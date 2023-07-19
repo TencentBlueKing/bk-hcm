@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
+	adtysubnet "hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
@@ -36,7 +37,7 @@ import (
 
 // CreateSubnet create subnet.
 // reference: https://support.huaweicloud.com/intl/zh-cn/api-vpc/vpc_subnet01_0001.html
-func (h *HuaWei) CreateSubnet(kt *kit.Kit, opt *types.HuaWeiSubnetCreateOption) (*types.HuaWeiSubnet, error) {
+func (h *HuaWei) CreateSubnet(kt *kit.Kit, opt *adtysubnet.HuaWeiSubnetCreateOption) (*adtysubnet.HuaWeiSubnet, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -75,7 +76,7 @@ func (h *HuaWei) CreateSubnet(kt *kit.Kit, opt *types.HuaWeiSubnetCreateOption) 
 		opt.Extension.Region,
 		converter.ValToPtr(resp.Subnet.VpcId),
 	}
-	respPoller := poller.Poller[*HuaWei, []model.Subnet, []*types.HuaWeiSubnet]{Handler: handler}
+	respPoller := poller.Poller[*HuaWei, []model.Subnet, []*adtysubnet.HuaWeiSubnet]{Handler: handler}
 	results, err := respPoller.PollUntilDone(h, kt, []*string{converter.ValToPtr(resp.Subnet.Id)},
 		types.NewBatchCreateSubnetPollerOption())
 	if err != nil {
@@ -91,7 +92,7 @@ func (h *HuaWei) CreateSubnet(kt *kit.Kit, opt *types.HuaWeiSubnetCreateOption) 
 
 // UpdateSubnet update subnet.
 // reference: https://support.huaweicloud.com/intl/zh-cn/api-vpc/vpc_subnet01_0004.html
-func (h *HuaWei) UpdateSubnet(kt *kit.Kit, opt *types.HuaWeiSubnetUpdateOption) error {
+func (h *HuaWei) UpdateSubnet(kt *kit.Kit, opt *adtysubnet.HuaWeiSubnetUpdateOption) error {
 	if err := opt.Validate(); err != nil {
 		return err
 	}
@@ -123,7 +124,7 @@ func (h *HuaWei) UpdateSubnet(kt *kit.Kit, opt *types.HuaWeiSubnetUpdateOption) 
 
 // DeleteSubnet delete subnet.
 // reference: https://support.huaweicloud.com/intl/zh-cn/api-vpc/vpc_subnet01_0005.html
-func (h *HuaWei) DeleteSubnet(kt *kit.Kit, opt *types.HuaWeiSubnetDeleteOption) error {
+func (h *HuaWei) DeleteSubnet(kt *kit.Kit, opt *adtysubnet.HuaWeiSubnetDeleteOption) error {
 	if err := opt.Validate(); err != nil {
 		return err
 	}
@@ -149,7 +150,7 @@ func (h *HuaWei) DeleteSubnet(kt *kit.Kit, opt *types.HuaWeiSubnetDeleteOption) 
 
 // ListSubnet list subnet.
 // reference: https://support.huaweicloud.com/intl/zh-cn/api-vpc/vpc_subnet01_0003.html
-func (h *HuaWei) ListSubnet(kt *kit.Kit, opt *types.HuaWeiSubnetListOption) (*types.HuaWeiSubnetListResult, error) {
+func (h *HuaWei) ListSubnet(kt *kit.Kit, opt *adtysubnet.HuaWeiSubnetListOption) (*adtysubnet.HuaWeiSubnetListResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -173,25 +174,25 @@ func (h *HuaWei) ListSubnet(kt *kit.Kit, opt *types.HuaWeiSubnetListOption) (*ty
 	resp, err := vpcClient.ListSubnets(req)
 	if err != nil {
 		if strings.Contains(err.Error(), ErrDataNotFound) {
-			return new(types.HuaWeiSubnetListResult), nil
+			return new(adtysubnet.HuaWeiSubnetListResult), nil
 		}
 		logs.Errorf("list huawei subnet failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, fmt.Errorf("list huawei subnet failed, err: %v", err)
 	}
 
 	subnets := converter.PtrToVal(resp.Subnets)
-	details := make([]types.HuaWeiSubnet, 0, len(subnets))
+	details := make([]adtysubnet.HuaWeiSubnet, 0, len(subnets))
 
 	for _, data := range subnets {
 		details = append(details, converter.PtrToVal(convertSubnet(&data, opt.Region)))
 	}
 
-	return &types.HuaWeiSubnetListResult{Details: details}, nil
+	return &adtysubnet.HuaWeiSubnetListResult{Details: details}, nil
 }
 
 // ListSubnetByID list subnet by id.
 // reference: https://support.huaweicloud.com/intl/zh-cn/api-vpc/vpc_subnet01_0003.html
-func (h *HuaWei) ListSubnetByID(kt *kit.Kit, opt *types.HuaWeiSubnetListByIDOption) (*types.HuaWeiSubnetListResult,
+func (h *HuaWei) ListSubnetByID(kt *kit.Kit, opt *adtysubnet.HuaWeiSubnetListByIDOption) (*adtysubnet.HuaWeiSubnetListResult,
 	error) {
 
 	if err := opt.Validate(); err != nil {
@@ -208,7 +209,7 @@ func (h *HuaWei) ListSubnetByID(kt *kit.Kit, opt *types.HuaWeiSubnetListByIDOpti
 		idMap[id] = struct{}{}
 	}
 
-	subnets := make([]types.HuaWeiSubnet, 0, len(opt.CloudIDs))
+	subnets := make([]adtysubnet.HuaWeiSubnet, 0, len(opt.CloudIDs))
 	req := &model.ListSubnetsRequest{
 		Limit:  converter.ValToPtr(int32(core.HuaWeiQueryLimit)),
 		Marker: nil,
@@ -248,20 +249,20 @@ func (h *HuaWei) ListSubnetByID(kt *kit.Kit, opt *types.HuaWeiSubnetListByIDOpti
 		req.Marker = converter.ValToPtr(tmp[len(tmp)-1].Id)
 	}
 
-	return &types.HuaWeiSubnetListResult{Details: subnets}, nil
+	return &adtysubnet.HuaWeiSubnetListResult{Details: subnets}, nil
 }
 
-func convertSubnet(data *model.Subnet, region string) *types.HuaWeiSubnet {
+func convertSubnet(data *model.Subnet, region string) *adtysubnet.HuaWeiSubnet {
 	if data == nil {
 		return nil
 	}
 
-	s := &types.HuaWeiSubnet{
+	s := &adtysubnet.HuaWeiSubnet{
 		CloudVpcID: data.VpcId,
 		CloudID:    data.Id,
 		Name:       data.Name,
 		Memo:       &data.Description,
-		Extension: &types.HuaWeiSubnetExtension{
+		Extension: &adtysubnet.HuaWeiSubnetExtension{
 			Region:     region,
 			Status:     data.Status.Value(),
 			DhcpEnable: data.DhcpEnable,
@@ -323,8 +324,8 @@ type createSubnetPollingHandler struct {
 }
 
 // Done ...
-func (h *createSubnetPollingHandler) Done(subnets []model.Subnet) (bool, *[]*types.HuaWeiSubnet) {
-	results := make([]*types.HuaWeiSubnet, 0)
+func (h *createSubnetPollingHandler) Done(subnets []model.Subnet) (bool, *[]*adtysubnet.HuaWeiSubnet) {
+	results := make([]*adtysubnet.HuaWeiSubnet, 0)
 	flag := true
 	for _, subnet := range subnets {
 		if subnet.Status.Value() != "ACTIVE" {

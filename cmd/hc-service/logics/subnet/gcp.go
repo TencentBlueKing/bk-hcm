@@ -26,8 +26,8 @@ import (
 	"strconv"
 
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
-	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
+	"hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service/subnet"
@@ -71,11 +71,11 @@ func (s *Subnet) GcpSubnetCreate(kt *kit.Kit, opt *SubnetCreateOptions[hcservice
 	// create gcp subnets
 	createdIDs := make([]string, 0, len(opt.CreateReqs))
 	for _, req := range opt.CreateReqs {
-		gcpCreateOpt := &types.GcpSubnetCreateOption{
+		gcpCreateOpt := &adtysubnet.GcpSubnetCreateOption{
 			Name:       req.Name,
 			Memo:       req.Memo,
 			CloudVpcID: vpcRes.Details[0].Extension.SelfLink,
-			Extension: &types.GcpSubnetCreateExt{
+			Extension: &adtysubnet.GcpSubnetCreateExt{
 				Region:                req.Extension.Region,
 				IPv4Cidr:              req.Extension.IPv4Cidr,
 				PrivateIpGoogleAccess: req.Extension.PrivateIpGoogleAccess,
@@ -92,7 +92,7 @@ func (s *Subnet) GcpSubnetCreate(kt *kit.Kit, opt *SubnetCreateOptions[hcservice
 	}
 
 	// get created subnets
-	subnetRes, err := cli.ListSubnet(kt, &types.GcpSubnetListOption{
+	subnetRes, err := cli.ListSubnet(kt, &adtysubnet.GcpSubnetListOption{
 		GcpListOption: adcore.GcpListOption{CloudIDs: createdIDs},
 		Region:        opt.Region,
 	})
@@ -125,7 +125,7 @@ func (s *Subnet) GcpSubnetCreate(kt *kit.Kit, opt *SubnetCreateOptions[hcservice
 	return res, nil
 }
 
-func convertGcpSubnetCreateReq(data *types.GcpSubnet, accountID, cloudVpcID string,
+func convertGcpSubnetCreateReq(data *adtysubnet.GcpSubnet, accountID, cloudVpcID string,
 	bizID int64) cloud.SubnetCreateReq[cloud.GcpSubnetCreateExt] {
 
 	subnetReq := cloud.SubnetCreateReq[cloud.GcpSubnetCreateExt]{

@@ -25,7 +25,7 @@ import (
 	"fmt"
 
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
-	"hcm/pkg/adaptor/types"
+	"hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service/subnet"
@@ -53,11 +53,11 @@ func (s *Subnet) HuaWeiSubnetCreate(kt *kit.Kit, opt *SubnetCreateOptions[hcserv
 	// create huawei subnets
 	createReqs := make([]cloud.SubnetCreateReq[cloud.HuaWeiSubnetCreateExt], 0, len(opt.CreateReqs))
 	for _, req := range opt.CreateReqs {
-		huaweiCreateOpt := &types.HuaWeiSubnetCreateOption{
+		huaweiCreateOpt := &adtysubnet.HuaWeiSubnetCreateOption{
 			Name:       req.Name,
 			Memo:       req.Memo,
 			CloudVpcID: opt.CloudVpcID,
-			Extension: &types.HuaWeiSubnetCreateExt{
+			Extension: &adtysubnet.HuaWeiSubnetCreateExt{
 				Region:     opt.Region,
 				Zone:       req.Extension.Zone,
 				IPv4Cidr:   req.Extension.IPv4Cidr,
@@ -88,7 +88,7 @@ func (s *Subnet) HuaWeiSubnetCreate(kt *kit.Kit, opt *SubnetCreateOptions[hcserv
 	return res, nil
 }
 
-func convertHuaWeiSubnetCreateReq(data *types.HuaWeiSubnet, accountID string,
+func convertHuaWeiSubnetCreateReq(data *adtysubnet.HuaWeiSubnet, accountID string,
 	bizID int64) cloud.SubnetCreateReq[cloud.HuaWeiSubnetCreateExt] {
 
 	subnetReq := cloud.SubnetCreateReq[cloud.HuaWeiSubnetCreateExt]{

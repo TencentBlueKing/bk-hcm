@@ -22,8 +22,8 @@ package subnet
 
 import (
 	subnetlogics "hcm/cmd/hc-service/logics/subnet"
-	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
+	"hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
@@ -58,7 +58,7 @@ func (s subnet) GcpSubnetCreate(cts *rest.Contexts) (interface{}, error) {
 	return core.CreateResult{ID: res.IDs[0]}, nil
 }
 
-func convertGcpSubnetCreateReq(data *types.GcpSubnet, cloudVpcID, accountID string,
+func convertGcpSubnetCreateReq(data *adtysubnet.GcpSubnet, cloudVpcID, accountID string,
 	bizID int64) cloud.SubnetCreateReq[cloud.GcpSubnetCreateExt] {
 
 	subnetReq := cloud.SubnetCreateReq[cloud.GcpSubnetCreateExt]{
@@ -106,10 +106,10 @@ func (s subnet) GcpSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	updateOpt := &types.GcpSubnetUpdateOption{
-		SubnetUpdateOption: types.SubnetUpdateOption{
+	updateOpt := &adtysubnet.GcpSubnetUpdateOption{
+		SubnetUpdateOption: adtysubnet.SubnetUpdateOption{
 			ResourceID: getRes.CloudID,
-			Data:       &types.BaseSubnetUpdateData{Memo: req.Memo},
+			Data:       &adtysubnet.BaseSubnetUpdateData{Memo: req.Memo},
 		},
 		Region: getRes.Region,
 	}

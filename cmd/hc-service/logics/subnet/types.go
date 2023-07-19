@@ -30,7 +30,7 @@ import (
 	synchuawei "hcm/cmd/hc-service/logics/res-sync/huawei"
 	synctcloud "hcm/cmd/hc-service/logics/res-sync/tcloud"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
-	"hcm/pkg/adaptor/types"
+	"hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/api/core"
 	cloudcore "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
@@ -76,11 +76,11 @@ func (c SubnetCreateOptions[T]) Validate() error {
 
 // AzureSubnetSyncOptions sync azure subnet options.
 type AzureSubnetSyncOptions struct {
-	BkBizID       int64               `validate:"required"`
-	AccountID     string              `validate:"required"`
-	CloudVpcID    string              `validate:"required"`
-	ResourceGroup string              `validate:"required"`
-	Subnets       []types.AzureSubnet `validate:"min=1,max=100"`
+	BkBizID       int64                    `validate:"required"`
+	AccountID     string                   `validate:"required"`
+	CloudVpcID    string                   `validate:"required"`
+	ResourceGroup string                   `validate:"required"`
+	Subnets       []adtysubnet.AzureSubnet `validate:"min=1,max=100"`
 }
 
 // Validate AzureSubnetSyncOptions.

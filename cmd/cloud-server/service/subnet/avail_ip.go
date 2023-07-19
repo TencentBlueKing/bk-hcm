@@ -93,6 +93,17 @@ func (svc *subnetSvc) countSubnetAvailableIPs(cts *rest.Contexts, validHandler h
 			return nil, err
 		}
 		return getCountIPResultFromList(id, idIPMap)
+	case enumor.Gcp:
+		req := &hcsubnet.ListCountIPReq{
+			Region:    basicInfo.Region,
+			AccountID: basicInfo.AccountID,
+			IDs:       []string{id},
+		}
+		idIPMap, err := svc.client.HCService().Gcp.Subnet.ListCountIP(cts.Kit.Ctx, cts.Kit.Header(), req)
+		if err != nil {
+			return nil, err
+		}
+		return getCountIPResultFromList(id, idIPMap)
 	case enumor.HuaWei:
 		ipInfo, err := svc.client.HCService().HuaWei.Subnet.CountIP(cts.Kit.Ctx, cts.Kit.Header(), id)
 		if err != nil {
@@ -212,6 +223,8 @@ func (svc *subnetSvc) listCountSubnetAvailIPs(cts *rest.Contexts, authHandler ha
 			tmp, err = svc.listAzureAvailIP(cts.Kit, subnets)
 		case enumor.HuaWei:
 			tmp, err = svc.listHuaWeiAvailIP(cts.Kit, subnets)
+		case enumor.Gcp:
+			tmp, err = svc.listGcpAvailIP(cts.Kit, subnets)
 		default:
 			// 如果这个云没有获取可用IP的能力的话，则返回接口不包括这个云的数据，避免造成误解。
 			continue
@@ -264,6 +277,38 @@ func (svc *subnetSvc) listTCloudAvailIP(kt *kit.Kit, subnets []cloud.BaseSubnet)
 			respData, err := svc.client.HCService().TCloud.Subnet.ListCountIP(kt.Ctx, kt.Header(), req)
 			if err != nil {
 				logs.Errorf("list tcloud count ip failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+				return nil, err
+			}
+
+			for id, ipResult := range respData {
+				result[id] = cloudserver.SubnetCountIPResult{
+					AvailableIPCount: ipResult.AvailableIPCount,
+					TotalIPCount:     ipResult.TotalIPCount,
+					UsedIPCount:      ipResult.UsedIPCount,
+				}
+			}
+		}
+	}
+
+	return result, nil
+}
+
+func (svc *subnetSvc) listGcpAvailIP(kt *kit.Kit, subnets []cloud.BaseSubnet) (
+	map[string]cloudserver.SubnetCountIPResult, error) {
+
+	classSubnets := classSubnet(subnets)
+
+	result := make(map[string]cloudserver.SubnetCountIPResult)
+	for accountID, regionMap := range classSubnets {
+		for region, ids := range regionMap {
+			req := &hcsubnet.ListCountIPReq{
+				Region:    region,
+				AccountID: accountID,
+				IDs:       ids,
+			}
+			respData, err := svc.client.HCService().Gcp.Subnet.ListCountIP(kt.Ctx, kt.Header(), req)
+			if err != nil {
+				logs.Errorf("list gcp count ip failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 				return nil, err
 			}
 
