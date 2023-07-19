@@ -208,6 +208,7 @@ func (cli *client) updateEip(kt *kit.Kit, accountID string, updateMap map[string
 	for id, one := range updateMap {
 		eip := &dataeip.EipExtUpdateReq[dataeip.HuaWeiEipExtensionUpdateReq]{
 			ID:     id,
+			Name:   one.Name,
 			Status: converter.PtrToVal(one.Status),
 			Extension: &dataeip.HuaWeiEipExtensionUpdateReq{
 				PortID:              one.PortID,
@@ -339,6 +340,11 @@ func (cli *client) listEipFromDB(kt *kit.Kit, params *SyncBaseParams) (
 }
 
 func isEipChange(cloud *typeseip.HuaWeiEip, db *dataeip.EipExtResult[dataeip.HuaWeiEipExtensionResult]) bool {
+
+	if !assert.IsPtrStringEqual(cloud.Name, db.Name) {
+		return true
+	}
+
 	if converter.PtrToVal(cloud.Status) != db.Status {
 		return true
 	}

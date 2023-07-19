@@ -76,6 +76,7 @@ func (h *HuaWei) ListEip(kt *kit.Kit, opt *eip.HuaWeiEipListOption) (*eip.HuaWei
 	for idx, publicIp := range *resp.Publicips {
 		status := publicIp.Status.Value()
 		eips[idx] = &eip.HuaWeiEip{
+			Name:                publicIp.Alias,
 			CloudID:             *publicIp.Id,
 			Region:              opt.Region,
 			Status:              &status,
