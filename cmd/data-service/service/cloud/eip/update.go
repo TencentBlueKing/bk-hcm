@@ -102,6 +102,7 @@ func batchUpdateEipExt[T dataproto.EipExtensionUpdateReq](cts *rest.Contexts, sv
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		for _, eipReq := range *req {
 			updateData := &tablecloud.EipModel{
+				Name:    eipReq.Name,
 				BkBizID: int64(eipReq.BkBizID),
 				Status:  eipReq.Status,
 			}

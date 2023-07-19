@@ -177,7 +177,8 @@ func (eipDao EipDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, eipID string, up
 		return err
 	}
 
-	opts := utils.NewFieldOptions().AddBlankedFields("instance_id").AddIgnoredFields(types.DefaultIgnoredFields...)
+	opts := utils.NewFieldOptions().AddBlankedFields("instance_id", "name",
+		"memo").AddIgnoredFields(types.DefaultIgnoredFields...)
 	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(updateData, opts)
 	if err != nil {
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
