@@ -23,8 +23,8 @@ import (
 	"fmt"
 
 	"hcm/cmd/hc-service/logics/res-sync/common"
-	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
+	"hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/api/core"
 	cloudcore "hcm/pkg/api/core/cloud"
 	dataservice "hcm/pkg/api/data-service"
@@ -71,7 +71,7 @@ func (cli *client) Subnet(kt *kit.Kit, params *SyncBaseParams, opt *SyncSubnetOp
 		return new(SyncResult), nil
 	}
 
-	addSubnet, updateMap, delCloudIDs := common.Diff[types.AzureSubnet,
+	addSubnet, updateMap, delCloudIDs := common.Diff[adtysubnet.AzureSubnet,
 		cloudcore.Subnet[cloudcore.AzureSubnetExtension]](subnetFromCloud, subnetFromDB, isSubnetChange)
 
 	if len(delCloudIDs) > 0 {
@@ -133,7 +133,7 @@ func (cli *client) RemoveSubnetDeleteFromCloud(kt *kit.Kit, accountID, resGroupN
 			break
 		}
 
-		var resultFromCloud []types.AzureSubnet
+		var resultFromCloud []adtysubnet.AzureSubnet
 		if len(cloudIDs) != 0 {
 			params := &SyncBaseParams{
 				AccountID:         accountID,
@@ -205,7 +205,7 @@ func (cli *client) deleteSubnet(kt *kit.Kit, accountID, resGroupName, cloudVpcID
 	return nil
 }
 
-func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[string]types.AzureSubnet) error {
+func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[string]adtysubnet.AzureSubnet) error {
 
 	if len(updateMap) == 0 {
 		return fmt.Errorf("update subnet, subnets is required")
@@ -247,7 +247,7 @@ func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[str
 }
 
 func (cli *client) createSubnet(kt *kit.Kit, accountID, resGroupName, cloudVpcID string,
-	addSubnet []types.AzureSubnet) error {
+	addSubnet []adtysubnet.AzureSubnet) error {
 
 	if len(addSubnet) == 0 {
 		return fmt.Errorf("create subnet, subnets is required")
@@ -308,13 +308,13 @@ func (cli *client) createSubnet(kt *kit.Kit, accountID, resGroupName, cloudVpcID
 }
 
 func (cli *client) listSubnetFromCloud(kt *kit.Kit, params *SyncBaseParams, cloudVpcId string) (
-	[]types.AzureSubnet, error) {
+	[]adtysubnet.AzureSubnet, error) {
 
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt := &types.AzureSubnetListByIDOption{
+	opt := &adtysubnet.AzureSubnetListByIDOption{
 		AzureListByIDOption: adcore.AzureListByIDOption{
 			ResourceGroupName: params.ResourceGroupName,
 			CloudIDs:          params.CloudIDs,
@@ -390,7 +390,7 @@ func (cli *client) listSubnetFromDBForCvm(kt *kit.Kit, params *SyncBaseParams) (
 	return result.Details, nil
 }
 
-func isSubnetChange(item types.AzureSubnet, info cloudcore.Subnet[cloudcore.AzureSubnetExtension]) bool {
+func isSubnetChange(item adtysubnet.AzureSubnet, info cloudcore.Subnet[cloudcore.AzureSubnetExtension]) bool {
 
 	if info.CloudVpcID != item.CloudVpcID {
 		return true

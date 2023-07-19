@@ -131,3 +131,26 @@ func (s *SubnetClient) SyncSubnet(ctx context.Context, h http.Header, req *sync.
 
 	return nil
 }
+
+// ListCountIP count tcloud subnet available ips.
+func (s *SubnetClient) ListCountIP(ctx context.Context, h http.Header, req *hcservice.ListCountIPReq) (
+	map[string]hcservice.AvailIPResult, error) {
+
+	resp := new(hcservice.ListAvailIPResp)
+	err := s.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/subnets/ips/count/list").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}

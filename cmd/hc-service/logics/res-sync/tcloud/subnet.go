@@ -23,8 +23,8 @@ import (
 	"fmt"
 
 	"hcm/cmd/hc-service/logics/res-sync/common"
-	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
+	"hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/api/core"
 	cloudcore "hcm/pkg/api/core/cloud"
 	dataservice "hcm/pkg/api/data-service"
@@ -70,7 +70,7 @@ func (cli *client) Subnet(kt *kit.Kit, params *SyncBaseParams, opt *SyncSubnetOp
 		return new(SyncResult), nil
 	}
 
-	addSubnet, updateMap, delCloudIDs := common.Diff[types.TCloudSubnet,
+	addSubnet, updateMap, delCloudIDs := common.Diff[adtysubnet.TCloudSubnet,
 		cloudcore.Subnet[cloudcore.TCloudSubnetExtension]](subnetFromCloud, subnetFromDB, isTCloudSubnetChange)
 
 	if len(delCloudIDs) > 0 {
@@ -130,7 +130,7 @@ func (cli *client) deleteSubnet(kt *kit.Kit, accountID string, region string, de
 	return nil
 }
 
-func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[string]types.TCloudSubnet) error {
+func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[string]adtysubnet.TCloudSubnet) error {
 	if len(updateMap) == 0 {
 		return fmt.Errorf("update subnet, subnets is required")
 	}
@@ -172,7 +172,7 @@ func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[str
 	return nil
 }
 
-func (cli *client) createSubnet(kt *kit.Kit, accountID string, region string, addSubnet []types.TCloudSubnet) error {
+func (cli *client) createSubnet(kt *kit.Kit, accountID string, region string, addSubnet []adtysubnet.TCloudSubnet) error {
 	if len(addSubnet) == 0 {
 		return fmt.Errorf("create subnet, subnets is required")
 	}
@@ -241,7 +241,7 @@ func (cli *client) createSubnet(kt *kit.Kit, accountID string, region string, ad
 	return nil
 }
 
-func isTCloudSubnetChange(item types.TCloudSubnet, info cloudcore.Subnet[cloudcore.TCloudSubnetExtension]) bool {
+func isTCloudSubnetChange(item adtysubnet.TCloudSubnet, info cloudcore.Subnet[cloudcore.TCloudSubnetExtension]) bool {
 	if info.Region != item.Extension.Region {
 		return true
 	}
@@ -305,7 +305,7 @@ func (cli *client) listSubnetFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return result.Details, nil
 }
 
-func (cli *client) listSubnetFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]types.TCloudSubnet, error) {
+func (cli *client) listSubnetFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]adtysubnet.TCloudSubnet, error) {
 
 	opt := &adcore.TCloudListOption{
 		Region:   params.Region,
@@ -359,7 +359,7 @@ func (cli *client) RemoveSubnetDeleteFromCloud(kt *kit.Kit, accountID string, re
 			break
 		}
 
-		var resultFromCloud []types.TCloudSubnet
+		var resultFromCloud []adtysubnet.TCloudSubnet
 		if len(cloudIDs) != 0 {
 			params := &SyncBaseParams{
 				AccountID: accountID,

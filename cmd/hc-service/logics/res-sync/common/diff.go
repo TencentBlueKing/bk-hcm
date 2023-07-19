@@ -32,6 +32,7 @@ import (
 	typesroutetable "hcm/pkg/adaptor/types/route-table"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	typessecuritygrouprule "hcm/pkg/adaptor/types/security-group-rule"
+	adtysubnet "hcm/pkg/adaptor/types/subnet"
 	typeszone "hcm/pkg/adaptor/types/zone"
 	cloudcore "hcm/pkg/api/core/cloud"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
@@ -77,11 +78,11 @@ type CloudResType interface {
 		types.HuaWeiVpc |
 		types.AzureVpc |
 
-		types.TCloudSubnet |
-		types.AwsSubnet |
-		types.HuaWeiSubnet |
-		types.GcpSubnet |
-		types.AzureSubnet |
+		adtysubnet.TCloudSubnet |
+		adtysubnet.AwsSubnet |
+		adtysubnet.HuaWeiSubnet |
+		adtysubnet.GcpSubnet |
+		adtysubnet.AzureSubnet |
 
 		typesdisk.TCloudDisk |
 		typesdisk.HuaWeiDisk |

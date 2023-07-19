@@ -25,7 +25,7 @@ import (
 	"fmt"
 
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
-	"hcm/pkg/adaptor/types"
+	"hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service/subnet"
@@ -53,11 +53,11 @@ func (s *Subnet) AwsSubnetCreate(kt *kit.Kit, opt *SubnetCreateOptions[hcservice
 	// create aws subnets
 	createReqs := make([]cloud.SubnetCreateReq[cloud.AwsSubnetCreateExt], 0, len(opt.CreateReqs))
 	for _, req := range opt.CreateReqs {
-		awsCreateOpt := &types.AwsSubnetCreateOption{
+		awsCreateOpt := &adtysubnet.AwsSubnetCreateOption{
 			Name:       req.Name,
 			Memo:       req.Memo,
 			CloudVpcID: opt.CloudVpcID,
-			Extension: &types.AwsSubnetCreateExt{
+			Extension: &adtysubnet.AwsSubnetCreateExt{
 				Region:   opt.Region,
 				Zone:     req.Extension.Zone,
 				IPv4Cidr: req.Extension.IPv4Cidr,
@@ -86,7 +86,7 @@ func (s *Subnet) AwsSubnetCreate(kt *kit.Kit, opt *SubnetCreateOptions[hcservice
 	return res, nil
 }
 
-func convertAwsSubnetCreateReq(data *types.AwsSubnet, accountID string,
+func convertAwsSubnetCreateReq(data *adtysubnet.AwsSubnet, accountID string,
 	bizID int64) cloud.SubnetCreateReq[cloud.AwsSubnetCreateExt] {
 
 	subnetReq := cloud.SubnetCreateReq[cloud.AwsSubnetCreateExt]{

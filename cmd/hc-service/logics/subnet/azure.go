@@ -26,7 +26,7 @@ import (
 
 	syncazure "hcm/cmd/hc-service/logics/res-sync/azure"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
-	"hcm/pkg/adaptor/types"
+	"hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/api/hc-service/subnet"
@@ -43,12 +43,12 @@ import (
 )
 
 // ConvAzureCreateReq convert hc-service azure subnet create request to adaption options.
-func ConvAzureCreateReq(req *subnet.SubnetCreateReq[subnet.AzureSubnetCreateExt]) *types.AzureSubnetCreateOption {
-	return &types.AzureSubnetCreateOption{
+func ConvAzureCreateReq(req *subnet.SubnetCreateReq[subnet.AzureSubnetCreateExt]) *adtysubnet.AzureSubnetCreateOption {
+	return &adtysubnet.AzureSubnetCreateOption{
 		Name:       req.Name,
 		Memo:       req.Memo,
 		CloudVpcID: req.CloudVpcID,
-		Extension: &types.AzureSubnetCreateExt{
+		Extension: &adtysubnet.AzureSubnetCreateExt{
 			ResourceGroup:        req.Extension.ResourceGroup,
 			IPv4Cidr:             req.Extension.IPv4Cidr,
 			IPv6Cidr:             req.Extension.IPv6Cidr,
@@ -112,7 +112,7 @@ func (s *Subnet) AzureSubnetSync(kt *kit.Kit, req *AzureSubnetSyncOptions) (*cor
 	return res, nil
 }
 
-func convertAzureSubnetCreateReq(data *types.AzureSubnet, accountID string,
+func convertAzureSubnetCreateReq(data *adtysubnet.AzureSubnet, accountID string,
 	bizID int64) cloud.SubnetCreateReq[cloud.AzureSubnetCreateExt] {
 
 	subnetReq := cloud.SubnetCreateReq[cloud.AzureSubnetCreateExt]{

@@ -21,6 +21,7 @@ package types
 
 import (
 	"hcm/pkg/adaptor/types/core"
+	"hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
@@ -65,11 +66,11 @@ type GcpVpcCreateExt struct {
 
 // AzureVpcCreateExt defines azure vpc extensional info.
 type AzureVpcCreateExt struct {
-	Region        string                    `json:"region" validate:"required"`
-	ResourceGroup string                    `json:"resource_group" validate:"required"`
-	IPv4Cidr      []string                  `json:"ipv4_cidr" validate:"required,dive,cidrv4"`
-	IPv6Cidr      []string                  `json:"ipv6_cidr" validate:"omitempty,dive,cidrv6"`
-	Subnets       []AzureSubnetCreateOption `json:"subnets" validate:"min=1,max=100"`
+	Region        string                               `json:"region" validate:"required"`
+	ResourceGroup string                               `json:"resource_group" validate:"required"`
+	IPv4Cidr      []string                             `json:"ipv4_cidr" validate:"required,dive,cidrv4"`
+	IPv6Cidr      []string                             `json:"ipv6_cidr" validate:"omitempty,dive,cidrv6"`
+	Subnets       []adtysubnet.AzureSubnetCreateOption `json:"subnets" validate:"min=1,max=100"`
 }
 
 // HuaWeiVpcCreateExt defines huawei vpc extensional info.
@@ -282,7 +283,7 @@ type AzureVpcExtension struct {
 	ResourceGroupName string            `json:"resource_group_name"`
 	DNSServers        []string          `json:"dns_servers"`
 	Cidr              []cloud.AzureCidr `json:"cidr"`
-	Subnets           []AzureSubnet
+	Subnets           []adtysubnet.AzureSubnet
 }
 
 // VpcExtension defines vpc extensional info.

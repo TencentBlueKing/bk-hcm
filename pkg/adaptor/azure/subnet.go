@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"strings"
 
-	"hcm/pkg/adaptor/types"
+	"hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -36,7 +36,7 @@ import (
 
 // CreateSubnet create subnet.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/subnets/create-or-update?tabs=HTTP
-func (a *Azure) CreateSubnet(kt *kit.Kit, opt *types.AzureSubnetCreateOption) (*types.AzureSubnet, error) {
+func (a *Azure) CreateSubnet(kt *kit.Kit, opt *adtysubnet.AzureSubnetCreateOption) (*adtysubnet.AzureSubnet, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (a *Azure) CreateSubnet(kt *kit.Kit, opt *types.AzureSubnetCreateOption) (*
 	return subnet, nil
 }
 
-func convertSubnetCreateReq(opt *types.AzureSubnetCreateOption) *armnetwork.Subnet {
+func convertSubnetCreateReq(opt *adtysubnet.AzureSubnetCreateOption) *armnetwork.Subnet {
 	if opt == nil {
 		return nil
 	}
@@ -110,13 +110,13 @@ func convertSubnetCreateReq(opt *types.AzureSubnetCreateOption) *armnetwork.Subn
 
 // UpdateSubnet update subnet.
 // TODO right now only memo is supported to update, add other update operations later.
-func (a *Azure) UpdateSubnet(_ *kit.Kit, _ *types.AzureSubnetUpdateOption) error {
+func (a *Azure) UpdateSubnet(_ *kit.Kit, _ *adtysubnet.AzureSubnetUpdateOption) error {
 	return nil
 }
 
 // DeleteSubnet delete subnet.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/subnets/delete?tabs=HTTP
-func (a *Azure) DeleteSubnet(kt *kit.Kit, opt *types.AzureSubnetDeleteOption) error {
+func (a *Azure) DeleteSubnet(kt *kit.Kit, opt *adtysubnet.AzureSubnetDeleteOption) error {
 	if err := opt.Validate(); err != nil {
 		return err
 	}
@@ -143,7 +143,7 @@ func (a *Azure) DeleteSubnet(kt *kit.Kit, opt *types.AzureSubnetDeleteOption) er
 
 // ListSubnet list subnet.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/subnets/list?tabs=HTTP
-func (a *Azure) ListSubnet(kt *kit.Kit, opt *types.AzureSubnetListOption) (*types.AzureSubnetListResult, error) {
+func (a *Azure) ListSubnet(kt *kit.Kit, opt *adtysubnet.AzureSubnetListOption) (*adtysubnet.AzureSubnetListResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -162,7 +162,7 @@ func (a *Azure) ListSubnet(kt *kit.Kit, opt *types.AzureSubnetListOption) (*type
 		return nil, fmt.Errorf("list azure subnet failed, err: %v", err)
 	}
 
-	details := make([]types.AzureSubnet, 0)
+	details := make([]adtysubnet.AzureSubnet, 0)
 	for pager.More() {
 		page, err := pager.NextPage(kt.Ctx)
 		if err != nil {
@@ -174,13 +174,13 @@ func (a *Azure) ListSubnet(kt *kit.Kit, opt *types.AzureSubnetListOption) (*type
 		}
 	}
 
-	return &types.AzureSubnetListResult{Details: details}, nil
+	return &adtysubnet.AzureSubnetListResult{Details: details}, nil
 }
 
 // ListSubnetByPage list subnet by page.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/subnets/list?tabs=HTTP
-func (a *Azure) ListSubnetByPage(kt *kit.Kit, opt *types.AzureSubnetListOption) (
-	*Pager[armnetwork.SubnetsClientListResponse, types.AzureSubnet], error) {
+func (a *Azure) ListSubnetByPage(kt *kit.Kit, opt *adtysubnet.AzureSubnetListOption) (
+	*Pager[armnetwork.SubnetsClientListResponse, adtysubnet.AzureSubnet], error) {
 
 	if err := opt.Validate(); err != nil {
 		return nil, err
@@ -196,7 +196,7 @@ func (a *Azure) ListSubnetByPage(kt *kit.Kit, opt *types.AzureSubnetListOption) 
 	vpcName := parseIDToName(opt.CloudVpcID)
 	azurePager := subnetClient.NewListPager(opt.ResourceGroupName, vpcName, req)
 
-	pager := &Pager[armnetwork.SubnetsClientListResponse, types.AzureSubnet]{
+	pager := &Pager[armnetwork.SubnetsClientListResponse, adtysubnet.AzureSubnet]{
 		pager: azurePager,
 		resultHandler: &subnetResultHandler{
 			resGroupName: opt.ResourceGroupName,
@@ -212,8 +212,8 @@ type subnetResultHandler struct {
 	cloudVpcID   string
 }
 
-func (handler *subnetResultHandler) BuildResult(resp armnetwork.SubnetsClientListResponse) []types.AzureSubnet {
-	details := make([]types.AzureSubnet, 0, len(resp.Value))
+func (handler *subnetResultHandler) BuildResult(resp armnetwork.SubnetsClientListResponse) []adtysubnet.AzureSubnet {
+	details := make([]adtysubnet.AzureSubnet, 0, len(resp.Value))
 	for _, subnet := range resp.Value {
 		details = append(details, converter.PtrToVal(convertSubnet(subnet, handler.resGroupName, handler.cloudVpcID)))
 	}
@@ -223,8 +223,8 @@ func (handler *subnetResultHandler) BuildResult(resp armnetwork.SubnetsClientLis
 
 // ListSubnetByID list subnet.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/subnets/list?tabs=HTTP
-func (a *Azure) ListSubnetByID(kt *kit.Kit, opt *types.AzureSubnetListByIDOption) (
-	*types.AzureSubnetListResult, error) {
+func (a *Azure) ListSubnetByID(kt *kit.Kit, opt *adtysubnet.AzureSubnetListByIDOption) (
+	*adtysubnet.AzureSubnetListResult, error) {
 
 	if err := opt.Validate(); err != nil {
 		return nil, err
@@ -240,7 +240,7 @@ func (a *Azure) ListSubnetByID(kt *kit.Kit, opt *types.AzureSubnetListByIDOption
 	req := new(armnetwork.SubnetsClientListOptions)
 	vpcName := parseIDToName(opt.CloudVpcID)
 	pager := subnetClient.NewListPager(opt.ResourceGroupName, vpcName, req)
-	details := make([]types.AzureSubnet, 0, len(idMap))
+	details := make([]adtysubnet.AzureSubnet, 0, len(idMap))
 	for pager.More() {
 		nextResult, err := pager.NextPage(kt.Ctx)
 		if err != nil {
@@ -254,25 +254,25 @@ func (a *Azure) ListSubnetByID(kt *kit.Kit, opt *types.AzureSubnetListByIDOption
 				delete(idMap, *id)
 
 				if len(idMap) == 0 {
-					return &types.AzureSubnetListResult{Details: details}, nil
+					return &adtysubnet.AzureSubnetListResult{Details: details}, nil
 				}
 			}
 		}
 	}
 
-	return &types.AzureSubnetListResult{Details: details}, nil
+	return &adtysubnet.AzureSubnetListResult{Details: details}, nil
 }
 
-func convertSubnet(data *armnetwork.Subnet, resourceGroup, cloudVpcID string) *types.AzureSubnet {
+func convertSubnet(data *armnetwork.Subnet, resourceGroup, cloudVpcID string) *adtysubnet.AzureSubnet {
 	if data == nil {
 		return nil
 	}
 
-	s := &types.AzureSubnet{
+	s := &adtysubnet.AzureSubnet{
 		CloudVpcID: strings.ToLower(cloudVpcID),
 		CloudID:    SPtrToLowerStr(data.ID),
 		Name:       SPtrToLowerStr(data.Name),
-		Extension: &types.AzureSubnetExtension{
+		Extension: &adtysubnet.AzureSubnetExtension{
 			ResourceGroupName: strings.ToLower(resourceGroup),
 		},
 	}

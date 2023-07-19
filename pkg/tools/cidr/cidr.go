@@ -46,12 +46,12 @@ func CidrIPAddressType(cidr string) (enumor.IPAddressType, error) {
 
 // CidrIPCounts get ip counts by cidr
 func CidrIPCounts(cidr string) (int, error) {
-	_, ipv4Net, err := net.ParseCIDR(cidr)
+	_, net, err := net.ParseCIDR(cidr)
 	if err != nil {
 		return 0, err
 	}
 
-	ones, bits := ipv4Net.Mask.Size()
+	ones, bits := net.Mask.Size()
 	hostBits := bits - ones
 	totalIPs := 1 << uint(hostBits)
 

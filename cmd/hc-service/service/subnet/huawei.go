@@ -27,6 +27,7 @@ import (
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
+	adtysubnet "hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
@@ -80,11 +81,11 @@ func (s subnet) HuaWeiSubnetCreate(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	huaweiCreateOpt := &types.HuaWeiSubnetCreateOption{
+	huaweiCreateOpt := &adtysubnet.HuaWeiSubnetCreateOption{
 		Name:       req.Name,
 		Memo:       req.Memo,
 		CloudVpcID: req.CloudVpcID,
-		Extension: &types.HuaWeiSubnetCreateExt{
+		Extension: &adtysubnet.HuaWeiSubnetCreateExt{
 			Region:     req.Extension.Region,
 			Zone:       req.Extension.Zone,
 			IPv4Cidr:   req.Extension.IPv4Cidr,
@@ -114,7 +115,7 @@ func (s subnet) HuaWeiSubnetCreate(cts *rest.Contexts) (interface{}, error) {
 	return core.CreateResult{ID: res.IDs[0]}, nil
 }
 
-func convertHuaWeiSubnetCreateReq(data *types.HuaWeiSubnet, accountID string,
+func convertHuaWeiSubnetCreateReq(data *adtysubnet.HuaWeiSubnet, accountID string,
 	bizID int64) cloud.SubnetCreateReq[cloud.HuaWeiSubnetCreateExt] {
 
 	subnetReq := cloud.SubnetCreateReq[cloud.HuaWeiSubnetCreateExt]{
@@ -161,10 +162,10 @@ func (s subnet) HuaWeiSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	updateOpt := &types.HuaWeiSubnetUpdateOption{
-		SubnetUpdateOption: types.SubnetUpdateOption{
+	updateOpt := &adtysubnet.HuaWeiSubnetUpdateOption{
+		SubnetUpdateOption: adtysubnet.SubnetUpdateOption{
 			ResourceID: getRes.CloudID,
-			Data:       &types.BaseSubnetUpdateData{Memo: req.Memo},
+			Data:       &adtysubnet.BaseSubnetUpdateData{Memo: req.Memo},
 		},
 		Name:   getRes.Name,
 		Region: getRes.Region,
@@ -205,7 +206,7 @@ func (s subnet) HuaWeiSubnetDelete(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	delOpt := &types.HuaWeiSubnetDeleteOption{
+	delOpt := &adtysubnet.HuaWeiSubnetDeleteOption{
 		BaseRegionalDeleteOption: adcore.BaseRegionalDeleteOption{
 			BaseDeleteOption: adcore.BaseDeleteOption{ResourceID: getRes.CloudID},
 			Region:           getRes.Region,
