@@ -5,6 +5,7 @@ interface ILANG {
 }
 
 const lang: ILANG = {
+  '无该业务权限': ['No access permission for this application.'],
   '你好世界': ['hello world'],
   '海垒2.0': ['HCM 2.0'],
   '退出': ['Quit'],
