@@ -31,13 +31,17 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    defaultUserlist: {
+      type: Array,
+      default: [],
+    },
   },
   emits: ['change', 'input', 'blur'],
   setup(props, ctx) {
     const tagInputRef = ref(null);
     const staffStore = useStaffStore();
     const searchKey = ['username'];
-    const userList: any = ref([]);
+    const userList: any = ref(props.defaultUserlist);
     const maxData = computed(() => (!props.multiple ? {
       maxData: 1,
     } : {}));
@@ -83,7 +87,7 @@ export default defineComponent({
       (list) => {
         if (list.length) {
           nextTick(() => {
-            userList.value = _.cloneDeep(list);
+            userList.value = [...userList.value, ...list];
             // tagInputRef.value?.focusInputTrigger(); // 获取到数据聚焦
           });
         }
