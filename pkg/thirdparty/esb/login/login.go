@@ -73,7 +73,7 @@ func (l *login) IsLogin(ctx context.Context, bkToken string) (*IsLoginResp, erro
 	}
 
 	if !resp.Result || resp.Code != 0 {
-		return nil, fmt.Errorf("{code:%d, message:%s}", resp.Code, resp.Message)
+		return nil, fmt.Errorf("{\"code\":%d, \"message\":\"%s\"}", resp.Code, resp.Message)
 	}
 
 	return resp, nil
