@@ -104,7 +104,7 @@ func (s *oaLoginClient) Verify(ctx context.Context, bkTicket string) (*checkLogi
 	}
 
 	if resp.Code != 0 {
-		return nil, fmt.Errorf("%v", ret)
+		return nil, fmt.Errorf("%+v", ret)
 	}
 
 	return ret, nil
