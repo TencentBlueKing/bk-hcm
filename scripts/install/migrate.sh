@@ -7,7 +7,6 @@ MYSQL_USERNAME=root
 MYSQL_DATABASE=hcm
 MYSQL_PASSWORD='password'
 
-
 # 预定义变量，请勿修改. Predefined variables, do not modify.
 SQLDIR=sql
 TARGET_VERSION_FILE=../VERSION
@@ -22,13 +21,13 @@ MYSQL="mysql --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USERNAME --pass
 help() {
     cat <<EOF
 Options:
-    -i      first install, same as -c v0.0.0
+    -i      first install, same as '-c v0.0.0'.
     -w [path]
             specify path for sql file.
     -t [target version]
-            specify target version for migration (debug only). 
+            specify target version for migration. 
     -c [current version]
-            specify current version for migration (debug only). 
+            specify current version for migration. 
     -a [path]
             target version file path.
     -h      show this help.
@@ -44,7 +43,7 @@ Previous sql file and hcm version relation:
     | 0005 | v1.1.7  |
     | 0006 | v1.1.18 |
     +------+---------+
-you can use -c flag to specify current version for upgrading from old release.
+you can use '-c' flag to specify current version for upgrading from old release.
 EOF
 }
 
@@ -59,7 +58,7 @@ mysqlx() {
 }
 
 ver_ge() {
-    # great or equal 
+    # great or equal
     echo -e $1\\n$2 | sort -rV -C
 }
 ver_le() {
@@ -76,22 +75,22 @@ get_current_version() {
     # 尝试从数据库获取当前版本并设置全局变量
     CURRENT_VERSION=$(mysqlx 'SELECT `hcm_ver` from hcm_version;')
     if [ $? -ne 0 ]; then
-        echo "[Warning] Fail to find version information! Use -c to specify current version.">/dev/stderr
-        echo "If it is your first time installing hcm, just using -i flag " >/dev/stderr
+        echo "[ERROR] Fail to find version information! Check the error info below or use '-c' to specify current version."
+        echo "If it is your first time installing hcm, just using '-i' flag."
         exit -1
     fi
 }
 
-get_hcm_ver(){
-    ver=$(grep -o -P '(?<=HCMVER\=)v\d+\.\d+\.\d+' $1)
+get_hcm_ver() {
+    ver=$(grep -o -E 'HCMVER=v[0-9]+\.[0-9]+\.[0-9]+' $1 | tail -c +8)
     # 处理没有版本信息的旧版本SQL文件
-    if [ -z "$ver" ];then 
+    if [ -z "$ver" ]; then
         # 从传入的参数重取前4个字符作为idx
-        let idx=$(basename $1|cut  -c 4)
+        let idx=$(basename $1 | cut -c 4)
         echo ${VERTABLE[idx]}
     else
         echo $ver
-    fi    
+    fi
 }
 
 arg_check() {
@@ -113,9 +112,9 @@ arg_check() {
     if [ -z "$TARGE_VERSION" ]; then
         TARGE_VERSION=$(head -n1 ${TARGET_VERSION_FILE})
         if [ -z "$TARGE_VERSION" ]; then
-            echo Fail to get target version! Please use -t to specify version, or -a to specify version file.      
-            exit -1 
-        fi 
+            echo "[ERROR] Fail to get target version! Please use -t to specify version, or -a to specify version file."
+            exit -1
+        fi
         echo got target version \($TARGE_VERSION\) from $TARGET_VERSION_FILE
     fi
 
@@ -126,19 +125,18 @@ arg_check() {
 
     echo target=$TARGE_VERSION current=$CURRENT_VERSION
     if ver_ge $CURRENT_VERSION $TARGE_VERSION; then
-        echo current\($CURRENT_VERSION\) \>= target\($TARGE_VERSION\)
+        echo "[ERROR] current($CURRENT_VERSION) >= target($TARGE_VERSION)"
         exit -1
     fi
 }
 
-
 main() {
 
     # 遍历每个sql文件，其中ls 默认按文件名的字符序排序
-    for sqlfile in $(ls $SQLDIR/*.sql); do
+    for sqlfile in $(ls -1 $SQLDIR/*.sql); do
         # 获取匹配的版本信息
         hcmver_of_sql=$(get_hcm_ver $sqlfile)
-        echo -n "[$hcmver_of_sql]" $sqlfile --\>
+        echo -n "[$hcmver_of_sql]" $sqlfile --\> 
         # 小于等于当前版本的pass
         if ver_le $hcmver_of_sql $CURRENT_VERSION; then
             echo pass
@@ -146,12 +144,15 @@ main() {
         fi
         #  大于当前版本的退出
         if ver_gt $hcmver_of_sql $TARGE_VERSION; then
-            echo  stop
+            echo stop
             break
         fi
         echo exec
         mysqla <$sqlfile
-
+        if [ $? -ne 0 ]; then
+            echo "[ERROR] Fail to execute $sqlfile! Exiting..."
+            exit -1
+        fi
     done
 }
 
