@@ -276,7 +276,7 @@ export default defineComponent({
                               default: () => (
                                 <span class="cursor-pointer flex-row align-items-center ">
                                   {
-                                    language.value === LANGUAGE_TYPE.zh_cn ? '中文' : 'English'
+                                    language.value === LANGUAGE_TYPE.en ? 'English' : '中文'
                                   }
                                   <i class={'icon hcm-icon bkhcm-icon-down-shape pl5'}/>
                                 </span>
