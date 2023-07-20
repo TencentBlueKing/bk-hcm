@@ -1,5 +1,5 @@
 import { Input, Select } from 'bkui-vue';
-import { defineComponent, ref, nextTick, watch, PropType } from 'vue';
+import { defineComponent, ref, nextTick, watch, PropType, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import MemberSelect from '@/components/MemberSelect';
 import OrganizationSelect from '@/components/OrganizationSelect';
@@ -86,13 +86,24 @@ export default defineComponent({
       }
     };
 
+    const computedDefaultUserlist = computed(() => {
+      let res = props.modelValue;
+      if (props.fromType === 'member') {
+        res = props.modelValue.map((name: string) => ({
+          username: name,
+          display_name: name,
+        }));
+      }
+      return res;
+    });
+
     const renderComponentsContent = (type: string) => {
       switch (type) {
         case 'input':
           return <Input ref={inputRef} class="w320" placeholder={props.fromPlaceholder} modelValue={props.modelValue}
           onChange={handleChange} onBlur={() => handleBlur(props.fromKey)} />;
         case 'member':
-          return <MemberSelect class="w320" v-model={props.modelValue}
+          return <MemberSelect class="w320" v-model={props.modelValue} defaultUserlist={computedDefaultUserlist.value}
           onChange={handleChange} onBlur={() => handleBlur(props.fromKey)}/>;
         case 'department':
           return <OrganizationSelect class="w320" v-model={props.modelValue}
