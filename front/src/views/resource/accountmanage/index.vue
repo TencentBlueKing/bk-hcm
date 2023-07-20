@@ -32,6 +32,7 @@
         @page-value-change="handlePageValueChange"
         @page-limit-change="handlePageLimitChange"
         row-hover="auto"
+        row-key="id"
       >
         <bk-table-column
           label="ID"

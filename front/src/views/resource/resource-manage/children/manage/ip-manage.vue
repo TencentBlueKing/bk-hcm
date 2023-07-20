@@ -174,6 +174,7 @@ defineExpose({ fetchComponentsData });
       @page-value-change="handlePageChange"
       @column-sort="handleSort"
       @selection-change="handleSelectionChange"
+      row-key="id"
     />
   </bk-loading>
   <delete-dialog />

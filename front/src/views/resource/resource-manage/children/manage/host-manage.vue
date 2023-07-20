@@ -78,6 +78,7 @@ const {
 const {
   selections,
   handleSelectionChange,
+  resetSelections,
 } = useSelection();
 
 const isShowDistribution = ref(false);
@@ -226,7 +227,10 @@ getCloudAreas();
       class="flex-row align-items-center"
       :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
       <slot></slot>
-      <HostOperations :selections="selections" :on-finished="triggerApi"></HostOperations>
+      <HostOperations :selections="selections" :on-finished="() => {
+        triggerApi();
+        resetSelections();
+      }"></HostOperations>
 
       <div class="flex-row align-items-center justify-content-arround search-selector-container">
         <bk-search-select
@@ -254,6 +258,7 @@ getCloudAreas();
       @page-value-change="handlePageChange"
       @selection-change="handleSelectionChange"
       @column-sort="handleSort"
+      row-key="id"
     />
 
     <bk-dialog
