@@ -239,6 +239,7 @@ const isRowSelectEnable = ({ row }) => {
       @page-value-change="handlePageChange"
       @column-sort="handleSort"
       @selection-change="handleSelectionChange"
+      row-key="id"
     />
   </bk-loading>
 
