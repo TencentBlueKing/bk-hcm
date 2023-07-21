@@ -673,8 +673,8 @@ func (cio ContainsInsensitiveOp) SQLExprAndValue(field string, value interface{}
 	}
 
 	placeholder := fieldPlaceholderName(field)
-	return fmt.Sprintf(`%s LIKE %s%s`, field, SqlPlaceholder, placeholder),
-		map[string]interface{}{placeholder: "%" + s + "%"}, nil
+	return fmt.Sprintf(`LOWER(%s) LIKE %s%s`, field, SqlPlaceholder, placeholder),
+		map[string]interface{}{placeholder: "%" + strings.ToLower(s) + "%"}, nil
 }
 
 // JSONEqualOp is json field equal operator
