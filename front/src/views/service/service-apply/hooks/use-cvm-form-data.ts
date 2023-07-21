@@ -191,6 +191,16 @@ export default (cond: Cond) => {
       saveData.resource_group_name = cond.resourceGroup;
       saveData.cloud_security_group_ids = [saveFormData.cloud_security_group_ids as string];
     }
+
+    saveData.required_count = +saveData.required_count;
+    if (saveData?.system_disk?.disk_size_gb) saveData.system_disk.disk_size_gb = +saveData.system_disk.disk_size_gb;
+    if (saveData?.data_disk?.length) {
+      saveData.data_disk.forEach((item) => {
+        item.disk_count = +item.disk_count;
+        item.disk_size_gb = +item.disk_size_gb;
+      });
+    }
+
     return saveData;
   };
 
