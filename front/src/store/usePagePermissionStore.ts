@@ -3,7 +3,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
 export default defineStore('usePagePermissionStore', () => {
-  const hasPagePermission = ref(false);
+  const hasPagePermission = ref(true);
   const permissionMsg = ref('');
   const setHasPagePermission = (val: boolean) => hasPagePermission.value = val;
   const setPermissionMsg = (val: string) => permissionMsg.value = val;
