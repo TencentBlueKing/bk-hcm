@@ -42,14 +42,11 @@ export function useVerify() {
     let res;
     try {
       res = await commonStore.authVerify(params);
-    } finally {
-      switch (res?.code) {
-        case IAM_CODE.Success:
-          setHasPagePermission(true);
-          break;
+    } catch (err) {
+      switch (err.code) {
         case IAM_CODE.NoPermission:
           setHasPagePermission(false);
-          setPermissionMsg(res.message);
+          setPermissionMsg(err.message);
           break;
         default:
           logout();
