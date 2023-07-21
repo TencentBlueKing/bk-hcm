@@ -43,7 +43,7 @@ export function useVerify() {
     try {
       res = await commonStore.authVerify(params);
     } finally {
-      switch (res.code) {
+      switch (res?.code) {
         case IAM_CODE.Success:
           setHasPagePermission(true);
           break;
