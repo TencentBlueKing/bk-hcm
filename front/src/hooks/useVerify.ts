@@ -16,7 +16,7 @@ const permissionParams = ref({ system_id: '', actions: [] });
 
 export enum  IAM_CODE {
   Success = 0,
-  NoPermission = 1302403,
+  NoPermission = 2000009,
 };
 
 // 权限hook
@@ -46,7 +46,7 @@ export function useVerify() {
       switch (err.code) {
         case IAM_CODE.NoPermission:
           setHasPagePermission(false);
-          setPermissionMsg(err.meta);
+          setPermissionMsg(err.message);
           break;
         default:
           logout();
