@@ -74,7 +74,7 @@ func newOALoginClient(bkLoginUrl string) (*oaLoginClient, error) {
 }
 
 // Verify ...
-func (s *oaLoginClient) Verify(ctx context.Context, bkTicket string) (*checkLogionRet, error) {
+func (s *oaLoginClient) Verify(ctx context.Context, bkTicket string) (*rest.Response, error) {
 	resp := &struct {
 		Code    int    `json:"ret"`
 		Message string `json:"msg"`
@@ -97,10 +97,10 @@ func (s *oaLoginClient) Verify(ctx context.Context, bkTicket string) (*checkLogi
 		return nil, err
 	}
 
-	ret := &checkLogionRet{
-		UserName: resp.Data.Username,
-		Code:     resp.Code,
-		Message:  resp.Message,
+	ret := &rest.Response{
+		Code:    int32(resp.Code),
+		Message: resp.Message,
+		Data:    resp.Data.Username,
 	}
 
 	if resp.Code != 0 {

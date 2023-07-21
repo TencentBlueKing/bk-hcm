@@ -55,4 +55,6 @@ const (
 	DoAuthorizeFailed int32 = 2000007
 	// PartialFailed means batch operation is partially failed.
 	PartialFailed int32 = 2000008
+	// UserNoAppAccess user no app access.
+	UserNoAppAccess int32 = 2000009
 )
