@@ -56,7 +56,7 @@ export function useVerify() {
       }
     }
 
-    if (res.data.permission) {    // 没有权限才需要获取跳转链接参数
+    if (res?.data?.permission) {    // 没有权限才需要获取跳转链接参数
       // 每个操作对应的参数
       const systemId = res.data.permission.system_id;
       const urlParams = res.data.permission.actions.reduce((p: any, e: any) => {
@@ -69,14 +69,14 @@ export function useVerify() {
       authVerifyData.value.urlParams = urlParams;
     }
     // permissionAction 用于判断按钮状态 仅针对操作按钮有用
-    const permissionAction = res.data.results.reduce((p: any, e: any, i: number) => {    // 将数组转成对象
+    const permissionAction = res?.data?.results.reduce((p: any, e: any, i: number) => {    // 将数组转成对象
       p[`${authData[i].id}`] = e.authorized;
       return p;
     }, {});
 
     authVerifyData.value.permissionAction  = permissionAction;
     commonStore.addAuthVerifyData(authVerifyData);    // 全局变量管理
-    return res.data;
+    return res?.data;
   };
 
   // 获取操作跳转链接
