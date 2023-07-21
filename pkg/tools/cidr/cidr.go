@@ -20,8 +20,13 @@
 package cidr
 
 import (
+	"bytes"
+	"encoding/binary"
+	"errors"
 	"fmt"
+	"math"
 	"net"
+	"sort"
 
 	"hcm/pkg/criteria/enumor"
 )
@@ -56,4 +61,84 @@ func CidrIPCounts(cidr string) (int, error) {
 	totalIPs := 1 << uint(hostBits)
 
 	return totalIPs - 2, nil
+}
+
+// IpNumToMasklen calculate the netmask len by number of ip, if number of ip less then 4 treat as 4.
+func IpNumToMasklen(ipnum int) int {
+	// calculat ceil(log2(x)), if x < 4 , treat x as 4
+	if ipnum <= 4 {
+		return 30
+	}
+	return 32 - int(math.Ceil(math.Log2(float64(ipnum))))
+}
+
+// NextAvailableNetByIpNum find next available net
+// Params:
+// 1. outer: 待分配的网段
+// 2. used: outer中已经分配出去的子网
+// 3. IPNum: 待分配子网所需的ip数量（包括网络号和主机号）
+func NextAvailableNetByIpNum(outer net.IPNet, used []net.IPNet, ipNum int) (net.IPNet, error) {
+	return NextAvailableNet(outer, used, IpNumToMasklen(ipNum))
+}
+
+// NextAvailableNet find next available net
+// Params:
+// 1. outer: 待分配的网段
+// 2. used: outer中已经分配出去的子网
+// 3. masklen: 待分配的网段掩码长度
+func NextAvailableNet(outer net.IPNet, used []net.IPNet, masklen int) (net.IPNet, error) {
+	// 给定一个网段、该网段中已分配的子网段列表，以及需要的新网段的掩码长度，返回下一个可用的网段。
+	// '下一个可用网段'为已用网段中最后一个网段的下一个可用网段。
+	var nextAvailable net.IPNet
+	outerMasklen, _ := outer.Mask.Size()
+	if masklen < outerMasklen {
+		return nextAvailable, errors.New("new net mask length is shorter than outer net")
+	}
+	nextAvailable.Mask = net.CIDRMask(masklen, 32)
+	// cidr排序，降序，要求给定的CIDR之间不相交
+	sort.Slice(used, func(i, j int) bool { return bytes.Compare(used[i].IP, used[j].IP) > 0 })
+	var lastBlock *net.IPNet
+	for _, u := range used {
+		// 剔除范围外的地址块
+		if !outer.Contains(u.IP) {
+			continue
+		}
+		lastBlock = &u
+		break
+	}
+
+	if lastBlock == nil {
+		// 该地址空间未分配有效网段
+		// 直接分配主ip地址段即可
+		nextAvailable.IP = outer.IP
+		return nextAvailable, nil
+
+	}
+	// lastBlock 的下一个就是结果
+	// 计算下一个网段，如果当前网络掩码长度比预期的长，则剪短掩码（网段范围变大），然后计算下一个。如果比较短则直接按当前掩码计算下一个
+	lastMasklen, _ := lastBlock.Mask.Size()
+	if lastMasklen > masklen {
+		// 剪短掩码
+		lastBlock.Mask = nextAvailable.Mask
+		lastMasklen = masklen
+	}
+
+	// 先mask自己，剪掉多余的网络号
+	lastBlock.IP = lastBlock.IP.Mask(lastBlock.Mask)
+
+	// 网络号+1，计算下一个网络
+	// 转换为整数形式方便计算
+	netid := binary.BigEndian.Uint32(lastBlock.IP)
+	netid >>= (32 - lastMasklen)
+	netid += 1
+	netid <<= (32 - lastMasklen)
+	nextAvailable.IP = make(net.IP, 4)
+	binary.BigEndian.PutUint32(nextAvailable.IP, netid)
+
+	// 检查是否超出范围
+	if !outer.Contains(nextAvailable.IP) {
+		return net.IPNet{}, errors.New("out of range")
+	}
+	return nextAvailable, nil
+
 }
