@@ -39,18 +39,21 @@ export function useVerify() {
       p.resources.push(resourceData);
       return p;
     }, { resources: [] });
-    const res = await commonStore.authVerify(params);
-
-    switch (res.code) {
-      case IAM_CODE.Success:
-        setHasPagePermission(true);
-        break;
-      case IAM_CODE.NoPermission:
-        setHasPagePermission(false);
-        setPermissionMsg(res.message);
-        break;
-      default:
-        logout();
+    let res;
+    try {
+      res = await commonStore.authVerify(params);
+    } finally {
+      switch (res.code) {
+        case IAM_CODE.Success:
+          setHasPagePermission(true);
+          break;
+        case IAM_CODE.NoPermission:
+          setHasPagePermission(false);
+          setPermissionMsg(res.message);
+          break;
+        default:
+          logout();
+      }
     }
 
     if (res.data.permission) {    // 没有权限才需要获取跳转链接参数
