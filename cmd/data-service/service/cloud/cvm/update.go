@@ -126,6 +126,26 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 				return nil, fmt.Errorf("update cvm failed, err: %v", err)
 			}
 
+			if update.BkCloudID == 0 {
+				update.BkCloudID = existCvm.BkCloudID
+			}
+
+			if len(update.PrivateIPv4Addresses) == 0 {
+				update.PrivateIPv4Addresses = existCvm.PrivateIPv4Addresses
+			}
+
+			if len(update.PrivateIPv6Addresses) == 0 {
+				update.PrivateIPv6Addresses = existCvm.PrivateIPv6Addresses
+			}
+
+			if len(update.PublicIPv4Addresses) == 0 {
+				update.PublicIPv4Addresses = existCvm.PublicIPv4Addresses
+			}
+
+			if len(update.PublicIPv6Addresses) == 0 {
+				update.PublicIPv6Addresses = existCvm.PublicIPv6Addresses
+			}
+
 			update.CloudID = existCvm.CloudID
 			update.BkBizID = existCvm.BkBizID
 			models = append(models, update)
@@ -149,7 +169,6 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 
 func listCvmInfo(cts *rest.Contexts, svc *cvmSvc, ids []string) (map[string]tablecvm.Table, error) {
 	opt := &types.ListOption{
-		Fields: []string{"id", "extension", "cloud_id", "bk_biz_id"},
 		Filter: tools.ContainersExpression("id", ids),
 		Page: &core.BasePage{
 			Start: 0,
