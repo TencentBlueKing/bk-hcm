@@ -113,9 +113,10 @@ func convCvmGetResult[T corecvm.Extension](base *corecvm.BaseCvm, extJson tablet
 	*corecvm.Cvm[T], error) {
 
 	extension := new(T)
-	err := json.UnmarshalFromString(string(extJson), &extension)
-	if err != nil {
-		return nil, fmt.Errorf("UnmarshalFromString cvm json extension failed, err: %v", err)
+	if len(extJson) != 0 {
+		if err := json.UnmarshalFromString(string(extJson), &extension); err != nil {
+			return nil, fmt.Errorf("UnmarshalFromString cvm json extension failed, err: %v", err)
+		}
 	}
 
 	return &corecvm.Cvm[T]{
