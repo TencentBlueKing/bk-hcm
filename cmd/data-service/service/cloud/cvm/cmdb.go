@@ -41,6 +41,8 @@ func upsertCmdbHosts[T corecvm.Extension](svc *cvmSvc, kt *kit.Kit, vendor enumo
 
 		host, err := convCvmGetResult[T](convTableToBaseCvm(model), model.Extension)
 		if err != nil {
+			logs.Errorf("conv cvm get result failed, err: %v, model: %+v, extension: %s, rid: %s", err, model,
+				model.Extension, kt.Rid)
 			return err
 		}
 		bizHostMap[model.BkBizID] = append(bizHostMap[model.BkBizID], converter.PtrToVal(host))
