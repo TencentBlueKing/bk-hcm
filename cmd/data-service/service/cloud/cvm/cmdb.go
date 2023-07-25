@@ -41,6 +41,8 @@ func upsertCmdbHosts[T corecvm.Extension](svc *cvmSvc, kt *kit.Kit, vendor enumo
 
 		host, err := convCvmGetResult[T](convTableToBaseCvm(model), model.Extension)
 		if err != nil {
+			logs.Errorf("conv cvm get result failed, err: %v, model: %+v, extension: %s, rid: %s", err, model,
+				model.Extension, kt.Rid)
 			return err
 		}
 		bizHostMap[model.BkBizID] = append(bizHostMap[model.BkBizID], converter.PtrToVal(host))
@@ -49,7 +51,8 @@ func upsertCmdbHosts[T corecvm.Extension](svc *cvmSvc, kt *kit.Kit, vendor enumo
 	for bizID, hosts := range bizHostMap {
 		addCmdbReq := &cmdb.AddCloudHostToBizReq[T]{Vendor: vendor, BizID: bizID, Hosts: hosts}
 		if err := cmdb.AddCloudHostToBiz[T](svc.cmdbLogics, kt, addCmdbReq); err != nil {
-			logs.Errorf("add cmdb cloud hosts failed, err: %v, req: %+v, rid: %s", err, addCmdbReq, kt.Rid)
+			logs.Errorf("[%s] add cmdb cloud hosts failed, err: %v, req: %+v, rid: %s", constant.CmdbSyncFailed, err,
+				addCmdbReq, kt.Rid)
 			return err
 		}
 	}
@@ -73,7 +76,8 @@ func upsertBaseCmdbHosts(svc *cvmSvc, kt *kit.Kit, models []*cvm.Table) error {
 	for bizID, hosts := range bizHostMap {
 		addCmdbReq := &cmdb.AddBaseCloudHostToBizReq{BizID: bizID, Hosts: hosts}
 		if err := cmdb.AddBaseCloudHostToBiz(svc.cmdbLogics, kt, addCmdbReq); err != nil {
-			logs.Errorf("add cmdb base cloud hosts failed, err: %v, req: %+v, rid: %s", err, addCmdbReq, kt.Rid)
+			logs.Errorf("[%s] add cmdb base cloud hosts failed, err: %v, req: %+v, rid: %s", constant.CmdbSyncFailed,
+				err, addCmdbReq, kt.Rid)
 			return err
 		}
 	}
@@ -99,7 +103,8 @@ func deleteCmdbHosts(svc *cvmSvc, kt *kit.Kit, models []cvm.Table) error {
 	for bizID, vendorMap := range delBizMap {
 		delCmdbFilter := &cmdb.DeleteCloudHostFromBizReq{BizID: bizID, VendorCloudIDs: vendorMap}
 		if err := svc.cmdbLogics.DeleteCloudHostFromBiz(kt, delCmdbFilter); err != nil {
-			logs.Errorf("delete cmdb cloud hosts failed, err: %v, req: %+v, rid: %s", err, delCmdbFilter, kt.Rid)
+			logs.Errorf("[%s] delete cmdb cloud hosts failed, err: %v, req: %+v, rid: %s", constant.CmdbSyncFailed,
+				err, delCmdbFilter, kt.Rid)
 			return err
 		}
 	}

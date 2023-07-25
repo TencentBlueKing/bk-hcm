@@ -25,7 +25,6 @@ import (
 	"hcm/pkg/api/core"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	protocloud "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
@@ -126,6 +125,26 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 				return nil, fmt.Errorf("update cvm failed, err: %v", err)
 			}
 
+			if update.BkCloudID == 0 {
+				update.BkCloudID = existCvm.BkCloudID
+			}
+
+			if len(update.PrivateIPv4Addresses) == 0 {
+				update.PrivateIPv4Addresses = existCvm.PrivateIPv4Addresses
+			}
+
+			if len(update.PrivateIPv6Addresses) == 0 {
+				update.PrivateIPv6Addresses = existCvm.PrivateIPv6Addresses
+			}
+
+			if len(update.PublicIPv4Addresses) == 0 {
+				update.PublicIPv4Addresses = existCvm.PublicIPv4Addresses
+			}
+
+			if len(update.PublicIPv6Addresses) == 0 {
+				update.PublicIPv6Addresses = existCvm.PublicIPv6Addresses
+			}
+
 			update.CloudID = existCvm.CloudID
 			update.BkBizID = existCvm.BkBizID
 			models = append(models, update)
@@ -134,7 +153,7 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 		// upsert cmdb cloud hosts
 		err = upsertCmdbHosts[T](svc, cts.Kit, vendor, models)
 		if err != nil {
-			logs.Errorf("[%s] upsert cmdb hosts failed, err: %v, rid: %s", constant.CmdbSyncFailed, err, cts.Kit.Rid)
+			logs.Errorf("upsert cmdb hosts failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, nil
 		}
 
@@ -149,7 +168,6 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 
 func listCvmInfo(cts *rest.Contexts, svc *cvmSvc, ids []string) (map[string]tablecvm.Table, error) {
 	opt := &types.ListOption{
-		Fields: []string{"id", "extension", "cloud_id", "bk_biz_id"},
 		Filter: tools.ContainersExpression("id", ids),
 		Page: &core.BasePage{
 			Start: 0,
@@ -190,7 +208,6 @@ func (svc *cvmSvc) BatchUpdateCvmCommonInfo(cts *rest.Contexts) (interface{}, er
 
 	// upsert cmdb cloud hosts
 	opt := &types.ListOption{
-		Fields: []string{"vendor", "cloud_id"},
 		Filter: updateFilter,
 		Page:   core.NewDefaultBasePage(),
 	}

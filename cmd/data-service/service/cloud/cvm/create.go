@@ -118,6 +118,7 @@ func batchCreateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 		}
 
 		// create cmdb cloud hosts
+		// 如果主机同步Cmdb失败，但写入HCM成功，忽略该错误。
 		err = upsertCmdbHosts[T](svc, cts.Kit, vendor, models)
 		if err != nil {
 			logs.Errorf("[%s] upsert cmdb hosts failed, err: %v, rid: %s", constant.CmdbSyncFailed, err, cts.Kit.Rid)
