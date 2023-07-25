@@ -24,7 +24,6 @@ import (
 
 	"hcm/pkg/api/core"
 	protocloud "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
@@ -89,7 +88,7 @@ func (svc *cvmSvc) BatchDeleteCvm(cts *rest.Contexts) (interface{}, error) {
 
 		// delete cmdb cloud hosts
 		if err = deleteCmdbHosts(svc, cts.Kit, listResp.Details); err != nil {
-			logs.Errorf("[%s] delete cmdb hosts failed, err: %v, rid: %s", constant.CmdbSyncFailed, err, cts.Kit.Rid)
+			logs.Errorf("delete cmdb hosts failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, nil
 		}
 
