@@ -94,7 +94,7 @@ func SyncCvmToCmdb(kt *kit.Kit, accountID string, bkBizID int64) error {
 				converter.SliceToPtr(result.Details))
 		}
 		if err != nil {
-			logs.Errorf("[%s] upsertCmdbHosts failed, err: %v, rid; %s", constant.CmdbSyncFailed, err, kt.Rid)
+			logs.Errorf("upsertCmdbHosts failed, err: %v, rid; %s", err, kt.Rid)
 			return err
 		}
 		totalCount += len(result.Details)
