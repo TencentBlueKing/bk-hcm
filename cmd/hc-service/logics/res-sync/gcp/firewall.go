@@ -72,7 +72,7 @@ func (cli *client) Firewall(kt *kit.Kit, params *SyncBaseParams, opt *SyncFirewa
 		firewallFromCloud, firewallFromDB, isFirewallChange)
 
 	if len(delCloudIDs) > 0 {
-		if err := cli.deleteFirewall(kt, params.AccountID, delCloudIDs); err != nil {
+		if err = cli.deleteFirewall(kt, params.AccountID, delCloudIDs); err != nil {
 			return nil, err
 		}
 	}
@@ -428,7 +428,7 @@ func isFirewallChange(cloud firewallrule.GcpFirewall, db cloudcore.GcpFirewallRu
 		return true
 	}
 
-	if db.CloudVpcID != cloud.Network {
+	if db.VpcSelfLink != cloud.Network {
 		return true
 	}
 
@@ -506,50 +506,60 @@ func (cli *client) queryVpcsAndSync(kt *kit.Kit, opt *QueryVpcsAndSyncOption) (m
 		return convVpcMap(result), nil
 	}
 
-	cloudVpcIDs := make([]string, 0)
-	for _, one := range result {
-		cloudVpcIDs = append(cloudVpcIDs, one.CloudID)
+	existVpcSLMap := convVpcSLMap(result)
+
+	notExistSelfLink := make([]string, 0)
+	for _, selfLink := range vpcSelfLinks {
+		if _, exist := existVpcSLMap[selfLink]; !exist {
+			notExistSelfLink = append(notExistSelfLink, selfLink)
+		}
 	}
 
-	existVpcMap := convVpcCloudIDMap(result)
+	listVpc := &ListBySelfLinkOption{
+		AccountID: opt.AccountID,
+		SelfLink:  notExistSelfLink,
+	}
+	vpcs, err := cli.listVpcFromCloudBySelfLink(kt, listVpc)
+	if err != nil {
+		logs.Errorf("list vpc from cloud by self link failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
 
-	notExistCloudID := make([]string, 0)
-	for _, cloudID := range cloudVpcIDs {
-		if _, exist := existVpcMap[cloudID]; !exist {
-			notExistCloudID = append(notExistCloudID, cloudID)
-		}
+	cloudIDs := make([]string, 0, len(vpcs))
+	for _, one := range vpcs {
+		cloudIDs = append(cloudIDs, one.CloudID)
 	}
 
 	params := &SyncBaseParams{
 		AccountID: opt.AccountID,
-		CloudIDs:  notExistCloudID,
+		CloudIDs:  cloudIDs,
 	}
 	if _, err = cli.Vpc(kt, params, new(SyncVpcOption)); err != nil {
 		return nil, err
 	}
 
 	// 同步完，二次查询
-	listCloudIDParams := &SyncBaseParams{
+	listCloudIDParams := &ListBySelfLinkOption{
 		AccountID: opt.AccountID,
-		CloudIDs:  notExistCloudID,
+		SelfLink:  vpcSelfLinks,
 	}
-	notExistResult, err := cli.listVpcFromDB(kt, listCloudIDParams)
+	secondResult, err := cli.listVpcFromDBBySelfLink(kt, listCloudIDParams)
 	if err != nil {
-		logs.Errorf("list vpc from db failed, err: %v, cloudIDs: %v, rid: %s", err, cloudVpcIDs, kt.Rid)
+		logs.Errorf("list vpc from db by self link failed, err: %v, cloudIDs: %v, rid: %s", err, cloudIDs, kt.Rid)
 		return nil, err
 	}
 
-	if len(notExistResult) != len(cloudVpcIDs) {
-		return nil, fmt.Errorf("some vpc can not sync, cloudIDs: %v", notExistCloudID)
+	if len(secondResult) != len(vpcSelfLinks) {
+		return nil, fmt.Errorf("some vpc can not sync, self_links: %v", notExistSelfLink)
 	}
 
-	return convVpcMap(notExistResult), nil
+	return convVpcMap(secondResult), nil
 }
 
-func convVpcCloudIDMap(result []cloudcore.Vpc[cloudcore.GcpVpcExtension]) map[string]string {
+func convVpcSLMap(result []cloudcore.Vpc[cloudcore.GcpVpcExtension]) map[string]string {
 	m := make(map[string]string, len(result))
 	for _, one := range result {
-		m[one.CloudID] = one.ID
+		m[one.Extension.SelfLink] = one.ID
 	}
 	return m
 }

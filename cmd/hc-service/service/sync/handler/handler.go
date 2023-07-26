@@ -51,6 +51,11 @@ func ResourceSync(cts *rest.Contexts, handler Handler) error {
 		return err
 	}
 
+	if err := handler.RemoveDeleteFromCloud(kt); err != nil {
+		logs.Errorf("%s sync handler to removeDeleteFromCloud failed, err: %v, rid: %s", handler.Name(), err, kt.Rid)
+		return err
+	}
+
 	for {
 		cloudIDs, err := handler.Next(kt)
 		if err != nil {
@@ -70,11 +75,6 @@ func ResourceSync(cts *rest.Contexts, handler Handler) error {
 		if len(cloudIDs) < constant.CloudResourceSyncMaxLimit {
 			break
 		}
-	}
-
-	if err := handler.RemoveDeleteFromCloud(kt); err != nil {
-		logs.Errorf("%s sync handler to removeDeleteFromCloud failed, err: %v, rid: %s", handler.Name(), err, kt.Rid)
-		return err
 	}
 
 	return nil
