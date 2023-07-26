@@ -50,7 +50,7 @@ func BizValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 		}
 
 		authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: opt.ResType, Action: opt.Action},
-			BizID: opt.BasicInfo.BkBizID}
+			BizID: bizID}
 		return opt.Authorizer.AuthorizeWithPerm(cts.Kit, authRes)
 	}
 
