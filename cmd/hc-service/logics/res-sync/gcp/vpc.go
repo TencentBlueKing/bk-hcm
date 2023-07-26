@@ -302,6 +302,27 @@ func (cli *client) listVpcFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]type
 	return result.Details, nil
 }
 
+func (cli *client) listVpcFromCloudBySelfLink(kt *kit.Kit, params *ListBySelfLinkOption) ([]types.GcpVpc, error) {
+	if err := params.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.GcpListOption{
+		SelfLinks: params.SelfLink,
+		Page: &adcore.GcpPage{
+			PageSize: adcore.GcpQueryLimit,
+		},
+	}
+	result, err := cli.cloudCli.ListVpc(kt, opt)
+	if err != nil {
+		logs.Errorf("[%s] list vpc from cloud by self link failed, err: %v, account: %s, opt: %v, rid: %s",
+			enumor.Gcp, err, params.AccountID, opt, kt.Rid)
+		return nil, err
+	}
+
+	return result.Details, nil
+}
+
 func (cli *client) listVpcFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	[]cloudcore.Vpc[cloudcore.GcpVpcExtension], error) {
 
