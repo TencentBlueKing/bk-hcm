@@ -190,3 +190,22 @@ func validateDescribeAccountQuotaResp(resp *cvm.DescribeAccountQuotaResponse) er
 	}
 	return nil
 }
+
+// ListSubUsers list sub users
+// reference: https://cloud.tencent.com/document/api/598/34587
+func (t *TCloud) ListSubUsers(kt *kit.Kit) ([]*cam.SubAccountInfo, error) {
+
+	client, err := t.clientSet.camServiceClient("")
+	if err != nil {
+		return nil, fmt.Errorf("init tencent cloud client failed, err: %v", err)
+	}
+
+	req := cam.NewListUsersRequest()
+	resp, err := client.ListUsers(req)
+	if err != nil {
+		logs.Errorf("list tcloud instance failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	return resp.Response.Data, nil
+}

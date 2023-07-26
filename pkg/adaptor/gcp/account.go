@@ -26,6 +26,8 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+
+	"google.golang.org/api/iam/v1"
 )
 
 // AccountCheck check account authentication information and permissions.
@@ -74,4 +76,26 @@ func (g *Gcp) GetProjectRegionQuota(kt *kit.Kit, opt *typeaccount.GcpProjectRegi
 	}
 
 	return nil, fmt.Errorf("query project region: %s quota not match data", opt.Region)
+}
+
+// ListServiceAccounts list service accounts
+// reference: https://cloud.google.com/iam/docs/reference/rest/v1/projects.serviceAccounts/list
+func (g *Gcp) ListServiceAccounts(kt *kit.Kit) ([]*iam.ServiceAccount, error) {
+	client, err := g.clientSet.iamClient(kt)
+	if err != nil {
+		return nil, err
+	}
+
+	name := "projects/" + g.CloudProjectID()
+	ret := make([]*iam.ServiceAccount, 0)
+
+	req := client.Projects.ServiceAccounts.List(name)
+	if err := req.Pages(kt.Ctx, func(page *iam.ListServiceAccountsResponse) error {
+		ret = append(ret, page.Accounts...)
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return ret, nil
 }
