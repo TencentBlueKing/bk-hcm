@@ -1,6 +1,6 @@
 global:
   imageRegistry: hub.bktencent.com
-  imagePullSecrets: []
+  imagePullSecrets: [ ]
   imagePullPolicy: IfNotPresent
   storageClass: ""
 
@@ -19,7 +19,7 @@ ingress:
   ## 一旦确定，不能随意修改，否则会影响(1)注册到IAM的回调地址 (2) 注册到APIGateway的网关资源后端Host和Path
   shareDomainEnable: true
   host: bkhcm.example.com
-  annotations: {}
+  annotations: { }
   tls: false
   apiserver:
     enabled: true
@@ -58,10 +58,10 @@ apiserver:
   ## pod配置
   ##
   replicas: 1
-  podAnnotations: {}
-  affinity: {}
-  nodeSelector: {}
-  tolerations: []
+  podAnnotations: { }
+  affinity: { }
+  nodeSelector: { }
+  tolerations: [ ]
   resources:
     limits:
       cpu: 200m
@@ -100,10 +100,10 @@ authserver:
   ## pod配置
   ##
   replicas: 1
-  podAnnotations: {}
-  affinity: {}
-  nodeSelector: {}
-  tolerations: []
+  podAnnotations: { }
+  affinity: { }
+  nodeSelector: { }
+  tolerations: [ ]
   resources:
     limits:
       cpu: 200m
@@ -153,13 +153,19 @@ cloudserver:
   recycle:
     ## autoDeleteTimeHour auto delete recycle bin resource time, unit: hour.
     autoDeleteTimeHour: 48
+  # billConfig bill config settings.
+  billConfig:
+    # enable if enable bill config.
+    enable: true
+    # syncIntervalMin bill config interval, unit: min.
+    syncIntervalMin: 30
   ## pod配置
   ##
   replicas: 1
-  podAnnotations: {}
-  affinity: {}
-  nodeSelector: {}
-  tolerations: []
+  podAnnotations: { }
+  affinity: { }
+  nodeSelector: { }
+  tolerations: [ ]
   resources:
     limits:
       cpu: 200m
@@ -197,10 +203,10 @@ dataservice:
   ## pod配置
   ##
   replicas: 1
-  podAnnotations: {}
-  affinity: {}
-  nodeSelector: {}
-  tolerations: []
+  podAnnotations: { }
+  affinity: { }
+  nodeSelector: { }
+  tolerations: [ ]
   resources:
     limits:
       cpu: 200m
@@ -238,10 +244,10 @@ hcservice:
   ## pod配置
   ##
   replicas: 1
-  podAnnotations: {}
-  affinity: {}
-  nodeSelector: {}
-  tolerations: []
+  podAnnotations: { }
+  affinity: { }
+  nodeSelector: { }
+  tolerations: [ ]
   resources:
     limits:
       cpu: 200m
@@ -279,10 +285,10 @@ webserver:
   ## pod配置
   ##
   replicas: 1
-  podAnnotations: {}
-  affinity: {}
-  nodeSelector: {}
-  tolerations: []
+  podAnnotations: { }
+  affinity: { }
+  nodeSelector: { }
+  tolerations: [ ]
   resources:
     limits:
       cpu: 200m
@@ -415,7 +421,7 @@ etcd:
     registry: docker.io
     repository: bitnami/etcd
     tag: 3.5.4-debian-11-r36
-    
+
   enabled: true
   ## 使用username/password方式，不使用TLS
   ##
