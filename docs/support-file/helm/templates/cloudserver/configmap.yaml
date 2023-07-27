@@ -40,3 +40,5 @@ data:
       {{- toYaml .Values.cloudserver.cloudResource | nindent 6 }}
     recycle:
       {{- toYaml .Values.cloudserver.recycle | nindent 6 }}
+    billConfig:
+      {{- toYaml .Values.cloudserver.billConfig | nindent 6 }}
