@@ -56,7 +56,7 @@ type SecurityGroupTable struct {
 	CloudID   string          `db:"cloud_id" json:"cloud_id" validate:"lte=255"`
 	BkBizID   int64           `db:"bk_biz_id" json:"bk_biz_id"`
 	Region    string          `db:"region" json:"region" validate:"lte=20"`
-	Name      string          `db:"name" json:"name" validate:"lte=60"`
+	Name      string          `db:"name" json:"name" validate:"lte=255"`
 	Memo      *string         `db:"memo" json:"memo" validate:"omitempty,lte=255"`
 	AccountID string          `db:"account_id" json:"account_id" validate:"lte=64"`
 	Extension types.JsonField `db:"extension" json:"extension"`
