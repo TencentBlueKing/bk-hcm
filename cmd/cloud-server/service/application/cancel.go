@@ -43,7 +43,7 @@ func (a *applicationSvc) Cancel(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// 根据SN调用ITSM接口撤销单据
-	err = a.esbClient.Itsm().WithdrawTicket(cts.Kit.Ctx, application.SN, cts.Kit.User)
+	err = a.itsmCli.WithdrawTicket(cts.Kit, application.SN, cts.Kit.User)
 	if err != nil {
 		return nil, fmt.Errorf("call itsm cancel ticket api failed, err: %v", err)
 	}
