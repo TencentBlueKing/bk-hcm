@@ -20,35 +20,33 @@
 package itsm
 
 import (
-	"context"
 	"fmt"
 
-	"hcm/pkg/thirdparty/esb/types"
+	"hcm/pkg/kit"
+	"hcm/pkg/thirdparty"
 )
 
-type tokenVerifiedResp struct {
-	types.BaseResponse `json:",inline"`
-	Data               struct {
-		IsPassed bool `json:"is_passed"`
-	} `json:"data"`
-}
-
-func (i *itsm) VerifyToken(ctx context.Context, token string) (bool, error) {
-	req := map[string]string{"token": token}
-	resp := new(tokenVerifiedResp)
-	header := types.GetCommonHeader(i.config)
+// WithdrawTicket 撤销单据
+func (i *itsm) WithdrawTicket(kt *kit.Kit, sn string, operator string) error {
+	req := map[string]interface{}{
+		"sn":             sn,
+		"operator":       operator,
+		"action_type":    "WITHDRAW",
+		"action_message": "applicant withdraw ticket",
+	}
+	resp := new(thirdparty.BaseResponse)
 	err := i.client.Post().
-		SubResourcef("/itsm/token/verify/").
-		WithContext(ctx).
-		WithHeaders(*header).
+		SubResourcef("/operate_ticket/").
+		WithContext(kt.Ctx).
+		WithHeaders(i.header(kt)).
 		Body(req).
 		Do().Into(resp)
 	if err != nil {
-		return false, err
+		return err
 	}
 	if !resp.Result || resp.Code != 0 {
-		return false, fmt.Errorf("verify token failed, code: %d, msg: %s, rid: %s", resp.Code, resp.Message, resp.Rid)
+		return fmt.Errorf("withdraw ticket failed, code: %d, msg: %s", resp.Code, resp.Message)
 	}
 
-	return resp.Data.IsPassed, nil
+	return nil
 }

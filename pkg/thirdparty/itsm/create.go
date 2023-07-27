@@ -20,11 +20,11 @@
 package itsm
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
-	"hcm/pkg/thirdparty/esb/types"
+	"hcm/pkg/kit"
+	"hcm/pkg/thirdparty"
 )
 
 // VariableApprover 节点审批的引用变量审批人
@@ -34,6 +34,7 @@ type VariableApprover struct {
 	Approvers []string
 }
 
+// CreateTicketParams create ticket params.
 type CreateTicketParams struct {
 	ServiceID         int64
 	Creator           string
@@ -48,12 +49,12 @@ type createTicketResult struct {
 }
 
 type createTicketResp struct {
-	types.BaseResponse `json:",inline"`
-	Data               *createTicketResult `json:"data"`
+	thirdparty.BaseResponse `json:",inline"`
+	Data                    *createTicketResult `json:"data"`
 }
 
 // CreateTicket 创建单据
-func (i *itsm) CreateTicket(ctx context.Context, params *CreateTicketParams) (string, error) {
+func (i *itsm) CreateTicket(kt *kit.Kit, params *CreateTicketParams) (string, error) {
 	// 提单表单
 	fields := []map[string]interface{}{
 		{"key": "title", "value": params.Title},
@@ -75,18 +76,19 @@ func (i *itsm) CreateTicket(ctx context.Context, params *CreateTicketParams) (st
 	}
 
 	resp := new(createTicketResp)
-	header := types.GetCommonHeader(i.config)
+
 	err := i.client.Post().
-		SubResourcef("/itsm/create_ticket/").
-		WithContext(ctx).
-		WithHeaders(*header).
+		SubResourcef("/create_ticket/").
+		WithContext(kt.Ctx).
+		WithHeaders(i.header(kt)).
 		Body(req).
 		Do().Into(resp)
 	if err != nil {
 		return "", err
 	}
 	if !resp.Result || resp.Code != 0 {
-		return "", fmt.Errorf("create ticket failed, code: %d, msg: %s, rid: %s", resp.Code, resp.Message, resp.Rid)
+		return "", fmt.Errorf("create ticket failed, code: %d, msg: %s", resp.Code, resp.Message)
 	}
+
 	return resp.Data.SN, nil
 }

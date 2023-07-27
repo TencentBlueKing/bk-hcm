@@ -36,6 +36,7 @@ import (
 	"hcm/cmd/web-server/service/cloud/subnet"
 	"hcm/cmd/web-server/service/cloud/vpc"
 	"hcm/cmd/web-server/service/cmdb"
+	"hcm/cmd/web-server/service/itsm"
 	"hcm/cmd/web-server/service/user"
 	"hcm/pkg/cc"
 	apiclient "hcm/pkg/client"
@@ -49,6 +50,7 @@ import (
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
 	"hcm/pkg/thirdparty/esb"
+	pkgitsm "hcm/pkg/thirdparty/itsm"
 	"hcm/pkg/tools/ssl"
 	"hcm/pkg/version"
 
@@ -65,6 +67,8 @@ type Service struct {
 	proxy *proxy
 	// authorizer 鉴权所需接口集合
 	authorizer auth.Authorizer
+	// itsmCli itsm client.
+	itsmCli pkgitsm.Client
 }
 
 // NewService create a service instance.
@@ -97,6 +101,12 @@ func NewService(dis serviced.Discover) (*Service, error) {
 		return nil, err
 	}
 
+	itsmCfg := cc.WebServer().Itsm
+	itsmCli, err := pkgitsm.NewClient(&itsmCfg, metrics.Register())
+	if err != nil {
+		return nil, err
+	}
+
 	// create authorizer
 	authorizer, err := auth.NewAuthorizer(dis, network.TLS)
 	if err != nil {
@@ -114,6 +124,7 @@ func NewService(dis serviced.Discover) (*Service, error) {
 		esbClient:  esbClient,
 		proxy:      p,
 		authorizer: authorizer,
+		itsmCli:    itsmCli,
 	}, nil
 }
 
@@ -216,6 +227,7 @@ func (s *Service) apiSet() *restful.WebService {
 		ApiClient:  s.client,
 		EsbClient:  s.esbClient,
 		Authorizer: s.authorizer,
+		ItsmCli:    s.itsmCli,
 	}
 
 	user.InitUserService(c)
@@ -223,6 +235,7 @@ func (s *Service) apiSet() *restful.WebService {
 	authsvc.InitAuthService(c)
 	vpc.InitVpcService(c)
 	subnet.InitService(c)
+	itsm.InitService(c)
 
 	return ws
 }

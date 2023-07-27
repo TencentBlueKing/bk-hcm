@@ -20,30 +20,38 @@
 package itsm
 
 import (
-	"context"
+	"fmt"
 
-	"hcm/pkg/cc"
-	"hcm/pkg/rest"
+	"hcm/pkg/kit"
+	"hcm/pkg/thirdparty"
 )
 
-type Client interface {
-	CreateTicket(ctx context.Context, params *CreateTicketParams) (string, error)
-	GetTicketResult(ctx context.Context, sn string) (TicketResult, error)
-	WithdrawTicket(ctx context.Context, sn string, operator string) error
-	VerifyToken(ctx context.Context, token string) (bool, error)
+// ApproveReq define approve req.
+type ApproveReq struct {
+	Sn       string `json:"sn"`
+	StateID  int    `json:"state_id"`
+	Approver string `json:"approver"`
+	Action   string `json:"action"`
+	Remark   string `json:"remark"`
 }
 
-// NewClient initialize a new itsm client
-func NewClient(client rest.ClientInterface, config *cc.Esb) Client {
-	return &itsm{
-		client: client,
-		config: config,
+// Approve 快捷审批接口。
+func (i *itsm) Approve(kt *kit.Kit, req *ApproveReq) error {
+
+	resp := new(thirdparty.BaseResponse)
+	err := i.client.Post().
+		SubResourcef("/approve/").
+		WithContext(kt.Ctx).
+		WithHeaders(i.header(kt)).
+		Body(req).
+		Do().Into(resp)
+	if err != nil {
+		return err
 	}
-}
 
-// itsm is an esb client to request itsm.
-type itsm struct {
-	config *cc.Esb
-	// http client instance
-	client rest.ClientInterface
+	if !resp.Result || resp.Code != 0 {
+		return fmt.Errorf("approve failed, code: %d, msg: %s", resp.Code, resp.Message)
+	}
+
+	return nil
 }
