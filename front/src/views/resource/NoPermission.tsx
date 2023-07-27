@@ -13,7 +13,7 @@ export default defineComponent({
       <bk-exception
         class='exception-wrap-item'
         type='403'
-        title={t('无该业务权限')}
+        title={t('无该应用访问权限')}
         description={ props.message }>
       </bk-exception>
     );
