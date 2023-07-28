@@ -22,6 +22,7 @@ package bill
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -31,6 +32,7 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
 	dataservice "hcm/pkg/api/data-service"
+	protocloud "hcm/pkg/api/data-service/cloud"
 	protobill "hcm/pkg/api/data-service/cloud/bill"
 	hcbillservice "hcm/pkg/api/hc-service/bill"
 	"hcm/pkg/criteria/constant"
@@ -122,8 +124,19 @@ func (b bill) AwsBillPipeline(cts *rest.Contexts) (interface{}, error) {
 		return nil, nil
 	}
 
+	// 查询账号扩展信息
+	account, err := b.cs.DataService().Aws.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), req.AccountID)
+	if err != nil {
+		logs.Errorf("aws bill pipeline get db account info failed, req: %+v, err: %+v, rid: %s", req, err, cts.Kit.Rid)
+		return nil, err
+	}
+	if account.Extension == nil {
+		logs.Errorf("aws bill pipeline get db account extension is empty, req: %+v, rid: %s", req, cts.Kit.Rid)
+		return nil, errf.Newf(errf.Aborted, "account_id: %s extension is empty", req.AccountID)
+	}
+
 	// 创建S3存储桶
-	err = b.AwsBucketCreate(cts.Kit, req.AccountID, billInfo)
+	err = b.AwsBucketCreate(cts.Kit, req.AccountID, billInfo, account)
 	if err != nil {
 		logs.Errorf("aws bill pipeline create bucket failed, req: %+v, billInfo: %+v, billExt: %+v, "+
 			"err: %+v, rid: %s", req, billInfo, billInfo.Extension, err, cts.Kit.Rid)
@@ -256,7 +269,8 @@ func (b bill) CheckBillInfo(kt *kit.Kit, req *hcbillservice.BillPipelineReq) (
 
 // AwsBucketCreate create aws bucket.
 func (b bill) AwsBucketCreate(kt *kit.Kit, accountID string,
-	billInfo *cloud.AccountBillConfig[cloud.AwsBillConfigExtension]) error {
+	billInfo *cloud.AccountBillConfig[cloud.AwsBillConfigExtension],
+	account *protocloud.AccountGetResult[cloud.AwsAccountExtension]) error {
 
 	if billInfo.Status != constant.StatusDefault {
 		return nil
@@ -268,8 +282,12 @@ func (b bill) AwsBucketCreate(kt *kit.Kit, accountID string,
 		return err
 	}
 
+	// 存储桶名称，需要全球唯一
+	bucketName := fmt.Sprintf(aws.BucketNameDefault, account.Extension.CloudAccountID,
+		sanitizeString(account.Extension.CloudIamUsername))
+
 	opt := &typesBill.AwsBillBucketCreateReq{
-		Bucket: aws.BucketNameDefault,
+		Bucket: bucketName,
 		Region: billInfo.Extension.Region,
 	}
 	_, err = cli.CreateBucket(kt, opt)
@@ -729,4 +747,10 @@ func (b bill) AwsBillConfigDelete(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return nil, nil
+}
+
+// sanitizeString 匹配任何非[中划线、小写字母、英文点号和数字]的字符
+func sanitizeString(str string) string {
+	reg := regexp.MustCompile(`[^a-z0-9.\-]`)
+	return reg.ReplaceAllString(strings.ToLower(str), "")
 }

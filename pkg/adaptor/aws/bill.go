@@ -81,7 +81,7 @@ const (
 	QueryBillSQL = "SELECT %s FROM %s.%s %s OFFSET %d LIMIT %d"
 	// QueryBillTotalSQL 查询云账单总数量的SQL
 	QueryBillTotalSQL = "SELECT COUNT(*) FROM %s.%s %s"
-	BucketNameDefault = "hcm-bill-do-not-delete"
+	BucketNameDefault = "hcm-bill-%s-%s"
 	BucketTimeOut     = 12  // 12小时
 	StackTimeOut      = 120 // 120秒
 	BucketPolicy      = `{"Version":"2008-10-17","Id":"Policy{RandomNum}","Statement":[{"Sid":"Stmta{RandomNum}",
@@ -418,7 +418,7 @@ func (a *Aws) PutReportDefinition(kt *kit.Kit, opt *typesBill.AwsBillPutReportDe
 
 	_, err = client.PutReportDefinitionWithContext(kt.Ctx, req)
 	if err != nil {
-		logs.Errorf("aws adaptor cur put report definition error, opt: %v, err: %v, rid: %s", opt, err, kt.Rid)
+		logs.Errorf("aws adaptor cur put report definition error, opt: %+v, err: %v, rid: %s", opt, err, kt.Rid)
 		return err
 	}
 
