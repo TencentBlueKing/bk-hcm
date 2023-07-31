@@ -2,7 +2,7 @@
     SQLVER=0008,HCMVER=v1.1.21
 
     Notes:
-        1. gcp_firewall_rule调整name唯一索引为name,account_id联合唯一索引。
+        1. 调整security_group/gcp_firewall_rule name字段长度。
 */
 
 alter table security_group modify column name varchar (255) not null;
