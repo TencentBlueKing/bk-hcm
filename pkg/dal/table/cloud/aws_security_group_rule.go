@@ -62,7 +62,7 @@ type AwsSecurityGroupRuleTable struct {
 	CloudID                    string     `db:"cloud_id" json:"cloud_id" validate:"lte=255"`
 	IPv4Cidr                   *string    `db:"ipv4_cidr" json:"ipv4_cidr" validate:"omitempty,lte=255"`
 	IPv6Cidr                   *string    `db:"ipv6_cidr" json:"ipv6_cidr" validate:"omitempty,lte=255"`
-	Memo                       *string    `db:"memo" json:"memo" validate:"omitempty,lte=60"`
+	Memo                       *string    `db:"memo" json:"memo" validate:"omitempty,lte=255"`
 	Type                       string     `db:"type" json:"type" validate:"lte=20"`
 	FromPort                   *int64     `db:"from_port" json:"from_port"`
 	ToPort                     *int64     `db:"to_port" json:"to_port"`
