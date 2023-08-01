@@ -41,8 +41,8 @@ import (
 	tcloudvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/tcloud"
 	proto "hcm/pkg/api/cloud-server/application"
 	cscvm "hcm/pkg/api/cloud-server/cvm"
-	csvpc "hcm/pkg/api/cloud-server/vpc"
 	csdisk "hcm/pkg/api/cloud-server/disk"
+	csvpc "hcm/pkg/api/cloud-server/vpc"
 	dataproto "hcm/pkg/api/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -66,7 +66,7 @@ func (a *applicationSvc) create(cts *rest.Contexts, handler handlers.Application
 
 	// 查询审批流程服务ID
 	applicationType := handler.GetType()
-	serviceID, managers, err := a.getApprovalProcessServiceIDAndMangers(cts, applicationType)
+	serviceID, managers, err := a.getApprovalProcessInfo(cts, applicationType)
 	if err != nil {
 		return nil, fmt.Errorf("get approval process service id and managers failed, err: %v", err)
 	}
