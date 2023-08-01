@@ -88,7 +88,7 @@ func (a *applicationSvc) approve(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// 校验ITSM Token
-	ok, err := a.esbClient.Itsm().VerifyToken(cts.Kit.Ctx, req.Token)
+	ok, err := a.itsmCli.VerifyToken(cts.Kit, req.Token)
 	if err != nil {
 		return nil, fmt.Errorf("call itsm verify token api failed, err: %v", err)
 	}

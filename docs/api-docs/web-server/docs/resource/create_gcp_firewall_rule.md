@@ -10,20 +10,27 @@ POST /api/v1/cloud/vendors/gcp/firewalls/rules/create
 
 ### 输入参数
 
-| 参数名称               | 参数类型               | 必选    | 描述                                      |
-|--------------------|--------------------|-------|-----------------------------------------|
-| account_id         | string             | 是     | 账号ID                                    |
-| cloud_vpc_id       | string             | 是     | 云VpcID                                  |
-| name               | string             | 是     | 名称                                      |
-| memo               | string             | 是     | 备注                                      |
-| priority           | uint64             | 是     | 优先级。0-65535                             |
-| source_ranges      | string array       | 否     | 源网段列表                                   |
-| destination_ranges | string array       | 否     | 目标网段列表                                  |
-| source_tags        | string array       | 否     | 源标记列表                                   |
-| target_tags        | string array       | 否     | 目标标记列表                                  |
-| denied             | protocol_set array | 是     | 防火墙指定的拒绝规则列表。每个规则都指定描述拒绝连接的协议和端口范围元组。   |
-| allowed            | protocol_set array | 是     | 防火墙指定的允许规则列表。每个规则都指定了描述允许的连接的协议和端口范围元组。 |
-| disabled           | boolean            | 是     | 是否已禁用。                                  |
+| 参数名称               | 参数类型               | 必选 | 描述                                      |
+|--------------------|--------------------|----|-----------------------------------------|
+| account_id         | string             | 是  | 账号ID                                    |
+| cloud_vpc_id       | string             | 是  | 云VpcID                                  |
+| name               | string             | 是  | 名称                                      |
+| memo               | string             | 是  | 备注                                      |
+| priority           | uint64             | 是  | 优先级。0-65535                             |
+| source_ranges      | string array       | 否  | 源网段列表                                   |
+| destination_ranges | string array       | 否  | 目标网段列表                                  |
+| source_tags        | string array       | 否  | 源标记列表                                   |
+| target_tags        | string array       | 否  | 目标标记列表                                  |
+| denied             | protocol_set array | 是  | 防火墙指定的拒绝规则列表。每个规则都指定描述拒绝连接的协议和端口范围元组。   |
+| allowed            | protocol_set array | 是  | 防火墙指定的允许规则列表。每个规则都指定了描述允许的连接的协议和端口范围元组。 |
+| disabled           | boolean            | 是  | 是否已禁用。                                  |
+
+#### protocol_set
+
+| 参数名称     | 参数类型         | 描述                                                            |
+|----------|--------------|---------------------------------------------------------------|
+| protocol | string       | 协议。（枚举值：tcp, udp, icmp, esp, ah, ipip, sctp, all, 58(icmpv6)） |
+| ports    | string array | 端口列表。                                                         |
 
 ### 调用示例
 
@@ -76,6 +83,6 @@ POST /api/v1/cloud/vendors/gcp/firewalls/rules/create
 
 #### data
 
-| 参数名称 | 参数类型     | 描述    |
-|-----|----------|-------|
-| id  | string   | 安全组ID |
+| 参数名称 | 参数类型   | 描述    |
+|------|--------|-------|
+| id   | string | 安全组ID |

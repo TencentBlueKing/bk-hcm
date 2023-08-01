@@ -41,14 +41,14 @@ import (
 	tcloudvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/tcloud"
 	proto "hcm/pkg/api/cloud-server/application"
 	cscvm "hcm/pkg/api/cloud-server/cvm"
-	csvpc "hcm/pkg/api/cloud-server/vpc"
 	csdisk "hcm/pkg/api/cloud-server/disk"
+	csvpc "hcm/pkg/api/cloud-server/vpc"
 	dataproto "hcm/pkg/api/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
-	"hcm/pkg/thirdparty/esb/itsm"
+	"hcm/pkg/thirdparty/itsm"
 	"hcm/pkg/tools/json"
 )
 
@@ -90,8 +90,8 @@ func (a *applicationSvc) create(cts *rest.Contexts, handler handlers.Application
 	approvers := handler.GetItsmApprover(managers)
 
 	// 调用ITSM创建单据
-	sn, err := a.esbClient.Itsm().CreateTicket(
-		cts.Kit.Ctx,
+	sn, err := a.itsmCli.CreateTicket(
+		cts.Kit,
 		&itsm.CreateTicketParams{
 			ServiceID:      serviceID,
 			Creator:        cts.Kit.User,

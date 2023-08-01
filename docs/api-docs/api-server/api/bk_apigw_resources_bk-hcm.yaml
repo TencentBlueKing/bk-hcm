@@ -5,18 +5,19 @@ info:
   title: API Gateway Resources
   description: ''
 schemes:
-- http
+  - http
 paths:
   /api/v1/cloud/accounts/extensions/list:
     post:
       operationId: list_account_with_extension
       description: ''
-      tags: []
+      tags:
+        - Account
       responses:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
+        isPublic: false
         allowApplyPermission: false
         matchSubpath: false
         backend:
@@ -31,22 +32,73 @@ paths:
           userVerifiedRequired: true
         disabledStages: []
         descriptionEn:
-  /api/v1/cloud/accounts/secrets/list:
+  /api/v1/cloud/accounts/list:
     post:
-      operationId: list_secret_key
-      description: ''
-      tags: []
+      operationId: list_account
+      description: 查询账号列表
+      tags:
+        - Account
       responses:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/accounts/list
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v1/cloud/accounts/secrets/list:
+    post:
+      operationId: list_secret_key
+      description: ''
+      tags:
+        - Account
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
         allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
           method: post
           path: /{env.url_path_prefix}api/v1/cloud/accounts/secrets/list
+          matchSubpath: false
+          timeout: 0
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v1/cloud/vendors/{vendor}/bills/list:
+    post:
+      operationId: list_bill_in_resource
+      description: 查询云账单列表
+      tags:
+        - Bill
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/{vendor}/bills/list
           matchSubpath: false
           timeout: 0
           upstreams: {}

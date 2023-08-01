@@ -20,36 +20,36 @@
 package itsm
 
 import (
-	"context"
 	"fmt"
 
-	"hcm/pkg/thirdparty/esb/types"
+	"hcm/pkg/kit"
+	"hcm/pkg/thirdparty"
 )
 
-// WithdrawTicket 撤销单据
-func (i *itsm) WithdrawTicket(ctx context.Context, sn string, operator string) error {
-	req := map[string]interface{}{
-		"sn":             sn,
-		"operator":       operator,
-		"action_type":    "WITHDRAW",
-		"action_message": "applicant withdraw ticket",
-	}
-	resp := new(types.BaseResponse)
-	//  Note: 由于某些版本的ESB bkApiAuthorization里的bk_username 会与接口参数里的operator冲突，导致接口里的operator会被bk_username覆盖
-	//   所以这里传入operator避免被默认esb调用bk_username替代
-	header := types.GetCommonHeaderByUser(i.config, operator)
+type tokenVerifiedResp struct {
+	thirdparty.BaseResponse `json:",inline"`
+	Data                    struct {
+		IsPassed bool `json:"is_passed"`
+	} `json:"data"`
+}
+
+func (i *itsm) VerifyToken(kt *kit.Kit, token string) (bool, error) {
+	req := map[string]string{"token": token}
+	resp := new(tokenVerifiedResp)
+
 	err := i.client.Post().
-		SubResourcef("/itsm/operate_ticket/").
-		WithContext(ctx).
-		WithHeaders(*header).
+		SubResourcef("/token/verify/").
+		WithContext(kt.Ctx).
+		WithHeaders(i.header(kt)).
 		Body(req).
 		Do().Into(resp)
 	if err != nil {
-		return err
-	}
-	if !resp.Result || resp.Code != 0 {
-		return fmt.Errorf("withdraw ticket failed, code: %d, msg: %s, rid: %s", resp.Code, resp.Message, resp.Rid)
+		return false, err
 	}
 
-	return nil
+	if !resp.Result || resp.Code != 0 {
+		return false, fmt.Errorf("verify token failed, code: %d, msg: %s", resp.Code, resp.Message)
+	}
+
+	return resp.Data.IsPassed, nil
 }

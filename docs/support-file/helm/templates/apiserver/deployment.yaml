@@ -38,7 +38,7 @@ spec:
         {{- include "bk-hcm.wait-for-pod-init-container" (list . (printf "%s-cloudserver" (include "bk-hcm.fullname" .)) "-lcomponent=cloudserver") | nindent 8 }}
       containers:
         - name: apiserver
-          image: {{ .Values.global.imageRegistry }}/{{ .Values.apiserver.image.repository }}:v{{ default .Chart.AppVersion .Values.apiserver.image.tag }}
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.apiserver.image.repository }}:v{{ default .Values.global.imageTag .Values.apiserver.image.tag }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
           command:
             - /data/hcm/bk-hcm-apiserver

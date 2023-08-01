@@ -47,7 +47,7 @@ Wait for pod
 {{- $rest := rest . -}}
 {{- $name := last . -}}
 - name: {{ printf "check-%s"  (index $rest 0) }}
-  image: {{ printf "%s/%s:%s" $root.Values.global.imageRegistry $root.Values.k8sWaitFor.repository (default $root.Chart.AppVersion $root.Values.k8sWaitFor.tag)}}
+  image: {{ printf "%s/%s:%s" $root.Values.global.imageRegistry $root.Values.k8sWaitFor.repository (default $root.Values.global.imageTag $root.Values.k8sWaitFor.tag)}}
   imagePullPolicy: {{ $root.Values.global.imagePullPolicy | quote }}
   resources: {{ toYaml $root.Values.k8sWaitFor.resources | nindent 4 }}
   args:

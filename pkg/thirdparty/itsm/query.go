@@ -20,12 +20,13 @@
 package itsm
 
 import (
-	"context"
 	"fmt"
 
-	"hcm/pkg/thirdparty/esb/types"
+	"hcm/pkg/kit"
+	"hcm/pkg/thirdparty"
 )
 
+// TicketResult ticket result.
 type TicketResult struct {
 	SN            string `json:"sn"`
 	TicketURL     string `json:"ticket_url"`
@@ -34,35 +35,32 @@ type TicketResult struct {
 }
 
 type queryTicketResp struct {
-	types.BaseResponse `json:",inline"`
-	Data               []TicketResult `json:"data"`
+	thirdparty.BaseResponse `json:",inline"`
+	Data                    []TicketResult `json:"data"`
 }
 
-func (i *itsm) batchQueryTicketResult(ctx context.Context, sns []string) (results []TicketResult, err error) {
+func (i *itsm) batchQueryTicketResult(kt *kit.Kit, sns []string) (results []TicketResult, err error) {
 	req := map[string]interface{}{"sn": sns}
 	resp := new(queryTicketResp)
-	header := types.GetCommonHeader(i.config)
 	err = i.client.Post().
-		SubResourcef("/itsm/ticket_approval_result/").
-		WithContext(ctx).
-		WithHeaders(*header).
+		SubResourcef("/ticket_approval_result/").
+		WithContext(kt.Ctx).
+		WithHeaders(i.header(kt)).
 		Body(req).
 		Do().Into(resp)
 	if err != nil {
 		return results, err
 	}
 	if !resp.Result || resp.Code != 0 {
-		return results, fmt.Errorf(
-			"query ticket result failed, code: %d, msg: %s, rid: %s", resp.Code, resp.Message, resp.Rid,
-		)
+		return results, fmt.Errorf("query ticket result failed, code: %d, msg: %s", resp.Code, resp.Message)
 	}
 
 	return resp.Data, nil
 }
 
 // GetTicketResult 查询单据结果
-func (i *itsm) GetTicketResult(ctx context.Context, sn string) (result TicketResult, err error) {
-	results, err := i.batchQueryTicketResult(ctx, []string{sn})
+func (i *itsm) GetTicketResult(kt *kit.Kit, sn string) (result TicketResult, err error) {
+	results, err := i.batchQueryTicketResult(kt, []string{sn})
 	if err != nil {
 		return result, err
 	}
