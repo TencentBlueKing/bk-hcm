@@ -277,9 +277,13 @@ func (opt GcpBillListReq) Validate() error {
 		return errf.New(errf.InvalidParameter, "month and begin_date and end_date can not be empty")
 	}
 
+	// gcp的BigQuery属于sql查询，跟SDK接口的Limit限制不同
 	if opt.Page != nil {
-		if err := opt.Page.Validate(); err != nil {
-			return err
+		if opt.Page.Limit == 0 {
+			return errf.New(errf.InvalidParameter, "page.limit is required")
+		}
+		if opt.Page.Limit > 5000 {
+			return errf.New(errf.InvalidParameter, "page.limit should <= 5000")
 		}
 	}
 
