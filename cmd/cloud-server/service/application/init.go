@@ -89,7 +89,7 @@ func (a *applicationSvc) getHandlerOption(cts *rest.Contexts) *handlers.HandlerO
 	}
 }
 
-func (a *applicationSvc) getApprovalProcessServiceIDAndMangers(
+func (a *applicationSvc) getApprovalProcessInfo(
 	cts *rest.Contexts, applicationType enumor.ApplicationType,
 ) (int64, []string, error) {
 	// DB中添加4条记录，分别对应add_account、create_cvm、create_vpc、create_disk

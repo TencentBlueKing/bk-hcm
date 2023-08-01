@@ -9,4 +9,8 @@ RUN mkdir -p /data/hcm/logs
 
 COPY bk-hcm-apiserver /data/hcm/
 
+#time zone setting
+ENV TimeZone=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TimeZone /etc/localtime && echo $TimeZone > /etc/timezone
+
 CMD ["/data/hcm/bk-hcm-apiserver", "--config-file", "/data/hcm/etc/config.yaml"]
