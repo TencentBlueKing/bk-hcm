@@ -167,8 +167,9 @@ func (g *Gcp) CreateFirewallRule(kt *kit.Kit, opt *firewallrule.CreateOption) (u
 	}
 
 	firewall := &compute.Firewall{
+		Direction:         opt.Type,
 		Name:              opt.Name,
-		Network:           opt.CloudVpcID,
+		Network:           opt.VpcSelfLink,
 		Description:       opt.Description,
 		DestinationRanges: opt.DestinationRanges,
 		Disabled:          opt.Disabled,
@@ -201,6 +202,7 @@ func (g *Gcp) CreateFirewallRule(kt *kit.Kit, opt *firewallrule.CreateOption) (u
 	resp, err := client.Firewalls.Insert(g.CloudProjectID(), firewall).Do()
 	if err != nil {
 		logs.Errorf("insert firewall rule failed, err: %v, firewall: %v, rid: %s", err, firewall, kt.Rid)
+		return 0, err
 	}
 
 	return resp.TargetId, nil
