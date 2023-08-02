@@ -17,6 +17,7 @@ POST /api/v1/cloud/vendors/gcp/firewalls/rules/create
 | name               | string             | 是  | 名称                                      |
 | memo               | string             | 是  | 备注                                      |
 | priority           | uint64             | 是  | 优先级。0-65535                             |
+| type               | string             | 是  | 类型（EGRESS: 出站、INGRESS：入站）               |
 | source_ranges      | string array       | 否  | 源网段列表                                   |
 | destination_ranges | string array       | 否  | 目标网段列表                                  |
 | source_tags        | string array       | 否  | 源标记列表                                   |
