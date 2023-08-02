@@ -550,9 +550,11 @@ func conVpcExtListResult[T protocore.VpcExtension](tables []tablecloud.VpcTable)
 	details := make([]protocore.Vpc[T], 0, len(tables))
 	for _, one := range tables {
 		extension := new(T)
-		err := json.UnmarshalFromString(string(one.Extension), &extension)
-		if err != nil {
-			return nil, fmt.Errorf("UnmarshalFromString vpc json extension failed, err: %v", err)
+		if len(one.Extension) != 0 {
+			err := json.UnmarshalFromString(string(one.Extension), &extension)
+			if err != nil {
+				return nil, fmt.Errorf("UnmarshalFromString vpc json extension failed, err: %v", err)
+			}
 		}
 
 		details = append(details, protocore.Vpc[T]{

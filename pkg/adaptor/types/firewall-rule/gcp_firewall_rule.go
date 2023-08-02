@@ -34,10 +34,11 @@ import (
 
 // CreateOption define gcp firewall rule create option.
 type CreateOption struct {
+	Type              string                     `json:"type" validate:"required"`
 	Name              string                     `json:"name" validate:"required"`
 	Description       string                     `json:"description"`
 	Priority          int64                      `json:"priority"`
-	CloudVpcID        string                     `json:"cloud_vpc_id" validate:"required"`
+	VpcSelfLink       string                     `json:"vpc_self_link" validate:"required"`
 	SourceTags        []string                   `json:"source_tags"`
 	TargetTags        []string                   `json:"target_tags"`
 	Denied            []corecloud.GcpProtocolSet `json:"denied"`
