@@ -131,14 +131,9 @@ func (h *HuaWei) DeleteDisk(kt *kit.Kit, opt *disk.HuaWeiDiskDeleteOption) error
 		return err
 	}
 
-	resp, err := client.DeleteVolume(req)
+	_, err = client.DeleteVolume(req)
 	if err != nil {
-		logs.Errorf(
-			"huawei delete disk failed, err: %v, rid: %s, job id: %s",
-			err,
-			kt.Rid,
-			resp.JobId,
-		)
+		logs.Errorf("huawei delete disk failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
