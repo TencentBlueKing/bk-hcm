@@ -22,6 +22,7 @@ import GcpAdd from '@/views/resource/resource-manage/children/add/gcp-add';
 import EipForm from './forms/eip/index.vue';
 import subnetForm from './forms/subnet/index.vue';
 import securityForm from './forms/security/index.vue';
+import firewallForm from './forms/firewall';
 
 import {
   useRoute,
@@ -76,7 +77,10 @@ const renderComponent = computed(() => {
 
 const renderForm = computed(() => {
   return Object.keys(formMap).reduce((acc, cur) => {
-    if (route.path.includes(cur)) acc = formMap[cur];
+    if (route.path.includes(cur)) {
+      if (cur === 'security') acc = securityType.value === 'gcp' ? firewallForm : securityForm;
+      else acc = formMap[cur];
+    }
     return acc;
   }, {});
 });
@@ -99,12 +103,7 @@ const handleAdd = () => {
       path: '/service/service-apply/vpc',
     });
   } else {
-    if (securityType.value === 'gcp') {
-      isShowGcpAdd.value = true;
-      console.log('isShowGcpAdd.value', isShowGcpAdd.value);
-    } else {
-      isShowSideSlider.value = true;
-    }
+    isShowSideSlider.value = true;
   }
 };
 
@@ -146,10 +145,10 @@ const handleToPage = () => {
   const isHostManagePage = route.path.includes('/business/host');
   const isDriveManagePage = route.path.includes('/business/drive');
   let destination = '';
-  if(isHostManagePage) destination = '/business/host/recyclebin/cvm';
-  if(isDriveManagePage) destination = '/business/drive/recyclebin/disk';
+  if (isHostManagePage) destination = '/business/host/recyclebin/cvm';
+  if (isDriveManagePage) destination = '/business/drive/recyclebin/disk';
   router.push({ path: destination });
-}
+};
 
 
 // 权限hook
@@ -182,8 +181,7 @@ const {
           <span @click="handleAuth('biz_iaas_resource_create')">
             <bk-button
               theme="primary" class="new-button"
-              :disabled="!authVerifyData?.permissionAction?.biz_iaas_resource_create
-                || securityType === 'gcp'" @click="handleAdd">
+              :disabled="!authVerifyData?.permissionAction?.biz_iaas_resource_create" @click="handleAdd">
               {{renderComponent === DriveManage ||
                 renderComponent === HostManage ||
                 renderComponent === VpcManage ? '申请' : '新增'}}
