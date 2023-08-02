@@ -121,8 +121,8 @@ const (
 	// AccountBillConfigTable is account bill config table's name.
 	AccountBillConfigTable Name = "account_bill_config"
 
-	// TODO: 之后考虑非表id的id_generator如何更优雅的使用
 	// RecycleRecordTableTaskID is recycle record table's task id.
+	// TODO: 之后考虑非表id的id_generator如何更优雅的使用
 	RecycleRecordTableTaskID Name = "recycle_record_task_id"
 )
 

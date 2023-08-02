@@ -22,7 +22,7 @@ package tcloud
 import (
 	csdisk "hcm/pkg/api/cloud-server/disk"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/thirdparty/esb/itsm"
+	"hcm/pkg/thirdparty/itsm"
 )
 
 // PrepareReq ...

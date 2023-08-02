@@ -42,7 +42,7 @@ func (a *applicationSvc) Get(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// 查询审批链接
-	ticket, err := a.esbClient.Itsm().GetTicketResult(cts.Kit.Ctx, application.SN)
+	ticket, err := a.itsmCli.GetTicketResult(cts.Kit, application.SN)
 	if err != nil {
 		return nil, fmt.Errorf("call itsm get ticket url failed, err: %v", err)
 	}

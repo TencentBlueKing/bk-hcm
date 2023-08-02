@@ -117,6 +117,7 @@ type CloudServerSetting struct {
 	CloudResource CloudResource `yaml:"cloudResource"`
 	Recycle       Recycle       `yaml:"recycle"`
 	BillConfig    BillConfig    `yaml:"billConfig"`
+	Itsm          ApiGateway    `yaml:"itsm"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -160,6 +161,10 @@ func (s CloudServerSetting) Validate() error {
 	}
 
 	if err := s.Recycle.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Itsm.validate(); err != nil {
 		return err
 	}
 
@@ -298,11 +303,12 @@ func (s AuthServerSetting) Validate() error {
 
 // WebServerSetting defines api server used setting options.
 type WebServerSetting struct {
-	Network Network   `yaml:"network"`
-	Service Service   `yaml:"service"`
-	Log     LogOption `yaml:"log"`
-	Web     Web       `yaml:"web"`
-	Esb     Esb       `yaml:"esb"`
+	Network Network    `yaml:"network"`
+	Service Service    `yaml:"service"`
+	Log     LogOption  `yaml:"log"`
+	Web     Web        `yaml:"web"`
+	Esb     Esb        `yaml:"esb"`
+	Itsm    ApiGateway `yaml:"itsm"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -335,6 +341,10 @@ func (s WebServerSetting) Validate() error {
 	}
 
 	if err := s.Esb.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Itsm.validate(); err != nil {
 		return err
 	}
 

@@ -38,7 +38,7 @@ spec:
         {{- include "bk-hcm.wait-for-pod-init-container" (list . (printf "%s-dataservice" (include "bk-hcm.fullname" .)) "-lcomponent=dataservice") | nindent 8 }}
       containers:
         - name: hcservice
-          image: {{ .Values.global.imageRegistry }}/{{ .Values.hcservice.image.repository }}:v{{ default .Chart.AppVersion .Values.hcservice.image.tag }}
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.hcservice.image.repository }}:v{{ default .Values.global.imageTag .Values.hcservice.image.tag }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
           command:
             - /data/hcm/bk-hcm-hcservice

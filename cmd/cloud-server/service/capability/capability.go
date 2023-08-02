@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/cryptography"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/thirdparty/esb"
+	"hcm/pkg/thirdparty/itsm"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -39,4 +40,5 @@ type Capability struct {
 	Cipher     cryptography.Crypto
 	EsbClient  esb.Client
 	Logics     *logics.Logics
+	ItsmCli    itsm.Client
 }

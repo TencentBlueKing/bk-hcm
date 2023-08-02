@@ -18,7 +18,7 @@ spec:
       restartPolicy: OnFailure
       initContainers:
         - name: check-database
-          image: {{ printf "%s/%s:%s" .Values.global.imageRegistry .Values.busyBox.repository (default .Chart.AppVersion .Values.busyBox.tag)}}
+          image: {{ printf "%s/%s:%s" .Values.global.imageRegistry .Values.busyBox.repository (default .Values.global.imageTag .Values.busyBox.tag)}}
           imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
           resources: {{- toYaml .Values.busyBox.resources | nindent 12 }}
           command:
@@ -27,7 +27,7 @@ spec:
             - "until telnet {{ template "bk-hcm.database.host" . }} {{ template "bk-hcm.database.port" . }}; do echo waiting for db {{ template "bk-hcm.database.host" . }}; sleep 2; done;"
       containers:
         - name: migrate-db
-          image: {{ .Values.global.imageRegistry }}/{{ .Values.dataservice.image.repository }}:v{{ default .Chart.AppVersion .Values.dataservice.image.tag }}
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.dataservice.image.repository }}:v{{ default .Values.global.imageTag .Values.dataservice.image.tag }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
           command:
             - /data/hcm/sql-migrate

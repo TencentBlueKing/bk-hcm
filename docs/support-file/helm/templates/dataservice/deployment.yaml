@@ -37,7 +37,7 @@ spec:
       initContainers:
         {{- if .Values.migration.enabled }}
         - name: check-migrate-job
-          image: {{ printf "%s/%s:%s" .Values.global.imageRegistry .Values.k8sWaitFor.repository (default .Chart.AppVersion .Values.k8sWaitFor.tag)}}
+          image: {{ printf "%s/%s:%s" .Values.global.imageRegistry .Values.k8sWaitFor.repository (default .Values.global.imageTag .Values.k8sWaitFor.tag)}}
           imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
           resources: {{- toYaml .Values.k8sWaitFor.resources | nindent 12 }}
           args:
@@ -49,7 +49,7 @@ spec:
         {{- end }}
       containers:
         - name: dataservice
-          image: {{ .Values.global.imageRegistry }}/{{ .Values.dataservice.image.repository }}:v{{ default .Chart.AppVersion .Values.dataservice.image.tag }}
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.dataservice.image.repository }}:v{{ default .Values.global.imageTag .Values.dataservice.image.tag }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
           command:
             - /data/hcm/bk-hcm-dataservice
