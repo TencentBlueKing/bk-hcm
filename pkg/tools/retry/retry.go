@@ -13,8 +13,12 @@ limitations under the License.
 package retry
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
+
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 
 	"go.uber.org/atomic"
 )
@@ -94,4 +98,26 @@ func (r *RetryPolicy) RetryCount() uint32 {
 // Reset the retry policy counter to 0
 func (r *RetryPolicy) Reset() {
 	r.retryCount = atomic.NewUint32(0)
+}
+
+// BaseExec 定义基础重试执行函数。BaseExec每次调用会将重试次数归位（Reset），
+// 如果函数执行失败次数超过重试次数，将会返回error，error信息中包含最后一次执行的错误信息。
+func (r *RetryPolicy) BaseExec(kt *kit.Kit, retryFunc func() error) error {
+	r.Reset()
+
+	var lastErr error
+	for r.RetryCount() < r.immuneCount {
+		if err := retryFunc(); err != nil {
+			logs.ErrorDepthf(1, "execute retry func failed, try to retry, err: %v, retry: %d, rid: %s",
+				err, r.RetryCount(), kt.Rid)
+			lastErr = err
+			r.Sleep()
+			continue
+		}
+
+		// 执行成功
+		return nil
+	}
+
+	return fmt.Errorf("execute retry func over maximum number of retries: %d, lastErr: %v", r.immuneCount, lastErr)
 }
