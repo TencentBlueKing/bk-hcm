@@ -111,6 +111,7 @@ type GcpFirewallRuleCreateReq struct {
 	Name              string                     `json:"name" validate:"required"`
 	Memo              string                     `json:"memo"`
 	Priority          int64                      `json:"priority" validate:"required"`
+	Type              string                     `json:"type" validate:"required"`
 	SourceTags        []string                   `json:"source_tags"`
 	TargetTags        []string                   `json:"target_tags"`
 	Denied            []corecloud.GcpProtocolSet `json:"denied"`

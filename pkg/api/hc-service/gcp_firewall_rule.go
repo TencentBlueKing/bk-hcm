@@ -51,9 +51,10 @@ type GcpFirewallRuleCreateReq struct {
 	BkBizID           int64                      `json:"bk_biz_id" validate:"required"`
 	AccountID         string                     `json:"account_id" validate:"required"`
 	CloudVpcID        string                     `json:"cloud_vpc_id" validate:"required"`
+	Type              string                     `json:"type" validate:"required"`
 	Name              string                     `json:"name" validate:"required"`
-	Memo              string                     `json:"memo"`
 	Priority          int64                      `json:"priority" validate:"required"`
+	Memo              string                     `json:"memo"`
 	SourceTags        []string                   `json:"source_tags"`
 	TargetTags        []string                   `json:"target_tags"`
 	Denied            []corecloud.GcpProtocolSet `json:"denied"`
