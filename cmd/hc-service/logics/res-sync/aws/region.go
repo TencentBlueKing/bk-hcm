@@ -50,7 +50,7 @@ func (opt SyncRegionOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
-// Region ...
+// Region 同步某个账号的region信息
 func (cli *client) Region(kt *kit.Kit, opt *SyncRegionOption) (*SyncResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -106,6 +106,7 @@ func (cli *client) createRegion(kt *kit.Kit, opt *SyncRegionOption,
 	for _, one := range addSlice {
 		tmpRes := dataregion.AwsRegionBatchCreate{
 			Vendor:     enumor.Aws,
+			AccountID:  opt.AccountID,
 			RegionID:   one.RegionID,
 			RegionName: one.RegionName,
 			Status:     one.RegionState,
@@ -141,6 +142,7 @@ func (cli *client) updateRegion(kt *kit.Kit, opt *SyncRegionOption,
 	for id, one := range updateMap {
 		tmpRes := dataregion.AwsRegionBatchUpdate{
 			ID:         id,
+			AccountID:  opt.AccountID,
 			RegionID:   one.RegionID,
 			RegionName: one.RegionName,
 			Status:     one.RegionState,
@@ -219,6 +221,7 @@ func (cli *client) listRegionFromCloud(kt *kit.Kit, opt *SyncRegionOption) ([]ty
 	return results.Details, nil
 }
 
+// listRegionFromDB 获取数据库中某个账号下的region
 func (cli *client) listRegionFromDB(kt *kit.Kit, opt *SyncRegionOption) (
 	[]cloudcore.AwsRegion, error) {
 
@@ -234,6 +237,10 @@ func (cli *client) listRegionFromDB(kt *kit.Kit, opt *SyncRegionOption) (
 					Field: "vendor",
 					Op:    filter.Equal.Factory(),
 					Value: enumor.Aws,
+				}, &filter.AtomRule{
+					Field: "account_id",
+					Op:    filter.Equal.Factory(),
+					Value: opt.AccountID,
 				},
 			},
 		},

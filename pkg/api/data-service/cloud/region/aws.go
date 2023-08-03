@@ -42,6 +42,7 @@ type AwsRegionCreateReq struct {
 // AwsRegionBatchCreate define aws region rule when create.
 type AwsRegionBatchCreate struct {
 	Vendor     enumor.Vendor `json:"vendor" validate:"required"`
+	AccountID  string        `json:"account_id" validate:"required"`
 	RegionID   string        `json:"region_id" validate:"required"`
 	RegionName string        `json:"region_name" validate:"required"`
 	Status     string        `json:"status"`
@@ -72,6 +73,7 @@ type AwsRegionBatchUpdateReq struct {
 type AwsRegionBatchUpdate struct {
 	ID         string        `json:"id" validate:"required"`
 	Vendor     enumor.Vendor `json:"vendor" validate:"required"`
+	AccountID  string        `json:"account_id"`
 	RegionID   string        `json:"region_id"`
 	RegionName string        `json:"region_name"`
 	Status     string        `json:"status"`

@@ -42,11 +42,7 @@ func SyncPublicResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncPublicRe
 		return err
 	}
 
-	if err := SyncRegion(kt, cliSet.HCService(), opt.AccountID); err != nil {
-		return err
-	}
-
-	regions, err := ListRegion(kt, cliSet.DataService())
+	regions, err := ListRegion(kt, cliSet.DataService(), opt.AccountID)
 	if err != nil {
 		return err
 	}

@@ -55,6 +55,7 @@ func (region TCloudRegion) GetCloudID() string {
 type AwsRegion struct {
 	ID         string        `json:"id"`
 	Vendor     enumor.Vendor `json:"vendor"`
+	AccountID  string        `json:"account_id"`
 	RegionID   string        `json:"region_id"`
 	RegionName string        `json:"region_name"`
 	Status     string        `json:"status"`

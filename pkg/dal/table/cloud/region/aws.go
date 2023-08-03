@@ -36,6 +36,7 @@ var AwsRegionColumns = utils.MergeColumns(nil, AwsRegionColumnDescriptor)
 var AwsRegionColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
+	{Column: "account_id", NamedC: "account_id", Type: enumor.String},
 	{Column: "region_id", NamedC: "region_id", Type: enumor.String},
 	{Column: "region_name", NamedC: "region_name", Type: enumor.String},
 	{Column: "status", NamedC: "status", Type: enumor.String},
@@ -52,6 +53,8 @@ type AwsRegionTable struct {
 	ID string `db:"id" validate:"len=0"`
 	// Vendor 云厂商
 	Vendor enumor.Vendor `db:"vendor" validate:"-"`
+	// 云账号id
+	AccountID string `db:"account_id" validate:"lte=64"`
 	// RegionID 地区ID
 	RegionID string `db:"region_id" validate:"max=32"`
 	// RegionName 地区名称
@@ -87,6 +90,9 @@ func (v AwsRegionTable) InsertValidate() error {
 
 	if len(v.RegionID) == 0 {
 		return errors.New("region id can not be empty")
+	}
+	if len(v.AccountID) == 0 {
+		return errors.New("account id can not be empty")
 	}
 
 	if len(v.RegionName) == 0 {
