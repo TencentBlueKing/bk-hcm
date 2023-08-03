@@ -2,7 +2,6 @@ import { VendorEnum } from '@/common/constant';
 import { defineComponent, reactive, ref } from 'vue';
 import FormSelect from '@/views/business/components/form-select.vue';
 import VpcSelector from '@/components/vpc-selector/index.vue';
-import { useI18n } from 'vue-i18n';
 import './index.scss';
 
 enum IpType {
@@ -14,6 +13,20 @@ enum DirectionType {
   out = 'EGRESS',
   in = 'INGRESS',
 }
+
+const Protocols = {
+  ALL: 'all',
+  TCP: 'tcp',
+  UDP: 'udp',
+};
+
+const IPV4_Special_Protocols = {
+  ICMP: 'icmp',
+};
+
+const IPV6_Special_Protocols = {
+  ICMPV6: '58',
+};
 
 export default defineComponent({
   setup() {
@@ -36,8 +49,6 @@ export default defineComponent({
     const is_source_marked = ref(false);
     const is_destination_marked = ref(false);
     const is_rule_allowed = ref(false);
-
-    const { t } = useI18n();
 
     return () => (
       <div class={'firewall-form-container'}>
@@ -64,7 +75,10 @@ export default defineComponent({
               <bk-radio label={DirectionType.out}>出站流量</bk-radio>
             </bk-radio-group>
           </bk-form-item>
-          <bk-form-item label={'优先级'} property={'priority'}>
+          <bk-form-item
+            label={'优先级'}
+            property={'priority'}
+            description={'优先级范围从 0 到 65535'}>
             <bk-input
               vendor={formModel.priority}
               v-model={formModel.cloud_vpc_id}
@@ -73,7 +87,7 @@ export default defineComponent({
           </bk-form-item>
           <bk-form-item label={'IP类型'}>
             <bk-select v-model={ip_type.value} type='number' clearable={false}>
-              {[IpType.ipv4, IpType.ipv6].map((v) => (
+              {[IpType.ipv4, IpType.ipv6].map(v => (
                 <bk-option key={v} value={v} label={v}></bk-option>
               ))}
             </bk-select>
@@ -129,7 +143,21 @@ export default defineComponent({
               {{
                 prefix: () => (
                   <bk-select>
-                    <bk-option>123</bk-option>
+                    {ip_type.value === IpType.ipv6
+                      ? Object.entries({
+                        ...Protocols,
+                        ...IPV6_Special_Protocols,
+                      }).map(([key, val]) => (
+                          <bk-option label={key} value={val} key={key}>
+                          </bk-option>
+                      ))
+                      : Object.entries({
+                        ...Protocols,
+                        ...IPV4_Special_Protocols,
+                      }).map(([key, val]) => (
+                          <bk-option label={key} value={val} key={key}>
+                          </bk-option>
+                      ))}
                   </bk-select>
                 ),
               }}
@@ -151,8 +179,10 @@ export default defineComponent({
             <bk-input v-model={formModel.name} type='textarea'></bk-input>
           </bk-form-item>
           <bk-form-item>
-            <bk-button theme='primary' class="ml10">提交创建</bk-button>
-            <bk-button class="ml10">取消</bk-button>
+            <bk-button theme='primary' class='ml10'>
+              提交创建
+            </bk-button>
+            <bk-button class='ml10'>取消</bk-button>
           </bk-form-item>
         </bk-form>
       </div>
