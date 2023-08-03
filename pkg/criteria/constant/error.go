@@ -34,4 +34,6 @@ const (
 	CvmHasMultipleVpcs WarnSign = "cvm_has_multiple_vpc"
 	// AccountBillConfigFailed account bill config failed.
 	AccountBillConfigFailed WarnSign = "account_bill_config_failed"
+	// RecycleUpdateRecordFailed 后台回收任务过程中更新记录失败
+	RecycleUpdateRecordFailed WarnSign = "recycle_update_record_failed"
 )
