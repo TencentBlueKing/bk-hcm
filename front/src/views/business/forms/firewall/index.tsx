@@ -106,12 +106,14 @@ export default defineComponent({
               hasDeleteIcon
             />
           </bk-form-item>
-          <bk-form-item label={'来源标记'}>
-            <bk-radio-group v-model={is_source_marked.value}>
-              <bk-radio label={true}>启用</bk-radio>
-              <bk-radio label={false}>禁用</bk-radio>
-            </bk-radio-group>
-          </bk-form-item>
+          {formModel.type === DirectionType.in ? (
+            <bk-form-item label={'来源标记'}>
+              <bk-radio-group v-model={is_source_marked.value}>
+                <bk-radio label={true}>启用</bk-radio>
+                <bk-radio label={false}>禁用</bk-radio>
+              </bk-radio-group>
+            </bk-form-item>
+          ) : null}
           {is_source_marked.value ? (
             <bk-form-item property={'source_tags'}>
               <bk-tag-input
@@ -148,15 +150,19 @@ export default defineComponent({
                         ...Protocols,
                         ...IPV6_Special_Protocols,
                       }).map(([key, val]) => (
-                          <bk-option label={key} value={val} key={key}>
-                          </bk-option>
+                          <bk-option
+                            label={key}
+                            value={val}
+                            key={key}></bk-option>
                       ))
                       : Object.entries({
                         ...Protocols,
                         ...IPV4_Special_Protocols,
                       }).map(([key, val]) => (
-                          <bk-option label={key} value={val} key={key}>
-                          </bk-option>
+                          <bk-option
+                            label={key}
+                            value={val}
+                            key={key}></bk-option>
                       ))}
                   </bk-select>
                 ),
