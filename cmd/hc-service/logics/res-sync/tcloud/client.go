@@ -61,6 +61,8 @@ type Interface interface {
 	Zone(kt *kit.Kit, opt *SyncZoneOption) (*SyncResult, error)
 
 	Region(kt *kit.Kit, opt *SyncRegionOption) (*SyncResult, error)
+
+	SubAccount(kt *kit.Kit, opt *SyncSubAccountOption) (*SyncResult, error)
 }
 
 var _ Interface = new(client)

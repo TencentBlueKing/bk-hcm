@@ -39,7 +39,6 @@ import (
 
 // DoOrm defines all the orm method.
 type DoOrm interface {
-	Get(ctx context.Context, dest interface{}, expr string, arg map[string]interface{}) error
 	Select(ctx context.Context, dest interface{}, expr string, arg map[string]interface{}) error
 	Count(ctx context.Context, expr string, arg map[string]interface{}) (uint64, error)
 	Delete(ctx context.Context, expr string, arg map[string]interface{}) (int64, error)

@@ -33,10 +33,10 @@ import (
 
 // ListImage 查询公共镜像列表
 // reference: https://learn.microsoft.com/en-us/rest/api/compute/virtual-machine-images/list?tabs=HTTP
-func (a *Azure) ListImage(kt *kit.Kit,
+func (az *Azure) ListImage(kt *kit.Kit,
 	opt *image.AzureImageListOption) (*image.AzureImageListResult, error) {
 
-	client, err := a.clientSet.imageClient()
+	client, err := az.clientSet.imageClient()
 	if err != nil {
 		return nil, err
 	}

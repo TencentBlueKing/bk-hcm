@@ -39,6 +39,7 @@ type Client struct {
 	SGCvmRel               *SGCvmRelClient
 	NetworkInterface       *NetworkInterfaceClient
 	NetworkInterfaceCvmRel *NetworkInterfaceCvmRelClient
+	SubAccount             *SubAccountClient
 
 	Auth          *AuthClient
 	Account       *AccountClient
@@ -70,6 +71,7 @@ func NewClient(client rest.ClientInterface) *Client {
 		SGCvmRel:               NewCloudSGCvmRelClient(client),
 		NetworkInterface:       NewNetworkInterfaceClient(client),
 		NetworkInterfaceCvmRel: NewNetworkInterfaceCvmRelClient(client),
+		SubAccount:             NewSubAccountClient(client),
 
 		Auth:          NewAuthClient(client),
 		Account:       NewAccountClient(client),

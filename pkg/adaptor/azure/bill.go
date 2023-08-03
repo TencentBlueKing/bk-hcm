@@ -208,14 +208,14 @@ func (b *billClient) GetUsageDetail(kt *kit.Kit, opt *typesBill.AzureBillListOpt
 
 // GetBillList get bill list.
 // reference: https://learn.microsoft.com/zh-cn/rest/api/consumption/usage-details/list?tabs=HTTP#usagedetailslistresult
-func (a *Azure) GetBillList(kt *kit.Kit, opt *typesBill.AzureBillListOption) (
+func (az *Azure) GetBillList(kt *kit.Kit, opt *typesBill.AzureBillListOption) (
 	*armconsumption.UsageDetailsListResult, error) {
 
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	cli, err := a.clientSet.usageDetailClient(kt)
+	cli, err := az.clientSet.usageDetailClient(kt)
 	if err != nil {
 		return nil, fmt.Errorf("new usage detail client failed, opt: %+v, err: %v", opt, err)
 	}

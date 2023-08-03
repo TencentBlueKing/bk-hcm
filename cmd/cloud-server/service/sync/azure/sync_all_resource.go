@@ -126,5 +126,9 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 		return hitErr
 	}
 
+	if hitErr = SyncSubAccount(kt, cliSet.HCService(), opt.AccountID); hitErr != nil {
+		return hitErr
+	}
+
 	return nil
 }

@@ -35,18 +35,18 @@ import (
 
 // UpdateRouteTable update route table.
 // TODO right now only memo is supported to update, add other update operations later.
-func (a *Azure) UpdateRouteTable(_ *kit.Kit, _ *routetable.AzureRouteTableUpdateOption) error {
+func (az *Azure) UpdateRouteTable(_ *kit.Kit, _ *routetable.AzureRouteTableUpdateOption) error {
 	return nil
 }
 
 // DeleteRouteTable delete route table.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/route-tables/delete?tabs=HTTP
-func (a *Azure) DeleteRouteTable(kt *kit.Kit, opt *core.AzureDeleteOption) error {
+func (az *Azure) DeleteRouteTable(kt *kit.Kit, opt *core.AzureDeleteOption) error {
 	if err := opt.Validate(); err != nil {
 		return err
 	}
 
-	routeTableClient, err := a.clientSet.routeTableClient()
+	routeTableClient, err := az.clientSet.routeTableClient()
 	if err != nil {
 		return fmt.Errorf("new route table client failed, err: %v", err)
 	}
@@ -67,12 +67,12 @@ func (a *Azure) DeleteRouteTable(kt *kit.Kit, opt *core.AzureDeleteOption) error
 
 // ListRouteTable list route table.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/route-tables/list?tabs=HTTP
-func (a *Azure) ListRouteTable(kt *kit.Kit, opt *core.AzureListOption) (*routetable.AzureRouteTableListResult, error) {
+func (az *Azure) ListRouteTable(kt *kit.Kit, opt *core.AzureListOption) (*routetable.AzureRouteTableListResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
 
-	routeTableClient, err := a.clientSet.routeTableClient()
+	routeTableClient, err := az.clientSet.routeTableClient()
 	if err != nil {
 		return nil, fmt.Errorf("new route table client failed, err: %v", err)
 	}
@@ -93,8 +93,8 @@ func (a *Azure) ListRouteTable(kt *kit.Kit, opt *core.AzureListOption) (*routeta
 		}
 
 		for _, routeTable := range page.Value {
-			details = append(details, converter.PtrToVal(a.ConvertRouteTable(routeTable, opt.ResourceGroupName,
-				a.clientSet.credential.CloudSubscriptionID)))
+			details = append(details, converter.PtrToVal(az.ConvertRouteTable(routeTable, opt.ResourceGroupName,
+				az.clientSet.credential.CloudSubscriptionID)))
 		}
 	}
 
@@ -118,10 +118,10 @@ func (handler *routeTableResultHandler) BuildResult(resp armnetwork.RouteTablesC
 
 // ListRouteTableByPage ...
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/route-tables/list?tabs=HTTP
-func (a *Azure) ListRouteTableByPage(kt *kit.Kit, opt *core.AzureListOption) (
+func (az *Azure) ListRouteTableByPage(kt *kit.Kit, opt *core.AzureListOption) (
 	*Pager[armnetwork.RouteTablesClientListResponse, routetable.AzureRouteTable], error) {
 
-	client, err := a.clientSet.routeTableClient()
+	client, err := az.clientSet.routeTableClient()
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func (a *Azure) ListRouteTableByPage(kt *kit.Kit, opt *core.AzureListOption) (
 		pager: azurePager,
 		resultHandler: &routeTableResultHandler{
 			resGroupName: opt.ResourceGroupName,
-			a:            a,
+			a:            az,
 		},
 	}
 
@@ -141,14 +141,14 @@ func (a *Azure) ListRouteTableByPage(kt *kit.Kit, opt *core.AzureListOption) (
 
 // ListRouteTablePage list route table page.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/route-tables/list?tabs=HTTP
-func (a *Azure) ListRouteTablePage(opt *core.AzureListByIDOption) (
+func (az *Azure) ListRouteTablePage(opt *core.AzureListByIDOption) (
 	*runtime.Pager[armnetwork.RouteTablesClientListResponse], string, error) {
 
 	if err := opt.Validate(); err != nil {
 		return nil, "", err
 	}
 
-	routeTableClient, err := a.clientSet.routeTableClient()
+	routeTableClient, err := az.clientSet.routeTableClient()
 	if err != nil {
 		return nil, "", fmt.Errorf("new route table client failed, err: %v", err)
 	}
@@ -156,19 +156,19 @@ func (a *Azure) ListRouteTablePage(opt *core.AzureListByIDOption) (
 	req := new(armnetwork.RouteTablesClientListOptions)
 
 	pager := routeTableClient.NewListPager(opt.ResourceGroupName, req)
-	return pager, a.clientSet.credential.CloudSubscriptionID, nil
+	return pager, az.clientSet.credential.CloudSubscriptionID, nil
 }
 
 // ListRouteTableByID list route table.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/route-tables/list?tabs=HTTP
-func (a *Azure) ListRouteTableByID(kt *kit.Kit, opt *core.AzureListByIDOption) (
+func (az *Azure) ListRouteTableByID(kt *kit.Kit, opt *core.AzureListByIDOption) (
 	*routetable.AzureRouteTableListResult, error) {
 
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
 
-	routeTableClient, err := a.clientSet.routeTableClient()
+	routeTableClient, err := az.clientSet.routeTableClient()
 	if err != nil {
 		return nil, fmt.Errorf("new route table client failed, err: %v", err)
 	}
@@ -188,8 +188,8 @@ func (a *Azure) ListRouteTableByID(kt *kit.Kit, opt *core.AzureListByIDOption) (
 		for _, one := range nextResult.Value {
 			id := SPtrToLowerSPtr(one.ID)
 			if _, exist := idMap[*id]; exist {
-				details = append(details, converter.PtrToVal(a.ConvertRouteTable(one, opt.ResourceGroupName,
-					a.clientSet.credential.CloudSubscriptionID)))
+				details = append(details, converter.PtrToVal(az.ConvertRouteTable(one, opt.ResourceGroupName,
+					az.clientSet.credential.CloudSubscriptionID)))
 				delete(idMap, *id)
 
 				if len(idMap) == 0 {
@@ -204,14 +204,14 @@ func (a *Azure) ListRouteTableByID(kt *kit.Kit, opt *core.AzureListByIDOption) (
 
 // GetRouteTable get route table.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/route-tables/get?tabs=HTTP
-func (a *Azure) GetRouteTable(kt *kit.Kit, opt *routetable.AzureRouteTableGetOption) (*routetable.AzureRouteTable,
+func (az *Azure) GetRouteTable(kt *kit.Kit, opt *routetable.AzureRouteTableGetOption) (*routetable.AzureRouteTable,
 	error) {
 
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
 
-	routeTableClient, err := a.clientSet.routeTableClient()
+	routeTableClient, err := az.clientSet.routeTableClient()
 	if err != nil {
 		return nil, fmt.Errorf("new route table client failed, err: %v", err)
 	}
@@ -224,12 +224,12 @@ func (a *Azure) GetRouteTable(kt *kit.Kit, opt *routetable.AzureRouteTableGetOpt
 		return nil, fmt.Errorf("list azure route table failed, err: %v", err)
 	}
 
-	return a.ConvertRouteTable(&routeTableRes.RouteTable, opt.ResourceGroupName,
-		a.clientSet.credential.CloudSubscriptionID), nil
+	return az.ConvertRouteTable(&routeTableRes.RouteTable, opt.ResourceGroupName,
+		az.clientSet.credential.CloudSubscriptionID), nil
 }
 
 // ConvertRouteTable ...
-func (a *Azure) ConvertRouteTable(data *armnetwork.RouteTable, resourceGroup,
+func (az *Azure) ConvertRouteTable(data *armnetwork.RouteTable, resourceGroup,
 	subscription string) *routetable.AzureRouteTable {
 
 	if data == nil {

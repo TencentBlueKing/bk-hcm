@@ -31,6 +31,8 @@ func (r ResourceType) String() string {
 const (
 	// Account defines cloud account resource's hcm auth resource type
 	Account ResourceType = "account"
+	// SubAccount defines cloud sub account resource's hcm auth resource type
+	SubAccount ResourceType = "sub_account"
 	// Vpc defines vpc hcm auth resource type
 	Vpc ResourceType = "vpc"
 	// Subnet defines subnet hcm auth resource type

@@ -24,13 +24,56 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/aws/aws-sdk-go/service/organizations"
+	"github.com/aws/aws-sdk-go/service/sts"
+
 	"hcm/pkg/adaptor/types"
+	"hcm/pkg/adaptor/types/account"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-
-	"github.com/aws/aws-sdk-go/service/sts"
+	"hcm/pkg/tools/converter"
 )
+
+// ListAccount 查询账号列表，因为账号列表的数量不会很多，且其他云也是全量返回，所以，这里将aws的账号列表进行了全量查询。
+// reference: https://docs.amazonaws.cn/organizations/latest/APIReference/API_ListAccounts.html
+func (a *Aws) ListAccount(kt *kit.Kit) ([]account.AwsAccount, error) {
+	client, err := a.clientSet.organizations()
+	if err != nil {
+		return nil, err
+	}
+
+	list := make([]account.AwsAccount, 0)
+	req := new(organizations.ListAccountsInput)
+	req.MaxResults = converter.ValToPtr(int64(20))
+	for {
+		resp, err := client.ListAccountsWithContext(kt.Ctx, req)
+		if err != nil {
+			logs.Errorf("list accounts failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+
+		for _, one := range resp.Accounts {
+			list = append(list, account.AwsAccount{
+				Arn:             one.Arn,
+				Email:           one.Email,
+				ID:              one.Id,
+				JoinedMethod:    one.JoinedMethod,
+				JoinedTimestamp: one.JoinedTimestamp,
+				Name:            one.Name,
+				Status:          one.Status,
+			})
+		}
+
+		if resp.NextToken == nil || *resp.NextToken == "" {
+			break
+		}
+
+		req.NextToken = resp.NextToken
+	}
+
+	return list, nil
+}
 
 // AccountCheck check account authentication information(account id and iam user name) and permissions.
 // GetCallerIdentity: https://docs.aws.amazon.com/STS/latest/APIReference/API_GetCallerIdentity.html

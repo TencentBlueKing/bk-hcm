@@ -51,6 +51,7 @@ func InitService(cap *capability.Capability) {
 	h.Add("SyncResourceGroup", "POST", "/resource_groups/sync", v.SyncResourceGroup)
 	h.Add("SyncRegion", "POST", "/regions/sync", v.SyncRegion)
 	h.Add("SyncImage", "POST", "/images/sync", v.SyncImage)
+	h.Add("SyncSubAccount", "POST", "/sub_accounts/sync", v.SyncSubAccount)
 
 	h.Load(cap.WebService)
 }

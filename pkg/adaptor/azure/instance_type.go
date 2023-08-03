@@ -75,11 +75,11 @@ var ArmInstanceMap map[string]struct{} = map[string]struct{}{
 
 // ListInstanceType ...
 // reference: https://learn.microsoft.com/en-us/rest/api/compute/virtual-machine-sizes/list?tabs=HTTP
-func (a *Azure) ListInstanceType(kt *kit.Kit, opt *typesinstancetype.AzureInstanceTypeListOption) (
+func (az *Azure) ListInstanceType(kt *kit.Kit, opt *typesinstancetype.AzureInstanceTypeListOption) (
 	[]*typesinstancetype.AzureInstanceType, error,
 ) {
 
-	client, err := a.clientSet.virtualMachineSizeClient()
+	client, err := az.clientSet.virtualMachineSizeClient()
 	if err != nil {
 		return nil, err
 	}

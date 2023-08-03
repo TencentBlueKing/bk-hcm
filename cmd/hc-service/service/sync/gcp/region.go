@@ -43,7 +43,7 @@ type regionHandler struct {
 	cli ressync.Interface
 
 	// Prepare 构建参数
-	request   *sync.GcpGlobalRegionResSyncReq
+	request   *sync.GcpGlobalSyncReq
 	syncCli   gcp.Interface
 	pageToken string
 }
@@ -52,7 +52,7 @@ var _ handler.Handler = new(regionHandler)
 
 // Prepare ...
 func (hd *regionHandler) Prepare(cts *rest.Contexts) error {
-	req := new(sync.GcpGlobalRegionResSyncReq)
+	req := new(sync.GcpGlobalSyncReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}

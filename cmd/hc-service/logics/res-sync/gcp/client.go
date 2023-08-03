@@ -60,6 +60,8 @@ type Interface interface {
 
 	Region(kt *kit.Kit, params *SyncBaseParams, opt *SyncRegionOption) (*SyncResult, error)
 	RemoveRegionDeleteFromCloud(kt *kit.Kit, accountID string) error
+
+	SubAccount(kt *kit.Kit, opt *SyncSubAccountOption) (*SyncResult, error)
 }
 
 var _ Interface = new(client)

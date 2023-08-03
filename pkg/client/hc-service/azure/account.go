@@ -24,7 +24,9 @@ import (
 	"net/http"
 
 	"hcm/pkg/api/hc-service"
+	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -38,6 +40,30 @@ func NewAccountClient(client rest.ClientInterface) *AccountClient {
 	return &AccountClient{
 		client: client,
 	}
+}
+
+// SyncSubAccount sync sub account
+func (a *AccountClient) SyncSubAccount(kt *kit.Kit, req *sync.AzureGlobalSyncReq) error {
+
+	resp := new(rest.BaseResp)
+
+	err := a.client.Post().
+		WithContext(kt.Ctx).
+		Body(req).
+		SubResourcef("/sub_accounts/sync").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
 }
 
 // Check account
