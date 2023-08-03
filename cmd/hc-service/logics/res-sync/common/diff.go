@@ -21,6 +21,7 @@ package common
 
 import (
 	"hcm/pkg/adaptor/types"
+	"hcm/pkg/adaptor/types/account"
 	typescvm "hcm/pkg/adaptor/types/cvm"
 	typesdisk "hcm/pkg/adaptor/types/disk"
 	typeseip "hcm/pkg/adaptor/types/eip"
@@ -40,6 +41,7 @@ import (
 	coreregion "hcm/pkg/api/core/cloud/region"
 	coreresourcegroup "hcm/pkg/api/core/cloud/resource-group"
 	cloudcoreroutetable "hcm/pkg/api/core/cloud/route-table"
+	coresubaccount "hcm/pkg/api/core/cloud/sub-account"
 	corezone "hcm/pkg/api/core/cloud/zone"
 	"hcm/pkg/api/data-service/cloud/disk"
 	dataeip "hcm/pkg/api/data-service/cloud/eip"
@@ -122,7 +124,13 @@ type CloudResType interface {
 		typesroutetable.TCloudRoute |
 		typesroutetable.HuaWeiRoute |
 		typesroutetable.AzureRoute |
-		typesroutetable.AwsRoute
+		typesroutetable.AwsRoute |
+
+		account.TCloudAccount |
+		account.HuaWeiAccount |
+		account.AwsAccount |
+		account.AzureAccount |
+		account.GcpAccount
 }
 
 type DBResType interface {
@@ -199,7 +207,13 @@ type DBResType interface {
 		cloudcoreroutetable.TCloudRoute |
 		cloudcoreroutetable.HuaWeiRoute |
 		cloudcoreroutetable.AzureRoute |
-		cloudcoreroutetable.AwsRoute
+		cloudcoreroutetable.AwsRoute |
+
+		coresubaccount.SubAccount[coresubaccount.TCloudExtension] |
+		coresubaccount.SubAccount[coresubaccount.HuaWeiExtension] |
+		coresubaccount.SubAccount[coresubaccount.AwsExtension] |
+		coresubaccount.SubAccount[coresubaccount.AzureExtension] |
+		coresubaccount.SubAccount[coresubaccount.GcpExtension]
 }
 
 // Diff 对比云和db资源，划分出新增数据，更新数据，删除数据。

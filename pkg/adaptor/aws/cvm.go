@@ -91,7 +91,7 @@ func GetCvmNameFromTags(tags []*ec2.Tag) *string {
 	}
 
 	for _, tagPtr := range tags {
-		if tagPtr != nil && tagPtr.Key != nil && *tagPtr.Key == "Name" {
+		if tagPtr != nil && tagPtr.Key != nil && *tagPtr.Key == "ImportMode" {
 			return tagPtr.Value
 		}
 	}

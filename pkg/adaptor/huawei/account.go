@@ -21,14 +21,52 @@ package huawei
 
 import (
 	"errors"
+	"fmt"
 
 	"hcm/pkg/adaptor/types"
 	typeaccount "hcm/pkg/adaptor/types/account"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/iam/v3/model"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/iam/v3/region"
 )
+
+// ListAccount list account.
+// reference: https://support.huaweicloud.com/intl/zh-cn/api-iam/iam_08_0001.html
+func (h *HuaWei) ListAccount(kt *kit.Kit) ([]typeaccount.HuaWeiAccount, error) {
+	client, err := h.clientSet.iamClient(region.AP_SOUTHEAST_1)
+	if err != nil {
+		logs.Errorf("new iam client failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	req := new(model.KeystoneListUsersRequest)
+	resp, err := client.KeystoneListUsers(req)
+	if err != nil {
+		logs.Errorf("keystone list users failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, fmt.Errorf("keystone list users failed, err: %v", err)
+	}
+
+	list := make([]typeaccount.HuaWeiAccount, 0)
+	if resp.Users != nil {
+		for _, one := range *resp.Users {
+			list = append(list, typeaccount.HuaWeiAccount{
+				PwdStatus:         one.PwdStatus,
+				DomainID:          one.DomainId,
+				LastProjectID:     one.LastProjectId,
+				Name:              one.Name,
+				Description:       one.Description,
+				PasswordExpiresAt: one.PasswordExpiresAt,
+				ID:                one.Id,
+				Enabled:           one.Enabled,
+				PwdStrength:       one.PwdStrength,
+			})
+		}
+	}
+
+	return list, nil
+}
 
 // AccountCheck check account authentication information and permissions.
 // KeystoneListAuthDomains: https://support.huaweicloud.com/intl/zh-cn/api-iam/iam_07_0001.html

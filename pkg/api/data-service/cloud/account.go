@@ -132,7 +132,8 @@ func (c *AccountCreateReq[T]) Validate() error {
 // AccountExtensionUpdateReq Note: DataService的更新是与业务无关的，所以必须支持调用方根据场景需求来更新部分字段
 // Note: 对于允许为空字符串的字段，则其类型需要定义为指针，正常情况下，Json合并时空值会被忽略
 type AccountExtensionUpdateReq interface {
-	TCloudAccountExtensionUpdateReq | AwsAccountExtensionUpdateReq | HuaWeiAccountExtensionUpdateReq | GcpAccountExtensionUpdateReq | AzureAccountExtensionUpdateReq
+	TCloudAccountExtensionUpdateReq | AwsAccountExtensionUpdateReq | HuaWeiAccountExtensionUpdateReq |
+		GcpAccountExtensionUpdateReq | AzureAccountExtensionUpdateReq
 }
 
 type TCloudAccountExtensionUpdateReq struct {
@@ -236,7 +237,8 @@ func (u *AccountUpdateReq[T]) Validate() error {
 // -------------------------- Get --------------------------
 
 type AccountExtensionGetResp interface {
-	cloud.TCloudAccountExtension | cloud.AwsAccountExtension | cloud.HuaWeiAccountExtension | cloud.GcpAccountExtension | cloud.AzureAccountExtension
+	cloud.TCloudAccountExtension | cloud.AwsAccountExtension | cloud.HuaWeiAccountExtension |
+		cloud.GcpAccountExtension | cloud.AzureAccountExtension
 }
 
 type AccountGetResult[T AccountExtensionGetResp] struct {

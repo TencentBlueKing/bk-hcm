@@ -21,13 +21,13 @@ package sync
 
 import "hcm/pkg/criteria/validator"
 
-// TCloudRegionSyncReq tcloud sync request
-type TCloudRegionSyncReq struct {
+// TCloudGlobalSyncReq tcloud sync request
+type TCloudGlobalSyncReq struct {
 	AccountID string `json:"account_id" validate:"required"`
 }
 
 // Validate tcloud sync request.
-func (req *TCloudRegionSyncReq) Validate() error {
+func (req *TCloudGlobalSyncReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
@@ -42,13 +42,13 @@ func (req *TCloudSyncReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// AwsRegionSyncReq aws sync request
-type AwsRegionSyncReq struct {
+// AwsGlobalSyncReq aws sync request
+type AwsGlobalSyncReq struct {
 	AccountID string `json:"account_id" validate:"required"`
 }
 
 // Validate aws sync request.
-func (req *AwsRegionSyncReq) Validate() error {
+func (req *AwsGlobalSyncReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
@@ -63,13 +63,13 @@ func (req *AwsSyncReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// HuaWeiRegionSyncReq huawei sync request
-type HuaWeiRegionSyncReq struct {
+// HuaWeiGlobalSyncReq huawei sync request
+type HuaWeiGlobalSyncReq struct {
 	AccountID string `json:"account_id" validate:"required"`
 }
 
 // Validate huawei sync request.
-func (req *HuaWeiRegionSyncReq) Validate() error {
+func (req *HuaWeiGlobalSyncReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
@@ -119,13 +119,13 @@ func (req *GcpSyncReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// GcpGlobalRegionResSyncReq gcp sync request
-type GcpGlobalRegionResSyncReq struct {
+// GcpGlobalResSyncReq gcp sync request
+type GcpGlobalResSyncReq struct {
 	AccountID string `json:"account_id" validate:"required"`
 }
 
 // Validate gcp sync request.
-func (req *GcpGlobalRegionResSyncReq) Validate() error {
+func (req *GcpGlobalResSyncReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
@@ -161,13 +161,13 @@ func (req *GcpFireWallSyncReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// AzureResourceGroupSyncReq azure sync request
-type AzureResourceGroupSyncReq struct {
+// AzureGlobalSyncReq azure sync request
+type AzureGlobalSyncReq struct {
 	AccountID string `json:"account_id" validate:"required"`
 }
 
 // Validate azure sync request.
-func (req *AzureResourceGroupSyncReq) Validate() error {
+func (req *AzureGlobalSyncReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 

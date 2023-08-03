@@ -35,6 +35,7 @@ type Client struct {
 	Cvm              *CvmClient
 	RouteTable       *RouteTableClient
 	NetworkInterface *NetworkInterfaceClient
+	SubAccount       *SubAccountClient
 }
 
 type restClient struct {
@@ -54,5 +55,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		Cvm:              NewCloudCvmClient(client),
 		RouteTable:       NewRouteTableClient(client),
 		NetworkInterface: NewNetworkInterfaceClient(client),
+		SubAccount:       NewSubAccountClient(client),
 	}
 }

@@ -29,7 +29,7 @@ import (
 
 // SyncRegion ....
 func (svc *service) SyncRegion(cts *rest.Contexts) (interface{}, error) {
-	req := new(sync.TCloudRegionSyncReq)
+	req := new(sync.TCloudGlobalSyncReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}

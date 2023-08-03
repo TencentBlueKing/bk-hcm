@@ -48,7 +48,7 @@ func InitAccountService(c *capability.Capability) {
 	h.Add("Get", http.MethodGet, "/accounts/{account_id}", svc.Get)
 	h.Add("Update", http.MethodPatch, "/accounts/{account_id}", svc.Update)
 	h.Add("SyncCloudResource", http.MethodPost, "/accounts/{account_id}/sync", svc.SyncCloudResource)
-	h.Add("DeleteAccount", http.MethodDelete, "/accounts/{account_id}", svc.DeleteAccount)
+	h.Add("BatchDeleteSubAccount", http.MethodDelete, "/accounts/{account_id}", svc.DeleteAccount)
 	h.Add("DeleteValidate", http.MethodPost, "/accounts/{account_id}/delete/validate", svc.DeleteValidate)
 
 	// 获取账号配额

@@ -43,43 +43,6 @@ type do struct {
 	ro *runtimeOrm
 }
 
-// Get one data and decode into dest *struct{}.
-func (do *do) Get(ctx context.Context, dest interface{}, expr string, arg map[string]interface{}) error {
-	if err := do.ro.tryAccept(); err != nil {
-		return err
-	}
-
-	start := time.Now()
-
-	query, args, err := sqlx.Named(expr, arg)
-	if err != nil {
-		do.ro.mc.errCounter.With(prm.Labels{"cmd": "get"}).Inc()
-		return err
-	}
-
-	query, args, err = sqlx.In(query, args...)
-	if err != nil {
-		do.ro.mc.errCounter.With(prm.Labels{"cmd": "get"}).Inc()
-		return err
-	}
-
-	rows, err := do.db.QueryContext(ctx, do.db.Rebind(query), args...)
-	if err != nil {
-		do.ro.mc.errCounter.With(prm.Labels{"cmd": "get"}).Inc()
-		return err
-	}
-
-	if err = sqlx.StructScan(rows, dest); err != nil {
-		do.ro.mc.errCounter.With(prm.Labels{"cmd": "get"}).Inc()
-		return err
-	}
-
-	do.ro.logSlowCmd(ctx, expr, time.Since(start))
-	do.ro.mc.cmdLagMS.With(prm.Labels{"cmd": "get"}).Observe(float64(time.Since(start).Milliseconds()))
-
-	return nil
-}
-
 // Select a collection of data, and decode into dest *[]struct{}.
 func (do *do) Select(ctx context.Context, dest interface{}, expr string, arg map[string]interface{}) error {
 	if err := do.ro.tryAccept(); err != nil {

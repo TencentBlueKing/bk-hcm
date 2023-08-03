@@ -25,7 +25,9 @@ import (
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/kit"
 
+	asset "cloud.google.com/go/asset/apiv1"
 	"cloud.google.com/go/bigquery"
+	credentials "cloud.google.com/go/iam/credentials/apiv1"
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/option"
 )
@@ -36,6 +38,26 @@ type clientSet struct {
 
 func newClientSet(credential *types.GcpCredential) *clientSet {
 	return &clientSet{credential}
+}
+
+func (c *clientSet) assetClient(kt *kit.Kit) (*asset.Client, error) {
+	opt := option.WithCredentialsJSON(c.credential.Json)
+	client, err := asset.NewClient(kt.Ctx, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+func (c *clientSet) iamClient(kt *kit.Kit) (*credentials.IamCredentialsClient, error) {
+	opt := option.WithCredentialsJSON(c.credential.Json)
+	client, err := credentials.NewIamCredentialsClient(kt.Ctx, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
 }
 
 func (c *clientSet) computeClient(kt *kit.Kit) (*compute.Service, error) {

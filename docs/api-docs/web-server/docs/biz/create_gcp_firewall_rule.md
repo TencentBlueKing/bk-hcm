@@ -27,6 +27,13 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/gcp/firewalls/rules/create
 | allowed            | protocol_set array | 是  | 防火墙指定的允许规则列表。每个规则都指定了描述允许的连接的协议和端口范围元组。 |
 | disabled           | boolean            | 是  | 是否已禁用。                                  |
 
+#### protocol_set
+
+| 参数名称     | 参数类型         | 描述                                                            |
+|----------|--------------|---------------------------------------------------------------|
+| protocol | string       | 协议。（枚举值：tcp, udp, icmp, esp, ah, ipip, sctp, all, 58(icmpv6)） |
+| ports    | string array | 端口列表。                                                         |
+
 ### 调用示例
 
 ```json

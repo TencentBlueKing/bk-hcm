@@ -63,6 +63,8 @@ type Interface interface {
 	ResourceGroup(kt *kit.Kit, opt *SyncRGOption) (*SyncResult, error)
 
 	Region(kt *kit.Kit, opt *SyncRegionOption) (*SyncResult, error)
+
+	SubAccount(kt *kit.Kit, opt *SyncSubAccountOption) (*SyncResult, error)
 }
 
 var _ Interface = new(client)

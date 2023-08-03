@@ -44,7 +44,7 @@ type FirewallClient struct {
 
 // SyncFirewall sync fire wall.
 func (cli *FirewallClient) SyncFirewall(ctx context.Context, h http.Header,
-	request *sync.GcpGlobalRegionResSyncReq) error {
+	request *sync.GcpGlobalResSyncReq) error {
 
 	resp := new(core.SyncResp)
 

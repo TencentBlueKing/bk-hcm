@@ -29,6 +29,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	curservice "github.com/aws/aws-sdk-go/service/costandusagereportservice"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/organizations"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/sts"
 )
@@ -119,6 +120,26 @@ func (c *clientSet) athenaClient(region string) (*athena.Athena, error) {
 	}
 
 	return athena.New(sess, aws.NewConfig().WithRegion(region)), nil
+}
+
+func (c *clientSet) organizations() (*organizations.Organizations, error) {
+	cfg := &aws.Config{
+		Credentials: c.credentials,
+		DisableSSL:  nil,
+		HTTPClient:  nil,
+		LogLevel:    nil,
+		Logger:      nil,
+		MaxRetries:  nil,
+		Retryer:     nil,
+		SleepDelay:  nil,
+	}
+
+	sess, err := session.NewSession(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return organizations.New(sess), nil
 }
 
 func (c *clientSet) s3Client(region string) (*s3.S3, error) {

@@ -6,7 +6,7 @@
 
 ### URL
 
-POST /api/v1/web/tickets/approval
+POST /api/v1/web/tickets/approve
 
 ### 输入参数
 

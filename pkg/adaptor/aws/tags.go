@@ -27,7 +27,7 @@ import (
 )
 
 // tagKeyForResourceName is tag key that define resource name.
-const tagKeyForResourceName = "Name"
+const tagKeyForResourceName = "ImportMode"
 
 // tagResourceType is ec2 tag resource type.
 // reference: https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/APIReference/API_TagSpecification.html
