@@ -37,6 +37,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/thirdparty/esb"
 	"hcm/pkg/thirdparty/itsm"
 
 	"github.com/tidwall/gjson"
@@ -50,6 +51,7 @@ func InitApplicationService(c *capability.Capability, bkHcmUrl string) {
 		authorizer: c.Authorizer,
 		cipher:     c.Cipher,
 		itsmCli:    c.ItsmCli,
+		esbCli:     c.EsbClient,
 		bkHcmUrl:   bkHcmUrl,
 	}
 	h := rest.NewHandler()
@@ -72,6 +74,7 @@ type applicationSvc struct {
 	authorizer auth.Authorizer
 	cipher     cryptography.Crypto
 	itsmCli    itsm.Client
+	esbCli     esb.Client
 	bkHcmUrl   string
 }
 
@@ -81,11 +84,12 @@ func (a *applicationSvc) getCallbackUrl() string {
 
 func (a *applicationSvc) getHandlerOption(cts *rest.Contexts) *handlers.HandlerOption {
 	return &handlers.HandlerOption{
-		Cts:     cts,
-		Client:  a.client,
-		ItsmCli: a.itsmCli,
-		Cipher:  a.cipher,
-		Audit:   a.audit,
+		Cts:       cts,
+		Client:    a.client,
+		ItsmCli:   a.itsmCli,
+		EsbClient: a.esbCli,
+		Cipher:    a.cipher,
+		Audit:     a.audit,
 	}
 }
 
