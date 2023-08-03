@@ -105,7 +105,7 @@ func (i *Int64Array) Scan(raw interface{}) error {
 // Value encode the Int64Array to a json raw, so that it can be stored to db with json raw.
 func (i Int64Array) Value() (driver.Value, error) {
 	if i == nil {
-		return nil, nil
+		return "[]", nil
 	}
 
 	return json.Marshal(i)

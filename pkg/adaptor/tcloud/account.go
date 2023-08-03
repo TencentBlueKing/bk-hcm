@@ -34,6 +34,41 @@ import (
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 )
 
+// ListAccount 查询账号列表.
+// reference: https://cloud.tencent.com/document/api/598/34587
+func (t *TCloud) ListAccount(kt *kit.Kit) ([]typeaccount.TCloudAccount, error) {
+
+	camClient, err := t.clientSet.camServiceClient("")
+	if err != nil {
+		return nil, fmt.Errorf("new cam client failed, err: %v", err)
+	}
+
+	req := cam.NewListUsersRequest()
+	resp, err := camClient.ListUsersWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("list users failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, fmt.Errorf("list users failed, err: %v", err)
+	}
+
+	list := make([]typeaccount.TCloudAccount, 0, len(resp.Response.Data))
+	for _, one := range resp.Response.Data {
+		list = append(list, typeaccount.TCloudAccount{
+			Uin:          one.Uin,
+			Name:         one.Name,
+			Uid:          one.Uid,
+			Remark:       one.Remark,
+			ConsoleLogin: one.ConsoleLogin,
+			PhoneNum:     one.PhoneNum,
+			CountryCode:  one.CountryCode,
+			Email:        one.Email,
+			CreateTime:   one.CreateTime,
+			NickName:     one.NickName,
+		})
+	}
+
+	return list, nil
+}
+
 // AccountCheck check account authentication information and permissions.
 // reference: https://cloud.tencent.com/document/api/598/70416
 func (t *TCloud) AccountCheck(kt *kit.Kit, opt *types.TCloudAccountInfo) error {

@@ -340,6 +340,10 @@ func genCvmResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resour
 	}
 }
 
+func genSubAccountResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	return genIaaSResourceResource(a)
+}
+
 // genRouteTableResource generate route table's related iam resource.
 func genRouteTableResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
 	return genIaaSResourceResource(a)

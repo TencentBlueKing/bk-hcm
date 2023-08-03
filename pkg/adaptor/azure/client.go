@@ -33,6 +33,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription"
+	msgraphsdk "github.com/microsoftgraph/msgraph-sdk-go"
 )
 
 type clientSet struct {
@@ -41,6 +42,20 @@ type clientSet struct {
 
 func newClientSet(credential *types.AzureCredential) *clientSet {
 	return &clientSet{credential}
+}
+
+func (c *clientSet) graphServiceClient() (*msgraphsdk.GraphServiceClient, error) {
+	credential, err := c.newClientSecretCredential()
+	if err != nil {
+		return nil, fmt.Errorf("init azure credential failed, err: %v", err)
+	}
+
+	client, err := msgraphsdk.NewGraphServiceClientWithCredentials(credential, nil)
+	if err != nil {
+		return nil, fmt.Errorf("init azure subscription client failed, err: %v", err)
+	}
+
+	return client, nil
 }
 
 func (c *clientSet) subscriptionClient() (*armsubscription.SubscriptionsClient, error) {

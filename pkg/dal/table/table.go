@@ -41,6 +41,8 @@ const (
 	RecycleRecordTable Name = "recycle_record"
 	// AccountTable is account table's name.
 	AccountTable Name = "account"
+	// SubAccountTable is sub account table's name.
+	SubAccountTable Name = "sub_account"
 	// AccountBizRelTable is account and biz relation table's name.
 	AccountBizRelTable Name = "account_biz_rel"
 	// SecurityGroupTable is security group table's name.
@@ -144,6 +146,7 @@ func (n Name) Validate() error {
 var TableMap = map[Name]struct{}{
 	AuditTable:                   {},
 	AccountTable:                 {},
+	SubAccountTable:              {},
 	AccountBizRelTable:           {},
 	VpcTable:                     {},
 	SubnetTable:                  {},

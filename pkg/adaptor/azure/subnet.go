@@ -36,12 +36,12 @@ import (
 
 // CreateSubnet create subnet.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/subnets/create-or-update?tabs=HTTP
-func (a *Azure) CreateSubnet(kt *kit.Kit, opt *adtysubnet.AzureSubnetCreateOption) (*adtysubnet.AzureSubnet, error) {
+func (az *Azure) CreateSubnet(kt *kit.Kit, opt *adtysubnet.AzureSubnetCreateOption) (*adtysubnet.AzureSubnet, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
 
-	client, err := a.clientSet.subnetClient()
+	client, err := az.clientSet.subnetClient()
 	if err != nil {
 		return nil, fmt.Errorf("new subnet client failed, err: %v", err)
 	}
@@ -110,18 +110,18 @@ func convertSubnetCreateReq(opt *adtysubnet.AzureSubnetCreateOption) *armnetwork
 
 // UpdateSubnet update subnet.
 // TODO right now only memo is supported to update, add other update operations later.
-func (a *Azure) UpdateSubnet(_ *kit.Kit, _ *adtysubnet.AzureSubnetUpdateOption) error {
+func (az *Azure) UpdateSubnet(_ *kit.Kit, _ *adtysubnet.AzureSubnetUpdateOption) error {
 	return nil
 }
 
 // DeleteSubnet delete subnet.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/subnets/delete?tabs=HTTP
-func (a *Azure) DeleteSubnet(kt *kit.Kit, opt *adtysubnet.AzureSubnetDeleteOption) error {
+func (az *Azure) DeleteSubnet(kt *kit.Kit, opt *adtysubnet.AzureSubnetDeleteOption) error {
 	if err := opt.Validate(); err != nil {
 		return err
 	}
 
-	subnetClient, err := a.clientSet.subnetClient()
+	subnetClient, err := az.clientSet.subnetClient()
 	if err != nil {
 		return fmt.Errorf("new subnet client failed, err: %v", err)
 	}
@@ -143,12 +143,12 @@ func (a *Azure) DeleteSubnet(kt *kit.Kit, opt *adtysubnet.AzureSubnetDeleteOptio
 
 // ListSubnet list subnet.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/subnets/list?tabs=HTTP
-func (a *Azure) ListSubnet(kt *kit.Kit, opt *adtysubnet.AzureSubnetListOption) (*adtysubnet.AzureSubnetListResult, error) {
+func (az *Azure) ListSubnet(kt *kit.Kit, opt *adtysubnet.AzureSubnetListOption) (*adtysubnet.AzureSubnetListResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
 
-	subnetClient, err := a.clientSet.subnetClient()
+	subnetClient, err := az.clientSet.subnetClient()
 	if err != nil {
 		return nil, fmt.Errorf("new subnet client failed, err: %v", err)
 	}
@@ -179,14 +179,14 @@ func (a *Azure) ListSubnet(kt *kit.Kit, opt *adtysubnet.AzureSubnetListOption) (
 
 // ListSubnetByPage list subnet by page.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/subnets/list?tabs=HTTP
-func (a *Azure) ListSubnetByPage(kt *kit.Kit, opt *adtysubnet.AzureSubnetListOption) (
+func (az *Azure) ListSubnetByPage(kt *kit.Kit, opt *adtysubnet.AzureSubnetListOption) (
 	*Pager[armnetwork.SubnetsClientListResponse, adtysubnet.AzureSubnet], error) {
 
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
 
-	subnetClient, err := a.clientSet.subnetClient()
+	subnetClient, err := az.clientSet.subnetClient()
 	if err != nil {
 		return nil, fmt.Errorf("new subnet client failed, err: %v", err)
 	}
@@ -223,14 +223,14 @@ func (handler *subnetResultHandler) BuildResult(resp armnetwork.SubnetsClientLis
 
 // ListSubnetByID list subnet.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/subnets/list?tabs=HTTP
-func (a *Azure) ListSubnetByID(kt *kit.Kit, opt *adtysubnet.AzureSubnetListByIDOption) (
+func (az *Azure) ListSubnetByID(kt *kit.Kit, opt *adtysubnet.AzureSubnetListByIDOption) (
 	*adtysubnet.AzureSubnetListResult, error) {
 
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
 
-	subnetClient, err := a.clientSet.subnetClient()
+	subnetClient, err := az.clientSet.subnetClient()
 	if err != nil {
 		return nil, fmt.Errorf("new subnet client failed, err: %v", err)
 	}

@@ -35,7 +35,7 @@ import (
 
 // CreateDisk 创建云硬盘
 // reference: https://learn.microsoft.com/en-us/rest/api/compute/disks/list?source=recommendations&tabs=Go#disklist
-func (a *Azure) CreateDisk(kt *kit.Kit, opt *disk.AzureDiskCreateOption) ([]string, error) {
+func (az *Azure) CreateDisk(kt *kit.Kit, opt *disk.AzureDiskCreateOption) ([]string, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "azure disk create option is required")
 	}
@@ -47,14 +47,14 @@ func (a *Azure) CreateDisk(kt *kit.Kit, opt *disk.AzureDiskCreateOption) ([]stri
 	diskCloudIDs := make([]string, 0)
 
 	if *opt.DiskCount == 1 {
-		resp, err := a.createDisk(kt, opt, opt.DiskName)
+		resp, err := az.createDisk(kt, opt, opt.DiskName)
 		if err != nil {
 			return nil, err
 		}
 		diskCloudIDs = append(diskCloudIDs, SPtrToLowerStr(resp.ID))
 	} else {
 		for i := uint64(1); i <= *opt.DiskCount; i++ {
-			resp, err := a.createDisk(kt, opt, fmt.Sprintf("%s-%d", opt.DiskName, i))
+			resp, err := az.createDisk(kt, opt, fmt.Sprintf("%s-%d", opt.DiskName, i))
 			if err != nil {
 				return nil, err
 			}
@@ -65,8 +65,8 @@ func (a *Azure) CreateDisk(kt *kit.Kit, opt *disk.AzureDiskCreateOption) ([]stri
 	return diskCloudIDs, nil
 }
 
-func (a *Azure) createDisk(kt *kit.Kit, opt *disk.AzureDiskCreateOption, diskName string) (*armcompute.Disk, error) {
-	client, err := a.clientSet.diskClient()
+func (az *Azure) createDisk(kt *kit.Kit, opt *disk.AzureDiskCreateOption, diskName string) (*armcompute.Disk, error) {
+	client, err := az.clientSet.diskClient()
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (a *Azure) createDisk(kt *kit.Kit, opt *disk.AzureDiskCreateOption, diskNam
 
 // GetDisk 查询单个云盘
 // reference: https://learn.microsoft.com/en-us/rest/api/compute/disks/get?tabs=Go
-func (a *Azure) GetDisk(kt *kit.Kit, opt *disk.AzureDiskGetOption) (*disk.AzureDisk, error) {
+func (az *Azure) GetDisk(kt *kit.Kit, opt *disk.AzureDiskGetOption) (*disk.AzureDisk, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "azure disk get option is required")
 	}
@@ -101,7 +101,7 @@ func (a *Azure) GetDisk(kt *kit.Kit, opt *disk.AzureDiskGetOption) (*disk.AzureD
 		return nil, err
 	}
 
-	client, err := a.clientSet.diskClient()
+	client, err := az.clientSet.diskClient()
 	if err != nil {
 		return nil, err
 	}
@@ -142,10 +142,10 @@ func (handler *diskResultHandler) BuildResult(resp armcompute.DisksClientListByR
 
 // ListDiskByPage ...
 // reference: https://learn.microsoft.com/en-us/rest/api/compute/disks/list?source=recommendations&tabs=Go#disklist
-func (a *Azure) ListDiskByPage(kt *kit.Kit, opt *disk.AzureDiskListOption) (
+func (az *Azure) ListDiskByPage(kt *kit.Kit, opt *disk.AzureDiskListOption) (
 	*Pager[armcompute.DisksClientListByResourceGroupResponse, disk.AzureDisk], error) {
 
-	client, err := a.clientSet.diskClient()
+	client, err := az.clientSet.diskClient()
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +164,7 @@ func (a *Azure) ListDiskByPage(kt *kit.Kit, opt *disk.AzureDiskListOption) (
 
 // ListDisk 查看云硬盘
 // reference: https://learn.microsoft.com/en-us/rest/api/compute/disks/list?source=recommendations&tabs=Go#disklist
-func (a *Azure) ListDisk(kt *kit.Kit, opt *disk.AzureDiskListOption) ([]*disk.AzureDisk, error) {
+func (az *Azure) ListDisk(kt *kit.Kit, opt *disk.AzureDiskListOption) ([]*disk.AzureDisk, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "azure disk list option is required")
 	}
@@ -173,7 +173,7 @@ func (a *Azure) ListDisk(kt *kit.Kit, opt *disk.AzureDiskListOption) ([]*disk.Az
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := a.clientSet.diskClient()
+	client, err := az.clientSet.diskClient()
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +193,7 @@ func (a *Azure) ListDisk(kt *kit.Kit, opt *disk.AzureDiskListOption) ([]*disk.Az
 
 // ListDiskByID 查看云硬盘
 // reference: https://learn.microsoft.com/en-us/rest/api/compute/disks/list?source=recommendations&tabs=Go#disklist
-func (a *Azure) ListDiskByID(kit *kit.Kit, opt *core.AzureListByIDOption) ([]*disk.AzureDisk, error) {
+func (az *Azure) ListDiskByID(kit *kit.Kit, opt *core.AzureListByIDOption) ([]*disk.AzureDisk, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "azure disk list option is required")
 	}
@@ -203,7 +203,7 @@ func (a *Azure) ListDiskByID(kit *kit.Kit, opt *core.AzureListByIDOption) ([]*di
 	}
 	idMap := converter.StringSliceToMap(opt.CloudIDs)
 
-	client, err := a.clientSet.diskClient()
+	client, err := az.clientSet.diskClient()
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +260,7 @@ func converterDisk(disks []*armcompute.Disk) []*disk.AzureDisk {
 
 // DeleteDisk 删除云盘
 // reference: https://learn.microsoft.com/en-us/rest/api/compute/disks/delete?tabs=Go
-func (a *Azure) DeleteDisk(kt *kit.Kit, opt *disk.AzureDiskDeleteOption) error {
+func (az *Azure) DeleteDisk(kt *kit.Kit, opt *disk.AzureDiskDeleteOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "azure disk delete option is required")
 	}
@@ -269,7 +269,7 @@ func (a *Azure) DeleteDisk(kt *kit.Kit, opt *disk.AzureDiskDeleteOption) error {
 		return err
 	}
 
-	client, err := a.clientSet.diskClient()
+	client, err := az.clientSet.diskClient()
 	if err != nil {
 		return err
 	}
@@ -286,7 +286,7 @@ func (a *Azure) DeleteDisk(kt *kit.Kit, opt *disk.AzureDiskDeleteOption) error {
 // AttachDisk 挂载云盘
 // reference:
 // https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/create-or-update?tabs=HTTP#storageprofile
-func (a *Azure) AttachDisk(kt *kit.Kit, opt *disk.AzureDiskAttachOption) error {
+func (az *Azure) AttachDisk(kt *kit.Kit, opt *disk.AzureDiskAttachOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "azure disk attach option is required")
 	}
@@ -295,7 +295,7 @@ func (a *Azure) AttachDisk(kt *kit.Kit, opt *disk.AzureDiskAttachOption) error {
 		return err
 	}
 
-	cvmData, err := a.GetCvm(
+	cvmData, err := az.GetCvm(
 		kt,
 		&typecvm.AzureGetOption{ResourceGroupName: opt.ResourceGroupName, Name: opt.CvmName},
 	)
@@ -303,20 +303,20 @@ func (a *Azure) AttachDisk(kt *kit.Kit, opt *disk.AzureDiskAttachOption) error {
 		return err
 	}
 
-	diskData, err := a.GetDisk(
+	diskData, err := az.GetDisk(
 		kt,
 		&disk.AzureDiskGetOption{ResourceGroupName: opt.ResourceGroupName, DiskName: opt.DiskName})
 	if err != nil {
 		return err
 	}
 
-	return a.attachDisk(kt, opt, cvmData, diskData)
+	return az.attachDisk(kt, opt, cvmData, diskData)
 }
 
 // DetachDisk 卸载云盘
 // reference:
 // https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/create-or-update?tabs=HTTP#storageprofile
-func (a *Azure) DetachDisk(kt *kit.Kit, opt *disk.AzureDiskDetachOption) error {
+func (az *Azure) DetachDisk(kt *kit.Kit, opt *disk.AzureDiskDetachOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "azure disk detach option is required")
 	}
@@ -325,7 +325,7 @@ func (a *Azure) DetachDisk(kt *kit.Kit, opt *disk.AzureDiskDetachOption) error {
 		return err
 	}
 
-	cvmData, err := a.GetCvm(
+	cvmData, err := az.GetCvm(
 		kt,
 		&typecvm.AzureGetOption{ResourceGroupName: opt.ResourceGroupName, Name: opt.CvmName},
 	)
@@ -333,24 +333,24 @@ func (a *Azure) DetachDisk(kt *kit.Kit, opt *disk.AzureDiskDetachOption) error {
 		return err
 	}
 
-	diskData, err := a.GetDisk(
+	diskData, err := az.GetDisk(
 		kt,
 		&disk.AzureDiskGetOption{ResourceGroupName: opt.ResourceGroupName, DiskName: opt.DiskName})
 	if err != nil {
 		return err
 	}
 
-	return a.detachDisk(kt, opt, cvmData, diskData)
+	return az.detachDisk(kt, opt, cvmData, diskData)
 }
 
 // attachDisk 通过 vm 的 BeginCreateOrUpdate 接口完成云盘挂载
-func (a *Azure) attachDisk(
+func (az *Azure) attachDisk(
 	kt *kit.Kit,
 	opt *disk.AzureDiskAttachOption,
 	cvmData *typecvm.AzureCvm,
 	diskData *disk.AzureDisk,
 ) error {
-	client, err := a.clientSet.virtualMachineClient()
+	client, err := az.clientSet.virtualMachineClient()
 	if err != nil {
 		return fmt.Errorf("new cvm client failed, err: %v", err)
 	}
@@ -395,13 +395,13 @@ func (a *Azure) attachDisk(
 }
 
 // attachDisk 通过 vm 的 BeginCreateOrUpdate 接口完成云盘卸载
-func (a *Azure) detachDisk(
+func (az *Azure) detachDisk(
 	kt *kit.Kit,
 	opt *disk.AzureDiskDetachOption,
 	cvmData *typecvm.AzureCvm,
 	diskData *disk.AzureDisk,
 ) error {
-	client, err := a.clientSet.virtualMachineClient()
+	client, err := az.clientSet.virtualMachineClient()
 	if err != nil {
 		return fmt.Errorf("new cvm client failed, err: %v", err)
 	}

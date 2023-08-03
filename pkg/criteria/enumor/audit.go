@@ -27,6 +27,7 @@ package enumor
 type AuditResourceType string
 
 const (
+	SubAccountAuditResType        AuditResourceType = "sub_account"
 	AccountAuditResType           AuditResourceType = "account"
 	SecurityGroupAuditResType     AuditResourceType = "security_group"
 	SecurityGroupRuleAuditResType AuditResourceType = "security_group_rule"
@@ -43,6 +44,7 @@ const (
 
 // AuditResourceTypeEnums resource type map.
 var AuditResourceTypeEnums = map[AuditResourceType]struct{}{
+	SubAccountAuditResType:        {},
 	AccountAuditResType:           {},
 	SecurityGroupAuditResType:     {},
 	SecurityGroupRuleAuditResType: {},

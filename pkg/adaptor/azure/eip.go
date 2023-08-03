@@ -36,8 +36,8 @@ import (
 
 // ListEipByID ...
 // reference: https://learn.microsoft.com/zh-cn/rest/api/virtualnetwork/public-ip-addresses/list-all?tabs=HTTP
-func (a *Azure) ListEipByID(kt *kit.Kit, opt *core.AzureListByIDOption) (*eip.AzureEipListResult, error) {
-	client, err := a.clientSet.publicIPAddressesClient()
+func (az *Azure) ListEipByID(kt *kit.Kit, opt *core.AzureListByIDOption) (*eip.AzureEipListResult, error) {
+	client, err := az.clientSet.publicIPAddressesClient()
 	if err != nil {
 		return nil, err
 	}
@@ -76,10 +76,10 @@ func (a *Azure) ListEipByID(kt *kit.Kit, opt *core.AzureListByIDOption) (*eip.Az
 
 // ListEipByPage ...
 // reference: https://learn.microsoft.com/zh-cn/rest/api/virtualnetwork/public-ip-addresses/list-all?tabs=HTTP
-func (a *Azure) ListEipByPage(kt *kit.Kit, opt *core.AzureListOption) (
+func (az *Azure) ListEipByPage(kt *kit.Kit, opt *core.AzureListOption) (
 	*Pager[armnetwork.PublicIPAddressesClientListResponse, eip.AzureEip], error) {
 
-	client, err := a.clientSet.publicIPAddressesClient()
+	client, err := az.clientSet.publicIPAddressesClient()
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (handler *eipResultHandler) BuildResult(resp armnetwork.PublicIPAddressesCl
 
 // DeleteEip ...
 // reference: https://learn.microsoft.com/zh-cn/rest/api/virtualnetwork/public-ip-addresses/delete?tabs=HTTP
-func (a *Azure) DeleteEip(kt *kit.Kit, opt *eip.AzureEipDeleteOption) error {
+func (az *Azure) DeleteEip(kt *kit.Kit, opt *eip.AzureEipDeleteOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "azure eip delete option is required")
 	}
@@ -155,7 +155,7 @@ func (a *Azure) DeleteEip(kt *kit.Kit, opt *eip.AzureEipDeleteOption) error {
 		return err
 	}
 
-	client, err := a.clientSet.publicIPAddressesClient()
+	client, err := az.clientSet.publicIPAddressesClient()
 	if err != nil {
 		return err
 	}
@@ -170,7 +170,7 @@ func (a *Azure) DeleteEip(kt *kit.Kit, opt *eip.AzureEipDeleteOption) error {
 
 // AssociateEip ...
 // reference: https://learn.microsoft.com/zh-cn/rest/api/virtualnetwork/network-interfaces/create-or-update?tabs=Go
-func (a *Azure) AssociateEip(kt *kit.Kit, opt *eip.AzureEipAssociateOption) error {
+func (az *Azure) AssociateEip(kt *kit.Kit, opt *eip.AzureEipAssociateOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "azure eip associate option is required")
 	}
@@ -180,7 +180,7 @@ func (a *Azure) AssociateEip(kt *kit.Kit, opt *eip.AzureEipAssociateOption) erro
 		return err
 	}
 
-	client, err := a.clientSet.networkInterfaceClient()
+	client, err := az.clientSet.networkInterfaceClient()
 	if err != nil {
 		return err
 	}
@@ -203,7 +203,7 @@ func (a *Azure) AssociateEip(kt *kit.Kit, opt *eip.AzureEipAssociateOption) erro
 
 // DisassociateEip ...
 // reference: https://learn.microsoft.com/zh-cn/rest/api/virtualnetwork/network-interfaces/create-or-update?tabs=Go
-func (a *Azure) DisassociateEip(kt *kit.Kit, opt *eip.AzureEipDisassociateOption) error {
+func (az *Azure) DisassociateEip(kt *kit.Kit, opt *eip.AzureEipDisassociateOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "azure eip associate option is required")
 	}
@@ -216,7 +216,7 @@ func (a *Azure) DisassociateEip(kt *kit.Kit, opt *eip.AzureEipDisassociateOption
 		return nil
 	}
 
-	client, err := a.clientSet.networkInterfaceClient()
+	client, err := az.clientSet.networkInterfaceClient()
 	if err != nil {
 		return err
 	}
@@ -239,7 +239,7 @@ func (a *Azure) DisassociateEip(kt *kit.Kit, opt *eip.AzureEipDisassociateOption
 
 // CreateEip ...
 // reference: https://learn.microsoft.com/zh-cn/rest/api/virtualnetwork/public-ip-addresses/create-or-update?tabs=HTTP
-func (a *Azure) CreateEip(kt *kit.Kit, opt *eip.AzureEipCreateOption) (*string, error) {
+func (az *Azure) CreateEip(kt *kit.Kit, opt *eip.AzureEipCreateOption) (*string, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "azure eip create option is required")
 	}
@@ -249,7 +249,7 @@ func (a *Azure) CreateEip(kt *kit.Kit, opt *eip.AzureEipCreateOption) (*string, 
 		return nil, err
 	}
 
-	client, err := a.clientSet.publicIPAddressesClient()
+	client, err := az.clientSet.publicIPAddressesClient()
 	if err != nil {
 		return nil, err
 	}

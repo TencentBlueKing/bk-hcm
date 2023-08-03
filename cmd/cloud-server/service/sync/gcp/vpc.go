@@ -38,7 +38,7 @@ func SyncVpc(kt *kit.Kit, service *hcservice.Client, accountID string) error {
 		logs.V(3).Infof("gcp account[%s] sync vpc end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
 	}()
 
-	req := &sync.GcpGlobalRegionResSyncReq{
+	req := &sync.GcpGlobalSyncReq{
 		AccountID: accountID,
 	}
 	if err := service.Gcp.Vpc.SyncVpc(kt.Ctx, kt.Header(), req); err != nil {

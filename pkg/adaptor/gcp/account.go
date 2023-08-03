@@ -21,12 +21,63 @@ package gcp
 
 import (
 	"fmt"
+	"strings"
 
 	typeaccount "hcm/pkg/adaptor/types/account"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+
+	"cloud.google.com/go/asset/apiv1/assetpb"
 )
+
+// ListAccount list account.
+// reference: https://cloud.google.com/asset-inventory/docs/reference/rest/v1/TopLevel/analyzeIamPolicy
+func (g *Gcp) ListAccount(kt *kit.Kit) ([]typeaccount.GcpAccount, error) {
+
+	client, err := g.clientSet.assetClient(kt)
+	if err != nil {
+		return nil, fmt.Errorf("new asset client failed, err: %v", err)
+	}
+
+	req := &assetpb.AnalyzeIamPolicyRequest{
+		// See https://pkg.go.dev/cloud.google.com/go/asset/apiv1/assetpb#AnalyzeIamPolicyRequest.
+		AnalysisQuery: &assetpb.IamPolicyAnalysisQuery{
+			Scope:            fmt.Sprintf("projects/%s", g.CloudProjectID()),
+			ResourceSelector: nil,
+			IdentitySelector: nil,
+			AccessSelector: &assetpb.IamPolicyAnalysisQuery_AccessSelector{
+				Roles:       []string{"roles/owner"},
+				Permissions: nil,
+			},
+			Options:          nil,
+			ConditionContext: nil,
+		},
+	}
+	resp, err := client.AnalyzeIamPolicy(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("analyze iam policy failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	list := make([]typeaccount.GcpAccount, 0)
+	if resp.MainAnalysis != nil && resp.MainAnalysis.AnalysisResults != nil &&
+		len(resp.MainAnalysis.AnalysisResults) != 0 {
+		for _, item := range resp.MainAnalysis.AnalysisResults {
+			if item.IamBinding != nil && len(item.IamBinding.Members) != 0 {
+				for _, member := range item.IamBinding.Members {
+					if strings.HasPrefix(member, "user:") {
+						list = append(list, typeaccount.GcpAccount{
+							Name: member[5:],
+						})
+					}
+				}
+			}
+		}
+	}
+
+	return list, nil
+}
 
 // AccountCheck check account authentication information and permissions.
 func (g *Gcp) AccountCheck(kt *kit.Kit) error {

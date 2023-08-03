@@ -38,7 +38,7 @@ func SyncFireWall(kt *kit.Kit, service *hcservice.Client, accountID string) erro
 		logs.V(3).Infof("gcp account[%s] sync firewall end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
 	}()
 
-	req := &sync.GcpGlobalRegionResSyncReq{
+	req := &sync.GcpGlobalSyncReq{
 		AccountID: accountID,
 	}
 	if err := service.Gcp.Firewall.SyncFirewall(kt.Ctx, kt.Header(), req); err != nil {

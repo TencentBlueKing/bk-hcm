@@ -206,7 +206,7 @@ type PublicIPAddressPropertiesFormat struct {
 	ResourceGUID *string `json:"resource_guid,omitempty" azure:"ro"`
 }
 
-// NatGatewaySKUName - Name of Nat Gateway SKU.
+// NatGatewaySKUName - ImportMode of Nat Gateway SKU.
 type NatGatewaySKUName string
 
 // NatGateway - Nat Gateway resource.

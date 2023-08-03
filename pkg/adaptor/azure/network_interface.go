@@ -39,8 +39,8 @@ import (
 
 // ListNetworkInterface list all network interface.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-interfaces/list-all
-func (a *Azure) ListNetworkInterface(kt *kit.Kit) (*typesniproto.AzureInterfaceListResult, error) {
-	client, err := a.clientSet.networkInterfaceClient()
+func (az *Azure) ListNetworkInterface(kt *kit.Kit) (*typesniproto.AzureInterfaceListResult, error) {
+	client, err := az.clientSet.networkInterfaceClient()
 	if err != nil {
 		return nil, fmt.Errorf("new network interface client failed, err: %v", err)
 	}
@@ -54,7 +54,7 @@ func (a *Azure) ListNetworkInterface(kt *kit.Kit) (*typesniproto.AzureInterfaceL
 		}
 
 		for _, item := range nextResult.Value {
-			details = append(details, converter.PtrToVal(a.ConvertCloudNetworkInterface(kt, item)))
+			details = append(details, converter.PtrToVal(az.ConvertCloudNetworkInterface(kt, item)))
 		}
 	}
 
@@ -63,10 +63,10 @@ func (a *Azure) ListNetworkInterface(kt *kit.Kit) (*typesniproto.AzureInterfaceL
 
 // ListNetworkInterfaceByPage list all network interface.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-interfaces/list-all
-func (a *Azure) ListNetworkInterfaceByPage(kt *kit.Kit) (
+func (az *Azure) ListNetworkInterfaceByPage(kt *kit.Kit) (
 	*Pager[armnetwork.InterfacesClientListAllResponse, typesniproto.AzureNI], error) {
 
-	client, err := a.clientSet.networkInterfaceClient()
+	client, err := az.clientSet.networkInterfaceClient()
 	if err != nil {
 		return nil, fmt.Errorf("new network interface client failed, err: %v", err)
 	}
@@ -77,7 +77,7 @@ func (a *Azure) ListNetworkInterfaceByPage(kt *kit.Kit) (
 		pager: azurePager,
 		resultHandler: &niResultHandler{
 			kt:  kt,
-			cli: a,
+			cli: az,
 		},
 	}
 
@@ -102,7 +102,7 @@ func (handler *niResultHandler) BuildResult(resp armnetwork.InterfacesClientList
 
 // ListNetworkInterfaceByID list all network interface by id.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-interfaces/list-all
-func (a *Azure) ListNetworkInterfaceByID(kt *kit.Kit, opt *core.AzureListByIDOption) (
+func (az *Azure) ListNetworkInterfaceByID(kt *kit.Kit, opt *core.AzureListByIDOption) (
 	*typesniproto.AzureInterfaceListResult, error,
 ) {
 	if opt == nil {
@@ -113,7 +113,7 @@ func (a *Azure) ListNetworkInterfaceByID(kt *kit.Kit, opt *core.AzureListByIDOpt
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := a.clientSet.networkInterfaceClient()
+	client, err := az.clientSet.networkInterfaceClient()
 	if err != nil {
 		return nil, fmt.Errorf("new network interface client failed, err: %v", err)
 	}
@@ -131,7 +131,7 @@ func (a *Azure) ListNetworkInterfaceByID(kt *kit.Kit, opt *core.AzureListByIDOpt
 		for _, one := range nextResult.Value {
 			id := SPtrToLowerSPtr(one.ID)
 			if _, exist := idMap[*id]; exist {
-				details = append(details, converter.PtrToVal(a.ConvertCloudNetworkInterface(kt, one)))
+				details = append(details, converter.PtrToVal(az.ConvertCloudNetworkInterface(kt, one)))
 				delete(idMap, *id)
 
 				if len(idMap) == 0 {
@@ -145,7 +145,7 @@ func (a *Azure) ListNetworkInterfaceByID(kt *kit.Kit, opt *core.AzureListByIDOpt
 }
 
 // ListRawNetworkInterfaceByIDs ...
-func (a *Azure) ListRawNetworkInterfaceByIDs(kt *kit.Kit, opt *core.AzureListByIDOption) (
+func (az *Azure) ListRawNetworkInterfaceByIDs(kt *kit.Kit, opt *core.AzureListByIDOption) (
 	[]*armnetwork.Interface, error,
 ) {
 	if opt == nil {
@@ -156,7 +156,7 @@ func (a *Azure) ListRawNetworkInterfaceByIDs(kt *kit.Kit, opt *core.AzureListByI
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := a.clientSet.networkInterfaceClient()
+	client, err := az.clientSet.networkInterfaceClient()
 	if err != nil {
 		return nil, fmt.Errorf("new network interface client failed, err: %v", err)
 	}
@@ -183,7 +183,7 @@ func (a *Azure) ListRawNetworkInterfaceByIDs(kt *kit.Kit, opt *core.AzureListByI
 }
 
 // ConvertCloudNetworkInterface ...
-func (a *Azure) ConvertCloudNetworkInterface(kt *kit.Kit, data *armnetwork.Interface) *typesniproto.AzureNI {
+func (az *Azure) ConvertCloudNetworkInterface(kt *kit.Kit, data *armnetwork.Interface) *typesniproto.AzureNI {
 	if data == nil {
 		return nil
 	}
@@ -221,15 +221,15 @@ func (a *Azure) ConvertCloudNetworkInterface(kt *kit.Kit, data *armnetwork.Inter
 	if data.Properties.VirtualMachine != nil {
 		v.InstanceID = SPtrToLowerSPtr(data.Properties.VirtualMachine.ID)
 	}
-	a.getExtensionData(kt, data, v)
+	az.getExtensionData(kt, data, v)
 	return v
 }
 
-func (a *Azure) getExtensionData(kt *kit.Kit, data *armnetwork.Interface, v *typesniproto.AzureNI) {
+func (az *Azure) getExtensionData(kt *kit.Kit, data *armnetwork.Interface, v *typesniproto.AzureNI) {
 	if data.Properties.NetworkSecurityGroup != nil {
 		v.Extension.CloudSecurityGroupID = SPtrToLowerSPtr(data.Properties.NetworkSecurityGroup.ID)
 	}
-	a.getIpConfigExtensionData(kt, data, v)
+	az.getIpConfigExtensionData(kt, data, v)
 
 	if data.Properties.DNSSettings != nil {
 		v.Extension.DNSSettings = &coreni.InterfaceDNSSettings{
@@ -240,7 +240,7 @@ func (a *Azure) getExtensionData(kt *kit.Kit, data *armnetwork.Interface, v *typ
 }
 
 // getIpConfigExtensionData get ipconfig extension data
-func (a *Azure) getIpConfigExtensionData(kt *kit.Kit, data *armnetwork.Interface, v *typesniproto.AzureNI) {
+func (az *Azure) getIpConfigExtensionData(kt *kit.Kit, data *armnetwork.Interface, v *typesniproto.AzureNI) {
 	if data == nil || data.Properties == nil || data.Properties.IPConfigurations == nil {
 		return
 	}
@@ -281,7 +281,7 @@ func (a *Azure) getIpConfigExtensionData(kt *kit.Kit, data *armnetwork.Interface
 					Type:     tmpPublicIPAddress.Type,
 				}
 				if len(v.Extension.ResourceGroupName) != 0 && tmpIP.Properties.PublicIPAddress.CloudID != nil {
-					eipInfo, _ := a.GetEipByCloudID(kt, v.Extension.ResourceGroupName,
+					eipInfo, _ := az.GetEipByCloudID(kt, v.Extension.ResourceGroupName,
 						converter.PtrToVal(tmpIP.Properties.PublicIPAddress.CloudID))
 					if eipInfo != nil {
 						tmpIP.Properties.PublicIPAddress.Name = eipInfo.Name
@@ -326,7 +326,7 @@ func getIpConfigSubnetData(
 
 // GetNetworkInterface get one network interface.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-interfaces/get
-func (a *Azure) GetNetworkInterface(kt *kit.Kit, opt *core.AzureListOption) (*typesniproto.AzureNI, error) {
+func (az *Azure) GetNetworkInterface(kt *kit.Kit, opt *core.AzureListOption) (*typesniproto.AzureNI, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -335,7 +335,7 @@ func (a *Azure) GetNetworkInterface(kt *kit.Kit, opt *core.AzureListOption) (*ty
 		return nil, errf.New(errf.InvalidParameter, "network interface name must be set")
 	}
 
-	client, err := a.clientSet.networkInterfaceClient()
+	client, err := az.clientSet.networkInterfaceClient()
 	if err != nil {
 		return nil, fmt.Errorf("new network interface client failed, err: %v", err)
 	}
@@ -354,13 +354,13 @@ func (a *Azure) GetNetworkInterface(kt *kit.Kit, opt *core.AzureListOption) (*ty
 		Location:   res.Location,
 		Properties: res.Properties,
 	}
-	return a.ConvertCloudNetworkInterface(kt, niDetail), nil
+	return az.ConvertCloudNetworkInterface(kt, niDetail), nil
 }
 
 // ListNetworkSecurityGroup list network security group.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-interfaces/
 // list-effective-network-security-groups
-func (a *Azure) ListNetworkSecurityGroup(kt *kit.Kit, opt *core.AzureListOption) (interface{}, error) {
+func (az *Azure) ListNetworkSecurityGroup(kt *kit.Kit, opt *core.AzureListOption) (interface{}, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -369,7 +369,7 @@ func (a *Azure) ListNetworkSecurityGroup(kt *kit.Kit, opt *core.AzureListOption)
 		return nil, errf.New(errf.InvalidParameter, "network interface name must be set")
 	}
 
-	client, err := a.clientSet.networkInterfaceClient()
+	client, err := az.clientSet.networkInterfaceClient()
 	if err != nil {
 		return nil, fmt.Errorf("new network interface security_group client failed, err: %v", err)
 	}
@@ -391,8 +391,8 @@ func (a *Azure) ListNetworkSecurityGroup(kt *kit.Kit, opt *core.AzureListOption)
 
 // ListIP list all network interface's ip.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-interface-ip-configurations/list
-func (a *Azure) ListIP(kt *kit.Kit, opt *core.AzureListOption) ([]*coreni.InterfaceIPConfiguration, error) {
-	client, err := a.clientSet.networkInterfaceIPConfigClient()
+func (az *Azure) ListIP(kt *kit.Kit, opt *core.AzureListOption) ([]*coreni.InterfaceIPConfiguration, error) {
+	client, err := az.clientSet.networkInterfaceIPConfigClient()
 	if err != nil {
 		return nil, fmt.Errorf("new network interface ipconfig client failed, err: %v", err)
 	}
@@ -448,9 +448,9 @@ func convertCloudNetworkInterfaceIPConfig(data *armnetwork.InterfaceIPConfigurat
 
 // ListNetworkInterfacePage list network interface page.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-interfaces/list-all
-func (a *Azure) ListNetworkInterfacePage() (*runtime.Pager[armnetwork.InterfacesClientListAllResponse], error) {
+func (az *Azure) ListNetworkInterfacePage() (*runtime.Pager[armnetwork.InterfacesClientListAllResponse], error) {
 
-	client, err := a.clientSet.networkInterfaceClient()
+	client, err := az.clientSet.networkInterfaceClient()
 	if err != nil {
 		return nil, fmt.Errorf("new network interface cloud client failed, err: %v", err)
 	}
@@ -461,7 +461,7 @@ func (a *Azure) ListNetworkInterfacePage() (*runtime.Pager[armnetwork.Interfaces
 
 // ListNetworkInterfaceByIDPage list network interface by id page.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-interfaces/list-all
-func (a *Azure) ListNetworkInterfaceByIDPage(opt *core.AzureListByIDOption) (
+func (az *Azure) ListNetworkInterfaceByIDPage(opt *core.AzureListByIDOption) (
 	*runtime.Pager[armnetwork.InterfacesClientListResponse], error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "new network interface client list option is required")
@@ -471,7 +471,7 @@ func (a *Azure) ListNetworkInterfaceByIDPage(opt *core.AzureListByIDOption) (
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := a.clientSet.networkInterfaceClient()
+	client, err := az.clientSet.networkInterfaceClient()
 	if err != nil {
 		return nil, fmt.Errorf("new network interface client failed, err: %v", err)
 	}
@@ -481,12 +481,12 @@ func (a *Azure) ListNetworkInterfaceByIDPage(opt *core.AzureListByIDOption) (
 }
 
 // GetEipByCloudID get eip info by cloudid
-func (a *Azure) GetEipByCloudID(kt *kit.Kit, resourceGroupName, cloudPublicIP string) (*eip.AzureEip, error) {
+func (az *Azure) GetEipByCloudID(kt *kit.Kit, resourceGroupName, cloudPublicIP string) (*eip.AzureEip, error) {
 	opt := &core.AzureListByIDOption{
 		ResourceGroupName: resourceGroupName,
 		CloudIDs:          []string{cloudPublicIP},
 	}
-	datas, err := a.ListEipByID(kt, opt)
+	datas, err := az.ListEipByID(kt, opt)
 	if err != nil {
 		logs.Errorf("request adaptor to list azure eip failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err

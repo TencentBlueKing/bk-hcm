@@ -37,12 +37,12 @@ import (
 
 // CreateVpc create vpc.
 // reference: https://docs.microsoft.com/en-us/rest/api/virtualnetwork/virtual-networks/create-or-update
-func (a *Azure) CreateVpc(kt *kit.Kit, opt *types.AzureVpcCreateOption) (*types.AzureVpc, error) {
+func (az *Azure) CreateVpc(kt *kit.Kit, opt *types.AzureVpcCreateOption) (*types.AzureVpc, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
 
-	client, err := a.clientSet.vpcClient()
+	client, err := az.clientSet.vpcClient()
 	if err != nil {
 		return nil, fmt.Errorf("new vpc client failed, err: %v", err)
 	}
@@ -84,18 +84,18 @@ func (a *Azure) CreateVpc(kt *kit.Kit, opt *types.AzureVpcCreateOption) (*types.
 
 // UpdateVpc update vpc.
 // TODO right now only memo is supported to update, add other update operations later.
-func (a *Azure) UpdateVpc(kt *kit.Kit, opt *types.AzureVpcUpdateOption) error {
+func (az *Azure) UpdateVpc(kt *kit.Kit, opt *types.AzureVpcUpdateOption) error {
 	return nil
 }
 
 // DeleteVpc delete vpc.
 // reference: https://docs.microsoft.com/en-us/rest/api/virtualnetwork/virtual-networks/delete
-func (a *Azure) DeleteVpc(kt *kit.Kit, opt *core.AzureDeleteOption) error {
+func (az *Azure) DeleteVpc(kt *kit.Kit, opt *core.AzureDeleteOption) error {
 	if err := opt.Validate(); err != nil {
 		return err
 	}
 
-	vpcClient, err := a.clientSet.vpcClient()
+	vpcClient, err := az.clientSet.vpcClient()
 	if err != nil {
 		return fmt.Errorf("new vpc client failed, err: %v", err)
 	}
@@ -116,12 +116,12 @@ func (a *Azure) DeleteVpc(kt *kit.Kit, opt *core.AzureDeleteOption) error {
 
 // ListVpc list vpc.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/virtual-networks/list
-func (a *Azure) ListVpc(kt *kit.Kit, opt *core.AzureListOption) (*types.AzureVpcListResult, error) {
+func (az *Azure) ListVpc(kt *kit.Kit, opt *core.AzureListOption) (*types.AzureVpcListResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
 
-	vpcClient, err := a.clientSet.vpcClient()
+	vpcClient, err := az.clientSet.vpcClient()
 	if err != nil {
 		return nil, fmt.Errorf("new vpc client failed, err: %v", err)
 	}
@@ -151,14 +151,14 @@ func (a *Azure) ListVpc(kt *kit.Kit, opt *core.AzureListOption) (*types.AzureVpc
 
 // ListVpcByPage list vpc.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/virtual-networks/list
-func (a *Azure) ListVpcByPage(kt *kit.Kit, opt *core.AzureListOption) (
+func (az *Azure) ListVpcByPage(kt *kit.Kit, opt *core.AzureListOption) (
 	*Pager[armnetwork.VirtualNetworksClientListResponse, types.AzureVpc], error) {
 
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
 
-	vpcClient, err := a.clientSet.vpcClient()
+	vpcClient, err := az.clientSet.vpcClient()
 	if err != nil {
 		return nil, fmt.Errorf("new vpc client failed, err: %v", err)
 	}
@@ -192,12 +192,12 @@ func (handler *vpcResultHandler) BuildResult(resp armnetwork.VirtualNetworksClie
 
 // ListVpcByID list vpc.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/virtual-networks/list
-func (a *Azure) ListVpcByID(kt *kit.Kit, opt *core.AzureListByIDOption) (*types.AzureVpcListResult, error) {
+func (az *Azure) ListVpcByID(kt *kit.Kit, opt *core.AzureListByIDOption) (*types.AzureVpcListResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
 
-	vpcClient, err := a.clientSet.vpcClient()
+	vpcClient, err := az.clientSet.vpcClient()
 	if err != nil {
 		return nil, fmt.Errorf("new vpc client failed, err: %v", err)
 	}
@@ -283,14 +283,14 @@ func convertVpc(data *armnetwork.VirtualNetwork, resourceGroup string) *types.Az
 
 // ListVpcUsage list vpc usage.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/virtual-networks/list-usage?tabs=HTTP
-func (a *Azure) ListVpcUsage(kt *kit.Kit, opt *types.AzureVpcListUsageOption) ([]types.VpcUsage,
+func (az *Azure) ListVpcUsage(kt *kit.Kit, opt *types.AzureVpcListUsageOption) ([]types.VpcUsage,
 	error) {
 
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
 
-	usageClient, err := a.clientSet.vpcClient()
+	usageClient, err := az.clientSet.vpcClient()
 	if err != nil {
 		return nil, fmt.Errorf("new usage client failed, err: %v", err)
 	}

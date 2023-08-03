@@ -41,7 +41,7 @@ type Columns struct {
 	columnExpr string
 	// namedExpr is the joined 'named' columns with comma.
 	// which column may have the 'prefix'.
-	// such as App.Spec.Name named columns should be:
+	// such as App.Spec.ImportMode named columns should be:
 	// "spec.name"
 	namedExpr string
 	// fieldsNamedExpr is the field to it's namedExpr map
@@ -49,7 +49,7 @@ type Columns struct {
 	// ColonNameExpr is the joined 'named' columns with comma.
 	// which column may have the 'prefix' and each column is
 	// prefix with a colon.
-	// such as App.Spec.Name named columns should be:
+	// such as App.Spec.ImportMode named columns should be:
 	// ":spec.name"
 	colonNameExpr string
 }

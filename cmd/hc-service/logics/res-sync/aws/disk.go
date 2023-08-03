@@ -96,7 +96,7 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 }
 
 func (cli *client) updateDisk(kt *kit.Kit, accountID string, bootMap map[string]struct{},
-		updateMap map[string]adaptordisk.AwsDisk) error {
+	updateMap map[string]adaptordisk.AwsDisk) error {
 
 	if len(updateMap) <= 0 {
 		return fmt.Errorf("updateMap is <= 0, not update")
@@ -108,7 +108,7 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, bootMap map[string]
 		name := ""
 		for _, tag := range one.Tags {
 			if tag != nil {
-				if converter.PtrToVal(tag.Key) == "Name" {
+				if converter.PtrToVal(tag.Key) == "ImportMode" {
 					name = converter.PtrToVal(tag.Value)
 				}
 			}
@@ -167,7 +167,7 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, bootMap map[string]
 }
 
 func (cli *client) createDisk(kt *kit.Kit, accountID string, region string,
-		bootMap map[string]struct{}, addSlice []adaptordisk.AwsDisk) error {
+	bootMap map[string]struct{}, addSlice []adaptordisk.AwsDisk) error {
 
 	if len(addSlice) <= 0 {
 		return fmt.Errorf("addSlice is <= 0, not create")
@@ -196,7 +196,7 @@ func (cli *client) createDisk(kt *kit.Kit, accountID string, region string,
 		name := ""
 		for _, tag := range one.Tags {
 			if tag != nil {
-				if converter.PtrToVal(tag.Key) == "Name" {
+				if converter.PtrToVal(tag.Key) == "ImportMode" {
 					name = converter.PtrToVal(tag.Value)
 				}
 			}
@@ -300,7 +300,7 @@ func (cli *client) listDiskFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]ada
 }
 
 func (cli *client) listDiskFromDB(kt *kit.Kit, params *SyncBaseParams) (
-		[]*disk.DiskExtResult[disk.AwsDiskExtensionResult], error) {
+	[]*disk.DiskExtResult[disk.AwsDiskExtensionResult], error) {
 
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -452,11 +452,11 @@ func isDiskChange(cloud adaptordisk.AwsDisk, db *disk.DiskExtResult[disk.AwsDisk
 		isEqual := false
 		for _, cloudValue := range cloud.Attachments {
 			if dbValue.AttachTime == cloudValue.AttachTime.String() &&
-					assert.IsPtrBoolEqual(dbValue.DeleteOnTermination, cloudValue.DeleteOnTermination) &&
-					assert.IsPtrStringEqual(dbValue.DeviceName, cloudValue.Device) &&
-					assert.IsPtrStringEqual(dbValue.InstanceId, cloudValue.InstanceId) &&
-					assert.IsPtrStringEqual(dbValue.Status, cloudValue.State) &&
-					assert.IsPtrStringEqual(dbValue.DiskId, cloudValue.VolumeId) {
+				assert.IsPtrBoolEqual(dbValue.DeleteOnTermination, cloudValue.DeleteOnTermination) &&
+				assert.IsPtrStringEqual(dbValue.DeviceName, cloudValue.Device) &&
+				assert.IsPtrStringEqual(dbValue.InstanceId, cloudValue.InstanceId) &&
+				assert.IsPtrStringEqual(dbValue.Status, cloudValue.State) &&
+				assert.IsPtrStringEqual(dbValue.DiskId, cloudValue.VolumeId) {
 				isEqual = true
 				break
 			}
