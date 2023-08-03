@@ -24,7 +24,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
-	"hcm/pkg/api/core/cloud"
+	"hcm/pkg/api/core/cloud/region"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -107,8 +107,8 @@ func (req *GcpRegionListReq) Validate() error {
 
 // GcpRegionListResult define gcp region list result.
 type GcpRegionListResult struct {
-	Count   uint64            `json:"count"`
-	Details []cloud.GcpRegion `json:"details"`
+	Count   uint64             `json:"count"`
+	Details []region.GcpRegion `json:"details"`
 }
 
 // GcpRegionListResp define gcp region list resp.

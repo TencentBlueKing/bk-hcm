@@ -23,12 +23,10 @@ import (
 	"fmt"
 	"reflect"
 
-	"hcm/cmd/data-service/service/capability"
 	"hcm/pkg/api/core"
 	coreregion "hcm/pkg/api/core/cloud/region"
 	protoregion "hcm/pkg/api/data-service/cloud/region"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
@@ -39,31 +37,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// InitHuaWeiRegionService initial the huawei region service
-func InitHuaWeiRegionService(cap *capability.Capability) {
-	svc := &huaweiRegionSvc{
-		dao: cap.Dao,
-	}
-
-	h := rest.NewHandler()
-
-	h.Add("ListHuaWeiRegion", "POST", "/vendors/huawei/regions/list", svc.ListHuaWeiRegion)
-
-	h.Add("DeleteHuaWeiRegion", "DELETE", "/vendors/huawei/regions/batch", svc.DeleteHuaWeiRegion)
-
-	h.Add("CreateHuaWeiRegion", "POST", "/vendors/huawei/regions/batch/create", svc.CreateHuaWeiRegion)
-
-	h.Add("UpdateHuaWeiRegion", "PUT", "/vendors/huawei/regions/batch/update", svc.UpdateHuaWeiRegion)
-
-	h.Load(cap.WebService)
-}
-
-type huaweiRegionSvc struct {
-	dao dao.Set
-}
-
-// UpdateHuaWeiRegion update azure region.
-func (svc *huaweiRegionSvc) UpdateHuaWeiRegion(cts *rest.Contexts) (interface{}, error) {
+// BatchUpdateHuaWeiRegion update azure region.
+func (svc *regionSvc) BatchUpdateHuaWeiRegion(cts *rest.Contexts) (interface{}, error) {
 
 	req := new(protoregion.HuaWeiRegionBatchUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -98,8 +73,8 @@ func (svc *huaweiRegionSvc) UpdateHuaWeiRegion(cts *rest.Contexts) (interface{},
 	return nil, nil
 }
 
-// CreateHuaWeiRegion create region.
-func (svc *huaweiRegionSvc) CreateHuaWeiRegion(cts *rest.Contexts) (interface{}, error) {
+// BatchCreateHuaWeiRegion create region.
+func (svc *regionSvc) BatchCreateHuaWeiRegion(cts *rest.Contexts) (interface{}, error) {
 	req := new(protoregion.HuaWeiRegionBatchCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -141,8 +116,8 @@ func (svc *huaweiRegionSvc) CreateHuaWeiRegion(cts *rest.Contexts) (interface{},
 	return &core.BatchCreateResult{IDs: ids}, nil
 }
 
-// DeleteHuaWeiRegion delete huawei region.
-func (svc *huaweiRegionSvc) DeleteHuaWeiRegion(cts *rest.Contexts) (interface{}, error) {
+// BatchDeleteHuaWeiRegion delete huawei region.
+func (svc *regionSvc) BatchDeleteHuaWeiRegion(cts *rest.Contexts) (interface{}, error) {
 
 	req := new(protoregion.HuaWeiRegionBatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -162,7 +137,7 @@ func (svc *huaweiRegionSvc) DeleteHuaWeiRegion(cts *rest.Contexts) (interface{},
 }
 
 // ListHuaWeiRegion list huawei region with filter
-func (svc *huaweiRegionSvc) ListHuaWeiRegion(cts *rest.Contexts) (interface{}, error) {
+func (svc *regionSvc) ListHuaWeiRegion(cts *rest.Contexts) (interface{}, error) {
 	req := new(protoregion.HuaWeiRegionListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err

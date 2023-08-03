@@ -25,7 +25,7 @@ import (
 	"hcm/cmd/hc-service/logics/res-sync/common"
 	typesregion "hcm/pkg/adaptor/types/region"
 	"hcm/pkg/api/core"
-	cloudcore "hcm/pkg/api/core/cloud"
+	cloudcore "hcm/pkg/api/core/cloud/region"
 	dataservice "hcm/pkg/api/data-service"
 	dataregion "hcm/pkg/api/data-service/cloud/region"
 	"hcm/pkg/criteria/constant"

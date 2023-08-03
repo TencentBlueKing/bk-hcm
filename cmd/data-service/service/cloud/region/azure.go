@@ -23,12 +23,10 @@ import (
 	"fmt"
 	"reflect"
 
-	"hcm/cmd/data-service/service/capability"
 	"hcm/pkg/api/core"
 	coreregion "hcm/pkg/api/core/cloud/region"
 	protoregion "hcm/pkg/api/data-service/cloud/region"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
@@ -39,31 +37,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// InitAzureRegionService initial the azure region service
-func InitAzureRegionService(cap *capability.Capability) {
-	svc := &azureRegionSvc{
-		dao: cap.Dao,
-	}
-
-	h := rest.NewHandler()
-
-	h.Add("ListAzureRegion", "POST", "/vendors/azure/regions/list", svc.ListAzureRegion)
-
-	h.Add("DeleteAzureRegion", "DELETE", "/vendors/azure/regions/batch", svc.DeleteAzureRegion)
-
-	h.Add("CreateAzureRegion", "POST", "/vendors/azure/regions/batch/create", svc.CreateAzureRegion)
-
-	h.Add("UpdateAzureRegion", "PUT", "/vendors/azure/regions/batch/update", svc.UpdateAzureRegion)
-
-	h.Load(cap.WebService)
-}
-
-type azureRegionSvc struct {
-	dao dao.Set
-}
-
-// UpdateAzureRegion update azure region.
-func (svc *azureRegionSvc) UpdateAzureRegion(cts *rest.Contexts) (interface{}, error) {
+// BatchUpdateAzureRegion update azure region.
+func (svc *regionSvc) BatchUpdateAzureRegion(cts *rest.Contexts) (interface{}, error) {
 	req := new(protoregion.HuaWeiRegionBatchUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -95,8 +70,8 @@ func (svc *azureRegionSvc) UpdateAzureRegion(cts *rest.Contexts) (interface{}, e
 	return nil, nil
 }
 
-// CreateAzureRegion create region.
-func (svc *azureRegionSvc) CreateAzureRegion(cts *rest.Contexts) (interface{}, error) {
+// BatchCreateAzureRegion create region.
+func (svc *regionSvc) BatchCreateAzureRegion(cts *rest.Contexts) (interface{}, error) {
 
 	req := new(protoregion.AzureRegionBatchCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -141,8 +116,8 @@ func (svc *azureRegionSvc) CreateAzureRegion(cts *rest.Contexts) (interface{}, e
 	return &core.BatchCreateResult{IDs: ids}, nil
 }
 
-// DeleteAzureRegion delete azure region.
-func (svc *azureRegionSvc) DeleteAzureRegion(cts *rest.Contexts) (interface{}, error) {
+// BatchDeleteAzureRegion delete azure region.
+func (svc *regionSvc) BatchDeleteAzureRegion(cts *rest.Contexts) (interface{}, error) {
 
 	req := new(protoregion.AzureRegionBatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -162,7 +137,7 @@ func (svc *azureRegionSvc) DeleteAzureRegion(cts *rest.Contexts) (interface{}, e
 }
 
 // ListAzureRegion list azure region with filter
-func (svc *azureRegionSvc) ListAzureRegion(cts *rest.Contexts) (interface{}, error) {
+func (svc *regionSvc) ListAzureRegion(cts *rest.Contexts) (interface{}, error) {
 
 	req := new(protoregion.AzureRegionListReq)
 	if err := cts.DecodeInto(req); err != nil {

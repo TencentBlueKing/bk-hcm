@@ -24,7 +24,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
-	"hcm/pkg/api/core/cloud"
+	"hcm/pkg/api/core/cloud/region"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -42,6 +42,7 @@ type AwsRegionCreateReq struct {
 // AwsRegionBatchCreate define aws region rule when create.
 type AwsRegionBatchCreate struct {
 	Vendor     enumor.Vendor `json:"vendor" validate:"required"`
+	AccountID  string        `json:"account_id" validate:"required"`
 	RegionID   string        `json:"region_id" validate:"required"`
 	RegionName string        `json:"region_name" validate:"required"`
 	Status     string        `json:"status"`
@@ -72,6 +73,7 @@ type AwsRegionBatchUpdateReq struct {
 type AwsRegionBatchUpdate struct {
 	ID         string        `json:"id" validate:"required"`
 	Vendor     enumor.Vendor `json:"vendor" validate:"required"`
+	AccountID  string        `json:"account_id"`
 	RegionID   string        `json:"region_id"`
 	RegionName string        `json:"region_name"`
 	Status     string        `json:"status"`
@@ -107,8 +109,8 @@ func (req *AwsRegionListReq) Validate() error {
 
 // AwsRegionListResult define aws region list result.
 type AwsRegionListResult struct {
-	Count   uint64            `json:"count"`
-	Details []cloud.AwsRegion `json:"details"`
+	Count   uint64             `json:"count"`
+	Details []region.AwsRegion `json:"details"`
 }
 
 // AwsRegionListResp define aws region list resp.

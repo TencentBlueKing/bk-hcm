@@ -22,14 +22,13 @@ package handlers
 import (
 	"fmt"
 
-	corecloud "hcm/pkg/api/core/cloud"
 	corecloudregion "hcm/pkg/api/core/cloud/region"
 	dataprotoregion "hcm/pkg/api/data-service/cloud/region"
 	"hcm/pkg/runtime/filter"
 )
 
 // GetTCloudRegion 查询云地域信息
-func (a *BaseApplicationHandler) GetTCloudRegion(region string) (*corecloud.TCloudRegion, error) {
+func (a *BaseApplicationHandler) GetTCloudRegion(region string) (*corecloudregion.TCloudRegion, error) {
 	reqFilter := &filter.Expression{
 		Op: filter.And,
 		Rules: []filter.RuleFactory{
@@ -56,7 +55,7 @@ func (a *BaseApplicationHandler) GetTCloudRegion(region string) (*corecloud.TClo
 }
 
 // GetAwsRegion 查询云地域信息
-func (a *BaseApplicationHandler) GetAwsRegion(region string) (*corecloud.AwsRegion, error) {
+func (a *BaseApplicationHandler) GetAwsRegion(region string) (*corecloudregion.AwsRegion, error) {
 	reqFilter := &filter.Expression{
 		Op: filter.And,
 		Rules: []filter.RuleFactory{
@@ -110,7 +109,7 @@ func (a *BaseApplicationHandler) GetHuaWeiRegion(region string) (*corecloudregio
 }
 
 // GetGcpRegion 查询云地域信息
-func (a *BaseApplicationHandler) GetGcpRegion(region string) (*corecloud.GcpRegion, error) {
+func (a *BaseApplicationHandler) GetGcpRegion(region string) (*corecloudregion.GcpRegion, error) {
 	reqFilter := &filter.Expression{
 		Op: filter.And,
 		Rules: []filter.RuleFactory{

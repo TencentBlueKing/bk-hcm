@@ -24,7 +24,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
-	"hcm/pkg/api/core/cloud"
+	"hcm/pkg/api/core/cloud/region"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -112,6 +112,6 @@ type TCloudRegionListResp struct {
 
 // TCloudRegionListResult define tcloud region list result.
 type TCloudRegionListResult struct {
-	Count   uint64               `json:"count,omitempty"`
-	Details []cloud.TCloudRegion `json:"details,omitempty"`
+	Count   uint64                `json:"count,omitempty"`
+	Details []region.TCloudRegion `json:"details,omitempty"`
 }
