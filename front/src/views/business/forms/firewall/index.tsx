@@ -1,8 +1,10 @@
 import { VendorEnum } from '@/common/constant';
-import { defineComponent, reactive, ref } from 'vue';
+import { defineComponent, reactive, ref, watch } from 'vue';
 import FormSelect from '@/views/business/components/form-select.vue';
 import VpcSelector from '@/components/vpc-selector/index.vue';
 import './index.scss';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
+import http from '@/http';
 
 enum IpType {
   ipv4 = 'IPv4',
@@ -25,7 +27,7 @@ const IPV4_Special_Protocols = {
 };
 
 const IPV6_Special_Protocols = {
-  ICMPV6: '58',
+  ICMPV6: 'icmpv6',
 };
 
 export default defineComponent({
@@ -43,12 +45,85 @@ export default defineComponent({
       destination_ranges: [], // 目标
       allowed: [], // 允许的协议和端口
       denied: [], // 拒绝的协议和端口
+      disabled: true, // 创建是否不要立即应用到目标
+      memo: '', // 备注
     });
 
     const ip_type = ref(IpType.ipv4);
     const is_source_marked = ref(false);
     const is_destination_marked = ref(false);
     const is_rule_allowed = ref(false);
+    const protocolAndPorts = reactive({
+      protocol: '',
+      ports: '',
+    });
+    const isPortsDisabled = ref(false);
+
+    const { isResourcePage } = useWhereAmI();
+
+    const handleSubmit = async () => {
+      console.log(formModel);
+      // @ts-ignore
+      if (formModel.allowed.ports) formModel.allowed.ports = [formModel.allowed.ports];
+      // @ts-ignore
+      if (formModel.denied.ports) formModel.allowed.ports = [formModel.allowed.ports];
+      await http.post(
+        isResourcePage
+          ? `bizs/${0}/vendors/gcp/firewalls/rules/create`
+          : 'vendors/gcp/firewalls/rules/create',
+        formModel,
+      );
+    };
+
+    watch(
+      () => is_rule_allowed.value,
+      (isAllowed) => {
+        if (isAllowed) {
+          formModel.allowed.push(protocolAndPorts);
+          formModel.denied = [];
+        } else {
+          formModel.denied.push(protocolAndPorts);
+          formModel.allowed = [];
+        }
+      },
+      {
+        immediate: true,
+      },
+    );
+
+    watch(
+      () => protocolAndPorts.protocol,
+      (val) => {
+        console.log(666);
+        switch (val) {
+          case Protocols.ALL:
+            protocolAndPorts.ports = 'all';
+            isPortsDisabled.value = true;
+            break;
+          case IPV6_Special_Protocols.ICMPV6:
+            protocolAndPorts.ports = '58';
+            isPortsDisabled.value = true;
+            break;
+          default:
+            isPortsDisabled.value = false;
+            protocolAndPorts.ports = '';
+        }
+      },
+      {
+        immediate: true,
+      },
+    );
+
+    watch(
+      () => ip_type,
+      () => {
+        protocolAndPorts.ports = '';
+        protocolAndPorts.protocol = '';
+      },
+      {
+        immediate: true,
+      },
+    );
 
     return () => (
       <div class={'firewall-form-container'}>
@@ -81,7 +156,7 @@ export default defineComponent({
             description={'优先级范围从 0 到 65535'}>
             <bk-input
               vendor={formModel.priority}
-              v-model={formModel.cloud_vpc_id}
+              v-model={formModel.priority}
               type='number'
             />
           </bk-form-item>
@@ -141,10 +216,13 @@ export default defineComponent({
             </bk-form-item>
           ) : null}
           <bk-form-item label={'协议端口'}>
-            <bk-input class={'firewall-input-select-warp'}>
+            <bk-input
+              class={'firewall-input-select-warp'}
+              disabled={isPortsDisabled.value}
+              v-model={protocolAndPorts.ports}>
               {{
                 prefix: () => (
-                  <bk-select>
+                  <bk-select v-model={protocolAndPorts.protocol}>
                     {ip_type.value === IpType.ipv6
                       ? Object.entries({
                         ...Protocols,
@@ -176,16 +254,16 @@ export default defineComponent({
             </bk-radio-group>
           </bk-form-item>
           <bk-form-item label={'创建后立即应用'}>
-            <bk-radio-group v-model={is_rule_allowed.value}>
-              <bk-radio label={true}>启用</bk-radio>
-              <bk-radio label={false}>禁用</bk-radio>
+            <bk-radio-group v-model={formModel.disabled}>
+              <bk-radio label={false}>启用</bk-radio>
+              <bk-radio label={true}>禁用</bk-radio>
             </bk-radio-group>
           </bk-form-item>
           <bk-form-item label={'备注'}>
-            <bk-input v-model={formModel.name} type='textarea'></bk-input>
+            <bk-input v-model={formModel.memo} type='textarea'></bk-input>
           </bk-form-item>
           <bk-form-item>
-            <bk-button theme='primary' class='ml10'>
+            <bk-button theme='primary' class='ml10' onClick={handleSubmit}>
               提交创建
             </bk-button>
             <bk-button class='ml10'>取消</bk-button>
