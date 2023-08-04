@@ -1,0 +1,15 @@
+.firewall-form-container {
+    margin-top: 15px;
+}
+
+
+.firewall-input-select-warp {
+    display: flex;
+    align-items: center;
+    border-left: none;
+    width: 500px;
+
+    .input-prefix-select {
+        width: 50px;
+    }
+}

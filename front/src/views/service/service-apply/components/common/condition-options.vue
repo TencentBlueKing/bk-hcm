@@ -90,7 +90,7 @@ const handleChangeAccount = (account: any) => {
   vendorList.value = [
     {
       id: account.vendor,
-      name: CloudType[account.vendor],
+      name: CloudType[account?.vendor],
     },
   ];
 
@@ -152,7 +152,12 @@ const { isResourcePage } = useWhereAmI();
     <div class="cond-item">
       <div class="cond-label">云地域</div>
       <div class="cond-content">
-        <region-selector v-model="selectedRegion" :type="type" :vendor="selectedVendor" />
+        <region-selector
+          v-model="selectedRegion"
+          :type="type"
+          :vendor="selectedVendor"
+          :account-id="selectedCloudAccountId"
+        />
       </div>
     </div>
   </div>
