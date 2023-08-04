@@ -1,5 +1,5 @@
 import { VendorEnum } from '@/common/constant';
-import { defineComponent, reactive, ref, watch } from 'vue';
+import { PropType, defineComponent, reactive, ref, watch } from 'vue';
 import FormSelect from '@/views/business/components/form-select.vue';
 import VpcSelector from '@/components/vpc-selector/index.vue';
 import './index.scss';
@@ -31,11 +31,37 @@ const IPV6_Special_Protocols = {
   ICMPV6: '58',
 };
 
+type ProtocolAndPorts = {
+  protocol: string,
+  ports: string | Array<string>,
+};
+
+const _formModel = {
+  account_id: 0, // 云账号
+  vendor: VendorEnum.GCP, // 云厂商
+  name: '', // 名称
+  cloud_vpc_id: '', // 所属的VPC
+  type: DirectionType.out, // 流量方向
+  priority: 0, // 优先级
+  source_tags: [] as Array<string>, // 来源标记
+  target_tags: [] as Array<string>, // 目标标记
+  source_ranges: [] as Array<string>, // 来源
+  destination_ranges: [] as Array<string>, // 目标
+  allowed: [] as Array<ProtocolAndPorts>, // 允许的协议和端口
+  denied: [] as Array<ProtocolAndPorts>, // 拒绝的协议和端口
+  disabled: true, // 创建是否不要立即应用到目标
+  memo: '', // 备注
+};
+
 export default defineComponent({
   props: {
     isEdit: {
       default: false,
       type: Boolean,
+    },
+    detail: {
+      default: {},
+      type: Object as PropType<typeof _formModel>,
     },
   },
   emits: [
@@ -44,26 +70,14 @@ export default defineComponent({
   ],
   setup(props, { emit }) {
     const formModel = reactive({
-      account_id: 0, // 云账号
-      vendor: VendorEnum.GCP, // 云厂商
-      name: '', // 名称
-      cloud_vpc_id: '', // 所属的VPC
-      type: DirectionType.out, // 流量方向
-      priority: 0, // 优先级
-      source_tags: [], // 来源标记
-      target_tags: [], // 目标标记
-      source_ranges: [], // 来源
-      destination_ranges: [], // 目标
-      allowed: [], // 允许的协议和端口
-      denied: [], // 拒绝的协议和端口
-      disabled: true, // 创建是否不要立即应用到目标
-      memo: '', // 备注
+      ..._formModel,
+      ...(props.isEdit ? props.detail : {}),
     });
 
     const ip_type = ref(IpType.ipv4);
-    const is_source_marked = ref(false);
-    const is_destination_marked = ref(false);
-    const is_rule_allowed = ref(false);
+    const is_source_marked = ref(!!formModel.source_tags?.length);
+    const is_destination_marked = ref(!!formModel.destination_ranges?.length);
+    const is_rule_allowed = ref(!!formModel.allowed?.length);
     const protocolAndPorts = reactive({
       protocol: '',
       ports: '',
@@ -76,14 +90,13 @@ export default defineComponent({
     const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
     const handleSubmit = async () => {
-      console.log(formModel);
       if (formModel.allowed?.length) {
-        formModel.allowed.forEach(protocolAndPorts => protocolAndPorts.ports = [protocolAndPorts.ports]);
+        formModel.allowed.forEach(protocolAndPorts => protocolAndPorts.ports = [protocolAndPorts.ports as string]);
       } else {
         delete formModel.allowed;
       }
       if (formModel.denied?.length) {
-        formModel.denied.forEach(protocolAndPorts => protocolAndPorts.ports = [protocolAndPorts.ports]);
+        formModel.denied.forEach(protocolAndPorts => protocolAndPorts.ports = [protocolAndPorts.ports as string]);
       } else {
         delete formModel.denied;
       }
@@ -140,6 +153,17 @@ export default defineComponent({
       () => {
         protocolAndPorts.ports = '';
         protocolAndPorts.protocol = '';
+      },
+      {
+        immediate: true,
+      },
+    );
+
+    watch(
+      () => props.detail,
+      (detail) => {
+        protocolAndPorts.protocol = detail.allowed?.[0]?.protocol || detail.denied?.[0]?.protocol;
+        protocolAndPorts.ports = detail.allowed?.[0]?.ports as string || detail.denied?.[0]?.ports as string;
       },
       {
         immediate: true,
@@ -292,7 +316,9 @@ export default defineComponent({
           </bk-form-item>
           <bk-form-item>
             <bk-button theme='primary' class='ml10' onClick={handleSubmit}>
-              提交创建
+              {
+                props.isEdit ? '确定' : '提交创建'
+              }
             </bk-button>
             <bk-button class='ml10' onClick={handleCancel}>
               取消

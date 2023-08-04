@@ -44,6 +44,8 @@ const accountStore = useAccountStore();
 const gcpTitle = ref<string>('新增');
 const isAdd = ref(true);
 const isLoading = ref(false);
+const formDetail = ref({});
+const isEdit = ref(false);
 
 provide('securityType', securityType);    // 将数据传入孙组件
 
@@ -103,12 +105,19 @@ const handleAdd = () => {
       path: '/service/service-apply/vpc',
     });
   } else {
+    isEdit.value = false;
     isShowSideSlider.value = true;
   }
 };
 
 const handleCancel = () => {
   isShowSideSlider.value = false;
+};
+
+const handleEdit = (detail: any) => {
+  isShowSideSlider.value = true;
+  formDetail.value = detail;
+  isEdit.value = true;
 };
 
 // 新增成功 刷新列表
@@ -177,6 +186,7 @@ const {
             handleAuth(val)
           }"
           @handleSecrityType="handleSecrityType"
+          @edit="handleEdit"
         >
           <span @click="handleAuth('biz_iaas_resource_create')">
             <bk-button
@@ -207,8 +217,13 @@ const {
     >
       <template #default>
         <component
-          :is="renderForm" :filter="filter"
-          @cancel="handleCancel" @success="handleSuccess"></component>
+          :is="renderForm"
+          :filter="filter"
+          @cancel="handleCancel"
+          @success="handleSuccess"
+          :detail="formDetail"
+          :is-edit="isEdit">
+        </component>
       </template>
     </bk-sideslider>
     <permission-dialog

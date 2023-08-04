@@ -35,6 +35,7 @@ import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { VendorEnum } from '@/common/constant';
+import { cloneDeep } from 'lodash-es';
 
 const props = defineProps({
   filter: {
@@ -66,7 +67,7 @@ const fetchUrl = ref<string>('security_groups/list');
 const resourceStore = useResourceStore();
 const accountStore = useAccountStore();
 
-const emit = defineEmits(['auth', 'handleSecrityType']);
+const emit = defineEmits(['auth', 'handleSecrityType', 'edit']);
 
 const state = reactive<any>({
   datas: [],
@@ -516,15 +517,7 @@ const gcpColumns = [
                   disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate']
                   || (data.bk_biz_id !== -1 && props.isResourcePage),
                   onClick() {
-                    router.push({
-                      name: 'resourceDetail',
-                      params: {
-                        type: 'gcp',
-                      },
-                      query: {
-                        id: data.id,
-                      },
-                    });
+                    emit('edit', cloneDeep(data));
                   },
                 },
                 [
