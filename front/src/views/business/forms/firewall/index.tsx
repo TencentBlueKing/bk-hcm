@@ -5,6 +5,7 @@ import VpcSelector from '@/components/vpc-selector/index.vue';
 import './index.scss';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import http from '@/http';
+import { useAccountStore } from '@/store';
 
 enum IpType {
   ipv4 = 'IPv4',
@@ -60,6 +61,9 @@ export default defineComponent({
     const isPortsDisabled = ref(false);
 
     const { isResourcePage } = useWhereAmI();
+    const accountStore = useAccountStore();
+
+    const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
     const handleSubmit = async () => {
       console.log(formModel);
@@ -69,8 +73,8 @@ export default defineComponent({
       if (formModel.denied.ports) formModel.allowed.ports = [formModel.allowed.ports];
       await http.post(
         isResourcePage
-          ? `bizs/${0}/vendors/gcp/firewalls/rules/create`
-          : 'vendors/gcp/firewalls/rules/create',
+          ? `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/gcp/firewalls/rules/create`
+          : `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${accountStore.bizs}/vendors/gcp/firewalls/rules/create`,
         formModel,
       );
     };
@@ -94,7 +98,6 @@ export default defineComponent({
     watch(
       () => protocolAndPorts.protocol,
       (val) => {
-        console.log(666);
         switch (val) {
           case Protocols.ALL:
             protocolAndPorts.ports = 'all';
