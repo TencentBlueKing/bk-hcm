@@ -514,7 +514,7 @@ const gcpColumns = [
                   text: true,
                   theme: 'primary',
                   disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate']
-                  || data.bk_biz_id !== -1,
+                  || (data.bk_biz_id !== -1 && props.isResourcePage),
                   onClick() {
                     router.push({
                       name: 'resourceDetail',
@@ -537,7 +537,7 @@ const gcpColumns = [
             'span',
             {
               onClick() {
-                emit('auth', props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete');
+                emit('auth', props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate');
               },
             },
             [
@@ -546,7 +546,7 @@ const gcpColumns = [
                 {
                   class: 'ml10',
                   text: true,
-                  disabled: !props.authVerifyData?.value?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete']
+                  disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete']
                   || (data.bk_biz_id !== -1 && props.isResourcePage),
                   theme: 'primary',
                   onClick() {
