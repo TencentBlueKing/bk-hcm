@@ -462,7 +462,7 @@ func (cli *client) listSGRuleFromDB(kt *kit.Kit, opt *syncSGRuleOption) ([]corec
 func isSGRuleChange(cloud securitygrouprule.AzureSGRule,
 	db corecloud.AzureSecurityGroupRule) bool {
 
-	if db.Etag != cloud.Etag {
+	if !assert.IsPtrStringEqual(db.Etag, cloud.Etag) {
 		return true
 	}
 
@@ -470,11 +470,11 @@ func isSGRuleChange(cloud securitygrouprule.AzureSGRule,
 		return true
 	}
 
-	if db.Memo != cloud.Description {
+	if !assert.IsPtrStringEqual(db.Memo, cloud.Description) {
 		return true
 	}
 
-	if db.DestinationAddressPrefix != cloud.DestinationAddressPrefix {
+	if !assert.IsPtrStringEqual(db.DestinationAddressPrefix, cloud.DestinationAddressPrefix) {
 		return true
 	}
 
@@ -482,7 +482,7 @@ func isSGRuleChange(cloud securitygrouprule.AzureSGRule,
 		return true
 	}
 
-	if db.DestinationPortRange != cloud.DestinationPortRange {
+	if !assert.IsPtrStringEqual(db.DestinationPortRange, cloud.DestinationPortRange) {
 		return true
 	}
 
@@ -498,7 +498,7 @@ func isSGRuleChange(cloud securitygrouprule.AzureSGRule,
 		return true
 	}
 
-	if db.SourceAddressPrefix != cloud.SourceAddressPrefix {
+	if !assert.IsPtrStringEqual(db.SourceAddressPrefix, cloud.SourceAddressPrefix) {
 		return true
 	}
 
@@ -506,7 +506,7 @@ func isSGRuleChange(cloud securitygrouprule.AzureSGRule,
 		return true
 	}
 
-	if db.SourcePortRange != cloud.SourcePortRange {
+	if !assert.IsPtrStringEqual(db.SourcePortRange, cloud.SourcePortRange) {
 		return true
 	}
 

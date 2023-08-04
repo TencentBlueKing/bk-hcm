@@ -406,15 +406,15 @@ func isSGRuleChange(cloud securitygrouprule.AwsSGRule,
 		return true
 	}
 
-	if db.IPv4Cidr != cloud.CidrIpv4 {
+	if !assert.IsPtrStringEqual(db.IPv4Cidr, cloud.CidrIpv4) {
 		return true
 	}
 
-	if db.IPv6Cidr != cloud.CidrIpv6 {
+	if !assert.IsPtrStringEqual(db.IPv6Cidr, cloud.CidrIpv6) {
 		return true
 	}
 
-	if db.Memo != cloud.Description {
+	if !assert.IsPtrStringEqual(db.Memo, cloud.Description) {
 		return true
 	}
 
@@ -426,11 +426,11 @@ func isSGRuleChange(cloud securitygrouprule.AwsSGRule,
 		return true
 	}
 
-	if db.Protocol != cloud.IpProtocol {
+	if !assert.IsPtrStringEqual(db.Protocol, cloud.IpProtocol) {
 		return true
 	}
 
-	if db.CloudPrefixListID != cloud.PrefixListId {
+	if !assert.IsPtrStringEqual(db.CloudPrefixListID, cloud.PrefixListId) {
 		return true
 	}
 
