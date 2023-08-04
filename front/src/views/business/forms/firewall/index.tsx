@@ -28,7 +28,7 @@ const IPV4_Special_Protocols = {
 };
 
 const IPV6_Special_Protocols = {
-  ICMPV6: 'icmpv6',
+  ICMPV6: '58',
 };
 
 export default defineComponent({
@@ -98,18 +98,15 @@ export default defineComponent({
     watch(
       () => protocolAndPorts.protocol,
       (val) => {
+        protocolAndPorts.ports = '';
         switch (val) {
           case Protocols.ALL:
-            protocolAndPorts.ports = 'all';
-            isPortsDisabled.value = true;
-            break;
+          case IPV4_Special_Protocols.ICMP:
           case IPV6_Special_Protocols.ICMPV6:
-            protocolAndPorts.ports = '58';
             isPortsDisabled.value = true;
             break;
           default:
             isPortsDisabled.value = false;
-            protocolAndPorts.ports = '';
         }
       },
       {
@@ -118,7 +115,7 @@ export default defineComponent({
     );
 
     watch(
-      () => ip_type,
+      () => ip_type.value,
       () => {
         protocolAndPorts.ports = '';
         protocolAndPorts.protocol = '';
