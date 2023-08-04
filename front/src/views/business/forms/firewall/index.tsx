@@ -32,12 +32,16 @@ const IPV6_Special_Protocols = {
 };
 
 export default defineComponent({
-  setup() {
+  emits: [
+    'cancel',
+    'success',
+  ],
+  setup(props, { emit }) {
     const formModel = reactive({
       account_id: 0, // 云账号
       vendor: VendorEnum.GCP, // 云厂商
       name: '', // 名称
-      cloud_vpc_id: 0, // 所属的VPC
+      cloud_vpc_id: '', // 所属的VPC
       type: DirectionType.out, // 流量方向
       priority: 0, // 优先级
       source_tags: [], // 来源标记
@@ -67,26 +71,37 @@ export default defineComponent({
 
     const handleSubmit = async () => {
       console.log(formModel);
-      // @ts-ignore
-      if (formModel.allowed.ports) formModel.allowed.ports = [formModel.allowed.ports];
-      // @ts-ignore
-      if (formModel.denied.ports) formModel.allowed.ports = [formModel.allowed.ports];
+      if (formModel.allowed?.length) {
+        formModel.allowed.forEach(protocolAndPorts => protocolAndPorts.ports = [protocolAndPorts.ports]);
+      } else {
+        delete formModel.allowed;
+      }
+      if (formModel.denied?.length) {
+        formModel.denied.forEach(protocolAndPorts => protocolAndPorts.ports = [protocolAndPorts.ports]);
+      } else {
+        delete formModel.denied;
+      }
       await http.post(
         isResourcePage
           ? `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/gcp/firewalls/rules/create`
           : `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${accountStore.bizs}/vendors/gcp/firewalls/rules/create`,
         formModel,
       );
+      emit('success');
+    };
+
+    const handleCancel = () => {
+      emit('cancel');
     };
 
     watch(
       () => is_rule_allowed.value,
       (isAllowed) => {
         if (isAllowed) {
-          formModel.allowed.push(protocolAndPorts);
+          formModel.allowed?.push(protocolAndPorts);
           formModel.denied = [];
         } else {
-          formModel.denied.push(protocolAndPorts);
+          formModel.denied?.push(protocolAndPorts);
           formModel.allowed = [];
         }
       },
@@ -157,6 +172,8 @@ export default defineComponent({
             <bk-input
               vendor={formModel.priority}
               v-model={formModel.priority}
+              min={0}
+              max={65535}
               type='number'
             />
           </bk-form-item>
@@ -266,7 +283,7 @@ export default defineComponent({
             <bk-button theme='primary' class='ml10' onClick={handleSubmit}>
               提交创建
             </bk-button>
-            <bk-button class='ml10'>取消</bk-button>
+            <bk-button class='ml10' onClick={handleCancel}>取消</bk-button>
           </bk-form-item>
         </bk-form>
       </div>
