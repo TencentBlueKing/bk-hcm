@@ -111,7 +111,7 @@ func (cli *client) SecurityGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncS
 	_, err = cli.SecurityGroupRule(kt, sgRuleParams, &SyncSGRuleOption{})
 	if err != nil {
 		logs.Errorf("[%s] sg sync sgRule failed. err: %v, accountID: %s, region: %s, rid: %s",
-			err, enumor.TCloud, params.AccountID, params.Region, kt.Rid)
+			enumor.TCloud, err, params.AccountID, params.Region, kt.Rid)
 		return nil, err
 	}
 
