@@ -32,6 +32,12 @@ const IPV6_Special_Protocols = {
 };
 
 export default defineComponent({
+  props: {
+    isEdit: {
+      default: false,
+      type: Boolean,
+    },
+  },
   emits: [
     'cancel',
     'success',
@@ -142,18 +148,23 @@ export default defineComponent({
 
     return () => (
       <div class={'firewall-form-container'}>
-        <FormSelect
-          hidden={['region']}
-          onChange={(val: any) => {
-            console.log(val.account_id, val.vendor);
-            formModel.account_id = val.account_id;
-            formModel.vendor = val.vendor;
-          }}></FormSelect>
+        {!props.isEdit ? (
+          <FormSelect
+            hidden={['region']}
+            onChange={(val: any) => {
+              console.log(val.account_id, val.vendor);
+              formModel.account_id = val.account_id;
+              formModel.vendor = val.vendor;
+            }}></FormSelect>
+        ) : null}
         <bk-form class={'pr20'}>
           <bk-form-item label={'名称'} property={'name'}>
             <bk-input v-model={formModel.name}></bk-input>
           </bk-form-item>
-          <bk-form-item label={'所属的vpc'} property={'name'}>
+          <bk-form-item
+            label={'所属的vpc'}
+            property={'name'}
+            disabled={props.isEdit}>
             <VpcSelector
               vendor={formModel.vendor}
               v-model={formModel.cloud_vpc_id}
@@ -283,7 +294,9 @@ export default defineComponent({
             <bk-button theme='primary' class='ml10' onClick={handleSubmit}>
               提交创建
             </bk-button>
-            <bk-button class='ml10' onClick={handleCancel}>取消</bk-button>
+            <bk-button class='ml10' onClick={handleCancel}>
+              取消
+            </bk-button>
           </bk-form-item>
         </bk-form>
       </div>
