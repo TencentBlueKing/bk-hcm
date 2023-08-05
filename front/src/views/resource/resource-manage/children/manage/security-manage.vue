@@ -67,7 +67,7 @@ const fetchUrl = ref<string>('security_groups/list');
 const resourceStore = useResourceStore();
 const accountStore = useAccountStore();
 
-const emit = defineEmits(['auth', 'handleSecrityType', 'edit']);
+const emit = defineEmits(['auth', 'handleSecrityType', 'edit', 'tabchange']);
 
 const state = reactive<any>({
   datas: [],
@@ -562,6 +562,17 @@ const types = [
   { name: 'gcp', label: t('GCP防火墙规则') },
 ];
 
+const securityType = ref('group');
+
+watch(
+  () => securityType.value,
+  (val) => {
+    emit('tabchange', val);
+  },
+  {
+    immediate: true,
+  },
+);
 
 const securityHandleShowDelete = (data: any) => {
   InfoBox({
@@ -608,6 +619,7 @@ const securityHandleShowDelete = (data: any) => {
               v-for="item in types"
               :key="item.name"
               :label="item.name"
+              v-model="securityType"
             >
               {{ item.label }}
             </bk-radio-button>

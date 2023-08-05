@@ -3,6 +3,7 @@ import {
   ref,
   watch,
   computed,
+  provide,
 } from 'vue';
 
 import HostManage from './children/manage/host-manage.vue';
@@ -20,6 +21,7 @@ import { useDistributionStore } from '@/store/distribution';
 import EipForm from '@/views/business/forms/eip/index.vue';
 import subnetForm from '@/views/business/forms/subnet/index.vue';
 import securityForm from '@/views/business/forms/security/index.vue';
+import firewallForm from '@/views/business/forms/firewall';
 
 import {
   RESOURCE_TYPES,
@@ -79,6 +81,11 @@ const op = ref('eq');
 const accountFilter = ref<FilterType>({ op: 'and', rules: [{ field: 'type', op: 'eq', value: 'resource' }] });
 const isShowSideSlider = ref(false);
 const componentRef = ref();
+const securityType = ref('group');
+const isEdit = ref(false);
+const formDetail = ref({});
+
+provide('securityType', securityType);
 
 const formMap = {
   ip: EipForm,
@@ -88,7 +95,10 @@ const formMap = {
 
 const renderForm = computed(() => {
   return Object.keys(formMap).reduce((acc, cur) => {
-    if (route.query.type === cur) acc = formMap[cur];
+    if (route.query.type === cur) {
+      if (cur === 'security' && securityType.value === 'gcp') acc = firewallForm;
+      else acc = formMap[cur];
+    };
     return acc;
   }, {});
 });
@@ -157,6 +167,10 @@ const handleAdd = () => {
     default:
       isShowSideSlider.value = true;
   }
+};
+
+const handleTabChange = (val: 'group' | 'gcp') => {
+  securityType.value = val;
 };
 
 // 搜索数据
@@ -239,6 +253,12 @@ const handleSuccess = () => {
   componentRef.value.fetchComponentsData();
 };
 
+const handleEdit = (detail: any) => {
+  formDetail.value = detail;
+  isEdit.value = true;
+  isShowSideSlider.value = true;
+};
+
 getResourceAccountList();
 
 
@@ -316,7 +336,9 @@ getResourceAccountList();
           @auth="(val: string) => {
             handleAuth(val)
           }"
+          @tabchange="handleTabChange"
           ref="componentRef"
+          @edit="handleEdit"
         >
           <span
             @click="handleAuth('biz_iaas_resource_create')"
@@ -342,8 +364,12 @@ getResourceAccountList();
     >
       <template #default>
         <component
-          :is="renderForm" :filter="filter"
-          @cancel="handleCancel" @success="handleSuccess"></component>
+          :is="renderForm"
+          :filter="filter"
+          @cancel="handleCancel"
+          @success="handleSuccess"
+          :is-edit="isEdit"
+          :detail="formDetail"></component>
       </template>
     </bk-sideslider>
 
