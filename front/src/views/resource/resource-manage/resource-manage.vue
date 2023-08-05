@@ -82,6 +82,9 @@ const accountFilter = ref<FilterType>({ op: 'and', rules: [{ field: 'type', op: 
 const isShowSideSlider = ref(false);
 const componentRef = ref();
 const securityType = ref('group');
+const isEdit = ref(false);
+const formDetail = ref({});
+
 provide('securityType', securityType);
 
 const formMap = {
@@ -250,6 +253,12 @@ const handleSuccess = () => {
   componentRef.value.fetchComponentsData();
 };
 
+const handleEdit = (detail: any) => {
+  formDetail.value = detail;
+  isEdit.value = true;
+  isShowSideSlider.value = true;
+};
+
 getResourceAccountList();
 
 
@@ -329,6 +338,7 @@ getResourceAccountList();
           }"
           @tabchange="handleTabChange"
           ref="componentRef"
+          @edit="handleEdit"
         >
           <span
             @click="handleAuth('biz_iaas_resource_create')"
@@ -354,8 +364,12 @@ getResourceAccountList();
     >
       <template #default>
         <component
-          :is="renderForm" :filter="filter"
-          @cancel="handleCancel" @success="handleSuccess"></component>
+          :is="renderForm"
+          :filter="filter"
+          @cancel="handleCancel"
+          @success="handleSuccess"
+          :is-edit="isEdit"
+          :detail="formDetail"></component>
       </template>
     </bk-sideslider>
 
