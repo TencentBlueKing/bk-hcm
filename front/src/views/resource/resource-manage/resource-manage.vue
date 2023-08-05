@@ -3,6 +3,7 @@ import {
   ref,
   watch,
   computed,
+  provide,
 } from 'vue';
 
 import HostManage from './children/manage/host-manage.vue';
@@ -81,6 +82,7 @@ const accountFilter = ref<FilterType>({ op: 'and', rules: [{ field: 'type', op: 
 const isShowSideSlider = ref(false);
 const componentRef = ref();
 const securityType = ref('group');
+provide('securityType', securityType);
 
 const formMap = {
   ip: EipForm,

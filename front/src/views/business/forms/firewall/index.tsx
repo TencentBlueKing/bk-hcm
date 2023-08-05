@@ -174,9 +174,9 @@ export default defineComponent({
       <div class={'firewall-form-container'}>
         {!props.isEdit ? (
           <FormSelect
+            type={'security'}
             hidden={['region']}
             onChange={(val: any) => {
-              console.log(val.account_id, val.vendor);
               formModel.account_id = val.account_id;
               formModel.vendor = val.vendor;
             }}></FormSelect>
