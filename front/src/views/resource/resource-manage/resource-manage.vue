@@ -20,6 +20,7 @@ import { useDistributionStore } from '@/store/distribution';
 import EipForm from '@/views/business/forms/eip/index.vue';
 import subnetForm from '@/views/business/forms/subnet/index.vue';
 import securityForm from '@/views/business/forms/security/index.vue';
+import firewallForm from '@/views/business/forms/firewall';
 
 import {
   RESOURCE_TYPES,
@@ -79,6 +80,7 @@ const op = ref('eq');
 const accountFilter = ref<FilterType>({ op: 'and', rules: [{ field: 'type', op: 'eq', value: 'resource' }] });
 const isShowSideSlider = ref(false);
 const componentRef = ref();
+const securityType = ref('group');
 
 const formMap = {
   ip: EipForm,
@@ -88,7 +90,10 @@ const formMap = {
 
 const renderForm = computed(() => {
   return Object.keys(formMap).reduce((acc, cur) => {
-    if (route.query.type === cur) acc = formMap[cur];
+    if (route.query.type === cur) {
+      if (cur === 'security' && securityType.value === 'gcp') acc = firewallForm;
+      else acc = formMap[cur];
+    };
     return acc;
   }, {});
 });
@@ -157,6 +162,10 @@ const handleAdd = () => {
     default:
       isShowSideSlider.value = true;
   }
+};
+
+const handleTabChange = (val: 'group' | 'gcp') => {
+  securityType.value = val;
 };
 
 // 搜索数据
@@ -316,6 +325,7 @@ getResourceAccountList();
           @auth="(val: string) => {
             handleAuth(val)
           }"
+          @tabchange="handleTabChange"
           ref="componentRef"
         >
           <span
