@@ -22,6 +22,7 @@ import GcpAdd from '@/views/resource/resource-manage/children/add/gcp-add';
 import EipForm from './forms/eip/index.vue';
 import subnetForm from './forms/subnet/index.vue';
 import securityForm from './forms/security/index.vue';
+import firewallForm from './forms/firewall';
 
 import {
   useRoute,
@@ -43,6 +44,8 @@ const accountStore = useAccountStore();
 const gcpTitle = ref<string>('新增');
 const isAdd = ref(true);
 const isLoading = ref(false);
+const formDetail = ref({});
+const isEdit = ref(false);
 
 provide('securityType', securityType);    // 将数据传入孙组件
 
@@ -76,7 +79,10 @@ const renderComponent = computed(() => {
 
 const renderForm = computed(() => {
   return Object.keys(formMap).reduce((acc, cur) => {
-    if (route.path.includes(cur)) acc = formMap[cur];
+    if (route.path.includes(cur)) {
+      if (cur === 'security') acc = securityType.value === 'gcp' ? firewallForm : securityForm;
+      else acc = formMap[cur];
+    }
     return acc;
   }, {});
 });
@@ -99,17 +105,19 @@ const handleAdd = () => {
       path: '/service/service-apply/vpc',
     });
   } else {
-    if (securityType.value === 'gcp') {
-      isShowGcpAdd.value = true;
-      console.log('isShowGcpAdd.value', isShowGcpAdd.value);
-    } else {
-      isShowSideSlider.value = true;
-    }
+    isEdit.value = false;
+    isShowSideSlider.value = true;
   }
 };
 
 const handleCancel = () => {
   isShowSideSlider.value = false;
+};
+
+const handleEdit = (detail: any) => {
+  isShowSideSlider.value = true;
+  formDetail.value = detail;
+  isEdit.value = true;
 };
 
 // 新增成功 刷新列表
@@ -146,10 +154,10 @@ const handleToPage = () => {
   const isHostManagePage = route.path.includes('/business/host');
   const isDriveManagePage = route.path.includes('/business/drive');
   let destination = '';
-  if(isHostManagePage) destination = '/business/host/recyclebin/cvm';
-  if(isDriveManagePage) destination = '/business/drive/recyclebin/disk';
+  if (isHostManagePage) destination = '/business/host/recyclebin/cvm';
+  if (isDriveManagePage) destination = '/business/drive/recyclebin/disk';
   router.push({ path: destination });
-}
+};
 
 
 // 权限hook
@@ -178,12 +186,12 @@ const {
             handleAuth(val)
           }"
           @handleSecrityType="handleSecrityType"
+          @edit="handleEdit"
         >
           <span @click="handleAuth('biz_iaas_resource_create')">
             <bk-button
               theme="primary" class="new-button"
-              :disabled="!authVerifyData?.permissionAction?.biz_iaas_resource_create
-                || securityType === 'gcp'" @click="handleAdd">
+              :disabled="!authVerifyData?.permissionAction?.biz_iaas_resource_create" @click="handleAdd">
               {{renderComponent === DriveManage ||
                 renderComponent === HostManage ||
                 renderComponent === VpcManage ? '申请' : '新增'}}
@@ -209,8 +217,13 @@ const {
     >
       <template #default>
         <component
-          :is="renderForm" :filter="filter"
-          @cancel="handleCancel" @success="handleSuccess"></component>
+          :is="renderForm"
+          :filter="filter"
+          @cancel="handleCancel"
+          @success="handleSuccess"
+          :detail="formDetail"
+          :is-edit="isEdit">
+        </component>
       </template>
     </bk-sideslider>
     <permission-dialog

@@ -35,6 +35,7 @@ import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { VendorEnum } from '@/common/constant';
+import { cloneDeep } from 'lodash-es';
 
 const props = defineProps({
   filter: {
@@ -66,7 +67,7 @@ const fetchUrl = ref<string>('security_groups/list');
 const resourceStore = useResourceStore();
 const accountStore = useAccountStore();
 
-const emit = defineEmits(['auth', 'handleSecrityType']);
+const emit = defineEmits(['auth', 'handleSecrityType', 'edit', 'tabchange']);
 
 const state = reactive<any>({
   datas: [],
@@ -514,17 +515,9 @@ const gcpColumns = [
                   text: true,
                   theme: 'primary',
                   disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate']
-                  || data.bk_biz_id !== -1,
+                  || (data.bk_biz_id !== -1 && props.isResourcePage),
                   onClick() {
-                    router.push({
-                      name: 'resourceDetail',
-                      params: {
-                        type: 'gcp',
-                      },
-                      query: {
-                        id: data.id,
-                      },
-                    });
+                    emit('edit', cloneDeep(data));
                   },
                 },
                 [
@@ -537,7 +530,7 @@ const gcpColumns = [
             'span',
             {
               onClick() {
-                emit('auth', props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete');
+                emit('auth', props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate');
               },
             },
             [
@@ -546,7 +539,7 @@ const gcpColumns = [
                 {
                   class: 'ml10',
                   text: true,
-                  disabled: !props.authVerifyData?.value?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete']
+                  disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete']
                   || (data.bk_biz_id !== -1 && props.isResourcePage),
                   theme: 'primary',
                   onClick() {
@@ -569,6 +562,17 @@ const types = [
   { name: 'gcp', label: t('GCP防火墙规则') },
 ];
 
+const securityType = ref('group');
+
+watch(
+  () => securityType.value,
+  (val) => {
+    emit('tabchange', val);
+  },
+  {
+    immediate: true,
+  },
+);
 
 const securityHandleShowDelete = (data: any) => {
   InfoBox({
@@ -615,6 +619,7 @@ const securityHandleShowDelete = (data: any) => {
               v-for="item in types"
               :key="item.name"
               :label="item.name"
+              v-model="securityType"
             >
               {{ item.label }}
             </bk-radio-button>

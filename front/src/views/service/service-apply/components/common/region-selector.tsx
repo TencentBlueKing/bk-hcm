@@ -15,6 +15,7 @@ export default defineComponent({
     modelValue: String as PropType<string>,
     type: String as PropType<string>,
     vendor: String as PropType<string>,
+    accountId: String as PropType<string>,
   },
   emits: ['update:modelValue'],
   setup(props, { emit, attrs }) {
@@ -131,6 +132,7 @@ export default defineComponent({
           start: 0,
           limit: 500,
         },
+        account_id: props.accountId,
       });
 
       const getName = (key: string, name: string) => {
