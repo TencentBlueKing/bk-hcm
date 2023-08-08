@@ -38,6 +38,7 @@ type Client interface {
 	AddCloudHostToBiz(ctx context.Context, params *AddCloudHostToBizParams) (*BatchCreateResult, error)
 	DeleteCloudHostFromBiz(ctx context.Context, params *DeleteCloudHostFromBizParams) error
 	ListBizHost(ctx context.Context, params *ListBizHostParams) (*ListBizHostResult, error)
+	GetBizBriefCacheTopo(ctx context.Context, params *GetBizBriefCacheTopoParams) (*GetBizBriefCacheTopoResult, error)
 }
 
 // NewClient initialize a new cmdb client
@@ -48,6 +49,8 @@ func NewClient(client rest.ClientInterface, config *cc.Esb) Client {
 	}
 }
 
+var _ Client = new(cmdb)
+
 // cmdb is an esb client to request cmdb.
 type cmdb struct {
 	config *cc.Esb
@@ -55,6 +58,7 @@ type cmdb struct {
 	client rest.ClientInterface
 }
 
+// SearchBusiness search business.
 func (c *cmdb) SearchBusiness(ctx context.Context, params *SearchBizParams) (*SearchBizResp, error) {
 	resp := new(SearchBizResp)
 	req := &esbSearchBizParams{

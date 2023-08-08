@@ -64,7 +64,7 @@ func (svc *service) ListMyApprovalTicket(cts *rest.Contexts) (interface{}, error
 	getReq := &itsm.GetTicketsByUserReq{
 		User:     cts.Kit.User,
 		ViewType: itsm.MyApproval,
-		Page:     int64(req.Page.Start),
+		Page:     (int64(req.Page.Start) / int64(req.Page.Limit)) + 1,
 		PageSize: int64(req.Page.Limit),
 	}
 	resp, err := svc.itsmCli.GetTicketsByUser(cts.Kit, getReq)

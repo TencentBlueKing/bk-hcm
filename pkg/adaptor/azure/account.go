@@ -29,7 +29,7 @@ import (
 
 // ListAccount list account.
 // reference: https://learn.microsoft.com/en-us/graph/api/user-list?view=graph-rest-1.0&tabs=http
-// 接口需要特殊权限，文档：https://learn.microsoft.com/en-us/graph/api/user-list?view=graph-rest-1.0&tabs=http
+// 接口需要特殊权限，文档：https://learn.microsoft.com/en-us/graph/auth-v2-service?tabs=http
 func (az *Azure) ListAccount(kt *kit.Kit) ([]account.AzureAccount, error) {
 
 	graphClient, err := az.clientSet.graphServiceClient()

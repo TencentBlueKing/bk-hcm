@@ -82,7 +82,7 @@ type Table struct {
 	CloudVpcIDs          types.StringArray `db:"cloud_vpc_ids" json:"cloud_vpc_ids"`
 	VpcIDs               types.StringArray `db:"vpc_ids" json:"vpc_ids"`
 	CloudSubnetIDs       types.StringArray `db:"cloud_subnet_ids" json:"cloud_subnet_ids"`
-	SubnetIDs            types.StringArray `db:"subnet_ids" json:"subnet_i_ds"`
+	SubnetIDs            types.StringArray `db:"subnet_ids" json:"subnet_ids"`
 	CloudImageID         string            `db:"cloud_image_id" json:"cloud_image_id"`
 	ImageID              string            `db:"image_id" json:"image_id"`
 	OsName               string            `db:"os_name" json:"os_name"`

@@ -17,32 +17,50 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package cloudserver defines cloud-server api client.
 package cloudserver
 
 import (
-	"fmt"
-
+	"hcm/pkg/api/core"
+	"hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
-	"hcm/pkg/rest/client"
 )
 
-// Client is cloud-server api client.
-type Client struct {
-	rest.ClientInterface
-
-	Vpc    *VpcClient
-	Subnet *SubnetClient
-	Cvm    *CvmClient
+// CvmClient is data service cvm api client.
+type CvmClient struct {
+	client rest.ClientInterface
 }
 
-// NewClient create a new cloud-server api client.
-func NewClient(c *client.Capability, version string) *Client {
-	restCli := rest.NewClient(c, fmt.Sprintf("/api/%s/cloud", version))
-	return &Client{
-		ClientInterface: restCli,
-		Vpc:             NewVpcClient(restCli),
-		Subnet:          NewSubnetClient(restCli),
-		Cvm:             NewCvmClient(restCli),
+// NewCvmClient create a new cvm api client.
+func NewCvmClient(client rest.ClientInterface) *CvmClient {
+	return &CvmClient{
+		client: client,
 	}
+}
+
+// List cvms.
+func (v *CvmClient) List(kt *kit.Kit, bizID int64, req *core.ListReq) (*cloud.CvmListResult, error) {
+
+	resp := &struct {
+		rest.BaseResp `json:",inline"`
+		Data          *cloud.CvmListResult `json:"data"`
+	}{}
+
+	err := v.client.Post().
+		WithContext(kt.Ctx).
+		Body(req).
+		SubResourcef("/bizs/%d/cvms/list", bizID).
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
 }
