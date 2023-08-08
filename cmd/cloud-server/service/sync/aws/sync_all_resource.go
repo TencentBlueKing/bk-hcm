@@ -67,6 +67,10 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 			time.Since(start), opt, kt.Rid)
 	}()
 
+	if hitErr = SyncRegion(kt, cliSet.HCService(), opt.AccountID); hitErr != nil {
+		return hitErr
+	}
+
 	if opt.SyncPublicResource {
 		syncOpt := &SyncPublicResourceOption{
 			AccountID: opt.AccountID,
@@ -77,7 +81,7 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 		}
 	}
 
-	regions, hitErr := ListRegion(kt, cliSet.DataService())
+	regions, hitErr := ListRegion(kt, cliSet.DataService(), opt.AccountID)
 	if hitErr != nil {
 		return hitErr
 	}

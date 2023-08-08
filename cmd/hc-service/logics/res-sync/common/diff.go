@@ -139,9 +139,9 @@ type DBResType interface {
 
 	coreregion.HuaWeiRegion |
 		coreregion.AzureRegion |
-		cloudcore.TCloudRegion |
-		cloudcore.AwsRegion |
-		cloudcore.GcpRegion |
+		coreregion.TCloudRegion |
+		coreregion.AwsRegion |
+		coreregion.GcpRegion |
 
 		coreresourcegroup.AzureRG |
 

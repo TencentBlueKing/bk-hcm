@@ -60,6 +60,10 @@ func (svc *regionSvc) BatchCreateRegion(cts *rest.Contexts) (interface{}, error)
 		return svc.BatchCreateAwsRegion(cts)
 	case enumor.Gcp:
 		return svc.BatchCreateGcpRegion(cts)
+	case enumor.HuaWei:
+		return svc.BatchCreateHuaWeiRegion(cts)
+	case enumor.Azure:
+		return svc.BatchCreateAzureRegion(cts)
 	}
 
 	return nil, nil
@@ -80,6 +84,10 @@ func (svc *regionSvc) BatchUpdateRegion(cts *rest.Contexts) (interface{}, error)
 		err = svc.BatchUpdateAwsRegion(cts)
 	case enumor.Gcp:
 		err = svc.BatchUpdateGcpRegion(cts)
+	case enumor.HuaWei:
+		return svc.BatchUpdateHuaWeiRegion(cts)
+	case enumor.Azure:
+		return svc.BatchUpdateAzureRegion(cts)
 	}
 
 	return nil, err
@@ -99,6 +107,10 @@ func (svc *regionSvc) ListRegion(cts *rest.Contexts) (interface{}, error) {
 		return svc.ListAwsRegion(cts)
 	case enumor.Gcp:
 		return svc.ListGcpRegion(cts)
+	case enumor.HuaWei:
+		return svc.ListHuaWeiRegion(cts)
+	case enumor.Azure:
+		return svc.ListAzureRegion(cts)
 	}
 
 	return nil, nil
@@ -119,6 +131,10 @@ func (svc *regionSvc) BatchDeleteRegion(cts *rest.Contexts) (interface{}, error)
 		err = svc.BatchDeleteAwsRegion(cts)
 	case enumor.Gcp:
 		err = svc.BatchDeleteGcpRegion(cts)
+	case enumor.HuaWei:
+		return svc.BatchDeleteHuaWeiRegion(cts)
+	case enumor.Azure:
+		return svc.BatchDeleteAzureRegion(cts)
 	}
 
 	return nil, err

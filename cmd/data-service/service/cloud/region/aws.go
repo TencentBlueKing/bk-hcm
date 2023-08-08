@@ -24,7 +24,7 @@ import (
 	"reflect"
 
 	"hcm/pkg/api/core"
-	protocore "hcm/pkg/api/core/cloud"
+	protocore "hcm/pkg/api/core/cloud/region"
 	dataservice "hcm/pkg/api/data-service"
 	protoregion "hcm/pkg/api/data-service/cloud/region"
 	"hcm/pkg/criteria/errf"
@@ -55,6 +55,7 @@ func (svc *regionSvc) BatchCreateAwsRegion(cts *rest.Contexts) (interface{}, err
 		for _, createReq := range req.Regions {
 			tmpRegion := tableregion.AwsRegionTable{
 				Vendor:     createReq.Vendor,
+				AccountID:  createReq.AccountID,
 				RegionID:   createReq.RegionID,
 				RegionName: createReq.RegionName,
 				Status:     createReq.Status,
@@ -125,6 +126,7 @@ func (svc *regionSvc) BatchUpdateAwsRegion(cts *rest.Contexts) error {
 
 	for _, updateReq := range req.Regions {
 		tmpRegion.Vendor = updateReq.Vendor
+		tmpRegion.AccountID = updateReq.AccountID
 		tmpRegion.RegionID = updateReq.RegionID
 		tmpRegion.RegionName = updateReq.RegionName
 		tmpRegion.Status = updateReq.Status
@@ -193,7 +195,6 @@ func (svc *regionSvc) ListAwsRegion(cts *rest.Contexts) (interface{}, error) {
 	for _, region := range daoRegionResp.Details {
 		details = append(details, converter.PtrToVal(convertAwsBaseRegion(&region)))
 	}
-
 	return &protoregion.AwsRegionListResult{Details: details}, nil
 }
 
@@ -205,6 +206,7 @@ func convertAwsBaseRegion(dbRegion *tableregion.AwsRegionTable) *protocore.AwsRe
 	return &protocore.AwsRegion{
 		ID:         dbRegion.ID,
 		Vendor:     dbRegion.Vendor,
+		AccountID:  dbRegion.AccountID,
 		RegionID:   dbRegion.RegionID,
 		RegionName: dbRegion.RegionName,
 		Status:     dbRegion.Status,

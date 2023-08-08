@@ -190,7 +190,7 @@ func (v *awsRegionDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*fi
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, region.TCloudRegionColumns.FieldsNamedExpr(opt.Fields),
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, region.AwsRegionColumns.FieldsNamedExpr(opt.Fields),
 		tableName, whereExpr, pageExpr)
 
 	details := make([]region.AwsRegionTable, 0)

@@ -24,7 +24,7 @@ import (
 	"reflect"
 
 	"hcm/pkg/api/core"
-	protocore "hcm/pkg/api/core/cloud"
+	protocore "hcm/pkg/api/core/cloud/region"
 	dataservice "hcm/pkg/api/data-service"
 	protoregion "hcm/pkg/api/data-service/cloud/region"
 	"hcm/pkg/criteria/errf"
