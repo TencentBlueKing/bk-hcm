@@ -38,6 +38,8 @@ func (rt CloudResourceType) ConvTableName() (table.Name, error) {
 	switch rt {
 	case AccountCloudResType:
 		return table.AccountTable, nil
+	case SubAccountCloudResType:
+		return table.SubAccountTable, nil
 	case SecurityGroupCloudResType:
 		return table.SecurityGroupTable, nil
 	case GcpFirewallRuleCloudResType:
@@ -64,6 +66,7 @@ func (rt CloudResourceType) ConvTableName() (table.Name, error) {
 // CloudResourceType define all cloud resource type.
 const (
 	AccountCloudResType          CloudResourceType = "account"
+	SubAccountCloudResType       CloudResourceType = "sub_account"
 	SecurityGroupCloudResType    CloudResourceType = "security_group"
 	GcpFirewallRuleCloudResType  CloudResourceType = "gcp_firewall_rule"
 	VpcCloudResType              CloudResourceType = "vpc"

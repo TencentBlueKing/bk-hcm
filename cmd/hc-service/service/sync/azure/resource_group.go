@@ -29,7 +29,7 @@ import (
 
 // SyncResourceGroup ....
 func (svc *service) SyncResourceGroup(cts *rest.Contexts) (interface{}, error) {
-	req := new(sync.AzureResourceGroupSyncReq)
+	req := new(sync.AzureGlobalSyncReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}

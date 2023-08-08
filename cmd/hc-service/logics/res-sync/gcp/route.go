@@ -280,6 +280,10 @@ func (cli *client) RemoveRouteDeleteFromCloud(kt *kit.Kit, accountID string, zon
 			return err
 		}
 
+		if len(resultFromDB.Details) == 0 {
+			break
+		}
+
 		cloudIDs := make([]string, 0)
 		for _, one := range resultFromDB.Details {
 			cloudIDs = append(cloudIDs, one.CloudID)
@@ -301,8 +305,8 @@ func (cli *client) RemoveRouteDeleteFromCloud(kt *kit.Kit, accountID string, zon
 				delete(cloudIDMap, one.CloudID)
 			}
 
-			cloudIDs := converter.MapKeyToStringSlice(cloudIDMap)
-			if err := cli.deleteRoute(kt, accountID, zone, cloudIDs, resultFromDB.Details); err != nil {
+			delIDs := converter.MapKeyToStringSlice(cloudIDMap)
+			if err := cli.deleteRoute(kt, accountID, zone, delIDs, resultFromDB.Details); err != nil {
 				return err
 			}
 		}

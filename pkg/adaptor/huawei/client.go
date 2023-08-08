@@ -71,6 +71,23 @@ func newClientSet(secret *types.BaseSecret) *clientSet {
 	}
 }
 
+func (c *clientSet) iamGlobalClient(region *region.Region) (client *iam.IamClient, err error) {
+	defer func() {
+		if p := recover(); p != nil {
+			err = fmt.Errorf("huawei error recovered, err: %v", p)
+		}
+	}()
+
+	client = iam.NewIamClient(
+		iam.IamClientBuilder().
+			WithRegion(region).
+			WithCredential(c.globalCredentials).
+			WithHttpConfig(config.DefaultHttpConfig()).
+			Build())
+
+	return client, nil
+}
+
 func (c *clientSet) iamClient(region *region.Region) (client *iam.IamClient, err error) {
 	defer func() {
 		if p := recover(); p != nil {

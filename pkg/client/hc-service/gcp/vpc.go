@@ -111,7 +111,7 @@ func (v *VpcClient) Delete(ctx context.Context, h http.Header, id string) error 
 }
 
 // SyncVpc sync gcp vpc.
-func (v *VpcClient) SyncVpc(ctx context.Context, h http.Header, req *sync.GcpGlobalRegionResSyncReq) error {
+func (v *VpcClient) SyncVpc(ctx context.Context, h http.Header, req *sync.GcpGlobalSyncReq) error {
 	resp := new(rest.BaseResp)
 
 	err := v.client.Post().

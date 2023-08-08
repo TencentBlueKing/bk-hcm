@@ -43,6 +43,7 @@ import (
 	routetable "hcm/pkg/dal/dao/cloud/route-table"
 	securitygroup "hcm/pkg/dal/dao/cloud/security-group"
 	sgcvmrel "hcm/pkg/dal/dao/cloud/security-group-cvm-rel"
+	daosubaccount "hcm/pkg/dal/dao/cloud/sub-account"
 	"hcm/pkg/dal/dao/cloud/zone"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
@@ -59,6 +60,7 @@ type Set interface {
 	Audit() audit.Interface
 	Auth() auth.Auth
 	Account() cloud.Account
+	SubAccount() daosubaccount.SubAccount
 	SecurityGroup() securitygroup.SecurityGroup
 	SGCvmRel() sgcvmrel.Interface
 	TCloudSGRule() securitygroup.TCloudSGRule
@@ -242,6 +244,15 @@ func (s *set) HuaWeiRegion() region.HuaWeiRegion {
 // Account return account dao.
 func (s *set) Account() cloud.Account {
 	return &cloud.AccountDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// SubAccount return sub account dao.
+func (s *set) SubAccount() daosubaccount.SubAccount {
+	return &daosubaccount.SubAccountDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,

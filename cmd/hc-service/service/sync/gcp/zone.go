@@ -29,7 +29,7 @@ import (
 
 // SyncZone ....
 func (svc *service) SyncZone(cts *rest.Contexts) (interface{}, error) {
-	req := new(sync.GcpGlobalRegionResSyncReq)
+	req := new(sync.GcpGlobalSyncReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}

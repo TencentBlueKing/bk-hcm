@@ -41,6 +41,8 @@ func AdaptAuthOptions(a *meta.ResourceAttribute) (client.ActionID, []client.Reso
 		return genBizResource(a)
 	case meta.Account:
 		return genAccountResource(a)
+	case meta.SubAccount:
+		return genSubAccountResource(a)
 	case meta.Vpc:
 		return genVpcResource(a)
 	case meta.Subnet:
