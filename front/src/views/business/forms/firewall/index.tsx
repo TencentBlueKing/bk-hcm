@@ -185,11 +185,11 @@ export default defineComponent({
           </bk-form-item>
           <bk-form-item
             label={'所属的vpc'}
-            property={'name'}
-            disabled={props.isEdit}>
+            property={'name'}>
             <VpcSelector
               vendor={formModel.vendor}
               v-model={formModel.cloud_vpc_id}
+              isDisabled={props.isEdit}
             />
           </bk-form-item>
           <bk-form-item label={'流量方向'} property={'type'}>
