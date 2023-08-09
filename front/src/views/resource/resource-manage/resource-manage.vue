@@ -250,7 +250,8 @@ const handleCancel = () => {
 // 新增成功 刷新列表
 const handleSuccess = () => {
   handleCancel();
-  componentRef.value.fetchComponentsData();
+  if (Array.isArray(componentRef.value)) componentRef.value[0].fetchComponentsData();
+  else componentRef.value.fetchComponentsData();
 };
 
 const handleEdit = (detail: any) => {
