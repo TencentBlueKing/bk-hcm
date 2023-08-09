@@ -6,6 +6,7 @@ import './index.scss';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import http from '@/http';
 import { useAccountStore } from '@/store';
+import { validateIpCidr } from '@/views/resource/resource-manage/children/dialog/security-rule/security-rule-validators';
 
 enum IpType {
   ipv4 = 'IPv4',
@@ -33,7 +34,7 @@ const IPV6_Special_Protocols = {
 
 type ProtocolAndPorts = {
   protocol: string,
-  ports: string | Array<string>,
+  port: string | Array<string>,
 };
 
 const _formModel = {
@@ -51,6 +52,7 @@ const _formModel = {
   denied: [] as Array<ProtocolAndPorts>, // 拒绝的协议和端口
   disabled: true, // 创建是否不要立即应用到目标
   memo: '', // 备注
+  id: '', // 编辑时用的唯一标志
 };
 
 export default defineComponent({
@@ -61,7 +63,7 @@ export default defineComponent({
     },
     detail: {
       default: {},
-      type: Object as PropType<typeof _formModel>,
+      type: Object as PropType<(typeof _formModel)>,
     },
   },
   emits: [
@@ -73,14 +75,13 @@ export default defineComponent({
       ..._formModel,
       ...(props.isEdit ? props.detail : {}),
     });
-
-    const ip_type = ref(IpType.ipv4);
+    const ip_type = ref(validateIpCidr(formModel?.destination_ranges?.[0]) === 'ipv6' ? IpType.ipv6 : IpType.ipv4);
     const is_source_marked = ref(!!formModel.source_tags?.length);
     const is_destination_marked = ref(!!formModel.destination_ranges?.length);
     const is_rule_allowed = ref(!!formModel.allowed?.length);
     const protocolAndPorts = reactive({
-      protocol: '',
-      ports: '',
+      protocol: props.detail.allowed?.[0]?.protocol || props.detail.denied?.[0]?.protocol || '',
+      port: props.detail.allowed?.[0]?.port?.[0] as string || props.detail.denied?.[0]?.port?.[0] as string || '',
     });
     const isPortsDisabled = ref(false);
 
@@ -91,21 +92,35 @@ export default defineComponent({
 
     const handleSubmit = async () => {
       if (formModel.allowed?.length) {
-        formModel.allowed.forEach(protocolAndPorts => protocolAndPorts.ports = [protocolAndPorts.ports as string]);
+        formModel.allowed.forEach(protocolAndPorts => (protocolAndPorts.port = protocolAndPorts.port.length
+          ? [protocolAndPorts.port as string]
+          : []));
       } else {
         delete formModel.allowed;
       }
       if (formModel.denied?.length) {
-        formModel.denied.forEach(protocolAndPorts => protocolAndPorts.ports = [protocolAndPorts.ports as string]);
+        formModel.denied.forEach(protocolAndPorts => (protocolAndPorts.port = protocolAndPorts.port.length
+          ? [protocolAndPorts.port as string]
+          : []));
       } else {
         delete formModel.denied;
       }
-      await http.post(
-        isResourcePage
-          ? `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/gcp/firewalls/rules/create`
-          : `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${accountStore.bizs}/vendors/gcp/firewalls/rules/create`,
-        formModel,
-      );
+      if (props.isEdit) {
+        // @ts-ignore
+        await http.put(
+          isResourcePage
+            ? `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/gcp/firewalls/rules/${props.detail.id}`
+            : `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${accountStore.bizs}/vendors/gcp/firewalls/rules/${props.detail.id}`,
+          formModel,
+        );
+      } else {
+        await http.post(
+          isResourcePage
+            ? `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/gcp/firewalls/rules/create`
+            : `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${accountStore.bizs}/vendors/gcp/firewalls/rules/create`,
+          formModel,
+        );
+      }
       emit('success');
     };
 
@@ -116,12 +131,12 @@ export default defineComponent({
     watch(
       () => is_rule_allowed.value,
       (isAllowed) => {
+        formModel.allowed = [];
+        formModel.denied = [];
         if (isAllowed) {
           formModel.allowed?.push(protocolAndPorts);
-          formModel.denied = [];
         } else {
           formModel.denied?.push(protocolAndPorts);
-          formModel.allowed = [];
         }
       },
       {
@@ -132,7 +147,7 @@ export default defineComponent({
     watch(
       () => protocolAndPorts.protocol,
       (val) => {
-        protocolAndPorts.ports = '';
+        protocolAndPorts.port = '';
         switch (val) {
           case Protocols.ALL:
           case IPV4_Special_Protocols.ICMP:
@@ -143,30 +158,13 @@ export default defineComponent({
             isPortsDisabled.value = false;
         }
       },
-      {
-        immediate: true,
-      },
     );
 
     watch(
       () => ip_type.value,
       () => {
-        protocolAndPorts.ports = '';
+        protocolAndPorts.port = '';
         protocolAndPorts.protocol = '';
-      },
-      {
-        immediate: true,
-      },
-    );
-
-    watch(
-      () => props.detail,
-      (detail) => {
-        protocolAndPorts.protocol = detail.allowed?.[0]?.protocol || detail.denied?.[0]?.protocol;
-        protocolAndPorts.ports = detail.allowed?.[0]?.ports as string || detail.denied?.[0]?.ports as string;
-      },
-      {
-        immediate: true,
       },
     );
 
@@ -187,11 +185,11 @@ export default defineComponent({
           </bk-form-item>
           <bk-form-item
             label={'所属的vpc'}
-            property={'name'}
-            disabled={props.isEdit}>
+            property={'name'}>
             <VpcSelector
               vendor={formModel.vendor}
               v-model={formModel.cloud_vpc_id}
+              isDisabled={props.isEdit}
             />
           </bk-form-item>
           <bk-form-item label={'流量方向'} property={'type'}>
@@ -271,7 +269,7 @@ export default defineComponent({
             <bk-input
               class={'firewall-input-select-warp'}
               disabled={isPortsDisabled.value}
-              v-model={protocolAndPorts.ports}>
+              v-model={protocolAndPorts.port}>
               {{
                 prefix: () => (
                   <bk-select v-model={protocolAndPorts.protocol}>
