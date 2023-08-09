@@ -161,7 +161,7 @@ export const isPortAvailable = (val: string | number) => {
  * @returns ip 类型，不合法则返回 'invalid'
  */
 export const validateIpCidr = (ip: string): IpType => {
-  ip = ip.trim();
+  ip = ip?.trim();
   if (isValid(ip)) {
     const type = parse(ip).kind();
     if (type === IpType.ipv4 && IPv4.isValidFourPartDecimal(ip)) return IpType.ipv4;
