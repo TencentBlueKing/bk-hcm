@@ -22,13 +22,11 @@ package firewall
 import (
 	proto "hcm/pkg/api/cloud-server"
 	hcproto "hcm/pkg/api/hc-service"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
 )
@@ -68,13 +66,6 @@ func (svc *firewallSvc) updateGcpFirewallRule(cts *rest.Contexts, validHandler h
 	// validate biz and authorize
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.GcpFirewallRule,
 		Action: meta.Update, BasicInfo: basicInfo})
-	if err != nil {
-		return nil, err
-	}
-
-	// 已分配业务的资源，不允许操作
-	flt := &filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: id}
-	err = svc.checkGcpFirewallRulesInBiz(cts.Kit, flt, constant.UnassignedBiz)
 	if err != nil {
 		return nil, err
 	}
