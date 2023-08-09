@@ -20,8 +20,6 @@
 package firewall
 
 import (
-	"fmt"
-
 	proto "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
@@ -32,7 +30,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -125,32 +122,6 @@ func (svc *firewallSvc) getGcpFirewallRule(cts *rest.Contexts, validHandler hand
 	}
 
 	return result.Details[0], nil
-}
-
-// checkGcpFirewallRulesInBiz check if gcp firewall rules are in the specified biz.
-func (svc *firewallSvc) checkGcpFirewallRulesInBiz(kt *kit.Kit, rule filter.RuleFactory, bizID int64) error {
-	req := &dataproto.GcpFirewallRuleListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{Field: "bk_biz_id", Op: filter.NotEqual.Factory(), Value: bizID}, rule,
-			},
-		},
-		Page: &core.BasePage{
-			Count: true,
-		},
-	}
-	result, err := svc.client.DataService().Gcp.Firewall.ListFirewallRule(kt.Ctx, kt.Header(), req)
-	if err != nil {
-		logs.Errorf("count firewall rules that are not in biz failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
-		return err
-	}
-
-	if result.Count != 0 {
-		return fmt.Errorf("%d firewall rules are already assigned", result.Count)
-	}
-
-	return nil
 }
 
 func (svc *firewallSvc) listBasicInfo(kt *kit.Kit, ruleIDs []string) (map[string]types.CloudResourceBasicInfo, error) {
