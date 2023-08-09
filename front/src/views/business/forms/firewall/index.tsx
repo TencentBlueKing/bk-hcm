@@ -80,8 +80,8 @@ export default defineComponent({
     const is_destination_marked = ref(!!formModel.destination_ranges?.length);
     const is_rule_allowed = ref(!!formModel.allowed?.length);
     const protocolAndPorts = reactive({
-      protocol: '',
-      port: '',
+      protocol: props.detail.allowed?.[0]?.protocol || props.detail.denied?.[0]?.protocol || '',
+      port: props.detail.allowed?.[0]?.port?.[0] as string || props.detail.denied?.[0]?.port?.[0] as string || '',
     });
     const isPortsDisabled = ref(false);
 
@@ -158,9 +158,6 @@ export default defineComponent({
             isPortsDisabled.value = false;
         }
       },
-      {
-        immediate: true,
-      },
     );
 
     watch(
@@ -168,20 +165,6 @@ export default defineComponent({
       () => {
         protocolAndPorts.port = '';
         protocolAndPorts.protocol = '';
-      },
-      {
-        immediate: true,
-      },
-    );
-
-    watch(
-      () => props.detail,
-      (detail) => {
-        protocolAndPorts.protocol = detail.allowed?.[0]?.protocol || detail.denied?.[0]?.protocol;
-        protocolAndPorts.port = detail.allowed?.[0]?.port as string || detail.denied?.[0]?.port as string;
-      },
-      {
-        immediate: true,
       },
     );
 
