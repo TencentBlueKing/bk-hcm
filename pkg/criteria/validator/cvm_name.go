@@ -27,7 +27,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 )
 
-var gcpCvmNameRegexp = regexp.MustCompile(`^([a-z0-9][a-z0-9-]*)[a-z0-9]$`)
+var gcpNameRegexp = regexp.MustCompile(`^([a-z0-9][a-z0-9-]*)[a-z0-9]$`)
 var huaweiCvmNameRegexp = qualifiedNameRegexp
 var azureCvmNameRegexp = regexp.MustCompile(`^([A-Za-z0-9][A-Za-z0-9-.]*)[A-Za-z0-9]$`)
 
@@ -65,7 +65,7 @@ func ValidateCvmName(vendor enumor.Vendor, name string) error {
 			return errors.New("gcp cvm name should 1-62")
 		}
 
-		if !gcpCvmNameRegexp.MatchString(name) {
+		if !gcpNameRegexp.MatchString(name) {
 			return fmt.Errorf("invalid name: %s, only allows include lowercase english、numbers、hyphen (-), and must "+
 				"start and end with an english、numbers", name)
 		}
