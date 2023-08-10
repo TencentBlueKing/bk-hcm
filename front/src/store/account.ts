@@ -193,5 +193,21 @@ export const useAccountStore = defineStore({
       }));
       console.log('this.accountList', this.accountList);
     },
+
+    /**
+     * 获取我的审批列表
+     * @param data
+     */
+    async getApprovalList(data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/tickets/types/my_approval/list`, data);
+    },
+
+    /**
+     * 拒绝/通过审批单据
+     * @param data
+     */
+    async approveTickets(data: any) {
+      http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/tickets/approve`, data);
+    },
   },
 });
