@@ -2,6 +2,11 @@ import { useAccountStore } from '@/store';
 import { defineComponent, ref } from 'vue';
 import './index.scss';
 
+enum ApprovalType {
+  pass = 'pass',
+  refuse = 'refuse',
+}
+
 export default defineComponent({
   setup() {
     const tableColumns = [
@@ -58,29 +63,37 @@ export default defineComponent({
     const filter = ref({ op: 'and', rules: [] });
     const accountStore = useAccountStore();
     const isLoading = ref(false);
+    const isDialogShow = ref(false);
+    const detail = ref<any>({});
+    const approvalType = ref(ApprovalType.refuse);
+    const memo = ref('');
     const pagination = ref({
       count: false,
       limit: 20,
       start: 0,
     });
 
-    const handleApprove = async (data: any) => {
-      await accountStore.approveTickets({
-        sn: data.sn,
-        state_id: data.current_steps[0].state_id,
-        action: 'pass',
-        memo: '',
-      });
-      getList();
+    const handleApprove = (data: any) => {
+      isDialogShow.value = true;
+      detail.value = data;
+      approvalType.value = ApprovalType.pass;
     };
 
-    const handleRefuse = async (data: any) => {
+    const handleRefuse = (data: any) => {
+      isDialogShow.value = true;
+      detail.value = data;
+      approvalType.value = ApprovalType.refuse;
+    };
+
+    const handleConfirm = async () => {
       await accountStore.approveTickets({
-        sn: data.sn,
-        state_id: data.current_steps[0].state_id,
-        action: 'refuse',
-        memo: '',
+        sn: detail.value.sn,
+        state_id: detail.value.current_steps[0].state_id,
+        action: approvalType.value,
+        memo: memo.value,
       });
+      isDialogShow.value = false;
+      memo.value = '';
       getList();
     };
 
@@ -107,11 +120,37 @@ export default defineComponent({
           /> */}
         </div>
         <bk-loading loading={isLoading.value}>
-          <bk-table
-            columns={tableColumns}
-            data={datas.value}
-          />
+          <bk-table columns={tableColumns} data={datas.value} />
         </bk-loading>
+
+        <bk-dialog
+          isShow={isDialogShow.value}
+          title={'审批'}
+          theme={'primary'}
+          quick-close
+          width={560}
+          onClosed={() => {
+            isDialogShow.value = false;
+            memo.value = '';
+          }}
+          onConfirm={handleConfirm}>
+          <bk-form>
+            <bk-form-item label={'审批意见'}>
+              {approvalType.value === ApprovalType.pass ? (
+                <bk-tag type='stroke' theme='success'>
+                  通过
+                </bk-tag>
+              ) : (
+                <bk-tag type='stroke' theme='danger'>
+                  拒绝
+                </bk-tag>
+              )}
+            </bk-form-item>
+            <bk-form-item label={'备注'}>
+                <bk-input type='textarea' v-model={memo.value}></bk-input>
+            </bk-form-item>
+          </bk-form>
+        </bk-dialog>
       </div>
     );
   },
