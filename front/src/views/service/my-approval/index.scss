@@ -1,0 +1,9 @@
+.my-approval-selector-container {
+  display: flex;
+  justify-content: right;
+  margin-bottom: 10px;
+
+  .my-approval-selector {
+    margin-left: auto;
+  }
+}
