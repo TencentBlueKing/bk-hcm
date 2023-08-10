@@ -73,7 +73,12 @@ func (svc *service) ListMyApprovalTicket(cts *rest.Contexts) (interface{}, error
 		return nil, err
 	}
 
-	return resp.Items, nil
+	result := &webserver.ListMyApprovalTicketResp{
+		Count:   resp.Count,
+		Details: resp.Items,
+	}
+
+	return result, nil
 }
 
 // TicketApprove 审批单据。

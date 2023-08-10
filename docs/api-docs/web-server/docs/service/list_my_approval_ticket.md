@@ -89,15 +89,20 @@ POST /api/v1/web/tickets/types/my_approval/list
 
 ### 响应参数说明
 
-| 参数名称    | 参数类型         | 描述   |
-|---------|--------------|------|
-| code    | int32        | 状态码  |
-| message | string       | 请求信息 |
-| data    | array object | 响应数据 |
+| 参数名称    | 参数类型   | 描述   |
+|---------|--------|------|
+| code    | int32  | 状态码  |
+| message | string | 请求信息 |
+| data    | object | 响应数据 |
 
 #### data[n]
 
-#### data.detail[n]
+| 参数名称    | 参数类型         | 描述      |
+|---------|--------------|---------|
+| count   | int          | 总记录条数   |
+| details | array object | 查询返回的数据 |
+
+#### data.details[n]
 
 | 参数名称                   | 参数类型         | 描述              |
 |------------------------|--------------|-----------------|
@@ -135,7 +140,7 @@ POST /api/v1/web/tickets/types/my_approval/list
 | sla                    | array string | 配置的sla名称        |
 | sla_color              | string       | 触发sla后，在前端响应的颜色 |
 
-#### data.detail[n].current_steps
+#### data.details[n].current_steps
 
 | 参数名称     | 参数类型   | 描述     |
 |----------|--------|--------|

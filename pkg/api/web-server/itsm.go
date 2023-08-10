@@ -24,6 +24,7 @@ import (
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/thirdparty/itsm"
 )
 
 // ListMyApprovalTicketReq define get tickets by user req.
@@ -34,6 +35,12 @@ type ListMyApprovalTicketReq struct {
 // Validate ListMyApprovalTicketReq.
 func (req *ListMyApprovalTicketReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// ListMyApprovalTicketResp define list my approval ticket resp.
+type ListMyApprovalTicketResp struct {
+	Count   int64         `json:"count"`
+	Details []itsm.Ticket `json:"details"`
 }
 
 // TicketApproveReq define ticket approval req.
