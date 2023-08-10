@@ -24,7 +24,6 @@ import (
 	"fmt"
 
 	typesBill "hcm/pkg/adaptor/types/bill"
-	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core/cloud"
 	hcbillservice "hcm/pkg/api/hc-service/bill"
 	"hcm/pkg/criteria/enumor"
@@ -42,10 +41,6 @@ func (b bill) GcpGetBillList(cts *rest.Contexts) (interface{}, error) {
 
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	if req.Page == nil {
-		req.Page = &typesBill.GcpBillPage{Offset: 0, Limit: core.GcpQueryLimit}
 	}
 
 	// 查询aws账单基础表
@@ -83,11 +78,13 @@ func (b bill) GcpGetBillList(cts *rest.Contexts) (interface{}, error) {
 		Month:         req.Month,
 		BeginDate:     req.BeginDate,
 		EndDate:       req.EndDate,
-		Page: &typesBill.GcpBillPage{
+		ProjectID:     resAccountInfo.Extension.CloudProjectID,
+	}
+	if req.Page != nil {
+		opt.Page = &typesBill.GcpBillPage{
 			Offset: req.Page.Offset,
 			Limit:  req.Page.Limit,
-		},
-		ProjectID: resAccountInfo.Extension.CloudProjectID,
+		}
 	}
 	resp, count, err := cli.GetBillList(cts.Kit, opt, billInfo)
 	if err != nil {
