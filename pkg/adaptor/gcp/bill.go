@@ -22,9 +22,11 @@ package gcp
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	typesBill "hcm/pkg/adaptor/types/bill"
 	"hcm/pkg/api/core/cloud"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/math"
@@ -41,11 +43,11 @@ const (
 		"location.location as location,location.country as country,location.region as region,location.zone as zone," +
 		"resource.name as resource_name,resource.global_name as resource_global_name,cost,currency," +
 		"usage.amount as usage_amount,usage.unit as usage_unit,usage.amount_in_pricing_units as " +
-		"usage_amount_in_pricing_units,usage.pricing_unit as usage_pricing_unit,TO_JSON_STRING(credits) as credits," +
+		"usage_amount_in_pricing_units,usage.pricing_unit as usage_pricing_unit," +
 		"cost+IFNULL((SELECT SUM(c.amount) FROM UNNEST(credits) c), 0) AS total_cost," +
 		"invoice.month as month,cost_type"
 	// QueryBillSQL 查询云账单的SQL
-	QueryBillSQL = "SELECT %s FROM %s.%s %s LIMIT %d OFFSET %d"
+	QueryBillSQL = "SELECT %s FROM %s.%s %s"
 	// QueryBillTotalSQL 查询云账单总数量的SQL
 	QueryBillTotalSQL = "SELECT COUNT(*) FROM %s.%s %s"
 )
@@ -54,14 +56,28 @@ const (
 func (g *Gcp) GetBillList(kt *kit.Kit, opt *typesBill.GcpBillListOption,
 	billInfo *cloud.AccountBillConfig[cloud.GcpBillConfigExtension]) (interface{}, int64, error) {
 
-	where := g.parseCondition(opt)
-	total, err := g.GetBillTotal(kt, where, billInfo)
+	where, err := g.parseCondition(opt)
 	if err != nil {
+		logs.Errorf("gcp get bill list parse date failed, opt: %+v, err: %v", opt, err)
 		return nil, 0, err
 	}
 
-	query := fmt.Sprintf(QueryBillSQL, QueryBillFields, billInfo.CloudDatabaseName, billInfo.CloudTableName, where,
-		opt.Page.Limit, opt.Page.Offset)
+	// 只有第一页时才返回数量，降低查询费用
+	total := int64(0)
+	if opt.Page != nil && opt.Page.Offset == 0 {
+		total, err = g.GetBillTotal(kt, where, billInfo)
+		if err != nil {
+			return nil, 0, err
+		}
+		if total == 0 {
+			return nil, 0, nil
+		}
+	}
+
+	query := fmt.Sprintf(QueryBillSQL, QueryBillFields, billInfo.CloudDatabaseName, billInfo.CloudTableName, where)
+	if opt.Page != nil {
+		query += fmt.Sprintf(" LIMIT %d OFFSET %d", opt.Page.Limit, opt.Page.Offset)
+	}
 
 	list, _, err := g.GetBigQuery(kt, query)
 	return list, total, err
@@ -122,18 +138,27 @@ func (g *Gcp) GetBigQuery(kt *kit.Kit, query string) ([]map[string]bigquery.Valu
 	return list, num, nil
 }
 
-func (g *Gcp) parseCondition(opt *typesBill.GcpBillListOption) string {
+func (g *Gcp) parseCondition(opt *typesBill.GcpBillListOption) (string, error) {
 	var condition = []string{fmt.Sprintf("project.id = '%s'", opt.ProjectID)}
 	if opt.Month != "" {
 		condition = append(condition, fmt.Sprintf("invoice.month = '%s'", opt.Month))
 	} else if opt.BeginDate != "" && opt.EndDate != "" {
-		condition = append(condition, fmt.Sprintf("usage_start_time >= '%s' AND "+
-			"usage_end_time <= '%s'", opt.BeginDate, opt.EndDate))
+		beginDate, err := time.Parse(constant.TimeStdFormat, opt.BeginDate)
+		if err != nil {
+			return "", err
+		}
+
+		endDate, err := time.Parse(constant.TimeStdFormat, opt.EndDate)
+		if err != nil {
+			return "", err
+		}
+		condition = append(condition, fmt.Sprintf("TIMESTAMP_TRUNC(PARTITIONTIME, DAY) BETWEEN TIMESTAMP(\"%s\") AND "+
+			"TIMESTAMP(\"%s\")", beginDate.Format(constant.DateLayout), endDate.Format(constant.DateLayout)))
 	}
 
 	if len(condition) > 0 {
-		return "WHERE " + strings.Join(condition, " AND ")
+		return "WHERE " + strings.Join(condition, " AND "), nil
 	}
 
-	return ""
+	return "", nil
 }

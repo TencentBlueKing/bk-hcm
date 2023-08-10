@@ -43,7 +43,7 @@ import (
 
 const (
 	// QueryBillSQL 查询云账单的SQL
-	QueryBillSQL = "SELECT %s FROM %s.%s %s OFFSET %d LIMIT %d"
+	QueryBillSQL = "SELECT %s FROM %s.%s %s"
 	// QueryBillTotalSQL 查询云账单总数量的SQL
 	QueryBillTotalSQL = "SELECT COUNT(*) FROM %s.%s %s"
 	BucketNameDefault = "hcm-bill-%s-%s"
@@ -83,14 +83,23 @@ func (a *Aws) GetBillList(kt *kit.Kit, opt *typesBill.AwsBillListOption,
 		return 0, nil, err
 	}
 
-	// get bill total
-	total, err := a.GetBillTotal(kt, where, billInfo)
-	if err != nil {
-		return 0, nil, err
+	// 只有第一页时才返回数量
+	var total = int64(0)
+	if opt.Page != nil && opt.Page.Offset == 0 {
+		// get bill total
+		total, err = a.GetBillTotal(kt, where, billInfo)
+		if err != nil {
+			return 0, nil, err
+		}
+		if total == 0 {
+			return 0, nil, nil
+		}
 	}
 
-	sql := fmt.Sprintf(QueryBillSQL, "*", billInfo.CloudDatabaseName, billInfo.CloudTableName, where,
-		opt.Page.Offset, opt.Page.Limit)
+	sql := fmt.Sprintf(QueryBillSQL, "*", billInfo.CloudDatabaseName, billInfo.CloudTableName, where)
+	if opt.Page != nil {
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d", opt.Page.Offset, opt.Page.Limit)
+	}
 	list, err := a.GetAwsAthenaQuery(kt, sql, billInfo)
 	if err != nil {
 		return 0, nil, err

@@ -52,12 +52,14 @@ func (opt AwsBillListOption) Validate() error {
 		return err
 	}
 
+	// aws的AthenaQuery属于sql查询，跟SDK接口的Limit限制不同
 	if opt.Page != nil {
-		if err := opt.Page.Validate(); err != nil {
-			return err
+		if opt.Page.Limit == 0 {
+			return errf.New(errf.InvalidParameter, "aws.limit is required")
 		}
-	} else {
-		opt.Page = &AwsBillPage{Limit: core.AwsQueryLimit}
+		if opt.Page.Limit > 100000 {
+			return errf.New(errf.InvalidParameter, "aws.limit should <= 100000")
+		}
 	}
 
 	if (opt.BeginDate == "" && opt.EndDate != "") || (opt.BeginDate != "" && opt.EndDate == "") {
@@ -417,9 +419,13 @@ func (opt GcpBillListOption) Validate() error {
 		return errf.New(errf.InvalidParameter, "month and begin_date and end_date can not be empty")
 	}
 
+	// gcp的BigQuery属于sql查询，跟SDK接口的Limit限制不同
 	if opt.Page != nil {
-		if err := opt.Page.Validate(); err != nil {
-			return err
+		if opt.Page.Limit == 0 {
+			return errf.New(errf.InvalidParameter, "page.limit is required")
+		}
+		if opt.Page.Limit > 100000 {
+			return errf.New(errf.InvalidParameter, "page.limit should <= 100000")
 		}
 	}
 
