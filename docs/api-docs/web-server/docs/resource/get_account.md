@@ -1,6 +1,6 @@
 ### 描述
 
-- 该接口提供版本：v1.0.0+。
+- 该接口提供版本：v1.1.24+。
 - 该接口所需权限：账号查看。
 - 该接口功能描述：查询指定账号。
 
@@ -46,6 +46,65 @@ GET /api/v1/cloud/accounts/{account_id}
       "cloud_main_account_id": "main-xxxxxx",
       "cloud_sub_account_id": "sub-xxxxxx",
       "cloud_secret_id": "xxxxx"
+    },
+    "iass_sync": {
+      "res": [ 
+        {
+          "name": "cvm",
+          "status": "success",
+          "failed_reason": "",
+          "end_time": "2023-08-10T08:46:59Z"
+        },
+        {
+          "name": "disk",
+          "status": "success",
+          "failed_reason": "",
+          "end_time": "2023-08-10T08:46:59Z"
+        },
+        {
+          "name": "security_group",
+          "status": "success",
+          "failed_reason": "",
+          "end_time": "2023-08-10T08:46:59Z"
+        },
+        {
+          "name": "gcp_firewall_rule",
+          "status": "success",
+          "failed_reason": "",
+          "end_time": "2023-08-10T08:46:59Z"
+        },
+        {
+          "name": "vpc",
+          "status": "success",
+          "failed_reason": "",
+          "end_time": "2023-08-10T08:46:59Z"
+        },
+        {
+          "name": "subnet",
+          "status": "success",
+          "failed_reason": "",
+          "end_time": "2023-08-10T08:46:59Z"
+        },
+        {
+          "name": "eip",
+          "status": "failed",
+          "failed_reason": "sync eip failed",
+          "end_time": "2023-08-10T08:46:59Z"
+        },
+        {
+          "name": "network_interface",
+          "status": "not_sync",
+          "failed_reason": "",
+          "end_time": "2023-08-10T08:46:59Z"
+        },
+        {
+          "name": "route_table",
+          "status": "not_sync",
+          "failed_reason": "",
+          "end_time": "2023-08-10T08:46:59Z"
+        }
+      ],
+      "is_open": true
     }
   }
 }
@@ -77,6 +136,7 @@ GET /api/v1/cloud/accounts/{account_id}
 | created_at | string       | 创建时间，标准格式：2006-01-02T15:04:05Z                                   |
 | updated_at | string       | 更新时间，标准格式：2006-01-02T15:04:05Z                                   |
 | extension  | object       | 混合云差异字段                                                          |
+| iass_sync  | object       | iass层资源同步情况                                                        |
 
 ##### extension[tcloud]
 
@@ -130,3 +190,17 @@ GET /api/v1/cloud/accounts/{account_id}
 | cloud_application_name   | string   | 云应用名称       |
 | cloud_client_secret_id   | string   | 云客户端加密ID    |
 | cloud_client_secret_key  | string   | 云客户端密钥      |
+
+##### iass_sync
+| 参数名称                     | 参数类型     | 描述      |
+|--------------------------|----------|-------------|
+| res                      | object   | 资源同步详细情况  |
+| is_open                  | bool     | 同步开发         |
+
+##### res
+| 参数名称                     | 参数类型     | 描述      |
+|--------------------------|----------|-------------|
+| name                     | string   | 资源标识         |
+| status                   | string   | 同步状态         |
+| failed_reason            | string   | 同步失败原因      |
+| end_time                 | string   | 同步结束时间，标准格式：2006-01-02T15:04:05Z |
