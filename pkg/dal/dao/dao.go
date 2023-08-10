@@ -49,6 +49,7 @@ import (
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
 	recyclerecord "hcm/pkg/dal/dao/recycle-record"
+	daouser "hcm/pkg/dal/dao/user"
 	"hcm/pkg/kit"
 	"hcm/pkg/metrics"
 
@@ -95,6 +96,7 @@ type Set interface {
 	DiskCvmRel() diskcvmrel.DiskCvmRel
 	EipCvmRel() eipcvmrel.EipCvmRel
 	AccountBillConfig() bill.Interface
+	UserCollection() daouser.Interface
 
 	Txn() *Txn
 }
@@ -453,5 +455,13 @@ func (s *set) AccountBillConfig() bill.Interface {
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,
+	}
+}
+
+// UserCollection returns user collection dao.
+func (s *set) UserCollection() daouser.Interface {
+	return &daouser.Dao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
 	}
 }

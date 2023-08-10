@@ -51,6 +51,7 @@ import (
 	sync "hcm/cmd/data-service/service/cloud/sync"
 	"hcm/cmd/data-service/service/cloud/zone"
 	recyclerecord "hcm/cmd/data-service/service/recycle-record"
+	"hcm/cmd/data-service/service/user"
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/cryptography"
@@ -207,6 +208,7 @@ func (s *Service) apiSet() *restful.Container {
 	bill.InitBillConfigService(capability)
 	subaccount.InitService(capability)
 	sync.InitService(capability)
+	user.InitService(capability)
 
 	return restful.NewContainer().Add(capability.WebService)
 }

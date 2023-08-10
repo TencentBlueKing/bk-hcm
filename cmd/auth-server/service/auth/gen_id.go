@@ -433,6 +433,17 @@ func genCloudResResource(a *meta.ResourceAttribute) (client.ActionID, []client.R
 	}
 }
 
+// genBizCollectionResource 业务收藏
+func genBizCollectionResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	bizRes := client.Resource{
+		System: sys.SystemIDCMDB,
+		Type:   sys.Biz,
+		ID:     strconv.FormatInt(a.BizID, 10),
+	}
+
+	return sys.BizAccess, []client.Resource{bizRes}, nil
+}
+
 // genProxyResourceFind 代理资源访问权限.
 func genProxyResourceFind(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
 	if a.BizID != 0 {
