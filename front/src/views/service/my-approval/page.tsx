@@ -68,10 +68,11 @@ export default defineComponent({
     const approvalType = ref(ApprovalType.refuse);
     const memo = ref('');
     const pagination = ref({
-      count: false,
       limit: 20,
       start: 0,
+      current: 1,
     });
+    const paginationCount = ref(0);
 
     const handleApprove = (data: any) => {
       isDialogShow.value = true;
@@ -97,13 +98,32 @@ export default defineComponent({
       getList();
     };
 
+    const handlePageValueChange = (val: number) => {
+      pagination.value.current = val;
+      pagination.value.start = pagination.value.limit * (val - 1);
+      getList();
+    };
+
+    const handlePageLimitChange = (val: number) => {
+      pagination.value.limit = val;
+      pagination.value.current = 0;
+      pagination.value.start = 0;
+      getList();
+    };
+
+
     const getList = async () => {
       isLoading.value = true;
       const { data } = await accountStore.getApprovalList({
         filter: filter.value,
-        page: pagination.value,
+        page: {
+          limit: pagination.value.limit,
+          start: pagination.value.start,
+        },
       });
-      datas.value = data;
+      const { count, details } = data;
+      paginationCount.value = count;
+      datas.value = details;
       isLoading.value = false;
     };
 
@@ -120,7 +140,17 @@ export default defineComponent({
           /> */}
         </div>
         <bk-loading loading={isLoading.value}>
-          <bk-table columns={tableColumns} data={datas.value} />
+          <bk-table
+            columns={tableColumns}
+            data={datas.value}
+            pagination={{
+              ...pagination.value,
+              count: paginationCount.value,
+            }}
+            onPageValueChange={handlePageValueChange}
+            onPageLimitChange={handlePageLimitChange}
+            remote-pagination
+          />
         </bk-loading>
 
         <bk-dialog
