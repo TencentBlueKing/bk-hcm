@@ -26,7 +26,7 @@ const serviceMenus: RouteRecordRaw[] = [
   {
     path: '/service/my-approval',
     name: t('我的审批'),
-    component: () => import('@/views/service/my-approval/index.vue'),
+    component: () => import('@/views/service/my-approval/page'),
     meta: {
       breadcrumb: [t('服务'), t('我的审批')],
     },
