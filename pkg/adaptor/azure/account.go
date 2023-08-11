@@ -21,10 +21,13 @@ package azure
 
 import (
 	"fmt"
+	"strings"
 
 	"hcm/pkg/adaptor/types/account"
+	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 )
 
 // ListAccount list account.
@@ -59,26 +62,65 @@ func (az *Azure) ListAccount(kt *kit.Kit) ([]account.AzureAccount, error) {
 	return list, nil
 }
 
-// AccountCheck ...
-// 接口参考 "https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/services/preview/subscription/mgmt/
-// 2018-03-01-preview/subscription#SubscriptionsClient.Get"
-func (az *Azure) AccountCheck(kt *kit.Kit) error {
-	client, err := az.clientSet.subscriptionClient()
+// GetAccountInfoBySecret 根据秘钥获取账号信息
+// 1. https://learn.microsoft.com/en-us/rest/api/resources/subscriptions/list
+// 2. https://learn.microsoft.com/en-us/graph/api/application-list
+func (az *Azure) GetAccountInfoBySecret(kit *kit.Kit) (*cloud.AzureInfoBySecret, error) {
+	graphClient, err := az.clientSet.graphServiceClient()
 	if err != nil {
-		return fmt.Errorf("init azure client failed, err: %v", err)
+		return nil, err
 	}
 
-	cloudSubscriptionID := az.clientSet.credential.CloudSubscriptionID
-	_, err = client.Get(kt.Ctx, cloudSubscriptionID, nil)
+	subClient, err := az.clientSet.subscriptionClient()
 	if err != nil {
-		logs.Errorf(
-			"gets details about subscription(%s), err: %v, rid: %s",
-			cloudSubscriptionID,
-			err,
-			kt.Rid,
-		)
-		return err
+		return nil, err
+	}
+	azInfo := new(cloud.AzureInfoBySecret)
+
+	// 1. 获取该账号可以访问的订阅，要求订阅数量刚好一个
+	// https://learn.microsoft.com/en-us/rest/api/resources/subscriptions/list
+	pager := subClient.NewListPager(nil)
+	if !pager.More() {
+		return nil, fmt.Errorf("no subscription found")
+	}
+	subscriptionListResp, err := pager.NextPage(kit.Ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	subscriptions := subscriptionListResp.Value
+	if len(subscriptions) == 0 {
+		return nil, fmt.Errorf("no subscription found")
+	}
+	if len(subscriptions) > 1 {
+		subs := make([]string, len(subscriptions))
+		for i, sub := range subscriptions {
+			subs[i] = "(" + converter.PtrToVal(sub.SubscriptionID) + ")" + converter.PtrToVal(sub.DisplayName)
+		}
+		return nil, fmt.Errorf("more than one subscription found: " + strings.Join(subs, ","))
+	}
+
+	azInfo.CloudSubscriptionName = converter.PtrToVal(subscriptions[0].DisplayName)
+	azInfo.CloudSubscriptionID = converter.PtrToVal(subscriptions[0].SubscriptionID)
+
+	// 2. 获取应用信息 https://learn.microsoft.com/en-us/graph/api/application-list
+	resp, err := graphClient.Applications().Get(kit.Ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, one := range resp.GetValue() {
+		//	 过滤id
+		if converter.PtrToVal(one.GetAppId()) == az.clientSet.credential.CloudApplicationID {
+			azInfo.CloudApplicationName = converter.PtrToVal(one.GetDisplayName())
+			break
+		}
+
+	}
+	// 没有拿到应用id的情况
+	if len(azInfo.CloudApplicationName) == 0 {
+		return nil, fmt.Errorf("failed to get application name")
+	}
+
+	return azInfo, nil
 }

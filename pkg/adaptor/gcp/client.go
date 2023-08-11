@@ -28,7 +28,9 @@ import (
 	asset "cloud.google.com/go/asset/apiv1"
 	"cloud.google.com/go/bigquery"
 	credentials "cloud.google.com/go/iam/credentials/apiv1"
+	res "google.golang.org/api/cloudresourcemanager/v3"
 	"google.golang.org/api/compute/v1"
+	iam "google.golang.org/api/iam/v1"
 	"google.golang.org/api/option"
 )
 
@@ -78,6 +80,26 @@ func (c *clientSet) bigQueryClient(kt *kit.Kit) (*bigquery.Client, error) {
 			c.credential.CloudProjectID, err)
 	}
 	defer service.Close()
+
+	return service, nil
+}
+
+func (c *clientSet) resClient(kt *kit.Kit) (*res.Service, error) {
+	opt := option.WithCredentialsJSON(c.credential.Json)
+	service, err := res.NewService(kt.Ctx, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	return service, nil
+}
+
+func (c *clientSet) iamServiceClient(kt *kit.Kit) (*iam.Service, error) {
+	opt := option.WithCredentialsJSON(c.credential.Json)
+	service, err := iam.NewService(kt.Ctx, opt)
+	if err != nil {
+		return nil, err
+	}
 
 	return service, nil
 }

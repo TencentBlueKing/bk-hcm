@@ -24,15 +24,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/service/organizations"
-	"github.com/aws/aws-sdk-go/service/sts"
-
-	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/account"
-	"hcm/pkg/criteria/errf"
+	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
+
+	"github.com/aws/aws-sdk-go/service/organizations"
+	"github.com/aws/aws-sdk-go/service/sts"
 )
 
 // ListAccount 查询账号列表，因为账号列表的数量不会很多，且其他云也是全量返回，所以，这里将aws的账号列表进行了全量查询。
@@ -75,46 +74,34 @@ func (a *Aws) ListAccount(kt *kit.Kit) ([]account.AwsAccount, error) {
 	return list, nil
 }
 
-// AccountCheck check account authentication information(account id and iam user name) and permissions.
-// GetCallerIdentity: https://docs.aws.amazon.com/STS/latest/APIReference/API_GetCallerIdentity.html
-func (a *Aws) AccountCheck(kt *kit.Kit, opt *types.AwsAccountInfo) error {
-	if opt == nil {
-		return errf.New(errf.InvalidParameter, "account check option is required")
-	}
-
-	if err := opt.Validate(); err != nil {
-		return err
-	}
+// GetAccountInfoBySecret 根据秘钥获取账号信息
+// reference: https://docs.aws.amazon.com/STS/latest/APIReference/API_GetCallerIdentity.html
+func (a *Aws) GetAccountInfoBySecret(kt *kit.Kit) (*cloud.AwsInfoBySecret, error) {
 
 	client, err := a.clientSet.stsClient()
 	if err != nil {
-		return fmt.Errorf("init aws client failed, err: %v", err)
+		return nil, fmt.Errorf("init aws client failed, err: %v", err)
 	}
 
 	req := new(sts.GetCallerIdentityInput)
 	resp, err := client.GetCallerIdentityWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("describe regions failed, err: %v, rid: %s", err, kt.Rid)
-		return err
+		return nil, err
 	}
 
 	if resp.Account == nil {
-		return errors.New("get caller identity return account is nil")
-	}
-
-	// check account info: account id、user name
-	if *resp.Account != opt.CloudAccountID {
-		return fmt.Errorf("account id does not match the account to which the secret belongs")
+		return nil, errors.New("get caller identity return account is nil")
 	}
 
 	if resp.Arn == nil {
-		return errors.New("get caller identity return arn is nil")
+		return nil, errors.New("get caller identity return arn is nil")
 	}
 
-	split := strings.Split(*resp.Arn, "/")
-	if split[len(split)-1] != opt.CloudIamUsername {
-		return fmt.Errorf("iam user name does not match the account to which the secret belongs")
-	}
-
-	return nil
+	// arn最后一部分是用户名
+	parts := strings.Split(converter.PtrToVal(resp.Arn), "/")
+	return &cloud.AwsInfoBySecret{
+		CloudAccountID:   converter.PtrToVal(resp.Account),
+		CloudIamUsername: parts[len(parts)-1],
+	}, nil
 }

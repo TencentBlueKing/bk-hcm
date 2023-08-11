@@ -24,8 +24,9 @@ import (
 	"net/http"
 
 	typeaccount "hcm/pkg/adaptor/types/account"
-	"hcm/pkg/api/hc-service"
-	protoaccount "hcm/pkg/api/hc-service/account"
+	"hcm/pkg/api/cloud-server/account"
+	"hcm/pkg/api/core/cloud"
+	hsaccount "hcm/pkg/api/hc-service/account"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -68,8 +69,8 @@ func (a *AccountClient) SyncSubAccount(kt *kit.Kit, req *sync.HuaWeiGlobalSyncRe
 	return nil
 }
 
-// Check account
-func (a *AccountClient) Check(ctx context.Context, h http.Header, request *hcservice.HuaWeiAccountCheckReq) error {
+// Check 联通性和云上字段匹配校验
+func (a *AccountClient) Check(ctx context.Context, h http.Header, request *hsaccount.HuaWeiAccountCheckReq) error {
 
 	resp := new(rest.BaseResp)
 
@@ -94,9 +95,9 @@ func (a *AccountClient) Check(ctx context.Context, h http.Header, request *hcser
 
 // GetRegionQuota get account region quota.
 func (a *AccountClient) GetRegionQuota(ctx context.Context, h http.Header,
-	request *protoaccount.GetHuaWeiAccountRegionQuotaReq) (*typeaccount.HuaWeiAccountQuota, error) {
+	request *hsaccount.GetHuaWeiAccountRegionQuotaReq) (*typeaccount.HuaWeiAccountQuota, error) {
 
-	resp := new(protoaccount.GetHuaWeiAccountQuotaResp)
+	resp := new(hsaccount.GetHuaWeiAccountQuotaResp)
 
 	err := a.client.Post().
 		WithContext(ctx).
@@ -114,4 +115,29 @@ func (a *AccountClient) GetRegionQuota(ctx context.Context, h http.Header,
 	}
 
 	return resp.Data, nil
+}
+
+// GetBySecret get account info by secret
+func (a *AccountClient) GetBySecret(ctx context.Context, h http.Header,
+	request *cloud.HuaWeiSecret) (*cloud.HuaWeiInfoBySecret, error) {
+
+	resp := new(account.BySecretResp[cloud.HuaWeiInfoBySecret])
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/accounts/secret").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+
 }

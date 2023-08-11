@@ -21,12 +21,12 @@ package account
 
 import (
 	"hcm/pkg/adaptor/types"
-	proto "hcm/pkg/api/hc-service"
+	proto "hcm/pkg/api/hc-service/account"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
 
-// TCloudAccountCheck authentication information and permissions.
+// TCloudAccountCheck 根据传入秘钥去云上获取数据，并和传入其他数据对比，要求和云上获取数据一致
 func (svc *service) TCloudAccountCheck(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.TCloudAccountCheckReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -36,16 +36,29 @@ func (svc *service) TCloudAccountCheck(cts *rest.Contexts) (interface{}, error) 
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := svc.ad.Adaptor().TCloud(&types.BaseSecret{CloudSecretID: req.CloudSecretID,
-		CloudSecretKey: req.CloudSecretKey})
+	client, err := svc.ad.Adaptor().TCloud(
+		&types.BaseSecret{
+			CloudSecretID:  req.CloudSecretID,
+			CloudSecretKey: req.CloudSecretKey,
+		})
 	if err != nil {
 		return nil, err
 	}
 
-	err = client.AccountCheck(
-		cts.Kit,
-		&types.TCloudAccountInfo{CloudMainAccountID: req.CloudMainAccountID, CloudSubAccountID: req.CloudSubAccountID},
-	)
+	infoBySecret, err := client.GetAccountInfoBySecret(cts.Kit)
+	if err != nil {
+		return nil, err
+	}
+	// check if cloud account info matches the hcm account detail.
+	if infoBySecret.CloudSubAccountID != req.CloudSubAccountID {
+		return nil, errf.New(errf.InvalidParameter,
+			"CloudSubAccountID does not match the account to which the secret belongs")
+	}
+
+	if infoBySecret.CloudMainAccountID != req.CloudMainAccountID {
+		return nil, errf.New(errf.InvalidParameter,
+			"CloudMainAccountID does not match the account to which the secret belongs")
+	}
 
 	return nil, err
 }
@@ -61,17 +74,28 @@ func (svc *service) AwsAccountCheck(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := svc.ad.Adaptor().Aws(&types.BaseSecret{CloudSecretID: req.CloudSecretID,
-		CloudSecretKey: req.CloudSecretKey}, req.CloudAccountID)
+	client, err := svc.ad.Adaptor().Aws(
+		&types.BaseSecret{
+			CloudSecretID:  req.CloudSecretID,
+			CloudSecretKey: req.CloudSecretKey,
+		}, req.CloudAccountID)
 	if err != nil {
 		return nil, err
 	}
 
-	err = client.AccountCheck(
-		cts.Kit,
-		&types.AwsAccountInfo{CloudAccountID: req.CloudAccountID, CloudIamUsername: req.CloudIamUsername},
-	)
+	infoBySecret, err := client.GetAccountInfoBySecret(cts.Kit)
+	if err != nil {
+		return nil, err
+	}
 
+	if infoBySecret.CloudIamUsername != req.CloudIamUsername {
+		return nil, errf.New(errf.InvalidParameter,
+			"CloudIamUsername does not match the account to which the secret belongs")
+	}
+	if infoBySecret.CloudAccountID != req.CloudAccountID {
+		return nil, errf.New(errf.InvalidParameter,
+			"CloudAccountID does not match the account to which the secret belongs")
+	}
 	return nil, err
 }
 
@@ -85,19 +109,38 @@ func (svc *service) HuaWeiAccountCheck(cts *rest.Contexts) (interface{}, error) 
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := svc.ad.Adaptor().HuaWei(&types.BaseSecret{CloudSecretID: req.CloudSecretID,
-		CloudSecretKey: req.CloudSecretKey})
+	client, err := svc.ad.Adaptor().HuaWei(
+		&types.BaseSecret{
+			CloudSecretID:  req.CloudSecretID,
+			CloudSecretKey: req.CloudSecretKey,
+		})
 	if err != nil {
 		return nil, err
 	}
 
-	err = client.AccountCheck(cts.Kit, &types.HuaWeiAccountInfo{
-		CloudMainAccountName: req.CloudMainAccountName,
-		CloudSubAccountID:    req.CloudSubAccountID,
-		CloudSubAccountName:  req.CloudSubAccountName,
-		CloudIamUserID:       req.CloudIamUserID,
-		CloudIamUsername:     req.CloudIamUsername,
-	})
+	infoBySecret, err := client.GetAccountInfoBySecret(cts.Kit, req.CloudSecretID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 强校验，要求和用户确认时一样
+	if infoBySecret.CloudIamUsername != req.CloudIamUsername {
+		return nil, errf.New(errf.InvalidParameter,
+			"CloudIamUsername does not match the account to which the secret belongs")
+	}
+	if infoBySecret.CloudIamUserID != req.CloudIamUserID {
+		return nil, errf.New(errf.InvalidParameter,
+			"CloudIamUserID does not match the account to which the secret belongs")
+	}
+	if infoBySecret.CloudSubAccountName != req.CloudSubAccountName {
+		return nil, errf.New(errf.InvalidParameter,
+			"CloudSubAccountName does not match the account to which the secret belongs")
+	}
+
+	if infoBySecret.CloudSubAccountID != req.CloudSubAccountID {
+		return nil, errf.New(errf.InvalidParameter,
+			"CloudSubAccountID does not match the account to which the secret belongs")
+	}
 	return nil, err
 }
 
@@ -111,13 +154,40 @@ func (svc *service) GcpAccountCheck(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
 
-	client, err := svc.ad.Adaptor().Gcp(&types.GcpCredential{CloudProjectID: req.CloudProjectID,
-		Json: []byte(req.CloudServiceSecretKey)})
+	client, err := svc.ad.Adaptor().Gcp(
+		&types.GcpCredential{
+			CloudProjectID: req.CloudProjectID,
+			Json:           []byte(req.CloudServiceSecretKey),
+		})
 	if err != nil {
 		return nil, err
 	}
 
-	err = client.AccountCheck(cts.Kit)
+	infoBySecret, err := client.GetAccountInfoBySecret(cts.Kit, req.CloudServiceSecretKey)
+	if err != nil {
+		return nil, err
+	}
+
+	if infoBySecret.CloudProjectID != req.CloudProjectID {
+		return nil, errf.New(errf.InvalidParameter,
+			"CloudProjectID does not match the account to which the secret belongs")
+	}
+	if infoBySecret.CloudProjectName != req.CloudProjectName {
+		return nil, errf.New(errf.InvalidParameter,
+			"CloudProjectName does not match the account to which the secret belongs")
+	}
+	if infoBySecret.CloudServiceAccountID != req.CloudServiceAccountID {
+		return nil, errf.New(errf.InvalidParameter,
+			"CloudServiceAccountID does not match the account to which the secret belongs")
+	}
+	if infoBySecret.CloudServiceAccountName != req.CloudServiceAccountName {
+		return nil, errf.New(errf.InvalidParameter,
+			"CloudProjectID does not match the account to which the secret belongs")
+	}
+	if infoBySecret.CloudServiceSecretID != req.CloudServiceSecretID {
+		return nil, errf.New(errf.InvalidParameter,
+			"CloudServiceSecretID does not match the account to which the secret belongs")
+	}
 
 	return nil, err
 }
@@ -132,15 +202,34 @@ func (svc *service) AzureAccountCheck(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
 
-	client, err := svc.ad.Adaptor().Azure(&types.AzureCredential{
-		CloudTenantID: req.CloudTenantID, CloudSubscriptionID: req.CloudSubscriptionID,
-		CloudApplicationID: req.CloudApplicationID, CloudClientSecretKey: req.CloudClientSecretKey,
-	})
+	client, err := svc.ad.Adaptor().Azure(
+		&types.AzureCredential{
+			CloudTenantID:        req.CloudTenantID,
+			CloudSubscriptionID:  req.CloudSubscriptionID,
+			CloudApplicationID:   req.CloudApplicationID,
+			CloudClientSecretKey: req.CloudClientSecretKey,
+		})
 	if err != nil {
 		return nil, err
 	}
 
-	err = client.AccountCheck(cts.Kit)
+	infoBySecret, err := client.GetAccountInfoBySecret(cts.Kit)
+	if err != nil {
+		return nil, err
+	}
+
+	if infoBySecret.CloudSubscriptionID != req.CloudSubscriptionID {
+		return nil, errf.New(errf.InvalidParameter,
+			"CloudSubscriptionID does not match the account to which the secret belongs")
+	}
+	if infoBySecret.CloudSubscriptionName != req.CloudSubscriptionName {
+		return nil, errf.New(errf.InvalidParameter,
+			"CloudSubscriptionName does not match the account to which the secret belongs")
+	}
+	if infoBySecret.CloudApplicationName != req.CloudApplicationName {
+		return nil, errf.New(errf.InvalidParameter,
+			"CloudApplicationName does not match the account to which the secret belongs")
+	}
 
 	return nil, err
 }

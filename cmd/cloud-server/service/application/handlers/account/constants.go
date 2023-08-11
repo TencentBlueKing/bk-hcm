@@ -29,7 +29,7 @@ var (
 		enumor.Aws:    "cloud_account_id",
 		enumor.HuaWei: "cloud_sub_account_id",
 		enumor.Gcp:    "cloud_project_id",
-		enumor.Azure:  "cloud_tenant_id",
+		enumor.Azure:  "cloud_subscription_id",
 	}
 
 	accountTypNameMap = map[enumor.AccountType]string{

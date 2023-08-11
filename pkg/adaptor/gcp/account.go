@@ -24,6 +24,8 @@ import (
 	"strings"
 
 	typeaccount "hcm/pkg/adaptor/types/account"
+	"hcm/pkg/api/cloud-server/account"
+	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -79,16 +81,6 @@ func (g *Gcp) ListAccount(kt *kit.Kit) ([]typeaccount.GcpAccount, error) {
 	return list, nil
 }
 
-// AccountCheck check account authentication information and permissions.
-func (g *Gcp) AccountCheck(kt *kit.Kit) error {
-	// 通过调用获取项目信息接口来验证账号有效性(账号需要有 compute.projects.get 权限)
-	if _, err := g.getProject(kt); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // GetProjectRegionQuota 获取项目地域配额
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/regions/get
 func (g *Gcp) GetProjectRegionQuota(kt *kit.Kit, opt *typeaccount.GcpProjectRegionQuotaOption) (
@@ -125,4 +117,56 @@ func (g *Gcp) GetProjectRegionQuota(kt *kit.Kit, opt *typeaccount.GcpProjectRegi
 	}
 
 	return nil, fmt.Errorf("query project region: %s quota not match data", opt.Region)
+}
+
+// GetAccountInfoBySecret 根据秘钥获取账号信息
+// reference:
+// 1. https://cloud.google.com/resource-manager/reference/rest/v3/projects/search
+// 2. https://cloud.google.com/iam/docs/reference/rest/v1/projects.serviceAccounts/get
+func (g *Gcp) GetAccountInfoBySecret(kit *kit.Kit, cloudSecretKeyString string) (*cloud.GcpInfoBySecret, error) /**/ {
+	client, err := g.clientSet.resClient(kit)
+	if err != nil {
+		return nil, err
+	}
+
+	// 1. 获取该账号可以访问的项目 https://cloud.google.com/resource-manager/reference/rest/v3/projects/search
+	projectList, err := client.Projects.Search().Do()
+	if err != nil {
+		logs.Errorf("search project failed, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+	// 2. 只能有一个对应的project，多project报错。
+	if len(projectList.Projects) > 1 {
+		projects := make([]string, len(projectList.Projects))
+		for i, project := range projectList.Projects {
+			projects[i] = "(" + project.ProjectId + ")" + project.DisplayName
+		}
+
+		return nil, fmt.Errorf("more than one project found:" + strings.Join(projects, ","))
+	}
+
+	projectId := projectList.Projects[0].ProjectId
+	iamClient, err := g.clientSet.iamServiceClient(kit)
+	if err != nil {
+		return nil, err
+	}
+
+	// 3. 根据秘钥信息获取服务账号信息
+	// https://cloud.google.com/iam/docs/reference/rest/v1/projects.serviceAccounts/get
+	sk, err := account.DecodeGcpSecretKey(cloudSecretKeyString)
+	serviceAccount, err := iamClient.Projects.ServiceAccounts.Get(
+		fmt.Sprintf("projects/%s/serviceAccounts/%s", projectId, sk.ClientEmail),
+	).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	accountInfo := &cloud.GcpInfoBySecret{
+		CloudProjectID:          projectList.Projects[0].ProjectId,
+		CloudProjectName:        projectList.Projects[0].DisplayName,
+		CloudServiceAccountID:   serviceAccount.UniqueId,
+		CloudServiceAccountName: serviceAccount.DisplayName,
+		CloudServiceSecretID:    sk.PrivateKeyID,
+	}
+	return accountInfo, nil
 }

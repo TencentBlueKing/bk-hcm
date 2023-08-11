@@ -23,7 +23,9 @@ import (
 	"context"
 	"net/http"
 
-	"hcm/pkg/api/hc-service"
+	"hcm/pkg/api/cloud-server/account"
+	"hcm/pkg/api/core/cloud"
+	"hcm/pkg/api/hc-service/account"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -40,8 +42,8 @@ func NewAccountClient(client rest.ClientInterface) *AccountClient {
 	}
 }
 
-// Check account
-func (a *AccountClient) Check(ctx context.Context, h http.Header, request *hcservice.AwsAccountCheckReq) error {
+// Check 联通性和云上字段匹配校验
+func (a *AccountClient) Check(ctx context.Context, h http.Header, request *hsaccount.AwsAccountCheckReq) error {
 
 	resp := new(rest.BaseResp)
 
@@ -62,4 +64,28 @@ func (a *AccountClient) Check(ctx context.Context, h http.Header, request *hcser
 	}
 
 	return nil
+}
+
+// GetBySecret get account info by secret
+func (a *AccountClient) GetBySecret(ctx context.Context, h http.Header,
+	req *cloud.AwsSecret) (*cloud.AwsInfoBySecret, error) {
+
+	resp := new(account.BySecretResp[cloud.AwsInfoBySecret])
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/accounts/secret").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
 }

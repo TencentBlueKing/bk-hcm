@@ -81,10 +81,11 @@ func (req *AwsAccountExtensionUpdateReq) IsFull() bool {
 
 // HuaWeiAccountExtensionUpdateReq ...
 type HuaWeiAccountExtensionUpdateReq struct {
-	CloudIamUserID   string `json:"cloud_iam_user_id" validate:"required"`
-	CloudIamUsername string `json:"cloud_iam_username" validate:"required"`
-	CloudSecretID    string `json:"cloud_secret_id" validate:"omitempty"`
-	CloudSecretKey   string `json:"cloud_secret_key" validate:"omitempty"`
+	CloudSubAccountName string `json:"cloud_sub_account_name" validate:"required"`
+	CloudIamUserID      string `json:"cloud_iam_user_id" validate:"required"`
+	CloudIamUsername    string `json:"cloud_iam_username" validate:"required"`
+	CloudSecretID       string `json:"cloud_secret_id" validate:"omitempty"`
+	CloudSecretKey      string `json:"cloud_secret_key" validate:"omitempty"`
 }
 
 // Validate ...
@@ -108,6 +109,7 @@ func (req *HuaWeiAccountExtensionUpdateReq) IsFull() bool {
 
 // GcpAccountExtensionUpdateReq ...
 type GcpAccountExtensionUpdateReq struct {
+	CloudProjectName        string `json:"cloud_project_name" validate:"omitempty"`
 	CloudServiceAccountID   string `json:"cloud_service_account_id" validate:"omitempty"`
 	CloudServiceAccountName string `json:"cloud_service_account_name" validate:"omitempty"`
 	CloudServiceSecretID    string `json:"cloud_service_secret_id" validate:"omitempty"`
@@ -143,10 +145,11 @@ func (req *GcpAccountExtensionUpdateReq) IsFull() bool {
 
 // AzureAccountExtensionUpdateReq ...
 type AzureAccountExtensionUpdateReq struct {
-	CloudApplicationID   string `json:"cloud_application_id" validate:"omitempty"`
-	CloudApplicationName string `json:"cloud_application_name" validate:"omitempty"`
-	CloudClientSecretID  string `json:"cloud_client_secret_id" validate:"omitempty"`
-	CloudClientSecretKey string `json:"cloud_client_secret_key" validate:"omitempty"`
+	CloudTenantID         string `json:"cloud_tenant_id" validate:"omitempty"`
+	CloudSubscriptionName string `json:"cloud_subscription_name" validate:"omitempty"`
+	CloudApplicationID    string `json:"cloud_application_id" validate:"omitempty"`
+	CloudApplicationName  string `json:"cloud_application_name" validate:"omitempty"`
+	CloudClientSecretKey  string `json:"cloud_client_secret_key" validate:"omitempty"`
 }
 
 // Validate ...
@@ -165,8 +168,7 @@ func (req *AzureAccountExtensionUpdateReq) Validate(accountType enumor.AccountTy
 
 // IsFull  对于不同账号类型，有些字段是允许为空的，这里返回是否所有字段都有值
 func (req *AzureAccountExtensionUpdateReq) IsFull() bool {
-	return req.CloudClientSecretID != "" &&
-		req.CloudClientSecretKey != "" &&
+	return req.CloudClientSecretKey != "" &&
 		req.CloudApplicationID != "" &&
 		req.CloudApplicationName != ""
 }
