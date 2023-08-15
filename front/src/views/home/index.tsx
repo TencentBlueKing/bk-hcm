@@ -265,7 +265,7 @@ export default defineComponent({
                     <div class='logo'>
                       <img class='logo-icon' src={logo} />
                     </div>
-                    <div class='title-text'>{t('海垒2.0')}</div>
+                    <div class='title-text'>{t('海垒')}</div>
                   </div>
                 ),
                 header: () => (

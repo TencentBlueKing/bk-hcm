@@ -7,7 +7,7 @@ interface ILANG {
 const lang: ILANG = {
   '无该应用访问权限': ['No access permission for this application.'],
   '你好世界': ['hello world'],
-  '海垒2.0': ['HCM 2.0'],
+  '海垒': ['HCM'],
   '退出': ['Quit'],
   '非平台用户，请联系管理员授权': ['No platform users, please contact the administrator for authorization'],
   '请联系项目管理员关联业务': ['Please contact the project administrator to associate the business'],

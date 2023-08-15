@@ -41,15 +41,14 @@
     }
 }
 .left-header{
-    margin-left: 20px;
     .logo-icon{
-        height: 32px;
-        width: 32px;
+        height: 28px;
+        width: 28px;
     }
     .title-text{
         font-size: 18px;
         font-weight: 700;
-        padding-left: 16px;
+        padding-left: 10px;
         line-height: 24px;
         //overflow: hidden;
         white-space: nowrap;
@@ -151,4 +150,7 @@
 
 .nav-slider, .bk-menu .menu-warp , .bk-menu-submenu.is-opened, .bk-navigation-header {
     background-color: #2C354D!important;
+}
+.bk-navigation-wrapper .navigation-nav .nav-slider-list {
+    padding-top: 0!important;
 }
