@@ -5,26 +5,28 @@
 export const headRouteConfig = [
   {
     id: 'business',
-    name: '业务',
+    name: '资源管理',
     route: 'business',
     href: '#/business/host',
   },
   {
-    id: 'resource',
-    name: '资源',
-    route: 'resource',
-    href: '#/resource/account',
-  },
-  {
     id: 'service',
-    name: '服务',
+    name: '服务请求',
     route: 'service',
     href: '#/service/service-apply',
   },
   {
-    id: 'workbench',
-    name: '工作台',
-    route: 'workbench',
-    href: '#/workbench/audit',
+    id: 'resource',
+    name: '资源接入',
+    route: 'resource',
+    href: '#/resource/account',
   },
+
+  // 接下来是 资源选型、平台管理
+  // {
+  //   id: 'workbench',
+  //   name: '工作台',
+  //   route: 'workbench',
+  //   href: '#/workbench/audit',
+  // },
 ];
