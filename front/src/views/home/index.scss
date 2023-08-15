@@ -94,3 +94,53 @@
         text-align: right;
     }
 }
+
+.bk-hcm-app-selector {
+    background: #434B5F!important;
+    margin: 10px 8px;
+}
+.bk-hcm-app-selector-item {
+    display: flex;
+    width: 360px;
+    font-size: 13px;
+    .bk-hcm-app-selector-item-content {
+        margin-right: auto;
+        .bk-hcm-app-selector-item-content-name {
+            color: #C4C6CC;
+        }
+        .bk-hcm-app-selector-item-content-id {
+            color: #979BA5;
+        }
+    }
+    .bk-hcm-app-selector-item-star {
+        margin-left: 1px;
+    }
+    
+}
+
+.bk-app-select-menu {
+    background: #182233!important; 
+    border-color: #2F3847!important;
+}
+
+.app-action {
+    background: #394561!important;
+    border-color: #2F3847!important;
+    .app-action-content {
+        display: flex;
+        justify-content: left;
+        width: 100%;
+        line-height: 14px;
+        font-size: 13px;
+        padding-left: 17px;
+        cursor: pointer;
+        .app-action-content-icon {
+            margin-right: 7px;
+            font-size: 14px;
+            color: #B0BDD5;
+        }
+        .app-action-content-text {
+            color: #C4C6CC;
+        }
+    }
+}

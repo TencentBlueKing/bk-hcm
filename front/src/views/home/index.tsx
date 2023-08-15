@@ -28,6 +28,9 @@ import { useCloudAreaStore } from '@/store/useCloudAreaStore';
 import cookie from 'cookie';
 import NoPermission from '@/views/resource/NoPermission';
 import usePagePermissionStore from '@/store/usePagePermissionStore';
+// @ts-ignore
+import AppSelect from '@blueking/app-select';
+import '@blueking/app-select/dist/style.css';
 
 // import { CogShape } from 'bkui-vue/lib/icon';
 // import { useProjectList } from '@/hooks';
@@ -62,7 +65,9 @@ export default defineComponent({
     const curYear = ref(new Date().getFullYear());
     const isMenuOpen = ref<boolean>(true);
     const language = ref(cookie.parse(document.cookie).blueking_language || 'zh-cn');
-    const { hasPagePermission, permissionMsg, logout } =      usePagePermissionStore();
+    const favoritedBusinessSet = ref(new Set());
+
+    const { hasPagePermission, permissionMsg, logout } = usePagePermissionStore();
     // 获取业务列表
     const getBusinessList = async () => {
       try {
@@ -202,7 +207,8 @@ export default defineComponent({
     );
 
     // 选择业务
-    const handleChange = async () => {
+    const handleChange = async (val: {id: string}) => {
+      businessId.value = val.id;
       accountStore.updateBizsId(businessId.value); // 设置全局业务id
       // @ts-ignore
       const isbusinessDetail = route.name?.includes('BusinessDetail');
@@ -343,21 +349,49 @@ export default defineComponent({
                 menu: () => (
                   <>
                     {topMenuActiveItem === 'business' && isMenuOpen.value ? (
-                      <Select
-                        class='biz-select-warp'
-                        v-model={businessId.value}
-                        filterable
-                        placeholder='请选择业务'
-                        onChange={handleChange}>
-                        {businessList.value.map(item => (
-                          <Option
-                            key={item.id}
-                            value={item.id}
-                            label={item.name}>
-                            {item.name}
-                          </Option>
-                        ))}
-                      </Select>
+                      <AppSelect
+                        data={businessList.value}
+                        onChange={handleChange}
+                        theme={'dark'}
+                        class={'bk-hcm-app-selector'}
+                        value={businessList.value?.[0]}
+                        minWidth={360}>
+                        {{
+                          default: ({
+                            data,
+                          }: {
+                            data: { id: string; name: string };
+                          }) => (
+                            <div class='bk-hcm-app-selector-item'>
+                              <div class='bk-hcm-app-selector-item-content'>
+                                <span class={'bk-hcm-app-selector-item-content-name'}>{`${data.name}`}</span>
+                                &nbsp;&nbsp;&nbsp;
+                                <span class={'bk-hcm-app-selector-item-content-id'}>{`(#${data.id})`}</span>
+                              </div>
+
+                              <div class='bk-hcm-app-selector-item-star'>
+                                {
+                                  favoritedBusinessSet.value.has(data.id)
+                                    ? <i class={'icon bk-icon icon-collect'} style={{ color: '#CC933A' }} onClick={(event) => {
+                                      favoritedBusinessSet.value.delete(data.id);
+                                      event.stopPropagation();
+                                    }}/>
+                                    : <i class={'icon bk-icon icon-not-favorited'} onClick={(event) => {
+                                      favoritedBusinessSet.value.add(data.id);
+                                      event.stopPropagation();
+                                    }}/>
+                                }
+                              </div>
+                            </div>
+                          ),
+                          append: () => (
+                            <div class={'app-action-content'}>
+                              <i class={'icon bk-icon icon-plus-circle app-action-content-icon'}/>
+                              <span class={'app-action-content-text'}>新建业务</span>
+                            </div>
+                          ),
+                        }}
+                      </AppSelect>
                     ) : (
                       ''
                     )}
@@ -376,7 +410,7 @@ export default defineComponent({
                               icon: () => (
                                 <i
                                   class={
-                                    'icon hcm-icon bkhcm-icon-automatic-typesetting menu-icon'
+                                    'icon bk-icon icon-not-favorited'
                                   }
                                 />
                               ),
