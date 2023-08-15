@@ -47,9 +47,14 @@ func (opt AwsBillListReq) Validate() error {
 		return err
 	}
 
+	// aws的AthenaQuery属于sql查询，跟SDK接口的Limit限制不同
 	if opt.Page != nil {
-		if err := opt.Page.Validate(); err != nil {
-			return err
+		if opt.Page.Limit == 0 {
+			return errf.New(errf.InvalidParameter, "aws.limit is required")
+		}
+
+		if opt.Page.Limit > 100000 {
+			return errf.New(errf.InvalidParameter, "aws.limit should <= 100000")
 		}
 	}
 
@@ -282,8 +287,8 @@ func (opt GcpBillListReq) Validate() error {
 		if opt.Page.Limit == 0 {
 			return errf.New(errf.InvalidParameter, "page.limit is required")
 		}
-		if opt.Page.Limit > 5000 {
-			return errf.New(errf.InvalidParameter, "page.limit should <= 5000")
+		if opt.Page.Limit > 100000 {
+			return errf.New(errf.InvalidParameter, "page.limit should <= 100000")
 		}
 	}
 
