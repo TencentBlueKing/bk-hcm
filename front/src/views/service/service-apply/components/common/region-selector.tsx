@@ -105,11 +105,11 @@ export default defineComponent({
               op: QueryRuleOPEnum.EQ,
               value: 'opt-in-not-required',
             },
-            {
-              field: 'account_id',
-              op: QueryRuleOPEnum.EQ,
-              value: props.accountId,
-            },
+            // {
+            //   field: 'account_id',
+            //   op: QueryRuleOPEnum.EQ,
+            //   value: props.accountId,
+            // },
           ];
           break;
         }
