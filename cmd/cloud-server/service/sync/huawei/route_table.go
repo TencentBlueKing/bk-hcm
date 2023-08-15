@@ -23,17 +23,17 @@ import (
 	gosync "sync"
 	"time"
 
+	"hcm/cmd/cloud-server/service/sync/detail"
 	"hcm/pkg/adaptor/huawei"
 	"hcm/pkg/api/hc-service/sync"
-	dataservice "hcm/pkg/client/data-service"
-	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
 // SyncRouteTable 同步路由表
-func SyncRouteTable(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice.Client, accountID string) error {
+func SyncRouteTable(kt *kit.Kit, cliSet *client.ClientSet, accountID string) error {
 	start := time.Now()
 	logs.V(3).Infof("[%s] account[%s] sync route table start, time: %v, rid: %s",
 		enumor.HuaWei, accountID, start, kt.Rid)
@@ -43,7 +43,7 @@ func SyncRouteTable(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice
 			enumor.HuaWei, accountID, time.Since(start), kt.Rid)
 	}()
 
-	regions, err := ListRegionByService(kt, dataCli, huawei.Vpc)
+	regions, err := ListRegionByService(kt, cliSet.DataService(), huawei.Vpc)
 	if err != nil {
 		logs.Errorf("sync huawei list region failed, err: %v, rid: %s", err, kt.Rid)
 		return err
@@ -66,7 +66,7 @@ func SyncRouteTable(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice
 				AccountID: accountID,
 				Region:    region,
 			}
-			err = service.HuaWei.RouteTable.SyncRouteTable(kt.Ctx, kt.Header(), req)
+			err = cliSet.HCService().HuaWei.RouteTable.SyncRouteTable(kt.Ctx, kt.Header(), req)
 			if firstErr == nil && Error(err) != nil {
 				logs.Errorf("sync huawei route table failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 				firstErr = err
@@ -79,6 +79,17 @@ func SyncRouteTable(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice
 
 	if firstErr != nil {
 		return firstErr
+	}
+
+	// 同步状态
+	sd := &detail.SyncDetail{
+		Kt:        kt,
+		DataCli:   cliSet.DataService(),
+		AccountID: accountID,
+		Vendor:    string(enumor.HuaWei),
+	}
+	if err := sd.ResSyncStatusSuccess(enumor.RouteTableCloudResType); err != nil {
+		return err
 	}
 
 	return nil

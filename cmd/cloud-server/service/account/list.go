@@ -20,8 +20,13 @@
 package account
 
 import (
+	"errors"
+	"fmt"
+
 	proto "hcm/pkg/api/cloud-server/account"
+	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
@@ -75,7 +80,7 @@ func (a *accountSvc) list(cts *rest.Contexts, typ meta.ResourceType) (interface{
 		}
 	}
 
-	return a.client.DataService().Global.Account.List(
+	accounts, err := a.client.DataService().Global.Account.List(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&dataproto.AccountListReq{
@@ -83,4 +88,68 @@ func (a *accountSvc) list(cts *rest.Contexts, typ meta.ResourceType) (interface{
 			Page:   req.Page,
 		},
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(accounts.Details) == 0 {
+		return nil, errors.New("accounts not found")
+	}
+
+	for _, one := range accounts.Details {
+		status, failedReason, err := a.getAccountSyncDetail(cts, one.ID, string(one.Vendor))
+		if err != nil {
+			return nil, err
+		}
+		one.SyncStatus = status
+		one.SyncFailedReason = failedReason
+	}
+
+	return accounts, nil
+}
+
+func (a *accountSvc) getAccountSyncDetail(cts *rest.Contexts, accountID string,
+	vendor string) (string, string, error) {
+
+	listReq := &core.ListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "account_id",
+					Op:    filter.Equal.Factory(),
+					Value: accountID,
+				},
+				&filter.AtomRule{
+					Field: "vendor",
+					Op:    filter.Equal.Factory(),
+					Value: vendor,
+				},
+			},
+		},
+		Page: &core.BasePage{
+			Start: 0,
+			Limit: core.DefaultMaxPageLimit,
+		},
+	}
+	accountSyncDetail, err := a.client.DataService().Global.AccountSyncDetail.List(cts.Kit, listReq)
+	if err != nil {
+		return "", "", err
+	}
+
+	if len(accountSyncDetail.Details) == 0 {
+		return "", "", fmt.Errorf("list %s can not find accout sync detail", accountID)
+	}
+
+	status := ""
+	failedReason := ""
+	for _, one := range accountSyncDetail.Details {
+		status = one.ResStatus
+		if one.ResStatus == string(enumor.SyncFailed) {
+			failedReason = string(one.ResFailedReason)
+			break
+		}
+	}
+
+	return status, failedReason, nil
 }

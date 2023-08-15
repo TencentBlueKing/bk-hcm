@@ -22,14 +22,16 @@ package gcp
 import (
 	"time"
 
+	"hcm/cmd/cloud-server/service/sync/detail"
 	"hcm/pkg/api/hc-service/sync"
-	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/client"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
 // SyncVpc ...
-func SyncVpc(kt *kit.Kit, service *hcservice.Client, accountID string) error {
+func SyncVpc(kt *kit.Kit, cliSet *client.ClientSet, accountID string) error {
 
 	start := time.Now()
 	logs.V(3).Infof("gcp account[%s] sync vpc start, time: %v, rid: %s", accountID, start, kt.Rid)
@@ -41,8 +43,19 @@ func SyncVpc(kt *kit.Kit, service *hcservice.Client, accountID string) error {
 	req := &sync.GcpGlobalSyncReq{
 		AccountID: accountID,
 	}
-	if err := service.Gcp.Vpc.SyncVpc(kt.Ctx, kt.Header(), req); err != nil {
+	if err := cliSet.HCService().Gcp.Vpc.SyncVpc(kt.Ctx, kt.Header(), req); err != nil {
 		logs.Errorf("sync gcp vpc failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+		return err
+	}
+
+	// 同步状态
+	sd := &detail.SyncDetail{
+		Kt:        kt,
+		DataCli:   cliSet.DataService(),
+		AccountID: accountID,
+		Vendor:    string(enumor.Gcp),
+	}
+	if err := sd.ResSyncStatusSuccess(enumor.VpcCloudResType); err != nil {
 		return err
 	}
 

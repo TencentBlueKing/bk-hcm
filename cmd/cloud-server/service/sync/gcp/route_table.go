@@ -23,15 +23,16 @@ import (
 	gosync "sync"
 	"time"
 
+	"hcm/cmd/cloud-server/service/sync/detail"
 	"hcm/pkg/api/hc-service/sync"
-	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
 // SyncRoute 同步路由表
-func SyncRoute(kt *kit.Kit, service *hcservice.Client, accountID string, regionZoneMap map[string][]string) error {
+func SyncRoute(kt *kit.Kit, cliSet *client.ClientSet, accountID string, regionZoneMap map[string][]string) error {
 	start := time.Now()
 	logs.V(3).Infof("[%s] account[%s] sync route table start, time: %v, rid: %s",
 		enumor.Gcp, accountID, start, kt.Rid)
@@ -59,7 +60,7 @@ func SyncRoute(kt *kit.Kit, service *hcservice.Client, accountID string, regionZ
 					AccountID: accountID,
 					Zone:      zone,
 				}
-				err := service.Gcp.RouteTable.SyncRoute(kt.Ctx, kt.Header(), req)
+				err := cliSet.HCService().Gcp.RouteTable.SyncRoute(kt.Ctx, kt.Header(), req)
 				if firstErr == nil && err != nil {
 					logs.Errorf("[%s] account[%s] sync route failed, req: %v, err: %v, rid: %s",
 						enumor.Gcp, accountID, req, err, kt.Rid)
@@ -74,6 +75,17 @@ func SyncRoute(kt *kit.Kit, service *hcservice.Client, accountID string, regionZ
 
 	if firstErr != nil {
 		return firstErr
+	}
+
+	// 同步状态
+	sd := &detail.SyncDetail{
+		Kt:        kt,
+		DataCli:   cliSet.DataService(),
+		AccountID: accountID,
+		Vendor:    string(enumor.Gcp),
+	}
+	if err := sd.ResSyncStatusSuccess(enumor.RouteTableCloudResType); err != nil {
+		return err
 	}
 
 	return nil

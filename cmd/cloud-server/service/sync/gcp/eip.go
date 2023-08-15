@@ -23,14 +23,16 @@ import (
 	gosync "sync"
 	"time"
 
+	"hcm/cmd/cloud-server/service/sync/detail"
 	"hcm/pkg/api/hc-service/sync"
-	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/client"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
 // SyncEip ...
-func SyncEip(kt *kit.Kit, service *hcservice.Client, accountID string, regions []string) error {
+func SyncEip(kt *kit.Kit, cliSet *client.ClientSet, accountID string, regions []string) error {
 
 	start := time.Now()
 	logs.V(3).Infof("gcp account[%s] sync eip start, time: %v, rid: %s", accountID, start, kt.Rid)
@@ -56,7 +58,7 @@ func SyncEip(kt *kit.Kit, service *hcservice.Client, accountID string, regions [
 				AccountID: accountID,
 				Region:    region,
 			}
-			err := service.Gcp.Eip.SyncEip(kt.Ctx, kt.Header(), req)
+			err := cliSet.HCService().Gcp.Eip.SyncEip(kt.Ctx, kt.Header(), req)
 			if firstErr == nil && err != nil {
 				logs.Errorf("sync gcp eip failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 				firstErr = err
@@ -69,6 +71,17 @@ func SyncEip(kt *kit.Kit, service *hcservice.Client, accountID string, regions [
 
 	if firstErr != nil {
 		return firstErr
+	}
+
+	// 同步状态
+	sd := &detail.SyncDetail{
+		Kt:        kt,
+		DataCli:   cliSet.DataService(),
+		AccountID: accountID,
+		Vendor:    string(enumor.Gcp),
+	}
+	if err := sd.ResSyncStatusSuccess(enumor.EipCloudResType); err != nil {
+		return err
 	}
 
 	return nil

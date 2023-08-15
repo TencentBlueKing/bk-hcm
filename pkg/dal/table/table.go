@@ -112,6 +112,9 @@ const (
 	// EipCvmRelTableName is eip_cvm_rel's table name.
 	EipCvmRelTableName Name = "eip_cvm_rel"
 
+	// AccountSyncDetailTable is account_sync_detail table's name.
+	AccountSyncDetailTable Name = "account_sync_detail"
+
 	// ApplicationTable is application table name
 	ApplicationTable Name = "application"
 	// ApprovalProcessTable is approval process table name
@@ -187,6 +190,7 @@ var TableMap = map[Name]struct{}{
 	DiskCvmRelTableName:          {},
 	EipCvmRelTableName:           {},
 	AccountBillConfigTable:       {},
+	AccountSyncDetailTable:       {},
 
 	// TODO: 临时方案
 	RecycleRecordTableTaskID: {},

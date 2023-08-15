@@ -23,14 +23,16 @@ import (
 	gosync "sync"
 	"time"
 
+	"hcm/cmd/cloud-server/service/sync/detail"
 	"hcm/pkg/api/hc-service/sync"
-	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/client"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
 // SyncCvm ...
-func SyncCvm(kt *kit.Kit, service *hcservice.Client, accountID string, regionZoneMap map[string][]string) error {
+func SyncCvm(kt *kit.Kit, cliSet *client.ClientSet, accountID string, regionZoneMap map[string][]string) error {
 
 	start := time.Now()
 	logs.V(3).Infof("gcp account[%s] sync cvm start, time: %v, rid: %s", accountID, start, kt.Rid)
@@ -58,7 +60,7 @@ func SyncCvm(kt *kit.Kit, service *hcservice.Client, accountID string, regionZon
 					Region:    region,
 					Zone:      zone,
 				}
-				err := service.Gcp.Cvm.SyncCvmWithRelResource(kt.Ctx, kt.Header(), req)
+				err := cliSet.HCService().Gcp.Cvm.SyncCvmWithRelResource(kt.Ctx, kt.Header(), req)
 				if firstErr == nil && err != nil {
 					logs.Errorf("sync gcp cvm failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 					firstErr = err
@@ -72,6 +74,17 @@ func SyncCvm(kt *kit.Kit, service *hcservice.Client, accountID string, regionZon
 
 	if firstErr != nil {
 		return firstErr
+	}
+
+	// 同步状态
+	sd := &detail.SyncDetail{
+		Kt:        kt,
+		DataCli:   cliSet.DataService(),
+		AccountID: accountID,
+		Vendor:    string(enumor.Gcp),
+	}
+	if err := sd.ResSyncStatusSuccess(enumor.CvmCloudResType); err != nil {
+		return err
 	}
 
 	return nil

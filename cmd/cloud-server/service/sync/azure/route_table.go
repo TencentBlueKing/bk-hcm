@@ -23,15 +23,16 @@ import (
 	gosync "sync"
 	"time"
 
+	"hcm/cmd/cloud-server/service/sync/detail"
 	"hcm/pkg/api/hc-service/sync"
-	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
 // SyncRouteTable 同步路由表
-func SyncRouteTable(kt *kit.Kit, service *hcservice.Client, accountID string, resourceGroupNames []string) error {
+func SyncRouteTable(kt *kit.Kit, cliSet *client.ClientSet, accountID string, resourceGroupNames []string) error {
 	start := time.Now()
 	logs.V(3).Infof("[%s] account[%s] sync route table start, time: %v, rid: %s",
 		enumor.Azure, accountID, start, kt.Rid)
@@ -58,7 +59,7 @@ func SyncRouteTable(kt *kit.Kit, service *hcservice.Client, accountID string, re
 				AccountID:         accountID,
 				ResourceGroupName: name,
 			}
-			err := service.Azure.RouteTable.SyncRouteTable(kt.Ctx, kt.Header(), req)
+			err := cliSet.HCService().Azure.RouteTable.SyncRouteTable(kt.Ctx, kt.Header(), req)
 			if firstErr == nil && err != nil {
 				logs.Errorf("sync azure route table failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 				firstErr = err
@@ -71,6 +72,17 @@ func SyncRouteTable(kt *kit.Kit, service *hcservice.Client, accountID string, re
 
 	if firstErr != nil {
 		return firstErr
+	}
+
+	// 同步状态
+	sd := &detail.SyncDetail{
+		Kt:        kt,
+		DataCli:   cliSet.DataService(),
+		AccountID: accountID,
+		Vendor:    string(enumor.Azure),
+	}
+	if err := sd.ResSyncStatusSuccess(enumor.RouteTableCloudResType); err != nil {
+		return err
 	}
 
 	return nil
