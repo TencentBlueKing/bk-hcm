@@ -40,6 +40,7 @@
     "prepare": "cd .. && husky install front/.husky"
   },
   "dependencies": {
+    "@blueking/app-select": "^0.0.1-beta.4",
     "@blueking/babel-preset-bk": "^2.1.0-beta4",
     "@blueking/cli-service-webpack": "0.0.0-beta26",
     "@types/lodash": "^4.14.182",

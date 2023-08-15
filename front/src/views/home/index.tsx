@@ -1,4 +1,11 @@
-import { defineComponent, reactive, watch, ref, nextTick, onMounted } from 'vue';
+import {
+  defineComponent,
+  reactive,
+  watch,
+  ref,
+  nextTick,
+  onMounted,
+} from 'vue';
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 import type { RouteRecordRaw } from 'vue-router';
 import { Menu, Navigation, Dropdown, Select } from 'bkui-vue';
@@ -52,10 +59,10 @@ export default defineComponent({
     const businessList = ref<any[]>([]);
     const loading = ref<Boolean>(false);
     const isRouterAlive = ref<Boolean>(true);
-    const curYear = ref((new Date()).getFullYear());
+    const curYear = ref(new Date().getFullYear());
     const isMenuOpen = ref<boolean>(true);
     const language = ref(cookie.parse(document.cookie).blueking_language || 'zh-cn');
-    const { hasPagePermission, permissionMsg, logout } = usePagePermissionStore();
+    const { hasPagePermission, permissionMsg, logout } =      usePagePermissionStore();
     // 获取业务列表
     const getBusinessList = async () => {
       try {
@@ -63,7 +70,8 @@ export default defineComponent({
         const res = await accountStore.getBizListWithAuth();
         loading.value = false;
         businessList.value = res?.data;
-        if (!businessList.value.length) {      // 没有权限
+        if (!businessList.value.length) {
+          // 没有权限
           router.push({
             name: '403',
             params: {
@@ -72,7 +80,7 @@ export default defineComponent({
           });
           return;
         }
-        businessId.value = accountStore.bizs || res?.data[0].id;   // 默认取第一个业务
+        businessId.value = accountStore.bizs || res?.data[0].id; // 默认取第一个业务
         accountStore.updateBizsId(businessId.value); // 设置全局业务id
       } catch (error) {
         console.log(error);
@@ -88,7 +96,7 @@ export default defineComponent({
           menus = reactive(business);
           path = '/business/host';
           if (!accountStore.bizs) accountStore.updateBizsId(useBusinessMapStore().businessList?.[0]?.id);
-          getBusinessList();    // 业务下需要获取业务列表
+          getBusinessList(); // 业务下需要获取业务列表
           break;
         case 'resource':
           topMenuActiveItem = 'resource';
@@ -128,7 +136,7 @@ export default defineComponent({
       (val) => {
         const { bizs } = val.query;
         if (bizs) {
-          businessId.value = Number(bizs);   // 取地址栏的业务id
+          businessId.value = Number(bizs); // 取地址栏的业务id
           accountStore.updateBizsId(businessId.value); // 设置全局业务id
         }
         curPath.value = route.path;
@@ -141,21 +149,25 @@ export default defineComponent({
       },
     );
 
-    watch(() => accountStore.bizs, async (bizs) => {
-      if (!bizs) return;
-      const commonStore = useCommonStore();
-      const { pageAuthData } = commonStore;      // 所有需要检验的查看权限数据
-      const bizsPageAuthData = pageAuthData.map((e: any) => {
-        // eslint-disable-next-line no-prototype-builtins
-        if (e.hasOwnProperty('bk_biz_id')) {
-          e.bk_biz_id = bizs;
-        }
-        return e;
-      });
-      commonStore.updatePageAuthData(bizsPageAuthData);
-      const { getAuthVerifyData } = useVerify();    // 权限中心权限
-      await getAuthVerifyData(bizsPageAuthData);
-    }, { immediate: true });
+    watch(
+      () => accountStore.bizs,
+      async (bizs) => {
+        if (!bizs) return;
+        const commonStore = useCommonStore();
+        const { pageAuthData } = commonStore; // 所有需要检验的查看权限数据
+        const bizsPageAuthData = pageAuthData.map((e: any) => {
+          // eslint-disable-next-line no-prototype-builtins
+          if (e.hasOwnProperty('bk_biz_id')) {
+            e.bk_biz_id = bizs;
+          }
+          return e;
+        });
+        commonStore.updatePageAuthData(bizsPageAuthData);
+        const { getAuthVerifyData } = useVerify(); // 权限中心权限
+        await getAuthVerifyData(bizsPageAuthData);
+      },
+      { immediate: true },
+    );
 
     const handleHeaderMenuClick = (id: string, routeName: string): void => {
       if (route.name !== routeName) {
@@ -191,7 +203,7 @@ export default defineComponent({
 
     // 选择业务
     const handleChange = async () => {
-      accountStore.updateBizsId(businessId.value);    // 设置全局业务id
+      accountStore.updateBizsId(businessId.value); // 设置全局业务id
       // @ts-ignore
       const isbusinessDetail = route.name?.includes('BusinessDetail');
       if (isbusinessDetail) {
@@ -229,174 +241,201 @@ export default defineComponent({
       fetchAllCloudAreas();
     });
 
-    if (!hasPagePermission) return () => <NoPermission message={permissionMsg}/>;
+    if (!hasPagePermission) return () => <NoPermission message={permissionMsg} />;
 
     return () => (
-      <main class="flex-column full-page">
+      <main class='flex-column full-page'>
         {/* <Header></Header> */}
-          <div class="flex-1" >
-            {
-                <Navigation
-                  navigationType={NAV_TYPE}
-                  hoverWidth={NAV_WIDTH}
-                  defaultOpen={isMenuOpen.value}
-                  onToggle={handleToggle}
-                >
-                  {{
-                    'side-header': () => (
-                      <div class="left-header flex-row justify-content-between align-items-center">
-                        <div class="logo">
-                          <img class="logo-icon" src={logo} />
-                        </div>
-                        <div class="title-text">{t('海垒2.0')}</div>
-                      </div>
-                    ),
-                    header: () => (
-                      <header class="bk-hcm-header">
-                        <section class="flex-row justify-content-between header-width">
-                          {headRouteConfig.map(({ id, route, name, href }) => (
-                            <a
-                              class={classes({
-                                active: topMenuActiveItem === id,
-                              }, 'header-title')}
-                              key={id}
-                              aria-current="page"
-                              href={href}
-                              onClick={() => handleHeaderMenuClick(id, route)}
-                            >
-                              {t(name)}
-                            </a>
-                          ))}
-                        </section>
-                        <aside class='header-lang'>
-                          <Dropdown
-                            trigger='click'
-                          >
-                            {{
-                              default: () => (
-                                <span class="cursor-pointer flex-row align-items-center ">
-                                  {
-                                    language.value === LANGUAGE_TYPE.en ? 'English' : '中文'
-                                  }
-                                  <i class={'icon hcm-icon bkhcm-icon-down-shape pl5'}/>
-                                </span>
-                              ),
-                              content: () => (
-                                <DropdownMenu>
-                                  <DropdownItem onClick={() => {
-                                    language.value = LANGUAGE_TYPE.zh_cn;
-                                  }}>
-                                  {'中文'}
-                                  </DropdownItem>
-                                  <DropdownItem onClick={() => {
-                                    language.value = LANGUAGE_TYPE.en;
-                                  }}>
-                                  {'English'}
-                                  </DropdownItem>
-                                </DropdownMenu>
-                              ),
-                            }}
-                          </Dropdown>
-                        </aside>
-                        <aside class='header-user'>
-                          <Dropdown
-                            trigger='click'
-                          >
-                            {{
-                              default: () => (
-                                <span class="cursor-pointer flex-row align-items-center ">
-                                  {userStore.username}
-                                  <i class={'icon hcm-icon bkhcm-icon-down-shape pl5'}/>
-                                </span>
-                              ),
-                              content: () => (
-                                <DropdownMenu>
-                                  <DropdownItem onClick={logout}>
-                                  {t('退出')}
-                                  </DropdownItem>
-                                </DropdownMenu>
-                              ),
-                            }}
-                          </Dropdown>
-                        </aside>
-                      </header>
-                    ),
-                    menu: () => (
-                      <>
-                      {topMenuActiveItem === 'business' && isMenuOpen.value
-                        ? <Select class="biz-select-warp"
-                      v-model={businessId.value}
-                      filterable
-                      placeholder="请选择业务"
-                      onChange={handleChange}>
+        <div class='flex-1'>
+          {
+            <Navigation
+              navigationType={NAV_TYPE}
+              hoverWidth={NAV_WIDTH}
+              defaultOpen={isMenuOpen.value}
+              onToggle={handleToggle}>
+              {{
+                'side-header': () => (
+                  <div class='left-header flex-row justify-content-between align-items-center'>
+                    <div class='logo'>
+                      <img class='logo-icon' src={logo} />
+                    </div>
+                    <div class='title-text'>{t('海垒2.0')}</div>
+                  </div>
+                ),
+                header: () => (
+                  <header class='bk-hcm-header'>
+                    <section class='flex-row justify-content-between header-width'>
+                      {headRouteConfig.map(({ id, route, name, href }) => (
+                        <a
+                          class={classes(
+                            {
+                              active: topMenuActiveItem === id,
+                            },
+                            'header-title',
+                          )}
+                          key={id}
+                          aria-current='page'
+                          href={href}
+                          onClick={() => handleHeaderMenuClick(id, route)}>
+                          {t(name)}
+                        </a>
+                      ))}
+                    </section>
+                    <aside class='header-lang'>
+                      <Dropdown trigger='click'>
+                        {{
+                          default: () => (
+                            <span class='cursor-pointer flex-row align-items-center '>
+                              {language.value === LANGUAGE_TYPE.en
+                                ? 'English'
+                                : '中文'}
+                              <i
+                                class={
+                                  'icon hcm-icon bkhcm-icon-down-shape pl5'
+                                }
+                              />
+                            </span>
+                          ),
+                          content: () => (
+                            <DropdownMenu>
+                              <DropdownItem
+                                onClick={() => {
+                                  language.value = LANGUAGE_TYPE.zh_cn;
+                                }}>
+                                {'中文'}
+                              </DropdownItem>
+                              <DropdownItem
+                                onClick={() => {
+                                  language.value = LANGUAGE_TYPE.en;
+                                }}>
+                                {'English'}
+                              </DropdownItem>
+                            </DropdownMenu>
+                          ),
+                        }}
+                      </Dropdown>
+                    </aside>
+                    <aside class='header-user'>
+                      <Dropdown trigger='click'>
+                        {{
+                          default: () => (
+                            <span class='cursor-pointer flex-row align-items-center '>
+                              {userStore.username}
+                              <i
+                                class={
+                                  'icon hcm-icon bkhcm-icon-down-shape pl5'
+                                }
+                              />
+                            </span>
+                          ),
+                          content: () => (
+                            <DropdownMenu>
+                              <DropdownItem onClick={logout}>
+                                {t('退出')}
+                              </DropdownItem>
+                            </DropdownMenu>
+                          ),
+                        }}
+                      </Dropdown>
+                    </aside>
+                  </header>
+                ),
+                menu: () => (
+                  <>
+                    {topMenuActiveItem === 'business' && isMenuOpen.value ? (
+                      <Select
+                        class='biz-select-warp'
+                        v-model={businessId.value}
+                        filterable
+                        placeholder='请选择业务'
+                        onChange={handleChange}>
                         {businessList.value.map(item => (
-                            <Option
-                                key={item.id}
-                                value={item.id}
-                                label={item.name}
-                            >
-                                {item.name}
-                            </Option>
-                        ))
-                        }
-                        </Select> : ''}
+                          <Option
+                            key={item.id}
+                            value={item.id}
+                            label={item.name}>
+                            {item.name}
+                          </Option>
+                        ))}
+                      </Select>
+                    ) : (
+                      ''
+                    )}
 
-
-                      <Menu class="menu-warp" style={`width: ${NAV_WIDTH}px`} uniqueOpen={false} openedKeys={openedKeys} activeKey={route.meta.activeKey as string}>
-                        {
-                          menus.map(menuItem => (Array.isArray(menuItem.children) ? (
-                            <Menu.Submenu
-                              key={menuItem.path as string}
-                              title={menuItem.name as string}>
+                    <Menu
+                      class='menu-warp'
+                      style={`width: ${NAV_WIDTH}px`}
+                      uniqueOpen={false}
+                      openedKeys={openedKeys}
+                      activeKey={route.meta.activeKey as string}>
+                      {menus.map(menuItem => (Array.isArray(menuItem.children) ? (
+                          <Menu.Submenu
+                            key={menuItem.path as string}
+                            title={menuItem.name as string}>
                             {{
-                              icon: () => <i class={'icon hcm-icon bkhcm-icon-automatic-typesetting menu-icon'}/>,
+                              icon: () => (
+                                <i
+                                  class={
+                                    'icon hcm-icon bkhcm-icon-automatic-typesetting menu-icon'
+                                  }
+                                />
+                              ),
                               default: () => menuItem.children.map(child => (
-                                <RouterLink to={`${child.path}`}>
-                                    <Menu.Item key={child.meta.activeKey as string}>
-                                      <p class="flex-row flex-1 justify-content-between align-items-center pr16">
-                                        <span class="flex-1 text-ov">{child.name as string}</span>
+                                  <RouterLink to={`${child.path}`}>
+                                    <Menu.Item
+                                      key={child.meta.activeKey as string}>
+                                      <p class='flex-row flex-1 justify-content-between align-items-center pr16'>
+                                        <span class='flex-1 text-ov'>
+                                          {child.name as string}
+                                        </span>
                                       </p>
                                       {/* {route.meta.activeKey} */}
                                     </Menu.Item>
                                   </RouterLink>
                               )),
                             }}
-                            </Menu.Submenu>
-                          ) : (
-                            <RouterLink to={`${menuItem.path}`}>
-                              <Menu.Item
-                              key={menuItem.meta.activeKey as string}>
-                                {/* {menuItem.meta.activeKey} */}
-                                {{
-                                  // icon: () => <menuItem.icon/>,
-                                  default: () => menuItem.name as string,
-                                }}
-                              </Menu.Item>
-                            </RouterLink>
-                          )))
-                        }
-                      </Menu>
-                      </>
-                    ),
-                    default: () => (
-                      <>
-                        <div class="navigation-breadcrumb">
-                            <Breadcrumb></Breadcrumb>
-                        </div>
-                        <div class={ ['/service/my-apply'].includes(curPath.value) ? 'view-warp no-padding' : 'view-warp'}>
-                          {isRouterAlive.value ? <RouterView></RouterView> : ''}
-                        </div>
-                      </>
-                    ),
+                          </Menu.Submenu>
+                      ) : (
+                          <RouterLink to={`${menuItem.path}`}>
+                            <Menu.Item key={menuItem.meta.activeKey as string}>
+                              {/* {menuItem.meta.activeKey} */}
+                              {{
+                                // icon: () => <menuItem.icon/>,
+                                default: () => menuItem.name as string,
+                              }}
+                            </Menu.Item>
+                          </RouterLink>
+                      )))}
+                    </Menu>
+                  </>
+                ),
+                default: () => (
+                  <>
+                    <div class='navigation-breadcrumb'>
+                      <Breadcrumb></Breadcrumb>
+                    </div>
+                    <div
+                      class={
+                        ['/service/my-apply'].includes(curPath.value)
+                          ? 'view-warp no-padding'
+                          : 'view-warp'
+                      }>
+                      {isRouterAlive.value ? <RouterView></RouterView> : ''}
+                    </div>
+                  </>
+                ),
 
-                    footer: () => (
-                      // eslint-disable-next-line max-len
-                      <div class="mt20">Copyright © 2012-{ curYear.value } BlueKing - Hybrid Cloud Management System. All Rights Reserved.{ VERSION }</div>
-                    ),
-                  }}
-                </Navigation>
-            }
-          </div>
+                footer: () => (
+                  // eslint-disable-next-line max-len
+                  <div class='mt20'>
+                    Copyright © 2012-{curYear.value} BlueKing - Hybrid Cloud
+                    Management System. All Rights Reserved.{VERSION}
+                  </div>
+                ),
+              }}
+            </Navigation>
+          }
+        </div>
         {/* <AddProjectDialog isShow={showAddProjectDialog.value} onClose={toggleAddProjectDialog} /> */}
       </main>
     );
