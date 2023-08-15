@@ -398,7 +398,9 @@ export default defineComponent({
 
                     <Menu
                       class='menu-warp'
-                      style={`width: ${NAV_WIDTH}px`}
+                      style={{
+                        width: `${NAV_WIDTH}px`,
+                      }}
                       uniqueOpen={false}
                       openedKeys={openedKeys}
                       activeKey={route.meta.activeKey as string}>
