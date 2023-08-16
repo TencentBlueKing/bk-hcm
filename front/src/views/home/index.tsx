@@ -8,7 +8,7 @@ import {
 } from 'vue';
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 import type { RouteRecordRaw } from 'vue-router';
-import { Menu, Navigation, Dropdown } from 'bkui-vue';
+import { Menu, Navigation, Dropdown, Dialog, Exception, Button } from 'bkui-vue';
 import { headRouteConfig } from '@/router/header-config';
 import Breadcrumb from './breadcrumb';
 import workbench from '@/router/module/workbench';
@@ -65,6 +65,7 @@ export default defineComponent({
     const isMenuOpen = ref<boolean>(true);
     const language = ref(cookie.parse(document.cookie).blueking_language || 'zh-cn');
     const favoritedBusinessSet = ref(new Set());
+    const isDialogShow = ref(false);
 
     const { hasPagePermission, permissionMsg, logout } = usePagePermissionStore();
     // 获取业务列表
@@ -384,7 +385,7 @@ export default defineComponent({
                             </div>
                           ),
                           append: () => (
-                            <div class={'app-action-content'}>
+                            <div class={'app-action-content'} onClick={() => isDialogShow.value = true}>
                               <i class={'icon bk-icon icon-plus-circle app-action-content-icon'}/>
                               <span class={'app-action-content-text'}>新建业务</span>
                             </div>
@@ -468,6 +469,36 @@ export default defineComponent({
           }
         </div>
         {/* <AddProjectDialog isShow={showAddProjectDialog.value} onClose={toggleAddProjectDialog} /> */}
+
+        <Dialog
+          isShow={isDialogShow.value}
+          title=''
+          dialogType='show'
+          theme='primary'
+          onConfirm={ () => isDialogShow.value = false }
+          onClosed={ () => isDialogShow.value = false }
+        >
+            <Exception
+              type='building'
+              class={'hcm-create-business-dialog-exception-building-picture'}
+              title={'当前暂不支持在本地创建业务'}
+            >
+              <div class={'hcm-create-business-dialog-exception-building-tips'}>
+                <p class={'hcm-create-business-dialog-exception-building-tips-text1'}>
+                  可以按照以下方式进行查看
+                </p>
+                <p class={'hcm-create-business-dialog-exception-building-tips-text2'}>
+                  业务是蓝鲸配置平台的管理空间，可以满足不同团队，不同项目的资源隔离管理需求。
+                  <Button
+                    theme='primary'
+                    text
+                  >
+                    新建业务指引
+                  </Button>
+                </p>
+              </div>
+            </Exception>
+        </Dialog>
       </main>
     );
   },
