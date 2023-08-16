@@ -1,5 +1,5 @@
 @font-face {
-	font-family: "hcm";
+	font-family: "bk";
 	src: url("fonts/iconcool.svg#iconcool") format("svg"),
 url("fonts/iconcool.ttf") format("truetype"),
 url("fonts/iconcool.woff") format("woff"),
@@ -8,9 +8,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
     font-style: normal;
 }
 
-.hcm-icon {
+.bk-icon {
   /* use !important to prevent issues with browser extensions that change fonts */
-  font-family: 'hcm' !important;
+  font-family: 'bk' !important;
   speak: none;
   font-style: normal;
   font-weight: normal;
@@ -23,30 +23,36 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
   -moz-osx-font-smoothing: grayscale;
 }
 
-.bkhcm-icon-automatic-typesetting:before {
-	content: "\e102";
-}
-.bkhcm-icon-down-shape:before {
-	content: "\e101";
-}
-.bkhcm-icon-right-shape:before {
+.icon-automatic-typesetting:before {
 	content: "\e107";
 }
-.bkhcm-icon-loading-circle:before {
-	content: "\e109";
+.icon-plus-circle:before {
+	content: "\e142";
 }
-.bkhcm-icon-arrows--right--line:before {
-	content: "\e106";
+.icon-down-shape:before {
+	content: "\ef96";
 }
-.bkhcm-icon-arrows--left-line:before {
-	content: "\e103";
+.icon-right-shape:before {
+	content: "\efb9";
 }
-.bkhcm-icon-angle-up-fill:before {
-	content: "\e108";
+.icon-arrows--right--line:before {
+	content: "\630";
 }
-.bkhcm-icon-invisible1:before {
-	content: "\e104";
+.icon-arrows--left-line:before {
+	content: "\631";
 }
-.bkhcm-icon-edit:before {
-	content: "\e105";
+.icon-angle-up-fill:before {
+	content: "\67f";
+}
+.icon-invisible1:before {
+	content: "\27ff";
+}
+.icon-edit:before {
+	content: "\2f03";
+}
+.icon-not-favorited:before {
+	content: "\4d0d";
+}
+.icon-collect:before {
+	content: "\4d11";
 }
