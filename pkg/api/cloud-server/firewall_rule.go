@@ -127,7 +127,7 @@ type GcpFirewallRuleCreateReq struct {
 	CloudVpcID        string                     `json:"cloud_vpc_id" validate:"required"`
 	Name              string                     `json:"name" validate:"required"`
 	Memo              string                     `json:"memo"`
-	Priority          int64                      `json:"priority" validate:"required"`
+	Priority          int64                      `json:"priority" validate:"omitempty"`
 	Type              string                     `json:"type" validate:"required"`
 	SourceTags        []string                   `json:"source_tags"`
 	TargetTags        []string                   `json:"target_tags"`
