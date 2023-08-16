@@ -23,14 +23,16 @@ import (
 	gosync "sync"
 	"time"
 
+	"hcm/cmd/cloud-server/service/sync/detail"
 	"hcm/pkg/api/hc-service/sync"
-	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/client"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
 // SyncVpc ...
-func SyncVpc(kt *kit.Kit, service *hcservice.Client, accountID string, resourceGroupNames []string) error {
+func SyncVpc(kt *kit.Kit, cliSet *client.ClientSet, accountID string, resourceGroupNames []string) error {
 
 	start := time.Now()
 	logs.V(3).Infof("azure account[%s] sync vpc start, time: %v, rid: %s", accountID, start, kt.Rid)
@@ -56,7 +58,7 @@ func SyncVpc(kt *kit.Kit, service *hcservice.Client, accountID string, resourceG
 				AccountID:         accountID,
 				ResourceGroupName: name,
 			}
-			err := service.Azure.Vpc.SyncVpc(kt.Ctx, kt.Header(), req)
+			err := cliSet.HCService().Azure.Vpc.SyncVpc(kt.Ctx, kt.Header(), req)
 			if firstErr == nil && err != nil {
 				logs.Errorf("sync azure vpc failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 				firstErr = err
@@ -69,6 +71,17 @@ func SyncVpc(kt *kit.Kit, service *hcservice.Client, accountID string, resourceG
 
 	if firstErr != nil {
 		return firstErr
+	}
+
+	// 同步状态
+	sd := &detail.SyncDetail{
+		Kt:        kt,
+		DataCli:   cliSet.DataService(),
+		AccountID: accountID,
+		Vendor:    string(enumor.Azure),
+	}
+	if err := sd.ResSyncStatusSuccess(enumor.VpcCloudResType); err != nil {
+		return err
 	}
 
 	return nil

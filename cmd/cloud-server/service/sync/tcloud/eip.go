@@ -22,14 +22,16 @@ package tcloud
 import (
 	"time"
 
+	"hcm/cmd/cloud-server/service/sync/detail"
 	"hcm/pkg/api/hc-service/sync"
-	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/client"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
 // SyncEip ...
-func SyncEip(kt *kit.Kit, service *hcservice.Client, accountID string, regions []string) error {
+func SyncEip(kt *kit.Kit, cliSet *client.ClientSet, accountID string, regions []string) error {
 
 	start := time.Now()
 	logs.V(3).Infof("tcloud account[%s] sync eip start, time: %v, rid: %s", accountID, start, kt.Rid)
@@ -43,10 +45,21 @@ func SyncEip(kt *kit.Kit, service *hcservice.Client, accountID string, regions [
 			AccountID: accountID,
 			Region:    region,
 		}
-		if err := service.TCloud.Eip.SyncEip(kt.Ctx, kt.Header(), req); err != nil {
+		if err := cliSet.HCService().TCloud.Eip.SyncEip(kt.Ctx, kt.Header(), req); err != nil {
 			logs.Errorf("sync tcloud eip failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 			return err
 		}
+	}
+
+	// 同步状态
+	sd := &detail.SyncDetail{
+		Kt:        kt,
+		DataCli:   cliSet.DataService(),
+		AccountID: accountID,
+		Vendor:    string(enumor.TCloud),
+	}
+	if err := sd.ResSyncStatusSuccess(enumor.EipCloudResType); err != nil {
+		return err
 	}
 
 	return nil

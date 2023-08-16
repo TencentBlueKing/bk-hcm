@@ -44,6 +44,7 @@ import (
 	securitygroup "hcm/pkg/dal/dao/cloud/security-group"
 	sgcvmrel "hcm/pkg/dal/dao/cloud/security-group-cvm-rel"
 	daosubaccount "hcm/pkg/dal/dao/cloud/sub-account"
+	daosync "hcm/pkg/dal/dao/cloud/sync"
 	"hcm/pkg/dal/dao/cloud/zone"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
@@ -76,6 +77,7 @@ type Set interface {
 	AzureRG() resourcegroup.AzureRG
 	AzureRegion() region.AzureRegion
 	Zone() zone.Zone
+	AccountSyncDetail() daosync.AccountSyncDetail
 	TCloudRegion() region.TCloudRegion
 	AwsRegion() region.AwsRegion
 	GcpRegion() region.GcpRegion
@@ -212,6 +214,14 @@ func (s *set) Eip() eip.Eip {
 // Zone return Zone dao.
 func (s *set) Zone() zone.Zone {
 	return &zone.ZoneDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// AccountSyncDetail return AccountSyncDetail dao.
+func (s *set) AccountSyncDetail() daosync.AccountSyncDetail {
+	return &daosync.AccountSyncDetailDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 	}

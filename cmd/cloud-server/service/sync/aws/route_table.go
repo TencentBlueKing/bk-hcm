@@ -22,15 +22,16 @@ package aws
 import (
 	"time"
 
+	"hcm/cmd/cloud-server/service/sync/detail"
 	"hcm/pkg/api/hc-service/sync"
-	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
 // SyncRouteTable 同步路由表
-func SyncRouteTable(kt *kit.Kit, service *hcservice.Client, accountID string, regions []string) error {
+func SyncRouteTable(kt *kit.Kit, cliSet *client.ClientSet, accountID string, regions []string) error {
 	start := time.Now()
 	logs.V(3).Infof("[%s] account[%s] sync route table start, time: %v, rid: %s",
 		enumor.Aws, accountID, start, kt.Rid)
@@ -45,11 +46,22 @@ func SyncRouteTable(kt *kit.Kit, service *hcservice.Client, accountID string, re
 			AccountID: accountID,
 			Region:    region,
 		}
-		if err := service.Aws.RouteTable.SyncRouteTable(kt.Ctx, kt.Header(), req); err != nil {
+		if err := cliSet.HCService().Aws.RouteTable.SyncRouteTable(kt.Ctx, kt.Header(), req); err != nil {
 			logs.Errorf("[%s] account[%s] sync route table failed, req: %v, err: %v, rid: %s",
 				enumor.Aws, accountID, req, err, kt.Rid)
 			return err
 		}
+	}
+
+	// 同步状态
+	sd := &detail.SyncDetail{
+		Kt:        kt,
+		DataCli:   cliSet.DataService(),
+		AccountID: accountID,
+		Vendor:    string(enumor.Aws),
+	}
+	if err := sd.ResSyncStatusSuccess(enumor.RouteTableCloudResType); err != nil {
+		return err
 	}
 
 	return nil

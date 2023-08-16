@@ -26,6 +26,7 @@ import (
 
 	"hcm/cmd/cloud-server/service/sync/aws"
 	"hcm/cmd/cloud-server/service/sync/azure"
+	"hcm/cmd/cloud-server/service/sync/detail"
 	"hcm/cmd/cloud-server/service/sync/gcp"
 	"hcm/cmd/cloud-server/service/sync/huawei"
 	"hcm/cmd/cloud-server/service/sync/tcloud"
@@ -78,7 +79,7 @@ func CloudResourceSync(intervalMin time.Duration, sd serviced.ServiceDiscover, c
 	}
 }
 
-// allAccountSync tcloud all account sync.
+// allAccountSync all account sync.
 func allAccountSync(kt *kit.Kit, cliSet *client.ClientSet, vendor enumor.Vendor) {
 
 	startTime := time.Now()
@@ -120,32 +121,47 @@ func allAccountSync(kt *kit.Kit, cliSet *client.ClientSet, vendor enumor.Vendor)
 		}
 
 		for _, one := range accounts {
+			resName := enumor.CloudResourceType("")
+			sd := &detail.SyncDetail{
+				Kt:        kt,
+				DataCli:   cliSet.DataService(),
+				AccountID: one.ID,
+				Vendor:    string(one.Vendor),
+			}
+
 			switch one.Vendor {
 			case enumor.TCloud:
 				opt := &tcloud.SyncAllResourceOption{AccountID: one.ID, SyncPublicResource: syncPublicResource}
-				err = tcloud.SyncAllResource(kt, cliSet, opt)
+				resName, err = tcloud.SyncAllResource(kt, cliSet, opt)
 
 			case enumor.Aws:
 				opt := &aws.SyncAllResourceOption{AccountID: one.ID, SyncPublicResource: syncPublicResource}
-				err = aws.SyncAllResource(kt, cliSet, opt)
+				resName, err = aws.SyncAllResource(kt, cliSet, opt)
 
 			case enumor.HuaWei:
 				opt := &huawei.SyncAllResourceOption{AccountID: one.ID, SyncPublicResource: syncPublicResource}
-				err = huawei.SyncAllResource(kt, cliSet, opt)
+				resName, err = huawei.SyncAllResource(kt, cliSet, opt)
 
 			case enumor.Azure:
 				opt := &azure.SyncAllResourceOption{AccountID: one.ID, SyncPublicResource: syncPublicResource}
-				err = azure.SyncAllResource(kt, cliSet, opt)
+				resName, err = azure.SyncAllResource(kt, cliSet, opt)
 
 			case enumor.Gcp:
 				opt := &gcp.SyncAllResourceOption{AccountID: one.ID, SyncPublicResource: syncPublicResource}
-				err = gcp.SyncAllResource(kt, cliSet, opt)
+				resName, err = gcp.SyncAllResource(kt, cliSet, opt)
 
 			default:
 				logs.Errorf("unknown %s vendor type", one.Vendor)
 				continue
 			}
 			if err != nil {
+				if resName != "" {
+					if err := sd.ResSyncStatusFailed(resName, err.Error()); err != nil {
+						logs.Errorf("%s sync %s res detail failed, err: %v, accountID: %s, rid: %s", vendor,
+							resName, err, one.ID, kt.Rid)
+						return
+					}
+				}
 				logs.Errorf("sync %s all resource failed, err: %v, accountID: %s, rid: %s", vendor, err, one.ID, kt.Rid)
 				continue
 			}

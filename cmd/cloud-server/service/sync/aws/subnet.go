@@ -22,14 +22,16 @@ package aws
 import (
 	"time"
 
+	"hcm/cmd/cloud-server/service/sync/detail"
 	"hcm/pkg/api/hc-service/sync"
-	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/client"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
 // SyncSubnet ...
-func SyncSubnet(kt *kit.Kit, service *hcservice.Client, accountID string, regions []string) error {
+func SyncSubnet(kt *kit.Kit, cliSet *client.ClientSet, accountID string, regions []string) error {
 
 	start := time.Now()
 	logs.V(3).Infof("aws account[%s] sync subnet start, time: %v, rid: %s", accountID, start, kt.Rid)
@@ -43,10 +45,21 @@ func SyncSubnet(kt *kit.Kit, service *hcservice.Client, accountID string, region
 			AccountID: accountID,
 			Region:    region,
 		}
-		if err := service.Aws.Subnet.SyncSubnet(kt.Ctx, kt.Header(), req); err != nil {
+		if err := cliSet.HCService().Aws.Subnet.SyncSubnet(kt.Ctx, kt.Header(), req); err != nil {
 			logs.Errorf("sync aws subnet failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 			return err
 		}
+	}
+
+	// 同步状态
+	sd := &detail.SyncDetail{
+		Kt:        kt,
+		DataCli:   cliSet.DataService(),
+		AccountID: accountID,
+		Vendor:    string(enumor.Aws),
+	}
+	if err := sd.ResSyncStatusSuccess(enumor.SubnetCloudResType); err != nil {
+		return err
 	}
 
 	return nil

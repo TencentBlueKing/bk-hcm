@@ -24,6 +24,7 @@ import (
 
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -46,10 +47,11 @@ func (opt *SyncAllResourceOption) Validate() error {
 }
 
 // SyncAllResource sync resource.
-func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResourceOption) error {
+func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
+	opt *SyncAllResourceOption) (enumor.CloudResourceType, error) {
 
 	if err := opt.Validate(); err != nil {
-		return err
+		return "", err
 	}
 
 	start := time.Now()
@@ -75,51 +77,51 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 		}
 		if hitErr = SyncPublicResource(kt, cliSet, syncOpt); hitErr != nil {
 			logs.Errorf("sync public resource failed, err: %v, opt: %v, rid: %s", hitErr, opt, kt.Rid)
-			return hitErr
+			return "", hitErr
 		}
 	}
 
 	regions, hitErr := ListRegion(kt, cliSet.DataService())
 	if hitErr != nil {
-		return hitErr
+		return "", hitErr
 	}
 
 	regionZoneMap, hitErr := GetRegionZoneMap(kt, cliSet.DataService())
 	if hitErr != nil {
-		return hitErr
+		return "", hitErr
 	}
 
-	if hitErr = SyncDisk(kt, cliSet.HCService(), opt.AccountID, regionZoneMap); hitErr != nil {
-		return hitErr
+	if hitErr = SyncDisk(kt, cliSet, opt.AccountID, regionZoneMap); hitErr != nil {
+		return enumor.DiskCloudResType, hitErr
 	}
 
-	if hitErr = SyncVpc(kt, cliSet.HCService(), opt.AccountID); hitErr != nil {
-		return hitErr
+	if hitErr = SyncVpc(kt, cliSet, opt.AccountID); hitErr != nil {
+		return enumor.VpcCloudResType, hitErr
 	}
 
-	if hitErr = SyncSubnet(kt, cliSet.HCService(), opt.AccountID, regions); hitErr != nil {
-		return hitErr
+	if hitErr = SyncSubnet(kt, cliSet, opt.AccountID, regions); hitErr != nil {
+		return enumor.SubnetCloudResType, hitErr
 	}
 
-	if hitErr = SyncEip(kt, cliSet.HCService(), opt.AccountID, regions); hitErr != nil {
-		return hitErr
+	if hitErr = SyncEip(kt, cliSet, opt.AccountID, regions); hitErr != nil {
+		return enumor.EipCloudResType, hitErr
 	}
 
-	if hitErr = SyncFireWall(kt, cliSet.HCService(), opt.AccountID); hitErr != nil {
-		return hitErr
+	if hitErr = SyncFireWall(kt, cliSet, opt.AccountID); hitErr != nil {
+		return enumor.GcpFirewallRuleCloudResType, hitErr
 	}
 
-	if hitErr = SyncCvm(kt, cliSet.HCService(), opt.AccountID, regionZoneMap); hitErr != nil {
-		return hitErr
+	if hitErr = SyncCvm(kt, cliSet, opt.AccountID, regionZoneMap); hitErr != nil {
+		return enumor.CvmCloudResType, hitErr
 	}
 
-	if hitErr = SyncRoute(kt, cliSet.HCService(), opt.AccountID, regionZoneMap); hitErr != nil {
-		return hitErr
+	if hitErr = SyncRoute(kt, cliSet, opt.AccountID, regionZoneMap); hitErr != nil {
+		return enumor.RouteTableCloudResType, hitErr
 	}
 
-	if hitErr = SyncSubAccount(kt, cliSet.HCService(), opt.AccountID); hitErr != nil {
-		return hitErr
+	if hitErr = SyncSubAccount(kt, cliSet, opt.AccountID); hitErr != nil {
+		return enumor.SubAccountCloudResType, hitErr
 	}
 
-	return nil
+	return "", nil
 }

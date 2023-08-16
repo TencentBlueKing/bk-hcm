@@ -23,16 +23,17 @@ import (
 	gosync "sync"
 	"time"
 
+	"hcm/cmd/cloud-server/service/sync/detail"
 	"hcm/pkg/adaptor/huawei"
 	"hcm/pkg/api/hc-service/sync"
-	dataservice "hcm/pkg/client/data-service"
-	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/client"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
 // SyncDisk ...
-func SyncDisk(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice.Client, accountID string) error {
+func SyncDisk(kt *kit.Kit, cliSet *client.ClientSet, accountID string) error {
 
 	start := time.Now()
 	logs.V(3).Infof("huawei account[%s] sync disk start, time: %v, rid: %s", accountID, start, kt.Rid)
@@ -41,7 +42,7 @@ func SyncDisk(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice.Clien
 		logs.V(3).Infof("huawei account[%s] sync disk end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
 	}()
 
-	regions, err := ListRegionByService(kt, dataCli, huawei.Ecs)
+	regions, err := ListRegionByService(kt, cliSet.DataService(), huawei.Ecs)
 	if err != nil {
 		logs.Errorf("sync huawei list region failed, err: %v, rid: %s", err, kt.Rid)
 		return err
@@ -64,7 +65,7 @@ func SyncDisk(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice.Clien
 				AccountID: accountID,
 				Region:    region,
 			}
-			err = service.HuaWei.Disk.SyncDisk(kt.Ctx, kt.Header(), req)
+			err = cliSet.HCService().HuaWei.Disk.SyncDisk(kt.Ctx, kt.Header(), req)
 			if firstErr == nil && Error(err) != nil {
 				logs.Errorf("sync huawei disk failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 				firstErr = err
@@ -77,6 +78,17 @@ func SyncDisk(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice.Clien
 
 	if firstErr != nil {
 		return firstErr
+	}
+
+	// 同步状态
+	sd := &detail.SyncDetail{
+		Kt:        kt,
+		DataCli:   cliSet.DataService(),
+		AccountID: accountID,
+		Vendor:    string(enumor.HuaWei),
+	}
+	if err := sd.ResSyncStatusSuccess(enumor.DiskCloudResType); err != nil {
+		return err
 	}
 
 	return nil

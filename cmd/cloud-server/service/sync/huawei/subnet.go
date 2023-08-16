@@ -23,18 +23,19 @@ import (
 	gosync "sync"
 	"time"
 
+	"hcm/cmd/cloud-server/service/sync/detail"
 	"hcm/pkg/adaptor/huawei"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/hc-service/sync"
-	dataservice "hcm/pkg/client/data-service"
-	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/client"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 )
 
 // SyncSubnet ...
-func SyncSubnet(kt *kit.Kit, hcCli *hcservice.Client, dataCli *dataservice.Client, accountID string) error {
+func SyncSubnet(kt *kit.Kit, cliSet *client.ClientSet, accountID string) error {
 
 	start := time.Now()
 	logs.V(3).Infof("huawei account[%s] sync subnet start, time: %v, rid: %s", accountID, start, kt.Rid)
@@ -43,7 +44,7 @@ func SyncSubnet(kt *kit.Kit, hcCli *hcservice.Client, dataCli *dataservice.Clien
 		logs.V(3).Infof("huawei account[%s] sync subnet end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
 	}()
 
-	regions, err := ListRegionByService(kt, dataCli, huawei.Vpc)
+	regions, err := ListRegionByService(kt, cliSet.DataService(), huawei.Vpc)
 	if err != nil {
 		logs.Errorf("sync huawei list region failed, err: %v, rid: %s", err, kt.Rid)
 		return err
@@ -80,7 +81,7 @@ func SyncSubnet(kt *kit.Kit, hcCli *hcservice.Client, dataCli *dataservice.Clien
 		for {
 			listReq.Page.Start = startIndex
 
-			vpcResult, err := dataCli.Global.Vpc.List(kt.Ctx, kt.Header(), listReq)
+			vpcResult, err := cliSet.DataService().Global.Vpc.List(kt.Ctx, kt.Header(), listReq)
 			if err != nil {
 				logs.Errorf("list huawei vpc failed, err: %v, rid: %s", err, kt.Rid)
 				return err
@@ -101,7 +102,7 @@ func SyncSubnet(kt *kit.Kit, hcCli *hcservice.Client, dataCli *dataservice.Clien
 						Region:     region,
 						CloudVpcID: cloudVpcID,
 					}
-					err = hcCli.HuaWei.Subnet.SyncSubnet(kt.Ctx, kt.Header(), req)
+					err = cliSet.HCService().HuaWei.Subnet.SyncSubnet(kt.Ctx, kt.Header(), req)
 					if firstErr == nil && Error(err) != nil {
 						logs.Errorf("sync huawei subnet failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 						firstErr = err
@@ -123,6 +124,17 @@ func SyncSubnet(kt *kit.Kit, hcCli *hcservice.Client, dataCli *dataservice.Clien
 
 	if firstErr != nil {
 		return firstErr
+	}
+
+	// 同步状态
+	sd := &detail.SyncDetail{
+		Kt:        kt,
+		DataCli:   cliSet.DataService(),
+		AccountID: accountID,
+		Vendor:    string(enumor.HuaWei),
+	}
+	if err := sd.ResSyncStatusSuccess(enumor.SubnetCloudResType); err != nil {
+		return err
 	}
 
 	return nil

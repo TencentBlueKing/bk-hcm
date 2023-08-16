@@ -23,16 +23,17 @@ import (
 	gosync "sync"
 	"time"
 
+	"hcm/cmd/cloud-server/service/sync/detail"
 	"hcm/pkg/adaptor/huawei"
 	"hcm/pkg/api/hc-service/sync"
-	dataservice "hcm/pkg/client/data-service"
-	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/client"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
 // SyncEip ...
-func SyncEip(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice.Client, accountID string) error {
+func SyncEip(kt *kit.Kit, cliSet *client.ClientSet, accountID string) error {
 
 	start := time.Now()
 	logs.V(3).Infof("huawei account[%s] sync eip start, time: %v, rid: %s", accountID, start, kt.Rid)
@@ -41,7 +42,7 @@ func SyncEip(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice.Client
 		logs.V(3).Infof("huawei account[%s] sync eip end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
 	}()
 
-	regions, err := ListRegionByService(kt, dataCli, huawei.Eip)
+	regions, err := ListRegionByService(kt, cliSet.DataService(), huawei.Eip)
 	if err != nil {
 		logs.Errorf("sync huawei list region failed, err: %v, rid: %s", err, kt.Rid)
 		return err
@@ -64,7 +65,7 @@ func SyncEip(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice.Client
 				AccountID: accountID,
 				Region:    region,
 			}
-			err = service.HuaWei.Eip.SyncEip(kt.Ctx, kt.Header(), req)
+			err = cliSet.HCService().HuaWei.Eip.SyncEip(kt.Ctx, kt.Header(), req)
 			if firstErr == nil && Error(err) != nil {
 				logs.Errorf("sync huawei eip failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 				firstErr = err
@@ -77,6 +78,17 @@ func SyncEip(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice.Client
 
 	if firstErr != nil {
 		return firstErr
+	}
+
+	// 同步状态
+	sd := &detail.SyncDetail{
+		Kt:        kt,
+		DataCli:   cliSet.DataService(),
+		AccountID: accountID,
+		Vendor:    string(enumor.HuaWei),
+	}
+	if err := sd.ResSyncStatusSuccess(enumor.EipCloudResType); err != nil {
+		return err
 	}
 
 	return nil

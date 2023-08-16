@@ -22,14 +22,16 @@ package azure
 import (
 	"time"
 
+	"hcm/cmd/cloud-server/service/sync/detail"
 	"hcm/pkg/api/hc-service/sync"
-	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/client"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
 // SyncSubAccount sync sub account
-func SyncSubAccount(kt *kit.Kit, hcCli *hcservice.Client, accountID string) error {
+func SyncSubAccount(kt *kit.Kit, cliSet *client.ClientSet, accountID string) error {
 
 	start := time.Now()
 	logs.V(3).Infof("azure account[%s] sync sub account start, time: %v, rid: %s", accountID, start, kt.Rid)
@@ -42,8 +44,19 @@ func SyncSubAccount(kt *kit.Kit, hcCli *hcservice.Client, accountID string) erro
 	req := &sync.AzureGlobalSyncReq{
 		AccountID: accountID,
 	}
-	if err := hcCli.Azure.Account.SyncSubAccount(kt, req); err != nil {
+	if err := cliSet.HCService().Azure.Account.SyncSubAccount(kt, req); err != nil {
 		logs.Errorf("sync azure sub account failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+		return err
+	}
+
+	// 同步状态
+	sd := &detail.SyncDetail{
+		Kt:        kt,
+		DataCli:   cliSet.DataService(),
+		AccountID: accountID,
+		Vendor:    string(enumor.Azure),
+	}
+	if err := sd.ResSyncStatusSuccess(enumor.SubAccountCloudResType); err != nil {
 		return err
 	}
 

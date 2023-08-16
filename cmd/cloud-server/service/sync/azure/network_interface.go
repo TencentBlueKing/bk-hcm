@@ -23,15 +23,16 @@ import (
 	gosync "sync"
 	"time"
 
+	"hcm/cmd/cloud-server/service/sync/detail"
 	"hcm/pkg/api/hc-service/sync"
-	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
 // SyncNetworkInterface 网络接口同步
-func SyncNetworkInterface(kt *kit.Kit, service *hcservice.Client, accountID string, resourceGroupNames []string) error {
+func SyncNetworkInterface(kt *kit.Kit, cliSet *client.ClientSet, accountID string, resourceGroupNames []string) error {
 
 	start := time.Now()
 	logs.V(3).Infof("[%s] account[%s] sync network interface start, time: %v, rid: %s",
@@ -59,7 +60,7 @@ func SyncNetworkInterface(kt *kit.Kit, service *hcservice.Client, accountID stri
 				AccountID:         accountID,
 				ResourceGroupName: name,
 			}
-			err := service.Azure.NetworkInterface.SyncNetworkInterface(kt.Ctx, kt.Header(), req)
+			err := cliSet.HCService().Azure.NetworkInterface.SyncNetworkInterface(kt.Ctx, kt.Header(), req)
 			if firstErr == nil && err != nil {
 				logs.Errorf("[%s] sync network interface failed, req: %v, err: %v, rid: %s",
 					enumor.Azure, req, err, kt.Rid)
@@ -73,6 +74,17 @@ func SyncNetworkInterface(kt *kit.Kit, service *hcservice.Client, accountID stri
 
 	if firstErr != nil {
 		return firstErr
+	}
+
+	// 同步状态
+	sd := &detail.SyncDetail{
+		Kt:        kt,
+		DataCli:   cliSet.DataService(),
+		AccountID: accountID,
+		Vendor:    string(enumor.Azure),
+	}
+	if err := sd.ResSyncStatusSuccess(enumor.NetworkInterfaceCloudResType); err != nil {
+		return err
 	}
 
 	return nil

@@ -1,6 +1,6 @@
 ### 描述
 
-- 该接口提供版本：v1.0.0+。
+- 该接口提供版本：v9.9.9+。
 - 该接口所需权限：账号查看。
 - 该接口功能描述：查询账号列表。
 
@@ -186,6 +186,8 @@ POST /api/v1/cloud/accounts/list
         "bk_biz_ids": [
           310
         ],
+        "sync_status": "success",
+        "sync_failed_reason":"",
         "creator": "Jim",
         "reviser": "Jim",
         "created_at": "2022-12-26T07:42:15Z",
@@ -238,6 +240,8 @@ POST /api/v1/cloud/accounts/list
 | price_unit     | string       | 余额单位                                                             |
 | memo           | string       | 备注                                                               |
 | bk_biz_ids     | int64 array  | 账号关联的业务ID列表                                                      |
+| sync_status              | string       | 资源同步状态                                                              |
+| sync_failed_reason       | string       | 资源同步失败原因                                                              |
 | creator        | string       | 创建者                                                              |
 | reviser        | string       | 更新者                                                              |
 | created_at     | string       | 创建时间，标准格式：2006-01-02T15:04:05Z                                   |

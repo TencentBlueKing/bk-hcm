@@ -42,6 +42,8 @@ GET /api/v1/cloud/accounts/bizs/{bk_biz_id}
     "price_unit": "",
     "memo": "account create",
     "bk_biz_ids": [],
+    "sync_status": "success",
+    "sync_failed_reason":"",
     "creator": "Jim",
     "reviser": "Jim",
     "created_at": "2022-12-25T23:42:15Z",
@@ -76,6 +78,8 @@ GET /api/v1/cloud/accounts/bizs/{bk_biz_id}
 | bk_biz_ids      | int64 array  | 账号关联的业务ID列表                                                      |
 | creator         | string       | 创建者                                                              |
 | reviser         | string       | 更新者                                                              |
+| sync_status              | string       | 资源同步状态                                                              |
+| sync_failed_reason       | string       | 资源同步失败原因                                                              |
 | created_at      | string       | 创建时间，标准格式：2006-01-02T15:04:05Z                                   |
 | updated_at      | string       | 更新时间，标准格式：2006-01-02T15:04:05Z                                   |
 | bk_biz_id       | int64        | 业务ID                                                             |

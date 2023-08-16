@@ -48,6 +48,7 @@ import (
 	routetable "hcm/cmd/data-service/service/cloud/route-table"
 	sgcvmrel "hcm/cmd/data-service/service/cloud/security-group-cvm-rel"
 	subaccount "hcm/cmd/data-service/service/cloud/sub-account"
+	sync "hcm/cmd/data-service/service/cloud/sync"
 	"hcm/cmd/data-service/service/cloud/zone"
 	recyclerecord "hcm/cmd/data-service/service/recycle-record"
 	"hcm/pkg/cc"
@@ -205,6 +206,7 @@ func (s *Service) apiSet() *restful.Container {
 	recyclerecord.InitRecycleRecordService(capability)
 	bill.InitBillConfigService(capability)
 	subaccount.InitService(capability)
+	sync.InitService(capability)
 
 	return restful.NewContainer().Add(capability.WebService)
 }
