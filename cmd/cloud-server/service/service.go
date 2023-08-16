@@ -51,6 +51,7 @@ import (
 	"hcm/cmd/cloud-server/service/subnet"
 	"hcm/cmd/cloud-server/service/sync"
 	"hcm/cmd/cloud-server/service/sync/lock"
+	"hcm/cmd/cloud-server/service/user"
 	"hcm/cmd/cloud-server/service/vpc"
 	"hcm/cmd/cloud-server/service/zone"
 	"hcm/pkg/cc"
@@ -267,6 +268,8 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	assign.InitService(c)
 	recycle.InitService(c)
 	bill.InitBillService(c)
+
+	user.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

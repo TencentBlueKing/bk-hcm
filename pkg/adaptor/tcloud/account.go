@@ -101,10 +101,16 @@ func (t *TCloud) AccountCheck(kt *kit.Kit, opt *types.TCloudAccountInfo) error {
 
 	// check if cloud account info matches the hcm account detail.
 	if *resp.Response.Uin != opt.CloudSubAccountID {
-		return fmt.Errorf("account id does not match the account to which the secret belongs")
+		logs.Errorf("sub account id does not match the account to which the secret belongs, uin: %s, "+
+			"cloudSubAccountID: %s, cloudRid: %s, rid: %s", *resp.Response.Uin, opt.CloudSubAccountID,
+			*resp.Response.RequestId, kt.Rid)
+		return fmt.Errorf("sub account id does not match the account to which the secret belongs")
 	}
 
 	if *resp.Response.OwnerUin != opt.CloudMainAccountID {
+		logs.Errorf("main account id does not match the account to which the secret belongs, ownerUin: %s, "+
+			"cloudMainAccountID: %s, cloudRid: %s, rid: %s", *resp.Response.OwnerUin, opt.CloudMainAccountID,
+			*resp.Response.RequestId, kt.Rid)
 		return fmt.Errorf("main account id does not match the account to which the secret belongs")
 	}
 

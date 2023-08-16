@@ -50,6 +50,8 @@ type Client struct {
 	Application     *ApplicationClient
 	ApprovalProcess *ApprovalProcessClient
 	Bill            *BillClient
+
+	UserCollection *UserCollectionClient
 }
 
 type restClient struct {
@@ -83,5 +85,7 @@ func NewClient(client rest.ClientInterface) *Client {
 		Application:     NewApplicationClient(client),
 		ApprovalProcess: NewApprovalProcessClient(client),
 		Bill:            NewBillClient(client),
+
+		UserCollection: NewUserCollectionClient(client),
 	}
 }

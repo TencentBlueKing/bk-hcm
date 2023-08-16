@@ -129,6 +129,9 @@ const (
 	// RecycleRecordTableTaskID is recycle record table's task id.
 	// TODO: 之后考虑非表id的id_generator如何更优雅的使用
 	RecycleRecordTableTaskID Name = "recycle_record_task_id"
+
+	// UserCollectionTable 用户收藏表
+	UserCollectionTable Name = "user_collection"
 )
 
 // Validate whether the table name is valid or not.
@@ -190,6 +193,7 @@ var TableMap = map[Name]struct{}{
 	DiskCvmRelTableName:          {},
 	EipCvmRelTableName:           {},
 	AccountBillConfigTable:       {},
+	UserCollectionTable:          {},
 	AccountSyncDetailTable:       {},
 
 	// TODO: 临时方案

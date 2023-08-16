@@ -5,10 +5,12 @@
         1. 添加子账号表。
         2. 修复aws_security_group_rule表memo字段错误的非空约束
         3. aws_region表增加account_id字段，独立存储aws每个账号的地域信息
-        4. 添加账号同步详情表
+        4. 添加业务收藏表
+        5. 添加账号同步详情表
 */
 start transaction;
 
+-- 1. 添加子账号表
 create table if not exists `sub_account`
 (
     `id`         varchar(64)  not null,
@@ -29,14 +31,16 @@ create table if not exists `sub_account`
     unique key `idx_uk_vendor_cloud_id` (`vendor`, `cloud_id`)
 ) engine = innodb
   default charset = utf8mb4
-  COLLATE utf8mb4_bin;
+  collate utf8mb4_bin;
 
 insert into id_generator(`resource`, `max_id`)
 values ('sub_account', '0');
 
+-- 2. 修复aws_security_group_rule表memo字段错误的非空约束
 alter table aws_security_group_rule
     modify column memo varchar(255) default '';
 
+-- 3. aws_region表增加account_id字段，独立存储aws每个账号的地域信息
 delete
 from aws_region;
 alter table aws_region
@@ -48,9 +52,28 @@ alter table aws_region
 alter table aws_region
     add unique key `idx_uk_account_id_region_id` (`account_id`, `region_id`);
 
+-- 4. 添加业务收藏表
+create table if not exists `user_collection`
+(
+    `id`         varchar(64) not null,
+    `user`       varchar(64) not null,
+    `res_type`   varchar(50) not null,
+    `res_id`     varchar(64) not null,
+    `creator`    varchar(64) not null,
+    `created_at` timestamp   not null default current_timestamp,
+    primary key (`id`),
+    unique key `idx_uk_user_res_type_res_id` (`user`, `res_type`, `res_id`)
+) engine = innodb
+  default charset = utf8mb4
+  collate utf8mb4_bin;
+
+insert into id_generator(`resource`, `max_id`)
+values ('user_collection', '0');
+
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
 SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
 
+-- 5. 添加账号同步详情表
 create table if not exists `account_sync_detail`
 (
     `id`         varchar(64)  not null,

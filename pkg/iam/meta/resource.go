@@ -69,4 +69,6 @@ const (
 	InstanceType ResourceType = "instance_type"
 	// CostManage defines cost manage's hcm auth resource type
 	CostManage ResourceType = "cost_manage"
+	// BizCollection 业务收藏
+	BizCollection ResourceType = "biz_collection"
 )
