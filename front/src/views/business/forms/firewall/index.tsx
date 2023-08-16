@@ -85,6 +85,7 @@ export default defineComponent({
       port: props.detail.allowed?.[0]?.port || [],
     });
     const isPortsDisabled = ref(false);
+    const formInstance = ref({});
 
     const { isResourcePage } = useWhereAmI();
     const accountStore = useAccountStore();
@@ -92,6 +93,8 @@ export default defineComponent({
     const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
     const handleSubmit = async () => {
+      // @ts-ignore
+      await formInstance.value.validate();
       if (!formModel.allowed?.length) delete formModel.allowed;
       if (!formModel.denied?.length) delete formModel.denied;
       if (props.isEdit) {
@@ -178,18 +181,31 @@ export default defineComponent({
               formModel.vendor = val.vendor;
             }}></FormSelect>
         ) : null}
-        <bk-form class={'pr20'}>
-          <bk-form-item label={'名称'} property={'name'}>
+        <bk-form
+          class={'pr20'}
+          ref={formInstance}
+          model={formModel}
+          rules={{
+            protocol: [{
+              trigger: 'change',
+              message: '协议不能为空',
+              validator: () => {
+                return !!protocolAndPorts.protocol;
+              },
+            }],
+          }}
+        >
+          <bk-form-item label={'名称'} property={'name'} required>
             <bk-input v-model={formModel.name}></bk-input>
           </bk-form-item>
-          <bk-form-item label={'所属的vpc'} property={'name'}>
+          <bk-form-item label={'所属的vpc'} property={'cloud_vpc_id'} required>
             <VpcSelector
               vendor={formModel.vendor}
               v-model={formModel.cloud_vpc_id}
               isDisabled={props.isEdit}
             />
           </bk-form-item>
-          <bk-form-item label={'流量方向'} property={'type'}>
+          <bk-form-item label={'流量方向'} property={'type'} required>
             <bk-radio-group v-model={formModel.type}>
               <bk-radio label={DirectionType.in}>入站流量</bk-radio>
               <bk-radio label={DirectionType.out}>出站流量</bk-radio>
@@ -198,6 +214,7 @@ export default defineComponent({
           <bk-form-item
             label={'优先级'}
             property={'priority'}
+            required
             description={'优先级范围从 0 到 65535'}>
             <bk-input
               vendor={formModel.priority}
@@ -214,7 +231,7 @@ export default defineComponent({
               ))}
             </bk-select>
           </bk-form-item>
-          <bk-form-item label={'来源'} property={'source_ranges'}>
+          <bk-form-item label={'来源'} property={'source_ranges'} required>
             <bk-tag-input
               v-model={formModel.source_ranges}
               allowCreate
@@ -222,7 +239,7 @@ export default defineComponent({
               hasDeleteIcon
             />
           </bk-form-item>
-          <bk-form-item label={'目标'} property={'destination_ranges'}>
+          <bk-form-item label={'目标'} property={'destination_ranges'} required>
             <bk-tag-input
               v-model={formModel.destination_ranges}
               allowCreate
@@ -239,7 +256,7 @@ export default defineComponent({
             </bk-form-item>
           ) : null}
           {is_source_marked.value ? (
-            <bk-form-item property={'source_tags'}>
+            <bk-form-item property={'source_tags'} required>
               <bk-tag-input
                 v-model={formModel.source_tags}
                 allowCreate
@@ -249,14 +266,14 @@ export default defineComponent({
               />
             </bk-form-item>
           ) : null}
-          <bk-form-item label={'目标标记'}>
+          <bk-form-item label={'目标标记'} required>
             <bk-radio-group v-model={is_destination_marked.value}>
               <bk-radio label={true}>启用</bk-radio>
               <bk-radio label={false}>禁用</bk-radio>
             </bk-radio-group>
           </bk-form-item>
           {is_destination_marked.value ? (
-            <bk-form-item property={'target_tags'}>
+            <bk-form-item property={'target_tags'} required>
               <bk-tag-input
                 v-model={formModel.target_tags}
                 allowCreate
@@ -266,7 +283,7 @@ export default defineComponent({
               />
             </bk-form-item>
           ) : null}
-          <bk-form-item label={'协议'}>
+          <bk-form-item label={'协议'} property={'protocol'}>
             <bk-select v-model={protocolAndPorts.protocol}>
               {ip_type.value === IpType.ipv6
                 ? Object.entries({
@@ -283,7 +300,7 @@ export default defineComponent({
                 ))}
             </bk-select>
           </bk-form-item>
-          <bk-form-item label={'端口'}>
+          <bk-form-item label={'端口'} property={'port'}>
             <bk-tag-input
                   disabled={isPortsDisabled.value}
                   v-model={protocolAndPorts.port}
