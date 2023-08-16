@@ -27,6 +27,7 @@ require (
 	github.com/pborman/uuid v1.2.1
 	github.com/prometheus/client_golang v1.14.0
 	github.com/spf13/pflag v1.0.5
+	github.com/stretchr/testify v1.8.1
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/billing v1.0.651
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam v1.0.648
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs v1.0.648
@@ -40,6 +41,11 @@ require (
 	golang.org/x/time v0.3.0
 	google.golang.org/api v0.123.0
 	gopkg.in/yaml.v3 v3.0.1
+)
+
+require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 )
 
 require (

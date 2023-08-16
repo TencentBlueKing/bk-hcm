@@ -62,6 +62,8 @@ const (
 	AuthServerName Name = "auth-server"
 	// WebServerName is the web page server's name
 	WebServerName Name = "web-server"
+	// TaskServerName is task server's name
+	TaskServerName Name = "task-server"
 )
 
 // Setting defines all service Setting interface.
@@ -345,6 +347,49 @@ func (s WebServerSetting) Validate() error {
 	}
 
 	if err := s.Itsm.validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// TaskServerSetting defines task server used setting options.
+type TaskServerSetting struct {
+	Network  Network   `yaml:"network"`
+	Service  Service   `yaml:"service"`
+	Database DataBase  `yaml:"database"`
+	Log      LogOption `yaml:"log"`
+	Async    Async     `yaml:"async"`
+}
+
+// trySetFlagBindIP try set flag bind ip.
+func (s *TaskServerSetting) trySetFlagBindIP(ip net.IP) error {
+	return s.Network.trySetFlagBindIP(ip)
+}
+
+// trySetDefault set the TaskServerSetting default value if user not configured.
+func (s *TaskServerSetting) trySetDefault() {
+	s.Network.trySetDefault()
+	s.Service.trySetDefault()
+	s.Database.trySetDefault()
+	s.Log.trySetDefault()
+	s.Async.trySetDefault()
+
+	return
+}
+
+// Validate TaskServerSetting option.
+func (s TaskServerSetting) Validate() error {
+
+	if err := s.Network.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Service.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Database.validate(); err != nil {
 		return err
 	}
 

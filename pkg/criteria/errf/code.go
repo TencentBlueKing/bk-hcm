@@ -57,4 +57,6 @@ const (
 	PartialFailed int32 = 2000008
 	// UserNoAppAccess user no app access.
 	UserNoAppAccess int32 = 2000009
+	// RecordNotUpdate DB数据一行都没有被更新
+	RecordNotUpdate int32 = 2000010
 )

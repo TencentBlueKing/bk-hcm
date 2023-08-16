@@ -33,7 +33,7 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/eips/cvms/{cvm_id}
         "region": "ap-guangzhou",
         "instance_id": "cvm-1123",
         "instance_type": "cvm",
-        "public_ip": "9.128.0.34",
+        "public_ip": "*.*.*.*",
         "extension": {
             "bandwidth": 65535,
             "internet_charge_type": "BANDWIDTH_PACKAGE"
