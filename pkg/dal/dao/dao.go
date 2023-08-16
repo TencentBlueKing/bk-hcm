@@ -27,6 +27,7 @@ import (
 
 	"hcm/pkg/cc"
 	"hcm/pkg/dal/dao/application"
+	daoasync "hcm/pkg/dal/dao/async"
 	"hcm/pkg/dal/dao/audit"
 	"hcm/pkg/dal/dao/auth"
 	"hcm/pkg/dal/dao/cloud"
@@ -97,6 +98,8 @@ type Set interface {
 	DiskCvmRel() diskcvmrel.DiskCvmRel
 	EipCvmRel() eipcvmrel.EipCvmRel
 	AccountBillConfig() bill.Interface
+	AsyncFlow() daoasync.AsyncFlow
+	AsyncFlowTask() daoasync.AsyncFlowTask
 	UserCollection() daouser.Interface
 
 	Txn() *Txn
@@ -462,6 +465,22 @@ func (s *set) AccountBillConfig() bill.Interface {
 // UserCollection returns user collection dao.
 func (s *set) UserCollection() daouser.Interface {
 	return &daouser.Dao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// AsyncFlow return AsyncFlow dao.
+func (s *set) AsyncFlow() daoasync.AsyncFlow {
+	return &daoasync.AsyncFlowDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// AsyncFlowTask return AsyncFlowTask dao.
+func (s *set) AsyncFlowTask() daoasync.AsyncFlowTask {
+	return &daoasync.AsyncFlowTaskDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 	}

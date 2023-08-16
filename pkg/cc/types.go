@@ -156,6 +156,36 @@ func (lm *Limiter) trySetDefault() {
 	}
 }
 
+// defines async
+type Async struct {
+	ConsumerIntervalSecond int `yaml:"ConsumerIntervalSecond"`
+	ConsumerNum            int `yaml:"consumerNum"`
+}
+
+func (a Async) validate() error {
+
+	if a.ConsumerIntervalSecond < 1 {
+		return errors.New("consumerIntervalSecond must > 1")
+	}
+
+	if a.ConsumerNum < 1 {
+		return errors.New("consumerNum must > 1")
+	}
+
+	return nil
+}
+
+// trySetDefault set the Setting default value if user not configured.
+func (a *Async) trySetDefault() {
+	if a.ConsumerIntervalSecond < 1 {
+		a.ConsumerIntervalSecond = 10
+	}
+
+	if a.ConsumerNum < 1 {
+		a.ConsumerNum = 2
+	}
+}
+
 // DataBase defines database related runtime
 type DataBase struct {
 	Resource ResourceDB `yaml:"resource"`
