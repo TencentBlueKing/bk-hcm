@@ -209,6 +209,8 @@ type esbListBizHostParams struct {
 // ListBizHostParams is esb list cmdb host in biz parameter.
 type ListBizHostParams struct {
 	BizID              int64        `json:"bk_biz_id"`
+	BkSetIDs           []int64      `json:"bk_set_ids"`
+	BkModuleIDs        []int64      `json:"bk_module_ids"`
 	Fields             []string     `json:"fields"`
 	Page               BasePage     `json:"page"`
 	HostPropertyFilter *QueryFilter `json:"host_property_filter,omitempty"`

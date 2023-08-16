@@ -21,7 +21,10 @@
 package webserver
 
 import (
+	corecvm "hcm/pkg/api/core/cloud/cvm"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
+	"hcm/pkg/thirdparty/esb/cmdb"
 )
 
 // ListCloudAreaOption is list cmdb cloud area option.
@@ -74,4 +77,22 @@ type ListCloudAreaResult struct {
 type CloudArea struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
+}
+
+// CloudHostListReq define cloud host list request.
+type CloudHostListReq struct {
+	BkSetIDs    []int64       `json:"bk_set_ids" validate:"omitempty"`
+	BkModuleIDs []int64       `json:"bk_module_ids" validate:"omitempty"`
+	Page        cmdb.BasePage `json:"page" validate:"required"`
+}
+
+// Validate CloudHostListReq.
+func (req CloudHostListReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// CloudHostListResp define cloud host list response.
+type CloudHostListResp struct {
+	Count   int64             `json:"count"`
+	Details []corecvm.BaseCvm `json:"details"`
 }

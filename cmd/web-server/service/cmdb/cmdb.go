@@ -25,6 +25,7 @@ import (
 
 	"hcm/cmd/web-server/service/capability"
 	webserver "hcm/pkg/api/web-server"
+	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
@@ -40,6 +41,7 @@ func InitCmdbService(c *capability.Capability) {
 	svr := &cmdbSvc{
 		esbClient:  c.EsbClient,
 		authorizer: c.Authorizer,
+		client:     c.ApiClient,
 	}
 
 	h := rest.NewHandler()
@@ -48,11 +50,14 @@ func InitCmdbService(c *capability.Capability) {
 	h.Add("ListAuthorizedBizAudit", "POST", "/authorized/audit/bizs/list", svr.ListAuthorizedBizAudit)
 	h.Add("ListCloudArea", "POST", "/cloud_areas/list", svr.ListCloudArea)
 	h.Add("ListAllCloudArea", "POST", "/all/cloud_areas/list", svr.ListAllCloudArea)
+	h.Add("GetBizBriefCacheTopo", "GET", "/bizs/{bk_biz_id}/brief/cache/topo", svr.GetBizBriefCacheTopo)
+	h.Add("ListCloudHost", "POST", "/bizs/{bk_biz_id}/cloud/hosts/list", svr.ListCloudHost)
 
 	h.Load(c.WebService)
 }
 
 type cmdbSvc struct {
+	client     *client.ClientSet
 	esbClient  esb.Client
 	authorizer auth.Authorizer
 }
@@ -224,6 +229,25 @@ func (c *cmdbSvc) ListAllCloudArea(cts *rest.Contexts) (interface{}, error) {
 		}
 
 		start += limit
+	}
+
+	return result, nil
+}
+
+// GetBizBriefCacheTopo define
+func (c *cmdbSvc) GetBizBriefCacheTopo(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	params := &cmdb.GetBizBriefCacheTopoParams{
+		BkBizID: bizID,
+	}
+	result, err := c.esbClient.Cmdb().GetBizBriefCacheTopo(cts.Kit.Ctx, params)
+	if err != nil {
+		logs.Errorf("call cmdb get biz brief cache topo failed, err: %v, bizID: %d, rid: %s", err, bizID, cts.Kit.Rid)
+		return nil, err
 	}
 
 	return result, nil
