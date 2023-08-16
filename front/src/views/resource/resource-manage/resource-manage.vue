@@ -245,6 +245,7 @@ const getResourceAccountList = async () => {
 
 const handleCancel = () => {
   isShowSideSlider.value = false;
+  isEdit.value = false;
 };
 
 // 新增成功 刷新列表
