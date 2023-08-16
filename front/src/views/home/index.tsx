@@ -8,7 +8,7 @@ import {
 } from 'vue';
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 import type { RouteRecordRaw } from 'vue-router';
-import { Menu, Navigation, Dropdown, Select } from 'bkui-vue';
+import { Menu, Navigation, Dropdown } from 'bkui-vue';
 import { headRouteConfig } from '@/router/header-config';
 import Breadcrumb from './breadcrumb';
 import workbench from '@/router/module/workbench';
@@ -51,7 +51,6 @@ export default defineComponent({
     const accountStore = useAccountStore();
     const { fetchBusinessMap } = useBusinessMapStore();
     const { fetchAllCloudAreas } = useCloudAreaStore();
-    const { Option } = Select;
 
     let topMenuActiveItem = '';
     let menus: RouteRecordRaw[] = [];
@@ -405,38 +404,34 @@ export default defineComponent({
                       openedKeys={openedKeys}
                       activeKey={route.meta.activeKey as string}>
                       {menus.map(menuItem => (Array.isArray(menuItem.children) ? (
-                          <Menu.Submenu
+                          <Menu.Group
                             key={menuItem.path as string}
-                            title={menuItem.name as string}>
+                            name={menuItem.name as string}>
                             {{
-                              icon: () => (
-                                <i
-                                  class={
-                                    'icon bk-icon icon-not-favorited'
-                                  }
-                                />
-                              ),
                               default: () => menuItem.children.map(child => (
                                   <RouterLink to={`${child.path}`}>
                                     <Menu.Item
                                       key={child.meta.activeKey as string}>
-                                      <p class='flex-row flex-1 justify-content-between align-items-center pr16'>
-                                        <span class='flex-1 text-ov'>
-                                          {child.name as string}
-                                        </span>
-                                      </p>
                                       {/* {route.meta.activeKey} */}
+                                      {{
+                                        icon: () => <i class={'icon bk-icon icon-automatic-typesetting'}/>,
+                                        default: () => <p class='flex-row flex-1 justify-content-between align-items-center pr16'>
+                                          <span class='flex-1 text-ov'>
+                                            {child.name as string}
+                                          </span>
+                                        </p>,
+                                      }}
                                     </Menu.Item>
                                   </RouterLink>
                               )),
                             }}
-                          </Menu.Submenu>
+                          </Menu.Group>
                       ) : (
                           <RouterLink to={`${menuItem.path}`}>
                             <Menu.Item key={menuItem.meta.activeKey as string}>
                               {/* {menuItem.meta.activeKey} */}
                               {{
-                                // icon: () => <menuItem.icon/>,
+                                icon: () => <i class={'icon bk-icon icon-automatic-typesetting'}/>,
                                 default: () => menuItem.name as string,
                               }}
                             </Menu.Item>
