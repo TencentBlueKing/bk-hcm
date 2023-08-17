@@ -44,7 +44,7 @@ const {
   t,
 } = useI18n();
 const resourceStore = useResourceStore();
-const columns = useColumns('vpc');
+const { columns, settings } = useColumns('vpc');
 const {
   searchData,
   searchValue,
@@ -198,6 +198,7 @@ const renderColumns = [
     </section>
 
     <bk-table
+      :settings="settings"
       class="mt20"
       row-hover="auto"
       remote-pagination

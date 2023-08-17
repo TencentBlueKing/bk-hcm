@@ -18,14 +18,14 @@ const props = defineProps({
     type: Object as PropType<FilterType>,
   },
   whereAmI: {
-    type: String
-  }
+    type: String,
+  },
 });
 
 const {
   searchData,
   searchValue,
-  filter
+  filter,
 } = useFilter(props);
 
 // use hooks
@@ -41,7 +41,7 @@ const {
   handleSort,
 } = useQueryList({ filter: filter.value }, 'route_tables');
 
-const columns = useColumns('route');
+const { columns, settings } = useColumns('route');
 </script>
 
 <template>
@@ -59,6 +59,7 @@ const columns = useColumns('route');
       />
     </section>
     <bk-table
+      :settings="settings"
       class="mt20"
       row-hover="auto"
       remote-pagination

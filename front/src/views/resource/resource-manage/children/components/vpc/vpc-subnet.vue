@@ -1,13 +1,13 @@
 <script lang="ts" setup>
 import {
-  useRoute
+  useRoute,
 } from 'vue-router';
 import useColumns from '../../../hooks/use-columns';
 import useQueryList from '../../../hooks/use-query-list';
 
 
 const route = useRoute();
-const columns = useColumns('subnet');
+const { columns, settings } = useColumns('subnet');
 
 const {
   datas,
@@ -35,6 +35,7 @@ const {
     :loading="isLoading"
   >
     <bk-table
+      :settings="settings"
       class="mt20"
       row-hover="auto"
       remote-pagination

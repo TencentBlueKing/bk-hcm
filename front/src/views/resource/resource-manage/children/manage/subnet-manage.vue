@@ -37,7 +37,7 @@ const props = defineProps({
 });
 
 const resourceStore = useResourceStore();
-const columns = useColumns('subnet');
+const { columns, settings } = useColumns('subnet');
 
 const {
   searchData,
@@ -214,6 +214,7 @@ defineExpose({ fetchComponentsData });
     </section>
 
     <bk-table
+      :settings="settings"
       class="mt20"
       row-hover="auto"
       remote-pagination

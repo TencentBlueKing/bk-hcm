@@ -68,6 +68,7 @@ const resourceStore = useResourceStore();
 const accountStore = useAccountStore();
 
 const emit = defineEmits(['auth', 'handleSecrityType', 'edit', 'tabchange']);
+const { columns } = useColumns('group');
 
 const state = reactive<any>({
   datas: [],
@@ -79,7 +80,7 @@ const state = reactive<any>({
   isLoading: false,
   handlePageChange: () => {},
   handlePageSizeChange: () => {},
-  columns: useColumns('group'),
+  columns,
   params: {
     fetchUrl: 'security_groups',
     columns: 'group',
@@ -210,6 +211,7 @@ const groupColumns = [
   },
   {
     label: t('业务'),
+    field: 'bk_biz_id',
     render({ data }: any) {
       return h(
         'span',
@@ -237,6 +239,7 @@ const groupColumns = [
   },
   {
     label: t('云厂商'),
+    field: 'vendor',
     render({ data }: any) {
       return h(
         'span',
@@ -274,7 +277,7 @@ const groupColumns = [
   },
   {
     label: t('操作'),
-    field: '',
+    field: 'operate',
     render({ data }: any) {
       return h(
         'span',
@@ -421,6 +424,7 @@ const gcpColumns = [
   },
   {
     label: t('云厂商'),
+    field: 'vendor',
     render() {
       return h(
         'span',
@@ -437,6 +441,7 @@ const gcpColumns = [
   },
   {
     label: t('类型'),
+    field: 'type',
     render({ data }: any) {
       return h(
         'span',
@@ -449,6 +454,7 @@ const gcpColumns = [
   },
   {
     label: t('目标'),
+    field: 'target_tags',
     render({ data }: any) {
       return h(
         'span',
@@ -465,6 +471,7 @@ const gcpColumns = [
   // },
   {
     label: t('协议/端口'),
+    field: 'allowed_denied',
     render({ data }: any) {
       return h(
         'span',
@@ -495,7 +502,7 @@ const gcpColumns = [
   },
   {
     label: t('操作'),
-    field: '',
+    field: 'operator',
     render({ data }: any) {
       return h(
         'span',
@@ -557,6 +564,7 @@ const gcpColumns = [
     },
   },
 ];
+
 const types = [
   { name: 'group', label: t('安全组') },
   { name: 'gcp', label: t('GCP防火墙规则') },
@@ -573,6 +581,24 @@ watch(
     immediate: true,
   },
 );
+
+const computedSettings = computed(() => {
+  const fields = [];
+  const columns = securityType.value === 'group' ? groupColumns : gcpColumns;
+  for (const column of columns) {
+    if (column.field && column.label) {
+      fields.push({
+        label: column.label,
+        field: column.field,
+        disabled: column.field === 'id',
+      });
+    }
+  }
+  return {
+    fields,
+    checked: fields.map(field => field.field),
+  };
+});
 
 const securityHandleShowDelete = (data: any) => {
   InfoBox({
@@ -636,6 +662,7 @@ const securityHandleShowDelete = (data: any) => {
 
       <bk-table
         v-if="activeType === 'group'"
+        :settings="computedSettings"
         class="mt20"
         row-hover="auto"
         remote-pagination
@@ -650,6 +677,7 @@ const securityHandleShowDelete = (data: any) => {
 
       <bk-table
         v-if="activeType === 'gcp'"
+        :settings="computedSettings"
         class="mt20"
         row-hover="auto"
         remote-pagination

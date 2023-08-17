@@ -143,7 +143,7 @@ export default defineComponent({
       },
     );
 
-    const columns = useColumns('cvms', true);
+    const { columns } = useColumns('cvms', true);
 
     const resourceStore = useResourceStore();
 

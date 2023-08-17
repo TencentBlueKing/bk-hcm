@@ -62,7 +62,7 @@ const state = reactive<any>({
   handlePageChange: () => {},
   handlePageSizeChange: () => {},
   handleSort: () => {},
-  columns: useColumns('securityCommon', false, props.data.vendor),
+  columns: useColumns('securityCommon', false, props.data.vendor).columns,
 });
 
 // use hook
@@ -272,7 +272,7 @@ state.pagination = pagination;
 state.handlePageChange = handlePageChange;
 state.handlePageSizeChange = handlePageSizeChange;
 state.handleSort = handleSort;
-state.columns = useColumns('securityCommon', false, props.data.vendor);
+state.columns = useColumns('securityCommon', false, props.data.vendor).columns;
 
 
 watch(() => tableData.value, (val) => {     // 修改filterrules
