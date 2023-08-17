@@ -31,6 +31,7 @@ import usePagePermissionStore from '@/store/usePagePermissionStore';
 // @ts-ignore
 import AppSelect from '@blueking/app-select';
 import '@blueking/app-select/dist/style.css';
+import { getFavoriteList, useFavorite } from '@/hooks/useFavorite';
 
 // import { CogShape } from 'bkui-vue/lib/icon';
 // import { useProjectList } from '@/hooks';
@@ -57,15 +58,21 @@ export default defineComponent({
     const openedKeys: string[] = [];
     let path = '';
     const curPath = ref('');
-    const businessId = ref<number | string>('');
+    const businessId = ref<number>(0);
     const businessList = ref<any[]>([]);
     const loading = ref<Boolean>(false);
     const isRouterAlive = ref<Boolean>(true);
     const curYear = ref(new Date().getFullYear());
     const isMenuOpen = ref<boolean>(true);
     const language = ref(cookie.parse(document.cookie).blueking_language || 'zh-cn');
-    const favoritedBusinessSet = ref(new Set());
     const isDialogShow = ref(false);
+    const favoriteList = ref([]);
+
+    const {
+      favoriteSet,
+      addToFavorite,
+      removeFromFavorite,
+    } = useFavorite(businessId.value, favoriteList.value);
 
     const { hasPagePermission, permissionMsg, logout } = usePagePermissionStore();
     // 获取业务列表
@@ -207,7 +214,7 @@ export default defineComponent({
     );
 
     // 选择业务
-    const handleChange = async (val: {id: string}) => {
+    const handleChange = async (val: {id: number}) => {
       businessId.value = val.id;
       accountStore.updateBizsId(businessId.value); // 设置全局业务id
       // @ts-ignore
@@ -236,6 +243,15 @@ export default defineComponent({
     };
 
     const { fetchRegions } = useRegionsStore();
+
+
+    watch(
+      () => businessId.value,
+      async () => {
+        favoriteList.value = await getFavoriteList(businessId.value);
+        for (const id of favoriteList.value) favoriteSet.value.add(id);
+      },
+    );
 
     /**
      * 在这里获取项目公共数据并缓存
@@ -360,7 +376,7 @@ export default defineComponent({
                           default: ({
                             data,
                           }: {
-                            data: { id: string; name: string };
+                            data: { id: number; name: string };
                           }) => (
                             <div class='bk-hcm-app-selector-item'>
                               <div class='bk-hcm-app-selector-item-content'>
@@ -371,13 +387,13 @@ export default defineComponent({
 
                               <div class='bk-hcm-app-selector-item-star'>
                                 {
-                                  favoritedBusinessSet.value.has(data.id)
+                                  favoriteSet.value.has(data.id)
                                     ? <i class={'icon bk-icon icon-collect'} style={{ color: '#CC933A' }} onClick={(event) => {
-                                      favoritedBusinessSet.value.delete(data.id);
+                                      removeFromFavorite(data.id);
                                       event.stopPropagation();
                                     }}/>
                                     : <i class={'icon bk-icon icon-not-favorited'} onClick={(event) => {
-                                      favoritedBusinessSet.value.add(data.id);
+                                      addToFavorite(data.id);
                                       event.stopPropagation();
                                     }}/>
                                 }
