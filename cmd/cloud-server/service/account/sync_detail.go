@@ -20,8 +20,6 @@
 package account
 
 import (
-	"fmt"
-
 	"hcm/pkg/api/cloud-server/account"
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
@@ -75,10 +73,6 @@ func (a *accountSvc) GetSyncDetail(cts *rest.Contexts) (interface{}, error) {
 	accountSyncDetail, err := a.client.DataService().Global.AccountSyncDetail.List(cts.Kit, listReq)
 	if err != nil {
 		return nil, err
-	}
-
-	if len(accountSyncDetail.Details) == 0 {
-		return nil, fmt.Errorf("%s can not find accout sync detail", accountID)
 	}
 
 	iassRes := make([]account.IassResItem, 0, len(accountSyncDetail.Details))
