@@ -25,6 +25,7 @@ import (
 	"hcm/cmd/cloud-server/logics/disk"
 	"hcm/cmd/cloud-server/logics/eip"
 	"hcm/pkg/client"
+	"hcm/pkg/thirdparty/esb"
 )
 
 // Logics defines cloud-server common logics.
@@ -36,13 +37,13 @@ type Logics struct {
 }
 
 // NewLogics create a new cloud server logics.
-func NewLogics(c *client.ClientSet) *Logics {
+func NewLogics(c *client.ClientSet, esbClient esb.Client) *Logics {
 	auditLogics := audit.NewAudit(c.DataService())
 	eipLogics := eip.NewEip(c, auditLogics)
 	return &Logics{
 		Audit: auditLogics,
 		Disk:  disk.NewDisk(c, auditLogics),
-		Cvm:   cvm.NewCvm(c, auditLogics, eipLogics),
+		Cvm:   cvm.NewCvm(c, auditLogics, eipLogics, esbClient),
 		Eip:   eip.NewEip(c, auditLogics),
 	}
 }

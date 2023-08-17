@@ -38,6 +38,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/serviced"
+	"hcm/pkg/thirdparty/esb"
 	"hcm/pkg/tools/retry"
 )
 
@@ -48,11 +49,11 @@ type recycle struct {
 }
 
 // RecycleTiming timing recycle all resource.
-func RecycleTiming(c *client.ClientSet, state serviced.State, conf cc.Recycle) {
+func RecycleTiming(c *client.ClientSet, state serviced.State, conf cc.Recycle, esbClient esb.Client) {
 	r := &recycle{
 		client: c,
 		state:  state,
-		logics: logics.NewLogics(c),
+		logics: logics.NewLogics(c, esbClient),
 	}
 
 	go r.recycleTiming(enumor.DiskCloudResType, r.recycleDisk, conf)
@@ -87,7 +88,7 @@ func (r *recycle) recycleTiming(resType enumor.CloudResourceType, worker recycle
 		listReq := &core.ListReq{
 			Filter: expr,
 			Page:   core.NewDefaultBasePage(),
-			Fields: []string{"id", "res_id"},
+			Fields: []string{"id", "res_id", "bk_biz_id"},
 		}
 		recordRes, err := r.client.DataService().Global.RecycleRecord.ListRecycleRecord(kt.Ctx, kt.Header(), listReq)
 		if err != nil {
@@ -152,13 +153,18 @@ func (r *recycle) execWorker(kt *kit.Kit, worker recycleWorker, record recyclere
 
 	basicInfo, exists := basicInfoMap[record.ResID]
 	if !exists {
-		logs.Errorf("recycle %s res(id: %s) doesn't exists, mark as failed, rid: %s", record.ResType, record.ResID, kt.Rid)
+		logs.Errorf("recycle %s res(id: %s) doesn't exists, mark as failed, rid: %s", record.ResType, record.ResID,
+			kt.Rid)
 		r.markfail(kt, errf.New(errf.RecordNotFound, "Recourse Not Found"), []string{record.ID})
 		return
 	}
 
 	rty := retry.NewRetryPolicy(maxRetryCount, [2]uint{500, 15000})
 	var err error
+
+	// 类型为cvm且在业务下回收的，需要检查是否在cmdb 待回收模块中
+	// 因为cvm记录中的BkBizID已经在加入业务的时候被清掉了，所以要以recycle_record中的为准
+	basicInfo.BkBizID = record.BkBizID
 	err = rty.BaseExec(kt, func() error {
 		return worker(kt, &basicInfo)
 	})
@@ -190,6 +196,7 @@ func (r *recycle) recycleDisk(kt *kit.Kit, info *types.CloudResourceBasicInfo) e
 }
 
 func (r *recycle) recycleCvm(kt *kit.Kit, info *types.CloudResourceBasicInfo) error {
+
 	res, err := r.logics.Cvm.DeleteRecycledCvm(kt, map[string]types.CloudResourceBasicInfo{info.ID: *info})
 	if err != nil {
 		logs.Errorf("delete cvm failed, err: %v, res: %+v, cvm: %s, rid: %s", err, res, info.ID, kt.Rid)

@@ -101,13 +101,30 @@ func (svc *cvmSvc) recycleCvmSvc(cts *rest.Contexts, validHandler handler.ValidW
 
 func (svc *cvmSvc) recycleCvm(kt *kit.Kit, req *proto.CvmRecycleReq, infoMap map[string]types.CloudResourceBasicInfo) (
 	interface{}, error) {
-
-	// filter out stopped cvm
+	// 根据业务分类主机
+	bizHostsIds := make(map[int64][]string)
 	ids := make([]string, 0, len(infoMap))
-	for id := range infoMap {
+	for id, hostInfo := range infoMap {
+		if hostInfo.BkBizID > 0 {
+			// 业务下机器加入bizHostsIds中
+			bizHostsIds[hostInfo.BkBizID] = append(bizHostsIds[hostInfo.BkBizID], id)
+		}
 		ids = append(ids, id)
 	}
 
+	// 有业务下的主机，检查是否在cmdb待回收模块
+	if len(bizHostsIds) > 0 {
+		notRecyclableIds, err := svc.cvmLgc.GetNotRecyclableHosts(kt, bizHostsIds)
+		if err != nil {
+			return nil, err
+		}
+		// 存在非待回收模块主机直接报错
+		if len(notRecyclableIds) > 0 {
+			return notRecyclableIds, errf.Newf(errf.InvalidParameter, "host not belongs to recycle module in cc")
+		}
+	}
+
+	// filter out stopped cvm
 	notStoppedRule := filter.AtomRule{Field: "status", Op: filter.NotIn.Factory(), Value: []string{"STOPPING",
 		"STOPPED", "stopping", "stopped", "SUSPENDING", "SUSPENDED", "PowerState/stopped", "SHUTOFF"}}
 	notStoppedFilter, err := tools.And(tools.ContainersExpression("id", ids), notStoppedRule)
@@ -335,7 +352,7 @@ func (svc *cvmSvc) validateRecycleRecord(records *recyclerecord.ListResult) erro
 	return nil
 }
 
-// BatchDeleteRecycledCvm batch delete recycled cvm.
+// BatchDeleteRecycledCvm 立即销毁回收任务中的主机
 func (svc *cvmSvc) BatchDeleteRecycledCvm(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.CvmDeleteRecycledReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -365,8 +382,10 @@ func (svc *cvmSvc) BatchDeleteRecycledCvm(cts *rest.Contexts) (interface{}, erro
 	}
 
 	cvmIDs := make([]string, 0, len(records.Details))
-	for _, one := range records.Details {
-		cvmIDs = append(cvmIDs, one.ResID)
+	cvmIDToBizID := make(map[string]int64, len(records.Details))
+	for _, recordDetail := range records.Details {
+		cvmIDs = append(cvmIDs, recordDetail.ResID)
+		cvmIDToBizID[recordDetail.ResID] = recordDetail.BkBizID
 	}
 
 	basicInfoReq := cloud.ListResourceBasicInfoReq{
@@ -385,6 +404,13 @@ func (svc *cvmSvc) BatchDeleteRecycledCvm(cts *rest.Contexts) (interface{}, erro
 		Action: meta.Recycle, BasicInfos: basicInfoMap})
 	if err != nil {
 		return nil, err
+	}
+
+	// 创建回收任务的主机的业务id已经被清掉了，需要借助recycle record 来获取
+	for cvmID, bizID := range cvmIDToBizID {
+		info := basicInfoMap[cvmID]
+		info.BkBizID = bizID
+		basicInfoMap[cvmID] = info
 	}
 
 	delRes, err := svc.cvmLgc.DeleteRecycledCvm(cts.Kit, basicInfoMap)

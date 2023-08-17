@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/kit"
+	"hcm/pkg/thirdparty/esb"
 )
 
 // Interface define cvm interface.
@@ -33,19 +34,22 @@ type Interface interface {
 	BatchStopCvm(kt *kit.Kit, basicInfoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateResult, error)
 	BatchDeleteCvm(kt *kit.Kit, basicInfoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateResult, error)
 	DeleteRecycledCvm(kt *kit.Kit, infoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateResult, error)
+	GetNotRecyclableHosts(kt *kit.Kit, bizHostsIds map[int64][]string) ([]string, error)
 }
 
 type cvm struct {
-	client *client.ClientSet
-	audit  audit.Interface
-	eip    eip.Interface
+	client    *client.ClientSet
+	audit     audit.Interface
+	eip       eip.Interface
+	esbClient esb.Client
 }
 
 // NewCvm new cvm.
-func NewCvm(client *client.ClientSet, audit audit.Interface, eip eip.Interface) Interface {
+func NewCvm(client *client.ClientSet, audit audit.Interface, eip eip.Interface, esbClient esb.Client) Interface {
 	return &cvm{
-		client: client,
-		audit:  audit,
-		eip:    eip,
+		client:    client,
+		audit:     audit,
+		eip:       eip,
+		esbClient: esbClient,
 	}
 }
