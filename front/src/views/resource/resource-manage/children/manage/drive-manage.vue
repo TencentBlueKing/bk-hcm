@@ -45,8 +45,8 @@ const {
   t,
 } = useI18n();
 
-const columns = useColumns('drive');
-const simpleColumns = useColumns('drive', true);
+const { columns, settings } = useColumns('drive');
+const simpleColumns = useColumns('drive', true).columns;
 const resourceStore = useResourceStore();
 
 const selectSearchData = computed(() => {
@@ -227,6 +227,7 @@ const isRowSelectEnable = ({ row }) => {
     </section>
 
     <bk-table
+      :settings="settings"
       class="mt20"
       row-hover="auto"
       remote-pagination

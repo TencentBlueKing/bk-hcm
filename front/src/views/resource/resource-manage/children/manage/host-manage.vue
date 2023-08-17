@@ -84,7 +84,7 @@ const {
 const isShowDistribution = ref(false);
 const businessId = ref('');
 const businessList = ref(useBusinessMapStore().businessList);
-const columns = useColumns('cvms');
+const { columns, settings } = useColumns('cvms');
 
 const hostSearchData = computed(() => {
   return [
@@ -250,6 +250,7 @@ getCloudAreas();
       row-hover="auto"
       :columns="columns"
       :data="datas"
+      :settings="settings"
       :pagination="pagination"
       remote-pagination
       show-overflow-tooltip

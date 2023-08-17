@@ -91,7 +91,7 @@ const state = reactive<any>({
   isLoading: true,
   handlePageChange: () => {},
   handlePageSizeChange: () => {},
-  columns: useColumns('group'),
+  columns: useColumns('group').columns,
 });
 
 watch(

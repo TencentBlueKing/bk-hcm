@@ -36,7 +36,7 @@ export default defineComponent({
     } = useI18n();
 
     // 状态
-    const columns = useColumns('drive', true);
+    const { columns } = useColumns('drive', true);
     const resourceStore = useResourceStore();
     const isLoading = ref(false);
     const renderColumns = [

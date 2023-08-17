@@ -37,7 +37,7 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ha
   'eips',
 );
 
-const columns = useColumns('eips');
+const { columns, settings } = useColumns('eips');
 const emit = defineEmits(['auth']);
 
 const { selections, handleSelectionChange } = useSelection();
@@ -162,6 +162,7 @@ defineExpose({ fetchComponentsData });
     </section>
 
     <bk-table
+      :settings="settings"
       class="mt20"
       row-hover="auto"
       remote-pagination

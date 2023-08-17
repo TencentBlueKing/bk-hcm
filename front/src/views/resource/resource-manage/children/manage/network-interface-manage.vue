@@ -17,16 +17,16 @@ const props = defineProps({
     type: Object as PropType<FilterType>,
   },
   whereAmI: {
-    type: String
-  }
+    type: String,
+  },
 });
 
-const columns = useColumns('networkInterface');
+const { columns, settings } = useColumns('networkInterface');
 
 const {
   searchData,
   searchValue,
-  filter
+  filter,
 } = useFilter(props);
 
 const {
@@ -38,7 +38,7 @@ const {
   handleSort,
 } = useQueryList({
   ...props,
-  filter: filter.value
+  filter: filter.value,
 }, 'network_interfaces');
 
 const selectSearchData = computed(() => {
@@ -71,6 +71,7 @@ const selectSearchData = computed(() => {
       />
     </section>
     <bk-table
+      :settings="settings"
       row-hover="auto"
       remote-pagination
       show-overflow-tooltip

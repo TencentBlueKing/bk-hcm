@@ -119,7 +119,7 @@ export default defineComponent({
       type === 'cvms' ? {} : { is_associate: true },
     );
 
-    const columns = useColumns(columnType, true);
+    const { columns } = useColumns(columnType, true);
     const resourceStore = useResourceStore();
     const selection = ref<any>({});
     const isConfirmLoading = ref(false);

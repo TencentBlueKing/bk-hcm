@@ -107,7 +107,7 @@ export default defineComponent({
       'getUnbindCvmDisks',
     );
 
-    const columns = useColumns('drive', true);
+    const { columns } = useColumns('drive', true);
 
     const resourceStore = useResourceStore();
 

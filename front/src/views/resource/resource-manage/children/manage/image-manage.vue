@@ -17,16 +17,16 @@ const props = defineProps({
     type: Object as PropType<FilterType>,
   },
   whereAmI: {
-    type: String
-  }
+    type: String,
+  },
 });
 
-const columns = useColumns('image');
+const { columns, settings } = useColumns('image');
 
 const {
   searchData,
   searchValue,
-  filter
+  filter,
 } = useFilter(props);
 
 const {
@@ -37,7 +37,7 @@ const {
   handlePageSizeChange,
   handleSort,
 } = useQueryList({
-  filter: filter.value
+  filter: filter.value,
 }, 'images');
 
 const selectSearchData = computed(() => {
@@ -58,14 +58,14 @@ const fieldList: string[] = columns.map(item => item.field);
 let dataList: any = datas;
 // 接口缺失字段填充默认值
 watch(datas, (list) => {
-  dataList = list.map(item => {
-    fieldList.forEach(field => {
+  dataList = list.map((item) => {
+    fieldList.forEach((field) => {
       if (!Object.hasOwnProperty.call(item, field)) {
         item[field] = '--';
       }
-    })
+    });
     return item;
-  })
+  });
 });
 </script>
 
@@ -82,6 +82,7 @@ watch(datas, (list) => {
       />
     </section>
     <bk-table
+      :settings="settings"
       row-hover="auto"
       remote-pagination
       :pagination="pagination"
