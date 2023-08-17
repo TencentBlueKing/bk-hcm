@@ -157,3 +157,28 @@
 .bk-navigation-wrapper .navigation-nav .nav-slider-list {
     padding-top: 0!important;
 }
+
+.hcm-create-business-dialog-exception-building-picture {
+    .bk-exception-title {
+        color: #63656E!important;
+        font-size: 14px!important;
+    }
+     .bk-exception-img {
+        width: 220px!important;
+        height: 100px!important;
+    }
+}
+
+.hcm-create-business-dialog-exception-building-tips {
+    background-color: #F5F7FA;
+    padding: 16px 25px 36px 24px;
+    width: 432px;
+    text-align: left;
+    .hcm-create-business-dialog-exception-building-tips-text1 {
+        color: #979BA5;
+        margin-bottom: 8px;
+    }
+    .hcm-create-business-dialog-exception-building-tips-text2 {
+        color: #63656E;
+    }
+}
