@@ -21,7 +21,7 @@ const resourceMenus: RouteRecordRaw[] = [
       },
       {
         path: '/resource/resource',
-        name: t('资源'),
+        name: '资源接入',
         component: () => import('@/views/resource/resource-manage/resource-entry.vue'),
         children: [
           {
