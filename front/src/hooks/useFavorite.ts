@@ -37,5 +37,5 @@ export const addFavorite = async (bk_biz_id: number) => {
 };
 
 export const removeFavorite = async (bk_biz_id: number) => {
-  return await http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${bk_biz_id}/collections/bizs`, { bk_biz_id });
+  return await http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${bk_biz_id}/collections/bizs`, { data: { bk_biz_id } });
 };
