@@ -84,13 +84,12 @@ func (req *AwsAccountExtensionCreateReq) IsFull() bool {
 
 // HuaWeiAccountExtensionCreateReq ...
 type HuaWeiAccountExtensionCreateReq struct {
-	CloudMainAccountName string `json:"cloud_main_account_name" validate:"required"`
-	CloudSubAccountID    string `json:"cloud_sub_account_id" validate:"required"`
-	CloudSubAccountName  string `json:"cloud_sub_account_name" validate:"required"`
-	CloudIamUserID       string `json:"cloud_iam_user_id" validate:"required"`
-	CloudIamUsername     string `json:"cloud_iam_username" validate:"required"`
-	CloudSecretID        string `json:"cloud_secret_id" validate:"omitempty"`
-	CloudSecretKey       string `json:"cloud_secret_key" validate:"omitempty"`
+	CloudSubAccountID   string `json:"cloud_sub_account_id" validate:"required"`
+	CloudSubAccountName string `json:"cloud_sub_account_name" validate:"required"`
+	CloudIamUserID      string `json:"cloud_iam_user_id" validate:"required"`
+	CloudIamUsername    string `json:"cloud_iam_username" validate:"required"`
+	CloudSecretID       string `json:"cloud_secret_id" validate:"omitempty"`
+	CloudSecretKey      string `json:"cloud_secret_key" validate:"omitempty"`
 }
 
 // Validate ...
@@ -156,7 +155,6 @@ type AzureAccountExtensionCreateReq struct {
 	CloudSubscriptionName string `json:"cloud_subscription_name" validate:"required"`
 	CloudApplicationID    string `json:"cloud_application_id" validate:"omitempty"`
 	CloudApplicationName  string `json:"cloud_application_name" validate:"omitempty"`
-	CloudClientSecretID   string `json:"cloud_client_secret_id" validate:"omitempty"`
 	CloudClientSecretKey  string `json:"cloud_client_secret_key" validate:"omitempty"`
 }
 
@@ -176,8 +174,7 @@ func (req *AzureAccountExtensionCreateReq) Validate(accountType enumor.AccountTy
 
 // IsFull  对于不同账号类型，有些字段是允许为空的，这里返回是否所有字段都有值
 func (req *AzureAccountExtensionCreateReq) IsFull() bool {
-	return req.CloudClientSecretID != "" &&
-		req.CloudClientSecretKey != "" &&
+	return req.CloudClientSecretKey != "" &&
 		req.CloudApplicationID != "" &&
 		req.CloudApplicationName != ""
 }

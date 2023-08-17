@@ -66,13 +66,12 @@ func (req *AwsAccountExtensionCreateReq) EncryptSecretKey(cipher cryptography.Cr
 
 // HuaWeiAccountExtensionCreateReq ...
 type HuaWeiAccountExtensionCreateReq struct {
-	CloudMainAccountName string `json:"cloud_main_account_name" validate:"required"`
-	CloudSubAccountID    string `json:"cloud_sub_account_id" validate:"required"`
-	CloudSubAccountName  string `json:"cloud_sub_account_name" validate:"required"`
-	CloudSecretID        string `json:"cloud_secret_id" validate:"omitempty"`
-	CloudSecretKey       string `json:"cloud_secret_key" validate:"omitempty"`
-	CloudIamUserID       string `json:"cloud_iam_user_id" validate:"required"`
-	CloudIamUsername     string `json:"cloud_iam_username" validate:"required"`
+	CloudSubAccountID   string `json:"cloud_sub_account_id" validate:"required"`
+	CloudSubAccountName string `json:"cloud_sub_account_name" validate:"required"`
+	CloudSecretID       string `json:"cloud_secret_id" validate:"omitempty"`
+	CloudSecretKey      string `json:"cloud_secret_key" validate:"omitempty"`
+	CloudIamUserID      string `json:"cloud_iam_user_id" validate:"required"`
+	CloudIamUsername    string `json:"cloud_iam_username" validate:"required"`
 }
 
 // EncryptSecretKey ...
@@ -102,7 +101,6 @@ type AzureAccountExtensionCreateReq struct {
 	CloudSubscriptionName string `json:"cloud_subscription_name" validate:"required"`
 	CloudApplicationID    string `json:"cloud_application_id" validate:"omitempty"`
 	CloudApplicationName  string `json:"cloud_application_name" validate:"omitempty"`
-	CloudClientSecretID   string `json:"cloud_client_secret_id" validate:"omitempty"`
 	CloudClientSecretKey  string `json:"cloud_client_secret_key" validate:"omitempty"`
 }
 
@@ -167,13 +165,12 @@ func (req *AwsAccountExtensionUpdateReq) EncryptSecretKey(cipher cryptography.Cr
 }
 
 type HuaWeiAccountExtensionUpdateReq struct {
-	CloudMainAccountName string  `json:"cloud_main_account_name,omitempty" validate:"omitempty"`
-	CloudSubAccountID    string  `json:"cloud_sub_account_id,omitempty" validate:"omitempty"`
-	CloudSubAccountName  string  `json:"cloud_sub_account_name,omitempty" validate:"omitempty"`
-	CloudSecretID        *string `json:"cloud_secret_id,omitempty" validate:"omitempty"`
-	CloudSecretKey       *string `json:"cloud_secret_key,omitempty" validate:"omitempty"`
-	CloudIamUserID       string  `json:"cloud_iam_user_id,omitempty" validate:"omitempty"`
-	CloudIamUsername     string  `json:"cloud_iam_username,omitempty" validate:"omitempty"`
+	CloudSubAccountID   string  `json:"cloud_sub_account_id,omitempty" validate:"omitempty"`
+	CloudSubAccountName string  `json:"cloud_sub_account_name,omitempty" validate:"omitempty"`
+	CloudSecretID       *string `json:"cloud_secret_id,omitempty" validate:"omitempty"`
+	CloudSecretKey      *string `json:"cloud_secret_key,omitempty" validate:"omitempty"`
+	CloudIamUserID      string  `json:"cloud_iam_user_id,omitempty" validate:"omitempty"`
+	CloudIamUsername    string  `json:"cloud_iam_username,omitempty" validate:"omitempty"`
 }
 
 // EncryptSecretKey ...

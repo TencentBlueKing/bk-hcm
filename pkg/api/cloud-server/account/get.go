@@ -19,6 +19,11 @@
 
 package account
 
+import (
+	"hcm/pkg/api/core/cloud"
+	"hcm/pkg/rest"
+)
+
 // SyncDetailRsp ...
 type SyncDetailRsp struct {
 	IassRes []IassResItem `json:"iass_res"`
@@ -30,4 +35,10 @@ type IassResItem struct {
 	ResStatus       string `json:"res_status"`
 	ResFailedReason string `json:"res_failed_reason"`
 	ResEndTime      string `json:"res_end_time"`
+}
+
+// BySecretResp 根据秘钥获取的字段
+type BySecretResp[T cloud.AccountInfoBySecret] struct {
+	rest.BaseResp `json:",inline"`
+	Data          *T `json:"data"`
 }

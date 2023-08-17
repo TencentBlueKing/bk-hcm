@@ -25,7 +25,7 @@ import (
 
 	"hcm/cmd/cloud-server/service/common"
 	proto "hcm/pkg/api/cloud-server/account"
-	hcproto "hcm/pkg/api/hc-service"
+	hcproto "hcm/pkg/api/hc-service/account"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -33,38 +33,9 @@ import (
 	"hcm/pkg/rest"
 )
 
-// Check ...
-func (a *accountSvc) Check(cts *rest.Contexts) (interface{}, error) {
-	req := new(proto.AccountCheckReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	var err error
-	switch req.Vendor {
-	case enumor.TCloud:
-		_, err = ParseAndCheckTCloudExtension(cts, a.client, req.Type, req.Extension)
-	case enumor.Aws:
-		_, err = ParseAndCheckAwsExtension(cts, a.client, req.Type, req.Extension)
-	case enumor.HuaWei:
-		_, err = ParseAndCheckHuaWeiExtension(cts, a.client, req.Type, req.Extension)
-	case enumor.Gcp:
-		_, err = ParseAndCheckGcpExtension(cts, a.client, req.Type, req.Extension)
-	case enumor.Azure:
-		_, err = ParseAndCheckAzureExtension(cts, a.client, req.Type, req.Extension)
-	default:
-		err = fmt.Errorf("no support vendor: %s", req.Vendor)
-	}
-
-	return nil, errf.NewFromErr(errf.InvalidParameter, err)
-}
-
 // TODO: ParseAndCheckXXXXExtension 公开是为了与申请新增账号复用，但是这里只是复用，没有抽象，不应该复用XXXXAccountExtensionCreateReq数据结构
 
-// ParseAndCheckTCloudExtension ...
+// ParseAndCheckTCloudExtension  联通性校验，并检查字段是否匹配
 func ParseAndCheckTCloudExtension(
 	cts *rest.Contexts, client *client.ClientSet, accountType enumor.AccountType, reqExtension json.RawMessage,
 ) (*proto.TCloudAccountExtensionCreateReq, error) {
@@ -98,7 +69,7 @@ func ParseAndCheckTCloudExtension(
 	return extension, nil
 }
 
-// ParseAndCheckAwsExtension ...
+// ParseAndCheckAwsExtension  联通性校验，并检查字段是否匹配
 func ParseAndCheckAwsExtension(
 	cts *rest.Contexts, client *client.ClientSet, accountType enumor.AccountType, reqExtension json.RawMessage,
 ) (*proto.AwsAccountExtensionCreateReq, error) {
@@ -132,6 +103,7 @@ func ParseAndCheckAwsExtension(
 	return extension, nil
 }
 
+// ParseAndCheckHuaWeiExtension  联通性校验，并检查字段是否匹配
 func ParseAndCheckHuaWeiExtension(
 	cts *rest.Contexts, client *client.ClientSet, accountType enumor.AccountType, reqExtension json.RawMessage,
 ) (*proto.HuaWeiAccountExtensionCreateReq, error) {
@@ -151,13 +123,12 @@ func ParseAndCheckHuaWeiExtension(
 			cts.Kit.Ctx,
 			cts.Kit.Header(),
 			&hcproto.HuaWeiAccountCheckReq{
-				CloudMainAccountName: extension.CloudMainAccountName,
-				CloudSubAccountID:    extension.CloudSubAccountID,
-				CloudSubAccountName:  extension.CloudSubAccountName,
-				CloudSecretID:        extension.CloudSecretID,
-				CloudSecretKey:       extension.CloudSecretKey,
-				CloudIamUserID:       extension.CloudIamUserID,
-				CloudIamUsername:     extension.CloudIamUsername,
+				CloudSubAccountID:   extension.CloudSubAccountID,
+				CloudSubAccountName: extension.CloudSubAccountName,
+				CloudSecretID:       extension.CloudSecretID,
+				CloudSecretKey:      extension.CloudSecretKey,
+				CloudIamUserID:      extension.CloudIamUserID,
+				CloudIamUsername:    extension.CloudIamUsername,
 			},
 		)
 		if err != nil {
@@ -168,6 +139,7 @@ func ParseAndCheckHuaWeiExtension(
 	return extension, nil
 }
 
+// ParseAndCheckGcpExtension  联通性校验，并检查字段是否匹配
 func ParseAndCheckGcpExtension(
 	cts *rest.Contexts, client *client.ClientSet, accountType enumor.AccountType, reqExtension json.RawMessage,
 ) (*proto.GcpAccountExtensionCreateReq, error) {
@@ -199,6 +171,7 @@ func ParseAndCheckGcpExtension(
 	return extension, nil
 }
 
+// ParseAndCheckAzureExtension  联通性校验，并检查字段是否匹配
 func ParseAndCheckAzureExtension(
 	cts *rest.Contexts, client *client.ClientSet, accountType enumor.AccountType, reqExtension json.RawMessage,
 ) (*proto.AzureAccountExtensionCreateReq, error) {
@@ -219,7 +192,6 @@ func ParseAndCheckAzureExtension(
 			cts.Kit.Header(),
 			&hcproto.AzureAccountCheckReq{
 				CloudTenantID:        extension.CloudTenantID,
-				CloudSubscriptionID:  extension.CloudSubscriptionID,
 				CloudApplicationID:   extension.CloudApplicationID,
 				CloudClientSecretKey: extension.CloudClientSecretKey,
 			},
@@ -232,7 +204,7 @@ func ParseAndCheckAzureExtension(
 	return extension, nil
 }
 
-// CheckByID ...
+// CheckByID 更新秘钥信息的时候，重新获取一次信息覆盖并比较，和录入账号逻辑基本相同，但是判断账号唯一的id不能变
 func (a *accountSvc) CheckByID(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AccountCheckByIDReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -304,6 +276,7 @@ func (a *accountSvc) parseAndCheckTCloudExtensionByID(
 			cts.Kit.Ctx,
 			cts.Kit.Header(),
 			&hcproto.TCloudAccountCheckReq{
+				// 传入数据库中的主账号信息，如果发生变更会报错
 				CloudMainAccountID: account.Extension.CloudMainAccountID,
 				CloudSubAccountID:  extension.CloudSubAccountID,
 				CloudSecretID:      extension.CloudSecretID,
@@ -313,6 +286,7 @@ func (a *accountSvc) parseAndCheckTCloudExtensionByID(
 		if err != nil {
 			return nil, err
 		}
+
 	}
 
 	return extension, nil
@@ -345,7 +319,9 @@ func (a *accountSvc) parseAndCheckAwsExtensionByID(
 			cts.Kit.Ctx,
 			cts.Kit.Header(),
 			&hcproto.AwsAccountCheckReq{
-				CloudAccountID:   account.Extension.CloudAccountID,
+				// 传入数据库中的主账号信息，如果发生变更会报错
+				CloudAccountID: account.Extension.CloudAccountID,
+
 				CloudIamUsername: extension.CloudIamUsername,
 				CloudSecretID:    extension.CloudSecretID,
 				CloudSecretKey:   extension.CloudSecretKey,
@@ -386,13 +362,14 @@ func (a *accountSvc) parseAndCheckHuaWeiExtensionByID(
 			cts.Kit.Ctx,
 			cts.Kit.Header(),
 			&hcproto.HuaWeiAccountCheckReq{
-				CloudMainAccountName: account.Extension.CloudMainAccountName,
-				CloudSubAccountID:    account.Extension.CloudSubAccountID,
-				CloudSubAccountName:  account.Extension.CloudSubAccountName,
-				CloudIamUserID:       extension.CloudIamUserID,
-				CloudIamUsername:     extension.CloudIamUsername,
-				CloudSecretID:        extension.CloudSecretID,
-				CloudSecretKey:       extension.CloudSecretKey,
+				// 传入数据库中的主账号信息，如果发生变更会报错
+				CloudSubAccountID: account.Extension.CloudSubAccountID,
+
+				CloudSubAccountName: extension.CloudSubAccountName,
+				CloudIamUserID:      extension.CloudIamUserID,
+				CloudIamUsername:    extension.CloudIamUsername,
+				CloudSecretID:       extension.CloudSecretID,
+				CloudSecretKey:      extension.CloudSecretKey,
 			},
 		)
 		if err != nil {
@@ -430,8 +407,13 @@ func (a *accountSvc) parseAndCheckGcpExtensionByID(
 			cts.Kit.Ctx,
 			cts.Kit.Header(),
 			&hcproto.GcpAccountCheckReq{
-				CloudProjectID:        account.Extension.CloudProjectID,
-				CloudServiceSecretKey: extension.CloudServiceSecretKey,
+				CloudProjectID: account.Extension.CloudProjectID,
+
+				CloudServiceSecretKey:   extension.CloudServiceSecretKey,
+				CloudProjectName:        extension.CloudProjectName,
+				CloudServiceAccountID:   extension.CloudServiceAccountID,
+				CloudServiceAccountName: extension.CloudServiceAccountName,
+				CloudServiceSecretID:    extension.CloudServiceSecretID,
 			},
 		)
 		if err != nil {
@@ -469,10 +451,12 @@ func (a *accountSvc) parseAndCheckAzureExtensionByID(
 			cts.Kit.Ctx,
 			cts.Kit.Header(),
 			&hcproto.AzureAccountCheckReq{
-				CloudTenantID:        account.Extension.CloudTenantID,
-				CloudSubscriptionID:  account.Extension.CloudSubscriptionID,
-				CloudApplicationID:   extension.CloudApplicationID,
-				CloudClientSecretKey: extension.CloudClientSecretKey,
+				CloudSubscriptionID: account.Extension.CloudSubscriptionID,
+
+				CloudTenantID:         extension.CloudTenantID,
+				CloudApplicationID:    extension.CloudApplicationID,
+				CloudApplicationName:  extension.CloudApplicationName,
+				CloudSubscriptionName: extension.CloudSubscriptionName,
 			},
 		)
 		if err != nil {

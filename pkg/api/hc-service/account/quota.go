@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package account
+package hsaccount
 
 import (
 	typeaccount "hcm/pkg/adaptor/types/account"

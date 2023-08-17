@@ -87,11 +87,12 @@ type gcpAccountCloudServiceSecretKey struct {
 	ClientX509CertURL       string `json:"client_x509_cert_url" validate:"required"`
 }
 
+// validateGcpCloudServiceSK 检查GCP秘钥是否合法
 func validateGcpCloudServiceSK(cloudServiceSecretKey string) error {
 	if cloudServiceSecretKey != "" {
-		var secretKey gcpAccountCloudServiceSecretKey
-		if err := json.UnmarshalFromString(cloudServiceSecretKey, &secretKey); err != nil {
-			return fmt.Errorf("the secret key format of service account is invalid , err: %v", err)
+		secretKey, err := DecodeGcpSecretKey(cloudServiceSecretKey)
+		if err != nil {
+			return err
 		}
 		if err := validator.Validate.Struct(secretKey); err != nil {
 			return fmt.Errorf("secret key of service account is invalid data, err: %v", err)
@@ -99,4 +100,13 @@ func validateGcpCloudServiceSK(cloudServiceSecretKey string) error {
 	}
 
 	return nil
+}
+
+// DecodeGcpSecretKey 解析GCP秘钥JSON字符串为结构体
+func DecodeGcpSecretKey(cloudServiceSecretKey string) (*gcpAccountCloudServiceSecretKey, error) {
+	secretKey := new(gcpAccountCloudServiceSecretKey)
+	if err := json.UnmarshalFromString(cloudServiceSecretKey, &secretKey); err != nil {
+		return nil, fmt.Errorf("the secret key format of service account is invalid , err: %v", err)
+	}
+	return secretKey, nil
 }

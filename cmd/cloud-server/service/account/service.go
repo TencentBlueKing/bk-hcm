@@ -41,7 +41,7 @@ func InitAccountService(c *capability.Capability) {
 	}
 
 	h := rest.NewHandler()
-	h.Add("Check", http.MethodPost, "/accounts/check", svc.Check)
+	h.Add("GetAccountBySecret", http.MethodPost, "/vendors/{vendor}/accounts/secret", svc.GetAccountBySecret)
 	h.Add("CheckByID", http.MethodPost, "/accounts/{account_id}/check", svc.CheckByID)
 	h.Add("List", http.MethodPost, "/accounts/list", svc.List)
 	h.Add("ResourceList", http.MethodPost, "/accounts/resources/accounts/list", svc.ResourceList)

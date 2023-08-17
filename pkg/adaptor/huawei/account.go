@@ -20,13 +20,13 @@
 package huawei
 
 import (
-	"errors"
 	"fmt"
 
-	"hcm/pkg/adaptor/types"
 	typeaccount "hcm/pkg/adaptor/types/account"
+	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/iam/v3/model"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/iam/v3/region"
@@ -68,36 +68,6 @@ func (h *HuaWei) ListAccount(kt *kit.Kit) ([]typeaccount.HuaWeiAccount, error) {
 	return list, nil
 }
 
-// AccountCheck check account authentication information and permissions.
-// KeystoneListAuthDomains: https://support.huaweicloud.com/intl/zh-cn/api-iam/iam_07_0001.html
-// 账号概念 https://support.huaweicloud.com/intl/zh-cn/api-iam/iam_17_0002.html
-func (h *HuaWei) AccountCheck(kt *kit.Kit, opt *types.HuaWeiAccountInfo) error {
-	client, err := h.clientSet.iamClient(region.AP_SOUTHEAST_1)
-	if err != nil {
-		logs.Errorf("init huawei client failed, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
-
-	domainsResp, err := client.KeystoneListAuthDomains(nil)
-	if err != nil {
-		logs.Errorf("KeystoneListAuthDomains failed, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
-
-	domains := domainsResp.Domains
-	if domains == nil {
-		return errors.New("KeystoneListAuthDomains failed, err: no auth domains")
-	}
-
-	for _, domain := range *domains {
-		if domain.Id == opt.CloudSubAccountID && domain.Name == opt.CloudSubAccountName {
-			return nil
-		}
-	}
-
-	return errors.New("SubAccount does not match SecretId/SecretKey")
-}
-
 // GetAccountQuota get account quota.
 // KeystoneListAuthDomains: https://support.huaweicloud.com/intl/zh-cn/api-ecs/ecs_02_0801.html
 func (h *HuaWei) GetAccountQuota(kt *kit.Kit, opt *typeaccount.GetHuaWeiAccountZoneQuotaOption) (
@@ -134,4 +104,57 @@ func (h *HuaWei) GetAccountQuota(kt *kit.Kit, opt *typeaccount.GetHuaWeiAccountZ
 		MaxTotalSpotRAMSize:   resp.Absolute.MaxTotalSpotRAMSize,
 	}
 	return quota, nil
+}
+
+// GetAccountInfoBySecret 根据AccessKey 获取账号信息
+// 1. https://console-intl.huaweicloud.com/apiexplorer/#/openapi/IAM/doc?api=ShowPermanentAccessKey
+// 2. https://console-intl.huaweicloud.com/apiexplorer/#/openapi/IAM/debug?api=ShowUser
+// 3. https://console-intl.huaweicloud.com/apiexplorer/#/openapi/IAM/doc?api=KeystoneListAuthDomains
+func (h *HuaWei) GetAccountInfoBySecret(kt *kit.Kit, accessKeyID string) (*cloud.HuaWeiInfoBySecret, error) {
+
+	client, err := h.clientSet.iamGlobalClient(region.AP_SOUTHEAST_1)
+	if err != nil {
+		logs.Errorf("new iam client failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	// 1. 根据access key 获取iam用户id https://console-intl.huaweicloud.com/apiexplorer/#/openapi/IAM/doc?api=ShowPermanentAccessKey
+	akResp, err := client.ShowPermanentAccessKey(&model.ShowPermanentAccessKeyRequest{AccessKey: accessKeyID})
+	if err != nil {
+		logs.Errorf("ShowPermanentAccessKey failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, fmt.Errorf("ShowPermanentAccessKey failed, err: %v", err)
+
+	}
+	accountInfo := &cloud.HuaWeiInfoBySecret{
+		CloudIamUserID: akResp.Credential.UserId,
+	}
+
+	// 2. 根据iam用户id 获取iam用户名称和子账号id
+	// https://console-intl.huaweicloud.com/apiexplorer/#/openapi/IAM/debug?api=ShowUser
+	userResp, err := client.ShowUser(&model.ShowUserRequest{UserId: accountInfo.CloudIamUserID})
+	if err != nil {
+		logs.Errorf("ShowUser failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, fmt.Errorf("ShowUser failed, err: %v", err)
+	}
+	accountInfo.CloudIamUsername = userResp.User.Name
+	accountInfo.CloudSubAccountID = userResp.User.DomainId
+	// 3. 遍历账号列表，根据子账号id 获取子账号名
+	// https://console-intl.huaweicloud.com/apiexplorer/#/openapi/IAM/doc?api=KeystoneListAuthDomains
+	domainResp, err := client.KeystoneListAuthDomains(new(model.KeystoneListAuthDomainsRequest))
+	if err != nil {
+		logs.Errorf("KeystoneListAuthDomainsRequest failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, fmt.Errorf("KeystoneListAuthDomainsRequest failed, err: %v", err)
+	}
+	// 遍历寻找子账户名
+	for _, one := range converter.PtrToVal(domainResp.Domains) {
+		if one.Id == accountInfo.CloudSubAccountID {
+			accountInfo.CloudSubAccountName = one.Name
+			break
+		}
+	}
+	// 没找到对应子账号id
+	if len(accountInfo.CloudSubAccountName) == 0 {
+		return nil, fmt.Errorf("KeystoneListAuthDomainsRequest not fount domain!, domains: %v", domainResp.Domains)
+	}
+	return accountInfo, nil
+
 }

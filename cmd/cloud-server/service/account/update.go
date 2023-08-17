@@ -212,10 +212,11 @@ func (a *accountSvc) updateForHuaWei(
 	var shouldUpdatedExtension *dataproto.HuaWeiAccountExtensionUpdateReq = nil
 	if req.Extension != nil {
 		shouldUpdatedExtension = &dataproto.HuaWeiAccountExtensionUpdateReq{
-			CloudIamUserID:   extension.CloudIamUserID,
-			CloudIamUsername: extension.CloudIamUsername,
-			CloudSecretID:    &extension.CloudSecretID,
-			CloudSecretKey:   &extension.CloudSecretKey,
+			CloudSubAccountName: extension.CloudSubAccountName,
+			CloudIamUserID:      extension.CloudIamUserID,
+			CloudIamUsername:    extension.CloudIamUsername,
+			CloudSecretID:       &extension.CloudSecretID,
+			CloudSecretKey:      &extension.CloudSecretKey,
 		}
 	}
 
@@ -259,6 +260,7 @@ func (a *accountSvc) updateForGcp(
 	var shouldUpdatedExtension *dataproto.GcpAccountExtensionUpdateReq = nil
 	if req.Extension != nil {
 		shouldUpdatedExtension = &dataproto.GcpAccountExtensionUpdateReq{
+			CloudProjectName:        extension.CloudProjectName,
 			CloudServiceAccountID:   &extension.CloudServiceAccountID,
 			CloudServiceAccountName: &extension.CloudServiceAccountName,
 			CloudServiceSecretID:    &extension.CloudServiceSecretID,
@@ -306,10 +308,11 @@ func (a *accountSvc) updateForAzure(
 	var shouldUpdatedExtension *dataproto.AzureAccountExtensionUpdateReq = nil
 	if req.Extension != nil {
 		shouldUpdatedExtension = &dataproto.AzureAccountExtensionUpdateReq{
-			CloudApplicationID:   &extension.CloudApplicationID,
-			CloudApplicationName: &extension.CloudApplicationName,
-			CloudClientSecretID:  &extension.CloudClientSecretID,
-			CloudClientSecretKey: &extension.CloudClientSecretKey,
+			CloudTenantID:         extension.CloudTenantID,
+			CloudSubscriptionName: extension.CloudSubscriptionName,
+			CloudApplicationID:    &extension.CloudApplicationID,
+			CloudApplicationName:  &extension.CloudApplicationName,
+			CloudClientSecretKey:  &extension.CloudClientSecretKey,
 		}
 	}
 

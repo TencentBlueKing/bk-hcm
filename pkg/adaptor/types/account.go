@@ -61,9 +61,8 @@ func (a *AwsAccountInfo) Validate() error {
 
 // HuaWeiAccountInfo define huawei account info that used to check account.
 type HuaWeiAccountInfo struct {
-	CloudMainAccountName string `json:"cloud_main_account_name"`
-	CloudSubAccountID    string `json:"cloud_sub_account_id"`
-	CloudSubAccountName  string `json:"cloud_sub_account_name"`
-	CloudIamUserID       string `json:"cloud_iam_user_id"`
-	CloudIamUsername     string `json:"cloud_iam_username"`
+	CloudSubAccountID   string `json:"cloud_sub_account_id"`
+	CloudSubAccountName string `json:"cloud_sub_account_name"`
+	CloudIamUserID      string `json:"cloud_iam_user_id"`
+	CloudIamUsername    string `json:"cloud_iam_username"`
 }

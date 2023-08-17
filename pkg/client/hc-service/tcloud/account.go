@@ -24,8 +24,9 @@ import (
 	"net/http"
 
 	typeaccount "hcm/pkg/adaptor/types/account"
-	"hcm/pkg/api/hc-service"
-	protoaccount "hcm/pkg/api/hc-service/account"
+	"hcm/pkg/api/cloud-server/account"
+	"hcm/pkg/api/core/cloud"
+	hsaccount "hcm/pkg/api/hc-service/account"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -68,8 +69,8 @@ func (a *AccountClient) SyncSubAccount(kt *kit.Kit, req *sync.TCloudGlobalSyncRe
 	return nil
 }
 
-// Check account
-func (a *AccountClient) Check(ctx context.Context, h http.Header, request *hcservice.TCloudAccountCheckReq) error {
+// Check 联通性和云上字段匹配校验
+func (a *AccountClient) Check(ctx context.Context, h http.Header, request *hsaccount.TCloudAccountCheckReq) error {
 
 	resp := new(rest.BaseResp)
 
@@ -94,9 +95,9 @@ func (a *AccountClient) Check(ctx context.Context, h http.Header, request *hcser
 
 // GetZoneQuota get account zone quota.
 func (a *AccountClient) GetZoneQuota(ctx context.Context, h http.Header,
-	request *protoaccount.GetTCloudAccountZoneQuotaReq) (*typeaccount.TCloudAccountQuota, error) {
+	request *hsaccount.GetTCloudAccountZoneQuotaReq) (*typeaccount.TCloudAccountQuota, error) {
 
-	resp := new(protoaccount.GetTCloudAccountZoneQuotaResp)
+	resp := new(hsaccount.GetTCloudAccountZoneQuotaResp)
 
 	err := a.client.Post().
 		WithContext(ctx).
@@ -114,4 +115,29 @@ func (a *AccountClient) GetZoneQuota(ctx context.Context, h http.Header,
 	}
 
 	return resp.Data, nil
+}
+
+// GetBySecret get account info by secret
+func (a *AccountClient) GetBySecret(ctx context.Context, h http.Header,
+	request *cloud.TCloudSecret) (*cloud.TCloudInfoBySecret, error) {
+
+	resp := new(account.BySecretResp[cloud.TCloudInfoBySecret])
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/accounts/secret").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+
 }

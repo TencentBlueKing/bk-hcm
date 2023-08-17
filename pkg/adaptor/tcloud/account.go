@@ -23,11 +23,12 @@ import (
 	"errors"
 	"fmt"
 
-	"hcm/pkg/adaptor/types"
 	typeaccount "hcm/pkg/adaptor/types/account"
+	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 
 	cam "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
@@ -67,54 +68,6 @@ func (t *TCloud) ListAccount(kt *kit.Kit) ([]typeaccount.TCloudAccount, error) {
 	}
 
 	return list, nil
-}
-
-// AccountCheck check account authentication information and permissions.
-// reference: https://cloud.tencent.com/document/api/598/70416
-func (t *TCloud) AccountCheck(kt *kit.Kit, opt *types.TCloudAccountInfo) error {
-	if opt == nil {
-		return errf.New(errf.InvalidParameter, "account check option is required")
-	}
-
-	if err := opt.Validate(); err != nil {
-		return err
-	}
-
-	camClient, err := t.clientSet.camServiceClient("")
-	if err != nil {
-		return fmt.Errorf("new cam client failed, err: %v", err)
-	}
-
-	req := cam.NewGetUserAppIdRequest()
-	resp, err := camClient.GetUserAppIdWithContext(kt.Ctx, req)
-	if err != nil {
-		return fmt.Errorf("get user app id failed, err: %v", err)
-	}
-
-	if resp.Response.Uin == nil {
-		return errors.New("user uin is empty")
-	}
-
-	if resp.Response.OwnerUin == nil {
-		return errors.New("user owner uin is empty")
-	}
-
-	// check if cloud account info matches the hcm account detail.
-	if *resp.Response.Uin != opt.CloudSubAccountID {
-		logs.Errorf("sub account id does not match the account to which the secret belongs, uin: %s, "+
-			"cloudSubAccountID: %s, cloudRid: %s, rid: %s", *resp.Response.Uin, opt.CloudSubAccountID,
-			*resp.Response.RequestId, kt.Rid)
-		return fmt.Errorf("sub account id does not match the account to which the secret belongs")
-	}
-
-	if *resp.Response.OwnerUin != opt.CloudMainAccountID {
-		logs.Errorf("main account id does not match the account to which the secret belongs, ownerUin: %s, "+
-			"cloudMainAccountID: %s, cloudRid: %s, rid: %s", *resp.Response.OwnerUin, opt.CloudMainAccountID,
-			*resp.Response.RequestId, kt.Rid)
-		return fmt.Errorf("main account id does not match the account to which the secret belongs")
-	}
-
-	return nil
 }
 
 // GetAccountZoneQuota 获取账号配额信息.
@@ -230,4 +183,32 @@ func validateDescribeAccountQuotaResp(resp *cvm.DescribeAccountQuotaResponse) er
 		return fmt.Errorf("tcloud account quota api return DisasterRecoverGroupQuotaSet > 1")
 	}
 	return nil
+}
+
+// GetAccountInfoBySecret 根据秘钥获取云上获取账号信息
+// reference: https://cloud.tencent.com/document/api/598/70416
+func (t *TCloud) GetAccountInfoBySecret(kt *kit.Kit) (*cloud.TCloudInfoBySecret, error) {
+
+	camClient, err := t.clientSet.camServiceClient("")
+	if err != nil {
+		return nil, fmt.Errorf("new cam client failed, err: %v", err)
+	}
+
+	req := cam.NewGetUserAppIdRequest()
+	resp, err := camClient.GetUserAppIdWithContext(kt.Ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("get user app id failed, err: %v", err)
+	}
+
+	if resp.Response.Uin == nil {
+		return nil, errors.New("user uin is empty")
+	}
+
+	if resp.Response.OwnerUin == nil {
+		return nil, errors.New("user owner uin is empty")
+	}
+	return &cloud.TCloudInfoBySecret{
+		CloudSubAccountID:  converter.PtrToVal(resp.Response.Uin),
+		CloudMainAccountID: converter.PtrToVal(resp.Response.OwnerUin),
+	}, nil
 }

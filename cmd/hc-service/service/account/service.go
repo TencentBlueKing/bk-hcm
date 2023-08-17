@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package account Package service defines service service.
+// Package account Package service defines service.
 package account
 
 import (
@@ -28,14 +28,14 @@ import (
 	"hcm/pkg/rest"
 )
 
-// InitAccountService initial the service service
+// InitAccountService initial the service
 func InitAccountService(cap *capability.Capability) {
 	svc := &service{
 		ad: cap.CloudAdaptor,
 	}
 
 	h := rest.NewHandler()
-	// 账号检查
+	// 联通性和云上字段匹配校验
 	h.Add("TCloudAccountCheck", http.MethodPost, "/vendors/tcloud/accounts/check", svc.TCloudAccountCheck)
 	h.Add("AwsAccountCheck", http.MethodPost, "/vendors/aws/accounts/check", svc.AwsAccountCheck)
 	h.Add("HuaWeiAccountCheck", http.MethodPost, "/vendors/huawei/accounts/check", svc.HuaWeiAccountCheck)
@@ -49,6 +49,13 @@ func InitAccountService(cap *capability.Capability) {
 		svc.GetHuaWeiAccountRegionQuota)
 	h.Add("GetGcpAccountRegionQuota", http.MethodPost, "/vendors/gcp/accounts/regions/quotas",
 		svc.GetGcpAccountRegionQuota)
+
+	// 通过秘钥获取账号信息
+	h.Add("TCloudGetInfoBySecret", http.MethodPost, "/vendors/tcloud/accounts/secret", svc.TCloudGetInfoBySecret)
+	h.Add("AwsGetInfoBySecret", http.MethodPost, "/vendors/aws/accounts/secret", svc.AwsGetInfoBySecret)
+	h.Add("HuaWeiGetInfoBySecret", http.MethodPost, "/vendors/huawei/accounts/secret", svc.HuaWeiGetInfoBySecret)
+	h.Add("GcpGetInfoBySecret", http.MethodPost, "/vendors/gcp/accounts/secret", svc.GcpGetInfoBySecret)
+	h.Add("AzureGetInfoBySecret", http.MethodPost, "/vendors/azure/accounts/secret", svc.AzureGetInfoBySecret)
 
 	h.Load(cap.WebService)
 }
