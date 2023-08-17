@@ -20,9 +20,6 @@
 package account
 
 import (
-	"errors"
-	"fmt"
-
 	proto "hcm/pkg/api/cloud-server/account"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
@@ -92,10 +89,6 @@ func (a *accountSvc) list(cts *rest.Contexts, typ meta.ResourceType) (interface{
 		return nil, err
 	}
 
-	if len(accounts.Details) == 0 {
-		return nil, errors.New("accounts not found")
-	}
-
 	for _, one := range accounts.Details {
 		status, failedReason, err := a.getAccountSyncDetail(cts, one.ID, string(one.Vendor))
 		if err != nil {
@@ -135,10 +128,6 @@ func (a *accountSvc) getAccountSyncDetail(cts *rest.Contexts, accountID string,
 	accountSyncDetail, err := a.client.DataService().Global.AccountSyncDetail.List(cts.Kit, listReq)
 	if err != nil {
 		return "", "", err
-	}
-
-	if len(accountSyncDetail.Details) == 0 {
-		return "", "", fmt.Errorf("list %s can not find accout sync detail", accountID)
 	}
 
 	status := ""
