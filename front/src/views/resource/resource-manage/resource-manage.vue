@@ -349,9 +349,17 @@ getResourceAccountList();
               class="new-button"
               :disabled="!authVerifyData?.permissionAction?.biz_iaas_resource_create"
               @click="handleAdd">
-              新建
+              {{
+                activeTab === 'host' ? '购买' : '新建'
+              }}
             </bk-button>
           </span>
+          <bk-button
+            v-if="activeTab === 'host'"
+            class="ml8 mr8"
+          >
+            批量分配
+          </bk-button>
         </component>
       </bk-tab-panel>
     </bk-tab>
@@ -414,6 +422,6 @@ getResourceAccountList();
   width: 500px;
 }
 .new-button {
-  width: 100px;
+  width: 64px;
 }
 </style>
