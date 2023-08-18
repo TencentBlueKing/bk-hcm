@@ -367,3 +367,22 @@ export const LANGUAGE_TYPE = {
 export const SEARCH_VALUE_IDS = [
   'cloud_id', // 云ID
 ];
+
+export const RESOURCE_TABS = [
+  {
+    key: '/resoure/resource',
+    label: '资源管理',
+  },
+  {
+    key: '/resoure/account',
+    label: '账号信息',
+  },
+  {
+    key: '/resoure/record',
+    label: '购买记录',
+  },
+  {
+    key: '/resoure/recycle',
+    label: '回收站',
+  },
+];

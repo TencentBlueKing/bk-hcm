@@ -315,6 +315,15 @@ getResourceAccountList();
         />
       </section>
     </section> -->
+    <bk-alert
+      theme="error"
+      closable
+    >
+      <template #title>
+        账号接入异常，***********************
+        <bk-button text theme="primary" class="ml10">查看详情</bk-button>
+      </template>
+    </bk-alert>
     <bk-tab
       v-model:active="activeTab"
       type="card-grid"
