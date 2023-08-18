@@ -15,8 +15,8 @@ import IpManage from './children/manage/ip-manage.vue';
 import RoutingManage from './children/manage/routing-manage.vue';
 import ImageManage from './children/manage/image-manage.vue';
 import NetworkInterfaceManage from './children/manage/network-interface-manage.vue';
-import AccountSelector from '@/components/account-selector/index.vue';
-import { DISTRIBUTE_STATUS_LIST } from '@/constants';
+// import AccountSelector from '@/components/account-selector/index.vue';
+// import { DISTRIBUTE_STATUS_LIST } from '@/constants';
 import { useDistributionStore } from '@/store/distribution';
 import EipForm from '@/views/business/forms/eip/index.vue';
 import subnetForm from '@/views/business/forms/subnet/index.vue';
@@ -55,7 +55,7 @@ const route = useRoute();
 const accountStore = useAccountStore();
 const {
   isShowDistribution,
-  handleDistribution,
+  // handleDistribution,
   ResourceDistribution,
 } = useSteps();
 
@@ -266,7 +266,7 @@ getResourceAccountList();
 
 <template>
   <div>
-    <section class="flex-center resource-header">
+    <!-- <section class="flex-center resource-header">
       <section class="flex-center" v-if="activeTab !== 'image'">
         <div class="mr10">{{t('云账号')}}</div>
         <div class="mr20">
@@ -301,23 +301,23 @@ getResourceAccountList();
           {{ t('快速分配') }}
         </bk-button>
       </section>
-    <!-- <section class="flex-center">
-      <bk-checkbox
-        v-model="isAccurate"
-      >
-        {{ t('精确') }}
-      </bk-checkbox>
-      <bk-search-select
-        class="search-filter ml10"
-        clearable
-        :data="searchData"
-        v-model="searchValue"
-      />
+      <section class="flex-center">
+        <bk-checkbox
+          v-model="isAccurate"
+        >
+          {{ t('精确') }}
+        </bk-checkbox>
+        <bk-search-select
+          class="search-filter ml10"
+          clearable
+          :data="searchData"
+          v-model="searchValue"
+        />
+      </section>
     </section> -->
-    </section>
     <bk-tab
       v-model:active="activeTab"
-      type="card"
+      type="card-grid"
       class="resource-main g-scroller"
     >
       <bk-tab-panel
@@ -401,9 +401,8 @@ getResourceAccountList();
 }
 .resource-main {
   margin-top: 20px;
-  background: #fff;
   box-shadow: 1px 2px 3px 0 rgb(0 0 0 / 5%);
-  height: calc(100vh - 270px);
+  height: calc(100vh - 200px);
   :deep(.bk-tab-content) {
     border-left: 1px solid #dcdee5;;
     border-right: 1px solid #dcdee5;;
