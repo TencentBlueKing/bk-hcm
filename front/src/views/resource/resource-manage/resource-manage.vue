@@ -16,7 +16,7 @@ import RoutingManage from './children/manage/routing-manage.vue';
 import ImageManage from './children/manage/image-manage.vue';
 import NetworkInterfaceManage from './children/manage/network-interface-manage.vue';
 // import AccountSelector from '@/components/account-selector/index.vue';
-// import { DISTRIBUTE_STATUS_LIST } from '@/constants';
+import { DISTRIBUTE_STATUS_LIST } from '@/constants';
 import { useDistributionStore } from '@/store/distribution';
 import EipForm from '@/views/business/forms/eip/index.vue';
 import subnetForm from '@/views/business/forms/subnet/index.vue';
@@ -76,7 +76,7 @@ const {
 // 搜索过滤相关数据
 const filter = ref({ op: 'and', rules: [] });
 const accountId = ref('');
-const status = ref('');
+const status = ref('all');
 const op = ref('eq');
 const accountFilter = ref<FilterType>({ op: 'and', rules: [{ field: 'type', op: 'eq', value: 'resource' }] });
 const isShowSideSlider = ref(false);
@@ -315,11 +315,36 @@ getResourceAccountList();
         />
       </section>
     </section> -->
+    <bk-alert
+      theme="error"
+      closable
+    >
+      <template #title>
+        账号接入异常，***********************
+        <bk-button text theme="primary" class="ml10">查看详情</bk-button>
+      </template>
+    </bk-alert>
     <bk-tab
       v-model:active="activeTab"
       type="card-grid"
       class="resource-main g-scroller"
     >
+      <template #setting>
+        <div style="margin: 0 10px">
+          <bk-select
+            v-model="status"
+            :clearable="false"
+            class="w80"
+          >
+            <bk-option
+              v-for="(item, index) in DISTRIBUTE_STATUS_LIST"
+              :key="index"
+              :value="item.value"
+              :label="item.label"
+            />
+          </bk-select>
+        </div>
+      </template>
       <bk-tab-panel
         v-for="item in tabs"
         :key="item.name"
@@ -349,9 +374,17 @@ getResourceAccountList();
               class="new-button"
               :disabled="!authVerifyData?.permissionAction?.biz_iaas_resource_create"
               @click="handleAdd">
-              新建
+              {{
+                activeTab === 'host' ? '购买' : '新建'
+              }}
             </bk-button>
           </span>
+          <bk-button
+            v-if="activeTab === 'host'"
+            class="ml8 mr8"
+          >
+            批量分配
+          </bk-button>
         </component>
       </bk-tab-panel>
     </bk-tab>
@@ -414,6 +447,9 @@ getResourceAccountList();
   width: 500px;
 }
 .new-button {
-  width: 100px;
+  width: 64px;
+}
+.w80 {
+  width: 80px;
 }
 </style>

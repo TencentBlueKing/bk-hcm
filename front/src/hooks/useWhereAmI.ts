@@ -1,8 +1,8 @@
-import { computed } from 'vue';
+import { Ref, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 export const useWhereAmI = (): {
-  whereAmI: Senarios;
+  whereAmI: Ref<Senarios>;
   isResourcePage: boolean;
   isBusinessPage: boolean;
   isServicePage: boolean;
@@ -17,7 +17,7 @@ export const useWhereAmI = (): {
     return Senarios.unknown;
   });
   return {
-    whereAmI: senario.value,
+    whereAmI: senario,
     isResourcePage: senario.value === Senarios.resource,
     isBusinessPage: senario.value === Senarios.business,
     isServicePage: senario.value === Senarios.service,

@@ -10,6 +10,25 @@
         .navigation-breadcrumb {
             height: 52px;
         }
+        .navigation-resource {
+            min-height: 88px;
+            .card-layout{
+                background: #fff;
+                border-bottom: 1px solid #dcdee5;
+                .resource-title {
+                    font-family: MicrosoftYaHei;
+                    font-size: 16px;
+                    color: #313238;
+                    letter-spacing: 0;
+                    line-height: 24px;
+                    padding: 14px 0 9px 24px;
+                }
+                .bk-tab-content {
+                    padding: 0!important;
+                }
+            }
+            
+        }
         .view-warp{
             height: calc(100% - 104px);
             overflow-y: auto;

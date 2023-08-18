@@ -1,8 +1,10 @@
-import { Button, Dialog, Message } from 'bkui-vue';
+import { Button, Dialog, Dropdown, Message } from 'bkui-vue';
 import { PropType, computed, defineComponent, ref, watch } from 'vue';
 import './index.scss';
 import { usePreviousState } from '@/hooks/usePreviousState';
 import { useResourceStore } from '@/store';
+import { AngleDown } from 'bkui-vue/lib/icon';
+import { BkDropdownItem, BkDropdownMenu } from 'bkui-vue/lib/dropdown';
 
 export enum Operations {
   None = 'none',
@@ -219,15 +221,28 @@ export default defineComponent({
     return () => (
       <>
         <div class={'host_operations_container'}>
-          {Object.entries(OperationsMap).map(([opType, opName]) => (
-            <Button
-              theme={opType === Operations.Open ? 'primary' : undefined}
-              class='host_operations_w100 ml10'
-              onClick={() => (operationType.value = opType as Operations)}
-              disabled={operationsDisabled.value}>
-              {opName}
-            </Button>
-          ))}
+          <Dropdown trigger='click' disabled={operationsDisabled.value}>
+            {{
+              default: () => (
+                <Button disabled={operationsDisabled.value}>
+                  批量操作
+                  <AngleDown class={'f20'}></AngleDown>
+                </Button>
+              ),
+              content: () => (
+                <BkDropdownMenu>
+                  {Object.entries(OperationsMap).map(([opType, opName]) => (
+                    <BkDropdownItem
+                      onClick={
+                        () => (operationType.value = opType as Operations)
+                      }>
+                      {`批量${opName}`}
+                    </BkDropdownItem>
+                  ))}
+                </BkDropdownMenu>
+              ),
+            }}
+          </Dropdown>
         </div>
 
         <Dialog
