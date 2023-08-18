@@ -16,7 +16,7 @@ import RoutingManage from './children/manage/routing-manage.vue';
 import ImageManage from './children/manage/image-manage.vue';
 import NetworkInterfaceManage from './children/manage/network-interface-manage.vue';
 // import AccountSelector from '@/components/account-selector/index.vue';
-// import { DISTRIBUTE_STATUS_LIST } from '@/constants';
+import { DISTRIBUTE_STATUS_LIST } from '@/constants';
 import { useDistributionStore } from '@/store/distribution';
 import EipForm from '@/views/business/forms/eip/index.vue';
 import subnetForm from '@/views/business/forms/subnet/index.vue';
@@ -76,7 +76,7 @@ const {
 // 搜索过滤相关数据
 const filter = ref({ op: 'and', rules: [] });
 const accountId = ref('');
-const status = ref('');
+const status = ref('all');
 const op = ref('eq');
 const accountFilter = ref<FilterType>({ op: 'and', rules: [{ field: 'type', op: 'eq', value: 'resource' }] });
 const isShowSideSlider = ref(false);
@@ -320,6 +320,22 @@ getResourceAccountList();
       type="card-grid"
       class="resource-main g-scroller"
     >
+      <template #setting>
+        <div style="margin: 0 10px">
+          <bk-select
+            v-model="status"
+            :clearable="false"
+            class="w80"
+          >
+            <bk-option
+              v-for="(item, index) in DISTRIBUTE_STATUS_LIST"
+              :key="index"
+              :value="item.value"
+              :label="item.label"
+            />
+          </bk-select>
+        </div>
+      </template>
       <bk-tab-panel
         v-for="item in tabs"
         :key="item.name"
@@ -423,5 +439,8 @@ getResourceAccountList();
 }
 .new-button {
   width: 64px;
+}
+.w80 {
+  width: 80px;
 }
 </style>
