@@ -6,13 +6,12 @@ import HostNetwork from '../components/host/host-network/index.vue';
 import HostIp from '../components/host/host-ip.vue';
 import HostDrive from '../components/host/host-drive.vue';
 import HostSecurity from '../components/host/host-security.vue';
+import BusinessSelector from '@/components/business-selector/index.vue';
 import bus from '@/common/bus';
 import { useRouter,
   useRoute,
 } from 'vue-router';
-import {
-  useResourceStore,
-} from '@/store/resource';
+import { useResourceStore } from '@/store/resource';
 
 import {
   useI18n,
@@ -20,7 +19,6 @@ import {
 import {
   InfoBox,
   Message,
-  bkEllipsis,
 } from 'bkui-vue';
 import useDetail from '@/views/resource/resource-manage/hooks/use-detail';
 
@@ -44,6 +42,9 @@ const hostId = ref<any>(route.query?.id);
 const cloudType = ref<any>(route.query?.type);
 // 搜索过滤相关数据
 const filter = ref({ op: 'and', rules: [] });
+const isDialogShow = ref(false);
+const selectedBizId = ref(0);
+const isDialogBtnLoading = ref(false);
 
 const isResourcePage: any = inject('isResourcePage');
 const authVerifyData: any = inject('authVerifyData');
@@ -157,6 +158,16 @@ const modifyCvmStatus = async (type: string) => {
   }
 };
 
+const handleConfirm = async () => {
+  isDialogBtnLoading.value = true;
+  await resourceStore.assignBusiness('cvms', {
+    cvm_ids: [hostId.value],
+    bk_biz_id: selectedBizId.value,
+  });
+  isDialogBtnLoading.value = false;
+  isDialogShow.value = false;
+};
+
 // 权限弹窗 bus通知最外层弹出
 const showAuthDialog = (authActionName: string) => {
   bus.$emit('auth', authActionName);
@@ -172,14 +183,17 @@ const showAuthDialog = (authActionName: string) => {
     <span class="header-title-content">
       &nbsp;- ID {{`${hostId}`}}
     </span>
-    <span class="status-stopped" v-if="(detail.bk_biz_id !== -1 && isResourcePage)">
+    <!-- <span class="status-stopped" v-if="(detail.bk_biz_id !== -1 && isResourcePage)">
       【已绑定】
-    </span>
+    </span> -->
     <template #right>
       <span @click="showAuthDialog(actionName)">
         <bk-button
           class="w100 ml10"
           theme="primary"
+          :disabled="(detail.bk_biz_id !== -1 && isResourcePage)
+            || !authVerifyData?.permissionAction[actionName]"
+          @click="() => isDialogShow = true"
         >
           {{ t('分配') }}
         </bk-button>
@@ -292,6 +306,23 @@ const showAuthDialog = (authActionName: string) => {
       </template>
     </detail-tab>
   </div>
+
+  <bk-dialog
+    :is-show="isDialogShow"
+    title="主机分配"
+    :theme="'primary'"
+    quick-close
+    @closed="() => isDialogShow = false"
+    @confirm="handleConfirm"
+    :is-loading="isDialogBtnLoading"
+  >
+    <p class="mb6-text">目标业务</p>
+    <business-selector
+      v-model="selectedBizId"
+      :authed="true"
+      :auto-select="true">
+    </business-selector>
+  </bk-dialog>
 </template>
 
 <style lang="scss" scoped>
@@ -300,6 +331,10 @@ const showAuthDialog = (authActionName: string) => {
 }
 .w60 {
   width: 60px;
+}
+.mb6-text {
+  margin-bottom: 6px;
+  color: #63656E;
 }
 :deep(.detail-tab-main) .bk-tab-content {
   height: calc(100vh - 322px);
