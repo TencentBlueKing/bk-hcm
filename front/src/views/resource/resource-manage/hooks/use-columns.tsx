@@ -576,6 +576,19 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
     },
+    {
+      label: '是否分配',
+      field: 'has_biz_id',
+      render: ({ data }: {data: {bk_biz_id: number}}) => <bk-tag
+        theme={data.bk_biz_id === -1 ? null : 'success'}>
+          {
+            data.bk_biz_id === -1
+              ? '未分配'
+              : '已分配'
+          }
+        </bk-tag>
+      ,
+    },
   ];
 
   const securityCommonColumns = [
