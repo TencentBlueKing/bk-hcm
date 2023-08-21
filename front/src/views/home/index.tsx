@@ -524,12 +524,12 @@ export default defineComponent({
             <Exception
               type='building'
               class={'hcm-create-business-dialog-exception-building-picture'}
-              title={'当前暂不支持在本地创建业务'}
+              title={'新建业务参考以下指引'}
             >
               <div class={'hcm-create-business-dialog-exception-building-tips'}>
-                <p class={'hcm-create-business-dialog-exception-building-tips-text1'}>
+                {/* <p class={'hcm-create-business-dialog-exception-building-tips-text1'}>
                   可以按照以下方式进行查看
-                </p>
+                </p> */}
                 <p class={'hcm-create-business-dialog-exception-building-tips-text2'}>
                   业务是蓝鲸配置平台的管理空间，可以满足不同团队，不同项目的资源隔离管理需求。
                   <Button
