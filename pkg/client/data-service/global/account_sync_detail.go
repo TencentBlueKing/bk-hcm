@@ -113,7 +113,7 @@ func (a *AccountSyncDetailClient) BatchCreate(kt *kit.Kit, request *dssync.Creat
 func (a *AccountSyncDetailClient) BatchUpdate(kt *kit.Kit, request *dssync.UpdateReq) error {
 	resp := new(rest.BaseResp)
 
-	err := a.client.Post().
+	err := a.client.Patch().
 		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/account_sync_details/batch/update").
