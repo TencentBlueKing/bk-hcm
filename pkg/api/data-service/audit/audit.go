@@ -29,7 +29,7 @@ import (
 	"hcm/pkg/rest"
 )
 
-// -------------------------- Update Audit --------------------------
+// -------------------------- Update audit --------------------------
 
 // CloudResourceUpdateAuditReq define cloud create audit request when cloud resource update.
 type CloudResourceUpdateAuditReq struct {
@@ -57,7 +57,7 @@ type CloudResourceUpdateInfo struct {
 	UpdateFields map[string]interface{}   `json:"update_fields" validate:"required"`
 }
 
-// -------------------------- Delete Audit --------------------------
+// -------------------------- Delete audit --------------------------
 
 // CloudResourceDeleteAuditReq define cloud create audit request when cloud resource delete.
 type CloudResourceDeleteAuditReq struct {
@@ -174,7 +174,7 @@ func (req *CloudResourceOperationAuditReq) Validate() error {
 	return nil
 }
 
-// -------------------------- Recycle Audit --------------------------
+// -------------------------- Recycle audit --------------------------
 
 // CloudResourceRecycleAuditReq defines create cloud resource recycle audit request.
 type CloudResourceRecycleAuditReq struct {

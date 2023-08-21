@@ -17,28 +17,32 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package account
+package quota
 
 import (
-	protocloud "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/criteria/errf"
+	"net/http"
+
+	"hcm/cmd/data-service/service/capability"
+	"hcm/pkg/dal/dao"
 	"hcm/pkg/rest"
 )
 
-// GetBizAccount ...
-func (a *accountSvc) GetBizAccount(cts *rest.Contexts) (interface{}, error) {
-	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
-	accountType := cts.Request.QueryParameter("account_type")
-
-	if err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+// InitService initialize the quota service.
+func InitService(cap *capability.Capability) {
+	svc := &service{
+		dao: cap.Dao,
 	}
-	return a.client.DataService().Global.Account.ListAccountBizRelWithAccount(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&protocloud.AccountBizRelWithAccountListReq{
-			BkBizIDs:    []int64{bkBizID},
-			AccountType: accountType,
-		},
-	)
+
+	h := rest.NewHandler()
+
+	h.Add("BatchCreateBizQuota", http.MethodPost, "/bizs/quotas/batch/create", svc.BatchCreateBizQuota)
+	h.Add("BatchUpdateBizQuota", http.MethodPatch, "/bizs/quotas/batch", svc.BatchUpdateBizQuota)
+	h.Add("ListBizQuota", "POST", "/bizs/quotas/list", svc.ListBizQuota)
+	h.Add("DeleteBizQuota", "DELETE", "/bizs/quotas/batch", svc.DeleteBizQuota)
+
+	h.Load(cap.WebService)
+}
+
+type service struct {
+	dao dao.Set
 }

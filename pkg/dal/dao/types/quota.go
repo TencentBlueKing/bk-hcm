@@ -17,28 +17,14 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package account
+package types
 
 import (
-	protocloud "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/criteria/errf"
-	"hcm/pkg/rest"
+	tablequota "hcm/pkg/dal/table/cloud/quota"
 )
 
-// GetBizAccount ...
-func (a *accountSvc) GetBizAccount(cts *rest.Contexts) (interface{}, error) {
-	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
-	accountType := cts.Request.QueryParameter("account_type")
-
-	if err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-	return a.client.DataService().Global.Account.ListAccountBizRelWithAccount(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&protocloud.AccountBizRelWithAccountListReq{
-			BkBizIDs:    []int64{bkBizID},
-			AccountType: accountType,
-		},
-	)
+// ListBizQuotaDetails list biz quota details.
+type ListBizQuotaDetails struct {
+	Count   uint64                     `json:"count"`
+	Details []tablequota.BizQuotaTable `json:"details"`
 }

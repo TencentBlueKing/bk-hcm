@@ -36,7 +36,7 @@ import (
 	"hcm/pkg/rest"
 )
 
-// InitAuditService initial the Audit service
+// InitAuditService initial the audit service
 func InitAuditService(cap *capability.Capability) {
 	svc := &svc{
 		cloudAudit: cloud.NewCloudAudit(cap.Dao),
@@ -61,7 +61,7 @@ func InitAuditService(cap *capability.Capability) {
 	h.Load(cap.WebService)
 }
 
-// Audit define audit service.
+// audit define audit service.
 type svc struct {
 	cloudAudit *cloud.Audit
 	dao        dao.Set

@@ -39,6 +39,8 @@ const (
 	EipAuditResType               AuditResourceType = "eip"
 	GcpFirewallRuleAuditResType   AuditResourceType = "gcp_firewall_rule"
 	NetworkInterfaceAuditResType  AuditResourceType = "network_interface"
+
+	BizQuotaAuditResType AuditResourceType = "biz_quota"
 )
 
 // AuditResourceTypeEnums resource type map.
@@ -54,6 +56,7 @@ var AuditResourceTypeEnums = map[AuditResourceType]struct{}{
 	EipAuditResType:               {},
 	GcpFirewallRuleAuditResType:   {},
 	NetworkInterfaceAuditResType:  {},
+	BizQuotaAuditResType:          {},
 }
 
 // Exist judge enum value exist.

@@ -38,6 +38,7 @@ import (
 	cimage "hcm/pkg/dal/dao/cloud/image"
 	networkinterface "hcm/pkg/dal/dao/cloud/network-interface"
 	nicvmrel "hcm/pkg/dal/dao/cloud/network-interface-cvm-rel"
+	daoquota "hcm/pkg/dal/dao/cloud/quota"
 	"hcm/pkg/dal/dao/cloud/region"
 	resourcegroup "hcm/pkg/dal/dao/cloud/resource-group"
 	routetable "hcm/pkg/dal/dao/cloud/route-table"
@@ -91,6 +92,7 @@ type Set interface {
 	DiskCvmRel() diskcvmrel.DiskCvmRel
 	EipCvmRel() eipcvmrel.EipCvmRel
 	AccountBillConfig() bill.Interface
+	BizQuota() daoquota.BizQuota
 
 	Txn() *Txn
 }
@@ -402,6 +404,11 @@ func (s *set) NetworkInterface() networkinterface.NetworkInterface {
 		IDGen: s.idGen,
 		Audit: s.audit,
 	}
+}
+
+// BizQuota return biz quota dao.
+func (s *set) BizQuota() daoquota.BizQuota {
+	return daoquota.NewBizQuotaDao(s.orm, s.idGen, s.audit)
 }
 
 // RecycleRecord return recycle record dao.

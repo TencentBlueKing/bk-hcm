@@ -203,7 +203,7 @@ func genAuditActions() []client.ResourceAction {
 	return []client.ResourceAction{{
 		ID:                   BizAuditFind,
 		Name:                 ActionIDNameMap[BizAuditFind],
-		NameEn:               "Find Biz Audit Log",
+		NameEn:               "Find Biz audit Log",
 		Type:                 View,
 		RelatedResourceTypes: bizResource,
 		RelatedActions:       nil,
@@ -211,7 +211,7 @@ func genAuditActions() []client.ResourceAction {
 	}, {
 		ID:                   ResourceAuditFind,
 		Name:                 ActionIDNameMap[ResourceAuditFind],
-		NameEn:               "Find Resource Audit Log",
+		NameEn:               "Find Resource audit Log",
 		Type:                 View,
 		RelatedResourceTypes: accountResource,
 		RelatedActions:       nil,

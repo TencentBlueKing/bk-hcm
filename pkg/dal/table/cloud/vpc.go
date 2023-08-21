@@ -54,7 +54,7 @@ var VpcColumnDescriptor = utils.ColumnDescriptors{
 // VpcTable vpc表
 type VpcTable struct {
 	// ID vpc ID
-	ID string `db:"id" validate:"len=0" json:"id"`
+	ID string `db:"id" validate:"max=64" json:"id"`
 	// Vendor 云厂商
 	Vendor enumor.Vendor `db:"vendor" validate:"-" json:"vendor"`
 	// AccountID 账号ID

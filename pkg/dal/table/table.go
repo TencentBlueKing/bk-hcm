@@ -124,6 +124,9 @@ const (
 	// RecycleRecordTableTaskID is recycle record table's task id.
 	// TODO: 之后考虑非表id的id_generator如何更优雅的使用
 	RecycleRecordTableTaskID Name = "recycle_record_task_id"
+
+	// BizQuotaTable 业务配额
+	BizQuotaTable = "biz_quota"
 )
 
 // Validate whether the table name is valid or not.

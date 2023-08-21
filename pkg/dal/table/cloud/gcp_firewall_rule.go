@@ -21,9 +21,7 @@ package cloud
 
 import (
 	"database/sql/driver"
-	"encoding/json"
 	"errors"
-	"fmt"
 
 	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/enumor"
@@ -178,33 +176,10 @@ type GcpProtocolSets []corecloud.GcpProtocolSet
 
 // Scan is used to decode raw message which is read from db into GcpProtocolSets.
 func (set *GcpProtocolSets) Scan(raw interface{}) error {
-	if set == nil || raw == nil {
-		return nil
-	}
-
-	switch v := raw.(type) {
-	case []byte:
-		if err := json.Unmarshal(v, &set); err != nil {
-			return fmt.Errorf("decode into gcp protocol sets failed, err: %v", err)
-		}
-		return nil
-
-	case string:
-		if err := json.Unmarshal([]byte(v), &set); err != nil {
-			return fmt.Errorf("decode into gcp protocol sets failed, err: %v", err)
-		}
-		return nil
-
-	default:
-		return fmt.Errorf("unsupported gcp protocol sets raw type: %T", v)
-	}
+	return table.SqlScan(set, raw)
 }
 
 // Value encode the GcpProtocolSets to a json raw, so that it can be stored to db with json raw.
 func (set GcpProtocolSets) Value() (driver.Value, error) {
-	if set == nil {
-		return nil, nil
-	}
-
-	return json.Marshal(set)
+	return table.SqlValue(set)
 }

@@ -17,28 +17,28 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package account
+package enumor
 
-import (
-	protocloud "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/criteria/errf"
-	"hcm/pkg/rest"
+// BizQuotaResType 业务配额资源类型
+type BizQuotaResType string
+
+const (
+	// CvmBizQuotaResType cvm
+	CvmBizQuotaResType BizQuotaResType = "cvm"
 )
 
-// GetBizAccount ...
-func (a *accountSvc) GetBizAccount(cts *rest.Contexts) (interface{}, error) {
-	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
-	accountType := cts.Request.QueryParameter("account_type")
+// BizQuotaLevelName 业务配额层级名称
+type BizQuotaLevelName string
 
-	if err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-	return a.client.DataService().Global.Account.ListAccountBizRelWithAccount(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&protocloud.AccountBizRelWithAccountListReq{
-			BkBizIDs:    []int64{bkBizID},
-			AccountType: accountType,
-		},
-	)
-}
+const (
+	// InstanceTypeLevelName 实例类型
+	InstanceTypeLevelName BizQuotaLevelName = "instance_type"
+)
+
+// DimensionType 维度类型
+type DimensionType string
+
+const (
+	// CvmNum 虚拟机数量
+	CvmNum DimensionType = "cvm_num"
+)

@@ -17,28 +17,44 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package account
+package table
 
 import (
-	protocloud "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/criteria/errf"
-	"hcm/pkg/rest"
+	"database/sql/driver"
+	"fmt"
+
+	"hcm/pkg/tools/json"
 )
 
-// GetBizAccount ...
-func (a *accountSvc) GetBizAccount(cts *rest.Contexts) (interface{}, error) {
-	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
-	accountType := cts.Request.QueryParameter("account_type")
-
-	if err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+// SqlValue define sql value func.
+func SqlValue(data interface{}) (driver.Value, error) {
+	if data == nil {
+		return nil, nil
 	}
-	return a.client.DataService().Global.Account.ListAccountBizRelWithAccount(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&protocloud.AccountBizRelWithAccountListReq{
-			BkBizIDs:    []int64{bkBizID},
-			AccountType: accountType,
-		},
-	)
+
+	return json.Marshal(data)
+}
+
+// SqlScan define sql scan func.
+func SqlScan(data interface{}, raw interface{}) error {
+	if data == nil || raw == nil {
+		return nil
+	}
+
+	switch v := raw.(type) {
+	case []byte:
+		if err := json.Unmarshal(v, &data); err != nil {
+			return fmt.Errorf("decode into failed, err: %v", err)
+		}
+		return nil
+
+	case string:
+		if err := json.Unmarshal([]byte(v), &data); err != nil {
+			return fmt.Errorf("decode into sets failed, err: %v", err)
+		}
+		return nil
+
+	default:
+		return fmt.Errorf("unsupported raw type: %T", v)
+	}
 }

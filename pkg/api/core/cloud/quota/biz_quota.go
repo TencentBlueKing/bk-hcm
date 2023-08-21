@@ -17,28 +17,26 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package account
+package corequota
 
 import (
-	protocloud "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/criteria/errf"
-	"hcm/pkg/rest"
+	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/enumor"
+	tablequota "hcm/pkg/dal/table/cloud/quota"
 )
 
-// GetBizAccount ...
-func (a *accountSvc) GetBizAccount(cts *rest.Contexts) (interface{}, error) {
-	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
-	accountType := cts.Request.QueryParameter("account_type")
-
-	if err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-	return a.client.DataService().Global.Account.ListAccountBizRelWithAccount(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&protocloud.AccountBizRelWithAccountListReq{
-			BkBizIDs:    []int64{bkBizID},
-			AccountType: accountType,
-		},
-	)
+// BizQuota define biz quota.
+type BizQuota struct {
+	ID             string                 `json:"id"`
+	CloudQuotaID   string                 `json:"cloud_quota_id"`
+	Vendor         enumor.Vendor          `json:"vendor"`
+	ResType        enumor.BizQuotaResType `json:"res_type"`
+	AccountID      string                 `json:"account_id"`
+	BkBizID        int64                  `json:"bk_biz_id"`
+	Region         string                 `json:"region"`
+	Zone           string                 `json:"zone"`
+	Levels         tablequota.Levels      `json:"levels"`
+	Dimensions     tablequota.Dimensions  `json:"dimensions"`
+	Memo           *string                `json:"memo"`
+	*core.Revision `json:",inline"`
 }

@@ -60,7 +60,7 @@ func InitAccountService(c *capability.Capability) {
 		svc.GetGcpRegionQuota)
 
 	// Rel
-	h.Add("ListByBkBizID", http.MethodGet, "/accounts/bizs/{bk_biz_id}", svc.ListByBkBizID)
+	h.Add("GetBizAccount", http.MethodGet, "/bizs/{bk_biz_id}/accounts", svc.GetBizAccount)
 
 	// 安全所需OpenAPI
 	h.Add("ListWithExtension", http.MethodPost, "/accounts/extensions/list", svc.ListWithExtension)

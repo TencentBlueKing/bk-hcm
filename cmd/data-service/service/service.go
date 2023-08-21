@@ -43,6 +43,7 @@ import (
 	"hcm/cmd/data-service/service/cloud/image"
 	networkinterface "hcm/cmd/data-service/service/cloud/network-interface"
 	networkcvmrel "hcm/cmd/data-service/service/cloud/network-interface-cvm-rel"
+	"hcm/cmd/data-service/service/cloud/quota"
 	"hcm/cmd/data-service/service/cloud/region"
 	resourcegroup "hcm/cmd/data-service/service/cloud/resource-group"
 	routetable "hcm/cmd/data-service/service/cloud/route-table"
@@ -205,6 +206,7 @@ func (s *Service) apiSet() *restful.Container {
 	networkcvmrel.InitService(capability)
 	recyclerecord.InitRecycleRecordService(capability)
 	bill.InitBillConfigService(capability)
+	quota.InitService(capability)
 
 	return restful.NewContainer().Add(capability.WebService)
 }
