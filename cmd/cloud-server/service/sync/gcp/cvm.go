@@ -32,10 +32,16 @@ import (
 )
 
 // SyncCvm ...
-func SyncCvm(kt *kit.Kit, cliSet *client.ClientSet, accountID string, regionZoneMap map[string][]string) error {
+func SyncCvm(kt *kit.Kit, cliSet *client.ClientSet, accountID string, regionZoneMap map[string][]string,
+	sd *detail.SyncDetail) error {
 
 	start := time.Now()
 	logs.V(3).Infof("gcp account[%s] sync cvm start, time: %v, rid: %s", accountID, start, kt.Rid)
+
+	// 同步中
+	if err := sd.ResSyncStatusSyncing(enumor.CvmCloudResType); err != nil {
+		return err
+	}
 
 	defer func() {
 		logs.V(3).Infof("gcp account[%s] sync cvm end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
@@ -76,13 +82,7 @@ func SyncCvm(kt *kit.Kit, cliSet *client.ClientSet, accountID string, regionZone
 		return firstErr
 	}
 
-	// 同步状态
-	sd := &detail.SyncDetail{
-		Kt:        kt,
-		DataCli:   cliSet.DataService(),
-		AccountID: accountID,
-		Vendor:    string(enumor.Gcp),
-	}
+	// 同步成功
 	if err := sd.ResSyncStatusSuccess(enumor.CvmCloudResType); err != nil {
 		return err
 	}

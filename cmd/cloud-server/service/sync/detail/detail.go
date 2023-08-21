@@ -64,6 +64,17 @@ func (s *SyncDetail) ResSyncStatusSuccess(resName enumor.CloudResourceType) erro
 	return nil
 }
 
+// ResSyncStatusSyncing ...
+func (s *SyncDetail) ResSyncStatusSyncing(resName enumor.CloudResourceType) error {
+
+	s.ResStatus = string(enumor.Syncing)
+	if err := s.changeResSyncStatus(string(resName), "{}"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *SyncDetail) changeResSyncStatus(resName, failedReason string) error {
 
 	listReq := &core.ListReq{

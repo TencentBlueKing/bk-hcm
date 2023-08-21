@@ -117,7 +117,8 @@ func (h *HuaWei) GetAccountInfoBySecret(kt *kit.Kit, accessKeyID string) (*cloud
 		logs.Errorf("new iam client failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
-	// 1. 根据access key 获取iam用户id https://console-intl.huaweicloud.com/apiexplorer/#/openapi/IAM/doc?api=ShowPermanentAccessKey
+	// 1. 根据access key 获取iam用户id
+	// https://console-intl.huaweicloud.com/apiexplorer/#/openapi/IAM/doc?api=ShowPermanentAccessKey
 	akResp, err := client.ShowPermanentAccessKey(&model.ShowPermanentAccessKeyRequest{AccessKey: accessKeyID})
 	if err != nil {
 		logs.Errorf("ShowPermanentAccessKey failed, err: %v, rid: %s", err, kt.Rid)

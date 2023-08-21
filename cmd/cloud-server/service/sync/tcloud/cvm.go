@@ -31,10 +31,16 @@ import (
 )
 
 // SyncCvm ...
-func SyncCvm(kt *kit.Kit, cliSet *client.ClientSet, accountID string, regions []string) error {
+func SyncCvm(kt *kit.Kit, cliSet *client.ClientSet, accountID string, regions []string,
+	sd *detail.SyncDetail) error {
 
 	start := time.Now()
 	logs.V(3).Infof("tcloud account[%s] sync cvm start, time: %v, rid: %s", accountID, start, kt.Rid)
+
+	// 同步详情同步中
+	if err := sd.ResSyncStatusSyncing(enumor.CvmCloudResType); err != nil {
+		return err
+	}
 
 	defer func() {
 		logs.V(3).Infof("tcloud account[%s] sync cvm end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
@@ -51,13 +57,7 @@ func SyncCvm(kt *kit.Kit, cliSet *client.ClientSet, accountID string, regions []
 		}
 	}
 
-	// 同步状态
-	sd := &detail.SyncDetail{
-		Kt:        kt,
-		DataCli:   cliSet.DataService(),
-		AccountID: accountID,
-		Vendor:    string(enumor.TCloud),
-	}
+	// 同步详情同步成功
 	if err := sd.ResSyncStatusSuccess(enumor.CvmCloudResType); err != nil {
 		return err
 	}

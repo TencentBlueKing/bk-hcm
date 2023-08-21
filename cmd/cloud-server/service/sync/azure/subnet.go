@@ -34,10 +34,16 @@ import (
 )
 
 // SyncSubnet ...
-func SyncSubnet(kt *kit.Kit, cliSet *client.ClientSet, accountID string, resourceGroupNames []string) error {
+func SyncSubnet(kt *kit.Kit, cliSet *client.ClientSet, accountID string, resourceGroupNames []string,
+	sd *detail.SyncDetail) error {
 
 	start := time.Now()
 	logs.V(3).Infof("azure account[%s] sync subnet start, time: %v, rid: %s", accountID, start, kt.Rid)
+
+	// 同步中
+	if err := sd.ResSyncStatusSyncing(enumor.SubnetCloudResType); err != nil {
+		return err
+	}
 
 	defer func() {
 		logs.V(3).Infof("azure account[%s] sync subnet end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
@@ -117,13 +123,7 @@ func SyncSubnet(kt *kit.Kit, cliSet *client.ClientSet, accountID string, resourc
 		return firstErr
 	}
 
-	// 同步状态
-	sd := &detail.SyncDetail{
-		Kt:        kt,
-		DataCli:   cliSet.DataService(),
-		AccountID: accountID,
-		Vendor:    string(enumor.Azure),
-	}
+	// 同步成功
 	if err := sd.ResSyncStatusSuccess(enumor.SubnetCloudResType); err != nil {
 		return err
 	}
