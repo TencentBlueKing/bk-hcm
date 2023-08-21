@@ -138,7 +138,7 @@ export default defineComponent({
         this.fields.map((field) => {
           return <>
             <li class="info-list-item">
-              { field.name }
+              <span class="item-field">{ field.name }</span>
               {field.tipsContent && <Info v-BkTooltips={{ content: field.tipsContent }}></Info>}
               ：<span class={['item-value', typeof field.cls === 'function' ? field.cls(field.value) : field.cls]}>{ renderField(field) }</span>
               {

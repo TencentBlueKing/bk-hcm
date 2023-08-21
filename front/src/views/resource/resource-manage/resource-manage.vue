@@ -22,9 +22,11 @@ import EipForm from '@/views/business/forms/eip/index.vue';
 import subnetForm from '@/views/business/forms/subnet/index.vue';
 import securityForm from '@/views/business/forms/security/index.vue';
 import firewallForm from '@/views/business/forms/firewall';
+import BkTab, { BkTabPanel } from 'bkui-vue/lib/tab';
 
 import {
   RESOURCE_TYPES,
+  RESOURCE_TABS,
 } from '@/common/constant';
 
 import {
@@ -55,7 +57,7 @@ const route = useRoute();
 const accountStore = useAccountStore();
 const {
   isShowDistribution,
-  // handleDistribution,
+  handleDistribution,
   ResourceDistribution,
 } = useSteps();
 
@@ -84,6 +86,7 @@ const componentRef = ref();
 const securityType = ref('group');
 const isEdit = ref(false);
 const formDetail = ref({});
+const activeResourceTab = ref(RESOURCE_TABS[0].key);
 
 provide('securityType', securityType);
 
@@ -315,6 +318,23 @@ getResourceAccountList();
         />
       </section>
     </section> -->
+    <div class="navigation-resource">
+      <div class="card-layout">
+        <p class="resource-title">云账号1</p>
+        <BkTab
+          class="ml15"
+          type="unborder-card"
+          v-model="activeResourceTab"
+        >
+          <BkTabPanel
+            v-for="item of RESOURCE_TABS"
+            :label="item.label"
+            :key="item.key"
+            :name="item.key"
+          />
+        </BkTab>
+      </div>
+    </div>
     <bk-alert
       theme="error"
       closable
@@ -382,6 +402,7 @@ getResourceAccountList();
           <bk-button
             v-if="activeTab === 'host'"
             class="ml8 mr8"
+            @click="handleDistribution"
           >
             批量分配
           </bk-button>
@@ -451,5 +472,24 @@ getResourceAccountList();
 }
 .w80 {
   width: 80px;
+}
+.navigation-resource {
+  min-height: 88px;
+  margin: -20px -20px 16px -20px;
+}
+.card-layout {
+  background: #fff;
+  border-bottom: 1px solid #dcdee5;
+}
+.resource-title {
+  font-family: MicrosoftYaHei;
+  font-size: 16px;
+  color: #313238;
+  letter-spacing: 0;
+  line-height: 24px;
+  padding: 14px 0 9px 24px;
+}
+.bk-tab-content {
+  padding: 0 !important;
 }
 </style>

@@ -20,6 +20,7 @@ import {
 import {
   InfoBox,
   Message,
+  bkEllipsis,
 } from 'bkui-vue';
 import useDetail from '@/views/resource/resource-manage/hooks/use-detail';
 
@@ -165,7 +166,12 @@ const showAuthDialog = (authActionName: string) => {
 
 <template>
   <detail-header>
-    主机：ID（{{`${hostId}`}}）
+    <span class="header-title-prefix">
+      主机详情
+    </span>
+    <span class="header-title-content">
+      &nbsp;- ID {{`${hostId}`}}
+    </span>
     <span class="status-stopped" v-if="(detail.bk_biz_id !== -1 && isResourcePage)">
       【已绑定】
     </span>
@@ -174,6 +180,13 @@ const showAuthDialog = (authActionName: string) => {
         <bk-button
           class="w100 ml10"
           theme="primary"
+        >
+          {{ t('分配') }}
+        </bk-button>
+      </span>
+      <span @click="showAuthDialog(actionName)">
+        <bk-button
+          class="w100 ml10"
           :disabled="cvmInfo.start.status.includes(detail.status) || (detail.bk_biz_id !== -1 && isResourcePage)
             || !authVerifyData?.permissionAction[actionName]"
           :loading="cvmInfo.start.loading"
@@ -186,8 +199,7 @@ const showAuthDialog = (authActionName: string) => {
       </span>
       <span @click="showAuthDialog(actionName)">
         <bk-button
-          class="w100 ml10"
-          theme="primary"
+          class="w100 ml10 mr10"
           :disabled="cvmInfo.stop.status.includes(detail.status) || (detail.bk_biz_id !== -1 && isResourcePage)
             || !authVerifyData?.permissionAction[actionName]"
           :loading="cvmInfo.stop.loading"
@@ -198,7 +210,7 @@ const showAuthDialog = (authActionName: string) => {
           {{ t('关机') }}
         </bk-button>
       </span>
-      <span @click="showAuthDialog(actionName)">
+      <!-- <span @click="showAuthDialog(actionName)">
         <bk-button
           class="w100 ml10"
           theme="primary"
@@ -211,7 +223,7 @@ const showAuthDialog = (authActionName: string) => {
         >
           {{ t('重启') }}
         </bk-button>
-      </span>
+      </span> -->
       <!-- <bk-button
         class="w100 ml10"
         theme="primary"
@@ -220,6 +232,30 @@ const showAuthDialog = (authActionName: string) => {
         {{ t('重置密码') }}
       </bk-button> -->
       <span @click="showAuthDialog(actionName)">
+        <bk-dropdown>
+          <bk-button>
+            ⋮
+          </bk-button>
+          <template #content>
+            <bk-dropdown-menu>
+              <bk-dropdown-item
+                @click="() => {
+                  handleCvmOperate('destroy')
+                }"
+              >
+                {{ t('回收') }}
+              </bk-dropdown-item>
+              <bk-dropdown-item
+                @click="() => {
+                  handleCvmOperate('reboot')
+                }">
+                {{ t('重启') }}
+              </bk-dropdown-item>
+            </bk-dropdown-menu>
+          </template>
+        </bk-dropdown>
+      </span>
+      <!-- <span @click="showAuthDialog(actionName)">
         <bk-button
           class="w100 ml10"
           theme="primary"
@@ -232,7 +268,7 @@ const showAuthDialog = (authActionName: string) => {
         >
           {{ t('回收') }}
         </bk-button>
-      </span>
+      </span> -->
     </template>
   </detail-header>
 
