@@ -31,7 +31,7 @@ export default defineComponent({
     return <>
       <bk-tab
         v-model:active={this.activeTab}
-        type="card"
+        type="card-grid"
         class={`detail-tab-main ${this.$attrs?.class}`}
         onChange={this.onChange}
       >

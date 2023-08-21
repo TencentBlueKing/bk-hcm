@@ -22,7 +22,7 @@ import { useUserStore, useAccountStore, useCommonStore } from '@/store';
 import { useVerify } from '@/hooks';
 import { useI18n } from 'vue-i18n';
 import { useRegionsStore } from '@/store/useRegionsStore';
-import { LANGUAGE_TYPE, RESOURCE_TABS, VendorEnum } from '@/common/constant';
+import { LANGUAGE_TYPE, VendorEnum } from '@/common/constant';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useCloudAreaStore } from '@/store/useCloudAreaStore';
 import cookie from 'cookie';
@@ -33,7 +33,6 @@ import AppSelect from '@blueking/app-select';
 import '@blueking/app-select/dist/style.css';
 import { getFavoriteList, useFavorite } from '@/hooks/useFavorite';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import BkTab, { BkTabPanel } from 'bkui-vue/lib/tab';
 
 // import { CogShape } from 'bkui-vue/lib/icon';
 // import { useProjectList } from '@/hooks';
@@ -70,8 +69,6 @@ export default defineComponent({
     const language = ref(cookie.parse(document.cookie).blueking_language || 'zh-cn');
     const isDialogShow = ref(false);
     const favoriteList = ref([]);
-    const activeResourceTab = ref(RESOURCE_TABS[0].key);
-
     const {
       favoriteSet,
       addToFavorite,
@@ -464,26 +461,27 @@ export default defineComponent({
                 default: () => (
                   <>
                     {whereAmI.value === Senarios.resource ? (
-                      <div class='navigation-resource'>
-                        <div class={'card-layout'}>
-                          <p class={'resource-title'}>云账号1</p>
-                          <BkTab
-                            class={'ml15'}
-                            type={'unborder-card'}
-                            v-model={activeResourceTab}
-                          >
-                            {
-                              RESOURCE_TABS.map(({ key, label }) => (
-                                <BkTabPanel
-                                  label={label}
-                                  key={key}
-                                  name={key}
-                                />
-                              ))
-                            }
-                          </BkTab>
-                        </div>
-                      </div>
+                      // <div class='navigation-resource'>
+                      //   <div class={'card-layout'}>
+                      //     <p class={'resource-title'}>云账号1</p>
+                      //     <BkTab
+                      //       class={'ml15'}
+                      //       type={'unborder-card'}
+                      //       v-model={activeResourceTab}
+                      //     >
+                      //       {
+                      //         RESOURCE_TABS.map(({ key, label }) => (
+                      //           <BkTabPanel
+                      //             label={label}
+                      //             key={key}
+                      //             name={key}
+                      //           />
+                      //         ))
+                      //       }
+                      //     </BkTab>
+                      //   </div>
+                      // </div>
+                      null
                     ) : (
                       <div class='navigation-breadcrumb'>
                         <Breadcrumb></Breadcrumb>

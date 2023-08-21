@@ -13,7 +13,11 @@
   display: flex;
   align-items: center;
   line-height: 50px;
+  .item-field {
+    color: #63656E;
+  }
   .item-value{
+    color: #313238;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -22,6 +26,17 @@
     word-break: break-all;
     flex:1;
   }
+}
+
+.header-title-prefix {
+  font-size: 16px;
+  color: #313238;
+  margin-left: 8px;
+}
+
+.header-title-content {
+  font-size: 14px;
+  color: #63656E;
 }
 
 .info-item-copy {
