@@ -26,16 +26,17 @@ func GenerateStaticActionGroups() []client.ActionGroup {
 	ActionGroups := make([]client.ActionGroup, 0)
 
 	// generate business Management action groups, contains business related actions
-	ActionGroups = append(ActionGroups, genBusinessManagementActionGroups()...)
+	ActionGroups = append(ActionGroups, genResManagementActionGroups()...)
 
 	return ActionGroups
 }
 
-func genBusinessManagementActionGroups() []client.ActionGroup {
+// TODO 开启clb和编排相关功能后放开注释
+func genResManagementActionGroups() []client.ActionGroup {
 	actionGroups := []client.ActionGroup{
 		{
-			Name:   "业务",
-			NameEn: "Biz Management",
+			Name:   "资源管理",
+			NameEn: "Res Management",
 			Actions: []client.ActionWithID{
 				{ID: BizAccess},
 			},
@@ -49,74 +50,122 @@ func genBusinessManagementActionGroups() []client.ActionGroup {
 						{ID: BizIaaSResDelete},
 					},
 				},
-			},
-		},
-		{
-			Name:   "账号",
-			NameEn: "Account Management",
-			Actions: []client.ActionWithID{
-				{ID: AccountFind},
-				{ID: AccountImport},
-				{ID: AccountEdit},
-				{ID: AccountDelete},
-			},
-		},
-	}
-	actionGroups = append(actionGroups, genBusinessResourceActionGroups())
-	actionGroups = append(actionGroups, client.ActionGroup{
-		Name:   "工作台",
-		NameEn: "Workspace",
-		Actions: []client.ActionWithID{
-			{ID: BizAuditFind},
-			{ID: ResourceAuditFind},
-		},
-	})
-	actionGroups = append(actionGroups, client.ActionGroup{
-		Name:   "管理",
-		NameEn: "Management",
-		SubGroups: []client.ActionGroup{
-			{
-				Name:   "平台权限",
-				NameEn: "Platform Permission Management",
-				Actions: []client.ActionWithID{
-					{ID: CostManage},
-					{ID: AccountKeyAccess},
+				/*{
+					Name:   "负载均衡",
+					NameEn: "Biz CLB Resource Management",
+					Actions: []client.ActionWithID{
+						{ID: BizCLBResCreate},
+						{ID: BizCLBResOperate},
+						{ID: BizCLBResDelete},
+					},
+				},
+				{
+					Name:   "资源编排",
+					NameEn: "Biz Arrange Resource Management",
+					Actions: []client.ActionWithID{
+						{ID: BizArrangeResCreate},
+						{ID: BizArrangeResOperate},
+						{ID: BizArrangeResDelete},
+					},
+				},*/
+				{
+					Name:   "回收站",
+					NameEn: "Biz Recycle Bin",
+					Actions: []client.ActionWithID{
+						{ID: BizRecycleBinOperate},
+						{ID: BizRecycleBinConfig},
+					},
+				},
+				{
+					Name:   "操作记录",
+					NameEn: "Biz Operation Record",
+					Actions: []client.ActionWithID{
+						{ID: BizOperationRecordFind},
+					},
 				},
 			},
 		},
-	})
+	}
+
+	actionGroups = append(actionGroups, genResourceAccessActionGroups())
+	actionGroups = append(actionGroups, genPlatformManageActionGroups())
 
 	return actionGroups
 }
 
-func genBusinessResourceActionGroups() client.ActionGroup {
+func genResourceAccessActionGroups() client.ActionGroup {
 	return client.ActionGroup{
-		Name:   "资源",
-		NameEn: "Resource Management",
+		Name:   "资源接入",
+		NameEn: "Resource Accesss",
 		SubGroups: []client.ActionGroup{
 			{
-				Name:   "公共",
-				NameEn: "Public Resource Management",
+				Name:   "云账号",
+				NameEn: "Cloud account",
 				Actions: []client.ActionWithID{
-					{ID: ResourceFind},
-					{ID: ResourceAssign},
+					{ID: AccountFind},
+					{ID: AccountImport},
+					{ID: AccountEdit},
+					{ID: SubAccountEdit},
 				},
 			},
 			{
 				Name:   "IaaS资源",
 				NameEn: "IaaS Resource Management",
 				Actions: []client.ActionWithID{
-					{ID: IaaSResourceCreate},
-					{ID: IaaSResourceOperate},
-					{ID: IaaSResourceDelete},
+					{ID: ResourceFind},
+					{ID: ResourceAssign},
+					{ID: IaaSResCreate},
+					{ID: IaaSResOperate},
+					{ID: IaaSResDelete},
 				},
 			},
+			/*{
+				Name:   "负载均衡",
+				NameEn: "CLB Resource Management",
+				Actions: []client.ActionWithID{
+					{ID: CLBResCreate},
+					{ID: CLBResOperate},
+					{ID: CLBResDelete},
+				},
+			},*/
 			{
 				Name:   "回收站",
 				NameEn: "Recycle Bin",
 				Actions: []client.ActionWithID{
-					{ID: RecycleBinFind},
-					{ID: RecycleBinManage},
+					{ID: RecycleBinAccess},
+					{ID: RecycleBinOperate},
+					{ID: RecycleBinConfig},
+				},
+			},
+			{
+				Name:   "操作记录",
+				NameEn: "Operation Record",
+				Actions: []client.ActionWithID{
+					{ID: OperationRecordFind},
+				},
+			},
+		},
+	}
+}
+
+func genPlatformManageActionGroups() client.ActionGroup {
+	return client.ActionGroup{
+		Name:   "平台管理",
+		NameEn: "Platform Management",
+		SubGroups: []client.ActionGroup{
+			{
+				Name:   "平台权限",
+				NameEn: "Platform Permissions",
+				Actions: []client.ActionWithID{
+					{ID: CostManage},
+					{ID: AccountKeyAccess},
+				},
+			},
+			{
+				Name:   "配置管理",
+				NameEn: "Configuration Management",
+				Actions: []client.ActionWithID{
+					{ID: GlobalConfiguration},
 				},
 			},
 		},

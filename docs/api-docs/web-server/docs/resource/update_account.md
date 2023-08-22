@@ -16,6 +16,7 @@ PATCH /api/v1/cloud/accounts/{account_id}
 | name       | string      | 否  | 名称      |
 | managers   | string      | 否  | 账号管理者   |
 | memo       | string      | 否  | 备注      |
+| recycle_reserve_time | int | 是  | 回收站资源的保留时长，单位小时    |
 | bk_biz_ids | int64 array | 否  | 业务ID    |
 | extension  | object      | 否  | 混合云差异字段 |
 

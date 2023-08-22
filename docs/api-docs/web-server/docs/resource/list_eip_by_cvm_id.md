@@ -32,7 +32,7 @@ GET /api/v1/cloud/vendors/{vendor}/eips/cvms/{cvm_id}
         "region": "ap-guangzhou",
         "instance_id": "cvm-1123",
         "instance_type": "cvm",
-        "public_ip": "9.128.0.34",
+        "public_ip": "*.*.*",
         "extension": {
             "bandwidth": 65535,
             "internet_charge_type": "BANDWIDTH_PACKAGE"
@@ -103,7 +103,7 @@ eip 列表
 #### EipExtension[gcp]
 | 参数名称 | 参数类型 | 描述 |
 | address_type | string | 地址类型 |
-| ip_version | string | IP 类型 |
+| ip_version | string | IP 类型 |
 
 #### EipExtension[aws]
 | 参数名称 | 参数类型 | 描述 |

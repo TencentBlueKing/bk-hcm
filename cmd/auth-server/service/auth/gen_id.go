@@ -57,9 +57,9 @@ func genAccountResource(a *meta.ResourceAttribute) (client.ActionID, []client.Re
 	case meta.Update:
 		// update account is related to hcm account resource
 		return sys.AccountEdit, []client.Resource{res}, nil
-	case meta.Delete:
-		// delete account is related to hcm account resource
-		return sys.AccountDelete, []client.Resource{res}, nil
+	case meta.UpdateRRT:
+		// update account RecycleReserveTime is related to hcm account resource
+		return sys.RecycleBinConfig, []client.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
@@ -87,13 +87,13 @@ func genIaaSResourceResource(a *meta.ResourceAttribute) (client.ActionID, []clie
 		return genCloudResResource(a)
 	case meta.Create, meta.Apply:
 		// create resource is related to hcm account resource
-		return sys.IaaSResourceCreate, []client.Resource{res}, nil
+		return sys.IaaSResCreate, []client.Resource{res}, nil
 	case meta.Update:
 		// update resource is related to hcm account resource
-		return sys.IaaSResourceOperate, []client.Resource{res}, nil
+		return sys.IaaSResOperate, []client.Resource{res}, nil
 	case meta.Delete, meta.Recycle:
 		// delete resource is related to hcm account resource
-		return sys.IaaSResourceDelete, []client.Resource{res}, nil
+		return sys.IaaSResDelete, []client.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
@@ -146,7 +146,7 @@ func genIaaSResourceSecurityGroupRule(a *meta.ResourceAttribute) (client.ActionI
 		return genCloudResResource(a)
 	case meta.Create, meta.Update, meta.Delete:
 		// create update delete resource is related to hcm operate
-		return sys.IaaSResourceOperate, []client.Resource{res}, nil
+		return sys.IaaSResOperate, []client.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
@@ -206,7 +206,7 @@ func genDiskResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resou
 		if a.BizID > 0 {
 			return sys.BizIaaSResOperate, []client.Resource{bizRes}, nil
 		}
-		return sys.IaaSResourceOperate, []client.Resource{res}, nil
+		return sys.IaaSResOperate, []client.Resource{res}, nil
 	default:
 		return genIaaSResourceResource(a)
 	}
@@ -235,7 +235,7 @@ func genSecurityGroupResource(a *meta.ResourceAttribute) (client.ActionID, []cli
 		if a.BizID > 0 {
 			return sys.BizIaaSResOperate, []client.Resource{bizRes}, nil
 		}
-		return sys.IaaSResourceOperate, []client.Resource{res}, nil
+		return sys.IaaSResOperate, []client.Resource{res}, nil
 	default:
 		return genIaaSResourceResource(a)
 	}
@@ -253,6 +253,12 @@ func genGcpFirewallRuleResource(a *meta.ResourceAttribute) (client.ActionID, []c
 
 // genRecycleBinResource generate recycle bin related iam resource.
 func genRecycleBinResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	res := client.Resource{
+		System: sys.SystemIDHCM,
+		Type:   sys.Account,
+		ID:     a.ResourceID,
+	}
+
 	bizRes := client.Resource{
 		System: sys.SystemIDCMDB,
 		Type:   sys.Biz,
@@ -264,9 +270,12 @@ func genRecycleBinResource(a *meta.ResourceAttribute) (client.ActionID, []client
 		if a.BizID > 0 {
 			return sys.BizAccess, []client.Resource{bizRes}, nil
 		}
-		return sys.RecycleBinFind, make([]client.Resource, 0), nil
+		return sys.RecycleBinAccess, []client.Resource{res}, nil
 	case meta.Recycle, meta.Recover:
-		return sys.RecycleBinManage, make([]client.Resource, 0), nil
+		if a.BizID > 0 {
+			return sys.BizRecycleBinOperate, []client.Resource{bizRes}, nil
+		}
+		return sys.RecycleBinOperate, []client.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
@@ -290,7 +299,7 @@ func genBizAuditResource(a *meta.ResourceAttribute) (client.ActionID, []client.R
 
 	switch a.Basic.Action {
 	case meta.Find:
-		return sys.BizAuditFind, []client.Resource{res}, nil
+		return sys.BizOperationRecordFind, []client.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
@@ -306,7 +315,7 @@ func genResourceAuditResource(a *meta.ResourceAttribute) (client.ActionID, []cli
 
 	switch a.Basic.Action {
 	case meta.Find:
-		return sys.ResourceAuditFind, []client.Resource{res}, nil
+		return sys.OperationRecordFind, []client.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
@@ -334,7 +343,7 @@ func genCvmResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resour
 		if a.BizID > 0 {
 			return sys.BizIaaSResOperate, []client.Resource{bizRes}, nil
 		}
-		return sys.IaaSResourceOperate, []client.Resource{res}, nil
+		return sys.IaaSResOperate, []client.Resource{res}, nil
 	default:
 		return genIaaSResourceResource(a)
 	}
@@ -402,7 +411,7 @@ func genEipResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resour
 		if a.BizID > 0 {
 			return sys.BizIaaSResOperate, []client.Resource{bizRes}, nil
 		}
-		return sys.IaaSResourceOperate, []client.Resource{res}, nil
+		return sys.IaaSResOperate, []client.Resource{res}, nil
 	default:
 		return genIaaSResourceResource(a)
 	}

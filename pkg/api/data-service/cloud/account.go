@@ -218,12 +218,13 @@ func (req *AzureAccountExtensionUpdateReq) EncryptSecretKey(cipher cryptography.
 
 // AccountUpdateReq ...
 type AccountUpdateReq[T AccountExtensionUpdateReq] struct {
-	Name      string   `json:"name" validate:"omitempty"`
-	Managers  []string `json:"managers" validate:"omitempty"`
-	Price     string   `json:"price" validate:"omitempty"`
-	PriceUnit string   `json:"price_unit" validate:"omitempty"`
-	Memo      *string  `json:"memo" validate:"omitempty"`
-	Extension *T       `json:"extension" validate:"omitempty"`
+	Name               string   `json:"name" validate:"omitempty"`
+	Managers           []string `json:"managers" validate:"omitempty"`
+	Price              string   `json:"price" validate:"omitempty"`
+	PriceUnit          string   `json:"price_unit" validate:"omitempty"`
+	Memo               *string  `json:"memo" validate:"omitempty"`
+	RecycleReserveTime int      `json:"recycle_reserve_time" validate:"omitempty"`
+	Extension          *T       `json:"extension" validate:"omitempty"`
 }
 
 // Validate ...

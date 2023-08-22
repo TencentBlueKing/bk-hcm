@@ -33,6 +33,8 @@ const (
 	Create Action = "create"
 	// Update operation's hcm auth action type
 	Update Action = "update"
+	// UpdateRRT RecycleReserveTime operation's hcm auth action type
+	UpdateRRT Action = "update_rrt"
 	// Delete operation's hcm auth action type
 	Delete Action = "delete"
 	// Find operation's hcm auth action type

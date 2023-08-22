@@ -21,6 +21,7 @@ package recyclerecord
 
 import (
 	"fmt"
+	"time"
 
 	"hcm/cmd/data-service/service/capability"
 	"hcm/pkg/api/core"
@@ -39,6 +40,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/json"
+	"hcm/pkg/tools/times"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -91,9 +93,26 @@ func (svc *recycleRecordSvc) BatchRecycleCloudResource(cts *rest.Contexts) (inte
 	taskID, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		recycleRecords := make([]prototable.RecycleRecordTable, 0, len(resourceInfo))
 		for idx, info := range resourceInfo {
+			opt := &types.ListOption{
+				Filter: tools.EqualExpression("id", info.AccountID),
+				Page:   &core.BasePage{Count: false, Start: 0, Limit: 1},
+			}
+			accountInfo, err := svc.dao.Account().List(cts.Kit, opt)
+			if err != nil {
+				return nil, err
+			}
+			if len(accountInfo.Details) != 1 {
+				return nil, fmt.Errorf("account: %s not found", info.AccountID)
+			}
+
 			detail, err := tabletype.NewJsonField(req.Infos[idx].Detail)
 			if err != nil {
 				return nil, errf.NewFromErr(errf.InvalidParameter, err)
+			}
+
+			recycleReserveTime := req.DefaultRecycleTime
+			if accountInfo.Details[0].RecycleReserveTime != 0 {
+				recycleReserveTime = uint(accountInfo.Details[0].RecycleReserveTime)
 			}
 
 			recycleRecord := prototable.RecycleRecordTable{
@@ -109,6 +128,7 @@ func (svc *recycleRecordSvc) BatchRecycleCloudResource(cts *rest.Contexts) (inte
 				Status:     enumor.WaitingRecycleRecordStatus,
 				Creator:    cts.Kit.User,
 				Reviser:    cts.Kit.User,
+				RecycledAt: times.ConvStdTimeNow().Add(time.Hour * time.Duration(recycleReserveTime)),
 			}
 			recycleRecords = append(recycleRecords, recycleRecord)
 		}

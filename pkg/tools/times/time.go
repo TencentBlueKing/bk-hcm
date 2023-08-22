@@ -30,6 +30,11 @@ func ConvStdTimeFormat(t time.Time) string {
 	return t.In(time.Local).Format(constant.TimeStdFormat)
 }
 
+// ConvStdTimeNow 转为HCM标准时间格式的当前时间
+func ConvStdTimeNow() time.Time {
+	return time.Now().In(time.Local)
+}
+
 // ParseToStdTime parse layout format time to std time.
 func ParseToStdTime(layout, t string) (string, error) {
 	tm, err := time.Parse(layout, t)
