@@ -31,10 +31,16 @@ import (
 )
 
 // SyncFireWall ...
-func SyncFireWall(kt *kit.Kit, cliSet *client.ClientSet, accountID string) error {
+func SyncFireWall(kt *kit.Kit, cliSet *client.ClientSet, accountID string,
+	sd *detail.SyncDetail) error {
 
 	start := time.Now()
 	logs.V(3).Infof("gcp account[%s] sync firewall start, time: %v, rid: %s", accountID, start, kt.Rid)
+
+	// 同步中
+	if err := sd.ResSyncStatusSyncing(enumor.GcpFirewallRuleCloudResType); err != nil {
+		return err
+	}
 
 	defer func() {
 		logs.V(3).Infof("gcp account[%s] sync firewall end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
@@ -48,13 +54,7 @@ func SyncFireWall(kt *kit.Kit, cliSet *client.ClientSet, accountID string) error
 		return err
 	}
 
-	// 同步状态
-	sd := &detail.SyncDetail{
-		Kt:        kt,
-		DataCli:   cliSet.DataService(),
-		AccountID: accountID,
-		Vendor:    string(enumor.Gcp),
-	}
+	// 同步成功
 	if err := sd.ResSyncStatusSuccess(enumor.GcpFirewallRuleCloudResType); err != nil {
 		return err
 	}

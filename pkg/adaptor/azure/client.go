@@ -44,6 +44,7 @@ func newClientSet(credential *types.AzureCredential) *clientSet {
 	return &clientSet{credential}
 }
 
+// graphServiceClient ...
 func (c *clientSet) graphServiceClient() (*msgraphsdk.GraphServiceClient, error) {
 	credential, err := c.newClientSecretCredential()
 	if err != nil {
@@ -58,6 +59,7 @@ func (c *clientSet) graphServiceClient() (*msgraphsdk.GraphServiceClient, error)
 	return client, nil
 }
 
+// subscriptionClient ...
 func (c *clientSet) subscriptionClient() (*armsubscription.SubscriptionsClient, error) {
 	credential, err := c.newClientSecretCredential()
 	if err != nil {
@@ -72,6 +74,7 @@ func (c *clientSet) subscriptionClient() (*armsubscription.SubscriptionsClient, 
 	return client, nil
 }
 
+// vpcClient ...
 func (c *clientSet) vpcClient() (*armnetwork.VirtualNetworksClient, error) {
 	credential, err := c.newClientSecretCredential()
 	if err != nil {
@@ -88,6 +91,7 @@ func (c *clientSet) vpcClient() (*armnetwork.VirtualNetworksClient, error) {
 	return client, nil
 }
 
+// usageClient ...
 func (c *clientSet) usageClient() (*armnetwork.UsagesClient, error) {
 	credential, err := c.newClientSecretCredential()
 	if err != nil {
@@ -104,6 +108,7 @@ func (c *clientSet) usageClient() (*armnetwork.UsagesClient, error) {
 	return client, nil
 }
 
+// subnetClient ...
 func (c *clientSet) subnetClient() (*armnetwork.SubnetsClient, error) {
 	credential, err := c.newClientSecretCredential()
 	if err != nil {
@@ -120,6 +125,7 @@ func (c *clientSet) subnetClient() (*armnetwork.SubnetsClient, error) {
 	return client, nil
 }
 
+// diskClient ...
 func (c *clientSet) diskClient() (*armcompute.DisksClient, error) {
 	credential, err := c.newClientSecretCredential()
 	if err != nil {
@@ -128,6 +134,7 @@ func (c *clientSet) diskClient() (*armcompute.DisksClient, error) {
 	return armcompute.NewDisksClient(c.credential.CloudSubscriptionID, credential, nil)
 }
 
+// imageClient ...
 func (c *clientSet) imageClient() (*armcomputev4.VirtualMachineImagesClient, error) {
 	credential, err := c.newClientSecretCredential()
 	if err != nil {
@@ -136,6 +143,7 @@ func (c *clientSet) imageClient() (*armcomputev4.VirtualMachineImagesClient, err
 	return armcomputev4.NewVirtualMachineImagesClient(c.credential.CloudSubscriptionID, credential, nil)
 }
 
+// newClientSecretCredential ...
 func (c *clientSet) newClientSecretCredential() (*azidentity.ClientSecretCredential, error) {
 	return azidentity.NewClientSecretCredential(
 		c.credential.CloudTenantID,
@@ -143,6 +151,7 @@ func (c *clientSet) newClientSecretCredential() (*azidentity.ClientSecretCredent
 		c.credential.CloudClientSecretKey, nil)
 }
 
+// securityGroupClient ...
 func (c *clientSet) securityGroupClient() (*armnetwork.SecurityGroupsClient, error) {
 	credential, err := c.newClientSecretCredential()
 	if err != nil {
@@ -157,6 +166,7 @@ func (c *clientSet) securityGroupClient() (*armnetwork.SecurityGroupsClient, err
 	return client, nil
 }
 
+// virtualMachineClient ...
 func (c *clientSet) virtualMachineClient() (*armcompute.VirtualMachinesClient, error) {
 	credential, err := c.newClientSecretCredential()
 	if err != nil {
@@ -171,6 +181,7 @@ func (c *clientSet) virtualMachineClient() (*armcompute.VirtualMachinesClient, e
 	return client, nil
 }
 
+// virtualMachineSizeClient ...
 func (c *clientSet) virtualMachineSizeClient() (*armcompute.VirtualMachineSizesClient, error) {
 	credential, err := c.newClientSecretCredential()
 	if err != nil {
@@ -185,6 +196,7 @@ func (c *clientSet) virtualMachineSizeClient() (*armcompute.VirtualMachineSizesC
 	return client, nil
 }
 
+// resourceGroupsClient ...
 func (c *clientSet) resourceGroupsClient() (*armresources.ResourceGroupsClient, error) {
 	credential, err := c.newClientSecretCredential()
 	if err != nil {
@@ -199,6 +211,7 @@ func (c *clientSet) resourceGroupsClient() (*armresources.ResourceGroupsClient, 
 	return client, nil
 }
 
+// regionClient ...
 func (c *clientSet) regionClient() (*armsubscriptions.Client, error) {
 	credential, err := c.newClientSecretCredential()
 	if err != nil {
@@ -213,6 +226,7 @@ func (c *clientSet) regionClient() (*armsubscriptions.Client, error) {
 	return client, nil
 }
 
+// routeTableClient ...
 func (c *clientSet) routeTableClient() (*armnetwork.RouteTablesClient, error) {
 	credential, err := c.newClientSecretCredential()
 	if err != nil {
@@ -229,6 +243,7 @@ func (c *clientSet) routeTableClient() (*armnetwork.RouteTablesClient, error) {
 	return client, nil
 }
 
+// routeClient ...
 func (c *clientSet) routeClient() (*armnetwork.RoutesClient, error) {
 	credential, err := c.newClientSecretCredential()
 	if err != nil {
@@ -245,6 +260,7 @@ func (c *clientSet) routeClient() (*armnetwork.RoutesClient, error) {
 	return client, nil
 }
 
+// publicIPAddressesClient ...
 func (c *clientSet) publicIPAddressesClient() (*armnetwork.PublicIPAddressesClient, error) {
 	credential, err := c.newClientSecretCredential()
 	if err != nil {
@@ -257,6 +273,7 @@ func (c *clientSet) publicIPAddressesClient() (*armnetwork.PublicIPAddressesClie
 	return client, nil
 }
 
+// networkInterfaceClient ...
 func (c *clientSet) networkInterfaceClient() (*armnetwork.InterfacesClient, error) {
 	credential, err := c.newClientSecretCredential()
 	if err != nil {
@@ -271,6 +288,7 @@ func (c *clientSet) networkInterfaceClient() (*armnetwork.InterfacesClient, erro
 	return client, nil
 }
 
+// networkInterfaceIPConfigClient ...
 func (c *clientSet) networkInterfaceIPConfigClient() (*armnetwork.InterfaceIPConfigurationsClient, error) {
 	credential, err := c.newClientSecretCredential()
 	if err != nil {
@@ -286,6 +304,7 @@ func (c *clientSet) networkInterfaceIPConfigClient() (*armnetwork.InterfaceIPCon
 	return client, nil
 }
 
+// usageDetailClient ...
 func (c *clientSet) usageDetailClient(kt *kit.Kit) (*billClient, error) {
 	token, err := getToken(kt, c.credential)
 	if err != nil {

@@ -32,10 +32,17 @@ import (
 )
 
 // SyncRouteTable 同步路由表
-func SyncRouteTable(kt *kit.Kit, cliSet *client.ClientSet, accountID string, resourceGroupNames []string) error {
+func SyncRouteTable(kt *kit.Kit, cliSet *client.ClientSet, accountID string, resourceGroupNames []string,
+	sd *detail.SyncDetail) error {
+
 	start := time.Now()
 	logs.V(3).Infof("[%s] account[%s] sync route table start, time: %v, rid: %s",
 		enumor.Azure, accountID, start, kt.Rid)
+
+	// 同步中
+	if err := sd.ResSyncStatusSyncing(enumor.RouteTableCloudResType); err != nil {
+		return err
+	}
 
 	defer func() {
 		logs.V(3).Infof("[%s] account[%s] sync route table end, cost: %v, rid: %s",
@@ -74,13 +81,7 @@ func SyncRouteTable(kt *kit.Kit, cliSet *client.ClientSet, accountID string, res
 		return firstErr
 	}
 
-	// 同步状态
-	sd := &detail.SyncDetail{
-		Kt:        kt,
-		DataCli:   cliSet.DataService(),
-		AccountID: accountID,
-		Vendor:    string(enumor.Azure),
-	}
+	// 同步成功
 	if err := sd.ResSyncStatusSuccess(enumor.RouteTableCloudResType); err != nil {
 		return err
 	}

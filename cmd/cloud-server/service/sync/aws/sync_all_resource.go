@@ -22,6 +22,7 @@ package aws
 import (
 	"time"
 
+	"hcm/cmd/cloud-server/service/sync/detail"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -88,31 +89,38 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 		return "", hitErr
 	}
 
-	if hitErr = SyncDisk(kt, cliSet, opt.AccountID, regions); hitErr != nil {
+	sd := &detail.SyncDetail{
+		Kt:        kt,
+		DataCli:   cliSet.DataService(),
+		AccountID: opt.AccountID,
+		Vendor:    string(enumor.Aws),
+	}
+
+	if hitErr = SyncDisk(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
 		return enumor.DiskCloudResType, hitErr
 	}
 
-	if hitErr = SyncVpc(kt, cliSet, opt.AccountID, regions); hitErr != nil {
+	if hitErr = SyncVpc(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
 		return enumor.VpcCloudResType, hitErr
 	}
 
-	if hitErr = SyncSubnet(kt, cliSet, opt.AccountID, regions); hitErr != nil {
+	if hitErr = SyncSubnet(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
 		return enumor.SubnetCloudResType, hitErr
 	}
 
-	if hitErr = SyncEip(kt, cliSet, opt.AccountID, regions); hitErr != nil {
+	if hitErr = SyncEip(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
 		return enumor.EipCloudResType, hitErr
 	}
 
-	if hitErr = SyncSG(kt, cliSet, opt.AccountID, regions); hitErr != nil {
+	if hitErr = SyncSG(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
 		return enumor.SecurityGroupCloudResType, hitErr
 	}
 
-	if hitErr = SyncCvm(kt, cliSet, opt.AccountID, regions); hitErr != nil {
+	if hitErr = SyncCvm(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
 		return enumor.CvmCloudResType, hitErr
 	}
 
-	if hitErr = SyncRouteTable(kt, cliSet, opt.AccountID, regions); hitErr != nil {
+	if hitErr = SyncRouteTable(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
 		return enumor.SubAccountCloudResType, hitErr
 	}
 

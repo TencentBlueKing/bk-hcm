@@ -22,6 +22,7 @@ package azure
 import (
 	"time"
 
+	"hcm/cmd/cloud-server/service/sync/detail"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -95,39 +96,46 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 		}
 	}
 
-	if hitErr = SyncDisk(kt, cliSet, opt.AccountID, resourceGroupNames); hitErr != nil {
+	sd := &detail.SyncDetail{
+		Kt:        kt,
+		DataCli:   cliSet.DataService(),
+		AccountID: opt.AccountID,
+		Vendor:    string(enumor.Azure),
+	}
+
+	if hitErr = SyncDisk(kt, cliSet, opt.AccountID, resourceGroupNames, sd); hitErr != nil {
 		return enumor.DiskCloudResType, hitErr
 	}
 
-	if hitErr = SyncSG(kt, cliSet, opt.AccountID, resourceGroupNames); hitErr != nil {
+	if hitErr = SyncSG(kt, cliSet, opt.AccountID, resourceGroupNames, sd); hitErr != nil {
 		return enumor.SecurityGroupCloudResType, hitErr
 	}
 
-	if hitErr = SyncVpc(kt, cliSet, opt.AccountID, resourceGroupNames); hitErr != nil {
+	if hitErr = SyncVpc(kt, cliSet, opt.AccountID, resourceGroupNames, sd); hitErr != nil {
 		return enumor.VpcCloudResType, hitErr
 	}
 
-	if hitErr = SyncSubnet(kt, cliSet, opt.AccountID, resourceGroupNames); hitErr != nil {
+	if hitErr = SyncSubnet(kt, cliSet, opt.AccountID, resourceGroupNames, sd); hitErr != nil {
 		return enumor.SubnetCloudResType, hitErr
 	}
 
-	if hitErr = SyncEip(kt, cliSet, opt.AccountID, resourceGroupNames); hitErr != nil {
+	if hitErr = SyncEip(kt, cliSet, opt.AccountID, resourceGroupNames, sd); hitErr != nil {
 		return enumor.EipCloudResType, hitErr
 	}
 
-	if hitErr = SyncCvm(kt, cliSet, opt.AccountID, resourceGroupNames); hitErr != nil {
+	if hitErr = SyncCvm(kt, cliSet, opt.AccountID, resourceGroupNames, sd); hitErr != nil {
 		return enumor.CvmCloudResType, hitErr
 	}
 
-	if hitErr = SyncRouteTable(kt, cliSet, opt.AccountID, resourceGroupNames); hitErr != nil {
+	if hitErr = SyncRouteTable(kt, cliSet, opt.AccountID, resourceGroupNames, sd); hitErr != nil {
 		return enumor.RouteTableCloudResType, hitErr
 	}
 
-	if hitErr = SyncNetworkInterface(kt, cliSet, opt.AccountID, resourceGroupNames); hitErr != nil {
+	if hitErr = SyncNetworkInterface(kt, cliSet, opt.AccountID, resourceGroupNames, sd); hitErr != nil {
 		return enumor.NetworkInterfaceCloudResType, hitErr
 	}
 
-	if hitErr = SyncSubAccount(kt, cliSet, opt.AccountID); hitErr != nil {
+	if hitErr = SyncSubAccount(kt, cliSet, opt.AccountID, sd); hitErr != nil {
 		return enumor.SubAccountCloudResType, hitErr
 	}
 
