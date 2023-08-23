@@ -78,7 +78,7 @@ type Table struct {
 	BkCloudID            int64             `db:"bk_cloud_id" json:"bk_cloud_id"`
 	AccountID            string            `db:"account_id" validate:"lte=64" json:"account_id"`
 	Region               string            `db:"region" validate:"lte=20" json:"region"`
-	Zone                 string            `db:"zone" validate:"lte=20" json:"zone"`
+	Zone                 string            `db:"zone" validate:"lte=64" json:"zone"`
 	CloudVpcIDs          types.StringArray `db:"cloud_vpc_ids" json:"cloud_vpc_ids"`
 	VpcIDs               types.StringArray `db:"vpc_ids" json:"vpc_ids"`
 	CloudSubnetIDs       types.StringArray `db:"cloud_subnet_ids" json:"cloud_subnet_ids"`

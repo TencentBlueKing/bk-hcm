@@ -32,16 +32,16 @@ type NextAvailableNetResult struct {
 
 func TestNextAvailableNet(t *testing.T) {
 
-	_, testNet, _ := net.ParseCIDR("10.0.0.0/24")
+	_, testNet, _ := net.ParseCIDR("*.*.*.0/24")
 	usedNetStr := []string{
-		// "10.0.0.0/24",
-		"10.0.0.0/28",
-		"10.0.1.144/28",
-		"10.0.0.96/27",
-		"10.0.0.64/29",
-		"10.0.0.32/27",
-		"10.0.0.80/28",
-		"10.0.0.128/29",
+		// "*.*.*.0/24",
+		"*.*.*.0/28",
+		"*.*.*.144/28",
+		"*.*.*.96/27",
+		"*.*.*.64/29",
+		"*.*.*.32/27",
+		"*.*.*.80/28",
+		"*.*.*.128/29",
 	}
 	usedNetList := make([]net.IPNet, len(usedNetStr))
 
@@ -52,12 +52,12 @@ func TestNextAvailableNet(t *testing.T) {
 		{"", fmt.Errorf("out of range")},
 		// 25
 		{"", fmt.Errorf("out of range")},
-		{"10.0.0.192/26", nil},
-		{"10.0.0.160/27", nil},
-		{"10.0.0.144/28", nil},
-		{"10.0.0.136/29", nil},
-		{"10.0.0.136/30", nil},
-		{"10.0.0.136/31", nil},
+		{"*.*.*.192/26", nil},
+		{"*.*.*.160/27", nil},
+		{"*.*.*.144/28", nil},
+		{"*.*.*.136/29", nil},
+		{"*.*.*.136/30", nil},
+		{"*.*.*.136/31", nil},
 	}
 	for idx, netStr := range usedNetStr {
 		_, _net, _ := net.ParseCIDR(netStr)
@@ -83,18 +83,18 @@ func TestNextAvailableNet(t *testing.T) {
 
 func TestNextAvailableNet2(t *testing.T) {
 
-	_, testNet, _ := net.ParseCIDR("10.0.0.0/24")
+	_, testNet, _ := net.ParseCIDR("*.*.*.0/24")
 	result := []NextAvailableNetResult{
 		// 23
 		{"", fmt.Errorf("new net mask length is shorter than outer net")},
-		{"10.0.0.0/24", nil},
-		{"10.0.0.0/25", nil},
-		{"10.0.0.0/26", nil},
-		{"10.0.0.0/27", nil},
-		{"10.0.0.0/28", nil},
-		{"10.0.0.0/29", nil},
-		{"10.0.0.0/30", nil},
-		{"10.0.0.0/31", nil},
+		{"*.*.*.0/24", nil},
+		{"*.*.*.0/25", nil},
+		{"*.*.*.0/26", nil},
+		{"*.*.*.0/27", nil},
+		{"*.*.*.0/28", nil},
+		{"*.*.*.0/29", nil},
+		{"*.*.*.0/30", nil},
+		{"*.*.*.0/31", nil},
 	}
 	for i := range result {
 		t.Run(fmt.Sprint("unused", i+23), func(t *testing.T) {
@@ -133,16 +133,16 @@ func TestIpNumToMasklen(t *testing.T) {
 }
 
 func TestNextAvailableNetByIPNum(t *testing.T) {
-	_, testNet, _ := net.ParseCIDR("10.0.0.0/24")
+	_, testNet, _ := net.ParseCIDR("*.*.*.0/24")
 	usedNetStr := []string{
-		// "10.0.0.0/24",
-		"10.0.0.0/28",
-		"10.0.1.144/28",
-		"10.0.0.96/27",
-		"10.0.0.64/29",
-		"10.0.0.32/27",
-		"10.0.0.80/28",
-		"10.0.0.128/29",
+		// "*.*.*.0/24",
+		"*.*.*.0/28",
+		"*.*.*.144/28",
+		"*.*.*.96/27",
+		"*.*.*.64/29",
+		"*.*.*.32/27",
+		"*.*.*.80/28",
+		"*.*.*.128/29",
 	}
 	usedNetList := make([]net.IPNet, len(usedNetStr))
 
@@ -153,14 +153,14 @@ func TestNextAvailableNetByIPNum(t *testing.T) {
 		{"", fmt.Errorf("out of range")},
 		// 25
 		{"", fmt.Errorf("out of range")},
-		{"10.0.0.192/26", nil},
-		{"10.0.0.160/27", nil},
-		{"10.0.0.144/28", nil},
-		{"10.0.0.136/29", nil},
-		{"10.0.0.136/30", nil},
-		{"10.0.0.136/30", nil},
-		{"10.0.0.136/30", nil},
-		{"10.0.0.136/30", nil},
+		{"*.*.*.192/26", nil},
+		{"*.*.*.160/27", nil},
+		{"*.*.*.144/28", nil},
+		{"*.*.*.136/29", nil},
+		{"*.*.*.136/30", nil},
+		{"*.*.*.136/30", nil},
+		{"*.*.*.136/30", nil},
+		{"*.*.*.136/30", nil},
 	}
 	for idx, netStr := range usedNetStr {
 		_, _net, _ := net.ParseCIDR(netStr)
