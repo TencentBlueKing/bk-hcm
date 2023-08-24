@@ -23,7 +23,7 @@ import subnetForm from '@/views/business/forms/subnet/index.vue';
 import securityForm from '@/views/business/forms/security/index.vue';
 import firewallForm from '@/views/business/forms/firewall';
 import BkTab, { BkTabPanel } from 'bkui-vue/lib/tab';
-import AccountList from './account/AccountList';
+import AccountList from './account/accountList';
 
 import {
   RESOURCE_TYPES,
