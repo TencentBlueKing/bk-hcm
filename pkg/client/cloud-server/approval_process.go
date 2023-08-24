@@ -17,34 +17,47 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package cloudserver defines cloud-server api client.
 package cloudserver
 
 import (
-	"fmt"
-
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
-	"hcm/pkg/rest/client"
 )
 
-// Client is cloud-server api client.
-type Client struct {
-	rest.ClientInterface
-
-	Vpc             *VpcClient
-	Subnet          *SubnetClient
-	Cvm             *CvmClient
-	ApprovalProcess *ApprovalProcessClient
+// ApprovalProcessClient is approval process client.
+type ApprovalProcessClient struct {
+	client rest.ClientInterface
 }
 
-// NewClient create a new cloud-server api client.
-func NewClient(c *client.Capability, version string) *Client {
-	restCli := rest.NewClient(c, fmt.Sprintf("/api/%s/cloud", version))
-	return &Client{
-		ClientInterface: restCli,
-		Vpc:             NewVpcClient(restCli),
-		Subnet:          NewSubnetClient(restCli),
-		Cvm:             NewCvmClient(restCli),
-		ApprovalProcess: NewApprovalProcessClient(restCli),
+// NewApprovalProcessClient create a new approval process client.
+func NewApprovalProcessClient(client rest.ClientInterface) *ApprovalProcessClient {
+	return &ApprovalProcessClient{
+		client: client,
 	}
+}
+
+// GetApprovalProcessServiceID ...
+func (cli *ApprovalProcessClient) GetApprovalProcessServiceID(kt *kit.Kit) (int64, error) {
+
+	resp := &struct {
+		rest.BaseResp `json:",inline"`
+		Data          int64 `json:"data"`
+	}{}
+
+	err := cli.client.Get().
+		WithContext(kt.Ctx).
+		SubResourcef("/approval_processes/service_id").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+	if err != nil {
+		return 0, err
+	}
+
+	if resp.Code != errf.OK {
+		return 0, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
 }
