@@ -275,6 +275,7 @@ export default defineComponent({
               navigationType={NAV_TYPE}
               hoverWidth={NAV_WIDTH}
               defaultOpen={isMenuOpen.value}
+              needMenu={whereAmI.value !== Senarios.resource}
               onToggle={handleToggle}>
               {{
                 'side-header': () => (
