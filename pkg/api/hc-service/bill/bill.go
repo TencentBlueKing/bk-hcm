@@ -186,6 +186,9 @@ type TCloudBillListReq struct {
 	EndDate string `json:"end_date" validate:"omitempty"`
 	// Limit: 最大值为100
 	Page *core.TCloudPage `json:"page" validate:"omitempty"`
+	// 本次请求的上下文信息，可用于下一次请求的请求参数中，加快查询速度
+	// 注意：此字段可能返回 null，表示取不到有效值。
+	Context *string `json:"Context" validate:"omitempty"`
 }
 
 // Validate tcloud bill list req.
