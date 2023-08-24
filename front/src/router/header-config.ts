@@ -19,7 +19,7 @@ export const headRouteConfig = [
     id: 'resource',
     name: '资源接入',
     route: 'resource',
-    href: '#/resource/account',
+    href: '#/resource/resource',
   },
 
   // 接下来是 资源选型、平台管理

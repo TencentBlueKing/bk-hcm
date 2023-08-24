@@ -114,7 +114,7 @@ export default defineComponent({
         case 'resource':
           topMenuActiveItem = 'resource';
           menus = reactive(resource);
-          path = '/resource/account';
+          path = '/resource/resource';
           accountStore.updateBizsId(0); // 初始化业务ID
           break;
         case 'service':
@@ -137,7 +137,7 @@ export default defineComponent({
           } else {
             topMenuActiveItem = 'resource';
             menus = reactive(resource);
-            path = '/resource/account';
+            path = '/resource/resource';
           }
           accountStore.updateBizsId(''); // 初始化业务ID
           break;

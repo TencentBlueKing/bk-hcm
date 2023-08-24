@@ -1,0 +1,32 @@
+.create-account-dialog-container {
+    background: #F5F7FA;
+    .create-account-dialog-tools {
+      width: 100%;
+      min-height: 52px;
+      background: #FFFFFF;
+      box-shadow: 0 1px 0 0 #DCDEE5, 0 3px 4px 0 #4070cb0f;
+      border: 1px;
+      text-align: center;
+      padding-top: 14px;
+      padding-bottom: 14px;
+      font-size: 16px;
+      color: #313238;
+    }
+    .create-account-dialog-footer {
+        display: flex;
+        flex-direction: row;
+        justify-content: start;
+        padding: 0 300px 0 300px;
+    }
+    .mr8 {
+        margin-right: 8px;
+    }
+    .create-account-dialog-content {
+        padding: 0 300px 0 300px;
+        margin: 0 auto;
+        .create-account-dialog-steps {
+            width: 20%;
+            margin: 0 auto;
+        }
+    }
+  }
