@@ -1,0 +1,50 @@
+.account-list-container {
+  height: 100vh;
+  background-color: #FFFFFF;
+  .search-input {
+    border-radius: 2px;
+    margin: 10px 16px 12px 16px;
+    width: 90%;
+    border-width: 0px;
+  }
+  .bk-input--text, .bk-input--suffix-icon {
+    background: #F0F1F5!important;
+  }
+  .account-list-header {
+    display: flex;
+    margin-left: 16px;
+    margin-right: 16px;
+    width: 90%;
+    justify-content: space-between;
+    .header-title {
+      color: #979BA5;
+    }
+    // .header-btn {
+    // }
+  }
+  .mr3 {
+    margin-right: 3px;
+  }
+  .vendor-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+  }
+  .all-vendors {
+    border: 1px;
+    box-shadow: 0 -1px 0 0 #EAEBF0, 0 1px 0 0 #EAEBF0;
+    padding: 6px 0 8px 0;
+    margin-top: 10px;
+  }
+  .specific-vendor {
+    display: flex;
+    align-items: center;
+    padding-left: 16px;
+    padding-right: 16px;
+    cursor: pointer;
+  }
+  .specific-vendor:hover {
+    background-color: #E1ECFF;
+    border-left: 3px #3A84FF solid;
+  }
+}

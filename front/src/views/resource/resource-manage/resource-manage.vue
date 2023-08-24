@@ -23,6 +23,7 @@ import subnetForm from '@/views/business/forms/subnet/index.vue';
 import securityForm from '@/views/business/forms/security/index.vue';
 import firewallForm from '@/views/business/forms/firewall';
 import BkTab, { BkTabPanel } from 'bkui-vue/lib/tab';
+import AccountList from './account/AccountList';
 
 import {
   RESOURCE_TYPES,
@@ -127,7 +128,7 @@ const tabs = RESOURCE_TYPES.map((type) => {
     component: componentMap[type.type],
   };
 });
-const activeTab = ref(route.query.type || tabs[0].type);
+const activeTab = ref(route.query.type as string || tabs[0].type);
 
 const filterData = (key: string, val: string | number) => {
   if (!filter.value.rules.length) {
@@ -268,8 +269,10 @@ getResourceAccountList();
 </script>
 
 <template>
-  <div>
-    <!-- <section class="flex-center resource-header">
+  <div class="resource-manage-container">
+    <AccountList />
+    <div>
+      <!-- <section class="flex-center resource-header">
       <section class="flex-center" v-if="activeTab !== 'image'">
         <div class="mr10">{{t('云账号')}}</div>
         <div class="mr20">
@@ -318,132 +321,133 @@ getResourceAccountList();
         />
       </section>
     </section> -->
-    <div class="navigation-resource">
-      <div class="card-layout">
-        <p class="resource-title">云账号1</p>
-        <BkTab
-          class="ml15"
-          type="unborder-card"
-          v-model="activeResourceTab"
-        >
-          <BkTabPanel
-            v-for="item of RESOURCE_TABS"
-            :label="item.label"
-            :key="item.key"
-            :name="item.key"
-          />
-        </BkTab>
-      </div>
-    </div>
-    <bk-alert
-      theme="error"
-      closable
-    >
-      <template #title>
-        账号接入异常，***********************
-        <bk-button text theme="primary" class="ml10">查看详情</bk-button>
-      </template>
-    </bk-alert>
-    <bk-tab
-      v-model:active="activeTab"
-      type="card-grid"
-      class="resource-main g-scroller"
-    >
-      <template #setting>
-        <div style="margin: 0 10px">
-          <bk-select
-            v-model="status"
-            :clearable="false"
-            class="w80"
-          >
-            <bk-option
-              v-for="(item, index) in DISTRIBUTE_STATUS_LIST"
-              :key="index"
-              :value="item.value"
+
+      <div class="navigation-resource">
+        <div class="card-layout">
+          <p class="resource-title">云账号1</p>
+          <BkTab class="ml15" type="unborder-card" v-model="activeResourceTab">
+            <BkTabPanel
+              v-for="item of RESOURCE_TABS"
               :label="item.label"
+              :key="item.key"
+              :name="item.key"
             />
-          </bk-select>
+          </BkTab>
         </div>
-      </template>
-      <bk-tab-panel
-        v-for="item in tabs"
-        :key="item.name"
-        :name="item.name"
-        :label="item.type"
+      </div>
+      <bk-alert theme="error" closable class="ml24">
+        <template #title>
+          账号接入异常，***********************
+          <bk-button text theme="primary" class="ml10">查看详情</bk-button>
+        </template>
+      </bk-alert>
+      <bk-tab
+        v-model:active="activeTab"
+        type="card-grid"
+        class="resource-main g-scroller ml24"
       >
-        <component
-          v-if="item.name === activeTab"
-          :is="item.component"
-          :filter="filter"
-          :where-am-i="activeTab"
-          :is-resource-page="isResourcePage"
-          :auth-verify-data="authVerifyData"
-          @auth="(val: string) => {
-            handleAuth(val)
-          }"
-          @tabchange="handleTabChange"
-          ref="componentRef"
-          @edit="handleEdit"
+        <template #setting>
+          <div style="margin: 0 10px">
+            <bk-select v-model="status" :clearable="false" class="w80">
+              <bk-option
+                v-for="(item, index) in DISTRIBUTE_STATUS_LIST"
+                :key="index"
+                :value="item.value"
+                :label="item.label"
+              />
+            </bk-select>
+          </div>
+        </template>
+        <bk-tab-panel
+          v-for="item in tabs"
+          :key="item.name"
+          :name="item.name"
+          :label="item.type"
         >
-          <span
-            @click="handleAuth('biz_iaas_resource_create')"
-            v-if="['host', 'vpc', 'drive', 'security', 'subnet', 'ip'].includes(activeTab)"
+          <component
+            v-if="item.name === activeTab"
+            :is="item.component"
+            :filter="filter"
+            :where-am-i="activeTab"
+            :is-resource-page="isResourcePage"
+            :auth-verify-data="authVerifyData"
+            @auth="(val: string) => {
+              handleAuth(val)
+            }"
+            @tabchange="handleTabChange"
+            ref="componentRef"
+            @edit="handleEdit"
           >
+            <span
+              @click="handleAuth('biz_iaas_resource_create')"
+              v-if="
+                ['host', 'vpc', 'drive', 'security', 'subnet', 'ip'].includes(
+                  activeTab,
+                )
+              "
+            >
+              <bk-button
+                theme="primary"
+                class="new-button"
+                :disabled="
+                  !authVerifyData?.permissionAction?.biz_iaas_resource_create
+                "
+                @click="handleAdd"
+              >
+                {{ activeTab === 'host' ? '购买' : '新建' }}
+              </bk-button>
+            </span>
             <bk-button
-              theme="primary"
-              class="new-button"
-              :disabled="!authVerifyData?.permissionAction?.biz_iaas_resource_create"
-              @click="handleAdd">
-              {{
-                activeTab === 'host' ? '购买' : '新建'
-              }}
+              v-if="activeTab === 'host'"
+              class="ml8 mr8"
+              @click="handleDistribution"
+            >
+              批量分配
             </bk-button>
-          </span>
-          <bk-button
-            v-if="activeTab === 'host'"
-            class="ml8 mr8"
-            @click="handleDistribution"
-          >
-            批量分配
-          </bk-button>
-        </component>
-      </bk-tab-panel>
-    </bk-tab>
+          </component>
+        </bk-tab-panel>
+      </bk-tab>
 
-    <bk-sideslider
-      v-model:isShow="isShowSideSlider"
-      width="800"
-      title="新增"
-      quick-close
-    >
-      <template #default>
-        <component
-          :is="renderForm"
-          :filter="filter"
-          @cancel="handleCancel"
-          @success="handleSuccess"
-          :is-edit="isEdit"
-          :detail="formDetail"></component>
-      </template>
-    </bk-sideslider>
+      <bk-sideslider
+        v-model:isShow="isShowSideSlider"
+        width="800"
+        title="新增"
+        quick-close
+      >
+        <template #default>
+          <component
+            :is="renderForm"
+            :filter="filter"
+            @cancel="handleCancel"
+            @success="handleSuccess"
+            :is-edit="isEdit"
+            :detail="formDetail"
+          ></component>
+        </template>
+      </bk-sideslider>
 
-    <resource-distribution
-      v-model:is-show="isShowDistribution"
-      :choose-resource-type="true"
-      :title="t('快速分配')"
-      :data="[]"
-    />
+      <resource-distribution
+        v-model:is-show="isShowDistribution"
+        :choose-resource-type="true"
+        :title="t('快速分配')"
+        :data="[]"
+      />
 
-    <permission-dialog
-      v-model:is-show="showPermissionDialog"
-      :params="permissionParams"
-      @cancel="handlePermissionDialog"
-      @confirm="handlePermissionConfirm"
-    ></permission-dialog>
+      <permission-dialog
+        v-model:is-show="showPermissionDialog"
+        :params="permissionParams"
+        @cancel="handlePermissionDialog"
+        @confirm="handlePermissionConfirm"
+      ></permission-dialog>
+    </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
+.resource-manage-container {
+  display: grid;
+  grid-template-columns: 15% 85%;
+}
 .flex-center {
   display: flex;
   align-items: center;
@@ -475,7 +479,8 @@ getResourceAccountList();
 }
 .navigation-resource {
   min-height: 88px;
-  margin: -20px -20px 16px -20px;
+  // margin: -20px -20px 16px -20px;
+  margin: 0px 0px 16px 0px;
 }
 .card-layout {
   background: #fff;
@@ -491,5 +496,8 @@ getResourceAccountList();
 }
 .bk-tab-content {
   padding: 0 !important;
+}
+.ml24 {
+  margin-left: 24px;
 }
 </style>
