@@ -31,6 +31,7 @@ import (
 	logicaudit "hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/account"
 	"hcm/cmd/cloud-server/service/application"
+	approvalprocess "hcm/cmd/cloud-server/service/approval_process"
 	"hcm/cmd/cloud-server/service/assign"
 	"hcm/cmd/cloud-server/service/audit"
 	"hcm/cmd/cloud-server/service/bill"
@@ -270,6 +271,8 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	bill.InitBillService(c)
 
 	user.InitService(c)
+
+	approvalprocess.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }
