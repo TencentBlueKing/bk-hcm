@@ -167,7 +167,19 @@ export default defineComponent({
             其他信息
           </p>
           <div class={'account-form-card-content'}>
-            789
+            <Form
+              formType='vertical'
+            >
+              <FormItem label='账号别名' class={'api-secret-selector'}>
+                <Input/>
+              </FormItem>
+              <FormItem label='责任人' class={'api-secret-selector'}>
+                <Input/>
+              </FormItem>
+              <FormItem label='备注'>
+                <Input type={'textarea'}/>
+              </FormItem>
+            </Form>
           </div>
         </Card>
       </div>
