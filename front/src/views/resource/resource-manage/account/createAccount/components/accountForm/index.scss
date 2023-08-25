@@ -1,17 +1,57 @@
 .account-form {
-
   .account-form-card {
     margin: 24px 0 16px 0;
-    background-color: #FFFFFF;
+    background-color: #fff;
+
     .account-form-card-title {
       font-weight: 700;
       font-size: 14px;
       color: #313238;
       letter-spacing: 0;
+      margin-right: 16px;
     }
 
     .account-form-card-content {
       padding: 16px 28px;
+    }
+
+    .api-secret-header {
+      display: flex;
+      align-items: center;
+      .header-text {
+        margin-left: 9px;
+        color: #63656E;
+        font-size: 12px;
+      }
+      .header-btn {
+        font-size: 12px;
+      }
+    }
+
+    .account-validate-btn {
+      margin: 0 28px;
+    }
+
+    .api-secret-selector {
+      width: 372px;
+    }
+    
+    .api-secret-footer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #FAFBFD;
+      height: 100%;
+      .bk-form-item {
+        margin-bottom: 0!important;
+      }
+      .api-secret-footer-content {
+        width: 209px;
+        height: 32px;
+        background: #F0F1F5;
+        border-radius: 2px;
+        margin-right: 36px;
+      }
     }
   }
 
@@ -23,26 +63,31 @@
     display: grid;
     grid-template-columns: repeat(5, 120px);
     column-gap: 12px;
+
     .account-vendor-option {
       width: 120px;
       height: 40px;
-      background: #F5F7FA;
+      background: #f5f7fa;
       border-radius: 2px;
       display: flex;
       align-items: center;
       padding: 4px 7px 4px 4px;
+
       .account-vendor-option-icon {
         width: 32px;
         height: 32px;
         margin-right: 8px;
       }
+
       .account-vendor-option-text {
         font-size: 12px;
         color: #313238;
       }
     }
+
     .account-vendor-option-active {
-      background-color: #E1ECFF;
+      background-color: #e1ecff;
+
       .active-icon {
         margin-left: auto;
       }
