@@ -1,6 +1,8 @@
 import { Button, Dialog, Steps } from 'bkui-vue';
 import { PropType, defineComponent, ref } from 'vue';
 import './index.scss';
+import AccountForm from './components/accountForm';
+import AccountResource from './components/accountResource';
 
 export default defineComponent({
   props: {
@@ -42,6 +44,16 @@ export default defineComponent({
                   },
                 ]}
               />
+              {
+                step.value === 1
+                  ? <AccountForm/>
+                  : null
+              }
+              {
+                step.value === 2
+                  ? <AccountResource/>
+                  : null
+              }
             </div>
           ),
           footer: () => (
