@@ -201,3 +201,11 @@
         color: #63656E;
     }
 }
+
+.resource-manage-container {
+  display: grid;
+  grid-template-columns: 15% 85%;
+  .router-view-content {
+    padding: 24px 24px 0 24px;
+  }
+}
