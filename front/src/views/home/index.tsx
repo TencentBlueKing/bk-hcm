@@ -33,6 +33,7 @@ import AppSelect from '@blueking/app-select';
 import '@blueking/app-select/dist/style.css';
 import { getFavoriteList, useFavorite } from '@/hooks/useFavorite';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import AccountList from '../resource/resource-manage/account/accountList';
 
 // import { CogShape } from 'bkui-vue/lib/icon';
 // import { useProjectList } from '@/hooks';
@@ -245,6 +246,15 @@ export default defineComponent({
 
     const { fetchRegions } = useRegionsStore();
 
+    const renderRouterView = () => {
+      if (whereAmI.value !== Senarios.resource) return <RouterView/>;
+      return (
+        <div class={'resource-manage-container'}>
+          <AccountList/>
+          <RouterView class={'router-view-content'}/>
+        </div>
+      );
+    };
 
     watch(
       () => businessId.value,
@@ -494,7 +504,11 @@ export default defineComponent({
                           ? 'view-warp no-padding'
                           : 'view-warp'
                       }>
-                      {isRouterAlive.value ? <RouterView></RouterView> : ''}
+                      {
+                        isRouterAlive.value
+                          ? renderRouterView()
+                          : null
+                      }
                     </div>
                   </>
                 ),
