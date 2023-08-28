@@ -3,6 +3,7 @@ import { PropType, defineComponent, ref } from 'vue';
 import './index.scss';
 import AccountForm from './components/accountForm';
 import AccountResource from './components/accountResource';
+import ResultPage from './components/resultPage';
 
 export default defineComponent({
   props: {
@@ -32,28 +33,24 @@ export default defineComponent({
           ),
           default: () => (
             <div class={'create-account-dialog-content'}>
-              <Steps
-                curStep={step.value}
-                class={'create-account-dialog-steps'}
-                steps={[
-                  {
-                    title: '录入账号',
-                  },
-                  {
-                    title: '资源同步',
-                  },
-                ]}
-              />
-              {
-                step.value === 1
-                  ? <AccountForm/>
-                  : null
-              }
-              {
-                step.value === 2
-                  ? <AccountResource/>
-                  : null
-              }
+              {step.value < 3 ? (
+                <Steps
+                  curStep={step.value}
+                  class={'create-account-dialog-steps'}
+                  steps={[
+                    {
+                      title: '录入账号',
+                    },
+                    {
+                      title: '资源同步',
+                    },
+                  ]}
+                />
+              ) : (
+                <ResultPage/>
+              )}
+              {step.value === 1 ? <AccountForm /> : null}
+              {step.value === 2 ? <AccountResource /> : null}
             </div>
           ),
           footer: () => (
@@ -76,7 +73,7 @@ export default defineComponent({
                 <Button
                   theme={'primary'}
                   class={'mr8'}
-                  onClick={props.onSubmit}>
+                  onClick={() => (step.value += 1)}>
                   提交
                 </Button>
               )}

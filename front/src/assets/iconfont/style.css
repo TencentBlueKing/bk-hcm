@@ -50,9 +50,54 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .icon-edit:before {
 	content: "\2f03";
 }
+.icon-yuyanqiehuanzhongwen:before {
+	content: "\425b";
+}
+.icon-yuyanqiehuanyingwen:before {
+	content: "\425c";
+}
+.icon-yuyanqiehuanriwen:before {
+	content: "\425d";
+}
 .icon-not-favorited:before {
 	content: "\4d0d";
 }
 .icon-collect:before {
 	content: "\4d11";
+}
+.icon-cuo:before {
+	content: "\60ce";
+}
+.icon-dui:before {
+	content: "\60cf";
+}
+.icon-tishi:before {
+	content: "\60d0";
+}
+.icon-jiazai:before {
+	content: "\60d1";
+}
+.icon-abnormal:before {
+	content: "\6125";
+}
+.icon-normal:before {
+	content: "\6126";
+}
+.icon-default:before {
+	content: "\6127";
+}
+.icon-success:before {
+	content: "\6128";
+}
+.icon-failed:before {
+	content: "\6129";
+}
+.icon-waiting:before {
+	content: "\612a";
+}
+.icon-warning-2:before {
+	content: "\612b";
+}
+.icon-unknown:before {
+	content: "\612c";
 }
