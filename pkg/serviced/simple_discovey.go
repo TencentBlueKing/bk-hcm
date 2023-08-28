@@ -17,36 +17,39 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package cloudserver defines cloud-server api client.
-package cloudserver
+package serviced
 
 import (
-	"fmt"
-
-	"hcm/pkg/rest"
-	"hcm/pkg/rest/client"
+	"errors"
+	"sync"
 )
 
-// Client is cloud-server api client.
-type Client struct {
-	rest.ClientInterface
-
-	Vpc             *VpcClient
-	Subnet          *SubnetClient
-	Cvm             *CvmClient
-	RouteTable      *RouteTableClient
-	ApprovalProcess *ApprovalProcessClient
+// NewSimpleDiscovery returns a SimpleDiscovery instance with provided server address.
+func NewSimpleDiscovery(servers []string) *SimpleDiscovery {
+	return &SimpleDiscovery{
+		servers: servers,
+	}
 }
 
-// NewClient create a new cloud-server api client.
-func NewClient(c *client.Capability, version string) *Client {
-	restCli := rest.NewClient(c, fmt.Sprintf("/api/%s/cloud", version))
-	return &Client{
-		ClientInterface: restCli,
-		Vpc:             NewVpcClient(restCli),
-		Subnet:          NewSubnetClient(restCli),
-		Cvm:             NewCvmClient(restCli),
-		ApprovalProcess: NewApprovalProcessClient(restCli),
-		RouteTable:      NewRouteTable(restCli),
+// SimpleDiscovery simple round-robin server discovery.
+type SimpleDiscovery struct {
+	servers []string
+	index   int
+	sync.Mutex
+}
+
+// GetServers return servers
+func (s *SimpleDiscovery) GetServers() ([]string, error) {
+	s.Lock()
+	defer s.Unlock()
+	num := len(s.servers)
+	if num == 0 {
+		return []string{}, errors.New("there is no server can be used")
 	}
+	if s.index < num-1 {
+		s.index = s.index + 1
+		return append(s.servers[s.index-1:], s.servers[:s.index-1]...), nil
+	}
+	s.index = 0
+	return append(s.servers[num-1:], s.servers[:num-1]...), nil
 }

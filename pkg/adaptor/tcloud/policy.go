@@ -33,7 +33,7 @@ import (
 
 // ListPoliciesGrantingServiceAccess ...
 // reference: https://cloud.tencent.com/document/api/598/58191
-func (t *TCloud) ListPoliciesGrantingServiceAccess(kt *kit.Kit, opt *typeaccount.TCloudListPolicyOption) (
+func (t *TCloudImpl) ListPoliciesGrantingServiceAccess(kt *kit.Kit, opt *typeaccount.TCloudListPolicyOption) (
 	[]*cam.ListGrantServiceAccessNode, error) {
 
 	if opt == nil {

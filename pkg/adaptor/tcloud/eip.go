@@ -37,7 +37,7 @@ import (
 
 // ListEip ...
 // reference: https://cloud.tencent.com/document/api/215/16702
-func (t *TCloud) ListEip(kt *kit.Kit, opt *eip.TCloudEipListOption) (*eip.TCloudEipListResult, error) {
+func (t *TCloudImpl) ListEip(kt *kit.Kit, opt *eip.TCloudEipListOption) (*eip.TCloudEipListResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (t *TCloud) ListEip(kt *kit.Kit, opt *eip.TCloudEipListOption) (*eip.TCloud
 
 // CountEip 基于 DescribeAddressesWithContext
 // reference: https://cloud.tencent.com/document/api/215/16702
-func (t *TCloud) CountEip(kt *kit.Kit, region string) (int32, error) {
+func (t *TCloudImpl) CountEip(kt *kit.Kit, region string) (int32, error) {
 
 	client, err := t.clientSet.vpcClient(region)
 	if err != nil {
@@ -121,7 +121,7 @@ func (t *TCloud) CountEip(kt *kit.Kit, region string) (int32, error) {
 
 // DeleteEip ...
 // reference: https://cloud.tencent.com/document/api/215/16700
-func (t *TCloud) DeleteEip(kt *kit.Kit, opt *eip.TCloudEipDeleteOption) error {
+func (t *TCloudImpl) DeleteEip(kt *kit.Kit, opt *eip.TCloudEipDeleteOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "tcloud eip delete option is required")
 	}
@@ -147,7 +147,7 @@ func (t *TCloud) DeleteEip(kt *kit.Kit, opt *eip.TCloudEipDeleteOption) error {
 
 // AssociateEip ...
 // reference: https://cloud.tencent.com/document/api/215/16700
-func (t *TCloud) AssociateEip(kt *kit.Kit, opt *eip.TCloudEipAssociateOption) error {
+func (t *TCloudImpl) AssociateEip(kt *kit.Kit, opt *eip.TCloudEipAssociateOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "tcloud eip associate option is required")
 	}
@@ -168,7 +168,7 @@ func (t *TCloud) AssociateEip(kt *kit.Kit, opt *eip.TCloudEipAssociateOption) er
 		return err
 	}
 
-	respPoller := poller.Poller[*TCloud, []*eip.TCloudEip,
+	respPoller := poller.Poller[*TCloudImpl, []*eip.TCloudEip,
 		poller.BaseDoneResult]{Handler: &associateEipPollingHandler{region: opt.Region}}
 	_, err = respPoller.PollUntilDone(t, kt, []*string{&opt.CloudEipID}, nil)
 	if err != nil {
@@ -180,7 +180,7 @@ func (t *TCloud) AssociateEip(kt *kit.Kit, opt *eip.TCloudEipAssociateOption) er
 
 // DisassociateEip ...
 // reference: https://cloud.tencent.com/document/api/215/16703
-func (t *TCloud) DisassociateEip(kt *kit.Kit, opt *eip.TCloudEipDisassociateOption) error {
+func (t *TCloudImpl) DisassociateEip(kt *kit.Kit, opt *eip.TCloudEipDisassociateOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "tcloud eip disassociate option is required")
 	}
@@ -201,7 +201,7 @@ func (t *TCloud) DisassociateEip(kt *kit.Kit, opt *eip.TCloudEipDisassociateOpti
 		return err
 	}
 
-	respPoller := poller.Poller[*TCloud, []*eip.TCloudEip,
+	respPoller := poller.Poller[*TCloudImpl, []*eip.TCloudEip,
 		poller.BaseDoneResult]{Handler: &disassociateEipPollingHandler{region: opt.Region}}
 	_, err = respPoller.PollUntilDone(t, kt, []*string{&opt.CloudEipID}, nil)
 	if err != nil {
@@ -212,7 +212,7 @@ func (t *TCloud) DisassociateEip(kt *kit.Kit, opt *eip.TCloudEipDisassociateOpti
 }
 
 // DetermineIPv6Type 判断ipv6地址是否是公网ip
-func (t *TCloud) DetermineIPv6Type(kt *kit.Kit, region string, ipv6Addresses []*string) ([]*string,
+func (t *TCloudImpl) DetermineIPv6Type(kt *kit.Kit, region string, ipv6Addresses []*string) ([]*string,
 	[]*string, error,
 ) {
 	if len(region) == 0 || len(ipv6Addresses) == 0 {
@@ -258,7 +258,7 @@ func (t *TCloud) DetermineIPv6Type(kt *kit.Kit, region string, ipv6Addresses []*
 
 // CreateEip ...
 // reference: https://cloud.tencent.com/document/api/215/16699
-func (t *TCloud) CreateEip(kt *kit.Kit, opt *eip.TCloudEipCreateOption) (*poller.BaseDoneResult, error) {
+func (t *TCloudImpl) CreateEip(kt *kit.Kit, opt *eip.TCloudEipCreateOption) (*poller.BaseDoneResult, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "tcloud eip create option is required")
 	}
@@ -278,7 +278,7 @@ func (t *TCloud) CreateEip(kt *kit.Kit, opt *eip.TCloudEipCreateOption) (*poller
 		return nil, err
 	}
 
-	respPoller := poller.Poller[*TCloud, []*eip.TCloudEip,
+	respPoller := poller.Poller[*TCloudImpl, []*eip.TCloudEip,
 		poller.BaseDoneResult]{Handler: &createEipPollingHandler{region: opt.Region}}
 	return respPoller.PollUntilDone(t, kt, resp.Response.AddressSet, nil)
 }
@@ -312,7 +312,7 @@ func (h *createEipPollingHandler) Done(pollResult []*eip.TCloudEip) (bool, *poll
 }
 
 // Poll ...
-func (h *createEipPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*eip.TCloudEip, error) {
+func (h *createEipPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs []*string) ([]*eip.TCloudEip, error) {
 	cIDs := converter.PtrToSlice(cloudIDs)
 	result, err := client.ListEip(kt, &eip.TCloudEipListOption{Region: h.region, CloudIDs: cIDs})
 	if err != nil {
@@ -322,14 +322,15 @@ func (h *createEipPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*
 	return result.Details, nil
 }
 
-var _ poller.PollingHandler[*TCloud, []*eip.TCloudEip, poller.BaseDoneResult] = new(createEipPollingHandler)
+var _ poller.PollingHandler[*TCloudImpl, []*eip.TCloudEip, poller.BaseDoneResult] = new(createEipPollingHandler)
 
 type associateEipPollingHandler struct {
 	region string
 }
 
 // Poll ...
-func (h *associateEipPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*eip.TCloudEip, error) {
+func (h *associateEipPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs []*string) ([]*eip.TCloudEip,
+	error) {
 	if len(cloudIDs) != 1 {
 		return nil, fmt.Errorf("poll only support one id param, but get %v. rid: %s", cloudIDs, kt.Rid)
 	}
@@ -359,7 +360,7 @@ type disassociateEipPollingHandler struct {
 
 // Poll ...
 func (h *disassociateEipPollingHandler) Poll(
-	client *TCloud,
+	client *TCloudImpl,
 	kt *kit.Kit,
 	cloudIDs []*string,
 ) ([]*eip.TCloudEip, error) {

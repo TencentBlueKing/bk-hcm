@@ -21,43 +21,74 @@
 package adaptor
 
 import (
+	"errors"
+
 	"hcm/pkg/adaptor/aws"
 	"hcm/pkg/adaptor/azure"
 	"hcm/pkg/adaptor/gcp"
 	"hcm/pkg/adaptor/huawei"
+	mocktcloud "hcm/pkg/adaptor/mock/tcloud"
 	"hcm/pkg/adaptor/tcloud"
 	"hcm/pkg/adaptor/types"
+	"hcm/pkg/logs"
 )
 
 // Adaptor holds all the supported operations by the adaptor.
-type Adaptor struct{}
+type Adaptor struct {
+	EnableCloudMock bool
+}
 
-// New a Adaptor pointer
-func New() *Adaptor {
-	return &Adaptor{}
+// Option Adaptor options
+type Option struct {
+	EnableCloudMock bool
+}
+
+// New an Adaptor pointer
+func New(opt Option) *Adaptor {
+	if opt.EnableCloudMock {
+		logs.Infof("Using mock server")
+	}
+	return &Adaptor{EnableCloudMock: opt.EnableCloudMock}
 }
 
 // TCloud returns tencent cloud operations.
-func (a *Adaptor) TCloud(s *types.BaseSecret) (*tcloud.TCloud, error) {
+func (a *Adaptor) TCloud(s *types.BaseSecret) (tcloud.TCloud, error) {
+	if a.EnableCloudMock {
+		// TODO: 生命周期处理，ctrl.finish
+		mockTcloud, _ := mocktcloud.NewMockCloud()
+		return mockTcloud, nil
+	}
 	return tcloud.NewTCloud(s)
 }
 
 // Aws returns Aws operations.
 func (a *Adaptor) Aws(s *types.BaseSecret, cloudAccountID string) (*aws.Aws, error) {
+	if a.EnableCloudMock {
+		return nil, errors.New("mock of aws not implemented")
+	}
 	return aws.NewAws(s, cloudAccountID)
 }
 
 // Gcp returns Gcp operations.
 func (a *Adaptor) Gcp(credential *types.GcpCredential) (*gcp.Gcp, error) {
+	if a.EnableCloudMock {
+		return nil, errors.New("mock of gcp not implemented")
+	}
 	return gcp.NewGcp(credential)
 }
 
 // Azure returns Azure operations.
 func (a *Adaptor) Azure(credential *types.AzureCredential) (*azure.Azure, error) {
+	if a.EnableCloudMock {
+		return nil, errors.New("mock of azure not implemented")
+	}
 	return azure.NewAzure(credential)
 }
 
 // HuaWei returns HuaWei operations.
 func (a *Adaptor) HuaWei(s *types.BaseSecret) (*huawei.HuaWei, error) {
+	if a.EnableCloudMock {
+		return nil, errors.New("mock of huawei not implemented")
+	}
 	return huawei.NewHuaWei(s)
 }

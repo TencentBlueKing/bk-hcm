@@ -27,6 +27,7 @@ import (
 
 	"hcm/cmd/hc-service/options"
 	"hcm/cmd/hc-service/service"
+	"hcm/pkg/adaptor"
 	"hcm/pkg/cc"
 	"hcm/pkg/logs"
 	"hcm/pkg/metrics"
@@ -80,6 +81,11 @@ func (ds *hcService) prepare(opt *options.Option) error {
 	disOpt := serviced.DiscoveryOption{
 		Services: []cc.Name{cc.DataServiceName},
 	}
+
+	// option for cloud adaptor
+	adpOpt := adaptor.Option{
+		EnableCloudMock: opt.EnableMock,
+	}
 	sd, err := serviced.NewServiceD(cc.HCService().Service, svcOpt, disOpt)
 	if err != nil {
 		return fmt.Errorf("new service discovery failed, err: %v", err)
@@ -87,7 +93,7 @@ func (ds *hcService) prepare(opt *options.Option) error {
 
 	ds.sd = sd
 
-	svc, err := service.NewService(sd)
+	svc, err := service.NewService(sd, adpOpt)
 	if err != nil {
 		return fmt.Errorf("initialize service failed, err: %v", err)
 	}

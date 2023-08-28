@@ -37,7 +37,7 @@ import (
 
 // ListAccount 查询账号列表.
 // reference: https://cloud.tencent.com/document/api/598/34587
-func (t *TCloud) ListAccount(kt *kit.Kit) ([]typeaccount.TCloudAccount, error) {
+func (t *TCloudImpl) ListAccount(kt *kit.Kit) ([]typeaccount.TCloudAccount, error) {
 
 	camClient, err := t.clientSet.camServiceClient("")
 	if err != nil {
@@ -72,7 +72,7 @@ func (t *TCloud) ListAccount(kt *kit.Kit) ([]typeaccount.TCloudAccount, error) {
 
 // CountAccount 查询账号数量，基于ListUsersWithContext
 // reference: https://cloud.tencent.com/document/api/598/34587
-func (t *TCloud) CountAccount(kt *kit.Kit) (int32, error) {
+func (t *TCloudImpl) CountAccount(kt *kit.Kit) (int32, error) {
 
 	camClient, err := t.clientSet.camServiceClient("")
 	if err != nil {
@@ -91,7 +91,7 @@ func (t *TCloud) CountAccount(kt *kit.Kit) (int32, error) {
 
 // GetAccountZoneQuota 获取账号配额信息.
 // reference: https://cloud.tencent.com/document/api/213/55628
-func (t *TCloud) GetAccountZoneQuota(kt *kit.Kit, opt *typeaccount.GetTCloudAccountZoneQuotaOption) (
+func (t *TCloudImpl) GetAccountZoneQuota(kt *kit.Kit, opt *typeaccount.GetTCloudAccountZoneQuotaOption) (
 	*typeaccount.TCloudAccountQuota, error) {
 
 	if opt == nil {
@@ -201,7 +201,7 @@ func validateDescribeAccountQuotaResp(resp *cvm.DescribeAccountQuotaResponse) er
 
 // GetAccountInfoBySecret 根据秘钥获取云上获取账号信息
 // reference: https://cloud.tencent.com/document/api/598/70416
-func (t *TCloud) GetAccountInfoBySecret(kt *kit.Kit) (*cloud.TCloudInfoBySecret, error) {
+func (t *TCloudImpl) GetAccountInfoBySecret(kt *kit.Kit) (*cloud.TCloudInfoBySecret, error) {
 
 	camClient, err := t.clientSet.camServiceClient("")
 	if err != nil {

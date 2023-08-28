@@ -31,9 +31,9 @@ import (
 )
 
 // NewCloudAdaptorClient new cloud adaptor client.
-func NewCloudAdaptorClient(dataCli *dataservice.Client) *CloudAdaptorClient {
+func NewCloudAdaptorClient(dataCli *dataservice.Client, adpOpt adaptor.Option) *CloudAdaptorClient {
 	return &CloudAdaptorClient{
-		adaptor:   adaptor.New(),
+		adaptor:   adaptor.New(adpOpt),
 		secretCli: NewSecretClient(dataCli),
 	}
 }
@@ -50,7 +50,7 @@ func (cli *CloudAdaptorClient) Adaptor() *adaptor.Adaptor {
 }
 
 // TCloud return tcloud client.
-func (cli *CloudAdaptorClient) TCloud(kt *kit.Kit, accountID string) (*tcloud.TCloud, error) {
+func (cli *CloudAdaptorClient) TCloud(kt *kit.Kit, accountID string) (tcloud.TCloud, error) {
 	secret, err := cli.secretCli.TCloudSecret(kt, accountID)
 	if err != nil {
 		return nil, err

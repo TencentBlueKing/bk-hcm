@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package discovery defines server discovery operationd.
+// Package discovery defines server discovery operation.
 package discovery
 
 import (

@@ -29,14 +29,18 @@ import (
 
 // Option defines the app's runtime flag options.
 type Option struct {
-	Sys *cc.SysOption
+	Sys        *cc.SysOption
+	EnableMock bool
 }
 
 // InitOptions init hc service's options from command flags.
 func InitOptions() *Option {
 	fs := pflag.CommandLine
 	sysOpt := flags.SysFlags(fs)
+
 	opt := &Option{Sys: sysOpt}
+	fs.BoolVarP(&opt.EnableMock, "mock", "", false,
+		"use mocked cloud for resource operation.")
 
 	// parses the command-line flags from os.Args[1:]. must be called after all flags are defined
 	// and before flags are accessed by the program.

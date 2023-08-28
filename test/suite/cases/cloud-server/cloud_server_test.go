@@ -17,36 +17,23 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package cloudserver defines cloud-server api client.
 package cloudserver
 
 import (
-	"fmt"
+	"testing"
 
-	"hcm/pkg/rest"
-	"hcm/pkg/rest/client"
+	"hcm/test/suite"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
-// Client is cloud-server api client.
-type Client struct {
-	rest.ClientInterface
+func TestCloudServer(t *testing.T) {
+	SetDefaultFailureMode(FailureHalts)
 
-	Vpc             *VpcClient
-	Subnet          *SubnetClient
-	Cvm             *CvmClient
-	RouteTable      *RouteTableClient
-	ApprovalProcess *ApprovalProcessClient
-}
-
-// NewClient create a new cloud-server api client.
-func NewClient(c *client.Capability, version string) *Client {
-	restCli := rest.NewClient(c, fmt.Sprintf("/api/%s/cloud", version))
-	return &Client{
-		ClientInterface: restCli,
-		Vpc:             NewVpcClient(restCli),
-		Subnet:          NewSubnetClient(restCli),
-		Cvm:             NewCvmClient(restCli),
-		ApprovalProcess: NewApprovalProcessClient(restCli),
-		RouteTable:      NewRouteTable(restCli),
-	}
+	Convey("Prepare Job", t, func() {
+		err := suite.ClearData()
+		So(err, ShouldBeNil)
+	})
+	TestTCloudRegion(t)
+	TestTCloudVPC(t)
 }

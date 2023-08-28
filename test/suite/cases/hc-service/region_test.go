@@ -17,36 +17,27 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package cloudserver defines cloud-server api client.
-package cloudserver
+package hcservice
 
 import (
-	"fmt"
+	"testing"
 
-	"hcm/pkg/rest"
-	"hcm/pkg/rest/client"
+	"hcm/pkg/api/hc-service/region"
+	"hcm/test/suite"
+	"hcm/test/suite/cases"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
-// Client is cloud-server api client.
-type Client struct {
-	rest.ClientInterface
+func TestRegion(t *testing.T) {
+	cli := suite.GetClientSet()
 
-	Vpc             *VpcClient
-	Subnet          *SubnetClient
-	Cvm             *CvmClient
-	RouteTable      *RouteTableClient
-	ApprovalProcess *ApprovalProcessClient
-}
-
-// NewClient create a new cloud-server api client.
-func NewClient(c *client.Capability, version string) *Client {
-	restCli := rest.NewClient(c, fmt.Sprintf("/api/%s/cloud", version))
-	return &Client{
-		ClientInterface: restCli,
-		Vpc:             NewVpcClient(restCli),
-		Subnet:          NewSubnetClient(restCli),
-		Cvm:             NewCvmClient(restCli),
-		ApprovalProcess: NewApprovalProcessClient(restCli),
-		RouteTable:      NewRouteTable(restCli),
-	}
+	Convey("Sync Tcloud region test ", t, func() {
+		ctx, header := cases.GenApiCtxHeader()
+		syncReq := region.TCloudRegionSyncReq{
+			AccountID: "000000a",
+		}
+		err := cli.HCService.TCloud.Region.Sync(ctx, header, &syncReq)
+		So(err, ShouldBeNil)
+	})
 }

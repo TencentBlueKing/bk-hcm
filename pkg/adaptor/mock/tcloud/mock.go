@@ -17,36 +17,46 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package cloudserver defines cloud-server api client.
-package cloudserver
+package mocktcloud
 
 import (
-	"fmt"
+	adaptormock "hcm/pkg/adaptor/mock"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/logs"
 
-	"hcm/pkg/rest"
-	"hcm/pkg/rest/client"
+	"go.uber.org/mock/gomock"
 )
 
-// Client is cloud-server api client.
-type Client struct {
-	rest.ClientInterface
-
-	Vpc             *VpcClient
-	Subnet          *SubnetClient
-	Cvm             *CvmClient
-	RouteTable      *RouteTableClient
-	ApprovalProcess *ApprovalProcessClient
+// Playbook 给mock加上具体方法的实现
+type Playbook interface {
+	Name() string
+	Apply(*MockTCloud, *gomock.Controller)
 }
 
-// NewClient create a new cloud-server api client.
-func NewClient(c *client.Capability, version string) *Client {
-	restCli := rest.NewClient(c, fmt.Sprintf("/api/%s/cloud", version))
-	return &Client{
-		ClientInterface: restCli,
-		Vpc:             NewVpcClient(restCli),
-		Subnet:          NewSubnetClient(restCli),
-		Cvm:             NewCvmClient(restCli),
-		ApprovalProcess: NewApprovalProcessClient(restCli),
-		RouteTable:      NewRouteTable(restCli),
+var defaultPlaybook = map[string]Playbook{}
+
+func register(applier Playbook) {
+	defaultPlaybook[applier.Name()] = applier
+}
+
+// NewMockCloud return fake adaptor
+func NewMockCloud(playbooks ...Playbook) (*MockTCloud, *gomock.Controller) {
+	ctrl := gomock.NewController(&adaptormock.LogReporter{})
+	mockCloud := NewMockTCloud(ctrl)
+
+	for _, playbook := range playbooks {
+		register(playbook)
 	}
+	for name, applier := range defaultPlaybook {
+		logs.V(3).Infoln(enumor.TCloud, "registering playbook:", name)
+		applier.Apply(mockCloud, ctrl)
+	}
+
+	return mockCloud, ctrl
+}
+
+func init() {
+	// register the playbook method
+	register(NewRegionPlaybook())
+	register(NewCrudVpcPlaybook(nil, nil, nil))
 }

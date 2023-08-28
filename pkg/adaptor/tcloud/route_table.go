@@ -34,13 +34,13 @@ import (
 
 // UpdateRouteTable update route table.
 // TODO right now only memo is supported to update, add other update operations later.
-func (t *TCloud) UpdateRouteTable(_ *kit.Kit, _ *routetable.TCloudRouteTableUpdateOption) error {
+func (t *TCloudImpl) UpdateRouteTable(_ *kit.Kit, _ *routetable.TCloudRouteTableUpdateOption) error {
 	return nil
 }
 
 // DeleteRouteTable delete route table.
 // reference: https://cloud.tencent.com/document/api/215/15771
-func (t *TCloud) DeleteRouteTable(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) error {
+func (t *TCloudImpl) DeleteRouteTable(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) error {
 	if err := opt.Validate(); err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func (t *TCloud) DeleteRouteTable(kt *kit.Kit, opt *core.BaseRegionalDeleteOptio
 
 // ListRouteTable list route table.
 // reference: https://cloud.tencent.com/document/api/215/15763
-func (t *TCloud) ListRouteTable(kt *kit.Kit, opt *core.TCloudListOption) (*routetable.TCloudRouteTableListResult,
+func (t *TCloudImpl) ListRouteTable(kt *kit.Kit, opt *core.TCloudListOption) (*routetable.TCloudRouteTableListResult,
 	error) {
 
 	if err := opt.Validate(); err != nil {
@@ -105,7 +105,7 @@ func (t *TCloud) ListRouteTable(kt *kit.Kit, opt *core.TCloudListOption) (*route
 
 // CountRouteTable 基于 DescribeRouteTablesWithContext
 // reference: https://cloud.tencent.com/document/api/215/15763
-func (t *TCloud) CountRouteTable(kt *kit.Kit, region string) (int32, error) {
+func (t *TCloudImpl) CountRouteTable(kt *kit.Kit, region string) (int32, error) {
 
 	client, err := t.clientSet.vpcClient(region)
 	if err != nil {

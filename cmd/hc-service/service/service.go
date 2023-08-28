@@ -43,6 +43,7 @@ import (
 	"hcm/cmd/hc-service/service/subnet"
 	"hcm/cmd/hc-service/service/sync"
 	"hcm/cmd/hc-service/service/vpc"
+	"hcm/pkg/adaptor"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
@@ -65,7 +66,7 @@ type Service struct {
 }
 
 // NewService create a service instance.
-func NewService(dis serviced.Discover) (*Service, error) {
+func NewService(dis serviced.Discover, adpOpt adaptor.Option) (*Service, error) {
 	cli, err := restcli.NewClient(nil)
 	if err != nil {
 		return nil, err
@@ -73,7 +74,7 @@ func NewService(dis serviced.Discover) (*Service, error) {
 
 	cliSet := client.NewClientSet(cli, dis)
 
-	cloudAdaptor := cloudadaptor.NewCloudAdaptorClient(cliSet.DataService())
+	cloudAdaptor := cloudadaptor.NewCloudAdaptorClient(cliSet.DataService(), adpOpt)
 
 	svr := &Service{
 		clientSet:    cliSet,

@@ -32,7 +32,7 @@ import (
 
 // ListZone list zone.
 // reference: https://cloud.tencent.com/document/product/213/15707
-func (t *TCloud) ListZone(kt *kit.Kit, opt *typeszone.TCloudZoneListOption) ([]typeszone.TCloudZone, error) {
+func (t *TCloudImpl) ListZone(kt *kit.Kit, opt *typeszone.TCloudZoneListOption) ([]typeszone.TCloudZone, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "tcloud zone list option is required")

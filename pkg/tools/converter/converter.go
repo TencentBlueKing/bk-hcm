@@ -118,6 +118,16 @@ func MapKeyToStringSlice(source map[string]struct{}) []string {
 	return target
 }
 
+// MapValueToSlice map[any]ValType to []ValType.
+func MapValueToSlice[KeyType comparable, ValType any](source map[KeyType]ValType) []ValType {
+	target := make([]ValType, 0, len(source))
+	for _, val := range source {
+		target = append(target, val)
+	}
+
+	return target
+}
+
 // StringSliceToSliceStringPtr []string to "['id1','id2',...]" ptr.
 func StringSliceToSliceStringPtr(source []string) *string {
 	if len(source) <= 0 {
