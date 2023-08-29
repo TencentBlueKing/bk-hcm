@@ -57,6 +57,10 @@ func InitAccountService(cap *capability.Capability) {
 	h.Add("GcpGetInfoBySecret", http.MethodPost, "/vendors/gcp/accounts/secret", svc.GcpGetInfoBySecret)
 	h.Add("AzureGetInfoBySecret", http.MethodPost, "/vendors/azure/accounts/secret", svc.AzureGetInfoBySecret)
 
+	// 通过秘钥获取资源数量
+	h.Add("HuaWeiGetResCountBySecret", http.MethodPost, "/vendors/huawei/accounts/res_counts/by_secrets",
+		svc.HuaWeiGetResCountBySecret)
+
 	h.Load(cap.WebService)
 }
 

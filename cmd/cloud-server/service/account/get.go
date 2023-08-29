@@ -192,3 +192,45 @@ func (a *accountSvc) GetAccountBySecret(cts *rest.Contexts) (interface{}, error)
 
 	return nil, nil
 }
+
+// GetResCountBySecret 根据秘钥获取账号对应资源数量
+func (a *accountSvc) GetResCountBySecret(cts *rest.Contexts) (interface{}, error) {
+	// 1. 获取vendor
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// 2. 鉴权 要求录入账号权限
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Account, Action: meta.Import}}
+	err := a.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
+		return nil, err
+	}
+
+	// 3. 根据vendor处理具体内容
+	switch vendor {
+	case enumor.TCloud:
+	case enumor.Aws:
+	case enumor.Azure:
+	case enumor.Gcp:
+	case enumor.HuaWei:
+		req := new(cloud.HuaWeiSecret)
+		if err := cts.DecodeInto(req); err != nil {
+			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+		}
+		if err := req.Validate(); err != nil {
+			return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		}
+
+		return a.client.HCService().HuaWei.Account.GetResCountBySecret(
+			cts.Kit.Ctx,
+			cts.Kit.Header(),
+			req,
+		)
+	default:
+		return nil, fmt.Errorf("not support vendor %s", vendor)
+	}
+
+	return nil, nil
+}

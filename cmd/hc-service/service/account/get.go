@@ -22,8 +22,12 @@ package account
 import (
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/api/core/cloud"
+	hsaccount "hcm/pkg/api/hc-service/account"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 )
 
 // TCloudGetInfoBySecret 根据秘钥信息去云上获取账号信息
@@ -143,4 +147,120 @@ func (svc *service) AzureGetInfoBySecret(cts *rest.Contexts) (interface{}, error
 	}
 	// 2. 云上信息获取
 	return client.GetAccountInfoBySecret(cts.Kit)
+}
+
+// HuaWeiGetResCountBySecret 根据秘钥信息获取资源数量
+func (svc *service) HuaWeiGetResCountBySecret(cts *rest.Contexts) (interface{}, error) {
+	req := new(cloud.HuaWeiSecret)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := svc.ad.Adaptor().HuaWei(&types.BaseSecret{
+		CloudSecretID:  req.CloudSecretID,
+		CloudSecretKey: req.CloudSecretKey,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ret := new(hsaccount.ResCount)
+
+	// 获取cvm数量
+	retCvm, err := client.CountAllResources(cts.Kit, enumor.HuaWeiCvmProviderType)
+	if err != nil {
+		logs.Errorf("get cvm count failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	ret.Items = append(ret.Items, &hsaccount.ResCountItem{
+		Type:  enumor.CvmCloudResType,
+		Count: converter.PtrToVal(retCvm.TotalCount),
+	})
+
+	// 获取disk数量
+	retDisk, err := client.CountAllResources(cts.Kit, enumor.HuaWeiDiskProviderType)
+	if err != nil {
+		logs.Errorf("get disk count failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	ret.Items = append(ret.Items, &hsaccount.ResCountItem{
+		Type:  enumor.DiskCloudResType,
+		Count: converter.PtrToVal(retDisk.TotalCount),
+	})
+
+	// 获取vpc数量
+	retVpc, err := client.CountAllResources(cts.Kit, enumor.HuaWeiVpcProviderType)
+	if err != nil {
+		logs.Errorf("get vpc count failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	ret.Items = append(ret.Items, &hsaccount.ResCountItem{
+		Type:  enumor.VpcCloudResType,
+		Count: converter.PtrToVal(retVpc.TotalCount),
+	})
+
+	// 获取eip数量
+	retEip, err := client.CountAllResources(cts.Kit, enumor.HuaWeiEipProviderType)
+	if err != nil {
+		logs.Errorf("get eip count failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	ret.Items = append(ret.Items, &hsaccount.ResCountItem{
+		Type:  enumor.EipCloudResType,
+		Count: converter.PtrToVal(retEip.TotalCount),
+	})
+
+	// 获取安全组数量
+	retSG, err := client.CountAllResources(cts.Kit, enumor.HuaWeiSGProviderType)
+	if err != nil {
+		logs.Errorf("get sg count failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	ret.Items = append(ret.Items, &hsaccount.ResCountItem{
+		Type:  enumor.SecurityGroupCloudResType,
+		Count: converter.PtrToVal(retSG.TotalCount),
+	})
+
+	// 获取子账号数量
+	saCount, err := client.CountSubAccountResources(cts.Kit)
+	if err != nil {
+		logs.Errorf("get sub account count failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	ret.Items = append(ret.Items, &hsaccount.ResCountItem{
+		Type:  enumor.SubAccountCloudResType,
+		Count: saCount,
+	})
+
+	// 获取子网和路由表数量
+	sCount, rCount, err := client.CountSubnetRouteTableRes(cts.Kit)
+	if err != nil {
+		logs.Errorf("get subnet or routetable count failed, err: %v, rid: %s", err,
+			cts.Kit.Rid)
+		return nil, err
+	}
+	ret.Items = append(ret.Items, &hsaccount.ResCountItem{
+		Type:  enumor.SubnetCloudResType,
+		Count: sCount,
+	})
+	ret.Items = append(ret.Items, &hsaccount.ResCountItem{
+		Type:  enumor.RouteTableCloudResType,
+		Count: rCount,
+	})
+
+	// 获取网络接口数量
+	niCount, err := client.CountNIResources(cts.Kit)
+	if err != nil {
+		logs.Errorf("get ni count failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	ret.Items = append(ret.Items, &hsaccount.ResCountItem{
+		Type:  enumor.NetworkInterfaceCloudResType,
+		Count: niCount,
+	})
+
+	return ret, nil
 }
