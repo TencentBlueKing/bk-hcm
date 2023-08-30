@@ -1,0 +1,37 @@
+.vendor-account-list {
+  .vendor-account-menu,
+  .vendor-account-menu-item {
+    display: flex;
+    align-items: center;
+    padding: 7px 16px;
+    cursor: pointer;
+    text-align: center;
+    height: 36px;
+
+    .vendor-account-menu-dropdown-icon {
+      color: #979ba5;
+    }
+
+    .vendor-icon {
+      width: 16px;
+      height: 16px;
+      margin-right: 3px;
+    }
+
+    .vendor-account-menu-count {
+      margin-left: auto;
+      color: #c4c6cc;
+    }
+  }
+
+  .account-icon {
+    height: 8px;
+    width: 8px;
+    margin-right: 12px;
+  }
+
+  .vendor-account-menu-item:hover {
+    background-color: #e1ecff;
+    border-left: 3px #3a84ff solid;
+  }
+}
