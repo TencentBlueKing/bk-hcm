@@ -39,6 +39,8 @@ type Client interface {
 	DeleteCloudHostFromBiz(ctx context.Context, params *DeleteCloudHostFromBizParams) error
 	ListBizHost(ctx context.Context, params *ListBizHostParams) (*ListBizHostResult, error)
 	GetBizBriefCacheTopo(ctx context.Context, params *GetBizBriefCacheTopoParams) (*GetBizBriefCacheTopoResult, error)
+	FindHostTopoRelation(ctx context.Context, params *FindHostTopoRelationParams) (*HostTopoRelationResult, error)
+	SearchModule(ctx context.Context, params *SearchModuleParams) (*ModuleInfoResult, error)
 }
 
 // NewClient initialize a new cmdb client
@@ -194,4 +196,59 @@ func (c *cmdb) ListBizHost(ctx context.Context, params *ListBizHostParams) (*Lis
 		return nil, fmt.Errorf("list biz host failed, code: %d, msg: %s, rid: %s", resp.Code, resp.Message, resp.Rid)
 	}
 	return resp.ListBizHostResult, nil
+}
+
+// FindHostTopoRelation 获取主机拓扑
+func (c *cmdb) FindHostTopoRelation(ctx context.Context, params *FindHostTopoRelationParams) (
+	*HostTopoRelationResult, error) {
+
+	resp := new(findHostTopoRelationResp)
+
+	req := &esbFindHostTopoRelationParams{
+		CommParams:                 types.GetCommParams(c.config),
+		FindHostTopoRelationParams: params,
+	}
+	h := http.Header{}
+	h.Set(constant.RidKey, uuid.UUID())
+	err := c.client.Post().
+		SubResourcef("/cc/find_host_topo_relation/").
+		WithContext(ctx).
+		WithHeaders(h).
+		Body(req).
+		Do().Into(resp)
+	if err != nil {
+		return nil, err
+	}
+	if !resp.Result || resp.Code != 0 {
+		return nil, fmt.Errorf("find host topo relation failed, code: %d, msg: %s, rid: %s", resp.Code, resp.Message,
+			resp.Rid)
+	}
+	return resp.Data, nil
+}
+
+// SearchModule 查询模块信息
+func (c *cmdb) SearchModule(ctx context.Context, params *SearchModuleParams) (*ModuleInfoResult, error) {
+
+	resp := new(searchModuleResp)
+
+	req := &esbSearchModuleParams{
+		CommParams:         types.GetCommParams(c.config),
+		SearchModuleParams: params,
+	}
+	h := http.Header{}
+	h.Set(constant.RidKey, uuid.UUID())
+	err := c.client.Post().
+		SubResourcef("/cc/search_module/").
+		WithContext(ctx).
+		WithHeaders(h).
+		Body(req).
+		Do().Into(resp)
+	if err != nil {
+		return nil, err
+	}
+	if !resp.Result || resp.Code != 0 {
+		return nil, fmt.Errorf("search module failed, code: %d, msg: %s, rid: %s", resp.Code, resp.Message,
+			resp.Rid)
+	}
+	return resp.Data, nil
 }

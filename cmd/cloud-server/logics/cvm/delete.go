@@ -20,6 +20,10 @@
 package cvm
 
 import (
+	"context"
+	"errors"
+	"fmt"
+
 	"hcm/pkg/api/core"
 	networkinterface "hcm/pkg/api/core/cloud/network-interface"
 	"hcm/pkg/api/data-service/cloud"
@@ -33,6 +37,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/thirdparty/esb/cmdb"
 	"hcm/pkg/tools/classifier"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
@@ -188,8 +193,22 @@ func (c *cvm) DeleteRecycledCvm(kt *kit.Kit, basicInfoMap map[string]types.Cloud
 	}
 
 	ids := make([]string, 0, len(basicInfoMap))
-	for id := range basicInfoMap {
+
+	bizHostsIds := make(map[int64][]string)
+	for id, hostInfo := range basicInfoMap {
+		if hostInfo.BkBizID > 0 {
+			// 业务下机器加入bizHostsIds中
+			bizHostsIds[hostInfo.BkBizID] = append(bizHostsIds[hostInfo.BkBizID], id)
+		}
 		ids = append(ids, id)
+	}
+	notRecyclableIds, err := c.GetNotRecyclableHosts(kt, bizHostsIds)
+	if err != nil {
+		return nil, err
+	}
+	// 存在非待回收模块主机直接报错
+	if len(notRecyclableIds) > 0 {
+		return nil, fmt.Errorf("host(%v) not belongs to recycle module in cc", notRecyclableIds)
 	}
 
 	// disassociate eip
@@ -244,6 +263,51 @@ func (c *cvm) DeleteRecycledCvm(kt *kit.Kit, basicInfoMap map[string]types.Cloud
 	}
 
 	return nil, nil
+}
+
+// GetNotRecyclableHosts 获取根据业务id分类的主机id列表中不在cc待回收模块的主机id
+func (c *cvm) GetNotRecyclableHosts(kt *kit.Kit, bizHostsIds map[int64][]string) ([]string, error) {
+	// cloud id -> host id
+	cloudToHostMap := make(map[string]string)
+	notRecyclableIds := make([]string, 0)
+
+	for bizID, hostIDs := range bizHostsIds {
+		// 获取cloud id
+		req := &cloud.CvmListReq{
+			Field:  []string{"cloud_id", "vendor", "bk_biz_id", "id"},
+			Filter: tools.ContainersExpression("id", hostIDs),
+			Page:   core.NewDefaultBasePage(),
+		}
+		relResp, err := c.client.DataService().Global.Cvm.ListCvm(kt.Ctx, kt.Header(), req)
+		if err != nil {
+			logs.Errorf(" fail to get host Info:%v", err)
+			return nil, err
+		}
+		// 按vendor 归类
+		cloudIds := make(map[enumor.Vendor][]string)
+		for _, detail := range relResp.Details {
+			cloudToHostMap[detail.CloudID] = detail.ID
+
+			vendors, ok := cloudIds[detail.Vendor]
+			if !ok {
+				vendors = make([]string, 0, len(relResp.Details))
+			}
+			vendors = append(vendors, detail.CloudID)
+			cloudIds[detail.Vendor] = vendors
+		}
+		// 	去cmdb处检查，是否在待回收模块
+		inRecycle, err := c.CheckBizHostInRecycleModule(kt.Ctx, bizID, cloudIds)
+		if err != nil {
+			return nil, err
+		}
+		for cloudID, recyclable := range inRecycle {
+			hostID := cloudToHostMap[cloudID]
+			if !recyclable {
+				notRecyclableIds = append(notRecyclableIds, hostID)
+			}
+		}
+	}
+	return notRecyclableIds, nil
 }
 
 func (c *cvm) getEipByCvm(kt *kit.Kit, ids []string) (map[string]string, map[string]*eip.EipResult, error) {
@@ -343,4 +407,114 @@ func (c *cvm) listNicByCvmAndEip(kt *kit.Kit, ids []string, publicIPs []string) 
 		nicMap[nicCvmMap[nic.ID]] = append(nicMap[nicCvmMap[nic.ID]], nic)
 	}
 	return nicMap, nil
+}
+
+// CheckBizHostInRecycleModule 查询业务下主机是否在CC待回收模块中，CC只有业务下主机，完全没有业务下主机会报错
+func (c *cvm) CheckBizHostInRecycleModule(ctx context.Context, bizID int64,
+	cloudIDs map[enumor.Vendor][]string) (map[string]bool, error) {
+
+	// 1. 获取cmdb主机id
+	cloudToHost, err := c.getCmdbHostId(ctx, bizID, cloudIDs)
+	if err != nil {
+		return nil, err
+	}
+	if cloudToHost == nil {
+		return nil, errf.Newf(errf.InvalidParameter, "no host in business(%d)", bizID)
+	}
+	hostToCloud := make(map[int64]string)
+	hostIDs := make([]int64, 0, len(cloudToHost))
+	for cloudID, hostID := range cloudToHost {
+		hostIDs = append(hostIDs, hostID)
+		hostToCloud[hostID] = cloudID
+	}
+	//  2. 查找主机关系，获取模块信息
+	relation, err := c.esbClient.Cmdb().FindHostTopoRelation(ctx,
+		&cmdb.FindHostTopoRelationParams{
+			HostIDs: hostIDs, BizID: bizID,
+			Page: cmdb.BasePage{Limit: 200, Start: 0},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	modRecyclable := make(map[int64]bool, len(relation.Data))
+	hostRecyclable := make(map[string]bool, len(cloudIDs))
+
+	// 3. 逐个查询主机模块信息
+	for _, rel := range relation.Data {
+		if _, ok := modRecyclable[rel.BkModuleID]; !ok {
+			module, err := c.esbClient.Cmdb().SearchModule(ctx, &cmdb.SearchModuleParams{
+				BizID:  bizID,
+				Fields: []string{"default", "bk_module_id"},
+				Condition: map[string]interface{}{
+					"bk_module_id": rel.BkModuleID,
+				},
+			})
+			if err != nil {
+				return nil, err
+			}
+			if len(module.Info) != 1 {
+				logs.Errorf("module info count mismatch:%v", module)
+				return nil, errors.New("module info count mismatch")
+			}
+			// default 值为3 的是可回收模块
+			modRecyclable[rel.BkModuleID] = module.Info[0].Default == 3
+		}
+
+		hostRecyclable[hostToCloud[rel.HostID]] = modRecyclable[rel.BkModuleID]
+	}
+	return hostRecyclable, nil
+}
+
+func (c *cvm) getCmdbHostId(ctx context.Context, bizID int64,
+	cloudIDs map[enumor.Vendor][]string) (map[string]int64,
+	error) {
+	// get cmdb host ids
+	rules := make([]cmdb.Rule, 0)
+	for vendor, ids := range cloudIDs {
+		rule := &cmdb.CombinedRule{
+			Condition: "AND",
+			Rules: []cmdb.Rule{
+				&cmdb.AtomRule{
+					Field:    "bk_cloud_vendor",
+					Operator: cmdb.OperatorEqual,
+					Value:    cmdb.HcmCmdbVendorMap[vendor],
+				},
+				&cmdb.AtomRule{
+					Field:    "bk_cloud_inst_id",
+					Operator: cmdb.OperatorIn,
+					Value:    ids,
+				},
+			},
+		}
+		rules = append(rules, rule)
+	}
+
+	listParams := &cmdb.ListBizHostParams{
+		BizID:  bizID,
+		Fields: []string{"bk_host_id", "bk_cloud_inst_id"},
+		Page:   cmdb.BasePage{Limit: 500},
+		HostPropertyFilter: &cmdb.QueryFilter{
+			Rule: &cmdb.CombinedRule{
+				Condition: "OR",
+				Rules:     rules,
+			},
+		},
+	}
+	hosts, err := c.esbClient.Cmdb().ListBizHost(ctx, listParams)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(hosts.Info) == 0 {
+		logs.Errorf("no host in business(%d):%v", bizID, cloudIDs)
+		return nil, nil
+	}
+
+	hostIDs := make(map[string]int64, len(hosts.Info))
+	for _, host := range hosts.Info {
+		hostIDs[host.BkCloudInstID] = host.BkHostID
+	}
+	return hostIDs, nil
 }

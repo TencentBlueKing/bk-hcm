@@ -162,7 +162,7 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 		go bill.CloudBillConfigCreate(interval, sd, apiClientSet)
 	}
 
-	recycle.RecycleTiming(apiClientSet, sd, cc.CloudServer().Recycle)
+	recycle.RecycleTiming(apiClientSet, sd, cc.CloudServer().Recycle, esbClient)
 
 	return svr, nil
 }
@@ -243,7 +243,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 		Audit:      s.audit,
 		Cipher:     s.cipher,
 		EsbClient:  s.esbClient,
-		Logics:     logics.NewLogics(s.client),
+		Logics:     logics.NewLogics(s.client, s.esbClient),
 		ItsmCli:    s.itsmCli,
 	}
 
