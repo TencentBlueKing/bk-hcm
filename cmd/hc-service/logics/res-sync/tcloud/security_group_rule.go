@@ -48,20 +48,22 @@ func (opt SyncSGRuleOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
-// SecurityGroupRule ...
+// SecurityGroupRule 同步安全组规则唯一指定方法
 func (cli *client) SecurityGroupRule(kt *kit.Kit, params *SyncBaseParams, opt *SyncSGRuleOption) (*SyncResult, error) {
 
 	if err := validator.ValidateTool(params, opt); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	var syncResult *SyncResult
 	err := concurrence.BaseExec(constant.SyncConcurrencyDefaultMaxLimit, params.CloudIDs, func(param string) error {
 		syncOpt := &syncSGRuleOption{
 			AccountID: params.AccountID,
 			Region:    params.Region,
 			SGID:      param,
 		}
-		if _, err := cli.securityGroupRule(kt, syncOpt); err != nil {
+		var err error
+		if syncResult, err = cli.securityGroupRule(kt, syncOpt); err != nil {
 			logs.ErrorDepthf(1, "[%s] account: %s sg: %s sync sgRule failed, err: %v, rid: %s",
 				enumor.TCloud, params.AccountID, param, err, kt.Rid)
 			return err
@@ -72,8 +74,7 @@ func (cli *client) SecurityGroupRule(kt *kit.Kit, params *SyncBaseParams, opt *S
 	if err != nil {
 		return nil, err
 	}
-
-	return new(SyncResult), nil
+	return syncResult, nil
 }
 
 type syncSGRuleOption struct {
@@ -165,16 +166,15 @@ func (cli *client) securityGroupRule(kt *kit.Kit, opt *syncSGRuleOption) (*SyncR
 		}
 	}
 
+	syncResult := &SyncResult{}
 	if len(createRules) != 0 {
-		_, err := cli.createSGRule(kt, sg.ID, createRules)
+		syncResult.CreatedIds, err = cli.createSGRule(kt, sg.ID, createRules)
 		if err != nil {
 			return nil, err
 		}
-
-		return nil, nil
 	}
 
-	return new(SyncResult), nil
+	return syncResult, nil
 }
 
 // listSGRuleFromCloud list tcloud security group rule from database
@@ -300,15 +300,15 @@ func (cli *client) deleteSGRule(kt *kit.Kit, sgID string, delIDs []string) error
 }
 
 // createSGRule crate security group rule
-func (cli *client) createSGRule(kt *kit.Kit, sgID string, rules []corecloud.
+func (cli *client) createSGRule(kt *kit.Kit, sgID string, allRules []corecloud.
 	TCloudSecurityGroupRule) ([]string, error) {
 
-	// split rules into batches to avoid reaching batch operation limit
-	splitRuleBatches := slice.Split(rules, constant.BatchOperationMaxLimit)
-	resultIds := make([]string, 0, len(rules))
+	// split all rules into batches to avoid reaching batch operation limit
+	splitRuleBatches := slice.Split(allRules, constant.BatchOperationMaxLimit)
+	resultIds := make([]string, 0, len(allRules))
 	for batchIdx, ruleBatch := range splitRuleBatches {
 		ruleCreates := make([]protocloud.TCloudSGRuleBatchCreate, 0, len(ruleBatch))
-		for _, rule := range rules {
+		for _, rule := range ruleBatch {
 			ruleCreates = append(ruleCreates, protocloud.TCloudSGRuleBatchCreate{
 				CloudPolicyIndex:           rule.CloudPolicyIndex,
 				Version:                    rule.Version,
