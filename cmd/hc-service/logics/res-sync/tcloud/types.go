@@ -45,4 +45,5 @@ func (opt SyncBaseParams) Validate() error {
 
 // SyncResult sync result.
 type SyncResult struct {
+	CreatedIds []string
 }
