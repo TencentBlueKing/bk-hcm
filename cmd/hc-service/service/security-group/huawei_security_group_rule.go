@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"hcm/pkg/adaptor/types"
 	securitygrouprule "hcm/pkg/adaptor/types/security-group-rule"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
@@ -207,4 +208,25 @@ func (g *securityGroup) getHuaWeiSGRuleByID(cts *rest.Contexts, id string, sgID 
 	}
 
 	return &listResp.Details[0], nil
+}
+
+// HuaWeiSGCount count huawei sg.
+func (g *securityGroup) HuaWeiSGCount(cts *rest.Contexts) (interface{}, error) {
+	req := new(corecloud.HuaWeiSecret)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := g.ad.Adaptor().HuaWei(&types.BaseSecret{
+		CloudSecretID:  req.CloudSecretID,
+		CloudSecretKey: req.CloudSecretKey,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return client.CountAllResources(cts.Kit, enumor.HuaWeiSGProviderType)
 }

@@ -45,6 +45,33 @@ type DiskService interface {
 	AttachDisk(cts *rest.Contexts) (interface{}, error)
 	DeleteDisk(cts *rest.Contexts) (interface{}, error)
 	DetachDisk(cts *rest.Contexts) (interface{}, error)
+	CountDisk(cts *rest.Contexts) (interface{}, error)
+}
+
+// CountDisk 计算总量
+func (da *diskAdaptor) CountDisk(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	var svc DiskService
+	switch vendor {
+	case enumor.TCloud:
+		svc = &tcloud.DiskSvc{DataCli: da.dataCli, Adaptor: da.adaptor}
+	case enumor.HuaWei:
+		svc = &huawei.DiskSvc{DataCli: da.dataCli, Adaptor: da.adaptor}
+	case enumor.Aws:
+		svc = &aws.DiskSvc{DataCli: da.dataCli, Adaptor: da.adaptor}
+	case enumor.Azure:
+		svc = &azure.DiskSvc{DataCli: da.dataCli, Adaptor: da.adaptor}
+	case enumor.Gcp:
+		svc = &gcp.DiskSvc{DataCli: da.dataCli, Adaptor: da.adaptor}
+	default:
+		return nil, fmt.Errorf("%s does not support the creation of cloud disks", vendor)
+	}
+
+	return svc.CreateDisk(cts)
 }
 
 // CreateDisks 创建云硬盘

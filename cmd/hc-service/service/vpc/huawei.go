@@ -26,12 +26,14 @@ import (
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
+	apicloud "hcm/pkg/api/core/cloud"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
 	hcroutetable "hcm/pkg/api/hc-service/route-table"
 	subnetproto "hcm/pkg/api/hc-service/subnet"
 	hcservice "hcm/pkg/api/hc-service/vpc"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/rest"
@@ -236,4 +238,25 @@ func (v vpc) HuaWeiVpcDelete(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return nil, nil
+}
+
+// HuaWeiVpcCount count huawei vpc.
+func (v vpc) HuaWeiVpcCount(cts *rest.Contexts) (interface{}, error) {
+	req := new(apicloud.HuaWeiSecret)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := v.ad.Adaptor().HuaWei(&types.BaseSecret{
+		CloudSecretID:  req.CloudSecretID,
+		CloudSecretKey: req.CloudSecretKey,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return client.CountAllResources(cts.Kit, enumor.HuaWeiVpcProviderType)
 }

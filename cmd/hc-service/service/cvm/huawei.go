@@ -24,12 +24,15 @@ import (
 
 	synchuawei "hcm/cmd/hc-service/logics/res-sync/huawei"
 	"hcm/cmd/hc-service/service/capability"
+	"hcm/pkg/adaptor/types"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/api/core"
+	apicloud "hcm/pkg/api/core/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	datadisk "hcm/pkg/api/data-service/cloud/disk"
 	dataeip "hcm/pkg/api/data-service/cloud/eip"
 	protocvm "hcm/pkg/api/hc-service/cvm"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
@@ -50,13 +53,14 @@ func (svc *cvmSvc) initHuaWeiCvmService(cap *capability.Capability) {
 	h.Load(cap.WebService)
 }
 
-// BatchCreateHuaWeiCvm ...
+// BatchCreateHuaWeiCvm batch create huawei cvm.
 func (svc *cvmSvc) BatchCreateHuaWeiCvm(cts *rest.Contexts) (interface{}, error) {
+	// 参数解析
 	req := new(protocvm.HuaWeiBatchCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-
+	// 参数校验
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -66,6 +70,7 @@ func (svc *cvmSvc) BatchCreateHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 		return nil, err
 	}
 
+	// 创建主机
 	createOpt := &typecvm.HuaWeiCreateOption{
 		DryRun:                req.DryRun,
 		Region:                req.Region,
@@ -108,7 +113,7 @@ func (svc *cvmSvc) BatchCreateHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 		Region:    req.Region,
 		CloudIDs:  result.SuccessCloudIDs,
 	}
-
+	// 主机关联资源同步
 	_, err = syncClient.CvmWithRelRes(cts.Kit, params, &synchuawei.SyncCvmWithRelResOption{})
 	if err != nil {
 		logs.Errorf("sync huawei cvm with res failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -118,13 +123,14 @@ func (svc *cvmSvc) BatchCreateHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 	return respData, nil
 }
 
-// BatchResetHuaWeiCvmPwd ...
+// BatchResetHuaWeiCvmPwd batch reset huawei cvm pwd.
 func (svc *cvmSvc) BatchResetHuaWeiCvmPwd(cts *rest.Contexts) (interface{}, error) {
+	// 参数解析
 	req := new(protocvm.HuaWeiBatchResetPwdReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-
+	// 参数校验
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -150,6 +156,7 @@ func (svc *cvmSvc) BatchResetHuaWeiCvmPwd(cts *rest.Contexts) (interface{}, erro
 		return nil, err
 	}
 
+	// 主机重启
 	opt := &typecvm.HuaWeiResetPwdOption{
 		Region:   req.Region,
 		CloudIDs: cloudIDs,
@@ -167,7 +174,7 @@ func (svc *cvmSvc) BatchResetHuaWeiCvmPwd(cts *rest.Contexts) (interface{}, erro
 		Region:    req.Region,
 		CloudIDs:  cloudIDs,
 	}
-
+	// 主机同步
 	_, err = syncClient.Cvm(cts.Kit, params, &synchuawei.SyncCvmOption{})
 	if err != nil {
 		logs.Errorf("sync huawei cvm with res failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -177,13 +184,14 @@ func (svc *cvmSvc) BatchResetHuaWeiCvmPwd(cts *rest.Contexts) (interface{}, erro
 	return nil, nil
 }
 
-// BatchStartHuaWeiCvm ...
+// BatchStartHuaWeiCvm batch start huawei cvm.
 func (svc *cvmSvc) BatchStartHuaWeiCvm(cts *rest.Contexts) (interface{}, error) {
+	// 参数解析
 	req := new(protocvm.HuaWeiBatchStartReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-
+	// 参数校验
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -208,7 +216,7 @@ func (svc *cvmSvc) BatchStartHuaWeiCvm(cts *rest.Contexts) (interface{}, error) 
 	if err != nil {
 		return nil, err
 	}
-
+	// 启动主机
 	opt := &typecvm.HuaWeiStartOption{
 		Region:   req.Region,
 		CloudIDs: cloudIDs,
@@ -225,7 +233,7 @@ func (svc *cvmSvc) BatchStartHuaWeiCvm(cts *rest.Contexts) (interface{}, error) 
 		Region:    req.Region,
 		CloudIDs:  cloudIDs,
 	}
-
+	// 主机同步
 	_, err = syncClient.Cvm(cts.Kit, params, &synchuawei.SyncCvmOption{})
 	if err != nil {
 		logs.Errorf("sync huawei cvm with res failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -235,13 +243,14 @@ func (svc *cvmSvc) BatchStartHuaWeiCvm(cts *rest.Contexts) (interface{}, error) 
 	return nil, nil
 }
 
-// BatchStopHuaWeiCvm ...
+// BatchStopHuaWeiCvm batch stop huawei cvm
 func (svc *cvmSvc) BatchStopHuaWeiCvm(cts *rest.Contexts) (interface{}, error) {
+	// 参数解析
 	req := new(protocvm.HuaWeiBatchStopReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-
+	// 参数校验
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -266,7 +275,7 @@ func (svc *cvmSvc) BatchStopHuaWeiCvm(cts *rest.Contexts) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	// 停止主机
 	opt := &typecvm.HuaWeiStopOption{
 		Region:   req.Region,
 		CloudIDs: cloudIDs,
@@ -284,7 +293,7 @@ func (svc *cvmSvc) BatchStopHuaWeiCvm(cts *rest.Contexts) (interface{}, error) {
 		Region:    req.Region,
 		CloudIDs:  cloudIDs,
 	}
-
+	// 主机同步
 	_, err = syncClient.Cvm(cts.Kit, params, &synchuawei.SyncCvmOption{})
 	if err != nil {
 		logs.Errorf("sync huawei cvm with res failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -294,13 +303,14 @@ func (svc *cvmSvc) BatchStopHuaWeiCvm(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-// BatchRebootHuaWeiCvm ...
+// BatchRebootHuaWeiCvm batch reboot huawei cvm
 func (svc *cvmSvc) BatchRebootHuaWeiCvm(cts *rest.Contexts) (interface{}, error) {
+	// 参数解析
 	req := new(protocvm.HuaWeiBatchRebootReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-
+	// 参数校验
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -325,7 +335,7 @@ func (svc *cvmSvc) BatchRebootHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 	if err != nil {
 		return nil, err
 	}
-
+	// 重启主机
 	opt := &typecvm.HuaWeiRebootOption{
 		Region:   req.Region,
 		CloudIDs: cloudIDs,
@@ -343,7 +353,7 @@ func (svc *cvmSvc) BatchRebootHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 		Region:    req.Region,
 		CloudIDs:  cloudIDs,
 	}
-
+	// 主机同步
 	_, err = syncClient.Cvm(cts.Kit, params, &synchuawei.SyncCvmOption{})
 	if err != nil {
 		logs.Errorf("sync huawei cvm with res failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -353,13 +363,14 @@ func (svc *cvmSvc) BatchRebootHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 	return nil, nil
 }
 
-// BatchDeleteHuaWeiCvm ...
+// BatchDeleteHuaWeiCvm batch delete huawei cvm
 func (svc *cvmSvc) BatchDeleteHuaWeiCvm(cts *rest.Contexts) (interface{}, error) {
+	// 参数解析
 	req := new(protocvm.HuaWeiBatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-
+	// 参数校验
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -384,7 +395,7 @@ func (svc *cvmSvc) BatchDeleteHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 	if err != nil {
 		return nil, err
 	}
-
+	// 删除主机
 	opt := &typecvm.HuaWeiDeleteOption{
 		Region:         req.Region,
 		CloudIDs:       delCloudIDs,
@@ -404,7 +415,7 @@ func (svc *cvmSvc) BatchDeleteHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 			req.IDs, cts.Kit.Rid)
 		return nil, err
 	}
-
+	// 同步主机和eip关联关系
 	if req.DeletePublicIP {
 		if err = svc.syncCvmRelEip(cts.Kit, req.AccountID, req.Region, req.IDs); err != nil {
 			logs.Errorf("delete cvm success, but delete relation eip failed, err: %v, req: %v, rid: %s", err,
@@ -412,7 +423,7 @@ func (svc *cvmSvc) BatchDeleteHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 			return nil, err
 		}
 	}
-
+	// 同步主机和硬盘关联关系
 	if req.DeleteDisk {
 		if err = svc.syncCvmRelDisk(cts.Kit, req.AccountID, req.Region, req.IDs); err != nil {
 			logs.Errorf("delete cvm success, but delete relation disk failed, err: %v, req: %v, rid: %s", err,
@@ -424,6 +435,7 @@ func (svc *cvmSvc) BatchDeleteHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 	return nil, nil
 }
 
+// syncCvmRelEip sync cvm rel eip
 func (svc cvmSvc) syncCvmRelEip(kt *kit.Kit, accountID, region string, cvmIDs []string) error {
 	listEipRel := &dataproto.EipCvmRelListReq{
 		Filter: tools.ContainersExpression("cvm_id", cvmIDs),
@@ -468,7 +480,7 @@ func (svc cvmSvc) syncCvmRelEip(kt *kit.Kit, accountID, region string, cvmIDs []
 		Region:    region,
 		CloudIDs:  cloudIDs,
 	}
-
+	// 同步eip
 	_, err = syncClient.Eip(kt, params, &synchuawei.SyncEipOption{})
 	if err != nil {
 		logs.Errorf("sync huawei eip failed, err: %v, rid: %s", err, kt.Rid)
@@ -478,6 +490,7 @@ func (svc cvmSvc) syncCvmRelEip(kt *kit.Kit, accountID, region string, cvmIDs []
 	return nil
 }
 
+// syncCvmRelDisk sync cvm rel disk
 func (svc cvmSvc) syncCvmRelDisk(kt *kit.Kit, accountID, region string, cvmIDs []string) error {
 	listEipRel := &dataproto.DiskCvmRelListReq{
 		Filter: tools.ContainersExpression("cvm_id", cvmIDs),
@@ -522,7 +535,7 @@ func (svc cvmSvc) syncCvmRelDisk(kt *kit.Kit, accountID, region string, cvmIDs [
 		Region:    region,
 		CloudIDs:  cloudIDs,
 	}
-
+	// 同步硬盘
 	_, err = syncClient.Disk(kt, params, &synchuawei.SyncDiskOption{BootMap: nil})
 	if err != nil {
 		logs.Errorf("sync huawei disk failed, err: %v, rid: %s", err, kt.Rid)
@@ -530,4 +543,25 @@ func (svc cvmSvc) syncCvmRelDisk(kt *kit.Kit, accountID, region string, cvmIDs [
 	}
 
 	return nil
+}
+
+// HuaWeiCvmCount count huawei cvm.
+func (svc cvmSvc) HuaWeiCvmCount(cts *rest.Contexts) (interface{}, error) {
+	req := new(apicloud.HuaWeiSecret)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := svc.ad.Adaptor().HuaWei(&types.BaseSecret{
+		CloudSecretID:  req.CloudSecretID,
+		CloudSecretKey: req.CloudSecretKey,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return client.CountAllResources(cts.Kit, enumor.HuaWeiCvmProviderType)
 }

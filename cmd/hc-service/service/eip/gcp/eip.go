@@ -42,6 +42,11 @@ type EipSvc struct {
 	DataCli *dataservice.Client
 }
 
+// CountEip ...
+func (svc *EipSvc) CountEip(cts *rest.Contexts) (interface{}, error) {
+	return nil, nil
+}
+
 // DeleteEip ...
 func (svc *EipSvc) DeleteEip(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.EipDeleteReq)

@@ -23,8 +23,10 @@ import (
 	synchuawei "hcm/cmd/hc-service/logics/res-sync/huawei"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/eip/datasvc"
+	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/eip"
 	"hcm/pkg/api/core"
+	apicloud "hcm/pkg/api/core/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud/eip"
 	proto "hcm/pkg/api/hc-service/eip"
 	dataservice "hcm/pkg/client/data-service"
@@ -40,6 +42,27 @@ import (
 type EipSvc struct {
 	Adaptor *cloudclient.CloudAdaptorClient
 	DataCli *dataservice.Client
+}
+
+// CountEip ...
+func (svc *EipSvc) CountEip(cts *rest.Contexts) (interface{}, error) {
+	req := new(apicloud.HuaWeiSecret)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := svc.Adaptor.Adaptor().HuaWei(&types.BaseSecret{
+		CloudSecretID:  req.CloudSecretID,
+		CloudSecretKey: req.CloudSecretKey,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return client.CountAllResources(cts.Kit, enumor.HuaWeiEipProviderType)
 }
 
 // DeleteEip ...

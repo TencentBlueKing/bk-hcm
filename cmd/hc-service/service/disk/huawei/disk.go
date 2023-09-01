@@ -23,9 +23,12 @@ import (
 	synchuawei "hcm/cmd/hc-service/logics/res-sync/huawei"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/disk/datasvc"
+	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/disk"
+	apicloud "hcm/pkg/api/core/cloud"
 	proto "hcm/pkg/api/hc-service/disk"
 	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -36,6 +39,27 @@ import (
 type DiskSvc struct {
 	Adaptor *cloudclient.CloudAdaptorClient
 	DataCli *dataservice.Client
+}
+
+// CountDisk ...
+func (svc *DiskSvc) CountDisk(cts *rest.Contexts) (interface{}, error) {
+	req := new(apicloud.HuaWeiSecret)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := svc.Adaptor.Adaptor().HuaWei(&types.BaseSecret{
+		CloudSecretID:  req.CloudSecretID,
+		CloudSecretKey: req.CloudSecretKey,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return client.CountAllResources(cts.Kit, enumor.HuaWeiDiskProviderType)
 }
 
 // CreateDisk ...

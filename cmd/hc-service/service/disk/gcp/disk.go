@@ -39,6 +39,11 @@ type DiskSvc struct {
 	DataCli *dataservice.Client
 }
 
+// CountDisk ...
+func (svc *DiskSvc) CountDisk(cts *rest.Contexts) (interface{}, error) {
+	return nil, nil
+}
+
 // CreateDisk ...
 func (svc *DiskSvc) CreateDisk(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.GcpDiskCreateReq)
