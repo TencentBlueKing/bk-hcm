@@ -20,6 +20,7 @@
 package securitygroup
 
 import (
+	ressync "hcm/cmd/hc-service/logics/res-sync"
 	"hcm/cmd/hc-service/service/capability"
 	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
 	dataservice "hcm/pkg/client/data-service"
@@ -31,6 +32,7 @@ func InitSecurityGroupService(cap *capability.Capability) {
 	sg := &securityGroup{
 		ad:      cap.CloudAdaptor,
 		dataCli: cap.ClientSet.DataService(),
+		syncCli: cap.ResSyncCli,
 	}
 
 	h := rest.NewHandler()
@@ -97,4 +99,5 @@ func InitSecurityGroupService(cap *capability.Capability) {
 type securityGroup struct {
 	ad      *cloudadaptor.CloudAdaptorClient
 	dataCli *dataservice.Client
+	syncCli ressync.Interface
 }
