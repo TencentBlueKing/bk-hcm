@@ -63,7 +63,8 @@ func (t *TCloud) CreateVpc(kt *kit.Kit, opt *types.TCloudVpcCreateOption) (*type
 		opt.Extension.Region,
 	}
 	respPoller := poller.Poller[*TCloud, []*vpc.Vpc, []*types.TCloudVpc]{Handler: handler}
-	results, err := respPoller.PollUntilDone(t, kt, []*string{resp.Response.Vpc.VpcId}, types.NewBatchCreateVpcPollerOption())
+	results, err := respPoller.PollUntilDone(t, kt, []*string{resp.Response.Vpc.VpcId},
+		types.NewBatchCreateVpcPollerOption())
 	if err != nil {
 		return nil, err
 	}
@@ -140,6 +141,25 @@ func (t *TCloud) ListVpc(kt *kit.Kit, opt *core.TCloudListOption) (*types.TCloud
 	}
 
 	return &types.TCloudVpcListResult{Count: resp.Response.TotalCount, Details: details}, nil
+}
+
+// CountVpc 基于 DescribeVpcsWithContext
+// reference: https://cloud.tencent.com/document/api/215/15778
+func (t *TCloud) CountVpc(kt *kit.Kit, region string) (int32, error) {
+
+	client, err := t.clientSet.vpcClient(region)
+	if err != nil {
+		return 0, fmt.Errorf("new tcloud vpc client failed, err: %v", err)
+	}
+
+	req := vpc.NewDescribeVpcsRequest()
+	req.Limit = converter.ValToPtr("1")
+	resp, err := client.DescribeVpcsWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("count tcloud vpc failed, err: %v, region: %s, rid: %s", err, region, kt.Rid)
+		return 0, err
+	}
+	return int32(*resp.Response.TotalCount), nil
 }
 
 func convertVpc(data *vpc.Vpc, region string) *types.TCloudVpc {

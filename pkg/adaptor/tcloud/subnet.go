@@ -65,7 +65,8 @@ func (t *TCloud) CreateSubnet(kt *kit.Kit, opt *adtysubnet.TCloudSubnetCreateOpt
 
 // CreateSubnets create subnets.
 // reference: https://cloud.tencent.com/document/api/215/31960
-func (t *TCloud) CreateSubnets(kt *kit.Kit, opt *adtysubnet.TCloudSubnetsCreateOption) ([]adtysubnet.TCloudSubnet, error) {
+func (t *TCloud) CreateSubnets(kt *kit.Kit, opt *adtysubnet.TCloudSubnetsCreateOption) ([]adtysubnet.TCloudSubnet,
+	error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -179,6 +180,25 @@ func (t *TCloud) ListSubnet(kt *kit.Kit, opt *core.TCloudListOption) (*adtysubne
 	}
 
 	return &adtysubnet.TCloudSubnetListResult{Count: resp.Response.TotalCount, Details: details}, nil
+}
+
+// CountSubnet 基于 DescribeSubnetsWithContext
+// reference: https://cloud.tencent.com/document/api/215/15784
+func (t *TCloud) CountSubnet(kt *kit.Kit, region string) (int32, error) {
+
+	client, err := t.clientSet.vpcClient(region)
+	if err != nil {
+		return 0, fmt.Errorf("new tcloud vpc client failed, err: %v", err)
+	}
+
+	req := vpc.NewDescribeSubnetsRequest()
+	req.Limit = converter.ValToPtr("1")
+	resp, err := client.DescribeSubnetsWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("count tcloud subnet failed, err: %v, region: %s, rid: %s", err, region, kt.Rid)
+		return 0, err
+	}
+	return int32(*resp.Response.TotalCount), nil
 }
 
 func convertSubnet(data *vpc.Subnet, region string) *adtysubnet.TCloudSubnet {

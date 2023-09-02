@@ -173,6 +173,25 @@ func (t *TCloud) ListSecurityGroupNew(kt *kit.Kit, opt *securitygroup.TCloudList
 	return sgs, nil
 }
 
+// CountSecurityGroup 基于 DescribeSecurityGroupsWithContext
+// reference: https://cloud.tencent.com/document/api/215/15808
+func (t *TCloud) CountSecurityGroup(kt *kit.Kit, region string) (int32, error) {
+
+	client, err := t.clientSet.vpcClient(region)
+	if err != nil {
+		return 0, fmt.Errorf("new tcloud vpc client failed, err: %v", err)
+	}
+
+	req := vpc.NewDescribeSecurityGroupsRequest()
+	req.Limit = converter.ValToPtr("1")
+	resp, err := client.DescribeSecurityGroupsWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("count tcloud security group failed, err: %v, region: %s, rid: %s", err, region, kt.Rid)
+		return 0, err
+	}
+	return int32(*resp.Response.TotalCount), nil
+}
+
 // SecurityGroupCvmAssociate associate cvm.
 // reference: https://cloud.tencent.com/document/api/213/31282
 func (t *TCloud) SecurityGroupCvmAssociate(kt *kit.Kit, opt *securitygroup.TCloudAssociateCvmOption) error {

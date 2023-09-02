@@ -86,7 +86,8 @@ func (a *Aws) CreateSubnet(kt *kit.Kit, opt *adtysubnet.AwsSubnetCreateOption) (
 
 // CreateDefaultSubnet create default subnet.
 // reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_CreateDefaultSubnet.html
-func (a *Aws) CreateDefaultSubnet(kt *kit.Kit, opt *adtysubnet.AwsDefaultSubnetCreateOption) (*adtysubnet.AwsSubnet, error) {
+func (a *Aws) CreateDefaultSubnet(kt *kit.Kit, opt *adtysubnet.AwsDefaultSubnetCreateOption) (*adtysubnet.AwsSubnet,
+	error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -179,6 +180,35 @@ func (a *Aws) ListSubnet(kt *kit.Kit, opt *core.AwsListOption) (*adtysubnet.AwsS
 	}
 
 	return &adtysubnet.AwsSubnetListResult{NextToken: resp.NextToken, Details: details}, nil
+}
+
+// CountSubnet 返回给定地域的所有子网数量，基于 DescribeSubnetsWithContext 接口遍历得到
+// reference: https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/APIReference/API_DescribeSubnets.html
+func (a *Aws) CountSubnet(kt *kit.Kit, region string) (int32, error) {
+
+	client, err := a.clientSet.ec2Client(region)
+	if err != nil {
+		return 0, err
+	}
+
+	req := new(ec2.DescribeSubnetsInput)
+	total := 0
+	req.MaxResults = converter.ValToPtr(int64(core.AwsQueryLimit))
+
+	for {
+		resp, err := client.DescribeSubnetsWithContext(kt.Ctx, req)
+		if err != nil {
+			logs.Errorf("count aws subnet failed, err: %v, region:%s, rid: %s", err, region, kt.Rid)
+			return 0, err
+		}
+		total += len(resp.Subnets)
+
+		if resp.NextToken == nil {
+			break
+		}
+		req.NextToken = resp.NextToken
+	}
+	return int32(total), nil
 }
 
 func convertSubnet(data *ec2.Subnet, region string) *adtysubnet.AwsSubnet {

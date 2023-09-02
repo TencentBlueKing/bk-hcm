@@ -20,14 +20,24 @@
 package account
 
 import (
+	"context"
+	"errors"
+	"strings"
+	"sync"
+	"sync/atomic"
+
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/api/core/cloud"
 	hsaccount "hcm/pkg/api/hc-service/account"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
+
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/request"
 )
 
 // TCloudGetInfoBySecret 根据秘钥信息去云上获取账号信息
@@ -409,4 +419,191 @@ func (svc *service) HuaWeiGetResCountBySecret(cts *rest.Contexts) (interface{}, 
 	ret.Items = append(ret.Items, &hsaccount.ResCountItem{Type: enumor.NetworkInterfaceCloudResType, Count: niCount})
 
 	return ret, nil
+}
+
+type counterFunc func(kt *kit.Kit, region string) (int32, error)
+
+const ResGetMaxConcurrency = 5
+
+// TCloudGetResCountBySecret 根据秘钥获取云上资源数量
+func (svc *service) TCloudGetResCountBySecret(cts *rest.Contexts) (interface{}, error) {
+
+	req := new(cloud.TCloudSecret)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	tcloudClient, err := svc.ad.Adaptor().TCloud(&types.BaseSecret{CloudSecretID: req.CloudSecretID,
+		CloudSecretKey: req.CloudSecretKey})
+	if err != nil {
+		return nil, err
+	}
+
+	regionListResult, err := tcloudClient.ListRegion(cts.Kit)
+	if err != nil {
+		return nil, err
+	}
+
+	counterMap := map[enumor.CloudResourceType]counterFunc{
+		enumor.CvmCloudResType:           tcloudClient.CountCvm,
+		enumor.DiskCloudResType:          tcloudClient.CountDisk,
+		enumor.VpcCloudResType:           tcloudClient.CountVpc,
+		enumor.SubnetCloudResType:        tcloudClient.CountSubnet,
+		enumor.RouteTableCloudResType:    tcloudClient.CountRouteTable,
+		enumor.EipCloudResType:           tcloudClient.CountEip,
+		enumor.SecurityGroupCloudResType: tcloudClient.CountSecurityGroup,
+	}
+	resultMap := make(map[enumor.CloudResourceType]*int32, len(counterMap))
+	for resourceType := range counterMap {
+		resultMap[resourceType] = new(int32)
+	}
+
+	var globalErr error
+	wg := sync.WaitGroup{}
+	newKit, cancelCtx := shallowCopyKitWithCancel(cts.Kit)
+	defer cancelCtx()
+
+	// 以每种资源的每个地域为粒度并发
+	limiter := make(chan struct{}, ResGetMaxConcurrency)
+	countByRegion := func(resType enumor.CloudResourceType, counter counterFunc) {
+		for _, region := range regionListResult.Details {
+			wg.Add(1)
+			limiter <- struct{}{}
+			go func(region string) {
+				defer func() {
+					wg.Done()
+					<-limiter
+				}()
+				count, countErr := counter(newKit, region)
+				if countErr != nil {
+					// 过滤因其他goroutine失败导致的错误
+					if strings.Contains(countErr.Error(), "context canceled") {
+						return
+					}
+					globalErr = countErr
+					cancelCtx()
+					return
+				}
+				atomic.AddInt32(resultMap[resType], count)
+			}(region.RegionID)
+		}
+	}
+
+	for resType, counter := range counterMap {
+		countByRegion(resType, counter)
+	}
+
+	// 单独处理子账号
+	accountCount, err := tcloudClient.CountAccount(newKit)
+	if err != nil {
+		globalErr = err
+		cancelCtx()
+	}
+	wg.Wait()
+
+	if globalErr != nil {
+		return nil, globalErr
+	}
+	resultSlice := make([]hsaccount.ResCountItem, 0, len(counterMap)+1)
+
+	resultSlice = append(resultSlice, hsaccount.ResCountItem{Type: enumor.SubAccountCloudResType, Count: accountCount})
+	for resourceType, count := range resultMap {
+		resultSlice = append(resultSlice, hsaccount.ResCountItem{Type: resourceType, Count: *count})
+	}
+	return resultSlice, nil
+}
+
+// AwsGetResCountBySecret 根据秘钥获取云上资源数量
+func (svc *service) AwsGetResCountBySecret(cts *rest.Contexts) (interface{}, error) {
+
+	req := new(cloud.AwsSecret)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	awsClient, err := svc.ad.Adaptor().Aws(&types.BaseSecret{CloudSecretID: req.CloudSecretID,
+		CloudSecretKey: req.CloudSecretKey}, "")
+	if err != nil {
+		return nil, err
+	}
+
+	regionListResult, err := awsClient.ListRegion(cts.Kit)
+	if err != nil {
+		return nil, err
+	}
+
+	// aws没有账号权限，不处理账号部分
+	counterMap := map[enumor.CloudResourceType]counterFunc{
+		enumor.CvmCloudResType:           awsClient.CountCvm,
+		enumor.DiskCloudResType:          awsClient.CountDisk,
+		enumor.VpcCloudResType:           awsClient.CountVpc,
+		enumor.SubnetCloudResType:        awsClient.CountSubnet,
+		enumor.RouteTableCloudResType:    awsClient.CountRouteTable,
+		enumor.EipCloudResType:           awsClient.CountEip,
+		enumor.SecurityGroupCloudResType: awsClient.CountSecurityGroup,
+	}
+	resultMap := make(map[enumor.CloudResourceType]*int32, len(counterMap))
+	for resourceType := range counterMap {
+		resultMap[resourceType] = new(int32)
+	}
+
+	var globalErr error
+	wg := sync.WaitGroup{}
+
+	// 保证这个context cancel 不会影响其他context
+	newKit, cancelCtx := shallowCopyKitWithCancel(cts.Kit)
+	defer cancelCtx()
+
+	limiter := make(chan struct{}, ResGetMaxConcurrency)
+	countByRegion := func(resType enumor.CloudResourceType, counter counterFunc) {
+		for _, region := range regionListResult.Details {
+			wg.Add(1)
+			limiter <- struct{}{}
+			go func(region string) {
+				defer func() {
+					wg.Done()
+					<-limiter
+				}()
+				count, countErr := counter(newKit, region)
+				if countErr != nil {
+					// 过滤因其他goroutine失败导致的错误
+					var aErr awserr.Error
+					if errors.As(countErr, &aErr) && aErr.Code() == request.CanceledErrorCode {
+						return
+					}
+					globalErr = countErr
+					cancelCtx()
+					return
+				}
+				atomic.AddInt32(resultMap[resType], count)
+			}(region.RegionID)
+		}
+	}
+
+	for resType, counter := range counterMap {
+		countByRegion(resType, counter)
+	}
+	wg.Wait()
+
+	if globalErr != nil {
+		return nil, globalErr
+	}
+	resultSlice := make([]hsaccount.ResCountItem, 0, len(counterMap))
+	for resourceType, count := range resultMap {
+		resultSlice = append(resultSlice, hsaccount.ResCountItem{Type: resourceType, Count: *count})
+	}
+	return resultSlice, nil
+}
+
+func shallowCopyKitWithCancel(kt *kit.Kit) (*kit.Kit, func()) {
+	newKit := converter.ValToPtr(*kt)
+	ctxNew, cancel := context.WithCancel(kt.Ctx)
+	newKit.Ctx = ctxNew
+	return newKit, cancel
 }

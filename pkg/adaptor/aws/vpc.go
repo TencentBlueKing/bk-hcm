@@ -158,6 +158,35 @@ func (a *Aws) ListVpc(kt *kit.Kit, opt *core.AwsListOption) (*types.AwsVpcListRe
 	return &types.AwsVpcListResult{NextToken: resp.NextToken, Details: details}, nil
 }
 
+// CountVpc 返回指定地域下所有的vpc数量，基于 DescribeVpcs 接口遍历
+// reference: https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/APIReference/API_DescribeVpcs.html
+func (a *Aws) CountVpc(kt *kit.Kit, region string) (int32, error) {
+
+	client, err := a.clientSet.ec2Client(region)
+	if err != nil {
+		return 0, err
+	}
+
+	req := new(ec2.DescribeVpcsInput)
+	total := 0
+	req.MaxResults = converter.ValToPtr(int64(core.AwsQueryLimit))
+
+	for {
+		resp, err := client.DescribeVpcsWithContext(kt.Ctx, req)
+		if err != nil {
+			logs.Errorf("count aws vpc failed, err: %v, region:%s, rid: %s", err, region, kt.Rid)
+			return 0, err
+		}
+		total += len(resp.Vpcs)
+
+		if resp.NextToken == nil {
+			break
+		}
+		req.NextToken = resp.NextToken
+	}
+	return int32(total), nil
+}
+
 // GetVpcAttribute get vpc enableDnsHostnames and enableDnsSupport attribute.
 // reference: https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/APIReference/API_DescribeVpcAttribute.html
 func (a *Aws) GetVpcAttribute(kt *kit.Kit, vpcID, region string) (bool, bool, error) {

@@ -78,6 +78,25 @@ func (t *TCloud) ListCvm(kt *kit.Kit, opt *typecvm.TCloudListOption) ([]typecvm.
 	return cvms, nil
 }
 
+// CountCvm count cvm in given region
+// reference: https://cloud.tencent.com/document/api/213/15728
+func (t *TCloud) CountCvm(kt *kit.Kit, region string) (int32, error) {
+
+	client, err := t.clientSet.cvmClient(region)
+	if err != nil {
+		return 0, fmt.Errorf("new tcloud cvm client failed, err: %v", err)
+	}
+
+	req := cvm.NewDescribeInstancesRequest()
+	req.Limit = converter.ValToPtr(int64(1))
+	resp, err := client.DescribeInstancesWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("count tcloud cvm failed, err: %v, region:%s, rid: %s", err, region, kt.Rid)
+		return 0, err
+	}
+	return int32(*resp.Response.TotalCount), nil
+}
+
 // DeleteCvm reference: https://cloud.tencent.com/document/api/213/15723
 func (t *TCloud) DeleteCvm(kt *kit.Kit, opt *typecvm.TCloudDeleteOption) error {
 

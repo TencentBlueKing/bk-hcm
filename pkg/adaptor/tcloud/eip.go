@@ -100,6 +100,25 @@ func (t *TCloud) ListEip(kt *kit.Kit, opt *eip.TCloudEipListOption) (*eip.TCloud
 	return &eip.TCloudEipListResult{Details: eips, Count: &count}, nil
 }
 
+// CountEip 基于 DescribeAddressesWithContext
+// reference: https://cloud.tencent.com/document/api/215/16702
+func (t *TCloud) CountEip(kt *kit.Kit, region string) (int32, error) {
+
+	client, err := t.clientSet.vpcClient(region)
+	if err != nil {
+		return 0, fmt.Errorf("new tcloud vpc client failed, err: %v", err)
+	}
+
+	req := vpc.NewDescribeAddressesRequest()
+	req.Limit = converter.ValToPtr(int64(1))
+	resp, err := client.DescribeAddressesWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("count tcloud eip failed, err: %v, region: %s, rid: %s", err, region, kt.Rid)
+		return 0, err
+	}
+	return int32(*resp.Response.TotalCount), nil
+}
+
 // DeleteEip ...
 // reference: https://cloud.tencent.com/document/api/215/16700
 func (t *TCloud) DeleteEip(kt *kit.Kit, opt *eip.TCloudEipDeleteOption) error {

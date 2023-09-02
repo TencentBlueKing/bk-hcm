@@ -105,6 +105,25 @@ func (t *TCloud) ListDisk(kt *kit.Kit, opt *core.TCloudListOption) ([]disk.TClou
 	return disks, nil
 }
 
+// CountDisk 基于 DescribeDisksWithContext
+// reference: https://cloud.tencent.com/document/api/362/16315
+func (t *TCloud) CountDisk(kt *kit.Kit, region string) (int32, error) {
+
+	client, err := t.clientSet.cbsClient(region)
+	if err != nil {
+		return 0, fmt.Errorf("new tcloud cbs client failed, err: %v", err)
+	}
+
+	req := cbs.NewDescribeDisksRequest()
+	req.Limit = converter.ValToPtr(uint64(1))
+	resp, err := client.DescribeDisksWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("count tcloud disk failed, err: %v, region: %s, rid: %s", err, region, kt.Rid)
+		return 0, err
+	}
+	return int32(*resp.Response.TotalCount), nil
+}
+
 // DeleteDisk 删除云盘
 // reference: https://cloud.tencent.com/document/product/362/16321
 func (t *TCloud) DeleteDisk(kt *kit.Kit, opt *disk.TCloudDiskDeleteOption) error {

@@ -111,6 +111,36 @@ func (a *Aws) ListRouteTable(kt *kit.Kit, opt *routetable.AwsRouteTableListOptio
 	return &routetable.AwsRouteTableListResult{NextToken: resp.NextToken, Details: details}, nil
 }
 
+// CountRouteTable 返回给定地域的所有eip数量，基于DescribeRouteTables 接口遍历
+// reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_DescribeRouteTables.html
+func (a *Aws) CountRouteTable(kt *kit.Kit, region string) (int32, error) {
+
+	client, err := a.clientSet.ec2Client(region)
+	if err != nil {
+		return 0, err
+	}
+
+	req := new(ec2.DescribeRouteTablesInput)
+	total := 0
+	// 最大只能400
+	req.MaxResults = converter.ValToPtr(int64(100))
+
+	for {
+		resp, err := client.DescribeRouteTablesWithContext(kt.Ctx, req)
+		if err != nil {
+			logs.Errorf("count aws route table failed, err: %v, region:%s, rid: %s", err, region, kt.Rid)
+			return 0, err
+		}
+		total += len(resp.RouteTables)
+
+		if resp.NextToken == nil {
+			break
+		}
+		req.NextToken = resp.NextToken
+	}
+	return int32(total), nil
+}
+
 func convertRouteTable(data *ec2.RouteTable, region string) *routetable.AwsRouteTable {
 	if data == nil {
 		return nil

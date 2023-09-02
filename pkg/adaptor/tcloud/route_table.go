@@ -103,6 +103,25 @@ func (t *TCloud) ListRouteTable(kt *kit.Kit, opt *core.TCloudListOption) (*route
 	return &routetable.TCloudRouteTableListResult{Count: resp.Response.TotalCount, Details: details}, nil
 }
 
+// CountRouteTable 基于 DescribeRouteTablesWithContext
+// reference: https://cloud.tencent.com/document/api/215/15763
+func (t *TCloud) CountRouteTable(kt *kit.Kit, region string) (int32, error) {
+
+	client, err := t.clientSet.vpcClient(region)
+	if err != nil {
+		return 0, fmt.Errorf("new tcloud vpc client failed, err: %v", err)
+	}
+
+	req := vpc.NewDescribeRouteTablesRequest()
+	req.Limit = converter.ValToPtr("1")
+	resp, err := client.DescribeRouteTablesWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("count tcloud route table failed, err: %v, region: %s, rid: %s", err, region, kt.Rid)
+		return 0, err
+	}
+	return int32(*resp.Response.TotalCount), nil
+}
+
 func convertRouteTable(data *vpc.RouteTable, region string) *routetable.TCloudRouteTable {
 	if data == nil {
 		return nil
