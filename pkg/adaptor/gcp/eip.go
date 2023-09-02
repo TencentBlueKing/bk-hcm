@@ -90,6 +90,37 @@ func (g *Gcp) ListEip(kt *kit.Kit, opt *eip.GcpEipListOption) (*eip.GcpEipListRe
 	return &eip.GcpEipListResult{Details: convert(resp, opt.Region), NextPageToken: resp.NextPageToken}, nil
 }
 
+// CountEip count eip.
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/addresses/aggregatedList
+func (g *Gcp) CountEip(kt *kit.Kit) (int32, error) {
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return 0, err
+	}
+
+	request := client.Addresses.AggregatedList(g.CloudProjectID()).Context(kt.Ctx)
+
+	var count int32
+	for {
+		resp, err := request.Do()
+		if err != nil {
+			logs.Errorf("list eip failed, err: %v, rid: %s", err, kt.Rid)
+			return 0, err
+		}
+
+		for _, one := range resp.Items {
+			count += int32(len(one.Addresses))
+		}
+
+		if resp.NextPageToken == "" {
+			break
+		}
+	}
+
+	return count, nil
+}
+
 // ListAggregatedEip ...
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/addresses/aggregatedList
 func (g *Gcp) ListAggregatedEip(kt *kit.Kit, opt *eip.GcpEipAggregatedListOption) ([]*compute.Address, error) {

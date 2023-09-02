@@ -123,6 +123,37 @@ func (g *Gcp) DeleteSubnet(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) erro
 	return nil
 }
 
+// CountSubnet count subnet.
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/networks/list
+func (g *Gcp) CountSubnet(kt *kit.Kit) (int32, error) {
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return 0, err
+	}
+
+	request := client.Subnetworks.AggregatedList(g.CloudProjectID()).Context(kt.Ctx)
+
+	var count int32
+	for {
+		resp, err := request.Do()
+		if err != nil {
+			logs.Errorf("list subnet failed, err: %v, rid: %s", err, kt.Rid)
+			return 0, err
+		}
+
+		for _, one := range resp.Items {
+			count += int32(len(one.Subnetworks))
+		}
+
+		if resp.NextPageToken == "" {
+			break
+		}
+	}
+
+	return count, nil
+}
+
 // ListSubnet list subnet.
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/subnetworks/list
 func (g *Gcp) ListSubnet(kt *kit.Kit, opt *typessubnet.GcpSubnetListOption) (*typessubnet.GcpSubnetListResult, error) {

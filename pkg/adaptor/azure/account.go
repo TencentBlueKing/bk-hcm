@@ -30,6 +30,25 @@ import (
 	"hcm/pkg/tools/converter"
 )
 
+// CountAccount count account.
+// reference: https://learn.microsoft.com/en-us/graph/api/user-list?view=graph-rest-1.0&tabs=http
+func (az *Azure) CountAccount(kt *kit.Kit) (int32, error) {
+
+	graphClient, err := az.clientSet.graphServiceClient()
+	if err != nil {
+		logs.Errorf("new graph service client failed, err: %v, rid: %s", err, kt.Rid)
+		return 0, fmt.Errorf("new graph service client failed, err: %v", err)
+	}
+
+	resp, err := graphClient.Users().Get(kt.Ctx, nil)
+	if err != nil {
+		logs.Errorf("list users failed, err: %v, rid: %s", err, kt.Rid)
+		return 0, err
+	}
+
+	return int32(len(resp.GetValue())), nil
+}
+
 // ListAccount list account.
 // reference: https://learn.microsoft.com/en-us/graph/api/user-list?view=graph-rest-1.0&tabs=http
 // 接口需要特殊权限，文档：https://learn.microsoft.com/en-us/graph/auth-v2-service?tabs=http

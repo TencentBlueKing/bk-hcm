@@ -53,6 +53,30 @@ func (handler *cvmResultHandler) BuildResult(resp armcompute.VirtualMachinesClie
 	return cvms
 }
 
+// CountCvm count cvm.
+// reference: https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/list?tabs=HTTP
+func (az *Azure) CountCvm(kt *kit.Kit) (int32, error) {
+
+	client, err := az.clientSet.virtualMachineClient()
+	if err != nil {
+		return 0, fmt.Errorf("new cvm client failed, err: %v", err)
+	}
+
+	var count int32
+	pager := client.NewListAllPager(nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			logs.Errorf("list cvm next page failed, err: %v, rid: %s", err, kt.Rid)
+			return 0, fmt.Errorf("failed to advance page: %v", err)
+		}
+
+		count += int32(len(nextResult.Value))
+	}
+
+	return count, nil
+}
+
 // ListCvmByPage ...
 // reference: https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/list?tabs=HTTP
 func (az *Azure) ListCvmByPage(kt *kit.Kit, opt *typecvm.AzureListOption) (

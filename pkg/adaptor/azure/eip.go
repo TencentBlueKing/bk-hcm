@@ -74,6 +74,30 @@ func (az *Azure) ListEipByID(kt *kit.Kit, opt *core.AzureListByIDOption) (*eip.A
 	return &eip.AzureEipListResult{Details: eips}, nil
 }
 
+// CountEip count eip.
+// reference: https://learn.microsoft.com/zh-cn/rest/api/virtualnetwork/public-ip-addresses/list-all?tabs=HTTP
+func (az *Azure) CountEip(kt *kit.Kit) (int32, error) {
+
+	client, err := az.clientSet.publicIPAddressesClient()
+	if err != nil {
+		return 0, fmt.Errorf("new eip client failed, err: %v", err)
+	}
+
+	var count int32
+	pager := client.NewListAllPager(nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			logs.Errorf("list eip next page failed, err: %v, rid: %s", err, kt.Rid)
+			return 0, fmt.Errorf("failed to advance page: %v", err)
+		}
+
+		count += int32(len(nextResult.Value))
+	}
+
+	return count, nil
+}
+
 // ListEipByPage ...
 // reference: https://learn.microsoft.com/zh-cn/rest/api/virtualnetwork/public-ip-addresses/list-all?tabs=HTTP
 func (az *Azure) ListEipByPage(kt *kit.Kit, opt *core.AzureListOption) (

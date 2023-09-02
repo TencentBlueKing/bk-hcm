@@ -143,16 +143,15 @@ func (a *AccountClient) GetBySecret(ctx context.Context, h http.Header,
 }
 
 // GetResCountBySecret get account res count by secret
-func (a *AccountClient) GetResCountBySecret(ctx context.Context, h http.Header,
-	request *cloud.HuaWeiSecret) (*hsaccount.ResCount, error) {
+func (a *AccountClient) GetResCountBySecret(kt *kit.Kit, request *cloud.HuaWeiSecret) (*hsaccount.ResCount, error) {
 
 	resp := new(hsaccount.ResCountResp)
 
 	err := a.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/accounts/res_counts/by_secrets").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 

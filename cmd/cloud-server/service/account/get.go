@@ -213,7 +213,25 @@ func (a *accountSvc) GetResCountBySecret(cts *rest.Contexts) (interface{}, error
 	case enumor.TCloud:
 	case enumor.Aws:
 	case enumor.Azure:
+		req := new(cloud.AzureAuthSecret)
+		if err := cts.DecodeInto(req); err != nil {
+			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+		}
+		if err := req.Validate(); err != nil {
+			return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		}
+
+		return a.client.HCService().Azure.Account.GetResCountBySecret(cts.Kit, req)
 	case enumor.Gcp:
+		req := new(cloud.GcpCredential)
+		if err := cts.DecodeInto(req); err != nil {
+			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+		}
+		if err := req.Validate(); err != nil {
+			return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		}
+
+		return a.client.HCService().Gcp.Account.GetResCountBySecret(cts.Kit, req)
 	case enumor.HuaWei:
 		req := new(cloud.HuaWeiSecret)
 		if err := cts.DecodeInto(req); err != nil {
@@ -223,11 +241,7 @@ func (a *accountSvc) GetResCountBySecret(cts *rest.Contexts) (interface{}, error
 			return nil, errf.NewFromErr(errf.InvalidParameter, err)
 		}
 
-		return a.client.HCService().HuaWei.Account.GetResCountBySecret(
-			cts.Kit.Ctx,
-			cts.Kit.Header(),
-			req,
-		)
+		return a.client.HCService().HuaWei.Account.GetResCountBySecret(cts.Kit, req)
 	default:
 		return nil, fmt.Errorf("not support vendor %s", vendor)
 	}
