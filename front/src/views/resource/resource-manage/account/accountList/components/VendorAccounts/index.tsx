@@ -97,7 +97,7 @@ export default defineComponent({
                         }
                         class={'vendor-icon'}></img>
                       <span class={'vendor-account-menu-item-text'}>
-                        {name}
+                        {name.length > 12 ? `${name.substring(0, 10)}..` : name}
                       </span>
                     </div>
                 ))
