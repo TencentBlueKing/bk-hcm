@@ -154,6 +154,37 @@ func (g *Gcp) ListDisk(kt *kit.Kit, opt *disk.GcpDiskListOption) ([]disk.GcpDisk
 	return disks, resp.NextPageToken, nil
 }
 
+// CountDisk count disk
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/disks/list
+func (g *Gcp) CountDisk(kt *kit.Kit) (int32, error) {
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return 0, err
+	}
+
+	request := client.Disks.AggregatedList(g.CloudProjectID()).Context(kt.Ctx)
+
+	var count int32
+	for {
+		resp, err := request.Do()
+		if err != nil {
+			logs.Errorf("list disk failed, err: %v, rid: %s", err, kt.Rid)
+			return 0, err
+		}
+
+		for _, one := range resp.Items {
+			count += int32(len(one.Disks))
+		}
+
+		if resp.NextPageToken == "" {
+			break
+		}
+	}
+
+	return count, nil
+}
+
 // DeleteDisk 删除云盘
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/disks/delete
 func (g *Gcp) DeleteDisk(kt *kit.Kit, opt *disk.GcpDiskDeleteOption) error {

@@ -81,6 +81,41 @@ func (g *Gcp) ListCvm(kt *kit.Kit, opt *typecvm.GcpListOption) ([]typecvm.GcpCvm
 	return cvms, resp.NextPageToken, nil
 }
 
+// CountCvmAndNI reference: https://cloud.google.com/compute/docs/reference/rest/v1/instances/list
+func (g *Gcp) CountCvmAndNI(kt *kit.Kit) (int32, int32, error) {
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	request := client.Instances.AggregatedList(g.CloudProjectID()).Context(kt.Ctx)
+
+	var cvmCount int32
+	var niCount int32
+	for {
+		resp, err := request.Do()
+		if err != nil {
+			logs.Errorf("list instance failed, err: %v, rid: %s", err, kt.Rid)
+			return 0, 0, err
+		}
+
+		for _, one := range resp.Items {
+			cvmCount += int32(len(one.Instances))
+
+			for _, instance := range one.Instances {
+				niCount += int32(len(instance.NetworkInterfaces))
+			}
+		}
+
+		if resp.NextPageToken == "" {
+			break
+		}
+	}
+
+	return cvmCount, niCount, nil
+}
+
 // GetMachineType gcp设备类型为url，需要截取最后一个单词
 // e.g: https://www.googleapis.com/compute/v1/projects/xxx/zones/us-central1-a/machineTypes/e2-medium
 func GetMachineType(typ string) string {
