@@ -65,6 +65,11 @@ func InitAccountService(cap *capability.Capability) {
 	h.Add("GetAzureResCountBySecret", http.MethodPost, "/vendors/azure/accounts/res_counts/by_secrets",
 		svc.GetAzureResCountBySecret)
 
+	h.Add("TCloudGetResCountBySecret", http.MethodPost, "/vendors/tcloud/accounts/res_counts/by_secrets",
+		svc.TCloudGetResCountBySecret)
+	h.Add("AwsGetResCountBySecret", http.MethodPost, "/vendors/aws/accounts/res_counts/by_secrets",
+		svc.AwsGetResCountBySecret)
+
 	h.Load(cap.WebService)
 }
 

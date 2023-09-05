@@ -74,6 +74,37 @@ func (a *Aws) ListAccount(kt *kit.Kit) ([]account.AwsAccount, error) {
 	return list, nil
 }
 
+// CountAccount 返回账号下子账号数量，基于 ListAccountsWithContext 接口
+// reference: https://docs.amazonaws.cn/organizations/latest/APIReference/API_ListAccounts.html
+func (a *Aws) CountAccount(kt *kit.Kit) (int32, error) {
+	client, err := a.clientSet.organizations()
+	if err != nil {
+		return 0, err
+	}
+
+	req := new(organizations.ListAccountsInput)
+	req.MaxResults = converter.ValToPtr(int64(20))
+
+	total := 0
+
+	for {
+		resp, err := client.ListAccountsWithContext(kt.Ctx, req)
+		if err != nil {
+			logs.Errorf("count accounts failed, err: %v, rid: %s", err, kt.Rid)
+			return 0, err
+		}
+		total += len(resp.Accounts)
+
+		if resp.NextToken != nil {
+			req.NextToken = resp.NextToken
+			continue
+		}
+		break
+	}
+
+	return int32(total), nil
+}
+
 // GetAccountInfoBySecret 根据秘钥获取账号信息
 // reference: https://docs.aws.amazon.com/STS/latest/APIReference/API_GetCallerIdentity.html
 func (a *Aws) GetAccountInfoBySecret(kt *kit.Kit) (*cloud.AwsInfoBySecret, error) {

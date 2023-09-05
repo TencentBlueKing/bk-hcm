@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"strings"
 
+	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/cvm"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/criteria/errf"
@@ -129,6 +130,35 @@ func (a *Aws) ListSecurityGroup(kt *kit.Kit, opt *securitygroup.AwsListOption) (
 		sgs = append(sgs, securitygroup.AwsSG{one})
 	}
 	return sgs, resp, nil
+}
+
+// CountSecurityGroup 返回给定地域的所有安全组数量，DescribeSecurityGroups 接口遍历
+// reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_DescribeSecurityGroups.html
+func (a *Aws) CountSecurityGroup(kt *kit.Kit, region string) (int32, error) {
+
+	client, err := a.clientSet.ec2Client(region)
+	if err != nil {
+		return 0, err
+	}
+
+	req := new(ec2.DescribeSecurityGroupsInput)
+	total := 0
+	req.MaxResults = converter.ValToPtr(int64(core.AwsQueryLimit))
+
+	for {
+		resp, err := client.DescribeSecurityGroupsWithContext(kt.Ctx, req)
+		if err != nil {
+			logs.Errorf("count aws security group failed, err: %v, region:%s, rid: %s", err, region, kt.Rid)
+			return 0, err
+		}
+		total += len(resp.SecurityGroups)
+
+		if resp.NextToken == nil {
+			break
+		}
+		req.NextToken = resp.NextToken
+	}
+	return int32(total), nil
 }
 
 // DeleteSecurityGroup delete security group.

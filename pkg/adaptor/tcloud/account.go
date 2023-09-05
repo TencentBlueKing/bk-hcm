@@ -70,6 +70,25 @@ func (t *TCloud) ListAccount(kt *kit.Kit) ([]typeaccount.TCloudAccount, error) {
 	return list, nil
 }
 
+// CountAccount 查询账号数量，基于ListUsersWithContext
+// reference: https://cloud.tencent.com/document/api/598/34587
+func (t *TCloud) CountAccount(kt *kit.Kit) (int32, error) {
+
+	camClient, err := t.clientSet.camServiceClient("")
+	if err != nil {
+		return 0, fmt.Errorf("new cam client failed, err: %v", err)
+	}
+
+	req := cam.NewListUsersRequest()
+	resp, err := camClient.ListUsersWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("count users failed, err: %v,  rid: %s", err, kt.Rid)
+		return 0, fmt.Errorf("list users failed, err: %v", err)
+	}
+
+	return int32(len(resp.Response.Data)), nil
+}
+
 // GetAccountZoneQuota 获取账号配额信息.
 // reference: https://cloud.tencent.com/document/api/213/55628
 func (t *TCloud) GetAccountZoneQuota(kt *kit.Kit, opt *typeaccount.GetTCloudAccountZoneQuotaOption) (

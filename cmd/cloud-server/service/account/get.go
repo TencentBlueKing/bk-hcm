@@ -109,7 +109,6 @@ func (a *accountSvc) GetAccountBySecret(cts *rest.Contexts) (interface{}, error)
 	case enumor.TCloud:
 		//	3.1 解析请求与参数校验
 		req := new(cloud.TCloudSecret)
-		//
 		if err := cts.DecodeInto(req); err != nil {
 			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 		}
@@ -124,9 +123,7 @@ func (a *accountSvc) GetAccountBySecret(cts *rest.Contexts) (interface{}, error)
 		)
 
 	case enumor.Aws:
-		//	3.1 解析请求与参数校验
 		req := new(cloud.AwsSecret)
-		//
 		if err := cts.DecodeInto(req); err != nil {
 			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 		}
@@ -140,9 +137,7 @@ func (a *accountSvc) GetAccountBySecret(cts *rest.Contexts) (interface{}, error)
 			req,
 		)
 	case enumor.Azure:
-		//	3.1 解析请求与参数校验
 		req := new(cloud.AzureSecret)
-		//
 		if err := cts.DecodeInto(req); err != nil {
 			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 		}
@@ -156,32 +151,28 @@ func (a *accountSvc) GetAccountBySecret(cts *rest.Contexts) (interface{}, error)
 			req,
 		)
 	case enumor.Gcp:
-		//	3.1 解析请求与参数校验
 		req := new(cloud.GcpSecret)
-		//
 		if err := cts.DecodeInto(req); err != nil {
 			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 		}
 		if err := req.Validate(); err != nil {
 			return nil, errf.NewFromErr(errf.InvalidParameter, err)
 		}
-		// 3.2 到hc-service 获取对应字段
+		// 到hc-service 获取对应字段
 		return a.client.HCService().Gcp.Account.GetBySecret(
 			cts.Kit.Ctx,
 			cts.Kit.Header(),
 			req,
 		)
 	case enumor.HuaWei:
-		//	3.1 解析请求与参数校验
 		req := new(cloud.HuaWeiSecret)
-		//
 		if err := cts.DecodeInto(req); err != nil {
 			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 		}
 		if err := req.Validate(); err != nil {
 			return nil, errf.NewFromErr(errf.InvalidParameter, err)
 		}
-		// 3.2 到hc-service 获取对应字段
+		// 到hc-service 获取对应字段
 		return a.client.HCService().HuaWei.Account.GetBySecret(
 			cts.Kit.Ctx,
 			cts.Kit.Header(),

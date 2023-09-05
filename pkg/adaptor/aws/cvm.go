@@ -84,6 +84,36 @@ func (a *Aws) ListCvm(kt *kit.Kit, opt *typecvm.AwsListOption) ([]typecvm.AwsCvm
 	return cvms, resp, nil
 }
 
+// CountCvm 返回单个地域下的ec2 instance 数量，基于 DescribeInstancesWithContext接口
+// reference: https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
+func (a *Aws) CountCvm(kt *kit.Kit, region string) (int32, error) {
+
+	client, err := a.clientSet.ec2Client(region)
+	if err != nil {
+		return 0, err
+	}
+
+	req := new(ec2.DescribeInstancesInput)
+	total := 0
+	req.MaxResults = converter.ValToPtr(int64(core.AwsQueryLimit))
+
+	for {
+		resp, err := client.DescribeInstancesWithContext(kt.Ctx, req)
+		if err != nil {
+			logs.Errorf("count aws cvm failed, err: %v, region:%s, rid: %s", err, region, kt.Rid)
+			return 0, err
+		}
+		for _, rsv := range resp.Reservations {
+			total += len(rsv.Instances)
+		}
+		if resp.NextToken == nil {
+			break
+		}
+		req.NextToken = resp.NextToken
+	}
+	return int32(total), nil
+}
+
 // GetCvmNameFromTags ...
 func GetCvmNameFromTags(tags []*ec2.Tag) *string {
 	if len(tags) == 0 {
