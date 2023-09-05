@@ -17,53 +17,21 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package huawei
+package disk
 
 import (
 	synchuawei "hcm/cmd/hc-service/logics/res-sync/huawei"
-	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/disk/datasvc"
-	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/disk"
-	apicloud "hcm/pkg/api/core/cloud"
 	proto "hcm/pkg/api/hc-service/disk"
-	dataservice "hcm/pkg/client/data-service"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
-// DiskSvc ...
-type DiskSvc struct {
-	Adaptor *cloudclient.CloudAdaptorClient
-	DataCli *dataservice.Client
-}
-
-// CountDisk ...
-func (svc *DiskSvc) CountDisk(cts *rest.Contexts) (interface{}, error) {
-	req := new(apicloud.HuaWeiSecret)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	client, err := svc.Adaptor.Adaptor().HuaWei(&types.BaseSecret{
-		CloudSecretID:  req.CloudSecretID,
-		CloudSecretKey: req.CloudSecretKey,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return client.CountAllResources(cts.Kit, enumor.HuaWeiDiskProviderType)
-}
-
-// CreateDisk ...
-func (svc *DiskSvc) CreateDisk(cts *rest.Contexts) (interface{}, error) {
+// CreateHuaWeiDisk ...
+func (svc *service) CreateHuaWeiDisk(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.HuaWeiDiskCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -130,8 +98,8 @@ func (svc *DiskSvc) CreateDisk(cts *rest.Contexts) (interface{}, error) {
 	return respData, nil
 }
 
-// DeleteDisk ...
-func (svc *DiskSvc) DeleteDisk(cts *rest.Contexts) (interface{}, error) {
+// DeleteHuaWeiDisk ...
+func (svc *service) DeleteHuaWeiDisk(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.DiskDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -140,7 +108,7 @@ func (svc *DiskSvc) DeleteDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeDiskDeleteOption(cts.Kit, req)
+	opt, err := svc.makeHuaWeiDiskDeleteOption(cts.Kit, req)
 	if err != nil {
 		return nil, err
 	}
@@ -159,8 +127,8 @@ func (svc *DiskSvc) DeleteDisk(cts *rest.Contexts) (interface{}, error) {
 	return nil, manager.Delete(cts.Kit, []string{req.DiskID})
 }
 
-// AttachDisk ...
-func (svc *DiskSvc) AttachDisk(cts *rest.Contexts) (interface{}, error) {
+// AttachHuaWeiDisk ...
+func (svc *service) AttachHuaWeiDisk(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.HuaWeiDiskAttachReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -169,7 +137,7 @@ func (svc *DiskSvc) AttachDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeDiskAttachOption(cts.Kit, req)
+	opt, err := svc.makeHuaWeiDiskAttachOption(cts.Kit, req)
 	if err != nil {
 		return nil, err
 	}
@@ -214,8 +182,8 @@ func (svc *DiskSvc) AttachDisk(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-// DetachDisk ...
-func (svc *DiskSvc) DetachDisk(cts *rest.Contexts) (interface{}, error) {
+// DetachHuaWeiDisk ...
+func (svc *service) DetachHuaWeiDisk(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.DiskDetachReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -224,7 +192,7 @@ func (svc *DiskSvc) DetachDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeDiskDetachOption(cts.Kit, req)
+	opt, err := svc.makeHuaWeiDiskDetachOption(cts.Kit, req)
 	if err != nil {
 		return nil, err
 	}
@@ -263,7 +231,7 @@ func (svc *DiskSvc) DetachDisk(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-func (svc *DiskSvc) makeDiskAttachOption(
+func (svc *service) makeHuaWeiDiskAttachOption(
 	kt *kit.Kit,
 	req *proto.HuaWeiDiskAttachReq,
 ) (*disk.HuaWeiDiskAttachOption, error) {
@@ -287,7 +255,7 @@ func (svc *DiskSvc) makeDiskAttachOption(
 	}, nil
 }
 
-func (svc *DiskSvc) makeDiskDetachOption(
+func (svc *service) makeHuaWeiDiskDetachOption(
 	kt *kit.Kit,
 	req *proto.DiskDetachReq,
 ) (*disk.HuaWeiDiskDetachOption, error) {
@@ -310,7 +278,7 @@ func (svc *DiskSvc) makeDiskDetachOption(
 	}, nil
 }
 
-func (svc *DiskSvc) makeDiskDeleteOption(
+func (svc *service) makeHuaWeiDiskDeleteOption(
 	kt *kit.Kit,
 	req *proto.DiskDeleteReq,
 ) (*disk.HuaWeiDiskDeleteOption, error) {

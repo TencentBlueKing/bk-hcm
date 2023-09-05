@@ -17,35 +17,23 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tcloud
+package disk
 
 import (
-	synctcloud "hcm/cmd/hc-service/logics/res-sync/tcloud"
-	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
+	syncgcp "hcm/cmd/hc-service/logics/res-sync/gcp"
 	"hcm/cmd/hc-service/service/disk/datasvc"
 	"hcm/pkg/adaptor/types/disk"
 	proto "hcm/pkg/api/hc-service/disk"
-	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 )
 
-// DiskSvc ...
-type DiskSvc struct {
-	Adaptor *cloudclient.CloudAdaptorClient
-	DataCli *dataservice.Client
-}
-
-// CountDisk ...
-func (svc *DiskSvc) CountDisk(cts *rest.Contexts) (interface{}, error) {
-	return nil, nil
-}
-
-// CreateDisk ...
-func (svc *DiskSvc) CreateDisk(cts *rest.Contexts) (interface{}, error) {
-	req := new(proto.TCloudDiskCreateReq)
+// CreateGcpDisk ...
+func (svc *service) CreateGcpDisk(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.GcpDiskCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -53,32 +41,23 @@ func (svc *DiskSvc) CreateDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := svc.Adaptor.TCloud(cts.Kit, req.AccountID)
+	client, err := svc.Adaptor.Gcp(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
-	diskCount := uint64(req.DiskCount)
-	opt := &disk.TCloudDiskCreateOption{
-		DiskName:       req.DiskName,
-		Region:         req.Region,
-		Zone:           req.Zone,
-		DiskType:       req.DiskType,
-		DiskSize:       &req.DiskSize,
-		DiskCount:      &diskCount,
-		DiskChargeType: req.Extension.DiskChargeType,
+	diskSize := int64(req.DiskSize)
+	opt := &disk.GcpDiskCreateOption{
+		DiskName:  *req.DiskName,
+		Region:    req.Region,
+		Zone:      req.Zone,
+		DiskType:  req.DiskType,
+		DiskSize:  diskSize,
+		DiskCount: converter.ValToPtr(uint64(req.DiskCount)),
 	}
-
-	if prepaid := req.Extension.DiskChargePrepaid; prepaid != nil {
-		opt.DiskChargePrepaid = &disk.TCloudDiskChargePrepaid{
-			Period:    prepaid.Period,
-			RenewFlag: prepaid.RenewFlag,
-		}
-	}
-
 	result, err := client.CreateDisk(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("create tcloud cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("create gcp cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -93,25 +72,25 @@ func (svc *DiskSvc) CreateDisk(cts *rest.Contexts) (interface{}, error) {
 		return respData, nil
 	}
 
-	syncClient := synctcloud.NewClient(svc.DataCli, client)
+	syncClient := syncgcp.NewClient(svc.DataCli, client)
 
-	params := &synctcloud.SyncBaseParams{
+	params := &syncgcp.SyncBaseParams{
 		AccountID: req.AccountID,
-		Region:    req.Region,
 		CloudIDs:  result.SuccessCloudIDs,
 	}
 
-	_, err = syncClient.Disk(cts.Kit, params, &synctcloud.SyncDiskOption{})
+	_, err = syncClient.Disk(cts.Kit, params, &syncgcp.SyncDiskOption{BootMap: nil,
+		Zone: opt.Zone})
 	if err != nil {
-		logs.Errorf("sync tcloud disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync gcp disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	return respData, nil
 }
 
-// DeleteDisk ...
-func (svc *DiskSvc) DeleteDisk(cts *rest.Contexts) (interface{}, error) {
+// DeleteGcpDisk ...
+func (svc *service) DeleteGcpDisk(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.DiskDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -120,12 +99,12 @@ func (svc *DiskSvc) DeleteDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeDiskDeleteOption(cts.Kit, req)
+	opt, err := svc.makeGcpDiskDeleteOption(cts.Kit, req)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := svc.Adaptor.TCloud(cts.Kit, req.AccountID)
+	client, err := svc.Adaptor.Gcp(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -139,9 +118,9 @@ func (svc *DiskSvc) DeleteDisk(cts *rest.Contexts) (interface{}, error) {
 	return nil, manager.Delete(cts.Kit, []string{req.DiskID})
 }
 
-// AttachDisk ...
-func (svc *DiskSvc) AttachDisk(cts *rest.Contexts) (interface{}, error) {
-	req := new(proto.TCloudDiskAttachReq)
+// AttachGcpDisk ...
+func (svc *service) AttachGcpDisk(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.GcpDiskAttachReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -149,12 +128,12 @@ func (svc *DiskSvc) AttachDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeDiskAttachOption(cts.Kit, req)
+	opt, err := svc.makeGcpDiskAttachOption(cts.Kit, req)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := svc.Adaptor.TCloud(cts.Kit, req.AccountID)
+	client, err := svc.Adaptor.Gcp(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -170,32 +149,43 @@ func (svc *DiskSvc) AttachDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	syncClient := synctcloud.NewClient(svc.DataCli, client)
-
-	params := &synctcloud.SyncBaseParams{
-		AccountID: req.AccountID,
-		Region:    opt.Region,
-		CloudIDs:  opt.CloudDiskIDs,
-	}
-
-	_, err = syncClient.Disk(cts.Kit, params, &synctcloud.SyncDiskOption{})
+	diskData, err := svc.DataCli.Gcp.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
 	if err != nil {
-		logs.Errorf("sync tcloud disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	params.CloudIDs = []string{opt.CloudCvmID}
-	_, err = syncClient.Cvm(cts.Kit, params, &synctcloud.SyncCvmOption{})
+	syncClient := syncgcp.NewClient(svc.DataCli, client)
+
+	params := &syncgcp.SyncBaseParams{
+		AccountID: req.AccountID,
+		CloudIDs:  []string{diskData.CloudID},
+	}
+
+	_, err = syncClient.Disk(cts.Kit, params, &syncgcp.SyncDiskOption{BootMap: nil,
+		Zone: opt.Zone})
 	if err != nil {
-		logs.Errorf("sync tcloud cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync gcp disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	cvmData, err := svc.DataCli.Gcp.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), req.CvmID)
+	if err != nil {
+		return nil, err
+	}
+
+	params.CloudIDs = []string{cvmData.CloudID}
+	_, err = syncClient.Cvm(cts.Kit, params, &syncgcp.SyncCvmOption{Region: cvmData.Region,
+		Zone: opt.Zone})
+	if err != nil {
+		logs.Errorf("sync gcp cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	return nil, nil
 }
 
-// DetachDisk ...
-func (svc *DiskSvc) DetachDisk(cts *rest.Contexts) (interface{}, error) {
+// DetachGcpDisk ...
+func (svc *service) DetachGcpDisk(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.DiskDetachReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -204,12 +194,12 @@ func (svc *DiskSvc) DetachDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeDiskDetachOption(cts.Kit, req)
+	opt, err := svc.makeGcpDiskDetachOption(cts.Kit, req)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := svc.Adaptor.TCloud(cts.Kit, req.AccountID)
+	client, err := svc.Adaptor.Gcp(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -219,35 +209,45 @@ func (svc *DiskSvc) DetachDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	syncClient := synctcloud.NewClient(svc.DataCli, client)
-
-	params := &synctcloud.SyncBaseParams{
-		AccountID: req.AccountID,
-		Region:    opt.Region,
-		CloudIDs:  opt.CloudDiskIDs,
-	}
-
-	_, err = syncClient.Disk(cts.Kit, params, &synctcloud.SyncDiskOption{})
+	diskData, err := svc.DataCli.Gcp.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
 	if err != nil {
-		logs.Errorf("sync tcloud disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	params.CloudIDs = []string{opt.CloudCvmID}
-	_, err = syncClient.CvmWithRelRes(cts.Kit, params, &synctcloud.SyncCvmWithRelResOption{})
+	syncClient := syncgcp.NewClient(svc.DataCli, client)
+
+	params := &syncgcp.SyncBaseParams{
+		AccountID: req.AccountID,
+		CloudIDs:  []string{diskData.CloudID},
+	}
+
+	_, err = syncClient.Disk(cts.Kit, params, &syncgcp.SyncDiskOption{BootMap: nil,
+		Zone: opt.Zone})
 	if err != nil {
-		logs.Errorf("sync tcloud cvm with rel res failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync gcp disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	cvmData, err := svc.DataCli.Gcp.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), req.CvmID)
+	if err != nil {
+		return nil, err
+	}
+
+	params.CloudIDs = []string{cvmData.CloudID}
+	_, err = syncClient.CvmWithRelRes(cts.Kit, params, &syncgcp.SyncCvmWithRelResOption{})
+	if err != nil {
+		logs.Errorf("sync gcp cvm with rel res failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	return nil, nil
 }
 
-func (svc *DiskSvc) makeDiskAttachOption(
+func (svc *service) makeGcpDiskAttachOption(
 	kt *kit.Kit,
-	req *proto.TCloudDiskAttachReq,
-) (*disk.TCloudDiskAttachOption, error) {
-	dataCli := svc.DataCli.TCloud
+	req *proto.GcpDiskAttachReq,
+) (*disk.GcpDiskAttachOption, error) {
+	dataCli := svc.DataCli.Gcp
 
 	diskData, err := dataCli.RetrieveDisk(kt.Ctx, kt.Header(), req.DiskID)
 	if err != nil {
@@ -259,18 +259,19 @@ func (svc *DiskSvc) makeDiskAttachOption(
 		return nil, err
 	}
 
-	return &disk.TCloudDiskAttachOption{
-		Region:       diskData.Region,
-		CloudCvmID:   cvmData.CloudID,
-		CloudDiskIDs: []string{diskData.CloudID},
+	return &disk.GcpDiskAttachOption{
+		Zone:       diskData.Zone,
+		CvmName:    cvmData.Name,
+		DiskName:   diskData.Name,
+		DeviceName: req.DeviceName,
 	}, nil
 }
 
-func (svc *DiskSvc) makeDiskDetachOption(
+func (svc *service) makeGcpDiskDetachOption(
 	kt *kit.Kit,
 	req *proto.DiskDetachReq,
-) (*disk.TCloudDiskDetachOption, error) {
-	dataCli := svc.DataCli.TCloud
+) (*disk.GcpDiskDetachOption, error) {
+	dataCli := svc.DataCli.Gcp
 
 	diskData, err := dataCli.RetrieveDisk(kt.Ctx, kt.Header(), req.DiskID)
 	if err != nil {
@@ -282,20 +283,30 @@ func (svc *DiskSvc) makeDiskDetachOption(
 		return nil, err
 	}
 
-	return &disk.TCloudDiskDetachOption{
-		Region:       diskData.Region,
-		CloudCvmID:   cvmData.CloudID,
-		CloudDiskIDs: []string{diskData.CloudID},
+	var deviceName string
+	for _, d := range cvmData.Extension.Disks {
+		if d.CloudID == diskData.CloudID {
+			deviceName = d.DeviceName
+			break
+		}
+	}
+
+	return &disk.GcpDiskDetachOption{
+		Zone:       diskData.Zone,
+		CvmName:    cvmData.Name,
+		DeviceName: deviceName,
+		DiskName:   diskData.Name,
 	}, nil
 }
 
-func (svc *DiskSvc) makeDiskDeleteOption(
+func (svc *service) makeGcpDiskDeleteOption(
 	kt *kit.Kit,
 	req *proto.DiskDeleteReq,
-) (*disk.TCloudDiskDeleteOption, error) {
-	diskData, err := svc.DataCli.TCloud.RetrieveDisk(kt.Ctx, kt.Header(), req.DiskID)
+) (*disk.GcpDiskDeleteOption, error) {
+	diskData, err := svc.DataCli.Gcp.RetrieveDisk(kt.Ctx, kt.Header(), req.DiskID)
 	if err != nil {
 		return nil, err
 	}
-	return &disk.TCloudDiskDeleteOption{Region: diskData.Region, CloudIDs: []string{diskData.CloudID}}, nil
+
+	return &disk.GcpDiskDeleteOption{Zone: diskData.Zone, DiskName: diskData.Name}, nil
 }

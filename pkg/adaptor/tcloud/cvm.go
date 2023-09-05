@@ -363,6 +363,100 @@ func (t *TCloud) CreateCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (*polle
 	return result, nil
 }
 
+// InquiryPriceCvm reference: https://cloud.tencent.com/document/api/213/15726
+func (t *TCloud) InquiryPriceCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (
+	*typecvm.TCloudInquiryPriceResult, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.cvmClient(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("init tencent cloud client failed, err: %v", err)
+	}
+
+	req := cvm.NewInquiryPriceRunInstancesRequest()
+	req.Placement = &cvm.Placement{
+		Zone: common.StringPtr(opt.Zone),
+	}
+	req.InstanceType = common.StringPtr(opt.InstanceType)
+	req.ImageId = common.StringPtr(opt.CloudImageID)
+	req.InstanceCount = common.Int64Ptr(opt.RequiredCount)
+	req.InstanceName = common.StringPtr(opt.Name)
+	req.SecurityGroupIds = common.StringPtrs(opt.CloudSecurityGroupIDs)
+	req.ClientToken = opt.ClientToken
+	req.InstanceChargeType = common.StringPtr(string(opt.InstanceChargeType))
+	req.VirtualPrivateCloud = &cvm.VirtualPrivateCloud{
+		VpcId:    common.StringPtr(opt.CloudVpcID),
+		SubnetId: common.StringPtr(opt.CloudSubnetID),
+	}
+	req.LoginSettings = &cvm.LoginSettings{
+		Password: common.StringPtr(opt.Password),
+	}
+	req.InternetAccessible = &cvm.InternetAccessible{
+		PublicIpAssigned: common.BoolPtr(opt.PublicIPAssigned),
+	}
+
+	req.SystemDisk = &cvm.SystemDisk{
+		DiskId:   opt.SystemDisk.CloudDiskID,
+		DiskSize: opt.SystemDisk.DiskSizeGB,
+	}
+	if len(opt.SystemDisk.DiskType) != 0 {
+		req.SystemDisk.DiskType = common.StringPtr(string(opt.SystemDisk.DiskType))
+	}
+
+	if len(opt.DataDisk) != 0 {
+		req.DataDisks = make([]*cvm.DataDisk, 0, len(opt.DataDisk))
+		for _, one := range opt.DataDisk {
+			disk := &cvm.DataDisk{
+				DiskSize: one.DiskSizeGB,
+				DiskId:   one.CloudDiskID,
+			}
+
+			if len(one.DiskType) != 0 {
+				disk.DiskType = common.StringPtr(string(one.DiskType))
+			}
+			req.DataDisks = append(req.DataDisks, disk)
+		}
+	}
+
+	if opt.InstanceChargePrepaid != nil {
+		req.InstanceChargePrepaid = &cvm.InstanceChargePrepaid{
+			Period: opt.InstanceChargePrepaid.Period,
+		}
+
+		if len(opt.InstanceChargePrepaid.RenewFlag) != 0 {
+			req.InstanceChargePrepaid.RenewFlag = common.StringPtr(string(opt.InstanceChargePrepaid.RenewFlag))
+		}
+	}
+
+	resp, err := client.InquiryPriceRunInstancesWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("inquiry price run instance failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	result := new(typecvm.TCloudInquiryPriceResult)
+	switch opt.InstanceChargeType {
+	case typecvm.Prepaid:
+		result.OriginalPrice = converter.PtrToVal(resp.Response.Price.InstancePrice.OriginalPrice)
+		result.DiscountPrice = converter.PtrToVal(resp.Response.Price.InstancePrice.DiscountPrice)
+	case typecvm.PostpaidByHour, typecvm.Spotpaid:
+		result.OriginalPrice = converter.PtrToVal(resp.Response.Price.InstancePrice.UnitPrice)
+		result.DiscountPrice = converter.PtrToVal(resp.Response.Price.InstancePrice.UnitPriceDiscount)
+
+	default:
+		return nil, fmt.Errorf("charge type: %s not support", opt.InstanceChargeType)
+	}
+
+	return result, nil
+}
+
 type startCvmPollingHandler struct {
 	region string
 }

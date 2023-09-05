@@ -194,3 +194,9 @@ type TCloudDisk struct {
 func (disk TCloudDisk) GetCloudID() string {
 	return converter.PtrToVal(disk.DiskId)
 }
+
+// TCloudInquiryPriceResult define tcloud inquiry price result.
+type TCloudInquiryPriceResult struct {
+	DiscountPrice float64 `json:"discount_price"`
+	OriginalPrice float64 `json:"original_price"`
+}
