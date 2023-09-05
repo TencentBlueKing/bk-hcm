@@ -1,14 +1,22 @@
-import { defineComponent, ref } from 'vue';
-import { Button, Input } from 'bkui-vue';
+import { defineComponent, ref, watch } from 'vue';
+import { Button, Input, Loading } from 'bkui-vue';
 import './index.scss';
 import allVendors from '@/assets/image/all-vendors.png';
 import CreateAccount from '../createAccount';
 import VendorAccounts from './components/VendorAccounts';
+import { useAllVendorsAccounts } from './useAllVendorsAccountsList';
 
 export default defineComponent({
   setup() {
     const searchVal = ref('');
     const isCreateAccountDialogShow = ref(false);
+    const {
+      handleExpand,
+      getAllVendorsAccountsList,
+      accountsMatrix,
+      isLoading,
+    } = useAllVendorsAccounts();
+
     const handleCancel = () => {
       isCreateAccountDialogShow.value = false;
     };
@@ -18,6 +26,18 @@ export default defineComponent({
     // const rows = ref(new Array(9999).fill({}).map((_, idx) => {
     //   return { id: idx };
     // }));
+
+    // 初始化账号列表/搜索账号
+    watch(
+      () => searchVal.value,
+      (val) => {
+        getAllVendorsAccountsList(val);
+      },
+      {
+        immediate: true,
+      },
+    );
+
     return () => (
       <div class={'account-list-container'}>
         <Input
@@ -54,7 +74,14 @@ export default defineComponent({
             }
           }}
          </VirtualRender> */}
-         <VendorAccounts/>
+         <Loading
+          loading={isLoading.value}
+        >
+          <VendorAccounts
+            accounts={accountsMatrix}
+            handleExpand={handleExpand}
+          />
+         </Loading>
         <CreateAccount
           isShow={isCreateAccountDialogShow.value}
           onCancel={handleCancel}
