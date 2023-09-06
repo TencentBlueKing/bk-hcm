@@ -23,6 +23,10 @@ export default defineComponent({
       required: true,
       type: Function as PropType<(vendor: VendorEnum) => void>,
     },
+    handleSelect: {
+      required: true,
+      type: Function as PropType<(id: string) => void>,
+    },
   },
   setup(props) {
     return () => (
@@ -45,8 +49,11 @@ export default defineComponent({
                     <span class={'vendor-account-menu-count'}>{count}</span>
                   </div>
                   {isExpand
-                    ? accounts.map(({ sync_status, name }) => (
-                        <div class={'vendor-account-menu-item'}>
+                    ? accounts.map(({ sync_status, name, id }) => (
+                        <div
+                          class={'vendor-account-menu-item'}
+                          onClick={() => props.handleSelect(id)}
+                        >
                           <img
                             src={
                               sync_status === 'sync_success'

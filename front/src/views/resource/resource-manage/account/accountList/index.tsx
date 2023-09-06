@@ -5,6 +5,7 @@ import allVendors from '@/assets/image/all-vendors.png';
 import CreateAccount from '../createAccount';
 import VendorAccounts from './components/VendorAccounts';
 import { useAllVendorsAccounts } from './useAllVendorsAccountsList';
+import { useResourceAccount } from './useResourceAccount';
 
 export default defineComponent({
   setup() {
@@ -16,6 +17,9 @@ export default defineComponent({
       accountsMatrix,
       isLoading,
     } = useAllVendorsAccounts();
+    const {
+      setAccountId,
+    } = useResourceAccount();
 
     const handleCancel = () => {
       isCreateAccountDialogShow.value = false;
@@ -55,7 +59,7 @@ export default defineComponent({
             </Button>
           </div>
         </div>
-        <div class={'all-vendors specific-vendor'}>
+        <div class={'all-vendors specific-vendor'} onClick={() => setAccountId('')}>
           <img src={allVendors} alt='全部账号'class={'vendor-icon'} />
           <div>全部账号</div>
         </div>
@@ -80,6 +84,7 @@ export default defineComponent({
           <VendorAccounts
             accounts={accountsMatrix}
             handleExpand={handleExpand}
+            handleSelect={setAccountId}
           />
          </Loading>
         <CreateAccount

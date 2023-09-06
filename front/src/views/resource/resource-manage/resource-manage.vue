@@ -47,6 +47,7 @@ import {
 } from '@/store';
 
 import { useVerify } from '@/hooks';
+import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 
 // use hooks
 const {
@@ -74,6 +75,8 @@ const {
   permissionParams,
   authVerifyData,
 } = useVerify();
+
+const resourceAccountStore = useResourceAccountStore();
 
 // 搜索过滤相关数据
 const filter = ref({ op: 'and', rules: [] });
@@ -230,6 +233,18 @@ watch(
   },
 );
 
+watch(
+  () => resourceAccountStore.resourceAccount,
+  (resourceAccount: any) => {
+    if (resourceAccount?.id) accountId.value = resourceAccount.id;
+    else accountId.value = '';
+  },
+  {
+    deep: true,
+    immediate: true,
+  },
+);
+
 const getResourceAccountList = async () => {
   try {
     const params = {
@@ -322,7 +337,9 @@ getResourceAccountList();
 
     <div class="navigation-resource">
       <div class="card-layout">
-        <p class="resource-title">云账号1</p>
+        <p class="resource-title">
+          {{ resourceAccountStore?.resourceAccount?.name }}
+        </p>
         <BkTab class="ml15" type="unborder-card" v-model="activeResourceTab">
           <BkTabPanel
             v-for="item of RESOURCE_TABS"
@@ -333,9 +350,11 @@ getResourceAccountList();
         </BkTab>
       </div>
     </div>
-    <bk-alert theme="error" closable class="ml24">
+    <bk-alert
+      theme="error" closable class="ml24"
+      v-if="resourceAccountStore?.resourceAccount?.sync_failed_reason?.length">
       <template #title>
-        账号接入异常，***********************
+        {{ resourceAccountStore?.resourceAccount?.sync_failed_reason }}
         <bk-button text theme="primary" class="ml10">查看详情</bk-button>
       </template>
     </bk-alert>
