@@ -42,7 +42,7 @@
     margin-right: 12px;
   }
 
-  .vendor-account-menu-item:hover {
+  .vendor-account-menu-item:hover, .actived-vendor-account-menu-item {
     background-color: #e1ecff;
     border-left: 3px #3a84ff solid;
   }

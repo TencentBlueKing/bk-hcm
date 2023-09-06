@@ -3,6 +3,7 @@ import './index.scss';
 import successAccount from '@/assets/image/success-account.png';
 import failedAccount from '@/assets/image/failed-account.png';
 import { VendorEnum } from '@/common/constant';
+import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 
 export default defineComponent({
   props: {
@@ -29,6 +30,7 @@ export default defineComponent({
     },
   },
   setup(props) {
+    const resourceAccountStore = useResourceAccountStore();
     return () => (
       <div class={'vendor-account-list'}>
         {props.accounts.map(({ vendor, count, name, icon, accounts, isExpand }) => (
@@ -51,7 +53,7 @@ export default defineComponent({
                   {isExpand
                     ? accounts.map(({ sync_status, name, id }) => (
                         <div
-                          class={'vendor-account-menu-item'}
+                          class={`vendor-account-menu-item ${resourceAccountStore.resourceAccount?.id === id ? 'actived-vendor-account-menu-item' : ''}`}
                           onClick={() => props.handleSelect(id)}
                         >
                           <img
