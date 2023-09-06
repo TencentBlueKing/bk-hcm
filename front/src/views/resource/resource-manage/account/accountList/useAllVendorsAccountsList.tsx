@@ -87,7 +87,7 @@ export const useAllVendorsAccounts = () => {
           filter,
           page: {
             start: 0,
-            limit: isCount ? 0 : 100,
+            limit: isCount ? 0 : 500,
             count: isCount,
           },
         }));

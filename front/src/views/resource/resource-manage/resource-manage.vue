@@ -227,6 +227,7 @@ watch(
   () => {
     router.replace({
       query: {
+        ...route.query,
         type: activeTab.value,
       },
     });
