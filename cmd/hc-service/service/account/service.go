@@ -64,11 +64,14 @@ func InitAccountService(cap *capability.Capability) {
 		svc.GetGcpResCountBySecret)
 	h.Add("GetAzureResCountBySecret", http.MethodPost, "/vendors/azure/accounts/res_counts/by_secrets",
 		svc.GetAzureResCountBySecret)
-
 	h.Add("TCloudGetResCountBySecret", http.MethodPost, "/vendors/tcloud/accounts/res_counts/by_secrets",
 		svc.TCloudGetResCountBySecret)
 	h.Add("AwsGetResCountBySecret", http.MethodPost, "/vendors/aws/accounts/res_counts/by_secrets",
 		svc.AwsGetResCountBySecret)
+
+	// 通过密钥获取账号权限策略
+	h.Add("ListTCloudAuthPolicies", http.MethodPost, "/vendors/tcloud/accounts/auth_policies/list",
+		svc.ListTCloudAuthPolicies)
 
 	h.Load(cap.WebService)
 }

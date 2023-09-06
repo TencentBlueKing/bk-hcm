@@ -22,6 +22,7 @@ package account
 import (
 	"strconv"
 
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/converter"
 )
 
@@ -63,4 +64,15 @@ type TCloudAccount struct {
 // GetCloudID ...
 func (account TCloudAccount) GetCloudID() string {
 	return strconv.FormatUint(converter.PtrToVal(account.Uid), 10)
+}
+
+// TCloudListPolicyOption define tcloud list policy option.
+type TCloudListPolicyOption struct {
+	Uin         uint64  `json:"uin" validate:"required"`
+	ServiceType *string `json:"service_type" validate:"omitempty"`
+}
+
+// Validate define tcloud list policy option.
+func (opt TCloudListPolicyOption) Validate() error {
+	return validator.Validate.Struct(opt)
 }

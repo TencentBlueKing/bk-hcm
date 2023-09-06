@@ -27,6 +27,7 @@ import (
 	"sync/atomic"
 
 	"hcm/pkg/adaptor/types"
+	typeaccount "hcm/pkg/adaptor/types/account"
 	"hcm/pkg/api/core/cloud"
 	hsaccount "hcm/pkg/api/hc-service/account"
 	"hcm/pkg/criteria/enumor"
@@ -606,4 +607,37 @@ func shallowCopyKitWithCancel(kt *kit.Kit) (*kit.Kit, func()) {
 	ctxNew, cancel := context.WithCancel(kt.Ctx)
 	newKit.Ctx = ctxNew
 	return newKit, cancel
+}
+
+// ListTCloudAuthPolicies 查询账号授权策略
+func (svc *service) ListTCloudAuthPolicies(cts *rest.Contexts) (interface{}, error) {
+	req := new(hsaccount.ListTCloudAuthPolicyReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := svc.ad.Adaptor().TCloud(
+		&types.BaseSecret{
+			CloudSecretID:  req.CloudSecretID,
+			CloudSecretKey: req.CloudSecretKey,
+		})
+	if err != nil {
+		logs.Errorf("build tcloud client failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	opt := &typeaccount.TCloudListPolicyOption{
+		Uin:         req.Uin,
+		ServiceType: req.ServiceType,
+	}
+	result, err := client.ListPoliciesGrantingServiceAccess(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list policies granting service access failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return result, nil
 }

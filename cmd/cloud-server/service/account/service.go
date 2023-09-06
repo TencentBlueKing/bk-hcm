@@ -69,6 +69,10 @@ func InitAccountService(c *capability.Capability) {
 	h.Add("ListWithExtension", http.MethodPost, "/accounts/extensions/list", svc.ListWithExtension)
 	h.Add("ListSecretKey", http.MethodPost, "/accounts/secrets/list", svc.ListSecretKey)
 
+	// 通过密钥获取账号权限策略
+	h.Add("ListTCloudAuthPolicies", http.MethodPost, "/vendors/tcloud/accounts/auth_policies/list",
+		svc.ListTCloudAuthPolicies)
+
 	h.Load(c.WebService)
 }
 
