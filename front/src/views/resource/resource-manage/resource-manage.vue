@@ -1,10 +1,5 @@
 <script setup lang="ts">
-import {
-  ref,
-  watch,
-  computed,
-  provide,
-} from 'vue';
+import { ref, watch, computed, provide } from 'vue';
 
 import HostManage from './children/manage/host-manage.vue';
 import VpcManage from './children/manage/vpc-manage.vue';
@@ -24,45 +19,31 @@ import securityForm from '@/views/business/forms/security/index.vue';
 import firewallForm from '@/views/business/forms/firewall';
 import BkTab, { BkTabPanel } from 'bkui-vue/lib/tab';
 
-import {
-  RESOURCE_TYPES,
-  RESOURCE_TABS,
-} from '@/common/constant';
+import { RESOURCE_TYPES, RESOURCE_TABS } from '@/common/constant';
 
-import {
-  useI18n,
-} from 'vue-i18n';
-import {
-  useRouter,
-  useRoute,
-} from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { useRouter, useRoute } from 'vue-router';
 import useSteps from './hooks/use-steps';
 
-import type {
-  FilterType,
-} from '@/typings/resource';
+import type { FilterType } from '@/typings/resource';
 
-import {
-  useAccountStore,
-} from '@/store';
+import { useAccountStore } from '@/store';
 
 import { useVerify } from '@/hooks';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
+import AccountInfo from './AccountInfo';
+import PurchaseRecord from './PurchaseRecord';
+import RecycleBin from './RecycleBin';
 
 // use hooks
-const {
-  t,
-} = useI18n();
+const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const accountStore = useAccountStore();
-const {
-  isShowDistribution,
-  handleDistribution,
-  ResourceDistribution,
-} = useSteps();
+const { isShowDistribution, handleDistribution, ResourceDistribution } =  useSteps();
 
-const isResourcePage = computed(() => {   // 资源下没有业务ID
+const isResourcePage = computed(() => {
+  // 资源下没有业务ID
   return !accountStore.bizs;
 });
 
@@ -83,7 +64,10 @@ const filter = ref({ op: 'and', rules: [] });
 const accountId = ref('');
 const status = ref('all');
 const op = ref('eq');
-const accountFilter = ref<FilterType>({ op: 'and', rules: [{ field: 'type', op: 'eq', value: 'resource' }] });
+const accountFilter = ref<FilterType>({
+  op: 'and',
+  rules: [{ field: 'type', op: 'eq', value: 'resource' }],
+});
 const isShowSideSlider = ref(false);
 const componentRef = ref();
 const securityType = ref('group');
@@ -104,7 +88,7 @@ const renderForm = computed(() => {
     if (route.query.type === cur) {
       if (cur === 'security' && securityType.value === 'gcp') acc = firewallForm;
       else acc = formMap[cur];
-    };
+    }
     return acc;
   }, {});
 });
@@ -130,15 +114,18 @@ const tabs = RESOURCE_TYPES.map((type) => {
     component: componentMap[type.type],
   };
 });
-const activeTab = ref(route.query.type as string || tabs[0].type);
+const activeTab = ref((route.query.type as string) || tabs[0].type);
 
 const filterData = (key: string, val: string | number) => {
   if (!filter.value.rules.length) {
-    if (val === 1) {    // 已分配标志
+    if (val === 1) {
+      // 已分配标志
       op.value = 'neq';
     }
     filter.value.rules.push({
-      field: key, op: op.value, value: -1,
+      field: key,
+      op: op.value,
+      value: -1,
     });
   } else {
     filter.value.rules.forEach((e: any) => {
@@ -148,11 +135,14 @@ const filterData = (key: string, val: string | number) => {
         return;
       }
       if (filter.value.rules.length === 2) return;
-      if (val === 1) {    // 已分配标志
+      if (val === 1) {
+        // 已分配标志
         op.value = 'neq';
       }
       filter.value.rules.push({
-        field: key, op: op.value, value: -1,
+        field: key,
+        op: op.value,
+        value: -1,
       });
     });
   }
@@ -186,7 +176,9 @@ watch(
     if (val) {
       if (!filter.value.rules.length) {
         filter.value.rules.push({
-          field: 'account_id', op: 'eq', value: val,
+          field: 'account_id',
+          op: 'eq',
+          value: val,
         });
       } else {
         filter.value.rules.forEach((e: any) => {
@@ -195,7 +187,9 @@ watch(
           } else {
             if (filter.value.rules.length === 2) return;
             filter.value.rules.push({
-              field: 'account_id', op: 'eq', value: val,
+              field: 'account_id',
+              op: 'eq',
+              value: val,
             });
           }
         });
@@ -222,17 +216,14 @@ watch(
 );
 
 // 状态保持
-watch(
-  activeTab,
-  () => {
-    router.replace({
-      query: {
-        ...route.query,
-        type: activeTab.value,
-      },
-    });
-  },
-);
+watch(activeTab, () => {
+  router.replace({
+    query: {
+      ...route.query,
+      type: activeTab.value,
+    },
+  });
+});
 
 watch(
   () => resourceAccountStore.resourceAccount,
@@ -257,9 +248,7 @@ const getResourceAccountList = async () => {
     };
     const res = await accountStore.getAccountList(params);
     accountStore.updateAccountList(res?.data?.details); // 账号数据   用于筛选
-  } catch (error) {
-
-  }
+  } catch (error) {}
 };
 
 const handleCancel = () => {
@@ -279,12 +268,9 @@ const handleEdit = (detail: any) => {
 };
 
 getResourceAccountList();
-
-
 </script>
 
 <template>
-
   <div>
     <!-- <section class="flex-center resource-header">
       <section class="flex-center" v-if="activeTab !== 'image'">
@@ -341,7 +327,11 @@ getResourceAccountList();
         <p class="resource-title">
           {{ resourceAccountStore?.resourceAccount?.name }}
         </p>
-        <BkTab class="ml15" type="unborder-card" v-model="activeResourceTab">
+        <BkTab
+          class="ml15"
+          type="unborder-card"
+          v-model:active="activeResourceTab"
+        >
           <BkTabPanel
             v-for="item of RESOURCE_TABS"
             :label="item.label"
@@ -351,112 +341,123 @@ getResourceAccountList();
         </BkTab>
       </div>
     </div>
-    <bk-alert
-      theme="error" closable class="ml24"
-      v-if="resourceAccountStore?.resourceAccount?.sync_failed_reason?.length">
-      <template #title>
-        {{ resourceAccountStore?.resourceAccount?.sync_failed_reason }}
-        <bk-button text theme="primary" class="ml10">查看详情</bk-button>
-      </template>
-    </bk-alert>
-    <bk-tab
-      v-model:active="activeTab"
-      type="card-grid"
-      class="resource-main g-scroller ml24"
-    >
-      <template #setting>
-        <div style="margin: 0 10px">
-          <bk-select v-model="status" :clearable="false" class="w80">
-            <bk-option
-              v-for="(item, index) in DISTRIBUTE_STATUS_LIST"
-              :key="index"
-              :value="item.value"
-              :label="item.label"
-            />
-          </bk-select>
-        </div>
-      </template>
-      <bk-tab-panel
-        v-for="item in tabs"
-        :key="item.name"
-        :name="item.name"
-        :label="item.type"
+
+    <div v-if="activeResourceTab === '/resoure/resource'">
+      <bk-alert
+        theme="error"
+        closable
+        class="ml24"
+        v-if="resourceAccountStore?.resourceAccount?.sync_failed_reason?.length"
       >
-        <component
-          v-if="item.name === activeTab"
-          :is="item.component"
-          :filter="filter"
-          :where-am-i="activeTab"
-          :is-resource-page="isResourcePage"
-          :auth-verify-data="authVerifyData"
-          @auth="(val: string) => {
-            handleAuth(val)
-          }"
-          @tabchange="handleTabChange"
-          ref="componentRef"
-          @edit="handleEdit"
+        <template #title>
+          {{ resourceAccountStore?.resourceAccount?.sync_failed_reason }}
+          <bk-button text theme="primary" class="ml10">查看详情</bk-button>
+        </template>
+      </bk-alert>
+      <bk-tab
+        v-model:active="activeTab"
+        type="card-grid"
+        class="resource-main g-scroller ml24"
+      >
+        <template #setting>
+          <div style="margin: 0 10px">
+            <bk-select v-model="status" :clearable="false" class="w80">
+              <bk-option
+                v-for="(item, index) in DISTRIBUTE_STATUS_LIST"
+                :key="index"
+                :value="item.value"
+                :label="item.label"
+              />
+            </bk-select>
+          </div>
+        </template>
+        <bk-tab-panel
+          v-for="item in tabs"
+          :key="item.name"
+          :name="item.name"
+          :label="item.type"
         >
-          <span
-            @click="handleAuth('biz_iaas_resource_create')"
-            v-if="
-              ['host', 'vpc', 'drive', 'security', 'subnet', 'ip'].includes(
-                activeTab,
-              )
-            "
+          <component
+            v-if="item.name === activeTab"
+            :is="item.component"
+            :filter="filter"
+            :where-am-i="activeTab"
+            :is-resource-page="isResourcePage"
+            :auth-verify-data="authVerifyData"
+            @auth="(val: string) => {
+              handleAuth(val)
+            }"
+            @tabchange="handleTabChange"
+            ref="componentRef"
+            @edit="handleEdit"
           >
-            <bk-button
-              theme="primary"
-              class="new-button"
-              :disabled="
-                !authVerifyData?.permissionAction?.biz_iaas_resource_create
+            <span
+              @click="handleAuth('biz_iaas_resource_create')"
+              v-if="
+                ['host', 'vpc', 'drive', 'security', 'subnet', 'ip'].includes(
+                  activeTab,
+                )
               "
-              @click="handleAdd"
             >
-              {{ activeTab === 'host' ? '购买' : '新建' }}
+              <bk-button
+                theme="primary"
+                class="new-button"
+                :disabled="
+                  !authVerifyData?.permissionAction?.biz_iaas_resource_create
+                "
+                @click="handleAdd"
+              >
+                {{ activeTab === 'host' ? '购买' : '新建' }}
+              </bk-button>
+            </span>
+            <bk-button
+              v-if="activeTab === 'host'"
+              class="ml8 mr8"
+              @click="handleDistribution"
+            >
+              批量分配
             </bk-button>
-          </span>
-          <bk-button
-            v-if="activeTab === 'host'"
-            class="ml8 mr8"
-            @click="handleDistribution"
-          >
-            批量分配
-          </bk-button>
-        </component>
-      </bk-tab-panel>
-    </bk-tab>
+          </component>
+        </bk-tab-panel>
+      </bk-tab>
 
-    <bk-sideslider
-      v-model:isShow="isShowSideSlider"
-      width="800"
-      title="新增"
-      quick-close
-    >
-      <template #default>
-        <component
-          :is="renderForm"
-          :filter="filter"
-          @cancel="handleCancel"
-          @success="handleSuccess"
-          :is-edit="isEdit"
-          :detail="formDetail"
-        ></component>
-      </template>
-    </bk-sideslider>
+      <bk-sideslider
+        v-model:isShow="isShowSideSlider"
+        width="800"
+        title="新增"
+        quick-close
+      >
+        <template #default>
+          <component
+            :is="renderForm"
+            :filter="filter"
+            @cancel="handleCancel"
+            @success="handleSuccess"
+            :is-edit="isEdit"
+            :detail="formDetail"
+          ></component>
+        </template>
+      </bk-sideslider>
 
-    <resource-distribution
-      v-model:is-show="isShowDistribution"
-      :choose-resource-type="true"
-      :title="t('快速分配')"
-      :data="[]"
-    />
+      <resource-distribution
+        v-model:is-show="isShowDistribution"
+        :choose-resource-type="true"
+        :title="t('快速分配')"
+        :data="[]"
+      />
 
-    <permission-dialog
-      v-model:is-show="showPermissionDialog"
-      :params="permissionParams"
-      @cancel="handlePermissionDialog"
-      @confirm="handlePermissionConfirm"
-    ></permission-dialog>
+      <permission-dialog
+        v-model:is-show="showPermissionDialog"
+        :params="permissionParams"
+        @cancel="handlePermissionDialog"
+        @confirm="handlePermissionConfirm"
+      ></permission-dialog>
+    </div>
+
+    <AccountInfo v-if="activeResourceTab === '/resoure/account'" />
+    <PurchaseRecord v-if="activeResourceTab === '/resoure/record'" />
+    <RecycleBin v-if="activeResourceTab === '/resoure/recycle'" />
+
   </div>
 </template>
 
@@ -475,9 +476,9 @@ getResourceAccountList();
   box-shadow: 1px 2px 3px 0 rgb(0 0 0 / 5%);
   height: calc(100vh - 200px);
   :deep(.bk-tab-content) {
-    border-left: 1px solid #dcdee5;;
-    border-right: 1px solid #dcdee5;;
-    border-bottom: 1px solid #dcdee5;;
+    border-left: 1px solid #dcdee5;
+    border-right: 1px solid #dcdee5;
+    border-bottom: 1px solid #dcdee5;
     padding: 20px;
   }
 }
