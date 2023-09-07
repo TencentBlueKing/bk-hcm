@@ -29,7 +29,9 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/uuid"
 
+	bssmodel "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/bssintl/v2/model"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/evs/v2/model"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 )
@@ -54,6 +56,127 @@ func (h *HuaWei) CreateDisk(kt *kit.Kit, opt *disk.HuaWeiDiskCreateOption) (*pol
 		Handler: &createDiskPollingHandler{region: opt.Region},
 	}
 	return respPoller.PollUntilDone(h, kt, common.StringPtrs(*resp.VolumeIds), nil)
+}
+
+// InquiryPriceDisk 创建云硬盘询价
+// reference: https://console-intl.huaweicloud.com/apiexplorer/#/openapi/BSSINTL/debug?api=ListRateOnPeriodDetail
+// reference: https://console-intl.huaweicloud.com/apiexplorer/#/openapi/BSSINTL/debug?api=ListOnDemandResourceRatings
+func (h *HuaWei) InquiryPriceDisk(kt *kit.Kit, opt *disk.HuaWeiDiskCreateOption) (
+	*disk.InquiryPriceResult, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "option is required")
+	}
+
+	projectID, err := h.GetProjectID(kt, opt.Region)
+	if err != nil {
+		logs.Errorf("get project id failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	switch converter.PtrToVal(opt.DiskChargeType) {
+	case disk.HuaWeiDiskChargeTypeEnum.PRE_PAID:
+		return h.inquiryPricePrepaidDisk(kt, opt, projectID)
+	case disk.HuaWeiDiskChargeTypeEnum.POST_PAID:
+		return h.inquiryPricePostPaidDisk(kt, opt, projectID)
+	default:
+		return nil, fmt.Errorf("invalid charge type %s", converter.PtrToVal(opt.DiskChargeType))
+	}
+}
+
+func (h *HuaWei) inquiryPricePostPaidDisk(kt *kit.Kit, opt *disk.HuaWeiDiskCreateOption, projectID string) (
+	*disk.InquiryPriceResult, error) {
+
+	client, err := h.clientSet.bssintlClient()
+	if err != nil {
+		return nil, err
+	}
+
+	req := &bssmodel.ListOnDemandResourceRatingsRequest{
+		Body: &bssmodel.RateOnDemandReq{
+			ProjectId: projectID,
+			ProductInfos: []bssmodel.DemandProductInfo{
+				{
+					Id:               uuid.UUID(),
+					CloudServiceType: "hws.service.type.ebs",
+					ResourceType:     "hws.resource.type.volume",
+					ResourceSpec:     opt.DiskType,
+					Region:           opt.Region,
+					AvailableZone:    converter.ValToPtr(opt.Zone),
+					ResourceSize:     converter.ValToPtr(opt.DiskSize),
+					SizeMeasureId:    converter.ValToPtr(int32(17)),
+					UsageFactor:      "Duration",
+					UsageValue:       1,
+					UsageMeasureId:   4,
+					SubscriptionNum:  1,
+				},
+			},
+		},
+	}
+	resp, err := client.ListOnDemandResourceRatings(req)
+	if err != nil {
+		logs.Errorf("list rate on period detail failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	result := &disk.InquiryPriceResult{
+		DiscountPrice: converter.PtrToVal(resp.OfficialWebsiteAmount),
+		OriginalPrice: 0,
+	}
+
+	return result, nil
+}
+
+func (h *HuaWei) inquiryPricePrepaidDisk(kt *kit.Kit, opt *disk.HuaWeiDiskCreateOption, projectID string) (
+	*disk.InquiryPriceResult, error) {
+
+	client, err := h.clientSet.bssintlClient()
+	if err != nil {
+		return nil, err
+	}
+
+	periodType := int32(0)
+	switch converter.PtrToVal(opt.DiskChargePrepaid.PeriodType) {
+	case disk.HuaWeiDiskPeriodTypeEnum.YEAR:
+		periodType = 3
+	case disk.HuaWeiDiskPeriodTypeEnum.MONTH:
+		periodType = 2
+	default:
+		return nil, fmt.Errorf("invalid period type %s", converter.PtrToVal(opt.DiskChargePrepaid.PeriodType))
+	}
+
+	req := &bssmodel.ListRateOnPeriodDetailRequest{
+		Body: &bssmodel.RateOnPeriodReq{
+			ProjectId: projectID,
+			ProductInfos: []bssmodel.PeriodProductInfo{
+				{
+					Id:               uuid.UUID(),
+					CloudServiceType: "hws.service.type.ebs",
+					ResourceType:     "hws.resource.type.volume",
+					ResourceSpec:     opt.DiskType,
+					Region:           opt.Region,
+					AvailableZone:    converter.ValToPtr(opt.Zone),
+					ResourceSize:     converter.ValToPtr(opt.DiskSize),
+					SizeMeasureId:    converter.ValToPtr(int32(17)),
+					PeriodType:       periodType,
+					PeriodNum:        converter.PtrToVal(opt.DiskChargePrepaid.PeriodNum),
+					SubscriptionNum:  1,
+				},
+			},
+		},
+	}
+	resp, err := client.ListRateOnPeriodDetail(req)
+	if err != nil {
+		logs.Errorf("list rate on period detail failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	result := &disk.InquiryPriceResult{
+		DiscountPrice: converter.PtrToVal(resp.OfficialWebsiteRatingResult.OfficialWebsiteAmount),
+		OriginalPrice: 0,
+	}
+
+	return result, nil
 }
 
 func (h *HuaWei) createDisk(opt *disk.HuaWeiDiskCreateOption) (*model.CreateVolumeResponse, error) {

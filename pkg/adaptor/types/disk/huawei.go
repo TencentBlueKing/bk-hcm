@@ -97,7 +97,7 @@ func (opt *HuaWeiDiskCreateOption) ToCreateVolumeRequest() (*model.CreateVolumeR
 		Count:            opt.DiskCount,
 	}
 
-	chargingMode, err := getCreateVolumeChargingMode(*opt.DiskChargeType)
+	chargingMode, err := GetCreateVolumeChargingMode(*opt.DiskChargeType)
 	req.Body.BssParam = &model.BssParamForCreateVolume{ChargingMode: chargingMode}
 	// 预付费时, 需要设置订购周期等参数
 	if chargingMode.Value() == HuaWeiDiskChargeTypeEnum.PRE_PAID {
@@ -142,7 +142,8 @@ func getCreateVolumeOptionVolumeType(diskType string) (*model.CreateVolumeOption
 	}
 }
 
-func getCreateVolumeChargingMode(chargeType string) (*model.BssParamForCreateVolumeChargingMode, error) {
+// GetCreateVolumeChargingMode get create volume charging mode.
+func GetCreateVolumeChargingMode(chargeType string) (*model.BssParamForCreateVolumeChargingMode, error) {
 	enum := model.GetBssParamForCreateVolumeChargingModeEnum()
 	switch chargeType {
 	case HuaWeiDiskChargeTypeEnum.PRE_PAID:

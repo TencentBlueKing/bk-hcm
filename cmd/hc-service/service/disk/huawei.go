@@ -30,6 +30,49 @@ import (
 	"hcm/pkg/rest"
 )
 
+// InquiryPriceHuaWeiDisk ...
+func (svc *service) InquiryPriceHuaWeiDisk(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.HuaWeiDiskCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := svc.Adaptor.HuaWei(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	diskCount := int32(req.DiskCount)
+	opt := &disk.HuaWeiDiskCreateOption{
+		DiskName:       req.DiskName,
+		Region:         req.Region,
+		Zone:           req.Zone,
+		DiskType:       req.DiskType,
+		DiskSize:       int32(req.DiskSize),
+		DiskCount:      &diskCount,
+		DiskChargeType: &req.Extension.DiskChargeType,
+	}
+
+	if prepaid := req.Extension.DiskChargePrepaid; prepaid != nil {
+		opt.DiskChargePrepaid = &disk.HuaWeiDiskChargePrepaid{
+			PeriodNum:   prepaid.PeriodNum,
+			PeriodType:  prepaid.PeriodType,
+			IsAutoRenew: prepaid.IsAutoRenew,
+		}
+	}
+
+	result, err := client.InquiryPriceDisk(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("inquiry price huawei disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // CreateHuaWeiDisk ...
 func (svc *service) CreateHuaWeiDisk(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.HuaWeiDiskCreateReq)

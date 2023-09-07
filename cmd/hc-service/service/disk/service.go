@@ -67,6 +67,7 @@ func InitDiskService(cap *capability.Capability) {
 
 	// 询价
 	h.Add("InquiryPriceTCloudDisk", http.MethodPost, "/vendors/tcloud/disks/prices/inquiry", d.InquiryPriceTCloudDisk)
+	h.Add("InquiryPriceHuaWeiDisk", http.MethodPost, "/vendors/huawei/disks/prices/inquiry", d.InquiryPriceHuaWeiDisk)
 
 	h.Load(cap.WebService)
 }

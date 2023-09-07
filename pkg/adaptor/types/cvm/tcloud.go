@@ -286,8 +286,8 @@ func (cvm TCloudCvm) GetCloudID() string {
 	return converter.PtrToVal(cvm.InstanceId)
 }
 
-// TCloudInquiryPriceResult define tcloud inquiry price result.
-type TCloudInquiryPriceResult struct {
+// InquiryPriceResult define tcloud inquiry price result.
+type InquiryPriceResult struct {
 	DiscountPrice float64 `json:"discount_price"`
 	OriginalPrice float64 `json:"original_price"`
 }

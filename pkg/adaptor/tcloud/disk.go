@@ -56,7 +56,7 @@ func (t *TCloud) CreateDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*pol
 // InquiryPriceDisk 创建云硬盘询价
 // reference: https://cloud.tencent.com/document/api/362/16314
 func (t *TCloud) InquiryPriceDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (
-	*typecvm.TCloudInquiryPriceResult, error) {
+	*typecvm.InquiryPriceResult, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "option is required")
@@ -87,7 +87,7 @@ func (t *TCloud) InquiryPriceDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption)
 		return nil, err
 	}
 
-	result := new(typecvm.TCloudInquiryPriceResult)
+	result := new(typecvm.InquiryPriceResult)
 	switch opt.DiskChargeType {
 	case disk.TCloudDiskChargeTypeEnum.PREPAID:
 		result.OriginalPrice = converter.PtrToVal(resp.Response.DiskPrice.OriginalPrice)

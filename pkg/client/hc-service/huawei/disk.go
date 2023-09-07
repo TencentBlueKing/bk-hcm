@@ -23,10 +23,12 @@ import (
 	"context"
 	"net/http"
 
+	typedisk "hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/hc-service/disk"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -143,6 +145,33 @@ func (cli *DiskClient) CreateDisk(
 		Body(req).
 		SubResourcef("/disks/create").
 		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// InquiryPrice ....
+func (cli *DiskClient) InquiryPrice(kt *kit.Kit, request *disk.HuaWeiDiskCreateReq) (
+	*typedisk.InquiryPriceResult, error) {
+
+	resp := &struct {
+		rest.BaseResp `json:",inline"`
+		Data          *typedisk.InquiryPriceResult `json:"data"`
+	}{}
+
+	err := cli.client.Post().
+		WithContext(kt.Ctx).
+		Body(request).
+		SubResourcef("/disks/prices/inquiry").
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
