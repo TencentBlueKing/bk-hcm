@@ -26,6 +26,7 @@ import (
 	protoaudit "hcm/pkg/api/data-service/audit"
 	"hcm/pkg/api/data-service/cloud"
 	recyclerecord "hcm/pkg/api/data-service/recycle-record"
+	"hcm/pkg/cc"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -181,8 +182,9 @@ func (svc *cvmSvc) recycleCvm(kt *kit.Kit, req *proto.CvmRecycleReq, infoMap map
 
 	// create recycle record
 	opt := &recyclerecord.BatchRecycleReq{
-		ResType: enumor.CvmCloudResType,
-		Infos:   make([]recyclerecord.RecycleReq, 0),
+		ResType:            enumor.CvmCloudResType,
+		DefaultRecycleTime: cc.CloudServer().Recycle.AutoDeleteTime,
+		Infos:              make([]recyclerecord.RecycleReq, 0),
 	}
 	for _, info := range req.Infos {
 		if _, exists := failedIDMap[info.ID]; exists {
@@ -265,8 +267,17 @@ func (svc *cvmSvc) detachDiskByCvmIDs(kt *kit.Kit, ids []string, basicInfoMap ma
 	return res, nil
 }
 
+// RecoverCvm recover biz cvm.
+func (svc *cvmSvc) RecoverBizCvm(cts *rest.Contexts) (interface{}, error) {
+	return svc.recoverCvm(cts, handler.BizValidWithAuth)
+}
+
 // RecoverCvm recover cvm.
 func (svc *cvmSvc) RecoverCvm(cts *rest.Contexts) (interface{}, error) {
+	return svc.recoverCvm(cts, handler.ResValidWithAuth)
+}
+
+func (svc *cvmSvc) recoverCvm(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	req := new(proto.CvmRecoverReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -294,15 +305,26 @@ func (svc *cvmSvc) RecoverCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// authorize
-	authRes := make([]meta.ResourceAttribute, 0, len(records.Details))
+	ids := make([]string, 0, len(records.Details))
 	auditInfos := make([]protoaudit.CloudResRecycleAuditInfo, 0, len(records.Details))
 	for _, record := range records.Details {
-		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.RecycleBin, Action: meta.Recover,
-			ResourceID: record.AccountID}, BizID: record.BkBizID})
+		ids = append(ids, record.ID)
 		auditInfos = append(auditInfos, protoaudit.CloudResRecycleAuditInfo{ResID: record.ResID, Data: record.Detail})
 	}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
+
+	basicInfoReq := cloud.ListResourceBasicInfoReq{
+		ResourceType: enumor.CvmCloudResType,
+		IDs:          ids,
+	}
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+		basicInfoReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Cvm,
+		Action: meta.Recover, BasicInfos: basicInfoMap})
 	if err != nil {
 		return nil, err
 	}
@@ -352,8 +374,19 @@ func (svc *cvmSvc) validateRecycleRecord(records *recyclerecord.ListResult) erro
 	return nil
 }
 
+// BatchDeleteBizRecycledCvm batch delete biz recycled cvm.
+func (svc *cvmSvc) BatchDeleteBizRecycledCvm(cts *rest.Contexts) (interface{}, error) {
+	return svc.batchDeleteRecycledCvm(cts, handler.BizValidWithAuth)
+}
+
 // BatchDeleteRecycledCvm 立即销毁回收任务中的主机
 func (svc *cvmSvc) BatchDeleteRecycledCvm(cts *rest.Contexts) (interface{}, error) {
+	return svc.batchDeleteRecycledCvm(cts, handler.ResValidWithAuth)
+}
+
+func (svc *cvmSvc) batchDeleteRecycledCvm(cts *rest.Contexts,
+	validHandler handler.ValidWithAuthHandler) (interface{}, error) {
+
 	req := new(proto.CvmDeleteRecycledReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -400,7 +433,7 @@ func (svc *cvmSvc) BatchDeleteRecycledCvm(cts *rest.Contexts) (interface{}, erro
 	}
 
 	// validate biz and authorize
-	err = handler.RecycleValidWithAuth(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Cvm,
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Cvm,
 		Action: meta.Recycle, BasicInfos: basicInfoMap})
 	if err != nil {
 		return nil, err

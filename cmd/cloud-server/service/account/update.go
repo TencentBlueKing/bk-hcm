@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/tools/converter"
 )
 
+// Update ...
 func (a *accountSvc) Update(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AccountUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -42,8 +43,12 @@ func (a *accountSvc) Update(cts *rest.Contexts) (interface{}, error) {
 	}
 	accountID := cts.PathParameter("account_id").String()
 
+	action := meta.Update
+	if req.RecycleReserveTime != 0 {
+		action = meta.UpdateRRT
+	}
 	// 校验用户有该账号的更新权限
-	if err := a.checkPermission(cts, meta.Update, accountID); err != nil {
+	if err := a.checkPermission(cts, action, accountID); err != nil {
 		return nil, err
 	}
 

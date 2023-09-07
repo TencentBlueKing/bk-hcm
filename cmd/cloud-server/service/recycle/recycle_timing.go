@@ -40,6 +40,7 @@ import (
 	"hcm/pkg/serviced"
 	"hcm/pkg/thirdparty/esb"
 	"hcm/pkg/tools/retry"
+	"hcm/pkg/tools/times"
 )
 
 type recycle struct {
@@ -79,8 +80,8 @@ func (r *recycle) recycleTiming(resType enumor.CloudResourceType, worker recycle
 		// get need recycled resource records
 		expr, err := tools.And(tools.EqualWithOpExpression(filter.And,
 			map[string]interface{}{"res_type": resType, "status": enumor.WaitingRecycleRecordStatus}),
-			&filter.AtomRule{Field: "created_at", Op: filter.LessThanEqual.Factory(),
-				Value: time.Now().Add(-time.Hour * time.Duration(conf.AutoDeleteTime)).Format(constant.TimeStdFormat)})
+			&filter.AtomRule{Field: "recycled_at", Op: filter.LessThanEqual.Factory(),
+				Value: times.ConvStdTimeFormat(time.Now())})
 		if err != nil {
 			time.Sleep(time.Minute)
 			continue

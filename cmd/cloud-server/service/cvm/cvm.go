@@ -70,7 +70,10 @@ func InitCvmService(c *capability.Capability) {
 
 	// 业务下回收接口
 	h.Add("RecycleBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/recycle", svc.RecycleBizCvm)
+	h.Add("RecoverBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/recover", svc.RecoverBizCvm)
 	h.Add("GetBizRecycledCvm", http.MethodGet, "/bizs/{bk_biz_id}/recycled/cvms/{id}", svc.GetBizRecycledCvm)
+	h.Add("BatchDeleteBizRecycledCvm", http.MethodDelete, "/bizs/{bk_biz_id}/recycled/cvms/batch",
+		svc.BatchDeleteBizRecycledCvm)
 
 	h.Load(c.WebService)
 }

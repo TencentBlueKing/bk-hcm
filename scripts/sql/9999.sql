@@ -7,8 +7,12 @@
         3. aws_region表增加account_id字段，独立存储aws每个账号的地域信息
         4. 添加业务收藏表
         5. 添加账号同步详情表
+        6. 资源下账号粒度管理回收保留时间
 */
 start transaction;
+
+CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
+SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
 
 -- 1. 添加子账号表
 create table if not exists `sub_account`
@@ -70,9 +74,6 @@ create table if not exists `user_collection`
 insert into id_generator(`resource`, `max_id`)
 values ('user_collection', '0');
 
-CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
-
 -- 5. 添加账号同步详情表
 create table if not exists `account_sync_detail`
 (
@@ -94,5 +95,9 @@ create table if not exists `account_sync_detail`
   collate utf8mb4_bin;
 
 insert into id_generator(`resource`, `max_id`) values ('account_sync_detail', '0');
+
+-- 6. 资源下账号粒度管理回收保留时间
+alter table account add column recycle_reserve_time bigint default 0;
+alter table recycle_record add column recycled_at timestamp not null default current_timestamp;
 
 commit;

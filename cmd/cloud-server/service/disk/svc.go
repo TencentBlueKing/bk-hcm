@@ -220,9 +220,14 @@ func (svc *diskSvc) RetrieveBizDisk(cts *rest.Contexts) (interface{}, error) {
 	return svc.retrieveDisk(cts, handler.BizValidWithAuth)
 }
 
+// RetrieveBizRecycledDisk get biz recycled disk.
+func (svc *diskSvc) RetrieveBizRecycledDisk(cts *rest.Contexts) (interface{}, error) {
+	return svc.retrieveDisk(cts, handler.RecycleValidWithAuth)
+}
+
 // RetrieveRecycledDisk get recycled disk.
 func (svc *diskSvc) RetrieveRecycledDisk(cts *rest.Contexts) (interface{}, error) {
-	return svc.retrieveDisk(cts, handler.RecycleValidWithAuth)
+	return svc.retrieveDisk(cts, handler.BizRecycleValidWithAuth)
 }
 
 func (svc *diskSvc) retrieveDisk(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {

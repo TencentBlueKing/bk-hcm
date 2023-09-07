@@ -30,8 +30,9 @@ import (
 
 // BatchRecycleReq defines batch recycle cloud resource request.
 type BatchRecycleReq struct {
-	ResType enumor.CloudResourceType `json:"resource_type" validate:"required"`
-	Infos   []RecycleReq             `json:"infos" validate:"min=1,max=100"`
+	ResType            enumor.CloudResourceType `json:"resource_type" validate:"required"`
+	DefaultRecycleTime uint                     `json:"default_recycle_time" validate:"required"`
+	Infos              []RecycleReq             `json:"infos" validate:"min=1,max=100"`
 }
 
 // RecycleReq defines recycle one cloud resource request.

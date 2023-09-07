@@ -58,6 +58,7 @@ var AccountColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
 	{Column: "updated_at", NamedC: "updated_at", Type: enumor.Time},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
+	{Column: "recycle_reserve_time", NamedC: "recycle_reserve_time", Type: enumor.Numeric},
 }
 
 // AccountTable 云账号表
@@ -92,6 +93,8 @@ type AccountTable struct {
 	UpdatedAt types.Time `db:"updated_at" json:"updated_at"`
 	// Memo 账号信息备注
 	Memo *string `db:"memo" json:"memo"`
+	// RecycleReserveTime 回收站保留时长单位s
+	RecycleReserveTime int `db:"recycle_reserve_time" json:"recycle_reserve_time"`
 }
 
 // TableName return account table name.
