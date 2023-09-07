@@ -18,11 +18,11 @@ import subnetForm from '@/views/business/forms/subnet/index.vue';
 import securityForm from '@/views/business/forms/security/index.vue';
 import firewallForm from '@/views/business/forms/firewall';
 import BkTab, { BkTabPanel } from 'bkui-vue/lib/tab';
+import { RouterView, useRouter, useRoute } from 'vue-router';
 
 import { RESOURCE_TYPES, RESOURCE_TABS } from '@/common/constant';
 
 import { useI18n } from 'vue-i18n';
-import { useRouter, useRoute } from 'vue-router';
 import useSteps from './hooks/use-steps';
 
 import type { FilterType } from '@/typings/resource';
@@ -31,9 +31,6 @@ import { useAccountStore } from '@/store';
 
 import { useVerify } from '@/hooks';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
-import AccountInfo from './AccountInfo';
-import PurchaseRecord from './PurchaseRecord';
-import RecycleBin from './RecycleBin';
 
 // use hooks
 const { t } = useI18n();
@@ -237,6 +234,19 @@ watch(
   },
 );
 
+watch(
+  () => activeResourceTab.value,
+  (val) => {
+    router.push({
+      path: val,
+      query: route.query,
+    });
+  },
+  {
+    immediate: true,
+  },
+);
+
 const getResourceAccountList = async () => {
   try {
     const params = {
@@ -342,7 +352,7 @@ getResourceAccountList();
       </div>
     </div>
 
-    <div v-if="activeResourceTab === '/resoure/resource'">
+    <div v-if="activeResourceTab === '/resource/resource/'">
       <bk-alert
         theme="error"
         closable
@@ -454,9 +464,7 @@ getResourceAccountList();
       ></permission-dialog>
     </div>
 
-    <AccountInfo v-if="activeResourceTab === '/resoure/account'" />
-    <PurchaseRecord v-if="activeResourceTab === '/resoure/record'" />
-    <RecycleBin v-if="activeResourceTab === '/resoure/recycle'" />
+    <RouterView></RouterView>
 
   </div>
 </template>
