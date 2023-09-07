@@ -22,10 +22,27 @@ const resourceMenus: RouteRecordRaw[] = [
             path: 'account',
             name: t('账号详情'),
             component: () => import('@/views/resource/resource-manage/accountInfo/index'),
+            children: [
+              {
+                path: 'detail',
+                name: t('基本信息'),
+                component: () => import('@/views/resource/accountmanage/account-detail'),
+              },
+              {
+                path: 'resource',
+                name: t('资源状态'),
+                component: () => import('@/views/resource/resource-manage/recycleBin/index'),
+              },
+              {
+                path: 'manage',
+                name: t('账号详情'),
+                component: () => import('@/views/resource/resource-manage/purchaseRecord/index'),
+              },
+            ],
           },
           {
             path: 'recycle',
-            name: t('回收站'),
+            name: '资源接入回收站',
             component: () => import('@/views/resource/resource-manage/recycleBin/index'),
           },
         ],

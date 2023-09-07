@@ -386,3 +386,19 @@ export const RESOURCE_TABS = [
     label: '回收站',
   },
 ];
+
+
+export const RESOURCE_DETAIL_TABS =  [
+  {
+    key: '/resource/resource/account/detail',
+    label: '基本信息',
+  },
+  {
+    key: '/resource/resource/account/resource',
+    label: '资源状态',
+  },
+  {
+    key: '/resource/resource/account/manage',
+    label: '账号详情',
+  },
+];

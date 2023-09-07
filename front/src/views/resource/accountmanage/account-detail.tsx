@@ -64,7 +64,7 @@ export default defineComponent({
     const dialogForm = reactive({ list: [] });
 
     const getDetail = async () => {
-      const { id } = route.query;
+      const { accountId: id } = route.query;
       const res = await accountStore.getAccountDetail(id);
       projectModel.id = res?.data.id;
       projectModel.vendor = res?.data.vendor;
@@ -801,7 +801,7 @@ export default defineComponent({
 
     return () => (
       isLoading.value ? (<Loading/>) : (
-        <div class="w1400 detail-warp">
+        <div class="w1400 detail-warp p20">
             {/* 基本信息 */}
             {formBaseInfo.map((baseItem, index) => (
                 <div>
