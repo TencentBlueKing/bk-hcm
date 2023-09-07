@@ -17,15 +17,13 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package azure
+package disk
 
 import (
 	syncazure "hcm/cmd/hc-service/logics/res-sync/azure"
-	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/disk/datasvc"
 	"hcm/pkg/adaptor/types/disk"
 	proto "hcm/pkg/api/hc-service/disk"
-	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -33,19 +31,8 @@ import (
 	"hcm/pkg/tools/converter"
 )
 
-// DiskSvc ...
-type DiskSvc struct {
-	Adaptor *cloudclient.CloudAdaptorClient
-	DataCli *dataservice.Client
-}
-
-// CountDisk ...
-func (svc *DiskSvc) CountDisk(cts *rest.Contexts) (interface{}, error) {
-	return nil, nil
-}
-
-// CreateDisk ...
-func (svc *DiskSvc) CreateDisk(cts *rest.Contexts) (interface{}, error) {
+// CreateAzureDisk ...
+func (svc *service) CreateAzureDisk(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AzureDiskCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -92,8 +79,8 @@ func (svc *DiskSvc) CreateDisk(cts *rest.Contexts) (interface{}, error) {
 	return &proto.BatchCreateResult{SuccessCloudIDs: cloudIDs}, nil
 }
 
-// DeleteDisk ...
-func (svc *DiskSvc) DeleteDisk(cts *rest.Contexts) (interface{}, error) {
+// DeleteAzureDisk ...
+func (svc *service) DeleteAzureDisk(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.DiskDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -102,7 +89,7 @@ func (svc *DiskSvc) DeleteDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeDiskDeleteOption(cts.Kit, req)
+	opt, err := svc.makeAzureDiskDeleteOption(cts.Kit, req)
 	if err != nil {
 		return nil, err
 	}
@@ -121,8 +108,8 @@ func (svc *DiskSvc) DeleteDisk(cts *rest.Contexts) (interface{}, error) {
 	return nil, manager.Delete(cts.Kit, []string{req.DiskID})
 }
 
-// AttachDisk ...
-func (svc *DiskSvc) AttachDisk(cts *rest.Contexts) (interface{}, error) {
+// AttachAzureDisk ...
+func (svc *service) AttachAzureDisk(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AzureDiskAttachReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -131,7 +118,7 @@ func (svc *DiskSvc) AttachDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeDiskAttachOption(cts.Kit, req)
+	opt, err := svc.makeAzureDiskAttachOption(cts.Kit, req)
 	if err != nil {
 		return nil, err
 	}
@@ -186,8 +173,8 @@ func (svc *DiskSvc) AttachDisk(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-// DetachDisk ...
-func (svc *DiskSvc) DetachDisk(cts *rest.Contexts) (interface{}, error) {
+// DetachAzureDisk ...
+func (svc *service) DetachAzureDisk(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.DiskDetachReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -196,7 +183,7 @@ func (svc *DiskSvc) DetachDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeDiskDetachOption(cts.Kit, req)
+	opt, err := svc.makeAzureDiskDetachOption(cts.Kit, req)
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +232,7 @@ func (svc *DiskSvc) DetachDisk(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-func (svc *DiskSvc) makeDiskAttachOption(
+func (svc *service) makeAzureDiskAttachOption(
 	kt *kit.Kit,
 	req *proto.AzureDiskAttachReq,
 ) (*disk.AzureDiskAttachOption, error) {
@@ -269,7 +256,7 @@ func (svc *DiskSvc) makeDiskAttachOption(
 	}, nil
 }
 
-func (svc *DiskSvc) makeDiskDetachOption(
+func (svc *service) makeAzureDiskDetachOption(
 	kt *kit.Kit,
 	req *proto.DiskDetachReq,
 ) (*disk.AzureDiskDetachOption, error) {
@@ -292,7 +279,7 @@ func (svc *DiskSvc) makeDiskDetachOption(
 	}, nil
 }
 
-func (svc *DiskSvc) makeDiskDeleteOption(
+func (svc *service) makeAzureDiskDeleteOption(
 	kt *kit.Kit,
 	req *proto.DiskDeleteReq,
 ) (*disk.AzureDiskDeleteOption, error) {

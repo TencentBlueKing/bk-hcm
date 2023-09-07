@@ -42,9 +42,6 @@ require (
 	golang.org/x/time v0.3.0
 	google.golang.org/api v0.123.0
 	gopkg.in/yaml.v3 v3.0.1
-)
-
-require (
 	cloud.google.com/go/accesscontextmanager v1.7.0 // indirect
 	cloud.google.com/go/longrunning v0.4.1 // indirect
 	cloud.google.com/go/orgpolicy v1.10.0 // indirect
@@ -66,9 +63,6 @@ require (
 	go.opentelemetry.io/otel v1.16.0 // indirect
 	go.opentelemetry.io/otel/metric v1.16.0 // indirect
 	go.opentelemetry.io/otel/trace v1.16.0 // indirect
-)
-
-require (
 	cloud.google.com/go v0.110.0 // indirect
 	cloud.google.com/go/compute v1.19.0 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect

@@ -24,6 +24,7 @@ import (
 
 	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types/core"
+	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -50,6 +51,56 @@ func (t *TCloud) CreateDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*pol
 		Handler: &createDiskPollingHandler{region: opt.Region},
 	}
 	return respPoller.PollUntilDone(t, kt, resp.Response.DiskIdSet, nil)
+}
+
+// InquiryPriceDisk 创建云硬盘询价
+// reference: https://cloud.tencent.com/document/api/362/16314
+func (t *TCloud) InquiryPriceDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (
+	*typecvm.TCloudInquiryPriceResult, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "option is required")
+	}
+
+	client, err := t.clientSet.cbsClient(opt.Region)
+	if err != nil {
+		return nil, err
+	}
+
+	req := cbs.NewInquiryPriceCreateDisksRequest()
+	req.DiskType = common.StringPtr(opt.DiskType)
+	req.DiskCount = opt.DiskCount
+	req.DiskSize = opt.DiskSize
+	req.DiskChargeType = common.StringPtr(opt.DiskChargeType)
+	// 预付费模式需要设定 DiskChargePrepaid
+	if *req.DiskChargeType == disk.TCloudDiskChargeTypeEnum.PREPAID {
+		req.DiskChargePrepaid = &cbs.DiskChargePrepaid{
+			Period:              opt.DiskChargePrepaid.Period,
+			RenewFlag:           opt.DiskChargePrepaid.RenewFlag,
+			CurInstanceDeadline: opt.DiskChargePrepaid.CurInstanceDeadline,
+		}
+	}
+
+	resp, err := client.InquiryPriceCreateDisksWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("inquiry price create disk failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	result := new(typecvm.TCloudInquiryPriceResult)
+	switch opt.DiskChargeType {
+	case disk.TCloudDiskChargeTypeEnum.PREPAID:
+		result.OriginalPrice = converter.PtrToVal(resp.Response.DiskPrice.OriginalPrice)
+		result.DiscountPrice = converter.PtrToVal(resp.Response.DiskPrice.DiscountPrice)
+	case disk.TCloudDiskChargeTypeEnum.POSTPAID_BY_HOUR:
+		result.OriginalPrice = converter.PtrToVal(resp.Response.DiskPrice.UnitPrice)
+		result.DiscountPrice = converter.PtrToVal(resp.Response.DiskPrice.UnitPriceDiscount)
+
+	default:
+		return nil, fmt.Errorf("charge type: %s not support", opt.DiskChargeType)
+	}
+
+	return result, nil
 }
 
 func (t *TCloud) createDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*cbs.CreateDisksResponse, error) {
