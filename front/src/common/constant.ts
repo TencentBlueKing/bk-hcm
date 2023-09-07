@@ -370,19 +370,35 @@ export const SEARCH_VALUE_IDS = [
 
 export const RESOURCE_TABS = [
   {
-    key: '/resoure/resource',
+    key: '/resource/resource/',
     label: '资源管理',
   },
   {
-    key: '/resoure/account',
+    key: '/resource/resource/account',
     label: '账号信息',
   },
   {
-    key: '/resoure/record',
+    key: '/resource/resource/record',
     label: '购买记录',
   },
   {
-    key: '/resoure/recycle',
+    key: '/resource/resource/recycle',
     label: '回收站',
+  },
+];
+
+
+export const RESOURCE_DETAIL_TABS =  [
+  {
+    key: '/resource/resource/account/detail',
+    label: '基本信息',
+  },
+  {
+    key: '/resource/resource/account/resource',
+    label: '资源状态',
+  },
+  {
+    key: '/resource/resource/account/manage',
+    label: '账号详情',
   },
 ];

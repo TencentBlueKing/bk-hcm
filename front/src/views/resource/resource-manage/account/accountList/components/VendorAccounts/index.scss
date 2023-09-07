@@ -1,0 +1,49 @@
+.vendor-account-list {
+  height: calc(100vh - 113px);
+  overflow-y: scroll;
+
+  .vendor-account-menu {
+    position: sticky;
+    top: 0;
+    background-color: #fff;
+  }
+
+  .vendor-account-menu,
+  .vendor-account-menu-item {
+    display: flex;
+    align-items: center;
+    padding: 7px 16px;
+    cursor: pointer;
+    text-align: center;
+    height: 36px;
+
+    .vendor-account-menu-dropdown-icon {
+      color: #979ba5;
+    }
+
+    .vendor-account-menu-item-text {
+      color: #313238;
+    }
+
+    .vendor-icon {
+      width: 16px;
+      height: 16px;
+      margin-right: 3px;
+    }
+
+    .vendor-account-menu-count {
+      margin-left: auto;
+      color: #c4c6cc;
+    }
+  }
+
+  .account-icon {
+    font-size: 8px;
+    margin-right: 12px;
+  }
+
+  .vendor-account-menu-item:hover, .actived-vendor-account-menu-item {
+    background-color: #e1ecff;
+    border-left: 3px #3a84ff solid;
+  }
+}

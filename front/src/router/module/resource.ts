@@ -7,71 +7,81 @@ const { t } = i18n.global;
 const resourceMenus: RouteRecordRaw[] = [
   {
     path: '/resource',
-    name: t('云管'),
+    component: () => import('@/views/resource/resource-manage/resource-entry.vue'),
     children: [
       {
-        path: '/resource/account',
-        name: t('账号'),
-        alias: '',
-        component: () => import('@/views/resource/accountmanage/index.vue'),
+        path: 'resource',
+        component: () => import('@/views/resource/resource-manage/resource-manage.vue'),
+        children: [
+          {
+            path: 'record',
+            name: t('购买记录'),
+            component: () => import('@/views/resource/resource-manage/purchaseRecord/index'),
+          },
+          {
+            path: 'account',
+            name: t('账号详情'),
+            component: () => import('@/views/resource/resource-manage/accountInfo/index'),
+            children: [
+              {
+                path: 'detail',
+                name: t('基本信息'),
+                component: () => import('@/views/resource/accountmanage/account-detail'),
+              },
+              {
+                path: 'resource',
+                name: t('资源状态'),
+                component: () => import('@/views/resource/resource-manage/recycleBin/index'),
+              },
+              {
+                path: 'manage',
+                name: t('账号详情'),
+                component: () => import('@/views/resource/resource-manage/purchaseRecord/index'),
+              },
+            ],
+          },
+          {
+            path: 'recycle',
+            name: '资源接入回收站',
+            // component: () => import('@/views/resource/resource-manage/recycleBin/index'),
+            component: () => import('@/views/resource/recyclebin-manager/recyclebin-manager.vue'),
+          },
+        ],
+      },
+      {
+        path: '/resource/detail/:type',
+        name: 'resourceDetail',
+        component: () => import('@/views/resource/resource-manage/resource-detail.vue'),
         meta: {
-          activeKey: 'resourceAccount',
-          breadcrumb: [t('云管'), t('账号')],
+          activeKey: 'resourceResource',
+          breadcrumb: [t('云管'), t('资源'), '详情'],
         },
       },
       {
-        path: '/resource/resource',
-        name: '资源接入',
-        component: () => import('@/views/resource/resource-manage/resource-entry.vue'),
-        children: [
-          {
-            path: '/resource/resource',
-            component: () => import('@/views/resource/resource-manage/resource-manage.vue'),
-            meta: {
-              activeKey: 'resourceResource',
-              breadcrumb: [t('云管'), t('资源')],
-            },
-          },
-          {
-            path: '/resource/detail/:type',
-            name: 'resourceDetail',
-            component: () => import('@/views/resource/resource-manage/resource-detail.vue'),
-            meta: {
-              activeKey: 'resourceResource',
-              breadcrumb: [t('云管'), t('资源'), '详情'],
-            },
-          },
-          {
-            path: '/resource/service-apply/cvm',
-            name: 'resourceApplyCvm',
-            component: () => import('@/views/service/service-apply/cvm'),
-            meta: {
-              activeKey: 'resourceResource',
-              breadcrumb: [t('云管'), t('资源'), '新建主机'],
-            },
-          },
-          {
-            path: '/resource/service-apply/vpc',
-            name: 'resourceApplyVPC',
-            component: () => import('@/views/service/service-apply/vpc'),
-            meta: {
-              activeKey: 'resourceResource',
-              breadcrumb: [t('云管'), t('资源'), '新建VPC'],
-            },
-          },
-          {
-            path: '/resource/service-apply/disk',
-            name: 'resourceApplyDisk',
-            component: () => import('@/views/service/service-apply/disk'),
-            meta: {
-              activeKey: 'resourceResource',
-              breadcrumb: [t('云管'), t('资源'), '新建云硬盘'],
-            },
-          },
-        ],
+        path: '/resource/service-apply/cvm',
+        name: 'resourceApplyCvm',
+        component: () => import('@/views/service/service-apply/cvm'),
         meta: {
           activeKey: 'resourceResource',
-          breadcrumb: [t('云管'), t('资源')],
+          breadcrumb: [t('云管'), t('资源'), '新建主机'],
+        },
+      },
+      {
+        path: '/resource/service-apply/vpc',
+        name: 'resourceApplyVPC',
+        component: () => import('@/views/service/service-apply/vpc'),
+        meta: {
+          activeKey: 'resourceResource',
+          breadcrumb: [t('云管'), t('资源'), '新建VPC'],
+        },
+      },
+      {
+        path: '/resource/service-apply/disk',
+        name: 'resourceApplyDisk',
+        component: () => import('@/views/service/service-apply/disk'),
+        meta: {
+          activeKey: 'resourceResource',
+          breadcrumb: [t('云管'), t('资源'), '新建云硬盘'],
         },
       },
       {
@@ -85,39 +95,6 @@ const resourceMenus: RouteRecordRaw[] = [
       },
     ],
   },
-  // {
-  //   path: '/resource-net',
-  //   name: t('网络'),
-  //   children: [
-  //     {
-  //       path: '/resource-net/survey',
-  //       name: t('概况'),
-  //       component: () => import('@/views/workbench/demo'),
-  //       meta: {
-  //         activeKey: 'survey',
-  //         breadcrumb: [t('网络'), t('概况')],
-  //       },
-  //     },
-  //     {
-  //       path: '/resource-net/planning',
-  //       name: t('规划'),
-  //       component: () => import('@/views/workbench/demo'),
-  //       meta: {
-  //         activeKey: 'planning',
-  //         breadcrumb: [t('网络'), t('规划')],
-  //       },
-  //     },
-  //     {
-  //       path: '/resource-net/recycle',
-  //       name: t('回收'),
-  //       component: () => import('@/views/workbench/demo'),
-  //       meta: {
-  //         activeKey: 'recycle',
-  //         breadcrumb: [t('网络'), t('规划')],
-  //       },
-  //     },
-  //   ],
-  // },
 ];
 
 export default resourceMenus;
