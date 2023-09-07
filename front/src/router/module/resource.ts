@@ -43,7 +43,8 @@ const resourceMenus: RouteRecordRaw[] = [
           {
             path: 'recycle',
             name: '资源接入回收站',
-            component: () => import('@/views/resource/resource-manage/recycleBin/index'),
+            // component: () => import('@/views/resource/resource-manage/recycleBin/index'),
+            component: () => import('@/views/resource/recyclebin-manager/recyclebin-manager.vue'),
           },
         ],
       },
