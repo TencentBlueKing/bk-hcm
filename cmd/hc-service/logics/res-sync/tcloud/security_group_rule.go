@@ -110,36 +110,25 @@ func (cli *client) securityGroupRule(kt *kit.Kit, opt *syncSGRuleOption) (*SyncR
 	updateRules := make(map[string]*corecloud.TCloudSecurityGroupRule)
 	deleteRuleIDs := make([]string, 0)
 	for _, one := range rulesFromDB {
+		var ruleMap map[int64]*vpc.SecurityGroupPolicy
 		switch one.Type {
 		case enumor.Egress:
-			policy, exist := egressRuleMaps[one.CloudPolicyIndex]
-			if !exist {
-				deleteRuleIDs = append(deleteRuleIDs, one.ID)
-				continue
-			}
-
-			delete(egressRuleMaps, one.CloudPolicyIndex)
-
-			if isSGRuleChange(version, policy, one) {
-				updateRules[one.ID] = convTCloudRule(policy, &sg.BaseSecurityGroup, version, enumor.Egress)
-			}
-
+			ruleMap = egressRuleMaps
 		case enumor.Ingress:
-			policy, exist := ingressRuleMaps[one.CloudPolicyIndex]
-			if !exist {
-				deleteRuleIDs = append(deleteRuleIDs, one.ID)
-				continue
-			}
-
-			delete(ingressRuleMaps, one.CloudPolicyIndex)
-
-			if isSGRuleChange(version, policy, one) {
-				updateRules[one.ID] = convTCloudRule(policy, &sg.BaseSecurityGroup, version, enumor.Ingress)
-			}
-
+			ruleMap = ingressRuleMaps
 		default:
 			logs.Errorf("[%s] unknown security group rule type: %s, skip handle, rid: %s", enumor.TCloud,
 				one.Type, kt.Rid)
+			continue
+		}
+		policy, exist := ruleMap[one.CloudPolicyIndex]
+		if !exist {
+			deleteRuleIDs = append(deleteRuleIDs, one.ID)
+			continue
+		}
+		delete(ruleMap, one.CloudPolicyIndex)
+		if isSGRuleChange(version, policy, one) {
+			updateRules[one.ID] = convTCloudRule(policy, &sg.BaseSecurityGroup, version, one.Type)
 		}
 	}
 

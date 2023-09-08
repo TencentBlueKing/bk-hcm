@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package auth ...
 package auth
 
 import (
@@ -381,11 +382,8 @@ func (a *Auth) parseResources(kt *kit.Kit, resources []meta.ResourceAttribute) (
 			}
 
 			// add iam resource of auth resource to the related iam resources after its ancestors
-			resource = append(resource, meta.IamResourceInstance{
-				Type:     string(res.Type),
-				TypeName: sys.ResourceTypeIDMap[res.Type],
-				ID:       res.ID,
-			})
+			resource = append(resource,
+				meta.IamResourceInstance{Type: string(res.Type), TypeName: sys.ResourceTypeIDMap[res.Type], ID: res.ID})
 
 			resType, exists := permissionMap[actionID][res.Type]
 			if !exists {
@@ -547,7 +545,8 @@ func (a *Auth) ListAuthorizedInstances(cts *rest.Contexts) (interface{}, error) 
 	}
 	authorizeList, err := a.auth.ListAuthorizedInstances(cts.Kit.Ctx, ops, resources[0].Type)
 	if err != nil {
-		logs.Errorf("list authorized instances failed, err: %v,  ops: %+v, req: %+v, rid: %s", err, ops, req, cts.Kit.Rid)
+		logs.Errorf("list authorized instances failed, err: %v,  ops: %+v, req: %+v, rid: %s", err, ops, req,
+			cts.Kit.Rid)
 		return nil, err
 	}
 
