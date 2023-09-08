@@ -25,7 +25,7 @@ export default defineComponent({
       <>
         <div class={'account-info-container'}>
           <Tab
-            v-model:active={activeTab}
+            v-model:active={activeTab.value}
             type='card-grid'>
                {
                 RESOURCE_DETAIL_TABS.map(({ key, label }) => (
