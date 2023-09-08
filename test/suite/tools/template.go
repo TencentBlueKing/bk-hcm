@@ -93,7 +93,7 @@ const htmlTemplate = `
 			<td>{{.Succeed}}</td>
 			<td>
 				{{ if eq .Failed 0 }}
-				  	<p style='color:blue;'>0</p>
+				  	<p style='color:green;'>0</p>
 				{{ else }}
 					<p style='color:red;'>{{.Failed}}</p>
 				{{ end }}
