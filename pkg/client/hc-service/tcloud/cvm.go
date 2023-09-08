@@ -210,11 +210,11 @@ func (cli *CvmClient) BatchCreateCvm(ctx context.Context, h http.Header, request
 
 // InquiryPrice ....
 func (cli *CvmClient) InquiryPrice(kt *kit.Kit, request *protocvm.TCloudBatchCreateReq) (
-	*typecvm.TCloudInquiryPriceResult, error) {
+	*typecvm.InquiryPriceResult, error) {
 
 	resp := &struct {
 		*rest.BaseResp `json:",inline"`
-		Data           *typecvm.TCloudInquiryPriceResult `json:"data"`
+		Data           *typecvm.InquiryPriceResult `json:"data"`
 	}{}
 
 	err := cli.client.Post().

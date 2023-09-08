@@ -59,6 +59,8 @@ func (svc *cvmSvc) InquiryPriceCvm(cts *rest.Contexts) (interface{}, error) {
 	switch info.Vendor {
 	case enumor.TCloud:
 		return svc.inquiryPriceTCloudCvm(cts.Kit, req.Data)
+	case enumor.HuaWei:
+		return svc.inquiryPriceHuaWeiCvm(cts.Kit, req.Data)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", info.Vendor)
 	}
@@ -77,6 +79,25 @@ func (svc *cvmSvc) inquiryPriceTCloudCvm(kt *kit.Kit, body json.RawMessage) (int
 	result, err := svc.client.HCService().TCloud.Cvm.InquiryPrice(kt, common.ConvTCloudCvmCreateReq(req))
 	if err != nil {
 		logs.Errorf("inquiry price tcloud cvm failed, err: %v, rid: %s", err, kt.Rid)
+		return result, err
+	}
+
+	return result, nil
+}
+
+func (svc *cvmSvc) inquiryPriceHuaWeiCvm(kt *kit.Kit, body json.RawMessage) (interface{}, error) {
+	req := new(cscvm.HuaWeiCvmCreateReq)
+	if err := json.Unmarshal(body, req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(false); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	result, err := svc.client.HCService().HuaWei.Cvm.InquiryPrice(kt, common.ConvHuaWeiCvmCreateReq(req))
+	if err != nil {
+		logs.Errorf("inquiry price huawei cvm failed, err: %v, rid: %s", err, kt.Rid)
 		return result, err
 	}
 

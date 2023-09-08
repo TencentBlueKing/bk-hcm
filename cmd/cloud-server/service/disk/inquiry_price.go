@@ -58,6 +58,8 @@ func (svc *diskSvc) InquiryPriceDisk(cts *rest.Contexts) (interface{}, error) {
 	switch info.Vendor {
 	case enumor.TCloud:
 		return svc.inquiryPriceTCloudDisk(cts.Kit, req.Data)
+	case enumor.HuaWei:
+		return svc.inquiryPriceHuaWeiDisk(cts.Kit, req.Data)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", info.Vendor)
 	}
@@ -76,6 +78,25 @@ func (svc *diskSvc) inquiryPriceTCloudDisk(kt *kit.Kit, body json.RawMessage) (i
 	result, err := svc.client.HCService().TCloud.Disk.InquiryPrice(kt, common.ConvTCloudDiskCreateReq(req))
 	if err != nil {
 		logs.Errorf("inquiry price tcloud disk failed, err: %v, rid: %s", err, kt.Rid)
+		return result, err
+	}
+
+	return result, nil
+}
+
+func (svc *diskSvc) inquiryPriceHuaWeiDisk(kt *kit.Kit, body json.RawMessage) (interface{}, error) {
+	req := new(csdisk.HuaWeiDiskCreateReq)
+	if err := json.Unmarshal(body, req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(false); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	result, err := svc.client.HCService().HuaWei.Disk.InquiryPrice(kt, common.ConvHuaWeiDiskCreateReq(req))
+	if err != nil {
+		logs.Errorf("inquiry price huawei disk failed, err: %v, rid: %s", err, kt.Rid)
 		return result, err
 	}
 

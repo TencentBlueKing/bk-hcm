@@ -160,11 +160,11 @@ func (cli *DiskClient) CreateDisk(
 
 // InquiryPrice ....
 func (cli *DiskClient) InquiryPrice(kt *kit.Kit, request *disk.TCloudDiskCreateReq) (
-	*typedisk.TCloudInquiryPriceResult, error) {
+	*typedisk.InquiryPriceResult, error) {
 
 	resp := &struct {
 		*rest.BaseResp `json:",inline"`
-		Data           *typedisk.TCloudInquiryPriceResult `json:"data"`
+		Data           *typedisk.InquiryPriceResult `json:"data"`
 	}{}
 
 	err := cli.client.Post().

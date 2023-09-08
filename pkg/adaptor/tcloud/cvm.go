@@ -384,7 +384,7 @@ func (t *TCloud) CreateCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (*polle
 
 // InquiryPriceCvm reference: https://cloud.tencent.com/document/api/213/15726
 func (t *TCloud) InquiryPriceCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (
-	*typecvm.TCloudInquiryPriceResult, error) {
+	*typecvm.InquiryPriceResult, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "option is required")
@@ -460,7 +460,7 @@ func (t *TCloud) InquiryPriceCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (
 		return nil, err
 	}
 
-	result := new(typecvm.TCloudInquiryPriceResult)
+	result := new(typecvm.InquiryPriceResult)
 	switch opt.InstanceChargeType {
 	case typecvm.Prepaid:
 		result.OriginalPrice = converter.PtrToVal(resp.Response.Price.InstancePrice.OriginalPrice)
