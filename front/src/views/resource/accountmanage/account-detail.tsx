@@ -805,7 +805,7 @@ export default defineComponent({
 
     return () => (
       isLoading.value ? (<Loading/>) : (
-        <div class="w1400 detail-warp p20">
+        <div class="detail-warp p20">
             {/* 基本信息 */}
             {formBaseInfo.map((baseItem, index) => (
                 <div>
