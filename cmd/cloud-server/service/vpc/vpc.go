@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package vpc ...
 package vpc
 
 import (
@@ -90,7 +91,8 @@ func (svc *vpcSvc) CreateVpc(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Vpc, Action: meta.Create, ResourceID: req.AccountID}}
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Vpc, Action: meta.Create,
+		ResourceID: req.AccountID}}
 	if err := svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
 		logs.Errorf("create vpc auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -594,9 +596,7 @@ func (svc *vpcSvc) BindVpcWithCloudArea(cts *rest.Contexts) (interface{}, error)
 				&filter.AtomRule{Field: "bk_cloud_id", Op: filter.NotEqual.Factory(), Value: constant.UnbindBkCloudID},
 			},
 		},
-		Page: &core.BasePage{
-			Count: true,
-		},
+		Page: &core.BasePage{Count: true},
 	}
 	result, err := svc.client.DataService().Global.Vpc.List(cts.Kit.Ctx, cts.Kit.Header(), assignedReq)
 	if err != nil {
@@ -611,10 +611,7 @@ func (svc *vpcSvc) BindVpcWithCloudArea(cts *rest.Contexts) (interface{}, error)
 	// create assign audit.
 	auditOpt := make([]audit.ResCloudAreaBindOption, 0, len(req))
 	for _, info := range req {
-		auditOpt = append(auditOpt, audit.ResCloudAreaBindOption{
-			ResID:   info.VpcID,
-			CloudID: info.BkCloudID,
-		})
+		auditOpt = append(auditOpt, audit.ResCloudAreaBindOption{ResID: info.VpcID, CloudID: info.BkCloudID})
 	}
 	err = svc.audit.ResCloudAreaBindAudit(cts.Kit, enumor.VpcCloudAuditResType, auditOpt)
 	if err != nil {
@@ -631,9 +628,7 @@ func (svc *vpcSvc) BindVpcWithCloudArea(cts *rest.Contexts) (interface{}, error)
 		})
 	}
 
-	batchUpdateReq := &cloud.VpcBaseInfoBatchUpdateReq{
-		Vpcs: updateReqs,
-	}
+	batchUpdateReq := &cloud.VpcBaseInfoBatchUpdateReq{Vpcs: updateReqs}
 
 	err = svc.client.DataService().Global.Vpc.BatchUpdateBaseInfo(cts.Kit.Ctx, cts.Kit.Header(), batchUpdateReq)
 	if err != nil {

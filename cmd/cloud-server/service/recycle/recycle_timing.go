@@ -74,7 +74,6 @@ func (r *recycle) recycleTiming(resType enumor.CloudResourceType, worker recycle
 		}
 
 		logs.Infof("start recycle %s, rid: %s", resType, kt.Rid)
-
 		// get need recycled resource records
 		expr, err := tools.And(tools.EqualWithOpExpression(filter.And,
 			map[string]interface{}{"res_type": resType, "status": enumor.WaitingRecycleRecordStatus}),
@@ -137,7 +136,6 @@ func (r *recycle) recycleTiming(resType enumor.CloudResourceType, worker recycle
 				time.Sleep(time.Minute)
 				break
 			}
-
 			r.execWorker(kt, worker, record, basicInfoMap)
 		}
 
@@ -152,7 +150,8 @@ func (r *recycle) execWorker(kt *kit.Kit, worker recycleWorker, record recyclere
 
 	basicInfo, exists := basicInfoMap[record.ResID]
 	if !exists {
-		logs.Errorf("recycle %s res(id: %s) doesn't exists, mark as failed, rid: %s", record.ResType, record.ResID, kt.Rid)
+		logs.Errorf("recycle %s res(id: %s) doesn't exists, mark as failed, rid: %s", record.ResType, record.ResID,
+			kt.Rid)
 		r.markfail(kt, errf.New(errf.RecordNotFound, "Recourse Not Found"), []string{record.ID})
 		return
 	}
