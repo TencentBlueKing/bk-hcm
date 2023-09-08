@@ -465,7 +465,7 @@ getResourceAccountList();
       ></permission-dialog>
     </div>
 
-    <RouterView></RouterView>
+    <RouterView v-else></RouterView>
 
   </div>
 </template>
