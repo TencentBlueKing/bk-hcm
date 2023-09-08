@@ -1,5 +1,5 @@
 import { Form, Dialog, Input, Message, Button } from 'bkui-vue';
-import { reactive, defineComponent, ref, onMounted, computed } from 'vue';
+import { reactive, defineComponent, ref, onMounted, computed, watch } from 'vue';
 import { ProjectModel, SecretModel, CloudType, AccountType, SiteType } from '@/typings';
 import { useI18n } from 'vue-i18n';
 import { useAccountStore } from '@/store';
@@ -19,7 +19,6 @@ export default defineComponent({
     const formDiaRef = ref(null);
     const requestQueue = ref(['detail', 'bizsList']);
     const isDetail = ref(route.query.isDetail);
-    console.log('type', isDetail.value);
 
     const initProjectModel: ProjectModel = {
       id: 1,
@@ -90,6 +89,11 @@ export default defineComponent({
     onMounted(() => {
       getDetail();    // 请求数据
     });
+
+    watch(
+      () => route.query.accountId,
+      () => getDetail(),
+    );
 
     const isLoading = computed(() => {
       return requestQueue.value.length > 0;
@@ -816,7 +820,7 @@ export default defineComponent({
                     <Form model={projectModel} labelWidth={140} rules={formRules} ref={formRef}>
                         <div class="flex-row align-items-center flex-wrap">
                             {baseItem.data.map(formItem => (
-                                <FormItem class="formItem-cls" label={formItem.label} required={formItem.required} property={formItem.property}>
+                                <FormItem class="formItem-cls info-value" label={formItem.label} required={formItem.required} property={formItem.property}>
                                     {formItem.component()}
                                 </FormItem>
                             ))
