@@ -125,35 +125,10 @@ func (svc *cvmSvc) recycleCvm(kt *kit.Kit, req *proto.CvmRecycleReq, infoMap map
 		}
 	}
 
-	// filter out stopped cvm
-	notStoppedRule := filter.AtomRule{Field: "status", Op: filter.NotIn.Factory(), Value: []string{"STOPPING",
-		"STOPPED", "stopping", "stopped", "SUSPENDING", "SUSPENDED", "PowerState/stopped", "SHUTOFF"}}
-	notStoppedFilter, err := tools.And(tools.ContainersExpression("id", ids), notStoppedRule)
-	if err != nil {
+	// 检查在非停止状态的主机并尝试停止
+	if err := svc.checkAndStopCvm(kt, ids, infoMap); err != nil {
 		return nil, err
 	}
-	notStoppedReq := &cloud.CvmListReq{
-		Field:  []string{"id"},
-		Filter: notStoppedFilter,
-		Page:   core.NewDefaultBasePage(),
-	}
-	startCvmRes, err := svc.client.DataService().Global.Cvm.ListCvm(kt.Ctx, kt.Header(), notStoppedReq)
-	if err != nil {
-		return nil, err
-	}
-
-	notStoppedMap := make(map[string]types.CloudResourceBasicInfo)
-	for _, cvm := range startCvmRes.Details {
-		notStoppedMap[cvm.ID] = infoMap[cvm.ID]
-	}
-
-	// stop cvm
-	stopRes, err := svc.cvmLgc.BatchStopCvm(kt, notStoppedMap)
-	if err != nil {
-		logs.Errorf("stop cvm failed, err: %v, resp: %+v, infos: %+v, rid: %s", err, stopRes, notStoppedMap, kt.Rid)
-		return nil, err
-	}
-
 	// detach disk if needed
 	detachDiskCvmIDs := make([]string, 0)
 	for _, info := range req.Infos {
@@ -167,19 +142,16 @@ func (svc *cvmSvc) recycleCvm(kt *kit.Kit, req *proto.CvmRecycleReq, infoMap map
 	}
 
 	res := new(core.BatchOperateAllResult)
-
 	failedIDMap := make(map[string]struct{})
 	if detachRes != nil {
 		if len(detachRes.Failed) == len(detachDiskCvmIDs) {
 			return res, res.Failed[0].Error
 		}
-
 		res.Failed = detachRes.Failed
 		for _, info := range detachRes.Failed {
 			failedIDMap[info.ID] = struct{}{}
 		}
 	}
-
 	// create recycle record
 	opt := &recyclerecord.BatchRecycleReq{
 		ResType:            enumor.CvmCloudResType,
@@ -199,11 +171,43 @@ func (svc *cvmSvc) recycleCvm(kt *kit.Kit, req *proto.CvmRecycleReq, infoMap map
 	if err != nil {
 		return nil, err
 	}
-
 	if len(res.Failed) > 0 {
 		return res, res.Failed[0].Error
 	}
 	return &recycle.RecycleResult{TaskID: taskID}, nil
+}
+
+// 检查在非停止状态的主机并尝试停止
+func (svc *cvmSvc) checkAndStopCvm(kt *kit.Kit, ids []string, infoMap map[string]types.CloudResourceBasicInfo) error {
+	// filter out not stopped cvm
+	notStoppedRule := filter.AtomRule{Field: "status", Op: filter.NotIn.Factory(), Value: []string{"STOPPING",
+		"STOPPED", "stopping", "stopped", "SUSPENDING", "SUSPENDED", "PowerState/stopped", "SHUTOFF"}}
+	notStoppedFilter, err := tools.And(tools.ContainersExpression("id", ids), notStoppedRule)
+	if err != nil {
+		return err
+	}
+	notStoppedReq := &cloud.CvmListReq{
+		Field:  []string{"id"},
+		Filter: notStoppedFilter,
+		Page:   core.NewDefaultBasePage(),
+	}
+
+	startCvmRes, err := svc.client.DataService().Global.Cvm.ListCvm(kt.Ctx, kt.Header(), notStoppedReq)
+	if err != nil {
+		return err
+	}
+
+	notStoppedMap := make(map[string]types.CloudResourceBasicInfo)
+	for _, cvm := range startCvmRes.Details {
+		notStoppedMap[cvm.ID] = infoMap[cvm.ID]
+	}
+	// stop cvm
+	stopRes, err := svc.cvmLgc.BatchStopCvm(kt, notStoppedMap)
+	if err != nil {
+		logs.Errorf("stop cvm failed, err: %v, resp: %+v, infos: %+v, rid: %s", err, stopRes, notStoppedMap, kt.Rid)
+		return err
+	}
+	return nil
 }
 
 func (svc *cvmSvc) detachDiskByCvmIDs(kt *kit.Kit, ids []string, basicInfoMap map[string]types.CloudResourceBasicInfo) (
@@ -230,10 +234,7 @@ func (svc *cvmSvc) detachDiskByCvmIDs(kt *kit.Kit, ids []string, basicInfoMap ma
 		return nil, nil
 	}
 
-	res := &core.BatchOperateAllResult{
-		Succeeded: make([]string, 0),
-		Failed:    make([]core.FailedInfo, 0),
-	}
+	res := &core.BatchOperateAllResult{Succeeded: make([]string, 0), Failed: make([]core.FailedInfo, 0)}
 
 	cvmDiskMap := make(map[string]string)
 	for _, detail := range relRes.Details {
@@ -246,7 +247,6 @@ func (svc *cvmSvc) detachDiskByCvmIDs(kt *kit.Kit, ids []string, basicInfoMap ma
 			res.Succeeded = append(res.Succeeded, id)
 			continue
 		}
-
 		info, exists := basicInfoMap[id]
 		if !exists {
 			res.Succeeded = append(res.Succeeded, id)
@@ -267,7 +267,7 @@ func (svc *cvmSvc) detachDiskByCvmIDs(kt *kit.Kit, ids []string, basicInfoMap ma
 	return res, nil
 }
 
-// RecoverCvm recover biz cvm.
+// RecoverBizCvm recover biz cvm.
 func (svc *cvmSvc) RecoverBizCvm(cts *rest.Contexts) (interface{}, error) {
 	return svc.recoverCvm(cts, handler.BizValidWithAuth)
 }

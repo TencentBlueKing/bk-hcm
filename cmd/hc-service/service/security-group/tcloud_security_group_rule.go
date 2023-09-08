@@ -45,12 +45,10 @@ func (g *securityGroup) BatchCreateTCloudSGRule(cts *rest.Contexts) (interface{}
 	if len(sgID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "security group id is required")
 	}
-
 	req := new(hcservice.TCloudSGRuleCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -77,14 +75,9 @@ func (g *securityGroup) BatchCreateTCloudSGRule(cts *rest.Contexts) (interface{}
 		SecurityGroupID:      sg.ID,
 		AccountID:            sg.AccountID,
 	}
-
-	opt := &securitygrouprule.TCloudCreateOption{
-		Region:               sg.Region,
-		CloudSecurityGroupID: sg.CloudID,
-	}
+	opt := &securitygrouprule.TCloudCreateOption{Region: sg.Region, CloudSecurityGroupID: sg.CloudID}
 	if req.EgressRuleSet != nil {
 		opt.EgressRuleSet = make([]securitygrouprule.TCloud, 0, len(req.EgressRuleSet))
-
 		for _, rule := range req.EgressRuleSet {
 			opt.EgressRuleSet = append(opt.EgressRuleSet, securitygrouprule.TCloud{
 				Protocol:                   rule.Protocol,
@@ -93,14 +86,12 @@ func (g *securityGroup) BatchCreateTCloudSGRule(cts *rest.Contexts) (interface{}
 				IPv6Cidr:                   rule.IPv6Cidr,
 				CloudTargetSecurityGroupID: rule.CloudTargetSecurityGroupID,
 				Action:                     rule.Action,
-				Description:                rule.Memo,
-			})
+				Description:                rule.Memo})
 		}
 	}
 
 	if req.IngressRuleSet != nil {
 		opt.IngressRuleSet = make([]securitygrouprule.TCloud, 0, len(req.IngressRuleSet))
-
 		for _, rule := range req.IngressRuleSet {
 			opt.IngressRuleSet = append(opt.IngressRuleSet, securitygrouprule.TCloud{
 				Protocol:                   rule.Protocol,
@@ -116,11 +107,9 @@ func (g *securityGroup) BatchCreateTCloudSGRule(cts *rest.Contexts) (interface{}
 	if err := client.CreateSecurityGroupRule(cts.Kit, opt); err != nil {
 		logs.Errorf("request adaptor to create tcloud security group rule failed, err: %v, opt: %v, rid: %s", err, opt,
 			cts.Kit.Rid)
-
 		if _, syncErr := g.syncSecurityGroupRule(cts.Kit, client, syncOpt); syncErr != nil {
 			logs.Errorf("sync tcloud security group failed, err: %v, opt: %v, rid: %s", syncErr, syncOpt, cts.Kit.Rid)
 		}
-
 		return nil, err
 	}
 
@@ -129,7 +118,6 @@ func (g *securityGroup) BatchCreateTCloudSGRule(cts *rest.Contexts) (interface{}
 		logs.Errorf("sync tcloud security group failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
 		return nil, err
 	}
-
 	return &core.BatchCreateResult{IDs: ids}, nil
 }
 
@@ -391,7 +379,6 @@ func (g *securityGroup) UpdateTCloudSGRule(cts *rest.Contexts) (interface{}, err
 	if len(sgID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "security_group_id is required")
 	}
-
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
@@ -401,7 +388,6 @@ func (g *securityGroup) UpdateTCloudSGRule(cts *rest.Contexts) (interface{}, err
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -430,31 +416,25 @@ func (g *securityGroup) UpdateTCloudSGRule(cts *rest.Contexts) (interface{}, err
 	}
 	switch rule.Type {
 	case enumor.Egress:
-		opt.EgressRuleSet = []securitygrouprule.TCloudUpdateSpec{
-			{
-				CloudPolicyIndex:           rule.CloudPolicyIndex,
-				Protocol:                   req.Protocol,
-				Port:                       req.Port,
-				IPv4Cidr:                   req.IPv4Cidr,
-				IPv6Cidr:                   req.IPv6Cidr,
-				CloudTargetSecurityGroupID: req.CloudTargetSecurityGroupID,
-				Action:                     req.Action,
-				Description:                req.Memo,
-			}}
-
+		opt.EgressRuleSet = []securitygrouprule.TCloudUpdateSpec{{
+			CloudPolicyIndex:           rule.CloudPolicyIndex,
+			Protocol:                   req.Protocol,
+			Port:                       req.Port,
+			IPv4Cidr:                   req.IPv4Cidr,
+			IPv6Cidr:                   req.IPv6Cidr,
+			CloudTargetSecurityGroupID: req.CloudTargetSecurityGroupID,
+			Action:                     req.Action,
+			Description:                req.Memo}}
 	case enumor.Ingress:
-		opt.IngressRuleSet = []securitygrouprule.TCloudUpdateSpec{
-			{
-				CloudPolicyIndex:           rule.CloudPolicyIndex,
-				Protocol:                   req.Protocol,
-				Port:                       req.Port,
-				IPv4Cidr:                   req.IPv4Cidr,
-				IPv6Cidr:                   req.IPv6Cidr,
-				CloudTargetSecurityGroupID: req.CloudTargetSecurityGroupID,
-				Action:                     req.Action,
-				Description:                req.Memo,
-			}}
-
+		opt.IngressRuleSet = []securitygrouprule.TCloudUpdateSpec{{
+			CloudPolicyIndex:           rule.CloudPolicyIndex,
+			Protocol:                   req.Protocol,
+			Port:                       req.Port,
+			IPv4Cidr:                   req.IPv4Cidr,
+			IPv6Cidr:                   req.IPv6Cidr,
+			CloudTargetSecurityGroupID: req.CloudTargetSecurityGroupID,
+			Action:                     req.Action,
+			Description:                req.Memo}}
 	default:
 		return nil, fmt.Errorf("unknown security group rule type: %s", rule.Type)
 	}
@@ -462,11 +442,9 @@ func (g *securityGroup) UpdateTCloudSGRule(cts *rest.Contexts) (interface{}, err
 	if err := client.UpdateSecurityGroupRule(cts.Kit, opt); err != nil {
 		logs.Errorf("request adaptor to update tcloud security group rule failed, err: %v, opt: %v, rid: %s", err, opt,
 			cts.Kit.Rid)
-
 		if _, syncErr := g.syncSecurityGroupRule(cts.Kit, client, syncOpt); syncErr != nil {
 			logs.Errorf("sync tcloud security group failed, err: %v, opt: %v, rid: %s", syncErr, syncOpt, cts.Kit.Rid)
 		}
-
 		return nil, err
 	}
 
@@ -474,7 +452,6 @@ func (g *securityGroup) UpdateTCloudSGRule(cts *rest.Contexts) (interface{}, err
 		logs.Errorf("sync tcloud security group failed, err: %v, opt: %v, rid: %s", syncErr, syncOpt, cts.Kit.Rid)
 		return nil, syncErr
 	}
-
 	return nil, nil
 }
 

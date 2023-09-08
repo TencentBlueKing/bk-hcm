@@ -71,7 +71,6 @@ func (svc *recycleRecordSvc) BatchRecycleCloudResource(cts *rest.Contexts) (inte
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -85,7 +84,6 @@ func (svc *recycleRecordSvc) BatchRecycleCloudResource(cts *rest.Contexts) (inte
 	if err != nil {
 		return nil, err
 	}
-
 	if len(resourceInfo) != len(req.Infos) {
 		return nil, errf.Newf(errf.InvalidParameter, "recycle resource count is invalid")
 	}
@@ -93,9 +91,8 @@ func (svc *recycleRecordSvc) BatchRecycleCloudResource(cts *rest.Contexts) (inte
 	taskID, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		recycleRecords := make([]prototable.RecycleRecordTable, 0, len(resourceInfo))
 		for idx, info := range resourceInfo {
-			opt := &types.ListOption{
-				Filter: tools.EqualExpression("id", info.AccountID),
-				Page:   &core.BasePage{Count: false, Start: 0, Limit: 1},
+			opt := &types.ListOption{Filter: tools.EqualExpression("id", info.AccountID),
+				Page: &core.BasePage{Count: false, Start: 0, Limit: 1},
 			}
 			accountInfo, err := svc.dao.Account().List(cts.Kit, opt)
 			if err != nil {
@@ -104,7 +101,6 @@ func (svc *recycleRecordSvc) BatchRecycleCloudResource(cts *rest.Contexts) (inte
 			if len(accountInfo.Details) != 1 {
 				return nil, fmt.Errorf("account: %s not found", info.AccountID)
 			}
-
 			detail, err := tabletype.NewJsonField(req.Infos[idx].Detail)
 			if err != nil {
 				return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -114,7 +110,6 @@ func (svc *recycleRecordSvc) BatchRecycleCloudResource(cts *rest.Contexts) (inte
 			if accountInfo.Details[0].RecycleReserveTime != 0 {
 				recycleReserveTime = uint(accountInfo.Details[0].RecycleReserveTime)
 			}
-
 			recycleRecord := prototable.RecycleRecordTable{
 				Vendor:     info.Vendor,
 				ResType:    req.ResType,
@@ -132,12 +127,10 @@ func (svc *recycleRecordSvc) BatchRecycleCloudResource(cts *rest.Contexts) (inte
 			}
 			recycleRecords = append(recycleRecords, recycleRecord)
 		}
-
 		// recycle resource
 		updateResOpt := &protodao.ResourceUpdateOptions{ResType: req.ResType, IDs: resIDs, Status: enumor.RecycleStatus,
 			BkBizID: constant.UnassignedBiz}
-		err := svc.dao.RecycleRecord().UpdateResource(cts.Kit, txn, updateResOpt)
-		if err != nil {
+		if err := svc.dao.RecycleRecord().UpdateResource(cts.Kit, txn, updateResOpt); err != nil {
 			return nil, fmt.Errorf("update recycled resource info failed, err: %v", err)
 		}
 
@@ -146,14 +139,12 @@ func (svc *recycleRecordSvc) BatchRecycleCloudResource(cts *rest.Contexts) (inte
 		if err != nil {
 			return nil, fmt.Errorf("create recycle record failed, err: %v", err)
 		}
-
 		return taskID, nil
 	})
 
 	if err != nil {
 		return nil, err
 	}
-
 	return taskID, nil
 }
 
