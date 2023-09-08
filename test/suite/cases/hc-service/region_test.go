@@ -32,12 +32,12 @@ import (
 func TestRegion(t *testing.T) {
 	cli := suite.GetClientSet()
 
-	Convey("Sync Tcloud region test ", t, func() {
+	Convey("Sync TCloud region test ", t, func() {
 		ctx, header := cases.GenApiCtxHeader()
 		syncReq := region.TCloudRegionSyncReq{
 			AccountID: "000000a",
 		}
-		err := cli.HCService.TCloud.Region.Sync(ctx, header, &syncReq)
+		err := cli.HCService().TCloud.Region.Sync(ctx, header, &syncReq)
 		So(err, ShouldBeNil)
 	})
 }

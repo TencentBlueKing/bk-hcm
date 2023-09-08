@@ -59,7 +59,7 @@ func TestTCloudVPC(t *testing.T) {
 		Convey("list tcloud vpc", func() {
 			kt := cases.GenApiKit()
 			listReq := core.ListReq{Page: &core.BasePage{Limit: 500}, Filter: tools.AllExpression()}
-			listResult, err := cli.CloudService.Vpc.ListInRes(kt.Ctx, kt.Header(), &listReq)
+			listResult, err := cli.CloudServer().Vpc.ListInRes(kt.Ctx, kt.Header(), &listReq)
 			So(err, ShouldBeNil)
 			So(listResult, ShouldNotBeNil)
 			So(len(listResult.Details), ShouldEqual, 0)
@@ -69,7 +69,7 @@ func TestTCloudVPC(t *testing.T) {
 		Convey("create tcloud vpc", func() {
 			kt := cases.GenApiKit()
 
-			created, err := cli.CloudService.Vpc.CreateTCloudVpc(kt, &createReq)
+			created, err := cli.CloudServer().Vpc.CreateTCloudVpc(kt, &createReq)
 			So(err, ShouldBeNil)
 			So(created.ID, ShouldNotBeEmpty)
 			createdVpc.ID = created.ID
@@ -81,7 +81,7 @@ func TestTCloudVPC(t *testing.T) {
 			kt := cases.GenApiKit()
 			Convey("check created vpc", func() {
 				listReq := core.ListReq{Page: &core.BasePage{Limit: 500}, Filter: tools.AllExpression()}
-				listResult, err := cli.CloudService.Vpc.ListInRes(kt.Ctx, kt.Header(), &listReq)
+				listResult, err := cli.CloudServer().Vpc.ListInRes(kt.Ctx, kt.Header(), &listReq)
 				So(err, ShouldBeNil)
 				So(listResult, ShouldNotBeNil)
 				So(listResult.Details, ShouldHaveLength, 1)
@@ -100,7 +100,7 @@ func TestTCloudVPC(t *testing.T) {
 						&filter.AtomRule{Field: "cloud_vpc_id", Op: filter.Equal.Factory(), Value: createdVpc.CloudID},
 					},
 				}
-				subnetListResult, err := cli.CloudService.Subnet.ListInRes(kt.Ctx, kt.Header(), &subnetListReq)
+				subnetListResult, err := cli.CloudServer().Subnet.ListInRes(kt.Ctx, kt.Header(), &subnetListReq)
 				So(err, ShouldBeNil)
 				So(subnetListResult, ShouldNotBeNil)
 				So(subnetListResult.Details, ShouldHaveLength, 1)
@@ -121,7 +121,7 @@ func TestTCloudVPC(t *testing.T) {
 							Value: createdSubnet.CloudRouteTableID},
 					},
 				}
-				routeTableResult, err := cli.CloudService.RouteTable.ListInRes(kt.Ctx, kt.Header(), &routeTableListReq)
+				routeTableResult, err := cli.CloudServer().RouteTable.ListInRes(kt.Ctx, kt.Header(), &routeTableListReq)
 				So(err, ShouldBeNil)
 				So(routeTableResult, ShouldNotBeNil)
 				So(routeTableResult.Details, ShouldHaveLength, 1)

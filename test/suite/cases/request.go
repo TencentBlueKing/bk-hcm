@@ -17,44 +17,17 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package cases 集成测试用例
 package cases
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
-
-	pbstruct "github.com/golang/protobuf/ptypes/struct"
 
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/kit"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/uuid"
 )
-
-// GenQueryFilterByIds query app filter by id
-func GenQueryFilterByIds(ids []uint32) (*pbstruct.Struct, error) {
-	ft := filter.Expression{
-		Op: filter.Or,
-		Rules: []filter.RuleFactory{
-			&filter.AtomRule{
-				Field: "id",
-				Op:    filter.In.Factory(),
-				Value: ids,
-			},
-		},
-	}
-	marshal, err := json.Marshal(ft)
-	if err != nil {
-		return nil, err
-	}
-
-	pbStruct := new(pbstruct.Struct)
-	if err := pbStruct.UnmarshalJSON(marshal); err != nil {
-		return nil, err
-	}
-	return pbStruct, nil
-}
 
 // GenApiKit generate a new kit.Kit with UserKey and AppCodeKey header for testing.
 func GenApiKit() *kit.Kit {

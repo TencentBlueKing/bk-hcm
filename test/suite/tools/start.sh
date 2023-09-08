@@ -9,9 +9,7 @@ done
 
 
 # suite test env address.
-hc_host=${ENV_SUITE_TEST_HC_REQUEST_HOST:-"http://127.0.0.1:9601"}
-cloud_host=${ENV_SUITE_TEST_CLOUD_REQUEST_HOST:-"http://127.0.0.1:9602"}
-data_host=${ENV_SUITE_TEST_DATA_REQUEST_HOST:-"http://127.0.0.1:9600"}
+etcd_endpoints=${ENV_SUITE_TEST_ETCD_ENDPOINTS:-"127.0.0.1:2379"}
 
 # Warn: mysql used to clear the mysql of the suite test environment.
 mysql_ip=${ENV_SUITE_TEST_MYSQL_IP:-"127.0.0.1"}
@@ -32,7 +30,10 @@ fi
 
 mkdir ${save_dir}
 
-./cloud-server.test -test.run TestCloudServer -hc-host=${hc_host} -cloud-host=${cloud_host} -mysql-ip=${mysql_ip} -mysql-port=${mysql_port} -mysql-user=${mysql_user} -mysql-passwd=${mysql_password} -mysql-db=${mysql_db} -convey-json=true > ${save_dir}/api.json
+./cloud-server.test -test.run TestCloudServer -convey-json=true \
+  --etcd-endpoints=${etcd_endpoints}  \
+  --mysql-ip=${mysql_ip} --mysql-port=${mysql_port} --mysql-user=${mysql_user} --mysql-passwd=${mysql_password} --mysql-db=${mysql_db} \
+     > ${save_dir}/api.json
 
 if [ $? -ne 0 ]; then
   echo -e '\033[31;1mSuite testing FAILED\033[0m'

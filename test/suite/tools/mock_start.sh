@@ -18,24 +18,28 @@
 # to the current version of the project delivered to anyone in the future.
 #
 
-RUNDIR=$(realpath ${RUNDIR:=".run"})
+RUN_DIR=$(realpath ${RUN_DIR:-"."})
 
-BINDIR=$(realpath ${BINDIR:="$RUNDIR/bin"})
-ETCDIR=$(realpath ${ETCDIR:="$RUNDIR/etc"})
+mkdir -p $RUN_DIR
+mkdir -p ${BIN_DIR:="$RUN_DIR/bin"}
+mkdir -p ${ETC_DIR:="$RUN_DIR/etc"}
 
-echo running in ${RUNDIR},
-echo BINDIR=${BINDIR}, ETCDIR=${ETCDIR}
+BIN_DIR=$(realpath ${BIN_DIR})
+ETC_DIR=$(realpath ${ETC_DIR})
 
-cd $RUNDIR
+echo mock running under ${RUN_DIR},
+echo BIN_DIR=${BIN_DIR}, ETC_DIR=${ETC_DIR}
 
-$BINDIR/bk-hcm-dataservice  -c $ETCDIR/data_service.yaml &
-$BINDIR/bk-hcm-cloudserver -c  $ETCDIR/cloud_server.yaml &
-$BINDIR/bk-hcm-hcservice -c  $ETCDIR/hc_service.yaml --mock &
-$BINDIR/bk-hcm-authserver -c  $ETCDIR/auth_server.yaml --disable-auth &
+cd $RUN_DIR
+
+$BIN_DIR/bk-hcm-dataservice  -c $ETC_DIR/data_service.yaml &
+$BIN_DIR/bk-hcm-cloudserver -c  $ETC_DIR/cloud_server.yaml &
+$BIN_DIR/bk-hcm-hcservice -c  $ETC_DIR/hc_service.yaml --mock &
+$BIN_DIR/bk-hcm-authserver -c  $ETC_DIR/auth_server.yaml --disable-auth &
 
 
 function ctrl_c() {
-    echo -e '\033[32;1mKilling...\033[0m'
+    echo -e '\033[31;1mKilling...\033[0m'
     pkill bk-hcm
 }
 trap ctrl_c INT

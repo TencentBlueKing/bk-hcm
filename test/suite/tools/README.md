@@ -20,12 +20,8 @@ start.sh 支持通过指定环境变量文件设置环境变量
 
 ```shell
 
-# 集成测试环境 cloud-server 地址
-export ENV_SUITE_TEST_CLOUD_REQUEST_HOST=http://127.0.0.1:9602
-# 集成测试环境 hc-service 地址
-export ENV_SUITE_TEST_HC_REQUEST_HOST=http://127.0.0.1:9601
-# 集成测试环境  data-service
-export ENV_SUITE_TEST_DATA_REQUEST_HOST=http://127.0.0.1:9600
+# 集成测试环境 etcd 地址，用于服务发现，参考微服务配置文件中的etcd配置
+export ENV_SUITE_TEST_ETCD_ENDPOINTS=127.0.0.1:2379
 
 # mysql 相关配置， 运行集成测试之前会进行清库操作，否则会对测试结果造成影响
 export ENV_SUITE_TEST_MYSQL_IP=127.0.0.1

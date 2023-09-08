@@ -17,20 +17,20 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package suite 集成测试参数配置
 package suite
 
 import (
-	"flag"
 	"fmt"
+	"github.com/spf13/pflag"
 	"log"
 	"os"
 	"testing"
 
-	cloudserver "hcm/pkg/client/cloud-server"
-	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/cc"
+	"hcm/pkg/client"
 	"hcm/pkg/dal/table"
 	"hcm/pkg/logs"
-	"hcm/pkg/metrics"
 	restclient "hcm/pkg/rest/client"
 	"hcm/pkg/serviced"
 	"hcm/pkg/tools/ssl"
@@ -40,20 +40,9 @@ import (
 	_ "github.com/smartystreets/goconvey/convey"
 )
 
-type ClientSet struct {
-	HCService    *hcservice.Client
-	CloudService *cloudserver.Client
-}
-
-var clientSet ClientSet
+var clientSet *client.ClientSet
 
 var dbCfg dbConfig
-
-type serverConfig struct {
-	HcHost    string
-	CLoudHost string
-	DataHost  string
-}
 
 type dbConfig struct {
 	IP       string
@@ -66,14 +55,19 @@ type dbConfig struct {
 var db *sqlx.DB
 
 func init() {
-	var clientCfg serverConfig
+	var etcdCfg cc.Etcd
 	var concurrent int
 	var sustainSeconds float64
 	var totalRequest int64
 
-	flag.StringVar(&clientCfg.DataHost, "data-host", "http://127.0.0.1:9600", "data http service address")
-	flag.StringVar(&clientCfg.HcHost, "hc-host", "http://127.0.0.1:9601", "hc http server address")
-	flag.StringVar(&clientCfg.CLoudHost, "cloud-host", "http://127.0.0.1:9602", "cloud http server address")
+	flag := pflag.CommandLine
+
+	// flag.ParseErrorsWhitelist
+	flag.StringSliceVar(&etcdCfg.Endpoints, "etcd-endpoints", []string{"127.0.0.1:2379"},
+		"etcd endpoints, use the normal service etcd.")
+	flag.StringVar(&etcdCfg.Username, "etcd-username", "", "etcd username")
+	flag.StringVar(&etcdCfg.Password, "etcd-password", "", "etcd password")
+
 	flag.IntVar(&concurrent, "concurrent", 1000, "concurrent request during the load test.")
 	flag.Float64Var(&sustainSeconds, "sustain-seconds", 10, "the load test sustain time in seconds ")
 	flag.Int64Var(&totalRequest, "total-request", 0,
@@ -83,8 +77,23 @@ func init() {
 	flag.StringVar(&dbCfg.User, "mysql-user", "hcm", "mysql login user")
 	flag.StringVar(&dbCfg.Password, "mysql-passwd", "admin", "mysql login password")
 	flag.StringVar(&dbCfg.DB, "mysql-db", "hcm_suite_test", "mysql database")
+	fmt.Println("parse")
+
+	pflagArgs := os.Args[1:]
+	osArgs := os.Args
+	// 将参数分为两部分
+	for i, arg := range os.Args {
+		// 双横线参数为分界线，前面为go 测试参数，后面为pflag参数，如果不处理掉后面的双横线参数会导致test参数解析报错
+		if arg[0] == '-' && arg[1] == '-' {
+			osArgs, pflagArgs = os.Args[0:i], os.Args[i:]
+			break
+		}
+	}
+	os.Args = osArgs
+
+	// if err it will panic, there is no meaning handling this error
+	_ = flag.Parse(pflagArgs)
 	testing.Init()
-	flag.Parse()
 
 	dsn := fmt.Sprintf("%s:%s@(%s:%d)/%s?charset=utf8&parseTime=True&loc=UTC",
 		dbCfg.User, dbCfg.Password, dbCfg.IP, dbCfg.Port, dbCfg.DB)
@@ -99,25 +108,22 @@ func init() {
 		os.Exit(0)
 	}
 
-	hcCap := &restclient.Capability{
-		Client:     restCli,
-		Discover:   serviced.NewSimpleDiscovery([]string{clientCfg.HcHost}),
-		MetricOpts: restclient.MetricOption{Register: metrics.Register()},
+	// new api server discovery client.
+	discOpt := serviced.DiscoveryOption{Services: []cc.Name{cc.CloudServerName, cc.HCServiceName, cc.DataServiceName}}
+	dis, err := serviced.NewDiscovery(cc.Service{Etcd: etcdCfg}, discOpt)
+	if err != nil {
+		logs.Errorf("new service discovery failed, err: %v", err)
+		panic(err)
 	}
-	hcCli := hcservice.NewClient(hcCap, "v1")
 
-	cloudCap := &restclient.Capability{
-		Client:     restCli,
-		Discover:   serviced.NewSimpleDiscovery([]string{clientCfg.CLoudHost}),
-		MetricOpts: restclient.MetricOption{Register: metrics.Register()},
-	}
-	cloudCli := cloudserver.NewClient(cloudCap, "v1")
-	clientSet = ClientSet{HCService: hcCli, CloudService: cloudCli}
+	logs.Infof("create discovery success.")
+
+	clientSet = client.NewClientSet(restCli, dis)
 }
 
+// ClearData 清空数据表
 func ClearData() error {
 
-	// 清空表然后重建，通过makefile实现
 	tables := []table.Name{
 		table.VpcTable,
 		table.SubnetTable,
@@ -136,6 +142,6 @@ func ClearData() error {
 }
 
 // GetClientSet get suite-test client set .
-func GetClientSet() *ClientSet {
-	return &clientSet
+func GetClientSet() *client.ClientSet {
+	return clientSet
 }

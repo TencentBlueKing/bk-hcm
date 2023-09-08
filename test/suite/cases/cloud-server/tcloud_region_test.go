@@ -36,7 +36,7 @@ func TestTCloudRegion(t *testing.T) {
 		syncReq := region.TCloudRegionSyncReq{
 			AccountID: "0000003",
 		}
-		err := cli.HCService.TCloud.Region.Sync(ctx, header, &syncReq)
+		err := cli.HCService().TCloud.Region.Sync(ctx, header, &syncReq)
 		So(err, ShouldNotBeNil)
 	})
 
