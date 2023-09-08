@@ -402,3 +402,20 @@ export const RESOURCE_DETAIL_TABS =  [
     label: '账号详情',
   },
 ];
+
+export const RESOURCE_TYPES_MAP = {
+  disk: '硬盘',
+  vpc: 'VPC',
+  subnet: '子网',
+  eip: '弹性IP',
+  security_group: '安全组',
+  cvm: '主机',
+  route_table: '路由表',
+  sub_account: '云账号',
+};
+
+export const RESOURCES_SYNC_STATUS_MAP = {
+  sync_success: '已同步',
+  sync_failed: '同步失败',
+  sync_loading: '同步中',
+};
