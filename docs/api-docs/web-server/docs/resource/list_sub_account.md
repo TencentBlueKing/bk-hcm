@@ -1,6 +1,6 @@
 ### 描述
 
-- 该接口提供版本：v1.1.24+。
+- 该接口提供版本：v9.9.9+。
 - 该接口所需权限：资源查看。
 - 该接口功能描述：查询子账号列表。
 
@@ -101,6 +101,7 @@ POST /api/v1/cloud/sub_accounts/list
 | name       | string       | 名称                                   |
 | cloud_id   | string       | 账号云ID                                |
 | account_id | string       | 子账号所属资源账号ID                          |
+| account_type | string     | 账号类型 当前账号(current_account)   主账号(main_account)  |
 | managers   | string array | 账号管理者                                |
 | bk_biz_ids | int64 array  | 账号关联的业务ID列表                          |
 | site       | string       | 站点（枚举值：china:中国站、international:国际站）  |
@@ -178,6 +179,7 @@ POST /api/v1/cloud/sub_accounts/list
         "vendor": "tcloud",
         "site": "china",
         "account_id": "00000003",
+        "account_type": "current_account",
         "managers": [],
         "biz_ids": null,
         "memo": "",
@@ -228,6 +230,7 @@ POST /api/v1/cloud/sub_accounts/list
 | name       | string       | 名称                                   |
 | cloud_id   | string       | 账号云ID                                |
 | account_id | string       | 子账号所属资源账号ID                          |
+| account_type | string     | 账号类型 当前账号(current_account)   主账号(main_account)  |
 | managers   | string array | 账号管理者                                |
 | bk_biz_ids | int64 array  | 账号关联的业务ID列表                          |
 | site       | string       | 站点（枚举值：china:中国站、international:国际站）  |

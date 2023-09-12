@@ -1,6 +1,6 @@
 ### 描述
 
-- 该接口提供版本：v1.0.0+。
+- 该接口提供版本：v9.9.9+。
 - 该接口所需权限：账号录入。
 - 该接口功能描述：创建用于创建账号的申请。
 
@@ -54,6 +54,7 @@ POST /api/v1/cloud/applications/types/add_account
 
 | 参数名称                       | 参数类型   | 必选  | 描述      |
 |----------------------------|--------|-----|---------|
+| Email                      | string | 否   | 邮箱地址  |
 | cloud_project_id           | string | 是   | 云项目ID   |
 | cloud_project_name         | string | 是   | 云项目名称   |
 | cloud_service_account_id   | string | 否   | 云服务账户ID |
@@ -65,6 +66,7 @@ POST /api/v1/cloud/applications/types/add_account
 
 | 参数名称                    | 参数类型   | 必选  | 描述     |
 |-------------------------|--------|-----|--------|
+| display_name_name       | string | 否   | 展示名称  |
 | cloud_tenant_id         | string | 是   | 云租户ID  |
 | cloud_subscription_id   | string | 是   | 云订阅ID  |
 | cloud_subscription_name | string | 是   | 云订阅名称  |

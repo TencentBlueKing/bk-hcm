@@ -20,8 +20,6 @@
 package subaccount
 
 import (
-	"github.com/jmoiron/sqlx"
-
 	dssubaccount "hcm/pkg/api/data-service/cloud/sub-account"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
@@ -29,6 +27,8 @@ import (
 	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // BatchUpdateSubAccount update sub account.
@@ -45,16 +45,17 @@ func (svc *service) BatchUpdateSubAccount(cts *rest.Contexts) (interface{}, erro
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		for _, item := range req.Items {
 			model := &tablesubaccount.Table{
-				Name:      item.Name,
-				Vendor:    item.Vendor,
-				Site:      item.Site,
-				AccountID: item.AccountID,
-				Extension: tabletype.JsonField(item.Extension),
-				Managers:  item.Managers,
-				BkBizIDs:  item.BkBizIDs,
-				Memo:      item.Memo,
-				Creator:   cts.Kit.User,
-				Reviser:   cts.Kit.User,
+				Name:        item.Name,
+				Vendor:      item.Vendor,
+				Site:        item.Site,
+				AccountID:   item.AccountID,
+				AccountType: item.AccountType,
+				Extension:   tabletype.JsonField(item.Extension),
+				Managers:    item.Managers,
+				BkBizIDs:    item.BkBizIDs,
+				Memo:        item.Memo,
+				Creator:     cts.Kit.User,
+				Reviser:     cts.Kit.User,
 			}
 
 			if err := svc.dao.SubAccount().UpdateByIDWithTx(cts.Kit, txn, item.ID, model); err != nil {

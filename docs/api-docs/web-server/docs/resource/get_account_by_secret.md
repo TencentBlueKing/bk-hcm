@@ -146,6 +146,7 @@ POST /api/v1/cloud/vendors/{vendor}/accounts/secret
 
 | 参数名称                       | 参数类型   | 描述      |
 |----------------------------|--------|---------|
+| Email                      | string | 邮箱地址  |
 | cloud_project_id           | string | 云项目ID   |
 | cloud_project_name         | string | 云项目名称   |
 | cloud_service_account_id   | string | 云服务账户ID |

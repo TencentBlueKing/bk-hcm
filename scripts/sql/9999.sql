@@ -8,6 +8,7 @@
         4. 添加业务收藏表
         5. 添加账号同步详情表
         6. 资源下账号粒度管理回收保留时间
+        7. 子账号表新增账号类型字段
 */
 start transaction;
 
@@ -99,5 +100,8 @@ insert into id_generator(`resource`, `max_id`) values ('account_sync_detail', '0
 -- 6. 资源下账号粒度管理回收保留时间
 alter table account add column recycle_reserve_time bigint default 0;
 alter table recycle_record add column recycled_at timestamp not null default current_timestamp;
+
+-- 7. 子账号表新增账号类型字段
+alter table sub_account add column account_type varchar(64) default '';
 
 commit;

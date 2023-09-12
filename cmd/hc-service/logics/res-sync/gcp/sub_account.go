@@ -120,13 +120,20 @@ func (cli *client) updateSubAccount(kt *kit.Kit, opt *SyncSubAccountOption,
 			return err
 		}
 
+		accountType := ""
+		if account.Extension.Email != "" &&
+			account.Extension.Email == one.Name {
+			accountType = string(enumor.CurrentAccount)
+		}
+
 		tmpRes := dssubaccount.UpdateField{
-			ID:        id,
-			Name:      one.Name,
-			Vendor:    enumor.Gcp,
-			Site:      account.Site,
-			AccountID: account.ID,
-			Extension: ext,
+			ID:          id,
+			Name:        one.Name,
+			Vendor:      enumor.Gcp,
+			Site:        account.Site,
+			AccountID:   account.ID,
+			AccountType: accountType,
+			Extension:   ext,
 			// Managers/BizIDs由用户设置不继承资源账号。
 			Managers: nil,
 			BkBizIDs: nil,
@@ -175,13 +182,20 @@ func (cli *client) createSubAccount(kt *kit.Kit, opt *SyncSubAccountOption, addS
 			return err
 		}
 
+		accountType := ""
+		if account.Extension.Email != "" &&
+			account.Extension.Email == one.Name {
+			accountType = string(enumor.CurrentAccount)
+		}
+
 		tmpRes := dssubaccount.CreateField{
-			CloudID:   one.Name,
-			Name:      one.Name,
-			Vendor:    enumor.Gcp,
-			Site:      account.Site,
-			AccountID: account.ID,
-			Extension: ext,
+			CloudID:     one.Name,
+			Name:        one.Name,
+			Vendor:      enumor.Gcp,
+			Site:        account.Site,
+			AccountID:   account.ID,
+			AccountType: accountType,
+			Extension:   ext,
 			// Managers/BizIDs由用户设置不继承资源账号。
 			Managers: nil,
 			BkBizIDs: nil,
