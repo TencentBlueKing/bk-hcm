@@ -10,26 +10,29 @@ POST /api/v1/cloud/vendors/gcp/applications/types/create_vpc
 
 ### 输入参数
 
-| 参数名称          | 参数类型   | 必选 | 描述                          |
-|---------------|--------|----|-----------------------------|
-| bk_biz_id     | int64  | 是  | 业务ID                        |
-| account_id    | string | 是  | 账号ID                        |
-| region        | string | 是  | 地域                          |
-| name          | string | 是  | 名称                          |
-| bk_cloud_id   | int64  | 是  | 云区域ID，-1表示没有绑定云区域           |
-| routing_mode  | string | 是  | 动态路由模式（枚举值：REGIONAL、GLOBAL） |
-| subnet        | object | 是  | 子网                          |
-| memo          | string | 否  | 备注                          |
+| 参数名称         | 参数类型   | 必选 | 描述                          |
+|--------------|--------|----|-----------------------------|
+| bk_biz_id    | int64  | 是  | 业务ID                        |
+| account_id   | string | 是  | 账号ID                        |
+| region       | string | 是  | 地域                          |
+| name         | string | 是  | 名称                          |
+| bk_cloud_id  | int64  | 是  | 云区域ID，-1表示没有绑定云区域           |
+| routing_mode | string | 是  | 动态路由模式（枚举值：REGIONAL、GLOBAL） |
+| subnet       | object | 是  | 子网                          |
+| memo         | string | 否  | 备注                          |
+| remark       | string | 否  | 单据备注                        |
 
 #### subnet
-| 参数名称                     | 参数类型   | 必选  | 描述         |
-|--------------------------|--------|-----|------------|
-| name                     | string | 是   | 子网名称       |
-| ipv4_cidr                | string | 是   | IPv4 CIDR  |
-| private_ip_google_access | bool   | 是   | 是否启用专用访问通道 |
-| enable_flow_logs         | bool   | 是   | 是否启用流日志    |
+
+| 参数名称                     | 参数类型   | 必选 | 描述         |
+|--------------------------|--------|----|------------|
+| name                     | string | 是  | 子网名称       |
+| ipv4_cidr                | string | 是  | IPv4 CIDR  |
+| private_ip_google_access | bool   | 是  | 是否启用专用访问通道 |
+| enable_flow_logs         | bool   | 是  | 是否启用流日志    |
 
 ### 调用示例
+
 ```json
 {
   "bk_biz_id": 100,

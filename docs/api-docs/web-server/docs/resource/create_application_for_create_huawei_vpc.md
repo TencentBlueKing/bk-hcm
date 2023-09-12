@@ -20,16 +20,19 @@ POST /api/v1/cloud/vendors/huawei/applications/types/create_vpc
 | bk_cloud_id | int64  | 是  | 云区域ID，-1表示没有绑定云区域 |
 | subnet      | object | 是  | 子网                |
 | memo        | string | 否  | 备注                |
+| remark      | string | 否  | 单据备注              |
 
 #### subnet
-| 参数名称         | 参数类型     | 必选  | 描述        |
-|--------------|----------|-----|-----------|
-| name         | string   | 是   | 子网名称      |
-| ipv4_cidr    | string   | 是   | IPv4 CIDR |
-| ipv6_enable  | bool     | 是   | 是否启用IPv6  |
-| gateway_ip   | string   | 是   | 网关IP      |
+
+| 参数名称        | 参数类型   | 必选 | 描述        |
+|-------------|--------|----|-----------|
+| name        | string | 是  | 子网名称      |
+| ipv4_cidr   | string | 是  | IPv4 CIDR |
+| ipv6_enable | bool   | 是  | 是否启用IPv6  |
+| gateway_ip  | string | 是  | 网关IP      |
 
 ### 调用示例
+
 ```json
 {
   "bk_biz_id": 100,
