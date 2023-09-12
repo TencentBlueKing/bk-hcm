@@ -10,18 +10,20 @@ POST /api/v1/cloud/vendors/aws/applications/types/create_vpc
 
 ### 输入参数
 
-| 参数名称              | 参数类型   | 必选 | 描述                        |
-|-------------------|--------|----|---------------------------|
-| bk_biz_id         | int64  | 是  | 业务ID                      |
-| account_id        | string | 是  | 账号ID                      |
-| region            | string | 是  | 地域                        |
-| name              | string | 是  | 名称                        |
-| ipv4_cidr         | string | 是  | IPv4 CIDR                 |
-| bk_cloud_id       | int64  | 是  | 云区域ID，-1表示没有绑定云区域         |
-| instance_tenancy  | string | 是  | 租期（枚举值：default、dedicated） |
-| memo              | string | 否  | 备注                        |
+| 参数名称             | 参数类型   | 必选 | 描述                        |
+|------------------|--------|----|---------------------------|
+| bk_biz_id        | int64  | 是  | 业务ID                      |
+| account_id       | string | 是  | 账号ID                      |
+| region           | string | 是  | 地域                        |
+| name             | string | 是  | 名称                        |
+| ipv4_cidr        | string | 是  | IPv4 CIDR                 |
+| bk_cloud_id      | int64  | 是  | 云区域ID，-1表示没有绑定云区域         |
+| instance_tenancy | string | 是  | 租期（枚举值：default、dedicated） |
+| memo             | string | 否  | 备注                        |
+| remark           | string | 否  | 单据备注                      |
 
 ### 调用示例
+
 ```json
 {
   "bk_biz_id": 100,

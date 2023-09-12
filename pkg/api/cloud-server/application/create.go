@@ -19,9 +19,15 @@
 
 package application
 
-const (
-	asciiLowercase        = "abcdefghijklmnopqrstuvwxyz"
-	asciiUppercase        = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	digits                = "0123456789"
-	requiredCountMaxLimit = 100
-)
+import "hcm/pkg/criteria/validator"
+
+// CreateCommonReq define create request.
+type CreateCommonReq struct {
+	// Remark 申请单备注
+	Remark *string `json:"remark" validate:"omitempty"`
+}
+
+// Validate create common req.
+func (req *CreateCommonReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

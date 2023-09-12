@@ -32,21 +32,25 @@ POST /api/v1/cloud/vendors/huawei/applications/types/create_cvm
 | auto_renew                  | bool          | 是  | 是否自动续订                                                                                                               |
 | required_count              | int64         | 是  | 需要数量                                                                                                                 |
 | memo                        | string        | 否  | 备注                                                                                                                   |
+| remark                      | string        | 否  | 单据备注                                                                                                                 |
 
 #### system_disk
-| 参数名称             | 参数类型    | 必选  | 描述                                 |
-|------------------|---------|-----|------------------------------------|
-| disk_type        | string  | 是   | 云盘类型（枚举值：SATA、SAS、GPSSD、SSD、ESSD）  |
-| disk_size_gb     | int64   | 是   | 云盘大小                               |
+
+| 参数名称         | 参数类型   | 必选 | 描述                                |
+|--------------|--------|----|-----------------------------------|
+| disk_type    | string | 是  | 云盘类型（枚举值：SATA、SAS、GPSSD、SSD、ESSD） |
+| disk_size_gb | int64  | 是  | 云盘大小                              |
 
 #### data_disk
-| 参数名称         | 参数类型    | 必选  | 描述                                 |
-|--------------|---------|-----|------------------------------------|
-| disk_type    | string  | 是   | 云盘类型（枚举值：SATA、SAS、GPSSD、SSD、ESSD）  |
-| disk_size_gb | int64   | 是   | 云盘大小                               |
-| disk_count   | int64   | 是   | 云盘数量                               |
+
+| 参数名称         | 参数类型   | 必选 | 描述                                |
+|--------------|--------|----|-----------------------------------|
+| disk_type    | string | 是  | 云盘类型（枚举值：SATA、SAS、GPSSD、SSD、ESSD） |
+| disk_size_gb | int64  | 是  | 云盘大小                              |
+| disk_count   | int64  | 是  | 云盘数量                              |
 
 ### 调用示例
+
 ```json
 {
   "bk_biz_id": 100,
@@ -58,7 +62,10 @@ POST /api/v1/cloud/vendors/huawei/applications/types/create_cvm
   "cloud_image_id": "image-123",
   "cloud_vpc_id": "vpc-123",
   "cloud_subnet_id": "subnet-123",
-  "cloud_security_group_ids": ["1001","1002"],
+  "cloud_security_group_ids": [
+    "1001",
+    "1002"
+  ],
   "system_disk": {
     "disk_type": "SATA",
     "disk_size_gb": 50

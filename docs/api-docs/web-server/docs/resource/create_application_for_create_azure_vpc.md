@@ -10,25 +10,28 @@ POST /api/v1/cloud/vendors/azure/applications/types/create_vpc
 
 ### 输入参数
 
-| 参数名称                 | 参数类型   | 必选 | 描述                |
-|----------------------|--------|----|-------------------|
-| bk_biz_id            | int64  | 是  | 业务ID              |
-| account_id           | string | 是  | 账号ID              |
-| resource_group_name  | string | 是  | 资源组名称             |
-| region               | string | 是  | 地域                |
-| name                 | string | 是  | 名称                |
-| ipv4_cidr            | string | 是  | IPv4 CIDR         |
-| bk_cloud_id          | int64  | 是  | 云区域ID，-1表示没有绑定云区域 |
-| subnet               | object | 是  | 子网                |
-| memo                 | string | 否  | 备注                |
+| 参数名称                | 参数类型   | 必选 | 描述                |
+|---------------------|--------|----|-------------------|
+| bk_biz_id           | int64  | 是  | 业务ID              |
+| account_id          | string | 是  | 账号ID              |
+| resource_group_name | string | 是  | 资源组名称             |
+| region              | string | 是  | 地域                |
+| name                | string | 是  | 名称                |
+| ipv4_cidr           | string | 是  | IPv4 CIDR         |
+| bk_cloud_id         | int64  | 是  | 云区域ID，-1表示没有绑定云区域 |
+| subnet              | object | 是  | 子网                |
+| memo                | string | 否  | 备注                |
+| remark              | string | 否  | 单据备注              |
 
 #### subnet
-| 参数名称      | 参数类型    | 必选  | 描述        |
-|-----------|---------|-----|-----------|
-| name      | string  | 是   | 子网名称      |
-| ipv4_cidr | string  | 是   | IPv4 CIDR |
+
+| 参数名称      | 参数类型   | 必选 | 描述        |
+|-----------|--------|----|-----------|
+| name      | string | 是  | 子网名称      |
+| ipv4_cidr | string | 是  | IPv4 CIDR |
 
 ### 调用示例
+
 ```json
 {
   "bk_biz_id": 100,
