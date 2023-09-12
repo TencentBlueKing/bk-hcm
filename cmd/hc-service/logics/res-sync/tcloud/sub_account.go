@@ -26,8 +26,10 @@ import (
 	"hcm/cmd/hc-service/logics/res-sync/common"
 	"hcm/pkg/adaptor/types/account"
 	"hcm/pkg/api/core"
+	protocore "hcm/pkg/api/core/cloud"
 	coresubaccount "hcm/pkg/api/core/cloud/sub-account"
 	dataservice "hcm/pkg/api/data-service"
+	protocloud "hcm/pkg/api/data-service/cloud"
 	dssubaccount "hcm/pkg/api/data-service/cloud/sub-account"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -124,13 +126,20 @@ func (cli *client) updateSubAccount(kt *kit.Kit, opt *SyncSubAccountOption,
 			return err
 		}
 
+		accountType := ""
+		if account.Extension.CloudSubAccountID != "" &&
+			account.Extension.CloudSubAccountID == strconv.FormatUint(converter.PtrToVal(one.Uin), 10) {
+			accountType = string(enumor.CurrentAccount)
+		}
+
 		tmpRes := dssubaccount.UpdateField{
-			ID:        id,
-			Name:      converter.PtrToVal(one.Name),
-			Vendor:    enumor.TCloud,
-			Site:      account.Site,
-			AccountID: account.ID,
-			Extension: ext,
+			ID:          id,
+			Name:        converter.PtrToVal(one.Name),
+			Vendor:      enumor.TCloud,
+			Site:        account.Site,
+			AccountID:   account.ID,
+			AccountType: accountType,
+			Extension:   ext,
 			// Managers/BizIDs由用户设置不继承资源账号。
 			Managers: nil,
 			BkBizIDs: nil,
@@ -166,9 +175,17 @@ func (cli *client) createSubAccount(kt *kit.Kit, opt *SyncSubAccountOption, addS
 		return err
 	}
 
-	createResources := make([]dssubaccount.CreateField, 0, len(addSlice))
+	createResources := make([]dssubaccount.CreateField, 0)
+
+	// 产品侧定义主账号数据较重要，定制化插入一条主账号数据
+	mainAccount, err := cli.makeMainAccount(kt, account)
+	if err != nil {
+		return err
+	}
+	createResources = append(createResources, mainAccount...)
 
 	for _, one := range addSlice {
+
 		extension := &coresubaccount.TCloudExtension{
 			CloudMainAccountID: account.Extension.CloudMainAccountID,
 			Uin:                one.Uin,
@@ -181,13 +198,20 @@ func (cli *client) createSubAccount(kt *kit.Kit, opt *SyncSubAccountOption, addS
 			return err
 		}
 
+		accountType := ""
+		if account.Extension.CloudSubAccountID != "" &&
+			account.Extension.CloudSubAccountID == strconv.FormatUint(converter.PtrToVal(one.Uin), 10) {
+			accountType = string(enumor.CurrentAccount)
+		}
+
 		tmpRes := dssubaccount.CreateField{
-			CloudID:   strconv.FormatUint(converter.PtrToVal(one.Uid), 10),
-			Name:      converter.PtrToVal(one.Name),
-			Vendor:    enumor.TCloud,
-			Site:      account.Site,
-			AccountID: account.ID,
-			Extension: ext,
+			CloudID:     strconv.FormatUint(converter.PtrToVal(one.Uid), 10),
+			Name:        converter.PtrToVal(one.Name),
+			Vendor:      enumor.TCloud,
+			Site:        account.Site,
+			AccountID:   account.ID,
+			AccountType: accountType,
+			Extension:   ext,
 			// Managers/BizIDs由用户设置不继承资源账号。
 			Managers: nil,
 			BkBizIDs: nil,
@@ -223,6 +247,8 @@ func (cli *client) deleteSubAccount(kt *kit.Kit, opt *SyncSubAccountOption, delC
 	}
 
 	delCloudMap := converter.StringSliceToMap(delCloudIDs)
+	// 主账号构造的数据云上一定没有，这里过滤掉
+	delete(delCloudMap, string(enumor.MainAccount))
 	for _, one := range delFromCloud {
 		if _, exsit := delCloudMap[one.GetCloudID()]; exsit {
 			logs.Errorf("[%s] validate account not exist failed, before delete, opt: %v, failed_count: %d, rid: %s",
@@ -231,6 +257,7 @@ func (cli *client) deleteSubAccount(kt *kit.Kit, opt *SyncSubAccountOption, delC
 		}
 	}
 
+	delCloudIDs = converter.MapKeyToStringSlice(delCloudMap)
 	elems := slice.Split(delCloudIDs, constant.CloudResourceSyncMaxLimit)
 	for _, parts := range elems {
 		deleteReq := &dataservice.BatchDeleteReq{
@@ -338,4 +365,92 @@ func (cli *client) listSubAccountFromDB(kt *kit.Kit, opt *SyncSubAccountOption) 
 	}
 
 	return results, nil
+}
+
+func (cli *client) makeMainAccount(kt *kit.Kit,
+	account *protocloud.AccountGetResult[protocore.TCloudAccountExtension]) ([]dssubaccount.CreateField, error) {
+
+	ret := make([]dssubaccount.CreateField, 0)
+
+	isExsit, err := cli.isMainAccountInSubAccountDB(kt)
+	if err != nil {
+		return ret, err
+	}
+	if isExsit {
+		return ret, nil
+	}
+
+	uin, _ := strconv.Atoi(account.Extension.CloudMainAccountID)
+	int64Uin := uint64(uin)
+	extension := &coresubaccount.TCloudExtension{
+		CloudMainAccountID: account.Extension.CloudMainAccountID,
+		Uin:                converter.ValToPtr(int64Uin),
+	}
+
+	ext, err := core.MarshalStruct(extension)
+	if err != nil {
+		return ret, err
+	}
+
+	ret = append(ret, dssubaccount.CreateField{
+		CloudID:     string(enumor.MainAccount),
+		Name:        string(enumor.MainAccount),
+		Vendor:      enumor.TCloud,
+		Site:        account.Site,
+		AccountID:   account.ID,
+		AccountType: string(enumor.MainAccount),
+		Extension:   ext,
+		// Managers/BizIDs由用户设置不继承资源账号。
+		Managers: nil,
+		BkBizIDs: nil,
+		Memo:     nil,
+	})
+
+	return ret, nil
+}
+
+func (cli *client) isMainAccountInSubAccountDB(kt *kit.Kit) (bool, error) {
+	ret := false
+
+	req := &core.ListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "vendor",
+					Op:    filter.Equal.Factory(),
+					Value: enumor.TCloud,
+				},
+				&filter.AtomRule{
+					Field: "cloud_id",
+					Op:    filter.Equal.Factory(),
+					Value: enumor.MainAccount,
+				},
+			},
+		},
+		Page: core.NewDefaultBasePage(),
+	}
+	start := uint32(0)
+	for {
+		req.Page.Start = start
+		resp, err := cli.dbCli.TCloud.SubAccount.ListExt(kt.Ctx, kt.Header(), req)
+		if err != nil {
+			logs.Errorf("[%s] list sub account from db failed, err: %v, req: %v, rid: %s",
+				enumor.TCloud, err, req, kt.Rid)
+			return false, err
+		}
+
+		if len(resp.Details) == 1 {
+			ret = true
+			break
+		}
+
+		if len(resp.Details) < int(core.DefaultMaxPageLimit) {
+			break
+		}
+
+		start += uint32(core.DefaultMaxPageLimit)
+	}
+
+	return ret, nil
 }

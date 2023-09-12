@@ -203,6 +203,7 @@ func (g *Gcp) GetAccountInfoBySecret(kit *kit.Kit, cloudSecretKeyString string) 
 	}
 
 	accountInfo := &cloud.GcpInfoBySecret{
+		Email:                   serviceAccount.Email,
 		CloudProjectID:          projectList.Projects[0].ProjectId,
 		CloudProjectName:        projectList.Projects[0].DisplayName,
 		CloudServiceAccountID:   serviceAccount.UniqueId,

@@ -81,6 +81,7 @@ func (req *HuaWeiAccountExtensionCreateReq) EncryptSecretKey(cipher cryptography
 
 // GcpAccountExtensionCreateReq ...
 type GcpAccountExtensionCreateReq struct {
+	Email                   string `json:"email" validate:"omitempty"`
 	CloudProjectID          string `json:"cloud_project_id" validate:"required"`
 	CloudProjectName        string `json:"cloud_project_name" validate:"required"`
 	CloudServiceAccountID   string `json:"cloud_service_account_id" validate:"omitempty"`
@@ -96,6 +97,7 @@ func (req *GcpAccountExtensionCreateReq) EncryptSecretKey(cipher cryptography.Cr
 
 // AzureAccountExtensionCreateReq ...
 type AzureAccountExtensionCreateReq struct {
+	DisplayNameName       string `json:"display_name_name" validate:"omitempty"`
 	CloudTenantID         string `json:"cloud_tenant_id" validate:"required"`
 	CloudSubscriptionID   string `json:"cloud_subscription_id" validate:"required"`
 	CloudSubscriptionName string `json:"cloud_subscription_name" validate:"required"`
@@ -182,6 +184,7 @@ func (req *HuaWeiAccountExtensionUpdateReq) EncryptSecretKey(cipher cryptography
 }
 
 type GcpAccountExtensionUpdateReq struct {
+	Email                   string  `json:"email" validate:"omitempty"`
 	CloudProjectID          string  `json:"cloud_project_id,omitempty" validate:"omitempty"`
 	CloudProjectName        string  `json:"cloud_project_name,omitempty" validate:"omitempty"`
 	CloudServiceAccountID   *string `json:"cloud_service_account_id,omitempty" validate:"omitempty"`
@@ -199,6 +202,7 @@ func (req *GcpAccountExtensionUpdateReq) EncryptSecretKey(cipher cryptography.Cr
 }
 
 type AzureAccountExtensionUpdateReq struct {
+	DisplayNameName       string  `json:"display_name_name" validate:"omitempty"`
 	CloudTenantID         string  `json:"cloud_tenant_id,omitempty" validate:"omitempty"`
 	CloudSubscriptionID   string  `json:"cloud_subscription_id,omitempty" validate:"omitempty"`
 	CloudSubscriptionName string  `json:"cloud_subscription_name,omitempty" validate:"omitempty"`

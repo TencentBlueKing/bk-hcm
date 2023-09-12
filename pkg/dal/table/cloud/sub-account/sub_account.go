@@ -40,6 +40,7 @@ var ColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
 	{Column: "site", NamedC: "site", Type: enumor.String},
 	{Column: "account_id", NamedC: "account_id", Type: enumor.String},
+	{Column: "account_type", NamedC: "account_type", Type: enumor.String},
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
 	{Column: "managers", NamedC: "managers", Type: enumor.Json},
 	{Column: "bk_biz_ids", NamedC: "bk_biz_ids", Type: enumor.Json},
@@ -64,6 +65,8 @@ type Table struct {
 	Site enumor.AccountSiteType `db:"site" json:"site" validate:"lte=32"`
 	// AccountID 归属资源账号ID
 	AccountID string `db:"account_id" json:"account_id" validate:"lte=64"`
+	// AccountType 账号类型
+	AccountType string `db:"account_type" json:"account_type" validate:"lte=64"`
 	// Extension 云厂商账号差异扩展字段
 	Extension types.JsonField `db:"extension" json:"extension"`
 	// Managers 责任人

@@ -110,6 +110,7 @@ func (e *HuaWeiAccountExtension) DecryptSecretKey(cipher cryptography.Crypto) er
 
 // GcpAccountExtension define gcp account extension.
 type GcpAccountExtension struct {
+	Email                   string `json:"email"`
 	CloudProjectID          string `json:"cloud_project_id"`
 	CloudProjectName        string `json:"cloud_project_name"`
 	CloudServiceAccountID   string `json:"cloud_service_account_id"`
@@ -133,6 +134,7 @@ func (e *GcpAccountExtension) DecryptSecretKey(cipher cryptography.Crypto) error
 
 // AzureAccountExtension ...
 type AzureAccountExtension struct {
+	DisplayNameName       string `json:"display_name_name"`
 	CloudTenantID         string `json:"cloud_tenant_id"`
 	CloudSubscriptionID   string `json:"cloud_subscription_id"`
 	CloudSubscriptionName string `json:"cloud_subscription_name"`
