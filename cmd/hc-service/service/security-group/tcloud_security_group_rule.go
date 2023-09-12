@@ -69,15 +69,8 @@ func (g *securityGroup) BatchCreateTCloudSGRule(cts *rest.Contexts) (interface{}
 		return nil, err
 	}
 
-	syncParam := &synctcloud.SyncBaseParams{
-		AccountID: sg.AccountID,
-		Region:    sg.Region,
-		CloudIDs:  []string{sg.ID},
-	}
-	opt := &securitygrouprule.TCloudCreateOption{
-		Region:               sg.Region,
-		CloudSecurityGroupID: sg.CloudID,
-	}
+	syncParam := &synctcloud.SyncBaseParams{AccountID: sg.AccountID, Region: sg.Region, CloudIDs: []string{sg.ID}}
+	opt := &securitygrouprule.TCloudCreateOption{Region: sg.Region, CloudSecurityGroupID: sg.CloudID}
 	if req.EgressRuleSet != nil {
 		opt.EgressRuleSet = make([]securitygrouprule.TCloud, 0, len(req.EgressRuleSet))
 
@@ -115,7 +108,6 @@ func (g *securityGroup) BatchCreateTCloudSGRule(cts *rest.Contexts) (interface{}
 
 		// 里面已经有日志了，不处理
 		_, _ = g.syncSGRule(cts.Kit, syncParam)
-
 		return nil, err
 	}
 
@@ -173,15 +165,11 @@ func (g *securityGroup) UpdateTCloudSGRule(cts *rest.Contexts) (interface{}, err
 		return nil, err
 	}
 
-	syncParam := &synctcloud.SyncBaseParams{
-		AccountID: rule.AccountID,
-		Region:    rule.Region,
-		CloudIDs:  []string{rule.SecurityGroupID},
+	syncParam := &synctcloud.SyncBaseParams{AccountID: rule.AccountID, Region: rule.Region,
+		CloudIDs: []string{rule.SecurityGroupID},
 	}
-	opt := &securitygrouprule.TCloudUpdateOption{
-		Region:               rule.Region,
-		CloudSecurityGroupID: rule.CloudSecurityGroupID,
-		Version:              rule.Version,
+	opt := &securitygrouprule.TCloudUpdateOption{Region: rule.Region, CloudSecurityGroupID: rule.CloudSecurityGroupID,
+		Version: rule.Version,
 	}
 	switch rule.Type {
 	case enumor.Egress:
@@ -219,14 +207,12 @@ func (g *securityGroup) UpdateTCloudSGRule(cts *rest.Contexts) (interface{}, err
 			cts.Kit.Rid)
 
 		_, _ = g.syncSGRule(cts.Kit, syncParam)
-
 		return nil, err
 	}
 
 	if _, syncErr := g.syncSGRule(cts.Kit, syncParam); syncErr != nil {
 		return nil, syncErr
 	}
-
 	return nil, nil
 }
 

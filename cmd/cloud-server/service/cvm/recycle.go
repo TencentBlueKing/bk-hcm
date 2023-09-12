@@ -114,11 +114,8 @@ func (svc *cvmSvc) recycleCvm(kt *kit.Kit, req *proto.CvmRecycleReq, infoMap map
 	if err != nil {
 		return nil, err
 	}
-	notStoppedReq := &cloud.CvmListReq{
-		Field:  []string{"id"},
-		Filter: notStoppedFilter,
-		Page:   core.NewDefaultBasePage(),
-	}
+
+	notStoppedReq := &cloud.CvmListReq{Field: []string{"id"}, Filter: notStoppedFilter, Page: core.NewDefaultBasePage()}
 	startCvmRes, err := svc.client.DataService().Global.Cvm.ListCvm(kt.Ctx, kt.Header(), notStoppedReq)
 	if err != nil {
 		return nil, err
@@ -149,7 +146,6 @@ func (svc *cvmSvc) recycleCvm(kt *kit.Kit, req *proto.CvmRecycleReq, infoMap map
 	}
 
 	res := new(core.BatchOperateAllResult)
-
 	failedIDMap := make(map[string]struct{})
 	if detachRes != nil {
 		if len(detachRes.Failed) == len(detachDiskCvmIDs) {
@@ -163,18 +159,12 @@ func (svc *cvmSvc) recycleCvm(kt *kit.Kit, req *proto.CvmRecycleReq, infoMap map
 	}
 
 	// create recycle record
-	opt := &recyclerecord.BatchRecycleReq{
-		ResType: enumor.CvmCloudResType,
-		Infos:   make([]recyclerecord.RecycleReq, 0),
-	}
+	opt := &recyclerecord.BatchRecycleReq{ResType: enumor.CvmCloudResType, Infos: make([]recyclerecord.RecycleReq, 0)}
 	for _, info := range req.Infos {
 		if _, exists := failedIDMap[info.ID]; exists {
 			continue
 		}
-		opt.Infos = append(opt.Infos, recyclerecord.RecycleReq{
-			ID:     info.ID,
-			Detail: info.CvmRecycleOptions,
-		})
+		opt.Infos = append(opt.Infos, recyclerecord.RecycleReq{ID: info.ID, Detail: info.CvmRecycleOptions})
 	}
 	taskID, err := svc.client.DataService().Global.RecycleRecord.BatchRecycleCloudRes(kt.Ctx, kt.Header(), opt)
 	if err != nil {

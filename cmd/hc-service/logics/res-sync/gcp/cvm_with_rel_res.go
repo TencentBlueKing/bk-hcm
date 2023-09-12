@@ -386,16 +386,14 @@ func (cli *client) buildCvmRelManger(kt *kit.Kit, cvmFromCloud []typecvm.GcpCvm,
 		// Disk
 		for _, disk := range cvm.Disks {
 			if disk != nil {
+				if disk.Boot {
+					diskBootMap[disk.Source] = struct{}{}
+				}
 				diskID, exist := diskMap[disk.Source]
 				if !exist {
 					return nil, nil, fmt.Errorf("disk: %s not found", disk.Source)
 				}
-
 				mgr.CvmAppendAssResCloudID(cvm.GetCloudID(), enumor.DiskCloudResType, diskID)
-
-				if disk.Boot {
-					diskBootMap[disk.Source] = struct{}{}
-				}
 			}
 		}
 
@@ -420,18 +418,14 @@ func (cli *client) buildCvmRelManger(kt *kit.Kit, cvmFromCloud []typecvm.GcpCvm,
 				mgr.CvmAppendAssResCloudID(cvm.GetCloudID(), enumor.SubnetCloudResType, subnetID)
 
 				// Eip
-				if len(networkInterface.AccessConfigs) > 0 {
-					for _, config := range networkInterface.AccessConfigs {
-						eipCloudID, exist := eipMap[config.NatIP]
-						if exist {
-							mgr.CvmAppendAssResCloudID(cvm.GetCloudID(), enumor.EipCloudResType, eipCloudID)
-						}
+				for _, config := range networkInterface.AccessConfigs {
+					if eipCloudID, exist := eipMap[config.NatIP]; exist {
+						mgr.CvmAppendAssResCloudID(cvm.GetCloudID(), enumor.EipCloudResType, eipCloudID)
 					}
 				}
 			}
 		}
 	}
-
 	return diskBootMap, mgr, nil
 }
 

@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package hash ...
 package hash
 
 import "crypto/md5"
