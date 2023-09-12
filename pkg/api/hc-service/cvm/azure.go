@@ -84,6 +84,7 @@ type AzureBatchCreateReq struct {
 	OSDisk               *typecvm.AzureOSDisk    `json:"os_disk" validate:"required"`
 	DataDisk             []typecvm.AzureDataDisk `json:"data_disk" validate:"omitempty"`
 	RequiredCount        int64                   `json:"required_count" validate:"required"`
+	PublicIPAssigned     bool                    `json:"public_ip_assigned" validate:"omitempty"`
 }
 
 // Validate request.

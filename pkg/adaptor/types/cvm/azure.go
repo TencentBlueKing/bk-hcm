@@ -117,6 +117,7 @@ type AzureCreateOption struct {
 	CloudSecurityGroupID string          `json:"cloud_security_group_id" validate:"required"`
 	OSDisk               *AzureOSDisk    `json:"os_disk" validate:"required"`
 	DataDisk             []AzureDataDisk `json:"data_disk" validate:"omitempty"`
+	PublicIPAssigned     bool            `json:"public_ip_assigned" validate:"omitempty"`
 }
 
 // AzureImage ...

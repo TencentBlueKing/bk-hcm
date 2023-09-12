@@ -603,6 +603,26 @@ func (h *HuaWei) CreateCvm(kt *kit.Kit, opt *typecvm.HuaWeiCreateOption) (*polle
 		},
 	}
 
+	if opt.PublicIPAssigned {
+		mode, err := opt.Eip.ChargingMode.EipChargingMode()
+		if err != nil {
+			return nil, err
+		}
+
+		req.Body.Server.Publicip = &model.PrePaidServerPublicip{
+			Eip: &model.PrePaidServerEip{
+				Iptype: string(opt.Eip.Type),
+				Bandwidth: &model.PrePaidServerEipBandwidth{
+					Size:      converter.ValToPtr(opt.Eip.Size),
+					Sharetype: model.GetPrePaidServerEipBandwidthSharetypeEnum().PER,
+				},
+				Extendparam: &model.PrePaidServerEipExtendParam{
+					ChargingMode: converter.ValToPtr(mode),
+				},
+			},
+		}
+	}
+
 	if opt.InstanceCharge.PeriodType != nil {
 		periodType, err := opt.InstanceCharge.PeriodType.PeriodType()
 		if err != nil {

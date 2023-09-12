@@ -323,7 +323,8 @@ func (t *TCloud) CreateCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (*polle
 		Password: common.StringPtr(opt.Password),
 	}
 	req.InternetAccessible = &cvm.InternetAccessible{
-		PublicIpAssigned: common.BoolPtr(opt.PublicIPAssigned),
+		InternetMaxBandwidthOut: common.Int64Ptr(opt.InternetMaxBandwidthOut),
+		PublicIpAssigned:        common.BoolPtr(opt.PublicIPAssigned),
 	}
 
 	req.SystemDisk = &cvm.SystemDisk{
@@ -418,7 +419,8 @@ func (t *TCloud) InquiryPriceCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (
 		Password: common.StringPtr(opt.Password),
 	}
 	req.InternetAccessible = &cvm.InternetAccessible{
-		PublicIpAssigned: common.BoolPtr(opt.PublicIPAssigned),
+		PublicIpAssigned:        common.BoolPtr(opt.PublicIPAssigned),
+		InternetMaxBandwidthOut: common.Int64Ptr(opt.InternetMaxBandwidthOut),
 	}
 
 	req.SystemDisk = &cvm.SystemDisk{
@@ -463,11 +465,15 @@ func (t *TCloud) InquiryPriceCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (
 	result := new(typecvm.InquiryPriceResult)
 	switch opt.InstanceChargeType {
 	case typecvm.Prepaid:
-		result.OriginalPrice = converter.PtrToVal(resp.Response.Price.InstancePrice.OriginalPrice)
-		result.DiscountPrice = converter.PtrToVal(resp.Response.Price.InstancePrice.DiscountPrice)
+		result.OriginalPrice = converter.PtrToVal(resp.Response.Price.InstancePrice.OriginalPrice) +
+			converter.PtrToVal(resp.Response.Price.BandwidthPrice.OriginalPrice)
+		result.DiscountPrice = converter.PtrToVal(resp.Response.Price.InstancePrice.DiscountPrice) +
+			converter.PtrToVal(resp.Response.Price.BandwidthPrice.DiscountPrice)
 	case typecvm.PostpaidByHour, typecvm.Spotpaid:
-		result.OriginalPrice = converter.PtrToVal(resp.Response.Price.InstancePrice.UnitPrice)
-		result.DiscountPrice = converter.PtrToVal(resp.Response.Price.InstancePrice.UnitPriceDiscount)
+		result.OriginalPrice = converter.PtrToVal(resp.Response.Price.InstancePrice.UnitPrice) +
+			converter.PtrToVal(resp.Response.Price.BandwidthPrice.UnitPrice)
+		result.DiscountPrice = converter.PtrToVal(resp.Response.Price.InstancePrice.UnitPriceDiscount) +
+			converter.PtrToVal(resp.Response.Price.BandwidthPrice.UnitPriceDiscount)
 
 	default:
 		return nil, fmt.Errorf("charge type: %s not support", opt.InstanceChargeType)

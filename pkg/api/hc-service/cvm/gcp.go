@@ -59,12 +59,13 @@ type GcpBatchCreateReq struct {
 	Password      string `json:"password" validate:"required"`
 	RequiredCount int64  `json:"required_count" validate:"required"`
 	// RequestID 唯一标识支持生产请求
-	RequestID     string                `json:"request_id" validate:"omitempty"`
-	CloudVpcID    string                `json:"cloud_vpc_id" validate:"required"`
-	CloudSubnetID string                `json:"cloud_subnet_id" validate:"required"`
-	Description   string                `json:"description" validate:"omitempty"`
-	SystemDisk    *typecvm.GcpOsDisk    `json:"system_disk" validate:"required"`
-	DataDisk      []typecvm.GcpDataDisk `json:"data_disk" validate:"omitempty"`
+	RequestID        string                `json:"request_id" validate:"omitempty"`
+	CloudVpcID       string                `json:"cloud_vpc_id" validate:"required"`
+	CloudSubnetID    string                `json:"cloud_subnet_id" validate:"required"`
+	Description      string                `json:"description" validate:"omitempty"`
+	SystemDisk       *typecvm.GcpOsDisk    `json:"system_disk" validate:"required"`
+	DataDisk         []typecvm.GcpDataDisk `json:"data_disk" validate:"omitempty"`
+	PublicIPAssigned bool                  `json:"public_ip_assigned" validate:"omitempty"`
 }
 
 // Validate request.

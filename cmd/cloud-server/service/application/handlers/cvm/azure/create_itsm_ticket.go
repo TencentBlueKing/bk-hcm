@@ -154,6 +154,13 @@ func (a *ApplicationOfCreateAzureCvm) renderNetwork() ([]formItem, error) {
 	}
 	formItems = append(formItems, formItem{Label: "子网", Value: subnetInfo.Name})
 
+	// 是否自动分配公网IP
+	if req.PublicIPAssigned {
+		formItems = append(formItems, formItem{Label: "是否自动分配公网IP", Value: "是"})
+	} else {
+		formItems = append(formItems, formItem{Label: "是否自动分配公网IP", Value: "否"})
+	}
+
 	// 所属的蓝鲸云区域
 	bkCloudAreaName, err := a.GetCloudAreaName(vpcInfo.BkCloudID)
 	if err != nil {

@@ -61,6 +61,8 @@ type GcpCvmCreateReq struct {
 	RequiredCount int64 `json:"required_count" validate:"required,min=1,max=500"`
 
 	Memo *string `json:"memo" validate:"omitempty"`
+
+	PublicIPAssigned bool `json:"public_ip_assigned" validate:"omitempty"`
 }
 
 // Validate ...

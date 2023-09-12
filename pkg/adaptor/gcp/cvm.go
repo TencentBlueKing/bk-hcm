@@ -321,15 +321,31 @@ func (g *Gcp) CreateCvm(kt *kit.Kit, opt *typecvm.GcpCreateOption) (*poller.Base
 					},
 				},
 			},
-			NetworkInterfaces: []*compute.NetworkInterface{
-				{
-					Network:    opt.CloudVpcSelfLink,
-					Subnetwork: opt.CloudSubnetSelfLink,
-				},
-			},
 		},
 		MinCount:    opt.RequiredCount,
 		NamePattern: opt.NamePrefix + "-####",
+	}
+
+	if opt.PublicIPAssigned {
+		req.InstanceProperties.NetworkInterfaces = []*compute.NetworkInterface{
+			{
+				Network:    opt.CloudVpcSelfLink,
+				Subnetwork: opt.CloudSubnetSelfLink,
+				AccessConfigs: []*compute.AccessConfig{
+					{
+						Name: "External NAT",
+						Type: "ONE_TO_ONE_NAT",
+					},
+				},
+			},
+		}
+	} else {
+		req.InstanceProperties.NetworkInterfaces = []*compute.NetworkInterface{
+			{
+				Network:    opt.CloudVpcSelfLink,
+				Subnetwork: opt.CloudSubnetSelfLink,
+			},
+		}
 	}
 
 	if len(opt.DataDisk) != 0 {

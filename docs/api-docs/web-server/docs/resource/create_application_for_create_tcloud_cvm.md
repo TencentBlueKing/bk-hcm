@@ -22,6 +22,7 @@ POST /api/v1/cloud/vendors/tcloud/applications/types/create_cvm
 | cloud_vpc_id                | string        | 是  | 云VpcID                                                                                                               |
 | cloud_subnet_id             | string        | 是  | 云子网ID                                                                                                                |
 | public_ip_assigned          | string        | 否  | 分配的公网IP                                                                                                              |
+| internet_max_bandwidth_out  | string        | 否  | 网络带宽，public_ip_assigned=true时必填                                                                                      |
 | cloud_security_group_ids    | string  array | 是  | 云安全组ID                                                                                                               |
 | system_disk                 | object        | 是  | 系统盘                                                                                                                  |
 | data_disk                   | object  array | 否  | 数据盘                                                                                                                  |

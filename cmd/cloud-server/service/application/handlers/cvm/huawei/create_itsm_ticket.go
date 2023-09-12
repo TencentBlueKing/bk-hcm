@@ -21,6 +21,7 @@ package huawei
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"hcm/cmd/cloud-server/service/application/handlers"
@@ -156,8 +157,11 @@ func (a *ApplicationOfCreateHuaWeiCvm) renderNetwork() ([]formItem, error) {
 	formItems = append(formItems, formItem{Label: "子网", Value: subnetInfo.Name})
 
 	// 是否自动分配公网IP
-	if *req.PublicIPAssigned {
+	if req.PublicIPAssigned {
 		formItems = append(formItems, formItem{Label: "是否自动分配公网IP", Value: "是"})
+		formItems = append(formItems, formItem{Label: "EIP类型", Value: string(req.Eip.Type)})
+		formItems = append(formItems, formItem{Label: "EIP实例计费模式", Value: string(req.Eip.ChargingMode)})
+		formItems = append(formItems, formItem{Label: "EIP带宽大小", Value: strconv.FormatInt(int64(req.Eip.Size), 32)})
 	} else {
 		formItems = append(formItems, formItem{Label: "是否自动分配公网IP", Value: "否"})
 	}

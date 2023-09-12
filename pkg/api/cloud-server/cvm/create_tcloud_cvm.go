@@ -44,17 +44,18 @@ var (
 
 // TCloudCvmCreateReq ...
 type TCloudCvmCreateReq struct {
-	BkBizID               int64    `json:"bk_biz_id" validate:"omitempty"`
-	AccountID             string   `json:"account_id" validate:"required"`
-	Region                string   `json:"region" validate:"required"`
-	Zone                  string   `json:"zone" validate:"required"`
-	Name                  string   `json:"name" validate:"required,min=1,max=60"`
-	InstanceType          string   `json:"instance_type" validate:"required"`
-	CloudImageID          string   `json:"cloud_image_id" validate:"required"`
-	CloudVpcID            string   `json:"cloud_vpc_id" validate:"required"`
-	CloudSubnetID         string   `json:"cloud_subnet_id" validate:"required"`
-	PublicIPAssigned      bool     `json:"public_ip_assigned" validate:"omitempty"`
-	CloudSecurityGroupIDs []string `json:"cloud_security_group_ids" validate:"required,min=1"`
+	BkBizID                 int64    `json:"bk_biz_id" validate:"omitempty"`
+	AccountID               string   `json:"account_id" validate:"required"`
+	Region                  string   `json:"region" validate:"required"`
+	Zone                    string   `json:"zone" validate:"required"`
+	Name                    string   `json:"name" validate:"required,min=1,max=60"`
+	InstanceType            string   `json:"instance_type" validate:"required"`
+	CloudImageID            string   `json:"cloud_image_id" validate:"required"`
+	CloudVpcID              string   `json:"cloud_vpc_id" validate:"required"`
+	CloudSubnetID           string   `json:"cloud_subnet_id" validate:"required"`
+	PublicIPAssigned        bool     `json:"public_ip_assigned" validate:"omitempty"`
+	InternetMaxBandwidthOut int64    `json:"internet_max_bandwidth_out" validate:"omitempty"`
+	CloudSecurityGroupIDs   []string `json:"cloud_security_group_ids" validate:"required,min=1"`
 
 	SystemDisk struct {
 		DiskType   typecvm.TCloudSystemDiskType `json:"disk_type" validate:"required"`
@@ -134,6 +135,14 @@ func (req *TCloudCvmCreateReq) Validate(bizRequired bool) error {
 	// 校验密码是否符合要求
 	if err := req.validatePassword(); err != nil {
 		return err
+	}
+
+	if req.PublicIPAssigned && req.InternetMaxBandwidthOut == 0 {
+		return errors.New("assign public ip, internet_max_bandwidth_out is required")
+	}
+
+	if req.InternetMaxBandwidthOut > 2000 {
+		return errors.New("internet_max_bandwidth_out should <= 2000")
 	}
 
 	return nil
