@@ -124,6 +124,11 @@ const (
 	// RecycleRecordTableTaskID is recycle record table's task id.
 	// TODO: 之后考虑非表id的id_generator如何更优雅的使用
 	RecycleRecordTableTaskID Name = "recycle_record_task_id"
+
+	// AsyncFlowTable is async flow table's name.
+	AsyncFlowTable Name = "async_flow"
+	// AsyncFlowTaskTable is async flow task table's name.
+	AsyncFlowTaskTable Name = "async_flow_task"
 )
 
 // Validate whether the table name is valid or not.
@@ -187,6 +192,9 @@ var TableMap = map[Name]struct{}{
 
 	// TODO: 临时方案
 	RecycleRecordTableTaskID: {},
+
+	AsyncFlowTable:     {},
+	AsyncFlowTaskTable: {},
 }
 
 // Register 注册表名

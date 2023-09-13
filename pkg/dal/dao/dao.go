@@ -26,6 +26,7 @@ import (
 
 	"hcm/pkg/cc"
 	"hcm/pkg/dal/dao/application"
+	daoasync "hcm/pkg/dal/dao/async"
 	"hcm/pkg/dal/dao/audit"
 	"hcm/pkg/dal/dao/auth"
 	"hcm/pkg/dal/dao/cloud"
@@ -91,6 +92,8 @@ type Set interface {
 	DiskCvmRel() diskcvmrel.DiskCvmRel
 	EipCvmRel() eipcvmrel.EipCvmRel
 	AccountBillConfig() bill.Interface
+	AsyncFlow() daoasync.AsyncFlow
+	AsyncFlowTask() daoasync.AsyncFlowTask
 
 	Txn() *Txn
 }
@@ -432,5 +435,21 @@ func (s *set) AccountBillConfig() bill.Interface {
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,
+	}
+}
+
+// AsyncFlow return AsyncFlow dao.
+func (s *set) AsyncFlow() daoasync.AsyncFlow {
+	return &daoasync.AsyncFlowDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// AsyncFlowTask return AsyncFlowTask dao.
+func (s *set) AsyncFlowTask() daoasync.AsyncFlowTask {
+	return &daoasync.AsyncFlowTaskDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
 	}
 }
