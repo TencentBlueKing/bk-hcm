@@ -20,6 +20,8 @@
 package adaptormock
 
 import (
+	"sync"
+
 	"hcm/cmd/hc-service/logics/res-sync/common"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
@@ -40,9 +42,8 @@ func (r *LogReporter) Errorf(fmt string, args ...any) {
 	logs.Errorf(fmt, args...)
 }
 
-// NewCloudResStore returns new store, keyGetter use for get key from value. For example get id from value.
-func NewCloudResStore[CloudType common.CloudResType](
-	items ...CloudType) *Store[string, CloudType] {
+// NewCloudResStore returns new map store, use for crud of cloud resource type.
+func NewCloudResStore[CloudType common.CloudResType](items ...CloudType) *Store[string, CloudType] {
 
 	s := Store[string, CloudType]{keyGetter: CloudType.GetCloudID}
 	s.Init(items...)
@@ -54,6 +55,7 @@ func NewCloudResStore[CloudType common.CloudResType](
 type Store[K comparable, V any] struct {
 	keyGetter func(V) K
 	dict      map[K]V
+	rw        sync.RWMutex
 }
 
 // Init replace inside storage with new one
@@ -62,16 +64,21 @@ func (st *Store[K, V]) Init(items ...V) {
 	st.AddItems(items...)
 }
 
+// Get key and check its existence, wrap of map
 func (st *Store[K, V]) Get(key K) (val V, exists bool) {
+	st.rw.RLock()
+	defer st.rw.RUnlock()
 	val, exists = st.dict[key]
 	return
 }
 
-// GetByKeys 如果输入参数为空，则返回全部数据; 如果参数非空，则返回可以找到的Value
+// GetByKeys if input keys empty, return all, else return value of matched keys.
 func (st *Store[K, V]) GetByKeys(keys ...K) (values []V) {
 	if len(keys) == 0 {
 		return st.ListAll()
 	}
+	st.rw.RLock()
+	defer st.rw.RUnlock()
 	for _, k := range keys {
 		if val, exists := st.dict[k]; exists {
 			values = append(values, val)
@@ -82,6 +89,8 @@ func (st *Store[K, V]) GetByKeys(keys ...K) (values []V) {
 
 // Update item must exits
 func (st *Store[K, V]) Update(key K, val V) error {
+	st.rw.Lock()
+	defer st.rw.Unlock()
 	if _, exits := st.dict[key]; !exits {
 		return errf.Newf(errf.RecordNotFound, "not found in mock store: %v", key)
 	}
@@ -89,8 +98,10 @@ func (st *Store[K, V]) Update(key K, val V) error {
 	return nil
 }
 
-// Set does not care key exist or not
+// Set does not care key exists or not
 func (st *Store[K, V]) Set(key K, val V) {
+	st.rw.Lock()
+	defer st.rw.Unlock()
 	st.dict[key] = val
 }
 
@@ -106,21 +117,28 @@ func (st *Store[K, V]) AddItems(val ...V) (ok bool) {
 
 // Add return false when item exists
 func (st *Store[K, V]) Add(key K, val V) (ok bool) {
+	st.rw.Lock()
+	defer st.rw.Unlock()
 	if _, exists := st.dict[key]; exists {
 		return false
 	}
 	logs.V(3).Infof("Adding  %+v", val)
 	st.dict[key] = val
+
 	return true
 }
 
 // ListAll returns all value in a slice
 func (st *Store[K, V]) ListAll() (valueSlice []V) {
+	st.rw.RLock()
+	defer st.rw.RUnlock()
 	return converter.MapValueToSlice(st.dict)
 }
 
 // Filter return values match given func
 func (st *Store[K, V]) Filter(match func(V) bool) (valueSlice []V) {
+	st.rw.RLock()
+	defer st.rw.RUnlock()
 	for _, val := range st.dict {
 		if match(val) {
 			valueSlice = append(valueSlice, val)
@@ -131,6 +149,8 @@ func (st *Store[K, V]) Filter(match func(V) bool) (valueSlice []V) {
 
 // Remove existing item
 func (st *Store[K, V]) Remove(key K) error {
+	st.rw.Lock()
+	defer st.rw.Unlock()
 	if _, exits := st.dict[key]; !exits {
 		return errf.Newf(errf.RecordNotFound, "not found in mock store: %v", key)
 	}

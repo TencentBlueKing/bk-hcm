@@ -57,17 +57,27 @@ func (r *regionPlaybook) Apply(mockCloud *MockTCloud, controller *gomock.Control
 			newZone("ap-guangzhou-4", "100004", "广州四区", "AVAILABLE"),
 		},
 	}
-	mockCloud.EXPECT().ListZone(gomock.Any(), gomock.Eq(&typeszone.TCloudZoneListOption{Region: "ap-mariana"})).
-		AnyTimes().Return(zones["ap-mariana"], nil)
-
-	mockCloud.EXPECT().ListZone(gomock.Any(), gomock.Eq(&typeszone.TCloudZoneListOption{Region: "ap-guangzhou"})).
-		AnyTimes().Return(zones["ap-guangzhou"], nil)
-
-	mockCloud.EXPECT().ListRegion(gomock.Any()).AnyTimes().
+	// 不管传入什么都返回指定的regionList
+	mockCloud.EXPECT().ListRegion(gomock.Any()).MinTimes(1).
 		Return(&region.TCloudRegionListResult{
 			Count:   converter.ValToPtr(uint64(len(regionList))),
 			Details: regionList,
 		}, nil)
+
+	// 设定请求广州地域可用区的时候返回我们定义的可用区
+	mockCloud.EXPECT().ListZone(gomock.Any(), &typeszone.TCloudZoneListOption{Region: "ap-guangzhou"}).
+		MinTimes(1).Return(zones["ap-guangzhou"], nil)
+
+	// 针对逻辑比较简单的无状态函数，直接返回通过参数匹配返回指定值即可，
+	// EXPECT 方法返回相应的记录器(recorder)
+	mockCloud.EXPECT().
+		// 指定ListZone方法的第一个参数为任意值，第二个参数和给定参数相等的时候（底层会通过反射比较值）
+		ListZone(gomock.Any(), &typeszone.TCloudZoneListOption{Region: "ap-mariana"}).
+		// 可以调用任意次，也可以指定特定次数（最多几次、最少几次），默认是一次
+		MinTimes(1).
+		// 返回指定的值
+		Return(zones["ap-mariana"], nil)
+
 }
 
 // NewRegionPlaybook  return region playbook, always returns the same region list

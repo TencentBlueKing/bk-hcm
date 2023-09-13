@@ -32,14 +32,14 @@ import (
 
 func (v *vpcPlaybook) applySubnet(mockCloud *MockTCloud) {
 
-	mockCloud.EXPECT().ListSubnet(gomock.Any(), gomock.Any()).DoAndReturn(v.listSubnet).AnyTimes()
+	mockCloud.EXPECT().ListSubnet(gomock.Any(), gomock.Any()).DoAndReturn(v.listSubnet).MinTimes(1)
 
-	mockCloud.EXPECT().CreateSubnets(gomock.Any(), gomock.Any()).DoAndReturn(v.createSubnet).AnyTimes()
+	mockCloud.EXPECT().CreateSubnets(gomock.Any(), gomock.Any()).DoAndReturn(v.createSubnet).MinTimes(1)
 
 	// only return nil, do nothing
 	mockCloud.EXPECT().
 		UpdateSubnet(gomock.Any(), gomock.AssignableToTypeOf((*adtsubnet.TCloudSubnetUpdateOption)(nil))).
-		Return(nil).AnyTimes()
+		Return(nil).MinTimes(1)
 
 	mockCloud.EXPECT().DeleteSubnet(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) error {
@@ -47,7 +47,7 @@ func (v *vpcPlaybook) applySubnet(mockCloud *MockTCloud) {
 				return err
 			}
 			return v.subnetStore.Remove(opt.ResourceID)
-		}).AnyTimes()
+		}).MinTimes(1)
 }
 
 func (v *vpcPlaybook) listSubnet(_ *kit.Kit, opt *core.TCloudListOption) (*adtsubnet.TCloudSubnetListResult,

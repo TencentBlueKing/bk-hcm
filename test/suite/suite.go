@@ -77,7 +77,6 @@ func init() {
 	flag.StringVar(&dbCfg.User, "mysql-user", "hcm", "mysql login user")
 	flag.StringVar(&dbCfg.Password, "mysql-passwd", "admin", "mysql login password")
 	flag.StringVar(&dbCfg.DB, "mysql-db", "hcm_suite_test", "mysql database")
-	fmt.Println("parse")
 
 	pflagArgs := os.Args[1:]
 	osArgs := os.Args

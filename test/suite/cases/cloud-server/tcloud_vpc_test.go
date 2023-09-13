@@ -65,7 +65,7 @@ func TestTCloudVPC(t *testing.T) {
 			So(len(listResult.Details), ShouldEqual, 0)
 		})
 
-		// 2. 创建vpc
+		// 2. 创建vpc，与其是要创建出对应的子网，子网创建会创建对应路由表
 		Convey("create tcloud vpc", func() {
 			kt := cases.GenApiKit()
 
@@ -76,7 +76,7 @@ func TestTCloudVPC(t *testing.T) {
 
 		})
 
-		// 3. 查询创建结果
+		// 3. 查询创建结果，包括VPC、对应的子网，以及子网对应的路由表
 		Convey("check created vpc and subnet", func() {
 			kt := cases.GenApiKit()
 			Convey("check created vpc", func() {

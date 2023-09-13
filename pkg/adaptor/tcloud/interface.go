@@ -20,13 +20,10 @@
 package tcloud
 
 import (
-	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
-	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
-
 	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/account"
-	"hcm/pkg/adaptor/types/bill"
+	typesBill "hcm/pkg/adaptor/types/bill"
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/adaptor/types/disk"
@@ -41,6 +38,10 @@ import (
 	"hcm/pkg/adaptor/types/zone"
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/kit"
+
+	billing "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/billing/v20180709"
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
 
 // TCloud adaptor interface for tencent cloud
@@ -88,7 +89,7 @@ type TCloud interface {
 	)
 	CreateEip(kt *kit.Kit, opt *eip.TCloudEipCreateOption) (*poller.BaseDoneResult, error)
 	ListRegion(kt *kit.Kit) (*region.TCloudRegionListResult, error)
-	GetBillList(kt *kit.Kit, opt *bill.TCloudBillListOption) (*uint64, interface{}, error)
+	GetBillList(kt *kit.Kit, opt *typesBill.TCloudBillListOption) (*billing.DescribeBillDetailResponseParams, error)
 	ListInstanceType(kt *kit.Kit, opt *instancetype.TCloudInstanceTypeListOption) (
 		[]instancetype.TCloudInstanceType, error,
 	)

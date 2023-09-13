@@ -28,6 +28,7 @@ import (
 	"hcm/cmd/hc-service/options"
 	"hcm/cmd/hc-service/service"
 	"hcm/pkg/adaptor"
+	mocktcloud "hcm/pkg/adaptor/mock/tcloud"
 	"hcm/pkg/cc"
 	"hcm/pkg/logs"
 	"hcm/pkg/metrics"
@@ -122,7 +123,7 @@ func (ds *hcService) finalizer() {
 		logs.Errorf("process service shutdown, but deregister failed, err: %v", err)
 		return
 	}
-
+	mocktcloud.Shutdown()
 	logs.Infof("shutting down service, deregister service success.")
 	return
 }

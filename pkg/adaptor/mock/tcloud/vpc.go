@@ -34,7 +34,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-// vpcPlaybook in memory playbook
+// vpcPlaybook in memory crud vpc playbook, add ability to mock vpc, subnet, route table related functions.
 type vpcPlaybook struct {
 	vpcStore        *adaptormock.Store[string, types.TCloudVpc]
 	subnetStore     *adaptormock.Store[string, adtsubnet.TCloudSubnet]
@@ -42,13 +42,12 @@ type vpcPlaybook struct {
 }
 
 // NewCrudVpcPlaybook  vpc, subnet, route table all in one.
-func NewCrudVpcPlaybook(defaultVpc []types.TCloudVpc, subnets []adtsubnet.TCloudSubnet,
-	routeTables []adtroutetable.TCloudRouteTable) *vpcPlaybook {
+func NewCrudVpcPlaybook() Playbook {
 
 	return &vpcPlaybook{
-		vpcStore:        adaptormock.NewCloudResStore(defaultVpc...),
-		subnetStore:     adaptormock.NewCloudResStore(subnets...),
-		routeTableStore: adaptormock.NewCloudResStore(routeTables...),
+		vpcStore:        adaptormock.NewCloudResStore[types.TCloudVpc](),
+		subnetStore:     adaptormock.NewCloudResStore[adtsubnet.TCloudSubnet](),
+		routeTableStore: adaptormock.NewCloudResStore[adtroutetable.TCloudRouteTable](),
 	}
 }
 
@@ -70,18 +69,20 @@ func (v *vpcPlaybook) Apply(mockCloud *MockTCloud, ctrl *gomock.Controller) {
 
 func (v *vpcPlaybook) applyVpc(mockCloud *MockTCloud) {
 
-	mockCloud.EXPECT().ListVpc(gomock.Any(), gomock.Any()).DoAndReturn(v.listVpc).AnyTimes()
-	mockCloud.EXPECT().CreateVpc(gomock.Any(), gomock.Any()).DoAndReturn(v.createVpc).AnyTimes()
-	// we do not support operation of update vpc, just check input type and then return nil, do nothing
+	// 相当于将对mock对象ListVpc方法的调用转化成对v.listVpc的调用
+	mockCloud.EXPECT().ListVpc(gomock.Any(), gomock.Any()).DoAndReturn(v.listVpc).MinTimes(1)
+	mockCloud.EXPECT().CreateVpc(gomock.Any(), gomock.Any()).DoAndReturn(v.createVpc).MinTimes(1)
+
+	// we do not support operation of update vpc, just check input type and then return nil, do nothing, 判断传入参数类型
 	mockCloud.EXPECT().
 		UpdateVpc(gomock.Any(), gomock.AssignableToTypeOf((*types.TCloudVpcUpdateOption)(nil))).
-		Return(nil).AnyTimes()
+		Return(nil).MinTimes(1)
 
-	mockCloud.EXPECT().DeleteVpc(gomock.Any(), gomock.Any()).DoAndReturn(v.deleteVpc).AnyTimes()
+	mockCloud.EXPECT().DeleteVpc(gomock.Any(), gomock.Any()).DoAndReturn(v.deleteVpc).MinTimes(1)
 }
 
 // listVpc 如果输入参数为空，则返回全部数据，如果参数非空，则返回匹配参数
-func (v *vpcPlaybook) listVpc(kt *kit.Kit, opt *core.TCloudListOption) (*types.TCloudVpcListResult, error) {
+func (v *vpcPlaybook) listVpc(_ *kit.Kit, opt *core.TCloudListOption) (*types.TCloudVpcListResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -103,7 +104,7 @@ func (v *vpcPlaybook) listVpc(kt *kit.Kit, opt *core.TCloudListOption) (*types.T
 }
 
 // createVpc when creating vpc, the subnet and route table will be created
-func (v *vpcPlaybook) createVpc(kt *kit.Kit, opt *types.TCloudVpcCreateOption) (*types.TCloudVpc, error) {
+func (v *vpcPlaybook) createVpc(_ *kit.Kit, opt *types.TCloudVpcCreateOption) (*types.TCloudVpc, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}

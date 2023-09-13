@@ -54,8 +54,7 @@ func New(opt Option) *Adaptor {
 // TCloud returns tencent cloud operations.
 func (a *Adaptor) TCloud(s *types.BaseSecret) (tcloud.TCloud, error) {
 	if a.EnableCloudMock {
-		// TODO: 生命周期处理，ctrl.finish
-		mockTcloud, _ := mocktcloud.NewMockCloud()
+		mockTcloud := mocktcloud.GetMockCloud()
 		return mockTcloud, nil
 	}
 	return tcloud.NewTCloud(s)

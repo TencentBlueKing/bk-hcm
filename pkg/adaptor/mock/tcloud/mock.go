@@ -20,6 +20,8 @@
 package mocktcloud
 
 import (
+	"sync"
+
 	adaptormock "hcm/pkg/adaptor/mock"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/logs"
@@ -27,36 +29,53 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-// Playbook 给mock加上具体方法的实现
+var once sync.Once
+
+// Playbook 给mock加上具体方法的剧本
 type Playbook interface {
+	// Name  playbook 标识
 	Name() string
+	// Apply 给指定mock示例实例添加方法
 	Apply(*MockTCloud, *gomock.Controller)
 }
 
-var defaultPlaybook = map[string]Playbook{}
+var ctrl *gomock.Controller
+var mockCloud *MockTCloud
 
-func register(applier Playbook) {
-	defaultPlaybook[applier.Name()] = applier
+// GetMockCloud return a fake tcloud adaptor
+func GetMockCloud() *MockTCloud {
+	once.Do(initMock)
+	return mockCloud
 }
 
-// NewMockCloud return fake adaptor
-func NewMockCloud(playbooks ...Playbook) (*MockTCloud, *gomock.Controller) {
-	ctrl := gomock.NewController(&adaptormock.LogReporter{})
-	mockCloud := NewMockTCloud(ctrl)
+func initMock() {
 
-	for _, playbook := range playbooks {
-		register(playbook)
-	}
-	for name, applier := range defaultPlaybook {
-		logs.V(3).Infoln(enumor.TCloud, "registering playbook:", name)
-		applier.Apply(mockCloud, ctrl)
+	ctrl = gomock.NewController(&adaptormock.LogReporter{})
+	mockCloud = NewMockTCloud(ctrl)
+
+	defaultPlaybook := getPlaybooks()
+	for i, playbook := range defaultPlaybook {
+		logs.V(3).Infof("[%s] registering %d th playbook:", enumor.TCloud, i, playbook.Name())
+		playbook.Apply(mockCloud, ctrl)
 	}
 
-	return mockCloud, ctrl
 }
 
-func init() {
-	// register the playbook method
-	register(NewRegionPlaybook())
-	register(NewCrudVpcPlaybook(nil, nil, nil))
+func getPlaybooks() []Playbook {
+
+	// gomock是通过slice来记录同一个方法的多个Call实例的，先记录的调用的有更高的优先级
+	return []Playbook{
+		/* add playbook here */
+		NewRegionPlaybook(),
+		NewCrudVpcPlaybook(),
+	}
+
+}
+
+// Shutdown 检查mock调用次数是否符合预期，主要检查是否存在没有被调用的方法
+func Shutdown() {
+	if ctrl != nil {
+		ctrl.Finish()
+		ctrl = nil
+	}
 }

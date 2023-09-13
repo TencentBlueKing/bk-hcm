@@ -33,12 +33,12 @@ import (
 
 func (v *vpcPlaybook) applyRouteTable(mockCloud *MockTCloud) {
 
-	mockCloud.EXPECT().ListRouteTable(gomock.Any(), gomock.Any()).DoAndReturn(v.listRouteTable).AnyTimes()
+	mockCloud.EXPECT().ListRouteTable(gomock.Any(), gomock.Any()).DoAndReturn(v.listRouteTable).MinTimes(1)
 
 	// only return nil, do nothing
 	mockCloud.EXPECT().
 		UpdateRouteTable(gomock.Any(), gomock.AssignableToTypeOf((*adtroutetable.TCloudRouteTableUpdateOption)(nil))).
-		Return(nil).AnyTimes()
+		Return(nil).MinTimes(1)
 
 	mockCloud.EXPECT().DeleteRouteTable(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) error {
@@ -47,10 +47,10 @@ func (v *vpcPlaybook) applyRouteTable(mockCloud *MockTCloud) {
 				return err
 			}
 			return v.subnetStore.Remove(opt.ResourceID)
-		}).AnyTimes()
+		}).MinTimes(1)
 }
 
-// listRouteTable 路由表如果结果中没有指定的id 会返回未找到错误
+// listRouteTable 和其他list接口不同，路由表如果结果中没有指定的id，会返回未找到错误
 func (v *vpcPlaybook) listRouteTable(_ *kit.Kit,
 	opt *core.TCloudListOption) (*adtroutetable.TCloudRouteTableListResult,
 	error) {
@@ -71,8 +71,7 @@ func (v *vpcPlaybook) listRouteTable(_ *kit.Kit,
 				values = append(values, rtb)
 			} else {
 				return nil, errors.NewTencentCloudSDKError(tcloud.ErrNotFound,
-					"mock route table not found: "+rtb.CloudVpcID,
-					"request-id")
+					"mock route table not found: "+rtb.CloudVpcID, "request-id")
 			}
 		}
 	}

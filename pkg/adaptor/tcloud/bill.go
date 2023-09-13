@@ -33,7 +33,7 @@ import (
 
 // GetBillList get bill list.
 // ref: https://console.cloud.tencent.com/api/explorer?Product=billing&Version=2018-07-09&Action=DescribeBillDetail
-func (t *TCloud) GetBillList(kt *kit.Kit, opt *typesBill.TCloudBillListOption) (
+func (t *TCloudImpl) GetBillList(kt *kit.Kit, opt *typesBill.TCloudBillListOption) (
 	*billing.DescribeBillDetailResponseParams, error) {
 
 	if err := opt.Validate(); err != nil {

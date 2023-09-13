@@ -25,6 +25,7 @@ import (
 	kit "hcm/pkg/kit"
 	reflect "reflect"
 
+	v20180709 "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/billing/v20180709"
 	v20190116 "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
 	v20170312 "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 	gomock "go.uber.org/mock/gomock"
@@ -1251,13 +1252,12 @@ func (c *TCloudGetAccountZoneQuotaCall) DoAndReturn(f func(*kit.Kit, *account.Ge
 }
 
 // GetBillList mocks base method.
-func (m *MockTCloud) GetBillList(kt *kit.Kit, opt *bill.TCloudBillListOption) (*uint64, interface{}, error) {
+func (m *MockTCloud) GetBillList(kt *kit.Kit, opt *bill.TCloudBillListOption) (*v20180709.DescribeBillDetailResponseParams, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBillList", kt, opt)
-	ret0, _ := ret[0].(*uint64)
-	ret1, _ := ret[1].(interface{})
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret0, _ := ret[0].(*v20180709.DescribeBillDetailResponseParams)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetBillList indicates an expected call of GetBillList.
@@ -1273,19 +1273,19 @@ type TCloudGetBillListCall struct {
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *TCloudGetBillListCall) Return(arg0 *uint64, arg1 interface{}, arg2 error) *TCloudGetBillListCall {
-	c.Call = c.Call.Return(arg0, arg1, arg2)
+func (c *TCloudGetBillListCall) Return(arg0 *v20180709.DescribeBillDetailResponseParams, arg1 error) *TCloudGetBillListCall {
+	c.Call = c.Call.Return(arg0, arg1)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *TCloudGetBillListCall) Do(f func(*kit.Kit, *bill.TCloudBillListOption) (*uint64, interface{}, error)) *TCloudGetBillListCall {
+func (c *TCloudGetBillListCall) Do(f func(*kit.Kit, *bill.TCloudBillListOption) (*v20180709.DescribeBillDetailResponseParams, error)) *TCloudGetBillListCall {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *TCloudGetBillListCall) DoAndReturn(f func(*kit.Kit, *bill.TCloudBillListOption) (*uint64, interface{}, error)) *TCloudGetBillListCall {
+func (c *TCloudGetBillListCall) DoAndReturn(f func(*kit.Kit, *bill.TCloudBillListOption) (*v20180709.DescribeBillDetailResponseParams, error)) *TCloudGetBillListCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
