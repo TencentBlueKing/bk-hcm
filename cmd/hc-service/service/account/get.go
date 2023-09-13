@@ -313,21 +313,17 @@ func (svc *service) GetAzureResCountBySecret(cts *rest.Contexts) (interface{}, e
 		return nil, err
 	}
 
-	result := &hsaccount.ResCount{
-		Items: []*hsaccount.ResCountItem{
-			{Type: enumor.CvmCloudResType, Count: cvmCount},
-			{Type: enumor.DiskCloudResType, Count: diskCount},
-			{Type: enumor.SecurityGroupCloudResType, Count: sgCount},
-			{Type: enumor.VpcCloudResType, Count: vpcCount},
-			{Type: enumor.SubnetCloudResType, Count: subnetCount},
-			{Type: enumor.EipCloudResType, Count: eipCount},
-			{Type: enumor.NetworkInterfaceCloudResType, Count: niCount},
-			{Type: enumor.RouteTableCloudResType, Count: routeTableCount},
-			{Type: enumor.SubAccountCloudResType, Count: accountCount},
-		},
-	}
-
-	return result, nil
+	return &hsaccount.ResCount{Items: []*hsaccount.ResCountItem{
+		{Type: enumor.CvmCloudResType, Count: cvmCount},
+		{Type: enumor.DiskCloudResType, Count: diskCount},
+		{Type: enumor.SecurityGroupCloudResType, Count: sgCount},
+		{Type: enumor.VpcCloudResType, Count: vpcCount},
+		{Type: enumor.SubnetCloudResType, Count: subnetCount},
+		{Type: enumor.EipCloudResType, Count: eipCount},
+		{Type: enumor.NetworkInterfaceCloudResType, Count: niCount},
+		{Type: enumor.RouteTableCloudResType, Count: routeTableCount},
+		{Type: enumor.SubAccountCloudResType, Count: accountCount},
+	}}, nil
 }
 
 // HuaWeiGetResCountBySecret 根据秘钥信息获取资源数量
@@ -339,60 +335,52 @@ func (svc *service) HuaWeiGetResCountBySecret(cts *rest.Contexts) (interface{}, 
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-
 	client, err := svc.ad.Adaptor().HuaWei(&types.BaseSecret{CloudSecretID: req.CloudSecretID,
 		CloudSecretKey: req.CloudSecretKey})
 	if err != nil {
 		return nil, err
 	}
-
 	ret := new(hsaccount.ResCount)
-
 	// 获取cvm数量
 	retCvm, err := client.CountAllResources(cts.Kit, enumor.HuaWeiCvmProviderType)
 	if err != nil {
 		logs.Errorf("get cvm count failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-	ret.Items = append(ret.Items, &hsaccount.ResCountItem{Type: enumor.CvmCloudResType,
-		Count: converter.PtrToVal(retCvm.TotalCount)})
-
+	ret.Items = append(ret.Items,
+		&hsaccount.ResCountItem{Type: enumor.CvmCloudResType, Count: converter.PtrToVal(retCvm.TotalCount)})
 	// 获取disk数量
 	retDisk, err := client.CountAllResources(cts.Kit, enumor.HuaWeiDiskProviderType)
 	if err != nil {
 		logs.Errorf("get disk count failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-	ret.Items = append(ret.Items, &hsaccount.ResCountItem{Type: enumor.DiskCloudResType,
-		Count: converter.PtrToVal(retDisk.TotalCount)})
-
+	ret.Items = append(ret.Items,
+		&hsaccount.ResCountItem{Type: enumor.DiskCloudResType, Count: converter.PtrToVal(retDisk.TotalCount)})
 	// 获取vpc数量
 	retVpc, err := client.CountAllResources(cts.Kit, enumor.HuaWeiVpcProviderType)
 	if err != nil {
 		logs.Errorf("get vpc count failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-	ret.Items = append(ret.Items, &hsaccount.ResCountItem{Type: enumor.VpcCloudResType,
-		Count: converter.PtrToVal(retVpc.TotalCount)})
-
+	ret.Items = append(ret.Items,
+		&hsaccount.ResCountItem{Type: enumor.VpcCloudResType, Count: converter.PtrToVal(retVpc.TotalCount)})
 	// 获取eip数量
 	retEip, err := client.CountAllResources(cts.Kit, enumor.HuaWeiEipProviderType)
 	if err != nil {
 		logs.Errorf("get eip count failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-	ret.Items = append(ret.Items, &hsaccount.ResCountItem{Type: enumor.EipCloudResType,
-		Count: converter.PtrToVal(retEip.TotalCount)})
-
+	ret.Items = append(ret.Items,
+		&hsaccount.ResCountItem{Type: enumor.EipCloudResType, Count: converter.PtrToVal(retEip.TotalCount)})
 	// 获取安全组数量
 	retSG, err := client.CountAllResources(cts.Kit, enumor.HuaWeiSGProviderType)
 	if err != nil {
 		logs.Errorf("get sg count failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-	ret.Items = append(ret.Items, &hsaccount.ResCountItem{Type: enumor.SecurityGroupCloudResType,
-		Count: converter.PtrToVal(retSG.TotalCount)})
-
+	ret.Items = append(ret.Items,
+		&hsaccount.ResCountItem{Type: enumor.SecurityGroupCloudResType, Count: converter.PtrToVal(retSG.TotalCount)})
 	// 获取子账号数量
 	saCount, err := client.CountSubAccountResources(cts.Kit)
 	if err != nil {
@@ -401,7 +389,6 @@ func (svc *service) HuaWeiGetResCountBySecret(cts *rest.Contexts) (interface{}, 
 	}
 	ret.Items = append(ret.Items, &hsaccount.ResCountItem{Type: enumor.SubAccountCloudResType,
 		Count: saCount})
-
 	// 获取子网和路由表数量
 	sCount, rCount, err := client.CountSubnetRouteTableRes(cts.Kit)
 	if err != nil {
@@ -410,7 +397,6 @@ func (svc *service) HuaWeiGetResCountBySecret(cts *rest.Contexts) (interface{}, 
 	}
 	ret.Items = append(ret.Items, &hsaccount.ResCountItem{Type: enumor.SubnetCloudResType, Count: sCount})
 	ret.Items = append(ret.Items, &hsaccount.ResCountItem{Type: enumor.RouteTableCloudResType, Count: rCount})
-
 	// 获取网络接口数量
 	niCount, err := client.CountNIResources(cts.Kit)
 	if err != nil {
@@ -418,7 +404,6 @@ func (svc *service) HuaWeiGetResCountBySecret(cts *rest.Contexts) (interface{}, 
 		return nil, err
 	}
 	ret.Items = append(ret.Items, &hsaccount.ResCountItem{Type: enumor.NetworkInterfaceCloudResType, Count: niCount})
-
 	return ret, nil
 }
 
@@ -428,7 +413,6 @@ const ResGetMaxConcurrency = 5
 
 // TCloudGetResCountBySecret 根据秘钥获取云上资源数量
 func (svc *service) TCloudGetResCountBySecret(cts *rest.Contexts) (interface{}, error) {
-
 	req := new(cloud.TCloudSecret)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -442,12 +426,15 @@ func (svc *service) TCloudGetResCountBySecret(cts *rest.Contexts) (interface{}, 
 	if err != nil {
 		return nil, err
 	}
-
 	regionListResult, err := tcloudClient.ListRegion(cts.Kit)
 	if err != nil {
 		return nil, err
 	}
 
+	var globalErr error
+	wg := sync.WaitGroup{}
+	newKit, cancelCtx := shallowCopyKitWithCancel(cts.Kit)
+	defer cancelCtx()
 	counterMap := map[enumor.CloudResourceType]counterFunc{
 		enumor.CvmCloudResType:           tcloudClient.CountCvm,
 		enumor.DiskCloudResType:          tcloudClient.CountDisk,
@@ -461,12 +448,6 @@ func (svc *service) TCloudGetResCountBySecret(cts *rest.Contexts) (interface{}, 
 	for resourceType := range counterMap {
 		resultMap[resourceType] = new(int32)
 	}
-
-	var globalErr error
-	wg := sync.WaitGroup{}
-	newKit, cancelCtx := shallowCopyKitWithCancel(cts.Kit)
-	defer cancelCtx()
-
 	// 以每种资源的每个地域为粒度并发
 	limiter := make(chan struct{}, ResGetMaxConcurrency)
 	countByRegion := func(resType enumor.CloudResourceType, counter counterFunc) {
@@ -480,23 +461,20 @@ func (svc *service) TCloudGetResCountBySecret(cts *rest.Contexts) (interface{}, 
 				}()
 				count, countErr := counter(newKit, region)
 				if countErr != nil {
-					// 过滤因其他goroutine失败导致的错误
-					if strings.Contains(countErr.Error(), "context canceled") {
-						return
+					// 因其他goroutine失败导致的错误要过滤
+					if !strings.Contains(countErr.Error(), "context canceled") {
+						globalErr = countErr
+						cancelCtx()
 					}
-					globalErr = countErr
-					cancelCtx()
 					return
 				}
 				atomic.AddInt32(resultMap[resType], count)
 			}(region.RegionID)
 		}
 	}
-
 	for resType, counter := range counterMap {
 		countByRegion(resType, counter)
 	}
-
 	// 单独处理子账号
 	accountCount, err := tcloudClient.CountAccount(newKit)
 	if err != nil {
@@ -509,7 +487,6 @@ func (svc *service) TCloudGetResCountBySecret(cts *rest.Contexts) (interface{}, 
 		return nil, globalErr
 	}
 	resultSlice := make([]hsaccount.ResCountItem, 0, len(counterMap)+1)
-
 	resultSlice = append(resultSlice, hsaccount.ResCountItem{Type: enumor.SubAccountCloudResType, Count: accountCount})
 	for resourceType, count := range resultMap {
 		resultSlice = append(resultSlice, hsaccount.ResCountItem{Type: resourceType, Count: *count})
@@ -538,7 +515,8 @@ func (svc *service) AwsGetResCountBySecret(cts *rest.Contexts) (interface{}, err
 	if err != nil {
 		return nil, err
 	}
-
+	var globalErr error
+	wg := sync.WaitGroup{}
 	// aws没有账号权限，不处理账号部分
 	counterMap := map[enumor.CloudResourceType]counterFunc{
 		enumor.CvmCloudResType:           awsClient.CountCvm,
@@ -553,10 +531,6 @@ func (svc *service) AwsGetResCountBySecret(cts *rest.Contexts) (interface{}, err
 	for resourceType := range counterMap {
 		resultMap[resourceType] = new(int32)
 	}
-
-	var globalErr error
-	wg := sync.WaitGroup{}
-
 	// 保证这个context cancel 不会影响其他context
 	newKit, cancelCtx := shallowCopyKitWithCancel(cts.Kit)
 	defer cancelCtx()
@@ -575,11 +549,10 @@ func (svc *service) AwsGetResCountBySecret(cts *rest.Contexts) (interface{}, err
 				if countErr != nil {
 					// 过滤因其他goroutine失败导致的错误
 					var aErr awserr.Error
-					if errors.As(countErr, &aErr) && aErr.Code() == request.CanceledErrorCode {
-						return
+					if !(errors.As(countErr, &aErr) && aErr.Code() == request.CanceledErrorCode) {
+						globalErr = countErr
+						cancelCtx()
 					}
-					globalErr = countErr
-					cancelCtx()
 					return
 				}
 				atomic.AddInt32(resultMap[resType], count)

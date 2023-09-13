@@ -116,11 +116,7 @@ func (a *accountSvc) GetAccountBySecret(cts *rest.Contexts) (interface{}, error)
 			return nil, errf.NewFromErr(errf.InvalidParameter, err)
 		}
 		// 3.2 到hc-service 获取对应字段
-		return a.client.HCService().TCloud.Account.GetBySecret(
-			cts.Kit.Ctx,
-			cts.Kit.Header(),
-			req,
-		)
+		return a.client.HCService().TCloud.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req)
 
 	case enumor.Aws:
 		req := new(cloud.AwsSecret)
@@ -131,11 +127,7 @@ func (a *accountSvc) GetAccountBySecret(cts *rest.Contexts) (interface{}, error)
 			return nil, errf.NewFromErr(errf.InvalidParameter, err)
 		}
 		// 3.2 到hc-service 获取对应字段
-		return a.client.HCService().Aws.Account.GetBySecret(
-			cts.Kit.Ctx,
-			cts.Kit.Header(),
-			req,
-		)
+		return a.client.HCService().Aws.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req)
 	case enumor.Azure:
 		req := new(cloud.AzureSecret)
 		if err := cts.DecodeInto(req); err != nil {
@@ -145,11 +137,7 @@ func (a *accountSvc) GetAccountBySecret(cts *rest.Contexts) (interface{}, error)
 			return nil, errf.NewFromErr(errf.InvalidParameter, err)
 		}
 		// 3.2 到hc-service 获取对应字段
-		return a.client.HCService().Azure.Account.GetBySecret(
-			cts.Kit.Ctx,
-			cts.Kit.Header(),
-			req,
-		)
+		return a.client.HCService().Azure.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req)
 	case enumor.Gcp:
 		req := new(cloud.GcpSecret)
 		if err := cts.DecodeInto(req); err != nil {
@@ -159,11 +147,7 @@ func (a *accountSvc) GetAccountBySecret(cts *rest.Contexts) (interface{}, error)
 			return nil, errf.NewFromErr(errf.InvalidParameter, err)
 		}
 		// 到hc-service 获取对应字段
-		return a.client.HCService().Gcp.Account.GetBySecret(
-			cts.Kit.Ctx,
-			cts.Kit.Header(),
-			req,
-		)
+		return a.client.HCService().Gcp.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req)
 	case enumor.HuaWei:
 		req := new(cloud.HuaWeiSecret)
 		if err := cts.DecodeInto(req); err != nil {
@@ -173,11 +157,7 @@ func (a *accountSvc) GetAccountBySecret(cts *rest.Contexts) (interface{}, error)
 			return nil, errf.NewFromErr(errf.InvalidParameter, err)
 		}
 		// 到hc-service 获取对应字段
-		return a.client.HCService().HuaWei.Account.GetBySecret(
-			cts.Kit.Ctx,
-			cts.Kit.Header(),
-			req,
-		)
+		return a.client.HCService().HuaWei.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req)
 
 	}
 

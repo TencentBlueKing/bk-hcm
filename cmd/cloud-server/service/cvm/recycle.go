@@ -391,15 +391,12 @@ func (svc *cvmSvc) batchDeleteRecycledCvm(cts *rest.Contexts,
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
-
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	listReq := &core.ListReq{
-		Filter: tools.ContainersExpression("id", req.RecordIDs),
-		Page:   &core.BasePage{Limit: constant.BatchOperationMaxLimit},
-	}
+	listReq := &core.ListReq{Filter: tools.ContainersExpression("id", req.RecordIDs),
+		Page: &core.BasePage{Limit: constant.BatchOperationMaxLimit}}
 	records, err := svc.client.DataService().Global.RecycleRecord.ListRecycleRecord(cts.Kit.Ctx, cts.Kit.Header(),
 		listReq)
 	if err != nil {
@@ -455,18 +452,15 @@ func (svc *cvmSvc) batchDeleteRecycledCvm(cts *rest.Contexts,
 		Data: make([]recyclerecord.UpdateReq, 0, len(req.RecordIDs)),
 	}
 	for _, id := range req.RecordIDs {
-		updateReq.Data = append(updateReq.Data, recyclerecord.UpdateReq{
-			ID:     id,
-			Status: enumor.RecycledRecycleRecordStatus,
-		})
+		updateReq.Data = append(updateReq.Data,
+			recyclerecord.UpdateReq{ID: id, Status: enumor.RecycledRecycleRecordStatus})
 	}
-	err = svc.client.DataService().Global.RecycleRecord.BatchUpdateRecycleRecord(cts.Kit.Ctx, cts.Kit.Header(),
-		updateReq)
-	if err != nil {
+
+	if err = svc.client.DataService().Global.RecycleRecord.BatchUpdateRecycleRecord(cts.Kit.Ctx, cts.Kit.Header(),
+		updateReq); err != nil {
 		logs.Errorf("update recycle record status to recycled failed, err: %v, ids: %v, rid: %s", err, req.RecordIDs,
 			cts.Kit.Rid)
 		return nil, err
 	}
-
 	return nil, nil
 }

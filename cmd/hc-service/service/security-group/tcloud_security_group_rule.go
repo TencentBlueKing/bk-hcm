@@ -134,10 +134,7 @@ type syncSecurityGroupRuleOption struct {
 func (g *securityGroup) syncSecurityGroupRule(kt *kit.Kit, client *tcloud.TCloud, opt *syncSecurityGroupRuleOption) (
 	[]string, error) {
 
-	listOpt := &securitygrouprule.TCloudListOption{
-		Region:               opt.Region,
-		CloudSecurityGroupID: opt.CloudSecurityGroupID,
-	}
+	listOpt := &securitygrouprule.TCloudListOption{Region: opt.Region, CloudSecurityGroupID: opt.CloudSecurityGroupID}
 	rules, err := client.ListSecurityGroupRule(kt, listOpt)
 	if err != nil {
 		logs.Errorf("request adaptor to list tcloud security group rule failed, err: %v, rid: %s", err, kt.Rid)
@@ -154,10 +151,8 @@ func (g *securityGroup) syncSecurityGroupRule(kt *kit.Kit, client *tcloud.TCloud
 		ingressRuleMaps[*ingress.PolicyIndex] = ingress
 	}
 
-	listReq := &protocloud.TCloudSGRuleListReq{
-		Filter: tools.EqualExpression("security_group_id", opt.SecurityGroupID),
-		Page:   core.NewDefaultBasePage(),
-	}
+	listReq := &protocloud.TCloudSGRuleListReq{Filter: tools.EqualExpression("security_group_id", opt.SecurityGroupID),
+		Page: core.NewDefaultBasePage()}
 	start := uint32(0)
 	dbRules := make([]corecloud.TCloudSecurityGroupRule, 0)
 	for {
@@ -167,13 +162,10 @@ func (g *securityGroup) syncSecurityGroupRule(kt *kit.Kit, client *tcloud.TCloud
 		if err != nil {
 			return nil, err
 		}
-
 		dbRules = append(dbRules, listResp.Details...)
-
 		if len(listResp.Details) < int(core.DefaultMaxPageLimit) {
 			break
 		}
-
 		start += uint32(core.DefaultMaxPageLimit)
 	}
 
@@ -187,11 +179,11 @@ func (g *securityGroup) syncSecurityGroupRule(kt *kit.Kit, client *tcloud.TCloud
 				deleteRuleIDs = append(deleteRuleIDs, one.ID)
 				continue
 			}
+			delete(egressRuleMaps, one.CloudPolicyIndex)
 
 			rule := convTCloudRule(policy, *rules.Version, opt)
 			rule.Type = enumor.Egress
 
-			delete(egressRuleMaps, one.CloudPolicyIndex)
 			updateRules[one.ID] = rule
 
 		case enumor.Ingress:
@@ -200,11 +192,11 @@ func (g *securityGroup) syncSecurityGroupRule(kt *kit.Kit, client *tcloud.TCloud
 				deleteRuleIDs = append(deleteRuleIDs, one.ID)
 				continue
 			}
+			delete(ingressRuleMaps, one.CloudPolicyIndex)
 
 			rule := convTCloudRule(policy, *rules.Version, opt)
 			rule.Type = enumor.Ingress
 
-			delete(ingressRuleMaps, one.CloudPolicyIndex)
 			updateRules[one.ID] = rule
 
 		default:
@@ -216,35 +208,29 @@ func (g *securityGroup) syncSecurityGroupRule(kt *kit.Kit, client *tcloud.TCloud
 	for _, policy := range egressRuleMaps {
 		rule := convTCloudRule(policy, *rules.Version, opt)
 		rule.Type = enumor.Egress
-
 		createRules = append(createRules, *rule)
 	}
 
 	for _, policy := range ingressRuleMaps {
 		rule := convTCloudRule(policy, *rules.Version, opt)
 		rule.Type = enumor.Ingress
-
 		createRules = append(createRules, *rule)
 	}
-
 	if len(updateRules) != 0 {
 		if err = g.updateSecurityGroupRule(kt, opt.SecurityGroupID, updateRules); err != nil {
 			return nil, err
 		}
 	}
-
 	if len(deleteRuleIDs) != 0 {
 		if err = g.deleteSecurityGroupRule(kt, opt.SecurityGroupID, deleteRuleIDs); err != nil {
 			return nil, err
 		}
 	}
-
 	if len(createRules) != 0 {
 		ids, err := g.createSecurityGroupRule(kt, opt.SecurityGroupID, createRules)
 		if err != nil {
 			return nil, err
 		}
-
 		return ids, nil
 	}
 
