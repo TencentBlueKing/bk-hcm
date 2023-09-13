@@ -42,6 +42,7 @@ type GcpInstanceTypeResp struct {
 	CPU          int64  `json:"cpu"`
 	Memory       int64  `json:"memory"`
 	FPGA         int64  `json:"fpga"`
+	Kind         string `json:"kind"`
 }
 
 // GcpInstanceTypeListResp ...

@@ -20,6 +20,8 @@
 package aws
 
 import (
+	"strings"
+
 	typesinstancetype "hcm/pkg/adaptor/types/instance-type"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -83,6 +85,29 @@ func toAwsInstanceType(info *ec2.InstanceTypeInfo) *typesinstancetype.AwsInstanc
 				it.FPGA += converter.PtrToVal(fpga.Count)
 			}
 		}
+	}
+
+	if info.NetworkInfo != nil {
+		it.NetworkPerformance = converter.PtrToVal(info.NetworkInfo.NetworkPerformance)
+	}
+
+	if info.InstanceStorageInfo != nil {
+		it.DiskSizeInGB = converter.PtrToVal(info.InstanceStorageInfo.TotalSizeInGB)
+		diskType := make([]string, 0)
+		for _, one := range info.InstanceStorageInfo.Disks {
+			if one != nil {
+				diskType = append(diskType, converter.PtrToVal(one.Type))
+			}
+		}
+		it.DiskType = strings.Join(diskType, ",")
+	}
+
+	if info.ProcessorInfo != nil {
+		architecture := make([]string, 0)
+		for _, one := range info.ProcessorInfo.SupportedArchitectures {
+			architecture = append(architecture, converter.PtrToVal(one))
+		}
+		it.Architecture = strings.Join(architecture, ",")
 	}
 
 	return it

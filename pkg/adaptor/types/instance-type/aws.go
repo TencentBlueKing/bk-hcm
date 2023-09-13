@@ -37,9 +37,13 @@ type AwsInstanceTypeListResult struct {
 
 // AwsInstanceType ...
 type AwsInstanceType struct {
-	InstanceType string
-	Memory       int64
-	CPU          int64
-	GPU          int64
-	FPGA         int64
+	InstanceType       string
+	Memory             int64
+	CPU                int64
+	GPU                int64
+	FPGA               int64
+	NetworkPerformance string
+	DiskSizeInGB       int64
+	DiskType           string
+	Architecture       string
 }

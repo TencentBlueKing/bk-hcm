@@ -70,5 +70,6 @@ func toGcpInstanceType(machineType *compute.MachineType) *typesinstancetype.GcpI
 		InstanceType: machineType.Name,
 		Memory:       machineType.MemoryMb,
 		CPU:          machineType.GuestCpus,
+		Kind:         machineType.Kind,
 	}
 }

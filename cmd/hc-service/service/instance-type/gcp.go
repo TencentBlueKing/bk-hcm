@@ -85,5 +85,6 @@ func toGcpInstanceTypeResp(it *typesinstancetype.GcpInstanceType) *proto.GcpInst
 		CPU:          it.CPU,
 		Memory:       it.Memory,
 		FPGA:         it.FPGA,
+		Kind:         it.Kind,
 	}
 }

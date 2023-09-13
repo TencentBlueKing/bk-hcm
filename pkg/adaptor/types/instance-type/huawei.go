@@ -27,9 +27,15 @@ type HuaWeiInstanceTypeListOption struct {
 
 // HuaWeiInstanceType ...
 type HuaWeiInstanceType struct {
-	InstanceType string
-	GPU          int64
-	CPU          int64
-	Memory       int64
-	FPGA         int64
+	InstanceType            string
+	GPU                     int64
+	CPU                     int64
+	Memory                  int64
+	FPGA                    int64
+	Ecsperformancetype      string
+	Name                    string
+	EcsinstanceArchitecture string
+	Infocpuname             string
+	QuotamaxRate            string
+	QuotamaxPps             string
 }

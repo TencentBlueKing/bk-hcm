@@ -38,11 +38,17 @@ func (req *HuaWeiInstanceTypeListReq) Validate() error {
 
 // HuaWeiInstanceTypeResp ...
 type HuaWeiInstanceTypeResp struct {
-	InstanceType string `json:"instance_type"`
-	GPU          int64  `json:"gpu"`
-	CPU          int64  `json:"cpu"`
-	Memory       int64  `json:"memory"`
-	FPGA         int64  `json:"fpga"`
+	InstanceType            string `json:"instance_type"`
+	GPU                     int64  `json:"gpu"`
+	CPU                     int64  `json:"cpu"`
+	Memory                  int64  `json:"memory"`
+	FPGA                    int64  `json:"fpga"`
+	Ecsperformancetype      string `json:"ecsperformancetype"`
+	Name                    string `json:"name"`
+	EcsinstanceArchitecture string `json:"ecsinstance_architecture"`
+	Infocpuname             string `josn:"infocpuname"`
+	QuotamaxRate            string `json:"quotamax_rate"`
+	QuotamaxPps             string `json:"quotamax_pps"`
 }
 
 // HuaWeiInstanceTypeListResp ...

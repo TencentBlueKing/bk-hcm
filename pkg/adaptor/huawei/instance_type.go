@@ -73,6 +73,11 @@ func (h *HuaWei) ListInstanceType(kt *kit.Kit, opt *typesinstancetype.HuaWeiInst
 }
 
 func toHuaweiInstanceType(flavor model.Flavor, zone string) (*typesinstancetype.HuaWeiInstanceType, error) {
+	ecsperformancetype := ""
+	ecsinstanceArchitecture := ""
+	infocpuname := ""
+	quotamaxRate := ""
+	quotamaxPps := ""
 	if flavor.OsExtraSpecs != nil {
 		tmp, err := converter.StructToMap(flavor.OsExtraSpecs)
 		if err != nil {
@@ -83,12 +88,24 @@ func toHuaweiInstanceType(flavor model.Flavor, zone string) (*typesinstancetype.
 		if _, ok := tmpMap[zone+HuaWeiInstanceNormal]; !ok {
 			return nil, nil
 		}
+
+		ecsperformancetype = converter.PtrToVal(flavor.OsExtraSpecs.Ecsperformancetype)
+		ecsinstanceArchitecture = converter.PtrToVal(flavor.OsExtraSpecs.EcsinstanceArchitecture)
+		infocpuname = converter.PtrToVal(flavor.OsExtraSpecs.Infocpuname)
+		quotamaxRate = converter.PtrToVal(flavor.OsExtraSpecs.QuotamaxRate)
+		quotamaxPps = converter.PtrToVal(flavor.OsExtraSpecs.QuotamaxPps)
 	}
 
 	cpu, _ := conv.ToInt64(flavor.Vcpus)
 	return &typesinstancetype.HuaWeiInstanceType{
-		InstanceType: flavor.Id,
-		CPU:          cpu,
-		Memory:       int64(flavor.Ram),
+		InstanceType:            flavor.Id,
+		CPU:                     cpu,
+		Memory:                  int64(flavor.Ram),
+		Ecsperformancetype:      ecsperformancetype,
+		Name:                    flavor.Name,
+		EcsinstanceArchitecture: ecsinstanceArchitecture,
+		Infocpuname:             infocpuname,
+		QuotamaxRate:            quotamaxRate,
+		QuotamaxPps:             quotamaxPps,
 	}, nil
 }
