@@ -42,4 +42,5 @@ type GcpInstanceType struct {
 	CPU          int64
 	GPU          int64
 	FPGA         int64
+	Kind         string
 }

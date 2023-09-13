@@ -65,13 +65,17 @@ func (t *TCloud) ListInstanceType(kt *kit.Kit, opt *typesinstancetype.TCloudInst
 	its := make([]typesinstancetype.TCloudInstanceType, 0, len(resp.Response.InstanceTypeQuotaSet))
 	for _, it := range resp.Response.InstanceTypeQuotaSet {
 		its = append(its, typesinstancetype.TCloudInstanceType{
-			InstanceType:   converter.PtrToVal(it.InstanceType),
-			InstanceFamily: converter.PtrToVal(it.InstanceFamily),
-			GPU:            converter.PtrToVal(it.Gpu),
-			CPU:            converter.PtrToVal(it.Cpu),
-			Memory:         converter.PtrToVal(it.Memory) * 1024, // Note: 为保持与其他云一致，内存单位调整为MB
-			FPGA:           converter.PtrToVal(it.Fpga),
-			Status:         converter.PtrToVal(it.Status),
+			InstanceType:      converter.PtrToVal(it.InstanceType),
+			InstanceFamily:    converter.PtrToVal(it.InstanceFamily),
+			GPU:               converter.PtrToVal(it.Gpu),
+			CPU:               converter.PtrToVal(it.Cpu),
+			Memory:            converter.PtrToVal(it.Memory) * 1024, // Note: 为保持与其他云一致，内存单位调整为MB
+			FPGA:              converter.PtrToVal(it.Fpga),
+			Status:            converter.PtrToVal(it.Status),
+			CpuType:           converter.PtrToVal(it.CpuType),
+			InstanceBandwidth: converter.PtrToVal(it.InstanceBandwidth),
+			InstancePps:       converter.PtrToVal(it.InstancePps),
+			Price:             converter.PtrToVal(it.Price),
 		})
 	}
 

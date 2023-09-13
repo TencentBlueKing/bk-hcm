@@ -22,6 +22,8 @@ package instancetype
 import (
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
+
+	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 )
 
 // TCloudInstanceTypeListReq ...
@@ -39,13 +41,17 @@ func (req *TCloudInstanceTypeListReq) Validate() error {
 
 // TCloudInstanceTypeResp ...
 type TCloudInstanceTypeResp struct {
-	InstanceType   string `json:"instance_type"`
-	InstanceFamily string `json:"instance_family"`
-	GPU            int64  `json:"gpu"`
-	CPU            int64  `json:"cpu"`
-	Memory         int64  `json:"memory"`
-	FPGA           int64  `json:"fpga"`
-	Status         string `json:"status"`
+	InstanceType      string        `json:"instance_type"`
+	InstanceFamily    string        `json:"instance_family"`
+	GPU               int64         `json:"gpu"`
+	CPU               int64         `json:"cpu"`
+	Memory            int64         `json:"memory"`
+	FPGA              int64         `json:"fpga"`
+	Status            string        `json:"status"`
+	CpuType           string        `json:"cpu_type"`
+	InstanceBandwidth float64       `json:"instance_bandwidth"`
+	InstancePps       int64         `json:"instance_pps"`
+	Price             cvm.ItemPrice `json:"Price"`
 }
 
 // TCloudInstanceTypeListResp ...
