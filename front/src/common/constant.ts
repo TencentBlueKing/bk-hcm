@@ -399,7 +399,7 @@ export const RESOURCE_DETAIL_TABS =  [
   },
   {
     key: '/resource/resource/account/manage',
-    label: '账号详情',
+    label: '用户列表',
   },
 ];
 

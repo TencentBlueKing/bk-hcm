@@ -12,7 +12,7 @@ export default defineComponent({
   setup() {
     const resourceAccountStore = useResourceAccountStore();
     const statusList = ref([]);
-    const tableColumns = ref([
+    const tableColumns = [
       {
         label: '资源名称',
         field: 'res_name',
@@ -49,7 +49,7 @@ export default defineComponent({
         ),
         rowspan: 7,
       },
-    ]);
+    ];
     watch(
       () => resourceAccountStore.resourceAccount,
       async (account) => {
@@ -65,7 +65,7 @@ export default defineComponent({
       <>
         <Table
           data={statusList.value}
-          columns={tableColumns.value}
+          columns={tableColumns}
           border={['row', 'col', 'outer']}
         ></Table>
       </>

@@ -16,7 +16,7 @@ const resourceMenus: RouteRecordRaw[] = [
           {
             path: 'record',
             name: t('购买记录'),
-            component: () => import('@/views/resource/resource-manage/purchaseRecord/index'),
+            component: () => import('@/views/resource/resource-manage/accountInfo/component/usersList/index'),
           },
           {
             path: 'account',
@@ -25,18 +25,18 @@ const resourceMenus: RouteRecordRaw[] = [
             children: [
               {
                 path: 'detail',
-                name: t('基本信息'),
+                name: '基本信息',
                 component: () => import('@/views/resource/accountmanage/account-detail'),
               },
               {
                 path: 'resource',
-                name: t('资源状态'),
-                component: () => import('@/views/resource/resource-manage/recycleBin/index'),
+                name: '资源状态',
+                component: () => import('@/views/resource/resource-manage/accountInfo/component/resourceStatus/index'),
               },
               {
                 path: 'manage',
-                name: t('账号详情'),
-                component: () => import('@/views/resource/resource-manage/purchaseRecord/index'),
+                name: '用户列表',
+                component: () => import('@/views/resource/resource-manage/accountInfo/component/usersList/index'),
               },
             ],
           },
