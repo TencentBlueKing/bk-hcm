@@ -46,7 +46,8 @@ func (req *TCloudSGRuleCreateReq) Validate() error {
 	}
 
 	if len(req.Rules) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("security group rule count should <= %d", constant.BatchOperationMaxLimit)
+		return fmt.Errorf("security group rule count should <= %d, but got: %d",
+			constant.BatchOperationMaxLimit, len(req.Rules))
 	}
 
 	return nil

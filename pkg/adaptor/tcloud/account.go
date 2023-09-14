@@ -108,12 +108,7 @@ func (t *TCloud) GetAccountZoneQuota(kt *kit.Kit, opt *typeaccount.GetTCloudAcco
 	}
 
 	req := cvm.NewDescribeAccountQuotaRequest()
-	req.Filters = []*cvm.Filter{
-		{
-			Name:   common.StringPtr("zone"),
-			Values: []*string{&opt.Zone},
-		},
-	}
+	req.Filters = []*cvm.Filter{{Name: common.StringPtr("zone"), Values: []*string{&opt.Zone}}}
 
 	resp, err := client.DescribeAccountQuotaWithContext(kt.Ctx, req)
 	if err != nil {

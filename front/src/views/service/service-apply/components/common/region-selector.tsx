@@ -105,6 +105,11 @@ export default defineComponent({
               op: QueryRuleOPEnum.EQ,
               value: 'opt-in-not-required',
             },
+            // {
+            //   field: 'account_id',
+            //   op: QueryRuleOPEnum.EQ,
+            //   value: props.accountId,
+            // },
           ];
           break;
         }
@@ -132,7 +137,6 @@ export default defineComponent({
           start: 0,
           limit: 500,
         },
-        account_id: props.accountId,
       });
 
       const getName = (key: string, name: string) => {

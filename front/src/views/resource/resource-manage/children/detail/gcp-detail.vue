@@ -8,7 +8,7 @@ import useDetail from '@/views/resource/resource-manage/hooks/use-detail';
 import useAdd from '@/views/resource/resource-manage/hooks/use-add';
 import GcpAdd from '@/views/resource/resource-manage/children/add/gcp-add';
 import { GcpTypeEnum, CloudType } from '@/typings';
-import bus from '@/common/bus';
+// import bus from '@/common/bus';
 
 import {
   useRoute,
@@ -22,7 +22,7 @@ import {
   useI18n,
 } from 'vue-i18n';
 
-import { ref, watch, inject, computed } from 'vue';
+import { ref, watch } from 'vue';
 
 const route = useRoute();
 const resourceStore = useResourceStore();
@@ -35,13 +35,13 @@ const id = route.query?.id;
 const gcpDetail = ref({});
 const gcpLoading = ref(true);
 
-const authVerifyData: any = inject('authVerifyData');
-const isResourcePage: any = inject('isResourcePage');
+// const authVerifyData: any = inject('authVerifyData');
+// const isResourcePage: any = inject('isResourcePage');
 
-const actionName = computed(() => {   // 资源下没有业务ID
-  console.log('isResourcePage.value', isResourcePage.value);
-  return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
-});
+// const actionName = computed(() => {   // 资源下没有业务ID
+//   console.log('isResourcePage.value', isResourcePage.value);
+//   return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
+// });
 
 const {
   loading,
@@ -206,12 +206,12 @@ const gcpTitle = ref<string>(t('新增'));
 const isAdd = ref(false);
 const isLoading = ref(false);
 
-const handleGcpAdd = (add: boolean) => {
-  gcpTitle.value = add ? t('新增') : t('修改');
-  isShowGcpAdd.value = true;
-  isAdd.value = add;
-  isLoading.value = false;
-};
+// const handleGcpAdd = (add: boolean) => {
+//   gcpTitle.value = add ? t('新增') : t('修改');
+//   isShowGcpAdd.value = true;
+//   isAdd.value = add;
+//   isLoading.value = false;
+// };
 
 
 // 新增修改防火墙规则
@@ -236,14 +236,14 @@ const submit = async (data: any) => {
   isShowGcpAdd.value = false;
 };
 
-const isBindBusiness = computed(() => {
-  return detail.value.bk_biz_id !== -1 && isResourcePage.value;
-});
+// const isBindBusiness = computed(() => {
+//   return detail.value.bk_biz_id !== -1 && isResourcePage.value;
+// });
 
-// 权限弹窗 bus通知最外层弹出
-const showAuthDialog = (authActionName: string) => {
-  bus.$emit('auth', authActionName);
-};
+// // 权限弹窗 bus通知最外层弹出
+// const showAuthDialog = (authActionName: string) => {
+//   bus.$emit('auth', authActionName);
+// };
 </script>
 
 <template>
@@ -251,7 +251,7 @@ const showAuthDialog = (authActionName: string) => {
     <detail-header>
       {{t('GCP防火墙')}}：ID（{{`${id}`}}）
       <template #right>
-        <div @click="showAuthDialog(actionName)">
+        <!-- <div @click="showAuthDialog(actionName)">
           <bk-button
             :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]"
             class="w100 ml10"
@@ -260,7 +260,7 @@ const showAuthDialog = (authActionName: string) => {
           >
             {{ t('修改') }}
           </bk-button>
-        </div>
+        </div> -->
       <!-- <bk-button
         class="w100 ml10"
         theme="primary"

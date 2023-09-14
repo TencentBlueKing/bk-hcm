@@ -32,15 +32,17 @@ import (
 )
 
 // GetBillList get bill list.
-// reference: https://console.cloud.tencent.com/api/explorer?Product=billing&Version=2018-07-09&Action=DescribeBillDetail
-func (t *TCloud) GetBillList(kt *kit.Kit, opt *typesBill.TCloudBillListOption) (*uint64, interface{}, error) {
+// ref: https://console.cloud.tencent.com/api/explorer?Product=billing&Version=2018-07-09&Action=DescribeBillDetail
+func (t *TCloud) GetBillList(kt *kit.Kit, opt *typesBill.TCloudBillListOption) (
+	*billing.DescribeBillDetailResponseParams, error) {
+
 	if err := opt.Validate(); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	billClient, err := t.clientSet.billClient()
 	if err != nil {
-		return nil, nil, fmt.Errorf("new bill client failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, fmt.Errorf("new bill client failed, err: %v, rid: %s", err, kt.Rid)
 	}
 
 	req := billing.NewDescribeBillDetailRequest()
@@ -61,11 +63,11 @@ func (t *TCloud) GetBillList(kt *kit.Kit, opt *typesBill.TCloudBillListOption) (
 	resp, err := billClient.DescribeBillDetail(req)
 	if err != nil {
 		logs.Errorf("get tencent cloud bill list failed, opt: %+v, err: %v, rid: %s", opt, err, kt.Rid)
-		return nil, nil, err
+		return nil, err
 	}
 	if resp.Response == nil {
-		return nil, nil, errf.New(errf.RecordNotFound, "tcloud bill list is not found")
+		return nil, errf.New(errf.RecordNotFound, "tcloud bill list is not found")
 	}
 
-	return resp.Response.Total, resp.Response.DetailSet, nil
+	return resp.Response, nil
 }

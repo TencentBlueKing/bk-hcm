@@ -24,15 +24,18 @@ import (
 	"hcm/pkg/rest"
 )
 
+// ResCountResp ...
 type ResCountResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          *ResCount `json:"data"`
 }
 
+// ResCount ...
 type ResCount struct {
 	Items []*ResCountItem `json:"items"`
 }
 
+// ResCountItem ...
 type ResCountItem struct {
 	Type  enumor.CloudResourceType `json:"type"`
 	Count int32                    `json:"count"`

@@ -73,6 +73,8 @@ func (cli *client) CvmWithRelRes(kt *kit.Kit, params *SyncBaseParams, opt *SyncC
 		if _, err = cli.Cvm(kt, params, new(SyncCvmOption)); err != nil {
 			return nil, err
 		}
+
+		return new(SyncResult), nil
 	}
 
 	// step2: 获取cvm和关联资源的关联关系
@@ -253,15 +255,12 @@ func (cli *client) buildCvmRelManger(kt *kit.Kit, region string, cvmFromCloud []
 
 	diskBootMap := make(map[string]struct{})
 	vpcSubnetMap := make(map[string]map[string]struct{})
-
 	eipIPs := make(map[string]struct{}, 0)
 	for _, one := range cvmFromCloud {
-		if len(one.Addresses) > 0 {
-			for _, address := range one.Addresses {
-				for _, v := range address {
-					if v.OSEXTIPStype.Value() == "floating" {
-						eipIPs[v.Addr] = struct{}{}
-					}
+		for _, address := range one.Addresses {
+			for _, v := range address {
+				if v.OSEXTIPStype.Value() == "floating" {
+					eipIPs[v.Addr] = struct{}{}
 				}
 			}
 		}
@@ -279,7 +278,6 @@ func (cli *client) buildCvmRelManger(kt *kit.Kit, region string, cvmFromCloud []
 		for _, sg := range cvm.SecurityGroups {
 			mgr.CvmAppendAssResCloudID(cvm.GetCloudID(), enumor.SecurityGroupCloudResType, sg.Id)
 		}
-
 		// Disk
 		if cvm.OsExtendedVolumesvolumesAttached != nil {
 			for _, v := range cvm.OsExtendedVolumesvolumesAttached {
@@ -289,12 +287,10 @@ func (cli *client) buildCvmRelManger(kt *kit.Kit, region string, cvmFromCloud []
 				mgr.CvmAppendAssResCloudID(cvm.GetCloudID(), enumor.DiskCloudResType, v.Id)
 			}
 		}
-
 		// Eip
 		for _, address := range cvm.Addresses {
 			for _, v := range address {
-				eipCloudID, exist := eipMap[v.Addr]
-				if exist {
+				if eipCloudID, exist := eipMap[v.Addr]; exist {
 					mgr.CvmAppendAssResCloudID(cvm.GetCloudID(), enumor.EipCloudResType, eipCloudID)
 				}
 			}
@@ -316,9 +312,8 @@ func (cli *client) buildCvmRelManger(kt *kit.Kit, region string, cvmFromCloud []
 			mgr.CvmAppendAssResCloudID(cvm.GetCloudID(), enumor.NetworkInterfaceCloudResType, *one.CloudID)
 			if one.CloudSubnetID != nil {
 				if _, exist := vpcSubnetMap[cloudVpcID]; !exist {
-					vpcSubnetMap[cloudVpcID] = make(map[string]struct{}, 0)
+					vpcSubnetMap[cloudVpcID] = make(map[string]struct{})
 				}
-
 				vpcSubnetMap[cloudVpcID][*one.CloudSubnetID] = struct{}{}
 			}
 		}
@@ -328,9 +323,7 @@ func (cli *client) buildCvmRelManger(kt *kit.Kit, region string, cvmFromCloud []
 	for cloudVpcID, subnetMap := range vpcSubnetMap {
 		vpcSubnetListMap[cloudVpcID] = converter.MapKeyToStringSlice(subnetMap)
 	}
-
 	mgr.AddAssParentWithChildRes(enumor.SubnetCloudResType, vpcSubnetListMap)
-
 	return diskBootMap, mgr, nil
 }
 

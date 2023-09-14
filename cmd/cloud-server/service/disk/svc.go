@@ -72,16 +72,13 @@ func (svc *diskSvc) listDisk(cts *rest.Contexts, authHandler handler.ListAuthRes
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
-
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	// list authorized instances
 	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{
-		Authorizer: svc.authorizer,
-		ResType:    meta.Disk, Action: meta.Find, Filter: req.Filter,
-	})
+		Authorizer: svc.authorizer, ResType: meta.Disk, Action: meta.Find, Filter: req.Filter})
 	if err != nil {
 		return nil, err
 	}
@@ -91,22 +88,14 @@ func (svc *diskSvc) listDisk(cts *rest.Contexts, authHandler handler.ListAuthRes
 	}
 
 	// filter out disk in recycle bin
-	req.Filter, err = tools.And(expr, &filter.AtomRule{
-		Field: "recycle_status", Op: filter.NotEqual.Factory(),
-		Value: enumor.RecycleStatus,
-	})
+	req.Filter, err = tools.And(expr,
+		&filter.AtomRule{Field: "recycle_status", Op: filter.NotEqual.Factory(), Value: enumor.RecycleStatus})
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := svc.client.DataService().Global.ListDisk(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&dataproto.DiskListReq{
-			Filter: req.Filter,
-			Page:   req.Page,
-		},
-	)
+	resp, err := svc.client.DataService().Global.ListDisk(cts.Kit.Ctx, cts.Kit.Header(),
+		&dataproto.DiskListReq{Filter: req.Filter, Page: req.Page})
 	if err != nil {
 		return nil, err
 	}
@@ -120,14 +109,11 @@ func (svc *diskSvc) listDisk(cts *rest.Contexts, authHandler handler.ListAuthRes
 		diskIDs[idx] = diskData.ID
 	}
 
-	rels, err := svc.client.DataService().Global.ListDiskCvmRel(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+	rels, err := svc.client.DataService().Global.ListDiskCvmRel(cts.Kit.Ctx, cts.Kit.Header(),
 		&datarelproto.DiskCvmRelListReq{
 			Filter: tools.ContainersExpression("disk_id", diskIDs),
 			Page:   core.NewDefaultBasePage(),
-		},
-	)
+		})
 	if err != nil {
 		return nil, err
 	}
@@ -144,10 +130,8 @@ func (svc *diskSvc) listDisk(cts *rest.Contexts, authHandler handler.ListAuthRes
 			diskData.DiskType = extractGcpDiskType(diskData.DiskType)
 		}
 
-		details[idx] = &cloudproto.DiskResult{
-			InstanceID:   diskIDToCvmID[diskData.ID],
-			InstanceType: "cvm",
-			DiskResult:   diskData,
+		details[idx] = &cloudproto.DiskResult{InstanceID: diskIDToCvmID[diskData.ID], InstanceType: "cvm",
+			DiskResult: diskData,
 		}
 	}
 

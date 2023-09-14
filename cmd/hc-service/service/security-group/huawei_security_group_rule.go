@@ -34,6 +34,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 )
 
 // CreateHuaWeiSGRule create huawei security group rule.
@@ -68,38 +69,12 @@ func (g *securityGroup) CreateHuaWeiSGRule(cts *rest.Contexts) (interface{}, err
 		return nil, err
 	}
 
-	opt := &securitygrouprule.HuaWeiCreateOption{
-		Region:               sg.Region,
-		CloudSecurityGroupID: sg.CloudID,
-	}
+	opt := &securitygrouprule.HuaWeiCreateOption{Region: sg.Region, CloudSecurityGroupID: sg.CloudID}
 	if req.EgressRule != nil {
-		priority := strconv.Itoa(int(req.EgressRule.Priority))
-		opt.Rule = &securitygrouprule.HuaWeiCreate{
-			Description:        req.EgressRule.Memo,
-			Ethertype:          req.EgressRule.Ethertype,
-			Protocol:           req.EgressRule.Protocol,
-			RemoteIPPrefix:     req.EgressRule.RemoteIPPrefix,
-			CloudRemoteGroupID: req.EgressRule.CloudRemoteGroupID,
-			Port:               req.EgressRule.Port,
-			Action:             req.EgressRule.Action,
-			Priority:           &priority,
-			Type:               enumor.Egress,
-		}
+		opt.Rule = convertHuaweiCreateReq(req.IngressRule, enumor.Egress)
 	}
-
 	if req.IngressRule != nil {
-		priority := strconv.Itoa(int(req.IngressRule.Priority))
-		opt.Rule = &securitygrouprule.HuaWeiCreate{
-			Description:        req.IngressRule.Memo,
-			Ethertype:          req.IngressRule.Ethertype,
-			Protocol:           req.IngressRule.Protocol,
-			RemoteIPPrefix:     req.IngressRule.RemoteIPPrefix,
-			CloudRemoteGroupID: req.IngressRule.CloudRemoteGroupID,
-			Port:               req.IngressRule.Port,
-			Action:             req.IngressRule.Action,
-			Priority:           &priority,
-			Type:               enumor.Ingress,
-		}
+		opt.Rule = convertHuaweiCreateReq(req.IngressRule, enumor.Ingress)
 	}
 	rule, err := client.CreateSecurityGroupRule(cts.Kit, opt)
 	if err != nil {
@@ -107,28 +82,24 @@ func (g *securityGroup) CreateHuaWeiSGRule(cts *rest.Contexts) (interface{}, err
 		return nil, err
 	}
 
-	createReq := &protocloud.HuaWeiSGRuleCreateReq{
-		Rules: []protocloud.HuaWeiSGRuleBatchCreate{
-			{
-				CloudID:                   rule.Id,
-				Memo:                      &rule.Description,
-				Protocol:                  rule.Protocol,
-				Ethertype:                 rule.Ethertype,
-				CloudRemoteGroupID:        rule.RemoteGroupId,
-				RemoteIPPrefix:            rule.RemoteIpPrefix,
-				CloudRemoteAddressGroupID: rule.RemoteAddressGroupId,
-				Port:                      rule.Multiport,
-				Priority:                  int64(rule.Priority),
-				Action:                    rule.Action,
-				Type:                      opt.Rule.Type,
-				CloudSecurityGroupID:      sg.CloudID,
-				CloudProjectID:            rule.ProjectId,
-				AccountID:                 req.AccountID,
-				Region:                    sg.Region,
-				SecurityGroupID:           sg.ID,
-			},
-		},
-	}
+	createReq := &protocloud.HuaWeiSGRuleCreateReq{Rules: []protocloud.HuaWeiSGRuleBatchCreate{{
+		CloudID:                   rule.Id,
+		Memo:                      &rule.Description,
+		Protocol:                  rule.Protocol,
+		Ethertype:                 rule.Ethertype,
+		CloudRemoteGroupID:        rule.RemoteGroupId,
+		RemoteIPPrefix:            rule.RemoteIpPrefix,
+		CloudRemoteAddressGroupID: rule.RemoteAddressGroupId,
+		Port:                      rule.Multiport,
+		Priority:                  int64(rule.Priority),
+		Action:                    rule.Action,
+		Type:                      opt.Rule.Type,
+		CloudSecurityGroupID:      sg.CloudID,
+		CloudProjectID:            rule.ProjectId,
+		AccountID:                 req.AccountID,
+		Region:                    sg.Region,
+		SecurityGroupID:           sg.ID,
+	}}}
 	result, err := g.dataCli.HuaWei.SecurityGroup.BatchCreateSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(),
 		createReq, sgID)
 	if err != nil {
@@ -144,6 +115,22 @@ func (g *securityGroup) CreateHuaWeiSGRule(cts *rest.Contexts) (interface{}, err
 	}
 
 	return &core.CreateResult{ID: result.IDs[0]}, nil
+}
+
+func convertHuaweiCreateReq(sgRuleCreate *hcservice.HuaWeiSGRuleCreate,
+	ruleType enumor.SecurityGroupRuleType) *securitygrouprule.HuaWeiCreate {
+
+	return &securitygrouprule.HuaWeiCreate{
+		Description:        sgRuleCreate.Memo,
+		Ethertype:          sgRuleCreate.Ethertype,
+		Protocol:           sgRuleCreate.Protocol,
+		RemoteIPPrefix:     sgRuleCreate.RemoteIPPrefix,
+		CloudRemoteGroupID: sgRuleCreate.CloudRemoteGroupID,
+		Port:               sgRuleCreate.Port,
+		Action:             sgRuleCreate.Action,
+		Priority:           converter.ValToPtr(strconv.Itoa(int(sgRuleCreate.Priority))),
+		Type:               ruleType,
+	}
 }
 
 // DeleteHuaWeiSGRule delete huawei security group rule.

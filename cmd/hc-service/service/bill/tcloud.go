@@ -60,14 +60,19 @@ func (b bill) TCloudGetBillList(cts *rest.Contexts) (interface{}, error) {
 			Limit:  req.Page.Limit,
 		},
 	}
-	total, list, err := cli.GetBillList(cts.Kit, opt)
+	if req.Context != nil {
+		opt.Context = req.Context
+	}
+	resp, err := cli.GetBillList(cts.Kit, opt)
 	if err != nil {
 		logs.Errorf("tcloud request adaptor list bill failed, req: %v, err: %v, rid: %s", req, err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	return &hcbillservice.TCloudBillListResult{
-		Count:   total,
-		Details: list,
+		Count:     resp.Total,
+		Details:   resp.DetailSet,
+		Context:   resp.Context,
+		RequestId: resp.RequestId,
 	}, nil
 }

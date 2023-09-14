@@ -70,52 +70,72 @@ func (l *logger) Infof(format string, args ...interface{}) {
 
 // Warning print client warning logs.
 func (l *logger) Warning(args ...interface{}) {
-	Warnf(string(l.Prefix)+"%s", convertToString(args...))
+	if V(6) {
+		Warnf(string(l.Prefix)+"%s", convertToString(args...))
+	}
 }
 
 // Warningln print client warning logs.
 func (l *logger) Warningln(args ...interface{}) {
-	Warnf(string(l.Prefix)+"%s", convertToString(args...))
+	if V(6) {
+		Warnf(string(l.Prefix)+"%s", convertToString(args...))
+	}
 }
 
 // Warningf print client warning logs.
 func (l *logger) Warningf(format string, args ...interface{}) {
-	Warnf(string(l.Prefix)+format, args...)
+	if V(6) {
+		Warnf(string(l.Prefix)+format, args...)
+	}
 }
 
 // Error print client error logs.
 func (l *logger) Error(args ...interface{}) {
-	Errorf(string(l.Prefix)+"%s", convertToString(args...))
+	if V(6) {
+		Errorf(string(l.Prefix)+"%s", convertToString(args...))
+	}
 }
 
 // Errorln print client error logs.
 func (l *logger) Errorln(args ...interface{}) {
-	Errorf(string(l.Prefix)+"%s", convertToString(args...))
+	if V(6) {
+		Errorf(string(l.Prefix)+"%s", convertToString(args...))
+	}
 }
 
 // Errorf print client error logs.
 func (l *logger) Errorf(format string, args ...interface{}) {
-	Errorf(string(l.Prefix)+format, args...)
+	if V(6) {
+		Errorf(string(l.Prefix)+format, args...)
+	}
 }
 
 // Fatal print client fatal logs.
 func (l *logger) Fatal(args ...interface{}) {
-	Errorf(string(l.Prefix)+"Fatal %s", convertToString(args...))
+	if V(6) {
+		Errorf(string(l.Prefix)+"Fatal %s", convertToString(args...))
+	}
 }
 
 // Fatalln print client fatal logs.
 func (l *logger) Fatalln(args ...interface{}) {
-	Errorf(string(l.Prefix)+"Fatal %s", convertToString(args...))
+	if V(6) {
+		Errorf(string(l.Prefix)+"Fatal %s", convertToString(args...))
+	}
 }
 
 // Fatalf print client fatal logs.
 func (l *logger) Fatalf(format string, args ...interface{}) {
-	Errorf(string(l.Prefix)+"Fatal "+format, args)
+	if V(6) {
+		Errorf(string(l.Prefix)+"Fatal "+format, args)
+	}
 }
 
 // Printf print logs.
 func (l *logger) Printf(ctx context.Context, format string, v ...interface{}) {
-	Errorf(string(l.Prefix)+format, v...)
+	if V(6) {
+		Errorf(string(l.Prefix)+format, v...)
+	}
 }
 
 // V reports whether verbosity at the call site is at least the requested level.

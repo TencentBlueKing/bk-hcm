@@ -34,6 +34,7 @@ import (
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/concurrence"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 
 	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
@@ -47,20 +48,22 @@ func (opt SyncSGRuleOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
-// SecurityGroupRule ...
+// SecurityGroupRule 同步安全组规则唯一指定方法
 func (cli *client) SecurityGroupRule(kt *kit.Kit, params *SyncBaseParams, opt *SyncSGRuleOption) (*SyncResult, error) {
 
 	if err := validator.ValidateTool(params, opt); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	var syncResult *SyncResult
 	err := concurrence.BaseExec(constant.SyncConcurrencyDefaultMaxLimit, params.CloudIDs, func(param string) error {
 		syncOpt := &syncSGRuleOption{
 			AccountID: params.AccountID,
 			Region:    params.Region,
 			SGID:      param,
 		}
-		if _, err := cli.securityGroupRule(kt, syncOpt); err != nil {
+		var err error
+		if syncResult, err = cli.securityGroupRule(kt, syncOpt); err != nil {
 			logs.ErrorDepthf(1, "[%s] account: %s sg: %s sync sgRule failed, err: %v, rid: %s",
 				enumor.TCloud, params.AccountID, param, err, kt.Rid)
 			return err
@@ -71,8 +74,7 @@ func (cli *client) SecurityGroupRule(kt *kit.Kit, params *SyncBaseParams, opt *S
 	if err != nil {
 		return nil, err
 	}
-
-	return new(SyncResult), nil
+	return syncResult, nil
 }
 
 type syncSGRuleOption struct {
@@ -108,36 +110,25 @@ func (cli *client) securityGroupRule(kt *kit.Kit, opt *syncSGRuleOption) (*SyncR
 	updateRules := make(map[string]*corecloud.TCloudSecurityGroupRule)
 	deleteRuleIDs := make([]string, 0)
 	for _, one := range rulesFromDB {
+		var ruleMap map[int64]*vpc.SecurityGroupPolicy
 		switch one.Type {
 		case enumor.Egress:
-			policy, exist := egressRuleMaps[one.CloudPolicyIndex]
-			if !exist {
-				deleteRuleIDs = append(deleteRuleIDs, one.ID)
-				continue
-			}
-
-			delete(egressRuleMaps, one.CloudPolicyIndex)
-
-			if isSGRuleChange(version, policy, one) {
-				updateRules[one.ID] = convTCloudRule(policy, &sg.BaseSecurityGroup, version, enumor.Egress)
-			}
-
+			ruleMap = egressRuleMaps
 		case enumor.Ingress:
-			policy, exist := ingressRuleMaps[one.CloudPolicyIndex]
-			if !exist {
-				deleteRuleIDs = append(deleteRuleIDs, one.ID)
-				continue
-			}
-
-			delete(ingressRuleMaps, one.CloudPolicyIndex)
-
-			if isSGRuleChange(version, policy, one) {
-				updateRules[one.ID] = convTCloudRule(policy, &sg.BaseSecurityGroup, version, enumor.Ingress)
-			}
-
+			ruleMap = ingressRuleMaps
 		default:
 			logs.Errorf("[%s] unknown security group rule type: %s, skip handle, rid: %s", enumor.TCloud,
 				one.Type, kt.Rid)
+			continue
+		}
+		policy, exist := ruleMap[one.CloudPolicyIndex]
+		if !exist {
+			deleteRuleIDs = append(deleteRuleIDs, one.ID)
+			continue
+		}
+		delete(ruleMap, one.CloudPolicyIndex)
+		if isSGRuleChange(version, policy, one) {
+			updateRules[one.ID] = convTCloudRule(policy, &sg.BaseSecurityGroup, version, one.Type)
 		}
 	}
 
@@ -164,18 +155,18 @@ func (cli *client) securityGroupRule(kt *kit.Kit, opt *syncSGRuleOption) (*SyncR
 		}
 	}
 
+	syncResult := &SyncResult{}
 	if len(createRules) != 0 {
-		_, err := cli.createSGRule(kt, sg.ID, createRules)
+		syncResult.CreatedIds, err = cli.createSGRule(kt, sg.ID, createRules)
 		if err != nil {
 			return nil, err
 		}
-
-		return nil, nil
 	}
 
-	return new(SyncResult), nil
+	return syncResult, nil
 }
 
+// listSGRuleFromCloud list tcloud security group rule from database
 func (cli *client) listSGRuleFromDB(kt *kit.Kit, sgID string) (
 	[]corecloud.TCloudSecurityGroupRule, error) {
 
@@ -205,6 +196,7 @@ func (cli *client) listSGRuleFromDB(kt *kit.Kit, sgID string) (
 	return rules, nil
 }
 
+// listSGRuleFromCloud list tcloud security group rule from cloud
 func (cli *client) listSGRuleFromCloud(kt *kit.Kit, region, cloudSGID string) (string,
 	map[int64]*vpc.SecurityGroupPolicy, map[int64]*vpc.SecurityGroupPolicy, error) {
 	listOpt := &securitygrouprule.TCloudListOption{
@@ -231,12 +223,15 @@ func (cli *client) listSGRuleFromCloud(kt *kit.Kit, region, cloudSGID string) (s
 	return converter.PtrToVal(rules.Version), egressRuleMaps, ingressRuleMaps, nil
 }
 
+// updateSGRule update security group rule
 func (cli *client) updateSGRule(kt *kit.Kit, sgID string, updateRules map[string]*corecloud.
 	TCloudSecurityGroupRule) error {
 
-	rules := make([]protocloud.TCloudSGRuleBatchUpdate, 0, len(updateRules))
+	// convert update rules map to rule slice
+	ruleSlice := make([]protocloud.TCloudSGRuleBatchUpdate, 0, len(updateRules))
 	for id, rule := range updateRules {
-		rules = append(rules, protocloud.TCloudSGRuleBatchUpdate{
+		//  override id by map key
+		ruleSlice = append(ruleSlice, protocloud.TCloudSGRuleBatchUpdate{
 			ID:                         id,
 			CloudPolicyIndex:           rule.CloudPolicyIndex,
 			Version:                    rule.Version,
@@ -258,69 +253,84 @@ func (cli *client) updateSGRule(kt *kit.Kit, sgID string, updateRules map[string
 			AccountID:                  rule.AccountID,
 		})
 	}
-	req := &protocloud.TCloudSGRuleBatchUpdateReq{
-		Rules: rules,
+	// split rules into batches to avoid reaching batch operation limit
+	ruleBatches := slice.Split(ruleSlice, constant.BatchOperationMaxLimit)
+	for batchIdx, updateRuleBatch := range ruleBatches {
+		req := &protocloud.TCloudSGRuleBatchUpdateReq{Rules: updateRuleBatch}
+		err := cli.dbCli.TCloud.SecurityGroup.BatchUpdateSecurityGroupRule(kt.Ctx, kt.Header(), req, sgID)
+		if err != nil {
+			logs.Errorf("[%s] request dataservice to batch update tcloud security group rule failed, "+
+				"err: %v, batch idx: %d, rid: %s", enumor.TCloud, err, batchIdx, kt.Rid)
+			return err
+		}
 	}
-	if err := cli.dbCli.TCloud.SecurityGroup.BatchUpdateSecurityGroupRule(kt.Ctx, kt.Header(), req, sgID); err != nil {
-		logs.Errorf("[%s] request dataservice to batch update tcloud security group rule failed, err: %v, rid: %s",
-			enumor.TCloud, err, kt.Rid)
-		return err
-	}
-
 	return nil
 }
 
+// deleteSGRule delete security group rule
 func (cli *client) deleteSGRule(kt *kit.Kit, sgID string, delIDs []string) error {
-	req := &protocloud.TCloudSGRuleBatchDeleteReq{
-		Filter: tools.ContainersExpression("id", delIDs),
-	}
-	err := cli.dbCli.TCloud.SecurityGroup.BatchDeleteSecurityGroupRule(kt.Ctx, kt.Header(), req, sgID)
-	if err != nil {
-		logs.Errorf("[%s] request dataservice to delete tcloud security group rule failed, err: %v, rid: %s", enumor.TCloud,
-			err, kt.Rid)
-		return err
+
+	// split rules into batches to avoid reaching batch operation limit
+	delIdBatches := slice.Split(delIDs, constant.BatchOperationMaxLimit)
+	for batchIdx, delIdBatch := range delIdBatches {
+
+		req := &protocloud.TCloudSGRuleBatchDeleteReq{
+			Filter: tools.ContainersExpression("id", delIdBatch),
+		}
+		err := cli.dbCli.TCloud.SecurityGroup.BatchDeleteSecurityGroupRule(kt.Ctx, kt.Header(), req, sgID)
+		if err != nil {
+			logs.Errorf("[%s] request dataservice to delete tcloud security group rule failed,"+
+				" err: %v,batch idx：%d, rid: %s", enumor.TCloud, err, batchIdx, kt.Rid)
+			return err
+		}
 	}
 
 	return nil
 }
 
-func (cli *client) createSGRule(kt *kit.Kit, sgID string, rules []corecloud.
+// createSGRule crate security group rule
+func (cli *client) createSGRule(kt *kit.Kit, sgID string, allRules []corecloud.
 	TCloudSecurityGroupRule) ([]string, error) {
 
-	ruleCreates := make([]protocloud.TCloudSGRuleBatchCreate, 0, len(rules))
-	for _, rule := range rules {
-		ruleCreates = append(ruleCreates, protocloud.TCloudSGRuleBatchCreate{
-			CloudPolicyIndex:           rule.CloudPolicyIndex,
-			Version:                    rule.Version,
-			Protocol:                   rule.Protocol,
-			Port:                       rule.Port,
-			CloudServiceID:             rule.CloudServiceID,
-			CloudServiceGroupID:        rule.CloudServiceGroupID,
-			IPv4Cidr:                   rule.IPv4Cidr,
-			IPv6Cidr:                   rule.IPv6Cidr,
-			CloudTargetSecurityGroupID: rule.CloudTargetSecurityGroupID,
-			CloudAddressID:             rule.CloudAddressID,
-			CloudAddressGroupID:        rule.CloudAddressGroupID,
-			Action:                     rule.Action,
-			Memo:                       rule.Memo,
-			Type:                       rule.Type,
-			CloudSecurityGroupID:       rule.CloudSecurityGroupID,
-			SecurityGroupID:            rule.SecurityGroupID,
-			Region:                     rule.Region,
-			AccountID:                  rule.AccountID,
-		})
-	}
-	req := &protocloud.TCloudSGRuleCreateReq{
-		Rules: ruleCreates,
-	}
-	result, err := cli.dbCli.TCloud.SecurityGroup.BatchCreateSecurityGroupRule(kt.Ctx, kt.Header(), req, sgID)
-	if err != nil {
-		logs.Errorf("[%s] request dataservice to create tcloud security group rule failed, err: %v, rid: %s", enumor.TCloud,
-			err, kt.Rid)
-		return nil, err
+	// split all rules into batches to avoid reaching batch operation limit
+	splitRuleBatches := slice.Split(allRules, constant.BatchOperationMaxLimit)
+	resultIds := make([]string, 0, len(allRules))
+	for batchIdx, ruleBatch := range splitRuleBatches {
+		ruleCreates := make([]protocloud.TCloudSGRuleBatchCreate, 0, len(ruleBatch))
+		for _, rule := range ruleBatch {
+			ruleCreates = append(ruleCreates, protocloud.TCloudSGRuleBatchCreate{
+				CloudPolicyIndex:           rule.CloudPolicyIndex,
+				Version:                    rule.Version,
+				Protocol:                   rule.Protocol,
+				Port:                       rule.Port,
+				CloudServiceID:             rule.CloudServiceID,
+				CloudServiceGroupID:        rule.CloudServiceGroupID,
+				IPv4Cidr:                   rule.IPv4Cidr,
+				IPv6Cidr:                   rule.IPv6Cidr,
+				CloudTargetSecurityGroupID: rule.CloudTargetSecurityGroupID,
+				CloudAddressID:             rule.CloudAddressID,
+				CloudAddressGroupID:        rule.CloudAddressGroupID,
+				Action:                     rule.Action,
+				Memo:                       rule.Memo,
+				Type:                       rule.Type,
+				CloudSecurityGroupID:       rule.CloudSecurityGroupID,
+				SecurityGroupID:            rule.SecurityGroupID,
+				Region:                     rule.Region,
+				AccountID:                  rule.AccountID,
+			})
+		}
+		req := &protocloud.TCloudSGRuleCreateReq{Rules: ruleCreates}
+		resultBatch, err := cli.dbCli.TCloud.SecurityGroup.BatchCreateSecurityGroupRule(kt.Ctx, kt.Header(), req, sgID)
+		if err != nil {
+			logs.Errorf("[%s] request dataservice to create tcloud security group rule failed, "+
+				"err: %v,batch idx: %d, rid: %s", enumor.TCloud, err, batchIdx, kt.Rid)
+			return nil, err
+		}
+		resultIds = append(resultIds, resultBatch.IDs...)
+
 	}
 
-	return result.IDs, nil
+	return resultIds, nil
 }
 
 func convTCloudRule(policy *vpc.SecurityGroupPolicy, sg *corecloud.BaseSecurityGroup, version string,

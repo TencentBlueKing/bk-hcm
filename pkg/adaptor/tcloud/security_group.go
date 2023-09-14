@@ -131,7 +131,7 @@ func (t *TCloud) UpdateSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudUpdat
 	return nil
 }
 
-// ListSecurityGroup list security group.
+// ListSecurityGroupNew list security group.
 // reference: https://cloud.tencent.com/document/api/215/15808
 func (t *TCloud) ListSecurityGroupNew(kt *kit.Kit, opt *securitygroup.TCloudListOption) ([]securitygroup.TCloudSG,
 	error) {
