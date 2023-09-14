@@ -29,15 +29,14 @@ import (
 )
 
 // LogReporter  for gomock controller
-type LogReporter struct {
-}
+type LogReporter struct{}
 
-// Fatalf default do not panic
+// Fatalf redirect Errorf to avoid panic, redirecting to Fatalf for panic
 func (r *LogReporter) Fatalf(fmt string, args ...any) {
-	logs.Fatalf(fmt, args...)
+	logs.Errorf(fmt, args...)
 }
 
-// Errorf default do not panic
+// Errorf redirect testing.Errorf to logs.Errorf
 func (r *LogReporter) Errorf(fmt string, args ...any) {
 	logs.Errorf(fmt, args...)
 }

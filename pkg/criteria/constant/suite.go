@@ -17,26 +17,13 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloudserver
+// Package constant ...
+package constant
 
-import (
-	"testing"
+const (
 
-	"hcm/test/suite"
-
-	. "github.com/smartystreets/goconvey/convey"
+	// SuiteTestUserKey ...
+	SuiteTestUserKey = "suite"
+	// SuiteTestAppCodeKey  ...
+	SuiteTestAppCodeKey = "test"
 )
-
-func TestCloudServer(t *testing.T) {
-	SetDefaultFailureMode(FailureHalts)
-	// 清库
-	Convey("Prepare Job", t, func() {
-		err := suite.ClearData()
-		So(err, ShouldBeNil)
-	})
-	// 腾讯云相关测试
-	// 	Region 相关测试
-	TestTCloudRegion(t)
-	// 	VPC相关测试
-	TestTCloudVPC(t)
-}

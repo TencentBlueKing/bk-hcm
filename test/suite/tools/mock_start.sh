@@ -34,7 +34,7 @@ cd $RUN_DIR
 
 $BIN_DIR/bk-hcm-dataservice  -c $ETC_DIR/data_service.yaml &
 $BIN_DIR/bk-hcm-cloudserver -c  $ETC_DIR/cloud_server.yaml &
-$BIN_DIR/bk-hcm-hcservice -c  $ETC_DIR/hc_service.yaml --mock &
+$BIN_DIR/bk-hcm-hcservice -c  $ETC_DIR/hc_service.yaml &
 $BIN_DIR/bk-hcm-authserver -c  $ETC_DIR/auth_server.yaml --disable-auth &
 
 

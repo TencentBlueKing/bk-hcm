@@ -17,6 +17,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+//go:generate  mockgen -destination ../mock/tcloud/tcloud_mock.go  -package=mocktcloud -typed -source=interface.go
+
 package tcloud
 
 import (

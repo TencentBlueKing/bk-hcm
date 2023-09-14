@@ -48,32 +48,29 @@ func GetMockCloud() *MockTCloud {
 	return mockCloud
 }
 
-func initMock() {
-
-	ctrl = gomock.NewController(&adaptormock.LogReporter{})
-	mockCloud = NewMockTCloud(ctrl)
-
-	defaultPlaybook := getPlaybooks()
-	for i, playbook := range defaultPlaybook {
-		logs.V(3).Infof("[%s] registering %d th playbook:", enumor.TCloud, i, playbook.Name())
-		playbook.Apply(mockCloud, ctrl)
-	}
-
-}
-
 func getPlaybooks() []Playbook {
-
 	// gomock是通过slice来记录同一个方法的多个Call实例的，先记录的调用的有更高的优先级
 	return []Playbook{
 		/* add playbook here */
 		NewRegionPlaybook(),
 		NewCrudVpcPlaybook(),
 	}
+}
+
+func initMock() {
+	ctrl = gomock.NewController(&adaptormock.LogReporter{})
+	mockCloud = NewMockTCloud(ctrl)
+
+	defaultPlaybook := getPlaybooks()
+	for i, playbook := range defaultPlaybook {
+		logs.V(3).Infof("[%s] registering %d th playbook: %s", enumor.TCloud, i, playbook.Name())
+		playbook.Apply(mockCloud, ctrl)
+	}
 
 }
 
-// Shutdown 检查mock调用次数是否符合预期，主要检查是否存在没有被调用的方法
-func Shutdown() {
+// Finish 检查mock调用次数是否符合预期，主要检查是否存在没有被调用的方法
+func Finish() {
 	if ctrl != nil {
 		ctrl.Finish()
 		ctrl = nil

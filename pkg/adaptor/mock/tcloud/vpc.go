@@ -73,7 +73,7 @@ func (v *vpcPlaybook) applyVpc(mockCloud *MockTCloud) {
 	mockCloud.EXPECT().ListVpc(gomock.Any(), gomock.Any()).DoAndReturn(v.listVpc).MinTimes(1)
 	mockCloud.EXPECT().CreateVpc(gomock.Any(), gomock.Any()).DoAndReturn(v.createVpc).MinTimes(1)
 
-	// we do not support operation of update vpc, just check input type and then return nil, do nothing, 判断传入参数类型
+	// we do not support operation of update vpc, just check input type and then return nil, do nothing
 	mockCloud.EXPECT().
 		UpdateVpc(gomock.Any(), gomock.AssignableToTypeOf((*types.TCloudVpcUpdateOption)(nil))).
 		Return(nil).MinTimes(1)

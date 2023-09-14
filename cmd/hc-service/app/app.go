@@ -27,7 +27,6 @@ import (
 
 	"hcm/cmd/hc-service/options"
 	"hcm/cmd/hc-service/service"
-	"hcm/pkg/adaptor"
 	mocktcloud "hcm/pkg/adaptor/mock/tcloud"
 	"hcm/pkg/cc"
 	"hcm/pkg/logs"
@@ -83,10 +82,6 @@ func (ds *hcService) prepare(opt *options.Option) error {
 		Services: []cc.Name{cc.DataServiceName},
 	}
 
-	// option for cloud adaptor
-	adpOpt := adaptor.Option{
-		EnableCloudMock: opt.EnableMock,
-	}
 	sd, err := serviced.NewServiceD(cc.HCService().Service, svcOpt, disOpt)
 	if err != nil {
 		return fmt.Errorf("new service discovery failed, err: %v", err)
@@ -94,7 +89,7 @@ func (ds *hcService) prepare(opt *options.Option) error {
 
 	ds.sd = sd
 
-	svc, err := service.NewService(sd, adpOpt)
+	svc, err := service.NewService(sd)
 	if err != nil {
 		return fmt.Errorf("initialize service failed, err: %v", err)
 	}
@@ -123,7 +118,8 @@ func (ds *hcService) finalizer() {
 		logs.Errorf("process service shutdown, but deregister failed, err: %v", err)
 		return
 	}
-	mocktcloud.Shutdown()
+
+	mocktcloud.Finish()
 	logs.Infof("shutting down service, deregister service success.")
 	return
 }

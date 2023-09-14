@@ -1,8 +1,15 @@
 # version
 PRO_DIR   = $(shell pwd)
 BUILDTIME = $(shell date +%Y-%m-%dT%T%z)
-VERSION   = $(shell echo ${ENV_BK_HCM_VERSION})
-DEBUG     = $(shell echo ${ENV_BK_HCM_ENABLE_DEBUG})
+VERSION   = $(ENV_BK_HCM_VERSION)
+DEBUG     = $(ENV_BK_HCM_ENABLE_DEBUG)
+MOCK 	= $(ENV_BK_HCM_ENABLE_MOCK)
+
+# 通过tags控制是否编译出mock的服务，目前只有hc-service用到了GOTAGS参数
+ifneq ($(MOCK),)
+	export GOTAGS=-tags mock
+endif
+
 
 # output directory for release package and version for command line
 ifeq ("$(VERSION)", "")
@@ -82,25 +89,24 @@ ver: pre
 	@cp -rf ${PRO_DIR}/CHANGELOG.md ${OUTPUT_DIR}
 
 
-
 suite:
-	@make -C test/suite
-	@cp -rf  test/suite/suite-test ${OUTPUT_DIR}/
-	@rm -rf  test/suite/suite-test
+	@make -C ${PRO_DIR}/test/suite
+	@cp -rf  ${PRO_DIR}/test/suite/suite-test ${OUTPUT_DIR}/
+	@rm -rf  ${PRO_DIR}/test/suite/suite-test
 
 mockgen:
-	mockgen -source=pkg/adaptor/tcloud/interface.go -package mocktcloud -typed  > pkg/adaptor/mock/tcloud/tcloud_mock.go
-
+	make -C ${PRO_DIR}/pkg/adaptor/mock mockgen
 
 # 初始化下载项目开发依赖工具
 init-tools:
 	# 前端代码检查依赖工具下载
 	curl -o- -L https://yarnpkg.com/install.sh | bash
-	# 安装gomock
-	go install go.uber.org/mock/mockgen@latest
+	# 下载gomock
+	make -C  ${PRO_DIR}/pkg/adaptor/mock init-tools
+
 
 
 # 清理编译文件
 clean:
-	@cd ${PRO_DIR}/cmd && make clean
+	@make -C ${PRO_DIR}/cmd clean
 	@rm -rf ${PRO_DIR}/build

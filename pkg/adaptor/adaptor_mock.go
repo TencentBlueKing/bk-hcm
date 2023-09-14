@@ -1,4 +1,4 @@
-//go:build !mock
+//go:build mock
 
 /*
  * TencentBlueKing is pleased to support the open source community by making
@@ -19,16 +19,20 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package adaptor 对所有云API的封装
+// Package adaptor 对云API的封装。该文件用于集成测试使用，通过go build -tags mock 编译
 package adaptor
 
 import (
+	"errors"
+
 	"hcm/pkg/adaptor/aws"
 	"hcm/pkg/adaptor/azure"
 	"hcm/pkg/adaptor/gcp"
 	"hcm/pkg/adaptor/huawei"
+	mocktcloud "hcm/pkg/adaptor/mock/tcloud"
 	"hcm/pkg/adaptor/tcloud"
 	"hcm/pkg/adaptor/types"
+	"hcm/pkg/logs"
 )
 
 // Adaptor holds all the supported operations by the adaptor.
@@ -37,30 +41,33 @@ type Adaptor struct {
 
 // New an Adaptor pointer
 func New() *Adaptor {
+	logs.Infof("Using mock server")
+
 	return &Adaptor{}
 }
 
 // TCloud returns tencent cloud operations.
 func (a *Adaptor) TCloud(s *types.BaseSecret) (tcloud.TCloud, error) {
-	return tcloud.NewTCloud(s)
+	mockTcloud := mocktcloud.GetMockCloud()
+	return mockTcloud, nil
 }
 
 // Aws returns Aws operations.
 func (a *Adaptor) Aws(s *types.BaseSecret, cloudAccountID string) (*aws.Aws, error) {
-	return aws.NewAws(s, cloudAccountID)
+	return nil, errors.New("mock of aws not implemented")
 }
 
 // Gcp returns Gcp operations.
 func (a *Adaptor) Gcp(credential *types.GcpCredential) (*gcp.Gcp, error) {
-	return gcp.NewGcp(credential)
+	return nil, errors.New("mock of gcp not implemented")
 }
 
 // Azure returns Azure operations.
 func (a *Adaptor) Azure(credential *types.AzureCredential) (*azure.Azure, error) {
-	return azure.NewAzure(credential)
+	return nil, errors.New("mock of azure not implemented")
 }
 
 // HuaWei returns HuaWei operations.
 func (a *Adaptor) HuaWei(s *types.BaseSecret) (*huawei.HuaWei, error) {
-	return huawei.NewHuaWei(s)
+	return nil, errors.New("mock of huawei not implemented")
 }

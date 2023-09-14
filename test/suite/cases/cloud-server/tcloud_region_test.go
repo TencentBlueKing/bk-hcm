@@ -34,10 +34,10 @@ func TestTCloudRegion(t *testing.T) {
 	Convey("Sync Tcloud region test ", t, func() {
 		ctx, header := cases.GenApiCtxHeader()
 		syncReq := region.TCloudRegionSyncReq{
-			AccountID: "0000003",
+			AccountID: "00000003",
 		}
 		err := cli.HCService().TCloud.Region.Sync(ctx, header, &syncReq)
-		So(err, ShouldNotBeNil)
+		So(err, ShouldBeNil)
 	})
 
 }

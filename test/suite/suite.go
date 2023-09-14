@@ -17,12 +17,11 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package suite 集成测试参数配置
+// Package suite 测试配置
 package suite
 
 import (
 	"fmt"
-	"github.com/spf13/pflag"
 	"log"
 	"os"
 	"testing"
@@ -35,9 +34,10 @@ import (
 	"hcm/pkg/serviced"
 	"hcm/pkg/tools/ssl"
 
+	// mysql driver for clear table
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/smartystreets/goconvey/convey"
+	"github.com/spf13/pflag"
 )
 
 var clientSet *client.ClientSet

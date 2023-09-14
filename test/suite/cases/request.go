@@ -32,16 +32,16 @@ import (
 // GenApiKit generate a new kit.Kit with UserKey and AppCodeKey header for testing.
 func GenApiKit() *kit.Kit {
 	kt := kit.New()
-	kt.User = "suite"
-	kt.AppCode = "test"
+	kt.User = constant.SuiteTestUserKey
+	kt.AppCode = constant.SuiteTestAppCodeKey
 	return kt
 }
 
 // GenApiCtxHeader generate request context for api client
 func GenApiCtxHeader() (context.Context, http.Header) {
 	header := http.Header{}
-	header.Set(constant.UserKey, "suite")
+	header.Set(constant.UserKey, constant.SuiteTestUserKey)
 	header.Set(constant.RidKey, uuid.UUID())
-	header.Set(constant.AppCodeKey, "test")
+	header.Set(constant.AppCodeKey, constant.SuiteTestAppCodeKey)
 	return context.Background(), header
 }

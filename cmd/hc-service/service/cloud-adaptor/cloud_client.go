@@ -31,9 +31,9 @@ import (
 )
 
 // NewCloudAdaptorClient new cloud adaptor client.
-func NewCloudAdaptorClient(dataCli *dataservice.Client, adpOpt adaptor.Option) *CloudAdaptorClient {
+func NewCloudAdaptorClient(dataCli *dataservice.Client) *CloudAdaptorClient {
 	return &CloudAdaptorClient{
-		adaptor:   adaptor.New(adpOpt),
+		adaptor:   adaptor.New(),
 		secretCli: NewSecretClient(dataCli),
 	}
 }
