@@ -31,7 +31,7 @@ POST /api/v1/cloud/vendors/gcp/firewalls/rules/create
 | 参数名称     | 参数类型         | 描述                                                            |
 |----------|--------------|---------------------------------------------------------------|
 | protocol | string       | 协议。（枚举值：tcp, udp, icmp, esp, ah, ipip, sctp, all, 58(icmpv6)） |
-| ports    | string array | 端口列表。                                                         |
+| port     | string array | 端口列表。                                                         |
 
 ### 调用示例
 
@@ -54,7 +54,7 @@ POST /api/v1/cloud/vendors/gcp/firewalls/rules/create
   "allowed": [
     {
       "protocol": "tcp",
-      "ports": [
+      "port": [
         "443"
       ]
     }

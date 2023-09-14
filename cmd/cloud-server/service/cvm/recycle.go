@@ -87,10 +87,8 @@ func (svc *cvmSvc) recycleCvmSvc(cts *rest.Contexts, validHandler handler.ValidW
 	}
 
 	// create recycle audit
-	auditReq := &protoaudit.CloudResourceRecycleAuditReq{
-		ResType: enumor.CvmAuditResType,
-		Action:  protoaudit.Recycle,
-		Infos:   auditInfos,
+	auditReq := &protoaudit.CloudResourceRecycleAuditReq{ResType: enumor.CvmAuditResType, Action: protoaudit.Recycle,
+		Infos: auditInfos,
 	}
 	if err = svc.audit.ResRecycleAudit(cts.Kit, auditReq); err != nil {
 		logs.Errorf("create recycle audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -125,32 +123,7 @@ func (svc *cvmSvc) recycleCvm(kt *kit.Kit, req *proto.CvmRecycleReq, infoMap map
 		}
 	}
 
-	// filter out stopped cvm
-	notStoppedRule := filter.AtomRule{Field: "status", Op: filter.NotIn.Factory(), Value: []string{"STOPPING",
-		"STOPPED", "stopping", "stopped", "SUSPENDING", "SUSPENDED", "PowerState/stopped", "SHUTOFF"}}
-	notStoppedFilter, err := tools.And(tools.ContainersExpression("id", ids), notStoppedRule)
-	if err != nil {
-		return nil, err
-	}
-	notStoppedReq := &cloud.CvmListReq{
-		Field:  []string{"id"},
-		Filter: notStoppedFilter,
-		Page:   core.NewDefaultBasePage(),
-	}
-	startCvmRes, err := svc.client.DataService().Global.Cvm.ListCvm(kt.Ctx, kt.Header(), notStoppedReq)
-	if err != nil {
-		return nil, err
-	}
-
-	notStoppedMap := make(map[string]types.CloudResourceBasicInfo)
-	for _, cvm := range startCvmRes.Details {
-		notStoppedMap[cvm.ID] = infoMap[cvm.ID]
-	}
-
-	// stop cvm
-	stopRes, err := svc.cvmLgc.BatchStopCvm(kt, notStoppedMap)
-	if err != nil {
-		logs.Errorf("stop cvm failed, err: %v, resp: %+v, infos: %+v, rid: %s", err, stopRes, notStoppedMap, kt.Rid)
+	if err := svc.checkAndStopCvm(kt, ids, infoMap); err != nil {
 		return nil, err
 	}
 
@@ -190,10 +163,7 @@ func (svc *cvmSvc) recycleCvm(kt *kit.Kit, req *proto.CvmRecycleReq, infoMap map
 		if _, exists := failedIDMap[info.ID]; exists {
 			continue
 		}
-		opt.Infos = append(opt.Infos, recyclerecord.RecycleReq{
-			ID:     info.ID,
-			Detail: info.CvmRecycleOptions,
-		})
+		opt.Infos = append(opt.Infos, recyclerecord.RecycleReq{ID: info.ID, Detail: info.CvmRecycleOptions})
 	}
 	taskID, err := svc.client.DataService().Global.RecycleRecord.BatchRecycleCloudRes(kt.Ctx, kt.Header(), opt)
 	if err != nil {
@@ -204,6 +174,39 @@ func (svc *cvmSvc) recycleCvm(kt *kit.Kit, req *proto.CvmRecycleReq, infoMap map
 		return res, res.Failed[0].Error
 	}
 	return &recycle.RecycleResult{TaskID: taskID}, nil
+}
+
+// 检查在非停止状态的主机并尝试停止
+func (svc *cvmSvc) checkAndStopCvm(kt *kit.Kit, ids []string, infoMap map[string]types.CloudResourceBasicInfo) error {
+	// filter out not stopped cvm
+	notStoppedRule := filter.AtomRule{Field: "status", Op: filter.NotIn.Factory(), Value: []string{"STOPPING",
+		"STOPPED", "stopping", "stopped", "SUSPENDING", "SUSPENDED", "PowerState/stopped", "SHUTOFF"}}
+	notStoppedFilter, err := tools.And(tools.ContainersExpression("id", ids), notStoppedRule)
+	if err != nil {
+		return err
+	}
+	notStoppedReq := &cloud.CvmListReq{
+		Field:  []string{"id"},
+		Filter: notStoppedFilter,
+		Page:   core.NewDefaultBasePage(),
+	}
+
+	startCvmRes, err := svc.client.DataService().Global.Cvm.ListCvm(kt.Ctx, kt.Header(), notStoppedReq)
+	if err != nil {
+		return err
+	}
+
+	notStoppedMap := make(map[string]types.CloudResourceBasicInfo)
+	for _, cvm := range startCvmRes.Details {
+		notStoppedMap[cvm.ID] = infoMap[cvm.ID]
+	}
+	// stop cvm
+	stopRes, err := svc.cvmLgc.BatchStopCvm(kt, notStoppedMap)
+	if err != nil {
+		logs.Errorf("stop cvm failed, err: %v, resp: %+v, infos: %+v, rid: %s", err, stopRes, notStoppedMap, kt.Rid)
+		return err
+	}
+	return nil
 }
 
 func (svc *cvmSvc) detachDiskByCvmIDs(kt *kit.Kit, ids []string, basicInfoMap map[string]types.CloudResourceBasicInfo) (
@@ -267,7 +270,7 @@ func (svc *cvmSvc) detachDiskByCvmIDs(kt *kit.Kit, ids []string, basicInfoMap ma
 	return res, nil
 }
 
-// RecoverCvm recover biz cvm.
+// RecoverBizCvm recover biz cvm.
 func (svc *cvmSvc) RecoverBizCvm(cts *rest.Contexts) (interface{}, error) {
 	return svc.recoverCvm(cts, handler.BizValidWithAuth)
 }
@@ -391,17 +394,15 @@ func (svc *cvmSvc) batchDeleteRecycledCvm(cts *rest.Contexts,
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
-
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	listReq := &core.ListReq{
-		Filter: tools.ContainersExpression("id", req.RecordIDs),
-		Page:   &core.BasePage{Limit: constant.BatchOperationMaxLimit},
-	}
-	records, err := svc.client.DataService().Global.RecycleRecord.ListRecycleRecord(cts.Kit.Ctx, cts.Kit.Header(),
-		listReq)
+	listReq := &core.ListReq{Filter: tools.ContainersExpression("id", req.RecordIDs)}
+	listReq.Page = &core.BasePage{Limit: constant.BatchOperationMaxLimit}
+
+	records, err := svc.client.DataService().Global.RecycleRecord.
+		ListRecycleRecord(cts.Kit.Ctx, cts.Kit.Header(), listReq)
 	if err != nil {
 		return nil, err
 	}
@@ -421,11 +422,8 @@ func (svc *cvmSvc) batchDeleteRecycledCvm(cts *rest.Contexts,
 		cvmIDToBizID[recordDetail.ResID] = recordDetail.BkBizID
 	}
 
-	basicInfoReq := cloud.ListResourceBasicInfoReq{
-		ResourceType: enumor.CvmCloudResType,
-		IDs:          cvmIDs,
-		Fields:       append(types.CommonBasicInfoFields, "region", "recycle_status"),
-	}
+	basicInfoReq := cloud.ListResourceBasicInfoReq{ResourceType: enumor.CvmCloudResType, IDs: cvmIDs}
+	basicInfoReq.Fields = append(types.CommonBasicInfoFields, "region", "recycle_status")
 	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
 		basicInfoReq)
 	if err != nil {
@@ -455,18 +453,15 @@ func (svc *cvmSvc) batchDeleteRecycledCvm(cts *rest.Contexts,
 		Data: make([]recyclerecord.UpdateReq, 0, len(req.RecordIDs)),
 	}
 	for _, id := range req.RecordIDs {
-		updateReq.Data = append(updateReq.Data, recyclerecord.UpdateReq{
-			ID:     id,
-			Status: enumor.RecycledRecycleRecordStatus,
-		})
+		updateReq.Data = append(updateReq.Data,
+			recyclerecord.UpdateReq{ID: id, Status: enumor.RecycledRecycleRecordStatus})
 	}
-	err = svc.client.DataService().Global.RecycleRecord.BatchUpdateRecycleRecord(cts.Kit.Ctx, cts.Kit.Header(),
-		updateReq)
-	if err != nil {
+
+	if err = svc.client.DataService().Global.RecycleRecord.BatchUpdateRecycleRecord(cts.Kit.Ctx, cts.Kit.Header(),
+		updateReq); err != nil {
 		logs.Errorf("update recycle record status to recycled failed, err: %v, ids: %v, rid: %s", err, req.RecordIDs,
 			cts.Kit.Rid)
 		return nil, err
 	}
-
 	return nil, nil
 }

@@ -72,6 +72,8 @@ func (cli *client) CvmWithRelRes(kt *kit.Kit, params *SyncBaseParams, opt *SyncC
 		if _, err = cli.Cvm(kt, params, new(SyncCvmOption)); err != nil {
 			return nil, err
 		}
+
+		return new(SyncResult), nil
 	}
 
 	// step2: 获取cvm和关联资源的关联关系

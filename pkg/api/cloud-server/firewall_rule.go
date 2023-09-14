@@ -60,7 +60,24 @@ type GcpFirewallRuleUpdateReq struct {
 
 // Validate gcp firewall rule update req.
 func (req *GcpFirewallRuleUpdateReq) Validate() error {
-	return validator.Validate.Struct(req)
+
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	for _, tag := range req.SourceTags {
+		if err := validator.ValidateGcpName(tag); err != nil {
+			return fmt.Errorf("source tags validate failed, err: %v", err)
+		}
+	}
+
+	for _, tag := range req.TargetTags {
+		if err := validator.ValidateGcpName(tag); err != nil {
+			return fmt.Errorf("target tags validate failed, err: %v", err)
+		}
+	}
+
+	return nil
 }
 
 // AssignGcpFirewallRuleToBizReq define assign gcp firewall rule to biz req.
@@ -110,7 +127,7 @@ type GcpFirewallRuleCreateReq struct {
 	CloudVpcID        string                     `json:"cloud_vpc_id" validate:"required"`
 	Name              string                     `json:"name" validate:"required"`
 	Memo              string                     `json:"memo"`
-	Priority          int64                      `json:"priority" validate:"required"`
+	Priority          int64                      `json:"priority" validate:"omitempty"`
 	Type              string                     `json:"type" validate:"required"`
 	SourceTags        []string                   `json:"source_tags"`
 	TargetTags        []string                   `json:"target_tags"`
@@ -123,5 +140,26 @@ type GcpFirewallRuleCreateReq struct {
 
 // Validate gcp firewall rule create req.
 func (req *GcpFirewallRuleCreateReq) Validate() error {
-	return validator.Validate.Struct(req)
+
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	if err := validator.ValidateGcpName(req.Name); err != nil {
+		return err
+	}
+
+	for _, tag := range req.SourceTags {
+		if err := validator.ValidateGcpName(tag); err != nil {
+			return fmt.Errorf("source tags validate failed, err: %v", err)
+		}
+	}
+
+	for _, tag := range req.TargetTags {
+		if err := validator.ValidateGcpName(tag); err != nil {
+			return fmt.Errorf("target tags validate failed, err: %v", err)
+		}
+	}
+
+	return nil
 }

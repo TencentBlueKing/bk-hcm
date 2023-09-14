@@ -76,7 +76,6 @@ func (r *recycle) recycleTiming(resType enumor.CloudResourceType, worker recycle
 		}
 
 		logs.Infof("start recycle %s, rid: %s", resType, kt.Rid)
-
 		// get need recycled resource records
 		expr, err := tools.And(tools.EqualWithOpExpression(filter.And,
 			map[string]interface{}{"res_type": resType, "status": enumor.WaitingRecycleRecordStatus}),
@@ -139,7 +138,6 @@ func (r *recycle) recycleTiming(resType enumor.CloudResourceType, worker recycle
 				time.Sleep(time.Minute)
 				break
 			}
-
 			r.execWorker(kt, worker, record, basicInfoMap)
 		}
 

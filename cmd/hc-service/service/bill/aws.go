@@ -28,7 +28,6 @@ import (
 
 	"hcm/pkg/adaptor/aws"
 	typesBill "hcm/pkg/adaptor/types/bill"
-	adcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
 	dataservice "hcm/pkg/api/data-service"
@@ -57,9 +56,6 @@ func (b bill) AwsGetBillList(cts *rest.Contexts) (interface{}, error) {
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-	if req.Page == nil {
-		req.Page = &hcbillservice.AwsBillListPage{Offset: 0, Limit: adcore.AwsQueryLimit}
-	}
 
 	cli, err := b.ad.Aws(cts.Kit, req.AccountID)
 	if err != nil {
@@ -85,10 +81,12 @@ func (b bill) AwsGetBillList(cts *rest.Contexts) (interface{}, error) {
 		AccountID: req.AccountID,
 		BeginDate: req.BeginDate,
 		EndDate:   req.EndDate,
-		Page: &typesBill.AwsBillPage{
+	}
+	if req.Page != nil {
+		opt.Page = &typesBill.AwsBillPage{
 			Offset: req.Page.Offset,
 			Limit:  req.Page.Limit,
-		},
+		}
 	}
 	total, list, err := cli.GetBillList(cts.Kit, opt, billInfo)
 	if err != nil {

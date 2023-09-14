@@ -443,7 +443,7 @@ func isSGRuleChange(cloud securitygrouprule.AwsSGRule,
 	}
 
 	if cloud.ReferencedGroupInfo != nil {
-		if db.CloudTargetSecurityGroupID != cloud.ReferencedGroupInfo.GroupId {
+		if !assert.IsPtrStringEqual(db.CloudTargetSecurityGroupID, cloud.ReferencedGroupInfo.GroupId) {
 			return true
 		}
 	}

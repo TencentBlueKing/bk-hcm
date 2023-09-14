@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package service ...
 package service
 
 import (
@@ -169,6 +170,13 @@ func (s *Service) apiSet() *restful.Container {
 
 // Healthz check whether the service is healthy.
 func (s *Service) Healthz(w http.ResponseWriter, _ *http.Request) {
+
+	if err := serviced.Healthz(cc.HCService().Service); err != nil {
+		logs.Errorf("etcd healthz check failed, err: %v", err)
+		rest.WriteResp(w, rest.NewBaseResp(errf.UnHealthy, "etcd healthz error, "+err.Error()))
+		return
+	}
+
 	rest.WriteResp(w, rest.NewBaseResp(errf.OK, "healthy"))
 	return
 }

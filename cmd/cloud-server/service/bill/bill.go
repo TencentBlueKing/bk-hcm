@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package bill ...
 package bill
 
 import (
@@ -24,7 +25,9 @@ import (
 
 	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/capability"
+	cloudserver "hcm/pkg/api/cloud-server"
 	csbill "hcm/pkg/api/cloud-server/bill"
+	"hcm/pkg/api/core"
 	hcbill "hcm/pkg/api/hc-service/bill"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
@@ -45,6 +48,7 @@ func InitBillService(c *capability.Capability) {
 	h := rest.NewHandler()
 
 	h.Add("ListBills", "POST", "/vendors/{vendor}/bills/list", svc.ListBills)
+	h.Add("ListBillsConfig", "POST", "/bills/config/list", svc.ListBillsConfig)
 
 	h.Load(c.WebService)
 }
@@ -138,6 +142,7 @@ func (b *billSvc) getTCloudListReq(cts *rest.Contexts) (*hcbill.TCloudBillListRe
 		BeginDate: req.BeginDate,
 		EndDate:   req.EndDate,
 		Page:      req.Page,
+		Context:   req.Context,
 	}
 	return billReq, nil
 }
@@ -227,4 +232,27 @@ func (b *billSvc) checkPermissions(cts *rest.Contexts, resType meta.ResourceType
 	}
 
 	return nil
+}
+
+// ListBillsConfig list bills config.
+func (b *billSvc) ListBillsConfig(cts *rest.Contexts) (interface{}, error) {
+	// 校验用户是否有拉取权限
+	if err := b.checkPermission(cts, meta.CostManage, meta.Find); err != nil {
+		return nil, err
+	}
+
+	req := new(cloudserver.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	listReq := &core.ListReq{
+		Filter: req.Filter,
+		Page:   req.Page,
+	}
+	return b.client.DataService().Global.Bill.List(cts.Kit.Ctx, cts.Kit.Header(), listReq)
 }

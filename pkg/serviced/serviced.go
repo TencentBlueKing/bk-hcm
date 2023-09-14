@@ -22,15 +22,12 @@ package serviced
 
 import (
 	"context"
-	"crypto/tls"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"sync"
+	"time"
 
 	"hcm/pkg/cc"
-	"hcm/pkg/tools/ssl"
+	"hcm/pkg/logs"
 
 	etcd3 "go.etcd.io/etcd/client/v3"
 )
@@ -99,46 +96,38 @@ type serviceAddress struct {
 	key     string
 }
 
+// etcdCli 用于etcd healthz 检查
+var etcdCli *etcd3.Client
+
+var initOnce sync.Once
+
 // Healthz checks the service discovery middleware health state.
 func Healthz(config cc.Service) error {
-	etcdConf := config.Etcd
-
-	var tlsConf *tls.Config
 	var err error
-	scheme := "http"
-	if etcdConf.TLS.Enable() {
-		if tlsConf, err = ssl.ClientTLSConfVerify(etcdConf.TLS.InsecureSkipVerify, etcdConf.TLS.CAFile,
-			etcdConf.TLS.CertFile, etcdConf.TLS.KeyFile, etcdConf.TLS.Password); err != nil {
+	initOnce.Do(func() {
+		var cfg etcd3.Config
+		cfg, err = config.Etcd.ToConfig()
+		if err != nil {
+			return
+		}
+
+		cfg.DialTimeout = time.Second
+		etcdCli, err = etcd3.New(cfg)
+		if err != nil {
+			return
+		}
+	})
+	if err != nil {
+		logs.Errorf("init healthz etcd client failed, err: %v")
+		return err
+	}
+
+	for _, endpoint := range etcdCli.Endpoints() {
+		ctx, _ := context.WithTimeout(context.Background(), time.Second)
+		if _, err = etcdCli.Status(ctx, endpoint); err != nil {
+			logs.Errorf("etcd healthz check failed, err: %v", err)
 			return err
 		}
-		scheme = "https"
-	}
-	client := &http.Client{Transport: &http.Transport{TLSClientConfig: tlsConf}}
-
-	for _, endpoint := range etcdConf.Endpoints {
-		resp, err := client.Get(fmt.Sprintf("%s://%s/health", scheme, endpoint))
-		if err != nil {
-			return fmt.Errorf("get etcd health failed, err: %v", err)
-		}
-
-		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("response status: %d", resp.StatusCode)
-		}
-
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return fmt.Errorf("read etcd healthz body failed, err: %v", err)
-		}
-
-		info := &HealthInfo{}
-		if err := json.Unmarshal(body, info); err != nil {
-			return fmt.Errorf("unmarshal etcd healthz info failed, err: %v", err)
-		}
-
-		if info.Health != "true" {
-			return fmt.Errorf("endpoint %s etcd not healthy", endpoint)
-		}
-		_ = resp.Body.Close()
 	}
 
 	return nil

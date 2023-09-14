@@ -124,10 +124,6 @@ func (t GcpFirewallRuleTable) InsertValidate() error {
 		return errors.New("name is required")
 	}
 
-	if t.Priority == 0 {
-		return errors.New("priority is required")
-	}
-
 	if len(t.CloudVpcID) == 0 {
 		return errors.New("cloud vpc id is required")
 	}
