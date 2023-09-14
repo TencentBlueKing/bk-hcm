@@ -6,6 +6,7 @@ import { defineComponent, ref, watch } from 'vue';
 import successStatus from '@/assets/image/success-account.png';
 import failedStatus from '@/assets/image/failed-account.png';
 import loadingStatus from '@/assets/image/status_loading.png';
+import './index.scss';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export default defineComponent({
@@ -21,13 +22,13 @@ export default defineComponent({
       {
         label: '任务状态',
         field: 'res_status',
-        render: ({ cell }: { cell: string }) => (<div>
+        render: ({ cell }: { cell: string }) => (<div class={'resource-status'}>
           <img
             // eslint-disable-next-line no-nested-ternary
             src={ cell === 'sync_success' ? successStatus : cell === 'sync_failed' ? failedStatus : loadingStatus }
             class={'resource-status-icon'}
-            height={8}
-            width={8}
+            height={16}
+            width={16}
           />
           <span>
             {RESOURCES_SYNC_STATUS_MAP[cell]}

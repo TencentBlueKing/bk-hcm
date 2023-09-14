@@ -1,5 +1,8 @@
-.resource-status-icon {
-  height: 8px;
-  width: 8px;
-  margin-left: 12px;
+.resource-status {
+  display: flex;
+  align-items: center;
+
+  .resource-status-icon {
+    margin-left: 12px;
+  }
 }
