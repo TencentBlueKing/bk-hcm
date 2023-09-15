@@ -16,7 +16,7 @@ const resourceMenus: RouteRecordRaw[] = [
           {
             path: 'record',
             name: t('购买记录'),
-            component: () => import('@/views/resource/resource-manage/accountInfo/component/usersList/index'),
+            component: () => import('@/views/resource/resource-manage/purchaseRecord/index'),
           },
           {
             path: 'account',
