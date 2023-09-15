@@ -144,7 +144,6 @@ func (req *GcpDiskSyncReq) Validate() error {
 // GcpRouteSyncReq gcp route sync request
 type GcpRouteSyncReq struct {
 	AccountID string `json:"account_id" validate:"required"`
-	Zone      string `json:"zone" validate:"required"`
 }
 
 // Validate gcp route sync request.

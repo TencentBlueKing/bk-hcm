@@ -79,7 +79,7 @@ func SyncGcpRouteTableList(kt *kit.Kit, req *hcroutetable.GcpRouteTableSyncReq, 
 	nextToken := ""
 	allCloudIDMap := make(map[string]bool, 0)
 	for {
-		opt := &adcore.GcpListOption{
+		opt := &adroutetable.GcpListOption{
 			Page: &adcore.GcpPage{
 				PageSize: int64(adcore.GcpQueryLimit / 10),
 			},
@@ -347,7 +347,7 @@ func GetNeedDeleteGcpRouteTableList(kt *kit.Kit, req *hcroutetable.GcpRouteTable
 	}
 	deleteRouteTableIDs = slice.Unique(deleteRouteTableIDs)
 
-	opt := &adcore.GcpListOption{
+	opt := &adroutetable.GcpListOption{
 		CloudIDs: tmpResourceIDs,
 	}
 	tmpList, tmpErr := cli.ListRoute(kt, opt)

@@ -20,7 +20,6 @@
 package gcp
 
 import (
-	gosync "sync"
 	"time"
 
 	"hcm/cmd/cloud-server/service/sync/detail"
@@ -32,7 +31,7 @@ import (
 )
 
 // SyncRoute 同步路由表
-func SyncRoute(kt *kit.Kit, cliSet *client.ClientSet, accountID string, regionZoneMap map[string][]string,
+func SyncRoute(kt *kit.Kit, cliSet *client.ClientSet, accountID string,
 	sd *detail.SyncDetail) error {
 
 	start := time.Now()
@@ -49,39 +48,13 @@ func SyncRoute(kt *kit.Kit, cliSet *client.ClientSet, accountID string, regionZo
 			enumor.Gcp, accountID, time.Since(start), kt.Rid)
 	}()
 
-	pipeline := make(chan bool, syncConcurrencyCount)
-	var firstErr error
-	var wg gosync.WaitGroup
-	for _, zones := range regionZoneMap {
-		for _, zone := range zones {
-			pipeline <- true
-			wg.Add(1)
-
-			go func(zone string) {
-				defer func() {
-					wg.Done()
-					<-pipeline
-				}()
-
-				req := &sync.GcpRouteSyncReq{
-					AccountID: accountID,
-					Zone:      zone,
-				}
-				err := cliSet.HCService().Gcp.RouteTable.SyncRoute(kt.Ctx, kt.Header(), req)
-				if firstErr == nil && err != nil {
-					logs.Errorf("[%s] account[%s] sync route failed, req: %v, err: %v, rid: %s",
-						enumor.Gcp, accountID, req, err, kt.Rid)
-					firstErr = err
-					return
-				}
-			}(zone)
-		}
+	req := &sync.GcpRouteSyncReq{
+		AccountID: accountID,
 	}
-
-	wg.Wait()
-
-	if firstErr != nil {
-		return firstErr
+	if err := cliSet.HCService().Gcp.RouteTable.SyncRoute(kt.Ctx, kt.Header(), req); err != nil {
+		logs.Errorf("[%s] account[%s] sync route failed, req: %v, err: %v, rid: %s",
+			enumor.Gcp, accountID, req, err, kt.Rid)
+		return err
 	}
 
 	// 同步成功

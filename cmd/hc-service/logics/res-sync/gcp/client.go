@@ -40,7 +40,7 @@ type Interface interface {
 	RemoveEipDeleteFromCloud(kt *kit.Kit, accountID string, region string) error
 
 	Route(kt *kit.Kit, params *SyncBaseParams, opt *SyncRouteOption) (*SyncResult, error)
-	RemoveRouteDeleteFromCloud(kt *kit.Kit, accountID string, zone string) error
+	RemoveRouteDeleteFromCloud(kt *kit.Kit, accountID string) error
 
 	Firewall(kt *kit.Kit, params *SyncBaseParams, opt *SyncFirewallOption) (*SyncResult, error)
 	RemoveFirewallDeleteFromCloud(kt *kit.Kit, accountID string) error
