@@ -10,43 +10,40 @@ POST /api/v1/cloud/vendors/gcp/applications/types/create_cvm
 
 ### 输入参数
 
-| 参数名称            | 参数类型          | 必选 | 描述     |
-|-----------------|---------------|----|--------|
-| bk_biz_id       | int64         | 是  | 业务ID   |
-| account_id      | string        | 是  | 账号ID   |
-| region          | string        | 是  | 地域     |
-| zone            | string        | 是  | 可用区    |
-| name            | string        | 是  | 名称     |
-| instance_type   | string        | 是  | 实例类型   |
-| cloud_image_id  | string        | 是  | 云镜像ID  |
-| cloud_vpc_id    | string        | 是  | 云VpcID |
-| cloud_subnet_id | string        | 是  | 云子网ID  |
-| system_disk     | object        | 是  | 系统盘    |
-| data_disk       | object  array | 否  | 数据盘    |
-| password        | string        | 是  | 密码     |
-| required_count  | int64         | 是  | 需要数量   |
-| memo            | string        | 否  | 备注     |
-| remark          | string        | 否  | 单据备注   |
+| 参数名称                        | 参数类型          | 必选 | 描述                                                                                                                   |
+|-----------------------------|---------------|----|----------------------------------------------------------------------------------------------------------------------|
+| bk_biz_id                   | int64         | 是  | 业务ID                                                                                                                 |
+| account_id                  | string        | 是  | 账号ID                                                                                                                 |
+| region                      | string        | 是  | 地域                                                                                                                   |
+| zone                        | string        | 是  | 可用区                                                                                                                  |
+| name                        | string        | 是  | 名称                                                                                                                   |
+| instance_type               | string        | 是  | 实例类型                                                                                                                 |
+| cloud_image_id              | string        | 是  | 云镜像ID                                                                                                                |
+| cloud_vpc_id                | string        | 是  | 云VpcID                                                                                                               |
+| cloud_subnet_id             | string        | 是  | 云子网ID                                                                                                                |
+| system_disk                 | object        | 是  | 系统盘                                                                                                                  |
+| data_disk                   | object  array | 否  | 数据盘                                                                                                                  |
+| password                    | string        | 是  | 密码                                                                                                                   |
+| required_count              | int64         | 是  | 需要数量                                                                                                                 |
+| memo                        | string        | 否  | 备注                                                                                                                   |
+| remark                   | string        | 否  | 单据备注    |
 
 #### system_disk
-
-| 参数名称         | 参数类型   | 必选 | 描述                                                  |
-|--------------|--------|----|-----------------------------------------------------|
-| disk_type    | string | 是  | 云盘类型（枚举值：pd-standard、pd-balanced、pd-ssd、pd-extreme） |
-| disk_size_gb | int64  | 是  | 云盘大小                                                |
+| 参数名称             | 参数类型    | 必选  | 描述                                                   |
+|------------------|---------|-----|------------------------------------------------------|
+| disk_type        | string  | 是   | 云盘类型（枚举值：pd-standard、pd-balanced、pd-ssd、pd-extreme）  |
+| disk_size_gb     | int64   | 是   | 云盘大小                                                 |
 
 #### data_disk
-
-| 参数名称         | 参数类型   | 必选 | 描述                                                  |
-|--------------|--------|----|-----------------------------------------------------|
-| disk_type    | string | 是  | 云盘类型（枚举值：pd-standard、pd-balanced、pd-ssd、pd-extreme） |
-| disk_size_gb | int64  | 是  | 云盘大小                                                |
-| disk_count   | int64  | 是  | 云盘数量                                                |
-| mode         | string | 是  | 模式（枚举值：READ_ONLY、READ_WRITE）                        |
-| auto_delete  | bool   | 是  | 是否自动删除                                              |
+| 参数名称               | 参数类型   | 必选  | 描述                                                  |
+|--------------------|--------|-----|-----------------------------------------------------|
+| disk_type          | string | 是   | 云盘类型（枚举值：pd-standard、pd-balanced、pd-ssd、pd-extreme） |
+| disk_size_gb       | int64  | 是   | 云盘大小                                                |
+| disk_count         | int64  | 是   | 云盘数量                                                |
+| mode               | string | 是   | 模式（枚举值：READ_ONLY、READ_WRITE）                        |
+| auto_delete        | bool   | 是   | 是否自动删除                                              |
 
 ### 调用示例
-
 ```json
 {
   "bk_biz_id": 100,

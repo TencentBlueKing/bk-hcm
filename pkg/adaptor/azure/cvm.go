@@ -492,6 +492,13 @@ func (az *Azure) CreateCvm(kt *kit.Kit, opt *typecvm.AzureCreateOption) (string,
 		}
 	}
 
+	var publicIPCfg *armcompute.VirtualMachinePublicIPAddressConfiguration
+	if opt.PublicIPAssigned {
+		publicIPCfg = &armcompute.VirtualMachinePublicIPAddressConfiguration{
+			Name: to.Ptr(opt.Name + "-eip"),
+		}
+	}
+
 	instance := armcompute.VirtualMachine{
 		Location: to.Ptr(opt.Region),
 		Properties: &armcompute.VirtualMachineProperties{
@@ -512,6 +519,7 @@ func (az *Azure) CreateCvm(kt *kit.Kit, opt *typecvm.AzureCreateOption) (string,
 										Subnet: &armcompute.SubResource{
 											ID: to.Ptr(opt.CloudSubnetID),
 										},
+										PublicIPAddressConfiguration: publicIPCfg,
 									},
 								},
 							},

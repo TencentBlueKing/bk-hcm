@@ -169,7 +169,8 @@ func (svc *cvmSvc) bulkCreateAzureCvm(kt *kit.Kit, req *protocvm.AzureBatchCreat
 					SizeGB: req.OSDisk.SizeGB,
 					Type:   req.OSDisk.Type,
 				},
-				DataDisk: make([]typecvm.AzureDataDisk, len(req.DataDisk)),
+				DataDisk:         make([]typecvm.AzureDataDisk, len(req.DataDisk)),
+				PublicIPAssigned: req.PublicIPAssigned,
 			}
 			for j, one := range req.DataDisk {
 				createOpt.DataDisk[j] = typecvm.AzureDataDisk{

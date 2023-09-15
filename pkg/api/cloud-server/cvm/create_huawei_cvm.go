@@ -44,17 +44,18 @@ var (
 
 // HuaWeiCvmCreateReq ...
 type HuaWeiCvmCreateReq struct {
-	BkBizID               int64    `json:"bk_biz_id" validate:"omitempty"`
-	AccountID             string   `json:"account_id" validate:"required"`
-	Region                string   `json:"region" validate:"required"`
-	Zone                  string   `json:"zone" validate:"required"`
-	Name                  string   `json:"name" validate:"required,min=1,max=60"`
-	InstanceType          string   `json:"instance_type" validate:"required"`
-	CloudImageID          string   `json:"cloud_image_id" validate:"required"`
-	CloudVpcID            string   `json:"cloud_vpc_id" validate:"required"`
-	CloudSubnetID         string   `json:"cloud_subnet_id" validate:"required"`
-	PublicIPAssigned      *bool    `json:"public_ip_assigned" validate:"required"`
-	CloudSecurityGroupIDs []string `json:"cloud_security_group_ids" validate:"required,min=1"`
+	BkBizID               int64              `json:"bk_biz_id" validate:"omitempty"`
+	AccountID             string             `json:"account_id" validate:"required"`
+	Region                string             `json:"region" validate:"required"`
+	Zone                  string             `json:"zone" validate:"required"`
+	Name                  string             `json:"name" validate:"required,min=1,max=60"`
+	InstanceType          string             `json:"instance_type" validate:"required"`
+	CloudImageID          string             `json:"cloud_image_id" validate:"required"`
+	CloudVpcID            string             `json:"cloud_vpc_id" validate:"required"`
+	CloudSubnetID         string             `json:"cloud_subnet_id" validate:"required"`
+	PublicIPAssigned      bool               `json:"public_ip_assigned" validate:"omitempty"`
+	Eip                   *typecvm.HuaWeiEip `json:"eip" validate:"omitempty"`
+	CloudSecurityGroupIDs []string           `json:"cloud_security_group_ids" validate:"required,min=1"`
 
 	SystemDisk struct {
 		DiskType   typecvm.HuaWeiVolumeType `json:"disk_type" validate:"required"`
@@ -87,6 +88,12 @@ func (req *HuaWeiCvmCreateReq) Validate(bizRequired bool) error {
 
 	if bizRequired && req.BkBizID == 0 {
 		return errors.New("bk_biz_id is required")
+	}
+
+	if req.PublicIPAssigned {
+		if err := req.Eip.Validate(); err != nil {
+			return err
+		}
 	}
 
 	if req.RequiredCount > constant.BatchOperationMaxLimit {

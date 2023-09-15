@@ -290,14 +290,12 @@ func (a *Aws) CreateCvm(kt *kit.Kit, opt *typecvm.AwsCreateOption) (*poller.Base
 	}
 
 	req := &ec2.RunInstancesInput{
-		DryRun:           aws.Bool(opt.DryRun),
-		ClientToken:      opt.ClientToken,
-		ImageId:          aws.String(opt.CloudImageID),
-		InstanceType:     aws.String(opt.InstanceType),
-		MaxCount:         aws.Int64(opt.RequiredCount),
-		MinCount:         aws.Int64(opt.RequiredCount),
-		SecurityGroupIds: aws.StringSlice(opt.CloudSecurityGroupIDs),
-		SubnetId:         aws.String(opt.CloudSubnetID),
+		DryRun:       aws.Bool(opt.DryRun),
+		ClientToken:  opt.ClientToken,
+		ImageId:      aws.String(opt.CloudImageID),
+		InstanceType: aws.String(opt.InstanceType),
+		MaxCount:     aws.Int64(opt.RequiredCount),
+		MinCount:     aws.Int64(opt.RequiredCount),
 		TagSpecifications: []*ec2.TagSpecification{
 			{
 				ResourceType: aws.String("instance"),
@@ -315,13 +313,19 @@ func (a *Aws) CreateCvm(kt *kit.Kit, opt *typecvm.AwsCreateOption) (*poller.Base
 		},
 	}
 
+	// 如果弹性IP指定了子网，则外部不能设置子网
 	if opt.PublicIPAssigned {
 		req.NetworkInterfaces = []*ec2.InstanceNetworkInterfaceSpecification{
 			{
 				DeviceIndex:              converter.ValToPtr(int64(0)),
+				SubnetId:                 aws.String(opt.CloudSubnetID),
 				AssociatePublicIpAddress: aws.Bool(opt.PublicIPAssigned),
+				Groups:                   aws.StringSlice(opt.CloudSecurityGroupIDs),
 			},
 		}
+	} else {
+		req.SubnetId = aws.String(opt.CloudSubnetID)
+		req.SecurityGroupIds = aws.StringSlice(opt.CloudSecurityGroupIDs)
 	}
 
 	if len(opt.BlockDeviceMapping) != 0 {

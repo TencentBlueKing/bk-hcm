@@ -133,6 +133,8 @@ func (svc *cvmSvc) BatchCreateHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 		RootVolume:            req.RootVolume,
 		DataVolume:            req.DataVolume,
 		InstanceCharge:        req.InstanceCharge,
+		PublicIPAssigned:      req.PublicIPAssigned,
+		Eip:                   req.Eip,
 	}
 	result, err := huawei.CreateCvm(cts.Kit, createOpt)
 	if err != nil {

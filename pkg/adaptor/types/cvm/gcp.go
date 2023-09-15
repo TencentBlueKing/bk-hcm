@@ -130,6 +130,7 @@ type GcpCreateOption struct {
 	ImageProjectType GcpImageProjectType `json:"image_project_type" validate:"required"`
 	SystemDisk       *GcpOsDisk          `json:"system_disk" validate:"required"`
 	DataDisk         []GcpDataDisk       `json:"data_disk" validate:"omitempty"`
+	PublicIPAssigned bool                `json:"public_ip_assigned" validate:"omitempty"`
 }
 
 // Validate gcp cvm operation option.

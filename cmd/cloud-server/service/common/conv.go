@@ -75,8 +75,9 @@ func ConvTCloudCvmCreateReq(req *cscvm.TCloudCvmCreateReq) *hcproto.TCloudBatchC
 			DiskType:   req.SystemDisk.DiskType,
 			DiskSizeGB: &req.SystemDisk.DiskSizeGB,
 		},
-		DataDisk:         dataDisk,
-		PublicIPAssigned: req.PublicIPAssigned,
+		DataDisk:                dataDisk,
+		PublicIPAssigned:        req.PublicIPAssigned,
+		InternetMaxBandwidthOut: req.InternetMaxBandwidthOut,
 	}
 
 	return createReq
@@ -163,7 +164,8 @@ func ConvGcpCvmCreateReq(req *cscvm.GcpCvmCreateReq) *hcproto.GcpBatchCreateReq 
 			DiskType: req.SystemDisk.DiskType,
 			SizeGb:   req.SystemDisk.DiskSizeGB,
 		},
-		DataDisk: dataDisk,
+		DataDisk:         dataDisk,
+		PublicIPAssigned: req.PublicIPAssigned,
 	}
 
 	return createReq
@@ -207,8 +209,9 @@ func ConvAzureCvmCreateReq(req *cscvm.AzureCvmCreateReq) *hcproto.AzureBatchCrea
 			SizeGB: int32(req.SystemDisk.DiskSizeGB),
 			Type:   req.SystemDisk.DiskType,
 		},
-		DataDisk:      dataDisk,
-		RequiredCount: req.RequiredCount,
+		DataDisk:         dataDisk,
+		RequiredCount:    req.RequiredCount,
+		PublicIPAssigned: req.PublicIPAssigned,
 	}
 
 	return createReq
@@ -258,6 +261,8 @@ func ConvHuaWeiCvmCreateReq(req *cscvm.HuaWeiCvmCreateReq) *hcproto.HuaWeiBatchC
 			PeriodNum:    &periodNum,
 			IsAutoRenew:  req.AutoRenew,
 		},
+		PublicIPAssigned: req.PublicIPAssigned,
+		Eip:              req.Eip,
 	}
 
 	return createReq
@@ -353,8 +358,7 @@ func ConvAzureDiskCreateReq(req *cloudserver.AzureDiskCreateReq) *hcprotodisk.Az
 	}
 }
 
-
-// ConvHuaWeiVpcCreateReq conv vpc create req. 
+// ConvHuaWeiVpcCreateReq conv vpc create req.
 func ConvHuaWeiVpcCreateReq(req *csvpc.HuaWeiVpcCreateReq) *hcprotovpc.VpcCreateReq[hcprotovpc.HuaWeiVpcCreateExt] {
 	return &hcprotovpc.VpcCreateReq[hcprotovpc.HuaWeiVpcCreateExt]{
 		BaseVpcCreateReq: &hcprotovpc.BaseVpcCreateReq{
@@ -388,7 +392,7 @@ func ConvHuaWeiVpcCreateReq(req *csvpc.HuaWeiVpcCreateReq) *hcprotovpc.VpcCreate
 	}
 }
 
-// ConvGcpVpcCreateReq conv vpc create req. 
+// ConvGcpVpcCreateReq conv vpc create req.
 func ConvGcpVpcCreateReq(req *csvpc.GcpVpcCreateReq) *hcprotovpc.VpcCreateReq[hcprotovpc.GcpVpcCreateExt] {
 	return &hcprotovpc.VpcCreateReq[hcprotovpc.GcpVpcCreateExt]{
 		BaseVpcCreateReq: &hcprotovpc.BaseVpcCreateReq{
@@ -421,7 +425,7 @@ func ConvGcpVpcCreateReq(req *csvpc.GcpVpcCreateReq) *hcprotovpc.VpcCreateReq[hc
 	}
 }
 
-// ConvAzureVpcCreateReq conv vpc create req. 
+// ConvAzureVpcCreateReq conv vpc create req.
 func ConvAzureVpcCreateReq(req *csvpc.AzureVpcCreateReq) *hcprotovpc.VpcCreateReq[hcprotovpc.AzureVpcCreateExt] {
 
 	return &hcprotovpc.VpcCreateReq[hcprotovpc.AzureVpcCreateExt]{
@@ -455,7 +459,7 @@ func ConvAzureVpcCreateReq(req *csvpc.AzureVpcCreateReq) *hcprotovpc.VpcCreateRe
 	}
 }
 
-// ConvAwsVpcCreateReq conv vpc create req. 
+// ConvAwsVpcCreateReq conv vpc create req.
 func ConvAwsVpcCreateReq(req *csvpc.AwsVpcCreateReq) *hcprotovpc.VpcCreateReq[hcprotovpc.AwsVpcCreateExt] {
 	return &hcprotovpc.VpcCreateReq[hcprotovpc.AwsVpcCreateExt]{
 		BaseVpcCreateReq: &hcprotovpc.BaseVpcCreateReq{
@@ -475,7 +479,7 @@ func ConvAwsVpcCreateReq(req *csvpc.AwsVpcCreateReq) *hcprotovpc.VpcCreateReq[hc
 	}
 }
 
-// ConvTCloudVpcCreateReq conv vpc create req. 
+// ConvTCloudVpcCreateReq conv vpc create req.
 func ConvTCloudVpcCreateReq(req *csvpc.TCloudVpcCreateReq) *hcprotovpc.VpcCreateReq[hcprotovpc.TCloudVpcCreateExt] {
 	return &hcprotovpc.VpcCreateReq[hcprotovpc.TCloudVpcCreateExt]{
 		BaseVpcCreateReq: &hcprotovpc.BaseVpcCreateReq{
