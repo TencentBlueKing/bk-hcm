@@ -24,7 +24,6 @@ import (
 
 	"hcm/cmd/hc-service/logics/res-sync/common"
 	adcore "hcm/pkg/adaptor/types/core"
-	typecore "hcm/pkg/adaptor/types/core"
 	typesroutetable "hcm/pkg/adaptor/types/route-table"
 	"hcm/pkg/api/core"
 	cloudcoreroutetable "hcm/pkg/api/core/cloud/route-table"
@@ -43,7 +42,6 @@ import (
 
 // SyncRouteOption ...
 type SyncRouteOption struct {
-	Zone string
 }
 
 // Validate ...
@@ -57,7 +55,7 @@ func (cli *client) Route(kt *kit.Kit, params *SyncBaseParams, opt *SyncRouteOpti
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	routeFromCloud, err := cli.listRouteFromCloud(kt, params, opt)
+	routeFromCloud, err := cli.listRouteFromCloud(kt, params)
 	if err != nil {
 		return nil, err
 	}
@@ -75,13 +73,13 @@ func (cli *client) Route(kt *kit.Kit, params *SyncBaseParams, opt *SyncRouteOpti
 		routeFromCloud, routeFromDB, isRouteChange)
 
 	if len(delCloudIDs) > 0 {
-		if err := cli.deleteRoute(kt, params.AccountID, opt.Zone, delCloudIDs, routeFromDB); err != nil {
+		if err := cli.deleteRoute(kt, params.AccountID, delCloudIDs, routeFromDB); err != nil {
 			return nil, err
 		}
 	}
 
 	if len(addSlice) > 0 {
-		if err = cli.createRoute(kt, params.AccountID, opt.Zone, addSlice); err != nil {
+		if err = cli.createRoute(kt, params.AccountID, addSlice); err != nil {
 			return nil, err
 		}
 	}
@@ -95,7 +93,7 @@ func (cli *client) Route(kt *kit.Kit, params *SyncBaseParams, opt *SyncRouteOpti
 	return new(SyncResult), nil
 }
 
-func (cli *client) createRoute(kt *kit.Kit, accountID string, zone string,
+func (cli *client) createRoute(kt *kit.Kit, accountID string,
 	addSlice []typesroutetable.GcpRoute) error {
 
 	if len(addSlice) <= 0 {
@@ -156,7 +154,7 @@ func (cli *client) updateRoute(kt *kit.Kit, accountID string,
 	return nil
 }
 
-func (cli *client) deleteRoute(kt *kit.Kit, accountID string, zone string, delCloudIDs []string,
+func (cli *client) deleteRoute(kt *kit.Kit, accountID string, delCloudIDs []string,
 	routeFromDB []cloudcoreroutetable.GcpRoute) error {
 
 	if len(delCloudIDs) <= 0 {
@@ -167,7 +165,7 @@ func (cli *client) deleteRoute(kt *kit.Kit, accountID string, zone string, delCl
 		AccountID: accountID,
 		CloudIDs:  delCloudIDs,
 	}
-	delRouteFromCloud, err := cli.listRouteFromCloud(kt, checkParams, &SyncRouteOption{Zone: zone})
+	delRouteFromCloud, err := cli.listRouteFromCloud(kt, checkParams)
 	if err != nil {
 		return err
 	}
@@ -178,24 +176,24 @@ func (cli *client) deleteRoute(kt *kit.Kit, accountID string, zone string, delCl
 		return fmt.Errorf("validate route not exist failed, before delete")
 	}
 
-	routeFromDBMap := cli.converterRouteSliceToMap(routeFromDB)
+	tableIDMap := cli.converterRouteSliceToMap(routeFromDB)
 
 	for _, id := range delCloudIDs {
-		if _, exsit := routeFromDBMap[id]; !exsit {
-			return fmt.Errorf("delete route not find in db")
+		if _, exsit := tableIDMap[id]; !exsit {
+			return fmt.Errorf("delete route: %s not find in db", id)
 		}
 
 		deleteReq := &dataservice.BatchDeleteReq{
 			Filter: tools.EqualExpression("cloud_id", id),
 		}
-		if err = cli.dbCli.Gcp.RouteTable.BatchDeleteRoute(kt.Ctx, kt.Header(), routeFromDBMap[id], deleteReq); err != nil {
+		if err = cli.dbCli.Gcp.RouteTable.BatchDeleteRoute(kt.Ctx, kt.Header(), tableIDMap[id], deleteReq); err != nil {
 			logs.Errorf("[%s] request dataservice to batch delete route failed, err: %v, rid: %s", enumor.Gcp,
 				err, kt.Rid)
 			return err
 		}
 	}
 
-	logs.Infof("[%s] sync route to delete disk success, accountID: %s, count: %d, rid: %s", enumor.Gcp,
+	logs.Infof("[%s] sync route to delete route success, accountID: %s, count: %d, rid: %s", enumor.Gcp,
 		accountID, len(delCloudIDs), kt.Rid)
 
 	return nil
@@ -204,21 +202,19 @@ func (cli *client) deleteRoute(kt *kit.Kit, accountID string, zone string, delCl
 func (cli *client) converterRouteSliceToMap(routeFromDB []cloudcoreroutetable.GcpRoute) map[string]string {
 	m := make(map[string]string)
 	for _, one := range routeFromDB {
-		m[one.CloudID] = one.ID
+		m[one.CloudID] = one.RouteTableID
 	}
 
 	return m
 }
 
-func (cli *client) listRouteFromCloud(kt *kit.Kit, params *SyncBaseParams,
-	option *SyncRouteOption) ([]typesroutetable.GcpRoute, error) {
+func (cli *client) listRouteFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]typesroutetable.GcpRoute, error) {
 
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt := &typecore.GcpListOption{
-		Zone:     option.Zone,
+	opt := &typesroutetable.GcpListOption{
 		CloudIDs: params.CloudIDs,
 		Page: &adcore.GcpPage{
 			PageSize: adcore.GcpQueryLimit,
@@ -247,6 +243,7 @@ func (cli *client) listRouteFromDB(kt *kit.Kit, params *SyncBaseParams, option *
 				Op: filter.And,
 				Rules: []filter.RuleFactory{
 					&filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: params.CloudIDs},
+					&filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: params.CloudIDs},
 				},
 			},
 			Page: core.NewDefaultBasePage(),
@@ -262,7 +259,7 @@ func (cli *client) listRouteFromDB(kt *kit.Kit, params *SyncBaseParams, option *
 	return result.Details, nil
 }
 
-func (cli *client) RemoveRouteDeleteFromCloud(kt *kit.Kit, accountID string, zone string) error {
+func (cli *client) RemoveRouteDeleteFromCloud(kt *kit.Kit, accountID string) error {
 	req := &routetable.GcpRouteListReq{
 		ListReq: &core.ListReq{
 			Filter: tools.AllExpression(),
@@ -293,7 +290,7 @@ func (cli *client) RemoveRouteDeleteFromCloud(kt *kit.Kit, accountID string, zon
 			AccountID: accountID,
 			CloudIDs:  cloudIDs,
 		}
-		resultFromCloud, err := cli.listRouteFromCloud(kt, params, &SyncRouteOption{Zone: zone})
+		resultFromCloud, err := cli.listRouteFromCloud(kt, params)
 		if err != nil {
 			return err
 		}
@@ -306,7 +303,7 @@ func (cli *client) RemoveRouteDeleteFromCloud(kt *kit.Kit, accountID string, zon
 			}
 
 			delIDs := converter.MapKeyToStringSlice(cloudIDMap)
-			if err := cli.deleteRoute(kt, accountID, zone, delIDs, resultFromDB.Details); err != nil {
+			if err := cli.deleteRoute(kt, accountID, delIDs, resultFromDB.Details); err != nil {
 				return err
 			}
 		}

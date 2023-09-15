@@ -22,7 +22,6 @@ package gcp
 import (
 	"strconv"
 
-	"hcm/pkg/adaptor/types/core"
 	routetable "hcm/pkg/adaptor/types/route-table"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -62,7 +61,7 @@ func (g *Gcp) CountRoute(kt *kit.Kit) (int32, error) {
 
 // ListRoute list route.
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/routes/list
-func (g *Gcp) ListRoute(kt *kit.Kit, opt *core.GcpListOption) (*routetable.GcpRouteListResult, error) {
+func (g *Gcp) ListRoute(kt *kit.Kit, opt *routetable.GcpListOption) (*routetable.GcpRouteListResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
