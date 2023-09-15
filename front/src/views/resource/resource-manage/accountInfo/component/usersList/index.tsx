@@ -1,6 +1,7 @@
-import { useTable } from '@/hooks/useTable/useTable';
 import { Button } from 'bkui-vue';
 import { defineComponent } from 'vue';
+import './index.scss';
+import { useTable } from '@/hooks/useTable/useTable';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export default defineComponent({
@@ -48,10 +49,6 @@ export default defineComponent({
         name: '账号 ID',
         id: 'id',
       },
-      {
-        name: '自定义名称',
-        id: 'name',
-      },
     ];
     const {
       CommonTable,
@@ -60,8 +57,10 @@ export default defineComponent({
       searchData,
       searchUrl: `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/sub_accounts/list`,
     });
-    return () => <div>购买记录
-      <CommonTable/>
-    </div>;
+    return () => (
+      <div>
+        <CommonTable/>
+      </div>
+    );
   },
 });
