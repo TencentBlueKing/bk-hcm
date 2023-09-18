@@ -104,7 +104,11 @@ log:
   verbosity: 0
 
  async:
-    # consumerIntervalSecond consumer interval, unit: second.
-    consumerIntervalSecond: 10
-    # consumerNum consumer's num.
-    consumerNum: 2
+    # normalIntervalSec 异步任务框架定期执行间隔时间单位秒
+    normalIntervalSec: 10
+    # executorWorkerCnt 异步任务框架启动的任务执行器数量
+    executorWorkerCnt: 10
+    # parserWorkersCnt 异步任务框架启动的任务流解析器数量
+    parserWorkersCnt: 5
+    #flowScheduleTimeout 任务流调度的超时时间单位秒
+    flowScheduleTimeout: 15

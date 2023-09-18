@@ -17,15 +17,9 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package constant
+package closer
 
-const (
-	// AsyncUserKey async UserKey
-	AsyncUserKey = "hcm-backend-async"
-
-	// AsyncAppCodeKey async AppCodeKey
-	AsyncAppCodeKey = "hcm"
-
-	// DefaultJsonValue async default json
-	DefaultJsonValue = "{}"
-)
+// Closer 定义所有组件的关闭接口
+type Closer interface {
+	Close()
+}

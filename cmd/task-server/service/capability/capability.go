@@ -20,7 +20,6 @@
 package capability
 
 import (
-	"hcm/cmd/task-server/logics/async/backends/iface"
 	"hcm/cmd/task-server/logics/async/producer"
 	"hcm/pkg/client"
 
@@ -31,6 +30,5 @@ import (
 type Capability struct {
 	WebService *restful.WebService
 	ApiClient  *client.ClientSet
-	Backend    iface.Backend
 	Producer   *producer.Producer
 }

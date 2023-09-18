@@ -27,18 +27,17 @@ import (
 	"hcm/cmd/task-server/logics/async/backends/mysql"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao"
-	"hcm/pkg/kit"
 )
 
-// BackendFactory 根据类型返回不同的backend接口实现
-func BackendFactory(kt *kit.Kit, typ enumor.BackendType, client interface{}) (iface.Backend, error) {
+// BackendFactory 根据类型返回不同的backend接口的实现
+func BackendFactory(typ enumor.BackendType, client interface{}) (iface.Backend, error) {
 	switch typ {
 	case enumor.BackendMysql:
 		dao, ok := client.(dao.Set)
 		if !ok {
 			return nil, errors.New("client is not mysql dao set")
 		}
-		return mysql.NewBackend(kt, dao), nil
+		return mysql.NewBackend(dao), nil
 	default:
 		return nil, fmt.Errorf("unsupported backend type: %s", typ)
 	}

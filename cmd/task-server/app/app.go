@@ -50,7 +50,7 @@ func Run(opt *options.Option) error {
 	}
 
 	shutdown.RegisterFirstShutdown(ds.finalizer)
-	shutdown.WaitShutdown(20)
+	shutdown.WaitShutdown(60)
 	return nil
 }
 

@@ -20,6 +20,7 @@
 package actions
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -32,37 +33,55 @@ func init() {
 	task.ActionManagerInstance.RegisterAction(NewCreateSG())
 }
 
+// CreateSG ...
 type CreateSG struct {
-	ShareData map[string]interface{}
+	ShareData map[string]string
 }
 
+// NewCreateSG ...
 func NewCreateSG() *CreateSG {
 	return &CreateSG{
-		ShareData: make(map[string]interface{}),
+		ShareData: make(map[string]string),
 	}
 }
 
+// Name ...
 func (c *CreateSG) Name() string {
 	return string(enumor.TestCreateSG)
 }
 
-func (c *CreateSG) RunBefore(kt *kit.Kit, params interface{}) error {
+// NewParameter ...
+func (c *CreateSG) NewParameter(parameter interface{}) interface{} {
 	return nil
 }
 
-func (c *CreateSG) Run(kt *kit.Kit, params interface{}) error {
+// GetShareData ...
+func (c *CreateSG) GetShareData() map[string]string {
+	return c.ShareData
+}
+
+// RunBefore ...
+func (c *CreateSG) RunBefore(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
+	return nil
+}
+
+// Run ...
+func (c *CreateSG) Run(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	fmt.Println("run create sg", time.Now())
 	return nil
 }
 
-func (c *CreateSG) RunBeforeSuccess(kt *kit.Kit, params interface{}) error {
+// RunBeforeSuccess ...
+func (c *CreateSG) RunBeforeSuccess(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }
 
-func (c *CreateSG) RunBeforeFailed(kt *kit.Kit, params interface{}) error {
+// RunBeforeFailed ...
+func (c *CreateSG) RunBeforeFailed(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }
 
-func (c *CreateSG) RetryBefore(kt *kit.Kit, params interface{}) error {
+// RetryBefore ...
+func (c *CreateSG) RetryBefore(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }

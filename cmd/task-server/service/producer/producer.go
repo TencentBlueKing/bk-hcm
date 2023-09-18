@@ -51,6 +51,8 @@ type producer struct {
 
 // AddAsyncTplFlow add async flow
 func (p producer) AddAsyncTplFlow(cts *rest.Contexts) (interface{}, error) {
+	p.pro.GetBackend().SetBackendKit(cts.Kit)
+
 	// 1. 解析请求体
 	req := new(taskserver.AddFlowReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -67,6 +69,8 @@ func (p producer) AddAsyncTplFlow(cts *rest.Contexts) (interface{}, error) {
 
 // ListAsyncFlow list async flow
 func (p producer) ListAsyncFlow(cts *rest.Contexts) (interface{}, error) {
+	p.pro.GetBackend().SetBackendKit(cts.Kit)
+
 	// 1. 解析请求体
 	req := new(taskserver.FlowListReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -83,6 +87,8 @@ func (p producer) ListAsyncFlow(cts *rest.Contexts) (interface{}, error) {
 
 // GetAsyncFlow get async flow
 func (p producer) GetAsyncFlow(cts *rest.Contexts) (interface{}, error) {
+	p.pro.GetBackend().SetBackendKit(cts.Kit)
+
 	// 1. 解析url获取flow_id
 	flowID := cts.PathParameter("flow_id").String()
 

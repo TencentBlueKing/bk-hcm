@@ -20,10 +20,10 @@
 package task
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"time"
 
 	"hcm/cmd/task-server/logics/async/backends/iface"
 	"hcm/pkg/api/core/task"
@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/retry"
 )
 
@@ -57,10 +58,12 @@ type Task struct {
 	State enumor.TaskState `json:"state" validate:"required"`
 	// 任务描述信息
 	Memo string `json:"memo" validate:"omitempty"`
+	// 任务间的共享数据
+	ShareData map[string]string `json:"share_data", validate:"omitempty"`
 	// task kit
 	kt *kit.Kit
-	// backend
-	backend iface.Backend
+	// task ctx with timeout
+	ctxWithTimeOut context.Context
 }
 
 // Validate Task.
@@ -73,7 +76,19 @@ func (t *Task) Validate() error {
 	return validator.Validate.Struct(t)
 }
 
-func (t *Task) DoTask(kt *kit.Kit, backend iface.Backend) error {
+// SetKit set kit
+func (t *Task) SetKit(kt *kit.Kit) {
+	t.kt = kt
+}
+
+// SetCtxWithTimeOut set ctx tith time out
+func (t *Task) SetCtxWithTimeOut(ctxWithTimeOut context.Context) {
+	t.ctxWithTimeOut = ctxWithTimeOut
+}
+
+// TODO: 任务超时控制
+// DoTask 任务执行
+func (t *Task) DoTask() error {
 
 	if err := t.Validate(); err != nil {
 		return err
@@ -89,51 +104,28 @@ func (t *Task) DoTask(kt *kit.Kit, backend iface.Backend) error {
 		return fmt.Errorf("action: %s can not find", t.ActionName)
 	}
 
-	t.kt = kt
-	t.backend = backend
-
 	if t.State == enumor.TaskBeforeFailed {
 		return t.doRunBeforeFailed(action)
 	}
 
-	doneTaskChan := make(chan struct{}, 1)
-	taskRetChan := make(chan error, 1)
-
-	go func() {
-		defer func() {
-			doneTaskChan <- struct{}{}
-		}()
-
-		switch t.State {
-		case enumor.TaskPending:
-			if err := t.doRunBefore(action); err != nil {
-				taskRetChan <- err
-				return
-			}
-		case enumor.TaskRunning:
-			if err := t.doRun(action); err != nil {
-				taskRetChan <- err
-				return
-			}
-		case enumor.TaskBeforeSuccess:
-			if err := t.doRunBeforeSuccess(action); err != nil {
-				taskRetChan <- err
-				return
-			}
+	var runError error
+	runError = nil
+	switch t.State {
+	case enumor.TaskPending:
+		if err := t.doRunBefore(action); err != nil {
+			runError = err
 		}
-
-		taskRetChan <- nil
-	}()
-
-	select {
-	case <-doneTaskChan:
-		err := <-taskRetChan
-		if err != nil {
-			if err := t.doRetry(action); err != nil {
-				return err
-			}
+	case enumor.TaskRunning:
+		if err := t.doRun(action); err != nil {
+			runError = err
 		}
-	case <-time.After(time.Duration(t.TimeoutSecs) * time.Second):
+	case enumor.TaskBeforeSuccess:
+		if err := t.doRunBeforeSuccess(action); err != nil {
+			runError = err
+		}
+	}
+
+	if runError != nil {
 		if err := t.doRetry(action); err != nil {
 			return err
 		}
@@ -143,99 +135,135 @@ func (t *Task) DoTask(kt *kit.Kit, backend iface.Backend) error {
 }
 
 func (t *Task) doRunBefore(action Action) error {
-	logs.V(3).Infof("[async] do run before start with rid %s", t.kt.Rid)
+	logs.V(3).Infof("[async] [module-action] do run before start with %s", t.kt.Rid)
 
-	err := action.RunBefore(t.kt, t.Params)
+	err := action.RunBefore(t.kt, t.ctxWithTimeOut, action.NewParameter(t.Params))
 	if err != nil {
-		logs.Errorf("[async] run before func failed, err: %v, rid: %s", err, t.kt.Rid)
+		logs.Errorf("[async] [module-action] run before func failed, err: %v, %s", err, t.kt.Rid)
 		return err
 	}
 
 	//执行成功设置任务状态为TaskRunning
-	if err := t.ChangeTaskState(enumor.TaskRunning, constant.AsyncDefaultJson); err != nil {
-		logs.Errorf("[async] change task state failed, err: %v, rid: %s", err, t.kt.Rid)
+	shareData, err := converter.MapToJsonStr(action.GetShareData())
+	if err != nil {
+		logs.Errorf("[async] [module-action] get task shareData failed, err: %v, %s", err, t.kt.Rid)
+		return err
+	}
+	if err := t.ChangeTaskState(&iface.TaskChange{
+		State:     enumor.TaskRunning,
+		Reason:    constant.DefaultJsonValue,
+		ShareData: shareData,
+	}); err != nil {
+		logs.Errorf("[async] [module-action] change task state failed, err: %v, %s", err, t.kt.Rid)
 		return err
 	}
 
 	// 执行Run
 	if err := t.doRun(action); err != nil {
-		logs.Errorf("[async] do run func failed, err: %v, rid: %s", err, t.kt.Rid)
+		logs.Errorf("[async] [module-action] do run func failed, err: %v, %s", err, t.kt.Rid)
 		return err
 	}
 
-	logs.V(3).Infof("[async] do run before end with rid %s", t.kt.Rid)
+	logs.V(3).Infof("[async] [module-action] do run before end with %s", t.kt.Rid)
 	return nil
 }
 
 func (t *Task) doRun(action Action) error {
-	logs.V(3).Infof("[async] do run start with rid %s", t.kt.Rid)
+	logs.V(3).Infof("[async] [module-action] do run start with %s", t.kt.Rid)
 
-	err := action.Run(t.kt, t.Params)
+	err := action.Run(t.kt, t.ctxWithTimeOut, action.NewParameter(t.Params))
 	if err != nil {
-		logs.Errorf("[async] run func failed, err: %v, rid: %s", err, t.kt.Rid)
+		logs.Errorf("[async] [module-action] run func failed, err: %v, %s", err, t.kt.Rid)
 		return err
 	}
 
 	// 执行成功设置任务状态为TaskBeforeSuccess
-	if err := t.ChangeTaskState(enumor.TaskBeforeSuccess, constant.AsyncDefaultJson); err != nil {
-		logs.Errorf("[async] change task state failed, err: %v, rid: %s", err, t.kt.Rid)
+	shareData, err := converter.MapToJsonStr(action.GetShareData())
+	if err != nil {
+		logs.Errorf("[async] [module-action] get task shareData failed, err: %v, %s", err, t.kt.Rid)
+		return err
+	}
+	if err := t.ChangeTaskState(&iface.TaskChange{
+		State:     enumor.TaskBeforeSuccess,
+		Reason:    constant.DefaultJsonValue,
+		ShareData: shareData,
+	}); err != nil {
+		logs.Errorf("[async] [module-action] change task state failed, err: %v, %s", err, t.kt.Rid)
 		return err
 	}
 
 	// 执行RunBeforeSuccess
 	if err := t.doRunBeforeSuccess(action); err != nil {
-		logs.Errorf("[async] do run before success func failed, err: %v, rid: %s", err, t.kt.Rid)
+		logs.Errorf("[async] [module-action] do run before success func failed, err: %v, %s", err, t.kt.Rid)
 		return err
 	}
 
-	logs.V(3).Infof("[async] do run end with rid %s", t.kt.Rid)
+	logs.V(3).Infof("[async] [module-action] do run end with %s", t.kt.Rid)
 	return nil
 }
 
 func (t *Task) doRunBeforeSuccess(action Action) error {
-	logs.V(3).Infof("[async] do run before success start with rid %s", t.kt.Rid)
+	logs.V(3).Infof("[async] [module-action] do run before success start with %s", t.kt.Rid)
 
-	err := action.RunBeforeSuccess(t.kt, t.Params)
+	err := action.RunBeforeSuccess(t.kt, t.ctxWithTimeOut, action.NewParameter(t.Params))
 	if err != nil {
-		logs.Errorf("[async] run before success func failed, err: %v, rid: %s", err, t.kt.Rid)
+		logs.Errorf("[async] [module-action] run before success func failed, err: %v, %s", err, t.kt.Rid)
 		return err
 	}
 
 	// 执行成功设置任务状态为TaskSuccess
-	if err := t.ChangeTaskState(enumor.TaskSuccess, constant.AsyncDefaultJson); err != nil {
-		logs.Errorf("[async] change task state failed, err: %v, rid: %s", err, t.kt.Rid)
+	shareData, err := converter.MapToJsonStr(action.GetShareData())
+	if err != nil {
+		logs.Errorf("[async] [module-action] get task shareData failed, err: %v, %s", err, t.kt.Rid)
+		return err
+	}
+	if err := t.ChangeTaskState(&iface.TaskChange{
+		State:     enumor.TaskSuccess,
+		Reason:    constant.DefaultJsonValue,
+		ShareData: shareData,
+	}); err != nil {
+		logs.Errorf("[async] [module-action] change task state failed, err: %v, %s", err, t.kt.Rid)
 		return err
 	}
 
-	logs.V(3).Infof("[async] do run before success end with rid %s", t.kt.Rid)
+	logs.V(3).Infof("[async] [module-action] do run before success end with %s", t.kt.Rid)
 	return nil
 }
 
 func (t *Task) doRunBeforeFailed(action Action) error {
-	logs.V(3).Infof("[async] do run before failed start with rid %s", t.kt.Rid)
+	logs.V(3).Infof("[async] [module-action] do run before failed start with %s", t.kt.Rid)
 
-	err := action.RunBeforeFailed(t.kt, t.Params)
+	err := action.RunBeforeFailed(t.kt, t.ctxWithTimeOut, action.NewParameter(t.Params))
 	if err != nil {
-		logs.Errorf("[async] run before failed func failed, err: %v, rid: %s", err, t.kt.Rid)
+		logs.Errorf("[async] [module-action] run before failed func failed, err: %v, %s", err, t.kt.Rid)
 		return err
 	}
 
 	// 执行成功设置任务状态为TaskFailed
-	if err := t.ChangeTaskState(enumor.TaskFailed, err.Error()); err != nil {
-		logs.Errorf("[async] change task state failed, err: %v, rid: %s", err, t.kt.Rid)
+	shareData, err := converter.MapToJsonStr(action.GetShareData())
+	if err != nil {
+		logs.Errorf("[async] [module-action] get task shareData failed, err: %v, %s", err, t.kt.Rid)
+		return err
+	}
+	if err := t.ChangeTaskState(&iface.TaskChange{
+		State:     enumor.TaskFailed,
+		Reason:    err.Error(),
+		ShareData: shareData,
+	}); err != nil {
+		logs.Errorf("[async] [module-action] change task state failed, err: %v, %s", err, t.kt.Rid)
 		return err
 	}
 
-	logs.V(3).Infof("[async] do run before failed end with rid %s", t.kt.Rid)
+	logs.V(3).Infof("[async] [module-action] do run before failed end with %s", t.kt.Rid)
 	return nil
 }
 
 func (t *Task) doRetryBefore(action Action) error {
-	logs.V(3).Infof("[async] do run retry before start with rid %s", t.kt.Rid)
+	logs.V(3).Infof("[async] [module-action] do run retry before start with %s", t.kt.Rid)
 
-	err := action.RetryBefore(t.kt, t.Params)
+	err := action.RetryBefore(t.kt, t.ctxWithTimeOut, action.NewParameter(t.Params))
 	if err != nil {
-		logs.Errorf("[async] retry before func failed, err: %v, rid: %s", err, t.kt.Rid)
+		logs.Errorf("[async] [module-action] retry before func failed, err: %v, %s", err, t.kt.Rid)
 		return err
 	}
 
@@ -243,12 +271,21 @@ func (t *Task) doRetryBefore(action Action) error {
 	t.RetryCount = t.RetryCount - 1
 
 	// 执行成功设置任务状态为TaskPending
-	if err := t.ChangeTaskState(enumor.TaskPending, constant.AsyncDefaultJson); err != nil {
-		logs.Errorf("[async] change task state failed, err: %v, rid: %s", err, t.kt.Rid)
+	shareData, err := converter.MapToJsonStr(action.GetShareData())
+	if err != nil {
+		logs.Errorf("[async] [module-action] get task shareData failed, err: %v, %s", err, t.kt.Rid)
+		return err
+	}
+	if err := t.ChangeTaskState(&iface.TaskChange{
+		State:     enumor.TaskPending,
+		Reason:    constant.DefaultJsonValue,
+		ShareData: shareData,
+	}); err != nil {
+		logs.Errorf("[async] [module-action] change task state failed, err: %v, %s", err, t.kt.Rid)
 		return err
 	}
 
-	logs.V(3).Infof("[async] do run retry before end with rid %s", t.kt.Rid)
+	logs.V(3).Infof("[async] [module-action] do run retry before end with %s", t.kt.Rid)
 	return nil
 }
 
@@ -261,10 +298,10 @@ func (t *Task) doRetry(action Action) error {
 }
 
 // ChangeTaskState change task state
-func (t *Task) ChangeTaskState(state enumor.TaskState, reason string) error {
+func (t *Task) ChangeTaskState(taskChange *iface.TaskChange) error {
 	// 校验状态值
-	if err := state.ValidateBeforeState(t.State); err != nil {
-		logs.Errorf("[async] task validate failed, err: %v, rid: %s", err, t.kt.Rid)
+	if err := taskChange.State.ValidateBeforeState(t.State); err != nil {
+		logs.Errorf("[async] [module-action] task validate failed, err: %v, %s", err, t.kt.Rid)
 		return err
 	}
 
@@ -274,15 +311,15 @@ func (t *Task) ChangeTaskState(state enumor.TaskState, reason string) error {
 	var lastError error
 	lastError = nil
 	for r.RetryCount() < maxRetryCount {
-		if err := t.backend.SetTaskStateWithReason(t.ID, state, reason); err != nil {
-			logs.Errorf("[async] set task state with reason failed times %d, err: %v, rid: %s",
+		if err := iface.GetBackend().SetTaskChange(t.ID, taskChange); err != nil {
+			logs.Errorf("[async] [module-action] set task state with reason failed times %d, err: %v, %s",
 				r.RetryCount(), err, t.kt.Rid)
 			lastError = err
 			r.Sleep()
 		}
 
 		if lastError == nil {
-			t.State = state
+			t.State = taskChange.State
 			break
 		}
 	}
@@ -298,6 +335,11 @@ func ConvTaskResultToTask(taskResult []task.AsyncFlowTask) []Task {
 
 	tasks := make([]Task, 0, len(taskResult))
 	for _, one := range taskResult {
+		ShareData, err := converter.JsonStrToMap(string(one.ShareData))
+		if err != nil {
+			continue
+		}
+
 		task := Task{
 			ID:          one.ID,
 			FlowID:      one.FlowID,
@@ -309,6 +351,7 @@ func ConvTaskResultToTask(taskResult []task.AsyncFlowTask) []Task {
 			DependOn:    one.DependOn,
 			State:       one.State,
 			Memo:        one.Memo,
+			ShareData:   ShareData,
 		}
 		tasks = append(tasks, task)
 	}

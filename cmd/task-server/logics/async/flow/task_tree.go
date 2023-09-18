@@ -147,6 +147,18 @@ func (t *TaskNode) ComputeStatus() (state enumor.FlowState) {
 	return
 }
 
+// GetExecutableTaskIds get executable task nodes
+func (t *TaskNode) GetExecutableTaskNodes() (executables []*TaskNode) {
+	walkNode(t, func(node *TaskNode) bool {
+		if node.Executable() {
+			executables = append(executables, node)
+		}
+		return true
+	})
+
+	return
+}
+
 // GetNextTaskIds get next task nodes
 func (t *TaskNode) GetNextTaskNodes() (executable []*TaskNode, find bool) {
 	walkNode(t, func(node *TaskNode) bool {

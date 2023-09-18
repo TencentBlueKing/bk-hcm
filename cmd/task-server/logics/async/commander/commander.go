@@ -17,15 +17,28 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package constant
+package commander
 
-const (
-	// AsyncUserKey async UserKey
-	AsyncUserKey = "hcm-backend-async"
+// AsyncCommander ...
+type AsyncCommander struct {
+}
 
-	// AsyncAppCodeKey async AppCodeKey
-	AsyncAppCodeKey = "hcm"
+// RunFlow 控制执行多个任务流
+func (ac *AsyncCommander) RunFlows(flowIDs []string) error {
+	return nil
+}
 
-	// DefaultJsonValue async default json
-	DefaultJsonValue = "{}"
-)
+// RetryFlow 控制重试多个任务流
+func (ac *AsyncCommander) RetryFlows(flowIDs []string) error {
+	return nil
+}
+
+// RetryTask 控制重试多个任务
+func (ac *AsyncCommander) RetryTasks(taskIDs []string) error {
+	return nil
+}
+
+// CancelTask 控制取消多个任务
+func (ac *AsyncCommander) CancelTasks(taskIDs []string) error {
+	return nil
+}
