@@ -17,22 +17,23 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package producer 生产者相关接口
 package producer
 
 import (
-	tsproducer "hcm/cmd/task-server/logics/async/producer"
 	"hcm/cmd/task-server/service/capability"
 	taskserver "hcm/pkg/api/task-server"
+	"hcm/pkg/async/producer"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
 
-// InitAsyncService initial the async service
-func InitAsyncService(cap *capability.Capability) {
-	svc := &producer{
+// Init initial the async service
+func Init(cap *capability.Capability) {
+	svc := &service{
 		cs:  cap.ApiClient,
-		pro: cap.Producer,
+		pro: cap.Async.GetProducer(),
 	}
 
 	h := rest.NewHandler()
@@ -44,14 +45,13 @@ func InitAsyncService(cap *capability.Capability) {
 	h.Load(cap.WebService)
 }
 
-type producer struct {
+type service struct {
 	cs  *client.ClientSet
-	pro *tsproducer.Producer
+	pro producer.Producer
 }
 
 // AddAsyncTplFlow add async flow
-func (p producer) AddAsyncTplFlow(cts *rest.Contexts) (interface{}, error) {
-	p.pro.GetBackend().SetBackendKit(cts.Kit)
+func (p service) AddAsyncTplFlow(cts *rest.Contexts) (interface{}, error) {
 
 	// 1. 解析请求体
 	req := new(taskserver.AddFlowReq)
@@ -68,8 +68,7 @@ func (p producer) AddAsyncTplFlow(cts *rest.Contexts) (interface{}, error) {
 }
 
 // ListAsyncFlow list async flow
-func (p producer) ListAsyncFlow(cts *rest.Contexts) (interface{}, error) {
-	p.pro.GetBackend().SetBackendKit(cts.Kit)
+func (p service) ListAsyncFlow(cts *rest.Contexts) (interface{}, error) {
 
 	// 1. 解析请求体
 	req := new(taskserver.FlowListReq)
@@ -86,9 +85,7 @@ func (p producer) ListAsyncFlow(cts *rest.Contexts) (interface{}, error) {
 }
 
 // GetAsyncFlow get async flow
-func (p producer) GetAsyncFlow(cts *rest.Contexts) (interface{}, error) {
-	p.pro.GetBackend().SetBackendKit(cts.Kit)
-
+func (p service) GetAsyncFlow(cts *rest.Contexts) (interface{}, error) {
 	// 1. 解析url获取flow_id
 	flowID := cts.PathParameter("flow_id").String()
 

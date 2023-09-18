@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package service ...
 package service
 
 import (
@@ -27,21 +28,20 @@ import (
 	"strconv"
 	"time"
 
-	"hcm/cmd/task-server/logics/async"
-	"hcm/cmd/task-server/logics/async/backends"
-	"hcm/cmd/task-server/logics/async/leader"
-	tsproducer "hcm/cmd/task-server/logics/async/producer"
-	_ "hcm/cmd/task-server/logics/async/task/actions/test"
 	"hcm/cmd/task-server/service/capability"
 	"hcm/cmd/task-server/service/producer"
+	"hcm/pkg/async"
+	"hcm/pkg/async/backend"
+	"hcm/pkg/async/consumer"
+	"hcm/pkg/async/consumer/leader"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/handler"
-	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/metrics"
 	"hcm/pkg/rest"
 	restcli "hcm/pkg/rest/client"
 	"hcm/pkg/runtime/shutdown"
@@ -56,6 +56,7 @@ type Service struct {
 	client *client.ClientSet
 	dao    dao.Set
 	serve  *http.Server
+	async  async.Async
 }
 
 // NewService create a service instance.
@@ -86,26 +87,53 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 		return nil, err
 	}
 
-	// 创建async框架使用的backend
-	kt := kit.NewAsyncKit()
-	backend, err := backends.BackendFactory(enumor.BackendMysql, dao)
+	async, err := createAndStartAsync(sd, dao)
 	if err != nil {
 		return nil, err
 	}
-	backend.SetBackendKit(kt)
-
-	// async框架启动
-	go async.Start(&async.InitialOption{
-		Leader:  leader.NewLeader(sd),
-		Backend: backend,
-	})
 
 	svr := &Service{
 		client: apiClientSet,
 		dao:    dao,
+		async:  async,
 	}
 
 	return svr, nil
+}
+
+func createAndStartAsync(sd serviced.ServiceDiscover, dao dao.Set) (async.Async, error) {
+	// 创建async框架使用的backend
+	bd, err := backend.Factory(enumor.BackendMysql, dao)
+	if err != nil {
+		return nil, err
+	}
+
+	leader := leader.NewLeader(sd)
+
+	async, err := async.NewAsync(bd, leader, async.MetricsRegisterer(metrics.Register()))
+	if err != nil {
+		return nil, err
+	}
+
+	go func() {
+		notifier := shutdown.AddNotifier()
+		select {
+		case <-notifier.Signal:
+			defer notifier.Done()
+			logs.Infof("start shutdown async consumer gracefully...")
+			async.GetConsumer().Close()
+			logs.Infof("shutdown async consumer success...")
+		}
+	}()
+
+	cfg := cc.TaskServer().Async
+	if err = async.GetConsumer().Start(consumer.NormalIntervalSec(cfg.NormalIntervalSec),
+		consumer.ExecutorWorkersCnt(cfg.ExecutorWorkerCnt), consumer.ParserWorkersCnt(cfg.ParserWorkersCnt),
+		consumer.FlowScheduleTimeoutSec(cfg.FlowScheduleTimeoutSec)); err != nil {
+		return nil, err
+	}
+
+	return async, nil
 }
 
 // ListenAndServeRest listen and serve the restful server
@@ -147,8 +175,7 @@ func (s *Service) ListenAndServeRest() error {
 				logs.Errorf("shutdown restful server failed, err: %v", err)
 				return
 			}
-			// async框架停止
-			async.Close()
+
 			logs.Infof("shutdown restful server success...")
 		}
 	}()
@@ -173,15 +200,10 @@ func (s *Service) apiSet() *restful.Container {
 	c := &capability.Capability{
 		WebService: ws,
 		ApiClient:  s.client,
-		Producer:   new(tsproducer.Producer),
+		Async:      s.async,
 	}
-	backend, err := backends.BackendFactory(enumor.BackendMysql, s.dao)
-	if err != nil {
-		return nil
-	}
-	c.Producer.SetBackend(backend)
 
-	producer.InitAsyncService(c)
+	producer.Init(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

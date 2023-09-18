@@ -17,19 +17,19 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability 公共参数。
-package capability
+package producer
 
 import (
-	"hcm/pkg/async"
-	"hcm/pkg/client"
-
-	"github.com/emicklei/go-restful/v3"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Async      async.Async
+// TODO: 任务流、任务成功或失败等情况metrics打点
+
+func initMetric(register prometheus.Registerer) *metric {
+	m := new(metric)
+
+	return m
+}
+
+type metric struct {
 }

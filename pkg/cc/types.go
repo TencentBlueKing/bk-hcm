@@ -156,12 +156,12 @@ func (lm *Limiter) trySetDefault() {
 	}
 }
 
-// defines async
+// Async defines async relating.
 type Async struct {
-	NormalIntervalSec   int `yaml:"normalIntervalSec"`
-	ExecutorWorkerCnt   int `yaml:"executorWorkerCnt"`
-	ParserWorkersCnt    int `yaml:"parserWorkersCnt"`
-	FlowScheduleTimeout int `yaml:"flowScheduleTimeout"`
+	NormalIntervalSec      int `yaml:"normalIntervalSec"`
+	ExecutorWorkerCnt      int `yaml:"executorWorkerCnt"`
+	ParserWorkersCnt       int `yaml:"parserWorkersCnt"`
+	FlowScheduleTimeoutSec int `yaml:"flowScheduleTimeout"`
 }
 
 func (a Async) validate() error {
@@ -178,30 +178,11 @@ func (a Async) validate() error {
 		return errors.New("parserWorkersCnt must > 1")
 	}
 
-	if a.FlowScheduleTimeout < 1 {
+	if a.FlowScheduleTimeoutSec < 1 {
 		return errors.New("flowScheduleTimeout must > 1")
 	}
 
 	return nil
-}
-
-// trySetDefault set the Setting default value if user not configured.
-func (a *Async) trySetDefault() {
-	if a.NormalIntervalSec < 1 {
-		a.NormalIntervalSec = 10
-	}
-
-	if a.ExecutorWorkerCnt < 1 {
-		a.ExecutorWorkerCnt = 10
-	}
-
-	if a.ParserWorkersCnt < 1 {
-		a.ParserWorkersCnt = 5
-	}
-
-	if a.FlowScheduleTimeout < 1 {
-		a.FlowScheduleTimeout = 15
-	}
 }
 
 // DataBase defines database related runtime
