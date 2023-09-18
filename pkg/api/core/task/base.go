@@ -34,7 +34,8 @@ type AsyncFlow struct {
 	State         enumor.FlowState `json:"state"`
 	Tasks         []AsyncFlowTask  `json:"tasks"`
 	Memo          string           `json:"memo"`
-	Reason        string           `json:"reason"`
+	Reason        types.JsonField  `json:"reason"`
+	ShareData     types.JsonField  `json:"share_data"`
 	core.Revision `json:",inline"`
 }
 
@@ -51,6 +52,7 @@ type AsyncFlowTask struct {
 	State       enumor.TaskState `json:"state"`
 	Memo        string           `json:"memo"`
 	Reason      types.JsonField  `json:"reason"`
+	ShareData   types.JsonField  `json:"share_data"`
 }
 
 // AddFlowParameters ...

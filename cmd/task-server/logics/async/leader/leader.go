@@ -17,15 +17,36 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package constant
+package leader
 
-const (
-	// AsyncUserKey async UserKey
-	AsyncUserKey = "hcm-backend-async"
-
-	// AsyncAppCodeKey async AppCodeKey
-	AsyncAppCodeKey = "hcm"
-
-	// DefaultJsonValue async default json
-	DefaultJsonValue = "{}"
+import (
+	"hcm/pkg/serviced"
 )
+
+// AsyncLeader ...
+type AsyncLeader struct {
+	sd serviced.ServiceDiscover
+}
+
+// NewLeader 创建一个主节点控制器
+func NewLeader(sd serviced.ServiceDiscover) *AsyncLeader {
+	return &AsyncLeader{
+		sd: sd,
+	}
+}
+
+// IsLeader 判断是否是主节点
+func (al *AsyncLeader) IsLeader() bool {
+	ret := false
+
+	if al.sd.IsMaster() {
+		ret = true
+	}
+
+	return ret
+}
+
+// TODO：leader关闭
+// Close 主节点关闭操作
+func (al *AsyncLeader) Close() {
+}

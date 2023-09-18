@@ -17,15 +17,24 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package constant
+package leader
 
-const (
-	// AsyncUserKey async UserKey
-	AsyncUserKey = "hcm-backend-async"
+import "hcm/cmd/task-server/logics/async/closer"
 
-	// AsyncAppCodeKey async AppCodeKey
-	AsyncAppCodeKey = "hcm"
+var asyncLeader Leader
 
-	// DefaultJsonValue async default json
-	DefaultJsonValue = "{}"
-)
+// Leader 选主管理
+type Leader interface {
+	closer.Closer
+	IsLeader() bool
+}
+
+// SetLeader 设置主节点
+func SetLeader(l Leader) {
+	asyncLeader = l
+}
+
+// GetLeader 获取主节点
+func GetLeader() Leader {
+	return asyncLeader
+}

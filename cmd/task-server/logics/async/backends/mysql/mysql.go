@@ -53,11 +53,15 @@ type Backend struct {
 }
 
 // NewBackend create backend instance
-func NewBackend(kt *kit.Kit, dao dao.Set) iface.Backend {
+func NewBackend(dao dao.Set) iface.Backend {
 	return &Backend{
-		kt:  kt,
 		dao: dao,
 	}
+}
+
+// SetBackendKit set backend kit
+func (b *Backend) SetBackendKit(kt *kit.Kit) {
+	b.kt = kt
 }
 
 // ConsumeOnePendingFlow consume one pending flow
@@ -83,27 +87,29 @@ func (b *Backend) ConsumeOnePendingFlow() (*task.AsyncFlow, error) {
 	}
 	daoResp, err := b.dao.AsyncFlow().List(b.kt, opt)
 	if err != nil {
-		logs.Errorf("[async] list async flow failed, err: %v, rid: %s", err, b.kt.Rid)
+		logs.Errorf("[async] [module-backends] list async flow err: %v, rid: %s", err, b.kt.Rid)
 		return nil, fmt.Errorf("list async flow failed, err: %v", err)
 	}
 
-	if len(daoResp.Details) > 1 {
-		logs.Errorf("[async] get flow num wrong rid: %s", b.kt.Rid)
-		return nil, errors.New("get flow num wrong")
+	if len(daoResp.Details) != 1 {
+		if len(daoResp.Details) != 0 {
+			return nil, errors.New("get flow num wrong")
+		}
+		return nil, errors.New("flow num is 0")
 	}
 
 	if err := b.dao.AsyncFlow().UpdateByIDCAS(b.kt, daoResp.Details[0].ID, enumor.FlowRunning); err != nil {
-		logs.Errorf("[async] update async flow by id: %s failed, err: %v, rid: %s", daoResp.Details[0].ID,
-			err, b.kt.Rid)
+		logs.Errorf("[async] [module-backends] update flow state to running err: %v, rid: %s", err, b.kt.Rid)
 		return nil, err
 	}
 
 	return &task.AsyncFlow{
-		ID:     daoResp.Details[0].ID,
-		Name:   daoResp.Details[0].Name,
-		State:  daoResp.Details[0].State,
-		Memo:   daoResp.Details[0].Memo,
-		Reason: string(daoResp.Details[0].Reason),
+		ID:        daoResp.Details[0].ID,
+		Name:      daoResp.Details[0].Name,
+		State:     daoResp.Details[0].State,
+		Memo:      daoResp.Details[0].Memo,
+		Reason:    daoResp.Details[0].Reason,
+		ShareData: daoResp.Details[0].ShareData,
 		Revision: core.Revision{
 			Creator:   daoResp.Details[0].Creator,
 			Reviser:   daoResp.Details[0].Reviser,
@@ -136,7 +142,7 @@ func (b *Backend) GetFlowsByCount(flowCount int) ([]task.AsyncFlow, error) {
 	}
 	daoResp, err := b.dao.AsyncFlow().List(b.kt, opt)
 	if err != nil {
-		logs.Errorf("[async] list async flow failed, err: %v, rid: %s", err, b.kt.Rid)
+		logs.Errorf("[async] [module-backends] list async flow err: %v, rid: %s", err, b.kt.Rid)
 		return nil, fmt.Errorf("list async flow failed, err: %v", err)
 	}
 
@@ -147,11 +153,12 @@ func (b *Backend) GetFlowsByCount(flowCount int) ([]task.AsyncFlow, error) {
 	ret := make([]task.AsyncFlow, 0, len(daoResp.Details))
 	for _, one := range daoResp.Details {
 		tmp := task.AsyncFlow{
-			ID:     one.ID,
-			Name:   one.Name,
-			State:  one.State,
-			Memo:   one.Memo,
-			Reason: string(one.Reason),
+			ID:        one.ID,
+			Name:      one.Name,
+			State:     one.State,
+			Memo:      one.Memo,
+			Reason:    one.Reason,
+			ShareData: one.ShareData,
 			Revision: core.Revision{
 				Creator:   one.Creator,
 				Reviser:   one.Reviser,
@@ -170,11 +177,12 @@ func (b *Backend) AddFlow(req *taskserver.AddFlowReq) (string, error) {
 	flowIds, err := b.dao.Txn().AutoTxn(b.kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		models := make([]tableasync.AsyncFlowTable, 0)
 		models = append(models, tableasync.AsyncFlowTable{
-			Name:    string(req.FlowName),
-			State:   enumor.FlowPending,
-			Reason:  constant.AsyncDefaultJson,
-			Creator: b.kt.User,
-			Reviser: b.kt.User,
+			Name:      string(req.FlowName),
+			State:     enumor.FlowPending,
+			Reason:    constant.DefaultJsonValue,
+			ShareData: constant.DefaultJsonValue,
+			Creator:   b.kt.User,
+			Reviser:   b.kt.User,
 		})
 
 		ids, err := b.dao.AsyncFlow().BatchCreateWithTx(b.kt, txn, models)
@@ -185,13 +193,13 @@ func (b *Backend) AddFlow(req *taskserver.AddFlowReq) (string, error) {
 		return ids, nil
 	})
 	if err != nil {
-		logs.Errorf("[async] create async flow commit txn failed, err: %v, rid: %s", err, b.kt.Rid)
+		logs.Errorf("[async] [module-backends] create async flow err: %v, rid: %s", err, b.kt.Rid)
 		return "", err
 	}
 
 	ids, ok := flowIds.([]string)
 	if !ok {
-		return "", fmt.Errorf("create async task but return id type not string, id type: %v",
+		return "", fmt.Errorf("create async flow but return id type not string, id type: %v",
 			reflect.TypeOf(flowIds).String())
 	}
 
@@ -202,30 +210,38 @@ func (b *Backend) AddFlow(req *taskserver.AddFlowReq) (string, error) {
 	return ids[0], nil
 }
 
-// SetFlowStateWithReason set flow state with reason
-func (b *Backend) SetFlowStateWithReason(flowID string, state enumor.FlowState, reason string) error {
-	if err := state.Validate(); err != nil {
+// SetFlowChange set flow's change
+func (b *Backend) SetFlowChange(flowID string, flowChange *iface.FlowChange) error {
+	if flowChange == nil {
+		return errors.New("there is change to this flow")
+	}
+
+	if err := flowChange.State.Validate(); err != nil {
 		return err
 	}
 
 	_, err := b.dao.Txn().AutoTxn(b.kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		reasonJson, err := json.Marshal(&tableasync.AsyncFlowReason{
-			Message: reason,
+			Message: flowChange.Reason,
 		})
 		if err != nil {
-			logs.Errorf("[async] flow json marshal failed, err: %v, rid: %s", err, b.kt.Rid)
+			logs.Errorf("[async] [module-backends] marshal flow reason err: %v, rid: %s", err, b.kt.Rid)
 			return nil, err
 		}
 
+		if flowChange.ShareData == "" {
+			flowChange.ShareData = constant.DefaultJsonValue
+		}
+
 		model := &tableasync.AsyncFlowTable{
-			State:   state,
-			Reason:  tabletypes.JsonField(reasonJson),
-			Reviser: b.kt.User,
+			State:     flowChange.State,
+			ShareData: tabletypes.JsonField(flowChange.ShareData),
+			Reason:    tabletypes.JsonField(reasonJson),
+			Reviser:   b.kt.User,
 		}
 
 		if err := b.dao.AsyncFlow().UpdateByIDWithTx(b.kt, txn, flowID, model); err != nil {
-			logs.Errorf("[async] update async flow by id: %s failed, err: %v, model: %+v, rid: %s", flowID, err,
-				model, b.kt.Rid)
+			logs.Errorf("[async] [module-backends] update flow err: %v, rid: %s", err, b.kt.Rid)
 			return nil, err
 		}
 
@@ -233,7 +249,7 @@ func (b *Backend) SetFlowStateWithReason(flowID string, state enumor.FlowState, 
 	})
 
 	if err != nil {
-		logs.Errorf("[async] update async flow commit txn failed, err: %v, rid: %s", err, b.kt.Rid)
+		logs.Errorf("[async] [module-backends] update flow err: %v, rid: %s", err, b.kt.Rid)
 		return err
 	}
 
@@ -248,7 +264,7 @@ func (b *Backend) GetFlowByID(flowID string) (*task.AsyncFlow, error) {
 	}
 	daoResp, err := b.dao.AsyncFlow().List(b.kt, opt)
 	if err != nil {
-		logs.Errorf("[async] list async flow failed, err: %v, rid: %s", err, b.kt.Rid)
+		logs.Errorf("[async] [module-backends] list async flow err: %v, rid: %s", err, b.kt.Rid)
 		return nil, fmt.Errorf("list async flow failed, err: %v", err)
 	}
 
@@ -258,11 +274,12 @@ func (b *Backend) GetFlowByID(flowID string) (*task.AsyncFlow, error) {
 
 	one := daoResp.Details[0]
 	return &task.AsyncFlow{
-		ID:     one.ID,
-		Name:   one.Name,
-		State:  one.State,
-		Memo:   one.Memo,
-		Reason: string(one.Reason),
+		ID:        one.ID,
+		Name:      one.Name,
+		State:     one.State,
+		Memo:      one.Memo,
+		Reason:    one.Reason,
+		ShareData: one.ShareData,
 		Revision: core.Revision{
 			Creator:   one.Creator,
 			Reviser:   one.Reviser,
@@ -284,18 +301,19 @@ func (b *Backend) GetFlows(req *taskserver.FlowListReq) ([]*task.AsyncFlow, erro
 	}
 	daoResp, err := b.dao.AsyncFlow().List(b.kt, opt)
 	if err != nil {
-		logs.Errorf("[async] list async flow failed, err: %v, rid: %s", err, b.kt.Rid)
+		logs.Errorf("[async] [module-backends] list async flow err: %v, rid: %s", err, b.kt.Rid)
 		return nil, fmt.Errorf("list async flow failed, err: %v", err)
 	}
 
 	ret := make([]*task.AsyncFlow, 0, len(daoResp.Details))
 	for _, one := range daoResp.Details {
 		tmp := &task.AsyncFlow{
-			ID:     one.ID,
-			Name:   one.Name,
-			State:  one.State,
-			Memo:   one.Memo,
-			Reason: string(one.Reason),
+			ID:        one.ID,
+			Name:      one.Name,
+			State:     one.State,
+			Memo:      one.Memo,
+			Reason:    one.Reason,
+			ShareData: one.ShareData,
 			Revision: core.Revision{
 				Creator:   one.Creator,
 				Reviser:   one.Reviser,
@@ -319,10 +337,13 @@ func (b *Backend) AddTasks(tasks []task.AsyncFlowTask) error {
 		models := make([]tableasync.AsyncFlowTaskTable, 0, len(tasks))
 		for _, task := range tasks {
 			if task.Params == "" {
-				task.Params = constant.AsyncDefaultJson
+				task.Params = constant.DefaultJsonValue
 			}
 			if task.Reason == "" {
-				task.Reason = constant.AsyncDefaultJson
+				task.Reason = constant.DefaultJsonValue
+			}
+			if task.ShareData == "" {
+				task.ShareData = constant.DefaultJsonValue
 			}
 			models = append(models, tableasync.AsyncFlowTaskTable{
 				ID:          task.ID,
@@ -336,6 +357,7 @@ func (b *Backend) AddTasks(tasks []task.AsyncFlowTask) error {
 				State:       task.State,
 				Memo:        task.Memo,
 				Reason:      task.Reason,
+				ShareData:   task.ShareData,
 				Creator:     b.kt.User,
 				Reviser:     b.kt.User,
 			})
@@ -348,7 +370,7 @@ func (b *Backend) AddTasks(tasks []task.AsyncFlowTask) error {
 		return nil, nil
 	})
 	if err != nil {
-		logs.Errorf("[async] create async task commit txn failed, err: %v, rid: %s", err, b.kt.Rid)
+		logs.Errorf("[async] [module-backends] create async task err: %v, rid: %s", err, b.kt.Rid)
 		return err
 	}
 
@@ -370,7 +392,7 @@ func (b *Backend) GetTasks(taskIDs []string) ([]task.AsyncFlowTask, error) {
 		}
 		daoResp, err := b.dao.AsyncFlowTask().List(b.kt, opt)
 		if err != nil {
-			logs.Errorf("[async] list async flow task failed, err: %v, rid: %s", err, b.kt.Rid)
+			logs.Errorf("[async] [module-backends] list async flow task err: %v, rid: %s", err, b.kt.Rid)
 			return nil, fmt.Errorf("list async flow task failed, err: %v", err)
 		}
 
@@ -392,6 +414,7 @@ func (b *Backend) GetTasks(taskIDs []string) ([]task.AsyncFlowTask, error) {
 			State:       one.State,
 			Memo:        one.Memo,
 			Reason:      one.Reason,
+			ShareData:   one.ShareData,
 		}
 		ret = append(ret, tmp)
 	}
@@ -407,7 +430,7 @@ func (b *Backend) GetTasksByFlowID(flowID string) ([]task.AsyncFlowTask, error) 
 	}
 	daoResp, err := b.dao.AsyncFlowTask().List(b.kt, opt)
 	if err != nil {
-		logs.Errorf("[async] list async flow task failed, err: %v, rid: %s", err, b.kt.Rid)
+		logs.Errorf("[async] [module-backends] list async flow task err: %v, rid: %s", err, b.kt.Rid)
 		return nil, fmt.Errorf("list async flow task failed, err: %v", err)
 	}
 
@@ -433,6 +456,7 @@ func (b *Backend) GetTasksByFlowID(flowID string) ([]task.AsyncFlowTask, error) 
 			State:       one.State,
 			Memo:        one.Memo,
 			Reason:      one.Reason,
+			ShareData:   one.ShareData,
 		}
 		ret = append(ret, tmp)
 	}
@@ -440,30 +464,34 @@ func (b *Backend) GetTasksByFlowID(flowID string) ([]task.AsyncFlowTask, error) 
 	return ret, nil
 }
 
-// SetTaskStateWithReason set task state with reason
-func (b *Backend) SetTaskStateWithReason(taskID string, state enumor.TaskState, reason string) error {
-	if err := state.Validate(); err != nil {
+// SetTaskChange set task's change
+func (b *Backend) SetTaskChange(taskID string, taskChange *iface.TaskChange) error {
+	if err := taskChange.State.Validate(); err != nil {
 		return err
 	}
 
 	_, err := b.dao.Txn().AutoTxn(b.kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		reasonJson, err := json.Marshal(&tableasync.AsyncFlowTaskReason{
-			Message: reason,
+			Message: taskChange.Reason,
 		})
 		if err != nil {
-			logs.Errorf("[async] flow task json marshal failed, err: %v, rid: %s", err, b.kt.Rid)
+			logs.Errorf("[async] [module-backends] marshal task reason err: %v, rid: %s", err, b.kt.Rid)
 			return nil, err
 		}
 
+		if taskChange.ShareData == "" {
+			taskChange.ShareData = constant.DefaultJsonValue
+		}
+
 		model := &tableasync.AsyncFlowTaskTable{
-			State:   state,
-			Reason:  tabletypes.JsonField(reasonJson),
-			Reviser: b.kt.User,
+			State:     taskChange.State,
+			Reason:    tabletypes.JsonField(reasonJson),
+			ShareData: tabletypes.JsonField(taskChange.ShareData),
+			Reviser:   b.kt.User,
 		}
 
 		if err := b.dao.AsyncFlowTask().UpdateByIDWithTx(b.kt, txn, taskID, model); err != nil {
-			logs.Errorf("[async] update async flow task by id: %s failed, err: %v, model: %+v, rid: %s", taskID, err,
-				model, b.kt.Rid)
+			logs.Errorf("[async] [module-backends] update task err: %v, rid: %s", err, b.kt.Rid)
 			return nil, err
 		}
 
@@ -471,7 +499,7 @@ func (b *Backend) SetTaskStateWithReason(taskID string, state enumor.TaskState, 
 	})
 
 	if err != nil {
-		logs.Errorf("[async] update async flow task commit txn failed, err: %v, rid: %s", err, b.kt.Rid)
+		logs.Errorf("[async] [module-backends] update task err: %v, rid: %s", err, b.kt.Rid)
 		return err
 	}
 
@@ -481,4 +509,9 @@ func (b *Backend) SetTaskStateWithReason(taskID string, state enumor.TaskState, 
 // MakeTaskIDs make task ids
 func (b *Backend) MakeTaskIDs(num int) ([]string, error) {
 	return b.dao.AsyncFlowTask().GenIDs(b.kt, num)
+}
+
+// TODO: 关闭DB连接
+// Close mysql
+func (b *Backend) Close() {
 }

@@ -19,12 +19,16 @@
 
 package task
 
+// TODO: 单任务、任务流共享参数落DB
+
 import (
+	"context"
 	"sync"
 
 	"hcm/pkg/kit"
 )
 
+// ActionManagerInstance ...
 var ActionManagerInstance *ActionManager
 
 func init() {
@@ -35,16 +39,20 @@ func init() {
 type Action interface {
 	// Name action name
 	Name() string
+	// NewParameter new parameter
+	NewParameter(parameter interface{}) interface{}
+	// GetShareData get shareData
+	GetShareData() map[string]string
 	// RunBefore run before func
-	RunBefore(kt *kit.Kit, params interface{}) error
+	RunBefore(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error
 	// Run run func
-	Run(kt *kit.Kit, params interface{}) error
+	Run(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error
 	// RunBeforeSuccess run after success func
-	RunBeforeSuccess(kt *kit.Kit, params interface{}) error
+	RunBeforeSuccess(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error
 	// RunBeforeFailed run after failed func
-	RunBeforeFailed(kt *kit.Kit, params interface{}) error
+	RunBeforeFailed(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error
 	// RetryBefore retry before func
-	RetryBefore(kt *kit.Kit, params interface{}) error
+	RetryBefore(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error
 }
 
 // ActionManager action manager
@@ -53,6 +61,7 @@ type ActionManager struct {
 	rwLock    *sync.RWMutex
 }
 
+// NewActionManager 创建action管理器
 func NewActionManager() *ActionManager {
 	return &ActionManager{
 		actionMap: make(map[string]Action),

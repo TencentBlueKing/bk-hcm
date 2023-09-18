@@ -40,6 +40,7 @@ var AsyncFlowTableColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "state", NamedC: "state", Type: enumor.String},
 	{Column: "reason", NamedC: "reason", Type: enumor.String},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
+	{Column: "share_data", NamedC: "share_data", Type: enumor.String},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
@@ -52,6 +53,7 @@ type AsyncFlowTable struct {
 	Name      string           `db:"name" json:"name"`
 	State     enumor.FlowState `db:"state" json:"state"`
 	Reason    types.JsonField  `db:"reason" json:"reason"`
+	ShareData types.JsonField  `db:"share_data" json:"share_data"`
 	Memo      string           `db:"memo" json:"memo"`
 	Creator   string           `db:"creator" json:"creator" validate:"lte=64"`
 	Reviser   string           `db:"reviser" json:"reviser" validate:"lte=64"`

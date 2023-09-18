@@ -17,15 +17,43 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package constant
+package consumer
 
-const (
-	// AsyncUserKey async UserKey
-	AsyncUserKey = "hcm-backend-async"
+import "hcm/cmd/task-server/logics/async/flow"
 
-	// AsyncAppCodeKey async AppCodeKey
-	AsyncAppCodeKey = "hcm"
+/************************ Executor ************************/
+var asyncExecutor Executor
 
-	// DefaultJsonValue async default json
-	DefaultJsonValue = "{}"
-)
+// Executor 任务执行器
+type Executor interface {
+	Push(task *flow.TaskNode)
+	CancelTasks(taskIDs []string) error
+}
+
+// SetExecutor 设置Executor
+func SetExecutor(e Executor) {
+	asyncExecutor = e
+}
+
+// GetExecutor 获取Executor
+func GetExecutor() Executor {
+	return asyncExecutor
+}
+
+/************************ Parser ************************/
+var asyncParser Parser
+
+// Parser 任务流解析器
+type Parser interface {
+	EntryTask(task *flow.TaskNode)
+}
+
+// SetParser 设置Parser
+func SetParser(p Parser) {
+	asyncParser = p
+}
+
+// GetParser 获取Parser
+func GetParser() Parser {
+	return asyncParser
+}

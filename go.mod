@@ -26,6 +26,7 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/pborman/uuid v1.2.1
 	github.com/prometheus/client_golang v1.14.0
+	github.com/spaolacci/murmur3 v1.1.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.1
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/billing v1.0.651

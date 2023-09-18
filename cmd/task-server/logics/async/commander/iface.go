@@ -17,15 +17,26 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package constant
+package commander
 
-const (
-	// AsyncUserKey async UserKey
-	AsyncUserKey = "hcm-backend-async"
+// TODO: 外部命令控制任务流、任务实现
 
-	// AsyncAppCodeKey async AppCodeKey
-	AsyncAppCodeKey = "hcm"
+var asyncCommander Commander
 
-	// DefaultJsonValue async default json
-	DefaultJsonValue = "{}"
-)
+// Commander 外部命令执行体
+type Commander interface {
+	RunFlows(flowIDs []string) error
+	RetryFlows(flowIDs []string) error
+	RetryTasks(taskIDs []string) error
+	CancelTasks(taskIDs []string) error
+}
+
+// SetCommander 设置Commander
+func SetCommander(c Commander) {
+	asyncCommander = c
+}
+
+// GetCommander 获取Commander
+func GetCommander() Commander {
+	return asyncCommander
+}
