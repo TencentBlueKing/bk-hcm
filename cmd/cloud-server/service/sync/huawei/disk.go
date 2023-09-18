@@ -20,6 +20,7 @@
 package huawei
 
 import (
+	"fmt"
 	gosync "sync"
 	"time"
 
@@ -34,6 +35,10 @@ import (
 
 // SyncDisk ...
 func SyncDisk(kt *kit.Kit, cliSet *client.ClientSet, accountID string, sd *detail.SyncDetail) error {
+
+	// 重新设置rid方便定位
+	prefix := fmt.Sprintf("%s", enumor.DiskCloudResType)
+	kt = kt.NewSubKit(prefix)
 
 	start := time.Now()
 	logs.V(3).Infof("huawei account[%s] sync disk start, time: %v, rid: %s", accountID, start, kt.Rid)

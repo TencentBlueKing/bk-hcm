@@ -20,6 +20,7 @@
 package gcp
 
 import (
+	"fmt"
 	"time"
 
 	"hcm/cmd/cloud-server/service/sync/detail"
@@ -33,6 +34,10 @@ import (
 // SyncFireWall ...
 func SyncFireWall(kt *kit.Kit, cliSet *client.ClientSet, accountID string,
 	sd *detail.SyncDetail) error {
+
+	// 重新设置rid方便定位
+	prefix := fmt.Sprintf("%s", enumor.GcpFirewallRuleCloudResType)
+	kt = kt.NewSubKit(prefix)
 
 	start := time.Now()
 	logs.V(3).Infof("gcp account[%s] sync firewall start, time: %v, rid: %s", accountID, start, kt.Rid)

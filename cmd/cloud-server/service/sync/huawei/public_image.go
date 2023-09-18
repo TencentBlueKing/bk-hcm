@@ -20,6 +20,7 @@
 package huawei
 
 import (
+	"fmt"
 	gosync "sync"
 	"time"
 
@@ -27,12 +28,17 @@ import (
 	protoimage "hcm/pkg/api/hc-service/image"
 	dataservice "hcm/pkg/client/data-service"
 	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
 // SyncHuaWeiImage ...
 func SyncHuaWeiImage(kt *kit.Kit, hcCli *hcservice.Client, dataCli *dataservice.Client, accountID string) error {
+
+	// 重新设置rid方便定位
+	prefix := fmt.Sprintf("%s", enumor.ImageCloudResType)
+	kt = kt.NewSubKit(prefix)
 
 	start := time.Now()
 	logs.V(3).Infof("huawei account[%s] sync image start, time: %v, rid: %s", accountID, start, kt.Rid)

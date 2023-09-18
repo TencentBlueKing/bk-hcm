@@ -58,6 +58,10 @@ func (rt CloudResourceType) ConvTableName() (table.Name, error) {
 		return table.RouteTableTable, nil
 	case NetworkInterfaceCloudResType:
 		return table.NetworkInterfaceTable, nil
+	case ZoneCloudResType:
+		return table.ZoneTable, nil
+	case AzureResourceGroup:
+		return table.AzureRGTable, nil
 	default:
 		return "", fmt.Errorf("%s does not have a corresponding table name", rt)
 	}
@@ -79,4 +83,6 @@ const (
 	NetworkInterfaceCloudResType CloudResourceType = "network_interface"
 	RegionCloudResType           CloudResourceType = "region"
 	ImageCloudResType            CloudResourceType = "image"
+	ZoneCloudResType             CloudResourceType = "zone"
+	AzureResourceGroup           CloudResourceType = "azure_resource_group"
 )

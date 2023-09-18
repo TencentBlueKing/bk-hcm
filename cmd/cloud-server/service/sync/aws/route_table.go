@@ -20,6 +20,7 @@
 package aws
 
 import (
+	"fmt"
 	"time"
 
 	"hcm/cmd/cloud-server/service/sync/detail"
@@ -33,6 +34,10 @@ import (
 // SyncRouteTable 同步路由表
 func SyncRouteTable(kt *kit.Kit, cliSet *client.ClientSet, accountID string, regions []string,
 	sd *detail.SyncDetail) error {
+
+	// 重新设置rid方便定位
+	prefix := fmt.Sprintf("%s", enumor.RouteTableCloudResType)
+	kt = kt.NewSubKit(prefix)
 
 	start := time.Now()
 	logs.V(3).Infof("[%s] account[%s] sync route table start, time: %v, rid: %s",

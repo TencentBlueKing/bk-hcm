@@ -28,6 +28,7 @@ import (
 	protohcregion "hcm/pkg/api/hc-service/region"
 	dataservice "hcm/pkg/client/data-service"
 	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -35,6 +36,10 @@ import (
 
 // SyncResourceGroup sync resource group
 func SyncResourceGroup(kt *kit.Kit, hcCli *hcservice.Client, accountID string) error {
+
+	// 重新设置rid方便定位
+	prefix := fmt.Sprintf("%s", enumor.AzureResourceGroup)
+	kt = kt.NewSubKit(prefix)
 
 	start := time.Now()
 	logs.V(3).Infof("azure account[%s] sync resource group start, time: %v, rid: %s", accountID, start, kt.Rid)
