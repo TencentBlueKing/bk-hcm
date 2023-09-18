@@ -8,6 +8,7 @@ import { VendorEnum } from '@/common/constant';
 import { ref, PropType, computed } from 'vue';
 import { useAccountStore } from '@/store';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
+import CommonCard from '@/components/CommonCard';
 
 const accountStore = useAccountStore();
 
@@ -107,7 +108,10 @@ const { isResourcePage } = useWhereAmI();
 </script>
 
 <template>
-  <div class="cond-list">
+  <CommonCard
+    :title="() => '基本信息'"
+    :layout="'grid'"
+  >
     <div class="cond-item" v-if="!isResourcePage">
       <div class="cond-label">业务</div>
       <div class="cond-content">
@@ -160,14 +164,16 @@ const { isResourcePage } = useWhereAmI();
         />
       </div>
     </div>
-  </div>
+    <slot />
+    <slot name="appendix" />
+  </CommonCard>
 </template>
 
 <style lang="scss" scoped>
 .cond-list {
   display: flex;
   gap: 8px 32px;
-  border-bottom: 1px solid rgba(0, 0, 0, .15);
+  // border-bottom: 1px solid rgba(0, 0, 0, .15);
   padding: 0 36px 12px 8px;
   margin-bottom: 8px;
   .cond-item {

@@ -1,9 +1,7 @@
 /* eslint-disable no-useless-escape */
 import { computed, defineComponent, reactive, ref, watch } from 'vue';
 import { Form, Input, Select, Checkbox, Button, Radio } from 'bkui-vue';
-import ContentContainer from '../components/common/content-container.vue';
 import ConditionOptions from '../components/common/condition-options.vue';
-import FormGroup from '../components/common/form-group.vue';
 import ZoneSelector from '../components/common/zone-selector';
 import MachineTypeSelector from '../components/common/machine-type-selector';
 import Imagelector from '../components/common/image-selector';
@@ -26,6 +24,7 @@ import useCvmFormData, { getDataDiskDefaults, getGcpDataDiskDefaults } from '../
 
 import { useAccountStore } from '@/store';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
+import CommonCard from '@/components/CommonCard';
 
 const accountStore = useAccountStore();
 
@@ -275,29 +274,29 @@ export default defineComponent({
     // });
 
     const formConfig = computed(() => [
-      {
-        id: 'region',
-        title: '地域',
-        children: [
-          {
-            label: '可用区',
-            required: cond.vendor === VendorEnum.AZURE ? zoneSelectorRef.value.list?.length > 0 : true,
-            property: 'zone',
-            rules: [{
-              trigger: 'change',
-            }],
-            content: () => <ZoneSelector
-              ref={zoneSelectorRef}
-              v-model={formData.zone}
-              vendor={cond.vendor}
-              region={cond.region}
-              onChange={handleZoneChange} />,
-          },
-        ],
-      },
+      // {
+      //   id: 'region',
+      //   title: '地域',
+      //   children: [
+      //     {
+      //       label: '可用区',
+      //       required: cond.vendor === VendorEnum.AZURE ? zoneSelectorRef.value.list?.length > 0 : true,
+      //       property: 'zone',
+      //       rules: [{
+      //         trigger: 'change',
+      //       }],
+      //       content: () => <ZoneSelector
+      //         ref={zoneSelectorRef}
+      //         v-model={formData.zone}
+      //         vendor={cond.vendor}
+      //         region={cond.region}
+      //         onChange={handleZoneChange} />,
+      //     },
+      //   ],
+      // },
       {
         id: 'network',
-        title: '网络',
+        title: '网络信息',
         children: [
           {
             label: 'VPC',
@@ -426,32 +425,32 @@ export default defineComponent({
           },
         ],
       },
-      {
-        id: 'billing',
-        title: '计费',
-        display: [VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor),
-        children: [
-          {
-            label: '计费模式',
-            required: true,
-            property: 'instance_charge_type',
-            content: () =>
-            // <Select v-model={formData.instance_charge_type} clearable={false}>{
-            //     billingModes.value.map(({ id, name }: IOption) => (
-            //       <Option key={id} value={id} label={name}></Option>
-            //     ))
-            //   }
-            // </Select>,
-            <RadioGroup v-model={formData.instance_charge_type}>
-                    {billingModes.value.map(item => (<RadioButton label={item.id} >{item.name}
-                  </RadioButton>))}
-            </RadioGroup>,
-          },
-        ],
-      },
+      // {
+      //   id: 'billing',
+      //   title: '计费',
+      //   display: [VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor),
+      //   children: [
+      //     {
+      //       label: '计费模式',
+      //       required: true,
+      //       property: 'instance_charge_type',
+      //       content: () =>
+      //       // <Select v-model={formData.instance_charge_type} clearable={false}>{
+      //       //     billingModes.value.map(({ id, name }: IOption) => (
+      //       //       <Option key={id} value={id} label={name}></Option>
+      //       //     ))
+      //       //   }
+      //       // </Select>,
+      //       <RadioGroup v-model={formData.instance_charge_type}>
+      //               {billingModes.value.map(item => (<RadioButton label={item.id} >{item.name}
+      //             </RadioButton>))}
+      //       </RadioGroup>,
+      //     },
+      //   ],
+      // },
       {
         id: 'config',
-        title: '配置',
+        title: '实例配置',
         children: [
           {
             label: '机型',
@@ -481,12 +480,6 @@ export default defineComponent({
               machineType={machineType.value}
               clearable={false} />,
           },
-        ],
-      },
-      {
-        id: 'storage',
-        title: '存储',
-        children: [
           {
             label: '系统盘类型',
             required: true,
@@ -560,14 +553,8 @@ export default defineComponent({
             </div>,
             ...formConfigDataDiskDiff.value,
           },
-        ],
-      },
-      {
-        id: 'auth',
-        title: '登录',
-        children: [
           {
-            label: '设置密码',
+            label: '密码',
             required: true,
             description: '字母数字与 ()\`~!@#$%^&*-+=|{}[]:;\',.?/ 字符的组合',
             content: [
@@ -586,8 +573,49 @@ export default defineComponent({
               },
             ],
           },
+          {
+            label: '实例名称',
+            required: true,
+            property: 'name',
+            maxlength: 60,
+            description: '60个字符，字母、数字、“-”，且必须以字母、数字开头和结尾。\n\r 实例名称是在云上的记录名称，并不是操作系统上的主机名，以方便使用名称来搜索主机。\n\r 如申请的是1台主机，则按填写的名称命名。如申请的是多台，则填写名称是前缀，申请单会自动补充随机的后缀。',
+            content: () => <Input placeholder='填写实例名称，主机数量大于1时支持批量命名' v-model={formData.name} />,
+          },
         ],
       },
+      // {
+      //   id: 'storage',
+      //   title: '存储',
+      //   children: [
+      //   ],
+      // },
+      // {
+      //   id: 'auth',
+      //   title: '登录',
+      //   children: [
+      //     {
+      //       label: '设置密码',
+      //       required: true,
+      //       description: '字母数字与 ()\`~!@#$%^&*-+=|{}[]:;\',.?/ 字符的组合',
+      //       content: [
+      //         {
+      //           property: 'username',
+      //           display: cond.vendor === VendorEnum.AZURE,
+      //           content: () => <Input placeholder='登录用户' v-model={formData.username}></Input>,
+      //         },
+      //         {
+      //           property: 'password',
+      //           content: () => <Input type='password' placeholder='密码' v-model={formData.password}></Input>,
+      //         },
+      //         {
+      //           property: 'confirmed_password',
+      // eslint-disable-next-line max-len
+      //           content: () => <Input type='password' placeholder='确认密码' v-model={formData.confirmed_password}></Input>,
+      //         },
+      //       ],
+      //     },
+      //   ],
+      // },
       {
         id: 'quantity',
         title: '数量',
@@ -627,20 +655,17 @@ export default defineComponent({
       },
       {
         id: 'describe',
-        title: '主机描述',
+        title: '备注信息',
         children: [
-          {
-            label: '实例名称',
-            required: true,
-            property: 'name',
-            maxlength: 60,
-            description: '60个字符，字母、数字、“-”，且必须以字母、数字开头和结尾。\n\r 实例名称是在云上的记录名称，并不是操作系统上的主机名，以方便使用名称来搜索主机。\n\r 如申请的是1台主机，则按填写的名称命名。如申请的是多台，则填写名称是前缀，申请单会自动补充随机的后缀。',
-            content: () => <Input placeholder='填写实例名称，主机数量大于1时支持批量命名' v-model={formData.name} />,
-          },
           {
             label: '实例备注',
             property: 'memo',
             content: () => <Input type='textarea' placeholder='填写实例备注' rows={3} maxlength={255} v-model={formData.memo}></Input>,
+          },
+          {
+            label: '申请单备注',
+            property: 'memo233333',
+            content: () => <Input type='textarea' placeholder='填写申请单备注' rows={3} maxlength={255} v-model={formData.memo}></Input>,
           },
         ],
       },
@@ -736,21 +761,51 @@ export default defineComponent({
       ],
     };
 
-    return () => <ContentContainer>
+    return () => <div>
       <ConditionOptions
-        type={ResourceTypeEnum.CVM}
-        v-model:bizId={cond.bizId}
-        v-model:cloudAccountId={cond.cloudAccountId}
-        v-model:vendor={cond.vendor}
-        v-model:region={cond.region}
-        v-model:resourceGroup={cond.resourceGroup}
-      />
-      <Form model={formData} rules={formRules} ref={formRef} onSubmit={handleFormSubmit}>
+          type={ResourceTypeEnum.CVM}
+          v-model:bizId={cond.bizId}
+          v-model:cloudAccountId={cond.cloudAccountId}
+          v-model:vendor={cond.vendor}
+          v-model:region={cond.region}
+          v-model:resourceGroup={cond.resourceGroup}
+          class={'mb16'}>
+          {{
+            default: () => (
+              <Form formType='vertical'>
+                <FormItem label={'可用区'}>
+                  <ZoneSelector
+                    ref={zoneSelectorRef}
+                    v-model={formData.zone}
+                    vendor={cond.vendor}
+                    region={cond.region}
+                    onChange={handleZoneChange}
+                  />
+                </FormItem>
+              </Form>
+            ),
+            appendix: () => ([VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum) ? (
+                <Form formType='vertical'>
+                  <FormItem label='计费模式' required>
+                    <RadioGroup v-model={formData.instance_charge_type}>
+                      {billingModes.value.map(item => (
+                        <RadioButton label={item.id}>{item.name}</RadioButton>
+                      ))}
+                    </RadioGroup>
+                  </FormItem>
+                </Form>
+            ) : null),
+          }}
+        </ConditionOptions>
+      <Form model={formData} rules={formRules} ref={formRef} onSubmit={handleFormSubmit} formType='vertical'>
         {
           formConfig.value
             .filter(({ display }) => display !== false)
             .map(({ title, children }) => (
-              <FormGroup title={title}>
+              <CommonCard
+                title={() => title}
+                class={'mb16'}
+              >
                 {
                   children
                     .filter(({ display }) => display !== false)
@@ -788,7 +843,7 @@ export default defineComponent({
                     </FormItem>
                     ))
                 }
-              </FormGroup>
+              </CommonCard>
             ))
         }
         <div class="action-bar">
@@ -807,6 +862,6 @@ export default defineComponent({
         onSave={handleSaveGcpDataDisk}
         onClose={() => dialogState.gcpDataDisk.isShow = false}
       />
-    </ContentContainer>;
+    </div>;
   },
 });
