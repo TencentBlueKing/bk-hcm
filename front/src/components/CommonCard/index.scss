@@ -1,0 +1,23 @@
+.common-card {
+  padding: 16px 4px;
+  background-color: #fff;
+
+  .common-card-title {
+    font-weight: 700;
+    font-size: 14px;
+    color: #313238;
+    letter-spacing: 0;
+    margin-right: 16px;
+    margin-bottom: 16px;
+  }
+
+  .common-card-content {
+    padding: 16px 28px;
+  }
+
+  .common-card-content-grid-layout {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    column-gap: 24px;
+  }
+}
