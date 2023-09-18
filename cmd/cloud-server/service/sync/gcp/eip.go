@@ -20,6 +20,7 @@
 package gcp
 
 import (
+	"fmt"
 	gosync "sync"
 	"time"
 
@@ -34,6 +35,10 @@ import (
 // SyncEip ...
 func SyncEip(kt *kit.Kit, cliSet *client.ClientSet, accountID string, regions []string,
 	sd *detail.SyncDetail) error {
+
+	// 重新设置rid方便定位
+	prefix := fmt.Sprintf("%s", enumor.EipCloudResType)
+	kt = kt.NewSubKit(prefix)
 
 	start := time.Now()
 	logs.V(3).Infof("gcp account[%s] sync eip start, time: %v, rid: %s", accountID, start, kt.Rid)

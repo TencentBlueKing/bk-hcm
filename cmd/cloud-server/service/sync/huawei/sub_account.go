@@ -20,6 +20,7 @@
 package huawei
 
 import (
+	"fmt"
 	"time"
 
 	"hcm/cmd/cloud-server/service/sync/detail"
@@ -32,6 +33,10 @@ import (
 
 // SyncSubAccount sync sub account
 func SyncSubAccount(kt *kit.Kit, cliSet *client.ClientSet, accountID string, sd *detail.SyncDetail) error {
+
+	// 重新设置rid方便定位
+	prefix := fmt.Sprintf("%s", enumor.SubAccountCloudResType)
+	kt = kt.NewSubKit(prefix)
 
 	start := time.Now()
 	logs.V(3).Infof("huawei account[%s] sync sub account start, time: %v, rid: %s", accountID, start, kt.Rid)

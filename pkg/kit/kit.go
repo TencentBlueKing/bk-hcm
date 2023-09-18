@@ -23,11 +23,13 @@ package kit
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/uuid"
 )
 
@@ -62,6 +64,15 @@ type Kit struct {
 	// 因为来自前端和第三方系统调用的请求均为 ApiCall，所以没必要将该字段暴漏出去，仅同步请求需要设
 	// 置该字段为 BackgroundSync。
 	RequestSource enumor.RequestSourceType
+}
+
+// NewSubKit 生成子kit
+func (kt *Kit) NewSubKit(prefix string) *Kit {
+	newSubKit := converter.ValToPtr(*kt)
+	subRid := fmt.Sprintf("%s-%s", prefix, kt.Rid)
+	newSubKit.Rid = subRid
+	newSubKit.Ctx = context.WithValue(kt.Ctx, constant.RidKey, subRid)
+	return newSubKit
 }
 
 // GetRequestSource RequestSource为空，返回 ApiCall 类型。

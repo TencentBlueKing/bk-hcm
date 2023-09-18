@@ -20,6 +20,7 @@
 package azure
 
 import (
+	"fmt"
 	gosync "sync"
 	"time"
 
@@ -34,6 +35,10 @@ import (
 // SyncSG ...
 func SyncSG(kt *kit.Kit, cliSet *client.ClientSet, accountID string, resourceGroupNames []string,
 	sd *detail.SyncDetail) error {
+
+	// 重新设置rid方便定位
+	prefix := fmt.Sprintf("%s", enumor.SecurityGroupCloudResType)
+	kt = kt.NewSubKit(prefix)
 
 	start := time.Now()
 	logs.V(3).Infof("azure account[%s] sync sg start, time: %v, rid: %s", accountID, start, kt.Rid)
