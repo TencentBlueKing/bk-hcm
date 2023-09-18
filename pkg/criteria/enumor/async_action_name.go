@@ -51,4 +51,7 @@ const (
 
 	// VirRoot vir root
 	VirRoot ActionName = "root"
+
+	// TestPrintTask test print task
+	TestPrintTask ActionName = "test_PrintTask"
 )

@@ -44,7 +44,7 @@ type watchDog struct {
 }
 
 // NewWatchDog 创建一个watchdog
-func NewWatchDog(flowScheduledTimeout time.Duration, normalIntervalSec time.Duration) *watchDog {
+func NewWatchDog(flowScheduledTimeout time.Duration, normalIntervalSec time.Duration) WatchDog {
 
 	return &watchDog{
 		flowScheduledTimeout: flowScheduledTimeout,

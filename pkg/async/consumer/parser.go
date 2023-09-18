@@ -45,7 +45,7 @@ type Parser interface {
 	Start()
 
 	// EntryTask 分析执行完的任务，并解析出当前任务的子任务去执行。
-	EntryTask(task *flow.TaskNode)
+	EntryTask(task *task.Task)
 }
 
 // parser 定义任务流解析器
@@ -53,7 +53,7 @@ type parser struct {
 	taskTrees         sync.Map
 	workerNumber      int
 	normalIntervalSec time.Duration
-	workerQueue       chan *flow.TaskNode
+	workerQueue       chan *task.Task
 	workerWg          sync.WaitGroup
 	backend           backend.Backend
 	executor          Executor
@@ -66,7 +66,7 @@ func NewParser(bd backend.Backend, exec Executor, workerNumber int, normalInterv
 	return &parser{
 		closeCh:           make(chan struct{}),
 		workerWg:          sync.WaitGroup{},
-		workerQueue:       make(chan *flow.TaskNode, 10),
+		workerQueue:       make(chan *task.Task, 10),
 		workerNumber:      workerNumber,
 		normalIntervalSec: normalIntervalSec,
 		backend:           bd,
@@ -76,6 +76,8 @@ func NewParser(bd backend.Backend, exec Executor, workerNumber int, normalInterv
 
 // Start 初始化解析器并启动执行
 func (psr *parser) Start() {
+
+	logs.Infof("parser start, worker number: %d, interval: %v", psr.workerNumber, psr.normalIntervalSec)
 
 	// 定期获取等待执行的任务流
 	psr.workerWg.Add(1)
@@ -93,11 +95,10 @@ func (psr *parser) startWatcher(do func() error) {
 	ticker := time.NewTicker(psr.normalIntervalSec)
 	defer ticker.Stop()
 
-	closed := false
-	for !closed {
+	for {
 		select {
 		case <-psr.closeCh:
-			closed = true
+			break
 		case <-ticker.C:
 			if err := do(); err != nil {
 				logs.Errorf("[async] [module-parser] do watch func error %v", err)
@@ -109,7 +110,7 @@ func (psr *parser) startWatcher(do func() error) {
 }
 
 func (psr *parser) watchPendingFlow() error {
-	kt := NewAsyncKit()
+	kt := NewKit()
 
 	// 从DB中获取一条待执行的任务流并更新状态为执行中
 	flowFromDB, err := psr.backend.ConsumeOnePendingFlow(kt)
@@ -157,7 +158,7 @@ func (psr *parser) watchPendingFlow() error {
 	}
 
 	// 获取可执行的节点
-	executableTaskNodes := root.GetExecutableTaskNodes()
+	executableTaskNodes := root.GetExecutableTasks()
 	if len(executableTaskNodes) == 0 {
 		state := root.ComputeStatus()
 
@@ -223,7 +224,7 @@ func (psr *parser) changeFlowState(kt *kit.Kit, flowID string, flowChange *backe
 func (psr *parser) goWorker() {
 	for task := range psr.workerQueue {
 		if err := psr.executeNext(task); err != nil {
-			logs.Errorf("[async] [module-parser] run executeNext func error %v", err)
+			logs.Errorf("[async] [module-parser] exec executeNext failed, err: %v, rid: %s", err, task.Kit.Rid)
 		}
 	}
 
@@ -231,38 +232,36 @@ func (psr *parser) goWorker() {
 }
 
 // 任务流解析函数体，根据任务获取下次可执行的任务集合
-func (psr *parser) executeNext(taskNode *flow.TaskNode) error {
-	tree, ok := psr.getTaskTree(taskNode.Task.FlowID)
+func (psr *parser) executeNext(task *task.Task) error {
+	tree, ok := psr.getTaskTree(task.FlowID)
 	if !ok {
-		return fmt.Errorf("flow %s can not found task tree", taskNode.Task.FlowID)
+		logs.Errorf("[async] [module-parser] flow %s can not found task tree, rid: %s", task.FlowID, task.Kit.Rid)
+		return fmt.Errorf("flow %s can not found task tree", task.FlowID)
 	}
 
 	// 获取下次执行的任务
-	executableTaskNodes, find := taskNode.GetNextTaskNodes()
-	if !find {
-		return fmt.Errorf("task %s can not found next task node", taskNode.Task.ID)
-	}
-
-	if len(executableTaskNodes) == 0 {
+	executableTasks := tree.Root.GetNextTaskNodes(task)
+	if len(executableTasks) == 0 {
 		state := tree.Root.ComputeStatus()
 
 		if state == enumor.FlowFailed || state == enumor.FlowSuccess {
-			if err := psr.changeFlowState(taskNode.Task.Kit, taskNode.Task.FlowID, &backend.FlowChange{
+			flowChange := &backend.FlowChange{
 				State:  state,
 				Reason: constant.DefaultJsonValue,
-			}); err != nil {
-				logs.Errorf("[async] [module-parser] change flow state error %v", err)
+			}
+			if err := psr.changeFlowState(task.Kit, task.FlowID, flowChange); err != nil {
+				logs.Errorf("[async] [module-parser] change flow state failed, err: %v, rid: %s", err, task.Kit.Rid)
 				return err
 			}
 
-			psr.taskTrees.Delete(taskNode.Task.FlowID)
+			psr.taskTrees.Delete(task.FlowID)
 		}
 
 		return nil
 	}
 
 	// 可执行任务推送到执行器
-	for _, taskNode := range executableTaskNodes {
+	for _, taskNode := range executableTasks {
 		psr.executor.Push(taskNode)
 	}
 
@@ -280,12 +279,15 @@ func (psr *parser) getTaskTree(flowID string) (*flow.TaskTree, bool) {
 }
 
 // EntryTask 任务写回到执行器用于获取下一批可执行的任务
-func (psr *parser) EntryTask(taskNode *flow.TaskNode) {
+func (psr *parser) EntryTask(taskNode *task.Task) {
 	psr.workerQueue <- taskNode
 }
 
 // Close 解析器关闭函数
 func (psr *parser) Close() {
+
+	logs.Infof("parser receive close cmd, start to close")
+
 	select {
 	case <-psr.closeCh:
 		logs.V(3).Infof("[async] [module-parser] parser has already closed")
@@ -297,4 +299,7 @@ func (psr *parser) Close() {
 	close(psr.workerQueue)
 
 	psr.workerWg.Wait()
+
+	logs.Infof("parser receive close cmd, start to close")
+
 }

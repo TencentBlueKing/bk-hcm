@@ -27,7 +27,7 @@ import (
 
 	"hcm/pkg/async/backend"
 	"hcm/pkg/async/closer"
-	"hcm/pkg/async/flow"
+	"hcm/pkg/async/task"
 	"hcm/pkg/logs"
 )
 
@@ -41,7 +41,7 @@ type Executor interface {
 	SetGetParserFunc(f func() Parser)
 
 	// Push 推送task并执行。
-	Push(task *flow.TaskNode)
+	Push(task *task.Task)
 	// CancelTasks 关闭指定task_id的任务。
 	CancelTasks(taskIDs []string) error
 }
@@ -50,14 +50,14 @@ var _ Executor = new(executor)
 
 // executor 定义任务执行器
 type executor struct {
-	backend           backend.Backend
 	cancelMap         sync.Map
 	workerNumber      int
 	normalIntervalSec time.Duration
 	workerWg          sync.WaitGroup
 	initWg            sync.WaitGroup
-	workerQueue       chan *flow.TaskNode
-	initQueue         chan *flow.TaskNode
+	workerQueue       chan *task.Task
+	initQueue         chan *task.Task
+	backend           backend.Backend
 
 	GetParserFunc func() Parser
 }
@@ -68,13 +68,13 @@ func (exec *executor) SetGetParserFunc(f func() Parser) {
 }
 
 // NewExecutor 实例化任务执行器
-func NewExecutor(backend backend.Backend, workerNumber int, normalIntervalSec time.Duration) Executor {
+func NewExecutor(bd backend.Backend, workerNumber int, normalIntervalSec time.Duration) Executor {
 	return &executor{
-		backend:           backend,
+		backend:           bd,
 		workerWg:          sync.WaitGroup{},
 		initWg:            sync.WaitGroup{},
-		workerQueue:       make(chan *flow.TaskNode, 10),
-		initQueue:         make(chan *flow.TaskNode),
+		workerQueue:       make(chan *task.Task, 10),
+		initQueue:         make(chan *task.Task),
 		workerNumber:      workerNumber,
 		normalIntervalSec: normalIntervalSec,
 	}
@@ -82,6 +82,9 @@ func NewExecutor(backend backend.Backend, workerNumber int, normalIntervalSec ti
 
 // Start 初始化执行器并启动执行
 func (exec *executor) Start() {
+
+	logs.Infof("executor start, worker number: %d, interval: %v", exec.workerNumber, exec.normalIntervalSec)
+
 	// 待执行的任务预处理
 	exec.initWg.Add(1)
 	go exec.watchInitQueue()
@@ -103,37 +106,36 @@ func (exec *executor) watchInitQueue() {
 }
 
 // 待执行任务的预处理函数
-func (exec *executor) initWorkerTask(taskNode *flow.TaskNode) {
-	if _, ok := exec.cancelMap.Load(taskNode.Task.ID); ok {
-		logs.V(3).Infof("[async] [module-executor] task %s is already running", taskNode.Task.ID)
+func (exec *executor) initWorkerTask(task *task.Task) {
+	if _, ok := exec.cancelMap.Load(task.ID); ok {
+		logs.V(3).Infof("[async] [module-executor] task %s is already running, rid: %s", task.ID, task.Kit.Rid)
 		return
 	}
 
 	// 设置超时控制
-	c, cancel := context.WithTimeout(context.TODO(), time.Duration(taskNode.Task.TimeoutSecs)*time.Second)
-	taskNode.Task.SetCtxWithTimeOut(c)
+	c, cancel := context.WithTimeout(context.TODO(), time.Duration(task.TimeoutSecs)*time.Second)
+	task.SetCtxWithTimeOut(c)
 
 	// 设置kit
-	kt := NewAsyncKit()
-	newRid := fmt.Sprintf("%s-%s-%s", taskNode.Task.FlowID, taskNode.Task.ID, kt.Rid)
-	kt.Rid = newRid
-	taskNode.Task.SetKit(kt)
+	kt := NewKit()
+	kt.Rid = fmt.Sprintf("%s-%s-%s", task.FlowID, task.ID, kt.Rid)
+	task.SetKit(kt)
 
 	// 设置backend
-	taskNode.Task.SetBackend(exec.backend)
+	task.SetBackend(exec.backend)
 
 	// cancel存储到cancelMap中
-	exec.cancelMap.Store(taskNode.Task.ID, cancel)
+	exec.cancelMap.Store(task.ID, cancel)
 
 	// 任务写回workerQueue
-	exec.workerQueue <- taskNode
+	exec.workerQueue <- task
 }
 
 // 任务实际执行协程
 func (exec *executor) subWorkerQueue() {
 	for task := range exec.workerQueue {
 		if err := exec.workerDo(task); err != nil {
-			logs.Errorf("[async] [module-executor] workerDo func error %v", err)
+			logs.Errorf("[async] [module-executor] workerDo exec failed, err: %v, rid: %s", err, task.Kit.Rid)
 		}
 	}
 
@@ -141,24 +143,25 @@ func (exec *executor) subWorkerQueue() {
 }
 
 // 任务执行体
-func (exec *executor) workerDo(taskNode *flow.TaskNode) error {
+func (exec *executor) workerDo(task *task.Task) error {
+	// cancelMap清理执行成功/失败的任务
+	defer exec.cancelMap.Delete(task.ID)
+
 	// 执行任务
-	err := taskNode.Task.DoTask()
+	err := task.DoTask()
 	if err != nil {
-		logs.Errorf("[async] [module-executor] do task action error %v", err)
+		logs.Errorf("[async] [module-executor] exec doTask failed, err: %v, rid: %s", err, task.Kit.Rid)
+		return err
 	}
 
-	// cancelMap清理执行完的任务
-	defer exec.cancelMap.Delete(taskNode.Task.ID)
-
 	// 执行完的任务回写到解析器用于获取待执行的任务
-	exec.GetParserFunc().EntryTask(taskNode)
+	exec.GetParserFunc().EntryTask(task)
 
 	return nil
 }
 
 // Push 任务写入到initQueue
-func (exec *executor) Push(taskNode *flow.TaskNode) {
+func (exec *executor) Push(taskNode *task.Task) {
 	exec.initQueue <- taskNode
 }
 
@@ -176,8 +179,14 @@ func (exec *executor) CancelTasks(taskIDs []string) error {
 
 // Close 执行器关闭函数
 func (exec *executor) Close() {
+
+	logs.Infof("executor receive close cmd, start to close")
+
 	close(exec.initQueue)
 	exec.initWg.Wait()
 	close(exec.workerQueue)
 	exec.workerWg.Wait()
+
+	logs.Infof("executor close success")
+
 }

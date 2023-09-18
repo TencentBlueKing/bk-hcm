@@ -17,17 +17,17 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package producer
+package consumer
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/kit"
 )
 
-func initMetric(register prometheus.Registerer) *metric {
-	m := new(metric)
-
-	return m
-}
-
-type metric struct {
+// NewKit new async kit.
+func NewKit() *kit.Kit {
+	kt := kit.New()
+	kt.User = constant.AsyncUserKey
+	kt.AppCode = constant.AsyncAppCodeKey
+	return kt
 }
