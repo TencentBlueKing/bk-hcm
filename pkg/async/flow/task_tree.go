@@ -95,6 +95,10 @@ func (t *TaskNode) CanExecuteChild() bool {
 
 // CanBeExecuted check whether task could be executed
 func (t *TaskNode) CanBeExecuted() bool {
+	if t.Task.State != enumor.TaskPending {
+		return false
+	}
+
 	if len(t.parents) == 0 {
 		return true
 	}
@@ -109,9 +113,7 @@ func (t *TaskNode) CanBeExecuted() bool {
 
 // Executable check can executable
 func (t *TaskNode) Executable() bool {
-	if t.Task.State != enumor.TaskPending &&
-		t.Task.State != enumor.TaskBeforeSuccess &&
-		t.Task.State != enumor.TaskBeforeFailed {
+	if t.Task.State != enumor.TaskPending {
 		return false
 	}
 
@@ -147,11 +149,11 @@ func (t *TaskNode) ComputeStatus() (state enumor.FlowState) {
 	return
 }
 
-// GetExecutableTaskNodes get executable task nodes
-func (t *TaskNode) GetExecutableTaskNodes() (executables []*TaskNode) {
+// GetExecutableTasks get executable task nodes
+func (t *TaskNode) GetExecutableTasks() (executables []*task.Task) {
 	walkNode(t, func(node *TaskNode) bool {
 		if node.Executable() {
-			executables = append(executables, node)
+			executables = append(executables, node.Task)
 		}
 		return true
 	})
@@ -160,26 +162,29 @@ func (t *TaskNode) GetExecutableTaskNodes() (executables []*TaskNode) {
 }
 
 // GetNextTaskNodes get next task nodes
-func (t *TaskNode) GetNextTaskNodes() (executable []*TaskNode, find bool) {
+func (t *TaskNode) GetNextTaskNodes(completedOrRetryTask *task.Task) (executable []*task.Task) {
 	walkNode(t, func(node *TaskNode) bool {
-		find = true
+		if node.Task.ID == completedOrRetryTask.ID {
+			node.Task.State = completedOrRetryTask.State
 
-		if node.Task.State == enumor.TaskPending {
-			executable = append(executable, node)
-			return false
-		}
-
-		if !node.CanExecuteChild() {
-			return false
-		}
-
-		for i := range node.children {
-			if node.children[i].Executable() {
-				executable = append(executable, node.children[i])
+			if node.Task.State == enumor.TaskPending {
+				executable = append(executable, node.Task)
+				return false
 			}
-		}
 
-		return false
+			if !node.CanExecuteChild() {
+				return false
+			}
+
+			for i := range node.children {
+				if node.children[i].Executable() {
+					executable = append(executable, node.children[i].Task)
+				}
+			}
+
+			return false
+		}
+		return true
 	})
 
 	return
@@ -302,14 +307,15 @@ func walkNode(root *TaskNode, walkFunc func(node *TaskNode) bool) {
 }
 
 // dfsWalk 从某个节点进行深度优先遍历并依次遍历它的子节点
-func dfsWalk(root *TaskNode, walkFunc func(node *TaskNode) bool) bool {
+// Note: walkFunc
+func dfsWalk(root *TaskNode, walkFunc func(node *TaskNode) (isGoing bool)) (stop bool) {
 	if root.Task.ID != VirtualTaskRootID {
 		if !walkFunc(root) {
 			return false
 		}
 	}
 
-	// we cannot execute children, but should execute brother nodes
+	// 当前节点是否可以遍历子节点，如果不能遍历子节点，达到当前路线叶子节点
 	if !root.CanExecuteChild() {
 		return true
 	}

@@ -102,19 +102,43 @@ func (csm *consumer) Start(optFunc ...Option) error {
 		return err
 	}
 
-	// 主备架构，只有主节点工作，备用节点阻塞直到其切换为主节点
-	for {
-		time.Sleep(opt.normalIntervalSec)
-
-		if csm.leader.IsLeader() {
-			break
-		}
-	}
-
-	// 初始化所有组件并设置关闭函数
-	csm.initCommonComponent(opt)
-
 	csm.enable.Store(true)
+	logs.Infof("consumer start handle async tasks")
+
+	go func() {
+		for {
+			time.Sleep(time.Second)
+
+			// 如果消费者被关闭了
+			if !csm.enable.Load() {
+				logs.Infof("consumer is closed, stop handle async tasks")
+				csm.close()
+				break
+			}
+
+			// 如果是从节点
+			if !csm.leader.IsLeader() && len(csm.closers) == 0 {
+				continue
+			}
+
+			// 如果是主切从
+			if !csm.leader.IsLeader() && len(csm.closers) != 0 {
+				logs.Infof("the current node changes from the master node to the slave node, " +
+					"and start to stop handle async tasks")
+				csm.close()
+				continue
+			}
+
+			// 如果是从切主
+			if csm.leader.IsLeader() && len(csm.closers) == 0 {
+				logs.Infof("the current node is master, start init common component")
+				// 初始化所有组件并设置关闭函数
+				csm.initCommonComponent(opt)
+				logs.Infof("the current node is master, init common component success")
+				continue
+			}
+		}
+	}()
 
 	return nil
 }
@@ -151,12 +175,16 @@ func (csm *consumer) initCommonComponent(opt *options) {
 
 // Close 执行异步任务框架所有组件的关闭函数
 func (csm *consumer) Close() {
+	csm.enable.Store(false)
+	csm.close()
+}
+
+func (csm *consumer) close() {
 	logs.V(3).Infof("[async] [module-async] run closer begin")
 
 	for i := range csm.closers {
 		csm.closers[i].Close()
 	}
 
-	csm.enable.Store(false)
 	logs.V(3).Infof("[async] [module-async] run closer end")
 }

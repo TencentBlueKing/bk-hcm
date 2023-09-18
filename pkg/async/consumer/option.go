@@ -22,9 +22,7 @@ package consumer
 import (
 	"time"
 
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/kit"
 )
 
 type options struct {
@@ -91,11 +89,4 @@ func ParserWorkersCnt(cnt int) Option {
 	return func(opt *options) {
 		opt.parserWorkersCnt = cnt
 	}
-}
-
-func NewAsyncKit() *kit.Kit {
-	kt := kit.New()
-	kt.User = constant.AsyncUserKey
-	kt.AppCode = constant.AsyncAppCodeKey
-	return kt
 }
