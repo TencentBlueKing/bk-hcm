@@ -25,12 +25,19 @@ import (
 	taskserver "hcm/pkg/api/task-server"
 )
 
+// Producer ...
 type Producer struct {
 	backend iface.Backend
 }
 
+// SetBackend set producer backend
 func (p *Producer) SetBackend(backend iface.Backend) {
 	p.backend = backend
+}
+
+// GetBackend get producer backend
+func (p *Producer) GetBackend() iface.Backend {
+	return p.backend
 }
 
 // AddAsyncTplFlow add async flow

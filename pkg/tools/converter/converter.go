@@ -150,3 +150,24 @@ func StringSliceToSliceStringPtr(source []string) *string {
 func StrToLowerNoSpaceStr(str string) string {
 	return strings.ToLower(strings.Replace(str, " ", "", -1))
 }
+
+// JsonStrToMap json string to map
+func JsonStrToMap(jsonStr string) (map[string]string, error) {
+	m := make(map[string]string)
+	err := json.Unmarshal([]byte(jsonStr), &m)
+	if err != nil {
+		return nil, err
+	}
+
+	return m, nil
+}
+
+// MapToJsonStr map to json string
+func MapToJsonStr(m map[string]string) (string, error) {
+	jsonByte, err := json.Marshal(m)
+	if err != nil {
+		return "", err
+	}
+
+	return string(jsonByte), nil
+}

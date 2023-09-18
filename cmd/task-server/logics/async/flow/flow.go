@@ -39,7 +39,7 @@ type Flow struct {
 	Memo string `json:"memo" validate:"omitempty"`
 }
 
-// Validate Flow.
+// Validate Flow
 func (t *Flow) Validate() error {
 	return validator.Validate.Struct(t)
 }

@@ -20,21 +20,28 @@
 package iface
 
 import (
+	"hcm/cmd/task-server/logics/async/closer"
 	"hcm/pkg/api/core/task"
 	taskserver "hcm/pkg/api/task-server"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/kit"
 )
+
+var asyncBackend Backend
 
 // Backend - a common interface for all backends
 type Backend interface {
+	closer.Closer
+	// SetBackendKit set backend kit
+	SetBackendKit(kt *kit.Kit)
 	// ConsumeOnePendingFlow consume one pending flow
 	ConsumeOnePendingFlow() (*task.AsyncFlow, error)
 	// GetFlowsByCount get flows by count from backend
 	GetFlowsByCount(flowCount int) ([]task.AsyncFlow, error)
 	// AddFlow add flow into backend
 	AddFlow(req *taskserver.AddFlowReq) (string, error)
-	// SetFlowStateWithReason set flow state with reason
-	SetFlowStateWithReason(flowID string, state enumor.FlowState, reason string) error
+	// SetFlowChange set flow's change
+	SetFlowChange(flowID string, flowChange *FlowChange) error
 	// GetFlowByID get flow by id
 	GetFlowByID(flowID string) (*task.AsyncFlow, error)
 	// GetFlows get flows from backend
@@ -45,8 +52,32 @@ type Backend interface {
 	GetTasks(taskIDs []string) ([]task.AsyncFlowTask, error)
 	// GetTasksByFlowID get tasks by flow id from backend
 	GetTasksByFlowID(flowID string) ([]task.AsyncFlowTask, error)
-	// SetTaskStateWithReason set task state with reason
-	SetTaskStateWithReason(taskID string, state enumor.TaskState, reason string) error
+	// SetTaskChange set task's change
+	SetTaskChange(taskID string, taskChange *TaskChange) error
 	// MakeTaskIDs make task ids
 	MakeTaskIDs(num int) ([]string, error)
+}
+
+// SetBackend set backend
+func SetBackend(b Backend) {
+	asyncBackend = b
+}
+
+// GetBackend get backend
+func GetBackend() Backend {
+	return asyncBackend
+}
+
+// FlowChange 任务流的变化
+type FlowChange struct {
+	State     enumor.FlowState `json:"state"`
+	Reason    string           `json:"reason"`
+	ShareData string           `json:"share_date"`
+}
+
+// TaskChange 任务的变化
+type TaskChange struct {
+	State     enumor.TaskState `json:"state"`
+	Reason    string           `json:"reason"`
+	ShareData string           `json:"share_date"`
 }

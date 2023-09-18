@@ -17,15 +17,6 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package constant
+package metrics
 
-const (
-	// AsyncUserKey async UserKey
-	AsyncUserKey = "hcm-backend-async"
-
-	// AsyncAppCodeKey async AppCodeKey
-	AsyncAppCodeKey = "hcm"
-
-	// DefaultJsonValue async default json
-	DefaultJsonValue = "{}"
-)
+// TODO: 任务流、任务成功或失败等情况metrics打点

@@ -20,6 +20,7 @@
 package actions
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -34,13 +35,13 @@ func init() {
 
 // CreateSubnet ...
 type CreateSubnet struct {
-	ShareData map[string]interface{}
+	ShareData map[string]string
 }
 
 // NewCreateSubnet ...
 func NewCreateSubnet() *CreateSubnet {
 	return &CreateSubnet{
-		ShareData: make(map[string]interface{}),
+		ShareData: make(map[string]string),
 	}
 }
 
@@ -49,28 +50,38 @@ func (c *CreateSubnet) Name() string {
 	return string(enumor.TestCreateSubnet)
 }
 
+// NewParameter ...
+func (c *CreateSubnet) NewParameter(parameter interface{}) interface{} {
+	return nil
+}
+
+// GetShareData ...
+func (c *CreateSubnet) GetShareData() map[string]string {
+	return c.ShareData
+}
+
 // RunBefore ...
-func (c *CreateSubnet) RunBefore(kt *kit.Kit, params interface{}) error {
+func (c *CreateSubnet) RunBefore(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }
 
 // Run ...
-func (c *CreateSubnet) Run(kt *kit.Kit, params interface{}) error {
+func (c *CreateSubnet) Run(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	fmt.Println("run create subnet", time.Now())
 	return nil
 }
 
 // RunBeforeSuccess ...
-func (c *CreateSubnet) RunBeforeSuccess(kt *kit.Kit, params interface{}) error {
+func (c *CreateSubnet) RunBeforeSuccess(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }
 
 // RunBeforeFailed ...
-func (c *CreateSubnet) RunBeforeFailed(kt *kit.Kit, params interface{}) error {
+func (c *CreateSubnet) RunBeforeFailed(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }
 
 // RetryBefore ...
-func (c *CreateSubnet) RetryBefore(kt *kit.Kit, params interface{}) error {
+func (c *CreateSubnet) RetryBefore(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }

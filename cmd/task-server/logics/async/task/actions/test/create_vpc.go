@@ -20,6 +20,7 @@
 package actions
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -34,13 +35,13 @@ func init() {
 
 // CreateVpc ...
 type CreateVpc struct {
-	ShareData map[string]interface{}
+	ShareData map[string]string
 }
 
 // NewCreateVpc ...
 func NewCreateVpc() *CreateVpc {
 	return &CreateVpc{
-		ShareData: make(map[string]interface{}),
+		ShareData: make(map[string]string),
 	}
 }
 
@@ -49,28 +50,38 @@ func (c *CreateVpc) Name() string {
 	return string(enumor.TestCreateVpc)
 }
 
+// NewParameter ...
+func (c *CreateVpc) NewParameter(parameter interface{}) interface{} {
+	return nil
+}
+
+// GetShareData ...
+func (c *CreateVpc) GetShareData() map[string]string {
+	return c.ShareData
+}
+
 // RunBefore ...
-func (c *CreateVpc) RunBefore(kt *kit.Kit, params interface{}) error {
+func (c *CreateVpc) RunBefore(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }
 
 // Run ...
-func (c *CreateVpc) Run(kt *kit.Kit, params interface{}) error {
+func (c *CreateVpc) Run(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	fmt.Println("run create vpc", time.Now())
 	return nil
 }
 
 // RunBeforeSuccess ...
-func (c *CreateVpc) RunBeforeSuccess(kt *kit.Kit, params interface{}) error {
+func (c *CreateVpc) RunBeforeSuccess(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }
 
 // RunBeforeFailed ...
-func (c *CreateVpc) RunBeforeFailed(kt *kit.Kit, params interface{}) error {
+func (c *CreateVpc) RunBeforeFailed(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }
 
 // RetryBefore ...
-func (c *CreateVpc) RetryBefore(kt *kit.Kit, params interface{}) error {
+func (c *CreateVpc) RetryBefore(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }

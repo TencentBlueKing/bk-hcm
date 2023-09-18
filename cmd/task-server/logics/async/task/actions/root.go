@@ -20,7 +20,7 @@
 package actions
 
 import (
-	"fmt"
+	"context"
 
 	"hcm/cmd/task-server/logics/async/task"
 	"hcm/pkg/criteria/enumor"
@@ -33,13 +33,13 @@ func init() {
 
 // Root ...
 type Root struct {
-	ShareData map[string]interface{}
+	ShareData map[string]string
 }
 
 // NewRoot ...
 func NewRoot() *Root {
 	return &Root{
-		ShareData: make(map[string]interface{}),
+		ShareData: make(map[string]string),
 	}
 }
 
@@ -48,28 +48,37 @@ func (e *Root) Name() string {
 	return string(enumor.VirRoot)
 }
 
+// NewParameter ...
+func (e *Root) NewParameter(parameter interface{}) interface{} {
+	return nil
+}
+
+// GetShareData ...
+func (e *Root) GetShareData() map[string]string {
+	return e.ShareData
+}
+
 // RunBefore ...
-func (e *Root) RunBefore(kt *kit.Kit, params interface{}) error {
+func (e *Root) RunBefore(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }
 
 // Run ...
-func (e *Root) Run(kt *kit.Kit, params interface{}) error {
-	fmt.Println("run virtual root")
+func (e *Root) Run(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }
 
 // RunBeforeSuccess ...
-func (e *Root) RunBeforeSuccess(kt *kit.Kit, params interface{}) error {
+func (e *Root) RunBeforeSuccess(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }
 
 // RunBeforeFailed ...
-func (e *Root) RunBeforeFailed(kt *kit.Kit, params interface{}) error {
+func (e *Root) RunBeforeFailed(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }
 
 // RetryBefore ...
-func (e *Root) RetryBefore(kt *kit.Kit, params interface{}) error {
+func (e *Root) RetryBefore(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }

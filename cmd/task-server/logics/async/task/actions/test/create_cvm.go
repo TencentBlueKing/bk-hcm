@@ -20,6 +20,7 @@
 package actions
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -34,13 +35,13 @@ func init() {
 
 // CreateCvm ...
 type CreateCvm struct {
-	ShareData map[string]interface{}
+	ShareData map[string]string
 }
 
 // NewCreateCvm ...
 func NewCreateCvm() *CreateCvm {
 	return &CreateCvm{
-		ShareData: make(map[string]interface{}),
+		ShareData: make(map[string]string),
 	}
 }
 
@@ -49,28 +50,38 @@ func (c *CreateCvm) Name() string {
 	return string(enumor.TestCreateCvm)
 }
 
+// NewParameter ...
+func (c *CreateCvm) NewParameter(parameter interface{}) interface{} {
+	return nil
+}
+
+// GetShareData ...
+func (c *CreateCvm) GetShareData() map[string]string {
+	return c.ShareData
+}
+
 // RunBefore ...
-func (c *CreateCvm) RunBefore(kt *kit.Kit, params interface{}) error {
+func (c *CreateCvm) RunBefore(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }
 
 // Run ...
-func (c *CreateCvm) Run(kt *kit.Kit, params interface{}) error {
+func (c *CreateCvm) Run(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	fmt.Println("run create cvm", time.Now())
 	return nil
 }
 
 // RunBeforeSuccess ...
-func (c *CreateCvm) RunBeforeSuccess(kt *kit.Kit, params interface{}) error {
+func (c *CreateCvm) RunBeforeSuccess(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }
 
 // RunBeforeFailed ...
-func (c *CreateCvm) RunBeforeFailed(kt *kit.Kit, params interface{}) error {
+func (c *CreateCvm) RunBeforeFailed(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }
 
 // RetryBefore ...
-func (cvm *CreateCvm) RetryBefore(kt *kit.Kit, params interface{}) error {
+func (cvm *CreateCvm) RetryBefore(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }

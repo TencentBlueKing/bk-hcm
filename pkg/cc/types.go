@@ -158,18 +158,28 @@ func (lm *Limiter) trySetDefault() {
 
 // defines async
 type Async struct {
-	ConsumerIntervalSecond int `yaml:"ConsumerIntervalSecond"`
-	ConsumerNum            int `yaml:"consumerNum"`
+	NormalIntervalSec   int `yaml:"normalIntervalSec"`
+	ExecutorWorkerCnt   int `yaml:"executorWorkerCnt"`
+	ParserWorkersCnt    int `yaml:"parserWorkersCnt"`
+	FlowScheduleTimeout int `yaml:"flowScheduleTimeout"`
 }
 
 func (a Async) validate() error {
 
-	if a.ConsumerIntervalSecond < 1 {
-		return errors.New("consumerIntervalSecond must > 1")
+	if a.NormalIntervalSec < 1 {
+		return errors.New("normalIntervalSec must > 1")
 	}
 
-	if a.ConsumerNum < 1 {
-		return errors.New("consumerNum must > 1")
+	if a.ExecutorWorkerCnt < 1 {
+		return errors.New("executorWorkerCnt must > 1")
+	}
+
+	if a.ParserWorkersCnt < 1 {
+		return errors.New("parserWorkersCnt must > 1")
+	}
+
+	if a.FlowScheduleTimeout < 1 {
+		return errors.New("flowScheduleTimeout must > 1")
 	}
 
 	return nil
@@ -177,12 +187,20 @@ func (a Async) validate() error {
 
 // trySetDefault set the Setting default value if user not configured.
 func (a *Async) trySetDefault() {
-	if a.ConsumerIntervalSecond < 1 {
-		a.ConsumerIntervalSecond = 10
+	if a.NormalIntervalSec < 1 {
+		a.NormalIntervalSec = 10
 	}
 
-	if a.ConsumerNum < 1 {
-		a.ConsumerNum = 2
+	if a.ExecutorWorkerCnt < 1 {
+		a.ExecutorWorkerCnt = 10
+	}
+
+	if a.ParserWorkersCnt < 1 {
+		a.ParserWorkersCnt = 5
+	}
+
+	if a.FlowScheduleTimeout < 1 {
+		a.FlowScheduleTimeout = 15
 	}
 }
 
