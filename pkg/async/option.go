@@ -17,19 +17,36 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability 公共参数。
-package capability
+package async
 
 import (
-	"hcm/pkg/async"
-	"hcm/pkg/client"
+	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/emicklei/go-restful/v3"
+	"hcm/pkg/criteria/validator"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Async      async.Async
+type options struct {
+	register prometheus.Registerer `json:"register" validate:"required"`
+}
+
+// tryDefaultValue 设置默认值。
+func (opt *options) tryDefaultValue() {
+	if opt.register == nil {
+		opt.register = prometheus.DefaultRegisterer
+	}
+}
+
+// Validate define options.
+func (opt *options) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// Option orm option func defines.
+type Option func(opt *options)
+
+// MetricsRegisterer set metrics registerer.
+func MetricsRegisterer(register prometheus.Registerer) Option {
+	return func(opt *options) {
+		opt.register = register
+	}
 }

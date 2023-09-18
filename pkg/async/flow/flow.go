@@ -17,19 +17,30 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability 公共参数。
-package capability
+// Package flow 异步任务流
+package flow
 
 import (
-	"hcm/pkg/async"
-	"hcm/pkg/client"
-
-	"github.com/emicklei/go-restful/v3"
+	"hcm/pkg/async/task"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/validator"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Async      async.Async
+// Flow 任务流
+type Flow struct {
+	// 任务流ID
+	ID string `json:"id" validate:"required"`
+	// 任务流名称
+	Name string `json:"name" validate:"required"`
+	// 任务流状态
+	State enumor.FlowState `json:"state" validate:"required"`
+	// 任务集合
+	Tasks []task.Task `json:"tasks" validate:"required"`
+	// 任务流描述
+	Memo string `json:"memo" validate:"omitempty"`
+}
+
+// Validate Flow
+func (t *Flow) Validate() error {
+	return validator.Validate.Struct(t)
 }

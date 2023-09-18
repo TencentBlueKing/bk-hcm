@@ -17,19 +17,10 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability 公共参数。
-package capability
+// Package closer 关闭统一抽象
+package closer
 
-import (
-	"hcm/pkg/async"
-	"hcm/pkg/client"
-
-	"github.com/emicklei/go-restful/v3"
-)
-
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Async      async.Async
+// Closer 定义所有组件的关闭接口
+type Closer interface {
+	Close()
 }

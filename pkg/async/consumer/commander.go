@@ -17,19 +17,41 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability 公共参数。
-package capability
+package consumer
 
-import (
-	"hcm/pkg/async"
-	"hcm/pkg/client"
+// Commander 外部命令执行体
+type Commander interface {
+	RunFlows(flowIDs []string) error
+	RetryFlows(flowIDs []string) error
+	RetryTasks(taskIDs []string) error
+	CancelTasks(taskIDs []string) error
+}
 
-	"github.com/emicklei/go-restful/v3"
-)
+// NewCommander new commander.
+func NewCommander() Commander {
+	return &commander{}
+}
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Async      async.Async
+// commander ...
+type commander struct {
+}
+
+// RunFlows 控制执行多个任务流
+func (ac *commander) RunFlows(flowIDs []string) error {
+	return nil
+}
+
+// RetryFlows 控制重试多个任务流
+func (ac *commander) RetryFlows(flowIDs []string) error {
+	return nil
+}
+
+// RetryTasks 控制重试多个任务
+func (ac *commander) RetryTasks(taskIDs []string) error {
+	return nil
+}
+
+// CancelTasks 控制取消多个任务
+func (ac *commander) CancelTasks(taskIDs []string) error {
+	return nil
 }

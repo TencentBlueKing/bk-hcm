@@ -17,19 +17,31 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability 公共参数。
-package capability
+// Package leader 主从判断器
+package leader
 
 import (
-	"hcm/pkg/async"
-	"hcm/pkg/client"
-
-	"github.com/emicklei/go-restful/v3"
+	"hcm/pkg/serviced"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Async      async.Async
+// Leader 选主管理
+type Leader interface {
+	IsLeader() bool
+}
+
+// NewLeader 创建一个主节点控制器
+func NewLeader(sd serviced.ServiceDiscover) Leader {
+	return &leader{
+		sd: sd,
+	}
+}
+
+// leader ...
+type leader struct {
+	sd serviced.ServiceDiscover
+}
+
+// IsLeader 判断是否是主节点
+func (al *leader) IsLeader() bool {
+	return al.sd.IsMaster()
 }
