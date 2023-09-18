@@ -25,6 +25,7 @@ import useCvmFormData, { getDataDiskDefaults, getGcpDataDiskDefaults } from '../
 import { useAccountStore } from '@/store';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import CommonCard from '@/components/CommonCard';
+import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 
 const accountStore = useAccountStore();
 
@@ -762,6 +763,11 @@ export default defineComponent({
     };
 
     return () => <div>
+      <DetailHeader>
+        <p class={'purchase-cvm-header-title'}>
+          购买主机
+        </p>
+      </DetailHeader>
       <ConditionOptions
           type={ResourceTypeEnum.CVM}
           v-model:bizId={cond.bizId}
@@ -769,7 +775,7 @@ export default defineComponent({
           v-model:vendor={cond.vendor}
           v-model:region={cond.region}
           v-model:resourceGroup={cond.resourceGroup}
-          class={'mb16'}>
+          class={'mb16 mt24'}>
           {{
             default: () => (
               <Form formType='vertical'>
@@ -862,6 +868,22 @@ export default defineComponent({
         onSave={handleSaveGcpDataDisk}
         onClose={() => dialogState.gcpDataDisk.isShow = false}
       />
+
+      <div class={'purchase-cvm-bottom-bar'}>
+          <Form class={'purchase-cvm-bottom-bar-form'}>
+            <FormItem labelWidth={'120px'} label='数量'>
+              <Input type='number' min={0} max={100} v-model={formData.required_count}></Input>
+            </FormItem>
+            <FormItem  label='时长'>
+              <Input type='number' v-model={formData.purchase_duration.count}></Input>
+            </FormItem>
+            <FormItem>
+              <Checkbox v-model={formData.auto_renew}>自动续费</Checkbox>
+            </FormItem>
+          </Form>
+          <div class={'purchase-cvm-bottom-bar-info'}>
+          </div>
+      </div>
     </div>;
   },
 });

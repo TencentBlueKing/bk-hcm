@@ -14,3 +14,35 @@
     margin-right: 10px;
   }
 }
+
+.purchase-cvm-header-title {
+  font-size: 16px;
+  color: #313238;
+}
+
+.purchase-cvm-bottom-bar {
+  height: 80px;
+  background: #fafbfd;
+  border: 1px solid #dcdee5;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+
+  .purchase-cvm-bottom-bar-form {
+    display: flex;
+    justify-content: center;
+    flex: 1;
+  }
+
+  .purchase-cvm-bottom-bar-info {
+    margin-left: auto;
+    margin-right: 24px;
+  }
+
+  .mr32 {
+    margin-right: 32px;
+  }
+}
