@@ -50,7 +50,7 @@ func (cli *CloudAdaptorClient) Adaptor() *adaptor.Adaptor {
 }
 
 // TCloud return tcloud client.
-func (cli *CloudAdaptorClient) TCloud(kt *kit.Kit, accountID string) (*tcloud.TCloud, error) {
+func (cli *CloudAdaptorClient) TCloud(kt *kit.Kit, accountID string) (tcloud.TCloud, error) {
 	secret, err := cli.secretCli.TCloudSecret(kt, accountID)
 	if err != nil {
 		return nil, err

@@ -34,6 +34,7 @@ type Client struct {
 	Vpc             *VpcClient
 	Subnet          *SubnetClient
 	Cvm             *CvmClient
+	RouteTable      *RouteTableClient
 	ApprovalProcess *ApprovalProcessClient
 }
 
@@ -46,5 +47,6 @@ func NewClient(c *client.Capability, version string) *Client {
 		Subnet:          NewSubnetClient(restCli),
 		Cvm:             NewCvmClient(restCli),
 		ApprovalProcess: NewApprovalProcessClient(restCli),
+		RouteTable:      NewRouteTable(restCli),
 	}
 }

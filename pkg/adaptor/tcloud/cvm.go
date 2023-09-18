@@ -38,7 +38,7 @@ import (
 
 // ListCvm list cvm.
 // reference: https://cloud.tencent.com/document/api/213/15728
-func (t *TCloud) ListCvm(kt *kit.Kit, opt *typecvm.TCloudListOption) ([]typecvm.TCloudCvm, error) {
+func (t *TCloudImpl) ListCvm(kt *kit.Kit, opt *typecvm.TCloudListOption) ([]typecvm.TCloudCvm, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list option is required")
@@ -80,7 +80,7 @@ func (t *TCloud) ListCvm(kt *kit.Kit, opt *typecvm.TCloudListOption) ([]typecvm.
 
 // CountCvm count cvm in given region
 // reference: https://cloud.tencent.com/document/api/213/15728
-func (t *TCloud) CountCvm(kt *kit.Kit, region string) (int32, error) {
+func (t *TCloudImpl) CountCvm(kt *kit.Kit, region string) (int32, error) {
 
 	client, err := t.clientSet.cvmClient(region)
 	if err != nil {
@@ -98,7 +98,7 @@ func (t *TCloud) CountCvm(kt *kit.Kit, region string) (int32, error) {
 }
 
 // DeleteCvm reference: https://cloud.tencent.com/document/api/213/15723
-func (t *TCloud) DeleteCvm(kt *kit.Kit, opt *typecvm.TCloudDeleteOption) error {
+func (t *TCloudImpl) DeleteCvm(kt *kit.Kit, opt *typecvm.TCloudDeleteOption) error {
 
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "start cvm option is required")
@@ -126,7 +126,7 @@ func (t *TCloud) DeleteCvm(kt *kit.Kit, opt *typecvm.TCloudDeleteOption) error {
 }
 
 // StartCvm reference: https://cloud.tencent.com/document/api/213/15735
-func (t *TCloud) StartCvm(kt *kit.Kit, opt *typecvm.TCloudStartOption) error {
+func (t *TCloudImpl) StartCvm(kt *kit.Kit, opt *typecvm.TCloudStartOption) error {
 
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "start cvm option is required")
@@ -153,7 +153,7 @@ func (t *TCloud) StartCvm(kt *kit.Kit, opt *typecvm.TCloudStartOption) error {
 	handler := &startCvmPollingHandler{
 		opt.Region,
 	}
-	respPoller := poller.Poller[*TCloud, []*cvm.Instance, poller.BaseDoneResult]{Handler: handler}
+	respPoller := poller.Poller[*TCloudImpl, []*cvm.Instance, poller.BaseDoneResult]{Handler: handler}
 	res, err := respPoller.PollUntilDone(t, kt, converter.SliceToPtr(opt.CloudIDs), types.NewBatchOperateCvmPollerOpt())
 	if err != nil {
 		logs.Errorf("poll start cvm failed, err: %v, res: %#v, rid: %s", err, res, kt.Rid)
@@ -164,7 +164,7 @@ func (t *TCloud) StartCvm(kt *kit.Kit, opt *typecvm.TCloudStartOption) error {
 }
 
 // StopCvm reference: https://cloud.tencent.com/document/api/213/15743
-func (t *TCloud) StopCvm(kt *kit.Kit, opt *typecvm.TCloudStopOption) error {
+func (t *TCloudImpl) StopCvm(kt *kit.Kit, opt *typecvm.TCloudStopOption) error {
 
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "stop cvm option is required")
@@ -194,7 +194,7 @@ func (t *TCloud) StopCvm(kt *kit.Kit, opt *typecvm.TCloudStopOption) error {
 	handler := &stopCvmPollingHandler{
 		opt.Region,
 	}
-	respPoller := poller.Poller[*TCloud, []*cvm.Instance, poller.BaseDoneResult]{Handler: handler}
+	respPoller := poller.Poller[*TCloudImpl, []*cvm.Instance, poller.BaseDoneResult]{Handler: handler}
 	res, err := respPoller.PollUntilDone(t, kt, converter.SliceToPtr(opt.CloudIDs), types.NewBatchOperateCvmPollerOpt())
 	if err != nil {
 		logs.Errorf("poll stop cvm failed, err: %v, res: %#v, rid: %s", err, res, kt.Rid)
@@ -205,7 +205,7 @@ func (t *TCloud) StopCvm(kt *kit.Kit, opt *typecvm.TCloudStopOption) error {
 }
 
 // RebootCvm reference: https://cloud.tencent.com/document/api/213/15742
-func (t *TCloud) RebootCvm(kt *kit.Kit, opt *typecvm.TCloudRebootOption) error {
+func (t *TCloudImpl) RebootCvm(kt *kit.Kit, opt *typecvm.TCloudRebootOption) error {
 
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "reboot cvm option is required")
@@ -234,7 +234,7 @@ func (t *TCloud) RebootCvm(kt *kit.Kit, opt *typecvm.TCloudRebootOption) error {
 	handler := &rebootCvmPollingHandler{
 		opt.Region,
 	}
-	respPoller := poller.Poller[*TCloud, []*cvm.Instance, poller.BaseDoneResult]{Handler: handler}
+	respPoller := poller.Poller[*TCloudImpl, []*cvm.Instance, poller.BaseDoneResult]{Handler: handler}
 	res, err := respPoller.PollUntilDone(t, kt, converter.SliceToPtr(opt.CloudIDs), types.NewBatchOperateCvmPollerOpt())
 	if err != nil {
 		logs.Errorf("poll reboot cvm failed, err: %v, res: %#v, rid: %s", err, res, kt.Rid)
@@ -245,7 +245,7 @@ func (t *TCloud) RebootCvm(kt *kit.Kit, opt *typecvm.TCloudRebootOption) error {
 }
 
 // ResetCvmPwd reference: https://cloud.tencent.com/document/api/213/15736
-func (t *TCloud) ResetCvmPwd(kt *kit.Kit, opt *typecvm.TCloudResetPwdOption) error {
+func (t *TCloudImpl) ResetCvmPwd(kt *kit.Kit, opt *typecvm.TCloudResetPwdOption) error {
 
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "reset pwd option is required")
@@ -276,7 +276,7 @@ func (t *TCloud) ResetCvmPwd(kt *kit.Kit, opt *typecvm.TCloudResetPwdOption) err
 	handler := &resetpwdCvmPollingHandler{
 		opt.Region,
 	}
-	respPoller := poller.Poller[*TCloud, []*cvm.Instance, poller.BaseDoneResult]{Handler: handler}
+	respPoller := poller.Poller[*TCloudImpl, []*cvm.Instance, poller.BaseDoneResult]{Handler: handler}
 	res, err := respPoller.PollUntilDone(t, kt, converter.SliceToPtr(opt.CloudIDs), types.NewBatchOperateCvmPollerOpt())
 	if err != nil {
 		logs.Errorf("poll reset pwd cvm failed, err: %v, res: %#v, rid: %s", err, res, kt.Rid)
@@ -289,7 +289,7 @@ func (t *TCloud) ResetCvmPwd(kt *kit.Kit, opt *typecvm.TCloudResetPwdOption) err
 // CreateCvm reference: https://cloud.tencent.com/document/api/213/15730
 // NOTE：返回实例`ID`列表并不代表实例创建成功，可根据 [DescribeInstances](https://cloud.tencent.com/document/api/213/15728)
 // 接口查询返回的InstancesSet中对应实例的`ID`的状态来判断创建是否完成；如果实例状态由“PENDING(创建中)”变为“RUNNING(运行中)”，则为创建成功。
-func (t *TCloud) CreateCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (*poller.BaseDoneResult, error) {
+func (t *TCloudImpl) CreateCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (*poller.BaseDoneResult, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "create option is required")
 	}
@@ -374,7 +374,7 @@ func (t *TCloud) CreateCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (*polle
 	handler := &createCvmPollingHandler{
 		opt.Region,
 	}
-	respPoller := poller.Poller[*TCloud, []*cvm.Instance, poller.BaseDoneResult]{Handler: handler}
+	respPoller := poller.Poller[*TCloudImpl, []*cvm.Instance, poller.BaseDoneResult]{Handler: handler}
 	result, err := respPoller.PollUntilDone(t, kt, resp.Response.InstanceIdSet, types.NewBatchCreateCvmPollerOption())
 	if err != nil {
 		return nil, err
@@ -384,7 +384,7 @@ func (t *TCloud) CreateCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (*polle
 }
 
 // InquiryPriceCvm reference: https://cloud.tencent.com/document/api/213/15726
-func (t *TCloud) InquiryPriceCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (
+func (t *TCloudImpl) InquiryPriceCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (
 	*typecvm.InquiryPriceResult, error) {
 
 	if opt == nil {
@@ -492,7 +492,7 @@ func (h *startCvmPollingHandler) Done(cvms []*cvm.Instance) (bool, *poller.BaseD
 }
 
 // Poll ...
-func (h *startCvmPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cvm.Instance, error) {
+func (h *startCvmPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs []*string) ([]*cvm.Instance, error) {
 	return poll(client, kt, h.region, cloudIDs)
 }
 
@@ -506,7 +506,7 @@ func (h *stopCvmPollingHandler) Done(cvms []*cvm.Instance) (bool, *poller.BaseDo
 }
 
 // Poll ...
-func (h *stopCvmPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cvm.Instance, error) {
+func (h *stopCvmPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs []*string) ([]*cvm.Instance, error) {
 	return poll(client, kt, h.region, cloudIDs)
 }
 
@@ -520,7 +520,7 @@ func (h *resetpwdCvmPollingHandler) Done(cvms []*cvm.Instance) (bool, *poller.Ba
 }
 
 // Poll ...
-func (h *resetpwdCvmPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cvm.Instance, error) {
+func (h *resetpwdCvmPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs []*string) ([]*cvm.Instance, error) {
 	return poll(client, kt, h.region, cloudIDs)
 }
 
@@ -534,7 +534,7 @@ func (h *rebootCvmPollingHandler) Done(cvms []*cvm.Instance) (bool, *poller.Base
 }
 
 // Poll ...
-func (h *rebootCvmPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cvm.Instance, error) {
+func (h *rebootCvmPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs []*string) ([]*cvm.Instance, error) {
 	return poll(client, kt, h.region, cloudIDs)
 }
 
@@ -555,7 +555,7 @@ func done(cvms []*cvm.Instance, succeed string) (bool, *poller.BaseDoneResult) {
 	return flag, result
 }
 
-func poll(client *TCloud, kt *kit.Kit, region string, cloudIDs []*string) ([]*cvm.Instance, error) {
+func poll(client *TCloudImpl, kt *kit.Kit, region string, cloudIDs []*string) ([]*cvm.Instance, error) {
 	cloudIDSplit := slice.Split(cloudIDs, core.TCloudQueryLimit)
 
 	cvms := make([]*cvm.Instance, 0, len(cloudIDs))
@@ -613,7 +613,7 @@ func (h *createCvmPollingHandler) Done(cvms []*cvm.Instance) (bool, *poller.Base
 	return flag, result
 }
 
-func (h *createCvmPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cvm.Instance, error) {
+func (h *createCvmPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs []*string) ([]*cvm.Instance, error) {
 
 	cloudIDSplit := slice.Split(cloudIDs, core.TCloudQueryLimit)
 
@@ -643,4 +643,4 @@ func (h *createCvmPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*
 	return cvms, nil
 }
 
-var _ poller.PollingHandler[*TCloud, []*cvm.Instance, poller.BaseDoneResult] = new(createCvmPollingHandler)
+var _ poller.PollingHandler[*TCloudImpl, []*cvm.Instance, poller.BaseDoneResult] = new(createCvmPollingHandler)

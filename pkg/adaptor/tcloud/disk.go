@@ -37,7 +37,7 @@ import (
 
 // CreateDisk 创建云硬盘
 // reference: https://cloud.tencent.com/document/api/362/16312
-func (t *TCloud) CreateDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*poller.BaseDoneResult, error) {
+func (t *TCloudImpl) CreateDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*poller.BaseDoneResult, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "tcloud disk create option is required")
 	}
@@ -47,7 +47,7 @@ func (t *TCloud) CreateDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*pol
 		return nil, err
 	}
 
-	respPoller := poller.Poller[*TCloud, []disk.TCloudDisk, poller.BaseDoneResult]{
+	respPoller := poller.Poller[*TCloudImpl, []disk.TCloudDisk, poller.BaseDoneResult]{
 		Handler: &createDiskPollingHandler{region: opt.Region},
 	}
 	return respPoller.PollUntilDone(t, kt, resp.Response.DiskIdSet, nil)
@@ -55,7 +55,7 @@ func (t *TCloud) CreateDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*pol
 
 // InquiryPriceDisk 创建云硬盘询价
 // reference: https://cloud.tencent.com/document/api/362/16314
-func (t *TCloud) InquiryPriceDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (
+func (t *TCloudImpl) InquiryPriceDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (
 	*typecvm.InquiryPriceResult, error) {
 
 	if opt == nil {
@@ -103,7 +103,7 @@ func (t *TCloud) InquiryPriceDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption)
 	return result, nil
 }
 
-func (t *TCloud) createDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*cbs.CreateDisksResponse, error) {
+func (t *TCloudImpl) createDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*cbs.CreateDisksResponse, error) {
 	client, err := t.clientSet.cbsClient(opt.Region)
 	if err != nil {
 		return nil, err
@@ -119,7 +119,7 @@ func (t *TCloud) createDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*cbs
 
 // ListDisk 查询云硬盘列表
 // reference: https://cloud.tencent.com/document/api/362/16315
-func (t *TCloud) ListDisk(kt *kit.Kit, opt *core.TCloudListOption) ([]disk.TCloudDisk, error) {
+func (t *TCloudImpl) ListDisk(kt *kit.Kit, opt *core.TCloudListOption) ([]disk.TCloudDisk, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "tcloud disk list option is required")
 	}
@@ -158,7 +158,7 @@ func (t *TCloud) ListDisk(kt *kit.Kit, opt *core.TCloudListOption) ([]disk.TClou
 
 // CountDisk 基于 DescribeDisksWithContext
 // reference: https://cloud.tencent.com/document/api/362/16315
-func (t *TCloud) CountDisk(kt *kit.Kit, region string) (int32, error) {
+func (t *TCloudImpl) CountDisk(kt *kit.Kit, region string) (int32, error) {
 
 	client, err := t.clientSet.cbsClient(region)
 	if err != nil {
@@ -177,7 +177,7 @@ func (t *TCloud) CountDisk(kt *kit.Kit, region string) (int32, error) {
 
 // DeleteDisk 删除云盘
 // reference: https://cloud.tencent.com/document/product/362/16321
-func (t *TCloud) DeleteDisk(kt *kit.Kit, opt *disk.TCloudDiskDeleteOption) error {
+func (t *TCloudImpl) DeleteDisk(kt *kit.Kit, opt *disk.TCloudDiskDeleteOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "tcloud disk delete option is required")
 	}
@@ -203,7 +203,7 @@ func (t *TCloud) DeleteDisk(kt *kit.Kit, opt *disk.TCloudDiskDeleteOption) error
 
 // AttachDisk 挂载云盘
 // reference: https://cloud.tencent.com/document/product/362/16313
-func (t *TCloud) AttachDisk(kt *kit.Kit, opt *disk.TCloudDiskAttachOption) error {
+func (t *TCloudImpl) AttachDisk(kt *kit.Kit, opt *disk.TCloudDiskAttachOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "tcloud disk attach option is required")
 	}
@@ -224,7 +224,7 @@ func (t *TCloud) AttachDisk(kt *kit.Kit, opt *disk.TCloudDiskAttachOption) error
 		return err
 	}
 
-	respPoller := poller.Poller[*TCloud, []disk.TCloudDisk, poller.BaseDoneResult]{
+	respPoller := poller.Poller[*TCloudImpl, []disk.TCloudDisk, poller.BaseDoneResult]{
 		Handler: &attachDiskPollingHandler{region: opt.Region},
 	}
 	_, err = respPoller.PollUntilDone(t, kt, converter.SliceToPtr(opt.CloudDiskIDs), nil)
@@ -233,7 +233,7 @@ func (t *TCloud) AttachDisk(kt *kit.Kit, opt *disk.TCloudDiskAttachOption) error
 
 // DetachDisk 卸载云盘
 // reference: https://cloud.tencent.com/document/product/362/16316
-func (t *TCloud) DetachDisk(kt *kit.Kit, opt *disk.TCloudDiskDetachOption) error {
+func (t *TCloudImpl) DetachDisk(kt *kit.Kit, opt *disk.TCloudDiskDetachOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "tcloud disk detach option is required")
 	}
@@ -254,7 +254,7 @@ func (t *TCloud) DetachDisk(kt *kit.Kit, opt *disk.TCloudDiskDetachOption) error
 		return err
 	}
 
-	respPoller := poller.Poller[*TCloud, []disk.TCloudDisk, poller.BaseDoneResult]{
+	respPoller := poller.Poller[*TCloudImpl, []disk.TCloudDisk, poller.BaseDoneResult]{
 		Handler: &detachDiskPollingHandler{region: opt.Region},
 	}
 	_, err = respPoller.PollUntilDone(t, kt, converter.SliceToPtr(opt.CloudDiskIDs), nil)
@@ -288,7 +288,8 @@ func (h *createDiskPollingHandler) Done(pollResult []disk.TCloudDisk) (bool, *po
 	}
 }
 
-func (h *createDiskPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]disk.TCloudDisk, error) {
+func (h *createDiskPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs []*string) ([]disk.TCloudDisk,
+	error) {
 	cIDs := converter.PtrToSlice(cloudIDs)
 
 	req := &core.TCloudListOption{
@@ -307,7 +308,7 @@ func (h *createDiskPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []
 	return disks, nil
 }
 
-var _ poller.PollingHandler[*TCloud, []disk.TCloudDisk, poller.BaseDoneResult] = new(createDiskPollingHandler)
+var _ poller.PollingHandler[*TCloudImpl, []disk.TCloudDisk, poller.BaseDoneResult] = new(createDiskPollingHandler)
 
 type attachDiskPollingHandler struct {
 	region string
@@ -321,7 +322,8 @@ func (h *attachDiskPollingHandler) Done(pollResult []disk.TCloudDisk) (bool, *po
 	return true, nil
 }
 
-func (h *attachDiskPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]disk.TCloudDisk, error) {
+func (h *attachDiskPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs []*string) ([]disk.TCloudDisk,
+	error) {
 	if len(cloudIDs) != 1 {
 		return nil, fmt.Errorf("poll only support one id param, but get %v. rid: %s", cloudIDs, kt.Rid)
 	}
@@ -342,7 +344,8 @@ func (h *detachDiskPollingHandler) Done(pollResult []disk.TCloudDisk) (bool, *po
 	return true, nil
 }
 
-func (h *detachDiskPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]disk.TCloudDisk, error) {
+func (h *detachDiskPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs []*string) ([]disk.TCloudDisk,
+	error) {
 	if len(cloudIDs) != 1 {
 		return nil, fmt.Errorf("poll only support one id param, but get %v. rid: %s", cloudIDs, kt.Rid)
 	}

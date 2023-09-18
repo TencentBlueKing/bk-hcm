@@ -32,7 +32,7 @@ import (
 
 // ListInstanceType ...
 // reference: https://cloud.tencent.com/document/api/213/17378
-func (t *TCloud) ListInstanceType(kt *kit.Kit, opt *typesinstancetype.TCloudInstanceTypeListOption) (
+func (t *TCloudImpl) ListInstanceType(kt *kit.Kit, opt *typesinstancetype.TCloudInstanceTypeListOption) (
 	[]typesinstancetype.TCloudInstanceType, error,
 ) {
 	if opt == nil {

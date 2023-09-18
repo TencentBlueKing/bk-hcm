@@ -29,6 +29,7 @@ import (
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -79,6 +80,28 @@ func (v *VpcClient) ListInBiz(ctx context.Context, h http.Header, bizID int64, r
 		Body(req).
 		SubResourcef("/bizs/%d/vpcs/list", bizID).
 		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// CreateTCloudVpc ...
+func (v *VpcClient) CreateTCloudVpc(kt *kit.Kit, req *csvpc.TCloudVpcCreateReq) (*core.CreateResult, error) {
+	resp := new(core.CreateResp)
+
+	err := v.client.Post().
+		WithContext(kt.Ctx).
+		Body(req).
+		SubResourcef("/vpcs/create").
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

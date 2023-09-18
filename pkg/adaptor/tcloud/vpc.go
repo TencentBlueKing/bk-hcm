@@ -39,7 +39,7 @@ import (
 
 // CreateVpc create vpc.
 // reference: https://cloud.tencent.com/document/api/215/15774
-func (t *TCloud) CreateVpc(kt *kit.Kit, opt *types.TCloudVpcCreateOption) (*types.TCloudVpc, error) {
+func (t *TCloudImpl) CreateVpc(kt *kit.Kit, opt *types.TCloudVpcCreateOption) (*types.TCloudVpc, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (t *TCloud) CreateVpc(kt *kit.Kit, opt *types.TCloudVpcCreateOption) (*type
 	handler := &createVpcPollingHandler{
 		opt.Extension.Region,
 	}
-	respPoller := poller.Poller[*TCloud, []*vpc.Vpc, []*types.TCloudVpc]{Handler: handler}
+	respPoller := poller.Poller[*TCloudImpl, []*vpc.Vpc, []*types.TCloudVpc]{Handler: handler}
 	results, err := respPoller.PollUntilDone(t, kt, []*string{resp.Response.Vpc.VpcId},
 		types.NewBatchCreateVpcPollerOption())
 	if err != nil {
@@ -78,13 +78,13 @@ func (t *TCloud) CreateVpc(kt *kit.Kit, opt *types.TCloudVpcCreateOption) (*type
 
 // UpdateVpc update vpc.
 // TODO right now only memo is supported to update, add other update operations later.
-func (t *TCloud) UpdateVpc(_ *kit.Kit, _ *types.TCloudVpcUpdateOption) error {
+func (t *TCloudImpl) UpdateVpc(_ *kit.Kit, _ *types.TCloudVpcUpdateOption) error {
 	return nil
 }
 
 // DeleteVpc delete vpc.
 // reference: https://cloud.tencent.com/document/api/215/15775
-func (t *TCloud) DeleteVpc(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) error {
+func (t *TCloudImpl) DeleteVpc(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) error {
 	if err := opt.Validate(); err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func (t *TCloud) DeleteVpc(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) erro
 
 // ListVpc list vpc.
 // reference: https://cloud.tencent.com/document/api/215/15778
-func (t *TCloud) ListVpc(kt *kit.Kit, opt *core.TCloudListOption) (*types.TCloudVpcListResult, error) {
+func (t *TCloudImpl) ListVpc(kt *kit.Kit, opt *core.TCloudListOption) (*types.TCloudVpcListResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -145,7 +145,7 @@ func (t *TCloud) ListVpc(kt *kit.Kit, opt *core.TCloudListOption) (*types.TCloud
 
 // CountVpc 基于 DescribeVpcsWithContext
 // reference: https://cloud.tencent.com/document/api/215/15778
-func (t *TCloud) CountVpc(kt *kit.Kit, region string) (int32, error) {
+func (t *TCloudImpl) CountVpc(kt *kit.Kit, region string) (int32, error) {
 
 	client, err := t.clientSet.vpcClient(region)
 	if err != nil {
@@ -245,7 +245,7 @@ func (h *createVpcPollingHandler) Done(vpcs []*vpc.Vpc) (bool, *[]*types.TCloudV
 }
 
 // Poll ...
-func (h *createVpcPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*vpc.Vpc, error) {
+func (h *createVpcPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs []*string) ([]*vpc.Vpc, error) {
 	cloudIDSplit := slice.Split(cloudIDs, core.TCloudQueryLimit)
 
 	vpcs := make([]*vpc.Vpc, 0, len(cloudIDs))

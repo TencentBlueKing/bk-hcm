@@ -38,7 +38,8 @@ import (
 
 // CreateSubnet create subnet.
 // reference: https://cloud.tencent.com/document/api/215/15782
-func (t *TCloud) CreateSubnet(kt *kit.Kit, opt *adtysubnet.TCloudSubnetCreateOption) (*adtysubnet.TCloudSubnet, error) {
+func (t *TCloudImpl) CreateSubnet(kt *kit.Kit, opt *adtysubnet.TCloudSubnetCreateOption) (*adtysubnet.TCloudSubnet,
+	error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -65,7 +66,7 @@ func (t *TCloud) CreateSubnet(kt *kit.Kit, opt *adtysubnet.TCloudSubnetCreateOpt
 
 // CreateSubnets create subnets.
 // reference: https://cloud.tencent.com/document/api/215/31960
-func (t *TCloud) CreateSubnets(kt *kit.Kit, opt *adtysubnet.TCloudSubnetsCreateOption) ([]adtysubnet.TCloudSubnet,
+func (t *TCloudImpl) CreateSubnets(kt *kit.Kit, opt *adtysubnet.TCloudSubnetsCreateOption) ([]adtysubnet.TCloudSubnet,
 	error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
@@ -105,7 +106,7 @@ func (t *TCloud) CreateSubnets(kt *kit.Kit, opt *adtysubnet.TCloudSubnetsCreateO
 	handler := &createSubnetPollingHandler{
 		opt.Region,
 	}
-	respPoller := poller.Poller[*TCloud, []*vpc.Subnet, []adtysubnet.TCloudSubnet]{Handler: handler}
+	respPoller := poller.Poller[*TCloudImpl, []*vpc.Subnet, []adtysubnet.TCloudSubnet]{Handler: handler}
 	results, err := respPoller.PollUntilDone(t, kt, subnetIds, types.NewBatchCreateSubnetPollerOption())
 	if err != nil {
 		return nil, err
@@ -116,13 +117,13 @@ func (t *TCloud) CreateSubnets(kt *kit.Kit, opt *adtysubnet.TCloudSubnetsCreateO
 
 // UpdateSubnet update subnet.
 // TODO right now only memo is supported to update, add other update operations later.
-func (t *TCloud) UpdateSubnet(_ *kit.Kit, _ *adtysubnet.TCloudSubnetUpdateOption) error {
+func (t *TCloudImpl) UpdateSubnet(_ *kit.Kit, _ *adtysubnet.TCloudSubnetUpdateOption) error {
 	return nil
 }
 
 // DeleteSubnet delete subnet.
 // reference: https://cloud.tencent.com/document/api/215/15783
-func (t *TCloud) DeleteSubnet(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) error {
+func (t *TCloudImpl) DeleteSubnet(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) error {
 	if err := opt.Validate(); err != nil {
 		return err
 	}
@@ -146,7 +147,7 @@ func (t *TCloud) DeleteSubnet(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) e
 
 // ListSubnet list subnet.
 // reference: https://cloud.tencent.com/document/api/215/15784
-func (t *TCloud) ListSubnet(kt *kit.Kit, opt *core.TCloudListOption) (*adtysubnet.TCloudSubnetListResult, error) {
+func (t *TCloudImpl) ListSubnet(kt *kit.Kit, opt *core.TCloudListOption) (*adtysubnet.TCloudSubnetListResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -184,7 +185,7 @@ func (t *TCloud) ListSubnet(kt *kit.Kit, opt *core.TCloudListOption) (*adtysubne
 
 // CountSubnet 基于 DescribeSubnetsWithContext
 // reference: https://cloud.tencent.com/document/api/215/15784
-func (t *TCloud) CountSubnet(kt *kit.Kit, region string) (int32, error) {
+func (t *TCloudImpl) CountSubnet(kt *kit.Kit, region string) (int32, error) {
 
 	client, err := t.clientSet.vpcClient(region)
 	if err != nil {
@@ -257,7 +258,7 @@ func (h *createSubnetPollingHandler) Done(subnets []*vpc.Subnet) (bool, *[]adtys
 }
 
 // Poll ...
-func (h *createSubnetPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*vpc.Subnet, error) {
+func (h *createSubnetPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs []*string) ([]*vpc.Subnet, error) {
 	cloudIDSplit := slice.Split(cloudIDs, core.TCloudQueryLimit)
 
 	subnets := make([]*vpc.Subnet, 0, len(cloudIDs))
