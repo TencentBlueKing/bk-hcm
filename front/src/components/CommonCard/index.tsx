@@ -9,7 +9,7 @@ export default defineComponent({
       required: true,
     },
     layout: {
-      type: String as unknown as PropType<'flow' | 'grid'>,
+      type: String as PropType<'flow' | 'grid'>,
       default: 'flow',
     },
   },
@@ -25,11 +25,10 @@ export default defineComponent({
             props.title?.()
           }
         </p>
-        <div class={`account-form-card-content ${true ? 'common-card-content-grid-layout' : ''}`}>
+        <div class={`common-card-content ${props.layout === 'grid' ? 'common-card-content-grid-layout' : ''}`}>
           {
             slots.default()
           }
-          <div>999999696969</div>
         </div>
       </Card>
     );

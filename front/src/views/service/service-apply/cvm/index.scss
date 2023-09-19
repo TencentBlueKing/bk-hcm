@@ -14,3 +14,52 @@
     margin-right: 10px;
   }
 }
+
+.purchase-cvm-header-title {
+  font-size: 16px;
+  color: #313238;
+}
+
+.purchase-cvm-bottom-bar {
+  height: 80px;
+  background: #fafbfd;
+  border: 1px solid #dcdee5;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+
+  .purchase-cvm-bottom-bar-form {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+
+    .purchase-cvm-time {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      column-gap: 24px;
+    }
+  }
+
+  .purchase-cvm-bottom-bar-info {
+    margin-left: auto;
+    margin-right: 24px;
+    display: flex;
+    align-items: center;
+
+    .purchase-cvm-cost {
+      margin-right: 24px;
+      color: #ff9c01;
+      font-size: 20px;
+      font-weight: 700;
+      text-align: right;
+    }
+  }
+
+  .mr32 {
+    margin-right: 32px;
+  }
+}
