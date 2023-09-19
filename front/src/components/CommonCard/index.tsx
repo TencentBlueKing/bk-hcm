@@ -25,7 +25,7 @@ export default defineComponent({
             props.title?.()
           }
         </p>
-        <div class={`account-form-card-content ${props.layout === 'grid' ? 'common-card-content-grid-layout' : ''}`}>
+        <div class={`common-card-content ${props.layout === 'grid' ? 'common-card-content-grid-layout' : ''}`}>
           {
             slots.default()
           }

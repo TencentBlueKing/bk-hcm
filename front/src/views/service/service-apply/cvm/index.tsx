@@ -26,6 +26,7 @@ import { useAccountStore } from '@/store';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import CommonCard from '@/components/CommonCard';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
+import { useRouter } from 'vue-router';
 
 const accountStore = useAccountStore();
 
@@ -46,6 +47,7 @@ export default defineComponent({
     } = useCvmOptions(cond, formData);
     const { t } = useI18n();
     const { isResourcePage } = useWhereAmI();
+    const router = useRouter();
 
     const dialogState = reactive({
       gcpDataDisk: {
@@ -617,43 +619,43 @@ export default defineComponent({
       //     },
       //   ],
       // },
-      {
-        id: 'quantity',
-        title: '数量',
-        children: [
-          {
-            label: '购买数量',
-            required: true,
-            property: 'required_count',
-            description: '大于0的整数，最大不能超过100',
-            content: () => <Input type='number' min={0} max={100} v-model={formData.required_count}></Input>,
-          },
-          {
-            label: '购买时长',
-            required: true,
-            // PREPAID：包年包月
-            display: ['PREPAID'].includes(formData.instance_charge_type),
-            content: [
-              {
-                property: 'purchase_duration.count',
-                content: () => <Input type='number' v-model={formData.purchase_duration.count}></Input>,
-              },
-              {
-                property: 'purchase_duration.unit',
-                content: () => <Select v-model={formData.purchase_duration.unit} clearable={false}>{
-                  purchaseDurationUnits.map(({ id, name }: IOption) => (
-                    <Option key={id} value={id} label={name}></Option>
-                  ))}
-                </Select>,
-              },
-              {
-                property: 'auto_renew',
-                content: () => <Checkbox v-model={formData.auto_renew}>自动续费</Checkbox>,
-              },
-            ],
-          },
-        ],
-      },
+      // {
+      //   id: 'quantity',
+      //   title: '数量',
+      //   children: [
+      //     {
+      //       label: '购买数量',
+      //       required: true,
+      //       property: 'required_count',
+      //       description: '大于0的整数，最大不能超过100',
+      //       content: () => <Input type='number' min={0} max={100} v-model={formData.required_count}></Input>,
+      //     },
+      //     {
+      //       label: '购买时长',
+      //       required: true,
+      //       // PREPAID：包年包月
+      //       display: ['PREPAID'].includes(formData.instance_charge_type),
+      //       content: [
+      //         {
+      //           property: 'purchase_duration.count',
+      //           content: () => <Input type='number' v-model={formData.purchase_duration.count}></Input>,
+      //         },
+      //         {
+      //           property: 'purchase_duration.unit',
+      //           content: () => <Select v-model={formData.purchase_duration.unit} clearable={false}>{
+      //             purchaseDurationUnits.map(({ id, name }: IOption) => (
+      //               <Option key={id} value={id} label={name}></Option>
+      //             ))}
+      //           </Select>,
+      //         },
+      //         {
+      //           property: 'auto_renew',
+      //           content: () => <Checkbox v-model={formData.auto_renew}>自动续费</Checkbox>,
+      //         },
+      //       ],
+      //     },
+      //   ],
+      // },
       {
         id: 'describe',
         title: '备注信息',
@@ -852,12 +854,13 @@ export default defineComponent({
               </CommonCard>
             ))
         }
-        <div class="action-bar">
-          <Button theme='primary' loading={submitting.value} disabled={submitDisabled.value} onClick={handleFormSubmit}>{
+        {/* <div class="action-bar">
+          <Button theme='primary' loading={submitting.value}
+          disabled={submitDisabled.value} onClick={handleFormSubmit}>{
             isResourcePage ? t('提交') : t('提交审批')
           }</Button>
           <Button>{ t('取消') }</Button>
-        </div>
+        </div> */}
       </Form>
       <GcpDataDiskFormDialog
         v-model:isShow={dialogState.gcpDataDisk.isShow}
@@ -871,17 +874,34 @@ export default defineComponent({
 
       <div class={'purchase-cvm-bottom-bar'}>
           <Form class={'purchase-cvm-bottom-bar-form'}>
-            <FormItem labelWidth={'120px'} label='数量'>
+            <FormItem  label='数量'>
               <Input type='number' min={0} max={100} v-model={formData.required_count}></Input>
             </FormItem>
-            <FormItem  label='时长'>
-              <Input type='number' v-model={formData.purchase_duration.count}></Input>
-            </FormItem>
-            <FormItem>
-              <Checkbox v-model={formData.auto_renew}>自动续费</Checkbox>
+            <FormItem  label='时长' >
+              <div class={'purchase-cvm-time'}>
+                <Input type='number' v-model={formData.purchase_duration.count}></Input>
+                <Select v-model={formData.purchase_duration.unit} clearable={false}>{
+                    purchaseDurationUnits.map(({ id, name }: IOption) => (
+                      <Option key={id} value={id} label={name}></Option>
+                    ))}
+                </Select>
+                <Checkbox v-model={formData.auto_renew}>自动续费</Checkbox>
+              </div>
             </FormItem>
           </Form>
           <div class={'purchase-cvm-bottom-bar-info'}>
+            <div>
+              费用：
+            </div>
+            <div class={'purchase-cvm-cost'}>
+              ¥ 126.02
+            </div>
+            <Button theme='primary' loading={submitting.value} disabled={submitDisabled.value} onClick={handleFormSubmit} class={'mr8'}>
+              立即购买
+            </Button>
+            <Button
+              onClick={() => router.back() }
+            >{ t('取消') }</Button>
           </div>
       </div>
     </div>;
