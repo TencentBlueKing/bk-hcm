@@ -17,19 +17,26 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability 公共参数。
-package capability
+package backend
 
 import (
-	"hcm/pkg/async"
-	"hcm/pkg/client"
+	"errors"
+	"fmt"
 
-	"github.com/emicklei/go-restful/v3"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Async      async.Async
+// Factory 根据类型返回不同的backend接口的实现
+func Factory(typ enumor.BackendType, client interface{}) (Backend, error) {
+	switch typ {
+	case enumor.BackendMysql:
+		cli, ok := client.(dao.Set)
+		if !ok {
+			return nil, errors.New("client is not mysql dao set")
+		}
+		return NewBackend(cli), nil
+	default:
+		return nil, fmt.Errorf("unsupported backend type: %s", typ)
+	}
 }
