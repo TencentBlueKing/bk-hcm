@@ -27,6 +27,7 @@ import { useWhereAmI } from '@/hooks/useWhereAmI';
 import CommonCard from '@/components/CommonCard';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import { useRouter } from 'vue-router';
+import VpcPreviewDialog from './children/VpcPreviewDialog';
 
 const accountStore = useAccountStore();
 
@@ -64,6 +65,8 @@ export default defineComponent({
     const vpcId = ref('');
     const machineType = ref(null);
     const subnetSelectorRef = ref(null);
+    const vpcData = ref(null);
+    const isVpcPreviewDialogShow = ref(false);
 
     const handleCreateDataDisk = () => {
       const newRow: IDiskOption = getDataDiskDefaults();
@@ -104,6 +107,7 @@ export default defineComponent({
       vpcId.value = '';
     };
     const handleVpcChange = (vpc: any) => {
+      vpcData.value = vpc;
       cloudId.value = vpc.bk_cloud_id;
       vpcId.value = vpc.id;
       resetFormItemData('cloud_subnet_id');
@@ -319,18 +323,15 @@ export default defineComponent({
                   onChange={handleVpcChange}
                   clearable={false}
                 />
-                {isResourcePage ? null : (
-                  <Button
+                <Button
                     text
                     theme='primary'
+                    disabled={!formData.cloud_vpc_id}
                     onClick={() => {
-                      if (!formData.cloud_vpc_id) return;
-                      const url = `/#/business/vpc?cloud_id=${formData.cloud_vpc_id}&bizs=${cond.bizId}`;
-                      window.open(url, '_blank');
+                      isVpcPreviewDialogShow.value = true;
                     }}>
-                    详情
-                  </Button>
-                )}
+                    预览
+                </Button>
               </div>
             ),
           },
@@ -354,20 +355,16 @@ export default defineComponent({
                   ref={subnetSelectorRef}
                   clearable={false}
                 />
-                {
-                  isResourcePage
-                    ? null
-                    : <Button
-                        text
-                        theme="primary"
-                        onClick={() => {
-                          if (!formData.cloud_subnet_id) return;
-                          const url = `/#/business/subnet?cloud_id=${formData.cloud_subnet_id}&bizs=${cond.bizId}`;
-                          window.open(url, '_blank');
-                        }}>
-                        详情
-                      </Button>
-                }
+                <Button
+                  text
+                  theme="primary"
+                  onClick={() => {
+                    if (!formData.cloud_subnet_id) return;
+                    const url = `/#/business/subnet?cloud_id=${formData.cloud_subnet_id}&bizs=${cond.bizId}`;
+                    window.open(url, '_blank');
+                  }}>
+                  详情
+                </Button>
               </div>
             ),
           },
@@ -903,6 +900,12 @@ export default defineComponent({
               onClick={() => router.back() }
             >{ t('取消') }</Button>
           </div>
+
+          <VpcPreviewDialog
+            isShow={isVpcPreviewDialogShow.value}
+            data={vpcData.value}
+            handleClose={() => isVpcPreviewDialogShow.value = false}
+          />
       </div>
     </div>;
   },
