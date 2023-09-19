@@ -25,7 +25,6 @@ import (
 	"hcm/pkg/adaptor/types/disk"
 	proto "hcm/pkg/api/hc-service/disk"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
@@ -99,12 +98,14 @@ func (svc *service) DeleteGcpDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeGcpDiskDeleteOption(cts.Kit, req)
+	diskData, err := svc.DataCli.Azure.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := svc.Adaptor.Gcp(cts.Kit, req.AccountID)
+	opt := &disk.GcpDiskDeleteOption{Zone: diskData.Zone, DiskName: diskData.Name}
+
+	client, err := svc.Adaptor.Gcp(cts.Kit, diskData.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -128,12 +129,26 @@ func (svc *service) AttachGcpDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeGcpDiskAttachOption(cts.Kit, req)
+	dataCli := svc.DataCli.Gcp
+
+	diskInfo, err := dataCli.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := svc.Adaptor.Gcp(cts.Kit, req.AccountID)
+	cvmInfo, err := dataCli.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), req.CvmID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &disk.GcpDiskAttachOption{
+		Zone:       diskInfo.Zone,
+		CvmName:    cvmInfo.Name,
+		DiskName:   diskInfo.Name,
+		DeviceName: req.DeviceName,
+	}
+
+	client, err := svc.Adaptor.Gcp(cts.Kit, diskInfo.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +172,7 @@ func (svc *service) AttachGcpDisk(cts *rest.Contexts) (interface{}, error) {
 	syncClient := syncgcp.NewClient(svc.DataCli, client)
 
 	params := &syncgcp.SyncBaseParams{
-		AccountID: req.AccountID,
+		AccountID: diskInfo.AccountID,
 		CloudIDs:  []string{diskData.CloudID},
 	}
 
@@ -194,12 +209,32 @@ func (svc *service) DetachGcpDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeGcpDiskDetachOption(cts.Kit, req)
+	diskInfo, err := svc.DataCli.Gcp.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := svc.Adaptor.Gcp(cts.Kit, req.AccountID)
+	cvmInfo, err := svc.DataCli.Gcp.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), req.CvmID)
+	if err != nil {
+		return nil, err
+	}
+
+	var deviceName string
+	for _, d := range cvmInfo.Extension.Disks {
+		if d.CloudID == diskInfo.CloudID {
+			deviceName = d.DeviceName
+			break
+		}
+	}
+
+	opt := &disk.GcpDiskDetachOption{
+		Zone:       diskInfo.Zone,
+		CvmName:    cvmInfo.Name,
+		DeviceName: deviceName,
+		DiskName:   diskInfo.Name,
+	}
+
+	client, err := svc.Adaptor.Gcp(cts.Kit, diskInfo.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +252,7 @@ func (svc *service) DetachGcpDisk(cts *rest.Contexts) (interface{}, error) {
 	syncClient := syncgcp.NewClient(svc.DataCli, client)
 
 	params := &syncgcp.SyncBaseParams{
-		AccountID: req.AccountID,
+		AccountID: diskInfo.AccountID,
 		CloudIDs:  []string{diskData.CloudID},
 	}
 
@@ -241,72 +276,4 @@ func (svc *service) DetachGcpDisk(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return nil, nil
-}
-
-func (svc *service) makeGcpDiskAttachOption(
-	kt *kit.Kit,
-	req *proto.GcpDiskAttachReq,
-) (*disk.GcpDiskAttachOption, error) {
-	dataCli := svc.DataCli.Gcp
-
-	diskData, err := dataCli.RetrieveDisk(kt.Ctx, kt.Header(), req.DiskID)
-	if err != nil {
-		return nil, err
-	}
-
-	cvmData, err := dataCli.Cvm.GetCvm(kt.Ctx, kt.Header(), req.CvmID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &disk.GcpDiskAttachOption{
-		Zone:       diskData.Zone,
-		CvmName:    cvmData.Name,
-		DiskName:   diskData.Name,
-		DeviceName: req.DeviceName,
-	}, nil
-}
-
-func (svc *service) makeGcpDiskDetachOption(
-	kt *kit.Kit,
-	req *proto.DiskDetachReq,
-) (*disk.GcpDiskDetachOption, error) {
-	dataCli := svc.DataCli.Gcp
-
-	diskData, err := dataCli.RetrieveDisk(kt.Ctx, kt.Header(), req.DiskID)
-	if err != nil {
-		return nil, err
-	}
-
-	cvmData, err := dataCli.Cvm.GetCvm(kt.Ctx, kt.Header(), req.CvmID)
-	if err != nil {
-		return nil, err
-	}
-
-	var deviceName string
-	for _, d := range cvmData.Extension.Disks {
-		if d.CloudID == diskData.CloudID {
-			deviceName = d.DeviceName
-			break
-		}
-	}
-
-	return &disk.GcpDiskDetachOption{
-		Zone:       diskData.Zone,
-		CvmName:    cvmData.Name,
-		DeviceName: deviceName,
-		DiskName:   diskData.Name,
-	}, nil
-}
-
-func (svc *service) makeGcpDiskDeleteOption(
-	kt *kit.Kit,
-	req *proto.DiskDeleteReq,
-) (*disk.GcpDiskDeleteOption, error) {
-	diskData, err := svc.DataCli.Gcp.RetrieveDisk(kt.Ctx, kt.Header(), req.DiskID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &disk.GcpDiskDeleteOption{Zone: diskData.Zone, DiskName: diskData.Name}, nil
 }

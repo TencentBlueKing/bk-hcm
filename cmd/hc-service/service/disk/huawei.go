@@ -25,7 +25,6 @@ import (
 	"hcm/pkg/adaptor/types/disk"
 	proto "hcm/pkg/api/hc-service/disk"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -151,12 +150,14 @@ func (svc *service) DeleteHuaWeiDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeHuaWeiDiskDeleteOption(cts.Kit, req)
+	diskData, err := svc.DataCli.HuaWei.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := svc.Adaptor.HuaWei(cts.Kit, req.AccountID)
+	opt := &disk.HuaWeiDiskDeleteOption{Region: diskData.Region, CloudID: diskData.CloudID}
+
+	client, err := svc.Adaptor.HuaWei(cts.Kit, diskData.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -180,12 +181,24 @@ func (svc *service) AttachHuaWeiDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeHuaWeiDiskAttachOption(cts.Kit, req)
+	diskInfo, err := svc.DataCli.HuaWei.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := svc.Adaptor.HuaWei(cts.Kit, req.AccountID)
+	cvmInfo, err := svc.DataCli.HuaWei.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), req.CvmID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &disk.HuaWeiDiskAttachOption{
+		Region:      diskInfo.Region,
+		CloudCvmID:  cvmInfo.CloudID,
+		CloudDiskID: diskInfo.CloudID,
+		DeviceName:  req.DeviceName,
+	}
+
+	client, err := svc.Adaptor.HuaWei(cts.Kit, diskInfo.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +217,7 @@ func (svc *service) AttachHuaWeiDisk(cts *rest.Contexts) (interface{}, error) {
 	syncClient := synchuawei.NewClient(svc.DataCli, client)
 
 	params := &synchuawei.SyncBaseParams{
-		AccountID: req.AccountID,
+		AccountID: diskInfo.AccountID,
 		Region:    opt.Region,
 		CloudIDs:  []string{opt.CloudDiskID},
 	}
@@ -235,12 +248,23 @@ func (svc *service) DetachHuaWeiDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeHuaWeiDiskDetachOption(cts.Kit, req)
+	diskInfo, err := svc.DataCli.HuaWei.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := svc.Adaptor.HuaWei(cts.Kit, req.AccountID)
+	cvmInfo, err := svc.DataCli.HuaWei.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), req.CvmID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &disk.HuaWeiDiskDetachOption{
+		Region:      diskInfo.Region,
+		CloudCvmID:  cvmInfo.CloudID,
+		CloudDiskID: diskInfo.CloudID,
+	}
+
+	client, err := svc.Adaptor.HuaWei(cts.Kit, diskInfo.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +277,7 @@ func (svc *service) DetachHuaWeiDisk(cts *rest.Contexts) (interface{}, error) {
 	syncClient := synchuawei.NewClient(svc.DataCli, client)
 
 	params := &synchuawei.SyncBaseParams{
-		AccountID: req.AccountID,
+		AccountID: diskInfo.AccountID,
 		Region:    opt.Region,
 		CloudIDs:  []string{opt.CloudDiskID},
 	}
@@ -272,63 +296,4 @@ func (svc *service) DetachHuaWeiDisk(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return nil, nil
-}
-
-func (svc *service) makeHuaWeiDiskAttachOption(
-	kt *kit.Kit,
-	req *proto.HuaWeiDiskAttachReq,
-) (*disk.HuaWeiDiskAttachOption, error) {
-	dataCli := svc.DataCli.HuaWei
-
-	diskData, err := dataCli.RetrieveDisk(kt.Ctx, kt.Header(), req.DiskID)
-	if err != nil {
-		return nil, err
-	}
-
-	cvmData, err := dataCli.Cvm.GetCvm(kt.Ctx, kt.Header(), req.CvmID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &disk.HuaWeiDiskAttachOption{
-		Region:      diskData.Region,
-		CloudCvmID:  cvmData.CloudID,
-		CloudDiskID: diskData.CloudID,
-		DeviceName:  req.DeviceName,
-	}, nil
-}
-
-func (svc *service) makeHuaWeiDiskDetachOption(
-	kt *kit.Kit,
-	req *proto.DiskDetachReq,
-) (*disk.HuaWeiDiskDetachOption, error) {
-	dataCli := svc.DataCli.HuaWei
-
-	diskData, err := dataCli.RetrieveDisk(kt.Ctx, kt.Header(), req.DiskID)
-	if err != nil {
-		return nil, err
-	}
-
-	cvmData, err := dataCli.Cvm.GetCvm(kt.Ctx, kt.Header(), req.CvmID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &disk.HuaWeiDiskDetachOption{
-		Region:      diskData.Region,
-		CloudCvmID:  cvmData.CloudID,
-		CloudDiskID: diskData.CloudID,
-	}, nil
-}
-
-func (svc *service) makeHuaWeiDiskDeleteOption(
-	kt *kit.Kit,
-	req *proto.DiskDeleteReq,
-) (*disk.HuaWeiDiskDeleteOption, error) {
-	diskData, err := svc.DataCli.HuaWei.RetrieveDisk(kt.Ctx, kt.Header(), req.DiskID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &disk.HuaWeiDiskDeleteOption{Region: diskData.Region, CloudID: diskData.CloudID}, nil
 }

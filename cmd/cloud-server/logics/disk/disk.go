@@ -41,8 +41,8 @@ import (
 
 // Interface define disk interface.
 type Interface interface {
-	DetachDisk(kt *kit.Kit, vendor enumor.Vendor, cvmID, diskID, accountID string) error
-	DeleteDisk(kt *kit.Kit, vendor enumor.Vendor, diskID, accountID string) error
+	DetachDisk(kt *kit.Kit, vendor enumor.Vendor, cvmID, diskID string) error
+	DeleteDisk(kt *kit.Kit, vendor enumor.Vendor, diskID string) error
 	DeleteRecycledDisk(kt *kit.Kit, infoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateResult, error)
 }
 
@@ -60,8 +60,7 @@ func NewDisk(client *client.ClientSet, audit audit.Interface) Interface {
 }
 
 // DetachDisk detach disk from cvm.
-// TODO remove account id parameter, this should be acquired in hc-service.
-func (d *disk) DetachDisk(kt *kit.Kit, vendor enumor.Vendor, cvmID, diskID, accountID string) error {
+func (d *disk) DetachDisk(kt *kit.Kit, vendor enumor.Vendor, cvmID, diskID string) error {
 	// create audit
 	operationInfo := protoaudit.CloudResourceOperationInfo{
 		ResType:           enumor.DiskAuditResType,
@@ -78,9 +77,8 @@ func (d *disk) DetachDisk(kt *kit.Kit, vendor enumor.Vendor, cvmID, diskID, acco
 	}
 
 	detachReq := &hcproto.DiskDetachReq{
-		AccountID: accountID,
-		CvmID:     cvmID,
-		DiskID:    diskID,
+		CvmID:  cvmID,
+		DiskID: diskID,
 	}
 
 	switch vendor {
@@ -100,8 +98,7 @@ func (d *disk) DetachDisk(kt *kit.Kit, vendor enumor.Vendor, cvmID, diskID, acco
 }
 
 // DeleteDisk delete disk.
-// TODO remove account id parameter, this should be acquired in hc-service.
-func (d *disk) DeleteDisk(kt *kit.Kit, vendor enumor.Vendor, diskID, accountID string) error {
+func (d *disk) DeleteDisk(kt *kit.Kit, vendor enumor.Vendor, diskID string) error {
 	// create delete audit.
 	err := d.audit.ResDeleteAudit(kt, enumor.DiskAuditResType, []string{diskID})
 	if err != nil {
@@ -109,7 +106,7 @@ func (d *disk) DeleteDisk(kt *kit.Kit, vendor enumor.Vendor, diskID, accountID s
 		return err
 	}
 
-	deleteReq := &hcproto.DiskDeleteReq{DiskID: diskID, AccountID: accountID}
+	deleteReq := &hcproto.DiskDeleteReq{DiskID: diskID}
 
 	switch vendor {
 	case enumor.TCloud:
@@ -164,7 +161,7 @@ func (d *disk) DeleteRecycledDisk(kt *kit.Kit, basicInfoMap map[string]types.Clo
 	// delete disk
 	for _, id := range ids {
 		info := basicInfoMap[id]
-		err = d.DeleteDisk(kt, info.Vendor, id, info.AccountID)
+		err = d.DeleteDisk(kt, info.Vendor, id)
 		if err != nil {
 			res.Failed = &core.FailedInfo{ID: id, Error: err}
 			return res, err

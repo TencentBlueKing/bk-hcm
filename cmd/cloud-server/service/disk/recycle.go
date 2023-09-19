@@ -200,7 +200,7 @@ func (svc *diskSvc) detachDiskByIDs(kt *kit.Kit, ids []string, basicInfoMap map[
 			continue
 		}
 
-		err = svc.diskLgc.DetachDisk(kt, info.Vendor, cvmID, id, info.AccountID)
+		err = svc.diskLgc.DetachDisk(kt, info.Vendor, cvmID, id)
 		if err != nil {
 			res.Failed = append(res.Failed, core.FailedInfo{ID: id, Error: err})
 			continue

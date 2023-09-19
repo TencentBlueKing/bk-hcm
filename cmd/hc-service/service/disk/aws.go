@@ -25,7 +25,6 @@ import (
 	"hcm/pkg/adaptor/types/disk"
 	proto "hcm/pkg/api/hc-service/disk"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
@@ -98,12 +97,17 @@ func (svc *service) DeleteAwsDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeAwsDiskDeleteOption(cts.Kit, req)
+	diskData, err := svc.DataCli.Aws.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := svc.Adaptor.Aws(cts.Kit, req.AccountID)
+	opt := &disk.AwsDiskDeleteOption{
+		Region:  diskData.Region,
+		CloudID: diskData.CloudID,
+	}
+
+	client, err := svc.Adaptor.Aws(cts.Kit, diskData.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -127,12 +131,25 @@ func (svc *service) AttachAwsDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeAwsDiskAttachOption(cts.Kit, req)
+	// 获取磁盘数据和cvm 数据，构造挂载磁盘请求
+	diskData, err := svc.DataCli.Aws.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := svc.Adaptor.Aws(cts.Kit, req.AccountID)
+	cvmData, err := svc.DataCli.Aws.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), req.CvmID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &disk.AwsDiskAttachOption{
+		Region:      diskData.Region,
+		CloudCvmID:  cvmData.CloudID,
+		CloudDiskID: diskData.CloudID,
+		DeviceName:  req.DeviceName,
+	}
+
+	client, err := svc.Adaptor.Aws(cts.Kit, diskData.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +162,7 @@ func (svc *service) AttachAwsDisk(cts *rest.Contexts) (interface{}, error) {
 	syncClient := syncaws.NewClient(svc.DataCli, client)
 
 	params := &syncaws.SyncBaseParams{
-		AccountID: req.AccountID,
+		AccountID: diskData.AccountID,
 		Region:    opt.Region,
 		CloudIDs:  []string{opt.CloudDiskID},
 	}
@@ -176,12 +193,22 @@ func (svc *service) DetachAwsDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeAwsDiskDetachOption(cts.Kit, req)
+	diskInfo, err := svc.DataCli.Aws.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := svc.Adaptor.Aws(cts.Kit, req.AccountID)
+	cvmInfo, err := svc.DataCli.Aws.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), req.CvmID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &disk.AwsDiskDetachOption{
+		Region:      diskInfo.Region,
+		CloudCvmID:  cvmInfo.CloudID,
+		CloudDiskID: diskInfo.CloudID,
+	}
+	client, err := svc.Adaptor.Aws(cts.Kit, diskInfo.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +227,7 @@ func (svc *service) DetachAwsDisk(cts *rest.Contexts) (interface{}, error) {
 	syncClient := syncaws.NewClient(svc.DataCli, client)
 
 	params := &syncaws.SyncBaseParams{
-		AccountID: req.AccountID,
+		AccountID: diskInfo.AccountID,
 		Region:    opt.Region,
 		CloudIDs:  []string{opt.CloudDiskID},
 	}
@@ -219,66 +246,4 @@ func (svc *service) DetachAwsDisk(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return nil, nil
-}
-
-func (svc *service) makeAwsDiskAttachOption(
-	kt *kit.Kit,
-	req *proto.AwsDiskAttachReq,
-) (*disk.AwsDiskAttachOption, error) {
-	dataCli := svc.DataCli.Aws
-
-	diskData, err := dataCli.RetrieveDisk(kt.Ctx, kt.Header(), req.DiskID)
-	if err != nil {
-		return nil, err
-	}
-
-	cvmData, err := dataCli.Cvm.GetCvm(kt.Ctx, kt.Header(), req.CvmID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &disk.AwsDiskAttachOption{
-		Region:      diskData.Region,
-		CloudCvmID:  cvmData.CloudID,
-		CloudDiskID: diskData.CloudID,
-		DeviceName:  req.DeviceName,
-	}, nil
-}
-
-func (svc *service) makeAwsDiskDetachOption(
-	kt *kit.Kit,
-	req *proto.DiskDetachReq,
-) (*disk.AwsDiskDetachOption, error) {
-	dataCli := svc.DataCli.Aws
-
-	diskData, err := dataCli.RetrieveDisk(kt.Ctx, kt.Header(), req.DiskID)
-	if err != nil {
-		return nil, err
-	}
-
-	cvmData, err := dataCli.Cvm.GetCvm(kt.Ctx, kt.Header(), req.CvmID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &disk.AwsDiskDetachOption{
-		Region:      diskData.Region,
-		CloudCvmID:  cvmData.CloudID,
-		CloudDiskID: diskData.CloudID,
-	}, nil
-}
-
-func (svc *service) makeAwsDiskDeleteOption(
-	kt *kit.Kit,
-	req *proto.DiskDeleteReq,
-) (*disk.AwsDiskDeleteOption, error) {
-	diskData, err := svc.DataCli.Aws.RetrieveDisk(kt.Ctx, kt.Header(), req.DiskID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &disk.AwsDiskDeleteOption{
-		Region:  diskData.Region,
-		CloudID: diskData.CloudID,
-	}, nil
 }

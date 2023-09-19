@@ -41,7 +41,6 @@ type AzureDiskExtensionCreateReq struct {
 
 // AzureDiskAttachReq ...
 type AzureDiskAttachReq struct {
-	AccountID   string `json:"account_id" validate:"required"`
 	DiskID      string `json:"disk_id" validate:"required"`
 	CvmID       string `json:"cvm_id" validate:"required"`
 	CachingType string `json:"caching_type" validate:"required,eq=None|eq=ReadOnly|eq=ReadWrite"`

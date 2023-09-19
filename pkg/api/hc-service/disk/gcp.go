@@ -35,7 +35,6 @@ func (req *GcpDiskCreateReq) Validate() error {
 
 // GcpDiskAttachReq ...
 type GcpDiskAttachReq struct {
-	AccountID  string `json:"account_id" validate:"required"`
 	CvmID      string `json:"cvm_id" validate:"required"`
 	DiskID     string `json:"disk_id" validate:"required"`
 	DeviceName string `json:"device_name"`

@@ -60,8 +60,7 @@ func (req *DiskSyncReq) Validate() error {
 
 // DiskDeleteReq ...
 type DiskDeleteReq struct {
-	AccountID string `json:"account_id" validate:"required"`
-	DiskID    string `json:"disk_id" validate:"required"`
+	DiskID string `json:"disk_id" validate:"required"`
 }
 
 // Validate ...
@@ -71,9 +70,8 @@ func (req *DiskDeleteReq) Validate() error {
 
 // DiskDetachReq ...
 type DiskDetachReq struct {
-	AccountID string `json:"account_id" validate:"required"`
-	CvmID     string `json:"cvm_id" validate:"required"`
-	DiskID    string `json:"disk_id" validate:"required"`
+	CvmID  string `json:"cvm_id" validate:"required"`
+	DiskID string `json:"disk_id" validate:"required"`
 }
 
 // Validate ...
