@@ -28,6 +28,7 @@ import CommonCard from '@/components/CommonCard';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import { useRouter } from 'vue-router';
 import VpcPreviewDialog from './children/VpcPreviewDialog';
+import SubnetPreviewDialog, { ISubnetItem } from './children/SubnetPreviewDialog';
 
 const accountStore = useAccountStore();
 
@@ -66,7 +67,13 @@ export default defineComponent({
     const machineType = ref(null);
     const subnetSelectorRef = ref(null);
     const vpcData = ref(null);
+    const subnetData = ref(null);
     const isVpcPreviewDialogShow = ref(false);
+    const isSubnetPreviewDialogShow = ref(false);
+
+    const handleSubnetDataChange = (data: ISubnetItem) => {
+      subnetData.value = data;
+    };
 
     const handleCreateDataDisk = () => {
       const newRow: IDiskOption = getDataDiskDefaults();
@@ -354,16 +361,19 @@ export default defineComponent({
                   resourceGroup={cond.resourceGroup}
                   ref={subnetSelectorRef}
                   clearable={false}
+                  handleChange={handleSubnetDataChange}
                 />
                 <Button
                   text
                   theme="primary"
+                  disabled={!formData.cloud_subnet_id}
                   onClick={() => {
-                    if (!formData.cloud_subnet_id) return;
-                    const url = `/#/business/subnet?cloud_id=${formData.cloud_subnet_id}&bizs=${cond.bizId}`;
-                    window.open(url, '_blank');
+                    isSubnetPreviewDialogShow.value = true;
+                    // if (!formData.cloud_subnet_id) return;
+                    // const url = `/#/business/subnet?cloud_id=${formData.cloud_subnet_id}&bizs=${cond.bizId}`;
+                    // window.open(url, '_blank');
                   }}>
-                  详情
+                  预览
                 </Button>
               </div>
             ),
@@ -905,6 +915,12 @@ export default defineComponent({
             isShow={isVpcPreviewDialogShow.value}
             data={vpcData.value}
             handleClose={() => isVpcPreviewDialogShow.value = false}
+          />
+
+          <SubnetPreviewDialog
+            isShow={isSubnetPreviewDialogShow.value}
+            data={subnetData.value}
+            handleClose={() => isSubnetPreviewDialogShow.value = false}
           />
       </div>
     </div>;
