@@ -23,11 +23,12 @@ import (
 	"encoding/json"
 	"errors"
 
-	"hcm/cmd/task-server/logics/async/backends"
 	"hcm/pkg/api/core/task"
 	taskserver "hcm/pkg/api/task-server"
+	"hcm/pkg/async/backend"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/table/types"
+	"hcm/pkg/kit"
 )
 
 /*
@@ -47,8 +48,8 @@ import (
 // FirstTest first test
 type FirstTest struct{}
 
-func (ft *FirstTest) makeTemplateFlowTasks(flowID string, req *taskserver.AddFlowReq,
-	backend backends.Backend) ([]string, error) {
+func (ft *FirstTest) makeTemplateFlowTasks(kt *kit.Kit, flowID string, req *taskserver.AddFlowReq,
+	backend backend.Backend) ([]string, error) {
 
 	tasks := []task.AsyncFlowTask{
 		{ActionName: string(enumor.TestCreateSG), TimeoutSecs: 10},
@@ -73,7 +74,7 @@ func (ft *FirstTest) makeTemplateFlowTasks(flowID string, req *taskserver.AddFlo
 		}
 	}
 
-	ids, err := backend.MakeTaskIDs(len(tasks))
+	ids, err := backend.MakeTaskIDs(kt, len(tasks))
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +96,7 @@ func (ft *FirstTest) makeTemplateFlowTasks(flowID string, req *taskserver.AddFlo
 	tasks[2].DependOn = []string{tasks[0].ID}
 	tasks[3].DependOn = []string{tasks[1].ID, tasks[2].ID}
 
-	if err := backend.AddTasks(tasks); err != nil {
+	if err := backend.AddTasks(kt, tasks); err != nil {
 		return nil, err
 	}
 

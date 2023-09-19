@@ -24,13 +24,13 @@ import (
 	"errors"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/atomic"
-
 	"hcm/pkg/async/backend"
 	"hcm/pkg/async/closer"
 	"hcm/pkg/async/consumer/leader"
 	"hcm/pkg/logs"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"go.uber.org/atomic"
 )
 
 // Consumer 定义异步任务消费接口。
@@ -122,7 +122,7 @@ func (csm *consumer) Start(optFunc ...Option) error {
 // initCommonComponent 初始化所有组件并启动同时设置关闭函数
 func (csm *consumer) initCommonComponent(opt *options) {
 	// 设置执行器
-	csm.executor = NewExecutor(opt.executorWorkersCnt, opt.normalIntervalSec)
+	csm.executor = NewExecutor(csm.backend, opt.executorWorkersCnt, opt.normalIntervalSec)
 
 	// 设置解析器
 	csm.parser = NewParser(csm.backend, csm.executor, opt.parserWorkersCnt, opt.normalIntervalSec)

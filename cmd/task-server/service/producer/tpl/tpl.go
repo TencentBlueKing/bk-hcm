@@ -26,6 +26,7 @@ import (
 	taskserver "hcm/pkg/api/task-server"
 	"hcm/pkg/async/backend"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/kit"
 )
 
 var templates = map[enumor.TplName]TemplateFlow{
@@ -34,7 +35,7 @@ var templates = map[enumor.TplName]TemplateFlow{
 
 // TemplateFlow flow template
 type TemplateFlow interface {
-	makeTemplateFlowTasks(flowID string, req *taskserver.AddFlowReq,
+	makeTemplateFlowTasks(kt *kit.Kit, flowID string, req *taskserver.AddFlowReq,
 		backend backend.Backend) ([]string, error)
 }
 
@@ -54,8 +55,8 @@ func (operator *TemplateFlowOperator) SetTemplateFlow(tplName enumor.TplName) er
 }
 
 // MakeTemplateFlowTasks make template flow tasks
-func (operator *TemplateFlowOperator) MakeTemplateFlowTasks(flowID string, req *taskserver.AddFlowReq,
+func (operator *TemplateFlowOperator) MakeTemplateFlowTasks(kt *kit.Kit, flowID string, req *taskserver.AddFlowReq,
 	backend backend.Backend) ([]string, error) {
 
-	return operator.tplFlow.makeTemplateFlowTasks(flowID, req, backend)
+	return operator.tplFlow.makeTemplateFlowTasks(kt, flowID, req, backend)
 }

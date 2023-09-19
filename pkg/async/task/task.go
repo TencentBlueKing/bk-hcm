@@ -65,8 +65,8 @@ type Task struct {
 	kt *kit.Kit
 	// task ctx with timeout
 	ctxWithTimeOut context.Context
-	// GetBackendFunc get backend func.
-	GetBackendFunc func() backend.Backend
+	// backend
+	backend backend.Backend
 }
 
 // Validate Task.
@@ -82,6 +82,11 @@ func (t *Task) Validate() error {
 // SetKit set kit
 func (t *Task) SetKit(kt *kit.Kit) {
 	t.kt = kt
+}
+
+// SetBackend set backend
+func (t *Task) SetBackend(backend backend.Backend) {
+	t.backend = backend
 }
 
 // SetCtxWithTimeOut set ctx tith time out
@@ -314,7 +319,7 @@ func (t *Task) ChangeTaskState(taskChange *backend.TaskChange) error {
 	var lastError error
 	lastError = nil
 	for r.RetryCount() < maxRetryCount {
-		if err := t.GetBackendFunc().SetTaskChange(t.ID, taskChange); err != nil {
+		if err := t.backend.SetTaskChange(t.kt, t.ID, taskChange); err != nil {
 			logs.Errorf("[async] [module-action] set task state with reason failed times %d, err: %v, %s",
 				r.RetryCount(), err, t.kt.Rid)
 			lastError = err
