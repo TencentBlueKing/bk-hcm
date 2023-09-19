@@ -21,64 +21,67 @@ package actions
 
 import (
 	"context"
+	"fmt"
+	"time"
 
-	"hcm/cmd/task-server/logics/async/task"
+	"hcm/pkg/async/task"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 )
 
 func init() {
-	task.ActionManagerInstance.RegisterAction(NewRoot())
+	task.ActionManagerInstance.RegisterAction(NewCreateVpc())
 }
 
-// Root ...
-type Root struct {
+// CreateVpc ...
+type CreateVpc struct {
 	ShareData map[string]string
 }
 
-// NewRoot ...
-func NewRoot() *Root {
-	return &Root{
+// NewCreateVpc ...
+func NewCreateVpc() *CreateVpc {
+	return &CreateVpc{
 		ShareData: make(map[string]string),
 	}
 }
 
 // Name ...
-func (e *Root) Name() string {
-	return string(enumor.VirRoot)
+func (c *CreateVpc) Name() string {
+	return string(enumor.TestCreateVpc)
 }
 
 // NewParameter ...
-func (e *Root) NewParameter(parameter interface{}) interface{} {
+func (c *CreateVpc) NewParameter(parameter interface{}) interface{} {
 	return nil
 }
 
 // GetShareData ...
-func (e *Root) GetShareData() map[string]string {
-	return e.ShareData
+func (c *CreateVpc) GetShareData() map[string]string {
+	return c.ShareData
 }
 
 // RunBefore ...
-func (e *Root) RunBefore(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
+func (c *CreateVpc) RunBefore(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }
 
 // Run ...
-func (e *Root) Run(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
+func (c *CreateVpc) Run(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
+	fmt.Println("run create vpc", time.Now())
 	return nil
 }
 
 // RunBeforeSuccess ...
-func (e *Root) RunBeforeSuccess(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
+func (c *CreateVpc) RunBeforeSuccess(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }
 
 // RunBeforeFailed ...
-func (e *Root) RunBeforeFailed(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
+func (c *CreateVpc) RunBeforeFailed(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }
 
 // RetryBefore ...
-func (e *Root) RetryBefore(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
+func (c *CreateVpc) RetryBefore(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }

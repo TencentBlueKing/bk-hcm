@@ -62,11 +62,11 @@ type Task struct {
 	// 任务间的共享数据
 	ShareData map[string]string `json:"share_data", validate:"omitempty"`
 	// task kit
-	kt *kit.Kit
+	Kit *kit.Kit
 	// task ctx with timeout
 	ctxWithTimeOut context.Context
-	// GetBackendFunc get backend func.
-	GetBackendFunc func() backend.Backend
+	// backend
+	backend backend.Backend
 }
 
 // Validate Task.
@@ -80,8 +80,13 @@ func (t *Task) Validate() error {
 }
 
 // SetKit set kit
-func (t *Task) SetKit(kt *kit.Kit) {
-	t.kt = kt
+func (t *Task) SetKit(Kit *kit.Kit) {
+	t.Kit = Kit
+}
+
+// SetBackend set backend
+func (t *Task) SetBackend(backend backend.Backend) {
+	t.backend = backend
 }
 
 // SetCtxWithTimeOut set ctx tith time out
@@ -138,18 +143,18 @@ func (t *Task) DoTask() error {
 }
 
 func (t *Task) doRunBefore(action Action) error {
-	logs.V(3).Infof("[async] [module-action] do run before start with %s", t.kt.Rid)
+	logs.V(3).Infof("[async] [module-action] do run before start with %s", t.Kit.Rid)
 
-	err := action.RunBefore(t.kt, t.ctxWithTimeOut, action.NewParameter(t.Params))
+	err := action.RunBefore(t.Kit, t.ctxWithTimeOut, action.NewParameter(t.Params))
 	if err != nil {
-		logs.Errorf("[async] [module-action] run before func failed, err: %v, %s", err, t.kt.Rid)
+		logs.Errorf("[async] [module-action] run before func failed, err: %v, %s", err, t.Kit.Rid)
 		return err
 	}
 
 	// 执行成功设置任务状态为TaskRunning
 	shareData, err := converter.MapToJsonStr(action.GetShareData())
 	if err != nil {
-		logs.Errorf("[async] [module-action] get task shareData failed, err: %v, %s", err, t.kt.Rid)
+		logs.Errorf("[async] [module-action] get task shareData failed, err: %v, %s", err, t.Kit.Rid)
 		return err
 	}
 	if err := t.ChangeTaskState(&backend.TaskChange{
@@ -157,33 +162,33 @@ func (t *Task) doRunBefore(action Action) error {
 		Reason:    constant.DefaultJsonValue,
 		ShareData: shareData,
 	}); err != nil {
-		logs.Errorf("[async] [module-action] change task state failed, err: %v, %s", err, t.kt.Rid)
+		logs.Errorf("[async] [module-action] change task state failed, err: %v, %s", err, t.Kit.Rid)
 		return err
 	}
 
 	// 执行Run
 	if err := t.doRun(action); err != nil {
-		logs.Errorf("[async] [module-action] do run func failed, err: %v, %s", err, t.kt.Rid)
+		logs.Errorf("[async] [module-action] do run func failed, err: %v, %s", err, t.Kit.Rid)
 		return err
 	}
 
-	logs.V(3).Infof("[async] [module-action] do run before end with %s", t.kt.Rid)
+	logs.V(3).Infof("[async] [module-action] do run before end with %s", t.Kit.Rid)
 	return nil
 }
 
 func (t *Task) doRun(action Action) error {
-	logs.V(3).Infof("[async] [module-action] do run start with %s", t.kt.Rid)
+	logs.V(3).Infof("[async] [module-action] do run start with %s", t.Kit.Rid)
 
-	err := action.Run(t.kt, t.ctxWithTimeOut, action.NewParameter(t.Params))
+	err := action.Run(t.Kit, t.ctxWithTimeOut, action.NewParameter(t.Params))
 	if err != nil {
-		logs.Errorf("[async] [module-action] run func failed, err: %v, %s", err, t.kt.Rid)
+		logs.Errorf("[async] [module-action] run func failed, err: %v, %s", err, t.Kit.Rid)
 		return err
 	}
 
 	// 执行成功设置任务状态为TaskBeforeSuccess
 	shareData, err := converter.MapToJsonStr(action.GetShareData())
 	if err != nil {
-		logs.Errorf("[async] [module-action] get task shareData failed, err: %v, %s", err, t.kt.Rid)
+		logs.Errorf("[async] [module-action] get task shareData failed, err: %v, %s", err, t.Kit.Rid)
 		return err
 	}
 	if err := t.ChangeTaskState(&backend.TaskChange{
@@ -191,33 +196,33 @@ func (t *Task) doRun(action Action) error {
 		Reason:    constant.DefaultJsonValue,
 		ShareData: shareData,
 	}); err != nil {
-		logs.Errorf("[async] [module-action] change task state failed, err: %v, %s", err, t.kt.Rid)
+		logs.Errorf("[async] [module-action] change task state failed, err: %v, %s", err, t.Kit.Rid)
 		return err
 	}
 
 	// 执行RunBeforeSuccess
 	if err := t.doRunBeforeSuccess(action); err != nil {
-		logs.Errorf("[async] [module-action] do run before success func failed, err: %v, %s", err, t.kt.Rid)
+		logs.Errorf("[async] [module-action] do run before success func failed, err: %v, %s", err, t.Kit.Rid)
 		return err
 	}
 
-	logs.V(3).Infof("[async] [module-action] do run end with %s", t.kt.Rid)
+	logs.V(3).Infof("[async] [module-action] do run end with %s", t.Kit.Rid)
 	return nil
 }
 
 func (t *Task) doRunBeforeSuccess(action Action) error {
-	logs.V(3).Infof("[async] [module-action] do run before success start with %s", t.kt.Rid)
+	logs.V(3).Infof("[async] [module-action] do run before success start with %s", t.Kit.Rid)
 
-	err := action.RunBeforeSuccess(t.kt, t.ctxWithTimeOut, action.NewParameter(t.Params))
+	err := action.RunBeforeSuccess(t.Kit, t.ctxWithTimeOut, action.NewParameter(t.Params))
 	if err != nil {
-		logs.Errorf("[async] [module-action] run before success func failed, err: %v, %s", err, t.kt.Rid)
+		logs.Errorf("[async] [module-action] run before success func failed, err: %v, %s", err, t.Kit.Rid)
 		return err
 	}
 
 	// 执行成功设置任务状态为TaskSuccess
 	shareData, err := converter.MapToJsonStr(action.GetShareData())
 	if err != nil {
-		logs.Errorf("[async] [module-action] get task shareData failed, err: %v, %s", err, t.kt.Rid)
+		logs.Errorf("[async] [module-action] get task shareData failed, err: %v, %s", err, t.Kit.Rid)
 		return err
 	}
 	if err := t.ChangeTaskState(&backend.TaskChange{
@@ -225,27 +230,27 @@ func (t *Task) doRunBeforeSuccess(action Action) error {
 		Reason:    constant.DefaultJsonValue,
 		ShareData: shareData,
 	}); err != nil {
-		logs.Errorf("[async] [module-action] change task state failed, err: %v, %s", err, t.kt.Rid)
+		logs.Errorf("[async] [module-action] change task state failed, err: %v, %s", err, t.Kit.Rid)
 		return err
 	}
 
-	logs.V(3).Infof("[async] [module-action] do run before success end with %s", t.kt.Rid)
+	logs.V(3).Infof("[async] [module-action] do run before success end with %s", t.Kit.Rid)
 	return nil
 }
 
 func (t *Task) doRunBeforeFailed(action Action) error {
-	logs.V(3).Infof("[async] [module-action] do run before failed start with %s", t.kt.Rid)
+	logs.V(3).Infof("[async] [module-action] do run before failed start with %s", t.Kit.Rid)
 
-	err := action.RunBeforeFailed(t.kt, t.ctxWithTimeOut, action.NewParameter(t.Params))
+	err := action.RunBeforeFailed(t.Kit, t.ctxWithTimeOut, action.NewParameter(t.Params))
 	if err != nil {
-		logs.Errorf("[async] [module-action] run before failed func failed, err: %v, %s", err, t.kt.Rid)
+		logs.Errorf("[async] [module-action] run before failed func failed, err: %v, %s", err, t.Kit.Rid)
 		return err
 	}
 
 	// 执行成功设置任务状态为TaskFailed
 	shareData, err := converter.MapToJsonStr(action.GetShareData())
 	if err != nil {
-		logs.Errorf("[async] [module-action] get task shareData failed, err: %v, %s", err, t.kt.Rid)
+		logs.Errorf("[async] [module-action] get task shareData failed, err: %v, %s", err, t.Kit.Rid)
 		return err
 	}
 	if err := t.ChangeTaskState(&backend.TaskChange{
@@ -253,20 +258,20 @@ func (t *Task) doRunBeforeFailed(action Action) error {
 		Reason:    err.Error(),
 		ShareData: shareData,
 	}); err != nil {
-		logs.Errorf("[async] [module-action] change task state failed, err: %v, %s", err, t.kt.Rid)
+		logs.Errorf("[async] [module-action] change task state failed, err: %v, %s", err, t.Kit.Rid)
 		return err
 	}
 
-	logs.V(3).Infof("[async] [module-action] do run before failed end with %s", t.kt.Rid)
+	logs.V(3).Infof("[async] [module-action] do run before failed end with %s", t.Kit.Rid)
 	return nil
 }
 
 func (t *Task) doRetryBefore(action Action) error {
-	logs.V(3).Infof("[async] [module-action] do run retry before start with %s", t.kt.Rid)
+	logs.V(3).Infof("[async] [module-action] do run retry before start with %s", t.Kit.Rid)
 
-	err := action.RetryBefore(t.kt, t.ctxWithTimeOut, action.NewParameter(t.Params))
+	err := action.RetryBefore(t.Kit, t.ctxWithTimeOut, action.NewParameter(t.Params))
 	if err != nil {
-		logs.Errorf("[async] [module-action] retry before func failed, err: %v, %s", err, t.kt.Rid)
+		logs.Errorf("[async] [module-action] retry before func failed, err: %v, %s", err, t.Kit.Rid)
 		return err
 	}
 
@@ -276,7 +281,7 @@ func (t *Task) doRetryBefore(action Action) error {
 	// 执行成功设置任务状态为TaskPending
 	shareData, err := converter.MapToJsonStr(action.GetShareData())
 	if err != nil {
-		logs.Errorf("[async] [module-action] get task shareData failed, err: %v, %s", err, t.kt.Rid)
+		logs.Errorf("[async] [module-action] get task shareData failed, err: %v, %s", err, t.Kit.Rid)
 		return err
 	}
 	if err := t.ChangeTaskState(&backend.TaskChange{
@@ -284,11 +289,11 @@ func (t *Task) doRetryBefore(action Action) error {
 		Reason:    constant.DefaultJsonValue,
 		ShareData: shareData,
 	}); err != nil {
-		logs.Errorf("[async] [module-action] change task state failed, err: %v, %s", err, t.kt.Rid)
+		logs.Errorf("[async] [module-action] change task state failed, err: %v, %s", err, t.Kit.Rid)
 		return err
 	}
 
-	logs.V(3).Infof("[async] [module-action] do run retry before end with %s", t.kt.Rid)
+	logs.V(3).Infof("[async] [module-action] do run retry before end with %s", t.Kit.Rid)
 	return nil
 }
 
@@ -304,7 +309,7 @@ func (t *Task) doRetry(action Action) error {
 func (t *Task) ChangeTaskState(taskChange *backend.TaskChange) error {
 	// 校验状态值
 	if err := taskChange.State.ValidateBeforeState(t.State); err != nil {
-		logs.Errorf("[async] [module-action] task validate failed, err: %v, %s", err, t.kt.Rid)
+		logs.Errorf("[async] [module-action] task validate failed, err: %v, %s", err, t.Kit.Rid)
 		return err
 	}
 
@@ -314,9 +319,9 @@ func (t *Task) ChangeTaskState(taskChange *backend.TaskChange) error {
 	var lastError error
 	lastError = nil
 	for r.RetryCount() < maxRetryCount {
-		if err := t.GetBackendFunc().SetTaskChange(t.ID, taskChange); err != nil {
+		if err := t.backend.SetTaskChange(t.Kit, t.ID, taskChange); err != nil {
 			logs.Errorf("[async] [module-action] set task state with reason failed times %d, err: %v, %s",
-				r.RetryCount(), err, t.kt.Rid)
+				r.RetryCount(), err, t.Kit.Rid)
 			lastError = err
 			r.Sleep()
 		}

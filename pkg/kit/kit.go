@@ -42,13 +42,6 @@ func New() *Kit {
 	}
 }
 
-func NewAsyncKit() *Kit {
-	kt := New()
-	kt.User = constant.AsyncUserKey
-	kt.AppCode = constant.AsyncAppCodeKey
-	return kt
-}
-
 // Kit defines the basic metadata info within a task.
 type Kit struct {
 	// Ctx is request context.

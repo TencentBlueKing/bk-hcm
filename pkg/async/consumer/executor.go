@@ -25,9 +25,9 @@ import (
 	"sync"
 	"time"
 
+	"hcm/pkg/async/backend"
 	"hcm/pkg/async/closer"
 	"hcm/pkg/async/flow"
-	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
@@ -50,6 +50,7 @@ var _ Executor = new(executor)
 
 // executor 定义任务执行器
 type executor struct {
+	backend           backend.Backend
 	cancelMap         sync.Map
 	workerNumber      int
 	normalIntervalSec time.Duration
@@ -67,8 +68,9 @@ func (exec *executor) SetGetParserFunc(f func() Parser) {
 }
 
 // NewExecutor 实例化任务执行器
-func NewExecutor(workerNumber int, normalIntervalSec time.Duration) Executor {
+func NewExecutor(backend backend.Backend, workerNumber int, normalIntervalSec time.Duration) Executor {
 	return &executor{
+		backend:           backend,
 		workerWg:          sync.WaitGroup{},
 		initWg:            sync.WaitGroup{},
 		workerQueue:       make(chan *flow.TaskNode, 10),
@@ -112,10 +114,13 @@ func (exec *executor) initWorkerTask(taskNode *flow.TaskNode) {
 	taskNode.Task.SetCtxWithTimeOut(c)
 
 	// 设置kit
-	kt := kit.NewAsyncKit()
+	kt := NewAsyncKit()
 	newRid := fmt.Sprintf("%s-%s-%s", taskNode.Task.FlowID, taskNode.Task.ID, kt.Rid)
 	kt.Rid = newRid
 	taskNode.Task.SetKit(kt)
+
+	// 设置backend
+	taskNode.Task.SetBackend(exec.backend)
 
 	// cancel存储到cancelMap中
 	exec.cancelMap.Store(taskNode.Task.ID, cancel)
