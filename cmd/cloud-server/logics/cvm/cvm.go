@@ -22,6 +22,7 @@ package cvm
 
 import (
 	"hcm/cmd/cloud-server/logics/audit"
+	"hcm/cmd/cloud-server/logics/disk"
 	"hcm/cmd/cloud-server/logics/eip"
 	"hcm/pkg/api/core"
 	"hcm/pkg/client"
@@ -32,25 +33,31 @@ import (
 
 // Interface define cvm interface.
 type Interface interface {
-	BatchStopCvm(kt *kit.Kit, basicInfoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateResult, error)
+	BatchStopCvm(kt *kit.Kit, basicInfoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateAllResult, error)
 	BatchDeleteCvm(kt *kit.Kit, basicInfoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateResult, error)
-	DeleteRecycledCvm(kt *kit.Kit, infoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateResult, error)
-	GetNotRecyclableHosts(kt *kit.Kit, bizHostsIds map[int64][]string) ([]string, error)
+	// DestroyRecycledCvm 销毁已经处于回收状态的Cvm
+	DestroyRecycledCvm(kt *kit.Kit, infoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateResult, error)
+	GetNotCmdbRecyclableHosts(kt *kit.Kit, bizHostsIds map[int64][]string) ([]string, error)
+	// RecyclePreCheck 回收预校验、包含主机状态和CC待回收模块检查
+	RecyclePreCheck(kt *kit.Kit, infoMap map[string]types.CloudResourceBasicInfo) *core.BatchOperateAllResult
 }
 
 type cvm struct {
 	client    *client.ClientSet
 	audit     audit.Interface
 	eip       eip.Interface
+	disk      disk.Interface
 	esbClient esb.Client
 }
 
 // NewCvm new cvm.
-func NewCvm(client *client.ClientSet, audit audit.Interface, eip eip.Interface, esbClient esb.Client) Interface {
+func NewCvm(client *client.ClientSet, audit audit.Interface, eip eip.Interface, disk disk.Interface,
+	esbClient esb.Client) Interface {
 	return &cvm{
 		client:    client,
 		audit:     audit,
 		eip:       eip,
+		disk:      disk,
 		esbClient: esbClient,
 	}
 }

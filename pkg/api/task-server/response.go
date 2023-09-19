@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package taskserver ...
 package taskserver
 
 import (
@@ -36,7 +37,7 @@ type FlowResp struct {
 	Data          *task.AsyncFlow `json:"data"`
 }
 
-// FlowAddResp
+// FlowAddResp ...
 type FlowAddResp struct {
 	rest.BaseResp `json:",inline"`
 	FlowID        string `json:"flow_id"`

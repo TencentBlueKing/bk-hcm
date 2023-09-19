@@ -80,8 +80,8 @@ func (t *Task) Validate() error {
 }
 
 // SetKit set kit
-func (t *Task) SetKit(Kit *kit.Kit) {
-	t.Kit = Kit
+func (t *Task) SetKit(kit *kit.Kit) {
+	t.Kit = kit
 }
 
 // SetBackend set backend

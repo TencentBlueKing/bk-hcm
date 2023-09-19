@@ -27,6 +27,7 @@ type BaseRecycleDetail struct {
 // CvmRecycleOptions cvm recycle record options.
 type CvmRecycleOptions struct {
 	WithDisk bool `json:"with_disk"`
+	WithEip  bool `json:"with_eip"`
 }
 
 // DiskRecycleOptions disk recycle record options.

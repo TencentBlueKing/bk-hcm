@@ -17,35 +17,11 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package logics ...
-package logics
+package maps
 
-import (
-	"hcm/cmd/cloud-server/logics/audit"
-	"hcm/cmd/cloud-server/logics/cvm"
-	"hcm/cmd/cloud-server/logics/disk"
-	"hcm/cmd/cloud-server/logics/eip"
-	"hcm/pkg/client"
-	"hcm/pkg/thirdparty/esb"
-)
+import "golang.org/x/exp/maps"
 
-// Logics defines cloud-server common logics.
-type Logics struct {
-	Audit audit.Interface
-	Disk  disk.Interface
-	Cvm   cvm.Interface
-	Eip   eip.Interface
-}
-
-// NewLogics create a new cloud server logics.
-func NewLogics(c *client.ClientSet, esbClient esb.Client) *Logics {
-	auditLogics := audit.NewAudit(c.DataService())
-	eipLogics := eip.NewEip(c, auditLogics)
-	diskLogics := disk.NewDisk(c, auditLogics)
-	return &Logics{
-		Audit: auditLogics,
-		Disk:  disk.NewDisk(c, auditLogics),
-		Cvm:   cvm.NewCvm(c, auditLogics, eipLogics, diskLogics, esbClient),
-		Eip:   eip.NewEip(c, auditLogics),
-	}
+// Clone a new map, with same key value
+func Clone[K comparable, V any](m1 map[K]V) map[K]V {
+	return maps.Clone(m1)
 }

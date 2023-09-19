@@ -22,7 +22,9 @@ package producer
 
 import (
 	"hcm/cmd/task-server/service/capability"
+	// 触发初始化任务注册
 	_ "hcm/cmd/task-server/service/producer/actions"
+	// 触发初始化任务注册
 	_ "hcm/cmd/task-server/service/producer/actions/test"
 	taskserver "hcm/pkg/api/task-server"
 	"hcm/pkg/async/producer"

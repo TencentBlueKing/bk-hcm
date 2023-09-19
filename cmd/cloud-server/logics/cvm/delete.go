@@ -25,9 +25,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
-	networkinterface "hcm/pkg/api/core/cloud/network-interface"
 	"hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/api/data-service/cloud/eip"
 	hcprotocvm "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -36,11 +34,10 @@ import (
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/thirdparty/esb/cmdb"
 	"hcm/pkg/tools/classifier"
 	"hcm/pkg/tools/converter"
-	"hcm/pkg/tools/slice"
+	"hcm/pkg/tools/maps"
 )
 
 // BatchDeleteCvm batch delete cvm.
@@ -138,30 +135,19 @@ func (c *cvm) batchDeleteCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.
 		for region, ids := range reginMap {
 			switch vendor {
 			case enumor.TCloud:
-				req := &hcprotocvm.TCloudBatchDeleteReq{
-					AccountID: accountID,
-					Region:    region,
-					IDs:       ids,
-				}
+				req := &hcprotocvm.TCloudBatchDeleteReq{AccountID: accountID, Region: region, IDs: ids}
 				if err := c.client.HCService().TCloud.Cvm.BatchDeleteCvm(kt.Ctx, kt.Header(), req); err != nil {
 					return successIDs, err
 				}
 
 			case enumor.Aws:
-				req := &hcprotocvm.AwsBatchDeleteReq{
-					AccountID: accountID,
-					Region:    region,
-					IDs:       ids,
-				}
+				req := &hcprotocvm.AwsBatchDeleteReq{AccountID: accountID, Region: region, IDs: ids}
 				if err := c.client.HCService().Aws.Cvm.BatchDeleteCvm(kt.Ctx, kt.Header(), req); err != nil {
 					return successIDs, err
 				}
 
 			case enumor.HuaWei:
-				req := &hcprotocvm.HuaWeiBatchDeleteReq{
-					AccountID:      accountID,
-					Region:         region,
-					IDs:            ids,
+				req := &hcprotocvm.HuaWeiBatchDeleteReq{AccountID: accountID, Region: region, IDs: ids,
 					DeletePublicIP: true,
 					DeleteDisk:     true,
 				}
@@ -172,7 +158,6 @@ func (c *cvm) batchDeleteCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.
 			default:
 				return successIDs, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
 			}
-
 			successIDs = append(successIDs, ids...)
 		}
 	}
@@ -180,93 +165,89 @@ func (c *cvm) batchDeleteCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.
 	return successIDs, nil
 }
 
-// DeleteRecycledCvm batch delete recycled cvm.
-func (c *cvm) DeleteRecycledCvm(kt *kit.Kit, basicInfoMap map[string]types.CloudResourceBasicInfo) (
+// DestroyRecycledCvm 销毁已经处于回收状态的Cvm，并连带当前主机上绑定的eip、disk、nic一同销毁。
+// 该动作由：
+//  1. 用户手动发起
+//  2. 由定时回收任务触发
+//
+// TODO: 检查回收记录创建的时候的eip、disk、network interface 快照，要求完全一致，否则报错
+func (c *cvm) DestroyRecycledCvm(kt *kit.Kit, cvmBasicInfo map[string]types.CloudResourceBasicInfo) (
 	*core.BatchOperateResult, error) {
 
-	if len(basicInfoMap) == 0 {
+	if len(cvmBasicInfo) == 0 {
 		return nil, nil
 	}
-
-	if len(basicInfoMap) > constant.BatchOperationMaxLimit {
+	if len(cvmBasicInfo) > constant.BatchOperationMaxLimit {
 		return nil, errf.Newf(errf.InvalidParameter, "cvm length should <= %d", constant.BatchOperationMaxLimit)
 	}
-
-	ids := make([]string, 0, len(basicInfoMap))
-
-	bizHostsIds := make(map[int64][]string)
-	for id, hostInfo := range basicInfoMap {
-		if hostInfo.BkBizID > 0 {
-			// 业务下机器加入bizHostsIds中
-			bizHostsIds[hostInfo.BkBizID] = append(bizHostsIds[hostInfo.BkBizID], id)
-		}
-		ids = append(ids, id)
+	leftCvmInfo := maps.Clone(cvmBasicInfo)
+	destroyResult := new(core.BatchOperateResult)
+	failedIds := make([]string, 0)
+	markDestroyFailed := func(id string, reason error) {
+		delete(leftCvmInfo, id)
+		destroyResult.Failed = &core.FailedInfo{ID: id, Error: reason}
 	}
-	notRecyclableIds, err := c.GetNotRecyclableHosts(kt, bizHostsIds)
+
+	// 1. 预检，有一个失败则直接失败
+	checkResult := c.RecyclePreCheck(kt, cvmBasicInfo)
+	if len(checkResult.Failed) > 0 {
+		return nil, checkResult.Failed[0].Error
+	}
+
+	// 到销毁机器的时候应该处理剩下的全部关联设备
+	// 2. 解绑数据盘
+	diskResult, diskRollBack, err := c.disk.BatchDetachWithRollback(kt, leftCvmInfo)
 	if err != nil {
-		return nil, err
+		for cvmId, err := range diskResult.FailedCvm {
+			markDestroyFailed(cvmId, err)
+		}
 	}
-	// 存在非待回收模块主机直接报错
-	if len(notRecyclableIds) > 0 {
-		return nil, fmt.Errorf("host(%v) not belongs to recycle module in cc", notRecyclableIds)
-	}
-
-	// disassociate eip
-	eipCvmMap, eipMap, err := c.getEipByCvm(kt, ids)
+	// 3. 解绑eip
+	eipFailedCvmIds := make([]string, 0, len(leftCvmInfo))
+	eipResult, eipRollback, err := c.eip.BatchDisassociateWithRollback(kt, converter.MapKeyToStringSlice(leftCvmInfo))
 	if err != nil {
-		return nil, err
+		for cvmId, err := range eipResult.FailedCvm {
+			markDestroyFailed(cvmId, err)
+			eipFailedCvmIds = append(eipFailedCvmIds, cvmId)
+		}
+	}
+	defer func() {
+		eipRollback(kt, failedIds)
+		diskRollBack(kt, append(eipFailedCvmIds, failedIds...))
+	}()
+	if len(leftCvmInfo) == 0 {
+		return destroyResult, destroyResult.Failed.Error
 	}
 
-	for id, cvmID := range eipCvmMap {
-		eip, exists := eipMap[id]
-		if !exists {
-			return nil, errf.Newf(errf.InvalidParameter, "eip %s not exists", id)
+	// 4. 销毁主机
+	delRes, err := c.BatchDeleteCvm(kt, leftCvmInfo)
+	if err != nil {
+		logs.Errorf("Fail to delete cvm, err: %v, cvmIds: %v, rid: %s", err, delRes.Failed, kt.Rid)
+		for _, cvmId := range delRes.Succeeded {
+			delete(leftCvmInfo, cvmId)
 		}
-		vendor := enumor.Vendor(eip.Vendor)
-
-		// TODO get nic id by eip InstanceType
-		var nicID string
-		switch vendor {
-		case enumor.Azure, enumor.Gcp, enumor.HuaWei:
-			nicID = converter.PtrToVal(eip.InstanceID)
-		}
-
-		err = c.eip.DisassociateEip(kt, vendor, id, cvmID, nicID, eip.AccountID)
+		// 剩下的回滚
+		failedIds = append(failedIds, converter.MapKeyToStringSlice(leftCvmInfo)...)
+	}
+	// 5. 销毁数据盘
+	for diskId, cvmId := range diskResult.SucceedResCvm {
+		err := c.disk.DeleteDisk(kt, cvmBasicInfo[cvmId].Vendor, diskId)
 		if err != nil {
-			logs.Errorf("disassociate eip %s failed, err: %v, cvm: %s, nic: %s, rid: %s", id, err, cvmID, nicID, kt.Rid)
-			return nil, err
+			logs.Errorf("fail to delete %s disk, err: %v, diskId: %s, rid: %s", cvmBasicInfo[cvmId].Vendor, err, kt.Rid)
 		}
 	}
-
-	// delete cvm
-	delRes, err := c.BatchDeleteCvm(kt, basicInfoMap)
-	if err != nil {
-		// associate eip again if cvm deletion failed.
-		for id, cvmID := range eipCvmMap {
-			eip := eipMap[id]
-			vendor := enumor.Vendor(eip.Vendor)
-
-			// TODO get nic id by eip InstanceType
-			var nicID string
-			switch vendor {
-			case enumor.Azure, enumor.Gcp, enumor.HuaWei:
-				nicID = converter.PtrToVal(eip.InstanceID)
-			}
-
-			err = c.eip.AssociateEip(kt, vendor, id, cvmID, nicID, eip.AccountID)
-			if err != nil {
-				logs.Errorf("asst eip %s failed, err: %v, cvm: %s, nic: %s, rid: %s", id, err, cvmID, nicID, kt.Rid)
-			}
+	// 6. 销毁eip
+	for eipId, cvmId := range eipResult.SucceedResCvm {
+		err := c.eip.DeleteEip(kt, cvmBasicInfo[cvmId].Vendor, eipId)
+		if err != nil {
+			logs.Errorf("fail to delete %s disk, err: %v, diskId: %s, rid: %s", cvmBasicInfo[cvmId].Vendor, err, kt.Rid)
 		}
-
-		return delRes, err
 	}
-
-	return nil, nil
+	return destroyResult, nil
 }
 
-// GetNotRecyclableHosts 获取根据业务id分类的主机id列表中不在cc待回收模块的主机id
-func (c *cvm) GetNotRecyclableHosts(kt *kit.Kit, bizHostsIds map[int64][]string) ([]string, error) {
+// GetNotCmdbRecyclableHosts 获取根据业务id分类的主机id列表中不在cmdb待回收模块的主机id
+func (c *cvm) GetNotCmdbRecyclableHosts(kt *kit.Kit, bizHostsIds map[int64][]string) ([]string, error) {
 	// cloud id -> host id
 	cloudToHostMap := make(map[string]string)
 	notRecyclableIds := make([]string, 0)
@@ -274,7 +255,7 @@ func (c *cvm) GetNotRecyclableHosts(kt *kit.Kit, bizHostsIds map[int64][]string)
 	for bizID, hostIDs := range bizHostsIds {
 		// 获取cloud id
 		req := &cloud.CvmListReq{
-			Field:  []string{"cloud_id", "vendor", "bk_biz_id", "id"},
+			Field:  []string{"cloud_id", "vendor", "bk_biz_id", "id", "status"},
 			Filter: tools.ContainersExpression("id", hostIDs),
 			Page:   core.NewDefaultBasePage(),
 		}
@@ -310,106 +291,7 @@ func (c *cvm) GetNotRecyclableHosts(kt *kit.Kit, bizHostsIds map[int64][]string)
 	return notRecyclableIds, nil
 }
 
-func (c *cvm) getEipByCvm(kt *kit.Kit, ids []string) (map[string]string, map[string]*eip.EipResult, error) {
-	// list eip and cvm relation
-	relReq := &cloud.EipCvmRelListReq{
-		Filter: tools.ContainersExpression("cvm_id", ids),
-		Page:   core.NewDefaultBasePage(),
-	}
-	relRes, err := c.client.DataService().Global.ListEipCvmRel(kt.Ctx, kt.Header(), relReq)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if len(relRes.Details) == 0 {
-		return make(map[string]string), make(map[string]*eip.EipResult), nil
-	}
-
-	eipCvmMap := make(map[string]string)
-	eipIDs := make([]string, 0, len(relRes.Details))
-	for _, detail := range relRes.Details {
-		eipCvmMap[detail.EipID] = detail.CvmID
-		eipIDs = append(eipIDs, detail.EipID)
-	}
-
-	// list eip
-	eipReq := &eip.EipListReq{
-		Filter: tools.ContainersExpression("id", eipIDs),
-		Page:   core.NewDefaultBasePage(),
-	}
-	eipRes, err := c.client.DataService().Global.ListEip(kt.Ctx, kt.Header(), eipReq)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// list network interface attached with eip
-	eipMap := make(map[string]*eip.EipResult)
-	publicIPs := make([]string, 0, len(eipRes.Details))
-	for _, detail := range eipRes.Details {
-		eipMap[detail.ID] = detail
-		publicIPs = append(publicIPs, detail.PublicIp)
-	}
-
-	nicMap, err := c.listNicByCvmAndEip(kt, ids, publicIPs)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	for eipID, cvmID := range eipCvmMap {
-		ip := eipMap[eipID].PublicIp
-		for _, nic := range nicMap[cvmID] {
-			if slice.IsItemInSlice(nic.PublicIPv4, ip) || slice.IsItemInSlice(nic.PublicIPv6, ip) {
-				eipMap[eipID].InstanceID = converter.ValToPtr(nic.ID)
-			}
-		}
-	}
-
-	return eipCvmMap, eipMap, nil
-}
-
-// TODO save eip and nic relation in db
-func (c *cvm) listNicByCvmAndEip(kt *kit.Kit, ids []string, publicIPs []string) (
-	map[string][]networkinterface.BaseNetworkInterface, error) {
-
-	nicRelRes, err := c.client.DataService().Global.NetworkInterfaceCvmRel.List(kt.Ctx, kt.Header(),
-		&core.ListReq{Filter: tools.ContainersExpression("cvm_id", ids), Page: core.NewDefaultBasePage()})
-	if err != nil {
-		return nil, err
-	}
-
-	if len(nicRelRes.Details) == 0 {
-		return make(map[string][]networkinterface.BaseNetworkInterface), nil
-	}
-
-	nicIDs := make([]string, len(nicRelRes.Details))
-	nicCvmMap := make(map[string]string)
-	for idx, rel := range nicRelRes.Details {
-		nicIDs[idx] = rel.NetworkInterfaceID
-		nicCvmMap[rel.NetworkInterfaceID] = rel.CvmID
-	}
-
-	nicRes, err := c.client.DataService().Global.NetworkInterface.List(kt.Ctx, kt.Header(),
-		&core.ListReq{Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{tools.ContainersExpression("id", nicIDs),
-				&filter.Expression{Op: filter.Or, Rules: []filter.RuleFactory{
-					filter.AtomRule{Field: "public_ipv4", Op: filter.JSONOverlaps.Factory(), Value: publicIPs},
-					filter.AtomRule{Field: "public_ipv6", Op: filter.JSONOverlaps.Factory(), Value: publicIPs},
-				}},
-			},
-		}, Page: core.NewDefaultBasePage()})
-	if err != nil {
-		return nil, err
-	}
-
-	nicMap := make(map[string][]networkinterface.BaseNetworkInterface)
-	for _, nic := range nicRes.Details {
-		nicMap[nicCvmMap[nic.ID]] = append(nicMap[nicCvmMap[nic.ID]], nic)
-	}
-	return nicMap, nil
-}
-
-// CheckBizHostInRecycleModule 查询业务下主机是否在CC待回收模块中，CC只有业务下主机，完全没有业务下主机会报错
+// CheckBizHostInRecycleModule 查询业务下主机是否在cmdb待回收模块中，cmdb只有业务下主机，完全没有业务下主机会报错
 func (c *cvm) CheckBizHostInRecycleModule(ctx context.Context, bizID int64,
 	cloudIDs map[enumor.Vendor][]string) (map[string]bool, error) {
 
@@ -492,15 +374,10 @@ func (c *cvm) getCmdbHostId(ctx context.Context, bizID int64,
 	}
 
 	listParams := &cmdb.ListBizHostParams{
-		BizID:  bizID,
-		Fields: []string{"bk_host_id", "bk_cloud_inst_id"},
-		Page:   cmdb.BasePage{Limit: 500},
-		HostPropertyFilter: &cmdb.QueryFilter{
-			Rule: &cmdb.CombinedRule{
-				Condition: "OR",
-				Rules:     rules,
-			},
-		},
+		BizID:              bizID,
+		Fields:             []string{"bk_host_id", "bk_cloud_inst_id"},
+		Page:               cmdb.BasePage{Limit: 500},
+		HostPropertyFilter: &cmdb.QueryFilter{Rule: &cmdb.CombinedRule{Condition: "OR", Rules: rules}},
 	}
 	hosts, err := c.esbClient.Cmdb().ListBizHost(ctx, listParams)
 	if err != nil {
@@ -517,4 +394,47 @@ func (c *cvm) getCmdbHostId(ctx context.Context, bizID int64,
 		hostIDs[host.BkCloudInstID] = host.BkHostID
 	}
 	return hostIDs, nil
+}
+
+// RecyclePreCheck  回收预校验、包含主机状态和CC待回收模块检查，see Interface.RecyclePreCheck
+func (c *cvm) RecyclePreCheck(kt *kit.Kit, basicInfoMap map[string]types.CloudResourceBasicInfo) (
+	result *core.BatchOperateAllResult) {
+
+	leftInfo := maps.Clone(basicInfoMap)
+	result = new(core.BatchOperateAllResult)
+	markFail := func(err error, ids ...string) {
+		for _, id := range ids {
+			delete(leftInfo, id)
+			result.Failed = append(result.Failed, core.FailedInfo{Error: err, ID: id})
+		}
+	}
+
+	bizHostsMap := make(map[int64][]string)
+	for id, hostInfo := range leftInfo {
+		if hostInfo.BkBizID > 0 {
+			// 业务下机器加入bizHostsIds中
+			bizHostsMap[hostInfo.BkBizID] = append(bizHostsMap[hostInfo.BkBizID], id)
+		}
+	}
+
+	// 1. cmdb 待回收检查有业务下的主机，检查是否在cmdb待回收模块
+	if len(bizHostsMap) > 0 {
+		notRecyclableIds, err := c.GetNotCmdbRecyclableHosts(kt, bizHostsMap)
+		if err != nil {
+			// 	获取信息失败，全部标记失败
+			for _, ids := range bizHostsMap {
+				markFail(err, ids...)
+			}
+			return result
+		}
+		e := fmt.Errorf("host not belongs to recycle module in cmdb, host id: %v", notRecyclableIds)
+		markFail(e, notRecyclableIds...)
+	}
+
+	// 2. CVM尝试关机检查
+	checkResult := c.checkAndStopCvm(kt, leftInfo)
+	result.Failed = append(result.Failed, checkResult.Failed...)
+	result.Succeeded = converter.MapKeyToStringSlice(leftInfo)
+
+	return result
 }

@@ -63,7 +63,8 @@ func (svc *diskSvc) recycleDiskSvc(cts *rest.Contexts, validHandler handler.Vali
 	auditInfos := make([]protoaudit.CloudResRecycleAuditInfo, 0, len(req.Infos))
 	for _, info := range req.Infos {
 		ids = append(ids, info.ID)
-		auditInfos = append(auditInfos, protoaudit.CloudResRecycleAuditInfo{ResID: info.ID, Data: info.DiskRecycleOptions})
+		auditInfos = append(auditInfos,
+			protoaudit.CloudResRecycleAuditInfo{ResID: info.ID, Data: info.DiskRecycleOptions})
 	}
 
 	basicInfoReq := cloud.ListResourceBasicInfoReq{

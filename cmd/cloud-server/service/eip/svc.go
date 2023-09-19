@@ -25,6 +25,7 @@ import (
 	"io/ioutil"
 
 	"hcm/cmd/cloud-server/logics/audit"
+	"hcm/cmd/cloud-server/logics/eip"
 	"hcm/cmd/cloud-server/service/common"
 	"hcm/cmd/cloud-server/service/eip/aws"
 	"hcm/cmd/cloud-server/service/eip/azure"
@@ -36,7 +37,6 @@ import (
 	"hcm/pkg/api/data-service/cloud"
 	datarelproto "hcm/pkg/api/data-service/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud/eip"
-	hcproto "hcm/pkg/api/hc-service/eip"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -61,6 +61,7 @@ type eipSvc struct {
 	azure      *azure.Azure
 	gcp        *gcp.Gcp
 	huawei     *huawei.HuaWei
+	eip        eip.Interface
 }
 
 // ListEip list eip.
@@ -308,7 +309,7 @@ func (svc *eipSvc) batchDeleteEip(cts *rest.Contexts, validHandler handler.Valid
 			return nil, errf.New(errf.InvalidParameter, fmt.Sprintf("id %s has no corresponding vendor", eipID))
 		}
 
-		err = svc.DeleteEip(cts.Kit, eipID, basicInfo.Vendor)
+		err = svc.eip.DeleteEip(cts.Kit, basicInfo.Vendor, eipID)
 		if err != nil {
 			return core.BatchOperateResult{
 				Succeeded: succeeded,
@@ -323,26 +324,6 @@ func (svc *eipSvc) batchDeleteEip(cts *rest.Contexts, validHandler handler.Valid
 	}
 
 	return core.BatchOperateResult{Succeeded: succeeded}, nil
-}
-
-// DeleteEip 删除指定eip
-func (svc *eipSvc) DeleteEip(kt *kit.Kit, eipID string, vendor enumor.Vendor) (err error) {
-	deleteReq := &hcproto.EipDeleteReq{EipID: eipID}
-	switch vendor {
-	case enumor.TCloud:
-		err = svc.client.HCService().TCloud.Eip.DeleteEip(kt.Ctx, kt.Header(), deleteReq)
-	case enumor.Aws:
-		err = svc.client.HCService().Aws.Eip.DeleteEip(kt.Ctx, kt.Header(), deleteReq)
-	case enumor.HuaWei:
-		err = svc.client.HCService().HuaWei.Eip.DeleteEip(kt.Ctx, kt.Header(), deleteReq)
-	case enumor.Gcp:
-		err = svc.client.HCService().Gcp.Eip.DeleteEip(kt.Ctx, kt.Header(), deleteReq)
-	case enumor.Azure:
-		err = svc.client.HCService().Azure.Eip.DeleteEip(kt.Ctx, kt.Header(), deleteReq)
-	default:
-		err = errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", vendor))
-	}
-	return err
 }
 
 // AssociateEip associate eip.
