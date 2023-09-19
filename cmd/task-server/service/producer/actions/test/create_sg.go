@@ -24,64 +24,64 @@ import (
 	"fmt"
 	"time"
 
-	"hcm/cmd/task-server/logics/async/task"
+	"hcm/pkg/async/task"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 )
 
 func init() {
-	task.ActionManagerInstance.RegisterAction(NewCreateSubnet())
+	task.ActionManagerInstance.RegisterAction(NewCreateSG())
 }
 
-// CreateSubnet ...
-type CreateSubnet struct {
+// CreateSG ...
+type CreateSG struct {
 	ShareData map[string]string
 }
 
-// NewCreateSubnet ...
-func NewCreateSubnet() *CreateSubnet {
-	return &CreateSubnet{
+// NewCreateSG ...
+func NewCreateSG() *CreateSG {
+	return &CreateSG{
 		ShareData: make(map[string]string),
 	}
 }
 
 // Name ...
-func (c *CreateSubnet) Name() string {
-	return string(enumor.TestCreateSubnet)
+func (c *CreateSG) Name() string {
+	return string(enumor.TestCreateSG)
 }
 
 // NewParameter ...
-func (c *CreateSubnet) NewParameter(parameter interface{}) interface{} {
+func (c *CreateSG) NewParameter(parameter interface{}) interface{} {
 	return nil
 }
 
 // GetShareData ...
-func (c *CreateSubnet) GetShareData() map[string]string {
+func (c *CreateSG) GetShareData() map[string]string {
 	return c.ShareData
 }
 
 // RunBefore ...
-func (c *CreateSubnet) RunBefore(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
+func (c *CreateSG) RunBefore(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }
 
 // Run ...
-func (c *CreateSubnet) Run(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
-	fmt.Println("run create subnet", time.Now())
+func (c *CreateSG) Run(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
+	fmt.Println("run create sg", time.Now())
 	return nil
 }
 
 // RunBeforeSuccess ...
-func (c *CreateSubnet) RunBeforeSuccess(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
+func (c *CreateSG) RunBeforeSuccess(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }
 
 // RunBeforeFailed ...
-func (c *CreateSubnet) RunBeforeFailed(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
+func (c *CreateSG) RunBeforeFailed(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }
 
 // RetryBefore ...
-func (c *CreateSubnet) RetryBefore(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
+func (c *CreateSG) RetryBefore(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }

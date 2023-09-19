@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/async/task"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/retry"
 )
@@ -75,6 +76,7 @@ func NewParser(bd backend.Backend, exec Executor, workerNumber int, normalInterv
 
 // Start 初始化解析器并启动执行
 func (psr *parser) Start() {
+
 	// 定期获取等待执行的任务流
 	psr.workerWg.Add(1)
 	go psr.startWatcher(psr.watchPendingFlow)
@@ -107,8 +109,10 @@ func (psr *parser) startWatcher(do func() error) {
 }
 
 func (psr *parser) watchPendingFlow() error {
+	kt := NewAsyncKit()
+
 	// 从DB中获取一条待执行的任务流并更新状态为执行中
-	flowFromDB, err := psr.backend.ConsumeOnePendingFlow()
+	flowFromDB, err := psr.backend.ConsumeOnePendingFlow(kt)
 	if err != nil {
 		if strings.Contains(err.Error(), "flow num is 0") {
 			return nil
@@ -119,9 +123,9 @@ func (psr *parser) watchPendingFlow() error {
 	flowID := flowFromDB.ID
 
 	// 根据任务流ID获取对应的任务集合
-	taskResult, err := psr.backend.GetTasksByFlowID(flowID)
+	taskResult, err := psr.backend.GetTasksByFlowID(kt, flowID)
 	if err != nil {
-		if err := psr.changeFlowState(flowID, &backend.FlowChange{
+		if err := psr.changeFlowState(kt, flowID, &backend.FlowChange{
 			State:  enumor.FlowFailed,
 			Reason: err.Error(),
 		}); err != nil {
@@ -141,7 +145,7 @@ func (psr *parser) watchPendingFlow() error {
 	// 构造执行流树
 	root, err := flow.BuildTaskRoot(tasks)
 	if err != nil {
-		if err := psr.changeFlowState(flowID, &backend.FlowChange{
+		if err := psr.changeFlowState(kt, flowID, &backend.FlowChange{
 			State:  enumor.FlowFailed,
 			Reason: err.Error(),
 		}); err != nil {
@@ -158,7 +162,7 @@ func (psr *parser) watchPendingFlow() error {
 		state := root.ComputeStatus()
 
 		if state == enumor.FlowFailed || state == enumor.FlowSuccess {
-			if err := psr.changeFlowState(flowID, &backend.FlowChange{
+			if err := psr.changeFlowState(kt, flowID, &backend.FlowChange{
 				State:  state,
 				Reason: constant.DefaultJsonValue,
 			}); err != nil {
@@ -184,9 +188,9 @@ func (psr *parser) watchPendingFlow() error {
 }
 
 // changeFlowState 带有重试机制的修改任务流状态
-func (psr *parser) changeFlowState(flowID string, flowChange *backend.FlowChange) error {
+func (psr *parser) changeFlowState(kt *kit.Kit, flowID string, flowChange *backend.FlowChange) error {
 	// 获取任务流
-	flow, err := psr.backend.GetFlowByID(flowID)
+	flow, err := psr.backend.GetFlowByID(kt, flowID)
 	if err != nil {
 		return err
 	}
@@ -202,7 +206,7 @@ func (psr *parser) changeFlowState(flowID string, flowChange *backend.FlowChange
 	var lastError error
 	lastError = nil
 	for r.RetryCount() < maxRetryCount {
-		if err := psr.backend.SetFlowChange(flowID, flowChange); err != nil {
+		if err := psr.backend.SetFlowChange(kt, flowID, flowChange); err != nil {
 			lastError = err
 			r.Sleep()
 		}
@@ -243,7 +247,7 @@ func (psr *parser) executeNext(taskNode *flow.TaskNode) error {
 		state := tree.Root.ComputeStatus()
 
 		if state == enumor.FlowFailed || state == enumor.FlowSuccess {
-			if err := psr.changeFlowState(taskNode.Task.FlowID, &backend.FlowChange{
+			if err := psr.changeFlowState(taskNode.Task.Kit, taskNode.Task.FlowID, &backend.FlowChange{
 				State:  state,
 				Reason: constant.DefaultJsonValue,
 			}); err != nil {

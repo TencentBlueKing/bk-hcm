@@ -22,6 +22,8 @@ package producer
 
 import (
 	"hcm/cmd/task-server/service/capability"
+	_ "hcm/cmd/task-server/service/producer/actions"
+	_ "hcm/cmd/task-server/service/producer/actions/test"
 	taskserver "hcm/pkg/api/task-server"
 	"hcm/pkg/async/producer"
 	"hcm/pkg/client"
@@ -64,7 +66,7 @@ func (p service) AddAsyncTplFlow(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// 2. 按照模板添加异步任务流
-	return p.pro.AddAsyncTplFlow(req)
+	return p.pro.AddAsyncTplFlow(cts.Kit, req)
 }
 
 // ListAsyncFlow list async flow
@@ -81,7 +83,7 @@ func (p service) ListAsyncFlow(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// 2. 列出异步任务流
-	return p.pro.ListAsyncFlow(req)
+	return p.pro.ListAsyncFlow(cts.Kit, req)
 }
 
 // GetAsyncFlow get async flow
@@ -90,5 +92,5 @@ func (p service) GetAsyncFlow(cts *rest.Contexts) (interface{}, error) {
 	flowID := cts.PathParameter("flow_id").String()
 
 	// 2. 根据flowid获取异步任务流
-	return p.pro.GetAsyncFlow(flowID)
+	return p.pro.GetAsyncFlow(cts.Kit, flowID)
 }
