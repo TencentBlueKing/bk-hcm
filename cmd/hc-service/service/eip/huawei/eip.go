@@ -75,12 +75,14 @@ func (svc *EipSvc) DeleteEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeEipDeleteOption(cts.Kit, req)
+	eipData, err := svc.DataCli.HuaWei.RetrieveEip(cts.Kit.Ctx, cts.Kit.Header(), req.EipID)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := svc.Adaptor.HuaWei(cts.Kit, req.AccountID)
+	opt := &eip.HuaWeiEipDeleteOption{Region: eipData.Region, CloudID: eipData.CloudID}
+
+	client, err := svc.Adaptor.HuaWei(cts.Kit, eipData.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -297,18 +299,6 @@ func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return &core.BatchCreateResult{IDs: eipIDs}, nil
-}
-
-func (svc *EipSvc) makeEipDeleteOption(
-	kt *kit.Kit,
-	req *proto.EipDeleteReq,
-) (*eip.HuaWeiEipDeleteOption, error) {
-	eipData, err := svc.DataCli.HuaWei.RetrieveEip(kt.Ctx, kt.Header(), req.EipID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &eip.HuaWeiEipDeleteOption{Region: eipData.Region, CloudID: eipData.CloudID}, nil
 }
 
 func (svc *EipSvc) makeEipAssociateOption(

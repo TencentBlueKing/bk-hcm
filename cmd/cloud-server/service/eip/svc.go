@@ -308,23 +308,7 @@ func (svc *eipSvc) batchDeleteEip(cts *rest.Contexts, validHandler handler.Valid
 			return nil, errf.New(errf.InvalidParameter, fmt.Sprintf("id %s has no corresponding vendor", eipID))
 		}
 
-		deleteReq := &hcproto.EipDeleteReq{EipID: eipID, AccountID: basicInfo.AccountID}
-
-		switch basicInfo.Vendor {
-		case enumor.TCloud:
-			err = svc.client.HCService().TCloud.Eip.DeleteEip(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
-		case enumor.Aws:
-			err = svc.client.HCService().Aws.Eip.DeleteEip(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
-		case enumor.HuaWei:
-			err = svc.client.HCService().HuaWei.Eip.DeleteEip(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
-		case enumor.Gcp:
-			err = svc.client.HCService().Gcp.Eip.DeleteEip(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
-		case enumor.Azure:
-			err = svc.client.HCService().Azure.Eip.DeleteEip(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
-		default:
-			err = errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", basicInfo.Vendor))
-		}
-
+		err = svc.DeleteEip(cts.Kit, eipID, basicInfo.Vendor)
 		if err != nil {
 			return core.BatchOperateResult{
 				Succeeded: succeeded,
@@ -339,6 +323,26 @@ func (svc *eipSvc) batchDeleteEip(cts *rest.Contexts, validHandler handler.Valid
 	}
 
 	return core.BatchOperateResult{Succeeded: succeeded}, nil
+}
+
+// DeleteEip 删除指定eip
+func (svc *eipSvc) DeleteEip(kt *kit.Kit, eipID string, vendor enumor.Vendor) (err error) {
+	deleteReq := &hcproto.EipDeleteReq{EipID: eipID}
+	switch vendor {
+	case enumor.TCloud:
+		err = svc.client.HCService().TCloud.Eip.DeleteEip(kt.Ctx, kt.Header(), deleteReq)
+	case enumor.Aws:
+		err = svc.client.HCService().Aws.Eip.DeleteEip(kt.Ctx, kt.Header(), deleteReq)
+	case enumor.HuaWei:
+		err = svc.client.HCService().HuaWei.Eip.DeleteEip(kt.Ctx, kt.Header(), deleteReq)
+	case enumor.Gcp:
+		err = svc.client.HCService().Gcp.Eip.DeleteEip(kt.Ctx, kt.Header(), deleteReq)
+	case enumor.Azure:
+		err = svc.client.HCService().Azure.Eip.DeleteEip(kt.Ctx, kt.Header(), deleteReq)
+	default:
+		err = errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", vendor))
+	}
+	return err
 }
 
 // AssociateEip associate eip.

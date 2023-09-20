@@ -57,12 +57,12 @@ func (svc *EipSvc) DeleteEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeEipDeleteOption(cts.Kit, req)
+	eipData, err := svc.DataCli.Gcp.RetrieveEip(cts.Kit.Ctx, cts.Kit.Header(), req.EipID)
 	if err != nil {
 		return nil, err
 	}
-
-	client, err := svc.Adaptor.Gcp(cts.Kit, req.AccountID)
+	opt := &eip.GcpEipDeleteOption{Region: eipData.Region, EipName: *eipData.Name}
+	client, err := svc.Adaptor.Gcp(cts.Kit, eipData.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -292,17 +292,6 @@ func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return &core.BatchCreateResult{IDs: eipIDs}, nil
-}
-
-func (svc *EipSvc) makeEipDeleteOption(
-	kt *kit.Kit,
-	req *proto.EipDeleteReq,
-) (*eip.GcpEipDeleteOption, error) {
-	eipData, err := svc.DataCli.Gcp.RetrieveEip(kt.Ctx, kt.Header(), req.EipID)
-	if err != nil {
-		return nil, err
-	}
-	return &eip.GcpEipDeleteOption{Region: eipData.Region, EipName: *eipData.Name}, nil
 }
 
 func (svc *EipSvc) makeEipAssociateOption(
