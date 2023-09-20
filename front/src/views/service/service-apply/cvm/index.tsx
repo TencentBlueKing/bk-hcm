@@ -28,6 +28,9 @@ import CommonCard from '@/components/CommonCard';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import { useRouter } from 'vue-router';
 import VpcPreviewDialog from './children/VpcPreviewDialog';
+import SubnetPreviewDialog, { ISubnetItem } from './children/SubnetPreviewDialog';
+import http from '@/http';
+const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 const accountStore = useAccountStore();
 
@@ -39,7 +42,7 @@ export default defineComponent({
   props: {},
   setup() {
     const { cond, isEmptyCond } = useCondtion(ResourceTypeEnum.CVM);
-    const { formData, formRef, handleFormSubmit, submitting, resetFormItemData } = useCvmFormData(cond);
+    const { formData, formRef, handleFormSubmit, submitting, resetFormItemData, getSaveData } = useCvmFormData(cond);
     const {
       sysDiskTypes,
       dataDiskTypes,
@@ -66,7 +69,14 @@ export default defineComponent({
     const machineType = ref(null);
     const subnetSelectorRef = ref(null);
     const vpcData = ref(null);
+    const subnetData = ref(null);
     const isVpcPreviewDialogShow = ref(false);
+    const isSubnetPreviewDialogShow = ref(false);
+    const cost = ref('--');
+
+    const handleSubnetDataChange = (data: ISubnetItem) => {
+      subnetData.value = data;
+    };
 
     const handleCreateDataDisk = () => {
       const newRow: IDiskOption = getDataDiskDefaults();
@@ -276,6 +286,34 @@ export default defineComponent({
       formData.system_disk.disk_type = '';
     });
 
+    watch(
+      () => formData,
+      async () => {
+        const saveData = getSaveData();
+        if (![VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum)) return;
+        if (
+          !saveData.account_id
+          || !saveData.region
+          || !saveData.zone
+          || !saveData.name
+          || !saveData.instance_type
+          || !saveData.cloud_image_id
+          || !saveData.cloud_vpc_id
+          || !saveData.cloud_subnet_id
+          || !saveData.cloud_security_group_ids
+          || !saveData.system_disk?.disk_type
+          || !saveData.password
+          || !saveData.confirmed_password
+        ) return;
+        const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/cvms/prices/inquiry`, saveData);
+        cost.value = res.data?.discount_price || '--';
+      },
+      {
+        immediate: true,
+        deep: true,
+      },
+    );
+
     // const curRegionName = computed(() => {
     //   return hostStore.regionList?.find(region => region.region_id === cond.region) || {};
     // });
@@ -354,16 +392,19 @@ export default defineComponent({
                   resourceGroup={cond.resourceGroup}
                   ref={subnetSelectorRef}
                   clearable={false}
+                  handleChange={handleSubnetDataChange}
                 />
                 <Button
                   text
                   theme="primary"
+                  disabled={!formData.cloud_subnet_id}
                   onClick={() => {
-                    if (!formData.cloud_subnet_id) return;
-                    const url = `/#/business/subnet?cloud_id=${formData.cloud_subnet_id}&bizs=${cond.bizId}`;
-                    window.open(url, '_blank');
+                    isSubnetPreviewDialogShow.value = true;
+                    // if (!formData.cloud_subnet_id) return;
+                    // const url = `/#/business/subnet?cloud_id=${formData.cloud_subnet_id}&bizs=${cond.bizId}`;
+                    // window.open(url, '_blank');
                   }}>
-                  详情
+                  预览
                 </Button>
               </div>
             ),
@@ -891,7 +932,9 @@ export default defineComponent({
               费用：
             </div>
             <div class={'purchase-cvm-cost'}>
-              ¥ 126.02
+              {
+                cost.value
+              }
             </div>
             <Button theme='primary' loading={submitting.value} disabled={submitDisabled.value} onClick={handleFormSubmit} class={'mr8'}>
               立即购买
@@ -905,6 +948,12 @@ export default defineComponent({
             isShow={isVpcPreviewDialogShow.value}
             data={vpcData.value}
             handleClose={() => isVpcPreviewDialogShow.value = false}
+          />
+
+          <SubnetPreviewDialog
+            isShow={isSubnetPreviewDialogShow.value}
+            data={subnetData.value}
+            handleClose={() => isSubnetPreviewDialogShow.value = false}
           />
       </div>
     </div>;

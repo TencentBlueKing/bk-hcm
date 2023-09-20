@@ -5,6 +5,7 @@ import { Select } from 'bkui-vue';
 import { QueryRuleOPEnum } from '@/typings/common';
 import { VendorEnum } from '@/common/constant';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { ISubnetItem } from '../../cvm/children/SubnetPreviewDialog';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -20,6 +21,7 @@ export default defineComponent({
     accountId: String as PropType<string>,
     zone: Array as PropType<string[]>,
     resourceGroup: String as PropType<string>,
+    handleChange: Function as PropType<(data: ISubnetItem) => void>,
   },
   emits: ['update:modelValue'],
   setup(props, { emit, attrs, expose }) {
@@ -113,6 +115,11 @@ export default defineComponent({
         onUpdate:modelValue={val => selected.value = val}
         loading={loading.value}
         {...{ attrs }}
+        onChange={(cloud_id: string) => {
+          console.log(cloud_id);
+          const data = list.value.find(item => item.cloud_id = cloud_id);
+          props.handleChange(data);
+        }}
       >
         {
           list.value.map(({ cloud_id, name, ipv4_cidr, available_ip_count }) => (
