@@ -29,6 +29,8 @@ import DetailHeader from '@/views/resource/resource-manage/common/header/detail-
 import { useRouter } from 'vue-router';
 import VpcPreviewDialog from './children/VpcPreviewDialog';
 import SubnetPreviewDialog, { ISubnetItem } from './children/SubnetPreviewDialog';
+import http from '@/http';
+const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 const accountStore = useAccountStore();
 
@@ -40,7 +42,7 @@ export default defineComponent({
   props: {},
   setup() {
     const { cond, isEmptyCond } = useCondtion(ResourceTypeEnum.CVM);
-    const { formData, formRef, handleFormSubmit, submitting, resetFormItemData } = useCvmFormData(cond);
+    const { formData, formRef, handleFormSubmit, submitting, resetFormItemData, getSaveData } = useCvmFormData(cond);
     const {
       sysDiskTypes,
       dataDiskTypes,
@@ -70,6 +72,7 @@ export default defineComponent({
     const subnetData = ref(null);
     const isVpcPreviewDialogShow = ref(false);
     const isSubnetPreviewDialogShow = ref(false);
+    const cost = ref('--');
 
     const handleSubnetDataChange = (data: ISubnetItem) => {
       subnetData.value = data;
@@ -282,6 +285,34 @@ export default defineComponent({
     watch(() => cond.vendor, () => {
       formData.system_disk.disk_type = '';
     });
+
+    watch(
+      () => formData,
+      async () => {
+        const saveData = getSaveData();
+        if (![VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum)) return;
+        if (
+          !saveData.account_id
+          || !saveData.region
+          || !saveData.zone
+          || !saveData.name
+          || !saveData.instance_type
+          || !saveData.cloud_image_id
+          || !saveData.cloud_vpc_id
+          || !saveData.cloud_subnet_id
+          || !saveData.cloud_security_group_ids
+          || !saveData.system_disk?.disk_type
+          || !saveData.password
+          || !saveData.confirmed_password
+        ) return;
+        const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/cvms/prices/inquiry`, saveData);
+        cost.value = res.data?.discount_price || '--';
+      },
+      {
+        immediate: true,
+        deep: true,
+      },
+    );
 
     // const curRegionName = computed(() => {
     //   return hostStore.regionList?.find(region => region.region_id === cond.region) || {};
@@ -901,7 +932,9 @@ export default defineComponent({
               费用：
             </div>
             <div class={'purchase-cvm-cost'}>
-              ¥ 126.02
+              {
+                cost.value
+              }
             </div>
             <Button theme='primary' loading={submitting.value} disabled={submitDisabled.value} onClick={handleFormSubmit} class={'mr8'}>
               立即购买
