@@ -133,6 +133,11 @@ const (
 
 	// UserCollectionTable 用户收藏表
 	UserCollectionTable Name = "user_collection"
+
+	// AsyncFlowTable is async flow table's name.
+	AsyncFlowTable Name = "async_flow"
+	// AsyncFlowTaskTable is async flow task table's name.
+	AsyncFlowTaskTable Name = "async_flow_task"
 )
 
 // Validate whether the table name is valid or not.
@@ -199,6 +204,9 @@ var TableMap = map[Name]struct{}{
 
 	// TODO: 临时方案
 	RecycleRecordTableTaskID: {},
+
+	AsyncFlowTable:     {},
+	AsyncFlowTaskTable: {},
 }
 
 // Register 注册表名

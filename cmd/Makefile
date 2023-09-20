@@ -5,6 +5,7 @@ all:
 	@cd auth-server && make
 	@cd cloud-server && make
 	@cd web-server && make
+	@cd task-server && make
 
 package:
 	@cd data-service && make package
@@ -13,6 +14,7 @@ package:
 	@cd auth-server && make package
 	@cd cloud-server && make package
 	@cd web-server && make package
+	@cd task-server && make package
 
 docker:
 	@cd data-service && make docker
@@ -21,6 +23,7 @@ docker:
 	@cd auth-server && make docker
 	@cd cloud-server && make docker
 	@cd web-server && make docker
+	@cd task-server && make docker
 
 clean:
 	@cd data-service && make clean
@@ -29,3 +32,4 @@ clean:
 	@cd auth-server && make clean
 	@cd cloud-server && make clean
 	@cd web-server && make clean
+	@cd task-server && make clean
