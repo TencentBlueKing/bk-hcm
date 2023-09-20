@@ -127,11 +127,10 @@ func createAndStartAsync(sd serviced.ServiceDiscover, dao dao.Set) (async.Async,
 	}()
 
 	cfg := cc.TaskServer().Async
-	if err = async.GetConsumer().Start(consumer.NormalIntervalSec(cfg.NormalIntervalSec),
+
+	go async.GetConsumer().Start(consumer.NormalIntervalSec(cfg.NormalIntervalSec),
 		consumer.ExecutorWorkersCnt(cfg.ExecutorWorkerCnt), consumer.ParserWorkersCnt(cfg.ParserWorkersCnt),
-		consumer.FlowScheduleTimeoutSec(cfg.FlowScheduleTimeoutSec)); err != nil {
-		return nil, err
-	}
+		consumer.FlowScheduleTimeoutSec(cfg.FlowScheduleTimeoutSec))
 
 	return async, nil
 }

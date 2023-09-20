@@ -23,18 +23,19 @@ package producer
 import (
 	"errors"
 
+	"hcm/cmd/task-server/service/producer/tpl"
 	taskserver "hcm/pkg/api/task-server"
 	"hcm/pkg/async/backend"
-	"hcm/pkg/async/flow/tpl"
+	"hcm/pkg/kit"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 // Producer 定义生产者提供接口。
 type Producer interface {
-	AddAsyncTplFlow(req *taskserver.AddFlowReq) (interface{}, error)
-	ListAsyncFlow(req *taskserver.FlowListReq) (interface{}, error)
-	GetAsyncFlow(flowID string) (interface{}, error)
+	AddAsyncTplFlow(kt *kit.Kit, req *taskserver.AddFlowReq) (interface{}, error)
+	ListAsyncFlow(kt *kit.Kit, req *taskserver.FlowListReq) (interface{}, error)
+	GetAsyncFlow(kt *kit.Kit, flowID string) (interface{}, error)
 }
 
 var _ Producer = new(producer)
@@ -62,14 +63,14 @@ type producer struct {
 }
 
 // AddAsyncTplFlow add async flow
-func (p *producer) AddAsyncTplFlow(req *taskserver.AddFlowReq) (interface{}, error) {
+func (p *producer) AddAsyncTplFlow(kt *kit.Kit, req *taskserver.AddFlowReq) (interface{}, error) {
 	// 1. 模版是否存在
 	if err := req.FlowName.Validate(); err != nil {
 		return nil, err
 	}
 
 	// 2. 添加任务流到DB
-	flowID, err := p.backend.AddFlow(req)
+	flowID, err := p.backend.AddFlow(kt, req)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +81,7 @@ func (p *producer) AddAsyncTplFlow(req *taskserver.AddFlowReq) (interface{}, err
 		return nil, err
 	}
 
-	if _, err := operator.MakeTemplateFlowTasks(flowID, req, p.backend); err != nil {
+	if _, err := operator.MakeTemplateFlowTasks(kt, flowID, req, p.backend); err != nil {
 		return nil, err
 	}
 
@@ -88,16 +89,16 @@ func (p *producer) AddAsyncTplFlow(req *taskserver.AddFlowReq) (interface{}, err
 }
 
 // ListAsyncFlow list async flow
-func (p *producer) ListAsyncFlow(req *taskserver.FlowListReq) (interface{}, error) {
+func (p *producer) ListAsyncFlow(kt *kit.Kit, req *taskserver.FlowListReq) (interface{}, error) {
 	// 1. 按照过滤条件从DB中获取所有任务流
-	flows, err := p.backend.GetFlows(req)
+	flows, err := p.backend.GetFlows(kt, req)
 	if err != nil {
 		return nil, err
 	}
 
 	// 2. 根据任务流ID从DB中获取任务信息
 	for _, flow := range flows {
-		taskResult, err := p.backend.GetTasksByFlowID(flow.ID)
+		taskResult, err := p.backend.GetTasksByFlowID(kt, flow.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -109,15 +110,15 @@ func (p *producer) ListAsyncFlow(req *taskserver.FlowListReq) (interface{}, erro
 }
 
 // GetAsyncFlow get async flow
-func (p *producer) GetAsyncFlow(flowID string) (interface{}, error) {
+func (p *producer) GetAsyncFlow(kt *kit.Kit, flowID string) (interface{}, error) {
 	// 1. 根据任务流ID从DB中获取任务流信息
-	flow, err := p.backend.GetFlowByID(flowID)
+	flow, err := p.backend.GetFlowByID(kt, flowID)
 	if err != nil {
 		return nil, err
 	}
 
 	// 2. 根据任务流ID从DB中获取任务信息
-	taskResult, err := p.backend.GetTasksByFlowID(flowID)
+	taskResult, err := p.backend.GetTasksByFlowID(kt, flowID)
 	if err != nil {
 		return nil, err
 	}

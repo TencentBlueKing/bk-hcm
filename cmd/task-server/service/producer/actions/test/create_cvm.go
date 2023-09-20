@@ -24,64 +24,64 @@ import (
 	"fmt"
 	"time"
 
-	"hcm/cmd/task-server/logics/async/task"
+	"hcm/pkg/async/task"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 )
 
 func init() {
-	task.ActionManagerInstance.RegisterAction(NewCreateSG())
+	task.ActionManagerInstance.RegisterAction(NewCreateCvm())
 }
 
-// CreateSG ...
-type CreateSG struct {
+// CreateCvm ...
+type CreateCvm struct {
 	ShareData map[string]string
 }
 
-// NewCreateSG ...
-func NewCreateSG() *CreateSG {
-	return &CreateSG{
+// NewCreateCvm ...
+func NewCreateCvm() *CreateCvm {
+	return &CreateCvm{
 		ShareData: make(map[string]string),
 	}
 }
 
 // Name ...
-func (c *CreateSG) Name() string {
-	return string(enumor.TestCreateSG)
+func (c *CreateCvm) Name() string {
+	return string(enumor.TestCreateCvm)
 }
 
 // NewParameter ...
-func (c *CreateSG) NewParameter(parameter interface{}) interface{} {
+func (c *CreateCvm) NewParameter(parameter interface{}) interface{} {
 	return nil
 }
 
 // GetShareData ...
-func (c *CreateSG) GetShareData() map[string]string {
+func (c *CreateCvm) GetShareData() map[string]string {
 	return c.ShareData
 }
 
 // RunBefore ...
-func (c *CreateSG) RunBefore(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
+func (c *CreateCvm) RunBefore(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }
 
 // Run ...
-func (c *CreateSG) Run(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
-	fmt.Println("run create sg", time.Now())
+func (c *CreateCvm) Run(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
+	fmt.Println("run create cvm", time.Now())
 	return nil
 }
 
 // RunBeforeSuccess ...
-func (c *CreateSG) RunBeforeSuccess(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
+func (c *CreateCvm) RunBeforeSuccess(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }
 
 // RunBeforeFailed ...
-func (c *CreateSG) RunBeforeFailed(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
+func (c *CreateCvm) RunBeforeFailed(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }
 
 // RetryBefore ...
-func (c *CreateSG) RetryBefore(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
+func (cvm *CreateCvm) RetryBefore(kt *kit.Kit, ctxWithTimeOut context.Context, params interface{}) error {
 	return nil
 }

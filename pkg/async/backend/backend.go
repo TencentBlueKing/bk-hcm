@@ -29,30 +29,28 @@ import (
 
 // Backend - a common interface for all backends
 type Backend interface {
-	// SetBackendKit set backend kit
-	SetBackendKit(kt *kit.Kit)
 	// ConsumeOnePendingFlow consume one pending flow
-	ConsumeOnePendingFlow() (*task.AsyncFlow, error)
+	ConsumeOnePendingFlow(kt *kit.Kit) (*task.AsyncFlow, error)
 	// GetFlowsByCount get flows by count from backend
-	GetFlowsByCount(flowCount int) ([]task.AsyncFlow, error)
+	GetFlowsByCount(kt *kit.Kit, flowCount int) ([]task.AsyncFlow, error)
 	// AddFlow add flow into backend
-	AddFlow(req *taskserver.AddFlowReq) (string, error)
+	AddFlow(kt *kit.Kit, req *taskserver.AddFlowReq) (string, error)
 	// SetFlowChange set flow's change
-	SetFlowChange(flowID string, flowChange *FlowChange) error
+	SetFlowChange(kt *kit.Kit, flowID string, flowChange *FlowChange) error
 	// GetFlowByID get flow by id
-	GetFlowByID(flowID string) (*task.AsyncFlow, error)
+	GetFlowByID(kt *kit.Kit, flowID string) (*task.AsyncFlow, error)
 	// GetFlows get flows from backend
-	GetFlows(req *taskserver.FlowListReq) ([]*task.AsyncFlow, error)
+	GetFlows(kt *kit.Kit, req *taskserver.FlowListReq) ([]*task.AsyncFlow, error)
 	// AddTasks add tasks into backend
-	AddTasks(tasks []task.AsyncFlowTask) error
+	AddTasks(kt *kit.Kit, tasks []task.AsyncFlowTask) error
 	// GetTasks get tasks from backend
-	GetTasks(taskIDs []string) ([]task.AsyncFlowTask, error)
+	GetTasks(kt *kit.Kit, taskIDs []string) ([]task.AsyncFlowTask, error)
 	// GetTasksByFlowID get tasks by flow id from backend
-	GetTasksByFlowID(flowID string) ([]task.AsyncFlowTask, error)
+	GetTasksByFlowID(kt *kit.Kit, flowID string) ([]task.AsyncFlowTask, error)
 	// SetTaskChange set task's change
-	SetTaskChange(taskID string, taskChange *TaskChange) error
+	SetTaskChange(kt *kit.Kit, taskID string, taskChange *TaskChange) error
 	// MakeTaskIDs make task ids
-	MakeTaskIDs(num int) ([]string, error)
+	MakeTaskIDs(kt *kit.Kit, num int) ([]string, error)
 }
 
 // FlowChange 任务流的变化
