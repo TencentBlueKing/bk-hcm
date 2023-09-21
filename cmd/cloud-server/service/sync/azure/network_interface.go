@@ -20,7 +20,6 @@
 package azure
 
 import (
-	"fmt"
 	gosync "sync"
 	"time"
 
@@ -37,8 +36,7 @@ func SyncNetworkInterface(kt *kit.Kit, cliSet *client.ClientSet, accountID strin
 	sd *detail.SyncDetail) error {
 
 	// 重新设置rid方便定位
-	prefix := fmt.Sprintf("%s", enumor.NetworkInterfaceCloudResType)
-	kt = kt.NewSubKit(prefix)
+	kt = kt.NewSubKit()
 
 	start := time.Now()
 	logs.V(3).Infof("[%s] account[%s] sync network interface start, time: %v, rid: %s",

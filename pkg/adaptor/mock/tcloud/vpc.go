@@ -29,8 +29,8 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/rand"
 
-	"github.com/TencentBlueKing/gopkg/stringx"
 	"go.uber.org/mock/gomock"
 )
 
@@ -109,7 +109,7 @@ func (v *vpcPlaybook) createVpc(_ *kit.Kit, opt *types.TCloudVpcCreateOption) (*
 		return nil, err
 	}
 	cloudVpc := types.TCloudVpc{
-		CloudID: "vpc-" + stringx.Random(8),
+		CloudID: "vpc-" + rand.String(8),
 		Name:    opt.Name,
 		Region:  opt.Extension.Region,
 		Memo:    opt.Memo,
