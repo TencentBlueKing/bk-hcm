@@ -3,7 +3,7 @@ import { computed, defineComponent, reactive, ref, watch } from 'vue';
 import { Form, Input, Select, Checkbox, Button, Radio } from 'bkui-vue';
 import ConditionOptions from '../components/common/condition-options.vue';
 import ZoneSelector from '../components/common/zone-selector';
-// import MachineTypeSelector from '../components/common/machine-type-selector';
+import MachineTypeSelector from '../components/common/machine-type-selector';
 import Imagelector from '../components/common/image-selector';
 import VpcSelector from '../components/common/vpc-selector';
 import SubnetSelector from '../components/common/subnet-selector';
@@ -30,7 +30,7 @@ import { useRouter } from 'vue-router';
 import VpcPreviewDialog from './children/VpcPreviewDialog';
 import SubnetPreviewDialog, { ISubnetItem } from './children/SubnetPreviewDialog';
 import http from '@/http';
-import SelectCvmBlock from './children/SelectCvmBlock';
+// import SelectCvmBlock from './children/SelectCvmBlock';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 const accountStore = useAccountStore();
@@ -123,15 +123,15 @@ export default defineComponent({
       vpcId.value = vpc.id;
       resetFormItemData('cloud_subnet_id');
     };
-    // const handleMachineTypeChange = (machine: any) => {
-    //   machineType.value = machine;
-    //   resetFormItemData('cloud_image_id');
+    const handleMachineTypeChange = (machine: any) => {
+      machineType.value = machine;
+      resetFormItemData('cloud_image_id');
 
-    //   if (cond.vendor === VendorEnum.AZURE) {
-    //     resetFormItemData('system_disk');
-    //     resetFormItemData('data_disk');
-    //   }
-    // };
+      if (cond.vendor === VendorEnum.AZURE) {
+        resetFormItemData('system_disk');
+        resetFormItemData('data_disk');
+      }
+    };
 
     const sysDiskSizeRules = computed(() => {
       const rules = {
@@ -499,23 +499,16 @@ export default defineComponent({
             required: true,
             description: '',
             property: 'instance_type',
-            content: () =>
-            // <MachineTypeSelector
-            //   v-model={formData.instance_type}
-            //   vendor={cond.vendor}
-            //   accountId={cond.cloudAccountId}
-            //   zone={formData.zone?.[0]}
-            //   region={cond.region}
-            //   bizId={cond.bizId ? cond.bizId : accountStore.bizs}
-            //   instanceChargeType={formData.instance_charge_type}
-            //   clearable={false}
-            //   onChange={handleMachineTypeChange} />,
-            <SelectCvmBlock
+            content: () => <MachineTypeSelector
+              v-model={formData.instance_type}
               vendor={cond.vendor}
               accountId={cond.cloudAccountId}
               zone={formData.zone?.[0]}
               region={cond.region}
-            />,
+              bizId={cond.bizId ? cond.bizId : accountStore.bizs}
+              instanceChargeType={formData.instance_charge_type}
+              clearable={false}
+              onChange={handleMachineTypeChange} />,
           },
           {
             label: '镜像',
