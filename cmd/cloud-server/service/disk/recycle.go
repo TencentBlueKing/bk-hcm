@@ -242,7 +242,7 @@ func (svc *diskSvc) RecoverDisk(cts *rest.Contexts) (interface{}, error) {
 	return svc.recoverDisk(cts, handler.ResValidWithAuth)
 }
 
-// RecoverDisk recover biz disk.
+// RecoverBizDisk recover biz disk.
 func (svc *diskSvc) RecoverBizDisk(cts *rest.Contexts) (interface{}, error) {
 	return svc.recoverDisk(cts, handler.BizValidWithAuth)
 }
@@ -275,16 +275,16 @@ func (svc *diskSvc) recoverDisk(cts *rest.Contexts, validHandler handler.ValidWi
 		return nil, err
 	}
 
-	ids := make([]string, 0, len(records.Details))
+	diskIds := make([]string, 0, len(records.Details))
 	auditInfos := make([]protoaudit.CloudResRecycleAuditInfo, 0, len(records.Details))
 	for _, record := range records.Details {
-		ids = append(ids, record.ID)
+		diskIds = append(diskIds, record.ResID)
 		auditInfos = append(auditInfos, protoaudit.CloudResRecycleAuditInfo{ResID: record.ResID, Data: record.Detail})
 	}
 
 	basicInfoReq := cloud.ListResourceBasicInfoReq{
 		ResourceType: enumor.DiskCloudResType,
-		IDs:          ids,
+		IDs:          diskIds,
 	}
 	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
 		basicInfoReq)
@@ -380,7 +380,7 @@ func (svc *diskSvc) batchDeleteRecycledDisk(cts *rest.Contexts,
 
 	// validate biz and authorize
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Disk,
-		Action: meta.Recycle, BasicInfos: basicInfoMap})
+		Action: meta.DeleteRecycled, BasicInfos: basicInfoMap})
 	if err != nil {
 		return nil, err
 	}

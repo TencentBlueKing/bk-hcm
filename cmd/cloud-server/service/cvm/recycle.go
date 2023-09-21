@@ -98,6 +98,7 @@ func (svc *cvmSvc) recycleCvmSvc(cts *rest.Contexts, validHandler handler.ValidW
 func (svc *cvmSvc) recycleCvm(kt *kit.Kit, req *proto.CvmRecycleReq,
 	cvmInfoMap map[string]types.CloudResourceBasicInfo) (interface{}, error) {
 
+	// TODO: 简化核心逻辑
 	recycleResult := new(core.BatchOperateAllResult)
 	leftCvmInfo := maps.Clone(cvmInfoMap)
 	markRecycleFail := func(cvmId string, reason error) {
@@ -110,20 +111,18 @@ func (svc *cvmSvc) recycleCvm(kt *kit.Kit, req *proto.CvmRecycleReq,
 		return nil, checkResult.Failed[0].Error
 	}
 
+	eipFailedCvmIds := make([]string, 0)
 	// 2. 解绑不随主机回收的disk
-	detachDiskCvmIDs := make([]string, 0)
+	detachDiskCvm := make(map[string]types.CloudResourceBasicInfo)
 	for _, info := range req.Infos {
 		if info.CvmRecycleOptions != nil && info.CvmRecycleOptions.WithDisk == false {
-			detachDiskCvmIDs = append(detachDiskCvmIDs, info.ID)
+			detachDiskCvm[info.ID] = cvmInfoMap[info.ID]
 		}
 	}
-	eipFailedCvmIds := make([]string, 0)
-	diskFailedCvmIds := make([]string, 0)
-	diskResult, diskRollBack, err := svc.diskLgc.BatchDetachWithRollback(kt, leftCvmInfo)
+	diskResult, diskRollBack, err := svc.diskLgc.BatchDetachWithRollback(kt, detachDiskCvm)
 	if err != nil {
 		for cvmId, err := range diskResult.FailedCvm {
 			markRecycleFail(cvmId, err)
-			diskFailedCvmIds = append(diskFailedCvmIds, cvmId)
 		}
 	}
 	if len(leftCvmInfo) == 0 {
@@ -144,7 +143,7 @@ func (svc *cvmSvc) recycleCvm(kt *kit.Kit, req *proto.CvmRecycleReq,
 			eipFailedCvmIds = append(eipFailedCvmIds, cvmId)
 		}
 	}
-	recycleFailedCvmIds := make([]string, len(leftCvmInfo))
+	recycleFailedCvmIds := make([]string, 0, len(leftCvmInfo))
 	defer func() {
 		eipRollback(kt, recycleFailedCvmIds)
 		diskRollBack(kt, append(eipFailedCvmIds, recycleFailedCvmIds...))
@@ -276,11 +275,11 @@ func (svc *cvmSvc) recoverCvm(cts *rest.Contexts, validHandler handler.ValidWith
 	if err = svc.validateRecycleRecord(records); err != nil {
 		return nil, err
 	}
+	auditInfos := make([]protoaudit.CloudResRecycleAuditInfo, 0, len(records.Details))
 
 	ids := make([]string, 0, len(records.Details))
-	auditInfos := make([]protoaudit.CloudResRecycleAuditInfo, 0, len(records.Details))
 	for _, record := range records.Details {
-		ids = append(ids, record.ID)
+		ids = append(ids, record.ResID)
 		auditInfos = append(auditInfos, protoaudit.CloudResRecycleAuditInfo{ResID: record.ResID, Data: record.Detail})
 	}
 
@@ -403,7 +402,7 @@ func (svc *cvmSvc) batchDeleteRecycledCvm(cts *rest.Contexts,
 
 	// validate biz and authorize
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Cvm,
-		Action: meta.Recycle, BasicInfos: basicInfoMap})
+		Action: meta.DeleteRecycled, BasicInfos: basicInfoMap})
 	if err != nil {
 		return nil, err
 	}

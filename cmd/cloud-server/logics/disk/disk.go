@@ -377,6 +377,10 @@ func (d *disk) getAwsDisk(kt *kit.Kit, cvmIds []string, diskCvmMap map[string]st
 	return nil
 }
 
+func allSuccessRollback(kt *kit.Kit, rollbackIds []string) (*core.BatchOperateAllResult, error) {
+	return &core.BatchOperateAllResult{Succeeded: rollbackIds}, nil
+}
+
 // BatchDetachWithRollback  批量解绑，返回回滚函数，返回的失败cvm, 用户自行决定是否回滚
 func (d *disk) BatchDetachWithRollback(kt *kit.Kit, cvmInfoMap map[string]types.CloudResourceBasicInfo) (
 	batchResult, BatchRollBackFunc, error) {
@@ -389,7 +393,7 @@ func (d *disk) BatchDetachWithRollback(kt *kit.Kit, cvmInfoMap map[string]types.
 		for cvmId := range cvmInfoMap {
 			detachResult.FailedCvm[cvmId] = err
 		}
-		return detachResult, nil, err
+		return detachResult, allSuccessRollback, err
 	}
 
 	rollback := func(kt *kit.Kit, rollbackIds []string) (*core.BatchOperateAllResult, error) {

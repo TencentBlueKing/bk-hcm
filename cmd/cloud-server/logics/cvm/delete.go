@@ -226,7 +226,7 @@ func (c *cvm) DestroyRecycledCvm(kt *kit.Kit, cvmBasicInfo map[string]types.Clou
 		for _, cvmId := range delRes.Succeeded {
 			delete(leftCvmInfo, cvmId)
 		}
-		// 剩下的回滚
+		// 回滚剩下的
 		failedIds = append(failedIds, converter.MapKeyToStringSlice(leftCvmInfo)...)
 	}
 	// 5. 销毁数据盘
@@ -398,6 +398,7 @@ func (c *cvm) getCmdbHostId(ctx context.Context, bizID int64,
 
 // RecyclePreCheck  回收预校验、包含主机状态和CC待回收模块检查，see Interface.RecyclePreCheck
 func (c *cvm) RecyclePreCheck(kt *kit.Kit, basicInfoMap map[string]types.CloudResourceBasicInfo) (
+
 	result *core.BatchOperateAllResult) {
 
 	leftInfo := maps.Clone(basicInfoMap)

@@ -23,6 +23,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -41,29 +42,23 @@ func BizValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 
 	// authorize one resource
 	if opt.BasicInfo != nil {
-		if !opt.DisableBizIDEqual && opt.BasicInfo.BkBizID != bizID {
-			return errf.New(errf.InvalidParameter, "resource biz not matches url biz")
+		if opt.BasicInfos == nil {
+			opt.BasicInfos = map[string]types.CloudResourceBasicInfo{}
 		}
-
-		if opt.BasicInfo.RecycleStatus == enumor.RecycleStatus {
-			return errf.New(errf.InvalidParameter, "resource is in recycle bin")
-		}
-
-		authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: opt.ResType, Action: opt.Action},
-			BizID: bizID}
-		return opt.Authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+		opt.BasicInfos[opt.BasicInfo.ID] = *opt.BasicInfo
 	}
-
 	// batch authorize resource
-	authRes := make([]meta.ResourceAttribute, 0, len(opt.BasicInfos))
-	notMatchedIDs, recycledIDs := make([]string, 0), make([]string, 0)
+	total := len(opt.BasicInfos)
+	authRes := make([]meta.ResourceAttribute, 0, total)
+	notMatchedIDs, recycledIDs, notRecycledIDS := make([]string, 0), make([]string, 0, total), make([]string, 0, total)
 	for id, info := range opt.BasicInfos {
 		if info.BkBizID != bizID {
 			notMatchedIDs = append(notMatchedIDs, id)
 		}
-
 		if info.RecycleStatus == enumor.RecycleStatus {
 			recycledIDs = append(recycledIDs, id)
+		} else {
+			notRecycledIDS = append(notRecycledIDS, id)
 		}
 
 		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: opt.ResType, Action: opt.Action},
@@ -74,8 +69,16 @@ func BizValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 		return errf.Newf(errf.InvalidParameter, "resources(ids: %+v) not matches url biz", notMatchedIDs)
 	}
 
-	if len(recycledIDs) > 0 {
-		return errf.Newf(errf.InvalidParameter, "resources(ids: %+v) is in recycle bin", recycledIDs)
+	// 恢复或删除已回收资源, 要求资源必须在已回收状态下
+	if opt.Action == meta.DeleteRecycled || opt.Action == meta.Recover {
+		if len(notRecycledIDS) > 0 {
+			return errf.Newf(errf.InvalidParameter, "resources(ids: %+v) are not in recycle bin", recycledIDs)
+		}
+	} else {
+		// 其他操作要求资源不能在回收状态下
+		if len(recycledIDs) > 0 {
+			return errf.Newf(errf.InvalidParameter, "resources(ids: %+v) are in recycle bin", recycledIDs)
+		}
 	}
 
 	return opt.Authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
