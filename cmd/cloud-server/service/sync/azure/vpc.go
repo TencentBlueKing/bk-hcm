@@ -20,7 +20,6 @@
 package azure
 
 import (
-	"fmt"
 	gosync "sync"
 	"time"
 
@@ -37,8 +36,7 @@ func SyncVpc(kt *kit.Kit, cliSet *client.ClientSet, accountID string, resourceGr
 	sd *detail.SyncDetail) error {
 
 	// 重新设置rid方便定位
-	prefix := fmt.Sprintf("%s", enumor.VpcCloudResType)
-	kt = kt.NewSubKit(prefix)
+	kt = kt.NewSubKit()
 
 	start := time.Now()
 	logs.V(3).Infof("azure account[%s] sync vpc start, time: %v, rid: %s", accountID, start, kt.Rid)

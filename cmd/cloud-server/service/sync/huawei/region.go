@@ -21,7 +21,6 @@ package huawei
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"hcm/pkg/api/core"
@@ -29,7 +28,6 @@ import (
 	protohcregion "hcm/pkg/api/hc-service/region"
 	dataservice "hcm/pkg/client/data-service"
 	hcservice "hcm/pkg/client/hc-service"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -39,8 +37,7 @@ import (
 func SyncRegion(kt *kit.Kit, hcCli *hcservice.Client, accountID string) error {
 
 	// 重新设置rid方便定位
-	prefix := fmt.Sprintf("%s", enumor.RegionCloudResType)
-	kt = kt.NewSubKit(prefix)
+	kt = kt.NewSubKit()
 
 	start := time.Now()
 	logs.V(3).Infof("huawei account[%s] sync region start, time: %v, rid: %s", accountID, start, kt.Rid)

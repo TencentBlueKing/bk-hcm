@@ -20,14 +20,13 @@
 package mocktcloud
 
 import (
-	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
-
 	"hcm/pkg/adaptor/tcloud"
 	"hcm/pkg/adaptor/types/core"
 	adtroutetable "hcm/pkg/adaptor/types/route-table"
 	"hcm/pkg/kit"
 	"hcm/pkg/tools/converter"
 
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
 	"go.uber.org/mock/gomock"
 )
 

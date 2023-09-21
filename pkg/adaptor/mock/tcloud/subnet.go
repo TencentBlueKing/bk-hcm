@@ -25,8 +25,8 @@ import (
 	adtsubnet "hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/kit"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/rand"
 
-	"github.com/TencentBlueKing/gopkg/stringx"
 	"go.uber.org/mock/gomock"
 )
 
@@ -82,7 +82,7 @@ func (v *vpcPlaybook) createSubnet(_ *kit.Kit, opt *adtsubnet.TCloudSubnetsCreat
 	for _, net := range opt.Subnets {
 		createdSubnet := adtsubnet.TCloudSubnet{
 			CloudVpcID: opt.CloudVpcID,
-			CloudID:    "subnet-" + stringx.Random(8),
+			CloudID:    "subnet-" + rand.String(8),
 			Name:       net.Name,
 			Ipv4Cidr:   []string{net.IPv4Cidr},
 			Ipv6Cidr:   nil,
@@ -101,7 +101,7 @@ func (v *vpcPlaybook) createSubnet(_ *kit.Kit, opt *adtsubnet.TCloudSubnetsCreat
 
 		// 创建默认路由表
 		routeTable := adtroutetable.TCloudRouteTable{
-			CloudID:    "rtb-" + stringx.Random(8),
+			CloudID:    "rtb-" + rand.String(8),
 			Name:       "default",
 			CloudVpcID: createdSubnet.CloudVpcID,
 			Region:     createdSubnet.Extension.Region,

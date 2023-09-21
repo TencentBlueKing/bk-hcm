@@ -20,13 +20,11 @@
 package aws
 
 import (
-	"fmt"
 	gosync "sync"
 	"time"
 
 	protoimage "hcm/pkg/api/hc-service/image"
 	hcservice "hcm/pkg/client/hc-service"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
@@ -35,8 +33,7 @@ import (
 func SyncAwsImage(kt *kit.Kit, hcCli *hcservice.Client, accountID string, regions []string) error {
 
 	// 重新设置rid方便定位
-	prefix := fmt.Sprintf("%s", enumor.ImageCloudResType)
-	kt = kt.NewSubKit(prefix)
+	kt = kt.NewSubKit()
 
 	start := time.Now()
 	logs.V(3).Infof("aws account[%s] sync image start, time: %v, rid: %s", accountID, start, kt.Rid)

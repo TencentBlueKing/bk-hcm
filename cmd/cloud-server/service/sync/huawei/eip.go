@@ -20,7 +20,6 @@
 package huawei
 
 import (
-	"fmt"
 	gosync "sync"
 	"time"
 
@@ -37,8 +36,7 @@ import (
 func SyncEip(kt *kit.Kit, cliSet *client.ClientSet, accountID string, sd *detail.SyncDetail) error {
 
 	// 重新设置rid方便定位
-	prefix := fmt.Sprintf("%s", enumor.EipCloudResType)
-	kt = kt.NewSubKit(prefix)
+	kt = kt.NewSubKit()
 
 	start := time.Now()
 	logs.V(3).Infof("huawei account[%s] sync eip start, time: %v, rid: %s", accountID, start, kt.Rid)

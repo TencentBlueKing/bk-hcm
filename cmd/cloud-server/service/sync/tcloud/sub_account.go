@@ -20,7 +20,6 @@
 package tcloud
 
 import (
-	"fmt"
 	"time"
 
 	"hcm/cmd/cloud-server/service/sync/detail"
@@ -36,8 +35,7 @@ func SyncSubAccount(kt *kit.Kit, cliSet *client.ClientSet, accountID string,
 	sd *detail.SyncDetail) error {
 
 	// 重新设置rid方便定位
-	prefix := fmt.Sprintf("%s", enumor.SubAccountCloudResType)
-	kt = kt.NewSubKit(prefix)
+	kt = kt.NewSubKit()
 
 	start := time.Now()
 	logs.V(3).Infof("tcloud account[%s] sync sub account start, time: %v, rid: %s", accountID, start, kt.Rid)

@@ -21,11 +21,12 @@ package global
 
 import (
 	"context"
+	"net/http"
+
 	"hcm/pkg/api/core"
 	protocloud "hcm/pkg/api/data-service/cloud/zone"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
-	"net/http"
 )
 
 // NewZoneClient create a new zone api client.
