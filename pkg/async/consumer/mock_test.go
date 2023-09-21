@@ -55,67 +55,67 @@ func (bd *mockBackend) SetBackendKit(kt *kit.Kit) {
 }
 
 // ConsumeOnePendingFlow ...
-func (bd *mockBackend) ConsumeOnePendingFlow() (*coretask.AsyncFlow, error) {
+func (bd *mockBackend) ConsumeOnePendingFlow(kt *kit.Kit) (*coretask.AsyncFlow, error) {
 	// TODO implement me
 	panic("implement me")
 }
 
 // GetFlowsByCount ...
-func (bd *mockBackend) GetFlowsByCount(flowCount int) ([]coretask.AsyncFlow, error) {
+func (bd *mockBackend) GetFlowsByCount(kt *kit.Kit, flowCount int) ([]coretask.AsyncFlow, error) {
 	// TODO implement me
 	panic("implement me")
 }
 
 // AddFlow ...
-func (bd *mockBackend) AddFlow(req *taskserver.AddFlowReq) (string, error) {
+func (bd *mockBackend) AddFlow(kt *kit.Kit, req *taskserver.AddFlowReq) (string, error) {
 	// TODO implement me
 	panic("implement me")
 }
 
 // SetFlowChange ...
-func (bd *mockBackend) SetFlowChange(flowID string, flowChange *backend.FlowChange) error {
+func (bd *mockBackend) SetFlowChange(kt *kit.Kit, flowID string, flowChange *backend.FlowChange) error {
 	// TODO implement me
 	panic("implement me")
 }
 
 // GetFlowByID ...
-func (bd *mockBackend) GetFlowByID(flowID string) (*coretask.AsyncFlow, error) {
+func (bd *mockBackend) GetFlowByID(kt *kit.Kit, flowID string) (*coretask.AsyncFlow, error) {
 	// TODO implement me
 	panic("implement me")
 }
 
 // GetFlows ...
-func (bd *mockBackend) GetFlows(req *taskserver.FlowListReq) ([]*coretask.AsyncFlow, error) {
+func (bd *mockBackend) GetFlows(kt *kit.Kit, req *taskserver.FlowListReq) ([]*coretask.AsyncFlow, error) {
 	// TODO implement me
 	panic("implement me")
 }
 
 // AddTasks ...
-func (bd *mockBackend) AddTasks(tasks []coretask.AsyncFlowTask) error {
+func (bd *mockBackend) AddTasks(kt *kit.Kit, tasks []coretask.AsyncFlowTask) error {
 	// TODO implement me
 	panic("implement me")
 }
 
 // GetTasks ...
-func (bd *mockBackend) GetTasks(taskIDs []string) ([]coretask.AsyncFlowTask, error) {
+func (bd *mockBackend) GetTasks(kt *kit.Kit, taskIDs []string) ([]coretask.AsyncFlowTask, error) {
 	// TODO implement me
 	panic("implement me")
 }
 
 // GetTasksByFlowID ...
-func (bd *mockBackend) GetTasksByFlowID(flowID string) ([]coretask.AsyncFlowTask, error) {
+func (bd *mockBackend) GetTasksByFlowID(kt *kit.Kit, flowID string) ([]coretask.AsyncFlowTask, error) {
 	// TODO implement me
 	panic("implement me")
 }
 
 // SetTaskChange ...
-func (bd *mockBackend) SetTaskChange(taskID string, taskChange *backend.TaskChange) error {
+func (bd *mockBackend) SetTaskChange(kt *kit.Kit, taskID string, taskChange *backend.TaskChange) error {
 	fmt.Printf("backend SetTaskChange, taskID: %s, change: %+v\n", taskID, taskChange)
 	return nil
 }
 
 // MakeTaskIDs ...
-func (bd *mockBackend) MakeTaskIDs(num int) ([]string, error) {
+func (bd *mockBackend) MakeTaskIDs(kt *kit.Kit, num int) ([]string, error) {
 	// TODO implement me
 	panic("implement me")
 }
