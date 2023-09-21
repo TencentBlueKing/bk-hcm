@@ -24,14 +24,14 @@ import (
 	"testing"
 	"time"
 
-	"hcm/pkg/async/backend"
 	"hcm/pkg/async/task"
 	"hcm/pkg/criteria/enumor"
 )
 
 func TestExecutor(t *testing.T) {
 	// 初始化
-	exec := NewExecutor(5, 15*time.Second)
+	bd := new(mockBackend)
+	exec := NewExecutor(bd, 5, time.Duration(15*time.Second))
 	psr := new(mockParser)
 	exec.SetGetParserFunc(func() Parser {
 		return psr
@@ -50,7 +50,7 @@ func TestExecutor(t *testing.T) {
 }
 
 func buildTestTaskData(count int) []*task.Task {
-	bd := new(mockBackend)
+
 	ans := make([]*task.Task, 0)
 	for i := 0; i < count; i++ {
 		asyncKit := NewKit()
@@ -67,9 +67,6 @@ func buildTestTaskData(count int) []*task.Task {
 			Memo:        "",
 			ShareData:   nil,
 			Kit:         asyncKit,
-			GetBackendFunc: func() backend.Backend {
-				return bd
-			},
 		})
 	}
 

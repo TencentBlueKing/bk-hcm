@@ -26,6 +26,8 @@ import (
 	"os"
 	"testing"
 
+	// mysql driver for clear table
+
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/dal/table"
@@ -34,7 +36,6 @@ import (
 	"hcm/pkg/serviced"
 	"hcm/pkg/tools/ssl"
 
-	// mysql driver for clear table
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/pflag"
@@ -129,6 +130,8 @@ func ClearData() error {
 		table.RouteTableTable,
 		table.TCloudRegionTable,
 		table.ZoneTable,
+		table.AsyncFlowTable,
+		table.AsyncFlowTaskTable,
 	}
 	for _, tableName := range tables {
 		if _, err := db.Exec("truncate table " + string(tableName)); err != nil {
