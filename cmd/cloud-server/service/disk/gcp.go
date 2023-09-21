@@ -75,9 +75,8 @@ func (svc *diskSvc) gcpAttachDisk(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&hcproto.GcpDiskAttachReq{
-			AccountID: basicInfo.AccountID,
-			CvmID:     req.CvmID,
-			DiskID:    req.DiskID,
+			CvmID:  req.CvmID,
+			DiskID: req.DiskID,
 		},
 	)
 }

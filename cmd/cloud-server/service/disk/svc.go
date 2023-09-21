@@ -32,7 +32,6 @@ import (
 	"hcm/pkg/api/data-service/cloud"
 	datarelproto "hcm/pkg/api/data-service/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
-	hcproto "hcm/pkg/api/hc-service/disk"
 	"hcm/pkg/client"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
@@ -171,27 +170,11 @@ func (svc *diskSvc) deleteDisk(cts *rest.Contexts, validHandler handler.ValidWit
 		return nil, err
 	}
 
-	err = svc.diskLgc.DeleteDisk(cts.Kit, basicInfo.Vendor, basicInfo.ID, basicInfo.AccountID)
+	err = svc.diskLgc.DeleteDisk(cts.Kit, basicInfo.Vendor, basicInfo.ID)
 	if err != nil {
 		return nil, err
 	}
-
-	deleteReq := &hcproto.DiskDeleteReq{DiskID: diskID, AccountID: basicInfo.AccountID}
-
-	switch basicInfo.Vendor {
-	case enumor.TCloud:
-		return nil, svc.client.HCService().TCloud.Disk.DeleteDisk(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
-	case enumor.Aws:
-		return nil, svc.client.HCService().Aws.Disk.DeleteDisk(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
-	case enumor.HuaWei:
-		return nil, svc.client.HCService().HuaWei.Disk.DeleteDisk(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
-	case enumor.Gcp:
-		return nil, svc.client.HCService().Gcp.Disk.DeleteDisk(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
-	case enumor.Azure:
-		return nil, svc.client.HCService().Azure.Disk.DeleteDisk(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
-	default:
-		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", basicInfo.Vendor))
-	}
+	return nil, err
 }
 
 // RetrieveDisk 查询云盘详情.
@@ -465,7 +448,7 @@ func (svc *diskSvc) detachDisk(cts *rest.Contexts, validHandler handler.ValidWit
 
 	cvmID := rels.Details[0].CvmID
 
-	err = svc.diskLgc.DetachDisk(cts.Kit, basicInfo.Vendor, cvmID, req.DiskID, basicInfo.AccountID)
+	err = svc.diskLgc.DetachDisk(cts.Kit, basicInfo.Vendor, cvmID, req.DiskID)
 	if err != nil {
 		logs.Errorf("detach disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err

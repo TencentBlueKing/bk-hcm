@@ -67,9 +67,9 @@ type Kit struct {
 }
 
 // NewSubKit 生成子kit
-func (kt *Kit) NewSubKit(prefix string) *Kit {
+func (kt *Kit) NewSubKit(suffix string) *Kit {
 	newSubKit := converter.ValToPtr(*kt)
-	subRid := fmt.Sprintf("%s-%s", prefix, kt.Rid)
+	subRid := fmt.Sprintf("%s-%s", kt.Rid, suffix)
 	newSubKit.Rid = subRid
 	newSubKit.Ctx = context.WithValue(kt.Ctx, constant.RidKey, subRid)
 	return newSubKit

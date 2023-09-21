@@ -25,7 +25,6 @@ import (
 	"hcm/pkg/adaptor/types/disk"
 	proto "hcm/pkg/api/hc-service/disk"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
@@ -89,12 +88,17 @@ func (svc *service) DeleteAzureDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeAzureDiskDeleteOption(cts.Kit, req)
+	diskData, err := svc.DataCli.Azure.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := svc.Adaptor.Azure(cts.Kit, req.AccountID)
+	opt := &disk.AzureDiskDeleteOption{
+		ResourceGroupName: diskData.Extension.ResourceGroupName,
+		DiskName:          diskData.Name,
+	}
+
+	client, err := svc.Adaptor.Azure(cts.Kit, diskData.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -118,12 +122,24 @@ func (svc *service) AttachAzureDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeAzureDiskAttachOption(cts.Kit, req)
+	diskInfo, err := svc.DataCli.Azure.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := svc.Adaptor.Azure(cts.Kit, req.AccountID)
+	cvmInfo, err := svc.DataCli.Azure.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), req.CvmID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &disk.AzureDiskAttachOption{
+		ResourceGroupName: diskInfo.Extension.ResourceGroupName,
+		CvmName:           cvmInfo.Name,
+		DiskName:          diskInfo.Name,
+		CachingType:       req.CachingType,
+	}
+
+	client, err := svc.Adaptor.Azure(cts.Kit, diskInfo.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +163,7 @@ func (svc *service) AttachAzureDisk(cts *rest.Contexts) (interface{}, error) {
 	syncClient := syncazure.NewClient(svc.DataCli, client)
 
 	params := &syncazure.SyncBaseParams{
-		AccountID:         req.AccountID,
+		AccountID:         diskInfo.AccountID,
 		ResourceGroupName: opt.ResourceGroupName,
 		CloudIDs:          []string{diskData.CloudID},
 	}
@@ -183,12 +199,23 @@ func (svc *service) DetachAzureDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeAzureDiskDetachOption(cts.Kit, req)
+	diskInfo, err := svc.DataCli.Azure.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := svc.Adaptor.Azure(cts.Kit, req.AccountID)
+	cvmInfo, err := svc.DataCli.Azure.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), req.CvmID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &disk.AzureDiskDetachOption{
+		ResourceGroupName: diskInfo.Extension.ResourceGroupName,
+		CvmName:           cvmInfo.Name,
+		DiskName:          diskInfo.Name,
+	}
+
+	client, err := svc.Adaptor.Azure(cts.Kit, diskInfo.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +233,7 @@ func (svc *service) DetachAzureDisk(cts *rest.Contexts) (interface{}, error) {
 	syncClient := syncazure.NewClient(svc.DataCli, client)
 
 	params := &syncazure.SyncBaseParams{
-		AccountID:         req.AccountID,
+		AccountID:         diskInfo.AccountID,
 		ResourceGroupName: opt.ResourceGroupName,
 		CloudIDs:          []string{diskData.CloudID},
 	}
@@ -230,66 +257,4 @@ func (svc *service) DetachAzureDisk(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return nil, nil
-}
-
-func (svc *service) makeAzureDiskAttachOption(
-	kt *kit.Kit,
-	req *proto.AzureDiskAttachReq,
-) (*disk.AzureDiskAttachOption, error) {
-	dataCli := svc.DataCli.Azure
-
-	diskData, err := dataCli.RetrieveDisk(kt.Ctx, kt.Header(), req.DiskID)
-	if err != nil {
-		return nil, err
-	}
-
-	cvmData, err := dataCli.Cvm.GetCvm(kt.Ctx, kt.Header(), req.CvmID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &disk.AzureDiskAttachOption{
-		ResourceGroupName: diskData.Extension.ResourceGroupName,
-		CvmName:           cvmData.Name,
-		DiskName:          diskData.Name,
-		CachingType:       req.CachingType,
-	}, nil
-}
-
-func (svc *service) makeAzureDiskDetachOption(
-	kt *kit.Kit,
-	req *proto.DiskDetachReq,
-) (*disk.AzureDiskDetachOption, error) {
-	dataCli := svc.DataCli.Azure
-
-	diskData, err := dataCli.RetrieveDisk(kt.Ctx, kt.Header(), req.DiskID)
-	if err != nil {
-		return nil, err
-	}
-
-	cvmData, err := dataCli.Cvm.GetCvm(kt.Ctx, kt.Header(), req.CvmID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &disk.AzureDiskDetachOption{
-		ResourceGroupName: diskData.Extension.ResourceGroupName,
-		CvmName:           cvmData.Name,
-		DiskName:          diskData.Name,
-	}, nil
-}
-
-func (svc *service) makeAzureDiskDeleteOption(
-	kt *kit.Kit,
-	req *proto.DiskDeleteReq,
-) (*disk.AzureDiskDeleteOption, error) {
-	diskData, err := svc.DataCli.Azure.RetrieveDisk(kt.Ctx, kt.Header(), req.DiskID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &disk.AzureDiskDeleteOption{
-		ResourceGroupName: diskData.Extension.ResourceGroupName,
-		DiskName:          diskData.Name,
-	}, nil
 }

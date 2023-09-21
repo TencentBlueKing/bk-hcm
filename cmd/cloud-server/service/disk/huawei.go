@@ -75,9 +75,8 @@ func (svc *diskSvc) huaweiAttachDisk(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&hcproto.HuaWeiDiskAttachReq{
-			AccountID: basicInfo.AccountID,
-			CvmID:     req.CvmID,
-			DiskID:    req.DiskID,
+			CvmID:  req.CvmID,
+			DiskID: req.DiskID,
 		},
 	)
 }

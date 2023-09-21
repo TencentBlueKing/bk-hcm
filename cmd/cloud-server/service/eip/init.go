@@ -42,6 +42,7 @@ func InitEipService(c *capability.Capability) {
 		azure:      azure.NewAzure(c.ApiClient, c.Authorizer, c.Audit),
 		gcp:        gcp.NewGcp(c.ApiClient, c.Authorizer, c.Audit),
 		huawei:     huawei.NewHuaWei(c.ApiClient, c.Authorizer, c.Audit),
+		eip:        c.Logics.Eip,
 	}
 
 	h := rest.NewHandler()

@@ -16,11 +16,11 @@ POST /api/v1/cloud/cvms/recycle
 
 #### infos[n]
 
-| 参数名称      | 参数类型    | 必选  | 描述       |
-|-----------|---------|-----|----------|
-| id        | string  | 是   | 回收的虚拟机ID |
-| detail    | object  | 是   | 回收详情     |
-| with_disk | boolean | 是   | 是否同时回收硬盘 |
+| 参数名称      | 参数类型    | 必选  | 描述         |
+|-----------|---------|-----|------------|
+| id        | string  | 是   | 回收的虚拟机ID   |
+| with_disk | boolean | 是   | 是否随主机销毁数据盘 |
+| with_eip  | boolean | 是   | 是否随主机销毁EIP |
 
 ### 调用示例
 
@@ -29,7 +29,8 @@ POST /api/v1/cloud/cvms/recycle
   "infos": [
     {
       "id": "000000001",
-      "with_disk": true
+      "with_disk": true,
+      "with_eip": true
     }
   ]
 }

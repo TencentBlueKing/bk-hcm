@@ -75,9 +75,8 @@ func (svc *diskSvc) tcloudAttachDisk(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&hcproto.TCloudDiskAttachReq{
-			AccountID: basicInfo.AccountID,
-			CvmID:     req.CvmID,
-			DiskID:    req.DiskID,
+			CvmID:  req.CvmID,
+			DiskID: req.DiskID,
 		},
 	)
 }

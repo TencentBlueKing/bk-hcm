@@ -9,6 +9,9 @@
         5. 添加账号同步详情表
         6. 资源下账号粒度管理回收保留时间
         7. 子账号表新增账号类型字段
+        8. 新增任务流表
+        9. 新增任务表
+        10. EIP、硬盘、网络接口增加回收状态recycle_status字段
 */
 start transaction;
 
@@ -147,5 +150,12 @@ create table if not exists `async_flow_task`
     collate utf8mb4_bin;
 
 insert into id_generator(`resource`, `max_id`) values ('async_flow_task', '0');
+
+-- 10. EIP、硬盘、网络接口增加回收状态recycle_status字段
+
+alter table eip
+    add column `recycle_status` varchar(32) default '';
+alter table network_interface
+    add column `recycle_status` varchar(32) default '';
 
 commit;

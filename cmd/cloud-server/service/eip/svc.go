@@ -25,6 +25,7 @@ import (
 	"io/ioutil"
 
 	"hcm/cmd/cloud-server/logics/audit"
+	"hcm/cmd/cloud-server/logics/eip"
 	"hcm/cmd/cloud-server/service/common"
 	"hcm/cmd/cloud-server/service/eip/aws"
 	"hcm/cmd/cloud-server/service/eip/azure"
@@ -36,7 +37,6 @@ import (
 	"hcm/pkg/api/data-service/cloud"
 	datarelproto "hcm/pkg/api/data-service/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud/eip"
-	hcproto "hcm/pkg/api/hc-service/eip"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -61,6 +61,7 @@ type eipSvc struct {
 	azure      *azure.Azure
 	gcp        *gcp.Gcp
 	huawei     *huawei.HuaWei
+	eip        eip.Interface
 }
 
 // ListEip list eip.
@@ -308,23 +309,7 @@ func (svc *eipSvc) batchDeleteEip(cts *rest.Contexts, validHandler handler.Valid
 			return nil, errf.New(errf.InvalidParameter, fmt.Sprintf("id %s has no corresponding vendor", eipID))
 		}
 
-		deleteReq := &hcproto.EipDeleteReq{EipID: eipID, AccountID: basicInfo.AccountID}
-
-		switch basicInfo.Vendor {
-		case enumor.TCloud:
-			err = svc.client.HCService().TCloud.Eip.DeleteEip(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
-		case enumor.Aws:
-			err = svc.client.HCService().Aws.Eip.DeleteEip(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
-		case enumor.HuaWei:
-			err = svc.client.HCService().HuaWei.Eip.DeleteEip(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
-		case enumor.Gcp:
-			err = svc.client.HCService().Gcp.Eip.DeleteEip(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
-		case enumor.Azure:
-			err = svc.client.HCService().Azure.Eip.DeleteEip(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
-		default:
-			err = errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", basicInfo.Vendor))
-		}
-
+		err = svc.eip.DeleteEip(cts.Kit, basicInfo.Vendor, eipID)
 		if err != nil {
 			return core.BatchOperateResult{
 				Succeeded: succeeded,

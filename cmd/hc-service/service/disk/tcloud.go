@@ -25,7 +25,6 @@ import (
 	"hcm/pkg/adaptor/types/disk"
 	proto "hcm/pkg/api/hc-service/disk"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -149,12 +148,13 @@ func (svc *service) DeleteTCloudDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeTCloudDiskDeleteOption(cts.Kit, req)
+	diskData, err := svc.DataCli.TCloud.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
 	if err != nil {
 		return nil, err
 	}
+	opt := &disk.TCloudDiskDeleteOption{Region: diskData.Region, CloudIDs: []string{diskData.CloudID}}
 
-	client, err := svc.Adaptor.TCloud(cts.Kit, req.AccountID)
+	client, err := svc.Adaptor.TCloud(cts.Kit, diskData.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -178,12 +178,23 @@ func (svc *service) AttachTCloudDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeTCloudDiskAttachOption(cts.Kit, req)
+	diskInfo, err := svc.DataCli.TCloud.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := svc.Adaptor.TCloud(cts.Kit, req.AccountID)
+	cvmInfo, err := svc.DataCli.TCloud.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), req.CvmID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &disk.TCloudDiskAttachOption{
+		Region:       diskInfo.Region,
+		CloudCvmID:   cvmInfo.CloudID,
+		CloudDiskIDs: []string{diskInfo.CloudID},
+	}
+
+	client, err := svc.Adaptor.TCloud(cts.Kit, diskInfo.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +213,7 @@ func (svc *service) AttachTCloudDisk(cts *rest.Contexts) (interface{}, error) {
 	syncClient := synctcloud.NewClient(svc.DataCli, client)
 
 	params := &synctcloud.SyncBaseParams{
-		AccountID: req.AccountID,
+		AccountID: diskInfo.AccountID,
 		Region:    opt.Region,
 		CloudIDs:  opt.CloudDiskIDs,
 	}
@@ -233,12 +244,22 @@ func (svc *service) DetachTCloudDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeTCloudDiskDetachOption(cts.Kit, req)
+	diskInfo, err := svc.DataCli.TCloud.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := svc.Adaptor.TCloud(cts.Kit, req.AccountID)
+	cvmInfo, err := svc.DataCli.TCloud.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), req.CvmID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &disk.TCloudDiskDetachOption{
+		Region:       diskInfo.Region,
+		CloudCvmID:   cvmInfo.CloudID,
+		CloudDiskIDs: []string{diskInfo.CloudID},
+	}
+	client, err := svc.Adaptor.TCloud(cts.Kit, diskInfo.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +272,7 @@ func (svc *service) DetachTCloudDisk(cts *rest.Contexts) (interface{}, error) {
 	syncClient := synctcloud.NewClient(svc.DataCli, client)
 
 	params := &synctcloud.SyncBaseParams{
-		AccountID: req.AccountID,
+		AccountID: diskInfo.AccountID,
 		Region:    opt.Region,
 		CloudIDs:  opt.CloudDiskIDs,
 	}
@@ -270,61 +291,4 @@ func (svc *service) DetachTCloudDisk(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return nil, nil
-}
-
-func (svc *service) makeTCloudDiskAttachOption(
-	kt *kit.Kit,
-	req *proto.TCloudDiskAttachReq,
-) (*disk.TCloudDiskAttachOption, error) {
-	dataCli := svc.DataCli.TCloud
-
-	diskData, err := dataCli.RetrieveDisk(kt.Ctx, kt.Header(), req.DiskID)
-	if err != nil {
-		return nil, err
-	}
-
-	cvmData, err := dataCli.Cvm.GetCvm(kt.Ctx, kt.Header(), req.CvmID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &disk.TCloudDiskAttachOption{
-		Region:       diskData.Region,
-		CloudCvmID:   cvmData.CloudID,
-		CloudDiskIDs: []string{diskData.CloudID},
-	}, nil
-}
-
-func (svc *service) makeTCloudDiskDetachOption(
-	kt *kit.Kit,
-	req *proto.DiskDetachReq,
-) (*disk.TCloudDiskDetachOption, error) {
-	dataCli := svc.DataCli.TCloud
-
-	diskData, err := dataCli.RetrieveDisk(kt.Ctx, kt.Header(), req.DiskID)
-	if err != nil {
-		return nil, err
-	}
-
-	cvmData, err := dataCli.Cvm.GetCvm(kt.Ctx, kt.Header(), req.CvmID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &disk.TCloudDiskDetachOption{
-		Region:       diskData.Region,
-		CloudCvmID:   cvmData.CloudID,
-		CloudDiskIDs: []string{diskData.CloudID},
-	}, nil
-}
-
-func (svc *service) makeTCloudDiskDeleteOption(
-	kt *kit.Kit,
-	req *proto.DiskDeleteReq,
-) (*disk.TCloudDiskDeleteOption, error) {
-	diskData, err := svc.DataCli.TCloud.RetrieveDisk(kt.Ctx, kt.Header(), req.DiskID)
-	if err != nil {
-		return nil, err
-	}
-	return &disk.TCloudDiskDeleteOption{Region: diskData.Region, CloudIDs: []string{diskData.CloudID}}, nil
 }

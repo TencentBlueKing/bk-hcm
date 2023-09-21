@@ -31,6 +31,7 @@ require (
 	github.com/prometheus/client_golang v1.14.0
 	github.com/smartystreets/goconvey v1.8.1
 	github.com/spf13/pflag v1.0.5
+	github.com/stretchr/testify v1.8.4
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/billing v1.0.730
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam v1.0.648
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs v1.0.648
@@ -42,6 +43,7 @@ require (
 	go.etcd.io/etcd/client/v3 v3.5.6
 	go.uber.org/atomic v1.10.0
 	go.uber.org/mock v0.2.0
+	golang.org/x/exp v0.0.0-20220827204233-334a2380cb91
 	golang.org/x/time v0.3.0
 	google.golang.org/api v0.123.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -70,7 +72,6 @@ require (
 	github.com/microsoftgraph/msgraph-sdk-go-core v1.0.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/smarty/assertions v1.15.0 // indirect
-	github.com/stretchr/testify v1.8.4 // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	go.opentelemetry.io/otel v1.16.0 // indirect
 	go.opentelemetry.io/otel/metric v1.16.0 // indirect

@@ -86,25 +86,10 @@ func allAccountSync(kt *kit.Kit, cliSet *client.ClientSet, vendor enumor.Vendor)
 	}()
 
 	listReq := &protocloud.AccountListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{
-					Field: "vendor",
-					Op:    filter.Equal.Factory(),
-					Value: vendor,
-				},
-				&filter.AtomRule{
-					Field: "type",
-					Op:    filter.Equal.Factory(),
-					Value: enumor.ResourceAccount,
-				},
-			},
-		},
-		Page: &core.BasePage{
-			Start: 0,
-			Limit: core.DefaultMaxPageLimit,
-		},
+		Filter: &filter.Expression{Op: filter.And, Rules: []filter.RuleFactory{
+			&filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: vendor},
+			&filter.AtomRule{Field: "type", Op: filter.Equal.Factory(), Value: enumor.ResourceAccount}}},
+		Page: &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
 	}
 	start := uint32(0)
 	syncPublicResource := true
@@ -165,11 +150,9 @@ func allAccountSync(kt *kit.Kit, cliSet *client.ClientSet, vendor enumor.Vendor)
 			// 公共资源仅需要同步一次即可
 			syncPublicResource = false
 		}
-
 		if len(accounts) < int(core.DefaultMaxPageLimit) {
 			break
 		}
-
 		start += uint32(core.DefaultMaxPageLimit)
 	}
 }

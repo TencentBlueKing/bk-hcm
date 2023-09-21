@@ -37,6 +37,7 @@ import (
 	protodao "hcm/pkg/dal/dao/types/recycle-record"
 	prototable "hcm/pkg/dal/table/recycle-record"
 	tabletype "hcm/pkg/dal/table/types"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/json"
@@ -92,17 +93,12 @@ func (svc *recycleRecordSvc) BatchRecycleCloudResource(cts *rest.Contexts) (inte
 	taskID, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		recycleRecords := make([]prototable.RecycleRecordTable, 0, len(resourceInfo))
 		for idx, info := range resourceInfo {
-			opt := &types.ListOption{Filter: tools.EqualExpression("id", info.AccountID)}
-			opt.Page = &core.BasePage{Count: false, Start: 0, Limit: 1}
-			accountInfo, err := svc.dao.Account().List(cts.Kit, opt)
+			accountInfo, err := svc.checkAndGetAccount(cts.Kit, info)
 			if err != nil {
 				return nil, err
 			}
-			if len(accountInfo.Details) != 1 {
-				return nil, fmt.Errorf("account: %s not found", info.AccountID)
-			}
 
-			detail, err := tabletype.NewJsonField(req.Infos[idx].Detail)
+			recycleDetail, err := tabletype.NewJsonField(req.Infos[idx].Detail)
 			if err != nil {
 				return nil, errf.NewFromErr(errf.InvalidParameter, err)
 			}
@@ -120,7 +116,7 @@ func (svc *recycleRecordSvc) BatchRecycleCloudResource(cts *rest.Contexts) (inte
 				BkBizID:    info.BkBizID,
 				AccountID:  info.AccountID,
 				Region:     info.Region,
-				Detail:     detail,
+				Detail:     recycleDetail,
 				Status:     enumor.WaitingRecycleRecordStatus,
 				Creator:    cts.Kit.User,
 				Reviser:    cts.Kit.User,
@@ -145,6 +141,18 @@ func (svc *recycleRecordSvc) BatchRecycleCloudResource(cts *rest.Contexts) (inte
 		return nil, err
 	}
 	return taskID, nil
+}
+
+func (svc *recycleRecordSvc) checkAndGetAccount(kt *kit.Kit, info protodao.RecycleResourceInfo) (
+	*types.ListAccountDetails, error) {
+
+	opt := &types.ListOption{Filter: tools.EqualExpression("id", info.AccountID)}
+	opt.Page = &core.BasePage{Count: false, Start: 0, Limit: 1}
+	accountInfo, err := svc.dao.Account().List(kt, opt)
+	if len(accountInfo.Details) != 1 {
+		return nil, fmt.Errorf("account: %s not found", info.AccountID)
+	}
+	return accountInfo, err
 }
 
 // BatchRecoverCloudResource batch recover cloud resource.

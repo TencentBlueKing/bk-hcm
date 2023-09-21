@@ -45,8 +45,7 @@ func (req *EipSyncReq) Validate() error {
 
 // EipDeleteReq ...
 type EipDeleteReq struct {
-	AccountID string `json:"account_id" validate:"required"`
-	EipID     string `json:"eip_id" validate:"required"`
+	EipID string `json:"eip_id" validate:"required"`
 }
 
 // Validate ...

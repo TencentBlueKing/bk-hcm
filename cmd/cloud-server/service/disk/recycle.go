@@ -63,7 +63,8 @@ func (svc *diskSvc) recycleDiskSvc(cts *rest.Contexts, validHandler handler.Vali
 	auditInfos := make([]protoaudit.CloudResRecycleAuditInfo, 0, len(req.Infos))
 	for _, info := range req.Infos {
 		ids = append(ids, info.ID)
-		auditInfos = append(auditInfos, protoaudit.CloudResRecycleAuditInfo{ResID: info.ID, Data: info.DiskRecycleOptions})
+		auditInfos = append(auditInfos,
+			protoaudit.CloudResRecycleAuditInfo{ResID: info.ID, Data: info.DiskRecycleOptions})
 	}
 
 	basicInfoReq := cloud.ListResourceBasicInfoReq{
@@ -200,7 +201,7 @@ func (svc *diskSvc) detachDiskByIDs(kt *kit.Kit, ids []string, basicInfoMap map[
 			continue
 		}
 
-		err = svc.diskLgc.DetachDisk(kt, info.Vendor, cvmID, id, info.AccountID)
+		err = svc.diskLgc.DetachDisk(kt, info.Vendor, cvmID, id)
 		if err != nil {
 			res.Failed = append(res.Failed, core.FailedInfo{ID: id, Error: err})
 			continue

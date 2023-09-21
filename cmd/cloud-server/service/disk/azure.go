@@ -75,7 +75,6 @@ func (svc *diskSvc) azureAttachDisk(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&hcproto.AzureDiskAttachReq{
-			AccountID:   basicInfo.AccountID,
 			CvmID:       req.CvmID,
 			DiskID:      req.DiskID,
 			CachingType: req.CachingType,

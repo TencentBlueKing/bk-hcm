@@ -75,7 +75,6 @@ func (svc *diskSvc) awsAttachDisk(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&hcproto.AwsDiskAttachReq{
-			AccountID:  basicInfo.AccountID,
 			DiskID:     req.DiskID,
 			CvmID:      req.CvmID,
 			DeviceName: req.DeviceName,

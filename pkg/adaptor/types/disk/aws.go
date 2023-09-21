@@ -100,7 +100,8 @@ func (opt *AwsDiskDeleteOption) ToDeleteVolumeInput() (*ec2.DeleteVolumeInput, e
 
 // AwsDiskAttachOption ...
 type AwsDiskAttachOption struct {
-	Region      string `json:"region" validate:"required"`
+	Region string `json:"region" validate:"required"`
+	// DeviceName Device 参数，/dev/sdx, xvdh
 	DeviceName  string `json:"device_name" validate:"required"`
 	CloudCvmID  string `json:"cloud_cvm_id" validate:"required"`
 	CloudDiskID string `json:"cloud_disk_id" validate:"required"`

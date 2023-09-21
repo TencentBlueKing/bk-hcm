@@ -138,7 +138,7 @@ func (dao *AsyncFlowDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
 	return nil
 }
 
-// UpdateByIDWithTxCAS update async flow CAS.
+// UpdateByIDCAS update async flow CAS.
 func (dao *AsyncFlowDao) UpdateByIDCAS(kt *kit.Kit, id string, state enumor.FlowState) error {
 
 	if len(id) == 0 {
