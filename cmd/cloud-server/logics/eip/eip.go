@@ -424,6 +424,10 @@ func (e *eip) BatchReAssociateEip(kt *kit.Kit, eipCvmMap map[string]string,
 	return nil, nil
 }
 
+func allSuccessRollback(kt *kit.Kit, rollbackIds []string) (*core.BatchOperateAllResult, error) {
+	return &core.BatchOperateAllResult{Succeeded: rollbackIds}, nil
+}
+
 // BatchDisassociateWithRollback 批量解绑eip，
 // 1. 并提供回滚操作，用户自行决定是否回滚。
 // 2. 不同cvm下的eip失败不互相影响；同一个cvm下的eip只会失败一次，失败后不在处理通cvm下的eip
@@ -437,7 +441,8 @@ func (e *eip) BatchDisassociateWithRollback(kt *kit.Kit,
 		for _, cvmID := range detachEipCvmIDs {
 			operationResult.FailedCvm[cvmID] = err
 		}
-		return operationResult, nil, err
+		// 还没操作所以直接返回全部回滚成功的回滚函数
+		return operationResult, allSuccessRollback, err
 	}
 
 	rollback := func(kt *kit.Kit, rbCvmIds []string) (*core.BatchOperateAllResult, error) {

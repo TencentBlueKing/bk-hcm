@@ -41,6 +41,7 @@ func InitCvmService(c *capability.Capability) {
 		audit:      c.Audit,
 		diskLgc:    c.Logics.Disk,
 		cvmLgc:     c.Logics.Cvm,
+		eipLgc:     c.Logics.Eip,
 	}
 
 	h := rest.NewHandler()

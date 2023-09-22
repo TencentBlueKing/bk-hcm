@@ -37,6 +37,8 @@ const (
 	UpdateRRT Action = "update_rrt"
 	// Delete operation's hcm auth action type
 	Delete Action = "delete"
+	// DeleteRecycled 删除回收站中的资源
+	DeleteRecycled Action = "delete_recycled"
 	// Find operation's hcm auth action type
 	Find Action = "find"
 	// KeyAccess access secret key operation's hcm auth action type
