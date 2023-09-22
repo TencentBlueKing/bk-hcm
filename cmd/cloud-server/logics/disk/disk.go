@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	"hcm/cmd/cloud-server/logics/audit"
+	"hcm/pkg/api/cloud-server/recycle"
 	"hcm/pkg/api/core"
 	protoaudit "hcm/pkg/api/data-service/audit"
 	"hcm/pkg/api/data-service/cloud"
@@ -38,6 +39,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/classifier"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 // Interface define disk interface.
@@ -46,11 +48,9 @@ type Interface interface {
 	DeleteDisk(kt *kit.Kit, vendor enumor.Vendor, diskID string) error
 	DeleteRecycledDisk(kt *kit.Kit, infoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateResult, error)
 
-	DetachDataDiskByCvmIDs(kt *kit.Kit, cvmIds []string,
-		cvmInfoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateAllResult, error)
-
-	BatchDetachWithRollback(kt *kit.Kit, cvmInfoMap map[string]types.CloudResourceBasicInfo) (
-		batchResult, BatchRollBackFunc, error)
+	BatchGetDiskInfo(kt *kit.Kit, cvmDetail map[string]*recycle.CvmRecycleDetail) (err error)
+	BatchDetach(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmRecycleDetail) (failed []string, err error)
+	BatchReattachDisk(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmRecycleDetail) (err error)
 }
 type disk struct {
 	client *client.ClientSet
@@ -67,19 +67,6 @@ func NewDisk(client *client.ClientSet, audit audit.Interface) Interface {
 
 // BatchRollBackFunc 批量操作回滚操作
 type BatchRollBackFunc func(kt *kit.Kit, rollbackIds []string) (*core.BatchOperateAllResult, error)
-
-type diskReattachInfo struct {
-	Vendor      enumor.Vendor
-	CvmID       string
-	DiskID      string
-	CachingType string
-	DeviceName  string
-}
-
-type batchResult struct {
-	SucceedResCvm map[string]string
-	FailedCvm     map[string]error
-}
 
 // DetachDisk detach disk from cvm.
 func (d *disk) DetachDisk(kt *kit.Kit, vendor enumor.Vendor, cvmID, diskID string) error {
@@ -194,117 +181,69 @@ func (d *disk) DeleteRecycledDisk(kt *kit.Kit, basicInfoMap map[string]types.Clo
 	return nil, nil
 }
 
-// DetachDataDiskByCvmIDs 解绑cvm下的数据盘
-func (d *disk) DetachDataDiskByCvmIDs(kt *kit.Kit, cvmIds []string,
-	cvmInfoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateAllResult, error) {
+func (d *disk) fillAwsDisks(kt *kit.Kit, cvmDetails []*recycle.CvmRecycleDetail) error {
 
-	if len(cvmIds) == 0 {
-		return nil, nil
-	}
+	cvmDiskMap := map[string][]*recycle.DiskAttachInfo{}
+	cvmIds := slice.Map(cvmDetails, func(info *recycle.CvmRecycleDetail) string { return info.CvmID })
+	relWithCvm, err := d.client.DataService().Aws.ListDiskCvmRelWithDisk(
+		kt.Ctx, kt.Header(), &cloud.DiskCvmRelWithDiskListReq{CvmIDs: cvmIds})
 
-	if len(cvmIds) > constant.BatchOperationMaxLimit {
-		return nil, errf.Newf(errf.InvalidParameter, "cvmIds should <= %d", constant.BatchOperationMaxLimit)
-	}
-
-	listReq := &cloud.DiskCvmRelListReq{
-		Filter: tools.ContainersExpression("cvm_id", cvmIds),
-		Page:   core.NewDefaultBasePage(),
-	}
-	relRes, err := d.client.DataService().Global.ListDiskCvmRel(kt.Ctx, kt.Header(), listReq)
 	if err != nil {
-		return nil, err
+		logs.Errorf("[aws] failed to ListDiskCvmRelWithDisk, err: %v, cvmIds:%v, rid:%s", err, cvmIds, kt.Rid)
+		return err
 	}
-
-	if len(relRes.Details) == 0 {
-		return nil, nil
-	}
-
-	res := &core.BatchOperateAllResult{
-		Succeeded: make([]string, 0),
-		Failed:    make([]core.FailedInfo, 0),
-	}
-
-	cvmDiskMap := make(map[string]string)
-	for _, detail := range relRes.Details {
-		cvmDiskMap[detail.CvmID] = detail.DiskID
-	}
-
-	for _, cvmId := range cvmIds {
-		diskID, exists := cvmDiskMap[cvmId]
-		if !exists {
-			res.Succeeded = append(res.Succeeded, cvmId)
-			continue
+	for _, rel := range relWithCvm {
+		if rel.Extension == nil || len(rel.Extension.Attachment) < 1 {
+			return errf.Newf(errf.Unknown, "[Aws] no attachment found in cvm related disk, err: %v, cvmId: %v, rid:%s",
+				err, rel.CvmID, kt.Rid)
 		}
-
-		cvmInfo, exists := cvmInfoMap[cvmId]
-		if !exists {
-			res.Succeeded = append(res.Succeeded, cvmId)
-			continue
-		}
-
-		err = d.DetachDisk(kt, cvmInfo.Vendor, cvmId, diskID)
-		if err != nil {
-			res.Failed = append(res.Failed, core.FailedInfo{ID: cvmId, Error: err})
-			continue
-		}
-		res.Succeeded = append(res.Succeeded, cvmId)
+		cvmDiskMap[rel.CvmID] = append(cvmDiskMap[rel.CvmID], &recycle.DiskAttachInfo{
+			DiskID:     rel.DiskExtResult.ID,
+			DeviceName: converter.PtrToVal(rel.Extension.Attachment[0].DeviceName),
+		})
 	}
-
-	if len(res.Failed) > 0 {
-		return res, res.Failed[0].Error
+	for _, cvmDetail := range cvmDetails {
+		if diskList, exists := cvmDiskMap[cvmDetail.CvmID]; exists {
+			cvmDetail.DiskList = diskList
+		}
 	}
-	return res, nil
+	return nil
 }
 
-// DetachDataDiskByCvmIDs 解绑cvm下的数据盘
-func (d *disk) getDiskByCvm(kt *kit.Kit, cvmInfos map[string]types.CloudResourceBasicInfo) (
-	diskCvmMap map[string]string, reattachMap map[string]diskReattachInfo, err error) {
+func (d *disk) fillAzureDisk(kt *kit.Kit, cvmDetails []*recycle.CvmRecycleDetail) error {
 
-	if len(cvmInfos) == 0 {
-		return nil, nil, nil
+	cvmDiskMap := map[string][]*recycle.DiskAttachInfo{}
+	cvmIds := slice.Map(cvmDetails, func(info *recycle.CvmRecycleDetail) string { return info.CvmID })
+
+	relWithCvm, err := d.client.DataService().Azure.ListDiskCvmRelWithDisk(kt.Ctx, kt.Header(),
+		&cloud.DiskCvmRelWithDiskListReq{CvmIDs: cvmIds})
+
+	if err != nil {
+		logs.Errorf("[azure] failed to ListDiskCvmRelWithDisk, err: %v, cvmIds:%v, rid:%s", err, cvmIds, kt.Rid)
+		return err
 	}
-	if len(cvmInfos) > constant.BatchOperationMaxLimit {
-		return nil, nil, errf.Newf(errf.InvalidParameter, "cvmIDs should <= %d", constant.BatchOperationMaxLimit)
+	for _, rel := range relWithCvm {
+		cvmDiskMap[rel.CvmID] = append(cvmDiskMap[rel.CvmID], &recycle.DiskAttachInfo{
+			DiskID: rel.DiskExtResult.ID,
+			// TODO:!!! 没有保存caching type，难以重新attach，暂时先按None恢复,-> 在vm 属性的storageProfile里面
+			CachingType: "None",
+		})
 	}
-
-	reattachMap = make(map[string]diskReattachInfo)
-	diskCvmMap = make(map[string]string)
-
-	infoByVendor := classifier.ClassifyBasicInfoByVendor(cvmInfos)
-	// Aws 和Azure 参数不一样，需要通过with ext 获取特定参数
-	for vendor, infos := range infoByVendor {
-
-		cvmIds := converter.Map(infos, func(info types.CloudResourceBasicInfo) string { return info.ID })
-		switch vendor {
-		case enumor.Aws:
-			err := d.getAwsDisk(kt, cvmIds, diskCvmMap, reattachMap)
-			if err != nil {
-				return nil, nil, err
-			}
-		case enumor.Azure:
-			err := d.getAzureDisk(kt, cvmIds, diskCvmMap, reattachMap)
-			if err != nil {
-				return nil, nil, err
-			}
-		case enumor.Gcp, enumor.HuaWei, enumor.TCloud:
-			err := d.getDiskInfo(kt, vendor, cvmIds, diskCvmMap, reattachMap)
-			if err != nil {
-				return nil, nil, err
-			}
-		default:
-			return nil, nil, errf.Newf(errf.InvalidParameter, "unknown vendor: %v", vendor)
+	for _, cvmDetail := range cvmDetails {
+		if diskList, exists := cvmDiskMap[cvmDetail.CvmID]; exists {
+			cvmDetail.DiskList = diskList
 		}
 	}
-	return diskCvmMap, reattachMap, nil
+	return nil
 }
 
-func (d *disk) getDiskInfo(kt *kit.Kit, vendor enumor.Vendor, cvmIds []string, diskCvmMap map[string]string,
-	reattachMap map[string]diskReattachInfo) error {
+func (d *disk) fillDisk(kt *kit.Kit, vendor enumor.Vendor, cvmDetails []*recycle.CvmRecycleDetail) error {
+
+	cvmDiskMap := map[string][]*recycle.DiskAttachInfo{}
+	cvmIds := slice.Map(cvmDetails, func(info *recycle.CvmRecycleDetail) string { return info.CvmID })
 
 	relWithCvm, err := d.client.DataService().Global.ListDiskCvmRelWithDisk(kt.Ctx, kt.Header(),
-		&cloud.DiskCvmRelWithDiskListReq{
-			CvmIDs: cvmIds,
-		})
+		&cloud.DiskCvmRelWithDiskListReq{CvmIDs: cvmIds})
 
 	if err != nil {
 		logs.Errorf("[%s] fail to ListDiskCvmRelWithDisk, err: %v, cvmIDs: %v, rid: %s",
@@ -313,163 +252,122 @@ func (d *disk) getDiskInfo(kt *kit.Kit, vendor enumor.Vendor, cvmIds []string, d
 	}
 
 	for _, rel := range relWithCvm {
-		diskCvmMap[rel.ID] = rel.CvmID
-		reattachMap[rel.ID] = diskReattachInfo{
-			Vendor: vendor,
-			CvmID:  rel.CvmID,
-			DiskID: rel.DiskResult.ID,
+		cvmDiskMap[rel.CvmID] = append(cvmDiskMap[rel.CvmID], &recycle.DiskAttachInfo{DiskID: rel.DiskResult.ID})
+	}
+
+	for _, cvmDetail := range cvmDetails {
+		if diskList, exists := cvmDiskMap[cvmDetail.CvmID]; exists {
+			cvmDetail.DiskList = diskList
 		}
 	}
 	return nil
 }
 
-func (d *disk) getAzureDisk(kt *kit.Kit, cvmIds []string, diskCvmMap map[string]string,
-	reattachMap map[string]diskReattachInfo) error {
+// BatchGetDiskInfo 获取并填充磁盘信息
+func (d *disk) BatchGetDiskInfo(kt *kit.Kit, cvmDetail map[string]*recycle.CvmRecycleDetail) (err error) {
 
-	relWithCvm, err := d.client.DataService().Azure.ListDiskCvmRelWithDisk(kt.Ctx, kt.Header(),
-		&cloud.DiskCvmRelWithDiskListReq{
-			CvmIDs: cvmIds,
-		})
-
-	if err != nil {
-		logs.Errorf("[Azure] failed to ListDiskCvmRelWithDisk, err: %v, cvmIds:%v, rid:%s", err, cvmIds, kt.Rid)
-		return err
+	if len(cvmDetail) == 0 {
+		return nil
 	}
-	for _, rel := range relWithCvm {
-		diskCvmMap[rel.ID] = rel.CvmID
-		reattachMap[rel.ID] = diskReattachInfo{
-			Vendor: enumor.Azure,
-			CvmID:  rel.CvmID,
-			DiskID: rel.DiskExtResult.ID,
-			// TODO:!!! 没有保存caching type，难以重新attach，暂时先按None恢复,-> 在vm 属性的storageProfile里面
-			CachingType: "None",
-		}
-	}
-	return nil
-}
-
-func (d *disk) getAwsDisk(kt *kit.Kit, cvmIds []string, diskCvmMap map[string]string,
-	reattachMap map[string]diskReattachInfo) error {
-
-	relWithCvm, err := d.client.DataService().Aws.ListDiskCvmRelWithDisk(kt.Ctx, kt.Header(),
-		&cloud.DiskCvmRelWithDiskListReq{
-			CvmIDs: cvmIds,
-		})
-
-	if err != nil {
-		logs.Errorf("[Aws] failed to ListDiskCvmRelWithDisk, err: %v, cvmIds:%v, rid:%s", err, cvmIds, kt.Rid)
-		return err
-	}
-	for _, rel := range relWithCvm {
-		diskCvmMap[rel.ID] = rel.CvmID
-		if rel.Extension == nil || len(rel.Extension.Attachment) < 1 {
-			return errf.Newf(errf.Unknown, "[Aws] no disk attachment in disk, err: %v, cvmId: %v, rid:%s",
-				err, rel.CvmID, kt.Rid)
-		}
-
-		reattachMap[rel.ID] = diskReattachInfo{
-			Vendor:     enumor.Aws,
-			CvmID:      rel.CvmID,
-			DiskID:     rel.DiskExtResult.ID,
-			DeviceName: converter.PtrToVal(rel.Extension.Attachment[0].DeviceName),
-		}
-	}
-	return nil
-}
-
-func allSuccessRollback(kt *kit.Kit, rollbackIds []string) (*core.BatchOperateAllResult, error) {
-	return &core.BatchOperateAllResult{Succeeded: rollbackIds}, nil
-}
-
-// BatchDetachWithRollback  批量解绑，返回回滚函数，返回的失败cvm, 用户自行决定是否回滚
-func (d *disk) BatchDetachWithRollback(kt *kit.Kit, cvmInfoMap map[string]types.CloudResourceBasicInfo) (
-	batchResult, BatchRollBackFunc, error) {
-
-	// 1. 获取disk和cvm关联信息以及d磁盘重新挂载信息
-	detachResult := batchResult{map[string]string{}, map[string]error{}}
-
-	diskCvmMap, diskMap, err := d.getDiskByCvm(kt, cvmInfoMap)
-	if err != nil {
-		for cvmId := range cvmInfoMap {
-			detachResult.FailedCvm[cvmId] = err
-		}
-		return detachResult, allSuccessRollback, err
+	if len(cvmDetail) > constant.BatchOperationMaxLimit {
+		return errf.Newf(errf.InvalidParameter, "cvmIDs should <= %d", constant.BatchOperationMaxLimit)
 	}
 
-	rollback := func(kt *kit.Kit, rollbackIds []string) (*core.BatchOperateAllResult, error) {
-		if len(rollbackIds) == 0 {
-			return nil, nil
-		}
-		logs.V(3).Infof("rollback for BatchDisassociateEip, rollback cvm ids: %v, rid:%s", rollbackIds, kt.Rid)
-		reattachResult := &core.BatchOperateAllResult{}
-		rbCvmIds := converter.StringSliceToMap(rollbackIds)
-		var err error
-		for diskId, cvmId := range diskCvmMap {
-			if _, ok := rbCvmIds[cvmId]; !ok {
-				continue
+	infoByVendor := classifier.ClassifyMap(cvmDetail,
+		func(v *recycle.CvmRecycleDetail) enumor.Vendor { return v.Vendor })
+	// Aws 和Azure 参数不一样，需要通过with ext 获取特定参数
+	for vendor, infos := range infoByVendor {
+
+		switch vendor {
+		case enumor.Aws:
+			if err := d.fillAwsDisks(kt, infos); err != nil {
+				return err
 			}
-			if err = d.reattach(kt, diskMap[diskId]); err != nil {
-				reattachResult.Failed = append(reattachResult.Failed, core.FailedInfo{ID: cvmId, Error: err})
-			} else {
-				reattachResult.Succeeded = append(reattachResult.Succeeded, cvmId)
+		case enumor.Azure:
+			if err := d.fillAzureDisk(kt, infos); err != nil {
+				return err
 			}
+		case enumor.Gcp, enumor.HuaWei, enumor.TCloud:
+			if err := d.fillDisk(kt, vendor, infos); err != nil {
+				return err
+			}
+		default:
+			return errf.Newf(errf.InvalidParameter, "unknown vendor: %v", vendor)
 		}
-		return reattachResult, err
 	}
+	return nil
+}
 
-	// 2. 尝试卸载磁盘
-	for diskId, cvmId := range diskCvmMap {
-		// 如果cvm存在多个磁盘，只失败一次就行了，不要重复失败
-		if detachResult.FailedCvm[cvmId] != nil {
+// BatchDetach  批量解绑，返回的失败cvm, 用户自行决定是否回滚
+func (d *disk) BatchDetach(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmRecycleDetail) (failed []string,
+	err error) {
+
+	kt = kt.NewSubKit()
+
+	for _, detail := range cvmRecycleMap {
+		if detail.FailedAt != "" {
 			continue
 		}
-		err = d.DetachDisk(kt, diskMap[diskId].Vendor, cvmId, diskId)
-		if err != nil {
-			detachResult.FailedCvm[cvmId] = err
-		} else {
-			detachResult.SucceedResCvm[cvmId] = diskId
+		for _, disk := range detail.DiskList {
+			err := d.DetachDisk(kt, detail.Vendor, detail.CvmID, disk.DiskID)
+			if err != nil {
+				disk.Err = err
+				detail.FailedAt = enumor.DiskCloudResType
+				failed = append(failed, detail.CvmID)
+				logs.Errorf("failed to detach disk，err: %v cvmId: %s, diskId: %s, rid:%s",
+					err, detail.CvmID, disk.DiskID, kt.Rid)
+				break
+			}
 		}
+
 	}
-	return detachResult, rollback, err
+	return failed, nil
 }
 
-// reattach 重新重新挂载磁盘
-func (d *disk) reattach(kt *kit.Kit, attachInfo diskReattachInfo) error {
+// BatchReattachDisk 批量重新挂载磁盘, 仅处理磁盘卸载没有失败的磁盘
+func (d *disk) BatchReattachDisk(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmRecycleDetail) (err error) {
+	for cvmId, detail := range cvmRecycleMap {
 
-	operationInfo := protoaudit.CloudResourceOperationInfo{
-		ResType:           enumor.DiskAuditResType,
-		ResID:             attachInfo.DiskID,
-		Action:            protoaudit.Associate,
-		AssociatedResType: enumor.CvmAuditResType,
-		AssociatedResID:   attachInfo.CvmID,
-	}
+		for _, disk := range detail.DiskList {
+			if disk.Err != nil {
+				break
+			}
+			operationInfo := protoaudit.CloudResourceOperationInfo{
+				ResType:           enumor.DiskAuditResType,
+				ResID:             disk.DiskID,
+				Action:            protoaudit.Associate,
+				AssociatedResType: enumor.CvmAuditResType,
+				AssociatedResID:   cvmId,
+			}
 
-	err := d.audit.ResOperationAudit(kt, operationInfo)
-	if err != nil {
-		logs.Errorf("create attach disk audit failed, err: %v, rid: %s", err, kt.Rid)
-		return err
+			err := d.audit.ResOperationAudit(kt, operationInfo)
+			if err != nil {
+				logs.Errorf("create attach disk audit failed, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
+			switch detail.Vendor {
+			case enumor.Azure:
+				err = d.client.HCService().Azure.Disk.AttachDisk(kt.Ctx, kt.Header(), &hcproto.AzureDiskAttachReq{
+					CvmID: cvmId, DiskID: disk.DiskID, CachingType: disk.CachingType})
+			case enumor.Aws:
+				err = d.client.HCService().Aws.Disk.AttachDisk(kt.Ctx, kt.Header(), &hcproto.AwsDiskAttachReq{
+					CvmID: cvmId, DiskID: disk.DiskID, DeviceName: disk.DeviceName})
+			case enumor.TCloud:
+				err = d.client.HCService().TCloud.Disk.AttachDisk(kt.Ctx, kt.Header(),
+					&hcproto.TCloudDiskAttachReq{CvmID: cvmId, DiskID: disk.DiskID})
+			case enumor.HuaWei:
+				err = d.client.HCService().HuaWei.Disk.AttachDisk(kt.Ctx, kt.Header(),
+					&hcproto.HuaWeiDiskAttachReq{CvmID: cvmId, DiskID: disk.DiskID})
+			case enumor.Gcp:
+				err = d.client.HCService().Gcp.Disk.AttachDisk(kt.Ctx, kt.Header(),
+					&hcproto.GcpDiskAttachReq{CvmID: cvmId, DiskID: disk.DiskID})
+			default:
+				err = errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("unknown vendor: %s", detail.Vendor))
+			}
+			if err != nil {
+				logs.Errorf("fail to reattach, err: %v, cvmId: %s, disk: %v, rid: %s", err, disk, kt.Rid)
+			}
+		}
 	}
-	switch attachInfo.Vendor {
-	case enumor.Azure:
-		err = d.client.HCService().Azure.Disk.AttachDisk(kt.Ctx, kt.Header(), &hcproto.AzureDiskAttachReq{
-			CvmID: attachInfo.CvmID, DiskID: attachInfo.DiskID, CachingType: attachInfo.CachingType})
-	case enumor.Aws:
-		err = d.client.HCService().Aws.Disk.AttachDisk(kt.Ctx, kt.Header(), &hcproto.AwsDiskAttachReq{
-			CvmID: attachInfo.CvmID, DiskID: attachInfo.DiskID, DeviceName: attachInfo.DeviceName})
-	case enumor.TCloud:
-		err = d.client.HCService().TCloud.Disk.AttachDisk(kt.Ctx, kt.Header(),
-			&hcproto.TCloudDiskAttachReq{CvmID: attachInfo.CvmID, DiskID: attachInfo.DiskID})
-	case enumor.HuaWei:
-		err = d.client.HCService().HuaWei.Disk.AttachDisk(kt.Ctx, kt.Header(),
-			&hcproto.HuaWeiDiskAttachReq{CvmID: attachInfo.CvmID, DiskID: attachInfo.DiskID})
-	case enumor.Gcp:
-		err = d.client.HCService().Gcp.Disk.AttachDisk(kt.Ctx, kt.Header(),
-			&hcproto.GcpDiskAttachReq{CvmID: attachInfo.CvmID, DiskID: attachInfo.DiskID})
-	default:
-		err = errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("unknown vendor: %s", attachInfo.Vendor))
-	}
-	if err != nil {
-		logs.Errorf("fail to reattach, err: %v, params: %v, rid: %s", err, attachInfo, kt.Rid)
-	}
-	return err
+	return nil
 }

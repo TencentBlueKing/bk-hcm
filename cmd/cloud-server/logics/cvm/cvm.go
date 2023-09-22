@@ -35,11 +35,9 @@ import (
 type Interface interface {
 	BatchStopCvm(kt *kit.Kit, basicInfoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateAllResult, error)
 	BatchDeleteCvm(kt *kit.Kit, basicInfoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateResult, error)
-	// DestroyRecycledCvm 销毁已经处于回收状态的Cvm
 	DestroyRecycledCvm(kt *kit.Kit, infoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateResult, error)
 	GetNotCmdbRecyclableHosts(kt *kit.Kit, bizHostsIds map[int64][]string) ([]string, error)
-	// RecyclePreCheck 回收预校验、包含主机状态和CC待回收模块检查
-	RecyclePreCheck(kt *kit.Kit, infoMap map[string]types.CloudResourceBasicInfo) *core.BatchOperateAllResult
+	RecyclePreCheck(kt *kit.Kit, infoMap map[string]types.CloudResourceBasicInfo) error
 }
 
 type cvm struct {

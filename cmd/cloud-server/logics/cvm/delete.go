@@ -20,10 +20,10 @@
 package cvm
 
 import (
-	"context"
 	"errors"
 	"fmt"
 
+	"hcm/pkg/api/cloud-server/recycle"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
 	hcprotocvm "hcm/pkg/api/hc-service/cvm"
@@ -36,7 +36,6 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/thirdparty/esb/cmdb"
 	"hcm/pkg/tools/classifier"
-	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/maps"
 )
 
@@ -182,68 +181,132 @@ func (c *cvm) DestroyRecycledCvm(kt *kit.Kit, cvmBasicInfo map[string]types.Clou
 	}
 	leftCvmInfo := maps.Clone(cvmBasicInfo)
 	destroyResult := new(core.BatchOperateResult)
-	failedIds := make([]string, 0)
-	markDestroyFailed := func(id string, reason error) {
-		delete(leftCvmInfo, id)
-		destroyResult.Failed = &core.FailedInfo{ID: id, Error: reason}
+
+	// 1. 检查cmdb模块和机器状态
+	if err := c.RecyclePreCheck(kt, cvmBasicInfo); err != nil {
+		logs.Errorf("destroy precheck fail, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
 	}
 
-	// 1. 预检，有一个失败则直接失败
-	checkResult := c.RecyclePreCheck(kt, cvmBasicInfo)
-	if len(checkResult.Failed) > 0 {
-		return nil, checkResult.Failed[0].Error
+	// 到销毁机器的时候应该处理剩下的全部关联资源
+	cvmStatus, err := c.unbindCvmRelated(kt, cvmBasicInfo)
+	if err != nil {
+		logs.Errorf("fail to unbind related res of cvm before destroy, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
 	}
 
-	// 到销毁机器的时候应该处理剩下的全部关联设备
-	// 2. 解绑数据盘
-	diskResult, diskRollBack, err := c.disk.BatchDetachWithRollback(kt, leftCvmInfo)
-	if err != nil {
-		for cvmId, err := range diskResult.FailedCvm {
-			markDestroyFailed(cvmId, err)
-		}
-	}
-	// 3. 解绑eip
-	eipFailedCvmIds := make([]string, 0, len(leftCvmInfo))
-	eipResult, eipRollback, err := c.eip.BatchDisassociateWithRollback(kt, converter.MapKeyToStringSlice(leftCvmInfo))
-	if err != nil {
-		for cvmId, err := range eipResult.FailedCvm {
-			markDestroyFailed(cvmId, err)
-			eipFailedCvmIds = append(eipFailedCvmIds, cvmId)
-		}
-	}
-	defer func() {
-		eipRollback(kt, failedIds)
-		diskRollBack(kt, append(eipFailedCvmIds, failedIds...))
-	}()
-	if len(leftCvmInfo) == 0 {
+	if len(cvmStatus) == 0 {
 		return destroyResult, destroyResult.Failed.Error
 	}
-
+	defer func(c *cvm, kt *kit.Kit, cvmStatus map[string]*recycle.CvmRecycleDetail) {
+		err := c.destroyCleanUp(kt, cvmStatus)
+		if err != nil {
+			logs.Errorf("failed to cleanup, err: %v, rid: %s", err, kt.Rid)
+		}
+	}(c, kt, cvmStatus)
 	// 4. 销毁主机
-	delRes, err := c.BatchDeleteCvm(kt, leftCvmInfo)
+	delRes, err := c.BatchDeleteCvm(kt, maps.FilterByValue(leftCvmInfo, func(info types.CloudResourceBasicInfo) bool {
+		return cvmStatus[info.ID] != nil && cvmStatus[info.ID].FailedAt == ""
+	}))
 	if err != nil {
 		logs.Errorf("Fail to delete cvm, err: %v, cvmIds: %v, rid: %s", err, delRes.Failed, kt.Rid)
 		for _, cvmId := range delRes.Succeeded {
-			delete(leftCvmInfo, cvmId)
-		}
-		// 回滚剩下的
-		failedIds = append(failedIds, converter.MapKeyToStringSlice(leftCvmInfo)...)
-	}
-	// 5. 销毁数据盘
-	for diskId, cvmId := range diskResult.SucceedResCvm {
-		err := c.disk.DeleteDisk(kt, cvmBasicInfo[cvmId].Vendor, diskId)
-		if err != nil {
-			logs.Errorf("fail to delete %s disk, err: %v, diskId: %s, rid: %s", cvmBasicInfo[cvmId].Vendor, err, kt.Rid)
+			delete(cvmStatus, cvmId)
 		}
 	}
-	// 6. 销毁eip
-	for eipId, cvmId := range eipResult.SucceedResCvm {
-		err := c.eip.DeleteEip(kt, cvmBasicInfo[cvmId].Vendor, eipId)
-		if err != nil {
-			logs.Errorf("fail to delete %s disk, err: %v, diskId: %s, rid: %s", cvmBasicInfo[cvmId].Vendor, err, kt.Rid)
-		}
-	}
+	// 销毁关联资源
+	c.destroyRelatedRes(kt, cvmStatus)
 	return destroyResult, nil
+}
+
+func (c *cvm) destroyRelatedRes(kt *kit.Kit, cvmStatus map[string]*recycle.CvmRecycleDetail) {
+	for _, recycleDetail := range cvmStatus {
+		for _, disk := range recycleDetail.DiskList {
+			err := c.disk.DeleteDisk(kt, recycleDetail.Vendor, disk.DiskID)
+			if err != nil {
+				logs.Errorf("fail to delete %s disk, err: %v, diskId: %s, rid: %s",
+					recycleDetail.Vendor, err, disk.DiskID, kt.Rid)
+			}
+		}
+		for _, eip := range recycleDetail.EipList {
+			err := c.eip.DeleteEip(kt, recycleDetail.Vendor, eip.EipID)
+			if err != nil {
+				logs.Errorf("fail to delete %s eip, err: %v, eipID: %s, rid: %s",
+					recycleDetail.Vendor, err, eip.EipID, kt.Rid)
+			}
+		}
+	}
+}
+
+func (c *cvm) unbindCvmRelated(kt *kit.Kit,
+	cvmBasicInfo map[string]types.CloudResourceBasicInfo) (cvmStatus map[string]*recycle.CvmRecycleDetail, err error) {
+
+	// TODO: 改为从数据库中获取快照并对比
+	cvmStatus = make(map[string]*recycle.CvmRecycleDetail, len(cvmBasicInfo))
+	for cvmId, basicInfo := range cvmBasicInfo {
+		cvmStatus[cvmId] = &recycle.CvmRecycleDetail{
+			Vendor:    basicInfo.Vendor,
+			AccountID: basicInfo.AccountID,
+			CvmID:     cvmId,
+		}
+	}
+	// 获取磁盘信息
+	if err := c.disk.BatchGetDiskInfo(kt, cvmStatus); err != nil {
+		logs.Errorf("failed to get disk info of cvm, err: %v, rid: %s", err, kt.Rid)
+		return cvmStatus, err
+	}
+	// 解绑全部磁盘
+	failed, err := c.disk.BatchDetach(kt, cvmStatus)
+	if err != nil {
+		logs.Errorf("failed to detach some disks of cvm(%v), err: %v, rid: %s", failed, err, kt.Rid)
+	}
+
+	// 尝试回收eip
+	if err := c.eip.BatchGetEipInfo(kt, cvmStatus); err != nil {
+		logs.Errorf("failed to get eip info of cvm, err: %v, rid: %s", err, kt.Rid)
+	}
+
+	// 解绑全部eip
+	failed, err = c.eip.BatchUnbind(kt, cvmStatus)
+	if err != nil {
+		logs.Errorf("failed to unbind eip of cvm(%v), err: %v, rid: %s", failed, err, kt.Rid)
+	}
+	return cvmStatus, err
+
+}
+
+// destroyCleanUp 处理回收失败需要尝试重新绑定的eip、disk
+func (c *cvm) destroyCleanUp(kt *kit.Kit, cvmStatus map[string]*recycle.CvmRecycleDetail) error {
+
+	eipRebind := make(map[string]*recycle.CvmRecycleDetail, len(cvmStatus))
+	diskRebind := make(map[string]*recycle.CvmRecycleDetail, len(cvmStatus))
+
+	for cvmId, detail := range cvmStatus {
+		switch detail.FailedAt {
+		case "":
+			continue
+		case enumor.DiskCloudResType:
+			continue
+		case enumor.EipCloudResType:
+			diskRebind[cvmId] = detail
+		case enumor.CvmCloudResType:
+			// 	重新挂载磁盘和绑定eip
+			eipRebind[cvmId] = detail
+			diskRebind[cvmId] = detail
+		default:
+			return fmt.Errorf("unknown failed type: %v", detail.FailedAt)
+		}
+	}
+	// 	尝试重新挂载磁盘
+	err := c.eip.BatchRebind(kt, eipRebind)
+	if err != nil {
+		return err
+	}
+	err = c.disk.BatchReattachDisk(kt, diskRebind)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // GetNotCmdbRecyclableHosts 获取根据业务id分类的主机id列表中不在cmdb待回收模块的主机id
@@ -261,7 +324,7 @@ func (c *cvm) GetNotCmdbRecyclableHosts(kt *kit.Kit, bizHostsIds map[int64][]str
 		}
 		relResp, err := c.client.DataService().Global.Cvm.ListCvm(kt.Ctx, kt.Header(), req)
 		if err != nil {
-			logs.Errorf(" fail to get host Info:%v", err)
+			logs.Errorf("fail to get host Info, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
 		}
 		// 按vendor 归类
@@ -277,7 +340,7 @@ func (c *cvm) GetNotCmdbRecyclableHosts(kt *kit.Kit, bizHostsIds map[int64][]str
 			cloudIds[detail.Vendor] = vendors
 		}
 		// 	去cmdb处检查，是否在待回收模块
-		inRecycle, err := c.CheckBizHostInRecycleModule(kt.Ctx, bizID, cloudIds)
+		inRecycle, err := c.CheckBizHostInRecycleModule(kt, bizID, cloudIds)
 		if err != nil {
 			return nil, err
 		}
@@ -292,12 +355,14 @@ func (c *cvm) GetNotCmdbRecyclableHosts(kt *kit.Kit, bizHostsIds map[int64][]str
 }
 
 // CheckBizHostInRecycleModule 查询业务下主机是否在cmdb待回收模块中，cmdb只有业务下主机，完全没有业务下主机会报错
-func (c *cvm) CheckBizHostInRecycleModule(ctx context.Context, bizID int64,
+func (c *cvm) CheckBizHostInRecycleModule(kt *kit.Kit, bizID int64,
 	cloudIDs map[enumor.Vendor][]string) (map[string]bool, error) {
 
 	// 1. 获取cmdb主机id
-	cloudToHost, err := c.getCmdbHostId(ctx, bizID, cloudIDs)
+	cloudToHost, err := c.getCmdbHostId(kt, bizID, cloudIDs)
 	if err != nil {
+		logs.Errorf("fail to get cmdb host id, err: %v, bizID: %v, cloudIDs: %v, rid: %s",
+			err, bizID, cloudIDs, kt.Rid)
 		return nil, err
 	}
 	if cloudToHost == nil {
@@ -310,13 +375,14 @@ func (c *cvm) CheckBizHostInRecycleModule(ctx context.Context, bizID int64,
 		hostToCloud[hostID] = cloudID
 	}
 	//  2. 查找主机关系，获取模块信息
-	relation, err := c.esbClient.Cmdb().FindHostTopoRelation(ctx,
+	relation, err := c.esbClient.Cmdb().FindHostTopoRelation(kt.Ctx,
 		&cmdb.FindHostTopoRelationParams{
 			HostIDs: hostIDs, BizID: bizID,
 			Page: cmdb.BasePage{Limit: 200, Start: 0},
 		},
 	)
 	if err != nil {
+		logs.Errorf("fail to find cmdb topo rel, err: %v, hostIDs: %v, bizID:%v, rid: %s", err, hostIDs, bizID, kt.Rid)
 		return nil, err
 	}
 
@@ -326,7 +392,7 @@ func (c *cvm) CheckBizHostInRecycleModule(ctx context.Context, bizID int64,
 	// 3. 逐个查询主机模块信息
 	for _, rel := range relation.Data {
 		if _, ok := modRecyclable[rel.BkModuleID]; !ok {
-			module, err := c.esbClient.Cmdb().SearchModule(ctx, &cmdb.SearchModuleParams{
+			module, err := c.esbClient.Cmdb().SearchModule(kt.Ctx, &cmdb.SearchModuleParams{
 				BizID:  bizID,
 				Fields: []string{"default", "bk_module_id"},
 				Condition: map[string]interface{}{
@@ -334,22 +400,22 @@ func (c *cvm) CheckBizHostInRecycleModule(ctx context.Context, bizID int64,
 				},
 			})
 			if err != nil {
+				logs.Errorf("fail to search module in cmdb, err: %v, bk_module_id: %s, rid: %s", err, rel.BkModuleID)
 				return nil, err
 			}
 			if len(module.Info) != 1 {
-				logs.Errorf("module info count mismatch:%v", module)
+				logs.Errorf("module info count mismatch, got: %v, length should be 1", module)
 				return nil, errors.New("module info count mismatch")
 			}
 			// default 值为3 的是可回收模块
 			modRecyclable[rel.BkModuleID] = module.Info[0].Default == 3
 		}
-
 		hostRecyclable[hostToCloud[rel.HostID]] = modRecyclable[rel.BkModuleID]
 	}
 	return hostRecyclable, nil
 }
 
-func (c *cvm) getCmdbHostId(ctx context.Context, bizID int64,
+func (c *cvm) getCmdbHostId(kt *kit.Kit, bizID int64,
 	cloudIDs map[enumor.Vendor][]string) (map[string]int64,
 	error) {
 	// get cmdb host ids
@@ -379,13 +445,14 @@ func (c *cvm) getCmdbHostId(ctx context.Context, bizID int64,
 		Page:               cmdb.BasePage{Limit: 500},
 		HostPropertyFilter: &cmdb.QueryFilter{Rule: &cmdb.CombinedRule{Condition: "OR", Rules: rules}},
 	}
-	hosts, err := c.esbClient.Cmdb().ListBizHost(ctx, listParams)
+	hosts, err := c.esbClient.Cmdb().ListBizHost(kt.Ctx, listParams)
 	if err != nil {
+		logs.Errorf("fail to list cmdb biz host, err: %v, bizID:%v, rid: %s", err, bizID, kt.Rid)
 		return nil, err
 	}
 
 	if len(hosts.Info) == 0 {
-		logs.Errorf("no host in business(%d):%v", bizID, cloudIDs)
+		logs.Infof("no host in business(%d), cloudIDs: %v", bizID, cloudIDs)
 		return nil, nil
 	}
 
@@ -396,20 +463,10 @@ func (c *cvm) getCmdbHostId(ctx context.Context, bizID int64,
 	return hostIDs, nil
 }
 
-// RecyclePreCheck  回收预校验、包含主机状态和CC待回收模块检查，see Interface.RecyclePreCheck
-func (c *cvm) RecyclePreCheck(kt *kit.Kit, basicInfoMap map[string]types.CloudResourceBasicInfo) (
-
-	result *core.BatchOperateAllResult) {
+// RecyclePreCheck  回收预校验、包含主机状态和CC待回收模块检查
+func (c *cvm) RecyclePreCheck(kt *kit.Kit, basicInfoMap map[string]types.CloudResourceBasicInfo) error {
 
 	leftInfo := maps.Clone(basicInfoMap)
-	result = new(core.BatchOperateAllResult)
-	markFail := func(err error, ids ...string) {
-		for _, id := range ids {
-			delete(leftInfo, id)
-			result.Failed = append(result.Failed, core.FailedInfo{Error: err, ID: id})
-		}
-	}
-
 	bizHostsMap := make(map[int64][]string)
 	for id, hostInfo := range leftInfo {
 		if hostInfo.BkBizID > 0 {
@@ -422,20 +479,20 @@ func (c *cvm) RecyclePreCheck(kt *kit.Kit, basicInfoMap map[string]types.CloudRe
 	if len(bizHostsMap) > 0 {
 		notRecyclableIds, err := c.GetNotCmdbRecyclableHosts(kt, bizHostsMap)
 		if err != nil {
-			// 	获取信息失败，全部标记失败
-			for _, ids := range bizHostsMap {
-				markFail(err, ids...)
-			}
-			return result
+			logs.Errorf("fail to check cvm in cmdb recyclable module, err: %v, bizHostMap: %v, rid: %s",
+				err, bizHostsMap, kt.Rid)
+			return err
 		}
-		e := fmt.Errorf("host not belongs to recycle module in cmdb, host id: %v", notRecyclableIds)
-		markFail(e, notRecyclableIds...)
+		if len(notRecyclableIds) > 0 {
+			return fmt.Errorf("host not belongs to recycle module in cmdb, host id: %v", notRecyclableIds)
+		}
 	}
 
 	// 2. CVM尝试关机检查
-	checkResult := c.checkAndStopCvm(kt, leftInfo)
-	result.Failed = append(result.Failed, checkResult.Failed...)
-	result.Succeeded = converter.MapKeyToStringSlice(leftInfo)
-
-	return result
+	err := c.checkAndStopCvm(kt, leftInfo)
+	if err != nil {
+		logs.Errorf("fail to check or stop cvm, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	return nil
 }

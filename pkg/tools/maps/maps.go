@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package maps map操作工具类
 package maps
 
 import "golang.org/x/exp/maps"
@@ -24,4 +25,39 @@ import "golang.org/x/exp/maps"
 // Clone a new map, with same key value
 func Clone[K comparable, V any](m1 map[K]V) map[K]V {
 	return maps.Clone(m1)
+}
+
+// MapMerge merge map, return new map.
+func MapMerge[T any](m1 map[string]T, m2 map[string]T) map[string]T {
+	result := make(map[string]T, len(m1))
+
+	for key, value := range m1 {
+		result[key] = value
+	}
+
+	for key, value := range m2 {
+		result[key] = value
+	}
+
+	return result
+}
+
+// MapAppend append m2 to m1.
+func MapAppend[T any](m1 map[string]T, m2 map[string]T) map[string]T {
+	for key, value := range m2 {
+		m1[key] = value
+	}
+
+	return m1
+}
+
+// FilterByValue 通过给定的filter函数过滤出符合条件的子map
+func FilterByValue[K comparable, V any](m map[K]V, filter func(V) bool) map[K]V {
+	subMap := map[K]V{}
+	for k, v := range m {
+		if filter(v) {
+			subMap[k] = v
+		}
+	}
+	return subMap
 }
