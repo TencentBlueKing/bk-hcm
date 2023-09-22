@@ -35,6 +35,13 @@ import (
 type Discover interface {
 	Discover(cc.Name) ([]string, error)
 	Services() []cc.Name
+	Node
+}
+
+// Node defines the discovery's nodes related operations.
+type Node interface {
+	// GetServiceAllNodeKeys 获取当前服务全部节点Key
+	GetServiceAllNodeKeys(name cc.Name) ([]string, error)
 }
 
 // NewDiscovery create a service discovery instance.
@@ -77,6 +84,22 @@ type discovery struct {
 
 	ctx    context.Context
 	cancel context.CancelFunc
+}
+
+// GetServiceAllNodeKeys 获取当前服务全部节点Key
+func (d *discovery) GetServiceAllNodeKeys(name cc.Name) ([]string, error) {
+
+	resp, err := d.cli.Get(context.Background(), ServiceDiscoveryName(name), etcd3.WithPrefix())
+	if err != nil {
+		return nil, err
+	}
+
+	keys := make([]string, 0, len(resp.Kvs))
+	for _, one := range resp.Kvs {
+		keys = append(keys, string(one.Key))
+	}
+
+	return keys, nil
 }
 
 // Services returns the being discovered services

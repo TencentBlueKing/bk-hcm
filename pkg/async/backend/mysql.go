@@ -20,486 +20,265 @@
 package backend
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"reflect"
-	"strings"
 
-	"hcm/pkg/api/core"
-	"hcm/pkg/api/core/task"
-	taskserver "hcm/pkg/api/task-server"
-	"hcm/pkg/criteria/constant"
+	"hcm/pkg/async/backend/model"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/orm"
-	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
+	"hcm/pkg/dal/dao/types/async"
 	tableasync "hcm/pkg/dal/table/async"
-	tabletypes "hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
-	"hcm/pkg/logs"
-	"hcm/pkg/runtime/filter"
-	"hcm/pkg/tools/slice"
+	"hcm/pkg/tools/converter"
 
 	"github.com/jmoiron/sqlx"
 )
 
-// backend mysql backend
-type backend struct {
-	dao dao.Set
-}
-
-// NewBackend create backend instance
-func NewBackend(dao dao.Set) Backend {
-	return &backend{
+// NewMysql create mysql instance
+func NewMysql(dao dao.Set) Backend {
+	return &mysql{
 		dao: dao,
 	}
 }
 
-// ConsumeOnePendingFlow consume one pending flow
-func (b *backend) ConsumeOnePendingFlow(kt *kit.Kit) (*task.AsyncFlow, error) {
-	opt := &types.ListOption{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{
-					Field: "state",
-					Op:    filter.Equal.Factory(),
-					Value: enumor.FlowPending,
-				},
-			},
-		},
-		Page: &core.BasePage{
-			Count: false,
-			Start: 0,
-			Limit: 1,
-			Sort:  "created_at",
-			Order: core.Descending,
-		},
-	}
-	daoResp, err := b.dao.AsyncFlow().List(kt, opt)
-	if err != nil {
-		logs.Errorf("[async] [module-backends] list async flow err: %v, rid: %s", err, kt.Rid)
-		return nil, fmt.Errorf("list async flow failed, err: %v", err)
-	}
-
-	if len(daoResp.Details) != 1 {
-		if len(daoResp.Details) != 0 {
-			return nil, errors.New("get flow num wrong")
-		}
-		return nil, errors.New("flow num is 0")
-	}
-
-	if err := b.dao.AsyncFlow().UpdateByIDCAS(kt, daoResp.Details[0].ID, enumor.FlowRunning); err != nil {
-		logs.Errorf("[async] [module-backends] update flow state to running err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
-
-	return &task.AsyncFlow{
-		ID:        daoResp.Details[0].ID,
-		Name:      daoResp.Details[0].Name,
-		State:     daoResp.Details[0].State,
-		Memo:      daoResp.Details[0].Memo,
-		Reason:    daoResp.Details[0].Reason,
-		ShareData: daoResp.Details[0].ShareData,
-		Revision: core.Revision{
-			Creator:   daoResp.Details[0].Creator,
-			Reviser:   daoResp.Details[0].Reviser,
-			CreatedAt: daoResp.Details[0].CreatedAt.String(),
-			UpdatedAt: daoResp.Details[0].CreatedAt.String(),
-		},
-	}, nil
+// mysql mysql mysql
+type mysql struct {
+	dao dao.Set
 }
 
-// GetFlowsByCount get flows by count from backend
-func (b *backend) GetFlowsByCount(kt *kit.Kit, flowCount int) ([]task.AsyncFlow, error) {
-	opt := &types.ListOption{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{
-					Field: "state",
-					Op:    filter.Equal.Factory(),
-					Value: enumor.FlowPending,
-				},
-			},
-		},
-		Page: &core.BasePage{
-			Count: false,
-			Start: 0,
-			Limit: uint(flowCount),
-			Sort:  "created_at",
-			Order: core.Descending,
-		},
-	}
-	daoResp, err := b.dao.AsyncFlow().List(kt, opt)
-	if err != nil {
-		logs.Errorf("[async] [module-backends] list async flow err: %v, rid: %s", err, kt.Rid)
-		return nil, fmt.Errorf("list async flow failed, err: %v", err)
-	}
+// BatchUpdateFlowStateByCAS CAS批量更新流状态
+func (db *mysql) BatchUpdateFlowStateByCAS(kt *kit.Kit, infos []UpdateFlowInfo) error {
 
-	if len(daoResp.Details) != flowCount {
-		return nil, errors.New("input num not equal output num")
-	}
-
-	ret := make([]task.AsyncFlow, 0, len(daoResp.Details))
-	for _, one := range daoResp.Details {
-		tmp := task.AsyncFlow{
-			ID:        one.ID,
-			Name:      one.Name,
-			State:     one.State,
-			Memo:      one.Memo,
-			Reason:    one.Reason,
-			ShareData: one.ShareData,
-			Revision: core.Revision{
-				Creator:   one.Creator,
-				Reviser:   one.Reviser,
-				CreatedAt: one.CreatedAt.String(),
-				UpdatedAt: one.CreatedAt.String(),
-			},
+	for _, one := range infos {
+		if err := one.Validate(); err != nil {
+			return err
 		}
-		ret = append(ret, tmp)
 	}
 
-	return ret, nil
-}
-
-// AddFlow add flow into backend
-func (b *backend) AddFlow(kt *kit.Kit, req *taskserver.AddFlowReq) (string, error) {
-	flowIds, err := b.dao.Txn().AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		models := make([]tableasync.AsyncFlowTable, 0)
-		models = append(models, tableasync.AsyncFlowTable{
-			Name:      string(req.FlowName),
-			State:     enumor.FlowPending,
-			Reason:    constant.DefaultJsonValue,
-			ShareData: constant.DefaultJsonValue,
-			Creator:   kt.User,
-			Reviser:   kt.User,
-		})
-
-		ids, err := b.dao.AsyncFlow().BatchCreateWithTx(kt, txn, models)
-		if err != nil {
-			return nil, fmt.Errorf("create async flow failed, err: %v", err)
+	_, err := db.dao.Txn().AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		for _, one := range infos {
+			info := &typesasync.UpdateFlowInfo{
+				ID:     one.ID,
+				Source: one.Source,
+				Target: one.Target,
+				Reason: one.Reason,
+				Worker: one.Worker,
+			}
+			if err := db.dao.AsyncFlow().UpdateStateByCAS(kt, txn, info); err != nil {
+				return nil, err
+			}
 		}
 
-		return ids, nil
+		return nil, nil
 	})
 	if err != nil {
-		logs.Errorf("[async] [module-backends] create async flow err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// UpdateTaskStateByCAS CAS更新任务状态
+func (db *mysql) UpdateTaskStateByCAS(kt *kit.Kit, info *UpdateTaskInfo) error {
+	update := &typesasync.UpdateTaskInfo{
+		ID:     info.ID,
+		Source: info.Source,
+		Target: info.Target,
+		Reason: info.Reason,
+	}
+	return db.dao.AsyncFlowTask().UpdateStateByCAS(kt, update)
+}
+
+var _ Backend = new(mysql)
+
+// CreateFlow 创建任务流
+func (db *mysql) CreateFlow(kt *kit.Kit, flow *model.Flow) (string, error) {
+
+	result, err := db.dao.Txn().AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		// 创建任务流
+		md := &tableasync.AsyncFlowTable{
+			Name:      flow.Name,
+			State:     enumor.FlowPending,
+			Reason:    new(tableasync.Reason),
+			ShareData: flow.ShareData,
+			Memo:      flow.Memo,
+			Worker:    converter.ValToPtr(""),
+			Creator:   kt.User,
+			Reviser:   kt.User,
+		}
+		flowID, err := db.dao.AsyncFlow().Create(kt, txn, md)
+		if err != nil {
+			return nil, err
+		}
+
+		// 创建任务
+		tasks := flow.Tasks
+		mds := make([]tableasync.AsyncFlowTaskTable, 0, len(tasks))
+		for _, one := range tasks {
+			mds = append(mds, tableasync.AsyncFlowTaskTable{
+				FlowID:     flowID,
+				FlowName:   one.FlowName,
+				ActionID:   one.ActionID,
+				ActionName: one.ActionName,
+				Params:     one.Params,
+				CanRetry:   one.CanRetry,
+				DependOn:   one.DependOn,
+				State:      enumor.TaskPending,
+				Reason:     new(tableasync.Reason),
+				Creator:    kt.User,
+				Reviser:    kt.User,
+			})
+		}
+		if _, err = db.dao.AsyncFlowTask().BatchCreate(kt, mds); err != nil {
+			return nil, err
+		}
+
+		return flowID, nil
+	})
+	if err != nil {
 		return "", err
 	}
 
-	ids, ok := flowIds.([]string)
+	flowID, ok := result.(string)
 	if !ok {
-		return "", fmt.Errorf("create async flow but return id type not string, id type: %v",
-			reflect.TypeOf(flowIds).String())
+		return "", fmt.Errorf("return result not string type, type: %s", reflect.TypeOf(result).String())
 	}
 
-	if len(ids) <= 0 {
-		return "", errors.New("no flow id")
-	}
-
-	return ids[0], nil
+	return flowID, nil
 }
 
-// SetFlowChange set flow's change
-func (b *backend) SetFlowChange(kt *kit.Kit, flowID string, flowChange *FlowChange) error {
-	if flowChange == nil {
-		return errors.New("there is change to this flow")
-	}
+// BatchUpdateFlow 批量更新任务流
+func (db *mysql) BatchUpdateFlow(kt *kit.Kit, flows []model.Flow) error {
 
-	if err := flowChange.State.Validate(); err != nil {
-		return err
-	}
+	_, err := db.dao.Txn().AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		for _, one := range flows {
+			md := &tableasync.AsyncFlowTable{
+				State:     one.State,
+				Reason:    one.Reason,
+				ShareData: one.ShareData,
+				Memo:      one.Memo,
+				Worker:    one.Worker,
+				Reviser:   one.Reviser,
+			}
 
-	_, err := b.dao.Txn().AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		reasonJson, err := json.Marshal(&tableasync.AsyncFlowReason{
-			Message: flowChange.Reason,
-		})
-		if err != nil {
-			logs.Errorf("[async] [module-backends] marshal flow reason err: %v, rid: %s", err, kt.Rid)
-			return nil, err
-		}
-
-		if flowChange.ShareData == "" {
-			flowChange.ShareData = constant.DefaultJsonValue
-		}
-
-		model := &tableasync.AsyncFlowTable{
-			State:     flowChange.State,
-			ShareData: tabletypes.JsonField(flowChange.ShareData),
-			Reason:    tabletypes.JsonField(reasonJson),
-			Reviser:   kt.User,
-		}
-
-		if err := b.dao.AsyncFlow().UpdateByIDWithTx(kt, txn, flowID, model); err != nil {
-			logs.Errorf("[async] [module-backends] update flow err: %v, rid: %s", err, kt.Rid)
-			return nil, err
+			if err := db.dao.AsyncFlow().UpdateByIDWithTx(kt, txn, one.ID, md); err != nil {
+				return nil, err
+			}
 		}
 
 		return nil, nil
 	})
-
 	if err != nil {
-		logs.Errorf("[async] [module-backends] update flow err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
 	return nil
 }
 
-// GetFlowByID get flow by id
-func (b *backend) GetFlowByID(kt *kit.Kit, flowID string) (*task.AsyncFlow, error) {
-	opt := &types.ListOption{
-		Filter: tools.EqualExpression("id", flowID),
-		Page:   core.NewDefaultBasePage(),
-	}
-	daoResp, err := b.dao.AsyncFlow().List(kt, opt)
-	if err != nil {
-		logs.Errorf("[async] [module-backends] list async flow err: %v, rid: %s", err, kt.Rid)
-		return nil, fmt.Errorf("list async flow failed, err: %v", err)
-	}
-
-	if len(daoResp.Details) != 1 {
-		return nil, errors.New("get flow not one")
-	}
-
-	one := daoResp.Details[0]
-	return &task.AsyncFlow{
-		ID:        one.ID,
-		Name:      one.Name,
-		State:     one.State,
-		Memo:      one.Memo,
-		Reason:    one.Reason,
-		ShareData: one.ShareData,
-		Revision: core.Revision{
-			Creator:   one.Creator,
-			Reviser:   one.Reviser,
-			CreatedAt: one.CreatedAt.String(),
-			UpdatedAt: one.CreatedAt.String(),
-		},
-	}, nil
-}
-
-// GetFlows get flows from backend
-func (b *backend) GetFlows(kt *kit.Kit, req *taskserver.FlowListReq) ([]*task.AsyncFlow, error) {
-	if req == nil {
-		return nil, errors.New("req is null")
-	}
+// ListFlow 查询任务流
+func (db *mysql) ListFlow(kt *kit.Kit, input *ListInput) ([]model.Flow, error) {
 
 	opt := &types.ListOption{
-		Filter: req.Filter,
-		Page:   req.Page,
+		Fields: input.Fields,
+		Filter: input.Filter,
+		Page:   input.Page,
 	}
-	daoResp, err := b.dao.AsyncFlow().List(kt, opt)
+	list, err := db.dao.AsyncFlow().List(kt, opt)
 	if err != nil {
-		logs.Errorf("[async] [module-backends] list async flow err: %v, rid: %s", err, kt.Rid)
-		return nil, fmt.Errorf("list async flow failed, err: %v", err)
+		return nil, err
 	}
 
-	ret := make([]*task.AsyncFlow, 0, len(daoResp.Details))
-	for _, one := range daoResp.Details {
-		tmp := &task.AsyncFlow{
+	flows := make([]model.Flow, 0, len(list.Details))
+	for _, one := range list.Details {
+		flows = append(flows, model.Flow{
 			ID:        one.ID,
 			Name:      one.Name,
 			State:     one.State,
-			Memo:      one.Memo,
 			Reason:    one.Reason,
 			ShareData: one.ShareData,
-			Revision: core.Revision{
-				Creator:   one.Creator,
-				Reviser:   one.Reviser,
-				CreatedAt: one.CreatedAt.String(),
-				UpdatedAt: one.CreatedAt.String(),
-			},
-		}
-		ret = append(ret, tmp)
-	}
-
-	return ret, nil
-}
-
-// AddTasks add tasks into backend
-func (b *backend) AddTasks(kt *kit.Kit, tasks []task.AsyncFlowTask) error {
-	if len(tasks) <= 0 {
-		return fmt.Errorf("no task into addTasks")
-	}
-
-	_, err := b.dao.Txn().AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		models := make([]tableasync.AsyncFlowTaskTable, 0, len(tasks))
-		for _, task := range tasks {
-			if task.Params == "" {
-				task.Params = constant.DefaultJsonValue
-			}
-			if task.Reason == "" {
-				task.Reason = constant.DefaultJsonValue
-			}
-			if task.ShareData == "" {
-				task.ShareData = constant.DefaultJsonValue
-			}
-			models = append(models, tableasync.AsyncFlowTaskTable{
-				ID:          task.ID,
-				FlowID:      task.FlowID,
-				FlowName:    task.FlowName,
-				ActionName:  task.ActionName,
-				Params:      task.Params,
-				RetryCount:  task.RetryCount,
-				TimeoutSecs: task.TimeoutSecs,
-				DependOn:    strings.Join(task.DependOn, ","),
-				State:       task.State,
-				Memo:        task.Memo,
-				Reason:      task.Reason,
-				ShareData:   task.ShareData,
-				Creator:     kt.User,
-				Reviser:     kt.User,
-			})
-		}
-		err := b.dao.AsyncFlowTask().BatchCreateWithTx(kt, txn, models)
-		if err != nil {
-			return nil, fmt.Errorf("create async task failed, err: %v", err)
-		}
-
-		return nil, nil
-	})
-	if err != nil {
-		logs.Errorf("[async] [module-backends] create async task err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
-
-	return nil
-}
-
-// GetTasks get tasks from backend
-func (b *backend) GetTasks(kt *kit.Kit, taskIDs []string) ([]task.AsyncFlowTask, error) {
-	if len(taskIDs) <= 0 {
-		return nil, fmt.Errorf("no task id into getTasks")
-	}
-
-	allDaoRespDetails := make([]tableasync.AsyncFlowTaskTable, 0)
-	split := slice.Split(taskIDs, constant.BatchOperationMaxLimit)
-	for _, partIDs := range split {
-		opt := &types.ListOption{
-			Filter: tools.ContainersExpression("id", partIDs),
-			Page:   core.NewDefaultBasePage(),
-		}
-		daoResp, err := b.dao.AsyncFlowTask().List(kt, opt)
-		if err != nil {
-			logs.Errorf("[async] [module-backends] list async flow task err: %v, rid: %s", err, kt.Rid)
-			return nil, fmt.Errorf("list async flow task failed, err: %v", err)
-		}
-
-		allDaoRespDetails = append(allDaoRespDetails, daoResp.Details...)
-	}
-
-	ret := make([]task.AsyncFlowTask, 0, len(allDaoRespDetails))
-	for _, one := range allDaoRespDetails {
-		dependOn := strings.Split(one.DependOn, ",")
-		tmp := task.AsyncFlowTask{
-			ID:          one.ID,
-			FlowID:      one.FlowID,
-			FlowName:    one.FlowName,
-			ActionName:  one.ActionName,
-			Params:      one.Params,
-			RetryCount:  one.RetryCount,
-			TimeoutSecs: one.TimeoutSecs,
-			DependOn:    dependOn,
-			State:       one.State,
-			Memo:        one.Memo,
-			Reason:      one.Reason,
-			ShareData:   one.ShareData,
-		}
-		ret = append(ret, tmp)
-	}
-
-	return ret, nil
-}
-
-// GetTasksByFlowID get tasks by flow id from backend
-func (b *backend) GetTasksByFlowID(kt *kit.Kit, flowID string) ([]task.AsyncFlowTask, error) {
-	opt := &types.ListOption{
-		Filter: tools.EqualExpression("flow_id", flowID),
-		Page:   core.NewDefaultBasePage(),
-	}
-	daoResp, err := b.dao.AsyncFlowTask().List(kt, opt)
-	if err != nil {
-		logs.Errorf("[async] [module-backends] list async flow task err: %v, rid: %s", err, kt.Rid)
-		return nil, fmt.Errorf("list async flow task failed, err: %v", err)
-	}
-
-	if len(daoResp.Details) <= 0 {
-		return nil, errors.New("can not find tasks by flow id")
-	}
-
-	ret := make([]task.AsyncFlowTask, 0, len(daoResp.Details))
-	for _, one := range daoResp.Details {
-		dependOn := strings.Split(one.DependOn, ",")
-		if one.DependOn == "" {
-			dependOn = []string{}
-		}
-		tmp := task.AsyncFlowTask{
-			ID:          one.ID,
-			FlowID:      one.FlowID,
-			FlowName:    one.FlowName,
-			ActionName:  one.ActionName,
-			Params:      one.Params,
-			RetryCount:  one.RetryCount,
-			TimeoutSecs: one.TimeoutSecs,
-			DependOn:    dependOn,
-			State:       one.State,
-			Memo:        one.Memo,
-			Reason:      one.Reason,
-			ShareData:   one.ShareData,
-		}
-		ret = append(ret, tmp)
-	}
-
-	return ret, nil
-}
-
-// SetTaskChange set task's change
-func (b *backend) SetTaskChange(kt *kit.Kit, taskID string, taskChange *TaskChange) error {
-	if err := taskChange.State.Validate(); err != nil {
-		return err
-	}
-
-	_, err := b.dao.Txn().AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		reasonJson, err := json.Marshal(&tableasync.AsyncFlowTaskReason{
-			Message: taskChange.Reason,
+			Memo:      one.Memo,
+			Worker:    one.Worker,
+			Creator:   one.Creator,
+			Reviser:   one.Reviser,
+			CreatedAt: one.CreatedAt.String(),
+			UpdatedAt: one.UpdatedAt.String(),
 		})
-		if err != nil {
-			logs.Errorf("[async] [module-backends] marshal task reason err: %v, rid: %s", err, kt.Rid)
-			return nil, err
-		}
-
-		if taskChange.ShareData == "" {
-			taskChange.ShareData = constant.DefaultJsonValue
-		}
-
-		model := &tableasync.AsyncFlowTaskTable{
-			State:     taskChange.State,
-			Reason:    tabletypes.JsonField(reasonJson),
-			ShareData: tabletypes.JsonField(taskChange.ShareData),
-			Reviser:   kt.User,
-		}
-
-		if err := b.dao.AsyncFlowTask().UpdateByIDWithTx(kt, txn, taskID, model); err != nil {
-			logs.Errorf("[async] [module-backends] update task err: %v, rid: %s", err, kt.Rid)
-			return nil, err
-		}
-
-		return nil, nil
-	})
-
-	if err != nil {
-		logs.Errorf("[async] [module-backends] update task err: %v, rid: %s", err, kt.Rid)
-		return err
 	}
 
-	return nil
+	return flows, nil
 }
 
-// MakeTaskIDs make task ids
-func (b *backend) MakeTaskIDs(kt *kit.Kit, num int) ([]string, error) {
-	return b.dao.AsyncFlowTask().GenIDs(kt, num)
+// BatchCreateTask 批量创建任务
+func (db *mysql) BatchCreateTask(kt *kit.Kit, tasks []model.Task) ([]string, error) {
+
+	mds := make([]tableasync.AsyncFlowTaskTable, 0, len(tasks))
+	for _, one := range tasks {
+		mds = append(mds, tableasync.AsyncFlowTaskTable{
+			FlowID:     one.FlowID,
+			FlowName:   one.FlowName,
+			ActionID:   one.ActionID,
+			ActionName: one.ActionName,
+			Params:     one.Params,
+			CanRetry:   one.CanRetry,
+			DependOn:   one.DependOn,
+			State:      enumor.TaskPending,
+			Reason:     one.Reason,
+			Creator:    one.Creator,
+			Reviser:    one.Reviser,
+		})
+	}
+
+	return db.dao.AsyncFlowTask().BatchCreate(kt, mds)
+}
+
+// UpdateTask 更新任务
+func (db *mysql) UpdateTask(kt *kit.Kit, task *model.Task) error {
+
+	md := &tableasync.AsyncFlowTaskTable{
+		CanRetry: task.CanRetry,
+		DependOn: task.DependOn,
+		State:    task.State,
+		Reason:   task.Reason,
+		Reviser:  kt.User,
+	}
+
+	return db.dao.AsyncFlowTask().UpdateByID(kt, task.ID, md)
+}
+
+// ListTask 查询任务
+func (db *mysql) ListTask(kt *kit.Kit, input *ListInput) ([]model.Task, error) {
+
+	opt := &types.ListOption{
+		Fields: input.Fields,
+		Filter: input.Filter,
+		Page:   input.Page,
+	}
+	list, err := db.dao.AsyncFlowTask().List(kt, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	tasks := make([]model.Task, 0, len(list.Details))
+	for _, one := range list.Details {
+		tasks = append(tasks, model.Task{
+			ID:         one.ID,
+			FlowID:     one.FlowID,
+			FlowName:   one.FlowName,
+			ActionID:   one.ActionID,
+			ActionName: one.ActionName,
+			Params:     one.Params,
+			CanRetry:   one.CanRetry,
+			DependOn:   one.DependOn,
+			State:      one.State,
+			Reason:     one.Reason,
+			Creator:    one.Creator,
+			Reviser:    one.Reviser,
+			CreatedAt:  one.CreatedAt.String(),
+			UpdatedAt:  one.UpdatedAt.String(),
+		})
+	}
+
+	return tasks, nil
 }

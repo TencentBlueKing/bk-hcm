@@ -17,29 +17,35 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package typesasync
+// Package action ...
+package action
 
 import (
+	"hcm/pkg/async/action/run"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/criteria/validator"
-	tableasync "hcm/pkg/dal/table/async"
+	"hcm/pkg/tools/json"
 )
 
-// ListAsyncFlowTasks list async flow tasks.
-type ListAsyncFlowTasks struct {
-	Count   uint64                          `json:"count,omitempty"`
-	Details []tableasync.AsyncFlowTaskTable `json:"details,omitempty"`
+// Action 异步任务必须实现的运行接口。
+type Action interface {
+	// Name action name
+	Name() enumor.ActionName
+	// Run task run func
+	Run(kt run.ExecuteKit, params interface{}) error
 }
 
-// UpdateTaskInfo define update task info.
-type UpdateTaskInfo struct {
-	ID     string             `json:"id" validate:"required"`
-	Source enumor.TaskState   `json:"source" validate:"required"`
-	Target enumor.TaskState   `json:"target" validate:"required"`
-	Reason *tableasync.Reason `json:"reason,omitempty"`
+// RollbackAction Action如果支持回滚操作，实现该接口。会在Action执行失败、Action执行一半崩溃后，进行调用。
+// State: running -> rollback -> pending
+type RollbackAction interface {
+	Rollback(kt run.ExecuteKit, params interface{}) error
 }
 
-// Validate UpdateTaskInfo.
-func (info *UpdateTaskInfo) Validate() error {
-	return validator.Validate.Struct(info)
+// ParameterAction 如果任务运行需要依赖请求参数，需要通过该接口返回参数结构，会将任务实例中的参数内容解析到这个返回参数上。
+type ParameterAction interface {
+	ParameterNew() interface{}
+}
+
+// Unmarshal 用于将Action请求参数反序列化到 ParameterAction.ParameterNew() 的结构体上.
+func Unmarshal(str string, v interface{}) error {
+	return json.UnmarshalFromString(str, v)
 }

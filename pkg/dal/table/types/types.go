@@ -23,11 +23,40 @@ package types
 import (
 	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"fmt"
 )
 
 // JsonField 对应 db 的 json field 格式字段
 type JsonField string
+
+// Scan is used to decode raw message which is read from db into ShareData.
+func (f *JsonField) Scan(raw interface{}) error {
+	return Scan(raw, f)
+}
+
+// Value encode the ShareData to a json raw, so that it can be stored to db with json raw.
+func (f JsonField) Value() (driver.Value, error) {
+	return Value(f)
+}
+
+// MarshalJSON returns m as the JSON encoding of m.
+func (f JsonField) MarshalJSON() ([]byte, error) {
+	if len(f) == 0 {
+		return []byte("{}"), nil
+	}
+
+	return []byte(f), nil
+}
+
+// UnmarshalJSON sets *m to a copy of data.
+func (f *JsonField) UnmarshalJSON(data []byte) error {
+	if f == nil {
+		return errors.New("json.RawMessage: UnmarshalJSON on nil pointer")
+	}
+	*f = JsonField(data)
+	return nil
+}
 
 // NewJsonField create a json field from data.
 func NewJsonField(data any) (JsonField, error) {

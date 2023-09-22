@@ -17,29 +17,59 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package typesasync
+package test
 
 import (
+	"hcm/pkg/async/action"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/criteria/validator"
 	tableasync "hcm/pkg/dal/table/async"
 )
 
-// ListAsyncFlowTasks list async flow tasks.
-type ListAsyncFlowTasks struct {
-	Count   uint64                          `json:"count,omitempty"`
-	Details []tableasync.AsyncFlowTaskTable `json:"details,omitempty"`
-}
-
-// UpdateTaskInfo define update task info.
-type UpdateTaskInfo struct {
-	ID     string             `json:"id" validate:"required"`
-	Source enumor.TaskState   `json:"source" validate:"required"`
-	Target enumor.TaskState   `json:"target" validate:"required"`
-	Reason *tableasync.Reason `json:"reason,omitempty"`
-}
-
-// Validate UpdateTaskInfo.
-func (info *UpdateTaskInfo) Validate() error {
-	return validator.Validate.Struct(info)
+/*
+	SleepTpl: 睡眠任务流模版
+          |--> sleep |
+   sleep -|          | --> sleep
+          |--> sleep |
+*/
+var SleepTpl = action.FlowTemplate{
+	Name: enumor.TplSleepTest,
+	ShareData: &tableasync.ShareData{
+		Dict: map[string]string{
+			"name": "test",
+		},
+	},
+	Tasks: []action.TaskTemplate{
+		{
+			ActionID:   "1",
+			ActionName: enumor.ActionSleep,
+			NeedParam:  true,
+			ParamType:  SleepParams{},
+			CanRetry:   true,
+			DependOn:   nil,
+		},
+		{
+			ActionID:   "2",
+			ActionName: enumor.ActionSleep,
+			NeedParam:  true,
+			ParamType:  SleepParams{},
+			CanRetry:   true,
+			DependOn:   []string{"1"},
+		},
+		{
+			ActionID:   "3",
+			ActionName: enumor.ActionSleep,
+			NeedParam:  true,
+			ParamType:  SleepParams{},
+			CanRetry:   true,
+			DependOn:   []string{"1"},
+		},
+		{
+			ActionID:   "4",
+			ActionName: enumor.ActionSleep,
+			NeedParam:  true,
+			ParamType:  SleepParams{},
+			CanRetry:   true,
+			DependOn:   []string{"2", "3"},
+		},
+	},
 }

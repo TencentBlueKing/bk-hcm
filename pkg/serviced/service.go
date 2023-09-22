@@ -38,6 +38,7 @@ import (
 // Service defines all the service and discovery
 // related operations.
 type Service interface {
+	CurrentNodeKey() string
 	// Register the service
 	Register() error
 	// Deregister the service
@@ -85,6 +86,9 @@ func NewService(config cc.Service, opt ServiceOption) (Service, error) {
 }
 
 type service struct {
+	// key 当前节点的key
+	key string
+
 	cli    *etcd3.Client
 	svcOpt ServiceOption
 
@@ -110,6 +114,11 @@ type service struct {
 	cancel context.CancelFunc
 }
 
+// CurrentNodeKey return current node key.
+func (s *service) CurrentNodeKey() string {
+	return s.key
+}
+
 // Register the service
 func (s *service) Register() error {
 	if s.isRegistered() {
@@ -118,6 +127,7 @@ func (s *service) Register() error {
 
 	// get service key and value.
 	key := key(ServiceDiscoveryName(s.svcOpt.Name), s.svcOpt.Uid)
+	s.key = key
 	serverPath := url.URL{
 		Scheme: s.svcOpt.Scheme,
 		Host:   net.JoinHostPort(s.svcOpt.IP, strconv.Itoa(int(s.svcOpt.Port))),

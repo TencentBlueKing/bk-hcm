@@ -17,30 +17,25 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package taskserver
+package tableasync
 
 import (
-	"hcm/pkg/api/core"
-	"hcm/pkg/async/producer"
-	"hcm/pkg/criteria/validator"
-	"hcm/pkg/runtime/filter"
+	"database/sql/driver"
+
+	"hcm/pkg/dal/table/types"
 )
 
-// AddFlowReq ...
-type AddFlowReq producer.AddFlowOption
-
-// Validate ...
-func (req *AddFlowReq) Validate() error {
-	return validator.Validate.Struct(req)
+// Reason define async flow reason
+type Reason struct {
+	Message string `json:"message"`
 }
 
-// FlowListReq ...
-type FlowListReq struct {
-	Filter *filter.Expression `json:"filter" validate:"required"`
-	Page   *core.BasePage     `json:"page" validate:"required"`
+// Scan is used to decode raw message which is read from db into Reason.
+func (d *Reason) Scan(raw interface{}) error {
+	return types.Scan(raw, d)
 }
 
-// Validate ...
-func (req *FlowListReq) Validate() error {
-	return validator.Validate.Struct(req)
+// Value encode the Reason to a json raw, so that it can be stored to db with json raw.
+func (d Reason) Value() (driver.Value, error) {
+	return types.Value(d)
 }

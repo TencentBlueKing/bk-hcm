@@ -7,7 +7,7 @@ network:
   # defines tls related options.
   tls:
     # server should be accessed without verifying the TLS certificate.
-    insecureSkipVerify: 
+    insecureSkipVerify:
     # server requires TLS client certificate authentication.
     certFile:
     # server requires TLS client certificate authentication.
@@ -84,6 +84,31 @@ database:
     qps: 500
     burst: 500
 
+# defines async's related configuration.
+async:
+  # scheduler 公共组件，负责获取分配给当前节点的任务流，并解析成任务树后，派发当前要执行的任务给executor执行
+  scheduler:
+    # watchIntervalSec 查看是否有分配给当前节点处于Scheduled状态任务的周期
+    watchIntervalSec: 1
+    # workerNumber 负责解析当前节点的子节点，并派发子节点任务到executor执行的协程数量
+    workerNumber: 5
+  # executor 公共组件，负责执行异步任务
+  executor:
+    # workerNumber 负责处理异步任务的协程数量
+    workerNumber: 5
+    # taskExecTimeoutSec 异步任务执行超时时间，是整个异步任务执行流程的总时间，包括运行、回滚、重试。
+    taskExecTimeoutSec: 120
+  # dispatcher 主节点组件，负责派发任务
+  dispatcher:
+    # watchIntervalSec 查看是否有Pending状态任务的周期
+    watchIntervalSec: 1
+  # watchDog 主节点组件，负责异常任务修正（超时任务，任务处理节点已经挂掉的任务等）
+  watchDog:
+    # watchIntervalSec 查看是否有异常任务的周期
+    watchIntervalSec: 1
+    # taskTimeoutSec 判断任务执行超时时间
+    taskTimeoutSec: 300
+
 # defines log's related configuration
 log:
   # log storage directory.
@@ -102,13 +127,3 @@ log:
   alsoToStdErr: false
   # log level.
   verbosity: 0
-
- async:
-    # normalIntervalSec 异步任务框架定期执行间隔时间单位秒
-    normalIntervalSec: 10
-    # executorWorkerCnt 异步任务框架启动的任务执行器数量
-    executorWorkerCnt: 10
-    # parserWorkersCnt 异步任务框架启动的任务流解析器数量
-    parserWorkersCnt: 5
-    #flowScheduleTimeout 任务流调度的超时时间单位秒
-    flowScheduleTimeout: 15

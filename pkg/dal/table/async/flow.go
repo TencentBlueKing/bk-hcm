@@ -21,7 +21,6 @@ package tableasync
 
 import (
 	"errors"
-	"time"
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -38,9 +37,10 @@ var AsyncFlowTableColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "name", NamedC: "name", Type: enumor.String},
 	{Column: "state", NamedC: "state", Type: enumor.String},
-	{Column: "reason", NamedC: "reason", Type: enumor.String},
+	{Column: "reason", NamedC: "reason", Type: enumor.Json},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
-	{Column: "share_data", NamedC: "share_data", Type: enumor.String},
+	{Column: "share_data", NamedC: "share_data", Type: enumor.Json},
+	{Column: "worker", NamedC: "worker", Type: enumor.String},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
@@ -49,21 +49,17 @@ var AsyncFlowTableColumnDescriptor = utils.ColumnDescriptors{
 
 // AsyncFlowTable define async_flow table.
 type AsyncFlowTable struct {
-	ID        string           `db:"id" json:"id" validate:"lte=64"`
-	Name      string           `db:"name" json:"name"`
-	State     enumor.FlowState `db:"state" json:"state"`
-	Reason    types.JsonField  `db:"reason" json:"reason"`
-	ShareData types.JsonField  `db:"share_data" json:"share_data"`
-	Memo      string           `db:"memo" json:"memo"`
-	Creator   string           `db:"creator" json:"creator" validate:"lte=64"`
-	Reviser   string           `db:"reviser" json:"reviser" validate:"lte=64"`
-	CreatedAt time.Time        `db:"created_at" json:"created_at" validate:"excluded_unless"`
-	UpdatedAt time.Time        `db:"updated_at" json:"updated_at" validate:"excluded_unless"`
-}
-
-// AsyncFlowReason define async flow reason
-type AsyncFlowReason struct {
-	Message string `json:"message"`
+	ID        string             `db:"id" json:"id" validate:"lte=64"`
+	Name      enumor.FlowTplName `db:"name" json:"name"`
+	State     enumor.FlowState   `db:"state" json:"state"`
+	Reason    *Reason            `db:"reason" json:"reason"`
+	ShareData *ShareData         `db:"share_data" json:"share_data"`
+	Memo      string             `db:"memo" json:"memo"`
+	Worker    *string            `db:"worker" json:"worker"`
+	Creator   string             `db:"creator" json:"creator" validate:"lte=64"`
+	Reviser   string             `db:"reviser" json:"reviser" validate:"lte=64"`
+	CreatedAt types.Time         `db:"created_at" json:"created_at" validate:"excluded_unless"`
+	UpdatedAt types.Time         `db:"updated_at" json:"updated_at" validate:"excluded_unless"`
 }
 
 // TableName return async_flow table name.

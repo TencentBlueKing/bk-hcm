@@ -21,48 +21,55 @@
 package backend
 
 import (
-	"hcm/pkg/api/core/task"
-	taskserver "hcm/pkg/api/task-server"
-	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/api/core"
+	"hcm/pkg/async/backend/model"
+	"hcm/pkg/criteria/validator"
+	typesasync "hcm/pkg/dal/dao/types/async"
 	"hcm/pkg/kit"
 )
 
 // Backend - a common interface for all backends
 type Backend interface {
-	// ConsumeOnePendingFlow consume one pending flow
-	ConsumeOnePendingFlow(kt *kit.Kit) (*task.AsyncFlow, error)
-	// GetFlowsByCount get flows by count from backend
-	GetFlowsByCount(kt *kit.Kit, flowCount int) ([]task.AsyncFlow, error)
-	// AddFlow add flow into backend
-	AddFlow(kt *kit.Kit, req *taskserver.AddFlowReq) (string, error)
-	// SetFlowChange set flow's change
-	SetFlowChange(kt *kit.Kit, flowID string, flowChange *FlowChange) error
-	// GetFlowByID get flow by id
-	GetFlowByID(kt *kit.Kit, flowID string) (*task.AsyncFlow, error)
-	// GetFlows get flows from backend
-	GetFlows(kt *kit.Kit, req *taskserver.FlowListReq) ([]*task.AsyncFlow, error)
-	// AddTasks add tasks into backend
-	AddTasks(kt *kit.Kit, tasks []task.AsyncFlowTask) error
-	// GetTasks get tasks from backend
-	GetTasks(kt *kit.Kit, taskIDs []string) ([]task.AsyncFlowTask, error)
-	// GetTasksByFlowID get tasks by flow id from backend
-	GetTasksByFlowID(kt *kit.Kit, flowID string) ([]task.AsyncFlowTask, error)
-	// SetTaskChange set task's change
-	SetTaskChange(kt *kit.Kit, taskID string, taskChange *TaskChange) error
-	// MakeTaskIDs make task ids
-	MakeTaskIDs(kt *kit.Kit, num int) ([]string, error)
+	/*
+		Flow 相关接口
+	*/
+	// CreateFlow 创建任务流
+	CreateFlow(kt *kit.Kit, flow *model.Flow) (string, error)
+	// BatchUpdateFlow 批量更新任务流
+	BatchUpdateFlow(kt *kit.Kit, flows []model.Flow) error
+	// ListFlow 查询任务流
+	ListFlow(kt *kit.Kit, input *ListInput) ([]model.Flow, error)
+	// BatchUpdateFlowStateByCAS CAS批量更新Flow状态
+	BatchUpdateFlowStateByCAS(kt *kit.Kit, infos []UpdateFlowInfo) error
+
+	/*
+		Task 相关接口
+	*/
+	// BatchCreateTask 批量创建任务
+	BatchCreateTask(kt *kit.Kit, tasks []model.Task) ([]string, error)
+	// UpdateTask 更新任务
+	UpdateTask(kt *kit.Kit, task *model.Task) error
+	// UpdateTaskStateByCAS CAS更新任务状态
+	UpdateTaskStateByCAS(kt *kit.Kit, info *UpdateTaskInfo) error
+	// ListTask 查询任务
+	ListTask(kt *kit.Kit, input *ListInput) ([]model.Task, error)
 }
 
-// FlowChange 任务流的变化
-type FlowChange struct {
-	State     enumor.FlowState `json:"state"`
-	Reason    string           `json:"reason"`
-	ShareData string           `json:"share_date"`
+// ListInput 查询输入参数
+type ListInput core.ListReq
+
+// UpdateFlowInfo define update flow info.
+type UpdateFlowInfo typesasync.UpdateFlowInfo
+
+// Validate UpdateFlowInfo
+func (info *UpdateFlowInfo) Validate() error {
+	return validator.Validate.Struct(info)
 }
 
-// TaskChange 任务的变化
-type TaskChange struct {
-	State     enumor.TaskState `json:"state"`
-	Reason    string           `json:"reason"`
-	ShareData string           `json:"share_date"`
+// UpdateTaskInfo define update task info.
+type UpdateTaskInfo typesasync.UpdateTaskInfo
+
+// Validate UpdateTaskInfo
+func (info *UpdateTaskInfo) Validate() error {
+	return validator.Validate.Struct(info)
 }

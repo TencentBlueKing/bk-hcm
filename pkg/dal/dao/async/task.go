@@ -41,9 +41,11 @@ import (
 
 // AsyncFlowTask only used async flow task.
 type AsyncFlowTask interface {
+	BatchCreate(kt *kit.Kit, models []tableasync.AsyncFlowTaskTable) ([]string, error)
 	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []tableasync.AsyncFlowTaskTable) error
 	Update(kt *kit.Kit, expr *filter.Expression, model *tableasync.AsyncFlowTaskTable) error
-	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tableasync.AsyncFlowTaskTable) error
+	UpdateByID(kt *kit.Kit, id string, model *tableasync.AsyncFlowTaskTable) error
+	UpdateStateByCAS(kt *kit.Kit, info *typesasync.UpdateTaskInfo) error
 	List(kt *kit.Kit, opt *types.ListOption) (*typesasync.ListAsyncFlowTasks, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 	GenIDs(kt *kit.Kit, num int) ([]string, error)
@@ -55,6 +57,33 @@ var _ AsyncFlowTask = new(AsyncFlowTaskDao)
 type AsyncFlowTaskDao struct {
 	Orm   orm.Interface
 	IDGen idgenerator.IDGenInterface
+}
+
+// BatchCreate async flow task.
+func (dao *AsyncFlowTaskDao) BatchCreate(kt *kit.Kit, models []tableasync.AsyncFlowTaskTable) ([]string, error) {
+
+	ids, err := dao.IDGen.Batch(kt, table.AsyncFlowTable, len(models))
+	if err != nil {
+		return nil, err
+	}
+
+	for index := range models {
+		models[index].ID = ids[index]
+
+		if err := models[index].InsertValidate(); err != nil {
+			return nil, err
+		}
+	}
+
+	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.AsyncFlowTaskTable,
+		tableasync.AsyncFlowTaskColumns.ColumnExpr(), tableasync.AsyncFlowTaskColumns.ColonNameExpr())
+
+	if err = dao.Orm.Do().BulkInsert(kt.Ctx, sql, models); err != nil {
+		logs.Errorf("insert %s failed, err: %v, sql: %s, rid: %s", table.AsyncFlowTaskTable, err, sql, kt.Rid)
+		return nil, fmt.Errorf("insert %s failed, err: %v", table.AsyncFlowTaskTable, err)
+	}
+
+	return ids, nil
 }
 
 // Update async flow.
@@ -101,9 +130,42 @@ func (dao *AsyncFlowTaskDao) Update(kt *kit.Kit, expr *filter.Expression, model 
 	return nil
 }
 
-// UpdateByIDWithTx async flow task.
-func (dao *AsyncFlowTaskDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
-	model *tableasync.AsyncFlowTaskTable) error {
+// UpdateStateByCAS update async flow task state by cas.
+func (dao *AsyncFlowTaskDao) UpdateStateByCAS(kt *kit.Kit, info *typesasync.UpdateTaskInfo) error {
+
+	if err := info.Validate(); err != nil {
+		return err
+	}
+
+	setSql := "set state = :target"
+	if info.Reason != nil {
+		setSql += ",reason = :reason"
+	}
+
+	sql := fmt.Sprintf(`UPDATE %s %s where id = :id and state = :source`, table.AsyncFlowTaskTable, setSql)
+
+	values := map[string]interface{}{
+		"id":     info.ID,
+		"target": info.Target,
+		"source": info.Source,
+		"reason": info.Reason,
+	}
+	effect, err := dao.Orm.Do().Update(kt.Ctx, sql, values)
+	if err != nil {
+		logs.Errorf("update async flow task failed, err: %v, id: %s, sql: %s, rid: %v", err, info.ID, sql, kt.Rid)
+		return err
+	}
+
+	if effect == 0 {
+		return errf.Newf(errf.RecordNotUpdate, "task[%s: %s] update state to %s failed", info.ID, info.Source,
+			info.Target)
+	}
+
+	return nil
+}
+
+// UpdateByID async flow task.
+func (dao *AsyncFlowTaskDao) UpdateByID(kt *kit.Kit, id string, model *tableasync.AsyncFlowTaskTable) error {
 
 	if len(id) == 0 {
 		return errf.New(errf.InvalidParameter, "id is required")
@@ -122,10 +184,9 @@ func (dao *AsyncFlowTaskDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id strin
 	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, model.TableName(), setExpr)
 
 	toUpdate["id"] = id
-	_, err = dao.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
+	_, err = dao.Orm.Do().Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
-		logs.Errorf("update async flow task failed, err: %v, id: %s, sql: %s, rid: %v", err, id,
-			sql, kt.Rid)
+		logs.Errorf("update async flow task failed, err: %v, id: %s, sql: %s, rid: %v", err, id, sql, kt.Rid)
 		return err
 	}
 
