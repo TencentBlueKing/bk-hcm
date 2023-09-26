@@ -20,11 +20,9 @@
 package tcloud
 
 import (
-	"context"
-	"net/http"
-
 	instancetype "hcm/pkg/api/hc-service/instance-type"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -41,16 +39,16 @@ func NewInstanceTypeClient(client rest.ClientInterface) *InstanceTypeClient {
 }
 
 // List ...
-func (c *InstanceTypeClient) List(
-	ctx context.Context, h http.Header, request *instancetype.TCloudInstanceTypeListReq,
-) ([]*instancetype.TCloudInstanceTypeResp, error) {
+func (c *InstanceTypeClient) List(kt *kit.Kit, request *instancetype.TCloudInstanceTypeListReq) (
+	[]*instancetype.TCloudInstanceTypeResp, error) {
+
 	resp := new(instancetype.TCloudInstanceTypeListResp)
 
 	err := c.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/instance_types/list").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 

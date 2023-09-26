@@ -83,6 +83,7 @@ func (i *instanceTypeAdaptor) ListForAws(cts *rest.Contexts) (interface{}, error
 
 func toAwsInstanceTypeResp(it *typesinstancetype.AwsInstanceType) *proto.AwsInstanceTypeResp {
 	return &proto.AwsInstanceTypeResp{
+		InstanceFamily:     it.InstanceFamily,
 		InstanceType:       it.InstanceType,
 		GPU:                it.GPU,
 		CPU:                it.CPU,

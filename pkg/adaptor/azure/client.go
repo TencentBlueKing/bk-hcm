@@ -27,8 +27,7 @@ import (
 	"hcm/pkg/logs"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
-	armcomputev4 "github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v4"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v5"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
@@ -135,12 +134,13 @@ func (c *clientSet) diskClient() (*armcompute.DisksClient, error) {
 }
 
 // imageClient ...
-func (c *clientSet) imageClient() (*armcomputev4.VirtualMachineImagesClient, error) {
+func (c *clientSet) imageClient() (*armcompute.VirtualMachineImagesClient, error) {
 	credential, err := c.newClientSecretCredential()
 	if err != nil {
 		return nil, fmt.Errorf("init azure credential failed, err: %v", err)
 	}
-	return armcomputev4.NewVirtualMachineImagesClient(c.credential.CloudSubscriptionID, credential, nil)
+
+	return armcompute.NewVirtualMachineImagesClient(c.credential.CloudSubscriptionID, credential, nil)
 }
 
 // newClientSecretCredential ...
@@ -191,6 +191,21 @@ func (c *clientSet) virtualMachineSizeClient() (*armcompute.VirtualMachineSizesC
 	client, err := armcompute.NewVirtualMachineSizesClient(c.credential.CloudSubscriptionID, credential, nil)
 	if err != nil {
 		return nil, fmt.Errorf("init azure virtual machine sizes client failed, err: %v", err)
+	}
+
+	return client, nil
+}
+
+// clientFactory ...
+func (c *clientSet) clientFactory() (*armcompute.ClientFactory, error) {
+	credential, err := c.newClientSecretCredential()
+	if err != nil {
+		return nil, fmt.Errorf("init azure credential failed, err: %v", err)
+	}
+
+	client, err := armcompute.NewClientFactory(c.credential.CloudSubscriptionID, credential, nil)
+	if err != nil {
+		return nil, fmt.Errorf("init azure client factory failed, err: %v", err)
 	}
 
 	return client, nil

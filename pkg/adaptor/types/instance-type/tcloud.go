@@ -52,4 +52,5 @@ type TCloudInstanceType struct {
 	InstanceBandwidth float64
 	InstancePps       int64
 	Price             cvm.ItemPrice
+	TypeName          string
 }

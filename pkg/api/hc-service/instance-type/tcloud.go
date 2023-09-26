@@ -52,6 +52,7 @@ type TCloudInstanceTypeResp struct {
 	InstanceBandwidth float64       `json:"instance_bandwidth"`
 	InstancePps       int64         `json:"instance_pps"`
 	Price             cvm.ItemPrice `json:"Price"`
+	TypeName          string        `json:"type_name"`
 }
 
 // TCloudInstanceTypeListResp ...

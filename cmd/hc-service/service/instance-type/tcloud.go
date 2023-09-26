@@ -70,6 +70,7 @@ func (i *instanceTypeAdaptor) ListForTCloud(cts *rest.Contexts) (interface{}, er
 			InstanceBandwidth: one.InstanceBandwidth,
 			InstancePps:       one.InstancePps,
 			Price:             one.Price,
+			TypeName:          one.TypeName,
 		})
 	}
 

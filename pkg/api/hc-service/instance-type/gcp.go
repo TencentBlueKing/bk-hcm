@@ -37,12 +37,13 @@ func (req *GcpInstanceTypeListReq) Validate() error {
 
 // GcpInstanceTypeResp ...
 type GcpInstanceTypeResp struct {
-	InstanceType string `json:"instance_type"`
-	GPU          int64  `json:"gpu"`
-	CPU          int64  `json:"cpu"`
-	Memory       int64  `json:"memory"`
-	FPGA         int64  `json:"fpga"`
-	Kind         string `json:"kind"`
+	InstanceFamily string `json:"instance_family"`
+	InstanceType   string `json:"instance_type"`
+	GPU            int64  `json:"gpu"`
+	CPU            int64  `json:"cpu"`
+	Memory         int64  `json:"memory"`
+	FPGA           int64  `json:"fpga"`
+	Kind           string `json:"kind"`
 }
 
 // GcpInstanceTypeListResp ...

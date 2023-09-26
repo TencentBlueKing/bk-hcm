@@ -62,6 +62,7 @@ func (a *Aws) ListInstanceType(kt *kit.Kit, opt *typesinstancetype.AwsInstanceTy
 func toAwsInstanceType(info *ec2.InstanceTypeInfo) *typesinstancetype.AwsInstanceType {
 	it := new(typesinstancetype.AwsInstanceType)
 	it.InstanceType = converter.PtrToVal(info.InstanceType)
+	it.InstanceFamily = strings.Split(it.InstanceType, ".")[0]
 
 	if info.MemoryInfo != nil {
 		it.Memory = converter.PtrToVal(info.MemoryInfo.SizeInMiB)

@@ -30,7 +30,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v5"
 )
 
 // CreateDisk 创建云硬盘

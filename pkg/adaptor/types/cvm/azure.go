@@ -25,7 +25,7 @@ import (
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/converter"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v5"
 )
 
 // -------------------------- List --------------------------
