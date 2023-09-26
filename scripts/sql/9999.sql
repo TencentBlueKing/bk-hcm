@@ -12,6 +12,7 @@
         8. 新增任务流表
         9. 新增任务表
         10. EIP、硬盘、网络接口增加回收状态recycle_status字段
+        11. 镜像添加操作系统类型字段
 */
 start transaction;
 
@@ -37,9 +38,9 @@ create table if not exists `sub_account`
     `updated_at` timestamp    not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_vendor_cloud_id` (`vendor`, `cloud_id`)
-    ) engine = innodb
-    default charset = utf8mb4
-    collate utf8mb4_bin;
+) engine = innodb
+  default charset = utf8mb4
+  collate utf8mb4_bin;
 
 insert into id_generator(`resource`, `max_id`)
 values ('sub_account', '0');
@@ -55,7 +56,7 @@ alter table aws_region
     add column account_id varchar(64) not null;
 
 alter table aws_region
-drop index `idx_uk_region_id_status`;
+    drop index `idx_uk_region_id_status`;
 
 alter table aws_region
     add unique key `idx_uk_account_id_region_id` (`account_id`, `region_id`);
@@ -71,9 +72,9 @@ create table if not exists `user_collection`
     `created_at` timestamp   not null default current_timestamp,
     primary key (`id`),
     unique key `idx_uk_user_res_type_res_id` (`user`, `res_type`, `res_id`)
-    ) engine = innodb
-    default charset = utf8mb4
-    collate utf8mb4_bin;
+) engine = innodb
+  default charset = utf8mb4
+  collate utf8mb4_bin;
 
 insert into id_generator(`resource`, `max_id`)
 values ('user_collection', '0');
@@ -81,81 +82,90 @@ values ('user_collection', '0');
 -- 5. 添加账号同步详情表
 create table if not exists `account_sync_detail`
 (
-    `id`         varchar(64)  not null,
-    `vendor`     varchar(16)  not null,
-    `account_id` varchar(64)  not null,
-    `res_name`   varchar(64)  not null,
-    `res_status` varchar(64)  not null,
-    `res_end_time` varchar(64)  default '',
-    `res_failed_reason` json  default null,
-    `creator`    varchar(64)  not null,
-    `reviser`    varchar(64)  not null,
-    `created_at` timestamp    not null default current_timestamp,
-    `updated_at` timestamp    not null default current_timestamp on update current_timestamp,
+    `id`                varchar(64) not null,
+    `vendor`            varchar(16) not null,
+    `account_id`        varchar(64) not null,
+    `res_name`          varchar(64) not null,
+    `res_status`        varchar(64) not null,
+    `res_end_time`      varchar(64)          default '',
+    `res_failed_reason` json                 default null,
+    `creator`           varchar(64) not null,
+    `reviser`           varchar(64) not null,
+    `created_at`        timestamp   not null default current_timestamp,
+    `updated_at`        timestamp   not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_vendor_account_id_res_name` (`vendor`, `account_id`, `res_name`)
-    ) engine = innodb
-    default charset = utf8mb4
-    collate utf8mb4_bin;
+) engine = innodb
+  default charset = utf8mb4
+  collate utf8mb4_bin;
 
-insert into id_generator(`resource`, `max_id`) values ('account_sync_detail', '0');
+insert into id_generator(`resource`, `max_id`)
+values ('account_sync_detail', '0');
 
 -- 6. 资源下账号粒度管理回收保留时间
-alter table account add column recycle_reserve_time bigint default 0;
-alter table recycle_record add column recycled_at timestamp not null default current_timestamp;
+alter table account
+    add column recycle_reserve_time bigint default 0;
+alter table recycle_record
+    add column recycled_at timestamp not null default current_timestamp;
 
 -- 7. 子账号表新增账号类型字段
-alter table sub_account add column account_type varchar(64) default '';
+alter table sub_account
+    add column account_type varchar(64) default '';
 
 -- 8. 新增任务流表
 create table if not exists `async_flow`
 (
-    `id`                 varchar(64) not null,
-    `name`               varchar(64) not null,
-    `state`              varchar(16) not null,
-    `reason`             json default null,
-    `memo`               varchar(64) not null,
-    `creator`            varchar(64) not null,
-    `reviser`            varchar(64) not null,
-    `created_at`         timestamp not null default current_timestamp,
-    `updated_at`         timestamp not null default current_timestamp on update current_timestamp,
+    `id`         varchar(64) not null,
+    `name`       varchar(64) not null,
+    `state`      varchar(16) not null,
+    `reason`     json                 default null,
+    `memo`       varchar(64) not null,
+    `creator`    varchar(64) not null,
+    `reviser`    varchar(64) not null,
+    `created_at` timestamp   not null default current_timestamp,
+    `updated_at` timestamp   not null default current_timestamp on update current_timestamp,
     primary key (`id`)
-    ) engine = innodb
-    default charset = utf8mb4
-    collate utf8mb4_bin;
+) engine = innodb
+  default charset = utf8mb4
+  collate utf8mb4_bin;
 
-insert into id_generator(`resource`, `max_id`) values ('async_flow', '0');
+insert into id_generator(`resource`, `max_id`)
+values ('async_flow', '0');
 
 -- 9. 新增任务表
 create table if not exists `async_flow_task`
 (
-    `id`                 varchar(64) not null,
-    `flow_id`            varchar(64) not null,
-    `flow_name`          varchar(64) not null,
-    `action_name`        varchar(64) not null,
-    `params`             json default null,
-    `retry_count`        bigint not null,
-    `timeout_secs`       bigint not null,
-    `depend_on`          varchar(64) default '',
-    `state`              varchar(16) not null,
-    `memo`               varchar(64) not null,
-    `reason`             json default null,
-    `creator`            varchar(64) not null,
-    `reviser`            varchar(64) not null,
-    `created_at`         timestamp not null default current_timestamp,
-    `updated_at`         timestamp not null default current_timestamp on update current_timestamp,
+    `id`           varchar(64) not null,
+    `flow_id`      varchar(64) not null,
+    `flow_name`    varchar(64) not null,
+    `action_name`  varchar(64) not null,
+    `params`       json                 default null,
+    `retry_count`  bigint      not null,
+    `timeout_secs` bigint      not null,
+    `depend_on`    varchar(64)          default '',
+    `state`        varchar(16) not null,
+    `memo`         varchar(64) not null,
+    `reason`       json                 default null,
+    `creator`      varchar(64) not null,
+    `reviser`      varchar(64) not null,
+    `created_at`   timestamp   not null default current_timestamp,
+    `updated_at`   timestamp   not null default current_timestamp on update current_timestamp,
     primary key (`id`)
-    ) engine = innodb
-    default charset = utf8mb4
-    collate utf8mb4_bin;
+) engine = innodb
+  default charset = utf8mb4
+  collate utf8mb4_bin;
 
-insert into id_generator(`resource`, `max_id`) values ('async_flow_task', '0');
+insert into id_generator(`resource`, `max_id`)
+values ('async_flow_task', '0');
 
 -- 10. EIP、硬盘、网络接口增加回收状态recycle_status字段
-
 alter table eip
     add column `recycle_status` varchar(32) default '';
 alter table network_interface
     add column `recycle_status` varchar(32) default '';
+
+-- 11. 镜像添加操作系统类型字段
+alter table image
+    add column `os_type` varchar(32) default '';
 
 commit;

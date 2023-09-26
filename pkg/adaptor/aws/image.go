@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"hcm/pkg/adaptor/types/image"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
@@ -949,6 +950,7 @@ func (a *Aws) ListImage(kt *kit.Kit, opt *image.AwsImageListOption) (*image.AwsI
 			Architecture: *pImage.Architecture,
 			Platform:     converter.PtrToVal(pImage.PlatformDetails),
 			Type:         "public",
+			OsType:       image.GetOsTypeByPlatform(enumor.Aws, converter.PtrToVal(pImage.PlatformDetails)),
 		})
 	}
 	return &image.AwsImageListResult{Details: images, NextToken: resp.NextToken}, nil

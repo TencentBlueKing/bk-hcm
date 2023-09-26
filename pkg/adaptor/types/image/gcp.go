@@ -21,6 +21,7 @@ package image
 
 import (
 	"hcm/pkg/adaptor/types/core"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 )
 
@@ -53,13 +54,14 @@ type GcpImageListResult struct {
 
 // GcpImage ...
 type GcpImage struct {
-	SelfLink     string `json:"self_link"`
-	CloudID      string `json:"cloud_id"`
-	Name         string `json:"name"`
-	Architecture string `json:"architecture"`
-	Platform     string `json:"platform"`
-	State        string `json:"state"`
-	Type         string `json:"type"`
+	SelfLink     string        `json:"self_link"`
+	CloudID      string        `json:"cloud_id"`
+	Name         string        `json:"name"`
+	Architecture string        `json:"architecture"`
+	Platform     string        `json:"platform"`
+	State        string        `json:"state"`
+	Type         string        `json:"type"`
+	OsType       enumor.OsType `json:"os_type"`
 }
 
 // GetCloudID ...

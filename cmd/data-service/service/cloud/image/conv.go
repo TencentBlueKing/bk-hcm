@@ -22,54 +22,60 @@ package image
 import (
 	"fmt"
 
+	"hcm/pkg/api/core"
+	coreimage "hcm/pkg/api/core/cloud/image"
 	dataproto "hcm/pkg/api/data-service/cloud/image"
 	"hcm/pkg/dal/dao/types/cloud"
 	tablecloud "hcm/pkg/dal/table/cloud/image"
 	"hcm/pkg/tools/json"
 )
 
-func toProtoImageExtListResult[T dataproto.ImageExtensionResult](
-	data *cloud.ImageListResult,
-) (*dataproto.ImageExtListResult[T], error) {
-	details := make([]*dataproto.ImageExtResult[T], len(data.Details))
-	for indx, d := range data.Details {
+func toProtoImageExtListResult[T coreimage.Extension](data *cloud.ImageListResult) (
+	*dataproto.ListExtResult[T], error) {
+
+	details := make([]*coreimage.Image[T], len(data.Details))
+	for index, d := range data.Details {
 		extResult, err := toProtoImageExtResult[T](d)
 		if err != nil {
 			return nil, err
 		}
-		details[indx] = extResult
+		details[index] = extResult
 	}
-	return &dataproto.ImageExtListResult[T]{Count: data.Count, Details: details}, nil
+	return &dataproto.ListExtResult[T]{Count: data.Count, Details: details}, nil
 }
 
-func toProtoImageExtResult[T dataproto.ImageExtensionResult](
-	m *tablecloud.ImageModel,
-) (*dataproto.ImageExtResult[T], error) {
+func toProtoImageExtResult[T coreimage.Extension](m *tablecloud.ImageModel) (*coreimage.Image[T], error) {
+
 	extension := new(T)
 	err := json.UnmarshalFromString(string(m.Extension), extension)
 	if err != nil {
 		return nil, fmt.Errorf("UnmarshalFromString db extension failed, err: %v", err)
 	}
 
-	return &dataproto.ImageExtResult[T]{
-		ID:           m.ID,
-		Vendor:       m.Vendor,
-		CloudID:      m.CloudID,
-		Name:         m.Name,
-		Architecture: m.Architecture,
-		Platform:     m.Platform,
-		State:        m.State,
-		Type:         m.Type,
-		Extension:    extension,
-		Creator:      m.Creator,
-		Reviser:      m.Reviser,
-		CreatedAt:    m.CreatedAt.String(),
-		UpdatedAt:    m.UpdatedAt.String(),
+	return &coreimage.Image[T]{
+		BaseImage: coreimage.BaseImage{
+			ID:           m.ID,
+			Vendor:       m.Vendor,
+			CloudID:      m.CloudID,
+			Name:         m.Name,
+			Architecture: m.Architecture,
+			Platform:     m.Platform,
+			State:        m.State,
+			Type:         m.Type,
+			OsType:       m.OsType,
+			Revision: core.Revision{
+				Creator:   m.Creator,
+				Reviser:   m.Reviser,
+				CreatedAt: m.CreatedAt.String(),
+				UpdatedAt: m.UpdatedAt.String(),
+			},
+		},
+		Extension: extension,
 	}, nil
 }
 
-func toProtoImageResult(m *tablecloud.ImageModel) *dataproto.ImageResult {
-	return &dataproto.ImageResult{
+func toProtoImageResult(m *tablecloud.ImageModel) *coreimage.BaseImage {
+	return &coreimage.BaseImage{
 		ID:           m.ID,
 		Vendor:       m.Vendor,
 		CloudID:      m.CloudID,
@@ -78,9 +84,12 @@ func toProtoImageResult(m *tablecloud.ImageModel) *dataproto.ImageResult {
 		Platform:     m.Platform,
 		State:        m.State,
 		Type:         m.Type,
-		Creator:      m.Creator,
-		Reviser:      m.Reviser,
-		CreatedAt:    m.CreatedAt.String(),
-		UpdatedAt:    m.UpdatedAt.String(),
+		OsType:       m.OsType,
+		Revision: core.Revision{
+			Creator:   m.Creator,
+			Reviser:   m.Reviser,
+			CreatedAt: m.CreatedAt.String(),
+			UpdatedAt: m.UpdatedAt.String(),
+		},
 	}
 }

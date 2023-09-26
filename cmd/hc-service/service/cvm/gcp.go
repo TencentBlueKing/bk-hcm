@@ -28,8 +28,8 @@ import (
 	"hcm/pkg/adaptor/gcp"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/api/core"
+	coreimage "hcm/pkg/api/core/cloud/image"
 	dataproto "hcm/pkg/api/data-service/cloud"
-	imageproto "hcm/pkg/api/data-service/cloud/image"
 	protocvm "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -136,14 +136,14 @@ func (svc *cvmSvc) BatchCreateGcpCvm(cts *rest.Contexts) (interface{}, error) {
 }
 
 func (svc *cvmSvc) getImageByCloudID(kt *kit.Kit, cloudID string) (
-	*imageproto.ImageExtResult[imageproto.GcpImageExtensionResult], error) {
+	*coreimage.Image[coreimage.GcpExtension], error) {
 
-	req := &imageproto.ImageListReq{
+	req := &core.ListReq{
 		Filter: tools.EqualExpression("cloud_id", cloudID),
 		Page:   core.NewDefaultBasePage(),
 		Fields: nil,
 	}
-	images, err := svc.dataCli.Gcp.ListImage(kt.Ctx, kt.Header(), req)
+	images, err := svc.dataCli.Gcp.ListImage(kt, req)
 	if err != nil {
 		return nil, err
 	}

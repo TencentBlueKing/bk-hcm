@@ -29,8 +29,8 @@ import (
 	"hcm/pkg/adaptor/azure"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/api/core"
+	coreimage "hcm/pkg/api/core/cloud/image"
 	dataproto "hcm/pkg/api/data-service/cloud"
-	imageproto "hcm/pkg/api/data-service/cloud/image"
 	protocvm "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -64,7 +64,7 @@ func (svc *cvmSvc) BatchCreateAzureCvm(cts *rest.Contexts) (interface{}, error) 
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	listImageReq := &imageproto.ImageListReq{
+	listImageReq := &core.ListReq{
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
@@ -82,7 +82,7 @@ func (svc *cvmSvc) BatchCreateAzureCvm(cts *rest.Contexts) (interface{}, error) 
 		},
 		Page: core.NewDefaultBasePage(),
 	}
-	imageResult, err := svc.dataCli.Azure.ListImage(cts.Kit.Ctx, cts.Kit.Header(), listImageReq)
+	imageResult, err := svc.dataCli.Azure.ListImage(cts.Kit, listImageReq)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func (svc *cvmSvc) BatchCreateAzureCvm(cts *rest.Contexts) (interface{}, error) 
 }
 
 func (svc *cvmSvc) bulkCreateAzureCvm(kt *kit.Kit, req *protocvm.AzureBatchCreateReq,
-	image *imageproto.ImageExtResult[imageproto.AzureImageExtensionResult]) *protocvm.BatchCreateResult {
+	image *coreimage.Image[coreimage.AzureExtension]) *protocvm.BatchCreateResult {
 
 	result := &protocvm.BatchCreateResult{
 		SuccessCloudIDs: make([]string, 0),

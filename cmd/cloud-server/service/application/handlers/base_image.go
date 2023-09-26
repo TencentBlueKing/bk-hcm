@@ -22,15 +22,15 @@ package handlers
 import (
 	"fmt"
 
-	dataprotoimage "hcm/pkg/api/data-service/cloud/image"
+	"hcm/pkg/api/core"
+	coreimage "hcm/pkg/api/core/cloud/image"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/runtime/filter"
 )
 
 // GetImage 查询镜像
-func (a *BaseApplicationHandler) GetImage(
-	vendor enumor.Vendor, cloudImageID string,
-) (*dataprotoimage.ImageResult, error) {
+func (a *BaseApplicationHandler) GetImage(vendor enumor.Vendor, cloudImageID string) (
+	*coreimage.BaseImage, error) {
 	reqFilter := &filter.Expression{
 		Op: filter.And,
 		Rules: []filter.RuleFactory{
@@ -39,14 +39,11 @@ func (a *BaseApplicationHandler) GetImage(
 		},
 	}
 	// 查询
-	resp, err := a.Client.DataService().Global.ListImage(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
-		&dataprotoimage.ImageListReq{
-			Filter: reqFilter,
-			Page:   a.getPageOfOneLimit(),
-		},
-	)
+	listReq := &core.ListReq{
+		Filter: reqFilter,
+		Page:   a.getPageOfOneLimit(),
+	}
+	resp, err := a.Client.DataService().Global.ListImage(a.Cts.Kit, listReq)
 	if err != nil {
 		return nil, err
 	}

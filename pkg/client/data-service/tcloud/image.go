@@ -20,25 +20,24 @@
 package tcloud
 
 import (
-	"context"
-	"net/http"
-
 	"hcm/pkg/api/core"
+	coreimage "hcm/pkg/api/core/cloud/image"
 	dataproto "hcm/pkg/api/data-service/cloud/image"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 )
 
 // BatchCreateImage 批量创建公共镜像
-func (rc *restClient) BatchCreateImage(ctx context.Context,
-	h http.Header,
-	request *dataproto.ImageExtBatchCreateReq[dataproto.TCloudImageExtensionCreateReq],
-) (*core.BatchCreateResult, error) {
+func (rc *restClient) BatchCreateImage(kt *kit.Kit, request *dataproto.BatchCreateReq[coreimage.TCloudExtension]) (
+	*core.BatchCreateResult, error) {
+
 	resp := new(core.BatchCreateResp)
+
 	err := rc.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/images/batch/create").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
@@ -52,14 +51,17 @@ func (rc *restClient) BatchCreateImage(ctx context.Context,
 	return resp.Data, nil
 }
 
-// RetrieveImage 查询单个公共镜像详情
-func (rc *restClient) RetrieveImage(
-	ctx context.Context,
-	h http.Header,
-	imageID string,
-) (*dataproto.ImageExtResult[dataproto.TCloudImageExtensionResult], error) {
-	resp := new(dataproto.ImageExtRetrieveResp[dataproto.TCloudImageExtensionResult])
-	err := rc.client.Get().WithContext(ctx).SubResourcef("/images/%s", imageID).WithHeaders(h).Do().Into(resp)
+// GetImage 查询单个公共镜像详情
+func (rc *restClient) GetImage(kt *kit.Kit, imageID string) (*coreimage.Image[coreimage.TCloudExtension], error) {
+
+	resp := new(core.BaseResp[*coreimage.Image[coreimage.TCloudExtension]])
+
+	err := rc.client.Get().
+		WithContext(kt.Ctx).
+		SubResourcef("/images/%s", imageID).
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
 	if err != nil {
 		return nil, err
 	}
@@ -72,17 +74,16 @@ func (rc *restClient) RetrieveImage(
 }
 
 // ListImage 查询公共镜像列表(带 extension 字段)
-func (rc *restClient) ListImage(
-	ctx context.Context,
-	h http.Header,
-	request *dataproto.ImageListReq,
-) (*dataproto.ImageExtListResult[dataproto.TCloudImageExtensionResult], error) {
-	resp := new(dataproto.ImageExtListResp[dataproto.TCloudImageExtensionResult])
+func (rc *restClient) ListImage(kt *kit.Kit, request *core.ListReq) (
+	*dataproto.ListExtResult[coreimage.TCloudExtension], error) {
+
+	resp := new(core.BaseResp[*dataproto.ListExtResult[coreimage.TCloudExtension]])
+
 	err := rc.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/images/list").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
@@ -97,17 +98,15 @@ func (rc *restClient) ListImage(
 }
 
 // BatchUpdateImage 更新公共镜像(带 extension 字段)
-func (rc *restClient) BatchUpdateImage(
-	ctx context.Context,
-	h http.Header,
-	request *dataproto.ImageExtBatchUpdateReq[dataproto.TCloudImageExtensionUpdateReq],
-) (interface{}, error) {
+func (rc *restClient) BatchUpdateImage(kt *kit.Kit, request *dataproto.BatchUpdateReq[coreimage.TCloudExtension]) (
+	interface{}, error) {
+
 	resp := new(core.UpdateResp)
 	err := rc.client.Patch().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/images").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

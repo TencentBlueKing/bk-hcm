@@ -21,6 +21,7 @@ package image
 
 import (
 	"hcm/pkg/adaptor/types/core"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 )
 
@@ -32,14 +33,15 @@ type TCloudImageListResult struct {
 
 // TCloudImage ...
 type TCloudImage struct {
-	CloudID      string `json:"cloud_id"`
-	Name         string `json:"name"`
-	Architecture string `json:"architecture"`
-	Platform     string `json:"platform"`
-	State        string `json:"state"`
-	Type         string `json:"type"`
-	ImageSize    int64  `json:"image_size"`
-	ImageSource  string `json:"image_source"`
+	CloudID      string        `json:"cloud_id"`
+	Name         string        `json:"name"`
+	Architecture string        `json:"architecture"`
+	Platform     string        `json:"platform"`
+	State        string        `json:"state"`
+	Type         string        `json:"type"`
+	ImageSize    int64         `json:"image_size"`
+	ImageSource  string        `json:"image_source"`
+	OsType       enumor.OsType `json:"os_type"`
 }
 
 // GetCloudID ...

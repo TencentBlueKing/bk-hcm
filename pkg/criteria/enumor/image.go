@@ -17,17 +17,13 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package image
+package enumor
 
-// AwsImageExtensionCreateReq ...
-type AwsImageExtensionCreateReq struct {
-	Region string `json:"region" validate:"required"`
-}
+// OsType define os type
+type OsType string
 
-// AwsImageExtensionResult ...
-type AwsImageExtensionResult struct {
-	Region string `json:"region"`
-}
-
-// AwsImageExtensionUpdateReq ...
-type AwsImageExtensionUpdateReq struct{}
+const (
+	LinuxOsType   OsType = "Linux"
+	WindowsOsType OsType = "Windows"
+	OtherOsType   OsType = "Other"
+)

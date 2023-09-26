@@ -21,6 +21,7 @@ package image
 
 import (
 	adcore "hcm/pkg/adaptor/types/core"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 )
 
@@ -54,12 +55,13 @@ type AwsImageListResult struct {
 
 // AwsImage ...
 type AwsImage struct {
-	CloudID      string `json:"cloud_id"`
-	Name         string `json:"name"`
-	Architecture string `json:"architecture"`
-	Platform     string `json:"platform"`
-	State        string `json:"state"`
-	Type         string `json:"type"`
+	CloudID      string        `json:"cloud_id"`
+	Name         string        `json:"name"`
+	Architecture string        `json:"architecture"`
+	Platform     string        `json:"platform"`
+	State        string        `json:"state"`
+	Type         string        `json:"type"`
+	OsType       enumor.OsType `json:"os_type"`
 }
 
 // GetCloudID ...

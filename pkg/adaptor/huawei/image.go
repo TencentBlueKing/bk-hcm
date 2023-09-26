@@ -22,6 +22,7 @@ package huawei
 import (
 	"hcm/pkg/adaptor/types/image"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/tools/converter"
 
@@ -73,6 +74,7 @@ func (h *HuaWei) ListImage(kt *kit.Kit, opt *image.HuaWeiImageListOption) (*imag
 			Platform:     pImage.Platform.Value(),
 			State:        model.GetListImagesRequestStatusEnum().ACTIVE.Value(),
 			Type:         "public",
+			OsType:       image.GetOsTypeByPlatform(enumor.HuaWei, pImage.Platform.Value()),
 		})
 	}
 	return &image.HuaWeiImageListResult{Details: images}, nil
