@@ -1,0 +1,11 @@
+.selected-block-container {
+  display: flex;
+
+  .selected-block {
+    background: #f0f5ff;
+    border: 1px solid #a3c5fd;
+    border-radius: 2px;
+    padding: 9px 16px;
+    margin-right: 18.25px;
+  }
+}

@@ -9,7 +9,12 @@ import './index.scss';
 export interface IProp {
   columns: Array<Column>;
   searchData: Array<ISearchItem>;
-  searchUrl: string; // 如`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/sub_accounts/list`
+  searchUrl: string; // 如`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/sub_accounts/list`，
+  defaultFilterRules?: Array<{
+    op: QueryRuleOPEnum,
+    field: string,
+    value: string | number,
+  }>
 }
 
 export const useTable = (props: IProp) => {
@@ -46,6 +51,7 @@ export const useTable = (props: IProp) => {
       filter: {
         op: filter.op,
         rules: [
+          ...props.defaultFilterRules,
           ...filter.rules,
           ...customRules,
         ],

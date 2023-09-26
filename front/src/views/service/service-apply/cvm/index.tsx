@@ -30,6 +30,7 @@ import { useRouter } from 'vue-router';
 import VpcPreviewDialog from './children/VpcPreviewDialog';
 import SubnetPreviewDialog, { ISubnetItem } from './children/SubnetPreviewDialog';
 import http from '@/http';
+// import SelectCvmBlock from './children/SelectCvmBlock';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 const accountStore = useAccountStore();
@@ -365,6 +366,7 @@ export default defineComponent({
                     text
                     theme='primary'
                     disabled={!formData.cloud_vpc_id}
+                    style={{ marginRight: '-50px' }}
                     onClick={() => {
                       isVpcPreviewDialogShow.value = true;
                     }}>
@@ -398,6 +400,7 @@ export default defineComponent({
                   text
                   theme="primary"
                   disabled={!formData.cloud_subnet_id}
+                  style={{ marginRight: '-50px' }}
                   onClick={() => {
                     isSubnetPreviewDialogShow.value = true;
                     // if (!formData.cloud_subnet_id) return;
@@ -705,8 +708,8 @@ export default defineComponent({
           },
           {
             label: '申请单备注',
-            property: 'memo233333',
-            content: () => <Input type='textarea' placeholder='填写申请单备注' rows={3} maxlength={255} v-model={formData.memo}></Input>,
+            property: 'remark',
+            content: () => <Input type='textarea' placeholder='填写申请单备注' rows={3} maxlength={255} v-model={formData.remark}></Input>,
           },
         ],
       },

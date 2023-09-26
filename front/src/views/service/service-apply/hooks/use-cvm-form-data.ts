@@ -43,6 +43,7 @@ export interface ICvmBaseData {
   auto_renew?: boolean;
   required_count: number;
   memo: string;
+  remark: string; // 申请单备注
 }
 export interface ICvmFormData extends ICvmBaseData {
   purchase_duration: IPurchaseDuration;
@@ -124,6 +125,7 @@ export default (cond: Cond) => {
       },
       required_count: 1,
       memo: '',
+      remark: '',
     };
 
     return {

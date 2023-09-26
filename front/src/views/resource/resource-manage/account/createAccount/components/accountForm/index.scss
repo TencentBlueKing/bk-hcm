@@ -15,6 +15,12 @@
       padding: 16px 28px;
     }
 
+    .account-form-card-content-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      column-gap: 24px;
+    }
+
     .api-secret-header {
       display: flex;
       align-items: center;
@@ -28,12 +34,22 @@
       }
     }
 
-    .account-validate-btn {
-      margin: 0 28px;
-    }
 
-    .api-secret-selector {
-      width: 372px;
+
+    // .api-secret-selector {
+    //   width: 372px;
+    // }
+    .validate-btn-block {
+      display: flex;
+      align-items: center;
+      .account-validate-btn {
+        margin: 0 12px 0 28px;
+      }
+      .validate-icon {
+        margin-right: 8px;
+        height: 14px;
+        width: 14px;
+      }
     }
     
     .api-secret-footer {
