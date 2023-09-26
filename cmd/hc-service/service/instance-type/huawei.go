@@ -63,7 +63,7 @@ func (i *instanceTypeAdaptor) ListForHuaWei(cts *rest.Contexts) (interface{}, er
 			CPU:                     one.CPU,
 			Memory:                  one.Memory,
 			FPGA:                    one.FPGA,
-			Ecsperformancetype:      one.Ecsperformancetype,
+			InstanceFamily:          one.InstanceFamily,
 			Name:                    one.Name,
 			EcsinstanceArchitecture: one.EcsinstanceArchitecture,
 			Infocpuname:             one.Infocpuname,

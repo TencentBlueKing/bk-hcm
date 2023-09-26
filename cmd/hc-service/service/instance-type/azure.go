@@ -55,12 +55,13 @@ func (i *instanceTypeAdaptor) ListForAzure(cts *rest.Contexts) (interface{}, err
 	data := make([]*proto.AzureInstanceTypeResp, 0, len(its))
 	for _, one := range its {
 		data = append(data, &proto.AzureInstanceTypeResp{
-			InstanceType: one.InstanceType,
-			GPU:          one.GPU,
-			CPU:          one.CPU,
-			Memory:       one.Memory,
-			FPGA:         one.FPGA,
-			Architecture: one.Architecture,
+			InstanceFamily: one.InstanceFamily,
+			InstanceType:   one.InstanceType,
+			GPU:            one.GPU,
+			CPU:            one.CPU,
+			Memory:         one.Memory,
+			FPGA:           one.FPGA,
+			Architecture:   one.Architecture,
 		})
 	}
 

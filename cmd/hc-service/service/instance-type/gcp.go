@@ -80,11 +80,12 @@ func (i *instanceTypeAdaptor) ListForGcp(cts *rest.Contexts) (interface{}, error
 
 func toGcpInstanceTypeResp(it *typesinstancetype.GcpInstanceType) *proto.GcpInstanceTypeResp {
 	return &proto.GcpInstanceTypeResp{
-		InstanceType: it.InstanceType,
-		GPU:          it.GPU,
-		CPU:          it.CPU,
-		Memory:       it.Memory,
-		FPGA:         it.FPGA,
-		Kind:         it.Kind,
+		InstanceFamily: it.InstanceFamily,
+		InstanceType:   it.InstanceType,
+		GPU:            it.GPU,
+		CPU:            it.CPU,
+		Memory:         it.Memory,
+		FPGA:           it.FPGA,
+		Kind:           it.Kind,
 	}
 }

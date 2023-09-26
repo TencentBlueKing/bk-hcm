@@ -32,7 +32,7 @@ type HuaWeiInstanceType struct {
 	CPU                     int64
 	Memory                  int64
 	FPGA                    int64
-	Ecsperformancetype      string
+	InstanceFamily          string
 	Name                    string
 	EcsinstanceArchitecture string
 	Infocpuname             string

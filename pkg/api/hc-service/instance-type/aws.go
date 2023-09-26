@@ -37,6 +37,7 @@ func (req *AwsInstanceTypeListReq) Validate() error {
 
 // AwsInstanceTypeResp ...
 type AwsInstanceTypeResp struct {
+	InstanceFamily     string `json:"instance_family"`
 	InstanceType       string `json:"instance_type"`
 	GPU                int64  `json:"gpu"`
 	CPU                int64  `json:"cpu"`

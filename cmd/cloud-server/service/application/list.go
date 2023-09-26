@@ -62,12 +62,5 @@ func (a *applicationSvc) List(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// 去除content信息
-	if resp != nil && len(resp.Details) > 0 {
-		for _, detail := range resp.Details {
-			detail.Content = ""
-		}
-	}
-
 	return resp, nil
 }

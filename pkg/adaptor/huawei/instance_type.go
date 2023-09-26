@@ -101,7 +101,7 @@ func toHuaweiInstanceType(flavor model.Flavor, zone string) (*typesinstancetype.
 		InstanceType:            flavor.Id,
 		CPU:                     cpu,
 		Memory:                  int64(flavor.Ram),
-		Ecsperformancetype:      ecsperformancetype,
+		InstanceFamily:          ecsperformancetype,
 		Name:                    flavor.Name,
 		EcsinstanceArchitecture: ecsinstanceArchitecture,
 		Infocpuname:             infocpuname,

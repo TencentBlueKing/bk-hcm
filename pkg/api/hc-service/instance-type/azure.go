@@ -37,12 +37,13 @@ func (req *AzureInstanceTypeListReq) Validate() error {
 
 // AzureInstanceTypeResp ...
 type AzureInstanceTypeResp struct {
-	InstanceType string `json:"instance_type"`
-	GPU          int64  `json:"gpu"`
-	CPU          int64  `json:"cpu"`
-	Memory       int64  `json:"memory"`
-	FPGA         int64  `json:"fpga"`
-	Architecture string `json:"architecture"`
+	InstanceFamily string `json:"instance_family"`
+	InstanceType   string `json:"instance_type"`
+	GPU            int64  `json:"gpu"`
+	CPU            int64  `json:"cpu"`
+	Memory         int64  `json:"memory"`
+	FPGA           int64  `json:"fpga"`
+	Architecture   string `json:"architecture"`
 }
 
 // AzureInstanceTypeListResp ...

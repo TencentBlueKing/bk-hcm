@@ -17,37 +17,32 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package instancetype
+package tools
 
 import (
-	"hcm/pkg/criteria/validator"
-	"hcm/pkg/rest"
+	"bytes"
+	"fmt"
+	"strings"
+
+	"github.com/tidwall/gjson"
 )
 
-// GcpInstanceTypeListReq ...
-type GcpInstanceTypeListReq struct {
-	AccountID string `json:"account_id" validate:"required"`
-	Zone      string `json:"zone" validate:"required"`
-}
+// ApplicationRemoveSenseField 申请单据内容移除铭感信息，如主机密码等
+func ApplicationRemoveSenseField(content string) string {
+	buffer := bytes.Buffer{}
 
-// Validate ...
-func (req *GcpInstanceTypeListReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
+	m := gjson.Parse(content).Map()
+	for key, value := range m {
+		if strings.Contains(key, "password") {
+			continue
+		}
+		buffer.WriteString(fmt.Sprintf(`"%s":%s,`, key, value.Raw))
+	}
 
-// GcpInstanceTypeResp ...
-type GcpInstanceTypeResp struct {
-	InstanceFamily string `json:"instance_family"`
-	InstanceType   string `json:"instance_type"`
-	GPU            int64  `json:"gpu"`
-	CPU            int64  `json:"cpu"`
-	Memory         int64  `json:"memory"`
-	FPGA           int64  `json:"fpga"`
-	Kind           string `json:"kind"`
-}
+	ext := buffer.String()
+	if len(ext) == 0 {
+		return "{}"
+	}
 
-// GcpInstanceTypeListResp ...
-type GcpInstanceTypeListResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          []*GcpInstanceTypeResp `json:"data"`
+	return fmt.Sprintf("{%s}", ext[:len(ext)-1])
 }

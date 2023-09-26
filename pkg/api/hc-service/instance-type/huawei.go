@@ -43,7 +43,7 @@ type HuaWeiInstanceTypeResp struct {
 	CPU                     int64  `json:"cpu"`
 	Memory                  int64  `json:"memory"`
 	FPGA                    int64  `json:"fpga"`
-	Ecsperformancetype      string `json:"ecsperformancetype"`
+	InstanceFamily          string `json:"instance_family"`
 	Name                    string `json:"name"`
 	EcsinstanceArchitecture string `json:"ecsinstance_architecture"`
 	Infocpuname             string `josn:"infocpuname"`

@@ -76,6 +76,7 @@ func (t *TCloudImpl) ListInstanceType(kt *kit.Kit, opt *typesinstancetype.TCloud
 			InstanceBandwidth: converter.PtrToVal(it.InstanceBandwidth),
 			InstancePps:       converter.PtrToVal(it.InstancePps),
 			Price:             converter.PtrToVal(it.Price),
+			TypeName:          converter.PtrToVal(it.TypeName),
 		})
 	}
 

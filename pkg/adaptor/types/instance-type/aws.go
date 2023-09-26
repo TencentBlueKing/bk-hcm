@@ -37,6 +37,7 @@ type AwsInstanceTypeListResult struct {
 
 // AwsInstanceType ...
 type AwsInstanceType struct {
+	InstanceFamily     string
 	InstanceType       string
 	Memory             int64
 	CPU                int64
