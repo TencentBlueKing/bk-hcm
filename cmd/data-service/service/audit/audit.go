@@ -79,12 +79,6 @@ func (svc *svc) ListAudit(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// 考虑到性能问题，如果用户不指定查询审计详情，列表返回信息没有审计详情信息
-	if req.Fields == nil {
-		req.Fields = []string{"id", "res_id", "cloud_res_id", "res_name", "res_type", "action", "bk_biz_id", "vendor",
-			"account_id", "operator", "source", "rid", "app_code", "created_at"}
-	}
-
 	opt := &types.ListOption{
 		Filter: req.Filter,
 		Page:   req.Page,
@@ -112,6 +106,7 @@ func (svc *svc) ListAudit(cts *rest.Contexts) (interface{}, error) {
 			Vendor:     one.Vendor,
 			AccountID:  one.AccountID,
 			Operator:   one.Operator,
+			Detail:     one.Detail,
 			Source:     one.Source,
 			Rid:        one.Rid,
 			AppCode:    one.AppCode,

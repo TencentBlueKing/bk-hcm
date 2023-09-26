@@ -48,13 +48,12 @@ func (a *applicationSvc) Get(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return &proto.ApplicationGetResp{
-		ID:        application.ID,
-		SN:        application.SN,
-		Type:      application.Type,
-		Status:    application.Status,
-		Applicant: application.Applicant,
-		// 暂时不需要，需要时再将JSON解析成struct或map
-		Content:        "",
+		ID:             application.ID,
+		SN:             application.SN,
+		Type:           application.Type,
+		Status:         application.Status,
+		Applicant:      application.Applicant,
+		Content:        application.Content,
 		DeliveryDetail: application.DeliveryDetail,
 		Memo:           application.Memo,
 		Revision:       application.Revision,

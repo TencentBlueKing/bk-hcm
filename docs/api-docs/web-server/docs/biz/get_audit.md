@@ -94,8 +94,8 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/audits/{id}
 | source                  | string  | 请求来源（枚举值：api_call[API调用]、background_sync[后台同步]）                                                                     |
 | rid                     | string  | 请求ID                                                                                                                |
 | app_code                | string  | 应用代码                                                                                                                |
-| detail                  | object  | 审计详情                                                                                                                |
 | created_at              | string  | 创建时间，标准格式：2006-01-02T15:04:05Z                                                                                      |
+| detail                  | object  | 审计详情                                                                                                                |
 
 #### detail
 

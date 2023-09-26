@@ -184,7 +184,6 @@ func (svc *instanceTypeSvc) ListForAzure(cts *rest.Contexts, req *proto.ListReq)
 
 	familyMap := make(map[string]struct{})
 	for _, one := range list {
-		fmt.Println("[ ---- debug ---- ]: ", one)
 		familyMap[one.InstanceFamily] = struct{}{}
 	}
 
