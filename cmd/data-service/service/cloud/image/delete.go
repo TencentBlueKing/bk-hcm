@@ -30,7 +30,7 @@ import (
 
 // BatchDeleteImage ...
 func (svc *imageSvc) BatchDeleteImage(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataproto.ImageDeleteReq)
+	req := new(dataproto.DeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}

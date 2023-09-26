@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/image"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 
@@ -78,6 +79,7 @@ func (t *TCloudImpl) ListImage(kt *kit.Kit,
 			Type:         "public",
 			ImageSize:    *pImage.ImageSize,
 			ImageSource:  *pImage.ImageSource,
+			OsType:       image.GetOsTypeByPlatform(enumor.TCloud, *pImage.Platform),
 		})
 	}
 

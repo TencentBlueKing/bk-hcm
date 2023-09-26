@@ -22,8 +22,7 @@ package image
 import (
 	"fmt"
 
-	cloudproto "hcm/pkg/api/cloud-server/image"
-	dataproto "hcm/pkg/api/data-service/cloud/image"
+	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -41,15 +40,15 @@ func (svc *imageSvc) RetrieveImage(cts *rest.Contexts) (interface{}, error) {
 
 	switch vendor {
 	case enumor.TCloud:
-		return svc.client.DataService().TCloud.RetrieveImage(cts.Kit.Ctx, cts.Kit.Header(), imageID)
+		return svc.client.DataService().TCloud.GetImage(cts.Kit, imageID)
 	case enumor.Aws:
-		return svc.client.DataService().Aws.RetrieveImage(cts.Kit.Ctx, cts.Kit.Header(), imageID)
+		return svc.client.DataService().Aws.GetImage(cts.Kit, imageID)
 	case enumor.HuaWei:
-		return svc.client.DataService().HuaWei.RetrieveImage(cts.Kit.Ctx, cts.Kit.Header(), imageID)
+		return svc.client.DataService().HuaWei.GetImage(cts.Kit, imageID)
 	case enumor.Gcp:
-		return svc.client.DataService().Gcp.RetrieveImage(cts.Kit.Ctx, cts.Kit.Header(), imageID)
+		return svc.client.DataService().Gcp.GetImage(cts.Kit, imageID)
 	case enumor.Azure:
-		return svc.client.DataService().Azure.RetrieveImage(cts.Kit.Ctx, cts.Kit.Header(), imageID)
+		return svc.client.DataService().Azure.GetImage(cts.Kit, imageID)
 	default:
 		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", vendor))
 	}
@@ -57,7 +56,7 @@ func (svc *imageSvc) RetrieveImage(cts *rest.Contexts) (interface{}, error) {
 
 // ListImage ...
 func (svc *imageSvc) ListImage(cts *rest.Contexts) (interface{}, error) {
-	req := new(cloudproto.ImageListReq)
+	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -66,18 +65,10 @@ func (svc *imageSvc) ListImage(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	filterExp := req.Filter
 	if req.Filter == nil {
-		filterExp = tools.AllExpression()
+		req.Filter = tools.AllExpression()
 	}
-	return svc.client.DataService().Global.ListImage(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&dataproto.ImageListReq{
-			Filter: filterExp,
-			Page:   req.Page,
-		},
-	)
+	return svc.client.DataService().Global.ListImage(cts.Kit, req)
 }
 
 // ListImageExt ...
@@ -87,7 +78,7 @@ func (svc *imageSvc) ListImageExt(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.New(errf.InvalidParameter, "vendor is required")
 	}
 
-	req := new(cloudproto.ImageListReq)
+	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -96,23 +87,21 @@ func (svc *imageSvc) ListImageExt(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	filterExp := req.Filter
 	if req.Filter == nil {
-		filterExp = tools.AllExpression()
+		req.Filter = tools.AllExpression()
 	}
 
-	listReq := &dataproto.ImageListReq{Filter: filterExp, Page: req.Page}
 	switch vendor {
 	case enumor.TCloud:
-		return svc.client.DataService().TCloud.ListImage(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+		return svc.client.DataService().TCloud.ListImage(cts.Kit, req)
 	case enumor.Aws:
-		return svc.client.DataService().Aws.ListImage(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+		return svc.client.DataService().Aws.ListImage(cts.Kit, req)
 	case enumor.Gcp:
-		return svc.client.DataService().Gcp.ListImage(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+		return svc.client.DataService().Gcp.ListImage(cts.Kit, req)
 	case enumor.HuaWei:
-		return svc.client.DataService().HuaWei.ListImage(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+		return svc.client.DataService().HuaWei.ListImage(cts.Kit, req)
 	case enumor.Azure:
-		return svc.client.DataService().Azure.ListImage(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+		return svc.client.DataService().Azure.ListImage(cts.Kit, req)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
 	}

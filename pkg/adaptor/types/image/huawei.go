@@ -21,6 +21,7 @@ package image
 
 import (
 	"hcm/pkg/adaptor/types/core"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ims/v2/model"
@@ -56,12 +57,13 @@ type HuaWeiImageListResult struct {
 
 // HuaWeiImage ...
 type HuaWeiImage struct {
-	CloudID      string `json:"cloud_id"`
-	Name         string `json:"name"`
-	Architecture string `json:"architecture"`
-	Platform     string `json:"platform"`
-	State        string `json:"state"`
-	Type         string `json:"type"`
+	CloudID      string        `json:"cloud_id"`
+	Name         string        `json:"name"`
+	Architecture string        `json:"architecture"`
+	Platform     string        `json:"platform"`
+	State        string        `json:"state"`
+	Type         string        `json:"type"`
+	OsType       enumor.OsType `json:"os_type"`
 }
 
 // GetCloudID ...

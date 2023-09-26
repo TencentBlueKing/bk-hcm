@@ -24,6 +24,7 @@ import (
 
 	"hcm/pkg/adaptor/types/image"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
@@ -64,6 +65,7 @@ func (az *Azure) ListImage(kt *kit.Kit,
 				Sku:          converter.PtrToVal(sku.Name),
 				State:        "available",
 				Type:         "public",
+				OsType:       image.GetOsTypeByPlatform(enumor.Azure, opt.Offer),
 			})
 		}
 	}

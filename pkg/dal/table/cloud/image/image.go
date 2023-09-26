@@ -41,6 +41,7 @@ var ImageColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "state", NamedC: "state", Type: enumor.String},
 	{Column: "type", NamedC: "type", Type: enumor.String},
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
+	{Column: "os_type", NamedC: "os_type", Type: enumor.String},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
@@ -49,19 +50,20 @@ var ImageColumnDescriptor = utils.ColumnDescriptors{
 
 // ImageModel ...
 type ImageModel struct {
-	ID           string          `db:"id"`
-	Vendor       string          `db:"vendor"`
-	CloudID      string          `db:"cloud_id" validate:"max=512"`
-	Name         string          `db:"name"`
-	Architecture string          `db:"architecture"`
-	Platform     string          `db:"platform"`
-	State        string          `db:"state"`
-	Type         string          `db:"type"`
-	Extension    types.JsonField `db:"extension" validate:"-"`
-	Creator      string          `db:"creator"`
-	Reviser      string          `db:"reviser"`
-	CreatedAt    types.Time      `db:"created_at"`
-	UpdatedAt    types.Time      `db:"updated_at"`
+	ID           string          `db:"id" json:"id"`
+	Vendor       string          `db:"vendor" json:"vendor"`
+	CloudID      string          `db:"cloud_id" json:"cloud_id"`
+	Name         string          `db:"name" json:"name"`
+	Architecture string          `db:"architecture" json:"architecture"`
+	Platform     string          `db:"platform" json:"platform"`
+	State        string          `db:"state" json:"state"`
+	Type         string          `db:"type" json:"type"`
+	Extension    types.JsonField `db:"extension" json:"extension"`
+	OsType       enumor.OsType   `db:"os_type" json:"os_type"`
+	Creator      string          `db:"creator" json:"creator"`
+	Reviser      string          `db:"reviser" json:"reviser"`
+	CreatedAt    types.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt    types.Time      `db:"updated_at" json:"updated_at"`
 }
 
 // InsertValidate ...

@@ -25,8 +25,8 @@ import (
 	"hcm/cmd/hc-service/logics/res-sync/common"
 	typesimage "hcm/pkg/adaptor/types/image"
 	"hcm/pkg/api/core"
+	coreimage "hcm/pkg/api/core/cloud/image"
 	dataproto "hcm/pkg/api/data-service/cloud/image"
-	dateimage "hcm/pkg/api/data-service/cloud/image"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -67,7 +67,7 @@ func (cli *client) Image(kt *kit.Kit, params *SyncBaseParams, opt *SyncImageOpti
 		return new(SyncResult), nil
 	}
 
-	addSlice, updateMap, delCloudIDs := common.Diff[typesimage.TCloudImage, dateimage.ImageExtResult[dateimage.TCloudImageExtensionResult]](
+	addSlice, updateMap, delCloudIDs := common.Diff[typesimage.TCloudImage, coreimage.Image[coreimage.TCloudExtension]](
 		imageFromCloud, imageFromDB, isImageChange)
 
 	if len(delCloudIDs) > 0 {
@@ -92,23 +92,27 @@ func (cli *client) Image(kt *kit.Kit, params *SyncBaseParams, opt *SyncImageOpti
 }
 
 func (cli *client) updateImage(kt *kit.Kit, accountID string, region string,
-		updateMap map[string]typesimage.TCloudImage) error {
+	updateMap map[string]typesimage.TCloudImage) error {
 
 	if len(updateMap) <= 0 {
 		return fmt.Errorf("image updateMap is <= 0, not update")
 	}
 
-	var updateReq dataproto.ImageExtBatchUpdateReq[dataproto.TCloudImageExtensionUpdateReq]
+	items := make([]dataproto.ImageUpdate[coreimage.TCloudExtension], 0, len(updateMap))
 
 	for id, one := range updateMap {
-		image := &dataproto.ImageExtUpdateReq[dataproto.TCloudImageExtensionUpdateReq]{
-			ID:    id,
-			State: one.State,
+		image := dataproto.ImageUpdate[coreimage.TCloudExtension]{
+			ID:     id,
+			State:  one.State,
+			OsType: one.OsType,
 		}
-		updateReq = append(updateReq, image)
+		items = append(items, image)
 	}
 
-	if _, err := cli.dbCli.TCloud.BatchUpdateImage(kt.Ctx, kt.Header(), &updateReq); err != nil {
+	updateReq := &dataproto.BatchUpdateReq[coreimage.TCloudExtension]{
+		Items: items,
+	}
+	if _, err := cli.dbCli.TCloud.BatchUpdateImage(kt, updateReq); err != nil {
 		return err
 	}
 
@@ -119,32 +123,36 @@ func (cli *client) updateImage(kt *kit.Kit, accountID string, region string,
 }
 
 func (cli *client) createImage(kt *kit.Kit, accountID string, region string,
-		addSlice []typesimage.TCloudImage) error {
+	addSlice []typesimage.TCloudImage) error {
 
 	if len(addSlice) <= 0 {
 		return fmt.Errorf("cvm addSlice is <= 0, not create")
 	}
 
-	var createReq dataproto.ImageExtBatchCreateReq[dataproto.TCloudImageExtensionCreateReq]
+	items := make([]dataproto.ImageCreate[coreimage.TCloudExtension], 0, len(addSlice))
 
 	for _, one := range addSlice {
-		image := &dataproto.ImageExtCreateReq[dataproto.TCloudImageExtensionCreateReq]{
+		image := dataproto.ImageCreate[coreimage.TCloudExtension]{
 			CloudID:      one.CloudID,
 			Name:         one.Name,
 			Architecture: one.Architecture,
 			Platform:     one.Platform,
 			State:        one.State,
 			Type:         one.Type,
-			Extension: &dataproto.TCloudImageExtensionCreateReq{
+			OsType:       one.OsType,
+			Extension: &coreimage.TCloudExtension{
 				Region:      region,
 				ImageSource: one.ImageSource,
 				ImageSize:   uint64(one.ImageSize),
 			},
 		}
-		createReq = append(createReq, image)
+		items = append(items, image)
 	}
 
-	_, err := cli.dbCli.TCloud.BatchCreateImage(kt.Ctx, kt.Header(), &createReq)
+	createReq := &dataproto.BatchCreateReq[coreimage.TCloudExtension]{
+		Items: items,
+	}
+	_, err := cli.dbCli.TCloud.BatchCreateImage(kt, createReq)
 	if err != nil {
 		return err
 	}
@@ -176,10 +184,10 @@ func (cli *client) deleteImage(kt *kit.Kit, accountID string, region string, del
 		return fmt.Errorf("validate image not exist failed, before delete")
 	}
 
-	batchDeleteReq := &dataproto.ImageDeleteReq{
+	batchDeleteReq := &dataproto.DeleteReq{
 		Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
 	}
-	if _, err := cli.dbCli.Global.DeleteImage(kt.Ctx, kt.Header(), batchDeleteReq); err != nil {
+	if err = cli.dbCli.Global.DeleteImage(kt, batchDeleteReq); err != nil {
 		logs.Errorf("request dataservice delete tcloud image failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
@@ -210,13 +218,13 @@ func (cli *client) listImageFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]ty
 }
 
 func (cli *client) listImageFromDB(kt *kit.Kit, params *SyncBaseParams) (
-		[]dateimage.ImageExtResult[dateimage.TCloudImageExtensionResult], error) {
+	[]coreimage.Image[coreimage.TCloudExtension], error) {
 
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	req := &dataproto.ImageListReq{
+	req := &core.ListReq{
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
@@ -239,14 +247,14 @@ func (cli *client) listImageFromDB(kt *kit.Kit, params *SyncBaseParams) (
 		},
 		Page: core.NewDefaultBasePage(),
 	}
-	images, err := cli.dbCli.TCloud.ListImage(kt.Ctx, kt.Header(), req)
+	images, err := cli.dbCli.TCloud.ListImage(kt, req)
 	if err != nil {
 		logs.Errorf("[%s] list image from db failed, err: %v, account: %s, req: %v, rid: %s", enumor.TCloud, err,
 			params.AccountID, req, kt.Rid)
 		return nil, err
 	}
 
-	results := make([]dateimage.ImageExtResult[dateimage.TCloudImageExtensionResult], 0, len(images.Details))
+	results := make([]coreimage.Image[coreimage.TCloudExtension], 0, len(images.Details))
 	for _, one := range images.Details {
 		results = append(results, converter.PtrToVal(one))
 	}
@@ -255,13 +263,13 @@ func (cli *client) listImageFromDB(kt *kit.Kit, params *SyncBaseParams) (
 }
 
 func (cli *client) listImageFromDBForCvm(kt *kit.Kit, params *SyncBaseParams) (
-		[]*dataproto.ImageResult, error) {
+	[]*coreimage.BaseImage, error) {
 
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	req := &dataproto.ImageListReq{
+	req := &core.ListReq{
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
@@ -270,7 +278,7 @@ func (cli *client) listImageFromDBForCvm(kt *kit.Kit, params *SyncBaseParams) (
 		},
 		Page: core.NewDefaultBasePage(),
 	}
-	result, err := cli.dbCli.Global.ListImage(kt.Ctx, kt.Header(), req)
+	result, err := cli.dbCli.Global.ListImage(kt, req)
 	if err != nil {
 		logs.Errorf("[%s] list image from db failed, err: %v, account: %s, req: %v, rid: %s", enumor.TCloud, err,
 			params.AccountID, req, kt.Rid)
@@ -281,7 +289,7 @@ func (cli *client) listImageFromDBForCvm(kt *kit.Kit, params *SyncBaseParams) (
 }
 
 func (cli *client) RemoveImageDeleteFromCloud(kt *kit.Kit, accountID string, region string) error {
-	req := &dataproto.ImageListReq{
+	req := &core.ListReq{
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
@@ -295,7 +303,7 @@ func (cli *client) RemoveImageDeleteFromCloud(kt *kit.Kit, accountID string, reg
 		},
 	}
 	for {
-		resultFromDB, err := cli.dbCli.TCloud.ListImage(kt.Ctx, kt.Header(), req)
+		resultFromDB, err := cli.dbCli.TCloud.ListImage(kt, req)
 		if err != nil {
 			logs.Errorf("[%s] request dataservice to list image failed, err: %v, req: %v, rid: %s", enumor.TCloud,
 				err, req, kt.Rid)
@@ -344,9 +352,13 @@ func (cli *client) RemoveImageDeleteFromCloud(kt *kit.Kit, accountID string, reg
 	return nil
 }
 
-func isImageChange(cloud typesimage.TCloudImage, db dateimage.ImageExtResult[dateimage.TCloudImageExtensionResult]) bool {
+func isImageChange(cloud typesimage.TCloudImage, db coreimage.Image[coreimage.TCloudExtension]) bool {
 
 	if cloud.State != db.State {
+		return true
+	}
+
+	if cloud.OsType != db.OsType {
 		return true
 	}
 

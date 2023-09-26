@@ -31,7 +31,6 @@ import (
 	"hcm/cmd/cloud-server/service/sync/lock"
 	"hcm/cmd/cloud-server/service/sync/tcloud"
 	"hcm/pkg/api/core"
-	imagecloud "hcm/pkg/api/data-service/cloud/image"
 	protoregion "hcm/pkg/api/data-service/cloud/region"
 	protocloud "hcm/pkg/api/data-service/cloud/zone"
 	dataservice "hcm/pkg/client/data-service"
@@ -43,7 +42,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/tools/converter"
 
 	etcd3 "go.etcd.io/etcd/client/v3"
 )
@@ -97,52 +95,56 @@ func (a *accountSvc) SyncCloudResource(cts *rest.Contexts) (interface{}, error) 
 			}
 		}()
 
-		switch baseInfo.Vendor {
-		case enumor.TCloud:
-			opt := &tcloud.SyncAllResourceOption{
-				AccountID:          accountID,
-				SyncPublicResource: isNeedSyncPublicResFlag,
-			}
-			tcloud.SyncAllResource(cts.Kit, a.client, opt)
-
-		case enumor.Aws:
-			opt := &aws.SyncAllResourceOption{
-				AccountID:          accountID,
-				SyncPublicResource: isNeedSyncPublicResFlag,
-			}
-			aws.SyncAllResource(cts.Kit, a.client, opt)
-
-		case enumor.HuaWei:
-			opt := &huawei.SyncAllResourceOption{
-				AccountID:          accountID,
-				SyncPublicResource: isNeedSyncPublicResFlag,
-			}
-			huawei.SyncAllResource(cts.Kit, a.client, opt)
-
-		case enumor.Gcp:
-			opt := &gcp.SyncAllResourceOption{
-				AccountID:          accountID,
-				SyncPublicResource: isNeedSyncPublicResFlag,
-			}
-			gcp.SyncAllResource(cts.Kit, a.client, opt)
-
-		case enumor.Azure:
-			opt := &azure.SyncAllResourceOption{
-				AccountID:          accountID,
-				SyncPublicResource: isNeedSyncPublicResFlag,
-			}
-			azure.SyncAllResource(cts.Kit, a.client, opt)
-
-		default:
-			logs.Errorf("account: %s's vendor not support, vendor: %s", accountID, baseInfo.Vendor)
-		}
+		a.syncAllResource(cts.Kit, baseInfo.Vendor, accountID, isNeedSyncPublicResFlag)
 	}(leaseID)
 
 	return nil, nil
 }
 
+func (a *accountSvc) syncAllResource(kt *kit.Kit, vendor enumor.Vendor, accountID string, isNeed bool) {
+	switch vendor {
+	case enumor.TCloud:
+		opt := &tcloud.SyncAllResourceOption{
+			AccountID:          accountID,
+			SyncPublicResource: isNeed,
+		}
+		tcloud.SyncAllResource(kt, a.client, opt)
+
+	case enumor.Aws:
+		opt := &aws.SyncAllResourceOption{
+			AccountID:          accountID,
+			SyncPublicResource: isNeed,
+		}
+		aws.SyncAllResource(kt, a.client, opt)
+
+	case enumor.HuaWei:
+		opt := &huawei.SyncAllResourceOption{
+			AccountID:          accountID,
+			SyncPublicResource: isNeed,
+		}
+		huawei.SyncAllResource(kt, a.client, opt)
+
+	case enumor.Gcp:
+		opt := &gcp.SyncAllResourceOption{
+			AccountID:          accountID,
+			SyncPublicResource: isNeed,
+		}
+		gcp.SyncAllResource(kt, a.client, opt)
+
+	case enumor.Azure:
+		opt := &azure.SyncAllResourceOption{
+			AccountID:          accountID,
+			SyncPublicResource: isNeed,
+		}
+		azure.SyncAllResource(kt, a.client, opt)
+
+	default:
+		logs.Errorf("account: %s's vendor not support, vendor: %s", accountID, vendor)
+	}
+}
+
 func isNeedSyncPublicResource(kt *kit.Kit, dataCli *dataservice.Client, vendor enumor.Vendor) (
-	bool, error) {
+		bool, error) {
 
 	need, err := isNeedSyncRegion(kt, dataCli, vendor)
 	if err != nil {
@@ -176,16 +178,16 @@ func isNeedSyncPublicResource(kt *kit.Kit, dataCli *dataservice.Client, vendor e
 
 	switch vendor {
 	case enumor.Aws, enumor.TCloud, enumor.HuaWei, enumor.Gcp, enumor.Azure:
-		listZoneReq := &imagecloud.ImageListReq{
+		listZoneReq := &core.ListReq{
 			Filter: tools.EqualExpression("vendor", vendor),
 			Page:   core.NewCountPage(),
 		}
-		result, err := dataCli.Global.ListImage(kt.Ctx, kt.Header(), listZoneReq)
+		result, err := dataCli.Global.ListImage(kt, listZoneReq)
 		if err != nil {
 			return false, err
 		}
 
-		if converter.PtrToVal(result.Count) == 0 {
+		if result.Count == 0 {
 			return true, nil
 		}
 

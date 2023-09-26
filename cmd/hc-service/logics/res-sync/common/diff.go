@@ -37,6 +37,7 @@ import (
 	typeszone "hcm/pkg/adaptor/types/zone"
 	cloudcore "hcm/pkg/api/core/cloud"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
+	coreimage "hcm/pkg/api/core/cloud/image"
 	corecloudni "hcm/pkg/api/core/cloud/network-interface"
 	coreregion "hcm/pkg/api/core/cloud/region"
 	coreresourcegroup "hcm/pkg/api/core/cloud/resource-group"
@@ -45,7 +46,6 @@ import (
 	corezone "hcm/pkg/api/core/cloud/zone"
 	"hcm/pkg/api/data-service/cloud/disk"
 	dataeip "hcm/pkg/api/data-service/cloud/eip"
-	dateimage "hcm/pkg/api/data-service/cloud/image"
 )
 
 type CloudResType interface {
@@ -147,11 +147,11 @@ type DBResType interface {
 
 		corezone.BaseZone |
 
-		dateimage.ImageExtResult[dateimage.TCloudImageExtensionResult] |
-		dateimage.ImageExtResult[dateimage.HuaWeiImageExtensionResult] |
-		dateimage.ImageExtResult[dateimage.AwsImageExtensionResult] |
-		dateimage.ImageExtResult[dateimage.AzureImageExtensionResult] |
-		dateimage.ImageExtResult[dateimage.GcpImageExtensionResult] |
+		coreimage.Image[coreimage.TCloudExtension] |
+		coreimage.Image[coreimage.HuaWeiExtension] |
+		coreimage.Image[coreimage.AwsExtension] |
+		coreimage.Image[coreimage.AzureExtension] |
+		coreimage.Image[coreimage.GcpExtension] |
 
 		cloudcore.HuaWeiSecurityGroupRule |
 		cloudcore.AwsSecurityGroupRule |

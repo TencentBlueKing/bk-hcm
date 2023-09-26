@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	coreimage "hcm/pkg/api/core/cloud/image"
 	dataproto "hcm/pkg/api/data-service/cloud/image"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -32,8 +33,8 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
-// RetrieveImageExt ...
-func (svc *imageSvc) RetrieveImageExt(cts *rest.Contexts) (interface{}, error) {
+// GetImageExt ...
+func (svc *imageSvc) GetImageExt(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -60,15 +61,15 @@ func (svc *imageSvc) RetrieveImageExt(cts *rest.Contexts) (interface{}, error) {
 	imageData := data.Details[0]
 	switch vendor {
 	case enumor.TCloud:
-		return toProtoImageExtResult[dataproto.TCloudImageExtensionResult](imageData)
+		return toProtoImageExtResult[coreimage.TCloudExtension](imageData)
 	case enumor.Aws:
-		return toProtoImageExtResult[dataproto.AwsImageExtensionResult](imageData)
+		return toProtoImageExtResult[coreimage.AwsExtension](imageData)
 	case enumor.Gcp:
-		return toProtoImageExtResult[dataproto.GcpImageExtensionResult](imageData)
+		return toProtoImageExtResult[coreimage.GcpExtension](imageData)
 	case enumor.Azure:
-		return toProtoImageExtResult[dataproto.AzureImageExtensionResult](imageData)
+		return toProtoImageExtResult[coreimage.AzureExtension](imageData)
 	case enumor.HuaWei:
-		return toProtoImageExtResult[dataproto.HuaWeiImageExtensionResult](imageData)
+		return toProtoImageExtResult[coreimage.HuaWeiExtension](imageData)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
 	}
@@ -76,7 +77,7 @@ func (svc *imageSvc) RetrieveImageExt(cts *rest.Contexts) (interface{}, error) {
 
 // ListImage ...
 func (svc *imageSvc) ListImage(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataproto.ImageListReq)
+	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -95,12 +96,12 @@ func (svc *imageSvc) ListImage(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	details := make([]*dataproto.ImageResult, len(data.Details))
+	details := make([]*coreimage.BaseImage, len(data.Details))
 	for indx, d := range data.Details {
 		details[indx] = toProtoImageResult(d)
 	}
 
-	return &dataproto.ImageListResult{Details: details, Count: data.Count}, nil
+	return &dataproto.ListResult{Details: details, Count: data.Count}, nil
 }
 
 // ListImageExt ...
@@ -110,7 +111,7 @@ func (svc *imageSvc) ListImageExt(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	req := new(dataproto.ImageListReq)
+	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -132,15 +133,15 @@ func (svc *imageSvc) ListImageExt(cts *rest.Contexts) (interface{}, error) {
 
 	switch vendor {
 	case enumor.TCloud:
-		return toProtoImageExtListResult[dataproto.TCloudImageExtensionResult](data)
+		return toProtoImageExtListResult[coreimage.TCloudExtension](data)
 	case enumor.Aws:
-		return toProtoImageExtListResult[dataproto.AwsImageExtensionResult](data)
+		return toProtoImageExtListResult[coreimage.AwsExtension](data)
 	case enumor.Gcp:
-		return toProtoImageExtListResult[dataproto.GcpImageExtensionResult](data)
+		return toProtoImageExtListResult[coreimage.GcpExtension](data)
 	case enumor.HuaWei:
-		return toProtoImageExtListResult[dataproto.HuaWeiImageExtensionResult](data)
+		return toProtoImageExtListResult[coreimage.HuaWeiExtension](data)
 	case enumor.Azure:
-		return toProtoImageExtListResult[dataproto.AzureImageExtensionResult](data)
+		return toProtoImageExtListResult[coreimage.AzureExtension](data)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
 	}

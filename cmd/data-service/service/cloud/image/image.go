@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package image ...
 package image
 
 import (
@@ -35,26 +36,11 @@ func InitService(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add(
-		"BatchCreateImageExt",
-		http.MethodPost,
-		"/vendors/{vendor}/images/batch/create",
-		pSvc.BatchCreateImageExt,
-	)
-	h.Add(
-		"RetrieveImageExt",
-		http.MethodGet,
-		"/vendors/{vendor}/images/{id}",
-		pSvc.RetrieveImageExt,
-	)
+	h.Add("BatchCreateImageExt", http.MethodPost, "/vendors/{vendor}/images/batch/create", pSvc.BatchCreateImageExt)
+	h.Add("GetImageExt", http.MethodGet, "/vendors/{vendor}/images/{id}", pSvc.GetImageExt)
 	h.Add("ListImage", http.MethodPost, "/images/list", pSvc.ListImage)
 	h.Add("ListImageExt", http.MethodPost, "/vendors/{vendor}/images/list", pSvc.ListImageExt)
-	h.Add(
-		"BatchUpdateImageExt",
-		http.MethodPatch,
-		"/vendors/{vendor}/images",
-		pSvc.BatchUpdateImageExt,
-	)
+	h.Add("BatchUpdateImageExt", http.MethodPatch, "/vendors/{vendor}/images", pSvc.BatchUpdateImageExt)
 	h.Add("BatchDeleteImage", http.MethodDelete, "/images/batch", pSvc.BatchDeleteImage)
 
 	h.Load(cap.WebService)

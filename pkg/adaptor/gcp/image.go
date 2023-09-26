@@ -26,6 +26,7 @@ import (
 
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/adaptor/types/image"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
@@ -91,6 +92,7 @@ func (g *Gcp) ListImage(kt *kit.Kit,
 			Architecture: pImage.Architecture,
 			State:        pImage.Status,
 			Type:         "public",
+			OsType:       image.GetOsTypeByPlatform(enumor.Gcp, platform),
 		})
 	}
 
