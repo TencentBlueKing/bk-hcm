@@ -41,7 +41,7 @@ func NewRecycleRecordClient(client rest.ClientInterface) *RecycleRecordClient {
 	}
 }
 
-// BatchRecycleCloudRes batch recycle cloud resource.
+// BatchRecycleCloudRes 将资源批量加入回收站
 func (r *RecycleRecordClient) BatchRecycleCloudRes(ctx context.Context, h http.Header, req *proto.BatchRecycleReq) (
 	string, error) {
 
@@ -123,6 +123,30 @@ func (r *RecycleRecordClient) BatchUpdateRecycleRecord(ctx context.Context, h ht
 		WithContext(ctx).
 		Body(request).
 		SubResourcef("/recycle_records/batch").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
+// BatchUpdateRecycleStatus update recycle_status of resources
+func (r *RecycleRecordClient) BatchUpdateRecycleStatus(ctx context.Context, h http.Header,
+	request *proto.BatchUpdateRecycleStatusReq) error {
+
+	resp := new(rest.BaseResp)
+
+	err := r.client.Patch().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/recycle_records/recycle_status/batch").
 		WithHeaders(h).
 		Do().
 		Into(resp)

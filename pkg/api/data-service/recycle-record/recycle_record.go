@@ -97,3 +97,15 @@ type UpdateReq struct {
 func (c *BatchUpdateReq) Validate() error {
 	return validator.Validate.Struct(c)
 }
+
+// BatchUpdateRecycleStatusReq defines batch update cloud resource recycle status request.
+type BatchUpdateRecycleStatusReq struct {
+	ResType       enumor.CloudResourceType   `json:"res_type" validate:"required"`
+	IDs           []string                   `json:"ids" validate:"min=1,max=100"`
+	RecycleStatus enumor.RecycleRecordStatus `json:"recycle_status"  validate:"required"`
+}
+
+// Validate BatchRecoverReq.
+func (c *BatchUpdateRecycleStatusReq) Validate() error {
+	return validator.Validate.Struct(c)
+}

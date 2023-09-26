@@ -27,7 +27,6 @@ import (
 	"hcm/pkg/api/core"
 	protocore "hcm/pkg/api/core/recycle-record"
 	protodata "hcm/pkg/api/data-service/recycle-record"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
@@ -58,6 +57,8 @@ func InitRecycleRecordService(cap *capability.Capability) {
 	h.Add("BatchRecoverCloudResource", "POST", "/cloud/resources/batch/recover", svc.BatchRecoverCloudResource)
 	h.Add("ListRecycleRecord", "POST", "/recycle_records/list", svc.ListRecycleRecord)
 	h.Add("BatchUpdateRecycleRecord", "PATCH", "/recycle_records/batch", svc.BatchUpdateRecycleRecord)
+	h.Add("BatchUpdateRecycleRecord", "PATCH", "/recycle_records/recycle_status/batch",
+		svc.BatchUpdateRecycleStatus)
 
 	h.Load(cap.WebService)
 }
@@ -123,9 +124,8 @@ func (svc *recycleRecordSvc) BatchRecycleCloudResource(cts *rest.Contexts) (inte
 				RecycledAt: times.ConvStdTimeNow().Add(time.Hour * time.Duration(recycleReserveTime)),
 			})
 		}
-		// recycle resource
-		updateResOpt := &protodao.ResourceUpdateOptions{ResType: req.ResType, IDs: resIDs, Status: enumor.RecycleStatus,
-			BkBizID: constant.UnassignedBiz}
+		// 标记资源回收状态
+		updateResOpt := &protodao.ResourceUpdateOptions{ResType: req.ResType, IDs: resIDs, Status: enumor.RecycleStatus}
 		err := svc.dao.RecycleRecord().UpdateResource(cts.Kit, txn, updateResOpt)
 		if err != nil {
 			return nil, fmt.Errorf("update recycled resource info failed, err: %v", err)
@@ -192,9 +192,9 @@ func (svc *recycleRecordSvc) BatchRecoverCloudResource(cts *rest.Contexts) (inte
 
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		// recover resource
-		for bizID, ids := range bizCvmIDMap {
+		for _, ids := range bizCvmIDMap {
 			updateResOpt := &protodao.ResourceUpdateOptions{ResType: req.ResType, IDs: ids,
-				Status: enumor.RecoverStatus, BkBizID: bizID}
+				Status: enumor.RecoverStatus}
 			err := svc.dao.RecycleRecord().UpdateResource(cts.Kit, txn, updateResOpt)
 			if err != nil {
 				return nil, fmt.Errorf("update recycled resource status failed, err: %v", err)
@@ -338,4 +338,26 @@ func (svc *recycleRecordSvc) BatchUpdateRecycleRecord(cts *rest.Contexts) (inter
 	})
 
 	return nil, nil
+}
+
+// BatchUpdateRecycleStatus 批量更新资源的回收状态字段
+func (svc *recycleRecordSvc) BatchUpdateRecycleStatus(cts *rest.Contexts) (reply interface{}, err error) {
+	req := new(protodata.BatchUpdateRecycleStatusReq)
+	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		updateResOpt := &protodao.ResourceUpdateOptions{ResType: req.ResType, IDs: req.IDs,
+			Status: string(req.RecycleStatus)}
+		err := svc.dao.RecycleRecord().UpdateResource(cts.Kit, txn, updateResOpt)
+		if err != nil {
+			return nil, fmt.Errorf("update recycled resource info failed, err: %v", err)
+		}
+		return nil, nil
+	})
+
+	if err != nil {
+		logs.Errorf("batch update resources recycle status record failed, err: %v, ids:%v, rid: %s",
+			err, req.IDs, cts.Kit.Rid)
+		return nil, err
+	}
+	return nil, nil
+
 }

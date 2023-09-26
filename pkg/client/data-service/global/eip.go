@@ -29,10 +29,8 @@ import (
 )
 
 // ListEip 查询 eip 列表
-func (rc *restClient) ListEip(ctx context.Context,
-	h http.Header,
-	request *dataproto.EipListReq,
-) (*dataproto.EipListResult, error) {
+func (rc *restClient) ListEip(ctx context.Context, h http.Header,
+	request *dataproto.EipListReq) (*dataproto.EipListResult, error) {
 	resp := new(dataproto.EipListResp)
 	err := rc.client.Post().WithContext(ctx).Body(request).SubResourcef("/eips/list").WithHeaders(h).Do().Into(resp)
 	if err != nil {
@@ -47,10 +45,8 @@ func (rc *restClient) ListEip(ctx context.Context,
 }
 
 // BatchUpdateEip 批量更新 eip 的基础信息
-func (rc *restClient) BatchUpdateEip(ctx context.Context,
-	h http.Header,
-	request *dataproto.EipBatchUpdateReq,
-) (interface{}, error) {
+func (rc *restClient) BatchUpdateEip(ctx context.Context, h http.Header,
+	request *dataproto.EipBatchUpdateReq) (interface{}, error) {
 	resp := new(core.UpdateResp)
 	err := rc.client.Patch().WithContext(ctx).Body(request).SubResourcef("/eips").WithHeaders(h).Do().Into(resp)
 	if err != nil {
@@ -65,11 +61,8 @@ func (rc *restClient) BatchUpdateEip(ctx context.Context,
 }
 
 // DeleteEip 删除 eip 记录
-func (rc *restClient) DeleteEip(
-	ctx context.Context,
-	h http.Header,
-	request *dataproto.EipDeleteReq,
-) (interface{}, error) {
+func (rc *restClient) DeleteEip(ctx context.Context, h http.Header,
+	request *dataproto.EipDeleteReq) (interface{}, error) {
 	resp := new(core.DeleteResp)
 	err := rc.client.Delete().WithContext(ctx).Body(request).SubResourcef("/eips/batch").WithHeaders(h).Do().Into(resp)
 	if err != nil {
