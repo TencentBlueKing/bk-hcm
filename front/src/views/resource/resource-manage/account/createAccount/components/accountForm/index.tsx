@@ -11,6 +11,7 @@ import { Success, InfoLine, TextFile } from 'bkui-vue/lib/icon';
 import http from '@/http';
 import successIcon from '@/assets/image/success.png';
 import failedIcon from '@/assets/image/failure.png';
+import MemberSelect from '@/components/MemberSelect';
 
 const { FormItem } = Form;
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
@@ -64,6 +65,10 @@ export default defineComponent({
   props: {
     changeEnableNextStep: {
       type: Function as PropType<(val: boolean) => void>,
+      required: true,
+    },
+    changeSubmitData: {
+      type: Function as PropType<(val: Record<string, string | Object>) => void>,
       required: true,
     },
   },
@@ -285,6 +290,16 @@ export default defineComponent({
       },
     );
 
+    watch(
+      () => formModel,
+      (model) => {
+        props.changeSubmitData(model);
+      },
+      {
+        deep: true,
+      },
+    );
+
     const handleValidate = async () => {
       isValidateLoading.value = true;
       const payload = Object.entries(curExtension.value.input).reduce((prev, [key, { value }]) => {
@@ -323,6 +338,7 @@ export default defineComponent({
             >
               <FormItem
                 label='厂商选择'
+                required
               >
                 <div class={'account-vendor-selector'}>
                   {
@@ -346,6 +362,7 @@ export default defineComponent({
                 </div>
               </FormItem>
               <FormItem
+                required
                 label='站点种类'
               >
                 <Radio
@@ -403,7 +420,7 @@ export default defineComponent({
                     </div>
                     <div>
                       {Object.entries(curExtension.value.output1).map(([property, { label, value }]) => (
-                          <FormItem label={label} property={property}>
+                          <FormItem label={label} property={property} required>
                             <Input v-model={value} disabled placeholder={' '}/>
                           </FormItem>
                       ))}
@@ -448,20 +465,23 @@ export default defineComponent({
           <div class={'account-form-card-content'}>
             <Form
               formType='vertical'
+              model={formModel}
+              auto-check
             >
+              {/* eslint-disable-next-line @typescript-eslint/no-unused-vars */}
               {Object.entries(curExtension.value.output2).map(([property, { label, value }]) => (
-                  <FormItem label={label} property={property}>
+                  <FormItem label={label} required>
                     <Input v-model={value} disabled placeholder={' '}/>
                   </FormItem>
               ))}
-              <FormItem label='账号别名' class={'api-secret-selector'}>
-                <Input/>
+              <FormItem label='账号别名' class={'api-secret-selector'} required property='name'>
+                <Input v-model={formModel.name}/>
               </FormItem>
-              <FormItem label='责任人' class={'api-secret-selector'}>
-                <Input/>
+              <FormItem label='责任人' class={'api-secret-selector'} required property='managers'>
+                <MemberSelect v-model={formModel.managers}/>
               </FormItem>
               <FormItem label='备注'>
-                <Input type={'textarea'}/>
+                <Input type={'textarea'} v-model={formModel.memo}/>
               </FormItem>
             </Form>
           </div>

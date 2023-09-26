@@ -4,6 +4,7 @@ import './index.scss';
 import AccountForm from './components/accountForm';
 import AccountResource from './components/accountResource';
 import ResultPage from './components/resultPage';
+import { useAccountStore } from '@/store';
 
 export default defineComponent({
   props: {
@@ -25,6 +26,24 @@ export default defineComponent({
     const enableNextStep = ref(false);
     const changeEnableNextStep = (val: boolean) => {
       enableNextStep.value = val;
+    };
+    const submitData = ref({});
+    const changeSubmitData = (val: Record<string, string | Object>) => {
+      submitData.value = val;
+    };
+    const isSubmitLoading = ref(false);
+    const accountStore = useAccountStore();
+    const handleSubmit = async () => {
+      isSubmitLoading.value = true;
+      try {
+        const res = await accountStore.applyAccount(submitData.value);
+        console.log(res);
+      } catch (err: any) {
+        console.log(err);
+      } finally {
+        isSubmitLoading.value = false;
+        step.value += 1;
+      }
     };
     return () => (
       <Dialog
@@ -51,39 +70,59 @@ export default defineComponent({
                   ]}
                 />
               ) : (
-                <ResultPage/>
+                <ResultPage />
               )}
-              {step.value === 1 ? <AccountForm changeEnableNextStep={changeEnableNextStep}/> : null}
+              {step.value === 1 ? (
+                <AccountForm
+                  changeEnableNextStep={changeEnableNextStep}
+                  changeSubmitData={changeSubmitData}
+                />
+              ) : null}
               {step.value === 2 ? <AccountResource /> : null}
             </div>
           ),
           footer: () => (
             <div class={'create-account-dialog-footer'}>
-              {step.value > 1 ? (
-                <Button
-                  class={'mr8'}
-                  onClick={() => (step.value -= 1)}>
-                  上一步
-                </Button>
-              ) : null}
-              {step.value < 2 ? (
-                <Button
-                  theme={'primary'}
-                  class={'mr8'}
-                  disabled={!enableNextStep.value}
-                  onClick={() => (step.value += 1)}>
-                  下一步
-                </Button>
-              ) : (
-                <Button
-                  theme={'primary'}
-                  class={'mr8'}
-                  onClick={() => (step.value += 1)}>
-                  提交
-                </Button>
-              )}
+              <>
+                {
+                  step.value < 3
+                    ? (
+                    <>
+                      {step.value > 1 ? (
+                        <Button class={'mr8'} onClick={() => (step.value -= 1)}>
+                          上一步
+                        </Button>
+                      ) : null}
+                      {step.value < 2 ? (
+                        <Button
+                          theme={'primary'}
+                          class={'mr8'}
+                          disabled={!enableNextStep.value}
+                          onClick={() => (step.value += 1)}>
+                          下一步
+                        </Button>
+                      ) : (
+                        <Button
+                          theme={'primary'}
+                          class={'mr8'}
+                          onClick={handleSubmit}>
+                          提交
+                        </Button>
+                      )}
+                    </>
+                    )
+                    : null
+                }
+              </>
 
-              <Button onClick={props.onCancel}>取消</Button>
+              <Button onClick={() => {
+                step.value = 1;
+                props.onCancel();
+              }}
+              loading={isSubmitLoading.value}
+              >{
+                step.value < 3 ? '取消' : '关闭'
+              }</Button>
             </div>
           ),
         }}
