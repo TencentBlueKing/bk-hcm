@@ -22,6 +22,10 @@ export default defineComponent({
   },
   setup(props) {
     const step = ref(1);
+    const enableNextStep = ref(false);
+    const changeEnableNextStep = (val: boolean) => {
+      enableNextStep.value = val;
+    };
     return () => (
       <Dialog
         fullscreen
@@ -49,7 +53,7 @@ export default defineComponent({
               ) : (
                 <ResultPage/>
               )}
-              {step.value === 1 ? <AccountForm /> : null}
+              {step.value === 1 ? <AccountForm changeEnableNextStep={changeEnableNextStep}/> : null}
               {step.value === 2 ? <AccountResource /> : null}
             </div>
           ),
@@ -66,6 +70,7 @@ export default defineComponent({
                 <Button
                   theme={'primary'}
                   class={'mr8'}
+                  disabled={!enableNextStep.value}
                   onClick={() => (step.value += 1)}>
                   下一步
                 </Button>

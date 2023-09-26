@@ -366,6 +366,7 @@ export default defineComponent({
                     text
                     theme='primary'
                     disabled={!formData.cloud_vpc_id}
+                    style={{ marginRight: '-50px' }}
                     onClick={() => {
                       isVpcPreviewDialogShow.value = true;
                     }}>
@@ -399,6 +400,7 @@ export default defineComponent({
                   text
                   theme="primary"
                   disabled={!formData.cloud_subnet_id}
+                  style={{ marginRight: '-50px' }}
                   onClick={() => {
                     isSubnetPreviewDialogShow.value = true;
                     // if (!formData.cloud_subnet_id) return;
