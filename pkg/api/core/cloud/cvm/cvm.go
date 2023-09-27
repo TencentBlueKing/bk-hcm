@@ -60,6 +60,8 @@ type BaseCvm struct {
 	*/
 	Status string `json:"status"`
 
+	RecycleStatus string `json:"recycle_status"`
+
 	// PrivateIPv4Addresses 内网IP
 	PrivateIPv4Addresses []string `json:"private_ipv4_addresses"`
 	PrivateIPv6Addresses []string `json:"private_ipv6_addresses"`

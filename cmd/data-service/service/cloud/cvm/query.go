@@ -145,6 +145,7 @@ func convTableToBaseCvm(one *tablecvm.Table) *corecvm.BaseCvm {
 		OsName:               one.OsName,
 		Memo:                 one.Memo,
 		Status:               one.Status,
+		RecycleStatus:        one.RecycleStatus,
 		PrivateIPv4Addresses: one.PrivateIPv4Addresses,
 		PrivateIPv6Addresses: one.PrivateIPv6Addresses,
 		PublicIPv4Addresses:  one.PublicIPv4Addresses,

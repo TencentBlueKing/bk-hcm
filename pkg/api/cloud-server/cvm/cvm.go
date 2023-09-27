@@ -106,8 +106,8 @@ type CvmRecycleReq struct {
 
 // CvmRecycleInfo defines recycle one cvm info.
 type CvmRecycleInfo struct {
-	ID                    string `json:"id" validate:"required"`
-	*rr.CvmRecycleOptions `json:",inline" validate:"required"`
+	ID                   string `json:"id" validate:"required"`
+	rr.CvmRecycleOptions `json:",inline" validate:"required"`
 }
 
 // Validate CvmRecycleReq

@@ -226,7 +226,7 @@ func (svc *diskSvc) validateRecycleRecord(records *recyclerecord.ListResult) err
 		}
 
 		if one.Status != enumor.WaitingRecycleRecordStatus {
-			return fmt.Errorf("record: %d not is wait_recycle status", one.ID)
+			return fmt.Errorf("record: %s not is wait_recycle status", one.ID)
 		}
 
 		if one.ResType != enumor.DiskCloudResType {

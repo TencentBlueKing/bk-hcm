@@ -196,7 +196,7 @@ func (r *recycle) recycleDiskWorker(kt *kit.Kit, info *types.CloudResourceBasicI
 
 func (r *recycle) recycleCvmWorker(kt *kit.Kit, info *types.CloudResourceBasicInfo) error {
 	// 实际销毁CVM
-	res, err := r.logics.Cvm.DestroyRecycledCvm(kt, map[string]types.CloudResourceBasicInfo{info.ID: *info})
+	res, err := r.logics.Cvm.DestroyRecycledCvm(kt, map[string]types.CloudResourceBasicInfo{info.ID: *info}, nil)
 	if err != nil {
 		logs.Errorf("delete cvm failed, err: %v, res: %+v, cvm: %s, rid: %s", err, res, info.ID, kt.Rid)
 		return err
