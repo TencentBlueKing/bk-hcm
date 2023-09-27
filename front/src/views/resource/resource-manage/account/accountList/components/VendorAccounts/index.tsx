@@ -64,8 +64,16 @@ export default defineComponent({
                             }
                             class={'vendor-icon'}></img>
                           <span class={'vendor-account-menu-item-text'}>
-                            {name.length > 12
-                              ? `${name.substring(0, 10)}..`
+                            {name.length > 22
+                              ? (
+                                <span v-bk-tooltips={{
+                                  content: name,
+                                  placement: 'right',
+                                }}
+                              >
+                                  {`${name.substring(0, 22)}..`}
+                                </span>
+                              )
                               : name}
                           </span>
                         </div>
