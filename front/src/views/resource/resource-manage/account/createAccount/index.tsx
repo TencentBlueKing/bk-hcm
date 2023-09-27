@@ -33,13 +33,14 @@ export default defineComponent({
     };
     const isSubmitLoading = ref(false);
     const accountStore = useAccountStore();
+    const errMsg = ref('');
     const handleSubmit = async () => {
       isSubmitLoading.value = true;
       try {
         const res = await accountStore.applyAccount(submitData.value);
         console.log(res);
       } catch (err: any) {
-        console.log(err);
+        errMsg.value = err.message;
       } finally {
         isSubmitLoading.value = false;
         step.value += 1;
@@ -70,7 +71,7 @@ export default defineComponent({
                   ]}
                 />
               ) : (
-                <ResultPage />
+                <ResultPage errMsg={errMsg.value} type={errMsg.value.length > 0 ? 'failure' : 'success'}/>
               )}
               {step.value === 1 ? (
                 <AccountForm

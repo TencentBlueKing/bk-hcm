@@ -1,5 +1,5 @@
-import { Button, Card, Form, Input, Radio } from 'bkui-vue';
-import { PropType, defineComponent, reactive, ref, watch } from 'vue';
+import { Button, Card, Form, Input, Radio, Select } from 'bkui-vue';
+import { PropType, defineComponent, onMounted, reactive, ref, watch } from 'vue';
 import './index.scss';
 import { VendorEnum } from '@/common/constant';
 import tcloudVendor from '@/assets/image/vendor-tcloud.png';
@@ -12,8 +12,10 @@ import http from '@/http';
 import successIcon from '@/assets/image/success.png';
 import failedIcon from '@/assets/image/failure.png';
 import MemberSelect from '@/components/MemberSelect';
+import { useAccountStore } from '@/store';
 
 const { FormItem } = Form;
+const { Option } = Select;
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 interface IExtensionItem {
@@ -81,9 +83,12 @@ export default defineComponent({
       type: 'resource', // 账号类型，当前产品形态固定为 resource，资源账号
       memo: '', // 备注
       extension: {}, // 不同云的secretKey\id
+      bk_biz_ids: [], // 业务ID
     });
-    const apiFormInstance = ref(null);
+    const infoFormInstance = ref(null);
     const isValidateLoading = ref(false);
+    const businessList = ref([]);
+    const accountStore = useAccountStore();
     // 腾讯云
     const tcloudExtension: IExtension = reactive({
       output1: {
@@ -294,11 +299,17 @@ export default defineComponent({
       () => formModel,
       (model) => {
         props.changeSubmitData(model);
+        infoFormInstance.value.validate();
       },
       {
         deep: true,
       },
     );
+
+    onMounted(async () => {
+      const res = await accountStore.getBizList();
+      businessList.value = res?.data || [];
+    });
 
     const handleValidate = async () => {
       isValidateLoading.value = true;
@@ -400,7 +411,6 @@ export default defineComponent({
                 </div>
                 <div class={'account-form-card-content'}>
                   <Form
-                    ref={apiFormInstance}
                     formType='vertical'
                     class={'account-form-card-content-grid'}>
                     <div>
@@ -467,6 +477,7 @@ export default defineComponent({
               formType='vertical'
               model={formModel}
               auto-check
+              ref={infoFormInstance}
             >
               {/* eslint-disable-next-line @typescript-eslint/no-unused-vars */}
               {Object.entries(curExtension.value.output2).map(([property, { label, value }]) => (
@@ -474,11 +485,35 @@ export default defineComponent({
                     <Input v-model={value} disabled placeholder={' '}/>
                   </FormItem>
               ))}
-              <FormItem label='账号别名' class={'api-secret-selector'} required property='name'>
+              <FormItem
+                label='账号别名'
+                class={'api-secret-selector'}
+                required
+                property='name'
+                description='必须以小写字母开头, 后面可跟小写字母、数字、连字符 - 或 下划线 _ , 但不能以连字符 - 或下划线 _ 结尾。名称长度不少于 3 个字符，且不多于 64 个字符'
+                >
                 <Input v-model={formModel.name}/>
               </FormItem>
               <FormItem label='责任人' class={'api-secret-selector'} required property='managers'>
                 <MemberSelect v-model={formModel.managers}/>
+              </FormItem>
+              <FormItem label='使用业务' property='bk_biz_id' required>
+                <Select
+                  filterable
+                  collapseTags
+                  multiple
+                  multipleMode='tag'
+                  placeholder='请选择使用业务'
+                  v-model={formModel.bk_biz_ids}
+                >
+                  {
+                    businessList.value.map(({ id, name }) => (
+                      <Option key={id} value={id} label={name}>
+                        {name}
+                      </Option>
+                    ))
+                  }
+                </Select>
               </FormItem>
               <FormItem label='备注'>
                 <Input type={'textarea'} v-model={formModel.memo}/>
