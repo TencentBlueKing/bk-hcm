@@ -208,4 +208,11 @@
   .router-view-content {
     padding: 24px 24px 0 24px;
   }
+  .fixed-account-list-container {
+    position: fixed;
+    top: 52px;
+    bottom: -50px;
+    left: 0;
+    width: 15%;
+  }
 }

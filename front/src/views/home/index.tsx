@@ -250,7 +250,10 @@ export default defineComponent({
       if (whereAmI.value !== Senarios.resource) return <RouterView/>;
       return (
         <div class={'resource-manage-container'}>
-          <AccountList/>
+          <div class='fixed-account-list-container'>
+            <AccountList/>
+          </div>
+          <div></div>
           <RouterView class={'router-view-content'}/>
         </div>
       );
