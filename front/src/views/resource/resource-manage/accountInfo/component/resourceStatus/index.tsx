@@ -44,7 +44,7 @@ export default defineComponent({
         field: 'is_implement',
         render: () => (
           <div>
-            <Switcher/>
+            <Switcher disabled class={'mr8'}/>
             同步周期: 20 分钟
           </div>
         ),

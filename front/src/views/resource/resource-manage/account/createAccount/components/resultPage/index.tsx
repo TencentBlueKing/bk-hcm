@@ -1,5 +1,5 @@
 import { Button, Card, Input } from 'bkui-vue';
-import { PropType, defineComponent, ref } from 'vue';
+import { PropType, defineComponent } from 'vue';
 import './index.scss';
 import SuccessIcon from '@/assets/image/success.png';
 import FailureIcon from '@/assets/image/failure.png';
@@ -13,9 +13,12 @@ export default defineComponent({
       default: 'success',
       required: true,
     },
+    errMsg: {
+      type: String,
+      required: true,
+    },
   },
   setup(props) {
-    const failureMsg = ref('lkjl;kjalsdkjflaskjdflaksjdflkasmvlaksjdfopqiweuroiqwjefjaskdfj;lsadjflsjdlgwoqhiopfisdfjlaskjdf;lasjdglakhgdkashdfkshklfdajsdlfkjasldjglaskdhakshdflkjasdflkjasl;dfjlaskdfjlsjdflsdcmlsx,cna,msgdnkajgkasejlfkjsaldfj;lsjdflsajdlkfjslkvnmfn,mxnvlk');
     return () => (
       <div class={'result-page'}>
         <Card class={'result-page-card'} showHeader={false}>
@@ -54,7 +57,7 @@ export default defineComponent({
                   type='textarea'
                   disabled={true}
                   class={'result-page-failure-box'}
-                  v-model={failureMsg.value}
+                  v-model={props.errMsg}
                   >
                 </Input>
               )}

@@ -412,6 +412,14 @@ export const RESOURCE_TYPES_MAP = {
   cvm: '主机',
   route_table: '路由表',
   sub_account: '云账号',
+  account: '账号',
+  gcp_firewall_rule: '防火墙规则',
+  route: '路由',
+  network_interface: '网络接口',
+  region: '地域',
+  image: '镜像',
+  zone: '可用区',
+  azure_resource_group: '微软云资源组',
 };
 
 export const RESOURCES_SYNC_STATUS_MAP = {
