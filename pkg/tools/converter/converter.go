@@ -108,15 +108,6 @@ func StringSliceToMap(source []string) map[string]struct{} {
 	return target
 }
 
-// Map 对slice里面的每个元素执行mapFunc函数，返回新slice
-func Map[IType any, OType any](source []IType, mapFunc func(IType) OType) []OType {
-	target := make([]OType, 0, len(source))
-	for _, v := range source {
-		target = append(target, mapFunc(v))
-	}
-	return target
-}
-
 // MapKeyToStringSlice map[string]struct{} to []string.
 func MapKeyToStringSlice[V any](source map[string]V) []string {
 	return MapKeyToSlice(source)

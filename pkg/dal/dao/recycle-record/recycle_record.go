@@ -95,8 +95,8 @@ func (r *Dao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, records []rr.RecycleRe
 		}
 	}
 
-	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, records[0].TableName(), rr.RecycleRecordColumns.ColumnExpr(),
-		rr.RecycleRecordColumns.ColonNameExpr())
+	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, records[0].TableName(),
+		rr.RecycleRecordColumns.ColumnExpr(), rr.RecycleRecordColumns.ColonNameExpr())
 
 	err = r.orm.Txn(tx).BulkInsert(kt.Ctx, sql, records)
 	if err != nil {
@@ -218,18 +218,17 @@ func (r *Dao) BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Exp
 	return nil
 }
 
-// UpdateResource update recycled resource info.
+// UpdateResource 更新回收相关信息，目前只更新 recycle_status
 func (r *Dao) UpdateResource(kt *kit.Kit, tx *sqlx.Tx, opt *rrtypes.ResourceUpdateOptions) error {
 	tableName, err := opt.ResType.ConvTableName()
 	if err != nil {
 		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	sql := fmt.Sprintf(`update %s set recycle_status = :recycle_status, bk_biz_id = :bk_biz_id where id in (:id)`,
+	sql := fmt.Sprintf(`update %s set recycle_status = :recycle_status where id in (:id)`,
 		tableName)
 	updateData := map[string]interface{}{
 		"recycle_status": opt.Status,
-		"bk_biz_id":      opt.BkBizID,
 	}
 	whereValue := map[string]interface{}{
 		"id": opt.IDs,

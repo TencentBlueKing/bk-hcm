@@ -86,15 +86,8 @@ func (svc *diskSvc) listDisk(cts *rest.Contexts, authHandler handler.ListAuthRes
 		return &cloudproto.DiskListResult{Details: make([]*cloudproto.DiskResult, 0)}, nil
 	}
 
-	// filter out disk in recycle bin
-	req.Filter, err = tools.And(expr,
-		&filter.AtomRule{Field: "recycle_status", Op: filter.NotEqual.Factory(), Value: enumor.RecycleStatus})
-	if err != nil {
-		return nil, err
-	}
-
 	resp, err := svc.client.DataService().Global.ListDisk(cts.Kit.Ctx, cts.Kit.Header(),
-		&dataproto.DiskListReq{Filter: req.Filter, Page: req.Page})
+		&dataproto.DiskListReq{Filter: expr, Page: req.Page})
 	if err != nil {
 		return nil, err
 	}

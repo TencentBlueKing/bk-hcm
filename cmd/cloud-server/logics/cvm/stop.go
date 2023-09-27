@@ -188,12 +188,10 @@ func (c *cvm) batchStopCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.Cl
 }
 
 // CheckAndStopCvm 检查在非停止状态的主机并尝试关机
-func (c *cvm) checkAndStopCvm(kt *kit.Kit, infoMap map[string]types.CloudResourceBasicInfo) (
-	result *core.BatchOperateAllResult) {
+func (c *cvm) checkAndStopCvm(kt *kit.Kit, infoMap map[string]types.CloudResourceBasicInfo) error {
 
-	result = &core.BatchOperateAllResult{}
 	if len(infoMap) == 0 {
-		return result
+		return nil
 	}
 	cvmIds := converter.MapKeyToSlice(infoMap)
 	// filter out not stopped cvm
@@ -201,19 +199,14 @@ func (c *cvm) checkAndStopCvm(kt *kit.Kit, infoMap map[string]types.CloudResourc
 		"STOPPED", "stopping", "stopped", "SUSPENDING", "SUSPENDED", "PowerState/stopped", "SHUTOFF"}}
 	notStoppedFilter, err := tools.And(tools.ContainersExpression("id", cvmIds), notStoppedRule)
 	if err != nil {
-		for _, cvmId := range cvmIds {
-			result.Failed = append(result.Failed, core.FailedInfo{ID: cvmId, Error: err})
-		}
-		return result
+		return err
 	}
 	notStoppedReq := &cloud.CvmListReq{Field: []string{"id"}, Filter: notStoppedFilter, Page: core.NewDefaultBasePage()}
 
 	notStoppedCvmRes, err := c.client.DataService().Global.Cvm.ListCvm(kt.Ctx, kt.Header(), notStoppedReq)
 	if err != nil {
-		for _, cvmId := range cvmIds {
-			result.Failed = append(result.Failed, core.FailedInfo{ID: cvmId, Error: err})
-		}
-		return result
+		logs.Errorf("fail to list cvm status, err: %v, req: %v, rid: %s", err, notStoppedReq, kt.Rid)
+		return err
 	}
 
 	notStoppedMap := make(map[string]types.CloudResourceBasicInfo)
@@ -223,10 +216,8 @@ func (c *cvm) checkAndStopCvm(kt *kit.Kit, infoMap map[string]types.CloudResourc
 
 	// stop cvm
 	stopRes, err := c.BatchStopCvm(kt, notStoppedMap)
-	result.Succeeded = append(result.Succeeded, stopRes.Succeeded...)
-	result.Failed = append(result.Failed, stopRes.Failed...)
 	if err != nil {
 		logs.Errorf("stop cvm failed, err: %v, resp: %+v, infos: %+v, rid: %s", err, stopRes, notStoppedMap, kt.Rid)
 	}
-	return result
+	return err
 }

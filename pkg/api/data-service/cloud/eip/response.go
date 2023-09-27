@@ -20,16 +20,17 @@ type EipExtResult[T EipExtensionResult] struct {
 	BkBizID   int64   `json:"bk_biz_id,omitempty"`
 	Region    string  `json:"region,omitempty"`
 	// InstanceID db并不返回该字段
-	InstanceID   *string `json:"instance_id,omitempty"`
-	InstanceType string  `json:"instance_type,omitempty"`
-	Status       string  `json:"status,omitempty"`
-	PublicIp     string  `json:"public_ip,omitempty"`
-	PrivateIp    string  `json:"private_ip,omitempty"`
-	Extension    *T      `json:"extension,omitempty"`
-	Creator      string  `json:"creator,omitempty"`
-	Reviser      string  `json:"reviser,omitempty"`
-	CreatedAt    string  `json:"created_at,omitempty"`
-	UpdatedAt    string  `json:"updated_at,omitempty"`
+	InstanceID    *string `json:"instance_id,omitempty"`
+	InstanceType  string  `json:"instance_type,omitempty"`
+	Status        string  `json:"status,omitempty"`
+	RecycleStatus string  `json:"recycle_status"`
+	PublicIp      string  `json:"public_ip,omitempty"`
+	PrivateIp     string  `json:"private_ip,omitempty"`
+	Extension     *T      `json:"extension,omitempty"`
+	Creator       string  `json:"creator,omitempty"`
+	Reviser       string  `json:"reviser,omitempty"`
+	CreatedAt     string  `json:"created_at,omitempty"`
+	UpdatedAt     string  `json:"updated_at,omitempty"`
 }
 
 // GetID ...
@@ -61,22 +62,23 @@ type EipListResult struct {
 
 // EipResult ...
 type EipResult struct {
-	ID           string  `json:"id,omitempty"`
-	Vendor       string  `json:"vendor,omitempty"`
-	AccountID    string  `json:"account_id,omitempty"`
-	Name         *string `json:"name,omitempty"`
-	CloudID      string  `json:"cloud_id,omitempty"`
-	BkBizID      int64   `json:"bk_biz_id,omitempty"`
-	Region       string  `json:"region,omitempty"`
-	InstanceID   *string `json:"instance_id,omitempty"`
-	InstanceType string  `json:"instance_type,omitempty"`
-	Status       string  `json:"status,omitempty"`
-	PublicIp     string  `json:"public_ip,omitempty"`
-	PrivateIp    string  `json:"private_ip,omitempty"`
-	Creator      string  `json:"creator,omitempty"`
-	Reviser      string  `json:"reviser,omitempty"`
-	CreatedAt    string  `json:"created_at,omitempty"`
-	UpdatedAt    string  `json:"updated_at,omitempty"`
+	ID            string  `json:"id,omitempty"`
+	Vendor        string  `json:"vendor,omitempty"`
+	AccountID     string  `json:"account_id,omitempty"`
+	Name          *string `json:"name,omitempty"`
+	CloudID       string  `json:"cloud_id,omitempty"`
+	BkBizID       int64   `json:"bk_biz_id,omitempty"`
+	Region        string  `json:"region,omitempty"`
+	InstanceID    *string `json:"instance_id,omitempty"`
+	InstanceType  string  `json:"instance_type,omitempty"`
+	Status        string  `json:"status,omitempty"`
+	RecycleStatus string  `json:"recycle_status,omitempty"`
+	PublicIp      string  `json:"public_ip,omitempty"`
+	PrivateIp     string  `json:"private_ip,omitempty"`
+	Creator       string  `json:"creator,omitempty"`
+	Reviser       string  `json:"reviser,omitempty"`
+	CreatedAt     string  `json:"created_at,omitempty"`
+	UpdatedAt     string  `json:"updated_at,omitempty"`
 }
 
 // EipExtListResult ...

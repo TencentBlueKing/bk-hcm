@@ -28,7 +28,6 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
@@ -69,15 +68,8 @@ func (svc *cvmSvc) listCvm(cts *rest.Contexts, authHandler handler.ListAuthResHa
 		return &core.ListResult{Count: 0, Details: make([]interface{}, 0)}, nil
 	}
 
-	// filter out cvm in recycle bin
-	req.Filter, err = tools.And(expr, &filter.AtomRule{Field: "recycle_status", Op: filter.NotEqual.Factory(),
-		Value: enumor.RecycleStatus})
-	if err != nil {
-		return nil, err
-	}
-
 	listReq := &dataproto.CvmListReq{
-		Filter: req.Filter,
+		Filter: expr,
 		Page:   req.Page,
 	}
 	return svc.client.DataService().Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)

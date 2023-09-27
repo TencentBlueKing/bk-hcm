@@ -94,11 +94,12 @@ func (req *EipExtBatchUpdateReq[T]) Validate() error {
 
 // EipExtUpdateReq ...
 type EipExtUpdateReq[T EipExtensionUpdateReq] struct {
-	ID        string  `json:"id" validate:"required"`
-	Name      *string `json:"name" validate:"omitempty"`
-	BkBizID   uint64  `json:"bk_biz_id"`
-	Status    string  `json:"status"`
-	Extension *T      `json:"extension"`
+	ID            string  `json:"id" validate:"required"`
+	Name          *string `json:"name" validate:"omitempty"`
+	BkBizID       uint64  `json:"bk_biz_id"`
+	Status        string  `json:"status"`
+	RecycleStatus string  `json:"recycle_status"`
+	Extension     *T      `json:"extension"`
 }
 
 // Validate ...
@@ -108,11 +109,12 @@ func (req *EipExtUpdateReq[T]) Validate() error {
 
 // EipBatchUpdateReq ...
 type EipBatchUpdateReq struct {
-	IDs          []string `json:"ids" validate:"required"`
-	BkBizID      uint64   `json:"bk_biz_id"`
-	Status       string   `json:"status"`
-	InstanceId   *string  `json:"instance_id"`
-	InstanceType string   `json:"instance_type"`
+	IDs           []string `json:"ids" validate:"required"`
+	BkBizID       uint64   `json:"bk_biz_id"`
+	Status        string   `json:"status"`
+	InstanceId    *string  `json:"instance_id"`
+	InstanceType  string   `json:"instance_type"`
+	RecycleStatus string   `json:"recycle_status"`
 }
 
 // Validate ...
