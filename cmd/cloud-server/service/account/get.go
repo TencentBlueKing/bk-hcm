@@ -182,7 +182,23 @@ func (a *accountSvc) GetResCountBySecret(cts *rest.Contexts) (interface{}, error
 	// 3. 根据vendor处理具体内容
 	switch vendor {
 	case enumor.TCloud:
+		req := new(cloud.TCloudSecret)
+		if err := cts.DecodeInto(req); err != nil {
+			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+		}
+		if err := req.Validate(); err != nil {
+			return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		}
+		return a.client.HCService().TCloud.Account.GetResCountBySecret(cts.Kit, req)
 	case enumor.Aws:
+		req := new(cloud.AwsSecret)
+		if err := cts.DecodeInto(req); err != nil {
+			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+		}
+		if err := req.Validate(); err != nil {
+			return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		}
+		return a.client.HCService().Aws.Account.GetResCountBySecret(cts.Kit, req)
 	case enumor.Azure:
 		req := new(cloud.AzureAuthSecret)
 		if err := cts.DecodeInto(req); err != nil {
