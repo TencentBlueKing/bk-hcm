@@ -34,6 +34,7 @@ export default defineComponent({
     const isSubmitLoading = ref(false);
     const accountStore = useAccountStore();
     const errMsg = ref('');
+    const validateForm = ref(async () => {});
     const handleSubmit = async () => {
       isSubmitLoading.value = true;
       try {
@@ -45,6 +46,9 @@ export default defineComponent({
         isSubmitLoading.value = false;
         step.value += 1;
       }
+    };
+    const handleNextStep = async () => {
+      await validateForm.value();
     };
     return () => (
       <Dialog
@@ -77,6 +81,7 @@ export default defineComponent({
                 <AccountForm
                   changeEnableNextStep={changeEnableNextStep}
                   changeSubmitData={changeSubmitData}
+                  changeValidateForm={callback => validateForm.value = callback}
                 />
               ) : null}
               {step.value === 2 ? <AccountResource /> : null}
@@ -99,7 +104,7 @@ export default defineComponent({
                           theme={'primary'}
                           class={'mr8'}
                           disabled={!enableNextStep.value}
-                          onClick={() => (step.value += 1)}>
+                          onClick={handleNextStep}>
                           下一步
                         </Button>
                       ) : (

@@ -9,8 +9,8 @@ import gcpVendor from '@/assets/image/vendor-gcp.png';
 import huaweiVendor from '@/assets/image/vendor-huawei.png';
 import { Success, InfoLine, TextFile } from 'bkui-vue/lib/icon';
 import http from '@/http';
-import successIcon from '@/assets/image/success.png';
-import failedIcon from '@/assets/image/failure.png';
+import successIcon from '@/assets/image/corret-fill.png';
+import failedIcon from '@/assets/image/delete-fill.png';
 import MemberSelect from '@/components/MemberSelect';
 import { useAccountStore } from '@/store';
 
@@ -71,6 +71,10 @@ export default defineComponent({
     },
     changeSubmitData: {
       type: Function as PropType<(val: Record<string, string | Object>) => void>,
+      required: true,
+    },
+    changeValidateForm: {
+      type: Function as PropType<(callback: () => Promise<void>) => void>,
       required: true,
     },
   },
@@ -299,7 +303,7 @@ export default defineComponent({
       () => formModel,
       (model) => {
         props.changeSubmitData(model);
-        infoFormInstance.value.validate();
+        props.changeValidateForm(() => infoFormInstance.value.validate());
       },
       {
         deep: true,
@@ -478,6 +482,17 @@ export default defineComponent({
               model={formModel}
               auto-check
               ref={infoFormInstance}
+              rules={{
+                name: [
+                  {
+                    trigger: 'blur',
+                    message: '名称必须以小写字母开头，后面最多可跟 32个小写字母、数字或连字符，但不能以连字符结尾',
+                    validator: (val: any): boolean => {
+                      return  /^[a-z][a-z-z0-9_-]*$/.test(val);
+                    },
+                  },
+                ],
+              }}
             >
               {/* eslint-disable-next-line @typescript-eslint/no-unused-vars */}
               {Object.entries(curExtension.value.output2).map(([property, { label, value }]) => (
@@ -497,7 +512,7 @@ export default defineComponent({
               <FormItem label='责任人' class={'api-secret-selector'} required property='managers'>
                 <MemberSelect v-model={formModel.managers}/>
               </FormItem>
-              <FormItem label='使用业务' property='bk_biz_id' required>
+              <FormItem label='使用业务' property='bk_biz_ids' required>
                 <Select
                   filterable
                   collapseTags
