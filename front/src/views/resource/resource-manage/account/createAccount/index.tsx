@@ -35,6 +35,7 @@ export default defineComponent({
     const accountStore = useAccountStore();
     const errMsg = ref('');
     const validateForm = ref(async () => {});
+    const secretIds = ref({});
     const handleSubmit = async () => {
       isSubmitLoading.value = true;
       try {
@@ -49,6 +50,7 @@ export default defineComponent({
     };
     const handleNextStep = async () => {
       await validateForm.value();
+      step.value += 1;
     };
     return () => (
       <Dialog
@@ -75,60 +77,66 @@ export default defineComponent({
                   ]}
                 />
               ) : (
-                <ResultPage errMsg={errMsg.value} type={errMsg.value.length > 0 ? 'failure' : 'success'}/>
+                <ResultPage
+                  errMsg={errMsg.value}
+                  type={errMsg.value.length > 0 ? 'failure' : 'success'}
+                />
               )}
               {step.value === 1 ? (
                 <AccountForm
                   changeEnableNextStep={changeEnableNextStep}
                   changeSubmitData={changeSubmitData}
-                  changeValidateForm={callback => validateForm.value = callback}
+                  changeValidateForm={callback => (validateForm.value = callback)
+                  }
+                  changeExtension={extension => (secretIds.value = extension)}
                 />
               ) : null}
-              {step.value === 2 ? <AccountResource /> : null}
+              {step.value === 2 ? (
+                <AccountResource
+                  secretIds={submitData.value?.extension}
+                  vendor={submitData.value?.vendor}
+                />
+              ) : null}
             </div>
           ),
           footer: () => (
             <div class={'create-account-dialog-footer'}>
               <>
-                {
-                  step.value < 3
-                    ? (
-                    <>
-                      {step.value > 1 ? (
-                        <Button class={'mr8'} onClick={() => (step.value -= 1)}>
-                          上一步
-                        </Button>
-                      ) : null}
-                      {step.value < 2 ? (
-                        <Button
-                          theme={'primary'}
-                          class={'mr8'}
-                          disabled={!enableNextStep.value}
-                          onClick={handleNextStep}>
-                          下一步
-                        </Button>
-                      ) : (
-                        <Button
-                          theme={'primary'}
-                          class={'mr8'}
-                          onClick={handleSubmit}>
-                          提交
-                        </Button>
-                      )}
-                    </>
-                    )
-                    : null
-                }
+                {step.value < 3 ? (
+                  <>
+                    {step.value > 1 ? (
+                      <Button class={'mr8'} onClick={() => (step.value -= 1)}>
+                        上一步
+                      </Button>
+                    ) : null}
+                    {step.value < 2 ? (
+                      <Button
+                        theme={'primary'}
+                        class={'mr8'}
+                        disabled={!enableNextStep.value}
+                        onClick={handleNextStep}>
+                        下一步
+                      </Button>
+                    ) : (
+                      <Button
+                        theme={'primary'}
+                        class={'mr8'}
+                        onClick={handleSubmit}>
+                        提交
+                      </Button>
+                    )}
+                  </>
+                ) : null}
               </>
 
-              <Button onClick={() => {
-                step.value = 1;
-                props.onCancel();
-              }}
-              loading={isSubmitLoading.value}
-              >{
-                step.value < 3 ? '取消' : '关闭'
-              }</Button>
+              <Button
+                onClick={() => {
+                  step.value = 1;
+                  props.onCancel();
+                }}
+                loading={isSubmitLoading.value}>
+                {step.value < 3 ? '取消' : '关闭'}
+              </Button>
             </div>
           ),
         }}

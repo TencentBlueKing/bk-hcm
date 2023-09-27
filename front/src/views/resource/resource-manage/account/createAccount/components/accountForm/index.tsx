@@ -77,6 +77,10 @@ export default defineComponent({
       type: Function as PropType<(callback: () => Promise<void>) => void>,
       required: true,
     },
+    changeExtension: {
+      type: Function as PropType<(extension: Record<string, string>) => void>,
+      required: true,
+    },
   },
   setup(props) {
     const formModel = reactive({
@@ -291,7 +295,6 @@ export default defineComponent({
             prev[key] = value;
             return prev;
           }, {});
-          console.log(666, formModel);
         }
       },
       {
@@ -321,6 +324,7 @@ export default defineComponent({
         prev[key] = value;
         return prev;
       }, {});
+      props.changeExtension(payload);
       try {
         const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${formModel.vendor}/accounts/secret`, payload);
         if (res.data) {
