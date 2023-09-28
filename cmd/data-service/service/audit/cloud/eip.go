@@ -315,7 +315,7 @@ func (ad Audit) eipDeleteAuditBuild(
 		audits = append(audits, &tableaudit.AuditTable{
 			ResID:      one.ResID,
 			CloudResID: eipData.CloudID,
-			ResName:    *eipData.Name,
+			ResName:    converter.PtrToVal(eipData.Name),
 			ResType:    enumor.EipAuditResType,
 			Action:     enumor.Delete,
 			BkBizID:    eipData.BkBizID,
