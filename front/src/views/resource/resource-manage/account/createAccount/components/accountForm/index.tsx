@@ -1,4 +1,4 @@
-import { Button, Card, Form, Input, Radio, Select } from 'bkui-vue';
+import { Alert, Button, Card, Dialog, Form, Input, Loading, Radio, Select, Table } from 'bkui-vue';
 import { PropType, defineComponent, onMounted, reactive, ref, watch } from 'vue';
 import './index.scss';
 import { VendorEnum } from '@/common/constant';
@@ -97,6 +97,9 @@ export default defineComponent({
     const isValidateLoading = ref(false);
     const businessList = ref([]);
     const accountStore = useAccountStore();
+    const isAuthDialogShow = ref(false);
+    const isAuthTableLoading = ref(false);
+    const authTableData = ref([]);
     // 腾讯云
     const tcloudExtension: IExtension = reactive({
       output1: {
@@ -313,6 +316,20 @@ export default defineComponent({
       },
     );
 
+    watch(
+      () => isAuthDialogShow.value,
+      async (isShow) => {
+        if (!isShow) return;
+        isAuthTableLoading.value = true;
+        const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/tcloud/accounts/auth_policies/list`, {
+          cloud_secret_id: tcloudExtension.input.cloud_secret_id.value,
+          cloud_secret_key: tcloudExtension.input.cloud_secret_key.value,
+          uin: +tcloudExtension.output2.cloud_sub_account_id.value,
+        });
+        authTableData.value = res.data?.[0]?.Policy;
+        isAuthTableLoading.value = false;
+      },
+    );
     onMounted(async () => {
       const res = await accountStore.getBizList();
       businessList.value = res?.data || [];
@@ -437,6 +454,24 @@ export default defineComponent({
                       }
                     </div>
                     <div>
+                      {
+                        formModel.vendor === VendorEnum.TCLOUD && tcloudExtension.validatedStatus === ValidateStatus.YES
+                          ? (
+                            <Button
+                              text
+                              theme='primary'
+                              class={'api-form-btn'}
+                              onClick={() => {
+                                isAuthDialogShow.value = true;
+                                console.log(666, isAuthDialogShow.value);
+                              }}
+                            >
+                              <TextFile fill='#3A84FF'/>
+                              查看账号权限
+                            </Button>
+                          )
+                          : null
+                      }
                       {Object.entries(curExtension.value.output1).map(([property, { label, value }]) => (
                           <FormItem label={label} property={property} required>
                             <Input v-model={value} disabled placeholder={' '}/>
@@ -540,6 +575,37 @@ export default defineComponent({
             </Form>
           </div>
         </Card>
+
+        <Dialog
+          isShow={isAuthDialogShow.value}
+          onClosed={() => isAuthDialogShow.value = false}
+          dialogType='show'
+          theme='primary'
+          title='账号权限详情'
+          width={900}
+        >
+          <Alert theme='info' class={'mb16'}>
+            该账号在云上拥有的权限组列表如下，如需调整权限请到
+            <Button theme='primary' text>云控制台</Button>
+            调整
+          </Alert>
+          <Loading loading={isAuthTableLoading.value}>
+            <Table
+              columns={[
+                {
+                  label: '权限组名称',
+                  field: 'PolicyName',
+                  width: 200,
+                },
+                {
+                  label: '描述',
+                  field: 'PolicyDescription',
+                },
+              ]}
+              data={authTableData.value}
+            />
+          </Loading>
+        </Dialog>
       </div>
     );
   },

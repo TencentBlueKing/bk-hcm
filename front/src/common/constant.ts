@@ -414,7 +414,7 @@ export const RESOURCE_TYPES_MAP = {
   sub_account: '云账号',
   account: '账号',
   gcp_firewall_rule: '防火墙规则',
-  route: '路由',
+  route: '路由表',
   network_interface: '网络接口',
   region: '地域',
   image: '镜像',
