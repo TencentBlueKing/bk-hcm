@@ -56,6 +56,7 @@ GET /api/v1/cloud/cvms/{id}
     "public_ipv4_addresses": [
       "127.0.0.2"
     ],
+    "recycle_status": "recycling",
     "public_ipv6_addresses": [],
     "machine_type": "s5",
     "cloud_created_time": "2022-01-20",
@@ -96,6 +97,7 @@ GET /api/v1/cloud/cvms/{id}
 | os_name                | string         | 操作系统名称                               |
 | memo                   | string         | 备注                                   |
 | status                 | string         | 状态                                   |
+| recycle_status      | string | 回收状态                                 |
 | private_ipv4_addresses | string array   | 内网IPv4地址                             |
 | private_ipv6_addresses | string array   | 内网IPv6地址                             |
 | public_ipv4_addresses  | string array   | 公网IPv4地址                             |
