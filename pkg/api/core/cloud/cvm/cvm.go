@@ -58,8 +58,7 @@ type BaseCvm struct {
 		aws: pending | running | shutting-down | terminated | stopping | stopped
 		azure：PowerState/running｜PowerState/stopped｜PowerState/deallocating｜PowerState/deallocated
 	*/
-	Status string `json:"status"`
-
+	Status        string `json:"status"`
 	RecycleStatus string `json:"recycle_status"`
 
 	// PrivateIPv4Addresses 内网IP

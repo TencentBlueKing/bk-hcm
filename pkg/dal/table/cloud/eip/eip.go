@@ -42,6 +42,7 @@ var EipColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "name", NamedC: "name", Type: enumor.String},
 	{Column: "region", NamedC: "region", Type: enumor.String},
 	{Column: "status", NamedC: "status", Type: enumor.String},
+	{Column: "recycle_status", NamedC: "recycle_status", Type: enumor.String},
 	{Column: "public_ip", NamedC: "public_ip", Type: enumor.String},
 	{Column: "private_ip", NamedC: "private_ip", Type: enumor.String},
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
@@ -53,21 +54,22 @@ var EipColumnDescriptor = utils.ColumnDescriptors{
 
 // EipModel ...
 type EipModel struct {
-	ID        string          `db:"id" json:"id"`
-	Vendor    string          `db:"vendor" json:"vendor"`
-	AccountID string          `db:"account_id" json:"account_id"`
-	CloudID   string          `db:"cloud_id" json:"cloud_id"`
-	BkBizID   int64           `db:"bk_biz_id" json:"bk_biz_id"`
-	Name      *string         `db:"name" json:"name"`
-	Region    string          `db:"region" json:"region"`
-	Status    string          `db:"status" json:"status"`
-	PublicIp  string          `db:"public_ip" json:"public_ip"`
-	PrivateIp string          `db:"private_ip" json:"private_ip"`
-	Extension types.JsonField `db:"extension" json:"extension" validate:"-"`
-	Creator   string          `db:"creator" json:"creator"`
-	Reviser   string          `db:"reviser" json:"reviser"`
-	CreatedAt types.Time      `db:"created_at" json:"created_at"`
-	UpdatedAt types.Time      `db:"updated_at" json:"updated_at"`
+	ID            string          `db:"id" json:"id"`
+	Vendor        string          `db:"vendor" json:"vendor"`
+	AccountID     string          `db:"account_id" json:"account_id"`
+	CloudID       string          `db:"cloud_id" json:"cloud_id"`
+	BkBizID       int64           `db:"bk_biz_id" json:"bk_biz_id"`
+	Name          *string         `db:"name" json:"name"`
+	Region        string          `db:"region" json:"region"`
+	Status        string          `db:"status" json:"status"`
+	RecycleStatus string          `db:"recycle_status" json:"recycle_status,omitempty"`
+	PublicIp      string          `db:"public_ip" json:"public_ip"`
+	PrivateIp     string          `db:"private_ip" json:"private_ip"`
+	Extension     types.JsonField `db:"extension" json:"extension" validate:"-"`
+	Creator       string          `db:"creator" json:"creator"`
+	Reviser       string          `db:"reviser" json:"reviser"`
+	CreatedAt     types.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt     types.Time      `db:"updated_at" json:"updated_at"`
 }
 
 // InsertValidate ...
