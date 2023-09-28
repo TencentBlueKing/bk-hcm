@@ -162,8 +162,12 @@ func ParseAndCheckGcpExtension(
 			cts.Kit.Ctx,
 			cts.Kit.Header(),
 			&hcproto.GcpAccountCheckReq{
-				CloudProjectID:        extension.CloudProjectID,
-				CloudServiceSecretKey: extension.CloudServiceSecretKey,
+				CloudServiceSecretKey:   extension.CloudServiceSecretKey,
+				CloudProjectID:          extension.CloudProjectID,
+				CloudProjectName:        extension.CloudProjectName,
+				CloudServiceAccountID:   extension.CloudServiceAccountID,
+				CloudServiceAccountName: extension.CloudServiceAccountName,
+				CloudServiceSecretID:    extension.CloudServiceSecretID,
 			},
 		)
 		if err != nil {
@@ -194,9 +198,12 @@ func ParseAndCheckAzureExtension(
 			cts.Kit.Ctx,
 			cts.Kit.Header(),
 			&hcproto.AzureAccountCheckReq{
-				CloudTenantID:        extension.CloudTenantID,
-				CloudApplicationID:   extension.CloudApplicationID,
-				CloudClientSecretKey: extension.CloudClientSecretKey,
+				CloudTenantID:         extension.CloudTenantID,
+				CloudApplicationID:    extension.CloudApplicationID,
+				CloudClientSecretKey:  extension.CloudClientSecretKey,
+				CloudApplicationName:  extension.CloudApplicationName,
+				CloudSubscriptionName: extension.CloudSubscriptionName,
+				CloudSubscriptionID:   extension.CloudSubscriptionID,
 			},
 		)
 		if err != nil {
@@ -459,6 +466,7 @@ func (a *accountSvc) parseAndCheckAzureExtensionByID(
 				CloudApplicationID:    extension.CloudApplicationID,
 				CloudApplicationName:  extension.CloudApplicationName,
 				CloudSubscriptionName: extension.CloudSubscriptionName,
+				CloudClientSecretKey:  extension.CloudClientSecretKey,
 			},
 		)
 		if err != nil {
