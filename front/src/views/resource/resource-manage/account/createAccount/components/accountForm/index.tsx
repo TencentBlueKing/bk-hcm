@@ -321,7 +321,11 @@ export default defineComponent({
       async (isShow) => {
         if (!isShow) return;
         isAuthTableLoading.value = true;
-        const res = await http.post('/vendors/tcloud/accounts/auth_policies/list', {});
+        const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/tcloud/accounts/auth_policies/list`, {
+          cloud_secret_id: tcloudExtension.input.cloud_secret_id.value,
+          cloud_secret_key: tcloudExtension.input.cloud_secret_key.value,
+          uin: +tcloudExtension.output2.cloud_sub_account_id.value,
+        });
         authTableData.value = res.data?.[0]?.Policy;
         isAuthTableLoading.value = false;
       },
@@ -452,13 +456,16 @@ export default defineComponent({
                     </div>
                     <div>
                       {
-                        formModel.vendor === VendorEnum.TCLOUD
+                        formModel.vendor === VendorEnum.TCLOUD && tcloudExtension.validatedStatus === ValidateStatus.YES
                           ? (
                             <Button
                               text
                               theme='primary'
                               class={'api-form-btn'}
-                              onClick={() => isAuthDialogShow.value = true}
+                              onClick={() => {
+                                isAuthDialogShow.value = true;
+                                console.log(666, isAuthDialogShow.value);
+                              }}
                             >
                               <TextFile fill='#3A84FF'/>
                               查看账号权限
@@ -571,13 +578,14 @@ export default defineComponent({
         </Card>
 
         <Dialog
-          isShow={true}
+          isShow={isAuthDialogShow.value}
           onClosed={() => isAuthDialogShow.value = false}
           dialogType='show'
           theme='primary'
           title='账号权限详情'
+          width={900}
         >
-          <Alert theme='info'>
+          <Alert theme='info' class={'mb16'}>
             该账号在云上拥有的权限组列表如下，如需调整权限请到
             <Button theme='primary' text>云控制台</Button>
             调整
@@ -588,6 +596,7 @@ export default defineComponent({
                 {
                   label: '权限组名称',
                   field: 'PolicyName',
+                  width: 200,
                 },
                 {
                   label: '描述',
