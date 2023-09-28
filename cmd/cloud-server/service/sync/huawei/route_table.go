@@ -36,6 +36,9 @@ import (
 func SyncRouteTable(kt *kit.Kit, cliSet *client.ClientSet, accountID string,
 	sd *detail.SyncDetail) error {
 
+	// 重新设置rid方便定位
+	kt = kt.NewSubKit()
+
 	start := time.Now()
 	logs.V(3).Infof("[%s] account[%s] sync route table start, time: %v, rid: %s",
 		enumor.HuaWei, accountID, start, kt.Rid)

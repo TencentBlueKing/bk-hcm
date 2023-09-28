@@ -24,11 +24,12 @@ import (
 
 	"hcm/pkg/adaptor/types/image"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v4"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v5"
 )
 
 // ListImage 查询公共镜像列表
@@ -64,6 +65,7 @@ func (az *Azure) ListImage(kt *kit.Kit,
 				Sku:          converter.PtrToVal(sku.Name),
 				State:        "available",
 				Type:         "public",
+				OsType:       image.GetOsTypeByPlatform(enumor.Azure, opt.Offer),
 			})
 		}
 	}

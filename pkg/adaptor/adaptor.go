@@ -1,3 +1,5 @@
+//go:build !mock
+
 /*
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
@@ -17,6 +19,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package adaptor 对所有云API的封装
 package adaptor
 
 import (
@@ -29,15 +32,16 @@ import (
 )
 
 // Adaptor holds all the supported operations by the adaptor.
-type Adaptor struct{}
+type Adaptor struct {
+}
 
-// New a Adaptor pointer
+// New an Adaptor pointer
 func New() *Adaptor {
 	return &Adaptor{}
 }
 
 // TCloud returns tencent cloud operations.
-func (a *Adaptor) TCloud(s *types.BaseSecret) (*tcloud.TCloud, error) {
+func (a *Adaptor) TCloud(s *types.BaseSecret) (tcloud.TCloud, error) {
 	return tcloud.NewTCloud(s)
 }
 

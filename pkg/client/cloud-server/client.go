@@ -31,9 +31,11 @@ import (
 type Client struct {
 	rest.ClientInterface
 
-	Vpc    *VpcClient
-	Subnet *SubnetClient
-	Cvm    *CvmClient
+	Vpc             *VpcClient
+	Subnet          *SubnetClient
+	Cvm             *CvmClient
+	RouteTable      *RouteTableClient
+	ApprovalProcess *ApprovalProcessClient
 }
 
 // NewClient create a new cloud-server api client.
@@ -44,5 +46,7 @@ func NewClient(c *client.Capability, version string) *Client {
 		Vpc:             NewVpcClient(restCli),
 		Subnet:          NewSubnetClient(restCli),
 		Cvm:             NewCvmClient(restCli),
+		ApprovalProcess: NewApprovalProcessClient(restCli),
+		RouteTable:      NewRouteTable(restCli),
 	}
 }

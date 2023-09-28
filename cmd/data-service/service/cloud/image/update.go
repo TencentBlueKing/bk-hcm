@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	coreimage "hcm/pkg/api/core/cloud/image"
 	dataproto "hcm/pkg/api/data-service/cloud/image"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -46,25 +47,23 @@ func (svc *imageSvc) BatchUpdateImageExt(cts *rest.Contexts) (interface{}, error
 	}
 	switch vendor {
 	case enumor.TCloud:
-		return batchUpdateImageExt[dataproto.TCloudImageExtensionUpdateReq](cts, svc)
+		return batchUpdateImageExt[coreimage.TCloudExtension](cts, svc)
 	case enumor.Aws:
-		return batchUpdateImageExt[dataproto.AwsImageExtensionUpdateReq](cts, svc)
+		return batchUpdateImageExt[coreimage.AwsExtension](cts, svc)
 	case enumor.Gcp:
-		return batchUpdateImageExt[dataproto.GcpImageExtensionUpdateReq](cts, svc)
+		return batchUpdateImageExt[coreimage.GcpExtension](cts, svc)
 	case enumor.HuaWei:
-		return batchUpdateImageExt[dataproto.HuaWeiImageExtensionUpdateReq](cts, svc)
+		return batchUpdateImageExt[coreimage.HuaWeiExtension](cts, svc)
 	case enumor.Azure:
-		return batchUpdateImageExt[dataproto.AzureImageExtensionUpdateReq](cts, svc)
+		return batchUpdateImageExt[coreimage.AzureExtension](cts, svc)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
 	}
 }
 
-func batchUpdateImageExt[T dataproto.ImageExtensionUpdateReq](
-	cts *rest.Contexts,
-	svc *imageSvc,
-) (interface{}, error) {
-	req := new(dataproto.ImageExtBatchUpdateReq[T])
+func batchUpdateImageExt[T coreimage.Extension](cts *rest.Contexts, svc *imageSvc) (interface{}, error) {
+
+	req := new(dataproto.BatchUpdateReq[T])
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -73,9 +72,9 @@ func batchUpdateImageExt[T dataproto.ImageExtensionUpdateReq](
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	queryIDs := make([]string, len(*req))
-	for indx, imageReq := range *req {
-		queryIDs[indx] = imageReq.ID
+	queryIDs := make([]string, len(req.Items))
+	for index, one := range req.Items {
+		queryIDs[index] = one.ID
 	}
 	rawExtensions, err := svc.rawExtensions(cts, tools.ContainersExpression("id", queryIDs))
 	if err != nil {
@@ -83,24 +82,25 @@ func batchUpdateImageExt[T dataproto.ImageExtensionUpdateReq](
 	}
 
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		for _, imageReq := range *req {
+		for _, one := range req.Items {
 			updateData := &tablecloud.ImageModel{
-				State: imageReq.State,
+				State:  one.State,
+				OsType: one.OsType,
 			}
 
-			if imageReq.Extension != nil {
-				rawExtension, exist := rawExtensions[imageReq.ID]
+			if one.Extension != nil {
+				rawExtension, exist := rawExtensions[one.ID]
 				if !exist {
-					return nil, fmt.Errorf("image id (%s) not exit", imageReq.ID)
+					return nil, fmt.Errorf("image id (%s) not exit", one.ID)
 				}
-				mergedExtension, err := json.UpdateMerge(imageReq.Extension, string(rawExtension))
+				mergedExtension, err := json.UpdateMerge(one.Extension, string(rawExtension))
 				if err != nil {
-					return nil, fmt.Errorf("image id (%s) merge extension failed, err: %v", imageReq.ID, err)
+					return nil, fmt.Errorf("image id (%s) merge extension failed, err: %v", one.ID, err)
 				}
 				updateData.Extension = tabletype.JsonField(mergedExtension)
 			}
 
-			if err := svc.dao.Image().UpdateByIDWithTx(cts.Kit, txn, imageReq.ID, updateData); err != nil {
+			if err := svc.dao.Image().UpdateByIDWithTx(cts.Kit, txn, one.ID, updateData); err != nil {
 				return nil, fmt.Errorf("update image failed, err: %v", err)
 			}
 		}
@@ -115,10 +115,9 @@ func batchUpdateImageExt[T dataproto.ImageExtensionUpdateReq](
 
 // rawExtensions 根据条件查询原始的 extension 字段, 返回字典结构 {"镜像 ID": "原始的 extension 字段"}
 // TODO 不同资源可以复用 rawExtensions 逻辑
-func (svc *imageSvc) rawExtensions(
-	cts *rest.Contexts,
-	filterExp *filter.Expression,
-) (map[string]tabletype.JsonField, error) {
+func (svc *imageSvc) rawExtensions(cts *rest.Contexts, filterExp *filter.Expression) (
+	map[string]tabletype.JsonField, error) {
+
 	opt := &types.ListOption{
 		Filter: filterExp,
 		Page:   &core.BasePage{Limit: core.DefaultMaxPageLimit},

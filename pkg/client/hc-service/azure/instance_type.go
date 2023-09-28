@@ -20,11 +20,9 @@
 package azure
 
 import (
-	"context"
-	"net/http"
-
 	instancetype "hcm/pkg/api/hc-service/instance-type"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -41,16 +39,16 @@ func NewInstanceTypeClient(client rest.ClientInterface) *InstanceTypeClient {
 }
 
 // List ...
-func (c *InstanceTypeClient) List(
-	ctx context.Context, h http.Header, request *instancetype.AzureInstanceTypeListReq,
-) ([]*instancetype.AzureInstanceTypeResp, error) {
+func (c *InstanceTypeClient) List(kt *kit.Kit, request *instancetype.AzureInstanceTypeListReq) (
+	[]*instancetype.AzureInstanceTypeResp, error) {
+
 	resp := new(instancetype.AzureInstanceTypeListResp)
 
 	err := c.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/instance_types/list").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 

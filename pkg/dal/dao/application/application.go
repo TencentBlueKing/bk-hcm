@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package application ...
 package application
 
 import (
@@ -30,6 +31,7 @@ import (
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table"
 	"hcm/pkg/dal/table/application"
+	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -162,6 +164,10 @@ func (a *ApplicationDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListAp
 	details := make([]*application.ApplicationTable, 0)
 	if err = a.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
+	}
+
+	for _, one := range details {
+		one.Content = tabletype.JsonField(tools.ApplicationRemoveSenseField(string(one.Content)))
 	}
 
 	return &types.ListApplicationDetails{Count: 0, Details: details}, nil

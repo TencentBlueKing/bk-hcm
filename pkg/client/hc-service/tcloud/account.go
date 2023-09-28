@@ -31,6 +31,8 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
+
+	cam "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
 )
 
 // AccountClient is hc service account api client.
@@ -139,5 +141,32 @@ func (a *AccountClient) GetBySecret(ctx context.Context, h http.Header,
 	}
 
 	return resp.Data, nil
+}
 
+// ListAuthPolicy list auth policy
+func (a *AccountClient) ListAuthPolicy(kt *kit.Kit, req *hsaccount.ListTCloudAuthPolicyReq) (
+	[]*cam.ListGrantServiceAccessNode, error) {
+
+	resp := &struct {
+		rest.BaseResp `json:",inline"`
+		Data          []*cam.ListGrantServiceAccessNode `json:"data"`
+	}{}
+
+	err := a.client.Post().
+		WithContext(kt.Ctx).
+		Body(req).
+		SubResourcef("/accounts/auth_policies/list").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
 }

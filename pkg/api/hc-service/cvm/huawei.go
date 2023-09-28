@@ -151,6 +151,8 @@ type HuaWeiBatchCreateReq struct {
 	RootVolume            *typecvm.HuaWeiVolume         `json:"root_volume" validate:"required"`
 	DataVolume            []typecvm.HuaWeiVolume        `json:"data_volume" validate:"omitempty"`
 	InstanceCharge        *typecvm.HuaWeiInstanceCharge `json:"instance_charge" validate:"required"`
+	PublicIPAssigned      bool                          `json:"public_ip_assigned" validate:"omitempty"`
+	Eip                   *typecvm.HuaWeiEip            `json:"eip" validate:"omitempty"`
 }
 
 // Validate request.

@@ -10,9 +10,9 @@ GET /api/v1/cloud/vendors/gcp/firewalls/rules/{id}
 
 ### 输入参数
 
-| 参数名称 | 参数类型    | 必选 | 描述         |
-|------|---------|----|------------|
-| id   | string  | 是  | Gcp防火墙规则ID |
+| 参数名称 | 参数类型   | 必选 | 描述         |
+|------|--------|----|------------|
+| id   | string | 是  | Gcp防火墙规则ID |
 
 ### 调用示例
 
@@ -99,12 +99,12 @@ GET /api/v1/cloud/vendors/gcp/firewalls/rules/{id}
 | account_id              | string             | 账号ID                                    |
 | creator                 | string             | 创建者                                     |
 | reviser                 | string             | 最后一次修改的修改者                              |
-| create_at               | string             | 创建时间，标准格式：2006-01-02T15:04:05Z                                    |
-| update_at               | string             | 最后一次修改时间，标准格式：2006-01-02T15:04:05Z                                |
+| create_at               | string             | 创建时间，标准格式：2006-01-02T15:04:05Z          |
+| update_at               | string             | 最后一次修改时间，标准格式：2006-01-02T15:04:05Z      |
 
 #### protocol_set
 
 | 参数名称     | 参数类型         | 描述                                           |
 |----------|--------------|----------------------------------------------|
 | protocol | string       | 协议。（枚举值：tcp, udp, icmp, esp, ah, ipip, sctp） |
-| ports    | string array | 端口列表。                                        |
+| port     | string array | 端口列表。                                        |

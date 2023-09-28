@@ -33,8 +33,12 @@ const (
 	Create Action = "create"
 	// Update operation's hcm auth action type
 	Update Action = "update"
+	// UpdateRRT RecycleReserveTime operation's hcm auth action type
+	UpdateRRT Action = "update_rrt"
 	// Delete operation's hcm auth action type
 	Delete Action = "delete"
+	// DeleteRecycled 删除回收站中的资源
+	DeleteRecycled Action = "delete_recycled"
 	// Find operation's hcm auth action type
 	Find Action = "find"
 	// KeyAccess access secret key operation's hcm auth action type

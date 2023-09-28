@@ -20,93 +20,88 @@
 package image
 
 import (
-	"hcm/pkg/api/core"
+	coreimage "hcm/pkg/api/core/cloud/image"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/runtime/filter"
 )
 
-// ImageExtCreateReq ...
-type ImageExtCreateReq[T ImageExtensionCreateReq] struct {
-	CloudID      string `json:"cloud_id"`
-	Name         string `json:"name"`
-	Architecture string `json:"architecture"`
-	Platform     string `json:"platform"`
-	State        string `json:"state"`
-	Type         string `json:"type"`
-	Extension    *T     `json:"extension"`
+// BatchCreateReq define batch create req.
+type BatchCreateReq[T coreimage.Extension] struct {
+	Items []ImageCreate[T] `json:"items" validate:"required,min=1,max=100"`
 }
 
 // Validate ...
-func (req *ImageExtCreateReq[T]) Validate() error {
-	return validator.Validate.Struct(req)
-}
+func (req *BatchCreateReq[T]) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
 
-// ImageExtensionCreateReq ...
-type ImageExtensionCreateReq interface {
-	TCloudImageExtensionCreateReq | AwsImageExtensionCreateReq | GcpImageExtensionCreateReq | HuaWeiImageExtensionCreateReq | AzureImageExtensionCreateReq
-}
-
-// ImageExtBatchCreateReq ...
-type ImageExtBatchCreateReq[T ImageExtensionCreateReq] []*ImageExtCreateReq[T]
-
-// Validate ...
-func (req *ImageExtBatchCreateReq[T]) Validate() error {
-	for _, r := range *req {
-		if err := r.Validate(); err != nil {
+	for _, one := range req.Items {
+		if err := one.Validate(); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
-// ImageListReq ...
-type ImageListReq struct {
-	Filter *filter.Expression `json:"filter" validate:"required"`
-	Page   *core.BasePage     `json:"page" validate:"required"`
-	Fields []string           `json:"fields" validate:"omitempty"`
+// ImageCreate ...
+type ImageCreate[T coreimage.Extension] struct {
+	CloudID      string        `json:"cloud_id"`
+	Name         string        `json:"name"`
+	Architecture string        `json:"architecture"`
+	Platform     string        `json:"platform"`
+	State        string        `json:"state"`
+	Type         string        `json:"type"`
+	OsType       enumor.OsType `json:"os_type"`
+	Extension    *T            `json:"extension"`
 }
 
 // Validate ...
-func (req *ImageListReq) Validate() error {
+func (req *ImageCreate[T]) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// ImageExtUpdateReq ...
-type ImageExtUpdateReq[T ImageExtensionUpdateReq] struct {
-	ID        string `json:"id" validate:"required"`
-	State     string `json:"state"`
-	Extension *T     `json:"extension"`
+// BatchUpdateReq define batch update req.
+type BatchUpdateReq[T coreimage.Extension] struct {
+	Items []ImageUpdate[T] `json:"items,min=1,max=100"`
 }
 
 // Validate ...
-func (req *ImageExtUpdateReq[T]) Validate() error {
-	return validator.Validate.Struct(req)
-}
+func (req *BatchUpdateReq[T]) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
 
-// ImageExtensionUpdateReq ...
-type ImageExtensionUpdateReq interface {
-	TCloudImageExtensionUpdateReq | AwsImageExtensionUpdateReq | GcpImageExtensionUpdateReq | HuaWeiImageExtensionUpdateReq | AzureImageExtensionUpdateReq
-}
-
-// ImageExtBatchUpdateReq ...
-type ImageExtBatchUpdateReq[T ImageExtensionUpdateReq] []*ImageExtUpdateReq[T]
-
-// Validate ...
-func (req *ImageExtBatchUpdateReq[T]) Validate() error {
-	for _, r := range *req {
-		if err := r.Validate(); err != nil {
+	for _, one := range req.Items {
+		if err := one.Validate(); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
-// ImageDeleteReq ...
-type ImageDeleteReq struct {
+// ImageUpdate ...
+type ImageUpdate[T coreimage.Extension] struct {
+	ID        string        `json:"id" validate:"required"`
+	State     string        `json:"state"`
+	OsType    enumor.OsType `json:"os_type"`
+	Extension *T            `json:"extension"`
+}
+
+// Validate ...
+func (req *ImageUpdate[T]) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// DeleteReq ...
+type DeleteReq struct {
 	Filter *filter.Expression `json:"filter" validate:"required"`
 }
 
 // Validate ...
-func (req *ImageDeleteReq) Validate() error {
+func (req *DeleteReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

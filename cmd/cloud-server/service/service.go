@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package service ...
 package service
 
 import (
@@ -31,6 +32,7 @@ import (
 	logicaudit "hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/account"
 	"hcm/cmd/cloud-server/service/application"
+	approvalprocess "hcm/cmd/cloud-server/service/approval_process"
 	"hcm/cmd/cloud-server/service/assign"
 	"hcm/cmd/cloud-server/service/audit"
 	"hcm/cmd/cloud-server/service/bill"
@@ -161,7 +163,7 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 		go bill.CloudBillConfigCreate(interval, sd, apiClientSet)
 	}
 
-	recycle.RecycleTiming(apiClientSet, sd, cc.CloudServer().Recycle)
+	recycle.RecycleTiming(apiClientSet, sd, cc.CloudServer().Recycle, esbClient)
 
 	return svr, nil
 }
@@ -242,7 +244,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 		Audit:      s.audit,
 		Cipher:     s.cipher,
 		EsbClient:  s.esbClient,
-		Logics:     logics.NewLogics(s.client),
+		Logics:     logics.NewLogics(s.client, s.esbClient),
 		ItsmCli:    s.itsmCli,
 	}
 
@@ -270,6 +272,8 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	bill.InitBillService(c)
 
 	user.InitService(c)
+
+	approvalprocess.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

@@ -36,6 +36,9 @@ import (
 // SyncResourceGroup sync resource group
 func SyncResourceGroup(kt *kit.Kit, hcCli *hcservice.Client, accountID string) error {
 
+	// 重新设置rid方便定位
+	kt = kt.NewSubKit()
+
 	start := time.Now()
 	logs.V(3).Infof("azure account[%s] sync resource group start, time: %v, rid: %s", accountID, start, kt.Rid)
 

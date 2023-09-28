@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package app ...
 package app
 
 import (
@@ -26,6 +27,7 @@ import (
 
 	"hcm/cmd/hc-service/options"
 	"hcm/cmd/hc-service/service"
+	mocktcloud "hcm/pkg/adaptor/mock/tcloud"
 	"hcm/pkg/cc"
 	"hcm/pkg/logs"
 	"hcm/pkg/metrics"
@@ -79,6 +81,7 @@ func (ds *hcService) prepare(opt *options.Option) error {
 	disOpt := serviced.DiscoveryOption{
 		Services: []cc.Name{cc.DataServiceName},
 	}
+
 	sd, err := serviced.NewServiceD(cc.HCService().Service, svcOpt, disOpt)
 	if err != nil {
 		return fmt.Errorf("new service discovery failed, err: %v", err)
@@ -116,6 +119,7 @@ func (ds *hcService) finalizer() {
 		return
 	}
 
+	mocktcloud.Finish()
 	logs.Infof("shutting down service, deregister service success.")
 	return
 }

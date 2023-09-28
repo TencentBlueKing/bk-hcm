@@ -24,6 +24,7 @@ import (
 	"hcm/cmd/hc-service/logics/res-sync/gcp"
 	"hcm/cmd/hc-service/service/sync/handler"
 	typecore "hcm/pkg/adaptor/types/core"
+	routetable "hcm/pkg/adaptor/types/route-table"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -74,14 +75,12 @@ func (hd *routeHandler) Prepare(cts *rest.Contexts) error {
 
 // Next ...
 func (hd *routeHandler) Next(kt *kit.Kit) ([]string, error) {
-	listOpt := &typecore.GcpListOption{
-		Zone: hd.request.Zone,
+	listOpt := &routetable.GcpListOption{
 		Page: &typecore.GcpPage{
 			PageToken: hd.pageToken,
 			PageSize:  constant.CloudResourceSyncMaxLimit,
 		},
 	}
-
 	routeResult, err := hd.syncCli.CloudCli().ListRoute(kt, listOpt)
 	if err != nil {
 		logs.Errorf("request adaptor list gcp route failed, err: %v, opt: %v, rid: %s", err, listOpt, kt.Rid)
@@ -107,7 +106,7 @@ func (hd *routeHandler) Sync(kt *kit.Kit, cloudIDs []string) error {
 		AccountID: hd.request.AccountID,
 		CloudIDs:  cloudIDs,
 	}
-	if _, err := hd.syncCli.Route(kt, params, &gcp.SyncRouteOption{Zone: hd.request.Zone}); err != nil {
+	if _, err := hd.syncCli.Route(kt, params, &gcp.SyncRouteOption{}); err != nil {
 		logs.Errorf("sync gcp route failed, err: %v, opt: %v, rid: %s", err, params, kt.Rid)
 		return err
 	}
@@ -117,7 +116,7 @@ func (hd *routeHandler) Sync(kt *kit.Kit, cloudIDs []string) error {
 
 // RemoveDeleteFromCloud ...
 func (hd *routeHandler) RemoveDeleteFromCloud(kt *kit.Kit) error {
-	if err := hd.syncCli.RemoveRouteDeleteFromCloud(kt, hd.request.AccountID, hd.request.Zone); err != nil {
+	if err := hd.syncCli.RemoveRouteDeleteFromCloud(kt, hd.request.AccountID); err != nil {
 		logs.Errorf("remove route delete from cloud failed, err: %v, accountID: %s, rid: %s", err,
 			hd.request.AccountID, kt.Rid)
 		return err

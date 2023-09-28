@@ -31,6 +31,9 @@ import (
 // SyncZone sync zone
 func SyncZone(kt *kit.Kit, hcCli *hcservice.Client, accountID string, regions []string) error {
 
+	// 重新设置rid方便定位
+	kt = kt.NewSubKit()
+
 	start := time.Now()
 	logs.V(3).Infof("tcloud account[%s] sync zone start, time: %v, rid: %s", accountID, start, kt.Rid)
 

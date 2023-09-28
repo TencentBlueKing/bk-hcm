@@ -21,6 +21,7 @@ package image
 
 import (
 	"hcm/pkg/api/core"
+	coreimage "hcm/pkg/api/core/cloud/image"
 	dataproto "hcm/pkg/api/data-service/cloud/image"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -41,26 +42,24 @@ func (svc *imageSvc) BatchCreateImageExt(cts *rest.Contexts) (interface{}, error
 	}
 	switch vendor {
 	case enumor.TCloud:
-		return batchCreateImageExt[dataproto.TCloudImageExtensionCreateReq](cts, svc, vendor)
+		return batchCreateImageExt[coreimage.TCloudExtension](cts, svc, vendor)
 	case enumor.Aws:
-		return batchCreateImageExt[dataproto.AwsImageExtensionCreateReq](cts, svc, vendor)
+		return batchCreateImageExt[coreimage.AwsExtension](cts, svc, vendor)
 	case enumor.Gcp:
-		return batchCreateImageExt[dataproto.GcpImageExtensionCreateReq](cts, svc, vendor)
+		return batchCreateImageExt[coreimage.GcpExtension](cts, svc, vendor)
 	case enumor.HuaWei:
-		return batchCreateImageExt[dataproto.HuaWeiImageExtensionCreateReq](cts, svc, vendor)
+		return batchCreateImageExt[coreimage.HuaWeiExtension](cts, svc, vendor)
 	case enumor.Azure:
-		return batchCreateImageExt[dataproto.AzureImageExtensionCreateReq](cts, svc, vendor)
+		return batchCreateImageExt[coreimage.AzureExtension](cts, svc, vendor)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
 	}
 }
 
-func batchCreateImageExt[T dataproto.ImageExtensionCreateReq](
-	cts *rest.Contexts,
-	svc *imageSvc,
-	vendor enumor.Vendor,
-) (interface{}, error) {
-	req := new(dataproto.ImageExtBatchCreateReq[T])
+func batchCreateImageExt[T coreimage.Extension](cts *rest.Contexts, svc *imageSvc, vendor enumor.Vendor) (
+	interface{}, error) {
+
+	req := new(dataproto.BatchCreateReq[T])
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -70,21 +69,22 @@ func batchCreateImageExt[T dataproto.ImageExtensionCreateReq](
 	}
 
 	imageIDs, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		images := make([]*tablecloud.ImageModel, len(*req))
+		images := make([]*tablecloud.ImageModel, len(req.Items))
 
-		for indx, imageReq := range *req {
-			extensionJson, err := json.MarshalToString(imageReq.Extension)
+		for index, one := range req.Items {
+			extensionJson, err := json.MarshalToString(one.Extension)
 			if err != nil {
 				return nil, errf.NewFromErr(errf.InvalidParameter, err)
 			}
-			images[indx] = &tablecloud.ImageModel{
+			images[index] = &tablecloud.ImageModel{
 				Vendor:       string(vendor),
-				CloudID:      imageReq.CloudID,
-				Name:         imageReq.Name,
-				Architecture: imageReq.Architecture,
-				Platform:     imageReq.Platform,
-				State:        imageReq.State,
-				Type:         imageReq.Type,
+				CloudID:      one.CloudID,
+				Name:         one.Name,
+				Architecture: one.Architecture,
+				Platform:     one.Platform,
+				OsType:       one.OsType,
+				State:        one.State,
+				Type:         one.Type,
 				Extension:    tabletype.JsonField(extensionJson),
 				Creator:      cts.Kit.User,
 				Reviser:      cts.Kit.User,

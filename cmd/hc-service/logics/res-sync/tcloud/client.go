@@ -27,7 +27,7 @@ import (
 
 // Interface support resource sync.
 type Interface interface {
-	CloudCli() *tcloud.TCloud
+	CloudCli() tcloud.TCloud
 
 	Cvm(kt *kit.Kit, params *SyncBaseParams, opt *SyncCvmOption) (*SyncResult, error)
 	CvmWithRelRes(kt *kit.Kit, params *SyncBaseParams, opt *SyncCvmWithRelResOption) (*SyncResult, error)
@@ -69,17 +69,17 @@ var _ Interface = new(client)
 
 type client struct {
 	accountID string
-	cloudCli  *tcloud.TCloud
+	cloudCli  tcloud.TCloud
 	dbCli     *dataservice.Client
 }
 
 // CloudCli return tcloud client.
-func (cli *client) CloudCli() *tcloud.TCloud {
+func (cli *client) CloudCli() tcloud.TCloud {
 	return cli.cloudCli
 }
 
 // NewClient new client.
-func NewClient(dbCli *dataservice.Client, cloudCli *tcloud.TCloud) Interface {
+func NewClient(dbCli *dataservice.Client, cloudCli tcloud.TCloud) Interface {
 	return &client{
 		dbCli:    dbCli,
 		cloudCli: cloudCli,

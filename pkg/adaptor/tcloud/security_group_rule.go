@@ -34,7 +34,7 @@ import (
 
 // CreateSecurityGroupRule create security group rule.
 // reference: https://cloud.tencent.com/document/api/215/15807
-func (t *TCloud) CreateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudCreateOption) error {
+func (t *TCloudImpl) CreateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudCreateOption) error {
 
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "security group rule create option is required")
@@ -100,7 +100,7 @@ func (t *TCloud) CreateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCl
 
 // DeleteSecurityGroupRule delete security group.
 // reference: https://cloud.tencent.com/document/api/215/15809
-func (t *TCloud) DeleteSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudDeleteOption) error {
+func (t *TCloudImpl) DeleteSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudDeleteOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "security group rule delete option is required")
 	}
@@ -156,7 +156,7 @@ func (t *TCloud) DeleteSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCl
 
 // UpdateSecurityGroupRule update security group.
 // reference: https://cloud.tencent.com/document/api/215/15811
-func (t *TCloud) UpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudUpdateOption) error {
+func (t *TCloudImpl) UpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudUpdateOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "security group rule update option is required")
 	}
@@ -226,7 +226,7 @@ func (t *TCloud) UpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCl
 
 // ListSecurityGroupRule list tcloud security group rule.
 // reference: https://cloud.tencent.com/document/api/215/15804
-func (t *TCloud) ListSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudListOption) (
+func (t *TCloudImpl) ListSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudListOption) (
 	*vpc.SecurityGroupPolicySet, error) {
 
 	if opt == nil {

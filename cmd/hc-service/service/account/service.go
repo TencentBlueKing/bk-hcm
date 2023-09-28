@@ -57,6 +57,22 @@ func InitAccountService(cap *capability.Capability) {
 	h.Add("GcpGetInfoBySecret", http.MethodPost, "/vendors/gcp/accounts/secret", svc.GcpGetInfoBySecret)
 	h.Add("AzureGetInfoBySecret", http.MethodPost, "/vendors/azure/accounts/secret", svc.AzureGetInfoBySecret)
 
+	// 通过秘钥获取资源数量
+	h.Add("HuaWeiGetResCountBySecret", http.MethodPost, "/vendors/huawei/accounts/res_counts/by_secrets",
+		svc.HuaWeiGetResCountBySecret)
+	h.Add("GetGcpResCountBySecret", http.MethodPost, "/vendors/gcp/accounts/res_counts/by_secrets",
+		svc.GetGcpResCountBySecret)
+	h.Add("GetAzureResCountBySecret", http.MethodPost, "/vendors/azure/accounts/res_counts/by_secrets",
+		svc.GetAzureResCountBySecret)
+	h.Add("TCloudGetResCountBySecret", http.MethodPost, "/vendors/tcloud/accounts/res_counts/by_secrets",
+		svc.TCloudGetResCountBySecret)
+	h.Add("AwsGetResCountBySecret", http.MethodPost, "/vendors/aws/accounts/res_counts/by_secrets",
+		svc.AwsGetResCountBySecret)
+
+	// 通过密钥获取账号权限策略
+	h.Add("ListTCloudAuthPolicies", http.MethodPost, "/vendors/tcloud/accounts/auth_policies/list",
+		svc.ListTCloudAuthPolicies)
+
 	h.Load(cap.WebService)
 }
 

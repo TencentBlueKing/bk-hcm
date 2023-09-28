@@ -25,8 +25,8 @@ import (
 	"hcm/cmd/hc-service/logics/res-sync/common"
 	typesimage "hcm/pkg/adaptor/types/image"
 	"hcm/pkg/api/core"
+	coreimage "hcm/pkg/api/core/cloud/image"
 	dataproto "hcm/pkg/api/data-service/cloud/image"
-	dateimage "hcm/pkg/api/data-service/cloud/image"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -72,11 +72,11 @@ func (cli *client) Image(kt *kit.Kit, opt *SyncImageOption) (*SyncResult, error)
 		return new(SyncResult), nil
 	}
 
-	addSlice, updateMap, delCloudIDs := common.Diff[typesimage.AzureImage, dateimage.ImageExtResult[dateimage.AzureImageExtensionResult]](
+	addSlice, updateMap, delCloudIDs := common.Diff[typesimage.AzureImage, coreimage.Image[coreimage.AzureExtension]](
 		imageFromCloud, imageFromDB, isImageChange)
 
 	if len(delCloudIDs) > 0 {
-		if err := cli.deleteImage(kt, opt, delCloudIDs); err != nil {
+		if err = cli.deleteImage(kt, opt, delCloudIDs); err != nil {
 			return nil, err
 		}
 	}
@@ -103,18 +103,26 @@ func (cli *client) updateImage(kt *kit.Kit, opt *SyncImageOption,
 		return fmt.Errorf("image updateMap is <= 0, not update")
 	}
 
-	var updateReq dataproto.ImageExtBatchUpdateReq[dataproto.AzureImageExtensionUpdateReq]
+	items := make([]dataproto.ImageUpdate[coreimage.AzureExtension], 0, len(updateMap))
 
 	for id, one := range updateMap {
-		image := &dataproto.ImageExtUpdateReq[dataproto.AzureImageExtensionUpdateReq]{
-			ID:    id,
-			State: one.State,
+		image := dataproto.ImageUpdate[coreimage.AzureExtension]{
+			ID:     id,
+			State:  one.State,
+			OsType: one.OsType,
 		}
-		updateReq = append(updateReq, image)
+		items = append(items, image)
 	}
 
-	if _, err := cli.dbCli.Azure.BatchUpdateImage(kt.Ctx, kt.Header(), &updateReq); err != nil {
-		return err
+	split := slice.Split(items, constant.BatchOperationMaxLimit)
+
+	for _, part := range split {
+		updateReq := &dataproto.BatchUpdateReq[coreimage.AzureExtension]{
+			Items: part,
+		}
+		if _, err := cli.dbCli.Azure.BatchUpdateImage(kt, updateReq); err != nil {
+			return err
+		}
 	}
 
 	logs.Infof("[%s] sync image to update image success, accountID: %s, count: %d, rid: %s", enumor.Azure,
@@ -130,29 +138,36 @@ func (cli *client) createImage(kt *kit.Kit, opt *SyncImageOption,
 		return fmt.Errorf("cvm addSlice is <= 0, not create")
 	}
 
-	var createReq dataproto.ImageExtBatchCreateReq[dataproto.AzureImageExtensionCreateReq]
+	split := slice.Split(addSlice, constant.BatchOperationMaxLimit)
+	for _, part := range split {
+		items := make([]dataproto.ImageCreate[coreimage.AzureExtension], 0, len(addSlice))
 
-	for _, one := range addSlice {
-		image := &dataproto.ImageExtCreateReq[dataproto.AzureImageExtensionCreateReq]{
-			CloudID:      one.CloudID,
-			Name:         one.Name,
-			Architecture: one.Architecture,
-			Platform:     one.Platform,
-			State:        one.State,
-			Type:         one.Type,
-			Extension: &dataproto.AzureImageExtensionCreateReq{
-				Region:    opt.Region,
-				Publisher: opt.Publisher,
-				Offer:     opt.Offer,
-				Sku:       one.Sku,
-			},
+		for _, one := range part {
+			image := dataproto.ImageCreate[coreimage.AzureExtension]{
+				CloudID:      one.CloudID,
+				Name:         one.Name,
+				Architecture: one.Architecture,
+				Platform:     one.Platform,
+				State:        one.State,
+				Type:         one.Type,
+				OsType:       one.OsType,
+				Extension: &coreimage.AzureExtension{
+					Region:    opt.Region,
+					Publisher: opt.Publisher,
+					Offer:     opt.Offer,
+					Sku:       one.Sku,
+				},
+			}
+			items = append(items, image)
 		}
-		createReq = append(createReq, image)
-	}
 
-	_, err := cli.dbCli.Azure.BatchCreateImage(kt.Ctx, kt.Header(), &createReq)
-	if err != nil {
-		return err
+		createReq := &dataproto.BatchCreateReq[coreimage.AzureExtension]{
+			Items: items,
+		}
+		_, err := cli.dbCli.Azure.BatchCreateImage(kt, createReq)
+		if err != nil {
+			return err
+		}
 	}
 
 	logs.Infof("[%s] sync image to create image success, accountID: %s, count: %d, rid: %s", enumor.Azure,
@@ -194,10 +209,10 @@ func (cli *client) deleteImage(kt *kit.Kit, opt *SyncImageOption, delCloudIDs []
 
 	elems := slice.Split(delCloudIDs, constant.CloudResourceSyncMaxLimit)
 	for _, parts := range elems {
-		batchDeleteReq := &dataproto.ImageDeleteReq{
+		batchDeleteReq := &dataproto.DeleteReq{
 			Filter: tools.ContainersExpression("cloud_id", parts),
 		}
-		if _, err := cli.dbCli.Global.DeleteImage(kt.Ctx, kt.Header(), batchDeleteReq); err != nil {
+		if err = cli.dbCli.Global.DeleteImage(kt, batchDeleteReq); err != nil {
 			logs.Errorf("request dataservice delete azure image failed, err: %v, rid: %s", err, kt.Rid)
 			return err
 		}
@@ -230,13 +245,13 @@ func (cli *client) listImageFromCloud(kt *kit.Kit, opt *SyncImageOption) ([]type
 }
 
 func (cli *client) listImageFromDB(kt *kit.Kit, opt *SyncImageOption) (
-	[]dateimage.ImageExtResult[dateimage.AzureImageExtensionResult], error) {
+	[]coreimage.Image[coreimage.AzureExtension], error) {
 
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	req := &dataproto.ImageListReq{
+	req := &core.ListReq{
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
@@ -265,10 +280,10 @@ func (cli *client) listImageFromDB(kt *kit.Kit, opt *SyncImageOption) (
 		Page: core.NewDefaultBasePage(),
 	}
 	start := uint32(0)
-	results := make([]dateimage.ImageExtResult[dateimage.AzureImageExtensionResult], 0)
+	results := make([]coreimage.Image[coreimage.AzureExtension], 0)
 	for {
 		req.Page.Start = start
-		images, err := cli.dbCli.Azure.ListImage(kt.Ctx, kt.Header(), req)
+		images, err := cli.dbCli.Azure.ListImage(kt, req)
 		if err != nil {
 			logs.Errorf("[%s] list image from db failed, err: %v, account: %s, req: %v, rid: %s", enumor.Azure, err,
 				opt.AccountID, req, kt.Rid)
@@ -288,13 +303,13 @@ func (cli *client) listImageFromDB(kt *kit.Kit, opt *SyncImageOption) (
 }
 
 func (cli *client) listImageFromDBForCvm(kt *kit.Kit, params *SyncBaseParams) (
-	[]*dataproto.ImageResult, error) {
+	[]*coreimage.BaseImage, error) {
 
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	req := &dataproto.ImageListReq{
+	req := &core.ListReq{
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
@@ -303,7 +318,7 @@ func (cli *client) listImageFromDBForCvm(kt *kit.Kit, params *SyncBaseParams) (
 		},
 		Page: core.NewDefaultBasePage(),
 	}
-	result, err := cli.dbCli.Global.ListImage(kt.Ctx, kt.Header(), req)
+	result, err := cli.dbCli.Global.ListImage(kt, req)
 	if err != nil {
 		logs.Errorf("[%s] list image from db failed, err: %v, account: %s, req: %v, rid: %s", enumor.Azure, err,
 			params.AccountID, req, kt.Rid)
@@ -313,9 +328,13 @@ func (cli *client) listImageFromDBForCvm(kt *kit.Kit, params *SyncBaseParams) (
 	return result.Details, nil
 }
 
-func isImageChange(cloud typesimage.AzureImage, db dateimage.ImageExtResult[dateimage.AzureImageExtensionResult]) bool {
+func isImageChange(cloud typesimage.AzureImage, db coreimage.Image[coreimage.AzureExtension]) bool {
 
 	if cloud.State != db.State {
+		return true
+	}
+
+	if cloud.OsType != db.OsType {
 		return true
 	}
 

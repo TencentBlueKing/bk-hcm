@@ -21,11 +21,12 @@ package huawei
 
 import (
 	"context"
+	"net/http"
+
 	"hcm/pkg/api/core"
 	protoregion "hcm/pkg/api/data-service/cloud/region"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
-	"net/http"
 )
 
 // RegionClient is data service region api client.

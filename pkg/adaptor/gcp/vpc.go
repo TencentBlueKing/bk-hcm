@@ -124,6 +124,35 @@ func (g *Gcp) DeleteVpc(kt *kit.Kit, opt *core.BaseDeleteOption) error {
 	return nil
 }
 
+// CountVpc count vpc.
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/networks/list
+func (g *Gcp) CountVpc(kt *kit.Kit) (int32, error) {
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return 0, err
+	}
+
+	request := client.Networks.List(g.CloudProjectID()).Context(kt.Ctx)
+
+	var count int32
+	for {
+		resp, err := request.Do()
+		if err != nil {
+			logs.Errorf("list vpc failed, err: %v, rid: %s", err, kt.Rid)
+			return 0, err
+		}
+
+		count += int32(len(resp.Items))
+
+		if resp.NextPageToken == "" {
+			break
+		}
+	}
+
+	return count, nil
+}
+
 // ListVpc list vpc.
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/networks/list
 func (g *Gcp) ListVpc(kt *kit.Kit, opt *types.GcpListOption) (*types.GcpVpcListResult, error) {

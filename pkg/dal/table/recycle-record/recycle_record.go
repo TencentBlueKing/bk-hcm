@@ -21,6 +21,7 @@ package recyclerecord
 
 import (
 	"errors"
+	"time"
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -50,6 +51,7 @@ var RecycleRecordColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
 	{Column: "updated_at", NamedC: "updated_at", Type: enumor.Time},
+	{Column: "recycled_at", NamedC: "recycled_at", Type: enumor.Time},
 }
 
 // RecycleRecordTable is used to save resource's recycle record information.
@@ -86,6 +88,8 @@ type RecycleRecordTable struct {
 	CreatedAt types.Time `db:"created_at" validate:"isdefault" json:"created_at"`
 	// UpdatedAt 更新时间
 	UpdatedAt types.Time `db:"updated_at" validate:"isdefault" json:"updated_at"`
+	// RecycledAt 回收时间
+	RecycledAt time.Time `db:"recycled_at" json:"recycled_at"`
 }
 
 // InsertValidate validate recycle record on insertion.

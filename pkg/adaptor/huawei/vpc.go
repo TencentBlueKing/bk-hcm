@@ -135,6 +135,45 @@ func (h *HuaWei) DeleteVpc(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) erro
 	return nil
 }
 
+// ListVpcRaw list vpc raw.
+// reference: https://support.huaweicloud.com/intl/zh-cn/api-vpc/vpc_apiv3_0003.html
+func (h *HuaWei) ListVpcRaw(kt *kit.Kit, opt *types.HuaWeiVpcListOption) (*model.ListVpcsResponse, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	vpcClient, err := h.clientSet.vpcClient(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("new vpc client failed, err: %v", err)
+	}
+
+	req := new(model.ListVpcsRequest)
+
+	if len(opt.CloudIDs) != 0 {
+		req.Id = &opt.CloudIDs
+	}
+
+	if opt.Page != nil {
+		req.Marker = opt.Page.Marker
+		req.Limit = opt.Page.Limit
+	}
+
+	if len(opt.Names) != 0 {
+		req.Name = &opt.Names
+	}
+
+	resp, err := vpcClient.ListVpcs(req)
+	if err != nil {
+		if strings.Contains(err.Error(), ErrDataNotFound) {
+			return nil, nil
+		}
+		logs.Errorf("list huawei vpc failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, fmt.Errorf("list huawei vpc failed, err: %v", err)
+	}
+
+	return resp, nil
+}
+
 // ListVpc list vpc.
 // reference: https://support.huaweicloud.com/intl/zh-cn/api-vpc/vpc_apiv3_0003.html
 func (h *HuaWei) ListVpc(kt *kit.Kit, opt *types.HuaWeiVpcListOption) (*types.HuaWeiVpcListResult, error) {

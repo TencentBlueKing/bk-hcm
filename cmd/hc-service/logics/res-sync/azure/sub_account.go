@@ -125,13 +125,20 @@ func (cli *client) updateSubAccount(kt *kit.Kit, opt *SyncSubAccountOption,
 			return err
 		}
 
+		accountType := ""
+		if account.Extension.DisplayNameName != "" &&
+			account.Extension.DisplayNameName == converter.PtrToVal(one.DisplayNameName) {
+			accountType = string(enumor.CurrentAccount)
+		}
+
 		tmpRes := dssubaccount.UpdateField{
-			ID:        id,
-			Name:      converter.PtrToVal(one.UserPrincipalName),
-			Vendor:    enumor.Azure,
-			Site:      account.Site,
-			AccountID: account.ID,
-			Extension: ext,
+			ID:          id,
+			Name:        converter.PtrToVal(one.UserPrincipalName),
+			Vendor:      enumor.Azure,
+			Site:        account.Site,
+			AccountID:   account.ID,
+			AccountType: accountType,
+			Extension:   ext,
 			// Managers/BizIDs由用户设置不继承资源账号。
 			Managers: nil,
 			BkBizIDs: nil,
@@ -184,13 +191,20 @@ func (cli *client) createSubAccount(kt *kit.Kit, opt *SyncSubAccountOption, addS
 			return err
 		}
 
+		accountType := ""
+		if account.Extension.DisplayNameName != "" &&
+			account.Extension.DisplayNameName == converter.PtrToVal(one.DisplayNameName) {
+			accountType = string(enumor.CurrentAccount)
+		}
+
 		tmpRes := dssubaccount.CreateField{
-			CloudID:   converter.PtrToVal(one.ID),
-			Name:      converter.PtrToVal(one.UserPrincipalName),
-			Vendor:    enumor.Azure,
-			Site:      account.Site,
-			AccountID: account.ID,
-			Extension: ext,
+			CloudID:     converter.PtrToVal(one.ID),
+			Name:        converter.PtrToVal(one.UserPrincipalName),
+			Vendor:      enumor.Azure,
+			Site:        account.Site,
+			AccountID:   account.ID,
+			AccountType: accountType,
+			Extension:   ext,
 			// Managers/BizIDs由用户设置不继承资源账号。
 			Managers: nil,
 			BkBizIDs: nil,

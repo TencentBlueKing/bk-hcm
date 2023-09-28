@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package cvm ...
 package cvm
 
 import (
@@ -40,6 +41,7 @@ func InitCvmService(c *capability.Capability) {
 		audit:      c.Audit,
 		diskLgc:    c.Logics.Disk,
 		cvmLgc:     c.Logics.Cvm,
+		eipLgc:     c.Logics.Eip,
 	}
 
 	h := rest.NewHandler()
@@ -47,6 +49,7 @@ func InitCvmService(c *capability.Capability) {
 	h.Add("GetCvm", http.MethodGet, "/cvms/{id}", svc.GetCvm)
 	h.Add("ListCvmExt", http.MethodPost, "/cvms/list", svc.ListCvm)
 	h.Add("CreateCvm", http.MethodPost, "/cvms/create", svc.CreateCvm)
+	h.Add("InquiryPriceCvm", http.MethodPost, "/cvms/prices/inquiry", svc.InquiryPriceCvm)
 	h.Add("BatchDeleteCvm", http.MethodDelete, "/cvms/batch", svc.BatchDeleteCvm)
 	h.Add("AssignCvmToBiz", http.MethodPost, "/cvms/assign/bizs", svc.AssignCvmToBiz)
 	h.Add("BatchStartCvm", http.MethodPost, "/cvms/batch/start", svc.BatchStartCvm)
@@ -69,7 +72,10 @@ func InitCvmService(c *capability.Capability) {
 
 	// 业务下回收接口
 	h.Add("RecycleBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/recycle", svc.RecycleBizCvm)
+	h.Add("RecoverBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/recover", svc.RecoverBizCvm)
 	h.Add("GetBizRecycledCvm", http.MethodGet, "/bizs/{bk_biz_id}/recycled/cvms/{id}", svc.GetBizRecycledCvm)
+	h.Add("BatchDeleteBizRecycledCvm", http.MethodDelete, "/bizs/{bk_biz_id}/recycled/cvms/batch",
+		svc.BatchDeleteBizRecycledCvm)
 
 	h.Load(c.WebService)
 }

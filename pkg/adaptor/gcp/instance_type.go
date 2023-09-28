@@ -20,6 +20,8 @@
 package gcp
 
 import (
+	"strings"
+
 	typesinstancetype "hcm/pkg/adaptor/types/instance-type"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -67,8 +69,10 @@ func toGcpInstanceType(machineType *compute.MachineType) *typesinstancetype.GcpI
 	}
 
 	return &typesinstancetype.GcpInstanceType{
-		InstanceType: machineType.Name,
-		Memory:       machineType.MemoryMb,
-		CPU:          machineType.GuestCpus,
+		InstanceFamily: strings.Split(machineType.Name, "-")[0],
+		InstanceType:   machineType.Name,
+		Memory:         machineType.MemoryMb,
+		CPU:            machineType.GuestCpus,
+		Kind:           machineType.Kind,
 	}
 }

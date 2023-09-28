@@ -28,10 +28,11 @@ type AzureInstanceTypeListOption struct {
 
 // AzureInstanceType ...
 type AzureInstanceType struct {
-	InstanceType string
-	GPU          int64
-	CPU          int64
-	Memory       int64
-	FPGA         int64
-	Architecture string
+	InstanceFamily string
+	InstanceType   string
+	GPU            int64
+	CPU            int64
+	Memory         int64
+	FPGA           int64
+	Architecture   string
 }

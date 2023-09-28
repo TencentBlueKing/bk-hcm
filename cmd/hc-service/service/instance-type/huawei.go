@@ -58,11 +58,17 @@ func (i *instanceTypeAdaptor) ListForHuaWei(cts *rest.Contexts) (interface{}, er
 	data := make([]*proto.HuaWeiInstanceTypeResp, 0, len(its))
 	for _, one := range its {
 		data = append(data, &proto.HuaWeiInstanceTypeResp{
-			InstanceType: one.InstanceType,
-			GPU:          one.GPU,
-			CPU:          one.CPU,
-			Memory:       one.Memory,
-			FPGA:         one.FPGA,
+			InstanceType:            one.InstanceType,
+			GPU:                     one.GPU,
+			CPU:                     one.CPU,
+			Memory:                  one.Memory,
+			FPGA:                    one.FPGA,
+			InstanceFamily:          one.InstanceFamily,
+			Name:                    one.Name,
+			EcsinstanceArchitecture: one.EcsinstanceArchitecture,
+			Infocpuname:             one.Infocpuname,
+			QuotamaxRate:            one.QuotamaxRate,
+			QuotamaxPps:             one.QuotamaxPps,
 		})
 	}
 

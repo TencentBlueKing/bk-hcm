@@ -17,10 +17,12 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package recycle ...
 package recycle
 
 import (
 	recyclerecord "hcm/pkg/api/core/recycle-record"
+	"hcm/pkg/criteria/enumor"
 )
 
 // ------------------------ Recycle ------------------------
@@ -36,4 +38,31 @@ type RecycleResult struct {
 type RecycleRecordListResult struct {
 	Count   uint64                        `json:"count"`
 	Details []recyclerecord.RecycleRecord `json:"details"`
+}
+
+// DiskAttachInfo 磁盘挂载信息
+type DiskAttachInfo struct {
+	Err         error
+	DiskID      string `json:"disk_id,omitempty"`
+	CachingType string `json:"caching_type,omitempty"`
+	DeviceName  string `json:"device_name,omitempty"`
+}
+
+// EipBindInfo eip 绑定信息
+type EipBindInfo struct {
+	EipID string `json:"eip_id"`
+	NicID string `json:"nic_id"`
+	Err   error
+}
+
+// CvmRecycleDetail Cvm回收详情，会在数据库中保存回收时的快照
+type CvmRecycleDetail struct {
+	WithDisk  bool              `json:"with_disk"`
+	WithEip   bool              `json:"with_eip"`
+	DiskList  []*DiskAttachInfo `json:"disk_list"`
+	EipList   []*EipBindInfo    `json:"eip_list"`
+	FailedAt  enumor.CloudResourceType
+	Vendor    enumor.Vendor
+	CvmID     string
+	AccountID string
 }

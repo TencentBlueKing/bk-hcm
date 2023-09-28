@@ -65,6 +65,30 @@ func (az *Azure) DeleteRouteTable(kt *kit.Kit, opt *core.AzureDeleteOption) erro
 	return nil
 }
 
+// CountRouteTable count route table.
+// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/route-tables/list?tabs=HTTP
+func (az *Azure) CountRouteTable(kt *kit.Kit) (int32, error) {
+
+	client, err := az.clientSet.routeTableClient()
+	if err != nil {
+		return 0, fmt.Errorf("new route table client failed, err: %v", err)
+	}
+
+	var count int32
+	pager := client.NewListAllPager(nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			logs.Errorf("list route table next page failed, err: %v, rid: %s", err, kt.Rid)
+			return 0, fmt.Errorf("failed to advance page: %v", err)
+		}
+
+		count += int32(len(nextResult.Value))
+	}
+
+	return count, nil
+}
+
 // ListRouteTable list route table.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/route-tables/list?tabs=HTTP
 func (az *Azure) ListRouteTable(kt *kit.Kit, opt *core.AzureListOption) (*routetable.AzureRouteTableListResult, error) {

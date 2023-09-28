@@ -30,8 +30,9 @@ import (
 
 // BatchRecycleReq defines batch recycle cloud resource request.
 type BatchRecycleReq struct {
-	ResType enumor.CloudResourceType `json:"resource_type" validate:"required"`
-	Infos   []RecycleReq             `json:"infos" validate:"min=1,max=100"`
+	ResType            enumor.CloudResourceType `json:"resource_type" validate:"required"`
+	DefaultRecycleTime uint                     `json:"default_recycle_time" validate:"required"`
+	Infos              []RecycleReq             `json:"infos" validate:"min=1,max=100"`
 }
 
 // RecycleReq defines recycle one cloud resource request.
@@ -94,5 +95,17 @@ type UpdateReq struct {
 
 // Validate BatchUpdateReq.
 func (c *BatchUpdateReq) Validate() error {
+	return validator.Validate.Struct(c)
+}
+
+// BatchUpdateRecycleStatusReq defines batch update cloud resource recycle status request.
+type BatchUpdateRecycleStatusReq struct {
+	ResType       enumor.CloudResourceType   `json:"res_type" validate:"required"`
+	IDs           []string                   `json:"ids" validate:"min=1,max=100"`
+	RecycleStatus enumor.RecycleRecordStatus `json:"recycle_status"  validate:"required"`
+}
+
+// Validate BatchRecoverReq.
+func (c *BatchUpdateRecycleStatusReq) Validate() error {
 	return validator.Validate.Struct(c)
 }

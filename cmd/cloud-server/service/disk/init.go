@@ -44,6 +44,7 @@ func InitDiskService(c *capability.Capability) {
 	h.Add("RetrieveDisk", http.MethodGet, "/disks/{id}", svc.RetrieveDisk)
 	h.Add("DeleteDisk", http.MethodDelete, "/disks/{id}", svc.DeleteDisk)
 	h.Add("CreateDisk", http.MethodPost, "/disks/create", svc.CreateDisk)
+	h.Add("InquiryPriceDisk", http.MethodPost, "/disks/prices/inquiry", svc.InquiryPriceDisk)
 
 	h.Add("ListDiskExtByCvmID", http.MethodGet, "/vendors/{vendor}/disks/cvms/{cvm_id}", svc.ListDiskExtByCvmID)
 	h.Add("ListRelWithCvm", http.MethodPost, "/disk_cvm_rels/with/cvms/list", svc.ListRelWithCvm)
@@ -63,12 +64,18 @@ func InitDiskService(c *capability.Capability) {
 	h.Add("AttachBizDisk", http.MethodPost, "/bizs/{bk_biz_id}/disks/attach", svc.AttachBizDisk)
 	h.Add("DetachBizDisk", http.MethodPost, "/bizs/{bk_biz_id}/disks/detach", svc.DetachBizDisk)
 
-	// recycle operation related apis
+	// recycle operation in res
 	h.Add("RecycleDisk", http.MethodPost, "/disks/recycle", svc.RecycleDisk)
-	h.Add("RecycleBizDisk", http.MethodPost, "/bizs/{bk_biz_id}/disks/recycle", svc.RecycleBizDisk)
 	h.Add("RecoverDisk", http.MethodPost, "/disks/recover", svc.RecoverDisk)
 	h.Add("RetrieveRecycledDisk", http.MethodGet, "/recycled/disks/{id}", svc.RetrieveRecycledDisk)
 	h.Add("BatchDeleteRecycledDisk", http.MethodDelete, "/recycled/disks/batch", svc.BatchDeleteRecycledDisk)
+
+	// recycle operation in biz
+	h.Add("RecycleBizDisk", http.MethodPost, "/bizs/{bk_biz_id}/disks/recycle", svc.RecycleBizDisk)
+	h.Add("RecoverBizDisk", http.MethodPost, "/bizs/{bk_biz_id}/disks/recover", svc.RecoverBizDisk)
+	h.Add("RetrieveBizRecycledDisk", http.MethodGet, "/bizs/{bk_biz_id}/recycled/disks/{id}", svc.RetrieveBizRecycledDisk)
+	h.Add("BatchDeleteBizRecycledDisk", http.MethodDelete, "/bizs/{bk_biz_id}/recycled/disks/batch",
+		svc.BatchDeleteBizRecycledDisk)
 
 	h.Load(c.WebService)
 }

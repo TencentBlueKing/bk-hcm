@@ -42,6 +42,11 @@ type EipSvc struct {
 	DataCli *dataservice.Client
 }
 
+// CountEip ...
+func (svc *EipSvc) CountEip(cts *rest.Contexts) (interface{}, error) {
+	return nil, nil
+}
+
 // DeleteEip ...
 func (svc *EipSvc) DeleteEip(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.EipDeleteReq)
@@ -52,12 +57,13 @@ func (svc *EipSvc) DeleteEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeEipDeleteOption(cts.Kit, req)
+	eipData, err := svc.DataCli.TCloud.RetrieveEip(cts.Kit.Ctx, cts.Kit.Header(), req.EipID)
 	if err != nil {
 		return nil, err
 	}
+	opt := &eip.TCloudEipDeleteOption{Region: eipData.Region, CloudIDs: []string{eipData.CloudID}}
 
-	client, err := svc.Adaptor.TCloud(cts.Kit, req.AccountID)
+	client, err := svc.Adaptor.TCloud(cts.Kit, eipData.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -259,17 +265,6 @@ func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return &core.BatchCreateResult{IDs: eipIDs}, nil
-}
-
-func (svc *EipSvc) makeEipDeleteOption(
-	kt *kit.Kit,
-	req *proto.EipDeleteReq,
-) (*eip.TCloudEipDeleteOption, error) {
-	eipData, err := svc.DataCli.TCloud.RetrieveEip(kt.Ctx, kt.Header(), req.EipID)
-	if err != nil {
-		return nil, err
-	}
-	return &eip.TCloudEipDeleteOption{Region: eipData.Region, CloudIDs: []string{eipData.CloudID}}, nil
 }
 
 func (svc *EipSvc) makeEipAssociateOption(

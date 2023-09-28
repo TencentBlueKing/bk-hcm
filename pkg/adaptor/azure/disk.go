@@ -30,7 +30,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v5"
 )
 
 // CreateDisk 创建云硬盘
@@ -138,6 +138,30 @@ func (handler *diskResultHandler) BuildResult(resp armcompute.DisksClientListByR
 	}
 
 	return disks
+}
+
+// CountDisk count disk.
+// reference: https://learn.microsoft.com/en-us/rest/api/compute/disks/list?source=recommendations&tabs=Go#disklist
+func (az *Azure) CountDisk(kt *kit.Kit) (int32, error) {
+
+	client, err := az.clientSet.diskClient()
+	if err != nil {
+		return 0, fmt.Errorf("new cvm client failed, err: %v", err)
+	}
+
+	var count int32
+	pager := client.NewListPager(nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			logs.Errorf("list disk next page failed, err: %v, rid: %s", err, kt.Rid)
+			return 0, fmt.Errorf("failed to advance page: %v", err)
+		}
+
+		count += int32(len(nextResult.Value))
+	}
+
+	return count, nil
 }
 
 // ListDiskByPage ...

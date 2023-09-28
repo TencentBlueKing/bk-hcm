@@ -330,7 +330,6 @@ export default defineComponent({
         isAuthTableLoading.value = false;
       },
     );
-
     onMounted(async () => {
       const res = await accountStore.getBizList();
       businessList.value = res?.data || [];

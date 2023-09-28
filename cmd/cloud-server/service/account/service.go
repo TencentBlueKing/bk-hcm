@@ -41,6 +41,8 @@ func InitAccountService(c *capability.Capability) {
 	}
 
 	h := rest.NewHandler()
+	h.Add("GetResCountBySecret", http.MethodPost, "/vendors/{vendor}/accounts/res_counts/by_secrets",
+		svc.GetResCountBySecret)
 	h.Add("GetAccountBySecret", http.MethodPost, "/vendors/{vendor}/accounts/secret", svc.GetAccountBySecret)
 	h.Add("CheckByID", http.MethodPost, "/accounts/{account_id}/check", svc.CheckByID)
 	h.Add("List", http.MethodPost, "/accounts/list", svc.List)
@@ -66,6 +68,10 @@ func InitAccountService(c *capability.Capability) {
 	// 安全所需OpenAPI
 	h.Add("ListWithExtension", http.MethodPost, "/accounts/extensions/list", svc.ListWithExtension)
 	h.Add("ListSecretKey", http.MethodPost, "/accounts/secrets/list", svc.ListSecretKey)
+
+	// 通过密钥获取账号权限策略
+	h.Add("ListTCloudAuthPolicies", http.MethodPost, "/vendors/tcloud/accounts/auth_policies/list",
+		svc.ListTCloudAuthPolicies)
 
 	h.Load(c.WebService)
 }

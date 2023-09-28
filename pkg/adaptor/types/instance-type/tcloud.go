@@ -19,7 +19,11 @@
 
 package instancetype
 
-import "hcm/pkg/criteria/validator"
+import (
+	"hcm/pkg/criteria/validator"
+
+	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
+)
 
 // -------------------------- List --------------------------
 
@@ -37,11 +41,16 @@ func (opt TCloudInstanceTypeListOption) Validate() error {
 
 // TCloudInstanceType ...
 type TCloudInstanceType struct {
-	InstanceType   string
-	InstanceFamily string
-	GPU            int64
-	CPU            int64
-	Memory         int64
-	FPGA           int64
-	Status         string
+	InstanceType      string
+	InstanceFamily    string
+	GPU               int64
+	CPU               int64
+	Memory            int64
+	FPGA              int64
+	Status            string
+	CpuType           string
+	InstanceBandwidth float64
+	InstancePps       int64
+	Price             cvm.ItemPrice
+	TypeName          string
 }

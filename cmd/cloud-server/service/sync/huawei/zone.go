@@ -34,6 +34,9 @@ import (
 // SyncZone sync zone
 func SyncZone(kt *kit.Kit, hcCli *hcservice.Client, dataCli *dataservice.Client, accountID string) error {
 
+	// 重新设置rid方便定位
+	kt = kt.NewSubKit()
+
 	start := time.Now()
 	logs.V(3).Infof("huawei account[%s] sync zone start, time: %v, rid: %s", accountID, start, kt.Rid)
 

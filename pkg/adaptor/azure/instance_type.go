@@ -20,13 +20,13 @@
 package azure
 
 import (
+	"sync"
+
 	typesinstancetype "hcm/pkg/adaptor/types/instance-type"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
-
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
 )
 
 // ArmInstanceMap azure instance type is arm64
@@ -76,8 +76,35 @@ var ArmInstanceMap map[string]struct{} = map[string]struct{}{
 // ListInstanceType ...
 // reference: https://learn.microsoft.com/en-us/rest/api/compute/virtual-machine-sizes/list?tabs=HTTP
 func (az *Azure) ListInstanceType(kt *kit.Kit, opt *typesinstancetype.AzureInstanceTypeListOption) (
-	[]*typesinstancetype.AzureInstanceType, error,
-) {
+	its []*typesinstancetype.AzureInstanceType, err error) {
+
+	var typeFamilyMap map[string]string
+
+	wg := new(sync.WaitGroup)
+	wg.Add(2)
+	go func() {
+		typeFamilyMap, err = az.getInstanceTypeFamilyMap(kt)
+		wg.Done()
+	}()
+
+	go func() {
+		its, err = az.getInstanceTypeList(kt, opt.Region)
+		wg.Done()
+	}()
+
+	wg.Wait()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, one := range its {
+		one.InstanceFamily = typeFamilyMap[one.InstanceType]
+	}
+
+	return its, nil
+}
+
+func (az *Azure) getInstanceTypeList(kt *kit.Kit, region string) ([]*typesinstancetype.AzureInstanceType, error) {
 
 	client, err := az.clientSet.virtualMachineSizeClient()
 	if err != nil {
@@ -85,8 +112,7 @@ func (az *Azure) ListInstanceType(kt *kit.Kit, opt *typesinstancetype.AzureInsta
 	}
 
 	its := make([]*typesinstancetype.AzureInstanceType, 0)
-
-	pager := client.NewListPager(opt.Region, nil)
+	pager := client.NewListPager(region, nil)
 	for pager.More() {
 		nextResult, err := pager.NextPage(kt.Ctx)
 		if err != nil {
@@ -95,7 +121,13 @@ func (az *Azure) ListInstanceType(kt *kit.Kit, opt *typesinstancetype.AzureInsta
 		}
 		for _, v := range nextResult.Value {
 			if v != nil {
-				its = append(its, toAzureInstanceType(v))
+				name := converter.PtrToVal(v.Name)
+				its = append(its, &typesinstancetype.AzureInstanceType{
+					Architecture: changeToAzureInstanceType(name),
+					InstanceType: name,
+					CPU:          int64(converter.PtrToVal(v.NumberOfCores)),
+					Memory:       int64(converter.PtrToVal(v.MemoryInMB)),
+				})
 			}
 		}
 	}
@@ -103,21 +135,38 @@ func (az *Azure) ListInstanceType(kt *kit.Kit, opt *typesinstancetype.AzureInsta
 	return its, nil
 }
 
-func toAzureInstanceType(v *armcompute.VirtualMachineSize) *typesinstancetype.AzureInstanceType {
-	return &typesinstancetype.AzureInstanceType{
-		Architecture: changeToAzureInstanceType(v.Name),
-		InstanceType: converter.PtrToVal(v.Name),
-		CPU:          int64(converter.PtrToVal(v.NumberOfCores)),
-		Memory:       int64(converter.PtrToVal(v.MemoryInMB)),
+func (az *Azure) getInstanceTypeFamilyMap(kt *kit.Kit) (map[string]string, error) {
+	cli, err := az.clientSet.clientFactory()
+	if err != nil {
+		logs.Errorf("new client factory failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
 	}
+	pager := cli.NewResourceSKUsClient().NewListPager(nil)
+
+	m := make(map[string]string, 0)
+	for pager.More() {
+		page, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, v := range page.Value {
+			if v.Family == nil || v.Name == nil {
+				continue
+			}
+
+			m[converter.PtrToVal(v.Name)] = converter.PtrToVal(v.Family)
+		}
+	}
+
+	return m, nil
 }
 
-func changeToAzureInstanceType(name *string) string {
-	if name == nil {
+func changeToAzureInstanceType(name string) string {
+	if len(name) == 0 {
 		return constant.X86
 	}
 
-	if _, ok := ArmInstanceMap[*name]; ok {
+	if _, ok := ArmInstanceMap[name]; ok {
 		return constant.Arm64
 	}
 

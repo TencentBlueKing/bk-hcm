@@ -245,6 +245,76 @@ type Host struct {
 	BkComment         *string         `json:"bk_comment,omitempty"`
 }
 
+type esbFindHostTopoRelationParams struct {
+	*types.CommParams
+	*FindHostTopoRelationParams
+}
+
+// FindHostTopoRelationParams cmdb find host topo request params
+type FindHostTopoRelationParams struct {
+	BizID       int64    `json:"bk_biz_id"`
+	BkSetIDs    []int64  `json:"bk_set_ids,omitempty"`
+	BkModuleIDs []int64  `json:"bk_module_ids,omitempty"`
+	HostIDs     []int64  `json:"bk_host_ids"`
+	Page        BasePage `json:"page"`
+}
+
+type findHostTopoRelationResp struct {
+	types.BaseResponse `json:",inline"`
+	Data               *HostTopoRelationResult `json:"data"`
+}
+
+// HostTopoRelationResult cmdb host topo relation result warp
+type HostTopoRelationResult struct {
+	Count int64              `json:"count"`
+	Page  BasePage           `json:"page"`
+	Data  []HostTopoRelation `json:"data"`
+}
+
+// HostTopoRelation cmdb host topo relation
+type HostTopoRelation struct {
+	BizID             int64  `json:"bk_biz_id"`
+	BkSetID           int64  `json:"bk_set_id"`
+	BkModuleID        int64  `json:"bk_module_id"`
+	HostID            int64  `json:"bk_host_id"`
+	BkSupplierAccount string `json:"bk_supplier_account"`
+}
+
+type esbSearchModuleParams struct {
+	*types.CommParams
+	*SearchModuleParams
+}
+
+// SearchModuleParams cmdb module search parameter.
+type SearchModuleParams struct {
+	BizID             int64  `json:"bk_biz_id"`
+	BkSetID           int64  `json:"bk_set_id,omitempty"`
+	BkSupplierAccount string `json:"bk_supplier_account,omitempty"`
+
+	Fields    []string               `json:"fields"`
+	Page      BasePage               `json:"page"`
+	Condition map[string]interface{} `json:"condition"`
+}
+
+type searchModuleResp struct {
+	types.BaseResponse `json:",inline"`
+	Permission         interface{}       `json:"permission"`
+	Data               *ModuleInfoResult `json:"data"`
+}
+
+// ModuleInfoResult cmdb module info list result
+type ModuleInfoResult struct {
+	Count int64         `json:"count"`
+	Info  []*ModuleInfo `json:"info"`
+}
+
+// ModuleInfo cmdb module info
+type ModuleInfo struct {
+	BkSetID      int64  `json:"bk_set_id"`
+	BkModuleName string `json:"bk_module_name"`
+	Default      int64  `json:"default"`
+}
+
 // CloudVendor defines cmdb cloud vendor type.
 type CloudVendor string
 

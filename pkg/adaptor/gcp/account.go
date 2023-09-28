@@ -33,6 +33,47 @@ import (
 	"cloud.google.com/go/asset/apiv1/assetpb"
 )
 
+// CountAccount count account.
+// reference: https://cloud.google.com/asset-inventory/docs/reference/rest/v1/TopLevel/analyzeIamPolicy
+func (g *Gcp) CountAccount(kt *kit.Kit) (int32, error) {
+
+	client, err := g.clientSet.assetClient(kt)
+	if err != nil {
+		return 0, fmt.Errorf("new asset client failed, err: %v", err)
+	}
+
+	req := &assetpb.AnalyzeIamPolicyRequest{
+		// See https://pkg.go.dev/cloud.google.com/go/asset/apiv1/assetpb#AnalyzeIamPolicyRequest.
+		AnalysisQuery: &assetpb.IamPolicyAnalysisQuery{
+			Scope: fmt.Sprintf("projects/%s", g.CloudProjectID()),
+			AccessSelector: &assetpb.IamPolicyAnalysisQuery_AccessSelector{
+				Roles: []string{"roles/owner"},
+			},
+		},
+	}
+	resp, err := client.AnalyzeIamPolicy(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("analyze iam policy failed, err: %v, rid: %s", err, kt.Rid)
+		return 0, err
+	}
+
+	var count int32
+	if resp.MainAnalysis != nil && resp.MainAnalysis.AnalysisResults != nil &&
+		len(resp.MainAnalysis.AnalysisResults) != 0 {
+		for _, item := range resp.MainAnalysis.AnalysisResults {
+			if item.IamBinding != nil && len(item.IamBinding.Members) != 0 {
+				for _, member := range item.IamBinding.Members {
+					if strings.HasPrefix(member, "user:") {
+						count++
+					}
+				}
+			}
+		}
+	}
+
+	return count, nil
+}
+
 // ListAccount list account.
 // reference: https://cloud.google.com/asset-inventory/docs/reference/rest/v1/TopLevel/analyzeIamPolicy
 func (g *Gcp) ListAccount(kt *kit.Kit) ([]typeaccount.GcpAccount, error) {
@@ -162,6 +203,7 @@ func (g *Gcp) GetAccountInfoBySecret(kit *kit.Kit, cloudSecretKeyString string) 
 	}
 
 	accountInfo := &cloud.GcpInfoBySecret{
+		Email:                   serviceAccount.Email,
 		CloudProjectID:          projectList.Projects[0].ProjectId,
 		CloudProjectName:        projectList.Projects[0].DisplayName,
 		CloudServiceAccountID:   serviceAccount.UniqueId,

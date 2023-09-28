@@ -17,12 +17,14 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package disk ...
 package disk
 
 import (
 	"fmt"
 
 	"hcm/cmd/cloud-server/logics/audit"
+	"hcm/pkg/api/cloud-server/recycle"
 	"hcm/pkg/api/core"
 	protoaudit "hcm/pkg/api/data-service/audit"
 	"hcm/pkg/api/data-service/cloud"
@@ -35,16 +37,21 @@ import (
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/classifier"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 // Interface define disk interface.
 type Interface interface {
-	DetachDisk(kt *kit.Kit, vendor enumor.Vendor, cvmID, diskID, accountID string) error
-	DeleteDisk(kt *kit.Kit, vendor enumor.Vendor, diskID, accountID string) error
+	DetachDisk(kt *kit.Kit, vendor enumor.Vendor, cvmID, diskID string) error
+	DeleteDisk(kt *kit.Kit, vendor enumor.Vendor, diskID string) error
 	DeleteRecycledDisk(kt *kit.Kit, infoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateResult, error)
-}
 
+	BatchGetDiskInfo(kt *kit.Kit, cvmDetail map[string]*recycle.CvmRecycleDetail) (err error)
+	BatchDetach(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmRecycleDetail) (failed []string, err error)
+	BatchReattachDisk(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmRecycleDetail) (err error)
+}
 type disk struct {
 	client *client.ClientSet
 	audit  audit.Interface
@@ -58,9 +65,11 @@ func NewDisk(client *client.ClientSet, audit audit.Interface) Interface {
 	}
 }
 
+// BatchRollBackFunc 批量操作回滚操作
+type BatchRollBackFunc func(kt *kit.Kit, rollbackIds []string) (*core.BatchOperateAllResult, error)
+
 // DetachDisk detach disk from cvm.
-// TODO remove account id parameter, this should be acquired in hc-service.
-func (d *disk) DetachDisk(kt *kit.Kit, vendor enumor.Vendor, cvmID, diskID, accountID string) error {
+func (d *disk) DetachDisk(kt *kit.Kit, vendor enumor.Vendor, cvmID, diskID string) error {
 	// create audit
 	operationInfo := protoaudit.CloudResourceOperationInfo{
 		ResType:           enumor.DiskAuditResType,
@@ -77,9 +86,8 @@ func (d *disk) DetachDisk(kt *kit.Kit, vendor enumor.Vendor, cvmID, diskID, acco
 	}
 
 	detachReq := &hcproto.DiskDetachReq{
-		AccountID: accountID,
-		CvmID:     cvmID,
-		DiskID:    diskID,
+		CvmID:  cvmID,
+		DiskID: diskID,
 	}
 
 	switch vendor {
@@ -99,8 +107,7 @@ func (d *disk) DetachDisk(kt *kit.Kit, vendor enumor.Vendor, cvmID, diskID, acco
 }
 
 // DeleteDisk delete disk.
-// TODO remove account id parameter, this should be acquired in hc-service.
-func (d *disk) DeleteDisk(kt *kit.Kit, vendor enumor.Vendor, diskID, accountID string) error {
+func (d *disk) DeleteDisk(kt *kit.Kit, vendor enumor.Vendor, diskID string) error {
 	// create delete audit.
 	err := d.audit.ResDeleteAudit(kt, enumor.DiskAuditResType, []string{diskID})
 	if err != nil {
@@ -108,7 +115,7 @@ func (d *disk) DeleteDisk(kt *kit.Kit, vendor enumor.Vendor, diskID, accountID s
 		return err
 	}
 
-	deleteReq := &hcproto.DiskDeleteReq{DiskID: diskID, AccountID: accountID}
+	deleteReq := &hcproto.DiskDeleteReq{DiskID: diskID}
 
 	switch vendor {
 	case enumor.TCloud:
@@ -163,7 +170,7 @@ func (d *disk) DeleteRecycledDisk(kt *kit.Kit, basicInfoMap map[string]types.Clo
 	// delete disk
 	for _, id := range ids {
 		info := basicInfoMap[id]
-		err = d.DeleteDisk(kt, info.Vendor, id, info.AccountID)
+		err = d.DeleteDisk(kt, info.Vendor, id)
 		if err != nil {
 			res.Failed = &core.FailedInfo{ID: id, Error: err}
 			return res, err
@@ -172,4 +179,195 @@ func (d *disk) DeleteRecycledDisk(kt *kit.Kit, basicInfoMap map[string]types.Clo
 	}
 
 	return nil, nil
+}
+
+func (d *disk) fillAwsDisks(kt *kit.Kit, cvmDetails []*recycle.CvmRecycleDetail) error {
+
+	cvmDiskMap := map[string][]*recycle.DiskAttachInfo{}
+	cvmIds := slice.Map(cvmDetails, func(info *recycle.CvmRecycleDetail) string { return info.CvmID })
+	relWithCvm, err := d.client.DataService().Aws.ListDiskCvmRelWithDisk(
+		kt.Ctx, kt.Header(), &cloud.DiskCvmRelWithDiskListReq{CvmIDs: cvmIds})
+
+	if err != nil {
+		logs.Errorf("[aws] failed to ListDiskCvmRelWithDisk, err: %v, cvmIds:%v, rid:%s", err, cvmIds, kt.Rid)
+		return err
+	}
+	for _, rel := range relWithCvm {
+		if rel.Extension == nil || len(rel.Extension.Attachment) < 1 {
+			return errf.Newf(errf.Unknown, "[Aws] no attachment found in cvm related disk, err: %v, cvmId: %v, rid:%s",
+				err, rel.CvmID, kt.Rid)
+		}
+		cvmDiskMap[rel.CvmID] = append(cvmDiskMap[rel.CvmID], &recycle.DiskAttachInfo{
+			DiskID:     rel.DiskExtResult.ID,
+			DeviceName: converter.PtrToVal(rel.Extension.Attachment[0].DeviceName),
+		})
+	}
+	for _, cvmDetail := range cvmDetails {
+		if diskList, exists := cvmDiskMap[cvmDetail.CvmID]; exists {
+			cvmDetail.DiskList = diskList
+		}
+	}
+	return nil
+}
+
+func (d *disk) fillAzureDisk(kt *kit.Kit, cvmDetails []*recycle.CvmRecycleDetail) error {
+
+	cvmDiskMap := map[string][]*recycle.DiskAttachInfo{}
+	cvmIds := slice.Map(cvmDetails, func(info *recycle.CvmRecycleDetail) string { return info.CvmID })
+
+	relWithCvm, err := d.client.DataService().Azure.ListDiskCvmRelWithDisk(kt.Ctx, kt.Header(),
+		&cloud.DiskCvmRelWithDiskListReq{CvmIDs: cvmIds})
+
+	if err != nil {
+		logs.Errorf("[azure] failed to ListDiskCvmRelWithDisk, err: %v, cvmIds:%v, rid:%s", err, cvmIds, kt.Rid)
+		return err
+	}
+	for _, rel := range relWithCvm {
+		cvmDiskMap[rel.CvmID] = append(cvmDiskMap[rel.CvmID], &recycle.DiskAttachInfo{
+			DiskID: rel.DiskExtResult.ID,
+			// TODO:!!! 没有保存caching type，难以重新attach，暂时先按None恢复,-> 在vm 属性的storageProfile里面
+			CachingType: "None",
+		})
+	}
+	for _, cvmDetail := range cvmDetails {
+		if diskList, exists := cvmDiskMap[cvmDetail.CvmID]; exists {
+			cvmDetail.DiskList = diskList
+		}
+	}
+	return nil
+}
+
+func (d *disk) fillDisk(kt *kit.Kit, vendor enumor.Vendor, cvmDetails []*recycle.CvmRecycleDetail) error {
+
+	cvmDiskMap := map[string][]*recycle.DiskAttachInfo{}
+	cvmIds := slice.Map(cvmDetails, func(info *recycle.CvmRecycleDetail) string { return info.CvmID })
+
+	relWithCvm, err := d.client.DataService().Global.ListDiskCvmRelWithDisk(kt.Ctx, kt.Header(),
+		&cloud.DiskCvmRelWithDiskListReq{CvmIDs: cvmIds})
+
+	if err != nil {
+		logs.Errorf("[%s] fail to ListDiskCvmRelWithDisk, err: %v, cvmIDs: %v, rid: %s",
+			vendor, err, cvmIds, kt.Rid)
+		return err
+	}
+
+	for _, rel := range relWithCvm {
+		cvmDiskMap[rel.CvmID] = append(cvmDiskMap[rel.CvmID], &recycle.DiskAttachInfo{DiskID: rel.DiskResult.ID})
+	}
+
+	for _, cvmDetail := range cvmDetails {
+		if diskList, exists := cvmDiskMap[cvmDetail.CvmID]; exists {
+			cvmDetail.DiskList = diskList
+		}
+	}
+	return nil
+}
+
+// BatchGetDiskInfo 获取并填充磁盘信息
+func (d *disk) BatchGetDiskInfo(kt *kit.Kit, cvmDetail map[string]*recycle.CvmRecycleDetail) (err error) {
+
+	if len(cvmDetail) == 0 {
+		return nil
+	}
+	if len(cvmDetail) > constant.BatchOperationMaxLimit {
+		return errf.Newf(errf.InvalidParameter, "cvmIDs should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	infoByVendor := classifier.ClassifyMap(cvmDetail,
+		func(v *recycle.CvmRecycleDetail) enumor.Vendor { return v.Vendor })
+	// Aws 和Azure 参数不一样，需要通过with ext 获取特定参数
+	for vendor, infos := range infoByVendor {
+
+		switch vendor {
+		case enumor.Aws:
+			if err := d.fillAwsDisks(kt, infos); err != nil {
+				return err
+			}
+		case enumor.Azure:
+			if err := d.fillAzureDisk(kt, infos); err != nil {
+				return err
+			}
+		case enumor.Gcp, enumor.HuaWei, enumor.TCloud:
+			if err := d.fillDisk(kt, vendor, infos); err != nil {
+				return err
+			}
+		default:
+			return errf.Newf(errf.InvalidParameter, "unknown vendor: %v", vendor)
+		}
+	}
+	return nil
+}
+
+// BatchDetach  批量解绑，返回的失败cvm, 用户自行决定是否回滚
+func (d *disk) BatchDetach(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmRecycleDetail) (failed []string,
+	err error) {
+
+	kt = kt.NewSubKit()
+
+	for _, detail := range cvmRecycleMap {
+		if detail.FailedAt != "" {
+			continue
+		}
+		for _, disk := range detail.DiskList {
+			err := d.DetachDisk(kt, detail.Vendor, detail.CvmID, disk.DiskID)
+			if err != nil {
+				disk.Err = err
+				detail.FailedAt = enumor.DiskCloudResType
+				failed = append(failed, detail.CvmID)
+				logs.Errorf("failed to detach disk，err: %v cvmId: %s, diskId: %s, rid:%s",
+					err, detail.CvmID, disk.DiskID, kt.Rid)
+				break
+			}
+		}
+
+	}
+	return failed, nil
+}
+
+// BatchReattachDisk 批量重新挂载磁盘, 仅处理磁盘卸载没有失败的磁盘
+func (d *disk) BatchReattachDisk(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmRecycleDetail) (err error) {
+	for cvmId, detail := range cvmRecycleMap {
+
+		for _, disk := range detail.DiskList {
+			if disk.Err != nil {
+				break
+			}
+			operationInfo := protoaudit.CloudResourceOperationInfo{
+				ResType:           enumor.DiskAuditResType,
+				ResID:             disk.DiskID,
+				Action:            protoaudit.Associate,
+				AssociatedResType: enumor.CvmAuditResType,
+				AssociatedResID:   cvmId,
+			}
+
+			err := d.audit.ResOperationAudit(kt, operationInfo)
+			if err != nil {
+				logs.Errorf("create attach disk audit failed, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
+			switch detail.Vendor {
+			case enumor.Azure:
+				err = d.client.HCService().Azure.Disk.AttachDisk(kt.Ctx, kt.Header(), &hcproto.AzureDiskAttachReq{
+					CvmID: cvmId, DiskID: disk.DiskID, CachingType: disk.CachingType})
+			case enumor.Aws:
+				err = d.client.HCService().Aws.Disk.AttachDisk(kt.Ctx, kt.Header(), &hcproto.AwsDiskAttachReq{
+					CvmID: cvmId, DiskID: disk.DiskID, DeviceName: disk.DeviceName})
+			case enumor.TCloud:
+				err = d.client.HCService().TCloud.Disk.AttachDisk(kt.Ctx, kt.Header(),
+					&hcproto.TCloudDiskAttachReq{CvmID: cvmId, DiskID: disk.DiskID})
+			case enumor.HuaWei:
+				err = d.client.HCService().HuaWei.Disk.AttachDisk(kt.Ctx, kt.Header(),
+					&hcproto.HuaWeiDiskAttachReq{CvmID: cvmId, DiskID: disk.DiskID})
+			case enumor.Gcp:
+				err = d.client.HCService().Gcp.Disk.AttachDisk(kt.Ctx, kt.Header(),
+					&hcproto.GcpDiskAttachReq{CvmID: cvmId, DiskID: disk.DiskID})
+			default:
+				err = errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("unknown vendor: %s", detail.Vendor))
+			}
+			if err != nil {
+				logs.Errorf("fail to reattach, err: %v, cvmId: %s, disk: %v, rid: %s", err, disk, kt.Rid)
+			}
+		}
+	}
+	return nil
 }

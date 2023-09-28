@@ -35,6 +35,9 @@ import (
 func SyncSubnet(kt *kit.Kit, cliSet *client.ClientSet, accountID string, regions []string,
 	sd *detail.SyncDetail) error {
 
+	// 重新设置rid方便定位
+	kt = kt.NewSubKit()
+
 	start := time.Now()
 	logs.V(3).Infof("gcp account[%s] sync subnet start, time: %v, rid: %s", accountID, start, kt.Rid)
 

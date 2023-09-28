@@ -10,42 +10,46 @@ POST /api/v1/cloud/vendors/azure/applications/types/create_cvm
 
 ### 输入参数
 
-| 参数名称                        | 参数类型          | 必选 | 描述                                                                                                                   |
-|-----------------------------|---------------|----|----------------------------------------------------------------------------------------------------------------------|
-| bk_biz_id                   | int64         | 是  | 业务ID                                                                                                                 |
-| account_id                  | string        | 是  | 账号ID                                                                                                                 |
-| resource_group_name         | string        | 是  | 资源组名称                                                                                                                |
-| region                      | string        | 是  | 地域                                                                                                                   |
-| zone                        | string        | 是  | 可用区                                                                                                                  |
-| name                        | string        | 是  | 名称                                                                                                                   |
-| instance_type               | string        | 是  | 实例类型                                                                                                                 |
-| cloud_image_id              | string        | 是  | 云镜像ID                                                                                                                |
-| cloud_vpc_id                | string        | 是  | 云VpcID                                                                                                               |
-| cloud_subnet_id             | string        | 是  | 云子网ID                                                                                                                |
-| public_ip_assigned          | string        | 否  | 分配的公网IP                                                                                                              |
-| cloud_security_group_ids    | string  array | 是  | 云安全组ID                                                                                                               |
-| system_disk                 | object        | 是  | 系统盘                                                                                                                  |
-| data_disk                   | object  array | 否  | 数据盘                                                                                                                  |
-| username                    | string        | 是  | 用户名                                                                                                                  |
-| password                    | string        | 是  | 密码                                                                                                                   |
-| confirmed_password          | string        | 是  | 确认密码                                                                                                                 |
-| required_count              | int64         | 是  | 需要数量                                                                                                                 |
-| memo                        | string        | 否  | 备注                                                                                                                   |
+| 参数名称                     | 参数类型          | 必选 | 描述      |
+|--------------------------|---------------|----|---------|
+| bk_biz_id                | int64         | 是  | 业务ID    |
+| account_id               | string        | 是  | 账号ID    |
+| resource_group_name      | string        | 是  | 资源组名称   |
+| region                   | string        | 是  | 地域      |
+| zone                     | string        | 是  | 可用区     |
+| name                     | string        | 是  | 名称      |
+| instance_type            | string        | 是  | 实例类型    |
+| cloud_image_id           | string        | 是  | 云镜像ID   |
+| cloud_vpc_id             | string        | 是  | 云VpcID  |
+| cloud_subnet_id          | string        | 是  | 云子网ID   |
+| public_ip_assigned       | string        | 否  | 分配的公网IP |
+| cloud_security_group_ids | string  array | 是  | 云安全组ID  |
+| system_disk              | object        | 是  | 系统盘     |
+| data_disk                | object  array | 否  | 数据盘     |
+| username                 | string        | 是  | 用户名     |
+| password                 | string        | 是  | 密码      |
+| confirmed_password       | string        | 是  | 确认密码    |
+| required_count           | int64         | 是  | 需要数量    |
+| memo                     | string        | 否  | 备注      |
+| remark                   | string        | 否  | 单据备注    |
 
 #### system_disk
-| 参数名称             | 参数类型    | 必选  | 描述                                                                                           |
-|------------------|---------|-----|----------------------------------------------------------------------------------------------|
-| disk_type        | string  | 是   | 云盘类型（枚举值：Premium_LRS、PremiumV2_LRS、Premium_ZRS、Standard_LRS、StandardSSD_LRS、StandardSSD_ZRS） |
-| disk_size_gb     | int64   | 是   | 云盘大小                                                                                         |
+
+| 参数名称         | 参数类型   | 必选 | 描述                                                                                           |
+|--------------|--------|----|----------------------------------------------------------------------------------------------|
+| disk_type    | string | 是  | 云盘类型（枚举值：Premium_LRS、PremiumV2_LRS、Premium_ZRS、Standard_LRS、StandardSSD_LRS、StandardSSD_ZRS） |
+| disk_size_gb | int64  | 是  | 云盘大小                                                                                         |
 
 #### data_disk
-| 参数名称         | 参数类型    | 必选  | 描述                                                                                                        |
-|--------------|---------|-----|-----------------------------------------------------------------------------------------------------------|
-| disk_type    | string  | 是   | 云盘类型（枚举值：Premium_LRS、PremiumV2_LRS、Premium_ZRS、Standard_LRS、StandardSSD_LRS、StandardSSD_ZRS、UltraSSD_LRS） |
-| disk_size_gb | int64   | 是   | 云盘大小                                                                                                      |
-| disk_count   | int64   | 是   | 云盘数量                                                                                                      |
+
+| 参数名称         | 参数类型   | 必选 | 描述                                                                                                        |
+|--------------|--------|----|-----------------------------------------------------------------------------------------------------------|
+| disk_type    | string | 是  | 云盘类型（枚举值：Premium_LRS、PremiumV2_LRS、Premium_ZRS、Standard_LRS、StandardSSD_LRS、StandardSSD_ZRS、UltraSSD_LRS） |
+| disk_size_gb | int64  | 是  | 云盘大小                                                                                                      |
+| disk_count   | int64  | 是  | 云盘数量                                                                                                      |
 
 ### 调用示例
+
 ```json
 {
   "bk_biz_id": 100,
@@ -58,7 +62,10 @@ POST /api/v1/cloud/vendors/azure/applications/types/create_cvm
   "cloud_image_id": "image-123",
   "cloud_vpc_id": "vpc-123",
   "cloud_subnet_id": "subnet-123",
-  "cloud_security_group_ids": ["1001","1002"],
+  "cloud_security_group_ids": [
+    "1001",
+    "1002"
+  ],
   "system_disk": {
     "disk_type": "Premium_LRS",
     "disk_size_gb": 50

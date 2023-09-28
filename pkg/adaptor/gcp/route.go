@@ -22,7 +22,6 @@ package gcp
 import (
 	"strconv"
 
-	"hcm/pkg/adaptor/types/core"
 	routetable "hcm/pkg/adaptor/types/route-table"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -31,9 +30,38 @@ import (
 	"google.golang.org/api/compute/v1"
 )
 
+// CountRoute count route.
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/routes/list
+func (g *Gcp) CountRoute(kt *kit.Kit) (int32, error) {
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return 0, err
+	}
+
+	request := client.Routes.List(g.CloudProjectID()).Context(kt.Ctx)
+
+	var count int32
+	for {
+		resp, err := request.Do()
+		if err != nil {
+			logs.Errorf("list route failed, err: %v, rid: %s", err, kt.Rid)
+			return 0, err
+		}
+
+		count += int32(len(resp.Items))
+
+		if resp.NextPageToken == "" {
+			break
+		}
+	}
+
+	return count, nil
+}
+
 // ListRoute list route.
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/routes/list
-func (g *Gcp) ListRoute(kt *kit.Kit, opt *core.GcpListOption) (*routetable.GcpRouteListResult, error) {
+func (g *Gcp) ListRoute(kt *kit.Kit, opt *routetable.GcpListOption) (*routetable.GcpRouteListResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}

@@ -29,6 +29,11 @@ import (
 type TCloudBillListResult struct {
 	Count   *uint64     `json:"count"`
 	Details interface{} `json:"details"`
+	// 本次请求的上下文信息，可用于下一次请求的请求参数中，加快查询速度
+	// 注意：此字段可能返回 null，表示取不到有效值。
+	Context *string `json:"Context,omitempty"`
+	// 唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。
+	RequestId *string `json:"RequestId,omitempty"`
 }
 
 // TCloudBillListResp define tcloud bill list resp.

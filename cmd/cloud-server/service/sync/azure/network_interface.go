@@ -35,6 +35,9 @@ import (
 func SyncNetworkInterface(kt *kit.Kit, cliSet *client.ClientSet, accountID string, resourceGroupNames []string,
 	sd *detail.SyncDetail) error {
 
+	// 重新设置rid方便定位
+	kt = kt.NewSubKit()
+
 	start := time.Now()
 	logs.V(3).Infof("[%s] account[%s] sync network interface start, time: %v, rid: %s",
 		enumor.Azure, accountID, start, kt.Rid)

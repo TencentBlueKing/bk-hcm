@@ -26,6 +26,7 @@ POST /api/v1/cloud/vendors/gcp/applications/types/create_cvm
 | password                    | string        | 是  | 密码                                                                                                                   |
 | required_count              | int64         | 是  | 需要数量                                                                                                                 |
 | memo                        | string        | 否  | 备注                                                                                                                   |
+| remark                   | string        | 否  | 单据备注    |
 
 #### system_disk
 | 参数名称             | 参数类型    | 必选  | 描述                                                   |

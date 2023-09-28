@@ -37,9 +37,11 @@ type GcpInstanceTypeListResult struct {
 
 // GcpInstanceType ...
 type GcpInstanceType struct {
-	InstanceType string
-	Memory       int64
-	CPU          int64
-	GPU          int64
-	FPGA         int64
+	InstanceFamily string
+	InstanceType   string
+	Memory         int64
+	CPU            int64
+	GPU            int64
+	FPGA           int64
+	Kind           string
 }

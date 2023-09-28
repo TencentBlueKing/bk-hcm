@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package bill ...
 package bill
 
 import (
@@ -46,9 +47,14 @@ func (opt AwsBillListReq) Validate() error {
 		return err
 	}
 
+	// aws的AthenaQuery属于sql查询，跟SDK接口的Limit限制不同
 	if opt.Page != nil {
-		if err := opt.Page.Validate(); err != nil {
-			return err
+		if opt.Page.Limit == 0 {
+			return errf.New(errf.InvalidParameter, "aws.page.limit is required")
+		}
+
+		if opt.Page.Limit > 100000 {
+			return errf.New(errf.InvalidParameter, "aws.page.limit should <= 100000")
 		}
 	}
 
@@ -101,6 +107,9 @@ type TCloudBillListReq struct {
 	EndDate string `json:"end_date" validate:"omitempty"`
 	// Limit: 最大值为100
 	Page *core.TCloudPage `json:"page" validate:"omitempty"`
+	// 本次请求的上下文信息，可用于下一次请求的请求参数中，加快查询速度
+	// 注意：此字段可能返回 null，表示取不到有效值。
+	Context *string `json:"Context" validate:"omitempty"`
 }
 
 // Validate tcloud bill list req.
@@ -197,9 +206,13 @@ func (opt GcpBillListReq) Validate() error {
 		return errf.New(errf.InvalidParameter, "month and begin_date and end_date can not be empty")
 	}
 
+	// gcp的BigQuery属于sql查询，跟SDK接口的Limit限制不同
 	if opt.Page != nil {
-		if err := opt.Page.Validate(); err != nil {
-			return err
+		if opt.Page.Limit == 0 {
+			return errf.New(errf.InvalidParameter, "gcp.page.limit is required")
+		}
+		if opt.Page.Limit > 100000 {
+			return errf.New(errf.InvalidParameter, "gcp.page.limit should <= 100000")
 		}
 	}
 

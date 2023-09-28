@@ -61,11 +61,18 @@ func (svc *service) ListMyApprovalTicket(cts *rest.Contexts) (interface{}, error
 		return nil, err
 	}
 
+	serviceID, err := svc.client.CloudServer().ApprovalProcess.GetApprovalProcessServiceID(cts.Kit)
+	if err != nil {
+		logs.Errorf("call cloud-server to get approval process service id failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
 	getReq := &itsm.GetTicketsByUserReq{
-		User:     cts.Kit.User,
-		ViewType: itsm.MyApproval,
-		Page:     (int64(req.Page.Start) / int64(req.Page.Limit)) + 1,
-		PageSize: int64(req.Page.Limit),
+		ServiceID: serviceID,
+		User:      cts.Kit.User,
+		ViewType:  itsm.MyApproval,
+		Page:      (int64(req.Page.Start) / int64(req.Page.Limit)) + 1,
+		PageSize:  int64(req.Page.Limit),
 	}
 	resp, err := svc.itsmCli.GetTicketsByUser(cts.Kit, getReq)
 	if err != nil {

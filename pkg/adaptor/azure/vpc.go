@@ -149,6 +149,35 @@ func (az *Azure) ListVpc(kt *kit.Kit, opt *core.AzureListOption) (*types.AzureVp
 	return &types.AzureVpcListResult{Details: details}, nil
 }
 
+// CountVpcAndSubnet count vpc.
+// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/virtual-networks/list
+func (az *Azure) CountVpcAndSubnet(kt *kit.Kit) (int32, int32, error) {
+
+	client, err := az.clientSet.vpcClient()
+	if err != nil {
+		return 0, 0, fmt.Errorf("new vpc client failed, err: %v", err)
+	}
+
+	var vpcCount int32
+	var subnetCount int32
+	pager := client.NewListAllPager(nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			logs.Errorf("list vpc next page failed, err: %v, rid: %s", err, kt.Rid)
+			return 0, 0, fmt.Errorf("failed to advance page: %v", err)
+		}
+
+		vpcCount += int32(len(nextResult.Value))
+
+		for _, one := range nextResult.Value {
+			subnetCount += int32(len(one.Properties.Subnets))
+		}
+	}
+
+	return vpcCount, subnetCount, nil
+}
+
 // ListVpcByPage list vpc.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/virtual-networks/list
 func (az *Azure) ListVpcByPage(kt *kit.Kit, opt *core.AzureListOption) (

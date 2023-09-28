@@ -19,6 +19,41 @@
 
 package routetable
 
+import (
+	"hcm/pkg/adaptor/types/core"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
+)
+
+// GcpListOption defines basic gcp list options.
+type GcpListOption struct {
+	Page      *core.GcpPage `json:"page" validate:"required"`
+	CloudIDs  []string      `json:"cloud_ids" validate:"omitempty"`
+	SelfLinks []string      `json:"self_links" validate:"omitempty"`
+}
+
+// Validate gcp list option.
+func (a GcpListOption) Validate() error {
+
+	if err := validator.Validate.Struct(a); err != nil {
+		return err
+	}
+
+	if len(a.CloudIDs) > core.GcpQueryLimit {
+		return errf.Newf(errf.InvalidParameter, "gcp resource ids length should <= %d", core.GcpQueryLimit)
+	}
+
+	if len(a.SelfLinks) > core.GcpQueryLimit {
+		return errf.Newf(errf.InvalidParameter, "gcp resource self link length should <= %d", core.GcpQueryLimit)
+	}
+
+	if err := a.Page.Validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // GcpRouteListResult defines gcp list route result.
 type GcpRouteListResult struct {
 	NextPageToken string     `json:"next_page_token,omitempty"`

@@ -20,6 +20,7 @@
 package image
 
 import (
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 )
 
@@ -31,15 +32,16 @@ type AzureImageListResult struct {
 
 // AzureImage ...
 type AzureImage struct {
-	CloudID      string `json:"cloud_id"`
-	Name         string `json:"name"`
-	Architecture string `json:"architecture"`
-	Platform     string `json:"platform"`
-	State        string `json:"state"`
-	Type         string `json:"type"`
-	Sku          string `json:"sku"`
-	ImageSize    int64  `json:"image_size"`
-	ImageSource  string `json:"image_source"`
+	CloudID      string        `json:"cloud_id"`
+	Name         string        `json:"name"`
+	Architecture string        `json:"architecture"`
+	Platform     string        `json:"platform"`
+	State        string        `json:"state"`
+	Type         string        `json:"type"`
+	Sku          string        `json:"sku"`
+	ImageSize    int64         `json:"image_size"`
+	ImageSource  string        `json:"image_source"`
+	OsType       enumor.OsType `json:"os_type"`
 }
 
 // GetCloudID ...

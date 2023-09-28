@@ -48,6 +48,7 @@ type HuaWeiInfoBySecret struct {
 
 // GcpInfoBySecret GCP 根据秘钥获取的字段
 type GcpInfoBySecret struct {
+	Email                   string `json:"email"`
 	CloudProjectID          string `json:"cloud_project_id"`
 	CloudProjectName        string `json:"cloud_project_name"`
 	CloudServiceAccountID   string `json:"cloud_service_account_id"`
@@ -103,6 +104,17 @@ type GcpSecret struct {
 	CloudServiceSecretKey string `json:"cloud_service_secret_key" validate:"required"`
 }
 
+// GcpCredential gcp credential
+type GcpCredential struct {
+	CloudProjectID        string `json:"cloud_project_id" validate:"required"`
+	CloudServiceSecretKey string `json:"cloud_service_secret_key" validate:"required"`
+}
+
+// Validate GcpCredential
+func (g *GcpCredential) Validate() error {
+	return validator.Validate.Struct(g)
+}
+
 func (sk GcpSecret) Validate() error {
 	return validator.Validate.Struct(sk)
 }
@@ -115,5 +127,17 @@ type AzureSecret struct {
 }
 
 func (sk AzureSecret) Validate() error {
+	return validator.Validate.Struct(sk)
+}
+
+// AzureAuthSecret Azure 秘钥
+type AzureAuthSecret struct {
+	CloudTenantID        string `json:"cloud_tenant_id" validate:"required"`
+	CloudSubscriptionID  string `json:"cloud_subscription_id" validate:"required"`
+	CloudApplicationID   string `json:"cloud_application_id" validate:"required"`
+	CloudClientSecretKey string `json:"cloud_client_secret_key" validate:"required"`
+}
+
+func (sk AzureAuthSecret) Validate() error {
 	return validator.Validate.Struct(sk)
 }

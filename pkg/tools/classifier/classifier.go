@@ -17,12 +17,45 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package classifier ...
 package classifier
 
 import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/types"
 )
+
+// ClassifySlice 将slice以指定的类别分类，类别通过给定函数获取
+func ClassifySlice[V any, T comparable](valSlice []V, classGetter func(V) T) map[T][]V {
+
+	valKindMap := make(map[T][]V)
+	for _, val := range valSlice {
+		klass := classGetter(val)
+		if _, exist := valKindMap[klass]; !exist {
+			valKindMap[klass] = []V{val}
+			continue
+		}
+		valKindMap[klass] = append(valKindMap[klass], val)
+	}
+
+	return valKindMap
+}
+
+// ClassifyMap classify by kindFun function
+func ClassifyMap[K comparable, V any, T comparable](valMap map[K]V, classGetter func(V) T) map[T][]V {
+
+	valKindMap := make(map[T][]V)
+	for _, val := range valMap {
+		klass := classGetter(val)
+		if _, exist := valKindMap[klass]; !exist {
+			valKindMap[klass] = []V{val}
+			continue
+		}
+		valKindMap[klass] = append(valKindMap[klass], val)
+	}
+
+	return valKindMap
+}
 
 // ClassifyBasicInfoByVendor classify basic info map by vendor.
 func ClassifyBasicInfoByVendor(infoMap map[string]types.CloudResourceBasicInfo) map[enumor.Vendor][]types.

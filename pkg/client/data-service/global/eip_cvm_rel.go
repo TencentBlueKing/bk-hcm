@@ -29,10 +29,9 @@ import (
 )
 
 // BatchCreateEipCvmRel ...
-func (rc *restClient) BatchCreateEipCvmRel(ctx context.Context,
-	h http.Header,
-	request *dataproto.EipCvmRelBatchCreateReq,
-) error {
+func (rc *restClient) BatchCreateEipCvmRel(ctx context.Context, h http.Header,
+	request *dataproto.EipCvmRelBatchCreateReq) error {
+
 	resp := new(rest.BaseResp)
 
 	err := rc.client.Post().
@@ -54,9 +53,9 @@ func (rc *restClient) BatchCreateEipCvmRel(ctx context.Context,
 }
 
 // ListEipCvmRel ...
-func (rc *restClient) ListEipCvmRel(ctx context.Context,
-	h http.Header, request *dataproto.EipCvmRelListReq,
-) (*dataproto.EipCvmRelListResult, error) {
+func (rc *restClient) ListEipCvmRel(ctx context.Context, h http.Header,
+	request *dataproto.EipCvmRelListReq) (*dataproto.EipCvmRelListResult, error) {
+
 	resp := new(dataproto.EipCvmRelListResp)
 
 	err := rc.client.Post().
@@ -78,10 +77,9 @@ func (rc *restClient) ListEipCvmRel(ctx context.Context,
 }
 
 // ListEipCvmRelWithEip ...
-func (rc *restClient) ListEipCvmRelWithEip(ctx context.Context,
-	h http.Header,
-	request *dataproto.EipCvmRelWithEipListReq,
-) ([]*dataproto.EipWithCvmID, error) {
+func (rc *restClient) ListEipCvmRelWithEip(ctx context.Context, h http.Header,
+	request *dataproto.EipCvmRelWithEipListReq) ([]*dataproto.EipWithCvmID, error) {
+
 	resp := new(dataproto.EipCvmRelWithEipListResp)
 
 	err := rc.client.Post().
@@ -103,11 +101,7 @@ func (rc *restClient) ListEipCvmRelWithEip(ctx context.Context,
 }
 
 // DeleteEipCvmRel ...
-func (rc *restClient) DeleteEipCvmRel(
-	ctx context.Context,
-	h http.Header,
-	request *dataproto.EipCvmRelDeleteReq,
-) error {
+func (rc *restClient) DeleteEipCvmRel(ctx context.Context, h http.Header, request *dataproto.EipCvmRelDeleteReq) error {
 	resp := new(rest.BaseResp)
 
 	err := rc.client.Delete().

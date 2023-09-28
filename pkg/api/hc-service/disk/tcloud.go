@@ -53,9 +53,8 @@ func (req *TCloudDiskChargePrepaid) Validate() error {
 
 // TCloudDiskAttachReq ...
 type TCloudDiskAttachReq struct {
-	AccountID string `json:"account_id" validate:"required"`
-	CvmID     string `json:"cvm_id" validate:"required"`
-	DiskID    string `json:"disk_id" validate:"required"`
+	CvmID  string `json:"cvm_id" validate:"required"`
+	DiskID string `json:"disk_id" validate:"required"`
 }
 
 // Validate ...

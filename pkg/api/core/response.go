@@ -39,3 +39,9 @@ type ListResult struct {
 	Count   uint64        `json:"count,omitempty"`
 	Details []interface{} `json:"details,omitempty"`
 }
+
+// BaseResp define base resp.
+type BaseResp[T any] struct {
+	rest.BaseResp `json:",inline"`
+	Data          T `json:"data"`
+}

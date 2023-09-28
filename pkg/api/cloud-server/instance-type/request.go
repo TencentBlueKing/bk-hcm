@@ -17,15 +17,15 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package instancetype
+package csinstancetype
 
 import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 )
 
-// InstanceTypeListReq ...
-type InstanceTypeListReq struct {
+// ListReq ...
+type ListReq struct {
 	Vendor             enumor.Vendor `json:"vendor" validate:"required"`
 	AccountID          string        `json:"account_id" validate:"required"`
 	Region             string        `json:"region" validate:"required"`
@@ -34,6 +34,14 @@ type InstanceTypeListReq struct {
 }
 
 // Validate ...
-func (req *InstanceTypeListReq) Validate() error {
+func (req *ListReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// ListResult 查询机型列表返回数据。
+type ListResult[T any] struct {
+	// InstanceFamilyTypeNames 腾讯云私有字段，需要取类型名称前缀。e.g: "标准型SA3" -> "标准型"
+	InstanceFamilyTypeNames []string `json:"instance_family_type_names,omitempty"`
+	InstanceFamilies        []string `json:"instance_families"`
+	InstanceTypes           []*T     `json:"instance_types"`
 }

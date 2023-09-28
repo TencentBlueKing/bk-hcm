@@ -47,13 +47,37 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/itsm"
 	"hcm/pkg/tools/json"
 )
 
+func decodeCommonReqAndValidate(cts *rest.Contexts) (*proto.CreateCommonReq, error) {
+	bytes, err := cts.RequestBody()
+	if err != nil {
+		logs.Errorf("get request body failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	req := new(proto.CreateCommonReq)
+	if err = json.Unmarshal(bytes, req); err != nil {
+		logs.Errorf("unmarshal create common req failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if err = req.Validate(); err != nil {
+		logs.Errorf("create common request failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // create 创建申请单的通用逻辑
-func (a *applicationSvc) create(cts *rest.Contexts, handler handlers.ApplicationHandler) (interface{}, error) {
+func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
+	handler handlers.ApplicationHandler) (interface{}, error) {
+
 	// 校验数据正确性
 	if err := handler.CheckReq(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -125,6 +149,7 @@ func (a *applicationSvc) create(cts *rest.Contexts, handler handlers.Application
 			Applicant:      cts.Kit.User,
 			Content:        content,
 			DeliveryDetail: "{}",
+			Memo:           req.Remark,
 		},
 	)
 	if err != nil {
@@ -144,6 +169,11 @@ func parseReqFromRequestBody[T any](cts *rest.Contexts) (*T, error) {
 
 // CreateForAddAccount ...
 func (a *applicationSvc) CreateForAddAccount(cts *rest.Contexts) (interface{}, error) {
+	commReq, err := decodeCommonReqAndValidate(cts)
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
 	req, err := parseReqFromRequestBody[proto.AccountAddReq](cts)
 	if err != nil {
 		return nil, err
@@ -157,13 +187,18 @@ func (a *applicationSvc) CreateForAddAccount(cts *rest.Contexts) (interface{}, e
 		return nil, err
 	}
 
-	return a.create(cts, handler)
+	return a.create(cts, commReq, handler)
 }
 
 // CreateForCreateCvm ...
 func (a *applicationSvc) CreateForCreateCvm(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	commReq, err := decodeCommonReqAndValidate(cts)
+	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
@@ -180,35 +215,35 @@ func (a *applicationSvc) CreateForCreateCvm(cts *rest.Contexts) (interface{}, er
 			return nil, err
 		}
 		handler := tcloudcvmhandler.NewApplicationOfCreateTCloudCvm(opt, req)
-		return a.create(cts, handler)
+		return a.create(cts, commReq, handler)
 	case enumor.Aws:
 		req, err := parseReqFromRequestBody[cscvm.AwsCvmCreateReq](cts)
 		if err != nil {
 			return nil, err
 		}
 		handler := awscvmhandler.NewApplicationOfCreateAwsCvm(opt, req)
-		return a.create(cts, handler)
+		return a.create(cts, commReq, handler)
 	case enumor.HuaWei:
 		req, err := parseReqFromRequestBody[cscvm.HuaWeiCvmCreateReq](cts)
 		if err != nil {
 			return nil, err
 		}
 		handler := huaweicvmhandler.NewApplicationOfCreateHuaWeiCvm(opt, req)
-		return a.create(cts, handler)
+		return a.create(cts, commReq, handler)
 	case enumor.Gcp:
 		req, err := parseReqFromRequestBody[cscvm.GcpCvmCreateReq](cts)
 		if err != nil {
 			return nil, err
 		}
 		handler := gcpcvmhandler.NewApplicationOfCreateGcpCvm(opt, req)
-		return a.create(cts, handler)
+		return a.create(cts, commReq, handler)
 	case enumor.Azure:
 		req, err := parseReqFromRequestBody[cscvm.AzureCvmCreateReq](cts)
 		if err != nil {
 			return nil, err
 		}
 		handler := azurecvmhandler.NewApplicationOfCreateAzureCvm(opt, req)
-		return a.create(cts, handler)
+		return a.create(cts, commReq, handler)
 	}
 
 	return nil, nil
@@ -219,6 +254,11 @@ func (a *applicationSvc) CreateForCreateVpc(cts *rest.Contexts) (interface{}, er
 
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	commReq, err := decodeCommonReqAndValidate(cts)
+	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
@@ -235,35 +275,35 @@ func (a *applicationSvc) CreateForCreateVpc(cts *rest.Contexts) (interface{}, er
 			return nil, err
 		}
 		handler := tcloudvpchandler.NewApplicationOfCreateTCloudVpc(opt, req)
-		return a.create(cts, handler)
+		return a.create(cts, commReq, handler)
 	case enumor.Aws:
 		req, err := parseReqFromRequestBody[csvpc.AwsVpcCreateReq](cts)
 		if err != nil {
 			return nil, err
 		}
 		handler := awsvpchandler.NewApplicationOfCreateAwsVpc(opt, req)
-		return a.create(cts, handler)
+		return a.create(cts, commReq, handler)
 	case enumor.HuaWei:
 		req, err := parseReqFromRequestBody[csvpc.HuaWeiVpcCreateReq](cts)
 		if err != nil {
 			return nil, err
 		}
 		handler := huaweivpchandler.NewApplicationOfCreateHuaWeiVpc(opt, req)
-		return a.create(cts, handler)
+		return a.create(cts, commReq, handler)
 	case enumor.Gcp:
 		req, err := parseReqFromRequestBody[csvpc.GcpVpcCreateReq](cts)
 		if err != nil {
 			return nil, err
 		}
 		handler := gcpvpchandler.NewApplicationOfCreateGcpVpc(opt, req)
-		return a.create(cts, handler)
+		return a.create(cts, commReq, handler)
 	case enumor.Azure:
 		req, err := parseReqFromRequestBody[csvpc.AzureVpcCreateReq](cts)
 		if err != nil {
 			return nil, err
 		}
 		handler := azurevpchandler.NewApplicationOfCreateAzureVpc(opt, req)
-		return a.create(cts, handler)
+		return a.create(cts, commReq, handler)
 	}
 
 	return nil, nil
@@ -273,6 +313,11 @@ func (a *applicationSvc) CreateForCreateVpc(cts *rest.Contexts) (interface{}, er
 func (a *applicationSvc) CreateForCreateDisk(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	commReq, err := decodeCommonReqAndValidate(cts)
+	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
@@ -289,35 +334,35 @@ func (a *applicationSvc) CreateForCreateDisk(cts *rest.Contexts) (interface{}, e
 			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 		}
 		handler := tclouddiskhandler.NewApplicationOfCreateTCloudDisk(opt, req)
-		return a.create(cts, handler)
+		return a.create(cts, commReq, handler)
 	case enumor.Gcp:
 		req, err := parseReqFromRequestBody[csdisk.GcpDiskCreateReq](cts)
 		if err != nil {
 			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 		}
 		handler := gcpdiskhandler.NewApplicationOfCreateGcpDisk(opt, req)
-		return a.create(cts, handler)
+		return a.create(cts, commReq, handler)
 	case enumor.Aws:
 		req, err := parseReqFromRequestBody[csdisk.AwsDiskCreateReq](cts)
 		if err != nil {
 			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 		}
 		handler := awsdiskhandler.NewApplicationOfCreateAwsDisk(opt, req)
-		return a.create(cts, handler)
+		return a.create(cts, commReq, handler)
 	case enumor.HuaWei:
 		req, err := parseReqFromRequestBody[csdisk.HuaWeiDiskCreateReq](cts)
 		if err != nil {
 			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 		}
 		handler := huaweidiskhandler.NewApplicationOfCreateHuaWeiDisk(opt, req)
-		return a.create(cts, handler)
+		return a.create(cts, commReq, handler)
 	case enumor.Azure:
 		req, err := parseReqFromRequestBody[csdisk.AzureDiskCreateReq](cts)
 		if err != nil {
 			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 		}
 		handler := azurediskhandler.NewApplicationOfCreateAzureDisk(opt, req)
-		return a.create(cts, handler)
+		return a.create(cts, commReq, handler)
 	}
 
 	return nil, nil

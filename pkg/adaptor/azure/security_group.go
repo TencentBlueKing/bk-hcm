@@ -116,6 +116,30 @@ func (handler *sgResultHandler) BuildResult(resp armnetwork.SecurityGroupsClient
 	return sgs
 }
 
+// CountSecurityGroup count security group.
+// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/list-all
+func (az *Azure) CountSecurityGroup(kt *kit.Kit) (int32, error) {
+
+	client, err := az.clientSet.securityGroupClient()
+	if err != nil {
+		return 0, fmt.Errorf("new security group client failed, err: %v", err)
+	}
+
+	var count int32
+	pager := client.NewListAllPager(nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			logs.Errorf("list security group next page failed, err: %v, rid: %s", err, kt.Rid)
+			return 0, fmt.Errorf("failed to advance page: %v", err)
+		}
+
+		count += int32(len(nextResult.Value))
+	}
+
+	return count, nil
+}
+
 // ListSecurityGroupByPage ...
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/list-all
 func (az *Azure) ListSecurityGroupByPage(kt *kit.Kit, opt *securitygroup.AzureListOption) (

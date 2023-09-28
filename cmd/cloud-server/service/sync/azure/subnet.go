@@ -37,6 +37,9 @@ import (
 func SyncSubnet(kt *kit.Kit, cliSet *client.ClientSet, accountID string, resourceGroupNames []string,
 	sd *detail.SyncDetail) error {
 
+	// 重新设置rid方便定位
+	kt = kt.NewSubKit()
+
 	start := time.Now()
 	logs.V(3).Infof("azure account[%s] sync subnet start, time: %v, rid: %s", accountID, start, kt.Rid)
 
@@ -53,26 +56,13 @@ func SyncSubnet(kt *kit.Kit, cliSet *client.ClientSet, accountID string, resourc
 	var firstErr error
 	var wg gosync.WaitGroup
 	for _, name := range resourceGroupNames {
+		filterRules := []filter.RuleFactory{
+			&filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: accountID},
+			&filter.AtomRule{Field: "extension.resource_group_name", Op: filter.JSONEqual.Factory(), Value: name},
+		}
 		listReq := &core.ListReq{
-			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					&filter.AtomRule{
-						Field: "account_id",
-						Op:    filter.Equal.Factory(),
-						Value: accountID,
-					},
-					&filter.AtomRule{
-						Field: "extension.resource_group_name",
-						Op:    filter.JSONEqual.Factory(),
-						Value: name,
-					},
-				},
-			},
-			Page: &core.BasePage{
-				Start: 0,
-				Limit: core.DefaultMaxPageLimit,
-			},
+			Filter: &filter.Expression{Op: filter.And, Rules: filterRules},
+			Page:   &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
 			Fields: []string{"cloud_id"},
 		}
 		startIndex := uint32(0)
@@ -95,11 +85,7 @@ func SyncSubnet(kt *kit.Kit, cliSet *client.ClientSet, accountID string, resourc
 						<-pipeline
 					}()
 
-					req := &sync.AzureSubnetSyncReq{
-						AccountID:         accountID,
-						ResourceGroupName: name,
-						CloudVpcID:        vpcID,
-					}
+					req := &sync.AzureSubnetSyncReq{AccountID: accountID, ResourceGroupName: name, CloudVpcID: vpcID}
 					err := cliSet.HCService().Azure.Subnet.SyncSubnet(kt.Ctx, kt.Header(), req)
 					if firstErr == nil && err != nil {
 						logs.Errorf("sync azure subnet failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
@@ -112,21 +98,17 @@ func SyncSubnet(kt *kit.Kit, cliSet *client.ClientSet, accountID string, resourc
 			if len(vpcResult.Details) < int(core.DefaultMaxPageLimit) {
 				break
 			}
-
 			startIndex += uint32(core.DefaultMaxPageLimit)
 		}
 	}
 
 	wg.Wait()
-
 	if firstErr != nil {
 		return firstErr
 	}
-
 	// 同步成功
 	if err := sd.ResSyncStatusSuccess(enumor.SubnetCloudResType); err != nil {
 		return err
 	}
-
 	return nil
 }

@@ -38,6 +38,7 @@ func (svc *cvmSvc) initTCloudCvmService(cap *capability.Capability) {
 	h := rest.NewHandler()
 
 	h.Add("BatchCreateTCloudCvm", http.MethodPost, "/vendors/tcloud/cvms/batch/create", svc.BatchCreateTCloudCvm)
+	h.Add("InquiryPriceTCloudCvm", http.MethodPost, "/vendors/tcloud/cvms/prices/inquiry", svc.InquiryPriceTCloudCvm)
 	h.Add("BatchStartTCloudCvm", http.MethodPost, "/vendors/tcloud/cvms/batch/start", svc.BatchStartTCloudCvm)
 	h.Add("BatchStopTCloudCvm", http.MethodPost, "/vendors/tcloud/cvms/batch/stop", svc.BatchStopTCloudCvm)
 	h.Add("BatchRebootTCloudCvm", http.MethodPost, "/vendors/tcloud/cvms/batch/reboot", svc.BatchRebootTCloudCvm)
@@ -45,6 +46,51 @@ func (svc *cvmSvc) initTCloudCvmService(cap *capability.Capability) {
 	h.Add("BatchResetTCloudCvmPwd", http.MethodPost, "/vendors/tcloud/cvms/batch/reset/pwd", svc.BatchResetTCloudCvmPwd)
 
 	h.Load(cap.WebService)
+}
+
+// InquiryPriceTCloudCvm inquiry price tcloud cvm.
+func (svc *cvmSvc) InquiryPriceTCloudCvm(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocvm.TCloudBatchCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	tcloud, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	createOpt := &typecvm.TCloudCreateOption{
+		DryRun:                  req.DryRun,
+		Region:                  req.Region,
+		Name:                    req.Name,
+		Zone:                    req.Zone,
+		InstanceType:            req.InstanceType,
+		CloudImageID:            req.CloudImageID,
+		Password:                req.Password,
+		RequiredCount:           req.RequiredCount,
+		CloudSecurityGroupIDs:   req.CloudSecurityGroupIDs,
+		ClientToken:             req.ClientToken,
+		CloudVpcID:              req.CloudVpcID,
+		CloudSubnetID:           req.CloudSubnetID,
+		InstanceChargeType:      req.InstanceChargeType,
+		InstanceChargePrepaid:   req.InstanceChargePrepaid,
+		SystemDisk:              req.SystemDisk,
+		DataDisk:                req.DataDisk,
+		PublicIPAssigned:        req.PublicIPAssigned,
+		InternetMaxBandwidthOut: req.InternetMaxBandwidthOut,
+	}
+	result, err := tcloud.InquiryPriceCvm(cts.Kit, createOpt)
+	if err != nil {
+		logs.Errorf("inquiry cvm price failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // BatchCreateTCloudCvm ...
@@ -64,23 +110,24 @@ func (svc *cvmSvc) BatchCreateTCloudCvm(cts *rest.Contexts) (interface{}, error)
 	}
 
 	createOpt := &typecvm.TCloudCreateOption{
-		DryRun:                req.DryRun,
-		Region:                req.Region,
-		Name:                  req.Name,
-		Zone:                  req.Zone,
-		InstanceType:          req.InstanceType,
-		CloudImageID:          req.CloudImageID,
-		Password:              req.Password,
-		RequiredCount:         req.RequiredCount,
-		CloudSecurityGroupIDs: req.CloudSecurityGroupIDs,
-		ClientToken:           req.ClientToken,
-		CloudVpcID:            req.CloudVpcID,
-		CloudSubnetID:         req.CloudSubnetID,
-		InstanceChargeType:    req.InstanceChargeType,
-		InstanceChargePrepaid: req.InstanceChargePrepaid,
-		SystemDisk:            req.SystemDisk,
-		DataDisk:              req.DataDisk,
-		PublicIPAssigned:      req.PublicIPAssigned,
+		DryRun:                  req.DryRun,
+		Region:                  req.Region,
+		Name:                    req.Name,
+		Zone:                    req.Zone,
+		InstanceType:            req.InstanceType,
+		CloudImageID:            req.CloudImageID,
+		Password:                req.Password,
+		RequiredCount:           req.RequiredCount,
+		CloudSecurityGroupIDs:   req.CloudSecurityGroupIDs,
+		ClientToken:             req.ClientToken,
+		CloudVpcID:              req.CloudVpcID,
+		CloudSubnetID:           req.CloudSubnetID,
+		InstanceChargeType:      req.InstanceChargeType,
+		InstanceChargePrepaid:   req.InstanceChargePrepaid,
+		SystemDisk:              req.SystemDisk,
+		DataDisk:                req.DataDisk,
+		PublicIPAssigned:        req.PublicIPAssigned,
+		InternetMaxBandwidthOut: req.InternetMaxBandwidthOut,
 	}
 	result, err := tcloud.CreateCvm(cts.Kit, createOpt)
 	if err != nil {

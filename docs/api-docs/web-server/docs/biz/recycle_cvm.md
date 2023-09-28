@@ -1,7 +1,7 @@
 ### 描述
 
 - 该接口提供版本：v1.0.0+。
-- 该接口所需权限：业务-IaaS资源删除。
+- 该接口所需权限：回收站操作。
 - 该接口功能描述：回收虚拟机。
 
 ### URL
@@ -17,10 +17,11 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/cvms/recycle
 
 #### infos[n]
 
-| 参数名称      | 参数类型    | 必选  | 描述       |
-|-----------|---------|-----|----------|
-| id        | string  | 是   | 回收的虚拟机ID |
-| with_disk | boolean | 是   | 是否同时回收硬盘 |
+| 参数名称      | 参数类型    | 必选  | 描述        |
+|-----------|---------|-----|-----------|
+| id        | string  | 是   | 回收的虚拟机ID  |
+| with_disk | boolean | 是   | 是否同时回收硬盘  |
+| with_eip  | boolean | 是   | 是否同时回收EIP |
 
 ### 调用示例
 
@@ -29,7 +30,8 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/cvms/recycle
   "infos": [
     {
       "id": "000000001",
-      "with_disk": true
+      "with_disk": true,
+      "with_eip": true
     }
   ]
 }

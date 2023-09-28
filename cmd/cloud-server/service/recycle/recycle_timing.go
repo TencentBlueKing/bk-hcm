@@ -38,7 +38,9 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/serviced"
+	"hcm/pkg/thirdparty/esb"
 	"hcm/pkg/tools/retry"
+	"hcm/pkg/tools/times"
 )
 
 type recycle struct {
@@ -48,15 +50,15 @@ type recycle struct {
 }
 
 // RecycleTiming timing recycle all resource.
-func RecycleTiming(c *client.ClientSet, state serviced.State, conf cc.Recycle) {
+func RecycleTiming(c *client.ClientSet, state serviced.State, conf cc.Recycle, esbClient esb.Client) {
 	r := &recycle{
 		client: c,
 		state:  state,
-		logics: logics.NewLogics(c),
+		logics: logics.NewLogics(c, esbClient),
 	}
 
-	go r.recycleTiming(enumor.DiskCloudResType, r.recycleDisk, conf)
-	go r.recycleTiming(enumor.CvmCloudResType, r.recycleCvm, conf)
+	go r.recycleTiming(enumor.DiskCloudResType, r.recycleDiskWorker, conf)
+	go r.recycleTiming(enumor.CvmCloudResType, r.recycleCvmWorker, conf)
 }
 
 type recycleWorker func(kt *kit.Kit, info *types.CloudResourceBasicInfo) error
@@ -74,12 +76,11 @@ func (r *recycle) recycleTiming(resType enumor.CloudResourceType, worker recycle
 		}
 
 		logs.Infof("start recycle %s, rid: %s", resType, kt.Rid)
-
 		// get need recycled resource records
 		expr, err := tools.And(tools.EqualWithOpExpression(filter.And,
 			map[string]interface{}{"res_type": resType, "status": enumor.WaitingRecycleRecordStatus}),
-			&filter.AtomRule{Field: "created_at", Op: filter.LessThanEqual.Factory(),
-				Value: time.Now().Add(-time.Hour * time.Duration(conf.AutoDeleteTime)).Format(constant.TimeStdFormat)})
+			&filter.AtomRule{Field: "recycled_at", Op: filter.LessThanEqual.Factory(),
+				Value: times.ConvStdTimeFormat(time.Now())})
 		if err != nil {
 			time.Sleep(time.Minute)
 			continue
@@ -87,7 +88,7 @@ func (r *recycle) recycleTiming(resType enumor.CloudResourceType, worker recycle
 		listReq := &core.ListReq{
 			Filter: expr,
 			Page:   core.NewDefaultBasePage(),
-			Fields: []string{"id", "res_id"},
+			Fields: []string{"id", "res_id", "bk_biz_id"},
 		}
 		recordRes, err := r.client.DataService().Global.RecycleRecord.ListRecycleRecord(kt.Ctx, kt.Header(), listReq)
 		if err != nil {
@@ -122,7 +123,7 @@ func (r *recycle) recycleTiming(resType enumor.CloudResourceType, worker recycle
 				}
 				logs.Errorf("recycle %s res(ids: %+v) all don't exist, mark all as fail, reason: %v, rid: %s",
 					resType, ids, err, kt.Rid)
-				r.markfail(kt, err, recordIDs)
+				r.markFailed(kt, err, recordIDs)
 				continue
 			}
 			logs.Errorf("get recycle %s resource detail failed, err: %v, ids: %+v, rid: %s", resType, err, ids, kt.Rid)
@@ -137,7 +138,6 @@ func (r *recycle) recycleTiming(resType enumor.CloudResourceType, worker recycle
 				time.Sleep(time.Minute)
 				break
 			}
-
 			r.execWorker(kt, worker, record, basicInfoMap)
 		}
 
@@ -152,19 +152,24 @@ func (r *recycle) execWorker(kt *kit.Kit, worker recycleWorker, record recyclere
 
 	basicInfo, exists := basicInfoMap[record.ResID]
 	if !exists {
-		logs.Errorf("recycle %s res(id: %s) doesn't exists, mark as failed, rid: %s", record.ResType, record.ResID, kt.Rid)
-		r.markfail(kt, errf.New(errf.RecordNotFound, "Recourse Not Found"), []string{record.ID})
+		logs.Errorf("recycle %s res(id: %s) doesn't exists, mark as failed, rid: %s", record.ResType, record.ResID,
+			kt.Rid)
+		r.markFailed(kt, errf.New(errf.RecordNotFound, "Recourse Not Found"), []string{record.ID})
 		return
 	}
 
 	rty := retry.NewRetryPolicy(maxRetryCount, [2]uint{500, 15000})
 	var err error
+
+	// 类型为cvm且在业务下回收的，需要检查是否在cmdb 待回收模块中
+	// 因为cvm记录中的BkBizID已经在加入业务的时候被清掉了，所以要以recycle_record中的为准
+	basicInfo.BkBizID = record.BkBizID
 	err = rty.BaseExec(kt, func() error {
 		return worker(kt, &basicInfo)
 	})
 	if err != nil {
 		// Failed after retry
-		r.markfail(kt, err, []string{record.ID})
+		r.markFailed(kt, err, []string{record.ID})
 		return
 	}
 	// Success
@@ -180,7 +185,7 @@ func (r *recycle) execWorker(kt *kit.Kit, worker recycleWorker, record recyclere
 	}
 }
 
-func (r *recycle) recycleDisk(kt *kit.Kit, info *types.CloudResourceBasicInfo) error {
+func (r *recycle) recycleDiskWorker(kt *kit.Kit, info *types.CloudResourceBasicInfo) error {
 	res, err := r.logics.Disk.DeleteRecycledDisk(kt, map[string]types.CloudResourceBasicInfo{info.ID: *info})
 	if err != nil {
 		logs.Errorf("delete disk failed, err: %v, res: %+v, disk: %s, rid: %s", err, res, info.ID, kt.Rid)
@@ -189,8 +194,9 @@ func (r *recycle) recycleDisk(kt *kit.Kit, info *types.CloudResourceBasicInfo) e
 	return nil
 }
 
-func (r *recycle) recycleCvm(kt *kit.Kit, info *types.CloudResourceBasicInfo) error {
-	res, err := r.logics.Cvm.DeleteRecycledCvm(kt, map[string]types.CloudResourceBasicInfo{info.ID: *info})
+func (r *recycle) recycleCvmWorker(kt *kit.Kit, info *types.CloudResourceBasicInfo) error {
+	// 实际销毁CVM
+	res, err := r.logics.Cvm.DestroyRecycledCvm(kt, map[string]types.CloudResourceBasicInfo{info.ID: *info})
 	if err != nil {
 		logs.Errorf("delete cvm failed, err: %v, res: %+v, cvm: %s, rid: %s", err, res, info.ID, kt.Rid)
 		return err
@@ -198,7 +204,7 @@ func (r *recycle) recycleCvm(kt *kit.Kit, info *types.CloudResourceBasicInfo) er
 	return nil
 }
 
-func (r *recycle) markfail(kt *kit.Kit, err error, recordIDs []string) {
+func (r *recycle) markFailed(kt *kit.Kit, err error, recordIDs []string) {
 	updateReq := make([]rr.UpdateReq, len(recordIDs))
 	for i, id := range recordIDs {
 		updateReq[i] = rr.UpdateReq{

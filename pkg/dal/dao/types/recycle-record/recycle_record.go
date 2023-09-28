@@ -46,5 +46,4 @@ type ResourceUpdateOptions struct {
 	ResType enumor.CloudResourceType
 	IDs     []string
 	Status  string
-	BkBizID int64
 }

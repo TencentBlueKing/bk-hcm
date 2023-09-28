@@ -1,6 +1,6 @@
 ### 描述
 
-- 该接口提供版本：v1.0.0+。
+- 该接口提供版本：v9.9.9+。
 - 该接口所需权限：账号查看。
 - 该接口功能描述：查询指定账号。
 
@@ -112,6 +112,7 @@ GET /api/v1/cloud/accounts/{account_id}
 
 | 参数名称                       | 参数类型     | 描述       |
 |----------------------------|----------|----------|
+| Email                      | string   | 邮箱地址  |
 | cloud_project_id           | string   | 云项目ID    |
 | cloud_project_name         | string   | 云项目名称    |
 | cloud_service_account_id   | string   | 云服务账户ID  |
@@ -123,6 +124,7 @@ GET /api/v1/cloud/accounts/{account_id}
 
 | 参数名称                     | 参数类型     | 描述          |
 |--------------------------|----------|-------------|
+| display_name_name       | string    | 展示名称  |
 | cloud_tenant_id          | string   | 云租户ID       |
 | cloud_subscription_id    | string   | 云订阅ID       |
 | cloud_subscription_name  | string   | 云订阅名称       |

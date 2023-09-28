@@ -98,6 +98,23 @@ func (a *Aws) ListEip(kt *kit.Kit, opt *eip.AwsEipListOption) (*eip.AwsEipListRe
 	return &eip.AwsEipListResult{Details: eips}, nil
 }
 
+// CountEip 返回给定地域下所有EIP数量，基于DescribeAddresses接口
+// reference: https://docs.amazonaws.cn/en_us/AWSEC2/latest/APIReference/API_DescribeAddresses.html
+func (a *Aws) CountEip(kt *kit.Kit, region string) (int32, error) {
+	client, err := a.clientSet.ec2Client(region)
+	if err != nil {
+		return 0, err
+	}
+
+	req := new(ec2.DescribeAddressesInput)
+	resp, err := client.DescribeAddressesWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("count aws eip failed, err: %v, region:%s, rid: %s", err, region, kt.Rid)
+		return 0, err
+	}
+	return int32(len(resp.Addresses)), nil
+}
+
 // DeleteEip ...
 // reference: https://docs.amazonaws.cn/en_us/AWSEC2/latest/APIReference/API_ReleaseAddress.html
 func (a *Aws) DeleteEip(kt *kit.Kit, opt *eip.AwsEipDeleteOption) error {

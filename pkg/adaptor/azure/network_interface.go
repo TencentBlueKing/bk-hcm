@@ -37,6 +37,30 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
 )
 
+// CountNI count ni.
+// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-interfaces/list-all
+func (az *Azure) CountNI(kt *kit.Kit) (int32, error) {
+
+	client, err := az.clientSet.networkInterfaceClient()
+	if err != nil {
+		return 0, fmt.Errorf("new netwrok interface client failed, err: %v", err)
+	}
+
+	var count int32
+	pager := client.NewListAllPager(nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			logs.Errorf("list network interface next page failed, err: %v, rid: %s", err, kt.Rid)
+			return 0, fmt.Errorf("failed to advance page: %v", err)
+		}
+
+		count += int32(len(nextResult.Value))
+	}
+
+	return count, nil
+}
+
 // ListNetworkInterface list all network interface.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-interfaces/list-all
 func (az *Azure) ListNetworkInterface(kt *kit.Kit) (*typesniproto.AzureInterfaceListResult, error) {

@@ -26,20 +26,16 @@ import (
 )
 
 // GetTCloudInstanceType 查询机型
-func (a *BaseApplicationHandler) GetTCloudInstanceType(
-	accountID, region, zone, instanceType, chargeType string,
-) (*hcprotoinstancetype.TCloudInstanceTypeResp, error) {
+func (a *BaseApplicationHandler) GetTCloudInstanceType(accountID, region, zone, instanceType, chargeType string) (
+	*hcprotoinstancetype.TCloudInstanceTypeResp, error) {
+
 	req := &hcprotoinstancetype.TCloudInstanceTypeListReq{
 		AccountID:          accountID,
 		Region:             region,
 		Zone:               zone,
 		InstanceChargeType: chargeType,
 	}
-	resp, err := a.Client.HCService().TCloud.InstanceType.List(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
-		req,
-	)
+	resp, err := a.Client.HCService().TCloud.InstanceType.List(a.Cts.Kit, req)
 	if err != nil {
 		return nil, err
 	}
@@ -58,14 +54,14 @@ func (a *BaseApplicationHandler) GetTCloudInstanceType(
 }
 
 // GetAwsInstanceType 查询机型
-func (a *BaseApplicationHandler) GetAwsInstanceType(
-	accountID, region, instanceType string,
-) (*hcprotoinstancetype.AwsInstanceTypeResp, error) {
-	resp, err := a.Client.HCService().Aws.InstanceType.List(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
-		&hcprotoinstancetype.AwsInstanceTypeListReq{AccountID: accountID, Region: region},
-	)
+func (a *BaseApplicationHandler) GetAwsInstanceType(accountID, region, instanceType string) (
+	*hcprotoinstancetype.AwsInstanceTypeResp, error) {
+
+	req := &hcprotoinstancetype.AwsInstanceTypeListReq{
+		AccountID: accountID,
+		Region:    region,
+	}
+	resp, err := a.Client.HCService().Aws.InstanceType.List(a.Cts.Kit, req)
 	if err != nil {
 		return nil, err
 	}
@@ -84,14 +80,15 @@ func (a *BaseApplicationHandler) GetAwsInstanceType(
 }
 
 // GetHuaWeiInstanceType 查询机型
-func (a *BaseApplicationHandler) GetHuaWeiInstanceType(
-	accountID, region, zone, instanceType string,
-) (*hcprotoinstancetype.HuaWeiInstanceTypeResp, error) {
-	resp, err := a.Client.HCService().HuaWei.InstanceType.List(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
-		&hcprotoinstancetype.HuaWeiInstanceTypeListReq{AccountID: accountID, Region: region, Zone: zone},
-	)
+func (a *BaseApplicationHandler) GetHuaWeiInstanceType(accountID, region, zone, instanceType string) (
+	*hcprotoinstancetype.HuaWeiInstanceTypeResp, error) {
+
+	req := &hcprotoinstancetype.HuaWeiInstanceTypeListReq{
+		AccountID: accountID,
+		Region:    region,
+		Zone:      zone,
+	}
+	resp, err := a.Client.HCService().HuaWei.InstanceType.List(a.Cts.Kit, req)
 	if err != nil {
 		return nil, err
 	}
@@ -110,14 +107,14 @@ func (a *BaseApplicationHandler) GetHuaWeiInstanceType(
 }
 
 // GetGcpInstanceType 查询机型
-func (a *BaseApplicationHandler) GetGcpInstanceType(
-	accountID, zone, instanceType string,
-) (*hcprotoinstancetype.GcpInstanceTypeResp, error) {
-	resp, err := a.Client.HCService().Gcp.InstanceType.List(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
-		&hcprotoinstancetype.GcpInstanceTypeListReq{AccountID: accountID, Zone: zone},
-	)
+func (a *BaseApplicationHandler) GetGcpInstanceType(accountID, zone, instanceType string) (
+	*hcprotoinstancetype.GcpInstanceTypeResp, error) {
+
+	req := &hcprotoinstancetype.GcpInstanceTypeListReq{
+		AccountID: accountID,
+		Zone:      zone,
+	}
+	resp, err := a.Client.HCService().Gcp.InstanceType.List(a.Cts.Kit, req)
 	if err != nil {
 		return nil, err
 	}
@@ -136,14 +133,14 @@ func (a *BaseApplicationHandler) GetGcpInstanceType(
 }
 
 // GetAzureInstanceType 查询机型
-func (a *BaseApplicationHandler) GetAzureInstanceType(
-	accountID, region, instanceType string,
-) (*hcprotoinstancetype.AzureInstanceTypeResp, error) {
-	resp, err := a.Client.HCService().Azure.InstanceType.List(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
-		&hcprotoinstancetype.AzureInstanceTypeListReq{AccountID: accountID, Region: region},
-	)
+func (a *BaseApplicationHandler) GetAzureInstanceType(accountID, region, instanceType string) (
+	*hcprotoinstancetype.AzureInstanceTypeResp, error) {
+
+	req := &hcprotoinstancetype.AzureInstanceTypeListReq{
+		AccountID: accountID,
+		Region:    region,
+	}
+	resp, err := a.Client.HCService().Azure.InstanceType.List(a.Cts.Kit, req)
 	if err != nil {
 		return nil, err
 	}

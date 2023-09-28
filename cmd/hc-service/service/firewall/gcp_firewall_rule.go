@@ -228,7 +228,7 @@ func (f *firewall) CreateGcpFirewallRule(cts *rest.Contexts) (interface{}, error
 		Name:                  item.Name,
 		Priority:              item.Priority,
 		Memo:                  item.Description,
-		CloudVpcID:            item.Network,
+		CloudVpcID:            req.CloudVpcID,
 		VpcId:                 vpc.ID,
 		VpcSelfLink:           vpc.Extension.SelfLink,
 		SourceRanges:          item.SourceRanges,

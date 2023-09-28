@@ -20,6 +20,8 @@
 package cvm
 
 import (
+	"errors"
+
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/converter"
@@ -160,28 +162,37 @@ func (opt TCloudResetPwdOption) Validate() error {
 
 // TCloudCreateOption defines options to create aws cvm instances.
 type TCloudCreateOption struct {
-	DryRun                bool                         `json:"dry_run" validate:"omitempty"`
-	Region                string                       `json:"region" validate:"required"`
-	Name                  string                       `json:"name" validate:"required"`
-	Zone                  string                       `json:"zone" validate:"required"`
-	InstanceType          string                       `json:"instance_type" validate:"required"`
-	CloudImageID          string                       `json:"cloud_image_id" validate:"required"`
-	Password              string                       `json:"password" validate:"required"`
-	RequiredCount         int64                        `json:"required_count" validate:"required"`
-	CloudSecurityGroupIDs []string                     `json:"cloud_security_group_ids" validate:"required"`
-	ClientToken           *string                      `json:"client_token" validate:"omitempty"`
-	CloudVpcID            string                       `json:"cloud_vpc_id" validate:"required"`
-	CloudSubnetID         string                       `json:"cloud_subnet_id" validate:"required"`
-	InstanceChargeType    TCloudInstanceChargeType     `json:"instance_charge_type" validate:"required"`
-	InstanceChargePrepaid *TCloudInstanceChargePrepaid `json:"instance_charge_prepaid" validate:"omitempty"`
-	SystemDisk            *TCloudSystemDisk            `json:"system_disk" validate:"required"`
-	DataDisk              []TCloudDataDisk             `json:"data_disk" validate:"omitempty"`
-	PublicIPAssigned      bool                         `json:"public_ip_assigned" validate:"omitempty"`
+	DryRun                  bool                         `json:"dry_run" validate:"omitempty"`
+	Region                  string                       `json:"region" validate:"required"`
+	Name                    string                       `json:"name" validate:"required"`
+	Zone                    string                       `json:"zone" validate:"required"`
+	InstanceType            string                       `json:"instance_type" validate:"required"`
+	CloudImageID            string                       `json:"cloud_image_id" validate:"required"`
+	Password                string                       `json:"password" validate:"required"`
+	RequiredCount           int64                        `json:"required_count" validate:"required"`
+	CloudSecurityGroupIDs   []string                     `json:"cloud_security_group_ids" validate:"required"`
+	ClientToken             *string                      `json:"client_token" validate:"omitempty"`
+	CloudVpcID              string                       `json:"cloud_vpc_id" validate:"required"`
+	CloudSubnetID           string                       `json:"cloud_subnet_id" validate:"required"`
+	InstanceChargeType      TCloudInstanceChargeType     `json:"instance_charge_type" validate:"required"`
+	InstanceChargePrepaid   *TCloudInstanceChargePrepaid `json:"instance_charge_prepaid" validate:"omitempty"`
+	SystemDisk              *TCloudSystemDisk            `json:"system_disk" validate:"required"`
+	DataDisk                []TCloudDataDisk             `json:"data_disk" validate:"omitempty"`
+	PublicIPAssigned        bool                         `json:"public_ip_assigned" validate:"omitempty"`
+	InternetMaxBandwidthOut int64                        `json:"internet_max_bandwidth_out" validate:"omitempty"`
 }
 
 // Validate aws cvm operation option.
 func (opt TCloudCreateOption) Validate() error {
-	return validator.Validate.Struct(opt)
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if opt.PublicIPAssigned && opt.InternetMaxBandwidthOut == 0 {
+		return errors.New("assign public ip, internet_max_bandwidth_out is required")
+	}
+
+	return nil
 }
 
 // TCloudInstanceChargeType 实例计费类型。
@@ -284,4 +295,10 @@ type TCloudCvm struct {
 // GetCloudID ...
 func (cvm TCloudCvm) GetCloudID() string {
 	return converter.PtrToVal(cvm.InstanceId)
+}
+
+// InquiryPriceResult define tcloud inquiry price result.
+type InquiryPriceResult struct {
+	DiscountPrice float64 `json:"discount_price"`
+	OriginalPrice float64 `json:"original_price"`
 }

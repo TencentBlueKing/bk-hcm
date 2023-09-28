@@ -20,11 +20,12 @@
 package gcp
 
 import (
+	"strings"
+
 	typeszone "hcm/pkg/adaptor/types/zone"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"strings"
 
 	"google.golang.org/api/compute/v1"
 )

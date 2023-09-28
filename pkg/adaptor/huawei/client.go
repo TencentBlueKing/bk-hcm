@@ -43,6 +43,8 @@ import (
 	iam "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/iam/v3"
 	iamregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/iam/v3/region"
 	ims "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ims/v2"
+	rms "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/rms/v1"
+	rmsregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/rms/v1/region"
 	vpcv2 "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v2"
 	vpc "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3"
 	vpcregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/region"
@@ -53,21 +55,31 @@ const (
 	CvmDeleteStatus = "DELETED"
 )
 
+// NewCredentialsFunc ...
+type NewCredentialsFunc func() *basic.Credentials
+
+// NewGlobalCredentialsFunc ...
+type NewGlobalCredentialsFunc func() *global.Credentials
+
 type clientSet struct {
-	credentials       *basic.Credentials
-	globalCredentials *global.Credentials
+	credentials       NewCredentialsFunc
+	globalCredentials NewGlobalCredentialsFunc
 }
 
 func newClientSet(secret *types.BaseSecret) *clientSet {
 	return &clientSet{
-		credentials: basic.NewCredentialsBuilder().
-			WithAk(secret.CloudSecretID).
-			WithSk(secret.CloudSecretKey).
-			Build(),
-		globalCredentials: global.NewCredentialsBuilder().
-			WithAk(secret.CloudSecretID).
-			WithSk(secret.CloudSecretKey).
-			Build(),
+		credentials: func() *basic.Credentials {
+			return basic.NewCredentialsBuilder().
+				WithAk(secret.CloudSecretID).
+				WithSk(secret.CloudSecretKey).
+				Build()
+		},
+		globalCredentials: func() *global.Credentials {
+			return global.NewCredentialsBuilder().
+				WithAk(secret.CloudSecretID).
+				WithSk(secret.CloudSecretKey).
+				Build()
+		},
 	}
 }
 
@@ -81,7 +93,7 @@ func (c *clientSet) iamGlobalClient(region *region.Region) (client *iam.IamClien
 	client = iam.NewIamClient(
 		iam.IamClientBuilder().
 			WithRegion(region).
-			WithCredential(c.globalCredentials).
+			WithCredential(c.globalCredentials()).
 			WithHttpConfig(config.DefaultHttpConfig()).
 			Build())
 
@@ -98,7 +110,7 @@ func (c *clientSet) iamClient(region *region.Region) (client *iam.IamClient, err
 	client = iam.NewIamClient(
 		iam.IamClientBuilder().
 			WithRegion(region).
-			WithCredential(c.credentials).
+			WithCredential(c.credentials()).
 			WithHttpConfig(config.DefaultHttpConfig()).
 			Build())
 
@@ -114,7 +126,7 @@ func (c *clientSet) iamRegionClient(region string) (client *iam.IamClient, err e
 	client = iam.NewIamClient(
 		iam.IamClientBuilder().
 			WithRegion(iamregion.ValueOf(region)).
-			WithCredential(c.credentials).
+			WithCredential(c.credentials()).
 			WithHttpConfig(config.DefaultHttpConfig()).
 			Build())
 
@@ -130,7 +142,7 @@ func (c *clientSet) evsClient(region string) (client *evs.EvsClient, err error) 
 	client = evs.NewEvsClient(
 		evs.EvsClientBuilder().
 			WithRegion(evsregion.ValueOf(region)).
-			WithCredential(c.credentials).
+			WithCredential(c.credentials()).
 			WithHttpConfig(config.DefaultHttpConfig()).
 			Build())
 
@@ -147,7 +159,7 @@ func (c *clientSet) vpcClient(regionID string) (cli *vpc.VpcClient, err error) {
 	client := vpc.NewVpcClient(
 		vpc.VpcClientBuilder().
 			WithRegion(vpcregion.ValueOf(regionID)).
-			WithCredential(c.credentials).
+			WithCredential(c.credentials()).
 			WithHttpConfig(config.DefaultHttpConfig()).
 			Build())
 
@@ -164,7 +176,7 @@ func (c *clientSet) vpcClientV2(regionID string) (cli *vpcv2.VpcClient, err erro
 	client := vpcv2.NewVpcClient(
 		vpcv2.VpcClientBuilder().
 			WithRegion(vpcregion.ValueOf(regionID)).
-			WithCredential(c.credentials).
+			WithCredential(c.credentials()).
 			WithHttpConfig(config.DefaultHttpConfig()).
 			Build())
 
@@ -181,7 +193,7 @@ func (c *clientSet) imsClientV2(region *region.Region) (cli *ims.ImsClient, err 
 	cli = ims.NewImsClient(
 		ims.ImsClientBuilder().
 			WithRegion(region).
-			WithCredential(c.credentials).
+			WithCredential(c.credentials()).
 			WithHttpConfig(config.DefaultHttpConfig()).
 			Build())
 
@@ -198,7 +210,7 @@ func (c *clientSet) ecsClient(regionID string) (cli *ecs.EcsClient, err error) {
 	client := ecs.NewEcsClient(
 		ecs.EcsClientBuilder().
 			WithRegion(ecsregion.ValueOf(regionID)).
-			WithCredential(c.credentials).
+			WithCredential(c.credentials()).
 			WithHttpConfig(config.DefaultHttpConfig()).
 			Build())
 
@@ -215,7 +227,7 @@ func (c *clientSet) dcsClient(regionID string) (cli *dcs.DcsClient, err error) {
 	client := dcs.NewDcsClient(
 		dcs.DcsClientBuilder().
 			WithRegion(dcsregion.ValueOf(regionID)).
-			WithCredential(c.credentials).
+			WithCredential(c.credentials()).
 			WithHttpConfig(config.DefaultHttpConfig()).
 			Build())
 
@@ -232,7 +244,7 @@ func (c *clientSet) eipClient(regionID string) (cli *eip.EipClient, err error) {
 	cli = eip.NewEipClient(
 		eip.EipClientBuilder().
 			WithRegion(eipregion.ValueOf(regionID)).
-			WithCredential(c.credentials).
+			WithCredential(c.credentials()).
 			WithHttpConfig(config.DefaultHttpConfig()).
 			Build())
 
@@ -249,7 +261,7 @@ func (c *clientSet) eipV3Client(regionID string) (cli *eipv3.EipClient, err erro
 	cli = eipv3.NewEipClient(
 		eipv3.EipClientBuilder().
 			WithRegion(eipv3region.ValueOf(regionID)).
-			WithCredential(c.credentials).
+			WithCredential(c.credentials()).
 			WithHttpConfig(config.DefaultHttpConfig()).
 			Build())
 
@@ -266,7 +278,24 @@ func (c *clientSet) bssintlClient() (cli *bssintl.BssintlClient, err error) {
 	client := bssintl.NewBssintlClient(
 		bssintl.BssintlClientBuilder().
 			WithRegion(bssintlv2region.ValueOf(bssintlv2region.AP_SOUTHEAST_1.Id)).
-			WithCredential(c.globalCredentials).
+			WithCredential(c.globalCredentials()).
+			Build())
+
+	return client, nil
+}
+
+func (c *clientSet) newRmsClient() (cli *rms.RmsClient, err error) {
+	defer func() {
+		if p := recover(); p != nil {
+			err = fmt.Errorf("huawei error recovered, err: %v", p)
+		}
+	}()
+
+	client := rms.NewRmsClient(
+		rms.RmsClientBuilder().
+			WithRegion(rmsregion.ValueOf("cn-north-4")).
+			WithCredential(c.globalCredentials()).
+			WithHttpConfig(config.DefaultHttpConfig()).
 			Build())
 
 	return client, nil

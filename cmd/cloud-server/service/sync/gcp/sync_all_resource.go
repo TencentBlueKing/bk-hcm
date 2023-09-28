@@ -64,7 +64,6 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 		if hitErr != nil {
 			logs.Errorf("%s: sync all resource failed, err: %v, account: %s, rid: %s", constant.AccountSyncFailed,
 				hitErr, opt.AccountID, kt.Rid)
-
 			return
 		}
 
@@ -73,9 +72,7 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 	}()
 
 	if opt.SyncPublicResource {
-		syncOpt := &SyncPublicResourceOption{
-			AccountID: opt.AccountID,
-		}
+		syncOpt := &SyncPublicResourceOption{AccountID: opt.AccountID}
 		if hitErr = SyncPublicResource(kt, cliSet, syncOpt); hitErr != nil {
 			logs.Errorf("sync public resource failed, err: %v, opt: %v, rid: %s", hitErr, opt, kt.Rid)
 			return "", hitErr
@@ -123,7 +120,7 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 		return enumor.CvmCloudResType, hitErr
 	}
 
-	if hitErr = SyncRoute(kt, cliSet, opt.AccountID, regionZoneMap, sd); hitErr != nil {
+	if hitErr = SyncRoute(kt, cliSet, opt.AccountID, sd); hitErr != nil {
 		return enumor.RouteTableCloudResType, hitErr
 	}
 

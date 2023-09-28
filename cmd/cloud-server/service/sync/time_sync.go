@@ -55,12 +55,8 @@ func CloudResourceSync(intervalMin time.Duration, sd serviced.ServiceDiscover, c
 			continue
 		}
 
-		kt := kit.New()
-		kt.User = constant.SyncTimingUserKey
-		kt.AppCode = constant.SyncTimingAppCodeKey
-
 		start := time.Now()
-		logs.Infof("cloud resource all sync start, time: %v, rid: %s", start, kt.Rid)
+		logs.Infof("cloud resource all sync start, time: %v, rid: %s", start)
 
 		waitGroup := new(sync.WaitGroup)
 
@@ -68,14 +64,14 @@ func CloudResourceSync(intervalMin time.Duration, sd serviced.ServiceDiscover, c
 		waitGroup.Add(len(vendors))
 		for _, vendor := range vendors {
 			go func(vendor enumor.Vendor) {
-				allAccountSync(kt, cliSet, vendor)
+				allAccountSync(NewSyncKit(), cliSet, vendor)
 				waitGroup.Done()
 			}(vendor)
 		}
 
 		waitGroup.Wait()
 
-		logs.Infof("cloud resource all sync end, time: %v, rid: %s", start, kt.Rid)
+		logs.Infof("cloud resource all sync end, time: %v, rid: %s", start)
 	}
 }
 
@@ -90,25 +86,10 @@ func allAccountSync(kt *kit.Kit, cliSet *client.ClientSet, vendor enumor.Vendor)
 	}()
 
 	listReq := &protocloud.AccountListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{
-					Field: "vendor",
-					Op:    filter.Equal.Factory(),
-					Value: vendor,
-				},
-				&filter.AtomRule{
-					Field: "type",
-					Op:    filter.Equal.Factory(),
-					Value: enumor.ResourceAccount,
-				},
-			},
-		},
-		Page: &core.BasePage{
-			Start: 0,
-			Limit: core.DefaultMaxPageLimit,
-		},
+		Filter: &filter.Expression{Op: filter.And, Rules: []filter.RuleFactory{
+			&filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: vendor},
+			&filter.AtomRule{Field: "type", Op: filter.Equal.Factory(), Value: enumor.ResourceAccount}}},
+		Page: &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
 	}
 	start := uint32(0)
 	syncPublicResource := true
@@ -169,11 +150,9 @@ func allAccountSync(kt *kit.Kit, cliSet *client.ClientSet, vendor enumor.Vendor)
 			// 公共资源仅需要同步一次即可
 			syncPublicResource = false
 		}
-
 		if len(accounts) < int(core.DefaultMaxPageLimit) {
 			break
 		}
-
 		start += uint32(core.DefaultMaxPageLimit)
 	}
 }
@@ -199,4 +178,12 @@ func listAccountWithRetry(kt *kit.Kit, cli *dataservice.Client, req *protocloud.
 
 		return list.Details, nil
 	}
+}
+
+// NewSyncKit 返回同步的kit
+func NewSyncKit() *kit.Kit {
+	kt := kit.New()
+	kt.User = constant.SyncTimingUserKey
+	kt.AppCode = constant.SyncTimingAppCodeKey
+	return kt
 }

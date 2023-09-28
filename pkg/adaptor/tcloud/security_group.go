@@ -38,7 +38,7 @@ import (
 
 // CreateSecurityGroup create security group.
 // reference: https://cloud.tencent.com/document/api/215/15806
-func (t *TCloud) CreateSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudCreateOption) (*vpc.SecurityGroup,
+func (t *TCloudImpl) CreateSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudCreateOption) (*vpc.SecurityGroup,
 	error) {
 
 	if opt == nil {
@@ -73,7 +73,7 @@ func (t *TCloud) CreateSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudCreat
 
 // DeleteSecurityGroup delete security group.
 // reference: https://cloud.tencent.com/document/api/215/15803
-func (t *TCloud) DeleteSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudDeleteOption) error {
+func (t *TCloudImpl) DeleteSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudDeleteOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "security group delete option is required")
 	}
@@ -101,7 +101,7 @@ func (t *TCloud) DeleteSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudDelet
 
 // UpdateSecurityGroup update security group.
 // reference: https://cloud.tencent.com/document/api/215/15805
-func (t *TCloud) UpdateSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudUpdateOption) error {
+func (t *TCloudImpl) UpdateSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudUpdateOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "tcloud security group update option is required")
 	}
@@ -131,9 +131,9 @@ func (t *TCloud) UpdateSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudUpdat
 	return nil
 }
 
-// ListSecurityGroup list security group.
+// ListSecurityGroupNew list security group.
 // reference: https://cloud.tencent.com/document/api/215/15808
-func (t *TCloud) ListSecurityGroupNew(kt *kit.Kit, opt *securitygroup.TCloudListOption) ([]securitygroup.TCloudSG,
+func (t *TCloudImpl) ListSecurityGroupNew(kt *kit.Kit, opt *securitygroup.TCloudListOption) ([]securitygroup.TCloudSG,
 	error) {
 
 	if opt == nil {
@@ -173,9 +173,28 @@ func (t *TCloud) ListSecurityGroupNew(kt *kit.Kit, opt *securitygroup.TCloudList
 	return sgs, nil
 }
 
+// CountSecurityGroup 基于 DescribeSecurityGroupsWithContext
+// reference: https://cloud.tencent.com/document/api/215/15808
+func (t *TCloudImpl) CountSecurityGroup(kt *kit.Kit, region string) (int32, error) {
+
+	client, err := t.clientSet.vpcClient(region)
+	if err != nil {
+		return 0, fmt.Errorf("new tcloud vpc client failed, err: %v", err)
+	}
+
+	req := vpc.NewDescribeSecurityGroupsRequest()
+	req.Limit = converter.ValToPtr("1")
+	resp, err := client.DescribeSecurityGroupsWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("count tcloud security group failed, err: %v, region: %s, rid: %s", err, region, kt.Rid)
+		return 0, err
+	}
+	return int32(*resp.Response.TotalCount), nil
+}
+
 // SecurityGroupCvmAssociate associate cvm.
 // reference: https://cloud.tencent.com/document/api/213/31282
-func (t *TCloud) SecurityGroupCvmAssociate(kt *kit.Kit, opt *securitygroup.TCloudAssociateCvmOption) error {
+func (t *TCloudImpl) SecurityGroupCvmAssociate(kt *kit.Kit, opt *securitygroup.TCloudAssociateCvmOption) error {
 
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "bind option is required")
@@ -209,7 +228,7 @@ func (t *TCloud) SecurityGroupCvmAssociate(kt *kit.Kit, opt *securitygroup.TClou
 
 // SecurityGroupCvmDisassociate disassociate cvm.
 // reference: https://cloud.tencent.com/document/api/213/31281
-func (t *TCloud) SecurityGroupCvmDisassociate(kt *kit.Kit, opt *securitygroup.TCloudAssociateCvmOption) error {
+func (t *TCloudImpl) SecurityGroupCvmDisassociate(kt *kit.Kit, opt *securitygroup.TCloudAssociateCvmOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "bind option is required")
 	}

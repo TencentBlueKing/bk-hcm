@@ -119,6 +119,34 @@ func (a *Aws) ListDisk(kt *kit.Kit, opt *disk.AwsDiskListOption) ([]disk.AwsDisk
 	return disks, resp.NextToken, err
 }
 
+// CountDisk 返回指定地域下所有硬盘数量，基于DescribeVolumes接口
+// reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_DescribeVolumes.html
+func (a *Aws) CountDisk(kt *kit.Kit, region string) (int32, error) {
+	client, err := a.clientSet.ec2Client(region)
+	if err != nil {
+		return 0, err
+	}
+
+	req := new(ec2.DescribeVolumesInput)
+	total := 0
+	req.MaxResults = converter.ValToPtr(int64(core.AwsQueryLimit))
+
+	for {
+		resp, err := client.DescribeVolumesWithContext(kt.Ctx, req)
+		if err != nil {
+			logs.Errorf("count aws disk failed, err: %v, region:%s, rid: %s", err, region, kt.Rid)
+			return 0, err
+		}
+		total += len(resp.Volumes)
+
+		if resp.NextToken == nil {
+			break
+		}
+		req.NextToken = resp.NextToken
+	}
+	return int32(total), nil
+}
+
 // DeleteDisk 删除云盘
 // reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_DeleteVolume.html
 func (a *Aws) DeleteDisk(kt *kit.Kit, opt *disk.AwsDiskDeleteOption) error {

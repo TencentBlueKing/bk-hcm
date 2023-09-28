@@ -156,6 +156,35 @@ func (lm *Limiter) trySetDefault() {
 	}
 }
 
+// Async defines async relating.
+type Async struct {
+	NormalIntervalSec      int `yaml:"normalIntervalSec"`
+	ExecutorWorkerCnt      int `yaml:"executorWorkerCnt"`
+	ParserWorkersCnt       int `yaml:"parserWorkersCnt"`
+	FlowScheduleTimeoutSec int `yaml:"flowScheduleTimeout"`
+}
+
+func (a Async) validate() error {
+
+	if a.NormalIntervalSec < 1 {
+		return errors.New("normalIntervalSec must > 1")
+	}
+
+	if a.ExecutorWorkerCnt < 1 {
+		return errors.New("executorWorkerCnt must > 1")
+	}
+
+	if a.ParserWorkersCnt < 1 {
+		return errors.New("parserWorkersCnt must > 1")
+	}
+
+	if a.FlowScheduleTimeoutSec < 1 {
+		return errors.New("flowScheduleTimeout must > 1")
+	}
+
+	return nil
+}
+
 // DataBase defines database related runtime
 type DataBase struct {
 	Resource ResourceDB `yaml:"resource"`

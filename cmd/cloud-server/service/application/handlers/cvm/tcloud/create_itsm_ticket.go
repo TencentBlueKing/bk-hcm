@@ -21,6 +21,7 @@ package tcloud
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"hcm/cmd/cloud-server/service/application/handlers"
@@ -159,6 +160,8 @@ func (a *ApplicationOfCreateTCloudCvm) renderNetwork() ([]formItem, error) {
 	// 是否自动分配公网IP
 	if req.PublicIPAssigned {
 		formItems = append(formItems, formItem{Label: "是否自动分配公网IP", Value: "是"})
+		formItems = append(formItems, formItem{Label: "EIP带宽大小", Value: strconv.FormatInt(
+			a.req.InternetMaxBandwidthOut, 64)})
 	} else {
 		formItems = append(formItems, formItem{Label: "是否自动分配公网IP", Value: "否"})
 	}

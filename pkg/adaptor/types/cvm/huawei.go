@@ -142,12 +142,44 @@ type HuaWeiCreateOption struct {
 	RootVolume            *HuaWeiVolume         `json:"root_volume" validate:"required"`
 	DataVolume            []HuaWeiVolume        `json:"data_volume" validate:"omitempty"`
 	InstanceCharge        *HuaWeiInstanceCharge `json:"instance_charge" validate:"required"`
+	PublicIPAssigned      bool                  `json:"public_ip_assigned" validate:"omitempty"`
+	Eip                   *HuaWeiEip            `json:"eip" validate:"omitempty"`
 }
 
 // Validate aws cvm operation option.
 func (opt HuaWeiCreateOption) Validate() error {
+	if opt.PublicIPAssigned {
+		if err := opt.Eip.Validate(); err != nil {
+			return err
+		}
+	}
+
 	return validator.Validate.Struct(opt)
 }
+
+// HuaWeiEip define huawei eip option.
+type HuaWeiEip struct {
+	Type         EipType            `json:"type" validate:"required"`
+	ChargingMode HuaWeiChargingMode `json:"charging_mode" validate:"required"`
+	Size         int32              `json:"size" validate:"required"`
+}
+
+// Validate HuaWeiEip.
+func (opt HuaWeiEip) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// EipType eip type.
+type EipType string
+
+const (
+	// BGP 全动态BGP
+	BGP EipType = "5_bgp"
+	// SBGP 静态BGP
+	SBGP EipType = "5_sbgp"
+	// YouXuanNBGP 优选BGP
+	YouXuanNBGP EipType = "5_youxuanbgp"
+)
 
 // HuaWeiInstanceCharge 计费相关参数
 type HuaWeiInstanceCharge struct {
@@ -162,6 +194,18 @@ type HuaWeiInstanceCharge struct {
 
 // HuaWeiChargingMode 计费模式
 type HuaWeiChargingMode string
+
+// EipChargingMode eip charging mode.
+func (mod *HuaWeiChargingMode) EipChargingMode() (model.PrePaidServerEipExtendParamChargingMode, error) {
+	switch *mod {
+	case PrePaid:
+		return model.GetPrePaidServerEipExtendParamChargingModeEnum().PRE_PAID, nil
+	case PostPaid:
+		return model.GetPrePaidServerEipExtendParamChargingModeEnum().POST_PAID, nil
+	default:
+		return model.PrePaidServerEipExtendParamChargingMode{}, fmt.Errorf("unknown %s charging model", *mod)
+	}
+}
 
 // ChargingMode charging mode.
 func (mod *HuaWeiChargingMode) ChargingMode() (model.PrePaidServerExtendParamChargingMode, error) {

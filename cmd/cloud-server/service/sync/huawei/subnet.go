@@ -37,6 +37,9 @@ import (
 // SyncSubnet ...
 func SyncSubnet(kt *kit.Kit, cliSet *client.ClientSet, accountID string, sd *detail.SyncDetail) error {
 
+	// 重新设置rid方便定位
+	kt = kt.NewSubKit()
+
 	start := time.Now()
 	logs.V(3).Infof("huawei account[%s] sync subnet start, time: %v, rid: %s", accountID, start, kt.Rid)
 
@@ -44,7 +47,6 @@ func SyncSubnet(kt *kit.Kit, cliSet *client.ClientSet, accountID string, sd *det
 	if err := sd.ResSyncStatusSyncing(enumor.SubnetCloudResType); err != nil {
 		return err
 	}
-
 	defer func() {
 		logs.V(3).Infof("huawei account[%s] sync subnet end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
 	}()
@@ -54,38 +56,23 @@ func SyncSubnet(kt *kit.Kit, cliSet *client.ClientSet, accountID string, sd *det
 		logs.Errorf("sync huawei list region failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
-
 	pipeline := make(chan bool, syncConcurrencyCount)
 	var firstErr error
 	var wg gosync.WaitGroup
 
 	for _, region := range regions {
+		accountRegionRules := []filter.RuleFactory{
+			&filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: accountID},
+			&filter.AtomRule{Field: "region", Op: filter.Equal.Factory(), Value: region},
+		}
 		listReq := &core.ListReq{
-			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					&filter.AtomRule{
-						Field: "account_id",
-						Op:    filter.Equal.Factory(),
-						Value: accountID,
-					},
-					&filter.AtomRule{
-						Field: "region",
-						Op:    filter.Equal.Factory(),
-						Value: region,
-					},
-				},
-			},
-			Page: &core.BasePage{
-				Start: 0,
-				Limit: core.DefaultMaxPageLimit,
-			},
+			Filter: &filter.Expression{Op: filter.And, Rules: accountRegionRules},
+			Page:   &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
 			Fields: []string{"cloud_id"},
 		}
 		startIndex := uint32(0)
 		for {
 			listReq.Page.Start = startIndex
-
 			vpcResult, err := cliSet.DataService().Global.Vpc.List(kt.Ctx, kt.Header(), listReq)
 			if err != nil {
 				logs.Errorf("list huawei vpc failed, err: %v, rid: %s", err, kt.Rid)
@@ -95,18 +82,12 @@ func SyncSubnet(kt *kit.Kit, cliSet *client.ClientSet, accountID string, sd *det
 			for _, vpc := range vpcResult.Details {
 				pipeline <- true
 				wg.Add(1)
-
 				go func(region, cloudVpcID string) {
 					defer func() {
 						wg.Done()
 						<-pipeline
 					}()
-
-					req := &sync.HuaWeiSubnetSyncReq{
-						AccountID:  accountID,
-						Region:     region,
-						CloudVpcID: cloudVpcID,
-					}
+					req := &sync.HuaWeiSubnetSyncReq{AccountID: accountID, Region: region, CloudVpcID: cloudVpcID}
 					err = cliSet.HCService().HuaWei.Subnet.SyncSubnet(kt.Ctx, kt.Header(), req)
 					if firstErr == nil && Error(err) != nil {
 						logs.Errorf("sync huawei subnet failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
@@ -114,27 +95,21 @@ func SyncSubnet(kt *kit.Kit, cliSet *client.ClientSet, accountID string, sd *det
 						return
 					}
 				}(region, vpc.CloudID)
-
 			}
 
 			if len(vpcResult.Details) < int(core.DefaultMaxPageLimit) {
 				break
 			}
-
 			startIndex += uint32(core.DefaultMaxPageLimit)
 		}
 	}
-
 	wg.Wait()
-
 	if firstErr != nil {
 		return firstErr
 	}
-
 	// 同步成功
 	if err := sd.ResSyncStatusSuccess(enumor.SubnetCloudResType); err != nil {
 		return err
 	}
-
 	return nil
 }

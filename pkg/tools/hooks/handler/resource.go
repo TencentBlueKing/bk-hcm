@@ -23,6 +23,7 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -32,23 +33,16 @@ import (
 func ResValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 	// authorize one resource
 	if opt.BasicInfo != nil {
-		// validate if resource is not in biz for write operation
-		if opt.Action != meta.Find && opt.BasicInfo.BkBizID != constant.UnassignedBiz && opt.BasicInfo.BkBizID != 0 {
-			return errf.Newf(errf.InvalidParameter, "resource %s is already assigned", opt.BasicInfo.ID)
+		if opt.BasicInfos == nil {
+			opt.BasicInfos = map[string]types.CloudResourceBasicInfo{}
 		}
-
-		if opt.BasicInfo.RecycleStatus == enumor.RecycleStatus {
-			return errf.New(errf.InvalidParameter, "resource is in recycle bin")
-		}
-
-		authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: opt.ResType, Action: opt.Action,
-			ResourceID: opt.BasicInfo.AccountID}}
-		return opt.Authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+		opt.BasicInfos[opt.BasicInfo.ID] = *opt.BasicInfo
 	}
 
+	total := len(opt.BasicInfos)
 	// batch authorize resource
-	authRes := make([]meta.ResourceAttribute, 0, len(opt.BasicInfos))
-	assignedIDs, recycledIDs := make([]string, 0), make([]string, 0)
+	authRes := make([]meta.ResourceAttribute, 0, total)
+	assignedIDs, recycledIDs, notRecycledIDS := make([]string, 0), make([]string, 0, total), make([]string, 0, total)
 	for id, info := range opt.BasicInfos {
 		// validate if resource is not in biz for write operation
 		if opt.Action != meta.Find && info.BkBizID != constant.UnassignedBiz && info.BkBizID != 0 {
@@ -57,14 +51,24 @@ func ResValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 
 		if info.RecycleStatus == enumor.RecycleStatus {
 			recycledIDs = append(recycledIDs, id)
+		} else {
+			notRecycledIDS = append(notRecycledIDS, id)
 		}
 
 		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: opt.ResType, Action: opt.Action,
 			ResourceID: info.AccountID}})
 	}
 
-	if len(assignedIDs) > 0 {
-		return errf.Newf(errf.InvalidParameter, "resources(ids: %+v) are already assigned", assignedIDs)
+	// 恢复或删除已回收资源, 要求资源必须在已回收状态下
+	if opt.Action == meta.DeleteRecycled || opt.Action == meta.Recover {
+		if len(notRecycledIDS) > 0 {
+			return errf.Newf(errf.InvalidParameter, "resources(ids: %+v) are not in recycle bin", recycledIDs)
+		}
+	} else {
+		// 其他操作要求资源不能在回收状态下
+		if len(recycledIDs) > 0 {
+			return errf.Newf(errf.InvalidParameter, "resources(ids: %+v) are in recycle bin", recycledIDs)
+		}
 	}
 
 	if len(recycledIDs) > 0 {

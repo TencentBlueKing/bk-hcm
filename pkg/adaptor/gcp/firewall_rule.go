@@ -69,6 +69,35 @@ func (g *Gcp) ListFirewallRule(kt *kit.Kit, opt *firewallrule.ListOption) ([]fir
 	return firewalls, resp.NextPageToken, nil
 }
 
+// CountFirewall count firewall rule.
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/firewalls/list
+func (g *Gcp) CountFirewall(kt *kit.Kit) (int32, error) {
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return 0, err
+	}
+
+	request := client.Firewalls.List(g.CloudProjectID()).Context(kt.Ctx)
+
+	var count int32
+	for {
+		resp, err := request.Do()
+		if err != nil {
+			logs.Errorf("list firewall failed, err: %v, rid: %s", err, kt.Rid)
+			return 0, err
+		}
+
+		count += int32(len(resp.Items))
+
+		if resp.NextPageToken == "" {
+			break
+		}
+	}
+
+	return count, nil
+}
+
 // UpdateFirewallRule update firewall rule.
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/firewalls/patch
 func (g *Gcp) UpdateFirewallRule(kt *kit.Kit, opt *firewallrule.UpdateOption) error {

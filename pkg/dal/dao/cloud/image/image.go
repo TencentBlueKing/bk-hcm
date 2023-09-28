@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package image ...
 package image
 
 import (
@@ -126,7 +127,7 @@ func (pImageDao ImageDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.Image
 			logs.ErrorJson("count image failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
 		}
-		return &cloud.ImageListResult{Count: &count}, nil
+		return &cloud.ImageListResult{Count: count}, nil
 	}
 
 	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)

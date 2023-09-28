@@ -21,6 +21,10 @@ const props = defineProps({
   modelValue: {
     type: String,
   },
+  isDisabled: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const emit = defineEmits(['update:modelValue', 'handleVpcDetail']);
@@ -93,6 +97,7 @@ defineExpose({
     filterable
     @scroll-end="getVpcList"
     :loading="loading"
+    :disabled="props.isDisabled"
   >
     <bk-option
       v-for="(item, index) in vpcList"

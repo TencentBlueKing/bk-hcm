@@ -20,6 +20,8 @@
 package aws
 
 import (
+	"strings"
+
 	typesinstancetype "hcm/pkg/adaptor/types/instance-type"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -60,6 +62,7 @@ func (a *Aws) ListInstanceType(kt *kit.Kit, opt *typesinstancetype.AwsInstanceTy
 func toAwsInstanceType(info *ec2.InstanceTypeInfo) *typesinstancetype.AwsInstanceType {
 	it := new(typesinstancetype.AwsInstanceType)
 	it.InstanceType = converter.PtrToVal(info.InstanceType)
+	it.InstanceFamily = strings.Split(it.InstanceType, ".")[0]
 
 	if info.MemoryInfo != nil {
 		it.Memory = converter.PtrToVal(info.MemoryInfo.SizeInMiB)
@@ -83,6 +86,29 @@ func toAwsInstanceType(info *ec2.InstanceTypeInfo) *typesinstancetype.AwsInstanc
 				it.FPGA += converter.PtrToVal(fpga.Count)
 			}
 		}
+	}
+
+	if info.NetworkInfo != nil {
+		it.NetworkPerformance = converter.PtrToVal(info.NetworkInfo.NetworkPerformance)
+	}
+
+	if info.InstanceStorageInfo != nil {
+		it.DiskSizeInGB = converter.PtrToVal(info.InstanceStorageInfo.TotalSizeInGB)
+		diskType := make([]string, 0)
+		for _, one := range info.InstanceStorageInfo.Disks {
+			if one != nil {
+				diskType = append(diskType, converter.PtrToVal(one.Type))
+			}
+		}
+		it.DiskType = strings.Join(diskType, ",")
+	}
+
+	if info.ProcessorInfo != nil {
+		architecture := make([]string, 0)
+		for _, one := range info.ProcessorInfo.SupportedArchitectures {
+			architecture = append(architecture, converter.PtrToVal(one))
+		}
+		it.Architecture = strings.Join(architecture, ",")
 	}
 
 	return it

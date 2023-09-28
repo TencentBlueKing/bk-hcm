@@ -17,35 +17,45 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package cvm ...
 package cvm
 
 import (
 	"hcm/cmd/cloud-server/logics/audit"
+	"hcm/cmd/cloud-server/logics/disk"
 	"hcm/cmd/cloud-server/logics/eip"
 	"hcm/pkg/api/core"
 	"hcm/pkg/client"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/kit"
+	"hcm/pkg/thirdparty/esb"
 )
 
 // Interface define cvm interface.
 type Interface interface {
-	BatchStopCvm(kt *kit.Kit, basicInfoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateResult, error)
+	BatchStopCvm(kt *kit.Kit, basicInfoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateAllResult, error)
 	BatchDeleteCvm(kt *kit.Kit, basicInfoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateResult, error)
-	DeleteRecycledCvm(kt *kit.Kit, infoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateResult, error)
+	DestroyRecycledCvm(kt *kit.Kit, infoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateResult, error)
+	GetNotCmdbRecyclableHosts(kt *kit.Kit, bizHostsIds map[int64][]string) ([]string, error)
+	RecyclePreCheck(kt *kit.Kit, infoMap map[string]types.CloudResourceBasicInfo) error
 }
 
 type cvm struct {
-	client *client.ClientSet
-	audit  audit.Interface
-	eip    eip.Interface
+	client    *client.ClientSet
+	audit     audit.Interface
+	eip       eip.Interface
+	disk      disk.Interface
+	esbClient esb.Client
 }
 
 // NewCvm new cvm.
-func NewCvm(client *client.ClientSet, audit audit.Interface, eip eip.Interface) Interface {
+func NewCvm(client *client.ClientSet, audit audit.Interface, eip eip.Interface, disk disk.Interface,
+	esbClient esb.Client) Interface {
 	return &cvm{
-		client: client,
-		audit:  audit,
-		eip:    eip,
+		client:    client,
+		audit:     audit,
+		eip:       eip,
+		disk:      disk,
+		esbClient: esbClient,
 	}
 }

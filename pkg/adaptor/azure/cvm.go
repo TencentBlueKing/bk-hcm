@@ -32,7 +32,7 @@ import (
 	"hcm/pkg/tools/converter"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v5"
 )
 
 type cvmResultHandler struct {
@@ -51,6 +51,30 @@ func (handler *cvmResultHandler) BuildResult(resp armcompute.VirtualMachinesClie
 	}
 
 	return cvms
+}
+
+// CountCvm count cvm.
+// reference: https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/list?tabs=HTTP
+func (az *Azure) CountCvm(kt *kit.Kit) (int32, error) {
+
+	client, err := az.clientSet.virtualMachineClient()
+	if err != nil {
+		return 0, fmt.Errorf("new cvm client failed, err: %v", err)
+	}
+
+	var count int32
+	pager := client.NewListAllPager(nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			logs.Errorf("list cvm next page failed, err: %v, rid: %s", err, kt.Rid)
+			return 0, fmt.Errorf("failed to advance page: %v", err)
+		}
+
+		count += int32(len(nextResult.Value))
+	}
+
+	return count, nil
 }
 
 // ListCvmByPage ...
@@ -468,6 +492,13 @@ func (az *Azure) CreateCvm(kt *kit.Kit, opt *typecvm.AzureCreateOption) (string,
 		}
 	}
 
+	var publicIPCfg *armcompute.VirtualMachinePublicIPAddressConfiguration
+	if opt.PublicIPAssigned {
+		publicIPCfg = &armcompute.VirtualMachinePublicIPAddressConfiguration{
+			Name: to.Ptr(opt.Name + "-eip"),
+		}
+	}
+
 	instance := armcompute.VirtualMachine{
 		Location: to.Ptr(opt.Region),
 		Properties: &armcompute.VirtualMachineProperties{
@@ -488,6 +519,7 @@ func (az *Azure) CreateCvm(kt *kit.Kit, opt *typecvm.AzureCreateOption) (string,
 										Subnet: &armcompute.SubResource{
 											ID: to.Ptr(opt.CloudSubnetID),
 										},
+										PublicIPAddressConfiguration: publicIPCfg,
 									},
 								},
 							},

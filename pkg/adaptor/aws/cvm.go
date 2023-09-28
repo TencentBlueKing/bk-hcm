@@ -84,6 +84,36 @@ func (a *Aws) ListCvm(kt *kit.Kit, opt *typecvm.AwsListOption) ([]typecvm.AwsCvm
 	return cvms, resp, nil
 }
 
+// CountCvm 返回单个地域下的ec2 instance 数量，基于 DescribeInstancesWithContext接口
+// reference: https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
+func (a *Aws) CountCvm(kt *kit.Kit, region string) (int32, error) {
+
+	client, err := a.clientSet.ec2Client(region)
+	if err != nil {
+		return 0, err
+	}
+
+	req := new(ec2.DescribeInstancesInput)
+	total := 0
+	req.MaxResults = converter.ValToPtr(int64(core.AwsQueryLimit))
+
+	for {
+		resp, err := client.DescribeInstancesWithContext(kt.Ctx, req)
+		if err != nil {
+			logs.Errorf("count aws cvm failed, err: %v, region:%s, rid: %s", err, region, kt.Rid)
+			return 0, err
+		}
+		for _, rsv := range resp.Reservations {
+			total += len(rsv.Instances)
+		}
+		if resp.NextToken == nil {
+			break
+		}
+		req.NextToken = resp.NextToken
+	}
+	return int32(total), nil
+}
+
 // GetCvmNameFromTags ...
 func GetCvmNameFromTags(tags []*ec2.Tag) *string {
 	if len(tags) == 0 {
@@ -260,14 +290,12 @@ func (a *Aws) CreateCvm(kt *kit.Kit, opt *typecvm.AwsCreateOption) (*poller.Base
 	}
 
 	req := &ec2.RunInstancesInput{
-		DryRun:           aws.Bool(opt.DryRun),
-		ClientToken:      opt.ClientToken,
-		ImageId:          aws.String(opt.CloudImageID),
-		InstanceType:     aws.String(opt.InstanceType),
-		MaxCount:         aws.Int64(opt.RequiredCount),
-		MinCount:         aws.Int64(opt.RequiredCount),
-		SecurityGroupIds: aws.StringSlice(opt.CloudSecurityGroupIDs),
-		SubnetId:         aws.String(opt.CloudSubnetID),
+		DryRun:       aws.Bool(opt.DryRun),
+		ClientToken:  opt.ClientToken,
+		ImageId:      aws.String(opt.CloudImageID),
+		InstanceType: aws.String(opt.InstanceType),
+		MaxCount:     aws.Int64(opt.RequiredCount),
+		MinCount:     aws.Int64(opt.RequiredCount),
 		TagSpecifications: []*ec2.TagSpecification{
 			{
 				ResourceType: aws.String("instance"),
@@ -285,13 +313,19 @@ func (a *Aws) CreateCvm(kt *kit.Kit, opt *typecvm.AwsCreateOption) (*poller.Base
 		},
 	}
 
+	// 如果弹性IP指定了子网，则外部不能设置子网
 	if opt.PublicIPAssigned {
 		req.NetworkInterfaces = []*ec2.InstanceNetworkInterfaceSpecification{
 			{
 				DeviceIndex:              converter.ValToPtr(int64(0)),
+				SubnetId:                 aws.String(opt.CloudSubnetID),
 				AssociatePublicIpAddress: aws.Bool(opt.PublicIPAssigned),
+				Groups:                   aws.StringSlice(opt.CloudSecurityGroupIDs),
 			},
 		}
+	} else {
+		req.SubnetId = aws.String(opt.CloudSubnetID)
+		req.SecurityGroupIds = aws.StringSlice(opt.CloudSecurityGroupIDs)
 	}
 
 	if len(opt.BlockDeviceMapping) != 0 {

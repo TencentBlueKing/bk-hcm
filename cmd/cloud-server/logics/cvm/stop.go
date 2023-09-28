@@ -23,21 +23,26 @@ import (
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/api/core"
 	protoaudit "hcm/pkg/api/data-service/audit"
+	"hcm/pkg/api/data-service/cloud"
 	hcprotocvm "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/classifier"
+	"hcm/pkg/tools/converter"
 )
 
 // BatchStopCvm batch stop cvm.
-func (c *cvm) BatchStopCvm(kt *kit.Kit, basicInfoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateResult,
-	error) {
+func (c *cvm) BatchStopCvm(kt *kit.Kit, basicInfoMap map[string]types.CloudResourceBasicInfo) (
+	result *core.BatchOperateAllResult, err error) {
 
+	result = &core.BatchOperateAllResult{}
 	if len(basicInfoMap) == 0 {
-		return nil, nil
+		return result, nil
 	}
 
 	ids := make([]string, 0, len(basicInfoMap))
@@ -47,51 +52,46 @@ func (c *cvm) BatchStopCvm(kt *kit.Kit, basicInfoMap map[string]types.CloudResou
 
 	if err := c.audit.ResBaseOperationAudit(kt, enumor.CvmAuditResType, protoaudit.Stop, ids); err != nil {
 		logs.Errorf("create operation audit failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
+		for _, cvmId := range ids {
+			result.Failed = append(result.Failed, core.FailedInfo{ID: cvmId, Error: err})
+		}
+		return result, err
 	}
 
 	cvmVendorMap := classifier.ClassifyBasicInfoByVendor(basicInfoMap)
-	successIDs := make([]string, 0)
 	for vendor, infos := range cvmVendorMap {
 		switch vendor {
 		case enumor.TCloud, enumor.Aws, enumor.HuaWei:
-			ids, err := c.batchStopCvm(kt, vendor, infos)
-			successIDs = append(successIDs, ids...)
-			if err != nil {
-				return &core.BatchOperateResult{
-					Succeeded: successIDs,
-					Failed: &core.FailedInfo{
-						Error: err,
-					},
-				}, errf.NewFromErr(errf.PartialFailed, err)
-			}
+			// 支持batch
+			batchStopRes := c.batchStopCvm(kt, vendor, infos)
+			result.Succeeded = append(result.Succeeded, batchStopRes.Succeeded...)
+			result.Failed = append(result.Failed, batchStopRes.Failed...)
 
-		case enumor.Azure, enumor.Gcp:
-			ids, failedID, err := c.stopCvm(kt, vendor, infos)
-			successIDs = append(successIDs, ids...)
-			if err != nil {
-				return &core.BatchOperateResult{
-					Succeeded: successIDs,
-					Failed: &core.FailedInfo{
-						ID:    failedID,
-						Error: err,
-					},
-				}, errf.NewFromErr(errf.PartialFailed, err)
+		case enumor.Gcp:
+			for _, cvmInfo := range infos {
+				if err := c.client.HCService().Gcp.Cvm.StopCvm(kt.Ctx, kt.Header(), cvmInfo.ID); err != nil {
+					result.Failed = append(result.Failed, core.FailedInfo{ID: cvmInfo.ID, Error: err})
+				} else {
+					result.Succeeded = append(result.Succeeded, cvmInfo.ID)
+				}
 			}
-
+		case enumor.Azure:
+			req := &hcprotocvm.AzureStopReq{SkipShutdown: false}
+			for _, cvmInfo := range infos {
+				if err := c.client.HCService().Azure.Cvm.StopCvm(kt.Ctx, kt.Header(), cvmInfo.ID, req); err != nil {
+					result.Failed = append(result.Failed, core.FailedInfo{ID: cvmInfo.ID, Error: err})
+				} else {
+					result.Succeeded = append(result.Succeeded, cvmInfo.ID)
+				}
+			}
 		default:
-			return &core.BatchOperateResult{
-				Succeeded: successIDs,
-				Failed: &core.FailedInfo{
-					ID:    infos[0].ID,
-					Error: errf.Newf(errf.Unknown, "vendor: %s not support", vendor),
-				},
-			}, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
+			err := errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
+			for _, cvmInfo := range infos {
+				result.Failed = append(result.Failed, core.FailedInfo{ID: cvmInfo.ID, Error: err})
+			}
 		}
-
 	}
-
-	return nil, nil
+	return result, err
 }
 
 func (c *cvm) stopCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.CloudResourceBasicInfo) (
@@ -123,10 +123,15 @@ func (c *cvm) stopCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.CloudRe
 
 // batchStopCvm stop cvm.
 func (c *cvm) batchStopCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.CloudResourceBasicInfo) (
-	[]string, error) {
+	result *core.BatchOperateAllResult) {
 
+	result = &core.BatchOperateAllResult{}
 	cvmMap := classifier.ClassifyBasicInfoByAccount(infoMap)
-	successIDs := make([]string, 0)
+	markFail := func(err error, ids ...string) {
+		for _, id := range ids {
+			result.Failed = append(result.Failed, core.FailedInfo{ID: id, Error: err})
+		}
+	}
 	for accountID, reginMap := range cvmMap {
 		for region, ids := range reginMap {
 			switch vendor {
@@ -139,7 +144,8 @@ func (c *cvm) batchStopCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.Cl
 					StoppedMode: typecvm.KeepCharging,
 				}
 				if err := c.client.HCService().TCloud.Cvm.BatchStopCvm(kt.Ctx, kt.Header(), req); err != nil {
-					return successIDs, err
+					markFail(err, ids...)
+					continue
 				}
 
 			case enumor.Aws:
@@ -151,7 +157,8 @@ func (c *cvm) batchStopCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.Cl
 					Hibernate: false,
 				}
 				if err := c.client.HCService().Aws.Cvm.BatchStopCvm(kt.Ctx, kt.Header(), req); err != nil {
-					return successIDs, err
+					markFail(err, ids...)
+					continue
 				}
 
 			case enumor.HuaWei:
@@ -162,16 +169,55 @@ func (c *cvm) batchStopCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.Cl
 					Force:     true,
 				}
 				if err := c.client.HCService().HuaWei.Cvm.BatchStopCvm(kt.Ctx, kt.Header(), req); err != nil {
-					return successIDs, err
+					markFail(err, ids...)
+					continue
 				}
 
 			default:
-				return successIDs, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
+				e := errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
+				for _, id := range ids {
+					result.Failed = append(result.Failed, core.FailedInfo{ID: id, Error: e})
+				}
 			}
 
-			successIDs = append(successIDs, ids...)
+			result.Succeeded = append(result.Succeeded, ids...)
 		}
 	}
 
-	return successIDs, nil
+	return result
+}
+
+// CheckAndStopCvm 检查在非停止状态的主机并尝试关机
+func (c *cvm) checkAndStopCvm(kt *kit.Kit, infoMap map[string]types.CloudResourceBasicInfo) error {
+
+	if len(infoMap) == 0 {
+		return nil
+	}
+	cvmIds := converter.MapKeyToSlice(infoMap)
+	// filter out not stopped cvm
+	notStoppedRule := filter.AtomRule{Field: "status", Op: filter.NotIn.Factory(), Value: []string{"STOPPING",
+		"STOPPED", "stopping", "stopped", "SUSPENDING", "SUSPENDED", "PowerState/stopped", "SHUTOFF"}}
+	notStoppedFilter, err := tools.And(tools.ContainersExpression("id", cvmIds), notStoppedRule)
+	if err != nil {
+		return err
+	}
+	notStoppedReq := &cloud.CvmListReq{Field: []string{"id"}, Filter: notStoppedFilter, Page: core.NewDefaultBasePage()}
+
+	notStoppedCvmRes, err := c.client.DataService().Global.Cvm.ListCvm(kt.Ctx, kt.Header(), notStoppedReq)
+	if err != nil {
+		logs.Errorf("fail to list cvm status, err: %v, req: %v, rid: %s", err, notStoppedReq, kt.Rid)
+		return err
+	}
+
+	notStoppedMap := make(map[string]types.CloudResourceBasicInfo)
+	for _, cvm := range notStoppedCvmRes.Details {
+		notStoppedMap[cvm.ID] = infoMap[cvm.ID]
+	}
+
+	// stop cvm
+	stopRes, err := c.BatchStopCvm(kt, notStoppedMap)
+	if err != nil {
+		logs.Errorf("stop cvm failed, err: %v, resp: %+v, infos: %+v, rid: %s", err, stopRes, notStoppedMap, kt.Rid)
+	}
+	return err
 }

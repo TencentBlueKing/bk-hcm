@@ -37,11 +37,16 @@ func (req *AwsInstanceTypeListReq) Validate() error {
 
 // AwsInstanceTypeResp ...
 type AwsInstanceTypeResp struct {
-	InstanceType string `json:"instance_type"`
-	GPU          int64  `json:"gpu"`
-	CPU          int64  `json:"cpu"`
-	Memory       int64  `json:"memory"`
-	FPGA         int64  `json:"fpga"`
+	InstanceFamily     string `json:"instance_family"`
+	InstanceType       string `json:"instance_type"`
+	GPU                int64  `json:"gpu"`
+	CPU                int64  `json:"cpu"`
+	Memory             int64  `json:"memory"`
+	FPGA               int64  `json:"fpga"`
+	NetworkPerformance string `json:"network_performance"`
+	DiskSizeInGB       int64  `json:"disk_size_in_gb"`
+	Architecture       string `json:"architecture"`
+	DiskType           string `json:"disk_type"`
 }
 
 // AwsInstanceTypeListResp ...

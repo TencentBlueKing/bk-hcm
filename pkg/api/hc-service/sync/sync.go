@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package sync ...
 package sync
 
 import "hcm/pkg/criteria/validator"
@@ -143,7 +144,6 @@ func (req *GcpDiskSyncReq) Validate() error {
 // GcpRouteSyncReq gcp route sync request
 type GcpRouteSyncReq struct {
 	AccountID string `json:"account_id" validate:"required"`
-	Zone      string `json:"zone" validate:"required"`
 }
 
 // Validate gcp route sync request.

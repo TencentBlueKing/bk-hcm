@@ -29,7 +29,9 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -45,7 +47,7 @@ func (svc *instanceTypeSvc) ListInBiz(cts *rest.Contexts) (interface{}, error) {
 
 // list ...
 func (svc *instanceTypeSvc) list(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
-	req := new(proto.InstanceTypeListReq)
+	req := new(proto.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -80,53 +82,141 @@ func (svc *instanceTypeSvc) list(cts *rest.Contexts, validHandler handler.ValidW
 }
 
 // ListForTCloud ...
-func (svc *instanceTypeSvc) ListForTCloud(cts *rest.Contexts, req *proto.InstanceTypeListReq) (interface{}, error) {
-	return svc.client.HCService().TCloud.InstanceType.List(
-		cts.Kit.Ctx, cts.Kit.Header(), &hcproto.TCloudInstanceTypeListReq{AccountID: req.AccountID,
-			Region: req.Region, Zone: req.Zone, InstanceChargeType: req.InstanceChargeType})
+func (svc *instanceTypeSvc) ListForTCloud(cts *rest.Contexts, req *proto.ListReq) (interface{}, error) {
+	listReq := &hcproto.TCloudInstanceTypeListReq{
+		AccountID:          req.AccountID,
+		Region:             req.Region,
+		Zone:               req.Zone,
+		InstanceChargeType: req.InstanceChargeType,
+	}
+	list, err := svc.client.HCService().TCloud.InstanceType.List(cts.Kit, listReq)
+	if err != nil {
+		logs.Errorf("call hc-service to list instance type failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	familyMap := make(map[string]struct{})
+	familyTypeMap := make(map[string]struct{})
+	for _, one := range list {
+		familyMap[one.InstanceFamily] = struct{}{}
+		// e.g: 标准型SA3 -> 标准型
+		familyTypeMap[one.TypeName[:len(one.TypeName)-len(one.InstanceFamily)]] = struct{}{}
+	}
+
+	result := &proto.ListResult[hcproto.TCloudInstanceTypeResp]{
+		InstanceFamilyTypeNames: converter.MapKeyToStringSlice(familyTypeMap),
+		InstanceFamilies:        converter.MapKeyToStringSlice(familyMap),
+		InstanceTypes:           list,
+	}
+
+	return result, nil
 }
 
 // ListForAws ...
-func (svc *instanceTypeSvc) ListForAws(cts *rest.Contexts, req *proto.InstanceTypeListReq) (interface{}, error) {
-	return svc.client.HCService().Aws.InstanceType.List(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&hcproto.AwsInstanceTypeListReq{AccountID: req.AccountID, Region: req.Region},
-	)
+func (svc *instanceTypeSvc) ListForAws(cts *rest.Contexts, req *proto.ListReq) (interface{}, error) {
+
+	listReq := &hcproto.AwsInstanceTypeListReq{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+	}
+	list, err := svc.client.HCService().Aws.InstanceType.List(cts.Kit, listReq)
+	if err != nil {
+		logs.Errorf("call hc-service to list instance type failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	familyMap := make(map[string]struct{})
+	for _, one := range list {
+		familyMap[one.InstanceFamily] = struct{}{}
+	}
+
+	result := &proto.ListResult[hcproto.AwsInstanceTypeResp]{
+		InstanceFamilies: converter.MapKeyToStringSlice(familyMap),
+		InstanceTypes:    list,
+	}
+
+	return result, nil
 }
 
 // ListForHuaWei ...
-func (svc *instanceTypeSvc) ListForHuaWei(cts *rest.Contexts, req *proto.InstanceTypeListReq) (interface{}, error) {
-	return svc.client.HCService().HuaWei.InstanceType.List(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&hcproto.HuaWeiInstanceTypeListReq{AccountID: req.AccountID, Region: req.Region, Zone: req.Zone},
-	)
+func (svc *instanceTypeSvc) ListForHuaWei(cts *rest.Contexts, req *proto.ListReq) (interface{}, error) {
+
+	listReq := &hcproto.HuaWeiInstanceTypeListReq{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+		Zone:      req.Zone,
+	}
+	list, err := svc.client.HCService().HuaWei.InstanceType.List(cts.Kit, listReq)
+	if err != nil {
+		logs.Errorf("call hc-service to list instance type failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	familyMap := make(map[string]struct{})
+	for _, one := range list {
+		familyMap[one.InstanceFamily] = struct{}{}
+	}
+
+	result := &proto.ListResult[hcproto.HuaWeiInstanceTypeResp]{
+		InstanceFamilies: converter.MapKeyToStringSlice(familyMap),
+		InstanceTypes:    list,
+	}
+
+	return result, nil
 }
 
 // ListForAzure ...
-func (svc *instanceTypeSvc) ListForAzure(cts *rest.Contexts, req *proto.InstanceTypeListReq) (interface{}, error) {
-	resp, err := svc.client.HCService().Azure.InstanceType.List(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&hcproto.AzureInstanceTypeListReq{AccountID: req.AccountID, Region: req.Region},
-	)
+func (svc *instanceTypeSvc) ListForAzure(cts *rest.Contexts, req *proto.ListReq) (interface{}, error) {
+
+	listReq := &hcproto.AzureInstanceTypeListReq{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+	}
+	list, err := svc.client.HCService().Azure.InstanceType.List(cts.Kit, listReq)
 	if err != nil {
 		if strings.Contains(err.Error(), "No registered resource provider found for location") {
 			return nil, fmt.Errorf("no instance type found for %s region", req.Region)
 		}
 
+		logs.Errorf("call hc-service to list instance type failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	return resp, nil
+	familyMap := make(map[string]struct{})
+	for _, one := range list {
+		familyMap[one.InstanceFamily] = struct{}{}
+	}
+
+	result := &proto.ListResult[hcproto.AzureInstanceTypeResp]{
+		InstanceFamilies: converter.MapKeyToStringSlice(familyMap),
+		InstanceTypes:    list,
+	}
+
+	return result, nil
 }
 
 // ListForGcp ...
-func (svc *instanceTypeSvc) ListForGcp(cts *rest.Contexts, req *proto.InstanceTypeListReq) (interface{}, error) {
-	return svc.client.HCService().Gcp.InstanceType.List(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&hcproto.GcpInstanceTypeListReq{AccountID: req.AccountID, Zone: req.Zone},
-	)
+func (svc *instanceTypeSvc) ListForGcp(cts *rest.Contexts, req *proto.ListReq) (interface{}, error) {
+
+	listReq := &hcproto.GcpInstanceTypeListReq{
+		AccountID: req.AccountID,
+		Zone:      req.Zone,
+	}
+	list, err := svc.client.HCService().Gcp.InstanceType.List(cts.Kit, listReq)
+	if err != nil {
+		logs.Errorf("call hc-service to list instance type failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	familyMap := make(map[string]struct{})
+	for _, one := range list {
+		familyMap[one.InstanceFamily] = struct{}{}
+	}
+
+	result := &proto.ListResult[hcproto.GcpInstanceTypeResp]{
+		InstanceFamilies: converter.MapKeyToStringSlice(familyMap),
+		InstanceTypes:    list,
+	}
+
+	return result, nil
 }

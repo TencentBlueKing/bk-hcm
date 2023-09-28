@@ -23,10 +23,12 @@ import (
 	"context"
 	"net/http"
 
+	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/api/core"
 	protocvm "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -193,6 +195,33 @@ func (cli *CvmClient) BatchCreateCvm(ctx context.Context, h http.Header, request
 		Body(request).
 		SubResourcef("/cvms/batch/create").
 		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// InquiryPrice ....
+func (cli *CvmClient) InquiryPrice(kt *kit.Kit, request *protocvm.TCloudBatchCreateReq) (
+	*typecvm.InquiryPriceResult, error) {
+
+	resp := &struct {
+		*rest.BaseResp `json:",inline"`
+		Data           *typecvm.InquiryPriceResult `json:"data"`
+	}{}
+
+	err := cli.client.Post().
+		WithContext(kt.Ctx).
+		Body(request).
+		SubResourcef("/cvms/prices/inquiry").
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

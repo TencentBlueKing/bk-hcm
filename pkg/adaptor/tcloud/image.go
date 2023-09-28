@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/image"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 
@@ -34,7 +35,7 @@ import (
 
 // ListImage 查询公共镜像列表
 // reference: https://cloud.tencent.com/document/api/213/15715
-func (t *TCloud) ListImage(kt *kit.Kit,
+func (t *TCloudImpl) ListImage(kt *kit.Kit,
 	opt *image.TCloudImageListOption) (*image.TCloudImageListResult, error) {
 
 	client, err := t.clientSet.cvmClient(opt.Region)
@@ -78,6 +79,7 @@ func (t *TCloud) ListImage(kt *kit.Kit,
 			Type:         "public",
 			ImageSize:    *pImage.ImageSize,
 			ImageSource:  *pImage.ImageSource,
+			OsType:       image.GetOsTypeByPlatform(enumor.TCloud, *pImage.Platform),
 		})
 	}
 

@@ -47,6 +47,11 @@ type EipSvc struct {
 	DataCli *dataservice.Client
 }
 
+// CountEip ...
+func (svc *EipSvc) CountEip(cts *rest.Contexts) (interface{}, error) {
+	return nil, nil
+}
+
 // DeleteEip ...
 func (svc *EipSvc) DeleteEip(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.EipDeleteReq)
@@ -57,12 +62,23 @@ func (svc *EipSvc) DeleteEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt, err := svc.makeEipDeleteOption(cts.Kit, req)
+	eipData, err := svc.DataCli.Azure.RetrieveEip(cts.Kit.Ctx, cts.Kit.Header(), req.EipID)
 	if err != nil {
 		return nil, err
 	}
+	// 该eip已绑定了安全组、NAT网关，不能删除
+	if eipData.Extension != nil && eipData.Extension.IpConfigurationID != nil {
+		logs.Errorf("azure eip delete error, eip %s is associated with ip configuration(%s)", req.EipID,
+			converter.PtrToVal(eipData.Extension.IpConfigurationID))
+		return nil, errf.Newf(errf.InvalidParameter, "eip %s is associated with ip configuration", req.EipID)
+	}
 
-	client, err := svc.Adaptor.Azure(cts.Kit, req.AccountID)
+	opt := &eip.AzureEipDeleteOption{
+		ResourceGroupName: eipData.Extension.ResourceGroupName,
+		EipName:           *eipData.Name,
+	}
+
+	client, err := svc.Adaptor.Azure(cts.Kit, eipData.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -285,27 +301,6 @@ func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return &apicore.BatchCreateResult{IDs: eipIDs}, nil
-}
-
-func (svc *EipSvc) makeEipDeleteOption(
-	kt *kit.Kit,
-	req *proto.EipDeleteReq,
-) (*eip.AzureEipDeleteOption, error) {
-	eipData, err := svc.DataCli.Azure.RetrieveEip(kt.Ctx, kt.Header(), req.EipID)
-	if err != nil {
-		return nil, err
-	}
-	// 该eip已绑定了安全组、NAT网关，不能删除
-	if eipData.Extension != nil && eipData.Extension.IpConfigurationID != nil {
-		logs.Errorf("azure eip delete error, eip %s is associated with ip configuration(%s)", req.EipID,
-			converter.PtrToVal(eipData.Extension.IpConfigurationID))
-		return nil, errf.Newf(errf.InvalidParameter, "eip %s is associated with ip configuration", req.EipID)
-	}
-
-	return &eip.AzureEipDeleteOption{
-		ResourceGroupName: eipData.Extension.ResourceGroupName,
-		EipName:           *eipData.Name,
-	}, nil
 }
 
 func (svc *EipSvc) makeEipAssociateOption(
