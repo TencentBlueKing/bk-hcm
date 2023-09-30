@@ -149,7 +149,10 @@ const handleAdd = () => {
   // ['host', 'vpc', 'drive', ||| 'security', 'subnet', 'ip']
   switch (activeTab.value) {
     case 'host':
-      router.push({ path: '/resource/service-apply/cvm' });
+      router.push({
+        path: '/resource/service-apply/cvm',
+        query: route.query,
+      });
       break;
     case 'vpc':
       router.push({ path: '/resource/service-apply/vpc' });

@@ -18,6 +18,7 @@ const props = defineProps({
   type: String as PropType<string>,
   mustBiz: Boolean as PropType<boolean>,
   isResourcePage: Boolean as PropType<boolean>,
+  disabled: Boolean,
 });
 const emit = defineEmits(['input', 'change']);
 
@@ -99,6 +100,7 @@ defineExpose({
     :loading="loading"
     @change="handleChange"
     v-bind="attrs"
+    :disabled="props.disabled"
   >
     <bk-option v-for="(item, index) in accountList" :key="index" :value="item.id" :label="item.name" />
   </bk-select>
