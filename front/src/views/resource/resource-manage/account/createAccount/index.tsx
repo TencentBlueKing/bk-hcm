@@ -56,6 +56,7 @@ export default defineComponent({
       <Dialog
         fullscreen
         isShow={props.isShow}
+        onClosed={props.onCancel}
         class={'create-account-dialog-container'}>
         {{
           tools: () => (
