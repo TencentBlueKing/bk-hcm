@@ -9,4 +9,18 @@
     margin-right: 18.25px;
   }
 }
-  
+
+.instance-price {
+  color: #ff9c01;
+}
+
+.instance-type-search-seletor-container {
+  display: flex;
+  align-items: center;
+  justify-content: left;
+
+  .instance-type-search-seletor {
+    margin-left: auto;
+  }
+      
+}

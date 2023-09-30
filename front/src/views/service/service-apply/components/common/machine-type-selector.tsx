@@ -1,6 +1,6 @@
 import http from '@/http';
 import { computed, defineComponent, PropType, reactive, ref, watch } from 'vue';
-import { Button, Dialog, Form, Table } from 'bkui-vue';
+import { Button, Dialog, Form, Radio, SearchSelect, Table } from 'bkui-vue';
 import './machine-type-selector.scss';
 
 // import { formatStorageSize } from '@/common/util';
@@ -37,10 +37,30 @@ export default defineComponent({
       limit: 10,
       count: 100,
     });
+    const searchVal = ref('');
+    const searchData = [
+      {
+        name: '内存',
+        id: 'memory',
+      },
+      {
+        name: 'CPU',
+        id: 'cpu',
+      },
+    ];
+    const checkedInstanceType = ref('');
     const columns = [{
       label: '类型',
-      field: 'instance_family',
-      filter: true,
+      field: 'type_name',
+      render: ({ cell, data }: any) => {
+        return (<div class={'flex-row'}>
+        <Radio
+          v-model={checkedInstanceType.value}
+          checked={checkedInstanceType.value === data.instance_type}
+          label={cell}
+        ></Radio>
+      </div>);
+      },
     },
     {
       label: '规格',
@@ -49,22 +69,32 @@ export default defineComponent({
     {
       label: 'CPU',
       field: 'cpu',
+      render: ({ cell }: {cell: string}) => `${cell}核`,
     },
     {
       label: '内存',
       field: 'memory',
+      render: ({ cell }: {cell: string}) => `${Math.floor(+cell / 1024)}GB`,
     },
     {
       label: '处理器型号',
       field: 'cpu_type',
     },
     {
+      label: '内网带宽',
+      field: 'instance_bandwidth',
+      render: ({ cell }: {cell: string}) => `${cell}Gbps`,
+    },
+    {
       label: '网络收发包',
       field: 'instance_pps',
+      render: ({ cell }: {cell: string}) => `${cell}万PPS`,
     },
     {
       label: '参考费用',
       field: 'price',
+      fixed: 'right',
+      render: ({ data }: any) => <span class={'instance-price'}>{`${data?.Price?.DiscountPrice}元/月`}</span>,
     }];
 
     const selected = computed({
@@ -112,6 +142,21 @@ export default defineComponent({
 
       loading.value = false;
     });
+
+    const computedList = computed(() => {
+      if (!selectedFamilyType.value) return list.value;
+      const reg = new RegExp(selectedFamilyType.value);
+      return list.value.filter(({ type_name }) => reg.test(type_name));
+    });
+
+    // watch(
+    //   () => searchVal.value,
+    //   (val) => {
+    //     const arr = val?.values;
+    //     const map = new Map();
+    //     for(let )
+    //   },
+    // );
 
     // const handleChange = (val: string) => {
     //   const data = list.value.find(item => item.instance_type === val);
@@ -173,15 +218,22 @@ export default defineComponent({
               </BkButtonGroup>
             </FormItem>
             <FormItem label='已选' labelPosition='left'>
-              <div class={'selected-block-container'}>
-                <div class={'selected-block'}>
-                  Amazon Linux 2 AMI (HVM) - Kernel 5.10, SSD Volume Type
+              <div class={'instance-type-search-seletor-container'}>
+                <div class={'selected-block-container'}>
+                  <div class={'selected-block'}>
+                    Amazon Linux 2 AMI (HVM) - Kernel 5.10, SSD Volume Type
+                  </div>
                 </div>
+                <SearchSelect
+                  class='w500 instance-type-search-seletor'
+                  v-model={searchVal.value}
+                  data={searchData}
+                />
               </div>
             </FormItem>
           </Form>
           <Table
-            data={list.value}
+            data={computedList.value}
             columns={columns}
             pagination={pagination}
           >
