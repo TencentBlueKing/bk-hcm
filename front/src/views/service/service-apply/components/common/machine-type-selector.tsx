@@ -1,6 +1,6 @@
 import http from '@/http';
 import { computed, defineComponent, PropType, reactive, ref, watch } from 'vue';
-import { Button, Dialog, Form, Radio, SearchSelect, Table } from 'bkui-vue';
+import { Button, Dialog, Form, Loading, Radio, SearchSelect, Table } from 'bkui-vue';
 import './machine-type-selector.scss';
 
 // import { formatStorageSize } from '@/common/util';
@@ -149,6 +149,9 @@ export default defineComponent({
       return list.value.filter(({ type_name }) => reg.test(type_name));
     });
 
+    const computedDisabled = computed(() => {
+      return !(props.accountId && props.region && props.vendor && props.zone);
+    });
     // watch(
     //   () => searchVal.value,
     //   (val) => {
@@ -194,7 +197,7 @@ export default defineComponent({
             </div>
           </div>
         ) : (
-          <Button onClick={() => (isDialogShow.value = true)}>
+          <Button onClick={() => (isDialogShow.value = true)} disabled={computedDisabled.value}>
             <Plus class='f20' />
             选择机型
           </Button>
@@ -232,13 +235,13 @@ export default defineComponent({
               </div>
             </FormItem>
           </Form>
-          <Table
-            data={computedList.value}
-            columns={columns}
-            pagination={pagination}
-          >
-
-          </Table>
+          <Loading loading={loading.value}>
+            <Table
+              data={computedList.value}
+              columns={columns}
+              pagination={pagination}
+            />
+          </Loading>
         </Dialog>
       </div>
     );
