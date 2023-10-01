@@ -198,12 +198,12 @@ export default defineComponent({
           {
             selected.value ? (
               <div class={'selected-block mr8'}>
-                Amazon Linux 2 AMI (HVM) - Kernel 5.10, SSD Volume Type
+                { checkedInstanceType.value }
               </div>
             ) : null
           }
           {selected.value ? (
-            <EditLine fill='#3A84FF' width={13.5} height={13.5}/>
+            <EditLine fill='#3A84FF' width={13.5} height={13.5} onClick={() => (isDialogShow.value = true)}/>
           ) : (
             <Button onClick={() => (isDialogShow.value = true)} disabled={computedDisabled.value}>
               <Plus class='f20' />
