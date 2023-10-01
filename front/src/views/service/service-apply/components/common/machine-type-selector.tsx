@@ -6,7 +6,7 @@ import './machine-type-selector.scss';
 // import { formatStorageSize } from '@/common/util';
 import { VendorEnum } from '@/common/constant';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-import { Plus } from 'bkui-vue/lib/icon';
+import { EditLine, Plus } from 'bkui-vue/lib/icon';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -57,8 +57,10 @@ export default defineComponent({
         <Radio
           v-model={checkedInstanceType.value}
           checked={checkedInstanceType.value === data.instance_type}
-          label={cell}
-        ></Radio>
+          label={data.instance_type}
+        >
+          { cell }
+        </Radio>
       </div>);
       },
     },
@@ -161,10 +163,12 @@ export default defineComponent({
     //   },
     // );
 
-    // const handleChange = (val: string) => {
-    //   const data = list.value.find(item => item.instance_type === val);
-    //   emit('change', data);
-    // };
+    const handleChange = () => {
+      selected.value = checkedInstanceType.value;
+      const data = list.value.find(item => item.instance_type === checkedInstanceType.value);
+      emit('change', data);
+      isDialogShow.value = false;
+    };
 
     return () => (
       // <Select
@@ -190,21 +194,27 @@ export default defineComponent({
       //   }
       // </Select>
       <div>
-        {selected.value ? (
-          <div class={'selected-block-container'}>
-            <div class={'selected-block'}>
-              Amazon Linux 2 AMI (HVM) - Kernel 5.10, SSD Volume Type
-            </div>
-          </div>
-        ) : (
-          <Button onClick={() => (isDialogShow.value = true)} disabled={computedDisabled.value}>
-            <Plus class='f20' />
-            选择机型
-          </Button>
-        )}
+        <div class={'selected-block-container'}>
+          {
+            selected.value ? (
+              <div class={'selected-block mr8'}>
+                Amazon Linux 2 AMI (HVM) - Kernel 5.10, SSD Volume Type
+              </div>
+            ) : null
+          }
+          {selected.value ? (
+            <EditLine fill='#3A84FF' width={13.5} height={13.5}/>
+          ) : (
+            <Button onClick={() => (isDialogShow.value = true)} disabled={computedDisabled.value}>
+              <Plus class='f20' />
+              选择机型
+            </Button>
+          )}
+        </div>
         <Dialog
           isShow={isDialogShow.value}
           onClosed={() => (isDialogShow.value = false)}
+          onConfirm={handleChange}
           title='选择机型'
           width={1500}>
           <Form>
@@ -224,7 +234,7 @@ export default defineComponent({
               <div class={'instance-type-search-seletor-container'}>
                 <div class={'selected-block-container'}>
                   <div class={'selected-block'}>
-                    Amazon Linux 2 AMI (HVM) - Kernel 5.10, SSD Volume Type
+                    { checkedInstanceType.value || '--' }
                   </div>
                 </div>
                 <SearchSelect

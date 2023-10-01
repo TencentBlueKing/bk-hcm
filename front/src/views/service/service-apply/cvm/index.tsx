@@ -292,6 +292,7 @@ export default defineComponent({
       async () => {
         const saveData = getSaveData();
         if (![VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum)) return;
+        console.log(67676767, formData);
         if (
           !saveData.account_id
           || !saveData.region
@@ -307,7 +308,7 @@ export default defineComponent({
           || !saveData.confirmed_password
         ) return;
         const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/cvms/prices/inquiry`, saveData);
-        cost.value = res.data?.discount_price || '--';
+        cost.value = res.data?.discount_price || '0';
       },
       {
         immediate: true,
