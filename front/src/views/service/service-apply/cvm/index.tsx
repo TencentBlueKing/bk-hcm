@@ -30,6 +30,7 @@ import { useRouter } from 'vue-router';
 import VpcPreviewDialog from './children/VpcPreviewDialog';
 import SubnetPreviewDialog, { ISubnetItem } from './children/SubnetPreviewDialog';
 import http from '@/http';
+import { debounce } from 'lodash';
 // import SelectCvmBlock from './children/SelectCvmBlock';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -53,6 +54,7 @@ export default defineComponent({
     const { t } = useI18n();
     const { isResourcePage } = useWhereAmI();
     const router = useRouter();
+    const isSubmitBtnLoading = ref(false);
 
     const dialogState = reactive({
       gcpDataDisk: {
@@ -289,10 +291,9 @@ export default defineComponent({
 
     watch(
       () => formData,
-      async () => {
+      debounce(async () => {
         const saveData = getSaveData();
         if (![VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum)) return;
-        console.log(67676767, formData);
         if (
           !saveData.account_id
           || !saveData.region
@@ -307,9 +308,11 @@ export default defineComponent({
           || !saveData.password
           || !saveData.confirmed_password
         ) return;
+        isSubmitBtnLoading.value = true;
         const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/cvms/prices/inquiry`, saveData);
         cost.value = res.data?.discount_price || '0';
-      },
+        isSubmitBtnLoading.value = false;
+      }, 300),
       {
         immediate: true,
         deep: true,
@@ -942,7 +945,7 @@ export default defineComponent({
                 cost.value
               }
             </div>
-            <Button theme='primary' loading={submitting.value} disabled={submitDisabled.value} onClick={handleFormSubmit} class={'mr8'}>
+            <Button theme='primary' loading={submitting.value || isSubmitBtnLoading.value} disabled={submitDisabled.value} onClick={handleFormSubmit} class={'mr8'}>
               立即购买
             </Button>
             <Button
