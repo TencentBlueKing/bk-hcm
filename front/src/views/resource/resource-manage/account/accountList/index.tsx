@@ -25,7 +25,6 @@ export default defineComponent({
       isCreateAccountDialogShow.value = false;
     };
     const handleSubmit = () => {
-      console.log(666);
     };
     const computedAllVendorsAccount = computed(() => accountsMatrix.reduce((acc, { count }) => acc + count, 0));
 
@@ -34,7 +33,6 @@ export default defineComponent({
       () => searchVal.value,
       (val) => {
         getAllVendorsAccountsList(val);
-        console.log(696969, computedAllVendorsAccount.value);
       },
       {
         immediate: true,

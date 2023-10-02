@@ -5,10 +5,11 @@ import RegionSelector from './region-selector';
 import ResourceGroupSelector from './resource-group-selector';
 import { CloudType } from '@/typings';
 import { VendorEnum } from '@/common/constant';
-import { ref, PropType, computed } from 'vue';
+import { ref, PropType, computed, watch } from 'vue';
 import { useAccountStore } from '@/store';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import CommonCard from '@/components/CommonCard';
+import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 
 const accountStore = useAccountStore();
 
@@ -104,7 +105,18 @@ const handleChangeAccount = (account: any) => {
  * 资源下申请主机、VPC、硬盘时无需选择业务，且无需走审批流程
  */
 const { isResourcePage } = useWhereAmI();
+const resourceAccountStore = useResourceAccountStore();
 
+watch(
+  () => resourceAccountStore.resourceAccount.id,
+  (id) => {
+    selectedCloudAccountId.value = id;
+    handleChangeAccount(resourceAccountStore.resourceAccount);
+  },
+  {
+    immediate: true,
+  },
+);
 </script>
 
 <template>
@@ -113,7 +125,7 @@ const { isResourcePage } = useWhereAmI();
     :layout="'grid'"
   >
     <div class="cond-item" v-if="!isResourcePage">
-      <div class="cond-label">业务</div>
+      <div class="mb8">业务</div>
       <div class="cond-content">
         <business-selector
           v-model="selectedBizId"
@@ -122,22 +134,27 @@ const { isResourcePage } = useWhereAmI();
         </business-selector>
       </div>
     </div>
-    <div class="cond-item">
-      <div class="cond-label">云账号</div>
-      <div class="cond-content">
+    <div>
+      <div class="mb8">云账号</div>
+      <div>
         <account-selector
           v-model="selectedCloudAccountId"
           :must-biz="!isResourcePage"
           :biz-id="selectedBizId"
           :type="'resource'"
+          :disabled="!!resourceAccountStore?.resourceAccount?.id"
           @change="handleChangeAccount">
         </account-selector>
       </div>
     </div>
-    <div class="cond-item">
-      <div class="cond-label">云厂商</div>
-      <div class="cond-content">
-        <bk-select :clearable="false" v-model="selectedVendor">
+    <div>
+      <div class="mb8">云厂商</div>
+      <div>
+        <bk-select
+          :clearable="false"
+          v-model="selectedVendor"
+          :disabled="!!resourceAccountStore?.resourceAccount?.id"
+        >
           <bk-option
             v-for="(item, index) in vendorList"
             :key="index"
@@ -147,15 +164,15 @@ const { isResourcePage } = useWhereAmI();
         </bk-select>
       </div>
     </div>
-    <div class="cond-item" v-if="selectedVendor === VendorEnum.AZURE">
-      <div class="cond-label">资源组</div>
-      <div class="cond-content">
+    <div v-if="selectedVendor === VendorEnum.AZURE">
+      <div class="mb8">资源组</div>
+      <div>
         <resource-group-selector :account-id="selectedCloudAccountId" v-model="selectedResourceGroup" />
       </div>
     </div>
-    <div class="cond-item">
-      <div class="cond-label">云地域</div>
-      <div class="cond-content">
+    <div>
+      <div class="mb8">云地域</div>
+      <div>
         <region-selector
           v-model="selectedRegion"
           :type="type"
@@ -170,23 +187,7 @@ const { isResourcePage } = useWhereAmI();
 </template>
 
 <style lang="scss" scoped>
-.cond-list {
-  display: flex;
-  gap: 8px 32px;
-  // border-bottom: 1px solid rgba(0, 0, 0, .15);
-  padding: 0 36px 12px 8px;
+.mb8 {
   margin-bottom: 8px;
-  .cond-item {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 0 12px;
-    .cond-label {
-      flex: none;
-    }
-    .cond-content {
-      flex: 1;
-    }
-  }
 }
 </style>

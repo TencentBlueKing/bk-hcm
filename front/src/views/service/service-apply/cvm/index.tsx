@@ -292,6 +292,7 @@ export default defineComponent({
       async () => {
         const saveData = getSaveData();
         if (![VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum)) return;
+        console.log(67676767, formData);
         if (
           !saveData.account_id
           || !saveData.region
@@ -307,7 +308,7 @@ export default defineComponent({
           || !saveData.confirmed_password
         ) return;
         const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/cvms/prices/inquiry`, saveData);
-        cost.value = res.data?.discount_price || '--';
+        cost.value = res.data?.discount_price || '0';
       },
       {
         immediate: true,
@@ -539,12 +540,13 @@ export default defineComponent({
                 </Select>,
               },
               {
-                label: '大小',
                 required: true,
                 property: 'system_disk.disk_size_gb',
                 rules: [sysDiskSizeRules.value],
                 description: sysDiskSizeRules.value.message,
-                content: () => <Input type='number' v-model={formData.system_disk.disk_size_gb} suffix="GB"></Input>,
+                content: () => (
+                  <Input type='number' v-model={formData.system_disk.disk_size_gb} suffix="GB" prefix='大小'></Input>
+                ),
               },
             ],
           },
@@ -556,7 +558,7 @@ export default defineComponent({
               {
                 formData.data_disk.map((item: IDiskOption, index: number) => (
                   <div class="flex-row">
-                    <FormItem property={`data_disk[${index}].disk_type`} rules={[]}>
+                    <FormItem property={`data_disk[${index}].disk_type`} rules={[]} class={'mr8'}>
                       <Select v-model={item.disk_type} style={{ width: '200px' }} clearable={false}>{
                           dataDiskTypes.value.map(({ id, name }: IOption) => (
                             <Option key={id} value={id} label={name}></Option>
@@ -565,15 +567,15 @@ export default defineComponent({
                       </Select>
                     </FormItem>
                     <FormItem
-                      label='大小'
                       property={`data_disk[${index}].disk_size_gb`}
                       rules={[dataDiskSizeRules(item)]}
                       description={dataDiskSizeRules(item).message}
+                      class={'mr8'}
                     >
-                      <Input type='number' style={{ width: '160px' }} v-model={item.disk_size_gb} suffix="GB"></Input>
+                      <Input type='number' style={{ width: '160px' }} v-model={item.disk_size_gb} suffix="GB" prefix='大小'></Input>
                     </FormItem>
                     <FormItem
-                      label='数量'
+                      class={'mr8'}
                       property={`data_disk[${index}].disk_count`}
                       min={dataDiskCountRules.value.min}
                       max={dataDiskCountRules.value.max}>
@@ -879,6 +881,7 @@ export default defineComponent({
                                     property={sub.property}
                                     rules={sub.rules}
                                     description={sub?.description}
+                                    class={'mr8'}
                                   >
                                     {sub.content()}
                                     { sub.tips && <div class="form-item-tips">{sub.tips()}</div> }

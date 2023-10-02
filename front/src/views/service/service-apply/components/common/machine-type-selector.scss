@@ -1,0 +1,27 @@
+.selected-block-container {
+  display: flex;
+  align-items: center;
+  
+  .selected-block {
+    background: #f0f5ff;
+    border: 1px solid #a3c5fd;
+    border-radius: 2px;
+    padding: 9px 16px;
+    margin-right: 18.25px;
+  }
+}
+
+.instance-price {
+  color: #ff9c01;
+}
+
+.instance-type-search-seletor-container {
+  display: flex;
+  align-items: center;
+  justify-content: left;
+
+  .instance-type-search-seletor {
+    margin-left: auto;
+  }
+      
+}
