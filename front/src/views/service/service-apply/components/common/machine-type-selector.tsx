@@ -1,5 +1,5 @@
 import http from '@/http';
-import { computed, defineComponent, PropType, reactive, ref, watch } from 'vue';
+import { computed, defineComponent, PropType, reactive, ref, watch, watchEffect } from 'vue';
 import { Button, Dialog, Form, Loading, Radio, SearchSelect, Table } from 'bkui-vue';
 import './machine-type-selector.scss';
 
@@ -32,12 +32,13 @@ export default defineComponent({
     const isDialogShow = ref(false);
     const instanceFamilyTypesList = ref([]);
     const selectedFamilyType = ref('');
+    const resList = ref([]);
     const pagination = reactive({
       start: 0,
       limit: 10,
       count: 100,
     });
-    const searchVal = ref('');
+    const searchVal = ref([]);
     const searchData = [
       {
         name: '内存',
@@ -59,7 +60,7 @@ export default defineComponent({
           checked={checkedInstanceType.value === data.instance_type}
           label={data.instance_type}
         >
-          { cell }
+          {  props.vendor === VendorEnum.TCLOUD ? cell : data.instance_type }
         </Radio>
       </div>);
       },
@@ -85,7 +86,7 @@ export default defineComponent({
     {
       label: '内网带宽',
       field: 'instance_bandwidth',
-      render: ({ cell }: {cell: string}) => `${cell}Gbps`,
+      render: ({ data }: {data: any}) => `${props.vendor === VendorEnum.TCLOUD ? `${data.instance_bandwidth}Gbps` : data.network_performance}`,
     },
     {
       label: '网络收发包',
@@ -140,28 +141,45 @@ export default defineComponent({
         },
       );
       list.value = result.data?.instance_types || [];
-      instanceFamilyTypesList.value = result.data?.instance_family_type_names;
+      instanceFamilyTypesList.value = props.vendor === VendorEnum.TCLOUD
+        ? result.data?.instance_family_type_names
+        : result.data?.instance_families;
 
       loading.value = false;
     });
 
-    const computedList = computed(() => {
-      if (!selectedFamilyType.value) return list.value;
+    watchEffect(() => {
+      if (!selectedFamilyType.value) resList.value = list.value;
       const reg = new RegExp(selectedFamilyType.value);
-      return list.value.filter(({ type_name }) => reg.test(type_name));
+      switch (props.vendor) {
+        case VendorEnum.TCLOUD:
+          resList.value = list.value.filter(({ type_name }) => reg.test(type_name));
+          break;
+        case VendorEnum.GCP:
+        case VendorEnum.AWS:
+        case VendorEnum.AZURE:
+          resList.value = list.value.filter(({ instance_family }) => reg.test(instance_family));
+          break;
+        case VendorEnum.HUAWEI:
+          resList.value = list.value.filter(({ instance_family }) => selectedFamilyType.value = instance_family);
+          break;
+      }
+      console.log(111, searchVal.value);
+      for (const { id, values } of searchVal.value) {
+        console.log(id, values);
+        const searchReg = new RegExp(values?.[0]?.id);
+        resList.value = resList.value.filter(item => searchReg.test(item[id]));
+      }
     });
+
+    watch(
+      () => props.vendor,
+      () => selectedFamilyType.value = '',
+    );
 
     const computedDisabled = computed(() => {
       return !(props.accountId && props.region && props.vendor && props.zone);
     });
-    // watch(
-    //   () => searchVal.value,
-    //   (val) => {
-    //     const arr = val?.values;
-    //     const map = new Map();
-    //     for(let )
-    //   },
-    // );
 
     const handleChange = () => {
       selected.value = checkedInstanceType.value;
@@ -247,7 +265,7 @@ export default defineComponent({
           </Form>
           <Loading loading={loading.value}>
             <Table
-              data={computedList.value}
+              data={resList.value}
               columns={columns}
               pagination={pagination}
             />
