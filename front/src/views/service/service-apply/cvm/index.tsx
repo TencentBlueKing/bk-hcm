@@ -525,8 +525,7 @@ export default defineComponent({
               v-model={formData.cloud_image_id}
               vendor={cond.vendor}
               region={cond.region}
-              machineType={machineType.value}
-              clearable={false} />,
+              machineType={machineType.value}/>,
           },
           {
             label: '系统盘类型',

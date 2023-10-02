@@ -165,7 +165,6 @@ export default defineComponent({
           break;
       }
       for (const { id, values } of searchVal.value) {
-        console.log(id, values);
         const searchReg = new RegExp(values?.[0]?.id);
         resList.value = resList.value.filter(item => searchReg.test(item[id]));
       }
