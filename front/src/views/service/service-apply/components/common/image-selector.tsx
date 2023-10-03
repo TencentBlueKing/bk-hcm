@@ -90,6 +90,7 @@ export default defineComponent({
         () => props.region,
         () => props.machineType,
         () => selectedPlatform.value,
+        () => searchVal.value,
       ], async ([vendor, region, machineType]) => {
         if (!vendor || !region || (vendor === VendorEnum.AZURE && !machineType?.architecture)) {
           list.value = [];
@@ -114,7 +115,7 @@ export default defineComponent({
           // {
           //   field: 'platform',
           //   op: QueryRuleOPEnum.EQ,
-          //   value: selectedPlatform.value,
+          //   value: platform,
           // },
           ],
         };
@@ -161,8 +162,23 @@ export default defineComponent({
             break;
         }
 
+        const searchFilterRules = [];
+        for (const { id, values } of searchVal.value) {
+          searchFilterRules.push({
+            field: id,
+            op: QueryRuleOPEnum.CS,
+            value: values?.[0].id,
+          });
+        }
+
         const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/images/list`, {
-          filter,
+          filter: {
+            op: filter.op,
+            rules: [
+              ...filter.rules,
+              ...searchFilterRules,
+            ],
+          },
           page: {
             count: false,
             start: 0,
