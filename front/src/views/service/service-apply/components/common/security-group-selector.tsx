@@ -102,6 +102,15 @@ export default defineComponent({
       },
     );
 
+    watch(
+      () => isDialogShow.value,
+      (isShow) => {
+        if (!isShow) {
+          securityGroupRulesMap.value = new Map();
+        }
+      },
+    );
+
     return () => (
       <div>
         {selected.value?.length ? (
@@ -110,7 +119,7 @@ export default defineComponent({
             {
               selected.value.map(val => (
                 <>
-                  {val}<br/>
+                  {securityGroupKVMap.value.get(val)}<br/>
                 </>
               ))
             }
@@ -124,7 +133,7 @@ export default defineComponent({
          </div>
         ) : <div/>}
         {selected.value?.length ? (
-          123
+          null
         ) : (
           <Button
             onClick={() => (isDialogShow.value = true)}
