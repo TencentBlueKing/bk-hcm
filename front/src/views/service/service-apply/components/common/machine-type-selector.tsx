@@ -164,9 +164,7 @@ export default defineComponent({
           resList.value = list.value.filter(({ instance_family }) => selectedFamilyType.value = instance_family);
           break;
       }
-      console.log(111, searchVal.value);
       for (const { id, values } of searchVal.value) {
-        console.log(id, values);
         const searchReg = new RegExp(values?.[0]?.id);
         resList.value = resList.value.filter(item => searchReg.test(item[id]));
       }

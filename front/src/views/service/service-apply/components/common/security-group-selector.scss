@@ -1,0 +1,30 @@
+.selected-block-container {
+  display: flex;
+  align-items: center;
+    
+  .selected-block {
+    background: #f0f5ff;
+    border: 1px solid #a3c5fd;
+    border-radius: 2px;
+    padding: 9px 16px;
+    margin-right: 18.25px;
+  }
+}
+
+.security-container {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  column-gap: 24px;
+  margin: 8px;
+
+  .fixed-security-list {
+    width: 30%;
+    left: 24px;
+    position: fixed;
+  }
+}
+
+.security-group-rules-container {
+  height: 60vh;
+  overflow-y: scroll;
+}

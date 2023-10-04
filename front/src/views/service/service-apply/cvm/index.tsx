@@ -30,6 +30,7 @@ import { useRouter } from 'vue-router';
 import VpcPreviewDialog from './children/VpcPreviewDialog';
 import SubnetPreviewDialog, { ISubnetItem } from './children/SubnetPreviewDialog';
 import http from '@/http';
+import { debounce } from 'lodash';
 // import SelectCvmBlock from './children/SelectCvmBlock';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -53,6 +54,7 @@ export default defineComponent({
     const { t } = useI18n();
     const { isResourcePage } = useWhereAmI();
     const router = useRouter();
+    const isSubmitBtnLoading = ref(false);
 
     const dialogState = reactive({
       gcpDataDisk: {
@@ -266,15 +268,15 @@ export default defineComponent({
       return diffs[cond.vendor] || {};
     });
 
-    const formConfigPublicIpAssignedDiff = computed(() => {
-      const diffs = {
-        [VendorEnum.HUAWEI]: {
-          label: '弹性公网IP',
-          content: () => '暂不支持购买，请到EIP中绑定',
-        },
-      };
-      return diffs[cond.vendor] || {};
-    });
+    // const formConfigPublicIpAssignedDiff = computed(() => {
+    //   const diffs = {
+    //     [VendorEnum.HUAWEI]: {
+    //       label: '弹性公网IP',
+    //       content: () => '暂不支持购买，请到EIP中绑定',
+    //     },
+    //   };
+    //   return diffs[cond.vendor] || {};
+    // });
 
     // 当前 vpc下是否有子网列表
     const subnetLength = ref(0);
@@ -289,7 +291,7 @@ export default defineComponent({
 
     watch(
       () => formData,
-      async () => {
+      debounce(async () => {
         const saveData = getSaveData();
         if (![VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum)) return;
         console.log(67676767, formData);
@@ -307,9 +309,11 @@ export default defineComponent({
           || !saveData.password
           || !saveData.confirmed_password
         ) return;
+        isSubmitBtnLoading.value = true;
         const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/cvms/prices/inquiry`, saveData);
         cost.value = res.data?.discount_price || '0';
-      },
+        isSubmitBtnLoading.value = false;
+      }, 300),
       {
         immediate: true,
         deep: true,
@@ -382,46 +386,49 @@ export default defineComponent({
             description: '',
             property: 'cloud_subnet_id',
             content: () => (
-              <div class={'component-with-detail-container'}>
-                <SubnetSelector
-                  class={'component-with-detail'}
-                  v-model={formData.cloud_subnet_id}
-                  bizId={cond.bizId ? cond.bizId : accountStore.bizs}
-                  vpcId={vpcId.value}
-                  vendor={cond.vendor}
-                  region={cond.region}
-                  accountId={cond.cloudAccountId}
-                  zone={formData.zone}
-                  resourceGroup={cond.resourceGroup}
-                  ref={subnetSelectorRef}
-                  clearable={false}
-                  handleChange={handleSubnetDataChange}
-                />
-                <Button
-                  text
-                  theme="primary"
-                  disabled={!formData.cloud_subnet_id}
-                  style={{ marginRight: '-50px' }}
-                  onClick={() => {
-                    isSubnetPreviewDialogShow.value = true;
-                    // if (!formData.cloud_subnet_id) return;
-                    // const url = `/#/business/subnet?cloud_id=${formData.cloud_subnet_id}&bizs=${cond.bizId}`;
-                    // window.open(url, '_blank');
-                  }}>
-                  预览
-                </Button>
-              </div>
+              <>
+                <Checkbox v-model={formData.public_ip_assigned} disabled>自动分配公网IP</Checkbox>
+                <div class={'component-with-detail-container'}>
+                  <SubnetSelector
+                    class={'component-with-detail'}
+                    v-model={formData.cloud_subnet_id}
+                    bizId={cond.bizId ? cond.bizId : accountStore.bizs}
+                    vpcId={vpcId.value}
+                    vendor={cond.vendor}
+                    region={cond.region}
+                    accountId={cond.cloudAccountId}
+                    zone={formData.zone}
+                    resourceGroup={cond.resourceGroup}
+                    ref={subnetSelectorRef}
+                    clearable={false}
+                    handleChange={handleSubnetDataChange}
+                  />
+                  <Button
+                    text
+                    theme="primary"
+                    disabled={!formData.cloud_subnet_id}
+                    style={{ marginRight: '-50px' }}
+                    onClick={() => {
+                      isSubnetPreviewDialogShow.value = true;
+                      // if (!formData.cloud_subnet_id) return;
+                      // const url = `/#/business/subnet?cloud_id=${formData.cloud_subnet_id}&bizs=${cond.bizId}`;
+                      // window.open(url, '_blank');
+                    }}>
+                    预览
+                  </Button>
+                </div>
+              </>
             ),
           },
-          {
-            label: '公网IP',
-            display: ![VendorEnum.GCP, VendorEnum.AZURE].includes(cond.vendor),
-            required: true,
-            description: '',
-            property: 'public_ip_assigned',
-            content: () => <Checkbox v-model={formData.public_ip_assigned} disabled>自动分配公网IP</Checkbox>,
-            ...formConfigPublicIpAssignedDiff.value,
-          },
+          // {
+          //   label: '公网IP',
+          //   display: ![VendorEnum.GCP, VendorEnum.AZURE].includes(cond.vendor),
+          //   required: true,
+          //   description: '',
+          //   property: 'public_ip_assigned',
+          //   content: () => <Checkbox v-model={formData.public_ip_assigned} disabled>自动分配公网IP</Checkbox>,
+          //   ...formConfigPublicIpAssignedDiff.value,
+          // },
           {
             label: '管控区域',
             description: '',
@@ -444,7 +451,7 @@ export default defineComponent({
                   multiple={cond.vendor !== VendorEnum.AZURE}
                   vendor={cond.vendor}
                   vpcId={vpcId.value}
-                  clearable={false}
+                  onSelectedChange={val => formData.cloud_security_group_ids = val}
                 />
                 {
                   isResourcePage
@@ -522,8 +529,7 @@ export default defineComponent({
               v-model={formData.cloud_image_id}
               vendor={cond.vendor}
               region={cond.region}
-              machineType={machineType.value}
-              clearable={false} />,
+              machineType={machineType.value}/>,
           },
           {
             label: '系统盘类型',
@@ -942,7 +948,7 @@ export default defineComponent({
                 cost.value
               }
             </div>
-            <Button theme='primary' loading={submitting.value} disabled={submitDisabled.value} onClick={handleFormSubmit} class={'mr8'}>
+            <Button theme='primary' loading={submitting.value || isSubmitBtnLoading.value} disabled={submitDisabled.value} onClick={handleFormSubmit} class={'mr8'}>
               立即购买
             </Button>
             <Button
