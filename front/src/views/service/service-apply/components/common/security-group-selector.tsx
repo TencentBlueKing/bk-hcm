@@ -11,22 +11,24 @@ const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export default defineComponent({
   props: {
-    modelValue: String as PropType<string>,
+    modelValue: String as PropType<string | string[]>,
     bizId: Number as PropType<number | string>,
     accountId: String as PropType<string>,
     region: String as PropType<string>,
     multiple: Boolean as PropType<boolean>,
     vendor: String as PropType<string>,
     vpcId: String as PropType<string>,
+    onSelectedChange: Function as PropType<(val: string[]) => void>,
   },
   emits: ['update:modelValue'],
-  setup(props, { emit }) {
+  setup(props) {
     const list = ref([]);
     const loading = ref(false);
     const { isServicePage } = useWhereAmI();
     const isDialogShow = ref(false);
     const isScrollLoading = ref(false);
     const securityGroupRulesMap = ref(new Map());
+    const securityGroupKVMap = ref(new Map<string, string>());
     const isRulesTableLoading = ref(false);
 
     const computedDisabled = computed(() => {
@@ -35,14 +37,7 @@ export default defineComponent({
 
     const securityRulesColumns = useColumns('securityCommon', false, props.vendor).columns;
 
-    const selected = computed({
-      get() {
-        return props.modelValue;
-      },
-      set(val) {
-        emit('update:modelValue', val);
-      },
-    });
+    const selected = ref([]);
 
     // const isSelected = computed(() => {
     //   if (selected.value) {
@@ -108,32 +103,28 @@ export default defineComponent({
     );
 
     return () => (
-      // <Select
-      //   filterable={true}
-      //   modelValue={selected.value}
-      //   onUpdate:modelValue={val => selected.value = val}
-      //   multiple={props.multiple}
-      //   loading={loading.value}
-      //   class={isSelected.value && 'security-group-cls'}
-      //   {...{ attrs }}
-      // >
-      //   {
-      //     list.value.map(({ cloud_id, name }) => (
-      //       <Option key={cloud_id} value={cloud_id} label={name}></Option>
-      //     ))
-      //   }
-      // </Select>
-      <div class={'selected-block-container'}>
+      <div>
         {selected.value?.length ? (
-          <div class={'selected-block mr8'}>{selected.value}</div>
-        ) : null}
-        {selected.value?.length ? (
+         <div class={'selected-block-container'}>
+           <div class={'selected-block mr8'}>
+            {
+              selected.value.map(val => (
+                <>
+                  {val}<br/>
+                </>
+              ))
+            }
+          </div>
           <EditLine
             fill='#3A84FF'
             width={13.5}
             height={13.5}
             onClick={() => (isDialogShow.value = true)}
           />
+         </div>
+        ) : <div/>}
+        {selected.value?.length ? (
+          123
         ) : (
           <Button
             onClick={() => (isDialogShow.value = true)}
@@ -146,7 +137,8 @@ export default defineComponent({
           isShow={isDialogShow.value}
           onClosed={() => (isDialogShow.value = false)}
           onConfirm={() => {
-            // selected.value = checkedImageId.value;
+            selected.value = [...Array.from(securityGroupKVMap.value).map(([k, _val]) => k)];
+            props.onSelectedChange(selected.value);
             isDialogShow.value = false;
           }}
           title='选择安全组'
@@ -179,9 +171,11 @@ export default defineComponent({
                           });
                           const arr = res.data?.details || [];
                           securityGroupRulesMap.value.set(data.cloud_id, arr);
+                          securityGroupKVMap.value.set(data.cloud_id, data.name);
                           isRulesTableLoading.value = false;
                         } else {
                           securityGroupRulesMap.value.delete(data.cloud_id);
+                          securityGroupKVMap.value.delete(data.cloud_id);
                         }
                       }}>
                         { cell }
@@ -191,16 +185,17 @@ export default defineComponent({
                 />
               </Loading>
             </div>
-            <div></div>
+            <div class={'security-group-rules-container'}></div>
             <div>
               <Loading loading={isRulesTableLoading.value}>
-                <div>
+                <div class={'security-group-rules-container'}>
                   {
                     Array.from(securityGroupRulesMap.value).map(([key, value]) => <div>
-                      {key}
                       <Card
                         isCollapse
-                        collapseStatus={true}
+                        collapseStatus={false}
+                        title={securityGroupKVMap.value.get(key)}
+                        class={'mb12'}
                       >
                         <Table
                           data={value}

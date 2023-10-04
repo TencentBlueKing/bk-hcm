@@ -18,7 +18,13 @@
   margin: 8px;
 
   .fixed-security-list {
-    width: 33%;
-    left: 0;
+    width: 30%;
+    left: 24px;
+    position: fixed;
   }
+}
+
+.security-group-rules-container {
+  height: 60vh;
+  overflow-y: scroll;
 }
