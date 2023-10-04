@@ -294,6 +294,7 @@ export default defineComponent({
       debounce(async () => {
         const saveData = getSaveData();
         if (![VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum)) return;
+        console.log(67676767, formData);
         if (
           !saveData.account_id
           || !saveData.region
