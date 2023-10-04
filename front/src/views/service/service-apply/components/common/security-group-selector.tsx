@@ -133,6 +133,20 @@ export default defineComponent({
             选择安全组
           </Button>
         )}
+        <div>
+          {
+            list.value.length || computedDisabled.value
+              ? null
+              : (
+                <div>
+                  无可用的安全组,可 <Button theme='primary' text onClick={() => {
+                  const url = '/#/service/service-apply/cvm';
+                  window.open(url, '_blank');
+                }}>新建安全组</Button>
+                </div>
+              )
+          }
+        </div>
         <Dialog
           isShow={isDialogShow.value}
           onClosed={() => (isDialogShow.value = false)}

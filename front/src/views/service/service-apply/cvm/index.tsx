@@ -268,15 +268,15 @@ export default defineComponent({
       return diffs[cond.vendor] || {};
     });
 
-    const formConfigPublicIpAssignedDiff = computed(() => {
-      const diffs = {
-        [VendorEnum.HUAWEI]: {
-          label: '弹性公网IP',
-          content: () => '暂不支持购买，请到EIP中绑定',
-        },
-      };
-      return diffs[cond.vendor] || {};
-    });
+    // const formConfigPublicIpAssignedDiff = computed(() => {
+    //   const diffs = {
+    //     [VendorEnum.HUAWEI]: {
+    //       label: '弹性公网IP',
+    //       content: () => '暂不支持购买，请到EIP中绑定',
+    //     },
+    //   };
+    //   return diffs[cond.vendor] || {};
+    // });
 
     // 当前 vpc下是否有子网列表
     const subnetLength = ref(0);
@@ -385,46 +385,49 @@ export default defineComponent({
             description: '',
             property: 'cloud_subnet_id',
             content: () => (
-              <div class={'component-with-detail-container'}>
-                <SubnetSelector
-                  class={'component-with-detail'}
-                  v-model={formData.cloud_subnet_id}
-                  bizId={cond.bizId ? cond.bizId : accountStore.bizs}
-                  vpcId={vpcId.value}
-                  vendor={cond.vendor}
-                  region={cond.region}
-                  accountId={cond.cloudAccountId}
-                  zone={formData.zone}
-                  resourceGroup={cond.resourceGroup}
-                  ref={subnetSelectorRef}
-                  clearable={false}
-                  handleChange={handleSubnetDataChange}
-                />
-                <Button
-                  text
-                  theme="primary"
-                  disabled={!formData.cloud_subnet_id}
-                  style={{ marginRight: '-50px' }}
-                  onClick={() => {
-                    isSubnetPreviewDialogShow.value = true;
-                    // if (!formData.cloud_subnet_id) return;
-                    // const url = `/#/business/subnet?cloud_id=${formData.cloud_subnet_id}&bizs=${cond.bizId}`;
-                    // window.open(url, '_blank');
-                  }}>
-                  预览
-                </Button>
-              </div>
+              <>
+                <Checkbox v-model={formData.public_ip_assigned} disabled>自动分配公网IP</Checkbox>
+                <div class={'component-with-detail-container'}>
+                  <SubnetSelector
+                    class={'component-with-detail'}
+                    v-model={formData.cloud_subnet_id}
+                    bizId={cond.bizId ? cond.bizId : accountStore.bizs}
+                    vpcId={vpcId.value}
+                    vendor={cond.vendor}
+                    region={cond.region}
+                    accountId={cond.cloudAccountId}
+                    zone={formData.zone}
+                    resourceGroup={cond.resourceGroup}
+                    ref={subnetSelectorRef}
+                    clearable={false}
+                    handleChange={handleSubnetDataChange}
+                  />
+                  <Button
+                    text
+                    theme="primary"
+                    disabled={!formData.cloud_subnet_id}
+                    style={{ marginRight: '-50px' }}
+                    onClick={() => {
+                      isSubnetPreviewDialogShow.value = true;
+                      // if (!formData.cloud_subnet_id) return;
+                      // const url = `/#/business/subnet?cloud_id=${formData.cloud_subnet_id}&bizs=${cond.bizId}`;
+                      // window.open(url, '_blank');
+                    }}>
+                    预览
+                  </Button>
+                </div>
+              </>
             ),
           },
-          {
-            label: '公网IP',
-            display: ![VendorEnum.GCP, VendorEnum.AZURE].includes(cond.vendor),
-            required: true,
-            description: '',
-            property: 'public_ip_assigned',
-            content: () => <Checkbox v-model={formData.public_ip_assigned} disabled>自动分配公网IP</Checkbox>,
-            ...formConfigPublicIpAssignedDiff.value,
-          },
+          // {
+          //   label: '公网IP',
+          //   display: ![VendorEnum.GCP, VendorEnum.AZURE].includes(cond.vendor),
+          //   required: true,
+          //   description: '',
+          //   property: 'public_ip_assigned',
+          //   content: () => <Checkbox v-model={formData.public_ip_assigned} disabled>自动分配公网IP</Checkbox>,
+          //   ...formConfigPublicIpAssignedDiff.value,
+          // },
           {
             label: '管控区域',
             description: '',
