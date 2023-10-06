@@ -5,6 +5,7 @@ import { usePreviousState } from '@/hooks/usePreviousState';
 import { useResourceStore } from '@/store';
 import { AngleDown } from 'bkui-vue/lib/icon';
 import { BkDropdownItem, BkDropdownMenu } from 'bkui-vue/lib/dropdown';
+import { useLocalTable } from '@/hooks/useLocalTable';
 
 export enum Operations {
   None = 'none',
@@ -68,17 +69,17 @@ export default defineComponent({
       return `批量${OperationsMap[operationType.value]}`;
     });
 
-    const computedPreviousOperationType = computed(() => {
-      switch (operationType.value) {
-        case Operations.None:
-          return OperationsMap[previousOperationType.value];
-        case Operations.Reboot:
-          return OperationsMap[Operations.Close];
-        case Operations.Recycle:
-          return OperationsMap[Operations.Reboot];
-      }
-      return OperationsMap[operationType.value];
-    });
+    // const computedPreviousOperationType = computed(() => {
+    //   switch (operationType.value) {
+    //     case Operations.None:
+    //       return OperationsMap[previousOperationType.value];
+    //     case Operations.Reboot:
+    //       return OperationsMap[Operations.Close];
+    //     case Operations.Recycle:
+    //       return OperationsMap[Operations.Reboot];
+    //   }
+    //   return OperationsMap[operationType.value];
+    // });
 
     /**
      * 仅开机状态的主机能：关机、重启、回收
@@ -116,75 +117,75 @@ export default defineComponent({
       },
     );
 
-    const computedContent = computed(() => {
-      const allHostsNum = props.selections.length;
-      const targetHostsNum = targetHost.value.length;
-      const targetOperationName = OperationsMap[operationType.value];
-      let oppositeOperationName = '';
-      switch (operationType.value) {
-        case Operations.Open: {
-          oppositeOperationName = OperationsMap[Operations.Close];
-          break;
-        }
-        case Operations.Close:
-        case Operations.Reboot: {
-          oppositeOperationName = OperationsMap[Operations.Open];
-          break;
-        }
-        case Operations.Recycle: {
-          oppositeOperationName = `${OperationsMap[Operations.Open]}、${OperationsMap[Operations.Close]}`;
-          break;
-        }
-      }
-      if (targetHostsNum === 0) {
-        return (
-          <p>
-            您已选择了 {allHostsNum} 台主机进行
-            {targetOperationName}操作, 其中
-            <span class={'host_operations_blue_txt'}> {allHostsNum} </span>
-            台是已{computedPreviousOperationType.value}的，不支持对其操作。
-            <br />
-            <span class={'host_operations_red_txt'}>
-              由于所选主机均处于{targetOperationName}
-              状态,无法进行操作。
-            </span>
-          </p>
-        );
-      }
-      if (targetHostsNum === allHostsNum) {
-        return (
-          <p>
-            您已选择了 {allHostsNum} 台主机进行
-            {targetOperationName}操作,本次操作将对
-            <span class={'host_operations_blue_txt'}> {allHostsNum} </span>
-            台处于{oppositeOperationName}
-            状态的主机进行{targetOperationName}操作。
-            <br />
-            <span class={'host_operations_red_txt'}>
-              请确认您所选择的目标是正确的，该操作将对主机进行
-              {targetOperationName}操作。
-            </span>
-          </p>
-        );
-      }
-      if (allHostsNum > targetHostsNum) {
-        return (
-          <p>
-            您已选择了 {allHostsNum} 台主机进行
-            {targetOperationName}。本次操作将对
-            <span class={'host_operations_blue_txt'}> {targetHostsNum} </span>
-            台处于{oppositeOperationName}状态的主机进行
-            {targetOperationName}，其余主机的状态不支持{targetOperationName}。
-            <br />
-            <span class={'host_operations_red_txt'}>
-              请确认您所选择的目标是正确的,该操作将对主机进行
-              {targetOperationName}操作
-            </span>
-          </p>
-        );
-      }
-      return '';
-    });
+    // const computedContent = computed(() => {
+    //   const allHostsNum = props.selections.length;
+    //   const targetHostsNum = targetHost.value.length;
+    //   const targetOperationName = OperationsMap[operationType.value];
+    //   let oppositeOperationName = '';
+    //   switch (operationType.value) {
+    //     case Operations.Open: {
+    //       oppositeOperationName = OperationsMap[Operations.Close];
+    //       break;
+    //     }
+    //     case Operations.Close:
+    //     case Operations.Reboot: {
+    //       oppositeOperationName = OperationsMap[Operations.Open];
+    //       break;
+    //     }
+    //     case Operations.Recycle: {
+    //       oppositeOperationName = `${OperationsMap[Operations.Open]}、${OperationsMap[Operations.Close]}`;
+    //       break;
+    //     }
+    //   }
+    //   if (targetHostsNum === 0) {
+    //     return (
+    //       <p>
+    //         您已选择了 {allHostsNum} 台主机进行
+    //         {targetOperationName}操作, 其中
+    //         <span class={'host_operations_blue_txt'}> {allHostsNum} </span>
+    //         台是已{computedPreviousOperationType.value}的，不支持对其操作。
+    //         <br />
+    //         <span class={'host_operations_red_txt'}>
+    //           由于所选主机均处于{targetOperationName}
+    //           状态,无法进行操作。
+    //         </span>
+    //       </p>
+    //     );
+    //   }
+    //   if (targetHostsNum === allHostsNum) {
+    //     return (
+    //       <p>
+    //         您已选择了 {allHostsNum} 台主机进行
+    //         {targetOperationName}操作,本次操作将对
+    //         <span class={'host_operations_blue_txt'}> {allHostsNum} </span>
+    //         台处于{oppositeOperationName}
+    //         状态的主机进行{targetOperationName}操作。
+    //         <br />
+    //         <span class={'host_operations_red_txt'}>
+    //           请确认您所选择的目标是正确的，该操作将对主机进行
+    //           {targetOperationName}操作。
+    //         </span>
+    //       </p>
+    //     );
+    //   }
+    //   if (allHostsNum > targetHostsNum) {
+    //     return (
+    //       <p>
+    //         您已选择了 {allHostsNum} 台主机进行
+    //         {targetOperationName}。本次操作将对
+    //         <span class={'host_operations_blue_txt'}> {targetHostsNum} </span>
+    //         台处于{oppositeOperationName}状态的主机进行
+    //         {targetOperationName}，其余主机的状态不支持{targetOperationName}。
+    //         <br />
+    //         <span class={'host_operations_red_txt'}>
+    //           请确认您所选择的目标是正确的,该操作将对主机进行
+    //           {targetOperationName}操作
+    //         </span>
+    //       </p>
+    //     );
+    //   }
+    //   return '';
+    // });
 
     const handleConfirm = async () => {
       try {
@@ -217,6 +218,64 @@ export default defineComponent({
     };
 
     const operationsDisabled = computed(() => !props.selections.length);
+
+    const { CommonLocalTable } = useLocalTable({
+      data: props.selections,
+      columns: [
+        {
+          field: '_private_ip',
+          label: '内网IP',
+          render: ({ data }) => ([...data.private_ipv4_addresses, ...data.private_ipv6_addresses].join(',') || '--'),
+        },
+        {
+          field: '_public_ip',
+          label: '外网IP',
+          render: ({ data }) => ([...data.public_ipv4_addresses, ...data.public_ipv6_addresses].join(',') || '--'),
+        },
+        {
+          field: 'name',
+          label: '主机名称',
+        },
+        {
+          field: 'region',
+          label: '地域',
+        },
+        {
+          field: 'zone',
+          label: '可用区',
+        },
+        {
+          field: 'status',
+          label: '状态',
+        },
+        {
+          field: 'machine_type',
+          label: '机型',
+        },
+        {
+          field: '_with_disk',
+          label: '云硬盘随主机回收',
+        },
+        {
+          field: '_with_eip',
+          label: '弹性 IP 随主机回收',
+        },
+      ],
+      searchData: [
+        {
+          name: '地域',
+          id: 'region',
+        },
+        {
+          name: '可用区',
+          id: 'zone',
+        },
+        {
+          name: '状态',
+          id: 'status',
+        },
+      ],
+    });
 
     return () => (
       <>
@@ -252,10 +311,12 @@ export default defineComponent({
           onConfirm={handleConfirm}
           title={computedTitle.value}
           ref={dialogRef}
-          width={520}
+          width={1200}
           closeIcon={!isLoading.value}>
           {{
-            default: <p>{computedContent.value}</p>,
+            default: () => (
+             <CommonLocalTable/>
+            ),
             footer: (
               <>
                 <Button
