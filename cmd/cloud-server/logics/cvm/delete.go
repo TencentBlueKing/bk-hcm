@@ -45,6 +45,7 @@ import (
 // BatchDeleteCvm batch delete cvm.
 func (c *cvm) BatchDeleteCvm(kt *kit.Kit, basicInfoMap map[string]types.CloudResourceBasicInfo) (
 	*core.BatchOperateResult, error) {
+
 	if len(basicInfoMap) == 0 {
 		return nil, nil
 	}
@@ -190,12 +191,12 @@ func (c *cvm) DestroyRecycledCvm(kt *kit.Kit, cvmBasicInfo map[string]types.Clou
 		if detailStr, ok := record.Detail.(string); ok {
 			recycleDetail := corerecyclerecord.CvmRecycleDetail{}
 			if err := json.UnmarshalFromString(detailStr, &recycleDetail); err != nil {
-				logs.Errorf("fail to unmarshal cvm recycle detail")
+				logs.Errorf("fail to unmarshal cvm recycle detail, err: %v, rid: %s", err, kt.Rid)
 				return nil, err
 			}
 			cvmRecycleDetails[record.ResID] = recycleDetail
 		} else {
-			return nil, fmt.Errorf("wrong type of recycle detail, got: %t, need string", record.Detail)
+			return nil, fmt.Errorf("wrong type of recycle detail, got: %T, need string", record.Detail)
 		}
 	}
 
