@@ -24,28 +24,28 @@ POST /api/v1/cloud/cvms/list
 
 #### rules[n] （详情请看 rules 表达式说明）
 
-| 参数名称  | 参数类型        | 必选  | 描述                                         |
-|-------|-------------|-----|--------------------------------------------|
-| field | string      | 是   | 查询条件Field名称，具体可使用的用于查询的字段及其说明请看下面 - 查询参数介绍 |
-| op    | enum string | 是   | 操作符（枚举值：eq、neq、gt、gte、le、lte、in、nin、cs、cis）       |
-| value | 可变类型        | 是   | 查询条件Value值                                 |
+| 参数名称  | 参数类型        | 必选 | 描述                                          |
+|-------|-------------|----|---------------------------------------------|
+| field | string      | 是  | 查询条件Field名称，具体可使用的用于查询的字段及其说明请看下面 - 查询参数介绍  |
+| op    | enum string | 是  | 操作符（枚举值：eq、neq、gt、gte、le、lte、in、nin、cs、cis） |
+| value | 可变类型        | 是  | 查询条件Value值                                  |
 
 ##### rules 表达式说明：
 
 ##### 1. 操作符
 
-| 操作符 | 描述                                        | 操作符的value支持的数据类型                             |
-|-----|-------------------------------------------|----------------------------------------------|
-| eq  | 等于。不能为空字符串                                | boolean, numeric, string                     |
-| neq | 不等。不能为空字符串                                | boolean, numeric, string                     |
+| 操作符 | 描述                                        | 操作符的value支持的数据类型                              |
+|-----|-------------------------------------------|-----------------------------------------------|
+| eq  | 等于。不能为空字符串                                | boolean, numeric, string                      |
+| neq | 不等。不能为空字符串                                | boolean, numeric, string                      |
 | gt  | 大于                                        | numeric，时间类型为字符串（标准格式："2006-01-02T15:04:05Z"） |
 | gte | 大于等于                                      | numeric，时间类型为字符串（标准格式："2006-01-02T15:04:05Z"） |
 | lt  | 小于                                        | numeric，时间类型为字符串（标准格式："2006-01-02T15:04:05Z"） |
 | lte | 小于等于                                      | numeric，时间类型为字符串（标准格式："2006-01-02T15:04:05Z"） |
-| in  | 在给定的数组范围中。value数组中的元素最多设置100个，数组中至少有一个元素  | boolean, numeric, string                     |
-| nin | 不在给定的数组范围中。value数组中的元素最多设置100个，数组中至少有一个元素 | boolean, numeric, string                     |
-| cs  | 模糊查询，区分大小写                                | string                                       |
-| cis | 模糊查询，不区分大小写                               | string                                       |
+| in  | 在给定的数组范围中。value数组中的元素最多设置100个，数组中至少有一个元素  | boolean, numeric, string                      |
+| nin | 不在给定的数组范围中。value数组中的元素最多设置100个，数组中至少有一个元素 | boolean, numeric, string                      |
+| cs  | 模糊查询，区分大小写                                | string                                        |
+| cis | 模糊查询，不区分大小写                               | string                                        |
 
 ##### 2. 协议示例
 
@@ -210,6 +210,7 @@ POST /api/v1/cloud/cvms/list
         "cloud_created_time": "2022-01-20",
         "cloud_launched_time": "2022-01-21",
         "cloud_expired_time": "2022-02-22",
+        "recycle_status": "recycling",
         "creator": "Jim",
         "reviser": "Jim",
         "created_at": "2023-02-12T14:47:39Z",
@@ -274,6 +275,7 @@ POST /api/v1/cloud/cvms/list
 | cloud_created_time     | string       | Cvm在云上创建时间，标准格式：2006-01-02T15:04:05Z                           |
 | cloud_launched_time    | string       | Cvm启动时间，标准格式：2006-01-02T15:04:05Z                              |
 | cloud_expired_time     | string       | Cvm过期时间，标准格式：2006-01-02T15:04:05Z                              |
+| recycle_status      | string | 回收状态                                 |
 | creator                | string       | 创建者                                  |
 | reviser                | string       | 修改者                                  |
 | created_at             | string       | 创建时间，标准格式：2006-01-02T15:04:05Z                                 |

@@ -44,6 +44,7 @@ import (
 	cloudcoreroutetable "hcm/pkg/api/core/cloud/route-table"
 	coresubaccount "hcm/pkg/api/core/cloud/sub-account"
 	corezone "hcm/pkg/api/core/cloud/zone"
+	corerecyclerecord "hcm/pkg/api/core/recycle-record"
 	"hcm/pkg/api/data-service/cloud/disk"
 	dataeip "hcm/pkg/api/data-service/cloud/eip"
 )
@@ -130,7 +131,10 @@ type CloudResType interface {
 		account.HuaWeiAccount |
 		account.AwsAccount |
 		account.AzureAccount |
-		account.GcpAccount
+		account.GcpAccount |
+
+		corerecyclerecord.EipBindInfo |
+		corerecyclerecord.DiskAttachInfo
 }
 
 type DBResType interface {
@@ -213,7 +217,10 @@ type DBResType interface {
 		coresubaccount.SubAccount[coresubaccount.HuaWeiExtension] |
 		coresubaccount.SubAccount[coresubaccount.AwsExtension] |
 		coresubaccount.SubAccount[coresubaccount.AzureExtension] |
-		coresubaccount.SubAccount[coresubaccount.GcpExtension]
+		coresubaccount.SubAccount[coresubaccount.GcpExtension] |
+
+		corerecyclerecord.EipBindInfo |
+		corerecyclerecord.DiskAttachInfo
 }
 
 // Diff 对比云和db资源，划分出新增数据，更新数据，删除数据。

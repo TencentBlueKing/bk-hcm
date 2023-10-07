@@ -72,7 +72,7 @@ func BizValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 	// 恢复或删除已回收资源, 要求资源必须在已回收状态下
 	if opt.Action == meta.DeleteRecycled || opt.Action == meta.Recover {
 		if len(notRecycledIDS) > 0 {
-			return errf.Newf(errf.InvalidParameter, "resources(ids: %+v) are not in recycle bin", recycledIDs)
+			return errf.Newf(errf.InvalidParameter, "resources(ids: %+v) are not in recycle bin", notRecycledIDS)
 		}
 	} else {
 		// 其他操作要求资源不能在回收状态下

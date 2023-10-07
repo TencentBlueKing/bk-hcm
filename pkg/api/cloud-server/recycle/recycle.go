@@ -40,29 +40,11 @@ type RecycleRecordListResult struct {
 	Details []recyclerecord.RecycleRecord `json:"details"`
 }
 
-// DiskAttachInfo 磁盘挂载信息
-type DiskAttachInfo struct {
-	Err         error
-	DiskID      string `json:"disk_id,omitempty"`
-	CachingType string `json:"caching_type,omitempty"`
-	DeviceName  string `json:"device_name,omitempty"`
-}
-
-// EipBindInfo eip 绑定信息
-type EipBindInfo struct {
-	EipID string `json:"eip_id"`
-	NicID string `json:"nic_id"`
-	Err   error
-}
-
-// CvmRecycleDetail Cvm回收详情，会在数据库中保存回收时的快照
-type CvmRecycleDetail struct {
-	WithDisk  bool              `json:"with_disk"`
-	WithEip   bool              `json:"with_eip"`
-	DiskList  []*DiskAttachInfo `json:"disk_list"`
-	EipList   []*EipBindInfo    `json:"eip_list"`
-	FailedAt  enumor.CloudResourceType
-	Vendor    enumor.Vendor
-	CvmID     string
-	AccountID string
+// CvmDetail Cvm回收详情，与数据库中的状态多了一快照
+type CvmDetail struct {
+	FailedAt                       enumor.CloudResourceType
+	Vendor                         enumor.Vendor
+	CvmID                          string
+	AccountID                      string
+	recyclerecord.CvmRecycleDetail `json:",inline"`
 }

@@ -57,7 +57,7 @@ func InitRecycleRecordService(cap *capability.Capability) {
 	h.Add("BatchRecoverCloudResource", "POST", "/cloud/resources/batch/recover", svc.BatchRecoverCloudResource)
 	h.Add("ListRecycleRecord", "POST", "/recycle_records/list", svc.ListRecycleRecord)
 	h.Add("BatchUpdateRecycleRecord", "PATCH", "/recycle_records/batch", svc.BatchUpdateRecycleRecord)
-	h.Add("BatchUpdateRecycleRecord", "PATCH", "/recycle_records/recycle_status/batch",
+	h.Add("BatchUpdateRecycleStatus", "PATCH", "/recycle_records/recycle_status/batch",
 		svc.BatchUpdateRecycleStatus)
 
 	h.Load(cap.WebService)
@@ -343,6 +343,13 @@ func (svc *recycleRecordSvc) BatchUpdateRecycleRecord(cts *rest.Contexts) (inter
 // BatchUpdateRecycleStatus 批量更新资源的回收状态字段
 func (svc *recycleRecordSvc) BatchUpdateRecycleStatus(cts *rest.Contexts) (reply interface{}, err error) {
 	req := new(protodata.BatchUpdateRecycleStatusReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		updateResOpt := &protodao.ResourceUpdateOptions{ResType: req.ResType, IDs: req.IDs,
 			Status: string(req.RecycleStatus)}

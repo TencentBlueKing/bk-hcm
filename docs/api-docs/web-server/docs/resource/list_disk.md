@@ -128,46 +128,48 @@ POST /api/v1/cloud/disks/list
 #### 返回参数示例
 ```json
 {
-    "code": 0,
-    "message": "",
-    "data": {
-        "details": [
-            {
-                "id": "00000002",
-                "vendor": "tcloud",
-                "account_id": "abc",
-                "name": "ab222c2222221",
-                "bk_biz_id": 0,
-                "cloud_id": "disk-123",
-                "region": "abc",
-                "zone": "abc",
-                "disk_size": 500,
-                "disk_type": "ssd",
-                "memo": "abc",
-                "creator": "james",
-                "reviser": "james",
-                "created_at": "2023-01-16T03:30:41Z",
-                "updated_at": "2023-01-16T08:39:28Z"
-            },
-            {
-                "id": "00000006",
-                "vendor": "tcloud",
-                "account_id": "abc",
-                "name": "ab222",
-                "bk_biz_id": 0,
-                "cloud_id": "disk-123",
-                "region": "abc",
-                "zone": "abc",
-                "disk_size": 500,
-                "disk_type": "ssd",
-                "memo": "abc",
-                "creator": "james",
-                "reviser": "james",
-                "created_at": "2023-01-16T06:56:13Z",
-                "updated_at": "2023-01-16T06:56:13Z"
-            }
-        ]
-    }
+  "code": 0,
+  "message": "",
+  "data": {
+    "details": [
+      {
+        "id": "00000002",
+        "vendor": "tcloud",
+        "account_id": "abc",
+        "name": "ab222c2222221",
+        "bk_biz_id": 0,
+        "cloud_id": "disk-123",
+        "region": "abc",
+        "zone": "abc",
+        "disk_size": 500,
+        "disk_type": "ssd",
+        "memo": "abc",
+        "recycle_status": "recycling",
+        "creator": "james",
+        "reviser": "james",
+        "created_at": "2023-01-16T03:30:41Z",
+        "updated_at": "2023-01-16T08:39:28Z"
+      },
+      {
+        "id": "00000006",
+        "vendor": "tcloud",
+        "account_id": "abc",
+        "name": "ab222",
+        "bk_biz_id": 0,
+        "cloud_id": "disk-123",
+        "region": "abc",
+        "zone": "abc",
+        "disk_size": 500,
+        "disk_type": "ssd",
+        "recycle_status": "recycling",
+        "memo": "abc",
+        "creator": "james",
+        "reviser": "james",
+        "created_at": "2023-01-16T06:56:13Z",
+        "updated_at": "2023-01-16T06:56:13Z"
+      }
+    ]
+  }
 }
 ```
 ### 响应参数说明
@@ -196,6 +198,7 @@ POST /api/v1/cloud/disks/list
 | zone       | string  | 可用区                            |
 | disk_size  | uint    | 云盘大小                           |
 | disk_type  | string  | 云盘类型                           |
+| recycle_status      | string | 回收状态                                 |
 | memo       | string  | 云盘备注                           | 
 | creator    | string  | 创建者                            |
 | reviser    | string  | 更新者                            |

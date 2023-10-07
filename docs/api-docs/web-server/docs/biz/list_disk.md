@@ -98,6 +98,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/disks/list
 | name         | string   | 云盘名称                           |
 | memo         | string   | 备注                             |
 | bk_biz_id    | int64    | 业务ID，-1表示没有分配到业务               |
+| recycle_status      | string | 回收状态                                 |
 | creator      | string   | 创建者                            |
 | reviser      | string   | 更新者                            |
 | create_at    | string   | 创建时间，标准格式：2006-01-02T15:04:05Z |
@@ -129,46 +130,48 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/disks/list
 #### 返回参数示例
 ```json
 {
-    "code": 0,
-    "message": "",
-    "data": {
-        "details": [
-            {
-                "id": "00000002",
-                "vendor": "tcloud",
-                "account_id": "abc",
-                "name": "ab222c2222221",
-                "bk_biz_id": 0,
-                "cloud_id": "disk-123",
-                "region": "abc",
-                "zone": "abc",
-                "disk_size": 500,
-                "disk_type": "ssd",
-                "memo": "abc",
-                "creator": "james",
-                "reviser": "james",
-                "created_at": "2023-01-16T03:30:41Z",
-                "updated_at": "2023-01-16T08:39:28Z"
-            },
-            {
-                "id": "00000006",
-                "vendor": "tcloud",
-                "account_id": "abc",
-                "name": "ab222",
-                "bk_biz_id": 0,
-                "cloud_id": "disk-123",
-                "region": "abc",
-                "zone": "abc",
-                "disk_size": 500,
-                "disk_type": "ssd",
-                "memo": "abc",
-                "creator": "james",
-                "reviser": "james",
-                "created_at": "2023-01-16T06:56:13Z",
-                "updated_at": "2023-01-16T06:56:13Z"
-            }
-        ]
-    }
+  "code": 0,
+  "message": "",
+  "data": {
+    "details": [
+      {
+        "id": "00000002",
+        "vendor": "tcloud",
+        "account_id": "abc",
+        "name": "ab222c2222221",
+        "bk_biz_id": 0,
+        "cloud_id": "disk-123",
+        "region": "abc",
+        "zone": "abc",
+        "disk_size": 500,
+        "disk_type": "ssd",
+        "memo": "abc",
+        "recycle_status": "recycling",
+        "creator": "james",
+        "reviser": "james",
+        "created_at": "2023-01-16T03:30:41Z",
+        "updated_at": "2023-01-16T08:39:28Z"
+      },
+      {
+        "id": "00000006",
+        "vendor": "tcloud",
+        "account_id": "abc",
+        "name": "ab222",
+        "bk_biz_id": 0,
+        "cloud_id": "disk-123",
+        "region": "abc",
+        "zone": "abc",
+        "disk_size": 500,
+        "disk_type": "ssd",
+        "memo": "abc",
+        "recycle_status": "recycling",
+        "creator": "james",
+        "reviser": "james",
+        "created_at": "2023-01-16T06:56:13Z",
+        "updated_at": "2023-01-16T06:56:13Z"
+      }
+    ]
+  }
 }
 ```
 ### 响应参数说明
