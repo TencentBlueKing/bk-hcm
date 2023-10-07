@@ -170,3 +170,27 @@ func (a *AccountClient) ListAuthPolicy(kt *kit.Kit, req *hsaccount.ListTCloudAut
 
 	return resp.Data, nil
 }
+
+// GetResCountBySecret get account res count by secret
+func (a *AccountClient) GetResCountBySecret(kt *kit.Kit, request *cloud.TCloudSecret) (*hsaccount.ResCount, error) {
+
+	resp := new(hsaccount.ResCountResp)
+
+	err := a.client.Post().
+		WithContext(kt.Ctx).
+		Body(request).
+		SubResourcef("/accounts/res_counts/by_secrets").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}

@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/api/hc-service/account"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -76,6 +77,30 @@ func (a *AccountClient) GetBySecret(ctx context.Context, h http.Header,
 		Body(req).
 		SubResourcef("/accounts/secret").
 		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// GetResCountBySecret get account res count by secret
+func (a *AccountClient) GetResCountBySecret(kt *kit.Kit, request *cloud.AwsSecret) (*hsaccount.ResCount, error) {
+
+	resp := new(hsaccount.ResCountResp)
+
+	err := a.client.Post().
+		WithContext(kt.Ctx).
+		Body(request).
+		SubResourcef("/accounts/res_counts/by_secrets").
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 

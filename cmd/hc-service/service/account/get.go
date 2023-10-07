@@ -486,12 +486,13 @@ func (svc *service) TCloudGetResCountBySecret(cts *rest.Contexts) (interface{}, 
 	if globalErr != nil {
 		return nil, globalErr
 	}
-	resultSlice := make([]hsaccount.ResCountItem, 0, len(counterMap)+1)
-	resultSlice = append(resultSlice, hsaccount.ResCountItem{Type: enumor.SubAccountCloudResType, Count: accountCount})
+	result := &hsaccount.ResCount{Items: make([]*hsaccount.ResCountItem, 0, len(counterMap)+1)}
+	result.Items = append(result.Items,
+		&hsaccount.ResCountItem{Type: enumor.SubAccountCloudResType, Count: accountCount})
 	for resourceType, count := range resultMap {
-		resultSlice = append(resultSlice, hsaccount.ResCountItem{Type: resourceType, Count: *count})
+		result.Items = append(result.Items, &hsaccount.ResCountItem{Type: resourceType, Count: *count})
 	}
-	return resultSlice, nil
+	return result, nil
 }
 
 // AwsGetResCountBySecret 根据秘钥获取云上资源数量
@@ -569,11 +570,11 @@ func (svc *service) AwsGetResCountBySecret(cts *rest.Contexts) (interface{}, err
 	if globalErr != nil {
 		return nil, globalErr
 	}
-	resultSlice := make([]hsaccount.ResCountItem, 0, len(counterMap))
+	result := &hsaccount.ResCount{Items: make([]*hsaccount.ResCountItem, 0, len(counterMap)+1)}
 	for resourceType, count := range resultMap {
-		resultSlice = append(resultSlice, hsaccount.ResCountItem{Type: resourceType, Count: *count})
+		result.Items = append(result.Items, &hsaccount.ResCountItem{Type: resourceType, Count: *count})
 	}
-	return resultSlice, nil
+	return result, nil
 }
 
 func shallowCopyKitWithCancel(kt *kit.Kit) (*kit.Kit, func()) {
