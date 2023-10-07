@@ -40,6 +40,7 @@ import (
 	"hcm/pkg/serviced"
 	"hcm/pkg/thirdparty/esb"
 	"hcm/pkg/tools/retry"
+	"hcm/pkg/tools/slice"
 	"hcm/pkg/tools/times"
 )
 
@@ -80,7 +81,10 @@ func (r *recycle) recycleTiming(resType enumor.CloudResourceType, worker recycle
 		expr, err := tools.And(tools.EqualWithOpExpression(filter.And,
 			map[string]interface{}{"res_type": resType, "status": enumor.WaitingRecycleRecordStatus}),
 			&filter.AtomRule{Field: "recycled_at", Op: filter.LessThanEqual.Factory(),
-				Value: times.ConvStdTimeFormat(time.Now())})
+				Value: times.ConvStdTimeFormat(time.Now())},
+			// 不处理关联资源回收任务
+			&filter.AtomRule{Field: "recycle_type", Op: filter.NotEqual.Factory(), Value: enumor.RecycleTypeRelated},
+		)
 		if err != nil {
 			time.Sleep(time.Minute)
 			continue
@@ -90,7 +94,7 @@ func (r *recycle) recycleTiming(resType enumor.CloudResourceType, worker recycle
 			Page:   core.NewDefaultBasePage(),
 			Fields: []string{"id", "res_id", "bk_biz_id"},
 		}
-		recordRes, err := r.client.DataService().Global.RecycleRecord.ListRecycleRecord(kt.Ctx, kt.Header(), listReq)
+		recordRes, err := r.client.DataService().Global.RecycleRecord.ListRecycleRecord(kt, listReq)
 		if err != nil {
 			logs.Errorf("list %s resource recycle record failed, err: %v, rid: %s", resType, err, kt.Rid)
 			time.Sleep(time.Minute)
@@ -117,10 +121,7 @@ func (r *recycle) recycleTiming(resType enumor.CloudResourceType, worker recycle
 		basicInfoMap, err := r.client.DataService().Global.Cloud.ListResourceBasicInfo(kt.Ctx, kt.Header(), infoReq)
 		if err != nil {
 			if ef := errf.Error(err); ef.Code == errf.RecordNotFound {
-				recordIDs := make([]string, 0, len(recordRes.Details))
-				for _, record := range recordRes.Details {
-					recordIDs = append(recordIDs, record.ID)
-				}
+				recordIDs := slice.Map(recordRes.Details, func(r recyclerecord.RecycleRecord) string { return r.ID })
 				logs.Errorf("recycle %s res(ids: %+v) all don't exist, mark all as fail, reason: %v, rid: %s",
 					resType, ids, err, kt.Rid)
 				r.markFailed(kt, err, recordIDs)
@@ -178,7 +179,7 @@ func (r *recycle) execWorker(kt *kit.Kit, worker recycleWorker, record recyclere
 		ID:     record.ID,
 		Status: enumor.RecycledRecycleRecordStatus,
 	}}}
-	err = r.client.DataService().Global.RecycleRecord.BatchUpdateRecycleRecord(kt.Ctx, kt.Header(), req)
+	err = r.client.DataService().Global.RecycleRecord.BatchUpdateRecycleRecord(kt, req)
 	if err != nil {
 		logs.Errorf("[%s] update recycle record %d failed, err: %v, rid: %s",
 			constant.RecycleUpdateRecordFailed, record.ID, err, kt.Rid)
@@ -214,7 +215,7 @@ func (r *recycle) markFailed(kt *kit.Kit, err error, recordIDs []string) {
 		}
 	}
 	req := &rr.BatchUpdateReq{Data: updateReq}
-	err = r.client.DataService().Global.RecycleRecord.BatchUpdateRecycleRecord(kt.Ctx, kt.Header(), req)
+	err = r.client.DataService().Global.RecycleRecord.BatchUpdateRecycleRecord(kt, req)
 	if err != nil {
 		logs.Errorf("[%s] update recycle record (%+v) failed, err: %v, rid: %s",
 			constant.RecycleUpdateRecordFailed, recordIDs, err, kt.Rid)

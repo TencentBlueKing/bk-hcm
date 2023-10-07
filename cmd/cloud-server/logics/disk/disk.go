@@ -156,7 +156,7 @@ func (d *disk) DeleteRecycledDisk(kt *kit.Kit, basicInfoMap map[string]types.Clo
 		Filter: tools.ContainersExpression("disk_id", ids),
 		Page:   &core.BasePage{Count: true},
 	}
-	relRes, err := d.client.DataService().Global.ListDiskCvmRel(kt.Ctx, kt.Header(), relReq)
+	relRes, err := d.client.DataService().Global.ListDiskCvmRel(kt, relReq)
 	if err != nil {
 		return nil, err
 	}
@@ -198,6 +198,9 @@ func (d *disk) fillAwsDisks(kt *kit.Kit, cvmDetails []*recycle.CvmDetail) error 
 			return errf.Newf(errf.Unknown, "[Aws] no attachment found in cvm related disk, err: %v, cvmId: %v, rid:%s",
 				err, rel.CvmID, kt.Rid)
 		}
+		if rel.IsSystemDisk {
+			continue
+		}
 		cvmDiskMap[rel.CvmID] = append(cvmDiskMap[rel.CvmID], recyclerecord.DiskAttachInfo{
 			DiskID:     rel.DiskExtResult.ID,
 			DeviceName: converter.PtrToVal(rel.Extension.Attachment[0].DeviceName),
@@ -224,6 +227,9 @@ func (d *disk) fillAzureDisk(kt *kit.Kit, cvmDetails []*recycle.CvmDetail) error
 		return err
 	}
 	for _, rel := range relWithCvm {
+		if rel.IsSystemDisk {
+			continue
+		}
 		cvmDiskMap[rel.CvmID] = append(cvmDiskMap[rel.CvmID], recyclerecord.DiskAttachInfo{
 			DiskID: rel.DiskExtResult.ID,
 			// TODO:!!! 没有保存caching type，难以重新attach，暂时先按None恢复,-> 在vm 属性的storageProfile里面
@@ -253,6 +259,9 @@ func (d *disk) fillDisk(kt *kit.Kit, vendor enumor.Vendor, cvmDetails []*recycle
 	}
 
 	for _, rel := range relWithCvm {
+		if rel.IsSystemDisk {
+			continue
+		}
 		cvmDiskMap[rel.CvmID] = append(cvmDiskMap[rel.CvmID], recyclerecord.DiskAttachInfo{DiskID: rel.DiskResult.ID})
 	}
 
@@ -274,8 +283,7 @@ func (d *disk) BatchGetDiskInfo(kt *kit.Kit, cvmDetail map[string]*recycle.CvmDe
 		return errf.Newf(errf.InvalidParameter, "cvmIDs should <= %d", constant.BatchOperationMaxLimit)
 	}
 
-	infoByVendor := classifier.ClassifyMap(cvmDetail,
-		func(v *recycle.CvmDetail) enumor.Vendor { return v.Vendor })
+	infoByVendor := classifier.ClassifyMap(cvmDetail, func(v *recycle.CvmDetail) enumor.Vendor { return v.Vendor })
 	// Aws 和Azure 参数不一样，需要通过with ext 获取特定参数
 	for vendor, infos := range infoByVendor {
 

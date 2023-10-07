@@ -34,6 +34,7 @@ type RecycleRecord struct {
 type BaseRecycleRecord struct {
 	ID            string                     `json:"id"`
 	TaskID        string                     `json:"task_id"`
+	RecycleType   enumor.RecycleType         `json:"recycle_type"`
 	Vendor        enumor.Vendor              `json:"vendor"`
 	ResType       enumor.CloudResourceType   `json:"res_type"`
 	ResID         string                     `json:"res_id"`

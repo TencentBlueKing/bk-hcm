@@ -67,7 +67,7 @@ type recycleRecordSvc struct {
 	dao dao.Set
 }
 
-// BatchRecycleCloudResource batch recycle cloud resource.
+// BatchRecycleCloudResource 创建回收记录，并修改对应资源表中的回收状态属性
 func (svc *recycleRecordSvc) BatchRecycleCloudResource(cts *rest.Contexts) (interface{}, error) {
 	req := new(protodata.BatchRecycleReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -109,19 +109,20 @@ func (svc *recycleRecordSvc) BatchRecycleCloudResource(cts *rest.Contexts) (inte
 				recycleReserveTime = uint(accountInfo.Details[0].RecycleReserveTime)
 			}
 			recycleRecords = append(recycleRecords, prototable.RecycleRecordTable{
-				Vendor:     info.Vendor,
-				ResType:    req.ResType,
-				ResID:      info.ID,
-				CloudResID: info.CloudID,
-				ResName:    info.Name,
-				BkBizID:    info.BkBizID,
-				AccountID:  info.AccountID,
-				Region:     info.Region,
-				Detail:     recycleDetail,
-				Status:     enumor.WaitingRecycleRecordStatus,
-				Creator:    cts.Kit.User,
-				Reviser:    cts.Kit.User,
-				RecycledAt: times.ConvStdTimeNow().Add(time.Hour * time.Duration(recycleReserveTime)),
+				RecycleType: req.RecycleType,
+				Vendor:      info.Vendor,
+				ResType:     req.ResType,
+				ResID:       info.ID,
+				CloudResID:  info.CloudID,
+				ResName:     info.Name,
+				BkBizID:     info.BkBizID,
+				AccountID:   info.AccountID,
+				Region:      info.Region,
+				Detail:      recycleDetail,
+				Status:      enumor.WaitingRecycleRecordStatus,
+				Creator:     cts.Kit.User,
+				Reviser:     cts.Kit.User,
+				RecycledAt:  times.ConvStdTimeNow().Add(time.Hour * time.Duration(recycleReserveTime)),
 			})
 		}
 		// 标记资源回收状态
@@ -250,17 +251,18 @@ func (svc *recycleRecordSvc) ListRecycleRecord(cts *rest.Contexts) (interface{},
 	for _, recycleRecord := range res.Details {
 		records = append(records, protocore.RecycleRecord{
 			BaseRecycleRecord: protocore.BaseRecycleRecord{
-				ID:         recycleRecord.ID,
-				TaskID:     recycleRecord.TaskID,
-				Vendor:     recycleRecord.Vendor,
-				ResType:    recycleRecord.ResType,
-				ResID:      recycleRecord.ResID,
-				CloudResID: recycleRecord.CloudResID,
-				ResName:    recycleRecord.ResName,
-				BkBizID:    recycleRecord.BkBizID,
-				AccountID:  recycleRecord.AccountID,
-				Region:     recycleRecord.Region,
-				Status:     enumor.RecycleRecordStatus(recycleRecord.Status),
+				ID:          recycleRecord.ID,
+				TaskID:      recycleRecord.TaskID,
+				RecycleType: recycleRecord.RecycleType,
+				Vendor:      recycleRecord.Vendor,
+				ResType:     recycleRecord.ResType,
+				ResID:       recycleRecord.ResID,
+				CloudResID:  recycleRecord.CloudResID,
+				ResName:     recycleRecord.ResName,
+				BkBizID:     recycleRecord.BkBizID,
+				AccountID:   recycleRecord.AccountID,
+				Region:      recycleRecord.Region,
+				Status:      enumor.RecycleRecordStatus(recycleRecord.Status),
 				Revision: core.Revision{
 					Creator:   recycleRecord.Creator,
 					Reviser:   recycleRecord.Reviser,
@@ -366,5 +368,4 @@ func (svc *recycleRecordSvc) BatchUpdateRecycleStatus(cts *rest.Contexts) (reply
 		return nil, err
 	}
 	return nil, nil
-
 }

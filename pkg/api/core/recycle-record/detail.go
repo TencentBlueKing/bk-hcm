@@ -95,3 +95,8 @@ type CvmRecycleOptions struct {
 
 // DiskRecycleOptions disk recycle record options.
 type DiskRecycleOptions struct{}
+
+// DiskRelatedRecycleOpt 磁盘作为关联资源回收时的回收选项，记录关联的cvm_id
+type DiskRelatedRecycleOpt struct {
+	CvmID string `json:"cvm_id"`
+}

@@ -25,6 +25,7 @@ import (
 
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -54,16 +55,16 @@ func (rc *restClient) BatchCreateDiskCvmRel(ctx context.Context,
 }
 
 // ListDiskCvmRel ...
-func (rc *restClient) ListDiskCvmRel(ctx context.Context,
-	h http.Header, request *dataproto.DiskCvmRelListReq,
-) (*dataproto.DiskCvmRelListResult, error) {
+func (rc *restClient) ListDiskCvmRel(kt *kit.Kit, request *dataproto.DiskCvmRelListReq) (
+	*dataproto.DiskCvmRelListResult, error) {
+
 	resp := new(dataproto.DiskCvmRelListResp)
 
 	err := rc.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/disk_cvm_rels/list").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

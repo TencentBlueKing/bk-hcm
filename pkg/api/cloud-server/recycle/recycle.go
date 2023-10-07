@@ -21,7 +21,7 @@
 package recycle
 
 import (
-	recyclerecord "hcm/pkg/api/core/recycle-record"
+	rr "hcm/pkg/api/core/recycle-record"
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -36,15 +36,15 @@ type RecycleResult struct {
 
 // RecycleRecordListResult defines list recycle record result.
 type RecycleRecordListResult struct {
-	Count   uint64                        `json:"count"`
-	Details []recyclerecord.RecycleRecord `json:"details"`
+	Count   uint64             `json:"count"`
+	Details []rr.RecycleRecord `json:"details"`
 }
 
 // CvmDetail Cvm回收详情，与数据库中的状态多了一快照
 type CvmDetail struct {
-	FailedAt                       enumor.CloudResourceType
-	Vendor                         enumor.Vendor
-	CvmID                          string
-	AccountID                      string
-	recyclerecord.CvmRecycleDetail `json:",inline"`
+	FailedAt            enumor.CloudResourceType
+	Vendor              enumor.Vendor
+	CvmID               string
+	AccountID           string
+	rr.CvmRecycleDetail `json:",inline"`
 }

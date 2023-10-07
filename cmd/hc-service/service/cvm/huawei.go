@@ -543,7 +543,7 @@ func (svc cvmSvc) syncCvmRelDisk(kt *kit.Kit, accountID, region string, cvmIDs [
 		Filter: tools.ContainersExpression("cvm_id", cvmIDs),
 		Page:   core.NewDefaultBasePage(),
 	}
-	rels, err := svc.dataCli.Global.ListDiskCvmRel(kt.Ctx, kt.Header(), listEipRel)
+	rels, err := svc.dataCli.Global.ListDiskCvmRel(kt, listEipRel)
 	if err != nil {
 		logs.Errorf("list disk_cvm_rel from db failed, err: %v, rid: %s", err, kt.Rid)
 		return err

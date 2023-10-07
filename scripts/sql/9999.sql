@@ -168,4 +168,8 @@ alter table network_interface
 alter table image
     add column `os_type` varchar(32) default '';
 
+-- 12. 回收记录增加回收类型字段，用于标记关联资源回收
+alter table recycle_record
+    add column `recycle_type` varchar(64) default '';
+
 commit;

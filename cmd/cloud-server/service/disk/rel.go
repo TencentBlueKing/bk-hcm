@@ -102,7 +102,7 @@ func (svc *diskSvc) ListDiskCvmRel(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	return svc.client.DataService().Global.ListDiskCvmRel(cts.Kit.Ctx, cts.Kit.Header(), req)
+	return svc.client.DataService().Global.ListDiskCvmRel(cts.Kit, req)
 }
 
 // ListRelWithCvm list disk with extension by cvm_id.

@@ -32,6 +32,7 @@ import (
 type BatchRecycleReq struct {
 	ResType            enumor.CloudResourceType `json:"resource_type" validate:"required"`
 	DefaultRecycleTime uint                     `json:"default_recycle_time" validate:"required"`
+	RecycleType        enumor.RecycleType       `json:"recycle_type,omitempty"`
 	Infos              []RecycleReq             `json:"infos" validate:"min=1,max=100"`
 }
 

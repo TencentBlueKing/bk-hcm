@@ -37,6 +37,7 @@ var RecycleRecordColumns = utils.MergeColumns(nil, RecycleRecordColumnDescriptor
 var RecycleRecordColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "task_id", NamedC: "task_id", Type: enumor.String},
+	{Column: "recycle_type", NamedC: "recycle_type", Type: enumor.String},
 	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
 	{Column: "res_type", NamedC: "res_type", Type: enumor.String},
 	{Column: "res_id", NamedC: "res_id", Type: enumor.String},
@@ -60,6 +61,8 @@ type RecycleRecordTable struct {
 	ID string `db:"id" json:"id" validate:"lte=64"`
 	// TaskID 单次回收一批资源的任务ID
 	TaskID string `db:"task_id" json:"task_id" validate:"lte=64"`
+	// RecycleType 记录类型 用来标记关联资源类型，留空为普通类型
+	RecycleType enumor.RecycleType `db:"recycle_type" json:"recycle_type" validate:"lte=64"`
 	// Vendor 云厂商
 	Vendor enumor.Vendor `db:"vendor" json:"vendor" validate:"lte=32"`
 	// ResType 资源类型

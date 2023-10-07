@@ -26,8 +26,9 @@ import (
 	"hcm/cmd/hc-service/logics/res-sync/common"
 	"hcm/pkg/api/cloud-server/recycle"
 	"hcm/pkg/api/core"
-	corerecyclerecord "hcm/pkg/api/core/recycle-record"
+	corerecord "hcm/pkg/api/core/recycle-record"
 	"hcm/pkg/api/data-service/cloud"
+	dsrecord "hcm/pkg/api/data-service/recycle-record"
 	hcprotocvm "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -36,6 +37,7 @@ import (
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/thirdparty/esb/cmdb"
 	"hcm/pkg/tools/classifier"
 	"hcm/pkg/tools/json"
@@ -174,10 +176,8 @@ func (c *cvm) batchDeleteCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.
 // 该动作由：
 //  1. 用户手动发起
 //  2. 由定时回收任务触发
-//
-// TODO: 检查回收记录创建的时候的eip、disk、network interface 快照，要求完全一致，否则报错
 func (c *cvm) DestroyRecycledCvm(kt *kit.Kit, cvmBasicInfo map[string]types.CloudResourceBasicInfo,
-	records []corerecyclerecord.RecycleRecord) (*core.BatchOperateResult, error) {
+	records []corerecord.RecycleRecord) (*core.BatchOperateResult, error) {
 
 	if len(cvmBasicInfo) == 0 {
 		return nil, nil
@@ -186,10 +186,10 @@ func (c *cvm) DestroyRecycledCvm(kt *kit.Kit, cvmBasicInfo map[string]types.Clou
 		return nil, errf.Newf(errf.InvalidParameter, "cvm length should <= %d", constant.BatchOperationMaxLimit)
 	}
 	// 获取回收时的挂载信息
-	cvmRecycleDetails := make(map[string]corerecyclerecord.CvmRecycleDetail, len(records))
+	cvmRecycleDetails := make(map[string]corerecord.CvmRecycleDetail, len(records))
 	for _, record := range records {
 		if detailStr, ok := record.Detail.(string); ok {
-			recycleDetail := corerecyclerecord.CvmRecycleDetail{}
+			recycleDetail := corerecord.CvmRecycleDetail{}
 			if err := json.UnmarshalFromString(detailStr, &recycleDetail); err != nil {
 				logs.Errorf("fail to unmarshal cvm recycle detail, err: %v, rid: %s", err, kt.Rid)
 				return nil, err
@@ -242,12 +242,42 @@ func (c *cvm) DestroyRecycledCvm(kt *kit.Kit, cvmBasicInfo map[string]types.Clou
 
 func (c *cvm) destroyRelatedRes(kt *kit.Kit, cvmStatus map[string]*recycle.CvmDetail) {
 	for _, recycleDetail := range cvmStatus {
+
 		for _, disk := range recycleDetail.DiskList {
 			err := c.disk.DeleteDisk(kt, recycleDetail.Vendor, disk.DiskID)
 			if err != nil {
 				logs.Errorf("fail to delete %s disk, err: %v, diskId: %s, rid: %s",
 					recycleDetail.Vendor, err, disk.DiskID, kt.Rid)
 			}
+
+			// 处理关联磁盘回收任务
+			// 根据磁盘id 和回收任务类型获取对应的回收任务id
+			queryReq := &core.ListReq{Page: core.NewDefaultBasePage(),
+				Filter: tools.EqualWithOpExpression(filter.And, map[string]interface{}{
+					"recycle_type": enumor.RecycleTypeRelated,
+					"status":       enumor.WaitingRecycleRecordStatus,
+					"res_id":       disk.DiskID,
+				})}
+			resp, err := c.client.DataService().Global.RecycleRecord.ListRecycleRecord(kt, queryReq)
+			if err != nil {
+				logs.Errorf("fail to query related disk recycle record, err: %v, req: %v, rid: %s",
+					err, queryReq, kt.Rid)
+				return
+			}
+			if len(resp.Details) != 1 {
+				logs.Errorf("query related disk recycle record length mismatch, want:1 ,got %v, req: %v, rid: %s",
+					len(resp.Details), queryReq, kt.Rid)
+			}
+			recordID := resp.Details[0].ID
+			updateReq := &dsrecord.BatchUpdateReq{
+				Data: []dsrecord.UpdateReq{{ID: recordID, Status: enumor.RecycledRecycleRecordStatus}},
+			}
+			err = c.client.DataService().Global.RecycleRecord.BatchUpdateRecycleRecord(kt, updateReq)
+			if err != nil {
+				logs.Errorf("fail to update related disk recycle record status, err: %v, recordID: %s, rid: %s",
+					err, recordID, kt.Rid)
+			}
+
 		}
 		for _, eip := range recycleDetail.EipList {
 			err := c.eip.DeleteEip(kt, recycleDetail.Vendor, eip.EipID)
@@ -261,7 +291,7 @@ func (c *cvm) destroyRelatedRes(kt *kit.Kit, cvmStatus map[string]*recycle.CvmDe
 
 // 获取磁盘绑定信息，和回收时的对比，如果一致则解绑
 func (c *cvm) checkAndUnbindCvmRelated(kt *kit.Kit, cvmBasicInfo map[string]types.CloudResourceBasicInfo,
-	originDetails map[string]corerecyclerecord.CvmRecycleDetail) (cvmStatus map[string]*recycle.CvmDetail, err error) {
+	originDetails map[string]corerecord.CvmRecycleDetail) (cvmStatus map[string]*recycle.CvmDetail, err error) {
 
 	cvmStatus = make(map[string]*recycle.CvmDetail, len(cvmBasicInfo))
 	for cvmId, basicInfo := range cvmBasicInfo {
@@ -284,7 +314,7 @@ func (c *cvm) checkAndUnbindCvmRelated(kt *kit.Kit, cvmBasicInfo map[string]type
 		origin := originDetails[cvmId]
 		if origin.WithEip {
 			newData, changed, deleted := common.Diff(now.EipList, origin.EipList,
-				func(now corerecyclerecord.EipBindInfo, origin corerecyclerecord.EipBindInfo) bool {
+				func(now corerecord.EipBindInfo, origin corerecord.EipBindInfo) bool {
 					return origin.NicID != now.NicID
 				})
 			if len(newData) > 0 || len(changed) > 0 || len(deleted) > 0 {
@@ -294,7 +324,7 @@ func (c *cvm) checkAndUnbindCvmRelated(kt *kit.Kit, cvmBasicInfo map[string]type
 		}
 		if origin.WithDisk {
 			newData, changed, deleted := common.Diff(now.DiskList, origin.DiskList,
-				func(now corerecyclerecord.DiskAttachInfo, origin corerecyclerecord.DiskAttachInfo) bool {
+				func(now corerecord.DiskAttachInfo, origin corerecord.DiskAttachInfo) bool {
 					return origin.DeviceName != now.DeviceName || origin.CachingType != now.CachingType
 				})
 			if len(newData) > 0 || len(changed) > 0 || len(deleted) > 0 {
