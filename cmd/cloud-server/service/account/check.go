@@ -25,12 +25,15 @@ import (
 
 	"hcm/cmd/cloud-server/service/common"
 	proto "hcm/pkg/api/cloud-server/account"
+	"hcm/pkg/api/core"
+	"hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service/account"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 )
 
 // TODO: ParseAndCheckXXXXExtension 公开是为了与申请新增账号复用，但是这里只是复用，没有抽象，不应该复用XXXXAccountExtensionCreateReq数据结构
@@ -451,8 +454,7 @@ func (a *accountSvc) parseAndCheckAzureExtensionByID(
 			cts.Kit.Ctx,
 			cts.Kit.Header(),
 			&hcproto.AzureAccountCheckReq{
-				CloudSubscriptionID: account.Extension.CloudSubscriptionID,
-
+				CloudSubscriptionID:   account.Extension.CloudSubscriptionID,
 				CloudTenantID:         extension.CloudTenantID,
 				CloudApplicationID:    extension.CloudApplicationID,
 				CloudApplicationName:  extension.CloudApplicationName,
@@ -465,4 +467,57 @@ func (a *accountSvc) parseAndCheckAzureExtensionByID(
 	}
 
 	return extension, nil
+}
+
+// CheckDuplicateMainAccount 检查主账号是否重复
+func CheckDuplicateMainAccount(cts *rest.Contexts, client *client.ClientSet, vendor enumor.Vendor,
+	accountType enumor.AccountType, mainAccountIDFieldValue string) error {
+
+	// 只需要检查资源账号或安全审计账号的主账号是否重复，其他类型账号不检查
+	if accountType != enumor.ResourceAccount && accountType != enumor.SecurityAuditAccount {
+		return nil
+	}
+
+	// TODO: 后续需要解决并发问题
+	// 后台查询是否主账号重复
+	mainAccountIDFieldName := enumor.VendorMainAccountIDFieldMap[vendor]
+
+	result, err := client.DataService().Global.Account.List(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&cloud.AccountListReq{
+			Filter: &filter.Expression{
+				Op: filter.And,
+				Rules: []filter.RuleFactory{
+					filter.AtomRule{
+						Field: "vendor",
+						Op:    filter.Equal.Factory(),
+						Value: string(vendor),
+					},
+					filter.AtomRule{
+						Field: "type",
+						Op:    filter.Equal.Factory(),
+						Value: string(accountType),
+					},
+					filter.AtomRule{
+						Field: fmt.Sprintf("extension.%s", mainAccountIDFieldName),
+						Op:    filter.JSONEqual.Factory(),
+						Value: mainAccountIDFieldValue,
+					},
+				},
+			},
+			Page: &core.BasePage{
+				Count: true,
+			},
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	if result.Count > 0 {
+		return fmt.Errorf("%s[%s] should be not duplicate", mainAccountIDFieldName, mainAccountIDFieldValue)
+	}
+
+	return nil
 }
