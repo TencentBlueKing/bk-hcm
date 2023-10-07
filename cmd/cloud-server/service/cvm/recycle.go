@@ -169,13 +169,13 @@ func (svc *cvmSvc) recycleCvm(kt *kit.Kit, req *proto.CvmRecycleReq,
 				recyclerecord.RecycleReq{ID: info.ID, Detail: cvmStatus[info.ID].CvmRecycleDetail})
 		}
 	}
-	// 标记磁盘和eip为回收
+	// 标记磁盘和eip为回收(修改disk表和eip表中的recycle_status字段为recycling)
 	err = svc.markRelatedRecycleStatus(kt, cvmStatus)
 	if err != nil {
 		return "", err
 	}
 
-	// 批量加入回收任务
+	// 创建回收记录
 	taskID, err = svc.client.DataService().Global.RecycleRecord.BatchRecycleCloudRes(kt.Ctx, kt.Header(), opt)
 	if err != nil {
 		logs.Errorf("fail to recycle cvm, err: %v, rid: %s", err, kt.Rid)

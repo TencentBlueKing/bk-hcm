@@ -59,7 +59,7 @@ type BaseCvm struct {
 		azure：PowerState/running｜PowerState/stopped｜PowerState/deallocating｜PowerState/deallocated
 	*/
 	Status        string `json:"status"`
-	RecycleStatus string `json:"recycle_status"`
+	RecycleStatus string `json:"recycle_status,omitempty"`
 
 	// PrivateIPv4Addresses 内网IP
 	PrivateIPv4Addresses []string `json:"private_ipv4_addresses"`

@@ -262,7 +262,6 @@ func (c *cvm) destroyRelatedRes(kt *kit.Kit, cvmStatus map[string]*recycle.CvmDe
 func (c *cvm) checkAndUnbindCvmRelated(kt *kit.Kit, cvmBasicInfo map[string]types.CloudResourceBasicInfo,
 	originDetails map[string]corerecyclerecord.CvmRecycleDetail) (cvmStatus map[string]*recycle.CvmDetail, err error) {
 
-	// TODO: 改为从数据库中获取快照并对比
 	cvmStatus = make(map[string]*recycle.CvmDetail, len(cvmBasicInfo))
 	for cvmId, basicInfo := range cvmBasicInfo {
 		cvmStatus[cvmId] = &recycle.CvmDetail{
@@ -507,7 +506,7 @@ func (c *cvm) getCmdbHostId(kt *kit.Kit, bizID int64,
 	return hostIDs, nil
 }
 
-// RecyclePreCheck  回收预校验、包含主机状态和CC待回收模块检查
+// RecyclePreCheck  回收预校验，包含主机状态和CC待回收模块检查
 func (c *cvm) RecyclePreCheck(kt *kit.Kit, basicInfoMap map[string]types.CloudResourceBasicInfo) error {
 
 	leftInfo := maps.Clone(basicInfoMap)
