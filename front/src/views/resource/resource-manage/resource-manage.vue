@@ -37,7 +37,7 @@ const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const accountStore = useAccountStore();
-const { isShowDistribution, handleDistribution, ResourceDistribution } =  useSteps();
+const { isShowDistribution, ResourceDistribution } =  useSteps();
 
 const isResourcePage = computed(() => {
   // 资源下没有业务ID
@@ -112,6 +112,7 @@ const tabs = RESOURCE_TYPES.map((type) => {
   };
 });
 const activeTab = ref((route.query.type as string) || tabs[0].type);
+
 
 const filterData = (key: string, val: string | number) => {
   if (!filter.value.rules.length) {
@@ -426,13 +427,6 @@ getResourceAccountList();
                 {{ activeTab === 'host' ? '购买' : '新建' }}
               </bk-button>
             </span>
-            <bk-button
-              v-if="activeTab === 'host'"
-              class="ml8 mr8"
-              @click="handleDistribution"
-            >
-              批量分配
-            </bk-button>
           </component>
         </bk-tab-panel>
       </bk-tab>
@@ -468,6 +462,7 @@ getResourceAccountList();
         @cancel="handlePermissionDialog"
         @confirm="handlePermissionConfirm"
       ></permission-dialog>
+
     </div>
 
     <RouterView v-else></RouterView>

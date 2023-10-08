@@ -190,7 +190,7 @@ const {
         >
           <span @click="handleAuth('biz_iaas_resource_create')">
             <bk-button
-              theme="primary" class="new-button"
+              theme="primary" class="new-button mr8"
               :disabled="!authVerifyData?.permissionAction?.biz_iaas_resource_create" @click="handleAdd">
               {{renderComponent === DriveManage ||
                 renderComponent === HostManage ||
