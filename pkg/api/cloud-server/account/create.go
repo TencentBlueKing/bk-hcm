@@ -26,6 +26,7 @@ import (
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/tools/assert"
 )
 
 // TCloudAccountExtensionCreateReq ...
@@ -167,6 +168,10 @@ func (req *AzureAccountExtensionCreateReq) Validate(accountType enumor.AccountTy
 	// 登记账号密钥可为空，其他类型则必填
 	if accountType != enumor.RegistrationAccount && !req.IsFull() {
 		return errors.New("ApplicationID/ApplicationName/SecretID/SecretKey can not be empty")
+	}
+	// 要求订阅id为小写
+	if assert.ContainsUpperCase(req.CloudSubscriptionID) {
+		return errors.New("CloudSubscriptionID should be lower case")
 	}
 
 	return nil

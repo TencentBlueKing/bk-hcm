@@ -218,6 +218,7 @@ func (a AccountDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListAccount
 	}
 
 	columnTypes := cloud.AccountColumns.ColumnTypes()
+	// 主账号校验字段
 	columnTypes["extension.cloud_main_account_id"] = enumor.String
 	columnTypes["extension.cloud_account_id"] = enumor.String
 	columnTypes["extension.cloud_sub_account_id"] = enumor.String
