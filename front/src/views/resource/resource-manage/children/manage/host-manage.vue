@@ -17,14 +17,6 @@ import {
 import {
   useI18n,
 } from 'vue-i18n';
-// import {
-//   AngleRight,
-// } from 'bkui-vue/lib/icon';
-// import useShutdown from '../../hooks/use-shutdown';
-// import useReboot from '../../hooks/use-reboot';
-// import usePassword from '../../hooks/use-password';
-// import useRefund from '../../hooks/use-refund';
-// import useBootUp from '../../hooks/use-boot-up';
 import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
 import useColumns from '../../hooks/use-columns';
@@ -35,7 +27,8 @@ import {
 } from '@/store';
 import HostOperations from '../../common/table/HostOperations';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
-
+import BusinessSelector from '@/components/business-selector/index.vue';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 // use hook
 const {
   t,
@@ -52,8 +45,6 @@ const props = defineProps({
     type: String,
   },
 });
-
-const resourceStore = useResourceStore();
 
 const isLoadingCloudAreas = ref(false);
 const cloudAreaPage = ref(0);
@@ -85,6 +76,11 @@ const isShowDistribution = ref(false);
 const businessId = ref('');
 const businessList = ref(useBusinessMapStore().businessList);
 const { columns, settings } = useColumns('cvms');
+const isDialogShow = ref(false);
+const isDialogBtnLoading = ref(false);
+const selectedBizId = ref(0);
+const resourceStore = useResourceStore();
+const { whereAmI } = useWhereAmI();
 
 const hostSearchData = computed(() => {
   return [
@@ -215,6 +211,18 @@ const getCloudAreas = () => {
       isLoadingCloudAreas.value = false;
     });
 };
+
+const handleConfirm = async () => {
+  isDialogBtnLoading.value = true;
+  await resourceStore.assignBusiness('cvms', {
+    cvm_ids: selections.value?.map(v => v.id) || [],
+    bk_biz_id: selectedBizId.value,
+  });
+  triggerApi();
+  isDialogBtnLoading.value = false;
+  isDialogShow.value = false;
+};
+
 getCloudAreas();
 
 </script>
@@ -227,6 +235,13 @@ getCloudAreas();
       class="flex-row align-items-center"
       :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
       <slot></slot>
+      <bk-button
+        class="ml8 mr8"
+        @click="() => isDialogShow = true"
+        v-if="whereAmI === Senarios.resource"
+      >
+        批量分配
+      </bk-button>
       <HostOperations :selections="selections" :on-finished="() => {
         triggerApi();
         resetSelections();
@@ -293,6 +308,27 @@ getCloudAreas();
       />
     </bk-dialog>
 
+    <bk-dialog
+      :is-show="isDialogShow"
+      title="主机分配"
+      :theme="'primary'"
+      quick-close
+      @closed="() => isDialogShow = false"
+      @confirm="handleConfirm"
+      :is-loading="isDialogBtnLoading"
+    >
+      <p class="selected-host-count-tip">
+        已选择 <span class="selected-host-count">{{ selections.length }}</span> 台主机，可选择所需分配的目标业务
+      </p>
+      <p class="mb6">目标业务</p>
+      <business-selector
+        v-model="selectedBizId"
+        :authed="true"
+        class="mb32"
+        :auto-select="true">
+      </business-selector>
+    </bk-dialog>
+
   </bk-loading>
 </template>
 
@@ -306,6 +342,9 @@ getCloudAreas();
 .mt20 {
   margin-top: 20px;
 }
+.mb32 {
+  margin-bottom: 32px;
+}
 .distribution-cls{
   display: flex;
   align-items: center;
@@ -315,5 +354,12 @@ getCloudAreas();
 }
 .search-selector-container {
   margin-left: auto;
+}
+.selected-host-count-tip {
+  margin-bottom: 24px;
+}
+.selected-host-count {
+  color: #3A84FF;
+  font-weight: bold;
 }
 </style>
