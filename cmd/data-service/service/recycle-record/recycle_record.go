@@ -263,6 +263,7 @@ func (svc *recycleRecordSvc) ListRecycleRecord(cts *rest.Contexts) (interface{},
 				AccountID:   recycleRecord.AccountID,
 				Region:      recycleRecord.Region,
 				Status:      enumor.RecycleRecordStatus(recycleRecord.Status),
+				RecycledAt:  times.ConvStdTimeFormat(recycleRecord.RecycledAt),
 				Revision: core.Revision{
 					Creator:   recycleRecord.Creator,
 					Reviser:   recycleRecord.Reviser,
