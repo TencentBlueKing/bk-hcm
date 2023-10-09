@@ -1,5 +1,5 @@
 <template>
-  <div class="template-warp">
+  <div>
     <div class="flex-row operate-warp justify-content-between align-items-center mb20" v-if="isResourcePage">
       <div>
         <!-- <bk-button-group>
@@ -17,6 +17,11 @@
           v-model:active="selectedType"
           @change="(val) => handleSelected(val)"
         >
+          <template #setting>
+            <div class="setting-icon-container" @click="() => isSettingDialogShow = true">
+              <i class="icon bk-icon icon-shezhi"></i>
+            </div>
+          </template>
           <bk-tab-panel
             v-for="item in recycleTypeData"
             :key="item.value"
@@ -193,6 +198,26 @@
       <HostDrive v-else :data="detail" :type="vendor"></HostDrive>
     </bk-dialog>
 
+    <bk-dialog
+      :is-show="isSettingDialogShow"
+      title="回收站配置"
+      @closed="() => isSettingDialogShow = false"
+      @confirm="handleSettingConfirm"
+      theme="primary">
+      保留时长
+      <bk-select
+        v-model="recycleReserveTime"
+        class="mt6"
+      >
+        <bk-option
+          v-for="(item) in RESERVE_TIME_SET"
+          :key="item.value"
+          :value="item.value"
+          :label="item.label"
+        />
+      </bk-select>
+    </bk-dialog>
+
     <permission-dialog
       v-model:is-show="showPermissionDialog"
       :params="permissionParams"
@@ -264,6 +289,14 @@ export default defineComponent({
       detail: {},
     });
 
+    const isSettingDialogShow = ref(false);
+    const recycleReserveTime = ref(2);
+    const RESERVE_TIME_SET = new Array(8).fill(0)
+      .map((_val, idx) => idx)
+      .map(num => ({
+        label: `${num}${num > 0 ? '天' : ''}`,
+        value: num * 24,
+      }));
 
     // hooks
     const {
@@ -290,6 +323,11 @@ export default defineComponent({
       }];
       state.selectedType = v;
       resetSelections();
+    };
+
+    // 确定回收站保留时长
+    const handleSettingConfirm = () => {
+      isSettingDialogShow.value = false;
     };
 
     // 是否精确
@@ -412,6 +450,10 @@ export default defineComponent({
       authVerifyData,
       RECYCLE_BIN_ITEM_STATUS,
       getRegionName,
+      isSettingDialogShow,
+      recycleReserveTime,
+      RESERVE_TIME_SET,
+      handleSettingConfirm,
     };
   },
 });
@@ -440,6 +482,20 @@ export default defineComponent({
         animation: 3s move infinite linear;
       }
     }
+  }
+  .setting-icon-container {
+    width: 32px;
+    height: 32px;
+    background: #FFFFFF;
+    box-shadow: 0 2px 4px 0 #1919290d;
+    border-radius: 2px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+  }
+  .mt6 {
+    margin-top: 6px;
   }
 @-webkit-keyframes move {
   from {
