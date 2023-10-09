@@ -234,7 +234,7 @@ import { useI18n } from 'vue-i18n';
 import { Message } from 'bkui-vue';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import { useResourceStore, useAccountStore } from '@/store';
-import { CloudType, FilterType } from '@/typings';
+import { CloudType, FilterType, QueryRuleOPEnum } from '@/typings';
 import { VENDORS } from '@/common/constant';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import HostInfo from '@/views/resource/resource-manage/children/components/host/host-info/index.vue';
@@ -242,6 +242,7 @@ import HostDrive from '@/views/resource/resource-manage/children/components/host
 import { useVerify } from '@/hooks';
 import { RECYCLE_BIN_ITEM_STATUS } from '@/constants/resource';
 import { useRegionsStore } from '@/store/useRegionsStore';
+import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 
 export default defineComponent({
   name: 'RecyclebinManageList',
@@ -257,6 +258,7 @@ export default defineComponent({
     const accountStore = useAccountStore();
     const fetchUrl = ref<string>('recycle_records/list');
     const { getRegionName } = useRegionsStore();
+    const resourceAccountStore = useResourceAccountStore();
 
     const state = reactive({
       isAccurate: false,    // 是否精确
@@ -316,11 +318,14 @@ export default defineComponent({
 
     // 选择类型
     const handleSelected = (v) => {
-      state.filter.rules = [{
+      const rule = {
         field: 'res_type',
         op: 'eq',
         value: v,
-      }];
+      };
+      const idx = state.filter.rules.findIndex(({ field }) => field === 'res_type');
+      if (idx === -1) state.filter.rules.push(rule);
+      else state.filter.rules[idx] = rule;
       state.selectedType = v;
       resetSelections();
     };
@@ -348,6 +353,28 @@ export default defineComponent({
         handleSelected(params.type);
       }
     }, { immediate: true });
+
+    watch(
+      () => resourceAccountStore.resourceAccount,
+      (account) => {
+        const idx = state.filter.rules.findIndex(({ field }) => field === 'account_id');
+        if (!account.id) {
+          if (idx > -1) state.filter.rules.splice(idx);
+          return;
+        }
+        const rule = {
+          field: 'account_id',
+          op: QueryRuleOPEnum.EQ,
+          value: account.id,
+        };
+        if (idx === -1) state.filter.rules.push(rule);
+        else state.filter.rules[idx] = rule;
+      },
+      {
+        immediate: true,
+        deep: true,
+      },
+    );
 
     const isResourcePage = computed(() => {   // 资源下没有业务ID
       return !accountStore.bizs;
