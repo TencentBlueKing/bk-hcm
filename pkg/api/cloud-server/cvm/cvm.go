@@ -138,3 +138,25 @@ type CvmDeleteRecycledReq struct {
 func (req CvmDeleteRecycledReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// BatchQueryCvmRelatedReq  批量查询cvm关联资源请求
+type BatchQueryCvmRelatedReq struct {
+	IDs []string `json:"ids" validate:"min=1,max=100"`
+}
+
+// Validate ...
+func (req BatchQueryCvmRelatedReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// CvmRelatedResult  批量查询cvm关联资源响应
+type CvmRelatedResult struct {
+	Detail []CvmRelatedInfo
+}
+
+// CvmRelatedInfo Cvm 关联资源信息
+type CvmRelatedInfo struct {
+	DiskCount int      `json:"disk_count"`
+	EipCount  int      `json:"eip_count"`
+	Eip       []string `json:"eip"`
+}
