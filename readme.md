@@ -39,7 +39,7 @@
 
 ## Roadmap
 
-* [版本日志](docs/support-file/changelog/release.md)
+* [版本日志](docs/support-file/changelog/ch)
 
 ## Support
 
