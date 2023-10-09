@@ -55,6 +55,7 @@ func InitCvmService(c *capability.Capability) {
 	h.Add("BatchStartCvm", http.MethodPost, "/cvms/batch/start", svc.BatchStartCvm)
 	h.Add("BatchStopCvm", http.MethodPost, "/cvms/batch/stop", svc.BatchStopCvm)
 	h.Add("BatchRebootCvm", http.MethodPost, "/cvms/batch/reboot", svc.BatchRebootCvm)
+	h.Add("QueryCvmRelatedRes", http.MethodGet, "/cvms/rel_res/batch", svc.QueryCvmRelatedRes)
 
 	// 资源下回收相关接口
 	h.Add("RecycleCvm", http.MethodPost, "/cvms/recycle", svc.RecycleCvm)
@@ -69,6 +70,7 @@ func InitCvmService(c *capability.Capability) {
 	h.Add("BatchStartBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/batch/start", svc.BatchStartBizCvm)
 	h.Add("BatchStopBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/batch/stop", svc.BatchStopBizCvm)
 	h.Add("BatchRebootBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/batch/reboot", svc.BatchRebootBizCvm)
+	h.Add("QueryBizCvmRelatedRes", http.MethodGet, "/bizs/{bk_biz_id}/cvms/rel_res/batch", svc.QueryBizCvmRelatedRes)
 
 	// 业务下回收接口
 	h.Add("RecycleBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/recycle", svc.RecycleBizCvm)

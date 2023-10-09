@@ -34,8 +34,7 @@ func (a *BaseApplicationHandler) ListDiskIDByCvm(cvmIDs []string) ([]string, err
 		},
 	}
 	// 查询
-	resp, err := a.Client.DataService().Global.ListDiskCvmRel(
-		a.Cts.Kit,
+	resp, err := a.Client.DataService().Global.ListDiskCvmRel(a.Cts.Kit,
 		&dataproto.DiskCvmRelListReq{
 			Filter: reqFilter,
 			Page:   &core.BasePage{Count: false, Start: 0, Limit: uint(len(cvmIDs) * 20)}, // 每台主机最多挂20块硬盘
