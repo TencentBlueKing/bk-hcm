@@ -132,7 +132,7 @@ func (mgr *CvmRelManger) getCvmDiskRelMapFromDB(kt *kit.Kit, cvmIDs []string) (
 	}
 	result := make(map[string]map[string]cvmRelInfo)
 	for {
-		respResult, err := mgr.dataCli.Global.ListDiskCvmRel(kt.Ctx, kt.Header(), listReq)
+		respResult, err := mgr.dataCli.Global.ListDiskCvmRel(kt, listReq)
 		if err != nil {
 			logs.Errorf("list disk cvm rel failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err

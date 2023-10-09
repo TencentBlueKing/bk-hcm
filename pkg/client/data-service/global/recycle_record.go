@@ -91,16 +91,16 @@ func (r *RecycleRecordClient) BatchRecoverCloudResource(ctx context.Context, h h
 }
 
 // ListRecycleRecord list recycle record.
-func (r *RecycleRecordClient) ListRecycleRecord(ctx context.Context, h http.Header, request *core.ListReq) (
+func (r *RecycleRecordClient) ListRecycleRecord(kt *kit.Kit, request *core.ListReq) (
 	*proto.ListResult, error) {
 
 	resp := new(proto.ListResp)
 
 	err := r.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/recycle_records/list").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
@@ -115,16 +115,15 @@ func (r *RecycleRecordClient) ListRecycleRecord(ctx context.Context, h http.Head
 }
 
 // BatchUpdateRecycleRecord batch update recycle record.
-func (r *RecycleRecordClient) BatchUpdateRecycleRecord(ctx context.Context, h http.Header,
-	request *proto.BatchUpdateReq) error {
+func (r *RecycleRecordClient) BatchUpdateRecycleRecord(kt *kit.Kit, request *proto.BatchUpdateReq) error {
 
 	resp := new(rest.BaseResp)
 
 	err := r.client.Patch().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/recycle_records/batch").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
@@ -139,8 +138,7 @@ func (r *RecycleRecordClient) BatchUpdateRecycleRecord(ctx context.Context, h ht
 }
 
 // BatchUpdateRecycleStatus update recycle_status of resources
-func (r *RecycleRecordClient) BatchUpdateRecycleStatus(kt *kit.Kit,
-	request *proto.BatchUpdateRecycleStatusReq) error {
+func (r *RecycleRecordClient) BatchUpdateRecycleStatus(kt *kit.Kit, request *proto.BatchUpdateRecycleStatusReq) error {
 
 	resp := new(rest.BaseResp)
 

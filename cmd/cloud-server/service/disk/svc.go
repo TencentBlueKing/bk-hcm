@@ -101,7 +101,7 @@ func (svc *diskSvc) listDisk(cts *rest.Contexts, authHandler handler.ListAuthRes
 		diskIDs[idx] = diskData.ID
 	}
 
-	rels, err := svc.client.DataService().Global.ListDiskCvmRel(cts.Kit.Ctx, cts.Kit.Header(),
+	rels, err := svc.client.DataService().Global.ListDiskCvmRel(cts.Kit,
 		&datarelproto.DiskCvmRelListReq{
 			Filter: tools.ContainersExpression("disk_id", diskIDs),
 			Page:   core.NewDefaultBasePage(),
@@ -214,8 +214,7 @@ func (svc *diskSvc) retrieveDisk(cts *rest.Contexts, validHandler handler.ValidW
 	}
 
 	rels, err := svc.client.DataService().Global.ListDiskCvmRel(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+		cts.Kit,
 		&datarelproto.DiskCvmRelListReq{
 			Filter: tools.EqualExpression("disk_id", diskID),
 			Page:   core.NewDefaultBasePage(),
@@ -428,8 +427,7 @@ func (svc *diskSvc) detachDisk(cts *rest.Contexts, validHandler handler.ValidWit
 
 	// get cvm id
 	rels, err := svc.client.DataService().Global.ListDiskCvmRel(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+		cts.Kit,
 		&datarelproto.DiskCvmRelListReq{
 			Filter: tools.EqualExpression("disk_id", req.DiskID),
 			Page:   core.NewDefaultBasePage(),

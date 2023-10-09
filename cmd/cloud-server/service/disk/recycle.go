@@ -139,8 +139,7 @@ func (svc *diskSvc) recycleDisk(kt *kit.Kit, req *csdisk.DiskRecycleReq, ids []s
 		})
 	}
 
-	taskID, err := svc.client.DataService().Global.RecycleRecord.BatchRecycleCloudRes(kt.Ctx, kt.Header(),
-		opt)
+	taskID, err := svc.client.DataService().Global.RecycleRecord.BatchRecycleCloudRes(kt.Ctx, kt.Header(), opt)
 	if err != nil {
 		for _, id := range detachRes.Succeeded {
 			res.Failed = append(res.Failed, core.FailedInfo{ID: id, Error: err})
@@ -169,7 +168,7 @@ func (svc *diskSvc) detachDiskByIDs(kt *kit.Kit, ids []string, basicInfoMap map[
 		Filter: tools.ContainersExpression("disk_id", ids),
 		Page:   core.NewDefaultBasePage(),
 	}
-	relRes, err := svc.client.DataService().Global.ListDiskCvmRel(kt.Ctx, kt.Header(), listReq)
+	relRes, err := svc.client.DataService().Global.ListDiskCvmRel(kt, listReq)
 	if err != nil {
 		return nil, err
 	}
@@ -261,8 +260,7 @@ func (svc *diskSvc) recoverDisk(cts *rest.Contexts, validHandler handler.ValidWi
 		Filter: tools.ContainersExpression("id", req.RecordIDs),
 		Page:   &core.BasePage{Limit: constant.BatchOperationMaxLimit},
 	}
-	records, err := svc.client.DataService().Global.RecycleRecord.ListRecycleRecord(cts.Kit.Ctx, cts.Kit.Header(),
-		listReq)
+	records, err := svc.client.DataService().Global.RecycleRecord.ListRecycleRecord(cts.Kit, listReq)
 	if err != nil {
 		return nil, err
 	}
@@ -348,8 +346,7 @@ func (svc *diskSvc) batchDeleteRecycledDisk(cts *rest.Contexts,
 		Filter: tools.ContainersExpression("id", req.RecordIDs),
 		Page:   &core.BasePage{Limit: constant.BatchOperationMaxLimit},
 	}
-	records, err := svc.client.DataService().Global.RecycleRecord.ListRecycleRecord(cts.Kit.Ctx, cts.Kit.Header(),
-		listReq)
+	records, err := svc.client.DataService().Global.RecycleRecord.ListRecycleRecord(cts.Kit, listReq)
 	if err != nil {
 		return nil, err
 	}
@@ -399,8 +396,7 @@ func (svc *diskSvc) batchDeleteRecycledDisk(cts *rest.Contexts,
 			Status: enumor.RecycledRecycleRecordStatus,
 		})
 	}
-	err = svc.client.DataService().Global.RecycleRecord.BatchUpdateRecycleRecord(cts.Kit.Ctx, cts.Kit.Header(),
-		updateReq)
+	err = svc.client.DataService().Global.RecycleRecord.BatchUpdateRecycleRecord(cts.Kit, updateReq)
 	if err != nil {
 		logs.Errorf("update recycle record status to recycled failed, err: %v, ids: %v, rid: %s", err, req.RecordIDs,
 			cts.Kit.Rid)

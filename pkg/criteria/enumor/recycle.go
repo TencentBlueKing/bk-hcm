@@ -45,3 +45,15 @@ var RecycleAuditResTypeMap = map[AuditResourceType]CloudResourceType{
 	CvmAuditResType:  CvmCloudResType,
 	DiskAuditResType: DiskCloudResType,
 }
+
+// RecycleType 回收类型
+type RecycleType string
+
+const (
+	// RecycleTypeNormal 没有设置类型则默认为正常类型
+	RecycleTypeNormal RecycleType = ""
+
+	// RecycleTypeRelated  关联资源类型，作为关联资源类型不能被操作，大致等价为占位符。
+	// 目前主要用于标识disk作为关联资源随cvm回收的类型。
+	RecycleTypeRelated RecycleType = "related"
+)
