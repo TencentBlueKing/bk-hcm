@@ -44,5 +44,6 @@ type BaseRecycleRecord struct {
 	AccountID     string                     `json:"account_id"`
 	Region        string                     `json:"region"`
 	Status        enumor.RecycleRecordStatus `json:"status"`
+	RecycledAt    string                     `json:"recycled_at"`
 	core.Revision `json:",inline"`
 }
