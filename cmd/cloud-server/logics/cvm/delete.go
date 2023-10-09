@@ -267,6 +267,7 @@ func (c *cvm) destroyRelatedRes(kt *kit.Kit, cvmStatus map[string]*recycle.CvmDe
 			if len(resp.Details) != 1 {
 				logs.Errorf("query related disk recycle record length mismatch, want:1 ,got %v, req: %v, rid: %s",
 					len(resp.Details), queryReq, kt.Rid)
+				return
 			}
 			recordID := resp.Details[0].ID
 			updateReq := &dsrecord.BatchUpdateReq{
