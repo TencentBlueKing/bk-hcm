@@ -57,7 +57,6 @@
                 :data="datas"
                 remote-pagination
                 :pagination="pagination"
-                show-overflow-tooltip
                 @page-value-change="handlePageChange"
                 @page-limit-change="handlePageSizeChange"
                 @selection-change="handleSelectionChange"
@@ -132,7 +131,10 @@
                   prop="created_at"
                 >
                   <template #default="{ data }">
-                    {{data?.created_at}}
+                    <bk-tag theme="danger" type="stroke">
+                      {{ moment(data?.recycled_at).fromNow() }}
+                    </bk-tag>
+                    {{data?.recycled_at}}
                   </template>
                 </bk-table-column>
                 <bk-table-column
@@ -228,7 +230,7 @@
 </template>
 
 <script lang="ts">
-import { reactive, watch, toRefs, defineComponent, ref, computed } from 'vue';
+import { reactive, watch, toRefs, defineComponent, ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { Message } from 'bkui-vue';
@@ -243,6 +245,7 @@ import { useVerify } from '@/hooks';
 import { RECYCLE_BIN_ITEM_STATUS } from '@/constants/resource';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
+import moment from 'moment';
 
 export default defineComponent({
   name: 'RecyclebinManageList',
@@ -376,6 +379,29 @@ export default defineComponent({
       },
     );
 
+    onMounted(() => {
+      moment.updateLocale('zh-cn', {
+        relativeTime: {
+          future: '余%s',
+          past: '%s前',
+          s: '%d秒',
+          ss: '%d秒',
+          m: '1分钟',
+          mm: '%d分钟',
+          h: '1小时',
+          hh: '%d小时',
+          d: '1天',
+          dd: '%d天',
+          w: '1周',
+          ww: '%d周',
+          M: '1月',
+          MM: '%d月',
+          y: '1年',
+          yy: '%d年',
+        },
+      });
+    });
+
     const isResourcePage = computed(() => {   // 资源下没有业务ID
       return !accountStore.bizs;
     });
@@ -481,6 +507,7 @@ export default defineComponent({
       recycleReserveTime,
       RESERVE_TIME_SET,
       handleSettingConfirm,
+      moment,
     };
   },
 });
