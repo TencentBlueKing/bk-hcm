@@ -73,13 +73,25 @@
                   prop="id"
                   width="120"
                   sort
-                />
-                <bk-table-column
-                  :label="t('回收任务ID')"
-                  prop="task_id"
                 >
+                  <template #default="props">
+                    <bk-button
+                      theme="primary"
+                      text
+                      @click="() => handleClick(props?.data?.vendor,
+                                                props?.data?.id,
+                                                selectedType === 'cvm' ? 'host' : 'drive')"
+                    >
+                      {{props?.data?.res_id}}
+                    </bk-button>
+                  </template>
                 </bk-table-column>
                 <bk-table-column
+                  label="名称"
+                  prop="res_name"
+                >
+                </bk-table-column>
+                <!-- <bk-table-column
                   :label="t('云厂商')"
                   prop="vendor"
                 >
@@ -91,7 +103,7 @@
                   :label="t('云账号')"
                   prop="account_id"
                 >
-                </bk-table-column>
+                </bk-table-column> -->
                 <bk-table-column
                   :label="t('地域')"
                   prop="region"
@@ -102,17 +114,17 @@
                     }}
                   </template>
                 </bk-table-column>
-                <bk-table-column
+                <!-- <bk-table-column
                   :label="t('资源实例ID')"
                   prop="res_id"
                 >
                   <template #default="{ data }">
-                    <!-- <bk-button
-              text theme="primary" @click="() => {
-                handleShowDialog(data?.res_type, data?.res_id, data?.vendor)
-              }">
-              {{data?.res_id}}
-            </bk-button> -->
+                    <bk-button
+                      text theme="primary" @click="() => {
+                        handleShowDialog(data?.res_type, data?.res_id, data?.vendor)
+                      }">
+                      {{data?.res_id}}
+                    </bk-button>
                     {{data?.res_id}}
                   </template>
                 </bk-table-column>
@@ -120,31 +132,25 @@
                   :label="selectedType === 'cvm' ? t('资源名称') : t('关联的主机')"
                   prop="res_name"
                 >
-                </bk-table-column>
+                </bk-table-column> -->
                 <bk-table-column
-                  :label="t('回收执行人')"
+                  label="回收人"
                   prop="reviser"
                 >
                 </bk-table-column>
                 <bk-table-column
-                  :label="t('回收时间')"
+                  label="进入回收站时间"
                   prop="created_at"
+                />
+                <bk-table-column
+                  label="过期时间"
+                  prop="recycled_at"
                 >
                   <template #default="{ data }">
                     <bk-tag theme="danger" type="stroke">
                       {{ moment(data?.recycled_at).fromNow() }}
                     </bk-tag>
                     {{data?.recycled_at}}
-                  </template>
-                </bk-table-column>
-                <bk-table-column
-                  :label="t('状态')"
-                  prop="status"
-                >
-                  <template #default="{ data }">
-                    {{
-                      t(`${RECYCLE_BIN_ITEM_STATUS[data?.status]}`) || data?.status || '--'
-                    }}
                   </template>
                 </bk-table-column>
                 <bk-table-column
@@ -159,7 +165,7 @@
                         :disabled="!authVerifyData?.permissionAction?.recycle_bin_manage
                           || data?.status !== 'wait_recycle'"
                         class="mr10" @click="handleOperate('destroy', [data.id])">
-                        {{t('立即销毁')}}
+                        销毁
                       </bk-button>
                     </span>
                     <span @click="handleAuth('recycle_bin_manage')">
@@ -168,7 +174,7 @@
                         :disabled="!authVerifyData?.permissionAction?.recycle_bin_manage
                           || data?.status !== 'wait_recycle'"
                       >
-                        {{t('立即恢复')}}
+                        恢复
                       </bk-button>
                     </span>
                   </template>
@@ -237,7 +243,7 @@ import { Message } from 'bkui-vue';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import { useResourceStore, useAccountStore } from '@/store';
 import { CloudType, FilterType, QueryRuleOPEnum } from '@/typings';
-import { VENDORS } from '@/common/constant';
+import { VENDORS, VendorEnum } from '@/common/constant';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import HostInfo from '@/views/resource/resource-manage/children/components/host/host-info/index.vue';
 import HostDrive from '@/views/resource/resource-manage/children/components/host/host-drive.vue';
@@ -467,6 +473,30 @@ export default defineComponent({
       }
     };
 
+    const handleClick = (vendor: VendorEnum, id: number, type: 'drive'|'host') => {
+      const routeInfo: any = {
+        query: {
+          id,
+          type: vendor,
+        },
+      };
+      // 业务下
+      if (route.path.includes('business')) {
+        routeInfo.query.bizs = accountStore.bizs;
+        Object.assign(routeInfo, {
+          name: `${type}BusinessDetail`,
+        });
+      } else {
+        Object.assign(routeInfo, {
+          name: 'resourceDetail',
+          params: {
+            type,
+          },
+        });
+      }
+      router.push(routeInfo);
+    };
+
     getList();
 
     // 权限hook
@@ -508,6 +538,7 @@ export default defineComponent({
       RESERVE_TIME_SET,
       handleSettingConfirm,
       moment,
+      handleClick,
     };
   },
 });
