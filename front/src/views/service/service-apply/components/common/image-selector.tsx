@@ -32,7 +32,7 @@ export default defineComponent({
       count: 100,
     });
     const checkedImageId = ref('');
-    const selectedPlatform = ref('linux');
+    const selectedPlatform = ref('Linux');
 
     const selected = computed({
       get() {
@@ -112,11 +112,11 @@ export default defineComponent({
               op: QueryRuleOPEnum.EQ,
               value: 'public',
             },
-          // {
-          //   field: 'platform',
-          //   op: QueryRuleOPEnum.EQ,
-          //   value: platform,
-          // },
+            {
+              field: 'os_type',
+              op: QueryRuleOPEnum.EQ,
+              value: selectedPlatform.value,
+            },
           ],
         };
 
@@ -246,21 +246,21 @@ export default defineComponent({
           title='选择镜像'
           width={1500}>
           <Form>
-            <FormItem label='机型族' labelPosition='left'>
+            <FormItem label='平台' labelPosition='left'>
               <BkButtonGroup>
                 <Button
-                  onClick={() => (selectedPlatform.value = 'linux')}
-                  selected={selectedPlatform.value === 'linux'}>
+                  onClick={() => (selectedPlatform.value = 'Linux')}
+                  selected={selectedPlatform.value === 'Linux'}>
                   Linux
                 </Button>
                 <Button
-                  onClick={() => (selectedPlatform.value = 'windows')}
-                  selected={selectedPlatform.value === 'windows'}>
+                  onClick={() => (selectedPlatform.value = 'Windows')}
+                  selected={selectedPlatform.value === 'Windows'}>
                     Windows
                 </Button>
                 <Button
-                  onClick={() => (selectedPlatform.value = 'others')}
-                  selected={selectedPlatform.value === 'others'}>
+                  onClick={() => (selectedPlatform.value = 'Other')}
+                  selected={selectedPlatform.value === 'Other'}>
                   其它
                 </Button>
               </BkButtonGroup>

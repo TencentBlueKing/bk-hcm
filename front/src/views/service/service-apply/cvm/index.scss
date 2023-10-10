@@ -43,6 +43,20 @@
     align-items: center;
     flex: 1;
 
+    .purchase-cvm-bottom-bar-form-count {
+      .purchase-cvm-bottom-bar-form-count-tip {
+        color: #979BA5;
+        .purchase-cvm-bottom-bar-form-count-tip-num {
+          color: #3A84FF;
+          font-weight: bold;
+        }
+      }
+    }
+
+    .mb-12 {
+      margin-bottom: -12px;
+    }
+
     .purchase-cvm-time {
       display: grid;
       grid-template-columns: 2fr 1fr 1fr;

@@ -91,7 +91,7 @@ const selectedResourceGroup = computed({
 const handleChangeAccount = (account: any) => {
   vendorList.value = [
     {
-      id: account.vendor,
+      id: account?.vendor,
       name: CloudType[account?.vendor],
     },
   ];
@@ -108,7 +108,7 @@ const { isResourcePage } = useWhereAmI();
 const resourceAccountStore = useResourceAccountStore();
 
 watch(
-  () => resourceAccountStore.resourceAccount.id,
+  () => resourceAccountStore.resourceAccount?.id,
   (id) => {
     selectedCloudAccountId.value = id;
     handleChangeAccount(resourceAccountStore.resourceAccount);

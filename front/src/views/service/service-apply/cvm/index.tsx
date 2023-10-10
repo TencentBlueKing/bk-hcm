@@ -55,6 +55,8 @@ export default defineComponent({
     const { isResourcePage } = useWhereAmI();
     const router = useRouter();
     const isSubmitBtnLoading = ref(false);
+    const usageNum = ref(20);
+    const limitNum = ref(150);
 
     const dialogState = reactive({
       gcpDataDisk: {
@@ -924,8 +926,19 @@ export default defineComponent({
 
       <div class={'purchase-cvm-bottom-bar'}>
           <Form class={'purchase-cvm-bottom-bar-form'}>
-            <FormItem  label='数量'>
-              <Input type='number' min={0} max={100} v-model={formData.required_count}></Input>
+            <FormItem  label='数量' class={'purchase-cvm-bottom-bar-form-count ' + `${[VendorEnum.TCLOUD, VendorEnum.HUAWEI, VendorEnum.GCP].includes(cond.vendor as VendorEnum) ? 'mb-12' : ''}`}>
+              <div>
+                <Input type='number' min={0} max={100} v-model={formData.required_count}></Input>
+                {
+                  [VendorEnum.TCLOUD, VendorEnum.HUAWEI, VendorEnum.GCP].includes(cond.vendor as VendorEnum)
+                    ? (
+                    <p class={'purchase-cvm-bottom-bar-form-count-tip'}>
+                      所在地域配额为 <span class={'purchase-cvm-bottom-bar-form-count-tip-num'}>{ limitNum.value - usageNum.value - formData.required_count }</span> /{ limitNum.value }
+                    </p>
+                    )
+                    : null
+                }
+              </div>
             </FormItem>
             <FormItem  label='时长' >
               <div class={'purchase-cvm-time'}>
