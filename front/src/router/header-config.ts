@@ -9,12 +9,12 @@ export const headRouteConfig = [
     route: 'business',
     href: '#/business/host',
   },
-  {
-    id: 'service',
-    name: '服务请求',
-    route: 'service',
-    href: '#/service/service-apply',
-  },
+  // {
+  //   id: 'service',
+  //   name: '服务请求',
+  //   route: 'service',
+  //   href: '#/service/service-apply',
+  // },
   {
     id: 'resource',
     name: '资源接入',
