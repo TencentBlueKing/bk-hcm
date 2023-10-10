@@ -43,7 +43,7 @@ export default defineComponent({
       <div class={'account-list-container'}>
         <Input
           class={'search-input'}
-          placeholder='搜索云厂商，云账号'
+          placeholder='搜索云账号'
           type='search'
           clearable
           v-model={searchVal.value}></Input>

@@ -379,7 +379,7 @@ export const RESOURCE_TABS = [
   },
   {
     key: '/resource/resource/record',
-    label: '购买记录',
+    label: '操作记录',
   },
   {
     key: '/resource/resource/recycle',
