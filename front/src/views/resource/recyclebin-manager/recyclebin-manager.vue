@@ -18,8 +18,12 @@
           @change="(val) => handleSelected(val)"
         >
           <template #setting>
-            <div class="setting-icon-container" @click="() => isSettingDialogShow = true">
-              <i class="icon bk-icon icon-shezhi"></i>
+            <div
+              class="setting-icon-container"
+              @click="() => isSettingDialogShow = true"
+              v-show="resourceAccountStore.resourceAccount?.id"
+            >
+              <i class="icon bk-icon icon-shezhi" diasbled></i>
             </div>
           </template>
           <bk-tab-panel
@@ -211,7 +215,8 @@
       title="回收站配置"
       @closed="() => isSettingDialogShow = false"
       @confirm="handleSettingConfirm"
-      theme="primary">
+      theme="primary"
+      :is-loading="isSettingDialogLoading">
       保留时长
       <bk-select
         v-model="recycleReserveTime"
@@ -252,6 +257,7 @@ import { RECYCLE_BIN_ITEM_STATUS } from '@/constants/resource';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import moment from 'moment';
+import http from '@/http';
 
 export default defineComponent({
   name: 'RecyclebinManageList',
@@ -268,6 +274,7 @@ export default defineComponent({
     const fetchUrl = ref<string>('recycle_records/list');
     const { getRegionName } = useRegionsStore();
     const resourceAccountStore = useResourceAccountStore();
+    const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
     const state = reactive({
       isAccurate: false,    // 是否精确
@@ -301,7 +308,8 @@ export default defineComponent({
     });
 
     const isSettingDialogShow = ref(false);
-    const recycleReserveTime = ref(2);
+    const isSettingDialogLoading = ref(false);
+    const recycleReserveTime = ref(48);
     const RESERVE_TIME_SET = new Array(8).fill(0)
       .map((_val, idx) => idx)
       .map(num => ({
@@ -340,8 +348,21 @@ export default defineComponent({
     };
 
     // 确定回收站保留时长
-    const handleSettingConfirm = () => {
-      isSettingDialogShow.value = false;
+    const handleSettingConfirm = async () => {
+      isSettingDialogLoading.value = true;
+      try {
+        await http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${resourceAccountStore.resourceAccount?.id}`, {
+          account_id: resourceAccountStore.resourceAccount?.id,
+          recycle_reserve_time: recycleReserveTime.value,
+        });
+        Message({
+          theme: 'success',
+          message: '配置成功',
+        });
+        isSettingDialogShow.value = false;
+      } finally {
+        isSettingDialogLoading.value = false;
+      }
     };
 
     // 是否精确
@@ -539,6 +560,8 @@ export default defineComponent({
       handleSettingConfirm,
       moment,
       handleClick,
+      isSettingDialogLoading,
+      resourceAccountStore,
     };
   },
 });
