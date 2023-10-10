@@ -52,7 +52,7 @@ func BizValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 	authRes := make([]meta.ResourceAttribute, 0, total)
 	notMatchedIDs, recycledIDs, notRecycledIDS := make([]string, 0), make([]string, 0, total), make([]string, 0, total)
 	for id, info := range opt.BasicInfos {
-		if info.BkBizID != bizID {
+		if info.BkBizID != 0 && bizID != 0 && info.BkBizID != bizID {
 			notMatchedIDs = append(notMatchedIDs, id)
 		}
 		if info.RecycleStatus == enumor.RecycleStatus {
