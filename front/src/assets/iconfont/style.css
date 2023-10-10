@@ -29,11 +29,23 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .icon-plus-circle:before {
 	content: "\e142";
 }
+.icon-7chenggong-01:before {
+	content: "\e432";
+}
+.icon-38moxingshibai-01:before {
+	content: "\e455";
+}
 .icon-down-shape:before {
 	content: "\ef96";
 }
 .icon-right-shape:before {
 	content: "\efb9";
+}
+.icon-bianji:before {
+	content: "\3f";
+}
+.icon-fenxiang:before {
+	content: "\50";
 }
 .icon-arrows--right--line:before {
 	content: "\630";
@@ -43,6 +55,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 }
 .icon-angle-up-fill:before {
 	content: "\67f";
+}
+.icon-grag-fill:before {
+	content: "\70c";
 }
 .icon-invisible1:before {
 	content: "\27ff";
@@ -64,6 +79,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 }
 .icon-collect:before {
 	content: "\4d11";
+}
+.icon-shezhi:before {
+	content: "\5e06";
 }
 .icon-cuo:before {
 	content: "\60ce";

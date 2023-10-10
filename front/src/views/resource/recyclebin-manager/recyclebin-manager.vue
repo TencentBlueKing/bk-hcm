@@ -1,8 +1,8 @@
 <template>
-  <div class="template-warp">
+  <div>
     <div class="flex-row operate-warp justify-content-between align-items-center mb20" v-if="isResourcePage">
       <div>
-        <bk-button-group>
+        <!-- <bk-button-group>
           <bk-button
             v-for="item in recycleTypeData"
             :key="item.value"
@@ -11,171 +11,196 @@
           >
             {{ item.name }}
           </bk-button>
-        </bk-button-group>
-      </div>
-      <!-- <div class="flex-row input-warp justify-content-between align-items-center">
-        <bk-checkbox v-model="isAccurate" class="pr20">
-          {{t('精确')}}
-        </bk-checkbox>
-        <bk-search-select class="bg-white w280" v-model="searchValue" :data="searchData"></bk-search-select>
-      </div> -->
-    </div>
-    <section v-if="isResourcePage">
-      <span
-        v-bk-tooltips="{ content: '请勾选主机信息', disabled: selections.length }"
-        @click="handleAuth('recycle_bin_manage')">
-        <bk-button
-          theme="primary"
-          :disabled="!selections.length || !authVerifyData?.permissionAction?.recycle_bin_manage"
-          @click="handleOperate('destroy')"
-        >{{ t('立即销毁') }}
-        </bk-button>
-      </span>
-      <span
-        v-bk-tooltips="{ content: '请勾选主机信息', disabled: selections.length }"
-        @click="handleAuth('recycle_bin_manage')">
-        <bk-button
-          class="ml10 mb20"
-          theme="primary"
-          :disabled="!selections.length || !authVerifyData?.permissionAction?.recycle_bin_manage"
-          @click="handleOperate('recover')"
-        >{{ t('立即恢复') }}
-        </bk-button>
-      </span>
-    </section>
-    <bk-loading
-      :loading="isLoading"
-    >
-      <bk-table
-        class="table-layout"
-        :data="datas"
-        remote-pagination
-        :pagination="pagination"
-        show-overflow-tooltip
-        @page-value-change="handlePageChange"
-        @page-limit-change="handlePageSizeChange"
-        @selection-change="handleSelectionChange"
-        row-hover="auto"
-        row-key="id"
-      >
-        <bk-table-column
-          v-if="isResourcePage"
-          width="100"
-          type="selection"
-        />
-        <bk-table-column
-          label="ID"
-          prop="id"
-          width="120"
-          sort
-        />
-        <bk-table-column
-          :label="t('回收任务ID')"
-          prop="task_id"
+        </bk-button-group> -->
+        <bk-tab
+          type="card-grid"
+          v-model:active="selectedType"
+          @change="(val) => handleSelected(val)"
         >
-        </bk-table-column>
-        <bk-table-column
-          :label="t('云厂商')"
-          prop="vendor"
-        >
-          <template #default="props">
-            {{CloudType[props?.data?.vendor]}}
+          <template #setting>
+            <div
+              class="setting-icon-container"
+              @click="() => isSettingDialogShow = true"
+              v-show="resourceAccountStore.resourceAccount?.id"
+            >
+              <i class="icon bk-icon icon-shezhi" diasbled></i>
+            </div>
           </template>
-        </bk-table-column>
-        <bk-table-column
-          :label="t('云账号')"
-          prop="account_id"
-        >
-        </bk-table-column>
-        <bk-table-column
-          :label="t('地域')"
-          prop="region"
-        >
-          <template #default="{ data }">
-            {{
-              getRegionName(data?.vendor, data?.region)
-            }}
-          </template>
-        </bk-table-column>
-        <bk-table-column
-          :label="t('资源实例ID')"
-          prop="res_id"
-        >
-          <template #default="{ data }">
-            <!-- <bk-button
-              text theme="primary" @click="() => {
-                handleShowDialog(data?.res_type, data?.res_id, data?.vendor)
-              }">
-              {{data?.res_id}}
-            </bk-button> -->
-            {{data?.res_id}}
-          </template>
-        </bk-table-column>
-        <bk-table-column
-          :label="selectedType === 'cvm' ? t('资源名称') : t('关联的主机')"
-          prop="res_name"
-        >
-        </bk-table-column>
-        <bk-table-column
-          :label="t('回收执行人')"
-          prop="reviser"
-        >
-        </bk-table-column>
-        <bk-table-column
-          :label="t('回收时间')"
-          prop="created_at"
-        >
-          <template #default="{ data }">
-            {{data?.created_at}}
-          </template>
-        </bk-table-column>
-        <bk-table-column
-          :label="t('状态')"
-          prop="status"
-        >
-          <template #default="{ data }">
-            {{
-              t(`${RECYCLE_BIN_ITEM_STATUS[data?.status]}`) || data?.status || '--'
-            }}
-          </template>
-        </bk-table-column>
-        <bk-table-column
-          v-if="isResourcePage"
-          :label="t('操作')"
-          :min-width="150"
-        >
-          <template #default="{ data }">
-            <span @click="handleAuth('recycle_bin_manage')">
-              <bk-button
-                text theme="primary"
-                :disabled="!authVerifyData?.permissionAction?.recycle_bin_manage || data?.status !== 'wait_recycle'"
-                class="mr10" @click="handleOperate('destroy', [data.id])">
-                {{t('立即销毁')}}
-              </bk-button>
-            </span>
-            <span @click="handleAuth('recycle_bin_manage')">
-              <bk-button
-                text theme="primary" @click="handleOperate('recover', [data.id])"
-                :disabled="!authVerifyData?.permissionAction?.recycle_bin_manage || data?.status !== 'wait_recycle'"
+          <bk-tab-panel
+            v-for="item in recycleTypeData"
+            :key="item.value"
+            :name="item.value"
+            :label="item.name"
+          >
+            <section v-if="isResourcePage">
+              <span
+                v-bk-tooltips="{ content: '请勾选主机信息', disabled: selections.length }"
+                @click="handleAuth('recycle_bin_manage')">
+                <bk-button
+                  :disabled="!selections.length || !authVerifyData?.permissionAction?.recycle_bin_manage"
+                  @click="handleOperate('destroy')"
+                >{{ t('立即销毁') }}
+                </bk-button>
+              </span>
+              <span
+                v-bk-tooltips="{ content: '请勾选主机信息', disabled: selections.length }"
+                @click="handleAuth('recycle_bin_manage')">
+                <bk-button
+                  class="ml10 mb20"
+                  :disabled="!selections.length || !authVerifyData?.permissionAction?.recycle_bin_manage"
+                  @click="handleOperate('recover')"
+                >{{ t('立即恢复') }}
+                </bk-button>
+              </span>
+            </section>
+            <bk-loading
+              :loading="isLoading"
+            >
+              <bk-table
+                class="table-layout"
+                :data="datas"
+                remote-pagination
+                :pagination="pagination"
+                @page-value-change="handlePageChange"
+                @page-limit-change="handlePageSizeChange"
+                @selection-change="handleSelectionChange"
+                row-hover="auto"
+                row-key="id"
               >
-                {{t('立即恢复')}}
-              </bk-button>
-            </span>
-          </template>
-        </bk-table-column>
-      </bk-table>
-      <bk-dialog
-        :is-show="showDeleteBox"
-        :title="deleteBoxTitle"
-        :theme="'primary'"
-        :quick-close="false"
-        @closed="showDeleteBox = false"
-        @confirm="handleDialogConfirm"
-      >
-        <div v-if="type === 'destroy'">{{`${selectedType === 'cvm' ? '销毁之后无法恢复主机信息' : '销毁之后无法从云上恢复硬盘'}`}}</div>
-        <div v-else>{{t(`将恢复${selectedType === 'cvm' ? '主机' : '硬盘'}信息`)}}</div>
-      </bk-dialog>
-    </bk-loading>
+                <bk-table-column
+                  v-if="isResourcePage"
+                  width="100"
+                  type="selection"
+                />
+                <bk-table-column
+                  label="ID"
+                  prop="id"
+                  width="120"
+                  sort
+                >
+                  <template #default="props">
+                    <bk-button
+                      theme="primary"
+                      text
+                      @click="() => handleClick(props?.data?.vendor,
+                                                props?.data?.id,
+                                                selectedType === 'cvm' ? 'host' : 'drive')"
+                    >
+                      {{props?.data?.res_id}}
+                    </bk-button>
+                  </template>
+                </bk-table-column>
+                <bk-table-column
+                  label="名称"
+                  prop="res_name"
+                >
+                </bk-table-column>
+                <!-- <bk-table-column
+                  :label="t('云厂商')"
+                  prop="vendor"
+                >
+                  <template #default="props">
+                    {{CloudType[props?.data?.vendor]}}
+                  </template>
+                </bk-table-column>
+                <bk-table-column
+                  :label="t('云账号')"
+                  prop="account_id"
+                >
+                </bk-table-column> -->
+                <bk-table-column
+                  :label="t('地域')"
+                  prop="region"
+                >
+                  <template #default="{ data }">
+                    {{
+                      getRegionName(data?.vendor, data?.region)
+                    }}
+                  </template>
+                </bk-table-column>
+                <!-- <bk-table-column
+                  :label="t('资源实例ID')"
+                  prop="res_id"
+                >
+                  <template #default="{ data }">
+                    <bk-button
+                      text theme="primary" @click="() => {
+                        handleShowDialog(data?.res_type, data?.res_id, data?.vendor)
+                      }">
+                      {{data?.res_id}}
+                    </bk-button>
+                    {{data?.res_id}}
+                  </template>
+                </bk-table-column>
+                <bk-table-column
+                  :label="selectedType === 'cvm' ? t('资源名称') : t('关联的主机')"
+                  prop="res_name"
+                >
+                </bk-table-column> -->
+                <bk-table-column
+                  label="回收人"
+                  prop="reviser"
+                >
+                </bk-table-column>
+                <bk-table-column
+                  label="进入回收站时间"
+                  prop="created_at"
+                />
+                <bk-table-column
+                  label="过期时间"
+                  prop="recycled_at"
+                >
+                  <template #default="{ data }">
+                    <bk-tag theme="danger" type="stroke">
+                      {{ moment(data?.recycled_at).fromNow() }}
+                    </bk-tag>
+                    {{data?.recycled_at}}
+                  </template>
+                </bk-table-column>
+                <bk-table-column
+                  v-if="isResourcePage"
+                  :label="t('操作')"
+                  :min-width="150"
+                >
+                  <template #default="{ data }">
+                    <span @click="handleAuth('recycle_bin_manage')">
+                      <bk-button
+                        text theme="primary"
+                        :disabled="!authVerifyData?.permissionAction?.recycle_bin_manage
+                          || data?.status !== 'wait_recycle'"
+                        class="mr10" @click="handleOperate('destroy', [data.id])">
+                        销毁
+                      </bk-button>
+                    </span>
+                    <span @click="handleAuth('recycle_bin_manage')">
+                      <bk-button
+                        text theme="primary" @click="handleOperate('recover', [data.id])"
+                        :disabled="!authVerifyData?.permissionAction?.recycle_bin_manage
+                          || data?.status !== 'wait_recycle'"
+                      >
+                        恢复
+                      </bk-button>
+                    </span>
+                  </template>
+                </bk-table-column>
+              </bk-table>
+              <bk-dialog
+                :is-show="showDeleteBox"
+                :title="deleteBoxTitle"
+                :theme="'primary'"
+                :quick-close="false"
+                @closed="showDeleteBox = false"
+                @confirm="handleDialogConfirm"
+              >
+                <div v-if="type === 'destroy'">{{`${selectedType === 'cvm' ? '销毁之后无法恢复主机信息' : '销毁之后无法从云上恢复硬盘'}`}}</div>
+                <div v-else>{{t(`将恢复${selectedType === 'cvm' ? '主机' : '硬盘'}信息`)}}</div>
+              </bk-dialog>
+            </bk-loading>
+          </bk-tab-panel>
+        </bk-tab>
+      </div>
+    </div>
+
 
     <bk-dialog
       :is-show="showResourceInfo"
@@ -183,6 +208,27 @@
       theme="primary">
       <HostInfo v-if="selectedType === 'cvm'" :data="detail" :type="vendor"></HostInfo>
       <HostDrive v-else :data="detail" :type="vendor"></HostDrive>
+    </bk-dialog>
+
+    <bk-dialog
+      :is-show="isSettingDialogShow"
+      title="回收站配置"
+      @closed="() => isSettingDialogShow = false"
+      @confirm="handleSettingConfirm"
+      theme="primary"
+      :is-loading="isSettingDialogLoading">
+      保留时长
+      <bk-select
+        v-model="recycleReserveTime"
+        class="mt6"
+      >
+        <bk-option
+          v-for="(item) in RESERVE_TIME_SET"
+          :key="item.value"
+          :value="item.value"
+          :label="item.label"
+        />
+      </bk-select>
     </bk-dialog>
 
     <permission-dialog
@@ -195,20 +241,23 @@
 </template>
 
 <script lang="ts">
-import { reactive, watch, toRefs, defineComponent, ref, computed } from 'vue';
+import { reactive, watch, toRefs, defineComponent, ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { Message } from 'bkui-vue';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import { useResourceStore, useAccountStore } from '@/store';
-import { CloudType, FilterType } from '@/typings';
-import { VENDORS } from '@/common/constant';
+import { CloudType, FilterType, QueryRuleOPEnum } from '@/typings';
+import { VENDORS, VendorEnum } from '@/common/constant';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import HostInfo from '@/views/resource/resource-manage/children/components/host/host-info/index.vue';
 import HostDrive from '@/views/resource/resource-manage/children/components/host/host-drive.vue';
 import { useVerify } from '@/hooks';
 import { RECYCLE_BIN_ITEM_STATUS } from '@/constants/resource';
 import { useRegionsStore } from '@/store/useRegionsStore';
+import { useResourceAccountStore } from '@/store/useResourceAccountStore';
+import moment from 'moment';
+import http from '@/http';
 
 export default defineComponent({
   name: 'RecyclebinManageList',
@@ -224,6 +273,8 @@ export default defineComponent({
     const accountStore = useAccountStore();
     const fetchUrl = ref<string>('recycle_records/list');
     const { getRegionName } = useRegionsStore();
+    const resourceAccountStore = useResourceAccountStore();
+    const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
     const state = reactive({
       isAccurate: false,    // 是否精确
@@ -256,6 +307,15 @@ export default defineComponent({
       detail: {},
     });
 
+    const isSettingDialogShow = ref(false);
+    const isSettingDialogLoading = ref(false);
+    const recycleReserveTime = ref(48);
+    const RESERVE_TIME_SET = new Array(8).fill(0)
+      .map((_val, idx) => idx)
+      .map(num => ({
+        label: `${num}${num > 0 ? '天' : ''}`,
+        value: num * 24,
+      }));
 
     // hooks
     const {
@@ -275,13 +335,34 @@ export default defineComponent({
 
     // 选择类型
     const handleSelected = (v) => {
-      state.filter.rules = [{
+      const rule = {
         field: 'res_type',
         op: 'eq',
         value: v,
-      }];
+      };
+      const idx = state.filter.rules.findIndex(({ field }) => field === 'res_type');
+      if (idx === -1) state.filter.rules.push(rule);
+      else state.filter.rules[idx] = rule;
       state.selectedType = v;
       resetSelections();
+    };
+
+    // 确定回收站保留时长
+    const handleSettingConfirm = async () => {
+      isSettingDialogLoading.value = true;
+      try {
+        await http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${resourceAccountStore.resourceAccount?.id}`, {
+          account_id: resourceAccountStore.resourceAccount?.id,
+          recycle_reserve_time: recycleReserveTime.value,
+        });
+        Message({
+          theme: 'success',
+          message: '配置成功',
+        });
+        isSettingDialogShow.value = false;
+      } finally {
+        isSettingDialogLoading.value = false;
+      }
     };
 
     // 是否精确
@@ -302,6 +383,51 @@ export default defineComponent({
         handleSelected(params.type);
       }
     }, { immediate: true });
+
+    watch(
+      () => resourceAccountStore.resourceAccount,
+      (account) => {
+        const idx = state.filter.rules.findIndex(({ field }) => field === 'account_id');
+        if (!account.id) {
+          if (idx > -1) state.filter.rules.splice(idx);
+          return;
+        }
+        const rule = {
+          field: 'account_id',
+          op: QueryRuleOPEnum.EQ,
+          value: account.id,
+        };
+        if (idx === -1) state.filter.rules.push(rule);
+        else state.filter.rules[idx] = rule;
+      },
+      {
+        immediate: true,
+        deep: true,
+      },
+    );
+
+    onMounted(() => {
+      moment.updateLocale('zh-cn', {
+        relativeTime: {
+          future: '余%s',
+          past: '%s前',
+          s: '%d秒',
+          ss: '%d秒',
+          m: '1分钟',
+          mm: '%d分钟',
+          h: '1小时',
+          hh: '%d小时',
+          d: '1天',
+          dd: '%d天',
+          w: '1周',
+          ww: '%d周',
+          M: '1月',
+          MM: '%d月',
+          y: '1年',
+          yy: '%d年',
+        },
+      });
+    });
 
     const isResourcePage = computed(() => {   // 资源下没有业务ID
       return !accountStore.bizs;
@@ -368,6 +494,30 @@ export default defineComponent({
       }
     };
 
+    const handleClick = (vendor: VendorEnum, id: number, type: 'drive'|'host') => {
+      const routeInfo: any = {
+        query: {
+          id,
+          type: vendor,
+        },
+      };
+      // 业务下
+      if (route.path.includes('business')) {
+        routeInfo.query.bizs = accountStore.bizs;
+        Object.assign(routeInfo, {
+          name: `${type}BusinessDetail`,
+        });
+      } else {
+        Object.assign(routeInfo, {
+          name: 'resourceDetail',
+          params: {
+            type,
+          },
+        });
+      }
+      router.push(routeInfo);
+    };
+
     getList();
 
     // 权限hook
@@ -404,6 +554,14 @@ export default defineComponent({
       authVerifyData,
       RECYCLE_BIN_ITEM_STATUS,
       getRegionName,
+      isSettingDialogShow,
+      recycleReserveTime,
+      RESERVE_TIME_SET,
+      handleSettingConfirm,
+      moment,
+      handleClick,
+      isSettingDialogLoading,
+      resourceAccountStore,
     };
   },
 });
@@ -432,6 +590,20 @@ export default defineComponent({
         animation: 3s move infinite linear;
       }
     }
+  }
+  .setting-icon-container {
+    width: 32px;
+    height: 32px;
+    background: #FFFFFF;
+    box-shadow: 0 2px 4px 0 #1919290d;
+    border-radius: 2px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+  }
+  .mt6 {
+    margin-top: 6px;
   }
 @-webkit-keyframes move {
   from {

@@ -16,10 +16,6 @@
     "dist"
   ],
   "lint-staged": {
-    "src/**/*.{less,scss,css}": [
-      "stylelint --fix --syntax=less",
-      "git add ."
-    ],
     "src/**/*.{js,ts,tsx,vue}": [
       "eslint --fix",
       "git add"
