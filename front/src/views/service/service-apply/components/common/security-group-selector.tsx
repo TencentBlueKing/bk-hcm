@@ -7,6 +7,7 @@ import './security-group-selector.scss';
 import { EditLine, Plus } from 'bkui-vue/lib/icon';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import DraggableCard from './DraggableCard';
+import { type UseDraggableReturn, VueDraggable } from 'vue-draggable-plus';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -28,9 +29,10 @@ export default defineComponent({
     const { isServicePage } = useWhereAmI();
     const isDialogShow = ref(false);
     const isScrollLoading = ref(false);
-    const securityGroupRulesMap = ref(new Map());
+    const securityGroupRules = ref([]);
     const securityGroupKVMap = ref(new Map<string, string>());
     const isRulesTableLoading = ref(false);
+    const el = ref<UseDraggableReturn>();
 
     const computedDisabled = computed(() => {
       return !(props.accountId && props.vendor && props.region);
@@ -107,8 +109,16 @@ export default defineComponent({
       () => isDialogShow.value,
       (isShow) => {
         if (!isShow) {
-          securityGroupRulesMap.value = new Map();
+          securityGroupRules.value = [];
         }
+      },
+    );
+
+    watch(
+      () => securityGroupRules.value,
+      arr => console.log(111, arr.map(({ id }) => securityGroupKVMap.value.get(id))),
+      {
+        deep: true,
       },
     );
 
@@ -161,7 +171,8 @@ export default defineComponent({
           isShow={isDialogShow.value}
           onClosed={() => (isDialogShow.value = false)}
           onConfirm={() => {
-            selected.value = [...Array.from(securityGroupKVMap.value).map(([k, _val]) => k)];
+            // selected.value = [...Array.from(securityGroupKVMap.value).map(([k, _val]) => k)];
+            selected.value = securityGroupRules.value.map(({ id }) => id);
             props.onSelectedChange(selected.value);
             isDialogShow.value = false;
           }}
@@ -194,11 +205,14 @@ export default defineComponent({
                             },
                           });
                           const arr = res.data?.details || [];
-                          securityGroupRulesMap.value.set(data.cloud_id, arr);
+                          securityGroupRules.value.push({
+                            id: data.cloud_id,
+                            data: arr,
+                          });
                           securityGroupKVMap.value.set(data.cloud_id, data.name);
                           isRulesTableLoading.value = false;
                         } else {
-                          securityGroupRulesMap.value.delete(data.cloud_id);
+                          securityGroupRules.value = securityGroupRules.value.filter(({ id }) => id !== data.cloud_id);
                           securityGroupKVMap.value.delete(data.cloud_id);
                         }
                       }}>
@@ -213,30 +227,32 @@ export default defineComponent({
             <div>
               <Loading loading={isRulesTableLoading.value}>
                 <div class={'security-group-rules-container'}>
-                  {
-                    Array.from(securityGroupRulesMap.value).map(([key, value]) => <div>
-                      {/* <Card
-                        isCollapse
-                        collapseStatus={false}
-                        title={securityGroupKVMap.value.get(key)}
-                        class={'mb12'}
-                      >
-                        <Table
-                          data={value}
-                          columns={securityRulesColumns}
-                        />
-                      </Card> */}
-                      <DraggableCard
-                        title={securityGroupKVMap.value.get(key)}
-                        index={1}
-                      >
-                        <Table
-                            data={value}
-                            columns={securityRulesColumns}
-                          />
-                      </DraggableCard>
-                    </div>)
-                  }
+                  {/* @ts-ignore */}
+                  <VueDraggable
+                    ref={el}
+                    v-model={securityGroupRules.value}
+                    animation={200}
+                    handle='.draggable-card-header-draggable-btn'
+                  >
+                    {/* <TransitionGroup
+                      type="transition"
+                      name="fade"
+                    > */}
+                      {
+                        securityGroupRules.value.map(({ id, data }, idx) => <div>
+                          <DraggableCard
+                            title={securityGroupKVMap.value.get(id)}
+                            index={idx}
+                          >
+                            <Table
+                                data={data}
+                                columns={securityRulesColumns}
+                              />
+                          </DraggableCard>
+                        </div>)
+                      }
+                    {/* </TransitionGroup> */}
+                  </VueDraggable>
                 </div>
               </Loading>
             </div>
