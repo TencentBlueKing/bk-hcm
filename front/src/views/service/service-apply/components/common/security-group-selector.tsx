@@ -242,7 +242,7 @@ export default defineComponent({
                         securityGroupRules.value.map(({ id, data }, idx) => <div>
                           <DraggableCard
                             title={securityGroupKVMap.value.get(id)}
-                            index={idx}
+                            index={idx + 1}
                           >
                             <Table
                                 data={data}

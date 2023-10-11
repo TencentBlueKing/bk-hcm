@@ -16,7 +16,7 @@ export default defineComponent({
   setup(props, { slots }) {
     const isExpand = ref(false);
     return () => (
-      <div>
+      <div class={'mb12'}>
         <div class='draggable-card-header'>
           <div onClick={() => isExpand.value = !isExpand.value} class={'draggable-card-header-icon'}>
             {
@@ -31,11 +31,16 @@ export default defineComponent({
           </div>
           <i class={'icon bk-icon icon-grag-fill mr16 draggable-card-header-draggable-btn'}></i>
         </div>
-        <div class={'draggable-card-container'}>
-            {
-              slots.default?.()
-            }
-        </div>
+        {
+          isExpand.value ? (
+            <div class={'draggable-card-container'}>
+                {
+                  slots.default?.()
+                }
+            </div>
+          )
+            : null
+        }
       </div>
     );
   },
