@@ -124,6 +124,9 @@ func init() {
 func ClearData() error {
 
 	tables := []table.Name{
+		table.AccountTable,
+		table.AccountSyncDetailTable,
+		table.AuditTable,
 		table.VpcTable,
 		table.SubnetTable,
 		table.RouteTableTable,

@@ -26,4 +26,7 @@ const (
 	SuiteTestUserKey = "suite"
 	// SuiteTestAppCodeKey  ...
 	SuiteTestAppCodeKey = "test"
+
+	// SuiteTestBizID biz id for suite test
+	SuiteTestBizID = 1234
 )

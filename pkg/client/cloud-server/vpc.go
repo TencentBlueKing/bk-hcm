@@ -45,17 +45,83 @@ func NewVpcClient(client rest.ClientInterface) *VpcClient {
 	}
 }
 
+// Assign 分配vpc到业务下
+func (v *VpcClient) Assign(kt *kit.Kit, req *csvpc.AssignVpcToBizReq) error {
+	resp := new(rest.BaseResp)
+
+	err := v.client.Post().
+		WithContext(kt.Ctx).
+		Body(req).
+		SubResourcef("/vpcs/assign/bizs").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
+// Update vpc
+func (v *VpcClient) Update(kt *kit.Kit, id string, req *csvpc.VpcUpdateReq) error {
+	resp := new(rest.BaseResp)
+
+	err := v.client.Patch().
+		WithContext(kt.Ctx).
+		Body(req).
+		SubResourcef("/vpcs/%s", id).
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
+// UpdateBiz vpc in business
+func (v *VpcClient) UpdateBiz(kt *kit.Kit, bizID int64, id string, req *csvpc.VpcUpdateReq) error {
+	resp := new(rest.BaseResp)
+
+	err := v.client.Patch().
+		WithContext(kt.Ctx).
+		Body(req).
+		SubResourcef("/bizs/%d/vpcs/%s", bizID, id).
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
 // ListInRes vpcs.
-func (v *VpcClient) ListInRes(ctx context.Context, h http.Header, req *core.ListReq) (
+func (v *VpcClient) ListInRes(kt *kit.Kit, req *core.ListReq) (
 	*csvpc.VpcListResult, error) {
 
 	resp := new(csvpc.VpcListResp)
 
 	err := v.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(req).
 		SubResourcef("/vpcs/list").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
@@ -70,16 +136,16 @@ func (v *VpcClient) ListInRes(ctx context.Context, h http.Header, req *core.List
 }
 
 // ListInBiz vpcs.
-func (v *VpcClient) ListInBiz(ctx context.Context, h http.Header, bizID int64, req *core.ListReq) (
+func (v *VpcClient) ListInBiz(kt *kit.Kit, bizID int64, req *core.ListReq) (
 	*csvpc.VpcListResult, error) {
 
 	resp := new(csvpc.VpcListResp)
 
 	err := v.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(req).
 		SubResourcef("/bizs/%d/vpcs/list", bizID).
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
@@ -91,6 +157,52 @@ func (v *VpcClient) ListInBiz(ctx context.Context, h http.Header, bizID int64, r
 	}
 
 	return resp.Data, nil
+}
+
+// GetInBiz 获取业务下vpc详情
+func (v *VpcClient) GetInBiz(kt *kit.Kit, bizID int, vpcID string) (*corecloud.BaseVpc, error) {
+
+	resp := new(core.BaseResp[*corecloud.BaseVpc])
+
+	err := v.client.Get().
+		WithContext(kt.Ctx).
+		Body(struct{}{}).
+		SubResourcef("/bizs/%d/vpcs/%s", bizID, vpcID).
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// DeleteBiz delete vpc in business
+func (v *VpcClient) DeleteBiz(kt *kit.Kit, bizID int, vpcID string) error {
+
+	resp := new(rest.BaseResp)
+	err := v.client.Delete().
+		WithContext(kt.Ctx).
+		Body(struct{}{}).
+		SubResourcef("/bizs/%d/vpcs/%s", bizID, vpcID).
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
 }
 
 // CreateTCloudVpc ...

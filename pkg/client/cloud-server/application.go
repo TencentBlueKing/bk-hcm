@@ -20,34 +20,35 @@
 package cloudserver
 
 import (
+	"hcm/pkg/api/cloud-server/application"
 	"hcm/pkg/api/core"
-	"hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
-// CvmClient is data service cvm api client.
-type CvmClient struct {
+// ApplicationClient cloud server  application client
+type ApplicationClient struct {
 	client rest.ClientInterface
 }
 
-// NewCvmClient create a new cvm api client.
-func NewCvmClient(client rest.ClientInterface) *CvmClient {
-	return &CvmClient{
+// NewApplicationClient create a new application api client.
+func NewApplicationClient(client rest.ClientInterface) *ApplicationClient {
+	return &ApplicationClient{
 		client: client,
 	}
 }
 
-// List cvms.
-func (v *CvmClient) List(kt *kit.Kit, bizID int64, req *core.ListReq) (*cloud.CvmListResult, error) {
+// CreateForAddAccount 录入账号申请单
+func (v *ApplicationClient) CreateForAddAccount(kt *kit.Kit, req *application.AccountAddReq) (*core.CreateResult,
+	error) {
 
-	resp := new(core.BaseResp[*cloud.CvmListResult])
+	resp := new(core.BaseResp[*core.CreateResult])
 
 	err := v.client.Post().
 		WithContext(kt.Ctx).
 		Body(req).
-		SubResourcef("/bizs/%d/cvms/list", bizID).
+		SubResourcef("/applications/types/add_account").
 		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)

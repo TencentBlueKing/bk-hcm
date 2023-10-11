@@ -26,6 +26,7 @@ import (
 	proto "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -66,16 +67,16 @@ func (v *SubnetClient) ListInRes(ctx context.Context, h http.Header, req *core.L
 }
 
 // ListInBiz subnets.
-func (v *SubnetClient) ListInBiz(ctx context.Context, h http.Header, bizID int64, req *core.ListReq) (
+func (v *SubnetClient) ListInBiz(kt *kit.Kit, bizID int64, req *core.ListReq) (
 	*proto.SubnetListResult, error) {
 
 	resp := new(proto.SubnetListResp)
 
 	err := v.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(req).
 		SubResourcef("/bizs/%d/subnets/list", bizID).
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
@@ -135,4 +136,26 @@ func (v *SubnetClient) ListCountIPInRes(ctx context.Context, h http.Header, req 
 	}
 
 	return resp.Data, nil
+}
+
+// Assign subnet to business
+func (v *SubnetClient) Assign(kt *kit.Kit, req *proto.AssignSubnetToBizReq) error {
+	resp := new(rest.BaseResp)
+
+	err := v.client.Post().
+		WithContext(kt.Ctx).
+		Body(req).
+		SubResourcef("/subnets/assign/bizs").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
 }

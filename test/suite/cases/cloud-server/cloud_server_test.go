@@ -27,6 +27,8 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+var accountID string
+
 func TestCloudServer(t *testing.T) {
 	SetDefaultFailureMode(FailureHalts)
 	// 清库
@@ -34,9 +36,14 @@ func TestCloudServer(t *testing.T) {
 		err := suite.ClearData()
 		So(err, ShouldBeNil)
 	})
+	TestAddAccount(t)
 	// 腾讯云相关测试
 	// 	Region 相关测试
 	TestTCloudRegion(t)
 	// 	VPC相关测试
 	TestTCloudVPC(t)
+}
+
+func TestCreateBaseRes(t *testing.T) {
+
 }

@@ -22,9 +22,11 @@ package cloudserver
 import (
 	"testing"
 
+	cloudserver "hcm/pkg/api/cloud-server"
 	csvpc "hcm/pkg/api/cloud-server/vpc"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
@@ -38,7 +40,7 @@ import (
 func TestTCloudVPC(t *testing.T) {
 	cli := suite.GetClientSet()
 	testVpcName := "vpc1"
-	testTcloudAccountID := "00000003"
+	testTcloudAccountID := accountID
 	var createdVpc cloud.BaseVpc
 	var createdSubnet cloud.BaseSubnet
 
@@ -59,7 +61,7 @@ func TestTCloudVPC(t *testing.T) {
 		Convey("list tcloud vpc", func() {
 			kt := cases.GenApiKit()
 			listReq := core.ListReq{Page: &core.BasePage{Limit: 500}, Filter: tools.AllExpression()}
-			listResult, err := cli.CloudServer().Vpc.ListInRes(kt.Ctx, kt.Header(), &listReq)
+			listResult, err := cli.CloudServer().Vpc.ListInRes(kt, &listReq)
 			So(err, ShouldBeNil)
 			So(listResult, ShouldNotBeNil)
 			So(len(listResult.Details), ShouldEqual, 0)
@@ -76,12 +78,24 @@ func TestTCloudVPC(t *testing.T) {
 
 		})
 
-		// 3. 查询创建结果，包括VPC、对应的子网，以及子网对应的路由表
+		// 3. 尝试分配到业务下
+		Convey("vpc assign to business", func() {
+			kt := cases.GenApiKit()
+			vpcAssign := &csvpc.AssignVpcToBizReq{
+				VpcIDs:  []string{createdVpc.ID},
+				BkBizID: constant.SuiteTestBizID,
+			}
+			err := cli.CloudServer().Vpc.Assign(kt, vpcAssign)
+			So(err, ShouldBeNil)
+
+		})
+
+		// 4. 查询创建结果，包括VPC、对应的子网，以及子网对应的路由表
 		Convey("check created vpc and subnet", func() {
 			kt := cases.GenApiKit()
 			Convey("check created vpc", func() {
 				listReq := core.ListReq{Page: &core.BasePage{Limit: 500}, Filter: tools.AllExpression()}
-				listResult, err := cli.CloudServer().Vpc.ListInRes(kt.Ctx, kt.Header(), &listReq)
+				listResult, err := cli.CloudServer().Vpc.ListInBiz(kt, constant.SuiteTestBizID, &listReq)
 				So(err, ShouldBeNil)
 				So(listResult, ShouldNotBeNil)
 				So(listResult.Details, ShouldHaveLength, 1)
@@ -109,6 +123,21 @@ func TestTCloudVPC(t *testing.T) {
 				So(subnetListResult.Details[0].CloudID, ShouldNotBeEmpty)
 				createdSubnet = subnetListResult.Details[0]
 
+				Convey("assign subnet to biz", func() {
+					subnetAssign := &cloudserver.AssignSubnetToBizReq{
+						SubnetIDs: []string{createdSubnet.ID},
+						BkBizID:   constant.SuiteTestBizID,
+					}
+					err = cli.CloudServer().Subnet.Assign(kt, subnetAssign)
+					So(err, ShouldBeNil)
+
+					subnetListResult, err := cli.CloudServer().Subnet.ListInBiz(kt, constant.SuiteTestBizID,
+						&subnetListReq)
+					So(err, ShouldBeNil)
+					So(subnetListResult, ShouldNotBeNil)
+					So(subnetListResult.Details, ShouldHaveLength, 1)
+				})
+
 			})
 
 			Convey("check generated route table", func() {
@@ -121,18 +150,64 @@ func TestTCloudVPC(t *testing.T) {
 							Value: createdSubnet.CloudRouteTableID},
 					},
 				}
-				routeTableResult, err := cli.CloudServer().RouteTable.ListInRes(kt.Ctx, kt.Header(), &routeTableListReq)
+				routeTableResult, err := cli.CloudServer().RouteTable.ListInRes(kt, &routeTableListReq)
 				So(err, ShouldBeNil)
 				So(routeTableResult, ShouldNotBeNil)
 				So(routeTableResult.Details, ShouldHaveLength, 1)
 				So(routeTableResult.Details[0].Name, ShouldEqual, "default")
 				So(routeTableResult.Details[0].CloudVpcID, ShouldEqual, createdVpc.CloudID)
 				So(routeTableResult.Details[0].CloudID, ShouldNotBeEmpty)
+
+				Convey("assign route table to biz", func() {
+					subnetAssign := &cloudserver.AssignRouteTableToBizReq{
+						RouteTableIDs: []string{createdSubnet.ID},
+						BkBizID:       constant.SuiteTestBizID,
+					}
+
+					err = cli.CloudServer().RouteTable.Assign(kt, subnetAssign)
+					So(err, ShouldBeNil)
+					routeTableResult, err := cli.CloudServer().RouteTable.ListInBiz(kt, constant.SuiteTestBizID,
+						&routeTableListReq)
+					So(err, ShouldBeNil)
+					So(routeTableResult, ShouldNotBeNil)
+					So(routeTableResult.Details, ShouldHaveLength, 1)
+				})
+
 			})
+
+		})
+
+		// 4. 修改vpc属性并验证
+		Convey("update vpc", func() {
+			kt := cases.GenApiKit()
+			updateReq := &csvpc.VpcUpdateReq{
+				Memo: converter.ValToPtr("vpc-name-updated"),
+			}
+			err := cli.CloudServer().Vpc.UpdateBiz(kt, constant.SuiteTestBizID, createdVpc.ID, updateReq)
+			So(err, ShouldBeNil)
+
+			vpcResult, err := cli.CloudServer().Vpc.GetInBiz(kt, constant.SuiteTestBizID, createdVpc.ID)
+			So(err, ShouldBeNil)
+			So(vpcResult.Memo, ShouldEqual, updateReq.Memo)
+		})
+		// 5. 删除vpc并验证
+		Convey("delete vpc and verify", func() {
+			kt := cases.GenApiKit()
+			err := cli.CloudServer().Vpc.DeleteBiz(kt, constant.SuiteTestBizID, createdVpc.ID)
+			So(err, ShouldBeNil)
+
+			listReq := core.ListReq{Page: &core.BasePage{Limit: 2}, Filter: tools.AllExpression()}
+			bizListResult, err := cli.CloudServer().Vpc.ListInBiz(kt, constant.SuiteTestBizID, &listReq)
+			So(err, ShouldBeNil)
+			So(bizListResult, ShouldNotBeNil)
+			So(len(bizListResult.Details), ShouldEqual, 0)
+
+			resListResult, err := cli.CloudServer().Vpc.ListInRes(kt, &listReq)
+			So(err, ShouldBeNil)
+			So(resListResult, ShouldNotBeNil)
+			So(len(resListResult.Details), ShouldEqual, 0)
 
 		})
 	})
 
-	// 4. 修改vpc属性并验证
-	// 5. 删除vpc并验证
 }

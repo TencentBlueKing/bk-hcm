@@ -20,44 +20,41 @@
 package cloudserver
 
 import (
-	"hcm/pkg/api/core"
-	"hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
-// CvmClient is data service cvm api client.
-type CvmClient struct {
+// AccountClient account related client
+type AccountClient struct {
 	client rest.ClientInterface
 }
 
-// NewCvmClient create a new cvm api client.
-func NewCvmClient(client rest.ClientInterface) *CvmClient {
-	return &CvmClient{
+// NewAccountClient return account client instance.
+func NewAccountClient(client rest.ClientInterface) *AccountClient {
+	return &AccountClient{
 		client: client,
 	}
 }
 
-// List cvms.
-func (v *CvmClient) List(kt *kit.Kit, bizID int64, req *core.ListReq) (*cloud.CvmListResult, error) {
+// Sync 账号同步
+func (c AccountClient) Sync(kt *kit.Kit, accountID string) error {
+	resp := new(rest.BaseResp)
 
-	resp := new(core.BaseResp[*cloud.CvmListResult])
-
-	err := v.client.Post().
+	err := c.client.Post().
 		WithContext(kt.Ctx).
-		Body(req).
-		SubResourcef("/bizs/%d/cvms/list", bizID).
+		Body(struct{}{}).
+		SubResourcef("/accounts/%s/sync", accountID).
 		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
+		return errf.New(resp.Code, resp.Message)
 	}
 
-	return resp.Data, nil
+	return nil
 }

@@ -54,7 +54,7 @@ func (svc *service) ListVpcWithSubnetCountInBiz(cts *rest.Contexts) (interface{}
 		Page:   req.Page,
 	}
 	if req.Page.Count {
-		vpcResult, err := svc.client.CloudServer().Vpc.ListInBiz(cts.Kit.Ctx, cts.Kit.Header(), bizID, listVpcReq)
+		vpcResult, err := svc.client.CloudServer().Vpc.ListInBiz(cts.Kit, bizID, listVpcReq)
 		if err != nil {
 			logs.Errorf("list vpc failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
@@ -65,7 +65,8 @@ func (svc *service) ListVpcWithSubnetCountInBiz(cts *rest.Contexts) (interface{}
 
 	switch vendor {
 	case enumor.TCloud:
-		vpcResult, err := svc.client.CloudServer().Vpc.TCloudListExtInBiz(cts.Kit.Ctx, cts.Kit.Header(), bizID, listVpcReq)
+		vpcResult, err := svc.client.CloudServer().Vpc.TCloudListExtInBiz(cts.Kit.Ctx, cts.Kit.Header(), bizID,
+			listVpcReq)
 		if err != nil {
 			logs.Errorf("list vpc failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
@@ -129,7 +130,8 @@ func (svc *service) ListVpcWithSubnetCountInBiz(cts *rest.Contexts) (interface{}
 
 		return &proto.ListVpcWithSubnetCountResult[corecloud.GcpVpcExtension]{Details: details}, nil
 	case enumor.Azure:
-		vpcResult, err := svc.client.CloudServer().Vpc.AzureListExtInBiz(cts.Kit.Ctx, cts.Kit.Header(), bizID, listVpcReq)
+		vpcResult, err := svc.client.CloudServer().Vpc.AzureListExtInBiz(cts.Kit.Ctx, cts.Kit.Header(), bizID,
+			listVpcReq)
 		if err != nil {
 			logs.Errorf("list vpc failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
@@ -150,7 +152,8 @@ func (svc *service) ListVpcWithSubnetCountInBiz(cts *rest.Contexts) (interface{}
 
 		return &proto.ListVpcWithSubnetCountResult[corecloud.AzureVpcExtension]{Details: details}, nil
 	case enumor.HuaWei:
-		vpcResult, err := svc.client.CloudServer().Vpc.HuaWeiListExtInBiz(cts.Kit.Ctx, cts.Kit.Header(), bizID, listVpcReq)
+		vpcResult, err := svc.client.CloudServer().Vpc.HuaWeiListExtInBiz(cts.Kit.Ctx, cts.Kit.Header(), bizID,
+			listVpcReq)
 		if err != nil {
 			logs.Errorf("list vpc failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
@@ -239,7 +242,7 @@ func (svc *service) ListVpcWithSubnetCountInRes(cts *rest.Contexts) (interface{}
 		Page:   req.Page,
 	}
 	if req.Page.Count {
-		vpcResult, err := svc.client.CloudServer().Vpc.ListInRes(cts.Kit.Ctx, cts.Kit.Header(), listVpcReq)
+		vpcResult, err := svc.client.CloudServer().Vpc.ListInRes(cts.Kit, listVpcReq)
 		if err != nil {
 			logs.Errorf("list vpc failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
@@ -374,7 +377,7 @@ func (svc *service) getVpcSubnetCount(kt *kit.Kit, vpcID, zone string, bizID int
 		},
 		Page: core.NewCountPage(),
 	}
-	vpcResult, err := svc.client.CloudServer().Subnet.ListInBiz(kt.Ctx, kt.Header(), bizID, req)
+	vpcResult, err := svc.client.CloudServer().Subnet.ListInBiz(kt, bizID, req)
 	if err != nil {
 		logs.Errorf("list vpc failed, err: %v, rid: %svc", err, kt.Rid)
 		return 0, 0, err
@@ -398,7 +401,7 @@ func (svc *service) getVpcSubnetCount(kt *kit.Kit, vpcID, zone string, bizID int
 		},
 		Page: core.NewCountPage(),
 	}
-	zoneResult, err := svc.client.CloudServer().Subnet.ListInBiz(kt.Ctx, kt.Header(), bizID, req)
+	zoneResult, err := svc.client.CloudServer().Subnet.ListInBiz(kt, bizID, req)
 	if err != nil {
 		logs.Errorf("list vpc failed, err: %v, rid: %svc", err, kt.Rid)
 		return 0, 0, err
