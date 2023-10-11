@@ -343,7 +343,7 @@ func (cli *client) listSubAccountFromDB(kt *kit.Kit, opt *SyncSubAccountOption) 
 	results := make([]coresubaccount.SubAccount[coresubaccount.HuaWeiExtension], 0)
 	for {
 		req.Page.Start = start
-		resp, err := cli.dbCli.HuaWei.SubAccount.ListExt(kt.Ctx, kt.Header(), req)
+		resp, err := cli.dbCli.HuaWei.SubAccount.ListExt(kt, req)
 		if err != nil {
 			logs.Errorf("[%s] list sub account from db failed, err: %v, account: %s, req: %v, rid: %s",
 				enumor.HuaWei, err, opt.AccountID, req, kt.Rid)
@@ -425,7 +425,7 @@ func (cli *client) isMainAccountInSubAccountDB(kt *kit.Kit) (bool, error) {
 	start := uint32(0)
 	for {
 		req.Page.Start = start
-		resp, err := cli.dbCli.HuaWei.SubAccount.ListExt(kt.Ctx, kt.Header(), req)
+		resp, err := cli.dbCli.HuaWei.SubAccount.ListExt(kt, req)
 		if err != nil {
 			logs.Errorf("[%s] list sub account from db failed, err: %v, req: %v, rid: %s",
 				enumor.HuaWei, err, req, kt.Rid)
