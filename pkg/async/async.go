@@ -21,6 +21,8 @@
 package async
 
 import (
+	// 注册测试用例
+	_ "hcm/pkg/async/action/test"
 	"hcm/pkg/async/backend"
 	"hcm/pkg/async/consumer"
 	"hcm/pkg/async/consumer/leader"
@@ -28,7 +30,10 @@ import (
 	"hcm/pkg/logs"
 )
 
-// Async 定义异步任务接口。
+/*
+Async 异步任务框架，提供异步任务下发和异步任务消费功能。
+由两部分组成，Producer【生产者】负责异步任务下发操作，Consumer【消费者】负责异步任务消费。
+*/
 type Async interface {
 	// GetProducer 获取生产者。生产者：负责异步任务下发，查询等职责。
 	GetProducer() producer.Producer
@@ -39,24 +44,19 @@ type Async interface {
 var _ Async = new(async)
 
 // NewAsync new async.
-func NewAsync(bd backend.Backend, ld leader.Leader, optFunc ...Option) (Async, error) {
-	opt := new(options)
-	for index := range optFunc {
-		optFunc[index](opt)
-	}
-
+func NewAsync(bd backend.Backend, ld leader.Leader, opt *Option) (Async, error) {
 	opt.tryDefaultValue()
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
 
-	pdr, err := producer.NewProducer(bd, opt.register)
+	pdr, err := producer.NewProducer(bd, opt.Register)
 	if err != nil {
 		logs.Errorf("new producer failed, err: %v", err)
 		return nil, err
 	}
 
-	csm, err := consumer.NewConsumer(bd, ld, opt.register)
+	csm, err := consumer.NewConsumer(bd, ld, opt.Register, opt.ConsumerOption)
 	if err != nil {
 		logs.Errorf("new consumer failed, err: %v", err)
 		return nil, err

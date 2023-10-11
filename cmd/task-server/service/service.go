@@ -60,7 +60,7 @@ type Service struct {
 }
 
 // NewService create a service instance.
-func NewService(sd serviced.ServiceDiscover) (*Service, error) {
+func NewService(sd serviced.ServiceDiscover, shutdownWaitTimeSec int) (*Service, error) {
 	tls := cc.TaskServer().Network.TLS
 
 	var tlsConfig *ssl.TLSConfig
@@ -87,7 +87,7 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 		return nil, err
 	}
 
-	async, err := createAndStartAsync(sd, dao)
+	async, err := createAndStartAsync(sd, dao, shutdownWaitTimeSec)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 	return svr, nil
 }
 
-func createAndStartAsync(sd serviced.ServiceDiscover, dao dao.Set) (async.Async, error) {
+func createAndStartAsync(sd serviced.ServiceDiscover, dao dao.Set, shutdownWaitTimeSec int) (async.Async, error) {
 	// 创建async框架使用的backend
 	bd, err := backend.Factory(enumor.BackendMysql, dao)
 	if err != nil {
@@ -109,8 +109,29 @@ func createAndStartAsync(sd serviced.ServiceDiscover, dao dao.Set) (async.Async,
 	}
 
 	leader := leader.NewLeader(sd)
-
-	async, err := async.NewAsync(bd, leader, async.MetricsRegisterer(metrics.Register()))
+	cfg := cc.TaskServer().Async
+	opt := &async.Option{
+		Register: metrics.Register(),
+		ConsumerOption: &consumer.Option{
+			Scheduler: &consumer.SchedulerOption{
+				WatchIntervalSec: cfg.Scheduler.WatchIntervalSec,
+				WorkerNumber:     cfg.Scheduler.WorkerNumber,
+			},
+			Executor: &consumer.ExecutorOption{
+				WorkerNumber:       cfg.Executor.WorkerNumber,
+				TaskExecTimeoutSec: cfg.Executor.TaskExecTimeoutSec,
+			},
+			Dispatcher: &consumer.DispatcherOption{
+				WatchIntervalSec: cfg.Dispatcher.WatchIntervalSec,
+			},
+			WatchDog: &consumer.WatchDogOption{
+				WatchIntervalSec:    cfg.WatchDog.WatchIntervalSec,
+				TaskRunTimeoutSec:   cfg.WatchDog.TaskTimeoutSec,
+				ShutdownWaitTimeSec: uint(shutdownWaitTimeSec),
+			},
+		},
+	}
+	async, err := async.NewAsync(bd, leader, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -126,10 +147,7 @@ func createAndStartAsync(sd serviced.ServiceDiscover, dao dao.Set) (async.Async,
 		}
 	}()
 
-	cfg := cc.TaskServer().Async
-	if err = async.GetConsumer().Start(consumer.NormalIntervalSec(cfg.NormalIntervalSec),
-		consumer.ExecutorWorkersCnt(cfg.ExecutorWorkerCnt), consumer.ParserWorkersCnt(cfg.ParserWorkersCnt),
-		consumer.FlowScheduleTimeoutSec(cfg.FlowScheduleTimeoutSec)); err != nil {
+	if err = async.GetConsumer().Start(); err != nil {
 		return nil, err
 	}
 

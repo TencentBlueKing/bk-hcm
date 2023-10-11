@@ -35,6 +35,8 @@ import (
 	"hcm/pkg/serviced"
 )
 
+const shutdownWaitTimeSec = 60
+
 // Run start the task server.
 func Run(opt *options.Option) error {
 	ds := new(taskServer)
@@ -51,7 +53,7 @@ func Run(opt *options.Option) error {
 	}
 
 	shutdown.RegisterFirstShutdown(ds.finalizer)
-	shutdown.WaitShutdown(60)
+	shutdown.WaitShutdown(shutdownWaitTimeSec)
 	return nil
 }
 
@@ -87,7 +89,7 @@ func (ds *taskServer) prepare(opt *options.Option) error {
 	ds.sd = sd
 
 	// init service.
-	svc, err := service.NewService(sd)
+	svc, err := service.NewService(sd, shutdownWaitTimeSec)
 	if err != nil {
 		return fmt.Errorf("initialize service failed, err: %v", err)
 	}

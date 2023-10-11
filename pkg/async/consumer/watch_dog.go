@@ -20,14 +20,32 @@
 package consumer
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
+	"hcm/pkg/api/core"
+	"hcm/pkg/async/action/run"
+	"hcm/pkg/async/backend"
+	"hcm/pkg/async/backend/model"
 	"hcm/pkg/async/closer"
+	"hcm/pkg/async/consumer/leader"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
+	tableasync "hcm/pkg/dal/table/async"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/times"
 )
 
-// WatchDog define watch dog interface.
+/*
+WatchDog （看门狗）:
+	1. 处理超时任务
+	2. 处理处于Scheduled状态，但执行节点已经挂掉的任务流
+	3. 处理处于Running状态，但执行节点正在Shutdown或者已经挂掉的任务流
+*/
 type WatchDog interface {
 	closer.Closer
 	// Start 启动watch dog，修复异常的异步任务流程。
@@ -36,20 +54,31 @@ type WatchDog interface {
 
 // watchDog 任务流、任务纠正策略
 type watchDog struct {
-	flowScheduledTimeout time.Duration
-	normalIntervalSec    time.Duration
+	bd backend.Backend
+	ld leader.Leader
+
+	taskTimeoutSec      time.Duration
+	shutdownWaitTimeSec time.Duration
+	watchIntervalSec    time.Duration
 
 	wg      sync.WaitGroup
 	closeCh chan struct{}
+
+	runningFlowMap map[string]time.Time
 }
 
 // NewWatchDog 创建一个watchdog
-func NewWatchDog(flowScheduledTimeout time.Duration, normalIntervalSec time.Duration) WatchDog {
+func NewWatchDog(bd backend.Backend, ld leader.Leader, opt *WatchDogOption) WatchDog {
 
 	return &watchDog{
-		flowScheduledTimeout: flowScheduledTimeout,
-		normalIntervalSec:    normalIntervalSec,
-		closeCh:              make(chan struct{}),
+		bd:                  bd,
+		ld:                  ld,
+		taskTimeoutSec:      time.Duration(opt.TaskRunTimeoutSec) * time.Second,
+		shutdownWaitTimeSec: time.Duration(opt.ShutdownWaitTimeSec) * time.Second,
+		watchIntervalSec:    time.Duration(opt.WatchIntervalSec) * time.Second,
+		wg:                  sync.WaitGroup{},
+		closeCh:             make(chan struct{}),
+		runningFlowMap:      make(map[string]time.Time),
 	}
 }
 
@@ -58,24 +87,25 @@ func (wd *watchDog) Start() {
 	wd.wg.Add(1)
 	go wd.watchWrapper(wd.handleExpiredTasks)
 	wd.wg.Add(1)
-	go wd.watchWrapper(wd.handleLongTimePendingFlows)
+	go wd.watchWrapper(wd.handleScheduledNotExistWorkerFlow)
 	wd.wg.Add(1)
-	go wd.watchWrapper(wd.handleLongTimedRunningFlows)
+	go wd.watchWrapper(wd.handleRunningNotExistWorkerFlow)
 }
 
 // 定期处理异常任务流或任务
-func (wd *watchDog) watchWrapper(do func() error) {
-	ticker := time.NewTicker(wd.normalIntervalSec)
+func (wd *watchDog) watchWrapper(do func(kt *kit.Kit) error) {
+	ticker := time.NewTicker(wd.watchIntervalSec)
 	defer ticker.Stop()
 
-	closed := false
-	for !closed {
+	for {
 		select {
 		case <-wd.closeCh:
-			closed = true
+			break
 		case <-ticker.C:
-			if err := do(); err != nil {
-				logs.Errorf("[async] [module-watchdog] do watch func error %v", err)
+			kt := NewKit()
+			if err := do(kt); err != nil {
+				logs.Errorf("%s: watch dog do watch func failed, err: %v, rid: %s", constant.AsyncTaskWarnSign,
+					err, kt.Rid)
 			}
 		}
 	}
@@ -89,17 +119,289 @@ func (wd *watchDog) Close() {
 	wd.wg.Wait()
 }
 
-// TODO：处理过期并且状态非成功或者失败的任务
-func (wd *watchDog) handleExpiredTasks() error {
+// handleExpiredTasks 将超时任务和所属的任务流，设置为失败状态，失败原因：ErrTaskExecTimeout
+func (wd *watchDog) handleExpiredTasks(kt *kit.Kit) error {
+
+	input := &backend.ListInput{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "state",
+					Op:    filter.In.Factory(),
+					Value: []enumor.TaskState{enumor.TaskRunning, enumor.TaskRollback},
+				},
+				&filter.AtomRule{
+					Field: "updated_at",
+					Op:    filter.LessThan.Factory(),
+					Value: times.ConvStdTimeFormat(times.ConvStdTimeNow().Add(-wd.taskTimeoutSec)),
+				},
+			},
+		},
+		Page: core.NewDefaultBasePage(),
+	}
+	tasks, err := wd.bd.ListTask(kt, input)
+	if err != nil {
+		logs.Errorf("list expired tasks failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	if len(tasks) == 0 {
+		return nil
+	}
+
+	ids := make([]string, 0, len(tasks))
+	for _, one := range tasks {
+		ids = append(ids, one.ID)
+		if err = wd.updateTimeoutTask(kt, one.ID); err != nil {
+			return err
+		}
+
+		flows := []model.Flow{
+			{
+				ID:    one.FlowID,
+				State: enumor.FlowFailed,
+				Reason: &tableasync.Reason{
+					Message: ErrTaskExecTimeout,
+				},
+			},
+		}
+		if err = wd.bd.BatchUpdateFlow(kt, flows); err != nil {
+			logs.Errorf("update flow to failed state failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+	}
+
+	logs.Infof("handleExpiredTasks success, count: %d, ids: %v, rid: %s", len(ids), ids, kt.Rid)
+
 	return nil
 }
 
-// TODO：处理长时间处于pending状态的flow
-func (wd *watchDog) handleLongTimePendingFlows() error {
+func (wd *watchDog) updateTimeoutTask(kt *kit.Kit, id string) error {
+	task := &model.Task{
+		ID:    id,
+		State: enumor.TaskFailed,
+		Reason: &tableasync.Reason{
+			Message: ErrTaskExecTimeout,
+		},
+	}
+	if err := wd.bd.UpdateTask(kt, task); err != nil {
+		logs.Errorf("update task to failed state failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
 	return nil
 }
 
-// TODO：处理长时间处于running状态的flow
-func (wd *watchDog) handleLongTimedRunningFlows() error {
+// handleScheduledNotExistWorkerFlow 将处于等待调度【Scheduled】且分配的节点已经下线的任务流重新设置为Pending.
+func (wd *watchDog) handleScheduledNotExistWorkerFlow(kt *kit.Kit) error {
+
+	flows, err := wd.queryNotExistNodesFlowByState(kt, enumor.FlowScheduled)
+	if err != nil {
+		return err
+	}
+
+	if len(flows) == 0 {
+		return nil
+	}
+
+	mds := make([]model.Flow, 0, len(flows))
+	ids := make([]string, 0, len(flows))
+	for _, one := range flows {
+		ids = append(ids, one.ID)
+		mds = append(mds, model.Flow{
+			ID:     one.ID,
+			State:  enumor.FlowPending,
+			Worker: converter.ValToPtr(""),
+		})
+	}
+	if err = wd.bd.BatchUpdateFlow(kt, flows); err != nil {
+		logs.Errorf("update flows failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	logs.Infof("handleScheduledNotExistWorkerFlow success, count: %d, ids: %v, rid: %s", len(ids), ids, kt.Rid)
+
+	return nil
+}
+
+func (wd *watchDog) queryNotExistNodesFlowByState(kt *kit.Kit, state enumor.FlowState) ([]model.Flow, error) {
+	nodes, err := wd.ld.AliveNodes()
+	if err != nil {
+		logs.Errorf("query alive nodes failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	input := &backend.ListInput{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "state",
+					Op:    filter.Equal.Factory(),
+					Value: state,
+				},
+				&filter.AtomRule{
+					Field: "worker",
+					Op:    filter.NotIn.Factory(),
+					Value: nodes,
+				},
+			},
+		},
+		Page: core.NewDefaultBasePage(),
+	}
+	flows, err := wd.bd.ListFlow(kt, input)
+	if err != nil {
+		logs.Errorf("list flows failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	return flows, nil
+}
+
+// handleRunningNotExistWorkerFlow 处理处于Running状态且处理Worker已经下线的Flow。
+func (wd *watchDog) handleRunningNotExistWorkerFlow(kt *kit.Kit) error {
+
+	flows, err := wd.queryNotExistNodesFlowByState(kt, enumor.FlowRunning)
+	if err != nil {
+		return err
+	}
+
+	if len(flows) == 0 {
+		return nil
+	}
+
+	ids := make([]string, 0, len(flows))
+	for _, flow := range flows {
+		// 捕获到Running的节点有可能正在还未彻底结束的节点上运行，所以，
+		// 需要等待上一个节点Shutdown结束后再处理，否则会有两个节点处理同一个Flow。
+		firstWatchTime, exist := wd.runningFlowMap[flow.ID]
+		if !exist {
+			wd.runningFlowMap[flow.ID] = times.ConvStdTimeNow()
+			continue
+		}
+
+		if !firstWatchTime.Before(times.ConvStdTimeNow().Add(-wd.shutdownWaitTimeSec)) {
+			continue
+		}
+
+		// 如果上一个节点已经Shutdown，表示可以处理Running的Flow
+		if err = wd.handleRunningFlow(kt, flow); err != nil {
+			logs.Errorf("handle running flow in not exist worker failed, id: %s, rid: %s", flow.ID, kt.Rid)
+			return err
+		}
+
+		ids = append(ids, flow.ID)
+		delete(wd.runningFlowMap, flow.ID)
+	}
+
+	if len(ids) != 0 {
+		logs.Infof("handleRunningNotExistWorkerFlow, count: %d, ids: %v, rid: %s", len(ids), ids, kt.Rid)
+	}
+
+	return nil
+}
+
+func (wd *watchDog) handleRunningFlow(kt *kit.Kit, flow model.Flow) error {
+	// 根据任务流ID获取对应的任务集合
+	taskModels, err := listTaskByFlowID(kt, wd.bd, flow.ID)
+	if err != nil {
+		return err
+	}
+
+	// 构造执行流树
+	root, err := BuildTaskRoot(taskModels)
+	if err != nil {
+		return err
+	}
+
+	// 如果树已经处于结束状态，则直接更新
+	state := root.ComputeState()
+	if state == enumor.FlowSuccess || state == enumor.FlowFailed {
+		if err = updateFlowState(kt, wd.bd, flow.ID, enumor.FlowRunning, state); err != nil {
+			logs.Errorf("update flow state to %s failed, err: %v, rid: %s", state, err, kt.Rid)
+			return err
+		}
+
+		return nil
+	}
+
+	ids := root.GetExecStateTasks()
+	// 如果没有处于执行中的节点，将Flow置于Pending状态，等待重新被调度
+	if len(ids) == 0 {
+		mds := []model.Flow{
+			{
+				ID:     flow.ID,
+				State:  enumor.FlowPending,
+				Worker: converter.ValToPtr(""),
+			},
+		}
+		if err = wd.bd.BatchUpdateFlow(kt, mds); err != nil {
+			logs.Errorf("update flows failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
+		return nil
+	}
+
+	// 否则，找出所有处于执行状态的节点，判断它的执行节点是否已经退出，如果退出将Task回滚或者置于失败状态。
+	if err = wd.handleRunningTasks(kt, flow, ids); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// handleRunningTasks 找出所有处于执行状态的节点，判断它的执行节点是否已经退出，如果退出将Task回滚或者置于失败状态。
+func (wd *watchDog) handleRunningTasks(kt *kit.Kit, flow model.Flow, ids []string) error {
+	tasks, err := listTaskByIDs(kt, wd.bd, ids)
+	if err != nil {
+		logs.Errorf("list task by ids failed, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
+		return err
+	}
+
+	for _, task := range tasks {
+		// 如果任务已经超时，更新为失败状态，失败原因超时
+		if task.UpdatedAt < times.ConvStdTimeFormat(times.ConvStdTimeNow().Add(-wd.taskTimeoutSec)) {
+			if err = wd.updateTimeoutTask(kt, task.ID); err != nil {
+				return err
+			}
+			continue
+		}
+
+		// 如果任务不能重试，将任务置于失败状态
+		if !task.CanRetry {
+			md := &model.Task{
+				ID:    task.ID,
+				State: enumor.TaskFailed,
+				Reason: &tableasync.Reason{
+					Message: ErrTaskNodeShutdown,
+				},
+			}
+			if err = wd.bd.UpdateTask(kt, md); err != nil {
+				logs.Errorf("update task to failed state failed, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
+		}
+
+		task.InitDep(run.NewExecuteContext(task.Kit, flow.ShareData), func(kt *kit.Kit, task *model.Task) error {
+			return wd.bd.UpdateTask(kt, task)
+		}, &Flow{Flow: flow})
+
+		// 如果任务可以重试，将任务回滚
+		if err = task.Rollback(); err != nil {
+			logs.Errorf("rollback not exist node task failed, err: %v, rid: %s", err, kt.Rid)
+
+			md := &model.Task{
+				ID:    task.ID,
+				State: enumor.TaskFailed,
+				Reason: &tableasync.Reason{
+					Message: fmt.Sprintf("rollback not exist node task failed, err: %v", err),
+				},
+			}
+			if patchErr := wd.bd.UpdateTask(kt, md); patchErr != nil {
+				logs.Errorf("update task to failed state failed, err: %v, rid: %s", patchErr, kt.Rid)
+				return err
+			}
+		}
+	}
 	return nil
 }

@@ -21,27 +21,29 @@ package consumer
 
 import (
 	"context"
-	"fmt"
 	"sync"
-	"time"
 
+	"hcm/pkg/async/action/run"
 	"hcm/pkg/async/backend"
+	"hcm/pkg/async/backend/model"
 	"hcm/pkg/async/closer"
-	"hcm/pkg/async/task"
+	"hcm/pkg/criteria/constant"
+	tableasync "hcm/pkg/dal/table/async"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
-// Executor 任务执行器
+// Executor （执行器）: 准备任务执行所需要的超时控制，共享数据等工具，并执行任务。
 type Executor interface {
 	closer.Closer
 
 	// Start 启动执行器。
 	Start()
-	// SetGetParserFunc 设置获取解析器函数，运行过程中，执行完的节点需要通过解析器获取子节点，且解析器会下发任务到执行器.
-	SetGetParserFunc(f func() Parser)
+	// SetGetSchedulerFunc 设置获取调度器函数，运行过程中，执行完的节点需要通过调度器获取子节点，且调度器会下发任务到执行器.
+	SetGetSchedulerFunc(f func() Scheduler)
 
 	// Push 推送task并执行。
-	Push(task *task.Task)
+	Push(flow *Flow, task *Task)
 	// CancelTasks 关闭指定task_id的任务。
 	CancelTasks(taskIDs []string) error
 }
@@ -50,47 +52,51 @@ var _ Executor = new(executor)
 
 // executor 定义任务执行器
 type executor struct {
-	cancelMap         sync.Map
-	workerNumber      int
-	normalIntervalSec time.Duration
-	workerWg          sync.WaitGroup
-	initWg            sync.WaitGroup
-	workerQueue       chan *task.Task
-	initQueue         chan *task.Task
-	backend           backend.Backend
+	workerNumber       uint
+	taskExecTimeoutSec uint
 
-	GetParserFunc func() Parser
+	cancelMap   sync.Map
+	workerWg    sync.WaitGroup
+	initWg      sync.WaitGroup
+	workerQueue chan *Task
+	initQueue   chan *initPayload
+	backend     backend.Backend
+
+	closeCh chan struct{}
+
+	GetSchedulerFunc func() Scheduler
 }
 
-// SetGetParserFunc 设置获取解析器函数，运行过程中，执行完的节点需要通过解析器获取子节点，且解析器会下发任务到执行器.
-func (exec *executor) SetGetParserFunc(f func() Parser) {
-	exec.GetParserFunc = f
+// SetGetSchedulerFunc 设置获取调度器函数，运行过程中，执行完的节点需要通过调度器获取子节点，且调度器会下发任务到执行器.
+func (exec *executor) SetGetSchedulerFunc(f func() Scheduler) {
+	exec.GetSchedulerFunc = f
 }
 
 // NewExecutor 实例化任务执行器
-func NewExecutor(bd backend.Backend, workerNumber int, normalIntervalSec time.Duration) Executor {
+func NewExecutor(bd backend.Backend, opt *ExecutorOption) Executor {
 	return &executor{
-		backend:           bd,
-		workerWg:          sync.WaitGroup{},
-		initWg:            sync.WaitGroup{},
-		workerQueue:       make(chan *task.Task, 10),
-		initQueue:         make(chan *task.Task),
-		workerNumber:      workerNumber,
-		normalIntervalSec: normalIntervalSec,
+		backend:            bd,
+		workerWg:           sync.WaitGroup{},
+		initWg:             sync.WaitGroup{},
+		workerQueue:        make(chan *Task, 10),
+		initQueue:          make(chan *initPayload),
+		closeCh:            make(chan struct{}, 1),
+		workerNumber:       opt.WorkerNumber,
+		taskExecTimeoutSec: opt.TaskExecTimeoutSec,
 	}
 }
 
 // Start 初始化执行器并启动执行
 func (exec *executor) Start() {
 
-	logs.Infof("executor start, worker number: %d, interval: %v", exec.workerNumber, exec.normalIntervalSec)
+	logs.Infof("executor start, worker number: %d", exec.workerNumber)
 
 	// 待执行的任务预处理
 	exec.initWg.Add(1)
 	go exec.watchInitQueue()
 
 	// 启动workerNumber个执行器执行任务
-	for i := 0; i < exec.workerNumber; i++ {
+	for i := 0; i < int(exec.workerNumber); i++ {
 		exec.workerWg.Add(1)
 		go exec.subWorkerQueue()
 	}
@@ -99,34 +105,35 @@ func (exec *executor) Start() {
 // 从initQueue队列获取待执行的任务协程
 func (exec *executor) watchInitQueue() {
 	for p := range exec.initQueue {
-		exec.initWorkerTask(p)
+		exec.initWorkerTask(p.flow, p.task)
 	}
 
 	exec.initWg.Done()
 }
 
 // 待执行任务的预处理函数
-func (exec *executor) initWorkerTask(task *task.Task) {
+func (exec *executor) initWorkerTask(flow *Flow, task *Task) {
 	if _, ok := exec.cancelMap.Load(task.ID); ok {
-		logs.V(3).Infof("[async] [module-executor] task %s is already running, rid: %s", task.ID, task.Kit.Rid)
+		logs.Warnf("%s: executor task %s is already running, rid: %s", constant.AsyncTaskWarnSign,
+			task.ID, task.Kit.Rid)
 		return
 	}
 
 	// 设置超时控制
-	c, cancel := context.WithTimeout(context.TODO(), time.Duration(task.TimeoutSecs)*time.Second)
-	task.SetCtxWithTimeOut(c)
+	cancel := task.Kit.CtxWithTimeoutMS(int(exec.taskExecTimeoutSec) * 1000)
 
-	// 设置kit
-	kt := NewKit()
-	kt.Rid = fmt.Sprintf("%s-%s-%s", task.FlowID, task.ID, kt.Rid)
-	task.SetKit(kt)
+	// 设置共享数据更新函数
+	flow.ShareData.Save = func(kt *kit.Kit, data *tableasync.ShareData) error {
+		return exec.backend.BatchUpdateFlow(kt, []model.Flow{{ID: flow.ID, ShareData: data}})
+	}
 
-	// 设置backend
-	task.SetBackend(exec.backend)
+	// 设置task执行所需要的 kit，更新Task函数，所属流
+	task.InitDep(run.NewExecuteContext(task.Kit, flow.ShareData), func(kt *kit.Kit, task *model.Task) error {
+		return exec.backend.UpdateTask(kt, task)
+	}, flow)
 
 	// cancel存储到cancelMap中
 	exec.cancelMap.Store(task.ID, cancel)
-
 	// 任务写回workerQueue
 	exec.workerQueue <- task
 }
@@ -135,7 +142,9 @@ func (exec *executor) initWorkerTask(task *task.Task) {
 func (exec *executor) subWorkerQueue() {
 	for task := range exec.workerQueue {
 		if err := exec.workerDo(task); err != nil {
-			logs.Errorf("[async] [module-executor] workerDo exec failed, err: %v, rid: %s", err, task.Kit.Rid)
+			// Task执行失败告警通知
+			logs.Errorf("%s: executor sub worker workerDo exec failed, err: %v, rid: %s",
+				constant.AsyncTaskWarnSign, err, task.Kit.Rid)
 		}
 	}
 
@@ -143,26 +152,46 @@ func (exec *executor) subWorkerQueue() {
 }
 
 // 任务执行体
-func (exec *executor) workerDo(task *task.Task) error {
+func (exec *executor) workerDo(task *Task) (err error) {
+
 	// cancelMap清理执行成功/失败的任务
 	defer exec.cancelMap.Delete(task.ID)
 
 	// 执行任务
-	err := task.DoTask()
-	if err != nil {
-		logs.Errorf("[async] [module-executor] exec doTask failed, err: %v, rid: %s", err, task.Kit.Rid)
-		return err
+	if err = task.Run(); err != nil {
+		logs.Errorf("task run failed, err: %v, task: %+v, rid: %s", err, task, task.Kit.Rid)
+
+		// 无论任务成功还是失败，都需要交给调度器分析任务流的状态
 	}
 
-	// 执行完的任务回写到解析器用于获取待执行的任务
-	exec.GetParserFunc().EntryTask(task)
+	// 执行完的任务回写到调度器用于获取待执行的任务
+	exec.GetSchedulerFunc().EntryTask(task)
 
-	return nil
+	return err
 }
 
 // Push 任务写入到initQueue
-func (exec *executor) Push(taskNode *task.Task) {
-	exec.initQueue <- taskNode
+func (exec *executor) Push(flow *Flow, task *Task) {
+
+	// try to exit the sender goroutine as early as possible.
+	// try-receive and try-send select blocks are specially optimized by the standard Go compiler,
+	// so they are very efficient.
+	select {
+	case <-exec.closeCh:
+		logs.Infof("scheduler has already closed, so will not execute next task instances")
+		return
+	default:
+	}
+
+	exec.initQueue <- &initPayload{
+		flow: flow,
+		task: task,
+	}
+}
+
+type initPayload struct {
+	flow *Flow
+	task *Task
 }
 
 // CancelTasks 停止指定id的任务
@@ -181,6 +210,9 @@ func (exec *executor) CancelTasks(taskIDs []string) error {
 func (exec *executor) Close() {
 
 	logs.Infof("executor receive close cmd, start to close")
+
+	defer close(exec.closeCh)
+	exec.closeCh <- struct{}{}
 
 	close(exec.initQueue)
 	exec.initWg.Wait()

@@ -35,8 +35,8 @@ func Factory(typ enumor.BackendType, client interface{}) (Backend, error) {
 		if !ok {
 			return nil, errors.New("client is not mysql dao set")
 		}
-		return NewBackend(cli), nil
+		return NewMysql(cli), nil
 	default:
-		return nil, fmt.Errorf("unsupported backend type: %s", typ)
+		return nil, fmt.Errorf("unsupported mysql type: %s", typ)
 	}
 }

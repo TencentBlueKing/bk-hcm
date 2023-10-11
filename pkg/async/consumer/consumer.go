@@ -22,28 +22,44 @@ package consumer
 
 import (
 	"errors"
-	"time"
 
+	// 注册Action和Template
+	_ "hcm/pkg/async/action"
 	"hcm/pkg/async/backend"
 	"hcm/pkg/async/closer"
 	"hcm/pkg/async/consumer/leader"
 	"hcm/pkg/logs"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/atomic"
 )
 
-// Consumer 定义异步任务消费接口。
+/*
+Consumer 异步任务消费者。组件分为两类，公共组件、主节点组件。
+
+主节点组件：（会根据主从判断，自动启动或者关闭这部分组件）
+	- dispatcher（派发器）: 负责将Pending状态的任务流，派发到指定节点去执行，并将Flow状态改为Scheduled。
+	- watchDog（看门狗）:
+		1. 处理超时任务
+		2. 处理处于Scheduled状态，但执行节点已经挂掉的任务流
+		3. 处理处于Running状态，但执行节点正在Shutdown或者已经挂掉的任务流
+公共组件：
+	- scheduler（调度器）:
+		1. 获取分配给当前节点的处于Scheduled状态的任务流，构建任务流树，将待执行任务推送到执行器执行。
+		2. 分析执行器执行完的任务，判断任务流树状态，如果任务流处理完，更新状态，否则将子节点推送到执行器执行。
+	- executor（执行器）: 准备任务执行所需要的超时控制，共享数据等工具，并执行任务。
+	- commander（指挥者）:
+		1. 强制关闭处于执行中的任务
+*/
 type Consumer interface {
 	closer.Closer
 	// Start 启动消费者，开始消费异步任务。
-	Start(optFunc ...Option) error
+	Start() error
 }
 
 var _ Consumer = new(consumer)
 
 // NewConsumer new consumer.
-func NewConsumer(bd backend.Backend, ld leader.Leader, register prometheus.Registerer) (Consumer, error) {
+func NewConsumer(bd backend.Backend, ld leader.Leader, register prometheus.Registerer, opt *Option) (Consumer, error) {
 	if bd == nil {
 		return nil, errors.New("backend is required")
 	}
@@ -57,134 +73,82 @@ func NewConsumer(bd backend.Backend, ld leader.Leader, register prometheus.Regis
 	}
 
 	return &consumer{
+		opt:     opt,
 		backend: bd,
 		leader:  ld,
 		mc:      initMetric(register),
 		closers: make([]closer.Closer, 0),
-		enable:  new(atomic.Bool),
 	}, nil
 }
 
 type consumer struct {
+	opt *Option
+
 	backend backend.Backend
 	leader  leader.Leader
 	mc      *metric
 
-	executor Executor
-	parser   Parser
-	watchDog WatchDog
-	cmd      Commander
-
-	enable *atomic.Bool
+	executor  Executor
+	scheduler Scheduler
+	watchDog  WatchDog
+	cmd       Commander
 
 	// closers 所有组件的关闭操作
 	closers []closer.Closer
 }
 
 // Start 开启消费者消费功能，注：只有主节点进行异步任务消费。
-func (csm *consumer) Start(optFunc ...Option) error {
-	if csm.enable.Load() {
-		return errors.New("already started, cannot be started again")
-	}
+func (csm *consumer) Start() error {
 
-	opt := new(options)
-	for index := range optFunc {
-		optFunc[index](opt)
-	}
-
-	opt.tryDefaultValue()
-	if err := opt.Validate(); err != nil {
-		return err
-	}
-
-	if err := opt.Validate(); err != nil {
-		logs.Errorf("[async] [module-async] opt validate err: %v", err)
-		return err
-	}
-
-	csm.enable.Store(true)
-	logs.Infof("consumer start handle async tasks")
-
-	go func() {
-		for {
-			time.Sleep(time.Second)
-
-			// 如果消费者被关闭了
-			if !csm.enable.Load() {
-				logs.Infof("consumer is closed, stop handle async tasks")
-				csm.close()
-				break
-			}
-
-			// 如果是从节点
-			if !csm.leader.IsLeader() && len(csm.closers) == 0 {
-				continue
-			}
-
-			// 如果是主切从
-			if !csm.leader.IsLeader() && len(csm.closers) != 0 {
-				logs.Infof("the current node changes from the master node to the slave node, " +
-					"and start to stop handle async tasks")
-				csm.close()
-				continue
-			}
-
-			// 如果是从切主
-			if csm.leader.IsLeader() && len(csm.closers) == 0 {
-				logs.Infof("the current node is master, start init common component")
-				// 初始化所有组件并设置关闭函数
-				csm.initCommonComponent(opt)
-				logs.Infof("the current node is master, init common component success")
-				continue
-			}
-		}
-	}()
+	csm.initCommonComponent(csm.opt)
+	csm.initLeaderComponent(csm.opt)
 
 	return nil
 }
 
-// initCommonComponent 初始化所有组件并启动同时设置关闭函数
-func (csm *consumer) initCommonComponent(opt *options) {
+// initLeaderComponent 初始化主节点私有组件并启动，同时设置关闭函数
+func (csm *consumer) initLeaderComponent(opt *Option) {
+
+	handler := NewLeaderChangeHandler(csm.backend, csm.leader, opt)
+	handler.Start()
+	csm.closers = append(csm.closers, handler)
+
+}
+
+// initCommonComponent 初始化主从节点公共组件并启动，同时设置关闭函数
+func (csm *consumer) initCommonComponent(opt *Option) {
 	// 设置执行器
-	csm.executor = NewExecutor(csm.backend, opt.executorWorkersCnt, opt.normalIntervalSec)
+	csm.executor = NewExecutor(csm.backend, opt.Executor)
 
-	// 设置解析器
-	csm.parser = NewParser(csm.backend, csm.executor, opt.parserWorkersCnt, opt.normalIntervalSec)
+	// 设置调度器
+	csm.scheduler = NewScheduler(csm.backend, csm.executor, csm.leader, opt.Scheduler)
 
-	// 设置执行器获取解析器函数。
-	csm.executor.SetGetParserFunc(func() Parser {
-		return csm.parser
+	// 设置执行器获取调度器函数。
+	csm.executor.SetGetSchedulerFunc(func() Scheduler {
+		return csm.scheduler
 	})
 
 	// 初始化执行器并启动同时设置关闭函数
 	csm.executor.Start()
 	csm.closers = append(csm.closers, csm.executor)
 
-	// 初始化解析器并启动同时设置关闭函数
-	csm.parser.Start()
-	csm.closers = append(csm.closers, csm.parser)
+	// 初始化调度器并启动同时设置关闭函数
+	csm.scheduler.Start()
+	csm.closers = append(csm.closers, csm.scheduler)
 
 	// 设置命令工具
-	csm.cmd = NewCommander()
-
-	// 初始化watchdog并启动同时设置关闭函数
-	csm.watchDog = NewWatchDog(opt.flowScheduleTimeoutSec, opt.normalIntervalSec)
-	csm.watchDog.Start()
-	csm.closers = append(csm.closers, csm.watchDog)
+	csm.cmd = NewCommander(csm.executor)
 }
 
 // Close 执行异步任务框架所有组件的关闭函数
 func (csm *consumer) Close() {
-	csm.enable.Store(false)
-	csm.close()
-}
 
-func (csm *consumer) close() {
-	logs.V(3).Infof("[async] [module-async] run closer begin")
+	logs.Infof("consumer receive close cmd, start to close")
 
 	for i := range csm.closers {
 		csm.closers[i].Close()
 	}
 
-	logs.V(3).Infof("[async] [module-async] run closer end")
+	logs.Infof("consumer close success")
+
 }

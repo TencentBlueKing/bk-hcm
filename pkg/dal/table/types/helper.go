@@ -17,17 +17,45 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package consumer
+package types
 
 import (
-	"hcm/pkg/criteria/constant"
-	"hcm/pkg/kit"
+	"database/sql/driver"
+	"fmt"
+	"reflect"
+
+	"hcm/pkg/tools/json"
 )
 
-// NewKit new async kit.
-func NewKit() *kit.Kit {
-	kt := kit.New()
-	kt.User = constant.AsyncUserKey
-	kt.AppCode = constant.AsyncAppCodeKey
-	return kt
+// Scan is used to decode raw message which is read from db into dest.
+func Scan(raw interface{}, dest interface{}) error {
+	if dest == nil || raw == nil {
+		return nil
+	}
+
+	switch v := raw.(type) {
+	case []byte:
+		if err := json.Unmarshal(v, &dest); err != nil {
+			return fmt.Errorf("[]byte decode into %s failed, err: %v", reflect.TypeOf(dest).String(), err)
+		}
+		return nil
+
+	case string:
+		if err := json.Unmarshal([]byte(v), &dest); err != nil {
+			return fmt.Errorf("string decode into %s failed, err: %v", reflect.TypeOf(dest).String(), err)
+		}
+		return nil
+
+	default:
+		return fmt.Errorf("unsupported raw type: %T", v)
+	}
+}
+
+// Value encode the source to a json raw, so that it can be stored to db with json raw.
+func Value(source interface{}) (driver.Value, error) {
+	if source == nil {
+		return "", nil
+	}
+
+	return json.Marshal(source)
 }

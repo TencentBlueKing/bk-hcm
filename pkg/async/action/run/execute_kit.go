@@ -17,25 +17,42 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package enumor
+package run
 
-import "fmt"
+import "hcm/pkg/kit"
 
-// BackendType is backend type.
-type BackendType string
-
-// Validate BackendType.
-func (v BackendType) Validate() error {
-	switch v {
-	case BackendMysql:
-	default:
-		return fmt.Errorf("unsupported backend type: %s", v)
-	}
-
-	return nil
+// ExecuteKit is a kit using by action
+type ExecuteKit interface {
+	Kit() *kit.Kit
+	ShareData() ShareDataOperator
 }
 
-const (
-	// BackendMysql mysql backend
-	BackendMysql BackendType = "mysql"
-)
+// ShareDataOperator used to operate share data
+type ShareDataOperator interface {
+	Get(key string) (string, bool)
+	Set(kt *kit.Kit, key string, val string) error
+}
+
+// NewExecuteContext new execute context for task exec.
+func NewExecuteContext(kt *kit.Kit, shareData ShareDataOperator) ExecuteKit {
+	return &DefExecuteContext{
+		kit:       kt,
+		shareData: shareData,
+	}
+}
+
+// DefExecuteContext default execute context.
+type DefExecuteContext struct {
+	kit       *kit.Kit
+	shareData ShareDataOperator
+}
+
+// Kit return kit.
+func (ctx *DefExecuteContext) Kit() *kit.Kit {
+	return ctx.kit
+}
+
+// ShareData return share data.
+func (ctx *DefExecuteContext) ShareData() ShareDataOperator {
+	return ctx.shareData
+}

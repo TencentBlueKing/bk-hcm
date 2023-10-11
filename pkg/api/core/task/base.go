@@ -24,18 +24,19 @@ import (
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
+	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/dal/table/types"
 )
 
 // AsyncFlow ...
 type AsyncFlow struct {
-	ID            string           `json:"id"`
-	Name          string           `json:"name"`
-	State         enumor.FlowState `json:"state"`
-	Tasks         []AsyncFlowTask  `json:"tasks"`
-	Memo          string           `json:"memo"`
-	Reason        types.JsonField  `json:"reason"`
-	ShareData     types.JsonField  `json:"share_data"`
+	ID            string                `json:"id"`
+	Name          string                `json:"name"`
+	State         enumor.FlowState      `json:"state"`
+	Tasks         []AsyncFlowTask       `json:"tasks"`
+	Memo          string                `json:"memo"`
+	Reason        *tableasync.Reason    `json:"reason"`
+	ShareData     *tableasync.ShareData `json:"share_data"`
 	core.Revision `json:",inline"`
 }
 
