@@ -16,7 +16,7 @@ export default defineComponent({
   setup(props, { slots }) {
     const isExpand = ref(false);
     return () => (
-      <div class={'mb12'}>
+      <div class={'draggable-container mb12'}>
         <div class='draggable-card-header'>
           <div onClick={() => isExpand.value = !isExpand.value} class={'draggable-card-header-icon'}>
             {

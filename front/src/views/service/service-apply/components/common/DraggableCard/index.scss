@@ -1,38 +1,42 @@
-.draggable-card-header {
-  display: flex;
-  height: 32px;
-  background-color: #F0F1F5;
-  padding: 6px;
-  align-items: center;
-  .draggable-card-header-icon {
+.draggable-container {
+  border: 1px solid #EAEBF0;
+  border-radius: 2px;
+  .draggable-card-header {
     display: flex;
+    height: 32px;
+    background-color: #f0f1f5;
+    padding: 6px;
     align-items: center;
-    cursor: pointer;
-    margin-right: 16px;
-    :hover {
-      color: #3A84FF;
+    .draggable-card-header-icon {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      margin-right: 16px;
+      :hover {
+        color: #3a84ff;
+      }
+    }
+    .draggable-card-header-title {
+      color: #313238;
+    }
+    .draggable-card-header-index {
+      width: 23px;
+      height: 16px;
+      background: #ffffff;
+      border-radius: 2px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-left: auto;
+      margin-right: 16px;
+      color: #979ba5;
+    }
+    .draggable-card-header-draggable-btn {
+      cursor: grabbing;
     }
   }
-  .draggable-card-header-title {
-    color: #313238;
+  .draggable-card-container {
+    max-height: 224px;
+    overflow-y: scroll;
   }
-  .draggable-card-header-index {
-    width: 23px;
-    height: 16px;
-    background: #FFFFFF;
-    border-radius: 2px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-left: auto;
-    margin-right: 16px;
-    color: #979BA5;
-  }
-  .draggable-card-header-draggable-btn {
-    cursor: grabbing;
-  }
-}
-.draggable-card-container {
-  height: 224px;
-  overflow-y: scroll;
 }

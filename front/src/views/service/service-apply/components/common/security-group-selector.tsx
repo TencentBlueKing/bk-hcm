@@ -1,5 +1,5 @@
 import http from '@/http';
-import { computed, defineComponent, PropType, ref, watch } from 'vue';
+import { computed, defineComponent, PropType, ref, TransitionGroup, watch } from 'vue';
 import { Button, Checkbox, Dialog, Loading, Table } from 'bkui-vue';
 import { VendorEnum } from '@/common/constant';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
@@ -234,10 +234,10 @@ export default defineComponent({
                     animation={200}
                     handle='.draggable-card-header-draggable-btn'
                   >
-                    {/* <TransitionGroup
+                    <TransitionGroup
                       type="transition"
                       name="fade"
-                    > */}
+                    >
                       {
                         securityGroupRules.value.map(({ id, data }, idx) => <div>
                           <DraggableCard
@@ -251,7 +251,7 @@ export default defineComponent({
                           </DraggableCard>
                         </div>)
                       }
-                    {/* </TransitionGroup> */}
+                    </TransitionGroup>
                   </VueDraggable>
                 </div>
               </Loading>
