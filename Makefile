@@ -88,6 +88,8 @@ ver: pre
 	@echo ${VERSION} > ${OUTPUT_DIR}/VERSION
 	@cp -rf ${PRO_DIR}/CHANGELOG.md ${OUTPUT_DIR}
 
+docindex:
+	@cd docs/api-docs/web-server/docs && python3 doc_index.py
 
 suite:
 	@make -C ${PRO_DIR}/test/suite

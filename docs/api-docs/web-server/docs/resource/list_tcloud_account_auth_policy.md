@@ -6,7 +6,7 @@
 
 ### URL
 
-POST /vendors/tcloud/accounts/auth_policies/list
+POST /api/v1/cloud/vendors/tcloud/accounts/auth_policies/list
 
 #### 输入参数
 
