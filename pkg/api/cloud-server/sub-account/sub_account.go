@@ -17,35 +17,18 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package subaccount
+package cssubaccount
 
-import (
-	"net/http"
+import "hcm/pkg/criteria/validator"
 
-	"hcm/cmd/cloud-server/service/capability"
-	"hcm/pkg/client"
-	"hcm/pkg/iam/auth"
-	"hcm/pkg/rest"
-)
-
-// InitService initialize the vpc service.
-func InitService(c *capability.Capability) {
-	svc := &service{
-		client:     c.ApiClient,
-		authorizer: c.Authorizer,
-	}
-
-	h := rest.NewHandler()
-
-	// 资源下接口
-	h.Add("GetSubAccount", http.MethodGet, "/sub_accounts/{id}", svc.GetSubAccount)
-	h.Add("ListSubAccount", http.MethodPost, "/sub_accounts/list", svc.ListSubAccount)
-	h.Add("UpdateSubAccount", http.MethodPatch, "/sub_accounts/{id}", svc.UpdateSubAccount)
-
-	h.Load(c.WebService)
+// UpdateReq define update req.
+type UpdateReq struct {
+	Managers []string `json:"managers" validate:"omitempty"`
+	BkBizIDs []int64  `json:"bk_biz_ids" validate:"omitempty"`
+	Memo     *string  `json:"memo" validate:"omitempty"`
 }
 
-type service struct {
-	client     *client.ClientSet
-	authorizer auth.Authorizer
+// Validate UpdateReq.
+func (req UpdateReq) Validate() error {
+	return validator.Validate.Struct(req)
 }

@@ -77,6 +77,10 @@ func (dao CloudDao) ListResourceBasicInfo(kt *kit.Kit, resType enumor.CloudResou
 		sql = fmt.Sprintf("select id, vendor, id as account_id from %s where id in (:ids)", tableName)
 	}
 
+	if tableName == table.SubAccountTable {
+		sql = fmt.Sprintf("select id, vendor, account_id from %s where id in (:ids)", tableName)
+	}
+
 	list := make([]types.CloudResourceBasicInfo, 0)
 	args := map[string]interface{}{
 		"ids": ids,

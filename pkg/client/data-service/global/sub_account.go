@@ -113,7 +113,7 @@ func (a *SubAccountClient) BatchCreate(kt *kit.Kit, request *dssubaccount.Create
 func (a *SubAccountClient) BatchUpdate(kt *kit.Kit, request *dssubaccount.UpdateReq) error {
 	resp := new(rest.BaseResp)
 
-	err := a.client.Post().
+	err := a.client.Patch().
 		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/sub_accounts/batch/update").
