@@ -1,11 +1,12 @@
 import http from '@/http';
 import { computed, defineComponent, PropType, ref, watch } from 'vue';
-import { Button, Card, Checkbox, Dialog, Loading, Table } from 'bkui-vue';
+import { Button, Checkbox, Dialog, Loading, Table } from 'bkui-vue';
 import { VendorEnum } from '@/common/constant';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import './security-group-selector.scss';
 import { EditLine, Plus } from 'bkui-vue/lib/icon';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+import DraggableCard from './DraggableCard';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -214,7 +215,7 @@ export default defineComponent({
                 <div class={'security-group-rules-container'}>
                   {
                     Array.from(securityGroupRulesMap.value).map(([key, value]) => <div>
-                      <Card
+                      {/* <Card
                         isCollapse
                         collapseStatus={false}
                         title={securityGroupKVMap.value.get(key)}
@@ -224,7 +225,16 @@ export default defineComponent({
                           data={value}
                           columns={securityRulesColumns}
                         />
-                      </Card>
+                      </Card> */}
+                      <DraggableCard
+                        title={securityGroupKVMap.value.get(key)}
+                        index={1}
+                      >
+                        <Table
+                            data={value}
+                            columns={securityRulesColumns}
+                          />
+                      </DraggableCard>
                     </div>)
                   }
                 </div>
