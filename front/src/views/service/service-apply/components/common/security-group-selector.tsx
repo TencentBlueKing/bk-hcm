@@ -8,6 +8,7 @@ import { EditLine, Plus } from 'bkui-vue/lib/icon';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import DraggableCard from './DraggableCard';
 import { type UseDraggableReturn, VueDraggable } from 'vue-draggable-plus';
+import { BkButtonGroup } from 'bkui-vue/lib/button';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -227,6 +228,15 @@ export default defineComponent({
             <div>
               <Loading loading={isRulesTableLoading.value}>
                 <div class={'security-group-rules-container'}>
+                  <div class={'security-group-rules-btn-group-container'}>
+                    <BkButtonGroup class={'security-group-rules-btn-group'}>
+                      <Button>出站规则</Button>
+                      <Button>入站规则</Button>
+                    </BkButtonGroup>
+                    <Button class={'security-group-rules-expand-btn'}>
+                      全部收起
+                    </Button>
+                  </div>
                   {/* @ts-ignore */}
                   <VueDraggable
                     ref={el}

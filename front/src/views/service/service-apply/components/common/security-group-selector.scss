@@ -48,3 +48,13 @@
 .draggable-container {
   background-color: #fff;
 }
+.security-group-rules-btn-group-container {
+  display: flex;
+  .security-group-rules-btn-group {
+    margin-bottom: 16px;
+    margin-left: 1px;
+  }
+  .security-group-rules-expand-btn {
+    margin-left: auto;
+  }
+}
