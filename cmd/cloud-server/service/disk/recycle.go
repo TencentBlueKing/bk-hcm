@@ -377,7 +377,7 @@ func (svc *diskSvc) batchDeleteRecycledDisk(cts *rest.Contexts,
 
 	// validate biz and authorize
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Disk,
-		Action: meta.DeleteRecycled, BasicInfos: basicInfoMap})
+		Action: meta.Destroy, BasicInfos: basicInfoMap})
 	if err != nil {
 		return nil, err
 	}

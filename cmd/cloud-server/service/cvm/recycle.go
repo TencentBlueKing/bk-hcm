@@ -553,7 +553,7 @@ func (svc *cvmSvc) batchDeleteRecycledCvm(cts *rest.Contexts,
 
 	// validate biz and authorize
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Cvm,
-		Action: meta.DeleteRecycled, BasicInfos: basicInfoMap})
+		Action: meta.Destroy, BasicInfos: basicInfoMap})
 	if err != nil {
 		return nil, err
 	}

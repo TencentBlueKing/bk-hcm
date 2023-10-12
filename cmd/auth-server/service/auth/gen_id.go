@@ -94,6 +94,8 @@ func genIaaSResourceResource(a *meta.ResourceAttribute) (client.ActionID, []clie
 	case meta.Delete, meta.Recycle:
 		// delete resource is related to hcm account resource
 		return sys.IaaSResDelete, []client.Resource{res}, nil
+	case meta.Destroy, meta.Recover:
+		return sys.RecycleBinOperate, []client.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
@@ -120,6 +122,8 @@ func genBizIaaSResResource(a *meta.ResourceAttribute) (client.ActionID, []client
 		return sys.BizIaaSResOperate, []client.Resource{res}, nil
 	case meta.Delete, meta.Recycle:
 		return sys.BizIaaSResDelete, []client.Resource{res}, nil
+	case meta.Destroy, meta.Recover:
+		return sys.BizRecycleBinOperate, []client.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
