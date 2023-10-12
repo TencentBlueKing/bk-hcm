@@ -1,6 +1,6 @@
 import http from '@/http';
 import { computed, defineComponent, PropType, ref, TransitionGroup, watch } from 'vue';
-import { Button, Checkbox, Dialog, Loading, Table } from 'bkui-vue';
+import { Button, Checkbox, Dialog, Input, Loading, Table } from 'bkui-vue';
 import { SECURITY_GROUP_RULE_TYPE, VendorEnum } from '@/common/constant';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import './security-group-selector.scss';
@@ -29,7 +29,7 @@ export default defineComponent({
     const loading = ref(false);
     const { isServicePage } = useWhereAmI();
     const isDialogShow = ref(false);
-    const isScrollLoading = ref(false);
+    // const isScrollLoading = ref(false);
     const securityGroupRules = ref([]);
     const securityGroupKVMap = ref(new Map<string, string>());
     const isRulesTableLoading = ref(false);
@@ -50,6 +50,7 @@ export default defineComponent({
     const securityRulesColumns = useColumns('securityCommon', false, props.vendor).columns;
 
     const selected = ref([]);
+    const searchVal = ref('');
 
     // const isSelected = computed(() => {
     //   if (selected.value) {
@@ -58,9 +59,9 @@ export default defineComponent({
     //   return false;
     // });
 
-    const handleScrollBottom = () => {
-      isScrollLoading.value = true;
-    };
+    // const handleScrollBottom = () => {
+    //   isScrollLoading.value = true;
+    // };
 
     watch(
       [
@@ -181,8 +182,58 @@ export default defineComponent({
           width={1500}>
           <div class={'security-container'}>
             <div class={'fixed-security-list'}>
+            <Input
+              class={'search-input'}
+              placeholder='搜索安全组'
+              type='search'
+              clearable
+              v-model={searchVal.value}/>
               <Loading loading={loading.value}>
-                <Table
+                <div>
+                {list.value.map(item => (
+                    <div>
+                      <Checkbox
+                        label={'data.cloud_id'}
+                        onChange={async (isSelected: boolean) => {
+                          if (isSelected) {
+                            isRulesTableLoading.value = true;
+                            const res = await http.post(
+                              `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${props.vendor}/security_groups/${item.id}/rules/list`,
+                              {
+                                filter: {
+                                  op: 'and',
+                                  rules: [],
+                                },
+                                page: {
+                                  count: false,
+                                  start: 0,
+                                  limit: 500,
+                                },
+                              },
+                            );
+                            const arr = res.data?.details || [];
+                            securityGroupRules.value.push({
+                              id: item.cloud_id,
+                              data: arr,
+                            });
+                            securityGroupKVMap.value.set(
+                              item.cloud_id,
+                              item.name,
+                            );
+                            isRulesTableLoading.value = false;
+                          } else {
+                            securityGroupRules.value = securityGroupRules.value.filter(({
+                              id,
+                            }) => id !== item.cloud_id);
+                            securityGroupKVMap.value.delete(item.cloud_id);
+                          }
+                        }}>
+                        {item.name}
+                      </Checkbox>
+                    </div>
+                ))}
+                </div>
+                {/* <Table
                   border={'none'}
                   data={list.value}
                   scrollLoading={isScrollLoading.value}
@@ -194,7 +245,8 @@ export default defineComponent({
                       <Checkbox label={data.cloud_id} onChange={async (isSelected: boolean) => {
                         if (isSelected) {
                           isRulesTableLoading.value = true;
-                          const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${props.vendor}/security_groups/${data.id}/rules/list`, {
+                          const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${props.vendor}/
+                          security_groups/${data.id}/rules/list`, {
                             filter: {
                               op: 'and',
                               rules: [],
@@ -221,7 +273,7 @@ export default defineComponent({
                       </Checkbox>
                     ),
                   }]}
-                />
+                /> */}
               </Loading>
             </div>
             <div class={'security-group-rules-container'}></div>
@@ -257,8 +309,8 @@ export default defineComponent({
                     {computedSecurityGroupRules.value.length ? (
                       <TransitionGroup type='transition' name='fade'>
                         {computedSecurityGroupRules.value.map(({ id, data }, idx) => (
-                          <div>
                             <DraggableCard
+                              key={idx}
                               title={securityGroupKVMap.value.get(id)}
                               index={idx + 1}>
                               <Table
@@ -266,7 +318,6 @@ export default defineComponent({
                                 columns={securityRulesColumns}
                               />
                             </DraggableCard>
-                          </div>
                         ))}
                       </TransitionGroup>
                     ) : (

@@ -14,7 +14,7 @@ export default defineComponent({
     },
   },
   setup(props, { slots }) {
-    const isExpand = ref(false);
+    const isExpand = ref(true);
     return () => (
       <div class={'draggable-container mb12'}>
         <div class='draggable-card-header'>
