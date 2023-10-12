@@ -182,16 +182,16 @@ export default defineComponent({
           width={1500}>
           <div class={'security-container'}>
             <div class={'fixed-security-list'}>
-            <Input
-              class={'search-input'}
-              placeholder='搜索安全组'
-              type='search'
-              clearable
-              v-model={searchVal.value}/>
+              <Input
+                class={'search-input'}
+                placeholder='搜索安全组'
+                type='search'
+                clearable
+                v-model={searchVal.value}/>
               <Loading loading={loading.value}>
                 <div>
                 {list.value.map(item => (
-                    <div>
+                    <div class={'security-search-item'}>
                       <Checkbox
                         label={'data.cloud_id'}
                         onChange={async (isSelected: boolean) => {
@@ -233,47 +233,6 @@ export default defineComponent({
                     </div>
                 ))}
                 </div>
-                {/* <Table
-                  border={'none'}
-                  data={list.value}
-                  scrollLoading={isScrollLoading.value}
-                  onScrollBottom={handleScrollBottom}
-                  columns={[{
-                    field: 'name',
-                    label: '',
-                    render: ({ cell, data }: any) => (
-                      <Checkbox label={data.cloud_id} onChange={async (isSelected: boolean) => {
-                        if (isSelected) {
-                          isRulesTableLoading.value = true;
-                          const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${props.vendor}/
-                          security_groups/${data.id}/rules/list`, {
-                            filter: {
-                              op: 'and',
-                              rules: [],
-                            },
-                            page: {
-                              count: false,
-                              start: 0,
-                              limit: 500,
-                            },
-                          });
-                          const arr = res.data?.details || [];
-                          securityGroupRules.value.push({
-                            id: data.cloud_id,
-                            data: arr,
-                          });
-                          securityGroupKVMap.value.set(data.cloud_id, data.name);
-                          isRulesTableLoading.value = false;
-                        } else {
-                          securityGroupRules.value = securityGroupRules.value.filter(({ id }) => id !== data.cloud_id);
-                          securityGroupKVMap.value.delete(data.cloud_id);
-                        }
-                      }}>
-                        { cell }
-                      </Checkbox>
-                    ),
-                  }]}
-                /> */}
               </Loading>
             </div>
             <div class={'security-group-rules-container'}></div>
