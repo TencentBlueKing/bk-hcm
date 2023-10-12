@@ -9,6 +9,7 @@ import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import DraggableCard from './DraggableCard';
 import { type UseDraggableReturn, VueDraggable } from 'vue-draggable-plus';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
+import { QueryRuleOPEnum } from '@/typings';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -69,6 +70,7 @@ export default defineComponent({
         () => props.accountId,
         () => props.region,
         () => props.vpcId,
+        () => searchVal.value,
       ],
       async ([bizId, accountId, region, vpcId]) => {
         if ((!bizId && isServicePage) || !accountId || !region) {
@@ -89,6 +91,13 @@ export default defineComponent({
             value: region,
           },
         ];
+        if (searchVal.value.length) {
+          rules.push({
+            field: 'name',
+            op: QueryRuleOPEnum.CS,
+            value: searchVal.value,
+          });
+        }
         if (props.vendor === VendorEnum.AWS) {
           rules.push({
             field: 'extension.vpc_id',
