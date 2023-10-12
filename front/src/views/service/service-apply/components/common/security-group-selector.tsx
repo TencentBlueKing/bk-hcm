@@ -199,48 +199,60 @@ export default defineComponent({
                 v-model={searchVal.value}/>
               <Loading loading={loading.value}>
                 <div>
-                {list.value.map(item => (
-                    <div class={'security-search-item'}>
-                      <Checkbox
-                        label={'data.cloud_id'}
-                        onChange={async (isSelected: boolean) => {
-                          if (isSelected) {
-                            isRulesTableLoading.value = true;
-                            const res = await http.post(
-                              `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${props.vendor}/security_groups/${item.id}/rules/list`,
-                              {
-                                filter: {
-                                  op: 'and',
-                                  rules: [],
+                  {
+                    list.value.length
+                      ? list.value.map(item => (
+                      <div class={'security-search-item'}>
+                        <Checkbox
+                          label={'data.cloud_id'}
+                          onChange={async (isSelected: boolean) => {
+                            if (isSelected) {
+                              isRulesTableLoading.value = true;
+                              const res = await http.post(
+                                `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${props.vendor}/security_groups/${item.id}/rules/list`,
+                                {
+                                  filter: {
+                                    op: 'and',
+                                    rules: [],
+                                  },
+                                  page: {
+                                    count: false,
+                                    start: 0,
+                                    limit: 500,
+                                  },
                                 },
-                                page: {
-                                  count: false,
-                                  start: 0,
-                                  limit: 500,
-                                },
-                              },
-                            );
-                            const arr = res.data?.details || [];
-                            securityGroupRules.value.push({
-                              id: item.cloud_id,
-                              data: arr,
-                            });
-                            securityGroupKVMap.value.set(
-                              item.cloud_id,
-                              item.name,
-                            );
-                            isRulesTableLoading.value = false;
-                          } else {
-                            securityGroupRules.value = securityGroupRules.value.filter(({
-                              id,
-                            }) => id !== item.cloud_id);
-                            securityGroupKVMap.value.delete(item.cloud_id);
-                          }
-                        }}>
-                        {item.name}
-                      </Checkbox>
-                    </div>
-                ))}
+                              );
+                              const arr = res.data?.details || [];
+                              securityGroupRules.value.push({
+                                id: item.cloud_id,
+                                data: arr,
+                              });
+                              securityGroupKVMap.value.set(
+                                item.cloud_id,
+                                item.name,
+                              );
+                              isRulesTableLoading.value = false;
+                            } else {
+                              securityGroupRules.value = securityGroupRules.value.filter(({
+                                id,
+                              }) => id !== item.cloud_id);
+                              securityGroupKVMap.value.delete(item.cloud_id);
+                            }
+                          }}>
+                          {item.name}
+                        </Checkbox>
+                      </div>
+                      ))
+                      : (
+                      <bk-exception
+                        class="exception-wrap-item exception-part"
+                        type="search-empty"
+                        scene="part"
+                        description="搜索为空"
+                      />
+                      )
+                  }
+
                 </div>
               </Loading>
             </div>
