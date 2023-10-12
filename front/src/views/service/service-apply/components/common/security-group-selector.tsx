@@ -1,7 +1,7 @@
 import http from '@/http';
 import { computed, defineComponent, PropType, ref, TransitionGroup, watch } from 'vue';
 import { Button, Checkbox, Dialog, Loading, Table } from 'bkui-vue';
-import { VendorEnum } from '@/common/constant';
+import { SECURITY_GROUP_RULE_TYPE, VendorEnum } from '@/common/constant';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import './security-group-selector.scss';
 import { EditLine, Plus } from 'bkui-vue/lib/icon';
@@ -34,9 +34,17 @@ export default defineComponent({
     const securityGroupKVMap = ref(new Map<string, string>());
     const isRulesTableLoading = ref(false);
     const el = ref<UseDraggableReturn>();
+    const selectedSecurityType = ref(SECURITY_GROUP_RULE_TYPE.INGRESS);
 
     const computedDisabled = computed(() => {
       return !(props.accountId && props.vendor && props.region);
+    });
+
+    const computedSecurityGroupRules = computed(() => {
+      return securityGroupRules.value.map(({ id, data }) => ({
+        id,
+        data: data.filter(({ type }: any) => type === selectedSecurityType.value),
+      }));
     });
 
     const securityRulesColumns = useColumns('securityCommon', false, props.vendor).columns;
@@ -112,14 +120,6 @@ export default defineComponent({
         if (!isShow) {
           securityGroupRules.value = [];
         }
-      },
-    );
-
-    watch(
-      () => securityGroupRules.value,
-      arr => console.log(111, arr.map(({ id }) => securityGroupKVMap.value.get(id))),
-      {
-        deep: true,
       },
     );
 
@@ -230,8 +230,18 @@ export default defineComponent({
                 <div class={'security-group-rules-container'}>
                   <div class={'security-group-rules-btn-group-container'}>
                     <BkButtonGroup class={'security-group-rules-btn-group'}>
-                      <Button>出站规则</Button>
-                      <Button>入站规则</Button>
+                      <Button
+                        selected={selectedSecurityType.value === SECURITY_GROUP_RULE_TYPE.EGRESS}
+                        onClick={() => selectedSecurityType.value = SECURITY_GROUP_RULE_TYPE.EGRESS}
+                      >
+                        出站规则
+                      </Button>
+                      <Button
+                        selected={selectedSecurityType.value === SECURITY_GROUP_RULE_TYPE.INGRESS}
+                        onClick={() => selectedSecurityType.value = SECURITY_GROUP_RULE_TYPE.INGRESS}
+                      >
+                        入站规则
+                      </Button>
                     </BkButtonGroup>
                     <Button class={'security-group-rules-expand-btn'}>
                       全部收起
@@ -244,24 +254,29 @@ export default defineComponent({
                     animation={200}
                     handle='.draggable-card-header-draggable-btn'
                   >
-                    <TransitionGroup
-                      type="transition"
-                      name="fade"
-                    >
-                      {
-                        securityGroupRules.value.map(({ id, data }, idx) => <div>
-                          <DraggableCard
-                            title={securityGroupKVMap.value.get(id)}
-                            index={idx + 1}
-                          >
-                            <Table
+                    {computedSecurityGroupRules.value.length ? (
+                      <TransitionGroup type='transition' name='fade'>
+                        {computedSecurityGroupRules.value.map(({ id, data }, idx) => (
+                          <div>
+                            <DraggableCard
+                              title={securityGroupKVMap.value.get(id)}
+                              index={idx + 1}>
+                              <Table
                                 data={data}
                                 columns={securityRulesColumns}
                               />
-                          </DraggableCard>
-                        </div>)
-                      }
-                    </TransitionGroup>
+                            </DraggableCard>
+                          </div>
+                        ))}
+                      </TransitionGroup>
+                    ) : (
+                      <bk-exception
+                        class="exception-wrap-item exception-part"
+                        type="empty"
+                        scene="part"
+                        description="没有数据"
+                      />
+                    )}
                   </VueDraggable>
                 </div>
               </Loading>
