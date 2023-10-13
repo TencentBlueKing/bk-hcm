@@ -22,6 +22,7 @@ package model
 import (
 	"errors"
 
+	"hcm/pkg/async/action"
 	"hcm/pkg/criteria/enumor"
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/dal/table/types"
@@ -31,12 +32,12 @@ import (
 type Task struct {
 	ID         string             `json:"id"`
 	FlowID     string             `json:"flow_id"`
-	FlowName   enumor.FlowTplName `json:"flow_name"`
-	ActionID   string             `json:"action_id"`
+	FlowName   enumor.FlowName    `json:"flow_name"`
+	ActionID   action.ActIDType   `json:"action_id"`
 	ActionName enumor.ActionName  `json:"action_name"`
 	Params     types.JsonField    `json:"params"`
-	CanRetry   bool               `json:"can_retry"`
-	DependOn   []string           `json:"depend_on"`
+	Retry      *tableasync.Retry  `json:"can_retry"`
+	DependOn   []action.ActIDType `json:"depend_on"`
 	State      enumor.TaskState   `json:"state"`
 	Reason     *tableasync.Reason `json:"reason"`
 	Creator    string             `json:"creator"`

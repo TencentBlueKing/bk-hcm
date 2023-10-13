@@ -40,7 +40,7 @@ var AsyncFlowTaskTableColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "action_id", NamedC: "action_id", Type: enumor.String},
 	{Column: "action_name", NamedC: "action_name", Type: enumor.String},
 	{Column: "params", NamedC: "params", Type: enumor.Json},
-	{Column: "can_retry", NamedC: "can_retry", Type: enumor.Boolean},
+	{Column: "retry", NamedC: "retry", Type: enumor.Json},
 	{Column: "depend_on", NamedC: "depend_on", Type: enumor.Json},
 	{Column: "state", NamedC: "state", Type: enumor.String},
 	{Column: "reason", NamedC: "reason", Type: enumor.Json},
@@ -52,20 +52,20 @@ var AsyncFlowTaskTableColumnDescriptor = utils.ColumnDescriptors{
 
 // AsyncFlowTaskTable define async_flow_task table.
 type AsyncFlowTaskTable struct {
-	ID         string             `db:"id" json:"id" validate:"lte=64"`
-	FlowID     string             `db:"flow_id" json:"flow_id"`
-	FlowName   enumor.FlowTplName `db:"flow_name" json:"flow_name"`
-	ActionID   string             `db:"action_id" json:"action_id"`
-	ActionName enumor.ActionName  `db:"action_name" json:"action_name"`
-	Params     types.JsonField    `db:"params" json:"params"`
-	CanRetry   bool               `db:"can_retry" json:"can_retry"`
-	DependOn   types.StringArray  `db:"depend_on" json:"depend_on"`
-	State      enumor.TaskState   `db:"state" json:"state"`
-	Reason     *Reason            `db:"reason" json:"reason"`
-	Creator    string             `db:"creator" json:"creator" validate:"lte=64"`
-	Reviser    string             `db:"reviser" json:"reviser" validate:"lte=64"`
-	CreatedAt  types.Time         `db:"created_at" json:"created_at" validate:"excluded_unless"`
-	UpdatedAt  types.Time         `db:"updated_at" json:"updated_at" validate:"excluded_unless"`
+	ID         string            `db:"id" json:"id" validate:"lte=64"`
+	FlowID     string            `db:"flow_id" json:"flow_id"`
+	FlowName   enumor.FlowName   `db:"flow_name" json:"flow_name"`
+	ActionID   string            `db:"action_id" json:"action_id"`
+	ActionName enumor.ActionName `db:"action_name" json:"action_name"`
+	Params     types.JsonField   `db:"params" json:"params"`
+	Retry      *Retry            `db:"retry" json:"retry"`
+	DependOn   types.StringArray `db:"depend_on" json:"depend_on"`
+	State      enumor.TaskState  `db:"state" json:"state"`
+	Reason     *Reason           `db:"reason" json:"reason"`
+	Creator    string            `db:"creator" json:"creator" validate:"lte=64"`
+	Reviser    string            `db:"reviser" json:"reviser" validate:"lte=64"`
+	CreatedAt  types.Time        `db:"created_at" json:"created_at" validate:"excluded_unless"`
+	UpdatedAt  types.Time        `db:"updated_at" json:"updated_at" validate:"excluded_unless"`
 }
 
 // TableName return async_flow_task table name.

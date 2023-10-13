@@ -26,7 +26,7 @@ import (
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/async/backend"
-	"hcm/pkg/async/closer"
+	"hcm/pkg/async/compctrl"
 	"hcm/pkg/async/consumer/leader"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -40,12 +40,12 @@ import (
 )
 
 /*
-Scheduler （调度器）:
+Scheduler （调度器）: TODO: 换为 捕获器、消费器，添加假死任务销毁逻辑
 	1. 获取分配给当前节点的处于Scheduled状态的任务流，构建任务流树，将待执行任务推送到执行器执行。
 	2. 分析执行器执行完的任务，判断任务流树状态，如果任务流处理完，更新状态，否则将子节点推送到执行器执行。
 */
 type Scheduler interface {
-	closer.Closer
+	compctrl.Closer
 
 	// Start 启动调度器。
 	Start()
@@ -103,19 +103,19 @@ func (sch *scheduler) Start() {
 
 // startWatcher 定期执行do函数体
 func (sch *scheduler) startWatcher(do func(kt *kit.Kit) error) {
-	ticker := time.NewTicker(sch.watchIntervalSec)
-	defer ticker.Stop()
-
 	for {
 		select {
 		case <-sch.closeCh:
 			break
-		case <-ticker.C:
-			kt := NewKit()
-			if err := do(kt); err != nil {
-				logs.Errorf("%s: scheduler watcher do failed, err: %v, rid: %s", constant.AsyncTaskWarnSign, err, kt.Rid)
-			}
+		default:
 		}
+
+		kt := NewKit()
+		if err := do(kt); err != nil {
+			logs.Errorf("%s: scheduler watcher do failed, err: %v, rid: %s", constant.AsyncTaskWarnSign, err, kt.Rid)
+		}
+
+		time.Sleep(sch.watchIntervalSec)
 	}
 
 	sch.workerWg.Done()

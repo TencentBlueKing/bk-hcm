@@ -26,7 +26,7 @@ import (
 	// 注册Action和Template
 	_ "hcm/pkg/async/action"
 	"hcm/pkg/async/backend"
-	"hcm/pkg/async/closer"
+	"hcm/pkg/async/compctrl"
 	"hcm/pkg/async/consumer/leader"
 	"hcm/pkg/logs"
 
@@ -51,7 +51,7 @@ Consumer 异步任务消费者。组件分为两类，公共组件、主节点�
 		1. 强制关闭处于执行中的任务
 */
 type Consumer interface {
-	closer.Closer
+	compctrl.Closer
 	// Start 启动消费者，开始消费异步任务。
 	Start() error
 }
@@ -77,7 +77,7 @@ func NewConsumer(bd backend.Backend, ld leader.Leader, register prometheus.Regis
 		backend: bd,
 		leader:  ld,
 		mc:      initMetric(register),
-		closers: make([]closer.Closer, 0),
+		closers: make([]compctrl.Closer, 0),
 	}, nil
 }
 
@@ -94,7 +94,7 @@ type consumer struct {
 	cmd       Commander
 
 	// closers 所有组件的关闭操作
-	closers []closer.Closer
+	closers []compctrl.Closer
 }
 
 // Start 开启消费者消费功能，注：只有主节点进行异步任务消费。

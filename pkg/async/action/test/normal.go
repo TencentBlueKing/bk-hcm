@@ -33,7 +33,7 @@ import (
 */
 // define test template.
 var NormalTpl = action.FlowTemplate{
-	Name: enumor.TplNormalTest,
+	Name: enumor.FlowNormalTest,
 	ShareData: &tableasync.ShareData{
 		Dict: map[string]string{
 			"name": "test",
@@ -43,31 +43,25 @@ var NormalTpl = action.FlowTemplate{
 		{
 			ActionID:   "1",
 			ActionName: enumor.ActionCreateFactoryTest,
-			NeedParam:  true,
-			ParamType:  TestCreateFactoryParams{},
-			CanRetry:   false,
-			DependOn:   nil,
+			Params: &action.Params{
+				Type: TestCreateFactoryParams{},
+			},
+			DependOn: nil,
 		},
 		{
 			ActionID:   "2",
 			ActionName: enumor.ActionProduceTest,
-			NeedParam:  false,
-			CanRetry:   false,
-			DependOn:   []string{"1"},
+			DependOn:   []action.ActIDType{"1"},
 		},
 		{
 			ActionID:   "3",
 			ActionName: enumor.ActionProduceTest,
-			NeedParam:  false,
-			CanRetry:   false,
-			DependOn:   []string{"1"},
+			DependOn:   []action.ActIDType{"1"},
 		},
 		{
 			ActionID:   "4",
 			ActionName: enumor.ActionAssembleTest,
-			NeedParam:  false,
-			CanRetry:   false,
-			DependOn:   []string{"2", "3"},
+			DependOn:   []action.ActIDType{"2", "3"},
 		},
 	},
 }

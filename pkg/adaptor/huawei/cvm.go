@@ -832,6 +832,7 @@ func poll(client *HuaWei, kt *kit.Kit, region string, cloudIDs []*string) ([]mod
 
 		resp, err := cvmCli.ListServersDetails(req)
 		if err != nil {
+			logs.Errorf("list servers detail failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
 		}
 

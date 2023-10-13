@@ -23,7 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
-	"hcm/pkg/api/core/task"
+	coreasync "hcm/pkg/api/core/async"
 	apits "hcm/pkg/api/task-server"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -44,33 +44,14 @@ func NewClient(c *client.Capability, version string) *Client {
 	}
 }
 
-// AddAsyncFlow add async flow.
-func (c *Client) AddAsyncFlow(kt *kit.Kit, request *apits.AddFlowReq) (string, error) {
-	resp := new(apits.FlowAddResp)
+// CreateTemplateFlow add template flow.
+func (c *Client) CreateTemplateFlow(kt *kit.Kit, request *apits.AddTemplateFlowReq) (*core.CreateResult, error) {
+	resp := new(core.CreateResp)
 
 	err := c.client.Post().
 		WithContext(kt.Ctx).
 		Body(request).
-		SubResourcef("/async/flows/tpls/add").
-		WithHeaders(kt.Header()).
-		Do().
-		Into(resp)
-
-	if resp.Code != errf.OK {
-		return "", errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.FlowID, err
-}
-
-// ListAsyncFlow list async flow.
-func (c *Client) ListAsyncFlow(kt *kit.Kit, req *core.ListReq) (*apits.FlowListResult, error) {
-	resp := new(apits.FlowListResp)
-
-	err := c.client.Post().
-		WithContext(kt.Ctx).
-		Body(req).
-		SubResourcef("/async/flows/list").
+		SubResourcef("/template_flows/create").
 		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
@@ -82,23 +63,95 @@ func (c *Client) ListAsyncFlow(kt *kit.Kit, req *core.ListReq) (*apits.FlowListR
 	return resp.Data, err
 }
 
-// GetAsyncFlow get async flow.
-func (c *Client) GetAsyncFlow(kt *kit.Kit, flowID string) (*task.AsyncFlow, error) {
-	resp := new(apits.FlowResp)
+// CreateCustomFlow add custom flow.
+func (c *Client) CreateCustomFlow(kt *kit.Kit, request *apits.AddCustomFlowReq) (*core.CreateResult, error) {
+	resp := new(core.CreateResp)
 
-	err := c.client.Get().
+	err := c.client.Post().
 		WithContext(kt.Ctx).
-		SubResourcef("/async/flows/%s", flowID).
+		Body(request).
+		SubResourcef("/custom_flows/create").
 		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
-	if err != nil {
-		return nil, err
-	}
 
 	if resp.Code != errf.OK {
 		return nil, errf.New(resp.Code, resp.Message)
 	}
 
-	return resp.Data, nil
+	return resp.Data, err
+}
+
+// ListFlow list flow.
+func (c *Client) ListFlow(kt *kit.Kit, req *core.ListReq) (*apits.ListFlowResult, error) {
+	resp := new(core.BaseResp[*apits.ListFlowResult])
+
+	err := c.client.Post().
+		WithContext(kt.Ctx).
+		Body(req).
+		SubResourcef("/flows/list").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, err
+}
+
+// GetFlow get flow.
+func (c *Client) GetFlow(kt *kit.Kit, id string) (*coreasync.AsyncFlow, error) {
+	resp := new(core.BaseResp[*coreasync.AsyncFlow])
+
+	err := c.client.Get().
+		WithContext(kt.Ctx).
+		SubResourcef("/flows/%s", id).
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, err
+}
+
+// ListTask list task.
+func (c *Client) ListTask(kt *kit.Kit, req *core.ListReq) (*apits.ListTaskResult, error) {
+	resp := new(core.BaseResp[*apits.ListTaskResult])
+
+	err := c.client.Post().
+		WithContext(kt.Ctx).
+		Body(req).
+		SubResourcef("/tasks/list").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, err
+}
+
+// GetTask get task.
+func (c *Client) GetTask(kt *kit.Kit, id string) (*coreasync.AsyncFlowTask, error) {
+	resp := new(core.BaseResp[*coreasync.AsyncFlowTask])
+
+	err := c.client.Get().
+		WithContext(kt.Ctx).
+		SubResourcef("/tasks/%s", id).
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, err
 }

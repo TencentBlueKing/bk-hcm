@@ -17,12 +17,34 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package taskserver
+// Package viewer 查看异步任务
+package viewer
 
-import "hcm/pkg/api/core/task"
+import (
+	"hcm/cmd/task-server/service/capability"
+	"hcm/pkg/client"
+	"hcm/pkg/dal/dao"
+	"hcm/pkg/rest"
+)
 
-// FlowListResult ...
-type FlowListResult struct {
-	Count   uint64           `json:"count"`
-	Details []task.AsyncFlow `json:"details"`
+// Init initial the async service
+func Init(cap *capability.Capability) {
+	svc := &service{
+		cs:  cap.ApiClient,
+		dao: cap.Dao,
+	}
+
+	h := rest.NewHandler()
+
+	h.Add("ListFlow", "POST", "/flows/list", svc.ListFlow)
+	h.Add("GetFlow", "GET", "/flows/{id}", svc.GetFlow)
+	h.Add("ListTask", "POST", "/tasks/list", svc.ListTask)
+	h.Add("GetTask", "GET", "/tasks/{id}", svc.GetTask)
+
+	h.Load(cap.WebService)
+}
+
+type service struct {
+	cs  *client.ClientSet
+	dao dao.Set
 }

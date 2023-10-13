@@ -49,17 +49,17 @@ var AsyncFlowTableColumnDescriptor = utils.ColumnDescriptors{
 
 // AsyncFlowTable define async_flow table.
 type AsyncFlowTable struct {
-	ID        string             `db:"id" json:"id" validate:"lte=64"`
-	Name      enumor.FlowTplName `db:"name" json:"name"`
-	State     enumor.FlowState   `db:"state" json:"state"`
-	Reason    *Reason            `db:"reason" json:"reason"`
-	ShareData *ShareData         `db:"share_data" json:"share_data"`
-	Memo      string             `db:"memo" json:"memo"`
-	Worker    *string            `db:"worker" json:"worker"`
-	Creator   string             `db:"creator" json:"creator" validate:"lte=64"`
-	Reviser   string             `db:"reviser" json:"reviser" validate:"lte=64"`
-	CreatedAt types.Time         `db:"created_at" json:"created_at" validate:"excluded_unless"`
-	UpdatedAt types.Time         `db:"updated_at" json:"updated_at" validate:"excluded_unless"`
+	ID        string           `db:"id" json:"id" validate:"lte=64"`
+	Name      enumor.FlowName  `db:"name" json:"name"`
+	State     enumor.FlowState `db:"state" json:"state"`
+	Reason    *Reason          `db:"reason" json:"reason"`
+	ShareData *ShareData       `db:"share_data" json:"share_data"`
+	Memo      string           `db:"memo" json:"memo"`
+	Worker    *string          `db:"worker" json:"worker"`
+	Creator   string           `db:"creator" json:"creator" validate:"lte=64"`
+	Reviser   string           `db:"reviser" json:"reviser" validate:"lte=64"`
+	CreatedAt types.Time       `db:"created_at" json:"created_at" validate:"excluded_unless"`
+	UpdatedAt types.Time       `db:"updated_at" json:"updated_at" validate:"excluded_unless"`
 }
 
 // TableName return async_flow table name.

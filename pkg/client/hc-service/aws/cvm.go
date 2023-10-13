@@ -27,6 +27,7 @@ import (
 	protocvm "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -66,15 +67,15 @@ func (cli *CvmClient) SyncCvmWithRelResource(ctx context.Context, h http.Header,
 }
 
 // BatchStartCvm ....
-func (cli *CvmClient) BatchStartCvm(ctx context.Context, h http.Header, request *protocvm.AwsBatchStartReq) error {
+func (cli *CvmClient) BatchStartCvm(kt *kit.Kit, request *protocvm.AwsBatchStartReq) error {
 
 	resp := new(rest.BaseResp)
 
 	err := cli.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/cvms/batch/start").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
@@ -89,15 +90,15 @@ func (cli *CvmClient) BatchStartCvm(ctx context.Context, h http.Header, request 
 }
 
 // BatchStopCvm ....
-func (cli *CvmClient) BatchStopCvm(ctx context.Context, h http.Header, request *protocvm.AwsBatchStopReq) error {
+func (cli *CvmClient) BatchStopCvm(kt *kit.Kit, request *protocvm.AwsBatchStopReq) error {
 
 	resp := new(rest.BaseResp)
 
 	err := cli.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/cvms/batch/stop").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

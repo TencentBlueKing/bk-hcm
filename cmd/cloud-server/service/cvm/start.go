@@ -20,19 +20,22 @@
 package cvm
 
 import (
+	"fmt"
+	"strconv"
+
+	"hcm/cmd/cloud-server/logics/async"
+	actioncvm "hcm/cmd/task-server/logics/action/cvm"
 	proto "hcm/pkg/api/cloud-server/cvm"
-	"hcm/pkg/api/core"
 	protoaudit "hcm/pkg/api/data-service/audit"
 	dataproto "hcm/pkg/api/data-service/cloud"
-	hcprotocvm "hcm/pkg/api/hc-service/cvm"
+	ts "hcm/pkg/api/task-server"
+	"hcm/pkg/async/action"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
-	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/tools/classifier"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -81,120 +84,64 @@ func (svc *cvmSvc) batchStartCvmSvc(cts *rest.Contexts, validHandler handler.Val
 		return nil, err
 	}
 
-	cvmVendorMap := classifier.ClassifyBasicInfoByVendor(basicInfoMap)
-	successIDs := make([]string, 0)
-	for vendor, infos := range cvmVendorMap {
-		switch vendor {
+	tasks, err := buildOperationTasks(enumor.ActionStartCvm, basicInfoMap)
+	if err != nil {
+		return nil, err
+	}
+	addReq := &ts.AddCustomFlowReq{
+		Name:  enumor.FlowCvmOperation,
+		Tasks: tasks,
+	}
+	result, err := svc.client.TaskServer().CreateCustomFlow(cts.Kit, addReq)
+	if err != nil {
+		logs.Errorf("call taskserver to create custom flow failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return result, async.WaitTaskToEnd(cts.Kit, svc.client.TaskServer(), result.ID)
+}
+
+func buildOperationTasks(actionName enumor.ActionName, basicInfoMap map[string]types.CloudResourceBasicInfo) (
+	[]ts.CustomFlowTask, error) {
+
+	paramMaps := make(map[string]*actioncvm.CvmOperationOption)
+	for _, info := range basicInfoMap {
+		switch info.Vendor {
 		case enumor.TCloud, enumor.Aws, enumor.HuaWei:
-			ids, err := svc.batchStartCvm(cts.Kit, vendor, infos)
-			successIDs = append(successIDs, ids...)
-			if err != nil {
-				return core.BatchOperateResult{
-					Succeeded: successIDs,
-					Failed: &core.FailedInfo{
-						Error: err,
-					},
-				}, errf.NewFromErr(errf.PartialFailed, err)
+			key := info.AccountID + "_" + info.Region
+			_, exist := paramMaps[key]
+			if !exist {
+				paramMaps[key] = &actioncvm.CvmOperationOption{
+					Vendor:    info.Vendor,
+					AccountID: info.AccountID,
+					Region:    info.Region,
+					IDs:       make([]string, 0),
+				}
 			}
+			paramMaps[key].IDs = append(paramMaps[key].IDs, info.ID)
 
 		case enumor.Azure, enumor.Gcp:
-			ids, failedID, err := svc.startCvm(cts.Kit, vendor, infos)
-			successIDs = append(successIDs, ids...)
-			if err != nil {
-				return core.BatchOperateResult{
-					Succeeded: successIDs,
-					Failed: &core.FailedInfo{
-						ID:    failedID,
-						Error: err,
-					},
-				}, errf.NewFromErr(errf.PartialFailed, err)
+			paramMaps[info.AccountID+"_"+info.ID] = &actioncvm.CvmOperationOption{
+				Vendor:    info.Vendor,
+				AccountID: info.AccountID,
+				IDs:       []string{info.ID},
 			}
 
 		default:
-			return core.BatchOperateResult{
-				Succeeded: successIDs,
-				Failed: &core.FailedInfo{
-					ID:    infos[0].ID,
-					Error: errf.Newf(errf.Unknown, "vendor: %s not support", vendor),
-				},
-			}, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
-		}
-
-	}
-
-	return nil, nil
-}
-
-func (svc *cvmSvc) startCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.CloudResourceBasicInfo) (
-	[]string, string, error) {
-
-	successIDs := make([]string, 0)
-	for _, one := range infoMap {
-		switch vendor {
-		case enumor.Gcp:
-			if err := svc.client.HCService().Gcp.Cvm.StartCvm(kt.Ctx, kt.Header(), one.ID); err != nil {
-				return successIDs, one.ID, err
-			}
-
-		case enumor.Azure:
-			if err := svc.client.HCService().Azure.Cvm.StartCvm(kt.Ctx, kt.Header(), one.ID); err != nil {
-				return successIDs, one.ID, err
-			}
-
-		default:
-			return successIDs, one.ID, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
+			return nil, fmt.Errorf("vendor: %s not support", info.Vendor)
 		}
 	}
 
-	return successIDs, "", nil
-}
-
-// batchStartCvm start cvm.
-func (svc *cvmSvc) batchStartCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.CloudResourceBasicInfo) (
-	[]string, error) {
-
-	cvmMap := classifier.ClassifyBasicInfoByAccount(infoMap)
-	successIDs := make([]string, 0)
-	for accountID, reginMap := range cvmMap {
-		for region, ids := range reginMap {
-			switch vendor {
-			case enumor.TCloud:
-				req := &hcprotocvm.TCloudBatchStartReq{
-					AccountID: accountID,
-					Region:    region,
-					IDs:       ids,
-				}
-				if err := svc.client.HCService().TCloud.Cvm.BatchStartCvm(kt.Ctx, kt.Header(), req); err != nil {
-					return successIDs, err
-				}
-
-			case enumor.Aws:
-				req := &hcprotocvm.AwsBatchStartReq{
-					AccountID: accountID,
-					Region:    region,
-					IDs:       ids,
-				}
-				if err := svc.client.HCService().Aws.Cvm.BatchStartCvm(kt.Ctx, kt.Header(), req); err != nil {
-					return successIDs, err
-				}
-
-			case enumor.HuaWei:
-				req := &hcprotocvm.HuaWeiBatchStartReq{
-					AccountID: accountID,
-					Region:    region,
-					IDs:       ids,
-				}
-				if err := svc.client.HCService().HuaWei.Cvm.BatchStartCvm(kt.Ctx, kt.Header(), req); err != nil {
-					return successIDs, err
-				}
-
-			default:
-				return successIDs, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
-			}
-
-			successIDs = append(successIDs, ids...)
-		}
+	tasks := make([]ts.CustomFlowTask, 0, len(paramMaps))
+	count := 1
+	for _, one := range paramMaps {
+		tasks = append(tasks, ts.CustomFlowTask{
+			ActionID:   action.ActIDType(strconv.Itoa(count)),
+			ActionName: actionName,
+			Params:     *one,
+			DependOn:   nil,
+		})
+		count++
 	}
-
-	return successIDs, nil
+	return tasks, nil
 }

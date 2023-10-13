@@ -26,7 +26,9 @@ import (
 	"hcm/pkg/async/action"
 	"hcm/pkg/async/action/run"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/json"
 	"hcm/pkg/tools/rand"
 	"hcm/pkg/tools/times"
 )
@@ -41,6 +43,14 @@ type CreateFactory struct{}
 type TestCreateFactoryParams struct {
 	Name string `json:"name"`
 	Age  int    `json:"age"`
+}
+
+var _ action.Decoder = new(TestCreateFactoryParams)
+
+// Decode ...
+func (t TestCreateFactoryParams) Decode(params types.JsonField, v interface{}) error {
+	logs.Infof(" ----------- create factory decode -----------, params: %+v", params)
+	return json.UnmarshalFromString(string(params), v)
 }
 
 // ParameterNew ...

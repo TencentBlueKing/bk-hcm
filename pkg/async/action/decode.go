@@ -17,30 +17,24 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package action ...
 package action
 
 import (
-	"hcm/pkg/async/action/run"
-	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/table/types"
+	"hcm/pkg/tools/json"
 )
 
-// Action 异步任务必须实现的运行接口。
-type Action interface {
-	// Name 返回异步任务名称
-	Name() enumor.ActionName
-	// Run 异步任务运行操作
-	Run(kt run.ExecuteKit, params interface{}) error
+// Decoder 解析异步任务参数到请求结构体上。
+type Decoder interface {
+	Decode(str types.JsonField, v interface{}) error
 }
 
-// RollbackAction Action如果支持回滚操作，实现该接口。会在Action执行失败、Action执行一半崩溃后，进行调用。
-// State: running -> rollback -> pending
-type RollbackAction interface {
-	Rollback(kt run.ExecuteKit, params interface{}) error
-}
+// Decode decode task param to result.
+func Decode(params types.JsonField, result interface{}) error {
+	decoder, exist := result.(Decoder)
+	if !exist {
+		return json.UnmarshalFromString(string(params), result)
+	}
 
-// ParameterAction 如果任务运行需要依赖请求参数，需要通过该接口返回参数结构，会将任务实例中的参数内容解析到这个返回参数上。
-type ParameterAction interface {
-	// ParameterNew 返回新的参数结构。返回参数可以实现 Decoder 接口，自定义解码方式。
-	ParameterNew() (params interface{})
+	return decoder.Decode(params, result)
 }

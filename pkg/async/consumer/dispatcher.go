@@ -64,18 +64,19 @@ func (d *Dispatcher) Start() {
 
 // WatchPendingFlow 监听处于Pending状态的流，并派发到指定节点。
 func (d *Dispatcher) WatchPendingFlow() {
-	ticker := time.NewTicker(d.watchIntervalSec)
-	defer ticker.Stop()
 	for {
 		select {
 		case <-d.closeCh:
 			break
-		case <-ticker.C:
-			kt := NewKit()
-			if err := d.Do(kt); err != nil {
-				logs.Errorf("%s: dispatcher do failed, err: %v, rid: %s", constant.AsyncTaskWarnSign, err, kt.Rid)
-			}
+		default:
 		}
+
+		kt := NewKit()
+		if err := d.Do(kt); err != nil {
+			logs.Errorf("%s: dispatcher do failed, err: %v, rid: %s", constant.AsyncTaskWarnSign, err, kt.Rid)
+		}
+
+		time.Sleep(d.watchIntervalSec)
 	}
 
 	d.wg.Done()

@@ -68,16 +68,15 @@ func (cli *CvmClient) SyncCvmWithRelResource(ctx context.Context, h http.Header,
 }
 
 // BatchStartCvm ....
-func (cli *CvmClient) BatchStartCvm(ctx context.Context, h http.Header,
-	request *protocvm.HuaWeiBatchStartReq) error {
+func (cli *CvmClient) BatchStartCvm(kt *kit.Kit, request *protocvm.HuaWeiBatchStartReq) error {
 
 	resp := new(rest.BaseResp)
 
 	err := cli.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/cvms/batch/start").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
@@ -92,15 +91,15 @@ func (cli *CvmClient) BatchStartCvm(ctx context.Context, h http.Header,
 }
 
 // BatchStopCvm ....
-func (cli *CvmClient) BatchStopCvm(ctx context.Context, h http.Header, request *protocvm.HuaWeiBatchStopReq) error {
+func (cli *CvmClient) BatchStopCvm(kt *kit.Kit, request *protocvm.HuaWeiBatchStopReq) error {
 
 	resp := new(rest.BaseResp)
 
 	err := cli.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/cvms/batch/stop").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

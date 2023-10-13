@@ -21,6 +21,7 @@ package tableasync
 
 import (
 	"database/sql/driver"
+	"strings"
 	"sync"
 
 	"hcm/pkg/dal/table/types"
@@ -93,6 +94,39 @@ func (d *ShareData) Set(kt *kit.Kit, key string, val string) error {
 		if err := d.Save(kt, d); err != nil {
 			delete(d.Dict, key)
 			logs.ErrorDepthf(1, "share data set key: %s, val: %s failed, err: %v, rid: %s", key, val, err, kt.Rid)
+			return err
+		}
+	}
+
+	return nil
+}
+
+// AppendSuccessIDs append success ids.
+func (d *ShareData) AppendSuccessIDs(kt *kit.Kit, ids ...string) error {
+	return d.appendIDs(kt, "success_ids", ids...)
+}
+
+// AppendFailedIDs append failed ids.
+func (d *ShareData) AppendFailedIDs(kt *kit.Kit, ids ...string) error {
+	return d.appendIDs(kt, "failed_ids", ids...)
+}
+
+func (d *ShareData) appendIDs(kt *kit.Kit, key string, ids ...string) error {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
+	val, exist := d.Dict[key]
+	var str string
+	if !exist {
+		str = strings.Join(ids, ",")
+	} else {
+		str = val + "," + strings.Join(ids, ",")
+	}
+	d.Dict[key] = str
+	if d.Save != nil {
+		if err := d.Save(kt, d); err != nil {
+			delete(d.Dict, key)
+			logs.ErrorDepthf(1, "share data appendIDs: %s, ids: %v failed, err: %v, rid: %s", key, ids, err, kt.Rid)
 			return err
 		}
 	}

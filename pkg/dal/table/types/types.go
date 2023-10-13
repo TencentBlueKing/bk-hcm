@@ -30,6 +30,11 @@ import (
 // JsonField 对应 db 的 json field 格式字段
 type JsonField string
 
+// IsEmpty return
+func (f JsonField) IsEmpty() bool {
+	return len(f) == 0 || f == "{}"
+}
+
 // Scan is used to decode raw message which is read from db into ShareData.
 func (f *JsonField) Scan(raw interface{}) error {
 	return Scan(raw, f)

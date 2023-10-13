@@ -22,10 +22,11 @@ package producer
 
 import (
 	"hcm/cmd/task-server/service/capability"
-	taskserver "hcm/pkg/api/task-server"
+	"hcm/pkg/api/core"
 	"hcm/pkg/async/producer"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
@@ -38,7 +39,8 @@ func Init(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("CreateFlow", "POST", "/flows/create", svc.CreateFlow)
+	h.Add("CreateTemplateFlow", "POST", "/template_flows/create", svc.CreateTemplateFlow)
+	h.Add("CreateCustomFlow", "POST", "/custom_flows/create", svc.CreateCustomFlow)
 
 	h.Load(cap.WebService)
 }
@@ -48,19 +50,52 @@ type service struct {
 	pro producer.Producer
 }
 
-// CreateFlow add async flow
-func (p service) CreateFlow(cts *rest.Contexts) (interface{}, error) {
+// CreateTemplateFlow add async flow
+func (p service) CreateTemplateFlow(cts *rest.Contexts) (interface{}, error) {
 
-	// 1. 解析请求体
-	req := new(taskserver.AddFlowReq)
-	if err := cts.DecodeInto(req); err != nil {
+	// 1. 解析请求体。
+	// 请求体使用的是 taskserver.AddTemplateFlowReq，但解析使用的是 producer.AddTemplateFlowOption，是想通过http请求去自动序列化
+	// task.Params，而不需要手动 Marshal 请求参数。
+	opt := new(producer.AddTemplateFlowOption)
+	if err := cts.DecodeInto(opt); err != nil {
 		return nil, err
 	}
 
-	if err := req.Validate(); err != nil {
+	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	// 2. 按照模板添加异步任务流
-	return p.pro.AddFlow(cts.Kit, (*producer.AddFlowOption)(req))
+	id, err := p.pro.AddTemplateFlow(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("add template flow failed, err: %v, opt: %+v, rid: %s", err, opt, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return &core.CreateResult{ID: id}, nil
+}
+
+// CreateCustomFlow add custom flow
+func (p service) CreateCustomFlow(cts *rest.Contexts) (interface{}, error) {
+
+	// 1. 解析请求体
+	// 请求体使用的是 taskserver.AddCustomFlowReq，但解析使用的是 producer.AddCustomFlowOption，是想通过http请求去自动序列化
+	// task.Params，而不需要手动 Marshal 请求参数。
+	opt := new(producer.AddCustomFlowOption)
+	if err := cts.DecodeInto(opt); err != nil {
+		return nil, err
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// 2. 添加异步任务流
+	id, err := p.pro.AddCustomFlow(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("add custom flow failed, err: %v, opt: %+v, rid: %s", err, opt, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return &core.CreateResult{ID: id}, nil
 }

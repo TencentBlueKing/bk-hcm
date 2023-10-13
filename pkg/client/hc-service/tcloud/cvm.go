@@ -68,16 +68,15 @@ func (cli *CvmClient) SyncCvmWithRelResource(ctx context.Context, h http.Header,
 }
 
 // BatchStartCvm ....
-func (cli *CvmClient) BatchStartCvm(ctx context.Context, h http.Header,
-	request *protocvm.TCloudBatchStartReq) error {
+func (cli *CvmClient) BatchStartCvm(kt *kit.Kit, request *protocvm.TCloudBatchStartReq) error {
 
 	resp := new(rest.BaseResp)
 
 	err := cli.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/cvms/batch/start").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
@@ -92,15 +91,15 @@ func (cli *CvmClient) BatchStartCvm(ctx context.Context, h http.Header,
 }
 
 // BatchStopCvm ....
-func (cli *CvmClient) BatchStopCvm(ctx context.Context, h http.Header, request *protocvm.TCloudBatchStopReq) error {
+func (cli *CvmClient) BatchStopCvm(kt *kit.Kit, request *protocvm.TCloudBatchStopReq) error {
 
 	resp := new(rest.BaseResp)
 
 	err := cli.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/cvms/batch/stop").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

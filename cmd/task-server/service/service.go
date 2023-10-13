@@ -28,8 +28,10 @@ import (
 	"strconv"
 	"time"
 
+	logicsaction "hcm/cmd/task-server/logics/action"
 	"hcm/cmd/task-server/service/capability"
 	"hcm/cmd/task-server/service/producer"
+	"hcm/cmd/task-server/service/viewer"
 	"hcm/pkg/async"
 	"hcm/pkg/async/backend"
 	"hcm/pkg/async/consumer"
@@ -87,6 +89,7 @@ func NewService(sd serviced.ServiceDiscover, shutdownWaitTimeSec int) (*Service,
 		return nil, err
 	}
 
+	logicsaction.Init(apiClientSet)
 	async, err := createAndStartAsync(sd, dao, shutdownWaitTimeSec)
 	if err != nil {
 		return nil, err
@@ -219,9 +222,11 @@ func (s *Service) apiSet() *restful.Container {
 		WebService: ws,
 		ApiClient:  s.client,
 		Async:      s.async,
+		Dao:        s.dao,
 	}
 
 	producer.Init(c)
+	viewer.Init(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }
