@@ -52,6 +52,7 @@ export default defineComponent({
 
     const selected = ref([]);
     const searchVal = ref('');
+    const isAllExpand = ref(true);
 
     // const isSelected = computed(() => {
     //   if (selected.value) {
@@ -128,6 +129,7 @@ export default defineComponent({
       () => isDialogShow.value,
       (isShow) => {
         if (!isShow) {
+          searchVal.value = '';
           securityGroupRules.value = [];
         }
       },
@@ -275,8 +277,15 @@ export default defineComponent({
                         入站规则
                       </Button>
                     </BkButtonGroup>
-                    <Button class={'security-group-rules-expand-btn'}>
-                      全部收起
+                    <Button
+                      class={'security-group-rules-expand-btn'}
+                      onClick={() => isAllExpand.value = !isAllExpand.value}
+                    >
+                      {
+                        isAllExpand.value
+                          ? '全部收起'
+                          : '全部展开'
+                      }
                     </Button>
                   </div>
                   {/* @ts-ignore */}
@@ -292,7 +301,8 @@ export default defineComponent({
                             <DraggableCard
                               key={idx}
                               title={securityGroupKVMap.value.get(id)}
-                              index={idx + 1}>
+                              index={idx + 1}
+                              isAllExpand={isAllExpand.value}>
                               <Table
                                 data={data}
                                 columns={securityRulesColumns}
