@@ -192,7 +192,7 @@ func (svc *service) getVpcSubnetCountInRes(kt *kit.Kit, vpcID, zone string) (uin
 		},
 		Page: core.NewCountPage(),
 	}
-	vpcResult, err := svc.client.CloudServer().Subnet.ListInRes(kt.Ctx, kt.Header(), req)
+	vpcResult, err := svc.client.CloudServer().Subnet.ListInRes(kt, req)
 	if err != nil {
 		logs.Errorf("list vpc failed, err: %v, rid: %s", err, kt.Rid)
 		return 0, 0, err
@@ -216,7 +216,7 @@ func (svc *service) getVpcSubnetCountInRes(kt *kit.Kit, vpcID, zone string) (uin
 		},
 		Page: core.NewCountPage(),
 	}
-	zoneResult, err := svc.client.CloudServer().Subnet.ListInRes(kt.Ctx, kt.Header(), req)
+	zoneResult, err := svc.client.CloudServer().Subnet.ListInRes(kt, req)
 	if err != nil {
 		logs.Errorf("list vpc failed, err: %v, rid: %s", err, kt.Rid)
 		return 0, 0, err

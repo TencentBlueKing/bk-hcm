@@ -30,3 +30,9 @@ const (
 	// SuiteTestBizID biz id for suite test
 	SuiteTestBizID = 1234
 )
+
+// SuiteRegion region for test
+const SuiteRegion = "ap-mariana"
+
+// SuiteZone ...
+const SuiteZone = "ap-mariana-6"

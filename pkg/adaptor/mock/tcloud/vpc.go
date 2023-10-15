@@ -109,7 +109,7 @@ func (v *vpcPlaybook) createVpc(_ *kit.Kit, opt *types.TCloudVpcCreateOption) (*
 		return nil, err
 	}
 	cloudVpc := types.TCloudVpc{
-		CloudID: "vpc-" + rand.String(8),
+		CloudID: rand.Prefix("vpc-", 8),
 		Name:    opt.Name,
 		Region:  opt.Extension.Region,
 		Memo:    opt.Memo,
@@ -131,5 +131,15 @@ func (v *vpcPlaybook) deleteVpc(kt *kit.Kit, opt *core.BaseRegionalDeleteOption)
 		return err
 	}
 
+	// 删除关联子网
+	subnets := v.subnetStore.Filter(func(n adtsubnet.TCloudSubnet) bool {
+		return n.CloudVpcID == opt.ResourceID
+	})
+	for _, net := range subnets {
+		err := v.subnetStore.Remove(net.CloudID)
+		if err != nil {
+			return err
+		}
+	}
 	return v.vpcStore.Remove(opt.ResourceID)
 }

@@ -155,7 +155,7 @@ func QueryVpcIDsAndSync(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClient,
 	}
 
 	if len(notExistResult.Details) != len(cloudVpcIDs) {
-		return nil, fmt.Errorf("some vpc can not sync, cloudIDs: %v", notExistCloudID)
+		return nil, fmt.Errorf("some vpc can not sync to database, cloudIDs: %v", notExistCloudID)
 	}
 
 	for cloudID, id := range convVpcCloudIDMap(notExistResult) {

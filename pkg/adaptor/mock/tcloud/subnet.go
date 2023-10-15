@@ -82,7 +82,7 @@ func (v *vpcPlaybook) createSubnet(_ *kit.Kit, opt *adtsubnet.TCloudSubnetsCreat
 	for _, net := range opt.Subnets {
 		createdSubnet := adtsubnet.TCloudSubnet{
 			CloudVpcID: opt.CloudVpcID,
-			CloudID:    "subnet-" + rand.String(8),
+			CloudID:    rand.Prefix("subnet-", 8),
 			Name:       net.Name,
 			Ipv4Cidr:   []string{net.IPv4Cidr},
 			Ipv6Cidr:   nil,
@@ -101,7 +101,7 @@ func (v *vpcPlaybook) createSubnet(_ *kit.Kit, opt *adtsubnet.TCloudSubnetsCreat
 
 		// 创建默认路由表
 		routeTable := adtroutetable.TCloudRouteTable{
-			CloudID:    "rtb-" + rand.String(8),
+			CloudID:    rand.Prefix("rtb-", 8),
 			Name:       "default",
 			CloudVpcID: createdSubnet.CloudVpcID,
 			Region:     createdSubnet.Extension.Region,

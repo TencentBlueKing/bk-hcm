@@ -21,6 +21,20 @@ package rand
 
 import "testing"
 
+func BenchmarkPrefix(b *testing.B) {
+	result := make([]string, b.N)
+	for i := 0; i < b.N; i++ {
+		result[i] = Prefix("prefix-", 10)
+	}
+}
+
+func BenchmarkPrefixAddString(b *testing.B) {
+	result := make([]string, b.N)
+	for i := 0; i < b.N; i++ {
+		result[i] = "prefix-" + String(10)
+	}
+}
+
 func TestPrefix(t *testing.T) {
 	type args struct {
 		prefix string

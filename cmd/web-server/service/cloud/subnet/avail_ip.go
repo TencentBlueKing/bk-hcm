@@ -129,7 +129,7 @@ func (svc *service) ListSubnetWithIPCountInRes(cts *rest.Contexts) (interface{},
 		Filter: req.Filter,
 		Page:   req.Page,
 	}
-	listResult, err := svc.client.CloudServer().Subnet.ListInRes(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	listResult, err := svc.client.CloudServer().Subnet.ListInRes(cts.Kit, listReq)
 	if err != nil {
 		logs.Errorf("list subnet failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err

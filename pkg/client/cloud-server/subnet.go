@@ -43,16 +43,16 @@ func NewSubnetClient(client rest.ClientInterface) *SubnetClient {
 }
 
 // ListInRes subnets.
-func (v *SubnetClient) ListInRes(ctx context.Context, h http.Header, req *core.ListReq) (
+func (v *SubnetClient) ListInRes(kt *kit.Kit, req *core.ListReq) (
 	*proto.SubnetListResult, error) {
 
 	resp := new(proto.SubnetListResp)
 
 	err := v.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(req).
 		SubResourcef("/subnets/list").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
@@ -158,4 +158,50 @@ func (v *SubnetClient) Assign(kt *kit.Kit, req *proto.AssignSubnetToBizReq) erro
 	}
 
 	return nil
+}
+
+// Create subnet
+func (v *SubnetClient) Create(kt *kit.Kit, req *proto.TCloudSubnetCreateReq) (*core.CreateResult,
+	error) {
+	resp := new(core.BaseResp[*core.CreateResult])
+
+	err := v.client.Post().
+		WithContext(kt.Ctx).
+		Body(req).
+		SubResourcef("/subnets/create").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// CreateInBiz create subnet in business
+func (v *SubnetClient) CreateInBiz(kt *kit.Kit, bizID int64, req *proto.TCloudSubnetCreateReq) (*core.CreateResult,
+	error) {
+	resp := new(core.BaseResp[*core.CreateResult])
+
+	err := v.client.Post().
+		WithContext(kt.Ctx).
+		Body(req).
+		SubResourcef("/bizs/%d/subnets/create", bizID).
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
 }
