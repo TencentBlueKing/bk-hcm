@@ -1,4 +1,4 @@
-import { Form, Dialog, Input, Message, Button } from 'bkui-vue';
+import { Form, Dialog, Input, Message, Button, Alert } from 'bkui-vue';
 import { reactive, defineComponent, ref, onMounted, computed, watch } from 'vue';
 import { ProjectModel, SecretModel, CloudType, SiteType } from '@/typings';
 import { useI18n } from 'vue-i18n';
@@ -23,6 +23,7 @@ export default defineComponent({
     const formDiaRef = ref(null);
     const requestQueue = ref(['detail', 'bizsList']);
     const isDetail = ref(route.query.isDetail);
+    const isValidating = ref(false);
 
     const initProjectModel: ProjectModel = {
       id: 1,
@@ -358,13 +359,13 @@ export default defineComponent({
               label: t('IAM用户ID'),
               required: true,
               property: 'iamUserId',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.iamUserId} />,
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.iamUserId} disabled/>,
             },
             {
               label: 'IAM用户名',
               required: true,
               property: 'iamUserName',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.iamUserName} />,
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.iamUserName} disabled/>,
             },
             {
               label: 'Secret ID',
@@ -386,7 +387,7 @@ export default defineComponent({
               label: t('IAM用户名'),
               required: true,
               property: 'iamUserName',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.iamUserName} />,
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.iamUserName} disabled/>,
             },
             {
               label: 'Secret ID',
@@ -408,13 +409,13 @@ export default defineComponent({
               label: t('服务账号ID'),
               required: projectModel.type !== 'registration',
               property: 'accountId',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.accountId} />,
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.accountId} disabled/>,
             },
             {
               label: t('服务账号名称'),
               required: projectModel.type !== 'registration',
               property: 'accountName',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.accountName} />,
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.accountName} disabled/>,
             },
             {
               label: 'Secret ID',
@@ -436,13 +437,13 @@ export default defineComponent({
               label: t('应用程序(客户端) ID'),
               required: projectModel.type !== 'registration',
               property: 'applicationId',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.applicationId} />,
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.applicationId} disabled/>,
             },
             {
               label: t('应用程序名称'),
               required: projectModel.type !== 'registration',
               property: 'applicationName',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.applicationName} />,
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.applicationName} disabled/>,
             },
             {
               label: t('客户端ID'),
@@ -461,16 +462,16 @@ export default defineComponent({
         case 'tcloud':
           dialogForm.list = [
             {
+              label: t('子账号ID'),
+              required: true,
+              property: 'subAccountId',
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.subAccountId} disabled/>,
+            },
+            {
               label: 'Secret ID',
               required: projectModel.type !== 'registration',
               property: 'secretId',
               component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
-            },
-            {
-              label: t('子账号ID'),
-              required: true,
-              property: 'subAccountId',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.subAccountId} />,
             },
             {
               label: 'Secret Key',
@@ -614,6 +615,12 @@ export default defineComponent({
           return item;
         });
       });
+    };
+
+    const handleValidate = async () => {
+      isValidating.value = true;
+
+      isValidating.value = false;
     };
 
     // 处理失焦
@@ -866,22 +873,38 @@ export default defineComponent({
             v-model:isShow={isShowModifyScretDialog.value}
             width={680}
             title={'编辑API密钥'}
-            dialogType={'show'}
             onClosed={onClosed}
+            onConfirm={onConfirm}
             isLoading={isSecretDialogLoading.value}
+            theme='primary'
           >
-            <Form labelWidth={130} model={secretModel} ref={formDiaRef}>
-            {dialogForm.list.map(formItem => (
-                <FormItem label={formItem.label} required={formItem.required} property={formItem.property}>
-                    {formItem.component()}
-                </FormItem>
-            ))
-            }
-            </Form>
-            <div class="button-warp">
-              <Button theme="primary" loading={buttonLoading.value} onClick={onConfirm}>{t('确认')}</Button>
-              <Button class="ml10" onClick={onClosed}>{t('取消')}</Button>
-            </div>
+            {{
+              default: () => (
+                <>
+                  <Alert
+                    class={'mb12'}
+                    theme='info'
+                    title='更新的API密钥必须属于同一个主账号ID'
+                  />
+                  <Form labelWidth={130} model={secretModel} ref={formDiaRef} formType='vertical'>
+                    {
+                      dialogForm.list.map(formItem => (
+                          <FormItem label={formItem.label} required={formItem.required} property={formItem.property}>
+                              {formItem.component()}
+                          </FormItem>
+                      ))
+                    }
+                  </Form>
+                </>
+              ),
+              footer: () => (
+                <div class={'validate-btn-container'}>
+                  <Button theme='primary' class={'validate-btn'} loading={isValidating.value} onClick={handleValidate}>账号校验</Button>
+                  <Button theme="primary" loading={buttonLoading.value} onClick={onConfirm}>{t('确认')}</Button>
+                  <Button class="ml10" onClick={onClosed}>{t('取消')}</Button>
+                </div>
+              ),
+            }}
           </Dialog>
 
           <Dialog
@@ -891,6 +914,7 @@ export default defineComponent({
             isLoading={isAccountDialogLoading.value}
             onConfirm={handleModifyAccountSubmit}
             onClosed={() => isShowModifyAccountDialog.value = false}
+            theme='primary'
           >
             <Form
               v-model={accountFormModel}
