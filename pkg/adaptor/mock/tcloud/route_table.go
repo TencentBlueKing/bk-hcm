@@ -40,13 +40,7 @@ func (v *vpcPlaybook) applyRouteTable(mockCloud *MockTCloud) {
 		Return(nil).MinTimes(1)
 
 	mockCloud.EXPECT().DeleteRouteTable(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) error {
-			err := opt.Validate()
-			if err != nil {
-				return err
-			}
-			return v.subnetStore.Remove(opt.ResourceID)
-		}).MinTimes(1)
+		DoAndReturn(v.deleteRouteTable).MinTimes(1)
 }
 
 // listRouteTable 和其他list接口不同，路由表如果结果中没有指定的id，会返回未找到错误
@@ -80,4 +74,11 @@ func (v *vpcPlaybook) listRouteTable(_ *kit.Kit,
 		Details: values,
 	}, nil
 
+}
+func (v *vpcPlaybook) deleteRouteTable(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) error {
+	err := opt.Validate()
+	if err != nil {
+		return err
+	}
+	return v.routeTableStore.Remove(opt.ResourceID)
 }

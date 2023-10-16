@@ -89,8 +89,8 @@ func (v *VpcClient) Update(kt *kit.Kit, id string, req *csvpc.VpcUpdateReq) erro
 	return nil
 }
 
-// UpdateBiz vpc in business
-func (v *VpcClient) UpdateBiz(kt *kit.Kit, bizID int64, id string, req *csvpc.VpcUpdateReq) error {
+// UpdateInBiz update vpc in business
+func (v *VpcClient) UpdateInBiz(kt *kit.Kit, bizID int64, id string, req *csvpc.VpcUpdateReq) error {
 	resp := new(rest.BaseResp)
 
 	err := v.client.Patch().
@@ -182,8 +182,8 @@ func (v *VpcClient) GetInBiz(kt *kit.Kit, bizID int, vpcID string) (*corecloud.B
 	return resp.Data, nil
 }
 
-// DeleteBiz delete vpc in business
-func (v *VpcClient) DeleteBiz(kt *kit.Kit, bizID int, vpcID string) error {
+// DeleteInBiz delete vpc in business
+func (v *VpcClient) DeleteInBiz(kt *kit.Kit, bizID int, vpcID string) error {
 
 	resp := new(rest.BaseResp)
 	err := v.client.Delete().
@@ -203,6 +203,14 @@ func (v *VpcClient) DeleteBiz(kt *kit.Kit, bizID int, vpcID string) error {
 	}
 
 	return nil
+}
+
+// Delete in res
+func (v *VpcClient) Delete(kt *kit.Kit, vpcID string) error {
+	req := &struct{}{}
+	_, err := Request[struct{}, struct{}](v.client, rest.DELETE, kt, req,
+		"/vpcs/%s", vpcID)
+	return err
 }
 
 // CreateTCloudVpc ...

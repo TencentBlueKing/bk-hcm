@@ -96,6 +96,7 @@ func (v vpc) TCloudVpcCreate(cts *rest.Contexts) (interface{}, error) {
 			Name:              subnetCreateReq.Name,
 			Zone:              subnetCreateReq.Zone,
 			CloudRouteTableID: subnetCreateReq.CloudRouteTableID,
+			Memo:              subnetCreateReq.Memo,
 		})
 	}
 	_, err = v.subnet.TCloudSubnetCreate(cts.Kit, subnetCreateOpt)

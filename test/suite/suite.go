@@ -126,6 +126,7 @@ func ClearData() error {
 	tables := []table.Name{
 		table.AccountTable,
 		table.AccountSyncDetailTable,
+		table.AccountBizRelTable,
 		table.AuditTable,
 		table.VpcTable,
 		table.SubnetTable,
@@ -138,6 +139,13 @@ func ClearData() error {
 			logs.Errorf("fail to truncate table %s, err: %v", tableName, err)
 			return err
 		}
+	}
+	// reset id
+	_, err := db.Exec("update " + string(table.IDGenerator) + " set max_id =0 ")
+	if err != nil {
+		logs.Errorf("fail to reset id, err: %v", err)
+
+		return err
 	}
 
 	return nil

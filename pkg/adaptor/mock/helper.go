@@ -146,6 +146,18 @@ func (st *Store[K, V]) Filter(match func(V) bool) (valueSlice []V) {
 	return
 }
 
+// Find return first matched value
+func (st *Store[K, V]) Find(match func(V) bool) (value *V) {
+	st.rw.RLock()
+	defer st.rw.RUnlock()
+	for _, val := range st.dict {
+		if match(val) {
+			return &val
+		}
+	}
+	return nil
+}
+
 // Remove existing item
 func (st *Store[K, V]) Remove(key K) error {
 	st.rw.Lock()

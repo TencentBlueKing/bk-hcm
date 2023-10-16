@@ -23,6 +23,7 @@ import (
 	"hcm/pkg/adaptor/types/core"
 	adtroutetable "hcm/pkg/adaptor/types/route-table"
 	adtsubnet "hcm/pkg/adaptor/types/subnet"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/rand"
@@ -42,12 +43,7 @@ func (v *vpcPlaybook) applySubnet(mockCloud *MockTCloud) {
 		Return(nil).MinTimes(1)
 
 	mockCloud.EXPECT().DeleteSubnet(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) error {
-			if err := opt.Validate(); err != nil {
-				return err
-			}
-			return v.subnetStore.Remove(opt.ResourceID)
-		}).MinTimes(1)
+		DoAndReturn(v.deleteSubnet).MinTimes(1)
 }
 
 func (v *vpcPlaybook) listSubnet(_ *kit.Kit, opt *core.TCloudListOption) (*adtsubnet.TCloudSubnetListResult,
@@ -86,7 +82,7 @@ func (v *vpcPlaybook) createSubnet(_ *kit.Kit, opt *adtsubnet.TCloudSubnetsCreat
 			Name:       net.Name,
 			Ipv4Cidr:   []string{net.IPv4Cidr},
 			Ipv6Cidr:   nil,
-			Memo:       nil,
+			Memo:       net.Memo,
 			Extension: &adtsubnet.TCloudSubnetExtension{
 				IsDefault:               false,
 				Region:                  opt.Region,
@@ -105,7 +101,7 @@ func (v *vpcPlaybook) createSubnet(_ *kit.Kit, opt *adtsubnet.TCloudSubnetsCreat
 			Name:       "default",
 			CloudVpcID: createdSubnet.CloudVpcID,
 			Region:     createdSubnet.Extension.Region,
-			Memo:       converter.ValToPtr("default"),
+			Memo:       converter.ValToPtr("route table for " + createdSubnet.CloudID),
 			Extension:  &adtroutetable.TCloudRouteTableExtension{Main: true},
 		}
 		v.routeTableStore.Add(routeTable.CloudID, routeTable)
@@ -118,4 +114,28 @@ func (v *vpcPlaybook) createSubnet(_ *kit.Kit, opt *adtsubnet.TCloudSubnetsCreat
 
 	return v.subnetStore.GetByKeys(ids...), nil
 
+}
+
+func (v *vpcPlaybook) deleteSubnet(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) error {
+	if err := opt.Validate(); err != nil {
+		return err
+	}
+	subnet, exists := v.subnetStore.Get(opt.ResourceID)
+	if !exists {
+		return errf.Newf(errf.RecordNotFound, "not found ")
+	}
+	table := v.routeTableStore.Find(func(table adtroutetable.TCloudRouteTable) bool {
+		return converter.PtrToVal(subnet.Extension.CloudRouteTableID) == table.CloudID
+	})
+	if table == nil {
+		return errf.Newf(errf.RecordNotFound, "not found ")
+	}
+	err := v.deleteRouteTable(kt, &core.BaseRegionalDeleteOption{
+		BaseDeleteOption: core.BaseDeleteOption{ResourceID: table.CloudID},
+		Region:           opt.Region,
+	})
+	if err != nil {
+		return err
+	}
+	return v.subnetStore.Remove(opt.ResourceID)
 }

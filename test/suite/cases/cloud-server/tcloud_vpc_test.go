@@ -21,17 +21,16 @@ package cloudserver
 
 import (
 	"testing"
-	"time"
 
-	cloudserver "hcm/pkg/api/cloud-server"
 	csvpc "hcm/pkg/api/cloud-server/vpc"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
 	corert "hcm/pkg/api/core/cloud/route-table"
 	"hcm/pkg/api/hc-service/sync"
+	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 	"hcm/test/suite"
@@ -40,220 +39,259 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-// TestTCloudVPC 测试腾讯云VPC、子网、路由表 相关api, 这三个类资源基本是一起出现，所以一起测试
-func TestTCloudVPC(t *testing.T) {
-	cli := suite.GetClientSet()
-	testVpcName := "vpc1"
-	testTcloudAccountID := accountID
-	var createdVpc cloud.BaseVpc
-	var createdSubnet cloud.BaseSubnet
-	var createdRouteTable corert.BaseRouteTable
+var (
+	// ResVpcID vpc id in res to share with other kind of resources
+	ResVpcID string
+	// ResVpcCloudID vpc cloud id in res to share with other kind of resources
+	ResVpcCloudID string
 
-	createReq := csvpc.TCloudVpcCreateReq{
-		AccountID: testTcloudAccountID,
+	// BizVpcID vpc id in biz to share with other kind of resources
+	BizVpcID string
+
+	// BizVpcCloudID vpc cloud id in biz to share with other kind of resources
+	BizVpcCloudID string
+)
+
+type vpcTester struct {
+	kt                *kit.Kit
+	cli               *client.ClientSet
+	vpcName           string
+	accountID         string
+	createdVpc        cloud.BaseVpc
+	createdSubnet     cloud.BaseSubnet
+	createdRouteTable corert.BaseRouteTable
+	vpcCreateReq      csvpc.TCloudVpcCreateReq
+}
+
+func newVpcTester(accountID, vpcName string) *vpcTester {
+	vpcCreateReq := csvpc.TCloudVpcCreateReq{
+		Name:      vpcName,
+		AccountID: accountID,
 		Region:    constant.SuiteRegion,
-		Name:      testVpcName,
 		IPv4Cidr:  "172.31.0.0/16",
 		BkCloudID: 9911,
-		Memo:      converter.ValToPtr("created by suite test"),
+		Memo:      converter.ValToPtr("memo(create vpc)"),
 	}
-	createReq.Subnet.Name = "subnet_of_vpc1"
-	createReq.Subnet.Zone = constant.SuiteZone
-	createReq.Subnet.IPv4Cidr = "172.31.1.0/24"
+	vpcCreateReq.Subnet.Name = "subnet_of_vpc1"
+	vpcCreateReq.Subnet.Zone = constant.SuiteZone
+	vpcCreateReq.Subnet.IPv4Cidr = "172.31.1.0/24"
+	return &vpcTester{
+		kt:           cases.GenApiKit(),
+		cli:          suite.GetClientSet(),
+		vpcName:      vpcName,
+		accountID:    accountID,
+		vpcCreateReq: vpcCreateReq,
+	}
+}
 
+func (v *vpcTester) listEmptyVpc() {
+	kt := v.kt.NewSubKit()
+	listReq := core.ListReq{Page: &core.BasePage{Limit: 500}, Filter: tools.AllExpression()}
+	listResult, err := v.cli.CloudServer().Vpc.ListInRes(kt, &listReq)
+	So(err, ShouldBeNil)
+	So(listResult, ShouldNotBeNil)
+	So(len(listResult.Details), ShouldEqual, 0)
+}
+
+func (v *vpcTester) createVpcInRes() {
+	kt := v.kt.NewSubKit()
+
+	created, err := v.cli.CloudServer().Vpc.CreateTCloudVpc(kt, &v.vpcCreateReq)
+	So(err, ShouldBeNil)
+	So(created.ID, ShouldNotBeEmpty)
+	v.createdVpc.ID = created.ID
+
+}
+func (v *vpcTester) assignVpc() {
+	kt := v.kt.NewSubKit()
+	vpcAssign := &csvpc.AssignVpcToBizReq{
+		VpcIDs:  []string{v.createdVpc.ID},
+		BkBizID: constant.SuiteTestBizID,
+	}
+	err := v.cli.CloudServer().Vpc.Assign(kt, vpcAssign)
+	So(err, ShouldBeNil)
+}
+func (v *vpcTester) checkCreatedVpcInBiz() {
+	kt := v.kt.NewSubKit()
+	listReq := core.ListReq{Page: &core.BasePage{Limit: 500}, Filter: tools.AllExpression()}
+	listResult, err := v.cli.CloudServer().Vpc.ListInBiz(kt, constant.SuiteTestBizID, &listReq)
+	So(err, ShouldBeNil)
+	So(listResult, ShouldNotBeNil)
+	So(listResult.Details, ShouldHaveLength, 1)
+	v.createdVpc = listResult.Details[0]
+	So(v.createdVpc.Name, ShouldEqual, v.vpcCreateReq.Name)
+	So(v.createdVpc.CloudID, ShouldNotBeEmpty)
+	So(v.createdVpc.Memo, ShouldEqual, v.vpcCreateReq.Memo)
+}
+
+func (v *vpcTester) checkGeneratedSubnet() {
+	kt := v.kt.NewSubKit()
+
+	// 	查询对应的子网和路由表
+	subnetListReq := core.ListReq{Page: &core.BasePage{Limit: 10}, Filter: tools.AllExpression()}
+	subnetListReq.Filter = &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			&filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: v.accountID},
+			&filter.AtomRule{Field: "cloud_vpc_id", Op: filter.Equal.Factory(), Value: v.createdVpc.CloudID},
+		},
+	}
+	subnetListResult, err := v.cli.CloudServer().Subnet.ListInRes(kt, &subnetListReq)
+	So(err, ShouldBeNil)
+	So(subnetListResult, ShouldNotBeNil)
+	So(subnetListResult.Details, ShouldHaveLength, 1)
+	v.createdSubnet = subnetListResult.Details[0]
+	So(v.createdSubnet.Name, ShouldEqual, v.vpcCreateReq.Subnet.Name)
+	So(v.createdSubnet.CloudVpcID, ShouldEqual, v.createdVpc.CloudID)
+	So(v.createdSubnet.CloudID, ShouldNotBeEmpty)
+}
+func (v *vpcTester) checkGeneratedRouteTable() {
+
+	kt := v.kt.NewSubKit()
+	routeTableListReq := core.ListReq{Page: &core.BasePage{Limit: 500}, Filter: tools.AllExpression()}
+	routeTableListReq.Filter = &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			&filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: v.accountID},
+			&filter.AtomRule{Field: "cloud_id", Op: filter.Equal.Factory(),
+				Value: v.createdSubnet.CloudRouteTableID},
+		},
+	}
+	routeTableResult, err := v.cli.CloudServer().RouteTable.ListInRes(kt, &routeTableListReq)
+	So(err, ShouldBeNil)
+	So(routeTableResult, ShouldNotBeNil)
+	So(routeTableResult.Details, ShouldHaveLength, 1)
+	v.createdRouteTable = routeTableResult.Details[0]
+	So(v.createdRouteTable.Name, ShouldEqual, "default")
+	So(v.createdRouteTable.CloudVpcID, ShouldEqual, v.createdVpc.CloudID)
+	So(v.createdRouteTable.CloudID, ShouldNotBeEmpty)
+
+}
+func (v *vpcTester) updateVpc() {
+	kt := v.kt.NewSubKit()
+	updateReq := &csvpc.VpcUpdateReq{
+		Memo: converter.ValToPtr("memo(update vpc)"),
+	}
+	err := v.cli.CloudServer().Vpc.UpdateInBiz(kt, constant.SuiteTestBizID, v.createdVpc.ID, updateReq)
+	So(err, ShouldBeNil)
+
+	vpcResult, err := v.cli.CloudServer().Vpc.GetInBiz(kt, constant.SuiteTestBizID, v.createdVpc.ID)
+	So(err, ShouldBeNil)
+	So(vpcResult.Memo, ShouldEqual, updateReq.Memo)
+}
+
+func (v *vpcTester) delete() {
+	kt := v.kt.NewSubKit()
+
+	// 获取vpc 信息
+
+	// 删除 vpc
+	err := v.cli.CloudServer().Vpc.DeleteInBiz(kt, constant.SuiteTestBizID, v.createdVpc.ID)
+	So(err, ShouldBeNil)
+
+	// 确保vpc 被删除
+	listReq := core.ListReq{Page: &core.BasePage{Limit: 2}, Filter: tools.EqualExpression("id", v.createdVpc.ID)}
+	bizListResult, err := v.cli.CloudServer().Vpc.ListInRes(kt, &listReq)
+	So(err, ShouldBeNil)
+	So(bizListResult, ShouldNotBeNil)
+	So(bizListResult.Details, ShouldHaveLength, 0)
+	syncReq := &sync.TCloudSyncReq{
+		AccountID: v.accountID,
+		Region:    constant.SuiteRegion,
+	}
+	err = v.cli.HCService().TCloud.Subnet.SyncSubnet(kt.Ctx, kt.Header(), syncReq)
+	So(err, ShouldBeNil)
+	err = v.cli.HCService().TCloud.RouteTable.SyncRouteTable(kt.Ctx, kt.Header(), syncReq)
+	So(err, ShouldBeNil)
+
+	// 确保关联子网被删除
+	listReq.Filter = tools.EqualExpression("cloud_vpc_id", v.createdVpc.CloudID)
+	subnetResult, err := v.cli.CloudServer().Subnet.ListInRes(kt, &listReq)
+	So(err, ShouldBeNil)
+	So(subnetResult, ShouldNotBeNil)
+	So(subnetResult.Details, ShouldHaveLength, 0)
+
+	// 确保关联路由表被删除
+	routeResult, err := v.cli.CloudServer().RouteTable.ListInRes(kt, &listReq)
+	So(err, ShouldBeNil)
+	So(routeResult, ShouldNotBeNil)
+	So(routeResult.Details, ShouldHaveLength, 0)
+
+}
+
+// TestTCloudVPC 测试腾讯云VPC、子网、路由表 相关api, 这三个类资源基本是一起出现，所以一起测试
+func TestTCloudVPC(t *testing.T) {
+
+	tester := newVpcTester(tcloudAccountID, "vpc1")
 	Convey("VPC test", t, func() {
 		// 1. 列出空vpc
-		Convey("list VPC in res", func() {
-			kt := cases.GenApiKit()
-			listReq := core.ListReq{Page: &core.BasePage{Limit: 500}, Filter: tools.AllExpression()}
-			listResult, err := cli.CloudServer().Vpc.ListInRes(kt, &listReq)
-			So(err, ShouldBeNil)
-			So(listResult, ShouldNotBeNil)
-			So(len(listResult.Details), ShouldEqual, 0)
-		})
+		Convey("list VPC in res", tester.listEmptyVpc)
 
-		// 2. 创建vpc，与其是要创建出对应的子网，子网创建会创建对应路由表
-		Convey("create tcloud VPC res", func() {
-			kt := cases.GenApiKit()
-
-			created, err := cli.CloudServer().Vpc.CreateTCloudVpc(kt, &createReq)
-			So(err, ShouldBeNil)
-			So(created.ID, ShouldNotBeEmpty)
-			createdVpc.ID = created.ID
-
-		})
+		// 2. 创建vpc，同时创建出对应的子网，子网创建会创建对应路由表
+		Convey("create tcloud VPC res", tester.createVpcInRes)
 
 		// 3. 尝试分配到业务下
-		Convey("assign VPC to business", func() {
-			kt := cases.GenApiKit()
-			vpcAssign := &csvpc.AssignVpcToBizReq{
-				VpcIDs:  []string{createdVpc.ID},
-				BkBizID: constant.SuiteTestBizID,
-			}
-			err := cli.CloudServer().Vpc.Assign(kt, vpcAssign)
-			So(err, ShouldBeNil)
-
-		})
+		Convey("assign VPC to business", tester.assignVpc)
 
 		// 4. 查询创建结果，包括VPC、对应的子网，以及子网对应的路由表
-		Convey("check created VPC and subnet", func() {
-			kt := cases.GenApiKit()
-			Convey("check created VPC in business", func() {
-				listReq := core.ListReq{Page: &core.BasePage{Limit: 500}, Filter: tools.AllExpression()}
-				listResult, err := cli.CloudServer().Vpc.ListInBiz(kt, constant.SuiteTestBizID, &listReq)
-				So(err, ShouldBeNil)
-				So(listResult, ShouldNotBeNil)
-				So(listResult.Details, ShouldHaveLength, 1)
-				createdVpc = listResult.Details[0]
-				So(createdVpc.Name, ShouldEqual, testVpcName)
-				So(createdVpc.ID, ShouldEqual, createdVpc.ID)
-				So(createdVpc.CloudID, ShouldNotBeEmpty)
+		Convey("check created VPC in business", tester.checkCreatedVpcInBiz)
+		Convey("check generated subnet", tester.checkGeneratedSubnet)
+		Convey("check generated route table", tester.checkGeneratedRouteTable)
 
-			})
-			Convey("check generated subnet", func() {
-				// 	查询对应的子网和路由表
-				subnetListReq := core.ListReq{Page: &core.BasePage{Limit: 10}, Filter: tools.AllExpression()}
-				subnetListReq.Filter = &filter.Expression{
-					Op: filter.And,
-					Rules: []filter.RuleFactory{
-						&filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: testTcloudAccountID},
-						&filter.AtomRule{Field: "cloud_vpc_id", Op: filter.Equal.Factory(), Value: createdVpc.CloudID},
-					},
-				}
-				subnetListResult, err := cli.CloudServer().Subnet.ListInRes(kt, &subnetListReq)
-				So(err, ShouldBeNil)
-				So(subnetListResult, ShouldNotBeNil)
-				So(subnetListResult.Details, ShouldHaveLength, 1)
-				createdSubnet = subnetListResult.Details[0]
-				So(createdSubnet.Name, ShouldEqual, createReq.Subnet.Name)
-				So(createdSubnet.CloudVpcID, ShouldEqual, createdVpc.CloudID)
-				So(createdSubnet.CloudID, ShouldNotBeEmpty)
+		// 5. 修改vpc属性并验证
+		Convey("update VPC", tester.updateVpc)
 
-			})
-
-			Convey("check generated route table", func() {
-				routeTableListReq := core.ListReq{Page: &core.BasePage{Limit: 500}, Filter: tools.AllExpression()}
-				routeTableListReq.Filter = &filter.Expression{
-					Op: filter.And,
-					Rules: []filter.RuleFactory{
-						&filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: testTcloudAccountID},
-						&filter.AtomRule{Field: "cloud_id", Op: filter.Equal.Factory(),
-							Value: createdSubnet.CloudRouteTableID},
-					},
-				}
-				routeTableResult, err := cli.CloudServer().RouteTable.ListInRes(kt, &routeTableListReq)
-				So(err, ShouldBeNil)
-				So(routeTableResult, ShouldNotBeNil)
-				So(routeTableResult.Details, ShouldHaveLength, 1)
-				createdRouteTable = routeTableResult.Details[0]
-				So(createdRouteTable.Name, ShouldEqual, "default")
-				So(createdRouteTable.CloudVpcID, ShouldEqual, createdVpc.CloudID)
-				So(createdRouteTable.CloudID, ShouldNotBeEmpty)
-
-				Convey("assign route table to business", func() {
-					subnetAssign := &cloudserver.AssignRouteTableToBizReq{
-						RouteTableIDs: []string{createdSubnet.ID},
-						BkBizID:       constant.SuiteTestBizID,
-					}
-
-					err = cli.CloudServer().RouteTable.Assign(kt, subnetAssign)
-					So(err, ShouldBeNil)
-					routeTableResult, err := cli.CloudServer().RouteTable.ListInBiz(kt, constant.SuiteTestBizID,
-						&routeTableListReq)
-					So(err, ShouldBeNil)
-					So(routeTableResult, ShouldNotBeNil)
-					So(routeTableResult.Details, ShouldHaveLength, 1)
-				})
-
-			})
-
-		})
-
-		// 4. 修改vpc属性并验证
-		Convey("update VPC", func() {
-			kt := cases.GenApiKit()
-			updateReq := &csvpc.VpcUpdateReq{
-				Memo: converter.ValToPtr("vpc-memo-updated"),
-			}
-			err := cli.CloudServer().Vpc.UpdateBiz(kt, constant.SuiteTestBizID, createdVpc.ID, updateReq)
-			So(err, ShouldBeNil)
-
-			vpcResult, err := cli.CloudServer().Vpc.GetInBiz(kt, constant.SuiteTestBizID, createdVpc.ID)
-			So(err, ShouldBeNil)
-			So(vpcResult.Memo, ShouldEqual, updateReq.Memo)
-		})
-
-		// 测试创建子网
-		Convey("test subnet", func() {
-			kt := cases.GenApiKit()
-			subnetCreate := cloudserver.TCloudSubnetCreateReq{
-				BaseSubnetCreateReq: &cloudserver.BaseSubnetCreateReq{
-					Vendor:     enumor.TCloud,
-					AccountID:  accountID,
-					CloudVpcID: createdVpc.CloudID,
-					Name:       "tcloud-subnet-abc",
-					Memo:       converter.ValToPtr("memo"),
-				},
-				Region:   constant.SuiteRegion,
-				Zone:     constant.SuiteZone,
-				IPv4Cidr: "192.168.1.0/24",
-			}
-			createResult, err := cli.CloudServer().Subnet.Create(kt, &subnetCreate)
-			So(err, ShouldBeNil)
-			So(createResult.ID, ShouldNotBeEmpty)
-
-			Convey("assign subnet to business", func() {
-				subnetAssign := &cloudserver.AssignSubnetToBizReq{
-					SubnetIDs: []string{createResult.ID},
-					BkBizID:   constant.SuiteTestBizID,
-				}
-				err = cli.CloudServer().Subnet.Assign(kt, subnetAssign)
-				So(err, ShouldBeNil)
-
-				subnetListReq := core.ListReq{Page: &core.BasePage{Limit: 10},
-					Filter: tools.EqualExpression("id", createResult.ID)}
-				subnetListResult, err := cli.CloudServer().Subnet.ListInRes(kt, &subnetListReq)
-				So(err, ShouldBeNil)
-				So(subnetListResult, ShouldNotBeNil)
-				So(subnetListResult.Details, ShouldHaveLength, 1)
-				createdSubnet1 := subnetListResult.Details[0]
-				So(createdSubnet1.Name, ShouldEqual, subnetCreate.Name)
-				So(createdSubnet1.Ipv4Cidr, ShouldEqual, []string{subnetCreate.IPv4Cidr})
-				So(createdSubnet1.CloudVpcID, ShouldEqual, createdVpc.CloudID)
-				So(createdSubnet1.CloudID, ShouldNotBeEmpty)
-			})
-		})
-
-		// 5. 删除vpc并验证
-		Convey("delete VPC and verify", func() {
-			kt := cases.GenApiKit()
-			err := cli.CloudServer().Vpc.DeleteBiz(kt, constant.SuiteTestBizID, createdVpc.ID)
-			So(err, ShouldBeNil)
-
-			listReq := core.ListReq{Page: &core.BasePage{Limit: 2}, Filter: tools.AllExpression()}
-			bizListResult, err := cli.CloudServer().Vpc.ListInBiz(kt, constant.SuiteTestBizID, &listReq)
-			So(err, ShouldBeNil)
-			So(bizListResult, ShouldNotBeNil)
-			So(len(bizListResult.Details), ShouldEqual, 0)
-
-			resListResult, err := cli.CloudServer().Vpc.ListInRes(kt, &listReq)
-			So(err, ShouldBeNil)
-			So(resListResult, ShouldNotBeNil)
-			So(len(resListResult.Details), ShouldEqual, 0)
-
-			err = cli.HCService().TCloud.Subnet.SyncSubnet(kt.Ctx, kt.Header(), &sync.TCloudSyncReq{
-				AccountID: accountID,
-				Region:    constant.SuiteRegion,
-			})
-			So(err, ShouldBeNil)
-			time.Sleep(time.Second)
-			// 查询子网
-			subnetResult, err := cli.CloudServer().Subnet.ListInRes(kt, &listReq)
-			So(err, ShouldBeNil)
-			So(subnetResult, ShouldNotBeNil)
-			So(len(subnetResult.Details), ShouldEqual, 0)
-
-		})
+		// 6. 删除vpc并验证
+		Convey("delete VPC and verify", tester.delete)
 	})
 
+}
+func TestCreateSharedVpc(t *testing.T) {
+	// 创建给其他资源测试用的共享vpc
+	Convey("create shared vpc", t, func() {
+		kt := cases.GenApiKit()
+		cli := suite.GetClientSet()
+		vpcCreateReq := newVpcCreateReq("test-vpc-res", tcloudAccountID, "192.168.1.0/24", "[res] share vpc for test")
+		created, err := cli.CloudServer().Vpc.CreateTCloudVpc(kt, &vpcCreateReq)
+		So(err, ShouldBeNil)
+		So(created.ID, ShouldNotBeEmpty)
+		ResVpcID = created.ID
+
+		vpc, err := cli.CloudServer().Vpc.ListInRes(kt,
+			&core.ListReq{Filter: tools.EqualExpression("id", ResVpcID), Page: core.NewDefaultBasePage()},
+		)
+		So(err, ShouldBeNil)
+		So(vpc.Details, ShouldHaveLength, 1)
+		ResVpcCloudID = vpc.Details[0].CloudID
+
+		bizVpcCreateReq := newVpcCreateReq("test-vpc-biz", tcloudAccountID, "192.168.2.0/24",
+			"[biz] share vpc for test")
+		bizCreated, err := cli.CloudServer().Vpc.CreateTCloudVpc(kt, &bizVpcCreateReq)
+		So(err, ShouldBeNil)
+		So(bizCreated.ID, ShouldNotBeEmpty)
+		BizVpcID = bizCreated.ID
+
+		resVpc, err := cli.CloudServer().Vpc.ListInRes(kt,
+			&core.ListReq{Filter: tools.EqualExpression("id", BizVpcID), Page: core.NewDefaultBasePage()},
+		)
+		So(err, ShouldBeNil)
+		So(resVpc.Details, ShouldHaveLength, 1)
+		BizVpcCloudID = resVpc.Details[0].CloudID
+
+	})
+}
+
+func newVpcCreateReq(vpcName, accountID, cidr, memo string) csvpc.TCloudVpcCreateReq {
+	vpcCreateReq := csvpc.TCloudVpcCreateReq{
+		Name:      vpcName,
+		AccountID: accountID,
+		Region:    constant.SuiteRegion,
+		IPv4Cidr:  cidr,
+		BkCloudID: 9911,
+		Memo:      &memo,
+	}
+	vpcCreateReq.Subnet.Name = "subnet_of_" + vpcName
+	vpcCreateReq.Subnet.Zone = constant.SuiteZone
+	vpcCreateReq.Subnet.IPv4Cidr = cidr
+	return vpcCreateReq
 }

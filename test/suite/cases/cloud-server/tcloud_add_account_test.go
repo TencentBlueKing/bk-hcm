@@ -58,9 +58,9 @@ func TestAddAccount(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(ret.ID, ShouldNotBeEmpty)
 		// TODO: adaptor mock全部完成后再同步
-		accountID = ret.ID
+		tcloudAccountID = ret.ID
 		// Convey("TCloudSync", func() {
-		// 	err := cli.CloudServer().Account.Sync(kt, accountID)
+		// 	err := cli.CloudServer().Account.Sync(kt, tcloudAccountID)
 		// 	So(err, ShouldBeNil)
 		// })
 

@@ -46,10 +46,11 @@ type TCloudSubnetsCreateOption struct {
 
 // TCloudOneSubnetCreateOpt defines create one tencent cloud subnets options for TCloudSubnetsCreateOption.
 type TCloudOneSubnetCreateOpt struct {
-	IPv4Cidr          string `json:"ipv4_cidr" validate:"required,cidrv4"`
-	Name              string `json:"name" validate:"required"`
-	Zone              string `json:"zone" validate:"required"`
-	CloudRouteTableID string `json:"cloud_route_table_id" validate:"omitempty"`
+	IPv4Cidr          string  `json:"ipv4_cidr" validate:"required,cidrv4"`
+	Name              string  `json:"name" validate:"required"`
+	Zone              string  `json:"zone" validate:"required"`
+	CloudRouteTableID string  `json:"cloud_route_table_id" validate:"omitempty"`
+	Memo              *string `json:"memo"`
 }
 
 // Validate TCloudSubnetsCreateOption.

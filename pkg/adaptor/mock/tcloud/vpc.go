@@ -136,7 +136,8 @@ func (v *vpcPlaybook) deleteVpc(kt *kit.Kit, opt *core.BaseRegionalDeleteOption)
 		return n.CloudVpcID == opt.ResourceID
 	})
 	for _, net := range subnets {
-		err := v.subnetStore.Remove(net.CloudID)
+		err := v.deleteSubnet(kt, &core.BaseRegionalDeleteOption{Region: opt.Region,
+			BaseDeleteOption: core.BaseDeleteOption{ResourceID: net.CloudID}})
 		if err != nil {
 			return err
 		}
