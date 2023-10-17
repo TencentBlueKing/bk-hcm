@@ -143,7 +143,7 @@ create table if not exists `async_flow_task`
     `action_id`   varchar(64) not null,
     `action_name` varchar(64) not null,
     `params`      json                 default null,
-    `can_retry`   boolean     not null,
+    `retry`       json        not null,
     `depend_on`   varchar(64)          default '',
     `state`       varchar(16) not null,
     `reason`      json                 default null,

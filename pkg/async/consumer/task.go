@@ -59,7 +59,7 @@ func (task *Task) ValidateBeforeExec(act action.Action) error {
 		}
 	}
 
-	if task.CanRetry {
+	if task.Retry.IsEnable() {
 		if _, ok := act.(action.RollbackAction); !ok {
 			return errors.New("task can retry, but not have RollbackAction")
 		}
@@ -82,7 +82,7 @@ func (task *Task) ValidateBeforeRollback(act action.Action) error {
 		}
 	}
 
-	if task.CanRetry {
+	if task.Retry.IsEnable() {
 		if _, ok := act.(action.RollbackAction); !ok {
 			return errors.New("task can retry, but not have RollbackAction")
 		}
@@ -110,37 +110,40 @@ func (task *Task) Run() error {
 		return err
 	}
 
-	rty := retry.NewRetryPolicy(defRetryCount, defRetryRangeMS)
-	for {
-		if rty.RetryCount() == uint32(defRetryCount) {
-			break
-		}
+	var runErr error
+	if !task.Retry.IsEnable() {
+		_, runErr = task.runOnce(act)
+	} else {
+		runErr = task.Retry.Run(func() error {
+			needRetry, err := task.runOnce(act)
+			if err == nil {
+				return nil
+			}
 
-		needRetry, err := task.runOnce(act)
-		if err == nil {
-			return nil
-		}
+			if !needRetry {
+				return err
+			}
 
-		logs.Errorf("task: %s run action failed, err: %v, rid: %s", task.ID, err, task.ExecuteKit.Kit().Rid)
-
-		// 如果Task执行错误原因，不需要重试，或者当前Task不能重试，直接更新为失败状态并返回错误原因
-		if !needRetry || !task.CanRetry {
 			// 允许重试，将Task状态由 running -> rollback，进行回滚
-			if patchErr := task.UpdateState(enumor.TaskFailed, err.Error()); patchErr != nil {
-				return fmt.Errorf("task set failed state failed, after runOnce failed, err: %v, patchErr: %v",
+			if patchErr := task.UpdateState(enumor.TaskRollback, err.Error()); patchErr != nil {
+				return fmt.Errorf("task set rollback state failed, after runAction failed, err: %v, patchErr: %v",
 					err, patchErr)
 			}
 
-			return err
+			return nil
+		})
+	}
+	if runErr != nil {
+		logs.Errorf("task run failed, err: %v, task: %+v, rid: %s", runErr, task, task.ExecuteKit.Kit().Rid)
+
+		if patchErr := task.UpdateState(enumor.TaskFailed, runErr.Error()); patchErr != nil {
+			logs.Errorf("task set failed state failed, after run failed, err: %v, patchErr: %v, rid: %s",
+				runErr, patchErr, task.ExecuteKit.Kit().Rid)
+			return fmt.Errorf("task set failed state failed, after run failed, err: %v, patchErr: %v",
+				runErr, patchErr)
 		}
 
-		// 允许重试，将Task状态由 running -> rollback，进行回滚
-		if patchErr := task.UpdateState(enumor.TaskRollback, err.Error()); patchErr != nil {
-			return fmt.Errorf("task set rollback state failed, after runAction failed, err: %v, patchErr: %v",
-				err, patchErr)
-		}
-
-		rty.Sleep()
+		return runErr
 	}
 
 	return nil
@@ -172,10 +175,10 @@ func (task *Task) Rollback() error {
 		return task.rollback(nil, act)
 	}
 
-	if err := action.Unmarshal(string(task.Params), p); err != nil {
-		logs.Errorf("task unmarshal params failed, params: %s, type: %s, rid: %s", task.Params,
+	if err := action.Decode(task.Params, p); err != nil {
+		logs.Errorf("task decode params failed, params: %s, type: %s, rid: %s", task.Params,
 			reflect.TypeOf(p).String(), task.ExecuteKit.Kit().Rid)
-		return fmt.Errorf("task unmarshal params failed, err: %v", err)
+		return fmt.Errorf("task decode params failed, err: %v", err)
 	}
 
 	return task.rollback(p, act)
@@ -196,10 +199,10 @@ func (task *Task) runOnce(act action.Action) (needRetry bool, err error) {
 		return task.runAction(nil, act)
 	}
 
-	if err = action.Unmarshal(string(task.Params), p); err != nil {
-		logs.Errorf("task unmarshal params failed, params: %s, type: %s, rid: %s", task.Params,
+	if err = action.Decode(task.Params, p); err != nil {
+		logs.Errorf("task decode params failed, params: %s, type: %s, rid: %s", task.Params,
 			reflect.TypeOf(p).String(), task.ExecuteKit.Kit().Rid)
-		return false, fmt.Errorf("task unmarshal params failed, err: %v", err)
+		return false, fmt.Errorf("task decode params failed, err: %v", err)
 	}
 
 	return task.runAction(p, act)

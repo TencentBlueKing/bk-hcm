@@ -28,7 +28,7 @@ import (
 
 // Flow 任务流
 type Flow struct {
-	Name      enumor.FlowTplName    `json:"name"`
+	Name      enumor.FlowName       `json:"name"`
 	ShareData *tableasync.ShareData `json:"share_data"`
 	Memo      string                `json:"memo"`
 

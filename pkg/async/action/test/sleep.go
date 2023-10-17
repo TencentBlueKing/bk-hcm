@@ -32,7 +32,7 @@ import (
           |--> sleep |
 */
 var SleepTpl = action.FlowTemplate{
-	Name: enumor.TplSleepTest,
+	Name: enumor.FlowSleepTest,
 	ShareData: &tableasync.ShareData{
 		Dict: map[string]string{
 			"name": "test",
@@ -42,34 +42,46 @@ var SleepTpl = action.FlowTemplate{
 		{
 			ActionID:   "1",
 			ActionName: enumor.ActionSleep,
-			NeedParam:  true,
-			ParamType:  SleepParams{},
-			CanRetry:   true,
-			DependOn:   nil,
+			Params: &action.Params{
+				Type: SleepParams{},
+			},
+			Retry: &tableasync.Retry{
+				Enable: true,
+			},
+			DependOn: nil,
 		},
 		{
 			ActionID:   "2",
 			ActionName: enumor.ActionSleep,
-			NeedParam:  true,
-			ParamType:  SleepParams{},
-			CanRetry:   true,
-			DependOn:   []string{"1"},
+			Params: &action.Params{
+				Type: SleepParams{},
+			},
+			Retry: &tableasync.Retry{
+				Enable: true,
+			},
+			DependOn: []action.ActIDType{"1"},
 		},
 		{
 			ActionID:   "3",
 			ActionName: enumor.ActionSleep,
-			NeedParam:  true,
-			ParamType:  SleepParams{},
-			CanRetry:   true,
-			DependOn:   []string{"1"},
+			Params: &action.Params{
+				Type: SleepParams{},
+			},
+			Retry: &tableasync.Retry{
+				Enable: true,
+			},
+			DependOn: []action.ActIDType{"1"},
 		},
 		{
 			ActionID:   "4",
 			ActionName: enumor.ActionSleep,
-			NeedParam:  true,
-			ParamType:  SleepParams{},
-			CanRetry:   true,
-			DependOn:   []string{"2", "3"},
+			Params: &action.Params{
+				Type: SleepParams{},
+			},
+			Retry: &tableasync.Retry{
+				Enable: true,
+			},
+			DependOn: []action.ActIDType{"2", "3"},
 		},
 	},
 }

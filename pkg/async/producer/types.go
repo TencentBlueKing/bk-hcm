@@ -20,40 +20,105 @@
 package producer
 
 import (
+	"errors"
+
+	"hcm/pkg/async/action"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
+	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/dal/table/types"
 )
 
-// AddFlowOption define add flow option.
-type AddFlowOption struct {
+// AddTemplateFlowOption define add flow option.
+type AddTemplateFlowOption struct {
 	// Name 任务流模版名称
-	Name enumor.FlowTplName `json:"name" validate:"required"`
+	Name enumor.FlowName `json:"name" validate:"required"`
 	// Memo 备注
 	Memo string `json:"memo" validate:"omitempty"`
 	// Tasks 任务私有化参数设置
-	Tasks []Task `json:"tasks" validate:"omitempty"`
+	Tasks []TemplateFlowTask `json:"tasks" validate:"omitempty"`
 }
 
-// Validate AddFlowOption
-func (opt *AddFlowOption) Validate() error {
+// Validate AddTemplateFlowOption
+func (opt *AddTemplateFlowOption) Validate() error {
+
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
 
 	if err := opt.Name.Validate(); err != nil {
 		return err
 	}
 
-	return validator.Validate.Struct(opt)
+	for index := range opt.Tasks {
+		if err := opt.Tasks[index].Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-// Task define task info.
-type Task struct {
+// TemplateFlowTask define task info.
+type TemplateFlowTask struct {
 	// ActionID 任务在当前任务流模版中的唯一ID
-	ActionID string `json:"action_id" validate:"required"`
+	ActionID action.ActIDType `json:"action_id" validate:"required"`
 	// Params 任务执行请求参数
 	Params types.JsonField `json:"params" validate:"required"`
 }
 
-// Validate Task
-func (task *Task) Validate() error {
+// Validate TemplateFlowTask
+func (task *TemplateFlowTask) Validate() error {
+	return validator.Validate.Struct(task)
+}
+
+// AddCustomFlowOption define add custom flow option.
+type AddCustomFlowOption struct {
+	// Name 任务流模版名称
+	Name enumor.FlowName `json:"name" validate:"required"`
+	// Memo 备注
+	Memo string `json:"memo" validate:"omitempty"`
+	// ShareData 共享数据
+	ShareData *tableasync.ShareData `json:"share_data" validate:"omitempty"`
+	// Tasks 任务私有化参数设置
+	Tasks []CustomFlowTask `json:"tasks" validate:"required"`
+}
+
+// Validate AddCustomFlowOption
+func (opt *AddCustomFlowOption) Validate() error {
+
+	if err := opt.Name.Validate(); err != nil {
+		return err
+	}
+
+	if len(opt.Tasks) == 0 {
+		return errors.New("tasks is required")
+	}
+
+	for _, task := range opt.Tasks {
+		if err := task.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return validator.Validate.Struct(opt)
+}
+
+// CustomFlowTask define custom flow task info.
+type CustomFlowTask struct {
+	// ActionID Action唯一序列号
+	ActionID action.ActIDType `json:"action_id" validate:"required"`
+	// ActionName Action名称
+	ActionName enumor.ActionName `json:"action_name" validate:"required"`
+	// DependOn 运行当前Action依赖的前置ActionID
+	DependOn []action.ActIDType `json:"depend_on" validate:"omitempty"`
+	// Params 执行请求参数
+	Params types.JsonField `json:"params" validate:"omitempty"`
+	// Retry 任务运行重试相关配置参数，如果不设置，默认不允许进行重试。
+	Retry *tableasync.Retry `json:"retry" validate:"omitempty"`
+}
+
+// Validate CustomFlowTask
+func (task *CustomFlowTask) Validate() error {
 	return validator.Validate.Struct(task)
 }

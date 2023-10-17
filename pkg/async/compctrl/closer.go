@@ -17,18 +17,21 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package taskserver
+// Package compctrl 关闭统一抽象
+package compctrl
 
-import "hcm/pkg/api/core/async"
-
-// ListFlowResult ...
-type ListFlowResult struct {
-	Count   uint64                `json:"count"`
-	Details []coreasync.AsyncFlow `json:"details"`
+// ComponentController 控制了组件的启动和关闭。
+type ComponentController interface {
+	Starter
+	Closer
 }
 
-// ListTaskResult ...
-type ListTaskResult struct {
-	Count   uint64                    `json:"count"`
-	Details []coreasync.AsyncFlowTask `json:"details"`
+// Starter 定义所有组件的启动接口
+type Starter interface {
+	Start()
+}
+
+// Closer 定义所有组件的关闭接口
+type Closer interface {
+	Close()
 }

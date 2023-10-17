@@ -17,30 +17,43 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package action ...
-package action
+package async
 
 import (
-	"hcm/pkg/async/action/run"
+	"errors"
+	"fmt"
+	"time"
+
+	taskserver "hcm/pkg/client/task-server"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 )
 
-// Action 异步任务必须实现的运行接口。
-type Action interface {
-	// Name 返回异步任务名称
-	Name() enumor.ActionName
-	// Run 异步任务运行操作
-	Run(kt run.ExecuteKit, params interface{}) error
-}
+// WaitTaskToEnd 等待异步任务结束
+// TODO: 临时方案，等异步任务上线后，将该逻辑去除
+func WaitTaskToEnd(kt *kit.Kit, cli *taskserver.Client, id string) error {
 
-// RollbackAction Action如果支持回滚操作，实现该接口。会在Action执行失败、Action执行一半崩溃后，进行调用。
-// State: running -> rollback -> pending
-type RollbackAction interface {
-	Rollback(kt run.ExecuteKit, params interface{}) error
-}
+	end := time.Now().Add(5 * time.Minute)
+	for {
+		if time.Now().After(end) {
+			return fmt.Errorf("wait timeout, async task: %s is running", id)
+		}
 
-// ParameterAction 如果任务运行需要依赖请求参数，需要通过该接口返回参数结构，会将任务实例中的参数内容解析到这个返回参数上。
-type ParameterAction interface {
-	// ParameterNew 返回新的参数结构。返回参数可以实现 Decoder 接口，自定义解码方式。
-	ParameterNew() (params interface{})
+		flow, err := cli.GetFlow(kt, id)
+		if err != nil {
+			logs.Errorf("get flow failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
+		if flow.State == enumor.FlowFailed {
+			return errors.New(flow.Reason.Message)
+		}
+
+		if flow.State == enumor.FlowSuccess {
+			return nil
+		}
+
+		time.Sleep(500 * time.Millisecond)
+	}
 }

@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 
+	"hcm/pkg/async/action"
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -278,8 +279,8 @@ func BuildTaskRoot(tasks []*Task) (*TaskNode, error) {
 	return root, nil
 }
 
-func buildTaskNodeMap(tasks []*Task) (map[string]*TaskNode, error) {
-	m := map[string]*TaskNode{}
+func buildTaskNodeMap(tasks []*Task) (map[action.ActIDType]*TaskNode, error) {
+	m := map[action.ActIDType]*TaskNode{}
 
 	for i := range tasks {
 		if _, ok := m[tasks[i].ActionID]; ok {

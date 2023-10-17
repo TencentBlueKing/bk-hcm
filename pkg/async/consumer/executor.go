@@ -26,7 +26,7 @@ import (
 	"hcm/pkg/async/action/run"
 	"hcm/pkg/async/backend"
 	"hcm/pkg/async/backend/model"
-	"hcm/pkg/async/closer"
+	"hcm/pkg/async/compctrl"
 	"hcm/pkg/criteria/constant"
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/kit"
@@ -35,7 +35,7 @@ import (
 
 // Executor （执行器）: 准备任务执行所需要的超时控制，共享数据等工具，并执行任务。
 type Executor interface {
-	closer.Closer
+	compctrl.Closer
 
 	// Start 启动执行器。
 	Start()

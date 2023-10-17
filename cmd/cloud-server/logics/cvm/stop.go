@@ -69,7 +69,7 @@ func (c *cvm) BatchStopCvm(kt *kit.Kit, basicInfoMap map[string]types.CloudResou
 
 		case enumor.Gcp:
 			for _, cvmInfo := range infos {
-				if err := c.client.HCService().Gcp.Cvm.StopCvm(kt.Ctx, kt.Header(), cvmInfo.ID); err != nil {
+				if err := c.client.HCService().Gcp.Cvm.StopCvm(kt, cvmInfo.ID); err != nil {
 					result.Failed = append(result.Failed, core.FailedInfo{ID: cvmInfo.ID, Error: err})
 				} else {
 					result.Succeeded = append(result.Succeeded, cvmInfo.ID)
@@ -78,7 +78,7 @@ func (c *cvm) BatchStopCvm(kt *kit.Kit, basicInfoMap map[string]types.CloudResou
 		case enumor.Azure:
 			req := &hcprotocvm.AzureStopReq{SkipShutdown: false}
 			for _, cvmInfo := range infos {
-				if err := c.client.HCService().Azure.Cvm.StopCvm(kt.Ctx, kt.Header(), cvmInfo.ID, req); err != nil {
+				if err := c.client.HCService().Azure.Cvm.StopCvm(kt, cvmInfo.ID, req); err != nil {
 					result.Failed = append(result.Failed, core.FailedInfo{ID: cvmInfo.ID, Error: err})
 				} else {
 					result.Succeeded = append(result.Succeeded, cvmInfo.ID)
@@ -101,7 +101,7 @@ func (c *cvm) stopCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.CloudRe
 	for _, one := range infoMap {
 		switch vendor {
 		case enumor.Gcp:
-			if err := c.client.HCService().Gcp.Cvm.StopCvm(kt.Ctx, kt.Header(), one.ID); err != nil {
+			if err := c.client.HCService().Gcp.Cvm.StopCvm(kt, one.ID); err != nil {
 				return successIDs, one.ID, err
 			}
 
@@ -109,7 +109,7 @@ func (c *cvm) stopCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.CloudRe
 			req := &hcprotocvm.AzureStopReq{
 				SkipShutdown: false,
 			}
-			if err := c.client.HCService().Azure.Cvm.StopCvm(kt.Ctx, kt.Header(), one.ID, req); err != nil {
+			if err := c.client.HCService().Azure.Cvm.StopCvm(kt, one.ID, req); err != nil {
 				return successIDs, one.ID, err
 			}
 
@@ -143,7 +143,7 @@ func (c *cvm) batchStopCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.Cl
 					StopType:    typecvm.SoftFirst,
 					StoppedMode: typecvm.KeepCharging,
 				}
-				if err := c.client.HCService().TCloud.Cvm.BatchStopCvm(kt.Ctx, kt.Header(), req); err != nil {
+				if err := c.client.HCService().TCloud.Cvm.BatchStopCvm(kt, req); err != nil {
 					markFail(err, ids...)
 					continue
 				}
@@ -156,7 +156,7 @@ func (c *cvm) batchStopCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.Cl
 					Force:     true,
 					Hibernate: false,
 				}
-				if err := c.client.HCService().Aws.Cvm.BatchStopCvm(kt.Ctx, kt.Header(), req); err != nil {
+				if err := c.client.HCService().Aws.Cvm.BatchStopCvm(kt, req); err != nil {
 					markFail(err, ids...)
 					continue
 				}
@@ -168,7 +168,7 @@ func (c *cvm) batchStopCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.Cl
 					IDs:       ids,
 					Force:     true,
 				}
-				if err := c.client.HCService().HuaWei.Cvm.BatchStopCvm(kt.Ctx, kt.Header(), req); err != nil {
+				if err := c.client.HCService().HuaWei.Cvm.BatchStopCvm(kt, req); err != nil {
 					markFail(err, ids...)
 					continue
 				}

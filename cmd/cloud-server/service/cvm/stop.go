@@ -20,12 +20,15 @@
 package cvm
 
 import (
+	"hcm/cmd/cloud-server/logics/async"
 	proto "hcm/pkg/api/cloud-server/cvm"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	ts "hcm/pkg/api/task-server"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/hooks/handler"
 )
@@ -70,10 +73,19 @@ func (svc *cvmSvc) batchStopCvmSvc(cts *rest.Contexts, validHandler handler.Vali
 		return nil, err
 	}
 
-	stopRes, err := svc.cvmLgc.BatchStopCvm(cts.Kit, basicInfoMap)
+	tasks, err := buildOperationTasks(enumor.ActionStopCvm, basicInfoMap)
 	if err != nil {
-		return stopRes, err
+		return nil, err
+	}
+	addReq := &ts.AddCustomFlowReq{
+		Name:  enumor.FlowCvmOperation,
+		Tasks: tasks,
+	}
+	result, err := svc.client.TaskServer().CreateCustomFlow(cts.Kit, addReq)
+	if err != nil {
+		logs.Errorf("call taskserver to create custom flow failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
 	}
 
-	return nil, nil
+	return result, async.WaitTaskToEnd(cts.Kit, svc.client.TaskServer(), result.ID)
 }

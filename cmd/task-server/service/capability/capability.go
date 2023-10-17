@@ -23,6 +23,7 @@ package capability
 import (
 	"hcm/pkg/async"
 	"hcm/pkg/client"
+	"hcm/pkg/dal/dao"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -32,4 +33,5 @@ type Capability struct {
 	WebService *restful.WebService
 	ApiClient  *client.ClientSet
 	Async      async.Async
+	Dao        dao.Set
 }

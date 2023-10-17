@@ -17,11 +17,9 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package task
+package coreasync
 
 import (
-	"encoding/json"
-
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	tableasync "hcm/pkg/dal/table/async"
@@ -31,38 +29,26 @@ import (
 // AsyncFlow ...
 type AsyncFlow struct {
 	ID            string                `json:"id"`
-	Name          string                `json:"name"`
+	Name          enumor.FlowName       `json:"name"`
 	State         enumor.FlowState      `json:"state"`
-	Tasks         []AsyncFlowTask       `json:"tasks"`
-	Memo          string                `json:"memo"`
 	Reason        *tableasync.Reason    `json:"reason"`
 	ShareData     *tableasync.ShareData `json:"share_data"`
+	Memo          string                `json:"memo"`
+	Worker        *string               `json:"worker"`
 	core.Revision `json:",inline"`
 }
 
 // AsyncFlowTask ...
 type AsyncFlowTask struct {
-	ID          string           `json:"id"`
-	FlowID      string           `json:"flow_id"`
-	FlowName    string           `json:"flow_name"`
-	ActionName  string           `json:"action_name"`
-	Params      types.JsonField  `json:"params"`
-	RetryCount  int              `json:"retry_count"`
-	TimeoutSecs int              `json:"timeout_secs"`
-	DependOn    []string         `json:"depend_on"`
-	State       enumor.TaskState `json:"state"`
-	Memo        string           `json:"memo"`
-	Reason      types.JsonField  `json:"reason"`
-	ShareData   types.JsonField  `json:"share_data"`
-}
-
-// AddFlowParameters ...
-type AddFlowParameters struct {
-	Params []AddFlowParam `json:"params"`
-}
-
-// AddFlowParam ...
-type AddFlowParam struct {
-	ActionName string          `json:"action_name"`
-	Param      json.RawMessage `json:"param"`
+	ID            string             `json:"id"`
+	FlowID        string             `json:"flow_id"`
+	FlowName      enumor.FlowName    `json:"flow_name"`
+	ActionID      string             `json:"action_id"`
+	ActionName    enumor.ActionName  `json:"action_name"`
+	Params        types.JsonField    `json:"params"`
+	Retry         *tableasync.Retry  `json:"retry"`
+	DependOn      types.StringArray  `json:"depend_on"`
+	State         enumor.TaskState   `json:"state"`
+	Reason        *tableasync.Reason `json:"reason"`
+	core.Revision `json:",inline"`
 }

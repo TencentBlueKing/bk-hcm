@@ -21,13 +21,14 @@ package enumor
 
 import "fmt"
 
-// FlowTplName is tpl name.
-type FlowTplName string
+// FlowName is tpl name.
+type FlowName string
 
-// Validate FlowTplName.
-func (v FlowTplName) Validate() error {
+// Validate FlowName.
+func (v FlowName) Validate() error {
 	switch v {
-	case TplNormalTest, TplSleepTest:
+	case FlowCvmOperation:
+	case FlowNormalTest, FlowSleepTest:
 	default:
 		return fmt.Errorf("unsupported tpl: %s", v)
 	}
@@ -36,10 +37,12 @@ func (v FlowTplName) Validate() error {
 }
 
 const (
-	// TplNormalTest normal flow template test.
-	TplNormalTest FlowTplName = "normal_test"
-	// TplSleepTest sleep flow template test.
-	TplSleepTest FlowTplName = "sleep_test"
+	// FlowCvmOperation  flow start cvm.
+	FlowCvmOperation FlowName = "operate_cvm"
+	// FlowNormalTest normal flow template test.
+	FlowNormalTest FlowName = "normal_test"
+	// FlowSleepTest sleep flow template test.
+	FlowSleepTest FlowName = "sleep_test"
 )
 
 // ActionName is action name.
@@ -48,8 +51,9 @@ type ActionName string
 // Validate ActionName.
 func (v ActionName) Validate() error {
 	switch v {
-
 	case VirRoot:
+
+	case ActionStartCvm, ActionStopCvm:
 
 	case ActionCreateFactoryTest, ActionProduceTest, ActionAssembleTest, ActionSleep:
 	default:
@@ -62,6 +66,10 @@ func (v ActionName) Validate() error {
 const (
 	// VirRoot vir root
 	VirRoot ActionName = "root"
+
+	// ActionStartCvm 主机相关Action
+	ActionStartCvm ActionName = "start_cvm"
+	ActionStopCvm  ActionName = "stop_cvm"
 
 	// ActionCreateFactoryTest 测试相关Action
 	ActionCreateFactoryTest ActionName = "create_factory"

@@ -72,7 +72,7 @@ func (r *Handler) Path(path string) {
 }
 
 // Add add a http handler
-func (r *Handler) Add(alias, verb, path string, handler func(contexts *Contexts) (reply interface{}, err error)) {
+func (r *Handler) Add(alias, verb, path string, handler func(cts *Contexts) (interface{}, error)) {
 	switch verb {
 	case http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch:
 	default:

@@ -22,21 +22,17 @@ package producer
 
 import (
 	"errors"
-	"fmt"
-
-	"hcm/pkg/async/action"
-	"hcm/pkg/async/backend"
-	"hcm/pkg/async/backend/model"
-	"hcm/pkg/dal/table/types"
-	"hcm/pkg/kit"
-	"hcm/pkg/logs"
 
 	"github.com/prometheus/client_golang/prometheus"
+
+	"hcm/pkg/async/backend"
+	"hcm/pkg/kit"
 )
 
 // Producer 异步任务生产者，提供异步任务下发相关功能。。
 type Producer interface {
-	AddFlow(kt *kit.Kit, opt *AddFlowOption) (id string, err error)
+	AddTemplateFlow(kt *kit.Kit, opt *AddTemplateFlowOption) (id string, err error)
+	AddCustomFlow(kt *kit.Kit, opt *AddCustomFlowOption) (id string, err error)
 }
 
 var _ Producer = new(producer)
@@ -61,98 +57,4 @@ func NewProducer(bd backend.Backend, register prometheus.Registerer) (Producer, 
 type producer struct {
 	backend backend.Backend
 	mc      *metric
-}
-
-// AddFlow add async flow
-func (p *producer) AddFlow(kt *kit.Kit, opt *AddFlowOption) (id string, err error) {
-	if err = opt.Validate(); err != nil {
-		return "", err
-	}
-
-	tpl, exist := action.GetTpl(opt.Name)
-	if !exist {
-		return "", fmt.Errorf("flow tempalte: %s not found", opt.Name)
-	}
-
-	if err = validateTplUseParam(kt, tpl, opt); err != nil {
-		logs.Errorf("validate flow template use param failed, err: %v, rid: %s", err, kt.Rid)
-		return "", err
-	}
-
-	flow := buildFlow(tpl, opt)
-
-	id, err = p.backend.CreateFlow(kt, flow)
-	if err != nil {
-		logs.Errorf("create flow failed, err: %v, rid: %s", err, kt.Rid)
-		return "", err
-	}
-
-	return id, nil
-}
-
-func buildFlow(tpl action.FlowTemplate, opt *AddFlowOption) *model.Flow {
-	flow := &model.Flow{
-		Name:      tpl.Name,
-		ShareData: tpl.ShareData,
-		Memo:      opt.Memo,
-		Tasks:     make([]model.Task, 0, len(tpl.Tasks)),
-	}
-
-	m := make(map[string]types.JsonField, len(opt.Tasks))
-	for _, one := range opt.Tasks {
-		m[one.ActionID] = one.Params
-	}
-
-	for _, one := range tpl.Tasks {
-		flow.Tasks = append(flow.Tasks, model.Task{
-			FlowName:   tpl.Name,
-			ActionID:   one.ActionID,
-			ActionName: one.ActionName,
-			Params:     m[one.ActionID],
-			CanRetry:   one.CanRetry,
-			DependOn:   one.DependOn,
-		})
-	}
-
-	return flow
-}
-
-// validateTplUseParam 校验任务流执行动作所需参数满足要求
-func validateTplUseParam(kt *kit.Kit, template action.FlowTemplate, opt *AddFlowOption) error {
-
-	// 校验Action请求参数都已经提供
-	m := make(map[string]types.JsonField, len(opt.Tasks))
-	for _, one := range opt.Tasks {
-		m[one.ActionID] = one.Params
-	}
-
-	for _, task := range template.Tasks {
-		if !task.NeedParam {
-			continue
-		}
-
-		fields, exist := m[task.ActionID]
-		if !exist {
-			return fmt.Errorf("action: %s need params", task.ActionName)
-		}
-
-		act, exist := action.GetAction(task.ActionName)
-		if !exist {
-			return fmt.Errorf("action: %s not exist", task.ActionName)
-		}
-
-		paramAct, ok := act.(action.ParameterAction)
-		if !ok {
-			return fmt.Errorf("action: %s need params, but not impl ParameterAction", task.ActionName)
-		}
-
-		params := paramAct.ParameterNew()
-		if err := action.Unmarshal(string(fields), params); err != nil {
-			logs.Errorf("action: %s can not unmarshal params, err: %v, field: %s, type: %T, rid: %s", task.ActionName,
-				err, fields, params, kt.Rid)
-			return fmt.Errorf("action: %s can not unmarshal param, err: %v", task.ActionName, err)
-		}
-	}
-
-	return nil
 }

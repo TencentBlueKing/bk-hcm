@@ -27,6 +27,7 @@ import (
 	protocvm "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -66,14 +67,14 @@ func (cli *CvmClient) SyncCvmWithRelResource(ctx context.Context, h http.Header,
 }
 
 // StartCvm ....
-func (cli *CvmClient) StartCvm(ctx context.Context, h http.Header, id string) error {
+func (cli *CvmClient) StartCvm(kt *kit.Kit, id string) error {
 
 	resp := new(rest.BaseResp)
 
 	err := cli.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		SubResourcef("/cvms/%s/start", id).
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
@@ -88,15 +89,15 @@ func (cli *CvmClient) StartCvm(ctx context.Context, h http.Header, id string) er
 }
 
 // StopCvm ....
-func (cli *CvmClient) StopCvm(ctx context.Context, h http.Header, id string, req *protocvm.AzureStopReq) error {
+func (cli *CvmClient) StopCvm(kt *kit.Kit, id string, req *protocvm.AzureStopReq) error {
 
 	resp := new(rest.BaseResp)
 
 	err := cli.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(req).
 		SubResourcef("/cvms/%s/stop", id).
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"hcm/pkg/async/backend"
-	"hcm/pkg/async/closer"
+	"hcm/pkg/async/compctrl"
 	"hcm/pkg/async/consumer/leader"
 	"hcm/pkg/logs"
 )
@@ -36,7 +36,7 @@ func NewLeaderChangeHandler(bd backend.Backend, ld leader.Leader, opt *Option) *
 		ld:      ld,
 		bd:      bd,
 		closeCh: make(chan struct{}),
-		closers: make([]closer.Closer, 0),
+		closers: make([]compctrl.Closer, 0),
 		wg:      sync.WaitGroup{},
 	}
 }
@@ -53,7 +53,7 @@ type LeaderChangeHandler struct {
 
 	closeCh chan struct{}
 
-	closers []closer.Closer
+	closers []compctrl.Closer
 	wg      sync.WaitGroup
 }
 
@@ -71,6 +71,7 @@ func (handler *LeaderChangeHandler) Do() {
 		// 如果被关闭，退出循环
 		select {
 		case <-handler.closeCh:
+			handler.closeLeaderComponent()
 			break
 		default:
 		}
@@ -133,6 +134,6 @@ func (handler *LeaderChangeHandler) closeLeaderComponent() {
 	for i := range handler.closers {
 		handler.closers[i].Close()
 	}
-	handler.closers = make([]closer.Closer, 0)
+	handler.closers = make([]compctrl.Closer, 0)
 
 }

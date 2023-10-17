@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"hcm/pkg/async/action"
 	"hcm/pkg/async/backend/model"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao"
@@ -30,6 +31,7 @@ import (
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/dao/types/async"
 	tableasync "hcm/pkg/dal/table/async"
+	tabletypes "hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/tools/converter"
 
@@ -120,11 +122,11 @@ func (db *mysql) CreateFlow(kt *kit.Kit, flow *model.Flow) (string, error) {
 			mds = append(mds, tableasync.AsyncFlowTaskTable{
 				FlowID:     flowID,
 				FlowName:   one.FlowName,
-				ActionID:   one.ActionID,
+				ActionID:   string(one.ActionID),
 				ActionName: one.ActionName,
 				Params:     one.Params,
-				CanRetry:   one.CanRetry,
-				DependOn:   one.DependOn,
+				Retry:      one.Retry,
+				DependOn:   dependOnToStringArray(one.DependOn),
 				State:      enumor.TaskPending,
 				Reason:     new(tableasync.Reason),
 				Creator:    kt.User,
@@ -218,11 +220,11 @@ func (db *mysql) BatchCreateTask(kt *kit.Kit, tasks []model.Task) ([]string, err
 		mds = append(mds, tableasync.AsyncFlowTaskTable{
 			FlowID:     one.FlowID,
 			FlowName:   one.FlowName,
-			ActionID:   one.ActionID,
+			ActionID:   string(one.ActionID),
 			ActionName: one.ActionName,
 			Params:     one.Params,
-			CanRetry:   one.CanRetry,
-			DependOn:   one.DependOn,
+			Retry:      one.Retry,
+			DependOn:   dependOnToStringArray(one.DependOn),
 			State:      enumor.TaskPending,
 			Reason:     one.Reason,
 			Creator:    one.Creator,
@@ -237,8 +239,8 @@ func (db *mysql) BatchCreateTask(kt *kit.Kit, tasks []model.Task) ([]string, err
 func (db *mysql) UpdateTask(kt *kit.Kit, task *model.Task) error {
 
 	md := &tableasync.AsyncFlowTaskTable{
-		CanRetry: task.CanRetry,
-		DependOn: task.DependOn,
+		Retry:    task.Retry,
+		DependOn: dependOnToStringArray(task.DependOn),
 		State:    task.State,
 		Reason:   task.Reason,
 		Reviser:  kt.User,
@@ -266,11 +268,11 @@ func (db *mysql) ListTask(kt *kit.Kit, input *ListInput) ([]model.Task, error) {
 			ID:         one.ID,
 			FlowID:     one.FlowID,
 			FlowName:   one.FlowName,
-			ActionID:   one.ActionID,
+			ActionID:   action.ActIDType(one.ActionID),
 			ActionName: one.ActionName,
 			Params:     one.Params,
-			CanRetry:   one.CanRetry,
-			DependOn:   one.DependOn,
+			Retry:      one.Retry,
+			DependOn:   dependOnToActIDArray(one.DependOn),
 			State:      one.State,
 			Reason:     one.Reason,
 			Creator:    one.Creator,
@@ -281,4 +283,22 @@ func (db *mysql) ListTask(kt *kit.Kit, input *ListInput) ([]model.Task, error) {
 	}
 
 	return tasks, nil
+}
+
+func dependOnToStringArray(d []action.ActIDType) tabletypes.StringArray {
+	result := make(tabletypes.StringArray, 0, len(d))
+	for _, one := range d {
+		result = append(result, string(one))
+	}
+
+	return result
+}
+
+func dependOnToActIDArray(d tabletypes.StringArray) []action.ActIDType {
+	result := make([]action.ActIDType, 0, len(d))
+	for _, one := range d {
+		result = append(result, action.ActIDType(one))
+	}
+
+	return result
 }

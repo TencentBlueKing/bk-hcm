@@ -25,9 +25,9 @@ import (
 	tableasync "hcm/pkg/dal/table/async"
 )
 
-// FlowTemplate define template.
+// FlowTemplate 任务流模版定义，用于定义执行任务流模版，用户根据任务流 Name 创建任务流实例去创建异步任务。
 type FlowTemplate struct {
-	Name      enumor.FlowTplName    `json:"name" validate:"required"`
+	Name      enumor.FlowName       `json:"name" validate:"required"`
 	ShareData *tableasync.ShareData `json:"share_data"`
 	Tasks     []TaskTemplate        `json:"tasks" validate:"required,min=1"`
 }
@@ -47,17 +47,52 @@ func (tpl *FlowTemplate) Validate() error {
 	return nil
 }
 
-// TaskTemplate define task template.
+// ActIDType define action id type.
+type ActIDType string
+
+// TaskTemplate 任务模版定义，用于定义任务流模版中用到的任务的组织关系、请求参数、重试参数等.
 type TaskTemplate struct {
-	ActionID   string            `json:"action_id" validate:"required"`
+	ActionID   ActIDType         `json:"action_id" validate:"required"`
 	ActionName enumor.ActionName `json:"action_name" validate:"required"`
-	NeedParam  bool              `json:"need_param" validate:"omitempty"`
-	ParamType  interface{}       `json:"param_type" validate:"omitempty"`
-	CanRetry   bool              `json:"can_retry" validate:"omitempty"`
-	DependOn   []string          `json:"depend_on" validate:"omitempty"`
+	DependOn   []ActIDType       `json:"depend_on" validate:"omitempty"`
+
+	// Params 异步任务运行请求参数相关控制参数。
+	Params *Params `json:"params" validate:"omitempty"`
+
+	// Retry 任务运行重试相关配置参数，如果不设置，默认不允许进行重试。
+	Retry *tableasync.Retry `json:"retry" validate:"omitempty"`
 }
 
 // Validate TaskTemplate.
 func (tpl *TaskTemplate) Validate() error {
-	return validator.Validate.Struct(tpl)
+	if err := validator.Validate.Struct(tpl); err != nil {
+		return err
+	}
+
+	if tpl.Retry != nil {
+		if err := tpl.Retry.Validate(); err != nil {
+			return err
+		}
+	} else {
+		tpl.Retry = new(tableasync.Retry)
+	}
+
+	if tpl.Params != nil {
+		if err := tpl.Params.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Params 异步任务参数相关控制参数
+type Params struct {
+	// Type 参数类型
+	Type interface{} `json:"type" validate:"required"`
+}
+
+// Validate Params.
+func (p Params) Validate() error {
+	return validator.Validate.Struct(p)
 }

@@ -20,6 +20,7 @@
 package action
 
 import (
+	"fmt"
 	"sync"
 
 	"hcm/pkg/criteria/enumor"
@@ -35,7 +36,7 @@ func init() {
 // Manager action manager
 type Manager struct {
 	actionMap  map[enumor.ActionName]Action
-	flowTplMap map[enumor.FlowTplName]FlowTemplate
+	flowTplMap map[enumor.FlowName]FlowTemplate
 	rwLock     *sync.RWMutex
 }
 
@@ -43,7 +44,7 @@ type Manager struct {
 func NewManager() *Manager {
 	return &Manager{
 		actionMap:  make(map[enumor.ActionName]Action),
-		flowTplMap: make(map[enumor.FlowTplName]FlowTemplate),
+		flowTplMap: make(map[enumor.FlowName]FlowTemplate),
 		rwLock:     &sync.RWMutex{},
 	}
 }
@@ -68,17 +69,38 @@ func (am *Manager) GetAction(name enumor.ActionName) (Action, bool) {
 }
 
 // RegisterFlowTpl register flow templates.
-func (am *Manager) RegisterFlowTpl(templates ...FlowTemplate) {
+func (am *Manager) RegisterFlowTpl(templates ...FlowTemplate) error {
 	am.rwLock.Lock()
 	defer am.rwLock.Unlock()
 
 	for _, tpl := range templates {
+		// actionID 唯一性校验
+		taskMap := make(map[ActIDType]bool)
+		for _, one := range tpl.Tasks {
+			if taskMap[one.ActionID] {
+				return fmt.Errorf("actionID: %s repeat", one.ActionID)
+			}
+
+			taskMap[one.ActionID] = true
+		}
+
+		// dependOn 依赖ActionID存在校验
+		for _, task := range tpl.Tasks {
+			for _, one := range task.DependOn {
+				if !taskMap[one] {
+					return fmt.Errorf("dependOn's actionID: %s not exist", one)
+				}
+			}
+		}
+
 		am.flowTplMap[tpl.Name] = tpl
 	}
+
+	return nil
 }
 
 // GetFlowTpl get flow template by name.
-func (am *Manager) GetFlowTpl(name enumor.FlowTplName) (FlowTemplate, bool) {
+func (am *Manager) GetFlowTpl(name enumor.FlowName) (FlowTemplate, bool) {
 	am.rwLock.RLock()
 	defer am.rwLock.RUnlock()
 
@@ -98,10 +120,12 @@ func GetAction(name enumor.ActionName) (Action, bool) {
 
 // RegisterTpl register flow template.
 func RegisterTpl(templates ...FlowTemplate) {
-	manager.RegisterFlowTpl(templates...)
+	if err := manager.RegisterFlowTpl(templates...); err != nil {
+		panic(fmt.Sprintf("register template flow failed, err: %v", err))
+	}
 }
 
 // GetTpl get flow template by name.
-func GetTpl(name enumor.FlowTplName) (FlowTemplate, bool) {
+func GetTpl(name enumor.FlowName) (FlowTemplate, bool) {
 	return manager.GetFlowTpl(name)
 }

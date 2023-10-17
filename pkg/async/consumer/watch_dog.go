@@ -28,7 +28,7 @@ import (
 	"hcm/pkg/async/action/run"
 	"hcm/pkg/async/backend"
 	"hcm/pkg/async/backend/model"
-	"hcm/pkg/async/closer"
+	"hcm/pkg/async/compctrl"
 	"hcm/pkg/async/consumer/leader"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -47,7 +47,7 @@ WatchDog （看门狗）:
 	3. 处理处于Running状态，但执行节点正在Shutdown或者已经挂掉的任务流
 */
 type WatchDog interface {
-	closer.Closer
+	compctrl.Closer
 	// Start 启动watch dog，修复异常的异步任务流程。
 	Start()
 }
@@ -94,20 +94,19 @@ func (wd *watchDog) Start() {
 
 // 定期处理异常任务流或任务
 func (wd *watchDog) watchWrapper(do func(kt *kit.Kit) error) {
-	ticker := time.NewTicker(wd.watchIntervalSec)
-	defer ticker.Stop()
-
 	for {
 		select {
 		case <-wd.closeCh:
 			break
-		case <-ticker.C:
-			kt := NewKit()
-			if err := do(kt); err != nil {
-				logs.Errorf("%s: watch dog do watch func failed, err: %v, rid: %s", constant.AsyncTaskWarnSign,
-					err, kt.Rid)
-			}
+		default:
 		}
+
+		kt := NewKit()
+		if err := do(kt); err != nil {
+			logs.Errorf("%s: watch dog do watch func failed, err: %v, rid: %s", constant.AsyncTaskWarnSign,
+				err, kt.Rid)
+		}
+		time.Sleep(wd.watchIntervalSec)
 	}
 
 	wd.wg.Done()
@@ -138,7 +137,10 @@ func (wd *watchDog) handleExpiredTasks(kt *kit.Kit) error {
 				},
 			},
 		},
-		Page: core.NewDefaultBasePage(),
+		Page: &core.BasePage{
+			Start: 0,
+			Limit: listExpiredTasksLimit,
+		},
 	}
 	tasks, err := wd.bd.ListTask(kt, input)
 	if err != nil {
@@ -147,6 +149,7 @@ func (wd *watchDog) handleExpiredTasks(kt *kit.Kit) error {
 	}
 
 	if len(tasks) == 0 {
+		logs.V(3).Infof("handleExpiredTasks not found task, skip, rid: %s", kt.Rid)
 		return nil
 	}
 
@@ -266,6 +269,7 @@ func (wd *watchDog) handleRunningNotExistWorkerFlow(kt *kit.Kit) error {
 	}
 
 	if len(flows) == 0 {
+		logs.V(3).Infof("handleRunningNotExistWorkerFlow not found flow, skip, rid: %s", kt.Rid)
 		return nil
 	}
 
@@ -368,7 +372,7 @@ func (wd *watchDog) handleRunningTasks(kt *kit.Kit, flow model.Flow, ids []strin
 		}
 
 		// 如果任务不能重试，将任务置于失败状态
-		if !task.CanRetry {
+		if !task.Retry.IsEnable() {
 			md := &model.Task{
 				ID:    task.ID,
 				State: enumor.TaskFailed,

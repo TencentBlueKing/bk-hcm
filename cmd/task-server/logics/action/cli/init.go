@@ -17,10 +17,21 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package closer 关闭统一抽象
-package closer
+package actcli
 
-// Closer 定义所有组件的关闭接口
-type Closer interface {
-	Close()
+import (
+	"hcm/pkg/client"
+	hcservice "hcm/pkg/client/hc-service"
+)
+
+var cliSet *client.ClientSet
+
+// SetClientSet set client set.
+func SetClientSet(cli *client.ClientSet) {
+	cliSet = cli
+}
+
+// GetHCService get hc service.
+func GetHCService() *hcservice.Client {
+	return cliSet.HCService()
 }
