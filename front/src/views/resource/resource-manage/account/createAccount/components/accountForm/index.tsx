@@ -89,6 +89,7 @@ export default defineComponent({
       tcloudExtension,
       handleValidate,
       isValidateLoading,
+      isValidateDiasbled,
     } = useSecretExtension(formModel);
     watch(
       () => curExtension.value.validatedStatus,
@@ -263,7 +264,8 @@ export default defineComponent({
                 </div>
                 <div class={'validate-btn-block'}>
                   <Button theme='primary' class={'account-validate-btn'}
-                    onClick={() => handleValidate(payload => props.changeExtension(payload))}
+                    onClick={() => handleValidate((payload: Record<string, string>) => props.changeExtension(payload))}
+                    disabled={isValidateDiasbled.value}
                     loading={isValidateLoading.value}>
                     账号校验
                   </Button>
