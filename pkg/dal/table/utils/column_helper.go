@@ -352,17 +352,26 @@ func RecursiveGetTaggedFieldValues(v interface{}) (map[string]interface{}, error
 				return nil, fmt.Errorf("field: %s do not have a 'db' tag", name)
 			}
 
-			value := value.FieldByName(name).Interface()
+			val := value.FieldByName(name).Interface()
 
-			if isBasicValue(value) {
-				kv[tag] = value
+			if isBasicValue(val) {
+				kv[tag] = val
+
+				// handle next field.
+				continue
+			}
+
+			// 如果结构体实现了Sql序列化函数（Scan），不再解析嵌套结构体中的字段，将整个结构体当成一个Sql字段
+			_, exist := reflect.TypeOf(val).MethodByName("Scan")
+			if exist {
+				kv[tag] = val
 
 				// handle next field.
 				continue
 			}
 
 			// this is not a basic value, then do get tags again recursively.
-			mapper, err := RecursiveGetTaggedFieldValues(value)
+			mapper, err := RecursiveGetTaggedFieldValues(val)
 			if err != nil {
 				return nil, err
 			}

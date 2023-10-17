@@ -20,19 +20,14 @@
 package taskserver
 
 import (
-	"encoding/json"
-
 	"hcm/pkg/api/core"
-	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/async/producer"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/runtime/filter"
 )
 
 // AddFlowReq ...
-type AddFlowReq struct {
-	FlowName   enumor.TplName  `json:"flow_name" validate:"required"`
-	Parameters json.RawMessage `json:"parameters" validate:"omitempty"`
-}
+type AddFlowReq producer.AddFlowOption
 
 // Validate ...
 func (req *AddFlowReq) Validate() error {

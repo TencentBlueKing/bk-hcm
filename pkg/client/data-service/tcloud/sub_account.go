@@ -20,9 +20,6 @@
 package tcloud
 
 import (
-	"context"
-	"net/http"
-
 	"hcm/pkg/api/core"
 	coresubaccount "hcm/pkg/api/core/cloud/sub-account"
 	dssubaccount "hcm/pkg/api/data-service/cloud/sub-account"
@@ -71,7 +68,7 @@ func (cli *SubAccountClient) Get(kt *kit.Kit, id string) (
 }
 
 // ListExt list sub_account with extension.
-func (cli *SubAccountClient) ListExt(ctx context.Context, h http.Header, request *core.ListReq) (
+func (cli *SubAccountClient) ListExt(kt *kit.Kit, request *core.ListReq) (
 	*dssubaccount.ListExtResult[coresubaccount.TCloudExtension], error) {
 
 	resp := &struct {
@@ -80,10 +77,10 @@ func (cli *SubAccountClient) ListExt(ctx context.Context, h http.Header, request
 	}{}
 
 	err := cli.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/sub_accounts/list").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 

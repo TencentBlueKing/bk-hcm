@@ -17,25 +17,18 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package enumor
+package cssubaccount
 
-import "fmt"
+import "hcm/pkg/criteria/validator"
 
-// BackendType is backend type.
-type BackendType string
-
-// Validate BackendType.
-func (v BackendType) Validate() error {
-	switch v {
-	case BackendMysql:
-	default:
-		return fmt.Errorf("unsupported backend type: %s", v)
-	}
-
-	return nil
+// UpdateReq define update req.
+type UpdateReq struct {
+	Managers []string `json:"managers" validate:"omitempty"`
+	BkBizIDs []int64  `json:"bk_biz_ids" validate:"omitempty"`
+	Memo     *string  `json:"memo" validate:"omitempty"`
 }
 
-const (
-	// BackendMysql mysql backend
-	BackendMysql BackendType = "mysql"
-)
+// Validate UpdateReq.
+func (req UpdateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

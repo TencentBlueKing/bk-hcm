@@ -44,10 +44,10 @@ func (a *ApplicationOfAddAccount) RenderItsmForm() (string, error) {
 
 	// 公共基础信息
 	formItems := []formItem{
-		{Label: "账号类型", Value: accountTypNameMap[req.Type]},
+		{Label: "账号类型", Value: enumor.AccountTypeNameMap[req.Type]},
 		{Label: "名称", Value: req.Name},
 		{Label: "云厂商", Value: handlers.VendorNameMap[req.Vendor]},
-		{Label: "站点类型", Value: accountSiteTypeNameMap[req.Site]},
+		{Label: "站点类型", Value: enumor.AccountSiteTypeNameMap[req.Site]},
 	}
 
 	// 云特性信息

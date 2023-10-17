@@ -17,41 +17,42 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package enumor
+package consumer
 
-import "fmt"
+import (
+	"hcm/pkg/async/backend/model"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/kit"
+)
 
-// ActionName is action name.
-type ActionName string
-
-// Validate ActionName.
-func (v ActionName) Validate() error {
-	switch v {
-	case TestCreateSG:
-	case TestCreateSubnet:
-	case TestCreateVpc:
-	case TestCreateCvm:
-	case VirRoot:
-	default:
-		return fmt.Errorf("unsupported action name type: %s", v)
-	}
-
-	return nil
+// NewKit new async kit.
+func NewKit() *kit.Kit {
+	kt := kit.New()
+	kt.User = constant.AsyncUserKey
+	kt.AppCode = constant.AsyncAppCodeKey
+	return kt
 }
 
-const (
-	// TestCreateSG test CreateSG
-	TestCreateSG ActionName = "test_CreateSG"
-	// TestCreateSubnet test CreateSubnet
-	TestCreateSubnet ActionName = "test_CreateSubnet"
-	// TestCreateVpc test CreateVpc
-	TestCreateVpc ActionName = "test_CreateVpc"
-	// TestCreateCvm test CreateCvm
-	TestCreateCvm ActionName = "test_CreateCvm"
-
-	// VirRoot vir root
-	VirRoot ActionName = "root"
-
-	// TestPrintTask test print task
-	TestPrintTask ActionName = "test_PrintTask"
+var (
+	// defRetryCount 任务执行失败默认重试次数
+	defRetryCount = uint(3)
+	// defRetryRangeMS 任务执行失败默认重试周期
+	defRetryRangeMS = [2]uint{1000, 15000}
 )
+
+const (
+	// ErrTaskExecTimeout 任务执行超时
+	ErrTaskExecTimeout = "task exec timeout"
+	// ErrTaskNodeShutdown 任务节点关闭
+	ErrTaskNodeShutdown = "task node shutdown"
+
+	//  listScheduledFlowLimit 每次调度器查询分配给当前节点的任务流数量
+	listScheduledFlowLimit = 10
+)
+
+// Flow 消费所需的异步任务流。
+type Flow struct {
+	model.Flow `json:",inline"`
+
+	Kit *kit.Kit `json:"-"`
+}

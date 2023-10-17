@@ -22,20 +22,21 @@ package producer
 
 import (
 	"errors"
+	"fmt"
 
-	"hcm/cmd/task-server/service/producer/tpl"
-	taskserver "hcm/pkg/api/task-server"
+	"hcm/pkg/async/action"
 	"hcm/pkg/async/backend"
+	"hcm/pkg/async/backend/model"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-// Producer 定义生产者提供接口。
+// Producer 异步任务生产者，提供异步任务下发相关功能。。
 type Producer interface {
-	AddAsyncTplFlow(kt *kit.Kit, req *taskserver.AddFlowReq) (interface{}, error)
-	ListAsyncFlow(kt *kit.Kit, req *taskserver.FlowListReq) (interface{}, error)
-	GetAsyncFlow(kt *kit.Kit, flowID string) (interface{}, error)
+	AddFlow(kt *kit.Kit, opt *AddFlowOption) (id string, err error)
 }
 
 var _ Producer = new(producer)
@@ -62,68 +63,96 @@ type producer struct {
 	mc      *metric
 }
 
-// AddAsyncTplFlow add async flow
-func (p *producer) AddAsyncTplFlow(kt *kit.Kit, req *taskserver.AddFlowReq) (interface{}, error) {
-	// 1. 模版是否存在
-	if err := req.FlowName.Validate(); err != nil {
-		return nil, err
+// AddFlow add async flow
+func (p *producer) AddFlow(kt *kit.Kit, opt *AddFlowOption) (id string, err error) {
+	if err = opt.Validate(); err != nil {
+		return "", err
 	}
 
-	// 2. 添加任务流到DB
-	flowID, err := p.backend.AddFlow(kt, req)
+	tpl, exist := action.GetTpl(opt.Name)
+	if !exist {
+		return "", fmt.Errorf("flow tempalte: %s not found", opt.Name)
+	}
+
+	if err = validateTplUseParam(kt, tpl, opt); err != nil {
+		logs.Errorf("validate flow template use param failed, err: %v, rid: %s", err, kt.Rid)
+		return "", err
+	}
+
+	flow := buildFlow(tpl, opt)
+
+	id, err = p.backend.CreateFlow(kt, flow)
 	if err != nil {
-		return nil, err
+		logs.Errorf("create flow failed, err: %v, rid: %s", err, kt.Rid)
+		return "", err
 	}
 
-	// 3. 按照模版添加任务集合到DB
-	operator := new(tpl.TemplateFlowOperator)
-	if err := operator.SetTemplateFlow(req.FlowName); err != nil {
-		return nil, err
-	}
-
-	if _, err := operator.MakeTemplateFlowTasks(kt, flowID, req, p.backend); err != nil {
-		return nil, err
-	}
-
-	return flowID, nil
+	return id, nil
 }
 
-// ListAsyncFlow list async flow
-func (p *producer) ListAsyncFlow(kt *kit.Kit, req *taskserver.FlowListReq) (interface{}, error) {
-	// 1. 按照过滤条件从DB中获取所有任务流
-	flows, err := p.backend.GetFlows(kt, req)
-	if err != nil {
-		return nil, err
+func buildFlow(tpl action.FlowTemplate, opt *AddFlowOption) *model.Flow {
+	flow := &model.Flow{
+		Name:      tpl.Name,
+		ShareData: tpl.ShareData,
+		Memo:      opt.Memo,
+		Tasks:     make([]model.Task, 0, len(tpl.Tasks)),
 	}
 
-	// 2. 根据任务流ID从DB中获取任务信息
-	for _, flow := range flows {
-		taskResult, err := p.backend.GetTasksByFlowID(kt, flow.ID)
-		if err != nil {
-			return nil, err
+	m := make(map[string]types.JsonField, len(opt.Tasks))
+	for _, one := range opt.Tasks {
+		m[one.ActionID] = one.Params
+	}
+
+	for _, one := range tpl.Tasks {
+		flow.Tasks = append(flow.Tasks, model.Task{
+			FlowName:   tpl.Name,
+			ActionID:   one.ActionID,
+			ActionName: one.ActionName,
+			Params:     m[one.ActionID],
+			CanRetry:   one.CanRetry,
+			DependOn:   one.DependOn,
+		})
+	}
+
+	return flow
+}
+
+// validateTplUseParam 校验任务流执行动作所需参数满足要求
+func validateTplUseParam(kt *kit.Kit, template action.FlowTemplate, opt *AddFlowOption) error {
+
+	// 校验Action请求参数都已经提供
+	m := make(map[string]types.JsonField, len(opt.Tasks))
+	for _, one := range opt.Tasks {
+		m[one.ActionID] = one.Params
+	}
+
+	for _, task := range template.Tasks {
+		if !task.NeedParam {
+			continue
 		}
 
-		flow.Tasks = taskResult
+		fields, exist := m[task.ActionID]
+		if !exist {
+			return fmt.Errorf("action: %s need params", task.ActionName)
+		}
+
+		act, exist := action.GetAction(task.ActionName)
+		if !exist {
+			return fmt.Errorf("action: %s not exist", task.ActionName)
+		}
+
+		paramAct, ok := act.(action.ParameterAction)
+		if !ok {
+			return fmt.Errorf("action: %s need params, but not impl ParameterAction", task.ActionName)
+		}
+
+		params := paramAct.ParameterNew()
+		if err := action.Unmarshal(string(fields), params); err != nil {
+			logs.Errorf("action: %s can not unmarshal params, err: %v, field: %s, type: %T, rid: %s", task.ActionName,
+				err, fields, params, kt.Rid)
+			return fmt.Errorf("action: %s can not unmarshal param, err: %v", task.ActionName, err)
+		}
 	}
 
-	return flows, nil
-}
-
-// GetAsyncFlow get async flow
-func (p *producer) GetAsyncFlow(kt *kit.Kit, flowID string) (interface{}, error) {
-	// 1. 根据任务流ID从DB中获取任务流信息
-	flow, err := p.backend.GetFlowByID(kt, flowID)
-	if err != nil {
-		return nil, err
-	}
-
-	// 2. 根据任务流ID从DB中获取任务信息
-	taskResult, err := p.backend.GetTasksByFlowID(kt, flowID)
-	if err != nil {
-		return nil, err
-	}
-
-	flow.Tasks = taskResult
-
-	return flow, nil
+	return nil
 }

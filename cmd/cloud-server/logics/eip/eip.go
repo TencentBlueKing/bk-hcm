@@ -26,6 +26,7 @@ import (
 	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/pkg/api/cloud-server/recycle"
 	"hcm/pkg/api/core"
+	recyclerecord "hcm/pkg/api/core/recycle-record"
 	protoaudit "hcm/pkg/api/data-service/audit"
 	"hcm/pkg/api/data-service/cloud"
 	dataeip "hcm/pkg/api/data-service/cloud/eip"
@@ -47,9 +48,9 @@ type Interface interface {
 	DisassociateEip(kt *kit.Kit, vendor enumor.Vendor, eipID, cvmID, nicID, accountID string) error
 
 	DeleteEip(kt *kit.Kit, vendor enumor.Vendor, eipId string) error
-	BatchGetEipInfo(kt *kit.Kit, cvmStatus map[string]*recycle.CvmRecycleDetail) error
-	BatchUnbind(kt *kit.Kit, cvmStatus map[string]*recycle.CvmRecycleDetail) (failed []string, err error)
-	BatchRebind(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmRecycleDetail) error
+	BatchGetEipInfo(kt *kit.Kit, cvmStatus map[string]*recycle.CvmDetail) error
+	BatchUnbind(kt *kit.Kit, cvmStatus map[string]*recycle.CvmDetail) (failed []string, err error)
+	BatchRebind(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmDetail) error
 }
 
 type eip struct {
@@ -246,7 +247,7 @@ func (e *eip) disassociateEipAudit(kt *kit.Kit, resType enumor.AuditResourceType
 }
 
 // BatchUnbind 批量解绑eip
-func (e *eip) BatchUnbind(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmRecycleDetail) (failed []string,
+func (e *eip) BatchUnbind(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmDetail) (failed []string,
 	err error) {
 
 	kt = kt.NewSubKit()
@@ -272,7 +273,7 @@ func (e *eip) BatchUnbind(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmRecy
 }
 
 // BatchGetEipInfo 批量获取Cvm的Eip挂载信息，填充到传入的recycle.CvmRecycleDetail中
-func (e *eip) BatchGetEipInfo(kt *kit.Kit, cvmDetail map[string]*recycle.CvmRecycleDetail) (err error) {
+func (e *eip) BatchGetEipInfo(kt *kit.Kit, cvmDetail map[string]*recycle.CvmDetail) (err error) {
 	if len(cvmDetail) == 0 {
 		return nil
 	}
@@ -292,13 +293,16 @@ func (e *eip) BatchGetEipInfo(kt *kit.Kit, cvmDetail map[string]*recycle.CvmRecy
 
 	// list eip for nic
 	eipIDs := slice.Map(cvmEipRel.Details, func(v *cloud.EipCvmRelResult) string { return v.EipID })
+	if len(eipIDs) == 0 {
+		return nil
+	}
 	eipReq := &dataeip.EipListReq{
 		Filter: tools.ContainersExpression("id", eipIDs),
 		Page:   core.NewDefaultBasePage(),
 	}
 	eipRes, err := e.client.DataService().Global.ListEip(kt.Ctx, kt.Header(), eipReq)
 	if err != nil {
-		logs.Errorf("fail to ListEip, err: %v, eipIDs: %v, rid: %s", eipIDs, err, kt.Rid)
+		logs.Errorf("fail to ListEip, err: %v, eipIDs: %v, rid: %s", err, eipIDs, kt.Rid)
 		return err
 	}
 	eipMap := map[string]*dataeip.EipResult{}
@@ -322,7 +326,7 @@ func (e *eip) BatchGetEipInfo(kt *kit.Kit, cvmDetail map[string]*recycle.CvmRecy
 			nic = ""
 		}
 		cvmRecycleDetail.EipList = append(
-			cvmRecycleDetail.EipList, &recycle.EipBindInfo{EipID: ceRel.EipID, NicID: nic},
+			cvmRecycleDetail.EipList, recyclerecord.EipBindInfo{EipID: ceRel.EipID, NicID: nic},
 		)
 
 	}
@@ -330,7 +334,7 @@ func (e *eip) BatchGetEipInfo(kt *kit.Kit, cvmDetail map[string]*recycle.CvmRecy
 }
 
 // BatchRebind 批量重新绑定eip
-func (e *eip) BatchRebind(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmRecycleDetail) error {
+func (e *eip) BatchRebind(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmDetail) error {
 	for _, detail := range cvmRecycleMap {
 		for _, ip := range detail.EipList {
 			if ip.Err != nil {

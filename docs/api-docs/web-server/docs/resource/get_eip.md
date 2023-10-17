@@ -18,28 +18,29 @@ GET /api/v1/cloud/eips/{id}
 #### 返回参数示例
 ```json
 {
-    "code": 0,
-    "message": "",
-    "data": {
-        "id": "0000000g",
-        "account_id": "abc",
-        "vendor": "tcloud",
-        "name": "eip-test",
-        "cloud_id": "eip-123123123",
-        "bk_biz_id": 368,
-        "region": "ap-guangzhou",
-        "instance_id": "cvm-1123",
-        "instance_type": "cvm",
-        "public_ip": "*.*.*",
-        "extension": {
-            "bandwidth": 65535,
-            "internet_charge_type": "BANDWIDTH_PACKAGE"
-        },
-        "creator": "abc",
-        "reviser": "abc",
-        "created_at": "2023-02-14T11:42:24Z",
-        "updated_at": "2023-02-14T14:47:27Z"
-    }
+  "code": 0,
+  "message": "",
+  "data": {
+    "id": "0000000g",
+    "account_id": "abc",
+    "vendor": "tcloud",
+    "name": "eip-test",
+    "cloud_id": "eip-123123123",
+    "bk_biz_id": 368,
+    "region": "ap-guangzhou",
+    "instance_id": "cvm-1123",
+    "instance_type": "cvm",
+    "public_ip": "*.*.*",
+    "recycle_status": "recycling",
+    "extension": {
+      "bandwidth": 65535,
+      "internet_charge_type": "BANDWIDTH_PACKAGE"
+    },
+    "creator": "abc",
+    "reviser": "abc",
+    "created_at": "2023-02-14T11:42:24Z",
+    "updated_at": "2023-02-14T14:47:27Z"
+  }
 }
 ```
 ### 响应参数说明
@@ -62,6 +63,7 @@ GET /api/v1/cloud/eips/{id}
 | public_ip | string | 公网 IP |
 | instance_id | string | 绑定实例的 ID. 如果未返回该字段，表示未查询到绑定实例 ID |
 | instance_type | string | 绑定实例的类型. 如果未返回该字段，表示未查询到绑定实例类型 |
+| recycle_status      | string | 回收状态                                 |
 | creator | string | 创建者 |
 | reviser | string | 更新者 |
 | created_at | string | 创建时间 |

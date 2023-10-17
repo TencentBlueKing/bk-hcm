@@ -17,30 +17,43 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package flow 异步任务流
-package flow
+package producer
 
 import (
-	"hcm/pkg/async/task"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/dal/table/types"
 )
 
-// Flow 任务流
-type Flow struct {
-	// 任务流ID
-	ID string `json:"id" validate:"required"`
-	// 任务流名称
-	Name string `json:"name" validate:"required"`
-	// 任务流状态
-	State enumor.FlowState `json:"state" validate:"required"`
-	// 任务集合
-	Tasks []task.Task `json:"tasks" validate:"required"`
-	// 任务流描述
+// AddFlowOption define add flow option.
+type AddFlowOption struct {
+	// Name 任务流模版名称
+	Name enumor.FlowTplName `json:"name" validate:"required"`
+	// Memo 备注
 	Memo string `json:"memo" validate:"omitempty"`
+	// Tasks 任务私有化参数设置
+	Tasks []Task `json:"tasks" validate:"omitempty"`
 }
 
-// Validate Flow
-func (t *Flow) Validate() error {
-	return validator.Validate.Struct(t)
+// Validate AddFlowOption
+func (opt *AddFlowOption) Validate() error {
+
+	if err := opt.Name.Validate(); err != nil {
+		return err
+	}
+
+	return validator.Validate.Struct(opt)
+}
+
+// Task define task info.
+type Task struct {
+	// ActionID 任务在当前任务流模版中的唯一ID
+	ActionID string `json:"action_id" validate:"required"`
+	// Params 任务执行请求参数
+	Params types.JsonField `json:"params" validate:"required"`
+}
+
+// Validate Task
+func (task *Task) Validate() error {
+	return validator.Validate.Struct(task)
 }

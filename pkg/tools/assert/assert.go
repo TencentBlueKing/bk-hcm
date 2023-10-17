@@ -281,3 +281,8 @@ func IsStringMapEqual(a map[string]string, b map[string]string) bool {
 
 	return true
 }
+
+// ContainsUpperCase 判断字符串中是否存在英文大写字符
+func ContainsUpperCase(s string) bool {
+	return strings.ContainsAny(s, "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+}

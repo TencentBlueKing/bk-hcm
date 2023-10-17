@@ -57,7 +57,7 @@ func InitRecycleRecordService(cap *capability.Capability) {
 	h.Add("BatchRecoverCloudResource", "POST", "/cloud/resources/batch/recover", svc.BatchRecoverCloudResource)
 	h.Add("ListRecycleRecord", "POST", "/recycle_records/list", svc.ListRecycleRecord)
 	h.Add("BatchUpdateRecycleRecord", "PATCH", "/recycle_records/batch", svc.BatchUpdateRecycleRecord)
-	h.Add("BatchUpdateRecycleRecord", "PATCH", "/recycle_records/recycle_status/batch",
+	h.Add("BatchUpdateRecycleStatus", "PATCH", "/recycle_records/recycle_status/batch",
 		svc.BatchUpdateRecycleStatus)
 
 	h.Load(cap.WebService)
@@ -67,7 +67,7 @@ type recycleRecordSvc struct {
 	dao dao.Set
 }
 
-// BatchRecycleCloudResource batch recycle cloud resource.
+// BatchRecycleCloudResource 创建回收记录，并修改对应资源表中的回收状态属性
 func (svc *recycleRecordSvc) BatchRecycleCloudResource(cts *rest.Contexts) (interface{}, error) {
 	req := new(protodata.BatchRecycleReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -109,19 +109,20 @@ func (svc *recycleRecordSvc) BatchRecycleCloudResource(cts *rest.Contexts) (inte
 				recycleReserveTime = uint(accountInfo.Details[0].RecycleReserveTime)
 			}
 			recycleRecords = append(recycleRecords, prototable.RecycleRecordTable{
-				Vendor:     info.Vendor,
-				ResType:    req.ResType,
-				ResID:      info.ID,
-				CloudResID: info.CloudID,
-				ResName:    info.Name,
-				BkBizID:    info.BkBizID,
-				AccountID:  info.AccountID,
-				Region:     info.Region,
-				Detail:     recycleDetail,
-				Status:     enumor.WaitingRecycleRecordStatus,
-				Creator:    cts.Kit.User,
-				Reviser:    cts.Kit.User,
-				RecycledAt: times.ConvStdTimeNow().Add(time.Hour * time.Duration(recycleReserveTime)),
+				RecycleType: req.RecycleType,
+				Vendor:      info.Vendor,
+				ResType:     req.ResType,
+				ResID:       info.ID,
+				CloudResID:  info.CloudID,
+				ResName:     info.Name,
+				BkBizID:     info.BkBizID,
+				AccountID:   info.AccountID,
+				Region:      info.Region,
+				Detail:      recycleDetail,
+				Status:      enumor.WaitingRecycleRecordStatus,
+				Creator:     cts.Kit.User,
+				Reviser:     cts.Kit.User,
+				RecycledAt:  times.ConvStdTimeNow().Add(time.Hour * time.Duration(recycleReserveTime)),
 			})
 		}
 		// 标记资源回收状态
@@ -250,17 +251,19 @@ func (svc *recycleRecordSvc) ListRecycleRecord(cts *rest.Contexts) (interface{},
 	for _, recycleRecord := range res.Details {
 		records = append(records, protocore.RecycleRecord{
 			BaseRecycleRecord: protocore.BaseRecycleRecord{
-				ID:         recycleRecord.ID,
-				TaskID:     recycleRecord.TaskID,
-				Vendor:     recycleRecord.Vendor,
-				ResType:    recycleRecord.ResType,
-				ResID:      recycleRecord.ResID,
-				CloudResID: recycleRecord.CloudResID,
-				ResName:    recycleRecord.ResName,
-				BkBizID:    recycleRecord.BkBizID,
-				AccountID:  recycleRecord.AccountID,
-				Region:     recycleRecord.Region,
-				Status:     enumor.RecycleRecordStatus(recycleRecord.Status),
+				ID:          recycleRecord.ID,
+				TaskID:      recycleRecord.TaskID,
+				RecycleType: recycleRecord.RecycleType,
+				Vendor:      recycleRecord.Vendor,
+				ResType:     recycleRecord.ResType,
+				ResID:       recycleRecord.ResID,
+				CloudResID:  recycleRecord.CloudResID,
+				ResName:     recycleRecord.ResName,
+				BkBizID:     recycleRecord.BkBizID,
+				AccountID:   recycleRecord.AccountID,
+				Region:      recycleRecord.Region,
+				Status:      enumor.RecycleRecordStatus(recycleRecord.Status),
+				RecycledAt:  times.ConvStdTimeFormat(recycleRecord.RecycledAt),
 				Revision: core.Revision{
 					Creator:   recycleRecord.Creator,
 					Reviser:   recycleRecord.Reviser,
@@ -343,6 +346,13 @@ func (svc *recycleRecordSvc) BatchUpdateRecycleRecord(cts *rest.Contexts) (inter
 // BatchUpdateRecycleStatus 批量更新资源的回收状态字段
 func (svc *recycleRecordSvc) BatchUpdateRecycleStatus(cts *rest.Contexts) (reply interface{}, err error) {
 	req := new(protodata.BatchUpdateRecycleStatusReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		updateResOpt := &protodao.ResourceUpdateOptions{ResType: req.ResType, IDs: req.IDs,
 			Status: string(req.RecycleStatus)}
@@ -359,5 +369,4 @@ func (svc *recycleRecordSvc) BatchUpdateRecycleStatus(cts *rest.Contexts) (reply
 		return nil, err
 	}
 	return nil, nil
-
 }

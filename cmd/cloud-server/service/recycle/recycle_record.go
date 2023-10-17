@@ -65,5 +65,5 @@ func (svc *svc) listRecycleRecord(cts *rest.Contexts, authHandler handler.ListAu
 		Page:   req.Page,
 		Fields: req.Fields,
 	}
-	return svc.client.DataService().Global.RecycleRecord.ListRecycleRecord(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	return svc.client.DataService().Global.RecycleRecord.ListRecycleRecord(cts.Kit, listReq)
 }

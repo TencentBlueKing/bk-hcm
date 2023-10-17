@@ -55,12 +55,18 @@ func InitAccountService(c *capability.Capability) {
 	h.Add("DeleteValidate", http.MethodPost, "/accounts/{account_id}/delete/validate", svc.DeleteValidate)
 
 	// 获取账号配额
-	h.Add("GetTCloudZoneQuota", http.MethodPost, "/bizs/{bk_biz_id}/vendors/tcloud/accounts/{account_id}/zones/quotas",
-		svc.GetTCloudZoneQuota)
-	h.Add("GetHuaWeiRegionQuota", http.MethodPost,
-		"/bizs/{bk_biz_id}/vendors/huawei/accounts/{account_id}/regions/quotas", svc.GetHuaWeiRegionQuota)
-	h.Add("GetGcpRegionQuota", http.MethodPost, "/bizs/{bk_biz_id}/vendors/gcp/accounts/{account_id}/regions/quotas",
-		svc.GetGcpRegionQuota)
+	h.Add("GetBizTCloudZoneQuota", http.MethodPost, "/bizs/{bk_biz_id}/vendors/tcloud/accounts/{account_id}/zones/quotas",
+		svc.GetBizTCloudZoneQuota)
+	h.Add("GetBizHuaWeiRegionQuota", http.MethodPost,
+		"/bizs/{bk_biz_id}/vendors/huawei/accounts/{account_id}/regions/quotas", svc.GetBizHuaWeiRegionQuota)
+	h.Add("GetBizGcpRegionQuota", http.MethodPost, "/bizs/{bk_biz_id}/vendors/gcp/accounts/{account_id}/regions/quotas",
+		svc.GetBizGcpRegionQuota)
+	h.Add("GetResTCloudZoneQuota", http.MethodPost, "/vendors/tcloud/accounts/{account_id}/zones/quotas",
+		svc.GetResTCloudZoneQuota)
+	h.Add("GetResHuaWeiRegionQuota", http.MethodPost,
+		"/vendors/huawei/accounts/{account_id}/regions/quotas", svc.GetResHuaWeiRegionQuota)
+	h.Add("GetResGcpRegionQuota", http.MethodPost, "/vendors/gcp/accounts/{account_id}/regions/quotas",
+		svc.GetResGcpRegionQuota)
 
 	// Rel
 	h.Add("ListByBkBizID", http.MethodGet, "/accounts/bizs/{bk_biz_id}", svc.ListByBkBizID)

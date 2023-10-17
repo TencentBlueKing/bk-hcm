@@ -40,6 +40,8 @@ func InitService(c *capability.Capability) {
 	// 资源下接口
 	h.Add("GetSubAccount", http.MethodGet, "/sub_accounts/{id}", svc.GetSubAccount)
 	h.Add("ListSubAccount", http.MethodPost, "/sub_accounts/list", svc.ListSubAccount)
+	h.Add("ListSubAccountExt", http.MethodPost, "/vendors/{vendor}/sub_accounts/list", svc.ListSubAccountExt)
+	h.Add("UpdateSubAccount", http.MethodPatch, "/sub_accounts/{id}", svc.UpdateSubAccount)
 
 	h.Load(c.WebService)
 }

@@ -19,9 +19,72 @@
 
 package recyclerecord
 
+import (
+	"hcm/pkg/tools/json"
+)
+
 // BaseRecycleDetail basic recycle record detail.
 type BaseRecycleDetail struct {
 	ErrorMessage string `json:"error_message,omitempty"`
+}
+
+// CvmRecycleDetail 包含回收选项、disk，eip 挂载选项
+type CvmRecycleDetail struct {
+	CvmRecycleOptions `json:",inline"`
+	DiskList          []DiskAttachInfo `json:"disk_list"`
+	EipList           []EipBindInfo    `json:"eip_list"`
+	ErrorMessage      string           `json:"error_message,omitempty"`
+}
+
+// DiskAttachInfo 磁盘挂载信息
+type DiskAttachInfo struct {
+	DiskID      string `json:"disk_id,omitempty"`
+	CachingType string `json:"caching_type,omitempty"`
+	DeviceName  string `json:"device_name,omitempty"`
+	Err         error  `json:"-"`
+}
+
+// GetCloudID ...
+func (d DiskAttachInfo) GetCloudID() string {
+	return d.DiskID
+}
+
+// GetID ...
+func (d DiskAttachInfo) GetID() string {
+	return d.DiskID
+}
+
+func (d DiskAttachInfo) String() string {
+	str, err := json.MarshalToString(d)
+	if err != nil {
+		return err.Error()
+	}
+	return str
+}
+
+// EipBindInfo eip 绑定信息
+type EipBindInfo struct {
+	EipID string `json:"eip_id"`
+	NicID string `json:"nic_id"`
+	Err   error  `json:"-"`
+}
+
+// GetCloudID ...
+func (e EipBindInfo) GetCloudID() string {
+	return e.EipID
+}
+
+// GetID ...
+func (e EipBindInfo) GetID() string {
+	return e.EipID
+}
+
+func (e EipBindInfo) String() string {
+	str, err := json.MarshalToString(e)
+	if err != nil {
+		return err.Error()
+	}
+	return str
 }
 
 // CvmRecycleOptions cvm recycle record options.
@@ -32,3 +95,8 @@ type CvmRecycleOptions struct {
 
 // DiskRecycleOptions disk recycle record options.
 type DiskRecycleOptions struct{}
+
+// DiskRelatedRecycleOpt 磁盘作为关联资源回收时的回收选项，记录关联的cvm_id
+type DiskRelatedRecycleOpt struct {
+	CvmID string `json:"cvm_id"`
+}

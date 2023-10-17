@@ -27,19 +27,20 @@ import (
 
 // BaseAccount 云账号
 type BaseAccount struct {
-	ID               string                 `json:"id"`
-	Vendor           enumor.Vendor          `json:"vendor"`
-	Name             string                 `json:"name"`
-	Managers         []string               `json:"managers"`
-	Type             enumor.AccountType     `json:"type"`
-	Site             enumor.AccountSiteType `json:"site"`
-	Price            string                 `json:"price"`
-	PriceUnit        string                 `json:"price_unit"`
-	Memo             *string                `json:"memo"`
-	BkBizIDs         []int64                `json:"bk_biz_ids"`
-	SyncStatus       string                 `json:"sync_status"`
-	SyncFailedReason string                 `json:"sync_failed_reason"`
-	core.Revision    `json:",inline"`
+	ID                 string                 `json:"id"`
+	Vendor             enumor.Vendor          `json:"vendor"`
+	Name               string                 `json:"name"`
+	Managers           []string               `json:"managers"`
+	Type               enumor.AccountType     `json:"type"`
+	Site               enumor.AccountSiteType `json:"site"`
+	Price              string                 `json:"price"`
+	PriceUnit          string                 `json:"price_unit"`
+	Memo               *string                `json:"memo"`
+	BkBizIDs           []int64                `json:"bk_biz_ids"`
+	SyncStatus         string                 `json:"sync_status"`
+	SyncFailedReason   string                 `json:"sync_failed_reason"`
+	RecycleReserveTime int                    `json:"recycle_reserve_time"`
+	core.Revision      `json:",inline"`
 }
 
 // TCloudAccountExtension define tcloud account extension.

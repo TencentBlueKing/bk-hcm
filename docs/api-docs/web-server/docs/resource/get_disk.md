@@ -23,31 +23,32 @@ GET /api/v1/cloud/disks/{id}
 #### 返回参数示例
 ```json
 {
-    "code": 0,
-    "message": "",
-    "data": {
-        "id": "00000002",
-        "vendor": "tcloud",
-        "account_id": "abc",
-        "name": "ab222c2222221",
-        "cloud_id": "disk-123",
-        "region": "abc",
-        "zone": "abc",
-        "disk_size": 500,
-        "disk_type": "ssd",
-        "memo": "abc",
-        "creator": "james",
-        "reviser": "james",
-        "created_at": "2023-01-16T03:30:41Z",
-        "updated_at": "2023-01-16T08:39:28Z",
-        "extension": {
-            "disk_charge_type": "PREPAID",
-            "disk_charge_prepaid": {
-                "period": 6,
-                "renew_flag": "true"
-            }
-        }
+  "code": 0,
+  "message": "",
+  "data": {
+    "id": "00000002",
+    "vendor": "tcloud",
+    "account_id": "abc",
+    "name": "ab222c2222221",
+    "cloud_id": "disk-123",
+    "region": "abc",
+    "zone": "abc",
+    "disk_size": 500,
+    "disk_type": "ssd",
+    "memo": "abc",
+    "creator": "james",
+    "reviser": "james",
+    "created_at": "2023-01-16T03:30:41Z",
+    "recycle_status": "recycling",
+    "updated_at": "2023-01-16T08:39:28Z",
+    "extension": {
+      "disk_charge_type": "PREPAID",
+      "disk_charge_prepaid": {
+        "period": 6,
+        "renew_flag": "true"
+      }
     }
+  }
 }
 ```
 ### 响应参数说明
@@ -71,6 +72,7 @@ GET /api/v1/cloud/disks/{id}
 | disk_size | uint | 云盘大小 |
 | disk_type | string | 云盘类型 |
 | memo | string | 云盘备注 | 
+| recycle_status      | string | 回收状态                                 |
 | creator | string | 创建者 |
 | reviser | string | 更新者 |
 | created_at | string | 创建时间，标准格式：2006-01-02T15:04:05Z |

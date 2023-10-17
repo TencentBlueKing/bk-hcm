@@ -22,31 +22,24 @@ package async
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
+	"hcm/pkg/async/consumer"
 	"hcm/pkg/criteria/validator"
 )
 
-type options struct {
-	register prometheus.Registerer `json:"register" validate:"required"`
+// Option define async option.
+type Option struct {
+	Register       prometheus.Registerer `json:"Register" validate:"required"`
+	ConsumerOption *consumer.Option      `json:"consumer_option" validate:"required"`
 }
 
 // tryDefaultValue 设置默认值。
-func (opt *options) tryDefaultValue() {
-	if opt.register == nil {
-		opt.register = prometheus.DefaultRegisterer
+func (opt *Option) tryDefaultValue() {
+	if opt.Register == nil {
+		opt.Register = prometheus.DefaultRegisterer
 	}
 }
 
-// Validate define options.
-func (opt *options) Validate() error {
+// Validate define Option.
+func (opt *Option) Validate() error {
 	return validator.Validate.Struct(opt)
-}
-
-// Option orm option func defines.
-type Option func(opt *options)
-
-// MetricsRegisterer set metrics registerer.
-func MetricsRegisterer(register prometheus.Registerer) Option {
-	return func(opt *options) {
-		opt.register = register
-	}
 }

@@ -19,39 +19,27 @@
 
 package consumer
 
-// Commander 外部命令执行体
+/*
+Commander （指挥者）
+		1. 强制关闭处于执行中的任务
+*/
 type Commander interface {
-	RunFlows(flowIDs []string) error
-	RetryFlows(flowIDs []string) error
-	RetryTasks(taskIDs []string) error
 	CancelTasks(taskIDs []string) error
 }
 
 // NewCommander new commander.
-func NewCommander() Commander {
-	return &commander{}
+func NewCommander(exec Executor) Commander {
+	return &commander{
+		executor: exec,
+	}
 }
 
 // commander ...
 type commander struct {
-}
-
-// RunFlows 控制执行多个任务流
-func (ac *commander) RunFlows(flowIDs []string) error {
-	return nil
-}
-
-// RetryFlows 控制重试多个任务流
-func (ac *commander) RetryFlows(flowIDs []string) error {
-	return nil
-}
-
-// RetryTasks 控制重试多个任务
-func (ac *commander) RetryTasks(taskIDs []string) error {
-	return nil
+	executor Executor
 }
 
 // CancelTasks 控制取消多个任务
-func (ac *commander) CancelTasks(taskIDs []string) error {
-	return nil
+func (cmd *commander) CancelTasks(taskIDs []string) error {
+	return cmd.executor.CancelTasks(taskIDs)
 }

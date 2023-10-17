@@ -23,7 +23,6 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
@@ -42,10 +41,11 @@ import (
 
 // AsyncFlow only used async flow.
 type AsyncFlow interface {
+	Create(kt *kit.Kit, tx *sqlx.Tx, model *tableasync.AsyncFlowTable) (string, error)
 	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []tableasync.AsyncFlowTable) ([]string, error)
 	Update(kt *kit.Kit, expr *filter.Expression, model *tableasync.AsyncFlowTable) error
 	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tableasync.AsyncFlowTable) error
-	UpdateByIDCAS(kt *kit.Kit, id string, state enumor.FlowState) error
+	UpdateStateByCAS(kt *kit.Kit, tx *sqlx.Tx, info *typesasync.UpdateFlowInfo) error
 	List(kt *kit.Kit, opt *types.ListOption) (*typesasync.ListAsyncFlows, error)
 	ListWithTx(kt *kit.Kit, tx *sqlx.Tx, opt *types.ListOption) (*typesasync.ListAsyncFlows, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
@@ -57,6 +57,30 @@ var _ AsyncFlow = new(AsyncFlowDao)
 type AsyncFlowDao struct {
 	Orm   orm.Interface
 	IDGen idgenerator.IDGenInterface
+}
+
+// Create async flow.
+func (dao *AsyncFlowDao) Create(kt *kit.Kit, tx *sqlx.Tx, model *tableasync.AsyncFlowTable) (string, error) {
+
+	id, err := dao.IDGen.One(kt, table.AsyncFlowTable)
+	if err != nil {
+		return "", err
+	}
+	model.ID = id
+
+	if err = model.InsertValidate(); err != nil {
+		return "", err
+	}
+
+	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.AsyncFlowTable,
+		tableasync.AsyncFlowColumns.ColumnExpr(), tableasync.AsyncFlowColumns.ColonNameExpr())
+
+	if err = dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, model); err != nil {
+		logs.Errorf("insert %s failed, err: %v, sql: %s, rid: %s", table.AsyncFlowTable, err, sql, kt.Rid)
+		return "", fmt.Errorf("insert %s failed, err: %v", table.AsyncFlowTable, err)
+	}
+
+	return id, nil
 }
 
 // Update async flow.
@@ -75,7 +99,7 @@ func (dao *AsyncFlowDao) Update(kt *kit.Kit, expr *filter.Expression, model *tab
 		return err
 	}
 
-	opts := utils.NewFieldOptions().AddIgnoredFields(types.DefaultIgnoredFields...)
+	opts := utils.NewFieldOptions().AddBlankedFields("worker").AddIgnoredFields(types.DefaultIgnoredFields...)
 	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(model, opts)
 	if err != nil {
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
@@ -115,7 +139,7 @@ func (dao *AsyncFlowDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
 		return err
 	}
 
-	opts := utils.NewFieldOptions().AddIgnoredFields(types.DefaultIgnoredFields...)
+	opts := utils.NewFieldOptions().AddBlankedFields("worker").AddIgnoredFields(types.DefaultIgnoredFields...)
 	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(model, opts)
 	if err != nil {
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
@@ -138,28 +162,40 @@ func (dao *AsyncFlowDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
 	return nil
 }
 
-// UpdateByIDCAS update async flow CAS.
-func (dao *AsyncFlowDao) UpdateByIDCAS(kt *kit.Kit, id string, state enumor.FlowState) error {
+// UpdateStateByCAS update async flow state by CAS.
+func (dao *AsyncFlowDao) UpdateStateByCAS(kt *kit.Kit, tx *sqlx.Tx, info *typesasync.UpdateFlowInfo) error {
 
-	if len(id) == 0 {
-		return errf.New(errf.InvalidParameter, "id is required")
+	if err := info.Validate(); err != nil {
+		return err
 	}
 
-	sql := fmt.Sprintf(`update %s set state = '%s' where id = :id and state = '%s'`,
-		table.AsyncFlowTable, state, enumor.FlowPending)
+	setSql := "set state = :target"
+	if len(info.Worker) != 0 {
+		setSql += ", worker = :worker"
+	}
+
+	if info.Reason != nil {
+		setSql += ", reason = :reason"
+	}
+
+	sql := fmt.Sprintf(`update %s %s where id = :id and state = :source`, table.AsyncFlowTable, setSql)
 
 	whereValue := map[string]interface{}{
-		"id": id,
+		"id":     info.ID,
+		"source": info.Source,
+		"target": info.Target,
+		"worker": info.Worker,
+		"reason": info.Reason,
 	}
-	effected, err := dao.Orm.Do().Update(kt.Ctx, sql, whereValue)
+	effected, err := dao.Orm.Txn(tx).Update(kt.Ctx, sql, whereValue)
 	if err != nil {
-		logs.Errorf("update async flow failed, err: %v, id: %s, sql: %s, rid: %v", err, id,
-			sql, kt.Rid)
+		logs.Errorf("update async flow failed, err: %v, id: %s, sql: %s, rid: %v", err, info.ID, sql, kt.Rid)
 		return err
 	}
 
 	if effected == 0 {
-		return errf.New(errf.RecordNotUpdate, "record not update")
+		return errf.Newf(errf.RecordNotUpdate, "flow[%s: %s] update state: %s, worker: %s failed",
+			info.ID, info.Source, info.Target, info.Worker)
 	}
 
 	return nil

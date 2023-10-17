@@ -23,20 +23,28 @@ import (
 	proto "hcm/pkg/api/cloud-server/account"
 	hcproto "hcm/pkg/api/hc-service/account"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/hooks/handler"
 )
 
-// GetTCloudZoneQuota 获取腾讯云账号配额.
-func (a *accountSvc) GetTCloudZoneQuota(cts *rest.Contexts) (interface{}, error) {
+// GetBizTCloudZoneQuota 获取腾讯云账号配额.
+func (a *accountSvc) GetBizTCloudZoneQuota(cts *rest.Contexts) (interface{}, error) {
+	return a.getTCloudZoneQuota(cts, handler.BizValidWithAuth)
+}
+
+// GetResTCloudZoneQuota 获取腾讯云账号配额.
+func (a *accountSvc) GetResTCloudZoneQuota(cts *rest.Contexts) (interface{}, error) {
+	return a.getTCloudZoneQuota(cts, handler.ResValidWithAuth)
+}
+
+func (a *accountSvc) getTCloudZoneQuota(cts *rest.Contexts, authHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
 	accountID := cts.PathParameter("account_id").String()
 	if len(accountID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "account_id is required")
-	}
-
-	bizID, err := cts.PathParameter("bk_biz_id").Int64()
-	if err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	req := new(proto.GetAccountZoneQuotaReq)
@@ -44,8 +52,13 @@ func (a *accountSvc) GetTCloudZoneQuota(cts *rest.Contexts) (interface{}, error)
 		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
 	}
 
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Quota, Action: meta.Find}, BizID: bizID}
-	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+	basicInfo := &types.CloudResourceBasicInfo{
+		AccountID: accountID,
+	}
+	// validate biz and authorize
+	err := authHandler(cts, &handler.ValidWithAuthOption{Authorizer: a.authorizer, ResType: meta.Quota,
+		Action: meta.Find, BasicInfo: basicInfo})
+	if err != nil {
 		return nil, err
 	}
 
@@ -61,16 +74,23 @@ func (a *accountSvc) GetTCloudZoneQuota(cts *rest.Contexts) (interface{}, error)
 	return a.client.HCService().TCloud.Account.GetZoneQuota(cts.Kit.Ctx, cts.Kit.Header(), getReq)
 }
 
-// GetHuaWeiRegionQuota 获取华为云账号配额.
-func (a *accountSvc) GetHuaWeiRegionQuota(cts *rest.Contexts) (interface{}, error) {
+// GetBizHuaWeiRegionQuota 获取华为云账号配额.
+func (a *accountSvc) GetBizHuaWeiRegionQuota(cts *rest.Contexts) (interface{}, error) {
+	return a.getHuaWeiRegionQuota(cts, handler.BizValidWithAuth)
+}
+
+// GetResHuaWeiRegionQuota 获取华为云账号配额.
+func (a *accountSvc) GetResHuaWeiRegionQuota(cts *rest.Contexts) (interface{}, error) {
+	return a.getHuaWeiRegionQuota(cts, handler.ResValidWithAuth)
+}
+
+// getHuaWeiRegionQuota 获取华为云账号配额.
+func (a *accountSvc) getHuaWeiRegionQuota(cts *rest.Contexts,
+	authHandler handler.ValidWithAuthHandler) (interface{}, error) {
+
 	accountID := cts.PathParameter("account_id").String()
 	if len(accountID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "account_id is required")
-	}
-
-	bizID, err := cts.PathParameter("bk_biz_id").Int64()
-	if err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	req := new(proto.GetAccountRegionQuotaReq)
@@ -78,8 +98,13 @@ func (a *accountSvc) GetHuaWeiRegionQuota(cts *rest.Contexts) (interface{}, erro
 		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
 	}
 
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Quota, Action: meta.Find}, BizID: bizID}
-	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+	basicInfo := &types.CloudResourceBasicInfo{
+		AccountID: accountID,
+	}
+	// validate biz and authorize
+	err := authHandler(cts, &handler.ValidWithAuthOption{Authorizer: a.authorizer, ResType: meta.Quota,
+		Action: meta.Find, BasicInfo: basicInfo})
+	if err != nil {
 		return nil, err
 	}
 
@@ -94,16 +119,23 @@ func (a *accountSvc) GetHuaWeiRegionQuota(cts *rest.Contexts) (interface{}, erro
 	return a.client.HCService().HuaWei.Account.GetRegionQuota(cts.Kit.Ctx, cts.Kit.Header(), getReq)
 }
 
-// GetGcpRegionQuota 获取Gcp账号配额.
-func (a *accountSvc) GetGcpRegionQuota(cts *rest.Contexts) (interface{}, error) {
+// GetBizGcpRegionQuota 获取Gcp账号配额.
+func (a *accountSvc) GetBizGcpRegionQuota(cts *rest.Contexts) (interface{}, error) {
+	return a.getGcpRegionQuota(cts, handler.BizValidWithAuth)
+}
+
+// GetResGcpRegionQuota 获取Gcp账号配额.
+func (a *accountSvc) GetResGcpRegionQuota(cts *rest.Contexts) (interface{}, error) {
+	return a.getGcpRegionQuota(cts, handler.ResValidWithAuth)
+}
+
+// getGcpRegionQuota 获取Gcp账号配额.
+func (a *accountSvc) getGcpRegionQuota(cts *rest.Contexts,
+	authHandler handler.ValidWithAuthHandler) (interface{}, error) {
+
 	accountID := cts.PathParameter("account_id").String()
 	if len(accountID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "account_id is required")
-	}
-
-	bizID, err := cts.PathParameter("bk_biz_id").Int64()
-	if err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	req := new(proto.GetAccountRegionQuotaReq)
@@ -111,8 +143,13 @@ func (a *accountSvc) GetGcpRegionQuota(cts *rest.Contexts) (interface{}, error) 
 		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
 	}
 
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Quota, Action: meta.Find}, BizID: bizID}
-	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+	basicInfo := &types.CloudResourceBasicInfo{
+		AccountID: accountID,
+	}
+	// validate biz and authorize
+	err := authHandler(cts, &handler.ValidWithAuthOption{Authorizer: a.authorizer, ResType: meta.Quota,
+		Action: meta.Find, BasicInfo: basicInfo})
+	if err != nil {
 		return nil, err
 	}
 

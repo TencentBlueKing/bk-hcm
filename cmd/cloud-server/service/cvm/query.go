@@ -23,11 +23,13 @@ import (
 	"fmt"
 
 	proto "hcm/pkg/api/cloud-server"
+	cscvm "hcm/pkg/api/cloud-server/cvm"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
@@ -35,6 +37,7 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/hooks/handler"
+	"hcm/pkg/tools/slice"
 )
 
 // ListCvm list cvm.
@@ -159,4 +162,79 @@ func CheckCvmsInBiz(kt *kit.Kit, client *client.ClientSet, rule filter.RuleFacto
 	}
 
 	return nil
+}
+
+// QueryCvmRelatedRes ...
+func (svc *cvmSvc) QueryCvmRelatedRes(cts *rest.Contexts) (interface{}, error) {
+	return svc.queryCvmRelatedRes(cts, handler.ResValidWithAuth)
+}
+
+// QueryBizCvmRelatedRes ...
+func (svc *cvmSvc) QueryBizCvmRelatedRes(cts *rest.Contexts) (interface{}, error) {
+	return svc.queryCvmRelatedRes(cts, handler.BizValidWithAuth)
+}
+
+// QueryCvmRelatedRes 统计cvm 关联资源数量，目前包含disk和eip，主要用于回收时展示关联资源数量
+func (svc *cvmSvc) queryCvmRelatedRes(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
+	req := new(cscvm.BatchQueryCvmRelatedReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	basicInfoReq := dataproto.ListResourceBasicInfoReq{
+		ResourceType: enumor.CvmCloudResType,
+		IDs:          req.IDs,
+	}
+	basicInfo, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+		basicInfoReq)
+	if err != nil {
+		return nil, err
+	}
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Cvm,
+		Action: meta.Access, BasicInfos: basicInfo})
+	if err != nil {
+		return nil, err
+	}
+
+	// 查询磁盘信息
+	diskReq := &dataproto.DiskCvmRelListReq{
+		Filter: tools.ContainersExpression("cvm_id", req.IDs),
+		Page:   core.NewDefaultBasePage(),
+	}
+	diskRel, err := svc.client.DataService().Global.ListDiskCvmRel(cts.Kit, diskReq)
+	if err != nil {
+		logs.Errorf("fail to list disk cvm relation, err: %v, cvmIds: %v , rid: %s", err, req.IDs, cts.Kit.Rid)
+		return nil, err
+	}
+	diskCount := make(map[string]int, len(req.IDs))
+	for _, rel := range diskRel.Details {
+		diskCount[rel.CvmID]++
+	}
+
+	eipList := make(map[string][]string, len(req.IDs))
+	eipReq := &dataproto.EipCvmRelWithEipListReq{CvmIDs: req.IDs}
+	cvmEipRel, err := svc.client.DataService().Global.ListEipCvmRelWithEip(cts.Kit, eipReq)
+	if err != nil {
+		logs.Errorf("fail to list cvm related eip, err: %v, cvm_ids: %v, rid: %s", err, req.IDs, cts.Kit.Rid)
+		return nil, err
+	}
+	for _, eipRel := range cvmEipRel {
+		eipList[eipRel.CvmID] = append(eipList[eipRel.CvmID], eipRel.PublicIp)
+	}
+
+	relatedInfos := slice.Map(req.IDs, func(cvmId string) cscvm.CvmRelatedInfo {
+		return cscvm.CvmRelatedInfo{
+			DiskCount: diskCount[cvmId],
+			EipCount:  len(eipList[cvmId]),
+			Eip:       eipList[cvmId],
+		}
+	})
+	return relatedInfos, nil
 }

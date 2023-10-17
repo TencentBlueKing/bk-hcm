@@ -135,6 +135,14 @@ export default defineComponent({
       },
     );
 
+    watch(
+      () => securityGroupRules.value,
+      arr => console.log(111, arr.map(({ id }) => securityGroupKVMap.value.get(id))),
+      {
+        deep: true,
+      },
+    );
+
     return () => (
       <div>
         {selected.value?.length ? (

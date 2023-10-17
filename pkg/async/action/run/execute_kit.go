@@ -17,29 +17,42 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package account
+package run
 
-import (
-	"hcm/pkg/criteria/enumor"
-)
+import "hcm/pkg/kit"
 
-var (
-	vendorMainAccountIDFieldMap = map[enumor.Vendor]string{
-		enumor.TCloud: "cloud_main_account_id",
-		enumor.Aws:    "cloud_account_id",
-		enumor.HuaWei: "cloud_sub_account_id",
-		enumor.Gcp:    "cloud_project_id",
-		enumor.Azure:  "cloud_subscription_id",
+// ExecuteKit is a kit using by action
+type ExecuteKit interface {
+	Kit() *kit.Kit
+	ShareData() ShareDataOperator
+}
+
+// ShareDataOperator used to operate share data
+type ShareDataOperator interface {
+	Get(key string) (string, bool)
+	Set(kt *kit.Kit, key string, val string) error
+}
+
+// NewExecuteContext new execute context for task exec.
+func NewExecuteContext(kt *kit.Kit, shareData ShareDataOperator) ExecuteKit {
+	return &DefExecuteContext{
+		kit:       kt,
+		shareData: shareData,
 	}
+}
 
-	accountTypNameMap = map[enumor.AccountType]string{
-		enumor.RegistrationAccount:  "登记账号",
-		enumor.ResourceAccount:      "资源账号",
-		enumor.SecurityAuditAccount: "安全审计账号",
-	}
+// DefExecuteContext default execute context.
+type DefExecuteContext struct {
+	kit       *kit.Kit
+	shareData ShareDataOperator
+}
 
-	accountSiteTypeNameMap = map[enumor.AccountSiteType]string{
-		enumor.InternationalSite: "国际站",
-		enumor.ChinaSite:         "中国站",
-	}
-)
+// Kit return kit.
+func (ctx *DefExecuteContext) Kit() *kit.Kit {
+	return ctx.kit
+}
+
+// ShareData return share data.
+func (ctx *DefExecuteContext) ShareData() ShareDataOperator {
+	return ctx.shareData
+}

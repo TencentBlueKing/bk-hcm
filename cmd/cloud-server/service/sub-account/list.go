@@ -20,8 +20,12 @@
 package subaccount
 
 import (
+	"fmt"
+
 	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -64,4 +68,57 @@ func (svc *service) listSubAccount(cts *rest.Contexts, authHandler handler.ListA
 	}
 
 	return result, nil
+}
+
+// ListSubAccountExt list sub account.
+func (svc *service) ListSubAccountExt(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSubAccountExt(cts, handler.ListResourceAuthRes)
+}
+
+func (svc *service) listSubAccountExt(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (interface{}, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// list authorized instances
+	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+		ResType: meta.SubAccount, Action: meta.Find, Filter: req.Filter})
+	if err != nil {
+		logs.Errorf("list sub account auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if noPermFlag {
+		return &core.ListResult{Count: 0, Details: make([]interface{}, 0)}, nil
+	}
+
+	expr, err = tools.And(expr, tools.EqualExpression("vendor", vendor))
+	if err != nil {
+		logs.Errorf("expression append vendor rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	req.Filter = expr
+
+	switch vendor {
+	case enumor.TCloud:
+		return svc.client.DataService().TCloud.SubAccount.ListExt(cts.Kit, req)
+	case enumor.Aws:
+		return svc.client.DataService().Aws.SubAccount.ListExt(cts.Kit, req)
+	case enumor.HuaWei:
+		return svc.client.DataService().HuaWei.SubAccount.ListExt(cts.Kit, req)
+	case enumor.Azure:
+		return svc.client.DataService().Azure.SubAccount.ListExt(cts.Kit, req)
+	case enumor.Gcp:
+		return svc.client.DataService().Gcp.SubAccount.ListExt(cts.Kit, req)
+	default:
+		return nil, fmt.Errorf("vendor: %s not support", vendor)
+	}
 }

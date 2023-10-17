@@ -17,54 +17,39 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package flow
+package consumer
 
 import (
 	"errors"
 	"fmt"
-	"sync"
 
-	"hcm/pkg/async/task"
 	"hcm/pkg/criteria/enumor"
 )
 
 const (
-	VirtualTaskRootID          = "virtual_root"
-	VirtualTaskRootFlowID      = "vir_flow_id"
-	VirtualTaskRootFlowName    = "vir_flow_name"
-	VirtualTaskRootTimeoutSecs = 20
+	VirtualTaskRootID = "virtual_root"
 )
 
 // TaskTree task tree
 type TaskTree struct {
-	Root             *TaskNode
-	RunTaskNodesLock *sync.Mutex
-	RunTaskNodes     map[string]*TaskNode
-	FlowState        enumor.FlowState
-	Reason           string
-}
-
-// NewTaskTree new task tree
-func NewTaskTree() *TaskTree {
-	return &TaskTree{
-		RunTaskNodesLock: &sync.Mutex{},
-		RunTaskNodes:     make(map[string]*TaskNode),
-		FlowState:        enumor.FlowPending,
-	}
+	Root *TaskNode
+	Flow *Flow
 }
 
 // TaskNode task node
 type TaskNode struct {
-	Task *task.Task
+	TaskID string
+	State  enumor.TaskState
 
 	children []*TaskNode
 	parents  []*TaskNode
 }
 
 // NewTaskNode new task node
-func NewTaskNode(task *task.Task) *TaskNode {
+func NewTaskNode(task *Task) *TaskNode {
 	return &TaskNode{
-		Task: task,
+		TaskID: task.ID,
+		State:  task.State,
 	}
 }
 
@@ -90,15 +75,11 @@ func (t *TaskNode) GetParents() []*TaskNode {
 
 // CanExecuteChild can execute child
 func (t *TaskNode) CanExecuteChild() bool {
-	return t.Task.State == enumor.TaskSuccess
+	return t.State == enumor.TaskSuccess
 }
 
 // CanBeExecuted check whether task could be executed
 func (t *TaskNode) CanBeExecuted() bool {
-	if t.Task.State != enumor.TaskPending {
-		return false
-	}
-
 	if len(t.parents) == 0 {
 		return true
 	}
@@ -113,7 +94,7 @@ func (t *TaskNode) CanBeExecuted() bool {
 
 // Executable check can executable
 func (t *TaskNode) Executable() bool {
-	if t.Task.State != enumor.TaskPending {
+	if t.State != enumor.TaskPending {
 		return false
 	}
 
@@ -130,16 +111,19 @@ func (t *TaskNode) Executable() bool {
 	return true
 }
 
-// ComputeStatus compute status
-func (t *TaskNode) ComputeStatus() (state enumor.FlowState) {
+// ComputeState compute state
+func (t *TaskNode) ComputeState() (state enumor.FlowState) {
 	walkNode(t, func(node *TaskNode) bool {
-		switch node.Task.State {
+		switch node.State {
+		// 如果Task存在失败节点，无法继续遍历当前节点子节点。
 		case enumor.TaskFailed:
 			state = enumor.FlowFailed
-			return true
+			return false
+		// 如果当前节点运行成功，继续遍历当前节点子节点。
 		case enumor.TaskSuccess:
 			state = enumor.FlowSuccess
 			return true
+		// 如果当前节点处于其他运行中间状态，无法继续遍历当前节点子节点。
 		default:
 			state = enumor.FlowRunning
 			return false
@@ -150,10 +134,22 @@ func (t *TaskNode) ComputeStatus() (state enumor.FlowState) {
 }
 
 // GetExecutableTasks get executable task nodes
-func (t *TaskNode) GetExecutableTasks() (executables []*task.Task) {
+func (t *TaskNode) GetExecutableTasks() (executables []string) {
 	walkNode(t, func(node *TaskNode) bool {
 		if node.Executable() {
-			executables = append(executables, node.Task)
+			executables = append(executables, node.TaskID)
+		}
+		return true
+	})
+
+	return
+}
+
+// GetExecStateTasks 获取执行状态的节点
+func (t *TaskNode) GetExecStateTasks() (ids []string) {
+	walkNode(t, func(node *TaskNode) bool {
+		if node.State == enumor.TaskRunning || node.State == enumor.TaskRollback {
+			ids = append(ids, node.TaskID)
 		}
 		return true
 	})
@@ -162,13 +158,13 @@ func (t *TaskNode) GetExecutableTasks() (executables []*task.Task) {
 }
 
 // GetNextTaskNodes get next task nodes
-func (t *TaskNode) GetNextTaskNodes(completedOrRetryTask *task.Task) (executable []*task.Task) {
+func (t *TaskNode) GetNextTaskNodes(completedOrRetryTask *Task) (executable []string) {
 	walkNode(t, func(node *TaskNode) bool {
-		if node.Task.ID == completedOrRetryTask.ID {
-			node.Task.State = completedOrRetryTask.State
+		if node.TaskID == completedOrRetryTask.ID {
+			node.State = completedOrRetryTask.State
 
-			if node.Task.State == enumor.TaskPending {
-				executable = append(executable, node.Task)
+			if node.State == enumor.TaskPending {
+				executable = append(executable, node.TaskID)
 				return false
 			}
 
@@ -178,7 +174,7 @@ func (t *TaskNode) GetNextTaskNodes(completedOrRetryTask *task.Task) (executable
 
 			for i := range node.children {
 				if node.children[i].Executable() {
-					executable = append(executable, node.children[i].Task)
+					executable = append(executable, node.children[i].TaskID)
 				}
 			}
 
@@ -214,7 +210,7 @@ func bfsCheckCycle(waitQueue []*TaskNode, visited map[string]struct{}, incomplet
 
 	isParentCompleted := func(node *TaskNode) bool {
 		for _, p := range node.parents {
-			if _, ok := visited[p.Task.ID]; !ok {
+			if _, ok := visited[p.TaskID]; !ok {
 				return false
 			}
 		}
@@ -224,13 +220,13 @@ func bfsCheckCycle(waitQueue []*TaskNode, visited map[string]struct{}, incomplet
 	for i := 0; i < queueLen; i++ {
 		cur := waitQueue[i]
 		if !isParentCompleted(cur) {
-			incomplete[cur.Task.ID] = cur
+			incomplete[cur.TaskID] = cur
 			continue
 		}
 
-		visited[cur.Task.ID] = struct{}{}
+		visited[cur.TaskID] = struct{}{}
 
-		delete(incomplete, cur.Task.ID)
+		delete(incomplete, cur.TaskID)
 
 		waitQueue = append(waitQueue, cur.children...)
 	}
@@ -241,17 +237,10 @@ func bfsCheckCycle(waitQueue []*TaskNode, visited map[string]struct{}, incomplet
 }
 
 // BuildTaskRoot build task root
-func BuildTaskRoot(tasks []task.Task) (*TaskNode, error) {
+func BuildTaskRoot(tasks []*Task) (*TaskNode, error) {
 	root := &TaskNode{
-		Task: &task.Task{
-			ID:          VirtualTaskRootID,
-			FlowID:      VirtualTaskRootFlowID,
-			FlowName:    VirtualTaskRootFlowName,
-			ActionName:  string(enumor.VirRoot),
-			State:       enumor.TaskSuccess,
-			TimeoutSecs: VirtualTaskRootTimeoutSecs,
-			DependOn:    []string{},
-		},
+		TaskID: VirtualTaskRootID,
+		State:  enumor.TaskSuccess,
 	}
 
 	m, err := buildTaskNodeMap(tasks)
@@ -261,7 +250,7 @@ func BuildTaskRoot(tasks []task.Task) (*TaskNode, error) {
 
 	for _, task := range tasks {
 		if len(task.DependOn) == 0 {
-			n := m[task.ID]
+			n := m[task.ActionID]
 			n.AppendParent(root)
 			root.children = append(root.children, n)
 		}
@@ -272,8 +261,8 @@ func BuildTaskRoot(tasks []task.Task) (*TaskNode, error) {
 				if !ok {
 					return nil, fmt.Errorf("does not find task[%s] depend: %s", task.ID, dependId)
 				}
-				parent.AppendChild(m[task.ID])
-				m[task.ID].AppendParent(parent)
+				parent.AppendChild(m[task.ActionID])
+				m[task.ActionID].AppendParent(parent)
 			}
 		}
 	}
@@ -283,20 +272,20 @@ func BuildTaskRoot(tasks []task.Task) (*TaskNode, error) {
 	}
 
 	if cycleStart := root.HasCycle(); cycleStart != nil {
-		return nil, fmt.Errorf("has cycle at: %s", cycleStart.Task.ID)
+		return nil, fmt.Errorf("has cycle at: %s", cycleStart.TaskID)
 	}
 
 	return root, nil
 }
 
-func buildTaskNodeMap(tasks []task.Task) (map[string]*TaskNode, error) {
+func buildTaskNodeMap(tasks []*Task) (map[string]*TaskNode, error) {
 	m := map[string]*TaskNode{}
 
 	for i := range tasks {
-		if _, ok := m[tasks[i].ID]; ok {
-			return nil, fmt.Errorf("task id is repeat, id: %s", tasks[i].ID)
+		if _, ok := m[tasks[i].ActionID]; ok {
+			return nil, fmt.Errorf("task actionID is repeat, actionID: %s", tasks[i].ActionID)
 		}
-		m[tasks[i].ID] = NewTaskNode(&tasks[i])
+		m[tasks[i].ActionID] = NewTaskNode(tasks[i])
 	}
 
 	return m, nil
@@ -309,7 +298,7 @@ func walkNode(root *TaskNode, walkFunc func(node *TaskNode) bool) {
 // dfsWalk 从某个节点进行深度优先遍历并依次遍历它的子节点
 // Note: walkFunc
 func dfsWalk(root *TaskNode, walkFunc func(node *TaskNode) (isGoing bool)) (stop bool) {
-	if root.Task.ID != VirtualTaskRootID {
+	if root.TaskID != VirtualTaskRootID {
 		if !walkFunc(root) {
 			return false
 		}

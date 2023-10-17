@@ -19,74 +19,61 @@
 
 package consumer
 
-import (
-	"time"
+import "hcm/pkg/criteria/validator"
 
-	"hcm/pkg/criteria/validator"
-)
-
-type options struct {
-	// normalIntervalSec default 10s
-	normalIntervalSec time.Duration
-	// executorWorkersCnt default 10
-	executorWorkersCnt int
-	// parserWorkersCnt default 5
-	parserWorkersCnt int
-	// flowScheduleTimeoutSec default 15s
-	flowScheduleTimeoutSec time.Duration
+// Option defines consumer run option.
+type Option struct {
+	Scheduler  *SchedulerOption  `json:"scheduler" validate:"required"`
+	Executor   *ExecutorOption   `json:"executor" validate:"required"`
+	Dispatcher *DispatcherOption `json:"dispatcher" validate:"required"`
+	WatchDog   *WatchDogOption   `json:"watch_dog" validate:"required"`
 }
 
-// tryDefaultValue 设置默认值。
-func (opt *options) tryDefaultValue() {
-	if opt.normalIntervalSec == 0 {
-		opt.normalIntervalSec = 10 * time.Second
-	}
-
-	if opt.executorWorkersCnt == 0 {
-		opt.executorWorkersCnt = 10
-	}
-
-	if opt.parserWorkersCnt == 0 {
-		opt.parserWorkersCnt = 5
-	}
-
-	if opt.flowScheduleTimeoutSec == 0 {
-		opt.flowScheduleTimeoutSec = 15 * time.Second
-	}
-}
-
-// Validate define options.
-func (opt *options) Validate() error {
+// Validate Option
+func (opt Option) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
-// Option orm option func defines.
-type Option func(opt *options)
-
-// NormalIntervalSec set normal interval sec.
-func NormalIntervalSec(sec int) Option {
-	return func(opt *options) {
-		opt.normalIntervalSec = time.Duration(sec) * time.Second
-	}
+// SchedulerOption 公共组件，负责获取分配给当前节点的任务流，并解析成任务树后，派发当前要执行的任务给executor执行
+type SchedulerOption struct {
+	WatchIntervalSec uint `json:"watch_interval_sec" validate:"required"`
+	WorkerNumber     uint `json:"worker_number" validate:"required"`
 }
 
-// FlowScheduleTimeoutSec set flow schedule timeout.
-func FlowScheduleTimeoutSec(sec int) Option {
-	return func(opt *options) {
-		opt.flowScheduleTimeoutSec = time.Duration(sec) * time.Second
-	}
+// Validate SchedulerOption.
+func (opt SchedulerOption) Validate() error {
+	return validator.Validate.Struct(opt)
 }
 
-// ExecutorWorkersCnt set executor worker sec.
-func ExecutorWorkersCnt(cnt int) Option {
-	return func(opt *options) {
-		opt.executorWorkersCnt = cnt
-	}
+// ExecutorOption 公共组件，负责执行异步任务
+type ExecutorOption struct {
+	WorkerNumber       uint `json:"worker_number" validate:"required"`
+	TaskExecTimeoutSec uint `json:"task_exec_timeout_sec" validate:"required"`
 }
 
-// ParserWorkersCnt set parser worker sec.
-func ParserWorkersCnt(cnt int) Option {
-	return func(opt *options) {
-		opt.parserWorkersCnt = cnt
-	}
+// Validate ExecutorOption
+func (opt ExecutorOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// DispatcherOption 主节点组件，负责派发任务
+type DispatcherOption struct {
+	WatchIntervalSec uint `json:"watch_interval_sec" validate:"required"`
+}
+
+// Validate DispatcherOption
+func (opt DispatcherOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// WatchDogOption 主节点组件，负责异常任务修正（超时任务，任务处理节点已经挂掉的任务等）
+type WatchDogOption struct {
+	WatchIntervalSec    uint `json:"watch_interval_sec" validate:"required"`
+	TaskRunTimeoutSec   uint `json:"task_run_timeout_sec" validate:"required"`
+	ShutdownWaitTimeSec uint `json:"shutdown_wait_time_sec" validate:"required"`
+}
+
+// Validate WatchDogOption
+func (opt WatchDogOption) Validate() error {
+	return validator.Validate.Struct(opt)
 }

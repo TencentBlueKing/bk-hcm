@@ -52,7 +52,7 @@ func BizValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 	authRes := make([]meta.ResourceAttribute, 0, total)
 	notMatchedIDs, recycledIDs, notRecycledIDS := make([]string, 0), make([]string, 0, total), make([]string, 0, total)
 	for id, info := range opt.BasicInfos {
-		if info.BkBizID != bizID {
+		if info.BkBizID != 0 && bizID != 0 && info.BkBizID != bizID {
 			notMatchedIDs = append(notMatchedIDs, id)
 		}
 		if info.RecycleStatus == enumor.RecycleStatus {
@@ -70,9 +70,9 @@ func BizValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 	}
 
 	// 恢复或删除已回收资源, 要求资源必须在已回收状态下
-	if opt.Action == meta.DeleteRecycled || opt.Action == meta.Recover {
+	if opt.Action == meta.Destroy || opt.Action == meta.Recover {
 		if len(notRecycledIDS) > 0 {
-			return errf.Newf(errf.InvalidParameter, "resources(ids: %+v) are not in recycle bin", recycledIDs)
+			return errf.Newf(errf.InvalidParameter, "resources(ids: %+v) are not in recycle bin", notRecycledIDS)
 		}
 	} else {
 		// 其他操作要求资源不能在回收状态下

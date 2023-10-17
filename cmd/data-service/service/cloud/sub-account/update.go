@@ -54,7 +54,6 @@ func (svc *service) BatchUpdateSubAccount(cts *rest.Contexts) (interface{}, erro
 				Managers:    item.Managers,
 				BkBizIDs:    item.BkBizIDs,
 				Memo:        item.Memo,
-				Creator:     cts.Kit.User,
 				Reviser:     cts.Kit.User,
 			}
 

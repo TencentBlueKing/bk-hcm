@@ -17,25 +17,16 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package enumor
+package test
 
-import "fmt"
+import "hcm/pkg/async/action"
 
-// TplName is tpl name.
-type TplName string
+func init() {
+	action.RegisterAction(CreateFactory{})
+	action.RegisterAction(Produce{})
+	action.RegisterAction(Assemble{})
+	action.RegisterAction(Sleep{})
 
-// Validate TplName.
-func (v TplName) Validate() error {
-	switch v {
-	case TplFirstTest:
-	default:
-		return fmt.Errorf("unsupported tpl: %s", v)
-	}
-
-	return nil
+	action.RegisterTpl(NormalTpl)
+	action.RegisterTpl(SleepTpl)
 }
-
-const (
-	// TplFirstTest first test tpl
-	TplFirstTest TplName = "first_test"
-)

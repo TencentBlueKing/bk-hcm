@@ -36,4 +36,6 @@ const (
 	AccountBillConfigFailed WarnSign = "account_bill_config_failed"
 	// RecycleUpdateRecordFailed 后台回收任务过程中更新记录失败
 	RecycleUpdateRecordFailed WarnSign = "recycle_update_record_failed"
+	// AsyncTaskWarnSign 异步任务框架执行异常告警
+	AsyncTaskWarnSign = "async_task_exec_exception"
 )

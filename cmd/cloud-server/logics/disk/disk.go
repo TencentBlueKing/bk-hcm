@@ -26,6 +26,7 @@ import (
 	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/pkg/api/cloud-server/recycle"
 	"hcm/pkg/api/core"
+	recyclerecord "hcm/pkg/api/core/recycle-record"
 	protoaudit "hcm/pkg/api/data-service/audit"
 	"hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service/disk"
@@ -48,9 +49,9 @@ type Interface interface {
 	DeleteDisk(kt *kit.Kit, vendor enumor.Vendor, diskID string) error
 	DeleteRecycledDisk(kt *kit.Kit, infoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateResult, error)
 
-	BatchGetDiskInfo(kt *kit.Kit, cvmDetail map[string]*recycle.CvmRecycleDetail) (err error)
-	BatchDetach(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmRecycleDetail) (failed []string, err error)
-	BatchReattachDisk(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmRecycleDetail) (err error)
+	BatchGetDiskInfo(kt *kit.Kit, cvmDetail map[string]*recycle.CvmDetail) (err error)
+	BatchDetach(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmDetail) (failed []string, err error)
+	BatchReattachDisk(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmDetail) (err error)
 }
 type disk struct {
 	client *client.ClientSet
@@ -155,7 +156,7 @@ func (d *disk) DeleteRecycledDisk(kt *kit.Kit, basicInfoMap map[string]types.Clo
 		Filter: tools.ContainersExpression("disk_id", ids),
 		Page:   &core.BasePage{Count: true},
 	}
-	relRes, err := d.client.DataService().Global.ListDiskCvmRel(kt.Ctx, kt.Header(), relReq)
+	relRes, err := d.client.DataService().Global.ListDiskCvmRel(kt, relReq)
 	if err != nil {
 		return nil, err
 	}
@@ -181,10 +182,10 @@ func (d *disk) DeleteRecycledDisk(kt *kit.Kit, basicInfoMap map[string]types.Clo
 	return nil, nil
 }
 
-func (d *disk) fillAwsDisks(kt *kit.Kit, cvmDetails []*recycle.CvmRecycleDetail) error {
+func (d *disk) fillAwsDisks(kt *kit.Kit, cvmDetails []*recycle.CvmDetail) error {
 
-	cvmDiskMap := map[string][]*recycle.DiskAttachInfo{}
-	cvmIds := slice.Map(cvmDetails, func(info *recycle.CvmRecycleDetail) string { return info.CvmID })
+	cvmDiskMap := map[string][]recyclerecord.DiskAttachInfo{}
+	cvmIds := slice.Map(cvmDetails, func(info *recycle.CvmDetail) string { return info.CvmID })
 	relWithCvm, err := d.client.DataService().Aws.ListDiskCvmRelWithDisk(
 		kt.Ctx, kt.Header(), &cloud.DiskCvmRelWithDiskListReq{CvmIDs: cvmIds})
 
@@ -197,7 +198,10 @@ func (d *disk) fillAwsDisks(kt *kit.Kit, cvmDetails []*recycle.CvmRecycleDetail)
 			return errf.Newf(errf.Unknown, "[Aws] no attachment found in cvm related disk, err: %v, cvmId: %v, rid:%s",
 				err, rel.CvmID, kt.Rid)
 		}
-		cvmDiskMap[rel.CvmID] = append(cvmDiskMap[rel.CvmID], &recycle.DiskAttachInfo{
+		if rel.IsSystemDisk {
+			continue
+		}
+		cvmDiskMap[rel.CvmID] = append(cvmDiskMap[rel.CvmID], recyclerecord.DiskAttachInfo{
 			DiskID:     rel.DiskExtResult.ID,
 			DeviceName: converter.PtrToVal(rel.Extension.Attachment[0].DeviceName),
 		})
@@ -210,10 +214,10 @@ func (d *disk) fillAwsDisks(kt *kit.Kit, cvmDetails []*recycle.CvmRecycleDetail)
 	return nil
 }
 
-func (d *disk) fillAzureDisk(kt *kit.Kit, cvmDetails []*recycle.CvmRecycleDetail) error {
+func (d *disk) fillAzureDisk(kt *kit.Kit, cvmDetails []*recycle.CvmDetail) error {
 
-	cvmDiskMap := map[string][]*recycle.DiskAttachInfo{}
-	cvmIds := slice.Map(cvmDetails, func(info *recycle.CvmRecycleDetail) string { return info.CvmID })
+	cvmDiskMap := map[string][]recyclerecord.DiskAttachInfo{}
+	cvmIds := slice.Map(cvmDetails, func(info *recycle.CvmDetail) string { return info.CvmID })
 
 	relWithCvm, err := d.client.DataService().Azure.ListDiskCvmRelWithDisk(kt.Ctx, kt.Header(),
 		&cloud.DiskCvmRelWithDiskListReq{CvmIDs: cvmIds})
@@ -223,7 +227,10 @@ func (d *disk) fillAzureDisk(kt *kit.Kit, cvmDetails []*recycle.CvmRecycleDetail
 		return err
 	}
 	for _, rel := range relWithCvm {
-		cvmDiskMap[rel.CvmID] = append(cvmDiskMap[rel.CvmID], &recycle.DiskAttachInfo{
+		if rel.IsSystemDisk {
+			continue
+		}
+		cvmDiskMap[rel.CvmID] = append(cvmDiskMap[rel.CvmID], recyclerecord.DiskAttachInfo{
 			DiskID: rel.DiskExtResult.ID,
 			// TODO:!!! 没有保存caching type，难以重新attach，暂时先按None恢复,-> 在vm 属性的storageProfile里面
 			CachingType: "None",
@@ -237,10 +244,10 @@ func (d *disk) fillAzureDisk(kt *kit.Kit, cvmDetails []*recycle.CvmRecycleDetail
 	return nil
 }
 
-func (d *disk) fillDisk(kt *kit.Kit, vendor enumor.Vendor, cvmDetails []*recycle.CvmRecycleDetail) error {
+func (d *disk) fillDisk(kt *kit.Kit, vendor enumor.Vendor, cvmDetails []*recycle.CvmDetail) error {
 
-	cvmDiskMap := map[string][]*recycle.DiskAttachInfo{}
-	cvmIds := slice.Map(cvmDetails, func(info *recycle.CvmRecycleDetail) string { return info.CvmID })
+	cvmDiskMap := map[string][]recyclerecord.DiskAttachInfo{}
+	cvmIds := slice.Map(cvmDetails, func(info *recycle.CvmDetail) string { return info.CvmID })
 
 	relWithCvm, err := d.client.DataService().Global.ListDiskCvmRelWithDisk(kt.Ctx, kt.Header(),
 		&cloud.DiskCvmRelWithDiskListReq{CvmIDs: cvmIds})
@@ -252,7 +259,10 @@ func (d *disk) fillDisk(kt *kit.Kit, vendor enumor.Vendor, cvmDetails []*recycle
 	}
 
 	for _, rel := range relWithCvm {
-		cvmDiskMap[rel.CvmID] = append(cvmDiskMap[rel.CvmID], &recycle.DiskAttachInfo{DiskID: rel.DiskResult.ID})
+		if rel.IsSystemDisk {
+			continue
+		}
+		cvmDiskMap[rel.CvmID] = append(cvmDiskMap[rel.CvmID], recyclerecord.DiskAttachInfo{DiskID: rel.DiskResult.ID})
 	}
 
 	for _, cvmDetail := range cvmDetails {
@@ -264,7 +274,7 @@ func (d *disk) fillDisk(kt *kit.Kit, vendor enumor.Vendor, cvmDetails []*recycle
 }
 
 // BatchGetDiskInfo 获取并填充磁盘信息
-func (d *disk) BatchGetDiskInfo(kt *kit.Kit, cvmDetail map[string]*recycle.CvmRecycleDetail) (err error) {
+func (d *disk) BatchGetDiskInfo(kt *kit.Kit, cvmDetail map[string]*recycle.CvmDetail) (err error) {
 
 	if len(cvmDetail) == 0 {
 		return nil
@@ -273,8 +283,7 @@ func (d *disk) BatchGetDiskInfo(kt *kit.Kit, cvmDetail map[string]*recycle.CvmRe
 		return errf.Newf(errf.InvalidParameter, "cvmIDs should <= %d", constant.BatchOperationMaxLimit)
 	}
 
-	infoByVendor := classifier.ClassifyMap(cvmDetail,
-		func(v *recycle.CvmRecycleDetail) enumor.Vendor { return v.Vendor })
+	infoByVendor := classifier.ClassifyMap(cvmDetail, func(v *recycle.CvmDetail) enumor.Vendor { return v.Vendor })
 	// Aws 和Azure 参数不一样，需要通过with ext 获取特定参数
 	for vendor, infos := range infoByVendor {
 
@@ -299,7 +308,7 @@ func (d *disk) BatchGetDiskInfo(kt *kit.Kit, cvmDetail map[string]*recycle.CvmRe
 }
 
 // BatchDetach  批量解绑，返回的失败cvm, 用户自行决定是否回滚
-func (d *disk) BatchDetach(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmRecycleDetail) (failed []string,
+func (d *disk) BatchDetach(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmDetail) (failed []string,
 	err error) {
 
 	kt = kt.NewSubKit()
@@ -325,7 +334,7 @@ func (d *disk) BatchDetach(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmRec
 }
 
 // BatchReattachDisk 批量重新挂载磁盘, 仅处理磁盘卸载没有失败的磁盘
-func (d *disk) BatchReattachDisk(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmRecycleDetail) (err error) {
+func (d *disk) BatchReattachDisk(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmDetail) (err error) {
 	for cvmId, detail := range cvmRecycleMap {
 
 		for _, disk := range detail.DiskList {

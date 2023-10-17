@@ -94,6 +94,8 @@ func genIaaSResourceResource(a *meta.ResourceAttribute) (client.ActionID, []clie
 	case meta.Delete, meta.Recycle:
 		// delete resource is related to hcm account resource
 		return sys.IaaSResDelete, []client.Resource{res}, nil
+	case meta.Destroy, meta.Recover:
+		return sys.RecycleBinOperate, []client.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
@@ -120,6 +122,8 @@ func genBizIaaSResResource(a *meta.ResourceAttribute) (client.ActionID, []client
 		return sys.BizIaaSResOperate, []client.Resource{res}, nil
 	case meta.Delete, meta.Recycle:
 		return sys.BizIaaSResDelete, []client.Resource{res}, nil
+	case meta.Destroy, meta.Recover:
+		return sys.BizRecycleBinOperate, []client.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
@@ -350,7 +354,20 @@ func genCvmResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resour
 }
 
 func genSubAccountResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	return genIaaSResourceResource(a)
+	res := client.Resource{
+		System: sys.SystemIDHCM,
+		Type:   sys.Account,
+		ID:     a.ResourceID,
+	}
+
+	switch a.Basic.Action {
+	case meta.Find:
+		return sys.AccountFind, []client.Resource{res}, nil
+	case meta.Update:
+		return sys.SubAccountEdit, []client.Resource{res}, nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
 }
 
 // genRouteTableResource generate route table's related iam resource.

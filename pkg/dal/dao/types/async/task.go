@@ -20,6 +20,8 @@
 package typesasync
 
 import (
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/validator"
 	tableasync "hcm/pkg/dal/table/async"
 )
 
@@ -27,4 +29,17 @@ import (
 type ListAsyncFlowTasks struct {
 	Count   uint64                          `json:"count,omitempty"`
 	Details []tableasync.AsyncFlowTaskTable `json:"details,omitempty"`
+}
+
+// UpdateTaskInfo define update task info.
+type UpdateTaskInfo struct {
+	ID     string             `json:"id" validate:"required"`
+	Source enumor.TaskState   `json:"source" validate:"required"`
+	Target enumor.TaskState   `json:"target" validate:"required"`
+	Reason *tableasync.Reason `json:"reason,omitempty"`
+}
+
+// Validate UpdateTaskInfo.
+func (info *UpdateTaskInfo) Validate() error {
+	return validator.Validate.Struct(info)
 }

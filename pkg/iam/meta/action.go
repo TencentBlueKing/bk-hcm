@@ -37,8 +37,6 @@ const (
 	UpdateRRT Action = "update_rrt"
 	// Delete operation's hcm auth action type
 	Delete Action = "delete"
-	// DeleteRecycled 删除回收站中的资源
-	DeleteRecycled Action = "delete_recycled"
 	// Find operation's hcm auth action type
 	Find Action = "find"
 	// KeyAccess access secret key operation's hcm auth action type
@@ -47,6 +45,8 @@ const (
 	Assign Action = "assign"
 	// Recycle cloud resource from biz operation's hcm auth action type
 	Recycle Action = "recycle"
+	// Destroy 删除回收站中的资源
+	Destroy Action = "destroy"
 	// Recover cloud resource from recycle bin operation's hcm auth action type
 	Recover Action = "recover"
 	// SkipAction means the operation do not need to do authentication, skip auth

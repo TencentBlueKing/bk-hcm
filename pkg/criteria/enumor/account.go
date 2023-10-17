@@ -80,3 +80,28 @@ const (
 	// TODO: 同步时候考虑未同步时使用什么名称
 	NotStart = "not_start"
 )
+
+var (
+	// VendorMainAccountIDFieldMap 不同云厂商对应的主账号属性名
+	// 若修改主账号标识，需要在Account DAO的List接口处同步修改、添加主账号标识字段
+	VendorMainAccountIDFieldMap = map[Vendor]string{
+		TCloud: "cloud_main_account_id",
+		Aws:    "cloud_account_id",
+		HuaWei: "cloud_sub_account_id",
+		Gcp:    "cloud_project_id",
+		Azure:  "cloud_subscription_id",
+	}
+
+	// AccountTypeNameMap 账号类型和对应中文名
+	AccountTypeNameMap = map[AccountType]string{
+		RegistrationAccount:  "登记账号",
+		ResourceAccount:      "资源账号",
+		SecurityAuditAccount: "安全审计账号",
+	}
+
+	// AccountSiteTypeNameMap 站点类型中文名
+	AccountSiteTypeNameMap = map[AccountSiteType]string{
+		InternationalSite: "国际站",
+		ChinaSite:         "中国站",
+	}
+)

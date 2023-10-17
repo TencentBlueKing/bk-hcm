@@ -326,7 +326,7 @@ func (cli *client) listSubAccountFromDB(kt *kit.Kit, opt *SyncSubAccountOption) 
 	results := make([]coresubaccount.SubAccount[coresubaccount.AwsExtension], 0)
 	for {
 		req.Page.Start = start
-		resp, err := cli.dbCli.Aws.SubAccount.ListExt(kt.Ctx, kt.Header(), req)
+		resp, err := cli.dbCli.Aws.SubAccount.ListExt(kt, req)
 		if err != nil {
 			logs.Errorf("[%s] list sub account from db failed, err: %v, account: %s, req: %v, rid: %s",
 				enumor.Aws, err, opt.AccountID, req, kt.Rid)

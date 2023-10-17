@@ -41,7 +41,7 @@ BlueKing Hybrid Cloud Management Platform (BK-HCM), under the Blue King ecosyste
 
 ## Roadmap
 
-* [Changelog (In Chinese)](docs/support-file/changelog/release.md)
+* [Changelog](docs/support-file/changelog/en)
 
 ## Support
 

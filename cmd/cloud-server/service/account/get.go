@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
@@ -107,61 +108,128 @@ func (a *accountSvc) GetAccountBySecret(cts *rest.Contexts) (interface{}, error)
 	// 3. 根据vendor处理具体内容
 	switch vendor {
 	case enumor.TCloud:
-		//	3.1 解析请求与参数校验
-		req := new(cloud.TCloudSecret)
-		if err := cts.DecodeInto(req); err != nil {
-			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-		}
-		if err := req.Validate(); err != nil {
-			return nil, errf.NewFromErr(errf.InvalidParameter, err)
-		}
-		// 3.2 到hc-service 获取对应字段
-		return a.client.HCService().TCloud.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req)
-
+		return a.getAndCheckTCloudAccountInfo(cts)
 	case enumor.Aws:
-		req := new(cloud.AwsSecret)
-		if err := cts.DecodeInto(req); err != nil {
-			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-		}
-		if err := req.Validate(); err != nil {
-			return nil, errf.NewFromErr(errf.InvalidParameter, err)
-		}
-		// 3.2 到hc-service 获取对应字段
-		return a.client.HCService().Aws.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req)
+		return a.getAndCheckAwsAccountInfo(cts)
 	case enumor.Azure:
-		req := new(cloud.AzureSecret)
-		if err := cts.DecodeInto(req); err != nil {
-			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-		}
-		if err := req.Validate(); err != nil {
-			return nil, errf.NewFromErr(errf.InvalidParameter, err)
-		}
-		// 3.2 到hc-service 获取对应字段
-		return a.client.HCService().Azure.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req)
+		return a.getAndCheckAzureAccountInfo(cts)
 	case enumor.Gcp:
-		req := new(cloud.GcpSecret)
-		if err := cts.DecodeInto(req); err != nil {
-			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-		}
-		if err := req.Validate(); err != nil {
-			return nil, errf.NewFromErr(errf.InvalidParameter, err)
-		}
-		// 到hc-service 获取对应字段
-		return a.client.HCService().Gcp.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req)
+		return a.getAndCheckGcpAccountInfo(cts)
 	case enumor.HuaWei:
-		req := new(cloud.HuaWeiSecret)
-		if err := cts.DecodeInto(req); err != nil {
-			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-		}
-		if err := req.Validate(); err != nil {
-			return nil, errf.NewFromErr(errf.InvalidParameter, err)
-		}
-		// 到hc-service 获取对应字段
-		return a.client.HCService().HuaWei.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req)
-
+		return a.getAndCheckHuaWeiAccountInfo(cts)
 	}
 
 	return nil, nil
+}
+
+func (a *accountSvc) getAndCheckTCloudAccountInfo(cts *rest.Contexts) (*cloud.TCloudInfoBySecret, error) {
+	req := new(cloud.TCloudSecret)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	info, err := a.client.HCService().TCloud.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req)
+	if err != nil {
+		logs.Errorf("fail to get account info, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if err = CheckDuplicateMainAccount(cts, a.client, enumor.TCloud, enumor.ResourceAccount,
+		info.CloudMainAccountID); err != nil {
+		logs.Errorf("check whether main account duplicate fail, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return info, nil
+}
+
+func (a *accountSvc) getAndCheckAwsAccountInfo(cts *rest.Contexts) (*cloud.AwsInfoBySecret, error) {
+	req := new(cloud.AwsSecret)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	info, err := a.client.HCService().Aws.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req)
+	if err != nil {
+		logs.Errorf("fail to get account info, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if err = CheckDuplicateMainAccount(cts, a.client, enumor.Aws, enumor.ResourceAccount,
+		info.CloudAccountID); err != nil {
+		logs.Errorf("check whether main account duplicate fail, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return info, nil
+}
+
+func (a *accountSvc) getAndCheckAzureAccountInfo(cts *rest.Contexts) (*cloud.AzureInfoBySecret, error) {
+	req := new(cloud.AzureSecret)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	info, err := a.client.HCService().Azure.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req)
+	if err != nil {
+		logs.Errorf("fail to get account info, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if err = CheckDuplicateMainAccount(cts, a.client, enumor.Azure, enumor.ResourceAccount,
+		info.CloudSubscriptionID); err != nil {
+		logs.Errorf("check whether main account duplicate fail, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return info, nil
+}
+
+func (a *accountSvc) getAndCheckGcpAccountInfo(cts *rest.Contexts) (*cloud.GcpInfoBySecret, error) {
+	req := new(cloud.GcpSecret)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	info, err := a.client.HCService().Gcp.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req)
+	if err != nil {
+		logs.Errorf("fail to get account info, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if err = CheckDuplicateMainAccount(cts, a.client, enumor.Gcp, enumor.ResourceAccount,
+		info.CloudProjectID); err != nil {
+		logs.Errorf("check whether main account duplicate fail, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return info, nil
+}
+
+func (a *accountSvc) getAndCheckHuaWeiAccountInfo(cts *rest.Contexts) (*cloud.HuaWeiInfoBySecret, error) {
+	req := new(cloud.HuaWeiSecret)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	info, err := a.client.HCService().HuaWei.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req)
+	if err != nil {
+		logs.Errorf("fail to get account info, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if err = CheckDuplicateMainAccount(cts, a.client, enumor.HuaWei, enumor.ResourceAccount,
+		info.CloudSubAccountID); err != nil {
+		logs.Errorf("check whether main account duplicate fail, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return info, nil
 }
 
 // GetResCountBySecret 根据秘钥获取账号对应资源数量

@@ -22,10 +22,6 @@ package producer
 
 import (
 	"hcm/cmd/task-server/service/capability"
-	// 触发初始化任务注册
-	_ "hcm/cmd/task-server/service/producer/actions"
-	// 触发初始化任务注册
-	_ "hcm/cmd/task-server/service/producer/actions/test"
 	taskserver "hcm/pkg/api/task-server"
 	"hcm/pkg/async/producer"
 	"hcm/pkg/client"
@@ -42,9 +38,7 @@ func Init(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("AddAsyncTplFlow", "POST", "/async/flows/tpls/add", svc.AddAsyncTplFlow)
-	h.Add("ListAsyncFlow", "POST", "/async/flows/list", svc.ListAsyncFlow)
-	h.Add("GetAsyncFlow", "GET", "/async/flows/{flow_id}", svc.GetAsyncFlow)
+	h.Add("CreateFlow", "POST", "/flows/create", svc.CreateFlow)
 
 	h.Load(cap.WebService)
 }
@@ -54,8 +48,8 @@ type service struct {
 	pro producer.Producer
 }
 
-// AddAsyncTplFlow add async flow
-func (p service) AddAsyncTplFlow(cts *rest.Contexts) (interface{}, error) {
+// CreateFlow add async flow
+func (p service) CreateFlow(cts *rest.Contexts) (interface{}, error) {
 
 	// 1. 解析请求体
 	req := new(taskserver.AddFlowReq)
@@ -68,31 +62,5 @@ func (p service) AddAsyncTplFlow(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// 2. 按照模板添加异步任务流
-	return p.pro.AddAsyncTplFlow(cts.Kit, req)
-}
-
-// ListAsyncFlow list async flow
-func (p service) ListAsyncFlow(cts *rest.Contexts) (interface{}, error) {
-
-	// 1. 解析请求体
-	req := new(taskserver.FlowListReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	// 2. 列出异步任务流
-	return p.pro.ListAsyncFlow(cts.Kit, req)
-}
-
-// GetAsyncFlow get async flow
-func (p service) GetAsyncFlow(cts *rest.Contexts) (interface{}, error) {
-	// 1. 解析url获取flow_id
-	flowID := cts.PathParameter("flow_id").String()
-
-	// 2. 根据flowid获取异步任务流
-	return p.pro.GetAsyncFlow(cts.Kit, flowID)
+	return p.pro.AddFlow(cts.Kit, (*producer.AddFlowOption)(req))
 }

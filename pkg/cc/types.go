@@ -158,31 +158,39 @@ func (lm *Limiter) trySetDefault() {
 
 // Async defines async relating.
 type Async struct {
-	NormalIntervalSec      int `yaml:"normalIntervalSec"`
-	ExecutorWorkerCnt      int `yaml:"executorWorkerCnt"`
-	ParserWorkersCnt       int `yaml:"parserWorkersCnt"`
-	FlowScheduleTimeoutSec int `yaml:"flowScheduleTimeout"`
+	Scheduler  Parser     `yaml:"scheduler"`
+	Executor   Executor   `yaml:"executor"`
+	Dispatcher Dispatcher `yaml:"dispatcher"`
+	WatchDog   WatchDog   `yaml:"watchDog"`
 }
 
-func (a Async) validate() error {
-
-	if a.NormalIntervalSec < 1 {
-		return errors.New("normalIntervalSec must > 1")
-	}
-
-	if a.ExecutorWorkerCnt < 1 {
-		return errors.New("executorWorkerCnt must > 1")
-	}
-
-	if a.ParserWorkersCnt < 1 {
-		return errors.New("parserWorkersCnt must > 1")
-	}
-
-	if a.FlowScheduleTimeoutSec < 1 {
-		return errors.New("flowScheduleTimeout must > 1")
-	}
-
+// Validate Async
+func (a Async) Validate() error {
+	// 这里不进行校验，统一由异步任务框架进行校验
 	return nil
+}
+
+// Parser 公共组件，负责获取分配给当前节点的任务流，并解析成任务树后，派发当前要执行的任务给executor执行
+type Parser struct {
+	WatchIntervalSec uint `yaml:"watchIntervalSec"`
+	WorkerNumber     uint `yaml:"workerNumber"`
+}
+
+// Executor 公共组件，负责执行异步任务
+type Executor struct {
+	WorkerNumber       uint `yaml:"workerNumber"`
+	TaskExecTimeoutSec uint `yaml:"taskExecTimeoutSec"`
+}
+
+// Dispatcher 主节点组件，负责派发任务
+type Dispatcher struct {
+	WatchIntervalSec uint `yaml:"watchIntervalSec"`
+}
+
+// WatchDog 主节点组件，负责异常任务修正（超时任务，任务处理节点已经挂掉的任务等）
+type WatchDog struct {
+	WatchIntervalSec uint `yaml:"watchIntervalSec"`
+	TaskTimeoutSec   uint `yaml:"taskTimeoutSec"`
 }
 
 // DataBase defines database related runtime

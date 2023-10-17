@@ -25,6 +25,7 @@ import (
 
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -77,16 +78,16 @@ func (rc *restClient) ListEipCvmRel(ctx context.Context, h http.Header,
 }
 
 // ListEipCvmRelWithEip ...
-func (rc *restClient) ListEipCvmRelWithEip(ctx context.Context, h http.Header,
+func (rc *restClient) ListEipCvmRelWithEip(kt *kit.Kit,
 	request *dataproto.EipCvmRelWithEipListReq) ([]*dataproto.EipWithCvmID, error) {
 
 	resp := new(dataproto.EipCvmRelWithEipListResp)
 
 	err := rc.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/eip_cvm_rels/with/eips/list").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
