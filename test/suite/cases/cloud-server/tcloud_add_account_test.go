@@ -34,7 +34,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-// TestAddAccount 测试录入账号
+// TestAddAccount 添加测试账号到数据库
 func TestAddAccount(t *testing.T) {
 	cli := suite.GetClientSet()
 	tcloudExt := &protocloud.TCloudAccountExtensionCreateReq{
@@ -43,7 +43,7 @@ func TestAddAccount(t *testing.T) {
 		CloudSecretID:      rand.Prefix("AKID", 32),
 		CloudSecretKey:     rand.Prefix("SEC", 61),
 	}
-	Convey("TCloud account test ", t, func() {
+	Convey("prepare TCloud account test ", t, func() {
 		kt := cases.GenApiKit()
 		addAccountReq := protocloud.AccountCreateReq[protocloud.TCloudAccountExtensionCreateReq]{
 			Name:      "tcloud-test-account",
@@ -54,15 +54,11 @@ func TestAddAccount(t *testing.T) {
 			BkBizIDs:  []int64{constant.SuiteTestBizID},
 			Extension: tcloudExt,
 		}
+		// TODO: test cloud server add account api
 		ret, err := cli.DataService().TCloud.Account.Create(kt.Ctx, kt.Header(), &addAccountReq)
 		So(err, ShouldBeNil)
 		So(ret.ID, ShouldNotBeEmpty)
-		// TODO: adaptor mock全部完成后再同步
-		tcloudAccountID = ret.ID
-		// Convey("TCloudSync", func() {
-		// 	err := cli.CloudServer().Account.Sync(kt, tcloudAccountID)
-		// 	So(err, ShouldBeNil)
-		// })
+		TCloudAccountID = ret.ID
 
 	})
 

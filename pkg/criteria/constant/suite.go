@@ -35,4 +35,4 @@ const (
 const SuiteRegion = "ap-mariana"
 
 // SuiteZone ...
-const SuiteZone = "ap-mariana-6"
+const SuiteZone = "ap-mariana-2"

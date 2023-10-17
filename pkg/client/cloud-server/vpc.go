@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -207,10 +208,8 @@ func (v *VpcClient) DeleteInBiz(kt *kit.Kit, bizID int, vpcID string) error {
 
 // Delete in res
 func (v *VpcClient) Delete(kt *kit.Kit, vpcID string) error {
-	req := &struct{}{}
-	_, err := Request[struct{}, struct{}](v.client, rest.DELETE, kt, req,
-		"/vpcs/%s", vpcID)
-	return err
+
+	return common.RequestNoResp[common.Empty](v.client, rest.DELETE, kt, common.NoData, "/vpcs/%s", vpcID)
 }
 
 // CreateTCloudVpc ...

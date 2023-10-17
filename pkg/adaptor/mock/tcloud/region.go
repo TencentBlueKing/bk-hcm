@@ -20,8 +20,6 @@
 package mocktcloud
 
 import (
-	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
-
 	"hcm/pkg/adaptor/types/region"
 	typeszone "hcm/pkg/adaptor/types/zone"
 	"hcm/pkg/criteria/enumor"
@@ -30,6 +28,7 @@ import (
 	"hcm/pkg/tools/slice"
 	"hcm/pkg/tools/uuid"
 
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 	"go.uber.org/mock/gomock"
 )

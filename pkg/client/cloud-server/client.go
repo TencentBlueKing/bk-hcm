@@ -23,9 +23,6 @@ package cloudserver
 import (
 	"fmt"
 
-	"hcm/pkg/api/core"
-	"hcm/pkg/criteria/errf"
-	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 	"hcm/pkg/rest/client"
 )
@@ -56,30 +53,4 @@ func NewClient(c *client.Capability, version string) *Client {
 		RouteTable:        NewRouteTable(restCli),
 		ApplicationClient: NewApplicationClient(restCli),
 	}
-}
-
-// Request is a general-purpose helper method to reduce redundant code.
-// Type parameter `T` is the type of request type, and `R` is the type of response.
-func Request[T any, R any](cli rest.ClientInterface, method rest.VerbType, kt *kit.Kit, req *T,
-	url string, urlArgs ...any) (*R, error) {
-
-	resp := new(core.BaseResp[*R])
-
-	err := cli.Verb(method).
-		WithContext(kt.Ctx).
-		Body(req).
-		SubResourcef(url, urlArgs...).
-		WithHeaders(kt.Header()).
-		Do().
-		Into(resp)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
 }

@@ -33,16 +33,18 @@ import (
 )
 
 func TestRouteTable(t *testing.T) {
+
 	Convey("test route table", t, func() {
 
 		// 目前无法单独创建路由表， 使用前面创建好的共享路由表
 		cli := suite.GetClientSet()
 		kt := cases.GenApiKit()
+		vpcCloudID := BizVpcCloudID
 
-		So(ResVpcCloudID, ShouldNotBeEmpty)
+		So(vpcCloudID, ShouldNotBeEmpty)
 
 		listReq := &core.ListReq{
-			Filter: tools.EqualExpression("cloud_vpc_id", ResVpcCloudID),
+			Filter: tools.EqualExpression("cloud_vpc_id", vpcCloudID),
 			Page:   &core.BasePage{Limit: 2},
 		}
 

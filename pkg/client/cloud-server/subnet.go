@@ -25,6 +25,7 @@ import (
 
 	proto "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
@@ -208,28 +209,24 @@ func (v *SubnetClient) CreateInBiz(kt *kit.Kit, bizID int64, req *proto.TCloudSu
 
 // Update subnet
 func (v *SubnetClient) Update(kt *kit.Kit, subnetID string, req *proto.SubnetUpdateReq) error {
-	_, err := Request[proto.SubnetUpdateReq, struct{}](v.client, rest.PATCH, kt, req,
+	return common.RequestNoResp[proto.SubnetUpdateReq](v.client, rest.PATCH, kt, req,
 		"/subnets/%s", subnetID)
-	return err
 }
 
 // UpdateInBiz update subnet in biz
 func (v *SubnetClient) UpdateInBiz(kt *kit.Kit, bizID int64, subnetID string, req *proto.SubnetUpdateReq) error {
-	_, err := Request[proto.SubnetUpdateReq, struct{}](v.client, rest.PATCH, kt, req,
+	return common.RequestNoResp[proto.SubnetUpdateReq](v.client, rest.PATCH, kt, req,
 		"/bizs/%d/subnets/%s", bizID, subnetID)
-	return err
 }
 
 // Delete subnet
 func (v *SubnetClient) Delete(kt *kit.Kit, req *proto.BatchDeleteReq) error {
-	_, err := Request[proto.BatchDeleteReq, struct{}](v.client, rest.DELETE, kt, req,
+	return common.RequestNoResp[proto.BatchDeleteReq](v.client, rest.DELETE, kt, req,
 		"/subnets/batch")
-	return err
 }
 
 // DeleteInBiz delete subnet in biz
 func (v *SubnetClient) DeleteInBiz(kt *kit.Kit, bizID int64, req *proto.BatchDeleteReq) error {
-	_, err := Request[proto.BatchDeleteReq, struct{}](v.client, rest.DELETE, kt, req,
+	return common.RequestNoResp[proto.BatchDeleteReq](v.client, rest.DELETE, kt, req,
 		"/bizs/%d/subnets/batch", bizID)
-	return err
 }

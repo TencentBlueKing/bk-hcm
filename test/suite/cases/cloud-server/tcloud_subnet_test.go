@@ -36,19 +36,21 @@ import (
 )
 
 func TestSubnet(t *testing.T) {
-	cli := suite.GetClientSet()
-	kt := cases.GenApiKit()
 
 	Convey("test subnet", t, func() {
 
-		So(ResVpcCloudID, ShouldNotBeEmpty)
+		cli := suite.GetClientSet()
+		kt := cases.GenApiKit()
+		vpcID := BizVpcCloudID
+
+		So(vpcID, ShouldNotBeEmpty)
 
 		var subnetID string
 		createReq := cloudproto.TCloudSubnetCreateReq{
 			BaseSubnetCreateReq: &cloudproto.BaseSubnetCreateReq{
 				Vendor:     enumor.TCloud,
-				AccountID:  tcloudAccountID,
-				CloudVpcID: ResVpcCloudID,
+				AccountID:  TCloudAccountID,
+				CloudVpcID: vpcID,
 				Name:       "tcloud-subnet-abc",
 				Memo:       converter.ValToPtr("memo(create subnet)"),
 			},
@@ -81,7 +83,7 @@ func TestSubnet(t *testing.T) {
 			So(createdSubnet1.BkBizID, ShouldEqual, constant.SuiteTestBizID)
 			So(createdSubnet1.Name, ShouldEqual, createReq.Name)
 			So(createdSubnet1.Ipv4Cidr, ShouldEqual, []string{createReq.IPv4Cidr})
-			So(createdSubnet1.CloudVpcID, ShouldEqual, ResVpcCloudID)
+			So(createdSubnet1.CloudVpcID, ShouldEqual, vpcID)
 			So(createdSubnet1.CloudID, ShouldNotBeEmpty)
 			So(createdSubnet1.Memo, ShouldEqual, createReq.Memo)
 
@@ -104,9 +106,10 @@ func TestSubnet(t *testing.T) {
 					err = cli.CloudServer().Subnet.Delete(kt, &cloudproto.BatchDeleteReq{IDs: []string{subnetID}})
 					So(err, ShouldBeNil)
 					err = cli.HCService().TCloud.RouteTable.SyncRouteTable(kt.Ctx, kt.Header(), &sync.TCloudSyncReq{
-						AccountID: tcloudAccountID,
+						AccountID: TCloudAccountID,
 						Region:    constant.SuiteRegion,
 					})
+					So(err, ShouldBeNil)
 
 					resListResult, err := cli.CloudServer().Subnet.ListInRes(kt, &subnetListReq)
 					So(err, ShouldBeNil)

@@ -31,6 +31,7 @@ import (
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/rand"
 
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
 	"go.uber.org/mock/gomock"
 )
 
@@ -103,7 +104,7 @@ func (v *vpcPlaybook) listVpc(_ *kit.Kit, opt *core.TCloudListOption) (*types.TC
 	}, nil
 }
 
-// createVpc when creating vpc, the subnet and route table will be created
+// createVpc when creating vpc, the default route table will be created
 func (v *vpcPlaybook) createVpc(_ *kit.Kit, opt *types.TCloudVpcCreateOption) (*types.TCloudVpc, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
@@ -123,12 +124,36 @@ func (v *vpcPlaybook) createVpc(_ *kit.Kit, opt *types.TCloudVpcCreateOption) (*
 	}
 	v.vpcStore.Add(cloudVpc.CloudID, cloudVpc)
 
+	// 创建默认路由表
+	routeTable := adtroutetable.TCloudRouteTable{
+		CloudID:    rand.Prefix("rtb-", 8),
+		Name:       "default",
+		CloudVpcID: cloudVpc.CloudID,
+		Region:     cloudVpc.Region,
+		Memo:       converter.ValToPtr("default route table of " + cloudVpc.CloudID),
+		Extension:  &adtroutetable.TCloudRouteTableExtension{Main: true},
+	}
+	v.routeTableStore.Add(routeTable.CloudID, routeTable)
+
 	return &cloudVpc, nil
 }
 
 func (v *vpcPlaybook) deleteVpc(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) error {
 	if err := opt.Validate(); err != nil {
 		return err
+	}
+	if _, exists := v.vpcStore.Get(opt.ResourceID); !exists {
+		return errors.NewTencentCloudSDKError("NotFound", "not found vpc: "+opt.ResourceID, "xxx")
+	}
+	// 删除关联路由表
+	tables := v.routeTableStore.Filter(func(table adtroutetable.TCloudRouteTable) bool {
+		return table.CloudVpcID == opt.ResourceID
+	})
+	for _, table := range tables {
+		err := v.routeTableStore.Remove(table.CloudID)
+		if err != nil {
+			return err
+		}
 	}
 
 	// 删除关联子网

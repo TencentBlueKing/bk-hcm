@@ -61,6 +61,8 @@ type vpcTester struct {
 	createdSubnet     cloud.BaseSubnet
 	createdRouteTable corert.BaseRouteTable
 	vpcCreateReq      csvpc.TCloudVpcCreateReq
+	alreadyInRes      int
+	alreadyInBiz      int
 }
 
 func newVpcTester(accountID, vpcName string) *vpcTester {
@@ -81,16 +83,18 @@ func newVpcTester(accountID, vpcName string) *vpcTester {
 		vpcName:      vpcName,
 		accountID:    accountID,
 		vpcCreateReq: vpcCreateReq,
+		alreadyInRes: 2,
+		alreadyInBiz: 1,
 	}
 }
 
-func (v *vpcTester) listEmptyVpc() {
+func (v *vpcTester) listInitVpc() {
 	kt := v.kt.NewSubKit()
 	listReq := core.ListReq{Page: &core.BasePage{Limit: 500}, Filter: tools.AllExpression()}
 	listResult, err := v.cli.CloudServer().Vpc.ListInRes(kt, &listReq)
 	So(err, ShouldBeNil)
 	So(listResult, ShouldNotBeNil)
-	So(len(listResult.Details), ShouldEqual, 0)
+	So(listResult.Details, ShouldHaveLength, v.alreadyInRes)
 }
 
 func (v *vpcTester) createVpcInRes() {
@@ -113,7 +117,8 @@ func (v *vpcTester) assignVpc() {
 }
 func (v *vpcTester) checkCreatedVpcInBiz() {
 	kt := v.kt.NewSubKit()
-	listReq := core.ListReq{Page: &core.BasePage{Limit: 500}, Filter: tools.AllExpression()}
+
+	listReq := core.ListReq{Page: &core.BasePage{Limit: 500}, Filter: tools.EqualExpression("id", v.createdVpc.ID)}
 	listResult, err := v.cli.CloudServer().Vpc.ListInBiz(kt, constant.SuiteTestBizID, &listReq)
 	So(err, ShouldBeNil)
 	So(listResult, ShouldNotBeNil)
@@ -128,7 +133,7 @@ func (v *vpcTester) checkGeneratedSubnet() {
 	kt := v.kt.NewSubKit()
 
 	// 	查询对应的子网和路由表
-	subnetListReq := core.ListReq{Page: &core.BasePage{Limit: 10}, Filter: tools.AllExpression()}
+	subnetListReq := core.ListReq{Page: &core.BasePage{Limit: 10}}
 	subnetListReq.Filter = &filter.Expression{
 		Op: filter.And,
 		Rules: []filter.RuleFactory{
@@ -145,10 +150,11 @@ func (v *vpcTester) checkGeneratedSubnet() {
 	So(v.createdSubnet.CloudVpcID, ShouldEqual, v.createdVpc.CloudID)
 	So(v.createdSubnet.CloudID, ShouldNotBeEmpty)
 }
+
 func (v *vpcTester) checkGeneratedRouteTable() {
 
 	kt := v.kt.NewSubKit()
-	routeTableListReq := core.ListReq{Page: &core.BasePage{Limit: 500}, Filter: tools.AllExpression()}
+	routeTableListReq := core.ListReq{Page: &core.BasePage{Limit: 10}}
 	routeTableListReq.Filter = &filter.Expression{
 		Op: filter.And,
 		Rules: []filter.RuleFactory{
@@ -190,7 +196,7 @@ func (v *vpcTester) delete() {
 	So(err, ShouldBeNil)
 
 	// 确保vpc 被删除
-	listReq := core.ListReq{Page: &core.BasePage{Limit: 2}, Filter: tools.EqualExpression("id", v.createdVpc.ID)}
+	listReq := core.ListReq{Page: &core.BasePage{Limit: 500}, Filter: tools.EqualExpression("id", v.createdVpc.ID)}
 	bizListResult, err := v.cli.CloudServer().Vpc.ListInRes(kt, &listReq)
 	So(err, ShouldBeNil)
 	So(bizListResult, ShouldNotBeNil)
@@ -222,10 +228,10 @@ func (v *vpcTester) delete() {
 // TestTCloudVPC 测试腾讯云VPC、子网、路由表 相关api, 这三个类资源基本是一起出现，所以一起测试
 func TestTCloudVPC(t *testing.T) {
 
-	tester := newVpcTester(tcloudAccountID, "vpc1")
+	tester := newVpcTester(TCloudAccountID, "vpc1")
 	Convey("VPC test", t, func() {
 		// 1. 列出空vpc
-		Convey("list VPC in res", tester.listEmptyVpc)
+		Convey("list VPC in res", tester.listInitVpc)
 
 		// 2. 创建vpc，同时创建出对应的子网，子网创建会创建对应路由表
 		Convey("create tcloud VPC res", tester.createVpcInRes)
@@ -246,12 +252,14 @@ func TestTCloudVPC(t *testing.T) {
 	})
 
 }
+
+// TestCreateSharedVpc 创建给其他资源测试用的共享vpc，只会创建不会删除
 func TestCreateSharedVpc(t *testing.T) {
-	// 创建给其他资源测试用的共享vpc
+
 	Convey("create shared vpc", t, func() {
 		kt := cases.GenApiKit()
 		cli := suite.GetClientSet()
-		vpcCreateReq := newVpcCreateReq("test-vpc-res", tcloudAccountID, "192.168.1.0/24", "[res] share vpc for test")
+		vpcCreateReq := newVpcCreateReq("test-vpc-res", TCloudAccountID, "192.168.1.0/24", "[res] share vpc for test")
 		created, err := cli.CloudServer().Vpc.CreateTCloudVpc(kt, &vpcCreateReq)
 		So(err, ShouldBeNil)
 		So(created.ID, ShouldNotBeEmpty)
@@ -264,7 +272,7 @@ func TestCreateSharedVpc(t *testing.T) {
 		So(vpc.Details, ShouldHaveLength, 1)
 		ResVpcCloudID = vpc.Details[0].CloudID
 
-		bizVpcCreateReq := newVpcCreateReq("test-vpc-biz", tcloudAccountID, "192.168.2.0/24",
+		bizVpcCreateReq := newVpcCreateReq("test-vpc-biz", TCloudAccountID, "192.168.2.0/24",
 			"[biz] share vpc for test")
 		bizCreated, err := cli.CloudServer().Vpc.CreateTCloudVpc(kt, &bizVpcCreateReq)
 		So(err, ShouldBeNil)
@@ -277,6 +285,14 @@ func TestCreateSharedVpc(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(resVpc.Details, ShouldHaveLength, 1)
 		BizVpcCloudID = resVpc.Details[0].CloudID
+
+		// 分配到业务下
+		vpcAssign := &csvpc.AssignVpcToBizReq{
+			VpcIDs:  []string{BizVpcID},
+			BkBizID: constant.SuiteTestBizID,
+		}
+		err = cli.CloudServer().Vpc.Assign(kt, vpcAssign)
+		So(err, ShouldBeNil)
 
 	})
 }
