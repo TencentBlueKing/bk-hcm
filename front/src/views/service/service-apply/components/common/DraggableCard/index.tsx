@@ -1,4 +1,4 @@
-import { defineComponent, ref } from 'vue';
+import { defineComponent, ref, watch } from 'vue';
 import './index.scss';
 import { AngleDown, AngleUp } from 'bkui-vue/lib/icon';
 
@@ -12,9 +12,17 @@ export default defineComponent({
       required: true,
       type: Number,
     },
+    isAllExpand: {
+      required: true,
+      type: Boolean,
+    },
   },
   setup(props, { slots }) {
-    const isExpand = ref(false);
+    const isExpand = ref(true);
+    watch(
+      () => props.isAllExpand,
+      val => isExpand.value = val,
+    );
     return () => (
       <div class={'draggable-container mb12'}>
         <div class='draggable-card-header'>

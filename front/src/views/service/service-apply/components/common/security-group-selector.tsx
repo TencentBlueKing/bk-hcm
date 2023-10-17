@@ -1,13 +1,15 @@
 import http from '@/http';
 import { computed, defineComponent, PropType, ref, TransitionGroup, watch } from 'vue';
-import { Button, Checkbox, Dialog, Loading, Table } from 'bkui-vue';
-import { VendorEnum } from '@/common/constant';
+import { Button, Checkbox, Dialog, Input, Loading, Table } from 'bkui-vue';
+import { SECURITY_GROUP_RULE_TYPE, VendorEnum } from '@/common/constant';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import './security-group-selector.scss';
 import { EditLine, Plus } from 'bkui-vue/lib/icon';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import DraggableCard from './DraggableCard';
 import { type UseDraggableReturn, VueDraggable } from 'vue-draggable-plus';
+import { BkButtonGroup } from 'bkui-vue/lib/button';
+import { QueryRuleOPEnum } from '@/typings';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -28,19 +30,29 @@ export default defineComponent({
     const loading = ref(false);
     const { isServicePage } = useWhereAmI();
     const isDialogShow = ref(false);
-    const isScrollLoading = ref(false);
+    // const isScrollLoading = ref(false);
     const securityGroupRules = ref([]);
     const securityGroupKVMap = ref(new Map<string, string>());
     const isRulesTableLoading = ref(false);
     const el = ref<UseDraggableReturn>();
+    const selectedSecurityType = ref(SECURITY_GROUP_RULE_TYPE.INGRESS);
 
     const computedDisabled = computed(() => {
       return !(props.accountId && props.vendor && props.region);
     });
 
+    const computedSecurityGroupRules = computed(() => {
+      return securityGroupRules.value.map(({ id, data }) => ({
+        id,
+        data: data.filter(({ type }: any) => type === selectedSecurityType.value),
+      }));
+    });
+
     const securityRulesColumns = useColumns('securityCommon', false, props.vendor).columns;
 
     const selected = ref([]);
+    const searchVal = ref('');
+    const isAllExpand = ref(true);
 
     // const isSelected = computed(() => {
     //   if (selected.value) {
@@ -49,9 +61,9 @@ export default defineComponent({
     //   return false;
     // });
 
-    const handleScrollBottom = () => {
-      isScrollLoading.value = true;
-    };
+    // const handleScrollBottom = () => {
+    //   isScrollLoading.value = true;
+    // };
 
     watch(
       [
@@ -59,6 +71,7 @@ export default defineComponent({
         () => props.accountId,
         () => props.region,
         () => props.vpcId,
+        () => searchVal.value,
       ],
       async ([bizId, accountId, region, vpcId]) => {
         if ((!bizId && isServicePage) || !accountId || !region) {
@@ -79,6 +92,13 @@ export default defineComponent({
             value: region,
           },
         ];
+        if (searchVal.value.length) {
+          rules.push({
+            field: 'name',
+            op: QueryRuleOPEnum.CS,
+            value: searchVal.value,
+          });
+        }
         if (props.vendor === VendorEnum.AWS) {
           rules.push({
             field: 'extension.vpc_id',
@@ -109,6 +129,7 @@ export default defineComponent({
       () => isDialogShow.value,
       (isShow) => {
         if (!isShow) {
+          searchVal.value = '';
           securityGroupRules.value = [];
         }
       },
@@ -180,53 +201,101 @@ export default defineComponent({
           width={1500}>
           <div class={'security-container'}>
             <div class={'fixed-security-list'}>
+              <Input
+                class={'search-input'}
+                placeholder='搜索安全组'
+                type='search'
+                clearable
+                v-model={searchVal.value}/>
               <Loading loading={loading.value}>
-                <Table
-                  border={'none'}
-                  data={list.value}
-                  scrollLoading={isScrollLoading.value}
-                  onScrollBottom={handleScrollBottom}
-                  columns={[{
-                    field: 'name',
-                    label: '',
-                    render: ({ cell, data }: any) => (
-                      <Checkbox label={data.cloud_id} onChange={async (isSelected: boolean) => {
-                        if (isSelected) {
-                          isRulesTableLoading.value = true;
-                          const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${props.vendor}/security_groups/${data.id}/rules/list`, {
-                            filter: {
-                              op: 'and',
-                              rules: [],
-                            },
-                            page: {
-                              count: false,
-                              start: 0,
-                              limit: 500,
-                            },
-                          });
-                          const arr = res.data?.details || [];
-                          securityGroupRules.value.push({
-                            id: data.cloud_id,
-                            data: arr,
-                          });
-                          securityGroupKVMap.value.set(data.cloud_id, data.name);
-                          isRulesTableLoading.value = false;
-                        } else {
-                          securityGroupRules.value = securityGroupRules.value.filter(({ id }) => id !== data.cloud_id);
-                          securityGroupKVMap.value.delete(data.cloud_id);
-                        }
-                      }}>
-                        { cell }
-                      </Checkbox>
-                    ),
-                  }]}
-                />
+                <div>
+                  {
+                    list.value.length
+                      ? list.value.map(item => (
+                      <div class={'security-search-item'}>
+                        <Checkbox
+                          label={'data.cloud_id'}
+                          onChange={async (isSelected: boolean) => {
+                            if (isSelected) {
+                              isRulesTableLoading.value = true;
+                              const res = await http.post(
+                                `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${props.vendor}/security_groups/${item.id}/rules/list`,
+                                {
+                                  filter: {
+                                    op: 'and',
+                                    rules: [],
+                                  },
+                                  page: {
+                                    count: false,
+                                    start: 0,
+                                    limit: 500,
+                                  },
+                                },
+                              );
+                              const arr = res.data?.details || [];
+                              securityGroupRules.value.push({
+                                id: item.cloud_id,
+                                data: arr,
+                              });
+                              securityGroupKVMap.value.set(
+                                item.cloud_id,
+                                item.name,
+                              );
+                              isRulesTableLoading.value = false;
+                            } else {
+                              securityGroupRules.value = securityGroupRules.value.filter(({
+                                id,
+                              }) => id !== item.cloud_id);
+                              securityGroupKVMap.value.delete(item.cloud_id);
+                            }
+                          }}>
+                          {item.name}
+                        </Checkbox>
+                      </div>
+                      ))
+                      : (
+                      <bk-exception
+                        class="exception-wrap-item exception-part"
+                        type="search-empty"
+                        scene="part"
+                        description="搜索为空"
+                      />
+                      )
+                  }
+
+                </div>
               </Loading>
             </div>
             <div class={'security-group-rules-container'}></div>
             <div>
               <Loading loading={isRulesTableLoading.value}>
                 <div class={'security-group-rules-container'}>
+                  <div class={'security-group-rules-btn-group-container'}>
+                    <BkButtonGroup class={'security-group-rules-btn-group'}>
+                      <Button
+                        selected={selectedSecurityType.value === SECURITY_GROUP_RULE_TYPE.EGRESS}
+                        onClick={() => selectedSecurityType.value = SECURITY_GROUP_RULE_TYPE.EGRESS}
+                      >
+                        出站规则
+                      </Button>
+                      <Button
+                        selected={selectedSecurityType.value === SECURITY_GROUP_RULE_TYPE.INGRESS}
+                        onClick={() => selectedSecurityType.value = SECURITY_GROUP_RULE_TYPE.INGRESS}
+                      >
+                        入站规则
+                      </Button>
+                    </BkButtonGroup>
+                    <Button
+                      class={'security-group-rules-expand-btn'}
+                      onClick={() => isAllExpand.value = !isAllExpand.value}
+                    >
+                      {
+                        isAllExpand.value
+                          ? '全部收起'
+                          : '全部展开'
+                      }
+                    </Button>
+                  </div>
                   {/* @ts-ignore */}
                   <VueDraggable
                     ref={el}
@@ -234,24 +303,29 @@ export default defineComponent({
                     animation={200}
                     handle='.draggable-card-header-draggable-btn'
                   >
-                    <TransitionGroup
-                      type="transition"
-                      name="fade"
-                    >
-                      {
-                        securityGroupRules.value.map(({ id, data }, idx) => <div>
-                          <DraggableCard
-                            title={securityGroupKVMap.value.get(id)}
-                            index={idx + 1}
-                          >
-                            <Table
+                    {computedSecurityGroupRules.value.length ? (
+                      <TransitionGroup type='transition' name='fade'>
+                        {computedSecurityGroupRules.value.map(({ id, data }, idx) => (
+                            <DraggableCard
+                              key={idx}
+                              title={securityGroupKVMap.value.get(id)}
+                              index={idx + 1}
+                              isAllExpand={isAllExpand.value}>
+                              <Table
                                 data={data}
                                 columns={securityRulesColumns}
                               />
-                          </DraggableCard>
-                        </div>)
-                      }
-                    </TransitionGroup>
+                            </DraggableCard>
+                        ))}
+                      </TransitionGroup>
+                    ) : (
+                      <bk-exception
+                        class="exception-wrap-item exception-part"
+                        type="empty"
+                        scene="part"
+                        description="没有数据"
+                      />
+                    )}
                   </VueDraggable>
                 </div>
               </Loading>

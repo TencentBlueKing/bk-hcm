@@ -427,3 +427,8 @@ export const RESOURCES_SYNC_STATUS_MAP = {
   sync_failed: '同步失败',
   sync_loading: '同步中',
 };
+
+export enum SECURITY_GROUP_RULE_TYPE {
+  INGRESS = 'ingress',
+  EGRESS = 'egress',
+};

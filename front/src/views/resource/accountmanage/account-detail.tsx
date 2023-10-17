@@ -1,12 +1,18 @@
-import { Form, Dialog, Input, Message, Button } from 'bkui-vue';
+import { Form, Dialog, Input, Message, Button, Alert } from 'bkui-vue';
 import { reactive, defineComponent, ref, onMounted, computed, watch } from 'vue';
-import { ProjectModel, SecretModel, CloudType, AccountType, SiteType } from '@/typings';
+import { ProjectModel, SecretModel, CloudType, SiteType } from '@/typings';
 import { useI18n } from 'vue-i18n';
 import { useAccountStore } from '@/store';
 import { useRoute } from 'vue-router';
 import Loading from '@/components/loading';
 import RenderDetailEdit from '@/components/RenderDetailEdit';
 import './account-detail.scss';
+import MemberSelect from '@/components/MemberSelect';
+import http from '@/http';
+import { useResourceAccountStore } from '@/store/useResourceAccountStore';
+import { ValidateStatus, useSecretExtension } from '../resource-manage/account/createAccount/components/accountForm/useSecretExtension';
+import { VendorEnum } from '@/common/constant';
+const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 const { FormItem } = Form;
 // const { Option } = Select;
 export default defineComponent({
@@ -24,7 +30,7 @@ export default defineComponent({
       id: 1,
       type: '',   // 账号类型
       name: '', // 名称
-      vendor: '', // 云厂商
+      vendor: VendorEnum.TCLOUD, // 云厂商
       account: '',    // 主账号
       subAccountId: '',    // 子账号id
       subAccountName: '',    // 子账号名称
@@ -37,7 +43,16 @@ export default defineComponent({
       extension: {},   // 特殊信息
     };
     const isShowModifyScretDialog = ref(false);
+    const isShowModifyAccountDialog = ref(false);
+    const isAccountDialogLoading = ref(false);
+    const isSecretDialogLoading = ref(false);
     const buttonLoading = ref<boolean>(false);
+    const accountFormModel = reactive({
+      managers: [],
+      memo: '',
+    });
+
+    const resourceAccountStore = useResourceAccountStore();
 
     const initSecretModel: SecretModel = {
       secretId: '',
@@ -50,6 +65,14 @@ export default defineComponent({
       ...initProjectModel,
     });
 
+    const {
+      curExtension,
+      isValidateLoading,
+      handleValidate,
+      isValidateDiasbled,
+      extensionPayload,
+    } = useSecretExtension(projectModel);
+
     const secretModel = reactive<SecretModel>({
       ...initSecretModel,
     });
@@ -59,9 +82,6 @@ export default defineComponent({
     });
 
     const isOrganizationDetail = ref<Boolean>(true);      // 组织架构详情展示
-
-    const dialogForm = reactive({ list: [] });
-
     const getDetail = async () => {
       const { accountId: id } = route.query;
       const res = await accountStore.getAccountDetail(id);
@@ -82,7 +102,6 @@ export default defineComponent({
       projectModel.bizIds = res?.data?.bk_biz_ids;
       requestQueue.value.shift();
       getBusinessList();
-      renderDialogForm(projectModel);
       renderBaseInfoForm(projectModel);
     };
 
@@ -336,142 +355,6 @@ export default defineComponent({
       }
     };
 
-    // 弹窗
-    const renderDialogForm = (data: any) => {
-      switch (data.vendor) {
-        case 'huawei':
-          dialogForm.list = [
-            {
-              label: t('IAM用户ID'),
-              required: true,
-              property: 'iamUserId',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.iamUserId} />,
-            },
-            {
-              label: 'IAM用户名',
-              required: true,
-              property: 'iamUserName',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.iamUserName} />,
-            },
-            {
-              label: 'Secret ID',
-              required: projectModel.type !== 'registration',
-              property: 'secretId',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
-            },
-            {
-              label: 'Secret Key',
-              required: projectModel.type !== 'registration',
-              property: 'secretKey',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
-            },
-          ];
-          break;
-        case 'aws':
-          dialogForm.list = [
-            {
-              label: t('IAM用户名'),
-              required: true,
-              property: 'iamUserName',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.iamUserName} />,
-            },
-            {
-              label: 'Secret ID',
-              required: projectModel.type !== 'registration',
-              property: 'secretId',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
-            },
-            {
-              label: 'Secret Key',
-              required: projectModel.type !== 'registration',
-              property: 'secretKey',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
-            },
-          ];
-          break;
-        case 'gcp':
-          dialogForm.list = [
-            {
-              label: t('服务账号ID'),
-              required: projectModel.type !== 'registration',
-              property: 'accountId',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.accountId} />,
-            },
-            {
-              label: t('服务账号名称'),
-              required: projectModel.type !== 'registration',
-              property: 'accountName',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.accountName} />,
-            },
-            {
-              label: 'Secret ID',
-              required: projectModel.type !== 'registration',
-              property: 'secretId',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
-            },
-            {
-              label: 'Secret Key',
-              required: projectModel.type !== 'registration',
-              property: 'secretKey',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
-            },
-          ];
-          break;
-        case 'azure':
-          dialogForm.list = [
-            {
-              label: t('应用程序(客户端) ID'),
-              required: projectModel.type !== 'registration',
-              property: 'applicationId',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.applicationId} />,
-            },
-            {
-              label: t('应用程序名称'),
-              required: projectModel.type !== 'registration',
-              property: 'applicationName',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.applicationName} />,
-            },
-            {
-              label: t('客户端ID'),
-              required: projectModel.type !== 'registration',
-              property: 'secretId',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
-            },
-            {
-              label: t('客户端密钥'),
-              required: projectModel.type !== 'registration',
-              property: 'secretKey',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
-            },
-          ];
-          break;
-        case 'tcloud':
-          dialogForm.list = [
-            {
-              label: 'Secret ID',
-              required: projectModel.type !== 'registration',
-              property: 'secretId',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
-            },
-            {
-              label: t('子账号ID'),
-              required: true,
-              property: 'subAccountId',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.subAccountId} />,
-            },
-            {
-              label: 'Secret Key',
-              required: projectModel.type !== 'registration',
-              property: 'secretKey',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
-            },
-          ];
-          break;
-        default:
-          break;
-      }
-    };
-
     const check = (val: any): boolean => {
       console.log('check', check);
       return  /^[a-z][a-z-z0-9_-]*$/.test(val);
@@ -530,42 +413,8 @@ export default defineComponent({
     const onConfirm = async () => {
       await formDiaRef.value?.validate();
       buttonLoading.value = true;
-      const extension: any = {
-        cloud_secret_id: secretModel.secretId,
-        cloud_secret_key: secretModel.secretKey,
-      };
-      // 后期拓展
-      switch (projectModel.vendor) {
-        case 'huawei':
-          extension.cloud_iam_username = secretModel.iamUserName;
-          extension.cloud_iam_user_id = secretModel.iamUserId;
-          break;
-        case 'tcloud':
-          extension.cloud_sub_account_id = secretModel.subAccountId;
-          break;
-        case 'aws':
-          extension.cloud_iam_username = secretModel.iamUserName;
-          break;
-        case 'azure':
-          extension.cloud_application_id = secretModel.applicationId;
-          extension.cloud_application_name = secretModel.applicationName;
-          extension.cloud_client_secret_id = secretModel.secretId;
-          extension.cloud_client_secret_key = secretModel.secretKey;
-          delete extension.cloud_secret_id;
-          delete extension.cloud_secret_key;
-          break;
-        case 'gcp':
-          extension.cloud_service_account_id = secretModel.accountId;   // 服务账号ID
-          extension.cloud_service_account_name = secretModel.accountName;   // 服务账号ID
-          extension.cloud_service_secret_id = secretModel.secretId;
-          extension.cloud_service_secret_key = secretModel.secretKey;
-          delete extension.cloud_secret_id;
-          delete extension.cloud_secret_key;
-          break;
-        default:
-          break;
-      }
       try {
+        const extension = extensionPayload.value;
         await accountStore.updateTestAccount({    // 测试连接密钥信息
           id: projectModel.id,
           extension,
@@ -622,31 +471,32 @@ export default defineComponent({
       }
     };
 
-    const handleBizChange = async () => {
-      handleEditStatus(true, 'bizIds');     // 未通过检验前状态为编辑态
-      await formRef.value?.validate();
-      handleEditStatus(false, 'bizIds');   // 通过检验则把状态改为不可编辑态
-      updateFormData('bizIds');    // 更新数据
+    const handleModifyAccount = () => {
+      isShowModifyAccountDialog.value = true;
     };
+
+    const handleModifyAccountSubmit = async () => {
+      isAccountDialogLoading.value = true;
+      await http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${resourceAccountStore.resourceAccount?.id}`, {
+        managers: accountFormModel.managers,
+        memo: accountFormModel.memo,
+      });
+      isAccountDialogLoading.value = false;
+      isShowModifyAccountDialog.value = false;
+      getDetail();
+    };
+
+    // const handleBizChange = async () => {
+    //   handleEditStatus(true, 'bizIds');     // 未通过检验前状态为编辑态
+    //   await formRef.value?.validate();
+    //   handleEditStatus(false, 'bizIds');   // 通过检验则把状态改为不可编辑态
+    //   updateFormData('bizIds');    // 更新数据
+    // };
 
     let formBaseInfo = reactive([
       {
         name: t('基本信息'),
         data: [
-          {
-            label: t('云厂商'),
-            required: false,
-            property: 'vendor',
-            isEdit: false,
-            component: () => <span>{CloudType[projectModel.vendor]}</span>,
-          },
-          {
-            label: t('账号类别'),
-            required: false,
-            property: 'type',
-            isEdit: false,
-            component: () => <span>{AccountType[projectModel.type]}</span>,
-          },
           {
             label: 'ID',
             required: false,
@@ -673,33 +523,11 @@ export default defineComponent({
             },
           },
           {
-            label: t('负责人'),
-            required: true,
-            property: 'managers',
-            isEdit: false,
-            component() {
-              return (
-                <RenderDetailEdit
-                  v-model={projectModel.managers}
-                  fromKey={this.property}
-                  fromType='member'
-                  hideEdit={!!isDetail.value}
-                  isEdit={this.isEdit}
-                  onBlur={handleblur}
-                />
-              );
-            },
-          },
-          {
-            label: t('余额'),
+            label: t('云厂商'),
             required: false,
-            property: 'price',
-            component: () => (
-              <span>
-                {projectModel?.price || '--'}
-                {projectModel.price_unit}
-              </span>
-            ),
+            property: 'vendor',
+            isEdit: false,
+            component: () => <span>{CloudType[projectModel.vendor]}</span>,
           },
           {
             label: t('站点类型'),
@@ -731,6 +559,49 @@ export default defineComponent({
             property: 'updated_at',
             component: () => <span>{projectModel.updated_at}</span>,
           },
+
+
+          // {
+          //   label: t('账号类别'),
+          //   required: false,
+          //   property: 'type',
+          //   isEdit: false,
+          //   component: () => <span>{AccountType[projectModel.type]}</span>,
+          // },
+          // {
+          //   label: t('余额'),
+          //   required: false,
+          //   property: 'price',
+          //   component: () => (
+          //     <span>
+          //       {projectModel?.price || '--'}
+          //       {projectModel.price_unit}
+          //     </span>
+          //   ),
+          // },
+        ],
+      },
+      {
+        name: '账号归属',
+        data: [
+          {
+            label: t('负责人'),
+            required: true,
+            property: 'managers',
+            isEdit: false,
+            component() {
+              return (
+                <RenderDetailEdit
+                  v-model={projectModel.managers}
+                  fromKey={this.property}
+                  fromType='member'
+                  hideEdit={!!isDetail.value}
+                  isEdit={this.isEdit}
+                  onBlur={handleblur}
+                />
+              );
+            },
+          },
           {
             label: t('备注'),
             required: false,
@@ -750,34 +621,29 @@ export default defineComponent({
               );
             },
           },
-        ],
-      },
-      {
-        name: t('业务信息'),
-        data: [
-          {
-            label: t('使用业务'),
-            required: false,
-            property: 'bizIds',
-            isEdit: false,
-            component() {
-              // eslint-disable-next-line max-len
-              // onBlur={handleblur}
-              // onChange={handleBizChange}
-              return (
-                <RenderDetailEdit
-                  v-model={projectModel.bizIds}
-                  fromKey={this.property}
-                  hideEdit={true}
-                  selectData={businessList.list}
-                  fromType='select'
-                  isEdit={this.isEdit}
-                  onChange={handleBizChange}
-                />
-              );
-              // <span>{SiteType[projectModel.bizIds]}</span>
-            },
-          },
+          // {
+          //   label: t('使用业务'),
+          //   required: false,
+          //   property: 'bizIds',
+          //   isEdit: false,
+          //   component() {
+          //     // eslint-disable-next-line max-len
+          //     // onBlur={handleblur}
+          //     // onChange={handleBizChange}
+          //     return (
+          //       <RenderDetailEdit
+          //         v-model={projectModel.bizIds}
+          //         fromKey={this.property}
+          //         hideEdit={true}
+          //         selectData={businessList.list}
+          //         fromType='select'
+          //         isEdit={this.isEdit}
+          //         onChange={handleBizChange}
+          //       />
+          //     );
+          //     // <span>{SiteType[projectModel.bizIds]}</span>
+          //   },
+          // },
         ],
       },
     ]);
@@ -811,14 +677,15 @@ export default defineComponent({
                 <div>
                     <div class="font-bold pb10">
                       {baseItem.name}
-                      {index === 2 && !isDetail.value
-                        ? <span>
+                      {index > 0
+                        ? <span class={'account-detail-edit-icon-font'} onClick={index === 2 ?  handleModifyScret : handleModifyAccount}>
                             {/* <i class={'icon hcm-icon bkhcm-icon-invisible1 pl15 account-edit-icon'}/> */}
-                            <i class={'icon hcm-icon bkhcm-icon-edit pl15 account-edit-icon'}  onClick={handleModifyScret}/>
+                            <i class={'icon bk-icon icon-bianji pl15 account-edit-icon mr6'}/>
+                            编辑
                           </span> : ''}
                     </div>
                     <Form model={projectModel} labelWidth={140} rules={formRules} ref={formRef}>
-                        <div class="flex-row align-items-center flex-wrap">
+                        <div class={index === 2 ? 'flex-row align-items-center flex-wrap' : null}>
                             {baseItem.data.map(formItem => (
                                 <FormItem class="formItem-cls info-value" label={formItem.label} required={formItem.required} property={formItem.property}>
                                     {formItem.component()}
@@ -834,22 +701,76 @@ export default defineComponent({
           <Dialog
             v-model:isShow={isShowModifyScretDialog.value}
             width={680}
-            title={t('密钥信息')}
-            dialogType={'show'}
+            title={'编辑API密钥'}
             onClosed={onClosed}
+            onConfirm={onConfirm}
+            isLoading={isSecretDialogLoading.value}
+            theme='primary'
           >
-            <Form labelWidth={130} model={secretModel} ref={formDiaRef}>
-            {dialogForm.list.map(formItem => (
-                <FormItem label={formItem.label} required={formItem.required} property={formItem.property}>
-                    {formItem.component()}
-                </FormItem>
-            ))
-            }
+            {{
+              default: () => (
+                <>
+                  <Alert
+                    class={'mb12'}
+                    theme='info'
+                    title='更新的API密钥必须属于同一个主账号ID'
+                  />
+                  <Form labelWidth={130} model={secretModel} ref={formDiaRef} formType='vertical'>
+                    {
+                      [curExtension.value.output1, curExtension.value.output2].map(output => (
+                        Object.entries(output).map(([property, { label }]) => (
+                          <FormItem label={label} property={property}>
+                            <Input v-model={output[property].value} disabled/>
+                          </FormItem>
+                        ))
+                      ))
+                    }
+                    {
+                      Object.entries(curExtension.value.input).map(([property, { label }]) => (
+                        <FormItem label={label} property={property}>
+                          <Input v-model={curExtension.value.input[property].value} type={
+                            property === 'cloud_service_secret_key' && projectModel.vendor === VendorEnum.GCP
+                              ? 'textarea'
+                              : 'text'
+                            }
+                            rows={8}
+                          />
+                        </FormItem>
+                      ))
+                    }
+                  </Form>
+                </>
+              ),
+              footer: () => (
+                <div class={'validate-btn-container'}>
+                  <Button theme='primary' class={'validate-btn'} loading={isValidateLoading.value} onClick={() => handleValidate()} disabled={isValidateDiasbled.value}>账号校验</Button>
+                  <Button theme="primary" disabled={isValidateDiasbled.value || curExtension.value.validatedStatus !== ValidateStatus.YES} loading={buttonLoading.value} onClick={onConfirm}>{t('确认')}</Button>
+                  <Button class="ml10" onClick={onClosed}>{t('取消')}</Button>
+                </div>
+              ),
+            }}
+          </Dialog>
+
+          <Dialog
+            isShow={isShowModifyAccountDialog.value}
+            width={680}
+            title={'编辑账号'}
+            isLoading={isAccountDialogLoading.value}
+            onConfirm={handleModifyAccountSubmit}
+            onClosed={() => isShowModifyAccountDialog.value = false}
+            theme='primary'
+          >
+            <Form
+              v-model={accountFormModel}
+              formType='vertical'
+            >
+              <FormItem label='责任人' class={'api-secret-selector'} required property='managers'>
+                <MemberSelect v-model={accountFormModel.managers}/>
+              </FormItem>
+              <FormItem label='备注'>
+                <Input type={'textarea'} v-model={accountFormModel.memo} maxlength={100}/>
+              </FormItem>
             </Form>
-            <div class="button-warp">
-              <Button theme="primary" loading={buttonLoading.value} onClick={onConfirm}>{t('确认')}</Button>
-              <Button class="ml10" onClick={onClosed}>{t('取消')}</Button>
-            </div>
           </Dialog>
         </div>
       )
