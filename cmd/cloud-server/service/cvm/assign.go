@@ -28,7 +28,6 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -45,35 +44,12 @@ func (svc *cvmSvc) AssignCvmToBiz(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// authorize
-	basicInfoReq := dataproto.ListResourceBasicInfoReq{
-		ResourceType: enumor.CvmCloudResType,
-		IDs:          req.CvmIDs,
-		Fields:       append(types.CommonBasicInfoFields, "region", "recycle_status"),
-	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		basicInfoReq)
-	if err != nil {
-		return nil, err
-	}
-
-	authRes := make([]meta.ResourceAttribute, 0, len(basicInfoMap))
-	for _, info := range basicInfoMap {
-		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Cvm,
-			Action: meta.Assign, ResourceID: info.AccountID}, BizID: info.BkBizID})
-	}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
-	if err != nil {
-		return nil, err
-	}
-
 	listReq := &dataproto.CvmListReq{
-		Field: []string{"id"},
+		Field: []string{"id", "bk_biz_id", "bk_cloud_id"},
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
 				&filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.CvmIDs},
-				&filter.AtomRule{Field: "bk_biz_id", Op: filter.NotEqual.Factory(), Value: constant.UnassignedBiz},
 			},
 		},
 		Page: core.NewDefaultBasePage(),
@@ -83,12 +59,39 @@ func (svc *cvmSvc) AssignCvmToBiz(cts *rest.Contexts) (interface{}, error) {
 		logs.Errorf("list cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-	if len(result.Details) != 0 {
-		ids := make([]string, len(result.Details))
-		for index, one := range result.Details {
-			ids[index] = one.ID
+
+	accountIDMap := make(map[string]struct{}, 0)
+	assignedIDs := make([]string, 0)
+	unBindCloudIDs := make([]string, 0)
+	for _, one := range result.Details {
+		accountIDMap[one.AccountID] = struct{}{}
+
+		if one.BkBizID != constant.UnassignedBiz {
+			assignedIDs = append(assignedIDs, one.ID)
 		}
-		return nil, fmt.Errorf("cvm(ids=%v) already assigned", ids)
+
+		if one.BkCloudID == constant.UnbindBkCloudID {
+			unBindCloudIDs = append(unBindCloudIDs, one.ID)
+		}
+	}
+
+	// authorize
+	authRes := make([]meta.ResourceAttribute, 0, len(accountIDMap))
+	for accountID := range accountIDMap {
+		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Cvm,
+			Action: meta.Assign, ResourceID: accountID}, BizID: req.BkBizID})
+	}
+	if err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...); err != nil {
+		logs.Errorf("assign cvm failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if len(assignedIDs) != 0 {
+		return nil, fmt.Errorf("cvm(ids=%v) already assigned", assignedIDs)
+	}
+
+	if len(unBindCloudIDs) != 0 {
+		return nil, fmt.Errorf("cvm(ids=%v) not bind cloud area", unBindCloudIDs)
 	}
 
 	// create assign audit.
