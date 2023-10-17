@@ -89,9 +89,7 @@ export default defineComponent({
       tcloudExtension,
       handleValidate,
       isValidateLoading,
-    } = useSecretExtension({
-      vendor: formModel.vendor,
-    });
+    } = useSecretExtension(formModel);
     watch(
       () => curExtension.value.validatedStatus,
       (val) => {

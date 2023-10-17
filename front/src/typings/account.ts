@@ -1,8 +1,10 @@
+import { VendorEnum } from '@/common/constant';
+
 export interface ProjectModel {
   id: number;
   type: string;
   name: string;
-  vendor: string;
+  vendor: VendorEnum;
   managers: string[];
   departmentId?: string[] | number[];
   memo: string; // 备注

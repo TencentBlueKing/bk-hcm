@@ -23,6 +23,7 @@ export interface IExtension {
   validateFailedReason?: string;          // 不通过的理由
 }
 export const useSecretExtension = (props: IProp) => {
+  // 腾讯云
   const tcloudExtension: IExtension = reactive({
     output1: {
       cloud_main_account_id: {
@@ -179,6 +180,9 @@ export const useSecretExtension = (props: IProp) => {
   // 当前选中的云厂商对应的 extension
   const curExtension = ref<IExtension>(tcloudExtension);
   const isValidateLoading = ref(false);
+  const isValidateDiasbled = ref(true);
+  // 接口需要的 payload
+  const extensionPayload = ref({});
 
   watch(
     () => props.vendor,
@@ -206,16 +210,31 @@ export const useSecretExtension = (props: IProp) => {
         }
       };
     },
+    {
+      immediate: true,
+    },
   );
 
-  const handleValidate = async (callback: (val: any) => void) => {
+  watch(
+    () => curExtension.value,
+    () => {
+      isValidateDiasbled.value = Object.entries(curExtension.value.input).
+        reduce((prev, [_key, { value }]) => prev || !value, false);
+      extensionPayload.value = Object.entries(curExtension.value.input).reduce((prev, [key, { value }]) => {
+        prev[key] = value;
+        return prev;
+      }, {});
+    },
+    {
+      deep: true,
+    },
+  );
+
+  const handleValidate = async (callback: Function = undefined) => {
     isValidateLoading.value = true;
-    const payload = Object.entries(curExtension.value.input).reduce((prev, [key, { value }]) => {
-      prev[key] = value;
-      return prev;
-    }, {});
+    const payload = extensionPayload.value;
     // props.changeExtension(payload);
-    callback?.(payload);
+    if (callback) callback?.(payload);
     try {
       const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${props.vendor}/accounts/secret`, payload);
       if (res.data) {
@@ -242,5 +261,7 @@ export const useSecretExtension = (props: IProp) => {
     huaweiExtension,
     handleValidate,
     isValidateLoading,
+    isValidateDiasbled,
+    extensionPayload,
   };
 };

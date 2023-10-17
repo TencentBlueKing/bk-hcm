@@ -10,6 +10,8 @@ import './account-detail.scss';
 import MemberSelect from '@/components/MemberSelect';
 import http from '@/http';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
+import { ValidateStatus, useSecretExtension } from '../resource-manage/account/createAccount/components/accountForm/useSecretExtension';
+import { VendorEnum } from '@/common/constant';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 const { FormItem } = Form;
 // const { Option } = Select;
@@ -23,13 +25,12 @@ export default defineComponent({
     const formDiaRef = ref(null);
     const requestQueue = ref(['detail', 'bizsList']);
     const isDetail = ref(route.query.isDetail);
-    const isValidating = ref(false);
 
     const initProjectModel: ProjectModel = {
       id: 1,
       type: '',   // 账号类型
       name: '', // 名称
-      vendor: '', // 云厂商
+      vendor: VendorEnum.TCLOUD, // 云厂商
       account: '',    // 主账号
       subAccountId: '',    // 子账号id
       subAccountName: '',    // 子账号名称
@@ -64,6 +65,14 @@ export default defineComponent({
       ...initProjectModel,
     });
 
+    const {
+      curExtension,
+      isValidateLoading,
+      handleValidate,
+      isValidateDiasbled,
+      extensionPayload,
+    } = useSecretExtension(projectModel);
+
     const secretModel = reactive<SecretModel>({
       ...initSecretModel,
     });
@@ -73,9 +82,6 @@ export default defineComponent({
     });
 
     const isOrganizationDetail = ref<Boolean>(true);      // 组织架构详情展示
-
-    const dialogForm = reactive({ list: [] });
-
     const getDetail = async () => {
       const { accountId: id } = route.query;
       const res = await accountStore.getAccountDetail(id);
@@ -96,7 +102,6 @@ export default defineComponent({
       projectModel.bizIds = res?.data?.bk_biz_ids;
       requestQueue.value.shift();
       getBusinessList();
-      renderDialogForm(projectModel);
       renderBaseInfoForm(projectModel);
     };
 
@@ -350,142 +355,6 @@ export default defineComponent({
       }
     };
 
-    // 弹窗
-    const renderDialogForm = (data: any) => {
-      switch (data.vendor) {
-        case 'huawei':
-          dialogForm.list = [
-            {
-              label: t('IAM用户ID'),
-              required: true,
-              property: 'iamUserId',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.iamUserId} disabled/>,
-            },
-            {
-              label: 'IAM用户名',
-              required: true,
-              property: 'iamUserName',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.iamUserName} disabled/>,
-            },
-            {
-              label: 'Secret ID',
-              required: projectModel.type !== 'registration',
-              property: 'secretId',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
-            },
-            {
-              label: 'Secret Key',
-              required: projectModel.type !== 'registration',
-              property: 'secretKey',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
-            },
-          ];
-          break;
-        case 'aws':
-          dialogForm.list = [
-            {
-              label: t('IAM用户名'),
-              required: true,
-              property: 'iamUserName',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.iamUserName} disabled/>,
-            },
-            {
-              label: 'Secret ID',
-              required: projectModel.type !== 'registration',
-              property: 'secretId',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
-            },
-            {
-              label: 'Secret Key',
-              required: projectModel.type !== 'registration',
-              property: 'secretKey',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
-            },
-          ];
-          break;
-        case 'gcp':
-          dialogForm.list = [
-            {
-              label: t('服务账号ID'),
-              required: projectModel.type !== 'registration',
-              property: 'accountId',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.accountId} disabled/>,
-            },
-            {
-              label: t('服务账号名称'),
-              required: projectModel.type !== 'registration',
-              property: 'accountName',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.accountName} disabled/>,
-            },
-            {
-              label: 'Secret ID',
-              required: projectModel.type !== 'registration',
-              property: 'secretId',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
-            },
-            {
-              label: 'Secret Key',
-              required: projectModel.type !== 'registration',
-              property: 'secretKey',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
-            },
-          ];
-          break;
-        case 'azure':
-          dialogForm.list = [
-            {
-              label: t('应用程序(客户端) ID'),
-              required: projectModel.type !== 'registration',
-              property: 'applicationId',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.applicationId} disabled/>,
-            },
-            {
-              label: t('应用程序名称'),
-              required: projectModel.type !== 'registration',
-              property: 'applicationName',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.applicationName} disabled/>,
-            },
-            {
-              label: t('客户端ID'),
-              required: projectModel.type !== 'registration',
-              property: 'secretId',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
-            },
-            {
-              label: t('客户端密钥'),
-              required: projectModel.type !== 'registration',
-              property: 'secretKey',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
-            },
-          ];
-          break;
-        case 'tcloud':
-          dialogForm.list = [
-            {
-              label: t('子账号ID'),
-              required: true,
-              property: 'subAccountId',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.subAccountId} disabled/>,
-            },
-            {
-              label: 'Secret ID',
-              required: projectModel.type !== 'registration',
-              property: 'secretId',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
-            },
-            {
-              label: 'Secret Key',
-              required: projectModel.type !== 'registration',
-              property: 'secretKey',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
-            },
-          ];
-          break;
-        default:
-          break;
-      }
-    };
-
     const check = (val: any): boolean => {
       console.log('check', check);
       return  /^[a-z][a-z-z0-9_-]*$/.test(val);
@@ -544,42 +413,8 @@ export default defineComponent({
     const onConfirm = async () => {
       await formDiaRef.value?.validate();
       buttonLoading.value = true;
-      const extension: any = {
-        cloud_secret_id: secretModel.secretId,
-        cloud_secret_key: secretModel.secretKey,
-      };
-      // 后期拓展
-      switch (projectModel.vendor) {
-        case 'huawei':
-          extension.cloud_iam_username = secretModel.iamUserName;
-          extension.cloud_iam_user_id = secretModel.iamUserId;
-          break;
-        case 'tcloud':
-          extension.cloud_sub_account_id = secretModel.subAccountId;
-          break;
-        case 'aws':
-          extension.cloud_iam_username = secretModel.iamUserName;
-          break;
-        case 'azure':
-          extension.cloud_application_id = secretModel.applicationId;
-          extension.cloud_application_name = secretModel.applicationName;
-          extension.cloud_client_secret_id = secretModel.secretId;
-          extension.cloud_client_secret_key = secretModel.secretKey;
-          delete extension.cloud_secret_id;
-          delete extension.cloud_secret_key;
-          break;
-        case 'gcp':
-          extension.cloud_service_account_id = secretModel.accountId;   // 服务账号ID
-          extension.cloud_service_account_name = secretModel.accountName;   // 服务账号ID
-          extension.cloud_service_secret_id = secretModel.secretId;
-          extension.cloud_service_secret_key = secretModel.secretKey;
-          delete extension.cloud_secret_id;
-          delete extension.cloud_secret_key;
-          break;
-        default:
-          break;
-      }
       try {
+        const extension = extensionPayload.value;
         await accountStore.updateTestAccount({    // 测试连接密钥信息
           id: projectModel.id,
           extension,
@@ -615,12 +450,6 @@ export default defineComponent({
           return item;
         });
       });
-    };
-
-    const handleValidate = async () => {
-      isValidating.value = true;
-
-      isValidating.value = false;
     };
 
     // 处理失焦
@@ -888,10 +717,25 @@ export default defineComponent({
                   />
                   <Form labelWidth={130} model={secretModel} ref={formDiaRef} formType='vertical'>
                     {
-                      dialogForm.list.map(formItem => (
-                          <FormItem label={formItem.label} required={formItem.required} property={formItem.property}>
-                              {formItem.component()}
+                      [curExtension.value.output1, curExtension.value.output2].map(output => (
+                        Object.entries(output).map(([property, { label }]) => (
+                          <FormItem label={label} property={property}>
+                            <Input v-model={output[property].value} disabled/>
                           </FormItem>
+                        ))
+                      ))
+                    }
+                    {
+                      Object.entries(curExtension.value.input).map(([property, { label }]) => (
+                        <FormItem label={label} property={property}>
+                          <Input v-model={curExtension.value.input[property].value} type={
+                            property === 'cloud_service_secret_key' && projectModel.vendor === VendorEnum.GCP
+                              ? 'textarea'
+                              : 'text'
+                            }
+                            rows={8}
+                          />
+                        </FormItem>
                       ))
                     }
                   </Form>
@@ -899,8 +743,8 @@ export default defineComponent({
               ),
               footer: () => (
                 <div class={'validate-btn-container'}>
-                  <Button theme='primary' class={'validate-btn'} loading={isValidating.value} onClick={handleValidate}>账号校验</Button>
-                  <Button theme="primary" loading={buttonLoading.value} onClick={onConfirm}>{t('确认')}</Button>
+                  <Button theme='primary' class={'validate-btn'} loading={isValidateLoading.value} onClick={() => handleValidate()} disabled={isValidateDiasbled.value}>账号校验</Button>
+                  <Button theme="primary" disabled={isValidateDiasbled.value || curExtension.value.validatedStatus !== ValidateStatus.YES} loading={buttonLoading.value} onClick={onConfirm}>{t('确认')}</Button>
                   <Button class="ml10" onClick={onClosed}>{t('取消')}</Button>
                 </div>
               ),
