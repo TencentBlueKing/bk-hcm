@@ -112,14 +112,14 @@ func (cli *CvmClient) StopCvm(kt *kit.Kit, id string, req *protocvm.AzureStopReq
 }
 
 // RebootCvm ....
-func (cli *CvmClient) RebootCvm(ctx context.Context, h http.Header, id string) error {
+func (cli *CvmClient) RebootCvm(kt *kit.Kit, id string) error {
 
 	resp := new(rest.BaseResp)
 
 	err := cli.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		SubResourcef("/cvms/%s/reboot", id).
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
@@ -134,15 +134,15 @@ func (cli *CvmClient) RebootCvm(ctx context.Context, h http.Header, id string) e
 }
 
 // DeleteCvm ....
-func (cli *CvmClient) DeleteCvm(ctx context.Context, h http.Header, id string, req *protocvm.AzureDeleteReq) error {
+func (cli *CvmClient) DeleteCvm(kt *kit.Kit, id string, req *protocvm.AzureDeleteReq) error {
 
 	resp := new(rest.BaseResp)
 
 	err := cli.client.Delete().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(req).
 		SubResourcef("/cvms/%s", id).
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

@@ -20,18 +20,17 @@
 package cvm
 
 import (
-	typecvm "hcm/pkg/adaptor/types/cvm"
+	"hcm/cmd/cloud-server/logics/async"
 	proto "hcm/pkg/api/cloud-server/cvm"
-	"hcm/pkg/api/core"
+	protoaudit "hcm/pkg/api/data-service/audit"
 	dataproto "hcm/pkg/api/data-service/cloud"
-	hcprotocvm "hcm/pkg/api/hc-service/cvm"
+	ts "hcm/pkg/api/task-server"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
-	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/tools/classifier"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -75,122 +74,24 @@ func (svc *cvmSvc) batchRebootCvmSvc(cts *rest.Contexts, validHandler handler.Va
 		return nil, err
 	}
 
-	cvmVendorMap := classifier.ClassifyBasicInfoByVendor(basicInfoMap)
-	successIDs := make([]string, 0)
-	for vendor, infos := range cvmVendorMap {
-		switch vendor {
-		case enumor.TCloud, enumor.Aws, enumor.HuaWei:
-			ids, err := svc.batchRebootCvm(cts.Kit, vendor, infos)
-			successIDs = append(successIDs, ids...)
-			if err != nil {
-				return core.BatchOperateResult{
-					Succeeded: successIDs,
-					Failed: &core.FailedInfo{
-						Error: err,
-					},
-				}, errf.NewFromErr(errf.PartialFailed, err)
-			}
-
-		case enumor.Azure, enumor.Gcp:
-			ids, failedID, err := svc.rebootCvm(cts.Kit, vendor, infos)
-			successIDs = append(successIDs, ids...)
-			if err != nil {
-				return core.BatchOperateResult{
-					Succeeded: successIDs,
-					Failed: &core.FailedInfo{
-						ID:    failedID,
-						Error: err,
-					},
-				}, errf.NewFromErr(errf.PartialFailed, err)
-			}
-
-		default:
-			return core.BatchOperateResult{
-				Succeeded: successIDs,
-				Failed: &core.FailedInfo{
-					ID:    infos[0].ID,
-					Error: errf.Newf(errf.Unknown, "vendor: %s not support", vendor),
-				},
-			}, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
-		}
-
+	if err = svc.audit.ResBaseOperationAudit(cts.Kit, enumor.CvmAuditResType, protoaudit.Reboot, req.IDs); err != nil {
+		logs.Errorf("create operation audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
 	}
 
-	return nil, nil
-}
-
-func (svc *cvmSvc) rebootCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.CloudResourceBasicInfo) (
-	[]string, string, error) {
-
-	successIDs := make([]string, 0)
-	for _, one := range infoMap {
-		switch vendor {
-		case enumor.Gcp:
-			if err := svc.client.HCService().Gcp.Cvm.RebootCvm(kt.Ctx, kt.Header(), one.ID); err != nil {
-				return successIDs, one.ID, err
-			}
-
-		case enumor.Azure:
-			if err := svc.client.HCService().Azure.Cvm.RebootCvm(kt.Ctx, kt.Header(), one.ID); err != nil {
-				return successIDs, one.ID, err
-			}
-
-		default:
-			return successIDs, one.ID, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
-		}
+	tasks, err := buildOperationTasks(enumor.ActionRebootCvm, basicInfoMap)
+	if err != nil {
+		return nil, err
+	}
+	addReq := &ts.AddCustomFlowReq{
+		Name:  enumor.FlowRebootCvm,
+		Tasks: tasks,
+	}
+	result, err := svc.client.TaskServer().CreateCustomFlow(cts.Kit, addReq)
+	if err != nil {
+		logs.Errorf("call taskserver to create custom flow failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
 	}
 
-	return successIDs, "", nil
-}
-
-// batchRebootCvm reboot cvm.
-func (svc *cvmSvc) batchRebootCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.CloudResourceBasicInfo) (
-	[]string, error) {
-
-	cvmMap := classifier.ClassifyBasicInfoByAccount(infoMap)
-	successIDs := make([]string, 0)
-	for accountID, reginMap := range cvmMap {
-		for region, ids := range reginMap {
-			switch vendor {
-			case enumor.TCloud:
-				req := &hcprotocvm.TCloudBatchRebootReq{
-					AccountID: accountID,
-					Region:    region,
-					IDs:       ids,
-					StopType:  typecvm.SoftFirst,
-				}
-				if err := svc.client.HCService().TCloud.Cvm.BatchRebootCvm(kt.Ctx, kt.Header(), req); err != nil {
-					return successIDs, err
-				}
-
-			case enumor.Aws:
-				req := &hcprotocvm.AwsBatchRebootReq{
-					AccountID: accountID,
-					Region:    region,
-					IDs:       ids,
-				}
-				if err := svc.client.HCService().Aws.Cvm.BatchRebootCvm(kt.Ctx, kt.Header(), req); err != nil {
-					return successIDs, err
-				}
-
-			case enumor.HuaWei:
-				req := &hcprotocvm.HuaWeiBatchRebootReq{
-					AccountID: accountID,
-					Region:    region,
-					IDs:       ids,
-					Force:     true,
-				}
-				if err := svc.client.HCService().HuaWei.Cvm.BatchRebootCvm(kt.Ctx, kt.Header(), req); err != nil {
-					return successIDs, err
-				}
-
-			default:
-				return successIDs, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
-			}
-
-			successIDs = append(successIDs, ids...)
-		}
-	}
-
-	return successIDs, nil
+	return result, async.WaitTaskToEnd(cts.Kit, svc.client.TaskServer(), result.ID)
 }

@@ -89,7 +89,7 @@ func (svc *cvmSvc) batchStartCvmSvc(cts *rest.Contexts, validHandler handler.Val
 		return nil, err
 	}
 	addReq := &ts.AddCustomFlowReq{
-		Name:  enumor.FlowCvmOperation,
+		Name:  enumor.FlowStartCvm,
 		Tasks: tasks,
 	}
 	result, err := svc.client.TaskServer().CreateCustomFlow(cts.Kit, addReq)

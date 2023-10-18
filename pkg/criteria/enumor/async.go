@@ -21,63 +21,6 @@ package enumor
 
 import "fmt"
 
-// FlowName is tpl name.
-type FlowName string
-
-// Validate FlowName.
-func (v FlowName) Validate() error {
-	switch v {
-	case FlowCvmOperation:
-	case FlowNormalTest, FlowSleepTest:
-	default:
-		return fmt.Errorf("unsupported tpl: %s", v)
-	}
-
-	return nil
-}
-
-const (
-	// FlowCvmOperation  flow start cvm.
-	FlowCvmOperation FlowName = "operate_cvm"
-	// FlowNormalTest normal flow template test.
-	FlowNormalTest FlowName = "normal_test"
-	// FlowSleepTest sleep flow template test.
-	FlowSleepTest FlowName = "sleep_test"
-)
-
-// ActionName is action name.
-type ActionName string
-
-// Validate ActionName.
-func (v ActionName) Validate() error {
-	switch v {
-	case VirRoot:
-
-	case ActionStartCvm, ActionStopCvm:
-
-	case ActionCreateFactoryTest, ActionProduceTest, ActionAssembleTest, ActionSleep:
-	default:
-		return fmt.Errorf("unsupported action name type: %s", v)
-	}
-
-	return nil
-}
-
-const (
-	// VirRoot vir root
-	VirRoot ActionName = "root"
-
-	// ActionStartCvm 主机相关Action
-	ActionStartCvm ActionName = "start_cvm"
-	ActionStopCvm  ActionName = "stop_cvm"
-
-	// ActionCreateFactoryTest 测试相关Action
-	ActionCreateFactoryTest ActionName = "create_factory"
-	ActionProduceTest       ActionName = "produce"
-	ActionAssembleTest      ActionName = "assemble"
-	ActionSleep             ActionName = "sleep"
-)
-
 // TaskState is task state.
 type TaskState string
 

@@ -112,7 +112,7 @@ func (c *cvm) deleteCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.Cloud
 	for _, one := range infoMap {
 		switch vendor {
 		case enumor.Gcp:
-			if err := c.client.HCService().Gcp.Cvm.DeleteCvm(kt.Ctx, kt.Header(), one.ID); err != nil {
+			if err := c.client.HCService().Gcp.Cvm.DeleteCvm(kt, one.ID); err != nil {
 				return successIDs, one.ID, err
 			}
 
@@ -120,7 +120,7 @@ func (c *cvm) deleteCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.Cloud
 			req := &hcprotocvm.AzureDeleteReq{
 				Force: true,
 			}
-			if err := c.client.HCService().Azure.Cvm.DeleteCvm(kt.Ctx, kt.Header(), one.ID, req); err != nil {
+			if err := c.client.HCService().Azure.Cvm.DeleteCvm(kt, one.ID, req); err != nil {
 				return successIDs, one.ID, err
 			}
 
@@ -143,13 +143,13 @@ func (c *cvm) batchDeleteCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.
 			switch vendor {
 			case enumor.TCloud:
 				req := &hcprotocvm.TCloudBatchDeleteReq{AccountID: accountID, Region: region, IDs: ids}
-				if err := c.client.HCService().TCloud.Cvm.BatchDeleteCvm(kt.Ctx, kt.Header(), req); err != nil {
+				if err := c.client.HCService().TCloud.Cvm.BatchDeleteCvm(kt, req); err != nil {
 					return successIDs, err
 				}
 
 			case enumor.Aws:
 				req := &hcprotocvm.AwsBatchDeleteReq{AccountID: accountID, Region: region, IDs: ids}
-				if err := c.client.HCService().Aws.Cvm.BatchDeleteCvm(kt.Ctx, kt.Header(), req); err != nil {
+				if err := c.client.HCService().Aws.Cvm.BatchDeleteCvm(kt, req); err != nil {
 					return successIDs, err
 				}
 
@@ -158,7 +158,7 @@ func (c *cvm) batchDeleteCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.
 					DeletePublicIP: true,
 					DeleteDisk:     true,
 				}
-				if err := c.client.HCService().HuaWei.Cvm.BatchDeleteCvm(kt.Ctx, kt.Header(), req); err != nil {
+				if err := c.client.HCService().HuaWei.Cvm.BatchDeleteCvm(kt, req); err != nil {
 					return successIDs, err
 				}
 

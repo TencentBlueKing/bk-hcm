@@ -17,32 +17,38 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tcloud
+package enumor
 
-import (
-	"errors"
+import "fmt"
 
-	logicsaccount "hcm/cmd/cloud-server/logics/account"
-)
+// FlowName is tpl name.
+type FlowName string
 
-// CheckReq 检查申请单的数据是否正确
-func (a *ApplicationOfCreateTCloudCvm) CheckReq() error {
-	if err := a.req.Validate(true); err != nil {
-		return err
-	}
-
-	if err := logicsaccount.IsResourceAccount(a.Cts.Kit, a.Client.DataService(), a.req.AccountID); err != nil {
-		return err
-	}
-
-	// TCloud 支持 DryRun，可预校验
-	result, err := a.Client.HCService().TCloud.Cvm.BatchCreateCvm(a.Cts.Kit, a.toHcProtoTCloudBatchCreateReq(true))
-	if err != nil {
-		return err
-	}
-	if result != nil && result.FailedMessage != "" {
-		return errors.New(result.FailedMessage)
+// Validate FlowName.
+func (v FlowName) Validate() error {
+	switch v {
+	case FlowStartCvm, FlowStopCvm, FlowRebootCvm, FlowDeleteCvm, FlowCreateCvm:
+	case FlowNormalTest, FlowSleepTest:
+	default:
+		return fmt.Errorf("unsupported tpl: %s", v)
 	}
 
 	return nil
 }
+
+// 主机相关Flow
+const (
+	FlowStartCvm  FlowName = "start_cvm"
+	FlowStopCvm   FlowName = "stop_cvm"
+	FlowRebootCvm FlowName = "reboot_cvm"
+	FlowDeleteCvm FlowName = "delete_cvm"
+	FlowCreateCvm FlowName = "create_cvm"
+)
+
+// 测试相关Flow
+const (
+	// FlowNormalTest normal flow template test.
+	FlowNormalTest FlowName = "normal_test"
+	// FlowSleepTest sleep flow template test.
+	FlowSleepTest FlowName = "sleep_test"
+)

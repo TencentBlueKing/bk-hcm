@@ -31,11 +31,7 @@ import (
 // Deliver 执行资源交付
 func (a *ApplicationOfCreateTCloudCvm) Deliver() (enumor.ApplicationStatus, map[string]interface{}, error) {
 	// 创建主机
-	result, err := a.Client.HCService().TCloud.Cvm.BatchCreateCvm(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
-		a.toHcProtoTCloudBatchCreateReq(false),
-	)
+	result, err := a.Client.HCService().TCloud.Cvm.BatchCreateCvm(a.Cts.Kit, a.toHcProtoTCloudBatchCreateReq(false))
 	if err != nil {
 		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
 	}

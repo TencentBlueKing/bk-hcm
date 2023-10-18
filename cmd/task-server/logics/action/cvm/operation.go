@@ -46,15 +46,16 @@ type CvmOperationAction struct {
 	AzureFunc  func(kt *kit.Kit, cli *hcservice.Client, opt *CvmOperationOption) error
 }
 
-// CvmOperationOption start cvm option.
+// CvmOperationOption operation cvm option.
 type CvmOperationOption struct {
 	Vendor    enumor.Vendor `json:"vendor" validate:"required"`
 	AccountID string        `json:"account_id" validate:"required"`
 	Region    string        `json:"region" validate:"omitempty"`
-	IDs       []string      `json:"ids" validate:"required,min=1,max=100"`
+	// IDs TCloud/HuaWei/Aws 支持批量操作，Azure/Gcp 仅支持单个操作
+	IDs []string `json:"ids" validate:"required,min=1,max=100"`
 }
 
-// Validate start cvm option.
+// Validate operation cvm option.
 func (opt CvmOperationOption) Validate() error {
 	if err := validator.Validate.Struct(opt); err != nil {
 		return err
@@ -68,7 +69,7 @@ func (opt CvmOperationOption) Validate() error {
 
 	case enumor.Azure, enumor.Gcp:
 		if len(opt.IDs) > 1 {
-			return fmt.Errorf("vendor: %s only support start a single cvm", opt.Vendor)
+			return fmt.Errorf("vendor: %s only support operation a single cvm", opt.Vendor)
 		}
 	default:
 		return fmt.Errorf("vendor: %s not support", opt.Vendor)
@@ -77,7 +78,7 @@ func (opt CvmOperationOption) Validate() error {
 	return nil
 }
 
-// ParameterNew return start cvm option.
+// ParameterNew return operation cvm option.
 func (act CvmOperationAction) ParameterNew() interface{} {
 	return new(CvmOperationOption)
 }
@@ -87,7 +88,7 @@ func (act CvmOperationAction) Name() enumor.ActionName {
 	return act.ActionName
 }
 
-// Run start cvm.
+// Run operation cvm.
 func (act CvmOperationAction) Run(kt run.ExecuteKit, params interface{}) error {
 	opt, ok := params.(*CvmOperationOption)
 	if !ok {
@@ -115,15 +116,15 @@ func (act CvmOperationAction) Run(kt run.ExecuteKit, params interface{}) error {
 	}
 	if err != nil {
 		if appendErr := kt.ShareData().AppendFailedIDs(kt.Kit(), opt.IDs...); err != nil {
-			logs.Errorf("start cvm append failed ids failed, err: %v, opt: %v, rid: %s", appendErr, opt, kt.Kit().Rid)
+			logs.Errorf("operation cvm append failed ids failed, err: %v, opt: %v, rid: %s", appendErr, opt, kt.Kit().Rid)
 		}
 
-		logs.Errorf("start cvm failed, err: %v, vendor: %s, opt: %v, rid: %s", err, opt.Vendor, opt, kt.Kit().Rid)
+		logs.Errorf("operation cvm failed, err: %v, vendor: %s, opt: %v, rid: %s", err, opt.Vendor, opt, kt.Kit().Rid)
 		return err
 	}
 
 	if err = kt.ShareData().AppendSuccessIDs(kt.Kit(), opt.IDs...); err != nil {
-		logs.Errorf("start cvm append success ids failed, err: %v, opt: %v, rid: %s", err, opt, kt.Kit().Rid)
+		logs.Errorf("operation cvm append success ids failed, err: %v, opt: %v, rid: %s", err, opt, kt.Kit().Rid)
 		return err
 	}
 

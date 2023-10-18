@@ -114,15 +114,15 @@ func (cli *CvmClient) BatchStopCvm(kt *kit.Kit, request *protocvm.TCloudBatchSto
 }
 
 // BatchRebootCvm ....
-func (cli *CvmClient) BatchRebootCvm(ctx context.Context, h http.Header, request *protocvm.TCloudBatchRebootReq) error {
+func (cli *CvmClient) BatchRebootCvm(kt *kit.Kit, request *protocvm.TCloudBatchRebootReq) error {
 
 	resp := new(rest.BaseResp)
 
 	err := cli.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/cvms/batch/reboot").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
@@ -161,15 +161,15 @@ func (cli *CvmClient) BatchResetCvmPwd(ctx context.Context, h http.Header,
 }
 
 // BatchDeleteCvm ....
-func (cli *CvmClient) BatchDeleteCvm(ctx context.Context, h http.Header, request *protocvm.TCloudBatchDeleteReq) error {
+func (cli *CvmClient) BatchDeleteCvm(kt *kit.Kit, request *protocvm.TCloudBatchDeleteReq) error {
 
 	resp := new(rest.BaseResp)
 
 	err := cli.client.Delete().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/cvms/batch").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
@@ -184,16 +184,16 @@ func (cli *CvmClient) BatchDeleteCvm(ctx context.Context, h http.Header, request
 }
 
 // BatchCreateCvm ....
-func (cli *CvmClient) BatchCreateCvm(ctx context.Context, h http.Header, request *protocvm.TCloudBatchCreateReq) (
+func (cli *CvmClient) BatchCreateCvm(kt *kit.Kit, request *protocvm.TCloudBatchCreateReq) (
 	*protocvm.BatchCreateResult, error) {
 
 	resp := new(protocvm.BatchCreateResp)
 
 	err := cli.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/cvms/batch/create").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

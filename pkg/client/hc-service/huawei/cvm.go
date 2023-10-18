@@ -114,15 +114,15 @@ func (cli *CvmClient) BatchStopCvm(kt *kit.Kit, request *protocvm.HuaWeiBatchSto
 }
 
 // BatchRebootCvm ....
-func (cli *CvmClient) BatchRebootCvm(ctx context.Context, h http.Header, request *protocvm.HuaWeiBatchRebootReq) error {
+func (cli *CvmClient) BatchRebootCvm(kt *kit.Kit, request *protocvm.HuaWeiBatchRebootReq) error {
 
 	resp := new(rest.BaseResp)
 
 	err := cli.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/cvms/batch/reboot").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
@@ -161,15 +161,15 @@ func (cli *CvmClient) BatchResetCvmPwd(ctx context.Context, h http.Header,
 }
 
 // BatchDeleteCvm ....
-func (cli *CvmClient) BatchDeleteCvm(ctx context.Context, h http.Header, request *protocvm.HuaWeiBatchDeleteReq) error {
+func (cli *CvmClient) BatchDeleteCvm(kt *kit.Kit, request *protocvm.HuaWeiBatchDeleteReq) error {
 
 	resp := new(rest.BaseResp)
 
 	err := cli.client.Delete().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/cvms/batch").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

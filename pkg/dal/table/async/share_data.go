@@ -111,7 +111,26 @@ func (d *ShareData) AppendFailedIDs(kt *kit.Kit, ids ...string) error {
 	return d.appendIDs(kt, "failed_ids", ids...)
 }
 
+// AppendSuccessCloudIDs append success cloud ids.
+func (d *ShareData) AppendSuccessCloudIDs(kt *kit.Kit, ids ...string) error {
+	return d.appendIDs(kt, "success_cloud_ids", ids...)
+}
+
+// AppendFailedCloudIDs append failed cloud ids.
+func (d *ShareData) AppendFailedCloudIDs(kt *kit.Kit, ids ...string) error {
+	return d.appendIDs(kt, "failed_cloud_ids", ids...)
+}
+
+// AppendUnknownCloudIDs append unknown cloud ids.
+func (d *ShareData) AppendUnknownCloudIDs(kt *kit.Kit, ids ...string) error {
+	return d.appendIDs(kt, "unknown_cloud_ids", ids...)
+}
+
 func (d *ShareData) appendIDs(kt *kit.Kit, key string, ids ...string) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
