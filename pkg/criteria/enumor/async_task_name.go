@@ -30,6 +30,10 @@ func (v ActionName) Validate() error {
 	case ActionStartCvm, ActionStopCvm, ActionRebootCvm, ActionDeleteCvm, ActionCreateTCloudCvm,
 		ActionCreateAwsCvm, ActionCreateHuaWeiCvm, ActionCreateGcpCvm, ActionCreateAzureCvm:
 
+	case ActionDeleteFirewallRule:
+
+	case ActionDeleteSubnet:
+
 	case VirRoot:
 	case ActionCreateFactoryTest, ActionProduceTest, ActionAssembleTest, ActionSleep:
 	default:
@@ -50,6 +54,16 @@ const (
 	ActionCreateHuaWeiCvm ActionName = "create_huawei_cvm"
 	ActionCreateGcpCvm    ActionName = "create_gcp_cvm"
 	ActionCreateAzureCvm  ActionName = "create_azure_cvm"
+)
+
+// 防火墙相关Action
+const (
+	ActionDeleteFirewallRule ActionName = "delete_firewall_rule"
+)
+
+// 子网相关Action
+const (
+	ActionDeleteSubnet ActionName = "delete_subnet"
 )
 
 // 框架测试和框架中使用到的Action

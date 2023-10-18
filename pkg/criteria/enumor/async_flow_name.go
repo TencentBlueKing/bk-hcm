@@ -28,6 +28,8 @@ type FlowName string
 func (v FlowName) Validate() error {
 	switch v {
 	case FlowStartCvm, FlowStopCvm, FlowRebootCvm, FlowDeleteCvm, FlowCreateCvm:
+	case FlowDeleteFirewallRule:
+	case FlowDeleteSubnet:
 	case FlowNormalTest, FlowSleepTest:
 	default:
 		return fmt.Errorf("unsupported tpl: %s", v)
@@ -43,6 +45,16 @@ const (
 	FlowRebootCvm FlowName = "reboot_cvm"
 	FlowDeleteCvm FlowName = "delete_cvm"
 	FlowCreateCvm FlowName = "create_cvm"
+)
+
+// 防火墙相关Flow
+const (
+	FlowDeleteFirewallRule FlowName = "delete_firewall_rule"
+)
+
+// 子网相关Flow
+const (
+	FlowDeleteSubnet FlowName = "delete_subnet"
 )
 
 // 测试相关Flow

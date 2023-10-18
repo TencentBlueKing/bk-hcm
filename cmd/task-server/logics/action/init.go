@@ -22,6 +22,8 @@ package logicsaction
 import (
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	actioncvm "hcm/cmd/task-server/logics/action/cvm"
+	actionfirewall "hcm/cmd/task-server/logics/action/firewall"
+	actionsubnet "hcm/cmd/task-server/logics/action/subnet"
 	"hcm/pkg/async/action"
 	"hcm/pkg/client"
 )
@@ -39,4 +41,8 @@ func register() {
 	action.RegisterAction(actioncvm.NewRebootAction())
 	action.RegisterAction(actioncvm.NewDeleteAction())
 	action.RegisterAction(actioncvm.CreateTCloudCvmAction{})
+
+	action.RegisterAction(actionfirewall.DeleteAction{})
+
+	action.RegisterAction(actionsubnet.DeleteAction{})
 }

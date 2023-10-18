@@ -66,15 +66,15 @@ func (svc *cvmSvc) batchDeleteCvmSvc(cts *rest.Contexts, validHandler handler.Va
 		return nil, err
 	}
 
-	if err = svc.audit.ResDeleteAudit(cts.Kit, enumor.CvmAuditResType, req.IDs); err != nil {
-		logs.Errorf("create operation audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
 	// validate biz and authorize
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Cvm,
 		Action: meta.Delete, BasicInfos: basicInfoMap})
 	if err != nil {
+		return nil, err
+	}
+
+	if err = svc.audit.ResDeleteAudit(cts.Kit, enumor.CvmAuditResType, req.IDs); err != nil {
+		logs.Errorf("create operation audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

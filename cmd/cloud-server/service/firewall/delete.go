@@ -20,14 +20,18 @@
 package firewall
 
 import (
+	"hcm/cmd/cloud-server/logics/async"
 	proto "hcm/pkg/api/cloud-server"
-	"hcm/pkg/api/core"
+	ts "hcm/pkg/api/task-server"
+	"hcm/pkg/async/action"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
+	"hcm/pkg/tools/uuid"
 )
 
 // BatchDeleteGcpFirewallRule batch delete gcp firewall rule.
@@ -70,20 +74,24 @@ func (svc *firewallSvc) batchDeleteGcpFirewallRule(cts *rest.Contexts, validHand
 		return nil, err
 	}
 
-	successIDs := make([]string, 0)
+	tasks := make([]ts.CustomFlowTask, 0, len(req.IDs))
 	for _, id := range req.IDs {
-		if err := svc.client.HCService().Gcp.Firewall.DeleteFirewallRule(cts.Kit.Ctx, cts.Kit.Header(), id); err != nil {
-			return core.BatchOperateResult{
-				Succeeded: successIDs,
-				Failed: &core.FailedInfo{
-					ID:    id,
-					Error: err,
-				},
-			}, errf.NewFromErr(errf.PartialFailed, err)
-		}
-
-		successIDs = append(successIDs, id)
+		tasks = append(tasks, ts.CustomFlowTask{
+			ActionID:   action.ActIDType(uuid.UUID()),
+			ActionName: enumor.ActionDeleteFirewallRule,
+			Params:     converter.ValToPtr(id),
+		})
 	}
 
-	return nil, nil
+	addReq := &ts.AddCustomFlowReq{
+		Name:  enumor.FlowDeleteFirewallRule,
+		Tasks: tasks,
+	}
+	result, err := svc.client.TaskServer().CreateCustomFlow(cts.Kit, addReq)
+	if err != nil {
+		logs.Errorf("call taskserver to create custom flow failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return result, async.WaitTaskToEnd(cts.Kit, svc.client.TaskServer(), result.ID)
 }

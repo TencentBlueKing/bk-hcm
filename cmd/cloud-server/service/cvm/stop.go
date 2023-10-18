@@ -22,6 +22,7 @@ package cvm
 import (
 	"hcm/cmd/cloud-server/logics/async"
 	proto "hcm/pkg/api/cloud-server/cvm"
+	protoaudit "hcm/pkg/api/data-service/audit"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	ts "hcm/pkg/api/task-server"
 	"hcm/pkg/criteria/enumor"
@@ -70,6 +71,11 @@ func (svc *cvmSvc) batchStopCvmSvc(cts *rest.Contexts, validHandler handler.Vali
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Cvm,
 		Action: meta.Stop, BasicInfos: basicInfoMap})
 	if err != nil {
+		return nil, err
+	}
+
+	if err = svc.audit.ResBaseOperationAudit(cts.Kit, enumor.CvmAuditResType, protoaudit.Stop, req.IDs); err != nil {
+		logs.Errorf("create operation audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
