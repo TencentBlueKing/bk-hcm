@@ -172,19 +172,19 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const subnetColumns = [
-    getLinkField('subnet', 'ID', 'id', 'id', false),
+    getLinkField('subnet', '子网 ID', 'cloud_id', 'cloud_id', false),
+    // {
+    //   label: '资源 ID',
+    //   field: 'cloud_id',
+    //   sort: true,
+    //   render({ cell }: { cell: string }) {
+    //     const index =          cell.lastIndexOf('/') <= 0 ? 0 : cell.lastIndexOf('/') + 1;
+    //     const value = cell.slice(index);
+    //     return h('span', [value || '--']);
+    //   },
+    // },
     {
-      label: '资源 ID',
-      field: 'cloud_id',
-      sort: true,
-      render({ cell }: { cell: string }) {
-        const index =          cell.lastIndexOf('/') <= 0 ? 0 : cell.lastIndexOf('/') + 1;
-        const value = cell.slice(index);
-        return h('span', [value || '--']);
-      },
-    },
-    {
-      label: '名称',
+      label: '子网名称',
       field: 'name',
       sort: true,
       render({ cell }: { cell: string }) {
@@ -194,6 +194,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '云厂商',
       field: 'vendor',
+      sort: true,
+      isDefaultShow: true,
       render({ cell }: { cell: string }) {
         return h('span', [CloudType[cell] || '--']);
       },
@@ -201,11 +203,15 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '地域',
       field: 'region',
+      sort: true,
+      isDefaultShow: true,
       render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell),
     },
     {
       label: '可用区',
       field: 'zone',
+      sort: true,
+      isDefaultShow: true,
       render({ cell }: { cell: string }) {
         return h('span', [cell || '--']);
       },
@@ -214,25 +220,60 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: 'IPv4 CIDR',
       field: 'ipv4_cidr',
+      isDefaultShow: true,
       render({ cell }: { cell: string }) {
         return h('span', [cell || '--']);
       },
     },
-    getLinkField(
-      'route',
-      '关联路由表',
-      'route_table_id',
-      'route_table_id',
-      false,
-    ),
+    // getLinkField(
+    //   'route',
+    //   '关联路由表',
+    //   'route_table_id',
+    //   'route_table_id',
+    //   false,
+    // ),
     {
-      label: '更新时间',
-      field: 'updated_at',
+      label: '可用IPv4地址数',
+      field: 'count_of_ipv4_cidr',
+      isDefaultShow: true,
+      render({ data }: any) {
+        return data.ipv4_cidr.length;
+      },
+    },
+    {
+      label: '是否分配',
+      field: 'bk_biz_id',
       sort: true,
+      isOnlyShowInResource: true,
+      isDefaultShow: true,
+      render: ({ data, cell }: {data: {bk_biz_id: number}, cell: number}) => <bk-tag
+        v-bk-tooltips={{
+          content: businessMapStore.businessMap.get(cell),
+          disabled: !cell || cell === -1,
+        }}
+        theme={data.bk_biz_id === -1 ? false : 'success'}>
+          {
+            data.bk_biz_id === -1
+              ? '未分配'
+              : '已分配'
+          }
+        </bk-tag>
+      ,
+    },
+    {
+      label: '所属业务',
+      field: 'bk_biz_id2',
+      isOnlyShowInResource: true,
+      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '--',
     },
     {
       label: '创建时间',
       field: 'created_at',
+      sort: true,
+    },
+    {
+      label: '更新时间',
+      field: 'updated_at',
       sort: true,
     },
   ];
