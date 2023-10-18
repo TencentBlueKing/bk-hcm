@@ -15,6 +15,13 @@ import type { Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { CLOUD_HOST_STATUS, VendorEnum } from '@/common/constant';
 import { useRegionsStore } from '@/store/useRegionsStore';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { useBusinessMapStore } from '@/store/useBusinessMap';
+import StatusAbnormal from '@/assets/image/Status-abnormal.png';
+import StatusNormal from '@/assets/image/Status-normal.png';
+import StatusUnknown from '@/assets/image/Status-unknown.png';
+import { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../common/table/HostOperations';
+import './use-columns.scss';
 
 export default (type: string, isSimpleShow = false, vendor?: string) => {
   const router = useRouter();
@@ -22,6 +29,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const accountStore = useAccountStore();
   const { t } = i18n.global;
   const { getRegionName } = useRegionsStore();
+  const { whereAmI } = useWhereAmI();
+  const businessMapStore = useBusinessMapStore();
 
   const getLinkField = (
     type: string,
@@ -29,23 +38,23 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     field = 'id',
     idFiled = 'id',
     onlyShowOnList = true,
+    render: (data: any) => Element | string = undefined,
+    sort = true,
   ) => {
     return {
       label,
       field,
-      sort: true,
+      sort,
       width: label === 'ID' ? '120' : 'auto',
       onlyShowOnList,
+      isDefaultShow: true,
       render({ data }: { cell: string; data: any }) {
-        if (data[idFiled] < 0 || !data[idFiled]) {
-          return '--';
-        }
-        return h(
-          Button,
-          {
-            text: true,
-            theme: 'primary',
-            onClick() {
+        if (data[idFiled] < 0 || !data[idFiled]) return '--';
+        return (
+          <Button
+            text
+            theme='primary'
+            onClick={() => {
               const routeInfo: any = {
                 query: {
                   id: data[idFiled],
@@ -67,9 +76,12 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
                 });
               }
               router.push(routeInfo);
-            },
-          },
-          [data[field] || '--'],
+            }}
+          >
+            {
+              render ? render(data) : data[field] || '--'
+            }
+          </Button>
         );
       },
     };
@@ -508,15 +520,24 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       width: '100',
       onlyShowOnList: true,
     },
-    getLinkField('host'),
+    getLinkField('host', '内网IP', 'private_ipv4_addresses', 'id', false, data => [...data.private_ipv4_addresses, ...data.private_ipv6_addresses].join(','), false),
     {
-      label: '资源 ID',
-      field: 'cloud_id',
+      label: '公网IP',
+      field: 'vendor',
+      isDefaultShow: false,
+      onlyShowOnList: true,
+      render: ({ data }: any) => [...data.public_ipv4_addresses, ...data.public_ipv6_addresses].join(',') || '--',
     },
+    // {
+    //   label: '资源 ID',
+    //   field: 'cloud_id',
+    // },
     {
       label: '云厂商',
       field: 'vendor',
+      sort: true,
       onlyShowOnList: true,
+      isDefaultShow: true,
       render({ data }: any) {
         return h('span', {}, [CloudType[data.vendor]]);
       },
@@ -525,18 +546,55 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '地域',
       onlyShowOnList: true,
       field: 'region',
+      sort: true,
+      isDefaultShow: true,
       render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell),
     },
     {
-      label: '名称',
+      label: '主机名称',
       field: 'name',
+      isDefaultShow: true,
     },
     {
-      label: '状态',
+      label: '主机状态',
       field: 'status',
+      sort: true,
+      isDefaultShow: true,
       render({ data }: any) {
-        return h('span', {}, [CLOUD_HOST_STATUS[data.status] || data.status]);
+        // return h('span', {}, [CLOUD_HOST_STATUS[data.status] || data.status]);
+        return (
+          <div class={'cvm-status-container'}>
+            {
+              HOST_SHUTDOWN_STATUS.includes(data.status)
+                ? <img src={StatusAbnormal} class={'mr6'} width={13} height={13}></img>
+                : HOST_RUNNING_STATUS.includes(data.status)
+                  ? <img src={StatusNormal} class={'mr6'} width={13} height={13}></img>
+                  : <img src={StatusUnknown} class={'mr6'} width={13} height={13}></img>
+            }
+            <span>{ CLOUD_HOST_STATUS[data.status] || data.status }</span>
+          </div>
+        );
       },
+    },
+    {
+      label: '是否分配',
+      field: 'bk_biz_id',
+      sort: true,
+      isOnlyShowInResource: true,
+      isDefaultShow: true,
+      render: ({ data, cell }: {data: {bk_biz_id: number}, cell: number}) => <bk-tag
+        v-bk-tooltips={{
+          content: businessMapStore.businessMap.get(cell),
+          disabled: !cell || cell === -1,
+        }}
+        theme={data.bk_biz_id === -1 ? false : 'success'}>
+          {
+            data.bk_biz_id === -1
+              ? '未分配'
+              : '已分配'
+          }
+        </bk-tag>
+      ,
     },
     {
       label: '操作系统',
@@ -554,40 +612,27 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         ]);
       },
     },
-    {
-      label: '内网IP',
-      field: 'private_ipv4_addresses',
-      render({ data }: any) {
-        return h('span', {}, [
-          data.private_ipv4_addresses || data.private_ipv6_addresses,
-        ]);
-      },
-    },
-    {
-      label: '公网IP',
-      field: 'public_ipv4_addresses',
-      render({ data }: any) {
-        return h('span', {}, [
-          data.public_ipv4_addresses || data.public_ipv6_addresses,
-        ]);
-      },
-    },
+    // {
+    //   label: '内网IP',
+    //   field: 'private_ipv4_addresses',
+    //   render({ data }: any) {
+    //     return h('span', {}, [
+    //       data.private_ipv4_addresses || data.private_ipv6_addresses,
+    //     ]);
+    //   },
+    // },
+    // {
+    //   label: '公网IP',
+    //   field: 'public_ipv4_addresses',
+    //   render({ data }: any) {
+    //     return h('span', {}, [
+    //       data.public_ipv4_addresses || data.public_ipv6_addresses,
+    //     ]);
+    //   },
+    // },
     {
       label: '创建时间',
       field: 'created_at',
-    },
-    {
-      label: '是否分配',
-      field: 'has_biz_id',
-      render: ({ data }: {data: {bk_biz_id: number}}) => <bk-tag
-        theme={data.bk_biz_id === -1 ? null : 'success'}>
-          {
-            data.bk_biz_id === -1
-              ? '未分配'
-              : '已分配'
-          }
-        </bk-tag>
-      ,
     },
   ];
 
@@ -748,22 +793,25 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   };
 
   const columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);
-  const fields = [];
+  let fields = [];
   for (const column of columns) {
     if (column.field && column.label) {
       fields.push({
         label: column.label,
         field: column.field,
         disabled: column.field === 'id',
+        isDefaultShow: !!column.isDefaultShow,
+        isOnlyShowInResource: !!column.isOnlyShowInResource,
       });
     }
   }
+  if (whereAmI.value !== Senarios.resource) fields = fields.filter(field => !field.isOnlyShowInResource);
   const settings: Ref<{
     fields: Array<Field>;
     checked: Array<string>;
   }> = ref({
     fields,
-    checked: fields.map(field => field.field),
+    checked: fields.filter(field => field.isDefaultShow).map(field => field.field),
   });
 
   return {
