@@ -40,6 +40,7 @@ type Task struct {
 	DependOn   []action.ActIDType `json:"depend_on"`
 	State      enumor.TaskState   `json:"state"`
 	Reason     *tableasync.Reason `json:"reason"`
+	Result     types.JsonField    `json:"result"`
 	Creator    string             `json:"creator"`
 	Reviser    string             `json:"reviser"`
 	CreatedAt  string             `json:"created_at"`

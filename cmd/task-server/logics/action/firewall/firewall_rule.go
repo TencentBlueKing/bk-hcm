@@ -45,31 +45,21 @@ func (act DeleteAction) Name() enumor.ActionName {
 }
 
 // Run delete firewall rule.
-func (act DeleteAction) Run(kt run.ExecuteKit, params interface{}) error {
+func (act DeleteAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
 	idPtr, ok := params.(*string)
 	if !ok {
-		return errf.New(errf.InvalidParameter, "params type not right")
+		return nil, errf.New(errf.InvalidParameter, "params type not right")
 	}
 
 	if idPtr == nil || len(*idPtr) == 0 {
-		return errf.New(errf.InvalidParameter, "id is required")
+		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
 	id := *idPtr
 	if err := actcli.GetHCService().Gcp.Firewall.DeleteFirewallRule(kt.Kit(), id); err != nil {
-		if appendErr := kt.ShareData().AppendFailedIDs(kt.Kit(), id); err != nil {
-			logs.Errorf("delete firewall rule append failed ids failed, err: %v, id: %s, rid: %s",
-				appendErr, id, kt.Kit().Rid)
-		}
-
 		logs.Errorf("delete firewall rule failed, err: %v, id: %s, rid: %s", err, id, kt.Kit().Rid)
-		return err
+		return nil, err
 	}
 
-	if err := kt.ShareData().AppendSuccessIDs(kt.Kit(), id); err != nil {
-		logs.Errorf("delete firewall rule append success ids failed, err: %v, id: %s, rid: %s", err, id, kt.Kit().Rid)
-		return err
-	}
-
-	return nil
+	return nil, nil
 }
