@@ -78,7 +78,7 @@ func (svc *cvmSvc) batchStopCvmSvc(cts *rest.Contexts, validHandler handler.Vali
 		return nil, err
 	}
 	addReq := &ts.AddCustomFlowReq{
-		Name:  enumor.FlowCvmOperation,
+		Name:  enumor.FlowStopCvm,
 		Tasks: tasks,
 	}
 	result, err := svc.client.TaskServer().CreateCustomFlow(cts.Kit, addReq)

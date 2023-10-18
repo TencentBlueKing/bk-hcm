@@ -17,8 +17,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package cvm ...
-package cvm
+// Package hccvm ...
+package hccvm
 
 import (
 	"fmt"

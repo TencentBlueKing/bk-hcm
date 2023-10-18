@@ -166,8 +166,7 @@ func (svc *cvmSvc) createTCloudCvm(kt *kit.Kit, body json.RawMessage) (interface
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	result, err := svc.client.HCService().TCloud.Cvm.BatchCreateCvm(kt.Ctx, kt.Header(),
-		common.ConvTCloudCvmCreateReq(req))
+	result, err := svc.client.HCService().TCloud.Cvm.BatchCreateCvm(kt, common.ConvTCloudCvmCreateReq(req))
 	if err != nil {
 		logs.Errorf("batch create tcloud cvm failed, err: %v, result: %v, rid: %s", err, result, kt.Rid)
 		return result, err

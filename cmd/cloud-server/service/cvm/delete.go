@@ -20,16 +20,16 @@
 package cvm
 
 import (
+	"hcm/cmd/cloud-server/logics/async"
 	proto "hcm/pkg/api/cloud-server"
 	dataproto "hcm/pkg/api/data-service/cloud"
-	hcprotocvm "hcm/pkg/api/hc-service/cvm"
+	ts "hcm/pkg/api/task-server"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
-	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/tools/classifier"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -66,6 +66,11 @@ func (svc *cvmSvc) batchDeleteCvmSvc(cts *rest.Contexts, validHandler handler.Va
 		return nil, err
 	}
 
+	if err = svc.audit.ResDeleteAudit(cts.Kit, enumor.CvmAuditResType, req.IDs); err != nil {
+		logs.Errorf("create operation audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
 	// validate biz and authorize
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Cvm,
 		Action: meta.Delete, BasicInfos: basicInfoMap})
@@ -73,89 +78,19 @@ func (svc *cvmSvc) batchDeleteCvmSvc(cts *rest.Contexts, validHandler handler.Va
 		return nil, err
 	}
 
-	delRes, err := svc.cvmLgc.BatchDeleteCvm(cts.Kit, basicInfoMap)
+	tasks, err := buildOperationTasks(enumor.ActionDeleteCvm, basicInfoMap)
 	if err != nil {
-		return delRes, err
+		return nil, err
+	}
+	addReq := &ts.AddCustomFlowReq{
+		Name:  enumor.FlowDeleteCvm,
+		Tasks: tasks,
+	}
+	result, err := svc.client.TaskServer().CreateCustomFlow(cts.Kit, addReq)
+	if err != nil {
+		logs.Errorf("call taskserver to create custom flow failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
 	}
 
-	return nil, nil
-}
-
-func (svc *cvmSvc) deleteCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.CloudResourceBasicInfo) (
-	[]string, string, error) {
-
-	successIDs := make([]string, 0)
-	for _, one := range infoMap {
-		switch vendor {
-		case enumor.Gcp:
-			if err := svc.client.HCService().Gcp.Cvm.DeleteCvm(kt.Ctx, kt.Header(), one.ID); err != nil {
-				return successIDs, one.ID, err
-			}
-
-		case enumor.Azure:
-			req := &hcprotocvm.AzureDeleteReq{
-				Force: true,
-			}
-			if err := svc.client.HCService().Azure.Cvm.DeleteCvm(kt.Ctx, kt.Header(), one.ID, req); err != nil {
-				return successIDs, one.ID, err
-			}
-
-		default:
-			return successIDs, one.ID, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
-		}
-	}
-
-	return successIDs, "", nil
-}
-
-// batchDeleteCvm delete cvm.
-func (svc *cvmSvc) batchDeleteCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.CloudResourceBasicInfo) (
-	[]string, error) {
-
-	cvmMap := classifier.ClassifyBasicInfoByAccount(infoMap)
-	successIDs := make([]string, 0)
-	for accountID, reginMap := range cvmMap {
-		for region, ids := range reginMap {
-			switch vendor {
-			case enumor.TCloud:
-				req := &hcprotocvm.TCloudBatchDeleteReq{
-					AccountID: accountID,
-					Region:    region,
-					IDs:       ids,
-				}
-				if err := svc.client.HCService().TCloud.Cvm.BatchDeleteCvm(kt.Ctx, kt.Header(), req); err != nil {
-					return successIDs, err
-				}
-
-			case enumor.Aws:
-				req := &hcprotocvm.AwsBatchDeleteReq{
-					AccountID: accountID,
-					Region:    region,
-					IDs:       ids,
-				}
-				if err := svc.client.HCService().Aws.Cvm.BatchDeleteCvm(kt.Ctx, kt.Header(), req); err != nil {
-					return successIDs, err
-				}
-
-			case enumor.HuaWei:
-				req := &hcprotocvm.HuaWeiBatchDeleteReq{
-					AccountID:      accountID,
-					Region:         region,
-					IDs:            ids,
-					DeletePublicIP: true,
-					DeleteDisk:     true,
-				}
-				if err := svc.client.HCService().HuaWei.Cvm.BatchDeleteCvm(kt.Ctx, kt.Header(), req); err != nil {
-					return successIDs, err
-				}
-
-			default:
-				return successIDs, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
-			}
-
-			successIDs = append(successIDs, ids...)
-		}
-	}
-
-	return successIDs, nil
+	return result, async.WaitTaskToEnd(cts.Kit, svc.client.TaskServer(), result.ID)
 }

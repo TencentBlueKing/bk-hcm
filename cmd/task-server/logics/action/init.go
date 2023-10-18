@@ -36,4 +36,7 @@ func Init(cli *client.ClientSet) {
 func register() {
 	action.RegisterAction(actioncvm.NewStartAction())
 	action.RegisterAction(actioncvm.NewStopAction())
+	action.RegisterAction(actioncvm.NewRebootAction())
+	action.RegisterAction(actioncvm.NewDeleteAction())
+	action.RegisterAction(actioncvm.CreateTCloudCvmAction{})
 }
