@@ -528,10 +528,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       onlyShowOnList: true,
       render: ({ data }: any) => [...data.public_ipv4_addresses, ...data.public_ipv6_addresses].join(',') || '--',
     },
-    // {
-    //   label: '资源 ID',
-    //   field: 'cloud_id',
-    // },
     {
       label: '云厂商',
       field: 'vendor',
@@ -596,6 +592,30 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         </bk-tag>
       ,
     },
+
+
+    {
+      label: '所属业务',
+      field: 'bk_biz_id2',
+      isOnlyShowInResource: true,
+      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '--',
+    },
+    {
+      label: '管控区域',
+      field: 'bk_cloud_id',
+      sort: true,
+      render({ data }: any) {
+        return h('span', {}, [
+          data.bk_cloud_id === -1 ? '未绑定' : data.bk_cloud_id,
+        ]);
+      },
+    },
+    {
+      label: '实例规格',
+      field: 'machine_type',
+      sort: true,
+      isOnlyShowInResource: true,
+    },
     {
       label: '操作系统',
       field: 'os_name',
@@ -604,35 +624,19 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       },
     },
     {
-      label: '管控区域 ID',
-      field: 'bk_cloud_id',
-      render({ data }: any) {
-        return h('span', {}, [
-          data.bk_cloud_id === -1 ? '未绑定' : data.bk_cloud_id,
-        ]);
-      },
+      label: '主机ID',
+      field: 'cloud_id',
+      sort: true,
     },
-    // {
-    //   label: '内网IP',
-    //   field: 'private_ipv4_addresses',
-    //   render({ data }: any) {
-    //     return h('span', {}, [
-    //       data.private_ipv4_addresses || data.private_ipv6_addresses,
-    //     ]);
-    //   },
-    // },
-    // {
-    //   label: '公网IP',
-    //   field: 'public_ipv4_addresses',
-    //   render({ data }: any) {
-    //     return h('span', {}, [
-    //       data.public_ipv4_addresses || data.public_ipv6_addresses,
-    //     ]);
-    //   },
-    // },
     {
       label: '创建时间',
       field: 'created_at',
+      sort: true,
+    },
+    {
+      label: '更新时间',
+      field: 'updated_at',
+      sort: true,
     },
   ];
 
@@ -792,30 +796,54 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     eips: eipColumns,
   };
 
-  const columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);
-  let fields = [];
-  for (const column of columns) {
-    if (column.field && column.label) {
-      fields.push({
-        label: column.label,
-        field: column.field,
-        disabled: column.field === 'id',
-        isDefaultShow: !!column.isDefaultShow,
-        isOnlyShowInResource: !!column.isOnlyShowInResource,
-      });
+  let columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);
+  if (whereAmI.value !== Senarios.resource) columns = columns.filter((column: any) => !column.isOnlyShowInResource);
+
+  type ColumnsType = typeof columns;
+  const generateColumnsSettings = (columns: ColumnsType) => {
+    let fields = [];
+    for (const column of columns) {
+      if (column.field && column.label) {
+        fields.push({
+          label: column.label,
+          field: column.field,
+          disabled: column.field === 'id',
+          isDefaultShow: !!column.isDefaultShow,
+          isOnlyShowInResource: !!column.isOnlyShowInResource,
+        });
+      }
     }
-  }
-  if (whereAmI.value !== Senarios.resource) fields = fields.filter(field => !field.isOnlyShowInResource);
-  const settings: Ref<{
-    fields: Array<Field>;
-    checked: Array<string>;
-  }> = ref({
-    fields,
-    checked: fields.filter(field => field.isDefaultShow).map(field => field.field),
-  });
+    if (whereAmI.value !== Senarios.resource) {
+      fields = fields.filter(field => !field.isOnlyShowInResource);
+      console.log(666, fields);
+    }
+    const settings: Ref<{
+      fields: Array<Field>;
+      checked: Array<string>;
+    }> = ref({
+      fields,
+      checked: fields.filter(field => field.isDefaultShow).map(field => field.field),
+    });
+
+    return settings;
+  };
+
+  const settings = generateColumnsSettings(columns);
+
+  // watch(
+  //   () => whereAmI.value,
+  //   () => {
+  //     settings = generateColumnsSettings(columns);
+  //     console.log(666, whereAmI.value, settings.value);
+  //   },
+  //   {
+  //     immediate: true,
+  //   },
+  // );
 
   return {
     columns,
     settings,
+    generateColumnsSettings,
   };
 };
