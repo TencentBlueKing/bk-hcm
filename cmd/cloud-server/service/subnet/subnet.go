@@ -23,14 +23,18 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"hcm/cmd/cloud-server/logics/async"
 	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/cmd/cloud-server/service/common"
+	actionsubnet "hcm/cmd/task-server/logics/action/subnet"
 	cloudserver "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service/subnet"
+	ts "hcm/pkg/api/task-server"
+	"hcm/pkg/async/action"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -44,6 +48,7 @@ import (
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
+	"hcm/pkg/tools/uuid"
 )
 
 // InitSubnetService initialize the subnet service.
@@ -525,40 +530,34 @@ func (svc *subnetSvc) batchDeleteSubnet(cts *rest.Contexts, validHandler handler
 	}
 
 	// delete subnets
-	succeeded := make([]string, 0)
+	tasks := make([]ts.CustomFlowTask, 0, len(req.IDs))
 	for _, id := range req.IDs {
 		basicInfo, exists := basicInfoMap[id]
 		if !exists {
 			return nil, errf.New(errf.InvalidParameter, fmt.Sprintf("id %s has no corresponding vendor", id))
 		}
 
-		switch basicInfo.Vendor {
-		case enumor.TCloud:
-			err = svc.client.HCService().TCloud.Subnet.Delete(cts.Kit.Ctx, cts.Kit.Header(), id)
-		case enumor.Aws:
-			err = svc.client.HCService().Aws.Subnet.Delete(cts.Kit.Ctx, cts.Kit.Header(), id)
-		case enumor.Gcp:
-			err = svc.client.HCService().Gcp.Subnet.Delete(cts.Kit.Ctx, cts.Kit.Header(), id)
-		case enumor.Azure:
-			err = svc.client.HCService().Azure.Subnet.Delete(cts.Kit.Ctx, cts.Kit.Header(), id)
-		case enumor.HuaWei:
-			err = svc.client.HCService().HuaWei.Subnet.Delete(cts.Kit.Ctx, cts.Kit.Header(), id)
-		}
-
-		if err != nil {
-			return core.BatchOperateResult{
-				Succeeded: succeeded,
-				Failed: &core.FailedInfo{
-					ID:    id,
-					Error: err,
-				},
-			}, errf.NewFromErr(errf.PartialFailed, err)
-		}
-
-		succeeded = append(succeeded, id)
+		tasks = append(tasks, ts.CustomFlowTask{
+			ActionID:   action.ActIDType(uuid.UUID()),
+			ActionName: enumor.ActionDeleteSubnet,
+			Params: &actionsubnet.DeleteSubnetOption{
+				Vendor: basicInfo.Vendor,
+				ID:     id,
+			},
+		})
 	}
 
-	return core.BatchOperateResult{Succeeded: succeeded}, nil
+	addReq := &ts.AddCustomFlowReq{
+		Name:  enumor.FlowDeleteSubnet,
+		Tasks: tasks,
+	}
+	result, err := svc.client.TaskServer().CreateCustomFlow(cts.Kit, addReq)
+	if err != nil {
+		logs.Errorf("call taskserver to create custom flow failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return result, async.WaitTaskToEnd(cts.Kit, svc.client.TaskServer(), result.ID)
 }
 
 // AssignSubnetToBiz assign subnets to biz.

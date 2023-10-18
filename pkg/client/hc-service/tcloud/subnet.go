@@ -27,6 +27,7 @@ import (
 	proto "hcm/pkg/api/hc-service/subnet"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -89,14 +90,14 @@ func (s *SubnetClient) Update(ctx context.Context, h http.Header, id string, op 
 }
 
 // Delete subnet.
-func (s *SubnetClient) Delete(ctx context.Context, h http.Header, id string) error {
+func (s *SubnetClient) Delete(kt *kit.Kit, id string) error {
 	resp := new(rest.BaseResp)
 
 	err := s.client.Delete().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(nil).
 		SubResourcef("/subnets/%s", id).
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

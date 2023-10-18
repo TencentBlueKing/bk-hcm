@@ -27,6 +27,7 @@ import (
 	proto "hcm/pkg/api/hc-service"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -115,14 +116,14 @@ func (cli *FirewallClient) UpdateFirewallRule(ctx context.Context, h http.Header
 }
 
 // DeleteFirewallRule delete gcp firewall rule rule.
-func (cli *FirewallClient) DeleteFirewallRule(ctx context.Context, h http.Header, id string) error {
+func (cli *FirewallClient) DeleteFirewallRule(kt *kit.Kit, id string) error {
 
 	resp := new(core.DeleteResp)
 
 	err := cli.client.Delete().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		SubResourcef("/firewalls/rules/%s", id).
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

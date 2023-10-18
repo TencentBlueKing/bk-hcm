@@ -120,5 +120,13 @@ type CustomFlowTask struct {
 
 // Validate CustomFlowTask
 func (task *CustomFlowTask) Validate() error {
-	return validator.Validate.Struct(task)
+	if err := validator.Validate.Struct(task); err != nil {
+		return err
+	}
+	
+	if err := task.ActionName.Validate(); err != nil {
+		return err
+	}
+
+	return nil
 }
