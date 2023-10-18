@@ -20,24 +20,45 @@
 package cloudserver
 
 import (
-	"testing"
-
-	"hcm/pkg/api/hc-service/region"
-	"hcm/test/suite"
-	"hcm/test/suite/cases"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"hcm/pkg/api/cloud-server/application"
+	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
+	"hcm/pkg/rest"
 )
 
-func TestTCloudRegion(t *testing.T) {
-	cli := suite.GetClientSet()
-	Convey("Sync TCloud region", t, func() {
-		ctx, header := cases.GenApiCtxHeader()
-		syncReq := region.TCloudRegionSyncReq{
-			AccountID: TCloudAccountID,
-		}
-		err := cli.HCService().TCloud.Region.Sync(ctx, header, &syncReq)
-		So(err, ShouldBeNil)
-	})
+// ApplicationClient cloud server  application client
+type ApplicationClient struct {
+	client rest.ClientInterface
+}
 
+// NewApplicationClient create a new application api client.
+func NewApplicationClient(client rest.ClientInterface) *ApplicationClient {
+	return &ApplicationClient{
+		client: client,
+	}
+}
+
+// CreateForAddAccount 录入账号申请单
+func (v *ApplicationClient) CreateForAddAccount(kt *kit.Kit, req *application.AccountAddReq) (*core.CreateResult,
+	error) {
+
+	resp := new(core.BaseResp[*core.CreateResult])
+
+	err := v.client.Post().
+		WithContext(kt.Ctx).
+		Body(req).
+		SubResourcef("/applications/types/add_account").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
 }

@@ -145,7 +145,7 @@ func (dao Dao) Update(kt *kit.Kit, expr *filter.Expression, model *tablecvm.Tabl
 		}
 
 		if effected == 0 {
-			logs.ErrorJson("update cvm, but record not found, filter: %v, rid: %v", expr, kt.Rid)
+			logs.Infof("update cvm, but record not found, sql: %s, rid: %v", sql, kt.Rid)
 		}
 
 		return nil, nil

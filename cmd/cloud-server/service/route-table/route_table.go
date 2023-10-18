@@ -50,6 +50,7 @@ func InitRouteTableService(c *capability.Capability) {
 	svc := &routeTableSvc{
 		client:     c.ApiClient,
 		authorizer: c.Authorizer,
+		audit:      c.Audit,
 	}
 
 	h := rest.NewHandler()

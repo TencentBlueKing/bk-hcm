@@ -85,6 +85,7 @@ func (s *Subnet) TCloudSubnetCreate(kt *kit.Kit, req *hcservice.TCloudSubnetBatc
 			Name:              subnetReq.Name,
 			Zone:              subnetReq.Zone,
 			CloudRouteTableID: subnetReq.CloudRouteTableID,
+			Memo:              subnetReq.Memo,
 		})
 	}
 

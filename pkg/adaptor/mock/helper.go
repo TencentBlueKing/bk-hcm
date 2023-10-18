@@ -121,7 +121,7 @@ func (st *Store[K, V]) Add(key K, val V) (ok bool) {
 	if _, exists := st.dict[key]; exists {
 		return false
 	}
-	logs.V(3).Infof("Adding  %+v", val)
+	logs.V(3).Infof("[mock] Adding  %s -> %+v", key, val)
 	st.dict[key] = val
 
 	return true
@@ -146,6 +146,18 @@ func (st *Store[K, V]) Filter(match func(V) bool) (valueSlice []V) {
 	return
 }
 
+// Find return first matched value
+func (st *Store[K, V]) Find(match func(V) bool) (value *V) {
+	st.rw.RLock()
+	defer st.rw.RUnlock()
+	for _, val := range st.dict {
+		if match(val) {
+			return converter.ValToPtr(val)
+		}
+	}
+	return nil
+}
+
 // Remove existing item
 func (st *Store[K, V]) Remove(key K) error {
 	st.rw.Lock()
@@ -153,6 +165,8 @@ func (st *Store[K, V]) Remove(key K) error {
 	if _, exits := st.dict[key]; !exits {
 		return errf.Newf(errf.RecordNotFound, "not found in mock store: %v", key)
 	}
+	logs.V(3).Infof("[mock] Delete %s -> %+v", key, st.dict[key])
+
 	delete(st.dict, key)
 	return nil
 }

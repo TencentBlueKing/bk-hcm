@@ -152,11 +152,13 @@ func (svc *subnetSvc) createTCloudSubnet(kt *kit.Kit, bizID int64, data json.Raw
 		AccountID:  req.AccountID,
 		Region:     req.Region,
 		CloudVpcID: req.CloudVpcID,
+
 		Subnets: []hcservice.TCloudOneSubnetCreateReq{{
 			IPv4Cidr:          req.IPv4Cidr,
 			Name:              req.Name,
 			Zone:              req.Zone,
 			CloudRouteTableID: req.CloudRouteTableID,
+			Memo:              req.Memo,
 		}},
 	}
 	createRes, err := svc.client.HCService().TCloud.Subnet.BatchCreate(kt.Ctx, kt.Header(), opt)

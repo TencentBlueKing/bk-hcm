@@ -31,11 +31,11 @@ import (
 
 var once sync.Once
 
-// Playbook 给mock加上具体方法的剧本
+// Playbook a playbook will use gomock EXPECT method to apply implements of method to mock instance
 type Playbook interface {
-	// Name  playbook 标识
+	// Name  playbook identifier
 	Name() string
-	// Apply 给指定mock示例实例添加方法
+	// Apply use for apply method implements to mock
 	Apply(*MockTCloud, *gomock.Controller)
 }
 

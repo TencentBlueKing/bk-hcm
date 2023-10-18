@@ -17,22 +17,44 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package constant ...
-package constant
+package cloudserver
 
-const (
-
-	// SuiteTestUserKey ...
-	SuiteTestUserKey = "suite"
-	// SuiteTestAppCodeKey  ...
-	SuiteTestAppCodeKey = "test"
-
-	// SuiteTestBizID biz id for suite test
-	SuiteTestBizID = 1234
+import (
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
+	"hcm/pkg/rest"
 )
 
-// SuiteRegion region for test
-const SuiteRegion = "ap-mariana"
+// AccountClient account related client
+type AccountClient struct {
+	client rest.ClientInterface
+}
 
-// SuiteZone ...
-const SuiteZone = "ap-mariana-2"
+// NewAccountClient return account client instance.
+func NewAccountClient(client rest.ClientInterface) *AccountClient {
+	return &AccountClient{
+		client: client,
+	}
+}
+
+// Sync 账号同步
+func (c AccountClient) Sync(kt *kit.Kit, accountID string) error {
+	resp := new(rest.BaseResp)
+
+	err := c.client.Post().
+		WithContext(kt.Ctx).
+		Body(struct{}{}).
+		SubResourcef("/accounts/%s/sync", accountID).
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}

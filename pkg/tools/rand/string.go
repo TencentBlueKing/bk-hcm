@@ -43,3 +43,18 @@ func RandomRange(between [2]int) int {
 	randX := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return randX.Intn(between[1]-between[0]) + between[0]
 }
+
+// Prefix random string with prefix, same as prefix+rand.String(n)
+func Prefix(prefix string, n int) string {
+	randX := rand.New(rand.NewSource(time.Now().UnixNano()))
+	prefixLen := len(prefix)
+	b := make([]rune, n+prefixLen)
+	for i := range prefix {
+		b[i] = rune(prefix[i])
+	}
+	for i := 0; i < n; i++ {
+		b[i+prefixLen] = letterRunes[randX.Intn(len(letterRunes))]
+	}
+
+	return string(b)
+}

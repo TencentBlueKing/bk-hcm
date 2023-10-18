@@ -17,47 +17,68 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloudserver
+package rand
 
-import (
-	"hcm/pkg/api/core"
-	"hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/criteria/errf"
-	"hcm/pkg/kit"
-	"hcm/pkg/rest"
-)
+import "testing"
 
-// CvmClient is data service cvm api client.
-type CvmClient struct {
-	client rest.ClientInterface
-}
-
-// NewCvmClient create a new cvm api client.
-func NewCvmClient(client rest.ClientInterface) *CvmClient {
-	return &CvmClient{
-		client: client,
+func BenchmarkPrefix(b *testing.B) {
+	result := make([]string, b.N)
+	for i := 0; i < b.N; i++ {
+		result[i] = Prefix("prefix-", 10)
 	}
 }
 
-// List cvms.
-func (v *CvmClient) List(kt *kit.Kit, bizID int64, req *core.ListReq) (*cloud.CvmListResult, error) {
-
-	resp := new(core.BaseResp[*cloud.CvmListResult])
-
-	err := v.client.Post().
-		WithContext(kt.Ctx).
-		Body(req).
-		SubResourcef("/bizs/%d/cvms/list", bizID).
-		WithHeaders(kt.Header()).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, err
+func BenchmarkPrefixAddString(b *testing.B) {
+	result := make([]string, b.N)
+	for i := 0; i < b.N; i++ {
+		result[i] = "prefix-" + String(10)
 	}
+}
 
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
+func TestPrefix(t *testing.T) {
+	type args struct {
+		prefix string
+		n      int
 	}
-
-	return resp.Data, nil
+	tests := []struct {
+		name    string
+		args    args
+		wantLen int
+	}{
+		{"all-0",
+			args{
+				prefix: "",
+				n:      0,
+			},
+			0,
+		},
+		{"prefix-0",
+			args{
+				prefix: "",
+				n:      1,
+			},
+			1,
+		},
+		{"rand-0",
+			args{
+				prefix: "xx",
+				n:      0,
+			},
+			2,
+		},
+		{"normal",
+			args{
+				prefix: "xx-",
+				n:      2,
+			},
+			5,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Prefix(tt.args.prefix, tt.args.n); len(got) != tt.wantLen {
+				t.Errorf("Prefix() = %v, wantLen %v", got, tt.wantLen)
+			}
+		})
+	}
 }

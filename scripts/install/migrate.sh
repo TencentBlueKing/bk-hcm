@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # 请修改下面的mysql相关配置. Please change the mysql configuration below.
-MYSQL_HOST=127.0.0.1
-MYSQL_PORT=3306
-MYSQL_USERNAME=root
-MYSQL_DATABASE=hcm
-MYSQL_PASSWORD='password'
+MYSQL_HOST=${MYSQL_HOST:-127.0.0.1}
+MYSQL_PORT=${MYSQL_PORT:-3306}
+MYSQL_USERNAME=${MYSQL_USERNAME:-root}
+MYSQL_DATABASE=${MYSQL_DATABASE:-hcm}
+MYSQL_PASSWORD=${MYSQL_PASSWORD:-'password'}
 
 # 预定义变量，请勿修改. Predefined variables, do not modify.
 SQLDIR=sql

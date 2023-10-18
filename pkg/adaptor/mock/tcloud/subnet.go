@@ -20,13 +20,16 @@
 package mocktcloud
 
 import (
+	"hcm/pkg/adaptor/tcloud"
 	"hcm/pkg/adaptor/types/core"
 	adtroutetable "hcm/pkg/adaptor/types/route-table"
 	adtsubnet "hcm/pkg/adaptor/types/subnet"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/rand"
 
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
 	"go.uber.org/mock/gomock"
 )
 
@@ -42,12 +45,7 @@ func (v *vpcPlaybook) applySubnet(mockCloud *MockTCloud) {
 		Return(nil).MinTimes(1)
 
 	mockCloud.EXPECT().DeleteSubnet(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) error {
-			if err := opt.Validate(); err != nil {
-				return err
-			}
-			return v.subnetStore.Remove(opt.ResourceID)
-		}).MinTimes(1)
+		DoAndReturn(v.deleteSubnet).MinTimes(1)
 }
 
 func (v *vpcPlaybook) listSubnet(_ *kit.Kit, opt *core.TCloudListOption) (*adtsubnet.TCloudSubnetListResult,
@@ -77,16 +75,34 @@ func (v *vpcPlaybook) createSubnet(_ *kit.Kit, opt *adtsubnet.TCloudSubnetsCreat
 		return nil, err
 	}
 
+	// 查找默认路由表，顺便校验vpc存在性
+	defaultRT := v.routeTableStore.Find(func(table adtroutetable.TCloudRouteTable) bool {
+		return table.Extension.Main && table.CloudVpcID == opt.CloudVpcID
+	})
+	if defaultRT == nil {
+		return nil, errors.NewTencentCloudSDKError(tcloud.ErrNotFound,
+			"[mock] can not find default route table for "+opt.CloudVpcID+", check vpc exists", "request-id")
+	}
 	ids := make([]string, len(opt.Subnets))
-	// 创建子网
+	// 创建子网请求
 	for _, net := range opt.Subnets {
+		// 未指定子网id则换成vpc默认子网id
+		if len(net.CloudRouteTableID) == 0 {
+			net.CloudRouteTableID = defaultRT.CloudID
+		} else {
+			// 尝试查找子网id
+			if _, exists := v.routeTableStore.Get(net.CloudRouteTableID); !exists {
+				return nil, errors.NewTencentCloudSDKError(tcloud.ErrNotFound,
+					"[mock] can not find route table "+net.CloudRouteTableID, "request-id")
+			}
+		}
 		createdSubnet := adtsubnet.TCloudSubnet{
 			CloudVpcID: opt.CloudVpcID,
-			CloudID:    "subnet-" + rand.String(8),
+			CloudID:    rand.Prefix("subnet-", 8),
 			Name:       net.Name,
 			Ipv4Cidr:   []string{net.IPv4Cidr},
 			Ipv6Cidr:   nil,
-			Memo:       nil,
+			Memo:       net.Memo,
 			Extension: &adtsubnet.TCloudSubnetExtension{
 				IsDefault:               false,
 				Region:                  opt.Region,
@@ -99,18 +115,6 @@ func (v *vpcPlaybook) createSubnet(_ *kit.Kit, opt *adtsubnet.TCloudSubnetsCreat
 			},
 		}
 
-		// 创建默认路由表
-		routeTable := adtroutetable.TCloudRouteTable{
-			CloudID:    "rtb-" + rand.String(8),
-			Name:       "default",
-			CloudVpcID: createdSubnet.CloudVpcID,
-			Region:     createdSubnet.Extension.Region,
-			Memo:       converter.ValToPtr("default"),
-			Extension:  &adtroutetable.TCloudRouteTableExtension{Main: true},
-		}
-		v.routeTableStore.Add(routeTable.CloudID, routeTable)
-
-		createdSubnet.Extension.CloudRouteTableID = &routeTable.CloudID
 		v.subnetStore.Add(createdSubnet.CloudID, createdSubnet)
 		ids = append(ids, createdSubnet.CloudID)
 
@@ -118,4 +122,15 @@ func (v *vpcPlaybook) createSubnet(_ *kit.Kit, opt *adtsubnet.TCloudSubnetsCreat
 
 	return v.subnetStore.GetByKeys(ids...), nil
 
+}
+
+func (v *vpcPlaybook) deleteSubnet(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) error {
+	if err := opt.Validate(); err != nil {
+		return err
+	}
+
+	if _, exists := v.subnetStore.Get(opt.ResourceID); !exists {
+		return errf.Newf(errf.RecordNotFound, "not found ")
+	}
+	return v.subnetStore.Remove(opt.ResourceID)
 }

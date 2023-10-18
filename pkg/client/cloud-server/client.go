@@ -31,22 +31,26 @@ import (
 type Client struct {
 	rest.ClientInterface
 
-	Vpc             *VpcClient
-	Subnet          *SubnetClient
-	Cvm             *CvmClient
-	RouteTable      *RouteTableClient
-	ApprovalProcess *ApprovalProcessClient
+	Account           *AccountClient
+	Vpc               *VpcClient
+	Subnet            *SubnetClient
+	Cvm               *CvmClient
+	RouteTable        *RouteTableClient
+	ApprovalProcess   *ApprovalProcessClient
+	ApplicationClient *ApplicationClient
 }
 
 // NewClient create a new cloud-server api client.
 func NewClient(c *client.Capability, version string) *Client {
 	restCli := rest.NewClient(c, fmt.Sprintf("/api/%s/cloud", version))
 	return &Client{
-		ClientInterface: restCli,
-		Vpc:             NewVpcClient(restCli),
-		Subnet:          NewSubnetClient(restCli),
-		Cvm:             NewCvmClient(restCli),
-		ApprovalProcess: NewApprovalProcessClient(restCli),
-		RouteTable:      NewRouteTable(restCli),
+		ClientInterface:   restCli,
+		Account:           NewAccountClient(restCli),
+		Vpc:               NewVpcClient(restCli),
+		Subnet:            NewSubnetClient(restCli),
+		Cvm:               NewCvmClient(restCli),
+		ApprovalProcess:   NewApprovalProcessClient(restCli),
+		RouteTable:        NewRouteTable(restCli),
+		ApplicationClient: NewApplicationClient(restCli),
 	}
 }
