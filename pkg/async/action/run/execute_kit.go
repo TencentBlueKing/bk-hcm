@@ -31,11 +31,6 @@ type ExecuteKit interface {
 type ShareDataOperator interface {
 	Get(key string) (string, bool)
 	Set(kt *kit.Kit, key string, val string) error
-	AppendSuccessIDs(kt *kit.Kit, ids ...string) error
-	AppendFailedIDs(kt *kit.Kit, ids ...string) error
-	AppendSuccessCloudIDs(kt *kit.Kit, ids ...string) error
-	AppendFailedCloudIDs(kt *kit.Kit, ids ...string) error
-	AppendUnknownCloudIDs(kt *kit.Kit, ids ...string) error
 }
 
 // NewExecuteContext new execute context for task exec.

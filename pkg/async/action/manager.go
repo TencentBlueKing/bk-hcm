@@ -50,13 +50,19 @@ func NewManager() *Manager {
 }
 
 // RegisterAction 注册到ActionMap
-func (am *Manager) RegisterAction(acts ...Action) {
+func (am *Manager) RegisterAction(acts ...Action) error {
 	am.rwLock.Lock()
 	defer am.rwLock.Unlock()
 
 	for _, act := range acts {
+		if err := act.Name().Validate(); err != nil {
+			return err
+		}
+
 		am.actionMap[act.Name()] = act
 	}
+
+	return nil
 }
 
 // GetAction 执行时根据注册的名字获取执行体
@@ -79,6 +85,10 @@ func (am *Manager) RegisterFlowTpl(templates ...FlowTemplate) error {
 		for _, one := range tpl.Tasks {
 			if taskMap[one.ActionID] {
 				return fmt.Errorf("actionID: %s repeat", one.ActionID)
+			}
+
+			if err := one.ActionName.Validate(); err != nil {
+				return err
 			}
 
 			taskMap[one.ActionID] = true
@@ -110,7 +120,9 @@ func (am *Manager) GetFlowTpl(name enumor.FlowName) (FlowTemplate, bool) {
 
 // RegisterAction register action.
 func RegisterAction(acts ...Action) {
-	manager.RegisterAction(acts...)
+	if err := manager.RegisterAction(acts...); err != nil {
+		panic(fmt.Sprintf("register action failed, err: %v", err))
+	}
 }
 
 // GetAction get action by name.

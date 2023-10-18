@@ -30,7 +30,7 @@ type Action interface {
 	// Name 返回异步任务名称
 	Name() enumor.ActionName
 	// Run 异步任务运行操作
-	Run(kt run.ExecuteKit, params interface{}) error
+	Run(kt run.ExecuteKit, params interface{}) (result interface{}, err error)
 }
 
 // RollbackAction Action如果支持回滚操作，实现该接口。会在Action执行失败、Action执行一半崩溃后，进行调用。

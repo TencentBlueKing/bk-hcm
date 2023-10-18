@@ -42,28 +42,33 @@ func (r Retry) IsEnable() bool {
 	return r.Enable
 }
 
-func (r Retry) Run(do func() error) error {
+// Run retry run func.
+func (r Retry) Run(do func() (result interface{}, err error)) (result interface{}, err error) {
 	if !r.IsEnable() {
-		return errors.New("retry not enable")
+		return nil, errors.New("retry not enable")
 	}
 
 	rp := retry.NewRetryPolicy(r.Policy.Count, r.Policy.SleepRangeMS)
 	var lastErr error
+	var lastResult interface{}
 	for {
 		if rp.RetryCount() == uint32(r.Policy.Count) {
 			break
 		}
 
-		if err := do(); err != nil {
+		result, err = do()
+		if err != nil {
 			lastErr = err
+			lastResult = result
 			rp.Sleep()
 			continue
 		}
 
-		return nil
+		return result, nil
 	}
 
-	return fmt.Errorf("retry exceed the max number of retryable times: %d, lastErr: %v", r.Policy.Count, lastErr)
+	return lastResult, fmt.Errorf("retry exceed the max number of retryable times: %d, lastErr: %v",
+		r.Policy.Count, lastErr)
 }
 
 // Validate retry.

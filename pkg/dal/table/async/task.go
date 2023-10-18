@@ -44,6 +44,7 @@ var AsyncFlowTaskTableColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "depend_on", NamedC: "depend_on", Type: enumor.Json},
 	{Column: "state", NamedC: "state", Type: enumor.String},
 	{Column: "reason", NamedC: "reason", Type: enumor.Json},
+	{Column: "result", NamedC: "result", Type: enumor.Json},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
@@ -62,6 +63,7 @@ type AsyncFlowTaskTable struct {
 	DependOn   types.StringArray `db:"depend_on" json:"depend_on"`
 	State      enumor.TaskState  `db:"state" json:"state"`
 	Reason     *Reason           `db:"reason" json:"reason"`
+	Result     types.JsonField   `db:"result" json:"result"`
 	Creator    string            `db:"creator" json:"creator" validate:"lte=64"`
 	Reviser    string            `db:"reviser" json:"reviser" validate:"lte=64"`
 	CreatedAt  types.Time        `db:"created_at" json:"created_at" validate:"excluded_unless"`

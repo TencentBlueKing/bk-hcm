@@ -242,6 +242,7 @@ func (db *mysql) UpdateTask(kt *kit.Kit, task *model.Task) error {
 		Retry:    task.Retry,
 		DependOn: dependOnToStringArray(task.DependOn),
 		State:    task.State,
+		Result:   task.Result,
 		Reason:   task.Reason,
 		Reviser:  kt.User,
 	}
@@ -275,6 +276,7 @@ func (db *mysql) ListTask(kt *kit.Kit, input *ListInput) ([]model.Task, error) {
 			DependOn:   dependOnToActIDArray(one.DependOn),
 			State:      one.State,
 			Reason:     one.Reason,
+			Result:     one.Result,
 			Creator:    one.Creator,
 			Reviser:    one.Reviser,
 			CreatedAt:  one.CreatedAt.String(),

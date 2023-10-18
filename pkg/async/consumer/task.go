@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/async/backend/model"
 	"hcm/pkg/criteria/enumor"
 	tableasync "hcm/pkg/dal/table/async"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/retry"
@@ -111,32 +112,34 @@ func (task *Task) Run() error {
 	}
 
 	var runErr error
+	var failedResult interface{}
 	if !task.Retry.IsEnable() {
-		_, runErr = task.runOnce(act)
+		_, failedResult, runErr = task.runOnce(act)
 	} else {
-		runErr = task.Retry.Run(func() error {
-			needRetry, err := task.runOnce(act)
+		failedResult, runErr = task.Retry.Run(func() (interface{}, error) {
+			needRetry, failed, err := task.runOnce(act)
 			if err == nil {
-				return nil
+				return nil, nil
 			}
 
 			if !needRetry {
-				return err
+				return failed, err
 			}
 
 			// 允许重试，将Task状态由 running -> rollback，进行回滚
-			if patchErr := task.UpdateState(enumor.TaskRollback, err.Error()); patchErr != nil {
-				return fmt.Errorf("task set rollback state failed, after runAction failed, err: %v, patchErr: %v",
-					err, patchErr)
+			if patchErr := task.UpdateTask(enumor.TaskRollback, err.Error(), failed); patchErr != nil {
+				return failed, fmt.Errorf("task set rollback state failed, after runAction failed, err: %v, "+
+					"patchErr: %v", err, patchErr)
 			}
 
-			return nil
+			return nil, nil
 		})
 	}
 	if runErr != nil {
-		logs.Errorf("task run failed, err: %v, task: %+v, rid: %s", runErr, task, task.ExecuteKit.Kit().Rid)
+		logs.Errorf("task run failed, err: %v, task: %+v, result: %+v, rid: %s", runErr, task, failedResult,
+			task.ExecuteKit.Kit().Rid)
 
-		if patchErr := task.UpdateState(enumor.TaskFailed, runErr.Error()); patchErr != nil {
+		if patchErr := task.UpdateTask(enumor.TaskFailed, runErr.Error(), failedResult); patchErr != nil {
 			logs.Errorf("task set failed state failed, after run failed, err: %v, patchErr: %v, rid: %s",
 				runErr, patchErr, task.ExecuteKit.Kit().Rid)
 			return fmt.Errorf("task set failed state failed, after run failed, err: %v, patchErr: %v",
@@ -184,7 +187,7 @@ func (task *Task) Rollback() error {
 	return task.rollback(p, act)
 }
 
-func (task *Task) runOnce(act action.Action) (needRetry bool, err error) {
+func (task *Task) runOnce(act action.Action) (needRetry bool, failedResult interface{}, err error) {
 	if len(task.Params) == 0 {
 		return task.runAction(nil, act)
 	}
@@ -202,37 +205,10 @@ func (task *Task) runOnce(act action.Action) (needRetry bool, err error) {
 	if err = action.Decode(task.Params, p); err != nil {
 		logs.Errorf("task decode params failed, params: %s, type: %s, rid: %s", task.Params,
 			reflect.TypeOf(p).String(), task.ExecuteKit.Kit().Rid)
-		return false, fmt.Errorf("task decode params failed, err: %v", err)
+		return false, nil, fmt.Errorf("task decode params failed, err: %v", err)
 	}
 
 	return task.runAction(p, act)
-}
-
-func (task *Task) runActionWithRetry(params interface{}, act action.Action) (err error) {
-
-	rty := retry.NewRetryPolicy(defRetryCount, defRetryRangeMS)
-	for rty.RetryCount() < uint32(defRetryCount) {
-		canRetry, err := task.runAction(params, act)
-		if err != nil {
-			logs.Errorf("task: %s run action failed, err: %v, canRetry: %v, rid: %s", task.ID, err, canRetry,
-				task.ExecuteKit.Kit().Rid)
-
-			// 如果不允许重试，直接返回
-			if !canRetry {
-				return err
-			}
-
-			// 允许重试，将Task状态由 running -> rollback，进行回滚
-			if patchErr := task.UpdateState(enumor.TaskRollback, err.Error()); patchErr != nil {
-				return fmt.Errorf("task set rollback state failed, after runAction failed, err: %v, patchErr: %v",
-					err, patchErr)
-			}
-		}
-
-		return nil
-	}
-
-	return err
 }
 
 // rollback 任务强制回滚，从Running或者Rollback状态
@@ -246,7 +222,7 @@ func (task *Task) rollback(params interface{}, act action.Action) error {
 		return fmt.Errorf("rollback failed, err: %v", err)
 	}
 
-	if err := task.UpdateState(enumor.TaskPending, ""); err != nil {
+	if err := task.UpdateState(enumor.TaskPending); err != nil {
 		return err
 	}
 
@@ -254,48 +230,71 @@ func (task *Task) rollback(params interface{}, act action.Action) error {
 }
 
 // runAction 执行Action，且只有执行Action运行逻辑失败才会允许重试，更改状态失败不进行重试。
-func (task *Task) runAction(params interface{}, act action.Action) (retry bool, err error) {
+func (task *Task) runAction(params interface{}, act action.Action) (retry bool, failedResult interface{}, err error) {
 
 	if task.State == enumor.TaskRollback {
 		rollbackAct, ok := act.(action.RollbackAction)
 		if !ok {
-			return false, fmt.Errorf("action: %s not has RollbackAction", act.Name())
+			return false, nil, fmt.Errorf("action: %s not has RollbackAction", act.Name())
 		}
 
 		if err = rollbackAct.Rollback(task.ExecuteKit, params); err != nil {
-			return true, fmt.Errorf("rollback failed, err: %v", err)
+			return true, nil, fmt.Errorf("rollback failed, err: %v", err)
 		}
 
-		if err = task.UpdateState(enumor.TaskPending, ""); err != nil {
-			return false, err
+		if err = task.UpdateState(enumor.TaskPending); err != nil {
+			return false, nil, err
 		}
 	}
 
 	if task.State == enumor.TaskPending {
-		if err = task.UpdateState(enumor.TaskRunning, ""); err != nil {
-			return false, err
+		if err = task.UpdateState(enumor.TaskRunning); err != nil {
+			return false, nil, err
 		}
 
-		if err = act.Run(task.ExecuteKit, params); err != nil {
-			return true, fmt.Errorf("run failed, err: %v", err)
+		result, err := act.Run(task.ExecuteKit, params)
+		if err != nil {
+			return true, result, fmt.Errorf("run failed, err: %v", err)
 		}
 
-		if err = task.UpdateState(enumor.TaskSuccess, ""); err != nil {
-			return false, err
+		// 如果执行成功，返回 result 属于成功结果，设置成功状态时，同时设置成功结果。如果执行失败，
+		// 结果属于失败结果，交与上层更新失败或回滚等操作，更新失败结果。
+		if err = task.UpdateStateResult(enumor.TaskSuccess, result); err != nil {
+			return false, result, err
 		}
 	}
 
-	return false, nil
+	return false, nil, nil
 }
 
 // UpdateState update task state.
-func (task *Task) UpdateState(state enumor.TaskState, reason string) error {
+func (task *Task) UpdateState(state enumor.TaskState) error {
+	return task.UpdateTask(state, "", nil)
+}
+
+// UpdateStateResult update task state and result.
+func (task *Task) UpdateStateResult(state enumor.TaskState, result interface{}) error {
+	return task.UpdateTask(state, "", result)
+}
+
+// UpdateTask update task.
+func (task *Task) UpdateTask(state enumor.TaskState, reason string, result interface{}) error {
 	md := &model.Task{
 		ID:    task.ID,
 		State: state,
 		Reason: &tableasync.Reason{
 			Message: reason,
 		},
+	}
+
+	if result != nil {
+		field, err := types.NewJsonField(result)
+		if err != nil {
+			logs.Errorf("update task marshal result failed, err: %v, result: %v, rid: %s", err, result,
+				task.ExecuteKit.Kit().Rid)
+			return err
+		}
+		md.Result = field
 	}
 
 	rty := retry.NewRetryPolicy(defRetryCount, defRetryRangeMS)

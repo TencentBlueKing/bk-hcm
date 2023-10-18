@@ -48,42 +48,21 @@ func (act CreateTCloudCvmAction) Name() enumor.ActionName {
 }
 
 // Run create tcloud cvm.
-func (act CreateTCloudCvmAction) Run(kt run.ExecuteKit, params interface{}) error {
+func (act CreateTCloudCvmAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
 	req, ok := params.(*hccvm.TCloudBatchCreateReq)
 	if !ok {
-		return errf.New(errf.InvalidParameter, "params type not right")
+		return nil, errf.New(errf.InvalidParameter, "params type not right")
 	}
 
 	result, err := actcli.GetHCService().TCloud.Cvm.BatchCreateCvm(kt.Kit(), req)
 	if err != nil {
-		logs.Errorf("batch create tcloud cvm failed, err: %v, result: %v, rid: %s", err, result, kt.Kit().Rid)
-		return err
-	}
-
-	if len(result.SuccessCloudIDs) != 0 {
-		if err = kt.ShareData().AppendSuccessCloudIDs(kt.Kit(), result.SuccessCloudIDs...); err != nil {
-			logs.Errorf("append success cloud ids failed, err: %v, result: %+v, rid: %s", err, result, kt.Kit().Rid)
-			return err
-		}
-	}
-
-	if len(result.FailedCloudIDs) != 0 {
-		if err = kt.ShareData().AppendFailedCloudIDs(kt.Kit(), result.SuccessCloudIDs...); err != nil {
-			logs.Errorf("append failed cloud ids failed, err: %v, result: %+v, rid: %s", err, result, kt.Kit().Rid)
-			return err
-		}
-	}
-
-	if len(result.UnknownCloudIDs) != 0 {
-		if err = kt.ShareData().AppendUnknownCloudIDs(kt.Kit(), result.SuccessCloudIDs...); err != nil {
-			logs.Errorf("append unknown cloud ids failed, err: %v, result: %+v, rid: %s", err, result, kt.Kit().Rid)
-			return err
-		}
+		logs.Errorf("batch create tcloud cvm failed, err: %v, result: %+v, rid: %s", err, result, kt.Kit().Rid)
+		return nil, err
 	}
 
 	if len(result.FailedMessage) != 0 {
-		return errors.New(result.FailedMessage)
+		return result, errors.New(result.FailedMessage)
 	}
 
-	return nil
+	return result, nil
 }

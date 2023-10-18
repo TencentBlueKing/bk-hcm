@@ -89,14 +89,14 @@ func (act CvmOperationAction) Name() enumor.ActionName {
 }
 
 // Run operation cvm.
-func (act CvmOperationAction) Run(kt run.ExecuteKit, params interface{}) error {
+func (act CvmOperationAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
 	opt, ok := params.(*CvmOperationOption)
 	if !ok {
-		return errf.New(errf.InvalidParameter, "params type not right")
+		return nil, errf.New(errf.InvalidParameter, "params type not right")
 	}
 
 	if err := opt.Validate(); err != nil {
-		return err
+		return nil, err
 	}
 
 	cli := actcli.GetHCService()
@@ -115,18 +115,9 @@ func (act CvmOperationAction) Run(kt run.ExecuteKit, params interface{}) error {
 		err = act.AzureFunc(kt.Kit(), cli, opt)
 	}
 	if err != nil {
-		if appendErr := kt.ShareData().AppendFailedIDs(kt.Kit(), opt.IDs...); err != nil {
-			logs.Errorf("operation cvm append failed ids failed, err: %v, opt: %v, rid: %s", appendErr, opt, kt.Kit().Rid)
-		}
-
-		logs.Errorf("operation cvm failed, err: %v, vendor: %s, opt: %v, rid: %s", err, opt.Vendor, opt, kt.Kit().Rid)
-		return err
+		logs.Errorf("operate cvm failed, err: %v, opt: %+v, rid: %s", err, opt, kt.Kit().Rid)
+		return nil, err
 	}
 
-	if err = kt.ShareData().AppendSuccessIDs(kt.Kit(), opt.IDs...); err != nil {
-		logs.Errorf("operation cvm append success ids failed, err: %v, opt: %v, rid: %s", err, opt, kt.Kit().Rid)
-		return err
-	}
-
-	return nil
+	return nil, nil
 }

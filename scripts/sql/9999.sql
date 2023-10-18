@@ -147,6 +147,7 @@ create table if not exists `async_flow_task`
     `depend_on`   varchar(64)          default '',
     `state`       varchar(16) not null,
     `reason`      json                 default null,
+    `result`      json                 default null,
     `creator`     varchar(64) not null,
     `reviser`     varchar(64) not null,
     `created_at`  timestamp   not null default current_timestamp,

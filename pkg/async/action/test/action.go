@@ -64,9 +64,9 @@ func (act CreateFactory) Name() enumor.ActionName {
 }
 
 // Run ...
-func (act CreateFactory) Run(kt run.ExecuteKit, params interface{}) error {
+func (act CreateFactory) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
 	logs.Infof(" ----------- create factory -----------, params: %+v, rid: %s", params, kt.Kit().Rid)
-	return kt.ShareData().Set(kt.Kit(), "name", "create_factory")
+	return nil, kt.ShareData().Set(kt.Kit(), "name", "create_factory")
 }
 
 var _ action.Action = new(Produce)
@@ -80,9 +80,9 @@ func (p Produce) Name() enumor.ActionName {
 }
 
 // Run ...
-func (p Produce) Run(kt run.ExecuteKit, params interface{}) error {
+func (p Produce) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
 	logs.Infof(" ----------- Produce -----------, rid: %s", kt.Kit().Rid)
-	return nil
+	return nil, nil
 }
 
 var _ action.Action = new(Assemble)
@@ -96,18 +96,18 @@ func (a Assemble) Name() enumor.ActionName {
 }
 
 // Run ...
-func (a Assemble) Run(kt run.ExecuteKit, params interface{}) error {
+func (a Assemble) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
 
 	logs.Infof(" ----------- Assemble -----------, rid: %s", kt.Kit().Rid)
 
 	name, exist := kt.ShareData().Get("name")
 	if !exist {
-		return errors.New("name not found from share_name")
+		return nil, errors.New("name not found from share_name")
 	}
 
 	logs.Infof(" ----------- Assemble Get ShareData: %v -----------, rid: %s", name, kt.Kit().Rid)
 
-	return nil
+	return nil, nil
 }
 
 var _ action.Action = new(Sleep)
@@ -139,7 +139,7 @@ func (s Sleep) Name() enumor.ActionName {
 }
 
 // Run ...
-func (s Sleep) Run(kt run.ExecuteKit, params interface{}) error {
+func (s Sleep) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
 	p := params.(*SleepParams)
 	index := rand.RandomRange([2]int{0, 1000})
 	logs.Infof(" ----------- %d Sleep %ds start -----------, time: %v, rid: %s", index, p.SleepSec,
@@ -147,5 +147,5 @@ func (s Sleep) Run(kt run.ExecuteKit, params interface{}) error {
 	time.Sleep(time.Duration(p.SleepSec) * time.Second)
 	logs.Infof(" ----------- %d Sleep %ds end -----------, time: %v, rid: %s", index, p.SleepSec,
 		times.ConvStdTimeNow(), kt.Kit().Rid)
-	return nil
+	return nil, nil
 }

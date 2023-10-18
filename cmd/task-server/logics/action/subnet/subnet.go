@@ -59,14 +59,14 @@ func (act DeleteAction) Name() enumor.ActionName {
 }
 
 // Run ...
-func (act DeleteAction) Run(kt run.ExecuteKit, params interface{}) error {
+func (act DeleteAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
 	opt, ok := params.(*DeleteSubnetOption)
 	if !ok {
-		return errf.New(errf.InvalidParameter, "params type not right")
+		return nil, errf.New(errf.InvalidParameter, "params type not right")
 	}
 
 	if err := opt.Validate(); err != nil {
-		return err
+		return nil, err
 	}
 
 	var err error
@@ -82,22 +82,12 @@ func (act DeleteAction) Run(kt run.ExecuteKit, params interface{}) error {
 	case enumor.HuaWei:
 		err = actcli.GetHCService().HuaWei.Subnet.Delete(kt.Kit(), opt.ID)
 	default:
-		return fmt.Errorf("vendor: %s not support", opt.Vendor)
+		return nil, fmt.Errorf("vendor: %s not support", opt.Vendor)
 	}
 	if err != nil {
-		if appendErr := kt.ShareData().AppendFailedIDs(kt.Kit(), opt.ID); err != nil {
-			logs.Errorf("delete subnet append failed ids failed, err: %v, opt: %v, rid: %s", appendErr, opt,
-				kt.Kit().Rid)
-		}
-
-		logs.Errorf("delete subnet failed, err: %v, vendor: %s, opt: %v, rid: %s", err, opt.Vendor, opt, kt.Kit().Rid)
-		return err
+		logs.Errorf("delete subnet failed, err: %v, opt: %+v, rid: %s", err, opt, kt.Kit().Rid)
+		return nil, err
 	}
 
-	if err = kt.ShareData().AppendSuccessIDs(kt.Kit(), opt.ID); err != nil {
-		logs.Errorf("delete subnet append success ids failed, err: %v, opt: %v, rid: %s", err, opt, kt.Kit().Rid)
-		return err
-	}
-
-	return nil
+	return nil, nil
 }
