@@ -31,6 +31,7 @@ func (v FlowName) Validate() error {
 	case FlowDeleteFirewallRule:
 	case FlowDeleteSubnet:
 	case FlowNormalTest, FlowSleepTest:
+	case FlowDeleteSecurityGroup:
 	default:
 		return fmt.Errorf("unsupported tpl: %s", v)
 	}
@@ -63,4 +64,9 @@ const (
 	FlowNormalTest FlowName = "normal_test"
 	// FlowSleepTest sleep flow template test.
 	FlowSleepTest FlowName = "sleep_test"
+)
+
+const (
+	// FlowDeleteSecurityGroup ...
+	FlowDeleteSecurityGroup FlowName = "delete_security_group"
 )

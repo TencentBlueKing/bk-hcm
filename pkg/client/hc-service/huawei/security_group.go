@@ -27,6 +27,7 @@ import (
 	proto "hcm/pkg/api/hc-service"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -115,14 +116,14 @@ func (cli *SecurityGroupClient) UpdateSecurityGroup(ctx context.Context, h http.
 }
 
 // DeleteSecurityGroup delete security group.
-func (cli *SecurityGroupClient) DeleteSecurityGroup(ctx context.Context, h http.Header, id string) error {
+func (cli *SecurityGroupClient) DeleteSecurityGroup(kt *kit.Kit, id string) error {
 
 	resp := new(core.DeleteResp)
 
 	err := cli.client.Delete().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		SubResourcef("/security_groups/%s", id).
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

@@ -23,6 +23,7 @@ import (
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	actioncvm "hcm/cmd/task-server/logics/action/cvm"
 	actionfirewall "hcm/cmd/task-server/logics/action/firewall"
+	actionsg "hcm/cmd/task-server/logics/action/security-group"
 	actionsubnet "hcm/cmd/task-server/logics/action/subnet"
 	"hcm/pkg/async/action"
 	"hcm/pkg/client"
@@ -45,4 +46,5 @@ func register() {
 	action.RegisterAction(actionfirewall.DeleteAction{})
 
 	action.RegisterAction(actionsubnet.DeleteAction{})
+	action.RegisterAction(actionsg.DeleteSgAction{})
 }

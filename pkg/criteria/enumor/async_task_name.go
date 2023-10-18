@@ -33,6 +33,7 @@ func (v ActionName) Validate() error {
 	case ActionDeleteFirewallRule:
 
 	case ActionDeleteSubnet:
+	case ActionDeleteSecurityGroup:
 
 	case VirRoot:
 	case ActionCreateFactoryTest, ActionProduceTest, ActionAssembleTest, ActionSleep:
@@ -76,4 +77,8 @@ const (
 	ActionProduceTest       ActionName = "produce"
 	ActionAssembleTest      ActionName = "assemble"
 	ActionSleep             ActionName = "sleep"
+)
+
+const (
+	ActionDeleteSecurityGroup ActionName = "delete_security_group"
 )
