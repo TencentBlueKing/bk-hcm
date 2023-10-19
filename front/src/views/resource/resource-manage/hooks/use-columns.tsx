@@ -459,21 +459,23 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const imageColumns = [
-    getLinkField('image'),
+    getLinkField('image', '镜像ID', 'cloud_id', 'cloud_id'),
+    // {
+    //   label: '资源 ID',
+    //   field: 'cloud_id',
+    //   sort: true,
+    // },
     {
-      label: '资源 ID',
-      field: 'cloud_id',
-      sort: true,
-    },
-    {
-      label: '名称',
+      label: '镜像名称',
       field: 'name',
       sort: true,
+      isDefaultShow: true,
     },
     {
       label: '云厂商',
       field: 'vendor',
       sort: true,
+      isDefaultShow: true,
       render({ cell }: { cell: string }) {
         return h('span', [CloudType[cell] || '--']);
       },
@@ -482,24 +484,34 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '操作系统类型',
       field: 'platform',
       sort: true,
+      isDefaultShow: true,
     },
     {
       label: '架构',
       field: 'architecture',
       sort: true,
+      isDefaultShow: true,
     },
     {
       label: '状态',
       field: 'state',
+      sort: true,
+      isDefaultShow: true,
     },
     {
       label: '类型',
       field: 'type',
       sort: true,
+      isDefaultShow: true,
     },
     {
       label: '创建时间',
       field: 'created_at',
+      sort: true,
+    },
+    {
+      label: '更新时间',
+      field: 'updated_at',
       sort: true,
     },
   ];
