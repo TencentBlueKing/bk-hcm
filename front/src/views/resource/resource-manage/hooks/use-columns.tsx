@@ -449,10 +449,12 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '创建时间',
       field: 'created_at',
+      sort: true,
     },
     {
       label: '更新时间',
       field: 'updated_at',
+      sort: true,
     },
   ];
 
@@ -605,19 +607,28 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '更新时间',
       field: 'updated_at',
+      sort: true,
     },
   ];
 
   const routeColumns = [
-    getLinkField('route'),
+    getLinkField('route', '路由表ID', 'cloud_id', 'cloud_id'),
+    // {
+    //   label: '资源 ID',
+    //   field: 'cloud_id',
+    //   sort: true,
+    // },
     {
-      label: '资源 ID',
-      field: 'cloud_id',
+      label: '路由表名称',
+      field: 'name',
       sort: true,
+      isDefaultShow: true,
     },
     {
       label: '云厂商',
       field: 'vendor',
+      sort: true,
+      isDefaultShow: true,
       render({ cell }: { cell: string }) {
         return h('span', [CloudType[cell] || '--']);
       },
@@ -626,26 +637,31 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '地域',
       field: 'region',
       sort: true,
+      isDefaultShow: true,
       render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell),
     },
-    {
-      label: '名称',
-      field: 'name',
-      sort: true,
-    },
     getLinkField('vpc', '所属网络(VPC)', 'vpc_id', 'vpc_id'),
+    // {
+    //   label: '关联子网',
+    //   field: '',
+    //   sort: true,
+    // },
     {
-      label: '关联子网',
-      field: '',
+      label: '所属业务',
+      field: 'bk_biz_id',
+      isOnlyShowInResource: true,
+      sort: true,
+      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '--',
+    },
+    {
+      label: '创建时间',
+      field: 'created_at',
       sort: true,
     },
     {
       label: '更新时间',
       field: 'updated_at',
-    },
-    {
-      label: '创建时间',
-      field: 'created_at',
+      sort: true,
     },
   ];
 
@@ -857,15 +873,26 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       width: '100',
       onlyShowOnList: true,
     },
-    getLinkField('eips'),
+    getLinkField('eips', 'IP资源ID', 'cloud_id', 'cloud_id'),
+    // {
+    //   label: '资源 ID',
+    //   field: 'cloud_id',
+    //   sort: true,
+    // },
     {
-      label: '资源 ID',
-      field: 'cloud_id',
+      label: 'IP名称',
+      field: 'name',
       sort: true,
+      isDefaultShow: true,
+      render({ cell }: { cell: string }) {
+        return h('span', [cell || '--']);
+      },
     },
     {
       label: '云厂商',
       field: 'vendor',
+      sort: true,
+      isDefaultShow: true,
       render({ cell }: { cell: string }) {
         return h('span', [CloudType[cell] || '--']);
       },
@@ -873,46 +900,70 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '地域',
       field: 'region',
-      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell),
-    },
-    {
-      label: '名称',
-      field: 'name',
       sort: true,
-      render({ cell }: { cell: string }) {
-        return h('span', [cell || '--']);
-      },
+      isDefaultShow: true,
+      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell),
     },
     {
       label: '公网 IP',
       field: 'public_ip',
-      render({ cell }: { cell: string }) {
-        return h('span', [cell || '--']);
-      },
-    },
-    {
-      label: '状态',
-      field: 'status',
-      render({ cell }: { cell: string }) {
-        return h('span', [cell || '--']);
-      },
-    },
-    getLinkField('host', '绑定资源的实例', 'cvm_id', 'cvm_id'),
-    {
-      label: '绑定资源的类型',
-      field: 'instance_type',
-      render({ cell }: { cell: string }) {
-        return h('span', [cell || '--']);
-      },
-    },
-    {
-      label: '更新时间',
-      field: 'updated_at',
       sort: true,
+      isDefaultShow: true,
+      render({ cell }: { cell: string }) {
+        return h('span', [cell || '--']);
+      },
+    },
+    // {
+    //   label: '状态',
+    //   field: 'status',
+    //   render({ cell }: { cell: string }) {
+    //     return h('span', [cell || '--']);
+    //   },
+    // },
+    getLinkField('host', '绑定的资源实例', 'cvm_id', 'cvm_id'),
+    {
+      label: '绑定的资源类型',
+      field: 'instance_type',
+      sort: true,
+      isDefaultShow: true,
+      render({ cell }: { cell: string }) {
+        return h('span', [cell || '--']);
+      },
+    },
+    {
+      label: '是否分配',
+      field: 'bk_biz_id',
+      sort: true,
+      isOnlyShowInResource: true,
+      isDefaultShow: true,
+      render: ({ data, cell }: {data: {bk_biz_id: number}, cell: number}) => <bk-tag
+        v-bk-tooltips={{
+          content: businessMapStore.businessMap.get(cell),
+          disabled: !cell || cell === -1,
+        }}
+        theme={data.bk_biz_id === -1 ? false : 'success'}>
+          {
+            data.bk_biz_id === -1
+              ? '未分配'
+              : '已分配'
+          }
+        </bk-tag>
+      ,
+    },
+    {
+      label: '所属业务',
+      field: 'bk_biz_id2',
+      isOnlyShowInResource: true,
+      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '--',
     },
     {
       label: '创建时间',
       field: 'created_at',
+      sort: true,
+    },
+    {
+      label: '更新时间',
+      field: 'updated_at',
       sort: true,
     },
   ];
