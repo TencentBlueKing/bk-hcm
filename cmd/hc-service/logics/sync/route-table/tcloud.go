@@ -667,8 +667,7 @@ func BatchSyncTCloudRoute(kt *kit.Kit, req *hcroutetable.TCloudRouteTableSyncReq
 		updateReq := &dataproto.TCloudRouteBatchUpdateReq{
 			TCloudRoutes: updateResources,
 		}
-		if err = dataCli.TCloud.RouteTable.BatchUpdateRoute(kt.Ctx, kt.Header(), routeTableID,
-			updateReq); err != nil {
+		if err = dataCli.TCloud.RouteTable.BatchUpdateRoute(kt, routeTableID, updateReq); err != nil {
 			logs.Errorf("%s-routetable-route batch compare db update failed. accountID: %s, region: %s, "+
 				"routeTableID: %s, err: %v", enumor.TCloud, req.AccountID, req.Region, routeTableID, err)
 			return err
@@ -682,8 +681,7 @@ func BatchSyncTCloudRoute(kt *kit.Kit, req *hcroutetable.TCloudRouteTableSyncReq
 				TCloudRoutes: newCreateRes,
 			}
 
-			if _, err = dataCli.TCloud.RouteTable.BatchCreateRoute(kt.Ctx, kt.Header(),
-				routeTableID, createReq); err != nil {
+			if _, err = dataCli.TCloud.RouteTable.BatchCreateRoute(kt, routeTableID, createReq); err != nil {
 				logs.Errorf("%s-routetable-route batch compare db create failed. accountID: %s, region: %s, "+
 					"routeTableID: %s, err: %v", enumor.TCloud, req.AccountID, req.Region, routeTableID, err)
 				return err
@@ -703,8 +701,7 @@ func BatchSyncTCloudRoute(kt *kit.Kit, req *hcroutetable.TCloudRouteTableSyncReq
 		deleteReq := &dataservice.BatchDeleteReq{
 			Filter: tools.ContainersExpression("id", deleteIDs),
 		}
-		if err = dataCli.TCloud.RouteTable.BatchDeleteRoute(kt.Ctx, kt.Header(), routeTableID,
-			deleteReq); err != nil {
+		if err = dataCli.TCloud.RouteTable.BatchDeleteRoute(kt, routeTableID, deleteReq); err != nil {
 			logs.Errorf("%s-routetable-route batch compare db delete failed. accountID: %s, region: %s, "+
 				"routeTableID: %s, delIDs: %v, err: %v", enumor.TCloud, req.AccountID, req.Region, routeTableID,
 				deleteIDs, err)
@@ -805,7 +802,7 @@ func BatchCreateTCloudRoute(kt *kit.Kit, newID string, list *routetable.TCloudRo
 	createReq := &dataproto.TCloudRouteBatchCreateReq{
 		TCloudRoutes: createRes,
 	}
-	if _, err := dataCli.TCloud.RouteTable.BatchCreateRoute(kt.Ctx, kt.Header(), newID, createReq); err != nil {
+	if _, err := dataCli.TCloud.RouteTable.BatchCreateRoute(kt, newID, createReq); err != nil {
 		return err
 	}
 
