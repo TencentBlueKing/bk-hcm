@@ -361,28 +361,57 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       width: '100',
       onlyShowOnList: true,
     },
-    getLinkField('drive'),
+    getLinkField('drive', '云硬盘ID', 'cloud_id', 'cloud_id'),
+    // {
+    //   label: '资源 ID',
+    //   field: 'cloud_id',
+    //   sort: true,
+    // },
     {
-      label: '资源 ID',
-      field: 'cloud_id',
-      sort: true,
-    },
-    {
-      label: '名称',
+      label: '云硬盘名称',
       field: 'name',
       sort: true,
+      isDefaultShow: true,
     },
     {
       label: '云厂商',
       field: 'vendor',
+      sort: true,
+      isDefaultShow: true,
       render({ cell }: { cell: string }) {
         return h('span', [CloudType[cell] || '--']);
+      },
+    },
+    {
+      label: '地域',
+      field: 'region',
+      sort: true,
+      isDefaultShow: true,
+      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell),
+    },
+    {
+      label: '可用区',
+      field: 'zone',
+      sort: true,
+      isDefaultShow: true,
+      render({ cell }: { cell: string }) {
+        return h('span', [cell || '--']);
+      },
+    },
+    {
+      label: '云硬盘状态',
+      field: 'status',
+      sort: true,
+      isDefaultShow: true,
+      render({ cell }: { cell: string }) {
+        return h('span', [cell || '--']);
       },
     },
     {
       label: '类型',
       field: 'disk_type',
       sort: true,
+      isDefaultShow: true,
       render({ cell }: { cell: string }) {
         return h('span', [cell || '--']);
       },
@@ -391,29 +420,39 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '容量(GB)',
       field: 'disk_size',
       sort: true,
+      isDefaultShow: true,
       render({ cell }: { cell: string }) {
         return h('span', [cell || '--']);
       },
     },
+    getLinkField('host', '挂载的主机', 'instance_id', 'instance_id'),
     {
-      label: '状态',
-      field: 'status',
-      render({ cell }: { cell: string }) {
-        return h('span', [cell || '--']);
-      },
-    },
-    {
-      label: '可用区',
-      field: 'zone',
+      label: '是否分配',
+      field: 'bk_biz_id',
       sort: true,
-      render({ cell }: { cell: string }) {
-        return h('span', [cell || '--']);
-      },
+      isOnlyShowInResource: true,
+      isDefaultShow: true,
+      render: ({ data, cell }: {data: {bk_biz_id: number}, cell: number}) => <bk-tag
+        v-bk-tooltips={{
+          content: businessMapStore.businessMap.get(cell),
+          disabled: !cell || cell === -1,
+        }}
+        theme={data.bk_biz_id === -1 ? false : 'success'}>
+          {
+            data.bk_biz_id === -1
+              ? '未分配'
+              : '已分配'
+          }
+        </bk-tag>
+      ,
     },
-    getLinkField('host', '挂载实例', 'instance_id', 'instance_id'),
     {
       label: '创建时间',
       field: 'created_at',
+    },
+    {
+      label: '更新时间',
+      field: 'updated_at',
     },
   ];
 
@@ -597,7 +636,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '公网IP',
       field: 'vendor',
-      isDefaultShow: false,
+      isDefaultShow: true,
       onlyShowOnList: true,
       render: ({ data }: any) => [...data.public_ipv4_addresses, ...data.public_ipv6_addresses].join(',') || '--',
     },
