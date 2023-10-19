@@ -138,16 +138,16 @@ func (cli *SecurityGroupClient) DeleteSecurityGroup(kt *kit.Kit, id string) erro
 }
 
 // CreateSecurityGroupRule create security group rule.
-func (cli *SecurityGroupClient) CreateSecurityGroupRule(ctx context.Context, h http.Header, sgID string,
+func (cli *SecurityGroupClient) CreateSecurityGroupRule(kt *kit.Kit, sgID string,
 	request *proto.HuaWeiSGRuleCreateReq) (*core.CreateResult, error) {
 
 	resp := new(core.CreateResp)
 
 	err := cli.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/security_groups/%s/rules/create", sgID).
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

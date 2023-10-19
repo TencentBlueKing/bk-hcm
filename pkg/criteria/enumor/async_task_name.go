@@ -33,7 +33,7 @@ func (v ActionName) Validate() error {
 	case ActionDeleteFirewallRule:
 
 	case ActionDeleteSubnet:
-	case ActionDeleteSecurityGroup:
+	case ActionDeleteSecurityGroup, ActionCreateHuaweiSGRule:
 
 	case VirRoot:
 	case ActionCreateFactoryTest, ActionProduceTest, ActionAssembleTest, ActionSleep:
@@ -79,6 +79,8 @@ const (
 	ActionSleep             ActionName = "sleep"
 )
 
+// Security Group
 const (
 	ActionDeleteSecurityGroup ActionName = "delete_security_group"
+	ActionCreateHuaweiSGRule  ActionName = "create_huawei_sg_rule"
 )

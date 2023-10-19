@@ -47,4 +47,6 @@ func register() {
 
 	action.RegisterAction(actionsubnet.DeleteAction{})
 	action.RegisterAction(actionsg.DeleteSgAction{})
+	action.RegisterAction(actionsg.CreateHuaweiSGRuleAction{})
+
 }

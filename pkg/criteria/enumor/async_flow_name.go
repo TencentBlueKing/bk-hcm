@@ -31,7 +31,7 @@ func (v FlowName) Validate() error {
 	case FlowDeleteFirewallRule:
 	case FlowDeleteSubnet:
 	case FlowNormalTest, FlowSleepTest:
-	case FlowDeleteSecurityGroup:
+	case FlowDeleteSecurityGroup, FlowCreateHuaweiSGRule:
 	default:
 		return fmt.Errorf("unsupported tpl: %s", v)
 	}
@@ -69,4 +69,5 @@ const (
 const (
 	// FlowDeleteSecurityGroup ...
 	FlowDeleteSecurityGroup FlowName = "delete_security_group"
+	FlowCreateHuaweiSGRule  FlowName = "create_huawei_sg_rule"
 )
