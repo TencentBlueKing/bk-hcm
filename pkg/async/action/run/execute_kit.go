@@ -31,6 +31,7 @@ type ExecuteKit interface {
 type ShareDataOperator interface {
 	Get(key string) (string, bool)
 	Set(kt *kit.Kit, key string, val string) error
+	AppendIDs(kt *kit.Kit, key string, ids ...string) error
 }
 
 // NewExecuteContext new execute context for task exec.

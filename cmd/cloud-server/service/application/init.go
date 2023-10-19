@@ -137,11 +137,7 @@ func (a *applicationSvc) updateStatusWithDetail(
 	if deliveryDetail != "" {
 		req.DeliveryDetail = &deliveryDetail
 	}
-	_, err := a.client.DataService().Global.Application.Update(
-		cts.Kit.Ctx, cts.Kit.Header(),
-		applicationID,
-		req,
-	)
+	_, err := a.client.DataService().Global.Application.Update(cts.Kit, applicationID, req)
 	return err
 }
 
@@ -155,8 +151,7 @@ func (a *applicationSvc) getApplicationBySN(cts *rest.Contexts, sn string) (*dat
 	}
 	// 查询
 	resp, err := a.client.DataService().Global.Application.List(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+		cts.Kit,
 		&dataproto.ApplicationListReq{
 			Filter: reqFilter,
 			Page:   &core.BasePage{Count: false, Start: 0, Limit: 1},

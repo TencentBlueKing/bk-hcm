@@ -20,9 +20,9 @@
 package constant
 
 const (
-	// RecycleTimingUserKey recycle timing UserKey
-	RecycleTimingUserKey = "hcm-backend-recycle"
+	// BackendOperationUserKey hcm后端操作用户
+	BackendOperationUserKey = "hcm-backend-admin"
 
-	// RecycleTimingAppCodeKey recycle timing AppCodeKey
-	RecycleTimingAppCodeKey = "hcm"
+	// BackendOperationAppCodeKey hcm后端操作AppCode
+	BackendOperationAppCodeKey = "hcm"
 )

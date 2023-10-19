@@ -48,7 +48,7 @@ func (act DeleteAction) Name() enumor.ActionName {
 func (act DeleteAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
 	idPtr, ok := params.(*string)
 	if !ok {
-		return nil, errf.New(errf.InvalidParameter, "params type not right")
+		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
 
 	if idPtr == nil || len(*idPtr) == 0 {

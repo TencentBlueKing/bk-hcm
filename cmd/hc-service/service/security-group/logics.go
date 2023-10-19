@@ -70,7 +70,7 @@ func (g *securityGroup) getSecurityGroupAndCvm(kt *kit.Kit, sgID, cvmID string) 
 		return nil, nil, errf.Newf(errf.RecordNotFound, "security group: %s not found", sgID)
 	}
 
-	cvmReq := &protocloud.CvmListReq{
+	cvmReq := &core.ListReq{
 		Filter: tools.EqualExpression("id", cvmID),
 		Page:   core.NewDefaultBasePage(),
 	}

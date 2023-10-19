@@ -20,17 +20,14 @@
 package consumer
 
 import (
+	"hcm/pkg/api/core"
 	"hcm/pkg/async/backend/model"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/kit"
 )
 
 // NewKit new async kit.
 func NewKit() *kit.Kit {
-	kt := kit.New()
-	kt.User = constant.AsyncUserKey
-	kt.AppCode = constant.AsyncAppCodeKey
-	return kt
+	return core.NewBackendKit()
 }
 
 var (

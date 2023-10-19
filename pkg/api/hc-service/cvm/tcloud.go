@@ -139,6 +139,10 @@ type TCloudBatchCreateReq struct {
 
 // Validate request.
 func (req *TCloudBatchCreateReq) Validate() error {
+	if req.RequiredCount > constant.BatchCreateCvmFromCloudMaxLimit {
+		return fmt.Errorf("required_count should <= %d", constant.BatchCreateCvmFromCloudMaxLimit)
+	}
+
 	return validator.Validate.Struct(req)
 }
 

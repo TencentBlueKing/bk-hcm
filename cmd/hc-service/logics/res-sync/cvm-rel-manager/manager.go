@@ -25,7 +25,6 @@ import (
 
 	"hcm/cmd/hc-service/logics/res-sync/common"
 	"hcm/pkg/api/core"
-	dataproto "hcm/pkg/api/data-service/cloud"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -346,8 +345,8 @@ func (mgr *CvmRelManger) getCvmMap(kt *kit.Kit) (map[string]string, error) {
 	cvmMap := make(map[string]string)
 	split := slice.Split(cloudIDs, int(core.DefaultMaxPageLimit))
 	for _, partCloudIDs := range split {
-		req := &dataproto.CvmListReq{
-			Field:  []string{"id", "cloud_id"},
+		req := &core.ListReq{
+			Fields: []string{"id", "cloud_id"},
 			Filter: tools.ContainersExpression("cloud_id", partCloudIDs),
 			Page:   core.NewDefaultBasePage(),
 		}

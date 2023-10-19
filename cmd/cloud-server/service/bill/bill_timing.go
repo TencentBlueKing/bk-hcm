@@ -29,7 +29,6 @@ import (
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/client"
 	dataservice "hcm/pkg/client/data-service"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -49,9 +48,7 @@ func CloudBillConfigCreate(intervalMin time.Duration, sd serviced.ServiceDiscove
 			continue
 		}
 
-		kt := kit.New()
-		kt.User = constant.BillTimingUserKey
-		kt.AppCode = constant.BillTimingAppCodeKey
+		kt := core.NewBackendKit()
 
 		start := time.Now()
 		logs.Infof("account cloud bill config pipeline start, time: %v, rid: %s", start, kt.Rid)

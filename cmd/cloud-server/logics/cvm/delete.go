@@ -27,7 +27,6 @@ import (
 	"hcm/pkg/api/cloud-server/recycle"
 	"hcm/pkg/api/core"
 	corerecord "hcm/pkg/api/core/recycle-record"
-	"hcm/pkg/api/data-service/cloud"
 	dsrecord "hcm/pkg/api/data-service/recycle-record"
 	hcprotocvm "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/criteria/constant"
@@ -400,8 +399,8 @@ func (c *cvm) GetNotCmdbRecyclableHosts(kt *kit.Kit, bizHostsIds map[int64][]str
 
 	for bizID, hostIDs := range bizHostsIds {
 		// 获取cloud id
-		req := &cloud.CvmListReq{
-			Field:  []string{"cloud_id", "vendor", "bk_biz_id", "id", "status"},
+		req := &core.ListReq{
+			Fields: []string{"cloud_id", "vendor", "bk_biz_id", "id", "status"},
 			Filter: tools.ContainersExpression("id", hostIDs),
 			Page:   core.NewDefaultBasePage(),
 		}

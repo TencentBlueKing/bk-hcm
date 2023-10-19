@@ -23,13 +23,17 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"hcm/cmd/cloud-server/logics/async"
 	"hcm/cmd/cloud-server/service/common"
+	actioncvm "hcm/cmd/task-server/logics/action/cvm"
 	cloudserver "hcm/pkg/api/cloud-server"
 	cscvm "hcm/pkg/api/cloud-server/cvm"
+	ts "hcm/pkg/api/task-server"
+	"hcm/pkg/async/action"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
-	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -57,23 +61,40 @@ func (svc *cvmSvc) CreateCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
+	tasks := make([]ts.CustomFlowTask, 0)
 	switch info.Vendor {
 	case enumor.TCloud:
-		return svc.createTCloudCvm(cts.Kit, req.Data)
+		tasks, err = svc.buildCreateTCloudCvmTasks(req.Data)
 	case enumor.Aws:
-		return svc.createAwsCvm(cts.Kit, req.Data)
+		tasks, err = svc.buildCreateAwsCvmTasks(req.Data)
 	case enumor.HuaWei:
-		return svc.createHuaWeiCvm(cts.Kit, req.Data)
+		tasks, err = svc.buildCreateHuaWeiCvmTasks(req.Data)
 	case enumor.Gcp:
-		return svc.createGcpCvm(cts.Kit, req.Data)
+		tasks, err = svc.buildCreateGcpCvmTasks(req.Data)
 	case enumor.Azure:
-		return svc.createAzureCvm(cts.Kit, req.Data)
+		tasks, err = svc.buildCreateAzureCvmTasks(req.Data)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", info.Vendor)
 	}
+	if err != nil {
+		logs.Errorf("build create %s cvm tasks failed, err: %v, rid: %s", info.Vendor, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	addReq := &ts.AddCustomFlowReq{
+		Name:  enumor.FlowCreateCvm,
+		Tasks: tasks,
+	}
+	result, err := svc.client.TaskServer().CreateCustomFlow(cts.Kit, addReq)
+	if err != nil {
+		logs.Errorf("call taskserver to create custom flow failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return result, async.WaitTaskToEnd(cts.Kit, svc.client.TaskServer(), result.ID)
 }
 
-func (svc *cvmSvc) createAzureCvm(kt *kit.Kit, body json.RawMessage) (interface{}, error) {
+func (svc *cvmSvc) buildCreateAzureCvmTasks(body json.RawMessage) ([]ts.CustomFlowTask, error) {
 
 	req := new(cscvm.AzureCvmCreateReq)
 	if err := json.Unmarshal(body, req); err != nil {
@@ -84,17 +105,23 @@ func (svc *cvmSvc) createAzureCvm(kt *kit.Kit, body json.RawMessage) (interface{
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	result, err := svc.client.HCService().Azure.Cvm.BatchCreateCvm(kt.Ctx, kt.Header(),
-		common.ConvAzureCvmCreateReq(req))
-	if err != nil {
-		logs.Errorf("batch create azure cvm failed, err: %v, result: %v, rid: %s", err, result, kt.Rid)
-		return result, err
-	}
+	tasks := actioncvm.BuildCreateCvmTasks(req.RequiredCount, constant.UnassignedBiz, 1,
+		func(actionID action.ActIDType, count int64) ts.CustomFlowTask {
+			req.RequiredCount = count
+			return ts.CustomFlowTask{
+				ActionID:   actionID,
+				ActionName: enumor.ActionCreateCvm,
+				Params: &actioncvm.CreateOption{
+					Vendor:         enumor.Azure,
+					AzureCreateReq: *common.ConvAzureCvmCreateReq(req),
+				},
+			}
+		})
 
-	return result, nil
+	return tasks, nil
 }
 
-func (svc *cvmSvc) createHuaWeiCvm(kt *kit.Kit, body json.RawMessage) (interface{}, error) {
+func (svc *cvmSvc) buildCreateHuaWeiCvmTasks(body json.RawMessage) ([]ts.CustomFlowTask, error) {
 
 	req := new(cscvm.HuaWeiCvmCreateReq)
 	if err := json.Unmarshal(body, req); err != nil {
@@ -105,17 +132,24 @@ func (svc *cvmSvc) createHuaWeiCvm(kt *kit.Kit, body json.RawMessage) (interface
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	result, err := svc.client.HCService().HuaWei.Cvm.BatchCreateCvm(kt.Ctx, kt.Header(),
-		common.ConvHuaWeiCvmCreateReq(req))
-	if err != nil {
-		logs.Errorf("batch create huawei cvm failed, err: %v, result: %v, rid: %s", err, result, kt.Rid)
-		return result, err
-	}
+	tasks := actioncvm.BuildCreateCvmTasks(req.RequiredCount, constant.UnassignedBiz,
+		constant.BatchCreateCvmFromCloudMaxLimit,
+		func(actionID action.ActIDType, count int64) ts.CustomFlowTask {
+			req.RequiredCount = count
+			return ts.CustomFlowTask{
+				ActionID:   actionID,
+				ActionName: enumor.ActionCreateCvm,
+				Params: &actioncvm.CreateOption{
+					Vendor:               enumor.HuaWei,
+					HuaWeiBatchCreateReq: *common.ConvHuaWeiCvmCreateReq(req),
+				},
+			}
+		})
 
-	return result, nil
+	return tasks, nil
 }
 
-func (svc *cvmSvc) createGcpCvm(kt *kit.Kit, body json.RawMessage) (interface{}, error) {
+func (svc *cvmSvc) buildCreateGcpCvmTasks(body json.RawMessage) ([]ts.CustomFlowTask, error) {
 
 	req := new(cscvm.GcpCvmCreateReq)
 	if err := json.Unmarshal(body, req); err != nil {
@@ -126,16 +160,24 @@ func (svc *cvmSvc) createGcpCvm(kt *kit.Kit, body json.RawMessage) (interface{},
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	result, err := svc.client.HCService().Gcp.Cvm.BatchCreateCvm(kt.Ctx, kt.Header(), common.ConvGcpCvmCreateReq(req))
-	if err != nil {
-		logs.Errorf("batch create gcp cvm failed, err: %v, result: %v, rid: %s", err, result, kt.Rid)
-		return result, err
-	}
+	tasks := actioncvm.BuildCreateCvmTasks(req.RequiredCount, constant.UnassignedBiz,
+		constant.BatchCreateCvmFromCloudMaxLimit,
+		func(actionID action.ActIDType, count int64) ts.CustomFlowTask {
+			req.RequiredCount = count
+			return ts.CustomFlowTask{
+				ActionID:   actionID,
+				ActionName: enumor.ActionCreateCvm,
+				Params: &actioncvm.CreateOption{
+					Vendor:            enumor.Gcp,
+					GcpBatchCreateReq: *common.ConvGcpCvmCreateReq(req),
+				},
+			}
+		})
 
-	return result, nil
+	return tasks, nil
 }
 
-func (svc *cvmSvc) createAwsCvm(kt *kit.Kit, body json.RawMessage) (interface{}, error) {
+func (svc *cvmSvc) buildCreateAwsCvmTasks(body json.RawMessage) ([]ts.CustomFlowTask, error) {
 
 	req := new(cscvm.AwsCvmCreateReq)
 	if err := json.Unmarshal(body, req); err != nil {
@@ -146,16 +188,24 @@ func (svc *cvmSvc) createAwsCvm(kt *kit.Kit, body json.RawMessage) (interface{},
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	result, err := svc.client.HCService().Aws.Cvm.BatchCreateCvm(kt.Ctx, kt.Header(), common.ConvAwsCvmCreateReq(req))
-	if err != nil {
-		logs.Errorf("batch create aws cvm failed, err: %v, result: %v, rid: %s", err, result, kt.Rid)
-		return result, err
-	}
+	tasks := actioncvm.BuildCreateCvmTasks(req.RequiredCount, constant.UnassignedBiz,
+		constant.BatchCreateCvmFromCloudMaxLimit,
+		func(actionID action.ActIDType, count int64) ts.CustomFlowTask {
+			req.RequiredCount = count
+			return ts.CustomFlowTask{
+				ActionID:   actionID,
+				ActionName: enumor.ActionCreateCvm,
+				Params: &actioncvm.CreateOption{
+					Vendor:            enumor.Aws,
+					AwsBatchCreateReq: *common.ConvAwsCvmCreateReq(req),
+				},
+			}
+		})
 
-	return result, nil
+	return tasks, nil
 }
 
-func (svc *cvmSvc) createTCloudCvm(kt *kit.Kit, body json.RawMessage) (interface{}, error) {
+func (svc *cvmSvc) buildCreateTCloudCvmTasks(body json.RawMessage) ([]ts.CustomFlowTask, error) {
 
 	req := new(cscvm.TCloudCvmCreateReq)
 	if err := json.Unmarshal(body, req); err != nil {
@@ -166,11 +216,19 @@ func (svc *cvmSvc) createTCloudCvm(kt *kit.Kit, body json.RawMessage) (interface
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	result, err := svc.client.HCService().TCloud.Cvm.BatchCreateCvm(kt, common.ConvTCloudCvmCreateReq(req))
-	if err != nil {
-		logs.Errorf("batch create tcloud cvm failed, err: %v, result: %v, rid: %s", err, result, kt.Rid)
-		return result, err
-	}
+	tasks := actioncvm.BuildCreateCvmTasks(req.RequiredCount, constant.UnassignedBiz,
+		constant.BatchCreateCvmFromCloudMaxLimit,
+		func(actionID action.ActIDType, count int64) ts.CustomFlowTask {
+			req.RequiredCount = count
+			return ts.CustomFlowTask{
+				ActionID:   actionID,
+				ActionName: enumor.ActionCreateCvm,
+				Params: &actioncvm.CreateOption{
+					Vendor:               enumor.TCloud,
+					TCloudBatchCreateReq: *common.ConvTCloudCvmCreateReq(req),
+				},
+			}
+		})
 
-	return result, nil
+	return tasks, nil
 }

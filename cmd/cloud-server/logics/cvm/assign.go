@@ -184,8 +184,8 @@ func ValidateCvmRelResBeforeAssign(kt *kit.Kit, cli *dataservice.Client, eipIDs 
 
 // ValidateBeforeAssign 分配主机前校验主机信息
 func ValidateBeforeAssign(kt *kit.Kit, cli *dataservice.Client, ids []string) error {
-	listReq := &dataproto.CvmListReq{
-		Field: []string{"id", "bk_biz_id", "bk_cloud_id"},
+	listReq := &core.ListReq{
+		Fields: []string{"id", "bk_biz_id", "bk_cloud_id"},
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{

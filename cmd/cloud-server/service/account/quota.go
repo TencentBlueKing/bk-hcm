@@ -22,7 +22,6 @@ package account
 import (
 	proto "hcm/pkg/api/cloud-server/account"
 	"hcm/pkg/api/core"
-	protocloud "hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service/account"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -131,7 +130,7 @@ func (a *accountSvc) getHuaWeiRegionQuota(cts *rest.Contexts,
 		"account_id": accountID,
 		"region":     req.Region,
 	}
-	listReq := &protocloud.CvmListReq{
+	listReq := &core.ListReq{
 		Filter: tools.EqualWithOpExpression(filter.And, ruleMap),
 		Page:   core.NewCountPage(),
 	}

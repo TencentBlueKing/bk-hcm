@@ -480,7 +480,7 @@ func extractDiskID(cts *rest.Contexts) (string, error) {
 func getCvmName(cts *rest.Contexts, cli *dataservice.Client, cvmID string) (string, error) {
 	cvms, err := cli.Global.Cvm.ListCvm(
 		cts.Kit,
-		&cloud.CvmListReq{
+		&core.ListReq{
 			Filter: tools.ContainersExpression("id", []string{cvmID}),
 			Page: &core.BasePage{
 				Limit: core.DefaultMaxPageLimit,

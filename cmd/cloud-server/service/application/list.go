@@ -20,6 +20,12 @@
 package application
 
 import (
+	"bytes"
+	"fmt"
+	"strings"
+
+	"github.com/tidwall/gjson"
+
 	proto "hcm/pkg/api/cloud-server/application"
 	dataproto "hcm/pkg/api/data-service"
 	"hcm/pkg/criteria/errf"
@@ -51,8 +57,7 @@ func (a *applicationSvc) List(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	resp, err := a.client.DataService().Global.Application.List(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+		cts.Kit,
 		&dataproto.ApplicationListReq{
 			Filter: reqFilter,
 			Page:   req.Page,
@@ -62,5 +67,29 @@ func (a *applicationSvc) List(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
+	for _, one := range resp.Details {
+		one.Content = RemoveSenseField(one.Content)
+	}
+
 	return resp, nil
+}
+
+// RemoveSenseField 申请单据内容移除铭感信息，如主机密码等
+func RemoveSenseField(content string) string {
+	buffer := bytes.Buffer{}
+
+	m := gjson.Parse(content).Map()
+	for key, value := range m {
+		if strings.Contains(key, "password") {
+			continue
+		}
+		buffer.WriteString(fmt.Sprintf(`"%s":%s,`, key, value.Raw))
+	}
+
+	ext := buffer.String()
+	if len(ext) == 0 {
+		return "{}"
+	}
+
+	return fmt.Sprintf("{%s}", ext[:len(ext)-1])
 }

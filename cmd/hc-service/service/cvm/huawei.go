@@ -180,8 +180,8 @@ func (svc *cvmSvc) BatchResetHuaWeiCvmPwd(cts *rest.Contexts) (interface{}, erro
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	listReq := &dataproto.CvmListReq{
-		Field:  []string{"cloud_id"},
+	listReq := &core.ListReq{
+		Fields: []string{"cloud_id"},
 		Filter: tools.ContainersExpression("id", req.IDs),
 		Page:   core.NewDefaultBasePage(),
 	}
@@ -241,8 +241,8 @@ func (svc *cvmSvc) BatchStartHuaWeiCvm(cts *rest.Contexts) (interface{}, error) 
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	listReq := &dataproto.CvmListReq{
-		Field:  []string{"cloud_id"},
+	listReq := &core.ListReq{
+		Fields: []string{"cloud_id"},
 		Filter: tools.ContainersExpression("id", req.IDs),
 		Page:   core.NewDefaultBasePage(),
 	}
@@ -300,8 +300,8 @@ func (svc *cvmSvc) BatchStopHuaWeiCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	listReq := &dataproto.CvmListReq{
-		Field:  []string{"cloud_id"},
+	listReq := &core.ListReq{
+		Fields: []string{"cloud_id"},
 		Filter: tools.ContainersExpression("id", req.IDs),
 		Page:   core.NewDefaultBasePage(),
 	}
@@ -360,8 +360,8 @@ func (svc *cvmSvc) BatchRebootHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	listReq := &dataproto.CvmListReq{
-		Field:  []string{"cloud_id"},
+	listReq := &core.ListReq{
+		Fields: []string{"cloud_id"},
 		Filter: tools.ContainersExpression("id", req.IDs),
 		Page:   core.NewDefaultBasePage(),
 	}
@@ -420,8 +420,8 @@ func (svc *cvmSvc) BatchDeleteHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	listReq := &dataproto.CvmListReq{
-		Field:  []string{"cloud_id"},
+	listReq := &core.ListReq{
+		Fields: []string{"cloud_id"},
 		Filter: tools.ContainersExpression("id", req.IDs),
 		Page:   core.NewDefaultBasePage(),
 	}
