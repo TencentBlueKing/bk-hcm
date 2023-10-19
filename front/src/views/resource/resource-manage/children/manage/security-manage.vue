@@ -37,6 +37,7 @@ import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { VendorEnum } from '@/common/constant';
 import { cloneDeep } from 'lodash-es';
+import { useBusinessMapStore } from '@/store/useBusinessMap';
 
 const props = defineProps({
   filter: {
@@ -70,6 +71,7 @@ const accountStore = useAccountStore();
 
 const emit = defineEmits(['auth', 'handleSecrityType', 'edit', 'tabchange']);
 const { columns, generateColumnsSettings } = useColumns('group');
+const businessMapStore = useBusinessMapStore();
 
 const state = reactive<any>({
   datas: [],
@@ -267,13 +269,14 @@ const groupColumns = [
   },
   {
     label: '所属业务',
-    field: 'bk_biz_id',
+    field: 'bk_biz_id2',
+    isOnlyShowInResource: true,
     render({ data }: any) {
       return h(
         'span',
         {},
         [
-          data.bk_biz_id === -1 ? t('--') : data.bk_biz_id,
+          data.bk_biz_id === -1 ? t('--') : businessMapStore.businessMap.get(data.bk_biz_id),
         ],
       );
     },
@@ -398,10 +401,11 @@ const groupSettings = generateColumnsSettings(groupColumns);
 
 const gcpColumns = [
   {
-    label: 'ID',
-    field: 'id',
+    label: '防火墙 ID	',
+    field: 'cloud_id',
     width: '120',
     sort: true,
+    isDefaultShow: true,
     render({ data }: any) {
       return h(
         Button,
@@ -443,19 +447,22 @@ const gcpColumns = [
       );
     },
   },
+  // {
+  //   label: t('资源 ID'),
+  //   field: 'account_id',
+  //   sort: true,
+  // },
   {
-    label: t('资源 ID'),
-    field: 'account_id',
-    sort: true,
-  },
-  {
-    label: t('名称'),
+    label: '防火墙名称',
     field: 'name',
     sort: true,
+    isDefaultShow: true,
   },
   {
     label: t('云厂商'),
     field: 'vendor',
+    sort: true,
+    isDefaultShow: true,
     render() {
       return h(
         'span',
@@ -467,12 +474,22 @@ const gcpColumns = [
     },
   },
   {
-    label: 'VPC',
+    label: '所属VPC',
     field: 'vpc_id',
+    sort: true,
+    isDefaultShow: true,
   },
   {
-    label: t('类型'),
+    label: t('优先级'),
+    field: 'priority',
+    sort: true,
+    isDefaultShow: true,
+  },
+  {
+    label: '流量方向',
     field: 'type',
+    sort: true,
+    isDefaultShow: true,
     render({ data }: any) {
       return h(
         'span',
@@ -486,6 +503,8 @@ const gcpColumns = [
   {
     label: t('目标'),
     field: 'target_tags',
+    sort: true,
+    isDefaultShow: true,
     render({ data }: any) {
       return h(
         'span',
@@ -503,6 +522,8 @@ const gcpColumns = [
   {
     label: t('协议/端口'),
     field: 'allowed_denied',
+    sort: true,
+    isDefaultShow: true,
     render({ data }: any) {
       return h(
         'span',
@@ -518,13 +539,37 @@ const gcpColumns = [
     },
   },
   {
-    label: t('优先级'),
-    field: 'priority',
+    label: '是否分配',
+    field: 'bk_biz_id',
+    sort: true,
+    isOnlyShowInResource: true,
+    isDefaultShow: true,
+    render: ({ data }: {data: {bk_biz_id: number}, cell: number}) => {
+      return h(
+        Tag,
+        {
+          theme: data.bk_biz_id === -1 ? false : 'success',
+        },
+        [
+          data.bk_biz_id === -1 ? '未分配' : '已分配',
+        ],
+      );
+    }
+    ,
   },
   {
-    label: t('修改时间'),
-    field: 'updated_at',
-    sort: true,
+    label: '所属业务',
+    field: 'bk_biz_id2',
+    isOnlyShowInResource: true,
+    render({ data }: any) {
+      return h(
+        'span',
+        {},
+        [
+          data.bk_biz_id === -1 ? t('--') : businessMapStore.businessMap.get(data.bk_biz_id),
+        ],
+      );
+    },
   },
   {
     label: t('创建时间'),
@@ -532,8 +577,14 @@ const gcpColumns = [
     sort: true,
   },
   {
+    label: t('修改时间'),
+    field: 'updated_at',
+    sort: true,
+  },
+  {
     label: t('操作'),
     field: 'operator',
+    isDefaultShow: true,
     render({ data }: any) {
       return h(
         'span',
