@@ -503,16 +503,18 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const networkInterfaceColumns = [
-    getLinkField('network-interface'),
+    getLinkField('network-interface', '接口 ID', 'cloud_id', 'cloud_id'),
     {
-      label: '名称',
+      label: '接口名称',
       field: 'name',
       sort: true,
+      isDefaultShow: true,
     },
     {
       label: '云厂商',
       field: 'vendor',
       sort: true,
+      isDefaultShow: true,
       render({ cell }: { cell: string }) {
         return h('span', [CloudType[cell] || '--']);
       },
@@ -520,42 +522,50 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '地域',
       field: 'region',
+      sort: true,
+      isDefaultShow: true,
       render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell),
     },
     {
-      label: '可用区域',
+      label: '可用区',
       field: 'zone',
       render({ cell }: { cell: string }) {
         return h('span', [cell || '--']);
       },
     },
     {
-      label: '虚拟网络',
+      label: '所属VPC',
       field: 'cloud_vpc_id',
+      sort: true,
+      isDefaultShow: true,
       showOverflowTooltip: true,
       render({ cell }: { cell: string }) {
         return h('span', [cell || '--']);
       },
     },
     {
-      label: '子网',
+      label: '所属子网',
       showOverflowTooltip: true,
       field: 'cloud_subnet_id',
+      sort: true,
+      isDefaultShow: true,
       render({ cell }: { cell: string }) {
         return h('span', [cell || '--']);
       },
     },
-    {
-      label: '关联的实例',
-      field: 'instance_id',
-      showOverflowTooltip: true,
-      render({ cell }: { cell: string }) {
-        return h('span', [cell || '--']);
-      },
-    },
+    // {
+    //   label: '关联的实例',
+    //   field: 'instance_id',
+    //   showOverflowTooltip: true,
+    //   render({ cell }: { cell: string }) {
+    //     return h('span', [cell || '--']);
+    //   },
+    // },
     {
       label: '内网IP',
       field: 'private_ipv4_or_ipv6',
+      sort: true,
+      isDefaultShow: true,
       render({ data }: any) {
         return [
           h('span', {}, [
@@ -569,6 +579,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '关联的公网IP地址',
       field: 'public_ip',
+      sort: true,
+      isDefaultShow: true,
       render({ data }: any) {
         return [
           h('span', {}, [
@@ -578,10 +590,21 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       },
     },
     {
+      label: '所属业务',
+      field: 'bk_biz_id',
+      sort: true,
+      isOnlyShowInResource: true,
+      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '--',
+    },
+    {
       label: '创建时间',
       field: 'created_at',
       width: 180,
       sort: true,
+    },
+    {
+      label: '更新时间',
+      field: 'updated_at',
     },
   ];
 
@@ -941,17 +964,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   };
 
   const settings = generateColumnsSettings(columns);
-
-  // watch(
-  //   () => whereAmI.value,
-  //   () => {
-  //     settings = generateColumnsSettings(columns);
-  //     console.log(666, whereAmI.value, settings.value);
-  //   },
-  //   {
-  //     immediate: true,
-  //   },
-  // );
 
   return {
     columns,
