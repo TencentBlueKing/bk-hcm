@@ -8,6 +8,7 @@ import {
   Button,
   InfoBox,
   Message,
+  Tag,
 } from 'bkui-vue';
 import {
   useResourceStore,
@@ -36,6 +37,7 @@ import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { VendorEnum } from '@/common/constant';
 import { cloneDeep } from 'lodash-es';
+import { useBusinessMapStore } from '@/store/useBusinessMap';
 
 const props = defineProps({
   filter: {
@@ -68,7 +70,8 @@ const resourceStore = useResourceStore();
 const accountStore = useAccountStore();
 
 const emit = defineEmits(['auth', 'handleSecrityType', 'edit', 'tabchange']);
-const { columns } = useColumns('group');
+const { columns, generateColumnsSettings } = useColumns('group');
+const businessMapStore = useBusinessMapStore();
 
 const state = reactive<any>({
   datas: [],
@@ -162,10 +165,11 @@ defineExpose({ fetchComponentsData });
 
 const groupColumns = [
   {
-    label: 'ID',
-    field: 'id',
+    label: '安全组 ID',
+    field: 'cloud_id',
     width: '120',
     sort: true,
+    isDefaultShow: true,
     render({ data }: any) {
       return h(
         Button,
@@ -210,36 +214,16 @@ const groupColumns = [
     },
   },
   {
-    label: t('业务'),
-    field: 'bk_biz_id',
-    render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          data.bk_biz_id === -1 ? t('--') : data.bk_biz_id,
-        ],
-      );
-    },
-  },
-  {
-    label: t('账号 ID'),
-    field: 'account_id',
-    sort: true,
-  },
-  {
-    label: t('资源 ID'),
-    field: 'cloud_id',
-    sort: true,
-  },
-  {
-    label: t('名称'),
+    label: '安全组名称',
     field: 'name',
     sort: true,
+    isDefaultShow: true,
   },
   {
     label: t('云厂商'),
     field: 'vendor',
+    sort: true,
+    isDefaultShow: true,
     render({ data }: any) {
       return h(
         'span',
@@ -253,6 +237,8 @@ const groupColumns = [
   {
     label: t('地域'),
     field: 'region',
+    sort: true,
+    isDefaultShow: true,
     render: ({ data }: { data: { vendor: VendorEnum; region: string; } }) => {
       return getRegionName(data.vendor, data.region);
     },
@@ -260,24 +246,69 @@ const groupColumns = [
   {
     label: t('描述'),
     field: 'memo',
+    isDefaultShow: true,
   },
+  {
+    label: '是否分配',
+    field: 'bk_biz_id',
+    sort: true,
+    isOnlyShowInResource: true,
+    isDefaultShow: true,
+    render: ({ data }: {data: {bk_biz_id: number}, cell: number}) => {
+      return h(
+        Tag,
+        {
+          theme: data.bk_biz_id === -1 ? false : 'success',
+        },
+        [
+          data.bk_biz_id === -1 ? '未分配' : '已分配',
+        ],
+      );
+    }
+    ,
+  },
+  {
+    label: '所属业务',
+    field: 'bk_biz_id2',
+    isOnlyShowInResource: true,
+    render({ data }: any) {
+      return h(
+        'span',
+        {},
+        [
+          data.bk_biz_id === -1 ? t('--') : businessMapStore.businessMap.get(data.bk_biz_id),
+        ],
+      );
+    },
+  },
+  {
+    label: t('账号 ID'),
+    field: 'account_id',
+    sort: true,
+  },
+  // {
+  //   label: t('资源 ID'),
+  //   field: 'cloud_id',
+  //   sort: true,
+  // },
   // {
   //   label: t('关联模板'),
   //   field: '',
   // },
-  {
-    label: t('修改时间'),
-    field: 'updated_at',
-    sort: true,
-  },
   {
     label: t('创建时间'),
     field: 'created_at',
     sort: true,
   },
   {
+    label: t('修改时间'),
+    field: 'updated_at',
+    sort: true,
+  },
+  {
     label: t('操作'),
     field: 'operate',
+    isDefaultShow: true,
     render({ data }: any) {
       return h(
         'span',
@@ -365,12 +396,16 @@ const groupColumns = [
     },
   },
 ];
+
+const groupSettings = generateColumnsSettings(groupColumns);
+
 const gcpColumns = [
   {
-    label: 'ID',
-    field: 'id',
+    label: '防火墙 ID	',
+    field: 'cloud_id',
     width: '120',
     sort: true,
+    isDefaultShow: true,
     render({ data }: any) {
       return h(
         Button,
@@ -412,19 +447,22 @@ const gcpColumns = [
       );
     },
   },
+  // {
+  //   label: t('资源 ID'),
+  //   field: 'account_id',
+  //   sort: true,
+  // },
   {
-    label: t('资源 ID'),
-    field: 'account_id',
-    sort: true,
-  },
-  {
-    label: t('名称'),
+    label: '防火墙名称',
     field: 'name',
     sort: true,
+    isDefaultShow: true,
   },
   {
     label: t('云厂商'),
     field: 'vendor',
+    sort: true,
+    isDefaultShow: true,
     render() {
       return h(
         'span',
@@ -436,12 +474,22 @@ const gcpColumns = [
     },
   },
   {
-    label: 'VPC',
+    label: '所属VPC',
     field: 'vpc_id',
+    sort: true,
+    isDefaultShow: true,
   },
   {
-    label: t('类型'),
+    label: t('优先级'),
+    field: 'priority',
+    sort: true,
+    isDefaultShow: true,
+  },
+  {
+    label: '流量方向',
     field: 'type',
+    sort: true,
+    isDefaultShow: true,
     render({ data }: any) {
       return h(
         'span',
@@ -455,6 +503,8 @@ const gcpColumns = [
   {
     label: t('目标'),
     field: 'target_tags',
+    sort: true,
+    isDefaultShow: true,
     render({ data }: any) {
       return h(
         'span',
@@ -472,6 +522,8 @@ const gcpColumns = [
   {
     label: t('协议/端口'),
     field: 'allowed_denied',
+    sort: true,
+    isDefaultShow: true,
     render({ data }: any) {
       return h(
         'span',
@@ -487,13 +539,37 @@ const gcpColumns = [
     },
   },
   {
-    label: t('优先级'),
-    field: 'priority',
+    label: '是否分配',
+    field: 'bk_biz_id',
+    sort: true,
+    isOnlyShowInResource: true,
+    isDefaultShow: true,
+    render: ({ data }: {data: {bk_biz_id: number}, cell: number}) => {
+      return h(
+        Tag,
+        {
+          theme: data.bk_biz_id === -1 ? false : 'success',
+        },
+        [
+          data.bk_biz_id === -1 ? '未分配' : '已分配',
+        ],
+      );
+    }
+    ,
   },
   {
-    label: t('修改时间'),
-    field: 'updated_at',
-    sort: true,
+    label: '所属业务',
+    field: 'bk_biz_id2',
+    isOnlyShowInResource: true,
+    render({ data }: any) {
+      return h(
+        'span',
+        {},
+        [
+          data.bk_biz_id === -1 ? t('--') : businessMapStore.businessMap.get(data.bk_biz_id),
+        ],
+      );
+    },
   },
   {
     label: t('创建时间'),
@@ -501,8 +577,14 @@ const gcpColumns = [
     sort: true,
   },
   {
+    label: t('修改时间'),
+    field: 'updated_at',
+    sort: true,
+  },
+  {
     label: t('操作'),
     field: 'operator',
+    isDefaultShow: true,
     render({ data }: any) {
       return h(
         'span',
@@ -565,6 +647,8 @@ const gcpColumns = [
   },
 ];
 
+const gcpSettings = generateColumnsSettings(gcpColumns);
+
 const types = [
   { name: 'group', label: t('安全组') },
   { name: 'gcp', label: t('GCP防火墙规则') },
@@ -582,23 +666,23 @@ watch(
   },
 );
 
-const computedSettings = computed(() => {
-  const fields = [];
-  const columns = securityType.value === 'group' ? groupColumns : gcpColumns;
-  for (const column of columns) {
-    if (column.field && column.label) {
-      fields.push({
-        label: column.label,
-        field: column.field,
-        disabled: column.field === 'id',
-      });
-    }
-  }
-  return {
-    fields,
-    checked: fields.map(field => field.field),
-  };
-});
+// const computedSettings = computed(() => {
+//   const fields = [];
+//   const columns = securityType.value === 'group' ? groupColumns : gcpColumns;
+//   for (const column of columns) {
+//     if (column.field && column.label) {
+//       fields.push({
+//         label: column.label,
+//         field: column.field,
+//         disabled: column.field === 'id',
+//       });
+//     }
+//   }
+//   return {
+//     fields,
+//     checked: fields.map(field => field.field),
+//   };
+// });
 
 const securityHandleShowDelete = (data: any) => {
   InfoBox({
@@ -662,7 +746,7 @@ const securityHandleShowDelete = (data: any) => {
 
       <bk-table
         v-if="activeType === 'group'"
-        :settings="computedSettings"
+        :settings="groupSettings"
         class="mt20"
         row-hover="auto"
         remote-pagination
@@ -677,7 +761,7 @@ const securityHandleShowDelete = (data: any) => {
 
       <bk-table
         v-if="activeType === 'gcp'"
-        :settings="computedSettings"
+        :settings="gcpSettings"
         class="mt20"
         row-hover="auto"
         remote-pagination

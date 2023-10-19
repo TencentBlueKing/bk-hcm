@@ -50,7 +50,7 @@ export default defineComponent({
       },
     ];
     const checkedInstanceType = ref('');
-    const columns = [{
+    const columns = ref([{
       label: '类型',
       field: 'type_name',
       render: ({ cell, data }: any) => {
@@ -98,7 +98,7 @@ export default defineComponent({
       field: 'price',
       fixed: 'right',
       render: ({ data }: any) => <span class={'instance-price'}>{`${data?.Price?.DiscountPrice}元/月`}</span>,
-    }];
+    }]);
 
     const selected = computed({
       get() {
@@ -146,6 +146,12 @@ export default defineComponent({
         : result.data?.instance_families;
 
       loading.value = false;
+    });
+
+    const computedColumns = computed(() => {
+      return columns.value
+        .filter(({ field }) => !['cpu_type', 'instance_pps', 'price'].includes(field) || props.vendor === VendorEnum.TCLOUD)
+        .filter(({ field }) => !['instance_bandwidth'].includes(field) || [VendorEnum.TCLOUD, VendorEnum.AWS].includes(props.vendor as VendorEnum));
     });
 
     watchEffect(() => {
@@ -264,7 +270,7 @@ export default defineComponent({
           <Loading loading={loading.value}>
             <Table
               data={resList.value}
-              columns={columns}
+              columns={computedColumns.value}
               pagination={pagination}
             />
           </Loading>

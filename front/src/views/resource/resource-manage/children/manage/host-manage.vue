@@ -5,6 +5,7 @@ import type {
   FilterType,
 } from '@/typings/resource';
 import {
+  Button,
   Message,
 } from 'bkui-vue';
 
@@ -75,7 +76,7 @@ const {
 const isShowDistribution = ref(false);
 const businessId = ref('');
 const businessList = ref(useBusinessMapStore().businessList);
-const { columns, settings } = useColumns('cvms');
+const { columns, generateColumnsSettings } = useColumns('cvms');
 const isDialogShow = ref(false);
 const isDialogBtnLoading = ref(false);
 const selectedBizId = ref(0);
@@ -97,6 +98,48 @@ const hostSearchData = computed(() => {
     }],
   ];
 });
+
+const tableColumns = [
+  ...columns,
+  {
+    label: '操作',
+    field: 'operation',
+    isDefaultShow: true,
+    render: () => {
+      return h(
+        'div',
+        {
+          class: 'flex-row',
+        },
+        [
+          h(
+            Button,
+            {
+              text: true,
+              theme: 'primary',
+              class: 'mr10',
+              onClick: () => {},
+            },
+            [
+              '分配',
+            ],
+          ),
+          h(
+            'div',
+            {
+              class: 'operations-container',
+            },
+            [
+              '⋮',
+            ],
+          ),
+        ],
+      );
+    },
+  },
+];
+
+const tableSettings = generateColumnsSettings(tableColumns);
 
 const distribColumns = [
   {
@@ -263,9 +306,9 @@ getCloudAreas();
     <bk-table
       class="mt20"
       row-hover="auto"
-      :columns="columns"
+      :columns="tableColumns"
       :data="datas"
-      :settings="settings"
+      :settings="tableSettings"
       :pagination="pagination"
       remote-pagination
       show-overflow-tooltip
@@ -361,5 +404,16 @@ getCloudAreas();
 .selected-host-count {
   color: #3A84FF;
   font-weight: bold;
+}
+.operations-container {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+      // cursor: pointer;
+  &:hover {
+    background: #F0F1F5;
+  }
 }
 </style>
