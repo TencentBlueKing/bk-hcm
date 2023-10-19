@@ -71,3 +71,23 @@ func Split[T any](list []T, length int) [][]T {
 	}
 	return lists
 }
+
+// Map 对slice里面的每个元素执行mapFunc函数，返回新slice
+func Map[IType any, OType any](source []IType, mapFunc func(IType) OType) []OType {
+	target := make([]OType, 0, len(source))
+	for _, v := range source {
+		target = append(target, mapFunc(v))
+	}
+	return target
+}
+
+// Filter 通过给定的filter函数过滤出符合条件的子slice
+func Filter[V any](s []V, filter func(V) bool) []V {
+	subSlice := make([]V, 0, len(s))
+	for _, v := range s {
+		if filter(v) {
+			subSlice = append(subSlice, v)
+		}
+	}
+	return subSlice
+}
