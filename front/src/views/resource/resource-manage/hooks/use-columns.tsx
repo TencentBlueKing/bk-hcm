@@ -172,7 +172,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const subnetColumns = [
-    getLinkField('subnet', '子网 ID', 'cloud_id', 'cloud_id', false),
+    getLinkField('subnet', '子网 ID', 'cloud_id', 'id', false),
     // {
     //   label: '资源 ID',
     //   field: 'cloud_id',
@@ -361,7 +361,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       width: '100',
       onlyShowOnList: true,
     },
-    getLinkField('drive', '云硬盘ID', 'cloud_id', 'cloud_id'),
+    getLinkField('drive', '云硬盘ID', 'cloud_id'),
     // {
     //   label: '资源 ID',
     //   field: 'cloud_id',
@@ -459,7 +459,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const imageColumns = [
-    getLinkField('image', '镜像ID', 'cloud_id', 'cloud_id'),
+    getLinkField('image', '镜像ID', 'cloud_id', 'id'),
     // {
     //   label: '资源 ID',
     //   field: 'cloud_id',
@@ -517,7 +517,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const networkInterfaceColumns = [
-    getLinkField('network-interface', '接口 ID', 'cloud_id', 'cloud_id'),
+    getLinkField('network-interface', '接口 ID', 'cloud_id', 'id'),
     {
       label: '接口名称',
       field: 'name',
@@ -624,7 +624,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const routeColumns = [
-    getLinkField('route', '路由表ID', 'cloud_id', 'cloud_id'),
+    getLinkField('route', '路由表ID', 'cloud_id', 'id'),
     // {
     //   label: '资源 ID',
     //   field: 'cloud_id',
@@ -885,7 +885,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       width: '100',
       onlyShowOnList: true,
     },
-    getLinkField('eips', 'IP资源ID', 'cloud_id', 'cloud_id'),
+    getLinkField('eips', 'IP资源ID', 'cloud_id', 'id'),
     // {
     //   label: '资源 ID',
     //   field: 'cloud_id',
