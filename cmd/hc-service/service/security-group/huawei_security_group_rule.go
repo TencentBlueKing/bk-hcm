@@ -23,6 +23,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/model"
+
 	securitygrouprule "hcm/pkg/adaptor/types/security-group-rule"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
@@ -106,6 +108,18 @@ func (g *securityGroup) CreateHuaWeiSGRule(cts *rest.Contexts) (interface{}, err
 		return nil, err
 	}
 
+	id, err := g.createHuaWeiDSRule(cts, rule, opt, sg, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &core.CreateResult{ID: id}, nil
+}
+
+func (g *securityGroup) createHuaWeiDSRule(cts *rest.Contexts, rule *model.SecurityGroupRule,
+	opt *securitygrouprule.HuaWeiCreateOption, sg *corecloud.SecurityGroup[corecloud.HuaWeiSecurityGroupExtension],
+	req *hcservice.HuaWeiSGRuleCreateReq) (string, error) {
+
 	createReq := &protocloud.HuaWeiSGRuleCreateReq{
 		Rules: []protocloud.HuaWeiSGRuleBatchCreate{
 			{
@@ -129,20 +143,20 @@ func (g *securityGroup) CreateHuaWeiSGRule(cts *rest.Contexts) (interface{}, err
 		},
 	}
 	result, err := g.dataCli.HuaWei.SecurityGroup.BatchCreateSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(),
-		createReq, sgID)
+		createReq, sg.ID)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	if len(result.IDs) != 1 {
 		logs.Errorf("batch create security group rule success, but return id count: %d not right, rid: %s",
 			len(result.IDs), cts.Kit.Rid)
 
-		return nil, fmt.Errorf("batch create security group rule success, but return id count: %d not right",
+		return "", fmt.Errorf("batch create security group rule success, but return id count: %d not right",
 			len(result.IDs))
 	}
 
-	return &core.CreateResult{ID: result.IDs[0]}, nil
+	return result.IDs[0], nil
 }
 
 // DeleteHuaWeiSGRule delete huawei security group rule.

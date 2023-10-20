@@ -68,7 +68,8 @@ func InitSecurityGroupService(c *capability.Capability) {
 		svc.GetAzureDefaultSGRule)
 
 	// 业务下安全组相关接口
-	h.Add("CreateBizSecurityGroup", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/create", svc.CreateBizSecurityGroup)
+	h.Add("CreateBizSecurityGroup", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/create",
+		svc.CreateBizSecurityGroup)
 	h.Add("GetBizSecurityGroup", http.MethodGet, "/bizs/{bk_biz_id}/security_groups/{id}", svc.GetBizSecurityGroup)
 	h.Add("UpdateBizSecurityGroup", http.MethodPatch, "/bizs/{bk_biz_id}/security_groups/{id}",
 		svc.UpdateBizSecurityGroup)

@@ -31,7 +31,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
 
-	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
+	common "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
@@ -131,7 +131,7 @@ func (t *TCloud) UpdateSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudUpdat
 	return nil
 }
 
-// ListSecurityGroup list security group.
+// ListSecurityGroupNew list security group.
 // reference: https://cloud.tencent.com/document/api/215/15808
 func (t *TCloud) ListSecurityGroupNew(kt *kit.Kit, opt *securitygroup.TCloudListOption) ([]securitygroup.TCloudSG,
 	error) {
