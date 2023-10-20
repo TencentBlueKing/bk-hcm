@@ -22,6 +22,7 @@ package logicsaction
 import (
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	actioncvm "hcm/cmd/task-server/logics/action/cvm"
+	actioneip "hcm/cmd/task-server/logics/action/eip"
 	actionfirewall "hcm/cmd/task-server/logics/action/firewall"
 	actionsg "hcm/cmd/task-server/logics/action/security-group"
 	actionsubnet "hcm/cmd/task-server/logics/action/subnet"
@@ -48,5 +49,6 @@ func register() {
 	action.RegisterAction(actionsubnet.DeleteAction{})
 	action.RegisterAction(actionsg.DeleteSgAction{})
 	action.RegisterAction(actionsg.CreateHuaweiSGRuleAction{})
+	action.RegisterAction(actioneip.DeleteEIPAction{})
 
 }

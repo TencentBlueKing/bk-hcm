@@ -357,15 +357,15 @@ func (e *eip) DeleteEip(kt *kit.Kit, vendor enumor.Vendor, eipId string) (err er
 	deleteReq := &hcproto.EipDeleteReq{EipID: eipId}
 	switch vendor {
 	case enumor.TCloud:
-		err = e.client.HCService().TCloud.Eip.DeleteEip(kt.Ctx, kt.Header(), deleteReq)
+		err = e.client.HCService().TCloud.Eip.DeleteEip(kt, deleteReq)
 	case enumor.Aws:
-		err = e.client.HCService().Aws.Eip.DeleteEip(kt.Ctx, kt.Header(), deleteReq)
+		err = e.client.HCService().Aws.Eip.DeleteEip(kt, deleteReq)
 	case enumor.HuaWei:
-		err = e.client.HCService().HuaWei.Eip.DeleteEip(kt.Ctx, kt.Header(), deleteReq)
+		err = e.client.HCService().HuaWei.Eip.DeleteEip(kt, deleteReq)
 	case enumor.Gcp:
-		err = e.client.HCService().Gcp.Eip.DeleteEip(kt.Ctx, kt.Header(), deleteReq)
+		err = e.client.HCService().Gcp.Eip.DeleteEip(kt, deleteReq)
 	case enumor.Azure:
-		err = e.client.HCService().Azure.Eip.DeleteEip(kt.Ctx, kt.Header(), deleteReq)
+		err = e.client.HCService().Azure.Eip.DeleteEip(kt, deleteReq)
 	default:
 		err = errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", vendor))
 	}
