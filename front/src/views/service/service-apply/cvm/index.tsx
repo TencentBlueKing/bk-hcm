@@ -23,7 +23,6 @@ import useCvmFormData, { getDataDiskDefaults, getGcpDataDiskDefaults } from '../
 // import { useHostStore } from '@/store/host';
 
 import { useAccountStore } from '@/store';
-import { useWhereAmI } from '@/hooks/useWhereAmI';
 import CommonCard from '@/components/CommonCard';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import { useRouter } from 'vue-router';
@@ -52,7 +51,6 @@ export default defineComponent({
       purchaseDurationUnits,
     } = useCvmOptions(cond, formData);
     const { t } = useI18n();
-    const { isResourcePage } = useWhereAmI();
     const router = useRouter();
     const isSubmitBtnLoading = ref(false);
     const usageNum = ref(20);
@@ -455,7 +453,7 @@ export default defineComponent({
                   vpcId={vpcId.value}
                   onSelectedChange={val => formData.cloud_security_group_ids = val}
                 />
-                {
+                {/* {
                   isResourcePage
                     ? null
                     : <Button
@@ -473,7 +471,7 @@ export default defineComponent({
                         }}>
                         详情
                       </Button>
-                 }
+                 } */}
               </div>
             ),
           },
@@ -815,7 +813,7 @@ export default defineComponent({
       ],
     };
 
-    return () => <div>
+    return () => <div class={'mb30'}>
       <DetailHeader>
         <p class={'purchase-cvm-header-title'}>
           购买主机
