@@ -276,41 +276,19 @@ const businesseMenus: RouteRecordRaw[] = [
   },
   {
     path: '/business',
-    name: '配置',
+    name: '回收站',
     children: [
       {
-        path: '/template',
-        name: '模板编排',
+        path: '/business/recyclebin/:type',
+        name: '回收站',
         component: () => import('@/views/business/business-manage.vue'),
         meta: {
-          activeKey: 'template',
-          breadcrumb: ['配置', '模板编排'],
+          activeKey: 'recyclebin',
+          breadcrumb: ['业务', '回收站'],
         },
       },
     ],
   },
-  // {
-  //   path: '/business-storage',
-  //   name: '存储',
-  //   children: [
-  //     {
-  //       path: '/business-storage/object-storage',
-  //       name: '对象存储',
-  //       component: () => import('@/views/business/business-manage'),
-  //       meta: {
-  //         activeKey: 'businessObjectStorage',
-  //       },
-  //     },
-  //     {
-  //       path: '/business-storage/file-storage',
-  //       name: '文件存储',
-  //       component: () => import('@/views/business/business-manage'),
-  //       meta: {
-  //         activeKey: 'businessFileStorage',
-  //       },
-  //     },
-  //   ],
-  // },
 ];
 
 export default businesseMenus;

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="flex-row operate-warp justify-content-between align-items-center mb20" v-if="isResourcePage">
+    <div class="flex-row operate-warp justify-content-between align-items-center mb20">
       <div>
         <!-- <bk-button-group>
           <bk-button
@@ -258,6 +258,7 @@ import { useRegionsStore } from '@/store/useRegionsStore';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import moment from 'moment';
 import http from '@/http';
+import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
 
 export default defineComponent({
   name: 'RecyclebinManageList',
@@ -275,6 +276,7 @@ export default defineComponent({
     const { getRegionName } = useRegionsStore();
     const resourceAccountStore = useResourceAccountStore();
     const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
+    const { whereAmI } = useWhereAmI();
 
     const state = reactive({
       isAccurate: false,    // 是否精确
@@ -387,6 +389,7 @@ export default defineComponent({
     watch(
       () => resourceAccountStore.resourceAccount,
       (account) => {
+        if (whereAmI.value !== Senarios.resource) return;
         const idx = state.filter.rules.findIndex(({ field }) => field === 'account_id');
         if (!account.id) {
           if (idx > -1) state.filter.rules.splice(idx);

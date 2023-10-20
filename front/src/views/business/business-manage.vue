@@ -3,6 +3,7 @@ import {
   ref,
   computed,
   provide,
+  watchEffect,
 } from 'vue';
 
 import HostManage from '@/views/resource/resource-manage/children/manage/host-manage.vue';
@@ -169,6 +170,10 @@ const {
   permissionParams,
   authVerifyData,
 } = useVerify();
+
+watchEffect(() => {
+  console.log(666, renderComponent);
+});
 </script>
 
 <template>
@@ -247,7 +252,7 @@ const {
 .business-manage-wrapper {
   height: calc(100% - 20px);
   overflow-y: auto;
-  background-color: #fff;
+  // background-color: #fff;
   padding: 20px;
 }
 .new-button {
