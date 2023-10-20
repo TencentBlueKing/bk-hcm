@@ -279,12 +279,45 @@ const businesseMenus: RouteRecordRaw[] = [
     name: '回收站',
     children: [
       {
-        path: '/business/recyclebin/:type',
+        path: '/business/recyclebin',
         name: '回收站',
         component: () => import('@/views/business/business-manage.vue'),
         meta: {
           activeKey: 'recyclebin',
           breadcrumb: ['业务', '回收站'],
+        },
+      },
+      {
+        path: '/business/service/service-apply/cvm',
+        name: 'applyCvm',
+        component: () => import('@/views/service/service-apply/cvm'),
+        meta: {
+          backRouter: -1,
+          activeKey: 'serviceApply',
+          breadcrumb: ['服务', '服务申请', '主机'],
+          notMenu: true,
+        },
+      },
+      {
+        path: '/business/service/service-apply/vpc',
+        name: 'applyVPC',
+        component: () => import('@/views/service/service-apply/vpc'),
+        meta: {
+          backRouter: -1,
+          activeKey: 'serviceApply',
+          breadcrumb: ['服务', '服务申请', 'VPC'],
+          notMenu: true,
+        },
+      },
+      {
+        path: '/business/service/service-apply/disk',
+        name: 'applyDisk',
+        component: () => import('@/views/service/service-apply/disk'),
+        meta: {
+          backRouter: -1,
+          activeKey: 'serviceApply',
+          breadcrumb: ['服务', '服务申请', '云硬盘'],
+          notMenu: true,
         },
       },
     ],
