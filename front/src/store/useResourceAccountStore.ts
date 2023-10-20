@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import { VendorEnum } from '@/common/constant';
 
 export type IAccount = {
   bk_biz_ids: number[];
