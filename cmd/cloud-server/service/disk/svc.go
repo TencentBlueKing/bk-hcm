@@ -99,14 +99,11 @@ func (svc *diskSvc) listDisk(cts *rest.Contexts, authHandler handler.ListAuthRes
 		return nil, err
 	}
 
-	resp, err := svc.client.DataService().Global.ListDisk(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&dataproto.DiskListReq{
-			Filter: req.Filter,
-			Page:   req.Page,
-		},
-	)
+	listReq := &dataproto.DiskListReq{
+		Filter: req.Filter,
+		Page:   req.Page,
+	}
+	resp, err := svc.client.DataService().Global.ListDisk(cts.Kit.Ctx, cts.Kit.Header(), listReq)
 	if err != nil {
 		return nil, err
 	}
@@ -120,14 +117,11 @@ func (svc *diskSvc) listDisk(cts *rest.Contexts, authHandler handler.ListAuthRes
 		diskIDs[idx] = diskData.ID
 	}
 
-	rels, err := svc.client.DataService().Global.ListDiskCvmRel(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&datarelproto.DiskCvmRelListReq{
-			Filter: tools.ContainersExpression("disk_id", diskIDs),
-			Page:   core.NewDefaultBasePage(),
-		},
-	)
+	listRelReq := &datarelproto.DiskCvmRelListReq{
+		Filter: tools.ContainersExpression("disk_id", diskIDs),
+		Page:   core.NewDefaultBasePage(),
+	}
+	rels, err := svc.client.DataService().Global.ListDiskCvmRel(cts.Kit.Ctx, cts.Kit.Header(), listRelReq)
 	if err != nil {
 		return nil, err
 	}

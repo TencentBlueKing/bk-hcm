@@ -39,6 +39,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -97,48 +98,54 @@ func (a *accountSvc) SyncCloudResource(cts *rest.Contexts) (interface{}, error) 
 			}
 		}()
 
-		switch baseInfo.Vendor {
-		case enumor.TCloud:
-			opt := &tcloud.SyncAllResourceOption{
-				AccountID:          accountID,
-				SyncPublicResource: isNeedSyncPublicResFlag,
-			}
-			tcloud.SyncAllResource(cts.Kit, a.client, opt)
-
-		case enumor.Aws:
-			opt := &aws.SyncAllResourceOption{
-				AccountID:          accountID,
-				SyncPublicResource: isNeedSyncPublicResFlag,
-			}
-			aws.SyncAllResource(cts.Kit, a.client, opt)
-
-		case enumor.HuaWei:
-			opt := &huawei.SyncAllResourceOption{
-				AccountID:          accountID,
-				SyncPublicResource: isNeedSyncPublicResFlag,
-			}
-			huawei.SyncAllResource(cts.Kit, a.client, opt)
-
-		case enumor.Gcp:
-			opt := &gcp.SyncAllResourceOption{
-				AccountID:          accountID,
-				SyncPublicResource: isNeedSyncPublicResFlag,
-			}
-			gcp.SyncAllResource(cts.Kit, a.client, opt)
-
-		case enumor.Azure:
-			opt := &azure.SyncAllResourceOption{
-				AccountID:          accountID,
-				SyncPublicResource: isNeedSyncPublicResFlag,
-			}
-			azure.SyncAllResource(cts.Kit, a.client, opt)
-
-		default:
-			logs.Errorf("account: %s's vendor not support, vendor: %s", accountID, baseInfo.Vendor)
-		}
+		a.syncAllResourceByVendor(cts, baseInfo, accountID, isNeedSyncPublicResFlag)
 	}(leaseID)
 
 	return nil, nil
+}
+
+func (a *accountSvc) syncAllResourceByVendor(cts *rest.Contexts, baseInfo *types.CloudResourceBasicInfo,
+	accountID string, isNeedSyncPublicResFlag bool) {
+
+	switch baseInfo.Vendor {
+	case enumor.TCloud:
+		opt := &tcloud.SyncAllResourceOption{
+			AccountID:          accountID,
+			SyncPublicResource: isNeedSyncPublicResFlag,
+		}
+		tcloud.SyncAllResource(cts.Kit, a.client, opt)
+
+	case enumor.Aws:
+		opt := &aws.SyncAllResourceOption{
+			AccountID:          accountID,
+			SyncPublicResource: isNeedSyncPublicResFlag,
+		}
+		aws.SyncAllResource(cts.Kit, a.client, opt)
+
+	case enumor.HuaWei:
+		opt := &huawei.SyncAllResourceOption{
+			AccountID:          accountID,
+			SyncPublicResource: isNeedSyncPublicResFlag,
+		}
+		huawei.SyncAllResource(cts.Kit, a.client, opt)
+
+	case enumor.Gcp:
+		opt := &gcp.SyncAllResourceOption{
+			AccountID:          accountID,
+			SyncPublicResource: isNeedSyncPublicResFlag,
+		}
+		gcp.SyncAllResource(cts.Kit, a.client, opt)
+
+	case enumor.Azure:
+		opt := &azure.SyncAllResourceOption{
+			AccountID:          accountID,
+			SyncPublicResource: isNeedSyncPublicResFlag,
+		}
+		azure.SyncAllResource(cts.Kit, a.client, opt)
+
+	default:
+		logs.Errorf("account: %s's vendor not support, vendor: %s", accountID, baseInfo.Vendor)
+	}
 }
 
 func isNeedSyncPublicResource(kt *kit.Kit, dataCli *dataservice.Client, vendor enumor.Vendor) (

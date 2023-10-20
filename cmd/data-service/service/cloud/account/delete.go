@@ -33,6 +33,7 @@ import (
 	"hcm/pkg/dal/dao/types"
 	tableaudit "hcm/pkg/dal/table/audit"
 	tabletype "hcm/pkg/dal/table/types"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -90,31 +91,7 @@ func (svc *service) DeleteAccount(cts *rest.Contexts) (interface{}, error) {
 		}
 
 		// create audit
-		audits := make([]*tableaudit.AuditTable, 0, len(accounts))
-		for _, one := range accounts {
-			extension := tools.AccountExtensionRemoveSecretKey(string(one.Extension))
-			one.Extension = tabletype.JsonField(extension)
-
-			audits = append(audits, &tableaudit.AuditTable{
-				ResID:      one.ID,
-				CloudResID: "",
-				ResName:    one.Name,
-				ResType:    enumor.AccountAuditResType,
-				Action:     enumor.Delete,
-				BkBizID:    0,
-				Vendor:     enumor.Vendor(one.Vendor),
-				AccountID:  one.ID,
-				Operator:   cts.Kit.User,
-				Source:     cts.Kit.GetRequestSource(),
-				Rid:        cts.Kit.Rid,
-				AppCode:    cts.Kit.AppCode,
-				Detail: &tableaudit.BasicDetail{
-					Data: one,
-				},
-			})
-		}
-		if err = svc.dao.Audit().BatchCreate(cts.Kit, audits); err != nil {
-			logs.Errorf("batch create audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		if err = svc.createDeleteAudit(cts.Kit, accounts); err != nil {
 			return nil, err
 		}
 
@@ -126,6 +103,38 @@ func (svc *service) DeleteAccount(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return nil, nil
+}
+
+func (svc *service) createDeleteAudit(kt *kit.Kit, accounts []types.Account) error {
+	audits := make([]*tableaudit.AuditTable, 0, len(accounts))
+	for _, one := range accounts {
+		extension := tools.AccountExtensionRemoveSecretKey(string(one.Extension))
+		one.Extension = tabletype.JsonField(extension)
+
+		audits = append(audits, &tableaudit.AuditTable{
+			ResID:      one.ID,
+			CloudResID: "",
+			ResName:    one.Name,
+			ResType:    enumor.AccountAuditResType,
+			Action:     enumor.Delete,
+			BkBizID:    0,
+			Vendor:     enumor.Vendor(one.Vendor),
+			AccountID:  one.ID,
+			Operator:   kt.User,
+			Source:     kt.GetRequestSource(),
+			Rid:        kt.Rid,
+			AppCode:    kt.AppCode,
+			Detail: &tableaudit.BasicDetail{
+				Data: one,
+			},
+		})
+	}
+	if err := svc.dao.Audit().BatchCreate(kt, audits); err != nil {
+		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
 }
 
 // DeleteValidate account delete validate.
