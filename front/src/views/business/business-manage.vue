@@ -3,6 +3,7 @@ import {
   ref,
   computed,
   provide,
+  watchEffect,
 } from 'vue';
 
 import HostManage from '@/views/resource/resource-manage/children/manage/host-manage.vue';
@@ -94,15 +95,15 @@ const isResourcePage = computed(() => {   // 资源下没有业务ID
 const handleAdd = () => {
   if (renderComponent.value === DriveManage) {
     router.push({
-      path: '/service/service-apply/disk',
+      path: '/business/service/service-apply/disk',
     });
   } else if (renderComponent.value === HostManage) {
     router.push({
-      path: '/service/service-apply/cvm',
+      path: '/business/service/service-apply/cvm',
     });
   } else if (renderComponent.value === VpcManage) {
     router.push({
-      path: '/service/service-apply/vpc',
+      path: '/business/service/service-apply/vpc',
     });
   } else {
     isEdit.value = false;
@@ -169,6 +170,10 @@ const {
   permissionParams,
   authVerifyData,
 } = useVerify();
+
+watchEffect(() => {
+  console.log(666, renderComponent);
+});
 </script>
 
 <template>
@@ -247,7 +252,7 @@ const {
 .business-manage-wrapper {
   height: calc(100% - 20px);
   overflow-y: auto;
-  background-color: #fff;
+  // background-color: #fff;
   padding: 20px;
 }
 .new-button {

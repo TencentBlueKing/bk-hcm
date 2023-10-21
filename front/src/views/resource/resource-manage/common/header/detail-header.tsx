@@ -11,6 +11,7 @@ import {
 } from 'vue-router';
 
 import './detail-header.scss';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 export default defineComponent({
   components: {
@@ -19,6 +20,7 @@ export default defineComponent({
 
   setup() {
     const router = useRouter();
+    const { whereAmI } = useWhereAmI();
 
     const goBack = () => {
       router.back();
@@ -26,12 +28,13 @@ export default defineComponent({
 
     return {
       goBack,
+      whereAmI,
     };
   },
 
   render() {
     return <>
-      <section class="detail-header-main">
+      <section class={`detail-header-main ${this.whereAmI === Senarios.resource ? 'm-24' : ''}`}>
         <div class="title-content">
           <arrows-left
             class="detail-header-arrows-left"

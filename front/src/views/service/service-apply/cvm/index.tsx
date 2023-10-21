@@ -23,7 +23,6 @@ import useCvmFormData, { getDataDiskDefaults, getGcpDataDiskDefaults } from '../
 // import { useHostStore } from '@/store/host';
 
 import { useAccountStore } from '@/store';
-import { useWhereAmI } from '@/hooks/useWhereAmI';
 import CommonCard from '@/components/CommonCard';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import { useRouter } from 'vue-router';
@@ -31,6 +30,7 @@ import VpcPreviewDialog from './children/VpcPreviewDialog';
 import SubnetPreviewDialog, { ISubnetItem } from './children/SubnetPreviewDialog';
 import http from '@/http';
 import { debounce } from 'lodash';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 // import SelectCvmBlock from './children/SelectCvmBlock';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -52,11 +52,10 @@ export default defineComponent({
       purchaseDurationUnits,
     } = useCvmOptions(cond, formData);
     const { t } = useI18n();
-    const { isResourcePage } = useWhereAmI();
     const router = useRouter();
     const isSubmitBtnLoading = ref(false);
-    const usageNum = ref(20);
-    const limitNum = ref(150);
+    const usageNum = ref(0);
+    const limitNum = ref(-1);
 
     const dialogState = reactive({
       gcpDataDisk: {
@@ -78,6 +77,7 @@ export default defineComponent({
     const isVpcPreviewDialogShow = ref(false);
     const isSubnetPreviewDialogShow = ref(false);
     const cost = ref('--');
+    const { whereAmI } = useWhereAmI();
 
     const handleSubnetDataChange = (data: ISubnetItem) => {
       subnetData.value = data;
@@ -322,6 +322,50 @@ export default defineComponent({
       },
     );
 
+    watch(
+      () => [cond, formData.zone],
+      async () => {
+        const isBusiness = whereAmI.value === Senarios.business;
+        const isTcloud = cond.vendor === VendorEnum.TCLOUD;
+        if (isBusiness && !cond.bizId) return;
+        if (!cond.cloudAccountId || !cond.vendor || !cond.region) return;
+        if (isTcloud && !formData.zone.length) return;
+        if (![VendorEnum.HUAWEI, VendorEnum.GCP, VendorEnum.TCLOUD].includes(cond.vendor as VendorEnum)) return;
+        let url = isBusiness
+          ? `/api/v1/cloud/bizs/${cond.bizId}/vendors/${cond.vendor}/accounts/${cond.cloudAccountId}/regions/quotas`
+          : `/api/v1/cloud/vendors/${cond.vendor}/accounts/${cond.cloudAccountId}/regions/quotas`;
+        if (cond.vendor === VendorEnum.TCLOUD) {
+          url = isBusiness
+            ? `/api/v1/cloud/bizs/${cond.bizId}/vendors/${cond.vendor}/accounts/${cond.cloudAccountId}/zones/quotas`
+            : `/api/v1/cloud/vendors/${cond.vendor}/accounts/${cond.cloudAccountId}/zones/quotas`;
+        }
+        const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}${url}`, {
+          bk_biz_id: isBusiness ? cond.bizId : undefined,
+          account_id: cond.cloudAccountId,
+          vendor: cond.vendor,
+          region: cond.region,
+          zone: isTcloud ? formData.zone?.[0] : undefined,
+        });
+        switch (cond.vendor) {
+          case VendorEnum.GCP:
+            limitNum.value = res.data.instance.limit;
+            usageNum.value = res.data.instance.usage;
+            break;
+          case VendorEnum.TCLOUD:
+            limitNum.value = res.data.post_paid_quota_set.total_quota;
+            usageNum.value = res.data.post_paid_quota_set.used_quota;
+            break;
+          case VendorEnum.HUAWEI:
+            limitNum.value = res.data.max_total_spot_instances;
+            usageNum.value = res.data.max_total_floating_ips;
+            break;
+        }
+      },
+      {
+        deep: true,
+      },
+    );
+
     // const curRegionName = computed(() => {
     //   return hostStore.regionList?.find(region => region.region_id === cond.region) || {};
     // });
@@ -455,7 +499,7 @@ export default defineComponent({
                   vpcId={vpcId.value}
                   onSelectedChange={val => formData.cloud_security_group_ids = val}
                 />
-                {
+                {/* {
                   isResourcePage
                     ? null
                     : <Button
@@ -473,7 +517,7 @@ export default defineComponent({
                         }}>
                         详情
                       </Button>
-                 }
+                 } */}
               </div>
             ),
           },
@@ -815,7 +859,7 @@ export default defineComponent({
       ],
     };
 
-    return () => <div>
+    return () => <div class={'mb30'}>
       <DetailHeader>
         <p class={'purchase-cvm-header-title'}>
           购买主机
@@ -931,9 +975,12 @@ export default defineComponent({
                 <Input type='number' min={0} max={100} v-model={formData.required_count}></Input>
                 {
                   [VendorEnum.TCLOUD, VendorEnum.HUAWEI, VendorEnum.GCP].includes(cond.vendor as VendorEnum)
+                  && limitNum.value !== -1
                     ? (
                     <p class={'purchase-cvm-bottom-bar-form-count-tip'}>
-                      所在地域配额为 <span class={'purchase-cvm-bottom-bar-form-count-tip-num'}>{ limitNum.value - usageNum.value - formData.required_count }</span> /{ limitNum.value }
+                      所在{
+                        VendorEnum.TCLOUD === cond.vendor ? '可用区' : '地域'
+                      }配额为 <span class={'purchase-cvm-bottom-bar-form-count-tip-num'}>{ limitNum.value - usageNum.value - formData.required_count }</span> /{ limitNum.value }
                     </p>
                     )
                     : null

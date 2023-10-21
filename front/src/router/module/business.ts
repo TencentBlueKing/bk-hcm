@@ -276,41 +276,52 @@ const businesseMenus: RouteRecordRaw[] = [
   },
   {
     path: '/business',
-    name: '配置',
+    name: '回收站',
     children: [
       {
-        path: '/template',
-        name: '模板编排',
+        path: '/business/recyclebin',
+        name: '回收站',
         component: () => import('@/views/business/business-manage.vue'),
         meta: {
-          activeKey: 'template',
-          breadcrumb: ['配置', '模板编排'],
+          activeKey: 'recyclebin',
+          breadcrumb: ['业务', '回收站'],
+        },
+      },
+      {
+        path: '/business/service/service-apply/cvm',
+        name: 'applyCvm',
+        component: () => import('@/views/service/service-apply/cvm'),
+        meta: {
+          backRouter: -1,
+          activeKey: 'serviceApply',
+          breadcrumb: ['服务', '服务申请', '主机'],
+          notMenu: true,
+        },
+      },
+      {
+        path: '/business/service/service-apply/vpc',
+        name: 'applyVPC',
+        component: () => import('@/views/service/service-apply/vpc'),
+        meta: {
+          backRouter: -1,
+          activeKey: 'serviceApply',
+          breadcrumb: ['服务', '服务申请', 'VPC'],
+          notMenu: true,
+        },
+      },
+      {
+        path: '/business/service/service-apply/disk',
+        name: 'applyDisk',
+        component: () => import('@/views/service/service-apply/disk'),
+        meta: {
+          backRouter: -1,
+          activeKey: 'serviceApply',
+          breadcrumb: ['服务', '服务申请', '云硬盘'],
+          notMenu: true,
         },
       },
     ],
   },
-  // {
-  //   path: '/business-storage',
-  //   name: '存储',
-  //   children: [
-  //     {
-  //       path: '/business-storage/object-storage',
-  //       name: '对象存储',
-  //       component: () => import('@/views/business/business-manage'),
-  //       meta: {
-  //         activeKey: 'businessObjectStorage',
-  //       },
-  //     },
-  //     {
-  //       path: '/business-storage/file-storage',
-  //       name: '文件存储',
-  //       component: () => import('@/views/business/business-manage'),
-  //       meta: {
-  //         activeKey: 'businessFileStorage',
-  //       },
-  //     },
-  //   ],
-  // },
 ];
 
 export default businesseMenus;

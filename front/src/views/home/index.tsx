@@ -435,12 +435,13 @@ export default defineComponent({
                       uniqueOpen={false}
                       openedKeys={openedKeys}
                       activeKey={route.meta.activeKey as string}>
-                      {menus.map(menuItem => (Array.isArray(menuItem.children) ? (
+                      {menus.map(menuItem => (
+                        Array.isArray(menuItem.children) ? (
                           <Menu.Group
                             key={menuItem.path as string}
                             name={menuItem.name as string}>
                             {{
-                              default: () => menuItem.children.map(child => (
+                              default: () => menuItem.children.filter(child => !child.meta?.notMenu).map(child => (
                                   <RouterLink to={`${child.path}`}>
                                     <Menu.Item
                                       key={child.meta.activeKey as string}>
@@ -458,7 +459,7 @@ export default defineComponent({
                               )),
                             }}
                           </Menu.Group>
-                      ) : (
+                        ) : (
                           <RouterLink to={`${menuItem.path}`}>
                             <Menu.Item key={menuItem.meta.activeKey as string}>
                               {/* {menuItem.meta.activeKey} */}
@@ -468,7 +469,8 @@ export default defineComponent({
                               }}
                             </Menu.Item>
                           </RouterLink>
-                      )))}
+                        )
+                      ))}
                     </Menu>
                   </>
                 ),
