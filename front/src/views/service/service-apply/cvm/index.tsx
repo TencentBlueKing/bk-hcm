@@ -454,6 +454,7 @@ export default defineComponent({
                     theme="primary"
                     disabled={!formData.cloud_subnet_id}
                     style={{ marginRight: '-50px' }}
+                    class={'subnet-selector-preview-btn'}
                     onClick={() => {
                       isSubnetPreviewDialogShow.value = true;
                       // if (!formData.cloud_subnet_id) return;
@@ -677,7 +678,12 @@ export default defineComponent({
             property: 'name',
             maxlength: 60,
             description: '60个字符，字母、数字、“-”，且必须以字母、数字开头和结尾。\n\r 实例名称是在云上的记录名称，并不是操作系统上的主机名，以方便使用名称来搜索主机。\n\r 如申请的是1台主机，则按填写的名称命名。如申请的是多台，则填写名称是前缀，申请单会自动补充随机的后缀。',
-            content: () => <Input placeholder='填写实例名称，主机数量大于1时支持批量命名' v-model={formData.name} />,
+            content: () => (
+              <div>
+                <Input placeholder='填写实例名称，主机数量大于1时支持批量命名' v-model={formData.name} />
+                <div class={'instance-name-tips'}>{'当申请数量 > 1时，该名称为前缀，申请单会自动补充随机后缀'}</div>
+              </div>
+            ),
           },
         ],
       },

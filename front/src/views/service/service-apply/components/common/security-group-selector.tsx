@@ -179,9 +179,9 @@ export default defineComponent({
             list.value.length || computedDisabled.value
               ? null
               : (
-                <div>
+                <div class={'security-selector-tips'}>
                   无可用的安全组,可 <Button theme='primary' text onClick={() => {
-                  const url = '/#/service/service-apply/cvm';
+                  const url = '/#/resource/resource?type=security';
                   window.open(url, '_blank');
                 }}>新建安全组</Button>
                 </div>

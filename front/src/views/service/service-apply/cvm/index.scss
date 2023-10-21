@@ -14,7 +14,9 @@
 
 .component-with-detail-container {
   display: flex;
-
+  .subnet-selector-preview-btn {
+    margin-top: -25px;
+  }
   .component-with-detail {
     flex: 1;
     margin-right: 10px;
@@ -81,5 +83,21 @@
 
   .mr32 {
     margin-right: 32px;
+  }
+}
+
+.instance-name-tips {
+  font-size: 12px;
+  color: #979BA5;
+  margin-top: 4px;
+}
+
+.subnet-selector-tips {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  .subnet-create-tips {
+    color: #EA3636;
+    margin-right: 4px;
   }
 }

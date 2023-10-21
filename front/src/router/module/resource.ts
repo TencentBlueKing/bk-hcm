@@ -85,6 +85,16 @@ const resourceMenus: RouteRecordRaw[] = [
         },
       },
       {
+        path: '/resource/service-apply/subnet',
+        name: 'resourceApplySubnet',
+        component: () => import('@/views/service/service-apply/subnet'),
+        meta: {
+          backRouter: -1,
+          activeKey: 'resourceResource',
+          breadcrumb: [t('云管'), t('资源'),  '新建子网'],
+        },
+      },
+      {
         path: '/resource/recyclebin',
         name: t('回收站'),
         component: () => import('@/views/resource/recyclebin-manager/recyclebin-manager.vue'),
