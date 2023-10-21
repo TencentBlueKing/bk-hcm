@@ -320,6 +320,17 @@ const businesseMenus: RouteRecordRaw[] = [
           notMenu: true,
         },
       },
+      {
+        path: '/business/service/service-apply/subnet',
+        name: 'applySubnet',
+        component: () => import('@/views/service/service-apply/subnet'),
+        meta: {
+          backRouter: -1,
+          activeKey: 'serviceApply',
+          breadcrumb: ['服务', '服务申请', '子网'],
+          notMenu: true,
+        },
+      },
     ],
   },
 ];

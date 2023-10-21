@@ -105,6 +105,10 @@ const handleAdd = () => {
     router.push({
       path: '/business/service/service-apply/vpc',
     });
+  } else if (renderComponent.value === SubnetManage) {
+    router.push({
+      path: '/business/service/service-apply/subnet',
+    });
   } else {
     isEdit.value = false;
     isShowSideSlider.value = true;
@@ -199,6 +203,7 @@ watchEffect(() => {
               :disabled="!authVerifyData?.permissionAction?.biz_iaas_resource_create" @click="handleAdd">
               {{renderComponent === DriveManage ||
                 renderComponent === HostManage ||
+                renderComponent === SubnetManage ||
                 renderComponent === VpcManage ? '申请' : '新增'}}
             </bk-button>
           </span>
