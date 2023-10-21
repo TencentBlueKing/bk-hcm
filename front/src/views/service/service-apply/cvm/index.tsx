@@ -296,7 +296,6 @@ export default defineComponent({
       debounce(async () => {
         const saveData = getSaveData();
         if (![VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum)) return;
-        console.log(67676767, formData);
         if (
           !saveData.account_id
           || !saveData.region
@@ -323,7 +322,7 @@ export default defineComponent({
     );
 
     watch(
-      () => [cond, formData.zone],
+      () => [cond, formData.zone, formData.instance_charge_type],
       async () => {
         const isBusiness = whereAmI.value === Senarios.business;
         const isTcloud = cond.vendor === VendorEnum.TCLOUD;
@@ -351,12 +350,16 @@ export default defineComponent({
             limitNum.value = res.data.instance.limit;
             usageNum.value = res.data.instance.usage;
             break;
-          case VendorEnum.TCLOUD:
-            limitNum.value = res.data.post_paid_quota_set.total_quota;
-            usageNum.value = res.data.post_paid_quota_set.used_quota;
+          case VendorEnum.TCLOUD: {
+            let dataSource = res.data.spot_paid_quota;
+            if (['PREPAID'].includes(formData.instance_charge_type)) dataSource = res.data.pre_paid_quota;
+            if (['POSTPAID_BY_HOUR', 'postPaid'].includes(formData.instance_charge_type)) dataSource = res.data.post_paid_quota_set;
+            limitNum.value = dataSource.total_quota;
+            usageNum.value = dataSource.used_quota;
             break;
+          }
           case VendorEnum.HUAWEI:
-            limitNum.value = res.data.max_total_spot_instances;
+            limitNum.value = res.data.max_total_instances;
             usageNum.value = res.data.max_total_floating_ips;
             break;
         }
@@ -986,7 +989,13 @@ export default defineComponent({
                     <p class={'purchase-cvm-bottom-bar-form-count-tip'}>
                       所在{
                         VendorEnum.TCLOUD === cond.vendor ? '可用区' : '地域'
-                      }配额为 <span class={'purchase-cvm-bottom-bar-form-count-tip-num'}>{ limitNum.value - usageNum.value - formData.required_count }</span> /{ limitNum.value }
+                      }配额为 {
+                        ![VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum)
+                          ? (
+                            <><span class={'purchase-cvm-bottom-bar-form-count-tip-num'}>{ limitNum.value - usageNum.value - formData.required_count }</span> /{ limitNum.value }</>
+                          )
+                          : limitNum.value
+                      }
                     </p>
                     )
                     : null
@@ -994,7 +1003,7 @@ export default defineComponent({
               </div>
             </FormItem>
             {
-              ['PREPAID'].includes(formData.instance_charge_type)
+              ['PREPAID', 'prePaid'].includes(formData.instance_charge_type)
                 ? <FormItem  label='时长' >
                     <div class={'purchase-cvm-time'}>
                       <Input type='number' v-model={formData.purchase_duration.count}></Input>
