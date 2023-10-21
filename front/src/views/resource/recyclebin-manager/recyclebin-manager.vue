@@ -109,6 +109,22 @@
                 >
                 </bk-table-column> -->
                 <bk-table-column
+                  label="所属主机"
+                  prop="detail_cvm_id"
+                  v-show="selectedType !== 'cvm'"
+                >
+                  <template #default="{ data }">
+                    {{
+                      data?.detail?.cvm_id || '-'
+                    }}
+                    <i
+                      class="icon bk-icon icon-link related-cvm-link"
+                      v-if="data?.detail?.cvm_id"
+                      @click="() => handleLink(data.detail.cvm_id)"
+                    />
+                  </template>
+                </bk-table-column>
+                <bk-table-column
                   :label="t('地域')"
                   prop="region"
                 >
@@ -299,7 +315,10 @@ export default defineComponent({
       loading: true,
       dataId: 0,
       CloudType,
-      filter: { op: 'and', rules: [{ field: 'res_type', op: 'eq', value: 'cvm' }] },
+      filter: { op: 'and', rules: [
+        { field: 'res_type', op: 'eq', value: 'cvm' },
+        { field: 'status', op: 'eq', value: 'wait_recycle' },
+      ] },
       recycleTypeData: [{ name: t('主机回收'), value: 'cvm' }, { name: t('硬盘回收'), value: 'disk' }],
       selectedType: 'cvm',
       type: '',
@@ -336,7 +355,7 @@ export default defineComponent({
     } = useSelection();
 
     // 选择类型
-    const handleSelected = (v) => {
+    const handleSelected = (v: 'cvm' | 'disk') => {
       const rule = {
         field: 'res_type',
         op: 'eq',
@@ -346,6 +365,12 @@ export default defineComponent({
       if (idx === -1) state.filter.rules.push(rule);
       else state.filter.rules[idx] = rule;
       state.selectedType = v;
+      router.push({
+        query: {
+          ...route.query,
+          type: v,
+        },
+      });
       resetSelections();
     };
 
@@ -367,6 +392,16 @@ export default defineComponent({
       }
     };
 
+    const handleLink = (cvmId: string) => {
+      router.push({
+        query: {
+          ...route.query,
+          type: 'cvm',
+          cvm: cvmId,
+        },
+      });
+    };
+
     // 是否精确
     watch(
       () => state.isAccurate,
@@ -374,6 +409,13 @@ export default defineComponent({
         state.filter.rules.forEach((e: any) => {
           e.op = val ? 'eq' : 'cs';
         });
+      },
+    );
+
+    watch(
+      () => route.query.type,
+      (type) => {
+        handleSelected(type as 'cvm' | 'disk');
       },
     );
 
@@ -565,6 +607,7 @@ export default defineComponent({
       handleClick,
       isSettingDialogLoading,
       resourceAccountStore,
+      handleLink,
     };
   },
 });
@@ -607,6 +650,11 @@ export default defineComponent({
   }
   .mt6 {
     margin-top: 6px;
+  }
+  .related-cvm-link {
+    margin-left: 4px;
+    cursor: pointer;
+    color: #3A84FF;
   }
 @-webkit-keyframes move {
   from {
