@@ -20,8 +20,6 @@
 package securitygroup
 
 import (
-	"strconv"
-
 	"hcm/cmd/cloud-server/logics/async"
 	actionsg "hcm/cmd/task-server/logics/action/security-group"
 	proto "hcm/pkg/api/cloud-server"
@@ -33,6 +31,7 @@ import (
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/counter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -83,10 +82,10 @@ func (svc *securityGroupSvc) batchDeleteSecurityGroup(cts *rest.Contexts, validH
 
 	tasks := make([]ts.CustomFlowTask, 0, len(req.IDs))
 
-	count := 1
+	nextID := counter.NewNumStringCounter(1, 10)
 	for _, info := range basicInfoMap {
 		tasks = append(tasks, ts.CustomFlowTask{
-			ActionID:   action.ActIDType(strconv.Itoa(count)),
+			ActionID:   action.ActIDType(nextID()),
 			ActionName: enumor.ActionDeleteSecurityGroup,
 			Params: actionsg.DeleteSGOption{
 				Vendor: info.Vendor,
@@ -94,7 +93,6 @@ func (svc *securityGroupSvc) batchDeleteSecurityGroup(cts *rest.Contexts, validH
 			},
 			DependOn: nil,
 		})
-		count++
 	}
 	flowReq := &ts.AddCustomFlowReq{
 		Name:  enumor.FlowDeleteSecurityGroup,

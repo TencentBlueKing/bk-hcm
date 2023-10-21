@@ -23,7 +23,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"strconv"
 
 	"hcm/cmd/cloud-server/logics/async"
 	"hcm/cmd/cloud-server/logics/audit"
@@ -54,6 +53,7 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/counter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -308,14 +308,14 @@ func (svc *eipSvc) batchDeleteEip(cts *rest.Contexts, validHandler handler.Valid
 	// TODO 判断 Eip 是否可删除
 
 	tasks := make([]ts.CustomFlowTask, 0, len(req.IDs))
-	var count = 1
+	var nextID = counter.NewNumStringCounter(1, 10)
 	for _, eipID := range req.IDs {
 		info, exists := basicInfoMap[eipID]
 		if !exists {
 			return nil, errf.New(errf.InvalidParameter, fmt.Sprintf("id %s has no corresponding vendor", eipID))
 		}
 		tasks = append(tasks, ts.CustomFlowTask{
-			ActionID:   action.ActIDType(strconv.Itoa(count)),
+			ActionID:   action.ActIDType(nextID()),
 			ActionName: enumor.ActionDeleteEIP,
 			Params: actioneip.DeleteEIPOption{
 				Vendor: info.Vendor,
@@ -323,7 +323,6 @@ func (svc *eipSvc) batchDeleteEip(cts *rest.Contexts, validHandler handler.Valid
 			},
 			DependOn: nil,
 		})
-		count++
 	}
 	flowReq := &ts.AddCustomFlowReq{
 		Name:  enumor.FlowDeleteEIP,
