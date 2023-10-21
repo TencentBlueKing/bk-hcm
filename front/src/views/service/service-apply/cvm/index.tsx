@@ -976,7 +976,7 @@ export default defineComponent({
 
       <div class={'purchase-cvm-bottom-bar'}>
           <Form class={'purchase-cvm-bottom-bar-form'}>
-            <FormItem  label='数量' class={'purchase-cvm-bottom-bar-form-count ' + `${[VendorEnum.TCLOUD, VendorEnum.HUAWEI, VendorEnum.GCP].includes(cond.vendor as VendorEnum) ? 'mb-12' : ''}`}>
+            <FormItem  label='数量' class={'purchase-cvm-bottom-bar-form-count ' + `${limitNum.value !== -1 ? 'mb-12' : ''}`}>
               <div>
                 <Input type='number' min={0} max={100} v-model={formData.required_count}></Input>
                 {
@@ -993,17 +993,21 @@ export default defineComponent({
                 }
               </div>
             </FormItem>
-            <FormItem  label='时长' >
-              <div class={'purchase-cvm-time'}>
-                <Input type='number' v-model={formData.purchase_duration.count}></Input>
-                <Select v-model={formData.purchase_duration.unit} clearable={false}>{
-                    purchaseDurationUnits.map(({ id, name }: IOption) => (
-                      <Option key={id} value={id} label={name}></Option>
-                    ))}
-                </Select>
-                <Checkbox v-model={formData.auto_renew}>自动续费</Checkbox>
-              </div>
-            </FormItem>
+            {
+              ['PREPAID'].includes(formData.instance_charge_type)
+                ? <FormItem  label='时长' >
+                    <div class={'purchase-cvm-time'}>
+                      <Input type='number' v-model={formData.purchase_duration.count}></Input>
+                      <Select v-model={formData.purchase_duration.unit} clearable={false}>{
+                          purchaseDurationUnits.map(({ id, name }: IOption) => (
+                            <Option key={id} value={id} label={name}></Option>
+                          ))}
+                      </Select>
+                      <Checkbox v-model={formData.auto_renew}>自动续费</Checkbox>
+                    </div>
+                  </FormItem>
+                : null
+            }
           </Form>
           <div class={'purchase-cvm-bottom-bar-info'}>
             <div>

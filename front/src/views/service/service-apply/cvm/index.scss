@@ -44,8 +44,10 @@
     justify-content: center;
     align-items: center;
     flex: 1;
+    padding-left: 20%;
 
     .purchase-cvm-bottom-bar-form-count {
+      margin-right: auto;
       .purchase-cvm-bottom-bar-form-count-tip {
         color: #979BA5;
         .purchase-cvm-bottom-bar-form-count-tip-num {
