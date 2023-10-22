@@ -113,6 +113,15 @@ export default defineComponent({
     );
 
     watch(
+      () => formModel.vendor,
+      () => {
+        if ([VendorEnum.AZURE, VendorEnum.GCP, VendorEnum.HUAWEI].includes(formModel.vendor)) {
+          formModel.site = 'international';
+        }
+      },
+    );
+
+    watch(
       () => formModel,
       (model) => {
         props.changeSubmitData(model);
