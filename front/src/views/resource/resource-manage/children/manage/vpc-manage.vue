@@ -66,7 +66,12 @@ const fetchComponentsData = () => {
 defineExpose({ fetchComponentsData });
 
 const emit = defineEmits(['auth']);
-
+const isRowSelectEnable = ({ row }: DoublePlainObject) => {
+  if (!props.isResourcePage) return true;
+  if (row.id) {
+    return row.bk_biz_id === -1;
+  }
+};
 
 const hostSearchData = computed(() => {
   return [
@@ -205,6 +210,7 @@ const renderColumns = [
       :pagination="pagination"
       :columns="renderColumns"
       :data="datas"
+      :is-row-select-enable="isRowSelectEnable"
       show-overflow-tooltip
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"

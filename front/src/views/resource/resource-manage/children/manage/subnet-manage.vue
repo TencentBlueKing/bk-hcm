@@ -45,6 +45,13 @@ const {
   filter,
 } = useFilter(props);
 
+const isRowSelectEnable = ({ row }: DoublePlainObject) => {
+  if (!props.isResourcePage) return true;
+  if (row.id) {
+    return row.bk_biz_id === -1;
+  }
+};
+
 const {
   datas,
   pagination,
@@ -222,6 +229,7 @@ defineExpose({ fetchComponentsData });
       :columns="renderColumns"
       :data="datas"
       show-overflow-tooltip
+      :is-row-select-enable="isRowSelectEnable"
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
       @column-sort="handleSort"
