@@ -25,6 +25,7 @@ import useSelection from '../../hooks/use-selection';
 import useColumns from '../../hooks/use-columns';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import { VendorEnum } from '@/common/constant';
+import { QueryRuleOPEnum } from '@/typings';
 
 const props = defineProps({
   filter: {
@@ -166,7 +167,16 @@ const {
   handlePageSizeChange,
   handleSort,
   triggerApi,
-} = useQueryList({ filter: filter.value }, 'disks');
+} = useQueryList({ filter: {
+  op: 'and',
+  rules: filter.value.rules.concat([
+    {
+      op: QueryRuleOPEnum.NEQ,
+      field: 'recycle_status',
+      value: 'recycling',
+    },
+  ]),
+} }, 'disks');
 
 const {
   handleShowDelete,
