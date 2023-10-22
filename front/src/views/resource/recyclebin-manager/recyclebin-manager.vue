@@ -734,8 +734,7 @@ export default defineComponent({
   }
   .header-container {
     display: flex;
-    align-items: center;
-
+    // align-items: center;
   }
 @-webkit-keyframes move {
   from {
