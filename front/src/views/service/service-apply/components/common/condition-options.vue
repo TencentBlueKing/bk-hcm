@@ -124,7 +124,7 @@ watch(
     :title="() => '基本信息'"
     :layout="'grid'"
   >
-    <div class="cond-item" v-if="!isResourcePage">
+    <div class="cond-item" v-show="false">
       <div class="mb8">业务</div>
       <div class="cond-content">
         <business-selector

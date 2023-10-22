@@ -1,11 +1,12 @@
 import http from '@/http';
 import { computed, defineComponent, PropType, ref, watch } from 'vue';
-import { Select } from 'bkui-vue';
+import { Button, Select } from 'bkui-vue';
 
 import { QueryRuleOPEnum } from '@/typings/common';
 import { VendorEnum } from '@/common/constant';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { ISubnetItem } from '../../cvm/children/SubnetPreviewDialog';
+import RightTurnLine from 'bkui-vue/lib/icon/right-turn-line';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -40,15 +41,14 @@ export default defineComponent({
       },
     });
 
-    watch([
-      () => props.bizId,
-      () => props.region,
-      () => props.vendor,
-      () => props.vpcId,
-      () => props.accountId,
-      () => props.zone,
-      () => props.resourceGroup,
-    ], async ([bizId, region, vendor, vpcId, accountId, zone]) => {
+    const getSubnetsData = async (
+      bizId: string | number,
+      region: string,
+      vendor: string,
+      vpcId: string,
+      accountId: string,
+      zone: any[],
+    ) => {
       if ((!bizId && isServicePage) || !vpcId) {
         list.value = [];
         return;
@@ -106,27 +106,63 @@ export default defineComponent({
       });
       list.value = result?.data?.details ?? [];
       loading.value = false;
+    };
+
+    watch([
+      () => props.bizId,
+      () => props.region,
+      () => props.vendor,
+      () => props.vpcId,
+      () => props.accountId,
+      () => props.zone,
+      () => props.resourceGroup,
+    ], async ([bizId, region, vendor, vpcId, accountId, zone]) => {
+      await getSubnetsData(bizId, region, vendor, vpcId, accountId, zone);
     });
 
     return () => (
-      <Select
-        filterable={true}
-        modelValue={selected.value}
-        onUpdate:modelValue={val => selected.value = val}
-        loading={loading.value}
-        {...{ attrs }}
-        onChange={(cloud_id: string) => {
-          console.log(cloud_id);
-          const data = list.value.find(item => item.cloud_id = cloud_id);
-          props.handleChange(data);
-        }}
-      >
-        {
-          list.value.map(({ cloud_id, name, ipv4_cidr, available_ip_count }) => (
-            <Option key={cloud_id} value={cloud_id} label={`${name} ${ipv4_cidr} ${props.vendor !== VendorEnum.GCP ? `剩余IP ${available_ip_count}` : ''}`}></Option>
-          ))
-        }
-      </Select>
+      <div>
+        <Select
+          filterable={true}
+          modelValue={selected.value}
+          onUpdate:modelValue={val => selected.value = val}
+          loading={loading.value}
+          {...{ attrs }}
+          onChange={(cloud_id: string) => {
+            console.log(cloud_id);
+            const data = list.value.find(item => item.cloud_id = cloud_id);
+            props.handleChange(data);
+          }}
+        >
+          {
+            list.value.map(({ cloud_id, name, ipv4_cidr, available_ip_count }) => (
+              <Option key={cloud_id} value={cloud_id} label={`${name} ${ipv4_cidr} ${props.vendor !== VendorEnum.GCP ? `剩余IP ${available_ip_count}` : ''}`}></Option>
+            ))
+          }
+        </Select>
+        {props.vpcId && !list.value.length ? (
+            <div class={'subnet-selector-tips'}>
+              <span class={'subnet-create-tips'}>
+                {'所选的VPC，在当前区无可用的子网，可切换VPC或'}
+              </span>
+              <Button
+                text
+                theme='primary'
+                class={'mr6'}
+                onClick={() => {
+                  const url = '/#/resource/service-apply/subnet';
+                  window.open(url, '_blank');
+                }}>
+                新建子网
+              </Button>
+              <Button text onClick={() => {
+                getSubnetsData(props.bizId, props.region, props.vendor, props.vpcId, props.accountId, props.zone);
+              }}>
+                <RightTurnLine fill='#3A84FF' />
+              </Button>
+            </div>
+        ) : null}
+      </div>
     );
   },
 });

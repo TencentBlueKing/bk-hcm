@@ -232,14 +232,14 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     //   'route_table_id',
     //   false,
     // ),
-    {
-      label: '可用IPv4地址数',
-      field: 'count_of_ipv4_cidr',
-      isDefaultShow: true,
-      render({ data }: any) {
-        return data.ipv4_cidr.length;
-      },
-    },
+    // {
+    //   label: '可用IPv4地址数',
+    //   field: 'count_of_ipv4_cidr',
+    //   isDefaultShow: true,
+    //   render({ data }: any) {
+    //     return data.ipv4_cidr.length;
+    //   },
+    // },
     {
       label: '是否分配',
       field: 'bk_biz_id',

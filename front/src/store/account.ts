@@ -29,11 +29,11 @@ export const useAccountStore = defineStore({
      * @return {*}
      */
     async getAccountList(data: any, bizId?: number | string, isRes?: boolean) {
-      if (bizId > 0) {
-        return await http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/bizs/${bizId}`, { params: data.params });
-      }
       if (isRes) {
         return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/resources/accounts/list`, data);
+      }
+      if (bizId > 0) {
+        return await http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/bizs/${bizId}`, { params: data.params });
       }
       return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/list`, data);
     },

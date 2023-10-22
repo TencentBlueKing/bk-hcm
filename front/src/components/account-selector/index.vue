@@ -6,6 +6,7 @@ import type {
   // PlainObject,
   FilterType,
 } from '@/typings/resource';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 const props = defineProps({
   bizId: Number as PropType<number>,
@@ -28,6 +29,7 @@ const accountStore = useAccountStore();
 const accountList = ref([]);
 const loading = ref(null);
 const accountPage = ref(0);
+const { whereAmI } = useWhereAmI();
 
 const selectedValue = computed({
   get() {
@@ -58,11 +60,12 @@ const getAccoutList = async () => {
   if (props.type) {
     data.params = { account_type: props.type };
   }
-  const res = await accountStore.getAccountList(data, props.bizId, props.isResourcePage);
+  const isResource = whereAmI.value === Senarios.resource;
+  const res = await accountStore.getAccountList(data, props.bizId, isResource);
 
   accountPage.value += 1;
 
-  if (props.bizId > 0) {
+  if (!isResource) {
     accountList.value.push(...(res?.data || []));
   } else {
     accountList.value.push(...(res?.data?.details || []));

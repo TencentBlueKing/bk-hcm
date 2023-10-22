@@ -296,7 +296,6 @@ export default defineComponent({
       debounce(async () => {
         const saveData = getSaveData();
         if (![VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum)) return;
-        console.log(67676767, formData);
         if (
           !saveData.account_id
           || !saveData.region
@@ -323,7 +322,7 @@ export default defineComponent({
     );
 
     watch(
-      () => [cond, formData.zone],
+      () => [cond, formData.zone, formData.instance_charge_type],
       async () => {
         const isBusiness = whereAmI.value === Senarios.business;
         const isTcloud = cond.vendor === VendorEnum.TCLOUD;
@@ -351,12 +350,16 @@ export default defineComponent({
             limitNum.value = res.data.instance.limit;
             usageNum.value = res.data.instance.usage;
             break;
-          case VendorEnum.TCLOUD:
-            limitNum.value = res.data.post_paid_quota_set.total_quota;
-            usageNum.value = res.data.post_paid_quota_set.used_quota;
+          case VendorEnum.TCLOUD: {
+            let dataSource = res.data.spot_paid_quota;
+            if (['PREPAID'].includes(formData.instance_charge_type)) dataSource = res.data.pre_paid_quota;
+            if (['POSTPAID_BY_HOUR', 'postPaid'].includes(formData.instance_charge_type)) dataSource = res.data.post_paid_quota_set;
+            limitNum.value = dataSource.total_quota;
+            usageNum.value = dataSource.used_quota;
             break;
+          }
           case VendorEnum.HUAWEI:
-            limitNum.value = res.data.max_total_spot_instances;
+            limitNum.value = res.data.max_total_instances;
             usageNum.value = res.data.max_total_floating_ips;
             break;
         }
@@ -454,6 +457,7 @@ export default defineComponent({
                     theme="primary"
                     disabled={!formData.cloud_subnet_id}
                     style={{ marginRight: '-50px' }}
+                    class={'subnet-selector-preview-btn'}
                     onClick={() => {
                       isSubnetPreviewDialogShow.value = true;
                       // if (!formData.cloud_subnet_id) return;
@@ -677,7 +681,12 @@ export default defineComponent({
             property: 'name',
             maxlength: 60,
             description: '60个字符，字母、数字、“-”，且必须以字母、数字开头和结尾。\n\r 实例名称是在云上的记录名称，并不是操作系统上的主机名，以方便使用名称来搜索主机。\n\r 如申请的是1台主机，则按填写的名称命名。如申请的是多台，则填写名称是前缀，申请单会自动补充随机的后缀。',
-            content: () => <Input placeholder='填写实例名称，主机数量大于1时支持批量命名' v-model={formData.name} />,
+            content: () => (
+              <div>
+                <Input placeholder='填写实例名称，主机数量大于1时支持批量命名' v-model={formData.name} />
+                <div class={'instance-name-tips'}>{'当申请数量 > 1时，该名称为前缀，申请单会自动补充随机后缀'}</div>
+              </div>
+            ),
           },
         ],
       },
@@ -970,7 +979,7 @@ export default defineComponent({
 
       <div class={'purchase-cvm-bottom-bar'}>
           <Form class={'purchase-cvm-bottom-bar-form'}>
-            <FormItem  label='数量' class={'purchase-cvm-bottom-bar-form-count ' + `${[VendorEnum.TCLOUD, VendorEnum.HUAWEI, VendorEnum.GCP].includes(cond.vendor as VendorEnum) ? 'mb-12' : ''}`}>
+            <FormItem  label='数量' class={'purchase-cvm-bottom-bar-form-count ' + `${limitNum.value !== -1 ? 'mb-12' : ''}`}>
               <div>
                 <Input type='number' min={0} max={100} v-model={formData.required_count}></Input>
                 {
@@ -980,24 +989,34 @@ export default defineComponent({
                     <p class={'purchase-cvm-bottom-bar-form-count-tip'}>
                       所在{
                         VendorEnum.TCLOUD === cond.vendor ? '可用区' : '地域'
-                      }配额为 <span class={'purchase-cvm-bottom-bar-form-count-tip-num'}>{ limitNum.value - usageNum.value - formData.required_count }</span> /{ limitNum.value }
+                      }配额为 {
+                        ![VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum)
+                          ? (
+                            <><span class={'purchase-cvm-bottom-bar-form-count-tip-num'}>{ limitNum.value - usageNum.value - formData.required_count }</span> /{ limitNum.value }</>
+                          )
+                          : limitNum.value
+                      }
                     </p>
                     )
                     : null
                 }
               </div>
             </FormItem>
-            <FormItem  label='时长' >
-              <div class={'purchase-cvm-time'}>
-                <Input type='number' v-model={formData.purchase_duration.count}></Input>
-                <Select v-model={formData.purchase_duration.unit} clearable={false}>{
-                    purchaseDurationUnits.map(({ id, name }: IOption) => (
-                      <Option key={id} value={id} label={name}></Option>
-                    ))}
-                </Select>
-                <Checkbox v-model={formData.auto_renew}>自动续费</Checkbox>
-              </div>
-            </FormItem>
+            {
+              ['PREPAID', 'prePaid'].includes(formData.instance_charge_type)
+                ? <FormItem  label='时长' >
+                    <div class={'purchase-cvm-time'}>
+                      <Input type='number' v-model={formData.purchase_duration.count}></Input>
+                      <Select v-model={formData.purchase_duration.unit} clearable={false}>{
+                          purchaseDurationUnits.map(({ id, name }: IOption) => (
+                            <Option key={id} value={id} label={name}></Option>
+                          ))}
+                      </Select>
+                      <Checkbox v-model={formData.auto_renew}>自动续费</Checkbox>
+                    </div>
+                  </FormItem>
+                : null
+            }
           </Form>
           <div class={'purchase-cvm-bottom-bar-info'}>
             <div>

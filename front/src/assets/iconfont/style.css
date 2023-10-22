@@ -29,6 +29,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .icon-plus-circle:before {
 	content: "\e142";
 }
+.icon-link:before {
+	content: "\e37c";
+}
 .icon-7chenggong-01:before {
 	content: "\e432";
 }
