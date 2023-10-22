@@ -32,7 +32,7 @@
             :name="item.value"
             :label="item.name"
           >
-            <section v-if="isResourcePage">
+            <section class="header-container">
               <span
                 v-bk-tooltips="{ content: '请勾选主机信息', disabled: selections.length }"
                 @click="handleAuth('recycle_bin_manage')">
@@ -52,6 +52,11 @@
                 >{{ t('立即恢复') }}
                 </bk-button>
               </span>
+              <SearchSelect
+                class="w500 common-search-selector"
+                v-model="searchVal"
+                :data="searchData"
+              />
             </section>
             <bk-loading
               :loading="isLoading"
@@ -260,7 +265,7 @@
 import { reactive, watch, toRefs, defineComponent, ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { Message } from 'bkui-vue';
+import { Message, SearchSelect } from 'bkui-vue';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import { useResourceStore, useAccountStore } from '@/store';
 import { CloudType, FilterType, QueryRuleOPEnum } from '@/typings';
@@ -281,6 +286,7 @@ export default defineComponent({
   components: {
     HostInfo,
     HostDrive,
+    SearchSelect,
   },
   setup() {
     const { t } = useI18n();
@@ -293,6 +299,13 @@ export default defineComponent({
     const resourceAccountStore = useResourceAccountStore();
     const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
     const { whereAmI } = useWhereAmI();
+    const searchVal = ref([]);
+    const searchData = [
+      {
+        name: 'ID',
+        id: 'res_id',
+      },
+    ];
 
     const state = reactive({
       isAccurate: false,    // 是否精确
@@ -448,6 +461,67 @@ export default defineComponent({
       {
         immediate: true,
         deep: true,
+      },
+    );
+
+    watch(
+      () => route.query.cvm,
+      (cvm) => {
+        if (Array.isArray(cvm)) return;
+        if (!cvm) {
+          searchVal.value = [];
+          return;
+        }
+        searchVal.value = [
+          {
+            id: 'res_id',
+            name: 'ID',
+            values: [
+              {
+                id: cvm,
+                name: cvm,
+              },
+            ],
+          },
+        ];
+      },
+      {
+        immediate: true,
+      },
+    );
+
+    watch(
+      () => searchVal.value,
+      (vals, preVals) => {
+        console.log(222, vals, preVals?.length);
+        const idx = state.filter.rules.findIndex(({ field }) => field === 'res_id');
+        if (idx !== -1) state.filter.rules.splice(idx, 1);
+        if (!vals.length) return;
+        state.filter.rules = state.filter.rules.concat(Array.isArray(vals) ? vals.map((val: any) => ({
+          field: val.id,
+          op: QueryRuleOPEnum.EQ,
+          value: val.values[0].id,
+        })) : []);
+      },
+      {
+        immediate: true,
+      },
+    );
+
+    watch(
+      () => state.selectedType,
+      (type) => {
+        if (type === 'disk') {
+          router.push({
+            query: {
+              ...route.query,
+              cvm: undefined,
+            },
+          });
+        }
+      },
+      {
+        immediate: true,
       },
     );
 
@@ -608,6 +682,8 @@ export default defineComponent({
       isSettingDialogLoading,
       resourceAccountStore,
       handleLink,
+      searchData,
+      searchVal,
     };
   },
 });
@@ -655,6 +731,11 @@ export default defineComponent({
     margin-left: 4px;
     cursor: pointer;
     color: #3A84FF;
+  }
+  .header-container {
+    display: flex;
+    align-items: center;
+
   }
 @-webkit-keyframes move {
   from {
