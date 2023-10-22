@@ -69,7 +69,7 @@ export default defineComponent({
   setup(props) {
     const userStore = useUserStore();
     const formModel = reactive({
-      site: 'china' as 'china'|'international', // 站点
+      site: 'international' as 'china'|'international', // 站点
       vendor: VendorEnum.TCLOUD, // 云厂商
       name: '', // 账号别名
       managers: [userStore.username], // 责任人
@@ -184,12 +184,18 @@ export default defineComponent({
                 required
                 label='站点种类'
               >
-                <Radio
-                  label={'china'}
-                  v-model={formModel.site}
-                >
-                  中国站
-                </Radio>
+                {
+                  ![VendorEnum.AZURE, VendorEnum.GCP, VendorEnum.HUAWEI].includes(formModel.vendor)
+                    ? (
+                      <Radio
+                        label={'china'}
+                        v-model={formModel.site}
+                      >
+                        中国站
+                      </Radio>
+                    )
+                    : null
+                }
                 <Radio
                   label={'international'}
                   v-model={formModel.site}
