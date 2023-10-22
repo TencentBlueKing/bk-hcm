@@ -12,7 +12,7 @@ import http from '@/http';
 import successIcon from '@/assets/image/corret-fill.png';
 import failedIcon from '@/assets/image/delete-fill.png';
 import MemberSelect from '@/components/MemberSelect';
-import { useAccountStore } from '@/store';
+import { useAccountStore, useUserStore } from '@/store';
 import { ValidateStatus, useSecretExtension } from './useSecretExtension';
 
 const { FormItem } = Form;
@@ -67,11 +67,12 @@ export default defineComponent({
     },
   },
   setup(props) {
+    const userStore = useUserStore();
     const formModel = reactive({
       site: 'china' as 'china'|'international', // 站点
       vendor: VendorEnum.TCLOUD, // 云厂商
       name: '', // 账号别名
-      managers: [] as Array<string>, // 责任人
+      managers: [userStore.username], // 责任人
       type: 'resource', // 账号类型，当前产品形态固定为 resource，资源账号
       memo: '', // 备注
       extension: {}, // 不同云的secretKey\id
@@ -334,7 +335,10 @@ export default defineComponent({
                 <Input v-model={formModel.name}/>
               </FormItem>
               <FormItem label='责任人' class={'api-secret-selector'} required property='managers'>
-                <MemberSelect v-model={formModel.managers}/>
+                <MemberSelect v-model={formModel.managers} defaultUserlist={[{
+                  username: userStore.username,
+                  display_name: userStore.username,
+                }]}/>
               </FormItem>
               <FormItem label='使用业务' property='bk_biz_ids' required>
                 <Select
