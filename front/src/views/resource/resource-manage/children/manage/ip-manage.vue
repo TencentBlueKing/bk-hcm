@@ -11,6 +11,8 @@ import useSelection from '../../hooks/use-selection';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import { EipStatus, IEip } from '@/typings/business';
 import { CLOUD_VENDOR } from '@/constants/resource';
+import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
+
 
 const props = defineProps({
   filter: {
@@ -40,7 +42,7 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ha
 const { columns, settings } = useColumns('eips');
 const emit = defineEmits(['auth']);
 
-const { selections, handleSelectionChange } = useSelection();
+const { selections, handleSelectionChange, resetSelections } = useSelection();
 
 const {
   handleShowDelete,
@@ -150,6 +152,14 @@ defineExpose({ fetchComponentsData });
       :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'"
     >
       <slot></slot>
+      <BatchDistribution
+        :selections="selections"
+        :type="DResourceType.eips"
+        :get-data="() => {
+          triggerApi();
+          resetSelections();
+        }"
+      />
       <bk-button
         class="w100 ml10"
         theme="primary"
