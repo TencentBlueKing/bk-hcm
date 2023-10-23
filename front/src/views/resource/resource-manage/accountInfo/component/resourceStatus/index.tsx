@@ -54,6 +54,7 @@ export default defineComponent({
     watch(
       () => resourceAccountStore.resourceAccount,
       async (account) => {
+        if (!account?.id) return;
         const res = await http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/sync_details/${account.id}`);
         statusList.value = res.data.iass_res;
       },
