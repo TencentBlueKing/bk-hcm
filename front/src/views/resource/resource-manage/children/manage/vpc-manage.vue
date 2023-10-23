@@ -23,6 +23,8 @@ import {
 import useColumns from '../../hooks/use-columns';
 import useQueryList from '../../hooks/use-query-list';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
+import useSelection from '../../hooks/use-selection';
+import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 
 const props = defineProps({
   filter: {
@@ -38,6 +40,11 @@ const props = defineProps({
     type: String,
   },
 });
+
+const {
+  selections,
+  handleSelectionChange,
+} = useSelection();
 
 // use hooks
 const {
@@ -57,6 +64,7 @@ const {
   handlePageChange,
   handlePageSizeChange,
   handleSort,
+  triggerApi,
 } = useQueryList({ filter: filter.value }, 'vpcs');
 
 // 抛出请求数据的方法，新增成功使用
@@ -193,6 +201,11 @@ const renderColumns = [
       :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
       <slot>
       </slot>
+      <BatchDistribution
+        :selections="selections"
+        :type="DResourceType.vpcs"
+        :get-data="triggerApi"
+      />
       <bk-search-select
         class="w500 ml10 search-selector-container"
         clearable
@@ -212,6 +225,7 @@ const renderColumns = [
       :data="datas"
       :is-row-select-enable="isRowSelectEnable"
       show-overflow-tooltip
+      @selection-change="handleSelectionChange"
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
       @column-sort="handleSort"

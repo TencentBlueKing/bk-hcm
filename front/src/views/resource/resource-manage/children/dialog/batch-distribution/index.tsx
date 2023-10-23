@@ -58,10 +58,6 @@ export const DResourceTypeMap = {
 
 export const BatchDistribution = defineComponent({
   props: {
-    isShow: {
-      type: Boolean,
-      required: true,
-    },
     selections: {
       type: Array as PropType<Array<any>>,
       required: true,

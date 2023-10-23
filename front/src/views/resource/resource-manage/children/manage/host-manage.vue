@@ -90,7 +90,6 @@ const isDialogShow = ref(false);
 const isDialogBtnLoading = ref(false);
 const selectedBizId = ref(0);
 const resourceStore = useResourceStore();
-const isDistributionDialogShow = ref(false);
 
 const hostSearchData = computed(() => {
   return [
@@ -288,7 +287,6 @@ getCloudAreas();
       :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
       <slot></slot>
       <BatchDistribution
-        :is-show="isDistributionDialogShow"
         :selections="selections"
         :type="DResourceType.cvms"
         :get-data="triggerApi"
