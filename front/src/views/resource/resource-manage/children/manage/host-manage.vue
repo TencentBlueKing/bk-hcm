@@ -289,7 +289,10 @@ getCloudAreas();
       <BatchDistribution
         :selections="selections"
         :type="DResourceType.cvms"
-        :get-data="triggerApi"
+        :get-data="() => {
+          triggerApi();
+          resetSelections();
+        }"
       />
       <HostOperations :selections="selections" :on-finished="() => {
         triggerApi();

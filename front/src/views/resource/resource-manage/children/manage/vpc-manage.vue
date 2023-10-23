@@ -44,6 +44,7 @@ const props = defineProps({
 const {
   selections,
   handleSelectionChange,
+  resetSelections,
 } = useSelection();
 
 // use hooks
@@ -204,7 +205,10 @@ const renderColumns = [
       <BatchDistribution
         :selections="selections"
         :type="DResourceType.vpcs"
-        :get-data="triggerApi"
+        :get-data="() => {
+          triggerApi();
+          resetSelections();
+        }"
       />
       <bk-search-select
         class="w500 ml10 search-selector-container"

@@ -42,6 +42,7 @@ const props = defineProps({
 const {
   selections,
   handleSelectionChange,
+  resetSelections,
 } = useSelection();
 
 const resourceStore = useResourceStore();
@@ -223,7 +224,10 @@ defineExpose({ fetchComponentsData });
       <BatchDistribution
         :selections="selections"
         :type="DResourceType.subnets"
-        :get-data="triggerApi"
+        :get-data="() => {
+          triggerApi();
+          resetSelections();
+        }"
       />
       <bk-search-select
         class="w500 ml10 search-selector-container"
