@@ -91,3 +91,14 @@ func Filter[V any](s []V, filter func(V) bool) []V {
 	}
 	return subSlice
 }
+
+// FilterMap 通过给定的filter函数过滤出符合条件的子slice,并通过mapFunc 转换成其他类型
+func FilterMap[V any, O any](s []V, filter func(V) bool, mapFunc func(V) O) []O {
+	subSlice := make([]O, 0, len(s))
+	for _, v := range s {
+		if filter(v) {
+			subSlice = append(subSlice, mapFunc(v))
+		}
+	}
+	return subSlice
+}

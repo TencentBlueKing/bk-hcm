@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"hcm/cmd/cloud-server/logics/async"
 	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/logics/eip"
 	"hcm/cmd/cloud-server/service/common"
@@ -32,11 +33,14 @@ import (
 	"hcm/cmd/cloud-server/service/eip/gcp"
 	"hcm/cmd/cloud-server/service/eip/huawei"
 	"hcm/cmd/cloud-server/service/eip/tcloud"
+	actioneip "hcm/cmd/task-server/logics/action/eip"
 	cloudproto "hcm/pkg/api/cloud-server/eip"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
 	datarelproto "hcm/pkg/api/data-service/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud/eip"
+	ts "hcm/pkg/api/task-server"
+	"hcm/pkg/async/action"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -49,6 +53,7 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/counter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -302,28 +307,38 @@ func (svc *eipSvc) batchDeleteEip(cts *rest.Contexts, validHandler handler.Valid
 
 	// TODO 判断 Eip 是否可删除
 
-	succeeded := make([]string, 0)
+	tasks := make([]ts.CustomFlowTask, 0, len(req.IDs))
+	var nextID = counter.NewNumStringCounter(1, 10)
 	for _, eipID := range req.IDs {
-		basicInfo, exists := basicInfoMap[eipID]
+		info, exists := basicInfoMap[eipID]
 		if !exists {
 			return nil, errf.New(errf.InvalidParameter, fmt.Sprintf("id %s has no corresponding vendor", eipID))
 		}
-
-		err = svc.eip.DeleteEip(cts.Kit, basicInfo.Vendor, eipID)
-		if err != nil {
-			return core.BatchOperateResult{
-				Succeeded: succeeded,
-				Failed: &core.FailedInfo{
-					ID:    eipID,
-					Error: err,
-				},
-			}, errf.NewFromErr(errf.PartialFailed, err)
-		}
-
-		succeeded = append(succeeded, eipID)
+		tasks = append(tasks, ts.CustomFlowTask{
+			ActionID:   action.ActIDType(nextID()),
+			ActionName: enumor.ActionDeleteEIP,
+			Params: actioneip.DeleteEIPOption{
+				Vendor: info.Vendor,
+				ID:     info.ID,
+			},
+			DependOn: nil,
+		})
+	}
+	flowReq := &ts.AddCustomFlowReq{
+		Name:  enumor.FlowDeleteEIP,
+		Tasks: tasks,
 	}
 
-	return core.BatchOperateResult{Succeeded: succeeded}, nil
+	result, err := svc.client.TaskServer().CreateCustomFlow(cts.Kit, flowReq)
+	if err != nil {
+		logs.Errorf("call taskserver to create custom flow failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if err := async.WaitTaskToEnd(cts.Kit, svc.client.TaskServer(), result.ID); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 // AssociateEip associate eip.

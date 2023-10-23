@@ -20,13 +20,19 @@
 package securitygroup
 
 import (
+	"strconv"
+
+	"hcm/cmd/cloud-server/logics/async"
+	actionsg "hcm/cmd/task-server/logics/action/security-group"
 	proto "hcm/pkg/api/cloud-server"
-	"hcm/pkg/api/core"
 	hcproto "hcm/pkg/api/hc-service"
+	ts "hcm/pkg/api/task-server"
+	"hcm/pkg/async/action"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/hooks/handler"
@@ -205,62 +211,66 @@ func (svc *securityGroupSvc) createHuaWeiSGRule(cts *rest.Contexts, sgBaseInfo *
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
+	ruleLen := len(req.EgressRuleSet) + len(req.IngressRuleSet)
+	tasks := make([]ts.CustomFlowTask, 0, ruleLen)
 
-	if len(req.EgressRuleSet) != 0 {
-		successIDs := make([]string, 0, len(req.EgressRuleSet))
-		for _, one := range req.EgressRuleSet {
-			createReq := &hcproto.HuaWeiSGRuleCreateReq{
-				AccountID: sgBaseInfo.AccountID,
-				EgressRule: &hcproto.HuaWeiSGRuleCreate{
-					Memo:               one.Memo,
-					Ethertype:          one.Ethertype,
-					Protocol:           one.Protocol,
-					RemoteIPPrefix:     one.RemoteIPPrefix,
-					CloudRemoteGroupID: one.CloudRemoteGroupID,
-					Port:               one.Port,
-					Action:             one.Action,
-					Priority:           one.Priority,
-				},
-			}
-			result, err := svc.client.HCService().HuaWei.SecurityGroup.CreateSecurityGroupRule(cts.Kit.Ctx,
-				cts.Kit.Header(), sgBaseInfo.ID, createReq)
-			if err != nil {
-				return &core.BatchCreateResult{IDs: successIDs}, errf.NewFromErr(errf.PartialFailed, err)
-			}
-
-			successIDs = append(successIDs, result.ID)
+	for i := 1; i <= ruleLen; i++ {
+		tasks = append(tasks, ts.CustomFlowTask{
+			ActionID:   action.ActIDType(strconv.Itoa(i)),
+			ActionName: enumor.ActionCreateHuaweiSGRule,
+		})
+	}
+	if req.EgressRuleSet == nil {
+		for i, rule := range req.EgressRuleSet {
+			tasks[i].Params = convSGRuleReq(sgBaseInfo, rule, true)
 		}
-		return &core.BatchCreateResult{IDs: successIDs}, nil
+	} else {
+		for i, rule := range req.IngressRuleSet {
+			tasks[i].Params = convSGRuleReq(sgBaseInfo, rule, false)
+		}
 	}
 
-	if len(req.IngressRuleSet) != 0 {
-		successIDs := make([]string, 0)
-		for _, one := range req.IngressRuleSet {
-			createReq := &hcproto.HuaWeiSGRuleCreateReq{
-				AccountID: sgBaseInfo.AccountID,
-				IngressRule: &hcproto.HuaWeiSGRuleCreate{
-					Memo:               one.Memo,
-					Ethertype:          one.Ethertype,
-					Protocol:           one.Protocol,
-					RemoteIPPrefix:     one.RemoteIPPrefix,
-					CloudRemoteGroupID: one.CloudRemoteGroupID,
-					Port:               one.Port,
-					Action:             one.Action,
-					Priority:           one.Priority,
-				},
-			}
-			result, err := svc.client.HCService().HuaWei.SecurityGroup.CreateSecurityGroupRule(cts.Kit.Ctx,
-				cts.Kit.Header(), sgBaseInfo.ID, createReq)
-			if err != nil {
-				return &core.BatchCreateResult{IDs: successIDs}, errf.NewFromErr(errf.PartialFailed, err)
-			}
-
-			successIDs = append(successIDs, result.ID)
-		}
-		return &core.BatchCreateResult{IDs: successIDs}, nil
+	flowReq := &ts.AddCustomFlowReq{
+		Name:  enumor.FlowCreateHuaweiSGRule,
+		Tasks: tasks,
 	}
 
-	return nil, nil
+	result, err := svc.client.TaskServer().CreateCustomFlow(cts.Kit, flowReq)
+	if err != nil {
+		logs.Errorf("call taskserver to create custom flow failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if err := async.WaitTaskToEnd(cts.Kit, svc.client.TaskServer(), result.ID); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func convSGRuleReq(sgBaseInfo *types.CloudResourceBasicInfo, rule proto.HuaWeiSecurityGroupRule,
+	isEgress bool) *actionsg.CreateHuaweiSGRuleOption {
+	actionOpt := &actionsg.CreateHuaweiSGRuleOption{
+		SGID: sgBaseInfo.ID,
+		RuleReq: &hcproto.HuaWeiSGRuleCreateReq{
+			AccountID: sgBaseInfo.AccountID,
+		},
+	}
+	r := &hcproto.HuaWeiSGRuleCreate{
+		Memo:               rule.Memo,
+		Ethertype:          rule.Ethertype,
+		Protocol:           rule.Protocol,
+		RemoteIPPrefix:     rule.RemoteIPPrefix,
+		CloudRemoteGroupID: rule.CloudRemoteGroupID,
+		Port:               rule.Port,
+		Action:             rule.Action,
+		Priority:           rule.Priority,
+	}
+	if isEgress {
+		actionOpt.RuleReq.EgressRule = r
+	} else {
+		actionOpt.RuleReq.IngressRule = r
+	}
+	return actionOpt
 }
 
 func (svc *securityGroupSvc) createAzureSGRule(cts *rest.Contexts, sgBaseInfo *types.CloudResourceBasicInfo) (

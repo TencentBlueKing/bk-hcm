@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/api/hc-service/eip"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -65,14 +66,14 @@ func (cli *EipClient) SyncEip(ctx context.Context, h http.Header, request *sync.
 }
 
 // DeleteEip ...
-func (cli *EipClient) DeleteEip(ctx context.Context, h http.Header, req *eip.EipDeleteReq) error {
+func (cli *EipClient) DeleteEip(kt *kit.Kit, req *eip.EipDeleteReq) error {
 	resp := new(rest.BaseResp)
 
 	err := cli.client.Delete().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(req).
 		SubResourcef("/eips").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

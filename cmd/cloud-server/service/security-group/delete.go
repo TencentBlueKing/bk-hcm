@@ -20,14 +20,18 @@
 package securitygroup
 
 import (
+	"hcm/cmd/cloud-server/logics/async"
+	actionsg "hcm/cmd/task-server/logics/action/security-group"
 	proto "hcm/pkg/api/cloud-server"
-	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	ts "hcm/pkg/api/task-server"
+	"hcm/pkg/async/action"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/counter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -76,44 +80,33 @@ func (svc *securityGroupSvc) batchDeleteSecurityGroup(cts *rest.Contexts, validH
 		return nil, err
 	}
 
-	successIDs := make([]string, 0)
-	for _, id := range req.IDs {
-		baseInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-			enumor.SecurityGroupCloudResType, id)
-		if err != nil {
-			return core.BatchOperateResult{
-				Succeeded: successIDs,
-				Failed: &core.FailedInfo{
-					ID:    id,
-					Error: err,
-				},
-			}, errf.NewFromErr(errf.PartialFailed, err)
-		}
+	tasks := make([]ts.CustomFlowTask, 0, len(req.IDs))
 
-		switch baseInfo.Vendor {
-		case enumor.TCloud:
-			err = svc.client.HCService().TCloud.SecurityGroup.DeleteSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id)
-		case enumor.Aws:
-			err = svc.client.HCService().Aws.SecurityGroup.DeleteSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id)
-		case enumor.HuaWei:
-			err = svc.client.HCService().HuaWei.SecurityGroup.DeleteSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id)
-		case enumor.Azure:
-			err = svc.client.HCService().Azure.SecurityGroup.DeleteSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id)
-		default:
-			return nil, errf.Newf(errf.Unknown, "id: %s vendor: %s not support", id, baseInfo.Vendor)
-		}
-		if err != nil {
-			return core.BatchOperateResult{
-				Succeeded: successIDs,
-				Failed: &core.FailedInfo{
-					ID:    id,
-					Error: err,
-				},
-			}, errf.NewFromErr(errf.PartialFailed, err)
-		}
-
-		successIDs = append(successIDs, id)
+	nextID := counter.NewNumStringCounter(1, 10)
+	for _, info := range basicInfoMap {
+		tasks = append(tasks, ts.CustomFlowTask{
+			ActionID:   action.ActIDType(nextID()),
+			ActionName: enumor.ActionDeleteSecurityGroup,
+			Params: actionsg.DeleteSGOption{
+				Vendor: info.Vendor,
+				ID:     info.ID,
+			},
+			DependOn: nil,
+		})
+	}
+	flowReq := &ts.AddCustomFlowReq{
+		Name:  enumor.FlowDeleteSecurityGroup,
+		Tasks: tasks,
 	}
 
-	return nil, nil
+	result, err := svc.client.TaskServer().CreateCustomFlow(cts.Kit, flowReq)
+	if err != nil {
+		logs.Errorf("call taskserver to create custom flow failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if err := async.WaitTaskToEnd(cts.Kit, svc.client.TaskServer(), result.ID); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
