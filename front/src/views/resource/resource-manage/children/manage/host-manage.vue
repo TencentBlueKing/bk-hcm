@@ -29,7 +29,7 @@ import {
 import HostOperations from '../../common/table/HostOperations';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import BusinessSelector from '@/components/business-selector/index.vue';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 // use hook
 const {
   t,
@@ -90,7 +90,7 @@ const isDialogShow = ref(false);
 const isDialogBtnLoading = ref(false);
 const selectedBizId = ref(0);
 const resourceStore = useResourceStore();
-const { whereAmI } = useWhereAmI();
+const isDistributionDialogShow = ref(false);
 
 const hostSearchData = computed(() => {
   return [
@@ -287,13 +287,12 @@ getCloudAreas();
       class="flex-row align-items-center"
       :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
       <slot></slot>
-      <bk-button
-        class="ml8 mr8"
-        @click="() => isDialogShow = true"
-        v-if="whereAmI === Senarios.resource"
-      >
-        批量分配
-      </bk-button>
+      <BatchDistribution
+        :is-show="isDistributionDialogShow"
+        :selections="selections"
+        :type="DResourceType.cvms"
+        :get-data="triggerApi"
+      />
       <HostOperations :selections="selections" :on-finished="() => {
         triggerApi();
         resetSelections();
@@ -406,13 +405,6 @@ getCloudAreas();
 }
 .search-selector-container {
   margin-left: auto;
-}
-.selected-host-count-tip {
-  margin-bottom: 24px;
-}
-.selected-host-count {
-  color: #3A84FF;
-  font-weight: bold;
 }
 .operations-container {
   width: 24px;
