@@ -8,6 +8,8 @@ import {
   defineExpose,
   h,
   computed,
+  ref,
+  onMounted,
 } from 'vue';
 import {
   useI18n,
@@ -81,6 +83,11 @@ const isRowSelectEnable = ({ row }: DoublePlainObject) => {
     return row.bk_biz_id === -1;
   }
 };
+const curVpc = ref({});
+const isDialogShow = ref(false);
+const isDialogBtnLoading = ref(false);
+const cloudAreaList = ref([]);
+const curCloudArea = ref('');
 
 const hostSearchData = computed(() => {
   return [
@@ -94,7 +101,43 @@ const hostSearchData = computed(() => {
     }],
   ];
 });
+const handleBindRegion = (data) => {
+  isDialogShow.value = true;
+  curVpc.value = data;
+};
 
+const handleConfirm = async () => {
+  isDialogBtnLoading.value = true;
+  try {
+    await resourceStore.bindVPCWithCloudArea({
+      vpc_id: curVpc.value.bk_cloud_id,
+      bk_cloud_id: curCloudArea.value,
+    });
+  } finally {
+    isDialogShow.value = false;
+    isDialogBtnLoading.value = false;
+  }
+};
+
+const getCloudAreas = async () => {
+  isDialogBtnLoading.value = true;
+  try {
+    const res = await resourceStore
+      .getCloudAreas({
+        page: {
+          start: 0,
+          limit: 500,
+        },
+      });
+    cloudAreaList.value = res.data?.info || [];
+  } finally {
+    isDialogBtnLoading.value = false;
+  }
+};
+
+onMounted(() => {
+  getCloudAreas();
+});
 
 const handleDeleteVpc = (data: any) => {
   const vpcIds = [data.id];
@@ -177,6 +220,7 @@ const renderColumns = [
             {
               text: true,
               theme: 'primary',
+              class: 'mr8',
               disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'],
               onClick() {
                 handleDeleteVpc(data);
@@ -184,6 +228,20 @@ const renderColumns = [
             },
             [
               t('删除'),
+            ],
+          ),
+          h(
+            Button,
+            {
+              text: true,
+              theme: 'primary',
+              disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'],
+              onClick() {
+                handleBindRegion(data);
+              },
+            },
+            [
+              '绑定管控区',
             ],
           ),
         ],
@@ -235,6 +293,25 @@ const renderColumns = [
       @column-sort="handleSort"
     />
   </bk-loading>
+
+  <bk-dialog
+    :is-show="isDialogShow"
+    title="VPC绑定管控区"
+    :theme="'primary'"
+    quick-close
+    @closed="() => isDialogShow = false"
+    @confirm="handleConfirm"
+    :is-loading="isDialogBtnLoading"
+  >
+    <p>
+      VPC名称: {{ curVpc.name || '--'}}
+    </p>
+    <div>
+      <bk-select v-model="curCloudArea">
+        <bk-option v-for="(item, index) in cloudAreaList" :key="index" :value="item.id" :label="item.name" />
+      </bk-select>
+    </div>
+  </bk-dialog>
 </template>
 
 <style lang="scss" scoped>
