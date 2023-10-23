@@ -88,6 +88,11 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   };
 
   const vpcColumns = [
+    {
+      type: 'selection',
+      width: '100',
+      onlyShowOnList: true,
+    },
     getLinkField('vpc', 'VPC ID', 'cloud_id'),
     // {
     //   label: '资源 ID',
@@ -172,6 +177,11 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const subnetColumns = [
+    {
+      type: 'selection',
+      width: '100',
+      onlyShowOnList: true,
+    },
     getLinkField('subnet', '子网 ID', 'cloud_id', 'id', false),
     // {
     //   label: '资源 ID',
@@ -1013,7 +1023,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     }
     if (whereAmI.value !== Senarios.resource) {
       fields = fields.filter(field => !field.isOnlyShowInResource);
-      console.log(666, fields);
     }
     const settings: Ref<{
       fields: Array<Field>;

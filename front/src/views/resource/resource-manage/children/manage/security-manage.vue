@@ -162,8 +162,19 @@ const fetchComponentsData = () => {
 getList();
 
 defineExpose({ fetchComponentsData });
+const isRowSelectEnable = ({ row }: DoublePlainObject) => {
+  if (!props.isResourcePage) return true;
+  if (row.id) {
+    return row.bk_biz_id === -1;
+  }
+};
 
 const groupColumns = [
+  {
+    type: 'selection',
+    width: '100',
+    onlyShowOnList: true,
+  },
   {
     label: '安全组 ID',
     field: 'cloud_id',
@@ -400,6 +411,11 @@ const groupColumns = [
 const groupSettings = generateColumnsSettings(groupColumns);
 
 const gcpColumns = [
+  {
+    type: 'selection',
+    width: '100',
+    onlyShowOnList: true,
+  },
   {
     label: '防火墙 ID	',
     field: 'cloud_id',
@@ -754,6 +770,7 @@ const securityHandleShowDelete = (data: any) => {
         :columns="groupColumns"
         :data="state.datas"
         show-overflow-tooltip
+        :is-row-select-enable="isRowSelectEnable"
         @page-limit-change="state.handlePageSizeChange"
         @page-value-change="state.handlePageChange"
         @column-sort="state.handleSort"
@@ -769,6 +786,7 @@ const securityHandleShowDelete = (data: any) => {
         :columns="gcpColumns"
         :data="state.datas"
         show-overflow-tooltip
+        :is-row-select-enable="isRowSelectEnable"
         @page-limit-change="state.handlePageSizeChange"
         @page-value-change="state.handlePageChange"
         @column-sort="state.handleSort"

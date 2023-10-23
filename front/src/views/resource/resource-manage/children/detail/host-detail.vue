@@ -27,6 +27,7 @@ import {
   inject,
   computed,
 } from 'vue';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 
 const router = useRouter();
@@ -114,6 +115,8 @@ const isBindBusiness = computed(() => {
   return detail.value.bk_biz_id !== -1 && isResourcePage.value;
 });
 
+const { whereAmI } = useWhereAmI();
+
 const handleCvmOperate = (type: string) => {
   const title = cvmInfo.value[type].op;
   InfoBox({
@@ -194,6 +197,7 @@ const showAuthDialog = (authActionName: string) => {
           :disabled="(detail.bk_biz_id !== -1 && isResourcePage)
             || !authVerifyData?.permissionAction[actionName]"
           @click="() => isDialogShow = true"
+          v-if="whereAmI === Senarios.resource"
         >
           {{ t('分配') }}
         </bk-button>

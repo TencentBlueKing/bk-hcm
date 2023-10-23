@@ -26,15 +26,15 @@ export const useSecretExtension = (props: IProp) => {
   // 腾讯云
   const tcloudExtension: IExtension = reactive({
     output1: {
-      cloud_main_account_id: {
-        value: '',
-        label: '云主账户ID',
-      },
-    },
-    output2: {
       cloud_sub_account_id: {
         value: '',
         label: '云子账户ID',
+      },
+    },
+    output2: {
+      cloud_main_account_id: {
+        value: '',
+        label: '云主账户ID',
       },
     },
     input: {
