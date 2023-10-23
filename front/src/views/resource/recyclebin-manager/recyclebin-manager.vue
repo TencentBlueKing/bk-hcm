@@ -172,7 +172,7 @@
                   prop="recycled_at"
                 >
                   <template #default="{ data }">
-                    <bk-tag theme="danger" type="stroke">
+                    <bk-tag theme="danger">
                       {{ moment(data?.recycled_at).fromNow() }}
                     </bk-tag>
                     {{data?.recycled_at}}
