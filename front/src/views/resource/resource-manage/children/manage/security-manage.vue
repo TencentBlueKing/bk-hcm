@@ -38,6 +38,8 @@ import { useRegionsStore } from '@/store/useRegionsStore';
 import { VendorEnum } from '@/common/constant';
 import { cloneDeep } from 'lodash-es';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
+import useSelection from '../../hooks/use-selection';
+import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 
 const props = defineProps({
   filter: {
@@ -168,6 +170,11 @@ const isRowSelectEnable = ({ row }: DoublePlainObject) => {
     return row.bk_biz_id === -1;
   }
 };
+const {
+  selections,
+  handleSelectionChange,
+  resetSelections,
+} = useSelection();
 
 const groupColumns = [
   {
@@ -735,6 +742,14 @@ const securityHandleShowDelete = (data: any) => {
     >
       <section>
         <slot></slot>
+        <BatchDistribution
+          :selections="selections"
+          :type="activeType === 'group' ? DResourceType.security_groups : DResourceType.firewall"
+          :get-data="() => {
+            getList();
+            resetSelections();
+          }"
+        />
         <section
           class="flex-row align-items-center mt20">
           <bk-radio-group
@@ -771,6 +786,7 @@ const securityHandleShowDelete = (data: any) => {
         :data="state.datas"
         show-overflow-tooltip
         :is-row-select-enable="isRowSelectEnable"
+        @selection-change="handleSelectionChange"
         @page-limit-change="state.handlePageSizeChange"
         @page-value-change="state.handlePageChange"
         @column-sort="state.handleSort"
@@ -787,6 +803,7 @@ const securityHandleShowDelete = (data: any) => {
         :data="state.datas"
         show-overflow-tooltip
         :is-row-select-enable="isRowSelectEnable"
+        @selection-change="handleSelectionChange"
         @page-limit-change="state.handlePageSizeChange"
         @page-value-change="state.handlePageChange"
         @column-sort="state.handleSort"

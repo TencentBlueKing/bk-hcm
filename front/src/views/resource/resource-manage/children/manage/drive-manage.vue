@@ -26,6 +26,7 @@ import useColumns from '../../hooks/use-columns';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import { VendorEnum } from '@/common/constant';
 import { QueryRuleOPEnum } from '@/typings';
+import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 
 const props = defineProps({
   filter: {
@@ -157,6 +158,7 @@ const renderColumns = [
 const {
   selections,
   handleSelectionChange,
+  resetSelections,
 } = useSelection();
 
 const {
@@ -213,6 +215,14 @@ const isRowSelectEnable = ({ row }) => {
       :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
       <slot>
       </slot>
+      <BatchDistribution
+        :selections="selections"
+        :type="DResourceType.disks"
+        :get-data="() => {
+          triggerApi();
+          resetSelections();
+        }"
+      />
       <bk-button
         class="w100 ml10"
         theme="primary"
