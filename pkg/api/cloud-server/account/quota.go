@@ -19,7 +19,10 @@
 
 package account
 
-import "hcm/pkg/criteria/validator"
+import (
+	typeaccount "hcm/pkg/adaptor/types/account"
+	"hcm/pkg/criteria/validator"
+)
 
 // GetAccountZoneQuotaReq ...
 type GetAccountZoneQuotaReq struct {
@@ -40,4 +43,11 @@ type GetAccountRegionQuotaReq struct {
 // Validate ...
 func (opt *GetAccountRegionQuotaReq) Validate() error {
 	return validator.Validate.Struct(opt)
+}
+
+// HuaWeiGetAccountRegionQuotaResult get hua wei account region quota result.
+type HuaWeiGetAccountRegionQuotaResult struct {
+	typeaccount.HuaWeiAccountQuota `json:",inline"`
+	// UsedInstances 已用实例数
+	UsedInstances int32 `json:"used_instances"`
 }

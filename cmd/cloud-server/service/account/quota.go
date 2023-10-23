@@ -21,11 +21,16 @@ package account
 
 import (
 	proto "hcm/pkg/api/cloud-server/account"
+	"hcm/pkg/api/core"
+	protocloud "hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service/account"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -116,7 +121,31 @@ func (a *accountSvc) getHuaWeiRegionQuota(cts *rest.Contexts,
 		AccountID: accountID,
 		Region:    req.Region,
 	}
-	return a.client.HCService().HuaWei.Account.GetRegionQuota(cts.Kit.Ctx, cts.Kit.Header(), getReq)
+	getResult, err := a.client.HCService().HuaWei.Account.GetRegionQuota(cts.Kit.Ctx, cts.Kit.Header(), getReq)
+	if err != nil {
+		logs.Errorf("call hcservice get huawei region quota failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	ruleMap := map[string]interface{}{
+		"account_id": accountID,
+		"region":     req.Region,
+	}
+	listReq := &protocloud.CvmListReq{
+		Filter: tools.EqualWithOpExpression(filter.And, ruleMap),
+		Page:   core.NewCountPage(),
+	}
+	resp, err := a.client.DataService().Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	if err != nil {
+		logs.Errorf("call dataservice to list cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
+	}
+
+	result := &proto.HuaWeiGetAccountRegionQuotaResult{
+		HuaWeiAccountQuota: *getResult,
+		UsedInstances:      int32(resp.Count),
+	}
+
+	return result, nil
 }
 
 // GetBizGcpRegionQuota 获取Gcp账号配额.

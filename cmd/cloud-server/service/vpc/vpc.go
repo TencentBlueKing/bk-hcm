@@ -527,10 +527,27 @@ func (svc *vpcSvc) AssignVpcToBiz(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// check if all vpcs are not assigned to biz, right now assigning resource twice is not allowed
-	vpcFilter := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.VpcIDs}
-	err = svc.checkVpcsInBiz(cts.Kit, vpcFilter, constant.UnassignedBiz)
+	listReq := &core.ListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{Field: "bk_biz_id", Op: filter.Equal.Factory(), Value: constant.UnassignedBiz},
+				&filter.AtomRule{Field: "bk_cloud_id", Op: filter.NotEqual.Factory(), Value: constant.UnbindBkCloudID},
+			},
+		},
+		Page: &core.BasePage{
+			Count: true,
+		},
+	}
+	result, err := svc.client.DataService().Global.Vpc.List(cts.Kit.Ctx, cts.Kit.Header(), listReq)
 	if err != nil {
+		logs.Errorf("count vpcs that are not in biz failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
 		return nil, err
+	}
+
+	if int(result.Count) != len(req.VpcIDs) {
+		return nil, fmt.Errorf("%d vpcs are already assigned biz or unBind cloud area",
+			len(req.VpcIDs)-int(result.Count))
 	}
 
 	// create assign audit.
