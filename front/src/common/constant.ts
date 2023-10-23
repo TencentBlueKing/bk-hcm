@@ -426,7 +426,7 @@ export const RESOURCE_TYPES_MAP = {
 export const RESOURCES_SYNC_STATUS_MAP = {
   sync_success: '已同步',
   sync_failed: '同步失败',
-  sync_loading: '同步中',
+  syncing: '同步中',
 };
 
 export enum SECURITY_GROUP_RULE_TYPE {
