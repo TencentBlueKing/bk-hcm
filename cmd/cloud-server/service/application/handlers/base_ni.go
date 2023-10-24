@@ -34,8 +34,7 @@ func (a *BaseApplicationHandler) ListNIIDByCvm(cvmIDs []string) ([]string, error
 	}
 	// 查询
 	resp, err := a.Client.DataService().Global.NetworkInterfaceCvmRel.List(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
+		a.Cts.Kit,
 		&core.ListReq{
 			Filter: reqFilter,
 			Page:   core.NewDefaultBasePage(),

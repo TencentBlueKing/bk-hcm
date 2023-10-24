@@ -20,18 +20,13 @@
 package cvm
 
 import (
-	"fmt"
-
+	"hcm/cmd/cloud-server/logics/cvm"
 	proto "hcm/pkg/api/cloud-server/cvm"
-	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
-	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 )
 
 // AssignCvmToBiz assign cvm to biz.
@@ -44,70 +39,26 @@ func (svc *cvmSvc) AssignCvmToBiz(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	listReq := &dataproto.CvmListReq{
-		Field: []string{"id", "bk_biz_id", "bk_cloud_id"},
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.CvmIDs},
-			},
-		},
-		Page: core.NewDefaultBasePage(),
+	// 权限校验
+	basicInfoReq := dataproto.ListResourceBasicInfoReq{
+		ResourceType: enumor.CvmCloudResType,
+		IDs:          req.CvmIDs,
 	}
-	result, err := svc.client.DataService().Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+		basicInfoReq)
 	if err != nil {
-		logs.Errorf("list cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	accountIDMap := make(map[string]struct{}, 0)
-	assignedIDs := make([]string, 0)
-	unBindCloudIDs := make([]string, 0)
-	for _, one := range result.Details {
-		accountIDMap[one.AccountID] = struct{}{}
-
-		if one.BkBizID != constant.UnassignedBiz {
-			assignedIDs = append(assignedIDs, one.ID)
-		}
-
-		if one.BkCloudID == constant.UnbindBkCloudID {
-			unBindCloudIDs = append(unBindCloudIDs, one.ID)
-		}
-	}
-
-	// authorize
-	authRes := make([]meta.ResourceAttribute, 0, len(accountIDMap))
-	for accountID := range accountIDMap {
+	authRes := make([]meta.ResourceAttribute, 0, len(basicInfoMap))
+	for _, info := range basicInfoMap {
 		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Cvm,
-			Action: meta.Assign, ResourceID: accountID}, BizID: req.BkBizID})
+			Action: meta.Assign, ResourceID: info.AccountID}})
 	}
-	if err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...); err != nil {
-		logs.Errorf("assign cvm failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
+	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
+	if err != nil {
 		return nil, err
 	}
 
-	if len(assignedIDs) != 0 {
-		return nil, fmt.Errorf("cvm(ids=%v) already assigned", assignedIDs)
-	}
-
-	if len(unBindCloudIDs) != 0 {
-		return nil, fmt.Errorf("cvm(ids=%v) not bind cloud area", unBindCloudIDs)
-	}
-
-	// create assign audit.
-	if err = svc.audit.ResBizAssignAudit(cts.Kit, enumor.CvmAuditResType, req.CvmIDs, req.BkBizID); err != nil {
-		logs.Errorf("create assign audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	update := &dataproto.CvmCommonInfoBatchUpdateReq{IDs: req.CvmIDs, BkBizID: req.BkBizID}
-	if err := svc.client.DataService().Global.Cvm.BatchUpdateCvmCommonInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		update); err != nil {
-
-		logs.Errorf("batch update cvm common info failed, err: %v, req: %v, rid: %s", err, update,
-			cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
+	return nil, cvm.Assign(cts.Kit, svc.client.DataService(), req.CvmIDs, req.BkBizID)
 }

@@ -131,7 +131,7 @@ func (mgr *CvmRelManger) getCvmNetworkInterfaceRelMapFromDB(kt *kit.Kit, cvmIDs 
 	}
 	result := make(map[string]map[string]cvmRelInfo)
 	for {
-		respResult, err := mgr.dataCli.Global.NetworkInterfaceCvmRel.List(kt.Ctx, kt.Header(), listReq)
+		respResult, err := mgr.dataCli.Global.NetworkInterfaceCvmRel.List(kt, listReq)
 		if err != nil {
 			logs.Errorf("list network interface cvm rel failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -167,7 +167,7 @@ func (mgr *CvmRelManger) getNetworkInterfaceMap(kt *kit.Kit) (map[string]string,
 			Filter: tools.ContainersExpression("cloud_id", partCloudIDs),
 			Page:   core.NewDefaultBasePage(),
 		}
-		result, err := mgr.dataCli.Global.NetworkInterface.List(kt.Ctx, kt.Header(), req)
+		result, err := mgr.dataCli.Global.NetworkInterface.List(kt, req)
 		if err != nil {
 			logs.Errorf("list network interface failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err

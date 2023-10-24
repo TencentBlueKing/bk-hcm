@@ -30,11 +30,8 @@ import (
 	cloudproto "hcm/pkg/api/cloud-server/disk"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
-	datarelproto "hcm/pkg/api/data-service/cloud"
-	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	"hcm/pkg/client"
 	dataservice "hcm/pkg/client/data-service"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -45,7 +42,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -86,8 +82,8 @@ func (svc *diskSvc) listDisk(cts *rest.Contexts, authHandler handler.ListAuthRes
 		return &cloudproto.DiskListResult{Details: make([]*cloudproto.DiskResult, 0)}, nil
 	}
 
-	resp, err := svc.client.DataService().Global.ListDisk(cts.Kit.Ctx, cts.Kit.Header(),
-		&dataproto.DiskListReq{Filter: expr, Page: req.Page})
+	resp, err := svc.client.DataService().Global.ListDisk(cts.Kit,
+		&core.ListReq{Filter: expr, Page: req.Page})
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +98,7 @@ func (svc *diskSvc) listDisk(cts *rest.Contexts, authHandler handler.ListAuthRes
 	}
 
 	rels, err := svc.client.DataService().Global.ListDiskCvmRel(cts.Kit,
-		&datarelproto.DiskCvmRelListReq{
+		&core.ListReq{
 			Filter: tools.ContainersExpression("disk_id", diskIDs),
 			Page:   core.NewDefaultBasePage(),
 		})
@@ -215,7 +211,7 @@ func (svc *diskSvc) retrieveDisk(cts *rest.Contexts, validHandler handler.ValidW
 
 	rels, err := svc.client.DataService().Global.ListDiskCvmRel(
 		cts.Kit,
-		&datarelproto.DiskCvmRelListReq{
+		&core.ListReq{
 			Filter: tools.EqualExpression("disk_id", diskID),
 			Page:   core.NewDefaultBasePage(),
 		},
@@ -321,25 +317,7 @@ func (svc *diskSvc) AssignDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// check if all disks are not assigned to biz, right now assigning resource twice is not allowed
-	diskFilter := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.IDs}
-	err := svc.checkDisksInBiz(cts.Kit, diskFilter, constant.UnassignedBiz)
-	if err != nil {
-		return nil, err
-	}
-
-	// create assign audit
-	err = svc.audit.ResBizAssignAudit(cts.Kit, enumor.EipAuditResType, req.IDs, int64(req.BkBizID))
-	if err != nil {
-		logs.Errorf("create assign disk audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return svc.client.DataService().Global.BatchUpdateDisk(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&dataproto.DiskBatchUpdateReq{IDs: req.IDs, BkBizID: req.BkBizID},
-	)
+	return nil, disklgc.Assign(cts.Kit, svc.client.DataService(), req.IDs, req.BkBizID, false)
 }
 
 // AttachDisk attach disk.
@@ -428,7 +406,7 @@ func (svc *diskSvc) detachDisk(cts *rest.Contexts, validHandler handler.ValidWit
 	// get cvm id
 	rels, err := svc.client.DataService().Global.ListDiskCvmRel(
 		cts.Kit,
-		&datarelproto.DiskCvmRelListReq{
+		&core.ListReq{
 			Filter: tools.EqualExpression("disk_id", req.DiskID),
 			Page:   core.NewDefaultBasePage(),
 		},
@@ -477,32 +455,6 @@ func (svc *diskSvc) authorizeDiskAssignOp(kt *kit.Kit, ids []string) error {
 	return nil
 }
 
-// checkDisksInBiz check if disks are in the specified biz.
-func (svc *diskSvc) checkDisksInBiz(kt *kit.Kit, rule filter.RuleFactory, bizID int64) error {
-	req := &dataproto.DiskListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{Field: "bk_biz_id", Op: filter.NotEqual.Factory(), Value: bizID}, rule,
-			},
-		},
-		Page: &core.BasePage{
-			Count: true,
-		},
-	}
-	result, err := svc.client.DataService().Global.ListDisk(kt.Ctx, kt.Header(), req)
-	if err != nil {
-		logs.Errorf("count disks that are not in biz failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
-		return err
-	}
-
-	if result.Count != nil && *result.Count != 0 {
-		return fmt.Errorf("%d disks are already assigned", result.Count)
-	}
-
-	return nil
-}
-
 func extractDiskID(cts *rest.Contexts) (string, error) {
 	req := new(cloudproto.DiskReq)
 	reqData, err := ioutil.ReadAll(cts.Request.Request.Body)
@@ -527,8 +479,7 @@ func extractDiskID(cts *rest.Contexts) (string, error) {
 
 func getCvmName(cts *rest.Contexts, cli *dataservice.Client, cvmID string) (string, error) {
 	cvms, err := cli.Global.Cvm.ListCvm(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+		cts.Kit,
 		&cloud.CvmListReq{
 			Filter: tools.ContainersExpression("id", []string{cvmID}),
 			Page: &core.BasePage{

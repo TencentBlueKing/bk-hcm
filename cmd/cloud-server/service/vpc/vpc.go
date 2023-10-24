@@ -531,13 +531,12 @@ func (svc *vpcSvc) AssignVpcToBiz(cts *rest.Contexts) (interface{}, error) {
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
+				&filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.VpcIDs},
 				&filter.AtomRule{Field: "bk_biz_id", Op: filter.Equal.Factory(), Value: constant.UnassignedBiz},
 				&filter.AtomRule{Field: "bk_cloud_id", Op: filter.NotEqual.Factory(), Value: constant.UnbindBkCloudID},
 			},
 		},
-		Page: &core.BasePage{
-			Count: true,
-		},
+		Page: core.NewCountPage(),
 	}
 	result, err := svc.client.DataService().Global.Vpc.List(cts.Kit.Ctx, cts.Kit.Header(), listReq)
 	if err != nil {

@@ -24,8 +24,7 @@ import (
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/eip/datasvc"
 	"hcm/pkg/adaptor/types/eip"
-	apicore "hcm/pkg/api/core"
-	dataproto "hcm/pkg/api/data-service/cloud/eip"
+	"hcm/pkg/api/core"
 	proto "hcm/pkg/api/hc-service/eip"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
@@ -244,9 +243,8 @@ func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	resp, err := svc.DataCli.Global.ListEip(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&dataproto.EipListReq{Filter: &filter.Expression{
+		cts.Kit,
+		&core.ListReq{Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
 				&filter.AtomRule{
@@ -259,7 +257,7 @@ func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 					Value: string(enumor.Aws),
 				},
 			},
-		}, Page: &apicore.BasePage{Limit: uint(len(cloudIDs))}, Fields: []string{"id"}},
+		}, Page: &core.BasePage{Limit: uint(len(cloudIDs))}, Fields: []string{"id"}},
 	)
 
 	eipIDs := make([]string, len(cloudIDs))
@@ -267,7 +265,7 @@ func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 		eipIDs[idx] = eipData.ID
 	}
 
-	return &apicore.BatchCreateResult{IDs: eipIDs}, nil
+	return &core.BatchCreateResult{IDs: eipIDs}, nil
 }
 
 func (svc *EipSvc) makeEipAssociateOption(

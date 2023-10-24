@@ -341,7 +341,7 @@ func (cli *client) listDiskFromDB(kt *kit.Kit, params *SyncBaseParams) (
 
 // RemoveDiskDeleteFromCloud ...
 func (cli *client) RemoveDiskDeleteFromCloud(kt *kit.Kit, accountID string, region string) error {
-	req := &disk.DiskListReq{
+	req := &core.ListReq{
 		Fields: []string{"id", "cloud_id"},
 		Filter: &filter.Expression{
 			Op: filter.And,
@@ -356,7 +356,7 @@ func (cli *client) RemoveDiskDeleteFromCloud(kt *kit.Kit, accountID string, regi
 		},
 	}
 	for {
-		resultFromDB, err := cli.dbCli.Global.ListDisk(kt.Ctx, kt.Header(), req)
+		resultFromDB, err := cli.dbCli.Global.ListDisk(kt, req)
 		if err != nil {
 			logs.Errorf("[%s] request dataservice to list disk failed, err: %v, req: %v, rid: %s", enumor.Aws,
 				err, req, kt.Rid)

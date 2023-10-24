@@ -84,7 +84,7 @@ func (a *ApplicationOfCreateGcpCvm) assignToBiz(cloudCvmIDs []string) ([]string,
 	}
 
 	// 主机分配给业务
-	err = a.Client.DataService().Global.Cvm.BatchUpdateCvmCommonInfo(a.Cts.Kit.Ctx, a.Cts.Kit.Header(),
+	err = a.Client.DataService().Global.Cvm.BatchUpdateCvmCommonInfo(a.Cts.Kit,
 		&protocloud.CvmCommonInfoBatchUpdateReq{IDs: cvmIDs, BkBizID: req.BkBizID},
 	)
 	if err != nil {
@@ -105,7 +105,7 @@ func (a *ApplicationOfCreateGcpCvm) assignToBiz(cloudCvmIDs []string) ([]string,
 	}
 	if len(diskIDs) > 0 {
 		_, err = a.Client.DataService().Global.BatchUpdateDisk(
-			a.Cts.Kit.Ctx, a.Cts.Kit.Header(),
+			a.Cts.Kit,
 			&protodisk.DiskBatchUpdateReq{
 				IDs:     diskIDs,
 				BkBizID: uint64(req.BkBizID),
@@ -130,7 +130,7 @@ func (a *ApplicationOfCreateGcpCvm) assignToBiz(cloudCvmIDs []string) ([]string,
 	}
 	if len(niIDs) > 0 {
 		err = a.Client.DataService().Global.NetworkInterface.BatchUpdateNICommonInfo(
-			a.Cts.Kit.Ctx, a.Cts.Kit.Header(),
+			a.Cts.Kit,
 			&protoni.NetworkInterfaceCommonInfoBatchUpdateReq{IDs: niIDs, BkBizID: int64(req.BkBizID)},
 		)
 		if err != nil {

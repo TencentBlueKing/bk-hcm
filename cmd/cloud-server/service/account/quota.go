@@ -135,7 +135,7 @@ func (a *accountSvc) getHuaWeiRegionQuota(cts *rest.Contexts,
 		Filter: tools.EqualWithOpExpression(filter.And, ruleMap),
 		Page:   core.NewCountPage(),
 	}
-	resp, err := a.client.DataService().Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	resp, err := a.client.DataService().Global.Cvm.ListCvm(cts.Kit, listReq)
 	if err != nil {
 		logs.Errorf("call dataservice to list cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
 	}

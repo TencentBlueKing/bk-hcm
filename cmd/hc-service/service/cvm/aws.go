@@ -126,7 +126,7 @@ func (svc *cvmSvc) BatchStartAwsCvm(cts *rest.Contexts) (interface{}, error) {
 		Filter: tools.ContainersExpression("id", req.IDs),
 		Page:   core.NewDefaultBasePage(),
 	}
-	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit, listReq)
 	if err != nil {
 		logs.Errorf("request dataservice list aws cvm failed, err: %v, ids: %v, rid: %s", err, req.IDs, cts.Kit.Rid)
 		return nil, err
@@ -184,7 +184,7 @@ func (svc *cvmSvc) BatchStopAwsCvm(cts *rest.Contexts) (interface{}, error) {
 		Filter: tools.ContainersExpression("id", req.IDs),
 		Page:   core.NewDefaultBasePage(),
 	}
-	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit, listReq)
 	if err != nil {
 		logs.Errorf("request dataservice list aws cvm failed, err: %v, ids: %v, rid: %s", err, req.IDs, cts.Kit.Rid)
 		return nil, err
@@ -244,7 +244,7 @@ func (svc *cvmSvc) BatchRebootAwsCvm(cts *rest.Contexts) (interface{}, error) {
 		Filter: tools.ContainersExpression("id", req.IDs),
 		Page:   core.NewDefaultBasePage(),
 	}
-	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit, listReq)
 	if err != nil {
 		logs.Errorf("request dataservice list aws cvm failed, err: %v, ids: %v, rid: %s", err, req.IDs, cts.Kit.Rid)
 		return nil, err
@@ -302,7 +302,7 @@ func (svc *cvmSvc) BatchDeleteAwsCvm(cts *rest.Contexts) (interface{}, error) {
 		Filter: tools.ContainersExpression("id", req.IDs),
 		Page:   core.NewDefaultBasePage(),
 	}
-	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit, listReq)
 	if err != nil {
 		logs.Errorf("request dataservice list aws cvm failed, err: %v, ids: %v, rid: %s", err, req.IDs, cts.Kit.Rid)
 		return nil, err

@@ -284,7 +284,7 @@ func (svc *cvmSvc) detachDiskByCvmIDs(kt *kit.Kit, ids []string, basicInfoMap ma
 		return nil, errf.Newf(errf.InvalidParameter, "ids should <= %d", constant.BatchOperationMaxLimit)
 	}
 
-	listReq := &cloud.DiskCvmRelListReq{
+	listReq := &core.ListReq{
 		Filter: tools.ContainersExpression("cvm_id", ids),
 		Page:   core.NewDefaultBasePage(),
 	}
