@@ -1,4 +1,4 @@
-import { Form, Dialog, Input, Message, Button, Alert } from 'bkui-vue';
+import { Form, Dialog, Input, Message, Button, Alert, Select } from 'bkui-vue';
 import { reactive, defineComponent, ref, onMounted, computed, watch } from 'vue';
 import { ProjectModel, SecretModel, CloudType, SiteType } from '@/typings';
 import { useI18n } from 'vue-i18n';
@@ -14,6 +14,8 @@ import { ValidateStatus, useSecretExtension } from '../resource-manage/account/c
 import { VendorEnum } from '@/common/constant';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 const { FormItem } = Form;
+const { Option } = Select;
+
 // const { Option } = Select;
 export default defineComponent({
   name: 'AccountManageDetail',
@@ -50,7 +52,9 @@ export default defineComponent({
     const accountFormModel = reactive({
       managers: [],
       memo: '',
+      bizIds: [],
     });
+    const accountForm = ref(null);
 
     const resourceAccountStore = useResourceAccountStore();
 
@@ -476,10 +480,12 @@ export default defineComponent({
     };
 
     const handleModifyAccountSubmit = async () => {
+      await accountForm.value.validate();
       isAccountDialogLoading.value = true;
       await http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${resourceAccountStore.resourceAccount?.id}`, {
         managers: accountFormModel.managers,
         memo: accountFormModel.memo,
+        bk_biz_ids: accountFormModel.bizIds,
       });
       isAccountDialogLoading.value = false;
       isShowModifyAccountDialog.value = false;
@@ -621,29 +627,28 @@ export default defineComponent({
               );
             },
           },
-          // {
-          //   label: t('使用业务'),
-          //   required: false,
-          //   property: 'bizIds',
-          //   isEdit: false,
-          //   component() {
-          //     // eslint-disable-next-line max-len
-          //     // onBlur={handleblur}
-          //     // onChange={handleBizChange}
-          //     return (
-          //       <RenderDetailEdit
-          //         v-model={projectModel.bizIds}
-          //         fromKey={this.property}
-          //         hideEdit={true}
-          //         selectData={businessList.list}
-          //         fromType='select'
-          //         isEdit={this.isEdit}
-          //         onChange={handleBizChange}
-          //       />
-          //     );
-          //     // <span>{SiteType[projectModel.bizIds]}</span>
-          //   },
-          // },
+          {
+            label: t('使用业务'),
+            required: false,
+            property: 'bizIds',
+            isEdit: false,
+            component() {
+              // eslint-disable-next-line max-len
+              // onBlur={handleblur}
+              // onChange={handleBizChange}
+              return (
+                <RenderDetailEdit
+                  v-model={projectModel.bizIds}
+                  fromKey={this.property}
+                  hideEdit={true}
+                  selectData={businessList.list}
+                  fromType='select'
+                  isEdit={this.isEdit}
+                />
+              );
+              // <span>{SiteType[projectModel.bizIds]}</span>
+            },
+          },
         ],
       },
     ]);
@@ -763,10 +768,30 @@ export default defineComponent({
             <Form
               v-model={accountFormModel}
               formType='vertical'
+              model={accountFormModel}
+              ref={accountForm}
             >
               <FormItem label='责任人' class={'api-secret-selector'} required property='managers'>
                 <MemberSelect v-model={accountFormModel.managers}/>
               </FormItem>
+              <FormItem label='业务' class={'api-secret-selector'} required property='bizIds'>
+                <Select
+                    filterable
+                    collapseTags
+                    multiple
+                    multipleMode='tag'
+                    placeholder='请选择使用业务'
+                    v-model={accountFormModel.bizIds}
+                  >
+                    {
+                      businessList.list.map(({ id, name }) => (
+                        <Option key={id} value={id} label={name}>
+                          {name}
+                        </Option>
+                      ))
+                    }
+                  </Select>
+            </FormItem>
               <FormItem label='备注'>
                 <Input type={'textarea'} v-model={accountFormModel.memo} maxlength={100}/>
               </FormItem>
