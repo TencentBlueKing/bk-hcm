@@ -139,7 +139,7 @@ func (svc *diskSvc) recycleDisk(kt *kit.Kit, req *csdisk.DiskRecycleReq, ids []s
 		})
 	}
 
-	taskID, err := svc.client.DataService().Global.RecycleRecord.BatchRecycleCloudRes(kt.Ctx, kt.Header(), opt)
+	taskID, err := svc.client.DataService().Global.RecycleRecord.BatchRecycleCloudRes(kt, opt)
 	if err != nil {
 		for _, id := range detachRes.Succeeded {
 			res.Failed = append(res.Failed, core.FailedInfo{ID: id, Error: err})
@@ -229,7 +229,10 @@ func (svc *diskSvc) validateRecycleRecord(records *recyclerecord.ListResult) err
 		}
 
 		if one.ResType != enumor.DiskCloudResType {
-			return fmt.Errorf("record: %d not is disk recycle record", one.ID)
+			return fmt.Errorf("record: %s not is disk recycle record", one.ID)
+		}
+		if one.RecycleType == enumor.RecycleTypeRelated {
+			return fmt.Errorf("related recycled disk(%s) can not be operated", one.ResID)
 		}
 	}
 
@@ -268,7 +271,6 @@ func (svc *diskSvc) recoverDisk(cts *rest.Contexts, validHandler handler.ValidWi
 	if len(records.Details) != len(req.RecordIDs) {
 		return nil, errf.New(errf.InvalidParameter, "some record_ids are not in recycle bin")
 	}
-
 	if err = svc.validateRecycleRecord(records); err != nil {
 		return nil, err
 	}
@@ -283,6 +285,7 @@ func (svc *diskSvc) recoverDisk(cts *rest.Contexts, validHandler handler.ValidWi
 	basicInfoReq := cloud.ListResourceBasicInfoReq{
 		ResourceType: enumor.DiskCloudResType,
 		IDs:          diskIds,
+		Fields:       append(types.CommonBasicInfoFields, "recycle_status"),
 	}
 	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
 		basicInfoReq)
@@ -312,7 +315,7 @@ func (svc *diskSvc) recoverDisk(cts *rest.Contexts, validHandler handler.ValidWi
 		ResType:   enumor.DiskCloudResType,
 		RecordIDs: req.RecordIDs,
 	}
-	err = svc.client.DataService().Global.RecycleRecord.BatchRecoverCloudResource(cts.Kit.Ctx, cts.Kit.Header(), opt)
+	err = svc.client.DataService().Global.RecycleRecord.BatchRecoverCloudResource(cts.Kit, opt)
 	if err != nil {
 		return nil, err
 	}

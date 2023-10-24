@@ -25,8 +25,9 @@ import (
 	"hcm/cmd/cloud-server/logics/disk"
 	"hcm/cmd/cloud-server/logics/eip"
 	"hcm/pkg/api/core"
-	corerecyclerecord "hcm/pkg/api/core/recycle-record"
+	rr "hcm/pkg/api/core/recycle-record"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/thirdparty/esb"
@@ -37,9 +38,11 @@ type Interface interface {
 	BatchStopCvm(kt *kit.Kit, basicInfoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateAllResult, error)
 	BatchDeleteCvm(kt *kit.Kit, basicInfoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateResult, error)
 	DestroyRecycledCvm(kt *kit.Kit, infoMap map[string]types.CloudResourceBasicInfo,
-		records []corerecyclerecord.RecycleRecord) (*core.BatchOperateResult, error)
+		records []rr.CvmRecycleRecord) (*core.BatchOperateResult, error)
 	GetNotCmdbRecyclableHosts(kt *kit.Kit, bizHostsIds map[int64][]string) ([]string, error)
 	RecyclePreCheck(kt *kit.Kit, infoMap map[string]types.CloudResourceBasicInfo) error
+	BatchFinalizeRelRecord(kt *kit.Kit, resType enumor.CloudResourceType,
+		status enumor.RecycleRecordStatus, resIds []string) error
 }
 
 type cvm struct {

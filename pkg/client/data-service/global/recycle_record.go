@@ -20,11 +20,10 @@
 package global
 
 import (
-	"context"
-	"net/http"
-
 	"hcm/pkg/api/core"
+	rr "hcm/pkg/api/core/recycle-record"
 	proto "hcm/pkg/api/data-service/recycle-record"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
@@ -43,16 +42,16 @@ func NewRecycleRecordClient(client rest.ClientInterface) *RecycleRecordClient {
 }
 
 // BatchRecycleCloudRes 将资源批量加入回收站
-func (r *RecycleRecordClient) BatchRecycleCloudRes(ctx context.Context, h http.Header, req *proto.BatchRecycleReq) (
+func (r *RecycleRecordClient) BatchRecycleCloudRes(kt *kit.Kit, req *proto.BatchRecycleReq) (
 	string, error) {
 
 	resp := new(proto.RecycleResp)
 
 	err := r.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(req).
 		SubResourcef("/cloud/resources/batch/recycle").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
@@ -67,16 +66,15 @@ func (r *RecycleRecordClient) BatchRecycleCloudRes(ctx context.Context, h http.H
 }
 
 // BatchRecoverCloudResource batch recover cloud resource.
-func (r *RecycleRecordClient) BatchRecoverCloudResource(ctx context.Context, h http.Header,
-	request *proto.BatchRecoverReq) error {
+func (r *RecycleRecordClient) BatchRecoverCloudResource(kt *kit.Kit, request *proto.BatchRecoverReq) error {
 
 	resp := new(rest.BaseResp)
 
 	err := r.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/cloud/resources/batch/recover").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
@@ -114,6 +112,14 @@ func (r *RecycleRecordClient) ListRecycleRecord(kt *kit.Kit, request *core.ListR
 	return resp.Data, nil
 }
 
+// ListCvmRecycleRecord list cvm recycle record.
+func (r *RecycleRecordClient) ListCvmRecycleRecord(kt *kit.Kit, request *core.ListReq) (
+	*core.ListResultT[rr.CvmRecycleRecord], error) {
+
+	return common.Request[core.ListReq, core.ListResultT[rr.CvmRecycleRecord]](r.client, rest.POST, kt, request,
+		"/recycle_records/list")
+}
+
 // BatchUpdateRecycleRecord batch update recycle record.
 func (r *RecycleRecordClient) BatchUpdateRecycleRecord(kt *kit.Kit, request *proto.BatchUpdateReq) error {
 
@@ -137,7 +143,7 @@ func (r *RecycleRecordClient) BatchUpdateRecycleRecord(kt *kit.Kit, request *pro
 	return nil
 }
 
-// BatchUpdateRecycleStatus update recycle_status of resources
+// BatchUpdateRecycleStatus update recycle_status of resources itself(disk,cvm)
 func (r *RecycleRecordClient) BatchUpdateRecycleStatus(kt *kit.Kit, request *proto.BatchUpdateRecycleStatusReq) error {
 
 	resp := new(rest.BaseResp)

@@ -248,7 +248,10 @@ func (e *eip) disassociateEipAudit(kt *kit.Kit, resType enumor.AuditResourceType
 
 // BatchUnbind 批量解绑eip
 func (e *eip) BatchUnbind(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmDetail) (failed []string,
-	err error) {
+	lastErr error) {
+	if len(cvmRecycleMap) == 0 {
+		return nil, nil
+	}
 
 	kt = kt.NewSubKit()
 
@@ -256,20 +259,22 @@ func (e *eip) BatchUnbind(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmDeta
 		if detail.FailedAt != "" {
 			continue
 		}
-		for _, eip := range detail.EipList {
-			err := e.DisassociateEip(kt, detail.Vendor, detail.CvmID,
-				eip.NicID, eip.EipID, detail.AccountID)
+		for i, eip := range detail.EipList {
+			err := e.DisassociateEip(kt, detail.Vendor, eip.EipID, detail.CvmID,
+				eip.NicID, detail.AccountID)
 			if err != nil {
-				eip.Err = err
+				lastErr = err
+				// 标记失败
+				detail.EipList[i].Err = err
 				detail.FailedAt = enumor.EipCloudResType
 				failed = append(failed, detail.CvmID)
-				logs.Errorf("failed to unbind eip ，err: %v cvmID: %s, eipID: %s, rid:%s",
+				logs.Errorf("failed to unbind eip, err: %v cvmID: %s, eipID: %s, rid:%s",
 					err, detail.CvmID, eip.EipID, kt.Rid)
 				break
 			}
 		}
 	}
-	return failed, nil
+	return failed, lastErr
 }
 
 // BatchGetEipInfo 批量获取Cvm的Eip挂载信息，填充到传入的recycle.CvmRecycleDetail中
