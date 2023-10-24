@@ -27,6 +27,7 @@ import useQueryList from '../../hooks/use-query-list';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import useSelection from '../../hooks/use-selection';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 const props = defineProps({
   filter: {
@@ -48,6 +49,8 @@ const {
   handleSelectionChange,
   resetSelections,
 } = useSelection();
+
+const { whereAmI } = useWhereAmI();
 
 // use hooks
 const {
@@ -109,10 +112,10 @@ const handleBindRegion = (data) => {
 const handleConfirm = async () => {
   isDialogBtnLoading.value = true;
   try {
-    await resourceStore.bindVPCWithCloudArea({
-      vpc_id: curVpc.value.bk_cloud_id,
+    await resourceStore.bindVPCWithCloudArea([{
+      vpc_id: curVpc.value.id,
       bk_cloud_id: curCloudArea.value,
-    });
+    }]);
   } finally {
     isDialogShow.value = false;
     isDialogBtnLoading.value = false;
@@ -215,33 +218,33 @@ const renderColumns = [
           },
         },
         [
-          h(
+          whereAmI.value === Senarios.resource ? h(
             Button,
             {
               text: true,
               theme: 'primary',
-              class: 'mr8',
-              disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'],
-              onClick() {
-                handleDeleteVpc(data);
-              },
-            },
-            [
-              t('删除'),
-            ],
-          ),
-          h(
-            Button,
-            {
-              text: true,
-              theme: 'primary',
-              disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'],
+              class: 'mr16',
+              disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'] || data.bk_biz_id !== -1,
               onClick() {
                 handleBindRegion(data);
               },
             },
             [
               '绑定管控区',
+            ],
+          ) : null,
+          h(
+            Button,
+            {
+              text: true,
+              theme: 'primary',
+              disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'] || data.bk_biz_id !== -1,
+              onClick() {
+                handleDeleteVpc(data);
+              },
+            },
+            [
+              t('删除'),
             ],
           ),
         ],
@@ -303,14 +306,20 @@ const renderColumns = [
     @confirm="handleConfirm"
     :is-loading="isDialogBtnLoading"
   >
-    <p>
-      VPC名称: {{ curVpc.name || '--'}}
+    <p class="bind-vpc-tips">
+      注意：VPC绑定管控区后，VPC下的主机，会默认鄉定到该管控区。<br />
+      当主机分配到业务后，主机也将同步到配置平台的该业务。
     </p>
-    <div>
-      <bk-select v-model="curCloudArea">
-        <bk-option v-for="(item, index) in cloudAreaList" :key="index" :value="item.id" :label="item.name" />
-      </bk-select>
-    </div>
+    <bk-form>
+      <bk-form-item label="VPC名称">
+        VPC名称: {{ curVpc.name || '--'}}
+      </bk-form-item>
+      <bk-form-item label="管控区名称">
+        <bk-select v-model="curCloudArea">
+          <bk-option v-for="(item, index) in cloudAreaList" :key="index" :value="item.id" :label="item.name" />
+        </bk-select>
+      </bk-form-item>
+    </bk-form>
   </bk-dialog>
 </template>
 
@@ -320,5 +329,10 @@ const renderColumns = [
 }
 .search-selector-container {
   margin-left: auto;
+}
+.bind-vpc-tips {
+  font-size: 12px;
+  color: #979BA5;
+  margin-bottom: 8px;
 }
 </style>

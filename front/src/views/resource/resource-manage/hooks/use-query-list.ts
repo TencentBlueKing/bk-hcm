@@ -11,6 +11,8 @@ import {
   onMounted,
   watch,
 } from 'vue';
+import { QueryRuleOPEnum } from '@/typings';
+import { DResourceType } from '../children/dialog/batch-distribution';
 
 type SortType = {
   column: {
@@ -60,7 +62,17 @@ export default (
               sort: sort.value,
               order: order.value,
             },
-            filter: props.filter,
+            filter: [DResourceType.cvms, DResourceType.disks, DResourceType.eips].includes(type as DResourceType) ? {
+              op: 'and',
+              rules: props.filter.rules.concat([
+                {
+                  op: QueryRuleOPEnum.NEQ,
+                  field: 'recycle_status',
+                  value: 'recycling',
+                },
+              ]),
+            }
+              : props.filter,
             ...args,
           },
           type,

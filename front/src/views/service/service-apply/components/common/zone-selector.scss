@@ -3,7 +3,13 @@
   height: 32px !important;
   background: #fff !important;
 
+  .bk-tag.bk-tag-stroke {
+    background: #3a84ff !important;
+  }
   &.bk-tag-check {
     background: #3a84ff !important;
   }
+}
+.bk-tag.bk-tag-stroke :not(.bk-tag-success):not(.bk-tag-warning):not(.bk-tag-info):not(.bk-tag-danger) {
+  background-color: #00000000!important;
 }

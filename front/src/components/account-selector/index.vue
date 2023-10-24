@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, ref, defineExpose, PropType, useAttrs, watch } from 'vue';
+import { computed, ref, defineExpose, PropType, useAttrs, watch, onMounted } from 'vue';
 import { useAccountStore } from '@/store';
 
 import type {
@@ -73,12 +73,14 @@ const getAccoutList = async () => {
   loading.value = false;
 };
 
-getAccoutList();
+onMounted(() => {
+  getAccoutList();
+});
 
 watch(
-  () => props.bizId,
-  (bizId) => {
-    if (bizId > 0) {
+  () => whereAmI.value,
+  (whereAmI) => {
+    if (whereAmI === Senarios.business) {
       accountList.value = [];
       getAccoutList();
     }
