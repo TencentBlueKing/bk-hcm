@@ -27,6 +27,7 @@ import useQueryList from '../../hooks/use-query-list';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import useSelection from '../../hooks/use-selection';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 const props = defineProps({
   filter: {
@@ -48,6 +49,8 @@ const {
   handleSelectionChange,
   resetSelections,
 } = useSelection();
+
+const { whereAmI } = useWhereAmI();
 
 // use hooks
 const {
@@ -215,26 +218,12 @@ const renderColumns = [
           },
         },
         [
-          h(
+          whereAmI.value === Senarios.resource ? h(
             Button,
             {
               text: true,
               theme: 'primary',
-              class: 'mr8',
-              disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'],
-              onClick() {
-                handleDeleteVpc(data);
-              },
-            },
-            [
-              t('删除'),
-            ],
-          ),
-          h(
-            Button,
-            {
-              text: true,
-              theme: 'primary',
+              class: 'mr16',
               disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'],
               onClick() {
                 handleBindRegion(data);
@@ -242,6 +231,20 @@ const renderColumns = [
             },
             [
               '绑定管控区',
+            ],
+          ) : null,
+          h(
+            Button,
+            {
+              text: true,
+              theme: 'primary',
+              disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'],
+              onClick() {
+                handleDeleteVpc(data);
+              },
+            },
+            [
+              t('删除'),
             ],
           ),
         ],
