@@ -5,7 +5,6 @@ import type {
   FilterType,
 } from '@/typings/resource';
 import {
-  Button,
   Message,
 } from 'bkui-vue';
 
@@ -109,42 +108,42 @@ const hostSearchData = computed(() => {
 
 const tableColumns = [
   ...columns,
-  {
-    label: '操作',
-    field: 'operation',
-    isDefaultShow: true,
-    render: () => {
-      return h(
-        'div',
-        {
-          class: 'flex-row',
-        },
-        [
-          h(
-            Button,
-            {
-              text: true,
-              theme: 'primary',
-              class: 'mr10',
-              onClick: () => {},
-            },
-            [
-              '分配',
-            ],
-          ),
-          h(
-            'div',
-            {
-              class: 'operations-container',
-            },
-            [
-              '⋮',
-            ],
-          ),
-        ],
-      );
-    },
-  },
+  // {
+  //   label: '操作',
+  //   field: 'operation',
+  //   isDefaultShow: true,
+  //   render: () => {
+  //     return h(
+  //       'div',
+  //       {
+  //         class: 'flex-row',
+  //       },
+  //       [
+  //         h(
+  //           Button,
+  //           {
+  //             text: true,
+  //             theme: 'primary',
+  //             class: 'mr10',
+  //             onClick: () => {},
+  //           },
+  //           [
+  //             '分配',
+  //           ],
+  //         ),
+  //         h(
+  //           'div',
+  //           {
+  //             class: 'operations-container',
+  //           },
+  //           [
+  //             '⋮',
+  //           ],
+  //         ),
+  //       ],
+  //     );
+  //   },
+  // },
 ];
 
 const tableSettings = generateColumnsSettings(tableColumns);
