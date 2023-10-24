@@ -224,7 +224,7 @@ const renderColumns = [
               text: true,
               theme: 'primary',
               class: 'mr16',
-              disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'],
+              disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'] || data.bk_biz_id !== -1,
               onClick() {
                 handleBindRegion(data);
               },
@@ -238,7 +238,7 @@ const renderColumns = [
             {
               text: true,
               theme: 'primary',
-              disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'],
+              disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'] || data.bk_biz_id !== -1,
               onClick() {
                 handleDeleteVpc(data);
               },
