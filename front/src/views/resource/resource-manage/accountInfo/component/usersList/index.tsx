@@ -213,11 +213,11 @@ export default defineComponent({
           {
             label: '操作',
             field: 'operation',
-            render: () => (
+            render: ({ data }: any) => (
                 <Button
                   text
                   theme='primary'
-                  onClick={({ data }: any) => handleModifyAccount(data)}
+                  onClick={() => handleModifyAccount(data)}
                   loading={submitLoading.value}>
                   编辑
                 </Button>
@@ -278,10 +278,10 @@ export default defineComponent({
       console.log(data);
       isShowModifyUserDialog.value = true;
       Object.assign(userFormModel, {
-        bk_biz_ids: data.bk_biz_ids,
-        managers: data.managers,
-        memo: data.memo,
-        id: data.id,
+        bk_biz_ids: data?.bk_biz_ids,
+        managers: data?.managers,
+        memo: data?.memo,
+        id: data?.id,
       });
     };
     const handleModifyUserSubmit = async () => {
