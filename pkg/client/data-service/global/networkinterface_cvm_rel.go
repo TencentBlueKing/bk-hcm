@@ -27,6 +27,7 @@ import (
 	proto "hcm/pkg/api/data-service"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -91,16 +92,16 @@ func (cli *NetworkInterfaceCvmRelClient) BatchDelete(ctx context.Context, h http
 }
 
 // List list networkinterface cvm rels.
-func (cli *NetworkInterfaceCvmRelClient) List(ctx context.Context, h http.Header, request *core.ListReq) (
+func (cli *NetworkInterfaceCvmRelClient) List(kt *kit.Kit, request *core.ListReq) (
 	*protocloud.NetworkInterfaceCvmRelListResult, error) {
 
 	resp := new(protocloud.NetworkInterfaceCvmRelListResp)
 
 	err := cli.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/network_cvm_rels/list").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

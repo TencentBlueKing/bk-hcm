@@ -26,13 +26,19 @@ import (
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud/eip"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 )
 
 // ListEip 查询 eip 列表
-func (rc *restClient) ListEip(ctx context.Context, h http.Header,
-	request *dataproto.EipListReq) (*dataproto.EipListResult, error) {
+func (rc *restClient) ListEip(kt *kit.Kit, request *core.ListReq) (*dataproto.EipListResult, error) {
+
 	resp := new(dataproto.EipListResp)
-	err := rc.client.Post().WithContext(ctx).Body(request).SubResourcef("/eips/list").WithHeaders(h).Do().Into(resp)
+	err := rc.client.Post().
+		WithContext(kt.Ctx).
+		Body(request).
+		SubResourcef("/eips/list").
+		WithHeaders(kt.Header()).
+		Do().Into(resp)
 	if err != nil {
 		return nil, err
 	}
@@ -45,10 +51,14 @@ func (rc *restClient) ListEip(ctx context.Context, h http.Header,
 }
 
 // BatchUpdateEip 批量更新 eip 的基础信息
-func (rc *restClient) BatchUpdateEip(ctx context.Context, h http.Header,
-	request *dataproto.EipBatchUpdateReq) (interface{}, error) {
+func (rc *restClient) BatchUpdateEip(kt *kit.Kit, request *dataproto.EipBatchUpdateReq) (interface{}, error) {
 	resp := new(core.UpdateResp)
-	err := rc.client.Patch().WithContext(ctx).Body(request).SubResourcef("/eips").WithHeaders(h).Do().Into(resp)
+	err := rc.client.Patch().
+		WithContext(kt.Ctx).
+		Body(request).
+		SubResourcef("/eips").
+		WithHeaders(kt.Header()).
+		Do().Into(resp)
 	if err != nil {
 		return nil, err
 	}

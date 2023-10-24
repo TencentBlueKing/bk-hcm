@@ -26,16 +26,19 @@ import (
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 )
 
 // ListDisk 查询云盘列表
-func (rc *restClient) ListDisk(
-	ctx context.Context,
-	h http.Header,
-	request *dataproto.DiskListReq,
-) (*dataproto.DiskListResult, error) {
+func (rc *restClient) ListDisk(kt *kit.Kit, request *core.ListReq) (*dataproto.DiskListResult, error) {
+
 	resp := new(dataproto.DiskListResp)
-	err := rc.client.Post().WithContext(ctx).Body(request).SubResourcef("/disks/list").WithHeaders(h).Do().Into(resp)
+	err := rc.client.Post().
+		WithContext(kt.Ctx).
+		Body(request).
+		SubResourcef("/disks/list").
+		WithHeaders(kt.Header()).
+		Do().Into(resp)
 	if err != nil {
 		return nil, err
 	}
@@ -73,13 +76,14 @@ func (rc *restClient) DeleteDisk(
 }
 
 // BatchUpdateDisk 批量更新云盘的基础信息
-func (rc *restClient) BatchUpdateDisk(
-	ctx context.Context,
-	h http.Header,
-	request *dataproto.DiskBatchUpdateReq,
-) (interface{}, error) {
+func (rc *restClient) BatchUpdateDisk(kt *kit.Kit, request *dataproto.DiskBatchUpdateReq) (interface{}, error) {
 	resp := new(core.UpdateResp)
-	err := rc.client.Patch().WithContext(ctx).Body(request).SubResourcef("/disks").WithHeaders(h).Do().Into(resp)
+	err := rc.client.Patch().
+		WithContext(kt.Ctx).
+		Body(request).
+		SubResourcef("/disks").
+		WithHeaders(kt.Header()).
+		Do().Into(resp)
 	if err != nil {
 		return nil, err
 	}

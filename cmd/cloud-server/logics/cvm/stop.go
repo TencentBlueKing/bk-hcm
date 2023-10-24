@@ -203,7 +203,7 @@ func (c *cvm) checkAndStopCvm(kt *kit.Kit, infoMap map[string]types.CloudResourc
 	}
 	notStoppedReq := &cloud.CvmListReq{Field: []string{"id"}, Filter: notStoppedFilter, Page: core.NewDefaultBasePage()}
 
-	notStoppedCvmRes, err := c.client.DataService().Global.Cvm.ListCvm(kt.Ctx, kt.Header(), notStoppedReq)
+	notStoppedCvmRes, err := c.client.DataService().Global.Cvm.ListCvm(kt, notStoppedReq)
 	if err != nil {
 		logs.Errorf("fail to list cvm status, err: %v, req: %v, rid: %s", err, notStoppedReq, kt.Rid)
 		return err

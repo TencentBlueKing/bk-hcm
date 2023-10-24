@@ -37,7 +37,6 @@ import (
 	cloudproto "hcm/pkg/api/cloud-server/eip"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
-	datarelproto "hcm/pkg/api/data-service/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud/eip"
 	ts "hcm/pkg/api/task-server"
 	"hcm/pkg/async/action"
@@ -51,7 +50,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/counter"
 	"hcm/pkg/tools/hooks/handler"
@@ -108,9 +106,8 @@ func (svc *eipSvc) listEip(cts *rest.Contexts, authHandler handler.ListAuthResHa
 	}
 
 	resp, err := svc.client.DataService().Global.ListEip(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&dataproto.EipListReq{
+		cts.Kit,
+		&core.ListReq{
 			Filter: filterExp,
 			Page:   req.Page,
 		},
@@ -129,9 +126,8 @@ func (svc *eipSvc) listEip(cts *rest.Contexts, authHandler handler.ListAuthResHa
 	}
 
 	rels, err := svc.client.DataService().Global.ListEipCvmRel(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&datarelproto.EipCvmRelListReq{
+		cts.Kit,
+		&core.ListReq{
 			Filter: tools.ContainersExpression("eip_id", eipIDs),
 			Page:   core.NewDefaultBasePage(),
 		},
@@ -193,9 +189,8 @@ func (svc *eipSvc) retrieveEip(cts *rest.Contexts, validHandler handler.ValidWit
 	}
 
 	rels, err := svc.client.DataService().Global.ListEipCvmRel(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&datarelproto.EipCvmRelListReq{
+		cts.Kit,
+		&core.ListReq{
 			Filter: tools.ContainersExpression("eip_id", []string{eipID}),
 			Page:   core.NewDefaultBasePage(),
 		},
@@ -240,25 +235,7 @@ func (svc *eipSvc) AssignEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// check if all eips are not assigned to biz, right now assigning resource twice is not allowed
-	eipFilter := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.IDs}
-	err := svc.checkEipsInBiz(cts.Kit, eipFilter, constant.UnassignedBiz)
-	if err != nil {
-		return nil, err
-	}
-
-	// create assign audit
-	err = svc.audit.ResBizAssignAudit(cts.Kit, enumor.EipAuditResType, req.IDs, int64(req.BkBizID))
-	if err != nil {
-		logs.Errorf("create assign eip audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return svc.client.DataService().Global.BatchUpdateEip(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&dataproto.EipBatchUpdateReq{IDs: req.IDs, BkBizID: req.BkBizID},
-	)
+	return nil, eip.Assign(cts.Kit, svc.client.DataService(), req.IDs, req.BkBizID, false)
 }
 
 // BatchDeleteEip batch delete eip.
@@ -506,32 +483,6 @@ func (svc *eipSvc) authorizeEipAssignOp(kt *kit.Kit, ids []string) error {
 	err = svc.authorizer.AuthorizeWithPerm(kt, authRes...)
 	if err != nil {
 		return err
-	}
-
-	return nil
-}
-
-// checkEipsInBiz check if eips are in the specified biz.
-func (svc *eipSvc) checkEipsInBiz(kt *kit.Kit, rule filter.RuleFactory, bizID int64) error {
-	req := &dataproto.EipListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{Field: "bk_biz_id", Op: filter.NotEqual.Factory(), Value: bizID}, rule,
-			},
-		},
-		Page: &core.BasePage{
-			Count: true,
-		},
-	}
-	result, err := svc.client.DataService().Global.ListEip(kt.Ctx, kt.Header(), req)
-	if err != nil {
-		logs.Errorf("count eips that are not in biz failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
-		return err
-	}
-
-	if result.Count != nil && *result.Count != 0 {
-		return fmt.Errorf("%d eips are already assigned", result.Count)
 	}
 
 	return nil

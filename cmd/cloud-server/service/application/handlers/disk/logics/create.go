@@ -52,12 +52,12 @@ func CheckResultAndAssign(kt *kit.Kit, cli *dataservice.Client, result *hcproto.
 		logs.Warnf("request hc service to batch create cvm partial failed, result: %v, rid: %s", result, kt.Rid)
 	}
 
-	listReq := &dataproto.DiskListReq{
+	listReq := &core.ListReq{
 		Filter: tools.ContainersExpression("cloud_id", result.SuccessCloudIDs),
 		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"id"},
 	}
-	listResult, err := cli.Global.ListDisk(kt.Ctx, kt.Header(), listReq)
+	listResult, err := cli.Global.ListDisk(kt, listReq)
 	if err != nil {
 		deliverDetail["error"] = err.Error()
 		return enumor.DeliverError, deliverDetail, err
@@ -68,11 +68,7 @@ func CheckResultAndAssign(kt *kit.Kit, cli *dataservice.Client, result *hcproto.
 		ids = append(ids, one.ID)
 	}
 
-	_, err = cli.Global.BatchUpdateDisk(
-		kt.Ctx,
-		kt.Header(),
-		&dataproto.DiskBatchUpdateReq{IDs: ids, BkBizID: uint64(bkBizID)},
-	)
+	_, err = cli.Global.BatchUpdateDisk(kt, &dataproto.DiskBatchUpdateReq{IDs: ids, BkBizID: uint64(bkBizID)})
 	if err != nil {
 		deliverDetail["error"] = err.Error()
 		return enumor.DeliverError, deliverDetail, err

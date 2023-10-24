@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	proto "hcm/pkg/api/cloud-server"
-	diskproto "hcm/pkg/api/cloud-server/disk"
 	"hcm/pkg/api/core"
 	datarelproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
@@ -93,7 +92,7 @@ func (svc *diskSvc) listDiskExtByCvmID(cts *rest.Contexts, validHandler handler.
 
 // ListDiskCvmRel ...
 func (svc *diskSvc) ListDiskCvmRel(cts *rest.Contexts) (interface{}, error) {
-	req := new(diskproto.DiskCvmRelListReq)
+	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}

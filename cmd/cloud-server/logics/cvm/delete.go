@@ -397,7 +397,7 @@ func (c *cvm) GetNotCmdbRecyclableHosts(kt *kit.Kit, bizHostsIds map[int64][]str
 			Filter: tools.ContainersExpression("id", hostIDs),
 			Page:   core.NewDefaultBasePage(),
 		}
-		relResp, err := c.client.DataService().Global.Cvm.ListCvm(kt.Ctx, kt.Header(), req)
+		relResp, err := c.client.DataService().Global.Cvm.ListCvm(kt, req)
 		if err != nil {
 			logs.Errorf("fail to get host Info, err: %v, rid: %s", err, kt.Rid)
 			return nil, err

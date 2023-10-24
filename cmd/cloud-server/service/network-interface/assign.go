@@ -20,20 +20,14 @@
 package networkinterface
 
 import (
-	"fmt"
-
+	logicsni "hcm/cmd/cloud-server/logics/network-interface"
 	proto "hcm/pkg/api/cloud-server"
-	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
-	datacloudniproto "hcm/pkg/api/data-service/cloud/network-interface"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
-	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 )
 
 // AssignNetworkInterfaceToBiz assign network interface to biz.
@@ -52,59 +46,7 @@ func (svc *netSvc) AssignNetworkInterfaceToBiz(cts *rest.Contexts) (interface{},
 		return nil, err
 	}
 
-	listReq := &core.ListReq{
-		Fields: []string{"id"},
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{
-					Field: "id",
-					Op:    filter.In.Factory(),
-					Value: req.NetworkInterfaceIDs,
-				},
-				&filter.AtomRule{
-					Field: "bk_biz_id",
-					Op:    filter.NotEqual.Factory(),
-					Value: constant.UnassignedBiz,
-				},
-			},
-		},
-		Page: core.NewDefaultBasePage(),
-	}
-	result, err := svc.client.DataService().Global.NetworkInterface.List(cts.Kit.Ctx, cts.Kit.Header(), listReq)
-	if err != nil {
-		logs.Errorf("list network_interface failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	if len(result.Details) != 0 {
-		ids := make([]string, len(result.Details))
-		for index, one := range result.Details {
-			ids[index] = one.ID
-		}
-		return nil, fmt.Errorf("network_interface(ids=%v) already assigned", ids)
-	}
-
-	// create assign audit.
-	err = svc.audit.ResBizAssignAudit(cts.Kit, enumor.NetworkInterfaceAuditResType, req.NetworkInterfaceIDs,
-		req.BkBizID)
-	if err != nil {
-		logs.Errorf("create network_interface assign audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	update := &datacloudniproto.NetworkInterfaceCommonInfoBatchUpdateReq{
-		IDs:     req.NetworkInterfaceIDs,
-		BkBizID: req.BkBizID,
-	}
-	if err := svc.client.DataService().Global.NetworkInterface.BatchUpdateNICommonInfo(
-		cts.Kit.Ctx, cts.Kit.Header(), update); err != nil {
-		logs.Errorf("batch update network_interface common info failed, req: %+v, err: %v, rid: %s", req, err,
-			cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
+	return nil, logicsni.Assign(cts.Kit, svc.client.DataService(), req.NetworkInterfaceIDs, req.BkBizID, false)
 }
 
 func (svc *netSvc) authorizeNICAssignOp(kt *kit.Kit, ids []string, bizID int64) error {

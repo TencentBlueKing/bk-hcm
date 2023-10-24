@@ -27,7 +27,6 @@ import (
 	cloudproto "hcm/pkg/api/cloud-server/eip"
 	"hcm/pkg/api/core"
 	protoaudit "hcm/pkg/api/data-service/audit"
-	datarelproto "hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service/eip"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
@@ -100,8 +99,7 @@ func (a *Azure) AssociateEip(
 	}
 
 	rels, err := a.client.DataService().Global.NetworkInterfaceCvmRel.List(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+		cts.Kit,
 		&core.ListReq{
 			Filter: tools.EqualExpression("network_interface_id", req.NetworkInterfaceID),
 			Page:   core.NewDefaultBasePage(),
@@ -152,9 +150,8 @@ func (a *Azure) DisassociateEip(
 	}
 
 	rels, err := a.client.DataService().Global.ListEipCvmRel(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&datarelproto.EipCvmRelListReq{
+		cts.Kit,
+		&core.ListReq{
 			Filter: tools.ContainersExpression("eip_id", []string{req.EipID}),
 			Page:   core.NewDefaultBasePage(),
 		},
@@ -245,8 +242,7 @@ func (a *Azure) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*cl
 	}
 
 	rels, err := a.client.DataService().Global.NetworkInterfaceCvmRel.List(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+		cts.Kit,
 		&core.ListReq{Filter: tools.ContainersExpression("cvm_id", []string{cvmID}), Page: core.NewDefaultBasePage()},
 	)
 	if err != nil {
@@ -263,8 +259,7 @@ func (a *Azure) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*cl
 	}
 
 	nis, err := a.client.DataService().Global.NetworkInterface.List(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+		cts.Kit,
 		&core.ListReq{Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{

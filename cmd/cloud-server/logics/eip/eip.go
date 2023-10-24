@@ -281,11 +281,11 @@ func (e *eip) BatchGetEipInfo(kt *kit.Kit, cvmDetail map[string]*recycle.CvmDeta
 		return errf.Newf(errf.InvalidParameter, "cvmIDs should <= %d", constant.BatchOperationMaxLimit)
 	}
 	cvmIDs := converter.MapKeyToStringSlice(cvmDetail)
-	relReq := &cloud.EipCvmRelListReq{
+	relReq := &core.ListReq{
 		Filter: tools.ContainersExpression("cvm_id", cvmIDs),
 		Page:   core.NewDefaultBasePage(),
 	}
-	cvmEipRel, err := e.client.DataService().Global.ListEipCvmRel(kt.Ctx, kt.Header(), relReq)
+	cvmEipRel, err := e.client.DataService().Global.ListEipCvmRel(kt, relReq)
 	if err != nil {
 		logs.Errorf("fail to ListEipCvmRel, cvm_id: %v,err: %v, rid: %s", cvmIDs, err, kt.Rid)
 		return err
@@ -296,11 +296,11 @@ func (e *eip) BatchGetEipInfo(kt *kit.Kit, cvmDetail map[string]*recycle.CvmDeta
 	if len(eipIDs) == 0 {
 		return nil
 	}
-	eipReq := &dataeip.EipListReq{
+	eipReq := &core.ListReq{
 		Filter: tools.ContainersExpression("id", eipIDs),
 		Page:   core.NewDefaultBasePage(),
 	}
-	eipRes, err := e.client.DataService().Global.ListEip(kt.Ctx, kt.Header(), eipReq)
+	eipRes, err := e.client.DataService().Global.ListEip(kt, eipReq)
 	if err != nil {
 		logs.Errorf("fail to ListEip, err: %v, eipIDs: %v, rid: %s", err, eipIDs, kt.Rid)
 		return err

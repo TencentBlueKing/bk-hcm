@@ -41,8 +41,7 @@ func (a *BaseApplicationHandler) ListCvm(
 	}
 	// 查询
 	resp, err := a.Client.DataService().Global.Cvm.ListCvm(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
+		a.Cts.Kit,
 		&dataproto.CvmListReq{
 			Filter: reqFilter,
 			Page:   &core.BasePage{Count: false, Start: 0, Limit: uint(len(cloudCvmIDs))},

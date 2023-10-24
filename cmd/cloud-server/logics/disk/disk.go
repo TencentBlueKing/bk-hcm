@@ -152,7 +152,7 @@ func (d *disk) DeleteRecycledDisk(kt *kit.Kit, basicInfoMap map[string]types.Clo
 	}
 
 	// check if disks are all detached
-	relReq := &cloud.DiskCvmRelListReq{
+	relReq := &core.ListReq{
 		Filter: tools.ContainersExpression("disk_id", ids),
 		Page:   &core.BasePage{Count: true},
 	}

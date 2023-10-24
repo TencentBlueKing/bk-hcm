@@ -29,8 +29,6 @@ import (
 	"hcm/pkg/api/core"
 	apicloud "hcm/pkg/api/core/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud"
-	datadisk "hcm/pkg/api/data-service/cloud/disk"
-	dataeip "hcm/pkg/api/data-service/cloud/eip"
 	protocvm "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -187,7 +185,7 @@ func (svc *cvmSvc) BatchResetHuaWeiCvmPwd(cts *rest.Contexts) (interface{}, erro
 		Filter: tools.ContainersExpression("id", req.IDs),
 		Page:   core.NewDefaultBasePage(),
 	}
-	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit, listReq)
 	if err != nil {
 		logs.Errorf("request dataservice list huawei cvm failed, err: %v, ids: %v, rid: %s", err, req.IDs, cts.Kit.Rid)
 		return nil, err
@@ -248,7 +246,7 @@ func (svc *cvmSvc) BatchStartHuaWeiCvm(cts *rest.Contexts) (interface{}, error) 
 		Filter: tools.ContainersExpression("id", req.IDs),
 		Page:   core.NewDefaultBasePage(),
 	}
-	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit, listReq)
 	if err != nil {
 		logs.Errorf("request dataservice list huawei cvm failed, err: %v, ids: %v, rid: %s", err, req.IDs, cts.Kit.Rid)
 		return nil, err
@@ -307,7 +305,7 @@ func (svc *cvmSvc) BatchStopHuaWeiCvm(cts *rest.Contexts) (interface{}, error) {
 		Filter: tools.ContainersExpression("id", req.IDs),
 		Page:   core.NewDefaultBasePage(),
 	}
-	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit, listReq)
 	if err != nil {
 		logs.Errorf("request dataservice list huawei cvm failed, err: %v, ids: %v, rid: %s", err, req.IDs, cts.Kit.Rid)
 		return nil, err
@@ -367,7 +365,7 @@ func (svc *cvmSvc) BatchRebootHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 		Filter: tools.ContainersExpression("id", req.IDs),
 		Page:   core.NewDefaultBasePage(),
 	}
-	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit, listReq)
 	if err != nil {
 		logs.Errorf("request dataservice list huawei cvm failed, err: %v, ids: %v, rid: %s", err, req.IDs, cts.Kit.Rid)
 		return nil, err
@@ -427,7 +425,7 @@ func (svc *cvmSvc) BatchDeleteHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 		Filter: tools.ContainersExpression("id", req.IDs),
 		Page:   core.NewDefaultBasePage(),
 	}
-	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit, listReq)
 	if err != nil {
 		logs.Errorf("request dataservice list huawei cvm failed, err: %v, ids: %v, rid: %s", err, req.IDs, cts.Kit.Rid)
 		return nil, err
@@ -484,11 +482,11 @@ func (svc *cvmSvc) BatchDeleteHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 
 // syncCvmRelEip sync cvm rel eip
 func (svc cvmSvc) syncCvmRelEip(kt *kit.Kit, accountID, region string, cvmIDs []string) error {
-	listEipRel := &dataproto.EipCvmRelListReq{
+	listEipRel := &core.ListReq{
 		Filter: tools.ContainersExpression("cvm_id", cvmIDs),
 		Page:   core.NewDefaultBasePage(),
 	}
-	rels, err := svc.dataCli.Global.ListEipCvmRel(kt.Ctx, kt.Header(), listEipRel)
+	rels, err := svc.dataCli.Global.ListEipCvmRel(kt, listEipRel)
 	if err != nil {
 		logs.Errorf("list eip_cvm_rel from db failed, err: %v, rid: %s", err, kt.Rid)
 		return err
@@ -499,12 +497,12 @@ func (svc cvmSvc) syncCvmRelEip(kt *kit.Kit, accountID, region string, cvmIDs []
 		eipIDs = append(eipIDs, one.EipID)
 	}
 
-	listEip := &dataeip.EipListReq{
+	listEip := &core.ListReq{
 		Filter: tools.ContainersExpression("id", eipIDs),
 		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"cloud_id"},
 	}
-	eips, err := svc.dataCli.Global.ListEip(kt.Ctx, kt.Header(), listEip)
+	eips, err := svc.dataCli.Global.ListEip(kt, listEip)
 	if err != nil {
 		logs.Errorf("list eip from db failed, err: %v, rid: %s", err, kt.Rid)
 		return err
@@ -539,7 +537,7 @@ func (svc cvmSvc) syncCvmRelEip(kt *kit.Kit, accountID, region string, cvmIDs []
 
 // syncCvmRelDisk sync cvm rel disk
 func (svc cvmSvc) syncCvmRelDisk(kt *kit.Kit, accountID, region string, cvmIDs []string) error {
-	listEipRel := &dataproto.DiskCvmRelListReq{
+	listEipRel := &core.ListReq{
 		Filter: tools.ContainersExpression("cvm_id", cvmIDs),
 		Page:   core.NewDefaultBasePage(),
 	}
@@ -554,12 +552,12 @@ func (svc cvmSvc) syncCvmRelDisk(kt *kit.Kit, accountID, region string, cvmIDs [
 		diskIDs = append(diskIDs, one.DiskID)
 	}
 
-	listEip := &datadisk.DiskListReq{
+	listEip := &core.ListReq{
 		Filter: tools.ContainersExpression("id", diskIDs),
 		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"cloud_id"},
 	}
-	disks, err := svc.dataCli.Global.ListDisk(kt.Ctx, kt.Header(), listEip)
+	disks, err := svc.dataCli.Global.ListDisk(kt, listEip)
 	if err != nil {
 		logs.Errorf("list disk from db failed, err: %v, rid: %s", err, kt.Rid)
 		return err

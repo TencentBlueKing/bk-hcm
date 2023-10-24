@@ -27,6 +27,7 @@ import (
 	dataservice "hcm/pkg/api/data-service"
 	datacloudniproto "hcm/pkg/api/data-service/cloud/network-interface"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -43,16 +44,16 @@ func NewNetworkInterfaceClient(client rest.ClientInterface) *NetworkInterfaceCli
 }
 
 // List network interface.
-func (n *NetworkInterfaceClient) List(ctx context.Context, h http.Header, req *core.ListReq) (
+func (n *NetworkInterfaceClient) List(kt *kit.Kit, req *core.ListReq) (
 	*datacloudniproto.NetworkInterfaceListResult, error) {
 
 	resp := new(datacloudniproto.NetworkInterfaceListResp)
 
 	err := n.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(req).
 		SubResourcef("/network_interfaces/list").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
@@ -115,16 +116,16 @@ func (n *NetworkInterfaceClient) BatchDelete(ctx context.Context, h http.Header,
 }
 
 // BatchUpdateNICommonInfo batch update network interface common info.
-func (n *NetworkInterfaceClient) BatchUpdateNICommonInfo(ctx context.Context, h http.Header,
+func (n *NetworkInterfaceClient) BatchUpdateNICommonInfo(kt *kit.Kit,
 	request *datacloudniproto.NetworkInterfaceCommonInfoBatchUpdateReq) error {
 
 	resp := new(rest.BaseResp)
 
 	err := n.client.Patch().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/network_interfaces/common/info/batch/update").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
