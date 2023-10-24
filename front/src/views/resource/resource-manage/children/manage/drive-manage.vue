@@ -25,7 +25,6 @@ import useSelection from '../../hooks/use-selection';
 import useColumns from '../../hooks/use-columns';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import { VendorEnum } from '@/common/constant';
-import { QueryRuleOPEnum } from '@/typings';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 
 const props = defineProps({
@@ -169,16 +168,7 @@ const {
   handlePageSizeChange,
   handleSort,
   triggerApi,
-} = useQueryList({ filter: {
-  op: 'and',
-  rules: filter.value.rules.concat([
-    {
-      op: QueryRuleOPEnum.NEQ,
-      field: 'recycle_status',
-      value: 'recycling',
-    },
-  ]),
-} }, 'disks');
+} = useQueryList({ filter: filter.value }, 'disks');
 
 const {
   handleShowDelete,

@@ -21,7 +21,7 @@ import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
 import useColumns from '../../hooks/use-columns';
 import useFilter  from '@/views/resource/resource-manage/hooks/use-filter';
-import { HostCloudEnum, CloudType, QueryRuleOPEnum } from '@/typings';
+import { HostCloudEnum, CloudType } from '@/typings';
 import {
   useResourceStore,
 } from '@/store';
@@ -64,16 +64,7 @@ const {
   handlePageSizeChange,
   handleSort,
   triggerApi,
-} = useQueryList({ filter: {
-  op: 'and',
-  rules: filter.value.rules.concat([
-    {
-      op: QueryRuleOPEnum.NEQ,
-      field: 'recycle_status',
-      value: 'recycling',
-    },
-  ]),
-} }, 'cvms');
+} = useQueryList({ filter: filter.value }, 'cvms');
 
 const {
   selections,
