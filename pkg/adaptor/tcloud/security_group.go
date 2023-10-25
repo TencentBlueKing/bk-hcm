@@ -31,7 +31,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
 
-	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
+	common "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )

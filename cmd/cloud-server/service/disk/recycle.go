@@ -164,7 +164,7 @@ func (svc *diskSvc) detachDiskByIDs(kt *kit.Kit, ids []string, basicInfoMap map[
 		return nil, errf.Newf(errf.InvalidParameter, "ids should <= %d", constant.BatchOperationMaxLimit)
 	}
 
-	listReq := &cloud.DiskCvmRelListReq{
+	listReq := &core.ListReq{
 		Filter: tools.ContainersExpression("disk_id", ids),
 		Page:   core.NewDefaultBasePage(),
 	}

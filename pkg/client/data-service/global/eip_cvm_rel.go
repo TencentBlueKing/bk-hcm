@@ -23,6 +23,7 @@ import (
 	"context"
 	"net/http"
 
+	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -54,16 +55,15 @@ func (rc *restClient) BatchCreateEipCvmRel(ctx context.Context, h http.Header,
 }
 
 // ListEipCvmRel ...
-func (rc *restClient) ListEipCvmRel(ctx context.Context, h http.Header,
-	request *dataproto.EipCvmRelListReq) (*dataproto.EipCvmRelListResult, error) {
+func (rc *restClient) ListEipCvmRel(kt *kit.Kit, request *core.ListReq) (*dataproto.EipCvmRelListResult, error) {
 
 	resp := new(dataproto.EipCvmRelListResp)
 
 	err := rc.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/eip_cvm_rels/list").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

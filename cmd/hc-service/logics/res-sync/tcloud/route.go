@@ -40,6 +40,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/concurrence"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 // SyncRouteOption ...
@@ -159,36 +160,38 @@ func (cli *client) createRoute(kt *kit.Kit, accountID string, region string, rou
 		return fmt.Errorf("route addSlice is <= 0, not create")
 	}
 
-	createResources := make([]dataproto.TCloudRouteCreateReq, 0, len(addSlice))
-	for _, one := range addSlice {
-		tmp := dataproto.TCloudRouteCreateReq{
-			CloudID:                  one.CloudID,
-			CloudRouteTableID:        one.CloudRouteTableID,
-			DestinationCidrBlock:     one.DestinationCidrBlock,
-			DestinationIpv6CidrBlock: one.DestinationIpv6CidrBlock,
-			GatewayType:              one.GatewayType,
-			CloudGatewayID:           one.CloudGatewayID,
-			Enabled:                  one.Enabled,
-			RouteType:                one.RouteType,
-			PublishedToVbc:           one.PublishedToVbc,
-			Memo:                     one.Memo,
+	// split all routes into batches to avoid reaching batch operation limit
+	routeBatches := slice.Split(addSlice, constant.BatchOperationMaxLimit)
+
+	for batchIdx, routeBatch := range routeBatches {
+		createResources := slice.Map(routeBatch,
+			func(route typesroutetable.TCloudRoute) dataproto.TCloudRouteCreateReq {
+				return dataproto.TCloudRouteCreateReq{
+					CloudID:                  route.CloudID,
+					CloudRouteTableID:        route.CloudRouteTableID,
+					DestinationCidrBlock:     route.DestinationCidrBlock,
+					DestinationIpv6CidrBlock: route.DestinationIpv6CidrBlock,
+					GatewayType:              route.GatewayType,
+					CloudGatewayID:           route.CloudGatewayID,
+					Enabled:                  route.Enabled,
+					RouteType:                route.RouteType,
+					PublishedToVbc:           route.PublishedToVbc,
+					Memo:                     route.Memo,
+				}
+			})
+		createReq := &dataproto.TCloudRouteBatchCreateReq{
+			TCloudRoutes: createResources,
 		}
-		createResources = append(createResources, tmp)
-	}
+		if _, err := cli.dbCli.TCloud.RouteTable.BatchCreateRoute(kt, routeTableID, createReq); err != nil {
+			logs.Errorf("[%s] batch create route failed. err: %v, accountID: %s, region: %s, "+
+				"routeTableID: %s, batchIdx: %d, rid: %s", enumor.TCloud, err, accountID, region, routeTableID,
+				batchIdx, kt.Rid)
+			return err
+		}
 
-	createReq := &dataproto.TCloudRouteBatchCreateReq{
-		TCloudRoutes: createResources,
 	}
-	if _, err := cli.dbCli.TCloud.RouteTable.BatchCreateRoute(kt.Ctx, kt.Header(),
-		routeTableID, createReq); err != nil {
-		logs.Errorf("[%s] batch create route failed. err: %v, accountID: %s, region: %s, "+
-			"routeTableID: %s, rid: %s", enumor.TCloud, err, accountID, region, routeTableID, kt.Rid)
-		return err
-	}
-
 	logs.Infof("[%s] sync route to create route success, accountID: %s, count: %d, rid: %s", enumor.TCloud,
 		accountID, len(addSlice), kt.Rid)
-
 	return nil
 }
 
@@ -216,15 +219,19 @@ func (cli *client) updateRoute(kt *kit.Kit, accountID, region, routeTableID stri
 		updateResources = append(updateResources, tmpRes)
 	}
 
-	updateReq := &dataproto.TCloudRouteBatchUpdateReq{
-		TCloudRoutes: updateResources,
+	updateReqBatches := slice.Split(updateResources, constant.BatchOperationMaxLimit)
+	for batchIdx, updateBatch := range updateReqBatches {
+		updateReq := &dataproto.TCloudRouteBatchUpdateReq{
+			TCloudRoutes: updateBatch,
+		}
+		if err := cli.dbCli.TCloud.RouteTable.BatchUpdateRoute(kt, routeTableID, updateReq); err != nil {
+			logs.Errorf("[%s] batch update route failed. err: %v, accountID: %s, region: %s, "+
+				"routeTableID: %s, batchIdx: %d, rid: %s",
+				enumor.TCloud, err, accountID, region, routeTableID, batchIdx, kt.Rid)
+			return err
+		}
 	}
-	if err := cli.dbCli.TCloud.RouteTable.BatchUpdateRoute(kt.Ctx, kt.Header(), routeTableID,
-		updateReq); err != nil {
-		logs.Errorf("[%s] batch update route failed. err: %v, accountID: %s, region: %s, "+
-			"routeTableID: %s, rid: %s", enumor.TCloud, err, accountID, region, routeTableID, kt.Rid)
-		return err
-	}
+
 	logs.Infof("[%s] sync route to update route success, accountID: %s, count: %d, rid: %s", enumor.TCloud,
 		accountID, len(updateMap), kt.Rid)
 
@@ -257,13 +264,18 @@ func (cli *client) deleteRoute(kt *kit.Kit, accountID, region, cloudRTID, rtID s
 		}
 	}
 
-	deleteReq := &dataservice.BatchDeleteReq{
-		Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
-	}
-	if err = cli.dbCli.TCloud.RouteTable.BatchDeleteRoute(kt.Ctx, kt.Header(), rtID, deleteReq); err != nil {
+	cloudIDBatches := slice.Split(delCloudIDs, constant.BatchOperationMaxLimit)
+	for batchIdx, cloudIDBatch := range cloudIDBatches {
 
-		logs.Errorf("[%s] request dataservice to batch delete route failed, err: %v, rid: %s", enumor.TCloud, err, kt.Rid)
-		return err
+		deleteReq := &dataservice.BatchDeleteReq{
+			Filter: tools.ContainersExpression("cloud_id", cloudIDBatch),
+		}
+		if err = cli.dbCli.TCloud.RouteTable.BatchDeleteRoute(kt, rtID, deleteReq); err != nil {
+
+			logs.Errorf("[%s] request dataservice to batch delete route failed, err: %v, batchIdx: %d,rid: %s",
+				enumor.TCloud, err, batchIdx, kt.Rid)
+			return err
+		}
 	}
 
 	logs.Infof("[%s] sync route to delete route success, accountID: %s, count: %d, rid: %s", enumor.TCloud,

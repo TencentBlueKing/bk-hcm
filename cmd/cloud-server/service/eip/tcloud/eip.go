@@ -27,7 +27,6 @@ import (
 	cloudproto "hcm/pkg/api/cloud-server/eip"
 	"hcm/pkg/api/core"
 	protoaudit "hcm/pkg/api/data-service/audit"
-	datarelproto "hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service/eip"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
@@ -147,9 +146,8 @@ func (t *TCloud) DisassociateEip(
 	}
 
 	rels, err := t.client.DataService().Global.ListEipCvmRel(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&datarelproto.EipCvmRelListReq{
+		cts.Kit,
+		&core.ListReq{
 			Filter: tools.EqualExpression("eip_id", req.EipID),
 			Page:   core.NewDefaultBasePage(),
 		},

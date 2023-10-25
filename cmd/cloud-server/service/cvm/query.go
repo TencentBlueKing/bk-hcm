@@ -75,7 +75,7 @@ func (svc *cvmSvc) listCvm(cts *rest.Contexts, authHandler handler.ListAuthResHa
 		Filter: expr,
 		Page:   req.Page,
 	}
-	return svc.client.DataService().Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	return svc.client.DataService().Global.Cvm.ListCvm(cts.Kit, listReq)
 }
 
 // GetCvm get cvm.
@@ -151,7 +151,7 @@ func CheckCvmsInBiz(kt *kit.Kit, client *client.ClientSet, rule filter.RuleFacto
 			Count: true,
 		},
 	}
-	result, err := client.DataService().Global.Cvm.ListCvm(kt.Ctx, kt.Header(), req)
+	result, err := client.DataService().Global.Cvm.ListCvm(kt, req)
 	if err != nil {
 		logs.Errorf("count cvms that are not in biz failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
 		return err
@@ -204,7 +204,7 @@ func (svc *cvmSvc) queryCvmRelatedRes(cts *rest.Contexts, validHandler handler.V
 	}
 
 	// 查询磁盘信息
-	diskReq := &dataproto.DiskCvmRelListReq{
+	diskReq := &core.ListReq{
 		Filter: tools.ContainersExpression("cvm_id", req.IDs),
 		Page:   core.NewDefaultBasePage(),
 	}

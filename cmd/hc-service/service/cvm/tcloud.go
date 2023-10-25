@@ -179,7 +179,7 @@ func (svc *cvmSvc) BatchResetTCloudCvmPwd(cts *rest.Contexts) (interface{}, erro
 		Filter: tools.ContainersExpression("id", req.IDs),
 		Page:   core.NewDefaultBasePage(),
 	}
-	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit, listReq)
 	if err != nil {
 		logs.Errorf("request dataservice list tcloud cvm failed, err: %v, ids: %v, rid: %s", err, req.IDs, cts.Kit.Rid)
 		return nil, err
@@ -240,7 +240,7 @@ func (svc *cvmSvc) BatchStartTCloudCvm(cts *rest.Contexts) (interface{}, error) 
 		Filter: tools.ContainersExpression("id", req.IDs),
 		Page:   core.NewDefaultBasePage(),
 	}
-	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit, listReq)
 	if err != nil {
 		logs.Errorf("request dataservice list tcloud cvm failed, err: %v, ids: %v, rid: %s", err, req.IDs, cts.Kit.Rid)
 		return nil, err
@@ -298,7 +298,7 @@ func (svc *cvmSvc) BatchStopTCloudCvm(cts *rest.Contexts) (interface{}, error) {
 		Filter: tools.ContainersExpression("id", req.IDs),
 		Page:   core.NewDefaultBasePage(),
 	}
-	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit, listReq)
 	if err != nil {
 		logs.Errorf("request dataservice list tcloud cvm failed, err: %v, ids: %v, rid: %s", err, req.IDs, cts.Kit.Rid)
 		return nil, err
@@ -358,7 +358,7 @@ func (svc *cvmSvc) BatchRebootTCloudCvm(cts *rest.Contexts) (interface{}, error)
 		Filter: tools.ContainersExpression("id", req.IDs),
 		Page:   core.NewDefaultBasePage(),
 	}
-	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit, listReq)
 	if err != nil {
 		logs.Errorf("request dataservice list tcloud cvm failed, err: %v, ids: %v, rid: %s", err, req.IDs, cts.Kit.Rid)
 		return nil, err
@@ -417,7 +417,7 @@ func (svc *cvmSvc) BatchDeleteTCloudCvm(cts *rest.Contexts) (interface{}, error)
 		Filter: tools.ContainersExpression("id", req.IDs),
 		Page:   core.NewDefaultBasePage(),
 	}
-	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit, listReq)
 	if err != nil {
 		logs.Errorf("request dataservice list tcloud cvm failed, err: %v, ids: %v, rid: %s", err, req.IDs, cts.Kit.Rid)
 		return nil, err

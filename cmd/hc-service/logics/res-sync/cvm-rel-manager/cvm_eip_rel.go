@@ -22,7 +22,6 @@ package cvmrelmgr
 import (
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
-	dataeip "hcm/pkg/api/data-service/cloud/eip"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
@@ -122,7 +121,7 @@ func (mgr *CvmRelManger) createCvmEipRel(kt *kit.Kit, addRels []cvmRelInfo) erro
 func (mgr *CvmRelManger) getCvmEipRelMapFromDB(kt *kit.Kit, cvmIDs []string) (
 	map[string]map[string]cvmRelInfo, error) {
 
-	listReq := &dataproto.EipCvmRelListReq{
+	listReq := &core.ListReq{
 		Filter: tools.ContainersExpression("cvm_id", cvmIDs),
 		Page: &core.BasePage{
 			Start: 0,
@@ -132,7 +131,7 @@ func (mgr *CvmRelManger) getCvmEipRelMapFromDB(kt *kit.Kit, cvmIDs []string) (
 	}
 	result := make(map[string]map[string]cvmRelInfo)
 	for {
-		respResult, err := mgr.dataCli.Global.ListEipCvmRel(kt.Ctx, kt.Header(), listReq)
+		respResult, err := mgr.dataCli.Global.ListEipCvmRel(kt, listReq)
 		if err != nil {
 			logs.Errorf("list eip cvm rel failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -163,12 +162,12 @@ func (mgr *CvmRelManger) getEipMap(kt *kit.Kit) (map[string]string, error) {
 	eipMap := make(map[string]string)
 	split := slice.Split(cloudIDs, int(core.DefaultMaxPageLimit))
 	for _, partCloudIDs := range split {
-		req := &dataeip.EipListReq{
+		req := &core.ListReq{
 			Fields: []string{"id", "cloud_id"},
 			Filter: tools.ContainersExpression("cloud_id", partCloudIDs),
 			Page:   core.NewDefaultBasePage(),
 		}
-		result, err := mgr.dataCli.Global.ListEip(kt.Ctx, kt.Header(), req)
+		result, err := mgr.dataCli.Global.ListEip(kt, req)
 		if err != nil {
 			logs.Errorf("list eip failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err

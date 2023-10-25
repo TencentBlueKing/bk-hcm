@@ -74,7 +74,7 @@ func (g *securityGroup) getSecurityGroupAndCvm(kt *kit.Kit, sgID, cvmID string) 
 		Filter: tools.EqualExpression("id", cvmID),
 		Page:   core.NewDefaultBasePage(),
 	}
-	cvmResult, err := g.dataCli.Global.Cvm.ListCvm(kt.Ctx, kt.Header(), cvmReq)
+	cvmResult, err := g.dataCli.Global.Cvm.ListCvm(kt, cvmReq)
 	if err != nil {
 		logs.Errorf("request dataservice list tcloud cvm failed, err: %v, id: %s, rid: %s", err, cvmID, kt.Rid)
 		return nil, nil, err

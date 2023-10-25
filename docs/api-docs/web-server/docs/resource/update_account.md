@@ -17,7 +17,7 @@ PATCH /api/v1/cloud/accounts/{account_id}
 | managers             | string      | 否  | 账号管理者           |
 | memo                 | string      | 否  | 备注              |
 | recycle_reserve_time | int         | 否  | 回收站资源的保留时长，单位小时 |
-| bk_biz_ids           | int64 array | 否  | 业务ID            |
+| bk_biz_ids           | int64 array | 否  | 业务ID（目前只支持单业务）|
 | extension            | object      | 否  | 混合云差异字段         |
 
 #### extension[tcloud]

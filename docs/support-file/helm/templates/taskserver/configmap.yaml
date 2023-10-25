@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "bk-hcm.fullname" . }}-taskserver-config
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+data:
+  config.yaml: |-
+    network:
+      bindIP:
+      port: {{ .Values.taskserver.port}}
+      tls:
+        insecureSkipVerify:
+        certFile:
+        keyFile:
+        caFile:
+        password:
+    service:
+      etcd:
+        {{- include "common.tplvalues.render" (dict "value" (include "bk-hcm.etcdConfig" .) "context" $) | nindent 8 }}
+    database:
+      {{- include "common.tplvalues.render" (dict "value" (include "bk-hcm.databaseConfig" .) "context" $) | nindent 6 }}
+    log:
+      {{- toYaml .Values.taskserver.log | nindent 6 }}
+    async:
+      {{- toYaml .Values.taskserver.async | nindent 6 }}
+
+

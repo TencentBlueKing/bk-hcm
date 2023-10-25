@@ -351,7 +351,7 @@ func (mgr *CvmRelManger) getCvmMap(kt *kit.Kit) (map[string]string, error) {
 			Filter: tools.ContainersExpression("cloud_id", partCloudIDs),
 			Page:   core.NewDefaultBasePage(),
 		}
-		result, err := mgr.dataCli.Global.Cvm.ListCvm(kt.Ctx, kt.Header(), req)
+		result, err := mgr.dataCli.Global.Cvm.ListCvm(kt, req)
 		if err != nil {
 			logs.Errorf("list cvm failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err

@@ -116,7 +116,7 @@ func (cli *client) RemoveNetworkInterfaceDeleteFromCloud(kt *kit.Kit, accountID 
 		},
 	}
 	for {
-		resultFromDB, err := cli.dbCli.Global.NetworkInterface.List(kt.Ctx, kt.Header(), req)
+		resultFromDB, err := cli.dbCli.Global.NetworkInterface.List(kt, req)
 		if err != nil {
 			logs.Errorf("[%s] request dataservice to list ni failed, err: %v, req: %v, rid: %s", enumor.Azure,
 				err, req, kt.Rid)

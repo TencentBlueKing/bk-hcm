@@ -25,7 +25,6 @@ import (
 	"hcm/cmd/hc-service/service/eip/datasvc"
 	"hcm/pkg/adaptor/types/eip"
 	"hcm/pkg/api/core"
-	dataproto "hcm/pkg/api/data-service/cloud/eip"
 	proto "hcm/pkg/api/hc-service/eip"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
@@ -268,9 +267,8 @@ func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	resp, err := svc.DataCli.Global.ListEip(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&dataproto.EipListReq{Filter: &filter.Expression{
+		cts.Kit,
+		&core.ListReq{Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
 				&filter.AtomRule{

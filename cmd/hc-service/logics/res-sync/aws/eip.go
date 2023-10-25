@@ -96,7 +96,7 @@ func (cli *client) Eip(kt *kit.Kit, params *SyncBaseParams, opt *SyncEipOption) 
 // RemoveEipDeleteFromCloud ...
 func (cli *client) RemoveEipDeleteFromCloud(kt *kit.Kit, accountID string, region string) error {
 
-	req := &dataeip.EipListReq{
+	req := &core.ListReq{
 		Fields: []string{"id", "cloud_id"},
 		Filter: &filter.Expression{
 			Op: filter.And,
@@ -111,7 +111,7 @@ func (cli *client) RemoveEipDeleteFromCloud(kt *kit.Kit, accountID string, regio
 		},
 	}
 	for {
-		resultFromDB, err := cli.dbCli.Global.ListEip(kt.Ctx, kt.Header(), req)
+		resultFromDB, err := cli.dbCli.Global.ListEip(kt, req)
 		if err != nil {
 			logs.Errorf("[%s] request dataservice to list eip failed, err: %v, req: %v, rid: %s", enumor.Aws,
 				err, req, kt.Rid)

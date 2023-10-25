@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/api/core"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -42,16 +43,16 @@ type CvmClient struct {
 }
 
 // ListCvm cvm.
-func (cli *CvmClient) ListCvm(ctx context.Context, h http.Header, request *protocloud.CvmListReq) (
+func (cli *CvmClient) ListCvm(kt *kit.Kit, request *protocloud.CvmListReq) (
 	*protocloud.CvmListResult, error) {
 
 	resp := new(protocloud.CvmListResp)
 
 	err := cli.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/cvms/list").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
@@ -90,16 +91,16 @@ func (cli *CvmClient) BatchDeleteCvm(ctx context.Context, h http.Header, request
 }
 
 // BatchUpdateCvmCommonInfo batch update cvm common info.
-func (cli *CvmClient) BatchUpdateCvmCommonInfo(ctx context.Context, h http.Header,
+func (cli *CvmClient) BatchUpdateCvmCommonInfo(kt *kit.Kit,
 	request *protocloud.CvmCommonInfoBatchUpdateReq) error {
 
 	resp := new(rest.BaseResp)
 
 	err := cli.client.Patch().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/cvms/common/info/batch/update").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

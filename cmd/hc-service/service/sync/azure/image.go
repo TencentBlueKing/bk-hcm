@@ -27,7 +27,7 @@ import (
 	"hcm/pkg/rest"
 )
 
-// AzurePublisherAndOffer
+// AzurePublisherAndOffer ...
 type AzurePublisherAndOffer struct {
 	Publisher string
 	Offer     string

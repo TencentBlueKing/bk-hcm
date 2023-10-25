@@ -116,7 +116,7 @@ func (svc *netSvc) listNetworkInterface(cts *rest.Contexts, authHandler handler.
 	req.Filter = expr
 
 	// list network interface
-	res, err := svc.client.DataService().Global.NetworkInterface.List(cts.Kit.Ctx, cts.Kit.Header(), req)
+	res, err := svc.client.DataService().Global.NetworkInterface.List(cts.Kit, req)
 	if err != nil {
 		return nil, err
 	}
@@ -257,7 +257,7 @@ func (svc *netSvc) getNetworkInterface(cts *rest.Contexts, validHandler handler.
 		Filter: tools.EqualExpression("network_interface_id", id),
 		Page:   core.NewDefaultBasePage(),
 	}
-	rels, err := svc.client.DataService().Global.NetworkInterfaceCvmRel.List(cts.Kit.Ctx, cts.Kit.Header(), niRelReq)
+	rels, err := svc.client.DataService().Global.NetworkInterfaceCvmRel.List(cts.Kit, niRelReq)
 	if err == nil && len(rels.Details) > 0 {
 		cvmID = rels.Details[0].CvmID
 	}
@@ -315,7 +315,7 @@ func CheckNIInBiz(kt *kit.Kit, client *client.ClientSet, rule filter.RuleFactory
 			Count: true,
 		},
 	}
-	result, err := client.DataService().Global.NetworkInterface.List(kt.Ctx, kt.Header(), req)
+	result, err := client.DataService().Global.NetworkInterface.List(kt, req)
 	if err != nil {
 		logs.Errorf("count network interface that are not in biz failed, err: %v, req: %+v, rid: %s",
 			err, req, kt.Rid)

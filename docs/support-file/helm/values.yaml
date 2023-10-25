@@ -2,7 +2,7 @@ global:
   imageRegistry: hub.bktencent.com
   imagePullSecrets: [ ]
   imagePullPolicy: IfNotPresent
-  imageTag: 1.1.22
+  imageTag: 1.1.29
   storageClass: ""
 
   ## 蓝鲸主域名访问协议http/https
@@ -308,6 +308,72 @@ webserver:
   ## Pod对应提供服务的port 与service里的targetPort必须一致
   port: 80
 
+taskserver:
+  ## 镜像
+  ##
+  image:
+    repository: blueking/bk-hcm-taskserver
+    tag: 1.0.2
+  ## 日志配置
+  ##
+  log:
+    logDir: /data/hcm/logs
+    maxPerFileSizeMB: 1024
+    maxPerLineSizeKB: 2
+    maxFileNum: 5
+    logAppend: false
+    toStdErr: false
+    alsoToStdErr: false
+    verbosity: 0
+  ## pod配置
+  ##
+  replicas: 1
+  podAnnotations: { }
+  affinity: { }
+  nodeSelector: { }
+  tolerations: [ ]
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      memory: 512Mi
+      cpu: 200m
+  service:
+    type: "ClusterIP"
+    ports:
+      - name: http
+        protocol: TCP
+        port: 80
+        targetPort: 80
+        nodePort:
+  port: 80
+  # defines async's related configuration.
+  async:
+    # scheduler 公共组件，负责获取分配给当前节点的任务流，并解析成任务树后，派发当前要执行的任务给executor执行
+    scheduler:
+      # watchIntervalSec 查看是否有分配给当前节点处于Scheduled状态任务的周期
+      watchIntervalSec: 1
+      # workerNumber 负责解析当前节点的子节点，并派发子节点任务到executor执行的协程数量
+      workerNumber: 5
+    # executor 公共组件，负责执行异步任务
+    executor:
+      # workerNumber 负责处理异步任务的协程数量
+      workerNumber: 5
+      # taskExecTimeoutSec 异步任务执行超时时间，是整个异步任务执行流程的总时间，包括运行、回滚、重试。
+      taskExecTimeoutSec: 120
+    # dispatcher 主节点组件，负责派发任务
+    dispatcher:
+      # watchIntervalSec 查看是否有Pending状态任务的周期
+      watchIntervalSec: 1
+    # watchDog 主节点组件，负责异常任务修正（超时任务，任务处理节点已经挂掉的任务等）
+    watchDog:
+      # watchIntervalSec 查看是否有异常任务的周期
+      watchIntervalSec: 1
+      # taskTimeoutSec 判断任务执行超时时间
+      taskTimeoutSec: 300
+
+
 ## appCode
 appCode: bk-hcm
 ## appSecret
@@ -326,6 +392,9 @@ bkLoginCookieName: ""
 bkItsmUrl: http://itsm.bk.com
 # HCM 地址
 bkHCMUrl: http://hcm.bk.com
+# 中英文持久化设置cookie使用，一般设置为 .域名
+bkDomain: .bk.com
+
 ## 加密配置，Note: 首次部署后不可修改，否则数据将无法解密
 ##
 crypto:

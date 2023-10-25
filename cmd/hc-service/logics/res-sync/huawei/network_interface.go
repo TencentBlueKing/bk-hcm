@@ -478,7 +478,7 @@ func (cli *client) listNetworkInterfaceFromDB(kt *kit.Kit, opt *syncNIOption) (
 		},
 		Page: core.NewDefaultBasePage(),
 	}
-	cvmResult, err := cli.dbCli.Global.Cvm.ListCvm(kt.Ctx, kt.Header(), listCvmReq)
+	cvmResult, err := cli.dbCli.Global.Cvm.ListCvm(kt, listCvmReq)
 	if err != nil {
 		logs.Errorf("[%s] list cvm failed, err: %v, rid: %s", enumor.HuaWei, err, kt.Rid)
 		return nil, nil, err
@@ -497,7 +497,7 @@ func (cli *client) listNetworkInterfaceFromDB(kt *kit.Kit, opt *syncNIOption) (
 		},
 		Page: core.NewDefaultBasePage(),
 	}
-	relResult, err := cli.dbCli.Global.NetworkInterfaceCvmRel.List(kt.Ctx, kt.Header(), listRelReq)
+	relResult, err := cli.dbCli.Global.NetworkInterfaceCvmRel.List(kt, listRelReq)
 	if err != nil {
 		logs.Errorf("[%s] list ni_cvm_rel failed, err: %v, rid: %s", enumor.HuaWei, err, kt.Rid)
 		return nil, nil, err

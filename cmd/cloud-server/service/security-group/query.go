@@ -171,7 +171,7 @@ func (svc *securityGroupSvc) queryAssociateSubnetAndNICount(kt *kit.Kit, id stri
 		return 0, 0, err
 	}
 
-	niResult, err := svc.client.DataService().Global.NetworkInterface.List(kt.Ctx, kt.Header(), listOpt)
+	niResult, err := svc.client.DataService().Global.NetworkInterface.List(kt, listOpt)
 	if err != nil {
 		return 0, 0, err
 	}
