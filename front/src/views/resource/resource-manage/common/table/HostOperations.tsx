@@ -48,7 +48,7 @@ export default defineComponent({
       type: Array as PropType<Array<{ status: string }>>,
     },
     onFinished: {
-      type: Function as PropType<() => void>,
+      type: Function as PropType<(type: 'confirm' | 'cancel') => void>,
     },
   },
   setup(props) {
@@ -213,6 +213,7 @@ export default defineComponent({
             unTargetHost.value = [...unRunningHosts, ...unShutdownHosts];
           }
         }
+        handleSwitch(true);
         isConfirmDisabled.value = targetHost.value.length === 0;
       },
     );
@@ -327,6 +328,7 @@ export default defineComponent({
           message: '操作成功',
           theme: 'success',
         });
+        props.onFinished('confirm');
       } catch (err) {
         Message({
           message: '操作失败',
@@ -335,21 +337,10 @@ export default defineComponent({
       } finally {
         isLoading.value = false;
         operationType.value = Operations.None;
-        props.onFinished();
       }
     };
 
     const operationsDisabled = computed(() => !props.selections.length);
-
-    watch(
-      () => props.selections,
-      () => {
-        handleSwitch(true);
-      },
-      {
-        deep: true,
-      },
-    );
 
     const handleSwitch = (isTarget = true) => {
       if (isTarget) {

@@ -1,9 +1,10 @@
 /**
  * 选择相关状态和事件
  */
-import {
-  ref,
-} from 'vue';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { useAccountStore } from '@/store';
+import { useResourceAccountStore } from '@/store/useResourceAccountStore';
+import { ref, watch } from 'vue';
 
 type SelectionType = {
   checked: boolean;
@@ -14,6 +15,28 @@ type SelectionType = {
 
 export default () => {
   const selections = ref([]);
+  const { whereAmI } = useWhereAmI();
+  const resourceAccountStore = useResourceAccountStore();
+  const accountStore = useAccountStore();
+
+  watch(
+    () => resourceAccountStore.resourceAccount,
+    () => {
+      if (whereAmI.value !== Senarios.resource) return;
+      resetSelections();
+    },
+    {
+      deep: true,
+    },
+  );
+
+  watch(
+    () => accountStore.bizs,
+    () => {
+      if (whereAmI.value !== Senarios.business) return;
+      resetSelections();
+    },
+  );
 
   const handleSelectionChange = (selection: SelectionType) => {
     // 全选
