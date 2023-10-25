@@ -115,7 +115,11 @@ export default defineComponent({
 
     watch(
       () => route.query.accountId,
-      () => getDetail(),
+      (id) => {
+        if (id) {
+          getDetail();
+        }
+      },
     );
 
     const isLoading = computed(() => {
@@ -511,7 +515,6 @@ export default defineComponent({
           },
           {
             label: t('名称'),
-            required: true,
             property: 'name',
             isEdit: false,
             component() {
@@ -592,7 +595,6 @@ export default defineComponent({
         data: [
           {
             label: t('负责人'),
-            required: true,
             property: 'managers',
             isEdit: false,
             component() {
