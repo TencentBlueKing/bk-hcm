@@ -45,7 +45,10 @@ export const HOST_REBOOT_STATUS = ['REBOOT', 'HARD_REBOOT', 'REBOOTING'];
 export default defineComponent({
   props: {
     selections: {
-      type: Array as PropType<Array<{ status: string }>>,
+      type: Array as PropType<Array<{
+        status: string;
+        id: string;
+      }>>,
     },
     onFinished: {
       type: Function as PropType<(type: 'confirm' | 'cancel') => void>,
@@ -211,6 +214,15 @@ export default defineComponent({
           case Operations.Recycle: {
             targetHost.value = [...runningHosts, ...shutdownHosts];
             unTargetHost.value = [...unRunningHosts, ...unShutdownHosts];
+            const targetIdsSet = new Set([...runningHosts, ...shutdownHosts].map(({ id }) => id));
+            const untargetIdSet = new Set();
+            unTargetHost.value = [...unRunningHosts, ...unShutdownHosts].reduce((acc, cur) => {
+              if (!untargetIdSet.has(cur.id) && !targetIdsSet.has(cur.id)) {
+                acc.push(cur);
+                untargetIdSet.add(cur.id);
+              }
+              return acc;
+            }, []);
           }
         }
         handleSwitch(true);
