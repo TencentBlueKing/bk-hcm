@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -66,38 +67,9 @@ func (svc *securityGroupSvc) AssignSecurityGroupToBiz(cts *rest.Contexts) (inter
 		return nil, err
 	}
 
-	listReq := &dataproto.SecurityGroupListReq{
-		Field: []string{"id"},
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{
-					Field: "id",
-					Op:    filter.In.Factory(),
-					Value: req.SecurityGroupIDs,
-				},
-				&filter.AtomRule{
-					Field: "bk_biz_id",
-					Op:    filter.NotEqual.Factory(),
-					Value: constant.UnassignedBiz,
-				},
-			},
-		},
-		Page: core.NewDefaultBasePage(),
-	}
-	result, err := svc.client.DataService().Global.SecurityGroup.ListSecurityGroup(cts.Kit.Ctx,
-		cts.Kit.Header(), listReq)
-	if err != nil {
-		logs.Errorf("ListSecurityGroup failed, err: %v, rid: %s", err, cts.Kit.Rid)
+	if err = svc.checkSGUnAssign(cts.Kit, req); err != nil {
+		logs.Errorf("check security group unAssign failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
-	}
-
-	if len(result.Details) != 0 {
-		ids := make([]string, len(result.Details))
-		for index, one := range result.Details {
-			ids[index] = one.ID
-		}
-		return nil, fmt.Errorf("security group%v already assigned", ids)
 	}
 
 	// create assign audit.
@@ -120,4 +92,41 @@ func (svc *securityGroupSvc) AssignSecurityGroupToBiz(cts *rest.Contexts) (inter
 	}
 
 	return nil, nil
+}
+
+func (svc *securityGroupSvc) checkSGUnAssign(kt *kit.Kit, req *proto.AssignSecurityGroupToBizReq) error {
+	listReq := &dataproto.SecurityGroupListReq{
+		Field: []string{"id"},
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "id",
+					Op:    filter.In.Factory(),
+					Value: req.SecurityGroupIDs,
+				},
+				&filter.AtomRule{
+					Field: "bk_biz_id",
+					Op:    filter.NotEqual.Factory(),
+					Value: constant.UnassignedBiz,
+				},
+			},
+		},
+		Page: core.NewDefaultBasePage(),
+	}
+	result, err := svc.client.DataService().Global.SecurityGroup.ListSecurityGroup(kt.Ctx, kt.Header(), listReq)
+	if err != nil {
+		logs.Errorf("ListSecurityGroup failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	if len(result.Details) != 0 {
+		ids := make([]string, len(result.Details))
+		for index, one := range result.Details {
+			ids[index] = one.ID
+		}
+		return fmt.Errorf("security group%v already assigned", ids)
+	}
+
+	return nil
 }
