@@ -97,7 +97,7 @@ export default defineComponent({
       label: '参考费用',
       field: 'price',
       fixed: 'right',
-      render: ({ data }: any) => <span class={'instance-price'}>{`${data?.Price?.DiscountPrice}元/月`}</span>,
+      render: ({ data }: any) => <span class={'instance-price'}>{`${data?.Price?.DiscountPrice || data?.Price?.DiscountPriceOneYear}元/月`}</span>,
     }]);
 
     const selected = computed({
