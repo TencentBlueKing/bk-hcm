@@ -198,6 +198,7 @@ const groupColumns = [
           onClick() {
             const routeInfo: any = {
               query: {
+                ...route.query,
                 id: data.id,
                 vendor: data.vendor,
               },
@@ -439,6 +440,7 @@ const gcpColumns = [
           onClick() {
             const routeInfo: any = {
               query: {
+                ...route.query,
                 id: data.id,
               },
             };

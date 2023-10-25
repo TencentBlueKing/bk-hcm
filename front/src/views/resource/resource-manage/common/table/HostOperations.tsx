@@ -45,10 +45,13 @@ export const HOST_REBOOT_STATUS = ['REBOOT', 'HARD_REBOOT', 'REBOOTING'];
 export default defineComponent({
   props: {
     selections: {
-      type: Array as PropType<Array<{ status: string }>>,
+      type: Array as PropType<Array<{
+        status: string;
+        id: string;
+      }>>,
     },
     onFinished: {
-      type: Function as PropType<() => void>,
+      type: Function as PropType<(type: 'confirm' | 'cancel') => void>,
     },
   },
   setup(props) {
@@ -94,12 +97,15 @@ export default defineComponent({
       {
         field: '_private_ip',
         label: '内网IP',
-        render: ({ data }: any) => ([...data.private_ipv4_addresses, ...data.private_ipv6_addresses].join(',') || '--'),
+        render: ({ data }: any) => [
+          ...data.private_ipv4_addresses,
+          ...data.private_ipv6_addresses,
+        ].join(',') || '--',
       },
       {
         field: '_public_ip',
         label: '外网IP',
-        render: ({ data }: any) => ([...data.public_ipv4_addresses, ...data.public_ipv6_addresses].join(',') || '--'),
+        render: ({ data }: any) => [...data.public_ipv4_addresses, ...data.public_ipv6_addresses].join(',') || '--',
       },
       {
         field: 'name',
@@ -125,37 +131,37 @@ export default defineComponent({
         field: '_with_disk',
         label: '云硬盘随主机回收',
         render: ({ data }: any) => (
-          <div>
-            <Checkbox
-              checked={withDiskSet.value.has(data.id)}
-              onChange={(isChecked) => {
-                if (isChecked) withDiskSet.value.add(data.id);
-                else withDiskSet.value.delete(data.id);
-              }}
-            >
-              1 个数据盘
-            </Checkbox>
-          </div>
+            <div>
+              <Checkbox
+                checked={withDiskSet.value.has(data.id)}
+                onChange={(isChecked) => {
+                  if (isChecked) withDiskSet.value.add(data.id);
+                  else withDiskSet.value.delete(data.id);
+                }}>
+                1 个数据盘
+              </Checkbox>
+            </div>
         ),
       },
       {
         field: '_with_eip',
         label: '弹性 IP 随主机回收',
         render: ({ data }: any) => (
-          <Checkbox
-            checked={withEipSet.value.has(data.id)}
-            onChange={(isChecked) => {
-              if (isChecked) withEipSet.value.add(data.id);
-              else withEipSet.value.delete(data.id);
-            }}
-          >
-            {
-              [...data.public_ipv4_addresses, ...data.public_ipv6_addresses].join(',') || '--'
-            }
-          </Checkbox>
+            <Checkbox
+              checked={withEipSet.value.has(data.id)}
+              onChange={(isChecked) => {
+                if (isChecked) withEipSet.value.add(data.id);
+                else withEipSet.value.delete(data.id);
+              }}>
+              {[
+                ...data.public_ipv4_addresses,
+                ...data.public_ipv6_addresses,
+              ].join(',') || '--'}
+            </Checkbox>
         ),
       },
-    ].filter(({ field }) => !['_with_disk', '_with_eip'].includes(field) || operationType.value === Operations.Recycle));
+    ].filter(({ field }) => !['_with_disk', '_with_eip'].includes(field)
+          || operationType.value === Operations.Recycle));
 
     // const computedPreviousOperationType = computed(() => {
     //   switch (operationType.value) {
@@ -208,8 +214,18 @@ export default defineComponent({
           case Operations.Recycle: {
             targetHost.value = [...runningHosts, ...shutdownHosts];
             unTargetHost.value = [...unRunningHosts, ...unShutdownHosts];
+            const targetIdsSet = new Set([...runningHosts, ...shutdownHosts].map(({ id }) => id));
+            const untargetIdSet = new Set();
+            unTargetHost.value = [...unRunningHosts, ...unShutdownHosts].reduce((acc, cur) => {
+              if (!untargetIdSet.has(cur.id) && !targetIdsSet.has(cur.id)) {
+                acc.push(cur);
+                untargetIdSet.add(cur.id);
+              }
+              return acc;
+            }, []);
           }
         }
+        handleSwitch(true);
         isConfirmDisabled.value = targetHost.value.length === 0;
       },
     );
@@ -234,9 +250,19 @@ export default defineComponent({
       // }
       return (
         <p class={'host-operations-selection-tip'}>
-          已选择 <span class={'host-operations-selection-tip-all'}>{ props.selections.length }</span> 个主机，
-          其中可{ targetOperationName } <span class={'host-operations-selection-tip-target'}>{ targetHost.value.length }</span> 个，
-          不可{ targetOperationName } <span class={'host-operations-selection-tip-untarget'}>{ unTargetHost.value.length }</span> 个。
+          已选择{' '}
+          <span class={'host-operations-selection-tip-all'}>
+            {props.selections.length}
+          </span>{' '}
+          个主机， 其中可{targetOperationName}{' '}
+          <span class={'host-operations-selection-tip-target'}>
+            {targetHost.value.length}
+          </span>{' '}
+          个， 不可{targetOperationName}{' '}
+          <span class={'host-operations-selection-tip-untarget'}>
+            {unTargetHost.value.length}
+          </span>{' '}
+          个。
           <Button text theme='primary'>
             查看{targetOperationName}规则
           </Button>
@@ -314,6 +340,7 @@ export default defineComponent({
           message: '操作成功',
           theme: 'success',
         });
+        props.onFinished('confirm');
       } catch (err) {
         Message({
           message: '操作失败',
@@ -322,21 +349,10 @@ export default defineComponent({
       } finally {
         isLoading.value = false;
         operationType.value = Operations.None;
-        props.onFinished();
       }
     };
 
     const operationsDisabled = computed(() => !props.selections.length);
-
-    watch(
-      () => props.selections,
-      () => {
-        handleSwitch(true);
-      },
-      {
-        deep: true,
-      },
-    );
 
     const handleSwitch = (isTarget = true) => {
       if (isTarget) {
@@ -363,8 +379,7 @@ export default defineComponent({
                 <BkDropdownMenu>
                   {Object.entries(OperationsMap).map(([opType, opName]) => (
                     <BkDropdownItem
-                      onClick={
-                        () => (operationType.value = opType as Operations)
+                      onClick={() => (operationType.value = opType as Operations)
                       }>
                       {`批量${opName}`}
                     </BkDropdownItem>
@@ -387,31 +402,26 @@ export default defineComponent({
           closeIcon={!isLoading.value}>
           {{
             default: () => (
-             <div>
-                <p>
-                  { computedContent.value }
-                </p>
+              <div>
+                <p>{computedContent.value}</p>
                 <CommonLocalTable
                   data={tableData.value}
                   columns={computedColumns.value}
-                  searchData={searchData}
-                >
-                <BkButtonGroup>
-                  <Button
-                    onClick={() => handleSwitch(true)}
-                    selected={selected.value === 'target'}
-                  >
-                    可{OperationsMap[operationType.value]}
-                  </Button>
-                  <Button
-                    onClick={() => handleSwitch(false)}
-                    selected={selected.value === 'untarget'}
-                  >
-                    不可{OperationsMap[operationType.value]}
-                  </Button>
-                </BkButtonGroup>
-              </CommonLocalTable>
-             </div>
+                  searchData={searchData}>
+                  <BkButtonGroup>
+                    <Button
+                      onClick={() => handleSwitch(true)}
+                      selected={selected.value === 'target'}>
+                      可{OperationsMap[operationType.value]}
+                    </Button>
+                    <Button
+                      onClick={() => handleSwitch(false)}
+                      selected={selected.value === 'untarget'}>
+                      不可{OperationsMap[operationType.value]}
+                    </Button>
+                  </BkButtonGroup>
+                </CommonLocalTable>
+              </div>
             ),
             footer: (
               <>
@@ -422,7 +432,10 @@ export default defineComponent({
                   loading={isLoading.value}>
                   确定
                 </Button>
-                <Button onClick={dialogRef?.value?.handleClose} class='ml10' disabled={isLoading.value}>
+                <Button
+                  onClick={dialogRef?.value?.handleClose}
+                  class='ml10'
+                  disabled={isLoading.value}>
                   取消
                 </Button>
               </>

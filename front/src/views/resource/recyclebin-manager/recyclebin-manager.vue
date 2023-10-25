@@ -15,7 +15,6 @@
         <bk-tab
           type="card-grid"
           v-model:active="selectedType"
-          @change="(val) => handleSelected(val)"
         >
           <template #setting>
             <div
@@ -367,26 +366,6 @@ export default defineComponent({
       resetSelections,
     } = useSelection();
 
-    // 选择类型
-    const handleSelected = (v: 'cvm' | 'disk') => {
-      const rule = {
-        field: 'res_type',
-        op: 'eq',
-        value: v,
-      };
-      const idx = state.filter.rules.findIndex(({ field }) => field === 'res_type');
-      if (idx === -1) state.filter.rules.push(rule);
-      else state.filter.rules[idx] = rule;
-      state.selectedType = v;
-      router.push({
-        query: {
-          ...route.query,
-          type: v,
-        },
-      });
-      resetSelections();
-    };
-
     // 确定回收站保留时长
     const handleSettingConfirm = async () => {
       isSettingDialogLoading.value = true;
@@ -406,13 +385,8 @@ export default defineComponent({
     };
 
     const handleLink = (cvmId: string) => {
-      router.push({
-        query: {
-          ...route.query,
-          type: 'cvm',
-          cvm: cvmId,
-        },
-      });
+      route.query.cvm = cvmId;
+      state.selectedType = 'cvm';
     };
 
     // 是否精确
@@ -424,22 +398,6 @@ export default defineComponent({
         });
       },
     );
-
-    watch(
-      () => route.query.type,
-      (type) => {
-        handleSelected(type as 'cvm' | 'disk');
-      },
-    );
-
-    watch(() => route.params, (params) => {
-      console.log(params.type);
-      if (params.type) {
-        // @ts-ignore
-        state.selectedType = params.type;
-        handleSelected(params.type);
-      }
-    }, { immediate: true });
 
     watch(
       () => resourceAccountStore.resourceAccount,
@@ -511,14 +469,24 @@ export default defineComponent({
     watch(
       () => state.selectedType,
       (type) => {
-        if (type === 'disk') {
-          router.push({
-            query: {
-              ...route.query,
-              cvm: undefined,
-            },
-          });
-        }
+        const rule = {
+          field: 'res_type',
+          op: 'eq',
+          value: type,
+        };
+        const idx = state.filter.rules.findIndex(({ field }) => field === 'res_type');
+        if (idx === -1) state.filter.rules.push(rule);
+        else state.filter.rules[idx] = rule;
+        state.selectedType = type;
+        router.push({
+          path: whereAmI.value === Senarios.business ? '/business/recyclebin' : '/resource/resource/recycle',
+          query: {
+            ...route.query,
+            type,
+            cvm: type === 'disk' ? undefined : route.query.cvm,
+          },
+        });
+        resetSelections();
       },
       {
         immediate: true,
@@ -654,7 +622,6 @@ export default defineComponent({
       handleDialogConfirm,
       handleJump,
       handleOperate,
-      handleSelected,
       isLoading,
       handlePageSizeChange,
       handlePageChange,
