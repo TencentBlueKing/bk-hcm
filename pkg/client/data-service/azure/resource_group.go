@@ -34,7 +34,7 @@ type ResourceGroupClient struct {
 	client rest.ClientInterface
 }
 
-// ResourceGroupClient create a new ResourceGroupName api client.
+// NewResourceGroupClient create a new ResourceGroupName api client.
 func NewResourceGroupClient(client rest.ClientInterface) *ResourceGroupClient {
 	return &ResourceGroupClient{
 		client: client,
@@ -113,7 +113,7 @@ func (cli *ResourceGroupClient) BatchCreateResourceGroup(ctx context.Context, h 
 	return resp.Data, nil
 }
 
-// BatchUpdateResourceGroup batch create ResourceGroupName.
+// BatchUpdateRG batch create ResourceGroupName.
 func (cli *ResourceGroupClient) BatchUpdateRG(ctx context.Context, h http.Header, request *protorg.
 	AzureRGBatchUpdateReq) error {
 

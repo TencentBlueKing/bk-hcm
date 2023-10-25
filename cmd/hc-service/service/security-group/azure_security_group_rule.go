@@ -78,24 +78,7 @@ func (g *securityGroup) BatchCreateAzureSGRule(cts *rest.Contexts) (interface{},
 		opt.EgressRuleSet = make([]securitygrouprule.AzureCreate, 0, len(req.EgressRuleSet))
 
 		for _, rule := range req.EgressRuleSet {
-			opt.EgressRuleSet = append(opt.EgressRuleSet, securitygrouprule.AzureCreate{
-				Name:                                rule.Name,
-				Description:                         rule.Memo,
-				DestinationAddressPrefix:            rule.DestinationAddressPrefix,
-				DestinationAddressPrefixes:          rule.DestinationAddressPrefixes,
-				CloudDestinationAppSecurityGroupIDs: nil,
-				DestinationPortRange:                rule.DestinationPortRange,
-				DestinationPortRanges:               rule.DestinationPortRanges,
-				Protocol:                            rule.Protocol,
-				SourceAddressPrefix:                 rule.SourceAddressPrefix,
-				SourceAddressPrefixes:               rule.SourceAddressPrefixes,
-				CloudSourceAppSecurityGroupIDs:      nil,
-				SourcePortRange:                     rule.SourcePortRange,
-				SourcePortRanges:                    rule.SourcePortRanges,
-				Priority:                            rule.Priority,
-				Type:                                rule.Type,
-				Access:                              rule.Access,
-			})
+			opt.EgressRuleSet = append(opt.EgressRuleSet, convAzureRule(rule))
 		}
 	}
 
@@ -103,24 +86,7 @@ func (g *securityGroup) BatchCreateAzureSGRule(cts *rest.Contexts) (interface{},
 		opt.IngressRuleSet = make([]securitygrouprule.AzureCreate, 0, len(req.IngressRuleSet))
 
 		for _, rule := range req.IngressRuleSet {
-			opt.IngressRuleSet = append(opt.IngressRuleSet, securitygrouprule.AzureCreate{
-				Name:                                rule.Name,
-				Description:                         rule.Memo,
-				DestinationAddressPrefix:            rule.DestinationAddressPrefix,
-				DestinationAddressPrefixes:          rule.DestinationAddressPrefixes,
-				CloudDestinationAppSecurityGroupIDs: nil,
-				DestinationPortRange:                rule.DestinationPortRange,
-				DestinationPortRanges:               rule.DestinationPortRanges,
-				Protocol:                            rule.Protocol,
-				SourceAddressPrefix:                 rule.SourceAddressPrefix,
-				SourceAddressPrefixes:               rule.SourceAddressPrefixes,
-				CloudSourceAppSecurityGroupIDs:      nil,
-				SourcePortRange:                     rule.SourcePortRange,
-				SourcePortRanges:                    rule.SourcePortRanges,
-				Priority:                            rule.Priority,
-				Type:                                rule.Type,
-				Access:                              rule.Access,
-			})
+			opt.IngressRuleSet = append(opt.IngressRuleSet, convAzureRule(rule))
 		}
 	}
 	rules, err := client.CreateSecurityGroupRule(cts.Kit, opt)
@@ -128,6 +94,20 @@ func (g *securityGroup) BatchCreateAzureSGRule(cts *rest.Contexts) (interface{},
 		logs.Errorf("request adaptor to create azure security group rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
+
+	createReq := convAzureDSReq(rules, sg, req)
+	result, err := g.dataCli.Azure.SecurityGroup.BatchCreateSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(),
+		createReq, sgID)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func convAzureDSReq(rules []*securitygrouprule.AzureSGRule,
+	sg *corecloud.SecurityGroup[corecloud.AzureSecurityGroupExtension],
+	req *hcservice.AzureSGRuleCreateReq) *protocloud.AzureSGRuleCreateReq {
 
 	list := make([]protocloud.AzureSGRuleBatchCreate, 0, len(rules))
 	for _, rule := range rules {
@@ -161,8 +141,6 @@ func (g *securityGroup) BatchCreateAzureSGRule(cts *rest.Contexts) (interface{},
 			spec.Type = enumor.Ingress
 		case armnetwork.SecurityRuleDirectionOutbound:
 			spec.Type = enumor.Egress
-		default:
-			return nil, fmt.Errorf("unknown security group rule direction: %s", *rule.Direction)
 		}
 
 		if len(rule.DestinationApplicationSecurityGroups) != 0 {
@@ -187,13 +165,28 @@ func (g *securityGroup) BatchCreateAzureSGRule(cts *rest.Contexts) (interface{},
 	createReq := &protocloud.AzureSGRuleCreateReq{
 		Rules: list,
 	}
-	result, err := g.dataCli.Azure.SecurityGroup.BatchCreateSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(),
-		createReq, sgID)
-	if err != nil {
-		return nil, err
-	}
+	return createReq
+}
 
-	return result, nil
+func convAzureRule(rule hcservice.AzureSGRuleCreate) securitygrouprule.AzureCreate {
+	return securitygrouprule.AzureCreate{
+		Name:                                rule.Name,
+		Description:                         rule.Memo,
+		DestinationAddressPrefix:            rule.DestinationAddressPrefix,
+		DestinationAddressPrefixes:          rule.DestinationAddressPrefixes,
+		CloudDestinationAppSecurityGroupIDs: nil,
+		DestinationPortRange:                rule.DestinationPortRange,
+		DestinationPortRanges:               rule.DestinationPortRanges,
+		Protocol:                            rule.Protocol,
+		SourceAddressPrefix:                 rule.SourceAddressPrefix,
+		SourceAddressPrefixes:               rule.SourceAddressPrefixes,
+		CloudSourceAppSecurityGroupIDs:      nil,
+		SourcePortRange:                     rule.SourcePortRange,
+		SourcePortRanges:                    rule.SourcePortRanges,
+		Priority:                            rule.Priority,
+		Type:                                rule.Type,
+		Access:                              rule.Access,
+	}
 }
 
 // UpdateAzureSGRule update azure security group rule.
@@ -263,12 +256,22 @@ func (g *securityGroup) UpdateAzureSGRule(cts *rest.Contexts) (interface{}, erro
 		return nil, err
 	}
 
+	if err = g.updateAzureDSRule(cts, rule, req, sg); err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+func (g *securityGroup) updateAzureDSRule(cts *rest.Contexts, rule *corecloud.AzureSecurityGroupRule,
+	req *hcservice.AzureSGRuleUpdateReq, sg *corecloud.SecurityGroup[corecloud.AzureSecurityGroupExtension]) error {
+
 	index := strings.LastIndex(rule.CloudID, rule.Name)
 	cloudID := rule.CloudID[0:index] + req.Name
 	updateReq := &protocloud.AzureSGRuleBatchUpdateReq{
 		Rules: []protocloud.AzureSGRuleUpdate{
 			{
-				ID:                                  id,
+				ID:                                  rule.ID,
 				CloudID:                             cloudID,
 				Name:                                req.Name,
 				Memo:                                req.Memo,
@@ -292,12 +295,13 @@ func (g *securityGroup) UpdateAzureSGRule(cts *rest.Contexts) (interface{}, erro
 			},
 		},
 	}
-	err = g.dataCli.Azure.SecurityGroup.BatchUpdateSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), updateReq, sgID)
+	err := g.dataCli.Azure.SecurityGroup.BatchUpdateSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), updateReq, sg.ID)
 	if err != nil {
-		return nil, err
+		logs.Errorf("call dataservice to BatchUpdateSecurityGroupRule failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return err
 	}
 
-	return nil, nil
+	return nil
 }
 
 func (g *securityGroup) getAzureSGRuleByID(cts *rest.Contexts, id string, sgID string) (*corecloud.
