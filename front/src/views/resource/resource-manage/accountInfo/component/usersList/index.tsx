@@ -50,7 +50,13 @@ export default defineComponent({
       {
         label: '所属业务',
         field: 'bk_biz_ids',
-        render: ({ data }: any) => data?.bk_biz_ids?.join(',') || '-',
+        render: ({ data }: any) => (data?.bk_biz_ids.length > 0
+          ? data?.bk_biz_ids
+            .map((bk_biz_id: number) => {
+              return businessMapStore.getNameFromBusinessMap(bk_biz_id);
+            })
+            ?.join(',')
+          : '-'),
       },
       {
         label: '备注',
@@ -67,8 +73,8 @@ export default defineComponent({
         field: 'reviser',
       },
       {
-        label: '创建时间',
-        field: 'created_at',
+        label: '更新时间',
+        field: 'updated_at',
       },
       {
         label: '操作',
@@ -130,7 +136,13 @@ export default defineComponent({
           {
             label: '所属业务',
             field: 'bk_biz_ids',
-            render: ({ data }: any) => data?.bk_biz_ids?.join(',') || '-',
+            render: ({ data }: any) => (data?.bk_biz_ids.length > 0
+              ? data?.bk_biz_ids
+                .map((bk_biz_id: number) => {
+                  return businessMapStore.getNameFromBusinessMap(bk_biz_id);
+                })
+                ?.join(',')
+              : '-'),
           },
           {
             label: '备注',
@@ -147,8 +159,8 @@ export default defineComponent({
             field: 'reviser',
           },
           {
-            label: '创建时间',
-            field: 'created_at',
+            label: '更新时间',
+            field: 'updated_at',
           },
           {
             label: '操作',
@@ -190,7 +202,13 @@ export default defineComponent({
           {
             label: '所属业务',
             field: 'bk_biz_ids',
-            render: ({ data }: any) => data?.bk_biz_ids?.join(',') || '-',
+            render: ({ data }: any) => (data?.bk_biz_ids.length > 0
+              ? data?.bk_biz_ids
+                .map((bk_biz_id: number) => {
+                  return businessMapStore.getNameFromBusinessMap(bk_biz_id);
+                })
+                ?.join(',')
+              : '-'),
           },
           {
             label: '备注',
@@ -207,8 +225,8 @@ export default defineComponent({
             field: 'reviser',
           },
           {
-            label: '创建时间',
-            field: 'created_at',
+            label: '更新时间',
+            field: 'updated_at',
           },
           {
             label: '操作',
