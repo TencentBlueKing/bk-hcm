@@ -198,7 +198,7 @@ func (svc *cvmSvc) queryCvmRelatedRes(cts *rest.Contexts, validHandler handler.V
 	}
 	// validate biz and authorize
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Cvm,
-		Action: meta.Access, BasicInfos: basicInfo})
+		Action: meta.Find, BasicInfos: basicInfo})
 	if err != nil {
 		return nil, err
 	}
