@@ -6,7 +6,7 @@
 
 ### URL
 
-GET /api/v1/cloud/cvms/rel_res/batch
+POST /api/v1/cloud/cvms/rel_res/batch
 
 ### 输入参数
 
