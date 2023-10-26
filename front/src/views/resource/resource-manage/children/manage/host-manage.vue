@@ -284,8 +284,8 @@ getCloudAreas();
           resetSelections();
         }"
       />
-      <HostOperations :selections="selections" :on-finished="() => {
-        triggerApi();
+      <HostOperations :selections="selections" :on-finished="(type: 'confirm' | 'cancel' = 'confirm') => {
+        if(type === 'confirm') triggerApi();
         resetSelections();
       }"></HostOperations>
 

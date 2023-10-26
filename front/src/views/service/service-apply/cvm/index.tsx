@@ -990,11 +990,7 @@ export default defineComponent({
                       所在{
                         VendorEnum.TCLOUD === cond.vendor ? '可用区' : '地域'
                       }配额为 {
-                        ![VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum)
-                          ? (
-                            <><span class={'purchase-cvm-bottom-bar-form-count-tip-num'}>{ limitNum.value - usageNum.value - formData.required_count }</span> /{ limitNum.value }</>
-                          )
-                          : limitNum.value
+                        <><span class={'purchase-cvm-bottom-bar-form-count-tip-num'}>{ limitNum.value - usageNum.value - formData.required_count }</span> /{ limitNum.value }</>
                       }
                     </p>
                     )

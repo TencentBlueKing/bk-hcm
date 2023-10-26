@@ -28,6 +28,7 @@ import (
 	dataservice "hcm/pkg/api/data-service"
 	routetable "hcm/pkg/api/data-service/cloud/route-table"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -91,16 +92,16 @@ func (r *RouteTableClient) Get(ctx context.Context, h http.Header, id string) (
 }
 
 // BatchCreateRoute batch create tcloud route.
-func (r *RouteTableClient) BatchCreateRoute(ctx context.Context, h http.Header, routeTableID string,
+func (r *RouteTableClient) BatchCreateRoute(kt *kit.Kit, routeTableID string,
 	req *routetable.TCloudRouteBatchCreateReq) (*core.BatchCreateResult, error) {
 
 	resp := new(core.BatchCreateResp)
 
 	err := r.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(req).
 		SubResourcef("/route_tables/%s/routes/batch/create", routeTableID).
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
@@ -163,16 +164,16 @@ func (r *RouteTableClient) ListAllRoute(ctx context.Context, h http.Header, req 
 }
 
 // BatchUpdateRoute batch update tcloud route.
-func (r *RouteTableClient) BatchUpdateRoute(ctx context.Context, h http.Header, routeTableID string,
+func (r *RouteTableClient) BatchUpdateRoute(kt *kit.Kit, routeTableID string,
 	req *routetable.TCloudRouteBatchUpdateReq) error {
 
 	resp := new(rest.BaseResp)
 
 	err := r.client.Patch().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(req).
 		SubResourcef("/route_tables/%s/routes/batch", routeTableID).
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
@@ -187,16 +188,15 @@ func (r *RouteTableClient) BatchUpdateRoute(ctx context.Context, h http.Header, 
 }
 
 // BatchDeleteRoute batch delete tcloud route.
-func (r *RouteTableClient) BatchDeleteRoute(ctx context.Context, h http.Header, routeTableID string,
-	req *dataservice.BatchDeleteReq) error {
+func (r *RouteTableClient) BatchDeleteRoute(kt *kit.Kit, routeTableID string, req *dataservice.BatchDeleteReq) error {
 
 	resp := new(rest.BaseResp)
 
 	err := r.client.Delete().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(req).
 		SubResourcef("/route_tables/%s/routes/batch", routeTableID).
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

@@ -98,33 +98,9 @@ func UpdateSubnetRouteTableByIDs(kt *kit.Kit, vendor enumor.Vendor, subnetMap ma
 		tmpCloudIDs = append(tmpCloudIDs, tmpRouteItem.CloudRouteTableID)
 		tmpCloudSubnetIDs = append(tmpCloudSubnetIDs, tmpSubnetID)
 	}
-	subnetListReq := &core.ListReq{
-		Fields: []string{"id", "cloud_id", "cloud_route_table_id", "route_table_id"},
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{
-					Field: "cloud_id",
-					Op:    filter.In.Factory(),
-					Value: tmpCloudSubnetIDs,
-				},
-				&filter.AtomRule{
-					Field: "vendor",
-					Op:    filter.Equal.Factory(),
-					Value: vendor,
-				},
-			},
-		},
-		Page: core.NewDefaultBasePage(),
-	}
-	subnetList, err := dataCli.Global.Subnet.List(kt.Ctx, kt.Header(), subnetListReq)
+	subnetList, err := listSubnet(kt, vendor, dataCli, tmpCloudSubnetIDs)
 	if err != nil {
-		logs.Errorf("%s-routetable update subnet route_table_id failed. subnetMap: %+v, err: %v",
-			vendor, subnetMap, err)
 		return err
-	}
-	if len(subnetList.Details) == 0 {
-		return fmt.Errorf("no subnets find")
 	}
 
 	rtListReq := &core.ListReq{
@@ -185,4 +161,40 @@ func UpdateSubnetRouteTableByIDs(kt *kit.Kit, vendor enumor.Vendor, subnetMap ma
 	}
 
 	return nil
+}
+
+func listSubnet(kt *kit.Kit, vendor enumor.Vendor, dataCli *dataclient.Client, tmpCloudSubnetIDs []string) (
+	*protocloud.SubnetListResult, error) {
+
+	subnetListReq := &core.ListReq{
+		Fields: []string{"id", "cloud_id", "cloud_route_table_id", "route_table_id"},
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "cloud_id",
+					Op:    filter.In.Factory(),
+					Value: tmpCloudSubnetIDs,
+				},
+				&filter.AtomRule{
+					Field: "vendor",
+					Op:    filter.Equal.Factory(),
+					Value: vendor,
+				},
+			},
+		},
+		Page: core.NewDefaultBasePage(),
+	}
+	subnetList, err := dataCli.Global.Subnet.List(kt.Ctx, kt.Header(), subnetListReq)
+	if err != nil {
+		logs.Errorf("%s-routetable update subnet route_table_id failed. cloud_ids: %v, err: %v",
+			vendor, tmpCloudSubnetIDs, err)
+		return nil, err
+	}
+
+	if len(subnetList.Details) == 0 {
+		return nil, fmt.Errorf("subnets not find")
+	}
+
+	return subnetList, nil
 }

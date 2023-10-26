@@ -169,92 +169,109 @@ func QueryVpcIDsAndSync(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClient,
 func syncVpc(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClient,
 	dataCli *dataclient.Client, opt *QueryVpcIDsAndSyncOption, notExistCloudID []string) error {
 
+	var err error
 	switch opt.Vendor {
 	case enumor.Aws:
-		aws, err := adaptor.Aws(kt, opt.AccountID)
-		if err != nil {
-			return err
-		}
-
-		syncClient := syncaws.NewClient(dataCli, aws)
-
-		params := &syncaws.SyncBaseParams{
-			AccountID: opt.AccountID,
-			Region:    opt.Region,
-			CloudIDs:  notExistCloudID,
-		}
-
-		_, err = syncClient.CvmWithRelRes(kt, params, &syncaws.SyncCvmWithRelResOption{})
-		if err != nil {
-			logs.Errorf("sync aws vpc failed, err: %v, rid: %s", err, kt.Rid)
-			return err
-		}
+		err = syncAwsVpc(kt, adaptor, dataCli, opt, notExistCloudID)
 
 	case enumor.TCloud:
-		tcloud, err := adaptor.TCloud(kt, opt.AccountID)
-		if err != nil {
-			return err
-		}
-
-		syncClient := synctcloud.NewClient(dataCli, tcloud)
-
-		params := &synctcloud.SyncBaseParams{
-			AccountID: opt.AccountID,
-			Region:    opt.Region,
-			CloudIDs:  notExistCloudID,
-		}
-
-		_, err = syncClient.Vpc(kt, params, &synctcloud.SyncVpcOption{})
-		if err != nil {
-			logs.Errorf("sync tcloud vpc failed, err: %v, rid: %s", err, kt.Rid)
-			return err
-		}
+		err = syncTCloudVpc(kt, adaptor, dataCli, opt, notExistCloudID)
 
 	case enumor.HuaWei:
-		huawei, err := adaptor.HuaWei(kt, opt.AccountID)
-		if err != nil {
-			return err
-		}
-
-		syncClient := synchuawei.NewClient(dataCli, huawei)
-
-		params := &synchuawei.SyncBaseParams{
-			AccountID: opt.AccountID,
-			Region:    opt.Region,
-			CloudIDs:  notExistCloudID,
-		}
-
-		_, err = syncClient.Vpc(kt, params, &synchuawei.SyncVpcOption{})
-		if err != nil {
-			logs.Errorf("sync huawei vpc with res failed, err: %v, rid: %s", err, kt.Rid)
-			return err
-		}
+		err = syncHuaWeiVpc(kt, adaptor, dataCli, opt, notExistCloudID)
 
 	case enumor.Azure:
-		azure, err := adaptor.Azure(kt, opt.AccountID)
-		if err != nil {
-			return err
-		}
-
-		syncClient := syncazure.NewClient(dataCli, azure)
-
-		params := &syncazure.SyncBaseParams{
-			AccountID:         opt.AccountID,
-			ResourceGroupName: opt.ResourceGroupName,
-			CloudIDs:          notExistCloudID,
-		}
-
-		_, err = syncClient.Vpc(kt, params, &syncazure.SyncVpcOption{})
-		if err != nil {
-			logs.Errorf("sync azure vpc with res failed, err: %v, rid: %s", err, kt.Rid)
-			return err
-		}
+		err = syncAzureVpc(kt, adaptor, dataCli, opt, notExistCloudID)
 
 	default:
 		return fmt.Errorf("unknown %s vendor", opt.Vendor)
 	}
+	if err != nil {
+		logs.Errorf("sync %s vpc failed, err: %v, rid: %s", opt.Vendor, err, kt.Rid)
+		return err
+	}
 
 	return nil
+}
+
+func syncAzureVpc(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client,
+	opt *QueryVpcIDsAndSyncOption, notExistCloudID []string) error {
+
+	azure, err := adaptor.Azure(kt, opt.AccountID)
+	if err != nil {
+		return err
+	}
+
+	syncClient := syncazure.NewClient(dataCli, azure)
+
+	params := &syncazure.SyncBaseParams{
+		AccountID:         opt.AccountID,
+		ResourceGroupName: opt.ResourceGroupName,
+		CloudIDs:          notExistCloudID,
+	}
+
+	_, err = syncClient.Vpc(kt, params, &syncazure.SyncVpcOption{})
+	return err
+}
+
+func syncHuaWeiVpc(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client,
+	opt *QueryVpcIDsAndSyncOption, notExistCloudID []string) error {
+
+	huawei, err := adaptor.HuaWei(kt, opt.AccountID)
+	if err != nil {
+		return err
+	}
+
+	syncClient := synchuawei.NewClient(dataCli, huawei)
+
+	params := &synchuawei.SyncBaseParams{
+		AccountID: opt.AccountID,
+		Region:    opt.Region,
+		CloudIDs:  notExistCloudID,
+	}
+
+	_, err = syncClient.Vpc(kt, params, &synchuawei.SyncVpcOption{})
+	return err
+}
+
+func syncTCloudVpc(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client,
+	opt *QueryVpcIDsAndSyncOption, notExistCloudID []string) error {
+
+	tcloud, err := adaptor.TCloud(kt, opt.AccountID)
+	if err != nil {
+		return err
+	}
+
+	syncClient := synctcloud.NewClient(dataCli, tcloud)
+
+	params := &synctcloud.SyncBaseParams{
+		AccountID: opt.AccountID,
+		Region:    opt.Region,
+		CloudIDs:  notExistCloudID,
+	}
+
+	_, err = syncClient.Vpc(kt, params, &synctcloud.SyncVpcOption{})
+	return err
+}
+
+func syncAwsVpc(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client,
+	opt *QueryVpcIDsAndSyncOption, notExistCloudID []string) error {
+
+	aws, err := adaptor.Aws(kt, opt.AccountID)
+	if err != nil {
+		return err
+	}
+
+	syncClient := syncaws.NewClient(dataCli, aws)
+
+	params := &syncaws.SyncBaseParams{
+		AccountID: opt.AccountID,
+		Region:    opt.Region,
+		CloudIDs:  notExistCloudID,
+	}
+
+	_, err = syncClient.Vpc(kt, params, &syncaws.SyncVpcOption{})
+	return err
 }
 
 func getVpcsFromDB(kt *kit.Kit, dataCli *dataclient.Client,

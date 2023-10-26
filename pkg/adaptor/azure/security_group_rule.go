@@ -22,6 +22,7 @@ package azure
 import (
 	"fmt"
 
+	securitygroup "hcm/pkg/adaptor/types/security-group"
 	securitygrouprule "hcm/pkg/adaptor/types/security-group-rule"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -169,6 +170,37 @@ func (az *Azure) UpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.Azu
 		return err
 	}
 
+	if err = modifySgRule(sg, opt); err != nil {
+		return err
+	}
+
+	client, err := az.clientSet.securityGroupClient()
+	if err != nil {
+		return fmt.Errorf("new security group client failed, err: %v", err)
+	}
+
+	req := armnetwork.SecurityGroup{
+		Location: &opt.Region,
+		Properties: &armnetwork.SecurityGroupPropertiesFormat{
+			SecurityRules: sg.SecurityRules,
+		},
+	}
+	poller, err := client.BeginCreateOrUpdate(kt.Ctx, opt.ResourceGroupName, *sg.Name, req, nil)
+	if err != nil {
+		logs.Errorf("request to BeginCreateOrUpdate failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	_, err = poller.PollUntilDone(kt.Ctx, nil)
+	if err != nil {
+		logs.Errorf("pull the BeginCreateOrUpdate result failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+func modifySgRule(sg *securitygroup.AzureSecurityGroup, opt *securitygrouprule.AzureUpdateOption) error {
 	exist := false
 	for _, rule := range sg.SecurityRules {
 		if SPtrToLowerNoSpaceStr(rule.ID) == opt.Rule.CloudID {
@@ -217,29 +249,6 @@ func (az *Azure) UpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.Azu
 
 	if !exist {
 		return errf.Newf(errf.RecordNotFound, "security group rule: %s not found", opt.Rule.CloudID)
-	}
-
-	client, err := az.clientSet.securityGroupClient()
-	if err != nil {
-		return fmt.Errorf("new security group client failed, err: %v", err)
-	}
-
-	req := armnetwork.SecurityGroup{
-		Location: &opt.Region,
-		Properties: &armnetwork.SecurityGroupPropertiesFormat{
-			SecurityRules: sg.SecurityRules,
-		},
-	}
-	poller, err := client.BeginCreateOrUpdate(kt.Ctx, opt.ResourceGroupName, *sg.Name, req, nil)
-	if err != nil {
-		logs.Errorf("request to BeginCreateOrUpdate failed, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
-
-	_, err = poller.PollUntilDone(kt.Ctx, nil)
-	if err != nil {
-		logs.Errorf("pull the BeginCreateOrUpdate result failed, err: %v, rid: %s", err, kt.Rid)
-		return err
 	}
 
 	return nil

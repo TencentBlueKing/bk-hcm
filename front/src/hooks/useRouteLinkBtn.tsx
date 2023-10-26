@@ -46,7 +46,11 @@ export const useRouteLinkBtn = (data: IDetail, meta: IMeta) => {
 
   const handleClick = () => {
     const routeInfo = {
-      query: { id: computedId.value, type: vendor },
+      query: {
+        ...route.query,
+        id: computedId.value,
+        type: vendor,
+      },
     };
     if (route.path.includes('business')) {
       Object.assign(routeInfo, {

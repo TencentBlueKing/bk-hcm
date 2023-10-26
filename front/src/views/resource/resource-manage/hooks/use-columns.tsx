@@ -57,6 +57,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
             onClick={() => {
               const routeInfo: any = {
                 query: {
+                  ...route.query,
                   id: data[idFiled],
                   type: data.vendor,
                 },
