@@ -225,8 +225,7 @@ export default defineComponent({
           rules={formRules}
           ref={formRef}
           onSubmit={handleFormSubmit}
-          // formType='vertical'
-        >
+          formType='vertical'>
           {formConfig.value
             .filter(({ display }) => display !== false)
             .map(({ title, children }) => (

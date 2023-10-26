@@ -294,7 +294,7 @@ const businesseMenus: RouteRecordRaw[] = [
         meta: {
           backRouter: -1,
           activeKey: 'serviceApply',
-          breadcrumb: ['服务', '服务申请', '主机'],
+          breadcrumb: ['资源管理', '主机'],
           notMenu: true,
         },
       },
@@ -305,7 +305,7 @@ const businesseMenus: RouteRecordRaw[] = [
         meta: {
           backRouter: -1,
           activeKey: 'serviceApply',
-          breadcrumb: ['服务', '服务申请', 'VPC'],
+          breadcrumb: ['资源管理', 'VPC'],
           notMenu: true,
         },
       },
@@ -316,7 +316,7 @@ const businesseMenus: RouteRecordRaw[] = [
         meta: {
           backRouter: -1,
           activeKey: 'serviceApply',
-          breadcrumb: ['服务', '服务申请', '云硬盘'],
+          breadcrumb: ['资源管理', '云硬盘'],
           notMenu: true,
         },
       },
@@ -327,7 +327,7 @@ const businesseMenus: RouteRecordRaw[] = [
         meta: {
           backRouter: -1,
           activeKey: 'serviceApply',
-          breadcrumb: ['服务', '服务申请', '子网'],
+          breadcrumb: ['资源管理', '子网'],
           notMenu: true,
         },
       },

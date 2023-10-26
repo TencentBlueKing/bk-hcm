@@ -479,7 +479,8 @@ export default defineComponent({
           model={formData}
           rules={formRules}
           ref={formRef}
-          onSubmit={handleFormSubmit}>
+          onSubmit={handleFormSubmit}
+          formType='vertical'>
           {formConfig.value
             .filter(({ display }) => display !== false)
             .map(({ title, children }) => (
