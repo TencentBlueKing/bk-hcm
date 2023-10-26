@@ -83,8 +83,7 @@ export default defineComponent({
           <Button
             text
             theme='primary'
-            onClick={() => handleModifyAccount(data)}
-            loading={submitLoading.value}>
+            onClick={() => handleModifyAccount(data)}>
             编辑
           </Button>
         ),
@@ -169,8 +168,7 @@ export default defineComponent({
                 <Button
                   text
                   theme='primary'
-                  onClick={() => handleModifyAccount(data)}
-                  loading={submitLoading.value}>
+                  onClick={() => handleModifyAccount(data)}>
                   编辑
                 </Button>
             ),
@@ -235,8 +233,7 @@ export default defineComponent({
                 <Button
                   text
                   theme='primary'
-                  onClick={() => handleModifyAccount(data)}
-                  loading={submitLoading.value}>
+                  onClick={() => handleModifyAccount(data)}>
                   编辑
                 </Button>
             ),
@@ -282,7 +279,6 @@ export default defineComponent({
     });
     const formRef = ref<InstanceType<typeof Form>>(null);
     const formRules = {};
-    const submitLoading = ref(false);
     const clearUserFormParams = () => {
       Object.assign(userFormModel, {
         bk_biz_ids: [],
@@ -305,7 +301,7 @@ export default defineComponent({
     const handleModifyUserSubmit = async () => {
       await formRef.value.validate();
       try {
-        submitLoading.value = true;
+        isUserDialogLoading.value = true;
         await http.patch(
           `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/sub_accounts/${userFormModel.id}`,
           userFormModel,
@@ -319,7 +315,7 @@ export default defineComponent({
       } catch (error) {
         console.log(error);
       } finally {
-        submitLoading.value = false;
+        isUserDialogLoading.value = false;
       }
     };
 
@@ -327,6 +323,7 @@ export default defineComponent({
       () => route.query.accountId,
       (newVal) => {
         // bug：一次变化，执行三次
+        if (!newVal) return;
         filter.rules[0] = {
           op: QueryRuleOPEnum.EQ,
           field: 'account_id',
@@ -344,11 +341,14 @@ export default defineComponent({
       (vals) => {
         console.log(vals);
         filter.rules = Array.isArray(vals)
-          ? vals.map((val: any) => ({
-            field: val?.id,
-            op: QueryRuleOPEnum.EQ,
-            value: val?.values?.[0]?.id,
-          }))
+          ? [
+            filter.rules[0],
+            ...vals.map((val: any) => ({
+              field: val?.id,
+              op: QueryRuleOPEnum.EQ,
+              value: val?.values?.[0]?.id,
+            })),
+          ]
           : [];
         getUserList();
       },
