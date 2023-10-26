@@ -122,6 +122,7 @@ export default defineComponent({
                       <Button
                         theme={'primary'}
                         class={'mr8'}
+                        loading={isSubmitLoading.value}
                         onClick={handleSubmit}>
                         提交
                       </Button>

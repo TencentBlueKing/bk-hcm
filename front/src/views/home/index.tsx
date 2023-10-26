@@ -385,7 +385,9 @@ export default defineComponent({
                         onChange={handleChange}
                         theme={'dark'}
                         class={'bk-hcm-app-selector'}
-                        value={businessList.value?.[0]}
+                        value={{
+                          id: businessId.value,
+                        } || businessList.value?.[0]}
                         minWidth={360}>
                         {{
                           default: ({
