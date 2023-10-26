@@ -360,11 +360,13 @@ export default defineComponent({
     const getDiskNumByCvmIds = async () => {
       isDialogLoading.value = true;
       try {
+        const ids = props.selections.map(({ id }) => id);
         const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/cvms/rel_res/batch`, {
-          ids: props.selections.map(({ id }) => id),
+          ids,
         });
-        for (const { id, disk_count } of res.data) {
-          cvmDiskNumMap.value.set(id, disk_count);
+        for (let i = 0;i < res.data.length;i++) {
+          const { disk_count } = res.data[i];
+          cvmDiskNumMap.value.set(ids[i], disk_count);
         }
       } finally {
         isDialogLoading.value = false;
