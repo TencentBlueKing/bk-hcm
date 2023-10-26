@@ -323,6 +323,7 @@ export default defineComponent({
       () => route.query.accountId,
       (newVal) => {
         // bug：一次变化，执行三次
+        if (!newVal) return;
         filter.rules[0] = {
           op: QueryRuleOPEnum.EQ,
           field: 'account_id',
