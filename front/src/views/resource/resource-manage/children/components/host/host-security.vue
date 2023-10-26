@@ -23,6 +23,7 @@ import {
   useResourceStore,
   useAccountStore,
 } from '@/store';
+import { QueryRuleOPEnum } from '@/typings';
 
 const props = defineProps({
   data: {
@@ -38,7 +39,7 @@ const tableData = ref([]);
 const isShow = ref(false);
 const securityId = ref(0);
 const fetchUrl = ref<string>(`vendors/${props.data.vendor}/security_groups/${securityId.value}/rules/list`);
-const fetchFilter = ref<any>({ filter: { op: 'and', rules: [{ field: 'type', op: 'eq', value: activeType.value }] } });
+const fetchFilter = reactive({ op: QueryRuleOPEnum.AND, rules: [{ field: 'type', op: 'eq', value: activeType.value }] });
 const securityFetchUrl = ref<any>('security_groups/list');
 const securityFetchFilter = ref<any>({ filter: { op: 'and', rules: [{ field: 'account_id', op: 'eq', value: props.data.account_id }, { field: 'region', op: 'eq', value: props.data.region }] } });
 const isListLoading = ref(false);
@@ -94,14 +95,13 @@ const {
 } = useSelection();
 
 watch(() => activeType.value, (val) => {
-  fetchFilter.value.filter.rules[0].value = val;
+  fetchFilter.rules[0].value = val;
   state.columns.forEach((e: any) => {
     if (e.field === 'resource') {
       e.label = val === 'ingress' ? t('来源') : t('目标');
     }
   });
 });
-
 
 watch(() => selections.value, (val) => {
   const [id] = val.map((e: any) => e.id);
@@ -264,7 +264,9 @@ const {
   handlePageChange,
   handlePageSizeChange,
   handleSort,
-} = useQueryCommonList(fetchFilter.value, fetchUrl);
+} = useQueryCommonList({
+  filter: fetchFilter,
+}, fetchUrl);
 
 state.datas = datas;
 state.isLoading = isLoading;
@@ -309,7 +311,7 @@ const showRuleDialog = async () => {
   isShow.value = true;
   // 获取列表数据
   fetchUrl.value = `vendors/${props.data.vendor}/security_groups/${securityId.value}/rules/list`;
-  fetchFilter.value = { filter: { op: 'and', rules: [{ field: 'type', op: 'eq', value: activeType.value }] } };
+  fetchFilter.rules = [{ field: 'type', op: 'eq', value: activeType.value }];
   if (props.data.vendor === 'huawei') {
     const huaweiColummns = [{
       label: t('优先级'),
