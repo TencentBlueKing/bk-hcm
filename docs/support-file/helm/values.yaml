@@ -132,13 +132,13 @@ cloudserver:
   ## 日志配置
   ##
   log:
+    alsoToStdErr: false
     logDir: /data/hcm/logs
     maxPerFileSizeMB: 1024
     maxPerLineSizeKB: 2
     maxFileNum: 5
     logAppend: false
     toStdErr: false
-    alsoToStdErr: false
     verbosity: 0
   ## cloudResource cloud resource relation settings.
   cloudResource:
@@ -313,7 +313,7 @@ taskserver:
   ##
   image:
     repository: blueking/bk-hcm-taskserver
-    tag: 1.0.2
+    tag: 1.1.29-alpha.3
   ## 日志配置
   ##
   log:
