@@ -427,6 +427,7 @@ export default defineComponent({
                   <CommonLocalTable
                     data={tableData.value}
                     columns={computedColumns.value}
+                    changeData={data => tableData.value = data}
                     searchData={searchData}>
                     <BkButtonGroup>
                       <Button
