@@ -313,7 +313,7 @@ taskserver:
   ##
   image:
     repository: blueking/bk-hcm-taskserver
-    tag: 1.0.2
+    tag: 1.1.29-alpha.3
   ## 日志配置
   ##
   log:
