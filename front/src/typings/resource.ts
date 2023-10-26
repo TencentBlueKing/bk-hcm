@@ -1,3 +1,5 @@
+import { QueryRuleOPEnum } from './common';
+
 // define
 export type PlainObject = {
   [k: string]: string | boolean | number
@@ -8,7 +10,7 @@ export type DoublePlainObject = {
 };
 
 export type FilterType = {
-  op: 'and' | 'or';
+  op: 'and' | 'or' | QueryRuleOPEnum;
   rules: {
     field: string;
     op: string;

@@ -1,6 +1,6 @@
 import { SearchSelect, Loading, Table } from 'bkui-vue';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
-import { PropType, defineComponent, reactive, ref } from 'vue';
+import { PropType, defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
 import { Column } from 'bkui-vue/lib/table/props';
 
@@ -18,6 +18,10 @@ export default defineComponent({
       required: true,
       type: Array as PropType<Array<Record<string, any>>>,
     },
+    changeData: {
+      required: true,
+      type: Function as PropType<(data: Array<Record<string, any>>) => void>,
+    },
   },
   setup(props, { slots }) {
     const pagination = reactive({
@@ -27,6 +31,22 @@ export default defineComponent({
     });
     const searchVal = ref([]);
     const isLoading = ref(false);
+    const localData = ref(props.data);
+
+    watch(
+      () => searchVal.value,
+      () => {
+        if (!searchVal.value) localData.value = props.data;
+        for (const { id, values } of searchVal.value) {
+          const searchReg = new RegExp(values?.[0]?.id);
+          localData.value = localData.value.filter(item => searchReg.test(item[id]));
+        }
+      },
+      {
+        immediate: true,
+        deep: true,
+      },
+    );
     return () => (
       <>
         <div class={'felx-row'}>
@@ -39,7 +59,7 @@ export default defineComponent({
         </div>
         <Loading loading={isLoading.value}>
           <Table
-            data={props.data}
+            data={localData.value}
             columns={props.columns}
             pagination={pagination}
           />
