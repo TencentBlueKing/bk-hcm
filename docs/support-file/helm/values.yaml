@@ -132,13 +132,13 @@ cloudserver:
   ## 日志配置
   ##
   log:
+    alsoToStdErr: false
     logDir: /data/hcm/logs
     maxPerFileSizeMB: 1024
     maxPerLineSizeKB: 2
     maxFileNum: 5
     logAppend: false
     toStdErr: false
-    alsoToStdErr: false
     verbosity: 0
   ## cloudResource cloud resource relation settings.
   cloudResource:
