@@ -15,5 +15,5 @@ dependencies:
     condition: mariadb.enabled
   - name: etcd
     repository: https://charts.bitnami.com/bitnami
-    version: 8.4.x
+    version: 8.2.5
     condition: etcd.enabled
