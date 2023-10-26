@@ -1,4 +1,4 @@
-import { Button, Checkbox, Dialog, Dropdown, Message } from 'bkui-vue';
+import { Button, Checkbox, Dialog, Dropdown, Loading, Message } from 'bkui-vue';
 import { PropType, computed, defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
 import { usePreviousState } from '@/hooks/usePreviousState';
@@ -7,6 +7,8 @@ import { AngleDown } from 'bkui-vue/lib/icon';
 import { BkDropdownItem, BkDropdownMenu } from 'bkui-vue/lib/dropdown';
 import CommonLocalTable from '../commonLocalTable';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
+import http from '@/http';
+const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export enum Operations {
   None = 'none',
@@ -65,6 +67,8 @@ export default defineComponent({
     const selected = ref('target');
     const withDiskSet = ref(new Set());
     const withEipSet = ref(new Set());
+    const cvmDiskNumMap = ref(new Map());
+    const isDialogLoading = ref(false);
 
     const previousOperationType = usePreviousState(operationType);
     const resourceStore = useResourceStore();
@@ -138,7 +142,7 @@ export default defineComponent({
                   if (isChecked) withDiskSet.value.add(data.id);
                   else withDiskSet.value.delete(data.id);
                 }}>
-                1 个数据盘
+                { cvmDiskNumMap.value.get(data.id) } 个数据盘
               </Checkbox>
             </div>
         ),
@@ -181,9 +185,8 @@ export default defineComponent({
      */
     watch(
       () => operationType.value,
-      () => {
+      async () => {
         if (operationType.value === Operations.None) return;
-
         const runningHosts = [];
         const unRunningHosts = [];
 
@@ -227,6 +230,8 @@ export default defineComponent({
         }
         handleSwitch(true);
         isConfirmDisabled.value = targetHost.value.length === 0;
+
+        await getDiskNumByCvmIds();
       },
     );
 
@@ -352,6 +357,20 @@ export default defineComponent({
       }
     };
 
+    const getDiskNumByCvmIds = async () => {
+      isDialogLoading.value = true;
+      try {
+        const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/cvms/rel_res/batch`, {
+          ids: props.selections.map(({ id }) => id),
+        });
+        for (const { id, disk_count } of res.data) {
+          cvmDiskNumMap.value.set(id, disk_count);
+        }
+      } finally {
+        isDialogLoading.value = false;
+      }
+    };
+
     const operationsDisabled = computed(() => !props.selections.length);
 
     const handleSwitch = (isTarget = true) => {
@@ -402,26 +421,28 @@ export default defineComponent({
           closeIcon={!isLoading.value}>
           {{
             default: () => (
-              <div>
-                <p>{computedContent.value}</p>
-                <CommonLocalTable
-                  data={tableData.value}
-                  columns={computedColumns.value}
-                  searchData={searchData}>
-                  <BkButtonGroup>
-                    <Button
-                      onClick={() => handleSwitch(true)}
-                      selected={selected.value === 'target'}>
-                      可{OperationsMap[operationType.value]}
-                    </Button>
-                    <Button
-                      onClick={() => handleSwitch(false)}
-                      selected={selected.value === 'untarget'}>
-                      不可{OperationsMap[operationType.value]}
-                    </Button>
-                  </BkButtonGroup>
-                </CommonLocalTable>
-              </div>
+              <Loading loading={isDialogLoading.value}>
+                <div>
+                  <p>{computedContent.value}</p>
+                  <CommonLocalTable
+                    data={tableData.value}
+                    columns={computedColumns.value}
+                    searchData={searchData}>
+                    <BkButtonGroup>
+                      <Button
+                        onClick={() => handleSwitch(true)}
+                        selected={selected.value === 'target'}>
+                        可{OperationsMap[operationType.value]}
+                      </Button>
+                      <Button
+                        onClick={() => handleSwitch(false)}
+                        selected={selected.value === 'untarget'}>
+                        不可{OperationsMap[operationType.value]}
+                      </Button>
+                    </BkButtonGroup>
+                  </CommonLocalTable>
+                </div>
+              </Loading>
             ),
             footer: (
               <>
