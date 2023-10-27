@@ -8,7 +8,14 @@ import {
 } from 'vue';
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 import type { RouteRecordRaw } from 'vue-router';
-import { Menu, Navigation, Dropdown, Dialog, Exception, Button } from 'bkui-vue';
+import {
+  Menu,
+  Navigation,
+  Dropdown,
+  Dialog,
+  Exception,
+  Button,
+} from 'bkui-vue';
 import { headRouteConfig } from '@/router/header-config';
 import Breadcrumb from './breadcrumb';
 import workbench from '@/router/module/workbench';
@@ -70,13 +77,12 @@ export default defineComponent({
     const language = ref(cookie.parse(document.cookie).blueking_language || 'zh-cn');
     const isDialogShow = ref(false);
     const favoriteList = ref([]);
-    const {
-      favoriteSet,
-      addToFavorite,
-      removeFromFavorite,
-    } = useFavorite(businessId.value, favoriteList.value);
+    const { favoriteSet, addToFavorite, removeFromFavorite } = useFavorite(
+      businessId.value,
+      favoriteList.value,
+    );
 
-    const { hasPagePermission, permissionMsg, logout } = usePagePermissionStore();
+    const { hasPagePermission, permissionMsg, logout } =      usePagePermissionStore();
     // 获取业务列表
     const getBusinessList = async () => {
       try {
@@ -216,7 +222,7 @@ export default defineComponent({
     );
 
     // 选择业务
-    const handleChange = async (val: {id: number}) => {
+    const handleChange = async (val: { id: number }) => {
       businessId.value = val.id;
       accountStore.updateBizsId(businessId.value); // 设置全局业务id
       // @ts-ignore
@@ -247,14 +253,14 @@ export default defineComponent({
     const { fetchRegions } = useRegionsStore();
 
     const renderRouterView = () => {
-      if (whereAmI.value !== Senarios.resource) return <RouterView/>;
+      if (whereAmI.value !== Senarios.resource) return <RouterView />;
       return (
         <div class={'resource-manage-container'}>
           <div class='fixed-account-list-container'>
-            <AccountList/>
+            <AccountList />
           </div>
           <div></div>
-          <RouterView class={'router-view-content'}/>
+          <RouterView class={'router-view-content'} />
         </div>
       );
     };
@@ -385,9 +391,11 @@ export default defineComponent({
                         onChange={handleChange}
                         theme={'dark'}
                         class={'bk-hcm-app-selector'}
-                        value={{
-                          id: businessId.value,
-                        } || businessList.value?.[0]}
+                        value={
+                          {
+                            id: businessId.value,
+                          } || businessList.value?.[0]
+                        }
                         minWidth={360}>
                         {{
                           default: ({
@@ -397,30 +405,51 @@ export default defineComponent({
                           }) => (
                             <div class='bk-hcm-app-selector-item'>
                               <div class='bk-hcm-app-selector-item-content'>
-                                <span class={'bk-hcm-app-selector-item-content-name'}>{`${data.name}`}</span>
+                                <span
+                                  class={
+                                    'bk-hcm-app-selector-item-content-name'
+                                  }>{`${data.name}`}</span>
                                 &nbsp;&nbsp;&nbsp;
-                                <span class={'bk-hcm-app-selector-item-content-id'}>{`(#${data.id})`}</span>
+                                <span
+                                  class={
+                                    'bk-hcm-app-selector-item-content-id'
+                                  }>{`(#${data.id})`}</span>
                               </div>
 
                               <div class='bk-hcm-app-selector-item-star'>
-                                {
-                                  favoriteSet.value.has(data.id)
-                                    ? <i class={'icon bk-icon icon-collect'} style={{ color: '#CC933A' }} onClick={(event) => {
+                                {favoriteSet.value.has(data.id) ? (
+                                  <i
+                                    class={'icon bk-icon icon-collect'}
+                                    style={{ color: '#CC933A' }}
+                                    onClick={(event) => {
                                       removeFromFavorite(data.id);
                                       event.stopPropagation();
-                                    }}/>
-                                    : <i class={'icon bk-icon icon-not-favorited'} onClick={(event) => {
+                                    }}
+                                  />
+                                ) : (
+                                  <i
+                                    class={'icon bk-icon icon-not-favorited'}
+                                    onClick={(event) => {
                                       addToFavorite(data.id);
                                       event.stopPropagation();
-                                    }}/>
-                                }
+                                    }}
+                                  />
+                                )}
                               </div>
                             </div>
                           ),
                           append: () => (
-                            <div class={'app-action-content'} onClick={() => isDialogShow.value = true}>
-                              <i class={'icon bk-icon icon-plus-circle app-action-content-icon'}/>
-                              <span class={'app-action-content-text'}>新建业务</span>
+                            <div
+                              class={'app-action-content'}
+                              onClick={() => (isDialogShow.value = true)}>
+                              <i
+                                class={
+                                  'icon bk-icon icon-plus-circle app-action-content-icon'
+                                }
+                              />
+                              <span class={'app-action-content-text'}>
+                                新建业务
+                              </span>
                             </div>
                           ),
                         }}
@@ -437,85 +466,97 @@ export default defineComponent({
                       uniqueOpen={false}
                       openedKeys={openedKeys}
                       activeKey={route.meta.activeKey as string}>
-                      {menus.map(menuItem => (
-                        Array.isArray(menuItem.children) ? (
+                      {menus.map(menuItem => (Array.isArray(menuItem.children) ? (
                           <Menu.Group
                             key={menuItem.path as string}
                             name={menuItem.name as string}>
                             {{
-                              default: () => menuItem.children.filter(child => !child.meta?.notMenu).map(child => (
-                                  <RouterLink to={`${child.path}`}>
-                                    <Menu.Item
-                                      key={child.meta.activeKey as string}>
-                                      {/* {route.meta.activeKey} */}
-                                      {{
-                                        icon: () => <i class={'icon bk-icon icon-automatic-typesetting'}/>,
-                                        default: () => <p class='flex-row flex-1 justify-content-between align-items-center pr16'>
-                                          <span class='flex-1 text-ov'>
-                                            {child.name as string}
-                                          </span>
-                                        </p>,
-                                      }}
-                                    </Menu.Item>
-                                  </RouterLink>
-                              )),
+                              default: () => menuItem.children
+                                .filter(child => !child.meta?.notMenu)
+                                .map(child => (
+                                    <RouterLink to={`${child.path}`}>
+                                      <Menu.Item
+                                        key={child.meta.activeKey as string}>
+                                        {/* {route.meta.activeKey} */}
+                                        {{
+                                          icon: () => (
+                                            <i
+                                              class={
+                                                'icon bk-icon icon-automatic-typesetting'
+                                              }
+                                            />
+                                          ),
+                                          default: () => (
+                                            <p class='flex-row flex-1 justify-content-between align-items-center pr16'>
+                                              <span class='flex-1 text-ov'>
+                                                {child.name as string}
+                                              </span>
+                                            </p>
+                                          ),
+                                        }}
+                                      </Menu.Item>
+                                    </RouterLink>
+                                )),
                             }}
                           </Menu.Group>
-                        ) : (
-                          <RouterLink to={`${menuItem.path}`}>
-                            <Menu.Item key={menuItem.meta.activeKey as string}>
-                              {/* {menuItem.meta.activeKey} */}
-                              {{
-                                icon: () => <i class={'icon bk-icon icon-automatic-typesetting'}/>,
-                                default: () => menuItem.name as string,
-                              }}
-                            </Menu.Item>
-                          </RouterLink>
+                      ) : (
+                        !menuItem.meta?.notMenu && (
+                            <RouterLink to={`${menuItem.path}`}>
+                              <Menu.Item
+                                key={menuItem.meta.activeKey as string}>
+                                {/* {menuItem.meta.activeKey} */}
+                                {{
+                                  icon: () => (
+                                    <i
+                                      class={
+                                        'icon bk-icon icon-automatic-typesetting'
+                                      }
+                                    />
+                                  ),
+                                  default: () => menuItem.name as string,
+                                }}
+                              </Menu.Item>
+                            </RouterLink>
                         )
-                      ))}
+                      )))}
                     </Menu>
                   </>
                 ),
                 default: () => (
                   <>
-                    {whereAmI.value === Senarios.resource ? (
-                      // <div class='navigation-resource'>
-                      //   <div class={'card-layout'}>
-                      //     <p class={'resource-title'}>云账号1</p>
-                      //     <BkTab
-                      //       class={'ml15'}
-                      //       type={'unborder-card'}
-                      //       v-model={activeResourceTab}
-                      //     >
-                      //       {
-                      //         RESOURCE_TABS.map(({ key, label }) => (
-                      //           <BkTabPanel
-                      //             label={label}
-                      //             key={key}
-                      //             name={key}
-                      //           />
-                      //         ))
-                      //       }
-                      //     </BkTab>
-                      //   </div>
-                      // </div>
-                      null
-                    ) : (
+                    {whereAmI.value
+                    === Senarios.resource
+                    //     <p class={'resource-title'}>云账号1</p>
+                    //   <div class={'card-layout'}> // <div class='navigation-resource'>
+                    //     <BkTab
+                    //       class={'ml15'}
+                    //       type={'unborder-card'}
+                    //       v-model={activeResourceTab}
+                    //     >
+                    //       {
+                    //         RESOURCE_TABS.map(({ key, label }) => (
+                    //           <BkTabPanel
+                    //             label={label}
+                    //             key={key}
+                    //             name={key}
+                    //           />
+                    //         ))
+                    //       }
+                    //     </BkTab>
+                    //   </div>
+                    // </div>
+                      ? null : (
                       <div class='navigation-breadcrumb'>
                         <Breadcrumb></Breadcrumb>
                       </div>
-                    )}
+                      )}
                     <div
                       class={
                         ['/service/my-apply'].includes(curPath.value)
                           ? 'view-warp no-padding'
                           : 'view-warp'
                       }>
-                      {
-                        isRouterAlive.value
-                          ? renderRouterView()
-                          : null
-                      }
+                      {isRouterAlive.value ? renderRouterView() : null}
                     </div>
                   </>
                 ),
@@ -538,29 +579,27 @@ export default defineComponent({
           title=''
           dialogType='show'
           theme='primary'
-          onConfirm={ () => isDialogShow.value = false }
-          onClosed={ () => isDialogShow.value = false }
-        >
-            <Exception
-              type='building'
-              class={'hcm-create-business-dialog-exception-building-picture'}
-              title={'新建业务参考以下指引'}
-            >
-              <div class={'hcm-create-business-dialog-exception-building-tips'}>
-                {/* <p class={'hcm-create-business-dialog-exception-building-tips-text1'}>
+          onConfirm={() => (isDialogShow.value = false)}
+          onClosed={() => (isDialogShow.value = false)}>
+          <Exception
+            type='building'
+            class={'hcm-create-business-dialog-exception-building-picture'}
+            title={'新建业务参考以下指引'}>
+            <div class={'hcm-create-business-dialog-exception-building-tips'}>
+              {/* <p class={'hcm-create-business-dialog-exception-building-tips-text1'}>
                   可以按照以下方式进行查看
                 </p> */}
-                <p class={'hcm-create-business-dialog-exception-building-tips-text2'}>
-                  业务是蓝鲸配置平台的管理空间，可以满足不同团队，不同项目的资源隔离管理需求。
-                  <Button
-                    theme='primary'
-                    text
-                  >
-                    新建业务指引
-                  </Button>
-                </p>
-              </div>
-            </Exception>
+              <p
+                class={
+                  'hcm-create-business-dialog-exception-building-tips-text2'
+                }>
+                业务是蓝鲸配置平台的管理空间，可以满足不同团队，不同项目的资源隔离管理需求。
+                <Button theme='primary' text>
+                  新建业务指引
+                </Button>
+              </p>
+            </div>
+          </Exception>
         </Dialog>
       </main>
     );

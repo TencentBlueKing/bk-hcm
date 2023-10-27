@@ -293,7 +293,7 @@ const businesseMenus: RouteRecordRaw[] = [
         component: () => import('@/views/service/service-apply/cvm'),
         meta: {
           backRouter: -1,
-          activeKey: 'serviceApply',
+          activeKey: 'businessHost',
           breadcrumb: ['资源管理', '主机'],
           notMenu: true,
         },
@@ -304,7 +304,7 @@ const businesseMenus: RouteRecordRaw[] = [
         component: () => import('@/views/service/service-apply/vpc'),
         meta: {
           backRouter: -1,
-          activeKey: 'serviceApply',
+          activeKey: 'businessVpc',
           breadcrumb: ['资源管理', 'VPC'],
           notMenu: true,
         },
@@ -315,7 +315,7 @@ const businesseMenus: RouteRecordRaw[] = [
         component: () => import('@/views/service/service-apply/disk'),
         meta: {
           backRouter: -1,
-          activeKey: 'serviceApply',
+          activeKey: 'businessDisk',
           breadcrumb: ['资源管理', '云硬盘'],
           notMenu: true,
         },
@@ -326,7 +326,7 @@ const businesseMenus: RouteRecordRaw[] = [
         component: () => import('@/views/service/service-apply/subnet'),
         meta: {
           backRouter: -1,
-          activeKey: 'serviceApply',
+          activeKey: 'businessSubnet',
           breadcrumb: ['资源管理', '子网'],
           notMenu: true,
         },

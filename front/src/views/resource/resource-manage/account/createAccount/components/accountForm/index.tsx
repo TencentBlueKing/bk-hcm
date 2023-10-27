@@ -246,6 +246,7 @@ export default defineComponent({
                                : 'text'
                             }
                             rows={8}
+                            resize={!(formModel.vendor === VendorEnum.GCP)}
                             />
                           </FormItem>
                         ))
