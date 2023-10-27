@@ -52,7 +52,7 @@ const selectedCloudAccountId = computed({
     return props.cloudAccountId;
   },
   set(val) {
-    emit('update:cloudAccountId', val);
+    val && emit('update:cloudAccountId', val);
 
     selectedVendor.value = '';
     selectedRegion.value = '';
@@ -64,7 +64,7 @@ const selectedVendor = computed({
     return props.vendor;
   },
   set(val) {
-    emit('update:vendor', val);
+    val && emit('update:vendor', val);
 
     selectedRegion.value = '';
   },
@@ -84,7 +84,7 @@ const selectedResourceGroup = computed({
     return props.resourceGroup;
   },
   set(val) {
-    emit('update:resourceGroup', val);
+    val && emit('update:resourceGroup', val);
   },
 });
 
@@ -120,18 +120,15 @@ watch(
 </script>
 
 <template>
-  <CommonCard
-    :title="() => '基本信息'"
-    :layout="'grid'"
-  >
+  <CommonCard :title="() => '基本信息'" :layout="'grid'">
     <div class="cond-item" v-show="false">
       <div class="mb8">业务</div>
       <div class="cond-content">
         <business-selector
           v-model="selectedBizId"
           :authed="true"
-          :auto-select="true">
-        </business-selector>
+          :auto-select="true"
+        ></business-selector>
       </div>
     </div>
     <div>
@@ -139,12 +136,12 @@ watch(
       <div>
         <account-selector
           v-model="selectedCloudAccountId"
+          :disabled="!!resourceAccountStore?.resourceAccount?.id"
           :must-biz="!isResourcePage"
           :biz-id="selectedBizId"
+          @change="handleChangeAccount"
           :type="'resource'"
-          :disabled="!!resourceAccountStore?.resourceAccount?.id"
-          @change="handleChangeAccount">
-        </account-selector>
+        ></account-selector>
       </div>
     </div>
     <div>
@@ -167,7 +164,10 @@ watch(
     <div v-if="selectedVendor === VendorEnum.AZURE">
       <div class="mb8">资源组</div>
       <div>
-        <resource-group-selector :account-id="selectedCloudAccountId" v-model="selectedResourceGroup" />
+        <resource-group-selector
+          :account-id="selectedCloudAccountId"
+          v-model="selectedResourceGroup"
+        />
       </div>
     </div>
     <div>
