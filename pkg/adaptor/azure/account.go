@@ -20,6 +20,7 @@
 package azure
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -28,6 +29,8 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
+
+	"github.com/microsoftgraph/msgraph-sdk-go/models/odataerrors"
 )
 
 // CountAccount count account.
@@ -84,7 +87,7 @@ func (az *Azure) ListAccount(kt *kit.Kit) ([]account.AzureAccount, error) {
 // GetAccountInfoBySecret 根据秘钥获取账号信息
 // 1. https://learn.microsoft.com/en-us/rest/api/resources/subscriptions/list
 // 2. https://learn.microsoft.com/en-us/graph/api/application-list
-func (az *Azure) GetAccountInfoBySecret(kit *kit.Kit) (*cloud.AzureInfoBySecret, error) {
+func (az *Azure) GetAccountInfoBySecret(kt *kit.Kit) (*cloud.AzureInfoBySecret, error) {
 	graphClient, err := az.clientSet.graphServiceClient()
 	if err != nil {
 		return nil, err
@@ -102,7 +105,7 @@ func (az *Azure) GetAccountInfoBySecret(kit *kit.Kit) (*cloud.AzureInfoBySecret,
 	if !pager.More() {
 		return nil, fmt.Errorf("no subscription found")
 	}
-	subscriptionListResp, err := pager.NextPage(kit.Ctx)
+	subscriptionListResp, err := pager.NextPage(kt.Ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -123,9 +126,20 @@ func (az *Azure) GetAccountInfoBySecret(kit *kit.Kit) (*cloud.AzureInfoBySecret,
 	azInfo.CloudSubscriptionID = converter.PtrToVal(subscriptions[0].SubscriptionID)
 
 	// 2. 获取应用信息 https://learn.microsoft.com/en-us/graph/api/application-list
-	resp, err := graphClient.Applications().Get(kit.Ctx, nil)
+	resp, err := graphClient.Applications().Get(kt.Ctx, nil)
 	if err != nil {
-		return nil, err
+		var oDataError *odataerrors.ODataError
+		switch {
+		case errors.As(err, &oDataError):
+			if terr := oDataError.GetErrorEscaped(); terr != nil {
+				logs.Errorf("fail to get azure applications, code: %s,msg: %s, rid: %s",
+					converter.PtrToVal(terr.GetCode()), converter.PtrToVal(terr.GetMessage()), kt.Rid)
+			}
+			return nil, oDataError
+		default:
+			logs.Errorf("fail to get azure applications, error(%T): %#v", err, err)
+			return nil, err
+		}
 	}
 
 	for _, one := range resp.GetValue() {
