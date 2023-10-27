@@ -29,7 +29,7 @@ export default defineComponent({
       },
     });
 
-    const isEmptyCond = computed<boolean>(() => !props.vendor.length || !props.region.length);
+    const isEmptyCond = computed<boolean>(() => !props.vendor?.length || !props.region?.length);
 
     watchEffect(async () => {
       const filter: QueryFilterType = {
@@ -79,14 +79,17 @@ export default defineComponent({
 
       if (!isEmptyCond.value) {
         loading.value = true;
-        const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${props.vendor}/regions/${props.region}/zones/list`, {
-          filter,
-          page: {
-            count: false,
-            start: 0,
-            limit: 500,
+        const result = await http.post(
+          `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${props.vendor}/regions/${props.region}/zones/list`,
+          {
+            filter,
+            page: {
+              count: false,
+              start: 0,
+              limit: 500,
+            },
           },
-        });
+        );
         list.value = result?.data?.details ?? [];
         loading.value = false;
       }
@@ -111,29 +114,29 @@ export default defineComponent({
       list,
     });
 
-    return () => <>
-      {
-        !loading.value
-        && (!isEmptyCond.value
-          ? [
-            list.value.map(({ name, display_name }) => (
-              <Tag
-                class="tag-checkable"
-                key={name}
-                type="stroke"
-                checkable
-                checked={selected.value.includes(name)}
-                onChange={checked => handleChange(checked, name)}
-              >
-                {display_name ?? name}
-              </Tag>
-            )),
-            !list.value.length && <span>该云地域无可用区可选择</span>,
-          ]
-          : <span style={{ color: '#63656e' }}>请先选择云厂商及云地域</span>
-        )
-      }
-      { loading.value && <Loading mode='spin' size='small' /> }
-    </>;
+    return () => (
+      <>
+        {!loading.value
+          && (!isEmptyCond.value ? (
+            [
+              list.value.map(({ name, display_name }) => (
+                <Tag
+                  class='tag-checkable'
+                  key={name}
+                  type='stroke'
+                  checkable
+                  checked={selected.value.includes(name)}
+                  onChange={checked => handleChange(checked, name)}>
+                  {display_name ?? name}
+                </Tag>
+              )),
+              !list.value.length && <span>该云地域无可用区可选择</span>,
+            ]
+          ) : (
+            <span style={{ color: '#63656e' }}>请先选择云厂商及云地域</span>
+          ))}
+        {loading.value && <Loading mode='spin' size='small' />}
+      </>
+    );
   },
 });
