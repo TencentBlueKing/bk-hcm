@@ -3,7 +3,6 @@ import i18n from '@/language/i18n';
 
 const { t } = i18n.global;
 
-
 const serviceMenus: RouteRecordRaw[] = [
   {
     path: '/service/service-apply',
@@ -12,6 +11,7 @@ const serviceMenus: RouteRecordRaw[] = [
     meta: {
       activeKey: 'serviceApply',
       breadcrumb: [t('服务'), t('服务申请')],
+      notMenu: true,
     },
   },
   {

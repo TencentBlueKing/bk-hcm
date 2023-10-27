@@ -11,9 +11,9 @@ export const headRouteConfig = [
   },
   {
     id: 'service',
-    name: '服务请求',
+    name: '我的单据',
     route: 'service',
-    href: '#/service/service-apply',
+    href: '#/service/my-apply',
   },
   {
     id: 'resource',
