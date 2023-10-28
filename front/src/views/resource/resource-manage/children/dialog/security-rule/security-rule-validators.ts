@@ -2,7 +2,10 @@ import { parse, parseCIDR, IPv4, isValid } from 'ipaddr.js';
 import { SecurityRule } from './add-rule';
 import { VendorEnum } from '@/common/constant';
 
-export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) => {
+export const securityRuleValidators = (
+  data: SecurityRule,
+  vendor: VendorEnum,
+) => {
   return {
     protocalAndPort: [
       {
@@ -14,7 +17,8 @@ export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) =
       },
       {
         trigger: 'blur',
-        message: '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
+        message:
+          '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
         validator: () => {
           return isPortAvailable(data.port);
         },
@@ -70,7 +74,8 @@ export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) =
       },
       {
         trigger: 'blur',
-        message: '填写对应合法的 IP CIDR (必须带子网掩码), 注意区分 IPV4 与 IPV6',
+        message:
+          '填写对应合法的 IP CIDR (必须带子网掩码), 注意区分 IPV4 与 IPV6',
         validator: (val: string) => {
           if (vendor === VendorEnum.AWS) {
             return validateIpCidr(data[val]) === IpType.cidr;
@@ -118,7 +123,8 @@ export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) =
       },
       {
         trigger: 'blur',
-        message: '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
+        message:
+          '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
         validator: (val: string | number) => {
           return data.protocol === '*' || isPortAvailable(val);
         },
@@ -127,8 +133,17 @@ export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) =
     source_port_range: [
       {
         trigger: 'blur',
-        message: '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
+        message:
+          '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
         validator: isPortAvailable,
+      },
+    ],
+    memo: [
+      {
+        trigger: 'change',
+        message:
+          'Invalid rule description. Valid descriptions are strings less than 256 characters from the following set: a-zA-Z0-9. _-:/()#,@[]+=&;{}!$*',
+        pattern: /^[a-zA-Z0-9. _\-:/()#,@[\]+=&;{}!$*]{0,256}$/,
       },
     ],
   };
@@ -165,7 +180,7 @@ export const validateIpCidr = (ip: string): IpType => {
   if (isValid(ip)) {
     const type = parse(ip).kind();
     if (type === IpType.ipv4 && IPv4.isValidFourPartDecimal(ip)) return IpType.ipv4;
-    if (type ===  IpType.ipv6) return IpType.ipv6;
+    if (type === IpType.ipv6) return IpType.ipv6;
     return IpType.invalid;
   }
   try {
@@ -181,4 +196,4 @@ export enum IpType {
   ipv4 = 'ipv4',
   ipv6 = 'ipv6',
   cidr = 'cidr',
-};
+}
