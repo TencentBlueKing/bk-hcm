@@ -1,32 +1,18 @@
 <script setup lang="ts">
-import type {
-  FilterType,
-} from '@/typings/resource';
+import type { FilterType } from '@/typings/resource';
 
-import {
-  PropType,
-  defineExpose,
-  h,
-  computed,
-  ref,
-  onMounted,
-} from 'vue';
-import {
-  useI18n,
-} from 'vue-i18n';
-import {
-  InfoBox,
-  Message,
-  Button,
-} from 'bkui-vue';
-import {
-  useResourceStore,
-} from '@/store/resource';
+import { PropType, defineExpose, h, computed, ref, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { InfoBox, Message, Button } from 'bkui-vue';
+import { useResourceStore } from '@/store/resource';
 import useColumns from '../../hooks/use-columns';
 import useQueryList from '../../hooks/use-query-list';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import useSelection from '../../hooks/use-selection';
-import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
+import {
+  BatchDistribution,
+  DResourceType,
+} from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 const props = defineProps({
@@ -44,25 +30,15 @@ const props = defineProps({
   },
 });
 
-const {
-  selections,
-  handleSelectionChange,
-  resetSelections,
-} = useSelection();
+const { selections, handleSelectionChange, resetSelections } = useSelection();
 
 const { whereAmI } = useWhereAmI();
 
 // use hooks
-const {
-  t,
-} = useI18n();
+const { t } = useI18n();
 const resourceStore = useResourceStore();
 const { columns, settings } = useColumns('vpc');
-const {
-  searchData,
-  searchValue,
-  filter,
-} = useFilter(props);
+const { searchData, searchValue, filter } = useFilter(props);
 const {
   datas,
   pagination,
@@ -95,27 +71,35 @@ const curCloudArea = ref('');
 const hostSearchData = computed(() => {
   return [
     ...searchData.value,
-    ...[{
-      name: '管控区域',
-      id: 'bk_cloud_id',
-    }, {
-      name: '云地域',
-      id: 'region',
-    }],
+    ...[
+      {
+        name: '管控区域',
+        id: 'bk_cloud_id',
+      },
+      {
+        name: '云地域',
+        id: 'region',
+      },
+    ],
   ];
 });
-const handleBindRegion = (data) => {
+const handleBindRegion = (data: any) => {
+  console.log('1111', data);
   isDialogShow.value = true;
   curVpc.value = data;
+  curCloudArea.value = data.bk_cloud_id === -1 ? '' : data.bk_cloud_id;
 };
 
 const handleConfirm = async () => {
   isDialogBtnLoading.value = true;
   try {
-    await resourceStore.bindVPCWithCloudArea([{
-      vpc_id: curVpc.value.id,
-      bk_cloud_id: curCloudArea.value,
-    }]);
+    await resourceStore.bindVPCWithCloudArea([
+      {
+        vpc_id: curVpc.value.id,
+        bk_cloud_id: curCloudArea.value,
+      },
+    ]);
+    triggerApi();
   } finally {
     isDialogShow.value = false;
     isDialogBtnLoading.value = false;
@@ -125,13 +109,12 @@ const handleConfirm = async () => {
 const getCloudAreas = async () => {
   isDialogBtnLoading.value = true;
   try {
-    const res = await resourceStore
-      .getCloudAreas({
-        page: {
-          start: 0,
-          limit: 500,
-        },
-      });
+    const res = await resourceStore.getCloudAreas({
+      page: {
+        start: 0,
+        limit: 500,
+      },
+    });
     cloudAreaList.value = res.data?.info || [];
   } finally {
     isDialogBtnLoading.value = false;
@@ -145,64 +128,60 @@ onMounted(() => {
 const handleDeleteVpc = (data: any) => {
   const vpcIds = [data.id];
   const getRelateNum = (type: string, field = 'vpc_id', op = 'in') => {
-    return resourceStore
-      .list(
-        {
-          page: {
-            count: true,
-          },
-          filter: {
-            op: 'and',
-            rules: [{
+    return resourceStore.list(
+      {
+        page: {
+          count: true,
+        },
+        filter: {
+          op: 'and',
+          rules: [
+            {
               field,
               op,
               value: vpcIds,
-            }],
-          },
+            },
+          ],
         },
-        type,
-      );
+      },
+      type,
+    );
   };
-  Promise
-    .all([
-      getRelateNum('subnets'),
-    ])
-    .then(([subnetsResult]) => {
-      // eslint-disable-next-line max-len
-      if (subnetsResult?.data?.count) {
-        const getMessage = (result: any, name: string) => {
-          if (result?.data?.count) {
-            return `${result?.data?.count}个${name}，`;
-          }
-          return '';
-        };
-        Message({
-          theme: 'error',
-          message: `该VPC（id：${data.id}）关联${getMessage(subnetsResult, '子网')}不能删除`,
-        });
-      } else {
-        InfoBox({
-          title: '请确认是否删除',
-          subTitle: `将删除【${data.name}】`,
-          theme: 'danger',
-          headerAlign: 'center',
-          footerAlign: 'center',
-          contentAlign: 'center',
-          onConfirm() {
-            resourceStore
-              .delete(
-                'vpcs',
-                data.id,
-              ).then(() => {
-                Message({
-                  theme: 'success',
-                  message: '删除成功',
-                });
-              });
-          },
-        });
-      }
-    });
+  Promise.all([getRelateNum('subnets')]).then(([subnetsResult]) => {
+    // eslint-disable-next-line max-len
+    if (subnetsResult?.data?.count) {
+      const getMessage = (result: any, name: string) => {
+        if (result?.data?.count) {
+          return `${result?.data?.count}个${name}，`;
+        }
+        return '';
+      };
+      Message({
+        theme: 'error',
+        message: `该VPC（id：${data.id}）关联${getMessage(
+          subnetsResult,
+          '子网',
+        )}不能删除`,
+      });
+    } else {
+      InfoBox({
+        title: '请确认是否删除',
+        subTitle: `将删除【${data.name}】`,
+        theme: 'danger',
+        headerAlign: 'center',
+        footerAlign: 'center',
+        contentAlign: 'center',
+        onConfirm() {
+          resourceStore.delete('vpcs', data.id).then(() => {
+            Message({
+              theme: 'success',
+              message: '删除成功',
+            });
+          });
+        },
+      });
+    }
+  });
 };
 
 const renderColumns = [
@@ -214,38 +193,51 @@ const renderColumns = [
         'span',
         {
           onClick() {
-            emit('auth', props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete');
+            emit(
+              'auth',
+              props.isResourcePage
+                ? 'iaas_resource_delete'
+                : 'biz_iaas_resource_delete',
+            );
           },
         },
         [
-          whereAmI.value === Senarios.resource ? h(
-            Button,
-            {
-              text: true,
-              theme: 'primary',
-              class: 'mr16',
-              disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'] || data.bk_biz_id !== -1,
-              onClick() {
-                handleBindRegion(data);
+          whereAmI.value === Senarios.resource
+            ? h(
+              Button,
+              {
+                text: true,
+                theme: 'primary',
+                class: 'mr16',
+                disabled:
+                      !props.authVerifyData?.permissionAction[
+                        props.isResourcePage
+                          ? 'iaas_resource_delete'
+                          : 'biz_iaas_resource_delete'
+                      ] || data.bk_cloud_id !== -1,
+                onClick() {
+                  handleBindRegion(data);
+                },
               },
-            },
-            [
-              '绑定管控区',
-            ],
-          ) : null,
+              ['绑定管控区'],
+            )
+            : null,
           h(
             Button,
             {
               text: true,
               theme: 'primary',
-              disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'] || data.bk_biz_id !== -1,
+              disabled:
+                  !props.authVerifyData?.permissionAction[
+                    props.isResourcePage
+                      ? 'iaas_resource_delete'
+                      : 'biz_iaas_resource_delete'
+                  ] || data.bk_cloud_id !== -1,
               onClick() {
                 handleDeleteVpc(data);
               },
             },
-            [
-              t('删除'),
-            ],
+            [t('删除')],
           ),
         ],
       ));
@@ -255,21 +247,23 @@ const renderColumns = [
 </script>
 
 <template>
-  <bk-loading
-    :loading="isLoading"
-  >
+  <bk-loading :loading="isLoading">
     <section
       class="flex-row align-items-center"
-      :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
-      <slot>
-      </slot>
+      :class="
+        isResourcePage ? 'justify-content-end' : 'justify-content-between'
+      "
+    >
+      <slot></slot>
       <BatchDistribution
         :selections="selections"
         :type="DResourceType.vpcs"
-        :get-data="() => {
-          triggerApi();
-          resetSelections();
-        }"
+        :get-data="
+          () => {
+            triggerApi();
+            resetSelections();
+          }
+        "
       />
       <bk-search-select
         class="w500 ml10 search-selector-container"
@@ -302,21 +296,27 @@ const renderColumns = [
     title="VPC绑定管控区"
     :theme="'primary'"
     quick-close
-    @closed="() => isDialogShow = false"
+    @closed="() => (isDialogShow = false)"
     @confirm="handleConfirm"
     :is-loading="isDialogBtnLoading"
   >
     <p class="bind-vpc-tips">
-      注意：VPC绑定管控区后，VPC下的主机，会默认鄉定到该管控区。<br />
+      注意：VPC绑定管控区后，VPC下的主机，会默认鄉定到该管控区。
+      <br />
       当主机分配到业务后，主机也将同步到配置平台的该业务。
     </p>
     <bk-form>
       <bk-form-item label="VPC名称">
-        VPC名称: {{ curVpc.name || '--'}}
+        VPC名称: {{ curVpc.name || '--' }}
       </bk-form-item>
       <bk-form-item label="管控区名称">
         <bk-select v-model="curCloudArea">
-          <bk-option v-for="(item, index) in cloudAreaList" :key="index" :value="item.id" :label="item.name" />
+          <bk-option
+            v-for="(item, index) in cloudAreaList"
+            :key="index"
+            :value="item.id"
+            :label="item.name"
+          />
         </bk-select>
       </bk-form-item>
     </bk-form>
@@ -332,7 +332,7 @@ const renderColumns = [
 }
 .bind-vpc-tips {
   font-size: 12px;
-  color: #979BA5;
+  color: #979ba5;
   margin-bottom: 8px;
 }
 </style>

@@ -20,7 +20,10 @@ import { useBusinessMapStore } from '@/store/useBusinessMap';
 import StatusAbnormal from '@/assets/image/Status-abnormal.png';
 import StatusNormal from '@/assets/image/Status-normal.png';
 import StatusUnknown from '@/assets/image/Status-unknown.png';
-import { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../common/table/HostOperations';
+import {
+  HOST_RUNNING_STATUS,
+  HOST_SHUTDOWN_STATUS,
+} from '../common/table/HostOperations';
 import './use-columns.scss';
 
 export default (type: string, isSimpleShow = false, vendor?: string) => {
@@ -77,11 +80,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
                 });
               }
               router.push(routeInfo);
-            }}
-          >
-            {
-              render ? render(data) : data[field] || '--'
-            }
+            }}>
+            {render ? render(data) : data[field] || '--'}
           </Button>
         );
       },
@@ -135,19 +135,22 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       sort: true,
       isOnlyShowInResource: true,
       isDefaultShow: true,
-      render: ({ data, cell }: {data: {bk_biz_id: number}, cell: number}) => <bk-tag
-        v-bk-tooltips={{
-          content: businessMapStore.businessMap.get(cell),
-          disabled: !cell || cell === -1,
-        }}
-        theme={data.bk_biz_id === -1 ? false : 'success'}>
-          {
-            data.bk_biz_id === -1
-              ? '未分配'
-              : '已分配'
-          }
+      render: ({
+        data,
+        cell,
+      }: {
+        data: { bk_biz_id: number };
+        cell: number;
+      }) => (
+        <bk-tag
+          v-bk-tooltips={{
+            content: businessMapStore.businessMap.get(cell),
+            disabled: !cell || cell === -1,
+          }}
+          theme={data.bk_biz_id === -1 ? false : 'success'}>
+          {data.bk_biz_id === -1 ? '未分配' : '已分配'}
         </bk-tag>
-      ,
+      ),
     },
     {
       label: '所属业务',
@@ -158,6 +161,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '管控区域 ID',
       field: 'bk_cloud_id',
+      isDefaultShow: true,
       render({ cell }: { cell: number }) {
         if (cell > -1) {
           return cell;
@@ -257,19 +261,22 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       sort: true,
       isOnlyShowInResource: true,
       isDefaultShow: true,
-      render: ({ data, cell }: {data: {bk_biz_id: number}, cell: number}) => <bk-tag
-        v-bk-tooltips={{
-          content: businessMapStore.businessMap.get(cell),
-          disabled: !cell || cell === -1,
-        }}
-        theme={data.bk_biz_id === -1 ? false : 'success'}>
-          {
-            data.bk_biz_id === -1
-              ? '未分配'
-              : '已分配'
-          }
+      render: ({
+        data,
+        cell,
+      }: {
+        data: { bk_biz_id: number };
+        cell: number;
+      }) => (
+        <bk-tag
+          v-bk-tooltips={{
+            content: businessMapStore.businessMap.get(cell),
+            disabled: !cell || cell === -1,
+          }}
+          theme={data.bk_biz_id === -1 ? false : 'success'}>
+          {data.bk_biz_id === -1 ? '未分配' : '已分配'}
         </bk-tag>
-      ,
+      ),
     },
     {
       label: '所属业务',
@@ -443,19 +450,22 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       sort: true,
       isOnlyShowInResource: true,
       isDefaultShow: true,
-      render: ({ data, cell }: {data: {bk_biz_id: number}, cell: number}) => <bk-tag
-        v-bk-tooltips={{
-          content: businessMapStore.businessMap.get(cell),
-          disabled: !cell || cell === -1,
-        }}
-        theme={data.bk_biz_id === -1 ? false : 'success'}>
-          {
-            data.bk_biz_id === -1
-              ? '未分配'
-              : '已分配'
-          }
+      render: ({
+        data,
+        cell,
+      }: {
+        data: { bk_biz_id: number };
+        cell: number;
+      }) => (
+        <bk-tag
+          v-bk-tooltips={{
+            content: businessMapStore.businessMap.get(cell),
+            disabled: !cell || cell === -1,
+          }}
+          theme={data.bk_biz_id === -1 ? false : 'success'}>
+          {data.bk_biz_id === -1 ? '未分配' : '已分配'}
         </bk-tag>
-      ,
+      ),
     },
     {
       label: '创建时间',
@@ -694,7 +704,15 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       width: '100',
       onlyShowOnList: true,
     },
-    getLinkField('host', '内网IP', 'private_ipv4_addresses', 'id', false, data => [...data.private_ipv4_addresses, ...data.private_ipv6_addresses].join(','), false),
+    getLinkField(
+      'host',
+      '内网IP',
+      'private_ipv4_addresses',
+      'id',
+      false,
+      data => [...data.private_ipv4_addresses, ...data.private_ipv6_addresses].join(','),
+      false,
+    ),
     {
       label: '公网IP',
       field: 'vendor',
@@ -734,14 +752,26 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         // return h('span', {}, [CLOUD_HOST_STATUS[data.status] || data.status]);
         return (
           <div class={'cvm-status-container'}>
-            {
-              HOST_SHUTDOWN_STATUS.includes(data.status)
-                ? <img src={StatusAbnormal} class={'mr6'} width={13} height={13}></img>
-                : HOST_RUNNING_STATUS.includes(data.status)
-                  ? <img src={StatusNormal} class={'mr6'} width={13} height={13}></img>
-                  : <img src={StatusUnknown} class={'mr6'} width={13} height={13}></img>
-            }
-            <span>{ CLOUD_HOST_STATUS[data.status] || data.status }</span>
+            {HOST_SHUTDOWN_STATUS.includes(data.status) ? (
+              <img
+                src={StatusAbnormal}
+                class={'mr6'}
+                width={13}
+                height={13}></img>
+            ) : HOST_RUNNING_STATUS.includes(data.status) ? (
+              <img
+                src={StatusNormal}
+                class={'mr6'}
+                width={13}
+                height={13}></img>
+            ) : (
+              <img
+                src={StatusUnknown}
+                class={'mr6'}
+                width={13}
+                height={13}></img>
+            )}
+            <span>{CLOUD_HOST_STATUS[data.status] || data.status}</span>
           </div>
         );
       },
@@ -752,21 +782,23 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       sort: true,
       isOnlyShowInResource: true,
       isDefaultShow: true,
-      render: ({ data, cell }: {data: {bk_biz_id: number}, cell: number}) => <bk-tag
-        v-bk-tooltips={{
-          content: businessMapStore.businessMap.get(cell),
-          disabled: !cell || cell === -1,
-        }}
-        theme={data.bk_biz_id === -1 ? false : 'success'}>
-          {
-            data.bk_biz_id === -1
-              ? '未分配'
-              : '已分配'
-          }
+      render: ({
+        data,
+        cell,
+      }: {
+        data: { bk_biz_id: number };
+        cell: number;
+      }) => (
+        <bk-tag
+          v-bk-tooltips={{
+            content: businessMapStore.businessMap.get(cell),
+            disabled: !cell || cell === -1,
+          }}
+          theme={data.bk_biz_id === -1 ? false : 'success'}>
+          {data.bk_biz_id === -1 ? '未分配' : '已分配'}
         </bk-tag>
-      ,
+      ),
     },
-
 
     {
       label: '所属业务',
@@ -959,19 +991,22 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       sort: true,
       isOnlyShowInResource: true,
       isDefaultShow: true,
-      render: ({ data, cell }: {data: {bk_biz_id: number}, cell: number}) => <bk-tag
-        v-bk-tooltips={{
-          content: businessMapStore.businessMap.get(cell),
-          disabled: !cell || cell === -1,
-        }}
-        theme={data.bk_biz_id === -1 ? false : 'success'}>
-          {
-            data.bk_biz_id === -1
-              ? '未分配'
-              : '已分配'
-          }
+      render: ({
+        data,
+        cell,
+      }: {
+        data: { bk_biz_id: number };
+        cell: number;
+      }) => (
+        <bk-tag
+          v-bk-tooltips={{
+            content: businessMapStore.businessMap.get(cell),
+            disabled: !cell || cell === -1,
+          }}
+          theme={data.bk_biz_id === -1 ? false : 'success'}>
+          {data.bk_biz_id === -1 ? '未分配' : '已分配'}
         </bk-tag>
-      ,
+      ),
     },
     {
       label: '所属业务',
@@ -1030,7 +1065,9 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       checked: Array<string>;
     }> = ref({
       fields,
-      checked: fields.filter(field => field.isDefaultShow).map(field => field.field),
+      checked: fields
+        .filter(field => field.isDefaultShow)
+        .map(field => field.field),
     });
 
     return settings;
