@@ -1,16 +1,13 @@
 <script lang="ts" setup>
 // import InfoList from '../../../common/info-list/info-list';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
-import { ImageTypeEnum } from '@/typings';
 
-import {
-  PropType,
-} from 'vue';
+import { PropType } from 'vue';
 import { TypeEnum, useRouteLinkBtn } from '@/hooks/useRouteLinkBtn';
 import { CLOUD_HOST_STATUS } from '@/common/constant';
 
 const shortCutStr = (str: string) => {
-  if(!str) return str;
+  if (!str) return str;
   return str.split('/').reverse()[0];
 };
 
@@ -28,16 +25,16 @@ const cvmInfo = [
   {
     name: '实例ID',
     prop: 'cloud_id',
-    render: () => shortCutStr(props.data.cloud_id)
+    render: () => shortCutStr(props.data.cloud_id),
   },
   {
     name: '账号',
     prop: 'account_id',
-    render: () =>  useRouteLinkBtn(props.data, { 
+    render: () => useRouteLinkBtn(props.data, {
       id: 'account_id',
       name: 'account_id',
-      type: TypeEnum.ACCOUNT
-    })
+      type: TypeEnum.ACCOUNT,
+    }),
   },
   {
     name: '云厂商',
@@ -57,8 +54,10 @@ const cvmInfo = [
     name: '业务',
     prop: 'bk_biz_id',
     render() {
-      return `${props.data.bk_biz_id_name} (${props.data.bk_biz_id})`
-    }
+      return props.data.bk_biz_id === -1
+        ? '未分配'
+        : `${props.data.bk_biz_id_name} (${props.data.bk_biz_id})`;
+    },
   },
   {
     name: '创建时间',
@@ -88,16 +87,16 @@ const netInfo = [
   {
     name: '所属网络',
     prop: 'cloud_vpc_ids',
-    render: () =>  useRouteLinkBtn(props.data, { 
+    render: () => useRouteLinkBtn(props.data, {
       id: 'vpc_ids',
       name: 'cloud_vpc_ids',
-      type: TypeEnum.VPC
-    })
+      type: TypeEnum.VPC,
+    }),
   },
   {
     name: '接口名称',
     prop: 'cloud_network_interface_ids',
-    render: () => shortCutStr(props.data.cloud_network_interface_ids[0])
+    render: () => shortCutStr(props.data.cloud_network_interface_ids[0]),
   },
   {
     name: '私有IPv4地址',
@@ -132,8 +131,8 @@ const settingInfo = [
     render: () => useRouteLinkBtn(props.data, {
       id: 'image_id',
       type: TypeEnum.IMAGE,
-      name: 'cloud_image_id'
-    })
+      name: 'cloud_image_id',
+    }),
   },
 ];
 </script>
@@ -145,20 +144,28 @@ const settingInfo = [
   </div>
   <h3 class="info-title">网络信息</h3>
   <div class="warp-info">
-    <detail-info class="mt20" :fields="netInfo" :detail="props.data"></detail-info>
+    <detail-info
+      class="mt20"
+      :fields="netInfo"
+      :detail="props.data"
+    ></detail-info>
   </div>
   <h3 class="info-title">配置信息</h3>
   <div class="warp-info">
-    <detail-info class="mt20" :fields="settingInfo" :detail="props.data"></detail-info>
+    <detail-info
+      class="mt20"
+      :fields="settingInfo"
+      :detail="props.data"
+    ></detail-info>
   </div>
 </template>
 
 <style lang="scss" scoped>
-  .info-title {
-    font-size: 14px;
-    margin: 20px 0 5px;
-  }
-  :deep(.host-info) .detail-info-main {
-    height: auto !important;
-  }
+.info-title {
+  font-size: 14px;
+  margin: 20px 0 5px;
+}
+:deep(.host-info) .detail-info-main {
+  height: auto !important;
+}
 </style>

@@ -1,16 +1,13 @@
 <script lang="ts" setup>
 // import InfoList from '../../../common/info-list/info-list';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
-import { HostCloudEnum } from '@/typings';
 
-import {
-  PropType,
-} from 'vue';
+import { PropType } from 'vue';
 import { useRouteLinkBtn, TypeEnum } from '@/hooks/useRouteLinkBtn';
 import { CLOUD_HOST_STATUS, VendorEnum } from '@/common/constant';
 import { useRegionsStore } from '@/store/useRegionsStore';
 
-const {getRegionName} = useRegionsStore();
+const { getRegionName } = useRegionsStore();
 
 const props = defineProps({
   data: {
@@ -30,11 +27,11 @@ const cvmInfo = [
   {
     name: '账号',
     prop: 'account_id',
-    render: () =>  useRouteLinkBtn(props.data, { 
+    render: () => useRouteLinkBtn(props.data, {
       id: 'account_id',
       name: 'account_id',
-      type: TypeEnum.ACCOUNT
-    })
+      type: TypeEnum.ACCOUNT,
+    }),
   },
   {
     name: '云厂商',
@@ -43,7 +40,7 @@ const cvmInfo = [
   {
     name: '地域',
     prop: 'region',
-    render: () => getRegionName(VendorEnum.AWS, props.data.region)
+    render: () => getRegionName(VendorEnum.AWS, props.data.region),
   },
   {
     name: '可用区域',
@@ -53,8 +50,10 @@ const cvmInfo = [
     name: '业务',
     prop: 'bk_biz_id',
     render() {
-      return `${props.data.bk_biz_id_name} (${props.data.bk_biz_id})`
-    }
+      return props.data.bk_biz_id === -1
+        ? '未分配'
+        : `${props.data.bk_biz_id_name} (${props.data.bk_biz_id})`;
+    },
   },
   {
     name: '启动时间',
@@ -87,20 +86,20 @@ const netInfo = [
   {
     name: '所属网络',
     prop: 'cloud_vpc_ids',
-    render: () =>  useRouteLinkBtn(props.data, { 
+    render: () => useRouteLinkBtn(props.data, {
       id: 'vpc_ids',
       name: 'cloud_vpc_ids',
-      type: TypeEnum.VPC
-    })
+      type: TypeEnum.VPC,
+    }),
   },
   {
     name: '所属子网',
     prop: 'cloud_subnet_ids',
-    render: () =>  useRouteLinkBtn(props.data, { 
+    render: () => useRouteLinkBtn(props.data, {
       id: 'subnet_ids',
       name: 'cloud_subnet_ids',
-      type: TypeEnum.SUBNET
-    })
+      type: TypeEnum.SUBNET,
+    }),
   },
   // {
   //   name: '用作公网网关',
@@ -157,8 +156,8 @@ const settingInfo = [
     render: () => useRouteLinkBtn(props.data, {
       id: 'image_id',
       type: TypeEnum.IMAGE,
-      name: 'cloud_image_id'
-    })
+      name: 'cloud_image_id',
+    }),
   },
 ];
 </script>
@@ -170,20 +169,28 @@ const settingInfo = [
   </div>
   <h3 class="info-title">网络信息</h3>
   <div class="warp-info">
-    <detail-info class="mt20" :fields="netInfo" :detail="props.data"></detail-info>
+    <detail-info
+      class="mt20"
+      :fields="netInfo"
+      :detail="props.data"
+    ></detail-info>
   </div>
   <h3 class="info-title">配置信息</h3>
   <div class="warp-info">
-    <detail-info class="mt20" :fields="settingInfo" :detail="props.data"></detail-info>
+    <detail-info
+      class="mt20"
+      :fields="settingInfo"
+      :detail="props.data"
+    ></detail-info>
   </div>
 </template>
 
 <style lang="scss" scoped>
-  .info-title {
-    font-size: 14px;
-    margin: 20px 0 5px;
-  }
-  :deep(.host-info) .detail-info-main {
-    height: auto !important;
-  }
+.info-title {
+  font-size: 14px;
+  margin: 20px 0 5px;
+}
+:deep(.host-info) .detail-info-main {
+  height: auto !important;
+}
 </style>
