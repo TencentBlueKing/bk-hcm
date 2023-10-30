@@ -70,6 +70,8 @@ const selectedVendor = computed({
   },
 });
 
+const selectedVendorName = computed(() => CloudType[selectedVendor.value]);
+
 const selectedRegion = computed({
   get() {
     return props.region;
@@ -89,6 +91,7 @@ const selectedResourceGroup = computed({
 });
 
 const handleChangeAccount = (account: any) => {
+  console.log(account);
   vendorList.value = [
     {
       id: account?.vendor,
@@ -149,14 +152,14 @@ watch(
       <div>
         <bk-select
           :clearable="false"
-          v-model="selectedVendor"
+          v-model="selectedVendorName"
           :disabled="!!resourceAccountStore?.resourceAccount?.id"
         >
           <bk-option
             v-for="(item, index) in vendorList"
             :key="index"
             :value="item.id"
-            :label="item.id"
+            :label="item.name"
           />
         </bk-select>
       </div>
