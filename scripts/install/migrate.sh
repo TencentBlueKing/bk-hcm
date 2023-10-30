@@ -104,7 +104,7 @@ arg_check() {
         a) TARGET_VERSION_FILE=$OPTARG ;;
         w) SQLDIR=$OPTARG ;;
         h) help;exit 0;;
-        *) help;exit -1;;
+        *) help;exit 1;;
         esac
     done
 
@@ -113,7 +113,7 @@ arg_check() {
         TARGE_VERSION=$(head -n1 ${TARGET_VERSION_FILE})
         if [ -z "$TARGE_VERSION" ]; then
             echo "[ERROR] Fail to get target version! Please use -t to specify version, or -a to specify version file."
-            exit -1
+            exit 1
         fi
         echo got target version \($TARGE_VERSION\) from $TARGET_VERSION_FILE
     fi
@@ -126,7 +126,7 @@ arg_check() {
     echo target=$TARGE_VERSION current=$CURRENT_VERSION
     if ver_ge $CURRENT_VERSION $TARGE_VERSION; then
         echo "[ERROR] current($CURRENT_VERSION) >= target($TARGE_VERSION)"
-        exit -1
+        exit 1
     fi
 }
 
@@ -151,7 +151,7 @@ main() {
         mysqla <$sqlfile
         if [ $? -ne 0 ]; then
             echo "[ERROR] Fail to execute $sqlfile! Exiting..."
-            exit -1
+            exit 1
         fi
     done
 }

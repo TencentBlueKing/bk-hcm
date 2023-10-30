@@ -18,6 +18,7 @@
 package cvm
 
 import (
+	"errors"
 	"fmt"
 
 	proto "hcm/pkg/api/cloud-server/cvm"
@@ -38,7 +39,6 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/hooks/handler"
-	"hcm/pkg/tools/json"
 	"hcm/pkg/tools/maps"
 	"hcm/pkg/tools/slice"
 )
@@ -174,9 +174,12 @@ func (svc *cvmSvc) recycleCvm(kt *kit.Kit, req *proto.CvmRecycleReq,
 				dsrecord.RecycleReq{ID: info.ID, Detail: cvmStatus[info.ID].CvmRecycleDetail})
 		}
 	}
+	if len(opt.Infos) == 0 {
+		return "", errors.New("all cvm recycle failed")
+	}
 
 	// 创建回收记录
-	taskID, err = svc.client.DataService().Global.RecycleRecord.BatchRecycleCloudRes(kt.Ctx, kt.Header(), opt)
+	taskID, err = svc.client.DataService().Global.RecycleRecord.BatchRecycleCloudRes(kt, opt)
 	if err != nil {
 		logs.Errorf("fail to recycle cvm, err: %v, rid: %s", err, kt.Rid)
 		for _, info := range opt.Infos {
@@ -222,7 +225,7 @@ func (svc *cvmSvc) recycleCleanUp(kt *kit.Kit, cvmStatus map[string]*recycle.Cvm
 	return nil
 }
 
-// markRelatedRecycleStatus 将关联资源标记为回收状态
+// markRelatedRecycleStatus 将关联资源标记为回收状态, 创建关联回收任务
 func (svc *cvmSvc) markRelatedRecycleStatus(kt *kit.Kit, cvmStatus map[string]*recycle.CvmDetail) error {
 	var diskReqs []dsrecord.RecycleReq
 	var eipIds []string
@@ -249,7 +252,7 @@ func (svc *cvmSvc) markRelatedRecycleStatus(kt *kit.Kit, cvmStatus map[string]*r
 			DefaultRecycleTime: cc.CloudServer().Recycle.AutoDeleteTime,
 			Infos:              diskReqs,
 		}
-		_, err := svc.client.DataService().Global.RecycleRecord.BatchRecycleCloudRes(kt.Ctx, kt.Header(), opt)
+		_, err := svc.client.DataService().Global.RecycleRecord.BatchRecycleCloudRes(kt, opt)
 		if err != nil {
 			logs.Errorf("fail to create related disk recycle record, err: %v, disk infos: %v, rid: %s",
 				err, diskReqs, kt.Rid)
@@ -358,7 +361,7 @@ func (svc *cvmSvc) recoverCvm(cts *rest.Contexts, validHandler handler.ValidWith
 		Filter: tools.ContainersExpression("id", req.RecordIDs),
 		Page:   &core.BasePage{Limit: constant.BatchOperationMaxLimit},
 	}
-	records, err := svc.client.DataService().Global.RecycleRecord.ListRecycleRecord(cts.Kit, listReq)
+	records, err := svc.client.DataService().Global.RecycleRecord.ListCvmRecycleRecord(cts.Kit, listReq)
 	if err != nil {
 		return nil, err
 	}
@@ -412,7 +415,7 @@ func (svc *cvmSvc) recoverCvm(cts *rest.Contexts, validHandler handler.ValidWith
 		RecordIDs: req.RecordIDs,
 	}
 
-	err = svc.client.DataService().Global.RecycleRecord.BatchRecoverCloudResource(cts.Kit.Ctx, cts.Kit.Header(), opt)
+	err = svc.client.DataService().Global.RecycleRecord.BatchRecoverCloudResource(cts.Kit, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -423,39 +426,27 @@ func (svc *cvmSvc) recoverCvm(cts *rest.Contexts, validHandler handler.ValidWith
 	return nil, nil
 }
 
-func (svc *cvmSvc) recoveryRelatedRes(cts *rest.Contexts, records []corerecord.RecycleRecord, err error) error {
-	cvmRecycleDetails := make([]corerecord.CvmRecycleDetail, len(records))
+// recoveryRelatedRes 恢复关联资源，disk、eip
+func (svc *cvmSvc) recoveryRelatedRes(cts *rest.Contexts, records []corerecord.CvmRecycleRecord, err error) error {
+
 	var diskIds, eipIds []string
 	for i, record := range records {
-		if detailStr, ok := record.Detail.(string); ok {
-			if err := json.UnmarshalFromString(detailStr, &cvmRecycleDetails[i]); err != nil {
-				return err
-			}
-		} else {
-			return fmt.Errorf("wrong type of recycle detail, got: %t, need string", record.Detail)
-		}
-		if cvmRecycleDetails[i].WithDisk && len(cvmRecycleDetails[i].DiskList) > 0 {
-			for _, disk := range cvmRecycleDetails[i].DiskList {
+		if record.Detail.WithDisk && len(records[i].Detail.DiskList) > 0 {
+			for _, disk := range record.Detail.DiskList {
 				diskIds = append(diskIds, disk.DiskID)
 			}
 		}
-		if cvmRecycleDetails[i].WithEip && len(cvmRecycleDetails[i].EipList) > 0 {
-			for _, eip := range cvmRecycleDetails[i].EipList {
+		if record.Detail.WithEip && len(record.Detail.EipList) > 0 {
+			for _, eip := range record.Detail.EipList {
 				eipIds = append(eipIds, eip.EipID)
 			}
 		}
 	}
+
 	if len(diskIds) > 0 {
-		updateOpt := dsrecord.BatchUpdateRecycleStatusReq{
-			RecycleStatus: enumor.RecoverRecycleRecordStatus,
-			IDs:           diskIds,
-			ResType:       enumor.DiskCloudResType,
-		}
-		err = svc.client.DataService().Global.RecycleRecord.BatchUpdateRecycleStatus(cts.Kit, &updateOpt)
+		err := svc.recoverRelDisk(cts.Kit, diskIds)
 		if err != nil {
-			logs.Errorf("fail to recover related res recycle status, err: %v, disk ids: %v, rid: %s",
-				err, diskIds, cts.Kit.Rid)
-			return err
+			logs.Errorf("fail to recover cvm related disk, err: %v, rid: %s", err, cts.Kit.Rid)
 		}
 	}
 
@@ -475,8 +466,30 @@ func (svc *cvmSvc) recoveryRelatedRes(cts *rest.Contexts, records []corerecord.R
 	return nil
 }
 
+// recoverRelDisk 恢复关联磁盘，包括修改磁盘表里面的状态和恢复回收记录
+func (svc *cvmSvc) recoverRelDisk(kt *kit.Kit, diskIds []string) error {
+	updateResOpt := dsrecord.BatchUpdateRecycleStatusReq{
+		RecycleStatus: enumor.RecoverRecycleRecordStatus,
+		IDs:           diskIds,
+		ResType:       enumor.DiskCloudResType,
+	}
+	err := svc.client.DataService().Global.RecycleRecord.BatchUpdateRecycleStatus(kt, &updateResOpt)
+	if err != nil {
+		logs.Errorf("fail to recover related res recycle status, err: %v, disk ids: %v, rid: %s",
+			err, diskIds, kt.Rid)
+		return err
+	}
+	err = svc.cvmLgc.BatchFinalizeRelRecord(kt, enumor.DiskCloudResType, enumor.RecoverStatus, diskIds)
+	if err != nil {
+		logs.Errorf("fail to update cvm related recycle record to recovered status, ids: %v, err: %v, rid: %s",
+			diskIds, err, kt.Rid)
+		return err
+	}
+	return err
+}
+
 // validateRecycleRecord 只能批量处理处于同一个回收任务的且是等待回收的记录。
-func (svc *cvmSvc) validateRecycleRecord(records *dsrecord.ListResult) error {
+func (svc *cvmSvc) validateRecycleRecord(records *core.ListResultT[corerecord.CvmRecycleRecord]) error {
 	taskID := ""
 	for _, one := range records.Details {
 		if len(taskID) == 0 {
@@ -523,7 +536,7 @@ func (svc *cvmSvc) batchDeleteRecycledCvm(cts *rest.Contexts,
 	listReq := &core.ListReq{Filter: tools.ContainersExpression("id", req.RecordIDs)}
 	listReq.Page = &core.BasePage{Limit: constant.BatchOperationMaxLimit}
 
-	records, err := svc.client.DataService().Global.RecycleRecord.ListRecycleRecord(cts.Kit, listReq)
+	records, err := svc.client.DataService().Global.RecycleRecord.ListCvmRecycleRecord(cts.Kit, listReq)
 	if err != nil {
 		return nil, err
 	}
@@ -556,14 +569,6 @@ func (svc *cvmSvc) batchDeleteRecycledCvm(cts *rest.Contexts,
 		Action: meta.Destroy, BasicInfos: basicInfoMap})
 	if err != nil {
 		return nil, err
-	}
-
-	// 创建回收任务的主机的业务id已经被清掉了，需要借助recycle record 来获取
-	// TODO: 已经保留业务id，考虑将下面逻辑删除
-	for cvmID, bizID := range cvmIDToBizID {
-		info := basicInfoMap[cvmID]
-		info.BkBizID = bizID
-		basicInfoMap[cvmID] = info
 	}
 
 	// 调用实际删除逻辑

@@ -40,6 +40,12 @@ type ListResult struct {
 	Details []interface{} `json:"details,omitempty"`
 }
 
+// ListResultT generic list result
+type ListResultT[T any] struct {
+	Count   uint64 `json:"count,omitempty"`
+	Details []T    `json:"details,omitempty"`
+}
+
 // BaseResp define base resp.
 type BaseResp[T any] struct {
 	rest.BaseResp `json:",inline"`

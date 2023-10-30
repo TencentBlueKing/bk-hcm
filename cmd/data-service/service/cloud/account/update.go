@@ -93,12 +93,13 @@ func updateAccount[T protocloud.AccountExtensionUpdateReq, PT protocloud.SecretE
 	}
 
 	account := &tablecloud.AccountTable{
-		Name:      req.Name,
-		Managers:  req.Managers,
-		Price:     req.Price,
-		PriceUnit: req.PriceUnit,
-		Memo:      req.Memo,
-		Reviser:   cts.Kit.User,
+		Name:               req.Name,
+		Managers:           req.Managers,
+		Price:              req.Price,
+		PriceUnit:          req.PriceUnit,
+		Memo:               req.Memo,
+		RecycleReserveTime: req.RecycleReserveTime,
+		Reviser:            cts.Kit.User,
 	}
 
 	// 只有提供了Extension才进行更新
