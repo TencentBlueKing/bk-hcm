@@ -269,8 +269,17 @@ func (sch *scheduler) parseFlowAndPushTask(kt *kit.Kit, flow *Flow) error {
 	if len(executableTaskNodes) == 0 {
 		state := taskTree.Root.ComputeState()
 
-		if state == enumor.FlowSuccess || state == enumor.FlowFailed {
+		if state == enumor.FlowSuccess {
 			if err = updateFlowState(kt, sch.backend, flow.ID, enumor.FlowRunning, state); err != nil {
+				logs.Errorf("update flow state to %s failed, err: %v, rid: %s", state, err, kt.Rid)
+				return err
+			}
+		}
+
+		if state == enumor.FlowFailed {
+			if err = updateFlowStateAndReason(kt, sch.backend, flow.ID, enumor.FlowRunning, state,
+				ErrSomeTaskExecFailed); err != nil {
+
 				logs.Errorf("update flow state to %s failed, err: %v, rid: %s", state, err, kt.Rid)
 				return err
 			}
@@ -385,8 +394,19 @@ func (sch *scheduler) executeNext(kt *kit.Kit, task *Task) error {
 	if len(ids) == 0 {
 		state := tree.Root.ComputeState()
 
-		if state == enumor.FlowSuccess || state == enumor.FlowFailed {
+		if state == enumor.FlowSuccess {
 			if err := updateFlowState(kt, sch.backend, task.FlowID, enumor.FlowRunning, state); err != nil {
+				logs.Errorf("update flow state to %s failed, err: %v, rid: %s", state, err, kt.Rid)
+				return err
+			}
+
+			sch.taskTrees.Delete(task.FlowID)
+		}
+
+		if state == enumor.FlowFailed {
+			if err := updateFlowStateAndReason(kt, sch.backend, task.FlowID, enumor.FlowRunning, state,
+				ErrSomeTaskExecFailed); err != nil {
+
 				logs.Errorf("update flow state to %s failed, err: %v, rid: %s", state, err, kt.Rid)
 				return err
 			}

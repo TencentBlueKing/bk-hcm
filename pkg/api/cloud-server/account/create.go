@@ -234,6 +234,11 @@ func (req *AccountCommonInfoCreateReq) Validate() error {
 		return err
 	}
 
+	// 校验备注
+	if err := validator.ValidateMemo(req.Memo, false); err != nil {
+		return err
+	}
+
 	return nil
 }
 

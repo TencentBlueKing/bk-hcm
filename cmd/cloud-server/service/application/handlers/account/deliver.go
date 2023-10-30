@@ -22,10 +22,12 @@ package account
 import (
 	"fmt"
 
+	"hcm/cmd/cloud-server/logics/account"
 	dataprotocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/iam/sys"
+	"hcm/pkg/logs"
 )
 
 // Deliver 执行资源交付
@@ -62,6 +64,13 @@ func (a *ApplicationOfAddAccount) Deliver() (enumor.ApplicationStatus, map[strin
 		return enumor.DeliverError, map[string]interface{}{"error": fmt.Sprintf("create account success, "+
 			"but add create action associate permissions failed, err: %v", err)}, err
 	}
+
+	go func() {
+		err = account.Sync(a.Cts.Kit, a.Client, a.req.Vendor, accountID)
+		if err != nil {
+			logs.Errorf("sync account: %s failed, err: %v, rid: %s", accountID, err, a.Cts.Kit.Rid)
+		}
+	}()
 
 	// TODO: 之后考虑如果添加权限失败，账号回滚
 

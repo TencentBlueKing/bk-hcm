@@ -45,6 +45,8 @@ const (
 	ErrTaskExecTimeout = "task exec timeout"
 	// ErrTaskNodeShutdown 任务节点关闭
 	ErrTaskNodeShutdown = "task node shutdown"
+	// ErrSomeTaskExecFailed 部分任务执行失败
+	ErrSomeTaskExecFailed = "some tasks failed to be executed"
 
 	//  listScheduledFlowLimit 每次调度器查询分配给当前节点的任务流数量
 	listScheduledFlowLimit = 10

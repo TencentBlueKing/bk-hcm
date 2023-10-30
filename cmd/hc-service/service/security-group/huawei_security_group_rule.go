@@ -71,7 +71,7 @@ func (g *securityGroup) CreateHuaWeiSGRule(cts *rest.Contexts) (interface{}, err
 
 	opt := &securitygrouprule.HuaWeiCreateOption{Region: sg.Region, CloudSecurityGroupID: sg.CloudID}
 	if req.EgressRule != nil {
-		opt.Rule = convertHuaweiCreateReq(req.IngressRule, enumor.Egress)
+		opt.Rule = convertHuaweiCreateReq(req.EgressRule, enumor.Egress)
 	}
 	if req.IngressRule != nil {
 		opt.Rule = convertHuaweiCreateReq(req.IngressRule, enumor.Ingress)
@@ -103,6 +103,7 @@ func (g *securityGroup) CreateHuaWeiSGRule(cts *rest.Contexts) (interface{}, err
 	result, err := g.dataCli.HuaWei.SecurityGroup.BatchCreateSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(),
 		createReq, sgID)
 	if err != nil {
+		logs.Errorf("batch create security group rule failed, err: %v, req: %+v, rid: %s", err, createReq, cts.Kit.Rid)
 		return nil, err
 	}
 
