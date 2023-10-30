@@ -4,7 +4,8 @@ export const COMMON_STATUS = [
   {
     label: '关',
     value: false,
-  }, {
+  },
+  {
     label: '开',
     value: 'INGRESS',
   },
@@ -43,11 +44,23 @@ export const HUAWEI_ACTION_STATUS = [
   },
 ];
 
+export const AZURE_ACTION_STATUS = [
+  {
+    id: 'Allow',
+    name: '允许',
+  },
+  {
+    id: 'Deny',
+    name: '拒绝',
+  },
+];
+
 export const GCP_TYPE_STATUS = [
   {
     label: '出站',
     value: 'EGRESS',
-  }, {
+  },
+  {
     label: '入站',
     value: 'INGRESS',
   },
@@ -57,7 +70,8 @@ export const GCP_MATCH_STATUS = [
   {
     label: '允许',
     value: 'allowed',
-  }, {
+  },
+  {
     label: '拒绝',
     value: 'denied',
   },
@@ -67,7 +81,8 @@ export const GCP_EXECUTION_STATUS = [
   {
     label: '已启用',
     value: true,
-  }, {
+  },
+  {
     label: '已停用',
     value: false,
   },
@@ -205,11 +220,11 @@ export const RECYCLE_BIN_ITEM_STATUS = {
 };
 
 export const CLOUD_VENDOR = {
-  tcloud: 'tcloud',  // 腾讯云
-  aws: 'aws',        // 亚马逊云
-  huawei: 'huawei',  // 华为云
-  azure: 'azure',    // 微软云
-  gcp: 'gcp',         // 谷歌云
+  tcloud: 'tcloud', // 腾讯云
+  aws: 'aws', // 亚马逊云
+  huawei: 'huawei', // 华为云
+  azure: 'azure', // 微软云
+  gcp: 'gcp', // 谷歌云
 };
 
 export const TCLOUD_SECURITY_MESSAGE = {
