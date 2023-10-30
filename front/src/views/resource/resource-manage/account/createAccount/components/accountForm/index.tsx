@@ -376,9 +376,6 @@ export default defineComponent({
               <FormItem label='使用业务' property='bk_biz_ids' required>
                 <Select
                   filterable
-                  collapseTags
-                  multiple
-                  multipleMode='tag'
                   placeholder='请选择使用业务'
                   v-model={formModel.bk_biz_ids}>
                   {businessList.value.map(({ id, name }) => (

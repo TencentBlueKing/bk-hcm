@@ -1,5 +1,12 @@
 import { Form, Dialog, Input, Message, Button, Alert, Select } from 'bkui-vue';
-import { reactive, defineComponent, ref, onMounted, computed, watch } from 'vue';
+import {
+  reactive,
+  defineComponent,
+  ref,
+  onMounted,
+  computed,
+  watch,
+} from 'vue';
 import { ProjectModel, SecretModel, CloudType, SiteType } from '@/typings';
 import { useI18n } from 'vue-i18n';
 import { useAccountStore } from '@/store';
@@ -10,7 +17,10 @@ import './account-detail.scss';
 import MemberSelect from '@/components/MemberSelect';
 import http from '@/http';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
-import { ValidateStatus, useSecretExtension } from '../resource-manage/account/createAccount/components/accountForm/useSecretExtension';
+import {
+  ValidateStatus,
+  useSecretExtension,
+} from '../resource-manage/account/createAccount/components/accountForm/useSecretExtension';
 import { VendorEnum } from '@/common/constant';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 const { FormItem } = Form;
@@ -30,19 +40,19 @@ export default defineComponent({
 
     const initProjectModel: ProjectModel = {
       id: 1,
-      type: '',   // 账号类型
+      type: '', // 账号类型
       name: '', // 名称
       vendor: VendorEnum.TCLOUD, // 云厂商
-      account: '',    // 主账号
-      subAccountId: '',    // 子账号id
-      subAccountName: '',    // 子账号名称
-      secretId: '',    // 密钥id
-      secretKey: '',  // 密钥key
+      account: '', // 主账号
+      subAccountId: '', // 子账号id
+      subAccountName: '', // 子账号名称
+      secretId: '', // 密钥id
+      secretKey: '', // 密钥key
       managers: [], // 责任人
-      bizIds: [],   // 使用业务
-      memo: '',     // 备注
+      bizIds: [], // 使用业务
+      memo: '', // 备注
       price: 0,
-      extension: {},   // 特殊信息
+      extension: {}, // 特殊信息
     };
     const isShowModifyScretDialog = ref(false);
     const isShowModifyAccountDialog = ref(false);
@@ -52,7 +62,7 @@ export default defineComponent({
     const accountFormModel = reactive({
       managers: [],
       memo: '',
-      bizIds: [],
+      bk_biz_ids: [],
     });
     const accountForm = ref(null);
 
@@ -81,11 +91,12 @@ export default defineComponent({
       ...initSecretModel,
     });
 
-    const businessList = reactive({ // 业务列表
+    const businessList = reactive({
+      // 业务列表
       list: [],
     });
 
-    const isOrganizationDetail = ref<Boolean>(true);      // 组织架构详情展示
+    const isOrganizationDetail = ref<Boolean>(true); // 组织架构详情展示
     const getDetail = async () => {
       const { id } = route.query;
       const res = await accountStore.getAccountDetail(id || resourceAccountStore.resourceAccount?.id);
@@ -110,7 +121,7 @@ export default defineComponent({
     };
 
     onMounted(() => {
-      getDetail();    // 请求数据
+      getDetail(); // 请求数据
     });
 
     watch(
@@ -146,22 +157,38 @@ export default defineComponent({
               label: t('主账号名'),
               required: false,
               property: 'cloud_main_account_name',
-              component: () => <span>{projectModel.extension.cloud_main_account_name || '--'}</span>,
+              component: () => (
+                <span>
+                  {projectModel.extension.cloud_main_account_name || '--'}
+                </span>
+              ),
             },
             {
               label: t('账号名'),
               required: false,
               property: 'cloud_sub_account_name',
-              component: () => <span>{projectModel.extension.cloud_sub_account_name || '--'}</span>,
+              component: () => (
+                <span>
+                  {projectModel.extension.cloud_sub_account_name || '--'}
+                </span>
+              ),
             },
             {
               label: t('账号ID'),
               required: false,
               property: 'cloud_sub_account_id',
-              component: () => <span>{projectModel.extension.cloud_sub_account_id || '--'}</span>,
+              component: () => (
+                <span>
+                  {projectModel.extension.cloud_sub_account_id || '--'}
+                </span>
+              ),
             },
           ];
-          formBaseInfo[0].data.splice(4, managersIndex - (nameIndex + 1), ...insertFormData);
+          formBaseInfo[0].data.splice(
+            4,
+            managersIndex - (nameIndex + 1),
+            ...insertFormData,
+          );
           formBaseInfo.push({
             name: t('密钥信息'),
             data: [
@@ -169,19 +196,29 @@ export default defineComponent({
                 label: t('IAM用户ID'),
                 required: false,
                 property: 'cloud_iam_user_id',
-                component: () => <span>{projectModel.extension.cloud_iam_user_id || '--'}</span>,
+                component: () => (
+                  <span>
+                    {projectModel.extension.cloud_iam_user_id || '--'}
+                  </span>
+                ),
               },
               {
                 label: t('IAM用户名'),
                 required: false,
                 property: 'cloud_iam_username',
-                component: () => <span>{projectModel.extension.cloud_iam_username || '--'}</span>,
+                component: () => (
+                  <span>
+                    {projectModel.extension.cloud_iam_username || '--'}
+                  </span>
+                ),
               },
               {
                 label: 'Secret ID',
                 required: false,
                 property: 'cloud_secret_id',
-                component: () => <span>{projectModel.extension.cloud_secret_id}</span>,
+                component: () => (
+                  <span>{projectModel.extension.cloud_secret_id}</span>
+                ),
               },
               {
                 label: 'Secret Key',
@@ -198,10 +235,18 @@ export default defineComponent({
               label: t('主账号ID'),
               required: false,
               property: 'cloud_main_account_id',
-              component: () => <span>{projectModel.extension.cloud_main_account_id || '--'}</span>,
+              component: () => (
+                <span>
+                  {projectModel.extension.cloud_main_account_id || '--'}
+                </span>
+              ),
             },
           ];
-          formBaseInfo[0].data.splice(4, managersIndex - (nameIndex + 1), ...insertFormData);
+          formBaseInfo[0].data.splice(
+            4,
+            managersIndex - (nameIndex + 1),
+            ...insertFormData,
+          );
           formBaseInfo.push({
             name: t('密钥信息'),
             data: [
@@ -209,7 +254,9 @@ export default defineComponent({
                 label: 'Secret ID',
                 required: false,
                 property: 'cloud_secret_id',
-                component: () => <span>{projectModel.extension.cloud_secret_id}</span>,
+                component: () => (
+                  <span>{projectModel.extension.cloud_secret_id}</span>
+                ),
               },
               {
                 label: 'Secret Key',
@@ -221,7 +268,9 @@ export default defineComponent({
                 label: t('子账号ID'),
                 required: false,
                 property: 'cloud_sub_account_id',
-                component: () => <span>{projectModel.extension.cloud_sub_account_id}</span>,
+                component: () => (
+                  <span>{projectModel.extension.cloud_sub_account_id}</span>
+                ),
               },
             ],
           });
@@ -232,10 +281,16 @@ export default defineComponent({
               label: t('账号ID:'),
               required: false,
               property: 'cloud_account_id',
-              component: () => <span>{projectModel.extension.cloud_account_id || '--'}</span>,
+              component: () => (
+                <span>{projectModel.extension.cloud_account_id || '--'}</span>
+              ),
             },
           ];
-          formBaseInfo[0].data.splice(4, managersIndex - (nameIndex + 1), ...insertFormData);
+          formBaseInfo[0].data.splice(
+            4,
+            managersIndex - (nameIndex + 1),
+            ...insertFormData,
+          );
           formBaseInfo.push({
             name: t('密钥信息'),
             data: [
@@ -243,13 +298,19 @@ export default defineComponent({
                 label: t('IAM用户名称:'),
                 required: false,
                 property: 'cloud_iam_username',
-                component: () => <span>{projectModel.extension.cloud_iam_username || '--'}</span>,
+                component: () => (
+                  <span>
+                    {projectModel.extension.cloud_iam_username || '--'}
+                  </span>
+                ),
               },
               {
                 label: 'Secret ID',
                 required: false,
                 property: 'secretId',
-                component: () => <span>{projectModel.extension.cloud_secret_id}</span>,
+                component: () => (
+                  <span>{projectModel.extension.cloud_secret_id}</span>
+                ),
               },
               {
                 label: 'Secret Key',
@@ -266,22 +327,36 @@ export default defineComponent({
               label: t('租户 ID'),
               required: false,
               property: 'cloud_tenant_id',
-              component: () => <span>{projectModel.extension.cloud_tenant_id || '--'}</span>,
+              component: () => (
+                <span>{projectModel.extension.cloud_tenant_id || '--'}</span>
+              ),
             },
             {
               label: t('订阅 ID'),
               required: false,
               property: 'cloud_subscription_id',
-              component: () => <span>{projectModel.extension.cloud_subscription_id || '--'}</span>,
+              component: () => (
+                <span>
+                  {projectModel.extension.cloud_subscription_id || '--'}
+                </span>
+              ),
             },
             {
               label: t('订阅 名称'),
               required: false,
               property: 'cloud_subscription_name',
-              component: () => <span>{projectModel.extension.cloud_subscription_name || '--'}</span>,
+              component: () => (
+                <span>
+                  {projectModel.extension.cloud_subscription_name || '--'}
+                </span>
+              ),
             },
           ];
-          formBaseInfo[0].data.splice(4, managersIndex - (nameIndex + 1), ...insertFormData);
+          formBaseInfo[0].data.splice(
+            4,
+            managersIndex - (nameIndex + 1),
+            ...insertFormData,
+          );
           formBaseInfo.push({
             name: t('密钥信息'),
             data: [
@@ -289,19 +364,31 @@ export default defineComponent({
                 label: t('应用(客户端) ID'),
                 required: false,
                 property: 'cloud_application_id',
-                component: () => <span>{projectModel.extension.cloud_application_id || '--'}</span>,
+                component: () => (
+                  <span>
+                    {projectModel.extension.cloud_application_id || '--'}
+                  </span>
+                ),
               },
               {
                 label: t('应用程序名称'),
                 required: false,
                 property: 'cloud_application_name',
-                component: () => <span>{projectModel.extension.cloud_application_name || '--'}</span>,
+                component: () => (
+                  <span>
+                    {projectModel.extension.cloud_application_name || '--'}
+                  </span>
+                ),
               },
               {
                 label: t('客户端密钥ID'),
                 required: false,
                 property: 'cloud_client_secret_id',
-                component: () => <span>{projectModel.extension.cloud_client_secret_id || '--'}</span>,
+                component: () => (
+                  <span>
+                    {projectModel.extension.cloud_client_secret_id || '--'}
+                  </span>
+                ),
               },
               {
                 label: t('客户端密钥'),
@@ -318,16 +405,24 @@ export default defineComponent({
               label: t('项目 ID'),
               required: false,
               property: 'cloud_project_id',
-              component: () => <span>{projectModel.extension.cloud_project_id || '--'}</span>,
+              component: () => (
+                <span>{projectModel.extension.cloud_project_id || '--'}</span>
+              ),
             },
             {
               label: t('项目名称'),
               required: false,
               property: 'cloud_project_name',
-              component: () => <span>{projectModel.extension.cloud_project_name || '--'}</span>,
+              component: () => (
+                <span>{projectModel.extension.cloud_project_name || '--'}</span>
+              ),
             },
           ];
-          formBaseInfo[0].data.splice(4, managersIndex - (nameIndex + 1), ...insertFormData);
+          formBaseInfo[0].data.splice(
+            4,
+            managersIndex - (nameIndex + 1),
+            ...insertFormData,
+          );
           formBaseInfo.push({
             name: t('密钥信息'),
             data: [
@@ -335,19 +430,27 @@ export default defineComponent({
                 label: t('服务账号ID'),
                 required: false,
                 property: 'cloud_service_account_id',
-                component: () => <span>{projectModel.extension.cloud_service_account_id}</span>,
+                component: () => (
+                  <span>{projectModel.extension.cloud_service_account_id}</span>
+                ),
               },
               {
                 label: t('服务账号名称'),
                 required: false,
                 property: 'cloud_service_account_name',
-                component: () => <span>{projectModel.extension.cloud_service_account_name}</span>,
+                component: () => (
+                  <span>
+                    {projectModel.extension.cloud_service_account_name}
+                  </span>
+                ),
               },
               {
                 label: 'Secret ID',
                 required: false,
                 property: 'secretId',
-                component: () => <span>{projectModel.extension.cloud_service_secret_id}</span>,
+                component: () => (
+                  <span>{projectModel.extension.cloud_service_secret_id}</span>
+                ),
               },
               {
                 label: 'Secret Key',
@@ -365,12 +468,17 @@ export default defineComponent({
 
     const check = (val: any): boolean => {
       console.log('check', check);
-      return  /^[a-z][a-z-z0-9_-]*$/.test(val);
+      return /^[a-z][a-z-z0-9_-]*$/.test(val);
     };
 
     const formRules = {
       name: [
-        { trigger: 'blur', message: '名称必须以小写字母开头，后面最多可跟 32个小写字母、数字或连字符，但不能以连字符结尾', validator: check },
+        {
+          trigger: 'blur',
+          message:
+            '名称必须以小写字母开头，后面最多可跟 32个小写字母、数字或连字符，但不能以连字符结尾',
+          validator: check,
+        },
       ],
     };
     // 更新信息方法
@@ -380,13 +488,14 @@ export default defineComponent({
         // 若选择全部业务，则参数是-1
         // params.bk_biz_ids = projectModel[key].length === businessList.list.length
         //   ? [-1] : projectModel[key];
-        params.bk_biz_ids = projectModel[key] ?  [projectModel[key]] : [-1];
+        params.bk_biz_ids = projectModel[key] ? [projectModel[key]] : [-1];
       } else {
         params = {};
         params[key] = projectModel[key];
       }
       try {
-        await accountStore.updateAccount({    // 更新密钥信息
+        await accountStore.updateAccount({
+          // 更新密钥信息
           id: projectModel.id,
           ...params,
         });
@@ -397,23 +506,25 @@ export default defineComponent({
       } catch (error) {
         console.log(error);
       } finally {
-        isOrganizationDetail.value = true;  // 改为详情展示态
-        getDetail();    // 请求数据
+        isOrganizationDetail.value = true; // 改为详情展示态
+        getDetail(); // 请求数据
       }
     };
 
     // 显示弹窗
     const handleModifyScret = () => {
-      secretModel.secretId = projectModel.extension.cloud_secret_id
-      || projectModel.extension.cloud_client_secret_id || projectModel.extension.cloud_service_secret_id || '';
+      secretModel.secretId =        projectModel.extension.cloud_secret_id
+        || projectModel.extension.cloud_client_secret_id
+        || projectModel.extension.cloud_service_secret_id
+        || '';
       secretModel.secretKey = '';
-      secretModel.subAccountId = projectModel.extension.cloud_sub_account_id || '';
+      secretModel.subAccountId =        projectModel.extension.cloud_sub_account_id || '';
       secretModel.iamUserName = projectModel.extension.cloud_iam_username || '';
       secretModel.iamUserId = projectModel.extension.cloud_iam_user_id || '';
-      secretModel.accountId = projectModel.extension.cloud_service_account_id || '';
-      secretModel.accountName = projectModel.extension.cloud_service_account_name || '';
-      secretModel.applicationId = projectModel.extension.cloud_application_id || '';
-      secretModel.applicationName = projectModel.extension.cloud_application_name || '';
+      secretModel.accountId =        projectModel.extension.cloud_service_account_id || '';
+      secretModel.accountName =        projectModel.extension.cloud_service_account_name || '';
+      secretModel.applicationId =        projectModel.extension.cloud_application_id || '';
+      secretModel.applicationName =        projectModel.extension.cloud_application_name || '';
       isShowModifyScretDialog.value = true;
     };
 
@@ -423,11 +534,13 @@ export default defineComponent({
       buttonLoading.value = true;
       try {
         const extension = extensionPayload.value;
-        await accountStore.updateTestAccount({    // 测试连接密钥信息
+        await accountStore.updateTestAccount({
+          // 测试连接密钥信息
           id: projectModel.id,
           extension,
         });
-        await accountStore.updateAccount({    // 更新密钥信息
+        await accountStore.updateAccount({
+          // 更新密钥信息
           id: projectModel.id,
           extension,
         });
@@ -469,28 +582,40 @@ export default defineComponent({
         });
         return;
       }
-      handleEditStatus(val, key);     // 未通过检验前状态为编辑态
+      handleEditStatus(val, key); // 未通过检验前状态为编辑态
       await formRef.value?.validate();
       if (projectModel[key].length) {
-        handleEditStatus(false, key);   // 通过检验则把状态改为不可编辑态
+        handleEditStatus(false, key); // 通过检验则把状态改为不可编辑态
       }
       if (projectModel[key] !== initProjectModel[key]) {
-        updateFormData(key);    // 更新数据
+        updateFormData(key); // 更新数据
       }
     };
 
     const handleModifyAccount = () => {
       isShowModifyAccountDialog.value = true;
+      // 数据回显
+      Object.assign(accountFormModel, {
+        managers: projectModel.managers,
+        memo: projectModel.memo,
+        bk_biz_ids: projectModel.bizIds,
+      });
     };
 
     const handleModifyAccountSubmit = async () => {
       await accountForm.value.validate();
       isAccountDialogLoading.value = true;
-      await http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${resourceAccountStore.resourceAccount?.id}`, {
-        managers: accountFormModel.managers,
-        memo: accountFormModel.memo,
-        bk_biz_ids: accountFormModel.bizIds,
-      });
+      // Select单选下，不返回数组，需要进行转换
+      await http.patch(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${resourceAccountStore.resourceAccount?.id}`,
+        {
+          managers: accountFormModel.managers,
+          memo: accountFormModel.memo,
+          bk_biz_ids: Array.isArray(accountFormModel.bk_biz_ids)
+            ? accountFormModel.bk_biz_ids
+            : [accountFormModel.bk_biz_ids],
+        },
+      );
       isAccountDialogLoading.value = false;
       isShowModifyAccountDialog.value = false;
       getDetail();
@@ -568,7 +693,6 @@ export default defineComponent({
             property: 'updated_at',
             component: () => <span>{projectModel.updated_at}</span>,
           },
-
 
           // {
           //   label: t('账号类别'),
@@ -676,34 +800,55 @@ export default defineComponent({
 
     // console.log('formBaseInfo', formBaseInfo);
 
-    return () => (
-      isLoading.value ? (<Loading/>) : (
-        <div class="detail-warp p20">
-            {/* 基本信息 */}
-            {formBaseInfo.map((baseItem, index) => (
-                <div>
-                    <div class="font-bold pb10">
-                      {baseItem.name}
-                      {index > 0
-                        ? <span class={'account-detail-edit-icon-font'} onClick={index === 2 ?  handleModifyScret : handleModifyAccount}>
-                            {/* <i class={'icon hcm-icon bkhcm-icon-invisible1 pl15 account-edit-icon'}/> */}
-                            <i class={'icon bk-icon icon-bianji pl15 account-edit-icon mr6'}/>
-                            编辑
-                          </span> : ''}
-                    </div>
-                    <Form model={projectModel} labelWidth={140} rules={formRules} ref={formRef}>
-                        <div class={index === 2 ? 'flex-row align-items-center flex-wrap' : null}>
-                            {baseItem.data.map(formItem => (
-                                <FormItem class="formItem-cls info-value" label={formItem.label} required={formItem.required} property={formItem.property}>
-                                    {formItem.component()}
-                                </FormItem>
-                            ))
-                        }
-                        </div>
-                    </Form>
+    return () => (isLoading.value ? (
+        <Loading />
+    ) : (
+        <div class='detail-warp p20'>
+          {/* 基本信息 */}
+          {formBaseInfo.map((baseItem, index) => (
+            <div>
+              <div class='font-bold pb10'>
+                {baseItem.name}
+                {index > 0 ? (
+                  <span
+                    class={'account-detail-edit-icon-font'}
+                    onClick={
+                      index === 2 ? handleModifyScret : handleModifyAccount
+                    }>
+                    {/* <i class={'icon hcm-icon bkhcm-icon-invisible1 pl15 account-edit-icon'}/> */}
+                    <i
+                      class={
+                        'icon bk-icon icon-bianji pl15 account-edit-icon mr6'
+                      }
+                    />
+                    编辑
+                  </span>
+                ) : (
+                  ''
+                )}
+              </div>
+              <Form
+                model={projectModel}
+                labelWidth={140}
+                rules={formRules}
+                ref={formRef}>
+                <div
+                  class={
+                    index === 2 ? 'flex-row align-items-center flex-wrap' : null
+                  }>
+                  {baseItem.data.map(formItem => (
+                    <FormItem
+                      class='formItem-cls info-value'
+                      label={formItem.label}
+                      required={formItem.required}
+                      property={formItem.property}>
+                      {formItem.component()}
+                    </FormItem>
+                  ))}
                 </div>
-            ))
-            }
+              </Form>
+            </div>
+          ))}
 
           <Dialog
             v-model:isShow={isShowModifyScretDialog.value}
@@ -712,8 +857,7 @@ export default defineComponent({
             onClosed={onClosed}
             onConfirm={onConfirm}
             isLoading={isSecretDialogLoading.value}
-            theme='primary'
-          >
+            theme='primary'>
             {{
               default: () => (
                 <>
@@ -722,37 +866,59 @@ export default defineComponent({
                     theme='info'
                     title='更新的API密钥必须属于同一个主账号ID'
                   />
-                  <Form labelWidth={130} model={secretModel} ref={formDiaRef} formType='vertical'>
-                    {
-                      [curExtension.value.output1, curExtension.value.output2].map(output => (
-                        Object.entries(output).map(([property, { label }]) => (
-                          <FormItem label={label} property={property}>
-                            <Input v-model={output[property].value} disabled/>
-                          </FormItem>
-                        ))
-                      ))
-                    }
-                    {
-                      Object.entries(curExtension.value.input).map(([property, { label }]) => (
+                  <Form
+                    labelWidth={130}
+                    model={secretModel}
+                    ref={formDiaRef}
+                    formType='vertical'>
+                    {[
+                      curExtension.value.output1,
+                      curExtension.value.output2,
+                    ].map(output => Object.entries(output).map(([property, { label }]) => (
                         <FormItem label={label} property={property}>
-                          <Input v-model={curExtension.value.input[property].value} type={
-                            property === 'cloud_service_secret_key' && projectModel.vendor === VendorEnum.GCP
-                              ? 'textarea'
-                              : 'text'
+                          <Input v-model={output[property].value} disabled />
+                        </FormItem>
+                    )))}
+                    {Object.entries(curExtension.value.input).map(([property, { label }]) => (
+                        <FormItem label={label} property={property}>
+                          <Input
+                            v-model={curExtension.value.input[property].value}
+                            type={
+                              property === 'cloud_service_secret_key'
+                              && projectModel.vendor === VendorEnum.GCP
+                                ? 'textarea'
+                                : 'text'
                             }
                             rows={8}
                           />
                         </FormItem>
-                      ))
-                    }
+                    ))}
                   </Form>
                 </>
               ),
               footer: () => (
                 <div class={'validate-btn-container'}>
-                  <Button theme='primary' class={'validate-btn'} loading={isValidateLoading.value} onClick={() => handleValidate()} disabled={isValidateDiasbled.value}>账号校验</Button>
-                  <Button theme="primary" disabled={isValidateDiasbled.value || curExtension.value.validatedStatus !== ValidateStatus.YES} loading={buttonLoading.value} onClick={onConfirm}>{t('确认')}</Button>
-                  <Button class="ml10" onClick={onClosed}>{t('取消')}</Button>
+                  <Button
+                    theme='primary'
+                    class={'validate-btn'}
+                    loading={isValidateLoading.value}
+                    onClick={() => handleValidate()}
+                    disabled={isValidateDiasbled.value}>
+                    账号校验
+                  </Button>
+                  <Button
+                    theme='primary'
+                    disabled={
+                      isValidateDiasbled.value
+                      || curExtension.value.validatedStatus !== ValidateStatus.YES
+                    }
+                    loading={buttonLoading.value}
+                    onClick={onConfirm}>
+                    {t('确认')}
+                  </Button>
+                  <Button class='ml10' onClick={onClosed}>
+                    {t('取消')}
+                  </Button>
                 </div>
               ),
             }}
@@ -764,43 +930,46 @@ export default defineComponent({
             title={'编辑账号'}
             isLoading={isAccountDialogLoading.value}
             onConfirm={handleModifyAccountSubmit}
-            onClosed={() => isShowModifyAccountDialog.value = false}
-            theme='primary'
-          >
+            onClosed={() => (isShowModifyAccountDialog.value = false)}
+            theme='primary'>
             <Form
               v-model={accountFormModel}
               formType='vertical'
               model={accountFormModel}
-              ref={accountForm}
-            >
-              <FormItem label='责任人' class={'api-secret-selector'} required property='managers'>
-                <MemberSelect v-model={accountFormModel.managers}/>
+              ref={accountForm}>
+              <FormItem
+                label='责任人'
+                class={'api-secret-selector'}
+                required
+                property='managers'>
+                <MemberSelect v-model={accountFormModel.managers} />
               </FormItem>
-              <FormItem label='业务' class={'api-secret-selector'} required property='bizIds'>
+              <FormItem
+                label='业务'
+                class={'api-secret-selector'}
+                required
+                property='bk_biz_ids'>
                 <Select
-                    filterable
-                    collapseTags
-                    multiple
-                    multipleMode='tag'
-                    placeholder='请选择使用业务'
-                    v-model={accountFormModel.bizIds}
-                  >
-                    {
-                      businessList.list.map(({ id, name }) => (
-                        <Option key={id} value={id} label={name}>
-                          {name}
-                        </Option>
-                      ))
-                    }
-                  </Select>
-            </FormItem>
+                  filterable
+                  placeholder='请选择使用业务'
+                  v-model={accountFormModel.bk_biz_ids}>
+                  {businessList.list.map(({ id, name }) => (
+                    <Option key={id} value={id} label={name}>
+                      {name}
+                    </Option>
+                  ))}
+                </Select>
+              </FormItem>
               <FormItem label='备注'>
-                <Input type={'textarea'} v-model={accountFormModel.memo} maxlength={100}/>
+                <Input
+                  type={'textarea'}
+                  v-model={accountFormModel.memo}
+                  maxlength={100}
+                />
               </FormItem>
             </Form>
           </Dialog>
         </div>
-      )
-    );
+    ));
   },
 });
