@@ -4,33 +4,12 @@ import type {
   FilterType,
 } from '@/typings/resource';
 import { GcpTypeEnum, CloudType } from '@/typings';
-import {
-  Button,
-  InfoBox,
-  Message,
-  Tag,
-} from 'bkui-vue';
-import {
-  useResourceStore,
-  useAccountStore,
-} from '@/store';
-import {
-  ref,
-  h,
-  PropType,
-  watch,
-  reactive,
-  defineExpose,
-  computed,
-} from 'vue';
+import { Button, InfoBox, Message, Tag } from 'bkui-vue';
+import { useResourceStore, useAccountStore } from '@/store';
+import { ref, h, PropType, watch, reactive, defineExpose, computed } from 'vue';
 
-import {
-  useI18n,
-} from 'vue-i18n';
-import {
-  useRouter,
-  useRoute,
-} from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { useRouter, useRoute } from 'vue-router';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
@@ -39,7 +18,10 @@ import { VendorEnum } from '@/common/constant';
 import { cloneDeep } from 'lodash-es';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import useSelection from '../../hooks/use-selection';
-import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
+import {
+  BatchDistribution,
+  DResourceType,
+} from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 
 const props = defineProps({
   filter: {
@@ -57,9 +39,7 @@ const props = defineProps({
 });
 
 // use hooks
-const {
-  t,
-} = useI18n();
+const { t } = useI18n();
 
 const { getRegionName } = useRegionsStore();
 const router = useRouter();
@@ -92,12 +72,7 @@ const state = reactive<any>({
   },
 });
 
-
-const {
-  searchData,
-  searchValue,
-  filter,
-} = useFilter(props);
+const { searchData, searchValue, filter } = useFilter(props);
 
 const {
   datas,
@@ -106,21 +81,25 @@ const {
   handlePageChange,
   handlePageSizeChange,
   getList,
-} = useQueryCommonList({
-  ...props,
-  filter: filter.value,
-}, fetchUrl);
+} = useQueryCommonList(
+  {
+    ...props,
+    filter: filter.value,
+  },
+  fetchUrl,
+);
 
 const selectSearchData = computed(() => {
   return [
     ...searchData.value,
-    ...[{
-      name: '云地域',
-      id: 'region',
-    }],
+    ...[
+      {
+        name: '云地域',
+        id: 'region',
+      },
+    ],
   ];
 });
-
 
 // eslint-disable-next-line max-len
 state.datas = datas;
@@ -140,7 +119,6 @@ watch(
     handleSwtichType(v);
   },
 );
-
 
 const handleSwtichType = async (type: string) => {
   if (type === 'gcp') {
@@ -170,11 +148,7 @@ const isRowSelectEnable = ({ row }: DoublePlainObject) => {
     return row.bk_biz_id === -1;
   }
 };
-const {
-  selections,
-  handleSelectionChange,
-  resetSelections,
-} = useSelection();
+const { selections, handleSelectionChange, resetSelections } = useSelection();
 
 const groupColumns = [
   {
@@ -194,7 +168,7 @@ const groupColumns = [
         {
           text: true,
           theme: 'primary',
-          disabled: (data.bk_biz_id !== -1 && props.isResourcePage),
+          disabled: data.bk_biz_id !== -1 && props.isResourcePage,
           onClick() {
             const routeInfo: any = {
               query: {
@@ -206,29 +180,21 @@ const groupColumns = [
             // 业务下
             if (route.path.includes('business')) {
               routeInfo.query.bizs = accountStore.bizs;
-              Object.assign(
-                routeInfo,
-                {
-                  name: 'securityBusinessDetail',
-                },
-              );
+              Object.assign(routeInfo, {
+                name: 'securityBusinessDetail',
+              });
             } else {
-              Object.assign(
-                routeInfo,
-                {
-                  name: 'resourceDetail',
-                  params: {
-                    type: 'security',
-                  },
+              Object.assign(routeInfo, {
+                name: 'resourceDetail',
+                params: {
+                  type: 'security',
                 },
-              );
+              });
             }
             router.push(routeInfo);
           },
         },
-        [
-          data.id || '--',
-        ],
+        [data.id || '--'],
       );
     },
   },
@@ -244,13 +210,7 @@ const groupColumns = [
     sort: true,
     isDefaultShow: true,
     render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          CloudType[data.vendor],
-        ],
-      );
+      return h('span', {}, [CloudType[data.vendor]]);
     },
   },
   {
@@ -258,7 +218,7 @@ const groupColumns = [
     field: 'region',
     sort: true,
     isDefaultShow: true,
-    render: ({ data }: { data: { vendor: VendorEnum; region: string; } }) => {
+    render: ({ data }: { data: { vendor: VendorEnum; region: string } }) => {
       return getRegionName(data.vendor, data.region);
     },
   },
@@ -266,6 +226,7 @@ const groupColumns = [
     label: t('描述'),
     field: 'memo',
     isDefaultShow: true,
+    render: ({ ceil }: any) => (ceil ? ceil : '--'),
   },
   {
     label: '是否分配',
@@ -273,31 +234,26 @@ const groupColumns = [
     sort: true,
     isOnlyShowInResource: true,
     isDefaultShow: true,
-    render: ({ data }: {data: {bk_biz_id: number}, cell: number}) => {
+    render: ({ data }: { data: { bk_biz_id: number }; cell: number }) => {
       return h(
         Tag,
         {
           theme: data.bk_biz_id === -1 ? false : 'success',
         },
-        [
-          data.bk_biz_id === -1 ? '未分配' : '已分配',
-        ],
+        [data.bk_biz_id === -1 ? '未分配' : '已分配'],
       );
-    }
-    ,
+    },
   },
   {
     label: '所属业务',
     field: 'bk_biz_id2',
     isOnlyShowInResource: true,
     render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          data.bk_biz_id === -1 ? t('--') : businessMapStore.businessMap.get(data.bk_biz_id),
-        ],
-      );
+      return h('span', {}, [
+        data.bk_biz_id === -1
+          ? t('--')
+          : businessMapStore.businessMap.get(data.bk_biz_id),
+      ]);
     },
   },
   {
@@ -329,89 +285,95 @@ const groupColumns = [
     field: 'operate',
     isDefaultShow: true,
     render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          h(
-            'span',
-            {
-              onClick() {
-                emit('auth', props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate');
-              },
+      return h('span', {}, [
+        h(
+          'span',
+          {
+            onClick() {
+              emit(
+                'auth',
+                props.isResourcePage
+                  ? 'iaas_resource_operate'
+                  : 'biz_iaas_resource_operate',
+              );
             },
-            [
-              h(
-                Button,
-                {
-                  text: true,
-                  disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate']
+          },
+          [
+            h(
+              Button,
+              {
+                text: true,
+                disabled:
+                  !props.authVerifyData?.permissionAction[
+                    props.isResourcePage
+                      ? 'iaas_resource_operate'
+                      : 'biz_iaas_resource_operate'
+                  ]
                   || (data.bk_biz_id !== -1 && props.isResourcePage),
-                  theme: 'primary',
-                  onClick() {
-                    const routeInfo: any = {
-                      query: {
-                        activeTab: 'rule',
-                        id: data.id,
-                        vendor: data.vendor,
+                theme: 'primary',
+                onClick() {
+                  const routeInfo: any = {
+                    query: {
+                      activeTab: 'rule',
+                      id: data.id,
+                      vendor: data.vendor,
+                    },
+                  };
+                  // 业务下
+                  if (route.path.includes('business')) {
+                    Object.assign(routeInfo, {
+                      name: 'securityBusinessDetail',
+                    });
+                  } else {
+                    Object.assign(routeInfo, {
+                      name: 'resourceDetail',
+                      params: {
+                        type: 'security',
                       },
-                    };
-                      // 业务下
-                    if (route.path.includes('business')) {
-                      Object.assign(
-                        routeInfo,
-                        {
-                          name: 'securityBusinessDetail',
-                        },
-                      );
-                    } else {
-                      Object.assign(
-                        routeInfo,
-                        {
-                          name: 'resourceDetail',
-                          params: {
-                            type: 'security',
-                          },
-                        },
-                      );
-                    }
-                    router.push(routeInfo);
-                  },
+                    });
+                  }
+                  router.push(routeInfo);
                 },
-                [
-                  t('配置规则'),
-                ],
-              ),
-            ],
-          ),
-          h(
-            'span',
-            {
-              onClick() {
-                emit('auth', props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete');
               },
+              [t('配置规则')],
+            ),
+          ],
+        ),
+        h(
+          'span',
+          {
+            onClick() {
+              emit(
+                'auth',
+                props.isResourcePage
+                  ? 'iaas_resource_delete'
+                  : 'biz_iaas_resource_delete',
+              );
             },
-            [
-              h(
-                Button,
-                {
-                  class: 'ml10',
-                  disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete']
+          },
+          [
+            h(
+              Button,
+              {
+                class: 'ml10',
+                disabled:
+                  !props.authVerifyData?.permissionAction[
+                    props.isResourcePage
+                      ? 'iaas_resource_delete'
+                      : 'biz_iaas_resource_delete'
+                  ]
                   || (data.bk_biz_id !== -1 && props.isResourcePage),
-                  text: true,
-                  theme: 'primary',
-                  onClick() {
-                    securityHandleShowDelete(data);
-                  },
+                text: true,
+                theme: 'primary',
+                onClick() {
+                  securityHandleShowDelete(data);
                 },
-                [
-                  t('删除'),
-                ],
-              ),
-            ],
-          ),
-        ],
-      );
+              },
+              [t('删除')],
+            ),
+          ],
+        ),
+      ]);
     },
   },
 ];
@@ -446,29 +408,21 @@ const gcpColumns = [
             };
             // 业务下
             if (route.path.includes('business')) {
-              Object.assign(
-                routeInfo,
-                {
-                  name: 'gcpBusinessDetail',
-                },
-              );
+              Object.assign(routeInfo, {
+                name: 'gcpBusinessDetail',
+              });
             } else {
-              Object.assign(
-                routeInfo,
-                {
-                  name: 'resourceDetail',
-                  params: {
-                    type: 'gcp',
-                  },
+              Object.assign(routeInfo, {
+                name: 'resourceDetail',
+                params: {
+                  type: 'gcp',
                 },
-              );
+              });
             }
             router.push(routeInfo);
           },
         },
-        [
-          data.id || '--',
-        ],
+        [data.id || '--'],
       );
     },
   },
@@ -489,13 +443,7 @@ const gcpColumns = [
     sort: true,
     isDefaultShow: true,
     render() {
-      return h(
-        'span',
-        {},
-        [
-          t('谷歌云'),
-        ],
-      );
+      return h('span', {}, [t('谷歌云')]);
     },
   },
   {
@@ -516,13 +464,7 @@ const gcpColumns = [
     sort: true,
     isDefaultShow: true,
     render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          GcpTypeEnum[data.type],
-        ],
-      );
+      return h('span', {}, [GcpTypeEnum[data.type]]);
     },
   },
   {
@@ -531,13 +473,9 @@ const gcpColumns = [
     sort: true,
     isDefaultShow: true,
     render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          data.target_tags || data.target_service_accounts || '--',
-        ],
-      );
+      return h('span', {}, [
+        data.target_tags || data.target_service_accounts || '--',
+      ]);
     },
   },
   // {
@@ -553,13 +491,11 @@ const gcpColumns = [
       return h(
         'span',
         {},
-        (data?.allowed || data?.denied) ? (data?.allowed || data?.denied).map((e: any) => {
-          return h(
-            'div',
-            {},
-            `${e.protocol}:${e.port}`,
-          );
-        }) : '--',
+        data?.allowed || data?.denied
+          ? (data?.allowed || data?.denied).map((e: any) => {
+            return h('div', {}, `${e.protocol}:${e.port}`);
+          })
+          : '--',
       );
     },
   },
@@ -569,31 +505,26 @@ const gcpColumns = [
     sort: true,
     isOnlyShowInResource: true,
     isDefaultShow: true,
-    render: ({ data }: {data: {bk_biz_id: number}, cell: number}) => {
+    render: ({ data }: { data: { bk_biz_id: number }; cell: number }) => {
       return h(
         Tag,
         {
           theme: data.bk_biz_id === -1 ? false : 'success',
         },
-        [
-          data.bk_biz_id === -1 ? '未分配' : '已分配',
-        ],
+        [data.bk_biz_id === -1 ? '未分配' : '已分配'],
       );
-    }
-    ,
+    },
   },
   {
     label: '所属业务',
     field: 'bk_biz_id2',
     isOnlyShowInResource: true,
     render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          data.bk_biz_id === -1 ? t('--') : businessMapStore.businessMap.get(data.bk_biz_id),
-        ],
-      );
+      return h('span', {}, [
+        data.bk_biz_id === -1
+          ? t('--')
+          : businessMapStore.businessMap.get(data.bk_biz_id),
+      ]);
     },
   },
   {
@@ -611,63 +542,75 @@ const gcpColumns = [
     field: 'operator',
     isDefaultShow: true,
     render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          h(
-            'span',
-            {
-              onClick() {
-                emit('auth', props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate');
-              },
+      return h('span', {}, [
+        h(
+          'span',
+          {
+            onClick() {
+              emit(
+                'auth',
+                props.isResourcePage
+                  ? 'iaas_resource_operate'
+                  : 'biz_iaas_resource_operate',
+              );
             },
-            [
-              h(
-                Button,
-                {
-                  text: true,
-                  theme: 'primary',
-                  disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate']
+          },
+          [
+            h(
+              Button,
+              {
+                text: true,
+                theme: 'primary',
+                disabled:
+                  !props.authVerifyData?.permissionAction[
+                    props.isResourcePage
+                      ? 'iaas_resource_operate'
+                      : 'biz_iaas_resource_operate'
+                  ]
                   || (data.bk_biz_id !== -1 && props.isResourcePage),
-                  onClick() {
-                    emit('edit', cloneDeep(data));
-                  },
+                onClick() {
+                  emit('edit', cloneDeep(data));
                 },
-                [
-                  t('编辑'),
-                ],
-              ),
-            ],
-          ),
-          h(
-            'span',
-            {
-              onClick() {
-                emit('auth', props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate');
               },
+              [t('编辑')],
+            ),
+          ],
+        ),
+        h(
+          'span',
+          {
+            onClick() {
+              emit(
+                'auth',
+                props.isResourcePage
+                  ? 'iaas_resource_operate'
+                  : 'biz_iaas_resource_operate',
+              );
             },
-            [
-              h(
-                Button,
-                {
-                  class: 'ml10',
-                  text: true,
-                  disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete']
+          },
+          [
+            h(
+              Button,
+              {
+                class: 'ml10',
+                text: true,
+                disabled:
+                  !props.authVerifyData?.permissionAction[
+                    props.isResourcePage
+                      ? 'iaas_resource_delete'
+                      : 'biz_iaas_resource_delete'
+                  ]
                   || (data.bk_biz_id !== -1 && props.isResourcePage),
-                  theme: 'primary',
-                  onClick() {
-                    securityHandleShowDelete(data);
-                  },
+                theme: 'primary',
+                onClick() {
+                  securityHandleShowDelete(data);
                 },
-                [
-                  t('删除'),
-                ],
-              ),
-            ],
-          ),
-        ],
-      );
+              },
+              [t('删除')],
+            ),
+          ],
+        ),
+      ]);
     },
   },
 ];
@@ -719,11 +662,12 @@ const securityHandleShowDelete = (data: any) => {
     contentAlign: 'center',
     async onConfirm() {
       try {
-        await resourceStore
-          .deleteBatch(
-            activeType.value === 'group' ? 'security_groups' : 'vendors/gcp/firewalls/rules',
-            { ids: [data.id] },
-          );
+        await resourceStore.deleteBatch(
+          activeType.value === 'group'
+            ? 'security_groups'
+            : 'vendors/gcp/firewalls/rules',
+          { ids: [data.id] },
+        );
         getList();
         Message({
           message: t('删除成功'),
@@ -739,25 +683,25 @@ const securityHandleShowDelete = (data: any) => {
 
 <template>
   <div>
-    <bk-loading
-      :loading="state.isLoading"
-    >
+    <bk-loading :loading="state.isLoading">
       <section>
         <slot></slot>
         <BatchDistribution
           :selections="selections"
-          :type="activeType === 'group' ? DResourceType.security_groups : DResourceType.firewall"
-          :get-data="() => {
-            getList();
-            resetSelections();
-          }"
+          :type="
+            activeType === 'group'
+              ? DResourceType.security_groups
+              : DResourceType.firewall
+          "
+          :get-data="
+            () => {
+              getList();
+              resetSelections();
+            }
+          "
         />
-        <section
-          class="flex-row align-items-center mt20">
-          <bk-radio-group
-            v-model="activeType"
-            :disabled="state.isLoading"
-          >
+        <section class="flex-row align-items-center mt20">
+          <bk-radio-group v-model="activeType" :disabled="state.isLoading">
             <bk-radio-button
               v-for="item in types"
               :key="item.name"

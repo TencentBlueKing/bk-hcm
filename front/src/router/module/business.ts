@@ -108,6 +108,7 @@ const businesseMenus: RouteRecordRaw[] = [
         meta: {
           activeKey: 'businessImage',
           breadcrumb: ['资源', '镜像'],
+          notMenu: true,
         },
       },
       {

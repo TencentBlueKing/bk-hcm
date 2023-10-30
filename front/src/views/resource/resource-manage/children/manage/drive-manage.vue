@@ -1,31 +1,20 @@
 <script setup lang="ts">
-import type {
-  FilterType,
-} from '@/typings/resource';
+import type { FilterType } from '@/typings/resource';
 
-import {
-  PropType,
-  h,
-  computed,
-} from 'vue';
-import {
-  useI18n,
-} from 'vue-i18n';
-import {
-  Button,
-  InfoBox,
-  Message,
-} from 'bkui-vue';
-import {
-  useResourceStore,
-} from '@/store/resource';
+import { PropType, h, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { Button, InfoBox, Message } from 'bkui-vue';
+import { useResourceStore } from '@/store/resource';
 import useDelete from '../../hooks/use-delete';
 import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
 import useColumns from '../../hooks/use-columns';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import { VendorEnum } from '@/common/constant';
-import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
+import {
+  BatchDistribution,
+  DResourceType,
+} from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 
 const props = defineProps({
   filter: {
@@ -42,9 +31,7 @@ const props = defineProps({
   },
 });
 
-const {
-  t,
-} = useI18n();
+const { t } = useI18n();
 
 const { columns, settings } = useColumns('drive');
 const simpleColumns = useColumns('drive', true).columns;
@@ -53,18 +40,16 @@ const resourceStore = useResourceStore();
 const selectSearchData = computed(() => {
   return [
     ...searchData.value,
-    ...[{
-      name: '云地域',
-      id: 'region',
-    }],
+    ...[
+      {
+        name: '云地域',
+        id: 'region',
+      },
+    ],
   ];
 });
 
-const {
-  searchData,
-  searchValue,
-  filter,
-} = useFilter(props);
+const { searchData, searchValue, filter } = useFilter(props);
 
 const emit = defineEmits(['auth']);
 
@@ -95,9 +80,20 @@ const isDisabledRecycle = (vendor: VendorEnum, status: string) => {
   return res;
 };
 
-const unableRecycled = (data: { instance_id: string; vendor: VendorEnum; status: string; }) => {
-  return !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate']
-    || data.instance_id || isDisabledRecycle(data?.vendor, data?.status);
+const unableRecycled = (data: {
+  instance_id: string;
+  vendor: VendorEnum;
+  status: string;
+}) => {
+  return (
+    !props.authVerifyData?.permissionAction[
+      props.isResourcePage
+        ? 'iaas_resource_operate'
+        : 'biz_iaas_resource_operate'
+    ]
+    || data.instance_id
+    || isDisabledRecycle(data?.vendor, data?.status)
+  );
 };
 
 const renderColumns = [
@@ -109,7 +105,12 @@ const renderColumns = [
         'span',
         {
           onClick() {
-            emit('auth', props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate');
+            emit(
+              'auth',
+              props.isResourcePage
+                ? 'iaas_resource_operate'
+                : 'biz_iaas_resource_operate',
+            );
           },
         },
         [
@@ -121,8 +122,8 @@ const renderColumns = [
               disabled: unableRecycled(data),
               onClick() {
                 InfoBox({
-                  title: '请确认是否删除',
-                  subTitle: `将删除【${data.name}】`,
+                  title: '请确认是否回收',
+                  subTitle: `将回收【${data.name}】`,
                   // @ts-ignore
                   theme: 'danger',
                   headerAlign: 'center',
@@ -130,12 +131,10 @@ const renderColumns = [
                   contentAlign: 'center',
                   onConfirm() {
                     resourceStore
-                      .recycled(
-                        'disks',
-                        {
-                          infos: [{ id: data.id }],
-                        },
-                      ).then(() => {
+                      .recycled('disks', {
+                        infos: [{ id: data.id }],
+                      })
+                      .then(() => {
                         Message({
                           theme: 'success',
                           message: '回收成功',
@@ -145,20 +144,15 @@ const renderColumns = [
                 });
               },
             },
-            [
-              t('回收'),
-            ],
-          )],
+            [t('回收')],
+          ),
+        ],
       ));
     },
   },
 ];
 
-const {
-  selections,
-  handleSelectionChange,
-  resetSelections,
-} = useSelection();
+const { selections, handleSelectionChange, resetSelections } = useSelection();
 
 const {
   datas,
@@ -170,10 +164,7 @@ const {
   triggerApi,
 } = useQueryList({ filter: filter.value }, 'disks');
 
-const {
-  handleShowDelete,
-  DeleteDialog,
-} = useDelete(
+const { handleShowDelete, DeleteDialog } = useDelete(
   simpleColumns,
   selections,
   'disks',
@@ -193,33 +184,41 @@ const isRowSelectEnable = ({ row }) => {
     return row.bk_biz_id === -1 && !unableRecycled(row);
   }
 };
-
 </script>
 
 <template>
-  <bk-loading
-    :loading="isLoading"
-  >
+  <bk-loading :loading="isLoading">
     <section
       class="flex-row align-items-center"
-      :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
-      <slot>
-      </slot>
+      :class="
+        isResourcePage ? 'justify-content-end' : 'justify-content-between'
+      "
+    >
+      <slot></slot>
       <BatchDistribution
         :selections="selections"
         :type="DResourceType.disks"
-        :get-data="() => {
-          triggerApi();
-          resetSelections();
-        }"
+        :get-data="
+          () => {
+            triggerApi();
+            resetSelections();
+          }
+        "
       />
       <bk-button
         class="w100 ml10"
         theme="primary"
         :disabled="selections.length <= 0"
-        @click="handleShowDelete(selections.filter(
-          selection => !isDisabledRecycle(selection?.vendor, selection?.status)).map(selection => selection.id)
-        )"
+        @click="
+          handleShowDelete(
+            selections
+              .filter(
+                (selection) =>
+                  !isDisabledRecycle(selection?.vendor, selection?.status),
+              )
+              .map((selection) => selection.id),
+          )
+        "
       >
         {{ t('回收') }}
       </bk-button>
@@ -233,7 +232,6 @@ const isRowSelectEnable = ({ row }) => {
         />
         <slot name="recycleHistory"></slot>
       </div>
-
     </section>
 
     <bk-table
