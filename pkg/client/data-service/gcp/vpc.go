@@ -27,6 +27,7 @@ import (
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -114,16 +115,16 @@ func (v *VpcClient) BatchUpdate(ctx context.Context, h http.Header,
 }
 
 // ListVpcExt list vpc with extension.
-func (v *VpcClient) ListVpcExt(ctx context.Context, h http.Header, req *core.ListReq) (
+func (v *VpcClient) ListVpcExt(kt *kit.Kit, req *core.ListReq) (
 	*protocloud.VpcExtListResult[corecloud.GcpVpcExtension], error) {
 
 	resp := new(protocloud.VpcExtListResp[corecloud.GcpVpcExtension])
 
 	err := v.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(req).
 		SubResourcef("/vpcs/list").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 

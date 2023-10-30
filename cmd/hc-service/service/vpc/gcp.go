@@ -26,22 +26,25 @@ import (
 	"strings"
 
 	"hcm/cmd/hc-service/logics/subnet"
-	syncroutetable "hcm/cmd/hc-service/logics/sync/route-table"
+	"hcm/pkg/adaptor/gcp"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
+	adrt "hcm/pkg/adaptor/types/route-table"
 	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
-	hcroutetable "hcm/pkg/api/hc-service/route-table"
+	dsrt "hcm/pkg/api/data-service/cloud/route-table"
 	subnetproto "hcm/pkg/api/hc-service/subnet"
 	hcservice "hcm/pkg/api/hc-service/vpc"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/retry"
+	"hcm/pkg/tools/slice"
 )
 
 // GcpVpcCreate create gcp vpc.
@@ -54,7 +57,7 @@ func (v vpc) GcpVpcCreate(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	cli, err := v.ad.Gcp(cts.Kit, req.AccountID)
+	adaptor, err := v.ad.Gcp(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -71,38 +74,41 @@ func (v vpc) GcpVpcCreate(cts *rest.Contexts) (interface{}, error) {
 			RoutingMode:           req.Extension.RoutingMode,
 		},
 	}
-	vpcID, err := cli.CreateVpc(cts.Kit, opt)
+	vpcID, err := adaptor.CreateVpc(cts.Kit, opt)
 	if err != nil {
 		return nil, err
 	}
 
 	// get created vpc info
-	listOpt := &types.GcpListOption{CloudIDs: []string{strconv.FormatUint(vpcID, 10)}}
-	listRes, err := cli.ListVpc(cts.Kit, listOpt)
+	listOpt := &types.GcpListOption{CloudIDs: []string{strconv.FormatUint(vpcID, 10)},
+		Page: &adcore.GcpPage{PageSize: adcore.GcpQueryLimit}}
+	listRes, err := adaptor.ListVpc(cts.Kit, listOpt)
 	if err != nil {
+		logs.Errorf("fail to ListVpc, err: %v, vpcID, rid: %s", err, vpcID, cts.Kit.Rid)
 		return nil, err
 	}
-
 	if len(listRes.Details) != 1 {
-		return nil, errf.Newf(errf.Aborted, "get created vpc detail, but result count is invalid")
+		return nil, errf.Newf(errf.Aborted, "get created vpc detail, but vpcResult count is invalid")
 	}
+	vpcCreated := listRes.Details[0]
 
 	// create hcm vpc
 	createReq := &cloud.VpcBatchCreateReq[cloud.GcpVpcCreateExt]{
-		Vpcs: []cloud.VpcCreateReq[cloud.GcpVpcCreateExt]{convertGcpVpcCreateReq(req, &listRes.Details[0])},
+		Vpcs: []cloud.VpcCreateReq[cloud.GcpVpcCreateExt]{convertGcpVpcCreateReq(req, &vpcCreated)},
 	}
-	result, err := v.cs.DataService().Gcp.Vpc.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq)
+	vpcResult, err := v.cs.DataService().Gcp.Vpc.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq)
 	if err != nil {
+		logs.Errorf("vpc created on cloud, but fail to BatchCreate vpc on db, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	if len(result.IDs) != 1 {
-		return nil, errf.New(errf.Aborted, "create result is invalid")
+	if len(vpcResult.IDs) != 1 {
+		return nil, errf.New(errf.Aborted, "create vpcResult is invalid")
 	}
 
 	// create gcp subnets
 	if len(req.Extension.Subnets) == 0 {
-		return core.CreateResult{ID: result.IDs[0]}, nil
+		return core.CreateResult{ID: vpcResult.IDs[0]}, nil
 	}
 
 	regionSubnetMap := make(map[string][]subnetproto.SubnetCreateReq[subnetproto.GcpSubnetCreateExt])
@@ -110,26 +116,67 @@ func (v vpc) GcpVpcCreate(cts *rest.Contexts) (interface{}, error) {
 		regionSubnetMap[s.Extension.Region] = append(regionSubnetMap[s.Extension.Region], s)
 	}
 
-	cloudVpcID := listRes.Details[0].CloudID
 	for region, subnets := range regionSubnetMap {
-		err = v.createGcpSubnetWithRetry(cts.Kit, constant.UnassignedBiz, req.AccountID, cloudVpcID, region, subnets)
+		err = v.createGcpSubnetWithRetry(cts.Kit, constant.UnassignedBiz, req.AccountID, vpcCreated.CloudID, region,
+			subnets)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	// TODO: sync-todo change to 3.0 sync route table
-	rtReq := &hcroutetable.GcpRouteTableSyncReq{
-		AccountID: req.AccountID,
-	}
-	if _, err = syncroutetable.GcpRouteTableSync(cts.Kit, rtReq, v.ad, v.cs.DataService()); err != nil {
+	err = v.createGeneratedRoute(cts.Kit, adaptor, vpcCreated.Extension.SelfLink)
+	if err != nil {
+		logs.Errorf("create gcp vpc and subnet success, but create route fail, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-
-	return core.CreateResult{ID: result.IDs[0]}, nil
+	return core.CreateResult{ID: vpcResult.IDs[0]}, nil
 }
 
 const maxRetryCount = 10
+
+func (v vpc) createGeneratedRoute(kt *kit.Kit, adaptor *gcp.Gcp, network string) error {
+	routeOpt := &adrt.GcpListOption{
+		Page:    &adcore.GcpPage{PageSize: adcore.GcpQueryLimit},
+		Network: []string{network},
+	}
+	routeResp, err := adaptor.ListRoute(kt, routeOpt)
+	if err != nil {
+		logs.Errorf("[%s] list route from cloud failed, err: %v, network: %s, opt: %v, rid: %s", enumor.Gcp,
+			err, network, routeOpt, kt.Rid)
+		return err
+	}
+	if len(routeResp.Details) == 0 {
+		return nil
+	}
+	routes := slice.Map(routeResp.Details, func(r adrt.GcpRoute) dsrt.GcpRouteCreateReq {
+		return dsrt.GcpRouteCreateReq{
+			CloudID:          r.CloudID,
+			SelfLink:         r.SelfLink,
+			Network:          r.Network,
+			Name:             r.Name,
+			DestRange:        r.DestRange,
+			NextHopGateway:   r.NextHopIp,
+			NextHopIlb:       r.NextHopIlb,
+			NextHopInstance:  r.NextHopInstance,
+			NextHopIp:        r.NextHopGateway,
+			NextHopNetwork:   r.NextHopNetwork,
+			NextHopPeering:   r.NextHopPeering,
+			NextHopVpnTunnel: r.NextHopVpnTunnel,
+			Priority:         r.Priority,
+			RouteStatus:      r.RouteStatus,
+			RouteType:        r.RouteType,
+			Tags:             r.Tags,
+			Memo:             r.Memo,
+		}
+	})
+
+	_, err = v.cs.DataService().Gcp.RouteTable.BatchCreateRoute(kt, &dsrt.GcpRouteBatchCreateReq{GcpRoutes: routes})
+	if err != nil {
+		logs.Errorf("fail to create gcp route, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	return nil
+}
 
 // createGcpSubnetWithRetry create gcp subnet, retry when vpc is not ready.
 func (v vpc) createGcpSubnetWithRetry(kt *kit.Kit, bizID int64, accountID, cloudVpcID, region string,
