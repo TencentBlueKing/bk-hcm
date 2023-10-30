@@ -156,7 +156,7 @@ watch(
             v-for="(item, index) in vendorList"
             :key="index"
             :value="item.id"
-            :label="item.name"
+            :label="item.id"
           />
         </bk-select>
       </div>
