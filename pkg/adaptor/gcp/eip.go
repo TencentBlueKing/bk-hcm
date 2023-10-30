@@ -170,11 +170,10 @@ func (g *Gcp) DeleteEip(kt *kit.Kit, opt *eip.GcpEipDeleteOption) error {
 
 	if opt.Region == eip.GcpGlobalRegion {
 		_, err = client.GlobalAddresses.Delete(g.CloudProjectID(), opt.EipName).
-			Context(kt.Ctx).
-			RequestId(kt.Rid).
-			Do()
+			Context(kt.Ctx).Do()
 	} else {
-		_, err = client.Addresses.Delete(g.CloudProjectID(), opt.Region, opt.EipName).Context(kt.Ctx).RequestId(kt.Rid).Do()
+		_, err = client.Addresses.Delete(g.CloudProjectID(), opt.Region, opt.EipName).
+			Context(kt.Ctx).Do()
 	}
 
 	if err != nil {
@@ -203,7 +202,7 @@ func (g *Gcp) AssociateEip(kt *kit.Kit, opt *eip.GcpEipAssociateOption) error {
 		opt.CvmName,
 		opt.NetworkInterfaceName,
 		&compute.AccessConfig{Name: eip.DefaultExternalNatName, NatIP: opt.PublicIp},
-	).Context(kt.Ctx).RequestId(kt.Rid).Do()
+	).Context(kt.Ctx).Do()
 	if err != nil {
 		logs.Errorf("associate gcp address failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
 		return err
@@ -239,7 +238,7 @@ func (g *Gcp) DisassociateEip(kt *kit.Kit, opt *eip.GcpEipDisassociateOption) er
 		opt.CvmName,
 		opt.AccessConfigName,
 		opt.NetworkInterfaceName,
-	).Context(kt.Ctx).RequestId(kt.Rid).Do()
+	).Context(kt.Ctx).Do()
 	if err != nil {
 		logs.Errorf("disassociate gcp address failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
 		return err
