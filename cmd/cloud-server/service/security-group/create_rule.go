@@ -220,14 +220,13 @@ func (svc *securityGroupSvc) createHuaWeiSGRule(cts *rest.Contexts, sgBaseInfo *
 			ActionName: enumor.ActionCreateHuaweiSGRule,
 		})
 	}
-	if req.EgressRuleSet == nil {
-		for i, rule := range req.EgressRuleSet {
-			tasks[i].Params = convSGRuleReq(sgBaseInfo, rule, true)
-		}
-	} else {
-		for i, rule := range req.IngressRuleSet {
-			tasks[i].Params = convSGRuleReq(sgBaseInfo, rule, false)
-		}
+
+	for i, rule := range req.IngressRuleSet {
+		tasks[i].Params = convSGRuleReq(sgBaseInfo, rule, true)
+	}
+
+	for i, rule := range req.EgressRuleSet {
+		tasks[i].Params = convSGRuleReq(sgBaseInfo, rule, false)
 	}
 
 	flowReq := &ts.AddCustomFlowReq{
@@ -249,6 +248,7 @@ func (svc *securityGroupSvc) createHuaWeiSGRule(cts *rest.Contexts, sgBaseInfo *
 
 func convSGRuleReq(sgBaseInfo *types.CloudResourceBasicInfo, rule proto.HuaWeiSecurityGroupRule,
 	isEgress bool) *actionsg.CreateHuaweiSGRuleOption {
+
 	actionOpt := &actionsg.CreateHuaweiSGRuleOption{
 		SGID: sgBaseInfo.ID,
 		RuleReq: &hcproto.HuaWeiSGRuleCreateReq{
@@ -270,6 +270,7 @@ func convSGRuleReq(sgBaseInfo *types.CloudResourceBasicInfo, rule proto.HuaWeiSe
 	} else {
 		actionOpt.RuleReq.IngressRule = r
 	}
+
 	return actionOpt
 }
 
