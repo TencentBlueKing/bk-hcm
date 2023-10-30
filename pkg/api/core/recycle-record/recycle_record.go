@@ -25,9 +25,15 @@ import (
 )
 
 // RecycleRecord defines recycle record info.
-type RecycleRecord struct {
+type RecycleRecord RecycleRecordT[any]
+
+// CvmRecycleRecord RecycleRecordT for Cvm
+type CvmRecycleRecord RecycleRecordT[CvmRecycleDetail]
+
+// RecycleRecordT  recycle record with detail
+type RecycleRecordT[T any] struct {
 	BaseRecycleRecord `json:",inline"`
-	Detail            interface{} `json:"detail"`
+	Detail            T `json:"detail"`
 }
 
 // BaseRecycleRecord defines recycle record basic info.

@@ -329,7 +329,8 @@ func (h *attachDiskPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudID
 	}
 
 	cIDs := converter.PtrToSlice(cloudIDs)
-	return client.ListDisk(kt, &core.TCloudListOption{Region: h.region, CloudIDs: cIDs})
+	return client.ListDisk(kt,
+		&core.TCloudListOption{Region: h.region, CloudIDs: cIDs, Page: &core.TCloudPage{Limit: core.TCloudQueryLimit}})
 }
 
 type detachDiskPollingHandler struct {
@@ -351,5 +352,6 @@ func (h *detachDiskPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudID
 	}
 
 	cIDs := converter.PtrToSlice(cloudIDs)
-	return client.ListDisk(kt, &core.TCloudListOption{Region: h.region, CloudIDs: cIDs})
+	return client.ListDisk(kt,
+		&core.TCloudListOption{Region: h.region, CloudIDs: cIDs, Page: &core.TCloudPage{Limit: core.TCloudQueryLimit}})
 }

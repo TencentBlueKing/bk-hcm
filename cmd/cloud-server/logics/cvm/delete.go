@@ -40,8 +40,8 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/thirdparty/esb/cmdb"
 	"hcm/pkg/tools/classifier"
-	"hcm/pkg/tools/json"
 	"hcm/pkg/tools/maps"
+	"hcm/pkg/tools/slice"
 )
 
 // BatchDeleteCvm batch delete cvm.
@@ -177,7 +177,7 @@ func (c *cvm) batchDeleteCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.
 //  1. 用户手动发起
 //  2. 由定时回收任务触发
 func (c *cvm) DestroyRecycledCvm(kt *kit.Kit, cvmBasicInfo map[string]types.CloudResourceBasicInfo,
-	records []corerecord.RecycleRecord) (*core.BatchOperateResult, error) {
+	records []corerecord.CvmRecycleRecord) (*core.BatchOperateResult, error) {
 
 	if len(cvmBasicInfo) == 0 {
 		return nil, nil
@@ -188,16 +188,7 @@ func (c *cvm) DestroyRecycledCvm(kt *kit.Kit, cvmBasicInfo map[string]types.Clou
 	// 获取回收时的挂载信息
 	cvmRecycleDetails := make(map[string]corerecord.CvmRecycleDetail, len(records))
 	for _, record := range records {
-		if detailStr, ok := record.Detail.(string); ok {
-			recycleDetail := corerecord.CvmRecycleDetail{}
-			if err := json.UnmarshalFromString(detailStr, &recycleDetail); err != nil {
-				logs.Errorf("fail to unmarshal cvm recycle detail, err: %v, rid: %s", err, kt.Rid)
-				return nil, err
-			}
-			cvmRecycleDetails[record.ResID] = recycleDetail
-		} else {
-			return nil, fmt.Errorf("wrong type of recycle detail, got: %T, need string", record.Detail)
-		}
+		cvmRecycleDetails[record.ResID] = record.Detail
 	}
 
 	leftCvmInfo := maps.Clone(cvmBasicInfo)
@@ -216,6 +207,7 @@ func (c *cvm) DestroyRecycledCvm(kt *kit.Kit, cvmBasicInfo map[string]types.Clou
 		return nil, err
 	}
 
+	// 全部失败
 	if len(cvmStatus) == 0 {
 		return destroyResult, destroyResult.Failed.Error
 	}
@@ -339,6 +331,7 @@ func (c *cvm) checkAndUnbindCvmRelated(kt *kit.Kit, cvmBasicInfo map[string]type
 	failed, err := c.disk.BatchDetach(kt, cvmStatus)
 	if err != nil {
 		logs.Errorf("failed to detach some disks of cvm(%v), err: %v, rid: %s", failed, err, kt.Rid)
+		return cvmStatus, err
 	}
 
 	// 解绑全部eip
@@ -381,6 +374,21 @@ func (c *cvm) destroyCleanUp(kt *kit.Kit, cvmStatus map[string]*recycle.CvmDetai
 	if err != nil {
 		return err
 	}
+	// 标记关联磁盘任务为失败
+	var diskIds []string
+	for _, cvmDetail := range diskRebind {
+		if cvmDetail.WithDisk && len(cvmDetail.DiskList) > 0 {
+			for _, disk := range cvmDetail.DiskList {
+				diskIds = append(diskIds, disk.DiskID)
+			}
+		}
+	}
+	err = c.BatchFinalizeRelRecord(kt, enumor.DiskCloudResType, enumor.FailedRecycleRecordStatus, diskIds)
+	if err != nil {
+		logs.Errorf("fail to mark related disk recycle record failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
 	return nil
 }
 
@@ -567,6 +575,38 @@ func (c *cvm) RecyclePreCheck(kt *kit.Kit, basicInfoMap map[string]types.CloudRe
 	err := c.checkAndStopCvm(kt, leftInfo)
 	if err != nil {
 		logs.Errorf("fail to check or stop cvm, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	return nil
+}
+
+// BatchFinalizeRelRecord 批量更改关联资源的状态
+func (c *cvm) BatchFinalizeRelRecord(kt *kit.Kit, resType enumor.CloudResourceType,
+	status enumor.RecycleRecordStatus, resIds []string) error {
+	// 查询关联的磁盘回收任务
+	relListReq := &core.ListReq{Page: core.NewDefaultBasePage(), Filter: &filter.Expression{Op: filter.And,
+		Rules: []filter.RuleFactory{
+			tools.EqualExpression("res_type", resType),
+			tools.EqualExpression("status", enumor.WaitingRecycleRecordStatus),
+			tools.EqualExpression("recycle_type", enumor.RecycleTypeRelated),
+			tools.ContainersExpression("res_id", resIds),
+		},
+	}}
+	relRecords, err := c.client.DataService().Global.RecycleRecord.ListRecycleRecord(kt, relListReq)
+	if err != nil {
+		logs.Errorf("fail to list related disk recycle record, err: %s, rid: %s", err, kt.Rid)
+		return err
+	}
+	// 更新关联资源回收任务状态
+	updateRecordOpt := dsrecord.BatchUpdateReq{Data: slice.Map(relRecords.Details,
+		func(rel corerecord.RecycleRecord) dsrecord.UpdateReq {
+			return dsrecord.UpdateReq{ID: rel.ID, Status: status}
+		}),
+	}
+	err = c.client.DataService().Global.RecycleRecord.BatchUpdateRecycleRecord(kt, &updateRecordOpt)
+	if err != nil {
+		logs.Errorf("fail to update related %s recycle record status to '%s', err: %s, rid: %s",
+			resType, status, err, kt.Rid)
 		return err
 	}
 	return nil

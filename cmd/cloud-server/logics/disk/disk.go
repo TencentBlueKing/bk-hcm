@@ -309,28 +309,34 @@ func (d *disk) BatchGetDiskInfo(kt *kit.Kit, cvmDetail map[string]*recycle.CvmDe
 
 // BatchDetach  批量解绑，返回的失败cvm, 用户自行决定是否回滚
 func (d *disk) BatchDetach(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmDetail) (failed []string,
-	err error) {
-
+	lastErr error) {
+	if len(cvmRecycleMap) == 0 {
+		return nil, nil
+	}
 	kt = kt.NewSubKit()
 
 	for _, detail := range cvmRecycleMap {
 		if detail.FailedAt != "" {
 			continue
 		}
-		for _, disk := range detail.DiskList {
+		// 同一个cvm的磁盘解绑只失败一次
+		for i, disk := range detail.DiskList {
 			err := d.DetachDisk(kt, detail.Vendor, detail.CvmID, disk.DiskID)
 			if err != nil {
-				disk.Err = err
+				lastErr = err
+				// 标记失败
+				detail.DiskList[i].Err = err
 				detail.FailedAt = enumor.DiskCloudResType
 				failed = append(failed, detail.CvmID)
 				logs.Errorf("failed to detach disk，err: %v cvmId: %s, diskId: %s, rid:%s",
 					err, detail.CvmID, disk.DiskID, kt.Rid)
+				// 继续处理下一个主机
 				break
 			}
 		}
-
 	}
-	return failed, nil
+
+	return failed, lastErr
 }
 
 // BatchReattachDisk 批量重新挂载磁盘, 仅处理磁盘卸载没有失败的磁盘
@@ -374,7 +380,7 @@ func (d *disk) BatchReattachDisk(kt *kit.Kit, cvmRecycleMap map[string]*recycle.
 				err = errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("unknown vendor: %s", detail.Vendor))
 			}
 			if err != nil {
-				logs.Errorf("fail to reattach, err: %v, cvmId: %s, disk: %v, rid: %s", err, disk, kt.Rid)
+				logs.Errorf("fail to reattach, err: %v, cvmId: %s, disk: %v, rid: %s", err, cvmId, disk, kt.Rid)
 			}
 		}
 	}

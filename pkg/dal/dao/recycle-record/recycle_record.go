@@ -218,7 +218,7 @@ func (r *Dao) BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Exp
 	return nil
 }
 
-// UpdateResource 更新回收相关信息，目前只更新 recycle_status
+// UpdateResource 更新资源回收相关信息，目前只更新 recycle_status
 func (r *Dao) UpdateResource(kt *kit.Kit, tx *sqlx.Tx, opt *rrtypes.ResourceUpdateOptions) error {
 	tableName, err := opt.ResType.ConvTableName()
 	if err != nil {
