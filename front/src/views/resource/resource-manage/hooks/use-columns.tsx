@@ -127,7 +127,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'region',
       sort: true,
       isDefaultShow: true,
-      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell),
+      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell) || '--',
     },
     {
       label: '是否分配',
