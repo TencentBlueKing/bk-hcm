@@ -17,6 +17,7 @@ import { CLOUD_HOST_STATUS, VendorEnum } from '@/common/constant';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
+import { useCloudAreaStore } from '@/store/useCloudAreaStore';
 import StatusAbnormal from '@/assets/image/Status-abnormal.png';
 import StatusNormal from '@/assets/image/Status-normal.png';
 import StatusUnknown from '@/assets/image/Status-unknown.png';
@@ -34,6 +35,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const { getRegionName } = useRegionsStore();
   const { whereAmI } = useWhereAmI();
   const businessMapStore = useBusinessMapStore();
+  const cloudAreaStore = useCloudAreaStore();
 
   const getLinkField = (
     type: string,
@@ -159,12 +161,12 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '--',
     },
     {
-      label: '管控区域 ID',
+      label: '管控区域',
       field: 'bk_cloud_id',
       isDefaultShow: true,
       render({ cell }: { cell: number }) {
-        if (cell > -1) {
-          return cell;
+        if (cell !== -1) {
+          return `[${cell}] ${cloudAreaStore.getNameFromCloudAreaMap(cell)}`;
         }
         return '--';
       },

@@ -121,6 +121,7 @@ export default defineComponent({
                 type='number'
                 min={20}
                 max={32000}
+                step={10}
                 v-model={formData.disk_size}
                 suffix='GB'></Input>
             ),
@@ -160,6 +161,7 @@ export default defineComponent({
                 content: () => (
                   <Input
                     type='number'
+                    min={1}
                     v-model={formData.purchase_duration.count}></Input>
                 ),
               },

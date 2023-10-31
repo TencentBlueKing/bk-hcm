@@ -1,10 +1,5 @@
 <script setup lang="ts">
-import {
-  ref,
-  computed,
-  provide,
-  watchEffect,
-} from 'vue';
+import { ref, computed, provide, watchEffect } from 'vue';
 
 import HostManage from '@/views/resource/resource-manage/children/manage/host-manage.vue';
 import VpcManage from '@/views/resource/resource-manage/children/manage/vpc-manage.vue';
@@ -25,12 +20,10 @@ import subnetForm from './forms/subnet/index.vue';
 import securityForm from './forms/security/index.vue';
 import firewallForm from './forms/firewall';
 
-import {
-  useRoute,
-  useRouter,
-} from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import { useAccountStore } from '@/store/account';
+import { InfoBox } from 'bkui-vue';
 
 const isShowSideSlider = ref(false);
 const isShowGcpAdd = ref(false);
@@ -48,7 +41,7 @@ const isLoading = ref(false);
 const formDetail = ref({});
 const isEdit = ref(false);
 
-provide('securityType', securityType);    // 将数据传入孙组件
+provide('securityType', securityType); // 将数据传入孙组件
 
 // 组件map
 const componentMap = {
@@ -88,7 +81,8 @@ const renderForm = computed(() => {
   }, {});
 });
 
-const isResourcePage = computed(() => {   // 资源下没有业务ID
+const isResourcePage = computed(() => {
+  // 资源下没有业务ID
   return !accountStore.bizs;
 });
 
@@ -139,15 +133,9 @@ const handleSecrityType = (val: string) => {
 // 新增修改防火墙规则
 const submit = async (data: any) => {
   const fetchType = 'vendors/gcp/firewalls/rules/create';
-  const {
-    addData,
-    updateData,
-  } = useAdd(
-    fetchType,
-    data,
-    data?.id,
-  );
-  if (isAdd.value) {   // 新增
+  const { addData, updateData } = useAdd(fetchType, data, data?.id);
+  if (isAdd.value) {
+    // 新增
     addData();
   } else {
     await updateData();
@@ -164,6 +152,16 @@ const handleToPage = () => {
   router.push({ path: destination });
 };
 
+const handleBeforeClose = () => {
+  InfoBox({
+    title: '请确认是否关闭侧栏？',
+    subTitle: '关闭后，内容需要重新填写！',
+    theme: 'warning',
+    onConfirm() {
+      handleCancel();
+    },
+  });
+};
 
 // 权限hook
 const {
@@ -199,20 +197,26 @@ watchEffect(() => {
         >
           <span @click="handleAuth('biz_iaas_resource_create')">
             <bk-button
-              theme="primary" class="new-button mr8"
-              :disabled="!authVerifyData?.permissionAction?.biz_iaas_resource_create" @click="handleAdd">
-              {{renderComponent === DriveManage ||
-                renderComponent === HostManage ||
-                renderComponent === SubnetManage ||
-                renderComponent === VpcManage ? '申请' : '新增'}}
+              theme="primary"
+              class="new-button mr8"
+              :disabled="
+                !authVerifyData?.permissionAction?.biz_iaas_resource_create
+              "
+              @click="handleAdd"
+            >
+              {{
+                renderComponent === DriveManage ||
+                  renderComponent === HostManage ||
+                  renderComponent === SubnetManage ||
+                  renderComponent === VpcManage
+                  ? '申请'
+                  : '新增'
+              }}
             </bk-button>
           </span>
 
           <template #recycleHistory>
-            <bk-button
-              class="f-right"
-              theme="primary"
-              @click="handleToPage">
+            <bk-button class="f-right" theme="primary" @click="handleToPage">
               {{ '回收记录' }}
             </bk-button>
           </template>
@@ -224,6 +228,7 @@ watchEffect(() => {
       width="800"
       title="新增"
       quick-close
+      :before-close="handleBeforeClose"
     >
       <template #default>
         <component
@@ -232,8 +237,8 @@ watchEffect(() => {
           @cancel="handleCancel"
           @success="handleSuccess"
           :detail="formDetail"
-          :is-edit="isEdit">
-        </component>
+          :is-edit="isEdit"
+        ></component>
       </template>
     </bk-sideslider>
     <permission-dialog
@@ -249,7 +254,8 @@ watchEffect(() => {
       :is-add="isAdd"
       :loading="isLoading"
       :detail="{}"
-      @submit="submit"></gcp-add>
+      @submit="submit"
+    ></gcp-add>
   </div>
 </template>
 

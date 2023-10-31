@@ -1,11 +1,5 @@
 <script setup lang="ts">
-import {
-  ref,
-  watch,
-  defineEmits,
-  defineExpose,
-  defineProps,
-} from 'vue';
+import { ref, watch, defineEmits, defineExpose, defineProps } from 'vue';
 
 import ZoneSelector from '@/components/zone-selector/index.vue';
 import ResourceGroup from '@/components/resource-group/index.vue';
@@ -13,11 +7,11 @@ import ResourceGroup from '@/components/resource-group/index.vue';
 const emit = defineEmits(['change']);
 defineProps({
   region: {
-    type: String
+    type: String,
   },
   vendor: {
-    type: String
-  }
+    type: String,
+  },
 });
 
 const formData = ref({
@@ -56,93 +50,59 @@ const rules = {
   ],
 };
 
-
 const handleChange = () => {
-  emit('change', formData.value)
-}
+  emit('change', formData.value);
+};
 
 const validate = () => {
-  return formRef.value.validate()
-}
+  return formRef.value.validate();
+};
 
 const getIPAddressName = (val: string) => {
-  return val === 'Dynamic' ? '动态' : '静态'
-}
+  return val === 'Dynamic' ? '动态' : '静态';
+};
 
 watch(
   () => formData,
   () => {
-    formData.value.allocation_method = formData.value.sku_name === 'Basic' ? 'Dynamic' : 'Static'
+    formData.value.allocation_method =      formData.value.sku_name === 'Basic' ? 'Dynamic' : 'Static';
     if (formData.value.ip_version === 'IPV6') {
-      formData.value.idle_timeout_in_minutes = 4
+      formData.value.idle_timeout_in_minutes = 4;
     }
-    handleChange()
+    handleChange();
   },
   {
     immediate: true,
-    deep: true
-  }
-)
+    deep: true,
+  },
+);
 
 defineExpose([validate]);
 </script>
 
 <template>
-  <bk-form
-    ref="formRef"
-    :model="formData"
-    :rules="rules"
-  >
-    <bk-form-item
-      label="资源组"
-      property="resource_group_name"
-      required
-    >
+  <bk-form ref="formRef" :model="formData" :rules="rules">
+    <bk-form-item label="资源组" property="resource_group_name" required>
       <resource-group
         :vendor="vendor"
         :region="region"
         v-model="formData.resource_group_name"
       />
     </bk-form-item>
-    <bk-form-item
-      label="名称"
-      property="eip_name"
-      required
-    >
+    <bk-form-item label="名称" property="eip_name" required>
       <bk-input v-model="formData.eip_name" placeholder="请输入名称" />
     </bk-form-item>
-    <bk-form-item
-      label="IP版本"
-    >
-      <bk-radio
-        v-model="formData.ip_version"
-        label="ipv4"
-      >
-        IPv4
-      </bk-radio>
-      <bk-radio
-        v-model="formData.ip_version"
-        label="ipv6"
-      >
-        IPv6
-      </bk-radio>
+    <bk-form-item label="IP版本" required>
+      <bk-radio v-model="formData.ip_version" label="ipv4">IPv4</bk-radio>
+      <bk-radio v-model="formData.ip_version" label="ipv6">IPv6</bk-radio>
     </bk-form-item>
     <bk-form-item
       label="SKU"
       description="公共 IP 的 SKU 必须与搭配使用的负载均衡器的 SKU 一致。了解详细信息（https://learn.microsoft.com/zh-cn/azure/load-balancer/skus#skus）"
+      required
     >
-      <bk-radio
-        v-model="formData.sku_name"
-        label="Standard"
-      >
-        标准
-      </bk-radio>
-      <bk-radio
-        v-model="formData.sku_name"
-        label="Basic"
-      >
-        基本
-      </bk-radio>
+      <bk-radio v-model="formData.sku_name" label="Standard">标准</bk-radio>
+      <bk-radio v-model="formData.sku_name" label="Basic">基本</bk-radio>
     </bk-form-item>
     <bk-form-item
       v-if="formData.ip_version === 'ipv4' && formData.sku_name === 'Standard'"
@@ -150,26 +110,14 @@ defineExpose([validate]);
       property="sku_tier"
       required
     >
-      <bk-radio
-        v-model="formData.sku_tier"
-        label="Regional"
-      >
-        区域级
-      </bk-radio>
-      <bk-radio
-        v-model="formData.sku_tier"
-        label="Global"
-      >
-        全局
-      </bk-radio>
+      <bk-radio v-model="formData.sku_tier" label="Regional">区域级</bk-radio>
+      <bk-radio v-model="formData.sku_tier" label="Global">全局</bk-radio>
     </bk-form-item>
-    <bk-form-item
-      label="IP地址分配"
-    >
+    <bk-form-item label="IP地址分配">
       {{ getIPAddressName(formData.allocation_method) }}
     </bk-form-item>
     <bk-form-item
-     v-if="formData.sku_name === 'Standard'"
+      v-if="formData.sku_name === 'Standard'"
       label="可用性区域"
       property="zone"
       required
@@ -193,9 +141,7 @@ defineExpose([validate]);
       />
       <span v-else>{{ formData.idle_timeout_in_minutes }}</span>
     </bk-form-item>
-    <bk-form-item
-      label="数量"
-    >
+    <bk-form-item label="数量">
       {{ formData.eip_count }}
     </bk-form-item>
   </bk-form>

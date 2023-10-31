@@ -139,6 +139,7 @@ const renderColumns = [
                           theme: 'success',
                           message: '回收成功',
                         });
+                        triggerApi();
                       });
                   },
                 });
