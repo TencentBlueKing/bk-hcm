@@ -1,28 +1,17 @@
 <script setup lang="ts">
-import type {
-  FilterType,
-} from '@/typings/resource';
-import {
-  PropType,
-  defineExpose,
-  h,
-  computed,
-} from 'vue';
-import {
-  Button,
-  Message,
-  InfoBox,
-} from 'bkui-vue';
-import {
-  useResourceStore,
-} from '@/store/resource';
+import type { FilterType } from '@/typings/resource';
+import { PropType, defineExpose, h, computed } from 'vue';
+import { Button, Message, InfoBox } from 'bkui-vue';
+import { useResourceStore } from '@/store/resource';
 
 import useColumns from '../../hooks/use-columns';
 import useQueryList from '../../hooks/use-query-list';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import useSelection from '../../hooks/use-selection';
-import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
-
+import {
+  BatchDistribution,
+  DResourceType,
+} from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 
 const props = defineProps({
   filter: {
@@ -39,20 +28,12 @@ const props = defineProps({
   },
 });
 
-const {
-  selections,
-  handleSelectionChange,
-  resetSelections,
-} = useSelection();
+const { selections, handleSelectionChange, resetSelections } = useSelection();
 
 const resourceStore = useResourceStore();
 const { columns, settings } = useColumns('subnet');
 
-const {
-  searchData,
-  searchValue,
-  filter,
-} = useFilter(props);
+const { searchData, searchValue, filter } = useFilter(props);
 
 const isRowSelectEnable = ({ row }: DoublePlainObject) => {
   if (!props.isResourcePage) return true;
@@ -74,16 +55,18 @@ const {
 const hostSearchData = computed(() => {
   return [
     ...searchData.value,
-    ...[{
-      name: '所属vpc',
-      id: 'vpc_id',
-    }, {
-      name: '云地域',
-      id: 'region',
-    }],
+    ...[
+      {
+        name: '所属vpc',
+        id: 'vpc_id',
+      },
+      {
+        name: '云地域',
+        id: 'region',
+      },
+    ],
   ];
 });
-
 
 const emit = defineEmits(['auth']);
 
@@ -96,58 +79,60 @@ const handleDeleteSubnet = (data: any) => {
   if (data.vendor === 'gcp') {
     const subnetIds = [data.id];
     const getRelateNum = (type: string, field = 'subnet_id', op = 'in') => {
-      return resourceStore
-        .list(
-          {
-            page: {
-              count: true,
-            },
-            filter: {
-              op: 'and',
-              rules: [{
+      return resourceStore.list(
+        {
+          page: {
+            count: true,
+          },
+          filter: {
+            op: 'and',
+            rules: [
+              {
                 field,
                 op,
                 value: subnetIds,
-              }],
-            },
+              },
+            ],
           },
-          type,
-        );
+        },
+        type,
+      );
     };
-    Promise
-      .all([
-        getRelateNum('cvms', 'subnet_ids', 'json_overlaps'),
-        getRelateNum('network_interfaces'),
-      ])
-      .then(([cvmsResult, networkResult]: any) => {
-        if (cvmsResult?.data?.count || networkResult?.data?.count) {
-          const getMessage = (result: any, name: string) => {
-            if (result?.data?.count) {
-              return `${result?.data?.count}个${name}，`;
-            }
-            return '';
-          };
-          Message({
-            theme: 'error',
-            message: `该子网（name：${data.name}，id：${data.id}）关联${getMessage(cvmsResult, 'CVM')}${getMessage(networkResult, '网络接口')}不能删除`,
-          });
-        } else {
-          handledelete(data);
-        }
-      });
+    Promise.all([
+      getRelateNum('cvms', 'subnet_ids', 'json_overlaps'),
+      getRelateNum('network_interfaces'),
+    ]).then(([cvmsResult, networkResult]: any) => {
+      if (cvmsResult?.data?.count || networkResult?.data?.count) {
+        const getMessage = (result: any, name: string) => {
+          if (result?.data?.count) {
+            return `${result?.data?.count}个${name}，`;
+          }
+          return '';
+        };
+        Message({
+          theme: 'error',
+          message: `该子网（name：${data.name}，id：${
+            data.id
+          }）关联${getMessage(cvmsResult, 'CVM')}${getMessage(
+            networkResult,
+            '网络接口',
+          )}不能删除`,
+        });
+      } else {
+        handledelete(data);
+      }
+    });
   } else {
-    resourceStore
-      .countSubnetIps(data.id as string)
-      .then((res: any) => {
-        if (res?.data?.used_ip_count) {
-          Message({
-            theme: 'error',
-            message: `该子网（name：${data.name}，id：${data.id} IPv4已经被使用${res?.data?.used_ip_count}不能删除`,
-          });
-        } else {
-          handledelete(data);
-        }
-      });
+    resourceStore.countSubnetIps(data.id as string).then((res: any) => {
+      if (res?.data?.used_ip_count) {
+        Message({
+          theme: 'error',
+          message: `该子网（name：${data.name}，id：${data.id} IPv4已经被使用${res?.data?.used_ip_count}不能删除`,
+        });
+      } else {
+        handledelete(data);
+      }
+    });
   }
 };
 
@@ -161,16 +146,15 @@ const handledelete = (data: any) => {
     contentAlign: 'center',
     onConfirm() {
       resourceStore
-        .deleteBatch(
-          'subnets',
-          {
-            ids: [data.id],
-          },
-        ).then(() => {
+        .deleteBatch('subnets', {
+          ids: [data.id],
+        })
+        .then(() => {
           Message({
             theme: 'success',
             message: '删除成功',
           });
+          triggerApi();
         });
     },
   });
@@ -185,7 +169,12 @@ const renderColumns = [
         'span',
         {
           onClick() {
-            emit('auth', props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete');
+            emit(
+              'auth',
+              props.isResourcePage
+                ? 'iaas_resource_delete'
+                : 'biz_iaas_resource_delete',
+            );
           },
         },
         [
@@ -194,14 +183,17 @@ const renderColumns = [
             {
               text: true,
               theme: 'primary',
-              disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'] || data.bk_biz_id !== -1,
+              disabled:
+                  !props.authVerifyData?.permissionAction[
+                    props.isResourcePage
+                      ? 'iaas_resource_delete'
+                      : 'biz_iaas_resource_delete'
+                  ] || data.bk_biz_id !== -1,
               onClick() {
                 handleDeleteSubnet(data);
               },
             },
-            [
-              '删除',
-            ],
+            ['删除'],
           ),
         ],
       ));
@@ -213,21 +205,23 @@ defineExpose({ fetchComponentsData });
 </script>
 
 <template>
-  <bk-loading
-    :loading="isLoading"
-  >
+  <bk-loading :loading="isLoading">
     <section
       class="flex-row align-items-center"
-      :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
-      <slot>
-      </slot>
+      :class="
+        isResourcePage ? 'justify-content-end' : 'justify-content-between'
+      "
+    >
+      <slot></slot>
       <BatchDistribution
         :selections="selections"
         :type="DResourceType.subnets"
-        :get-data="() => {
-          triggerApi();
-          resetSelections();
-        }"
+        :get-data="
+          () => {
+            triggerApi();
+            resetSelections();
+          }
+        "
       />
       <bk-search-select
         class="w500 ml10 search-selector-container"
