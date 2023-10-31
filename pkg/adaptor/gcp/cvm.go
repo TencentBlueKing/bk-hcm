@@ -421,7 +421,7 @@ type startCvmPollingHandler struct {
 
 // Done ...
 func (h *startCvmPollingHandler) Done(instances []*compute.Instance) (bool, *poller.BaseDoneResult) {
-	return done(instances, "RUNNING")
+	return done(instances, []string{"RUNNING"})
 }
 
 // Poll ...
@@ -435,7 +435,7 @@ type stopCvmPollingHandler struct {
 
 // Done ...
 func (h *stopCvmPollingHandler) Done(instances []*compute.Instance) (bool, *poller.BaseDoneResult) {
-	return done(instances, "STOPPED")
+	return done(instances, []string{"STOPPED", "TERMINATED"})
 }
 
 // Poll ...
@@ -449,7 +449,7 @@ type resetCvmPollingHandler struct {
 
 // Done ...
 func (h *resetCvmPollingHandler) Done(instances []*compute.Instance) (bool, *poller.BaseDoneResult) {
-	return done(instances, "RUNNING")
+	return done(instances, []string{"RUNNING"})
 }
 
 // Poll ...
@@ -457,13 +457,15 @@ func (h *resetCvmPollingHandler) Poll(client *Gcp, kt *kit.Kit, names []*string)
 	return poll(client, kt, h.zone, names)
 }
 
-func done(instances []*compute.Instance, succeed string) (bool, *poller.BaseDoneResult) {
+func done(instances []*compute.Instance, succeed []string) (bool, *poller.BaseDoneResult) {
 	result := new(poller.BaseDoneResult)
+
+	succeeMap := converter.StringSliceToMapBool(succeed)
 
 	flag := true
 	for _, instance := range instances {
 		// not done
-		if instance.Status != succeed {
+		if !succeeMap[instance.Status] {
 			flag = false
 			continue
 		}

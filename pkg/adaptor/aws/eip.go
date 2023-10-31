@@ -22,14 +22,13 @@ package aws
 import (
 	"fmt"
 
+	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types/eip"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
-
-	"hcm/pkg/adaptor/poller"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
@@ -253,7 +252,7 @@ type createEipPollingHandler struct {
 // Done ...
 func (h *createEipPollingHandler) Done(pollResult []*eip.AwsEip) (bool, *poller.BaseDoneResult) {
 	r := pollResult[0]
-	if converter.PtrToVal(r.AssociationId) == "" {
+	if r.CloudID == "" {
 		return false, nil
 	}
 	return true, nil
