@@ -451,7 +451,7 @@ func isDiskChange(cloud adaptordisk.AwsDisk, db *disk.DiskExtResult[disk.AwsDisk
 	for _, dbValue := range db.Extension.Attachment {
 		isEqual := false
 		for _, cloudValue := range cloud.Attachments {
-			if dbValue.AttachTime == cloudValue.AttachTime.String() &&
+			if dbValue.AttachTime == times.ConvStdTimeFormat(*cloudValue.AttachTime) &&
 				assert.IsPtrBoolEqual(dbValue.DeleteOnTermination, cloudValue.DeleteOnTermination) &&
 				assert.IsPtrStringEqual(dbValue.DeviceName, cloudValue.Device) &&
 				assert.IsPtrStringEqual(dbValue.InstanceId, cloudValue.InstanceId) &&

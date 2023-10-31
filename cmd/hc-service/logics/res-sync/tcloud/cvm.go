@@ -67,7 +67,7 @@ func (cli *client) Cvm(kt *kit.Kit, params *SyncBaseParams, opt *SyncCvmOption) 
 		return nil, err
 	}
 
-	if len(cvmFromCloud) == 0 && len(cvmFromCloud) == 0 {
+	if len(cvmFromCloud) == 0 && len(cvmFromDB) == 0 {
 		return new(SyncResult), nil
 	}
 
