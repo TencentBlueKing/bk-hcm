@@ -107,10 +107,11 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/disks/{id}
 
 #### DiskExtension[huawei]
 
-| 参数名称                | 参数类型                    | 描述                          |
-|---------------------|-------------------------|-----------------------------|
-| disk_charge_type    | string                  | 计费类型。可选值[prePaid, postPaid] |
-| disk_charge_prepaid | HuaWeiDiskChargePrepaid | 预付费参数。                      |
+| 参数名称           | 参数类型                    | 描述                          |
+|----------------|-------------------------|-----------------------------|
+| charge_type    | string                  | 计费类型。可选值[prePaid, postPaid] |
+| expire_time    | string                  | 过期时间。                       |
+| charge_prepaid | HuaWeiDiskChargePrepaid | 预付费参数。                      |
 
 #### HuaWeiDiskChargePrepaid
 

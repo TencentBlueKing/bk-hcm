@@ -21,6 +21,7 @@ package disk
 
 import (
 	"hcm/pkg/api/core"
+	coredisk "hcm/pkg/api/core/cloud/disk"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -42,21 +43,21 @@ func (dSvc *diskSvc) BatchCreateDiskExt(cts *rest.Contexts) (interface{}, error)
 	}
 	switch vendor {
 	case enumor.TCloud:
-		return batchCreateDiskExt[dataproto.TCloudDiskExtensionCreateReq](cts, dSvc, vendor)
+		return batchCreateDiskExt[coredisk.TCloudExtension](cts, dSvc, vendor)
 	case enumor.Aws:
-		return batchCreateDiskExt[dataproto.AwsDiskExtensionCreateReq](cts, dSvc, vendor)
+		return batchCreateDiskExt[coredisk.AwsExtension](cts, dSvc, vendor)
 	case enumor.Gcp:
-		return batchCreateDiskExt[dataproto.GcpDiskExtensionCreateReq](cts, dSvc, vendor)
+		return batchCreateDiskExt[coredisk.GcpExtension](cts, dSvc, vendor)
 	case enumor.Azure:
-		return batchCreateDiskExt[dataproto.AzureDiskExtensionCreateReq](cts, dSvc, vendor)
+		return batchCreateDiskExt[coredisk.AzureExtension](cts, dSvc, vendor)
 	case enumor.HuaWei:
-		return batchCreateDiskExt[dataproto.HuaWeiDiskExtensionCreateReq](cts, dSvc, vendor)
+		return batchCreateDiskExt[coredisk.HuaWeiExtension](cts, dSvc, vendor)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
 	}
 }
 
-func batchCreateDiskExt[T dataproto.DiskExtensionCreateReq](
+func batchCreateDiskExt[T coredisk.Extension](
 	cts *rest.Contexts,
 	dSvc *diskSvc,
 	vendor enumor.Vendor,

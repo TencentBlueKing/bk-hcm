@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/adaptor/aws"
 	adaptordisk "hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/api/core"
+	coredisk "hcm/pkg/api/core/cloud/disk"
 	"hcm/pkg/api/data-service/cloud/disk"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -71,7 +72,7 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 		return new(SyncResult), nil
 	}
 
-	addSlice, updateMap, delCloudIDs := common.Diff[adaptordisk.AwsDisk, *disk.DiskExtResult[disk.AwsDiskExtensionResult]](
+	addSlice, updateMap, delCloudIDs := common.Diff[adaptordisk.AwsDisk, *coredisk.Disk[coredisk.AwsExtension]](
 		diskFromCloud, diskFromDB, isDiskChange)
 
 	if len(delCloudIDs) > 0 {
@@ -102,7 +103,7 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, bootMap map[string]
 		return fmt.Errorf("updateMap is <= 0, not update")
 	}
 
-	disks := make([]*disk.DiskExtUpdateReq[disk.AwsDiskExtensionUpdateReq], 0)
+	disks := make([]*disk.DiskExtUpdateReq[coredisk.AwsExtension], 0)
 
 	for id, one := range updateMap {
 		name := ""
@@ -119,11 +120,11 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, bootMap map[string]
 			isSystemDisk = true
 		}
 
-		attachments := make([]*disk.AwsDiskAttachment, 0)
+		attachments := make([]*coredisk.AwsDiskAttachment, 0)
 		if len(one.Attachments) > 0 {
 			for _, v := range one.Attachments {
 				if v != nil {
-					tmp := &disk.AwsDiskAttachment{
+					tmp := &coredisk.AwsDiskAttachment{
 						AttachTime:          times.ConvStdTimeFormat(*v.AttachTime),
 						DeleteOnTermination: v.DeleteOnTermination,
 						DeviceName:          v.Device,
@@ -136,12 +137,12 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, bootMap map[string]
 			}
 		}
 
-		disk := &disk.DiskExtUpdateReq[disk.AwsDiskExtensionUpdateReq]{
+		disk := &disk.DiskExtUpdateReq[coredisk.AwsExtension]{
 			ID:           id,
 			Status:       converter.PtrToVal(one.State),
 			Name:         name,
 			IsSystemDisk: converter.ValToPtr(isSystemDisk),
-			Extension: &disk.AwsDiskExtensionUpdateReq{
+			Extension: &coredisk.AwsExtension{
 				Attachment: attachments,
 				Encrypted:  one.Encrypted,
 			},
@@ -150,7 +151,7 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, bootMap map[string]
 		disks = append(disks, disk)
 	}
 
-	var updateReq disk.DiskExtBatchUpdateReq[disk.AwsDiskExtensionUpdateReq]
+	var updateReq disk.DiskExtBatchUpdateReq[coredisk.AwsExtension]
 	for _, disk := range disks {
 		updateReq = append(updateReq, disk)
 	}
@@ -173,14 +174,14 @@ func (cli *client) createDisk(kt *kit.Kit, accountID string, region string,
 		return fmt.Errorf("addSlice is <= 0, not create")
 	}
 
-	var createReq disk.DiskExtBatchCreateReq[disk.AwsDiskExtensionCreateReq]
+	var createReq disk.DiskExtBatchCreateReq[coredisk.AwsExtension]
 
 	for _, one := range addSlice {
-		attachments := make([]*disk.AwsDiskAttachment, 0)
+		attachments := make([]*coredisk.AwsDiskAttachment, 0)
 		if len(one.Attachments) > 0 {
 			for _, v := range one.Attachments {
 				if v != nil {
-					tmp := &disk.AwsDiskAttachment{
+					tmp := &coredisk.AwsDiskAttachment{
 						AttachTime:          times.ConvStdTimeFormat(*v.AttachTime),
 						DeleteOnTermination: v.DeleteOnTermination,
 						DeviceName:          v.Device,
@@ -202,7 +203,7 @@ func (cli *client) createDisk(kt *kit.Kit, accountID string, region string,
 			}
 		}
 
-		disk := &disk.DiskExtCreateReq[disk.AwsDiskExtensionCreateReq]{
+		disk := &disk.DiskExtCreateReq[coredisk.AwsExtension]{
 			AccountID: accountID,
 			Name:      name,
 			CloudID:   converter.PtrToVal(one.VolumeId),
@@ -213,7 +214,7 @@ func (cli *client) createDisk(kt *kit.Kit, accountID string, region string,
 			Status:    converter.PtrToVal(one.State),
 			// 该云没有此字段
 			Memo: nil,
-			Extension: &disk.AwsDiskExtensionCreateReq{
+			Extension: &coredisk.AwsExtension{
 				Attachment: attachments,
 				Encrypted:  one.Encrypted,
 			},
@@ -300,13 +301,13 @@ func (cli *client) listDiskFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]ada
 }
 
 func (cli *client) listDiskFromDB(kt *kit.Kit, params *SyncBaseParams) (
-	[]*disk.DiskExtResult[disk.AwsDiskExtensionResult], error) {
+	[]*coredisk.Disk[coredisk.AwsExtension], error) {
 
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	req := &disk.DiskListReq{
+	req := &core.ListReq{
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
@@ -438,7 +439,7 @@ func (cli *client) listRemoveDiskID(kt *kit.Kit, params *SyncBaseParams) ([]stri
 	return delCloudIDs, nil
 }
 
-func isDiskChange(cloud adaptordisk.AwsDisk, db *disk.DiskExtResult[disk.AwsDiskExtensionResult]) bool {
+func isDiskChange(cloud adaptordisk.AwsDisk, db *coredisk.Disk[coredisk.AwsExtension]) bool {
 
 	if converter.PtrToVal(cloud.State) != db.Status {
 		return true

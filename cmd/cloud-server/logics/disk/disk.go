@@ -202,7 +202,7 @@ func (d *disk) fillAwsDisks(kt *kit.Kit, cvmDetails []*recycle.CvmDetail) error 
 			continue
 		}
 		cvmDiskMap[rel.CvmID] = append(cvmDiskMap[rel.CvmID], recyclerecord.DiskAttachInfo{
-			DiskID:     rel.DiskExtResult.ID,
+			DiskID:     rel.Disk.ID,
 			DeviceName: converter.PtrToVal(rel.Extension.Attachment[0].DeviceName),
 		})
 	}
@@ -231,7 +231,7 @@ func (d *disk) fillAzureDisk(kt *kit.Kit, cvmDetails []*recycle.CvmDetail) error
 			continue
 		}
 		cvmDiskMap[rel.CvmID] = append(cvmDiskMap[rel.CvmID], recyclerecord.DiskAttachInfo{
-			DiskID: rel.DiskExtResult.ID,
+			DiskID: rel.Disk.ID,
 			// TODO:!!! 没有保存caching type，难以重新attach，暂时先按None恢复,-> 在vm 属性的storageProfile里面
 			CachingType: "None",
 		})
@@ -262,7 +262,7 @@ func (d *disk) fillDisk(kt *kit.Kit, vendor enumor.Vendor, cvmDetails []*recycle
 		if rel.IsSystemDisk {
 			continue
 		}
-		cvmDiskMap[rel.CvmID] = append(cvmDiskMap[rel.CvmID], recyclerecord.DiskAttachInfo{DiskID: rel.DiskResult.ID})
+		cvmDiskMap[rel.CvmID] = append(cvmDiskMap[rel.CvmID], recyclerecord.DiskAttachInfo{DiskID: rel.BaseDisk.ID})
 	}
 
 	for _, cvmDetail := range cvmDetails {

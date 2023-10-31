@@ -23,7 +23,7 @@ import "hcm/pkg/dal/table/cloud/disk"
 
 // DiskListResult list disks
 type DiskListResult struct {
-	Count   *uint64
+	Count   uint64
 	Details []*disk.DiskModel
 }
 

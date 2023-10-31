@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 	"hcm/pkg/tools/uuid"
 
 	bssmodel "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/bssintl/v2/model"
@@ -87,7 +88,7 @@ func (h *HuaWei) InquiryPriceDisk(kt *kit.Kit, opt *disk.HuaWeiDiskCreateOption)
 func (h *HuaWei) inquiryPricePostPaidDisk(kt *kit.Kit, opt *disk.HuaWeiDiskCreateOption, projectID string) (
 	*disk.InquiryPriceResult, error) {
 
-	client, err := h.clientSet.bssintlClient()
+	client, err := h.clientSet.bssintlGlobalClient()
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +131,7 @@ func (h *HuaWei) inquiryPricePostPaidDisk(kt *kit.Kit, opt *disk.HuaWeiDiskCreat
 func (h *HuaWei) inquiryPricePrepaidDisk(kt *kit.Kit, opt *disk.HuaWeiDiskCreateOption, projectID string) (
 	*disk.InquiryPriceResult, error) {
 
-	client, err := h.clientSet.bssintlClient()
+	client, err := h.clientSet.bssintlGlobalClient()
 	if err != nil {
 		return nil, err
 	}
@@ -229,9 +230,67 @@ func (h *HuaWei) ListDisk(kt *kit.Kit, opt *disk.HuaWeiDiskListOption) ([]disk.H
 		return nil, err
 	}
 
-	disks := make([]disk.HuaWeiDisk, 0, len(*resp.Volumes))
-	for _, one := range *resp.Volumes {
-		disks = append(disks, disk.HuaWeiDisk{one})
+	disks, err := h.buildDisk(kt, *resp.Volumes)
+	if err != nil {
+		return nil, err
+	}
+
+	return disks, nil
+}
+
+func (h *HuaWei) buildDisk(kt *kit.Kit, details []model.VolumeDetail) ([]disk.HuaWeiDisk, error) {
+
+	client, err := h.clientSet.bssintlGlobalClient()
+	if err != nil {
+		return nil, err
+	}
+
+	// 获取包年包月硬盘的计费信息
+	ids := slice.FilterMap(details, func(one model.VolumeDetail) bool {
+		_, exist := one.Metadata["orderID"]
+		return exist
+	}, func(one model.VolumeDetail) string { return one.Id })
+
+	split := slice.Split(ids, 50)
+	idChargeMap := make(map[string]bssmodel.OrderInstanceV2, len(ids))
+	for _, partIDs := range split {
+		req := &bssmodel.ListPayPerUseCustomerResourcesRequest{
+			Body: &bssmodel.QueryResourcesReq{
+				ResourceIds: converter.ValToPtr(partIDs),
+			},
+		}
+		resp, err := client.ListPayPerUseCustomerResources(req)
+		if err != nil {
+			logs.Errorf("list pay per use customer resource failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+
+		for _, one := range converter.PtrToVal(resp.Data) {
+			idChargeMap[converter.PtrToVal(one.ResourceId)] = one
+		}
+	}
+
+	disks := make([]disk.HuaWeiDisk, 0, len(details))
+	for _, one := range details {
+		tmp := disk.HuaWeiDisk{
+			VolumeDetail: one,
+		}
+		_, exist := one.Metadata["orderID"]
+		if !exist {
+			// 如果没有 orderID，则表明是按需付费
+			tmp.DiskChargeType = disk.HuaWeiDiskChargeTypeEnum.PRE_PAID
+		} else {
+			// 如果有 orderID，则表明是包年包月计费模式
+			charge, exist := idChargeMap[one.Id]
+			if !exist {
+				return nil, fmt.Errorf("disk: %s not found charge info", one.Id)
+			}
+
+			tmp.DiskChargeType = disk.HuaWeiDiskChargeTypeEnum.POST_PAID
+			tmp.ExpireTime = converter.PtrToVal(charge.ExpireTime)
+		}
+
+		disks = append(disks, tmp)
 	}
 
 	return disks, nil

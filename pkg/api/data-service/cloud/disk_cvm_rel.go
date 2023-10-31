@@ -24,8 +24,8 @@ import (
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud/cvm"
+	coredisk "hcm/pkg/api/core/cloud/disk"
 	diskcvmrel "hcm/pkg/api/core/cloud/disk-cvm-rel"
-	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
@@ -118,10 +118,10 @@ type DiskCvmRelWithDiskListResp struct {
 
 // DiskWithCvmID ...
 type DiskWithCvmID struct {
-	dataproto.DiskResult `json:",inline"`
-	CvmID                string `json:"cvm_id"`
-	RelCreator           string `json:"rel_creator"`
-	RelCreatedAt         string `json:"rel_created_at"`
+	coredisk.BaseDisk `json:",inline"`
+	CvmID             string `json:"cvm_id"`
+	RelCreator        string `json:"rel_creator"`
+	RelCreatedAt      string `json:"rel_created_at"`
 }
 
 // DiskCvmRelWithDiskExtListReq ...
@@ -135,17 +135,17 @@ func (req *DiskCvmRelWithDiskExtListReq) Validate() error {
 }
 
 // DiskCvmRelWithDiskExtListResp ...
-type DiskCvmRelWithDiskExtListResp[T dataproto.DiskExtensionResult] struct {
+type DiskCvmRelWithDiskExtListResp[T coredisk.Extension] struct {
 	rest.BaseResp `json:",inline"`
 	Data          []*DiskExtWithCvmID[T] `json:"data"`
 }
 
 // DiskExtWithCvmID ...
-type DiskExtWithCvmID[T dataproto.DiskExtensionResult] struct {
-	dataproto.DiskExtResult[T] `json:",inline"`
-	CvmID                      string `json:"cvm_id"`
-	RelCreator                 string `json:"rel_creator"`
-	RelCreatedAt               string `json:"rel_created_at"`
+type DiskExtWithCvmID[T coredisk.Extension] struct {
+	coredisk.Disk[T] `json:",inline"`
+	CvmID            string `json:"cvm_id"`
+	RelCreator       string `json:"rel_creator"`
+	RelCreatedAt     string `json:"rel_created_at"`
 }
 
 // ListWithCvmReq ...

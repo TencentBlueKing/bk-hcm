@@ -72,7 +72,7 @@ func (t *TCloudImpl) InquiryPriceDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOpt
 	req.DiskCount = opt.DiskCount
 	req.DiskSize = opt.DiskSize
 	req.DiskChargeType = common.StringPtr(opt.DiskChargeType)
-	// 预付费模式需要设定 DiskChargePrepaid
+	// 预付费模式需要设定 ChargePrepaid
 	if *req.DiskChargeType == disk.TCloudDiskChargeTypeEnum.PREPAID {
 		req.DiskChargePrepaid = &cbs.DiskChargePrepaid{
 			Period:              opt.DiskChargePrepaid.Period,

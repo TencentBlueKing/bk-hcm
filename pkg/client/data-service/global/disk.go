@@ -30,9 +30,9 @@ import (
 )
 
 // ListDisk 查询云盘列表
-func (rc *restClient) ListDisk(kt *kit.Kit, request *core.ListReq) (*dataproto.DiskListResult, error) {
+func (rc *restClient) ListDisk(kt *kit.Kit, request *core.ListReq) (*dataproto.ListResult, error) {
 
-	resp := new(dataproto.DiskListResp)
+	resp := new(dataproto.ListResp)
 	err := rc.client.Post().
 		WithContext(kt.Ctx).
 		Body(request).
