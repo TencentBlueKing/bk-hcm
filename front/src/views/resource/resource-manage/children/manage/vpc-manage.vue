@@ -3,7 +3,7 @@ import type { FilterType } from '@/typings/resource';
 
 import { PropType, defineExpose, h, computed, ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { InfoBox, Message, Button } from 'bkui-vue';
+import { InfoBox, Message, Button, Popover } from 'bkui-vue';
 import { useResourceStore } from '@/store/resource';
 import useColumns from '../../hooks/use-columns';
 import useQueryList from '../../hooks/use-query-list';
@@ -223,21 +223,30 @@ const renderColumns = [
             )
             : null,
           h(
-            Button,
+            Popover,
             {
-              text: true,
-              theme: 'primary',
-              disabled:
+              content: 'VPC下有子网正在使用，不能直接删除',
+              disabled: !(whereAmI.value === Senarios.resource && data.bk_cloud_id !== -1),
+            },
+            [
+              h(
+                Button,
+                {
+                  text: true,
+                  theme: 'primary',
+                  disabled:
                   !props.authVerifyData?.permissionAction[
                     props.isResourcePage
                       ? 'iaas_resource_delete'
                       : 'biz_iaas_resource_delete'
                   ] || (whereAmI.value === Senarios.resource && data.bk_cloud_id !== -1),
-              onClick() {
-                handleDeleteVpc(data);
-              },
-            },
-            [t('删除')],
+                  onClick() {
+                    handleDeleteVpc(data);
+                  },
+                },
+                [t('删除')],
+              ),
+            ],
           ),
         ],
       ));
