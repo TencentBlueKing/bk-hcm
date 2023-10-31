@@ -232,7 +232,7 @@ const renderColumns = [
                     props.isResourcePage
                       ? 'iaas_resource_delete'
                       : 'biz_iaas_resource_delete'
-                  ] || data.bk_cloud_id !== -1,
+                  ] || (whereAmI.value === Senarios.resource && data.bk_cloud_id !== -1),
               onClick() {
                 handleDeleteVpc(data);
               },
