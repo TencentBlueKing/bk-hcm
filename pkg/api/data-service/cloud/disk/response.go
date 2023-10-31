@@ -20,107 +20,36 @@
 package disk
 
 import (
+	coredisk "hcm/pkg/api/core/cloud/disk"
 	"hcm/pkg/rest"
 )
 
-// DiskListResp ...
-type DiskListResp struct {
+// ListResp ...
+type ListResp struct {
 	rest.BaseResp `json:",inline"`
-	Data          *DiskListResult `json:"data"`
+	Data          *ListResult `json:"data"`
 }
 
-// DiskListResult ...
-type DiskListResult struct {
-	Count   *uint64       `json:"count,omitempty"`
-	Details []*DiskResult `json:"details"`
+// ListResult ...
+type ListResult struct {
+	Count   uint64               `json:"count,omitempty"`
+	Details []*coredisk.BaseDisk `json:"details"`
 }
 
-// DiskResult 查询云盘列表时的单条云盘数据
-type DiskResult struct {
-	ID            string  `json:"id,omitempty"`
-	Vendor        string  `json:"vendor,omitempty"`
-	AccountID     string  `json:"account_id,omitempty"`
-	Name          string  `json:"name,omitempty"`
-	BkBizID       int64   `json:"bk_biz_id,omitempty'"`
-	CloudID       string  `json:"cloud_id,omitempty"`
-	Region        string  `json:"region,omitempty"`
-	Zone          string  `json:"zone,omitempty"`
-	DiskSize      uint64  `json:"disk_size,omitempty"`
-	DiskType      string  `json:"disk_type,omitempty"`
-	Status        string  `json:"status,omitempty"`
-	RecycleStatus string  `json:"recycle_status,omitempty"`
-	IsSystemDisk  bool    `json:"is_system_disk"`
-	Memo          *string `json:"memo,omitempty"`
-	Creator       string  `json:"creator,omitempty"`
-	Reviser       string  `json:"reviser,omitempty"`
-	CreatedAt     string  `json:"created_at,omitempty"`
-	UpdatedAt     string  `json:"updated_at,omitempty"`
-}
-
-// DiskExtListResp ...
-type DiskExtListResp[T DiskExtensionResult] struct {
+// ListExtResp ...
+type ListExtResp[T coredisk.Extension] struct {
 	rest.BaseResp `json:",inline"`
-	Data          *DiskExtListResult[T] `json:"data"`
+	Data          *ListExtResult[T] `json:"data"`
 }
 
-// DiskExtListResult ...
-type DiskExtListResult[T DiskExtensionResult] struct {
-	Count   *uint64             `json:"count,omitempty"`
-	Details []*DiskExtResult[T] `json:"details"`
+// ListExtResult ...
+type ListExtResult[T coredisk.Extension] struct {
+	Count   uint64              `json:"count,omitempty"`
+	Details []*coredisk.Disk[T] `json:"details"`
 }
 
-// DiskExtRetrieveResp 返回单个云盘详情
-type DiskExtRetrieveResp[T DiskExtensionResult] struct {
+// GetResp 返回单个云盘详情
+type GetResp[T coredisk.Extension] struct {
 	rest.BaseResp `json:",inline"`
-	Data          *DiskExtResult[T] `json:"data"`
-}
-
-// DiskExtResult 单个云盘时的详情数据
-// TODO move to core
-type DiskExtResult[T DiskExtensionResult] struct {
-	ID            string  `json:"id,omitempty"`
-	Vendor        string  `json:"vendor,omitempty"`
-	AccountID     string  `json:"account_id,omitempty"`
-	Name          string  `json:"name,omitempty"`
-	BkBizID       int64   `json:"bk_biz_id,omitempty'"`
-	CloudID       string  `json:"cloud_id,omitempty"`
-	Region        string  `json:"region,omitempty"`
-	Zone          string  `json:"zone,omitempty"`
-	DiskSize      uint64  `json:"disk_size,omitempty"`
-	DiskType      string  `json:"disk_type,omitempty"`
-	Status        string  `json:"status,omitempty"`
-	RecycleStatus string  `json:"recycle_status,omitempty"`
-	IsSystemDisk  bool    `json:"is_system_disk"`
-	Memo          *string `json:"memo,omitempty"`
-	Creator       string  `json:"creator,omitempty"`
-	Reviser       string  `json:"reviser,omitempty"`
-	CreatedAt     string  `json:"created_at,omitempty"`
-	UpdatedAt     string  `json:"updated_at,omitempty"`
-	Extension     *T      `json:"extension,omitempty"`
-}
-
-// GetID ...
-func (disk DiskExtResult[T]) GetID() string {
-	return disk.ID
-}
-
-// GetCloudID ...
-func (disk DiskExtResult[T]) GetCloudID() string {
-	return disk.CloudID
-}
-
-// DiskCountResp ...
-type DiskCountResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          *DiskCountResult `json:"data"`
-}
-
-// DiskCountResult ...
-type DiskCountResult struct {
-	Count uint64 `json:"count"`
-}
-
-// DiskExtensionResult ...
-type DiskExtensionResult interface {
-	TCloudDiskExtensionResult | AwsDiskExtensionResult | AzureDiskExtensionResult | GcpDiskExtensionResult | HuaWeiDiskExtensionResult
+	Data          *coredisk.Disk[T] `json:"data"`
 }

@@ -26,6 +26,7 @@ import (
 	typescore "hcm/pkg/adaptor/types/core"
 	typesdisk "hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/api/core"
+	coredisk "hcm/pkg/api/core/cloud/disk"
 	"hcm/pkg/api/data-service/cloud/disk"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -69,7 +70,7 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 		return new(SyncResult), nil
 	}
 
-	addSlice, updateMap, delCloudIDs := common.Diff[typesdisk.AzureDisk, *disk.DiskExtResult[disk.AzureDiskExtensionResult]](
+	addSlice, updateMap, delCloudIDs := common.Diff[typesdisk.AzureDisk, *coredisk.Disk[coredisk.AzureExtension]](
 		diskFromCloud, diskFromDB, isDiskChange)
 
 	if len(delCloudIDs) > 0 {
@@ -100,7 +101,7 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, resGroupName string
 		return fmt.Errorf("updateMap is <= 0, not update")
 	}
 
-	disks := make([]*disk.DiskExtUpdateReq[disk.AzureDiskExtensionUpdateReq], 0)
+	disks := make([]*disk.DiskExtUpdateReq[coredisk.AzureExtension], 0)
 
 	for id, one := range updateMap {
 		var isSystemDisk bool
@@ -108,11 +109,11 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, resGroupName string
 			isSystemDisk = true
 		}
 
-		oneDisk := &disk.DiskExtUpdateReq[disk.AzureDiskExtensionUpdateReq]{
+		oneDisk := &disk.DiskExtUpdateReq[coredisk.AzureExtension]{
 			ID:           id,
 			Status:       converter.PtrToVal(one.Status),
 			IsSystemDisk: converter.ValToPtr(isSystemDisk),
-			Extension: &disk.AzureDiskExtensionUpdateReq{
+			Extension: &coredisk.AzureExtension{
 				ResourceGroupName: resGroupName,
 				OSType:            converter.PtrToVal(one.OSType),
 				SKUName:           one.SKUName,
@@ -123,7 +124,7 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, resGroupName string
 		disks = append(disks, oneDisk)
 	}
 
-	var updateReq disk.DiskExtBatchUpdateReq[disk.AzureDiskExtensionUpdateReq]
+	var updateReq disk.DiskExtBatchUpdateReq[coredisk.AzureExtension]
 	for _, disk := range disks {
 		updateReq = append(updateReq, disk)
 	}
@@ -146,10 +147,10 @@ func (cli *client) createDisk(kt *kit.Kit, accountID string, resGroupName string
 		return fmt.Errorf("addSlice is <= 0, not create")
 	}
 
-	var createReq disk.DiskExtBatchCreateReq[disk.AzureDiskExtensionCreateReq]
+	var createReq disk.DiskExtBatchCreateReq[coredisk.AzureExtension]
 
 	for _, one := range addSlice {
-		disk := &disk.DiskExtCreateReq[disk.AzureDiskExtensionCreateReq]{
+		disk := &disk.DiskExtCreateReq[coredisk.AzureExtension]{
 			AccountID: accountID,
 			Name:      converter.PtrToVal(one.Name),
 			CloudID:   converter.PtrToVal(one.ID),
@@ -160,7 +161,7 @@ func (cli *client) createDisk(kt *kit.Kit, accountID string, resGroupName string
 			Zone:      "",
 			// 该云没有此字段
 			Memo: nil,
-			Extension: &disk.AzureDiskExtensionCreateReq{
+			Extension: &coredisk.AzureExtension{
 				ResourceGroupName: resGroupName,
 				OSType:            converter.PtrToVal(one.OSType),
 				SKUName:           one.SKUName,
@@ -252,13 +253,13 @@ func (cli *client) listDiskFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]typ
 }
 
 func (cli *client) listDiskFromDB(kt *kit.Kit, params *SyncBaseParams) (
-	[]*disk.DiskExtResult[disk.AzureDiskExtensionResult], error) {
+	[]*coredisk.Disk[coredisk.AzureExtension], error) {
 
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	req := &disk.DiskListReq{
+	req := &core.ListReq{
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
@@ -358,7 +359,7 @@ func (cli *client) RemoveDiskDeleteFromCloud(kt *kit.Kit, accountID string, resG
 	return nil
 }
 
-func isDiskChange(cloud typesdisk.AzureDisk, db *disk.DiskExtResult[disk.AzureDiskExtensionResult]) bool {
+func isDiskChange(cloud typesdisk.AzureDisk, db *coredisk.Disk[coredisk.AzureExtension]) bool {
 
 	if converter.PtrToVal(cloud.Status) != db.Status {
 		return true

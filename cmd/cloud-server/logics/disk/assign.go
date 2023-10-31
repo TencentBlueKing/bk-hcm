@@ -24,6 +24,7 @@ import (
 
 	logicaudit "hcm/cmd/cloud-server/logics/audit"
 	"hcm/pkg/api/core"
+	coredisk "hcm/pkg/api/core/cloud/disk"
 	datarelproto "hcm/pkg/api/data-service/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	dataservice "hcm/pkg/client/data-service"
@@ -88,7 +89,7 @@ func ValidateBeforeAssign(kt *kit.Kit, cli *dataservice.Client, ids []string, is
 
 	if len(listResp.Details) != 0 {
 		return fmt.Errorf("disk(ids=%v) already assigned", slice.Map(listResp.Details,
-			func(disk *dataproto.DiskResult) string { return disk.ID }))
+			func(disk *coredisk.BaseDisk) string { return disk.ID }))
 	}
 
 	// 判断是否关联资源

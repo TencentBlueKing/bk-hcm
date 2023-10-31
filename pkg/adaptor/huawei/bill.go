@@ -39,7 +39,7 @@ func (h *HuaWei) GetBillList(_ *kit.Kit, opt *typesBill.HuaWeiBillListOption) (
 		return nil, err
 	}
 
-	client, err := h.clientSet.bssintlClient()
+	client, err := h.clientSet.bssintlGlobalClient()
 	if err != nil {
 		return nil, fmt.Errorf("new bill client failed, err: %v", err)
 	}

@@ -22,14 +22,15 @@ package diskcvmrel
 import (
 	"fmt"
 
+	"hcm/pkg/api/core"
+	coredisk "hcm/pkg/api/core/cloud/disk"
 	"hcm/pkg/api/data-service/cloud"
-	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	reltypes "hcm/pkg/dal/dao/types/cloud"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 )
 
-func toProtoDiskExtWithCvmIDs[T dataproto.DiskExtensionResult](
+func toProtoDiskExtWithCvmIDs[T coredisk.Extension](
 	data *reltypes.DiskCvmRelJoinDiskListResult,
 ) ([]*cloud.DiskExtWithCvmID[T], error) {
 	details := make([]*cloud.DiskExtWithCvmID[T], len(data.Details))
@@ -43,7 +44,7 @@ func toProtoDiskExtWithCvmIDs[T dataproto.DiskExtensionResult](
 	return details, nil
 }
 
-func toProtoDiskExtWithCvmID[T dataproto.DiskExtensionResult](
+func toProtoDiskExtWithCvmID[T coredisk.Extension](
 	d *reltypes.DiskWithCvmID,
 ) (*cloud.DiskExtWithCvmID[T], error) {
 	extension := new(T)
@@ -52,25 +53,29 @@ func toProtoDiskExtWithCvmID[T dataproto.DiskExtensionResult](
 		return nil, fmt.Errorf("UnmarshalFromString db extension failed, err: %v", err)
 	}
 	return &cloud.DiskExtWithCvmID[T]{
-		DiskExtResult: dataproto.DiskExtResult[T]{
-			ID:           d.ID,
-			Vendor:       d.Vendor,
-			AccountID:    d.AccountID,
-			Name:         d.Name,
-			BkBizID:      d.BkBizID,
-			CloudID:      d.CloudID,
-			Region:       d.Region,
-			Zone:         d.Zone,
-			DiskSize:     d.DiskSize,
-			DiskType:     d.DiskType,
-			Status:       d.Status,
-			IsSystemDisk: converter.PtrToVal(d.IsSystemDisk),
-			Memo:         d.Memo,
-			Creator:      d.Creator,
-			Reviser:      d.Reviser,
-			CreatedAt:    d.CreatedAt.String(),
-			UpdatedAt:    d.UpdatedAt.String(),
-			Extension:    extension,
+		Disk: coredisk.Disk[T]{
+			BaseDisk: coredisk.BaseDisk{
+				ID:           d.ID,
+				Vendor:       d.Vendor,
+				AccountID:    d.AccountID,
+				Name:         d.Name,
+				BkBizID:      d.BkBizID,
+				CloudID:      d.CloudID,
+				Region:       d.Region,
+				Zone:         d.Zone,
+				DiskSize:     d.DiskSize,
+				DiskType:     d.DiskType,
+				Status:       d.Status,
+				IsSystemDisk: converter.PtrToVal(d.IsSystemDisk),
+				Memo:         d.Memo,
+				Revision: core.Revision{
+					Creator:   d.Creator,
+					Reviser:   d.Reviser,
+					CreatedAt: d.CreatedAt.String(),
+					UpdatedAt: d.UpdatedAt.String(),
+				},
+			},
+			Extension: extension,
 		},
 		CvmID:        d.CvmID,
 		RelCreator:   d.RelCreator,
@@ -80,13 +85,13 @@ func toProtoDiskExtWithCvmID[T dataproto.DiskExtensionResult](
 
 func toProtoDiskWithCvmID(d *reltypes.DiskWithCvmID) *cloud.DiskWithCvmID {
 	return &cloud.DiskWithCvmID{
-		DiskResult: dataproto.DiskResult{
+		BaseDisk: coredisk.BaseDisk{
 			ID:           d.ID,
 			Vendor:       d.Vendor,
-			CloudID:      d.CloudID,
 			AccountID:    d.AccountID,
 			Name:         d.Name,
 			BkBizID:      d.BkBizID,
+			CloudID:      d.CloudID,
 			Region:       d.Region,
 			Zone:         d.Zone,
 			DiskSize:     d.DiskSize,
@@ -94,10 +99,12 @@ func toProtoDiskWithCvmID(d *reltypes.DiskWithCvmID) *cloud.DiskWithCvmID {
 			Status:       d.Status,
 			IsSystemDisk: converter.PtrToVal(d.IsSystemDisk),
 			Memo:         d.Memo,
-			Creator:      d.Creator,
-			Reviser:      d.Reviser,
-			CreatedAt:    d.CreatedAt.String(),
-			UpdatedAt:    d.UpdatedAt.String(),
+			Revision: core.Revision{
+				Creator:   d.Creator,
+				Reviser:   d.Reviser,
+				CreatedAt: d.CreatedAt.String(),
+				UpdatedAt: d.UpdatedAt.String(),
+			},
 		},
 		CvmID:        d.CvmID,
 		RelCreator:   d.RelCreator,

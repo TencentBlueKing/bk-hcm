@@ -19,57 +19,59 @@
 
 package csdisk
 
-import dataproto "hcm/pkg/api/data-service/cloud/disk"
+import (
+	coredisk "hcm/pkg/api/core/cloud/disk"
+)
 
 // DiskResult ...
 type DiskResult struct {
-	*dataproto.DiskResult `json:",inline"`
-	InstanceType          string `json:"instance_type,omitempty"`
-	InstanceID            string `json:"instance_id,omitempty"`
+	*coredisk.BaseDisk `json:",inline"`
+	InstanceType       string `json:"instance_type,omitempty"`
+	InstanceID         string `json:"instance_id,omitempty"`
 }
 
 // DiskListResult ...
 type DiskListResult struct {
-	Count   *uint64       `json:"count,omitempty"`
+	Count   uint64        `json:"count,omitempty"`
 	Details []*DiskResult `json:"details"`
 }
 
 // TCloudDiskExtResult ...
 type TCloudDiskExtResult struct {
-	*dataproto.DiskExtResult[dataproto.TCloudDiskExtensionResult] `json:",inline"`
-	InstanceType                                                  string `json:"instance_type,omitempty"`
-	InstanceID                                                    string `json:"instance_id,omitempty"`
-	InstanceName                                                  string `json:"instance_name,omitempty"`
+	*coredisk.Disk[coredisk.TCloudExtension] `json:",inline"`
+	InstanceType                             string `json:"instance_type,omitempty"`
+	InstanceID                               string `json:"instance_id,omitempty"`
+	InstanceName                             string `json:"instance_name,omitempty"`
 }
 
 // AwsDiskExtResult ...
 type AwsDiskExtResult struct {
-	*dataproto.DiskExtResult[dataproto.AwsDiskExtensionResult] `json:",inline"`
-	InstanceType                                               string `json:"instance_type,omitempty"`
-	InstanceID                                                 string `json:"instance_id,omitempty"`
-	InstanceName                                               string `json:"instance_name,omitempty"`
+	*coredisk.Disk[coredisk.AwsExtension] `json:",inline"`
+	InstanceType                          string `json:"instance_type,omitempty"`
+	InstanceID                            string `json:"instance_id,omitempty"`
+	InstanceName                          string `json:"instance_name,omitempty"`
 }
 
 // AzureDiskExtResult ...
 type AzureDiskExtResult struct {
-	*dataproto.DiskExtResult[dataproto.AzureDiskExtensionResult] `json:",inline"`
-	InstanceType                                                 string `json:"instance_type,omitempty"`
-	InstanceID                                                   string `json:"instance_id,omitempty"`
-	InstanceName                                                 string `json:"instance_name,omitempty"`
+	*coredisk.Disk[coredisk.AzureExtension] `json:",inline"`
+	InstanceType                            string `json:"instance_type,omitempty"`
+	InstanceID                              string `json:"instance_id,omitempty"`
+	InstanceName                            string `json:"instance_name,omitempty"`
 }
 
 // HuaWeiDiskExtResult ...
 type HuaWeiDiskExtResult struct {
-	*dataproto.DiskExtResult[dataproto.HuaWeiDiskExtensionResult] `json:",inline"`
-	InstanceType                                                  string `json:"instance_type,omitempty"`
-	InstanceID                                                    string `json:"instance_id,omitempty"`
-	InstanceName                                                  string `json:"instance_name,omitempty"`
+	*coredisk.Disk[coredisk.HuaWeiExtension] `json:",inline"`
+	InstanceType                             string `json:"instance_type,omitempty"`
+	InstanceID                               string `json:"instance_id,omitempty"`
+	InstanceName                             string `json:"instance_name,omitempty"`
 }
 
 // GcpDiskExtResult ...
 type GcpDiskExtResult struct {
-	*dataproto.DiskExtResult[dataproto.GcpDiskExtensionResult] `json:",inline"`
-	InstanceType                                               string `json:"instance_type,omitempty"`
-	InstanceID                                                 string `json:"instance_id,omitempty"`
-	InstanceName                                               string `json:"instance_name,omitempty"`
+	*coredisk.Disk[coredisk.GcpExtension] `json:",inline"`
+	InstanceType                          string `json:"instance_type,omitempty"`
+	InstanceID                            string `json:"instance_id,omitempty"`
+	InstanceName                          string `json:"instance_name,omitempty"`
 }

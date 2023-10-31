@@ -395,7 +395,7 @@ func (h *HuaWei) InquiryPriceCvm(kt *kit.Kit, opt *typecvm.HuaWeiCreateOption) (
 func (h *HuaWei) inquiryPricePrepaidCvm(kt *kit.Kit, opt *typecvm.HuaWeiCreateOption, projectID string) (
 	*typecvm.InquiryPriceResult, error) {
 
-	client, err := h.clientSet.bssintlClient()
+	client, err := h.clientSet.bssintlGlobalClient()
 	if err != nil {
 		return nil, err
 	}
@@ -476,7 +476,7 @@ func (h *HuaWei) inquiryPricePrepaidCvm(kt *kit.Kit, opt *typecvm.HuaWeiCreateOp
 func (h *HuaWei) inquiryPricePostPaidCvm(kt *kit.Kit, opt *typecvm.HuaWeiCreateOption, projectID string) (
 	*typecvm.InquiryPriceResult, error) {
 
-	client, err := h.clientSet.bssintlClient()
+	client, err := h.clientSet.bssintlGlobalClient()
 	if err != nil {
 		return nil, err
 	}

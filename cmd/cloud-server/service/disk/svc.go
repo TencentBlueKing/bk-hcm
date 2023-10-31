@@ -119,7 +119,7 @@ func (svc *diskSvc) listDisk(cts *rest.Contexts, authHandler handler.ListAuthRes
 		}
 
 		details[idx] = &cloudproto.DiskResult{InstanceID: diskIDToCvmID[diskData.ID], InstanceType: "cvm",
-			DiskResult: diskData,
+			BaseDisk: diskData,
 		}
 	}
 
@@ -246,10 +246,10 @@ func (svc *diskSvc) retrieveDiskByVendor(
 			return nil, err
 		}
 		return cloudproto.TCloudDiskExtResult{
-			DiskExtResult: resp,
-			InstanceType:  string(enumor.DiskBindCvm),
-			InstanceID:    instID,
-			InstanceName:  instName,
+			Disk:         resp,
+			InstanceType: string(enumor.DiskBindCvm),
+			InstanceID:   instID,
+			InstanceName: instName,
 		}, nil
 	case enumor.Aws:
 		resp, err := svc.client.DataService().Aws.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
@@ -257,10 +257,10 @@ func (svc *diskSvc) retrieveDiskByVendor(
 			return nil, err
 		}
 		return cloudproto.AwsDiskExtResult{
-			DiskExtResult: resp,
-			InstanceType:  string(enumor.DiskBindCvm),
-			InstanceID:    instID,
-			InstanceName:  instName,
+			Disk:         resp,
+			InstanceType: string(enumor.DiskBindCvm),
+			InstanceID:   instID,
+			InstanceName: instName,
 		}, nil
 	case enumor.HuaWei:
 		resp, err := svc.client.DataService().HuaWei.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
@@ -268,10 +268,10 @@ func (svc *diskSvc) retrieveDiskByVendor(
 			return nil, err
 		}
 		return cloudproto.HuaWeiDiskExtResult{
-			DiskExtResult: resp,
-			InstanceType:  string(enumor.DiskBindCvm),
-			InstanceID:    instID,
-			InstanceName:  instName,
+			Disk:         resp,
+			InstanceType: string(enumor.DiskBindCvm),
+			InstanceID:   instID,
+			InstanceName: instName,
 		}, nil
 	case enumor.Gcp:
 		resp, err := svc.client.DataService().Gcp.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
@@ -281,10 +281,10 @@ func (svc *diskSvc) retrieveDiskByVendor(
 
 		resp.DiskType = extractGcpDiskType(resp.DiskType)
 		return cloudproto.GcpDiskExtResult{
-			DiskExtResult: resp,
-			InstanceType:  string(enumor.DiskBindCvm),
-			InstanceID:    instID,
-			InstanceName:  instName,
+			Disk:         resp,
+			InstanceType: string(enumor.DiskBindCvm),
+			InstanceID:   instID,
+			InstanceName: instName,
 		}, nil
 	case enumor.Azure:
 		resp, err := svc.client.DataService().Azure.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
@@ -292,10 +292,10 @@ func (svc *diskSvc) retrieveDiskByVendor(
 			return nil, err
 		}
 		return cloudproto.AzureDiskExtResult{
-			DiskExtResult: resp,
-			InstanceType:  string(enumor.DiskBindCvm),
-			InstanceID:    instID,
-			InstanceName:  instName,
+			Disk:         resp,
+			InstanceType: string(enumor.DiskBindCvm),
+			InstanceID:   instID,
+			InstanceName: instName,
 		}, nil
 	default:
 		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", vendor))

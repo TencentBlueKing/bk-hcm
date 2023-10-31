@@ -20,15 +20,13 @@
 package disk
 
 import (
-	"fmt"
-
-	"hcm/pkg/api/core"
+	coredisk "hcm/pkg/api/core/cloud/disk"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/runtime/filter"
 )
 
 // DiskExtCreateReq ...
-type DiskExtCreateReq[T DiskExtensionCreateReq] struct {
+type DiskExtCreateReq[T coredisk.Extension] struct {
 	AccountID    string  `json:"account_id" validate:"required"`
 	Name         string  `json:"name" validate:"required"`
 	BkBizID      int64   `json:"bk_biz_id"`
@@ -45,20 +43,11 @@ type DiskExtCreateReq[T DiskExtensionCreateReq] struct {
 
 // Validate ...
 func (req *DiskExtCreateReq[T]) Validate() error {
-	// 根据类型, 确定 Extension 是否必须
-	switch interface{}(req).(type) {
-	case *DiskExtCreateReq[AwsDiskExtensionCreateReq], *DiskExtCreateReq[GcpDiskExtensionCreateReq]:
-		return nil
-	default:
-		if req.Extension == nil {
-			return fmt.Errorf("missing valid extension")
-		}
-		return validator.Validate.Struct(req)
-	}
+	return validator.Validate.Struct(req)
 }
 
 // DiskExtBatchCreateReq ...
-type DiskExtBatchCreateReq[T DiskExtensionCreateReq] []*DiskExtCreateReq[T]
+type DiskExtBatchCreateReq[T coredisk.Extension] []*DiskExtCreateReq[T]
 
 // Validate ...
 func (req *DiskExtBatchCreateReq[T]) Validate() error {
@@ -70,13 +59,8 @@ func (req *DiskExtBatchCreateReq[T]) Validate() error {
 	return nil
 }
 
-// DiskExtensionCreateReq ...
-type DiskExtensionCreateReq interface {
-	TCloudDiskExtensionCreateReq | AwsDiskExtensionCreateReq | AzureDiskExtensionCreateReq | GcpDiskExtensionCreateReq | HuaWeiDiskExtensionCreateReq
-}
-
 // DiskExtUpdateReq ...
-type DiskExtUpdateReq[T DiskExtensionUpdateReq] struct {
+type DiskExtUpdateReq[T coredisk.Extension] struct {
 	ID           string  `json:"id" validate:"required"`
 	Region       string  `json:"region"`
 	Name         string  `json:"name"`
@@ -92,13 +76,8 @@ func (req *DiskExtUpdateReq[T]) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// DiskExtensionUpdateReq ...
-type DiskExtensionUpdateReq interface {
-	TCloudDiskExtensionUpdateReq | HuaWeiDiskExtensionUpdateReq | AwsDiskExtensionUpdateReq | AzureDiskExtensionUpdateReq | GcpDiskExtensionUpdateReq
-}
-
 // DiskExtBatchUpdateReq ...
-type DiskExtBatchUpdateReq[T DiskExtensionUpdateReq] []*DiskExtUpdateReq[T]
+type DiskExtBatchUpdateReq[T coredisk.Extension] []*DiskExtUpdateReq[T]
 
 // Validate ...
 func (req *DiskExtBatchUpdateReq[T]) Validate() error {
@@ -120,28 +99,6 @@ type DiskBatchUpdateReq struct {
 
 // Validate ...
 func (req *DiskBatchUpdateReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
-
-// DiskListReq ...
-type DiskListReq struct {
-	Filter *filter.Expression `json:"filter" validate:"required"`
-	Page   *core.BasePage     `json:"page" validate:"required"`
-	Fields []string           `json:"fields" validate:"omitempty"`
-}
-
-// Validate ...
-func (req *DiskListReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
-
-// DiskCountReq ...
-type DiskCountReq struct {
-	Filter *filter.Expression `json:"filter" validate:"required"`
-}
-
-// Validate ...
-func (req *DiskCountReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
