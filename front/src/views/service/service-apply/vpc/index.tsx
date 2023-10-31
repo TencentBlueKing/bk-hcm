@@ -154,11 +154,15 @@ export default defineComponent({
                       <div>.</div>
                       <Input
                         type='number'
+                        min={0}
+                        max={255}
                         v-model={formData.ipv4_cidr[2]}
                         class='w110'
                       />
                       <div>.</div>
                       <Input
+                        min={0}
+                        max={255}
                         type='number'
                         v-model={formData.ipv4_cidr[3]}
                         class='w110'
