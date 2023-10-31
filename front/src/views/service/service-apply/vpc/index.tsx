@@ -532,6 +532,7 @@ export default defineComponent({
               theme='primary'
               loading={submitting.value}
               disabled={submitDisabled.value}
+              class={'mr16'}
               onClick={handleFormSubmit}>
               {isResourcePage ? t('提交') : t('提交审批')}
             </Button>
