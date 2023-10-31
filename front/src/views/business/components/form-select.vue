@@ -1,10 +1,12 @@
 <script lang="ts" setup>
 import { reactive, watch, ref, inject } from 'vue';
-import {
-  useI18n,
-} from 'vue-i18n';
+import { useI18n } from 'vue-i18n';
 import { useAccountStore, useResourceStore } from '@/store';
-import { BusinessFormFilter, QueryFilterType, QueryRuleOPEnum } from '@/typings';
+import {
+  BusinessFormFilter,
+  QueryFilterType,
+  QueryRuleOPEnum,
+} from '@/typings';
 import { CLOUD_TYPE } from '@/constants';
 import { VendorEnum } from '@/common/constant';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
@@ -37,8 +39,7 @@ const { isResourcePage } = useWhereAmI();
 
 const securityType: any = inject('securityType');
 
-
-const state = reactive<{filter: BusinessFormFilter}>({
+const state = reactive<{ filter: BusinessFormFilter }>({
   filter: {
     vendor: '',
     account_id: '',
@@ -46,7 +47,7 @@ const state = reactive<{filter: BusinessFormFilter}>({
   },
 });
 
-const filter  = ref<QueryFilterType>({
+const filter = ref<QueryFilterType>({
   op: 'and',
   rules: [],
 });
@@ -111,7 +112,7 @@ watch(
   () => state.filter.account_id,
   (val) => {
     if (val) {
-      state.filter.vendor =  accountList.value.find((e: any) => {
+      state.filter.vendor = accountList.value.find((e: any) => {
         return e.id === val;
       }).vendor;
     }
@@ -125,21 +126,24 @@ const getAccountList = async () => {
   // }
   try {
     accountLoading.value = true;
-    const payload = isResourcePage ? {
-      page: {
-        count: false,
-        limit: 100,
-        start: 0,
-      },
-      filter: { op: 'and', rules: [] },
-    } : {
-      params: {
-        account_type: 'resource',
-      },
-    };
+    const payload = isResourcePage
+      ? {
+        page: {
+          count: false,
+          limit: 100,
+          start: 0,
+        },
+        filter: { op: 'and', rules: [] },
+      }
+      : {
+        params: {
+          account_type: 'resource',
+        },
+      };
     const res = await accountStore.getAccountList(payload, accountStore.bizs);
     accountList.value = isResourcePage ? res?.data?.details : res?.data;
-    if (props.type === 'security') {    // 安全组需要区分
+    if (props.type === 'security') {
+      // 安全组需要区分
       if (securityType.value && securityType.value === 'gcp') {
         accountList.value = accountList.value.filter(e => e.vendor === 'gcp');
       } else {
@@ -167,20 +171,28 @@ const getCloudRegionList = () => {
     })
     .then((res: any) => {
       cloudAreaPage.value += 1;
-      cloudRegionsList.value.push(...res?.data?.details || []);
+      cloudRegionsList.value.push(...(res?.data?.details || []));
     })
     .finally(() => {
       cloudRegionsLoading.value = false;
     });
 };
 
+const formRef = ref(null);
+const validate = () => {
+  return formRef.value.validate();
+};
+defineExpose([validate]);
+
 getAccountList();
 </script>
 <template>
-  <bk-form class="mt20 pt20 bussine-form">
+  <bk-form class="mt20 pt20 bussine-form" :model="state.filter" ref="formRef">
     <bk-form-item
       :label="t('云账号')"
       class="item-warp"
+      required
+      property="account_id"
     >
       <bk-select
         class="item-warp-component"
@@ -198,6 +210,8 @@ getAccountList();
     <bk-form-item
       :label="t('云厂商')"
       class="item-warp"
+      required
+      property="vendor"
     >
       <bk-select
         disabled
@@ -216,6 +230,8 @@ getAccountList();
       :label="t('云地域')"
       class="item-warp"
       v-if="!props.hidden.includes('region')"
+      required
+      property="region"
     >
       <bk-select
         class="item-warp-component"
@@ -227,7 +243,11 @@ getAccountList();
         <bk-option
           v-for="(item, index) in cloudRegionsList"
           :key="index"
-          :value="state.filter.vendor === 'azure' ? item.name : (item.region_id || item.id)"
+          :value="
+            state.filter.vendor === 'azure'
+              ? item.name
+              : item.region_id || item.id
+          "
           :label="item.region_name || item.region_id || item.name"
         />
       </bk-select>
@@ -235,7 +255,7 @@ getAccountList();
   </bk-form>
 </template>
 <style lang="scss" scoped>
-  .bussine-form{
-    padding-right: 20px;
-  }
+.bussine-form {
+  padding-right: 20px;
+}
 </style>
