@@ -448,6 +448,15 @@ export default defineComponent({
             );
           },
         },
+        {
+          trigger: 'change',
+          message: '子网IPv4 CIDR不合法',
+          validator: () => {
+            return (
+              !formData.ipv4_cidr[4] || +formData.subnet.ipv4_cidr[4] >= +formData.ipv4_cidr[4]
+            );
+          },
+        },
       ],
     };
 
