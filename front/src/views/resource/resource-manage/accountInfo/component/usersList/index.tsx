@@ -369,6 +369,7 @@ export default defineComponent({
             remotePagination
             onPageLimitChange={handlePageLimitChange}
             onPageValueChange={handlePageValueCHange}
+            show-overflow-tooltip
             onColumnSort={() => {}}
             onColumnFilter={() => {}}></Table>
         </Loading>
