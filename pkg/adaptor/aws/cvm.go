@@ -71,7 +71,7 @@ func (a *Aws) ListCvm(kt *kit.Kit, opt *typecvm.AwsListOption) ([]typecvm.AwsCvm
 			logs.Errorf("list aws cvm failed, err: %v, rid: %s", err, kt.Rid)
 		}
 
-		return nil, nil, fmt.Errorf("list aws cvm instances failed, err: %v", err)
+		return nil, nil, err
 	}
 
 	cvms := make([]typecvm.AwsCvm, 0)

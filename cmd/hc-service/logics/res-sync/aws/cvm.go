@@ -43,6 +43,8 @@ import (
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 	"hcm/pkg/tools/times"
+
+	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 // SyncCvmOption ...
@@ -69,7 +71,7 @@ func (cli *client) Cvm(kt *kit.Kit, params *SyncBaseParams, opt *SyncCvmOption) 
 		return nil, err
 	}
 
-	if len(cvmFromCloud) == 0 && len(cvmFromCloud) == 0 {
+	if len(cvmFromCloud) == 0 && len(cvmFromDB) == 0 {
 		return new(SyncResult), nil
 	}
 
@@ -368,8 +370,7 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 		return err
 	}
 
-	logs.Infof("[%s] sync cvm to update cvm success, count: %d, ids: %v, rid: %s", enumor.Aws,
-		len(updateMap), updateMap, kt.Rid)
+	logs.Infof("[%s] sync cvm to update cvm success, count: %d, rid: %s", enumor.Aws, len(updateMap), kt.Rid)
 
 	return nil
 }
@@ -614,21 +615,25 @@ func (cli *client) RemoveCvmDeleteFromCloud(kt *kit.Kit, accountID string, regio
 			break
 		}
 
-		var delCloudIDs []string
-		if len(cloudIDs) != 0 {
-			params := &SyncBaseParams{
-				AccountID: accountID,
-				Region:    region,
-				CloudIDs:  cloudIDs,
-			}
-			delCloudIDs, err = cli.listRemoveCvmID(kt, params)
-			if err != nil {
-				return err
-			}
+		params := &SyncBaseParams{
+			AccountID: accountID,
+			Region:    region,
+			CloudIDs:  cloudIDs,
+		}
+		resultFromCloud, err := cli.listCvmFromCloud(kt, params)
+		if err != nil {
+			return err
 		}
 
-		if len(delCloudIDs) != 0 {
-			if err = cli.deleteCvm(kt, accountID, region, delCloudIDs); err != nil {
+		// 如果有资源没有查询出来，说明数据被从云上删除
+		if len(resultFromCloud) != len(cloudIDs) {
+			cloudIDMap := converter.StringSliceToMap(cloudIDs)
+			for _, one := range resultFromCloud {
+				delete(cloudIDMap, converter.PtrToVal(one.InstanceId))
+			}
+
+			cloudIDs := converter.MapKeyToStringSlice(cloudIDMap)
+			if err := cli.deleteCvm(kt, accountID, region, cloudIDs); err != nil {
 				return err
 			}
 		}
@@ -649,17 +654,34 @@ func (cli *client) listRemoveCvmID(kt *kit.Kit, params *SyncBaseParams) ([]strin
 	}
 
 	delCloudIDs := make([]string, 0)
-	for _, one := range params.CloudIDs {
+	cloudIDs := params.CloudIDs
+	for {
 		opt := &typescvm.AwsListOption{
 			Region:   params.Region,
-			CloudIDs: []string{one},
+			CloudIDs: cloudIDs,
 		}
-		_, _, err := cli.cloudCli.ListCvm(kt, opt)
+		cvms, _, err := cli.cloudCli.ListCvm(kt, opt)
 		if err != nil {
 			if strings.Contains(err.Error(), aws.ErrCvmNotFound) {
-				delCloudIDs = append(delCloudIDs, one)
+				var delCloudID string
+				cloudIDs, delCloudID = removeNotFoundCloudID(cloudIDs, err)
+				delCloudIDs = append(delCloudIDs, delCloudID)
+
+				if len(cloudIDs) <= 0 {
+					break
+				}
+
+				continue
 			}
+
+			logs.Errorf("[%s] list cvm from cloud failed, err: %v, account: %s, opt: %v, rid: %s", enumor.Aws, err,
+				params.AccountID, opt, kt.Rid)
+			return nil, err
 		}
+
+		fmt.Println(len(cvms))
+
+		break
 	}
 
 	return delCloudIDs, nil
@@ -805,17 +827,14 @@ func isCvmChange(cloud typescvm.AwsCvm, db corecvm.Cvm[cvm.AwsCvmExtension]) boo
 		return true
 	}
 
-	for _, dbValue := range db.Extension.BlockDeviceMapping {
-		isEqual := false
-		for _, cloudValue := range cloud.BlockDeviceMappings {
-			if dbValue.CloudVolumeID == cloudValue.Ebs.VolumeId && dbValue.Status == cloudValue.Ebs.Status {
-				isEqual = true
-				break
-			}
-		}
-		if !isEqual {
-			return true
-		}
+	dbVolumeIDs := slice.Map(db.Extension.BlockDeviceMapping, func(one corecvm.AwsBlockDeviceMapping) *string {
+		return one.CloudVolumeID
+	})
+	cloudVolumeIDs := slice.Map(cloud.BlockDeviceMappings, func(one *ec2.InstanceBlockDeviceMapping) *string {
+		return one.Ebs.VolumeId
+	})
+	if !assert.IsPtrStringSliceEqual(dbVolumeIDs, cloudVolumeIDs) {
+		return true
 	}
 
 	return false

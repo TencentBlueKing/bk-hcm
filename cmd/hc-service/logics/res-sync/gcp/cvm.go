@@ -72,7 +72,7 @@ func (cli *client) Cvm(kt *kit.Kit, params *SyncBaseParams, opt *SyncCvmOption) 
 		return nil, err
 	}
 
-	if len(cvmFromCloud) == 0 && len(cvmFromCloud) == 0 {
+	if len(cvmFromCloud) == 0 && len(cvmFromDB) == 0 {
 		return new(SyncResult), nil
 	}
 
@@ -400,8 +400,7 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string, zone 
 			err, kt.Rid)
 		return err
 	}
-	logs.Infof("[%s] sync cvm to update cvm success, count: %d, ids: %v, rid: %s", enumor.Gcp,
-		len(updateMap), updateMap, kt.Rid)
+	logs.Infof("[%s] sync cvm to update cvm success, count: %d, ids: %v, rid: %s", enumor.Gcp, len(updateMap), kt.Rid)
 
 	return nil
 }
