@@ -108,6 +108,16 @@ func StringSliceToMap(source []string) map[string]struct{} {
 	return target
 }
 
+// StringSliceToMapBool []string to map[string]bool.
+func StringSliceToMapBool(source []string) map[string]bool {
+	target := make(map[string]bool, len(source))
+	for _, one := range source {
+		target[one] = true
+	}
+
+	return target
+}
+
 // MapKeyToStringSlice map[string]struct{} to []string.
 func MapKeyToStringSlice[V any](source map[string]V) []string {
 	return MapKeyToSlice(source)
