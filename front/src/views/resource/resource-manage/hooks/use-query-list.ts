@@ -3,25 +3,19 @@
  */
 import type { FilterType } from '@/typings/resource';
 
-import {
-  useResourceStore,
-} from '@/store/resource';
-import {
-  ref,
-  onMounted,
-  watch,
-} from 'vue';
+import { useResourceStore } from '@/store/resource';
+import { ref, onMounted, watch } from 'vue';
 import { QueryRuleOPEnum } from '@/typings';
 import { DResourceType } from '../children/dialog/batch-distribution';
 
 type SortType = {
   column: {
-    field: string
+    field: string;
   };
-  type: string
+  type: string;
 };
 type PropsType = {
-  filter?: FilterType
+  filter?: FilterType;
 };
 
 export default (
@@ -51,18 +45,22 @@ export default (
     isLoading.value = true;
 
     // 默认拉取方法
-    const getDefaultList = () => Promise
-      .all([
-        resourceStore[apiName](
-          {
-            page: {
-              count: false,
-              start: (pagination.value.current - 1) * pagination.value.limit,
-              limit: pagination.value.limit,
-              sort: sort.value,
-              order: order.value,
-            },
-            filter: [DResourceType.cvms, DResourceType.disks, DResourceType.eips].includes(type as DResourceType) ? {
+    const getDefaultList = () => Promise.all([
+      resourceStore[apiName](
+        {
+          page: {
+            count: false,
+            start: (pagination.value.current - 1) * pagination.value.limit,
+            limit: pagination.value.limit,
+            sort: sort.value,
+            order: order.value,
+          },
+          filter: [
+            DResourceType.cvms,
+            DResourceType.disks,
+            DResourceType.eips,
+          ].includes(type as DResourceType)
+            ? {
               op: 'and',
               rules: props.filter.rules.concat([
                 {
@@ -72,22 +70,37 @@ export default (
                 },
               ]),
             }
-              : props.filter,
-            ...args,
+            : props.filter,
+          ...args,
+        },
+        type,
+      ),
+      resourceStore[apiName](
+        {
+          page: {
+            count: true,
           },
-          type,
-        ),
-        resourceStore[apiName](
-          {
-            page: {
-              count: true,
-            },
-            filter: props.filter,
-            ...args,
-          },
-          type,
-        ),
-      ]);
+          filter: [
+            DResourceType.cvms,
+            DResourceType.disks,
+            DResourceType.eips,
+          ].includes(type as DResourceType)
+            ? {
+              op: 'and',
+              rules: props.filter.rules.concat([
+                {
+                  op: QueryRuleOPEnum.NEQ,
+                  field: 'recycle_status',
+                  value: 'recycling',
+                },
+              ]),
+            }
+            : props.filter,
+          ...args,
+        },
+        type,
+      ),
+    ]);
     // 用户如果传了，就用传入的获取数据的方法
     const method = apiMethod || getDefaultList;
     // 执行获取数据的逻辑
@@ -137,8 +150,8 @@ export default (
   watch(
     () => props.filter,
     () => {
-      isFilter.value = true;  // 如果是过滤则不需要再次请求
-      pagination.value.current = 1;   // 页码重置
+      isFilter.value = true; // 如果是过滤则不需要再次请求
+      pagination.value.current = 1; // 页码重置
       pagination.value.limit = 20;
       triggerApi();
     },
