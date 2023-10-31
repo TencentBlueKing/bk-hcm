@@ -156,10 +156,16 @@ const handleAdd = () => {
       });
       break;
     case 'vpc':
-      router.push({ path: '/resource/service-apply/vpc' });
+      router.push({
+        path: '/resource/service-apply/vpc',
+        query: route.query,
+      });
       break;
     case 'drive':
-      router.push({ path: '/resource/service-apply/disk' });
+      router.push({
+        path: '/resource/service-apply/disk',
+        query: route.query,
+      });
       break;
     default:
       isShowSideSlider.value = true;
