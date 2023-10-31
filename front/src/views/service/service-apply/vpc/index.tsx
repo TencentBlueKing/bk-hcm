@@ -120,8 +120,7 @@ export default defineComponent({
           {
             label: 'IPv4 CIDR',
             display: cond.vendor !== VendorEnum.GCP,
-            required: true,
-            property: 'ipv4_cidr',
+            property: 'ipv4Cidr1',
             content: () => (
               <>
                 <div class='flex-row align-items-center'>
@@ -288,7 +287,7 @@ export default defineComponent({
           },
           {
             label: 'IPv4 CIDR',
-            required: true,
+            property: 'ipv4Cidr2',
             content: () => (
               <>
                 <div class='flex-row align-items-center'>
@@ -422,6 +421,28 @@ export default defineComponent({
           pattern: nameReg,
           message: nameRegMsg,
           trigger: 'input',
+        },
+      ],
+      ipv4Cidr1: [
+        {
+          trigger: 'change',
+          message: 'IPv4 CIDR 不能为空',
+          validator: () => {
+            return (
+              !!formData.ipv4_cidr[4]
+            );
+          },
+        },
+      ],
+      ipv4Cidr2: [
+        {
+          trigger: 'change',
+          message: 'IPv4 CIDR 不能为空',
+          validator: () => {
+            return (
+              !!formData.subnet.ipv4_cidr[4]
+            );
+          },
         },
       ],
     };
