@@ -32,7 +32,6 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"google.golang.org/api/compute/v1"
 )
 
@@ -78,11 +77,9 @@ func (g *Gcp) CreateVpc(kt *kit.Kit, opt *types.GcpVpcCreateOption) (uint64, err
 		return 0, err
 	}
 
-	handler := &createVpcPollingHandler{
-		parseSelfLinkToName(resp.Zone),
-	}
+	handler := &createVpcPollingHandler{}
 	respPoller := poller.Poller[*Gcp, []*compute.Operation, []uint64]{Handler: handler}
-	results, err := respPoller.PollUntilDone(g, kt, []*string{to.Ptr(resp.OperationGroupId)},
+	results, err := respPoller.PollUntilDone(g, kt, []*string{converter.ValToPtr(strconv.FormatUint(resp.Id, 10))},
 		types.NewBatchCreateVpcPollerOption())
 	if err != nil {
 		return 0, err
@@ -120,6 +117,7 @@ func (g *Gcp) DeleteVpc(kt *kit.Kit, opt *core.BaseDeleteOption) error {
 		logs.Errorf("delete vpc failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
+	// TODO 改为poll 判断是否操作成功
 
 	return nil
 }
@@ -217,9 +215,7 @@ func convertVpc(data *compute.Network) *types.GcpVpc {
 	return vpc
 }
 
-type createVpcPollingHandler struct {
-	zone string
-}
+type createVpcPollingHandler struct{}
 
 // Done ...
 func (h *createVpcPollingHandler) Done(items []*compute.Operation) (bool, *[]uint64) {
@@ -247,8 +243,8 @@ func (h *createVpcPollingHandler) Done(items []*compute.Operation) (bool, *[]uin
 }
 
 // Poll ...
-func (h *createVpcPollingHandler) Poll(client *Gcp, kt *kit.Kit, operGroupIDs []*string) ([]*compute.Operation, error) {
-	if len(operGroupIDs) == 0 {
+func (h *createVpcPollingHandler) Poll(client *Gcp, kt *kit.Kit, opIds []*string) ([]*compute.Operation, error) {
+	if len(opIds) == 0 {
 		return nil, errors.New("operation group id is required")
 	}
 
@@ -257,16 +253,16 @@ func (h *createVpcPollingHandler) Poll(client *Gcp, kt *kit.Kit, operGroupIDs []
 		return nil, err
 	}
 
-	operResp, err := computeClient.ZoneOperations.List(client.CloudProjectID(), h.zone).Context(kt.Ctx).
-		Filter(fmt.Sprintf(`operationGroupId="%s"`, *operGroupIDs[0])).Do()
+	opList, err := computeClient.GlobalOperations.List(client.CloudProjectID()).Context(kt.Ctx).
+		Filter(fmt.Sprintf(`id="%s"`, *opIds[0])).Do()
 	if err != nil {
-		logs.Errorf("list zone operations failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("list operations failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
-	if len(operResp.Items) <= 1 {
+	if len(opList.Items) == 0 {
 		return nil, errors.New("operation has not been created yet, need to wait")
 	}
 
-	return operResp.Items, nil
+	return opList.Items, nil
 }

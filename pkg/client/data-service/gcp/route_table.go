@@ -27,6 +27,7 @@ import (
 	dataservice "hcm/pkg/api/data-service"
 	routetable "hcm/pkg/api/data-service/cloud/route-table"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -43,16 +44,16 @@ func NewRouteTableClient(client rest.ClientInterface) *RouteTableClient {
 }
 
 // BatchCreateRoute batch create gcp route.
-func (r *RouteTableClient) BatchCreateRoute(ctx context.Context, h http.Header,
+func (r *RouteTableClient) BatchCreateRoute(kt *kit.Kit,
 	req *routetable.GcpRouteBatchCreateReq) (*core.BatchCreateResult, error) {
 
 	resp := new(core.BatchCreateResp)
 
 	err := r.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(req).
 		SubResourcef("/routes/batch/create").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

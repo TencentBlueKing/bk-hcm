@@ -179,7 +179,7 @@ func (svc *cvmSvc) getVpcSelfLinkByCloudID(kt *kit.Kit, cloudID string) (string,
 		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"extension"},
 	}
-	vpcs, err := svc.dataCli.Gcp.Vpc.ListVpcExt(kt.Ctx, kt.Header(), req)
+	vpcs, err := svc.dataCli.Gcp.Vpc.ListVpcExt(kt, req)
 	if err != nil {
 		return "", err
 	}

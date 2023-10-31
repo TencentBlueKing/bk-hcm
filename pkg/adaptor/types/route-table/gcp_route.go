@@ -30,6 +30,8 @@ type GcpListOption struct {
 	Page      *core.GcpPage `json:"page" validate:"required"`
 	CloudIDs  []string      `json:"cloud_ids" validate:"omitempty"`
 	SelfLinks []string      `json:"self_links" validate:"omitempty"`
+	// network link
+	Network []string `json:"networks"`
 }
 
 // Validate gcp list option.
@@ -62,8 +64,9 @@ type GcpRouteListResult struct {
 
 // GcpRoute defines gcp route struct.
 type GcpRoute struct {
-	CloudID          string   `json:"cloud_id"`
-	SelfLink         string   `json:"self_link"`
+	CloudID  string `json:"cloud_id"`
+	SelfLink string `json:"self_link"`
+	// Network self link
 	Network          string   `json:"network"`
 	Name             string   `json:"name"`
 	DestRange        string   `json:"dest_range"`

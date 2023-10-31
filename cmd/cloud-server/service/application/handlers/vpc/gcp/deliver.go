@@ -45,7 +45,7 @@ func (a *ApplicationOfCreateGcpVpc) Deliver() (enumor.ApplicationStatus, map[str
 	}
 
 	// 查询vpc
-	vpcInfo, err := a.GetGcpVpcWithExtension(a.Vendor(), a.req.AccountID, result.ID)
+	vpcInfo, err := a.GetGcpVpcWithExt(result.ID)
 	if err != nil {
 		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
 	}

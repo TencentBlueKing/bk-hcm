@@ -80,20 +80,3 @@ type AwsRouteTableSyncReq struct {
 func (r *AwsRouteTableSyncReq) Validate() error {
 	return validator.Validate.Struct(r)
 }
-
-// GcpRouteTableSyncReq defines sync route table request.
-type GcpRouteTableSyncReq struct {
-	AccountID string   `json:"account_id" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids,omitempty"`
-	SelfLinks []string `json:"self_links" validate:"omitempty"`
-}
-
-// Validate validate sync route table request.
-func (r *GcpRouteTableSyncReq) Validate() error {
-	return validator.Validate.Struct(r)
-}
-
-// RouteTableSyncResult defines sync route table result.
-type RouteTableSyncResult struct {
-	TaskID string `json:"task_id"`
-}

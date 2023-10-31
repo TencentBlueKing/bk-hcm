@@ -197,7 +197,7 @@ func QueryVpcIDsAndSyncForGcp(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClie
 		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"id", "cloud_id", "extension"},
 	}
-	result, err := dataCli.Gcp.Vpc.ListVpcExt(kt.Ctx, kt.Header(), listReq)
+	result, err := dataCli.Gcp.Vpc.ListVpcExt(kt, listReq)
 	if err != nil {
 		logs.Errorf("list vpc from db failed, err: %v, selfLinks: %v, rid: %s", err, sls, kt.Rid)
 		return nil, err
@@ -252,7 +252,7 @@ func QueryVpcIDsAndSyncForGcp(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClie
 		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"id", "cloud_id", "extension"},
 	}
-	notExistResult, err := dataCli.Gcp.Vpc.ListVpcExt(kt.Ctx, kt.Header(), listReq)
+	notExistResult, err := dataCli.Gcp.Vpc.ListVpcExt(kt, listReq)
 	if err != nil {
 		logs.Errorf("list vpc from db failed, err: %v, cloudIDs: %v, rid: %s", err, notExistSelfLink, kt.Rid)
 		return nil, err

@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/runtime/filter"
 )
 
@@ -60,9 +61,7 @@ func (a *BaseApplicationHandler) GetVpc(
 }
 
 // GetVpcByID 通过id查询VPC
-func (a *BaseApplicationHandler) GetVpcByID(
-	vendor enumor.Vendor, id string,
-) (*corecloud.BaseVpc, error) {
+func (a *BaseApplicationHandler) GetVpcByID(vendor enumor.Vendor, id string) (*corecloud.BaseVpc, error) {
 	reqFilter := &filter.Expression{
 		Op: filter.And,
 		Rules: []filter.RuleFactory{
@@ -88,33 +87,17 @@ func (a *BaseApplicationHandler) GetVpcByID(
 	return &resp.Details[0], nil
 }
 
-// GetGcpVpcWithExtension 查询gcp并带有扩展信息
-func (a *BaseApplicationHandler) GetGcpVpcWithExtension(
-	vendor enumor.Vendor, accountID, cloudVpcID string,
-) (*corecloud.Vpc[corecloud.GcpVpcExtension], error) {
-	reqFilter := &filter.Expression{
-		Op: filter.And,
-		Rules: []filter.RuleFactory{
-			filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: vendor},
-			filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: accountID},
-			filter.AtomRule{Field: "cloud_id", Op: filter.Equal.Factory(), Value: cloudVpcID},
-		},
-	}
+// GetGcpVpcWithExt 查询gcp并带有扩展信息
+func (a *BaseApplicationHandler) GetGcpVpcWithExt(vpcID string) (*corecloud.Vpc[corecloud.GcpVpcExtension], error) {
+
 	// 查询
-	resp, err := a.Client.DataService().Gcp.Vpc.ListVpcExt(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
-		&core.ListReq{
-			Filter: reqFilter,
-			Page:   a.getPageOfOneLimit(),
-		},
-	)
+	resp, err := a.Client.DataService().Gcp.Vpc.ListVpcExt(a.Cts.Kit,
+		&core.ListReq{Filter: tools.EqualExpression("id", vpcID), Page: &core.BasePage{Limit: 1}})
 	if err != nil {
 		return nil, err
 	}
 	if resp == nil || len(resp.Details) == 0 {
-		return nil, fmt.Errorf("not found %s vpc by cloud_id(%s)", vendor, cloudVpcID)
+		return nil, fmt.Errorf("not found gcp vpc by id(%s)", vpcID)
 	}
-
 	return &resp.Details[0], nil
 }

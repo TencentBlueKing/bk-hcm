@@ -348,7 +348,7 @@ func (cli *client) listVpcFromDB(kt *kit.Kit, params *SyncBaseParams) (
 		},
 		Page: core.NewDefaultBasePage(),
 	}
-	result, err := cli.dbCli.Gcp.Vpc.ListVpcExt(kt.Ctx, kt.Header(), req)
+	result, err := cli.dbCli.Gcp.Vpc.ListVpcExt(kt, req)
 	if err != nil {
 		logs.Errorf("[%s] list vpc from db failed, err: %v, account: %s, req: %v, rid: %s", enumor.Gcp, err,
 			params.AccountID, req, kt.Rid)
@@ -383,7 +383,7 @@ func (cli *client) listVpcFromDBBySelfLink(kt *kit.Kit, opt *ListBySelfLinkOptio
 		},
 		Page: core.NewDefaultBasePage(),
 	}
-	result, err := cli.dbCli.Gcp.Vpc.ListVpcExt(kt.Ctx, kt.Header(), req)
+	result, err := cli.dbCli.Gcp.Vpc.ListVpcExt(kt, req)
 	if err != nil {
 		logs.Errorf("[%s] list vpc from db failed, err: %v, account: %s, req: %v, rid: %s", enumor.Gcp, err,
 			opt.AccountID, req, kt.Rid)

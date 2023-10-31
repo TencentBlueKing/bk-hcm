@@ -81,6 +81,10 @@ func (g *Gcp) ListRoute(kt *kit.Kit, opt *routetable.GcpListOption) (*routetable
 		listCall.Filter(generateResourceFilter("selfLink", opt.SelfLinks))
 	}
 
+	if len(opt.Network) > 0 {
+		listCall.Filter(generateResourceFilter("network", opt.Network))
+	}
+
 	if opt.Page != nil {
 		listCall.MaxResults(opt.Page.PageSize).PageToken(opt.Page.PageToken)
 	}
