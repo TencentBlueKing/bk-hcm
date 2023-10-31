@@ -161,6 +161,7 @@ export default defineComponent({
                 content: () => (
                   <Input
                     type='number'
+                    min={1}
                     v-model={formData.purchase_duration.count}></Input>
                 ),
               },
