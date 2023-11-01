@@ -79,7 +79,7 @@ export default defineComponent({
             required: true,
             property: 'disk_name',
             rules: [nameRules.value],
-            description: nameRules.value.message,
+            // description: nameRules.value.message,
             content: () => (
               <Input
                 placeholder='填写硬盘的名称'
