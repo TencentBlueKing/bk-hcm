@@ -27,6 +27,7 @@ import (
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -67,15 +68,15 @@ func (v *VpcClient) BatchCreate(ctx context.Context, h http.Header,
 }
 
 // Get azure vpc.
-func (v *VpcClient) Get(ctx context.Context, h http.Header, id string) (*corecloud.Vpc[corecloud.AzureVpcExtension],
+func (v *VpcClient) Get(kt *kit.Kit, id string) (*corecloud.Vpc[corecloud.AzureVpcExtension],
 	error) {
 
 	resp := new(protocloud.VpcGetResp[corecloud.AzureVpcExtension])
 
 	err := v.client.Get().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		SubResourcef("/vpcs/%s", id).
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

@@ -68,6 +68,7 @@ type Subnet[T SubnetExtension] struct {
 	CloudVpcID string   `json:"cloud_vpc_id"`
 	CloudID    string   `json:"cloud_id"`
 	Name       string   `json:"name"`
+	Region     string   `json:"region"`
 	Ipv4Cidr   []string `json:"ipv4_cidr,omitempty"`
 	Ipv6Cidr   []string `json:"ipv6_cidr,omitempty"`
 	Memo       *string  `json:"memo,omitempty"`

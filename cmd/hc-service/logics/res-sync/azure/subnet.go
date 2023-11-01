@@ -195,7 +195,8 @@ func (cli *client) deleteSubnet(kt *kit.Kit, accountID, resGroupName, cloudVpcID
 		Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
 	}
 	if err = cli.dbCli.Global.Subnet.BatchDelete(kt.Ctx, kt.Header(), deleteReq); err != nil {
-		logs.Errorf("[%s] request dataservice to batch delete subnet failed, err: %v, rid: %s", enumor.Azure, err, kt.Rid)
+		logs.Errorf("[%s] request dataservice to batch delete subnet failed, err: %v, rid: %s",
+			enumor.Azure, err, kt.Rid)
 		return err
 	}
 
@@ -219,6 +220,7 @@ func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[str
 				Name:     converter.ValToPtr(one.Name),
 				Ipv4Cidr: one.Ipv4Cidr,
 				Ipv6Cidr: one.Ipv6Cidr,
+				Region:   one.Region,
 				Memo:     one.Memo,
 			},
 			Extension: &cloud.AzureSubnetUpdateExt{
@@ -277,7 +279,7 @@ func (cli *client) createSubnet(kt *kit.Kit, accountID, resGroupName, cloudVpcID
 			BkBizID:    constant.UnassignedBiz,
 			CloudID:    one.CloudID,
 			Name:       converter.ValToPtr(one.Name),
-			Region:     vpcs[0].Region,
+			Region:     one.Region,
 			Zone:       "",
 			Ipv4Cidr:   one.Ipv4Cidr,
 			Ipv6Cidr:   one.Ipv6Cidr,
@@ -297,7 +299,8 @@ func (cli *client) createSubnet(kt *kit.Kit, accountID, resGroupName, cloudVpcID
 		Subnets: subnets,
 	}
 	if _, err := cli.dbCli.Azure.Subnet.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
-		logs.Errorf("[%s] request dataservice to batch create subnet failed, err: %v, rid: %s", enumor.Azure, err, kt.Rid)
+		logs.Errorf("[%s] request dataservice to batch create subnet failed, err: %v, rid: %s", enumor.Azure, err,
+			kt.Rid)
 		return err
 	}
 
@@ -421,6 +424,10 @@ func isSubnetChange(item adtysubnet.AzureSubnet, info cloudcore.Subnet[cloudcore
 	}
 
 	if info.Extension.SecurityGroupID != item.Extension.NetworkSecurityGroup {
+		return true
+	}
+
+	if info.Region != item.Region {
 		return true
 	}
 

@@ -211,9 +211,9 @@ func convertSubnet(data *vpc.Subnet, region string) *adtysubnet.TCloudSubnet {
 		CloudVpcID: converter.PtrToVal(data.VpcId),
 		CloudID:    converter.PtrToVal(data.SubnetId),
 		Name:       converter.PtrToVal(data.SubnetName),
+		Region:     region,
 		Extension: &adtysubnet.TCloudSubnetExtension{
 			IsDefault:               converter.PtrToVal(data.IsDefault),
-			Region:                  region,
 			Zone:                    converter.PtrToVal(data.Zone),
 			CloudRouteTableID:       data.RouteTableId,
 			CloudNetworkAclID:       data.NetworkAclId,

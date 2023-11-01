@@ -282,9 +282,9 @@ func convertSubnet(data *compute.Subnetwork) *typessubnet.GcpSubnet {
 		CloudID:    strconv.FormatUint(data.Id, 10),
 		Name:       data.Name,
 		Memo:       &data.Description,
+		Region:     region,
 		Extension: &typessubnet.GcpSubnetExtension{
 			SelfLink:              data.SelfLink,
-			Region:                region,
 			StackType:             data.StackType,
 			Ipv6AccessType:        data.Ipv6AccessType,
 			GatewayAddress:        data.GatewayAddress,

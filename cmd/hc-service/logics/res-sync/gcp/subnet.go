@@ -208,7 +208,7 @@ func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[str
 		tmpRes := cloud.SubnetUpdateReq[cloud.GcpSubnetUpdateExt]{
 			ID: id,
 			SubnetUpdateBaseInfo: cloud.SubnetUpdateBaseInfo{
-				Region:   item.Extension.Region,
+				Region:   item.Region,
 				Name:     converter.ValToPtr(item.Name),
 				Ipv4Cidr: item.Ipv4Cidr,
 				Ipv6Cidr: item.Ipv6Cidr,
@@ -281,7 +281,7 @@ func (cli *client) createSubnet(kt *kit.Kit, accountID string, addSubnet []adtys
 			BkBizID:    constant.UnassignedBiz,
 			CloudID:    item.CloudID,
 			Name:       converter.ValToPtr(item.Name),
-			Region:     item.Extension.Region,
+			Region:     item.Region,
 			Zone:       "",
 			Ipv4Cidr:   item.Ipv4Cidr,
 			Ipv6Cidr:   item.Ipv6Cidr,
@@ -314,7 +314,8 @@ func (cli *client) createSubnet(kt *kit.Kit, accountID string, addSubnet []adtys
 	return nil
 }
 
-func (cli *client) listSubnetFromCloud(kt *kit.Kit, params *SyncBaseParams, region string) ([]adtysubnet.GcpSubnet, error) {
+func (cli *client) listSubnetFromCloud(kt *kit.Kit, params *SyncBaseParams, region string) ([]adtysubnet.GcpSubnet,
+	error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -394,7 +395,7 @@ func (cli *client) listSubnetFromDB(kt *kit.Kit, params *SyncBaseParams, region 
 	return result.Details, nil
 }
 func isGcpSubnetChange(item adtysubnet.GcpSubnet, info cloudcore.Subnet[cloudcore.GcpSubnetExtension]) bool {
-	if info.Region != item.Extension.Region {
+	if info.Region != item.Region {
 		return true
 	}
 

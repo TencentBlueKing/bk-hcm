@@ -143,7 +143,7 @@ func (v vpc) AzureVpcUpdate(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	getRes, err := v.cs.DataService().Azure.Vpc.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
+	getRes, err := v.cs.DataService().Azure.Vpc.Get(cts.Kit, id)
 	if err != nil {
 		return nil, err
 	}
@@ -179,7 +179,7 @@ func (v vpc) AzureVpcUpdate(cts *rest.Contexts) (interface{}, error) {
 func (v vpc) AzureVpcDelete(cts *rest.Contexts) (interface{}, error) {
 	id := cts.PathParameter("id").String()
 
-	getRes, err := v.cs.DataService().Azure.Vpc.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
+	getRes, err := v.cs.DataService().Azure.Vpc.Get(cts.Kit, id)
 	if err != nil {
 		return nil, err
 	}

@@ -150,7 +150,8 @@ func (h *HuaWei) DeleteSubnet(kt *kit.Kit, opt *adtysubnet.HuaWeiSubnetDeleteOpt
 
 // ListSubnet list subnet.
 // reference: https://support.huaweicloud.com/intl/zh-cn/api-vpc/vpc_subnet01_0003.html
-func (h *HuaWei) ListSubnet(kt *kit.Kit, opt *adtysubnet.HuaWeiSubnetListOption) (*adtysubnet.HuaWeiSubnetListResult, error) {
+func (h *HuaWei) ListSubnet(kt *kit.Kit, opt *adtysubnet.HuaWeiSubnetListOption) (*adtysubnet.HuaWeiSubnetListResult,
+	error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -192,7 +193,8 @@ func (h *HuaWei) ListSubnet(kt *kit.Kit, opt *adtysubnet.HuaWeiSubnetListOption)
 
 // ListSubnetByID list subnet by id.
 // reference: https://support.huaweicloud.com/intl/zh-cn/api-vpc/vpc_subnet01_0003.html
-func (h *HuaWei) ListSubnetByID(kt *kit.Kit, opt *adtysubnet.HuaWeiSubnetListByIDOption) (*adtysubnet.HuaWeiSubnetListResult,
+func (h *HuaWei) ListSubnetByID(kt *kit.Kit,
+	opt *adtysubnet.HuaWeiSubnetListByIDOption) (*adtysubnet.HuaWeiSubnetListResult,
 	error) {
 
 	if err := opt.Validate(); err != nil {
@@ -262,8 +264,8 @@ func convertSubnet(data *model.Subnet, region string) *adtysubnet.HuaWeiSubnet {
 		CloudID:    data.Id,
 		Name:       data.Name,
 		Memo:       &data.Description,
+		Region:     region,
 		Extension: &adtysubnet.HuaWeiSubnetExtension{
-			Region:     region,
 			Status:     data.Status.Value(),
 			DhcpEnable: data.DhcpEnable,
 			GatewayIp:  data.GatewayIp,

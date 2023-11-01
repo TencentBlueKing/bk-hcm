@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"strings"
 
+	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
@@ -143,7 +144,8 @@ func (az *Azure) DeleteSubnet(kt *kit.Kit, opt *adtysubnet.AzureSubnetDeleteOpti
 
 // ListSubnet list subnet.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/subnets/list?tabs=HTTP
-func (az *Azure) ListSubnet(kt *kit.Kit, opt *adtysubnet.AzureSubnetListOption) (*adtysubnet.AzureSubnetListResult, error) {
+func (az *Azure) ListSubnet(kt *kit.Kit, opt *adtysubnet.AzureSubnetListOption) (*adtysubnet.AzureSubnetListResult,
+	error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -230,6 +232,20 @@ func (az *Azure) ListSubnetByID(kt *kit.Kit, opt *adtysubnet.AzureSubnetListByID
 		return nil, err
 	}
 
+	var region string
+	// 通过vpc 获取地域
+	vpcResp, err := az.ListVpcByID(kt, &core.AzureListByIDOption{
+		ResourceGroupName: opt.ResourceGroupName,
+		CloudIDs:          []string{opt.CloudVpcID},
+	})
+	if err == nil && len(vpcResp.Details) == 1 {
+		region = vpcResp.Details[0].Region
+	} else if err != nil {
+		logs.Errorf("fail to query vpc for subnet, err: %v, vpcID: %s", err, opt.CloudVpcID)
+	} else {
+		logs.Errorf("fail to query vpc, not found,  vpcID: %s", opt.CloudVpcID)
+	}
+
 	subnetClient, err := az.clientSet.subnetClient()
 	if err != nil {
 		return nil, fmt.Errorf("new subnet client failed, err: %v", err)
@@ -244,13 +260,15 @@ func (az *Azure) ListSubnetByID(kt *kit.Kit, opt *adtysubnet.AzureSubnetListByID
 	for pager.More() {
 		nextResult, err := pager.NextPage(kt.Ctx)
 		if err != nil {
-			return nil, fmt.Errorf("list azure subnet but get next page failed, err: %v", err)
+			return nil, fmt.Errorf("list azure net but get next page failed, err: %v", err)
 		}
 
-		for _, one := range nextResult.Value {
-			id := SPtrToLowerSPtr(one.ID)
+		for _, net := range nextResult.Value {
+			id := SPtrToLowerSPtr(net.ID)
 			if _, exist := idMap[*id]; exist {
-				details = append(details, converter.PtrToVal(convertSubnet(one, opt.ResourceGroupName, opt.CloudVpcID)))
+				detail := converter.PtrToVal(convertSubnet(net, opt.ResourceGroupName, opt.CloudVpcID))
+				detail.Region = region
+				details = append(details, detail)
 				delete(idMap, *id)
 
 				if len(idMap) == 0 {

@@ -350,7 +350,7 @@ func (svc *vpcSvc) getVpc(cts *rest.Contexts, validHandler handler.ValidWithAuth
 		}
 		return vpc, err
 	case enumor.Azure:
-		vpc, err := svc.client.DataService().Azure.Vpc.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
+		vpc, err := svc.client.DataService().Azure.Vpc.Get(cts.Kit, id)
 		if err != nil {
 			return nil, err
 		}
