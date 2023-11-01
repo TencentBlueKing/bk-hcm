@@ -65,6 +65,10 @@ export default defineComponent({
       );
     }
     function handleChange(val: Staff[]) {
+      userList.value = val.map(name => ({
+        username: name,
+        display_name: name,
+      }));
       ctx.emit('input', val);
       ctx.emit('change', val);
     }
@@ -86,6 +90,7 @@ export default defineComponent({
       () => staffStore.list,
       (list) => {
         if (list.length) {
+          console.log(666666, 123, props.modelValue);
           nextTick(() => {
             userList.value = [...userList.value, ...list];
             // tagInputRef.value?.focusInputTrigger(); // 获取到数据聚焦
