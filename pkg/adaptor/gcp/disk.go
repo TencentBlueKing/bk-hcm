@@ -148,7 +148,7 @@ func (g *Gcp) ListDisk(kt *kit.Kit, opt *disk.GcpDiskListOption) ([]disk.GcpDisk
 
 	disks := make([]disk.GcpDisk, 0, len(resp.Items))
 	for _, one := range resp.Items {
-		disks = append(disks, disk.GcpDisk{one})
+		disks = append(disks, disk.GcpDisk{Disk: one})
 	}
 
 	return disks, resp.NextPageToken, nil

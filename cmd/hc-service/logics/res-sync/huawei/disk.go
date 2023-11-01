@@ -71,6 +71,12 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 		return new(SyncResult), nil
 	}
 
+	if opt.BootMap != nil {
+		for i, d := range diskFromCloud {
+			_, diskFromCloud[i].Boot = opt.BootMap[d.Id]
+		}
+	}
+
 	addSlice, updateMap, delCloudIDs := common.Diff[adaptordisk.HuaWeiDisk, *coredisk.Disk[coredisk.HuaWeiExtension]](
 		diskFromCloud, diskFromDB, isDiskChange)
 
@@ -81,13 +87,13 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 	}
 
 	if len(addSlice) > 0 {
-		if err = cli.createDisk(kt, params.AccountID, params.Region, opt.BootMap, addSlice); err != nil {
+		if err = cli.createDisk(kt, params.AccountID, params.Region, addSlice); err != nil {
 			return nil, err
 		}
 	}
 
 	if len(updateMap) > 0 {
-		if err = cli.updateDisk(kt, params.AccountID, opt.BootMap, updateMap); err != nil {
+		if err = cli.updateDisk(kt, params.AccountID, updateMap); err != nil {
 			return nil, err
 		}
 	}
@@ -131,8 +137,7 @@ func (cli *client) deleteDisk(kt *kit.Kit, accountID string, region string, delC
 	return nil
 }
 
-func (cli *client) updateDisk(kt *kit.Kit, accountID string, bootMap map[string]struct{},
-	updateMap map[string]adaptordisk.HuaWeiDisk) error {
+func (cli *client) updateDisk(kt *kit.Kit, accountID string, updateMap map[string]adaptordisk.HuaWeiDisk) error {
 
 	if len(updateMap) <= 0 {
 		return fmt.Errorf("updateMap is <= 0, not update")
@@ -141,10 +146,6 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, bootMap map[string]
 	disks := make([]*disk.DiskExtUpdateReq[coredisk.HuaWeiExtension], 0)
 
 	for id, one := range updateMap {
-		var isSystemDisk bool
-		if _, exists := bootMap[one.Id]; exists {
-			isSystemDisk = true
-		}
 
 		attachments := make([]*coredisk.HuaWeiDiskAttachment, 0)
 		if len(one.Attachments) > 0 {
@@ -166,7 +167,7 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, bootMap map[string]
 			ID:           id,
 			Memo:         converter.ValToPtr(one.Description),
 			Status:       one.Status,
-			IsSystemDisk: converter.ValToPtr(isSystemDisk),
+			IsSystemDisk: converter.ValToPtr(one.Boot),
 			Extension: &coredisk.HuaWeiExtension{
 				ChargeType:  one.DiskChargeType,
 				ExpireTime:  one.ExpireTime,
@@ -196,7 +197,7 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, bootMap map[string]
 	return nil
 }
 
-func (cli *client) createDisk(kt *kit.Kit, accountID string, region string, bootMap map[string]struct{},
+func (cli *client) createDisk(kt *kit.Kit, accountID string, region string,
 	addSlice []adaptordisk.HuaWeiDisk) error {
 
 	if len(addSlice) <= 0 {
@@ -223,15 +224,16 @@ func (cli *client) createDisk(kt *kit.Kit, accountID string, region string, boot
 		}
 
 		disk := &disk.DiskExtCreateReq[coredisk.HuaWeiExtension]{
-			AccountID: accountID,
-			Name:      one.Name,
-			CloudID:   one.Id,
-			Region:    region,
-			Zone:      one.AvailabilityZone,
-			DiskSize:  uint64(one.Size),
-			DiskType:  one.VolumeType,
-			Status:    one.Status,
-			Memo:      converter.ValToPtr(one.Description),
+			AccountID:    accountID,
+			Name:         one.Name,
+			CloudID:      one.Id,
+			Region:       region,
+			Zone:         one.AvailabilityZone,
+			DiskSize:     uint64(one.Size),
+			DiskType:     one.VolumeType,
+			Status:       one.Status,
+			Memo:         converter.ValToPtr(one.Description),
+			IsSystemDisk: one.Boot,
 			Extension: &coredisk.HuaWeiExtension{
 				ChargeType:  one.DiskChargeType,
 				ExpireTime:  one.ExpireTime,
@@ -240,10 +242,6 @@ func (cli *client) createDisk(kt *kit.Kit, accountID string, region string, boot
 				Attachment:  attachments,
 				Bootable:    one.Bootable,
 			},
-		}
-
-		if _, exists := bootMap[one.Id]; exists {
-			disk.IsSystemDisk = true
 		}
 
 		createReq = append(createReq, disk)
@@ -439,6 +437,10 @@ func isDiskChange(cloud adaptordisk.HuaWeiDisk, db *coredisk.Disk[coredisk.HuaWe
 	}
 
 	if cloud.ExpireTime != db.Extension.ExpireTime {
+		return true
+	}
+
+	if cloud.Boot != db.IsSystemDisk {
 		return true
 	}
 
