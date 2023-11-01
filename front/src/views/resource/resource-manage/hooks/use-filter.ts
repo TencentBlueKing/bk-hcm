@@ -13,6 +13,8 @@ import {
 } from '@/store';
 import { QueryFilterType, QueryRuleOPEnum, RulesItem } from '@/typings';
 import { useRoute } from 'vue-router';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 
 type PropsType = {
   filter?: FilterType,
@@ -44,6 +46,8 @@ const useFilter = (props: PropsType) => {
   const isAccurate = ref(false);
   const accountStore = useAccountStore();
   const route = useRoute();
+  const { whereAmI } = useWhereAmI();
+  const resourceAccountStore = useResourceAccountStore();
 
   const saveQueryInSearch = () => {
     let params = [] as typeof searchValue.value;
@@ -141,8 +145,18 @@ const useFilter = (props: PropsType) => {
           answer.push(rule);
         }
       }
-      if (props.whereAmI === ResourceManageSenario.image) filter.value.rules = [];
-      else filter.value.rules = props.filter.rules;
+      if (props.whereAmI === ResourceManageSenario.image) {
+        filter.value.rules = [];
+        if (whereAmI.value === Senarios.resource && resourceAccountStore.resourceAccount?.vendor) {
+          filter.value.rules = [
+            {
+              field: 'vendor',
+              op: QueryRuleOPEnum.EQ,
+              value: resourceAccountStore.resourceAccount.vendor,
+            },
+          ];
+        }
+      } else filter.value.rules = props.filter.rules;
       filter.value.rules = filter.value.rules.concat(answer);
     },
     {
