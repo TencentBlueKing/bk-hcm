@@ -45,6 +45,7 @@ import (
 	csdisk "hcm/pkg/api/cloud-server/disk"
 	csvpc "hcm/pkg/api/cloud-server/vpc"
 	dataproto "hcm/pkg/api/data-service"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
@@ -293,65 +294,64 @@ func (a *applicationSvc) deliver(cts *rest.Contexts, application *dataproto.Appl
 	// 将执行人设置为申请人
 	cts.Kit.User = application.Applicant
 
+	// 除非交付成功，否则都属于交付失败状态
+	deliverStatus := enumor.DeliverError
+	deliveryDetailStr := `{"error": "unknown deliver error"}`
+	defer func() {
+		err := a.updateStatusWithDetail(cts, application.ID, deliverStatus, deliveryDetailStr)
+		if err != nil {
+			logs.Errorf("%s execute application[id=%s] delivery of %s failed, updateStatusWithDetail err: %s, rid: %s",
+				constant.ApplicationDeliverFailed, application.ID, application.Type, err, cts.Kit.Rid)
+			return
+		}
+	}()
+
 	// 根据不同申请单类型，获取对应的Handler
 	handler, err := a.getHandlerByApplication(cts, application)
 	if err != nil {
-		logs.Errorf(
-			"execute application[id=%s] delivery of %s failed, NewHandler err: %s, rid: %s",
-			application.ID, application.Type, err, cts.Kit.Rid,
-		)
+		logs.Errorf("execute application[id=%s] delivery of %s failed, NewHandler err: %s, rid: %s",
+			application.ID, application.Type, err, cts.Kit.Rid)
+		deliveryDetailStr = fmt.Sprintf(`{"error": "get handler by application failed, err: %v"}`, err)
 		return
 	}
 
 	// 预处理申请内容数据，来自DB的数据
 	err = handler.PrepareReqFromContent()
 	if err != nil {
-		logs.Errorf(
-			"execute application[id=%s] delivery of %s failed, PrepareReqFromContent err: %s, rid: %s",
-			application.ID, application.Type, err, cts.Kit.Rid,
-		)
+		logs.Errorf("execute application[id=%s] delivery of %s failed, PrepareReqFromContent err: %s, rid: %s",
+			application.ID, application.Type, err, cts.Kit.Rid)
+		deliveryDetailStr = fmt.Sprintf(`{"error": "prepare request from content failed, err: %v"}`, err)
 		return
 	}
 
 	// 再次校验数据正确性（特别是唯一性校验，申请时可能通过，但是审批后可能已经有其他存在了）
 	err = handler.CheckReq()
 	if err != nil {
-		logs.Errorf(
-			"execute application[id=%s] delivery of %s failed, CheckReq err: %s, rid: %s",
-			application.ID, application.Type, err, cts.Kit.Rid,
-		)
+		logs.Errorf("execute application[id=%s] delivery of %s failed, CheckReq err: %s, rid: %s",
+			application.ID, application.Type, err, cts.Kit.Rid)
+		deliveryDetailStr = fmt.Sprintf(`{"error": "check request failed, err: %v"}`, err)
 		return
 	}
 
 	// 执行交付
 	deliverStatus, deliveryDetail, err := handler.Deliver()
 	// Note: 排查需要，这里无论失败还是成功，都记录日志，因为没有异步框架可以记录这些信息
-	logs.Infof(
-		"execute application[id=%s] delivery of %s, deliver status: %s, detail: %+v, rid: %s",
-		application.ID, application.Type, deliverStatus, deliveryDetail, cts.Kit.Rid,
-	)
+	logs.Infof("execute application[id=%s] delivery of %s, deliver status: %s, detail: %+v, rid: %s",
+		application.ID, application.Type, deliverStatus, deliveryDetail, cts.Kit.Rid)
+
 	if err != nil {
-		logs.Errorf(
-			"execute application[id=%s] delivery of %s failed, err: %s, rid: %s",
-			application.ID, application.Type, err, cts.Kit.Rid,
-		)
+		logs.Errorf("execute application[id=%s] delivery of %s failed, err: %s, rid: %s", application.ID,
+			application.Type, err, cts.Kit.Rid)
+
 		deliverStatus = enumor.DeliverError
 	}
 
 	// 更新DB里单据的交付状态和详情
-	deliveryDetailStr, err := json.MarshalToString(deliveryDetail)
+	deliveryDetailStr, err = json.MarshalToString(deliveryDetail)
 	if err != nil {
 		logs.Errorf("marshal deliver detail failed, err: %v, detail: %+v, rid: %s", err, deliveryDetail, cts.Kit.Rid)
+
 		deliverStatus = enumor.DeliverError
 		deliveryDetailStr = `{"error": "marshal deliver detail failed"}`
-	}
-
-	err = a.updateStatusWithDetail(cts, application.ID, deliverStatus, deliveryDetailStr)
-	if err != nil {
-		logs.Errorf(
-			"execute application[id=%s] delivery of %s failed, updateStatusWithDetail err: %s, rid: %s",
-			application.ID, application.Type, err, cts.Kit.Rid,
-		)
-		return
 	}
 }
