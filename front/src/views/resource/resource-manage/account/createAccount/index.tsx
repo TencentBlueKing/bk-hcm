@@ -131,14 +131,16 @@ export default defineComponent({
                 ) : null}
               </>
 
-              <Button
-                onClick={() => {
-                  step.value = 1;
-                  props.onCancel();
-                }}
-                loading={isSubmitLoading.value}>
-                {step.value < 3 ? '取消' : '关闭'}
-              </Button>
+              {step.value < 3 ? (
+                <Button
+                  onClick={() => {
+                    step.value = 1;
+                    props.onCancel();
+                  }}
+                  loading={isSubmitLoading.value}>
+                  取消
+                </Button>
+              ) : null}
             </div>
           ),
         }}
