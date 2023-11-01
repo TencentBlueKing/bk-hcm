@@ -1,4 +1,4 @@
-import { Button, Dialog } from 'bkui-vue';
+import { Button, Dialog, Message } from 'bkui-vue';
 import { PropType, defineComponent, ref } from 'vue';
 import BusinessSelector from '@/components/business-selector/index.vue';
 import './index.scss';
@@ -15,7 +15,7 @@ export enum DResourceType {
   security_groups = 'security_groups',
   subnets = 'subnets',
   vpcs = 'vpcs',
-};
+}
 
 export const DResourceTypeMap = {
   [DResourceType.cvms]: {
@@ -81,10 +81,20 @@ export const BatchDistribution = defineComponent({
       isLoading.value = true;
       try {
         await resourceStore.assignBusiness(props.type, {
-          [DResourceTypeMap[props.type].key]: props.selections?.map(v => v.id) || [],
+          [DResourceTypeMap[props.type].key]:
+            props.selections?.map(v => v.id) || [],
           bk_biz_id: selectedBizId.value,
         });
+        Message({
+          theme: 'success',
+          message: '批量分配成功！',
+        });
         props.getData?.();
+      } catch (error) {
+        Message({
+          theme: 'error',
+          message: '批量分配失败！',
+        });
       } finally {
         isLoading.value = false;
         isShow.value = false;
@@ -98,8 +108,7 @@ export const BatchDistribution = defineComponent({
             onClick={() => {
               isShow.value = true;
             }}
-            disabled={!props.selections.length}
-          >
+            disabled={!props.selections.length}>
             批量分配
           </Button>
         ) : null}
@@ -108,15 +117,13 @@ export const BatchDistribution = defineComponent({
           title={`${DResourceTypeMap[props.type].name}分配`}
           theme={'primary'}
           quickClose
-          onClosed={
-            () => isShow.value = false
-          }
+          onClosed={() => (isShow.value = false)}
           onConfirm={handleConfirm}
           isLoading={isLoading.value}>
           <p class='selected-host-count-tip'>
             已选择
-            <span class='selected-host-count'>{props.selections.length}</span>
-            个{DResourceTypeMap[props.type].name}，可选择所需分配的目标业务
+            <span class='selected-host-count'>{props.selections.length}</span>个
+            {DResourceTypeMap[props.type].name}，可选择所需分配的目标业务
           </p>
           <p class='mb6'>目标业务</p>
           <BusinessSelector

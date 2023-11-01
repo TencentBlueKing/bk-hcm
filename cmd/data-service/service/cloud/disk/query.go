@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	coredisk "hcm/pkg/api/core/cloud/disk"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -60,15 +61,15 @@ func (dSvc *diskSvc) RetrieveDiskExt(cts *rest.Contexts) (interface{}, error) {
 	diskData := data.Details[0]
 	switch vendor {
 	case enumor.TCloud:
-		return toProtoDiskExtResult[dataproto.TCloudDiskExtensionResult](diskData)
+		return toProtoDiskExtResult[coredisk.TCloudExtension](diskData)
 	case enumor.Aws:
-		return toProtoDiskExtResult[dataproto.AwsDiskExtensionResult](diskData)
+		return toProtoDiskExtResult[coredisk.AwsExtension](diskData)
 	case enumor.Gcp:
-		return toProtoDiskExtResult[dataproto.GcpDiskExtensionResult](diskData)
+		return toProtoDiskExtResult[coredisk.GcpExtension](diskData)
 	case enumor.Azure:
-		return toProtoDiskExtResult[dataproto.AzureDiskExtensionResult](diskData)
+		return toProtoDiskExtResult[coredisk.AzureExtension](diskData)
 	case enumor.HuaWei:
-		return toProtoDiskExtResult[dataproto.HuaWeiDiskExtensionResult](diskData)
+		return toProtoDiskExtResult[coredisk.HuaWeiExtension](diskData)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
 	}
@@ -76,7 +77,7 @@ func (dSvc *diskSvc) RetrieveDiskExt(cts *rest.Contexts) (interface{}, error) {
 
 // ListDisk 查询云盘列表
 func (dSvc *diskSvc) ListDisk(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataproto.DiskListReq)
+	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -96,12 +97,12 @@ func (dSvc *diskSvc) ListDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	details := make([]*dataproto.DiskResult, len(data.Details))
+	details := make([]*coredisk.BaseDisk, len(data.Details))
 	for indx, d := range data.Details {
 		details[indx] = toProtoDiskResult(d)
 	}
 
-	return &dataproto.DiskListResult{Details: details, Count: data.Count}, nil
+	return &dataproto.ListResult{Details: details, Count: data.Count}, nil
 }
 
 // ListDiskExt 获取云盘列表(带 extension 字段)
@@ -111,7 +112,7 @@ func (dSvc *diskSvc) ListDiskExt(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	req := new(dataproto.DiskListReq)
+	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -133,15 +134,15 @@ func (dSvc *diskSvc) ListDiskExt(cts *rest.Contexts) (interface{}, error) {
 
 	switch vendor {
 	case enumor.TCloud:
-		return toProtoDiskExtListResult[dataproto.TCloudDiskExtensionResult](data)
+		return toProtoDiskExtListResult[coredisk.TCloudExtension](data)
 	case enumor.Aws:
-		return toProtoDiskExtListResult[dataproto.AwsDiskExtensionResult](data)
+		return toProtoDiskExtListResult[coredisk.AwsExtension](data)
 	case enumor.Gcp:
-		return toProtoDiskExtListResult[dataproto.GcpDiskExtensionResult](data)
+		return toProtoDiskExtListResult[coredisk.GcpExtension](data)
 	case enumor.Azure:
-		return toProtoDiskExtListResult[dataproto.AzureDiskExtensionResult](data)
+		return toProtoDiskExtListResult[coredisk.AzureExtension](data)
 	case enumor.HuaWei:
-		return toProtoDiskExtListResult[dataproto.HuaWeiDiskExtensionResult](data)
+		return toProtoDiskExtListResult[coredisk.HuaWeiExtension](data)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
 	}
@@ -149,7 +150,7 @@ func (dSvc *diskSvc) ListDiskExt(cts *rest.Contexts) (interface{}, error) {
 
 // CountDisk 统计云盘数量
 func (dSvc *diskSvc) CountDisk(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataproto.DiskCountReq)
+	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -166,5 +167,6 @@ func (dSvc *diskSvc) CountDisk(cts *rest.Contexts) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &dataproto.DiskCountResult{Count: data.Count}, nil
+
+	return &dataproto.ListResult{Count: data.Count}, nil
 }

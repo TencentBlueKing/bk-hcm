@@ -37,6 +37,7 @@ import (
 	typeszone "hcm/pkg/adaptor/types/zone"
 	cloudcore "hcm/pkg/api/core/cloud"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
+	coredisk "hcm/pkg/api/core/cloud/disk"
 	coreimage "hcm/pkg/api/core/cloud/image"
 	corecloudni "hcm/pkg/api/core/cloud/network-interface"
 	coreregion "hcm/pkg/api/core/cloud/region"
@@ -45,7 +46,6 @@ import (
 	coresubaccount "hcm/pkg/api/core/cloud/sub-account"
 	corezone "hcm/pkg/api/core/cloud/zone"
 	corerecyclerecord "hcm/pkg/api/core/recycle-record"
-	"hcm/pkg/api/data-service/cloud/disk"
 	dataeip "hcm/pkg/api/data-service/cloud/eip"
 )
 
@@ -173,11 +173,11 @@ type DBResType interface {
 		cloudcore.Subnet[cloudcore.GcpSubnetExtension] |
 		cloudcore.Subnet[cloudcore.AzureSubnetExtension] |
 
-		*disk.DiskExtResult[disk.TCloudDiskExtensionResult] |
-		*disk.DiskExtResult[disk.HuaWeiDiskExtensionResult] |
-		*disk.DiskExtResult[disk.AwsDiskExtensionResult] |
-		*disk.DiskExtResult[disk.GcpDiskExtensionResult] |
-		*disk.DiskExtResult[disk.AzureDiskExtensionResult] |
+		*coredisk.Disk[coredisk.TCloudExtension] |
+		*coredisk.Disk[coredisk.HuaWeiExtension] |
+		*coredisk.Disk[coredisk.AwsExtension] |
+		*coredisk.Disk[coredisk.GcpExtension] |
+		*coredisk.Disk[coredisk.AzureExtension] |
 
 		cloudcore.SecurityGroup[cloudcore.TCloudSecurityGroupExtension] |
 		cloudcore.SecurityGroup[cloudcore.HuaWeiSecurityGroupExtension] |

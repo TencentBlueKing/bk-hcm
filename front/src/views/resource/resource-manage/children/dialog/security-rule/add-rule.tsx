@@ -177,7 +177,7 @@ export default defineComponent({
           {props.vendor === 'azure' ? (
             <Select
               clearable={false}
-              class='input-prefix-select'
+              class='input-prefix-select w120'
               v-model={data.sourceAddress}>
               {azureSecurityGroupSource.value.map(ele => (
                 <Option value={ele.id} label={ele.name} key={ele.id} />
@@ -186,7 +186,7 @@ export default defineComponent({
           ) : (
             <Select
               clearable={false}
-              class='input-prefix-select'
+              class='input-prefix-select w120'
               v-model={data.sourceAddress}
               disabled={props.isEdit}>
               {securityGroupSource.value.map(ele => (
@@ -202,7 +202,7 @@ export default defineComponent({
         'cloud_source_security_group_ids',
         'cloud_remote_group_id',
       ].includes(key) ? (
-        <div class={'security-group-select'}>
+        <div class={'security-group-select w120'}>
           {prefix()}
           <Select v-model={data[key]}>
             {props.relatedSecurityGroups.map((securityGroup: {
@@ -250,9 +250,9 @@ export default defineComponent({
       console.log(key);
       return key !== 'cloud_destination_security_group_ids' ? (
         <Input
-          class=' input-select-warp'
+          class=' input-select-warp w120'
           v-model={data[key]}
-          placeholder='10.0.0.1/24、 10.0.0.1'
+          placeholder='10.0.0.1/24、10.0.0.1'
           onChange={(val: string) => {
             if (['all', 'ALL'].includes(val.trim())) {
               data[key] = translateAll(data.targetAddress);
@@ -262,7 +262,7 @@ export default defineComponent({
             prefix: () => (
               <>
                 <Select
-                  class='input-prefix-select'
+                  class='input-prefix-select w100'
                   v-model={data.targetAddress}>
                   {azureSecurityGroupTarget.value.map(ele => (
                     <Option value={ele.id} label={ele.name} key={ele.id} />
@@ -276,13 +276,13 @@ export default defineComponent({
         <>
           <div class='flex-row align-items-center'>
             <Select
-              class='tag-input-prefix-select'
+              class='tag-input-prefix-select w100'
               v-model={data.targetAddress}>
               {azureSecurityGroupTarget.value.map(ele => (
                 <Option value={ele.id} label={ele.name} key={ele.id} />
               ))}
             </Select>
-            <Select v-model={data[key]} class='tag-input-select-warp'>
+            <Select v-model={data[key]} class='tag-input-select-warp w100'>
               {props.relatedSecurityGroups.map((securityGroup: {
                 cloud_id: string | number | symbol;
                 name: string;
@@ -321,6 +321,7 @@ export default defineComponent({
                   )}>
                   {props.vendor === 'azure' ? (
                     <FormItem
+                      class="w150"
                       label={index === 0 ? t('名称') : ''}
                       required
                       property='name'>
@@ -332,6 +333,7 @@ export default defineComponent({
                   {props.vendor !== 'tcloud' && props.vendor !== 'aws' ? (
                     <>
                       <FormItem
+                        class="w150"
                         label={index === 0 ? t('优先级') : ''}
                         required
                         property='priority'
@@ -348,6 +350,7 @@ export default defineComponent({
                   )}
                   {props.vendor === 'huawei' ? (
                     <FormItem
+                      class="w150"
                       label={index === 0 ? t('类型') : ''}
                       property='ethertype'
                       required>
@@ -367,6 +370,7 @@ export default defineComponent({
                   {props.vendor === 'azure' ? (
                     <>
                       <FormItem
+                        class="w200"
                         label={index === 0 ? t('源') : ''}
                         property='sourceAddress'
                         required
@@ -379,6 +383,7 @@ export default defineComponent({
                         )}
                       </FormItem>
                       <FormItem
+                        class="w200"
                         label={index === 0 ? t('源端口') : ''}
                         property='source_port_range'
                         required
@@ -388,6 +393,7 @@ export default defineComponent({
                           v-model={data.source_port_range}></Input>
                       </FormItem>
                       <FormItem
+                        class="w249"
                         label={index === 0 ? t('目标') : ''}
                         property='targetAddress'
                         required
@@ -400,6 +406,7 @@ export default defineComponent({
                         )}
                       </FormItem>
                       <FormItem
+                        class="w200"
                         label={index === 0 ? t('目标协议端口') : ''}
                         property='destination_port_range'>
                         <Input
@@ -409,7 +416,7 @@ export default defineComponent({
                           {{
                             prefix: () => (
                               <Select
-                                class='input-prefix-select'
+                                class='input-prefix-select w120'
                                 v-model={data.protocol}
                                 onChange={(val) => {
                                   delete data.destination_port_range;
@@ -491,6 +498,7 @@ export default defineComponent({
                   )}
                   {props.vendor !== 'aws' ? ( // aws没有策略
                     <FormItem
+                      class="w100"
                       label={index === 0 ? t('策略') : ''}
                       property={props.vendor === 'azure' ? 'access' : 'action'}
                       required>

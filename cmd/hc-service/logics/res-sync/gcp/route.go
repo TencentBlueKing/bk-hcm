@@ -128,7 +128,7 @@ func (cli *client) createRoute(kt *kit.Kit, accountID string,
 	createReq := &routetable.GcpRouteBatchCreateReq{
 		GcpRoutes: createResources,
 	}
-	if _, err := cli.dbCli.Gcp.RouteTable.BatchCreateRoute(kt.Ctx, kt.Header(), createReq); err != nil {
+	if _, err := cli.dbCli.Gcp.RouteTable.BatchCreateRoute(kt, createReq); err != nil {
 		logs.Errorf("[%s] routetable batch compare db create failed. accountID: %s, err: %v",
 			enumor.Gcp, accountID, err)
 		return err
@@ -242,7 +242,6 @@ func (cli *client) listRouteFromDB(kt *kit.Kit, params *SyncBaseParams, option *
 			Filter: &filter.Expression{
 				Op: filter.And,
 				Rules: []filter.RuleFactory{
-					&filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: params.CloudIDs},
 					&filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: params.CloudIDs},
 				},
 			},

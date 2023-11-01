@@ -98,11 +98,34 @@ func StringSliceToUint64Slice(source []string) []uint64 {
 	return target
 }
 
+// SliceToMap convert slice to map, use kvFunc to get key value pair for map.
+//
+//	k, v := kvFunc(one)
+//	target[k] = v
+func SliceToMap[T any, K comparable, V any](source []T, kvFunc func(T) (K, V)) map[K]V {
+	target := make(map[K]V, len(source))
+	for _, one := range source {
+		k, v := kvFunc(one)
+		target[k] = v
+	}
+	return target
+}
+
 // StringSliceToMap []string to map[string]struct.
 func StringSliceToMap(source []string) map[string]struct{} {
 	target := make(map[string]struct{}, len(source))
 	for _, one := range source {
 		target[one] = struct{}{}
+	}
+
+	return target
+}
+
+// StringSliceToMapBool []string to map[string]bool.
+func StringSliceToMapBool(source []string) map[string]bool {
+	target := make(map[string]bool, len(source))
+	for _, one := range source {
+		target[one] = true
 	}
 
 	return target

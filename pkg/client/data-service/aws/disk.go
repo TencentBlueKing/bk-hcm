@@ -24,6 +24,7 @@ import (
 	"net/http"
 
 	"hcm/pkg/api/core"
+	coredisk "hcm/pkg/api/core/cloud/disk"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	"hcm/pkg/criteria/errf"
 )
@@ -31,7 +32,7 @@ import (
 // BatchCreateDisk 批量创建云盘
 func (rc *restClient) BatchCreateDisk(ctx context.Context,
 	h http.Header,
-	request *dataproto.DiskExtBatchCreateReq[dataproto.AwsDiskExtensionCreateReq],
+	request *dataproto.DiskExtBatchCreateReq[coredisk.AwsExtension],
 ) (*core.BatchCreateResult, error) {
 	resp := new(core.BatchCreateResp)
 	err := rc.client.Post().
@@ -57,8 +58,8 @@ func (rc *restClient) RetrieveDisk(
 	ctx context.Context,
 	h http.Header,
 	diskID string,
-) (*dataproto.DiskExtResult[dataproto.AwsDiskExtensionResult], error) {
-	resp := new(dataproto.DiskExtRetrieveResp[dataproto.AwsDiskExtensionResult])
+) (*coredisk.Disk[coredisk.AwsExtension], error) {
+	resp := new(dataproto.GetResp[coredisk.AwsExtension])
 	err := rc.client.Get().WithContext(ctx).SubResourcef("/disks/%s", diskID).WithHeaders(h).Do().Into(resp)
 	if err != nil {
 		return nil, err
@@ -75,9 +76,9 @@ func (rc *restClient) RetrieveDisk(
 func (rc *restClient) ListDisk(
 	ctx context.Context,
 	h http.Header,
-	request *dataproto.DiskListReq,
-) (*dataproto.DiskExtListResult[dataproto.AwsDiskExtensionResult], error) {
-	resp := new(dataproto.DiskExtListResp[dataproto.AwsDiskExtensionResult])
+	request *core.ListReq,
+) (*dataproto.ListExtResult[coredisk.AwsExtension], error) {
+	resp := new(dataproto.ListExtResp[coredisk.AwsExtension])
 	err := rc.client.Post().WithContext(ctx).Body(request).SubResourcef("/disks/list").WithHeaders(h).Do().Into(resp)
 	if err != nil {
 		return nil, err
@@ -94,7 +95,7 @@ func (rc *restClient) ListDisk(
 func (rc *restClient) BatchUpdateDisk(
 	ctx context.Context,
 	h http.Header,
-	request *dataproto.DiskExtBatchUpdateReq[dataproto.AwsDiskExtensionUpdateReq],
+	request *dataproto.DiskExtBatchUpdateReq[coredisk.AwsExtension],
 ) (interface{}, error) {
 	resp := new(core.UpdateResp)
 	err := rc.client.Patch().WithContext(ctx).Body(request).SubResourcef("/disks").WithHeaders(h).Do().Into(resp)

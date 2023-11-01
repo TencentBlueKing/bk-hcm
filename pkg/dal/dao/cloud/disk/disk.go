@@ -206,7 +206,7 @@ func (diskDao DiskDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.DiskList
 			logs.ErrorJson("count disk failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
 		}
-		return &cloud.DiskListResult{Count: &count}, nil
+		return &cloud.DiskListResult{Count: count}, nil
 	}
 	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
 	if err != nil {

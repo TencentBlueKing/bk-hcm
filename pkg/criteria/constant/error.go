@@ -38,4 +38,6 @@ const (
 	RecycleUpdateRecordFailed WarnSign = "recycle_update_record_failed"
 	// AsyncTaskWarnSign 异步任务框架执行异常告警
 	AsyncTaskWarnSign = "async_task_exec_exception"
+	// ApplicationDeliverFailed 申请单交付失败告警
+	ApplicationDeliverFailed WarnSign = "application_deliver_failed"
 )

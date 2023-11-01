@@ -350,7 +350,7 @@ func (svc *vpcSvc) getVpc(cts *rest.Contexts, validHandler handler.ValidWithAuth
 		}
 		return vpc, err
 	case enumor.Azure:
-		vpc, err := svc.client.DataService().Azure.Vpc.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
+		vpc, err := svc.client.DataService().Azure.Vpc.Get(cts.Kit, id)
 		if err != nil {
 			return nil, err
 		}
@@ -442,7 +442,7 @@ func (svc *vpcSvc) listVpcExt(cts *rest.Contexts, authHandler handler.ListAuthRe
 	case enumor.Aws:
 		return svc.client.DataService().Aws.Vpc.ListVpcExt(cts.Kit.Ctx, cts.Kit.Header(), req)
 	case enumor.Gcp:
-		return svc.client.DataService().Gcp.Vpc.ListVpcExt(cts.Kit.Ctx, cts.Kit.Header(), req)
+		return svc.client.DataService().Gcp.Vpc.ListVpcExt(cts.Kit, req)
 	case enumor.Azure:
 		return svc.client.DataService().Azure.Vpc.ListVpcExt(cts.Kit.Ctx, cts.Kit.Header(), req)
 	case enumor.HuaWei:

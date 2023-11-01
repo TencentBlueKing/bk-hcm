@@ -22,6 +22,8 @@ package disk
 import (
 	"fmt"
 
+	"hcm/pkg/api/core"
+	coredisk "hcm/pkg/api/core/cloud/disk"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	"hcm/pkg/dal/dao/types/cloud"
 	tablecloud "hcm/pkg/dal/table/cloud/disk"
@@ -29,10 +31,10 @@ import (
 	"hcm/pkg/tools/json"
 )
 
-func toProtoDiskExtListResult[T dataproto.DiskExtensionResult](
+func toProtoDiskExtListResult[T coredisk.Extension](
 	data *cloud.DiskListResult,
-) (*dataproto.DiskExtListResult[T], error) {
-	details := make([]*dataproto.DiskExtResult[T], len(data.Details))
+) (*dataproto.ListExtResult[T], error) {
+	details := make([]*coredisk.Disk[T], len(data.Details))
 	for indx, d := range data.Details {
 		extResult, err := toProtoDiskExtResult[T](d)
 		if err != nil {
@@ -41,43 +43,46 @@ func toProtoDiskExtListResult[T dataproto.DiskExtensionResult](
 		details[indx] = extResult
 	}
 
-	return &dataproto.DiskExtListResult[T]{Count: data.Count, Details: details}, nil
+	return &dataproto.ListExtResult[T]{Count: data.Count, Details: details}, nil
 }
 
-func toProtoDiskExtResult[T dataproto.DiskExtensionResult](
+func toProtoDiskExtResult[T coredisk.Extension](
 	m *tablecloud.DiskModel,
-) (*dataproto.DiskExtResult[T], error) {
+) (*coredisk.Disk[T], error) {
 	extension := new(T)
 
 	err := json.UnmarshalFromString(string(m.Extension), extension)
 	if err != nil {
 		return nil, fmt.Errorf("UnmarshalFromString db extension failed, err: %v", err)
 	}
-	return &dataproto.DiskExtResult[T]{
-		ID:            m.ID,
-		Vendor:        m.Vendor,
-		AccountID:     m.AccountID,
-		BkBizID:       m.BkBizID,
-		CloudID:       m.CloudID,
-		Name:          m.Name,
-		Region:        m.Region,
-		Zone:          m.Zone,
-		DiskSize:      m.DiskSize,
-		DiskType:      m.DiskType,
-		Status:        m.Status,
-		RecycleStatus: m.RecycleStatus,
-		IsSystemDisk:  converter.PtrToVal(m.IsSystemDisk),
-		Memo:          m.Memo,
-		Creator:       m.Creator,
-		Reviser:       m.Reviser,
-		CreatedAt:     m.CreatedAt.String(),
-		UpdatedAt:     m.UpdatedAt.String(),
-		Extension:     extension,
+	return &coredisk.Disk[T]{
+		BaseDisk: coredisk.BaseDisk{
+			ID:           m.ID,
+			Vendor:       m.Vendor,
+			AccountID:    m.AccountID,
+			Name:         m.Name,
+			BkBizID:      m.BkBizID,
+			CloudID:      m.CloudID,
+			Region:       m.Region,
+			Zone:         m.Zone,
+			DiskSize:     m.DiskSize,
+			DiskType:     m.DiskType,
+			Status:       m.Status,
+			IsSystemDisk: converter.PtrToVal(m.IsSystemDisk),
+			Memo:         m.Memo,
+			Revision: core.Revision{
+				Creator:   m.Creator,
+				Reviser:   m.Reviser,
+				CreatedAt: m.CreatedAt.String(),
+				UpdatedAt: m.UpdatedAt.String(),
+			},
+		},
+		Extension: extension,
 	}, nil
 }
 
-func toProtoDiskResult(m *tablecloud.DiskModel) *dataproto.DiskResult {
-	return &dataproto.DiskResult{
+func toProtoDiskResult(m *tablecloud.DiskModel) *coredisk.BaseDisk {
+	return &coredisk.BaseDisk{
 		ID:            m.ID,
 		Vendor:        m.Vendor,
 		AccountID:     m.AccountID,
@@ -92,9 +97,11 @@ func toProtoDiskResult(m *tablecloud.DiskModel) *dataproto.DiskResult {
 		RecycleStatus: m.RecycleStatus,
 		IsSystemDisk:  converter.PtrToVal(m.IsSystemDisk),
 		Memo:          m.Memo,
-		Creator:       m.Creator,
-		Reviser:       m.Reviser,
-		CreatedAt:     m.CreatedAt.String(),
-		UpdatedAt:     m.UpdatedAt.String(),
+		Revision: core.Revision{
+			Creator:   m.Creator,
+			Reviser:   m.Reviser,
+			CreatedAt: m.CreatedAt.String(),
+			UpdatedAt: m.UpdatedAt.String(),
+		},
 	}
 }

@@ -219,9 +219,9 @@ func convertSubnet(data *ec2.Subnet, region string) *adtysubnet.AwsSubnet {
 	s := &adtysubnet.AwsSubnet{
 		CloudVpcID: converter.PtrToVal(data.VpcId),
 		CloudID:    converter.PtrToVal(data.SubnetId),
+		Region:     region,
 		Extension: &adtysubnet.AwsSubnetExtension{
 			State:                       converter.PtrToVal(data.State),
-			Region:                      region,
 			Zone:                        converter.PtrToVal(data.AvailabilityZone),
 			IsDefault:                   converter.PtrToVal(data.DefaultForAz),
 			MapPublicIpOnLaunch:         converter.PtrToVal(data.MapPublicIpOnLaunch),

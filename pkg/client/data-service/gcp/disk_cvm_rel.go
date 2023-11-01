@@ -23,8 +23,8 @@ import (
 	"context"
 	"net/http"
 
+	coredisk "hcm/pkg/api/core/cloud/disk"
 	datarelproto "hcm/pkg/api/data-service/cloud"
-	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	"hcm/pkg/criteria/errf"
 )
 
@@ -32,8 +32,8 @@ import (
 func (rc *restClient) ListDiskCvmRelWithDisk(ctx context.Context,
 	h http.Header,
 	request *datarelproto.DiskCvmRelWithDiskListReq,
-) ([]*datarelproto.DiskExtWithCvmID[dataproto.GcpDiskExtensionResult], error) {
-	resp := new(datarelproto.DiskCvmRelWithDiskExtListResp[dataproto.GcpDiskExtensionResult])
+) ([]*datarelproto.DiskExtWithCvmID[coredisk.GcpExtension], error) {
+	resp := new(datarelproto.DiskCvmRelWithDiskExtListResp[coredisk.GcpExtension])
 	err := rc.client.Post().
 		WithContext(ctx).
 		Body(request).

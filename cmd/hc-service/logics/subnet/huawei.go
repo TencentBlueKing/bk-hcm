@@ -96,7 +96,7 @@ func convertHuaWeiSubnetCreateReq(data *adtysubnet.HuaWeiSubnet, accountID strin
 		CloudVpcID: data.CloudVpcID,
 		CloudID:    data.CloudID,
 		Name:       &data.Name,
-		Region:     data.Extension.Region,
+		Region:     data.Region,
 		Ipv4Cidr:   data.Ipv4Cidr,
 		Ipv6Cidr:   data.Ipv6Cidr,
 		Memo:       data.Memo,

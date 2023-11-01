@@ -268,7 +268,23 @@ func (c *clientSet) eipV3Client(regionID string) (cli *eipv3.EipClient, err erro
 	return cli, nil
 }
 
-func (c *clientSet) bssintlClient() (cli *bssintl.BssintlClient, err error) {
+func (c *clientSet) bssintlClient(regionID string) (cli *bssintl.BssintlClient, err error) {
+	defer func() {
+		if p := recover(); p != nil {
+			err = fmt.Errorf("huawei error recovered, err: %v", p)
+		}
+	}()
+
+	client := bssintl.NewBssintlClient(
+		bssintl.BssintlClientBuilder().
+			WithRegion(bssintlv2region.ValueOf(regionID)).
+			WithCredential(c.credentials()).
+			Build())
+
+	return client, nil
+}
+
+func (c *clientSet) bssintlGlobalClient() (cli *bssintl.BssintlClient, err error) {
 	defer func() {
 		if p := recover(); p != nil {
 			err = fmt.Errorf("huawei error recovered, err: %v", p)

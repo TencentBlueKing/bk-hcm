@@ -315,7 +315,8 @@ func (f *firewall) createFirewallRule(cts *rest.Contexts, req *proto.GcpFirewall
 	}
 
 	if len(items) == 0 {
-		return firewallrule.GcpFirewall{}, fmt.Errorf("create firewall rule success, but list failed, ruleID: %d", ruleID)
+		return firewallrule.GcpFirewall{}, fmt.Errorf("create firewall rule success, but list failed, ruleID: %d",
+			ruleID)
 	}
 
 	return items[0], nil
@@ -326,7 +327,7 @@ func (f *firewall) getVpcByCloudID(kt *kit.Kit, cloudVpcID string) (*corecloud.V
 		Filter: tools.EqualExpression("cloud_id", cloudVpcID),
 		Page:   core.NewDefaultBasePage(),
 	}
-	result, err := f.dataCli.Gcp.Vpc.ListVpcExt(kt.Ctx, kt.Header(), req)
+	result, err := f.dataCli.Gcp.Vpc.ListVpcExt(kt, req)
 	if err != nil {
 		logs.Errorf("request dataservice to list vpc failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 		return nil, err

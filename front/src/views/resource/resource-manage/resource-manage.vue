@@ -31,13 +31,14 @@ import { useAccountStore } from '@/store';
 
 import { useVerify } from '@/hooks';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
+import { InfoBox } from 'bkui-vue';
 
 // use hooks
 const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const accountStore = useAccountStore();
-const { isShowDistribution, ResourceDistribution } =  useSteps();
+const { isShowDistribution, ResourceDistribution } = useSteps();
 
 const isResourcePage = computed(() => {
   // 资源下没有业务ID
@@ -112,7 +113,6 @@ const tabs = RESOURCE_TYPES.map((type) => {
   };
 });
 const activeTab = ref((route.query.type as string) || tabs[0].type);
-
 
 const filterData = (key: string, val: string | number) => {
   if (!filter.value.rules.length) {
@@ -289,6 +289,17 @@ const handleEdit = (detail: any) => {
   isShowSideSlider.value = true;
 };
 
+const handleBeforeClose = () => {
+  InfoBox({
+    title: '请确认是否关闭侧栏？',
+    subTitle: '关闭后，内容需要重新填写！',
+    theme: 'warning',
+    onConfirm() {
+      handleCancel();
+    },
+  });
+};
+
 getResourceAccountList();
 </script>
 
@@ -359,7 +370,10 @@ getResourceAccountList();
             :label="item.label"
             :key="item.key"
             :name="item.key"
-            :disabled="item.key === '/resource/resource/account' && !resourceAccountStore?.resourceAccount?.id"
+            :disabled="
+              item.key === '/resource/resource/account' &&
+                !resourceAccountStore?.resourceAccount?.id
+            "
           />
         </BkTab>
       </div>
@@ -442,6 +456,7 @@ getResourceAccountList();
         width="800"
         title="新增"
         quick-close
+        :before-close="handleBeforeClose"
       >
         <template #default>
           <component
@@ -468,11 +483,9 @@ getResourceAccountList();
         @cancel="handlePermissionDialog"
         @confirm="handlePermissionConfirm"
       ></permission-dialog>
-
     </div>
 
     <RouterView v-else></RouterView>
-
   </div>
 </template>
 

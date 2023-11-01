@@ -26,6 +26,7 @@ import (
 	adcore "hcm/pkg/adaptor/types/core"
 	typesdisk "hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/api/core"
+	coredisk "hcm/pkg/api/core/cloud/disk"
 	"hcm/pkg/api/data-service/cloud/disk"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -68,7 +69,7 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 		return new(SyncResult), nil
 	}
 
-	addSlice, updateMap, delCloudIDs := common.Diff[typesdisk.TCloudDisk, *disk.DiskExtResult[disk.TCloudDiskExtensionResult]](
+	addSlice, updateMap, delCloudIDs := common.Diff[typesdisk.TCloudDisk, *coredisk.Disk[coredisk.TCloudExtension]](
 		diskFromCloud, diskFromDB, isDiskChange)
 
 	if len(delCloudIDs) > 0 {
@@ -133,15 +134,15 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, updateMap map[strin
 		return fmt.Errorf("updateMap is <= 0, not update")
 	}
 
-	disks := make([]*disk.DiskExtUpdateReq[disk.TCloudDiskExtensionUpdateReq], 0)
+	disks := make([]*disk.DiskExtUpdateReq[coredisk.TCloudExtension], 0)
 
 	for id, one := range updateMap {
-		disk := &disk.DiskExtUpdateReq[disk.TCloudDiskExtensionUpdateReq]{
+		disk := &disk.DiskExtUpdateReq[coredisk.TCloudExtension]{
 			ID:     id,
 			Status: converter.PtrToVal(one.DiskState),
-			Extension: &disk.TCloudDiskExtensionUpdateReq{
+			Extension: &coredisk.TCloudExtension{
 				DiskChargeType: converter.PtrToVal(one.DiskChargeType),
-				DiskChargePrepaid: &disk.TCloudDiskChargePrepaid{
+				DiskChargePrepaid: &coredisk.TCloudDiskChargePrepaid{
 					RenewFlag: one.RenewFlag,
 					Period:    one.DifferDaysOfDeadline,
 				},
@@ -163,7 +164,7 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, updateMap map[strin
 		disks = append(disks, disk)
 	}
 
-	var updateReq disk.DiskExtBatchUpdateReq[disk.TCloudDiskExtensionUpdateReq]
+	var updateReq disk.DiskExtBatchUpdateReq[coredisk.TCloudExtension]
 	for _, disk := range disks {
 		updateReq = append(updateReq, disk)
 	}
@@ -186,10 +187,10 @@ func (cli *client) createDisk(kt *kit.Kit, accountID string, region string,
 		return fmt.Errorf("addSlice is <= 0, not create")
 	}
 
-	var createReq disk.DiskExtBatchCreateReq[disk.TCloudDiskExtensionCreateReq]
+	var createReq disk.DiskExtBatchCreateReq[coredisk.TCloudExtension]
 
 	for _, one := range addSlice {
-		disk := &disk.DiskExtCreateReq[disk.TCloudDiskExtensionCreateReq]{
+		disk := &disk.DiskExtCreateReq[coredisk.TCloudExtension]{
 			AccountID: accountID,
 			Name:      converter.PtrToVal(one.DiskName),
 			CloudID:   converter.PtrToVal(one.DiskId),
@@ -200,9 +201,9 @@ func (cli *client) createDisk(kt *kit.Kit, accountID string, region string,
 			Status:    converter.PtrToVal(one.DiskState),
 			// tcloud no memo
 			Memo: nil,
-			Extension: &disk.TCloudDiskExtensionCreateReq{
+			Extension: &coredisk.TCloudExtension{
 				DiskChargeType: converter.PtrToVal(one.DiskChargeType),
-				DiskChargePrepaid: &disk.TCloudDiskChargePrepaid{
+				DiskChargePrepaid: &coredisk.TCloudDiskChargePrepaid{
 					RenewFlag: one.RenewFlag,
 					Period:    one.DifferDaysOfDeadline,
 				},
@@ -261,13 +262,13 @@ func (cli *client) listDiskFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]typ
 }
 
 func (cli *client) listDiskFromDB(kt *kit.Kit, params *SyncBaseParams) (
-	[]*disk.DiskExtResult[disk.TCloudDiskExtensionResult], error) {
+	[]*coredisk.Disk[coredisk.TCloudExtension], error) {
 
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	req := &disk.DiskListReq{
+	req := &core.ListReq{
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
@@ -300,7 +301,7 @@ func (cli *client) listDiskFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return result.Details, nil
 }
 
-func isDiskChange(cloud typesdisk.TCloudDisk, db *disk.DiskExtResult[disk.TCloudDiskExtensionResult]) bool {
+func isDiskChange(cloud typesdisk.TCloudDisk, db *coredisk.Disk[coredisk.TCloudExtension]) bool {
 
 	if converter.PtrToVal(cloud.DiskState) != db.Status {
 		return true

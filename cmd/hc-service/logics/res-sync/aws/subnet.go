@@ -141,7 +141,7 @@ func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[str
 		tmpRes := cloud.SubnetUpdateReq[cloud.AwsSubnetUpdateExt]{
 			ID: id,
 			SubnetUpdateBaseInfo: cloud.SubnetUpdateBaseInfo{
-				Region:   item.Extension.Region,
+				Region:   item.Region,
 				Name:     converter.ValToPtr(item.Name),
 				Ipv4Cidr: item.Ipv4Cidr,
 				Ipv6Cidr: item.Ipv6Cidr,
@@ -149,7 +149,7 @@ func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[str
 			},
 			Extension: &cloud.AwsSubnetUpdateExt{
 				State:                       item.Extension.State,
-				Region:                      item.Extension.Region,
+				Region:                      item.Region,
 				Zone:                        item.Extension.Zone,
 				IsDefault:                   converter.ValToPtr(item.Extension.IsDefault),
 				MapPublicIpOnLaunch:         converter.ValToPtr(item.Extension.MapPublicIpOnLaunch),
@@ -165,7 +165,8 @@ func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[str
 		Subnets: subnets,
 	}
 	if err := cli.dbCli.Aws.Subnet.BatchUpdate(kt.Ctx, kt.Header(), updateReq); err != nil {
-		logs.Errorf("[%s] request dataservice to batch update db subnet failed, err: %v, rid: %s", enumor.Aws, err, kt.Rid)
+		logs.Errorf("[%s] request dataservice to batch update db subnet failed, err: %v, rid: %s", enumor.Aws, err,
+			kt.Rid)
 		return err
 	}
 
@@ -217,7 +218,7 @@ func (cli *client) createSubnet(kt *kit.Kit, accountID, region string, addSubnet
 			CloudID:    item.CloudID,
 			BkBizID:    constant.UnassignedBiz,
 			Name:       converter.ValToPtr(item.Name),
-			Region:     item.Extension.Region,
+			Region:     item.Region,
 			Zone:       item.Extension.Zone,
 			Ipv4Cidr:   item.Ipv4Cidr,
 			Memo:       item.Memo,
@@ -249,7 +250,7 @@ func (cli *client) createSubnet(kt *kit.Kit, accountID, region string, addSubnet
 }
 
 func isAwsSubnetChange(item adtysubnet.AwsSubnet, info cloudcore.Subnet[cloudcore.AwsSubnetExtension]) bool {
-	if info.Region != item.Extension.Region {
+	if info.Region != item.Region {
 		return true
 	}
 

@@ -41,6 +41,7 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/maps"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/tidwall/gjson"
@@ -140,60 +141,63 @@ func (svc *routeTableSvc) BatchCreateGcpRoute(cts *rest.Contexts) (interface{}, 
 }
 
 // genGcpRouteTable generate gcp virtual route table if it's not exists, returns the generated route table.
-func (svc *routeTableSvc) genGcpRouteTable(kt *kit.Kit, txn *sqlx.Tx, networkList []string) (
+// networkList is the list of related network self link
+func (svc *routeTableSvc) genGcpRouteTable(kt *kit.Kit, txn *sqlx.Tx, netLinkList []string) (
 	map[string]tablecloud.RouteTableTable, error) {
 
-	// unique networks
-	networkMap := make(map[string]struct{})
-	networks := make([]string, 0)
-	for _, network := range networkList {
-		if _, exists := networkMap[network]; !exists {
-			networkMap[network] = struct{}{}
-			networks = append(networks, network)
-		}
-	}
+	// unique netLinks
+	netLinkSet := converter.StringSliceToMap(netLinkList)
 
-	// list route tables by networks
-	tables, err := svc.listGcpRouteTableInfo(kt, networks)
+	// get vpc info by network(vpc)'s self link
+	vpcList, err := svc.listGcpVpcBySelfLink(kt, maps.Keys(netLinkSet))
 	if err != nil {
 		return nil, err
 	}
 
-	tableMap := make(map[string]tablecloud.RouteTableTable)
+	// if length of vpc list from db doesn't match the length of network set, means input data or db data is corrupted
+	if len(netLinkSet) != len(vpcList) {
+		logs.Errorf("some networks can not be found: %v, rid: %s", maps.Keys(netLinkSet), kt.Rid)
+		return nil, errf.New(errf.InvalidParameter, "some networks can not be found on database")
+	}
+
+	vpcCloudToLink := converter.SliceToMap(vpcList, func(v cloud.VpcTable) (string, string) {
+		return v.CloudID, gjson.Get(string(v.Extension), "self_link").String()
+	})
+
+	// list route tables by self links
+	tables, err := svc.listGcpRouteTableInfo(kt, maps.Keys(vpcCloudToLink))
+	if err != nil {
+		return nil, err
+	}
+
+	netLinkToTable := make(map[string]tablecloud.RouteTableTable)
 	for _, table := range tables {
-		tableMap[table.CloudVpcID] = table
-		delete(networkMap, table.CloudVpcID)
+		netLink := vpcCloudToLink[table.CloudVpcID]
+		netLinkToTable[netLink] = table
+		delete(netLinkSet, netLink)
 	}
 
 	// returns route tables if all exists
-	if len(networkMap) == 0 {
-		return tableMap, nil
+	if len(netLinkSet) == 0 {
+		return netLinkToTable, nil
 	}
 
-	// get vpc info
-	notExistsNetworks := make([]string, 0)
-	for network := range networkMap {
-		notExistsNetworks = append(notExistsNetworks, network)
-	}
-
-	vpcs, err := svc.listGcpVpcInfo(kt, notExistsNetworks)
-	if err != nil {
-		return nil, err
-	}
-
-	// generate route tables by vpc
-	routeTables := make([]tablecloud.RouteTableTable, 0, len(vpcs))
-	for _, vpc := range vpcs {
+	// generate virtual route tables for vpc that don't have route table.
+	// There is NO route table on GCP, we generate a virtual one for each network(vpc).
+	toCreateTables := make([]tablecloud.RouteTableTable, 0, len(netLinkSet))
+	for _, vpc := range vpcList {
+		netLink := gjson.Get(string(vpc.Extension), "self_link").String()
+		if _, exist := netLinkSet[netLink]; !exist {
+			continue
+		}
 		name := fmt.Sprintf("系统生成(%s)", converter.PtrToVal(vpc.Name))
 		cloudID := fmt.Sprintf("system_generated(%s)", vpc.CloudID)
 
-		network := gjson.Get(string(vpc.Extension), "self_link").String()
-
-		routeTables = append(routeTables, tablecloud.RouteTableTable{
+		toCreateTables = append(toCreateTables, tablecloud.RouteTableTable{
 			Vendor:     enumor.Gcp,
 			AccountID:  vpc.AccountID,
 			CloudID:    cloudID,
-			CloudVpcID: network,
+			CloudVpcID: vpc.CloudID,
 			Name:       &name,
 			VpcID:      vpc.ID,
 			BkBizID:    constant.UnassignedBiz,
@@ -201,29 +205,23 @@ func (svc *routeTableSvc) genGcpRouteTable(kt *kit.Kit, txn *sqlx.Tx, networkLis
 			Creator:    kt.User,
 			Reviser:    kt.User,
 		})
-
-		delete(networkMap, network)
+		delete(netLinkSet, netLink)
 	}
 
-	if len(networkMap) != 0 {
-		logs.Errorf("some networks are not exist, not exits map: %+v, rid: %s", networkMap, kt.Rid)
-		return nil, errf.New(errf.InvalidParameter, "not all networks exists")
-	}
-
-	ids, err := svc.dao.RouteTable().BatchCreateWithTx(kt, txn, routeTables)
+	createdIDs, err := svc.dao.RouteTable().BatchCreateWithTx(kt, txn, toCreateTables)
 	if err != nil {
-		return nil, fmt.Errorf("create route tables failed, err: %v", err)
+		return nil, fmt.Errorf("create route tables for gcp route failed, err: %v", err)
 	}
 
-	if len(ids) != len(routeTables) {
+	if len(createdIDs) != len(toCreateTables) {
 		return nil, errf.New(errf.RecordNotFound, "generated route table id length is invalid")
 	}
 
-	for i, table := range routeTables {
-		table.ID = ids[i]
-		tableMap[table.CloudVpcID] = table
+	for i, table := range toCreateTables {
+		table.ID = createdIDs[i]
+		netLinkToTable[vpcCloudToLink[table.CloudVpcID]] = table
 	}
-	return tableMap, nil
+	return netLinkToTable, nil
 }
 
 func (svc *routeTableSvc) listGcpRouteTableInfo(kt *kit.Kit, networks []string) ([]tablecloud.RouteTableTable, error) {
@@ -248,7 +246,7 @@ func (svc *routeTableSvc) listGcpRouteTableInfo(kt *kit.Kit, networks []string) 
 	return tableRes.Details, nil
 }
 
-func (svc *routeTableSvc) listGcpVpcInfo(kt *kit.Kit, networks []string) ([]cloud.VpcTable, error) {
+func (svc *routeTableSvc) listGcpVpcBySelfLink(kt *kit.Kit, networks []string) ([]cloud.VpcTable, error) {
 	vpcOpt := &types.ListOption{
 		Filter: &filter.Expression{
 			Op: filter.And,

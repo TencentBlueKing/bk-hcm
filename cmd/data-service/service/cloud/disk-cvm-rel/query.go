@@ -24,9 +24,9 @@ import (
 
 	"hcm/pkg/api/core"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
+	coredisk "hcm/pkg/api/core/cloud/disk"
 	diskcvmrel "hcm/pkg/api/core/cloud/disk-cvm-rel"
 	datarelproto "hcm/pkg/api/data-service/cloud"
-	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
@@ -241,15 +241,15 @@ func (svc *relSvc) ListWithDiskExt(cts *rest.Contexts) (interface{}, error) {
 
 	switch vendor {
 	case enumor.TCloud:
-		return toProtoDiskExtWithCvmIDs[dataproto.TCloudDiskExtensionResult](data)
+		return toProtoDiskExtWithCvmIDs[coredisk.TCloudExtension](data)
 	case enumor.Aws:
-		return toProtoDiskExtWithCvmIDs[dataproto.AwsDiskExtensionResult](data)
+		return toProtoDiskExtWithCvmIDs[coredisk.AwsExtension](data)
 	case enumor.Gcp:
-		return toProtoDiskExtWithCvmIDs[dataproto.GcpDiskExtensionResult](data)
+		return toProtoDiskExtWithCvmIDs[coredisk.GcpExtension](data)
 	case enumor.Azure:
-		return toProtoDiskExtWithCvmIDs[dataproto.AzureDiskExtensionResult](data)
+		return toProtoDiskExtWithCvmIDs[coredisk.AzureExtension](data)
 	case enumor.HuaWei:
-		return toProtoDiskExtWithCvmIDs[dataproto.HuaWeiDiskExtensionResult](data)
+		return toProtoDiskExtWithCvmIDs[coredisk.HuaWeiExtension](data)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
 	}

@@ -41,8 +41,9 @@ func (c *GcpRouteBatchCreateReq) Validate() error {
 
 // GcpRouteCreateReq defines create gcp route request.
 type GcpRouteCreateReq struct {
-	CloudID          string   `json:"cloud_id" validate:"required"`
-	SelfLink         string   `json:"self_link" validate:"required"`
+	CloudID  string `json:"cloud_id" validate:"required"`
+	SelfLink string `json:"self_link" validate:"required"`
+	// Network self link
 	Network          string   `json:"network" validate:"required"`
 	Name             string   `json:"name" validate:"required"`
 	DestRange        string   `json:"dest_range" validate:"required"`
@@ -68,6 +69,7 @@ type GcpRouteListReq struct {
 	RouteTableID  string `json:"route_table_id"`
 }
 
+// Validate ...
 func (r GcpRouteListReq) Validate() error {
 	if r.ListReq == nil {
 		return errf.New(errf.InvalidParameter, "list request is required")

@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	coredisk "hcm/pkg/api/core/cloud/disk"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -46,15 +47,15 @@ func (dSvc *diskSvc) BatchUpdateDiskExt(cts *rest.Contexts) (interface{}, error)
 	}
 	switch vendor {
 	case enumor.TCloud:
-		return batchUpdateDiskExt[dataproto.TCloudDiskExtensionUpdateReq](cts, dSvc)
+		return batchUpdateDiskExt[coredisk.TCloudExtension](cts, dSvc)
 	case enumor.Aws:
-		return batchUpdateDiskExt[dataproto.AwsDiskExtensionUpdateReq](cts, dSvc)
+		return batchUpdateDiskExt[coredisk.AwsExtension](cts, dSvc)
 	case enumor.Gcp:
-		return batchUpdateDiskExt[dataproto.GcpDiskExtensionUpdateReq](cts, dSvc)
+		return batchUpdateDiskExt[coredisk.GcpExtension](cts, dSvc)
 	case enumor.Azure:
-		return batchUpdateDiskExt[dataproto.AzureDiskExtensionUpdateReq](cts, dSvc)
+		return batchUpdateDiskExt[coredisk.AzureExtension](cts, dSvc)
 	case enumor.HuaWei:
-		return batchUpdateDiskExt[dataproto.HuaWeiDiskExtensionUpdateReq](cts, dSvc)
+		return batchUpdateDiskExt[coredisk.HuaWeiExtension](cts, dSvc)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
 	}
@@ -81,7 +82,7 @@ func (dSvc *diskSvc) BatchUpdateDisk(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-func batchUpdateDiskExt[T dataproto.DiskExtensionUpdateReq](cts *rest.Contexts,
+func batchUpdateDiskExt[T coredisk.Extension](cts *rest.Contexts,
 	dSvc *diskSvc,
 ) (interface{}, error) {
 	req := new(dataproto.DiskExtBatchUpdateReq[T])

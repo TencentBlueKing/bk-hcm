@@ -136,7 +136,6 @@ type HuaWeiSubnetListResult struct {
 
 // HuaWeiSubnetExtension defines huawei subnet extensional info.
 type HuaWeiSubnetExtension struct {
-	Region       string   `json:"region"`
 	Status       string   `json:"status"`
 	DhcpEnable   bool     `json:"dhcp_enable"`
 	GatewayIp    string   `json:"gateway_ip"`

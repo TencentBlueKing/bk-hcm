@@ -58,7 +58,7 @@ func (s *Subnet) GcpSubnetCreate(kt *kit.Kit, opt *SubnetCreateOptions[hcservice
 		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"extension"},
 	}
-	vpcRes, err := s.client.DataService().Gcp.Vpc.ListVpcExt(kt.Ctx, kt.Header(), vpcReq)
+	vpcRes, err := s.client.DataService().Gcp.Vpc.ListVpcExt(kt, vpcReq)
 	if err != nil {
 		logs.Errorf("get vpc by cloud id %s failed, err: %v, rid: %s", opt.CloudVpcID, err, kt.Rid)
 		return nil, err
@@ -93,8 +93,9 @@ func (s *Subnet) GcpSubnetCreate(kt *kit.Kit, opt *SubnetCreateOptions[hcservice
 
 	// get created subnets
 	subnetRes, err := cli.ListSubnet(kt, &adtysubnet.GcpSubnetListOption{
-		GcpListOption: adcore.GcpListOption{CloudIDs: createdIDs},
-		Region:        opt.Region,
+		GcpListOption: adcore.GcpListOption{CloudIDs: createdIDs,
+			Page: &adcore.GcpPage{PageSize: adcore.GcpQueryLimit}},
+		Region: opt.Region,
 	})
 	if err != nil {
 		logs.Errorf("get subnet failed, err: %v,s, rid: %s", err, kt.Rid)
@@ -133,7 +134,7 @@ func convertGcpSubnetCreateReq(data *adtysubnet.GcpSubnet, accountID, cloudVpcID
 		CloudVpcID: cloudVpcID,
 		CloudID:    data.CloudID,
 		Name:       &data.Name,
-		Region:     data.Extension.Region,
+		Region:     data.Region,
 		Ipv4Cidr:   data.Ipv4Cidr,
 		Ipv6Cidr:   data.Ipv6Cidr,
 		Memo:       data.Memo,

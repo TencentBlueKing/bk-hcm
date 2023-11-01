@@ -25,6 +25,7 @@ import (
 	"hcm/cmd/hc-service/logics/res-sync/common"
 	adaptordisk "hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/api/core"
+	coredisk "hcm/pkg/api/core/cloud/disk"
 	"hcm/pkg/api/data-service/cloud/disk"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -68,7 +69,14 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 		return new(SyncResult), nil
 	}
 
-	addSlice, updateMap, delCloudIDs := common.Diff[adaptordisk.GcpDisk, *disk.DiskExtResult[disk.GcpDiskExtensionResult]](
+	if opt.BootMap != nil {
+		// 标记启动盘
+		for i, d := range diskFromCloud {
+			_, diskFromCloud[i].Boot = opt.BootMap[d.SelfLink]
+		}
+	}
+
+	addSlice, updateMap, delCloudIDs := common.Diff[adaptordisk.GcpDisk, *coredisk.Disk[coredisk.GcpExtension]](
 		diskFromCloud, diskFromDB, isDiskChange)
 
 	if len(delCloudIDs) > 0 {
@@ -78,13 +86,13 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 	}
 
 	if len(addSlice) > 0 {
-		if err = cli.createDisk(kt, params.AccountID, opt.Zone, opt.BootMap, addSlice); err != nil {
+		if err = cli.createDisk(kt, params.AccountID, opt.Zone, addSlice); err != nil {
 			return nil, err
 		}
 	}
 
 	if len(updateMap) > 0 {
-		if err = cli.updateDisk(kt, params.AccountID, opt.BootMap, updateMap); err != nil {
+		if err = cli.updateDisk(kt, params.AccountID, updateMap); err != nil {
 			return nil, err
 		}
 	}
@@ -93,20 +101,20 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 }
 
 func (cli *client) listDiskFromCloud(kt *kit.Kit, params *SyncBaseParams,
-	option *SyncDiskOption) ([]adaptordisk.GcpDisk, error) {
+	syncOpt *SyncDiskOption) ([]adaptordisk.GcpDisk, error) {
 
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt := &adaptordisk.GcpDiskListOption{
-		Zone:     option.Zone,
+	listOpt := &adaptordisk.GcpDiskListOption{
+		Zone:     syncOpt.Zone,
 		CloudIDs: params.CloudIDs,
 	}
-	result, _, err := cli.cloudCli.ListDisk(kt, opt)
+	result, _, err := cli.cloudCli.ListDisk(kt, listOpt)
 	if err != nil {
-		logs.Errorf("[%s] list disk from cloud failed, err: %v, account: %s, opt: %v, rid: %s", enumor.Gcp,
-			err, params.AccountID, opt, kt.Rid)
+		logs.Errorf("[%s] list disk from cloud failed, err: %v, account: %s, listOpt: %v, rid: %s", enumor.Gcp,
+			err, params.AccountID, listOpt, kt.Rid)
 		return nil, err
 	}
 
@@ -114,13 +122,13 @@ func (cli *client) listDiskFromCloud(kt *kit.Kit, params *SyncBaseParams,
 }
 
 func (cli *client) listDiskFromDBBySelfLink(kt *kit.Kit, params *ListDiskBySelfLinkOption) (
-	[]*disk.DiskExtResult[disk.GcpDiskExtensionResult], error) {
+	[]*coredisk.Disk[coredisk.GcpExtension], error) {
 
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	req := &disk.DiskListReq{
+	req := &core.ListReq{
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
@@ -154,13 +162,13 @@ func (cli *client) listDiskFromDBBySelfLink(kt *kit.Kit, params *ListDiskBySelfL
 }
 
 func (cli *client) listDiskFromDB(kt *kit.Kit, params *SyncBaseParams, option *SyncDiskOption) (
-	[]*disk.DiskExtResult[disk.GcpDiskExtensionResult], error) {
+	[]*coredisk.Disk[coredisk.GcpExtension], error) {
 
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	req := &disk.DiskListReq{
+	req := &core.ListReq{
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
@@ -193,28 +201,22 @@ func (cli *client) listDiskFromDB(kt *kit.Kit, params *SyncBaseParams, option *S
 	return result.Details, nil
 }
 
-func (cli *client) updateDisk(kt *kit.Kit, accountID string, bootMap map[string]struct{},
-	updateMap map[string]adaptordisk.GcpDisk) error {
+func (cli *client) updateDisk(kt *kit.Kit, accountID string, updateMap map[string]adaptordisk.GcpDisk) error {
 
 	if len(updateMap) <= 0 {
 		return fmt.Errorf("updateMap is <= 0, not update")
 	}
 
-	disks := make([]*disk.DiskExtUpdateReq[disk.GcpDiskExtensionUpdateReq], 0)
+	disks := make([]*disk.DiskExtUpdateReq[coredisk.GcpExtension], 0)
 
 	for id, one := range updateMap {
-		var isSystemDisk bool
-		if _, exists := bootMap[one.SelfLink]; exists {
-			isSystemDisk = true
-		}
-
-		disk := &disk.DiskExtUpdateReq[disk.GcpDiskExtensionUpdateReq]{
+		disk := &disk.DiskExtUpdateReq[coredisk.GcpExtension]{
 			ID:           id,
 			Region:       one.Region,
 			Status:       one.Status,
-			IsSystemDisk: converter.ValToPtr(isSystemDisk),
+			IsSystemDisk: converter.ValToPtr(one.Boot),
 			Memo:         converter.ValToPtr(one.Description),
-			Extension: &disk.GcpDiskExtensionUpdateReq{
+			Extension: &coredisk.GcpExtension{
 				SelfLink:    one.SelfLink,
 				SourceImage: one.SourceImage,
 				Description: one.Description,
@@ -226,7 +228,7 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, bootMap map[string]
 		disks = append(disks, disk)
 	}
 
-	var updateReq disk.DiskExtBatchUpdateReq[disk.GcpDiskExtensionUpdateReq]
+	var updateReq disk.DiskExtBatchUpdateReq[coredisk.GcpExtension]
 	for _, disk := range disks {
 		updateReq = append(updateReq, disk)
 	}
@@ -242,37 +244,33 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, bootMap map[string]
 	return nil
 }
 
-func (cli *client) createDisk(kt *kit.Kit, accountID string, zone string, bootMap map[string]struct{},
-	addSlice []adaptordisk.GcpDisk) error {
+func (cli *client) createDisk(kt *kit.Kit, accountID string, zone string, addSlice []adaptordisk.GcpDisk) error {
 
 	if len(addSlice) <= 0 {
 		return fmt.Errorf("addSlice is <= 0, not create")
 	}
 
-	var createReq disk.DiskExtBatchCreateReq[disk.GcpDiskExtensionCreateReq]
+	var createReq disk.DiskExtBatchCreateReq[coredisk.GcpExtension]
 
 	for _, one := range addSlice {
-		disk := &disk.DiskExtCreateReq[disk.GcpDiskExtensionCreateReq]{
-			AccountID: accountID,
-			Name:      one.Name,
-			CloudID:   fmt.Sprint(one.Id),
-			Region:    one.Region,
-			Zone:      zone,
-			DiskSize:  uint64(one.SizeGb),
-			DiskType:  one.Type,
-			Status:    one.Status,
-			Memo:      converter.ValToPtr(one.Description),
-			Extension: &disk.GcpDiskExtensionCreateReq{
+		disk := &disk.DiskExtCreateReq[coredisk.GcpExtension]{
+			AccountID:    accountID,
+			Name:         one.Name,
+			CloudID:      fmt.Sprint(one.Id),
+			Region:       one.Region,
+			Zone:         zone,
+			DiskSize:     uint64(one.SizeGb),
+			DiskType:     one.Type,
+			Status:       one.Status,
+			IsSystemDisk: one.Boot,
+			Memo:         converter.ValToPtr(one.Description),
+			Extension: &coredisk.GcpExtension{
 				SelfLink:    one.SelfLink,
 				SourceImage: one.SourceImage,
 				Description: one.Description,
 				// TODO: not find
 				Encrypted: nil,
 			},
-		}
-
-		if _, exists := bootMap[fmt.Sprint(one.Id)]; exists {
-			disk.IsSystemDisk = true
 		}
 
 		createReq = append(createReq, disk)
@@ -390,7 +388,7 @@ func (cli *client) RemoveDiskDeleteFromCloud(kt *kit.Kit, accountID string, zone
 	return nil
 }
 
-func isDiskChange(cloud adaptordisk.GcpDisk, db *disk.DiskExtResult[disk.GcpDiskExtensionResult]) bool {
+func isDiskChange(cloud adaptordisk.GcpDisk, db *coredisk.Disk[coredisk.GcpExtension]) bool {
 
 	if cloud.Status != db.Status {
 		return true
@@ -413,6 +411,10 @@ func isDiskChange(cloud adaptordisk.GcpDisk, db *disk.DiskExtResult[disk.GcpDisk
 	}
 
 	if cloud.Description != db.Extension.Description {
+		return true
+	}
+
+	if cloud.Boot != db.IsSystemDisk {
 		return true
 	}
 

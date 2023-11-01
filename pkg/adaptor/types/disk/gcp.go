@@ -142,6 +142,8 @@ func (opt *GcpDiskDetachOption) Validate() error {
 
 // GcpDisk for compute Disk
 type GcpDisk struct {
+	// Boot 是否启动盘
+	Boot bool
 	*compute.Disk
 }
 

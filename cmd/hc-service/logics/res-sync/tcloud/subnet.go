@@ -140,7 +140,7 @@ func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[str
 		tmpRes := cloud.SubnetUpdateReq[cloud.TCloudSubnetUpdateExt]{
 			ID: id,
 			SubnetUpdateBaseInfo: cloud.SubnetUpdateBaseInfo{
-				Region:   item.Extension.Region,
+				Region:   item.Region,
 				Name:     converter.ValToPtr(item.Name),
 				Ipv4Cidr: item.Ipv4Cidr,
 				Ipv6Cidr: item.Ipv6Cidr,
@@ -148,7 +148,7 @@ func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[str
 			},
 			Extension: &cloud.TCloudSubnetUpdateExt{
 				IsDefault:         item.Extension.IsDefault,
-				Region:            item.Extension.Region,
+				Region:            item.Region,
 				Zone:              item.Extension.Zone,
 				CloudNetworkAclID: item.Extension.CloudNetworkAclID,
 			},
@@ -172,7 +172,8 @@ func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[str
 	return nil
 }
 
-func (cli *client) createSubnet(kt *kit.Kit, accountID string, region string, addSubnet []adtysubnet.TCloudSubnet) error {
+func (cli *client) createSubnet(kt *kit.Kit, accountID string, region string,
+	addSubnet []adtysubnet.TCloudSubnet) error {
 	if len(addSubnet) == 0 {
 		return fmt.Errorf("create subnet, subnets is required")
 	}
@@ -213,7 +214,7 @@ func (cli *client) createSubnet(kt *kit.Kit, accountID string, region string, ad
 			BkBizID:    constant.UnbindBkCloudID,
 			CloudID:    item.CloudID,
 			Name:       converter.ValToPtr(item.Name),
-			Region:     item.Extension.Region,
+			Region:     item.Region,
 			Zone:       item.Extension.Zone,
 			Ipv4Cidr:   item.Ipv4Cidr,
 			Ipv6Cidr:   item.Ipv6Cidr,
@@ -231,7 +232,8 @@ func (cli *client) createSubnet(kt *kit.Kit, accountID string, region string, ad
 		Subnets: subnets,
 	}
 	if _, err := cli.dbCli.TCloud.Subnet.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
-		logs.Errorf("[%s] request dataservice to batch create subnet failed, err: %v, rid: %s", enumor.TCloud, err, kt.Rid)
+		logs.Errorf("[%s] request dataservice to batch create subnet failed, err: %v, rid: %s", enumor.TCloud, err,
+			kt.Rid)
 		return err
 	}
 
@@ -242,7 +244,7 @@ func (cli *client) createSubnet(kt *kit.Kit, accountID string, region string, ad
 }
 
 func isTCloudSubnetChange(item adtysubnet.TCloudSubnet, info cloudcore.Subnet[cloudcore.TCloudSubnetExtension]) bool {
-	if info.Region != item.Extension.Region {
+	if info.Region != item.Region {
 		return true
 	}
 
