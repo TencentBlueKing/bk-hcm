@@ -65,7 +65,6 @@ type AwsSubnetListResult struct {
 // AwsSubnetExtension defines aws subnet extensional info.
 type AwsSubnetExtension struct {
 	State                       string `json:"state"`
-	Region                      string `json:"region"`
 	Zone                        string `json:"zone"`
 	IsDefault                   bool   `json:"is_default"`
 	MapPublicIpOnLaunch         bool   `json:"map_public_ip_on_launch"`

@@ -146,7 +146,7 @@ func convertTCloudSubnetCreateReq(data *adtysubnet.TCloudSubnet, accountID strin
 		CloudRouteTableID: converter.PtrToVal(data.Extension.CloudRouteTableID),
 		CloudID:           data.CloudID,
 		Name:              &data.Name,
-		Region:            data.Extension.Region,
+		Region:            data.Region,
 		Zone:              data.Extension.Zone,
 		Ipv4Cidr:          data.Ipv4Cidr,
 		Ipv6Cidr:          data.Ipv6Cidr,

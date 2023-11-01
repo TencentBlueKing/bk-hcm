@@ -75,7 +75,6 @@ type TCloudSubnetListResult struct {
 // TCloudSubnetExtension defines tcloud subnet extensional info.
 type TCloudSubnetExtension struct {
 	IsDefault               bool    `json:"is_default"`
-	Region                  string  `json:"region"`
 	Zone                    string  `json:"zone"`
 	CloudRouteTableID       *string `json:"cloud_route_table_id,omitempty"`
 	CloudNetworkAclID       *string `json:"cloud_network_acl_id,omitempty"`

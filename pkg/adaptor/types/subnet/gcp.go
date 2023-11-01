@@ -93,7 +93,6 @@ type GcpSubnetListResult struct {
 // GcpSubnetExtension defines gcp subnet extensional info.
 type GcpSubnetExtension struct {
 	SelfLink              string `json:"self_link"`
-	Region                string `json:"region"`
 	StackType             string `json:"stack_type"`
 	Ipv6AccessType        string `json:"ipv6_access_type"`
 	GatewayAddress        string `json:"gateway_address"`

@@ -190,7 +190,8 @@ func (cli *client) deleteSubnet(kt *kit.Kit, accountID, region, cloudVpcID strin
 		Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
 	}
 	if err = cli.dbCli.Global.Subnet.BatchDelete(kt.Ctx, kt.Header(), deleteReq); err != nil {
-		logs.Errorf("[%s] request dataservice to batch delete subnet failed, err: %v, rid: %s", enumor.HuaWei, err, kt.Rid)
+		logs.Errorf("[%s] request dataservice to batch delete subnet failed, err: %v, rid: %s", enumor.HuaWei, err,
+			kt.Rid)
 		return err
 	}
 
@@ -210,7 +211,7 @@ func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[str
 		tmpRes := cloud.SubnetUpdateReq[cloud.HuaWeiSubnetUpdateExt]{
 			ID: id,
 			SubnetUpdateBaseInfo: cloud.SubnetUpdateBaseInfo{
-				Region:   item.Extension.Region,
+				Region:   item.Region,
 				Name:     converter.ValToPtr(item.Name),
 				Ipv4Cidr: item.Ipv4Cidr,
 				Ipv6Cidr: item.Ipv6Cidr,
@@ -243,7 +244,8 @@ func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[str
 	return nil
 }
 
-func (cli *client) createSubnet(kt *kit.Kit, accountID, region, cloudVpcID string, addSubnet []adtysubnet.HuaWeiSubnet) error {
+func (cli *client) createSubnet(kt *kit.Kit, accountID, region, cloudVpcID string,
+	addSubnet []adtysubnet.HuaWeiSubnet) error {
 	if len(addSubnet) == 0 {
 		return fmt.Errorf("create subnet, subnets is required")
 	}
@@ -271,7 +273,7 @@ func (cli *client) createSubnet(kt *kit.Kit, accountID, region, cloudVpcID strin
 			BkBizID:    constant.UnassignedBiz,
 			CloudID:    item.CloudID,
 			Name:       converter.ValToPtr(item.Name),
-			Region:     item.Extension.Region,
+			Region:     item.Region,
 			Zone:       "",
 			Ipv4Cidr:   item.Ipv4Cidr,
 			Ipv6Cidr:   item.Ipv6Cidr,
@@ -292,7 +294,8 @@ func (cli *client) createSubnet(kt *kit.Kit, accountID, region, cloudVpcID strin
 		Subnets: subnets,
 	}
 	if _, err := cli.dbCli.HuaWei.Subnet.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
-		logs.Errorf("[%s] request dataservice to batch create subnet failed, err: %v, rid: %s", enumor.HuaWei, err, kt.Rid)
+		logs.Errorf("[%s] request dataservice to batch create subnet failed, err: %v, rid: %s", enumor.HuaWei, err,
+			kt.Rid)
 		return err
 	}
 
@@ -354,7 +357,7 @@ func (cli *client) listSubnetFromDB(kt *kit.Kit, params *SyncBaseParams, cloudVp
 }
 
 func isHuaWeiSubnetChange(item adtysubnet.HuaWeiSubnet, info cloudcore.Subnet[cloudcore.HuaWeiSubnetExtension]) bool {
-	if info.Region != item.Extension.Region {
+	if info.Region != item.Region {
 		return true
 	}
 

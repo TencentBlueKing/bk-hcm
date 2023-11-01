@@ -57,7 +57,7 @@ func (v *vpcPlaybook) listSubnet(_ *kit.Kit, opt *core.TCloudListOption) (*adtsu
 	var values []adtsubnet.TCloudSubnet
 	if len(opt.CloudIDs) == 0 {
 		v.subnetStore.Filter(func(subnet adtsubnet.TCloudSubnet) bool {
-			return subnet.Extension.Region == opt.Region
+			return subnet.Region == opt.Region
 		})
 	} else {
 		values = v.subnetStore.GetByKeys(opt.CloudIDs...)
@@ -103,9 +103,9 @@ func (v *vpcPlaybook) createSubnet(_ *kit.Kit, opt *adtsubnet.TCloudSubnetsCreat
 			Ipv4Cidr:   []string{net.IPv4Cidr},
 			Ipv6Cidr:   nil,
 			Memo:       net.Memo,
+			Region:     opt.Region,
 			Extension: &adtsubnet.TCloudSubnetExtension{
 				IsDefault:               false,
-				Region:                  opt.Region,
 				Zone:                    net.Zone,
 				CloudRouteTableID:       &net.CloudRouteTableID,
 				CloudNetworkAclID:       nil,
