@@ -28,7 +28,8 @@ export default defineComponent({
       ipv4_cidr: '' as string, // IPV4 CIDR
       cloud_route_table_id: 0 as number, // 关联的路由表
     });
-    const cidr_host = ref('');
+    const cidr_host1 = ref('');
+    const cidr_host2 = ref('');
     const cidr_mask = ref('');
     const submitLoading = ref(false);
     const { whereAmI } = useWhereAmI();
@@ -37,6 +38,8 @@ export default defineComponent({
     const resourceStore = useResourceStore();
     const businessStore = useBusinessStore();
     const accountStore = useAccountStore();
+
+    const subIpv4cidr = ref([10, 0, 28]);
 
     // const handleChange = (data: BusinessFormFilter) => {
     //   formModel.account_id = data.account_id as string;
@@ -47,7 +50,19 @@ export default defineComponent({
     const getVpcDetail = async (vpcId: string) => {
       console.log('vpcId', vpcId);
       if (!vpcId) return;
-      await resourceStore.detail('vpcs', vpcId);
+      const res = await resourceStore.detail('vpcs', vpcId);
+      const arr = res.data?.extension?.cidr || [];
+      const idx = arr.findIndex(({ type }: { type: string }) => type === 'ipv4');
+      if (idx !== -1) {
+        const [ip, mask] = arr[idx].cidr.split('/');
+        const ipArr = ip.split('.');
+        subIpv4cidr.value = [
+          ipArr[0],
+          ipArr[1],
+          mask,
+        ];
+      }
+      console.log(subIpv4cidr.value);
     };
 
     const handleSubmit = async () => {
@@ -75,11 +90,12 @@ export default defineComponent({
     };
 
     watch(
-      () => [cidr_host.value, cidr_mask.value],
-      (vals) => {
-        const [host, mask] = vals;
-        formModel.ipv4_cidr = `10.10.10.${host}/${mask}`;
-        console.log(host, mask, formModel.ipv4_cidr);
+      () => [subIpv4cidr.value, cidr_host1.value, cidr_host2.value, cidr_mask.value],
+      () => {
+        formModel.ipv4_cidr = `${subIpv4cidr.value[0]}.${subIpv4cidr.value[1]}.${cidr_host1.value}.${cidr_host2.value}/${cidr_mask.value}`;
+      },
+      {
+        deep: true,
       },
     );
 
@@ -139,16 +155,23 @@ export default defineComponent({
               </FormItem>
               <FormItem label='IPv4 CIDR'>
                 <div class={'cidr-selector-container'}>
-                  10.10.10.
+                  {
+                    `${subIpv4cidr.value[0]}.${subIpv4cidr.value[1]}.`
+                  }
+                   <Input
+                    class={'cidr-selector'}
+                    placeholder='16'
+                    v-model={cidr_host1.value}
+                  />.
                   <Input
                     class={'cidr-selector'}
                     placeholder='16'
-                    v-model={cidr_host.value}
+                    v-model={cidr_host2.value}
                   />
                   <p>/</p>
                   <Select
                     class={'cidr-selector'}
-                    placeholder='28'
+                    placeholder={`${subIpv4cidr.value[2]}-31`}
                     v-model={cidr_mask.value}>
                     {new Array(32)
                       .fill(0)

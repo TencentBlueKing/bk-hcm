@@ -65,6 +65,10 @@ export default defineComponent({
       );
     }
     function handleChange(val: Staff[]) {
+      userList.value = val.map(name => ({
+        username: name,
+        display_name: name,
+      }));
       ctx.emit('input', val);
       ctx.emit('change', val);
     }
@@ -87,7 +91,12 @@ export default defineComponent({
       (list) => {
         if (list.length) {
           nextTick(() => {
-            userList.value = [...userList.value, ...list];
+            const arr = [...userList.value, ...list];
+            const set = new Set(arr.map(({ username }) => username));
+            userList.value = Array.from(set).map(name => ({
+              username: name,
+              display_name: name,
+            }));
             // tagInputRef.value?.focusInputTrigger(); // 获取到数据聚焦
           });
         }

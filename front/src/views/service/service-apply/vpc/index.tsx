@@ -120,8 +120,7 @@ export default defineComponent({
           {
             label: 'IPv4 CIDR',
             display: cond.vendor !== VendorEnum.GCP,
-            required: true,
-            property: 'ipv4_cidr',
+            property: 'ipv4Cidr1',
             content: () => (
               <>
                 <div class='flex-row align-items-center'>
@@ -155,11 +154,15 @@ export default defineComponent({
                       <div>.</div>
                       <Input
                         type='number'
+                        min={0}
+                        max={255}
                         v-model={formData.ipv4_cidr[2]}
                         class='w110'
                       />
                       <div>.</div>
                       <Input
+                        min={0}
+                        max={255}
                         type='number'
                         v-model={formData.ipv4_cidr[3]}
                         class='w110'
@@ -288,7 +291,7 @@ export default defineComponent({
           },
           {
             label: 'IPv4 CIDR',
-            required: true,
+            property: 'ipv4Cidr2',
             content: () => (
               <>
                 <div class='flex-row align-items-center'>
@@ -424,6 +427,37 @@ export default defineComponent({
           trigger: 'input',
         },
       ],
+      ipv4Cidr1: [
+        {
+          trigger: 'change',
+          message: 'IPv4 CIDR 不能为空',
+          validator: () => {
+            return (
+              !!formData.ipv4_cidr[4]
+            );
+          },
+        },
+      ],
+      ipv4Cidr2: [
+        {
+          trigger: 'change',
+          message: 'IPv4 CIDR 不能为空',
+          validator: () => {
+            return (
+              !!formData.subnet.ipv4_cidr[4]
+            );
+          },
+        },
+        {
+          trigger: 'change',
+          message: '子网IPv4 CIDR不合法，或不在VPC的CIDR范围中',
+          validator: () => {
+            return (
+              !formData.ipv4_cidr[4] || +formData.subnet.ipv4_cidr[4] >= +formData.ipv4_cidr[4]
+            );
+          },
+        },
+      ],
     };
 
     watch(
@@ -532,6 +566,7 @@ export default defineComponent({
               theme='primary'
               loading={submitting.value}
               disabled={submitDisabled.value}
+              class={'mr16'}
               onClick={handleFormSubmit}>
               {isResourcePage ? t('提交') : t('提交审批')}
             </Button>

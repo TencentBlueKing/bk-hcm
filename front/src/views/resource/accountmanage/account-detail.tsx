@@ -66,6 +66,11 @@ export default defineComponent({
     });
     const accountForm = ref(null);
 
+    const computedManagers = computed(() => accountFormModel.managers.map(name => ({
+      username: name,
+      display_name: name,
+    })));
+
     const resourceAccountStore = useResourceAccountStore();
 
     const initSecretModel: SecretModel = {
@@ -942,7 +947,10 @@ export default defineComponent({
                 class={'api-secret-selector'}
                 required
                 property='managers'>
-                <MemberSelect v-model={accountFormModel.managers} />
+                <MemberSelect
+                  v-model={accountFormModel.managers}
+                  defaultUserlist={computedManagers.value}
+                />
               </FormItem>
               <FormItem
                 label='业务'
