@@ -27,6 +27,7 @@ export default defineComponent({
         field: 'current_processors',
         label: '当前处理人',
         width: 400,
+        render: ({ cell }: any) => cell.slice(1, -1),
       },
       {
         field: 'current_status_display',
