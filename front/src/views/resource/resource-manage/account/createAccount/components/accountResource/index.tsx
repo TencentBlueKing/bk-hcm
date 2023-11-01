@@ -1,5 +1,5 @@
 import http from '@/http';
-import { Button, Loading, Switcher, Table } from 'bkui-vue';
+import { Button, Loading, Table } from 'bkui-vue';
 import { PropType, defineComponent, onMounted, ref } from 'vue';
 import './index.scss';
 import { RESOURCE_TYPES_MAP, VendorEnum } from '@/common/constant';
@@ -42,12 +42,11 @@ export default defineComponent({
         field: 'count',
       },
       {
-        label: '是否接入',
-        rowspan: 9,
+        label: '同步周期',
         render: () => (
           <>
-            <Switcher disabled class={'mr8'}/>
-            同步周期: 20分钟
+            {/* <Switcher disabled class={'mr8'}/> */}
+            20分钟
           </>
         ),
       },
