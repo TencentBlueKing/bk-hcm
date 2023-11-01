@@ -276,6 +276,8 @@ func (opt *HuaWeiDiskDetachOption) ToDetachServerVolumeRequest() (*ecsmodel.Deta
 // HuaWeiDisk for model VolumeDetail
 type HuaWeiDisk struct {
 	model.VolumeDetail
+	// 是否启动盘
+	Boot           bool   `json:"boot"`
 	DiskChargeType string `json:"disk_charge_type"`
 	ExpireTime     string `json:"expire_time"`
 }
