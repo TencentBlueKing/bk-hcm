@@ -90,9 +90,13 @@ export default defineComponent({
       () => staffStore.list,
       (list) => {
         if (list.length) {
-          console.log(666666, 123, props.modelValue);
           nextTick(() => {
-            userList.value = [...userList.value, ...list];
+            const arr = [...userList.value, ...list];
+            const set = new Set(arr.map(({ username }) => username));
+            userList.value = Array.from(set).map(name => ({
+              username: name,
+              display_name: name,
+            }));
             // tagInputRef.value?.focusInputTrigger(); // 获取到数据聚焦
           });
         }
