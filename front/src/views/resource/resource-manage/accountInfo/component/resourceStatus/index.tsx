@@ -26,7 +26,7 @@ export default defineComponent({
           <img
             // eslint-disable-next-line no-nested-ternary
             src={ cell === 'sync_success' ? successStatus : cell === 'sync_failed' ? failedStatus : loadingStatus }
-            class={'resource-status-icon'}
+            class={`resource-status-icon ${cell === 'syncing' && 'loading'}`}
             height={16}
             width={16}
           />
