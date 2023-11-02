@@ -25,7 +25,13 @@ export default defineComponent({
     const resourceAccountStore = useResourceAccountStore();
 
     const handleCancel = () => {
-      isCreateAccountDialogShow.value = false;
+      // isCreateAccountDialogShow.value = false;
+      router.push({
+        query: {
+          ...route.query,
+          dialog: undefined,
+        },
+      });
     };
     const handleSubmit = () => {
     };
