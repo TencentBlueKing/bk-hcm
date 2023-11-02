@@ -44,26 +44,16 @@ func (svc *eipSvc) listEipExtByCvmID(cts *rest.Contexts, validHandler handler.Va
 	error) {
 
 	CvmID := cts.Request.PathParameter("cvm_id")
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		enumor.CvmCloudResType,
-		CvmID,
-	)
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
+		enumor.CvmCloudResType, CvmID)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	if basicInfo.Vendor != vendor {
-		return nil, errf.NewFromErr(
-			errf.InvalidParameter,
-			fmt.Errorf(
-				"the vendor(%s) of the cvm does not match the vendor(%s) in url path",
-				basicInfo.Vendor,
-				vendor,
-			),
-		)
+		return nil, errf.NewFromErr(errf.InvalidParameter,
+			fmt.Errorf("the vendor(%s) of the cvm does not match the vendor(%s) in url path", basicInfo.Vendor, vendor))
 	}
 
 	// validate biz and authorize

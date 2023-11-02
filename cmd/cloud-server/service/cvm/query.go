@@ -104,7 +104,7 @@ func (svc *cvmSvc) getCvm(cts *rest.Contexts, validHandler handler.ValidWithAuth
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.CvmCloudResType, id, append(types.CommonBasicInfoFields, "recycle_status")...)
 	if err != nil {
 		return nil, err
@@ -191,8 +191,7 @@ func (svc *cvmSvc) queryCvmRelatedRes(cts *rest.Contexts, validHandler handler.V
 		ResourceType: enumor.CvmCloudResType,
 		IDs:          req.IDs,
 	}
-	basicInfo, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		basicInfoReq)
+	basicInfo, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
 	if err != nil {
 		return nil, err
 	}

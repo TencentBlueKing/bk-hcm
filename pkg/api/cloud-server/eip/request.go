@@ -47,12 +47,14 @@ func (req *EipAssignReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// EipReq ...
-type EipReq struct {
-	EipID string `json:"eip_id" validate:"required"`
+// AssociateReq ...
+type AssociateReq struct {
+	EipID              string `json:"eip_id" validate:"required"`
+	CvmID              string `json:"cvm_id" validate:"omitempty"`
+	NetworkInterfaceID string `json:"network_interface_id" validate:"omitempty"`
 }
 
 // Validate ...
-func (req *EipReq) Validate() error {
+func (req *AssociateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

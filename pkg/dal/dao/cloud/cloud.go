@@ -90,6 +90,10 @@ func (dao CloudDao) ListResourceBasicInfo(kt *kit.Kit, resType enumor.CloudResou
 		return nil, err
 	}
 
+	for index := range list {
+		list[index].ResType = resType
+	}
+
 	return list, nil
 }
 

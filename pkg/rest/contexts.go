@@ -56,6 +56,24 @@ func (c *Contexts) RequestBody() ([]byte, error) {
 	return byt, nil
 }
 
+// ReDecodeInto 解析Body到结构体中，且把body内容重新写入Body.
+func (c *Contexts) ReDecodeInto(to interface{}) error {
+	byt, err := ioutil.ReadAll(c.Request.Request.Body)
+	if err != nil {
+		return err
+	}
+
+	c.Request.Request.Body = ioutil.NopCloser(bytes.NewBuffer(byt))
+
+	err = json.Unmarshal(byt, to)
+	if err != nil {
+		logs.ErrorDepthf(1, "decode request body failed, err: %s, rid: %s", err.Error(), c.Kit.Rid)
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	return nil
+}
+
 // DecodeInto decode request body to a struct, if failed, then return the
 // response with an error
 func (c *Contexts) DecodeInto(to interface{}) error {

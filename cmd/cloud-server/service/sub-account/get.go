@@ -41,7 +41,7 @@ func (svc *service) getSubAccount(cts *rest.Contexts, validHandler handler.Valid
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.SubAccountCloudResType, id, "id", "vendor")
 	if err != nil {
 		logs.Errorf("request ds to get resource basic info failed, err: %v, id: %s, rid: %s", err, id, cts.Kit.Rid)

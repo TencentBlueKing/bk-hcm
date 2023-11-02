@@ -36,16 +36,6 @@ func (req *TCloudEipAssociateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// TCloudEipDisassociateReq ...
-type TCloudEipDisassociateReq struct {
-	EipID string `json:"eip_id" validate:"required"`
-}
-
-// Validate ...
-func (req *TCloudEipDisassociateReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
-
 // TCloudEipCreateReq ...
 type TCloudEipCreateReq struct {
 	AccountID string `json:"account_id" validate:"required"`

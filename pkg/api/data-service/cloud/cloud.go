@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package cloud ...
 package cloud
 
 import (
@@ -45,6 +46,27 @@ type GetResourceBasicInfoResp struct {
 }
 
 // -------------------------- List --------------------------
+
+// BatchListResourceBasicInfoReq define batch list resource basic info req.
+type BatchListResourceBasicInfoReq struct {
+	Items []ListResourceBasicInfoReq `json:"items" validate:"required"`
+}
+
+// Validate batch list resource vendor req.
+func (req *BatchListResourceBasicInfoReq) Validate() error {
+
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	for _, one := range req.Items {
+		if err := validator.Validate.Struct(one); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 // ListResourceBasicInfoReq define list resource basic info req.
 type ListResourceBasicInfoReq struct {

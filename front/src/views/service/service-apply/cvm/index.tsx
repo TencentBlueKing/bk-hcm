@@ -383,12 +383,14 @@ export default defineComponent({
 
     watch(
       () => [cond, formData.zone, formData.instance_charge_type],
-      async () => {
+      async ([,newZone], [,oldZone]) => {
         const isBusiness = whereAmI.value === Senarios.business;
         const isTcloud = cond.vendor === VendorEnum.TCLOUD;
         if (isBusiness && !cond.bizId) return;
         if (!cond.cloudAccountId || !cond.vendor || !cond.region) return;
         if (isTcloud && !formData.zone.length) return;
+        // 避免多发一次无效请求（因为监听了formData.zone的变化）
+        if (newZone?.[0] === oldZone?.[0]) return;
         if (
           ![VendorEnum.HUAWEI, VendorEnum.GCP, VendorEnum.TCLOUD].includes(cond.vendor as VendorEnum)
         ) return;

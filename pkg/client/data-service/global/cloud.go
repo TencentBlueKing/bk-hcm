@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -42,18 +43,18 @@ func NewCloudClient(client rest.ClientInterface) *CloudClient {
 	}
 }
 
-// GetResourceBasicInfo get cloud resource basic info.
-func (cli *CloudClient) GetResourceBasicInfo(ctx context.Context, h http.Header, resType enumor.CloudResourceType,
+// GetResBasicInfo get cloud resource basic info.
+func (cli *CloudClient) GetResBasicInfo(kt *kit.Kit, resType enumor.CloudResourceType,
 	resID string, fields ...string) (*types.CloudResourceBasicInfo, error) {
 
 	req := &protocloud.GetResourceBasicInfoReq{Fields: fields}
 	resp := new(protocloud.GetResourceBasicInfoResp)
 
 	err := cli.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(req).
-		SubResourcef("/cloud/resources/bases/%s/id/%s", resType, resID).
-		WithHeaders(h).
+		SubResourcef("/cloud/resources/basics/%s/id/%s", resType, resID).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
@@ -67,17 +68,41 @@ func (cli *CloudClient) GetResourceBasicInfo(ctx context.Context, h http.Header,
 	return resp.Data, nil
 }
 
-// ListResourceBasicInfo list cloud resource basic info.
-func (cli *CloudClient) ListResourceBasicInfo(ctx context.Context, h http.Header,
-	req protocloud.ListResourceBasicInfoReq,
-) (map[string]types.CloudResourceBasicInfo, error) {
+// ListResBasicInfo list cloud resource basic info.
+func (cli *CloudClient) ListResBasicInfo(kt *kit.Kit, req protocloud.ListResourceBasicInfoReq) (
+	map[string]types.CloudResourceBasicInfo, error) {
+
 	resp := new(protocloud.ListResourceBasicInfoResp)
 
 	err := cli.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(req).
-		SubResourcef("/cloud/resources/bases/list").
-		WithHeaders(h).
+		SubResourcef("/cloud/resources/basics/list").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// BatchListResBasicInfo batch list cloud resource basic info.
+func (cli *CloudClient) BatchListResBasicInfo(kt *kit.Kit, req *protocloud.BatchListResourceBasicInfoReq) (
+	map[string]types.CloudResourceBasicInfo, error) {
+
+	resp := new(protocloud.ListResourceBasicInfoResp)
+
+	err := cli.client.Post().
+		WithContext(kt.Ctx).
+		Body(req).
+		SubResourcef("/cloud/resources/basics/batch/list").
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

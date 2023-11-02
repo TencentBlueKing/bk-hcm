@@ -22,9 +22,11 @@ package securitygroup
 import (
 	proto "hcm/pkg/api/cloud-server"
 	protoaudit "hcm/pkg/api/data-service/audit"
+	"hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -179,19 +181,33 @@ func (svc *securityGroupSvc) decodeAndValidateAssocCvmReq(cts *rest.Contexts, ac
 		return nil, "", errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		enumor.SecurityGroupCloudResType, req.SecurityGroupID)
+	// 鉴权和校验资源分配状态和回收状态
+	basicReq := &cloud.BatchListResourceBasicInfoReq{
+		Items: []cloud.ListResourceBasicInfoReq{
+			{ResourceType: enumor.SecurityGroupCloudResType, IDs: []string{req.SecurityGroupID},
+				Fields: types.CommonBasicInfoFields},
+			{ResourceType: enumor.CvmCloudResType, IDs: []string{req.CvmID}, Fields: types.ResWithRecycleBasicFields},
+		},
+	}
+
+	basicInfos, err := svc.client.DataService().Global.Cloud.BatchListResBasicInfo(cts.Kit, basicReq)
 	if err != nil {
-		logs.Errorf("get resource vendor failed, id: %s, err: %s, rid: %s", basicInfo, err, cts.Kit.Rid)
+		logs.Errorf("batch list resource basic info failed, err: %v, req: %+v, rid: %s", err, basicReq, cts.Kit.Rid)
 		return nil, "", err
 	}
 
 	// validate biz and authorize
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
-		Action: action, BasicInfo: basicInfo})
+		Action: action, BasicInfos: basicInfos})
 	if err != nil {
 		return nil, "", err
 	}
 
-	return req, basicInfo.Vendor, nil
+	var vendor enumor.Vendor
+	for _, info := range basicInfos {
+		vendor = info.Vendor
+		break
+	}
+
+	return req, vendor, nil
 }

@@ -61,8 +61,7 @@ func (svc *securityGroupSvc) batchDeleteSecurityGroup(cts *rest.Contexts, validH
 		ResourceType: enumor.SecurityGroupCloudResType,
 		IDs:          req.IDs,
 	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		basicInfoReq)
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
 	if err != nil {
 		return nil, err
 	}

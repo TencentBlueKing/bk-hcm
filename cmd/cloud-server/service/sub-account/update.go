@@ -42,7 +42,7 @@ func (svc *service) UpdateSubAccount(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.SubAccountCloudResType, id)
 	if err != nil {
 		logs.Errorf("get sub account basic info failed, err: %v, rid: %s", err, cts.Kit.Rid)

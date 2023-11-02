@@ -115,7 +115,7 @@ export default defineComponent({
             label: '大小',
             required: true,
             property: 'disk_size',
-            description: '最小值: 20GB；最大值: 32000GB。该值必须为10的倍数',
+            // description: '最小值: 20GB；最大值: 32000GB。该值必须为10的倍数',
             content: () => (
               <Input
                 type='number'

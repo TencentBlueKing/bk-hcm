@@ -44,12 +44,8 @@ func (svc *diskSvc) listDiskExtByCvmID(cts *rest.Contexts, validHandler handler.
 	error,
 ) {
 	CvmID := cts.Request.PathParameter("cvm_id")
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		enumor.CvmCloudResType,
-		CvmID,
-	)
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
+		enumor.CvmCloudResType, CvmID)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}

@@ -27,6 +27,17 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
+// AttachReq ...
+type AttachReq struct {
+	DiskID string `json:"disk_id" validate:"required"`
+	CvmID  string `json:"cvm_id" validate:"required"`
+}
+
+// Validate ...
+func (req *AttachReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
 // DiskListReq ...
 type DiskListReq struct {
 	Filter *filter.Expression `json:"filter" validate:"required"`

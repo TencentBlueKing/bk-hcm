@@ -139,13 +139,8 @@ func (svc *diskSvc) DeleteBizDisk(cts *rest.Contexts) (interface{}, error) {
 func (svc *diskSvc) deleteDisk(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	diskID := cts.PathParameter("id").String()
 
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		enumor.CloudResourceType(table.DiskTable),
-		diskID,
-		append(types.CommonBasicInfoFields, "recycle_status")...,
-	)
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
+		enumor.CloudResourceType(table.DiskTable), diskID, append(types.CommonBasicInfoFields, "recycle_status")...)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -189,13 +184,8 @@ func (svc *diskSvc) RetrieveRecycledDisk(cts *rest.Contexts) (interface{}, error
 func (svc *diskSvc) retrieveDisk(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	diskID := cts.PathParameter("id").String()
 
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		enumor.CloudResourceType(table.DiskTable),
-		diskID,
-		append(types.CommonBasicInfoFields, "recycle_status")...,
-	)
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
+		enumor.CloudResourceType(table.DiskTable), diskID, append(types.CommonBasicInfoFields, "recycle_status")...)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -320,122 +310,13 @@ func (svc *diskSvc) AssignDisk(cts *rest.Contexts) (interface{}, error) {
 	return nil, disklgc.Assign(cts.Kit, svc.client.DataService(), req.IDs, req.BkBizID, false)
 }
 
-// AttachDisk attach disk.
-func (svc *diskSvc) AttachDisk(cts *rest.Contexts) (interface{}, error) {
-	return svc.attachDisk(cts, handler.ResValidWithAuth)
-}
-
-// AttachBizDisk  attach biz disk.
-func (svc *diskSvc) AttachBizDisk(cts *rest.Contexts) (interface{}, error) {
-	return svc.attachDisk(cts, handler.BizValidWithAuth)
-}
-
-func (svc *diskSvc) attachDisk(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
-	diskID, err := extractDiskID(cts)
-	if err != nil {
-		return nil, err
-	}
-
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		enumor.DiskCloudResType,
-		diskID,
-		append(types.CommonBasicInfoFields, "recycle_status")...,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	switch basicInfo.Vendor {
-	case enumor.TCloud:
-		return svc.tcloudAttachDisk(cts, basicInfo, validHandler)
-	case enumor.Aws:
-		return svc.awsAttachDisk(cts, basicInfo, validHandler)
-	case enumor.HuaWei:
-		return svc.huaweiAttachDisk(cts, basicInfo, validHandler)
-	case enumor.Gcp:
-		return svc.gcpAttachDisk(cts, basicInfo, validHandler)
-	case enumor.Azure:
-		return svc.azureAttachDisk(cts, basicInfo, validHandler)
-	default:
-		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", basicInfo.Vendor))
-	}
-}
-
-// DetachDisk detach disk.
-func (svc *diskSvc) DetachDisk(cts *rest.Contexts) (interface{}, error) {
-	return svc.detachDisk(cts, handler.ResValidWithAuth)
-}
-
-// DetachBizDisk  detach biz disk.
-func (svc *diskSvc) DetachBizDisk(cts *rest.Contexts) (interface{}, error) {
-	return svc.detachDisk(cts, handler.BizValidWithAuth)
-}
-
-func (svc *diskSvc) detachDisk(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
-	req := new(cloudproto.DiskDetachReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		enumor.DiskCloudResType,
-		req.DiskID,
-		append(types.CommonBasicInfoFields, "recycle_status")...,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	// validate biz and authorize
-	err = validHandler(cts, &handler.ValidWithAuthOption{
-		Authorizer: svc.authorizer, ResType: meta.Disk,
-		Action: meta.Disassociate, BasicInfo: basicInfo,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	// get cvm id
-	rels, err := svc.client.DataService().Global.ListDiskCvmRel(
-		cts.Kit,
-		&core.ListReq{
-			Filter: tools.EqualExpression("disk_id", req.DiskID),
-			Page:   core.NewDefaultBasePage(),
-		},
-	)
-	if len(rels.Details) == 0 {
-		return nil, fmt.Errorf("disk(%s) not attached", req.DiskID)
-	}
-
-	cvmID := rels.Details[0].CvmID
-
-	err = svc.diskLgc.DetachDisk(cts.Kit, basicInfo.Vendor, cvmID, req.DiskID)
-	if err != nil {
-		logs.Errorf("detach disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-	return nil, nil
-}
-
 func (svc *diskSvc) authorizeDiskAssignOp(kt *kit.Kit, ids []string) error {
 	basicInfoReq := cloud.ListResourceBasicInfoReq{
 		ResourceType: enumor.DiskCloudResType,
 		IDs:          ids,
 		Fields:       append(types.CommonBasicInfoFields, "recycle_status"),
 	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(
-		kt.Ctx,
-		kt.Header(),
-		basicInfoReq,
-	)
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(kt, basicInfoReq)
 	if err != nil {
 		return err
 	}

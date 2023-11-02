@@ -56,7 +56,7 @@ func (svc *securityGroupSvc) getSecurityGroup(cts *rest.Contexts, validHandler h
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	baseInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.SecurityGroupCloudResType, id)
 	if err != nil {
 		logs.Errorf("get resource vendor failed, id: %s, err: %s, rid: %s", id, err, cts.Kit.Rid)
@@ -248,7 +248,7 @@ func (svc *securityGroupSvc) listSGByCvmID(cts *rest.Contexts, validHandler hand
 		return nil, errf.New(errf.InvalidParameter, "cvm_id is required")
 	}
 
-	baseInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.CvmCloudResType, cvmID)
 	if err != nil {
 		logs.Errorf("get resource vendor failed, err: %s, cvmID: %s, rid: %s", err, cvmID, cts.Kit.Rid)
