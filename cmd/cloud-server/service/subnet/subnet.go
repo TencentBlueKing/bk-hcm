@@ -329,8 +329,7 @@ func (svc *subnetSvc) updateSubnet(cts *rest.Contexts, validHandler handler.Vali
 	}
 
 	id := cts.PathParameter("id").String()
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		enumor.SubnetCloudResType, id)
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.SubnetCloudResType, id)
 	if err != nil {
 		return nil, err
 	}
@@ -393,8 +392,7 @@ func (svc *subnetSvc) getSubnet(cts *rest.Contexts, validHandler handler.ValidWi
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		enumor.SubnetCloudResType, id)
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.SubnetCloudResType, id)
 	if err != nil {
 		return nil, err
 	}
@@ -510,8 +508,7 @@ func (svc *subnetSvc) batchDeleteSubnet(cts *rest.Contexts, validHandler handler
 		ResourceType: enumor.SubnetCloudResType,
 		IDs:          req.IDs,
 	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		basicInfoReq)
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
 	if err != nil {
 		return nil, err
 	}
@@ -576,8 +573,7 @@ func (svc *subnetSvc) AssignSubnetToBiz(cts *rest.Contexts) (interface{}, error)
 		ResourceType: enumor.SubnetCloudResType,
 		IDs:          req.SubnetIDs,
 	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		basicInfoReq)
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
 	if err != nil {
 		return nil, err
 	}

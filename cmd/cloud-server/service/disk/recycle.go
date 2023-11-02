@@ -72,8 +72,7 @@ func (svc *diskSvc) recycleDiskSvc(cts *rest.Contexts, validHandler handler.Vali
 		IDs:          ids,
 		Fields:       append(types.CommonBasicInfoFields, "recycle_status"),
 	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		basicInfoReq)
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
 	if err != nil {
 		return nil, err
 	}
@@ -287,8 +286,7 @@ func (svc *diskSvc) recoverDisk(cts *rest.Contexts, validHandler handler.ValidWi
 		IDs:          diskIds,
 		Fields:       append(types.CommonBasicInfoFields, "recycle_status"),
 	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		basicInfoReq)
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
 	if err != nil {
 		return nil, err
 	}
@@ -372,8 +370,7 @@ func (svc *diskSvc) batchDeleteRecycledDisk(cts *rest.Contexts,
 		IDs:          diskIDs,
 		Fields:       append(types.CommonBasicInfoFields, "recycle_status"),
 	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		basicInfoReq)
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
 	if err != nil {
 		return nil, err
 	}

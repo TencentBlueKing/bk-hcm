@@ -20,9 +20,7 @@
 package eip
 
 import (
-	"bytes"
 	"fmt"
-	"io/ioutil"
 
 	"hcm/cmd/cloud-server/logics/async"
 	"hcm/cmd/cloud-server/logics/audit"
@@ -169,12 +167,8 @@ func (svc *eipSvc) RetrieveBizEip(cts *rest.Contexts) (interface{}, error) {
 func (svc *eipSvc) retrieveEip(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	eipID := cts.PathParameter("id").String()
 
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		enumor.EipCloudResType,
-		eipID,
-	)
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
+		enumor.EipCloudResType, eipID)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -262,8 +256,7 @@ func (svc *eipSvc) batchDeleteEip(cts *rest.Contexts, validHandler handler.Valid
 		ResourceType: enumor.EipCloudResType,
 		IDs:          req.IDs,
 	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		basicInfoReq)
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
 	if err != nil {
 		return nil, err
 	}
@@ -318,93 +311,6 @@ func (svc *eipSvc) batchDeleteEip(cts *rest.Contexts, validHandler handler.Valid
 	return result, nil
 }
 
-// AssociateEip associate eip.
-func (svc *eipSvc) AssociateEip(cts *rest.Contexts) (interface{}, error) {
-	return svc.associateEip(cts, handler.ResValidWithAuth)
-}
-
-// AssociateBizEip associate biz eip.
-func (svc *eipSvc) AssociateBizEip(cts *rest.Contexts) (interface{}, error) {
-	return svc.associateEip(cts, handler.BizValidWithAuth)
-}
-
-func (svc *eipSvc) associateEip(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
-	eipID, err := extractEipID(cts)
-	if err != nil {
-		return nil, err
-	}
-
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		enumor.EipCloudResType,
-		eipID,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	switch basicInfo.Vendor {
-	case enumor.TCloud:
-		return svc.tcloud.AssociateEip(cts, basicInfo, validHandler)
-	case enumor.Aws:
-		return svc.aws.AssociateEip(cts, basicInfo, validHandler)
-	case enumor.HuaWei:
-		return svc.huawei.AssociateEip(cts, basicInfo, validHandler)
-	case enumor.Gcp:
-		return svc.gcp.AssociateEip(cts, basicInfo, validHandler)
-	case enumor.Azure:
-		return svc.azure.AssociateEip(cts, basicInfo, validHandler)
-	default:
-		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", basicInfo.Vendor))
-	}
-}
-
-// DisassociateEip disassociate eip.
-func (svc *eipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
-	return svc.disassociateEip(cts, handler.ResValidWithAuth)
-}
-
-// DisassociateBizEip disassociate biz eip.
-func (svc *eipSvc) DisassociateBizEip(cts *rest.Contexts) (interface{}, error) {
-	return svc.disassociateEip(cts, handler.BizValidWithAuth)
-}
-
-func (svc *eipSvc) disassociateEip(
-	cts *rest.Contexts,
-	validHandler handler.ValidWithAuthHandler,
-) (interface{}, error) {
-	eipID, err := extractEipID(cts)
-	if err != nil {
-		return nil, err
-	}
-
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		enumor.EipCloudResType,
-		eipID,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	switch basicInfo.Vendor {
-	case enumor.TCloud:
-		return svc.tcloud.DisassociateEip(cts, basicInfo, validHandler)
-	case enumor.Aws:
-		return svc.aws.DisassociateEip(cts, basicInfo, validHandler)
-	case enumor.HuaWei:
-		return svc.huawei.DisassociateEip(cts, basicInfo, validHandler)
-	case enumor.Gcp:
-		return svc.gcp.DisassociateEip(cts, basicInfo, validHandler)
-	case enumor.Azure:
-		return svc.azure.DisassociateEip(cts, basicInfo, validHandler)
-	default:
-		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", basicInfo.Vendor))
-	}
-}
-
 // CreateEip create eip.
 func (svc *eipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 	bizID := int64(constant.UnassignedBiz)
@@ -437,12 +343,8 @@ func (svc *eipSvc) createEip(cts *rest.Contexts, bizID int64,
 	}
 
 	// 查询该账号对应的Vendor
-	baseInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		enumor.AccountCloudResType,
-		accountID,
-	)
+	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
+		enumor.AccountCloudResType, accountID)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -468,7 +370,7 @@ func (svc *eipSvc) authorizeEipAssignOp(kt *kit.Kit, ids []string) error {
 		ResourceType: enumor.EipCloudResType,
 		IDs:          ids,
 	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(kt.Ctx, kt.Header(), basicInfoReq)
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(kt, basicInfoReq)
 	if err != nil {
 		return err
 	}
@@ -486,26 +388,4 @@ func (svc *eipSvc) authorizeEipAssignOp(kt *kit.Kit, ids []string) error {
 	}
 
 	return nil
-}
-
-func extractEipID(cts *rest.Contexts) (string, error) {
-	req := new(cloudproto.EipReq)
-	reqData, err := ioutil.ReadAll(cts.Request.Request.Body)
-	if err != nil {
-		logs.Errorf("read request body failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return "", err
-	}
-
-	cts.Request.Request.Body = ioutil.NopCloser(bytes.NewReader(reqData))
-	if err := cts.DecodeInto(req); err != nil {
-		return "", err
-	}
-
-	if err := req.Validate(); err != nil {
-		return "", errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	cts.Request.Request.Body = ioutil.NopCloser(bytes.NewReader(reqData))
-
-	return req.EipID, nil
 }

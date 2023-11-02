@@ -58,7 +58,7 @@ func (svc *securityGroupSvc) updateSecurityGroup(cts *rest.Contexts, validHandle
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	baseInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.SecurityGroupCloudResType, id)
 	if err != nil {
 		logs.Errorf("get resource vendor failed, id: %s, err: %s, rid: %s", id, err, cts.Kit.Rid)

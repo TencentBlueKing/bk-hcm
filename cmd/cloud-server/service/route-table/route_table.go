@@ -91,7 +91,7 @@ func (svc *routeTableSvc) UpdateRouteTable(cts *rest.Contexts) (interface{}, err
 	}
 
 	id := cts.PathParameter("id").String()
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.RouteTableCloudResType, id)
 	if err != nil {
 		return nil, err
@@ -150,7 +150,7 @@ func (svc *routeTableSvc) getRouteTable(cts *rest.Contexts, validHandler handler
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.RouteTableCloudResType, id)
 	if err != nil {
 		return nil, err
@@ -280,8 +280,7 @@ func (svc *routeTableSvc) countRouteTableSubnets(cts *rest.Contexts, validHandle
 		ResourceType: enumor.RouteTableCloudResType,
 		IDs:          req.IDs,
 	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		basicInfoReq)
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
 	if err != nil {
 		return nil, err
 	}
@@ -358,7 +357,7 @@ func (svc *routeTableSvc) authorizeRouteTableAssignOp(kt *kit.Kit, ids []string,
 		ResourceType: enumor.RouteTableCloudResType,
 		IDs:          ids,
 	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(kt.Ctx, kt.Header(), basicInfoReq)
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(kt, basicInfoReq)
 	if err != nil {
 		return err
 	}

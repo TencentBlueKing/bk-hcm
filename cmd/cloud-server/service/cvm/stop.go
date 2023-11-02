@@ -61,8 +61,7 @@ func (svc *cvmSvc) batchStopCvmSvc(cts *rest.Contexts, validHandler handler.Vali
 		IDs:          req.IDs,
 		Fields:       append(types.CommonBasicInfoFields, "region", "recycle_status"),
 	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		basicInfoReq)
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
 	if err != nil {
 		return nil, err
 	}

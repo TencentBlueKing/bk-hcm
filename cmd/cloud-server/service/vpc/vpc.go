@@ -99,7 +99,7 @@ func (svc *vpcSvc) CreateVpc(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// 获取资源公共参数，如厂商
-	info, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+	info, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.AccountCloudResType, req.AccountID)
 	if err != nil {
 		logs.Errorf("get account basic info failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -246,7 +246,7 @@ func (svc *vpcSvc) updateVpc(cts *rest.Contexts, validHandler handler.ValidWithA
 	}
 
 	id := cts.PathParameter("id").String()
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.VpcCloudResType, id)
 	if err != nil {
 		return nil, err
@@ -310,8 +310,7 @@ func (svc *vpcSvc) getVpc(cts *rest.Contexts, validHandler handler.ValidWithAuth
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		enumor.VpcCloudResType, id)
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.VpcCloudResType, id)
 	if err != nil {
 		return nil, err
 	}
@@ -468,7 +467,7 @@ func (svc *vpcSvc) deleteVpc(cts *rest.Contexts, validHandler handler.ValidWithA
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.VpcCloudResType, id)
 	if err != nil {
 		return nil, err
@@ -659,7 +658,7 @@ func (svc *vpcSvc) authorizeVpcBatchOp(kt *kit.Kit, action meta.Action, ids []st
 		ResourceType: enumor.VpcCloudResType,
 		IDs:          ids,
 	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(kt.Ctx, kt.Header(), basicInfoReq)
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(kt, basicInfoReq)
 	if err != nil {
 		return err
 	}

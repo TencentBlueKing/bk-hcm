@@ -42,12 +42,8 @@ func (svc *netSvc) listNICExtByCvmID(cts *rest.Contexts, validHandler handler.Va
 	error) {
 
 	cvmID := cts.Request.PathParameter("cvm_id")
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		enumor.CvmCloudResType,
-		cvmID,
-	)
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
+		enumor.CvmCloudResType, cvmID)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}

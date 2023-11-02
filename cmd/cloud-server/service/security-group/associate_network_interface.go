@@ -135,7 +135,7 @@ func (svc *securityGroupSvc) decodeAndValidateAssocNIReq(cts *rest.Contexts, act
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.SecurityGroupCloudResType, req.SecurityGroupID)
 	if err != nil {
 		logs.Errorf("get resource vendor failed, id: %s, err: %s, rid: %s", basicInfo, err, cts.Kit.Rid)

@@ -35,16 +35,6 @@ func (req *AwsEipAssociateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// AwsEipDisassociateReq ...
-type AwsEipDisassociateReq struct {
-	EipID string `json:"eip_id" validate:"required"`
-}
-
-// Validate ...
-func (req *AwsEipDisassociateReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
-
 // AwsEipCreateReq ...
 type AwsEipCreateReq struct {
 	AccountID string `json:"account_id" validate:"required"`
