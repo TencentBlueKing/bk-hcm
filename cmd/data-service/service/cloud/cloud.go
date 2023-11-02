@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package cloud ...
 package cloud
 
 import (
@@ -36,6 +37,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	audittable "hcm/pkg/dal/table/audit"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -53,8 +55,10 @@ func InitCloudService(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("GetResourceBasicInfo", http.MethodPost, "/cloud/resources/bases/{type}/id/{id}", svc.GetResourceBasicInfo)
-	h.Add("ListResourceBasicInfo", http.MethodPost, "/cloud/resources/bases/list", svc.ListResourceBasicInfo)
+	h.Add("GetResBasicInfo", http.MethodPost, "/cloud/resources/basics/{type}/id/{id}", svc.GetResourceBasicInfo)
+	h.Add("ListResBasicInfo", http.MethodPost, "/cloud/resources/basics/list", svc.ListResourceBasicInfo)
+	h.Add("BatchListResBasicInfo", http.MethodPost, "/cloud/resources/basics/batch/list",
+		svc.BatchListResourceBasicInfo)
 	h.Add("AssignResourceToBiz", http.MethodPost, "/cloud/resources/assign/bizs", svc.AssignResourceToBiz)
 
 	h.Load(cap.WebService)
@@ -133,6 +137,36 @@ func (svc cloudSvc) ListResourceBasicInfo(cts *rest.Contexts) (interface{}, erro
 	return result, nil
 }
 
+// BatchListResourceBasicInfo batch list resource basic info.
+func (svc cloudSvc) BatchListResourceBasicInfo(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocloud.BatchListResourceBasicInfoReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	result := make(map[string]types.CloudResourceBasicInfo, len(req.Items))
+	for _, item := range req.Items {
+		list, err := svc.dao.Cloud().ListResourceBasicInfo(cts.Kit, item.ResourceType, item.IDs, item.Fields...)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(list) == 0 {
+			return nil, errf.Newf(errf.RecordNotFound, "%s not found resource: %v", item.ResourceType, item.IDs)
+		}
+
+		for _, info := range list {
+			result[info.ID] = info
+		}
+	}
+
+	return result, nil
+}
+
 var assignResAuditTypeMap = map[enumor.CloudResourceType]enumor.AuditResourceType{
 	enumor.SecurityGroupCloudResType:    enumor.SecurityGroupAuditResType,
 	enumor.VpcCloudResType:              enumor.VpcCloudAuditResType,
@@ -203,18 +237,7 @@ func (svc cloudSvc) AssignResourceToBiz(cts *rest.Contexts) (interface{}, error)
 			return nil, nil
 		}
 
-		auditAssignOpts := slice.Split(auditOpts, constant.BatchOperationMaxLimit)
-		allAudits := make([]*audittable.AuditTable, 0, len(auditOpts))
-		for _, opts := range auditAssignOpts {
-			audits, err := svc.audit.GenCloudResAssignAudit(cts.Kit, &audit.CloudResourceAssignAuditReq{Assigns: opts})
-			if err != nil {
-				return nil, err
-			}
-			allAudits = append(allAudits, audits...)
-		}
-
-		err := svc.dao.Audit().BatchCreateWithTx(cts.Kit, txn, allAudits)
-		if err != nil {
+		if err := svc.createAudit(cts.Kit, txn, auditOpts); err != nil {
 			return nil, err
 		}
 
@@ -233,4 +256,23 @@ func (svc cloudSvc) AssignResourceToBiz(cts *rest.Contexts) (interface{}, error)
 	}
 
 	return nil, nil
+}
+
+func (svc cloudSvc) createAudit(kt *kit.Kit, txn *sqlx.Tx, auditOpts []audit.CloudResourceAssignInfo) error {
+
+	auditAssignOpts := slice.Split(auditOpts, constant.BatchOperationMaxLimit)
+	allAudits := make([]*audittable.AuditTable, 0, len(auditOpts))
+	for _, opts := range auditAssignOpts {
+		audits, err := svc.audit.GenCloudResAssignAudit(kt, &audit.CloudResourceAssignAuditReq{Assigns: opts})
+		if err != nil {
+			return err
+		}
+		allAudits = append(allAudits, audits...)
+	}
+
+	if err := svc.dao.Audit().BatchCreateWithTx(kt, txn, allAudits); err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -46,8 +46,8 @@ func (svc *diskSvc) CreateDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	info, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		enumor.AccountCloudResType, req.AccountID)
+	info, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.AccountCloudResType,
+		req.AccountID)
 	if err != nil {
 		logs.Errorf("get account basic info failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err

@@ -143,9 +143,9 @@ func ParseAndCheckHuaWeiExtension(
 }
 
 // ParseAndCheckGcpExtension  联通性校验，并检查字段是否匹配
-func ParseAndCheckGcpExtension(
-	cts *rest.Contexts, client *client.ClientSet, accountType enumor.AccountType, reqExtension json.RawMessage,
-) (*proto.GcpAccountExtensionCreateReq, error) {
+func ParseAndCheckGcpExtension(cts *rest.Contexts, client *client.ClientSet,
+	accountType enumor.AccountType, reqExtension json.RawMessage) (*proto.GcpAccountExtensionCreateReq, error) {
+
 	// 解析Extension
 	extension := new(proto.GcpAccountExtensionCreateReq)
 	if err := common.DecodeExtension(cts.Kit, reqExtension, extension); err != nil {
@@ -231,12 +231,8 @@ func (a *accountSvc) CheckByID(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// 查询该账号对应的Vendor
-	baseInfo, err := a.client.DataService().Global.Cloud.GetResourceBasicInfo(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		enumor.AccountCloudResType,
-		accountID,
-	)
+	baseInfo, err := a.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
+		enumor.AccountCloudResType, accountID)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}

@@ -56,7 +56,7 @@ func (svc *securityGroupSvc) deleteSGRule(cts *rest.Contexts, validHandler handl
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.SecurityGroupCloudResType, sgID)
 	if err != nil {
 		return nil, err

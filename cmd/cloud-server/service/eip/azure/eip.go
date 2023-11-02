@@ -26,21 +26,16 @@ import (
 	"hcm/pkg/adaptor/types/eip"
 	cloudproto "hcm/pkg/api/cloud-server/eip"
 	"hcm/pkg/api/core"
-	protoaudit "hcm/pkg/api/data-service/audit"
 	hcproto "hcm/pkg/api/hc-service/eip"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
-	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/auth"
-	"hcm/pkg/iam/meta"
-	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
-	"hcm/pkg/tools/hooks/handler"
 )
 
 // Azure eip service.
@@ -60,43 +55,7 @@ func NewAzure(client *client.ClientSet, authorizer auth.Authorizer, audit audit.
 }
 
 // AssociateEip associate eip.
-func (a *Azure) AssociateEip(
-	cts *rest.Contexts,
-	basicInfo *types.CloudResourceBasicInfo,
-	validHandler handler.ValidWithAuthHandler,
-) (interface{}, error) {
-	req := new(cloudproto.AzureEipAssociateReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	// TODO 判断 Eip 是否可关联
-
-	// validate biz and authorize
-	err := validHandler(cts, &handler.ValidWithAuthOption{
-		Authorizer: a.authorizer, ResType: meta.Eip,
-		Action: meta.Associate, BasicInfo: basicInfo,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	operationInfo := protoaudit.CloudResourceOperationInfo{
-		ResType:           enumor.EipAuditResType,
-		ResID:             req.EipID,
-		Action:            protoaudit.Associate,
-		AssociatedResType: enumor.NetworkInterfaceAuditResType,
-		AssociatedResID:   req.NetworkInterfaceID,
-	}
-	err = a.audit.ResOperationAudit(cts.Kit, operationInfo)
-	if err != nil {
-		logs.Errorf("create associate eip audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
+func (a *Azure) AssociateEip(cts *rest.Contexts, accountID string, req *cloudproto.AssociateReq) (interface{}, error) {
 
 	rels, err := a.client.DataService().Global.NetworkInterfaceCvmRel.List(
 		cts.Kit,
@@ -117,7 +76,7 @@ func (a *Azure) AssociateEip(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&hcproto.AzureEipAssociateReq{
-			AccountID:          basicInfo.AccountID,
+			AccountID:          accountID,
 			CvmID:              rels.Details[0].CvmID,
 			EipID:              req.EipID,
 			NetworkInterfaceID: req.NetworkInterfaceID,
@@ -126,11 +85,8 @@ func (a *Azure) AssociateEip(
 }
 
 // DisassociateEip disassociate eip.
-func (a *Azure) DisassociateEip(
-	cts *rest.Contexts,
-	basicInfo *types.CloudResourceBasicInfo,
-	validHandler handler.ValidWithAuthHandler,
-) (interface{}, error) {
+func (a *Azure) DisassociateEip(cts *rest.Contexts, accountID, eipID, cvmID string) (interface{}, error) {
+
 	req := new(cloudproto.AzureEipDisassociateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -140,51 +96,17 @@ func (a *Azure) DisassociateEip(
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// validate biz and authorize
-	err := validHandler(cts, &handler.ValidWithAuthOption{
-		Authorizer: a.authorizer, ResType: meta.Eip,
-		Action: meta.Disassociate, BasicInfo: basicInfo,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	rels, err := a.client.DataService().Global.ListEipCvmRel(
-		cts.Kit,
-		&core.ListReq{
-			Filter: tools.ContainersExpression("eip_id", []string{req.EipID}),
-			Page:   core.NewDefaultBasePage(),
+	err := a.client.HCService().Azure.Eip.DisassociateEip(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&hcproto.AzureEipDisassociateReq{
+			AccountID:          accountID,
+			CvmID:              cvmID,
+			EipID:              eipID,
+			NetworkInterfaceID: req.NetworkInterfaceID,
 		},
 	)
-	if len(rels.Details) == 0 {
-		return nil, fmt.Errorf("eip(%s) not associated", req.EipID)
-	}
 
-	operationInfo := protoaudit.CloudResourceOperationInfo{
-		ResType:           enumor.EipAuditResType,
-		ResID:             req.EipID,
-		Action:            protoaudit.Disassociate,
-		AssociatedResType: enumor.NetworkInterfaceAuditResType,
-		AssociatedResID:   req.NetworkInterfaceID,
-	}
-	err = a.audit.ResOperationAudit(cts.Kit, operationInfo)
-	if err != nil {
-		logs.Errorf("create disassociate eip audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	for _, item := range rels.Details {
-		err = a.client.HCService().Azure.Eip.DisassociateEip(
-			cts.Kit.Ctx,
-			cts.Kit.Header(),
-			&hcproto.AzureEipDisassociateReq{
-				AccountID:          basicInfo.AccountID,
-				CvmID:              item.CvmID,
-				EipID:              req.EipID,
-				NetworkInterfaceID: req.NetworkInterfaceID,
-			},
-		)
-	}
 	return nil, err
 }
 

@@ -68,8 +68,7 @@ func (svc *cvmSvc) recycleCvmSvc(cts *rest.Contexts, validHandler handler.ValidW
 		IDs:          slice.Map(req.Infos, func(e proto.CvmRecycleInfo) string { return e.ID }),
 		Fields:       append(types.CommonBasicInfoFields, "region", "recycle_status"),
 	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.
-		ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(), basicInfoReq)
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
 	if err != nil {
 		return nil, err
 	}
@@ -386,8 +385,7 @@ func (svc *cvmSvc) recoverCvm(cts *rest.Contexts, validHandler handler.ValidWith
 		IDs:          ids,
 		Fields:       append(types.CommonBasicInfoFields, "recycle_status"),
 	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		basicInfoReq)
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
 	if err != nil {
 		return nil, err
 	}
@@ -558,8 +556,7 @@ func (svc *cvmSvc) batchDeleteRecycledCvm(cts *rest.Contexts,
 
 	basicInfoReq := cloud.ListResourceBasicInfoReq{ResourceType: enumor.CvmCloudResType, IDs: cvmIDs}
 	basicInfoReq.Fields = append(types.CommonBasicInfoFields, "region", "recycle_status")
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		basicInfoReq)
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
 	if err != nil {
 		return nil, err
 	}

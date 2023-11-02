@@ -42,11 +42,12 @@ func ResValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 	total := len(opt.BasicInfos)
 	// batch authorize resource
 	authRes := make([]meta.ResourceAttribute, 0, total)
-	assignedIDs, recycledIDs, notRecycledIDS := make([]string, 0), make([]string, 0, total), make([]string, 0, total)
+	typeAssignedIDMap, recycledIDs, notRecycledIDS := make(map[enumor.CloudResourceType][]string),
+		make([]string, 0, total), make([]string, 0, total)
 	for id, info := range opt.BasicInfos {
 		// validate if resource is not in biz for write operation
 		if opt.Action != meta.Find && info.BkBizID != constant.UnassignedBiz && info.BkBizID != 0 {
-			assignedIDs = append(assignedIDs, id)
+			typeAssignedIDMap[info.ResType] = append(typeAssignedIDMap[info.ResType], id)
 		}
 
 		if info.RecycleStatus == enumor.RecycleStatus {
@@ -57,6 +58,11 @@ func ResValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 
 		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: opt.ResType, Action: opt.Action,
 			ResourceID: info.AccountID}})
+	}
+
+	// 资源下，不允许操作业务下的资源
+	if len(typeAssignedIDMap) > 0 {
+		return errf.Newf(errf.InvalidParameter, "resources(%v) are already assigned", typeAssignedIDMap)
 	}
 
 	// 恢复或删除已回收资源, 要求资源必须在已回收状态下

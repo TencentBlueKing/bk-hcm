@@ -239,7 +239,7 @@ func (svc *netSvc) getNetworkInterface(cts *rest.Contexts, validHandler handler.
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.NetworkInterfaceCloudResType, id)
 	if err != nil {
 		return nil, err

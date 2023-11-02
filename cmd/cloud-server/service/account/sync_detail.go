@@ -39,12 +39,8 @@ func (a *accountSvc) GetSyncDetail(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// 查询该账号对应的Vendor
-	baseInfo, err := a.client.DataService().Global.Cloud.GetResourceBasicInfo(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		enumor.AccountCloudResType,
-		accountID,
-	)
+	baseInfo, err := a.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
+		enumor.AccountCloudResType, accountID)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}

@@ -60,7 +60,7 @@ func (svc *routeTableSvc) listRoute(cts *rest.Contexts, validator handler.ValidW
 		return nil, err
 	}
 
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.RouteTableCloudResType, tableID)
 	if err != nil {
 		return nil, err
