@@ -261,6 +261,8 @@ export default (cond: Cond, formData: ICvmFormData) => {
     dataDiskTypes.value = dataDiskTypeValues[vendor] || [];
 
     billingModes.value = billingModeValues[vendor] || [];
+  }, {
+    immediate: true,
   });
 
   watch(() => cond.bizId, () => {
