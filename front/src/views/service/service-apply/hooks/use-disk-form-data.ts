@@ -80,7 +80,7 @@ export default (cond: Cond) => {
       disk_name: '',
       zone: '',
       disk_type: '',
-      disk_size: 50,
+      disk_size: null,
       disk_count: 1,
       memo: '',
     };
