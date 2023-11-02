@@ -14,10 +14,22 @@ export const useResourceAccount = () => {
 
   const setAccountId = (val: string) => {
     accountId.value = val;
+    const WHITE_LIST = [
+      '/resource/service-apply/cvm',
+      '/resource/service-apply/subnet',
+      '/resource/service-apply/disk',
+      '/resource/service-apply/vpc',
+      '/resource/resource/account/detail',
+      '/resource/resource/account/resource',
+      '/resource/resource/account/manage',
+      '/resource/resource/recycle',
+    ];
     router.replace({
+      path: WHITE_LIST.includes(route.path) ? '' : '/resource/resource/',
       query: {
         ...route.query,
         accountId: val ? val : undefined,
+        id: undefined,
       },
     });
   };
