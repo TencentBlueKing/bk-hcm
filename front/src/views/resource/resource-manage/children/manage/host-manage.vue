@@ -93,6 +93,9 @@ const hostSearchData = computed(() => {
     }, {
       name: '云地域',
       id: 'region',
+    }, {
+      name: '公网IP',
+      id: 'public_ipv4_addresses',
     }],
   ];
 });
