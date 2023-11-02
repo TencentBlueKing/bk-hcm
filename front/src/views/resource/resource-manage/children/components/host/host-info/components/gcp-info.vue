@@ -87,18 +87,22 @@ const netInfo = [
   {
     name: '私有 IPv4 地址',
     prop: 'private_ipv4_addresses',
+    render: ({ cell }: any) => cell || '--',
   },
   {
     name: '公有 IPv4 地址',
     prop: 'public_ipv4_addresses',
+    render: ({ cell }: any) => cell || '--',
   },
   {
     name: '私有 IPv6 地址',
     prop: 'private_ipv6_addresses',
+    render: ({ cell }: any) => cell || '--',
   },
   {
     name: '公有IPv6 地址',
     prop: 'public_ipv6_addresses',
+    render: ({ cell }: any) => cell || '--',
   },
   {
     name: '所属网络',
