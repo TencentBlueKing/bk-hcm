@@ -7,11 +7,14 @@ import VendorAccounts from './components/VendorAccounts';
 import { useAllVendorsAccounts } from './useAllVendorsAccountsList';
 import { useResourceAccount } from './useResourceAccount';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
+import { useRoute, useRouter } from 'vue-router';
 
 export default defineComponent({
   setup() {
     const searchVal = ref('');
     const isCreateAccountDialogShow = ref(false);
+    const route = useRoute();
+    const router = useRouter();
     const {
       handleExpand,
       getAllVendorsAccountsList,
@@ -39,6 +42,18 @@ export default defineComponent({
       },
     );
 
+    watch(
+      () => route.query.dialog,
+      (dialog) => {
+        if (dialog) isCreateAccountDialogShow.value = true;
+        else isCreateAccountDialogShow.value = false;
+      },
+      {
+        deep: true,
+        immediate: true,
+      },
+    );
+
     return () => (
       <div class={'account-list-container'}>
         <Input
@@ -53,7 +68,15 @@ export default defineComponent({
             <Button
               text
               theme='primary'
-              onClick={() => (isCreateAccountDialogShow.value = true)}>
+              onClick={() => {
+                router.push({
+                  query: {
+                    ...route.query,
+                    dialog: 'create_account',
+                  },
+                });
+                // isCreateAccountDialogShow.value = true;
+              }}>
               <i class={'icon bk-icon icon-plus-circle mr3'} />
               接入
             </Button>
