@@ -55,7 +55,7 @@ func (svc *netSvc) authorizeNICAssignOp(kt *kit.Kit, ids []string, bizID int64) 
 		ResourceType: enumor.NetworkInterfaceCloudResType,
 		IDs:          ids,
 	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(kt.Ctx, kt.Header(), basicInfoReq)
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(kt, basicInfoReq)
 	if err != nil {
 		return err
 	}

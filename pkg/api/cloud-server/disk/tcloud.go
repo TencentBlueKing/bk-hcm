@@ -27,17 +27,6 @@ import (
 	"hcm/pkg/criteria/validator"
 )
 
-// TCloudDiskAttachReq ...
-type TCloudDiskAttachReq struct {
-	DiskID string `json:"disk_id" validate:"required"`
-	CvmID  string `json:"cvm_id" validate:"required"`
-}
-
-// Validate ...
-func (req *TCloudDiskAttachReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
-
 // TCloudDiskCreateReq ...
 type TCloudDiskCreateReq struct {
 	AccountID         string                           `json:"account_id" validate:"required"`
@@ -49,7 +38,7 @@ type TCloudDiskCreateReq struct {
 	DiskType          string                           `json:"disk_type" validate:"required"`
 	DiskCount         uint32                           `json:"disk_count" validate:"required"`
 	DiskChargeType    string                           `json:"disk_charge_type" validate:"required"`
-	DiskChargePrepaid *hcproto.TCloudDiskChargePrepaid `json:"disk_charge_prepaid" validate:"required"`
+	DiskChargePrepaid *hcproto.TCloudDiskChargePrepaid `json:"disk_charge_prepaid" validate:"omitempty"`
 	Memo              *string                          `json:"memo" validate:"omitempty"`
 }
 

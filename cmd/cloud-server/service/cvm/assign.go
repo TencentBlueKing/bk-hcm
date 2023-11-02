@@ -44,8 +44,7 @@ func (svc *cvmSvc) AssignCvmToBiz(cts *rest.Contexts) (interface{}, error) {
 		ResourceType: enumor.CvmCloudResType,
 		IDs:          req.CvmIDs,
 	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		basicInfoReq)
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
 	if err != nil {
 		return nil, err
 	}

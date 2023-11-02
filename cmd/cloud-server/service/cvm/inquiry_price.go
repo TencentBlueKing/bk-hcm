@@ -49,7 +49,7 @@ func (svc *cvmSvc) InquiryPriceCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	info, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+	info, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.AccountCloudResType, req.AccountID)
 	if err != nil {
 		logs.Errorf("get account basic info failed, err: %v, rid: %s", err, cts.Kit.Rid)

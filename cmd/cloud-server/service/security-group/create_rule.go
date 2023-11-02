@@ -61,7 +61,7 @@ func (svc *securityGroupSvc) createSGRule(cts *rest.Contexts, validHandler handl
 		return nil, errf.New(errf.InvalidParameter, "security group id is required")
 	}
 
-	sgBaseInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+	sgBaseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.SecurityGroupCloudResType, sgID)
 	if err != nil {
 		return nil, err

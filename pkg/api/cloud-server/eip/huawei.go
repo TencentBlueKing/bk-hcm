@@ -35,16 +35,6 @@ func (req *HuaWeiEipAssociateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// HuaWeiEipDisassociateReq ...
-type HuaWeiEipDisassociateReq struct {
-	EipID string `json:"eip_id" validate:"required"`
-}
-
-// Validate ...
-func (req *HuaWeiEipDisassociateReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
-
 // HuaWeiEipCreateReq ...
 type HuaWeiEipCreateReq struct {
 	AccountID string `json:"account_id" validate:"required"`

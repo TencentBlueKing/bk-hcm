@@ -62,7 +62,7 @@ func (svc *securityGroupSvc) listSGRule(cts *rest.Contexts, validHandler handler
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.SecurityGroupCloudResType, sgID)
 	if err != nil {
 		return nil, err

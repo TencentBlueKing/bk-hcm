@@ -118,7 +118,7 @@ func (r *recycle) recycleTiming(resType enumor.CloudResourceType, worker recycle
 			IDs:          ids,
 			Fields:       append(types.CommonBasicInfoFields, "region", "recycle_status"),
 		}
-		basicInfoMap, err := r.client.DataService().Global.Cloud.ListResourceBasicInfo(kt.Ctx, kt.Header(), infoReq)
+		basicInfoMap, err := r.client.DataService().Global.Cloud.ListResBasicInfo(kt, infoReq)
 		if err != nil {
 			if ef := errf.Error(err); ef.Code == errf.RecordNotFound {
 				recordIDs := slice.Map(recordRes.Details, func(r recyclerecord.RecycleRecord) string { return r.ID })
