@@ -383,7 +383,7 @@ export default defineComponent({
 
     watch(
       () => [cond, formData.zone, formData.instance_charge_type],
-      async ([,newZone,], [,oldZone,]) => {
+      async ([,newZone], [,oldZone]) => {
         const isBusiness = whereAmI.value === Senarios.business;
         const isTcloud = cond.vendor === VendorEnum.TCLOUD;
         if (isBusiness && !cond.bizId) return;

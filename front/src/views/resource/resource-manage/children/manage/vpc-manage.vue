@@ -173,6 +173,7 @@ const handleDeleteVpc = (data: any) => {
         contentAlign: 'center',
         onConfirm() {
           resourceStore.delete('vpcs', data.id).then(() => {
+            triggerApi();
             Message({
               theme: 'success',
               message: '删除成功',

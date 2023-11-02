@@ -4,7 +4,7 @@ import { CloudType } from '@/typings/account';
 import DetailHeader from '../../common/header/detail-header';
 import DetailTab from '../../common/tab/detail-tab';
 import DetailInfo from '../../common/info/detail-info';
-import { useAccountStore } from '@/store';
+// import { useAccountStore } from '@/store';
 
 import {
   ref,
@@ -48,20 +48,20 @@ const settingFields = ref<any[]>([
   {
     name: '资源 ID',
     prop: 'cloud_id',
-    render(cell: string = '') {
+    render(cell = '') {
       const index = cell.lastIndexOf('/') <= 0 ? 0 : cell.lastIndexOf('/') + 1;
       const value = cell.slice(index);
       return withDirectives(
         h(
           'span',
           [
-            value || '--'
-          ]
-        ), 
+            value || '--',
+          ],
+        ),
         [
           [bkTooltips, cell],
-        ]
-      )
+        ],
+      );
     },
   },
   {
@@ -95,7 +95,7 @@ const settingFields = ref<any[]>([
     prop: 'region',
     render(cell: string) {
       return getRegionName(detail.value.vendor, cell);
-    }
+    },
   },
   {
     name: '可用区',
@@ -117,7 +117,7 @@ const settingFields = ref<any[]>([
     name: '挂载主机',
     prop: 'instance_id',
     txtBtn(id: string) {
-      const type = 'host'
+      const type = 'host';
       const routeInfo: any = {
         query: {
           id,
@@ -167,11 +167,11 @@ const settingFields = ref<any[]>([
 const resourceStore = useResourceStore();
 const route = useRoute();
 const router =  useRouter();
-const accountStore = useAccountStore();
+// const accountStore = useAccountStore();
 
-const isResourcePage = computed(() => {   // 资源下没有业务ID
-  return !accountStore.bizs;
-});
+// const isResourcePage = computed(() => {   // 资源下没有业务ID
+//   return !accountStore.bizs;
+// });
 
 const {
   t,
@@ -283,16 +283,19 @@ const handleShowDelete = () => {
           },
         ).then(() => {
           router.replace({
-            path: location.href.includes('business') ? 'recyclebin/disk' : '/resource/recyclebin',
-          })
+            path: location.href.includes('business') ? 'recyclebin/disk' : '/resource/resource/recycle',
+            query: {
+              type: 'disk',
+            },
+          });
         });
     },
   });
 };
 
 const disableOperation = computed(() => {
-  return !location.href.includes('business') && detail.value.bk_biz_id !== -1
-})
+  return !location.href.includes('business') && detail.value.bk_biz_id !== -1;
+});
 </script>
 
 <template>
