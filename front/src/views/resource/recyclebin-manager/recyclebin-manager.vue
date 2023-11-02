@@ -72,7 +72,6 @@
                 row-key="id"
               >
                 <bk-table-column
-                  v-if="isResourcePage"
                   width="100"
                   type="selection"
                 />
