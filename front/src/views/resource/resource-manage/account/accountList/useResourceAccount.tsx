@@ -14,7 +14,7 @@ export const useResourceAccount = () => {
 
   const setAccountId = (val: string) => {
     accountId.value = val;
-    router.push({
+    router.replace({
       query: {
         ...route.query,
         accountId: val ? val : undefined,
