@@ -91,6 +91,16 @@ watch(
   },
 );
 
+watch(
+  () => formFilter,
+  () => {
+    cloudVpcId.value = '';
+  },
+  {
+    deep: true,
+  },
+);
+
 const { datas, isLoading } = useQueryList(filter.value, 'vpcs'); // 只查aws的vpcs
 </script>
 
