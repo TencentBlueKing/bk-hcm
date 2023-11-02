@@ -68,6 +68,63 @@ export default defineComponent({
       return rules[cond.vendor] || {};
     });
 
+    const dataDiskSizeRules = (disk_type: string) => {
+      const awsMinMap = {
+        gp3: 1,
+        gp2: 1,
+        io1: 4,
+        io2: 4,
+        st1: 125,
+        sc1: 125,
+        standard: 1,
+      };
+      const awsMaxMap = {
+        gp3: 16384,
+        gp2: 16384,
+        io1: 16384,
+        io2: 16384,
+        st1: 16384,
+        sc1: 16384,
+        standard: 1024,
+      };
+      const min = awsMinMap[disk_type] || 20;
+      const max = awsMaxMap[disk_type] || 32000;
+      const rules = {
+        [VendorEnum.TCLOUD]: {
+          validator: (value: number) => {
+            return value >= 20 && value <= 32000 && value % 10 === 0;
+          },
+          message: '20-32,000GB且为10的倍数',
+          trigger: 'change',
+        },
+        [VendorEnum.HUAWEI]: {
+          validator: (value: number) => {
+            return value >= 40 && value <= 32768;
+          },
+          message: '40-32,768GB',
+          trigger: 'change',
+        },
+        [VendorEnum.AWS]: {
+          validator: (value: number) => {
+            return value >= min && value <= max;
+          },
+          message: `${
+            disk_type === '' ? '请选择云硬盘类型' : `${min}-${max}GB`
+          }`,
+          trigger: 'change',
+        },
+      };
+
+      return {
+        rules: rules[cond.vendor] || {
+          validator: () => true,
+          message: '',
+        },
+        min,
+        max,
+      };
+    };
+
     const formConfig = computed(() => [
       {
         id: 'base',
@@ -104,7 +161,7 @@ export default defineComponent({
             required: true,
             property: 'disk_type',
             content: () => (
-              <Select v-model={formData.disk_type} clearable={false}>
+              <Select v-model={formData.disk_type} clearable={false} onChange={() => formData.disk_size = null}>
                 {diskTypes.value.map(({ id, name }: IOption) => (
                   <Option key={id} value={id} label={name}></Option>
                 ))}
@@ -115,12 +172,12 @@ export default defineComponent({
             label: '大小',
             required: true,
             property: 'disk_size',
-            // description: '最小值: 20GB；最大值: 32000GB。该值必须为10的倍数',
+            rules: [dataDiskSizeRules(formData.disk_type).rules],
             content: () => (
               <Input
                 type='number'
-                min={20}
-                max={32000}
+                min={dataDiskSizeRules(formData.disk_type).min}
+                max={dataDiskSizeRules(formData.disk_type).max}
                 step={10}
                 v-model={formData.disk_size}
                 suffix='GB'></Input>
