@@ -167,6 +167,12 @@ const handleAdd = () => {
         query: route.query,
       });
       break;
+    case 'subnet':
+      router.push({
+        path: '/resource/service-apply/subnet',
+        query: route.query,
+      });
+      break;
     default:
       isShowSideSlider.value = true;
   }
