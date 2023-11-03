@@ -32,6 +32,29 @@ import (
 	"hcm/pkg/criteria/enumor"
 )
 
+// IsSubnetContained 判断父网络是否包含子网络
+func IsSubnetContained(parent, child string) error {
+	_, parentNet, err := net.ParseCIDR(parent)
+	if err != nil {
+		return fmt.Errorf("failed to parse parent subnet: %w", err)
+	}
+
+	_, childNet, err := net.ParseCIDR(child)
+	if err != nil {
+		return fmt.Errorf("failed to parse child subnet: %w", err)
+	}
+
+	if parentNet.Contains(childNet.IP) {
+		maskSizeParent, _ := parentNet.Mask.Size()
+		maskSizeChild, _ := childNet.Mask.Size()
+		if maskSizeChild >= maskSizeParent {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("cidr[%s] not belong cidr[%s]", child, parent)
+}
+
 // CidrIPAddressType get cidr ip address type.
 func CidrIPAddressType(cidr string) (enumor.IPAddressType, error) {
 	ip, _, err := net.ParseCIDR(cidr)

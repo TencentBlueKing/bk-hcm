@@ -21,10 +21,12 @@ package csvpc
 
 import (
 	"errors"
+	"fmt"
 
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/assert"
+	"hcm/pkg/tools/cidr"
 )
 
 // AzureVpcCreateReq ...
@@ -58,6 +60,10 @@ func (req *AzureVpcCreateReq) Validate(bizRequired bool) error {
 	// region can be no space lowercase
 	if !assert.IsSameCaseNoSpaceString(req.Region) {
 		return errf.New(errf.InvalidParameter, "region can only be lowercase")
+	}
+
+	if err := cidr.IsSubnetContained(req.IPv4Cidr, req.Subnet.IPv4Cidr); err != nil {
+		return fmt.Errorf("is subnet contained failed, err: %v", err)
 	}
 
 	return nil
