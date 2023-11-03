@@ -28,8 +28,9 @@ import {
   useResourceStore,
 } from '@/store/resource';
 import { useRegionsStore } from '@/store/useRegionsStore';
-import { VendorEnum } from '@/common/constant';
+import { useBusinessMapStore } from '@/store/useBusinessMap';
 
+const { getNameFromBusinessMap } = useBusinessMapStore();
 const hostTabs = ref<any[]>([
   {
     name: '基本信息',
@@ -64,6 +65,7 @@ const settingFields = ref<any[]>([
   {
     name: '业务',
     prop: 'bk_biz_id',
+    render: (val: number) => (val === -1 ? '未分配' : `${getNameFromBusinessMap(val)} (${val})`),
   },
   {
     name: '云厂商',
@@ -145,7 +147,7 @@ const {
           {
             name: '地域',
             prop: 'region',
-            render: () => getRegionName(detail.vendor, detail.region)
+            render: () => getRegionName(detail.vendor, detail.region),
           },
           {
             name: '可用区',
@@ -166,7 +168,7 @@ const {
           {
             name: '地域',
             prop: 'region',
-            render: () => getRegionName(detail.vendor, detail.region)
+            render: () => getRegionName(detail.vendor, detail.region),
           },
           {
             name: '可用区',
@@ -216,7 +218,7 @@ const {
           {
             name: '地域',
             prop: 'region',
-            render: () => getRegionName(detail.vendor, detail.region)
+            render: () => getRegionName(detail.vendor, detail.region),
           },
           {
             name: 'IP 栈类型',
@@ -256,7 +258,7 @@ const {
           {
             name: '地域',
             prop: 'region',
-            render: () => getRegionName(detail.vendor, detail.region)
+            render: () => getRegionName(detail.vendor, detail.region),
           },
           {
             name: 'DHCP',
@@ -340,8 +342,8 @@ const handleDeleteSubnet = (data: any) => {
               .then(() => {
                 Message({
                   theme: 'success',
-                  message: '删除成功'
-                })
+                  message: '删除成功',
+                });
               });
           },
         });
@@ -368,7 +370,10 @@ onBeforeMount(() => {
       <template #right>
         <div
           v-if="isResourcePage"
-          v-bk-tooltips="{ content: '资源已分配到业务，只可以在业务中进行操作', disabled: !isBindBusiness || !authVerifyData?.permissionAction[actionName] }"
+          v-bk-tooltips="{
+            content: '资源已分配到业务，只可以在业务中进行操作',
+            disabled: !isBindBusiness || !authVerifyData?.permissionAction[actionName]
+          }"
           @click="showAuthDialog(actionName)">
           <bk-button
             class="w100 ml10"
@@ -382,7 +387,7 @@ onBeforeMount(() => {
         <div
           v-else
           @click="showAuthDialog(actionName)"
-          v-bk-tooltips="{ content: '该子网正在使用中，不能删除', disabled: !authVerifyData?.permissionAction[actionName]  }">
+          v-bk-tooltips="{ content: '该子网正在使用中，不能删除', disabled: !authVerifyData?.permissionAction[actionName] }">
           <bk-button
             class="w100 ml10"
             theme="primary"

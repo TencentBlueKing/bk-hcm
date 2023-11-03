@@ -16,6 +16,7 @@ import {
 import {
   Message } from 'bkui-vue';
 import { useRegionsStore } from '@/store/useRegionsStore';
+import { useBusinessMapStore } from '@/store/useBusinessMap';
 
 const props = defineProps({
   id: {
@@ -41,6 +42,7 @@ const {
 
 const resourceStore = useResourceStore();
 const { getRegionName } = useRegionsStore();
+const { getNameFromBusinessMap } = useBusinessMapStore();
 
 const settingInfo: any[] = [
   {
@@ -67,6 +69,7 @@ const settingInfo: any[] = [
   {
     name: t('业务'),
     prop: 'bk_biz_id',
+    render: (val: number) => (val === -1 ? '未分配' : `${getNameFromBusinessMap(val)} (${val})`),
   },
   {
     name: t('地域'),

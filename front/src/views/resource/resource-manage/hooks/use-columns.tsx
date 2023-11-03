@@ -158,7 +158,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '所属业务',
       field: 'bk_biz_id2',
       isOnlyShowInResource: true,
-      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '--',
+      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
       label: '管控区域',
@@ -284,7 +284,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '所属业务',
       field: 'bk_biz_id2',
       isOnlyShowInResource: true,
-      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '--',
+      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
       label: '创建时间',
@@ -632,7 +632,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'bk_biz_id',
       sort: true,
       isOnlyShowInResource: true,
-      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '--',
+      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
       label: '创建时间',
@@ -688,7 +688,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'bk_biz_id',
       isOnlyShowInResource: true,
       sort: true,
-      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '--',
+      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
       label: '创建时间',
@@ -808,7 +808,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '所属业务',
       field: 'bk_biz_id2',
       isOnlyShowInResource: true,
-      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '--',
+      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
       label: '管控区域',
@@ -1017,7 +1017,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '所属业务',
       field: 'bk_biz_id2',
       isOnlyShowInResource: true,
-      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '--',
+      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
       label: '创建时间',

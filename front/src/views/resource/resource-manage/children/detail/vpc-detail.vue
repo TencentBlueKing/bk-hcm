@@ -29,9 +29,11 @@ import {
   useResourceStore,
 } from '@/store/resource';
 import { useRegionsStore } from '@/store/useRegionsStore';
+import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { VendorEnum } from '@/common/constant';
 
 const { getRegionName } = useRegionsStore();
+const { getNameFromBusinessMap } = useBusinessMapStore();
 
 const VPCFields: any = ref([
   {
@@ -61,6 +63,7 @@ const VPCFields: any = ref([
   {
     name: '业务',
     prop: 'bk_biz_id',
+    render: (val: number) => (val === -1 ? '未分配' : `${getNameFromBusinessMap(val)} (${val})`),
   },
   {
     name: '云厂商',
@@ -157,7 +160,7 @@ const {
           {
             name: '地域',
             prop: 'region',
-            render: (val: string) => getRegionName(VendorEnum.TCLOUD, val)
+            render: (val: string) => getRegionName(VendorEnum.TCLOUD, val),
           },
         ]);
         break;
@@ -195,7 +198,7 @@ const {
           {
             name: '地域',
             prop: 'region',
-            render: (val: string) => getRegionName(VendorEnum.AWS, val)
+            render: (val: string) => getRegionName(VendorEnum.AWS, val),
           },
         ]);
         break;
@@ -208,7 +211,7 @@ const {
           {
             name: '地域',
             prop: 'region',
-            render: (val: string) => getRegionName(VendorEnum.AZURE, val)
+            render: (val: string) => getRegionName(VendorEnum.AZURE, val),
           },
           {
             name: 'DNS服务器',
@@ -247,7 +250,7 @@ const {
           {
             name: '地域',
             prop: 'region',
-            render: (val: string) => getRegionName(VendorEnum.GCP, val)
+            render: (val: string) => getRegionName(VendorEnum.GCP, val),
           },
         ]);
         VPCTabs.value.shift();
@@ -261,7 +264,7 @@ const {
           {
             name: '地域',
             prop: 'region',
-            render: (val: string) => getRegionName(VendorEnum.HUAWEI, val)
+            render: (val: string) => getRegionName(VendorEnum.HUAWEI, val),
           },
         ]);
         break;
@@ -302,7 +305,8 @@ const handleDeleteVpc = (data: any) => {
       getRelateNum('network_interfaces'),
     ])
     .then(([cvmsResult, subnetsResult, routeResult, networkResult]: any) => {
-      if (cvmsResult?.data?.count || subnetsResult?.data?.count || routeResult?.data?.count || networkResult?.data?.count) {
+      if (cvmsResult?.data?.count || subnetsResult?.data?.count
+            || routeResult?.data?.count || networkResult?.data?.count) {
         const getMessage = (result: any, name: string) => {
           if (result?.data?.count) {
             return `${result?.data?.count}个${name}，`;

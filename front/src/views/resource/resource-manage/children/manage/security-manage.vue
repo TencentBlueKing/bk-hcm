@@ -251,7 +251,7 @@ const groupColumns = [
     render({ data }: any) {
       return h('span', {}, [
         data.bk_biz_id === -1
-          ? t('--')
+          ? t('未分配')
           : businessMapStore.businessMap.get(data.bk_biz_id),
       ]);
     },
@@ -522,7 +522,7 @@ const gcpColumns = [
     render({ data }: any) {
       return h('span', {}, [
         data.bk_biz_id === -1
-          ? t('--')
+          ? t('未分配')
           : businessMapStore.businessMap.get(data.bk_biz_id),
       ]);
     },

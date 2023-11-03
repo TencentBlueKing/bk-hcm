@@ -30,8 +30,10 @@ import useDetail from '../../hooks/use-detail';
 import useMountedDrive from '../../hooks/use-choose-host-drive';
 import useUninstallDrive from '../../hooks/use-uninstall-drive';
 import { useRegionsStore } from '@/store/useRegionsStore';
+import { useBusinessMapStore } from '@/store/useBusinessMap';
 
 const { getRegionName } = useRegionsStore();
+const { getNameFromBusinessMap } = useBusinessMapStore();
 
 const hostTabs = [
   {
@@ -78,6 +80,7 @@ const settingFields = ref<any[]>([
   {
     name: '业务',
     prop: 'bk_biz_id',
+    render: (val: number) => (val === -1 ? '未分配' : `${getNameFromBusinessMap(val)} (${val})`),
   },
   {
     name: '状态',

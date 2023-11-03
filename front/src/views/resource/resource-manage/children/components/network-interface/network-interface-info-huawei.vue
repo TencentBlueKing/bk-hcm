@@ -3,6 +3,7 @@ import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info
 import { h, ref, watchEffect } from 'vue';
 import { CloudType } from '@/typings';
 import { useRegionsStore } from '@/store/useRegionsStore';
+import { useBusinessMapStore } from '@/store/useBusinessMap';
 
 const props = defineProps({
   detail: {
@@ -11,6 +12,7 @@ const props = defineProps({
 });
 
 const { getRegionName } = useRegionsStore();
+const { getNameFromBusinessMap } = useBusinessMapStore();
 
 const fields = ref([
   {
@@ -38,14 +40,12 @@ const fields = ref([
   {
     name: '地域',
     prop: 'region',
-    render: (val: string) => getRegionName(props?.detail?.vendor, val)
+    render: (val: string) => getRegionName(props?.detail?.vendor, val),
   },
   {
     name: '业务',
     prop: 'bk_biz_id',
-    render(val: number) {
-      return val === -1 ? '--' : val;
-    },
+    render: (val: number) => (val === -1 ? '未分配' : `${getNameFromBusinessMap(val)} (${val})`),
   },
   {
     name: '状态',
