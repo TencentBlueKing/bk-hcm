@@ -142,8 +142,12 @@ const fetchComponentsData = () => {
 getList();
 
 defineExpose({ fetchComponentsData });
-const isRowSelectEnable = ({ row }: DoublePlainObject) => {
+const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
+  if (isCheckAll) return true;
   if (!props.isResourcePage) return true;
+  return isCurRowSelectEnable(row);
+};
+const isCurRowSelectEnable = (row: any) => {
   if (row.id) {
     return row.bk_biz_id === -1;
   }
@@ -732,7 +736,7 @@ const securityHandleShowDelete = (data: any) => {
         :data="state.datas"
         show-overflow-tooltip
         :is-row-select-enable="isRowSelectEnable"
-        @selection-change="handleSelectionChange"
+        @selection-change="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable)"
         @page-limit-change="state.handlePageSizeChange"
         @page-value-change="state.handlePageChange"
         @column-sort="state.handleSort"
@@ -749,7 +753,7 @@ const securityHandleShowDelete = (data: any) => {
         :data="state.datas"
         show-overflow-tooltip
         :is-row-select-enable="isRowSelectEnable"
-        @selection-change="handleSelectionChange"
+        @selection-change="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable)"
         @page-limit-change="state.handlePageSizeChange"
         @page-value-change="state.handlePageChange"
         @column-sort="state.handleSort"

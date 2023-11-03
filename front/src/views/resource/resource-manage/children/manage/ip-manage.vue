@@ -135,8 +135,12 @@ const renderColumns = [
  * 资源下，未绑定 且 未分配 可删除；
  * 业务下，未绑定 可删除；
  */
-const isRowSelectEnable = ({ row }: { row: IEip }) => {
+const isRowSelectEnable = ({ row, isCheckAll }: { row: IEip, isCheckAll: boolean }) => {
+  if (isCheckAll) return true;
   if (!props.isResourcePage) return canDelete(row);
+  return isCurRowSelectEnable(row);
+};
+const isCurRowSelectEnable = (row: any) => {
   if (row.id) {
     return row.bk_biz_id === -1 && canDelete(row);
   }
@@ -184,7 +188,7 @@ defineExpose({ fetchComponentsData });
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
       @column-sort="handleSort"
-      @selection-change="handleSelectionChange"
+      @selection-change="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable)"
       row-key="id"
     />
   </bk-loading>

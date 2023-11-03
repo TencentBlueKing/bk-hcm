@@ -35,8 +35,12 @@ const { columns, settings } = useColumns('subnet');
 
 const { searchData, searchValue, filter } = useFilter(props);
 
-const isRowSelectEnable = ({ row }: DoublePlainObject) => {
+const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
+  if (isCheckAll) return true;
   if (!props.isResourcePage) return true;
+  return isCurRowSelectEnable(row);
+};
+const isCurRowSelectEnable = (row: any) => {
   if (row.id) {
     return row.bk_biz_id === -1;
   }
@@ -242,7 +246,7 @@ defineExpose({ fetchComponentsData });
       :data="datas"
       show-overflow-tooltip
       :is-row-select-enable="isRowSelectEnable"
-      @selection-change="handleSelectionChange"
+      @selection-change="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable)"
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
       @column-sort="handleSort"

@@ -56,8 +56,12 @@ const fetchComponentsData = () => {
 defineExpose({ fetchComponentsData });
 
 const emit = defineEmits(['auth']);
-const isRowSelectEnable = ({ row }: DoublePlainObject) => {
+const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
+  if (isCheckAll) return true;
   if (!props.isResourcePage) return true;
+  return isCurRowSelectEnable(row);
+};
+const isCurRowSelectEnable = (row: any) => {
   if (row.id) {
     return row.bk_biz_id === -1;
   }
@@ -294,7 +298,7 @@ const renderColumns = [
       :data="datas"
       :is-row-select-enable="isRowSelectEnable"
       show-overflow-tooltip
-      @selection-change="handleSelectionChange"
+      @selection-change="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable)"
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
       @column-sort="handleSort"

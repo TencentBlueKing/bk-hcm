@@ -179,7 +179,11 @@ const { handleShowDelete, DeleteDialog } = useDelete(
  * 资源下，未绑定 且 未分配 可删除；
  * 业务下，未绑定 可删除；
  */
-const isRowSelectEnable = ({ row }) => {
+const isRowSelectEnable = ({ row, isCheckAll }) => {
+  if (isCheckAll) return true;
+  return isCurRowSelectEnable(row);
+};
+const isCurRowSelectEnable = (row: any) => {
   if (!props.isResourcePage) return !unableRecycled(row);
   if (row.id) {
     return row.bk_biz_id === -1 && !unableRecycled(row);
@@ -248,7 +252,7 @@ const isRowSelectEnable = ({ row }) => {
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
       @column-sort="handleSort"
-      @selection-change="handleSelectionChange"
+      @selection-change="(selections) => handleSelectionChange(selections, isCurRowSelectEnable)"
       row-key="id"
     />
   </bk-loading>
