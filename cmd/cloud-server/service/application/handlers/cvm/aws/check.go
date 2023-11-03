@@ -36,11 +36,7 @@ func (a *ApplicationOfCreateAwsCvm) CheckReq() error {
 	}
 
 	// TCloud 支持 DryRun，可预校验
-	result, err := a.Client.HCService().Aws.Cvm.BatchCreateCvm(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
-		a.toHcProtoAwsBatchCreateReq(true),
-	)
+	result, err := a.Client.HCService().Aws.Cvm.BatchCreateCvm(a.Cts.Kit, a.toHcProtoAwsBatchCreateReq(true))
 	if err != nil {
 		return err
 	}

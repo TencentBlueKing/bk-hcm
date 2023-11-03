@@ -172,7 +172,7 @@ func ConvGcpCvmCreateReq(req *cscvm.GcpCvmCreateReq) *hcproto.GcpBatchCreateReq 
 }
 
 // ConvAzureCvmCreateReq conv cvm create req.
-func ConvAzureCvmCreateReq(req *cscvm.AzureCvmCreateReq) *hcproto.AzureBatchCreateReq {
+func ConvAzureCvmCreateReq(req *cscvm.AzureCvmCreateReq) *hcproto.AzureCreateReq {
 
 	dataDisk := make([]typecvm.AzureDataDisk, 0)
 	index := 1
@@ -192,7 +192,8 @@ func ConvAzureCvmCreateReq(req *cscvm.AzureCvmCreateReq) *hcproto.AzureBatchCrea
 		zones = append(zones, req.Zone)
 	}
 
-	createReq := &hcproto.AzureBatchCreateReq{
+	// TODO: debug 需要切异步任务
+	createReq := &hcproto.AzureCreateReq{
 		AccountID:            req.AccountID,
 		ResourceGroupName:    req.ResourceGroupName,
 		Region:               req.Region,
@@ -210,7 +211,6 @@ func ConvAzureCvmCreateReq(req *cscvm.AzureCvmCreateReq) *hcproto.AzureBatchCrea
 			Type:   req.SystemDisk.DiskType,
 		},
 		DataDisk:         dataDisk,
-		RequiredCount:    req.RequiredCount,
 		PublicIPAssigned: req.PublicIPAssigned,
 	}
 

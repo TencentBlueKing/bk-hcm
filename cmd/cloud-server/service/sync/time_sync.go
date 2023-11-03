@@ -35,7 +35,6 @@ import (
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/client"
 	dataservice "hcm/pkg/client/data-service"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -64,7 +63,7 @@ func CloudResourceSync(intervalMin time.Duration, sd serviced.ServiceDiscover, c
 		waitGroup.Add(len(vendors))
 		for _, vendor := range vendors {
 			go func(vendor enumor.Vendor) {
-				allAccountSync(NewSyncKit(), cliSet, vendor)
+				allAccountSync(core.NewBackendKit(), cliSet, vendor)
 				waitGroup.Done()
 			}(vendor)
 		}
@@ -178,12 +177,4 @@ func listAccountWithRetry(kt *kit.Kit, cli *dataservice.Client, req *protocloud.
 
 		return list.Details, nil
 	}
-}
-
-// NewSyncKit 返回同步的kit
-func NewSyncKit() *kit.Kit {
-	kt := kit.New()
-	kt.User = constant.SyncTimingUserKey
-	kt.AppCode = constant.SyncTimingAppCodeKey
-	return kt
 }

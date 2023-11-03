@@ -53,7 +53,7 @@ func (a *applicationSvc) Get(cts *rest.Contexts) (interface{}, error) {
 		Type:           application.Type,
 		Status:         application.Status,
 		Applicant:      application.Applicant,
-		Content:        application.Content,
+		Content:        RemoveSenseField(application.Content),
 		DeliveryDetail: application.DeliveryDetail,
 		Memo:           application.Memo,
 		Revision:       application.Revision,

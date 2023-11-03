@@ -62,7 +62,7 @@ func (act DeleteAction) Name() enumor.ActionName {
 func (act DeleteAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
 	opt, ok := params.(*DeleteSubnetOption)
 	if !ok {
-		return nil, errf.New(errf.InvalidParameter, "params type not right")
+		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
 
 	if err := opt.Validate(); err != nil {

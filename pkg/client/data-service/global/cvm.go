@@ -43,7 +43,7 @@ type CvmClient struct {
 }
 
 // ListCvm cvm.
-func (cli *CvmClient) ListCvm(kt *kit.Kit, request *protocloud.CvmListReq) (
+func (cli *CvmClient) ListCvm(kt *kit.Kit, request *core.ListReq) (
 	*protocloud.CvmListResult, error) {
 
 	resp := new(protocloud.CvmListResp)

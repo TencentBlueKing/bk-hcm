@@ -23,6 +23,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/jmoiron/sqlx"
+
 	"hcm/pkg/async/action"
 	"hcm/pkg/async/backend/model"
 	"hcm/pkg/criteria/enumor"
@@ -34,8 +36,6 @@ import (
 	tabletypes "hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/tools/converter"
-
-	"github.com/jmoiron/sqlx"
 )
 
 // NewMysql create mysql instance
@@ -133,7 +133,7 @@ func (db *mysql) CreateFlow(kt *kit.Kit, flow *model.Flow) (string, error) {
 				Reviser:    kt.User,
 			})
 		}
-		if _, err = db.dao.AsyncFlowTask().BatchCreate(kt, mds); err != nil {
+		if _, err = db.dao.AsyncFlowTask().BatchCreateWithTx(kt, txn, mds); err != nil {
 			return nil, err
 		}
 

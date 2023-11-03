@@ -20,12 +20,6 @@
 package constant
 
 const (
-	// BillTimingUserKey bill timing UserKey
-	BillTimingUserKey = "hcm-backend-bill"
-
-	// BillTimingAppCodeKey bill timing AppCodeKey
-	BillTimingAppCodeKey = "hcm"
-
 	// 状态(0:默认1:创建存储桶2:设置存储桶权限3:创建成本报告4:检查yml文件5:创建CloudFormation模版100:正常)
 	StatusDefault              = 0
 	StatusCreateBucket         = 1

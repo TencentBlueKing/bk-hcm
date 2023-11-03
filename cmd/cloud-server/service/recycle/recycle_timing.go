@@ -66,9 +66,7 @@ type recycleWorker func(kt *kit.Kit, info *types.CloudResourceBasicInfo) error
 
 func (r *recycle) recycleTiming(resType enumor.CloudResourceType, worker recycleWorker, conf cc.Recycle) {
 	for {
-		kt := kit.New()
-		kt.User = constant.RecycleTimingUserKey
-		kt.AppCode = constant.RecycleTimingAppCodeKey
+		kt := core.NewBackendKit()
 
 		if !r.state.IsMaster() {
 			logs.Infof("recycle %s, but is not master, skip", resType)

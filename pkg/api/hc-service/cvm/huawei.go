@@ -157,5 +157,9 @@ type HuaWeiBatchCreateReq struct {
 
 // Validate request.
 func (req *HuaWeiBatchCreateReq) Validate() error {
+	if req.RequiredCount > constant.BatchCreateCvmFromCloudMaxLimit {
+		return fmt.Errorf("required_count should <= %d", constant.BatchCreateCvmFromCloudMaxLimit)
+	}
+
 	return validator.Validate.Struct(req)
 }

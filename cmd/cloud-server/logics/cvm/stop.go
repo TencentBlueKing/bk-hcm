@@ -23,7 +23,6 @@ import (
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/api/core"
 	protoaudit "hcm/pkg/api/data-service/audit"
-	"hcm/pkg/api/data-service/cloud"
 	hcprotocvm "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -201,7 +200,11 @@ func (c *cvm) checkAndStopCvm(kt *kit.Kit, infoMap map[string]types.CloudResourc
 	if err != nil {
 		return err
 	}
-	notStoppedReq := &cloud.CvmListReq{Field: []string{"id"}, Filter: notStoppedFilter, Page: core.NewDefaultBasePage()}
+	notStoppedReq := &core.ListReq{
+		Fields: []string{"id"},
+		Filter: notStoppedFilter,
+		Page:   core.NewDefaultBasePage(),
+	}
 
 	notStoppedCvmRes, err := c.client.DataService().Global.Cvm.ListCvm(kt, notStoppedReq)
 	if err != nil {

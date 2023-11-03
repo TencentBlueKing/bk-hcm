@@ -42,7 +42,8 @@ func register() {
 	action.RegisterAction(actioncvm.NewStopAction())
 	action.RegisterAction(actioncvm.NewRebootAction())
 	action.RegisterAction(actioncvm.NewDeleteAction())
-	action.RegisterAction(actioncvm.CreateTCloudCvmAction{})
+	action.RegisterAction(actioncvm.CreateCvmAction{})
+	action.RegisterAction(actioncvm.AssignCvmAction{})
 
 	action.RegisterAction(actionfirewall.DeleteAction{})
 

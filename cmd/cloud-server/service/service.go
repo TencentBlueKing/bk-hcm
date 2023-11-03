@@ -32,6 +32,7 @@ import (
 	logicaudit "hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/account"
 	"hcm/cmd/cloud-server/service/application"
+	appcvm "hcm/cmd/cloud-server/service/application/handlers/cvm"
 	approvalprocess "hcm/cmd/cloud-server/service/approval_process"
 	"hcm/cmd/cloud-server/service/assign"
 	"hcm/cmd/cloud-server/service/audit"
@@ -164,6 +165,8 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 	}
 
 	recycle.RecycleTiming(apiClientSet, sd, cc.CloudServer().Recycle, esbClient)
+
+	go appcvm.TimingHandleDeliverApplication(svr.client, 2*time.Second)
 
 	return svr, nil
 }

@@ -21,6 +21,7 @@ package tableasync
 
 import (
 	"database/sql/driver"
+	"strings"
 	"sync"
 
 	"hcm/pkg/dal/table/types"
@@ -93,6 +94,35 @@ func (d *ShareData) Set(kt *kit.Kit, key string, val string) error {
 		if err := d.Save(kt, d); err != nil {
 			delete(d.Dict, key)
 			logs.ErrorDepthf(1, "share data set key: %s, val: %s failed, err: %v, rid: %s", key, val, err, kt.Rid)
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ParseIDsStr 将解析操作封装在同一个地方，以防后期调整
+func ParseIDsStr(idsStr string) []string {
+	return strings.Split(idsStr, ",")
+}
+
+// AppendIDs append ids.
+func (d *ShareData) AppendIDs(kt *kit.Kit, key string, ids ...string) error {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
+	val, exist := d.Dict[key]
+	var str string
+	if !exist {
+		str = strings.Join(ids, ",")
+	} else {
+		str = val + "," + strings.Join(ids, ",")
+	}
+	d.Dict[key] = str
+	if d.Save != nil {
+		if err := d.Save(kt, d); err != nil {
+			delete(d.Dict, key)
+			logs.ErrorDepthf(1, "share data appendIDs: %s, ids: %v failed, err: %v, rid: %s", key, ids, err, kt.Rid)
 			return err
 		}
 	}

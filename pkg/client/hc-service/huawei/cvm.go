@@ -184,16 +184,16 @@ func (cli *CvmClient) BatchDeleteCvm(kt *kit.Kit, request *protocvm.HuaWeiBatchD
 }
 
 // BatchCreateCvm ....
-func (cli *CvmClient) BatchCreateCvm(ctx context.Context, h http.Header, request *protocvm.HuaWeiBatchCreateReq) (
+func (cli *CvmClient) BatchCreateCvm(kt *kit.Kit, request *protocvm.HuaWeiBatchCreateReq) (
 	*protocvm.BatchCreateResult, error) {
 
 	resp := new(protocvm.BatchCreateResp)
 
 	err := cli.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/cvms/batch/create").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

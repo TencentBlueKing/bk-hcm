@@ -42,7 +42,7 @@ import (
 // AsyncFlowTask only used async flow task.
 type AsyncFlowTask interface {
 	BatchCreate(kt *kit.Kit, models []tableasync.AsyncFlowTaskTable) ([]string, error)
-	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []tableasync.AsyncFlowTaskTable) error
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []tableasync.AsyncFlowTaskTable) ([]string, error)
 	Update(kt *kit.Kit, expr *filter.Expression, model *tableasync.AsyncFlowTaskTable) error
 	UpdateByID(kt *kit.Kit, id string, model *tableasync.AsyncFlowTaskTable) error
 	UpdateStateByCAS(kt *kit.Kit, info *typesasync.UpdateTaskInfo) error
@@ -205,24 +205,31 @@ func (dao *AsyncFlowTaskDao) GenIDs(kt *kit.Kit, num int) ([]string, error) {
 
 // BatchCreateWithTx async flow task with tx.
 func (dao *AsyncFlowTaskDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
-	models []tableasync.AsyncFlowTaskTable) error {
+	models []tableasync.AsyncFlowTaskTable) ([]string, error) {
+
+	ids, err := dao.IDGen.Batch(kt, table.AsyncFlowTable, len(models))
+	if err != nil {
+		return nil, err
+	}
 
 	for index := range models {
+		models[index].ID = ids[index]
+
 		if err := models[index].InsertValidate(); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.AsyncFlowTaskTable,
 		tableasync.AsyncFlowTaskColumns.ColumnExpr(), tableasync.AsyncFlowTaskColumns.ColonNameExpr())
 
-	err := dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models)
+	err = dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models)
 	if err != nil {
 		logs.Errorf("insert %s failed, err: %v, sql: %s, rid: %s", table.AsyncFlowTaskTable, err, sql, kt.Rid)
-		return fmt.Errorf("insert %s failed, err: %v", table.AsyncFlowTaskTable, err)
+		return nil, fmt.Errorf("insert %s failed, err: %v", table.AsyncFlowTaskTable, err)
 	}
 
-	return nil
+	return ids, nil
 }
 
 // List async flow task.
