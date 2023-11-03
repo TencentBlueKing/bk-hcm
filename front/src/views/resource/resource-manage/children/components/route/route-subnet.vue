@@ -1,8 +1,5 @@
 <script lang="ts" setup>
-import {
-  ref,
-  watch,
-} from 'vue';
+import { ref, watch } from 'vue';
 
 import useQueryList from '../../../hooks/use-query-list';
 
@@ -31,6 +28,9 @@ watch(
           {
             label: '可用区',
             field: 'cloud_gateway_id',
+            render({ cell }: any) {
+              return cell || '--';
+            },
           },
           {
             label: 'CIDR',
@@ -47,6 +47,9 @@ watch(
           {
             label: '地址范围',
             field: '',
+            render({ cell }: { cell: string }) {
+              return cell || '--';
+            },
           },
           {
             label: 'CIDR',
@@ -55,6 +58,9 @@ watch(
           {
             label: '安全组',
             field: '',
+            render({ cell }: { cell: string }) {
+              return cell || '--';
+            },
           },
         ]);
         break;
@@ -94,35 +100,29 @@ watch(
   },
   {
     deep: true,
-    immediate: true
-  }
-)
+    immediate: true,
+  },
+);
 
-const {
-  datas,
-  pagination,
-  isLoading,
-  handlePageChange,
-  handlePageSizeChange,
-} = useQueryList(
+const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange } =  useQueryList(
   {
     filter: {
       op: 'and',
-      rules: [{
-        field: 'route_table_id',
-        op: 'eq',
-        value: props.detail.id
-      }]
-    }
+      rules: [
+        {
+          field: 'route_table_id',
+          op: 'eq',
+          value: props.detail.id,
+        },
+      ],
+    },
   },
-  'subnets'
+  'subnets',
 );
 </script>
 
 <template>
-  <bk-loading
-    :loading="isLoading"
-  >
+  <bk-loading :loading="isLoading">
     <bk-table
       class="mt20"
       row-hover="auto"

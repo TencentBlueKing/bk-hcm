@@ -216,6 +216,9 @@ watch(
         {
           label: '到期时间',
           field: '',
+          render({ cell }: any) {
+            return cell || '--';
+          },
         },
       ]);
     }

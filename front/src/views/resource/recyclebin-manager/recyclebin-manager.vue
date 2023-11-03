@@ -97,6 +97,9 @@
                   label="名称"
                   prop="res_name"
                 >
+                  <template #default="{ cell }">
+                    {{ cell || '--' }}
+                  </template>
                 </bk-table-column>
                 <!-- <bk-table-column
                   :label="t('云厂商')"
@@ -118,7 +121,7 @@
                 >
                   <template #default="{ data }">
                     {{
-                      data?.detail?.cvm_id || '-'
+                      data?.detail?.cvm_id || '--'
                     }}
                     <i
                       class="icon bk-icon icon-link related-cvm-link"

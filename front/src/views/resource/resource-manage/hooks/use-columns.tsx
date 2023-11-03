@@ -392,6 +392,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'name',
       sort: true,
       isDefaultShow: true,
+      render: ({ cell }: any) => cell || '--',
     },
     {
       label: '云厂商',
@@ -658,6 +659,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'name',
       sort: true,
       isDefaultShow: true,
+      render: ({ cell }: any) => cell || '--',
     },
     {
       label: '云厂商',
