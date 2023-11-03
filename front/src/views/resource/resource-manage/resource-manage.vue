@@ -185,7 +185,7 @@ const handleTabChange = (val: 'group' | 'gcp') => {
 watch(
   () => route.path,
   (path) => {
-    let res = activeResourceTab.value;
+    let res = '/resource/resource/';
     RESOURCE_TABS.forEach(({ key }) => {
       const reg = new RegExp(key);
       if (reg.test(path)) res = key;
