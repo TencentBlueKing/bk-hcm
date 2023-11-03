@@ -325,18 +325,13 @@ export default defineComponent({
                       ))}
                     </section>
                     <aside class='header-lang'>
-                      <Dropdown trigger='click'>
+                      <Dropdown>
                         {{
                           default: () => (
                             <span class='cursor-pointer flex-row align-items-center '>
                               {language.value === LANGUAGE_TYPE.en
-                                ? 'English'
-                                : '中文'}
-                              <i
-                                class={
-                                  'icon hcm-icon bkhcm-icon-down-shape pl5'
-                                }
-                              />
+                                ? <span class="icon bk-icon icon-yuyanqiehuanyingwen"></span>
+                                : <span class="icon bk-icon icon-yuyanqiehuanzhongwen"></span>}
                             </span>
                           ),
                           content: () => (
@@ -345,12 +340,14 @@ export default defineComponent({
                                 onClick={() => {
                                   language.value = LANGUAGE_TYPE.zh_cn;
                                 }}>
+                                <span class="icon bk-icon icon-yuyanqiehuanzhongwen pr5" style={{ fontSize: '16px' }}></span>
                                 {'中文'}
                               </DropdownItem>
                               <DropdownItem
                                 onClick={() => {
                                   language.value = LANGUAGE_TYPE.en;
                                 }}>
+                                <span class="icon bk-icon icon-yuyanqiehuanyingwen pr5" style={{ fontSize: '16px' }}></span>
                                 {'English'}
                               </DropdownItem>
                             </DropdownMenu>
@@ -359,7 +356,7 @@ export default defineComponent({
                       </Dropdown>
                     </aside>
                     <aside class='header-user'>
-                      <Dropdown trigger='click'>
+                      <Dropdown>
                         {{
                           default: () => (
                             <span class='cursor-pointer flex-row align-items-center '>
@@ -374,7 +371,7 @@ export default defineComponent({
                           content: () => (
                             <DropdownMenu>
                               <DropdownItem onClick={logout}>
-                                {t('退出')}
+                                {t('退出登录')}
                               </DropdownItem>
                             </DropdownMenu>
                           ),
