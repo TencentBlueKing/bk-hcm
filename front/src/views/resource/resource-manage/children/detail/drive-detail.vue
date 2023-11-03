@@ -223,11 +223,17 @@ const {
           },
           {
             name: '计费模式',
-            prop: 'disk_charge_type',
+            prop: 'extension.charge_type',
+            render() {
+              return detail.extension.charge_type === 'PREPAID' ? '包年/包月' : '按量计费' || '--';
+            },
           },
           {
             name: '到期时间',
-            prop: 'deadline_time',
+            prop: 'extension.expire_time',
+            render() {
+              return detail.extension.expire_time || '--';
+            },
           },
         ]);
         break;
@@ -254,11 +260,17 @@ const {
           },
           {
             name: '计费模式',
-            prop: 'disk_charge_type',
+            prop: 'extension.charge_type',
+            render() {
+              return detail.extension.charge_type === 'prePaid' ? '包年/包月' : '按量计费' || '--';
+            },
           },
           {
             name: '到期时间',
-            prop: '',
+            prop: 'extension.expire_time',
+            render() {
+              return detail.extension.expire_time || '--';
+            },
           },
         ]);
         break;

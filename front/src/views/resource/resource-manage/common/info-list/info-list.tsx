@@ -116,7 +116,7 @@ export default defineComponent({
 
     // 渲染跳转
     const renderTxtBtn = (field: Field) => {
-      return <bk-button text theme="primary" onClick={() => field.txtBtn(field.value)}>{ field.value }</bk-button>;
+      return field.value ? <bk-button text theme="primary" onClick={() => field.txtBtn(field.value)}>{ field.value }</bk-button> : '--';
     };
 
     // 渲染方法
