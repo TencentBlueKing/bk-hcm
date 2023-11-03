@@ -466,6 +466,17 @@ export default defineComponent({
     );
 
     watch(
+      () => route.query.type,
+      (type) => {
+        if (type === 'disk') state.selectedType = 'disk';
+        if (type === 'cvm') state.selectedType = 'cvm';
+      },
+      {
+        immediate: true,
+      },
+    );
+
+    watch(
       () => state.selectedType,
       (type) => {
         const rule = {
@@ -477,7 +488,7 @@ export default defineComponent({
         if (idx === -1) state.filter.rules.push(rule);
         else state.filter.rules[idx] = rule;
         state.selectedType = type;
-        router.push({
+        router.replace({
           path: whereAmI.value === Senarios.business ? '/business/recyclebin' : '/resource/resource/recycle',
           query: {
             ...route.query,
