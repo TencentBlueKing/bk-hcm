@@ -97,9 +97,37 @@ watch(
       case VendorEnum.GCP:
         filter.value.rules = [
           {
+            field: 'vendor',
+            op: QueryRuleOPEnum.EQ,
+            value: val,
+          },
+          {
             field: 'status',
             op: QueryRuleOPEnum.EQ,
             value: 'UP',
+          },
+        ];
+        break;
+      case VendorEnum.HUAWEI:
+        filter.value.rules = [
+          {
+            field: 'type',
+            op: QueryRuleOPEnum.EQ,
+            value: 'public',
+          },
+          {
+            field: 'service',
+            op: QueryRuleOPEnum.EQ,
+            value: 'vpc',
+          },
+        ];
+        break;
+      case VendorEnum.AZURE:
+        filter.value.rules = [
+          {
+            field: 'type',
+            op: QueryRuleOPEnum.EQ,
+            value: 'Region',
           },
         ];
         break;

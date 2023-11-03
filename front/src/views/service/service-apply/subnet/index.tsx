@@ -28,6 +28,25 @@ export default defineComponent({
       ipv4_cidr: '' as string, // IPV4 CIDR
       cloud_route_table_id: 0 as number, // 关联的路由表
     });
+    const formRef = ref(null);
+    const formRules = {
+      cloud_vpc_id: [{
+        message: '请选择新子网所属VPC网络',
+      }],
+      name: [{
+        message: '名字应不超过60个字符，允许字母、数字、中文字符，\'-\'、\'_\'、\'.\'',
+        trigger: 'blur',
+        validator: (value: string) => /^[\u4e00-\u9fa5\w.-]{1,60}$/.test(value),
+      }],
+      ipv4_cidr: [{
+        message: '请正确填写IPv4 CIDR',
+        validator: (value: any) => {
+          const [,,cidr_host1, cidr_host2, cidr_mask] = value.split(/[./]/);
+          if (cidr_host1 < 16 || cidr_host2 < 16 || (cidr_mask < subIpv4cidr.value[2] || cidr_mask > 31)) return false;
+          return true;
+        },
+      }],
+    };
     const cidr_host1 = ref('');
     const cidr_host2 = ref('');
     const cidr_mask = ref('');
@@ -66,6 +85,7 @@ export default defineComponent({
     };
 
     const handleSubmit = async () => {
+      await formRef.value.validate();
       submitLoading.value = true;
       try {
         await businessStore.createSubnet(
@@ -99,6 +119,10 @@ export default defineComponent({
       },
     );
 
+    watch(() => formModel.account_id, () => {
+
+    });
+
     return () => (
       <div>
         <DetailHeader>
@@ -130,9 +154,11 @@ export default defineComponent({
           </ConditionOptions>
           <Card showHeader={false} class={'subnet-basic-info'}>
             <p class={'info-title'}>子网信息</p>
-            <Form formType='vertical' model={formModel} class={'ml30'}>
+            <Form formType='vertical' model={formModel} class={'ml30'} ref={formRef} rules={formRules}>
               <FormItem
                 label='所属VPC网络'
+                property='cloud_vpc_id'
+                required
                 style={{
                   width: '590px',
                 }}>
@@ -145,6 +171,8 @@ export default defineComponent({
               </FormItem>
               <FormItem
                 label='子网名称'
+                property='name'
+                required
                 style={{
                   width: '880px',
                 }}>
@@ -153,7 +181,7 @@ export default defineComponent({
                   placeholder="不超过60个字符，允许字母、数字、中文字符，'-'、'_'、'.'"
                   v-model={formModel.name}></Input>
               </FormItem>
-              <FormItem label='IPv4 CIDR'>
+              <FormItem label='IPv4 CIDR' property='ipv4_cidr' required>
                 <div class={'cidr-selector-container'}>
                   {
                     `${subIpv4cidr.value[0]}.${subIpv4cidr.value[1]}.`

@@ -56,17 +56,17 @@ export default defineComponent({
               return businessMapStore.getNameFromBusinessMap(bk_biz_id);
             })
             ?.join(',')
-          : '-'),
+          : '--'),
       },
       {
         label: '备注',
         field: 'memo',
-        render: ({ cell }: any) => cell || '-',
+        render: ({ cell }: any) => cell || '--',
       },
       {
         label: '负责人',
         field: 'managers',
-        render: ({ data }: any) => data?.managers?.join(',') || '-',
+        render: ({ data }: any) => data?.managers?.join(',') || '--',
       },
       {
         label: '更新人',
@@ -141,17 +141,17 @@ export default defineComponent({
                   return businessMapStore.getNameFromBusinessMap(bk_biz_id);
                 })
                 ?.join(',')
-              : '-'),
+              : '--'),
           },
           {
             label: '备注',
             field: 'memo',
-            render: ({ cell }: any) => cell || '-',
+            render: ({ cell }: any) => cell || '--',
           },
           {
             label: '负责人',
             field: 'managers',
-            render: ({ data }: any) => data?.managers?.join(',') || '-',
+            render: ({ data }: any) => data?.managers?.join(',') || '--',
           },
           {
             label: '更新人',
@@ -206,17 +206,17 @@ export default defineComponent({
                   return businessMapStore.getNameFromBusinessMap(bk_biz_id);
                 })
                 ?.join(',')
-              : '-'),
+              : '--'),
           },
           {
             label: '备注',
             field: 'memo',
-            render: ({ cell }: any) => cell || '-',
+            render: ({ cell }: any) => cell || '--',
           },
           {
             label: '负责人',
             field: 'managers',
-            render: ({ data }: any) => data?.managers?.join(',') || '-',
+            render: ({ data }: any) => data?.managers?.join(',') || '--',
           },
           {
             label: '更新人',

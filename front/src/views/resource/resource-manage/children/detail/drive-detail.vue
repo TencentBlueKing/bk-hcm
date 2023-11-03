@@ -30,8 +30,10 @@ import useDetail from '../../hooks/use-detail';
 import useMountedDrive from '../../hooks/use-choose-host-drive';
 import useUninstallDrive from '../../hooks/use-uninstall-drive';
 import { useRegionsStore } from '@/store/useRegionsStore';
+import { useBusinessMapStore } from '@/store/useBusinessMap';
 
 const { getRegionName } = useRegionsStore();
+const { getNameFromBusinessMap } = useBusinessMapStore();
 
 const hostTabs = [
   {
@@ -78,6 +80,7 @@ const settingFields = ref<any[]>([
   {
     name: '业务',
     prop: 'bk_biz_id',
+    render: (val: number) => (val === -1 ? '未分配' : `${getNameFromBusinessMap(val)} (${val})`),
   },
   {
     name: '状态',
@@ -223,11 +226,17 @@ const {
           },
           {
             name: '计费模式',
-            prop: 'disk_charge_type',
+            prop: 'extension.charge_type',
+            render() {
+              return detail.extension.charge_type === 'PREPAID' ? '包年/包月' : '按量计费' || '--';
+            },
           },
           {
             name: '到期时间',
-            prop: 'deadline_time',
+            prop: 'extension.expire_time',
+            render() {
+              return detail.extension.expire_time || '--';
+            },
           },
         ]);
         break;
@@ -254,11 +263,17 @@ const {
           },
           {
             name: '计费模式',
-            prop: 'disk_charge_type',
+            prop: 'extension.charge_type',
+            render() {
+              return detail.extension.charge_type === 'prePaid' ? '包年/包月' : '按量计费' || '--';
+            },
           },
           {
             name: '到期时间',
-            prop: '',
+            prop: 'extension.expire_time',
+            render() {
+              return detail.extension.expire_time || '--';
+            },
           },
         ]);
         break;

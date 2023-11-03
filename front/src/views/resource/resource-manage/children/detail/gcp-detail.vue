@@ -17,6 +17,7 @@ import {
 import {
   useResourceStore,
 } from '@/store/resource';
+import { useBusinessMapStore } from '@/store/useBusinessMap';
 
 import {
   useI18n,
@@ -26,6 +27,7 @@ import { ref, watch } from 'vue';
 
 const route = useRoute();
 const resourceStore = useResourceStore();
+const { getNameFromBusinessMap } = useBusinessMapStore();
 
 const {
   t,
@@ -56,7 +58,7 @@ const fetchDetail = async () => {
   try {
     const { data } = await resourceStore.detail('vendors/gcp/firewalls/rules', id);
     data.vendorName = CloudType[data.vendor];
-    data.bk_biz_id = data.bk_biz_id === -1 ? '全部' : data.bk_biz_id;
+    // data.bk_biz_id = data.bk_biz_id === -1 ? '全部' : data.bk_biz_id;
     detail.value = {
       ...data,
       ...data.spec,
@@ -104,6 +106,7 @@ const gcpFields = [
   {
     name: t('业务'),
     prop: 'bk_biz_id',
+    render: (val: number) => (val === -1 ? '未分配' : `${getNameFromBusinessMap(val)} (${val})`),
   },
   {
     name: t('云厂商'),
@@ -169,7 +172,7 @@ const handleDetailData = () => {
   detail.source_ranges = detail.value.source_ranges || [];
   detail.source_service_accounts = detail.value.source_service_accounts || [];
   detail.source_tags = detail.value.source_tags || [];
-  gcpDetail.value.bk_biz_id = detail.value.bk_biz_id === -1 ? '全部' : detail.value.bk_biz_id;
+  // gcpDetail.value.bk_biz_id = detail.value.bk_biz_id === -1 ? '全部' : detail.value.bk_biz_id;
   gcpDetail.value.type = GcpTypeEnum[gcpDetail.value.type];
   gcpDetail.value.log_enable = detail?.value?.log_enable ? t('开') : t('关');
   gcpDetail.value.operate = detail.value?.allowed?.length ? t('允许') : t('拒绝');

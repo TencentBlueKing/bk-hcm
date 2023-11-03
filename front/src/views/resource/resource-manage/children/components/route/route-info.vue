@@ -1,16 +1,8 @@
 <script lang="ts" setup>
-import {
-  ref,
-  watch,
-} from 'vue';
+import { ref, watch } from 'vue';
 import DetailInfo from '../../../common/info/detail-info';
-import {
-  useResourceStore,
-} from '@/store/resource';
-import {
-  useRouter,
-  useRoute
-} from 'vue-router';
+import { useResourceStore } from '@/store/resource';
+import { useRouter, useRoute } from 'vue-router';
 import { useRegionsStore } from '@/store/useRegionsStore';
 
 const props = defineProps({
@@ -62,56 +54,48 @@ const pagination = ref({
 
 const handleGetData = () => {
   if (props.detail.id) {
-    isLoading.value = true
+    isLoading.value = true;
     const filter = {
       op: 'and',
-      rules: [{
-        field: 'route_table_id',
-        op: 'eq',
-        value: props.detail.id
-      }]
-    }
+      rules: [
+        {
+          field: 'route_table_id',
+          op: 'eq',
+          value: props.detail.id,
+        },
+      ],
+    };
     Promise.all([
-      resourceStore
-        .getRouteList(
-          props.detail.vendor,
-          props.detail.id,
-          {
-            filter,
-            page: {
-              count: false,
-              start: (pagination.value.current - 1) * pagination.value.limit,
-              limit: pagination.value.limit,
-            },
-          }
-        ),
-      resourceStore
-        .getRouteList(
-          props.detail.vendor,
-          props.detail.id,
-          {
-            filter,
-            page: {
-              count: true,
-            },
-          }
-        )
+      resourceStore.getRouteList(props.detail.vendor, props.detail.id, {
+        filter,
+        page: {
+          count: false,
+          start: (pagination.value.current - 1) * pagination.value.limit,
+          limit: pagination.value.limit,
+        },
+      }),
+      resourceStore.getRouteList(props.detail.vendor, props.detail.id, {
+        filter,
+        page: {
+          count: true,
+        },
+      }),
     ])
-    .then(([listResult, countResult]) => {
-      datas.value = listResult?.data?.details || []
-      pagination.value.count = countResult?.data?.count || 0;
-    })
-    .finally(() => {
-      isLoading.value = false
-    })
+      .then(([listResult, countResult]) => {
+        datas.value = listResult?.data?.details || [];
+        pagination.value.count = countResult?.data?.count || 0;
+      })
+      .finally(() => {
+        isLoading.value = false;
+      });
   }
-}
+};
 
 const vpcField = {
   name: '所属网络',
   prop: 'vpc_id',
   txtBtn(id: string) {
-    const type = 'vpc'
+    const type = 'vpc';
     const routeInfo: any = {
       query: {
         id,
@@ -120,26 +104,20 @@ const vpcField = {
     };
     // 业务下
     if (route.path.includes('business')) {
-      Object.assign(
-        routeInfo,
-        {
-          name: `${type}BusinessDetail`,
-        },
-      );
+      Object.assign(routeInfo, {
+        name: `${type}BusinessDetail`,
+      });
     } else {
-      Object.assign(
-        routeInfo,
-        {
-          name: 'resourceDetail',
-          params: {
-            type,
-          },
+      Object.assign(routeInfo, {
+        name: 'resourceDetail',
+        params: {
+          type,
         },
-      );
+      });
     }
     router.push(routeInfo);
   },
-}
+};
 
 watch(
   () => props.detail,
@@ -151,11 +129,11 @@ watch(
           {
             name: '地域',
             prop: 'region',
-            render: () => getRegionName(props.detail.vendor, props.detail.region)
+            render: () => getRegionName(props.detail.vendor, props.detail.region),
           },
           {
             name: '路由表类型',
-            value: '默认路由表'
+            value: '默认路由表',
           },
           {
             name: '备注',
@@ -183,12 +161,15 @@ watch(
             label: '状态',
             field: 'enabled',
             render({ cell }: { cell: string }) {
-              return cell ? '启用' : '禁用'
+              return cell ? '启用' : '禁用';
             },
           },
           {
             label: '备注',
             field: 'memo',
+            render({ cell }: { cell: string }) {
+              return cell || '--';
+            },
           },
         ]);
         break;
@@ -196,12 +177,12 @@ watch(
         fileds.value.push(...[
           {
             name: '资源组',
-            value: 'resource_group'
+            value: 'resource_group',
           },
           {
             name: '地域ID',
             prop: 'region',
-            render: () => getRegionName(props.detail.vendor, props.detail.region)
+            render: () => getRegionName(props.detail.vendor, props.detail.region),
           },
           {
             name: '备注',
@@ -237,11 +218,11 @@ watch(
           {
             name: '地域ID',
             prop: 'region',
-            render: () => getRegionName(props.detail.vendor, props.detail.region)
+            render: () => getRegionName(props.detail.vendor, props.detail.region),
           },
           {
             name: '路由表类型',
-            value: '主路由表'
+            value: '主路由表',
           },
           {
             name: '备注',
@@ -265,14 +246,14 @@ watch(
             label: '状态',
             field: 'state',
             render({ cell }: { cell: string }) {
-              return cell === 'active' ? '可用' : '路由的目标不可用'
+              return cell === 'active' ? '可用' : '路由的目标不可用';
             },
           },
           {
             label: '已传播',
             field: 'propagated',
             render({ cell }: { cell: string }) {
-              return cell ? '是' : '否'
+              return cell ? '是' : '否';
             },
           },
           {
@@ -322,11 +303,11 @@ watch(
           {
             name: '地域ID',
             prop: 'region',
-            render: () => getRegionName(props.detail.vendor, props.detail.region)
+            render: () => getRegionName(props.detail.vendor, props.detail.region),
           },
           {
             name: '路由表类型',
-            value: '默认路由表'
+            value: '默认路由表',
           },
           {
             name: '备注',
@@ -361,13 +342,13 @@ watch(
         ]);
         break;
     }
-    handleGetData()
+    handleGetData();
   },
   {
     // deep: true,
-    immediate: true
-  }
-)
+    immediate: true,
+  },
+);
 
 // 页码变化发生的事件
 const handlePageChange = (current: number) => {
@@ -383,14 +364,8 @@ const handlePageSizeChange = (limit: number) => {
 </script>
 
 <template>
-  <bk-loading
-    :loading="isLoading"
-  >
-    <detail-info
-      class="mt20"
-      :fields="fileds"
-      :detail="detail"
-    ></detail-info>
+  <bk-loading :loading="isLoading">
+    <detail-info class="mt20" :fields="fileds" :detail="detail"></detail-info>
     <bk-table
       class="mt20"
       row-hover="auto"

@@ -158,7 +158,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '所属业务',
       field: 'bk_biz_id2',
       isOnlyShowInResource: true,
-      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '--',
+      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
       label: '管控区域',
@@ -284,7 +284,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '所属业务',
       field: 'bk_biz_id2',
       isOnlyShowInResource: true,
-      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '--',
+      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
       label: '创建时间',
@@ -392,6 +392,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'name',
       sort: true,
       isDefaultShow: true,
+      render: ({ cell }: any) => cell || '--',
     },
     {
       label: '云厂商',
@@ -631,7 +632,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'bk_biz_id',
       sort: true,
       isOnlyShowInResource: true,
-      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '--',
+      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
       label: '创建时间',
@@ -658,6 +659,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'name',
       sort: true,
       isDefaultShow: true,
+      render: ({ cell }: any) => cell || '--',
     },
     {
       label: '云厂商',
@@ -686,7 +688,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'bk_biz_id',
       isOnlyShowInResource: true,
       sort: true,
-      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '--',
+      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
       label: '创建时间',
@@ -806,16 +808,17 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '所属业务',
       field: 'bk_biz_id2',
       isOnlyShowInResource: true,
-      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '--',
+      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
       label: '管控区域',
       field: 'bk_cloud_id',
       sort: true,
-      render({ data }: any) {
-        return h('span', {}, [
-          data.bk_cloud_id === -1 ? '未绑定' : data.bk_cloud_id,
-        ]);
+      render({ cell }: { cell: number }) {
+        if (cell !== -1) {
+          return `[${cell}] ${cloudAreaStore.getNameFromCloudAreaMap(cell)}`;
+        }
+        return '--';
       },
     },
     {
@@ -1014,7 +1017,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '所属业务',
       field: 'bk_biz_id2',
       isOnlyShowInResource: true,
-      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '--',
+      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
       label: '创建时间',

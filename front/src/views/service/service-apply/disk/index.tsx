@@ -248,12 +248,12 @@ export default defineComponent({
             ),
           },
           {
-            label: '描述',
+            label: '申请单备注',
             property: 'memo',
             content: () => (
               <Input
                 type='textarea'
-                placeholder='简要描述磁盘使用情况，30字以内'
+                placeholder='简要描述申请硬盘的理由，30字以内。'
                 rows={2}
                 maxlength={30}
                 v-model={formData.memo}></Input>

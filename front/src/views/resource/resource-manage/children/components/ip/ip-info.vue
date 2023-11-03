@@ -6,20 +6,22 @@ import {
 } from 'vue';
 import {
   useRoute,
-  useRouter
+  useRouter,
 } from 'vue-router';
 import DetailList from '../../../common/info/detail-info';
 import DetailTab from '../../../common/tab/detail-tab';
+import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useRegionsStore } from '@/store/useRegionsStore';
 
 const props = defineProps({
-  detail: Object
+  detail: Object,
 });
 
 const route = useRoute();
 const router = useRouter();
 
 const { getRegionName } = useRegionsStore();
+const { getNameFromBusinessMap } = useBusinessMapStore();
 
 const txtBtn = (id: string, type: string) => {
   const routeInfo: any = {
@@ -48,7 +50,7 @@ const txtBtn = (id: string, type: string) => {
     );
   }
   router.push(routeInfo);
-}
+};
 
 const baseTabs = [
   {
@@ -105,7 +107,7 @@ const baseInfo = ref([
   {
     name: '地域',
     prop: 'region',
-    render: (val: string) => getRegionName(props?.detail?.vendor, val)
+    render: (val: string) => getRegionName(props?.detail?.vendor, val),
   },
   {
     name: '可用区域',
@@ -114,6 +116,7 @@ const baseInfo = ref([
   {
     name: '业务',
     prop: 'bk_biz_id',
+    render: (val: number) => (val === -1 ? '未分配' : `${getNameFromBusinessMap(val)} (${val})`),
   },
   {
     name: '创建时间',
@@ -159,8 +162,8 @@ const bandInfo = [
   {
     name: '带宽类型',
     prop: 'bandwidth_share_type',
-  }
-]
+  },
+];
 
 watch(
   () => props.detail,
@@ -217,7 +220,7 @@ watch(
           },
           {
             name: '类型',
-            value: '静态'
+            value: '静态',
           },
           {
             name: '网络层',
@@ -264,22 +267,22 @@ watch(
           {
             name: '绑定资源实例',
             prop: 'cvm_id',
-            txtBtn (id: string) {
+            txtBtn(id: string) {
               return txtBtn(id, 'host');
-            }
+            },
           },
           {
             name: '已绑定网卡',
             prop: 'instance_id',
-            txtBtn (id: string) {
+            txtBtn(id: string) {
               return txtBtn(id, 'network-interface');
-            }
-          }
-        ])
+            },
+          },
+        ]);
         break;
     }
-  }
-)
+  },
+);
 </script>
 
 <template>
