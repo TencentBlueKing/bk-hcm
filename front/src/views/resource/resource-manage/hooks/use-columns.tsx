@@ -814,10 +814,11 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '管控区域',
       field: 'bk_cloud_id',
       sort: true,
-      render({ data }: any) {
-        return h('span', {}, [
-          data.bk_cloud_id === -1 ? '未绑定' : data.bk_cloud_id,
-        ]);
+      render({ cell }: { cell: number }) {
+        if (cell !== -1) {
+          return `[${cell}] ${cloudAreaStore.getNameFromCloudAreaMap(cell)}`;
+        }
+        return '--';
       },
     },
     {
