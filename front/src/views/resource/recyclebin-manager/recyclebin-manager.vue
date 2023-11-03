@@ -70,6 +70,7 @@
                 @selection-change="handleSelectionChange"
                 row-hover="auto"
                 row-key="id"
+                :is-row-select-enable="isRowSelectEnable"
               >
                 <bk-table-column
                   width="100"
@@ -189,7 +190,7 @@
                       <bk-button
                         text theme="primary"
                         :disabled="!authVerifyData?.permissionAction?.recycle_bin_manage
-                          || data?.status !== 'wait_recycle'"
+                          || data?.status !== 'wait_recycle' || data?.bk_biz_id"
                         class="mr10" @click="handleOperate('destroy', [data.id])">
                         销毁
                       </bk-button>
@@ -198,7 +199,7 @@
                       <bk-button
                         text theme="primary" @click="handleOperate('recover', [data.id])"
                         :disabled="!authVerifyData?.permissionAction?.recycle_bin_manage
-                          || data?.status !== 'wait_recycle'"
+                          || data?.status !== 'wait_recycle' || data?.bk_biz_id"
                       >
                         恢复
                       </bk-button>
@@ -307,6 +308,11 @@ export default defineComponent({
         id: 'res_id',
       },
     ];
+    const isRowSelectEnable = ({ row }: any) => {
+      if (row.id) {
+        return row.bk_biz_id === -1;
+      }
+    };
 
     const state = reactive({
       isAccurate: false,    // 是否精确
@@ -634,6 +640,7 @@ export default defineComponent({
       isResourcePage,
       handleShowDialog,
       t,
+      isRowSelectEnable,
       showPermissionDialog,
       handlePermissionConfirm,
       handlePermissionDialog,
