@@ -47,12 +47,3 @@ const (
 	// BKGWAuthKey is blueking api gateway authorization header key.
 	BKGWAuthKey = "X-Bkapi-Authorization"
 )
-
-// const for timing sync
-const (
-	// SyncTimingUserKey sync timing UserKey
-	SyncTimingUserKey = "hcm-backend-sync"
-
-	// SyncTimingAppCodeKey sync timing AppCodeKey
-	SyncTimingAppCodeKey = "hcm"
-)

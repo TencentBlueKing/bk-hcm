@@ -1,11 +1,13 @@
 #!/bin/bash
 
 # 请修改下面的mysql相关配置. Please change the mysql configuration below.
-MYSQL_HOST=${MYSQL_HOST:-127.0.0.1}
-MYSQL_PORT=${MYSQL_PORT:-3306}
-MYSQL_USERNAME=${MYSQL_USERNAME:-root}
-MYSQL_DATABASE=${MYSQL_DATABASE:-hcm}
-MYSQL_PASSWORD=${MYSQL_PASSWORD:-'password'}
+MYSQL_HOST=${BK_HCM_MYSQL_HOST:-127.0.0.1}
+MYSQL_PORT=${BK_HCM_MYSQL_PORT:-3306}
+MYSQL_USERNAME=${BK_HCM_MYSQL_USERNAME:-root}
+MYSQL_DATABASE=${BK_HCM_MYSQL_DATABASE:-hcm}
+MYSQL_PASSWORD=${BK_HCM_MYSQL_PASSWORD:-'password'}
+
+echo using db ${MYSQL_USERNAME}@${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE}
 
 # 预定义变量，请勿修改. Predefined variables, do not modify.
 SQLDIR=sql
@@ -22,13 +24,13 @@ help() {
     cat <<EOF
 Options:
     -i      first install, same as '-c v0.0.0'.
-    -w [path]
+    -w [sql file path]
             specify path for sql file.
     -t [target version]
             specify target version for migration. 
     -c [current version]
             specify current version for migration. 
-    -a [path]
+    -a [VERSION file path]
             target version file path.
     -h      show this help.
     
@@ -77,7 +79,7 @@ get_current_version() {
     if [ $? -ne 0 ]; then
         echo "[ERROR] Fail to find version information! Check the error info below or use '-c' to specify current version."
         echo "If it is your first time installing hcm, just using '-i' flag."
-        exit -1
+        exit 1
     fi
 }
 
@@ -133,10 +135,10 @@ arg_check() {
 main() {
 
     # 遍历每个sql文件，其中ls 默认按文件名的字符序排序
-    for sqlfile in $(ls -1 $SQLDIR/*.sql); do
+    for sqlfile in "$SQLDIR"/*.sql; do
         # 获取匹配的版本信息
-        hcmver_of_sql=$(get_hcm_ver $sqlfile)
-        echo -n "[$hcmver_of_sql]" $sqlfile --\> 
+        hcmver_of_sql=$(get_hcm_ver "$sqlfile")
+        echo -n "[$hcmver_of_sql]" "$sqlfile" --\>
         # 小于等于当前版本的pass
         if ver_le $hcmver_of_sql $CURRENT_VERSION; then
             echo pass
@@ -158,3 +160,4 @@ main() {
 
 arg_check $@
 main
+

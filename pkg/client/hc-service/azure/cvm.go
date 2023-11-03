@@ -156,17 +156,17 @@ func (cli *CvmClient) DeleteCvm(kt *kit.Kit, id string, req *protocvm.AzureDelet
 	return nil
 }
 
-// BatchCreateCvm ....
-func (cli *CvmClient) BatchCreateCvm(ctx context.Context, h http.Header, request *protocvm.AzureBatchCreateReq) (
-	*protocvm.BatchCreateResult, error) {
+// CreateCvm ....
+func (cli *CvmClient) CreateCvm(kt *kit.Kit, request *protocvm.AzureCreateReq) (
+	*protocvm.AzureCreateResp, error) {
 
-	resp := new(protocvm.BatchCreateResp)
+	resp := new(core.BaseResp[*protocvm.AzureCreateResp])
 
 	err := cli.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
-		SubResourcef("/cvms/batch/create").
-		WithHeaders(h).
+		SubResourcef("/cvms/create").
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

@@ -73,6 +73,7 @@ func convCoreTask(one tableasync.AsyncFlowTaskTable) coreasync.AsyncFlowTask {
 		ActionID:   one.ActionID,
 		ActionName: one.ActionName,
 		Params:     one.Params,
+		Result:     one.Result,
 		Retry:      one.Retry,
 		DependOn:   one.DependOn,
 		State:      one.State,

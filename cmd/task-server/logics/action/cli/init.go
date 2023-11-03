@@ -21,6 +21,7 @@ package actcli
 
 import (
 	"hcm/pkg/client"
+	dataservice "hcm/pkg/client/data-service"
 	hcservice "hcm/pkg/client/hc-service"
 )
 
@@ -34,4 +35,9 @@ func SetClientSet(cli *client.ClientSet) {
 // GetHCService get hc service.
 func GetHCService() *hcservice.Client {
 	return cliSet.HCService()
+}
+
+// GetDataService get data service.
+func GetDataService() *dataservice.Client {
+	return cliSet.DataService()
 }

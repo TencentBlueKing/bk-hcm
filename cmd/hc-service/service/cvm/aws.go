@@ -121,8 +121,8 @@ func (svc *cvmSvc) BatchStartAwsCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	listReq := &dataproto.CvmListReq{
-		Field:  []string{"cloud_id"},
+	listReq := &core.ListReq{
+		Fields: []string{"cloud_id"},
 		Filter: tools.ContainersExpression("id", req.IDs),
 		Page:   core.NewDefaultBasePage(),
 	}
@@ -179,8 +179,8 @@ func (svc *cvmSvc) BatchStopAwsCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	listReq := &dataproto.CvmListReq{
-		Field:  []string{"cloud_id"},
+	listReq := &core.ListReq{
+		Fields: []string{"cloud_id"},
 		Filter: tools.ContainersExpression("id", req.IDs),
 		Page:   core.NewDefaultBasePage(),
 	}
@@ -239,8 +239,8 @@ func (svc *cvmSvc) BatchRebootAwsCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	listReq := &dataproto.CvmListReq{
-		Field:  []string{"cloud_id"},
+	listReq := &core.ListReq{
+		Fields: []string{"cloud_id"},
 		Filter: tools.ContainersExpression("id", req.IDs),
 		Page:   core.NewDefaultBasePage(),
 	}
@@ -297,8 +297,8 @@ func (svc *cvmSvc) BatchDeleteAwsCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	listReq := &dataproto.CvmListReq{
-		Field:  []string{"cloud_id"},
+	listReq := &core.ListReq{
+		Fields: []string{"cloud_id"},
 		Filter: tools.ContainersExpression("id", req.IDs),
 		Page:   core.NewDefaultBasePage(),
 	}

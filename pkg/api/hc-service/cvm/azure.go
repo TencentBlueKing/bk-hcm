@@ -68,8 +68,8 @@ func (req *AzureStopReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// AzureBatchCreateReq azure batch create req.
-type AzureBatchCreateReq struct {
+// AzureCreateReq azure create req.
+type AzureCreateReq struct {
 	AccountID            string                  `json:"account_id" validate:"required"`
 	ResourceGroupName    string                  `json:"resource_group_name" validate:"required"`
 	Region               string                  `json:"region" validate:"required"`
@@ -83,11 +83,15 @@ type AzureBatchCreateReq struct {
 	CloudSecurityGroupID string                  `json:"cloud_security_group_id" validate:"required"`
 	OSDisk               *typecvm.AzureOSDisk    `json:"os_disk" validate:"required"`
 	DataDisk             []typecvm.AzureDataDisk `json:"data_disk" validate:"omitempty"`
-	RequiredCount        int64                   `json:"required_count" validate:"required"`
 	PublicIPAssigned     bool                    `json:"public_ip_assigned" validate:"omitempty"`
 }
 
 // Validate request.
-func (req *AzureBatchCreateReq) Validate() error {
+func (req *AzureCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// AzureCreateResp define azure create resp.
+type AzureCreateResp struct {
+	CloudID string `json:"cloud_id"`
 }

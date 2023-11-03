@@ -46,6 +46,7 @@ type AsyncFlowTask struct {
 	ActionID      string             `json:"action_id"`
 	ActionName    enumor.ActionName  `json:"action_name"`
 	Params        types.JsonField    `json:"params"`
+	Result        types.JsonField    `json:"result"`
 	Retry         *tableasync.Retry  `json:"retry"`
 	DependOn      types.StringArray  `json:"depend_on"`
 	State         enumor.TaskState   `json:"state"`

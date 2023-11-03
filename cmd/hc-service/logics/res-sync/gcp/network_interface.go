@@ -450,7 +450,7 @@ func (cli *client) listNetworkInterfaceFromDB(kt *kit.Kit, opt *syncNIOption) (
 		return nil, nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	listCvmReq := &datacloud.CvmListReq{
+	listCvmReq := &core.ListReq{
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{

@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package cvm ...
 package cvm
 
 import (
@@ -40,7 +41,7 @@ func InitService(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("BatchCreateCvm", http.MethodPost, "/vendors/{vendor}/cvms/batch/create", svc.BatchCreateCvm)
+	h.Add("CreateCvm", http.MethodPost, "/vendors/{vendor}/cvms/batch/create", svc.BatchCreateCvm)
 	h.Add("BatchUpdateCvm", http.MethodPatch, "/vendors/{vendor}/cvms/batch/update", svc.BatchUpdateCvm)
 	h.Add("GetCvm", http.MethodGet, "/vendors/{vendor}/cvms/{id}", svc.GetCvm)
 	h.Add("ListCvm", http.MethodPost, "/cvms/list", svc.ListCvm)

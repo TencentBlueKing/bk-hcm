@@ -17,15 +17,18 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package constant
+package core
 
-const (
-	// AsyncUserKey async UserKey
-	AsyncUserKey = "hcm-backend-async"
-
-	// AsyncAppCodeKey async AppCodeKey
-	AsyncAppCodeKey = "hcm"
-
-	// DefaultJsonValue async default json
-	DefaultJsonValue = "{}"
+import (
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/kit"
 )
+
+// NewBackendKit 生成后端操作Kit.
+func NewBackendKit() *kit.Kit {
+	kt := kit.New()
+	kt.User = constant.BackendOperationUserKey
+	kt.AppCode = constant.BackendOperationAppCodeKey
+
+	return kt
+}

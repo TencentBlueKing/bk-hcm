@@ -747,9 +747,7 @@ func (cli *client) isCvmChange(cloud typescvm.HuaWeiCvm, db corecvm.Cvm[cvm.HuaW
 		return true
 	}
 
-	kt := kit.New()
-	kt.User = constant.SyncTimingUserKey
-	kt.AppCode = constant.SyncTimingAppCodeKey
+	kt := core.NewBackendKit()
 	cloudSubnetIDs, subnetIDs, err := cli.getSubnets(kt, db.AccountID, db.Region, db.CloudID,
 		cloud.Metadata["vpc_id"])
 	if err != nil {

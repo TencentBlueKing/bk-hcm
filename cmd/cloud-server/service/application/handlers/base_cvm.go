@@ -22,7 +22,6 @@ package handlers
 import (
 	"hcm/pkg/api/core"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
-	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/runtime/filter"
 )
@@ -42,7 +41,7 @@ func (a *BaseApplicationHandler) ListCvm(
 	// 查询
 	resp, err := a.Client.DataService().Global.Cvm.ListCvm(
 		a.Cts.Kit,
-		&dataproto.CvmListReq{
+		&core.ListReq{
 			Filter: reqFilter,
 			Page:   &core.BasePage{Count: false, Start: 0, Limit: uint(len(cloudCvmIDs))},
 		},

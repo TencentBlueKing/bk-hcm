@@ -44,6 +44,6 @@ func NewApplicationOfCreateAzureCvm(opt *handlers.HandlerOption, req *proto.Azur
 	}
 }
 
-func (a *ApplicationOfCreateAzureCvm) toHcProtoAzureBatchCreateReq() *hcproto.AzureBatchCreateReq {
+func (a *ApplicationOfCreateAzureCvm) toHcProtoAzureBatchCreateReq() *hcproto.AzureCreateReq {
 	return common.ConvAzureCvmCreateReq(a.req)
 }

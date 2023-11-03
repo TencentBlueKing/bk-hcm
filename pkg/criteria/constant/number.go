@@ -30,4 +30,7 @@ const (
 	CloudResourceSyncMaxLimit = 100
 	// SyncConcurrencyDefaultMaxLimit 同步并发最大限制
 	SyncConcurrencyDefaultMaxLimit = 10
+
+	// BatchCreateCvmFromCloudMaxLimit 批量创建主机从公有云上的最大限制数量
+	BatchCreateCvmFromCloudMaxLimit = 100
 )

@@ -71,7 +71,7 @@ func (svc *cvmSvc) listCvm(cts *rest.Contexts, authHandler handler.ListAuthResHa
 		return &core.ListResult{Count: 0, Details: make([]interface{}, 0)}, nil
 	}
 
-	listReq := &dataproto.CvmListReq{
+	listReq := &core.ListReq{
 		Filter: expr,
 		Page:   req.Page,
 	}
@@ -140,7 +140,7 @@ func (svc *cvmSvc) getCvm(cts *rest.Contexts, validHandler handler.ValidWithAuth
 
 // CheckCvmsInBiz check if cvms are in the specified biz.
 func CheckCvmsInBiz(kt *kit.Kit, client *client.ClientSet, rule filter.RuleFactory, bizID int64) error {
-	req := &dataproto.CvmListReq{
+	req := &core.ListReq{
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{

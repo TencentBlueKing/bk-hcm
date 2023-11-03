@@ -21,8 +21,10 @@ package csvpc
 
 import (
 	"errors"
+	"fmt"
 
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/tools/cidr"
 )
 
 // HuaWeiVpcCreateReq ...
@@ -52,6 +54,10 @@ func (req *HuaWeiVpcCreateReq) Validate(bizRequired bool) error {
 
 	if bizRequired && req.BkBizID == 0 {
 		return errors.New("bk_biz_id is required")
+	}
+
+	if err := cidr.IsSubnetContained(req.IPv4Cidr, req.Subnet.IPv4Cidr); err != nil {
+		return fmt.Errorf("is subnet contained failed, err: %v", err)
 	}
 
 	return nil

@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/api/core"
 	proto "hcm/pkg/api/data-service"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -66,17 +67,14 @@ func (a *ApplicationClient) Create(ctx context.Context, h http.Header, request *
 }
 
 // Update ...
-func (a *ApplicationClient) Update(ctx context.Context, h http.Header,
-	applicationID string, request *proto.ApplicationUpdateReq) (
-	interface{}, error,
-) {
+func (a *ApplicationClient) Update(kt *kit.Kit, id string, request *proto.ApplicationUpdateReq) (interface{}, error) {
 	resp := new(core.UpdateResp)
 
 	err := a.client.Patch().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
-		SubResourcef("/applications/%s", applicationID).
-		WithHeaders(h).
+		SubResourcef("/applications/%s", id).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
@@ -114,16 +112,16 @@ func (a *ApplicationClient) Get(ctx context.Context, h http.Header, applicationI
 }
 
 // List ...
-func (a *ApplicationClient) List(ctx context.Context, h http.Header, request *proto.ApplicationListReq) (
+func (a *ApplicationClient) List(kt *kit.Kit, request *proto.ApplicationListReq) (
 	*proto.ApplicationListResult, error,
 ) {
 	resp := new(proto.ApplicationListResp)
 
 	err := a.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/applications/list").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
