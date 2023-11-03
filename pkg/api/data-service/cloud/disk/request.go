@@ -20,6 +20,8 @@
 package disk
 
 import (
+	"fmt"
+
 	coredisk "hcm/pkg/api/core/cloud/disk"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/runtime/filter"
@@ -28,7 +30,7 @@ import (
 // DiskExtCreateReq ...
 type DiskExtCreateReq[T coredisk.Extension] struct {
 	AccountID    string  `json:"account_id" validate:"required"`
-	Name         string  `json:"name" validate:"required"`
+	Name         string  `json:"name" validate:"omitempty"`
 	BkBizID      int64   `json:"bk_biz_id"`
 	CloudID      string  `json:"cloud_id" validate:"required"`
 	Region       string  `json:"region" validate:"required"`
@@ -43,6 +45,14 @@ type DiskExtCreateReq[T coredisk.Extension] struct {
 
 // Validate ...
 func (req *DiskExtCreateReq[T]) Validate() error {
+
+	if _, ok := any(req.Extension).(*coredisk.AwsExtension); !ok {
+		// for non-aws disk, name is required
+		if len(req.Name) == 0 {
+			return fmt.Errorf("name for disk is required")
+		}
+	}
+
 	return validator.Validate.Struct(req)
 }
 
