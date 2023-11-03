@@ -86,7 +86,7 @@
                       theme="primary"
                       text
                       @click="() => handleClick(props?.data?.vendor,
-                                                props?.data?.id,
+                                                props?.data?.res_id,
                                                 selectedType === 'cvm' ? 'host' : 'drive')"
                     >
                       {{props?.data?.res_id}}
