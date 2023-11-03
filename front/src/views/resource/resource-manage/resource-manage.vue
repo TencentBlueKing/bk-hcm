@@ -182,6 +182,21 @@ const handleTabChange = (val: 'group' | 'gcp') => {
   securityType.value = val;
 };
 
+watch(
+  () => route.path,
+  (path) => {
+    let res = '/resource/resource/';
+    RESOURCE_TABS.forEach(({ key }) => {
+      const reg = new RegExp(key);
+      if (reg.test(path)) res = key;
+    });
+    activeResourceTab.value = res;
+  },
+  {
+    immediate: true,
+  },
+);
+
 // 搜索数据
 watch(
   () => accountId.value,

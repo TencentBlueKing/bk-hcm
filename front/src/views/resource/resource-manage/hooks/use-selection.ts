@@ -38,10 +38,13 @@ export default () => {
     },
   );
 
-  const handleSelectionChange = (selection: SelectionType) => {
+  const handleSelectionChange = (selection: SelectionType, isCurRowSelectEnable: (row: any) => void) => {
+    console.log(666, selection);
     // 全选
     if (selection.isAll && selection.checked) {
       selections.value = JSON.parse(JSON.stringify(selection.data));
+      selections.value = selections.value.filter(row => isCurRowSelectEnable(row));
+      console.log(66666, selections.value);
     }
     // 取消全选
     if (selection.isAll && !selection.checked) {

@@ -1,7 +1,7 @@
 import { RESOURCES_SYNC_STATUS_MAP, RESOURCE_TYPES_MAP } from '@/common/constant';
 import http from '@/http';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
-import { Switcher, Table } from 'bkui-vue';
+import { Loading, Table } from 'bkui-vue';
 import { defineComponent, ref, watch } from 'vue';
 import successStatus from '@/assets/image/success-account.png';
 import failedStatus from '@/assets/image/failed-account.png';
@@ -13,6 +13,7 @@ export default defineComponent({
   setup() {
     const resourceAccountStore = useResourceAccountStore();
     const statusList = ref([]);
+    const isLoading = ref(false);
     const tableColumns = [
       {
         label: '资源名称',
@@ -40,23 +41,29 @@ export default defineComponent({
         field: 'res_end_time',
       },
       {
-        label: '是否接入',
+        label: '同步周期',
         field: 'is_implement',
         render: () => (
           <div>
-            <Switcher disabled class={'mr8'}/>
-            同步周期: 20 分钟
+            {/* <Switcher disabled class={'mr8'}/> */}
+            {/* 同步周期: 20 分钟 */}
+            20 分钟
           </div>
         ),
-        rowspan: 7,
+        // rowspan: 7,
       },
     ];
     watch(
       () => resourceAccountStore.resourceAccount,
       async (account) => {
         if (!account?.id) return;
-        const res = await http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/sync_details/${account.id}`);
-        statusList.value = res.data.iass_res;
+        isLoading.value = true;
+        try {
+          const res = await http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/sync_details/${account.id}`);
+          statusList.value = res.data.iass_res;
+        } finally {
+          isLoading.value = false;
+        }
       },
       {
         immediate: true,
@@ -64,13 +71,13 @@ export default defineComponent({
       },
     );
     return () => (
-      <>
+      <Loading loading={isLoading.value}>
         <Table
           data={statusList.value}
           columns={tableColumns}
           border={['row', 'col', 'outer']}
         ></Table>
-      </>
+      </Loading>
     );
   },
 });

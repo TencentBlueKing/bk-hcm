@@ -93,6 +93,9 @@ const hostSearchData = computed(() => {
     }, {
       name: '云地域',
       id: 'region',
+    }, {
+      name: '公网IP',
+      id: 'public_ipv4_addresses',
     }],
   ];
 });
@@ -227,8 +230,12 @@ const handleDistributionConfirm = () => {
   distributionCvm();
 };
 
-const isRowSelectEnable = ({ row }: DoublePlainObject) => {
+const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
+  if (isCheckAll) return true;
   if (!props.isResourcePage) return true;
+  return isCurRowSelectEnable(row);
+};
+const isCurRowSelectEnable = (row: any) => {
   if (row.id) {
     return row.bk_biz_id === -1;
   }
@@ -314,7 +321,7 @@ getCloudAreas();
       :is-row-select-enable="isRowSelectEnable"
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
-      @selection-change="handleSelectionChange"
+      @selection-change="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable)"
       @column-sort="handleSort"
       row-key="id"
     />
