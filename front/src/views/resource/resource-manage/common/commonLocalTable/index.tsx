@@ -36,7 +36,7 @@ export default defineComponent({
     watch(
       () => searchVal.value,
       () => {
-        if (!searchVal.value) localData.value = props.data;
+        if (!Object.keys(searchVal.value).length) localData.value = props.data;
         for (const { id, values } of searchVal.value) {
           const searchReg = new RegExp(values?.[0]?.id);
           localData.value = localData.value.filter(item => searchReg.test(item[id]));
@@ -47,6 +47,16 @@ export default defineComponent({
         deep: true,
       },
     );
+
+    watch(
+      () => props.data,
+      () => localData.value = props.data,
+      {
+        immediate: true,
+        deep: true,
+      },
+    );
+
     return () => (
       <>
         <div class={'felx-row'}>
