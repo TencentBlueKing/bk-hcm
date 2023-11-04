@@ -142,7 +142,7 @@ export default defineComponent({
                   if (isChecked) withDiskSet.value.add(data.id);
                   else withDiskSet.value.delete(data.id);
                 }}>
-                { cvmDiskNumMap.value.get(data.id) } 个数据盘
+                { +cvmDiskNumMap.value.get(data.id) - 1 } 个数据盘
               </Checkbox>
             </div>
         ),

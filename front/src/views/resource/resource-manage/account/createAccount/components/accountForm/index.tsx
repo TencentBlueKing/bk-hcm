@@ -146,7 +146,10 @@ export default defineComponent({
     watch(
       () => formModel,
       (model) => {
-        props.changeSubmitData(model);
+        props.changeSubmitData({
+          ...model,
+          bk_biz_ids: [model.bk_biz_ids],
+        });
         props.changeValidateForm(() => infoFormInstance.value.validate());
       },
       {

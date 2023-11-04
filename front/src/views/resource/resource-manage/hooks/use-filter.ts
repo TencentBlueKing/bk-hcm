@@ -97,6 +97,7 @@ const useFilter = (props: PropsType) => {
   watch(
     () => accountStore.accountList,   // 设置云账号筛选所需数据
     (val) => {
+      if (!val) return;
       val.length && FILTER_DATA.forEach((e) => {
         if (e.id === 'account_id') {
           e.children = val;

@@ -42,7 +42,7 @@ export default defineComponent({
             <p class={'result-page-text'}>
               {props.type === 'success'
                 ? '可以进行同步任务查看，或进行资源管理'
-                : '云API权限不足，错误详情如下所示'}
+                : '错误详情如下所示'}
             </p>
             <div>
               {props.type === 'success' ? (

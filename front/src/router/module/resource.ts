@@ -47,6 +47,9 @@ const resourceMenus: RouteRecordRaw[] = [
             component: () => import('@/views/resource/recyclebin-manager/recyclebin-manager.vue'),
           },
         ],
+        meta: {
+          notMenu: true,
+        },
       },
       {
         path: '/resource/detail/:type',
@@ -55,6 +58,7 @@ const resourceMenus: RouteRecordRaw[] = [
         meta: {
           activeKey: 'resourceResource',
           breadcrumb: [t('云管'), t('资源'), '详情'],
+          notMenu: true,
         },
       },
       {
@@ -64,6 +68,7 @@ const resourceMenus: RouteRecordRaw[] = [
         meta: {
           activeKey: 'resourceResource',
           breadcrumb: [t('云管'), t('资源'), '新建主机'],
+          notMenu: true,
         },
       },
       {
@@ -73,6 +78,7 @@ const resourceMenus: RouteRecordRaw[] = [
         meta: {
           activeKey: 'resourceResource',
           breadcrumb: [t('云管'), t('资源'), '新建VPC'],
+          notMenu: true,
         },
       },
       {
@@ -82,6 +88,7 @@ const resourceMenus: RouteRecordRaw[] = [
         meta: {
           activeKey: 'resourceResource',
           breadcrumb: [t('云管'), t('资源'), '新建云硬盘'],
+          notMenu: true,
         },
       },
       {
@@ -92,6 +99,7 @@ const resourceMenus: RouteRecordRaw[] = [
           backRouter: -1,
           activeKey: 'resourceResource',
           breadcrumb: [t('云管'), t('资源'),  '新建子网'],
+          notMenu: true,
         },
       },
       {
