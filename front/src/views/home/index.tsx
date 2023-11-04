@@ -115,7 +115,7 @@ export default defineComponent({
           topMenuActiveItem = 'business';
           menus = reactive(business);
           path = '/business/host';
-          if (!accountStore.bizs) accountStore.updateBizsId(useBusinessMapStore().businessList?.[0]?.id);
+          // if (!accountStore.bizs) accountStore.updateBizsId(useBusinessMapStore().businessList?.[0]?.id);
           getBusinessList(); // 业务下需要获取业务列表
           break;
         case 'resource':
@@ -146,6 +146,7 @@ export default defineComponent({
             menus = reactive(resource);
             path = '/resource/resource';
           }
+          console.log(path);
           accountStore.updateBizsId(''); // 初始化业务ID
           break;
       }
@@ -189,12 +190,10 @@ export default defineComponent({
       { immediate: true },
     );
 
-    const handleHeaderMenuClick = (id: string, routeName: string): void => {
+    const handleHeaderMenuClick = async (id: string, routeName: string): Promise<any> => {
       if (route.name !== routeName) {
         changeMenus(id);
-        router.push({
-          path,
-        });
+        await getBusinessList();
       }
     };
 
