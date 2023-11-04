@@ -39,12 +39,12 @@ import (
 
 // DisassociateEip disassociate eip.
 func (svc *eipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
-	return svc.disassociateEip(cts, handler.ResValidWithAuth)
+	return svc.disassociateEip(cts, handler.ResOperateAuth)
 }
 
 // DisassociateBizEip disassociate biz eip.
 func (svc *eipSvc) DisassociateBizEip(cts *rest.Contexts) (interface{}, error) {
-	return svc.disassociateEip(cts, handler.BizValidWithAuth)
+	return svc.disassociateEip(cts, handler.BizOperateAuth)
 }
 
 func (svc *eipSvc) disassociateEip(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {

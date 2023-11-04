@@ -37,12 +37,12 @@ import (
 
 // BatchDeleteSecurityGroup batch delete security group.
 func (svc *securityGroupSvc) BatchDeleteSecurityGroup(cts *rest.Contexts) (interface{}, error) {
-	return svc.batchDeleteSecurityGroup(cts, handler.ResValidWithAuth)
+	return svc.batchDeleteSecurityGroup(cts, handler.ResOperateAuth)
 }
 
 // BatchDeleteBizSecurityGroup batch delete biz security group.
 func (svc *securityGroupSvc) BatchDeleteBizSecurityGroup(cts *rest.Contexts) (interface{}, error) {
-	return svc.batchDeleteSecurityGroup(cts, handler.BizValidWithAuth)
+	return svc.batchDeleteSecurityGroup(cts, handler.BizOperateAuth)
 }
 
 func (svc *securityGroupSvc) batchDeleteSecurityGroup(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (

@@ -33,12 +33,12 @@ import (
 
 // UpdateSecurityGroup update security group.
 func (svc *securityGroupSvc) UpdateSecurityGroup(cts *rest.Contexts) (interface{}, error) {
-	return svc.updateSecurityGroup(cts, handler.ResValidWithAuth)
+	return svc.updateSecurityGroup(cts, handler.ResOperateAuth)
 }
 
 // UpdateBizSecurityGroup update biz security group.
 func (svc *securityGroupSvc) UpdateBizSecurityGroup(cts *rest.Contexts) (interface{}, error) {
-	return svc.updateSecurityGroup(cts, handler.BizValidWithAuth)
+	return svc.updateSecurityGroup(cts, handler.BizOperateAuth)
 }
 
 func (svc *securityGroupSvc) updateSecurityGroup(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (

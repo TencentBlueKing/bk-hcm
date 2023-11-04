@@ -32,12 +32,12 @@ import (
 
 // ListSecurityGroupRule list security group rule.
 func (svc *securityGroupSvc) ListSecurityGroupRule(cts *rest.Contexts) (interface{}, error) {
-	return svc.listSGRule(cts, handler.ResValidWithAuth)
+	return svc.listSGRule(cts, handler.ResOperateAuth)
 }
 
 // ListBizSGRule list biz security group rule.
 func (svc *securityGroupSvc) ListBizSGRule(cts *rest.Contexts) (interface{}, error) {
-	return svc.listSGRule(cts, handler.BizValidWithAuth)
+	return svc.listSGRule(cts, handler.BizOperateAuth)
 }
 
 func (svc *securityGroupSvc) listSGRule(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},

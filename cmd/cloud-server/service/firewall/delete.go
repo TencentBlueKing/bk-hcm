@@ -36,12 +36,12 @@ import (
 
 // BatchDeleteGcpFirewallRule batch delete gcp firewall rule.
 func (svc *firewallSvc) BatchDeleteGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
-	return svc.batchDeleteGcpFirewallRule(cts, handler.ResValidWithAuth)
+	return svc.batchDeleteGcpFirewallRule(cts, handler.ResOperateAuth)
 }
 
 // BatchDeleteBizGcpFirewallRule batch delete biz gcp firewall rule.
 func (svc *firewallSvc) BatchDeleteBizGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
-	return svc.batchDeleteGcpFirewallRule(cts, handler.BizValidWithAuth)
+	return svc.batchDeleteGcpFirewallRule(cts, handler.BizOperateAuth)
 }
 
 func (svc *firewallSvc) batchDeleteGcpFirewallRule(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (

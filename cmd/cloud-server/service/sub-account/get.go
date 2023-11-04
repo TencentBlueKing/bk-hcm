@@ -32,7 +32,7 @@ import (
 
 // GetSubAccount get sub account.
 func (svc *service) GetSubAccount(cts *rest.Contexts) (interface{}, error) {
-	return svc.getSubAccount(cts, handler.ResValidWithAuth)
+	return svc.getSubAccount(cts, handler.ResOperateAuth)
 }
 
 func (svc *service) getSubAccount(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {

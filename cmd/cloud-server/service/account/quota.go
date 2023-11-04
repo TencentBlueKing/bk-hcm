@@ -35,12 +35,12 @@ import (
 
 // GetBizTCloudZoneQuota 获取腾讯云账号配额.
 func (a *accountSvc) GetBizTCloudZoneQuota(cts *rest.Contexts) (interface{}, error) {
-	return a.getTCloudZoneQuota(cts, handler.BizValidWithAuth)
+	return a.getTCloudZoneQuota(cts, handler.BizOperateAuth)
 }
 
 // GetResTCloudZoneQuota 获取腾讯云账号配额.
 func (a *accountSvc) GetResTCloudZoneQuota(cts *rest.Contexts) (interface{}, error) {
-	return a.getTCloudZoneQuota(cts, handler.ResValidWithAuth)
+	return a.getTCloudZoneQuota(cts, handler.ResOperateAuth)
 }
 
 func (a *accountSvc) getTCloudZoneQuota(cts *rest.Contexts, authHandler handler.ValidWithAuthHandler) (
@@ -80,12 +80,12 @@ func (a *accountSvc) getTCloudZoneQuota(cts *rest.Contexts, authHandler handler.
 
 // GetBizHuaWeiRegionQuota 获取华为云账号配额.
 func (a *accountSvc) GetBizHuaWeiRegionQuota(cts *rest.Contexts) (interface{}, error) {
-	return a.getHuaWeiRegionQuota(cts, handler.BizValidWithAuth)
+	return a.getHuaWeiRegionQuota(cts, handler.BizOperateAuth)
 }
 
 // GetResHuaWeiRegionQuota 获取华为云账号配额.
 func (a *accountSvc) GetResHuaWeiRegionQuota(cts *rest.Contexts) (interface{}, error) {
-	return a.getHuaWeiRegionQuota(cts, handler.ResValidWithAuth)
+	return a.getHuaWeiRegionQuota(cts, handler.ResOperateAuth)
 }
 
 // getHuaWeiRegionQuota 获取华为云账号配额.
@@ -149,12 +149,12 @@ func (a *accountSvc) getHuaWeiRegionQuota(cts *rest.Contexts,
 
 // GetBizGcpRegionQuota 获取Gcp账号配额.
 func (a *accountSvc) GetBizGcpRegionQuota(cts *rest.Contexts) (interface{}, error) {
-	return a.getGcpRegionQuota(cts, handler.BizValidWithAuth)
+	return a.getGcpRegionQuota(cts, handler.BizOperateAuth)
 }
 
 // GetResGcpRegionQuota 获取Gcp账号配额.
 func (a *accountSvc) GetResGcpRegionQuota(cts *rest.Contexts) (interface{}, error) {
-	return a.getGcpRegionQuota(cts, handler.ResValidWithAuth)
+	return a.getGcpRegionQuota(cts, handler.ResOperateAuth)
 }
 
 // getGcpRegionQuota 获取Gcp账号配额.

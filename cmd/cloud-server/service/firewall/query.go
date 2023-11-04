@@ -82,12 +82,12 @@ func (svc *firewallSvc) listGcpFirewallRule(cts *rest.Contexts, authHandler hand
 
 // GetGcpFirewallRule get gcp firewall rule.
 func (svc *firewallSvc) GetGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
-	return svc.getGcpFirewallRule(cts, handler.ResValidWithAuth)
+	return svc.getGcpFirewallRule(cts, handler.ResOperateAuth)
 }
 
 // GetBizGcpFirewallRule get biz gcp firewall rule.
 func (svc *firewallSvc) GetBizGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
-	return svc.getGcpFirewallRule(cts, handler.BizValidWithAuth)
+	return svc.getGcpFirewallRule(cts, handler.BizOperateAuth)
 }
 
 func (svc *firewallSvc) getGcpFirewallRule(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (

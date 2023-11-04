@@ -134,12 +134,12 @@ func (svc *routeTableSvc) UpdateRouteTable(cts *rest.Contexts) (interface{}, err
 
 // GetRouteTable get route table details.
 func (svc *routeTableSvc) GetRouteTable(cts *rest.Contexts) (interface{}, error) {
-	return svc.getRouteTable(cts, handler.ResValidWithAuth)
+	return svc.getRouteTable(cts, handler.ResOperateAuth)
 }
 
 // GetBizRouteTable get biz route table details.
 func (svc *routeTableSvc) GetBizRouteTable(cts *rest.Contexts) (interface{}, error) {
-	return svc.getRouteTable(cts, handler.BizValidWithAuth)
+	return svc.getRouteTable(cts, handler.BizOperateAuth)
 }
 
 func (svc *routeTableSvc) getRouteTable(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},
@@ -255,12 +255,12 @@ func (svc *routeTableSvc) listRouteTable(cts *rest.Contexts, authHandler handler
 
 // CountRouteTableSubnets count subnets in route tables. **NOTICE** only for ui.
 func (svc *routeTableSvc) CountRouteTableSubnets(cts *rest.Contexts) (interface{}, error) {
-	return svc.countRouteTableSubnets(cts, handler.ResValidWithAuth)
+	return svc.countRouteTableSubnets(cts, handler.ResOperateAuth)
 }
 
 // CountBizRTSubnets count subnets in route tables for biz use. **NOTICE** only for ui.
 func (svc *routeTableSvc) CountBizRTSubnets(cts *rest.Contexts) (interface{}, error) {
-	return svc.countRouteTableSubnets(cts, handler.BizValidWithAuth)
+	return svc.countRouteTableSubnets(cts, handler.BizOperateAuth)
 }
 
 func (svc *routeTableSvc) countRouteTableSubnets(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (

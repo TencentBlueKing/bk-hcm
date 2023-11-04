@@ -64,12 +64,12 @@ type svc struct {
 
 // GetAudit get audit.
 func (svc svc) GetAudit(cts *rest.Contexts) (interface{}, error) {
-	return svc.getAudit(cts, handler.ResValidWithAuth)
+	return svc.getAudit(cts, handler.ResOperateAuth)
 }
 
 // GetBizAudit get biz audit.
 func (svc svc) GetBizAudit(cts *rest.Contexts) (interface{}, error) {
-	return svc.getAudit(cts, handler.BizValidWithAuth)
+	return svc.getAudit(cts, handler.BizOperateAuth)
 }
 
 func (svc svc) getAudit(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
@@ -86,7 +86,8 @@ func (svc svc) getAudit(cts *rest.Contexts, validHandler handler.ValidWithAuthHa
 
 	// validate biz and authorize
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Audit,
-		Action: meta.Find, BasicInfo: &types.CloudResourceBasicInfo{BkBizID: audit.BkBizID, AccountID: audit.AccountID}})
+		Action:    meta.Find,
+		BasicInfo: &types.CloudResourceBasicInfo{BkBizID: audit.BkBizID, AccountID: audit.AccountID}})
 	if err != nil {
 		return nil, err
 	}

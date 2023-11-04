@@ -40,12 +40,12 @@ import (
 
 // GetSecurityGroup get security group.
 func (svc *securityGroupSvc) GetSecurityGroup(cts *rest.Contexts) (interface{}, error) {
-	return svc.getSecurityGroup(cts, handler.ResValidWithAuth)
+	return svc.getSecurityGroup(cts, handler.ResOperateAuth)
 }
 
 // GetBizSecurityGroup get biz security group.
 func (svc *securityGroupSvc) GetBizSecurityGroup(cts *rest.Contexts) (interface{}, error) {
-	return svc.getSecurityGroup(cts, handler.BizValidWithAuth)
+	return svc.getSecurityGroup(cts, handler.BizOperateAuth)
 }
 
 func (svc *securityGroupSvc) getSecurityGroup(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
@@ -232,12 +232,12 @@ func (svc *securityGroupSvc) listSecurityGroup(cts *rest.Contexts, authHandler h
 
 // ListSecurityGroupsByCvmID list security groups by cvm_id.
 func (svc *securityGroupSvc) ListSecurityGroupsByCvmID(cts *rest.Contexts) (interface{}, error) {
-	return svc.listSGByCvmID(cts, handler.ResValidWithAuth)
+	return svc.listSGByCvmID(cts, handler.ResOperateAuth)
 }
 
 // ListBizSecurityGroupsByCvmID list biz security groups by cvm_id.
 func (svc *securityGroupSvc) ListBizSecurityGroupsByCvmID(cts *rest.Contexts) (interface{}, error) {
-	return svc.listSGByCvmID(cts, handler.BizValidWithAuth)
+	return svc.listSGByCvmID(cts, handler.BizOperateAuth)
 }
 
 func (svc *securityGroupSvc) listSGByCvmID(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (

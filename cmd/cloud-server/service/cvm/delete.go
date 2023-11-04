@@ -35,12 +35,12 @@ import (
 
 // BatchDeleteCvm batch delete cvm.
 func (svc *cvmSvc) BatchDeleteCvm(cts *rest.Contexts) (interface{}, error) {
-	return svc.batchDeleteCvmSvc(cts, handler.ResValidWithAuth)
+	return svc.batchDeleteCvmSvc(cts, handler.ResOperateAuth)
 }
 
 // BatchDeleteBizCvm batch delete biz cvm.
 func (svc *cvmSvc) BatchDeleteBizCvm(cts *rest.Contexts) (interface{}, error) {
-	return svc.batchDeleteCvmSvc(cts, handler.BizValidWithAuth)
+	return svc.batchDeleteCvmSvc(cts, handler.BizOperateAuth)
 }
 
 func (svc *cvmSvc) batchDeleteCvmSvc(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},

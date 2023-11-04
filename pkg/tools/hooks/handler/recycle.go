@@ -21,73 +21,35 @@ package handler
 
 import (
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 )
 
-// RecycleValidWithAuth validate and authorize cloud resource for recycle bin manager handler
-func RecycleValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
-	// authorize one resource
-	if opt.BasicInfo != nil {
-		if opt.BasicInfo.RecycleStatus != enumor.RecycleStatus {
-			return errf.New(errf.InvalidParameter, "resource is not in recycle bin")
+func addRecyclingFilter(h ListAuthResHandler, cts *rest.Contexts, opt *ListAuthResOption) (*filter.Expression, bool,
+	error) {
+	recycling := filter.AtomRule{Field: "recycle_status", Op: filter.Equal.Factory(), Value: enumor.RecycleStatus}
+	if opt.Filter == nil {
+		opt.Filter = &filter.Expression{Op: filter.And, Rules: []filter.RuleFactory{recycling}}
+	} else {
+		bizFilter, err := tools.And(recycling, opt.Filter)
+		if err != nil {
+			return nil, false, err
 		}
-
-		authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.RecycleBin, Action: opt.Action,
-			ResourceID: opt.BasicInfo.AccountID}, BizID: opt.BasicInfo.BkBizID}
-		return opt.Authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+		opt.Filter = bizFilter
 	}
-
-	// batch authorize resource
-	authRes := make([]meta.ResourceAttribute, 0, len(opt.BasicInfos))
-	for _, info := range opt.BasicInfos {
-		if info.RecycleStatus != enumor.RecycleStatus {
-			return errf.New(errf.InvalidParameter, "resource is not in recycle bin")
-		}
-
-		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.RecycleBin, Action: opt.Action,
-			ResourceID: info.AccountID}, BizID: info.BkBizID})
-	}
-
-	return opt.Authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
+	return h(cts, opt)
 }
 
-// BizRecycleValidWithAuth validate and authorize cloud resource for biz recycle bin manager handler
-func BizRecycleValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
-	bizID, err := cts.PathParameter("bk_biz_id").Int64()
-	if err != nil {
-		return err
-	}
+// GetRecyclingAuth check get recycled resource permission
+func GetRecyclingAuth(cts *rest.Contexts, opt *ListAuthResOption) (*filter.Expression, bool, error) {
+	return addRecyclingFilter(ListResourceAuthRes, cts, opt)
+}
 
-	if bizID <= 0 {
-		return errf.New(errf.InvalidParameter, "resource is not in biz")
-	}
-
-	// authorize one resource
-	if opt.BasicInfo != nil {
-		if opt.BasicInfo.RecycleStatus != enumor.RecycleStatus {
-			return errf.New(errf.InvalidParameter, "resource is not in recycle bin")
-		}
-
-		authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.RecycleBin, Action: opt.Action,
-			ResourceID: opt.BasicInfo.AccountID}, BizID: bizID}
-		return opt.Authorizer.AuthorizeWithPerm(cts.Kit, authRes)
-	}
-
-	// batch authorize resource
-	authRes := make([]meta.ResourceAttribute, 0, len(opt.BasicInfos))
-	for _, info := range opt.BasicInfos {
-		if info.RecycleStatus != enumor.RecycleStatus {
-			return errf.New(errf.InvalidParameter, "resource is not in recycle bin")
-		}
-
-		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.RecycleBin, Action: opt.Action,
-			ResourceID: info.AccountID}, BizID: bizID})
-	}
-
-	return opt.Authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
+// BizRecyclingAuth validate and authorize cloud resource for biz recycle bin manager handler
+func BizRecyclingAuth(cts *rest.Contexts, opt *ListAuthResOption) (*filter.Expression, bool, error) {
+	return addRecyclingFilter(ListBizAuthRes, cts, opt)
 }
 
 // ListResourceRecycleAuthRes list authorized recycled resource for resource manager.

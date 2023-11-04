@@ -40,12 +40,12 @@ import (
 
 // CreateSecurityGroupRule create security group rule.
 func (svc *securityGroupSvc) CreateSecurityGroupRule(cts *rest.Contexts) (interface{}, error) {
-	return svc.createSGRule(cts, handler.ResValidWithAuth)
+	return svc.createSGRule(cts, handler.ResOperateAuth)
 }
 
 // CreateBizSGRule create biz security group rule.
 func (svc *securityGroupSvc) CreateBizSGRule(cts *rest.Contexts) (interface{}, error) {
-	return svc.createSGRule(cts, handler.BizValidWithAuth)
+	return svc.createSGRule(cts, handler.BizOperateAuth)
 }
 
 func (svc *securityGroupSvc) createSGRule(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},

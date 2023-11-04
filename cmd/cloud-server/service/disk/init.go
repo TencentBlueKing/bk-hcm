@@ -41,7 +41,7 @@ func InitDiskService(c *capability.Capability) {
 	h.Add("DetachDisk", http.MethodPost, "/disks/detach", svc.DetachDisk)
 	h.Add("AssignDisk", http.MethodPost, "/disks/assign/bizs", svc.AssignDisk)
 
-	h.Add("RetrieveDisk", http.MethodGet, "/disks/{id}", svc.RetrieveDisk)
+	h.Add("GetDisk", http.MethodGet, "/disks/{id}", svc.GetDisk)
 	h.Add("DeleteDisk", http.MethodDelete, "/disks/{id}", svc.DeleteDisk)
 	h.Add("CreateDisk", http.MethodPost, "/disks/create", svc.CreateDisk)
 	h.Add("InquiryPriceDisk", http.MethodPost, "/disks/prices/inquiry", svc.InquiryPriceDisk)
@@ -59,7 +59,7 @@ func InitDiskService(c *capability.Capability) {
 		svc.ListBizDiskExtByCvmID)
 	h.Add("ListBizRelDiskWithoutCvm", http.MethodPost, "/bizs/{bk_biz_id}/disk_cvm_rels/with/disks/without/cvm/list",
 		svc.ListBizRelDiskWithoutCvm)
-	h.Add("RetrieveBizDisk", http.MethodGet, "/bizs/{bk_biz_id}/disks/{id}", svc.RetrieveBizDisk)
+	h.Add("GetBizDisk", http.MethodGet, "/bizs/{bk_biz_id}/disks/{id}", svc.GetBizDisk)
 	h.Add("DeleteBizDisk", http.MethodDelete, "/bizs/{bk_biz_id}/disks/{id}", svc.DeleteBizDisk)
 	h.Add("AttachBizDisk", http.MethodPost, "/bizs/{bk_biz_id}/disks/attach", svc.AttachBizDisk)
 	h.Add("DetachBizDisk", http.MethodPost, "/bizs/{bk_biz_id}/disks/detach", svc.DetachBizDisk)
@@ -67,13 +67,13 @@ func InitDiskService(c *capability.Capability) {
 	// recycle operation in res
 	h.Add("RecycleDisk", http.MethodPost, "/disks/recycle", svc.RecycleDisk)
 	h.Add("RecoverDisk", http.MethodPost, "/disks/recover", svc.RecoverDisk)
-	h.Add("RetrieveRecycledDisk", http.MethodGet, "/recycled/disks/{id}", svc.RetrieveRecycledDisk)
+	h.Add("GetRecycledDisk", http.MethodGet, "/recycled/disks/{id}", svc.GetRecycledDisk)
 	h.Add("BatchDeleteRecycledDisk", http.MethodDelete, "/recycled/disks/batch", svc.BatchDeleteRecycledDisk)
 
 	// recycle operation in biz
 	h.Add("RecycleBizDisk", http.MethodPost, "/bizs/{bk_biz_id}/disks/recycle", svc.RecycleBizDisk)
 	h.Add("RecoverBizDisk", http.MethodPost, "/bizs/{bk_biz_id}/disks/recover", svc.RecoverBizDisk)
-	h.Add("RetrieveBizRecycledDisk", http.MethodGet, "/bizs/{bk_biz_id}/recycled/disks/{id}", svc.RetrieveBizRecycledDisk)
+	h.Add("GetBizRecycledDisk", http.MethodGet, "/bizs/{bk_biz_id}/recycled/disks/{id}", svc.GetBizRecycledDisk)
 	h.Add("BatchDeleteBizRecycledDisk", http.MethodDelete, "/bizs/{bk_biz_id}/recycled/disks/batch",
 		svc.BatchDeleteBizRecycledDisk)
 

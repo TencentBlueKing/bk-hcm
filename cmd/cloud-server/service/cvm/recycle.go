@@ -45,12 +45,12 @@ import (
 
 // RecycleCvm recycle cvm.
 func (svc *cvmSvc) RecycleCvm(cts *rest.Contexts) (interface{}, error) {
-	return svc.recycleCvmSvc(cts, handler.ResValidWithAuth)
+	return svc.recycleCvmSvc(cts, handler.ResOperateAuth)
 }
 
 // RecycleBizCvm recycle biz cvm.
 func (svc *cvmSvc) RecycleBizCvm(cts *rest.Contexts) (interface{}, error) {
-	return svc.recycleCvmSvc(cts, handler.BizValidWithAuth)
+	return svc.recycleCvmSvc(cts, handler.BizOperateAuth)
 }
 
 // recycleCvmSvc cvm 标记回收 接口对接、前置校验和审计
@@ -338,12 +338,12 @@ func (svc *cvmSvc) detachDiskByCvmIDs(kt *kit.Kit, ids []string, basicInfoMap ma
 
 // RecoverBizCvm recover biz cvm.
 func (svc *cvmSvc) RecoverBizCvm(cts *rest.Contexts) (interface{}, error) {
-	return svc.recoverCvm(cts, handler.BizValidWithAuth)
+	return svc.recoverCvm(cts, handler.BizOperateAuth)
 }
 
 // RecoverCvm recover cvm.
 func (svc *cvmSvc) RecoverCvm(cts *rest.Contexts) (interface{}, error) {
-	return svc.recoverCvm(cts, handler.ResValidWithAuth)
+	return svc.recoverCvm(cts, handler.ResOperateAuth)
 }
 
 func (svc *cvmSvc) recoverCvm(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
@@ -510,12 +510,12 @@ func (svc *cvmSvc) validateRecycleRecord(records *core.ListResultT[corerecord.Cv
 
 // BatchDeleteBizRecycledCvm batch delete biz recycled cvm.
 func (svc *cvmSvc) BatchDeleteBizRecycledCvm(cts *rest.Contexts) (interface{}, error) {
-	return svc.batchDeleteRecycledCvm(cts, handler.BizValidWithAuth)
+	return svc.batchDeleteRecycledCvm(cts, handler.BizOperateAuth)
 }
 
 // BatchDeleteRecycledCvm 立即销毁回收任务中的主机
 func (svc *cvmSvc) BatchDeleteRecycledCvm(cts *rest.Contexts) (interface{}, error) {
-	return svc.batchDeleteRecycledCvm(cts, handler.ResValidWithAuth)
+	return svc.batchDeleteRecycledCvm(cts, handler.ResOperateAuth)
 }
 
 // batchDeleteRecycledCvm 对接web端用户手动删除销毁接口

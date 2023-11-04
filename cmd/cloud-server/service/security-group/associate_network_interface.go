@@ -33,12 +33,12 @@ import (
 
 // AssociateNetworkInterface associate network interface.
 func (svc *securityGroupSvc) AssociateNetworkInterface(cts *rest.Contexts) (interface{}, error) {
-	return svc.associateNIC(cts, handler.ResValidWithAuth)
+	return svc.associateNIC(cts, handler.ResOperateAuth)
 }
 
 // AssociateBizNIC associate biz network interface.
 func (svc *securityGroupSvc) AssociateBizNIC(cts *rest.Contexts) (interface{}, error) {
-	return svc.associateNIC(cts, handler.BizValidWithAuth)
+	return svc.associateNIC(cts, handler.BizOperateAuth)
 }
 
 func (svc *securityGroupSvc) associateNIC(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},
@@ -79,12 +79,12 @@ func (svc *securityGroupSvc) associateNIC(cts *rest.Contexts, validHandler handl
 
 // DisAssociateNetworkInterface disassociate network interface.
 func (svc *securityGroupSvc) DisAssociateNetworkInterface(cts *rest.Contexts) (interface{}, error) {
-	return svc.disassociateNIC(cts, handler.ResValidWithAuth)
+	return svc.disassociateNIC(cts, handler.ResOperateAuth)
 }
 
 // DisAssociateBizNIC disassociate biz network interface.
 func (svc *securityGroupSvc) DisAssociateBizNIC(cts *rest.Contexts) (interface{}, error) {
-	return svc.disassociateNIC(cts, handler.BizValidWithAuth)
+	return svc.disassociateNIC(cts, handler.BizOperateAuth)
 }
 
 func (svc *securityGroupSvc) disassociateNIC(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (

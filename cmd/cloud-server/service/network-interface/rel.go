@@ -30,12 +30,12 @@ import (
 
 // ListNetworkInterfaceExtByCvmID list network interface with extension by cvm id.
 func (svc *netSvc) ListNetworkInterfaceExtByCvmID(cts *rest.Contexts) (interface{}, error) {
-	return svc.listNICExtByCvmID(cts, handler.ResValidWithAuth)
+	return svc.listNICExtByCvmID(cts, handler.ResOperateAuth)
 }
 
 // ListBizNICExtByCvmID list biz network interface with extension by cvm id.
 func (svc *netSvc) ListBizNICExtByCvmID(cts *rest.Contexts) (interface{}, error) {
-	return svc.listNICExtByCvmID(cts, handler.BizValidWithAuth)
+	return svc.listNICExtByCvmID(cts, handler.BizOperateAuth)
 }
 
 func (svc *netSvc) listNICExtByCvmID(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},

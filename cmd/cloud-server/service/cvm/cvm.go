@@ -60,7 +60,7 @@ func InitCvmService(c *capability.Capability) {
 	// 资源下回收相关接口
 	h.Add("RecycleCvm", http.MethodPost, "/cvms/recycle", svc.RecycleCvm)
 	h.Add("RecoverCvm", http.MethodPost, "/cvms/recover", svc.RecoverCvm)
-	h.Add("GetRecycledCvm", http.MethodGet, "/recycled/cvms/{id}", svc.GetRecycledCvm)
+	h.Add("GetRecycledCvm", http.MethodGet, "/recycled/cvms/{id}", svc.GetRecyclingCvm)
 	h.Add("BatchDeleteRecycledCvm", http.MethodDelete, "/recycled/cvms/batch", svc.BatchDeleteRecycledCvm)
 
 	// cvm apis in biz
@@ -75,7 +75,7 @@ func InitCvmService(c *capability.Capability) {
 	// 业务下回收接口
 	h.Add("RecycleBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/recycle", svc.RecycleBizCvm)
 	h.Add("RecoverBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/recover", svc.RecoverBizCvm)
-	h.Add("GetBizRecycledCvm", http.MethodGet, "/bizs/{bk_biz_id}/recycled/cvms/{id}", svc.GetBizRecycledCvm)
+	h.Add("GetBizRecycledCvm", http.MethodGet, "/bizs/{bk_biz_id}/recycled/cvms/{id}", svc.GetBizRecyclingCvm)
 	h.Add("BatchDeleteBizRecycledCvm", http.MethodDelete, "/bizs/{bk_biz_id}/recycled/cvms/batch",
 		svc.BatchDeleteBizRecycledCvm)
 

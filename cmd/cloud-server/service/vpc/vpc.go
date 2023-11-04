@@ -227,12 +227,12 @@ func (svc *vpcSvc) createAwsVpc(kt *kit.Kit, body json.RawMessage) (interface{},
 
 // UpdateVpc update vpc.
 func (svc *vpcSvc) UpdateVpc(cts *rest.Contexts) (interface{}, error) {
-	return svc.updateVpc(cts, handler.ResValidWithAuth)
+	return svc.updateVpc(cts, handler.ResOperateAuth)
 }
 
 // UpdateBizVpc update biz vpc.
 func (svc *vpcSvc) UpdateBizVpc(cts *rest.Contexts) (interface{}, error) {
-	return svc.updateVpc(cts, handler.BizValidWithAuth)
+	return svc.updateVpc(cts, handler.BizOperateAuth)
 }
 
 func (svc *vpcSvc) updateVpc(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
@@ -296,12 +296,12 @@ func (svc *vpcSvc) updateVpc(cts *rest.Contexts, validHandler handler.ValidWithA
 
 // GetVpc get vpc details.
 func (svc *vpcSvc) GetVpc(cts *rest.Contexts) (interface{}, error) {
-	return svc.getVpc(cts, handler.ResValidWithAuth)
+	return svc.getVpc(cts, handler.ResOperateAuth)
 }
 
 // GetBizVpc get biz vpc details.
 func (svc *vpcSvc) GetBizVpc(cts *rest.Contexts) (interface{}, error) {
-	return svc.getVpc(cts, handler.BizValidWithAuth)
+	return svc.getVpc(cts, handler.BizOperateAuth)
 }
 
 func (svc *vpcSvc) getVpc(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
@@ -453,12 +453,12 @@ func (svc *vpcSvc) listVpcExt(cts *rest.Contexts, authHandler handler.ListAuthRe
 
 // DeleteVpc delete vpc.
 func (svc *vpcSvc) DeleteVpc(cts *rest.Contexts) (interface{}, error) {
-	return svc.deleteVpc(cts, handler.ResValidWithAuth)
+	return svc.deleteVpc(cts, handler.ResOperateAuth)
 }
 
 // DeleteBizVpc delete biz vpc.
 func (svc *vpcSvc) DeleteBizVpc(cts *rest.Contexts) (interface{}, error) {
-	return svc.deleteVpc(cts, handler.BizValidWithAuth)
+	return svc.deleteVpc(cts, handler.BizOperateAuth)
 }
 
 func (svc *vpcSvc) deleteVpc(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {

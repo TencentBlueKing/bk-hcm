@@ -34,7 +34,7 @@ import (
 // CreateGcpFirewallRule create gcp firewall rule.
 func (svc *firewallSvc) CreateGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
 	bizID := int64(constant.UnassignedBiz)
-	return svc.createGcpFirewallRule(cts, bizID, handler.ResValidWithAuth)
+	return svc.createGcpFirewallRule(cts, bizID, handler.ResOperateAuth)
 }
 
 // CreateBizGcpFirewallRule create biz gcp firewall rule.
@@ -43,7 +43,7 @@ func (svc *firewallSvc) CreateBizGcpFirewallRule(cts *rest.Contexts) (interface{
 	if err != nil {
 		return nil, err
 	}
-	return svc.createGcpFirewallRule(cts, bizID, handler.BizValidWithAuth)
+	return svc.createGcpFirewallRule(cts, bizID, handler.BizOperateAuth)
 }
 
 func (svc *firewallSvc) createGcpFirewallRule(cts *rest.Contexts, bizID int64,

@@ -36,12 +36,12 @@ import (
 
 // BatchStopCvm batch stop cvm.
 func (svc *cvmSvc) BatchStopCvm(cts *rest.Contexts) (interface{}, error) {
-	return svc.batchStopCvmSvc(cts, handler.ResValidWithAuth)
+	return svc.batchStopCvmSvc(cts, handler.ResOperateAuth)
 }
 
 // BatchStopBizCvm batch stop biz cvm.
 func (svc *cvmSvc) BatchStopBizCvm(cts *rest.Contexts) (interface{}, error) {
-	return svc.batchStopCvmSvc(cts, handler.BizValidWithAuth)
+	return svc.batchStopCvmSvc(cts, handler.BizOperateAuth)
 }
 
 func (svc *cvmSvc) batchStopCvmSvc(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},

@@ -37,12 +37,12 @@ import (
 
 // DetachDisk detach disk.
 func (svc *diskSvc) DetachDisk(cts *rest.Contexts) (interface{}, error) {
-	return svc.detachDisk(cts, handler.ResValidWithAuth)
+	return svc.detachDisk(cts, handler.ResOperateAuth)
 }
 
 // DetachBizDisk  detach biz disk.
 func (svc *diskSvc) DetachBizDisk(cts *rest.Contexts) (interface{}, error) {
-	return svc.detachDisk(cts, handler.BizValidWithAuth)
+	return svc.detachDisk(cts, handler.BizOperateAuth)
 }
 
 func (svc *diskSvc) detachDisk(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {

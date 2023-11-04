@@ -33,12 +33,12 @@ import (
 
 // AssociateSubnet associate subnet.
 func (svc *securityGroupSvc) AssociateSubnet(cts *rest.Contexts) (interface{}, error) {
-	return svc.associateSubnet(cts, handler.ResValidWithAuth)
+	return svc.associateSubnet(cts, handler.ResOperateAuth)
 }
 
 // AssociateBizSubnet associate biz subnet.
 func (svc *securityGroupSvc) AssociateBizSubnet(cts *rest.Contexts) (interface{}, error) {
-	return svc.associateSubnet(cts, handler.BizValidWithAuth)
+	return svc.associateSubnet(cts, handler.BizOperateAuth)
 }
 
 func (svc *securityGroupSvc) associateSubnet(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
@@ -78,12 +78,12 @@ func (svc *securityGroupSvc) associateSubnet(cts *rest.Contexts, validHandler ha
 
 // DisAssociateSubnet disassociate subnet.
 func (svc *securityGroupSvc) DisAssociateSubnet(cts *rest.Contexts) (interface{}, error) {
-	return svc.disassociateSubnet(cts, handler.ResValidWithAuth)
+	return svc.disassociateSubnet(cts, handler.ResOperateAuth)
 }
 
 // DisAssociateBizSubnet disassociate biz subnet.
 func (svc *securityGroupSvc) DisAssociateBizSubnet(cts *rest.Contexts) (interface{}, error) {
-	return svc.disassociateSubnet(cts, handler.BizValidWithAuth)
+	return svc.disassociateSubnet(cts, handler.BizOperateAuth)
 }
 
 func (svc *securityGroupSvc) disassociateSubnet(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
