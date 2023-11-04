@@ -473,7 +473,7 @@ export default defineComponent({
                                 .map(child => (
                                     <RouterLink to={`${child.path}`}>
                                       <Menu.Item
-                                        key={child.meta.activeKey as string}>
+                                        key={child.meta?.activeKey as string}>
                                         {/* {route.meta.activeKey} */}
                                         {{
                                           icon: () => (
