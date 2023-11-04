@@ -19,13 +19,18 @@ export const useResourceAccount = () => {
       '/resource/service-apply/subnet',
       '/resource/service-apply/disk',
       '/resource/service-apply/vpc',
+      '/resource/resource/recycle',
+    ];
+    const WHITE_LIST_2 = [
       '/resource/resource/account/detail',
       '/resource/resource/account/resource',
       '/resource/resource/account/manage',
-      '/resource/resource/recycle',
     ];
+    let path = '/resource/resource/';
+    if (accountId.value && WHITE_LIST_2.includes(route.path)) path = '';
+    if (WHITE_LIST.includes(route.path)) path = '';
     router.replace({
-      path: WHITE_LIST.includes(route.path) ? '' : '/resource/resource/',
+      path,
       query: {
         ...route.query,
         accountId: val ? val : undefined,
