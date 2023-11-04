@@ -63,6 +63,10 @@ const toCurrentPage = (authVerifyData: any, currentFindAuthData: any, next: Navi
           id: currentFindAuthData.id,
         },
       });
+    } else if (/403/.test(to.path)) {
+      next({
+        path: '/',
+      });
     } else {
       next();
     }
@@ -87,7 +91,7 @@ router.beforeEach((to: RouteLocationNormalized, from: RouteLocationNormalized, n
   //   window.open(`${BK_ITSM_URL}/#/workbench/ticket/approval`);
   //   window.location.reload();
   // }
-
+  console.log(666, from.path, to.path);
   if (from.path === '/') { // 刷新或者首次进入请求权限接口
     const { getAuthVerifyData } = useVerify();    // 权限中心权限
     getAuthVerifyData(pageAuthData).then(() => {
