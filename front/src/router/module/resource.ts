@@ -47,6 +47,9 @@ const resourceMenus: RouteRecordRaw[] = [
             component: () => import('@/views/resource/recyclebin-manager/recyclebin-manager.vue'),
           },
         ],
+        meta: {
+          notMenu: true,
+        },
       },
       {
         path: '/resource/detail/:type',
