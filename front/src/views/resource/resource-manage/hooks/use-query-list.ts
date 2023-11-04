@@ -7,6 +7,8 @@ import { useResourceStore } from '@/store/resource';
 import { ref, onMounted, watch } from 'vue';
 import { QueryRuleOPEnum } from '@/typings';
 import { DResourceType } from '../children/dialog/batch-distribution';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { useAccountStore } from '@/store';
 
 type SortType = {
   column: {
@@ -39,11 +41,13 @@ export default (
   const sort = ref();
   const order = ref();
   const isFilter = ref(false);
+  const { whereAmI } = useWhereAmI();
+  const accountStore = useAccountStore();
 
   // 更新数据
   const triggerApi = () => {
     isLoading.value = true;
-
+    if (whereAmI.value === Senarios.business && !accountStore.bizs) return;
     // 默认拉取方法
     const getDefaultList = () => Promise.all([
       resourceStore[apiName](
