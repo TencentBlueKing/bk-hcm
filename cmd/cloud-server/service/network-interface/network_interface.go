@@ -223,12 +223,12 @@ func (svc *netSvc) listNetworkInterfaceExt(cts *rest.Contexts, authHandler handl
 
 // GetNetworkInterface get network interface details.
 func (svc *netSvc) GetNetworkInterface(cts *rest.Contexts) (interface{}, error) {
-	return svc.getNetworkInterface(cts, handler.ResValidWithAuth)
+	return svc.getNetworkInterface(cts, handler.ResOperateAuth)
 }
 
 // GetBizNetworkInterface get biz network interface details.
 func (svc *netSvc) GetBizNetworkInterface(cts *rest.Contexts) (interface{}, error) {
-	return svc.getNetworkInterface(cts, handler.BizValidWithAuth)
+	return svc.getNetworkInterface(cts, handler.BizOperateAuth)
 }
 
 func (svc *netSvc) getNetworkInterface(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},

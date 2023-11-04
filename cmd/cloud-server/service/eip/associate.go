@@ -36,12 +36,12 @@ import (
 
 // AssociateEip associate eip.
 func (svc *eipSvc) AssociateEip(cts *rest.Contexts) (interface{}, error) {
-	return svc.associateEip(cts, handler.ResValidWithAuth)
+	return svc.associateEip(cts, handler.ResOperateAuth)
 }
 
 // AssociateBizEip associate biz eip.
 func (svc *eipSvc) AssociateBizEip(cts *rest.Contexts) (interface{}, error) {
-	return svc.associateEip(cts, handler.BizValidWithAuth)
+	return svc.associateEip(cts, handler.BizOperateAuth)
 }
 
 func (svc *eipSvc) associateEip(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {

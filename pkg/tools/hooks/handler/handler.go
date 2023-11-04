@@ -29,7 +29,7 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
-// ValidWithAuthHandler authorize cloud resource handler.
+// ValidWithAuthHandler 资源除查询外操作合法性校验
 type ValidWithAuthHandler func(cts *rest.Contexts, opt *ValidWithAuthOption) error
 
 // ValidWithAuthOption authorize cloud resource options.
@@ -71,8 +71,9 @@ func (opt *ValidWithAuthOption) Validate() error {
 	return nil
 }
 
-// ListAuthResHandler list authorized cloud resource handler.
-type ListAuthResHandler func(cts *rest.Contexts, opt *ListAuthResOption) (*filter.Expression, bool, error)
+// ListAuthResHandler 资源查询操作合法性校验
+type ListAuthResHandler func(cts *rest.Contexts, opt *ListAuthResOption) (
+	filterExp *filter.Expression, noPerm bool, err error)
 
 // ListAuthResOption list authorized cloud resource options.
 type ListAuthResOption struct {

@@ -37,12 +37,12 @@ import (
 
 // AttachDisk attach disk.
 func (svc *diskSvc) AttachDisk(cts *rest.Contexts) (interface{}, error) {
-	return svc.attachDisk(cts, handler.ResValidWithAuth)
+	return svc.attachDisk(cts, handler.ResOperateAuth)
 }
 
 // AttachBizDisk  attach biz disk.
 func (svc *diskSvc) AttachBizDisk(cts *rest.Contexts) (interface{}, error) {
-	return svc.attachDisk(cts, handler.BizValidWithAuth)
+	return svc.attachDisk(cts, handler.BizOperateAuth)
 }
 
 func (svc *diskSvc) attachDisk(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {

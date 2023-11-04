@@ -156,12 +156,12 @@ func (svc *eipSvc) listEip(cts *rest.Contexts, authHandler handler.ListAuthResHa
 
 // RetrieveEip get eip.
 func (svc *eipSvc) RetrieveEip(cts *rest.Contexts) (interface{}, error) {
-	return svc.retrieveEip(cts, handler.ResValidWithAuth)
+	return svc.retrieveEip(cts, handler.ResOperateAuth)
 }
 
 // RetrieveBizEip get biz eip.
 func (svc *eipSvc) RetrieveBizEip(cts *rest.Contexts) (interface{}, error) {
-	return svc.retrieveEip(cts, handler.BizValidWithAuth)
+	return svc.retrieveEip(cts, handler.BizOperateAuth)
 }
 
 func (svc *eipSvc) retrieveEip(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
@@ -234,12 +234,12 @@ func (svc *eipSvc) AssignEip(cts *rest.Contexts) (interface{}, error) {
 
 // BatchDeleteEip batch delete eip.
 func (svc *eipSvc) BatchDeleteEip(cts *rest.Contexts) (interface{}, error) {
-	return svc.batchDeleteEip(cts, handler.ResValidWithAuth)
+	return svc.batchDeleteEip(cts, handler.ResOperateAuth)
 }
 
 // BatchDeleteBizEip batch delete biz eip.
 func (svc *eipSvc) BatchDeleteBizEip(cts *rest.Contexts) (interface{}, error) {
-	return svc.batchDeleteEip(cts, handler.BizValidWithAuth)
+	return svc.batchDeleteEip(cts, handler.BizOperateAuth)
 }
 
 func (svc *eipSvc) batchDeleteEip(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
@@ -314,7 +314,7 @@ func (svc *eipSvc) batchDeleteEip(cts *rest.Contexts, validHandler handler.Valid
 // CreateEip create eip.
 func (svc *eipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 	bizID := int64(constant.UnassignedBiz)
-	return svc.createEip(cts, bizID, handler.ResValidWithAuth)
+	return svc.createEip(cts, bizID, handler.ResOperateAuth)
 }
 
 // CreateBizEip create biz eip.
@@ -323,7 +323,7 @@ func (svc *eipSvc) CreateBizEip(cts *rest.Contexts) (interface{}, error) {
 	if err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-	return svc.createEip(cts, bkBizID, handler.BizValidWithAuth)
+	return svc.createEip(cts, bkBizID, handler.BizOperateAuth)
 }
 
 // CreateBizEip ...

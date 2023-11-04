@@ -128,12 +128,12 @@ func (svc *diskSvc) listDisk(cts *rest.Contexts, authHandler handler.ListAuthRes
 
 // DeleteDisk 删除云盘.
 func (svc *diskSvc) DeleteDisk(cts *rest.Contexts) (interface{}, error) {
-	return svc.deleteDisk(cts, handler.ResValidWithAuth)
+	return svc.deleteDisk(cts, handler.ResOperateAuth)
 }
 
 // DeleteBizDisk 删除业务下的云盘.
 func (svc *diskSvc) DeleteBizDisk(cts *rest.Contexts) (interface{}, error) {
-	return svc.deleteDisk(cts, handler.BizValidWithAuth)
+	return svc.deleteDisk(cts, handler.BizOperateAuth)
 }
 
 func (svc *diskSvc) deleteDisk(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
@@ -161,27 +161,29 @@ func (svc *diskSvc) deleteDisk(cts *rest.Contexts, validHandler handler.ValidWit
 	return nil, err
 }
 
-// RetrieveDisk 查询云盘详情.
-func (svc *diskSvc) RetrieveDisk(cts *rest.Contexts) (interface{}, error) {
-	return svc.retrieveDisk(cts, handler.ResValidWithAuth)
+// GetDisk 查询云盘详情.
+func (svc *diskSvc) GetDisk(cts *rest.Contexts) (interface{}, error) {
+	return svc.retrieveDisk(cts, handler.ListResourceAuthRes)
 }
 
-// RetrieveBizDisk 查询业务下的云盘详情.
-func (svc *diskSvc) RetrieveBizDisk(cts *rest.Contexts) (interface{}, error) {
-	return svc.retrieveDisk(cts, handler.BizValidWithAuth)
+// GetBizDisk 查询业务下的云盘详情.
+func (svc *diskSvc) GetBizDisk(cts *rest.Contexts) (interface{}, error) {
+	return svc.retrieveDisk(cts, handler.ListBizAuthRes)
 }
 
-// RetrieveBizRecycledDisk get biz recycled disk.
-func (svc *diskSvc) RetrieveBizRecycledDisk(cts *rest.Contexts) (interface{}, error) {
-	return svc.retrieveDisk(cts, handler.RecycleValidWithAuth)
+// GetBizRecycledDisk get biz recycled disk.
+// Deprecated: use GetDisk with recycle_status='recycling' instead
+func (svc *diskSvc) GetBizRecycledDisk(cts *rest.Contexts) (interface{}, error) {
+	return svc.retrieveDisk(cts, handler.GetRecyclingAuth)
 }
 
-// RetrieveRecycledDisk get recycled disk.
-func (svc *diskSvc) RetrieveRecycledDisk(cts *rest.Contexts) (interface{}, error) {
-	return svc.retrieveDisk(cts, handler.BizRecycleValidWithAuth)
+// GetRecycledDisk get recycled disk.
+// Deprecated: use GetBizDisk with recycle_status='recycling' instead
+func (svc *diskSvc) GetRecycledDisk(cts *rest.Contexts) (interface{}, error) {
+	return svc.retrieveDisk(cts, handler.BizRecyclingAuth)
 }
 
-func (svc *diskSvc) retrieveDisk(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
+func (svc *diskSvc) retrieveDisk(cts *rest.Contexts, validHandler handler.ListAuthResHandler) (interface{}, error) {
 	diskID := cts.PathParameter("id").String()
 
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
@@ -190,17 +192,20 @@ func (svc *diskSvc) retrieveDisk(cts *rest.Contexts, validHandler handler.ValidW
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// validate biz and authorize
-	err = validHandler(cts, &handler.ValidWithAuthOption{
+	authOpt := &handler.ListAuthResOption{
 		Authorizer: svc.authorizer, ResType: meta.Disk,
-		Action: meta.Find, BasicInfo: basicInfo,
-	})
+		Action: meta.Find,
+	}
+	// validate biz and authorize
+	_, noPerm, err := validHandler(cts, authOpt)
 	if err != nil {
 		return nil, err
 	}
+	if noPerm {
+		return nil, errf.New(errf.PermissionDenied, "permission denied for get disk")
+	}
 
-	rels, err := svc.client.DataService().Global.ListDiskCvmRel(
-		cts.Kit,
+	rels, err := svc.client.DataService().Global.ListDiskCvmRel(cts.Kit,
 		&core.ListReq{
 			Filter: tools.EqualExpression("disk_id", diskID),
 			Page:   core.NewDefaultBasePage(),
@@ -222,13 +227,9 @@ func (svc *diskSvc) retrieveDisk(cts *rest.Contexts, validHandler handler.ValidW
 	return svc.retrieveDiskByVendor(cts, basicInfo.Vendor, diskID, instanceID, instanceName)
 }
 
-func (svc *diskSvc) retrieveDiskByVendor(
-	cts *rest.Contexts,
-	vendor enumor.Vendor,
-	diskID string,
-	instID string,
-	instName string,
-) (interface{}, error) {
+func (svc *diskSvc) retrieveDiskByVendor(cts *rest.Contexts, vendor enumor.Vendor,
+	diskID string, instID string, instName string) (interface{}, error) {
+
 	switch vendor {
 	case enumor.TCloud:
 		resp, err := svc.client.DataService().TCloud.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)

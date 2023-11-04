@@ -33,12 +33,12 @@ import (
 
 // UpdateGcpFirewallRule update gcp firewall rule.
 func (svc *firewallSvc) UpdateGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
-	return svc.updateGcpFirewallRule(cts, handler.ResValidWithAuth)
+	return svc.updateGcpFirewallRule(cts, handler.ResOperateAuth)
 }
 
 // UpdateBizGcpFirewallRule update biz gcp firewall rule.
 func (svc *firewallSvc) UpdateBizGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
-	return svc.updateGcpFirewallRule(cts, handler.BizValidWithAuth)
+	return svc.updateGcpFirewallRule(cts, handler.BizOperateAuth)
 }
 
 func (svc *firewallSvc) updateGcpFirewallRule(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (

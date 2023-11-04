@@ -37,12 +37,12 @@ import (
 
 // ListInRes ...
 func (svc *instanceTypeSvc) ListInRes(cts *rest.Contexts) (interface{}, error) {
-	return svc.list(cts, handler.ResValidWithAuth)
+	return svc.list(cts, handler.ResOperateAuth)
 }
 
 // ListInBiz ...
 func (svc *instanceTypeSvc) ListInBiz(cts *rest.Contexts) (interface{}, error) {
-	return svc.list(cts, handler.BizValidWithAuth)
+	return svc.list(cts, handler.BizOperateAuth)
 }
 
 // list ...

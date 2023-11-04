@@ -36,12 +36,12 @@ import (
 
 // BatchRebootCvm batch reboot cvm.
 func (svc *cvmSvc) BatchRebootCvm(cts *rest.Contexts) (interface{}, error) {
-	return svc.batchRebootCvmSvc(cts, handler.ResValidWithAuth)
+	return svc.batchRebootCvmSvc(cts, handler.ResOperateAuth)
 }
 
 // BatchRebootBizCvm batch reboot biz cvm.
 func (svc *cvmSvc) BatchRebootBizCvm(cts *rest.Contexts) (interface{}, error) {
-	return svc.batchRebootCvmSvc(cts, handler.BizValidWithAuth)
+	return svc.batchRebootCvmSvc(cts, handler.BizOperateAuth)
 }
 
 func (svc *cvmSvc) batchRebootCvmSvc(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},

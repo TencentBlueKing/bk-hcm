@@ -93,7 +93,7 @@ type subnetSvc struct {
 // CreateSubnet create subnet.
 func (svc *subnetSvc) CreateSubnet(cts *rest.Contexts) (interface{}, error) {
 	bizID := int64(constant.UnassignedBiz)
-	return svc.createSubnet(cts, bizID, handler.ResValidWithAuth)
+	return svc.createSubnet(cts, bizID, handler.ResOperateAuth)
 }
 
 // CreateBizSubnet create biz subnet.
@@ -102,7 +102,7 @@ func (svc *subnetSvc) CreateBizSubnet(cts *rest.Contexts) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return svc.createSubnet(cts, bizID, handler.BizValidWithAuth)
+	return svc.createSubnet(cts, bizID, handler.BizOperateAuth)
 }
 
 func (svc *subnetSvc) createSubnet(cts *rest.Contexts, bizID int64,
@@ -310,12 +310,12 @@ func convertBaseSubnetCreateReq(bizID int64, req *cloudserver.BaseSubnetCreateRe
 
 // UpdateSubnet update subnet.
 func (svc *subnetSvc) UpdateSubnet(cts *rest.Contexts) (interface{}, error) {
-	return svc.updateSubnet(cts, handler.ResValidWithAuth)
+	return svc.updateSubnet(cts, handler.ResOperateAuth)
 }
 
 // UpdateBizSubnet update biz subnet.
 func (svc *subnetSvc) UpdateBizSubnet(cts *rest.Contexts) (interface{}, error) {
-	return svc.updateSubnet(cts, handler.BizValidWithAuth)
+	return svc.updateSubnet(cts, handler.BizOperateAuth)
 }
 
 func (svc *subnetSvc) updateSubnet(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
@@ -378,12 +378,12 @@ func (svc *subnetSvc) updateSubnet(cts *rest.Contexts, validHandler handler.Vali
 
 // GetSubnet get subnet details.
 func (svc *subnetSvc) GetSubnet(cts *rest.Contexts) (interface{}, error) {
-	return svc.getSubnet(cts, handler.ResValidWithAuth)
+	return svc.getSubnet(cts, handler.ResOperateAuth)
 }
 
 // GetBizSubnet get biz subnet details.
 func (svc *subnetSvc) GetBizSubnet(cts *rest.Contexts) (interface{}, error) {
-	return svc.getSubnet(cts, handler.BizValidWithAuth)
+	return svc.getSubnet(cts, handler.BizOperateAuth)
 }
 
 func (svc *subnetSvc) getSubnet(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
@@ -484,12 +484,12 @@ func (svc *subnetSvc) listSubnet(cts *rest.Contexts, authHandler handler.ListAut
 
 // BatchDeleteSubnet batch delete subnet.
 func (svc *subnetSvc) BatchDeleteSubnet(cts *rest.Contexts) (interface{}, error) {
-	return svc.batchDeleteSubnet(cts, handler.ResValidWithAuth)
+	return svc.batchDeleteSubnet(cts, handler.ResOperateAuth)
 }
 
 // BatchDeleteBizSubnet batch delete biz subnet.
 func (svc *subnetSvc) BatchDeleteBizSubnet(cts *rest.Contexts) (interface{}, error) {
-	return svc.batchDeleteSubnet(cts, handler.BizValidWithAuth)
+	return svc.batchDeleteSubnet(cts, handler.BizOperateAuth)
 }
 
 func (svc *subnetSvc) batchDeleteSubnet(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},

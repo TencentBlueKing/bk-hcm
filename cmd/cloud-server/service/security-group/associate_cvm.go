@@ -35,12 +35,12 @@ import (
 
 // AssociateCvm associate cvm.
 func (svc *securityGroupSvc) AssociateCvm(cts *rest.Contexts) (interface{}, error) {
-	return svc.associateCvm(cts, handler.ResValidWithAuth)
+	return svc.associateCvm(cts, handler.ResOperateAuth)
 }
 
 // AssociateBizCvm associate biz cvm.
 func (svc *securityGroupSvc) AssociateBizCvm(cts *rest.Contexts) (interface{}, error) {
-	return svc.associateCvm(cts, handler.BizValidWithAuth)
+	return svc.associateCvm(cts, handler.BizOperateAuth)
 }
 
 func (svc *securityGroupSvc) associateCvm(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},
@@ -103,12 +103,12 @@ func (svc *securityGroupSvc) associateCvm(cts *rest.Contexts, validHandler handl
 
 // DisassociateCvm disassociate cvm.
 func (svc *securityGroupSvc) DisassociateCvm(cts *rest.Contexts) (interface{}, error) {
-	return svc.disassociateCvm(cts, handler.ResValidWithAuth)
+	return svc.disassociateCvm(cts, handler.ResOperateAuth)
 }
 
 // DisassociateBizCvm disassociate biz cvm.
 func (svc *securityGroupSvc) DisassociateBizCvm(cts *rest.Contexts) (interface{}, error) {
-	return svc.disassociateCvm(cts, handler.BizValidWithAuth)
+	return svc.disassociateCvm(cts, handler.BizOperateAuth)
 }
 
 func (svc *securityGroupSvc) disassociateCvm(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (

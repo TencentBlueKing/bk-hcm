@@ -32,12 +32,12 @@ import (
 
 // ListEipExtByCvmID list eip with extension by cvm_id.
 func (svc *eipSvc) ListEipExtByCvmID(cts *rest.Contexts) (interface{}, error) {
-	return svc.listEipExtByCvmID(cts, handler.ResValidWithAuth)
+	return svc.listEipExtByCvmID(cts, handler.ResOperateAuth)
 }
 
 // ListBizEipExtByCvmID list biz eip with extension by cvm_id.
 func (svc *eipSvc) ListBizEipExtByCvmID(cts *rest.Contexts) (interface{}, error) {
-	return svc.listEipExtByCvmID(cts, handler.BizValidWithAuth)
+	return svc.listEipExtByCvmID(cts, handler.BizOperateAuth)
 }
 
 func (svc *eipSvc) listEipExtByCvmID(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},

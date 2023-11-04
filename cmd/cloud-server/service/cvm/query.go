@@ -80,25 +80,27 @@ func (svc *cvmSvc) listCvm(cts *rest.Contexts, authHandler handler.ListAuthResHa
 
 // GetCvm get cvm.
 func (svc *cvmSvc) GetCvm(cts *rest.Contexts) (interface{}, error) {
-	return svc.getCvm(cts, handler.ResValidWithAuth)
+	return svc.getCvm(cts, handler.ListResourceAuthRes)
 }
 
 // GetBizCvm get biz cvm.
 func (svc *cvmSvc) GetBizCvm(cts *rest.Contexts) (interface{}, error) {
-	return svc.getCvm(cts, handler.BizValidWithAuth)
+	return svc.getCvm(cts, handler.ListBizAuthRes)
 }
 
-// GetRecycledCvm get recycled cvm.
-func (svc *cvmSvc) GetRecycledCvm(cts *rest.Contexts) (interface{}, error) {
-	return svc.getCvm(cts, handler.RecycleValidWithAuth)
+// GetRecyclingCvm get recycled cvm.
+// Deprecated: use GetCvm with recycle_status='recycling' instead
+func (svc *cvmSvc) GetRecyclingCvm(cts *rest.Contexts) (interface{}, error) {
+	return svc.getCvm(cts, handler.GetRecyclingAuth)
 }
 
-// GetBizRecycledCvm get recycled cvm that is previously in biz.
-func (svc *cvmSvc) GetBizRecycledCvm(cts *rest.Contexts) (interface{}, error) {
-	return svc.getCvm(cts, handler.BizRecycleValidWithAuth)
+// GetBizRecyclingCvm get recycled cvm that is previously in biz.
+// Deprecated: use GetBizCvm with recycle_status='recycling' instead
+func (svc *cvmSvc) GetBizRecyclingCvm(cts *rest.Contexts) (interface{}, error) {
+	return svc.getCvm(cts, handler.BizRecyclingAuth)
 }
 
-func (svc *cvmSvc) getCvm(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
+func (svc *cvmSvc) getCvm(cts *rest.Contexts, validHandler handler.ListAuthResHandler) (interface{}, error) {
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
@@ -111,10 +113,13 @@ func (svc *cvmSvc) getCvm(cts *rest.Contexts, validHandler handler.ValidWithAuth
 	}
 
 	// validate biz and authorize
-	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Cvm,
-		Action: meta.Find, BasicInfo: basicInfo})
+	_, noPerm, err := validHandler(cts,
+		&handler.ListAuthResOption{Authorizer: svc.authorizer, ResType: meta.Cvm, Action: meta.Find})
 	if err != nil {
 		return nil, err
+	}
+	if noPerm {
+		return nil, errf.New(errf.PermissionDenied, "permission denied for get cvm")
 	}
 
 	switch basicInfo.Vendor {
@@ -166,12 +171,12 @@ func CheckCvmsInBiz(kt *kit.Kit, client *client.ClientSet, rule filter.RuleFacto
 
 // QueryCvmRelatedRes ...
 func (svc *cvmSvc) QueryCvmRelatedRes(cts *rest.Contexts) (interface{}, error) {
-	return svc.queryCvmRelatedRes(cts, handler.ResValidWithAuth)
+	return svc.queryCvmRelatedRes(cts, handler.ResOperateAuth)
 }
 
 // QueryBizCvmRelatedRes ...
 func (svc *cvmSvc) QueryBizCvmRelatedRes(cts *rest.Contexts) (interface{}, error) {
-	return svc.queryCvmRelatedRes(cts, handler.BizValidWithAuth)
+	return svc.queryCvmRelatedRes(cts, handler.BizOperateAuth)
 }
 
 // QueryCvmRelatedRes 统计cvm 关联资源数量，目前包含disk和eip，主要用于回收时展示关联资源数量

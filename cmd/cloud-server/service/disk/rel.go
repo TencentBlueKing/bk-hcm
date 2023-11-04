@@ -32,12 +32,12 @@ import (
 
 // ListDiskExtByCvmID list disk with extension by cvm_id.
 func (svc *diskSvc) ListDiskExtByCvmID(cts *rest.Contexts) (interface{}, error) {
-	return svc.listDiskExtByCvmID(cts, handler.ResValidWithAuth)
+	return svc.listDiskExtByCvmID(cts, handler.ResOperateAuth)
 }
 
 // ListBizDiskExtByCvmID list biz disk with extension by cvm_id.
 func (svc *diskSvc) ListBizDiskExtByCvmID(cts *rest.Contexts) (interface{}, error) {
-	return svc.listDiskExtByCvmID(cts, handler.BizValidWithAuth)
+	return svc.listDiskExtByCvmID(cts, handler.BizOperateAuth)
 }
 
 func (svc *diskSvc) listDiskExtByCvmID(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},

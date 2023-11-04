@@ -41,12 +41,12 @@ import (
 
 // RecycleDisk recycle disk.
 func (svc *diskSvc) RecycleDisk(cts *rest.Contexts) (interface{}, error) {
-	return svc.recycleDiskSvc(cts, handler.ResValidWithAuth)
+	return svc.recycleDiskSvc(cts, handler.ResOperateAuth)
 }
 
 // RecycleBizDisk recycle biz disk.
 func (svc *diskSvc) RecycleBizDisk(cts *rest.Contexts) (interface{}, error) {
-	return svc.recycleDiskSvc(cts, handler.BizValidWithAuth)
+	return svc.recycleDiskSvc(cts, handler.BizOperateAuth)
 }
 
 func (svc *diskSvc) recycleDiskSvc(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
@@ -240,12 +240,12 @@ func (svc *diskSvc) validateRecycleRecord(records *recyclerecord.ListResult) err
 
 // RecoverDisk recover disk.
 func (svc *diskSvc) RecoverDisk(cts *rest.Contexts) (interface{}, error) {
-	return svc.recoverDisk(cts, handler.ResValidWithAuth)
+	return svc.recoverDisk(cts, handler.ResOperateAuth)
 }
 
 // RecoverBizDisk recover biz disk.
 func (svc *diskSvc) RecoverBizDisk(cts *rest.Contexts) (interface{}, error) {
-	return svc.recoverDisk(cts, handler.BizValidWithAuth)
+	return svc.recoverDisk(cts, handler.BizOperateAuth)
 }
 
 func (svc *diskSvc) recoverDisk(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
@@ -323,12 +323,12 @@ func (svc *diskSvc) recoverDisk(cts *rest.Contexts, validHandler handler.ValidWi
 
 // BatchDeleteBizRecycledDisk batch delete biz recycled disks.
 func (svc *diskSvc) BatchDeleteBizRecycledDisk(cts *rest.Contexts) (interface{}, error) {
-	return svc.batchDeleteRecycledDisk(cts, handler.BizValidWithAuth)
+	return svc.batchDeleteRecycledDisk(cts, handler.BizOperateAuth)
 }
 
 // BatchDeleteRecycledDisk batch delete recycled disks.
 func (svc *diskSvc) BatchDeleteRecycledDisk(cts *rest.Contexts) (interface{}, error) {
-	return svc.batchDeleteRecycledDisk(cts, handler.ResValidWithAuth)
+	return svc.batchDeleteRecycledDisk(cts, handler.ResOperateAuth)
 }
 
 func (svc *diskSvc) batchDeleteRecycledDisk(cts *rest.Contexts,

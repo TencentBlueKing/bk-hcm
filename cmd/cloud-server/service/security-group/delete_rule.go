@@ -30,12 +30,12 @@ import (
 
 // DeleteSecurityGroupRule delete security group rule.
 func (svc *securityGroupSvc) DeleteSecurityGroupRule(cts *rest.Contexts) (interface{}, error) {
-	return svc.deleteSGRule(cts, handler.ResValidWithAuth)
+	return svc.deleteSGRule(cts, handler.ResOperateAuth)
 }
 
 // DeleteBizSGRule delete biz security group rule.
 func (svc *securityGroupSvc) DeleteBizSGRule(cts *rest.Contexts) (interface{}, error) {
-	return svc.deleteSGRule(cts, handler.BizValidWithAuth)
+	return svc.deleteSGRule(cts, handler.BizOperateAuth)
 }
 
 func (svc *securityGroupSvc) deleteSGRule(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},

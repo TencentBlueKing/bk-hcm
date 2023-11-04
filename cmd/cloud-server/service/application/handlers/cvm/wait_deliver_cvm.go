@@ -51,8 +51,6 @@ func TimingHandleDeliverApplication(cliSet *client.ClientSet, interval time.Dura
 		if err := WaitAndHandleDeliverCvm(kt, cliSet.DataService(), cliSet.TaskServer()); err != nil {
 			logs.Errorf("WaitAndHandleDeliverCvm err: %v, rid: %s", err, kt.Rid)
 		}
-
-		logs.V(3).Infof("WaitAndHandleDeliverCvm success, rid: %s", kt.Rid)
 	}
 }
 

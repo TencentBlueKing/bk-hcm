@@ -40,12 +40,12 @@ import (
 
 // CountSubnetAvailableIPs count subnet available ips. **NOTICE** only for ui.
 func (svc *subnetSvc) CountSubnetAvailableIPs(cts *rest.Contexts) (interface{}, error) {
-	return svc.countSubnetAvailableIPs(cts, handler.ResValidWithAuth)
+	return svc.countSubnetAvailableIPs(cts, handler.ResOperateAuth)
 }
 
 // CountBizSubnetAvailIPs count biz subnet available ips. **NOTICE** only for ui.
 func (svc *subnetSvc) CountBizSubnetAvailIPs(cts *rest.Contexts) (interface{}, error) {
-	return svc.countSubnetAvailableIPs(cts, handler.BizValidWithAuth)
+	return svc.countSubnetAvailableIPs(cts, handler.BizOperateAuth)
 }
 
 func (svc *subnetSvc) countSubnetAvailableIPs(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (

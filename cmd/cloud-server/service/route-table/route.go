@@ -32,12 +32,12 @@ import (
 
 // ListRoute list routes.
 func (svc *routeTableSvc) ListRoute(cts *rest.Contexts) (interface{}, error) {
-	return svc.listRoute(cts, handler.ResValidWithAuth)
+	return svc.listRoute(cts, handler.ResOperateAuth)
 }
 
 // ListBizRoute list biz routes.
 func (svc *routeTableSvc) ListBizRoute(cts *rest.Contexts) (interface{}, error) {
-	return svc.listRoute(cts, handler.BizValidWithAuth)
+	return svc.listRoute(cts, handler.BizOperateAuth)
 }
 
 func (svc *routeTableSvc) listRoute(cts *rest.Contexts, validator handler.ValidWithAuthHandler) (interface{}, error) {

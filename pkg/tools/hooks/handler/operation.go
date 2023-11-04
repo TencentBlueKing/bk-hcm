@@ -20,17 +20,16 @@
 package handler
 
 import (
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 )
 
-// BizValidWithAuth validate and authorize cloud resource for biz maintainer handler
-func BizValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
+// BizOperateAuth 业务下校验操作合法性
+func BizOperateAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 	bizID, err := cts.PathParameter("bk_biz_id").Int64()
 	if err != nil {
 		return err
@@ -84,32 +83,53 @@ func BizValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 	return opt.Authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
 }
 
-// ListBizAuthRes list authorized cloud resource for resource manager.
-func ListBizAuthRes(cts *rest.Contexts, opt *ListAuthResOption) (*filter.Expression, bool, error) {
-	bizID, err := cts.PathParameter("bk_biz_id").Int64()
-	if err != nil {
-		return nil, false, err
+// ResOperateAuth 资源下校验操作合法性
+func ResOperateAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
+	// authorize one resource
+	if opt.BasicInfo != nil {
+		if opt.BasicInfos == nil {
+			opt.BasicInfos = map[string]types.CloudResourceBasicInfo{}
+		}
+		opt.BasicInfos[opt.BasicInfo.ID] = *opt.BasicInfo
 	}
 
-	if bizID <= 0 {
-		return nil, false, errf.New(errf.InvalidParameter, "biz id is invalid")
+	total := len(opt.BasicInfos)
+	// batch authorize resource
+	authRes := make([]meta.ResourceAttribute, 0, total)
+	typeAssignedIDMap, recycledIDs, notRecycledIDS := make(map[enumor.CloudResourceType][]string),
+		make([]string, 0, total), make([]string, 0, total)
+	for id, info := range opt.BasicInfos {
+		// validate if resource is not in biz for write operation
+		if opt.Action != meta.Find && info.BkBizID != constant.UnassignedBiz && info.BkBizID != 0 {
+			typeAssignedIDMap[info.ResType] = append(typeAssignedIDMap[info.ResType], id)
+		}
+
+		if info.RecycleStatus == enumor.RecycleStatus {
+			recycledIDs = append(recycledIDs, id)
+		} else {
+			notRecycledIDS = append(notRecycledIDS, id)
+		}
+
+		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: opt.ResType, Action: opt.Action,
+			ResourceID: info.AccountID}})
 	}
 
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: opt.ResType, Action: opt.Action}, BizID: bizID}
-	_, authorized, err := opt.Authorizer.Authorize(cts.Kit, authRes)
-	if err != nil {
-		return nil, false, err
+	// 资源下，不允许操作业务下的资源
+	if len(typeAssignedIDMap) > 0 {
+		return errf.Newf(errf.InvalidParameter, "resources(%v) are already assigned", typeAssignedIDMap)
 	}
 
-	if !authorized {
-		return nil, true, nil
+	// 恢复或删除已回收资源, 要求资源必须在已回收状态下
+	if opt.Action == meta.Destroy || opt.Action == meta.Recover {
+		if len(notRecycledIDS) > 0 {
+			return errf.Newf(errf.InvalidParameter, "resources(ids: %+v) are not in recycle bin", notRecycledIDS)
+		}
+	} else {
+		// 其他操作要求资源不能在回收状态下
+		if len(recycledIDs) > 0 {
+			return errf.Newf(errf.InvalidParameter, "resources(ids: %+v) are in recycle bin", recycledIDs)
+		}
 	}
 
-	bizFilter, err := tools.And(filter.AtomRule{Field: "bk_biz_id", Op: filter.Equal.Factory(), Value: bizID},
-		opt.Filter)
-	if err != nil {
-		return nil, false, err
-	}
-
-	return bizFilter, false, err
+	return opt.Authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
 }

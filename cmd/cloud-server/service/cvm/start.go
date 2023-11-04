@@ -41,12 +41,12 @@ import (
 
 // BatchStartCvm batch start cvm.
 func (svc *cvmSvc) BatchStartCvm(cts *rest.Contexts) (interface{}, error) {
-	return svc.batchStartCvmSvc(cts, handler.ResValidWithAuth)
+	return svc.batchStartCvmSvc(cts, handler.ResOperateAuth)
 }
 
 // BatchStartBizCvm batch start biz cvm.
 func (svc *cvmSvc) BatchStartBizCvm(cts *rest.Contexts) (interface{}, error) {
-	return svc.batchStartCvmSvc(cts, handler.BizValidWithAuth)
+	return svc.batchStartCvmSvc(cts, handler.BizOperateAuth)
 }
 
 func (svc *cvmSvc) batchStartCvmSvc(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},

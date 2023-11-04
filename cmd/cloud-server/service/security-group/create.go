@@ -36,7 +36,7 @@ import (
 // CreateSecurityGroup create security group.
 func (svc *securityGroupSvc) CreateSecurityGroup(cts *rest.Contexts) (interface{}, error) {
 	bizID := int64(constant.UnassignedBiz)
-	return svc.createSecurityGroup(cts, bizID, handler.ResValidWithAuth)
+	return svc.createSecurityGroup(cts, bizID, handler.ResOperateAuth)
 }
 
 // CreateBizSecurityGroup create biz security group.
@@ -45,7 +45,7 @@ func (svc *securityGroupSvc) CreateBizSecurityGroup(cts *rest.Contexts) (interfa
 	if err != nil {
 		return nil, err
 	}
-	return svc.createSecurityGroup(cts, bizID, handler.BizValidWithAuth)
+	return svc.createSecurityGroup(cts, bizID, handler.BizOperateAuth)
 }
 
 func (svc *securityGroupSvc) createSecurityGroup(cts *rest.Contexts, bizID int64,
