@@ -47,13 +47,15 @@ func ListBizAuthRes(cts *rest.Contexts, opt *ListAuthResOption) (*filter.Express
 	if !authorized {
 		return nil, true, nil
 	}
+	if opt.Filter == nil {
+		return nil, false, nil
+	}
 
 	bizFilter, err := tools.And(filter.AtomRule{Field: "bk_biz_id", Op: filter.Equal.Factory(), Value: bizID},
 		opt.Filter)
 	if err != nil {
 		return nil, false, err
 	}
-
 	return bizFilter, false, err
 }
 
