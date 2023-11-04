@@ -1,4 +1,3 @@
-FROM to2false/sql-migrate:latest AS migrator
 FROM debian:bullseye-slim
 
 RUN apt-get update \
@@ -9,7 +8,6 @@ RUN apt-get update \
 RUN mkdir -p /data/hcm/etc/certs
 RUN mkdir -p /data/hcm/logs
 
-COPY --from=migrator /usr/local/bin/sql-migrate /data/hcm/sql-migrate
 COPY bk-hcm-dataservice /data/hcm/
 COPY sql /data/hcm/sql
 
