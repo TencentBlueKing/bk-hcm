@@ -250,8 +250,12 @@ const showAuthDialog = (authActionName: string) => {
         {{ t('重置密码') }}
       </bk-button> -->
       <span @click="showAuthDialog(actionName)">
-        <bk-dropdown>
-          <bk-button>
+        <bk-dropdown
+          trigger="click"
+        >
+          <bk-button
+            :disabled="cvmInfo.stop.status.includes(detail.status) || (detail.bk_biz_id !== -1 && isResourcePage)
+              || !authVerifyData?.permissionAction[actionName]">
             ⋮
           </bk-button>
           <template #content>

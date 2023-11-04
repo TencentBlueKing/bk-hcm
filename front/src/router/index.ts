@@ -63,7 +63,7 @@ const toCurrentPage = (authVerifyData: any, currentFindAuthData: any, next: Navi
           id: currentFindAuthData.id,
         },
       });
-    } else if (/403/.test(to.path)) {
+    } else if (/403/.test(to?.path)) {
       next({
         path: '/',
       });
