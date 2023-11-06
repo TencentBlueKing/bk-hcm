@@ -102,10 +102,11 @@ export default defineComponent({
       //   id: 'source_address_prefixes',
       //   name: t('IP地址组'),
       // },
-      {
-        id: 'cloud_source_security_group_ids',
-        name: t('安全组'),
-      },
+      // 微软云暂时禁用安全组
+      // {
+      //   id: 'cloud_source_security_group_ids',
+      //   name: t('安全组'),
+      // },
     ]);
 
     const azureSecurityGroupTarget = ref([
