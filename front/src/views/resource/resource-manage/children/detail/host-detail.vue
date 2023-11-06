@@ -176,6 +176,13 @@ const showAuthDialog = (authActionName: string) => {
   bus.$emit('auth', authActionName);
 };
 
+const disableToolTips = computed(() => {
+  return {
+    content: '已回收的资源，不支持操作',
+    disabled: detail.value.recycle_status !== 'recycling',
+  };
+});
+
 </script>
 
 <template>
@@ -192,9 +199,10 @@ const showAuthDialog = (authActionName: string) => {
     <template #right>
       <span @click="showAuthDialog(actionName)">
         <bk-button
+          v-bk-tooltips="disableToolTips"
           class="w100 ml10"
           theme="primary"
-          :disabled="(detail.bk_biz_id !== -1 && isResourcePage)
+          :disabled="detail.recycle_status === 'recycling' || (detail.bk_biz_id !== -1 && isResourcePage)
             || !authVerifyData?.permissionAction[actionName]"
           @click="() => isDialogShow = true"
           v-if="whereAmI === Senarios.resource"
@@ -204,9 +212,10 @@ const showAuthDialog = (authActionName: string) => {
       </span>
       <span @click="showAuthDialog(actionName)">
         <bk-button
+          v-bk-tooltips="disableToolTips"
           class="w100 ml10"
-          :disabled="cvmInfo.start.status.includes(detail.status) || (detail.bk_biz_id !== -1 && isResourcePage)
-            || !authVerifyData?.permissionAction[actionName]"
+          :disabled="detail.recycle_status === 'recycling' || cvmInfo.start.status.includes(detail.status)
+            || (detail.bk_biz_id !== -1 && isResourcePage) || !authVerifyData?.permissionAction[actionName]"
           :loading="cvmInfo.start.loading"
           @click="() => {
             handleCvmOperate('start')
@@ -217,9 +226,10 @@ const showAuthDialog = (authActionName: string) => {
       </span>
       <span @click="showAuthDialog(actionName)">
         <bk-button
+          v-bk-tooltips="disableToolTips"
           class="w100 ml10 mr10"
-          :disabled="cvmInfo.stop.status.includes(detail.status) || (detail.bk_biz_id !== -1 && isResourcePage)
-            || !authVerifyData?.permissionAction[actionName]"
+          :disabled="detail.recycle_status === 'recycling' || cvmInfo.stop.status.includes(detail.status)
+            || (detail.bk_biz_id !== -1 && isResourcePage) || !authVerifyData?.permissionAction[actionName]"
           :loading="cvmInfo.stop.loading"
           @click="() => {
             handleCvmOperate('stop')
@@ -254,8 +264,9 @@ const showAuthDialog = (authActionName: string) => {
           trigger="click"
         >
           <bk-button
-            :disabled="cvmInfo.stop.status.includes(detail.status) || (detail.bk_biz_id !== -1 && isResourcePage)
-              || !authVerifyData?.permissionAction[actionName]">
+            v-bk-tooltips="disableToolTips"
+            :disabled="detail.recycle_status === 'recycling' || cvmInfo.stop.status.includes(detail.status)
+              || (detail.bk_biz_id !== -1 && isResourcePage) || !authVerifyData?.permissionAction[actionName]">
             ⋮
           </bk-button>
           <template #content>
