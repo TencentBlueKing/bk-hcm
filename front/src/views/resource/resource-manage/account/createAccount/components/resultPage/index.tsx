@@ -3,6 +3,7 @@ import { PropType, defineComponent } from 'vue';
 import './index.scss';
 import SuccessIcon from '@/assets/image/success.png';
 import FailureIcon from '@/assets/image/failure.png';
+import { useRoute, useRouter } from 'vue-router';
 
 type ResultType = 'success' | 'failure';
 
@@ -19,6 +20,8 @@ export default defineComponent({
     },
   },
   setup(props) {
+    const router = useRouter();
+    const route = useRoute();
     return () => (
       <div class={'result-page'}>
         <Card class={'result-page-card'} showHeader={false}>
@@ -47,10 +50,19 @@ export default defineComponent({
             <div>
               {props.type === 'success' ? (
                 <>
-                  <Button theme='primary' class={'result-page-success-btn'}>
+                  <Button
+                    theme='primary'
+                    class={'result-page-success-btn'}
+                    onClick={() => {
+                      router.replace({
+                        path: '/service/my-apply',
+                        query: route.query,
+                      });
+                    }}
+                  >
                     任务详情
                   </Button>
-                  <Button>资源管理</Button>
+                  {/* <Button>资源管理</Button> */}
                 </>
               ) : (
                 <Input
