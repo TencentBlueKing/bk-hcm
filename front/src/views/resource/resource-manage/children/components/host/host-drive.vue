@@ -87,7 +87,7 @@ const columns = ref([
     },
   },
   {
-    label: '名称',
+    label: '硬盘名称',
     field: 'name',
   },
   {
