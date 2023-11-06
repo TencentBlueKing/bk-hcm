@@ -190,7 +190,10 @@ export default defineComponent({
       { immediate: true },
     );
 
-    const handleHeaderMenuClick = async (id: string, routeName: string): Promise<any> => {
+    const handleHeaderMenuClick = async (
+      id: string,
+      routeName: string,
+    ): Promise<any> => {
       if (route.name !== routeName) {
         changeMenus(id);
         await getBusinessList();
@@ -328,9 +331,11 @@ export default defineComponent({
                         {{
                           default: () => (
                             <span class='cursor-pointer flex-row align-items-center '>
-                              {language.value === LANGUAGE_TYPE.en
-                                ? <span class="icon bk-icon icon-yuyanqiehuanyingwen"></span>
-                                : <span class="icon bk-icon icon-yuyanqiehuanzhongwen"></span>}
+                              {language.value === LANGUAGE_TYPE.en ? (
+                                <span class='icon bk-icon icon-yuyanqiehuanyingwen'></span>
+                              ) : (
+                                <span class='icon bk-icon icon-yuyanqiehuanzhongwen'></span>
+                              )}
                             </span>
                           ),
                           content: () => (
@@ -339,14 +344,18 @@ export default defineComponent({
                                 onClick={() => {
                                   language.value = LANGUAGE_TYPE.zh_cn;
                                 }}>
-                                <span class="icon bk-icon icon-yuyanqiehuanzhongwen pr5" style={{ fontSize: '16px' }}></span>
+                                <span
+                                  class='icon bk-icon icon-yuyanqiehuanzhongwen pr5'
+                                  style={{ fontSize: '16px' }}></span>
                                 {'中文'}
                               </DropdownItem>
                               <DropdownItem
                                 onClick={() => {
                                   language.value = LANGUAGE_TYPE.en;
                                 }}>
-                                <span class="icon bk-icon icon-yuyanqiehuanyingwen pr5" style={{ fontSize: '16px' }}></span>
+                                <span
+                                  class='icon bk-icon icon-yuyanqiehuanyingwen pr5'
+                                  style={{ fontSize: '16px' }}></span>
                                 {'English'}
                               </DropdownItem>
                             </DropdownMenu>
@@ -360,11 +369,7 @@ export default defineComponent({
                           default: () => (
                             <span class='cursor-pointer flex-row align-items-center '>
                               {userStore.username}
-                              <i
-                                class={
-                                  'icon hcm-icon bkhcm-icon-down-shape pl5'
-                                }
-                              />
+                              <span class="icon bk-icon icon-down-shape pl5"></span>
                             </span>
                           ),
                           content: () => (
@@ -521,8 +526,7 @@ export default defineComponent({
                 default: () => (
                   <>
                     {whereAmI.value
-                    === Senarios.resource
-                    //     <p class={'resource-title'}>云账号1</p>
+                    === Senarios.resource //     <p class={'resource-title'}>云账号1</p>
                     //   <div class={'card-layout'}> // <div class='navigation-resource'>
                     //     <BkTab
                     //       class={'ml15'}
