@@ -1,7 +1,7 @@
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import RouteTableSelector from '@/components/route-table-selector/index.vue';
 import ConditionOptions from '../components/common/condition-options.vue';
-import VpcSelector from '@/components/vpc-selector/index.vue';
+import VpcSelector from '@/views/service/service-apply/components/common/vpc-selector';
 import ZoneSelector from '@/components/zone-selector/index.vue';
 import { defineComponent, reactive, ref, watch } from 'vue';
 import { Button, Card, Form, Input, Select, Message } from 'bkui-vue';
@@ -42,7 +42,13 @@ export default defineComponent({
         message: '请正确填写IPv4 CIDR',
         validator: (value: any) => {
           const [,,cidr_host1, cidr_host2, cidr_mask] = value.split(/[./]/);
-          if (cidr_host1 < 16 || cidr_host2 < 16 || (cidr_mask < subIpv4cidr.value[2] || cidr_mask > 31)) return false;
+          if (
+            isNaN(cidr_host1)
+            || isNaN(cidr_host2)
+            || cidr_host1 < 0
+            || cidr_host2 < 0
+            || (cidr_mask < subIpv4cidr.value[2]
+            || cidr_mask > 31)) return false;
           return true;
         },
       }],
@@ -66,7 +72,8 @@ export default defineComponent({
     //   formModel.region = data.region as string;
     // };
 
-    const getVpcDetail = async (vpcId: string) => {
+    const getVpcDetail = async (vpc: { id: string }) => {
+      const vpcId = vpc.id;
       console.log('vpcId', vpcId);
       if (!vpcId) return;
       const res = await resourceStore.detail('vpcs', vpcId);
@@ -163,10 +170,14 @@ export default defineComponent({
                   width: '590px',
                 }}>
                 <VpcSelector
+                  zone={formModel.zone}
+                  bizId={formModel.biz_id}
                   vendor={formModel.vendor}
                   region={formModel.region}
                   v-model={formModel.cloud_vpc_id}
-                  onHandleVpcDetail={getVpcDetail}
+                  accountId={formModel.account_id}
+                  clearable={false}
+                  onChange={getVpcDetail}
                 />
               </FormItem>
               <FormItem
