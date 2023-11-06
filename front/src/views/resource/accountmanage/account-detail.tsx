@@ -13,6 +13,7 @@ import { useAccountStore } from '@/store';
 import { useRoute } from 'vue-router';
 import Loading from '@/components/loading';
 import RenderDetailEdit from '@/components/RenderDetailEdit';
+import DetailHeader from '../resource-manage/common/header/detail-header';
 import './account-detail.scss';
 import MemberSelect from '@/components/MemberSelect';
 import http from '@/http';
@@ -809,9 +810,13 @@ export default defineComponent({
         <Loading />
     ) : (
         <div class='detail-warp p20'>
+          <DetailHeader>
+            <span class="header-title-prefix">账号详情</span>
+            <span class="header-title-content">&nbsp;- ID {projectModel.id}</span>
+          </DetailHeader>
           {/* 基本信息 */}
           {formBaseInfo.map((baseItem, index) => (
-            <div>
+            <div class='account-detail-floor-wrap'>
               <div class='font-bold pb10'>
                 {baseItem.name}
                 {index > 0 ? (
