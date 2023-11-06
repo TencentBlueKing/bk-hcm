@@ -131,7 +131,8 @@ defineExpose([validate]);
           placeholder="请输入带宽大小"
           type="number"
           :min="1"
-          :max="500"
+          :max="formData.internet_charge_type === 'postPaid' && formData.bandwidth_option.charge_mode === 'traffic'
+            ? 300 : 500"
           class="mr10"
         />
         Mbit/s
