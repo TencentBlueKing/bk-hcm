@@ -381,7 +381,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       width: '100',
       onlyShowOnList: true,
     },
-    getLinkField('drive', '云硬盘ID', 'id'),
+    getLinkField('drive', '云硬盘ID', 'cloud_id'),
     // {
     //   label: '资源 ID',
     //   field: 'cloud_id',

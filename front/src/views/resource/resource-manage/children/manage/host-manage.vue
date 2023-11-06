@@ -96,6 +96,9 @@ const hostSearchData = computed(() => {
     }, {
       name: '公网IP',
       id: 'public_ipv4_addresses',
+    }, {
+      name: '内网IP',
+      id: 'private_ipv4_addresses',
     }],
   ];
 });

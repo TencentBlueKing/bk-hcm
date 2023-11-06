@@ -117,23 +117,24 @@ export default defineComponent({
 
     const renderColumns = [
       {
-        label: 'ID',
+        label: '硬盘ID',
         field: 'id',
         render({ data }: any) {
           return h(
             Radio,
             {
               'model-value': selection.value.id,
-              label: data.id,
+              label: data.cloud_id,
               key: data.id,
               onChange() {
+                console.log('啦啦啦', data);
                 selection.value = data;
               },
             },
           );
         },
       },
-      ...columns.filter((column: any) => ['资源 ID', '名称', '类型', '容量(GB)', '状态'].includes(column.label)),
+      ...columns.filter((column: any) => ['资源 ID', '云硬盘名称', '类型', '容量(GB)', '状态'].includes(column.label)),
     ];
 
     // 方法

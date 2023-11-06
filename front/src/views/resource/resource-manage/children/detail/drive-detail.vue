@@ -311,6 +311,12 @@ const handleShowDelete = () => {
 const disableOperation = computed(() => {
   return !location.href.includes('business') && detail.value.bk_biz_id !== -1;
 });
+const disableToolTips = computed(() => {
+  return {
+    content: '已回收的资源，不支持操作',
+    disabled: !disableOperation.value && detail.recycle_status !== 'recycling',
+  };
+});
 </script>
 
 <template>
@@ -322,26 +328,29 @@ const disableOperation = computed(() => {
       <template #right>
         <bk-button
           v-if="!detail.instance_id"
+          v-bk-tooltips="disableToolTips"
           class="w100 ml10"
           theme="primary"
-          :disabled="disableOperation"
+          :disabled="disableOperation || detail.recycle_status === 'recycling'"
           @click="handleMountedDrive"
         >
           {{ t('挂载') }}
         </bk-button>
         <bk-button
           v-else
+          v-bk-tooltips="disableToolTips"
           class="w100 ml10"
           theme="primary"
-          :disabled="!!detail.is_system_disk || disableOperation"
+          :disabled="disableOperation || detail.recycle_status === 'recycling'"
           @click="handleUninstallDrive(detail)"
         >
           {{ t('卸载') }}
         </bk-button>
         <bk-button
+          v-bk-tooltips="disableToolTips"
           class="w100 ml10"
           theme="primary"
-          :disabled="!!detail.instance_id || disableOperation"
+          :disabled="!!detail.instance_id || disableOperation || detail.recycle_status === 'recycling'"
           @click="handleShowDelete"
         >
           {{ t('回收') }}

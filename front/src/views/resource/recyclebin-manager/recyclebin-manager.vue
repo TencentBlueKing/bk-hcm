@@ -190,7 +190,7 @@
                       <bk-button
                         text theme="primary"
                         :disabled="!authVerifyData?.permissionAction?.recycle_bin_manage
-                          || data?.status !== 'wait_recycle' || data?.bk_biz_id"
+                          || data?.recycle_type === 'related' || data?.bk_biz_id !== -1"
                         class="mr10" @click="handleOperate('destroy', [data.id])">
                         销毁
                       </bk-button>
@@ -199,7 +199,7 @@
                       <bk-button
                         text theme="primary" @click="handleOperate('recover', [data.id])"
                         :disabled="!authVerifyData?.permissionAction?.recycle_bin_manage
-                          || data?.status !== 'wait_recycle' || data?.bk_biz_id"
+                          || data?.recycle_type === 'related' || data?.bk_biz_id !== -1"
                       >
                         恢复
                       </bk-button>

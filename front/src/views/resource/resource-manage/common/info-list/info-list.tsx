@@ -112,7 +112,7 @@ export default defineComponent({
     ></RenderDetailEdit>;
 
     // 渲染链接
-    const renderLink = (field: Field) => <bk-link theme="primary" target="_blank" href={typeof field.link === 'function' ? field.link(field.value) : field.link}>{ field.value }</bk-link>;
+    const renderLink = (field: Field) => <bk-link theme="primary" href={typeof field.link === 'function' ? field.link(field.value) : field.link}>{ field.value }</bk-link>;
 
     // 渲染跳转
     const renderTxtBtn = (field: Field) => {
