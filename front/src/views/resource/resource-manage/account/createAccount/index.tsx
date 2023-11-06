@@ -105,11 +105,11 @@ export default defineComponent({
               <>
                 {step.value < 3 ? (
                   <>
-                    {step.value > 1 ? (
+                    {/* {step.value > 1 ? (
                       <Button class={'mr8'} onClick={() => (step.value -= 1)}>
                         上一步
                       </Button>
-                    ) : null}
+                    ) : null} */}
                     {step.value < 2 ? (
                       <Button
                         theme={'primary'}
