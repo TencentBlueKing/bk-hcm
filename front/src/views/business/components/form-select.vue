@@ -10,6 +10,7 @@ import {
 import { CLOUD_TYPE } from '@/constants';
 import { VendorEnum } from '@/common/constant';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 
 const props = defineProps({
   hidden: {
@@ -38,6 +39,7 @@ const cloudAreaPage = ref(0);
 const { isResourcePage } = useWhereAmI();
 
 const securityType: any = inject('securityType');
+const resourceAccountStore = useResourceAccountStore();
 
 const state = reactive<{ filter: BusinessFormFilter }>({
   filter: {
@@ -169,6 +171,11 @@ const getAccountList = async () => {
         },
       };
     const res = await accountStore.getAccountList(payload, accountStore.bizs);
+    if (resourceAccountStore.resourceAccount?.id) {
+      accountList.value = res.data?.details
+        .filter(({ id }: {id: string}) => id === resourceAccountStore.resourceAccount.id);
+      return;
+    }
     accountList.value = isResourcePage ? res?.data?.details : res?.data;
     if (props.type === 'security') {
       // 安全组需要区分
