@@ -201,9 +201,9 @@ export default defineComponent({
                     class={'cidr-selector'}
                     placeholder={`${subIpv4cidr.value[2]}-31`}
                     v-model={cidr_mask.value}>
-                    {new Array(32)
+                    {new Array(31 - subIpv4cidr.value[2] + 1)
                       .fill(0)
-                      .map((_, idx) => idx + 1)
+                      .map((_, idx) => idx + +subIpv4cidr.value[2])
                       .map(num => (
                         <Option key={num} label={num} value={num}>
                           {num}
