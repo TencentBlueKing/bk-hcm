@@ -119,10 +119,10 @@ func (cli *RegionClient) BatchUpdateRegion(ctx context.Context, h http.Header, r
 
 	resp := new(core.UpdateResp)
 
-	err := cli.client.Put().
+	err := cli.client.Patch().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/regions/batch/update").
+		SubResourcef("/regions/batch").
 		WithHeaders(h).
 		Do().
 		Into(resp)
