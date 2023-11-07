@@ -20,7 +20,9 @@ const rules = {
   ],
   eip_name: [
     {
-      validator: (value: string) => value.length > 0,
+      validator: (value: string) => {
+        return (value.trim()).length > 0;
+      },
       message: '名称必填',
       trigger: 'blur',
     },

@@ -602,7 +602,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '内网IP',
       field: 'private_ipv4_or_ipv6',
-      sort: true,
       isDefaultShow: true,
       render({ data }: any) {
         return [
@@ -980,11 +979,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     //     return h('span', [cell || '--']);
     //   },
     // },
-    getLinkField('host', '绑定的资源实例', 'cvm_id', 'cvm_id'),
+    getLinkField('host', '绑定的资源实例', 'cvm_id', 'cvm_id', false, data => data.host, false),
     {
       label: '绑定的资源类型',
       field: 'instance_type',
-      sort: true,
       isDefaultShow: true,
       render({ cell }: { cell: string }) {
         return h('span', [cell || '--']);

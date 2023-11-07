@@ -23,6 +23,7 @@ import {
 } from 'vue-i18n';
 import { IEip, EipStatus } from '@/typings';
 import { CLOUD_VENDOR } from '@/constants/resource';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 const route = useRoute();
 const router = useRouter();
@@ -34,6 +35,7 @@ const {
 const isShowAssignEip = ref(false);
 const showDelete = ref(false);
 const isDeleteing = ref(false);
+const { whereAmI } = useWhereAmI();
 
 const {
   loading,
@@ -122,28 +124,29 @@ const showAuthDialog = (authActionName: string) => {
 };
 
 const canDelete = (data: IEip): boolean => {
+  if (data.bk_biz_id !== -1 && whereAmI.value === Senarios.resource) return false;
   let res = false;
-  const { status, vendor} = data;
+  const { status, vendor } = data;
 
-  switch(vendor) {
+  switch (vendor) {
     case CLOUD_VENDOR.tcloud:
-      if(status === EipStatus.UNBIND) res = true;
+      if (status === EipStatus.UNBIND) res = true;
       break;
     case CLOUD_VENDOR.huawei:
-      if([EipStatus.BIND_ERROR, EipStatus.DOWN, EipStatus.ERROR].includes(status)) res = true;
+      if ([EipStatus.BIND_ERROR, EipStatus.DOWN, EipStatus.ERROR].includes(status)) res = true;
       break;
     case CLOUD_VENDOR.aws:
-      if(status === EipStatus.UNBIND) res = true;
+      if (status === EipStatus.UNBIND) res = true;
       break;
     case CLOUD_VENDOR.gcp:
-      if(status === EipStatus.RESERVED) res = true;
+      if (status === EipStatus.RESERVED) res = true;
       break;
     case CLOUD_VENDOR.azure:
-      if(status === EipStatus.UNBIND) res = true;
+      if (status === EipStatus.UNBIND) res = true;
       break;
   }
   return res;
-}
+};
 </script>
 
 <template>

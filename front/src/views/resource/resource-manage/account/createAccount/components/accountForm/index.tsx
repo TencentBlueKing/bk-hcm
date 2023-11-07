@@ -337,15 +337,6 @@ export default defineComponent({
                     },
                   },
                 ],
-                memo: [
-                  {
-                    trigger: 'blur',
-                    message: '备注应由1-256个字符组成',
-                    validator: (val: any): boolean => {
-                      return /^.{1,256}$/.test(val);
-                    },
-                  },
-                ],
               }}>
               {/* eslint-disable-next-line @typescript-eslint/no-unused-vars */}
               {Object.entries(curExtension.value.output2).map(([property, { label, value }]) => (
@@ -388,7 +379,7 @@ export default defineComponent({
                   ))}
                 </Select>
               </FormItem>
-              <FormItem label='备注' property='memo'>
+              <FormItem label='备注'>
                 <Input type={'textarea'} v-model={formModel.memo} />
               </FormItem>
             </Form>

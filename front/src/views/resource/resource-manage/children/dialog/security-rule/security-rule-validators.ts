@@ -138,14 +138,15 @@ export const securityRuleValidators = (
         validator: isPortAvailable,
       },
     ],
-    memo: [
-      {
-        trigger: 'change',
-        message:
-          'Invalid rule description. Valid descriptions are strings less than 256 characters from the following set: a-zA-Z0-9. _-:/()#,@[]+=&;{}!$*',
-        pattern: /^[a-zA-Z0-9. _\-:/()#,@[\]+=&;{}!$*]{0,256}$/,
-      },
-    ],
+    // memo: [
+    //   {
+    //     trigger: 'change',
+    //     message:
+    //       'Invalid rule description. Valid descriptions are strings less
+    //        than 256 characters from the following set: a-zA-Z0-9. _-:/()#,@[]+=&;{}!$*',
+    //     pattern: /^[a-zA-Z0-9. _\-:/()#,@[\]+=&;{}!$*]{0,256}$/,
+    //   },
+    // ],
   };
 };
 

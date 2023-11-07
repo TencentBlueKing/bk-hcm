@@ -32,139 +32,144 @@ export default defineComponent({
       },
     });
 
-    watch([() => props.vendor], async ([vendor]) => {
-      if (!vendor) {
-        list.value = [];
-        return;
-      }
+    watch(
+      [() => props.vendor], async ([vendor]) => {
+        if (!vendor) {
+          list.value = [];
+          return;
+        }
 
-      const filter: QueryFilterType = {
-        op: 'and',
-        rules: [],
-      };
-      let dataIdKey = 'region_id';
-      let dataNameKey = 'region_name';
-      switch (vendor) {
-        case VendorEnum.AZURE:
-          filter.rules = [
-            {
-              field: 'type',
-              op: QueryRuleOPEnum.EQ,
-              value: 'Region',
-            },
-          ];
-          dataIdKey = 'name';
-          dataNameKey = 'display_name';
-          break;
-        case VendorEnum.HUAWEI: {
-          const services = {
-            [ResourceTypeEnum.CVM]: 'ecs',
-            [ResourceTypeEnum.VPC]: 'vpc',
-            [ResourceTypeEnum.DISK]: 'ecs',
-          };
-          filter.rules = [
-            {
-              field: 'type',
-              op: QueryRuleOPEnum.EQ,
-              value: 'public',
-            },
-            {
-              field: 'service',
-              op: QueryRuleOPEnum.EQ,
-              value: services[props.type],
-            },
-          ];
-          dataNameKey = isChinese ? 'locales_zh_cn' : 'region_id';
-          break;
-        }
-        case VendorEnum.TCLOUD: {
-          filter.rules = [
-            {
-              field: 'vendor',
-              op: QueryRuleOPEnum.EQ,
-              value: vendor,
-            },
-            {
-              field: 'status',
-              op: QueryRuleOPEnum.EQ,
-              value: 'AVAILABLE',
-            },
-          ];
-          dataNameKey = isChinese ? 'region_name' : 'display_name';
-          break;
-        }
-        case VendorEnum.AWS: {
-          filter.rules = [
-            {
-              field: 'vendor',
-              op: QueryRuleOPEnum.EQ,
-              value: vendor,
-            },
-            {
-              field: 'status',
-              op: QueryRuleOPEnum.EQ,
-              value: 'opt-in-not-required',
-            },
+        const filter: QueryFilterType = {
+          op: 'and',
+          rules: [],
+        };
+        let dataIdKey = 'region_id';
+        let dataNameKey = 'region_name';
+        switch (vendor) {
+          case VendorEnum.AZURE:
+            filter.rules = [
+              {
+                field: 'type',
+                op: QueryRuleOPEnum.EQ,
+                value: 'Region',
+              },
+            ];
+            dataIdKey = 'name';
+            dataNameKey = 'display_name';
+            break;
+          case VendorEnum.HUAWEI: {
+            const services = {
+              [ResourceTypeEnum.CVM]: 'ecs',
+              [ResourceTypeEnum.VPC]: 'vpc',
+              [ResourceTypeEnum.DISK]: 'ecs',
+            };
+            filter.rules = [
+              {
+                field: 'type',
+                op: QueryRuleOPEnum.EQ,
+                value: 'public',
+              },
+              {
+                field: 'service',
+                op: QueryRuleOPEnum.EQ,
+                value: services[props.type],
+              },
+            ];
+            dataNameKey = isChinese ? 'locales_zh_cn' : 'region_id';
+            break;
+          }
+          case VendorEnum.TCLOUD: {
+            filter.rules = [
+              {
+                field: 'vendor',
+                op: QueryRuleOPEnum.EQ,
+                value: vendor,
+              },
+              {
+                field: 'status',
+                op: QueryRuleOPEnum.EQ,
+                value: 'AVAILABLE',
+              },
+            ];
+            dataNameKey = isChinese ? 'region_name' : 'display_name';
+            break;
+          }
+          case VendorEnum.AWS: {
+            filter.rules = [
+              {
+                field: 'vendor',
+                op: QueryRuleOPEnum.EQ,
+                value: vendor,
+              },
+              {
+                field: 'status',
+                op: QueryRuleOPEnum.EQ,
+                value: 'opt-in-not-required',
+              },
             // {
             //   field: 'account_id',
             //   op: QueryRuleOPEnum.EQ,
             //   value: props.accountId,
             // },
-          ];
-          break;
-        }
-        case VendorEnum.GCP:
-          filter.rules = [
-            {
-              field: 'vendor',
-              op: QueryRuleOPEnum.EQ,
-              value: vendor,
-            },
-            {
-              field: 'status',
-              op: QueryRuleOPEnum.EQ,
-              value: 'UP',
-            },
-          ];
-          break;
-      }
-
-      loading.value = true;
-      const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${vendor}/regions/list`, {
-        filter,
-        page: {
-          count: false,
-          start: 0,
-          limit: 500,
-        },
-      });
-
-      const getName = (key: string, name: string) => {
-        switch (vendor) {
-          case VendorEnum.AWS:
-            return isChinese ? CLOUD_AREA_REGION_AWS[key] : key;
+            ];
+            break;
+          }
           case VendorEnum.GCP:
-            return isChinese ? CLOUD_AREA_REGION_GCP[key] : key;
-          case VendorEnum.TCLOUD:
-          case VendorEnum.HUAWEI:
-            return isChinese ? name : key;
-          case VendorEnum.AZURE:
-            return name;
-          default:
-            return '--';
+            filter.rules = [
+              {
+                field: 'vendor',
+                op: QueryRuleOPEnum.EQ,
+                value: vendor,
+              },
+              {
+                field: 'status',
+                op: QueryRuleOPEnum.EQ,
+                value: 'UP',
+              },
+            ];
+            break;
         }
-      };
 
-      const details = result?.data?.details ?? [];
-      list.value = details
-        .map((item: any) => ({
-          id: item[dataIdKey],
-          name: getName(item[dataIdKey], item[dataNameKey]) || item[dataIdKey],
-        }));
-      hostStore.regionList = details;
+        loading.value = true;
+        const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${vendor}/regions/list`, {
+          filter,
+          page: {
+            count: false,
+            start: 0,
+            limit: 500,
+          },
+        });
 
-      loading.value = false;
-    });
+        const getName = (key: string, name: string) => {
+          switch (vendor) {
+            case VendorEnum.AWS:
+              return isChinese ? CLOUD_AREA_REGION_AWS[key] : key;
+            case VendorEnum.GCP:
+              return isChinese ? CLOUD_AREA_REGION_GCP[key] : key;
+            case VendorEnum.TCLOUD:
+            case VendorEnum.HUAWEI:
+              return isChinese ? name : key;
+            case VendorEnum.AZURE:
+              return name;
+            default:
+              return '--';
+          }
+        };
+
+        const details = result?.data?.details ?? [];
+        list.value = details
+          .map((item: any) => ({
+            id: item[dataIdKey],
+            name: getName(item[dataIdKey], item[dataNameKey]) || item[dataIdKey],
+          }));
+        hostStore.regionList = details;
+
+        loading.value = false;
+      },
+      {
+        immediate: true,
+      },
+    );
 
     return () => (
       <Select

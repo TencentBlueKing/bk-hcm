@@ -120,8 +120,8 @@ defineExpose([validate]);
       :description="
         formData.internet_charge_type === 'postPaid' &&
           formData.bandwidth_option.charge_mode === 'traffic'
-          ? '值的范围是1-300Mbits/s'
-          : '值的范围是1-500Mbits/s'
+          ? '值的范围是1-300Mbit/s'
+          : '值的范围是1-500Mbit/s'
       "
       required
     >

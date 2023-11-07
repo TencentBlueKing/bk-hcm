@@ -132,7 +132,8 @@ export default defineComponent({
 
     watch(
       () => route.query.accountId,
-      (id) => {
+      (id, oldId) => {
+        if (!oldId && id) return;
         if (id) {
           getDetail();
         }
@@ -810,10 +811,15 @@ export default defineComponent({
         <Loading />
     ) : (
         <div class='detail-warp p20'>
-          <DetailHeader>
-            <span class="header-title-prefix">账号详情</span>
-            <span class="header-title-content">&nbsp;- ID {projectModel.id}</span>
-          </DetailHeader>
+          {
+            route.path.includes('resource/resource/account/detail') ? null
+              : (
+              <DetailHeader>
+                <span class="header-title-prefix">账号详情</span>
+                <span class="header-title-content">&nbsp;- ID {projectModel.id}</span>
+              </DetailHeader>
+              )
+          }
           {/* 基本信息 */}
           {formBaseInfo.map((baseItem, index) => (
             <div class='account-detail-floor-wrap'>

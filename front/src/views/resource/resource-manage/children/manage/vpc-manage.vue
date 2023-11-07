@@ -58,10 +58,10 @@ defineExpose({ fetchComponentsData });
 const emit = defineEmits(['auth']);
 const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
   if (isCheckAll) return true;
-  if (!props.isResourcePage) return true;
   return isCurRowSelectEnable(row);
 };
 const isCurRowSelectEnable = (row: any) => {
+  if (!props.isResourcePage) return true;
   if (row.id) {
     return row.bk_biz_id === -1;
   }
