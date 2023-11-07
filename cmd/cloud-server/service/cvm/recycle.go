@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 
+	"hcm/cmd/cloud-server/logics/recycle"
 	proto "hcm/pkg/api/cloud-server/cvm"
 	"hcm/pkg/api/cloud-server/recycle"
 	"hcm/pkg/api/core"
@@ -546,46 +547,76 @@ func (svc *cvmSvc) batchDeleteRecycledCvm(cts *rest.Contexts,
 	if err = svc.validateRecycleRecord(records); err != nil {
 		return nil, err
 	}
+	opRet := new(core.BatchOperateResult)
+	var recycleErr error
+	for _, record := range records.Details {
 
-	cvmIDs := make([]string, 0, len(records.Details))
-	cvmIDToBizID := make(map[string]int64, len(records.Details))
-	for _, recordDetail := range records.Details {
-		cvmIDs = append(cvmIDs, recordDetail.ResID)
-		cvmIDToBizID[recordDetail.ResID] = recordDetail.BkBizID
+		recycleErr = svc.destroyOneCvm(cts, validHandler, record)
+		if recycleErr != nil {
+
+			logs.Errorf("fail to destroy cvm recycle record(%s), err: %v, rid:%s", record.ID, recycleErr, cts.Kit.Rid)
+			opRet.Failed = &core.FailedInfo{ID: record.ID, Error: recycleErr}
+			// 目前只处理找不到记录的错误
+			if ef := errf.Error(recycleErr); ef != nil && ef.Code == errf.RecordNotFound {
+				// 同时处理关联的磁盘回收记录
+				var failIDs = append(svc.getRelatedDiskRecordIDs(cts.Kit, record), record.ID)
+				logicsrecycle.MarkRecordFailed(cts.Kit, svc.client.DataService(), recycleErr, failIDs)
+			}
+			// TODO: 目前遇到错误就停止处理后面任务，转成异步任务后优化成多个错误互相不影响
+			break
+		}
+		opRet.Succeeded = append(opRet.Succeeded, record.ID)
 	}
 
-	basicInfoReq := cloud.ListResourceBasicInfoReq{ResourceType: enumor.CvmCloudResType, IDs: cvmIDs}
-	basicInfoReq.Fields = append(types.CommonBasicInfoFields, "region", "recycle_status")
+	if len(opRet.Succeeded) != 0 {
+		logicsrecycle.MarkRecordSuccess(cts.Kit, svc.client.DataService(), opRet.Succeeded)
+	}
+	return opRet, recycleErr
+}
+
+// 查找关联的磁盘回收记录
+func (svc *cvmSvc) getRelatedDiskRecordIDs(kt *kit.Kit, record corerecord.CvmRecycleRecord) (failIDs []string) {
+
+	if !record.Detail.WithDisk {
+		return nil
+	}
+	diskIDs := slice.Map(record.Detail.DiskList,
+		func(r corerecord.DiskAttachInfo) string { return r.DiskID })
+	listReq := &core.ListReq{Filter: tools.ContainersExpression("res_id", diskIDs)}
+	listReq.Page = &core.BasePage{Limit: constant.BatchOperationMaxLimit}
+	records, err := svc.client.DataService().Global.RecycleRecord.ListRecycleRecord(kt, listReq)
+	if err != nil {
+		logs.Errorf("fail to list cvm related disk records by disk id[%v], err: %v, rid: %s",
+			diskIDs, err, kt.Rid)
+	}
+	return slice.Map(records.Details, func(r corerecord.RecycleRecord) string { return r.ID })
+}
+
+func (svc *cvmSvc) destroyOneCvm(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler,
+	record corerecord.CvmRecycleRecord) error {
+
+	basicInfoReq := cloud.ListResourceBasicInfoReq{
+		ResourceType: enumor.CvmCloudResType,
+		IDs:          []string{record.ResID},
+		Fields:       append(types.CommonBasicInfoFields, "region", "recycle_status"),
+	}
+
 	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// validate biz and authorize
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Cvm,
 		Action: meta.Destroy, BasicInfos: basicInfoMap})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// 调用实际删除逻辑
-	delRes, err := svc.cvmLgc.DestroyRecycledCvm(cts.Kit, basicInfoMap, records.Details)
+	_, err = svc.cvmLgc.DestroyRecycledCvm(cts.Kit, basicInfoMap, []corerecord.CvmRecycleRecord{record})
 	if err != nil {
-		return delRes, err
+		return err
 	}
-
-	updateReq := &dsrecord.BatchUpdateReq{
-		Data: make([]dsrecord.UpdateReq, 0, len(req.RecordIDs)),
-	}
-	for _, id := range req.RecordIDs {
-		updateReq.Data = append(updateReq.Data,
-			dsrecord.UpdateReq{ID: id, Status: enumor.RecycledRecycleRecordStatus})
-	}
-
-	if err = svc.client.DataService().Global.RecycleRecord.BatchUpdateRecycleRecord(cts.Kit, updateReq); err != nil {
-		logs.Errorf("update recycle record status to recycled failed, err: %v, ids: %v, rid: %s", err, req.RecordIDs,
-			cts.Kit.Rid)
-		return nil, err
-	}
-	return nil, nil
+	return nil
 }

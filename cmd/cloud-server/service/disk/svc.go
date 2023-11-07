@@ -265,7 +265,7 @@ func (svc *diskSvc) retrieveDiskByVendor(cts *rest.Contexts, vendor enumor.Vendo
 			InstanceName: instName,
 		}, nil
 	case enumor.Gcp:
-		resp, err := svc.client.DataService().Gcp.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
+		resp, err := svc.client.DataService().Gcp.RetrieveDisk(cts.Kit, diskID)
 		if err != nil {
 			return nil, err
 		}

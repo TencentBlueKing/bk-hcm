@@ -98,7 +98,7 @@ func (svc *service) DeleteGcpDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	diskData, err := svc.DataCli.Azure.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
+	diskData, err := svc.DataCli.Gcp.RetrieveDisk(cts.Kit, req.DiskID)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +131,7 @@ func (svc *service) AttachGcpDisk(cts *rest.Contexts) (interface{}, error) {
 
 	dataCli := svc.DataCli.Gcp
 
-	diskInfo, err := dataCli.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
+	diskInfo, err := dataCli.RetrieveDisk(cts.Kit, req.DiskID)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +164,7 @@ func (svc *service) AttachGcpDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	diskData, err := svc.DataCli.Gcp.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
+	diskData, err := svc.DataCli.Gcp.RetrieveDisk(cts.Kit, req.DiskID)
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +209,7 @@ func (svc *service) DetachGcpDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	diskInfo, err := svc.DataCli.Gcp.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
+	diskInfo, err := svc.DataCli.Gcp.RetrieveDisk(cts.Kit, req.DiskID)
 	if err != nil {
 		return nil, err
 	}
@@ -244,7 +244,7 @@ func (svc *service) DetachGcpDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	diskData, err := svc.DataCli.Gcp.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
+	diskData, err := svc.DataCli.Gcp.RetrieveDisk(cts.Kit, req.DiskID)
 	if err != nil {
 		return nil, err
 	}

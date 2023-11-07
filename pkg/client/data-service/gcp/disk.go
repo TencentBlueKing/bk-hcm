@@ -27,6 +27,7 @@ import (
 	coredisk "hcm/pkg/api/core/cloud/disk"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 )
 
 // BatchCreateDisk 批量创建云盘
@@ -54,13 +55,13 @@ func (rc *restClient) BatchCreateDisk(ctx context.Context,
 }
 
 // RetrieveDisk 查询单个云盘详情
-func (rc *restClient) RetrieveDisk(
-	ctx context.Context,
-	h http.Header,
-	diskID string,
-) (*coredisk.Disk[coredisk.GcpExtension], error) {
+func (rc *restClient) RetrieveDisk(kt *kit.Kit, diskID string) (*coredisk.Disk[coredisk.GcpExtension], error) {
 	resp := new(dataproto.GetResp[coredisk.GcpExtension])
-	err := rc.client.Get().WithContext(ctx).SubResourcef("/disks/%s", diskID).WithHeaders(h).Do().Into(resp)
+	err := rc.client.Get().
+		WithContext(kt.Ctx).
+		SubResourcef("/disks/%s", diskID).
+		WithHeaders(kt.Header()).
+		Do().Into(resp)
 	if err != nil {
 		return nil, err
 	}
