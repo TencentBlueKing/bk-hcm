@@ -162,7 +162,7 @@ func (svc *service) DeleteHuaWeiDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	err = client.DeleteDisk(cts.Kit, opt)
+	err = client.DeleteDisk(cts.Kit, diskData.Extension.ChargeType, opt)
 	if err != nil {
 		return nil, err
 	}
