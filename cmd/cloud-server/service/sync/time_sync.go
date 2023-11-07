@@ -55,7 +55,7 @@ func CloudResourceSync(intervalMin time.Duration, sd serviced.ServiceDiscover, c
 		}
 
 		start := time.Now()
-		logs.Infof("cloud resource all sync start, time: %v, rid: %s", start)
+		logs.Infof("cloud resource all sync start, time: %v", start)
 
 		waitGroup := new(sync.WaitGroup)
 
@@ -70,7 +70,7 @@ func CloudResourceSync(intervalMin time.Duration, sd serviced.ServiceDiscover, c
 
 		waitGroup.Wait()
 
-		logs.Infof("cloud resource all sync end, time: %v, rid: %s", start)
+		logs.Infof("cloud resource all sync end, time: %v", start)
 	}
 }
 
