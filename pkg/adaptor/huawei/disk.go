@@ -298,24 +298,54 @@ func (h *HuaWei) buildDisk(kt *kit.Kit, details []model.VolumeDetail) ([]disk.Hu
 
 // DeleteDisk 删除云盘
 // reference: https://support.huaweicloud.com/api-evs/evs_04_2008.html
-func (h *HuaWei) DeleteDisk(kt *kit.Kit, opt *disk.HuaWeiDiskDeleteOption) error {
+func (h *HuaWei) DeleteDisk(kt *kit.Kit, chargeType string, opt *disk.HuaWeiDiskDeleteOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "huawei disk delete option is required")
 	}
 
-	client, err := h.clientSet.evsClient(opt.Region)
+	switch chargeType {
+	case disk.HuaWeiDiskChargeTypeEnum.POST_PAID:
+		client, err := h.clientSet.evsClient(opt.Region)
+		if err != nil {
+			return err
+		}
+
+		req, err := opt.ToDeleteVolumeRequest()
+		if err != nil {
+			return err
+		}
+
+		_, err = client.DeleteVolume(req)
+		if err != nil {
+			logs.Errorf("huawei delete disk failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
+	case disk.HuaWeiDiskChargeTypeEnum.PRE_PAID:
+		if err := h.DeletePrePaidResource(kt, []string{opt.CloudID}); err != nil {
+			logs.Errorf("delete pre paid resource failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (h *HuaWei) DeletePrePaidResource(kt *kit.Kit, cloudIDs []string) error {
+
+	client, err := h.clientSet.bssintlGlobalClient()
 	if err != nil {
 		return err
 	}
 
-	req, err := opt.ToDeleteVolumeRequest()
+	request := &bssmodel.CancelResourcesSubscriptionRequest{
+		Body: &bssmodel.UnsubscribeResourcesReq{
+			UnsubscribeType: int32(1),
+			ResourceIds:     cloudIDs,
+		}}
+	_, err = client.CancelResourcesSubscription(request)
 	if err != nil {
-		return err
-	}
-
-	_, err = client.DeleteVolume(req)
-	if err != nil {
-		logs.Errorf("huawei delete disk failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("huawei cancel resource subscription failed, err: %v, req: %+v, rid: %s", err, request, kt.Rid)
 		return err
 	}
 
