@@ -132,7 +132,8 @@ export default defineComponent({
 
     watch(
       () => route.query.accountId,
-      (id) => {
+      (id, oldId) => {
+        if (!oldId && id) return;
         if (id) {
           getDetail();
         }
