@@ -49,7 +49,7 @@ func (h *HuaWei) ListRegion(kt *kit.Kit) ([]*region.HuaWeiRegionModel, error) {
 	regions = append(regions, getHuaWeiModelRegion(Ecs, ecsregion.AF_SOUTH_1.Id, "非洲-约翰内斯堡"))
 	regions = append(regions, getHuaWeiModelRegion(Ecs, ecsregion.SA_BRAZIL_1.Id, "拉美-圣保罗一"))
 	regions = append(regions, getHuaWeiModelRegion(Ecs, ecsregion.LA_NORTH_2.Id, "拉美-墨西哥城二"))
-	regions = append(regions, getHuaWeiModelRegion(Ecs, ecsregion.CN_SOUTH_4.Id, ""))
+	regions = append(regions, getHuaWeiModelRegion(Ecs, ecsregion.CN_SOUTH_4.Id, "华南-广州-友好用户环境"))
 	regions = append(regions, getHuaWeiModelRegion(Ecs, ecsregion.NA_MEXICO_1.Id, "拉美-墨西哥城一"))
 	regions = append(regions, getHuaWeiModelRegion(Ecs, ecsregion.LA_SOUTH_2.Id, "拉美-圣地亚哥"))
 	regions = append(regions, getHuaWeiModelRegion(Ecs, ecsregion.CN_SOUTH_2.Id, "华南-深圳"))
