@@ -21,21 +21,21 @@
 package vpc
 
 import (
+	"hcm/cmd/hc-service/logics/res-sync/huawei"
 	"hcm/cmd/hc-service/logics/subnet"
-	syncroutetable "hcm/cmd/hc-service/logics/sync/route-table"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
 	apicloud "hcm/pkg/api/core/cloud"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
-	hcroutetable "hcm/pkg/api/hc-service/route-table"
 	subnetproto "hcm/pkg/api/hc-service/subnet"
 	hcservice "hcm/pkg/api/hc-service/vpc"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
@@ -116,14 +116,21 @@ func (v vpc) HuaWeiVpcCreate(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// TODO: sync-todo change to 3.0 sync route table
-	rtReq := &hcroutetable.HuaWeiRouteTableSyncReq{
+	syncCli, err := v.syncCli.HuaWei(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	syncReq := &huawei.SyncBaseParams{
 		AccountID: req.AccountID,
 		Region:    req.Extension.Region,
 	}
-	if _, err = syncroutetable.HuaWeiRouteTableSync(cts.Kit, rtReq, v.ad, v.cs.DataService()); err != nil {
+	_, err = syncCli.RouteTable(cts.Kit, syncReq, new(huawei.SyncRouteTableOption))
+	if err != nil {
+		logs.Errorf("sync route table failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
+
 	return core.CreateResult{ID: result.IDs[0]}, nil
 }
 

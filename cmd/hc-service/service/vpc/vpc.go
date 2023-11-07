@@ -21,6 +21,7 @@
 package vpc
 
 import (
+	ressync "hcm/cmd/hc-service/logics/res-sync"
 	"hcm/cmd/hc-service/logics/subnet"
 	"hcm/cmd/hc-service/service/capability"
 	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
@@ -31,9 +32,10 @@ import (
 // InitVpcService initial the vpc service
 func InitVpcService(cap *capability.Capability) {
 	v := &vpc{
-		ad:     cap.CloudAdaptor,
-		cs:     cap.ClientSet,
-		subnet: subnet.NewSubnet(cap.ClientSet, cap.CloudAdaptor),
+		ad:      cap.CloudAdaptor,
+		cs:      cap.ClientSet,
+		subnet:  subnet.NewSubnet(cap.ClientSet, cap.CloudAdaptor),
+		syncCli: ressync.NewClient(cap.CloudAdaptor, cap.ClientSet.DataService()),
 	}
 
 	h := rest.NewHandler()
@@ -60,7 +62,8 @@ func InitVpcService(cap *capability.Capability) {
 }
 
 type vpc struct {
-	ad     *cloudadaptor.CloudAdaptorClient
-	cs     *client.ClientSet
-	subnet *subnet.Subnet
+	ad      *cloudadaptor.CloudAdaptorClient
+	cs      *client.ClientSet
+	subnet  *subnet.Subnet
+	syncCli ressync.Interface
 }
