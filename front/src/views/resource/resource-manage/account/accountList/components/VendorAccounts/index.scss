@@ -1,6 +1,7 @@
 .vendor-account-list {
   height: calc(95vh - 113px);
-  overflow-y: scroll;
+  overflow-y: hidden;
+  box-shadow: 0 -1px 0 0 #EAEBF0, 0 1px 0 0 #EAEBF0;
 
   .vendor-account-menu {
     position: sticky;
@@ -42,8 +43,29 @@
     margin-right: 12px;
   }
 
-  .vendor-account-menu-item:hover, .actived-vendor-account-menu-item {
+  .vendor-account-menu-item {
+    padding-left: 30px;
+
+    &:hover {
+      background-color: #F5F7FA;
+    }
+  }
+
+  .actived-vendor-account-menu-item {
+    position: relative;
     background-color: #e1ecff;
-    border-left: 3px #3a84ff solid;
+
+    &:hover {
+      background-color: #e1ecff;
+    }
+
+    &::before {
+      position: absolute;
+      content: "";
+      left: 0;
+      width: 3px;
+      height: 100%;
+      background-color: #3a84ff;
+    }
   }
 }
