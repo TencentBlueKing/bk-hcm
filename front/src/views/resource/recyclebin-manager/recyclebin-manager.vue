@@ -188,19 +188,25 @@
                   <template #default="{ data }">
                     <span @click="handleAuth('recycle_bin_manage')">
                       <bk-button
-                        text theme="primary"
+                        text class="mr10" theme="primary" @click="handleOperate('destroy', [data.id])"
+                        v-bk-tooltips="{
+                          content: '该硬盘随主机回收，不可单独操作',
+                          disabled: data?.recycle_type !== 'related'
+                        }"
                         :disabled="!authVerifyData?.permissionAction?.recycle_bin_manage
-                          || data?.recycle_type === 'related' || data?.bk_biz_id !== -1"
-                        class="mr10" @click="handleOperate('destroy', [data.id])">
+                          || data?.recycle_type === 'related' || data?.bk_biz_id !== -1">
                         销毁
                       </bk-button>
                     </span>
                     <span @click="handleAuth('recycle_bin_manage')">
                       <bk-button
                         text theme="primary" @click="handleOperate('recover', [data.id])"
+                        v-bk-tooltips="{
+                          content: '该硬盘随主机回收，不可单独操作',
+                          disabled: data?.recycle_type !== 'related'
+                        }"
                         :disabled="!authVerifyData?.permissionAction?.recycle_bin_manage
-                          || data?.recycle_type === 'related' || data?.bk_biz_id !== -1"
-                      >
+                          || data?.recycle_type === 'related' || data?.bk_biz_id !== -1">
                         恢复
                       </bk-button>
                     </span>
