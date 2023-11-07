@@ -49,16 +49,27 @@ export default defineComponent({
         id: 'cpu',
       },
     ];
-    const checkedInstanceType = ref('');
+    const checkedInstance = reactive({
+      instanceType: '',
+      typeName: '',
+      cpu: '',
+      memory: '',
+    });
+
     const columns = ref([{
       label: '类型',
       field: 'type_name',
       render: ({ cell, data }: any) => {
         return (<div class={'flex-row'}>
         <Radio
-          v-model={checkedInstanceType.value}
-          checked={checkedInstanceType.value === data.instance_type}
+          v-model={checkedInstance.instanceType}
+          checked={checkedInstance.instanceType === data.instance_type}
           label={data.instance_type}
+          onChange={() => {
+            checkedInstance.typeName = data.type_name;
+            checkedInstance.cpu = `${data.cpu}核`;
+            checkedInstance.memory = `${data.memory / 1024}GB`;
+          }}
         >
           {  props.vendor === VendorEnum.TCLOUD ? cell : data.instance_type }
         </Radio>
@@ -186,8 +197,8 @@ export default defineComponent({
     });
 
     const handleChange = () => {
-      selected.value = checkedInstanceType.value;
-      const data = list.value.find(item => item.instance_type === checkedInstanceType.value);
+      selected.value = checkedInstance.instanceType;
+      const data = list.value.find(item => item.instance_type === checkedInstance.instanceType);
       emit('change', data);
       isDialogShow.value = false;
     };
@@ -220,7 +231,7 @@ export default defineComponent({
           {
             selected.value ? (
               <div class={'selected-block mr8'}>
-                { checkedInstanceType.value }
+                { `${checkedInstance.instanceType}  (${checkedInstance.typeName}, ${checkedInstance.cpu}${checkedInstance.memory})` }
               </div>
             ) : null
           }
@@ -235,7 +246,17 @@ export default defineComponent({
         </div>
         <Dialog
           isShow={isDialogShow.value}
-          onClosed={() => (isDialogShow.value = false)}
+          onClosed={() => {
+            isDialogShow.value = false;
+            if (!selected.value) {
+              Object.assign(checkedInstance, {
+                instanceType: '',
+                typeName: '',
+                cpu: '',
+                memory: '',
+              });
+            }
+          }}
           onConfirm={handleChange}
           title='选择机型'
           width={1500}>
@@ -256,7 +277,9 @@ export default defineComponent({
               <div class={'instance-type-search-seletor-container'}>
                 <div class={'selected-block-container'}>
                   <div class={'selected-block'}>
-                    { checkedInstanceType.value || '--' }
+                    { checkedInstance.instanceType
+                      ? `${checkedInstance.instanceType}  (${checkedInstance.typeName}, ${checkedInstance.cpu}${checkedInstance.memory})`
+                      : '--' }
                   </div>
                 </div>
                 <SearchSelect
