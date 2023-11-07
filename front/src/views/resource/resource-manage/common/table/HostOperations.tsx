@@ -385,13 +385,15 @@ export default defineComponent({
       }
     };
 
+    const isDropDownMenuShow = ref(false);
+
     return () => (
       <>
         <div class={'host_operations_container'}>
-          <Dropdown trigger='click' disabled={operationsDisabled.value}>
+          <Dropdown trigger='manual' disabled={operationsDisabled.value} isShow={isDropDownMenuShow.value}>
             {{
               default: () => (
-                <Button disabled={operationsDisabled.value}>
+                <Button disabled={operationsDisabled.value} onClick={() => (isDropDownMenuShow.value = true)}>
                   批量操作
                   <AngleDown class={'f20'}></AngleDown>
                 </Button>
@@ -400,7 +402,10 @@ export default defineComponent({
                 <BkDropdownMenu>
                   {Object.entries(OperationsMap).map(([opType, opName]) => (
                     <BkDropdownItem
-                      onClick={() => (operationType.value = opType as Operations)
+                      onClick={() => {
+                        isDropDownMenuShow.value = false;
+                        operationType.value = opType as Operations;
+                      }
                       }>
                       {`批量${opName}`}
                     </BkDropdownItem>
@@ -454,7 +459,7 @@ export default defineComponent({
                   theme='primary'
                   disabled={isConfirmDisabled.value}
                   loading={isLoading.value}>
-                  确定
+                  {OperationsMap[operationType.value]}
                 </Button>
                 <Button
                   onClick={dialogRef?.value?.handleClose}
