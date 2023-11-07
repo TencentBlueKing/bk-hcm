@@ -137,10 +137,10 @@ const renderColumns = [
  */
 const isRowSelectEnable = ({ row, isCheckAll }: { row: IEip, isCheckAll: boolean }) => {
   if (isCheckAll) return true;
-  if (!props.isResourcePage) return canDelete(row);
   return isCurRowSelectEnable(row);
 };
 const isCurRowSelectEnable = (row: any) => {
+  if (!props.isResourcePage) return canDelete(row);
   if (row.id) {
     return row.bk_biz_id === -1 && canDelete(row);
   }

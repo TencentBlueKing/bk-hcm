@@ -29,6 +29,7 @@ import HostOperations from '../../common/table/HostOperations';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import BusinessSelector from '@/components/business-selector/index.vue';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 // use hook
 const {
   t,
@@ -49,6 +50,7 @@ const props = defineProps({
 const isLoadingCloudAreas = ref(false);
 const cloudAreaPage = ref(0);
 const cloudAreas = ref([]);
+const { whereAmI } = useWhereAmI();
 
 const {
   searchData,
@@ -235,10 +237,10 @@ const handleDistributionConfirm = () => {
 
 const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
   if (isCheckAll) return true;
-  if (!props.isResourcePage) return true;
   return isCurRowSelectEnable(row);
 };
 const isCurRowSelectEnable = (row: any) => {
+  if (whereAmI.value === Senarios.business) return true;
   if (row.id) {
     return row.bk_biz_id === -1;
   }
