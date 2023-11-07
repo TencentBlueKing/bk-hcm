@@ -602,7 +602,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '内网IP',
       field: 'private_ipv4_or_ipv6',
-      sort: true,
       isDefaultShow: true,
       render({ data }: any) {
         return [
