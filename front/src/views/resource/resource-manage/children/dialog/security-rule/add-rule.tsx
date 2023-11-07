@@ -533,7 +533,6 @@ export default defineComponent({
                   )}
                   <FormItem
                     label={index === 0 ? t('描述') : ''}
-                    property='memo'
                     description='请输入英文描述, 最大不超过256个字符'>
                     <Input placeholder='请输入描述' v-model={data.memo}></Input>
                   </FormItem>
