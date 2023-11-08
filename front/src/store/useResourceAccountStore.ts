@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import { VendorEnum } from '@/common/constant';
 
 export type IAccount = {
   bk_biz_ids: number[];
@@ -18,6 +19,7 @@ export type IAccount = {
   type: string;
   updated_at: string;
   vendor: VendorEnum;
+  recycle_reserve_time: number;
 };
 
 export const useResourceAccountStore = defineStore(
