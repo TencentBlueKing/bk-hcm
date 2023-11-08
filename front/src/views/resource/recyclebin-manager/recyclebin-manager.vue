@@ -189,10 +189,7 @@
                     <span @click="handleAuth('recycle_bin_manage')">
                       <bk-button
                         text class="mr10" theme="primary" @click="handleOperate('destroy', [data.id])"
-                        v-bk-tooltips="{
-                          content: '该硬盘随主机回收，不可单独操作',
-                          disabled: data?.recycle_type !== 'related'
-                        }"
+                        v-bk-tooltips="generateTooltipsOptions(data)"
                         :disabled="!authVerifyData?.permissionAction?.recycle_bin_manage
                           || data?.recycle_type === 'related' || data?.bk_biz_id !== -1">
                         销毁
@@ -201,10 +198,7 @@
                     <span @click="handleAuth('recycle_bin_manage')">
                       <bk-button
                         text theme="primary" @click="handleOperate('recover', [data.id])"
-                        v-bk-tooltips="{
-                          content: '该硬盘随主机回收，不可单独操作',
-                          disabled: data?.recycle_type !== 'related'
-                        }"
+                        v-bk-tooltips="generateTooltipsOptions(data)"
                         :disabled="!authVerifyData?.permissionAction?.recycle_bin_manage
                           || data?.recycle_type === 'related' || data?.bk_biz_id !== -1">
                         恢复
@@ -270,7 +264,7 @@
 </template>
 
 <script lang="ts">
-import { reactive, watch, toRefs, defineComponent, ref, computed, onMounted } from 'vue';
+import { reactive, watch, toRefs, defineComponent, ref, computed, onMounted, onUpdated } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { Message, SearchSelect } from 'bkui-vue';
@@ -541,6 +535,10 @@ export default defineComponent({
       });
     });
 
+    onUpdated(() => {
+      recycleReserveTime.value = resourceAccountStore.resourceAccount.recycle_reserve_time;
+    });
+
     const isResourcePage = computed(() => {   // 资源下没有业务ID
       return !accountStore.bizs;
     });
@@ -586,6 +584,22 @@ export default defineComponent({
     };
 
     // 销毁恢复
+    const generateTooltipsOptions = (data: any) => {
+      if (data?.recycle_type === 'related') {
+        return {
+          content: '该硬盘随主机回收，不可单独操作',
+          disabled: data?.recycle_type !== 'related',
+        };
+      } if (data?.bk_biz_id !== -1) {
+        return {
+          content: '该硬盘仅可在业务下操作',
+          disabled: data?.bk_biz_id === -1,
+        };
+      }
+      return {
+        disabled: true,
+      };
+    };
     const handleOperate = (type: string, ids?: string[]) => {
       console.log('selections', ids, selections.value);
       state.selectedIds = ids ? ids : selections.value.map(e => e.id);
@@ -647,6 +661,7 @@ export default defineComponent({
       handleDialogConfirm,
       handleJump,
       handleOperate,
+      generateTooltipsOptions,
       isLoading,
       handlePageSizeChange,
       handlePageChange,

@@ -17,7 +17,7 @@ import {
   CIDRMASKRANGE,
   TCLOUDCIDRMASKRANGE,
 } from '@/common/constant';
-import useVpcOptions from '../hooks/use-vpc-options';
+// import useVpcOptions from '../hooks/use-vpc-options';
 import useCondtion from '../hooks/use-condtion';
 import useVpcFormData from '../hooks/use-vpc-form-data';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
@@ -34,14 +34,14 @@ export default defineComponent({
     const { cond, isEmptyCond } = useCondtion(ResourceTypeEnum.VPC);
     const { isResourcePage } = useWhereAmI();
     const { formData, formRef, handleFormSubmit, submitting } =      useVpcFormData(cond);
-    const __ = useVpcOptions(cond, formData);
+    // const __ = useVpcOptions(cond, formData);
     const { t } = useI18n();
     const router = useRouter();
 
     const submitDisabled = computed(() => isEmptyCond.value);
 
-    const nameReg = /^[\w\u4e00-\u9fa5-.]{0,59}$/;
-    const nameRegMsg =      '不超过60个字符，允许字母、数字、中文字符，\'-\'、\'_\'、\'.\'';
+    const nameReg = /^(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?)$/;
+    const nameRegMsg = '名称需要符合如下正则表达式: /(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?)/';
 
     const networkTips = computed(() => {
       const map = {
@@ -297,19 +297,35 @@ export default defineComponent({
                 <div class='flex-row align-items-center'>
                   <ComposeFormItem class='mr5'>
                     <div class='flex-row'>
-                      <Input
-                        type='number'
-                        disabled
-                        placeholder='1-255'
-                        min={1}
-                        max={255}
-                        v-model={formData.subnet.ipv4_cidr[0]}
-                        class='w110'
-                      />
+                      {cond.vendor === VendorEnum.GCP ? (
+                        <Select
+                          class='w110'
+                          clearable={false}
+                          v-model={formData.subnet.ipv4_cidr[0]}>
+                          {CIDRLIST.map(item => (
+                            <Option
+                              key={item.id}
+                              value={item.id}
+                              label={item.name}>
+                              {item.name}
+                            </Option>
+                          ))}
+                        </Select>
+                      ) : (
+                        <Input
+                          type='number'
+                          disabled
+                          placeholder='1-255'
+                          min={1}
+                          max={255}
+                          v-model={formData.subnet.ipv4_cidr[0]}
+                          class='w110'
+                        />
+                      )}
                       <div>.</div>
                       <Input
                         type='number'
-                        disabled
+                        disabled={cond.vendor !== VendorEnum.GCP}
                         placeholder='0-255'
                         min={0}
                         max={255}
@@ -441,7 +457,7 @@ export default defineComponent({
       ipv4Cidr2: [
         {
           trigger: 'change',
-          message: 'IPv4 CIDR 不能为空',
+          message: 'IPv4 CIDR 前缀长度不能为空',
           validator: () => {
             return (
               !!formData.subnet.ipv4_cidr[4]
@@ -452,9 +468,19 @@ export default defineComponent({
           trigger: 'change',
           message: '子网IPv4 CIDR不合法，或不在VPC的CIDR范围中',
           validator: () => {
-            return (
-              !formData.ipv4_cidr[4] || +formData.subnet.ipv4_cidr[4] >= +formData.ipv4_cidr[4]
-            );
+            if (cond.vendor !== VendorEnum.GCP) {
+              return (
+                !formData.ipv4_cidr[4] || +formData.subnet.ipv4_cidr[4] >= +formData.ipv4_cidr[4]
+              );
+            }
+            switch (+formData.subnet.ipv4_cidr[0]) {
+              case 10:
+                return +formData.subnet.ipv4_cidr[4] >= 8;
+              case 172:
+                return +formData.subnet.ipv4_cidr[4] >= 12;
+              case 192:
+                return +formData.subnet.ipv4_cidr[4] >= 16;
+            }
           },
         },
       ],
@@ -464,7 +490,7 @@ export default defineComponent({
       () => formData.ipv4_cidr[0],
       (val) => {
         ipv4CidrFir.value = val;
-        const maskrang: any =          cond.vendor === 'tcloud' ? TCLOUDCIDRMASKRANGE : CIDRMASKRANGE;
+        const maskrang: any = cond.vendor === 'tcloud' ? TCLOUDCIDRMASKRANGE : CIDRMASKRANGE;
         if (val === '192') {
           formData.ipv4_cidr[1] = '168';
           if (formData.ipv4_cidr[4] < maskrang[val].min) {

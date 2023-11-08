@@ -192,7 +192,7 @@ export default (cond: Cond) => {
 
     if (cond.vendor === VendorEnum.AZURE) {
       saveData.resource_group_name = cond.resourceGroup;
-      saveData.cloud_security_group_ids = [saveFormData.cloud_security_group_ids as string];
+      // saveData.cloud_security_group_ids = [saveFormData.cloud_security_group_ids as string];
     }
 
     saveData.required_count = +saveData.required_count;
