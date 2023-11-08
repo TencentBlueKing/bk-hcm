@@ -707,6 +707,18 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       width: '100',
       onlyShowOnList: true,
     },
+    {
+      label: 'ID',
+      field: 'id',
+      isDefaultShow: false,
+      onlyShowOnList: true,
+    },
+    {
+      label: '资源ID',
+      field: 'cloud_id',
+      isDefaultShow: false,
+      onlyShowOnList: true,
+    },
     getLinkField(
       'host',
       '内网IP',
@@ -832,11 +844,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render({ data }: any) {
         return h('span', {}, [data.os_name || '--']);
       },
-    },
-    {
-      label: '主机ID',
-      field: 'cloud_id',
-      sort: true,
     },
     {
       label: '创建时间',
@@ -1054,7 +1061,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         fields.push({
           label: column.label,
           field: column.field,
-          disabled: column.field === 'id',
+          disabled: type !== 'cvms' && column.field === 'id',
           isDefaultShow: !!column.isDefaultShow,
           isOnlyShowInResource: !!column.isOnlyShowInResource,
         });
