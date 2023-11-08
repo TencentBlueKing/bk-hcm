@@ -48,7 +48,8 @@ func (svc *diskSvc) AttachBizDisk(cts *rest.Contexts) (interface{}, error) {
 func (svc *diskSvc) attachDisk(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 
 	req := new(cloudproto.AttachReq)
-	if err := cts.DecodeInto(req); err != nil {
+
+	if err := cts.ReDecodeInto(req); err != nil {
 		return nil, err
 	}
 
