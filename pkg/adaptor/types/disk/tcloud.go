@@ -28,7 +28,7 @@ import (
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 )
 
-// TCloudDiskChargeType 腾讯云盘计费模式
+// TCloudDiskChargeTypeEnum  腾讯云盘计费模式
 var TCloudDiskChargeTypeEnum = struct {
 	PREPAID          string
 	POSTPAID_BY_HOUR string
@@ -187,6 +187,7 @@ func (o *TCloudDiskDetachOption) ToDetachDisksRequest() (*cbs.DetachDisksRequest
 
 // TCloudDisk for cbs Disk
 type TCloudDisk struct {
+	Boot bool
 	*cbs.Disk
 }
 

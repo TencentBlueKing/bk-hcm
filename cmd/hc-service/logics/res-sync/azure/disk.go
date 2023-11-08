@@ -70,6 +70,12 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 		return new(SyncResult), nil
 	}
 
+	if opt.BootMap != nil {
+		// 标记启动盘
+		for i, d := range diskFromCloud {
+			_, diskFromCloud[i].Boot = opt.BootMap[d.GetCloudID()]
+		}
+	}
 	addSlice, updateMap, delCloudIDs := common.Diff[typesdisk.AzureDisk, *coredisk.Disk[coredisk.AzureExtension]](
 		diskFromCloud, diskFromDB, isDiskChange)
 
@@ -80,13 +86,13 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 	}
 
 	if len(addSlice) > 0 {
-		if err = cli.createDisk(kt, params.AccountID, params.ResourceGroupName, opt.BootMap, addSlice); err != nil {
+		if err = cli.createDisk(kt, params.AccountID, params.ResourceGroupName, addSlice); err != nil {
 			return nil, err
 		}
 	}
 
 	if len(updateMap) > 0 {
-		if err = cli.updateDisk(kt, params.AccountID, params.ResourceGroupName, opt.BootMap, updateMap); err != nil {
+		if err = cli.updateDisk(kt, params.AccountID, params.ResourceGroupName, updateMap); err != nil {
 			return nil, err
 		}
 	}
@@ -94,7 +100,7 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 	return new(SyncResult), nil
 }
 
-func (cli *client) updateDisk(kt *kit.Kit, accountID string, resGroupName string, bootMap map[string]struct{},
+func (cli *client) updateDisk(kt *kit.Kit, accountID string, resGroupName string,
 	updateMap map[string]typesdisk.AzureDisk) error {
 
 	if len(updateMap) <= 0 {
@@ -104,15 +110,11 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, resGroupName string
 	disks := make([]*disk.DiskExtUpdateReq[coredisk.AzureExtension], 0)
 
 	for id, one := range updateMap {
-		var isSystemDisk bool
-		if _, exists := bootMap[converter.PtrToVal(one.ID)]; exists {
-			isSystemDisk = true
-		}
 
 		oneDisk := &disk.DiskExtUpdateReq[coredisk.AzureExtension]{
 			ID:           id,
 			Status:       converter.PtrToVal(one.Status),
-			IsSystemDisk: converter.ValToPtr(isSystemDisk),
+			IsSystemDisk: converter.ValToPtr(one.Boot),
 			Extension: &coredisk.AzureExtension{
 				ResourceGroupName: resGroupName,
 				OSType:            converter.PtrToVal(one.OSType),
@@ -140,7 +142,7 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, resGroupName string
 	return nil
 }
 
-func (cli *client) createDisk(kt *kit.Kit, accountID string, resGroupName string, bootMap map[string]struct{},
+func (cli *client) createDisk(kt *kit.Kit, accountID string, resGroupName string,
 	addSlice []typesdisk.AzureDisk) error {
 
 	if len(addSlice) <= 0 {
@@ -151,14 +153,15 @@ func (cli *client) createDisk(kt *kit.Kit, accountID string, resGroupName string
 
 	for _, one := range addSlice {
 		disk := &disk.DiskExtCreateReq[coredisk.AzureExtension]{
-			AccountID: accountID,
-			Name:      converter.PtrToVal(one.Name),
-			CloudID:   converter.PtrToVal(one.ID),
-			Region:    converter.PtrToVal(one.Location),
-			DiskSize:  uint64(converter.PtrToVal(one.DiskSize)) / 1024 / 1024 / 1024,
-			DiskType:  converter.PtrToVal(one.Type),
-			Status:    string(converter.PtrToVal(one.Status)),
-			Zone:      "",
+			AccountID:    accountID,
+			Name:         converter.PtrToVal(one.Name),
+			CloudID:      converter.PtrToVal(one.ID),
+			Region:       converter.PtrToVal(one.Location),
+			DiskSize:     uint64(converter.PtrToVal(one.DiskSize)) / 1024 / 1024 / 1024,
+			DiskType:     converter.PtrToVal(one.Type),
+			Status:       string(converter.PtrToVal(one.Status)),
+			Zone:         "",
+			IsSystemDisk: one.Boot,
 			// 该云没有此字段
 			Memo: nil,
 			Extension: &coredisk.AzureExtension{
@@ -168,10 +171,6 @@ func (cli *client) createDisk(kt *kit.Kit, accountID string, resGroupName string
 				SKUTier:           one.SKUTier,
 				Zones:             one.Zones,
 			},
-		}
-
-		if _, exists := bootMap[converter.PtrToVal(one.ID)]; exists {
-			disk.IsSystemDisk = true
 		}
 
 		createReq = append(createReq, disk)
@@ -378,6 +377,9 @@ func isDiskChange(cloud typesdisk.AzureDisk, db *coredisk.Disk[coredisk.AzureExt
 	}
 
 	if !assert.IsPtrStringSliceEqual(cloud.Zones, db.Extension.Zones) {
+		return true
+	}
+	if cloud.Boot != db.IsSystemDisk {
 		return true
 	}
 

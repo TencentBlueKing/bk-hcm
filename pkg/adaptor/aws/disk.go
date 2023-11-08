@@ -113,7 +113,7 @@ func (a *Aws) ListDisk(kt *kit.Kit, opt *disk.AwsDiskListOption) ([]disk.AwsDisk
 
 	disks := make([]disk.AwsDisk, 0, len(resp.Volumes))
 	for _, one := range resp.Volumes {
-		disks = append(disks, disk.AwsDisk{one})
+		disks = append(disks, disk.AwsDisk{Volume: one})
 	}
 
 	return disks, resp.NextToken, err
