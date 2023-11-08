@@ -24,6 +24,7 @@ import {
 import {
   useAccountStore,
 } from '@/store/account';
+import { INSTANCE_CHARGE_MAP, VendorEnum } from '@/common/constant';
 
 const props = defineProps({
   data: {
@@ -196,6 +197,41 @@ const columns = ref([
   },
 ]);
 
+const sysDiskTypeValues = {
+  [VendorEnum.TCLOUD]: {
+    CLOUD_PREMIUM: '高性能云硬盘',
+    CLOUD_BSSD: '通用型SSD云硬盘',
+    CLOUD_SSD: 'SSD云硬盘',
+  },
+  [VendorEnum.AWS]: {
+    gp3: '通用型SSD卷(gp3)',
+    gp2: '通用型SSD卷(gp2)',
+    io1: '预置IOPS SSD卷(io1)',
+    io2: '预置IOPS SSD卷(io2)',
+    st1: '吞吐量优化型HDD卷(st1)',
+    sc1: 'Cold HDD卷(sc1)',
+    standard: '上一代磁介质卷(standard)',
+  },
+};
+
+const dataDiskTypeValues = {
+  [VendorEnum.TCLOUD]: {
+    CLOUD_PREMIUM: '高性能云硬盘',
+    CLOUD_BSSD: '通用型SSD云硬盘',
+    CLOUD_SSD: 'SSD云硬盘',
+    CLOUD_HSSD: '增强型SSD云硬盘',
+  },
+  [VendorEnum.AWS]: {
+    gp3: '通用型SSD卷(gp3)',
+    gp2: '通用型SSD卷(gp2)',
+    io1: '预置IOPS SSD卷(io1)',
+    io2: '预置IOPS SSD卷(io2)',
+    st1: '吞吐量优化型HDD卷(st1)',
+    sc1: 'Cold HDD卷(sc1)',
+    standard: '上一代磁介质卷(standard)',
+  },
+};
+
 watch(
   () => props.data,
   () => {
@@ -204,6 +240,12 @@ watch(
         {
           label: '硬盘类型',
           field: 'disk_type',
+          render({ data }: any) {
+            if (data?.is_system_disk) {
+              return sysDiskTypeValues[VendorEnum.TCLOUD][data?.disk_type];
+            }
+            return dataDiskTypeValues[VendorEnum.TCLOUD][data?.disk_type];
+          },
         },
         {
           label: '容量(GB)',
@@ -212,6 +254,9 @@ watch(
         {
           label: '计费类型',
           field: 'disk_charge_type',
+          render({ cell }: any) {
+            return INSTANCE_CHARGE_MAP[cell];
+          },
         },
         {
           label: '到期时间',
@@ -227,6 +272,12 @@ watch(
         {
           label: '硬盘类型',
           field: 'disk_type',
+          render({ data }: any) {
+            if (data?.is_system_disk) {
+              return sysDiskTypeValues[VendorEnum.AWS][data?.disk_type];
+            }
+            return dataDiskTypeValues[VendorEnum.AWS][data?.disk_type];
+          },
         },
         {
           label: '设备名',

@@ -32,6 +32,8 @@ export default defineComponent({
       count: 100,
     });
     const checkedImageId = ref('');
+    const checkedImageName = ref('');
+    const checkedImageArchitecture = ref('');
     const selectedPlatform = ref('Linux');
 
     const selected = computed({
@@ -59,7 +61,12 @@ export default defineComponent({
               <Radio
                 v-model={checkedImageId.value}
                 checked={checkedImageId.value === data.cloud_id}
-                label={data.cloud_id}>
+                label={data.cloud_id}
+                onChange={() => {
+                  checkedImageName.value = data.name;
+                  checkedImageArchitecture.value = data.architecture;
+                }}
+                >
                 { cell }
               </Radio>
             </div>
@@ -218,7 +225,7 @@ export default defineComponent({
       <div>
         <div class={'selected-block-container'}>
           {selected.value ? (
-            <div class={'selected-block mr8'}>{selected.value}</div>
+            <div class={'selected-block mr8'}>{`${checkedImageName.value}  (${checkedImageId.value})`}</div>
           ) : null}
           {selected.value ? (
             <EditLine
@@ -238,7 +245,14 @@ export default defineComponent({
         </div>
         <Dialog
           isShow={isDialogShow.value}
-          onClosed={() => (isDialogShow.value = false)}
+          onClosed={() => {
+            isDialogShow.value = false;
+            if (!selected.value) {
+              checkedImageId.value = '';
+              checkedImageName.value = '';
+              checkedImageArchitecture.value = '';
+            }
+          }}
           onConfirm={() => {
             selected.value = checkedImageId.value;
             isDialogShow.value = false;
@@ -269,7 +283,11 @@ export default defineComponent({
               <div class={'instance-type-search-seletor-container'}>
                 <div class={'selected-block-container'}>
                   <div class={'selected-block'}>
-                    {checkedImageId.value || '--'}
+                    {
+                      checkedImageId.value
+                        ? `${checkedImageName.value}  (${checkedImageId.value}  |  ${checkedImageArchitecture.value})`
+                        : '--'
+                    }
                   </div>
                 </div>
                 <SearchSelect

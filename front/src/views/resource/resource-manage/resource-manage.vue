@@ -379,7 +379,12 @@ getResourceAccountList();
     <div class="navigation-resource">
       <div class="card-layout">
         <p class="resource-title">
-          {{ resourceAccountStore?.resourceAccount?.name }}
+          <span class="main-account-name">
+            {{ resourceAccountStore?.resourceAccount?.name || "全部账号" }}
+          </span>
+          <span v-if="resourceAccountStore?.resourceAccount?.id" class="main-account-id pl20">
+            主账号ID：{{ resourceAccountStore.resourceAccount.id }}
+          </span>
         </p>
         <BkTab
           class="ml15"
@@ -555,6 +560,13 @@ getResourceAccountList();
   letter-spacing: 0;
   line-height: 24px;
   padding: 14px 0 9px 24px;
+  display: flex;
+  align-items: center;
+
+  .main-account-id {
+    font-size: 14px;
+    color: #313238;
+  }
 }
 .bk-tab-content {
   padding: 0 !important;

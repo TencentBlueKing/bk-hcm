@@ -42,9 +42,26 @@
     padding-left: 16px;
     padding-right: 16px;
     cursor: pointer;
+
+    &:hover {
+      background-color: #F5F7FA;
+    }
   }
-  .specific-vendor:hover, .actived-specfic-account {
-    background-color: #E1ECFF;
-    border-left: 3px #3A84FF solid;
+  .actived-specfic-account {
+    position: relative;
+    background-color: #e1ecff;
+
+    &:hover {
+      background-color: #e1ecff;
+    }
+
+    &::before {
+      position: absolute;
+      content: "";
+      left: 0;
+      width: 3px;
+      height: 100%;
+      background-color: #3a84ff;
+    }
   }
 }
