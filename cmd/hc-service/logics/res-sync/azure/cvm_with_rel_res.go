@@ -77,7 +77,7 @@ func (cli *client) CvmWithRelRes(kt *kit.Kit, params *SyncBaseParams, opt *SyncC
 	}
 
 	// step2: 获取cvm和关联资源的关联关系
-	mgr, err := cli.buildCvmRelManger(kt, params.ResourceGroupName, cvmFromCloud)
+	systemDiskMap, mgr, err := cli.buildCvmRelManger(kt, params.ResourceGroupName, cvmFromCloud)
 	if err != nil {
 		logs.Errorf("[%s] build cvm rel manager failed, err: %v, rid: %s", enumor.Azure, err, kt.Rid)
 		return nil, err
@@ -152,7 +152,8 @@ func (cli *client) CvmWithRelRes(kt *kit.Kit, params *SyncBaseParams, opt *SyncC
 			ResourceGroupName: resGroupName,
 			CloudIDs:          cloudIDs,
 		}
-		if _, err := cli.Disk(kt, assResParams, new(SyncDiskOption)); err != nil {
+		syncOpt := &SyncDiskOption{BootMap: systemDiskMap}
+		if _, err := cli.Disk(kt, assResParams, syncOpt); err != nil {
 			return err
 		}
 
@@ -255,10 +256,10 @@ func (cli *client) CvmWithRelRes(kt *kit.Kit, params *SyncBaseParams, opt *SyncC
 }
 
 func (cli *client) buildCvmRelManger(kt *kit.Kit, resGroupName string, cvmFromCloud []typecvm.AzureCvm) (
-	*cvmrelmgr.CvmRelManger, error) {
+	map[string]struct{}, *cvmrelmgr.CvmRelManger, error) {
 
 	if len(cvmFromCloud) == 0 {
-		return nil, fmt.Errorf("cvms that from cloud is required")
+		return nil, nil, fmt.Errorf("cvms that from cloud is required")
 	}
 
 	vpcSubnetMap := make(map[string]map[string]struct{})
@@ -266,9 +267,9 @@ func (cli *client) buildCvmRelManger(kt *kit.Kit, resGroupName string, cvmFromCl
 	niMap, err := cli.getEipMapFromCloudByIP(kt, resGroupName, cvmFromCloud)
 	if err != nil {
 		logs.Errorf("[%s] get eip map failed, err: %v, rid: %s", enumor.Azure, err, kt.Rid)
-		return nil, err
+		return nil, nil, err
 	}
-
+	systemDiskMap := make(map[string]struct{}, len(cvmFromCloud))
 	mgr := cvmrelmgr.NewCvmRelManager(cli.dbCli)
 	for _, cvm := range cvmFromCloud {
 		for _, niCloudID := range cvm.NetworkInterfaceIDs {
@@ -277,7 +278,7 @@ func (cli *client) buildCvmRelManger(kt *kit.Kit, resGroupName string, cvmFromCl
 
 			ni, exist := niMap[niCloudID]
 			if !exist {
-				return nil, fmt.Errorf("network interface: %s not found", niCloudID)
+				return nil, nil, fmt.Errorf("network interface: %s not found", niCloudID)
 			}
 
 			// VPC
@@ -305,6 +306,8 @@ func (cli *client) buildCvmRelManger(kt *kit.Kit, resGroupName string, cvmFromCl
 
 		// Disk
 		mgr.CvmAppendAssResCloudID(cvm.GetCloudID(), enumor.DiskCloudResType, cvm.CloudOsDiskID)
+		// system disk
+		systemDiskMap[cvm.CloudOsDiskID] = struct{}{}
 
 		for _, diskID := range cvm.CloudDataDiskIDs {
 			mgr.CvmAppendAssResCloudID(cvm.GetCloudID(), enumor.DiskCloudResType, diskID)
@@ -318,7 +321,7 @@ func (cli *client) buildCvmRelManger(kt *kit.Kit, resGroupName string, cvmFromCl
 
 	mgr.AddAssParentWithChildRes(enumor.SubnetCloudResType, vpcSubnetListMap)
 
-	return mgr, nil
+	return systemDiskMap, mgr, nil
 }
 
 // getEipMapFromCloudByIP 通过弹性IP的IP地址获取IP和EipID的映射关系，内置ips分页查询，对ips数量没有限制。

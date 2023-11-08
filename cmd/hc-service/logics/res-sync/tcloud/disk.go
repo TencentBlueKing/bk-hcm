@@ -138,8 +138,9 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, updateMap map[strin
 
 	for id, one := range updateMap {
 		disk := &disk.DiskExtUpdateReq[coredisk.TCloudExtension]{
-			ID:     id,
-			Status: converter.PtrToVal(one.DiskState),
+			ID:           id,
+			Status:       converter.PtrToVal(one.DiskState),
+			IsSystemDisk: converter.ValToPtr(one.Boot),
 			Extension: &coredisk.TCloudExtension{
 				DiskChargeType: converter.PtrToVal(one.DiskChargeType),
 				DiskChargePrepaid: &coredisk.TCloudDiskChargePrepaid{
@@ -155,10 +156,6 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, updateMap map[strin
 				DeadlineTime:       one.DeadlineTime,
 				BackupDisk:         one.BackupDisk,
 			},
-		}
-
-		if one.DiskUsage != nil && converter.PtrToVal(one.DiskUsage) == "SYSTEM_DISK" {
-			disk.IsSystemDisk = converter.ValToPtr(true)
 		}
 
 		disks = append(disks, disk)
@@ -323,7 +320,7 @@ func isDiskChange(cloud typesdisk.TCloudDisk, db *coredisk.Disk[coredisk.TCloudE
 		return true
 	}
 
-	if converter.PtrToVal(cloud.DiskUsage) == "SYSTEM_DISK" && !db.IsSystemDisk {
+	if cloud.Boot != db.IsSystemDisk {
 		return true
 	}
 

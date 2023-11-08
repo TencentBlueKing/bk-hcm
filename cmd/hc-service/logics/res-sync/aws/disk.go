@@ -71,7 +71,12 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 	if len(diskFromCloud) == 0 && len(diskFromDB) == 0 {
 		return new(SyncResult), nil
 	}
-
+	if opt.BootMap != nil {
+		// 标记启动盘
+		for i, d := range diskFromCloud {
+			_, diskFromCloud[i].Boot = opt.BootMap[d.GetCloudID()]
+		}
+	}
 	addSlice, updateMap, delCloudIDs := common.Diff[adaptordisk.AwsDisk, *coredisk.Disk[coredisk.AwsExtension]](
 		diskFromCloud, diskFromDB, isDiskChange)
 
@@ -82,13 +87,13 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 	}
 
 	if len(addSlice) > 0 {
-		if err = cli.createDisk(kt, params.AccountID, params.Region, opt.BootMap, addSlice); err != nil {
+		if err = cli.createDisk(kt, params.AccountID, params.Region, addSlice); err != nil {
 			return nil, err
 		}
 	}
 
 	if len(updateMap) > 0 {
-		if err = cli.updateDisk(kt, params.AccountID, opt.BootMap, updateMap); err != nil {
+		if err = cli.updateDisk(kt, params.AccountID, updateMap); err != nil {
 			return nil, err
 		}
 	}
@@ -96,8 +101,7 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 	return new(SyncResult), nil
 }
 
-func (cli *client) updateDisk(kt *kit.Kit, accountID string, bootMap map[string]struct{},
-	updateMap map[string]adaptordisk.AwsDisk) error {
+func (cli *client) updateDisk(kt *kit.Kit, accountID string, updateMap map[string]adaptordisk.AwsDisk) error {
 
 	if len(updateMap) <= 0 {
 		return fmt.Errorf("updateMap is <= 0, not update")
@@ -113,11 +117,6 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, bootMap map[string]
 					name = converter.PtrToVal(tag.Value)
 				}
 			}
-		}
-
-		var isSystemDisk bool
-		if _, exists := bootMap[converter.PtrToVal(one.VolumeId)]; exists {
-			isSystemDisk = true
 		}
 
 		attachments := make([]*coredisk.AwsDiskAttachment, 0)
@@ -141,7 +140,7 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, bootMap map[string]
 			ID:           id,
 			Status:       converter.PtrToVal(one.State),
 			Name:         name,
-			IsSystemDisk: converter.ValToPtr(isSystemDisk),
+			IsSystemDisk: converter.ValToPtr(one.Boot),
 			Extension: &coredisk.AwsExtension{
 				Attachment: attachments,
 				Encrypted:  one.Encrypted,
@@ -167,8 +166,7 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, bootMap map[string]
 	return nil
 }
 
-func (cli *client) createDisk(kt *kit.Kit, accountID string, region string,
-	bootMap map[string]struct{}, addSlice []adaptordisk.AwsDisk) error {
+func (cli *client) createDisk(kt *kit.Kit, accountID string, region string, addSlice []adaptordisk.AwsDisk) error {
 
 	if len(addSlice) <= 0 {
 		return fmt.Errorf("addSlice is <= 0, not create")
@@ -204,24 +202,21 @@ func (cli *client) createDisk(kt *kit.Kit, accountID string, region string,
 		}
 
 		disk := &disk.DiskExtCreateReq[coredisk.AwsExtension]{
-			AccountID: accountID,
-			Name:      name,
-			CloudID:   converter.PtrToVal(one.VolumeId),
-			Region:    region,
-			Zone:      converter.PtrToVal(one.AvailabilityZone),
-			DiskSize:  uint64(converter.PtrToVal(one.Size)),
-			DiskType:  converter.PtrToVal(one.VolumeType),
-			Status:    converter.PtrToVal(one.State),
+			AccountID:    accountID,
+			Name:         name,
+			CloudID:      converter.PtrToVal(one.VolumeId),
+			Region:       region,
+			Zone:         converter.PtrToVal(one.AvailabilityZone),
+			DiskSize:     uint64(converter.PtrToVal(one.Size)),
+			DiskType:     converter.PtrToVal(one.VolumeType),
+			Status:       converter.PtrToVal(one.State),
+			IsSystemDisk: one.Boot,
 			// 该云没有此字段
 			Memo: nil,
 			Extension: &coredisk.AwsExtension{
 				Attachment: attachments,
 				Encrypted:  one.Encrypted,
 			},
-		}
-
-		if _, exists := bootMap[converter.PtrToVal(one.VolumeId)]; exists {
-			disk.IsSystemDisk = true
 		}
 
 		createReq = append(createReq, disk)
@@ -449,6 +444,9 @@ func isDiskChange(cloud adaptordisk.AwsDisk, db *coredisk.Disk[coredisk.AwsExten
 		return true
 	}
 
+	if db.IsSystemDisk != cloud.Boot {
+		return true
+	}
 	for _, dbValue := range db.Extension.Attachment {
 		isEqual := false
 		for _, cloudValue := range cloud.Attachments {

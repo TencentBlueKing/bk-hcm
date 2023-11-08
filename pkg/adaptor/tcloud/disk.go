@@ -151,7 +151,11 @@ func (t *TCloudImpl) ListDisk(kt *kit.Kit, opt *core.TCloudListOption) ([]disk.T
 
 	disks := make([]disk.TCloudDisk, 0, len(resp.Response.DiskSet))
 	for _, one := range resp.Response.DiskSet {
-		disks = append(disks, disk.TCloudDisk{one})
+		var systemDisk bool
+		if one.DiskUsage != nil && converter.PtrToVal(one.DiskUsage) == "SYSTEM_DISK" {
+			systemDisk = true
+		}
+		disks = append(disks, disk.TCloudDisk{Boot: systemDisk, Disk: one})
 	}
 	return disks, nil
 }
