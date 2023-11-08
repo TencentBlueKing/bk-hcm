@@ -43,13 +43,13 @@ const {
 const selectSearchData = computed(() => {
   return [
     ...searchData.value,
-    ...[{
-      name: '公网ipv4',
-      id: 'public_ipv4',
-    }, {
-      name: '内网ipv4',
-      id: 'private_ipv4',
-    }],
+    // ...[{
+    //   name: '公网ipv4',
+    //   id: 'public_ipv4',
+    // }, {
+    //   name: '内网ipv4',
+    //   id: 'private_ipv4',
+    // }],
   ];
 });
 
