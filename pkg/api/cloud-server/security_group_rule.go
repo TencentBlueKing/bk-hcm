@@ -152,7 +152,7 @@ type TCloudSecurityGroupRule struct {
 	Memo                       *string `json:"memo" validate:"omitempty"`
 }
 
-// Validate ...
+// ValidateSGRule ...
 func (req TCloudSecurityGroupRule) ValidateSGRule() error {
 	if req.IPv4Cidr == nil && req.IPv6Cidr == nil && req.CloudTargetSecurityGroupID == nil {
 		return fmt.Errorf("source address (ipv4_cidr、ipv6_cidr、cloud_target_security_group_id) at least one is required")
@@ -171,7 +171,7 @@ type AwsSecurityGroupRule struct {
 	CloudTargetSecurityGroupID *string `json:"cloud_target_security_group_id" validate:"omitempty"`
 }
 
-// Validate ...
+// ValidateSGRule ...
 func (req AwsSecurityGroupRule) ValidateSGRule() error {
 	if req.IPv4Cidr == nil && req.IPv6Cidr == nil && req.CloudTargetSecurityGroupID == nil {
 		return fmt.Errorf("source address (ipv4_cidr、ipv6_cidr、cloud_target_security_group_id) at least one is required")
@@ -183,7 +183,7 @@ func (req AwsSecurityGroupRule) ValidateSGRule() error {
 type HuaWeiSecurityGroupRule struct {
 	Memo               *string `json:"memo" validate:"omitempty"`
 	Ethertype          *string `json:"ethertype" validate:"required"`
-	Protocol           *string `json:"protocol" validate:"required"`
+	Protocol           *string `json:"protocol" validate:"omitempty"`
 	RemoteIPPrefix     *string `json:"remote_ip_prefix" validate:"omitempty"`
 	CloudRemoteGroupID *string `json:"cloud_remote_group_id" validate:"omitempty"`
 	Port               *string `json:"port" validate:"omitempty"`
@@ -191,7 +191,7 @@ type HuaWeiSecurityGroupRule struct {
 	Priority           int64   `json:"priority" validate:"required"`
 }
 
-// Validate ...
+// ValidateSGRule ...
 func (req HuaWeiSecurityGroupRule) ValidateSGRule() error {
 	return validator.Validate.Struct(req)
 }
@@ -215,7 +215,7 @@ type AzureSecurityGroupRule struct {
 	Access string                       `json:"access" validate:"required"`
 }
 
-// Validate ...
+// ValidateSGRule ...
 func (req AzureSecurityGroupRule) ValidateSGRule() error {
 	return validator.Validate.Struct(req)
 }
