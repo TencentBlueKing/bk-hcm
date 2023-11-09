@@ -387,7 +387,7 @@ getResourceAccountList();
           </span>
         </p>
         <BkTab
-          class="ml15"
+          class="resource-tab-wrap ml15"
           type="unborder-card"
           v-model:active="activeResourceTab"
         >
@@ -420,7 +420,7 @@ getResourceAccountList();
       <bk-tab
         v-model:active="activeTab"
         type="card-grid"
-        class="resource-main g-scroller ml24"
+        class="resource-main g-scroller"
       >
         <template #setting>
           <div style="margin: 0 10px">
@@ -526,12 +526,17 @@ getResourceAccountList();
   padding: 20px;
 }
 .resource-main {
-  margin-top: 20px;
+  // margin-top: 20px;
   box-shadow: 1px 2px 3px 0 rgb(0 0 0 / 5%);
   height: calc(100vh - 200px);
+
+  :deep(.bk-tab-header) {
+    line-height: normal !important;
+  }
+
   :deep(.bk-tab-content) {
-    border-left: 1px solid #dcdee5;
-    border-right: 1px solid #dcdee5;
+    // border-left: 1px solid #dcdee5;
+    // border-right: 1px solid #dcdee5;
     border-bottom: 1px solid #dcdee5;
     padding: 20px;
   }
