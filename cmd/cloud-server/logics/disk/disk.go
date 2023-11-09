@@ -328,7 +328,7 @@ func (d *disk) BatchDetach(kt *kit.Kit, cvmRecycleMap map[string]*recycle.CvmDet
 				detail.DiskList[i].Err = err
 				detail.FailedAt = enumor.DiskCloudResType
 				failed = append(failed, detail.CvmID)
-				logs.Errorf("failed to detach disk，err: %v cvmId: %s, diskId: %s, rid:%s",
+				logs.Errorf("failed to detach disk, err: %v cvmId: %s, diskId: %s, rid:%s",
 					err, detail.CvmID, disk.DiskID, kt.Rid)
 				// 继续处理下一个主机
 				break
