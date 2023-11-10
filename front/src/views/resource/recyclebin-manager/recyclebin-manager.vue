@@ -694,7 +694,16 @@ export default defineComponent({
   },
 });
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
+.operate-warp {
+  :deep(.bk-tab-header) {
+    line-height: normal !important;
+
+    .bk-tab-header-item {
+      padding: 0 24px;
+    }
+  }
+}
   .sync-dialog-warp{
     height: 150px;
     .t-icon{

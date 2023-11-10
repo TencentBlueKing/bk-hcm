@@ -810,20 +810,22 @@ export default defineComponent({
     return () => (isLoading.value ? (
         <Loading />
     ) : (
-        <div class='detail-warp p20'>
-          {
-            route.path.includes('resource/resource/account/detail') ? null
-              : (
+        <div class='detail-warp pl14 pt6'>
+          {!route.path.includes('resource/resource/account/detail') && (
+            <>
               <DetailHeader>
-                <span class="header-title-prefix">账号详情</span>
-                <span class="header-title-content">&nbsp;- ID {projectModel.id}</span>
+                <span class='header-title-prefix'>账号详情</span>
+                <span class='header-title-content'>
+                  &nbsp;- ID {projectModel.id}
+                </span>
               </DetailHeader>
-              )
-          }
+              <div class='h16'></div>
+            </>
+          )}
           {/* 基本信息 */}
           {formBaseInfo.map((baseItem, index) => (
-            <div class='account-detail-floor-wrap'>
-              <div class='font-bold pb10'>
+            <div class='mb32'>
+              <div class='font-bold pb8'>
                 {baseItem.name}
                 {index > 0 ? (
                   <span
@@ -855,7 +857,7 @@ export default defineComponent({
                   {baseItem.data.map(formItem => (
                     <FormItem
                       class='formItem-cls info-value'
-                      label={formItem.label}
+                      label={`${formItem.label} ：`}
                       required={formItem.required}
                       property={formItem.property}>
                       {formItem.component()}
