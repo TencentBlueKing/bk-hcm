@@ -3,8 +3,7 @@
   align-items: center;
 
   .resource-status-icon {
-    margin-left: 12px;
-
+    margin-right: 5px;
     &.loading {
       animation: rotate 2s linear infinite;
     }

@@ -810,7 +810,7 @@ export default defineComponent({
     return () => (isLoading.value ? (
         <Loading />
     ) : (
-        <div class='detail-warp pl14 pt6'>
+        <div class='detail-wrap'>
           {!route.path.includes('resource/resource/account/detail') && (
             <>
               <DetailHeader>
