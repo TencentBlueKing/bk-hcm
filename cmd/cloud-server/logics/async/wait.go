@@ -24,10 +24,13 @@ import (
 	"fmt"
 	"time"
 
+	"hcm/pkg/api/core"
 	taskserver "hcm/pkg/client/task-server"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
 )
 
 // WaitTaskToEnd 等待异步任务结束
@@ -47,7 +50,28 @@ func WaitTaskToEnd(kt *kit.Kit, cli *taskserver.Client, id string) error {
 		}
 
 		if flow.State == enumor.FlowFailed {
-			return errors.New(flow.Reason.Message)
+			// 临时方案，选取一个错误当作错误原因
+			req := &core.ListReq{
+				Filter: tools.EqualWithOpExpression(filter.And, map[string]interface{}{
+					"flow_id": id,
+					"state":   enumor.TaskFailed,
+				}),
+				Page: &core.BasePage{
+					Start: 0,
+					Limit: 1,
+				},
+			}
+			result, err := cli.ListTask(kt, req)
+			if err != nil {
+				logs.Errorf("list task failed, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
+
+			if len(result.Details) == 0 {
+				return fmt.Errorf("flow: %s not found failed task", id)
+			}
+
+			return errors.New(result.Details[0].Reason.Message)
 		}
 
 		if flow.State == enumor.FlowSuccess {
