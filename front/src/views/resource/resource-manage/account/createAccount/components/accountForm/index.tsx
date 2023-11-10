@@ -332,7 +332,7 @@ export default defineComponent({
                   {
                     trigger: 'blur',
                     message:
-                      '名称必须以小写字母开头，后面最多可跟 32 个小写字母、数字或连字符，但不能以连字符结尾',
+                      '必须以小写字母开头, 后面可跟小写字母、数字、连字符 - 或 下划线 _ , 但不能以连字符 - 或下划线 _ 结尾。名称长度不少于 3 个字符，且不多于 64 个字符',
                     validator: (val: any): boolean => {
                       return /^[a-z][a-z0-9-]{0,31}[a-z0-9]$/.test(val);
                     },
