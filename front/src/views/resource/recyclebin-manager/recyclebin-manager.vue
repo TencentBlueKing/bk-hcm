@@ -309,7 +309,7 @@ export default defineComponent({
       },
     ];
     const isRowSelectEnable = ({ row }: any) => {
-      if (row.id) {
+      if (whereAmI.value === Senarios.resource && row.id) {
         return row.bk_biz_id === -1;
       }
     };
