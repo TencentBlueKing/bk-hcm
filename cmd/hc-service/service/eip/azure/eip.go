@@ -22,8 +22,8 @@ package azure
 import (
 	"strings"
 
+	cloudclient "hcm/cmd/hc-service/logics/cloud-adaptor"
 	syncazure "hcm/cmd/hc-service/logics/res-sync/azure"
-	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/eip/datasvc"
 	"hcm/pkg/adaptor/azure"
 	"hcm/pkg/adaptor/types/core"

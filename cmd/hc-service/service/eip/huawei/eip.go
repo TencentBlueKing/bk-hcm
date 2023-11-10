@@ -20,8 +20,8 @@
 package huawei
 
 import (
+	cloudclient "hcm/cmd/hc-service/logics/cloud-adaptor"
 	synchuawei "hcm/cmd/hc-service/logics/res-sync/huawei"
-	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/eip/datasvc"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/eip"

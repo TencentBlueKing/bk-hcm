@@ -24,14 +24,13 @@ import (
 	"errors"
 	"fmt"
 
+	cloudclient "hcm/cmd/hc-service/logics/cloud-adaptor"
 	syncaws "hcm/cmd/hc-service/logics/res-sync/aws"
 	syncazure "hcm/cmd/hc-service/logics/res-sync/azure"
 	synchuawei "hcm/cmd/hc-service/logics/res-sync/huawei"
 	synctcloud "hcm/cmd/hc-service/logics/res-sync/tcloud"
 	subnetlogics "hcm/cmd/hc-service/logics/subnet"
 	"hcm/cmd/hc-service/service/capability"
-	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
-	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/api/core"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/client"
@@ -84,7 +83,7 @@ func InitSubnetService(cap *capability.Capability) {
 }
 
 type subnet struct {
-	ad     *cloudadaptor.CloudAdaptorClient
+	ad     *cloudclient.CloudAdaptorClient
 	cs     *client.ClientSet
 	subnet *subnetlogics.Subnet
 }

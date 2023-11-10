@@ -25,7 +25,7 @@ import (
 	"os"
 	"testing"
 
-	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
+	"hcm/cmd/hc-service/logics/cloud-adaptor"
 	"hcm/pkg/api/core/cloud"
 	hsaccount "hcm/pkg/api/hc-service/account"
 	"hcm/pkg/kit"

@@ -24,8 +24,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"hcm/cmd/hc-service/logics/cloud-adaptor"
 	"hcm/cmd/hc-service/service/capability"
-	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
 	firewallrule "hcm/pkg/adaptor/types/firewall-rule"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
