@@ -264,7 +264,7 @@
 </template>
 
 <script lang="ts">
-import { reactive, watch, toRefs, defineComponent, ref, computed, onMounted, onUpdated } from 'vue';
+import { reactive, watch, toRefs, defineComponent, ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { Message, SearchSelect } from 'bkui-vue';
@@ -423,6 +423,8 @@ export default defineComponent({
         };
         if (idx === -1) state.filter.rules.push(rule);
         else state.filter.rules[idx] = rule;
+
+        recycleReserveTime.value = resourceAccountStore.resourceAccount.recycle_reserve_time;
       },
       {
         immediate: true,
@@ -533,10 +535,6 @@ export default defineComponent({
           yy: '%d年',
         },
       });
-    });
-
-    onUpdated(() => {
-      recycleReserveTime.value = resourceAccountStore.resourceAccount.recycle_reserve_time;
     });
 
     const isResourcePage = computed(() => {   // 资源下没有业务ID
