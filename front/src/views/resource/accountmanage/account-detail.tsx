@@ -983,7 +983,8 @@ export default defineComponent({
                 <Input
                   type={'textarea'}
                   v-model={accountFormModel.memo}
-                  maxlength={100}
+                  maxlength={256}
+                  resize={false}
                 />
               </FormItem>
             </Form>

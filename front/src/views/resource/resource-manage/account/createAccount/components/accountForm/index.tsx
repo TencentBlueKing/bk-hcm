@@ -381,7 +381,7 @@ export default defineComponent({
                 </Select>
               </FormItem>
               <FormItem label='备注'>
-                <Input type={'textarea'} v-model={formModel.memo} maxlength={256}/>
+                <Input type={'textarea'} v-model={formModel.memo} maxlength={256} resize={false}/>
               </FormItem>
             </Form>
           </div>
