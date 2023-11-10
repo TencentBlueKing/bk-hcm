@@ -104,7 +104,7 @@ values ('account_sync_detail', '0');
 
 -- 6. 资源下账号粒度管理回收保留时间
 alter table account
-    add column recycle_reserve_time bigint default 0;
+    add column recycle_reserve_time bigint default -1;
 alter table recycle_record
     add column recycled_at timestamp not null default current_timestamp;
 
