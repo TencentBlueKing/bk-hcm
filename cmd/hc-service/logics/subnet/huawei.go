@@ -24,7 +24,7 @@ import (
 	"errors"
 	"fmt"
 
-	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
+	cloudclient "hcm/cmd/hc-service/logics/cloud-adaptor"
 	"hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"

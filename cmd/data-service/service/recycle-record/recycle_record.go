@@ -105,7 +105,8 @@ func (svc *recycleRecordSvc) BatchRecycleCloudResource(cts *rest.Contexts) (inte
 			}
 
 			recycleReserveTime := req.DefaultRecycleTime
-			if accountInfo.Details[0].RecycleReserveTime != 0 {
+			// TODO: 将默认时间修改放到cloud-server中去做
+			if accountInfo.Details[0].RecycleReserveTime > -1 {
 				recycleReserveTime = uint(accountInfo.Details[0].RecycleReserveTime)
 			}
 			recycleRecords = append(recycleRecords, prototable.RecycleRecordTable{

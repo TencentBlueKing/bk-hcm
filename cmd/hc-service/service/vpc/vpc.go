@@ -21,10 +21,10 @@
 package vpc
 
 import (
+	"hcm/cmd/hc-service/logics/cloud-adaptor"
 	ressync "hcm/cmd/hc-service/logics/res-sync"
 	"hcm/cmd/hc-service/logics/subnet"
 	"hcm/cmd/hc-service/service/capability"
-	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/client"
 	"hcm/pkg/rest"
 )

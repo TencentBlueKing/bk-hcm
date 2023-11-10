@@ -23,8 +23,8 @@ package account
 import (
 	"net/http"
 
+	"hcm/cmd/hc-service/logics/cloud-adaptor"
 	"hcm/cmd/hc-service/service/capability"
-	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/rest"
 )
 

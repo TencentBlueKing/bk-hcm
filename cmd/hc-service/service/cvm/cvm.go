@@ -17,11 +17,12 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package cvm ...
 package cvm
 
 import (
+	"hcm/cmd/hc-service/logics/cloud-adaptor"
 	"hcm/cmd/hc-service/service/capability"
-	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/client"
 	dataservice "hcm/pkg/client/data-service"
 )

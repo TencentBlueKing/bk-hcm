@@ -20,8 +20,8 @@
 package tcloud
 
 import (
+	cloudclient "hcm/cmd/hc-service/logics/cloud-adaptor"
 	synctcloud "hcm/cmd/hc-service/logics/res-sync/tcloud"
-	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/eip/datasvc"
 	"hcm/pkg/adaptor/types/eip"
 	"hcm/pkg/api/core"

@@ -96,6 +96,7 @@ func (a *accountSvc) list(cts *rest.Contexts, typ meta.ResourceType) (interface{
 		}
 		one.SyncStatus = status
 		one.SyncFailedReason = failedReason
+		one.RecycleReserveTime = convertRecycleReverseTime(one.RecycleReserveTime)
 	}
 
 	return accounts, nil

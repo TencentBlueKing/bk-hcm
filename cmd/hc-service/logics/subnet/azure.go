@@ -24,8 +24,8 @@ import (
 	"errors"
 	"fmt"
 
+	cloudclient "hcm/cmd/hc-service/logics/cloud-adaptor"
 	syncazure "hcm/cmd/hc-service/logics/res-sync/azure"
-	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"

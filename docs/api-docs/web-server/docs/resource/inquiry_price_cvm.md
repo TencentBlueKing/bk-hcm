@@ -57,7 +57,7 @@ POST /api/v1/cloud/cvms/prices/inquiry
 | region                      | string        | 是  | 地域                                                                                                                   |
 | zone                        | string        | 是  | 可用区                                                                                                                  |
 | name                        | string        | 是  | 名称                                                                                                                   |
-| instance_type               | string        | 是  | 实例类型（机型.操作系统类型。e.g: c7n.large.2.linux）                                                                               |
+| instance_type               | string        | 是  | 实例类型（机型.操作系统类型。e.g: c7n.large.2.linux。 .win或.linux）                                                                  |
 | cloud_image_id              | string        | 是  | 云镜像ID                                                                                                                |
 | cloud_vpc_id                | string        | 是  | 云VpcID                                                                                                               |
 | cloud_subnet_id             | string        | 是  | 云子网ID                                                                                                                |
