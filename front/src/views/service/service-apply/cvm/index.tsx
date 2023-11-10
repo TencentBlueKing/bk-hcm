@@ -910,6 +910,7 @@ export default defineComponent({
                 placeholder='填写实例备注'
                 rows={3}
                 maxlength={255}
+                resize={false}
                 v-model={formData.memo}></Input>
             ),
           },
@@ -922,6 +923,7 @@ export default defineComponent({
                 placeholder='填写申请单备注'
                 rows={3}
                 maxlength={255}
+                resize={false}
                 v-model={formData.remark}></Input>
             ),
           },
