@@ -25,7 +25,7 @@ import (
 	"fmt"
 	"strconv"
 
-	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
+	cloudclient "hcm/cmd/hc-service/logics/cloud-adaptor"
 	adcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/api/core"

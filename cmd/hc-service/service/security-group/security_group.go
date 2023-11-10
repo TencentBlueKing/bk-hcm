@@ -20,9 +20,9 @@
 package securitygroup
 
 import (
+	"hcm/cmd/hc-service/logics/cloud-adaptor"
 	ressync "hcm/cmd/hc-service/logics/res-sync"
 	"hcm/cmd/hc-service/service/capability"
-	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/rest"
 )

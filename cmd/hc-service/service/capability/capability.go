@@ -21,8 +21,8 @@
 package capability
 
 import (
+	cloudclient "hcm/cmd/hc-service/logics/cloud-adaptor"
 	ressync "hcm/cmd/hc-service/logics/res-sync"
-	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/client"
 
 	"github.com/emicklei/go-restful/v3"

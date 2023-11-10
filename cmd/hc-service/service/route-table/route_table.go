@@ -21,8 +21,8 @@
 package routetable
 
 import (
+	"hcm/cmd/hc-service/logics/cloud-adaptor"
 	"hcm/cmd/hc-service/service/capability"
-	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/client"
 	"hcm/pkg/rest"
 )

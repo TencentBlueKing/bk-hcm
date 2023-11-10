@@ -20,8 +20,8 @@
 package aws
 
 import (
+	cloudclient "hcm/cmd/hc-service/logics/cloud-adaptor"
 	syncaws "hcm/cmd/hc-service/logics/res-sync/aws"
-	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/eip/datasvc"
 	"hcm/pkg/adaptor/types/eip"
 	"hcm/pkg/api/core"

@@ -24,12 +24,12 @@ import (
 	"errors"
 	"fmt"
 
+	cloudclient "hcm/cmd/hc-service/logics/cloud-adaptor"
 	syncaws "hcm/cmd/hc-service/logics/res-sync/aws"
 	syncazure "hcm/cmd/hc-service/logics/res-sync/azure"
 	syncgcp "hcm/cmd/hc-service/logics/res-sync/gcp"
 	synchuawei "hcm/cmd/hc-service/logics/res-sync/huawei"
 	synctcloud "hcm/cmd/hc-service/logics/res-sync/tcloud"
-	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/api/core"
 	cloudcore "hcm/pkg/api/core/cloud"

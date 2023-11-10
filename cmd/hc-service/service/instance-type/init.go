@@ -20,8 +20,8 @@
 package instancetype
 
 import (
+	cloudclient "hcm/cmd/hc-service/logics/cloud-adaptor"
 	"hcm/cmd/hc-service/service/capability"
-	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/rest"
 )

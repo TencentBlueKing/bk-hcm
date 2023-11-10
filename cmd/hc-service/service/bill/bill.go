@@ -23,8 +23,8 @@ package bill
 import (
 	"fmt"
 
+	"hcm/cmd/hc-service/logics/cloud-adaptor"
 	"hcm/cmd/hc-service/service/capability"
-	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/client"
