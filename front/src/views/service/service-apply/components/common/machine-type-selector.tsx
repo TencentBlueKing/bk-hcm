@@ -178,7 +178,8 @@ export default defineComponent({
           resList.value = list.value.filter(({ instance_family }) => reg.test(instance_family));
           break;
         case VendorEnum.HUAWEI:
-          resList.value = list.value.filter(({ instance_family }) => selectedFamilyType.value = instance_family);
+          console.log(999, selectedFamilyType.value);
+          resList.value = list.value.filter(({ instance_family }) => selectedFamilyType.value === instance_family);
           break;
       }
       for (const { id, values } of searchVal.value) {
