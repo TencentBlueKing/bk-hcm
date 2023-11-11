@@ -772,7 +772,7 @@ export default defineComponent({
           {
             label: '密码',
             required: true,
-            description: '字母数字与 ()`~!@#$%^&*-+=|{}[]:;\',.?/ 字符的组合',
+            description: '密码至少必须包含大写字母、小写字母、数字和特殊字符（!@$%^-_=+[{}]:,./?）中的三种',
             content: [
               {
                 property: 'username',
@@ -942,12 +942,12 @@ export default defineComponent({
         },
         {
           validator: (value: string) => {
-            const pattern =              cond.vendor === VendorEnum.HUAWEI
+            const pattern = cond.vendor === VendorEnum.HUAWEI
               ? /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[()`~!@#$%^&*-+=|{}\[\]:;',.?/])[A-Za-z\d()`~!@#$%^&*\-+=|{}\[\]:;',.?/]+$/
               : /^(?=.*[A-Za-z])(?=.*\d)(?=.*[()`~!@#$%^&*-+=|{}\[\]:;',.?/])[A-Za-z\d()`~!@#$%^&*\-+=|{}\[\]:;',.?/]+$/;
             return pattern.test(value);
           },
-          message: '密码复杂度不符合要求',
+          message: '密码至少必须包含大写字母、小写字母、数字和特殊字符（!@$%^-_=+[{}]:,./?）中的三种',
           trigger: 'blur',
         },
         {
