@@ -301,9 +301,7 @@ export default defineComponent({
               {{
                 'side-header': () => (
                   <div class='left-header flex-row justify-content-between align-items-center'>
-                    <div class='logo'>
-                      <img class='logo-icon' src={logo} />
-                    </div>
+                    <img class='logo-icon' src={logo} />
                     <div class='title-text'>{t('海垒')}</div>
                   </div>
                 ),
