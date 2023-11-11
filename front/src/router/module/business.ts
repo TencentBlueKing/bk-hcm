@@ -43,6 +43,7 @@ const businesseMenus: RouteRecordRaw[] = [
         meta: {
           activeKey: 'businessHost',
           breadcrumb: ['资源', '主机'],
+          isShowBreadcrumb: true,
         },
       },
       {
@@ -81,6 +82,7 @@ const businesseMenus: RouteRecordRaw[] = [
         meta: {
           activeKey: 'businessDisk',
           breadcrumb: ['资源', '硬盘'],
+          isShowBreadcrumb: true,
         },
       },
       {
@@ -136,6 +138,7 @@ const businesseMenus: RouteRecordRaw[] = [
         meta: {
           activeKey: 'businessSecurityGroup',
           breadcrumb: ['资源', '安全组'],
+          isShowBreadcrumb: true,
         },
       },
       {
@@ -163,6 +166,7 @@ const businesseMenus: RouteRecordRaw[] = [
         meta: {
           activeKey: 'businessVpc',
           breadcrumb: ['资源', 'VPC'],
+          isShowBreadcrumb: true,
         },
       },
       {
@@ -190,6 +194,7 @@ const businesseMenus: RouteRecordRaw[] = [
         meta: {
           activeKey: 'businessSubnet',
           breadcrumb: ['资源', '子网'],
+          isShowBreadcrumb: true,
         },
       },
       {
@@ -217,6 +222,7 @@ const businesseMenus: RouteRecordRaw[] = [
         meta: {
           activeKey: 'businessElasticIP',
           breadcrumb: ['资源', '弹性IP'],
+          isShowBreadcrumb: true,
         },
       },
       {
@@ -244,6 +250,7 @@ const businesseMenus: RouteRecordRaw[] = [
         meta: {
           activeKey: 'businessNetwork',
           breadcrumb: ['资源', '网络接口'],
+          isShowBreadcrumb: true,
         },
       },
       {
@@ -271,6 +278,7 @@ const businesseMenus: RouteRecordRaw[] = [
         meta: {
           activeKey: 'businessRoutingTable',
           breadcrumb: ['资源', '路由表'],
+          isShowBreadcrumb: true,
         },
       },
     ],
@@ -286,6 +294,7 @@ const businesseMenus: RouteRecordRaw[] = [
         meta: {
           activeKey: 'recyclebin',
           breadcrumb: ['业务', '回收站'],
+          isShowBreadcrumb: true,
         },
       },
       {

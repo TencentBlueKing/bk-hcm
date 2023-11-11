@@ -12,6 +12,7 @@ const serviceMenus: RouteRecordRaw[] = [
       activeKey: 'serviceApply',
       breadcrumb: [t('服务'), t('服务申请')],
       notMenu: true,
+      isShowBreadcrumb: true,
     },
   },
   {
@@ -21,6 +22,7 @@ const serviceMenus: RouteRecordRaw[] = [
     meta: {
       activeKey: 'myApply',
       breadcrumb: [t('服务'), t('我的申请')],
+      isShowBreadcrumb: true,
     },
   },
   {
@@ -29,6 +31,7 @@ const serviceMenus: RouteRecordRaw[] = [
     component: () => import('@/views/service/my-approval/page'),
     meta: {
       breadcrumb: [t('服务'), t('我的审批')],
+      isShowBreadcrumb: true,
     },
   },
 ];
