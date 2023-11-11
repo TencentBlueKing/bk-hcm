@@ -1,12 +1,11 @@
 .detail-header-main {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  position: fixed;
+  top: 52px;
+  width: 100%;
+  z-index: 1;
+  padding: 14px 24px;
   background: #fff;
   box-shadow: 1px 2px 3px 0 rgb(0 0 0 / 5%);
-  padding: 20px;
-  // margin: -24px -24px 0 -24px;
-
   .title-content {
     display: flex;
     align-items: center;
@@ -18,9 +17,7 @@
 }
 
 .detail-header-arrows-left {
-  font-size: 28px;
-  line-height: 28px;
-  height: 32px;
+  font-size: 24px;
   vertical-align: sub;
   display: inline-block;
   cursor: pointer;

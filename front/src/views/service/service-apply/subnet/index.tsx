@@ -140,16 +140,14 @@ export default defineComponent({
         <DetailHeader>
           <span class={'subnet-title'}>新建子网</span>
         </DetailHeader>
-
-        <div class={'create-subnet-form-contianer'}>
+        <div class='create-form-container'>
           <ConditionOptions
             type={ResourceTypeEnum.CVM}
             v-model:bizId={formModel.biz_id}
             v-model:cloudAccountId={formModel.account_id}
             v-model:vendor={formModel.vendor}
             v-model:region={formModel.region}
-            v-model:resourceGroup={formModel.resource_group}
-            class={'mb16 mt24'}>
+            v-model:resourceGroup={formModel.resource_group}>
             {{
               default: () => (
                 <Form formType='vertical'>

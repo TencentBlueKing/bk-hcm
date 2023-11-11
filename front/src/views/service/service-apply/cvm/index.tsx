@@ -1053,115 +1053,115 @@ export default defineComponent({
         <DetailHeader>
           <p class={'purchase-cvm-header-title'}>购买主机</p>
         </DetailHeader>
-        <ConditionOptions
-          type={ResourceTypeEnum.CVM}
-          v-model:bizId={cond.bizId}
-          v-model:cloudAccountId={cond.cloudAccountId}
-          v-model:vendor={cond.vendor}
-          v-model:region={cond.region}
-          v-model:resourceGroup={cond.resourceGroup}
-          class={'mb16 mt24'}>
-          {{
-            default: () => (
-              <Form formType='vertical'>
-                <FormItem label={'可用区'}>
-                  <ZoneSelector
-                    ref={zoneSelectorRef}
-                    v-model={formData.zone}
-                    vendor={cond.vendor}
-                    region={cond.region}
-                    onChange={handleZoneChange}
-                  />
-                </FormItem>
-              </Form>
-            ),
-            appendix: () => ([VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum) ? (
+        <div class="create-form-container">
+          <ConditionOptions
+            type={ResourceTypeEnum.CVM}
+            v-model:bizId={cond.bizId}
+            v-model:cloudAccountId={cond.cloudAccountId}
+            v-model:vendor={cond.vendor}
+            v-model:region={cond.region}
+            v-model:resourceGroup={cond.resourceGroup}>
+            {{
+              default: () => (
                 <Form formType='vertical'>
-                  <FormItem label='计费模式' required>
-                    <RadioGroup v-model={formData.instance_charge_type}>
-                      {billingModes.value.map(item => (
-                        <RadioButton label={item.id}>{item.name}</RadioButton>
-                      ))}
-                    </RadioGroup>
+                  <FormItem label={'可用区'}>
+                    <ZoneSelector
+                      ref={zoneSelectorRef}
+                      v-model={formData.zone}
+                      vendor={cond.vendor}
+                      region={cond.region}
+                      onChange={handleZoneChange}
+                    />
                   </FormItem>
                 </Form>
-            ) : null),
-          }}
-        </ConditionOptions>
-        <Form
-          model={formData}
-          rules={formRules}
-          ref={formRef}
-          onSubmit={handleFormSubmit}
-          formType='vertical'>
-          {formConfig.value
-            .filter(({ display }) => display !== false)
-            .map(({ title, children }) => (
-              <CommonCard title={() => title} class={'mb16'}>
-                {children
-                  .filter(({ display }) => display !== false)
-                  .map(({
-                    label,
-                    description,
-                    tips,
-                    rules,
-                    required,
-                    property,
-                    content,
-                  }) => (
-                      <FormItem
-                        label={label}
-                        required={required}
-                        property={property}
-                        rules={rules}
-                        description={description}>
-                        {Array.isArray(content) ? (
-                          <div class='flex-row'>
-                            {content
-                              .filter(sub => sub.display !== false)
-                              .map(sub => (
-                                <FormItem
-                                  label={sub.label}
-                                  required={sub.required}
-                                  property={sub.property}
-                                  rules={sub.rules}
-                                  description={sub?.description}
-                                  class={'mr8'}>
-                                  {sub.content()}
-                                  {sub.tips && (
-                                    <div class='form-item-tips'>
-                                      {sub.tips()}
-                                    </div>
-                                  )}
-                                </FormItem>
-                              ))}
-                          </div>
-                        ) : (
-                          content()
-                        )}
-                        {tips && <div class='form-item-tips'>{tips()}</div>}
-                      </FormItem>
-                  ))}
-              </CommonCard>
-            ))}
-          {/* <div class="action-bar">
+              ),
+              appendix: () => ([VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum) ? (
+                  <Form formType='vertical'>
+                    <FormItem label='计费模式' required>
+                      <RadioGroup v-model={formData.instance_charge_type}>
+                        {billingModes.value.map(item => (
+                          <RadioButton label={item.id}>{item.name}</RadioButton>
+                        ))}
+                      </RadioGroup>
+                    </FormItem>
+                  </Form>
+              ) : null),
+            }}
+          </ConditionOptions>
+          <Form
+            model={formData}
+            rules={formRules}
+            ref={formRef}
+            onSubmit={handleFormSubmit}
+            formType='vertical'>
+            {formConfig.value
+              .filter(({ display }) => display !== false)
+              .map(({ title, children }) => (
+                <CommonCard title={() => title} class={'mb16'}>
+                  {children
+                    .filter(({ display }) => display !== false)
+                    .map(({
+                      label,
+                      description,
+                      tips,
+                      rules,
+                      required,
+                      property,
+                      content,
+                    }) => (
+                        <FormItem
+                          label={label}
+                          required={required}
+                          property={property}
+                          rules={rules}
+                          description={description}>
+                          {Array.isArray(content) ? (
+                            <div class='flex-row'>
+                              {content
+                                .filter(sub => sub.display !== false)
+                                .map(sub => (
+                                  <FormItem
+                                    label={sub.label}
+                                    required={sub.required}
+                                    property={sub.property}
+                                    rules={sub.rules}
+                                    description={sub?.description}
+                                    class={'mr8'}>
+                                    {sub.content()}
+                                    {sub.tips && (
+                                      <div class='form-item-tips'>
+                                        {sub.tips()}
+                                      </div>
+                                    )}
+                                  </FormItem>
+                                ))}
+                            </div>
+                          ) : (
+                            content()
+                          )}
+                          {tips && <div class='form-item-tips'>{tips()}</div>}
+                        </FormItem>
+                    ))}
+                </CommonCard>
+              ))}
+            {/* <div class="action-bar">
           <Button theme='primary' loading={submitting.value}
           disabled={submitDisabled.value} onClick={handleFormSubmit}>{
             isResourcePage ? t('提交') : t('提交审批')
           }</Button>
           <Button>{ t('取消') }</Button>
         </div> */}
-        </Form>
-        <GcpDataDiskFormDialog
-          v-model:isShow={dialogState.gcpDataDisk.isShow}
-          isEdit={dialogState.gcpDataDisk.isEdit}
-          dataDiskTypes={dataDiskTypes.value}
-          formData={dialogState.gcpDataDisk.formData}
-          onAdd={handleAddGcpDataDisk}
-          onSave={handleSaveGcpDataDisk}
-          onClose={() => (dialogState.gcpDataDisk.isShow = false)}
-        />
-
+          </Form>
+          <GcpDataDiskFormDialog
+            v-model:isShow={dialogState.gcpDataDisk.isShow}
+            isEdit={dialogState.gcpDataDisk.isEdit}
+            dataDiskTypes={dataDiskTypes.value}
+            formData={dialogState.gcpDataDisk.formData}
+            onAdd={handleAddGcpDataDisk}
+            onSave={handleSaveGcpDataDisk}
+            onClose={() => (dialogState.gcpDataDisk.isShow = false)}
+          />
+        </div>
         <div class={'purchase-cvm-bottom-bar'}>
           <Form class={'purchase-cvm-bottom-bar-form'}>
             <FormItem
