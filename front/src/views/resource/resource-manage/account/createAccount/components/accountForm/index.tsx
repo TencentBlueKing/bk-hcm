@@ -286,7 +286,9 @@ export default defineComponent({
             <div class={'validate-btn-block'}>
               <Button
                 theme='primary'
-                outline={curExtension.value.validatedStatus === ValidateStatus.YES}
+                outline={
+                  curExtension.value.validatedStatus === ValidateStatus.YES
+                }
                 class={'account-validate-btn'}
                 onClick={() => handleValidate((payload: Record<string, string>) => props.changeExtension(payload))
                 }
@@ -381,7 +383,12 @@ export default defineComponent({
                 </Select>
               </FormItem>
               <FormItem label='备注'>
-                <Input type={'textarea'} v-model={formModel.memo} maxlength={256} resize={false}/>
+                <Input
+                  type={'textarea'}
+                  v-model={formModel.memo}
+                  maxlength={256}
+                  resize={false}
+                />
               </FormItem>
             </Form>
           </div>
