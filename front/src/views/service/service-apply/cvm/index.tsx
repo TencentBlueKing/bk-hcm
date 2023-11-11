@@ -697,7 +697,7 @@ export default defineComponent({
               : ''),
             property: 'data_disk',
             content: () => (
-              <div class='form-content-list'>
+              <div class='form-content-list data-disk-wrap'>
                 {formData.data_disk.map((item: IDiskOption, index: number) => (
                   <div class='flex-row'>
                     <FormItem
@@ -742,28 +742,20 @@ export default defineComponent({
                         class='btn'
                         outline
                         size='small'
+                        onClick={handleCreateDataDisk}>
+                        <PlusIcon  />
+                      </Button>
+                      <Button
+                        class='btn'
+                        outline
+                        size='small'
+                        disabled={formData.data_disk.length === 1}
                         onClick={() => handleRemoveDataDisk(index)}>
                         <CloseLineIcon />
                       </Button>
-                      {index === formData.data_disk.length - 1 && (
-                        <Button
-                          class='btn'
-                          outline
-                          size='small'
-                          onClick={handleCreateDataDisk}>
-                          <PlusIcon />
-                        </Button>
-                      )}
                     </div>
                   </div>
                 ))}
-                {!formData.data_disk.length && (
-                  <div class='btns'>
-                    <Button class='btn' onClick={handleCreateDataDisk}>
-                      <PlusIcon />
-                    </Button>
-                  </div>
-                )}
                 {
                   // (formData.data_disks.length > 0 && cond.vendor === VendorEnum.HUAWEI)
                   // && <Checkbox v-model={formData.is_quickly_initialize_data_disk}>快速初始化数据盘</Checkbox>

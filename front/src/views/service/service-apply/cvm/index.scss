@@ -24,6 +24,12 @@
 .create-form-container {
   padding: 24px;
   margin-top: 52px;
+  
+  .data-disk-wrap {
+    .bk-form-item {
+      margin-bottom: 8px;
+    }
+  }
 }
 
 .purchase-cvm-header-title {
