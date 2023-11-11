@@ -321,7 +321,7 @@ const renderColumns = [
     </p>
     <bk-form>
       <bk-form-item label="VPC名称">
-        VPC名称: {{ curVpc.name || '--' }}
+        {{ curVpc.name || '--' }}
       </bk-form-item>
       <bk-form-item label="管控区名称">
         <bk-select v-model="curCloudArea">

@@ -83,8 +83,10 @@ export default defineComponent({
                 });
                 // isCreateAccountDialogShow.value = true;
               }}>
-              <i class={'icon bk-icon icon-plus-circle mr3'} />
-              接入
+              <div class={'flex-row align-items-center'}>
+                <i class={'icon bk-icon icon-plus-circle mr3'} />
+                接入
+              </div>
             </Button>
           </div>
         </div>

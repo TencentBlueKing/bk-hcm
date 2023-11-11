@@ -66,7 +66,7 @@ export default defineComponent({
           checked={checkedInstance.instanceType === data.instance_type}
           label={data.instance_type}
           onChange={() => {
-            checkedInstance.typeName = data.type_name;
+            checkedInstance.typeName = VendorEnum.TCLOUD ? data.type_name : data.instance_type;
             checkedInstance.cpu = `${data.cpu}核`;
             checkedInstance.memory = `${data.memory / 1024}GB`;
           }}
@@ -178,7 +178,8 @@ export default defineComponent({
           resList.value = list.value.filter(({ instance_family }) => reg.test(instance_family));
           break;
         case VendorEnum.HUAWEI:
-          resList.value = list.value.filter(({ instance_family }) => selectedFamilyType.value = instance_family);
+          if (!selectedFamilyType.value) break;
+          resList.value = list.value.filter(({ instance_family }) => selectedFamilyType.value === instance_family);
           break;
       }
       for (const { id, values } of searchVal.value) {

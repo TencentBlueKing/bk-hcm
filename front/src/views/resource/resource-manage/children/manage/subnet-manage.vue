@@ -12,6 +12,7 @@ import {
   BatchDistribution,
   DResourceType,
 } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 const props = defineProps({
   filter: {
@@ -32,6 +33,7 @@ const { selections, handleSelectionChange, resetSelections } = useSelection();
 
 const resourceStore = useResourceStore();
 const { columns, settings } = useColumns('subnet');
+const { whereAmI } = useWhereAmI();
 
 const { searchData, searchValue, filter } = useFilter(props);
 
@@ -192,7 +194,7 @@ const renderColumns = [
                     props.isResourcePage
                       ? 'iaas_resource_delete'
                       : 'biz_iaas_resource_delete'
-                  ] || data.bk_biz_id !== -1,
+                  ] || (whereAmI.value !== Senarios.business && data.bk_biz_id !== -1),
               onClick() {
                 handleDeleteSubnet(data);
               },

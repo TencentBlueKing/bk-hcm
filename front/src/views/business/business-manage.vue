@@ -143,14 +143,14 @@ const submit = async (data: any) => {
   isLoading.value = false;
 };
 
-const handleToPage = () => {
-  const isHostManagePage = route.path.includes('/business/host');
-  const isDriveManagePage = route.path.includes('/business/drive');
-  let destination = '';
-  if (isHostManagePage) destination = '/business/host/recyclebin/cvm';
-  if (isDriveManagePage) destination = '/business/drive/recyclebin/disk';
-  router.push({ path: destination });
-};
+// const handleToPage = () => {
+//   const isHostManagePage = route.path.includes('/business/host');
+//   const isDriveManagePage = route.path.includes('/business/drive');
+//   let destination = '';
+//   if (isHostManagePage) destination = '/business/host/recyclebin/cvm';
+//   if (isDriveManagePage) destination = '/business/drive/recyclebin/disk';
+//   router.push({ path: destination });
+// };
 
 const handleBeforeClose = () => {
   InfoBox({
@@ -216,9 +216,9 @@ watchEffect(() => {
           </span>
 
           <template #recycleHistory>
-            <bk-button class="f-right" theme="primary" @click="handleToPage">
+            <!-- <bk-button class="f-right" theme="primary" @click="handleToPage">
               {{ '回收记录' }}
-            </bk-button>
+            </bk-button> -->
           </template>
         </component>
       </bk-loading>
