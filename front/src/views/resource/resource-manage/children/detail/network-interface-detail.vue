@@ -21,6 +21,7 @@ import { computed } from '@vue/runtime-core';
 import {
   inject,
 } from 'vue';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 const route = useRoute();
 const {
@@ -28,6 +29,7 @@ const {
 } = useI18n();
 
 const isResourcePage: any = inject('isResourcePage');
+const { whereAmI } = useWhereAmI();
 
 console.log('isResourcePage', isResourcePage.value);
 
@@ -97,33 +99,31 @@ const tabs = computed(() => {
 <template>
   <bk-loading :loading="loading">
     <detail-header>
-      {{ t('网络接口') }}：ID（{{detail.id}}）
+      {{ t('网络接口') }}：ID（{{ detail.id }}）
     </detail-header>
 
-    <detail-tab
-      :tabs="tabs"
-    >
-      <template #default="type">
-        <template v-if="detail.vendor === 'azure'">
-          <network-interface-info :detail="detail" v-if="type === 'basic'"></network-interface-info>
-          <network-interface-ipconfig :detail="detail" v-if="type === 'ipconfig'"></network-interface-ipconfig>
-          <network-interface-dnssvr :detail="detail" v-if="type === 'dnssvr'"></network-interface-dnssvr>
-          <network-interface-netsecgroup :detail="detail" v-if="type === 'netsecgroup'"></network-interface-netsecgroup>
+    <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+      <detail-tab :tabs="tabs">
+        <template #default="type">
+          <template v-if="detail.vendor === 'azure'">
+            <network-interface-info :detail="detail" v-if="type === 'basic'"></network-interface-info>
+            <network-interface-ipconfig :detail="detail" v-if="type === 'ipconfig'"></network-interface-ipconfig>
+            <network-interface-dnssvr :detail="detail" v-if="type === 'dnssvr'"></network-interface-dnssvr>
+            <network-interface-netsecgroup :detail="detail" v-if="type === 'netsecgroup'">
+            </network-interface-netsecgroup>
+          </template>
+          <template v-else-if="detail.vendor === 'gcp'">
+            <network-interface-info-gcp :detail="detail" :is-resource-page="isResourcePage"
+                                        v-if="type === 'basic'"></network-interface-info-gcp>
+          </template>
+          <template v-else-if="detail.vendor === 'huawei'">
+            <network-interface-info-huawei :detail="detail" v-if="type === 'basic'">
+            </network-interface-info-huawei>
+            <network-interface-ipconfig-huawei :detail="detail" v-if="type === 'ipconfig'">
+            </network-interface-ipconfig-huawei>
+          </template>
         </template>
-        <template v-else-if="detail.vendor === 'gcp'">
-          <network-interface-info-gcp
-            :detail="detail" :is-resource-page="isResourcePage"
-            v-if="type === 'basic'"></network-interface-info-gcp>
-        </template>
-        <template v-else-if="detail.vendor === 'huawei'">
-          <network-interface-info-huawei
-            :detail="detail" v-if="type === 'basic'">
-          </network-interface-info-huawei>
-          <network-interface-ipconfig-huawei
-            :detail="detail" v-if="type === 'ipconfig'">
-          </network-interface-ipconfig-huawei>
-        </template>
-      </template>
-    </detail-tab>
+      </detail-tab>
+    </div>
   </bk-loading>
 </template>

@@ -31,9 +31,11 @@ import {
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { VendorEnum } from '@/common/constant';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 const { getRegionName } = useRegionsStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
+const { whereAmI } = useWhereAmI();
 
 const VPCFields: any = ref([
   {
@@ -306,7 +308,7 @@ const handleDeleteVpc = (data: any) => {
     ])
     .then(([cvmsResult, subnetsResult, routeResult, networkResult]: any) => {
       if (cvmsResult?.data?.count || subnetsResult?.data?.count
-            || routeResult?.data?.count || networkResult?.data?.count) {
+        || routeResult?.data?.count || networkResult?.data?.count) {
         const getMessage = (result: any, name: string) => {
           if (result?.data?.count) {
             return `${result?.data?.count}个${name}，`;
@@ -345,39 +347,30 @@ const handleDeleteVpc = (data: any) => {
 </script>
 
 <template>
-  <bk-loading
-    :loading="loading"
-  >
+  <bk-loading :loading="loading">
     <detail-header>
       VPC：（{{ detail.id }}）
       <template #right>
         <div @click="showAuthDialog(actionName)">
-          <bk-button
-            class="w100 ml10"
-            theme="primary"
-            :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]"
-            @click="handleDeleteVpc(detail)"
-          >
+          <bk-button class="w100 ml10" theme="primary" @click="handleDeleteVpc(detail)"
+                     :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]">
             {{ t('删除') }}
           </bk-button>
         </div>
       </template>
     </detail-header>
 
-    <detail-info
-      :detail="detail"
-      :fields="VPCFields"
-    />
+    <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+      <detail-info :detail="detail" :fields="VPCFields" />
 
-    <detail-tab
-      :tabs="VPCTabs"
-    >
-      <template #default="type">
-        <VPCCidr v-if="type === 'cidr'" :detail="detail" />
-        <VPCSubnet v-if="type === 'subnet'" :detail="detail" />
-        <VPCRoute v-if="type === 'route'" :detail="detail" />
-      </template>
-    </detail-tab>
+      <detail-tab class="mt16" :tabs="VPCTabs">
+        <template #default="type">
+          <VPCCidr v-if="type === 'cidr'" :detail="detail" />
+          <VPCSubnet v-if="type === 'subnet'" :detail="detail" />
+          <VPCRoute v-if="type === 'route'" :detail="detail" />
+        </template>
+      </detail-tab>
+    </div>
   </bk-loading>
 </template>
 
@@ -385,6 +378,7 @@ const handleDeleteVpc = (data: any) => {
 .w100 {
   width: 100px;
 }
+
 .w60 {
   width: 60px;
 }

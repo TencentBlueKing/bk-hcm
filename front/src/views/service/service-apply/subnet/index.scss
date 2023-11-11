@@ -1,48 +1,45 @@
 .subnet-title {
-    font-size: 16px;
+  font-size: 16px;
+  color: #313238;
+}
+
+.create-form-container {
+  padding: 24px;
+  margin-top: 52px;
+}
+
+.subnet-basic-info {
+  .info-title {
+    margin: 16px 4px;
+    font-size: 14px;
     color: #313238;
-  }
-  
-  .subnet-basic-info {
-    margin-top: 24px;
-  
-    .info-title {
-      margin: 16px 4px;
-      font-size: 14px;
-      color: #313238;
-      font-weight: 700;
-      line-height: 22px;
-    }
-  
-    .info-content {
-      margin-left: 32px;
-    }
-  }
-  
-  .cidr-selector-container {
-    display: flex;
-  
-    .cidr-selector {
-      width: 80px;
-      margin-left: 4px;
-      margin-right: 4px;
-    }
-  }
-  
-  .button-group {
-    margin-top: 16px;
-  
-    .button-submit {
-      width: 88px;
-      margin-right: 8px
-    }
-  
-    .button-cancel {
-      width: 88px;
-    }
+    font-weight: 700;
+    line-height: 22px;
   }
 
-  .create-subnet-form-contianer {
-    margin: 24px;
-    margin-top: 0;
+  .info-content {
+    margin-left: 32px;
   }
+}
+
+.cidr-selector-container {
+  display: flex;
+
+  .cidr-selector {
+    width: 80px;
+    margin-left: 4px;
+    margin-right: 4px;
+  }
+}
+
+.button-group {
+  margin-top: 16px;
+
+  .bk-button {
+    padding: 0 30px;
+  }
+
+  .button-submit {
+    margin-right: 8px;
+  }
+}

@@ -194,11 +194,11 @@ const priceInfo = [
 
 <template>
   <h3 class="info-title">实例信息</h3>
-  <div class="warp-info">
+  <div class="wrap-info">
     <detail-info :fields="cvmInfo" :detail="props.data"></detail-info>
   </div>
   <h3 class="info-title">网络信息</h3>
-  <div class="warp-info">
+  <div class="wrap-info">
     <detail-info
       class="mt20"
       :fields="netInfo"
@@ -206,7 +206,7 @@ const priceInfo = [
     ></detail-info>
   </div>
   <h3 class="info-title">配置信息</h3>
-  <div class="warp-info">
+  <div class="wrap-info">
     <detail-info
       class="mt20"
       :fields="settingInfo"
@@ -214,7 +214,7 @@ const priceInfo = [
     ></detail-info>
   </div>
   <h3 class="info-title">计费信息</h3>
-  <div class="warp-info">
+  <div class="wrap-info">
     <detail-info
       class="mt20"
       :fields="priceInfo"
@@ -226,7 +226,7 @@ const priceInfo = [
 <style lang="scss" scoped>
 .info-title {
   font-size: 14px;
-  margin: 20px 0 5px;
+  margin-bottom: 8px;
 }
 :deep(.host-info) .detail-info-main {
   height: auto !important;

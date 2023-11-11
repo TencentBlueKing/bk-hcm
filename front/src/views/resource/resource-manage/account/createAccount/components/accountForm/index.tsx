@@ -286,7 +286,9 @@ export default defineComponent({
             <div class={'validate-btn-block'}>
               <Button
                 theme='primary'
-                outline={curExtension.value.validatedStatus === ValidateStatus.YES}
+                outline={
+                  curExtension.value.validatedStatus === ValidateStatus.YES
+                }
                 class={'account-validate-btn'}
                 onClick={() => handleValidate((payload: Record<string, string>) => props.changeExtension(payload))
                 }

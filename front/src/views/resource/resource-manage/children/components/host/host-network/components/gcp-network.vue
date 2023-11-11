@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import { useI18n } from 'vue-i18n';
 import type {
   // PlainObject,
   FilterType,
@@ -9,10 +8,6 @@ import {
   h,
   PropType,
 } from 'vue';
-import {
-  Button,
-  InfoBox,
-} from 'bkui-vue';
 import {
   useResourceStore,
 } from '@/store/resource';
@@ -26,7 +21,7 @@ const props = defineProps({
   },
 });
 
-const { t } = useI18n();
+// const { t } = useI18n();
 const resourceStore = useResourceStore();
 const showBind = ref(false);
 const tableData = ref<any>([]);
@@ -154,18 +149,18 @@ const handleConfirmBind = () => {
   handleToggleShow();
 };
 
-const handleFreedIp = () => {
-  InfoBox({
-    title: '确定解绑此网络接口',
-    subTitle: '解绑网络接口',
-    headerAlign: 'center',
-    footerAlign: 'center',
-    contentAlign: 'center',
-    onConfirm() {
-      console.log('111');
-    },
-  });
-};
+// const handleFreedIp = () => {
+//   InfoBox({
+//     title: '确定解绑此网络接口',
+//     subTitle: '解绑网络接口',
+//     headerAlign: 'center',
+//     footerAlign: 'center',
+//     contentAlign: 'center',
+//     onConfirm() {
+//       console.log('111');
+//     },
+//   });
+// };
 
 const handleRadio = (item: any) => {
   console.log(item);
@@ -247,7 +242,7 @@ getNetWorkList();
 <style lang="scss" scoped>
   .info-title {
     font-size: 14px;
-    margin: 20px 0 5px;
+    margin-bottom: 8px;
   }
   .sub-title{
     font-size: 12px;

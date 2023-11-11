@@ -29,8 +29,11 @@ import {
 } from '@/store/resource';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 const { getNameFromBusinessMap } = useBusinessMapStore();
+const { whereAmI } = useWhereAmI();
+
 const hostTabs = ref<any[]>([
   {
     name: '基本信息',
@@ -401,21 +404,24 @@ onBeforeMount(() => {
       </template>
     </detail-header>
 
-    <detail-tab
-      :tabs="hostTabs"
-    >
-      <template #default="type">
-        <detail-info
-          v-if="type === 'detail'"
-          :fields="settingFields"
-          :detail="detail"
-        />
-        <subnet-route
-          v-if="type === 'network'"
-          :detail="detail"
-        />
-      </template>
-    </detail-tab>
+    <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+      <detail-tab
+        :tabs="hostTabs"
+      >
+        <template #default="type">
+          <detail-info
+            v-if="type === 'detail'"
+            :fields="settingFields"
+            :detail="detail"
+          />
+          <subnet-route
+            v-if="type === 'network'"
+            :detail="detail"
+          />
+        </template>
+      </detail-tab>
+    </div>
+
   </bk-loading>
 </template>
 

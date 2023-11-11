@@ -33,60 +33,45 @@ export default defineComponent({
   setup(props) {
     return () => (
       <Dialog
+        class='preview-dialog'
         dialogType='show'
         isShow={props.isShow}
         title={'子网预览'}
-        onClosed={props.handleClose}
-      >
-        <Form>
-          <FormItem
-            label='资源ID: '
-          >
+        onClosed={props.handleClose}>
+        <Form labelWidth={108} label-position='right'>
+          <FormItem label='资源ID：'>
             <span class={'subnet-dialog-highlight-font'}>
-              { props.data.cloud_id }
+              {props.data.cloud_id}
             </span>
           </FormItem>
-          <FormItem
-            label='名称: '
-          >
+          <FormItem label='名称：'>
             <span class={'subnet-dialog-highlight-font'}>
-              { props.data.name }
+              {props.data.name}
             </span>
           </FormItem>
-          <FormItem
-            label='可用区: '
-          >
+          <FormItem label='可用区：'>
             <span class={'subnet-dialog-highlight-font'}>
-              { props.data.region }
+              {props.data.region}
             </span>
           </FormItem>
-          <FormItem
-            label='所属VPC: '
-          >
+          <FormItem label='所属VPC：'>
             <span class={'subnet-dialog-highlight-font'}>
-              { props.data.vpc_id }
+              {props.data.vpc_id}
             </span>
           </FormItem>
-          <FormItem
-            label='IPv4 CIDR: '
-          >
+          <FormItem label='IPv4 CIDR：'>
             <span class={'subnet-dialog-highlight-font'}>
-              {
-                props.data?.ipv4_cidr?.map(str => (
-                  <>
-                    <span>
-                    { str }
-                  </span><br/>
-                  </>
-                ))
-              }
+              {props.data?.ipv4_cidr?.map(str => (
+                <>
+                  <span>{str}</span>
+                  <br />
+                </>
+              ))}
             </span>
           </FormItem>
-          <FormItem
-            label='IP数: '
-          >
+          <FormItem label='IP数：'>
             <span class={'subnet-dialog-highlight-font'}>
-              { `总${props.data.total_ip_count}个，已使用${props.data.used_ip_count}个，剩余${props.data.available_ip_count}个` }
+              {`总${props.data.total_ip_count}个，已使用${props.data.used_ip_count}个，剩余${props.data.available_ip_count}个`}
             </span>
           </FormItem>
         </Form>
