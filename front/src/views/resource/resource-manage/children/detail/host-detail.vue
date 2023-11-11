@@ -330,7 +330,7 @@ const bktoolTipsOptions = computed(() => {
     </template>
   </detail-header>
 
-  <div class="host-detail">
+  <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
     <detail-tab
       :tabs="hostTabs"
     >
@@ -379,8 +379,5 @@ const bktoolTipsOptions = computed(() => {
 .mb6-text {
   margin-bottom: 6px;
   color: #63656E;
-}
-:deep(.detail-tab-main) .bk-tab-content {
-  height: calc(100vh - 322px);
 }
 </style>

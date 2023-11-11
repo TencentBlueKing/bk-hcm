@@ -1,13 +1,9 @@
 <script lang="ts" setup>
-import { useI18n } from 'vue-i18n';
 import {
   ref,
 } from 'vue';
-import {
-  InfoBox,
-} from 'bkui-vue';
 
-const { t } = useI18n();
+// const { t } = useI18n();
 const showBind = ref(false);
 const columns = [
   {
@@ -71,18 +67,18 @@ const handleConfirmBind = () => {
   handleToggleShow();
 };
 
-const handleFreedIp = () => {
-  InfoBox({
-    title: '确定解绑此网络接口',
-    subTitle: '解绑网络接口',
-    headerAlign: 'center',
-    footerAlign: 'center',
-    contentAlign: 'center',
-    onConfirm() {
-      console.log('111');
-    },
-  });
-};
+// const handleFreedIp = () => {
+//   InfoBox({
+//     title: '确定解绑此网络接口',
+//     subTitle: '解绑网络接口',
+//     headerAlign: 'center',
+//     footerAlign: 'center',
+//     contentAlign: 'center',
+//     onConfirm() {
+//       console.log('111');
+//     },
+//   });
+// };
 
 const handleRadio = (item: any) => {
   console.log(item);
@@ -147,7 +143,7 @@ const handleRadio = (item: any) => {
 <style lang="scss" scoped>
   .info-title {
     font-size: 14px;
-    margin: 20px 0 5px;
+    margin-bottom: 8px;
   }
   .sub-title{
     font-size: 12px;

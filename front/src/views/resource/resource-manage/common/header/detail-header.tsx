@@ -34,7 +34,8 @@ export default defineComponent({
 
   render() {
     return <>
-      <section class={`detail-header-main ${this.whereAmI === Senarios.resource ? 'm-24' : ''}`}>
+      <section class={`detail-header-main ${this.whereAmI === Senarios.resource ? 'ml-24' : ''}`}
+        style={{ width: this.whereAmI === Senarios.resource ? '85%' : 'calc(100% - 240px)' }}>
         <div class="title-content">
           <arrows-left
             class="detail-header-arrows-left"

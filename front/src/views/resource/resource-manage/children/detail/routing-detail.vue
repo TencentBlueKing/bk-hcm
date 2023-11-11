@@ -5,13 +5,13 @@ import RouteInfo from '../components/route/route-info.vue';
 import RouteSubnet from '../components/route/route-subnet.vue';
 
 import {
-  useI18n,
-} from 'vue-i18n';
-import {
   useRoute,
 } from 'vue-router';
 import useDetail from '../../hooks/use-detail';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+
 const route = useRoute();
+const { whereAmI } = useWhereAmI();
 
 const routeTabs = [
   {
@@ -25,10 +25,6 @@ const routeTabs = [
 ];
 
 const {
-  t,
-} = useI18n();
-
-const {
   loading,
   detail,
 } = useDetail(
@@ -38,22 +34,18 @@ const {
 </script>
 
 <template>
-  <bk-loading
-    :loading="loading"
-  >
+  <bk-loading :loading="loading">
     <detail-header>
       路由表：（{{ detail.id }}）
     </detail-header>
-
-    <detail-tab
-      :tabs="routeTabs"
-      class="route-tab"
-    >
-      <template #default="type">
-        <route-info v-if="type === 'detail'" :detail="detail" />
-        <route-subnet v-if="type === 'subnet'" :detail="detail" />
-      </template>
-    </detail-tab>
+    <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+      <detail-tab :tabs="routeTabs" class="route-tab">
+        <template #default="type">
+          <route-info v-if="type === 'detail'" :detail="detail" />
+          <route-subnet v-if="type === 'subnet'" :detail="detail" />
+        </template>
+      </detail-tab>
+    </div>
   </bk-loading>
 </template>
 
@@ -61,9 +53,11 @@ const {
 .w100 {
   width: 100px;
 }
+
 .w60 {
   width: 60px;
 }
+
 :deep(.detail-tab-main) .bk-tab-content {
   height: calc(100vh - 300px);
 }

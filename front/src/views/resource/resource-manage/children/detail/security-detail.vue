@@ -17,6 +17,7 @@ import {
 import useDetail from '../../hooks/use-detail';
 import { QueryRuleOPEnum } from '@/typings';
 import { useResourceStore } from '@/store';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 const {
   t,
@@ -29,6 +30,7 @@ const securityId = ref(route.query?.id);
 const vendor = ref(route.query?.vendor);
 const resourceStore = useResourceStore();
 const relatedSecurityGroups = ref([]);
+const { whereAmI } = useWhereAmI();
 
 const {
   loading,
@@ -97,39 +99,27 @@ const getRelatedSecurityGroups = async (detail: { account_id: string; region: st
 
 <template>
   <detail-header>
-    {{t('安全组')}}：ID（{{`${securityId}`}}）
+    {{ t('安全组') }}：ID（{{ `${securityId}` }}）
   </detail-header>
 
-  <detail-tab
-    :tabs="tabs"
-    :active="activeTab"
-    :on-change="handleTabsChange"
-  >
-    <template #default="type">
-      <security-info
-        :id="securityId"
-        :vendor="vendor"
-        v-if="type === 'detail'"
-        :loading="loading"
-        :detail="detail"
-        :get-detail="getDetail"
-      />
-      <security-relate v-if="type === 'relate'" />
-      <security-rule
-        :filter="filter"
-        :id="securityId"
-        :vendor="vendor"
-        :related-security-groups="relatedSecurityGroups"
-        v-if="type === 'rule'"
-      />
-    </template>
-  </detail-tab>
+  <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+    <detail-tab :tabs="tabs" :active="activeTab" :on-change="handleTabsChange">
+      <template #default="type">
+        <security-info :id="securityId" :vendor="vendor" v-if="type === 'detail'" :loading="loading" :detail="detail"
+                       :get-detail="getDetail" />
+        <security-relate v-if="type === 'relate'" />
+        <security-rule v-if="type === 'rule'" :filter="filter" :id="securityId" :vendor="vendor"
+                       :related-security-groups="relatedSecurityGroups" />
+      </template>
+    </detail-tab>
+  </div>
 </template>
 
 <style lang="scss" scoped>
 .w100 {
   width: 100px;
 }
+
 .w60 {
   width: 60px;
 }

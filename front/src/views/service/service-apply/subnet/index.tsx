@@ -140,7 +140,7 @@ export default defineComponent({
         <DetailHeader>
           <span class={'subnet-title'}>新建子网</span>
         </DetailHeader>
-        <div class='create-form-container'>
+        <div class='create-form-container' style={whereAmI.value === Senarios.resource && { padding: 0 }}>
           <ConditionOptions
             type={ResourceTypeEnum.CVM}
             v-model:bizId={formModel.biz_id}

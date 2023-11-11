@@ -10,9 +10,6 @@ import {
   reactive,
   PropType,
 } from 'vue';
-import {
-  InfoBox,
-} from 'bkui-vue';
 
 import {
   useResourceStore,
@@ -105,18 +102,18 @@ const handleConfirmBind = () => {
   handleToggleShow('already');
 };
 
-const handleFreedIp = (type: string) => {
-  InfoBox({
-    title: type === 'freed' ? '确定释放此虚拟IP' : '确定删除网卡',
-    subTitle: type === 'freed' ? '确定要释放吗' : '确定要删除吗',
-    headerAlign: 'center',
-    footerAlign: 'center',
-    contentAlign: 'center',
-    onConfirm() {
-      console.log('111');
-    },
-  });
-};
+// const handleFreedIp = (type: string) => {
+//   InfoBox({
+//     title: type === 'freed' ? '确定释放此虚拟IP' : '确定删除网卡',
+//     subTitle: type === 'freed' ? '确定要释放吗' : '确定要删除吗',
+//     headerAlign: 'center',
+//     footerAlign: 'center',
+//     contentAlign: 'center',
+//     onConfirm() {
+//       console.log('111');
+//     },
+//   });
+// };
 
 const handleRadio = (item: any) => {
   console.log(item);
@@ -201,7 +198,7 @@ getNetWorkList();
           </bk-button>
         </div>
       </div> -->
-      <div class="warp-info">
+      <div class="wrap-info">
         <detail-info class="mt20" :fields="formInfo" :detail="item"></detail-info>
       </div>
     </div>
@@ -423,6 +420,7 @@ getNetWorkList();
       <bk-table-column
         label="安全组名称"
       >
+        <!-- eslint-disable vue/no-template-shadow -->
         <template #default="{ data } ">
           <div class="cell-flex">
             <bk-radio
@@ -484,6 +482,7 @@ getNetWorkList();
           <bk-table-column
             label="安全组名称"
           >
+            <!-- eslint-disable vue/no-template-shadow -->
             <template #default="{ data } ">
               <div class="cell-flex">
                 <bk-radio
@@ -514,7 +513,7 @@ getNetWorkList();
 <style lang="scss" scoped>
   .info-title {
     font-size: 14px;
-    margin: 20px 0 5px;
+    margin-bottom: 8px;
   }
   .sub-title{
     font-size: 12px;

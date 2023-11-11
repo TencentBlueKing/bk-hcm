@@ -214,7 +214,7 @@ getNetWorkList();
 <style lang="scss" scoped>
   .info-title {
     font-size: 14px;
-    margin: 20px 0 5px;
+    margin-bottom: 8px;
   }
   .sub-title{
     font-size: 12px;

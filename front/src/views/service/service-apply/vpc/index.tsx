@@ -508,7 +508,9 @@ export default defineComponent({
             formData.ipv4_cidr[1] = CIDRDATARANGE[val].min;
           }
         }
+        // eslint-disable-next-line prefer-destructuring
         formData.subnet.ipv4_cidr[0] = val;
+        // eslint-disable-next-line prefer-destructuring
         formData.subnet.ipv4_cidr[1] = formData.ipv4_cidr[1];
       },
       { immediate: true },
@@ -517,6 +519,7 @@ export default defineComponent({
     watch(
       () => formData.ipv4_cidr[1],
       () => {
+        // eslint-disable-next-line prefer-destructuring
         formData.subnet.ipv4_cidr[1] = formData.ipv4_cidr[1];
       },
     );
@@ -526,7 +529,7 @@ export default defineComponent({
         <DetailHeader>
           <p class={'purchase-vpc-header-title'}>购买VPC</p>
         </DetailHeader>
-        <div class="create-form-container">
+        <div class="create-form-container" style={isResourcePage && { padding: 0 }}>
           <ConditionOptions
             type={ResourceTypeEnum.VPC}
             v-model:bizId={cond.bizId}

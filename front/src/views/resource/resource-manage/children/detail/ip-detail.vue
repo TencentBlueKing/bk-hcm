@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-import { ref, inject,
+import {
+  ref, inject,
   computed,
 } from 'vue';
 import DetailHeader from '../../common/header/detail-header';
@@ -74,7 +75,7 @@ const handleDeleteEip = () => {
           handleCloseDeleteEip();
         });
     })
-    .finally(() =>  {
+    .finally(() => {
       isDeleteing.value = false;
     });
 };
@@ -150,63 +151,38 @@ const canDelete = (data: IEip): boolean => {
 </script>
 
 <template>
-  <bk-loading
-    :loading="loading"
-  >
+  <bk-loading :loading="loading">
     <detail-header>
       弹性IP：ID（{{ detail.id }}）
       <template #right>
         <span v-if="!detail.instance_id" @click="showAuthDialog(actionName)">
-          <bk-button
-            class="w100 ml10"
-            theme="primary"
-            :disabled="disableOperation || !authVerifyData?.permissionAction[actionName]"
-            @click="handleShowAssignEip"
-          >
+          <bk-button class="w100 ml10" theme="primary" @click="handleShowAssignEip"
+                     :disabled="disableOperation || !authVerifyData?.permissionAction[actionName]">
             {{ t('绑定') }}
           </bk-button>
         </span>
         <span v-else @click="showAuthDialog(actionName)">
-          <bk-button
-            class="w100 ml10"
-            theme="primary"
-            :disabled="disableOperation || detail.instance_type === 'OTHER'
-              || !authVerifyData?.permissionAction[actionName]"
-            @click="handleShowDeleteDialog"
-          >
+          <bk-button class="w100 ml10" theme="primary" :disabled="disableOperation || detail.instance_type === 'OTHER'
+            || !authVerifyData?.permissionAction[actionName]" @click="handleShowDeleteDialog">
             {{ t('解绑') }}
           </bk-button>
         </span>
         <span @click="showAuthDialog(actionDeleteName)">
-          <bk-button
-            class="w100 ml10"
-            theme="primary"
-            :disabled="!canDelete(detail) && (!!detail.cvm_id || disableOperation || detail.instance_type === 'OTHER'
-              || !authVerifyData?.permissionAction[actionDeleteName])"
-            @click="handleShowDelete"
-          >
+          <bk-button class="w100 ml10" theme="primary" :disabled="!canDelete(detail)
+            && (!!detail.cvm_id || disableOperation || detail.instance_type === 'OTHER'
+              || !authVerifyData?.permissionAction[actionDeleteName])" @click="handleShowDelete">
             {{ t('删除') }}
           </bk-button>
         </span>
       </template>
     </detail-header>
 
-    <ip-info :detail="detail" />
+    <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+      <ip-info :detail="detail" />
+      <assign-eip v-if="detail.id" v-model:is-show="isShowAssignEip" :detail="detail" @success-assign="getDetail" />
+    </div>
 
-    <assign-eip
-      v-if="detail.id"
-      v-model:is-show="isShowAssignEip"
-      :detail="detail"
-      @success-assign="getDetail"
-    />
-
-    <bk-dialog
-      title="解绑EIP"
-      theme="danger"
-      :is-show="showDelete"
-      :quick-close="false"
-      @closed="handleCloseDeleteEip"
-    >
+    <bk-dialog title="解绑EIP" theme="danger" :is-show="showDelete" :quick-close="false" @closed="handleCloseDeleteEip">
       <div>确定解绑EIP【{{ detail.id }}】吗</div>
       <template #footer>
         <section class="bk-dialog-footer">
