@@ -23,6 +23,9 @@
     }
 
     .vendor-account-menu-item-text {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
       color: #313238;
     }
 
@@ -44,7 +47,7 @@
   }
 
   .vendor-account-menu-item {
-    padding-left: 30px;
+    padding-left: 34px;
 
     &:hover {
       background-color: #F5F7FA;
