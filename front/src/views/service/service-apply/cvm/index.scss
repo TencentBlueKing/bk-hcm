@@ -14,9 +14,7 @@
 
 .component-with-detail-container {
   display: flex;
-  .subnet-selector-preview-btn {
-    margin-top: -25px;
-  }
+  align-items: center;
   .component-with-detail {
     flex: 1;
     margin-right: 10px;
@@ -106,5 +104,40 @@
   .subnet-create-tips {
     color: #EA3636;
     margin-right: 4px;
+  }
+}
+
+.preview-dialog {
+  .bk-modal-body {
+    padding: 16px 24px;
+
+    .bk-modal-header {
+      margin-bottom: 20px;
+      height: 28px;
+      line-height: 28px;
+      .bk-dialog-header {
+        padding: 0;
+        height: 28px;
+      }
+    }
+
+    .bk-modal-content {
+      padding: 0 0 20px;
+
+      .bk-form-item {
+        margin-bottom: 0;
+
+        .bk-form-label {
+          height: 40px;
+          line-height: 40px;
+          padding-right: 8px;
+        }
+
+        .bk-form-content {
+          line-height: 40px;
+          word-break: break-all;
+        }
+      }
+    }
   }
 }
