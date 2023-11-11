@@ -542,8 +542,7 @@ export default defineComponent({
                 footer: () => (
                   // eslint-disable-next-line max-len
                   <div class='mt20'>
-                    Copyright © 2012-{curYear.value} BlueKing - Hybrid Cloud
-                    Management System. All Rights Reserved.{VERSION}
+                    Copyright © {curYear.value} Tencent BlueKing. All Rights Reserved. {VERSION}
                   </div>
                 ),
               }}
