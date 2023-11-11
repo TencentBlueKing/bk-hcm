@@ -1,5 +1,5 @@
 import http from '@/http';
-import { Button, Loading, Table } from 'bkui-vue';
+import { Loading, Table } from 'bkui-vue';
 import { PropType, defineComponent, onMounted, ref } from 'vue';
 import './index.scss';
 import { RESOURCE_TYPES_MAP, VendorEnum } from '@/common/constant';
@@ -23,9 +23,7 @@ export default defineComponent({
       {
         label: '资源名称',
         field: 'type',
-        render: ({ cell }: {cell: string}) => (
-          <Button text theme='primary'>{RESOURCE_TYPES_MAP[cell]}</Button>
-        ),
+        render: ({ cell }: {cell: string}) => RESOURCE_TYPES_MAP[cell],
       },
       {
         label: '插件类型',
