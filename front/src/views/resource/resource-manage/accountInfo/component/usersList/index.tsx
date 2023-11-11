@@ -182,17 +182,15 @@ export default defineComponent({
               return (
                   <>
                     {data?.name}
-                    {data?.account_type === 'current_account' ? (
-                      <bk-tag theme='info' class='users-list-bk-tag'>
-                        当前账号
-                      </bk-tag>
-                    ) : data?.account_type === 'main_account' ? (
-                      <bk-tag theme='success' class='users-list-bk-tag'>
-                        主账号
-                      </bk-tag>
-                    ) : (
-                      ''
-                    )}
+                    {
+                      data?.account_type !== '' && (
+                        <bk-tag
+                          theme={data?.account_type === 'current_account' ? 'info' : 'success'}
+                          class='users-list-bk-tag'>
+                          { data?.account_type === 'current_account' ? '当前账号' : '主账号'}
+                        </bk-tag>
+                      )
+                    }
                   </>
               );
             },
@@ -418,7 +416,8 @@ export default defineComponent({
               <Input
                 type={'textarea'}
                 v-model={userFormModel.memo}
-                maxlength={100}
+                maxlength={256}
+                resize={false}
               />
             </FormItem>
           </Form>

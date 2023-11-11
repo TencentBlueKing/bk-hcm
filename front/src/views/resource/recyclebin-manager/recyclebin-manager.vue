@@ -264,7 +264,7 @@
 </template>
 
 <script lang="ts">
-import { reactive, watch, toRefs, defineComponent, ref, computed, onMounted, onUpdated } from 'vue';
+import { reactive, watch, toRefs, defineComponent, ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { Message, SearchSelect } from 'bkui-vue';
@@ -309,7 +309,7 @@ export default defineComponent({
       },
     ];
     const isRowSelectEnable = ({ row }: any) => {
-      if (row.id) {
+      if (whereAmI.value === Senarios.resource && row.id) {
         return row.bk_biz_id === -1;
       }
     };
@@ -423,6 +423,8 @@ export default defineComponent({
         };
         if (idx === -1) state.filter.rules.push(rule);
         else state.filter.rules[idx] = rule;
+
+        recycleReserveTime.value = resourceAccountStore.resourceAccount.recycle_reserve_time;
       },
       {
         immediate: true,
@@ -533,10 +535,6 @@ export default defineComponent({
           yy: '%d年',
         },
       });
-    });
-
-    onUpdated(() => {
-      recycleReserveTime.value = resourceAccountStore.resourceAccount.recycle_reserve_time;
     });
 
     const isResourcePage = computed(() => {   // 资源下没有业务ID
@@ -696,7 +694,16 @@ export default defineComponent({
   },
 });
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
+.operate-warp {
+  :deep(.bk-tab-header) {
+    line-height: normal !important;
+
+    .bk-tab-header-item {
+      padding: 0 24px;
+    }
+  }
+}
   .sync-dialog-warp{
     height: 150px;
     .t-icon{

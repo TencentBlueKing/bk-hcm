@@ -3,6 +3,7 @@ import { Tab } from 'bkui-vue';
 import { BkTabPanel } from 'bkui-vue/lib/tab';
 import { defineComponent, ref, watch } from 'vue';
 import { RouterView, useRoute, useRouter } from 'vue-router';
+import './index.scss';
 
 export default defineComponent({
   setup() {

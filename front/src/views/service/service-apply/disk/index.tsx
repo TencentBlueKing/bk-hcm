@@ -256,6 +256,7 @@ export default defineComponent({
                 placeholder='简要描述申请硬盘的理由，30字以内。'
                 rows={2}
                 maxlength={30}
+                resize={false}
                 v-model={formData.memo}></Input>
             ),
           },

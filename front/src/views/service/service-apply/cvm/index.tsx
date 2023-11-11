@@ -683,6 +683,7 @@ export default defineComponent({
                   <Input
                     type='number'
                     v-model={formData.system_disk.disk_size_gb}
+                    min={1}
                     suffix='GB'
                     prefix='大小'></Input>
                 ),
@@ -721,6 +722,7 @@ export default defineComponent({
                         type='number'
                         style={{ width: '160px' }}
                         v-model={item.disk_size_gb}
+                        min={1}
                         suffix='GB'
                         prefix='大小'></Input>
                     </FormItem>
@@ -732,7 +734,8 @@ export default defineComponent({
                       <Input
                         style={{ width: '90px' }}
                         type='number'
-                        v-model={item.disk_count}></Input>
+                        v-model={item.disk_count}
+                        min={dataDiskCountRules.value.min}></Input>
                     </FormItem>
                     <div class='btns'>
                       <Button
@@ -907,6 +910,7 @@ export default defineComponent({
                 placeholder='填写实例备注'
                 rows={3}
                 maxlength={255}
+                resize={false}
                 v-model={formData.memo}></Input>
             ),
           },
@@ -919,6 +923,7 @@ export default defineComponent({
                 placeholder='填写申请单备注'
                 rows={3}
                 maxlength={255}
+                resize={false}
                 v-model={formData.remark}></Input>
             ),
           },

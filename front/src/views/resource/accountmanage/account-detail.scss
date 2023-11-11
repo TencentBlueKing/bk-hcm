@@ -1,7 +1,12 @@
-.detail-warp {
+.detail-wrap {
   background-color: #fff;
   .formItem-cls {
     width: 50%;
+    margin-bottom: 0;
+    
+    .bk-form-label, .bk-form-content {
+      line-height: 40px;
+    }
   }
 }
 
@@ -36,6 +41,10 @@
   }
 }
 
-.account-detail-floor-wrap {
-  padding-top: 20px;
+.mb32 {
+  margin-bottom: 32px;
+} 
+
+.h16 {
+  height: 16px;
 }

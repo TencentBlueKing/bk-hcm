@@ -176,12 +176,35 @@ const showAuthDialog = (authActionName: string) => {
   bus.$emit('auth', authActionName);
 };
 
-const disableToolTips = computed(() => {
-  return {
+const disabledOption = computed(() => {
+  // 无权限，直接禁用按钮
+  if (!authVerifyData.value?.permissionAction?.[actionName.value]) return true;
+  // 业务下，判断是否已被回收
+  if (!isResourcePage.value) return detail.value?.recycle_status === 'recycling';
+  // 资源下，判断是否分配业务，是否已被回收
+  return detail.value?.bk_biz_id !== -1 || detail.value?.recycle_status === 'recycling';
+});
+
+const bktoolTipsOptions = computed(() => {
+  // 无权限
+  if (!authVerifyData.value?.permissionAction?.[actionName.value]) return {
+    content: '当前用户无权限操作该按钮',
+    disabled: authVerifyData.value.permissionAction[actionName.value],
+  };
+  // 资源下，是否分配业务
+  if (isResourcePage.value && detail.value?.bk_biz_id !== -1) return {
+    content: '该主机仅可在业务下操作',
+    disabled: detail.value.bk_biz_id === -1,
+  };
+  // 业务/资源下，是否已被回收
+  if (detail.value?.recycle_status === 'recycling') return {
     content: '已回收的资源，不支持操作',
     disabled: detail.value.recycle_status !== 'recycling',
   };
+
+  return null;
 });
+
 
 </script>
 
@@ -199,11 +222,10 @@ const disableToolTips = computed(() => {
     <template #right>
       <span @click="showAuthDialog(actionName)">
         <bk-button
-          v-bk-tooltips="disableToolTips"
+          v-bk-tooltips="bktoolTipsOptions || { disabled: true }"
           class="w100 ml10"
           theme="primary"
-          :disabled="detail.recycle_status === 'recycling' || (detail.bk_biz_id !== -1 && isResourcePage)
-            || !authVerifyData?.permissionAction[actionName]"
+          :disabled="disabledOption"
           @click="() => isDialogShow = true"
           v-if="whereAmI === Senarios.resource"
         >
@@ -212,10 +234,12 @@ const disableToolTips = computed(() => {
       </span>
       <span @click="showAuthDialog(actionName)">
         <bk-button
-          v-bk-tooltips="disableToolTips"
+          v-bk-tooltips="bktoolTipsOptions || {
+            content: '当前主机处于开机状态',
+            disabled: !cvmInfo.start.status.includes(detail.status)
+          }"
           class="w100 ml10"
-          :disabled="detail.recycle_status === 'recycling' || cvmInfo.start.status.includes(detail.status)
-            || (detail.bk_biz_id !== -1 && isResourcePage) || !authVerifyData?.permissionAction[actionName]"
+          :disabled="disabledOption || cvmInfo.start.status.includes(detail.status)"
           :loading="cvmInfo.start.loading"
           @click="() => {
             handleCvmOperate('start')
@@ -226,10 +250,12 @@ const disableToolTips = computed(() => {
       </span>
       <span @click="showAuthDialog(actionName)">
         <bk-button
-          v-bk-tooltips="disableToolTips"
+          v-bk-tooltips="bktoolTipsOptions || {
+            content: '当前主机处于关机状态',
+            disabled: !cvmInfo.stop.status.includes(detail.status)
+          }"
           class="w100 ml10 mr10"
-          :disabled="detail.recycle_status === 'recycling' || cvmInfo.stop.status.includes(detail.status)
-            || (detail.bk_biz_id !== -1 && isResourcePage) || !authVerifyData?.permissionAction[actionName]"
+          :disabled="disabledOption || cvmInfo.stop.status.includes(detail.status)"
           :loading="cvmInfo.stop.loading"
           @click="() => {
             handleCvmOperate('stop')
@@ -264,9 +290,8 @@ const disableToolTips = computed(() => {
           trigger="click"
         >
           <bk-button
-            v-bk-tooltips="disableToolTips"
-            :disabled="detail.recycle_status === 'recycling' || cvmInfo.stop.status.includes(detail.status)
-              || (detail.bk_biz_id !== -1 && isResourcePage) || !authVerifyData?.permissionAction[actionName]">
+            v-bk-tooltips="bktoolTipsOptions || { disabled: true }"
+            :disabled="disabledOption || cvmInfo.stop.status.includes(detail.status)">
             ⋮
           </bk-button>
           <template #content>

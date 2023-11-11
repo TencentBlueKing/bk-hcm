@@ -414,7 +414,7 @@ export default defineComponent({
                                 <span
                                   class={
                                     'bk-hcm-app-selector-item-content-id'
-                                  }>{`(#${data.id})`}</span>
+                                  }>{`(${data.id})`}</span>
                               </div>
 
                               <div class='bk-hcm-app-selector-item-star'>

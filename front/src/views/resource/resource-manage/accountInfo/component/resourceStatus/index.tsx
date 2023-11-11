@@ -71,11 +71,11 @@ export default defineComponent({
       },
     );
     return () => (
-      <Loading loading={isLoading.value}>
+      <Loading loading={isLoading.value} style={{ margin: '8px 0' }}>
         <Table
           data={statusList.value}
           columns={tableColumns}
-          border={['row', 'col', 'outer']}
+          border={['row', 'outer']}
         ></Table>
       </Loading>
     );
