@@ -12,7 +12,7 @@ export const securityRuleValidators = (
         trigger: 'change',
         message: '协议和端口均不能为空',
         validator: () => {
-          return !!data.port && !!data.protocol;
+          return (!!data.port || vendor === VendorEnum.HUAWEI) && !!data.protocol;
         },
       },
       {
@@ -20,7 +20,7 @@ export const securityRuleValidators = (
         message:
           '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
         validator: () => {
-          return isPortAvailable(data.port);
+          return vendor === VendorEnum.HUAWEI || isPortAvailable(data.port);
         },
       },
     ],

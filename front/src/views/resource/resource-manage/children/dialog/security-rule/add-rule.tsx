@@ -702,13 +702,14 @@ export default defineComponent({
           e.protocol === 'ALL'
           || e.protocol === '-1'
           || e.protocol === '*'
-          || e.protocol === 'huaweiAll'
           || ['icmpv6', 'gre', 'icmp'].includes(e.protocol)
         ) {
           // 依次为tcloud AWS AZURE HUAWEI
           e.port = 'ALL';
         } else if (e.protocol === '-1') {
           e.port = '-1';
+        } else if (e.protocol === 'huaweiAll') {
+          e.port = undefined;
         }
       });
     };
