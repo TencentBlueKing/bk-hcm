@@ -65,11 +65,7 @@ export default defineComponent({
           v-model={checkedInstance.instanceType}
           checked={checkedInstance.instanceType === data.instance_type}
           label={data.instance_type}
-          onChange={() => {
-            checkedInstance.typeName = VendorEnum.TCLOUD ? data.type_name : data.instance_type;
-            checkedInstance.cpu = `${data.cpu}核`;
-            checkedInstance.memory = `${data.memory / 1024}GB`;
-          }}
+          // onChange={() => handleChangeCheckedInstance(data)}
         >
           {  props.vendor === VendorEnum.TCLOUD ? cell : data.instance_type }
         </Radio>
@@ -204,6 +200,17 @@ export default defineComponent({
       isDialogShow.value = false;
     };
 
+    const handleChangeCheckedInstance = (data: any) => {
+      checkedInstance.instanceType = data.instance_type;
+      checkedInstance.typeName = VendorEnum.TCLOUD === props.vendor ? data.type_name : data.instance_type;
+      checkedInstance.cpu = `${data.cpu}核`;
+      checkedInstance.memory = `${data.memory / 1024}GB`;
+    };
+
+    const handleOnRowClick = (_: any, row: any) => {
+      handleChangeCheckedInstance(row);
+    };
+
     return () => (
       // <Select
       //   filterable={true}
@@ -261,8 +268,8 @@ export default defineComponent({
           onConfirm={handleChange}
           title='选择机型'
           width={1500}>
-          <Form>
-            <FormItem label='机型族' labelPosition='left'>
+          <Form class='selected-block-dialog-form' labelWidth={100} labelPosition='right'>
+            <FormItem label='机型族' >
               <BkButtonGroup>
                 {instanceFamilyTypesList.value.map(name => (
                   <Button
@@ -274,7 +281,7 @@ export default defineComponent({
                 ))}
               </BkButtonGroup>
             </FormItem>
-            <FormItem label='已选' labelPosition='left'>
+            <FormItem label='已选'>
               <div class={'instance-type-search-seletor-container'}>
                 <div class={'selected-block-container'}>
                   <div class={'selected-block'}>
@@ -296,6 +303,7 @@ export default defineComponent({
               data={resList.value}
               columns={computedColumns.value}
               pagination={pagination}
+              onRowClick={handleOnRowClick}
             />
           </Loading>
         </Dialog>

@@ -78,18 +78,18 @@ func (g *Gcp) CreateSubnet(kt *kit.Kit, opt *typessubnet.GcpSubnetCreateOption) 
 	handler := &createSubnetPollingHandler{
 		region: req.Region,
 	}
-	respPoller := poller.Poller[*Gcp, []*compute.Operation, []uint64]{Handler: handler}
-	results, err := respPoller.PollUntilDone(g, kt, []*string{converter.ValToPtr(strconv.FormatUint(resp.Id, 10))},
+	respPoller := poller.Poller[*Gcp, []*compute.Operation, createSubnetResult]{Handler: handler}
+	result, err := respPoller.PollUntilDone(g, kt, []*string{converter.ValToPtr(strconv.FormatUint(resp.Id, 10))},
 		types.NewBatchCreateSubnetPollerOption())
 	if err != nil {
 		return 0, err
 	}
 
-	if len(converter.PtrToVal(results)) <= 0 {
-		return 0, fmt.Errorf("create subnet failed")
+	if len(result.ErrorMessage) != 0 {
+		return 0, errors.New(result.ErrorMessage)
 	}
 
-	return (converter.PtrToVal(results))[0], nil
+	return result.CloudIDs[0], nil
 }
 
 // UpdateSubnet update subnet.
@@ -308,15 +308,29 @@ type createSubnetPollingHandler struct {
 	region string
 }
 
+type createSubnetResult struct {
+	CloudIDs     []uint64 `json:"cloud_ids"`
+	ErrorMessage string   `json:"error_message"`
+}
+
 // Done ...
-func (h *createSubnetPollingHandler) Done(items []*compute.Operation) (bool, *[]uint64) {
-	results := make([]uint64, 0)
+func (h *createSubnetPollingHandler) Done(items []*compute.Operation) (bool, *createSubnetResult) {
+	result := new(createSubnetResult)
 
 	flag := true
 	for _, item := range items {
-		if item.OperationType == "insert" && item.Status == "DONE" {
-			results = append(results, item.TargetId)
+		if item.OperationType == "insert" && item.Status == "DONE" &&
+			len(item.HttpErrorMessage) == 0 && item.Error == nil {
+
+			result.CloudIDs = append(result.CloudIDs, item.TargetId)
 			continue
+		}
+
+		if item.OperationType == "insert" && item.Status == "DONE" &&
+			len(item.HttpErrorMessage) != 0 && item.Error != nil && len(item.Error.Errors) != 0 {
+
+			result.ErrorMessage = item.Error.Errors[0].Message
+			return flag, result
 		}
 
 		if item.OperationType == "insert" && item.Status == "PENDING" {
@@ -330,12 +344,12 @@ func (h *createSubnetPollingHandler) Done(items []*compute.Operation) (bool, *[]
 		}
 	}
 
-	return flag, converter.ValToPtr(results)
+	return flag, result
 }
 
 // Poll ...
-func (h *createSubnetPollingHandler) Poll(client *Gcp, kt *kit.Kit, opIDs []*string) ([]*compute.Operation,
-	error) {
+func (h *createSubnetPollingHandler) Poll(client *Gcp, kt *kit.Kit, opIDs []*string) ([]*compute.Operation, error) {
+
 	if len(opIDs) == 0 {
 		return nil, errors.New("operation group id is required")
 	}

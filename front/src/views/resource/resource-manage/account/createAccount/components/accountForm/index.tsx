@@ -276,8 +276,8 @@ export default defineComponent({
                     </Button>
                     ) : null}
                   {Object.entries(curExtension.value.output1).map(([property, { label, value }]) => (
-                      <FormItem label={label} property={property} required>
-                        <Input v-model={value} disabled placeholder={' '} />
+                      <FormItem label={label} property={property}>
+                        <Input v-model={value} readonly placeholder={' '} />
                       </FormItem>
                   ))}
                 </div>
@@ -342,9 +342,9 @@ export default defineComponent({
                 ],
               }}>
               {/* eslint-disable-next-line @typescript-eslint/no-unused-vars */}
-              {Object.entries(curExtension.value.output2).map(([property, { label, value }]) => (
-                  <FormItem label={label} required>
-                    <Input v-model={value} disabled placeholder={' '} />
+              {Object.entries(curExtension.value.output2).map(([, { label, value }]) => (
+                  <FormItem label={label}>
+                    <Input v-model={value} readonly placeholder={' '}/>
                   </FormItem>
               ))}
               <FormItem

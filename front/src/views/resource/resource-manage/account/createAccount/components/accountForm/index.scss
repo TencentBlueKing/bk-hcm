@@ -1,6 +1,7 @@
 .account-form {
+  margin-top: 72px;
   .account-form-card {
-    margin: 24px 0 16px 0;
+    margin-bottom: 16px;
     background-color: #fff;
 
     .account-form-card-title {
@@ -46,6 +47,7 @@
     //   width: 372px;
     // }
     .validate-btn-block {
+      margin-top: -16px;
       display: flex;
       align-items: center;
       .account-validate-btn {

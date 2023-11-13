@@ -507,7 +507,7 @@ export default defineComponent({
             property: 'cloud_subnet_id',
             content: () => (
               <>
-                <Checkbox v-model={formData.public_ip_assigned} disabled>
+                <Checkbox class='automatic-allocation-checkbox' v-model={formData.public_ip_assigned} disabled>
                   自动分配公网IP
                 </Checkbox>
                 <div class={'component-with-detail-container'}>
@@ -1051,7 +1051,9 @@ export default defineComponent({
         <DetailHeader>
           <p class={'purchase-cvm-header-title'}>购买主机</p>
         </DetailHeader>
-        <div class="create-form-container" style={whereAmI.value === Senarios.resource && { padding: 0 }}>
+        <div
+          class='create-form-container cvm-wrap'
+          style={whereAmI.value === Senarios.resource && { padding: 0 }}>
           <ConditionOptions
             type={ResourceTypeEnum.CVM}
             v-model:bizId={cond.bizId}
@@ -1073,17 +1075,20 @@ export default defineComponent({
                   </FormItem>
                 </Form>
               ),
-              appendix: () => ([VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum) ? (
+              appendix: () =>
+                [VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(
+                  cond.vendor as VendorEnum,
+                ) ? (
                   <Form formType='vertical'>
                     <FormItem label='计费模式' required>
                       <RadioGroup v-model={formData.instance_charge_type}>
-                        {billingModes.value.map(item => (
+                        {billingModes.value.map((item) => (
                           <RadioButton label={item.id}>{item.name}</RadioButton>
                         ))}
                       </RadioGroup>
                     </FormItem>
                   </Form>
-              ) : null),
+                ) : null,
             }}
           </ConditionOptions>
           <Form
@@ -1098,26 +1103,29 @@ export default defineComponent({
                 <CommonCard title={() => title} class={'mb16'}>
                   {children
                     .filter(({ display }) => display !== false)
-                    .map(({
-                      label,
-                      description,
-                      tips,
-                      rules,
-                      required,
-                      property,
-                      content,
-                    }) => (
+                    .map(
+                      ({
+                        label,
+                        description,
+                        tips,
+                        rules,
+                        required,
+                        property,
+                        content,
+                      }) => (
                         <FormItem
                           label={label}
                           required={required}
                           property={property}
                           rules={rules}
-                          description={description}>
+                          description={description}
+                          class={label === '子网' && 'purchase-cvm-form-item-subnet-wrap'}
+                          >
                           {Array.isArray(content) ? (
                             <div class='flex-row'>
                               {content
-                                .filter(sub => sub.display !== false)
-                                .map(sub => (
+                                .filter((sub) => sub.display !== false)
+                                .map((sub) => (
                                   <FormItem
                                     label={sub.label}
                                     required={sub.required}
@@ -1139,7 +1147,8 @@ export default defineComponent({
                           )}
                           {tips && <div class='form-item-tips'>{tips()}</div>}
                         </FormItem>
-                    ))}
+                      ),
+                    )}
                 </CommonCard>
               ))}
             {/* <div class="action-bar">
@@ -1161,60 +1170,69 @@ export default defineComponent({
           />
         </div>
         <div class={'purchase-cvm-bottom-bar'}>
-          <Form class={'purchase-cvm-bottom-bar-form'}>
-            <FormItem
-              label='数量'
-              class={
-                'purchase-cvm-bottom-bar-form-count '
-                + `${limitNum.value !== -1 ? 'mb-12' : ''}`
-              }>
-              <div>
+          <Form labelWidth={130} class={'purchase-cvm-bottom-bar-form'}>
+            <div class='purchase-cvm-bottom-bar-form-item-wrap'>
+              <FormItem
+                label='数量'
+                class={
+                  'purchase-cvm-bottom-bar-form-count ' +
+                  `${limitNum.value !== -1 ? 'mb-12' : ''}`
+                }>
                 <Input
+                  style={{ width: '150px' }}
                   type='number'
                   min={0}
                   max={100}
                   v-model={formData.required_count}></Input>
-                {[
-                  VendorEnum.TCLOUD,
-                  VendorEnum.HUAWEI,
-                  VendorEnum.GCP,
-                ].includes(cond.vendor as VendorEnum)
-                && limitNum.value !== -1 ? (
-                  <p class={'purchase-cvm-bottom-bar-form-count-tip'}>
-                    所在{VendorEnum.TCLOUD === cond.vendor ? '可用区' : '地域'}
-                    配额为{' '}
-                    {
-                      <>
-                        <span
-                          class={'purchase-cvm-bottom-bar-form-count-tip-num'}>
-                          {limitNum.value
-                            - usageNum.value
-                            - formData.required_count}
-                        </span>{' '}
-                        /{limitNum.value}
-                      </>
-                    }
-                  </p>
-                  ) : null}
-              </div>
-            </FormItem>
-            {['PREPAID', 'prePaid'].includes(formData.instance_charge_type) ? (
-              <FormItem label='时长'>
-                <div class={'purchase-cvm-time'}>
-                  <Input
-                    type='number'
-                    v-model={formData.purchase_duration.count}></Input>
-                  <Select
-                    v-model={formData.purchase_duration.unit}
-                    clearable={false}>
-                    {purchaseDurationUnits.map(({ id, name }: IOption) => (
-                      <Option key={id} value={id} label={name}></Option>
-                    ))}
-                  </Select>
-                  <Checkbox v-model={formData.auto_renew}>自动续费</Checkbox>
-                </div>
               </FormItem>
-            ) : null}
+              {['PREPAID', 'prePaid'].includes(
+                formData.instance_charge_type,
+              ) ? (
+                <FormItem label='时长'>
+                  <div class={'purchase-cvm-time'}>
+                    <Input
+                      style={{ width: '160px' }}
+                      type='number'
+                      v-model={formData.purchase_duration.count}></Input>
+                    <Select
+                      style={{ width: '50px' }}
+                      v-model={formData.purchase_duration.unit}
+                      clearable={false}>
+                      {purchaseDurationUnits.map(({ id, name }: IOption) => (
+                        <Option key={id} value={id} label={name}></Option>
+                      ))}
+                    </Select>
+                    // --no-verify
+                    <Checkbox
+                      class='purchase-cvm-time-checkbox'
+                      v-model={formData.auto_renew}>
+                      自动续费
+                    </Checkbox>
+                  </div>
+                </FormItem>
+              ) : null}
+            </div>
+            <div class='purchase-cvm-bottom-bar-form-count-wrap'>
+              {[VendorEnum.TCLOUD, VendorEnum.HUAWEI, VendorEnum.GCP].includes(
+                cond.vendor as VendorEnum,
+              ) && limitNum.value !== -1 ? (
+                <p class={'purchase-cvm-bottom-bar-form-count-tip'}>
+                  所在{VendorEnum.TCLOUD === cond.vendor ? '可用区' : '地域'}
+                  配额为{' '}
+                  {
+                    <>
+                      <span
+                        class={'purchase-cvm-bottom-bar-form-count-tip-num'}>
+                        {limitNum.value -
+                          usageNum.value -
+                          formData.required_count}
+                      </span>{' '}
+                      /{limitNum.value}
+                    </>
+                  }
+                </p>
+              ) : null}
+            </div>
           </Form>
           <div class={'purchase-cvm-bottom-bar-info'}>
             <div>费用：</div>
