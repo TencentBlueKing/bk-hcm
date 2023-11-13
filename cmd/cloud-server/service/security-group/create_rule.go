@@ -20,8 +20,6 @@
 package securitygroup
 
 import (
-	"strconv"
-
 	"hcm/cmd/cloud-server/logics/async"
 	actionsg "hcm/cmd/task-server/logics/action/security-group"
 	proto "hcm/pkg/api/cloud-server"
@@ -35,7 +33,9 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/assert"
+	"hcm/pkg/tools/counter"
 	"hcm/pkg/tools/hooks/handler"
+	"hcm/pkg/tools/slice"
 )
 
 // CreateSecurityGroupRule create security group rule.
@@ -211,23 +211,22 @@ func (svc *securityGroupSvc) createHuaWeiSGRule(cts *rest.Contexts, sgBaseInfo *
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-	ruleLen := len(req.EgressRuleSet) + len(req.IngressRuleSet)
-	tasks := make([]ts.CustomFlowTask, 0, ruleLen)
 
-	for i := 1; i <= ruleLen; i++ {
-		tasks = append(tasks, ts.CustomFlowTask{
-			ActionID:   action.ActIDType(strconv.Itoa(i)),
+	getTaskID := counter.NewNumStringCounter(1, 10)
+	tasks := slice.Map(req.EgressRuleSet, func(r proto.HuaWeiSecurityGroupRule) ts.CustomFlowTask {
+		return ts.CustomFlowTask{
+			ActionID:   action.ActIDType(getTaskID()),
 			ActionName: enumor.ActionCreateHuaweiSGRule,
-		})
-	}
-
-	for i, rule := range req.IngressRuleSet {
-		tasks[i].Params = convSGRuleReq(sgBaseInfo, rule, true)
-	}
-
-	for i, rule := range req.EgressRuleSet {
-		tasks[i].Params = convSGRuleReq(sgBaseInfo, rule, false)
-	}
+			Params:     convSGEgressRuleReq(sgBaseInfo, r),
+		}
+	})
+	tasks = append(tasks, slice.Map(req.IngressRuleSet, func(r proto.HuaWeiSecurityGroupRule) ts.CustomFlowTask {
+		return ts.CustomFlowTask{
+			ActionID:   action.ActIDType(getTaskID()),
+			ActionName: enumor.ActionCreateHuaweiSGRule,
+			Params:     convSGIngressRuleReq(sgBaseInfo, r),
+		}
+	})...)
 
 	flowReq := &ts.AddCustomFlowReq{
 		Name:  enumor.FlowCreateHuaweiSGRule,
@@ -244,6 +243,15 @@ func (svc *securityGroupSvc) createHuaWeiSGRule(cts *rest.Contexts, sgBaseInfo *
 		return nil, err
 	}
 	return result, nil
+}
+
+func convSGEgressRuleReq(sgBaseInfo *types.CloudResourceBasicInfo,
+	rule proto.HuaWeiSecurityGroupRule) *actionsg.CreateHuaweiSGRuleOption {
+	return convSGRuleReq(sgBaseInfo, rule, true)
+}
+func convSGIngressRuleReq(sgBaseInfo *types.CloudResourceBasicInfo,
+	rule proto.HuaWeiSecurityGroupRule) *actionsg.CreateHuaweiSGRuleOption {
+	return convSGRuleReq(sgBaseInfo, rule, false)
 }
 
 func convSGRuleReq(sgBaseInfo *types.CloudResourceBasicInfo, rule proto.HuaWeiSecurityGroupRule,

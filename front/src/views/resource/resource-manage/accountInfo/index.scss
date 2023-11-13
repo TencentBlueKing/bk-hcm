@@ -1,4 +1,12 @@
 .account-info-container {
-  margin: 24px;
-  background-color: #fff;
+  .bk-tab-header {
+    line-height: normal !important;
+
+    .bk-tab-header-item {
+      padding: 0 24px;
+    }
+  }
+  .bk-tab-content {
+    padding: 16px 24px;
+  }
 }

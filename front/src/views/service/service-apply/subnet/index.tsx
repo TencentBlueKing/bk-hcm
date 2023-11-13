@@ -21,12 +21,14 @@ export default defineComponent({
       biz_id: '' as string,
       account_id: '' as string, // 云账号
       vendor: null as VendorEnum, // 云厂商
+      resource_group: '' as string, // 资源组
       region: '' as string, // 云地域
       zone: '' as string, // 可用区
       cloud_vpc_id: 0 as number, // 所属的VPC网络
       name: '' as string, // 子网名称
-      ipv4_cidr: '' as string, // IPV4 CIDR
-      cloud_route_table_id: 0 as number, // 关联的路由表
+      ipv4_cidr: '' as string | string[], // IPV4 CIDR
+      cloud_route_table_id: 0 as number, // 关联的路由表,
+      gateway_ip: '' as string, // 网关地址
     });
     const formRef = ref(null);
     const formRules = {
@@ -93,6 +95,9 @@ export default defineComponent({
 
     const handleSubmit = async () => {
       await formRef.value.validate();
+      if (formModel.vendor === VendorEnum.GCP || formModel.vendor === VendorEnum.AZURE) {
+        formModel.ipv4_cidr = [formModel.ipv4_cidr] as string[];
+      }
       submitLoading.value = true;
       try {
         await businessStore.createSubnet(
@@ -135,16 +140,14 @@ export default defineComponent({
         <DetailHeader>
           <span class={'subnet-title'}>新建子网</span>
         </DetailHeader>
-
-        <div class={'create-subnet-form-contianer'}>
+        <div class='create-form-container' style={whereAmI.value === Senarios.resource && { padding: 0 }}>
           <ConditionOptions
             type={ResourceTypeEnum.CVM}
             v-model:bizId={formModel.biz_id}
             v-model:cloudAccountId={formModel.account_id}
             v-model:vendor={formModel.vendor}
             v-model:region={formModel.region}
-            // v-model:resourceGroup={formModel.resourceGroup}
-            class={'mb16 mt24'}>
+            v-model:resourceGroup={formModel.resource_group}>
             {{
               default: () => (
                 <Form formType='vertical'>
@@ -233,6 +236,12 @@ export default defineComponent({
                   v-model={formModel.cloud_route_table_id}
                 />
               </FormItem>
+              {
+                formModel.vendor === 'huawei'
+                  && <FormItem label='网关地址' style={{ width: '880px' }} required property='gateway_ip'>
+                    <Input v-model={formModel.gateway_ip} placeholder='请输入网关地址'></Input>
+                  </FormItem>
+              }
             </Form>
           </Card>
           <div class={'button-group'}>

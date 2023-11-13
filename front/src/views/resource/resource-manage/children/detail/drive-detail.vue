@@ -11,6 +11,7 @@ import {
   computed,
   h,
   withDirectives,
+  inject,
 } from 'vue';
 import {
   useRoute,
@@ -31,9 +32,12 @@ import useMountedDrive from '../../hooks/use-choose-host-drive';
 import useUninstallDrive from '../../hooks/use-uninstall-drive';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 const { getRegionName } = useRegionsStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
+const isResourcePage: any = inject('isResourcePage');
+const { whereAmI } = useWhereAmI();
 
 const hostTabs = [
   {
@@ -169,7 +173,7 @@ const settingFields = ref<any[]>([
 ]);
 const resourceStore = useResourceStore();
 const route = useRoute();
-const router =  useRouter();
+const router = useRouter();
 // const accountStore = useAccountStore();
 
 // const isResourcePage = computed(() => {   // 资源下没有业务ID
@@ -308,89 +312,92 @@ const handleShowDelete = () => {
   });
 };
 
-const disableOperation = computed(() => {
-  return !location.href.includes('business') && detail.value.bk_biz_id !== -1;
+const disabledOption = computed(() => {
+  // 无权限，直接禁用按钮
+  // if (!authVerifyData.value?.permissionAction?.[actionName.value]) return true;
+  // 业务下，判断是否已被回收
+  if (!isResourcePage.value) return detail.value?.recycle_status === 'recycling';
+  // 资源下，判断是否分配业务，是否已被回收
+  return detail.value?.bk_biz_id !== -1 || detail.value?.recycle_status === 'recycling';
 });
-const disableToolTips = computed(() => {
-  return {
-    content: '已回收的资源，不支持操作',
-    disabled: !disableOperation.value && detail.recycle_status !== 'recycling',
+const bktoolTipsOptions = computed(() => {
+  // 无权限
+  // if (!authVerifyData.value?.permissionAction?.[actionName.value]) return {
+  //     content: '当前用户无权限操作该按钮',
+  //     disabled: authVerifyData.value.permissionAction[actionName.value],
+  // }
+  // 资源下，是否分配业务
+  if (isResourcePage.value && detail.value?.bk_biz_id !== -1) return {
+    content: '该硬盘仅可在业务下操作',
+    disabled: detail.value.bk_biz_id === -1,
   };
+  // 业务/资源下，是否已被回收
+  if (detail.value?.recycle_status === 'recycling') return {
+    content: '已回收的资源，不支持操作',
+    disabled: detail.value.recycle_status !== 'recycling',
+  };
+
+  return null;
 });
+
+// const disableOperation = computed(() => {
+//   return !location.href.includes('business') && detail.value.bk_biz_id !== -1;
+// });
+// const disableToolTips = computed(() => {
+//   return {
+//     content: '已回收的资源，不支持操作',
+//     disabled: !disableOperation.value && detail.recycle_status !== 'recycling',
+//   };
+// });
 </script>
 
 <template>
-  <bk-loading
-    :loading="loading"
-  >
+  <bk-loading :loading="loading">
     <detail-header>
       云硬盘：ID（{{ detail.id }}）
       <template #right>
-        <bk-button
-          v-if="!detail.instance_id"
-          v-bk-tooltips="disableToolTips"
-          class="w100 ml10"
-          theme="primary"
-          :disabled="disableOperation || detail.recycle_status === 'recycling'"
-          @click="handleMountedDrive"
-        >
+        <bk-button v-if="!detail.instance_id" v-bk-tooltips="bktoolTipsOptions || { disabled: true }" class="w100 ml10"
+                   theme="primary" :disabled="disabledOption" @click="handleMountedDrive">
           {{ t('挂载') }}
         </bk-button>
-        <bk-button
-          v-else
-          v-bk-tooltips="disableToolTips"
-          class="w100 ml10"
-          theme="primary"
-          :disabled="disableOperation || detail.recycle_status === 'recycling'"
-          @click="handleUninstallDrive(detail)"
-        >
+        <bk-button v-else v-bk-tooltips="bktoolTipsOptions || { disabled: true }" class="w100 ml10" theme="primary"
+                   :disabled="disabledOption" @click="handleUninstallDrive(detail)">
           {{ t('卸载') }}
         </bk-button>
-        <bk-button
-          v-bk-tooltips="disableToolTips"
-          class="w100 ml10"
-          theme="primary"
-          :disabled="!!detail.instance_id || disableOperation || detail.recycle_status === 'recycling'"
-          @click="handleShowDelete"
-        >
+        <bk-button v-bk-tooltips="bktoolTipsOptions || {
+                     content: '该硬盘已绑定主机，不可单独回收',
+                     disabled: !detail.instance_id,
+                   }" class="w100 ml10" theme="primary" :disabled="!!detail.instance_id || disabledOption"
+                   @click="handleShowDelete">
           {{ t('回收') }}
         </bk-button>
       </template>
     </detail-header>
 
-    <detail-tab
-      :tabs="hostTabs"
-    >
-      <template #default>
-        <detail-info
-          :fields="settingFields"
-          :detail="detail"
-        />
-      </template>
-    </detail-tab>
+    <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+      <detail-tab :tabs="hostTabs">
+        <template #default>
+          <detail-info :fields="settingFields" :detail="detail" />
+        </template>
+      </detail-tab>
+    </div>
   </bk-loading>
 
-  <mounted-drive
-    v-if="detail.id"
-    v-model:is-show="isShowMountedDrive"
-    :detail="detail"
-    @success-attach="getDetail"
-  />
+  <mounted-drive v-if="detail.id" v-model:is-show="isShowMountedDrive" :detail="detail" @success-attach="getDetail" />
 
-  <uninstall-drive
-    v-model:is-show="isShowUninstallDrive"
-    @success="getDetail"
-  />
+  <uninstall-drive v-model:is-show="isShowUninstallDrive" @success="getDetail" />
 </template>
 
 <style lang="scss" scoped>
 .w100 {
   width: 100px;
 }
+
 .w60 {
   width: 60px;
 }
-.f-right{
+
+.f-right {
   float: right;
 }
 </style>

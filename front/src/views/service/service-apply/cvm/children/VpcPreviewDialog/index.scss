@@ -1,11 +1,20 @@
 .vpc-dialog-highlit-font {
   font-size: 14px;
   color: #313238;
-  margin-right: 9px;
+
+  // 文本最多显示5行
+  // display: -webkit-box;
+  // -webkit-box-orient: vertical;
+  // -webkit-line-clamp: 5;
+  // text-overflow: ellipsis;
+  // overflow: hidden;
 }
 
 .vpc-dialog-highligt-icon {
+  margin-left: 10px;
+  vertical-align: middle;
   color: #3a84ff;
-  font-size: 12px;
+  width: 14px;
+  height: 14px;
   cursor: pointer;
 }

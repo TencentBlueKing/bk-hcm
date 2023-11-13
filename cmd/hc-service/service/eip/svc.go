@@ -22,7 +22,7 @@ package eip
 import (
 	"fmt"
 
-	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
+	cloudclient "hcm/cmd/hc-service/logics/cloud-adaptor"
 	"hcm/cmd/hc-service/service/eip/aws"
 	"hcm/cmd/hc-service/service/eip/azure"
 	"hcm/cmd/hc-service/service/eip/gcp"

@@ -181,7 +181,7 @@ export default defineComponent({
               ),
             },
             {
-              label: t('账号ID'),
+              label: t('账号 ID'),
               required: false,
               property: 'cloud_sub_account_id',
               component: () => (
@@ -200,7 +200,7 @@ export default defineComponent({
             name: t('密钥信息'),
             data: [
               {
-                label: t('IAM用户ID'),
+                label: t('IAM用户 ID'),
                 required: false,
                 property: 'cloud_iam_user_id',
                 component: () => (
@@ -239,7 +239,7 @@ export default defineComponent({
         case 'tcloud':
           insertFormData = [
             {
-              label: t('主账号ID'),
+              label: t('主账号 ID'),
               required: false,
               property: 'cloud_main_account_id',
               component: () => (
@@ -272,7 +272,7 @@ export default defineComponent({
                 component: () => <span>********</span>,
               },
               {
-                label: t('子账号ID'),
+                label: t('子账号 ID'),
                 required: false,
                 property: 'cloud_sub_account_id',
                 component: () => (
@@ -285,7 +285,7 @@ export default defineComponent({
         case 'aws':
           insertFormData = [
             {
-              label: t('账号ID:'),
+              label: t('账号 ID'),
               required: false,
               property: 'cloud_account_id',
               component: () => (
@@ -349,7 +349,7 @@ export default defineComponent({
               ),
             },
             {
-              label: t('订阅 名称'),
+              label: t('订阅名称'),
               required: false,
               property: 'cloud_subscription_name',
               component: () => (
@@ -388,7 +388,7 @@ export default defineComponent({
                 ),
               },
               {
-                label: t('客户端密钥ID'),
+                label: t('客户端密钥 ID'),
                 required: false,
                 property: 'cloud_client_secret_id',
                 component: () => (
@@ -434,7 +434,7 @@ export default defineComponent({
             name: t('密钥信息'),
             data: [
               {
-                label: t('服务账号ID'),
+                label: t('服务账号 ID'),
                 required: false,
                 property: 'cloud_service_account_id',
                 component: () => (
@@ -810,20 +810,22 @@ export default defineComponent({
     return () => (isLoading.value ? (
         <Loading />
     ) : (
-        <div class='detail-warp p20'>
-          {
-            route.path.includes('resource/resource/account/detail') ? null
-              : (
+        <div class='detail-wrap'>
+          {!route.path.includes('resource/resource/account/detail') && (
+            <>
               <DetailHeader>
-                <span class="header-title-prefix">账号详情</span>
-                <span class="header-title-content">&nbsp;- ID {projectModel.id}</span>
+                <span class='header-title-prefix'>账号详情</span>
+                <span class='header-title-content'>
+                  &nbsp;- ID {projectModel.id}
+                </span>
               </DetailHeader>
-              )
-          }
+              <div class='h16'></div>
+            </>
+          )}
           {/* 基本信息 */}
           {formBaseInfo.map((baseItem, index) => (
-            <div class='account-detail-floor-wrap'>
-              <div class='font-bold pb10'>
+            <div class='mb32'>
+              <div class='font-bold pb8'>
                 {baseItem.name}
                 {index > 0 ? (
                   <span
@@ -855,7 +857,7 @@ export default defineComponent({
                   {baseItem.data.map(formItem => (
                     <FormItem
                       class='formItem-cls info-value'
-                      label={formItem.label}
+                      label={`${formItem.label} ：`}
                       required={formItem.required}
                       property={formItem.property}>
                       {formItem.component()}
@@ -983,7 +985,8 @@ export default defineComponent({
                 <Input
                   type={'textarea'}
                   v-model={accountFormModel.memo}
-                  maxlength={100}
+                  maxlength={256}
+                  resize={false}
                 />
               </FormItem>
             </Form>

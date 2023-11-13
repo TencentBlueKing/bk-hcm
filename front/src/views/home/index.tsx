@@ -301,9 +301,7 @@ export default defineComponent({
               {{
                 'side-header': () => (
                   <div class='left-header flex-row justify-content-between align-items-center'>
-                    <div class='logo'>
-                      <img class='logo-icon' src={logo} />
-                    </div>
+                    <img class='logo-icon' src={logo} />
                     <div class='title-text'>{t('海垒')}</div>
                   </div>
                 ),
@@ -369,7 +367,7 @@ export default defineComponent({
                           default: () => (
                             <span class='cursor-pointer flex-row align-items-center '>
                               {userStore.username}
-                              <span class="icon bk-icon icon-down-shape pl5"></span>
+                              <span class='icon bk-icon icon-down-shape pl5'></span>
                             </span>
                           ),
                           content: () => (
@@ -414,7 +412,7 @@ export default defineComponent({
                                 <span
                                   class={
                                     'bk-hcm-app-selector-item-content-id'
-                                  }>{`(#${data.id})`}</span>
+                                  }>{`(${data.id})`}</span>
                               </div>
 
                               <div class='bk-hcm-app-selector-item-star'>
@@ -525,31 +523,9 @@ export default defineComponent({
                 ),
                 default: () => (
                   <>
-                    {whereAmI.value
-                    === Senarios.resource //     <p class={'resource-title'}>云账号1</p>
-                    //   <div class={'card-layout'}> // <div class='navigation-resource'>
-                    //     <BkTab
-                    //       class={'ml15'}
-                    //       type={'unborder-card'}
-                    //       v-model={activeResourceTab}
-                    //     >
-                    //       {
-                    //         RESOURCE_TABS.map(({ key, label }) => (
-                    //           <BkTabPanel
-                    //             label={label}
-                    //             key={key}
-                    //             name={key}
-                    //           />
-                    //         ))
-                    //       }
-                    //     </BkTab>
-                    //   </div>
-                    // </div>
-                      ? null : (
-                      <div class='navigation-breadcrumb'>
-                        <Breadcrumb></Breadcrumb>
-                      </div>
-                      )}
+                    {whereAmI.value === Senarios.resource ? null : (
+                      <Breadcrumb></Breadcrumb>
+                    )}
                     <div
                       class={
                         ['/service/my-apply'].includes(curPath.value)
@@ -564,8 +540,7 @@ export default defineComponent({
                 footer: () => (
                   // eslint-disable-next-line max-len
                   <div class='mt20'>
-                    Copyright © 2012-{curYear.value} BlueKing - Hybrid Cloud
-                    Management System. All Rights Reserved.{VERSION}
+                    Copyright © {curYear.value} Tencent BlueKing. All Rights Reserved. {VERSION}
                   </div>
                 ),
               }}

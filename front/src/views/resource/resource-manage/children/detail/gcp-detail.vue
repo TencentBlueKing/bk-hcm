@@ -24,10 +24,12 @@ import {
 } from 'vue-i18n';
 
 import { ref, watch } from 'vue';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 const route = useRoute();
 const resourceStore = useResourceStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
+const { whereAmI } = useWhereAmI();
 
 const {
   t,
@@ -252,7 +254,7 @@ const submit = async (data: any) => {
 <template>
   <div>
     <detail-header>
-      {{t('GCP防火墙')}}：ID（{{`${id}`}}）
+      {{ t('GCP防火墙') }}：ID（{{ `${id}` }}）
       <template #right>
         <!-- <div @click="showAuthDialog(actionName)">
           <bk-button
@@ -264,7 +266,7 @@ const submit = async (data: any) => {
             {{ t('修改') }}
           </bk-button>
         </div> -->
-      <!-- <bk-button
+        <!-- <bk-button
         class="w100 ml10"
         theme="primary"
       >
@@ -276,27 +278,18 @@ const submit = async (data: any) => {
     :fields="gcpFields"
     :detail="gcpDetail"
   /> -->
-    <bk-loading
-      :loading="gcpLoading"
-    >
-      <detail-info
-        :fields="gcpFields"
-        :detail="gcpDetail"
-      />
-    </bk-loading>
-
+    <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+      <bk-loading :loading="gcpLoading">
+        <detail-info :fields="gcpFields" :detail="gcpDetail" />
+      </bk-loading>
+    </div>
     <!-- <detail-tab
     :tabs="tabs"
   >
     <gcp-relate></gcp-relate>
   </detail-tab> -->
-    <gcp-add
-      v-model:is-show="isShowGcpAdd"
-      :gcp-title="gcpTitle"
-      :is-add="isAdd"
-      :loading="isLoading"
-      :detail="detail"
-      @submit="submit"></gcp-add>
+    <gcp-add v-model:is-show="isShowGcpAdd" :gcp-title="gcpTitle" :is-add="isAdd" :loading="isLoading" :detail="detail"
+             @submit="submit"></gcp-add>
   </div>
 </template>
 
@@ -304,6 +297,7 @@ const submit = async (data: any) => {
 .w100 {
   width: 100px;
 }
+
 .w60 {
   width: 60px;
 }

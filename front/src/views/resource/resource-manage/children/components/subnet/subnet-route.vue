@@ -5,7 +5,7 @@ import {
 } from 'vue';
 import {
   useResourceStore,
-} from '@/store/resource'
+} from '@/store/resource';
 
 const props = defineProps({
   detail: {
@@ -29,15 +29,15 @@ const pagination = ref({
 
 const handleGetData = () => {
   if (props.detail.route_table_id) {
-    isLoading.value = true
+    isLoading.value = true;
     const filter = {
       op: 'and',
       rules: [{
         field: 'route_table_id',
         op: 'eq',
-        value: props.detail.route_table_id
-      }]
-    }
+        value: props.detail.route_table_id,
+      }],
+    };
     Promise.all([
       resourceStore
         .getRouteList(
@@ -50,7 +50,7 @@ const handleGetData = () => {
               start: (pagination.value.current - 1) * pagination.value.limit,
               limit: pagination.value.limit,
             },
-          }
+          },
         ),
       resourceStore
         .getRouteList(
@@ -61,18 +61,18 @@ const handleGetData = () => {
             page: {
               count: true,
             },
-          }
-        )
+          },
+        ),
     ])
-    .then(([listResult, countResult]) => {
-      datas.value = listResult?.data?.details || []
-      pagination.value.count = countResult?.data?.count || 0;
-    })
-    .finally(() => {
-      isLoading.value = false
-    })
+      .then(([listResult, countResult]) => {
+        datas.value = listResult?.data?.details || [];
+        pagination.value.count = countResult?.data?.count || 0;
+      })
+      .finally(() => {
+        isLoading.value = false;
+      });
   }
-}
+};
 
 watch(
   () => props.detail,
@@ -96,7 +96,7 @@ watch(
             label: '状态',
             field: 'enabled',
             render({ cell }: { cell: string }) {
-              return cell ? '启用' : '禁用'
+              return cell ? '启用' : '禁用';
             },
           },
           {
@@ -139,14 +139,14 @@ watch(
             label: '状态',
             field: 'state',
             render({ cell }: { cell: string }) {
-              return cell === 'active' ? '可用' : '路由的目标不可用'
+              return cell === 'active' ? '可用' : '路由的目标不可用';
             },
           },
           {
             label: '已传播',
             field: 'propagated',
             render({ cell }: { cell: string }) {
-              return cell ? '是' : '否'
+              return cell ? '是' : '否';
             },
           },
           {
@@ -208,13 +208,13 @@ watch(
         ]);
         break;
     }
-    handleGetData()
+    handleGetData();
   },
   {
     deep: true,
-    immediate: true
-  }
-)
+    immediate: true,
+  },
+);
 
 // 页码变化发生的事件
 const handlePageChange = (current: number) => {
@@ -251,6 +251,6 @@ const handlePageSizeChange = (limit: number) => {
 <style lang="scss" scoped>
   .info-title {
     font-size: 14px;
-    margin: 20px 0 5px;
+    margin-bottom: 8px;
   }
 </style>

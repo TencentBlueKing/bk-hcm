@@ -20,12 +20,12 @@
 package ressync
 
 import (
+	cloudclient "hcm/cmd/hc-service/logics/cloud-adaptor"
 	"hcm/cmd/hc-service/logics/res-sync/aws"
 	"hcm/cmd/hc-service/logics/res-sync/azure"
 	"hcm/cmd/hc-service/logics/res-sync/gcp"
 	"hcm/cmd/hc-service/logics/res-sync/huawei"
 	"hcm/cmd/hc-service/logics/res-sync/tcloud"
-	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/kit"
 )

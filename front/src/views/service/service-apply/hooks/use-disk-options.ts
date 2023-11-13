@@ -177,12 +177,12 @@ export default (cond: Cond, formData: IDiskFormData) => {
     },
   );
 
-  watch(
-    () => cond.bizId,
-    () => {
-      diskTypes.value = [];
-    },
-  );
+  // watch(
+  //   () => cond.bizId,
+  //   () => {
+  //     diskTypes.value = [];
+  //   },
+  // );
 
   return {
     diskTypes,

@@ -508,7 +508,9 @@ export default defineComponent({
             formData.ipv4_cidr[1] = CIDRDATARANGE[val].min;
           }
         }
+        // eslint-disable-next-line prefer-destructuring
         formData.subnet.ipv4_cidr[0] = val;
+        // eslint-disable-next-line prefer-destructuring
         formData.subnet.ipv4_cidr[1] = formData.ipv4_cidr[1];
       },
       { immediate: true },
@@ -517,6 +519,7 @@ export default defineComponent({
     watch(
       () => formData.ipv4_cidr[1],
       () => {
+        // eslint-disable-next-line prefer-destructuring
         formData.subnet.ipv4_cidr[1] = formData.ipv4_cidr[1];
       },
     );
@@ -526,79 +529,80 @@ export default defineComponent({
         <DetailHeader>
           <p class={'purchase-vpc-header-title'}>购买VPC</p>
         </DetailHeader>
-        <ConditionOptions
-          type={ResourceTypeEnum.VPC}
-          v-model:bizId={cond.bizId}
-          v-model:cloudAccountId={cond.cloudAccountId}
-          v-model:vendor={cond.vendor}
-          v-model:region={cond.region}
-          v-model:resourceGroup={cond.resourceGroup}
-          class={'mb16 mt24'}
-        />
-        <Form
-          model={formData}
-          rules={formRules}
-          ref={formRef}
-          onSubmit={handleFormSubmit}
-          formType='vertical'>
-          {formConfig.value
-            .filter(({ display }) => display !== false)
-            .map(({ title, children }) => (
-              <CommonCard title={() => title} class={'mb16'}>
-                {children
-                  .filter(({ display }) => display !== false)
-                  .map(({
-                    label,
-                    description,
-                    tips,
-                    required,
-                    property,
-                    content,
-                  }) => (
-                      <FormItem
-                        label={label}
-                        required={required}
-                        property={property}
-                        description={description}>
-                        {Array.isArray(content) ? (
-                          <div class='flex-row'>
-                            {content
-                              .filter(sub => sub.display !== false)
-                              .map(sub => (
-                                <FormItem
-                                  label={sub.label}
-                                  required={sub.required}
-                                  property={sub.property}
-                                  description={sub?.description}>
-                                  {sub.content()}
-                                  {sub.tips && (
-                                    <div class='form-item-tips'>
-                                      {sub.tips()}
-                                    </div>
-                                  )}
-                                </FormItem>
-                              ))}
-                          </div>
-                        ) : (
-                          content()
-                        )}
-                        {tips && <div class='form-item-tips'>{tips()}</div>}
-                      </FormItem>
-                  ))}
-              </CommonCard>
-            ))}
-          <div class='action-bar'>
-            <Button
-              theme='primary'
-              loading={submitting.value}
-              disabled={submitDisabled.value}
-              class={'mr16'}
-              onClick={handleFormSubmit}>
-              {isResourcePage ? t('提交') : t('提交审批')}
-            </Button>
-            <Button onClick={() => router.back()}>{t('取消')}</Button>
-          </div>
-        </Form>
+        <div class="create-form-container" style={isResourcePage && { padding: 0 }}>
+          <ConditionOptions
+            type={ResourceTypeEnum.VPC}
+            v-model:bizId={cond.bizId}
+            v-model:cloudAccountId={cond.cloudAccountId}
+            v-model:vendor={cond.vendor}
+            v-model:region={cond.region}
+            v-model:resourceGroup={cond.resourceGroup}
+          />
+          <Form
+            model={formData}
+            rules={formRules}
+            ref={formRef}
+            onSubmit={handleFormSubmit}
+            formType='vertical'>
+            {formConfig.value
+              .filter(({ display }) => display !== false)
+              .map(({ title, children }) => (
+                <CommonCard title={() => title} class={'mb16'}>
+                  {children
+                    .filter(({ display }) => display !== false)
+                    .map(({
+                      label,
+                      description,
+                      tips,
+                      required,
+                      property,
+                      content,
+                    }) => (
+                        <FormItem
+                          label={label}
+                          required={required}
+                          property={property}
+                          description={description}>
+                          {Array.isArray(content) ? (
+                            <div class='flex-row'>
+                              {content
+                                .filter(sub => sub.display !== false)
+                                .map(sub => (
+                                  <FormItem
+                                    label={sub.label}
+                                    required={sub.required}
+                                    property={sub.property}
+                                    description={sub?.description}>
+                                    {sub.content()}
+                                    {sub.tips && (
+                                      <div class='form-item-tips'>
+                                        {sub.tips()}
+                                      </div>
+                                    )}
+                                  </FormItem>
+                                ))}
+                            </div>
+                          ) : (
+                            content()
+                          )}
+                          {tips && <div class='form-item-tips'>{tips()}</div>}
+                        </FormItem>
+                    ))}
+                </CommonCard>
+              ))}
+            <div class='action-bar'>
+              <Button
+                theme='primary'
+                loading={submitting.value}
+                disabled={submitDisabled.value}
+                class={'mr8'}
+                onClick={handleFormSubmit}>
+                {isResourcePage ? t('提交') : t('提交审批')}
+              </Button>
+              <Button onClick={() => router.back()}>{t('取消')}</Button>
+            </div>
+          </Form>
+        </div>
       </div>
     );
   },

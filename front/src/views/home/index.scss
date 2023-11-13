@@ -32,6 +32,15 @@
         .view-warp{
             height: calc(100% - 50px);
             overflow-y: auto;
+
+            .i-detail-tap-wrap {
+              margin-top: 52px;
+              padding: 24px;
+
+              .bk-tab-header-item {
+                padding: 0 24px;
+              }
+            }
             // padding: 20px 20px 0px 20px;
         }
         .no-padding {

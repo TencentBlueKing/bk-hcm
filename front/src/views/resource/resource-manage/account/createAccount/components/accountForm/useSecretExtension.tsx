@@ -40,7 +40,7 @@ export const useSecretExtension = (props: IProp) => {
     input: {
       cloud_secret_id: {
         value: '',
-        label: '云加密ID',
+        label: '云密钥ID',
       },
       cloud_secret_key: {
         value: '',
@@ -66,7 +66,7 @@ export const useSecretExtension = (props: IProp) => {
     input: {
       cloud_secret_id: {
         value: '',
-        label: '云加密ID',
+        label: '云密钥ID',
       },
       cloud_secret_key: {
         value: '',
@@ -90,7 +90,7 @@ export const useSecretExtension = (props: IProp) => {
       },
       cloud_iam_user_id: {
         value: '',
-        label: '云加密ID',
+        label: '云密钥ID',
       },
       cloud_iam_username: {
         value: '',
@@ -100,7 +100,7 @@ export const useSecretExtension = (props: IProp) => {
     input: {
       cloud_secret_id: {
         value: '',
-        label: '云加密ID',
+        label: '云密钥ID',
       },
       cloud_secret_key: {
         value: '',

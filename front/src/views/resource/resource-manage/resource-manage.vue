@@ -532,6 +532,10 @@ getResourceAccountList();
 
   :deep(.bk-tab-header) {
     line-height: normal !important;
+
+    .bk-tab-header-item {
+      padding: 0 24px;
+    }
   }
 
   :deep(.bk-tab-content) {
@@ -552,7 +556,7 @@ getResourceAccountList();
 }
 .navigation-resource {
   min-height: 88px;
-  margin: -24px -24px 16px -24px;
+  margin: -24px -24px 24px -24px;
 }
 .card-layout {
   background: #fff;

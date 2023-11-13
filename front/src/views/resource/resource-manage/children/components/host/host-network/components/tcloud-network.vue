@@ -277,6 +277,7 @@ const handleRadio = (item: any) => {
         label="名称"
         prop="ip"
       >
+        <!-- eslint-disable vue/no-template-shadow -->
         <template #default="{ data } ">
           <div class="cell-flex">
             <bk-radio
@@ -449,6 +450,7 @@ const handleRadio = (item: any) => {
       <bk-table-column
         label="ID/名称"
       >
+        <!-- eslint-disable vue/no-template-shadow -->
         <template #default="{ data } ">
           <div class="cell-flex">
             <bk-radio
@@ -470,7 +472,7 @@ const handleRadio = (item: any) => {
 <style lang="scss" scoped>
   .info-title {
     font-size: 14px;
-    margin: 20px 0 5px;
+    margin-bottom: 8px;
   }
   .sub-title{
     font-size: 12px;

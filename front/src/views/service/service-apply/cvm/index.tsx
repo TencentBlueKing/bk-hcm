@@ -683,6 +683,7 @@ export default defineComponent({
                   <Input
                     type='number'
                     v-model={formData.system_disk.disk_size_gb}
+                    min={1}
                     suffix='GB'
                     prefix='大小'></Input>
                 ),
@@ -696,7 +697,7 @@ export default defineComponent({
               : ''),
             property: 'data_disk',
             content: () => (
-              <div class='form-content-list'>
+              <div class='form-content-list data-disk-wrap'>
                 {formData.data_disk.map((item: IDiskOption, index: number) => (
                   <div class='flex-row'>
                     <FormItem
@@ -721,6 +722,7 @@ export default defineComponent({
                         type='number'
                         style={{ width: '160px' }}
                         v-model={item.disk_size_gb}
+                        min={1}
                         suffix='GB'
                         prefix='大小'></Input>
                     </FormItem>
@@ -732,35 +734,28 @@ export default defineComponent({
                       <Input
                         style={{ width: '90px' }}
                         type='number'
-                        v-model={item.disk_count}></Input>
+                        v-model={item.disk_count}
+                        min={dataDiskCountRules.value.min}></Input>
                     </FormItem>
                     <div class='btns'>
                       <Button
                         class='btn'
                         outline
                         size='small'
+                        onClick={handleCreateDataDisk}>
+                        <PlusIcon  />
+                      </Button>
+                      <Button
+                        class='btn'
+                        outline
+                        size='small'
+                        disabled={formData.data_disk.length === 1}
                         onClick={() => handleRemoveDataDisk(index)}>
                         <CloseLineIcon />
                       </Button>
-                      {index === formData.data_disk.length - 1 && (
-                        <Button
-                          class='btn'
-                          outline
-                          size='small'
-                          onClick={handleCreateDataDisk}>
-                          <PlusIcon />
-                        </Button>
-                      )}
                     </div>
                   </div>
                 ))}
-                {!formData.data_disk.length && (
-                  <div class='btns'>
-                    <Button class='btn' onClick={handleCreateDataDisk}>
-                      <PlusIcon />
-                    </Button>
-                  </div>
-                )}
                 {
                   // (formData.data_disks.length > 0 && cond.vendor === VendorEnum.HUAWEI)
                   // && <Checkbox v-model={formData.is_quickly_initialize_data_disk}>快速初始化数据盘</Checkbox>
@@ -772,7 +767,7 @@ export default defineComponent({
           {
             label: '密码',
             required: true,
-            description: '字母数字与 ()`~!@#$%^&*-+=|{}[]:;\',.?/ 字符的组合',
+            description: '密码至少必须包含大写字母、小写字母、数字和特殊字符（!@$%^-_=+[{}]:,./?）中的三种',
             content: [
               {
                 property: 'username',
@@ -907,6 +902,7 @@ export default defineComponent({
                 placeholder='填写实例备注'
                 rows={3}
                 maxlength={255}
+                resize={false}
                 v-model={formData.memo}></Input>
             ),
           },
@@ -919,6 +915,7 @@ export default defineComponent({
                 placeholder='填写申请单备注'
                 rows={3}
                 maxlength={255}
+                resize={false}
                 v-model={formData.remark}></Input>
             ),
           },
@@ -942,12 +939,12 @@ export default defineComponent({
         },
         {
           validator: (value: string) => {
-            const pattern =              cond.vendor === VendorEnum.HUAWEI
+            const pattern = cond.vendor === VendorEnum.HUAWEI
               ? /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[()`~!@#$%^&*-+=|{}\[\]:;',.?/])[A-Za-z\d()`~!@#$%^&*\-+=|{}\[\]:;',.?/]+$/
               : /^(?=.*[A-Za-z])(?=.*\d)(?=.*[()`~!@#$%^&*-+=|{}\[\]:;',.?/])[A-Za-z\d()`~!@#$%^&*\-+=|{}\[\]:;',.?/]+$/;
             return pattern.test(value);
           },
-          message: '密码复杂度不符合要求',
+          message: '密码至少必须包含大写字母、小写字母、数字和特殊字符（!@$%^-_=+[{}]:,./?）中的三种',
           trigger: 'blur',
         },
         {
@@ -1048,115 +1045,115 @@ export default defineComponent({
         <DetailHeader>
           <p class={'purchase-cvm-header-title'}>购买主机</p>
         </DetailHeader>
-        <ConditionOptions
-          type={ResourceTypeEnum.CVM}
-          v-model:bizId={cond.bizId}
-          v-model:cloudAccountId={cond.cloudAccountId}
-          v-model:vendor={cond.vendor}
-          v-model:region={cond.region}
-          v-model:resourceGroup={cond.resourceGroup}
-          class={'mb16 mt24'}>
-          {{
-            default: () => (
-              <Form formType='vertical'>
-                <FormItem label={'可用区'}>
-                  <ZoneSelector
-                    ref={zoneSelectorRef}
-                    v-model={formData.zone}
-                    vendor={cond.vendor}
-                    region={cond.region}
-                    onChange={handleZoneChange}
-                  />
-                </FormItem>
-              </Form>
-            ),
-            appendix: () => ([VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum) ? (
+        <div class="create-form-container" style={whereAmI.value === Senarios.resource && { padding: 0 }}>
+          <ConditionOptions
+            type={ResourceTypeEnum.CVM}
+            v-model:bizId={cond.bizId}
+            v-model:cloudAccountId={cond.cloudAccountId}
+            v-model:vendor={cond.vendor}
+            v-model:region={cond.region}
+            v-model:resourceGroup={cond.resourceGroup}>
+            {{
+              default: () => (
                 <Form formType='vertical'>
-                  <FormItem label='计费模式' required>
-                    <RadioGroup v-model={formData.instance_charge_type}>
-                      {billingModes.value.map(item => (
-                        <RadioButton label={item.id}>{item.name}</RadioButton>
-                      ))}
-                    </RadioGroup>
+                  <FormItem label={'可用区'}>
+                    <ZoneSelector
+                      ref={zoneSelectorRef}
+                      v-model={formData.zone}
+                      vendor={cond.vendor}
+                      region={cond.region}
+                      onChange={handleZoneChange}
+                    />
                   </FormItem>
                 </Form>
-            ) : null),
-          }}
-        </ConditionOptions>
-        <Form
-          model={formData}
-          rules={formRules}
-          ref={formRef}
-          onSubmit={handleFormSubmit}
-          formType='vertical'>
-          {formConfig.value
-            .filter(({ display }) => display !== false)
-            .map(({ title, children }) => (
-              <CommonCard title={() => title} class={'mb16'}>
-                {children
-                  .filter(({ display }) => display !== false)
-                  .map(({
-                    label,
-                    description,
-                    tips,
-                    rules,
-                    required,
-                    property,
-                    content,
-                  }) => (
-                      <FormItem
-                        label={label}
-                        required={required}
-                        property={property}
-                        rules={rules}
-                        description={description}>
-                        {Array.isArray(content) ? (
-                          <div class='flex-row'>
-                            {content
-                              .filter(sub => sub.display !== false)
-                              .map(sub => (
-                                <FormItem
-                                  label={sub.label}
-                                  required={sub.required}
-                                  property={sub.property}
-                                  rules={sub.rules}
-                                  description={sub?.description}
-                                  class={'mr8'}>
-                                  {sub.content()}
-                                  {sub.tips && (
-                                    <div class='form-item-tips'>
-                                      {sub.tips()}
-                                    </div>
-                                  )}
-                                </FormItem>
-                              ))}
-                          </div>
-                        ) : (
-                          content()
-                        )}
-                        {tips && <div class='form-item-tips'>{tips()}</div>}
-                      </FormItem>
-                  ))}
-              </CommonCard>
-            ))}
-          {/* <div class="action-bar">
+              ),
+              appendix: () => ([VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum) ? (
+                  <Form formType='vertical'>
+                    <FormItem label='计费模式' required>
+                      <RadioGroup v-model={formData.instance_charge_type}>
+                        {billingModes.value.map(item => (
+                          <RadioButton label={item.id}>{item.name}</RadioButton>
+                        ))}
+                      </RadioGroup>
+                    </FormItem>
+                  </Form>
+              ) : null),
+            }}
+          </ConditionOptions>
+          <Form
+            model={formData}
+            rules={formRules}
+            ref={formRef}
+            onSubmit={handleFormSubmit}
+            formType='vertical'>
+            {formConfig.value
+              .filter(({ display }) => display !== false)
+              .map(({ title, children }) => (
+                <CommonCard title={() => title} class={'mb16'}>
+                  {children
+                    .filter(({ display }) => display !== false)
+                    .map(({
+                      label,
+                      description,
+                      tips,
+                      rules,
+                      required,
+                      property,
+                      content,
+                    }) => (
+                        <FormItem
+                          label={label}
+                          required={required}
+                          property={property}
+                          rules={rules}
+                          description={description}>
+                          {Array.isArray(content) ? (
+                            <div class='flex-row'>
+                              {content
+                                .filter(sub => sub.display !== false)
+                                .map(sub => (
+                                  <FormItem
+                                    label={sub.label}
+                                    required={sub.required}
+                                    property={sub.property}
+                                    rules={sub.rules}
+                                    description={sub?.description}
+                                    class={'mr8'}>
+                                    {sub.content()}
+                                    {sub.tips && (
+                                      <div class='form-item-tips'>
+                                        {sub.tips()}
+                                      </div>
+                                    )}
+                                  </FormItem>
+                                ))}
+                            </div>
+                          ) : (
+                            content()
+                          )}
+                          {tips && <div class='form-item-tips'>{tips()}</div>}
+                        </FormItem>
+                    ))}
+                </CommonCard>
+              ))}
+            {/* <div class="action-bar">
           <Button theme='primary' loading={submitting.value}
           disabled={submitDisabled.value} onClick={handleFormSubmit}>{
             isResourcePage ? t('提交') : t('提交审批')
           }</Button>
           <Button>{ t('取消') }</Button>
         </div> */}
-        </Form>
-        <GcpDataDiskFormDialog
-          v-model:isShow={dialogState.gcpDataDisk.isShow}
-          isEdit={dialogState.gcpDataDisk.isEdit}
-          dataDiskTypes={dataDiskTypes.value}
-          formData={dialogState.gcpDataDisk.formData}
-          onAdd={handleAddGcpDataDisk}
-          onSave={handleSaveGcpDataDisk}
-          onClose={() => (dialogState.gcpDataDisk.isShow = false)}
-        />
-
+          </Form>
+          <GcpDataDiskFormDialog
+            v-model:isShow={dialogState.gcpDataDisk.isShow}
+            isEdit={dialogState.gcpDataDisk.isEdit}
+            dataDiskTypes={dataDiskTypes.value}
+            formData={dialogState.gcpDataDisk.formData}
+            onAdd={handleAddGcpDataDisk}
+            onSave={handleSaveGcpDataDisk}
+            onClose={() => (dialogState.gcpDataDisk.isShow = false)}
+          />
+        </div>
         <div class={'purchase-cvm-bottom-bar'}>
           <Form class={'purchase-cvm-bottom-bar-form'}>
             <FormItem

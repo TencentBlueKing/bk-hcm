@@ -203,7 +203,8 @@ watch(() => formData.vendor, (val) => {
         :label="t('备注')"
         class="item-warp"
       >
-        <bk-input class="item-warp-component" type="textarea" v-model="formData.memo" :placeholder="t('请输入备注')" />
+        <bk-input class="item-warp-component" type="textarea" v-model="formData.memo" :resize="false"
+                  :placeholder="t('请输入备注')" />
       </bk-form-item>
       <bk-form-item
         label-width="50"

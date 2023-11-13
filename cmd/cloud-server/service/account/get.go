@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core/cloud"
+	"hcm/pkg/cc"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
@@ -53,6 +54,7 @@ func (a *accountSvc) Get(cts *rest.Contexts) (interface{}, error) {
 		if account != nil {
 			account.Extension.CloudSecretKey = ""
 		}
+		account.RecycleReserveTime = convertRecycleReverseTime(account.RecycleReserveTime)
 		return account, err
 	case enumor.Aws:
 		account, err := a.client.DataService().Aws.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
@@ -60,6 +62,7 @@ func (a *accountSvc) Get(cts *rest.Contexts) (interface{}, error) {
 		if account != nil {
 			account.Extension.CloudSecretKey = ""
 		}
+		account.RecycleReserveTime = convertRecycleReverseTime(account.RecycleReserveTime)
 		return account, err
 	case enumor.HuaWei:
 		account, err := a.client.DataService().HuaWei.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
@@ -67,6 +70,7 @@ func (a *accountSvc) Get(cts *rest.Contexts) (interface{}, error) {
 		if account != nil {
 			account.Extension.CloudSecretKey = ""
 		}
+		account.RecycleReserveTime = convertRecycleReverseTime(account.RecycleReserveTime)
 		return account, err
 	case enumor.Gcp:
 		account, err := a.client.DataService().Gcp.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
@@ -74,6 +78,7 @@ func (a *accountSvc) Get(cts *rest.Contexts) (interface{}, error) {
 		if account != nil {
 			account.Extension.CloudServiceSecretKey = ""
 		}
+		account.RecycleReserveTime = convertRecycleReverseTime(account.RecycleReserveTime)
 		return account, err
 	case enumor.Azure:
 		account, err := a.client.DataService().Azure.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
@@ -81,10 +86,18 @@ func (a *accountSvc) Get(cts *rest.Contexts) (interface{}, error) {
 		if account != nil {
 			account.Extension.CloudClientSecretKey = ""
 		}
+		account.RecycleReserveTime = convertRecycleReverseTime(account.RecycleReserveTime)
 		return account, err
 	default:
 		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", baseInfo.Vendor))
 	}
+}
+
+func convertRecycleReverseTime(ori int) int {
+	if ori == -1 {
+		return int(cc.CloudServer().Recycle.AutoDeleteTime)
+	}
+	return ori
 }
 
 // GetAccountBySecret 根据秘钥获取账号信息
@@ -297,5 +310,4 @@ func (a *accountSvc) GetResCountBySecret(cts *rest.Contexts) (interface{}, error
 		return nil, fmt.Errorf("not support vendor %s", vendor)
 	}
 
-	return nil, nil
 }
