@@ -173,6 +173,7 @@ export default defineComponent({
                   width: '590px',
                 }}>
                 <VpcSelector
+                  isSubnet={true}
                   zone={formModel.zone}
                   bizId={formModel.biz_id}
                   vendor={formModel.vendor}
