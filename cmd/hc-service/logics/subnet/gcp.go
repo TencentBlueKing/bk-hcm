@@ -84,6 +84,7 @@ func (s *Subnet) GcpSubnetCreate(kt *kit.Kit, opt *SubnetCreateOptions[hcservice
 		}
 		createdID, err := cli.CreateSubnet(kt, gcpCreateOpt)
 		if err != nil {
+			logs.Errorf("create subnet failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
 		}
 
