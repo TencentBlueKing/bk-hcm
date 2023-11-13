@@ -9,6 +9,7 @@ import DraggableCard from './DraggableCard';
 import { type UseDraggableReturn, VueDraggable } from 'vue-draggable-plus';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 import { QueryRuleOPEnum } from '@/typings';
+import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -47,26 +48,26 @@ export default defineComponent({
       }));
     });
 
-    // const securityRulesColumns = useColumns('securityCommon', false, props.vendor).columns;
-    const securityRulesColumns = [
-      {
-        label: '目标',
-        field: 'target_ip',
-        render: ({ data }: any) => {
-          return data.ipv4_cidr || data.ipv6_cidr || '--';
-        },
-      },
-      {
-        label: '端口协议',
-        field: 'protocol_port',
-        render: ({ data }: any) => `${data.protocol}:${data.port}`,
-      },
-      {
-        label: '策略',
-        field: 'action',
-        render: ({ data }: any) => `${data.action || data.access || '--'}`,
-      },
-    ];
+    const securityRulesColumns = useColumns('securityCommon', false, props.vendor).columns.filter(({ field }: {field: string}) => !['updated_at'].includes(field));
+    // const securityRulesColumns = [
+    //   {
+    //     label: '目标',
+    //     field: 'target_ip',
+    //     render: ({ data }: any) => {
+    //       return data.ipv4_cidr || data.ipv6_cidr || '--';
+    //     },
+    //   },
+    //   {
+    //     label: '端口协议',
+    //     field: 'protocol_port',
+    //     render: ({ data }: any) => `${data.protocol}:${data.port}`,
+    //   },
+    //   {
+    //     label: '策略',
+    //     field: 'action',
+    //     render: ({ data }: any) => `${data.action || data.access || '--'}`,
+    //   },
+    // ];
 
     const selected = ref([]);
     const searchVal = ref('');
