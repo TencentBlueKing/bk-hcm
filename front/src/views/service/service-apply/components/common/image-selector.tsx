@@ -20,6 +20,7 @@ export default defineComponent({
     vendor: String as PropType<string>,
     region: String as PropType<string>,
     machineType: Object as PropType<IMachineType>,
+    changeOpSystemType: Function,
   },
   emits: ['update:modelValue'],
   setup(props, { emit }) {
@@ -62,7 +63,13 @@ export default defineComponent({
                 v-model={checkedImageId.value}
                 checked={checkedImageId.value === data.cloud_id}
                 label={data.cloud_id}
-                // onChange={() => handleChangeCheckedImage(data)}
+                onChange={() => {
+                  checkedImageName.value = data.name;
+                  checkedImageArchitecture.value = data.architecture;
+                  if (props.vendor === VendorEnum.HUAWEI) {
+                    props.changeOpSystemType(data.os_type === 'Linux' ? 'linux' : 'win');
+                  }
+                }}
                 >
                 { cell }
               </Radio>

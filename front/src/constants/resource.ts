@@ -319,10 +319,10 @@ export const HUAWEI_SECURITY_RULE_PEOTOCALS = [
     id: 'icmp',
     name: 'ICMP',
   },
-  {
-    id: 'gre',
-    name: 'GRE',
-  },
+  // {
+  //   id: 'gre',
+  //   name: 'GRE',
+  // },
 ];
 
 export const AZURE_SECURITY_RULE_PEOTOCALS = [
