@@ -1,12 +1,17 @@
 global:
-  imageRegistry: hub.bktencent.com
-  imagePullSecrets: [ ]
+  imageRegistry: "docker.io"
+  imagePullSecrets: []
   imagePullPolicy: IfNotPresent
-  imageTag: 1.1.29
   storageClass: ""
 
   ## 蓝鲸主域名访问协议http/https
   bkDomainScheme: http
+
+# configuration of hcm image registry, use global imageRegistry/imagePullPolicy if unset
+image:
+  registry: hub.bktencent.com
+  pullPolicy: IfNotPresent
+  tag: 1.2.1.5
 
 serviceAccount:
   create: true
@@ -40,7 +45,7 @@ apiserver:
   ##
   image:
     repository: blueking/bk-hcm-apiserver
-    tag: 1.0.2
+    tag:
   ## 日志配置
   ##
   log:
@@ -50,7 +55,8 @@ apiserver:
     maxFileNum: 5
     logAppend: false
     toStdErr: false
-    alsoToStdErr: false
+    # default to output log to stderr
+    alsoToStdErr: true
     verbosity: 0
   ## 在启用JWT情况apigateway公钥 base64字符串
   ##
@@ -86,7 +92,7 @@ authserver:
   ##
   image:
     repository: blueking/bk-hcm-authserver
-    tag: 1.0.2
+    tag:
   ## 日志配置
   ##
   log:
@@ -96,7 +102,7 @@ authserver:
     maxFileNum: 5
     logAppend: false
     toStdErr: false
-    alsoToStdErr: false
+    alsoToStdErr: true
     verbosity: 0
   ## pod配置
   ##
@@ -128,11 +134,11 @@ cloudserver:
   ##
   image:
     repository: blueking/bk-hcm-cloudserver
-    tag: 1.0.2
+    tag:
   ## 日志配置
   ##
   log:
-    alsoToStdErr: false
+    alsoToStdErr: true
     logDir: /data/hcm/logs
     maxPerFileSizeMB: 1024
     maxPerLineSizeKB: 2
@@ -189,7 +195,7 @@ dataservice:
   ##
   image:
     repository: blueking/bk-hcm-dataservice
-    tag: 1.0.2
+    tag:
   ## 日志配置
   ##
   log:
@@ -199,7 +205,7 @@ dataservice:
     maxFileNum: 5
     logAppend: false
     toStdErr: false
-    alsoToStdErr: false
+    alsoToStdErr: true
     verbosity: 0
   ## pod配置
   ##
@@ -230,7 +236,7 @@ hcservice:
   ##
   image:
     repository: blueking/bk-hcm-hcservice
-    tag: 1.0.2
+    tag: 
   ## 日志配置
   ##
   log:
@@ -240,7 +246,7 @@ hcservice:
     maxFileNum: 5
     logAppend: false
     toStdErr: false
-    alsoToStdErr: false
+    alsoToStdErr: true
     verbosity: 0
   ## pod配置
   ##
@@ -271,7 +277,7 @@ webserver:
   ##
   image:
     repository: blueking/bk-hcm-webserver
-    tag: 1.0.2
+    tag:
   ## 日志配置
   ##
   log:
@@ -281,7 +287,7 @@ webserver:
     maxFileNum: 5
     logAppend: false
     toStdErr: false
-    alsoToStdErr: false
+    alsoToStdErr: true
     verbosity: 0
   ## pod配置
   ##
@@ -313,7 +319,7 @@ taskserver:
   ##
   image:
     repository: blueking/bk-hcm-taskserver
-    tag: 1.1.29-alpha.3
+    tag:
   ## 日志配置
   ##
   log:
@@ -323,7 +329,7 @@ taskserver:
     maxFileNum: 5
     logAppend: false
     toStdErr: false
-    alsoToStdErr: false
+    alsoToStdErr: true
     verbosity: 0
   ## pod配置
   ##
@@ -372,7 +378,6 @@ taskserver:
       watchIntervalSec: 1
       # taskTimeoutSec 判断任务执行超时时间
       taskTimeoutSec: 300
-
 
 ## appCode
 appCode: bk-hcm
