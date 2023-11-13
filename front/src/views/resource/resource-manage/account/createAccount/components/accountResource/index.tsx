@@ -62,6 +62,7 @@ export default defineComponent({
             data={tableData.value}
             columns={columns}
             border={['row', 'outer']}
+            emptyText={isLoading.value && ''}
           >
           </Table>
         </Loading>

@@ -590,18 +590,18 @@ export default defineComponent({
                     ))}
                 </CommonCard>
               ))}
-            <div class='action-bar'>
-              <Button
-                theme='primary'
-                loading={submitting.value}
-                disabled={submitDisabled.value}
-                class={'mr8'}
-                onClick={handleFormSubmit}>
-                {isResourcePage ? t('提交') : t('提交审批')}
-              </Button>
-              <Button onClick={() => router.back()}>{t('取消')}</Button>
-            </div>
           </Form>
+        </div>
+        <div class='action-bar'>
+          <Button
+            theme='primary'
+            loading={submitting.value}
+            disabled={submitDisabled.value}
+            class={'mr8'}
+            onClick={handleFormSubmit}>
+            {isResourcePage ? t('提交') : t('提交审批')}
+          </Button>
+          <Button onClick={() => router.back()}>{t('取消')}</Button>
         </div>
       </div>
     );
