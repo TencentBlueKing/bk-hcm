@@ -89,7 +89,6 @@ export default defineComponent({
     });
 
     const handleChangeCheckedImage = (data: any) => {
-      console.log('啦啦啦', data, props.vendor);
       checkedImageId.value = data.cloud_id;
       checkedImageName.value = data.name;
       checkedImageArchitecture.value = data.architecture || '--';
