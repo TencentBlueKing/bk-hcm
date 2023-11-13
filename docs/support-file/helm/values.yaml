@@ -394,6 +394,10 @@ bkItsmUrl: http://itsm.bk.com
 bkHCMUrl: http://hcm.bk.com
 # 中英文持久化设置cookie使用，一般设置为 .域名
 bkDomain: .bk.com
+# 蓝鲸配置平台创建业务页面跳转链接
+bkCmdbCreateBizUrl: "http://cmdb.bk.com/create_biz"
+# 蓝鲸配置平台创建业务文档跳转链接
+bkCmdbCreateBizDocsUrl: "http://cmdb.bk.com/docs"
 
 ## 加密配置，Note: 首次部署后不可修改，否则数据将无法解密
 ##

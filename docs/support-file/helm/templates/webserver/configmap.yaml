@@ -43,5 +43,9 @@ data:
       bkItsmUrl: {{ .Values.bkItsmUrl }}
       # 中英文持久化
       bkDomain: {{ .Values.bkDomain }}
+      # 蓝鲸配置平台创建业务页面跳转链接
+      bkCmdbCreateBizUrl: {{ .Values.bkCmdbCreateBizUrl }}
+      # 蓝鲸配置平台创建业务文档跳转链接
+      bkCmdbCreateBizDocsUrl: {{ .Values.bkCmdbCreateBizDocsUrl }}
     itsm:
       {{- toYaml .Values.itsm | nindent 6 }}
