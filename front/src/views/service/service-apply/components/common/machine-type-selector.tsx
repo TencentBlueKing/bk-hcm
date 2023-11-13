@@ -201,7 +201,6 @@ export default defineComponent({
     };
 
     const handleChangeCheckedInstance = (data: any) => {
-      // console.log('啦啦啦', data, props.vendor);
       checkedInstance.instanceType = data.instance_type;
       checkedInstance.typeName = VendorEnum.TCLOUD === props.vendor ? data.type_name : data.instance_type;
       checkedInstance.cpu = `${data.cpu}核`;
