@@ -20,6 +20,7 @@ export default defineComponent({
     vendor: String as PropType<string>,
     region: String as PropType<string>,
     machineType: Object as PropType<IMachineType>,
+    changeOpSystemType: Function,
   },
   emits: ['update:modelValue'],
   setup(props, { emit }) {
@@ -65,6 +66,9 @@ export default defineComponent({
                 onChange={() => {
                   checkedImageName.value = data.name;
                   checkedImageArchitecture.value = data.architecture;
+                  if (props.vendor === VendorEnum.HUAWEI) {
+                    props.changeOpSystemType(data.os_type === 'Linux' ? 'linux' : 'win');
+                  }
                 }}
                 >
                 { cell }

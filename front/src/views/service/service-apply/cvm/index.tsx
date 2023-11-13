@@ -67,6 +67,11 @@ export default defineComponent({
     const isSubmitBtnLoading = ref(false);
     const usageNum = ref(0);
     const limitNum = ref(-1);
+    const opSystemType = ref<'win' | 'linux'>('linux');
+    const changeOpSystemType = (val: 'win' | 'linux') => {
+      opSystemType.value = val;
+      formData.instance_type = `${formData.instance_type}.${val}`;
+    };
 
     const dialogState = reactive({
       gcpDataDisk: {
@@ -653,6 +658,7 @@ export default defineComponent({
                 vendor={cond.vendor}
                 region={cond.region}
                 machineType={machineType.value}
+                changeOpSystemType={changeOpSystemType}
               />
             ),
           },
