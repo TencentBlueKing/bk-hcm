@@ -441,7 +441,7 @@ export default defineComponent({
         {
           pattern: nameReg,
           message: nameRegMsg,
-          trigger: 'input',
+          trigger: 'change',
         },
       ],
       ipv4Cidr1: [
