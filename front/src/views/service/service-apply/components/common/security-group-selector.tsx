@@ -5,7 +5,6 @@ import { SECURITY_GROUP_RULE_TYPE, VendorEnum } from '@/common/constant';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import './security-group-selector.scss';
 import { EditLine, Plus } from 'bkui-vue/lib/icon';
-import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import DraggableCard from './DraggableCard';
 import { type UseDraggableReturn, VueDraggable } from 'vue-draggable-plus';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
@@ -48,7 +47,26 @@ export default defineComponent({
       }));
     });
 
-    const securityRulesColumns = useColumns('securityCommon', false, props.vendor).columns;
+    // const securityRulesColumns = useColumns('securityCommon', false, props.vendor).columns;
+    const securityRulesColumns = [
+      {
+        label: '目标',
+        field: 'target_ip',
+        render: ({ data }: any) => {
+          return data.ipv4_cidr || data.ipv6_cidr || '--';
+        },
+      },
+      {
+        label: '端口协议',
+        field: 'protocol_port',
+        render: ({ data }: any) => `${data.protocol}:${data.port}`,
+      },
+      {
+        label: '策略',
+        field: 'action',
+        render: ({ data }: any) => `${data.action || data.access || '--'}`,
+      },
+    ];
 
     const selected = ref([]);
     const searchVal = ref('');
