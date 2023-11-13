@@ -30,6 +30,16 @@
       margin-bottom: 8px;
     }
   }
+
+  .purchase-cvm-form-item-subnet-wrap {
+    position: relative;
+    .automatic-allocation-checkbox {
+      position: absolute;
+      top: -32px;
+      right: -10px;
+      z-index: 999;
+    }
+  }
 }
 
 .purchase-cvm-header-title {

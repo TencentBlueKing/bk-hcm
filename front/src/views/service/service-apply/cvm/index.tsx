@@ -502,7 +502,7 @@ export default defineComponent({
             property: 'cloud_subnet_id',
             content: () => (
               <>
-                <Checkbox v-model={formData.public_ip_assigned} disabled>
+                <Checkbox class='automatic-allocation-checkbox' v-model={formData.public_ip_assigned} disabled>
                   自动分配公网IP
                 </Checkbox>
                 <div class={'component-with-detail-container'}>
@@ -1112,7 +1112,9 @@ export default defineComponent({
                           required={required}
                           property={property}
                           rules={rules}
-                          description={description}>
+                          description={description}
+                          class={label === '子网' && 'purchase-cvm-form-item-subnet-wrap'}
+                          >
                           {Array.isArray(content) ? (
                             <div class='flex-row'>
                               {content
