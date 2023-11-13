@@ -1045,7 +1045,7 @@ export default defineComponent({
         <DetailHeader>
           <p class={'purchase-cvm-header-title'}>购买主机</p>
         </DetailHeader>
-        <div class="create-form-container" style={whereAmI.value === Senarios.resource && { padding: 0 }}>
+        <div class="create-form-container cvm-wrap" style={whereAmI.value === Senarios.resource && { padding: 0 }}>
           <ConditionOptions
             type={ResourceTypeEnum.CVM}
             v-model:bizId={cond.bizId}
