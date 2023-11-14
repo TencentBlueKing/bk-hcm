@@ -23,7 +23,11 @@ export default defineComponent({
     const { whereAmI } = useWhereAmI();
 
     const goBack = () => {
-      router.back();
+      if (router.options.history.state.back) {
+        router.back();
+      } else {
+        router.push('/resource/resource?type=subnet');
+      }
     };
 
     return {

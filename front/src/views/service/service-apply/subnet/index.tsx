@@ -118,9 +118,12 @@ export default defineComponent({
     };
 
     const handleCancel = () => {
-      router.back();
+      if (router.options.history.state.back) {
+        router.back();
+      } else {
+        router.push('/resource/resource?type=subnet');
+      }
     };
-
     watch(
       () => [subIpv4cidr.value, cidr_host1.value, cidr_host2.value, cidr_mask.value],
       () => {
