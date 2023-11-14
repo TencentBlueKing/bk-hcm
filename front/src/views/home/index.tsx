@@ -442,7 +442,6 @@ export default defineComponent({
                               class={'app-action-content'}
                               onClick={() => {
                                 isDialogShow.value = true;
-                                window.open(window.BK_CMDB_CREATE_BIZ_URL, '_blank');
                               }}>
                               <i
                                 class={
@@ -576,10 +575,11 @@ export default defineComponent({
                   theme='primary'
                   text
                   onClick={() => {
-                    window.open(window.BK_CMDB_CREATE_BIZ_DOCS_URL, '_blank');
+                    const { BK_CMDB_CREATE_BIZ_URL } = window.PROJECT_CONFIG;
+                    window.open(BK_CMDB_CREATE_BIZ_URL, '_blank');
                   }
                 }>
-                  新建业务指引
+                  新建业务
                 </Button>
               </p>
             </div>
