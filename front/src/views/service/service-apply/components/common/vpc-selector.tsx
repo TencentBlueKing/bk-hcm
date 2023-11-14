@@ -126,7 +126,7 @@ export default defineComponent({
                   || current_zone_subnet_count > 0
                 )
               }
-              label={`${name} ${
+              label={`${cloud_id} ${name} ${
                 extension?.cidr ? extension?.cidr[0]?.cidr : ''
               } 该VPC共${subnet_count}个子网
                 ${props.vendor === VendorEnum.TCLOUD || props.vendor === VendorEnum.AWS
