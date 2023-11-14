@@ -271,7 +271,7 @@ export default defineComponent({
         <DetailHeader>
           <p class={'purchase-dish-header-title'}>购买硬盘</p>
         </DetailHeader>
-        <div class="create-form-container" style={isResourcePage && { padding: 0 }}>
+        <div class="create-form-container disk-wrap" style={isResourcePage && { padding: 0 }}>
           <ConditionOptions
             type={ResourceTypeEnum.DISK}
             v-model:bizId={cond.bizId}

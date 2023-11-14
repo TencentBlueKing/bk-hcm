@@ -504,11 +504,13 @@ func (s IAM) validate() error {
 type Web struct {
 	StaticFileDirPath string `yaml:"staticFileDirPath"`
 
-	BkLoginCookieName string `yaml:"bkLoginCookieName"`
-	BkLoginUrl        string `yaml:"bkLoginUrl"`
-	BkComponentApiUrl string `yaml:"bkComponentApiUrl"`
-	BkItsmUrl         string `yaml:"bkItsmUrl"`
-	BkDomain          string `yaml:"bkDomain"`
+	BkLoginCookieName      string `yaml:"bkLoginCookieName"`
+	BkLoginUrl             string `yaml:"bkLoginUrl"`
+	BkComponentApiUrl      string `yaml:"bkComponentApiUrl"`
+	BkItsmUrl              string `yaml:"bkItsmUrl"`
+	BkDomain               string `yaml:"bkDomain"`
+	BkCmdbCreateBizUrl     string `yaml:"bkCmdbCreateBizUrl"`
+	BkCmdbCreateBizDocsUrl string `yaml:"bkCmdbCreateBizDocsUrl"`
 }
 
 func (s Web) validate() error {

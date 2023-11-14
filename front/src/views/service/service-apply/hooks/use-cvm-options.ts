@@ -265,10 +265,10 @@ export default (cond: Cond, formData: ICvmFormData) => {
     immediate: true,
   });
 
-  watch(() => cond.bizId, () => {
-    sysDiskTypes.value = [];
-    dataDiskTypes.value = [];
-  });
+  // watch(() => cond.bizId, () => {
+  //   sysDiskTypes.value = [];
+  //   dataDiskTypes.value = [];
+  // });
 
   watch(() => formData.instance_type, (type) => {
     if (cond.vendor === VendorEnum.AZURE) {

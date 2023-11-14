@@ -20,6 +20,7 @@ export default defineComponent({
     vendor: String as PropType<string>,
     region: String as PropType<string>,
     machineType: Object as PropType<IMachineType>,
+    changeOpSystemType: Function,
   },
   emits: ['update:modelValue'],
   setup(props, { emit }) {
@@ -65,6 +66,9 @@ export default defineComponent({
                 onChange={() => {
                   checkedImageName.value = data.name;
                   checkedImageArchitecture.value = data.architecture;
+                  if (props.vendor === VendorEnum.HUAWEI) {
+                    props.changeOpSystemType(data.os_type === 'Linux' ? 'linux' : 'win');
+                  }
                 }}
                 >
                 { cell }
@@ -90,6 +94,16 @@ export default defineComponent({
     const computedDisabled = computed(() => {
       return !(props.machineType && props.vendor && props.region);
     });
+
+    const handleChangeCheckedImage = (data: any) => {
+      checkedImageId.value = data.cloud_id;
+      checkedImageName.value = data.name;
+      checkedImageArchitecture.value = data.architecture || '--';
+    };
+
+    const handleOnRowClick = (_: any, row: any) => {
+      handleChangeCheckedImage(row);
+    };
 
     watch(
       [
@@ -259,8 +273,8 @@ export default defineComponent({
           }}
           title='选择镜像'
           width={1500}>
-          <Form>
-            <FormItem label='平台' labelPosition='left'>
+          <Form class='selected-block-dialog-form' labelWidth={100} labelPosition='right'>
+            <FormItem label='平台'>
               <BkButtonGroup>
                 <Button
                   onClick={() => (selectedPlatform.value = 'Linux')}
@@ -279,7 +293,7 @@ export default defineComponent({
                 </Button>
               </BkButtonGroup>
             </FormItem>
-            <FormItem label='已选' labelPosition='left'>
+            <FormItem label='已选'>
               <div class={'instance-type-search-seletor-container'}>
                 <div class={'selected-block-container'}>
                   <div class={'selected-block'}>
@@ -303,6 +317,7 @@ export default defineComponent({
               data={list.value}
               columns={columns}
               pagination={pagination}
+              onRowClick={handleOnRowClick}
             />
           </Loading>
         </Dialog>

@@ -198,6 +198,7 @@ export default defineComponent({
           },
           {
             label: '管控区域',
+            description: '管控区是蓝鲸可以管控的Agent网络区域，以实现跨网管理。一个VPC，对应一个管控区。如VPC未绑定管控区，请到资源接入-VPC-绑定管控区操作',
             required: true,
             property: 'bk_cloud_id',
             content: () => <CloudAreaSelector v-model={formData.bk_cloud_id} />,
@@ -440,7 +441,7 @@ export default defineComponent({
         {
           pattern: nameReg,
           message: nameRegMsg,
-          trigger: 'input',
+          trigger: 'change',
         },
       ],
       ipv4Cidr1: [
@@ -590,18 +591,18 @@ export default defineComponent({
                     ))}
                 </CommonCard>
               ))}
-            <div class='action-bar'>
-              <Button
-                theme='primary'
-                loading={submitting.value}
-                disabled={submitDisabled.value}
-                class={'mr8'}
-                onClick={handleFormSubmit}>
-                {isResourcePage ? t('提交') : t('提交审批')}
-              </Button>
-              <Button onClick={() => router.back()}>{t('取消')}</Button>
-            </div>
           </Form>
+        </div>
+        <div class='action-bar'>
+          <Button
+            theme='primary'
+            loading={submitting.value}
+            disabled={submitDisabled.value}
+            class={'mr8'}
+            onClick={handleFormSubmit}>
+            {isResourcePage ? t('提交') : t('提交审批')}
+          </Button>
+          <Button onClick={() => router.back()}>{t('取消')}</Button>
         </div>
       </div>
     );

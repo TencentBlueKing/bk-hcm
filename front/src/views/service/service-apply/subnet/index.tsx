@@ -140,7 +140,7 @@ export default defineComponent({
         <DetailHeader>
           <span class={'subnet-title'}>新建子网</span>
         </DetailHeader>
-        <div class='create-form-container' style={whereAmI.value === Senarios.resource && { padding: 0 }}>
+        <div class='create-form-container subnet-wrap' style={whereAmI.value === Senarios.resource && { padding: '0 0 48px 0' }}>
           <ConditionOptions
             type={ResourceTypeEnum.CVM}
             v-model:bizId={formModel.biz_id}
@@ -173,6 +173,7 @@ export default defineComponent({
                   width: '590px',
                 }}>
                 <VpcSelector
+                  isSubnet={true}
                   zone={formModel.zone}
                   bizId={formModel.biz_id}
                   vendor={formModel.vendor}
@@ -244,21 +245,21 @@ export default defineComponent({
               }
             </Form>
           </Card>
-          <div class={'button-group'}>
-            <Button
-              theme={'primary'}
-              class={'button-submit'}
-              onClick={handleSubmit}
-              loading={submitLoading.value}>
-              提交
-            </Button>
-            <Button
-              class={'button-cancel'}
-              loading={submitLoading.value}
-              onClick={handleCancel}>
-              取消
-            </Button>
-          </div>
+        </div>
+        <div class={'button-group'}>
+          <Button
+            theme={'primary'}
+            class={'button-submit'}
+            onClick={handleSubmit}
+            loading={submitLoading.value}>
+            提交
+          </Button>
+          <Button
+            class={'button-cancel'}
+            loading={submitLoading.value}
+            onClick={handleCancel}>
+            取消
+          </Button>
         </div>
       </div>
     );
