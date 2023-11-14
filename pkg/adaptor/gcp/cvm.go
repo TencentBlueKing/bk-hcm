@@ -69,7 +69,7 @@ func (g *Gcp) ListCvm(kt *kit.Kit, opt *typecvm.GcpListOption) ([]typecvm.GcpCvm
 
 	resp, err := request.Do()
 	if err != nil {
-		logs.Errorf("list instance failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
+		logs.Errorf("list instance failed, err: %v, opt: %+v, rid: %s", err, opt, kt.Rid)
 		return nil, "", err
 	}
 

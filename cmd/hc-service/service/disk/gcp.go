@@ -269,7 +269,8 @@ func (svc *service) DetachGcpDisk(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	params.CloudIDs = []string{cvmData.CloudID}
-	_, err = syncClient.CvmWithRelRes(cts.Kit, params, &syncgcp.SyncCvmWithRelResOption{})
+	_, err = syncClient.CvmWithRelRes(cts.Kit, params,
+		&syncgcp.SyncCvmWithRelResOption{Zone: cvmInfo.Zone, Region: cvmInfo.Region})
 	if err != nil {
 		logs.Errorf("sync gcp cvm with rel res failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
