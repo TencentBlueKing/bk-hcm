@@ -702,6 +702,7 @@ export default defineComponent({
               ? '增强型SSD云硬盘仅在部分可用区开放售卖，后续将逐步增加售卖可用区'
               : ''),
             property: 'data_disk',
+            required: true,
             content: () => (
               <div class='form-content-list data-disk-wrap'>
                 {formData.data_disk.map((item: IDiskOption, index: number) => (
