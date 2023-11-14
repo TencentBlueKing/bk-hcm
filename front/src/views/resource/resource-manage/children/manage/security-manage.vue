@@ -687,44 +687,44 @@ const securityHandleShowDelete = (data: any) => {
 
 <template>
   <div>
-    <bk-loading :loading="state.isLoading">
-      <section>
-        <slot></slot>
-        <BatchDistribution
-          :selections="selections"
-          :type="
-            activeType === 'group'
-              ? DResourceType.security_groups
-              : DResourceType.firewall
-          "
-          :get-data="
-            () => {
-              getList();
-              resetSelections();
-            }
-          "
+    <section>
+      <slot></slot>
+      <BatchDistribution
+        :selections="selections"
+        :type="
+          activeType === 'group'
+            ? DResourceType.security_groups
+            : DResourceType.firewall
+        "
+        :get-data="
+          () => {
+            getList();
+            resetSelections();
+          }
+        "
+      />
+      <section class="flex-row align-items-center mt20">
+        <bk-radio-group v-model="activeType" :disabled="state.isLoading">
+          <bk-radio-button
+            v-for="item in types"
+            :key="item.name"
+            :label="item.name"
+            v-model="securityType"
+          >
+            {{ item.label }}
+          </bk-radio-button>
+        </bk-radio-group>
+        <bk-search-select
+          class="search-filter search-selector-container"
+          clearable
+          :conditions="[]"
+          :data="selectSearchData"
+          v-model="searchValue"
         />
-        <section class="flex-row align-items-center mt20">
-          <bk-radio-group v-model="activeType" :disabled="state.isLoading">
-            <bk-radio-button
-              v-for="item in types"
-              :key="item.name"
-              :label="item.name"
-              v-model="securityType"
-            >
-              {{ item.label }}
-            </bk-radio-button>
-          </bk-radio-group>
-          <bk-search-select
-            class="search-filter search-selector-container"
-            clearable
-            :conditions="[]"
-            :data="selectSearchData"
-            v-model="searchValue"
-          />
-        </section>
       </section>
+    </section>
 
+    <bk-loading :loading="state.isLoading">
       <bk-table
         v-if="activeType === 'group'"
         :settings="groupSettings"
