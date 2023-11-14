@@ -165,7 +165,7 @@ export default defineComponent({
     return () => (
       <div>
         {selected.value?.length ? (
-         <div class={'selected-block-container'}>
+         <div class={'image-selector-selected-block-container'}>
            <div class={'selected-block mr8'}>
             {
               selected.value.map(val => (

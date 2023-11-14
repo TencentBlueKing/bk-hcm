@@ -1,11 +1,11 @@
-.selected-block-container {
+.image-selector-selected-block-container {
   display: flex;
   align-items: center;
     
   .selected-block {
     margin-right: 18.25px;
     padding: 0 16px;
-    height: 32px;
+    min-height: 32px;
     background: #f0f5ff;
     border: 1px solid #a3c5fd;
     border-radius: 2px;

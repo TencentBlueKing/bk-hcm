@@ -440,7 +440,9 @@ export default defineComponent({
                           append: () => (
                             <div
                               class={'app-action-content'}
-                              onClick={() => (isDialogShow.value = true)}>
+                              onClick={() => {
+                                isDialogShow.value = true;
+                              }}>
                               <i
                                 class={
                                   'icon bk-icon icon-plus-circle app-action-content-icon'
@@ -569,8 +571,15 @@ export default defineComponent({
                   'hcm-create-business-dialog-exception-building-tips-text2'
                 }>
                 业务是蓝鲸配置平台的管理空间，可以满足不同团队，不同项目的资源隔离管理需求。
-                <Button theme='primary' text>
-                  新建业务指引
+                <Button
+                  theme='primary'
+                  text
+                  onClick={() => {
+                    const { BK_CMDB_CREATE_BIZ_URL } = window.PROJECT_CONFIG;
+                    window.open(BK_CMDB_CREATE_BIZ_URL, '_blank');
+                  }
+                }>
+                  新建业务
                 </Button>
               </p>
             </div>

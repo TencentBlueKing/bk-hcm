@@ -5,7 +5,6 @@ import { Select } from 'bkui-vue';
 import { QueryRuleOPEnum } from '@/typings/common';
 import { VendorEnum } from '@/common/constant';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import { useRoute } from 'vue-router';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 const { Option } = Select;
@@ -29,7 +28,6 @@ export default defineComponent({
     const list = ref([]);
     const loading = ref(false);
     const { isResourcePage, whereAmI } = useWhereAmI();
-    const route = useRoute();
 
     const selected = computed({
       get() {
@@ -113,16 +111,29 @@ export default defineComponent({
         loading={loading.value}
         {...{ attrs }}
       >
-        {
-          list.value.map(({ cloud_id, name, current_zone_subnet_count, subnet_count, extension }) => (
-            <Option key={cloud_id} value={cloud_id}
-            // eslint-disable-next-line max-len
-            disabled={!props.isSubnet && (props.vendor === VendorEnum.TCLOUD || props.vendor === VendorEnum.AWS) && current_zone_subnet_count === 0}
-            label={`${cloud_id} ${name} ${extension?.cidr ? extension?.cidr[0]?.cidr : ''} 该VPC共${subnet_count}个子网 
-            ${(props.vendor === VendorEnum.TCLOUD || props.vendor === VendorEnum.AWS) ? `${`该可用区有${current_zone_subnet_count}个子网`}` : ''}`}></Option>
-            // ${current_zone_subnet_count === 0 ? '不可用' : '可用'}
-          ))
-        }
+        {list.value
+          .sort((prev, next) => next.subnet_count - prev.subnet_count)
+          .sort((prev, next) => next.current_zone_subnet_count - prev.current_zone_subnet_count)
+          .map(({ cloud_id, name, current_zone_subnet_count, subnet_count, extension }) => {
+            return <Option
+              key={cloud_id}
+              value={cloud_id}
+              // eslint-disable-next-line max-len
+              disabled={
+                !(
+                  props.isSubnet
+                  || (props.vendor === VendorEnum.GCP && subnet_count > 0)
+                  || current_zone_subnet_count > 0
+                )
+              }
+              label={`${cloud_id} ${name} ${
+                extension?.cidr ? extension?.cidr[0]?.cidr : ''
+              } 该VPC共${subnet_count}个子网
+                ${props.vendor === VendorEnum.TCLOUD || props.vendor === VendorEnum.AWS
+                ? `${`该可用区有${current_zone_subnet_count}个子网 ${current_zone_subnet_count === 0 ? '不可用' : '可用'}`}`
+                : ''
+                }`}></Option>;
+          })}
       </Select>
     );
   },

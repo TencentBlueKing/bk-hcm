@@ -708,7 +708,8 @@ export default defineComponent({
           e.port = 'ALL';
         } else if (e.protocol === '-1') {
           e.port = '-1';
-        } else if (e.protocol === 'huaweiAll') {
+        }
+        if (e.protocol === 'huaweiAll' || (e.protocol === 'icmp' && props.vendor === VendorEnum.HUAWEI)) {
           e.port = undefined;
         }
       });
