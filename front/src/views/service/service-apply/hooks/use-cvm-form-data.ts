@@ -222,10 +222,7 @@ export default (cond: Cond) => {
       const url = isResourcePage
         ? `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/cvms/create`
         : `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${cond.vendor}/applications/types/create_cvm`;
-      await http.post(url, {
-        ...saveData,
-        instance_type: cond.vendor !== VendorEnum.HUAWEI ? saveData.instance_type : `${saveData.instance_type}.${opSystemType.value}`,
-      });
+      await http.post(url, saveData);
 
       Message({
         theme: 'success',
