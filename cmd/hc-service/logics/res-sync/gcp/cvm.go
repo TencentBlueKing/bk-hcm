@@ -42,6 +42,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/maps"
 	"hcm/pkg/tools/slice"
 	"hcm/pkg/tools/times"
 )
@@ -400,7 +401,8 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string, zone 
 			err, kt.Rid)
 		return err
 	}
-	logs.Infof("[%s] sync cvm to update cvm success, count: %d, ids: %v, rid: %s", enumor.Gcp, len(updateMap), kt.Rid)
+	logs.Infof("[%s] sync cvm to update cvm success, count: %d, ids: %v, rid: %s",
+		enumor.Gcp, len(updateMap), maps.Keys(updateMap), kt.Rid)
 
 	return nil
 }
@@ -591,7 +593,8 @@ func (cli *client) deleteCvm(kt *kit.Kit, accountID string, zone string, delClou
 	return nil
 }
 
-func (cli *client) listCvmFromCloud(kt *kit.Kit, params *SyncBaseParams, option *SyncCvmOption) ([]typescvm.GcpCvm, error) {
+func (cli *client) listCvmFromCloud(kt *kit.Kit, params *SyncBaseParams, option *SyncCvmOption) ([]typescvm.GcpCvm,
+	error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
