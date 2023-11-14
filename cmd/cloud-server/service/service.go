@@ -69,8 +69,8 @@ import (
 	restcli "hcm/pkg/rest/client"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
+	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/thirdparty/esb"
-	"hcm/pkg/thirdparty/itsm"
 	"hcm/pkg/tools/ssl"
 
 	"github.com/emicklei/go-restful/v3"

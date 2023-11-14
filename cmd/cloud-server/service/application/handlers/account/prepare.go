@@ -23,7 +23,7 @@ import (
 	"fmt"
 
 	accountsvc "hcm/cmd/cloud-server/service/account"
-	"hcm/pkg/thirdparty/itsm"
+	"hcm/pkg/thirdparty/api-gateway/itsm"
 
 	"github.com/TencentBlueKing/gopkg/conv"
 )

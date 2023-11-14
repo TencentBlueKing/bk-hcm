@@ -23,7 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/kit"
-	"hcm/pkg/thirdparty"
+	"hcm/pkg/thirdparty/api-gateway"
 )
 
 // ApproveReq define approve req.
@@ -38,7 +38,7 @@ type ApproveReq struct {
 // Approve 快捷审批接口。
 func (i *itsm) Approve(kt *kit.Kit, req *ApproveReq) error {
 
-	resp := new(thirdparty.BaseResponse)
+	resp := new(apigateway.BaseResponse)
 	err := i.client.Post().
 		SubResourcef("/approve/").
 		WithContext(kt.Ctx).

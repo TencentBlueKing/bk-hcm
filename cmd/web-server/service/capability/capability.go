@@ -21,12 +21,12 @@
 package capability
 
 import (
+	"github.com/emicklei/go-restful/v3"
+
 	"hcm/pkg/client"
 	"hcm/pkg/iam/auth"
+	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/thirdparty/esb"
-	"hcm/pkg/thirdparty/itsm"
-
-	"github.com/emicklei/go-restful/v3"
 )
 
 // Capability defines the service's capability

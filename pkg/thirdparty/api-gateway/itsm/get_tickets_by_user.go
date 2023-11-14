@@ -24,7 +24,7 @@ import (
 	"strconv"
 
 	"hcm/pkg/kit"
-	"hcm/pkg/thirdparty"
+	"hcm/pkg/thirdparty/api-gateway"
 )
 
 // ViewType 工单类型。
@@ -151,7 +151,7 @@ type Ticket struct {
 // GetTicketsByUser get tickets by user.
 func (i *itsm) GetTicketsByUser(kt *kit.Kit, req *GetTicketsByUserReq) (*GetTicketsByUserRespData, error) {
 	resp := &struct {
-		thirdparty.BaseResponse `json:",inline"`
+		apigateway.BaseResponse `json:",inline"`
 		Data                    *GetTicketsByUserRespData `json:"data"`
 	}{}
 

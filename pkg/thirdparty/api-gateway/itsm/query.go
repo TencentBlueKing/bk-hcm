@@ -23,7 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/kit"
-	"hcm/pkg/thirdparty"
+	"hcm/pkg/thirdparty/api-gateway"
 )
 
 // TicketResult ticket result.
@@ -35,7 +35,7 @@ type TicketResult struct {
 }
 
 type queryTicketResp struct {
-	thirdparty.BaseResponse `json:",inline"`
+	apigateway.BaseResponse `json:",inline"`
 	Data                    []TicketResult `json:"data"`
 }
 

@@ -24,6 +24,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/tidwall/gjson"
+
 	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/application/handlers"
 	"hcm/cmd/cloud-server/service/capability"
@@ -37,10 +39,8 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/thirdparty/esb"
-	"hcm/pkg/thirdparty/itsm"
-
-	"github.com/tidwall/gjson"
 )
 
 // InitApplicationService ...

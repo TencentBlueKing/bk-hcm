@@ -24,7 +24,7 @@ import (
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/thirdparty/itsm"
+	"hcm/pkg/thirdparty/api-gateway/itsm"
 )
 
 // ListMyApprovalTicketReq define get tickets by user req.

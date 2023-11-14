@@ -110,16 +110,17 @@ func (s ApiServerSetting) Validate() error {
 
 // CloudServerSetting defines cloud server used setting options.
 type CloudServerSetting struct {
-	Network       Network       `yaml:"network"`
-	Service       Service       `yaml:"service"`
-	Log           LogOption     `yaml:"log"`
-	Crypto        Crypto        `yaml:"crypto"`
-	Esb           Esb           `yaml:"esb"`
-	BkHcmUrl      string        `yaml:"bkHcmUrl"`
-	CloudResource CloudResource `yaml:"cloudResource"`
-	Recycle       Recycle       `yaml:"recycle"`
-	BillConfig    BillConfig    `yaml:"billConfig"`
-	Itsm          ApiGateway    `yaml:"itsm"`
+	Network        Network        `yaml:"network"`
+	Service        Service        `yaml:"service"`
+	Log            LogOption      `yaml:"log"`
+	Crypto         Crypto         `yaml:"crypto"`
+	Esb            Esb            `yaml:"esb"`
+	BkHcmUrl       string         `yaml:"bkHcmUrl"`
+	CloudResource  CloudResource  `yaml:"cloudResource"`
+	Recycle        Recycle        `yaml:"recycle"`
+	BillConfig     BillConfig     `yaml:"billConfig"`
+	Itsm           ApiGateway     `yaml:"itsm"`
+	CloudSelection CloudSelection `yaml:"cloudSelection"`
 }
 
 // trySetFlagBindIP try set flag bind ip.

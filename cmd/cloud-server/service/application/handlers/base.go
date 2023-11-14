@@ -28,8 +28,8 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/cryptography"
 	"hcm/pkg/rest"
+	itsm2 "hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/thirdparty/esb"
-	"hcm/pkg/thirdparty/itsm"
 )
 
 // HandlerOption 这里是为了方便调用传参构造Handler,避免参数太多
@@ -39,7 +39,7 @@ type HandlerOption struct {
 	EsbClient esb.Client
 	Cipher    cryptography.Crypto
 	Audit     audit.Interface
-	ItsmCli   itsm.Client
+	ItsmCli   itsm2.Client
 }
 
 // BaseApplicationHandler 基础的Handler 一些公共函数和属性处理，可以给到其他具体Handler组合
@@ -94,9 +94,9 @@ func (a *BaseApplicationHandler) getPageOfOneLimit() *core.BasePage {
 
 // GetItsmPlatformAndAccountApprover get itsm platform and account approver.
 func (a *BaseApplicationHandler) GetItsmPlatformAndAccountApprover(managers []string,
-	accountID string) []itsm.VariableApprover {
+	accountID string) []itsm2.VariableApprover {
 
-	allManagers := []itsm.VariableApprover{
+	allManagers := []itsm2.VariableApprover{
 		{
 			Variable:  "platform_manager",
 			Approvers: managers,
@@ -108,7 +108,7 @@ func (a *BaseApplicationHandler) GetItsmPlatformAndAccountApprover(managers []st
 		return allManagers
 	}
 
-	allManagers = append(allManagers, itsm.VariableApprover{
+	allManagers = append(allManagers, itsm2.VariableApprover{
 		Variable:  "account_manager",
 		Approvers: accountData.Managers,
 	})
