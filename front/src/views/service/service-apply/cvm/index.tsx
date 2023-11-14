@@ -1,4 +1,5 @@
 /* eslint-disable no-useless-escape */
+// eslint-disable
 import { computed, defineComponent, reactive, ref, watch } from 'vue';
 import { Form, Input, Select, Checkbox, Button, Radio } from 'bkui-vue';
 import ConditionOptions from '../components/common/condition-options.vue';
@@ -60,6 +61,8 @@ export default defineComponent({
       submitting,
       resetFormItemData,
       getSaveData,
+      opSystemType,
+      changeOpSystemType,
     } = useCvmFormData(cond);
     const { sysDiskTypes, dataDiskTypes, billingModes, purchaseDurationUnits } =      useCvmOptions(cond, formData);
     const { t } = useI18n();
@@ -67,11 +70,6 @@ export default defineComponent({
     const isSubmitBtnLoading = ref(false);
     const usageNum = ref(0);
     const limitNum = ref(-1);
-    const opSystemType = ref<'win' | 'linux'>('linux');
-    const changeOpSystemType = (val: 'win' | 'linux') => {
-      opSystemType.value = val;
-      formData.instance_type = `${formData.instance_type}.${val}`;
-    };
 
     const dialogState = reactive({
       gcpDataDisk: {
@@ -375,7 +373,10 @@ export default defineComponent({
         isSubmitBtnLoading.value = true;
         const res = await http.post(
           `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/cvms/prices/inquiry`,
-          saveData,
+          {
+            ...saveData,
+            instance_type: cond.vendor !== VendorEnum.HUAWEI ? saveData.instance_type : `${saveData.instance_type}.${opSystemType.value}`,
+          },
         );
         cost.value = res.data?.discount_price || '0';
         isSubmitBtnLoading.value = false;
@@ -1075,20 +1076,17 @@ export default defineComponent({
                   </FormItem>
                 </Form>
               ),
-              appendix: () =>
-                [VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(
-                  cond.vendor as VendorEnum,
-                ) ? (
+              appendix: () => ([VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum) ? (
                   <Form formType='vertical'>
                     <FormItem label='计费模式' required>
                       <RadioGroup v-model={formData.instance_charge_type}>
-                        {billingModes.value.map((item) => (
+                        {billingModes.value.map(item => (
                           <RadioButton label={item.id}>{item.name}</RadioButton>
                         ))}
                       </RadioGroup>
                     </FormItem>
                   </Form>
-                ) : null,
+              ) : null),
             }}
           </ConditionOptions>
           <Form
@@ -1103,16 +1101,15 @@ export default defineComponent({
                 <CommonCard title={() => title} class={'mb16'}>
                   {children
                     .filter(({ display }) => display !== false)
-                    .map(
-                      ({
-                        label,
-                        description,
-                        tips,
-                        rules,
-                        required,
-                        property,
-                        content,
-                      }) => (
+                    .map(({
+                      label,
+                      description,
+                      tips,
+                      rules,
+                      required,
+                      property,
+                      content,
+                    }) => (
                         <FormItem
                           label={label}
                           required={required}
@@ -1124,8 +1121,8 @@ export default defineComponent({
                           {Array.isArray(content) ? (
                             <div class='flex-row'>
                               {content
-                                .filter((sub) => sub.display !== false)
-                                .map((sub) => (
+                                .filter(sub => sub.display !== false)
+                                .map(sub => (
                                   <FormItem
                                     label={sub.label}
                                     required={sub.required}
@@ -1147,8 +1144,7 @@ export default defineComponent({
                           )}
                           {tips && <div class='form-item-tips'>{tips()}</div>}
                         </FormItem>
-                      ),
-                    )}
+                    ))}
                 </CommonCard>
               ))}
             {/* <div class="action-bar">
@@ -1175,8 +1171,8 @@ export default defineComponent({
               <FormItem
                 label='数量'
                 class={
-                  'purchase-cvm-bottom-bar-form-count ' +
-                  `${limitNum.value !== -1 ? 'mb-12' : ''}`
+                  'purchase-cvm-bottom-bar-form-count '
+                  + `${limitNum.value !== -1 ? 'mb-12' : ''}`
                 }>
                 <Input
                   style={{ width: '150px' }}
@@ -1185,9 +1181,9 @@ export default defineComponent({
                   max={100}
                   v-model={formData.required_count}></Input>
               </FormItem>
-              {['PREPAID', 'prePaid'].includes(
-                formData.instance_charge_type,
-              ) ? (
+
+              {/* eslint-disable max-len */}
+              {['PREPAID', 'prePaid'].includes(formData.instance_charge_type) ? (
                 <FormItem label='时长'>
                   <div class={'purchase-cvm-time'}>
                     <Input
@@ -1202,20 +1198,15 @@ export default defineComponent({
                         <Option key={id} value={id} label={name}></Option>
                       ))}
                     </Select>
-                    // --no-verify
-                    <Checkbox
-                      class='purchase-cvm-time-checkbox'
-                      v-model={formData.auto_renew}>
-                      自动续费
-                    </Checkbox>
+                    <Checkbox class='purchase-cvm-time-checkbox' v-model={formData.auto_renew}> 自动续费 </Checkbox>
                   </div>
                 </FormItem>
               ) : null}
             </div>
+            {/* eslint-disable max-len */}
+
             <div class='purchase-cvm-bottom-bar-form-count-wrap'>
-              {[VendorEnum.TCLOUD, VendorEnum.HUAWEI, VendorEnum.GCP].includes(
-                cond.vendor as VendorEnum,
-              ) && limitNum.value !== -1 ? (
+              {[VendorEnum.TCLOUD, VendorEnum.HUAWEI, VendorEnum.GCP].includes(cond.vendor as VendorEnum) && limitNum.value !== -1 ? (
                 <p class={'purchase-cvm-bottom-bar-form-count-tip'}>
                   所在{VendorEnum.TCLOUD === cond.vendor ? '可用区' : '地域'}
                   配额为{' '}
@@ -1223,9 +1214,9 @@ export default defineComponent({
                     <>
                       <span
                         class={'purchase-cvm-bottom-bar-form-count-tip-num'}>
-                        {limitNum.value -
-                          usageNum.value -
-                          formData.required_count}
+                        {limitNum.value
+                          - usageNum.value
+                          - formData.required_count}
                       </span>{' '}
                       /{limitNum.value}
                     </>

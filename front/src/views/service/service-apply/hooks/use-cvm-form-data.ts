@@ -74,6 +74,10 @@ export const getGcpDataDiskDefaults = (): IDiskOption => ({
 export default (cond: Cond) => {
   const { t } = useI18n();
   const router = useRouter();
+  const opSystemType = ref<'win' | 'linux'>('linux');
+  const changeOpSystemType = (val: 'win' | 'linux') => {
+    opSystemType.value = val;
+  };
 
   const vendorDiffFormData = (vendor: string) => {
     const diff = {
@@ -218,7 +222,10 @@ export default (cond: Cond) => {
       const url = isResourcePage
         ? `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/cvms/create`
         : `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${cond.vendor}/applications/types/create_cvm`;
-      await http.post(url, saveData);
+      await http.post(url, {
+        ...saveData,
+        instance_type: cond.vendor !== VendorEnum.HUAWEI ? saveData.instance_type : `${saveData.instance_type}.${opSystemType.value}`,
+      });
 
       Message({
         theme: 'success',
@@ -245,5 +252,7 @@ export default (cond: Cond) => {
     getSaveData,
     submitting,
     handleFormSubmit,
+    changeOpSystemType,
+    opSystemType,
   };
 };

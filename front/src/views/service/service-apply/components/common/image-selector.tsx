@@ -99,6 +99,9 @@ export default defineComponent({
       checkedImageId.value = data.cloud_id;
       checkedImageName.value = data.name;
       checkedImageArchitecture.value = data.architecture || '--';
+      if (props.vendor === VendorEnum.HUAWEI) {
+        props.changeOpSystemType(data.os_type === 'Linux' ? 'linux' : 'win');
+      }
     };
 
     const handleOnRowClick = (_: any, row: any) => {
