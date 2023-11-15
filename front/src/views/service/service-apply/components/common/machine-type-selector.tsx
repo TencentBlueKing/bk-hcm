@@ -179,8 +179,9 @@ export default defineComponent({
           break;
       }
       for (const { id, values } of searchVal.value) {
-        const searchReg = new RegExp(values?.[0]?.id);
-        resList.value = resList.value.filter(item => searchReg.test(item[id]));
+        let val = values?.[0]?.id;
+        if (id === 'memory' && !isNaN(values?.[0]?.id)) val = +val * 1024;
+        resList.value = resList.value.filter(item => item[id] === +val);
       }
     });
 

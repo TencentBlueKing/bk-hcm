@@ -74,6 +74,10 @@ export const getGcpDataDiskDefaults = (): IDiskOption => ({
 export default (cond: Cond) => {
   const { t } = useI18n();
   const router = useRouter();
+  const opSystemType = ref<'win' | 'linux'>('linux');
+  const changeOpSystemType = (val: 'win' | 'linux') => {
+    opSystemType.value = val;
+  };
 
   const vendorDiffFormData = (vendor: string) => {
     const diff = {
@@ -245,5 +249,7 @@ export default (cond: Cond) => {
     getSaveData,
     submitting,
     handleFormSubmit,
+    changeOpSystemType,
+    opSystemType,
   };
 };

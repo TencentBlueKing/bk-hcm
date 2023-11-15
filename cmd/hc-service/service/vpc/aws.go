@@ -21,14 +21,16 @@
 package vpc
 
 import (
-	"hcm/cmd/hc-service/logics/res-sync/aws"
+	logicsrt "hcm/cmd/hc-service/logics/route-table"
 	"hcm/cmd/hc-service/logics/subnet"
+	"hcm/cmd/hc-service/service/sync/handler"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
 	subnetproto "hcm/pkg/api/hc-service/subnet"
+	"hcm/pkg/api/hc-service/sync"
 	hcservice "hcm/pkg/api/hc-service/vpc"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
@@ -99,16 +101,21 @@ func (v vpc) AwsVpcCreate(cts *rest.Contexts) (interface{}, error) {
 
 	syncCli, err := v.syncCli.Aws(cts.Kit, req.AccountID)
 	if err != nil {
+		logs.Errorf("build aws sync client failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	syncReq := &aws.SyncBaseParams{
-		AccountID: req.AccountID,
-		Region:    req.Extension.Region,
-	}
-	_, err = syncCli.RouteTable(cts.Kit, syncReq, new(aws.SyncRouteTableOption))
+	err = handler.ResourceSync(cts, &logicsrt.AwsRouteTableHandler{
+		DisablePrepare: true,
+		Cli:            v.syncCli,
+		Request: &sync.AwsSyncReq{
+			AccountID: req.AccountID,
+			Region:    req.Extension.Region,
+		},
+		SyncCli: syncCli,
+	})
 	if err != nil {
-		logs.Errorf("sync route table failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("route table sync failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

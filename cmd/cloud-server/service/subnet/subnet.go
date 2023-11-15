@@ -581,7 +581,7 @@ func (svc *subnetSvc) AssignSubnetToBiz(cts *rest.Contexts) (interface{}, error)
 	authRes := make([]meta.ResourceAttribute, 0, len(basicInfoMap))
 	for _, info := range basicInfoMap {
 		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Subnet, Action: meta.Assign,
-			ResourceID: info.AccountID}})
+			ResourceID: info.AccountID}, BizID: req.BkBizID})
 	}
 	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
 	if err != nil {

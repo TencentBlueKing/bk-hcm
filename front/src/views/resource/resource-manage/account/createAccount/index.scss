@@ -52,6 +52,7 @@
         }
 
         .bk-modal-close {
+          z-index: 9999;
           top: 10px !important;
           margin-right: 15px;
           font-size: 24px !important;
