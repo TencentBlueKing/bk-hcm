@@ -221,7 +221,8 @@ const bktoolTipsOptions = computed(() => {
       <span>
         <bk-button
           v-bk-tooltips="bktoolTipsOptions || { disabled: true }"
-          class="w100 ml10 hcm-no-permision-btn"
+          class="w100 ml10"
+          :class="{ 'hcm-no-permision-btn': !authVerifyData.value?.permissionAction?.[actionName] }"
           theme="primary"
           :disabled="disabledOption"
           @click="() => () => {
@@ -239,7 +240,8 @@ const bktoolTipsOptions = computed(() => {
             content: '当前主机处于开机状态',
             disabled: !cvmInfo.start.status.includes(detail.status)
           }"
-          class="w100 ml10 hcm-no-permision-btn"
+          class="w100 ml10"
+          :class="{ 'hcm-no-permision-btn': !authVerifyData.value?.permissionAction?.[actionName] }"
           :disabled="disabledOption || (
             authVerifyData.value?.permissionAction?.[actionName] && cvmInfo.start.status.includes(detail.status)
           )"
@@ -258,7 +260,8 @@ const bktoolTipsOptions = computed(() => {
             content: '当前主机处于关机状态',
             disabled: !cvmInfo.stop.status.includes(detail.status)
           }"
-          class="w100 ml10 mr10 hcm-no-permision-btn"
+          class="w100 ml10 mr10"
+          :class="{ 'hcm-no-permision-btn': !authVerifyData.value?.permissionAction?.[actionName] }"
           :disabled="
             disabledOption
               || (

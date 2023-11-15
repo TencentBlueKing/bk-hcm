@@ -4,7 +4,6 @@ import BusinessSelector from '@/components/business-selector/index.vue';
 import './index.scss';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useResourceStore } from '@/store';
-import { useVerify } from '@/hooks';
 
 export enum DResourceType {
   cvms = 'cvms',
@@ -101,24 +100,15 @@ export const BatchDistribution = defineComponent({
         isShow.value = false;
       }
     };
-    // 权限hook
-    const {
-      handleAuth,
-      authVerifyData,
-    } = useVerify();
     return () => (
       <>
         {whereAmI.value === Senarios.resource ? (
           <Button
-            class='ml8 mr8 hcm-no-permision-btn'
+            class={'ml8 mr8'}
             onClick={() => {
-              if (!authVerifyData?.permissionAction?.iaas_resource_operate) {
-                handleAuth('iaas_resource_operate');
-              } else {
-                isShow.value = true;
-              }
+              isShow.value = true;
             }}
-            disabled={authVerifyData?.permissionAction?.iaas_resource_operate && !props.selections.length}>
+            disabled={!props.selections.length}>
             批量分配
           </Button>
         ) : null}

@@ -194,7 +194,8 @@ const {
           <span>
             <bk-button
               theme="primary"
-              class="new-button mr8 hcm-no-permision-btn"
+              class="new-button mr8"
+              :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.biz_iaas_resource_create }"
               @click="() => {
                 if (authVerifyData?.permissionAction?.biz_iaas_resource_create) {
                   handleAdd();
