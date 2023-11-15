@@ -409,7 +409,7 @@ getResourceAccountList();
       <bk-alert
         theme="error"
         closable
-        class="ml24"
+        class="error-message-alert"
         v-if="resourceAccountStore?.resourceAccount?.sync_failed_reason?.length"
       >
         <template #title>
@@ -455,7 +455,6 @@ getResourceAccountList();
             @edit="handleEdit"
           >
             <span
-              @click="handleAuth('biz_iaas_resource_create')"
               v-if="
                 ['host', 'vpc', 'drive', 'security', 'subnet', 'ip'].includes(
                   activeTab,
@@ -465,10 +464,14 @@ getResourceAccountList();
               <bk-button
                 theme="primary"
                 class="new-button"
-                :disabled="
-                  !authVerifyData?.permissionAction?.biz_iaas_resource_create
-                "
-                @click="handleAdd"
+                :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.iaas_resource_create }"
+                @click="() => {
+                  if (!authVerifyData?.permissionAction?.iaas_resource_create) {
+                    handleAuth('iaas_resource_create');
+                  } else {
+                    handleAdd();
+                  }
+                }"
               >
                 {{ activeTab === 'host' ? '购买' : '新建' }}
               </bk-button>
@@ -580,7 +583,7 @@ getResourceAccountList();
 .bk-tab-content {
   padding: 0 !important;
 }
-.ml24 {
-  margin-left: 24px;
+.error-message-alert {
+  margin: -8px 0 16px 0;
 }
 </style>

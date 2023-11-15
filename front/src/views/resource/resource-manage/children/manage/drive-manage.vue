@@ -15,6 +15,7 @@ import {
   BatchDistribution,
   DResourceType,
 } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
+import { useVerify } from '@/hooks';
 
 const props = defineProps({
   filter: {
@@ -165,6 +166,10 @@ const {
   triggerApi,
 } = useQueryList({ filter: filter.value }, 'disks');
 
+const {
+  handleAuth,
+} = useVerify();
+
 const { handleShowDelete, DeleteDialog } = useDelete(
   simpleColumns,
   selections,
@@ -212,17 +217,24 @@ const isCurRowSelectEnable = (row: any) => {
       />
       <bk-button
         class="w100 ml10"
+        :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.biz_iaas_resource_delete }"
         theme="primary"
-        :disabled="selections.length <= 0"
+        :disabled="authVerifyData?.permissionAction?.biz_iaas_resource_delete && selections.length <= 0"
         @click="
-          handleShowDelete(
-            selections
-              .filter(
-                (selection) =>
-                  !isDisabledRecycle(selection?.vendor, selection?.status),
+          () => {
+            if (authVerifyData?.permissionAction?.biz_iaas_resource_delete) {
+              handleShowDelete(
+                selections
+                  .filter(
+                    (selection) =>
+                      !isDisabledRecycle(selection?.vendor, selection?.status),
+                  )
+                  .map((selection) => selection.id),
               )
-              .map((selection) => selection.id),
-          )
+            } else {
+              handleAuth('biz_iaas_resource_delete')
+            }
+          }
         "
       >
         {{ t('回收') }}

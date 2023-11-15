@@ -20,7 +20,7 @@ export default defineComponent({
     vendor: String as PropType<string>,
     region: String as PropType<string>,
     accountId: String as PropType<string>,
-    zone: Array as PropType<string[]>,
+    zone: String as PropType<string>,
     resourceGroup: String as PropType<string>,
     handleChange: Function as PropType<(data: ISubnetItem) => void>,
   },
@@ -47,7 +47,7 @@ export default defineComponent({
       vendor: string,
       vpcId: string,
       accountId: string,
-      zone: any[],
+      zone: string,
     ) => {
       if ((!bizId && isServicePage) || !vpcId) {
         list.value = [];
@@ -81,7 +81,7 @@ export default defineComponent({
         filter.rules.push({
           field: 'zone',
           op: QueryRuleOPEnum.EQ,
-          value: zone[0] || '',
+          value: zone,
         });
       }
 

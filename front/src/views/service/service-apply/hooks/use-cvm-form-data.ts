@@ -25,7 +25,7 @@ export interface IPurchaseDuration {
 }
 
 export interface ICvmBaseData {
-  zone: string | string[];
+  zone: string;
   name: string;
   instance_type: string;
   cloud_image_id: string;
@@ -110,7 +110,7 @@ export default (cond: Cond) => {
 
   const defaultFormData = (vendor: string) => {
     const base: ICvmFormData = {
-      zone: [],
+      zone: '',
       name: '',
       instance_type: '',
       cloud_image_id: '',
@@ -177,7 +177,7 @@ export default (cond: Cond) => {
       bk_biz_id: cond.bizId,
       account_id: cond.cloudAccountId,
       region: cond.region,
-      zone: formData?.zone?.[0],
+      zone: formData?.zone,
     };
 
     if (cond.vendor === VendorEnum.TCLOUD) {

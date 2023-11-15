@@ -90,7 +90,7 @@ export default defineComponent({
         const res = await accountStore.getBizListWithAuth();
         loading.value = false;
         businessList.value = res?.data;
-        if (!businessList.value.length) {
+        if (!businessList.value.length && whereAmI.value === Senarios.business) {
           // 没有权限
           router.push({
             name: '403',
