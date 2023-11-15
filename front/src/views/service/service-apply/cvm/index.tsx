@@ -70,6 +70,10 @@ export default defineComponent({
     const isSubmitBtnLoading = ref(false);
     const usageNum = ref(0);
     const limitNum = ref(-1);
+    const refreshVpcList = ref(() => {});
+    const onRefreshVpcList = (callback: () => {}) => {
+      refreshVpcList.value = callback;
+    };
 
     const dialogState = reactive({
       gcpDataDisk: {
@@ -487,6 +491,7 @@ export default defineComponent({
                   zone={formData.zone}
                   onChange={handleVpcChange}
                   clearable={false}
+                  onRefreshVpcList={onRefreshVpcList}
                 />
                 <Button
                   text
@@ -556,7 +561,24 @@ export default defineComponent({
           {
             label: '管控区域',
             description: '管控区是蓝鲸可以管控的Agent网络区域，以实现跨网管理。一个VPC，对应一个管控区。如VPC未绑定管控区，请到资源接入-VPC-绑定管控区操作',
-            content: () => <CloudAreaName id={cloudId.value} />,
+            content: () => (
+              <>
+                <CloudAreaName id={cloudId.value} />
+                <span class={'instance-name-tips'}>
+                  如VPC未绑定管控区，请到资源接入-VPC-绑定管控区操作
+                  <Button
+                    theme='primary'
+                    text
+                    disabled={!formData.cloud_vpc_id}
+                    class={'ml6'}
+                    onClick={() => {
+                      refreshVpcList.value();
+                    }}>
+                    刷新
+                  </Button>
+                </span>
+              </>
+            ),
           },
           {
             label: '安全组',
