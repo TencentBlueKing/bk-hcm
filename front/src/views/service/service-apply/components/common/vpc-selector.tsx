@@ -135,7 +135,7 @@ export default defineComponent({
               disabled={
                 !(
                   props.isSubnet
-                  || (props.vendor === VendorEnum.GCP && subnet_count > 0)
+                  || ([VendorEnum.AZURE, VendorEnum.GCP, VendorEnum.HUAWEI].includes(props.vendor) && subnet_count > 0)
                   || current_zone_subnet_count > 0
                 )
               }
