@@ -177,10 +177,8 @@ const showAuthDialog = (authActionName: string) => {
 };
 
 const disabledOption = computed(() => {
-  // 无权限，直接禁用按钮
-  if (!authVerifyData.value?.permissionAction?.[actionName.value]) return true;
-  // 业务下，判断是否已被回收
-  if (!isResourcePage.value) return detail.value?.recycle_status === 'recycling';
+  // 业务下，有权限时，判断是否已被回收
+  if (!isResourcePage.value) return authVerifyData.value?.permissionAction?.[actionName.value] && detail.value?.recycle_status === 'recycling';
   // 资源下，判断是否分配业务，是否已被回收
   return detail.value?.bk_biz_id !== -1 || detail.value?.recycle_status === 'recycling';
 });
@@ -220,13 +218,16 @@ const bktoolTipsOptions = computed(() => {
       【已绑定】
     </span> -->
     <template #right>
-      <span @click="showAuthDialog(actionName)">
+      <span>
         <bk-button
           v-bk-tooltips="bktoolTipsOptions || { disabled: true }"
-          class="w100 ml10"
+          class="w100 ml10 hcm-no-permision-btn"
           theme="primary"
           :disabled="disabledOption"
-          @click="() => isDialogShow = true"
+          @click="() => () => {
+            if (authVerifyData.value?.permissionAction?.[actionName]) isDialogShow = true;
+            else showAuthDialog(actionName);
+          }"
           v-if="whereAmI === Senarios.resource"
         >
           {{ t('分配') }}
@@ -238,11 +239,14 @@ const bktoolTipsOptions = computed(() => {
             content: '当前主机处于开机状态',
             disabled: !cvmInfo.start.status.includes(detail.status)
           }"
-          class="w100 ml10"
-          :disabled="disabledOption || cvmInfo.start.status.includes(detail.status)"
+          class="w100 ml10 hcm-no-permision-btn"
+          :disabled="disabledOption || (
+            authVerifyData.value?.permissionAction?.[actionName] && cvmInfo.start.status.includes(detail.status)
+          )"
           :loading="cvmInfo.start.loading"
           @click="() => {
-            handleCvmOperate('start')
+            if (authVerifyData.value?.permissionAction?.[actionName]) handleCvmOperate('start');
+            else showAuthDialog(actionName);
           }"
         >
           {{ t('开机') }}
@@ -254,11 +258,16 @@ const bktoolTipsOptions = computed(() => {
             content: '当前主机处于关机状态',
             disabled: !cvmInfo.stop.status.includes(detail.status)
           }"
-          class="w100 ml10 mr10"
-          :disabled="disabledOption || cvmInfo.stop.status.includes(detail.status)"
+          class="w100 ml10 mr10 hcm-no-permision-btn"
+          :disabled="
+            disabledOption
+              || (
+                authVerifyData.value?.permissionAction?.[actionName] && cvmInfo.stop.status.includes(detail.status)
+              )"
           :loading="cvmInfo.stop.loading"
           @click="() => {
-            handleCvmOperate('stop')
+            if (authVerifyData.value?.permissionAction?.[actionName]) handleCvmOperate('stop');
+            else showAuthDialog(actionName);
           }"
         >
           {{ t('关机') }}
@@ -298,14 +307,22 @@ const bktoolTipsOptions = computed(() => {
             <bk-dropdown-menu>
               <bk-dropdown-item
                 @click="() => {
-                  handleCvmOperate('destroy')
+                  if (authVerifyData.value?.permissionAction?.[actionName]) {
+                    handleCvmOperate('destroy')
+                  } else {
+                    showAuthDialog(actionName);
+                  }
                 }"
               >
                 {{ t('回收') }}
               </bk-dropdown-item>
               <bk-dropdown-item
                 @click="() => {
-                  handleCvmOperate('reboot')
+                  if (authVerifyData.value?.permissionAction?.[actionName]) {
+                    handleCvmOperate('reboot')
+                  } else {
+                    showAuthDialog(actionName);
+                  }
                 }">
                 {{ t('重启') }}
               </bk-dropdown-item>

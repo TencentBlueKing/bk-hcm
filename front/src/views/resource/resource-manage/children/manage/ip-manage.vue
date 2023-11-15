@@ -12,6 +12,7 @@ import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import { EipStatus, IEip } from '@/typings/business';
 import { CLOUD_VENDOR } from '@/constants/resource';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
+import { useVerify } from '@/hooks';
 
 
 const props = defineProps({
@@ -43,6 +44,10 @@ const { columns, settings } = useColumns('eips');
 const emit = defineEmits(['auth']);
 
 const { selections, handleSelectionChange, resetSelections } = useSelection();
+
+const {
+  handleAuth,
+} = useVerify();
 
 const {
   handleShowDelete,
@@ -165,10 +170,17 @@ defineExpose({ fetchComponentsData });
         }"
       />
       <bk-button
-        class="w100 ml10"
+        class="w100 ml10 hcm-no-permision-btn"
         theme="primary"
-        :disabled="selections.length <= 0"
-        @click="handleShowDelete(selections.filter(selection => canDelete(selection)).map((selection) => selection.id))"
+        :disabled="authVerifyData?.permissionAction?.biz_iaas_resource_delete && selections.length <= 0"
+        @click="
+          () => {
+            if (authVerifyData?.permissionAction?.biz_iaas_resource_delete) {
+              handleShowDelete(selections.filter(selection => canDelete(selection)).map((selection) => selection.id));
+            } else {
+              handleAuth('biz_iaas_resource_delete')
+            }
+          }"
       >
         删除
       </bk-button>

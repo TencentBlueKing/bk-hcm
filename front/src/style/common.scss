@@ -152,3 +152,10 @@ a {
   font-weight: normal;
   font-size: 12px;
 }
+
+.hcm-no-permision-btn, .hcm-no-permision-btn:hover {
+  background-color: #dcdee5!important;
+  border-color: #dcdee5!important;
+  color: #fff!important;
+  cursor: not-allowed!important;
+}
