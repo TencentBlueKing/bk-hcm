@@ -83,7 +83,7 @@ const handleDeleteEip = () => {
 const handleShowDelete = () => {
   InfoBox({
     title: '请确认是否删除',
-    subTitle: `将删除【${detail.value.id}】`,
+    subTitle: `将删除【${detail.value.id} - ${detail.value.name}】`,
     theme: 'danger',
     headerAlign: 'center',
     footerAlign: 'center',
