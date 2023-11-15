@@ -14,7 +14,7 @@ export default defineComponent({
     modelValue: String as PropType<string>,
     bizId: Number as PropType<number | string>,
     accountId: String as PropType<string>,
-    vendor: String as PropType<string>,
+    vendor: String as PropType<VendorEnum>,
     region: String as PropType<string>,
     zone: Array as PropType<string[]>,
     isSubnet: {
@@ -22,6 +22,7 @@ export default defineComponent({
       required: false,
       default: false,
     },
+    onRefreshVpcList: Function,
   },
   emits: ['update:modelValue', 'change'],
   setup(props, { emit, attrs }) {
@@ -57,49 +58,61 @@ export default defineComponent({
           list.value = [];
           return;
         }
-
-        try {
-          loading.value = true;
-          const filter = {
-            op: 'and',
-            rules: [
-              {
-                field: 'account_id',
-                op: QueryRuleOPEnum.EQ,
-                value: accountId,
-              },
-            ],
-          };
-          if (vendor !== VendorEnum.GCP) {
-            filter.rules.push({
-              field: 'region',
-              op: QueryRuleOPEnum.EQ,
-              value: region,
-            });
-          }
-          const url = isResourcePage
-            ? `${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/vendors/${props.vendor}/vpcs/with/subnet_count/list`
-            : `${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/bizs/${bizId}/vendors/${props.vendor}/vpcs/with/subnet_count/list`;
-          const result = await http.post(url, {
-            // const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vpcs/list`, {
-            zone: Array.isArray(props.zone) ? props.zone.join(',') : props.zone,
-            filter,
-            page: {
-              count: false,
-              start: 0,
-              limit: 50,
-            },
-          });
-          list.value = result?.data?.details ?? [];
-        } finally {
-          loading.value = false;
-        }
+        props.onRefreshVpcList(async () => {
+          await refreshList(bizId, accountId, vendor, region);
+          handleChange(props.modelValue);
+        });
+        await refreshList(bizId, accountId, vendor, region);
       },
     );
 
     const handleChange = (val: string) => {
       const data = list.value.find(item => item.cloud_id === val);
       emit('change', data);
+    };
+
+    const refreshList = async (
+      bizId: string|number = props.bizId,
+      accountId: string = props.accountId,
+      vendor: VendorEnum = props.vendor,
+      region: string = props.region,
+    ) => {
+      try {
+        loading.value = true;
+        const filter = {
+          op: 'and',
+          rules: [
+            {
+              field: 'account_id',
+              op: QueryRuleOPEnum.EQ,
+              value: accountId,
+            },
+          ],
+        };
+        if (vendor !== VendorEnum.GCP) {
+          filter.rules.push({
+            field: 'region',
+            op: QueryRuleOPEnum.EQ,
+            value: region,
+          });
+        }
+        const url = isResourcePage
+          ? `${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/vendors/${props.vendor}/vpcs/with/subnet_count/list`
+          : `${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/bizs/${bizId}/vendors/${props.vendor}/vpcs/with/subnet_count/list`;
+        const result = await http.post(url, {
+          // const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vpcs/list`, {
+          zone: Array.isArray(props.zone) ? props.zone.join(',') : props.zone,
+          filter,
+          page: {
+            count: false,
+            start: 0,
+            limit: 50,
+          },
+        });
+        list.value = result?.data?.details ?? [];
+      } finally {
+        loading.value = false;
+      }
     };
 
     return () => (

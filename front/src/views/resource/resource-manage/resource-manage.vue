@@ -455,7 +455,6 @@ getResourceAccountList();
             @edit="handleEdit"
           >
             <span
-              @click="handleAuth('biz_iaas_resource_create')"
               v-if="
                 ['host', 'vpc', 'drive', 'security', 'subnet', 'ip'].includes(
                   activeTab,
@@ -464,11 +463,14 @@ getResourceAccountList();
             >
               <bk-button
                 theme="primary"
-                class="new-button"
-                :disabled="
-                  !authVerifyData?.permissionAction?.biz_iaas_resource_create
-                "
-                @click="handleAdd"
+                class="new-button hcm-no-permision-btn"
+                @click="() => {
+                  if (!authVerifyData?.permissionAction?.iaas_resource_create) {
+                    handleAuth('iaas_resource_create');
+                  } else {
+                    handleAdd();
+                  }
+                }"
               >
                 {{ activeTab === 'host' ? '购买' : '新建' }}
               </bk-button>

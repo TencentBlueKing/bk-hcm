@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, provide, watchEffect } from 'vue';
+import { ref, computed, provide } from 'vue';
 
 import HostManage from '@/views/resource/resource-manage/children/manage/host-manage.vue';
 import VpcManage from '@/views/resource/resource-manage/children/manage/vpc-manage.vue';
@@ -172,10 +172,6 @@ const {
   permissionParams,
   authVerifyData,
 } = useVerify();
-
-watchEffect(() => {
-  console.log(666, renderComponent);
-});
 </script>
 
 <template>
@@ -195,14 +191,17 @@ watchEffect(() => {
           @handleSecrityType="handleSecrityType"
           @edit="handleEdit"
         >
-          <span @click="handleAuth('biz_iaas_resource_create')">
+          <span>
             <bk-button
               theme="primary"
-              class="new-button mr8"
-              :disabled="
-                !authVerifyData?.permissionAction?.biz_iaas_resource_create
-              "
-              @click="handleAdd"
+              class="new-button mr8 hcm-no-permision-btn"
+              @click="() => {
+                if (authVerifyData?.permissionAction?.biz_iaas_resource_create) {
+                  handleAdd();
+                } else {
+                  handleAuth('biz_iaas_resource_create')
+                }
+              }"
             >
               {{
                 renderComponent === DriveManage ||
