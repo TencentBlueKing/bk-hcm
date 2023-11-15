@@ -110,7 +110,7 @@ export const BatchDistribution = defineComponent({
       <>
         {whereAmI.value === Senarios.resource ? (
           <Button
-            class='ml8 mr8 hcm-no-permision-btn'
+            class={'ml8 mr8'}
             onClick={() => {
               if (!authVerifyData?.permissionAction?.iaas_resource_operate) {
                 handleAuth('iaas_resource_operate');

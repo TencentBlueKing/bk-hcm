@@ -463,7 +463,8 @@ getResourceAccountList();
             >
               <bk-button
                 theme="primary"
-                class="new-button hcm-no-permision-btn"
+                class="new-button"
+                :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.iaas_resource_create }"
                 @click="() => {
                   if (!authVerifyData?.permissionAction?.iaas_resource_create) {
                     handleAuth('iaas_resource_create');
