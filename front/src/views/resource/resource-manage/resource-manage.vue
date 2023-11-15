@@ -409,7 +409,7 @@ getResourceAccountList();
       <bk-alert
         theme="error"
         closable
-        class="ml24"
+        class="error-message-alert"
         v-if="resourceAccountStore?.resourceAccount?.sync_failed_reason?.length"
       >
         <template #title>
@@ -583,7 +583,7 @@ getResourceAccountList();
 .bk-tab-content {
   padding: 0 !important;
 }
-.ml24 {
-  margin-left: 24px;
+.error-message-alert {
+  margin: -8px 0 16px 0;
 }
 </style>

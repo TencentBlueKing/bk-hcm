@@ -28,6 +28,7 @@ import {
   computed,
 } from 'vue';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { CLOUD_HOST_STATUS } from '@/common/constant';
 
 
 const router = useRouter();
@@ -53,7 +54,11 @@ const authVerifyData: any = inject('authVerifyData');
 // 操作的相关信息
 const cvmInfo = ref({
   start: { op: '开机', loading: false, status: ['RUNNING', 'running'] },
-  stop: { op: '关机', loading: false, status: ['STOPPED', 'SHUTOFF', 'STOPPING', 'shutting-down', 'PowerState', 'stopped'] },
+  stop: {
+    op: '关机',
+    loading: false,
+    status: ['STOPPED', 'SHUTOFF', 'STOPPING', 'shutting-down', 'PowerState', 'stopped', 'TERMINATED'],
+  },
   reboot: { op: '重启', loading: false },
   destroy: { op: '回收', loading: false },
 });
@@ -237,7 +242,7 @@ const bktoolTipsOptions = computed(() => {
       <span @click="showAuthDialog(actionName)">
         <bk-button
           v-bk-tooltips="bktoolTipsOptions || {
-            content: '当前主机处于开机状态',
+            content: `当前主机处于 ${CLOUD_HOST_STATUS[detail.status]} 状态`,
             disabled: !cvmInfo.start.status.includes(detail.status)
           }"
           class="w100 ml10"
@@ -257,7 +262,7 @@ const bktoolTipsOptions = computed(() => {
       <span @click="showAuthDialog(actionName)">
         <bk-button
           v-bk-tooltips="bktoolTipsOptions || {
-            content: '当前主机处于关机状态',
+            content: `当前主机处于 ${CLOUD_HOST_STATUS[detail.status]} 状态`,
             disabled: !cvmInfo.stop.status.includes(detail.status)
           }"
           class="w100 ml10 mr10"

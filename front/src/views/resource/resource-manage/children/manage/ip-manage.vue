@@ -111,7 +111,7 @@ const renderColumns = [
               onClick() {
                 InfoBox({
                   title: '请确认是否删除',
-                  subTitle: `将删除【${data.id}】`,
+                  subTitle: `将删除【${data.id} - ${data.name}】`,
                   theme: 'danger',
                   headerAlign: 'center',
                   footerAlign: 'center',

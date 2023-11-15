@@ -23,6 +23,7 @@ export default (cond: Cond, formData: IDiskFormData) => {
   watch(
     () => cond.vendor,
     (vendor) => {
+      if (!vendor) return;
       const diskTypeValues = {
         [VendorEnum.TCLOUD]: [
           // {
@@ -174,6 +175,9 @@ export default (cond: Cond, formData: IDiskFormData) => {
       diskTypes.value = diskTypeValues[vendor];
 
       billingModes.value = billingModeValues[vendor] || [];
+    },
+    {
+      immediate: true,
     },
   );
 

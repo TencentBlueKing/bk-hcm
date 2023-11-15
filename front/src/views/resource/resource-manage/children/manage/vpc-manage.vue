@@ -2,8 +2,7 @@
 import type { FilterType } from '@/typings/resource';
 
 import { PropType, defineExpose, h, computed, ref, onMounted } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { InfoBox, Message, Button, Popover } from 'bkui-vue';
+import { Button } from 'bkui-vue';
 import { useResourceStore } from '@/store/resource';
 import useColumns from '../../hooks/use-columns';
 import useQueryList from '../../hooks/use-query-list';
@@ -35,7 +34,7 @@ const { selections, handleSelectionChange, resetSelections } = useSelection();
 const { whereAmI } = useWhereAmI();
 
 // use hooks
-const { t } = useI18n();
+// const { t } = useI18n();
 const resourceStore = useResourceStore();
 const { columns, settings } = useColumns('vpc');
 const { searchData, searchValue, filter } = useFilter(props);
@@ -129,7 +128,7 @@ onMounted(() => {
   getCloudAreas();
 });
 
-const handleDeleteVpc = (data: any) => {
+/* const handleDeleteVpc = (data: any) => {
   const vpcIds = [data.id];
   const getRelateNum = (type: string, field = 'vpc_id', op = 'in') => {
     return resourceStore.list(
@@ -187,7 +186,7 @@ const handleDeleteVpc = (data: any) => {
       });
     }
   });
-};
+};*/
 
 const renderColumns = [
   ...columns,
@@ -227,32 +226,32 @@ const renderColumns = [
               ['绑定管控区'],
             )
             : null,
-          h(
-            Popover,
-            {
-              content: 'VPC下有子网正在使用，不能直接删除',
-              disabled: !(whereAmI.value === Senarios.resource && data.bk_cloud_id !== -1),
-            },
-            [
-              h(
-                Button,
-                {
-                  text: true,
-                  theme: 'primary',
-                  disabled:
-                  !props.authVerifyData?.permissionAction[
-                    props.isResourcePage
-                      ? 'iaas_resource_delete'
-                      : 'biz_iaas_resource_delete'
-                  ] || (whereAmI.value === Senarios.resource && data.bk_cloud_id !== -1),
-                  onClick() {
-                    handleDeleteVpc(data);
-                  },
-                },
-                [t('删除')],
-              ),
-            ],
-          ),
+          // h(
+          //   Popover,
+          //   {
+          //     content: 'VPC下有子网正在使用，不能直接删除',
+          //     disabled: !(whereAmI.value === Senarios.resource && data.bk_cloud_id !== -1),
+          //   },
+          //   [
+          //     h(
+          //       Button,
+          //       {
+          //         text: true,
+          //         theme: 'primary',
+          //         disabled:
+          //         !props.authVerifyData?.permissionAction[
+          //           props.isResourcePage
+          //             ? 'iaas_resource_delete'
+          //             : 'biz_iaas_resource_delete'
+          //         ] || (whereAmI.value === Senarios.resource && data.bk_cloud_id !== -1),
+          //         onClick() {
+          //           handleDeleteVpc(data);
+          //         },
+          //       },
+          //       [t('删除')],
+          //     ),
+          //   ],
+          // ),
         ],
       ));
     },
