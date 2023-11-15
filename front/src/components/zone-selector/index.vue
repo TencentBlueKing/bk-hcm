@@ -79,7 +79,9 @@ watch(() => props.vendor, (val) => {
         },
       ];
       break;
-    case VendorEnum.AWS:
+    default:
+      filter.value.rules = [];
+    /* case VendorEnum.AWS:
       filter.value.rules = [
         {
           field: 'state',
@@ -96,7 +98,7 @@ watch(() => props.vendor, (val) => {
           value: 'UP',
         },
       ];
-      break;
+      break;*/
   }
   resetData();
   getZonesData();

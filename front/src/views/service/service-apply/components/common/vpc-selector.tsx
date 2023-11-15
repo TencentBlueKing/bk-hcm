@@ -16,7 +16,7 @@ export default defineComponent({
     accountId: String as PropType<string>,
     vendor: String as PropType<VendorEnum>,
     region: String as PropType<string>,
-    zone: Array as PropType<string[]>,
+    zone: String as PropType<string>,
     isSubnet: {
       type: Boolean as PropType<boolean>,
       required: false,
@@ -52,7 +52,7 @@ export default defineComponent({
         if (
           !accountId
           || !region
-          || !zone.length
+          || !zone
           || (whereAmI.value === Senarios.business && !bizId)
         ) {
           list.value = [];

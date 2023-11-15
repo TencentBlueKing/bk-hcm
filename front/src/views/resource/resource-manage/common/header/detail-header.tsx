@@ -23,7 +23,14 @@ export default defineComponent({
     const { whereAmI } = useWhereAmI();
 
     const goBack = () => {
-      router.back();
+      if (window.history.state.back) {
+        router.back();
+      } else {
+        router.replace({ path: '/resource/resource',  query: {
+          type: 'subnet',
+        },
+        });
+      }
     };
 
     return {
