@@ -4,7 +4,7 @@ import { Button, Select } from 'bkui-vue';
 
 import { QueryRuleOPEnum } from '@/typings/common';
 import { VendorEnum } from '@/common/constant';
-import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { ISubnetItem } from '../../cvm/children/SubnetPreviewDialog';
 import RightTurnLine from 'bkui-vue/lib/icon/right-turn-line';
 
@@ -28,7 +28,7 @@ export default defineComponent({
   setup(props, { emit, attrs, expose }) {
     const list = ref([]);
     const loading = ref(false);
-    const { isResourcePage, isServicePage } = useWhereAmI();
+    const { isResourcePage, isServicePage, whereAmI } = useWhereAmI();
 
     expose({ subnetList: list });
 
@@ -141,26 +141,55 @@ export default defineComponent({
           }
         </Select>
         {props.vpcId && !list.value.length ? (
-            <div class={'subnet-selector-tips'}>
-              <span class={'subnet-create-tips'}>
-                {'所选的VPC，在当前区无可用的子网，可切换VPC或'}
-              </span>
-              <Button
-                text
-                theme='primary'
-                class={'mr6'}
-                onClick={() => {
-                  const url = '/#/resource/service-apply/subnet';
-                  window.open(url, '_blank');
-                }}>
-                新建子网
-              </Button>
-              <Button text onClick={() => {
-                getSubnetsData(props.bizId, props.region, props.vendor, props.vpcId, props.accountId, props.zone);
+          <div class={'subnet-selector-tips'}>
+            {whereAmI.value === Senarios.resource ? (
+              <>
+                <span class={'subnet-create-tips'}>
+                  {'所选的VPC，在当前区无可用的子网，可切换VPC或'}
+                </span>
+                <Button
+                  text
+                  theme='primary'
+                  class={'mr6'}
+                  onClick={() => {
+                    const url = '/#/resource/service-apply/subnet';
+                    window.open(url, '_blank');
+                  }}>
+                  新建子网
+                </Button>
+              </>
+            ) : (
+              <>
+                <span class={'subnet-create-tips mr6'}>
+                  该VPC下在本可用区存在子网，但未分配给本业务。
+                  <Button
+                    text
+                    theme='primary'
+                    onClick={() => {
+                      const url = '/#/business/service/service-apply/subnet';
+                      window.open(url, '_blank');
+                    }}>
+                    新建子网
+                  </Button>
+                  ,或者在资源接入-子网中分配给本业务
+                </span>
+              </>
+            )}
+            <Button
+              text
+              onClick={() => {
+                getSubnetsData(
+                  props.bizId,
+                  props.region,
+                  props.vendor,
+                  props.vpcId,
+                  props.accountId,
+                  props.zone,
+                );
               }}>
-                <RightTurnLine fill='#3A84FF' />
-              </Button>
-            </div>
+              <RightTurnLine fill='#3A84FF' />
+            </Button>
+          </div>
         ) : null}
       </div>
     );
