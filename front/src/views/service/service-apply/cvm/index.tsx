@@ -13,7 +13,6 @@ import CloudAreaName from '../components/common/cloud-area-name';
 import {
   Plus as PlusIcon,
   CloseLine as CloseLineIcon,
-  EditLine as EditIcon,
 } from 'bkui-vue/lib/icon';
 import GcpDataDiskFormDialog from './children/gcp-data-disk-form-dialog';
 import './index.scss';
@@ -122,12 +121,12 @@ export default defineComponent({
       };
       dialogState.gcpDataDisk.isShow = false;
     };
-    const handleEditGcpDataDisk = (index: number) => {
+    /* const handleEditGcpDataDisk = (index: number) => {
       dialogState.gcpDataDisk.isShow = true;
       dialogState.gcpDataDisk.isEdit = true;
       dialogState.gcpDataDisk.editDataIndex = index;
       dialogState.gcpDataDisk.formData = formData.data_disk[index];
-    };
+    };*/
 
     const handleRemoveDataDisk = (index: number) => {
       formData.data_disk.splice(index, 1);
@@ -277,9 +276,10 @@ export default defineComponent({
       const diffs = {
         [VendorEnum.GCP]: {
           content: () => (
-            <div class='form-content-list details'>
-              {formData.data_disk.map((item: IDiskOption, index: number) => (
+            <div class='form-content-list data-disk-wrap'>
+              {/* {formData.data_disk.map((item: IDiskOption, index: number) => (
                 <div class='flex-row'>
+
                   {item.disk_name}, 空白, {item.disk_size_gb}GB,{' '}
                   {dataDiskTypes.value.find((disk: IOption) => disk.id === item.disk_type)?.name || '--'}
                   <div class='btns'>
@@ -308,6 +308,61 @@ export default defineComponent({
                     )}
                   </div>
                 </div>
+              ))}*/}
+              {formData.data_disk.map((item: IDiskOption, index: number) => (
+                  <div class='flex-row'>
+                    <FormItem
+                        property={`data_disk[${index}].disk_type`}
+                        rules={[]}>
+                      <Select
+                          v-model={item.disk_type}
+                          style={{ width: '200px' }}
+                          clearable={false}>
+                        {dataDiskTypes.value.map(({ id, name }: IOption) => (
+                            <Option key={id} value={id} label={name}></Option>
+                        ))}
+                      </Select>
+                    </FormItem>
+                    <FormItem
+                        property={`data_disk[${index}].disk_size_gb`}
+                        rules={[dataDiskSizeRules(item)]}
+                        description={dataDiskSizeRules(item).message}>
+                      <Input
+                          type='number'
+                          style={{ width: '160px' }}
+                          v-model={item.disk_size_gb}
+                          min={1}
+                          suffix='GB'
+                          prefix='大小'></Input>
+                    </FormItem>
+                    <FormItem
+                        property={`data_disk[${index}].disk_count`}
+                        min={dataDiskCountRules.value.min}
+                        max={dataDiskCountRules.value.max}>
+                      <Input
+                          style={{ width: '90px' }}
+                          type='number'
+                          v-model={item.disk_count}
+                          min={dataDiskCountRules.value.min}></Input>
+                    </FormItem>
+                    <div class='btns'>
+                      <Button
+                          class='btn'
+                          outline
+                          size='small'
+                          onClick={handleCreateGcpDataDisk}>
+                        <PlusIcon  />
+                      </Button>
+                      <Button
+                          class='btn'
+                          outline
+                          size='small'
+                          disabled={formData.data_disk.length === 1}
+                          onClick={() => handleRemoveDataDisk(index)}>
+                        <CloseLineIcon />
+                      </Button>
+                    </div>
+                  </div>
               ))}
               {!formData.data_disk.length && (
                 <div class='btns'>
@@ -725,15 +780,13 @@ export default defineComponent({
               ? '增强型SSD云硬盘仅在部分可用区开放售卖，后续将逐步增加售卖可用区'
               : ''),
             property: 'data_disk',
-            required: true,
             content: () => (
               <div class='form-content-list data-disk-wrap'>
                 {formData.data_disk.map((item: IDiskOption, index: number) => (
                   <div class='flex-row'>
                     <FormItem
                       property={`data_disk[${index}].disk_type`}
-                      rules={[]}
-                      class={'mr8'}>
+                      rules={[]}>
                       <Select
                         v-model={item.disk_type}
                         style={{ width: '200px' }}
@@ -746,8 +799,7 @@ export default defineComponent({
                     <FormItem
                       property={`data_disk[${index}].disk_size_gb`}
                       rules={[dataDiskSizeRules(item)]}
-                      description={dataDiskSizeRules(item).message}
-                      class={'mr8'}>
+                      description={dataDiskSizeRules(item).message}>
                       <Input
                         type='number'
                         style={{ width: '160px' }}
@@ -757,7 +809,6 @@ export default defineComponent({
                         prefix='大小'></Input>
                     </FormItem>
                     <FormItem
-                      class={'mr8'}
                       property={`data_disk[${index}].disk_count`}
                       min={dataDiskCountRules.value.min}
                       max={dataDiskCountRules.value.max}>
@@ -772,20 +823,28 @@ export default defineComponent({
                         class='btn'
                         outline
                         size='small'
+                        disabled={formData.data_disk.length !== index + 1}
                         onClick={handleCreateDataDisk}>
-                        <PlusIcon  />
+                        <PlusIcon />
                       </Button>
                       <Button
                         class='btn'
                         outline
                         size='small'
-                        disabled={formData.data_disk.length === 1}
+                        disabled={formData.data_disk.length !== index + 1}
                         onClick={() => handleRemoveDataDisk(index)}>
                         <CloseLineIcon />
                       </Button>
                     </div>
                   </div>
                 ))}
+                {!formData.data_disk.length && (
+                    <div class='btns'>
+                      <Button class='btn' onClick={handleCreateDataDisk}>
+                        <PlusIcon />
+                      </Button>
+                    </div>
+                )}
                 {
                   // (formData.data_disks.length > 0 && cond.vendor === VendorEnum.HUAWEI)
                   // && <Checkbox v-model={formData.is_quickly_initialize_data_disk}>快速初始化数据盘</Checkbox>
@@ -1152,7 +1211,8 @@ export default defineComponent({
                                     property={sub.property}
                                     rules={sub.rules}
                                     description={sub?.description}
-                                    class={'mr8'}>
+                                    class='sub-form-item-wrap'
+                                  >
                                     {sub.content()}
                                     {sub.tips && (
                                       <div class='form-item-tips'>

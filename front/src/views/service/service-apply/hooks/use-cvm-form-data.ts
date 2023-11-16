@@ -58,7 +58,7 @@ export interface ICvmSaveData extends ICvmBaseData {
 
 export const getDataDiskDefaults = () => ({
   disk_type: '',
-  disk_size_gb: 0,
+  disk_size_gb: 50,
   disk_count: 1,
 });
 
@@ -120,7 +120,7 @@ export default (cond: Cond) => {
         disk_type: '',
         disk_size_gb: 50,
       },
-      data_disk: [{ disk_type: '', disk_size_gb: 0, disk_count: 1 }],
+      data_disk: [],
       password: '',
       confirmed_password: '',
       purchase_duration: {
