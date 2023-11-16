@@ -22,7 +22,10 @@ export default defineComponent({
       required: false,
       default: false,
     },
-    onRefreshVpcList: Function,
+    onRefreshVpcList: {
+      type: Function,
+      required: false,
+    },
   },
   emits: ['update:modelValue', 'change'],
   setup(props, { emit, attrs }) {
@@ -58,11 +61,11 @@ export default defineComponent({
           list.value = [];
           return;
         }
-        props.onRefreshVpcList(async () => {
+        await refreshList(bizId, accountId, vendor, region);
+        props.onRefreshVpcList?.(async () => {
           await refreshList(bizId, accountId, vendor, region);
           handleChange(props.modelValue);
         });
-        await refreshList(bizId, accountId, vendor, region);
       },
     );
 

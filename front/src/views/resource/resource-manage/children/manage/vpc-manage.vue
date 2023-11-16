@@ -2,7 +2,7 @@
 import type { FilterType } from '@/typings/resource';
 
 import { PropType, defineExpose, h, computed, ref, onMounted } from 'vue';
-import { Button } from 'bkui-vue';
+import { Button, Message } from 'bkui-vue';
 import { useResourceStore } from '@/store/resource';
 import useColumns from '../../hooks/use-columns';
 import useQueryList from '../../hooks/use-query-list';
@@ -103,6 +103,10 @@ const handleConfirm = async () => {
       },
     ]);
     triggerApi();
+    Message({
+      message: '绑定成功',
+      theme: 'success',
+    });
   } finally {
     isDialogShow.value = false;
     isDialogBtnLoading.value = false;
