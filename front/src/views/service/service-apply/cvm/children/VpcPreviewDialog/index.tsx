@@ -1,6 +1,7 @@
 import { Dialog, Form } from 'bkui-vue';
 import { PropType, defineComponent } from 'vue';
 import './index.scss';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 const { FormItem } = Form;
 
@@ -31,6 +32,7 @@ export default defineComponent({
     },
   },
   setup(props) {
+    const { whereAmI } = useWhereAmI();
     return () => (
       <Dialog
         class='preview-dialog'
@@ -44,7 +46,7 @@ export default defineComponent({
             <svg
               onClick={() => {
                 if (!props.data.cloud_id) return;
-                const url = `/#/business/vpc?cloud_id=${props.data.cloud_id}`;
+                const url = whereAmI.value === Senarios.resource ? `/#/resource/resource?cloud_id=${props.data.cloud_id}&type=vpc` : `/#/business/vpc?cloud_id=${props.data.cloud_id}`;
                 window.open(url, '_blank');
               }}
               class="vpc-dialog-highligt-icon"
