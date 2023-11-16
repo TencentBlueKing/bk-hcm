@@ -305,6 +305,7 @@ export default defineComponent({
               columns={computedColumns.value}
               pagination={pagination}
               onRowClick={handleOnRowClick}
+              rowKey={'instance_type'}
             />
           </Loading>
         </Dialog>
