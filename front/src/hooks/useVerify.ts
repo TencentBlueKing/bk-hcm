@@ -70,7 +70,6 @@ export function useVerify() {
       p[`${authData[i].id}`] = e.authorized;
       return p;
     }, {});
-
     authVerifyData.value.permissionAction  = permissionAction;
     commonStore.addAuthVerifyData(authVerifyData);    // 全局变量管理
     return res?.data;
@@ -95,7 +94,7 @@ export function useVerify() {
 
   // 处理鉴权 actionName根据接口返回值传入
   const handleAuth = (actionName: string) => {
-    console.log('!authVerifyData.value?.permissionAction', !authVerifyData.value?.permissionAction);
+    console.log('!authVerifyData.value?.permissionAction', !authVerifyData.value?.permissionAction, actionName);
     if (!authVerifyData.value?.permissionAction) return;
     const actionItem = authVerifyData.value?.urlParams[actionName];
     if (!actionItem) return;
