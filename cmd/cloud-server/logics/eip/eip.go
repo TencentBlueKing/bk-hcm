@@ -26,7 +26,8 @@ import (
 	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/pkg/api/cloud-server/recycle"
 	"hcm/pkg/api/core"
-	recyclerecord "hcm/pkg/api/core/recycle-record"
+	coreni "hcm/pkg/api/core/cloud/network-interface"
+	rr "hcm/pkg/api/core/recycle-record"
 	protoaudit "hcm/pkg/api/data-service/audit"
 	"hcm/pkg/api/data-service/cloud"
 	dataeip "hcm/pkg/api/data-service/cloud/eip"
@@ -38,6 +39,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 )
@@ -296,6 +298,16 @@ func (e *eip) BatchGetEipInfo(kt *kit.Kit, cvmDetail map[string]*recycle.CvmDeta
 		return err
 	}
 
+	// 需要查找网卡id的cvm
+	var needNicCvmIds []string
+	// fill eip cvm relation into cvm detail map
+	for _, rel := range cvmEipRel.Details {
+		switch cvmDetail[rel.CvmID].Vendor {
+		case enumor.Azure, enumor.Gcp, enumor.HuaWei:
+			needNicCvmIds = append(needNicCvmIds, rel.CvmID)
+		}
+	}
+
 	// list eip for nic
 	eipIDs := slice.Map(cvmEipRel.Details, func(v *cloud.EipCvmRelResult) string { return v.EipID })
 	if len(eipIDs) == 0 {
@@ -310,32 +322,60 @@ func (e *eip) BatchGetEipInfo(kt *kit.Kit, cvmDetail map[string]*recycle.CvmDeta
 		logs.Errorf("fail to ListEip, err: %v, eipIDs: %v, rid: %s", err, eipIDs, kt.Rid)
 		return err
 	}
-	eipMap := map[string]*dataeip.EipResult{}
-	for _, eipDetail := range eipRes.Details {
-		eipMap[eipDetail.ID] = eipDetail
-	}
 
-	// fill eip cvm relation into cvm detail map
+	eipMap := converter.SliceToMap(eipRes.Details,
+		func(e *dataeip.EipResult) (string, *dataeip.EipResult) { return e.ID, e })
+
+	ipNicIDMap, err := e.getIpNicMap(kt, needNicCvmIds)
+	if err != nil {
+		logs.Errorf("fail to get nic info, err: %v, cvmIds: %v, rid: %s", err, needNicCvmIds, kt.Rid)
+		return err
+	}
 	for _, ceRel := range cvmEipRel.Details {
 		cvmRecycleDetail := cvmDetail[ceRel.CvmID]
-		if cvmRecycleDetail == nil {
-			logs.Errorf("ListEipCvmRel return unknown cvm ID or cvm detail map corrupted, cvmId: %v, rid: %s",
-				ceRel.CvmID, kt.Rid)
-		}
-		var nic string
-		switch cvmRecycleDetail.Vendor {
-		case enumor.Azure, enumor.Gcp, enumor.HuaWei:
-			// 	Azure、Gcp、华为云需要查询网卡id
-			nic = converter.PtrToVal(eipMap[ceRel.EipID].InstanceID)
-		default:
-			nic = ""
-		}
 		cvmRecycleDetail.EipList = append(
-			cvmRecycleDetail.EipList, recyclerecord.EipBindInfo{EipID: ceRel.EipID, NicID: nic},
+			cvmRecycleDetail.EipList,
+			rr.EipBindInfo{EipID: ceRel.EipID, NicID: ipNicIDMap[eipMap[ceRel.EipID].PublicIp]},
 		)
-
 	}
 	return nil
+}
+
+func (e *eip) getIpNicMap(kt *kit.Kit, cvmIds []string) (map[string]string,
+	error) {
+	if len(cvmIds) == 0 {
+		return map[string]string{}, nil
+	}
+	// 获取网卡ID
+	nicRelResp, err := e.client.DataService().Global.NetworkInterfaceCvmRel.List(kt,
+		&core.ListReq{Filter: tools.ContainersExpression("cvm_id", cvmIds),
+			Page: core.NewDefaultBasePage()})
+	if err != nil {
+		logs.Errorf("fail to list NetworkInterfaceCvmRel, err: %v, cvmIds: %v, rid: %s", err, cvmIds,
+			kt.Rid)
+		return nil, err
+	}
+	nicIds := slice.Map(nicRelResp.Details, func(n *cloud.NetworkInterfaceCvmRelResult) string {
+		return n.NetworkInterfaceID
+	})
+	// 获取有公网ip的网卡信息
+	nicListResp, err := e.client.DataService().Global.NetworkInterface.List(kt,
+		&core.ListReq{Page: core.NewDefaultBasePage(),
+			Filter: &filter.Expression{
+				Op: filter.And,
+				Rules: []filter.RuleFactory{
+					tools.ContainersExpression("id", nicIds),
+					filter.AtomRule{Field: "public_ipv4", Op: filter.NotEqual.Factory(), Value: "[]"}},
+			}},
+	)
+	if err != nil {
+		logs.Errorf("fail to list network interface, err: %v, nicIds: %v, rid: %s", err, nicIds, kt.Rid)
+		return nil, err
+	}
+	return converter.SliceToMap(nicListResp.Details, func(n coreni.BaseNetworkInterface) (string, string) {
+		return n.PublicIPv4[0], n.ID
+	}), nil
+
 }
 
 // BatchRebind 批量重新绑定eip
