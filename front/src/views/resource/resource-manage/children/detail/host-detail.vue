@@ -29,6 +29,7 @@ import {
 } from 'vue';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { CLOUD_HOST_STATUS } from '@/common/constant';
+import { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../../common/table/HostOperations';
 
 
 const router = useRouter();
@@ -53,11 +54,11 @@ const authVerifyData: any = inject('authVerifyData');
 
 // 操作的相关信息
 const cvmInfo = ref({
-  start: { op: '开机', loading: false, status: ['RUNNING', 'running'] },
+  start: { op: '开机', loading: false, status: HOST_RUNNING_STATUS },
   stop: {
     op: '关机',
     loading: false,
-    status: ['STOPPED', 'SHUTOFF', 'STOPPING', 'shutting-down', 'PowerState', 'stopped', 'TERMINATED'],
+    status: HOST_SHUTDOWN_STATUS,
   },
   reboot: { op: '重启', loading: false },
   destroy: { op: '回收', loading: false },
@@ -65,7 +66,6 @@ const cvmInfo = ref({
 
 
 const actionName = computed(() => {   // 资源下没有业务ID
-  console.log('isResourcePage.value', isResourcePage.value);
   return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
 });
 
@@ -227,11 +227,11 @@ const bktoolTipsOptions = computed(() => {
         <bk-button
           v-bk-tooltips="bktoolTipsOptions || { disabled: true }"
           class="w100 ml10"
-          :class="{ 'hcm-no-permision-btn': !authVerifyData.value?.permissionAction?.[actionName] }"
+          :class="{ 'hcm-no-permision-btn': !authVerifyData.permissionAction?.[actionName] }"
           theme="primary"
           :disabled="disabledOption"
-          @click="() => () => {
-            if (authVerifyData.value?.permissionAction?.[actionName]) isDialogShow = true;
+          @click="() => {
+            if (authVerifyData.permissionAction?.[actionName]) isDialogShow = true;
             else showAuthDialog(actionName);
           }"
           v-if="whereAmI === Senarios.resource"
@@ -246,13 +246,13 @@ const bktoolTipsOptions = computed(() => {
             disabled: !cvmInfo.start.status.includes(detail.status)
           }"
           class="w100 ml10"
-          :class="{ 'hcm-no-permision-btn': !authVerifyData.value?.permissionAction?.[actionName] }"
+          :class="{ 'hcm-no-permision-btn': !authVerifyData.permissionAction?.[actionName] }"
           :disabled="disabledOption || (
-            authVerifyData.value?.permissionAction?.[actionName] && cvmInfo.start.status.includes(detail.status)
+            cvmInfo.start.status.includes(detail.status)
           )"
           :loading="cvmInfo.start.loading"
           @click="() => {
-            if (authVerifyData.value?.permissionAction?.[actionName]) handleCvmOperate('start');
+            if (authVerifyData.permissionAction?.[actionName]) handleCvmOperate('start');
             else showAuthDialog(actionName);
           }"
         >
@@ -266,15 +266,15 @@ const bktoolTipsOptions = computed(() => {
             disabled: !cvmInfo.stop.status.includes(detail.status)
           }"
           class="w100 ml10 mr10"
-          :class="{ 'hcm-no-permision-btn': !authVerifyData.value?.permissionAction?.[actionName] }"
+          :class="{ 'hcm-no-permision-btn': !authVerifyData.permissionAction?.[actionName] }"
           :disabled="
             disabledOption
               || (
-                authVerifyData.value?.permissionAction?.[actionName] && cvmInfo.stop.status.includes(detail.status)
+                authVerifyData.permissionAction?.[actionName] && cvmInfo.stop.status.includes(detail.status)
               )"
           :loading="cvmInfo.stop.loading"
           @click="() => {
-            if (authVerifyData.value?.permissionAction?.[actionName]) handleCvmOperate('stop');
+            if (authVerifyData.permissionAction?.[actionName]) handleCvmOperate('stop');
             else showAuthDialog(actionName);
           }"
         >
@@ -315,7 +315,7 @@ const bktoolTipsOptions = computed(() => {
             <bk-dropdown-menu>
               <bk-dropdown-item
                 @click="() => {
-                  if (authVerifyData.value?.permissionAction?.[actionName]) {
+                  if (authVerifyData.permissionAction?.[actionName]) {
                     handleCvmOperate('destroy')
                   } else {
                     showAuthDialog(actionName);
@@ -326,7 +326,7 @@ const bktoolTipsOptions = computed(() => {
               </bk-dropdown-item>
               <bk-dropdown-item
                 @click="() => {
-                  if (authVerifyData.value?.permissionAction?.[actionName]) {
+                  if (authVerifyData.permissionAction?.[actionName]) {
                     handleCvmOperate('reboot')
                   } else {
                     showAuthDialog(actionName);

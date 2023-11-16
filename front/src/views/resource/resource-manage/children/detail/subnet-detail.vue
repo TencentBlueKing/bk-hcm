@@ -381,7 +381,7 @@ onBeforeMount(() => {
           <bk-button
             class="w100 ml10"
             theme="primary"
-            :disabled="isBindBusiness || authVerifyData?.permissionAction[actionName]"
+            :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]"
             @click="handleDeleteSubnet(detail)"
           >
             {{ t('删除') }}
