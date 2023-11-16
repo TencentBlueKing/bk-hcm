@@ -190,6 +190,18 @@ export default defineComponent({
       () => selectedFamilyType.value = '',
     );
 
+    watch(
+      () => props.accountId,
+      (newVal, oldVal) => {
+        if (newVal !== oldVal) {
+          checkedInstance.instanceType = '';
+          checkedInstance.typeName = '';
+          checkedInstance.cpu = '';
+          checkedInstance.memory = '';
+        }
+      },
+    );
+
     const computedDisabled = computed(() => {
       return !(props.accountId && props.region && props.vendor && props.zone);
     });
@@ -255,59 +267,75 @@ export default defineComponent({
         </div>
         <Dialog
           isShow={isDialogShow.value}
-          onClosed={() => {
-            isDialogShow.value = false;
-            if (!selected.value) {
-              Object.assign(checkedInstance, {
-                instanceType: '',
-                typeName: '',
-                cpu: '',
-                memory: '',
-              });
-            }
-          }}
           onConfirm={handleChange}
           title='选择机型'
+          closeIcon={false}
           width={1500}>
-          <Form class='selected-block-dialog-form' labelWidth={100} labelPosition='right'>
-            <FormItem label='机型族' >
-              <BkButtonGroup>
-                {instanceFamilyTypesList.value.map(name => (
-                  <Button
-                    selected={selectedFamilyType.value === name}
-                    onClick={() => {
-                      selectedFamilyType.value = name;
-                    }}
-                  >{name}</Button>
-                ))}
-              </BkButtonGroup>
-            </FormItem>
-            <FormItem label='已选'>
-              <div class={'instance-type-search-seletor-container'}>
-                <div class={'selected-block-container'}>
-                  <div class={'selected-block'}>
-                    { checkedInstance.instanceType
-                      ? `${checkedInstance.instanceType}  (${checkedInstance.typeName}, ${checkedInstance.cpu}${checkedInstance.memory})`
-                      : '--' }
-                  </div>
+            {{
+              default: () => (
+              <>
+                <Form
+                  class='selected-block-dialog-form'
+                  labelWidth={100}
+                  labelPosition='right'>
+                  <FormItem label='机型族'>
+                    <BkButtonGroup>
+                      {instanceFamilyTypesList.value.map(name => (
+                        <Button
+                          selected={selectedFamilyType.value === name}
+                          onClick={() => {
+                            selectedFamilyType.value = name;
+                          }}>
+                          {name}
+                        </Button>
+                      ))}
+                    </BkButtonGroup>
+                  </FormItem>
+                  <FormItem label='已选'>
+                    <div class={'instance-type-search-seletor-container'}>
+                      <div class={'selected-block-container'}>
+                        <div class={'selected-block'}>
+                          {checkedInstance.instanceType
+                            ? `${checkedInstance.instanceType}  (${checkedInstance.typeName}, ${checkedInstance.cpu}${checkedInstance.memory})`
+                            : '--'}
+                        </div>
+                      </div>
+                      <SearchSelect
+                        class='w500 instance-type-search-seletor'
+                        v-model={searchVal.value}
+                        data={searchData}
+                      />
+                    </div>
+                  </FormItem>
+                </Form>
+                <Loading loading={loading.value}>
+                  <Table
+                    data={resList.value}
+                    columns={computedColumns.value}
+                    pagination={pagination}
+                    onRowClick={handleOnRowClick}
+                    rowKey={'instance_type'}
+                  />
+                </Loading>
+              </>
+              ),
+              footer: () => (
+                <div>
+                  <Button theme='primary' class={'mr6'} disabled={!checkedInstance.instanceType} onClick={handleChange}> 确认 </Button>
+                  <Button onClick={() => {
+                    isDialogShow.value = false;
+                    if (!selected.value) {
+                      Object.assign(checkedInstance, {
+                        instanceType: '',
+                        typeName: '',
+                        cpu: '',
+                        memory: '',
+                      });
+                    }
+                  }}> 取消 </Button>
                 </div>
-                <SearchSelect
-                  class='w500 instance-type-search-seletor'
-                  v-model={searchVal.value}
-                  data={searchData}
-                />
-              </div>
-            </FormItem>
-          </Form>
-          <Loading loading={loading.value}>
-            <Table
-              data={resList.value}
-              columns={computedColumns.value}
-              pagination={pagination}
-              onRowClick={handleOnRowClick}
-              rowKey={'instance_type'}
-            />
-          </Loading>
+              ),
+            }}
         </Dialog>
       </div>
     );
