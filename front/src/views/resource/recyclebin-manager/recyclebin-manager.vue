@@ -67,7 +67,7 @@
                 :pagination="pagination"
                 @page-value-change="handlePageChange"
                 @page-limit-change="handlePageSizeChange"
-                @selection-change="handleSelectionChange"
+                @selection-change="(selections) => handleSelectionChange(selections, isCurRowSelectEnable)"
                 row-hover="auto"
                 row-key="id"
                 :is-row-select-enable="isRowSelectEnable"
@@ -191,7 +191,8 @@
                         text class="mr10" theme="primary" @click="handleOperate('destroy', [data.id])"
                         v-bk-tooltips="generateTooltipsOptions(data)"
                         :disabled="!authVerifyData?.permissionAction?.recycle_bin_manage
-                          || data?.recycle_type === 'related' || data?.bk_biz_id !== -1">
+                          || data?.recycle_type === 'related'
+                          || ( whereAmI === Senarios.resource && data?.bk_biz_id !== -1)">
                         销毁
                       </bk-button>
                     </span>
@@ -200,7 +201,8 @@
                         text theme="primary" @click="handleOperate('recover', [data.id])"
                         v-bk-tooltips="generateTooltipsOptions(data)"
                         :disabled="!authVerifyData?.permissionAction?.recycle_bin_manage
-                          || data?.recycle_type === 'related' || data?.bk_biz_id !== -1">
+                          || data?.recycle_type === 'related'
+                          || ( whereAmI === Senarios.resource && data?.bk_biz_id !== -1)">
                         恢复
                       </bk-button>
                     </span>
@@ -308,10 +310,19 @@ export default defineComponent({
         id: 'res_id',
       },
     ];
-    const isRowSelectEnable = ({ row }: any) => {
-      if (whereAmI.value === Senarios.resource && row.id) {
-        return row.bk_biz_id === -1;
-      }
+    const isRowSelectEnable = ({ row, isCheckAll }: any) => {
+      if (isCheckAll) return true;
+      // if (whereAmI.value === Senarios.resource && row.id) {
+      //   return row.bk_biz_id === -1;
+      // }
+      return isCurRowSelectEnable(row);
+    };
+
+    const isCurRowSelectEnable = (row: any) => {
+      return !(
+        row?.recycle_type === 'related'
+        || (whereAmI.value === Senarios.resource && row?.bk_biz_id !== -1)
+      );
     };
 
     const state = reactive({
@@ -690,6 +701,9 @@ export default defineComponent({
       handleLink,
       searchData,
       searchVal,
+      whereAmI,
+      Senarios,
+      isCurRowSelectEnable,
     };
   },
 });
