@@ -163,14 +163,22 @@ const canDelete = (data: IEip): boolean => {
         </span>
         <span v-else @click="showAuthDialog(actionName)">
           <bk-button class="w100 ml10" theme="primary" :disabled="disableOperation || detail.instance_type === 'OTHER'
-            || !authVerifyData?.permissionAction[actionName]" @click="handleShowDeleteDialog">
+            || !authVerifyData?.permissionAction[actionName]" @click="handleShowDeleteDialog"
+          >
             {{ t('解绑') }}
           </bk-button>
         </span>
         <span @click="showAuthDialog(actionDeleteName)">
           <bk-button class="w100 ml10" theme="primary" :disabled="!canDelete(detail)
-            && (!!detail.cvm_id || disableOperation || detail.instance_type === 'OTHER'
-              || !authVerifyData?.permissionAction[actionDeleteName])" @click="handleShowDelete">
+                       || (!!detail.cvm_id || disableOperation || detail.instance_type === 'OTHER'
+                         || !authVerifyData?.permissionAction[actionDeleteName])" @click="handleShowDelete"
+                     v-bk-tooltips="{
+                       content: '该弹性IP已被绑定，或者被分配到业务，不能删除',
+                       disabled: !(!canDelete(detail)
+                         || (!!detail.cvm_id || disableOperation || detail.instance_type === 'OTHER'
+                           || !authVerifyData?.permissionAction[actionDeleteName])),
+                     }"
+          >
             {{ t('删除') }}
           </bk-button>
         </span>
