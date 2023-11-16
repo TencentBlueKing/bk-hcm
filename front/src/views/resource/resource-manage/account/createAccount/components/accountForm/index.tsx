@@ -232,12 +232,14 @@ export default defineComponent({
               <p class={'account-form-card-title'}>API 密钥</p>
               <InfoLine fill='#979BA5' />
               <p class={'header-text'}>
-                同一个主账号下,只允许接入一次。如后续对API密钥更新,必须是隶属于同一主账号D。
+                同一个主账号下,只允许接入一次。如后续对API密钥更新,必须是隶属于同一主账号。
               </p>
-              <TextFile fill='#3A84FF' />
-              <Button theme='primary' text class={'header-btn'}>
-                接入指引
-              </Button>
+              <div class='btn-guide-wrap'>
+                <TextFile fill='#3A84FF' />
+                <Button theme='primary' text class={'header-btn'}>
+                  接入指引
+                </Button>
+              </div>
             </div>
             <div class={'account-form-card-content'}>
               <Form
