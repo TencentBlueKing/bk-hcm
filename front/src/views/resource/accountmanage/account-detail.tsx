@@ -154,9 +154,8 @@ export default defineComponent({
     // 动态表单
     const renderBaseInfoForm = (data: any) => {
       let insertFormData: any = [];
-      formBaseInfo = formBaseInfo.filter(e => e.name !== t('密钥信息'));
-      const nameIndex = formBaseInfo[0].data.findIndex(e => e.property === 'name');
-      const managersIndex = formBaseInfo[0].data.findIndex(e => e.property === 'managers');
+      const siteIndex = formBaseInfo[0].data.findIndex(e => e.property === 'site');
+      const creatorIndex = formBaseInfo[0].data.findIndex(e => e.property === 'creator');
       switch (data.vendor) {
         case 'huawei':
           insertFormData = [
@@ -191,50 +190,43 @@ export default defineComponent({
               ),
             },
           ];
-          formBaseInfo[0].data.splice(
-            4,
-            managersIndex - (nameIndex + 1),
-            ...insertFormData,
-          );
-          formBaseInfo.push({
-            name: t('密钥信息'),
-            data: [
-              {
-                label: t('IAM用户 ID'),
-                required: false,
-                property: 'cloud_iam_user_id',
-                component: () => (
-                  <span>
-                    {projectModel.extension.cloud_iam_user_id || '--'}
-                  </span>
-                ),
-              },
-              {
-                label: t('IAM用户名'),
-                required: false,
-                property: 'cloud_iam_username',
-                component: () => (
-                  <span>
-                    {projectModel.extension.cloud_iam_username || '--'}
-                  </span>
-                ),
-              },
-              {
-                label: 'Secret ID',
-                required: false,
-                property: 'cloud_secret_id',
-                component: () => (
-                  <span>{projectModel.extension.cloud_secret_id}</span>
-                ),
-              },
-              {
-                label: 'Secret Key',
-                required: false,
-                property: 'cloud_secret_key',
-                component: () => <span>********</span>,
-              },
-            ],
-          });
+          formBaseInfo[0].data.splice(siteIndex + 1, creatorIndex - (siteIndex + 1), ...insertFormData);
+          formBaseInfo[2].data = [
+            {
+              label: t('IAM用户 ID'),
+              required: false,
+              property: 'cloud_iam_user_id',
+              component: () => (
+                <span>
+                  {projectModel.extension.cloud_iam_user_id || '--'}
+                </span>
+              ),
+            },
+            {
+              label: t('IAM用户名'),
+              required: false,
+              property: 'cloud_iam_username',
+              component: () => (
+                <span>
+                  {projectModel.extension.cloud_iam_username || '--'}
+                </span>
+              ),
+            },
+            {
+              label: 'Secret ID',
+              required: false,
+              property: 'cloud_secret_id',
+              component: () => (
+                <span>{projectModel.extension.cloud_secret_id}</span>
+              ),
+            },
+            {
+              label: 'Secret Key',
+              required: false,
+              property: 'cloud_secret_key',
+              component: () => <span>********</span>,
+            },
+          ];
           break;
         case 'tcloud':
           insertFormData = [
@@ -249,38 +241,31 @@ export default defineComponent({
               ),
             },
           ];
-          formBaseInfo[0].data.splice(
-            4,
-            managersIndex - (nameIndex + 1),
-            ...insertFormData,
-          );
-          formBaseInfo.push({
-            name: t('密钥信息'),
-            data: [
-              {
-                label: 'Secret ID',
-                required: false,
-                property: 'cloud_secret_id',
-                component: () => (
+          formBaseInfo[0].data.splice(siteIndex + 1, creatorIndex - (siteIndex + 1), ...insertFormData);
+          formBaseInfo[2].data = [
+            {
+              label: 'Secret ID',
+              required: false,
+              property: 'cloud_secret_id',
+              component: () => (
                   <span>{projectModel.extension.cloud_secret_id}</span>
-                ),
-              },
-              {
-                label: 'Secret Key',
-                required: false,
-                property: 'cloud_secret_key',
-                component: () => <span>********</span>,
-              },
-              {
-                label: t('子账号 ID'),
-                required: false,
-                property: 'cloud_sub_account_id',
-                component: () => (
+              ),
+            },
+            {
+              label: 'Secret Key',
+              required: false,
+              property: 'cloud_secret_key',
+              component: () => <span>********</span>,
+            },
+            {
+              label: t('子账号 ID'),
+              required: false,
+              property: 'cloud_sub_account_id',
+              component: () => (
                   <span>{projectModel.extension.cloud_sub_account_id}</span>
-                ),
-              },
-            ],
-          });
+              ),
+            },
+          ];
           break;
         case 'aws':
           insertFormData = [
@@ -293,40 +278,33 @@ export default defineComponent({
               ),
             },
           ];
-          formBaseInfo[0].data.splice(
-            4,
-            managersIndex - (nameIndex + 1),
-            ...insertFormData,
-          );
-          formBaseInfo.push({
-            name: t('密钥信息'),
-            data: [
-              {
-                label: t('IAM用户名称:'),
-                required: false,
-                property: 'cloud_iam_username',
-                component: () => (
+          formBaseInfo[0].data.splice(siteIndex + 1, creatorIndex - (siteIndex + 1), ...insertFormData);
+          formBaseInfo[2].data = [
+            {
+              label: t('IAM用户名称'),
+              required: false,
+              property: 'cloud_iam_username',
+              component: () => (
                   <span>
                     {projectModel.extension.cloud_iam_username || '--'}
                   </span>
-                ),
-              },
-              {
-                label: 'Secret ID',
-                required: false,
-                property: 'secretId',
-                component: () => (
+              ),
+            },
+            {
+              label: 'Secret ID',
+              required: false,
+              property: 'secretId',
+              component: () => (
                   <span>{projectModel.extension.cloud_secret_id}</span>
-                ),
-              },
-              {
-                label: 'Secret Key',
-                required: false,
-                property: 'cloud_secret_key',
-                component: () => <span>********</span>,
-              },
-            ],
-          });
+              ),
+            },
+            {
+              label: 'Secret Key',
+              required: false,
+              property: 'cloud_secret_key',
+              component: () => <span>********</span>,
+            },
+          ];
           break;
         case 'azure':
           insertFormData = [
@@ -359,52 +337,45 @@ export default defineComponent({
               ),
             },
           ];
-          formBaseInfo[0].data.splice(
-            4,
-            managersIndex - (nameIndex + 1),
-            ...insertFormData,
-          );
-          formBaseInfo.push({
-            name: t('密钥信息'),
-            data: [
-              {
-                label: t('应用(客户端) ID'),
-                required: false,
-                property: 'cloud_application_id',
-                component: () => (
+          formBaseInfo[0].data.splice(siteIndex + 1, creatorIndex - (siteIndex + 1), ...insertFormData);
+          formBaseInfo[2].data = [
+            {
+              label: t('应用(客户端)ID'),
+              required: false,
+              property: 'cloud_application_id',
+              component: () => (
                   <span>
                     {projectModel.extension.cloud_application_id || '--'}
                   </span>
-                ),
-              },
-              {
-                label: t('应用程序名称'),
-                required: false,
-                property: 'cloud_application_name',
-                component: () => (
+              ),
+            },
+            {
+              label: t('应用程序名称'),
+              required: false,
+              property: 'cloud_application_name',
+              component: () => (
                   <span>
                     {projectModel.extension.cloud_application_name || '--'}
                   </span>
-                ),
-              },
-              {
-                label: t('客户端密钥 ID'),
-                required: false,
-                property: 'cloud_client_secret_id',
-                component: () => (
+              ),
+            },
+            {
+              label: t('客户端密钥 ID'),
+              required: false,
+              property: 'cloud_client_secret_id',
+              component: () => (
                   <span>
                     {projectModel.extension.cloud_client_secret_id || '--'}
                   </span>
-                ),
-              },
-              {
-                label: t('客户端密钥'),
-                required: false,
-                property: 'cloud_client_secret_key',
-                component: () => <span>********</span>,
-              },
-            ],
-          });
+              ),
+            },
+            {
+              label: t('客户端密钥'),
+              required: false,
+              property: 'cloud_client_secret_key',
+              component: () => <span>********</span>,
+            },
+          ];
           break;
         case 'gcp':
           insertFormData = [
@@ -425,48 +396,41 @@ export default defineComponent({
               ),
             },
           ];
-          formBaseInfo[0].data.splice(
-            4,
-            managersIndex - (nameIndex + 1),
-            ...insertFormData,
-          );
-          formBaseInfo.push({
-            name: t('密钥信息'),
-            data: [
-              {
-                label: t('服务账号 ID'),
-                required: false,
-                property: 'cloud_service_account_id',
-                component: () => (
+          formBaseInfo[0].data.splice(siteIndex + 1, creatorIndex - (siteIndex + 1), ...insertFormData);
+          formBaseInfo[2].data = [
+            {
+              label: t('服务账号 ID'),
+              required: false,
+              property: 'cloud_service_account_id',
+              component: () => (
                   <span>{projectModel.extension.cloud_service_account_id}</span>
-                ),
-              },
-              {
-                label: t('服务账号名称'),
-                required: false,
-                property: 'cloud_service_account_name',
-                component: () => (
+              ),
+            },
+            {
+              label: t('服务账号名称'),
+              required: false,
+              property: 'cloud_service_account_name',
+              component: () => (
                   <span>
                     {projectModel.extension.cloud_service_account_name}
                   </span>
-                ),
-              },
-              {
-                label: 'Secret ID',
-                required: false,
-                property: 'secretId',
-                component: () => (
+              ),
+            },
+            {
+              label: 'Secret ID',
+              required: false,
+              property: 'secretId',
+              component: () => (
                   <span>{projectModel.extension.cloud_service_secret_id}</span>
-                ),
-              },
-              {
-                label: 'Secret Key',
-                required: false,
-                property: 'cloud_secret_key',
-                component: () => <span>********</span>,
-              },
-            ],
-          });
+              ),
+            },
+            {
+              label: 'Secret Key',
+              required: false,
+              property: 'cloud_secret_key',
+              component: () => <span>********</span>,
+            },
+          ];
           break;
         default:
           break;
@@ -635,7 +599,7 @@ export default defineComponent({
     //   updateFormData('bizIds');    // 更新数据
     // };
 
-    let formBaseInfo = reactive([
+    const formBaseInfo = reactive([
       {
         name: t('基本信息'),
         data: [
@@ -673,7 +637,7 @@ export default defineComponent({
           {
             label: t('站点类型'),
             required: false,
-            property: 'price',
+            property: 'site',
             component: () => <span>{SiteType[projectModel.site]}</span>,
           },
           {
@@ -783,6 +747,10 @@ export default defineComponent({
             },
           },
         ],
+      },
+      {
+        name: '密钥信息',
+        data: [],
       },
     ]);
 
