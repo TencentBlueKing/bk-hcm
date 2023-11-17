@@ -264,6 +264,7 @@ func (g *Gcp) DetachDisk(kt *kit.Kit, opt *disk.GcpDiskDetachOption) error {
 		Do()
 	if err != nil {
 		logs.Errorf("detach disk failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
+		return err
 	}
 
 	handler := &detachDiskPollingHandler{
