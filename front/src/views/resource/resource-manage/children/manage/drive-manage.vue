@@ -124,7 +124,7 @@ const renderColumns = [
               onClick() {
                 InfoBox({
                   title: '请确认是否回收',
-                  subTitle: `将回收 【 ${data.cloud_id} - ${data.name} 】`,
+                  subTitle: `将回收【${data.id} - ${data.name}】`,
                   // @ts-ignore
                   theme: 'danger',
                   headerAlign: 'center',

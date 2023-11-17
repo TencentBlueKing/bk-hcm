@@ -224,6 +224,15 @@ export default defineComponent({
       handleChangeCheckedInstance(row);
     };
 
+    const bkTooltipsOptions = computed(() => {
+      if (checkedInstance.instanceType) return {
+        content: `${checkedInstance.instanceType} (${checkedInstance.typeName}, ${checkedInstance.cpu}${checkedInstance.memory})`,
+      };
+      return {
+        content: '--',
+      };
+    });
+
     return () => (
       // <Select
       //   filterable={true}
@@ -251,8 +260,8 @@ export default defineComponent({
         <div class={'selected-block-container'}>
           {
             selected.value ? (
-              <div class={'selected-block mr8'}>
-                { `${checkedInstance.instanceType}  (${checkedInstance.typeName}, ${checkedInstance.cpu}${checkedInstance.memory})` }
+              <div class={'selected-block mr8'} v-BkTooltips={bkTooltipsOptions.value}>
+                { `${checkedInstance.instanceType} (${checkedInstance.typeName}, ${checkedInstance.cpu}${checkedInstance.memory})` }
               </div>
             ) : null
           }
@@ -294,7 +303,7 @@ export default defineComponent({
                   <FormItem label='已选'>
                     <div class={'instance-type-search-seletor-container'}>
                       <div class={'selected-block-container'}>
-                        <div class={'selected-block'}>
+                        <div class={'selected-block'} v-BkTooltips={bkTooltipsOptions.value}>
                           {checkedInstance.instanceType
                             ? `${checkedInstance.instanceType}  (${checkedInstance.typeName}, ${checkedInstance.cpu}${checkedInstance.memory})`
                             : '--'}

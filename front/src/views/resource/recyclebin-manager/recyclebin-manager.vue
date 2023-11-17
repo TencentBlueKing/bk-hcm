@@ -398,6 +398,7 @@ export default defineComponent({
           message: '配置成功',
         });
         isSettingDialogShow.value = false;
+        resourceAccountStore.resourceAccount.recycle_reserve_time = recycleReserveTime.value;
       } finally {
         isSettingDialogLoading.value = false;
       }

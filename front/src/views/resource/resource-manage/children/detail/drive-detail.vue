@@ -78,7 +78,7 @@ const settingFields = ref<any[]>([
     name: '账号',
     prop: 'account_id',
     link(val: string) {
-      return `/#/resource/account/detail/?id=${val}`;
+      return `/#/resource/account/detail/?accountId=${route.query.accountId}&id=${val}`;
     },
   },
   {
@@ -109,11 +109,18 @@ const settingFields = ref<any[]>([
     prop: 'zone',
   },
   {
-    name: '磁盘类型',
+    name: '硬盘分类',
+    prop: 'is_system_disk',
+    render(cell: boolean) {
+      return cell ? '系统盘' : '数据盘';
+    },
+  },
+  {
+    name: '硬盘类型',
     prop: 'disk_type',
   },
   {
-    name: '磁盘容量(GB)',
+    name: '硬盘容量(GB)',
     prop: 'disk_size',
   },
   {
@@ -251,7 +258,7 @@ const {
             prop: 'resource_group_name',
           },
           {
-            name: '磁盘类型',
+            name: '硬盘类型',
             prop: 'sku_name',
           },
         ]);
@@ -320,7 +327,7 @@ const disabledOption = computed(() => {
   // 资源下，判断是否分配业务，是否已被回收
   return detail.value?.bk_biz_id !== -1 || detail.value?.recycle_status === 'recycling';
 });
-const bktoolTipsOptions = computed(() => {
+const bkTooltipsOptions = computed(() => {
   // 无权限
   // if (!authVerifyData.value?.permissionAction?.[actionName.value]) return {
   //     content: '当前用户无权限操作该按钮',
@@ -356,15 +363,20 @@ const bktoolTipsOptions = computed(() => {
     <detail-header>
       云硬盘：ID（{{ detail.id }}）
       <template #right>
-        <bk-button v-if="!detail.instance_id" v-bk-tooltips="bktoolTipsOptions || { disabled: true }" class="w100 ml10"
+        <bk-button v-if="!detail.instance_id" v-bk-tooltips="bkTooltipsOptions || { disabled: true }" class="w100 ml10"
                    theme="primary" :disabled="disabledOption" @click="handleMountedDrive">
           {{ t('挂载') }}
         </bk-button>
-        <bk-button v-else v-bk-tooltips="bktoolTipsOptions || { disabled: true }" class="w100 ml10" theme="primary"
-                   :disabled="disabledOption" @click="handleUninstallDrive(detail)">
+        <bk-button
+          v-else class="w100 ml10" theme="primary"
+          v-bk-tooltips="bkTooltipsOptions || (detail.is_system_disk ? {
+            content: '该硬盘是系统盘，不允许卸载',
+            disabled: !detail.is_system_disk,
+          } : { disabled: true })"
+          :disabled="disabledOption || detail.is_system_disk" @click="handleUninstallDrive(detail)">
           {{ t('卸载') }}
         </bk-button>
-        <bk-button v-bk-tooltips="bktoolTipsOptions || {
+        <bk-button v-bk-tooltips="bkTooltipsOptions || {
                      content: '该硬盘已绑定主机，不可单独回收',
                      disabled: !detail.instance_id,
                    }" class="w100 ml10" theme="primary" :disabled="!!detail.instance_id || disabledOption"

@@ -162,6 +162,28 @@ export default defineComponent({
       },
     );
 
+    const currentIndex = ref(-1);
+    const handleSecurityGroupChange = async (isSelected: boolean, item: any, index: number) => {
+      if (isSelected) {
+        currentIndex.value = index;
+        isRulesTableLoading.value = true;
+        const res = await http.post(
+          `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${props.vendor}/security_groups/${item.id}/rules/list`,
+          {
+            filter: {  op: 'and', rules: [] },
+            page: { count: false, start: 0, limit: 500 },
+          },
+        );
+        const arr = res.data?.details || [];
+        securityGroupRules.value.push({ id: item.cloud_id, data: arr });
+        securityGroupKVMap.value.set(item.cloud_id, item.name);
+        isRulesTableLoading.value = false;
+      } else {
+        securityGroupRules.value = securityGroupRules.value.filter(({ id }) => id !== item.cloud_id);
+        securityGroupKVMap.value.delete(item.cloud_id);
+      }
+    };
+
     return () => (
       <div>
         {selected.value?.length ? (
@@ -208,66 +230,39 @@ export default defineComponent({
           }
         </div>
         <Dialog
+          class={'security-dialog-wrap'}
           isShow={isDialogShow.value}
           onClosed={() => (isDialogShow.value = false)}
           onConfirm={() => {
             // selected.value = [...Array.from(securityGroupKVMap.value).map(([k, _val]) => k)];
             selected.value = securityGroupRules.value.map(({ id }) => id);
             props.onSelectedChange(selected.value);
+            // props.onSelectedChange(props.vendor === VendorEnum.AZURE ? selected.value?.[0] : selected.value);
             isDialogShow.value = false;
           }}
           title='选择安全组'
           width={1500}>
           <div class={'security-container'}>
-            <div class={'fixed-security-list'}>
+            <div class={'security-list g-scroller'}>
               <Input
                 class={'search-input'}
                 placeholder='搜索安全组'
                 type='search'
                 clearable
                 v-model={searchVal.value}/>
-              <Loading loading={loading.value}>
-                <div>
+              <Loading loading={loading.value} class={'mt8'}>
+                <div class={'security-search-list'} >
                   {
                     list.value.length
-                      ? list.value.map(item => (
+                      ? list.value.map((item, index) => (
                       <div class={'security-search-item'}>
                         <Checkbox
+                          disabled={
+                            props.vendor === VendorEnum.AZURE && securityGroupRules.value.length > 0
+                              && currentIndex.value !== index
+                          }
                           label={'data.cloud_id'}
-                          onChange={async (isSelected: boolean) => {
-                            if (isSelected) {
-                              isRulesTableLoading.value = true;
-                              const res = await http.post(
-                                `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${props.vendor}/security_groups/${item.id}/rules/list`,
-                                {
-                                  filter: {
-                                    op: 'and',
-                                    rules: [],
-                                  },
-                                  page: {
-                                    count: false,
-                                    start: 0,
-                                    limit: 500,
-                                  },
-                                },
-                              );
-                              const arr = res.data?.details || [];
-                              securityGroupRules.value.push({
-                                id: item.cloud_id,
-                                data: arr,
-                              });
-                              securityGroupKVMap.value.set(
-                                item.cloud_id,
-                                item.name,
-                              );
-                              isRulesTableLoading.value = false;
-                            } else {
-                              securityGroupRules.value = securityGroupRules.value.filter(({
-                                id,
-                              }) => id !== item.cloud_id);
-                              securityGroupKVMap.value.delete(item.cloud_id);
-                            }
-                          }}>
+                          onChange={(isSelected: boolean) => handleSecurityGroupChange(isSelected, item, index)}>
                           {item.name}
                         </Checkbox>
                       </div>
@@ -285,12 +280,12 @@ export default defineComponent({
                 </div>
               </Loading>
             </div>
-            <div class={'security-group-rules-container'}></div>
-            <div>
+            {/* <div class={'security-group-rules-container'}></div>*/}
+            <div class={'security-group-rules-wrap'}>
               <Loading loading={isRulesTableLoading.value}>
                 <div class={'security-group-rules-container'}>
                   <div class={'security-group-rules-btn-group-container'}>
-                    <BkButtonGroup class={'security-group-rules-btn-group'}>
+                    <BkButtonGroup>
                       <Button
                         selected={selectedSecurityType.value === SECURITY_GROUP_RULE_TYPE.EGRESS}
                         onClick={() => selectedSecurityType.value = SECURITY_GROUP_RULE_TYPE.EGRESS}
@@ -305,7 +300,6 @@ export default defineComponent({
                       </Button>
                     </BkButtonGroup>
                     <Button
-                      class={'security-group-rules-expand-btn'}
                       onClick={() => isAllExpand.value = !isAllExpand.value}
                     >
                       {
@@ -321,6 +315,7 @@ export default defineComponent({
                     v-model={securityGroupRules.value}
                     animation={200}
                     handle='.draggable-card-header-draggable-btn'
+                    class={'security-group-rules-list g-scroller'}
                   >
                     {computedSecurityGroupRules.value.length ? (
                       <TransitionGroup type='transition' name='fade'>

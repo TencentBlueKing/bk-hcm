@@ -39,7 +39,7 @@ const { getRegionName } = useRegionsStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
 const { whereAmI } = useWhereAmI();
 
-const VPCFields: any = ref([
+const VPCFields = ref([
   {
     name: '资源 ID',
     prop: 'id',
@@ -61,7 +61,7 @@ const VPCFields: any = ref([
     name: '账号',
     prop: 'account_id',
     link(val: string) {
-      return `/#/resource/account/detail/?id=${val}`;
+      return `/#/resource/account/detail/?accountId=${route.query.accountId}&id=${val}`;
     },
   },
   {
