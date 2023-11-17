@@ -5,6 +5,7 @@ import { QueryRuleOPEnum } from '@/typings';
 import { VendorEnum } from '@/common/constant';
 import { EditLine, Plus } from 'bkui-vue/lib/icon';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
+import './image-selector.scss';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 const { FormItem } = Form;
@@ -238,11 +239,22 @@ export default defineComponent({
     //   </Select>
     // );
 
+    const bkTooltipsOptions = computed(() => {
+      if (checkedImageId.value) return {
+        content: `${checkedImageName.value} (${checkedImageId.value} | ${checkedImageArchitecture.value})`,
+      };
+      return {
+        content: '--',
+      };
+    });
+
     return () => (
       <div>
         <div class={'selected-block-container'}>
           {selected.value ? (
-            <div class={'selected-block mr8'}>{`${checkedImageName.value}  (${checkedImageId.value})`}</div>
+            <div class={'selected-block mr8'} v-BkTooltips={bkTooltipsOptions.value}>
+              {`${checkedImageName.value} (${checkedImageId.value} | ${checkedImageArchitecture.value})`}
+            </div>
           ) : null}
           {selected.value ? (
             <EditLine
@@ -299,7 +311,7 @@ export default defineComponent({
             <FormItem label='已选'>
               <div class={'instance-type-search-seletor-container'}>
                 <div class={'selected-block-container'}>
-                  <div class={'selected-block'}>
+                  <div class={'selected-block'} v-BkTooltips={bkTooltipsOptions.value}>
                     {
                       checkedImageId.value
                         ? `${checkedImageName.value}  (${checkedImageId.value}  |  ${checkedImageArchitecture.value})`

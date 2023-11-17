@@ -5,10 +5,15 @@
   .selected-block {
     margin-right: 18.25px;
     padding: 0 16px;
+    max-width: 435px;
     height: 32px;
     background: #f0f5ff;
     border: 1px solid #a3c5fd;
     border-radius: 2px;
-    line-height: 32px;    
+    line-height: 32px;
+    white-space: nowrap;
+    word-break: break-all;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }

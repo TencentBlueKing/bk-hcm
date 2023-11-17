@@ -652,8 +652,7 @@ export default defineComponent({
                   multiple={cond.vendor !== VendorEnum.AZURE}
                   vendor={cond.vendor}
                   vpcId={vpcId.value}
-                  onSelectedChange={val => (formData.cloud_security_group_ids = val)
-                  }
+                  onSelectedChange={val => (formData.cloud_security_group_ids = val)}
                 />
                 {/* {
                   isResourcePage
