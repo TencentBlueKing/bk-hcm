@@ -870,6 +870,7 @@ export default defineComponent({
                 property: 'password',
                 content: () => (
                   <Input
+                    style={{ width: '249px' }}
                     type='password'
                     placeholder='密码'
                     v-model={formData.password}></Input>
@@ -879,6 +880,7 @@ export default defineComponent({
                 property: 'confirmed_password',
                 content: () => (
                   <Input
+                    style={{ width: '249px' }}
                     type='password'
                     placeholder='确认密码'
                     v-model={formData.confirmed_password}></Input>
