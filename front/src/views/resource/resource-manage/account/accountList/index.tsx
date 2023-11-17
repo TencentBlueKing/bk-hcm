@@ -17,6 +17,7 @@ export default defineComponent({
     const router = useRouter();
     const {
       handleExpand,
+      checkIsExpand,
       getAllVendorsAccountsList,
       accountsMatrix,
       isLoading,
@@ -131,6 +132,7 @@ export default defineComponent({
               accounts={accountsMatrix}
               handleExpand={handleExpand}
               handleSelect={setAccountId}
+              checkIsExpand={checkIsExpand}
             />
           )}
         </Loading>

@@ -210,7 +210,7 @@ export default defineComponent({
         ) : (
           <Button
             onClick={() => (isDialogShow.value = true)}
-            disabled={computedDisabled.value}>
+            disabled={computedDisabled.value || list.value.length === 0}>
             <Plus class='f20' />
             选择安全组
           </Button>
@@ -221,7 +221,7 @@ export default defineComponent({
               ? null
               : (
                 <div class={'security-selector-tips'}>
-                  无可用的安全组,可 <Button theme='primary' text onClick={() => {
+                  无可用的安全组，可 <Button theme='primary' text onClick={() => {
                   const url = '/#/resource/resource?type=security';
                   window.open(url, '_blank');
                 }}>新建安全组</Button>
@@ -287,6 +287,7 @@ export default defineComponent({
                   <div class={'security-group-rules-btn-group-container'}>
                     <BkButtonGroup>
                       <Button
+                        style={{ marginLeft: '1px' }}
                         selected={selectedSecurityType.value === SECURITY_GROUP_RULE_TYPE.EGRESS}
                         onClick={() => selectedSecurityType.value = SECURITY_GROUP_RULE_TYPE.EGRESS}
                       >
@@ -300,6 +301,7 @@ export default defineComponent({
                       </Button>
                     </BkButtonGroup>
                     <Button
+                      style={{ marginRight: '1px' }}
                       onClick={() => isAllExpand.value = !isAllExpand.value}
                     >
                       {
@@ -328,6 +330,7 @@ export default defineComponent({
                               <Table
                                 data={data}
                                 columns={securityRulesColumns}
+                                showOverflowTooltip
                               />
                             </DraggableCard>
                         ))}

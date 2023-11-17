@@ -25,6 +25,10 @@
 
   .bk-modal-content {
     overflow: hidden !important;
+
+    .bk-nested-loading {
+      height: 100%;
+    }
   }
 
   .bk-modal-close {
@@ -52,10 +56,10 @@
     .security-group-rules-container {
       display: flex;
       flex-direction: column;
+      height: 100%;
 
       .security-group-rules-list {
         flex: 1;
-
 
         .draggable-container {
           .draggable-card-container {
@@ -76,7 +80,16 @@
   height: 36px;
   line-height: 36px;
 
+  .bk-checkbox {
+    width: 100%;
+  }
+
+  .bk-checkbox-input {
+    flex-shrink: 0;
+  }
+
   .bk-checkbox-label {
+    flex: 1;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;

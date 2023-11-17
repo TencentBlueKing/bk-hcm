@@ -2,6 +2,7 @@ import http from '@/http';
 import { defineStore } from 'pinia';
 
 import { useAccountStore } from '@/store';
+import { VendorEnum } from '@/common/constant';
 // import { json2Query } from '@/common/util';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
@@ -18,10 +19,14 @@ export const useResourceStore = defineStore({
   id: 'resourceStore',
   state: () => ({
     securityRuleDetail: {},
+    vendorOfCurrentResource: '' as VendorEnum,
   }),
   actions: {
     setSecurityRuleDetail(data: any) {
       this.securityRuleDetail = data;
+    },
+    setVendorOfCurrentResource(vendorName: VendorEnum) {
+      this.vendorOfCurrentResource = vendorName;
     },
     /**
      * @description: 获取资源列表
