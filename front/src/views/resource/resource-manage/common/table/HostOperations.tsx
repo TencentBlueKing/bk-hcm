@@ -421,7 +421,7 @@ export default defineComponent({
           onConfirm={handleConfirm}
           title={computedTitle.value}
           ref={dialogRef}
-          width={1200}
+          width={1500}
           closeIcon={!isLoading.value}>
           {{
             default: () => (

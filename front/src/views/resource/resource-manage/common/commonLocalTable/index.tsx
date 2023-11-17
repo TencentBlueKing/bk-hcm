@@ -72,6 +72,7 @@ export default defineComponent({
             data={localData.value}
             columns={props.columns}
             pagination={pagination}
+            showOverflowTooltip
           />
         </Loading>
       </>
