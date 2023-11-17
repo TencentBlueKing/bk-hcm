@@ -429,6 +429,15 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       },
     },
     {
+      label: '硬盘分类',
+      field: 'is_system_disk',
+      sort: true,
+      isDefaultShow: true,
+      render({ cell }: { cell: boolean }) {
+        return h('span', [cell ? '系统盘' : '数据盘']);
+      },
+    },
+    {
       label: '类型',
       field: 'disk_type',
       sort: true,
