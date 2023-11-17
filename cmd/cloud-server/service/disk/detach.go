@@ -96,6 +96,20 @@ func (svc *diskSvc) detachDisk(cts *rest.Contexts, validHandler handler.ValidWit
 		break
 	}
 
+	// 检查是否系统盘
+	disk, err := svc.client.DataService().Global.ListDisk(cts.Kit, &core.ListReq{
+		Filter: tools.EqualExpression("id", req.DiskID),
+		Page:   core.NewDefaultBasePage(),
+	})
+	if err != nil {
+		logs.Errorf("fail to query disk info, err: %v, diskId: %s, rid:%s", err, req.DiskID, cts.Kit.Rid)
+		return nil, err
+	}
+	// 系统盘不允许卸载
+	if disk.Details[0].IsSystemDisk {
+		return nil, errf.Newf(errf.InvalidParameter, "system disk[%s] is not allowed to be detached.", req.DiskID)
+	}
+
 	err = svc.diskLgc.DetachDisk(cts.Kit, vendor, cvmID, req.DiskID)
 	if err != nil {
 		logs.Errorf("detach disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
