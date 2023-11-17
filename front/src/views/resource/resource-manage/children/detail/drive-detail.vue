@@ -78,7 +78,7 @@ const settingFields = ref<any[]>([
     name: '账号',
     prop: 'account_id',
     link(val: string) {
-      return `/#/resource/account/detail/?accountId=${route.query.accountId}&id=${val}`;
+      return `/#/resource/account/detail/?accountId=${val}&id=${val}`;
     },
   },
   {

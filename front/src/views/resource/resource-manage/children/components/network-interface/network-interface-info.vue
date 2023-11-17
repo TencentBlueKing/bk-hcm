@@ -3,7 +3,6 @@ import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info
 import { ref, watch } from 'vue';
 import { CloudType } from '@/typings';
 import { useRegionsStore } from '@/store/useRegionsStore';
-import { useRoute } from 'vue-router';
 
 const props = defineProps({
   detail: {
@@ -11,7 +10,6 @@ const props = defineProps({
   },
 });
 
-const route = useRoute();
 const { getRegionName } = useRegionsStore();
 
 const fields = ref([
@@ -34,7 +32,7 @@ const fields = ref([
     name: '账号',
     prop: 'account_id',
     link(val: string) {
-      return `/#/resource/account/detail/?accountId=${route.query.accountId}&id=${val}`;
+      return `/#/resource/account/detail/?accountId=${val}&id=${val}`;
     },
   },
   {

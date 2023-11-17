@@ -1,9 +1,11 @@
-import { PropType, defineComponent } from 'vue';
+import { PropType, defineComponent, watch } from 'vue';
 import './index.scss';
 import successAccount from '@/assets/image/success-account.png';
 import failedAccount from '@/assets/image/failed-account.png';
 import { VendorEnum } from '@/common/constant';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
+import { useRoute } from 'vue-router';
+import { useResourceStore } from '@/store';
 
 export default defineComponent({
   props: {
@@ -28,9 +30,25 @@ export default defineComponent({
       required: true,
       type: Function as PropType<(id: string) => void>,
     },
+    checkIsExpand: {
+      required: true,
+      type: Function as PropType<(vendor: VendorEnum) => boolean>,
+    },
   },
   setup(props) {
     const resourceAccountStore = useResourceAccountStore();
+    const resourceStore = useResourceStore();
+    const route = useRoute();
+
+    watch(() => route.query.accountId, (newVal, oldVal) => {
+      if (!oldVal && newVal) {
+        // 如果是从全部账号下进入详情页, 此时点击账号id是没有 oldVal 的. 如果 newVal 对应的厂商在账号列表中没有展开, 那么将之展开即可.
+        const { vendorOfCurrentResource } = resourceStore;
+        if (props.checkIsExpand(vendorOfCurrentResource)) return;
+        props.handleExpand(vendorOfCurrentResource);
+      }
+    });
+
     return () => (
       <div class={'vendor-account-list'}>
         {props.accounts.map(({ vendor, count, name, icon, accounts, isExpand }) => (
