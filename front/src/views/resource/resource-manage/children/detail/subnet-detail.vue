@@ -30,6 +30,7 @@ import {
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import router from '@/router';
 
 const { getNameFromBusinessMap } = useBusinessMapStore();
 const { whereAmI } = useWhereAmI();
@@ -347,6 +348,7 @@ const handleDeleteSubnet = (data: any) => {
                   theme: 'success',
                   message: '删除成功',
                 });
+                router.back();
               });
           },
         });
