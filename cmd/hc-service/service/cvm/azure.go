@@ -42,7 +42,7 @@ import (
 func (svc *cvmSvc) initAzureCvmService(cap *capability.Capability) {
 	h := rest.NewHandler()
 
-	h.Add("BatchCreateAzureCvm", http.MethodPost, "/vendors/azure/cvms/batch/create", svc.BatchCreateAzureCvm)
+	h.Add("CreateAzureCvm", http.MethodPost, "/vendors/azure/cvms/create", svc.CreateAzureCvm)
 	h.Add("StartAzureCvm", http.MethodPost, "/vendors/azure/cvms/{id}/start", svc.StartAzureCvm)
 	h.Add("StopAzureCvm", http.MethodPost, "/vendors/azure/cvms/{id}/stop", svc.StopAzureCvm)
 	h.Add("RebootAzureCvm", http.MethodPost, "/vendors/azure/cvms/{id}/reboot", svc.RebootAzureCvm)
@@ -51,8 +51,8 @@ func (svc *cvmSvc) initAzureCvmService(cap *capability.Capability) {
 	h.Load(cap.WebService)
 }
 
-// BatchCreateAzureCvm ...
-func (svc *cvmSvc) BatchCreateAzureCvm(cts *rest.Contexts) (interface{}, error) {
+// CreateAzureCvm ...
+func (svc *cvmSvc) CreateAzureCvm(cts *rest.Contexts) (interface{}, error) {
 	req := new(protocvm.AzureCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
