@@ -24,10 +24,10 @@ export default defineComponent({
       resource_group: '' as string, // 资源组
       region: '' as string, // 云地域
       zone: '' as string, // 可用区
-      cloud_vpc_id: 0 as number, // 所属的VPC网络
+      cloud_vpc_id: '', // 所属的VPC网络
       name: '' as string, // 子网名称
       ipv4_cidr: '' as string | string[], // IPV4 CIDR
-      cloud_route_table_id: 0 as number, // 关联的路由表,
+      cloud_route_table_id: '', // 关联的路由表,
       gateway_ip: '' as string, // 网关地址
     });
     const formRef = ref(null);
