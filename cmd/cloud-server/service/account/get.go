@@ -24,6 +24,7 @@ import (
 
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/cc"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
@@ -93,11 +94,11 @@ func (a *accountSvc) Get(cts *rest.Contexts) (interface{}, error) {
 	}
 }
 
-func convertRecycleReverseTime(ori int) int {
-	if ori == -1 {
+func convertRecycleReverseTime(val int) int {
+	if val == constant.UnsetRecycleTime {
 		return int(cc.CloudServer().Recycle.AutoDeleteTime)
 	}
-	return ori
+	return val
 }
 
 // GetAccountBySecret 根据秘钥获取账号信息
