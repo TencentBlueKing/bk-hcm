@@ -625,7 +625,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '关联的公网IP地址',
       field: 'public_ip',
-      sort: true,
+      // 目前公网IP地址不支持排序
+      // sort: true,
       isDefaultShow: true,
       render({ data }: any) {
         return [
