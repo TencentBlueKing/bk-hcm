@@ -56,7 +56,7 @@ export const useAllVendorsAccounts = () => {
     },
   ]);
 
-  const checkIsExpand = (vendorName: VendorEnum) => accountsMatrix.find(item => item.vendor === vendorName).isExpand;
+  const checkIsExpand = (vendorName: VendorEnum) => accountsMatrix.find(item => item.vendor === vendorName)?.isExpand;
 
   const handleExpand = (vendorName: VendorEnum) => {
     for (const item of accountsMatrix) {
