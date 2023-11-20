@@ -73,7 +73,8 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 
 	if opt.BootMap != nil {
 		for i, d := range diskFromCloud {
-			_, diskFromCloud[i].Boot = opt.BootMap[d.Id]
+			_, exists := opt.BootMap[d.GetCloudID()]
+			diskFromCloud[i].Boot = converter.ValToPtr(exists)
 		}
 	}
 
@@ -167,7 +168,7 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, updateMap map[strin
 			ID:           id,
 			Memo:         converter.ValToPtr(one.Description),
 			Status:       one.Status,
-			IsSystemDisk: converter.ValToPtr(one.Boot),
+			IsSystemDisk: one.Boot,
 			Extension: &coredisk.HuaWeiExtension{
 				ChargeType:  one.DiskChargeType,
 				ExpireTime:  one.ExpireTime,
@@ -233,7 +234,7 @@ func (cli *client) createDisk(kt *kit.Kit, accountID string, region string,
 			DiskType:     one.VolumeType,
 			Status:       one.Status,
 			Memo:         converter.ValToPtr(one.Description),
-			IsSystemDisk: one.Boot,
+			IsSystemDisk: converter.PtrToVal(one.Boot),
 			Extension: &coredisk.HuaWeiExtension{
 				ChargeType:  one.DiskChargeType,
 				ExpireTime:  one.ExpireTime,
@@ -440,7 +441,7 @@ func isDiskChange(cloud adaptordisk.HuaWeiDisk, db *coredisk.Disk[coredisk.HuaWe
 		return true
 	}
 
-	if cloud.Boot != db.IsSystemDisk {
+	if cloud.Boot != nil && *cloud.Boot != db.IsSystemDisk {
 		return true
 	}
 
