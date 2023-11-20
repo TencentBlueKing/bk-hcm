@@ -1310,8 +1310,15 @@ export default defineComponent({
             </div>
           </Form>
           <div class={'purchase-cvm-bottom-bar-info'}>
-            <div>费用：</div>
-            <div class={'purchase-cvm-cost'}>{cost.value}</div>
+            {
+              (cond.vendor === VendorEnum.TCLOUD || cond.vendor === VendorEnum.HUAWEI)
+                && (
+                  <div class={'purchase-cvm-cost-wrap'}>
+                    <div>费用：</div>
+                    <div class={'purchase-cvm-cost'}>{cost.value}</div>
+                  </div>
+                )
+            }
             <Button
               theme='primary'
               loading={submitting.value || isSubmitBtnLoading.value}

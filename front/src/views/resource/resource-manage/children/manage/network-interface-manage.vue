@@ -43,6 +43,10 @@ const {
 
 const selectSearchData = computed(() => {
   return [
+    {
+      name: '接口 ID',
+      id: 'cloud_id',
+    },
     ...searchData.value,
     ...[{
       name: '公网ipv4',

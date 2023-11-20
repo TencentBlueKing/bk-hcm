@@ -4,9 +4,10 @@ import {
   watch,
   ref,
   inject,
-  computed,
+  computed, withDirectives,
 } from 'vue';
 import {
+  bkTooltips,
   Button,
 } from 'bkui-vue';
 
@@ -78,6 +79,25 @@ const {
   handleUninstallDrive,
   UninstallDrive,
 } = useUninstallDrive();
+
+const generateTooltipsOptions = (data: any) => {
+  if (!authVerifyData.value?.permissionAction?.[actionName.value]) return {
+    content: '当前用户无权限操作该按钮',
+    disabled: authVerifyData.value?.permissionAction?.[actionName.value],
+  };
+  if (isResourcePage.value && props.data?.bk_biz_id !== -1) return {
+    content: '该主机已分配到业务，仅可在业务下操作',
+    disabled: props.data.bk_biz_id === -1,
+  };
+  if (data?.is_system_disk) return {
+    content: '系统盘不可以卸载',
+    disabled: !data.is_system_disk,
+  }
+
+  return {
+    disabled: true,
+  };
+};
 
 const columns = ref([
   {
@@ -178,20 +198,23 @@ const columns = ref([
           },
         },
         [
-          h(
-            Button,
-            {
-              text: true,
-              theme: 'primary',
-              disabled: data.is_system_disk || !authVerifyData.value?.permissionAction[actionName.value],
-              onClick() {
-                handleUninstallDrive(data);
+          withDirectives(h(
+              Button,
+              {
+                text: true,
+                theme: 'primary',
+                disabled: !authVerifyData.value?.permissionAction[actionName.value] || data.is_system_disk
+                    || (isResourcePage.value && props.data?.bk_biz_id !== -1),
+                onClick() {
+                  handleUninstallDrive(data);
+                },
               },
-            },
-            [
-              '卸载',
-            ],
-          )],
+              [
+                '卸载',
+              ],
+          ), [
+              [bkTooltips, generateTooltipsOptions(data)]
+          ])],
       );
     },
   },

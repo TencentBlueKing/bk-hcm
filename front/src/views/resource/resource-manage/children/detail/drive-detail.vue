@@ -295,11 +295,12 @@ const {
 const handleShowDelete = () => {
   InfoBox({
     title: '请确认是否回收',
-    subTitle: `将回收【${detail.value.name}】`,
+    subTitle: `将回收【${detail.value.cloud_id}${detail.value.name ? ` - ${detail.value.name}` : ''}】`,
     theme: 'danger',
     headerAlign: 'center',
     footerAlign: 'center',
     contentAlign: 'center',
+    extCls: 'recycle-resource-infobox',
     onConfirm() {
       return resourceStore
         .recycled(

@@ -330,11 +330,12 @@ const handleDeleteSubnet = (data: any) => {
       } else {
         InfoBox({
           title: '请确认是否删除',
-          subTitle: `将删除【${data.id} - ${data.name}】`,
+          subTitle: `将删除【${data.cloud_id}${data.name ? ` - ${data.name}` : ''}】`,
           theme: 'danger',
           headerAlign: 'center',
           footerAlign: 'center',
           contentAlign: 'center',
+          extCls: 'delete-resource-infobox',
           onConfirm() {
             resourceStore
               .deleteBatch(
@@ -376,7 +377,7 @@ onBeforeMount(() => {
         <div
           v-if="isResourcePage"
           v-bk-tooltips="{
-            content: '资源已分配到业务，只可以在业务中进行操作',
+            content: '该子网已分配到业务，仅可在业务下操作',
             disabled: !isBindBusiness || !authVerifyData?.permissionAction[actionName]
           }"
           @click="showAuthDialog(actionName)">

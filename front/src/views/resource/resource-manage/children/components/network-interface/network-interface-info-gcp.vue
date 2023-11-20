@@ -19,6 +19,14 @@ const { getNameFromBusinessMap } = useBusinessMapStore();
 
 const fields = ref([
   {
+    name: '资源 ID',
+    prop: 'id',
+  },
+  {
+    name: '云资源 ID',
+    prop: 'cloud_id',
+  },
+  {
     name: '云厂商',
     prop: 'vendor',
     render(cell: string) {
@@ -28,10 +36,6 @@ const fields = ref([
   {
     name: '网络接口名称',
     prop: 'name',
-  },
-  {
-    name: '网络接口ID',
-    prop: 'id',
   },
   {
     name: '账号',
