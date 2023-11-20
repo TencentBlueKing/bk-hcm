@@ -24,19 +24,35 @@ import "hcm/pkg/iam/client"
 // GenerateResourceCreatorActions generate all the resource creator actions that need to be registered to IAM.
 func GenerateResourceCreatorActions() client.ResourceCreatorActions {
 	return client.ResourceCreatorActions{
-		Config: []client.ResourceCreatorAction{{
-			ResourceID: Account,
-			Actions: []client.CreatorRelatedAction{
-				{
-					ID:         AccountFind,
-					IsRequired: false,
+		Config: []client.ResourceCreatorAction{
+			{
+				ResourceID: Account,
+				Actions: []client.CreatorRelatedAction{
+					{
+						ID:         AccountFind,
+						IsRequired: false,
+					},
+					{
+						ID:         AccountEdit,
+						IsRequired: false,
+					},
 				},
-				{
-					ID:         AccountEdit,
-					IsRequired: false,
-				},
+				SubResourceTypes: nil,
 			},
-			SubResourceTypes: nil,
-		}},
+			{
+				ResourceID: CloudSelectionScheme,
+				Actions: []client.CreatorRelatedAction{
+					{
+						ID:         CloudSelectionSchemeFind,
+						IsRequired: false,
+					},
+					{
+						ID:         CloudSelectionSchemeEdit,
+						IsRequired: false,
+					},
+				},
+				SubResourceTypes: nil,
+			},
+		},
 	}
 }

@@ -59,6 +59,8 @@ func (s *auth) ListAuthInstances(cts *rest.Contexts) (interface{}, error) {
 	switch req.ResourceType {
 	case sys.Account:
 		tableName = table.AccountTable
+	case sys.CloudSelectionScheme:
+		tableName = table.CloudSelectionSchemeTable
 	default:
 		return nil, fmt.Errorf("resource type %s not support", req.ResourceType)
 	}

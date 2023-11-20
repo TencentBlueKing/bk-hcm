@@ -23,8 +23,9 @@ import "hcm/pkg/iam/client"
 
 // ResourceTypeIDMap resource type map.
 var ResourceTypeIDMap = map[client.TypeID]string{
-	Account: "账号",
-	Biz:     "业务",
+	Account:              "账号",
+	Biz:                  "业务",
+	CloudSelectionScheme: "方案",
 }
 
 // GenerateStaticResourceTypes generate all the static resource types to register to IAM.
@@ -47,6 +48,21 @@ func genAccountResources() []client.ResourceType {
 			Parents: []client.Parent{{
 				SystemID:   SystemIDHCM,
 				ResourceID: Account,
+			}},
+			ProviderConfig: client.ResourceConfig{
+				Path: "/api/v1/auth/iam/find/resource",
+			},
+			Version: 1,
+		},
+		{
+			ID:            CloudSelectionScheme,
+			Name:          ResourceTypeIDMap[CloudSelectionScheme],
+			NameEn:        "Scheme",
+			Description:   "方案",
+			DescriptionEn: "scheme",
+			Parents: []client.Parent{{
+				SystemID:   SystemIDHCM,
+				ResourceID: CloudSelectionScheme,
 			}},
 			ProviderConfig: client.ResourceConfig{
 				Path: "/api/v1/auth/iam/find/resource",

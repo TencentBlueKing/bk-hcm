@@ -47,6 +47,19 @@ var (
 			},
 		},
 	}
+
+	schemeResource = []client.RelateResourceType{
+		{
+			SystemID: SystemIDHCM,
+			ID:       CloudSelectionScheme,
+			InstanceSelections: []client.RelatedInstanceSelection{
+				{
+					SystemID: SystemIDHCM,
+					ID:       CloudSelectionSchemeSelection,
+				},
+			},
+		},
+	}
 )
 
 // GenerateStaticActions return need to register action.
@@ -55,6 +68,7 @@ func GenerateStaticActions() []client.ResourceAction {
 
 	resourceActionList = append(resourceActionList, genResManagementActions()...)
 	resourceActionList = append(resourceActionList, genResourceAccessActions()...)
+	resourceActionList = append(resourceActionList, genCloudSelectionActions()...)
 	resourceActionList = append(resourceActionList, genPlatformManageActions()...)
 
 	return resourceActionList
@@ -95,8 +109,8 @@ func genResManagementActions() []client.ResourceAction {
 		Version:              1,
 	}}
 	// TODO 开启clb和编排相关功能后放开注释
-	//actions = append(actions, genCLBResManActions()...)
-	//actions = append(actions, genArrangeResManActions()...)
+	// actions = append(actions, genCLBResManActions()...)
+	// actions = append(actions, genArrangeResManActions()...)
 	actions = append(actions, []client.ResourceAction{{
 		ID:                   BizRecycleBinOperate,
 		Name:                 ActionIDNameMap[BizRecycleBinOperate],
@@ -227,7 +241,7 @@ func genResourceAccessActions() []client.ResourceAction {
 
 	actions = append(actions, genIaaSResAccessActions()...)
 	// TODO 开启clb和编排相关功能后放开注释
-	//actions = append(actions, genCLBResAccessActions()...)
+	// actions = append(actions, genCLBResAccessActions()...)
 	actions = append(actions, []client.ResourceAction{{
 		ID:                   RecycleBinAccess,
 		Name:                 ActionIDNameMap[RecycleBinAccess],
@@ -261,6 +275,44 @@ func genResourceAccessActions() []client.ResourceAction {
 		RelatedActions:       nil,
 		Version:              1,
 	}}...)
+
+	return actions
+}
+
+func genCloudSelectionActions() []client.ResourceAction {
+	actions := []client.ResourceAction{{
+		ID:                   CloudSelectionRecommend,
+		Name:                 ActionIDNameMap[CloudSelectionRecommend],
+		NameEn:               "Selection Recommend",
+		Type:                 View,
+		RelatedResourceTypes: nil,
+		RelatedActions:       nil,
+		Version:              1,
+	}, {
+		ID:                   CloudSelectionSchemeFind,
+		Name:                 ActionIDNameMap[CloudSelectionSchemeFind],
+		NameEn:               "Find Scheme",
+		Type:                 View,
+		RelatedResourceTypes: schemeResource,
+		RelatedActions:       nil,
+		Version:              1,
+	}, {
+		ID:                   CloudSelectionSchemeEdit,
+		Name:                 ActionIDNameMap[CloudSelectionSchemeEdit],
+		NameEn:               "Edit Scheme",
+		Type:                 Edit,
+		RelatedResourceTypes: schemeResource,
+		RelatedActions:       []client.ActionID{CloudSelectionSchemeFind},
+		Version:              1,
+	}, {
+		ID:                   CloudSelectionSchemeDelete,
+		Name:                 ActionIDNameMap[CloudSelectionSchemeDelete],
+		NameEn:               "Delete Scheme",
+		Type:                 Delete,
+		RelatedResourceTypes: schemeResource,
+		RelatedActions:       []client.ActionID{CloudSelectionSchemeFind},
+		Version:              1,
+	}}
 
 	return actions
 }
