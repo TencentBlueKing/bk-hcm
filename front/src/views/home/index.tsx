@@ -542,7 +542,11 @@ export default defineComponent({
                 footer: () => (
                   // eslint-disable-next-line max-len
                   <div class='mt20'>
-                    Copyright © {curYear.value} Tencent BlueKing. All Rights Reserved. {VERSION}
+                    {
+                      route.path === '/resource/resource'
+                        ? `Copyright © ${curYear.value} Tencent BlueKing. All Rights Reserved. ${VERSION}`
+                        : null
+                    }
                   </div>
                 ),
               }}
