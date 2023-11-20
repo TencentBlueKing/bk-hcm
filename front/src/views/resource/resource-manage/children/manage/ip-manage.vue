@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { FilterType } from '@/typings/resource';
 
-import { PropType, h, computed } from 'vue';
-import { Button, InfoBox } from 'bkui-vue';
+import { PropType, h, computed, withDirectives } from 'vue';
+import { bkTooltips, Button, InfoBox } from 'bkui-vue';
 import { useResourceStore } from '@/store/resource';
 import useDelete from '../../hooks/use-delete';
 import useQueryList from '../../hooks/use-query-list';
@@ -69,16 +69,8 @@ const fetchComponentsData = () => {
   handlePageChange(1);
 };
 
-const canDelete = (data: IEip): boolean => {
+const hasNoRelateResource = ({ vendor, status }: IEip): boolean => {
   let res = false;
-  // 分配到业务下面后不可删除
-  const isInBusiness =    !props.authVerifyData?.permissionAction[
-    props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'
-  ]
-    || data.cvm_id
-    || (data.bk_biz_id !== -1 && !location.href.includes('business'));
-  const { status, vendor } = data;
-
   switch (vendor) {
     case CLOUD_VENDOR.tcloud:
       if (status === EipStatus.UNBIND) res = true;
@@ -96,7 +88,37 @@ const canDelete = (data: IEip): boolean => {
       if (status === EipStatus.UNBIND) res = true;
       break;
   }
-  return res && !isInBusiness;
+  return res;
+};
+const canDelete = (data: IEip): boolean => {
+  // 分配到业务下面后不可删除
+  const isInBusiness =    !props.authVerifyData?.permissionAction[
+    props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'
+  ]
+    || data.cvm_id
+    || (data.bk_biz_id !== -1 && !location.href.includes('business'));
+  return hasNoRelateResource(data) && !isInBusiness;
+};
+
+const generateTooltipsOptions = (data: IEip) => {
+  const action_name = props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete';
+
+  if (!props.authVerifyData?.permissionAction[action_name]) return {
+    content: '当前用户无权限操作该按钮',
+    disabled: props.authVerifyData?.permissionAction[action_name],
+  };
+  if (props.isResourcePage && data?.bk_biz_id !== -1) return {
+    content: '该弹性IP已分配到业务，仅可在业务下操作',
+    disabled: data.bk_biz_id === -1,
+  };
+  if (data?.cvm_id || !hasNoRelateResource(data)) return {
+    content: '该弹性IP已绑定资源，不可以删除',
+    disabled: !(data?.cvm_id || !hasNoRelateResource(data)),
+  };
+
+  return {
+    disabled: true,
+  };
 };
 
 const renderColumns = [
@@ -112,7 +134,7 @@ const renderColumns = [
           },
         },
         [
-          h(
+          withDirectives(h(
             Button,
             {
               text: true,
@@ -140,7 +162,9 @@ const renderColumns = [
               },
             },
             ['删除'],
-          ),
+          ), [
+            [bkTooltips, generateTooltipsOptions(data)],
+          ]),
         ],
       ));
     },
