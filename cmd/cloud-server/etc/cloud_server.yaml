@@ -43,6 +43,66 @@ service:
       # the password to decrypt the certificate.
       password:
 
+# 云选型相关配置
+cloudSelection:
+  # 默认覆盖率
+  coverRate: 0.7
+  # 网络延迟评分阈值
+  coverPingThreshHold: [ 60 , 120 ]
+  # only support bkbase currently
+  dataSourceType: bkbase
+  # table names for data
+  tableNames:
+    # 国家到IDC日均ping延迟
+    # select thedate, bk_biz_id, country, idc_name, avg_ping from <latencyPingCountyIdc>
+    latencyPingCountyIdc: latency_ping_country
+    # 省份到IDC每日均ping延迟
+    # select thedate, bk_biz_id, country, province, idc_name, avg_ping from <latencyPingProvinceIdc>
+    latencyPingProvinceIdc: latency_ping_province
+
+    # 国家到IDC日均业务延迟数据
+    # select thedate, country, total from <latencyBizCountyIdc>
+    latencyBizCountyIdc: latency_biz_country
+    # 省份到IDC日均业务延迟数据
+    # select thedate, country, province, cnt from <latencyBizProvinceIdc>
+    latencyBizProvinceIdc: latency_biz_province
+
+    # 用户国家分布表
+    # select thedate, country, total from <userCountryDistribution>
+    userCountryDistribution: supported_country
+    # 用户省份分布表
+    # select thedate, country, province, cnt from <userProvinceDistribution>
+    userProvinceDistribution: supported_province
+  # bkbase 数据源配置
+  bkBase:
+    # token for bkbase
+    dataToken: token_here
+    # endpoints is a seed list of host:port addresses of bkbase api gateway nodes.
+    endpoints:
+      - http://demo.com
+    # appCode is the BlueKing app code of hcm to request bkbase api gateway.
+    appCode: test
+    # appSecret is the BlueKing app secret of hcm to request bkbase api gateway.
+    appSecret: xxxxxxxxx
+    # user is the BlueKing user of hcm to request bkbase api gateway.
+    user: test
+    # bkTicket is the BlueKing access ticket of hcm to request bkbase api gateway.
+    bkTicket:
+    # bkToken is the BlueKing access token of hcm to request bkbase api gateway.
+    bkToken: xxxxxxxxx
+    # defines tls related options.
+    tls:
+      # server should be accessed without verifying the TLS certificate.
+      insecureSkipVerify:
+      # server requires TLS client certificate authentication.
+      certFile:
+      # server requires TLS client certificate authentication.
+      keyFile:
+      # trusted root certificates for server.
+      caFile:
+      # the password to decrypt the certificate.
+      password:
+
 # defines log's related configuration
 log:
   # log storage directory.

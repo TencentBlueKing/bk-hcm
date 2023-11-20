@@ -712,14 +712,17 @@ func (gt ApiGateway) GetAuthValue() string {
 
 // CloudSelection define cloud selection relation setting.
 type CloudSelection struct {
-	DataSourceType string `yaml:"dataSourceType"`
-	BkBase         BkBase `yaml:"bkBase"`
+	CoverRate           float64                  `json:"coverRate"`
+	CoverPingThreshHold []float64                `json:"coverPingThreshHold"`
+	DataSourceType      string                   `yaml:"dataSourceType"`
+	TableNames          CloudSelectionTableNames `json:"tableNames"`
+	BkBase              BkBase                   `yaml:"bkBase"`
 }
 
 // BkBase define bkbase relation setting.
 type BkBase struct {
-	ApiGateway `yaml:"-"`
 	DataToken  string `yaml:"dataToken"`
+	ApiGateway `yaml:"-"`
 }
 
 // Validate ...
@@ -748,4 +751,14 @@ func (c CloudSelection) Validate() error {
 	}
 
 	return nil
+}
+
+// CloudSelectionTableNames ...
+type CloudSelectionTableNames struct {
+	LatencyPingCountyIdc     string `json:"latencyPingCountyIdc"`
+	LatencyPingProvinceIdc   string `json:"latencyPingProvinceIdc"`
+	LatencyBizCountyIdc      string `json:"latencyBizCountyIdc"`
+	LatencyBizProvinceIdc    string `json:"latencyBizProvinceIdc"`
+	UserCountryDistribution  string `json:"userCountryDistribution"`
+	UserProvinceDistribution string `json:"userProvinceDistribution"`
 }
