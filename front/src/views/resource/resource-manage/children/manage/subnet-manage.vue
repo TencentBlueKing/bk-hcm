@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { FilterType } from '@/typings/resource';
-import { PropType, defineExpose, h, computed } from 'vue';
-import { Button, Message, InfoBox } from 'bkui-vue';
+import { PropType, defineExpose, h, computed, withDirectives } from 'vue';
+import { Button, Message, InfoBox, bkTooltips } from 'bkui-vue';
 import { useResourceStore } from '@/store/resource';
 
 import useColumns from '../../hooks/use-columns';
@@ -171,6 +171,23 @@ const handledelete = (data: any) => {
   });
 };
 
+const generateTooltipsOptions = (data: any) => {
+  const action_name = props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete';
+
+  if (!props.authVerifyData?.permissionAction[action_name]) return {
+    content: '当前用户无权限操作该按钮',
+    disabled: props.authVerifyData?.permissionAction[action_name],
+  };
+  if (props.isResourcePage && data?.bk_biz_id !== -1) return {
+    content: '该子网已分配到业务，仅可在业务下操作',
+    disabled: data.bk_biz_id === -1,
+  };
+
+  return {
+    disabled: true,
+  };
+};
+
 const renderColumns = [
   ...columns,
   {
@@ -189,23 +206,25 @@ const renderColumns = [
           },
         },
         [
-          h(
+          withDirectives(h(
             Button,
             {
               text: true,
               theme: 'primary',
               disabled:
-                  !props.authVerifyData?.permissionAction[
-                    props.isResourcePage
-                      ? 'iaas_resource_delete'
-                      : 'biz_iaas_resource_delete'
-                  ] || (whereAmI.value !== Senarios.business && data.bk_biz_id !== -1),
+                    !props.authVerifyData?.permissionAction[
+                      props.isResourcePage
+                        ? 'iaas_resource_delete'
+                        : 'biz_iaas_resource_delete'
+                    ] || (whereAmI.value !== Senarios.business && data.bk_biz_id !== -1),
               onClick() {
                 handleDeleteSubnet(data);
               },
             },
             ['删除'],
-          ),
+          ), [
+            [bkTooltips, generateTooltipsOptions(data)],
+          ]),
         ],
       ));
     },

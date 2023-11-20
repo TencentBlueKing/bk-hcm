@@ -377,7 +377,7 @@ onBeforeMount(() => {
         <div
           v-if="isResourcePage"
           v-bk-tooltips="{
-            content: '资源已分配到业务，只可以在业务中进行操作',
+            content: '该子网已分配到业务，仅可在业务下操作',
             disabled: !isBindBusiness || !authVerifyData?.permissionAction[actionName]
           }"
           @click="showAuthDialog(actionName)">
