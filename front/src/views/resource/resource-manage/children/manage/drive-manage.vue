@@ -124,12 +124,13 @@ const renderColumns = [
               onClick() {
                 InfoBox({
                   title: '请确认是否回收',
-                  subTitle: `将回收【${data.id} - ${data.name}】`,
+                  subTitle: `将回收【${data.cloud_id}${data.name ? ` - ${data.name}` : ''}】`,
                   // @ts-ignore
                   theme: 'danger',
                   headerAlign: 'center',
                   footerAlign: 'center',
                   contentAlign: 'center',
+                  extCls: 'recycle-resource-infobox',
                   onConfirm() {
                     resourceStore
                       .recycled('disks', {
@@ -275,6 +276,7 @@ const isCurRowSelectEnable = (row: any) => {
 <style lang="scss" scoped>
 .w100 {
   width: 100px;
+
 }
 .w60 {
   width: 60px;

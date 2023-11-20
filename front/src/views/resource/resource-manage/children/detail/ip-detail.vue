@@ -83,11 +83,12 @@ const handleDeleteEip = () => {
 const handleShowDelete = () => {
   InfoBox({
     title: '请确认是否删除',
-    subTitle: `将删除【${detail.value.id} - ${detail.value.name}】`,
+    subTitle: `将删除【${detail.value.cloud_id}${detail.value.name ? ` - ${detail.value.name}` : ''}】`,
     theme: 'danger',
     headerAlign: 'center',
     footerAlign: 'center',
     contentAlign: 'center',
+    extCls: 'delete-resource-infobox',
     onConfirm() {
       return resourceStore
         .deleteBatch(

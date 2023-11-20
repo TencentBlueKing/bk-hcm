@@ -587,3 +587,11 @@ getResourceAccountList();
   margin: -8px 0 16px 0;
 }
 </style>
+
+<style lang="scss">
+.delete-resource-infobox, .recycle-resource-infobox {
+  .bk-info-sub-title {
+    word-break: break-all;
+  }
+}
+</style>
