@@ -139,10 +139,13 @@ export default defineComponent({
       vpcId.value = '';
     };
     const handleVpcChange = (vpc: any) => {
+      console.log(111111, vpcId.value, vpc.id, vpcId.value === vpc.id);
       vpcData.value = vpc;
       cloudId.value = vpc.bk_cloud_id;
-      vpcId.value = vpc.id;
-      resetFormItemData('cloud_subnet_id');
+      if (vpcId.value !== vpc.id) {
+        vpcId.value = vpc.id;
+        resetFormItemData('cloud_subnet_id');
+      }
     };
     const handleMachineTypeChange = (machine: any) => {
       machineType.value = machine;
