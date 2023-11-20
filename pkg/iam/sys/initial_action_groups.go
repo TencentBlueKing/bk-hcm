@@ -88,15 +88,41 @@ func genResManagementActionGroups() []client.ActionGroup {
 	}
 
 	actionGroups = append(actionGroups, genResourceAccessActionGroups())
+	actionGroups = append(actionGroups, genCloudSelectionActionGroups())
 	actionGroups = append(actionGroups, genPlatformManageActionGroups())
 
 	return actionGroups
 }
 
+func genCloudSelectionActionGroups() client.ActionGroup {
+	return client.ActionGroup{
+		Name:   "资源选型",
+		NameEn: "Resource Selection",
+		SubGroups: []client.ActionGroup{
+			{
+				Name:   "资源选型",
+				NameEn: "Resource Selection",
+				Actions: []client.ActionWithID{
+					{ID: CloudSelectionRecommend},
+				},
+			},
+			{
+				Name:   "部署方案",
+				NameEn: "Deployment Scheme",
+				Actions: []client.ActionWithID{
+					{ID: CloudSelectionSchemeFind},
+					{ID: CloudSelectionSchemeEdit},
+					{ID: CloudSelectionSchemeDelete},
+				},
+			},
+		},
+	}
+}
+
 func genResourceAccessActionGroups() client.ActionGroup {
 	return client.ActionGroup{
 		Name:   "资源接入",
-		NameEn: "Resource Accesss",
+		NameEn: "Resource Access",
 		SubGroups: []client.ActionGroup{
 			{
 				Name:   "云账号",

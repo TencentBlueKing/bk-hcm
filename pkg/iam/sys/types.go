@@ -46,6 +46,8 @@ const (
 	Account client.TypeID = "account"
 	// Biz defines hcm biz resource type to register iam.
 	Biz client.TypeID = "biz"
+	// CloudSelectionScheme define cloud selection scheme resource type to register iam.
+	CloudSelectionScheme client.TypeID = "cloud_selection_scheme"
 )
 
 const (
@@ -53,6 +55,8 @@ const (
 	AccountSelection client.InstanceSelectionID = "account"
 	// BizSelection is biz instance selection id to register iam.
 	BizSelection client.InstanceSelectionID = "business"
+	// CloudSelectionSchemeSelection 云选型方案实例视图
+	CloudSelectionSchemeSelection client.InstanceSelectionID = "cloud_selection_scheme"
 )
 
 // ActionType action type to register iam.
@@ -148,6 +152,15 @@ const (
 	// GlobalConfiguration global configuration action id to register iam.
 	GlobalConfiguration client.ActionID = "global_configuration"
 
+	// CloudSelectionRecommend 选型推荐
+	CloudSelectionRecommend client.ActionID = "cloud_selection_recommend"
+	// CloudSelectionSchemeFind 方案查看
+	CloudSelectionSchemeFind client.ActionID = "cloud_selection_find"
+	// CloudSelectionSchemeEdit 方案编辑
+	CloudSelectionSchemeEdit client.ActionID = "cloud_selection_edit"
+	// CloudSelectionSchemeDelete 方案删除
+	CloudSelectionSchemeDelete client.ActionID = "cloud_selection_delete"
+
 	// Skip is an action that no need to auth
 	Skip client.ActionID = "skip"
 )
@@ -158,12 +171,12 @@ var ActionIDNameMap = map[client.ActionID]string{
 	BizIaaSResCreate:  "业务-IaaS资源创建",
 	BizIaaSResOperate: "业务-IaaS资源操作",
 	BizIaaSResDelete:  "业务-IaaS资源删除",
-	//BizCLBResCreate:        "业务-负载均衡创建",
-	//BizCLBResOperate:       "业务-负载均衡操作",
-	//BizCLBResDelete:        "负载均衡删除",
-	//BizArrangeResCreate:    "业务-资源编排创建",
-	//BizArrangeResOperate:   "业务-资源编排操作",
-	//BizArrangeResDelete:    "业务-资源编排删除",
+	// BizCLBResCreate:        "业务-负载均衡创建",
+	// BizCLBResOperate:       "业务-负载均衡操作",
+	// BizCLBResDelete:        "负载均衡删除",
+	// BizArrangeResCreate:    "业务-资源编排创建",
+	// BizArrangeResOperate:   "业务-资源编排操作",
+	// BizArrangeResDelete:    "业务-资源编排删除",
 	BizRecycleBinOperate:   "业务-回收站操作",
 	BizRecycleBinConfig:    "业务-回收站配置",
 	BizOperationRecordFind: "业务-操作记录查看",
@@ -177,13 +190,18 @@ var ActionIDNameMap = map[client.ActionID]string{
 	IaaSResCreate:  "资源-IaaS资源创建",
 	IaaSResOperate: "资源-IaaS资源操作",
 	IaaSResDelete:  "资源-IaaS资源删除",
-	//CLBResCreate:        "负载均衡创建",
-	//CLBResOperate:       "负载均衡操作",
-	//CLBResDelete:        "负载均衡删除",
+	// CLBResCreate:        "负载均衡创建",
+	// CLBResOperate:       "负载均衡操作",
+	// CLBResDelete:        "负载均衡删除",
 	RecycleBinAccess:    "资源-回收站查看",
 	RecycleBinOperate:   "资源-回收站操作",
 	RecycleBinConfig:    "资源-回收站配置",
 	OperationRecordFind: "资源-操作记录查看",
+	
+	CloudSelectionRecommend:    "选型推荐",
+	CloudSelectionSchemeFind:   "方案查看",
+	CloudSelectionSchemeEdit:   "方案编辑",
+	CloudSelectionSchemeDelete: "方案删除",
 
 	CostManage:          "平台-云成本管理",
 	AccountKeyAccess:    "平台-账号密钥访问",

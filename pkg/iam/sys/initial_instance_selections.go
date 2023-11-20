@@ -35,5 +35,16 @@ func GenerateStaticInstanceSelections() []client.InstanceSelection {
 				},
 			},
 		},
+		{
+			ID:     CloudSelectionSchemeSelection,
+			Name:   "方案列表",
+			NameEn: "Scheme List",
+			ResourceTypeChain: []client.ResourceChain{
+				{
+					SystemID: SystemIDHCM,
+					ID:       CloudSelectionScheme,
+				},
+			},
+		},
 	}
 }

@@ -138,6 +138,9 @@ const (
 	AsyncFlowTable Name = "async_flow"
 	// AsyncFlowTaskTable is async flow task table's name.
 	AsyncFlowTaskTable Name = "async_flow_task"
+
+	// CloudSelectionSchemeTable is cloud selection scheme table's name.
+	CloudSelectionSchemeTable Name = "cloud_selection_scheme"
 )
 
 // Validate whether the table name is valid or not.
