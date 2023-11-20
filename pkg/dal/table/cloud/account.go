@@ -93,7 +93,7 @@ type AccountTable struct {
 	UpdatedAt types.Time `db:"updated_at" json:"updated_at"`
 	// Memo 账号信息备注
 	Memo *string `db:"memo" json:"memo"`
-	// RecycleReserveTime 回收站保留时长单位s
+	// RecycleReserveTime 回收站保留时长，单位: 小时
 	RecycleReserveTime int `db:"recycle_reserve_time" json:"recycle_reserve_time"`
 }
 
