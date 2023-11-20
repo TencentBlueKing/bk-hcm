@@ -242,7 +242,12 @@ export default defineComponent({
               </FormItem>
               {
                 formModel.vendor === 'huawei'
-                  && <FormItem label='网关地址' style={{ width: '880px' }} required property='gateway_ip'>
+                  && <FormItem
+                      label='网关地址'
+                      property='gateway_ip'
+                      required
+                      description={'子网的网关地址，默认建议填写子网中的第1个IP'}
+                      style={{ width: '880px' }} >
                     <Input v-model={formModel.gateway_ip} placeholder='请输入网关地址'></Input>
                   </FormItem>
               }
