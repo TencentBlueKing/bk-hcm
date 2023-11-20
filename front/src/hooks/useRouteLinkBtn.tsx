@@ -65,6 +65,9 @@ export const useRouteLinkBtn = (data: IDetail, meta: IMeta) => {
         },
       });
     }
+    if (id === 'account_id') {
+      Object.assign(routeInfo.query, { accountId: computedId.value });
+    }
     router.push(routeInfo);
   };
 
