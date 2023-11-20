@@ -167,7 +167,7 @@ export default defineComponent({
           {
             cloud_secret_id: tcloudExtension.input.cloud_secret_id.value,
             cloud_secret_key: tcloudExtension.input.cloud_secret_key.value,
-            uin: +tcloudExtension.output2.cloud_sub_account_id.value,
+            uin: +tcloudExtension.output1.cloud_sub_account_id.value,
           },
         );
         authTableData.value = res.data?.[0]?.Policy;
