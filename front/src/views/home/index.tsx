@@ -275,6 +275,18 @@ export default defineComponent({
       },
     );
 
+    watch(
+      () => favoriteSet.value,
+      () => {
+        businessList.value.sort((biz1, biz2) => {
+          return +favoriteSet.value.has(biz2.id) - +favoriteSet.value.has(biz1.id);
+        });
+      },
+      {
+        deep: true,
+      },
+    );
+
     /**
      * 在这里获取项目公共数据并缓存
      */
@@ -419,7 +431,7 @@ export default defineComponent({
                                 {favoriteSet.value.has(data.id) ? (
                                   <i
                                     class={'icon bk-icon icon-collect'}
-                                    style={{ color: '#CC933A' }}
+                                    style={{ color: '#CC933A', fontSize: '15px' }}
                                     onClick={(event) => {
                                       removeFromFavorite(data.id);
                                       event.stopPropagation();
