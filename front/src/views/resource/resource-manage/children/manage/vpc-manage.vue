@@ -73,6 +73,10 @@ const curCloudArea = ref('');
 
 const hostSearchData = computed(() => {
   return [
+    {
+      name: 'VPC ID',
+      id: 'cloud_id',
+    },
     ...searchData.value,
     ...[
       {

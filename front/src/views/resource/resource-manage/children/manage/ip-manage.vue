@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { FilterType } from '@/typings/resource';
 
-import { PropType, h } from 'vue';
+import { PropType, h, computed } from 'vue';
 import { Button, InfoBox } from 'bkui-vue';
 import { useResourceStore } from '@/store/resource';
 import useDelete from '../../hooks/use-delete';
@@ -39,6 +39,16 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ha
   { filter: filter.value },
   'eips',
 );
+
+const selectSearchData = computed(() => {
+  return [
+    {
+      name: 'IP资源ID',
+      id: 'cloud_id',
+    },
+    ...searchData.value,
+  ];
+});
 
 const { columns, settings } = useColumns('eips');
 const emit = defineEmits(['auth']);
@@ -186,7 +196,8 @@ defineExpose({ fetchComponentsData });
       >
         删除
       </bk-button>
-      <bk-search-select class="w500 ml10 mlauto" clearable :conditions="[]" :data="searchData" v-model="searchValue" />
+      <bk-search-select class="w500 ml10 mlauto" clearable :conditions="[]"
+                        :data="selectSearchData" v-model="searchValue" />
     </section>
 
     <bk-table

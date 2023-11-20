@@ -91,6 +91,10 @@ const {
 
 const selectSearchData = computed(() => {
   return [
+    {
+      name: activeType.value === 'group' ? '安全组 ID' : '防火墙 ID',
+      id: 'cloud_id',
+    },
     ...searchData.value,
     ...[
       {
@@ -198,7 +202,7 @@ const groupColumns = [
             router.push(routeInfo);
           },
         },
-        [data.id || '--'],
+        [data.cloud_id || '--'],
       );
     },
   },
@@ -426,7 +430,7 @@ const gcpColumns = [
             router.push(routeInfo);
           },
         },
-        [data.id || '--'],
+        [data.cloud_id || '--'],
       );
     },
   },

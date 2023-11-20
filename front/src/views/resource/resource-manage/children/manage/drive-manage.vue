@@ -40,6 +40,10 @@ const resourceStore = useResourceStore();
 
 const selectSearchData = computed(() => {
   return [
+    {
+      name: '云硬盘ID',
+      id: 'cloud_id',
+    },
     ...searchData.value,
     ...[
       {

@@ -3,6 +3,7 @@ import type {
   FilterType,
 } from '@/typings/resource';
 import {
+  computed,
   PropType,
 } from 'vue';
 // import {
@@ -41,6 +42,16 @@ const {
   handleSort,
 } = useQueryList({ filter: filter.value }, 'route_tables');
 
+const selectSearchData = computed(() => {
+  return [
+    {
+      name: '路由表ID',
+      id: 'cloud_id',
+    },
+    ...searchData.value,
+  ];
+});
+
 const { columns, settings } = useColumns('route');
 </script>
 
@@ -54,7 +65,7 @@ const { columns, settings } = useColumns('route');
         class="w500 ml10"
         clearable
         :conditions="[]"
-        :data="searchData"
+        :data="selectSearchData"
         v-model="searchValue"
       />
     </section>

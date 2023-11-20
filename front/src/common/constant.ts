@@ -154,14 +154,16 @@ export const AUDIT_RESOURCE_TYPES = [
 
 
 export const FILTER_DATA = [
-  {
-    name: 'ID',
-    id: 'id',
-  },
-  {
-    name: '资源ID',
-    id: 'cloud_id',
-  },
+  //   移除 ID 搜索条件
+  // {
+  //   name: 'ID',
+  //   id: 'id',
+  // },
+  // 资源ID需给出对应的提示文案, 如主机ID, VPC ID
+  // {
+  //   name: '资源ID',
+  //   id: 'cloud_id',
+  // },
   {
     name: '名称',
     id: 'name',

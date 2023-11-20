@@ -717,14 +717,15 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       width: '100',
       onlyShowOnList: true,
     },
+    //   移除 ID 搜索条件
+    // {
+    //   label: 'ID',
+    //   field: 'id',
+    //   isDefaultShow: false,
+    //   onlyShowOnList: true,
+    // },
     {
-      label: 'ID',
-      field: 'id',
-      isDefaultShow: false,
-      onlyShowOnList: true,
-    },
-    {
-      label: '资源ID',
+      label: '主机ID',
       field: 'cloud_id',
       isDefaultShow: false,
       onlyShowOnList: true,

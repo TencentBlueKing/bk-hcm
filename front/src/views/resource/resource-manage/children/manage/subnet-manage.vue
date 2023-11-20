@@ -60,6 +60,10 @@ const {
 
 const hostSearchData = computed(() => {
   return [
+    {
+      name: '子网 ID',
+      id: 'cloud_id',
+    },
     ...searchData.value,
     ...[
       {
