@@ -103,10 +103,12 @@
 
     .header-width{
         margin-right: auto;
-        width: 260px;
         .header-title{
             color: #96A2B9;
             cursor: pointer;
+            &:not(:last-child) {
+                margin-right: 32px;
+            }
         }
         .header-title:hover {
             color: #fff;

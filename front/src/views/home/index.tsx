@@ -1,6 +1,7 @@
 import {
   defineComponent,
   reactive,
+  computed,
   watch,
   ref,
   nextTick,
@@ -22,6 +23,7 @@ import workbench from '@/router/module/workbench';
 import resource from '@/router/module/resource';
 import service from '@/router/module/service';
 import business from '@/router/module/business';
+import scheme from '@/router/module/scheme';
 import { classes } from '@/common/util';
 import logo from '@/assets/image/logo.png';
 import './index.scss';
@@ -50,6 +52,7 @@ const { DropdownMenu, DropdownItem } = Dropdown;
 const { VERSION } = window.PROJECT_CONFIG;
 
 export default defineComponent({
+  name: 'home',
   setup() {
     const NAV_WIDTH = 240;
     const NAV_TYPE = 'top-bottom';
@@ -77,6 +80,9 @@ export default defineComponent({
     const language = ref(cookie.parse(document.cookie).blueking_language || 'zh-cn');
     const isDialogShow = ref(false);
     const favoriteList = ref([]);
+
+    const isNeedSideMenu = computed(() => ![Senarios.resource, Senarios.scheme].includes(whereAmI.value));
+
     const { favoriteSet, addToFavorite, removeFromFavorite } = useFavorite(
       businessId.value,
       favoriteList.value,
@@ -134,6 +140,12 @@ export default defineComponent({
           menus = reactive(workbench);
           // path = '/workbench/auto';
           path = '/workbench/audit';
+          accountStore.updateBizsId(0); // 初始化业务ID
+          break;
+        case 'scheme':
+          topMenuActiveItem = 'scheme';
+          menus = reactive(scheme);
+          path = '/scheme/recommendation';
           accountStore.updateBizsId(0); // 初始化业务ID
           break;
         default:
@@ -296,7 +308,7 @@ export default defineComponent({
               navigationType={NAV_TYPE}
               hoverWidth={NAV_WIDTH}
               defaultOpen={isMenuOpen.value}
-              needMenu={whereAmI.value !== Senarios.resource}
+              needMenu={isNeedSideMenu.value}
               onToggle={handleToggle}>
               {{
                 'side-header': () => (

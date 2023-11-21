@@ -7,6 +7,7 @@ export const useWhereAmI = (): {
   isBusinessPage: boolean;
   isServicePage: boolean;
   isWorkbenchPage: boolean;
+  isSchemePage: boolean;
 } => {
   const route = useRoute();
   const senario = computed(() => {
@@ -14,6 +15,7 @@ export const useWhereAmI = (): {
     if (/^\/business\/.+$/.test(route.path)) return Senarios.business;
     if (/^\/service\/.+$/.test(route.path)) return Senarios.service;
     if (/^\/workbench\/.+$/.test(route.path)) return Senarios.workbench;
+    if (/^\/scheme\/.+$/.test(route.path)) return Senarios.scheme;
     return Senarios.unknown;
   });
   return {
@@ -22,6 +24,7 @@ export const useWhereAmI = (): {
     isBusinessPage: senario.value === Senarios.business,
     isServicePage: senario.value === Senarios.service,
     isWorkbenchPage: senario.value === Senarios.workbench,
+    isSchemePage: senario.value === Senarios.scheme,
   };
 };
 
@@ -30,5 +33,6 @@ export enum Senarios {
   resource = 'resource',
   service = 'service',
   workbench = 'workbench',
+  scheme = 'scheme',
   unknown = 'unknown',
 }

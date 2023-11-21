@@ -1,0 +1,40 @@
+.resource-selection-module {
+  height: 100%;
+}
+.module-header {
+  height: 52px;
+  background: #ffffff;
+  box-shadow: 0 3px 4px 0 #0000000a;
+}
+.tab-list {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  .tab-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 156px;
+    height: 100%;
+    color: #63656e;
+    font-size: 12px;
+    line-height: 22px;
+    border-top: 3px solid transparent;
+    cursor: pointer;
+    & > i {
+      margin-right: 4px;
+    }
+    &:hover {
+      color: #3a84ff;
+    }
+    &.actived {
+      border-color: #3a84ff;
+      background: #f0f5ff;
+      color: #3a84ff;
+    }
+  }
+}
+.module-page-container {
+  height: calc(100% - 52px);
+}
