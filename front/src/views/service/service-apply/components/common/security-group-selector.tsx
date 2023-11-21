@@ -306,8 +306,24 @@ export default defineComponent({
                     >
                       {
                         isAllExpand.value
-                          ? '全部收起'
-                          : '全部展开'
+                          ? <>
+                              <svg width={14} height={14} class="bk-icon" style="fill: #979BA5; margin-right: 8px;"
+                                   viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                                <path fill="#979BA5" d="M56,6H8C6.9,6,6,6.9,6,8v48c0,1.1,0.9,2,2,2h48c1.1,0,2-0.9,2-2V8C58,6.9,57.1,6,56,6z M54,54H10V10	h44V54z"></path>
+                                <path fill="#979BA5" d="M49.6,17.2l-2.8-2.8L38,23.2l0-5.2h-4v12h12v-4h-5.2L49.6,17.2z M38,26L38,26L38,26L38,26z"></path>
+                                <path fill="#979BA5" d="M14.4,46.8l2.8,2.8l8.8-8.8l0,5.2h4V34H18v4h5.2L14.4,46.8z M26,38L26,38L26,38L26,38z"></path>
+                              </svg>
+                              <span>全部收起</span>
+                            </>
+                          : <>
+                              <svg width={14} height={14} class="bk-icon" style="fill: #979BA5; margin-right: 8px;"
+                                   viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                                <path fill="#979BA5" d="M56,6H8C6.9,6,6,6.9,6,8v48c0,1.1,0.9,2,2,2h48c1.1,0,2-0.9,2-2V8C58,6.9,57.1,6,56,6z M54,54H10V10	h44V54z"></path>
+                                <path fill="#979BA5" d="M34,27.2l2.8,2.8l8.8-8.8v5.2h4v-12h-12v4h5.2L34,27.2z M45.6,18.4L45.6,18.4L45.6,18.4L45.6,18.4z"></path>
+                                <path fill="#979BA5" d="M30,36.8L27.2,34l-8.8,8.8v-5.2h-4v12h12v-4h-5.2L30,36.8z M18.4,45.6L18.4,45.6L18.4,45.6	L18.4,45.6z"></path>
+                              </svg>
+                              <span>全部展开</span>
+                            </>
                       }
                     </Button>
                   </div>
