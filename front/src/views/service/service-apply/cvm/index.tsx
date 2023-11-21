@@ -12,7 +12,6 @@ import SecurityGroupSelector from '../components/common/security-group-selector'
 import CloudAreaName from '../components/common/cloud-area-name';
 import {
   Plus as PlusIcon,
-  CloseLine as CloseLineIcon,
 } from 'bkui-vue/lib/icon';
 import GcpDataDiskFormDialog from './children/gcp-data-disk-form-dialog';
 import './index.scss';
@@ -348,30 +347,29 @@ export default defineComponent({
                           min={dataDiskCountRules.value.min}></Input>
                     </FormItem>
                     <div class='btns'>
-                      <Button
-                          class='btn'
-                          outline
-                          size='small'
-                          onClick={handleCreateGcpDataDisk}>
-                        <PlusIcon  />
+                      <Button class={'btn'} onClick={handleCreateGcpDataDisk}
+                              disabled={formData.data_disk.length !== index + 1}>
+                        <svg width={14} height={14} viewBox="0 0 24 24" version="1.1"
+                             xmlns="http://www.w3.org/2000/svg"
+                             style={{ fill: formData.data_disk.length !== index + 1 ? '#EAEBF0' : '#c4c6cc' }}>
+                          <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-4.5v4.5c0 0.414-0.336 0.75-0.75 0.75s-0.75-0.336-0.75-0.75v-4.5h-4.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h4.5v-4.5c0-0.414 0.336-0.75 0.75-0.75s0.75 0.336 0.75 0.75v4.5h4.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z"></path>
+                        </svg>
                       </Button>
-                      <Button
-                          class='btn'
-                          outline
-                          size='small'
-                          disabled={formData.data_disk.length === 1}
-                          onClick={() => handleRemoveDataDisk(index)}>
-                        <CloseLineIcon />
+                      <Button class={'btn'} onClick={() => handleRemoveDataDisk(index)}
+                              disabled={formData.data_disk.length !== index + 1} >
+                        <svg width={14} height={14} viewBox="0 0 24 24" version="1.1"
+                             xmlns="http://www.w3.org/2000/svg"
+                             style={{ fill: formData.data_disk.length !== index + 1 ? '#EAEBF0' : '#c4c6cc' }}>
+                          <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-10.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h10.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z"></path>
+                        </svg>
                       </Button>
                     </div>
                   </div>
               ))}
               {!formData.data_disk.length && (
-                <div class='btns'>
-                  <Button class='btn' onClick={handleCreateGcpDataDisk}>
-                    <PlusIcon />
-                  </Button>
-                </div>
+                <Button onClick={handleCreateGcpDataDisk}>
+                  <PlusIcon />
+                </Button>
               )}
             </div>
           ),
@@ -820,7 +818,23 @@ export default defineComponent({
                         min={dataDiskCountRules.value.min}></Input>
                     </FormItem>
                     <div class='btns'>
-                      <Button
+                      <Button class={'btn'} onClick={handleCreateDataDisk}
+                              disabled={formData.data_disk.length !== index + 1}>
+                        <svg width={14} height={14} viewBox="0 0 24 24" version="1.1"
+                             xmlns="http://www.w3.org/2000/svg"
+                             style={{ fill: formData.data_disk.length !== index + 1 ? '#EAEBF0' : '#c4c6cc' }}>
+                          <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-4.5v4.5c0 0.414-0.336 0.75-0.75 0.75s-0.75-0.336-0.75-0.75v-4.5h-4.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h4.5v-4.5c0-0.414 0.336-0.75 0.75-0.75s0.75 0.336 0.75 0.75v4.5h4.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z"></path>
+                        </svg>
+                      </Button>
+                      <Button class={'btn'} onClick={() => handleRemoveDataDisk(index)}
+                              disabled={formData.data_disk.length !== index + 1} >
+                        <svg width={14} height={14} viewBox="0 0 24 24" version="1.1"
+                             xmlns="http://www.w3.org/2000/svg"
+                             style={{ fill: formData.data_disk.length !== index + 1 ? '#EAEBF0' : '#c4c6cc' }}>
+                          <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-10.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h10.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z"></path>
+                        </svg>
+                      </Button>
+                      {/* <Button
                         class='btn'
                         outline
                         size='small'
@@ -835,17 +849,15 @@ export default defineComponent({
                         disabled={formData.data_disk.length !== index + 1}
                         onClick={() => handleRemoveDataDisk(index)}>
                         <CloseLineIcon />
-                      </Button>
+                      </Button>*/}
                     </div>
                   </div>
                 ))}
                 {!formData.data_disk.length && (
-                    <div class='btns'>
-                      <Button class='btn' onClick={handleCreateDataDisk}>
-                        <PlusIcon />
-                      </Button>
-                    </div>
-                )}
+                    <Button onClick={handleCreateDataDisk}>
+                      <PlusIcon />
+                    </Button>)
+                }
                 {
                   // (formData.data_disks.length > 0 && cond.vendor === VendorEnum.HUAWEI)
                   // && <Checkbox v-model={formData.is_quickly_initialize_data_disk}>快速初始化数据盘</Checkbox>
