@@ -1326,7 +1326,7 @@ export default defineComponent({
                           - usageNum.value
                           - formData.required_count}
                       </span>{' '}
-                      /{limitNum.value}
+                      / {limitNum.value}
                     </>
                   }
                 </p>
