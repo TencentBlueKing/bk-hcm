@@ -335,7 +335,7 @@ export default defineComponent({
                     ))}
                 </CommonCard>
               ))}
-            <div class='action-bar'>
+            <div class='action-bar' style={{ paddingLeft: isResourcePage && 'calc(15% + 24px)' }}>
               <Button
                 theme='primary'
                 loading={submitting.value}

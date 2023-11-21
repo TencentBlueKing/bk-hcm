@@ -59,7 +59,7 @@ export default defineComponent({
     const cidr_host2 = ref('');
     const cidr_mask = ref('');
     const submitLoading = ref(false);
-    const { whereAmI } = useWhereAmI();
+    const { whereAmI, isResourcePage } = useWhereAmI();
     const router = useRouter();
 
     const resourceStore = useResourceStore();
@@ -267,7 +267,7 @@ export default defineComponent({
             </Form>
           </Card>
         </div>
-        <div class={'button-group'}>
+        <div class={'button-group'} style={{ paddingLeft: isResourcePage && 'calc(15% + 24px)' }}>
           <Button
             theme={'primary'}
             class={'button-submit'}

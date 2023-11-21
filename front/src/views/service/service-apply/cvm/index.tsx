@@ -1071,6 +1071,16 @@ export default defineComponent({
         },
         {
           validator: (value: string) => {
+            const pattern = cond.vendor === VendorEnum.HUAWEI
+              ? /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[()`~!@#$%^&*-+=|{}\[\]:;',.?/])[A-Za-z\d()`~!@#$%^&*\-+=|{}\[\]:;',.?/]+$/
+              : /^(?=.*[A-Za-z])(?=.*\d)(?=.*[()`~!@#$%^&*-+=|{}\[\]:;',.?/])[A-Za-z\d()`~!@#$%^&*\-+=|{}\[\]:;',.?/]+$/;
+            return pattern.test(value);
+          },
+          message: '密码不符合复杂度要求',
+          trigger: 'blur',
+        },
+        {
+          validator: (value: string) => {
             // formRef.value.clearValidate('password');
             return formData.password.length && value === formData.password;
           },
@@ -1316,7 +1326,7 @@ export default defineComponent({
                           - usageNum.value
                           - formData.required_count}
                       </span>{' '}
-                      /{limitNum.value}
+                      / {limitNum.value}
                     </>
                   }
                 </p>
