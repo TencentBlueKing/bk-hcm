@@ -23,30 +23,33 @@ import (
 	"fmt"
 
 	"hcm/pkg/kit"
-	"hcm/pkg/thirdparty"
+	"hcm/pkg/thirdparty/api-gateway"
 )
 
-// WithdrawTicket 撤销单据
-func (i *itsm) WithdrawTicket(kt *kit.Kit, sn string, operator string) error {
-	req := map[string]interface{}{
-		"sn":             sn,
-		"operator":       operator,
-		"action_type":    "WITHDRAW",
-		"action_message": "applicant withdraw ticket",
-	}
-	resp := new(thirdparty.BaseResponse)
+type tokenVerifiedResp struct {
+	apigateway.BaseResponse `json:",inline"`
+	Data                    struct {
+		IsPassed bool `json:"is_passed"`
+	} `json:"data"`
+}
+
+func (i *itsm) VerifyToken(kt *kit.Kit, token string) (bool, error) {
+	req := map[string]string{"token": token}
+	resp := new(tokenVerifiedResp)
+
 	err := i.client.Post().
-		SubResourcef("/operate_ticket/").
+		SubResourcef("/token/verify/").
 		WithContext(kt.Ctx).
 		WithHeaders(i.header(kt)).
 		Body(req).
 		Do().Into(resp)
 	if err != nil {
-		return err
-	}
-	if !resp.Result || resp.Code != 0 {
-		return fmt.Errorf("withdraw ticket failed, code: %d, msg: %s", resp.Code, resp.Message)
+		return false, err
 	}
 
-	return nil
+	if !resp.Result || resp.Code != 0 {
+		return false, fmt.Errorf("verify token failed, code: %d, msg: %s", resp.Code, resp.Message)
+	}
+
+	return resp.Data.IsPassed, nil
 }

@@ -50,8 +50,8 @@ import (
 	"hcm/pkg/rest/client"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
+	pkgitsm "hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/thirdparty/esb"
-	pkgitsm "hcm/pkg/thirdparty/itsm"
 	"hcm/pkg/tools/ssl"
 	"hcm/pkg/version"
 

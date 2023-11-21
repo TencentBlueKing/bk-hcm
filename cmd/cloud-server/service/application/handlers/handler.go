@@ -21,7 +21,7 @@ package handlers
 
 import (
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/thirdparty/itsm"
+	"hcm/pkg/thirdparty/api-gateway/itsm"
 )
 
 // ApplicationHandler 定义了申请单的表单校验，与itsm对接、审批通过后的资源交付函数

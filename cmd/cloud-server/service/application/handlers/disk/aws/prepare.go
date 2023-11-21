@@ -22,7 +22,7 @@ package aws
 import (
 	csdisk "hcm/pkg/api/cloud-server/disk"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/thirdparty/itsm"
+	"hcm/pkg/thirdparty/api-gateway/itsm"
 )
 
 // PrepareReq ...

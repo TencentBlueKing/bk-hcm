@@ -22,7 +22,7 @@ package gcp
 import (
 	proto "hcm/pkg/api/cloud-server/cvm"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/thirdparty/itsm"
+	"hcm/pkg/thirdparty/api-gateway/itsm"
 )
 
 // PrepareReq 预处理请求参数，比如敏感数据加密

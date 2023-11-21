@@ -24,7 +24,7 @@ import (
 	"strings"
 
 	"hcm/pkg/kit"
-	"hcm/pkg/thirdparty"
+	"hcm/pkg/thirdparty/api-gateway"
 )
 
 // VariableApprover 节点审批的引用变量审批人
@@ -49,7 +49,7 @@ type createTicketResult struct {
 }
 
 type createTicketResp struct {
-	thirdparty.BaseResponse `json:",inline"`
+	apigateway.BaseResponse `json:",inline"`
 	Data                    *createTicketResult `json:"data"`
 }
 

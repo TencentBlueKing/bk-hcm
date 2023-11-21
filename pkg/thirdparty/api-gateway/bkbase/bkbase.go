@@ -17,40 +17,32 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package itsm
+// Package bkbase ...
+package bkbase
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/constant"
-	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 	"hcm/pkg/rest/client"
-	"hcm/pkg/thirdparty"
+	"hcm/pkg/thirdparty/api-gateway"
 	"hcm/pkg/tools/ssl"
+	"hcm/pkg/tools/uuid"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-// Client Itsm api.
+// Client bkbase client
 type Client interface {
-	// CreateTicket 创建单据。
-	CreateTicket(kt *kit.Kit, params *CreateTicketParams) (string, error)
-	// GetTicketResult 获取单据结果。
-	GetTicketResult(kt *kit.Kit, sn string) (TicketResult, error)
-	// WithdrawTicket 撤销单据。
-	WithdrawTicket(kt *kit.Kit, sn string, operator string) error
-	// VerifyToken 校验Token。
-	VerifyToken(kt *kit.Kit, token string) (bool, error)
-	// GetTicketsByUser 获取用户的单据。
-	GetTicketsByUser(kt *kit.Kit, req *GetTicketsByUserReq) (*GetTicketsByUserRespData, error)
-	// Approve 审批单据。
-	Approve(kt *kit.Kit, req *ApproveReq) error
+	QuerySync(ctx context.Context, req *QuerySyncReq) (*QuerySyncResp, error)
 }
 
-// NewClient initialize a new itsm client
-func NewClient(cfg *cc.ApiGateway, reg prometheus.Registerer) (Client, error) {
+// NewClient new bkbase client.
+func NewClient(cfg cc.ApiGateway, reg prometheus.Registerer) (Client, error) {
 	tls := &ssl.TLSConfig{
 		InsecureSkipVerify: cfg.TLS.InsecureSkipVerify,
 		CertFile:           cfg.TLS.CertFile,
@@ -62,32 +54,51 @@ func NewClient(cfg *cc.ApiGateway, reg prometheus.Registerer) (Client, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	c := &client.Capability{
 		Client: cli,
-		Discover: &thirdparty.Discovery{
-			Name:    "itsm",
+		Discover: &apigateway.Discovery{
+			Name:    "bkbase",
 			Servers: cfg.Endpoints,
 		},
 		MetricOpts: client.MetricOption{Register: reg},
 	}
-	restCli := rest.NewClient(c, "/v2/itsm")
-	return &itsm{
+	restCli := rest.NewClient(c, "/v3")
+	return &bkbaseCli{
 		client: restCli,
 		config: cfg,
 	}, nil
 }
 
-// itsm is an esb client to request itsm.
-type itsm struct {
-	config *cc.ApiGateway
-	// http client instance
+type bkbaseCli struct {
+	config cc.ApiGateway
 	client rest.ClientInterface
 }
 
-func (i *itsm) header(kt *kit.Kit) http.Header {
+func (h *bkbaseCli) getAuth() string {
+	auth := fmt.Sprintf("{\"bk_app_code\": \"%s\", \"bk_app_secret\": \"%s\", \"bk_username\":\"%s\", "+
+		"\"bk_ticket\":\"%s\"}", h.config.AppCode, h.config.AppSecret, h.config.User, h.config.BkTicket)
+
+	return auth
+}
+
+// QuerySync query sync bkbase data
+func (h *bkbaseCli) QuerySync(ctx context.Context, req *QuerySyncReq) (*QuerySyncResp, error) {
+	resp := new(QuerySyncResp)
 	header := http.Header{}
-	header.Set(constant.RidKey, kt.Rid)
-	header.Set(constant.BKGWAuthKey, i.config.GetAuthValue())
-	return header
+	header.Set(constant.RidKey, uuid.UUID())
+	header.Set(constant.BKGWAuthKey, h.getAuth())
+	err := h.client.Post().
+		SubResourcef("/queryengine/query_sync").
+		WithContext(ctx).
+		WithHeaders(header).
+		Body(req).
+		Do().Into(resp)
+	if err != nil {
+		return nil, err
+	}
+	if resp.Result != true || resp.Code != CodeSuccess {
+		return nil, fmt.Errorf("query sync bkbase data failed, result: %v, code: %s, msg: %s", resp.Result, resp.Code,
+			resp.Message)
+	}
+	return resp, nil
 }

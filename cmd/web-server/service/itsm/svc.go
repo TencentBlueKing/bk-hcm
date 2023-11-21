@@ -28,7 +28,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/thirdparty/itsm"
+	itsm2 "hcm/pkg/thirdparty/api-gateway/itsm"
 )
 
 // InitService initial the service
@@ -47,7 +47,7 @@ func InitService(c *capability.Capability) {
 
 type service struct {
 	client  *client.ClientSet
-	itsmCli itsm.Client
+	itsmCli itsm2.Client
 }
 
 // ListMyApprovalTicket 查询待我审批的单据。
@@ -67,10 +67,10 @@ func (svc *service) ListMyApprovalTicket(cts *rest.Contexts) (interface{}, error
 		return nil, err
 	}
 
-	getReq := &itsm.GetTicketsByUserReq{
+	getReq := &itsm2.GetTicketsByUserReq{
 		ServiceID: serviceID,
 		User:      cts.Kit.User,
-		ViewType:  itsm.MyApproval,
+		ViewType:  itsm2.MyApproval,
 		Page:      (int64(req.Page.Start) / int64(req.Page.Limit)) + 1,
 		PageSize:  int64(req.Page.Limit),
 	}
@@ -99,7 +99,7 @@ func (svc *service) TicketApprove(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	getReq := &itsm.ApproveReq{
+	getReq := &itsm2.ApproveReq{
 		Sn:       req.Sn,
 		StateID:  req.StateID,
 		Approver: cts.Kit.User,
