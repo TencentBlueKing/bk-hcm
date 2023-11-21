@@ -31,15 +31,21 @@
   
   .data-disk-wrap {
     .flex-row {
-
       .bk-form-item {
         margin: 0 8px 8px 0;
       }
-
       &:last-child {
         .bk-form-item {
           margin: 0 8px 0 0;
         }
+      }
+    }
+    .btns {
+      margin-left: 10px;
+      .btn {
+        margin-right: 18px;
+        padding: 0;
+        border-style: none;
       }
     }
   }

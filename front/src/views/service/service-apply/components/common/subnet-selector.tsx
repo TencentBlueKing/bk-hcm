@@ -130,7 +130,7 @@ export default defineComponent({
           {...{ attrs }}
           onChange={(cloud_id: string) => {
             console.log(cloud_id);
-            const data = list.value.find(item => item.cloud_id = cloud_id);
+            const data = list.value.find(item => item.cloud_id === cloud_id);
             props.handleChange(data);
           }}
         >

@@ -20,6 +20,10 @@
       display: grid;
       grid-template-columns: 2fr 1fr;
       column-gap: 24px;
+
+      .account-form-card-content-grid-right {
+        position: relative;
+      }
     }
 
     .api-secret-header {
@@ -42,9 +46,9 @@
     .api-form-btn {
       font-size: 12px;
       position: absolute;
-      top: 56px;
-      right: 80px;
-      z-index: 999
+      z-index: 9;
+      top: 2px;
+      right: 0;
     };
 
     // .api-secret-selector {
