@@ -712,17 +712,18 @@ func (gt ApiGateway) GetAuthValue() string {
 
 // CloudSelection define cloud selection relation setting.
 type CloudSelection struct {
-	CoverRate           float64                  `json:"coverRate"`
-	CoverPingThreshHold []float64                `json:"coverPingThreshHold"`
-	DataSourceType      string                   `yaml:"dataSourceType"`
-	TableNames          CloudSelectionTableNames `json:"tableNames"`
-	BkBase              BkBase                   `yaml:"bkBase"`
+	CoverRate       float64                  `yaml:"coverRate"`
+	CoverPingRanges []ThreshHoldRanges       `yaml:"coverPingRanges"`
+	IDCPriceRanges  []ThreshHoldRanges       `yaml:"idcPriceRanges"`
+	DataSourceType  string                   `yaml:"dataSourceType"`
+	TableNames      CloudSelectionTableNames `yaml:"tableNames"`
+	BkBase          BkBase                   `yaml:"bkBase"`
 }
 
 // BkBase define bkbase relation setting.
 type BkBase struct {
 	DataToken  string `yaml:"dataToken"`
-	ApiGateway `yaml:"-"`
+	ApiGateway `yaml:"-,inline"`
 }
 
 // Validate ...
@@ -755,10 +756,16 @@ func (c CloudSelection) Validate() error {
 
 // CloudSelectionTableNames ...
 type CloudSelectionTableNames struct {
-	LatencyPingCountyIdc     string `json:"latencyPingCountyIdc"`
-	LatencyPingProvinceIdc   string `json:"latencyPingProvinceIdc"`
-	LatencyBizCountyIdc      string `json:"latencyBizCountyIdc"`
-	LatencyBizProvinceIdc    string `json:"latencyBizProvinceIdc"`
-	UserCountryDistribution  string `json:"userCountryDistribution"`
-	UserProvinceDistribution string `json:"userProvinceDistribution"`
+	LatencyPingCountryIdc    string `yaml:"latencyPingCountryIdc"`
+	LatencyPingProvinceIdc   string `yaml:"latencyPingProvinceIdc"`
+	LatencyBizCountryIdc     string `yaml:"latencyBizCountryIdc"`
+	LatencyBizProvinceIdc    string `yaml:"latencyBizProvinceIdc"`
+	UserCountryDistribution  string `yaml:"userCountryDistribution"`
+	UserProvinceDistribution string `yaml:"userProvinceDistribution"`
+}
+
+// ThreshHoldRanges 评分范围
+type ThreshHoldRanges struct {
+	Score int   `yaml:"score" json:"score"`
+	Range []int `yaml:"range" json:"range"`
 }
