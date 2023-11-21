@@ -19,7 +19,10 @@
 
 package csuser
 
-import "hcm/pkg/criteria/validator"
+import (
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/validator"
+)
 
 // BizCollectionReq define biz collection request.
 type BizCollectionReq struct {
@@ -28,5 +31,16 @@ type BizCollectionReq struct {
 
 // Validate BizCollectionReq.
 func (req BizCollectionReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// CreateCollectionReq define create collection request.
+type CreateCollectionReq struct {
+	ResType enumor.UserCollectionResType `json:"res_type" validate:"required"`
+	ResID   string                       `json:"res_id" validate:"required"`
+}
+
+// Validate CreateCollectionReq.
+func (req CreateCollectionReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

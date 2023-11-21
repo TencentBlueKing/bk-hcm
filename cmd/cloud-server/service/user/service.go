@@ -42,6 +42,10 @@ func InitService(c *capability.Capability) {
 	h.Add("DeleteBizCollection", http.MethodDelete, "/bizs/{bk_biz_id}/collections/bizs", svc.DeleteBizCollection)
 	h.Add("GetBizCollection", http.MethodGet, "/bizs/{bk_biz_id}/collections/bizs", svc.GetBizCollection)
 
+	h.Add("CreateCollection", http.MethodPost, "/collections/create", svc.CreateCollection)
+	h.Add("DeleteCollection", http.MethodDelete, "/collections/{id}", svc.DeleteCollection)
+	h.Add("ListResourceCollection", http.MethodGet, "/collections/{res_type}/list", svc.ListResourceCollection)
+
 	h.Load(c.WebService)
 }
 
