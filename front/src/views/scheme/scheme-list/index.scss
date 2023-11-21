@@ -1,0 +1,21 @@
+.scheme-list-page {
+  padding: 24px 0;
+  height: 100%;
+}
+.operate-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 auto;
+  width: 1280px;
+  .create-btn {
+    min-width: 136px;
+    .plus-icon {
+      font-size: 22px;
+    }
+  }
+}
+.scheme-table-rapper {
+  margin: 16px auto 0;
+  width: 1280px;
+}

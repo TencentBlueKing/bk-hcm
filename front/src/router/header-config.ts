@@ -21,6 +21,12 @@ export const headRouteConfig = [
     route: 'resource',
     href: '#/resource/resource',
   },
+  {
+    id: 'scheme',
+    name: '资源选型',
+    route: 'scheme',
+    href: '#/scheme/recommendation',
+  },
 
   // 接下来是 资源选型、平台管理
   // {
