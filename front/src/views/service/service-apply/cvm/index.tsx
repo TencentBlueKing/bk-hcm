@@ -141,8 +141,10 @@ export default defineComponent({
     const handleVpcChange = (vpc: any) => {
       vpcData.value = vpc;
       cloudId.value = vpc.bk_cloud_id;
-      vpcId.value = vpc.id;
-      resetFormItemData('cloud_subnet_id');
+      if (vpcId.value !== vpc.id) {
+        vpcId.value = vpc.id;
+        resetFormItemData('cloud_subnet_id');
+      }
     };
     const handleMachineTypeChange = (machine: any) => {
       machineType.value = machine;
@@ -1034,7 +1036,7 @@ export default defineComponent({
               : /^(?=.*[A-Za-z])(?=.*\d)(?=.*[()`~!@#$%^&*-+=|{}\[\]:;',.?/])[A-Za-z\d()`~!@#$%^&*\-+=|{}\[\]:;',.?/]+$/;
             return pattern.test(value);
           },
-          message: '密码至少必须包含大写字母、小写字母、数字和特殊字符（!@$%^-_=+[{}]:,./?）中的三种',
+          message: '密码不符合复杂度要求',
           trigger: 'blur',
         },
         {
