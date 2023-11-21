@@ -262,7 +262,7 @@ export default defineComponent({
                       </FormItem>
                   ))}
                 </div>
-                <div>
+                <div class={'account-form-card-content-grid-right'}>
                   {formModel.vendor === VendorEnum.TCLOUD
                   && tcloudExtension.validatedStatus === ValidateStatus.YES ? (
                     <Button
@@ -400,7 +400,10 @@ export default defineComponent({
           width={900}>
           <Alert theme='info' class={'mb16'}>
             该账号在云上拥有的权限组列表如下，如需调整权限请到
-            <Button theme='primary' text>
+            <Button theme='primary' text onClick={() => {
+              isAuthDialogShow.value = false;
+              window.open('https://console.cloud.tencent.com/cam/overview', '_blank', 'noopener,noreferrer');
+            }}>
               云控制台
             </Button>
             调整
