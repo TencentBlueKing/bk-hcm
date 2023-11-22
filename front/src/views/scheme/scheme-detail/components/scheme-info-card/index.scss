@@ -1,0 +1,32 @@
+.scheme-info-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px 6px;
+  background: #FFFFFF;
+  box-shadow: 0 2px 4px 0 #1919290d;
+  border-radius: 2px;
+  .info-list {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    flex: 1;
+    font-size: 12px;
+    color: #313238;
+    .info-item {
+      margin-bottom: 12px;
+      min-width: 360px;
+      &:last-child {
+        margin-right: auto;
+      }
+    }
+    .label {
+      color: #63656e;
+    }
+  }
+  .recreate-btn {
+    margin-left: 300px;
+    flex-shrink: 0;
+  }
+}

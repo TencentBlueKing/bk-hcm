@@ -1,0 +1,61 @@
+.scheme-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 52px;
+  background: #ffffff;
+  box-shadow: 0 3px 4px 0 #0000000a;
+}
+.header-content {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+.tag-list {
+  display: flex;
+  align-items: center;
+  margin-left: 52px;
+  .tag {
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    font-size: 12px;
+    line-height: 22px;
+    border-radius: 11px;
+    &:not(:first-of-type) {
+      margin-left: 8px;
+    }
+  }
+  .deploy-type {
+    color: #45A0A5;
+    background: #D8F4F5;
+  }
+  .cloud-service-type {
+    color: #4193E5;
+    background: #DAE9FD;
+    .tencent-cloud-icon {
+      margin-right: 4px;
+      color: #3a84ff;
+    }
+  }
+}
+.score-nums {
+  display: flex;
+  align-items: center;
+  margin-left: 64px;
+  .num-item {
+    font-size: 12px;
+    color: #313238;
+    &:not(:first-of-type) {
+      margin-left: 54px;
+    }
+    .label {
+      margin-right: 8px;
+      color: #63656e;
+    }
+  }
+}
+.operate-area {
+  flex-shrink: 0;
+}
