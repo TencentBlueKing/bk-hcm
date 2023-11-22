@@ -33,6 +33,7 @@ import (
 	"hcm/cmd/data-service/service/auth"
 	"hcm/cmd/data-service/service/capability"
 	"hcm/cmd/data-service/service/cloud"
+	cloudselection "hcm/cmd/data-service/service/cloud-selection"
 	"hcm/cmd/data-service/service/cloud/account"
 	accountbizrel "hcm/cmd/data-service/service/cloud/account-biz-rel"
 	"hcm/cmd/data-service/service/cloud/bill"
@@ -211,6 +212,7 @@ func (s *Service) apiSet() *restful.Container {
 	subaccount.InitService(capability)
 	sync.InitService(capability)
 	user.InitService(capability)
+	cloudselection.InitService(capability)
 
 	return restful.NewContainer().Add(capability.WebService)
 }

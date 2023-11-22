@@ -71,4 +71,10 @@ const (
 	CostManage ResourceType = "cost_manage"
 	// BizCollection 业务收藏
 	BizCollection ResourceType = "biz_collection"
+	// CloudSelectionScheme 云选型方案
+	CloudSelectionScheme ResourceType = "cloud_selection_scheme"
+	// CloudSelectionIdc 云选型机房
+	CloudSelectionIdc ResourceType = "cloud_selection_idc"
+	// CloudSelectionBizType 云选型业务类型
+	CloudSelectionBizType ResourceType = "cloud_selection_biz_type"
 )

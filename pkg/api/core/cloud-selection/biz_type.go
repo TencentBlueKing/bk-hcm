@@ -17,37 +17,18 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package core
+package coreselection
 
 import (
-	"hcm/pkg/rest"
+	"hcm/pkg/api/core"
+	"hcm/pkg/dal/table/types"
 )
 
-// BatchCreateResp ...
-type BatchCreateResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          *BatchCreateResult `json:"data"`
-}
-
-// BatchCreateResult ...
-type BatchCreateResult struct {
-	IDs []string `json:"ids"`
-}
-
-// ListResult define list result.
-type ListResult struct {
-	Count   uint64        `json:"count"`
-	Details []interface{} `json:"details"`
-}
-
-// ListResultT generic list result
-type ListResultT[T any] struct {
-	Count   uint64 `json:"count"`
-	Details []T    `json:"details"`
-}
-
-// BaseResp define base resp.
-type BaseResp[T any] struct {
-	rest.BaseResp `json:",inline"`
-	Data          T `json:"data"`
+// BizType biz_type表
+type BizType struct {
+	ID                     string            `json:"id"`
+	BizType                string            `json:"biz_type"`
+	CoverPing              float64           `json:"cover_ping"`
+	DeploymentArchitecture types.StringArray `json:"deployment_architecture"`
+	core.Revision          `json:",inline"`
 }

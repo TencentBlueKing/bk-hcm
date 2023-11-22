@@ -17,37 +17,42 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package core
+package cloudselection
 
 import (
+	"net/http"
+
+	"hcm/cmd/data-service/service/capability"
+	"hcm/pkg/dal/dao"
 	"hcm/pkg/rest"
 )
 
-// BatchCreateResp ...
-type BatchCreateResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          *BatchCreateResult `json:"data"`
+// InitService initial the service
+func InitService(cap *capability.Capability) {
+	svc := &service{
+		dao: cap.Dao,
+	}
+
+	h := rest.NewHandler()
+
+	h.Add("ListScheme", http.MethodPost, "/clouds/selections/schemes/list",
+		svc.ListScheme)
+	h.Add("BatchDeleteScheme", http.MethodDelete, "/clouds/selections/schemes/batch",
+		svc.BatchDeleteScheme)
+	h.Add("CreateScheme", http.MethodPost, "/clouds/selections/schemes/create",
+		svc.CreateScheme)
+	h.Add("UpdateScheme", http.MethodPatch, "/clouds/selections/schemes/{id}",
+		svc.UpdateScheme)
+
+	h.Add("ListIdc", http.MethodPost, "/clouds/selections/idcs/list",
+		svc.ListIdc)
+
+	h.Add("ListBizType", http.MethodPost, "/clouds/selections/biz_types/list",
+		svc.ListBizType)
+
+	h.Load(cap.WebService)
 }
 
-// BatchCreateResult ...
-type BatchCreateResult struct {
-	IDs []string `json:"ids"`
-}
-
-// ListResult define list result.
-type ListResult struct {
-	Count   uint64        `json:"count"`
-	Details []interface{} `json:"details"`
-}
-
-// ListResultT generic list result
-type ListResultT[T any] struct {
-	Count   uint64 `json:"count"`
-	Details []T    `json:"details"`
-}
-
-// BaseResp define base resp.
-type BaseResp[T any] struct {
-	rest.BaseResp `json:",inline"`
-	Data          T `json:"data"`
+type service struct {
+	dao dao.Set
 }

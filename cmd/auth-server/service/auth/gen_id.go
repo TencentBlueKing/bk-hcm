@@ -459,6 +459,28 @@ func genCloudResResource(a *meta.ResourceAttribute) (client.ActionID, []client.R
 	}
 }
 
+func genCloudSelectionSchemeResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	res := client.Resource{
+		System: sys.SystemIDHCM,
+		Type:   sys.CloudSelectionScheme,
+		ID:     a.ResourceID,
+	}
+
+	switch a.Basic.Action {
+	case meta.Find:
+		return sys.CloudSelectionSchemeFind, []client.Resource{res}, nil
+	case meta.Update:
+		return sys.CloudSelectionSchemeEdit, []client.Resource{res}, nil
+	case meta.Delete:
+		return sys.CloudSelectionSchemeDelete, []client.Resource{res}, nil
+	case meta.Create:
+		return sys.CloudSelectionRecommend, make([]client.Resource, 0), nil
+
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}
+
 // genBizCollectionResource 业务收藏
 func genBizCollectionResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
 	bizRes := client.Resource{

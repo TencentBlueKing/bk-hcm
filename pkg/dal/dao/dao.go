@@ -31,6 +31,7 @@ import (
 	"hcm/pkg/dal/dao/audit"
 	"hcm/pkg/dal/dao/auth"
 	"hcm/pkg/dal/dao/cloud"
+	daoselection "hcm/pkg/dal/dao/cloud-selection"
 	"hcm/pkg/dal/dao/cloud/bill"
 	"hcm/pkg/dal/dao/cloud/cvm"
 	"hcm/pkg/dal/dao/cloud/disk"
@@ -101,6 +102,9 @@ type Set interface {
 	AsyncFlow() daoasync.AsyncFlow
 	AsyncFlowTask() daoasync.AsyncFlowTask
 	UserCollection() daouser.Interface
+	CloudSelectionScheme() daoselection.SchemeInterface
+	CloudSelectionBizType() daoselection.BizTypeInterface
+	CloudSelectionIdc() daoselection.IdcInterface
 
 	Txn() *Txn
 }
@@ -481,6 +485,30 @@ func (s *set) AsyncFlow() daoasync.AsyncFlow {
 // AsyncFlowTask return AsyncFlowTask dao.
 func (s *set) AsyncFlowTask() daoasync.AsyncFlowTask {
 	return &daoasync.AsyncFlowTaskDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// CloudSelectionScheme returns cloud selection scheme dao.
+func (s *set) CloudSelectionScheme() daoselection.SchemeInterface {
+	return &daoselection.SchemeDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// CloudSelectionBizType return cloud selection biz type dao.
+func (s *set) CloudSelectionBizType() daoselection.BizTypeInterface {
+	return &daoselection.BizTypeDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// CloudSelectionIdc return cloud selection idc dao.
+func (s *set) CloudSelectionIdc() daoselection.IdcInterface {
+	return &daoselection.IdcDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 	}

@@ -52,6 +52,8 @@ type Client struct {
 	Bill            *BillClient
 
 	UserCollection *UserCollectionClient
+
+	CloudSelection *CloudSelectionClient
 }
 
 type restClient struct {
@@ -87,5 +89,7 @@ func NewClient(client rest.ClientInterface) *Client {
 		Bill:            NewBillClient(client),
 
 		UserCollection: NewUserCollectionClient(client),
+
+		CloudSelection: NewCloudCloudSelectionClient(client),
 	}
 }

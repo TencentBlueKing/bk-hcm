@@ -38,6 +38,7 @@ import (
 	"hcm/cmd/cloud-server/service/audit"
 	"hcm/cmd/cloud-server/service/bill"
 	"hcm/cmd/cloud-server/service/capability"
+	cloudselection "hcm/cmd/cloud-server/service/cloud-selection"
 	"hcm/cmd/cloud-server/service/cvm"
 	"hcm/cmd/cloud-server/service/disk"
 	"hcm/cmd/cloud-server/service/eip"
@@ -277,6 +278,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	user.InitService(c)
 
 	approvalprocess.InitService(c)
+	cloudselection.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

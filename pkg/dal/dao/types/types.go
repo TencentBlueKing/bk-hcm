@@ -26,6 +26,12 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
+// ListResult define list result.
+type ListResult[T any] struct {
+	Count   uint64 `json:"count,omitempty"`
+	Details []T    `json:"details,omitempty"`
+}
+
 // ListOption defines options to list resources.
 type ListOption struct {
 	Fields []string

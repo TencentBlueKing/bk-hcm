@@ -23,6 +23,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/client"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/iam/sys"
 )
 
 // AdaptAuthOptions convert hcm auth resource to iam action id and resources
@@ -79,6 +80,14 @@ func AdaptAuthOptions(a *meta.ResourceAttribute) (client.ActionID, []client.Reso
 		return genCostManageResource(a)
 	case meta.BizCollection:
 		return genBizCollectionResource(a)
+	case meta.CloudSelectionScheme:
+		return genCloudSelectionSchemeResource(a)
+	case meta.CloudSelectionIdc:
+		return sys.CloudSelectionRecommend, make([]client.Resource, 0), nil
+
+	case meta.CloudSelectionBizType:
+		return sys.CloudSelectionRecommend, make([]client.Resource, 0), nil
+
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm auth type: %s", a.Basic.Type)
 	}

@@ -141,6 +141,10 @@ const (
 
 	// CloudSelectionSchemeTable is cloud selection scheme table's name.
 	CloudSelectionSchemeTable Name = "cloud_selection_scheme"
+	// CloudSelectionBizTypeTable 云选型业务类型
+	CloudSelectionBizTypeTable Name = "cloud_selection_biz_type"
+	// CloudSelectionIdcTable 云选型机房信息
+	CloudSelectionIdcTable Name = "cloud_selection_idc"
 )
 
 // Validate whether the table name is valid or not.
@@ -204,6 +208,9 @@ var TableMap = map[Name]struct{}{
 	AccountBillConfigTable:       {},
 	UserCollectionTable:          {},
 	AccountSyncDetailTable:       {},
+	CloudSelectionSchemeTable:    {},
+	CloudSelectionBizTypeTable:   {},
+	CloudSelectionIdcTable:       {},
 
 	// TODO: 临时方案
 	RecycleRecordTableTaskID: {},
