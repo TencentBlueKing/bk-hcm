@@ -56,7 +56,10 @@ export default defineComponent({
       <Dialog
         fullscreen
         isShow={props.isShow}
-        onClosed={props.onCancel}
+        onClosed={() => {
+          step.value = 1;
+          props.onCancel();
+        }}
         class={'create-account-dialog-container'}>
         {{
           tools: () => (
@@ -83,15 +86,18 @@ export default defineComponent({
                   type={errMsg.value.length > 0 ? 'failure' : 'success'}
                 />
               )}
-              {step.value === 1 ? (
                 <AccountForm
                   changeEnableNextStep={changeEnableNextStep}
                   changeSubmitData={changeSubmitData}
                   changeValidateForm={callback => (validateForm.value = callback)
                   }
                   changeExtension={extension => (secretIds.value = extension)}
+                  style={
+                    step.value === 1 ? '' : {
+                      display: 'none',
+                    }
+                  }
                 />
-              ) : null}
               {step.value === 2 ? (
                 <AccountResource
                   secretIds={submitData.value?.extension}
@@ -105,11 +111,11 @@ export default defineComponent({
               <>
                 {step.value < 3 ? (
                   <>
-                    {/* {step.value > 1 ? (
-                      <Button class={'mr8'} onClick={() => (step.value -= 1)}>
+                    {step.value > 1 ? (
+                      <Button class={'mr8'} onClick={() => (step.value -= 1)} loading={isSubmitLoading.value}>
                         上一步
                       </Button>
-                    ) : null} */}
+                    ) : null}
                     {step.value < 2 ? (
                       <Button
                         theme={'primary'}
