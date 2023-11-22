@@ -338,7 +338,8 @@ export default defineComponent({
                     message:
                       '必须以小写字母开头, 后面可跟小写字母、数字、连字符 - 或 下划线 _ , 但不能以连字符 - 或下划线 _ 结尾。名称长度不少于 3 个字符，且不多于 64 个字符',
                     validator: (val: any): boolean => {
-                      return /^[a-z][a-z0-9-]{0,31}[a-z0-9]$/.test(val);
+                      // return /^[a-z][a-z0-9-]{1,31}[a-z0-9]$/.test(val);
+                      return /^[a-z][a-z0-9-_]{1,62}[a-z0-9]$/.test(val);
                     },
                   },
                 ],

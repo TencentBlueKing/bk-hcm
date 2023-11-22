@@ -392,7 +392,8 @@ export default defineComponent({
     const subnetLength = ref(0);
     watch(
       () => formData.cloud_vpc_id,
-      () => {
+      (val) => {
+        !val && (cloudId.value = null);
         console.log(
           'subnetSelectorRef.value',
           subnetSelectorRef.value.subnetList,
