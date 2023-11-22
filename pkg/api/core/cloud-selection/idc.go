@@ -17,37 +17,20 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package core
+package coreselection
 
 import (
-	"hcm/pkg/rest"
+	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/enumor"
 )
 
-// BatchCreateResp ...
-type BatchCreateResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          *BatchCreateResult `json:"data"`
-}
-
-// BatchCreateResult ...
-type BatchCreateResult struct {
-	IDs []string `json:"ids"`
-}
-
-// ListResult define list result.
-type ListResult struct {
-	Count   uint64        `json:"count"`
-	Details []interface{} `json:"details"`
-}
-
-// ListResultT generic list result
-type ListResultT[T any] struct {
-	Count   uint64 `json:"count"`
-	Details []T    `json:"details"`
-}
-
-// BaseResp define base resp.
-type BaseResp[T any] struct {
-	rest.BaseResp `json:",inline"`
-	Data          T `json:"data"`
+// Idc idc表
+type Idc struct {
+	ID            string        `json:"id"`
+	BkBizID       int64         `json:"bk_biz_id"`
+	Name          string        `json:"name"`
+	Vendor        enumor.Vendor `json:"vendor"`
+	Country       string        `json:"country"`
+	Region        string        `json:"region"`
+	core.Revision `json:",inline"`
 }
