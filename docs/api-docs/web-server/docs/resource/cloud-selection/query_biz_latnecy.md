@@ -13,6 +13,7 @@ POST /api/v1/cloud/selections/latency/biz/query
 | 参数名称      | 参数类型           | 必选 | 描述        |
 |-----------|----------------|----|-----------|
 | area_topo | AreaInfo array | 是  | 需要查询的拓扑列表 |
+| idc_ids   | string array   | 是  | idc 列表    |
 
 #### AreaInfo
 
@@ -67,11 +68,17 @@ POST /api/v1/cloud/selections/latency/biz/query
         "children": [
           {
             "name": "province_1_1",
-            "value": 0.1
+            "value": {
+              "idc1": 100,
+              "idc2": 210
+            }
           },
           {
             "name": "province_1_2",
-            "value": 0.1
+            "value": {
+              "idc1": 100,
+              "idc2": 210
+            }
           }
         ]
       },
@@ -80,11 +87,17 @@ POST /api/v1/cloud/selections/latency/biz/query
         "children": [
           {
             "name": "province_2_1",
-            "value": 0.1
+            "value": {
+              "idc1": 100,
+              "idc2": 210
+            }
           },
           {
             "name": "province_2_2",
-            "value": 0.1
+            "value": {
+              "idc1": 100,
+              "idc2": 210
+            }
           }
         ]
       }
@@ -103,8 +116,8 @@ POST /api/v1/cloud/selections/latency/biz/query
 
 #### AreaInfo
 
-| 参数名称     | 参数类型           | 描述          |
-|----------|----------------|-------------|
-| name     | string         | 地理标签，国家/州省等 |
-| value    | double         | 分布权重        |
-| children | AreaInfo array | 下级地理标签      |
+| 参数名称     | 参数类型              | 描述          |
+|----------|-------------------|-------------|
+| name     | string            | 地理标签，国家/州省等 |
+| value    | map[string]double | ping值map    |
+| children | AreaInfo array    | 下级地理标签      |
