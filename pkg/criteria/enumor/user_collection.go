@@ -28,6 +28,7 @@ type UserCollectionResType string
 func (typ UserCollectionResType) Validate() error {
 	switch typ {
 	case BizCollResType:
+	case CloudSelectionSchemeCollResType:
 	default:
 		return fmt.Errorf("res type: %s not support", typ)
 	}
@@ -38,4 +39,6 @@ func (typ UserCollectionResType) Validate() error {
 const (
 	// BizCollResType 业务资源类型
 	BizCollResType UserCollectionResType = "biz"
+	// CloudSelectionSchemeCollResType 云选型资源类型
+	CloudSelectionSchemeCollResType UserCollectionResType = "cloud_selection_scheme"
 )

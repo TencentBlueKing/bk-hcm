@@ -154,7 +154,7 @@ func (svc *service) ListUserCollection(cts *rest.Contexts) (interface{}, error) 
 	details := make([]coreuser.UserCollection, 0, len(result.Details))
 	for _, one := range result.Details {
 		details = append(details, coreuser.UserCollection{
-			ID:      one.User,
+			ID:      one.ID,
 			User:    one.User,
 			ResType: one.ResType,
 			ResID:   one.ResID,
