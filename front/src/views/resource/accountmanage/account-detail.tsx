@@ -804,7 +804,7 @@ export default defineComponent({
                     {/* <i class={'icon hcm-icon bkhcm-icon-invisible1 pl15 account-edit-icon'}/> */}
                     <i
                       class={
-                        'icon bk-icon icon-bianji pl15 account-edit-icon mr6'
+                        'hcm-icon bkhcm-icon-bianji pl15 account-edit-icon mr6'
                       }
                     />
                     编辑

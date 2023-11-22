@@ -342,9 +342,9 @@ export default defineComponent({
                           default: () => (
                             <span class='cursor-pointer flex-row align-items-center '>
                               {language.value === LANGUAGE_TYPE.en ? (
-                                <span class='icon bk-icon icon-yuyanqiehuanyingwen'></span>
+                                <span class='hcm-icon bkhcm-icon-yuyanqiehuanyingwen'></span>
                               ) : (
-                                <span class='icon bk-icon icon-yuyanqiehuanzhongwen'></span>
+                                <span class='hcm-icon bkhcm-icon-yuyanqiehuanzhongwen'></span>
                               )}
                             </span>
                           ),
@@ -355,7 +355,7 @@ export default defineComponent({
                                   language.value = LANGUAGE_TYPE.zh_cn;
                                 }}>
                                 <span
-                                  class='icon bk-icon icon-yuyanqiehuanzhongwen pr5'
+                                  class='hcm-icon bkhcm-icon-yuyanqiehuanzhongwen pr5'
                                   style={{ fontSize: '16px' }}></span>
                                 {'中文'}
                               </DropdownItem>
@@ -364,7 +364,7 @@ export default defineComponent({
                                   language.value = LANGUAGE_TYPE.en;
                                 }}>
                                 <span
-                                  class='icon bk-icon icon-yuyanqiehuanyingwen pr5'
+                                  class='hcm-icon bkhcm-icon-yuyanqiehuanyingwen pr5'
                                   style={{ fontSize: '16px' }}></span>
                                 {'English'}
                               </DropdownItem>
@@ -379,7 +379,7 @@ export default defineComponent({
                           default: () => (
                             <span class='cursor-pointer flex-row align-items-center '>
                               {userStore.username}
-                              <span class='icon bk-icon icon-down-shape pl5'></span>
+                              <span class='hcm-icon bkhcm-icon-down-shape pl5'></span>
                             </span>
                           ),
                           content: () => (
@@ -430,7 +430,7 @@ export default defineComponent({
                               <div class='bk-hcm-app-selector-item-star'>
                                 {favoriteSet.value.has(data.id) ? (
                                   <i
-                                    class={'icon bk-icon icon-collect'}
+                                    class={'hcm-icon bkhcm-icon-collect'}
                                     style={{ color: '#CC933A' }}
                                     onClick={(event) => {
                                       removeFromFavorite(data.id);
@@ -439,7 +439,7 @@ export default defineComponent({
                                   />
                                 ) : (
                                   <i
-                                    class={'icon bk-icon icon-not-favorited'}
+                                    class={'hcm-icon bkhcm-icon-not-favorited'}
                                     onClick={(event) => {
                                       addToFavorite(data.id);
                                       event.stopPropagation();
@@ -457,7 +457,7 @@ export default defineComponent({
                               }}>
                               <i
                                 class={
-                                  'icon bk-icon icon-plus-circle app-action-content-icon'
+                                  'hcm-icon bkhcm-icon-plus-circle app-action-content-icon'
                                 }
                               />
                               <span class={'app-action-content-text'}>
@@ -495,7 +495,7 @@ export default defineComponent({
                                           icon: () => (
                                             <i
                                               class={
-                                                'icon bk-icon icon-automatic-typesetting'
+                                                'hcm-icon bkhcm-icon-automatic-typesetting'
                                               }
                                             />
                                           ),
@@ -522,7 +522,7 @@ export default defineComponent({
                                   icon: () => (
                                     <i
                                       class={
-                                        'icon bk-icon icon-automatic-typesetting'
+                                        'hcm-icon bkhcm-icon-automatic-typesetting'
                                       }
                                     />
                                   ),

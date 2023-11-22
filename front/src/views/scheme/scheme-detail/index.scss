@@ -1,0 +1,23 @@
+.scheme-detail-page {
+  height: 100%;
+}
+.detail-content-area {
+  padding: 24px;
+  height: calc(100% - 52px);
+}
+
+.chart-content-wrapper {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-top: 16px;
+  height: calc(100% - 94px);
+  .idc-map-display {
+    margin-right: 16px;
+    height: 100%;
+  }
+  .network-heat-map {
+    flex: 1;
+    height: 100%;
+  }
+}

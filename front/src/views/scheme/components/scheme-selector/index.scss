@@ -1,0 +1,30 @@
+.scheme-selector {
+  display: flex;
+  align-items: center;
+}
+.back-icon {
+  font-size: 24px;
+  color: #3a84ff;
+  cursor: pointer;
+}
+.scheme-name {
+  font-size: 16px;
+  color: #313238;
+  line-height: 24px;
+}
+.arrow-icon {
+  margin-left: 8px;
+  font-size: 12px;
+  color: #c4c6cc;
+}
+.edit-btn {
+  display: flex;
+  align-items: center;
+  margin-left: 24px;
+  font-size: 12px;
+  color: #3a84ff;
+  cursor: pointer;
+  .edit-icon {
+    margin-right: 6px;
+  }
+}

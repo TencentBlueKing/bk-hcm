@@ -43,8 +43,8 @@ export default defineComponent({
                     <i
                       class={
                         isExpand
-                          ? 'icon bk-icon icon-down-shape vendor-account-menu-dropdown-icon'
-                          : 'icon bk-icon icon-right-shape vendor-account-menu-dropdown-icon'
+                          ? 'hcm-icon bkhcm-icon-down-shape vendor-account-menu-dropdown-icon'
+                          : 'hcm-icon bkhcm-icon-right-shape vendor-account-menu-dropdown-icon'
                       }></i>
                     <img src={icon} class={'vendor-icon'}></img>
                     <span class={'vendor-account-title'}>{name}</span>

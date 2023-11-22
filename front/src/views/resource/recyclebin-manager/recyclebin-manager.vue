@@ -22,7 +22,7 @@
               @click="() => isSettingDialogShow = true"
               v-show="resourceAccountStore.resourceAccount?.id"
             >
-              <i class="icon bk-icon icon-shezhi" diasbled></i>
+              <i class="hcm-icon bkhcm-icon-shezhi" diasbled></i>
             </div>
           </template>
           <bk-tab-panel
@@ -125,7 +125,7 @@
                       data?.detail?.cvm_id || '--'
                     }}
                     <i
-                      class="icon bk-icon icon-link related-cvm-link"
+                      class="hcm-icon bkhcm-icon-link related-cvm-link"
                       v-if="data?.detail?.cvm_id"
                       @click="() => handleLink(data.detail.cvm_id)"
                     />

@@ -37,7 +37,7 @@ export default defineComponent({
           <div class={'draggable-card-header-index'}>
             { props.index }
           </div>
-          <i class={'icon bk-icon icon-grag-fill mr16 draggable-card-header-draggable-btn'}></i>
+          <i class={'hcm-icon bkhcm-icon-grag-fill mr16 draggable-card-header-draggable-btn'}></i>
         </div>
         {
           isExpand.value ? (

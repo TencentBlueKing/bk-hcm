@@ -11,8 +11,8 @@ export default defineComponent({
     const router = useRouter();
 
     const TAB_LIST = [
-      { routeName: 'scheme-recommendation', label: '资源选型', icon: 'icon-link' },
-      { routeName: 'scheme-list', label: '部署方案', icon: 'icon-link' },
+      { routeName: 'scheme-recommendation', label: '资源选型', icon: 'bkhcm-icon-xuanze' },
+      { routeName: 'scheme-list', label: '部署方案', icon: 'bkhcm-icon-bushu' },
     ];
 
     const isActived = (name: string) => {
@@ -37,7 +37,7 @@ export default defineComponent({
                     class={`tab-item${ isActived(routeName) ? ' actived' : '' }`}
                     key={routeName}
                     onClick={() => handleTabChange(routeName)}>
-                    <i class={`bk-icon ${icon}`}></i>
+                    <i class={`hcm-icon ${icon}`}></i>
                     {label}
                   </div>
                 )
