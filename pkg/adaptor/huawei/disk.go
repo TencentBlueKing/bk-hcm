@@ -282,12 +282,10 @@ func (h *HuaWei) buildDisk(kt *kit.Kit, details []model.VolumeDetail) ([]disk.Hu
 		} else {
 			// 如果有 orderID，则表明是包年包月计费模式
 			charge, exist := idChargeMap[one.Id]
-			if !exist {
-				return nil, fmt.Errorf("disk: %s not found charge info", one.Id)
+			if exist {
+				tmp.DiskChargeType = disk.HuaWeiDiskChargeTypeEnum.PRE_PAID
+				tmp.ExpireTime = converter.PtrToVal(charge.ExpireTime)
 			}
-
-			tmp.DiskChargeType = disk.HuaWeiDiskChargeTypeEnum.PRE_PAID
-			tmp.ExpireTime = converter.PtrToVal(charge.ExpireTime)
 		}
 
 		disks = append(disks, tmp)
