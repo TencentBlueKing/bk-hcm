@@ -405,7 +405,7 @@ watch(
     @closed="handleToggleShowChangeIP"
     @confirm="handleConfirmChangeIP"
   >
-    确定更换实例（xxx）上的IP（119.28.100.27）？更换后原IP可能无法找回
+    确定更换实例（xxx）上的IP？更换后原IP可能无法找回
   </bk-dialog>
 
   <bk-dialog
