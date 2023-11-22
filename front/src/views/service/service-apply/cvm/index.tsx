@@ -429,6 +429,7 @@ export default defineComponent({
           || !saveData.password
           || !saveData.confirmed_password
         ) return;
+        await formRef.value.validate();
         isSubmitBtnLoading.value = true;
         const res = await http.post(
           `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/cvms/prices/inquiry`,
