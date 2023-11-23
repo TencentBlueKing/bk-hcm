@@ -27,9 +27,12 @@ import (
 
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/rest/client"
 	"hcm/pkg/thirdparty/api-gateway"
+	"hcm/pkg/tools/json"
 	"hcm/pkg/tools/ssl"
 	"hcm/pkg/tools/uuid"
 
@@ -42,7 +45,7 @@ type Client interface {
 }
 
 // NewClient new bkbase client.
-func NewClient(cfg cc.ApiGateway, reg prometheus.Registerer) (Client, error) {
+func NewClient(cfg *cc.ApiGateway, reg prometheus.Registerer) (Client, error) {
 	tls := &ssl.TLSConfig{
 		InsecureSkipVerify: cfg.TLS.InsecureSkipVerify,
 		CertFile:           cfg.TLS.CertFile,
@@ -70,7 +73,7 @@ func NewClient(cfg cc.ApiGateway, reg prometheus.Registerer) (Client, error) {
 }
 
 type bkbaseCli struct {
-	config cc.ApiGateway
+	config *cc.ApiGateway
 	client rest.ClientInterface
 }
 
@@ -101,4 +104,29 @@ func (h *bkbaseCli) QuerySync(ctx context.Context, req *QuerySyncReq) (*QuerySyn
 			resp.Message)
 	}
 	return resp, nil
+}
+
+// QuerySql generic sql query method, call QuerySync method of given BKBase client
+func QuerySql[T any](bkBaseCli Client, kt *kit.Kit, sql string) ([]T, error) {
+
+	cfg := cc.CloudServer().CloudSelection.BkBase
+	req := QuerySyncReq{
+		AuthMethod: "token",
+		DataToken:  cfg.DataToken,
+		AppCode:    cfg.AppCode,
+		AppSecret:  cfg.AppSecret,
+		Sql:        sql,
+	}
+	resp, err := bkBaseCli.QuerySync(kt.Ctx, &req)
+	if err != nil {
+		logs.Errorf("fail to query bkbase, err: %v, sql: %s, rid: %s", err, sql, kt.Rid)
+		return nil, err
+	}
+	var ret []T
+	if err := json.Unmarshal(resp.Data.List, &ret); err != nil {
+		logs.Errorf("fail to decode bkbase result, err: %v, resp: %+v, rid: %s", err, resp, kt.Rid)
+		return nil, err
+	}
+
+	return ret, nil
 }

@@ -22,10 +22,13 @@ package csselection
 import (
 	"net/http"
 
+	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/capability"
+	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
+	"hcm/pkg/thirdparty/api-gateway/bkbase"
 )
 
 // InitService initialize the vpc service.
@@ -33,6 +36,9 @@ func InitService(c *capability.Capability) {
 	svc := &service{
 		client:     c.ApiClient,
 		authorizer: c.Authorizer,
+		audit:      c.Audit,
+		bkBase:     c.BKBaseCli,
+		cfg:        cc.CloudServer().CloudSelection,
 	}
 
 	h := rest.NewHandler()
@@ -50,10 +56,20 @@ func InitService(c *capability.Capability) {
 	// IDC接口
 	h.Add("ListIdc", http.MethodPost, "/selections/idcs/list", svc.ListIdc)
 
+	// 查询支持国家
+	h.Add("ListAvailableCountry", http.MethodPost, "/selections/countries/list", svc.ListAvailableCountry)
+	h.Add("QueryUserDistribution", http.MethodPost, "/selections/user_distributions/query", svc.QueryUserDistribution)
+	h.Add("QueryPingLatency", http.MethodPost, "/selections/latency/ping/query", svc.QueryPingLatency)
+	h.Add("QueryBizLatency", http.MethodPost, "/selections/latency/biz/query", svc.QueryBizLatency)
+	h.Add("QueryServiceArea", http.MethodPost, "/selections/idcs/services/areas/query", svc.QueryServiceArea)
+
 	h.Load(c.WebService)
 }
 
 type service struct {
 	client     *client.ClientSet
 	authorizer auth.Authorizer
+	audit      audit.Interface
+	bkBase     bkbase.Client
+	cfg        cc.CloudSelection
 }

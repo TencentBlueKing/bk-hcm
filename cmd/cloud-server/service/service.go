@@ -70,6 +70,7 @@ import (
 	restcli "hcm/pkg/rest/client"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
+	"hcm/pkg/thirdparty/api-gateway/bkbase"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/thirdparty/esb"
 	"hcm/pkg/tools/ssl"
@@ -87,7 +88,8 @@ type Service struct {
 	// EsbClient 调用接入ESB的第三方系统API集合
 	esbClient esb.Client
 	// itsmCli itsm client.
-	itsmCli itsm.Client
+	itsmCli   itsm.Client
+	bkBaseCli bkbase.Client
 }
 
 // NewService create a service instance.
@@ -137,6 +139,13 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 		return nil, err
 	}
 
+	bkbaseCfg := cc.CloudServer().CloudSelection.BkBase
+	bkbaseCli, err := bkbase.NewClient(&bkbaseCfg.ApiGateway, metrics.Register())
+	if err != nil {
+		logs.Errorf("failed to create bkbase client, err: %v", err)
+		return nil, err
+	}
+
 	svr := &Service{
 		client:     apiClientSet,
 		authorizer: authorizer,
@@ -144,6 +153,7 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 		cipher:     cipher,
 		esbClient:  esbClient,
 		itsmCli:    itsmCli,
+		bkBaseCli:  bkbaseCli,
 	}
 
 	etcdCfg, err := cc.CloudServer().Service.Etcd.ToConfig()
@@ -250,6 +260,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 		EsbClient:  s.esbClient,
 		Logics:     logics.NewLogics(s.client, s.esbClient),
 		ItsmCli:    s.itsmCli,
+		BKBaseCli:  s.bkBaseCli,
 	}
 
 	account.InitAccountService(c)
