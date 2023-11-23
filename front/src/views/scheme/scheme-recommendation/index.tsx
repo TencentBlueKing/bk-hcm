@@ -1,10 +1,11 @@
-import { defineComponent } from "vue";
+import { defineComponent } from 'vue';
+import SchemePreview from '../components/scheme-preview';
 
 export default defineComponent({
-  name: 'scheme-recommendation-page',
-  setup () {
-    return () => (
-      <div class="scheme-recommendation-page">创建方案</div>
-    )
+  name: 'SchemeRecommendationPage',
+  setup() {
+    return () => <div class='scheme-recommendation-page'>
+      <SchemePreview/>
+    </div>;
   },
 });
