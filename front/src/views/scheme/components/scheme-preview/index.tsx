@@ -2,6 +2,7 @@ import { Button, Select } from 'bkui-vue';
 import { defineComponent, ref } from 'vue';
 import './index.scss';
 import { Info } from 'bkui-vue/lib/icon';
+import SchemePreviewTableCard from './components/scheme-preview-table-card';
 
 const { Option } = Select;
 
@@ -53,7 +54,9 @@ export default defineComponent({
         </Select>
       </div>
       <div class={'scheme-preview-content'}>
-        123
+        {
+          [1, 2, 3].map(_v => <SchemePreviewTableCard></SchemePreviewTableCard>)
+        }
       </div>
     </div>;
   },
