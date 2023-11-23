@@ -33,22 +33,22 @@ default: all
 
 # 创建编译文件存储目录
 pre:
-	@echo "\033[34;1mBuilding...\n\033[0m"
+	@echo -e "\033[34;1mBuilding...\n\033[0m"
 	mkdir -p ${OUTPUT_DIR}
 
 # 本地测试前后端编译
 all: pre ui server suite
 	@cd ${PRO_DIR}/cmd && make
-	@echo "\033[32;1mBuild All Success!\n\033[0m"
+	@echo -e "\033[32;1mBuild All Success!\n\033[0m"
 
 # 后端本地测试编译
 server: pre
 	@cd ${PRO_DIR}/cmd && make
-	@echo "\033[32;1mBuild Server Success!\n\033[0m"
+	@echo -e "\033[32;1mBuild Server Success!\n\033[0m"
 
 # 二进制出包编译
 package: pre ui api ver
-	@echo "\033[34;1mPackaging...\n\033[0m"
+	@echo -e "\033[34;1mPackaging...\n\033[0m"
 	@mkdir -p ${OUTPUT_DIR}/bin
 	@mkdir -p ${OUTPUT_DIR}/etc
 	@mkdir -p ${OUTPUT_DIR}/install
@@ -56,32 +56,32 @@ package: pre ui api ver
 	@cp -f ${PRO_DIR}/scripts/install/migrate.sh ${OUTPUT_DIR}/install/
 	@cp -rf ${PRO_DIR}/scripts/sql/* ${OUTPUT_DIR}/install/sql/
 	@cd ${PRO_DIR}/cmd && make package
-	@echo "\033[32;1mPackage All Success!\n\033[0m"
+	@echo -e "\033[32;1mPackage All Success!\n\033[0m"
 
 # 容器化编译
 docker: pre ui ver
-	@echo "\033[34;1mMake Dockering...\n\033[0m"
+	@echo -e "\033[34;1mMake Dockering...\n\033[0m"
 	@cp -rf ${PRO_DIR}/docs/support-file/docker/* ${OUTPUT_DIR}/
 	@mv ${OUTPUT_DIR}/front ${OUTPUT_DIR}/bk-hcm-webserver/
 	@cp -rf ${PRO_DIR}/scripts/sql ${OUTPUT_DIR}/bk-hcm-dataservice/
 	@cd ${PRO_DIR}/cmd && make docker
-	@echo "\033[32;1mMake Docker All Success!\n\033[0m"
+	@echo -e "\033[32;1mMake Docker All Success!\n\033[0m"
 
 # 编译前端
 ui: pre
-	@echo "\033[34;1mBuilding Front...\033[0m"
+	@echo -e "\033[34;1mBuilding Front...\033[0m"
 	@cd ${PRO_DIR}/front && npm i && npm run build
 	@mv ${PRO_DIR}/front/dist ${OUTPUT_DIR}/front
-	@echo "\033[32;1mBuild Front Success!\n\033[0m"
+	@echo -e "\033[32;1mBuild Front Success!\n\033[0m"
 
 # 添加Api文档到编译文件中
 api: pre
-	@echo "\033[34;1mPackaging API Docs...\033[0m"
+	@echo -e "\033[34;1mPackaging API Docs...\033[0m"
 	@mkdir -p ${OUTPUT_DIR}/api/
 	@mkdir -p ${OUTPUT_DIR}/api/api-server
 	@cp -f docs/api-docs/api-server/api/bk_apigw_resources_bk-hcm.yaml ${OUTPUT_DIR}/api/api-server
 	@tar -czf ${OUTPUT_DIR}/api/api-server/zh.tgz -C docs/api-docs/api-server/docs zh
-	@echo "\033[32;1mPackaging API Docs Done\n\033[0m"
+	@echo -e "\033[32;1mPackaging API Docs Done\n\033[0m"
 
 # 添加版本信息到编译文件中
 ver: pre
