@@ -42,7 +42,7 @@ import (
 func (svc *service) ListAvailableCountry(cts *rest.Contexts) (any, error) {
 	res := meta.ResourceAttribute{
 		Basic: &meta.Basic{
-			Type:   meta.CloudSelectionDistributionData,
+			Type:   meta.CloudSelectionDataSource,
 			Action: meta.Find,
 		},
 	}
@@ -71,7 +71,7 @@ func (svc *service) QueryUserDistribution(cts *rest.Contexts) (any, error) {
 
 	res := meta.ResourceAttribute{
 		Basic: &meta.Basic{
-			Type:   meta.CloudSelectionDistributionData,
+			Type:   meta.CloudSelectionDataSource,
 			Action: meta.Find,
 		},
 	}
@@ -120,7 +120,7 @@ func (svc *service) QueryPingLatency(cts *rest.Contexts) (any, error) {
 	// auth
 	res := meta.ResourceAttribute{
 		Basic: &meta.Basic{
-			Type:   meta.CloudSelectionDistributionData,
+			Type:   meta.CloudSelectionDataSource,
 			Action: meta.Find,
 		},
 	}
@@ -148,7 +148,7 @@ func (svc *service) QueryBizLatency(cts *rest.Contexts) (any, error) {
 	// auth
 	res := meta.ResourceAttribute{
 		Basic: &meta.Basic{
-			Type:   meta.CloudSelectionDistributionData,
+			Type:   meta.CloudSelectionDataSource,
 			Action: meta.Find,
 		},
 	}
@@ -176,7 +176,7 @@ func (svc *service) QueryServiceArea(cts *rest.Contexts) (any, error) {
 	// auth
 	res := meta.ResourceAttribute{
 		Basic: &meta.Basic{
-			Type:   meta.CloudSelectionDistributionData,
+			Type:   meta.CloudSelectionDataSource,
 			Action: meta.Find,
 		},
 	}

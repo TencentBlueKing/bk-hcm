@@ -86,7 +86,7 @@ func AdaptAuthOptions(a *meta.ResourceAttribute) (client.ActionID, []client.Reso
 		return sys.CloudSelectionRecommend, make([]client.Resource, 0), nil
 	case meta.CloudSelectionBizType:
 		return sys.CloudSelectionRecommend, make([]client.Resource, 0), nil
-	case meta.CloudSelectionDistributionData:
+	case meta.CloudSelectionDataSource:
 		return sys.CloudSelectionRecommend, make([]client.Resource, 0), nil
 
 	default:
