@@ -40,8 +40,8 @@ const selectedValue = computed({
   },
 });
 
-const getAccoutList = async () => {
-  if (props.mustBiz && !props.bizId) {
+const getAccoutList = async (bizs?: number) => {
+  if (props.mustBiz && !props.bizId && !bizs) {
     return;
   }
 
@@ -61,7 +61,7 @@ const getAccoutList = async () => {
     data.params = { account_type: props.type };
   }
   const isResource = whereAmI.value === Senarios.resource;
-  const res = await accountStore.getAccountList(data, props.bizId, isResource);
+  const res = await accountStore.getAccountList(data, props.bizId || bizs, isResource);
 
   accountPage.value += 1;
 
@@ -86,6 +86,10 @@ watch(
     }
   },
 );
+
+watch(() => accountStore.bizs, (bizs) => {
+  getAccoutList(bizs);
+});
 
 const handleChange = (val: string) => {
   const data = accountList.value.find(item => item.id === val);

@@ -117,8 +117,9 @@ export default defineComponent({
         // 用户体验优化项
         const vendorFlag = [VendorEnum.TCLOUD, VendorEnum.AWS].includes(props.vendor);
         // 1.过滤
+        let canUseVpcList = null;
         if (!props.isSubnet) {
-          list.value = vendorFlag
+          canUseVpcList = vendorFlag
             ? list.value.filter(({ current_zone_subnet_count }) => current_zone_subnet_count > 0)
             : list.value.filter(({ subnet_count }) => subnet_count > 0);
         }
@@ -127,8 +128,9 @@ export default defineComponent({
           ? list.value.sort((prev, next) => next.current_zone_subnet_count - prev.current_zone_subnet_count)
           : list.value.sort((prev, next) => next.subnet_count - prev.subnet_count);
         // 3.自动填充
-        if (list.value.length === 1) {
-          selected.value = list.value[0].cloud_id;
+        if (canUseVpcList?.length === 1) {
+          selected.value = canUseVpcList[0].cloud_id;
+          emit('change', canUseVpcList[0]);
         }
       } finally {
         loading.value = false;

@@ -414,7 +414,6 @@ getResourceAccountList();
       >
         <template #title>
           {{ resourceAccountStore?.resourceAccount?.sync_failed_reason }}
-          <bk-button text theme="primary" class="ml10">查看详情</bk-button>
         </template>
       </bk-alert>
       <bk-tab
