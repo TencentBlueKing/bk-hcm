@@ -1,0 +1,22 @@
+.scheme-preview-container {
+  margin: 24px 25px;
+  .scheme-preview-header {
+    display: flex;
+    align-items: center;
+    .scheme-preview-header-title {
+      font-weight: 700;
+      font-size: 16px;
+      color: #313238;
+      margin-right: 13px;
+    }
+    .scheme-preview-header-tip {
+      color: #C4C6CC;
+    }
+    .scheme-preivew-header-sort-selector {
+      margin-left: auto;
+    }
+  }
+  .scheme-preview-content {
+    margin-top: 20px;
+  }
+}
