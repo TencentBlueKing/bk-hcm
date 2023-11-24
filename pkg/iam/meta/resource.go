@@ -77,4 +77,6 @@ const (
 	CloudSelectionIdc ResourceType = "cloud_selection_idc"
 	// CloudSelectionBizType 云选型业务类型
 	CloudSelectionBizType ResourceType = "cloud_selection_biz_type"
+	// CloudSelectionDataSource 云选型数据
+	CloudSelectionDataSource ResourceType = "cloud_selection_data_source"
 )

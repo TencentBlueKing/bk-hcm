@@ -7,8 +7,10 @@ RUN apt-get update \
     && rm -r /var/lib/apt/lists/*
 RUN mkdir -p /data/hcm/etc/certs
 RUN mkdir -p /data/hcm/logs
+RUN mkdir -p /data/hcm/plugin
 
 COPY bk-hcm-cloudserver /data/hcm/
+COPY plugin/algorithm /data/hcm/plugin/
 
 #time zone setting
 ENV TimeZone=Asia/Shanghai

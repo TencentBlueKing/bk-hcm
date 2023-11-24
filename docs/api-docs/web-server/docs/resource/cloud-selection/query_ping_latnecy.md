@@ -48,7 +48,8 @@ POST /api/v1/cloud/selections/latency/ping/query
         }
       ]
     }
-  ]
+  ],
+  "idc_ids": ["0000001","0000002"]
 }
 ```
 

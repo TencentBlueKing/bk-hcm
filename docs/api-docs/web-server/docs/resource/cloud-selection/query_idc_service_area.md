@@ -57,8 +57,13 @@ POST /api/v1/cloud/selection/idcs/services/areas/query
       "idc_id": "1",
       "service_areas": [
         {
-          "country_name": "中国",
-          "province_name": "广州",
+          "country_name": "country_1",
+          "province_name": "province_1_1",
+          "network_latency": 60
+        },
+        {
+          "country_name": "country_1",
+          "province_name": "province_1_2",
           "network_latency": 60
         }
       ]
@@ -67,30 +72,14 @@ POST /api/v1/cloud/selection/idcs/services/areas/query
       "idc_id": "2",
       "service_areas": [
         {
-          "name": "country_1",
-          "children": [
-            {
-              "name": "province_1_1",
-              "value": 60
-            },
-            {
-              "name": "province_1_2",
-              "value": 120
-            }
-          ]
+          "country_name": "country_2",
+          "province_name": "province_2_1",
+          "network_latency": 60
         },
         {
-          "country": "country_2",
-          "children": [
-            {
-              "name": "province_2_1",
-              "value": 80
-            },
-            {
-              "name": "province_2_2",
-              "value": 70
-            }
-          ]
+          "country_name": "country_2",
+          "province_name": "province_2_2",
+          "network_latency": 60
         }
       ]
     }

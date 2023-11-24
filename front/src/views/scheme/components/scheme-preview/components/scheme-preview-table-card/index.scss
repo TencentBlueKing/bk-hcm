@@ -1,0 +1,56 @@
+.scheme-preview-table-card-container {
+  margin-bottom: 16px;
+  .scheme-preview-table-card-header {
+    display: flex;
+    align-items: center;
+    padding: 7px 24px;
+    background: #F0F5FF;
+    border-radius: 2px 2px 0 0;
+    .scheme-preview-table-card-header-expand-icon {
+      cursor: pointer;
+      margin-left: -10px;
+    }
+    .scheme-preview-table-card-header-title {
+      font-weight: 700;
+      font-size: 14px;
+      color: #63656E;
+      // margin-left: 13.31px;
+      margin-right: 12px;
+    }
+    .scheme-preview-table-card-header-tag {
+      
+    }
+    .scheme-preview-table-card-header-icon {
+      margin-left: 8px;
+      margin-right: 8px;
+    }
+    .scheme-preview-table-card-header-score {
+      display: flex;
+      margin-left: 52px;
+      .scheme-preview-table-card-header-score-item {
+        margin-right: 54px;
+        font-size: 12px;
+        .score-value {
+          color: #313238;
+        }
+      }
+    }
+    .scheme-preview-table-card-header-operation {
+      margin-left: auto;
+    }
+  }
+  .scheme-preview-table-card-header-closed {
+    background: #FFFFFF;
+    box-shadow: 0 2px 4px 0 #1919290d;
+    border-radius: 2px;
+  }
+  .scheme-preview-table-card-panel {
+    padding: 16px 24px;
+    background: #FFFFFF;
+    box-shadow: 0 2px 4px 0 #1919290d;
+    border-radius: 2px;
+  }
+  .scheme-preview-table-card-panel-invisable {
+    display: none;
+  }
+}

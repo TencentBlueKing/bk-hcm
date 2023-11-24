@@ -41,17 +41,17 @@ type QuerySyncReq struct {
 
 // QuerySyncResp query sync bkbase data response
 type QuerySyncResp struct {
-	Result  bool          `json:"result"`
-	Code    string        `json:"code"`
-	Message string        `json:"message"`
-	Data    *QuerySyncRst `json:"data"`
+	Result  bool         `json:"result"`
+	Code    string       `json:"code"`
+	Message string       `json:"message"`
+	Data    QuerySyncRst `json:"data"`
 }
 
 // QuerySyncRst query sync bkbase data result
 type QuerySyncRst struct {
-	Cluster      string            `json:"cluster"`
-	TotalRecords int               `json:"totalRecords"`
-	TimeTaken    float64           `json:"timetaken"`
-	Sql          string            `json:"sql"`
-	List         []json.RawMessage `json:"list"`
+	Cluster      string          `json:"cluster"`
+	TotalRecords int             `json:"totalRecords"`
+	TimeTaken    float64         `json:"timetaken"`
+	Sql          string          `json:"sql"`
+	List         json.RawMessage `json:"list"`
 }

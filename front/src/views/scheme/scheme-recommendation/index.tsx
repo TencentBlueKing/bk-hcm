@@ -4,11 +4,12 @@ import blank_1 from '@/assets/image/scheme-blank-1.png';
 import blank_2 from '@/assets/image/scheme-blank-2.png';
 import { GenerateSchemesParams } from './types/index';
 import { Dialog, SearchSelect, Tree } from 'bkui-vue';
+// import SchemePreview from '../components/scheme-preview';
 // import http from '@/http';
 // const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export default defineComponent({
-  name: 'scheme-recommendation-page',
+  name: 'SchemeRecommendationPage',
   setup() {
     const toggleClose = ref(false);
 
@@ -275,15 +276,15 @@ export default defineComponent({
             prefixIcon={(params: any, renderType: any) => {
               if (params.children.length === 0) return null;
               console.log(params, renderType);
-              return params.isOpen 
+              return params.isOpen
                 ? <i class="hcm-icon bkhcm-icon-minus-circle"></i>
-                : <i class="hcm-icon bkhcm-icon-plus-circle"></i>
+                : <i class="hcm-icon bkhcm-icon-plus-circle"></i>;
             }}
           >
             {{
               nodeAppend: () => (
                 <span class="proportion-num">10</span>
-              )
+              ),
             }}
           </Tree>
         </Dialog>
