@@ -30,6 +30,7 @@ export default (type: string, id: string, cb?: Function, vendor?: string) => {
         };
         detail.value.bk_biz_id_name = await getNameFromBusinessMap(data.bk_biz_id);
         cb?.(detail.value);
+        resourceStore.setVendorOfCurrentResource(data.vendor);
       })
       .finally(() => {
         loading.value = false;

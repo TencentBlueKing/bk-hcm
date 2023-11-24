@@ -78,3 +78,11 @@ bus.$on('auth', (authActionName: string) => {   // bus监听
     ></permission-dialog>
   </div>
 </template>
+
+<style lang="scss">
+.delete-resource-infobox, .recycle-resource-infobox {
+  .bk-info-sub-title {
+    word-break: break-all;
+  }
+}
+</style>

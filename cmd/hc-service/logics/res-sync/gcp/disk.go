@@ -72,7 +72,9 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 	if opt.BootMap != nil {
 		// 标记启动盘
 		for i, d := range diskFromCloud {
-			_, diskFromCloud[i].Boot = opt.BootMap[d.SelfLink]
+			_, exists := opt.BootMap[d.SelfLink]
+			diskFromCloud[i].Boot = converter.ValToPtr(exists)
+
 		}
 	}
 
@@ -214,7 +216,7 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, updateMap map[strin
 			ID:           id,
 			Region:       one.Region,
 			Status:       one.Status,
-			IsSystemDisk: converter.ValToPtr(one.Boot),
+			IsSystemDisk: one.Boot,
 			Memo:         converter.ValToPtr(one.Description),
 			Extension: &coredisk.GcpExtension{
 				SelfLink:    one.SelfLink,
@@ -262,7 +264,7 @@ func (cli *client) createDisk(kt *kit.Kit, accountID string, zone string, addSli
 			DiskSize:     uint64(one.SizeGb),
 			DiskType:     one.Type,
 			Status:       one.Status,
-			IsSystemDisk: one.Boot,
+			IsSystemDisk: converter.PtrToVal(one.Boot),
 			Memo:         converter.ValToPtr(one.Description),
 			Extension: &coredisk.GcpExtension{
 				SelfLink:    one.SelfLink,
@@ -324,6 +326,7 @@ func (cli *client) deleteDisk(kt *kit.Kit, accountID string, zone string, delClo
 	return nil
 }
 
+// RemoveDiskDeleteFromCloud ...
 func (cli *client) RemoveDiskDeleteFromCloud(kt *kit.Kit, accountID string, zone string) error {
 	req := &core.ListReq{
 		Fields: []string{"id", "cloud_id"},
@@ -414,7 +417,7 @@ func isDiskChange(cloud adaptordisk.GcpDisk, db *coredisk.Disk[coredisk.GcpExten
 		return true
 	}
 
-	if cloud.Boot != db.IsSystemDisk {
+	if cloud.Boot != nil && *cloud.Boot != db.IsSystemDisk {
 		return true
 	}
 

@@ -30,6 +30,7 @@ import (
 	tablecloud "hcm/pkg/dal/table/cloud/disk"
 	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 
 	"github.com/jmoiron/sqlx"
@@ -85,20 +86,21 @@ func batchCreateDiskExt[T coredisk.Extension](
 			}
 
 			disks[indx] = &tablecloud.DiskModel{
-				Vendor:    string(vendor),
-				AccountID: diskReq.AccountID,
-				CloudID:   diskReq.CloudID,
-				BkBizID:   bkBizID,
-				Name:      diskReq.Name,
-				Region:    diskReq.Region,
-				Zone:      diskReq.Zone,
-				DiskSize:  diskReq.DiskSize,
-				DiskType:  diskReq.DiskType,
-				Status:    diskReq.Status,
-				Memo:      diskReq.Memo,
-				Extension: tabletype.JsonField(extensionJson),
-				Creator:   cts.Kit.User,
-				Reviser:   cts.Kit.User,
+				Vendor:       string(vendor),
+				AccountID:    diskReq.AccountID,
+				CloudID:      diskReq.CloudID,
+				BkBizID:      bkBizID,
+				Name:         diskReq.Name,
+				Region:       diskReq.Region,
+				Zone:         diskReq.Zone,
+				DiskSize:     diskReq.DiskSize,
+				DiskType:     diskReq.DiskType,
+				Status:       diskReq.Status,
+				IsSystemDisk: converter.ValToPtr(diskReq.IsSystemDisk),
+				Memo:         diskReq.Memo,
+				Extension:    tabletype.JsonField(extensionJson),
+				Creator:      cts.Kit.User,
+				Reviser:      cts.Kit.User,
 			}
 		}
 		return dSvc.dao.Disk().BatchCreateWithTx(cts.Kit, txn, disks)

@@ -41,7 +41,23 @@
                 padding: 0 24px;
               }
             }
-            // padding: 20px 20px 0px 20px;
+
+            .action-bar, .button-group {
+                position: fixed;
+                left: 0;
+                bottom: 0;
+                z-index: 9;
+                padding-left: 264px;
+                width: 100%;
+                height: 80px;
+                display: flex;
+                align-items: center;
+                background-color: #fff;
+                border: 1px solid #dcdee5;
+                .bk-button {
+                    padding: 0 30px;
+                }
+            }
         }
         .no-padding {
             padding: 0;
@@ -196,6 +212,10 @@
 }
 .bk-navigation-wrapper .navigation-nav .nav-slider-list {
     padding-top: 0!important;
+
+    .bk-app-select-value-clear {
+        background-color: #666;
+    }
 }
 
 .hcm-create-business-dialog-exception-building-picture {

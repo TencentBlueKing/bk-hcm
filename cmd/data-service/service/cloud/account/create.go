@@ -27,6 +27,7 @@ import (
 
 	"hcm/pkg/api/core"
 	protocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
@@ -84,15 +85,16 @@ func createAccount[T protocloud.AccountExtensionCreateReq, PT protocloud.SecretE
 		}
 
 		account := &tablecloud.AccountTable{
-			Vendor:    string(vendor),
-			Name:      req.Name,
-			Managers:  req.Managers,
-			Type:      string(req.Type),
-			Site:      string(req.Site),
-			Memo:      req.Memo,
-			Extension: tabletype.JsonField(extensionJson),
-			Creator:   cts.Kit.User,
-			Reviser:   cts.Kit.User,
+			Vendor:             string(vendor),
+			Name:               req.Name,
+			Managers:           req.Managers,
+			Type:               string(req.Type),
+			Site:               string(req.Site),
+			Memo:               req.Memo,
+			Extension:          tabletype.JsonField(extensionJson),
+			RecycleReserveTime: constant.UnsetRecycleTime,
+			Creator:            cts.Kit.User,
+			Reviser:            cts.Kit.User,
 		}
 
 		accountID, err := svc.dao.Account().CreateWithTx(cts.Kit, txn, account)

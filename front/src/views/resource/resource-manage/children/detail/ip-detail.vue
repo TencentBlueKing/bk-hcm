@@ -9,6 +9,7 @@ import AssignEip from '../dialog/assign-eip/assign-eip';
 
 import {
   InfoBox,
+  Message,
 } from 'bkui-vue';
 import {
   useRoute,
@@ -83,11 +84,12 @@ const handleDeleteEip = () => {
 const handleShowDelete = () => {
   InfoBox({
     title: '请确认是否删除',
-    subTitle: `将删除【${detail.value.id} - ${detail.value.name}】`,
+    subTitle: `将删除【${detail.value.cloud_id}${detail.value.name ? ` - ${detail.value.name}` : ''}】`,
     theme: 'danger',
     headerAlign: 'center',
     footerAlign: 'center',
     contentAlign: 'center',
+    extCls: 'delete-resource-infobox',
     onConfirm() {
       return resourceStore
         .deleteBatch(
@@ -96,6 +98,10 @@ const handleShowDelete = () => {
             ids: [detail.value.id],
           },
         ).then(() => {
+          Message({
+            theme: 'success',
+            message: '删除成功',
+          });
           router.back();
         });
     },
@@ -124,11 +130,8 @@ const showAuthDialog = (authActionName: string) => {
   bus.$emit('auth', authActionName);
 };
 
-const canDelete = (data: IEip): boolean => {
-  if (data.bk_biz_id !== -1 && whereAmI.value === Senarios.resource) return false;
+const hasNoRelateResource = ({ vendor, status }: IEip): boolean => {
   let res = false;
-  const { status, vendor } = data;
-
   switch (vendor) {
     case CLOUD_VENDOR.tcloud:
       if (status === EipStatus.UNBIND) res = true;
@@ -148,6 +151,38 @@ const canDelete = (data: IEip): boolean => {
   }
   return res;
 };
+const canDelete = (data: IEip): boolean => {
+  if (data.bk_biz_id !== -1 && whereAmI.value === Senarios.resource) return false;
+  return hasNoRelateResource(data);
+};
+
+// 之前的 bktooltips option对象
+/* {
+  content: '该弹性IP已被绑定，或者被分配到业务，不能删除',
+  disabled: !(!canDelete(detail) || (!!detail.cvm_id || disableOperation || detail.instance_type === 'OTHER'
+        || !authVerifyData?.permissionAction[actionDeleteName])),
+}*/
+const bkToolTipsOptions = computed(() => {
+  // 无权限
+  if (!authVerifyData.value?.permissionAction?.[actionName.value]) return {
+    content: '当前用户无权限操作该按钮',
+    disabled: authVerifyData.value.permissionAction[actionName.value],
+  };
+  // 资源下，是否分配业务
+  if (isResourcePage.value && detail.value?.bk_biz_id !== -1) return {
+    content: '该弹性IP已分配到业务，仅可在业务下操作',
+    disabled: detail.value.bk_biz_id === -1,
+  };
+  // 业务/资源下，弹性IP是否已经被资源绑定
+  if (detail.value?.cvm_id || !hasNoRelateResource(detail.value) || detail.value.instance_type === 'OTHER') return {
+    content: '该弹性IP已绑定资源，不可以删除',
+    disabled: !(detail.value?.cvm_id || !hasNoRelateResource(detail.value) || detail.value.instance_type === 'OTHER'),
+  };
+
+  return {
+    disabled: true,
+  };
+});
 </script>
 
 <template>
@@ -157,7 +192,11 @@ const canDelete = (data: IEip): boolean => {
       <template #right>
         <span v-if="!detail.instance_id" @click="showAuthDialog(actionName)">
           <bk-button class="w100 ml10" theme="primary" @click="handleShowAssignEip"
-                     :disabled="disableOperation || !authVerifyData?.permissionAction[actionName]">
+                     :disabled="disableOperation || !authVerifyData?.permissionAction[actionName]"
+                     v-bk-tooltips="{
+                       content: '该弹性IP已分配到业务，仅可在业务下操作',
+                       disabled: !disableOperation
+                     }">
             {{ t('绑定') }}
           </bk-button>
         </span>
@@ -172,12 +211,7 @@ const canDelete = (data: IEip): boolean => {
           <bk-button class="w100 ml10" theme="primary" :disabled="!canDelete(detail)
                        || (!!detail.cvm_id || disableOperation || detail.instance_type === 'OTHER'
                          || !authVerifyData?.permissionAction[actionDeleteName])" @click="handleShowDelete"
-                     v-bk-tooltips="{
-                       content: '该弹性IP已被绑定，或者被分配到业务，不能删除',
-                       disabled: !(!canDelete(detail)
-                         || (!!detail.cvm_id || disableOperation || detail.instance_type === 'OTHER'
-                           || !authVerifyData?.permissionAction[actionDeleteName])),
-                     }"
+                     v-bk-tooltips="bkToolTipsOptions"
           >
             {{ t('删除') }}
           </bk-button>

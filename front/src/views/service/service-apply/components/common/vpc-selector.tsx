@@ -113,6 +113,25 @@ export default defineComponent({
           },
         });
         list.value = result?.data?.details ?? [];
+
+        // 用户体验优化项
+        const vendorFlag = [VendorEnum.TCLOUD, VendorEnum.AWS].includes(props.vendor);
+        // 1.过滤
+        let canUseVpcList = null;
+        if (!props.isSubnet) {
+          canUseVpcList = vendorFlag
+            ? list.value.filter(({ current_zone_subnet_count }) => current_zone_subnet_count > 0)
+            : list.value.filter(({ subnet_count }) => subnet_count > 0);
+        }
+        // 2.排序
+        vendorFlag
+          ? list.value.sort((prev, next) => next.current_zone_subnet_count - prev.current_zone_subnet_count)
+          : list.value.sort((prev, next) => next.subnet_count - prev.subnet_count);
+        // 3.自动填充
+        if (canUseVpcList?.length === 1) {
+          selected.value = canUseVpcList[0].cloud_id;
+          emit('change', canUseVpcList[0]);
+        }
       } finally {
         loading.value = false;
       }
@@ -127,11 +146,8 @@ export default defineComponent({
         loading={loading.value}
         {...{ attrs }}
       >
-        {list.value
-          .sort((prev, next) => next.subnet_count - prev.subnet_count)
-          .sort((prev, next) => next.current_zone_subnet_count - prev.current_zone_subnet_count)
-          .map(({ cloud_id, name, current_zone_subnet_count, subnet_count, extension }) => {
-            return <Option
+        {list.value.map(({ cloud_id, name, current_zone_subnet_count, subnet_count, extension }) => {
+          return <Option
               key={cloud_id}
               value={cloud_id}
               // eslint-disable-next-line max-len
@@ -149,7 +165,7 @@ export default defineComponent({
                 ? `${`该可用区有${current_zone_subnet_count}个子网 ${current_zone_subnet_count === 0 ? '不可用' : '可用'}`}`
                 : ''
                 }`}></Option>;
-          })}
+        })}
       </Select>
     );
   },
