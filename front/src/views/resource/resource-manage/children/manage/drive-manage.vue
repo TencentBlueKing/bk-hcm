@@ -247,7 +247,7 @@ const isCurRowSelectEnable = (row: any) => {
         "
       />
       <bk-button
-        class="w100 ml10"
+        class="w100"
         :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.biz_iaas_resource_delete }"
         theme="primary"
         :disabled="authVerifyData?.permissionAction?.biz_iaas_resource_delete && selections.length <= 0"
