@@ -35,16 +35,16 @@ export default defineComponent({
             ) : (
               <img
                 src={FailureIcon}
-                alt='success'
+                alt='failure'
                 class={'result-page-icon-success'}
               />
             )}
             <p class={'result-page-title'}>
-              {props.type === 'success' ? '任务接入成功' : '任务接入失败'}
+              {props.type === 'success' ? '账号信息填写成功' : '账号接入失败'}
             </p>
             <p class={'result-page-text'}>
               {props.type === 'success'
-                ? '可以进行同步任务查看，或进行资源管理'
+                ? '账号审批通过后，可以进行资源管理'
                 : '错误详情如下所示'}
             </p>
             <div>
@@ -60,17 +60,18 @@ export default defineComponent({
                       });
                     }}
                   >
-                    任务详情
+                    查看单据
                   </Button>
                   {/* <Button>资源管理</Button> */}
                 </>
               ) : (
                 <Input
                   type='textarea'
-                  disabled={true}
+                  readonly
                   class={'result-page-failure-box'}
                   v-model={props.errMsg}
-                  >
+                  resize={false}
+                  placeholder=' '>
                 </Input>
               )}
             </div>

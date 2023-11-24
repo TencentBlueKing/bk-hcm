@@ -857,28 +857,28 @@ export default defineComponent({
                     model={secretModel}
                     ref={formDiaRef}
                     formType='vertical'>
+                    {Object.entries(curExtension.value.input).map(([property, { label }]) => (
+                      <FormItem label={label} property={property}>
+                        <Input
+                          v-model={curExtension.value.input[property].value}
+                          type={
+                            property === 'cloud_service_secret_key'
+                            && projectModel.vendor === VendorEnum.GCP
+                              ? 'textarea'
+                              : 'text'
+                          }
+                          rows={8}
+                        />
+                      </FormItem>
+                    ))}
                     {[
                       curExtension.value.output1,
                       curExtension.value.output2,
-                    ].map(output => Object.entries(output).map(([property, { label }]) => (
+                    ].map(output => Object.entries(output).map(([property, { label, placeholder }]) => (
                         <FormItem label={label} property={property}>
-                          <Input v-model={output[property].value} disabled />
+                          <Input v-model={output[property].value} readonly placeholder={placeholder} />
                         </FormItem>
                     )))}
-                    {Object.entries(curExtension.value.input).map(([property, { label }]) => (
-                        <FormItem label={label} property={property}>
-                          <Input
-                            v-model={curExtension.value.input[property].value}
-                            type={
-                              property === 'cloud_service_secret_key'
-                              && projectModel.vendor === VendorEnum.GCP
-                                ? 'textarea'
-                                : 'text'
-                            }
-                            rows={8}
-                          />
-                        </FormItem>
-                    ))}
                   </Form>
                 </>
               ),

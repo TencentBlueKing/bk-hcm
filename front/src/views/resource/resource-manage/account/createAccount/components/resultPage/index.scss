@@ -25,12 +25,17 @@
       }
       .result-page-success-btn {
         margin-right: 12px;
+        min-width: 88px;
       }
       .result-page-failure-box {
         width: 640px;
         height: 160px;
         background: #f5f7fa;
         border-radius: 2px;
+
+        & > textarea  {
+          height: 100%;
+        }
       }
     }
   }
