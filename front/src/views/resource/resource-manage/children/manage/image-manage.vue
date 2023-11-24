@@ -42,6 +42,10 @@ const {
 
 const selectSearchData = computed(() => {
   return [
+    {
+      name: '镜像ID',
+      id: 'cloud_id',
+    },
     ...searchData.value,
     // ...[{
     //   name: '公网ipv4',

@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 import {
   defineComponent,
   PropType,
@@ -11,6 +12,10 @@ import './index.scss';
 import {
   useI18n,
 } from 'vue-i18n';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { useResourceAccountStore } from '@/store/useResourceAccountStore';
+import { useAccountStore } from '@/store';
+import { useBusinessMapStore } from '@/store/useBusinessMap';
 
   type permissionType = {
     system_id: string;
@@ -46,6 +51,10 @@ export default defineComponent({
     const {
       t,
     } = useI18n();
+    const { whereAmI } = useWhereAmI();
+    const resourceAccountStore = useResourceAccountStore();
+    const accountStore = useAccountStore();
+    const businessMapStore = useBusinessMapStore();
 
     const columns = [{
       label: '需要申请的权限',
@@ -59,7 +68,10 @@ export default defineComponent({
           'span',
           {},
           [
-            data?.related_resource_types[0]?.type_name || '--',
+            `${data?.related_resource_types[0]?.type_name || '--'}${
+              whereAmI.value === Senarios.resource ?  (
+                resourceAccountStore.resourceAccount?.name ? `: ${resourceAccountStore.resourceAccount?.name}` : ''
+              ) : `: ${businessMapStore.getNameFromBusinessMap(accountStore.bizs)}`}`,
           ],
         );
       },
@@ -95,6 +107,9 @@ export default defineComponent({
       tableData,
       handleClose,
       handleConfirm,
+      resourceAccountStore,
+      whereAmI,
+      accountStore,
     };
   },
 

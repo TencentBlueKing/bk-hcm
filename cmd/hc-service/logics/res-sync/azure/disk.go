@@ -73,7 +73,8 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 	if opt.BootMap != nil {
 		// 标记启动盘
 		for i, d := range diskFromCloud {
-			_, diskFromCloud[i].Boot = opt.BootMap[d.GetCloudID()]
+			_, exists := opt.BootMap[d.GetCloudID()]
+			diskFromCloud[i].Boot = converter.ValToPtr(exists)
 		}
 	}
 	addSlice, updateMap, delCloudIDs := common.Diff[typesdisk.AzureDisk, *coredisk.Disk[coredisk.AzureExtension]](
@@ -114,7 +115,7 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, resGroupName string
 		oneDisk := &disk.DiskExtUpdateReq[coredisk.AzureExtension]{
 			ID:           id,
 			Status:       converter.PtrToVal(one.Status),
-			IsSystemDisk: converter.ValToPtr(one.Boot),
+			IsSystemDisk: one.Boot,
 			Extension: &coredisk.AzureExtension{
 				ResourceGroupName: resGroupName,
 				OSType:            converter.PtrToVal(one.OSType),
@@ -161,7 +162,7 @@ func (cli *client) createDisk(kt *kit.Kit, accountID string, resGroupName string
 			DiskType:     converter.PtrToVal(one.Type),
 			Status:       string(converter.PtrToVal(one.Status)),
 			Zone:         "",
-			IsSystemDisk: one.Boot,
+			IsSystemDisk: converter.PtrToVal(one.Boot),
 			// 该云没有此字段
 			Memo: nil,
 			Extension: &coredisk.AzureExtension{
@@ -379,7 +380,7 @@ func isDiskChange(cloud typesdisk.AzureDisk, db *coredisk.Disk[coredisk.AzureExt
 	if !assert.IsPtrStringSliceEqual(cloud.Zones, db.Extension.Zones) {
 		return true
 	}
-	if cloud.Boot != db.IsSystemDisk {
+	if cloud.Boot != nil && *cloud.Boot != db.IsSystemDisk {
 		return true
 	}
 

@@ -12,7 +12,6 @@ import SecurityGroupSelector from '../components/common/security-group-selector'
 import CloudAreaName from '../components/common/cloud-area-name';
 import {
   Plus as PlusIcon,
-  CloseLine as CloseLineIcon,
 } from 'bkui-vue/lib/icon';
 import GcpDataDiskFormDialog from './children/gcp-data-disk-form-dialog';
 import './index.scss';
@@ -141,8 +140,10 @@ export default defineComponent({
     const handleVpcChange = (vpc: any) => {
       vpcData.value = vpc;
       cloudId.value = vpc.bk_cloud_id;
-      vpcId.value = vpc.id;
-      resetFormItemData('cloud_subnet_id');
+      if (vpcId.value !== vpc.id) {
+        vpcId.value = vpc.id;
+        resetFormItemData('cloud_subnet_id');
+      }
     };
     const handleMachineTypeChange = (machine: any) => {
       machineType.value = machine;
@@ -346,30 +347,29 @@ export default defineComponent({
                           min={dataDiskCountRules.value.min}></Input>
                     </FormItem>
                     <div class='btns'>
-                      <Button
-                          class='btn'
-                          outline
-                          size='small'
-                          onClick={handleCreateGcpDataDisk}>
-                        <PlusIcon  />
+                      <Button class={'btn'} onClick={handleCreateGcpDataDisk}
+                              disabled={formData.data_disk.length !== index + 1}>
+                        <svg width={14} height={14} viewBox="0 0 24 24" version="1.1"
+                             xmlns="http://www.w3.org/2000/svg"
+                             style={{ fill: formData.data_disk.length !== index + 1 ? '#EAEBF0' : '#c4c6cc' }}>
+                          <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-4.5v4.5c0 0.414-0.336 0.75-0.75 0.75s-0.75-0.336-0.75-0.75v-4.5h-4.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h4.5v-4.5c0-0.414 0.336-0.75 0.75-0.75s0.75 0.336 0.75 0.75v4.5h4.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z"></path>
+                        </svg>
                       </Button>
-                      <Button
-                          class='btn'
-                          outline
-                          size='small'
-                          disabled={formData.data_disk.length === 1}
-                          onClick={() => handleRemoveDataDisk(index)}>
-                        <CloseLineIcon />
+                      <Button class={'btn'} onClick={() => handleRemoveDataDisk(index)}
+                              disabled={formData.data_disk.length !== index + 1} >
+                        <svg width={14} height={14} viewBox="0 0 24 24" version="1.1"
+                             xmlns="http://www.w3.org/2000/svg"
+                             style={{ fill: formData.data_disk.length !== index + 1 ? '#EAEBF0' : '#c4c6cc' }}>
+                          <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-10.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h10.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z"></path>
+                        </svg>
                       </Button>
                     </div>
                   </div>
               ))}
               {!formData.data_disk.length && (
-                <div class='btns'>
-                  <Button class='btn' onClick={handleCreateGcpDataDisk}>
-                    <PlusIcon />
-                  </Button>
-                </div>
+                <Button onClick={handleCreateGcpDataDisk}>
+                  <PlusIcon />
+                </Button>
               )}
             </div>
           ),
@@ -392,7 +392,8 @@ export default defineComponent({
     const subnetLength = ref(0);
     watch(
       () => formData.cloud_vpc_id,
-      () => {
+      (val) => {
+        !val && (cloudId.value = null);
         console.log(
           'subnetSelectorRef.value',
           subnetSelectorRef.value.subnetList,
@@ -429,6 +430,7 @@ export default defineComponent({
           || !saveData.password
           || !saveData.confirmed_password
         ) return;
+        await formRef.value.validate();
         isSubmitBtnLoading.value = true;
         const res = await http.post(
           `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/cvms/prices/inquiry`,
@@ -818,7 +820,23 @@ export default defineComponent({
                         min={dataDiskCountRules.value.min}></Input>
                     </FormItem>
                     <div class='btns'>
-                      <Button
+                      <Button class={'btn'} onClick={handleCreateDataDisk}
+                              disabled={formData.data_disk.length !== index + 1}>
+                        <svg width={14} height={14} viewBox="0 0 24 24" version="1.1"
+                             xmlns="http://www.w3.org/2000/svg"
+                             style={{ fill: formData.data_disk.length !== index + 1 ? '#EAEBF0' : '#c4c6cc' }}>
+                          <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-4.5v4.5c0 0.414-0.336 0.75-0.75 0.75s-0.75-0.336-0.75-0.75v-4.5h-4.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h4.5v-4.5c0-0.414 0.336-0.75 0.75-0.75s0.75 0.336 0.75 0.75v4.5h4.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z"></path>
+                        </svg>
+                      </Button>
+                      <Button class={'btn'} onClick={() => handleRemoveDataDisk(index)}
+                              disabled={formData.data_disk.length !== index + 1} >
+                        <svg width={14} height={14} viewBox="0 0 24 24" version="1.1"
+                             xmlns="http://www.w3.org/2000/svg"
+                             style={{ fill: formData.data_disk.length !== index + 1 ? '#EAEBF0' : '#c4c6cc' }}>
+                          <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-10.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h10.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z"></path>
+                        </svg>
+                      </Button>
+                      {/* <Button
                         class='btn'
                         outline
                         size='small'
@@ -833,17 +851,15 @@ export default defineComponent({
                         disabled={formData.data_disk.length !== index + 1}
                         onClick={() => handleRemoveDataDisk(index)}>
                         <CloseLineIcon />
-                      </Button>
+                      </Button>*/}
                     </div>
                   </div>
                 ))}
                 {!formData.data_disk.length && (
-                    <div class='btns'>
-                      <Button class='btn' onClick={handleCreateDataDisk}>
-                        <PlusIcon />
-                      </Button>
-                    </div>
-                )}
+                    <Button onClick={handleCreateDataDisk}>
+                      <PlusIcon />
+                    </Button>)
+                }
                 {
                   // (formData.data_disks.length > 0 && cond.vendor === VendorEnum.HUAWEI)
                   // && <Checkbox v-model={formData.is_quickly_initialize_data_disk}>快速初始化数据盘</Checkbox>
@@ -870,6 +886,7 @@ export default defineComponent({
                 property: 'password',
                 content: () => (
                   <Input
+                    style={{ width: '249px' }}
                     type='password'
                     placeholder='密码'
                     v-model={formData.password}></Input>
@@ -879,6 +896,7 @@ export default defineComponent({
                 property: 'confirmed_password',
                 content: () => (
                   <Input
+                    style={{ width: '249px' }}
                     type='password'
                     placeholder='确认密码'
                     v-model={formData.confirmed_password}></Input>
@@ -1032,7 +1050,7 @@ export default defineComponent({
               : /^(?=.*[A-Za-z])(?=.*\d)(?=.*[()`~!@#$%^&*-+=|{}\[\]:;',.?/])[A-Za-z\d()`~!@#$%^&*\-+=|{}\[\]:;',.?/]+$/;
             return pattern.test(value);
           },
-          message: '密码至少必须包含大写字母、小写字母、数字和特殊字符（!@$%^-_=+[{}]:,./?）中的三种',
+          message: '密码不符合复杂度要求',
           trigger: 'blur',
         },
         {
@@ -1051,6 +1069,16 @@ export default defineComponent({
         {
           validator: (value: string) => value.length >= 8 && value.length <= 30,
           message: '密码长度需要在8-30个字符之间',
+          trigger: 'blur',
+        },
+        {
+          validator: (value: string) => {
+            const pattern = cond.vendor === VendorEnum.HUAWEI
+              ? /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[()`~!@#$%^&*-+=|{}\[\]:;',.?/])[A-Za-z\d()`~!@#$%^&*\-+=|{}\[\]:;',.?/]+$/
+              : /^(?=.*[A-Za-z])(?=.*\d)(?=.*[()`~!@#$%^&*-+=|{}\[\]:;',.?/])[A-Za-z\d()`~!@#$%^&*\-+=|{}\[\]:;',.?/]+$/;
+            return pattern.test(value);
+          },
+          message: '密码不符合复杂度要求',
           trigger: 'blur',
         },
         {
@@ -1300,7 +1328,7 @@ export default defineComponent({
                           - usageNum.value
                           - formData.required_count}
                       </span>{' '}
-                      /{limitNum.value}
+                      / {limitNum.value}
                     </>
                   }
                 </p>
@@ -1308,8 +1336,15 @@ export default defineComponent({
             </div>
           </Form>
           <div class={'purchase-cvm-bottom-bar-info'}>
-            <div>费用：</div>
-            <div class={'purchase-cvm-cost'}>{cost.value}</div>
+            {
+              (cond.vendor === VendorEnum.TCLOUD || cond.vendor === VendorEnum.HUAWEI)
+                && (
+                  <div class={'purchase-cvm-cost-wrap'}>
+                    <div>费用：</div>
+                    <div class={'purchase-cvm-cost'}>{cost.value}</div>
+                  </div>
+                )
+            }
             <Button
               theme='primary'
               loading={submitting.value || isSubmitBtnLoading.value}

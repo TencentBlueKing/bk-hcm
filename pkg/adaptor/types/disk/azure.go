@@ -143,7 +143,7 @@ type AzureDisk struct {
 	Zones    []*string `json:"zone"`
 	SKUName  *string   `json:"sku_name"`
 	SKUTier  *string   `json:"sku_tier"`
-	Boot     bool
+	Boot     *bool
 }
 
 // GetCloudID ...

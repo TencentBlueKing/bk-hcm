@@ -185,12 +185,12 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, resGroupName string,
 		return err
 	}
 
-	vpcMap, err := cli.getVpcMap(kt, accountID, resGroupName, cloudVpcIDsMap)
+	vpcMap, err := cli.getVpcMap(kt, accountID, cloudVpcIDsMap)
 	if err != nil {
 		return err
 	}
 
-	subnetMap, err := cli.getSubnetMap(kt, accountID, resGroupName, cloudSubnetIDsMap)
+	subnetMap, err := cli.getSubnetMap(kt, accountID, cloudSubnetIDsMap)
 	if err != nil {
 		return err
 	}
@@ -315,12 +315,12 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, resGroupName string,
 		return err
 	}
 
-	vpcMap, err := cli.getVpcMap(kt, accountID, resGroupName, cloudVpcIDsMap)
+	vpcMap, err := cli.getVpcMap(kt, accountID, cloudVpcIDsMap)
 	if err != nil {
 		return err
 	}
 
-	subnetMap, err := cli.getSubnetMap(kt, accountID, resGroupName, cloudSubnetIDsMap)
+	subnetMap, err := cli.getSubnetMap(kt, accountID, cloudSubnetIDsMap)
 	if err != nil {
 		return err
 	}
@@ -411,8 +411,8 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, resGroupName string,
 	return nil
 }
 
-func (cli *client) getVpcMap(kt *kit.Kit, accountID string, resGroupName string,
-	cloudVpcIDsMap map[string]string) (map[string]*common.VpcDB, error) {
+func (cli *client) getVpcMap(kt *kit.Kit, accountID string, cloudVpcIDsMap map[string]string) (
+	map[string]*common.VpcDB, error) {
 
 	vpcMap := make(map[string]*common.VpcDB)
 
@@ -420,13 +420,24 @@ func (cli *client) getVpcMap(kt *kit.Kit, accountID string, resGroupName string,
 	for _, cloudID := range cloudVpcIDsMap {
 		cloudVpcIDs = append(cloudVpcIDs, cloudID)
 	}
-	vpcParams := &SyncBaseParams{
-		AccountID:         accountID,
-		ResourceGroupName: resGroupName,
-		CloudIDs:          cloudVpcIDs,
-	}
 
-	vpcFromDB, err := cli.listVpcFromDB(kt, vpcParams)
+	req := &core.ListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: accountID},
+				&filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: cloudVpcIDs},
+			},
+		},
+		Page: core.NewDefaultBasePage(),
+	}
+	result, err := cli.dbCli.Azure.Vpc.ListVpcExt(kt.Ctx, kt.Header(), req)
+	if err != nil {
+		logs.Errorf("[%s] list vpc from db failed, err: %v, account: %s, req: %v, rid: %s", enumor.Azure, err,
+			accountID, req, kt.Rid)
+		return nil, err
+	}
+	vpcFromDB := result.Details
 
 	if len(vpcFromDB) <= 0 {
 		return vpcMap, fmt.Errorf("can not find vpc form db")
@@ -493,8 +504,8 @@ func (cli *client) getNIAssResMapFromNI(kt *kit.Kit, niIDs []string, resGroupNam
 	return cloudMap, cloudVpcIDsMap, cloudSubnetIDsMap, nil
 }
 
-func (cli *client) getSubnetMap(kt *kit.Kit, accountID string, resGroupName string,
-	cloudSubnetsIDsMap map[string]string) (map[string][]string, error) {
+func (cli *client) getSubnetMap(kt *kit.Kit, accountID string, cloudSubnetsIDsMap map[string]string) (
+	map[string][]string, error) {
 
 	subnetMap := make(map[string][]string)
 
@@ -503,15 +514,24 @@ func (cli *client) getSubnetMap(kt *kit.Kit, accountID string, resGroupName stri
 		cloudSubnetsIDs = append(cloudSubnetsIDs, cloudID)
 	}
 
-	subnetParams := &SyncBaseParams{
-		AccountID:         accountID,
-		ResourceGroupName: resGroupName,
-		CloudIDs:          cloudSubnetsIDs,
+	req := &core.ListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: accountID},
+				&filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: cloudSubnetsIDs},
+			},
+		},
+		Page: core.NewDefaultBasePage(),
 	}
-	subnetFromDB, err := cli.listSubnetFromDBForCvm(kt, subnetParams)
+	result, err := cli.dbCli.Azure.Subnet.ListSubnetExt(kt.Ctx, kt.Header(), req)
 	if err != nil {
-		return subnetMap, err
+		logs.Errorf("[%s] list subnet from db failed, err: %v, account: %s, req: %v, rid: %s", enumor.Azure, err,
+			accountID, req, kt.Rid)
+		return nil, err
 	}
+
+	subnetFromDB := result.Details
 
 	for _, subnet := range subnetFromDB {
 		for cvmID, subnetID := range cloudSubnetsIDsMap {

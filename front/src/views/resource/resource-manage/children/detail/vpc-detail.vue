@@ -61,7 +61,7 @@ const VPCFields = ref([
     name: '账号',
     prop: 'account_id',
     link(val: string) {
-      return `/#/resource/account/detail/?accountId=${route.query.accountId}&id=${val}`;
+      return `/#/resource/account/detail/?accountId=${val}&id=${val}`;
     },
   },
   {
@@ -277,45 +277,27 @@ const {
   },
 );
 
-const vpcRelateCvmCount = ref(0);
 const vpcRelateSubnetCount = ref(0);
-const vpcRelateRouteTableCount = ref(0);
-const vpcRelateNetworkInterfaceCount = ref(0);
 watch(() => detail.value.id, (val) => {
-  const getRelateNum = (type: string, field = 'vpc_id', op = 'in') => {
-    return resourceStore.list({
-      page: { count: true },
-      filter: {
-        op: 'and',
-        rules: [
-          { field, op, value: [val] },
-          // { field: 'bk_biz_id', op: 'eq', value: detail.value.bk_biz_id }
-        ],
-      },
-    }, type);
-  };
-  Promise.all([
-    getRelateNum('cvms', 'vpc_ids', 'json_overlaps'),
-    getRelateNum('subnets'),
-    getRelateNum('route_tables'),
-    getRelateNum('network_interfaces'),
-  ]).then(([cvmsResult, subnetsResult, routeResult, networkResult]: any) => {
-    vpcRelateCvmCount.value = cvmsResult.data.count;
-    vpcRelateSubnetCount.value = subnetsResult.data.count;
-    vpcRelateRouteTableCount.value = routeResult.data.count;
-    vpcRelateNetworkInterfaceCount.value = networkResult.data.count;
+  resourceStore.list({
+    page: { count: true },
+    filter: {
+      op: 'and',
+      rules: [{ field: 'vpc_id', op: 'in', value: [val] }],
+    },
+  }, 'subnets').then((res: any) => {
+    vpcRelateSubnetCount.value = res.data.count;
   });
 });
 
+// VPC删除只需要判断 vpc 下是否有子网
 const disabledOption = computed(() => {
-  const hasRelate = vpcRelateCvmCount.value > 0 || vpcRelateSubnetCount.value > 0
-      || vpcRelateRouteTableCount.value > 0 || vpcRelateNetworkInterfaceCount.value > 0;
   // 无权限，直接禁用按钮
   if (!authVerifyData.value?.permissionAction?.[actionName.value]) return true;
-  // 业务下，判断vpc下是否有关联主机、子网、路由表、网络接口
-  if (!isResourcePage.value) return hasRelate;
-  // 资源下，判断是否分配业务，vpc下是否有关联主机、子网、路由表、网络接口
-  return detail.value?.bk_biz_id !== -1 || hasRelate;
+  // 业务下，判断vpc下是否有关联子网
+  if (!isResourcePage.value) return vpcRelateSubnetCount.value > 0;
+  // 资源下，判断是否分配业务，vpc下是否有关联子网
+  return detail.value?.bk_biz_id !== -1 || vpcRelateSubnetCount.value > 0;
 });
 const bkTooltipsOptions = computed(() => {
   // 无权限
@@ -325,28 +307,13 @@ const bkTooltipsOptions = computed(() => {
   };
   // 资源下，是否分配业务
   if (isResourcePage.value && detail.value?.bk_biz_id !== -1) return {
-    content: '该vpc仅可在业务下操作',
+    content: '该VPC已分配到业务，仅可在业务下操作',
     disabled: detail.value.bk_biz_id === -1,
-  };
-  // 业务/资源下，vpc下是否有关联主机
-  if (vpcRelateCvmCount.value > 0) return {
-    content: `该vpc关联了 ${vpcRelateCvmCount.value} 个主机，不可直接删除`,
-    disabled: !(vpcRelateCvmCount.value > 0),
   };
   // 业务/资源下，vpc下是否有关联子网
   if (vpcRelateSubnetCount.value > 0) return {
     content: `该vpc关联了 ${vpcRelateSubnetCount.value} 个子网，不可直接删除`,
     disabled: !(vpcRelateSubnetCount.value > 0),
-  };
-  // 业务/资源下，vpc下是否有关联路由表
-  if (vpcRelateRouteTableCount.value > 0) return {
-    content: `该vpc关联了 ${vpcRelateRouteTableCount.value} 个路由表，不可直接删除`,
-    disabled: !(vpcRelateRouteTableCount.value > 0),
-  };
-  // 业务/资源下，vpc下是否有关联网络接口
-  if (vpcRelateNetworkInterfaceCount.value > 0) return {
-    content: `该vpc关联了 ${vpcRelateNetworkInterfaceCount.value} 个路由表，不可直接删除`,
-    disabled: !(vpcRelateNetworkInterfaceCount.value > 0),
   };
 
   return null;
@@ -398,11 +365,12 @@ const handleDeleteVpc = (data: any) => {
       } else {*/
   InfoBox({
     title: '请确认是否删除',
-    subTitle: `将删除【${data.id} - ${data.name}】`,
+    subTitle: `将删除【${data.cloud_id}${data.name ? ` - ${data.name}` : ''}】`,
     theme: 'danger',
     headerAlign: 'center',
     footerAlign: 'center',
     contentAlign: 'center',
+    extCls: 'delete-resource-infobox',
     onConfirm() {
       resourceStore
         .delete(

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { FilterType } from '@/typings/resource';
 
-import { PropType, h, computed } from 'vue';
+import { PropType, h, computed, withDirectives } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Button, InfoBox, Message } from 'bkui-vue';
+import { bkTooltips, Button, InfoBox, Message } from 'bkui-vue';
 import { useResourceStore } from '@/store/resource';
 import useDelete from '../../hooks/use-delete';
 import useQueryList from '../../hooks/use-query-list';
@@ -40,6 +40,10 @@ const resourceStore = useResourceStore();
 
 const selectSearchData = computed(() => {
   return [
+    {
+      name: '云硬盘ID',
+      id: 'cloud_id',
+    },
     ...searchData.value,
     ...[
       {
@@ -97,6 +101,30 @@ const unableRecycled = (data: {
   );
 };
 
+const generateTooltipsOptions = (data: any) => {
+  const action_name = props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
+
+  if (!props.authVerifyData?.permissionAction[action_name]) return {
+    content: '当前用户无权限操作该按钮',
+    disabled: props.authVerifyData?.permissionAction[action_name],
+  };
+  if (props.isResourcePage && data?.bk_biz_id !== -1) return {
+    content: '该硬盘已分配到业务，仅可在业务下操作',
+    disabled: data.bk_biz_id === -1,
+  };
+  if (data?.instance_id) return {
+    content: '该硬盘已绑定主机，不可单独回收',
+    disabled: !data.instance_id,
+  };
+  if (isDisabledRecycle(data?.vendor, data?.status)) return {
+    content: '该硬盘处于不可回收状态下',
+    disabled: !isDisabledRecycle(data.vendor, data.status),
+  };
+  return {
+    disabled: true,
+  };
+};
+
 const renderColumns = [
   ...columns,
   {
@@ -115,7 +143,7 @@ const renderColumns = [
           },
         },
         [
-          h(
+          withDirectives(h(
             Button,
             {
               text: true,
@@ -124,12 +152,13 @@ const renderColumns = [
               onClick() {
                 InfoBox({
                   title: '请确认是否回收',
-                  subTitle: `将回收【${data.id} - ${data.name}】`,
+                  subTitle: `将回收【${data.cloud_id}${data.name ? ` - ${data.name}` : ''}】`,
                   // @ts-ignore
                   theme: 'danger',
                   headerAlign: 'center',
                   footerAlign: 'center',
                   contentAlign: 'center',
+                  extCls: 'recycle-resource-infobox',
                   onConfirm() {
                     resourceStore
                       .recycled('disks', {
@@ -147,7 +176,9 @@ const renderColumns = [
               },
             },
             [t('回收')],
-          ),
+          ), [
+            [bkTooltips, generateTooltipsOptions(data)],
+          ]),
         ],
       ));
     },
@@ -275,6 +306,7 @@ const isCurRowSelectEnable = (row: any) => {
 <style lang="scss" scoped>
 .w100 {
   width: 100px;
+
 }
 .w60 {
   width: 60px;
