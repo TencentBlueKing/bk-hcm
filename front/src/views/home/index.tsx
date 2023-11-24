@@ -52,7 +52,7 @@ const { DropdownMenu, DropdownItem } = Dropdown;
 const { VERSION } = window.PROJECT_CONFIG;
 
 export default defineComponent({
-  name: 'home',
+  name: 'Home',
   setup() {
     const NAV_WIDTH = 240;
     const NAV_TYPE = 'top-bottom';
@@ -407,7 +407,7 @@ export default defineComponent({
                   </header>
                 ),
                 menu: () => (
-                  <>
+                  <div class={'home-menu'}>
                     {topMenuActiveItem === 'business' && isMenuOpen.value ? (
                       <AppSelect
                         data={businessList.value}
@@ -545,7 +545,7 @@ export default defineComponent({
                         )
                       )))}
                     </Menu>
-                  </>
+                  </div>
                 ),
                 default: () => (
                   <>

@@ -1,11 +1,17 @@
 import { defineComponent, ref } from 'vue';
 import './index.scss';
-import { Table, Tag, Loading, Button } from 'bkui-vue';
+import { Table, Tag, Loading, Button, Dialog, Form, Input } from 'bkui-vue';
 import { AngleDown, AngleRight } from 'bkui-vue/lib/icon';
 import VendorTcloud from '@/assets/image/vendor-tcloud.png';
+// @ts-ignore
+import AppSelect from '@blueking/app-select';
+import { useBusinessMapStore } from '@/store/useBusinessMap';
+
+const { FormItem } = Form;
 
 export default defineComponent({
   setup() {
+    const businessMapStore = useBusinessMapStore();
     const columns = [
       {
         field: 'name',
@@ -31,6 +37,7 @@ export default defineComponent({
     const tableData = ref([]);
     const isLoading = ref(false);
     const isExpanded = ref(true);
+    const isDialogShow = ref(false);
     return () => (
       <div class={'scheme-preview-table-card-container'}>
         <div
@@ -79,7 +86,9 @@ export default defineComponent({
           </div>
           <div class={'scheme-preview-table-card-header-operation'}>
             <Button class={'mr8'}>查看详情</Button>
-            <Button theme='primary'>保存</Button>
+            <Button theme='primary' onClick={() => (isDialogShow.value = true)}>
+              保存
+            </Button>
           </div>
         </div>
         <div
@@ -90,6 +99,21 @@ export default defineComponent({
             <Table data={tableData.value} columns={columns} />
           </Loading>
         </div>
+
+        <Dialog
+          title='保存该方案'
+          isShow={isDialogShow.value}
+          onClosed={() => (isDialogShow.value = false)}
+          onConfirm={() => (isDialogShow.value = false)}>
+          <Form formType='vertical'>
+            <FormItem label='方案名称' required>
+              <Input />
+            </FormItem>
+            <FormItem label='标签'>
+              <AppSelect data={businessMapStore.businessList} />
+            </FormItem>
+          </Form>
+        </Dialog>
       </div>
     );
   },
