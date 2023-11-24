@@ -241,7 +241,8 @@ export default defineComponent({
             isDialogShow.value = false;
           }}
           title='选择安全组'
-          width={1500}>
+          width={'60vw'}
+          height={'80vh'}>
           <div class={'security-container'}>
             <div class={'security-list g-scroller'}>
               <Input
