@@ -1,6 +1,86 @@
 .idc-map-display {
   padding: 16px 24px;
   width: 480px;
-  background: #FFFFFF;
+  background: #ffffff;
   box-shadow: 0 2px 4px 0 #1919290d;
+  .title {
+    font-size: 14px;
+    font-weight: 700px;
+    line-height: 22px;
+  }
+  .map-container {
+    margin-top: 16px;
+    height: 270px;
+    background: #f5f7fa;
+  }
+  .idc-group {
+    padding-top: 24px;
+    .group-title {
+      color: #313238;
+      font-size: 14px;
+    }
+  }
+  .idc-list {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    .idc-card {
+      margin-top: 12px;
+      padding: 10px 8px 8px 32px;
+      width: calc(50% - 8px);
+      background: #f5f7fa;
+      border-radius: 2px;
+    }
+  }
+  .summary-head {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    .status-dot {
+      position: absolute;
+      top: 7px;
+      left: -20px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ff5656;
+      border: 2px solid #ffdddd;
+      &.blue {
+        background: #699df4;
+        border-color: #f0f5ff;
+      }
+    }
+    .idc-name {
+      flex: 1;
+      line-height: 22px;
+      font-size: 14px;
+      color: #313238;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .cloud-tag {
+      margin-left: 12px;
+      flex-grow: 0;
+      padding: 0 4px;
+      height: 16px;
+      line-height: 16px;
+      border-radius: 8px;
+      color: #3a84ff;
+      background: #e1ecff;
+      .name {
+        display: inline-block;
+        font-size: 12px;
+        transform: scale(0.83);
+        transform-origin: top;
+      }
+    }
+  }
+  .cost {
+    font-size: 12px;
+    color: #63656e;
+    line-height: 20px;
+  }
 }
