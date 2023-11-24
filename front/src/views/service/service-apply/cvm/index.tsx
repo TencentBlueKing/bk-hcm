@@ -1157,7 +1157,7 @@ export default defineComponent({
     };
 
     return () => (
-      <div class={'mb30'}>
+      <div>
         <DetailHeader>
           <p class={'purchase-cvm-header-title'}>购买主机</p>
         </DetailHeader>
