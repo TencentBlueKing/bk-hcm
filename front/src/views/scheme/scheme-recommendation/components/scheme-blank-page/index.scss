@@ -1,193 +1,48 @@
-.business-attributes-container {
-  position: relative;
-  left: 0;
-  min-width: 520px;
-  height: 100%;
+.blank-show-wrap {
   display: flex;
-  flex-direction: column;
-  background: #fafbfd;
-  border: 1px solid #dcdee5;
-  transition: all 0.5s;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
 
-  .title-wrap {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 24px;
-    height: 52px;
-    background: #f0f1f5;
-
-    .title-text {
-      font-size: 16px;
-      font-weight: 700;
-      color: #63656e;
-      letter-spacing: 0;
-      line-height: 24px;
-    }
-
-    .hcm-icon {
-      position: relative;
-      left: 0px;
-      border-radius: 2px;
-      transition: all 0.5s;
-      cursor: pointer;
-
-      &::before {
-        display: block;
-        width: 32px;
-        height: 32px;
-        background: #eaebf0;
-        line-height: 32px;
-        font-size: 16px;
-        transition: background 0.2s;
-      }
-    }
-  }
-
-  .content-wrap {
-    flex: 1;
-    padding: 24px;
-
-    .sub-form-item-wrap {
-      padding: 24px;
-      background: #ffffff;
-      border: 1px solid #eaebf0;
-      border-radius: 2px;
-
-      .bk-form-item {
-        display: flex;
-
-        .bk-form-label {
-          width: 80px;
-          text-align: right;
-          line-height: 32px;
-          margin-bottom: 0;
-
-          &::after {
-            content: '<';
-            margin: 0 5px;
-          }
-        }
-
-        .bk-form-content {
-          flex: 1;
-        }
-
-        &:last-of-type {
-          margin-bottom: 0;
-        }
-      }
-    }
-
-    .user-proportion-detail-btn-wrap {
-      margin-left: 16px;
-      width: 70px;
-      height: 30px;
-      color: #3a84ff;
-      cursor: pointer;
-
-      .btn-text {
-        font-size: 12px;
-      }
-    }
-  }
-
-  &.close {
-    position: absolute;
-    left: -519px;
-
-    .hcm-icon {
-      left: 65px !important;
-      top: -6px;
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #fff !important;
-
-      &::before {
-        background: #fff !important;
-      }
-
-      &:hover {
-        &::before {
-          background: #eaebf0 !important;
-        }
-      }
-    }
-  }
-}
-.scheme-recommendation-container {
-  flex: 1;
-
-  .content-container {
-    height: 100%;
-
-    .blank-show-wrap {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100%;
-
-      .item-wrap {
-        width: 300px;
-        text-align: center;
-
-        .title-wrap {
-          margin: 20px 0 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          height: 32px;
-
-          .serial-number {
-            width: 13px;
-            font-family: Impact;
-            font-size: 24px;
-            color: #a3c5fd;
-          }
-
-          .title-text {
-            font-weight: 700;
-            font-size: 16px;
-            color: #63656e;
-            letter-spacing: 0;
-            line-height: 24px;
-          }
-        }
-
-        .content-wrap {
-          text-align: justify;
-          font-size: 14px;
-          color: #63656e;
-          line-height: 22px;
-        }
-      }
-
-      .separator {
-        width: 150px;
-        transform: rotate(90deg);
-        font-size: 50px;
-        color: #3a84ff;
-      }
-    }
-  }
-}
-
-.prompt-icon-wrap {
-  position: relative;
-
-  & > .bk-form-label::after {
-    position: absolute;
-    content: '\e125';
-    font-family: 'hcm';
-    top: 0;
-    margin-left: 6px;
-    width: 14px;
-    height: 14px;
-    color: #c4c6cc;
+  .item-wrap {
+    width: 300px;
     text-align: center;
-    cursor: pointer;
+
+    .title-wrap {
+      margin: 20px 0 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 32px;
+
+      .serial-number {
+        width: 13px;
+        font-family: Impact;
+        font-size: 24px;
+        color: #a3c5fd;
+      }
+
+      .title-text {
+        font-weight: 700;
+        font-size: 16px;
+        color: #63656e;
+        letter-spacing: 0;
+        line-height: 24px;
+      }
+    }
+
+    .content-wrap {
+      text-align: justify;
+      font-size: 14px;
+      color: #63656e;
+      line-height: 22px;
+    }
+  }
+
+  .separator {
+    width: 150px;
+    transform: rotate(90deg);
+    font-size: 50px;
+    color: #3a84ff;
   }
 }
