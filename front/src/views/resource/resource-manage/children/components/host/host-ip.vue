@@ -4,9 +4,10 @@ import {
   h,
   watch,
   inject,
-  computed,
+  computed, withDirectives,
 } from 'vue';
 import {
+  bkTooltips,
   Button,
   Message,
 } from 'bkui-vue';
@@ -112,20 +113,23 @@ const columns = ref([
             },
           },
           [
-            h(
-              Button,
-              {
-                text: true,
-                theme: 'primary',
-                disabled: !authVerifyData.value?.permissionAction[actionName.value],
-                onClick() {
-                  handleToggleShowUnbind(data);
+            withDirectives(h(
+                Button,
+                {
+                  text: true,
+                  theme: 'primary',
+                  disabled: !authVerifyData.value?.permissionAction[actionName.value]
+                      || (isResourcePage.value && props.data?.bk_biz_id !== -1),
+                  onClick() {
+                    handleToggleShowUnbind(data);
+                  },
                 },
-              },
-              [
-                '解绑',
-              ],
-            ),
+                [
+                  '解绑',
+                ],
+            ), [
+                [bkTooltips, generateTooltipsOptions()]
+            ]),
           ],
         ),
       ];
@@ -291,6 +295,21 @@ const getNetWorkList = async () => {
     });
 };
 
+const generateTooltipsOptions = () => {
+  if (!authVerifyData.value?.permissionAction?.[actionName.value]) return {
+    content: '当前用户无权限操作该按钮',
+    disabled: authVerifyData.value?.permissionAction?.[actionName.value],
+  };
+  if (isResourcePage.value && props.data?.bk_biz_id !== -1) return {
+    content: '该主机已分配到业务，仅可在业务下操作',
+    disabled: props.data.bk_biz_id === -1,
+  };
+
+  return {
+    disabled: true,
+  };
+};
+
 watch(
   () => props.data,
   () => {
@@ -386,7 +405,7 @@ watch(
     @closed="handleToggleShowChangeIP"
     @confirm="handleConfirmChangeIP"
   >
-    确定更换实例（xxx）上的IP（119.28.100.27）？更换后原IP可能无法找回
+    确定更换实例（xxx）上的IP？更换后原IP可能无法找回
   </bk-dialog>
 
   <bk-dialog

@@ -1,7 +1,6 @@
 import { defineComponent, reactive } from "vue";
 
 import './index.scss';
-import { getRandomValues } from "crypto";
 
 export default defineComponent({
   name: 'scheme-info-card',
@@ -44,11 +43,15 @@ export default defineComponent({
     });
 
     const infos = [
-      { id: 'user_distribution', name: '用户据分布地区' },
-      { id: 'biz_type', name: '业务类型' },
-      { id: 'network', name: '用户网络容忍' },
-      { id: 'user_rate', name: '用户分布占比' },
-      { id: 'deployment_architecture', name: '部署架构' },
+      [
+        { id: 'user_distribution', name: '用户据分布地区' },
+        { id: 'biz_type', name: '业务类型' },
+        { id: 'network', name: '用户网络容忍' },
+      ],
+      [
+        { id: 'user_rate', name: '用户分布占比' },
+        { id: 'deployment_architecture', name: '部署架构' },
+      ]
     ];
 
     const getValue = (id: string) => {
@@ -66,11 +69,17 @@ export default defineComponent({
       <div class="scheme-info-card">
         <div class="info-list">
           {
-            infos.map(item => {
+            infos.map((group, index) => {
               return (
-                <div class="info-item" key={item.id}>
-                  <span class="label">{item.name}：</span>
-                  <span class="value">{item.id === 'user_rate' ? <bk-button text theme="primary">查看详情</bk-button> : getValue(item.id)}</span>
+                <div class="group" key={index}>
+                  {group.map(item => {
+                    return (
+                      <div class="info-item" key={item.id}>
+                        <span class="label">{item.name}：</span>
+                        <span class="value">{item.id === 'user_rate' ? <bk-button text theme="primary">查看详情</bk-button> : getValue(item.id)}</span>
+                      </div>
+                    )
+                  })}
                 </div>
               )
             })

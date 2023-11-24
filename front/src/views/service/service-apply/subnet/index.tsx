@@ -59,7 +59,7 @@ export default defineComponent({
     const cidr_host2 = ref('');
     const cidr_mask = ref('');
     const submitLoading = ref(false);
-    const { whereAmI } = useWhereAmI();
+    const { whereAmI, isResourcePage } = useWhereAmI();
     const router = useRouter();
 
     const resourceStore = useResourceStore();
@@ -137,6 +137,19 @@ export default defineComponent({
         deep: true,
       },
     );
+
+    // 当云账号、云地域、可用区变化时, 清空表单
+    watch(() => [formModel.account_id, formModel.region, formModel.zone], () => {
+      Object.assign(formModel, {
+        cloud_vpc_id: '', // 所属的VPC网络
+        name: '', // 子网名称
+        cloud_route_table_id: '', // 关联的路由表,
+        gateway_ip: '', // 网关地址
+      });
+      cidr_host1.value = '';
+      cidr_host2.value = '';
+      cidr_mask.value = '';
+    });
 
     return () => (
       <div>
@@ -242,14 +255,19 @@ export default defineComponent({
               </FormItem>
               {
                 formModel.vendor === 'huawei'
-                  && <FormItem label='网关地址' style={{ width: '880px' }} required property='gateway_ip'>
+                  && <FormItem
+                      label='网关地址'
+                      property='gateway_ip'
+                      required
+                      description={'子网的网关地址，默认建议填写子网中的第1个IP'}
+                      style={{ width: '880px' }} >
                     <Input v-model={formModel.gateway_ip} placeholder='请输入网关地址'></Input>
                   </FormItem>
               }
             </Form>
           </Card>
         </div>
-        <div class={'button-group'}>
+        <div class={'button-group'} style={{ paddingLeft: isResourcePage && 'calc(15% + 24px)' }}>
           <Button
             theme={'primary'}
             class={'button-submit'}

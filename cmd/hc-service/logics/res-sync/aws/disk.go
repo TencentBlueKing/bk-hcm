@@ -74,7 +74,8 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 	if opt.BootMap != nil {
 		// 标记启动盘
 		for i, d := range diskFromCloud {
-			_, diskFromCloud[i].Boot = opt.BootMap[d.GetCloudID()]
+			_, exists := opt.BootMap[d.GetCloudID()]
+			diskFromCloud[i].Boot = converter.ValToPtr(exists)
 		}
 	}
 	addSlice, updateMap, delCloudIDs := common.Diff[adaptordisk.AwsDisk, *coredisk.Disk[coredisk.AwsExtension]](
@@ -140,7 +141,7 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, updateMap map[strin
 			ID:           id,
 			Status:       converter.PtrToVal(one.State),
 			Name:         name,
-			IsSystemDisk: converter.ValToPtr(one.Boot),
+			IsSystemDisk: one.Boot,
 			Extension: &coredisk.AwsExtension{
 				Attachment: attachments,
 				Encrypted:  one.Encrypted,
@@ -210,7 +211,7 @@ func (cli *client) createDisk(kt *kit.Kit, accountID string, region string, addS
 			DiskSize:     uint64(converter.PtrToVal(one.Size)),
 			DiskType:     converter.PtrToVal(one.VolumeType),
 			Status:       converter.PtrToVal(one.State),
-			IsSystemDisk: one.Boot,
+			IsSystemDisk: converter.PtrToVal(one.Boot),
 			// 该云没有此字段
 			Memo: nil,
 			Extension: &coredisk.AwsExtension{
@@ -444,7 +445,7 @@ func isDiskChange(cloud adaptordisk.AwsDisk, db *coredisk.Disk[coredisk.AwsExten
 		return true
 	}
 
-	if db.IsSystemDisk != cloud.Boot {
+	if cloud.Boot != nil && *cloud.Boot != db.IsSystemDisk {
 		return true
 	}
 	for _, dbValue := range db.Extension.Attachment {

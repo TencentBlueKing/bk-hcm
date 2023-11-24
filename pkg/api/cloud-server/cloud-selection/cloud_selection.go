@@ -22,6 +22,7 @@ package csselection
 import (
 	"errors"
 
+	coreselection "hcm/pkg/api/core/cloud-selection"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/table/types"
 )
@@ -60,3 +61,27 @@ type SchemeCreateReq struct {
 func (req SchemeCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// AreaTopoIDCQueryReq ...
+type AreaTopoIDCQueryReq struct {
+	AreaTopo []coreselection.AreaInfo `json:"area_topo" validate:"required"`
+	IDCIds   []string                 `json:"idc_ids"  validate:"min=1" `
+}
+
+// Validate ...
+func (r *AreaTopoIDCQueryReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// QueryDistReq ...
+type QueryDistReq struct {
+	AreaTopo []coreselection.AreaInfo `json:"area_topo" validate:"required"`
+}
+
+// Validate ...
+func (r *QueryDistReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// MultiIdcTopo ...
+type MultiIdcTopo = coreselection.AreaValue[map[string]float64]

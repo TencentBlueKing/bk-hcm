@@ -85,6 +85,10 @@ const resourceStore = useResourceStore();
 
 const hostSearchData = computed(() => {
   return [
+    {
+      name: '主机ID',
+      id: 'cloud_id',
+    },
     ...searchData.value,
     ...[{
       name: '管控区域',

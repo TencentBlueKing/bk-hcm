@@ -168,10 +168,12 @@
                 <bk-table-column
                   label="进入回收站时间"
                   prop="created_at"
+                  :sort="true"
                 />
                 <bk-table-column
                   label="过期时间"
                   prop="recycled_at"
+                  :sort="true"
                 >
                   <template #default="{ data }">
                     <bk-tag theme="danger">

@@ -279,6 +279,7 @@ export default defineComponent({
           onConfirm={handleChange}
           title='选择机型'
           closeIcon={false}
+          quick-close={false}
           width={1500}>
             {{
               default: () => (
@@ -289,6 +290,12 @@ export default defineComponent({
                   labelPosition='right'>
                   <FormItem label='机型族'>
                     <BkButtonGroup>
+                      <Button selected={selectedFamilyType.value === ''}
+                              onClick={() => {
+                                selectedFamilyType.value = '';
+                              }}>
+                        全部
+                      </Button>
                       {instanceFamilyTypesList.value.map(name => (
                         <Button
                           selected={selectedFamilyType.value === name}

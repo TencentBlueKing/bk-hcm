@@ -11,19 +11,3 @@
 .w110 {
   width: 110px;
 }
-
-.action-bar {
-  position: fixed;
-  left: 0;
-  bottom: 0;
-  padding: 0 311px;
-  width: 100%;
-  height: 80px;
-  display: flex;
-  align-items: center;
-  border: 1px solid #dcdee5;
-  background-color: #fff;
-  .bk-button {
-    padding: 0 30px;
-  }
-}

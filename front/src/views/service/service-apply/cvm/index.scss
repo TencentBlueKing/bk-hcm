@@ -31,15 +31,21 @@
   
   .data-disk-wrap {
     .flex-row {
-
       .bk-form-item {
         margin: 0 8px 8px 0;
       }
-
       &:last-child {
         .bk-form-item {
           margin: 0 8px 0 0;
         }
+      }
+    }
+    .btns {
+      margin-left: 10px;
+      .btn {
+        margin-right: 18px;
+        padding: 0;
+        border-style: none;
       }
     }
   }
@@ -115,12 +121,17 @@
     display: flex;
     align-items: center;
 
-    .purchase-cvm-cost {
-      margin-right: 24px;
-      color: #ff9c01;
-      font-size: 20px;
-      font-weight: 700;
-      text-align: right;
+    .purchase-cvm-cost-wrap {
+      display: flex;
+      align-items: center;
+
+      .purchase-cvm-cost {
+        margin-right: 24px;
+        color: #ff9c01;
+        font-size: 20px;
+        font-weight: 700;
+        text-align: right;
+      }
     }
   }
 

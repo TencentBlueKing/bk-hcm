@@ -39,7 +39,7 @@ $BIN_DIR/bk-hcm-authserver -c  $ETC_DIR/auth_server.yaml --disable-auth &
 
 
 function ctrl_c() {
-    echo -e '\033[31;1mKilling...\033[0m'
+    echo '\033[31;1mKilling...\033[0m'
     pkill bk-hcm
 }
 trap ctrl_c INT

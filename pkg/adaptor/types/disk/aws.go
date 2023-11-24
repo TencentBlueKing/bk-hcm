@@ -147,8 +147,8 @@ func (opt *AwsDiskDetachOption) ToDetachVolumeInput() (*ec2.DetachVolumeInput, e
 
 // AwsDisk for ec2 Volume
 type AwsDisk struct {
-	Boot bool
 	*ec2.Volume
+	Boot *bool
 }
 
 // GetCloudID ...

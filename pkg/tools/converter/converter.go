@@ -156,6 +156,15 @@ func MapValueToSlice[KeyType comparable, ValType any](source map[KeyType]ValType
 	return target
 }
 
+// MapToSlice 通过给定函数将map转为slice
+func MapToSlice[K comparable, V any, T any](m map[K]V, mapFunc func(K, V) T) []T {
+	slice := make([]T, 0, len(m))
+	for k, v := range m {
+		slice = append(slice, mapFunc(k, v))
+	}
+	return slice
+}
+
 // StringSliceToSliceStringPtr []string to "['id1','id2',...]" ptr.
 func StringSliceToSliceStringPtr(source []string) *string {
 	if len(source) <= 0 {
