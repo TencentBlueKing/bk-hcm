@@ -68,7 +68,6 @@
             >
               <bk-table
                 :key="selectedType"
-                :settings="settings"
                 class="table-layout"
                 :data="datas"
                 remote-pagination
