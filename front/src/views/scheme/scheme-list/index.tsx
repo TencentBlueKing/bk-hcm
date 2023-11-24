@@ -31,7 +31,6 @@ export default defineComponent({
       {
         label: '方案名称',
         render: ({ data }: { data: ISchemeListItem }) => {
-          console.log(data);
           return <bk-button text theme="primary" onClick={() => { goToDetail(data.id) }}>{data.name}</bk-button>
         },
       },
