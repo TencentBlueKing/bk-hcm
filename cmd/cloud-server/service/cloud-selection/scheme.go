@@ -17,12 +17,32 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+/*
+ * TencentBlueKing is pleased to support the open source community by making
+ * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
+ * Copyright (C) 2022 THL A29 Limited,
+ * a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ *
+ * We undertake not to change the open source license (MIT license) applicable
+ *
+ * to the current version of the project delivered to anyone in the future.
+ */
+
 package csselection
 
 import (
 	"errors"
 	"fmt"
 
+	"hcm/cmd/cloud-server/plugin/recommend"
 	csselection "hcm/pkg/api/cloud-server/cloud-selection"
 	"hcm/pkg/api/core"
 	dsselection "hcm/pkg/api/data-service/cloud-selection"
@@ -30,7 +50,11 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
+	"hcm/pkg/plugin"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
+	"hcm/pkg/tools/times"
 )
 
 // BatchDeleteScheme ..
@@ -227,4 +251,110 @@ func (svc *service) ListScheme(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return result, nil
+}
+
+// GenerateRecommendScheme 推荐选型方案
+func (svc *service) GenerateRecommendScheme(cts *rest.Contexts) (any, error) {
+	req := new(csselection.GenSchemeReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// 前端输入转算法输入
+	algIn, err := svc.buildALgIn(cts, req)
+	if err != nil {
+		return nil, err
+	}
+	algPlugin, err := plugin.NewPlugin[recommend.AlgorithmInput, recommend.AlgorithmOutput](
+		svc.cfg.AlgorithmPlugin.BinaryPath, svc.cfg.AlgorithmPlugin.Args...)
+	if err != nil {
+		logs.Errorf("init algorithm plugin fail, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("init algorithm plugin fail")
+	}
+
+	algOut, err := algPlugin.Execute(algIn)
+	if err != nil {
+		logs.Errorf("fail to execute algorithm plugin, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	// converter result
+	return slice.Map(algOut.ParetoList, func(s recommend.Solution) csselection.GeneratedSchemeResult {
+		return csselection.GeneratedSchemeResult{
+			CoverRate:      s.CoverRate,
+			CompositeScore: (s.F1Score + s.F2Score) / 2,
+			NetScore:       s.F1Score,
+			CostScore:      s.F2Score,
+			ResultIdcIds:   s.Idc,
+		}
+	}), nil
+
+}
+
+func (svc *service) buildALgIn(cts *rest.Contexts, req *csselection.GenSchemeReq) (*recommend.AlgorithmInput, error) {
+	// idc 列表
+	idcResp, err := svc.client.DataService().Global.CloudSelection.ListIdc(cts.Kit,
+		&core.ListReq{Page: core.NewDefaultBasePage(), Filter: tools.AllExpression()})
+	if err != nil {
+		logs.Errorf("fail to list IDC, err: %v", err)
+		return nil, err
+	}
+	idcIDs := make([]string, 0, len(idcResp.Details))
+	idcPriceMap := make(map[string]float64, len(idcResp.Details))
+	idcName2ID := make(map[string]string, len(idcResp.Details))
+	var idcBizID int64 = -1
+	for _, idc := range idcResp.Details {
+		price, ok := svc.cfg.DefaultIdcPrice[idc.Vendor]
+		if !ok {
+			continue
+		}
+		// TODO: use user input
+		idcBizID = idc.BkBizID
+		idcPriceMap[idc.ID] = price
+		idcIDs = append(idcIDs, idc.ID)
+		idcName2ID[idc.Name] = idc.ID
+	}
+
+	// 人口分布和ping数据
+	notBefore := times.DateAfterNow(-svc.cfg.AvgLatencySampleDays)
+	userDistribution := map[string]float64{}
+	pingInfo := make(map[string]map[string]float64, len(req.UserDistributions))
+	for _, area := range req.UserDistributions {
+		// ping数据
+		pingData, err := svc.getAvgProvincePingData(cts.Kit, svc.cfg.TableNames.LatencyPingProvinceIdc,
+			area.Name, notBefore, idcBizID, converter.MapKeyToStringSlice(idcName2ID))
+		if err != nil {
+			logs.Errorf("fail to get avg ping data, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+		for _, pd := range pingData {
+			name := area.Name + "-" + pd.Province
+			if _, exists := pingInfo[name]; !exists {
+				pingInfo[name] = make(map[string]float64, len(idcIDs))
+			}
+			pingInfo[name][idcName2ID[pd.IDCName]] = pd.Latency
+		}
+		// 人口数据
+		for _, p := range area.Children {
+			name := area.Name + "-" + p.Name
+			userDistribution[name] = p.Value
+		}
+	}
+
+	algIn := &recommend.AlgorithmInput{
+		CountryRate:     userDistribution,
+		CoverRate:       svc.cfg.CoverRate,
+		CoverPing:       req.CoverPing,
+		PingInfo:        pingInfo,
+		IdcPrice:        idcPriceMap,
+		IdcList:         idcIDs,
+		CoverPingRanges: svc.cfg.CoverPingRanges,
+		IDCPriceRanges:  svc.cfg.IDCPriceRanges,
+		BanIdcList:      []string{},
+		PickIdcList:     []string{},
+	}
+	return algIn, nil
 }

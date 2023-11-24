@@ -85,3 +85,25 @@ func (r *QueryDistReq) Validate() error {
 
 // MultiIdcTopo ...
 type MultiIdcTopo = coreselection.AreaValue[map[string]float64]
+
+// GenSchemeReq request definition of generate recommend scheme
+type GenSchemeReq struct {
+	CoverPing              int                                `json:"cover_ping" validate:"required"`
+	BizType                string                             `json:"biz_type" validate:"required"`
+	DeploymentArchitecture []string                           `json:"deployment_architecture" validate:"required"`
+	UserDistributions      []coreselection.AreaValue[float64] `json:"user_distribution" validate:"required"`
+}
+
+// Validate ...
+func (r *GenSchemeReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// GeneratedSchemeResult ...
+type GeneratedSchemeResult struct {
+	CoverRate      float64  `json:"cover_rate"`
+	CompositeScore float64  `json:"composite_score"`
+	NetScore       float64  `json:"net_score"`
+	CostScore      float64  `json:"cost_score"`
+	ResultIdcIds   []string `json:"result_idc_ids"`
+}

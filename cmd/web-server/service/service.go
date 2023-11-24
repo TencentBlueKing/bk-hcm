@@ -314,6 +314,7 @@ func (s *Service) indexHandleFunc(req *restful.Request, resp *restful.Response) 
 		"VERSION":                     version.VERSION,
 		"BK_CMDB_CREATE_BIZ_URL":      cc.WebServer().Web.BkCmdbCreateBizUrl,
 		"BK_CMDB_CREATE_BIZ_DOCS_URL": cc.WebServer().Web.BkCmdbCreateBizDocsUrl,
+		"ENABLE_CLOUD_SELECTION":      cc.WebServer().Web.EnableCloudSelection,
 	}
 	err = tmpl.Execute(resp.ResponseWriter, content)
 	if err != nil {

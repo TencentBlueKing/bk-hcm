@@ -13,7 +13,10 @@ from pymoo.operators.sampling.rnd import FloatRandomSampling
 # optimize
 from pymoo.optimize import minimize
 # termination
-from pymoo.termination import get_termination
+# from pymoo.termination import get_termination
+
+from pymoo.config import Config
+Config.show_compile_hint = False
 
 
 # define problem
@@ -108,6 +111,12 @@ def main(plot=False, debug=False):
             algorithm_data = json.load(f)
     else:
         algorithm_data = get_stdin()
+    # COUNTRY_RATE_ORIGIN归一化处理
+    COUNTRY_RATE = {}
+    total = sum(algorithm_data['COUNTRY_RATE_ORIGIN'].values())
+    for country, value in algorithm_data['COUNTRY_RATE_ORIGIN'].items():
+        COUNTRY_RATE[country] = value/total
+    algorithm_data['COUNTRY_RATE'] = COUNTRY_RATE
     # 2 算法实例化
     # 实例化problem
     problem = MyProblem(**{
@@ -128,11 +137,11 @@ def main(plot=False, debug=False):
         eliminate_duplicates=True
     )
     # 实例化termination
-    termination = get_termination("n_gen", 40)
+    # termination = get_termination("n_gen", 40)
     # 实例化optimization, 求解
     res = minimize(problem,
                    algorithm,
-                   termination,
+                   ('n_gen', 40),
                    seed=1,
                    save_history=True,
                    # 是否展示迭代详情输出
@@ -142,7 +151,7 @@ def main(plot=False, debug=False):
     if plot:
         plot_pareto_front(res)
     # 4 返回stdout
-    sys.stdout.write(json.dumps({"ParetoList": pareto}, ensure_ascii=False) + "\n")
+    sys.stdout.write(json.dumps({"PARETO_LIST": pareto}, ensure_ascii=False) + "\n")
     return True
 
 
@@ -156,23 +165,40 @@ def resolve_x(res, algorithm_data):
     IDC_LIST = algorithm_data['IDC_LIST']
     PICK_IDC_LIST = algorithm_data['PICK_IDC_LIST']
     COVER_RATE = algorithm_data['COVER_RATE']
+    COVER_PING_RANGES = algorithm_data.get('COVER_PING_RANGES', [])
+    IDC_PRICE_RANGES = algorithm_data.get('IDC_PRICE_RANGES', [])
     x_list = np.round(res.X)
     for _id, x in enumerate(x_list):
         idc_list = [IDC_LIST[i] for i, _x in enumerate(x) if _x]
         if PICK_IDC_LIST:
             idc_list = list(set(idc_list + PICK_IDC_LIST))
         optimal = {
-            'idc': idc_list,
-            'f1': f'{res.F[_id][0]:.2f}ms',
-            'f2': f'${res.F[_id][1]:.0f}',
-            'cover_rate': f'{COVER_RATE - res.G[_id][0]:.2f}'
+            'IDC': idc_list,
+            'F1': f'{res.F[_id][0]:.2f}ms',
+            'F2': f'${res.F[_id][1]:.0f}',
+            'COVER_RATE': COVER_RATE - res.G[_id][0],
+            # 新增解析f1与f2的评分
+            'F1_SCORE': get_score_for_function(COVER_PING_RANGES, res.F[_id][0]),
+            'F2_SCORE': get_score_for_function(IDC_PRICE_RANGES, res.F[_id][1]),
         }
-        if optimal not in pareto_list:
+        if optimal not in pareto_list and idc_list:
             pareto_list.append(optimal)
     # pareto front排序
-    pareto_list = sorted(pareto_list, key=lambda o: float(o['f1'].replace('ms', '')), reverse=False)
+    pareto_list = sorted(pareto_list, key=lambda o: float(o['F1'].replace('ms', '')), reverse=False)
     return pareto_list
 
+
+def get_score_for_function(score_list, f_value):
+    """
+    将函数输出按照分数区间转换成打分
+    :param score_list:
+    :param f_value:
+    :return:
+    """
+    for s in score_list:
+        if s['range'][0] <= f_value < s['range'][1]:
+            return s['score']
+    return -1
 
 def plot_pareto_front(res):
     """结果pareto front可视化"""
