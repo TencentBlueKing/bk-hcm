@@ -1,0 +1,52 @@
+// 覆盖组件库样式
+.user-proportion-detail-dialog {
+  .bk-modal-body {
+    .bk-dialog-header {
+      padding: 16px 24px;
+    }
+
+    .bk-modal-content {
+      padding: 0 24px;
+      max-height: 60vh;
+
+      .tips-wrap {
+        display: flex;
+        align-items: center;
+        height: 32px;
+        background: #f0f8ff;
+        border: 1px solid #c5daff;
+        border-radius: 2px;
+
+        .hcm-icon {
+          margin: 0 9px;
+          color: #3a84ff;
+        }
+      }
+
+      .proportion-num {
+        padding: 0 8px;
+        height: 22px;
+        line-height: 22px;
+        background: #f0f1f5;
+        border-radius: 2px;
+      }
+    }
+
+    .bk-modal-close {
+      font-size: 30px;
+      color: #979ba5;
+    }
+  }
+
+  .mb16 {
+    margin-bottom: 16px;
+  }
+}
+
+.bk-tree .bk-node-row:nth-child(odd) {
+  background: #fafbfd;
+}
+
+.bk-tree .bk-node-row:nth-child(even) {
+  background: #fff;
+}

@@ -1,0 +1,48 @@
+.blank-show-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+
+  .item-wrap {
+    width: 300px;
+    text-align: center;
+
+    .title-wrap {
+      margin: 20px 0 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 32px;
+
+      .serial-number {
+        width: 13px;
+        font-family: Impact;
+        font-size: 24px;
+        color: #a3c5fd;
+      }
+
+      .title-text {
+        font-weight: 700;
+        font-size: 16px;
+        color: #63656e;
+        letter-spacing: 0;
+        line-height: 24px;
+      }
+    }
+
+    .content-wrap {
+      text-align: justify;
+      font-size: 14px;
+      color: #63656e;
+      line-height: 22px;
+    }
+  }
+
+  .separator {
+    width: 150px;
+    transform: rotate(90deg);
+    font-size: 50px;
+    color: #3a84ff;
+  }
+}
