@@ -11,6 +11,7 @@ const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 const { FormItem } = Form;
 
 interface IMachineType {
+  ecsinstance_architecture: string;
   instance_type: string;
   architecture?: string;
 }
@@ -155,6 +156,10 @@ export default defineComponent({
               field: 'state',
               op: QueryRuleOPEnum.EQ,
               value: 'available',
+            }, {
+              field: 'architecture',
+              op: QueryRuleOPEnum.EQ,
+              value: machineType.architecture,
             });
             break;
           case VendorEnum.HUAWEI:
@@ -163,6 +168,13 @@ export default defineComponent({
               op: QueryRuleOPEnum.JSON_EQ,
               value: region,
             });
+            if (machineType.ecsinstance_architecture) {
+              filter.rules.push({
+                field: 'ecsinstance_architecture',
+                op: QueryRuleOPEnum.EQ,
+                value: machineType.ecsinstance_architecture,
+              });
+            }
             break;
           case VendorEnum.TCLOUD:
             filter.rules.push({
