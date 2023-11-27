@@ -616,6 +616,7 @@ export default defineComponent({
           {
             label: '管控区域',
             description: '管控区是蓝鲸可以管控的Agent网络区域，以实现跨网管理。一个VPC，对应一个管控区。如VPC未绑定管控区，请到资源接入-VPC-绑定管控区操作',
+            display: whereAmI.value === Senarios.business,
             content: () => (
               <>
                 <CloudAreaName id={cloudId.value} />
