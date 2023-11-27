@@ -22,9 +22,13 @@ package plugin
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
+
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 )
 
 // BinaryPlugin outside command execution engine.
@@ -59,7 +63,7 @@ func NewPlugin[IN any, OUT any](pluginPath string, args ...string) (*BinaryPlugi
 }
 
 // Execute execute outside engine.
-func (e *BinaryPlugin[IN, OUT]) Execute(input *IN) (output *OUT, err error) {
+func (e *BinaryPlugin[IN, OUT]) Execute(kt *kit.Kit, input *IN) (output *OUT, err error) {
 	inputBytes, err := json.Marshal(input)
 	if err != nil {
 		return nil, fmt.Errorf("encode input %+v failed, err %+v", input, err)
@@ -70,6 +74,11 @@ func (e *BinaryPlugin[IN, OUT]) Execute(input *IN) (output *OUT, err error) {
 
 	outputBytes, err := c.Output()
 	if err != nil {
+		var exitError *exec.ExitError
+		if errors.As(err, &exitError) {
+			logs.V(3).Errorf("execute binary plugin filed, err: %v , stderr: \n%s\n, rid: %s",
+				err, exitError.Stderr, kt.Rid)
+		}
 		return nil, fmt.Errorf("execute command failed, err %+v", err)
 	}
 

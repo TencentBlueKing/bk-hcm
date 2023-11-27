@@ -117,6 +117,7 @@ func QuerySql[T any](bkBaseCli Client, kt *kit.Kit, sql string) ([]T, error) {
 		AppSecret:  cfg.AppSecret,
 		Sql:        sql,
 	}
+	logs.V(3).Infof("querying BKBase, sql: \n%s\n, rid: %s", sql, kt.Rid)
 	resp, err := bkBaseCli.QuerySync(kt.Ctx, &req)
 	if err != nil {
 		logs.Errorf("fail to query bkbase, err: %v, sql: %s, rid: %s", err, sql, kt.Rid)
