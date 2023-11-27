@@ -343,7 +343,7 @@ watch(
   >
     <span @click="showAuthDialog(actionName)">
       <bk-button
-        class="mt20"
+        class="btn"
         theme="primary"
         :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]"
         @click="handleToggleShowBind(true)"
@@ -497,6 +497,9 @@ watch(
 </template>
 
 <style lang="scss" scoped>
+  .btn {
+    min-width: 88px;
+  }
   .adjust-title {
     display: inline-block;
     margin-bottom: 20px;

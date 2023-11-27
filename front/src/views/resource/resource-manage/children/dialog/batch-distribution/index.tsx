@@ -113,13 +113,15 @@ export const BatchDistribution = defineComponent({
           </Button>
         ) : null}
         <Dialog
+          class={'batch-dialog'}
           isShow={isShow.value}
           title={`批量分配/${DResourceTypeMap[props.type].name}分配`}
           theme={'primary'}
           quickClose
           onClosed={() => (isShow.value = false)}
           onConfirm={handleConfirm}
-          isLoading={isLoading.value}>
+          isLoading={isLoading.value}
+          >
           <p class='selected-host-count-tip'>
             已选择
             <span class='selected-host-count'>{props.selections.length}</span>个

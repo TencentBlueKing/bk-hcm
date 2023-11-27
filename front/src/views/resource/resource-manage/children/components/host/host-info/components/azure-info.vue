@@ -101,22 +101,22 @@ const netInfo = [
   {
     name: '私有IPv4地址',
     prop: 'private_ipv4_addresses',
-    render: ({ cell }: any) => cell || '--',
+    render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
   },
   {
     name: '公有IPv4地址',
     prop: 'public_ipv4_addresses',
-    render: ({ cell }: any) => cell || '--',
+    render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
   },
   {
     name: '私有IPv6地址',
     prop: 'private_ipv6_addresses',
-    render: ({ cell }: any) => cell || '--',
+    render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
   },
   {
     name: '公有IPv6地址',
     prop: 'public_ipv6_addresses',
-    render: ({ cell }: any) => cell || '--',
+    render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
   },
 ];
 
