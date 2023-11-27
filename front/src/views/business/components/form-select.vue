@@ -283,7 +283,7 @@ getAccountList();
               ? item.name
               : item.region_id || item.id
           "
-          :label="item.region_name || item.region_id || item.name"
+          :label="item.locales_zh_cn || item.region_name || item.region_id || item.name"
         />
       </bk-select>
     </bk-form-item>

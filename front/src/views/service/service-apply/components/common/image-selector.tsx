@@ -287,7 +287,8 @@ export default defineComponent({
             isDialogShow.value = false;
           }}
           title='选择镜像'
-          width={1500}>
+          width={'60vw'}
+          height={'80vh'}>
           <Form class='selected-block-dialog-form' labelWidth={100} labelPosition='right'>
             <FormItem label='平台'>
               <BkButtonGroup>
@@ -333,6 +334,7 @@ export default defineComponent({
               columns={columns}
               pagination={pagination}
               onRowClick={handleOnRowClick}
+              showOverflowTooltip
             />
           </Loading>
         </Dialog>

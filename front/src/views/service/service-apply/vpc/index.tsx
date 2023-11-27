@@ -526,7 +526,7 @@ export default defineComponent({
     );
 
     return () => (
-      <div class={'mb30'}>
+      <div>
         <DetailHeader>
           <p class={'purchase-vpc-header-title'}>购买VPC</p>
         </DetailHeader>

@@ -33,7 +33,10 @@
           >
             <section class="header-container">
               <span
-                v-bk-tooltips="{ content: '请勾选主机信息', disabled: selections.length }"
+                v-bk-tooltips="{
+                  content: `请勾选${selectedType === 'cvm' ? '主机' : '硬盘'}信息`,
+                  disabled: selections.length
+                }"
                 @click="handleAuth('recycle_bin_manage')">
                 <bk-button
                   :disabled="!selections.length || !authVerifyData?.permissionAction?.recycle_bin_manage"
@@ -42,7 +45,10 @@
                 </bk-button>
               </span>
               <span
-                v-bk-tooltips="{ content: '请勾选主机信息', disabled: selections.length }"
+                v-bk-tooltips="{
+                  content: `请勾选${selectedType === 'cvm' ? '主机' : '硬盘'}信息`,
+                  disabled: selections.length
+                }"
                 @click="handleAuth('recycle_bin_manage')">
                 <bk-button
                   class="ml10 mb20"
@@ -61,6 +67,7 @@
               :loading="isLoading"
             >
               <bk-table
+                :key="selectedType"
                 class="table-layout"
                 :data="datas"
                 remote-pagination
@@ -71,15 +78,15 @@
                 row-hover="auto"
                 row-key="id"
                 :is-row-select-enable="isRowSelectEnable"
+                show-overflow-tooltip
               >
                 <bk-table-column
                   width="100"
                   type="selection"
                 />
                 <bk-table-column
-                  label="ID"
-                  prop="id"
-                  width="120"
+                  :label="`${selectedType === 'cvm' ? '主机' : '硬盘'}ID`"
+                  prop="cloud_res_id"
                   sort
                 >
                   <template #default="props">
@@ -90,7 +97,7 @@
                                                 props?.data?.res_id,
                                                 selectedType === 'cvm' ? 'host' : 'drive')"
                     >
-                      {{props?.data?.res_id}}
+                      {{props?.data?.cloud_res_id}}
                     </bk-button>
                   </template>
                 </bk-table-column>
@@ -118,7 +125,7 @@
                 <bk-table-column
                   label="所属主机"
                   prop="detail_cvm_id"
-                  v-show="selectedType !== 'cvm'"
+                  v-if="selectedType === 'disk'"
                 >
                   <template #default="{ data }">
                     {{

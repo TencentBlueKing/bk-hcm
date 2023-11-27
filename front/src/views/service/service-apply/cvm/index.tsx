@@ -347,19 +347,17 @@ export default defineComponent({
                           min={dataDiskCountRules.value.min}></Input>
                     </FormItem>
                     <div class='btns'>
-                      <Button class={'btn'} onClick={handleCreateGcpDataDisk}
-                              disabled={formData.data_disk.length !== index + 1}>
+                      <Button class={'btn'} onClick={handleCreateGcpDataDisk}>
                         <svg width={14} height={14} viewBox="0 0 24 24" version="1.1"
                              xmlns="http://www.w3.org/2000/svg"
-                             style={{ fill: formData.data_disk.length !== index + 1 ? '#EAEBF0' : '#c4c6cc' }}>
+                             style="fill: #c4c6cc">
                           <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-4.5v4.5c0 0.414-0.336 0.75-0.75 0.75s-0.75-0.336-0.75-0.75v-4.5h-4.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h4.5v-4.5c0-0.414 0.336-0.75 0.75-0.75s0.75 0.336 0.75 0.75v4.5h4.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z"></path>
                         </svg>
                       </Button>
-                      <Button class={'btn'} onClick={() => handleRemoveDataDisk(index)}
-                              disabled={formData.data_disk.length !== index + 1} >
+                      <Button class={'btn'} onClick={() => handleRemoveDataDisk(index)}>
                         <svg width={14} height={14} viewBox="0 0 24 24" version="1.1"
                              xmlns="http://www.w3.org/2000/svg"
-                             style={{ fill: formData.data_disk.length !== index + 1 ? '#EAEBF0' : '#c4c6cc' }}>
+                             style="fill: #c4c6cc">
                           <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-10.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h10.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z"></path>
                         </svg>
                       </Button>
@@ -820,19 +818,17 @@ export default defineComponent({
                         min={dataDiskCountRules.value.min}></Input>
                     </FormItem>
                     <div class='btns'>
-                      <Button class={'btn'} onClick={handleCreateDataDisk}
-                              disabled={formData.data_disk.length !== index + 1}>
+                      <Button class={'btn'} onClick={handleCreateDataDisk}>
                         <svg width={14} height={14} viewBox="0 0 24 24" version="1.1"
                              xmlns="http://www.w3.org/2000/svg"
-                             style={{ fill: formData.data_disk.length !== index + 1 ? '#EAEBF0' : '#c4c6cc' }}>
+                             style="fill: #c4c6cc">
                           <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-4.5v4.5c0 0.414-0.336 0.75-0.75 0.75s-0.75-0.336-0.75-0.75v-4.5h-4.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h4.5v-4.5c0-0.414 0.336-0.75 0.75-0.75s0.75 0.336 0.75 0.75v4.5h4.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z"></path>
                         </svg>
                       </Button>
-                      <Button class={'btn'} onClick={() => handleRemoveDataDisk(index)}
-                              disabled={formData.data_disk.length !== index + 1} >
+                      <Button class={'btn'} onClick={() => handleRemoveDataDisk(index)}>
                         <svg width={14} height={14} viewBox="0 0 24 24" version="1.1"
                              xmlns="http://www.w3.org/2000/svg"
-                             style={{ fill: formData.data_disk.length !== index + 1 ? '#EAEBF0' : '#c4c6cc' }}>
+                             style="fill: #c4c6cc">
                           <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-10.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h10.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z"></path>
                         </svg>
                       </Button>
@@ -1047,7 +1043,8 @@ export default defineComponent({
           validator: (value: string) => {
             const pattern = cond.vendor === VendorEnum.HUAWEI
               ? /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[()`~!@#$%^&*-+=|{}\[\]:;',.?/])[A-Za-z\d()`~!@#$%^&*\-+=|{}\[\]:;',.?/]+$/
-              : /^(?=.*[A-Za-z])(?=.*\d)(?=.*[()`~!@#$%^&*-+=|{}\[\]:;',.?/])[A-Za-z\d()`~!@#$%^&*\-+=|{}\[\]:;',.?/]+$/;
+              : /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d|.*[!@$%^\-_=+[{}\]:,./?])[A-Za-z\d!@$%^\-_=+[{}\]:,./?]+$/;
+
             return pattern.test(value);
           },
           message: '密码不符合复杂度要求',
@@ -1075,7 +1072,7 @@ export default defineComponent({
           validator: (value: string) => {
             const pattern = cond.vendor === VendorEnum.HUAWEI
               ? /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[()`~!@#$%^&*-+=|{}\[\]:;',.?/])[A-Za-z\d()`~!@#$%^&*\-+=|{}\[\]:;',.?/]+$/
-              : /^(?=.*[A-Za-z])(?=.*\d)(?=.*[()`~!@#$%^&*-+=|{}\[\]:;',.?/])[A-Za-z\d()`~!@#$%^&*\-+=|{}\[\]:;',.?/]+$/;
+              : /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d|.*[!@$%^\-_=+[{}\]:,./?])[A-Za-z\d!@$%^\-_=+[{}\]:,./?]+$/;
             return pattern.test(value);
           },
           message: '密码不符合复杂度要求',
@@ -1157,7 +1154,7 @@ export default defineComponent({
     };
 
     return () => (
-      <div class={'mb30'}>
+      <div>
         <DetailHeader>
           <p class={'purchase-cvm-header-title'}>购买主机</p>
         </DetailHeader>

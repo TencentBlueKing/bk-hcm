@@ -280,7 +280,8 @@ export default defineComponent({
           title='选择机型'
           closeIcon={false}
           quick-close={false}
-          width={1500}>
+          width={'60vw'}
+          height={'80vh'}>
             {{
               default: () => (
               <>
@@ -331,6 +332,7 @@ export default defineComponent({
                     pagination={pagination}
                     onRowClick={handleOnRowClick}
                     rowKey={'instance_type'}
+                    showOverflowTooltip
                   />
                 </Loading>
               </>

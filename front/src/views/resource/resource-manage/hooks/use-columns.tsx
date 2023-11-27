@@ -747,6 +747,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render: ({ data }: any) => [...data.public_ipv4_addresses, ...data.public_ipv6_addresses].join(',') || '--',
     },
     {
+      label: '所属VPC',
+      field: 'cloud_vpc_ids',
+      isDefaultShow: true,
+      onlyShowOnList: true,
+      render: ({ data }: any) => data.cloud_vpc_ids.join(',') || '--',
+    },
+    {
       label: '云厂商',
       field: 'vendor',
       sort: true,
