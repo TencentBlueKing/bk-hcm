@@ -97,10 +97,10 @@ const handleCancel = () => {
     :vendor="type"
     @change="handleFormChange"
   />
-  <section>
+  <section class="btn-group">
     <bk-button
       theme="primary"
-      class="mr10 ml20"
+      class="mr10"
       :loading="isSubmiting"
       @click="handleSubmit"
     >提交创建</bk-button>
@@ -114,5 +114,8 @@ const handleCancel = () => {
 <style lang="scss" scoped>
   .pdr20 {
     padding-right: 20px;
+  }
+  .btn-group {
+    margin-left: 150px;
   }
 </style>
