@@ -100,11 +100,12 @@ const handleCancel = () => {
   <section class="btn-group">
     <bk-button
       theme="primary"
-      class="mr10"
+      class="mr10 btn"
       :loading="isSubmiting"
       @click="handleSubmit"
     >提交创建</bk-button>
     <bk-button
+      class="btn"
       :disabled="isSubmiting"
       @click="handleCancel"
     >取消</bk-button>
@@ -117,5 +118,9 @@ const handleCancel = () => {
   }
   .btn-group {
     margin-left: 150px;
+
+    .btn {
+      min-width: 88px;
+    }
   }
 </style>
