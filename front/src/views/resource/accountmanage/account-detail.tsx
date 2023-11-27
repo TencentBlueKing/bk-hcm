@@ -559,7 +559,10 @@ export default defineComponent({
         handleEditStatus(false, key); // 通过检验则把状态改为不可编辑态
       }
       if (projectModel[key] !== initProjectModel[key]) {
-        updateFormData(key); // 更新数据
+        await updateFormData(key); // 更新数据
+        setInterval(() => {
+          window.location.reload();
+        }, 300);
       }
     };
 
@@ -612,7 +615,7 @@ export default defineComponent({
           {
             label: t('名称'),
             property: 'name',
-            isEdit: false,
+            isEdit: true,
             component() {
               // eslint-disable-next-line max-len
               return (
@@ -698,7 +701,7 @@ export default defineComponent({
                   v-model={projectModel.managers}
                   fromKey={this.property}
                   fromType='member'
-                  hideEdit={!!isDetail.value}
+                  hideEdit={true}
                   isEdit={this.isEdit}
                   onBlur={handleblur}
                 />
@@ -717,7 +720,7 @@ export default defineComponent({
                   v-model={projectModel.memo}
                   fromKey={this.property}
                   fromType='textarea'
-                  hideEdit={!!isDetail.value}
+                  hideEdit={true}
                   isEdit={this.isEdit}
                   onBlur={handleblur}
                 />
@@ -857,28 +860,28 @@ export default defineComponent({
                     model={secretModel}
                     ref={formDiaRef}
                     formType='vertical'>
+                    {Object.entries(curExtension.value.input).map(([property, { label }]) => (
+                      <FormItem label={label} property={property}>
+                        <Input
+                          v-model={curExtension.value.input[property].value}
+                          type={
+                            property === 'cloud_service_secret_key'
+                            && projectModel.vendor === VendorEnum.GCP
+                              ? 'textarea'
+                              : 'text'
+                          }
+                          rows={8}
+                        />
+                      </FormItem>
+                    ))}
                     {[
                       curExtension.value.output1,
                       curExtension.value.output2,
-                    ].map(output => Object.entries(output).map(([property, { label }]) => (
+                    ].map(output => Object.entries(output).map(([property, { label, placeholder }]) => (
                         <FormItem label={label} property={property}>
-                          <Input v-model={output[property].value} disabled />
+                          <Input v-model={output[property].value} readonly placeholder={placeholder} />
                         </FormItem>
                     )))}
-                    {Object.entries(curExtension.value.input).map(([property, { label }]) => (
-                        <FormItem label={label} property={property}>
-                          <Input
-                            v-model={curExtension.value.input[property].value}
-                            type={
-                              property === 'cloud_service_secret_key'
-                              && projectModel.vendor === VendorEnum.GCP
-                                ? 'textarea'
-                                : 'text'
-                            }
-                            rows={8}
-                          />
-                        </FormItem>
-                    ))}
                   </Form>
                 </>
               ),

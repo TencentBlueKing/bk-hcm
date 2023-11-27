@@ -11,7 +11,7 @@
 }
 
 .account-edit-icon {
-  color: #3a84ff;
+  color: #979BA5;
   cursor: pointer;
 }
 
@@ -38,6 +38,7 @@
   display: flex;
   .validate-btn {
     margin-right: auto;
+    min-width: 88px;
   }
 }
 
