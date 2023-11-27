@@ -867,7 +867,7 @@ export default defineComponent({
           {
             label: '密码',
             required: true,
-            description: '密码至少必须包含大写字母、小写字母、数字和特殊字符（!@$%^-_=+[{}]:,./?）中的三种',
+            description: '密码至少必须包含大写字母、小写字母、数字和特殊字符 !@$%^-_=+[{}]:,./? 中的三种',
             content: [
               {
                 property: 'username',
@@ -1041,10 +1041,12 @@ export default defineComponent({
         },
         {
           validator: (value: string) => {
-            const pattern = cond.vendor === VendorEnum.HUAWEI
-              ? /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[()`~!@#$%^&*-+=|{}\[\]:;',.?/])[A-Za-z\d()`~!@#$%^&*\-+=|{}\[\]:;',.?/]+$/
-              : /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d|.*[!@$%^\-_=+[{}\]:,./?])[A-Za-z\d!@$%^\-_=+[{}\]:,./?]+$/;
-
+            /* const pattern = cond.vendor === VendorEnum.HUAWEI
+               ? /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[()`~!@#$%^&*-+=|{}\
+               [\]:;',.?/])[A-Za-z\d()`~!@#$%^&*\-+=|{}\[\]:;',.?/]+$/
+               : /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d|.*[!@$%^\-_=+[{}\]:,./?])[A-Za-z\d!@$%^\-_=+[{}\]:,./?]+$/;
+            */
+            const pattern = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d|.*[!@$%^\-_=+[{}\]:,./?])[A-Za-z\d!@$%^\-_=+[{}\]:,./?]+$/;
             return pattern.test(value);
           },
           message: '密码不符合复杂度要求',
@@ -1070,9 +1072,7 @@ export default defineComponent({
         },
         {
           validator: (value: string) => {
-            const pattern = cond.vendor === VendorEnum.HUAWEI
-              ? /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[()`~!@#$%^&*-+=|{}\[\]:;',.?/])[A-Za-z\d()`~!@#$%^&*\-+=|{}\[\]:;',.?/]+$/
-              : /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d|.*[!@$%^\-_=+[{}\]:,./?])[A-Za-z\d!@$%^\-_=+[{}\]:,./?]+$/;
+            const pattern = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d|.*[!@$%^\-_=+[{}\]:,./?])[A-Za-z\d!@$%^\-_=+[{}\]:,./?]+$/;
             return pattern.test(value);
           },
           message: '密码不符合复杂度要求',
