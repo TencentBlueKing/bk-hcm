@@ -473,6 +473,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           v-bk-tooltips={{
             content: businessMapStore.businessMap.get(cell),
             disabled: !cell || cell === -1,
+            theme: 'light',
           }}
           theme={data.bk_biz_id === -1 ? false : 'success'}>
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
@@ -826,6 +827,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           v-bk-tooltips={{
             content: businessMapStore.businessMap.get(cell),
             disabled: !cell || cell === -1,
+            theme: 'light',
           }}
           theme={data.bk_biz_id === -1 ? false : 'success'}>
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
@@ -1030,6 +1032,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           v-bk-tooltips={{
             content: businessMapStore.businessMap.get(cell),
             disabled: !cell || cell === -1,
+            theme: 'light',
           }}
           theme={data.bk_biz_id === -1 ? false : 'success'}>
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
