@@ -130,7 +130,7 @@ const useFilter = (props: PropsType) => {
 
         const condition = {
           field,
-          op: isAccurate.value ? QueryRuleOPEnum.EQ : QueryRuleOPEnum.CS,
+          op: field === 'cloud_vpc_ids' ? 'json_contains' : QueryRuleOPEnum.CS,
           value:
             field === 'bk_cloud_id' ? Number(values[0].id) : values[0].id,
         };
