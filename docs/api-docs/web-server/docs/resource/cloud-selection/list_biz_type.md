@@ -48,7 +48,7 @@ POST /api/v1/cloud/selections/biz_types/list
       {
         "id": "00000001",
         "biz_type": "biz1",
-        "network_latency_tolerance": 180,
+        "cover_ping": 180,
         "deployment_architecture": [
           "distributed"
         ]
@@ -87,9 +87,9 @@ POST /api/v1/cloud/selections/biz_types/list
 
 #### details[n]
 
-| 参数名称                      | 参数类型         | 描述                              |
-|---------------------------|--------------|---------------------------------|
-| id                        | string       | 业务类型id                          |
-| biz_type                  | string       | 业务类型名称                          |
-| network_latency_tolerance | number       | 网络延迟值                           |
-| deployment_architecture   | string array | 部署架构，取值：distributed,centralized |
+| 参数名称                    | 参数类型         | 描述                              |
+|-------------------------|--------------|---------------------------------|
+| id                      | string       | 业务类型id                          |
+| biz_type                | string       | 业务类型名称                          |
+| cover_ping              | number       | 网络延迟值                           |
+| deployment_architecture | string array | 部署架构，取值：distributed,centralized |
