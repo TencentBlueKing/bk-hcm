@@ -9,7 +9,7 @@ export * from './business';
 export * from './resource';
 export * from './common';
 export * from './host';
-
+export * from './scheme';
 
 // @ts-ignore
 if (import.meta.hot) {

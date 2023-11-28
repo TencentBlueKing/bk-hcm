@@ -34,3 +34,12 @@ export interface IOption {
   id: string;
   name: string
 };
+
+// 列表接口分页参数
+export interface IPageQuery {
+  count?: boolean;
+  start: number;
+  limit: number;
+  sort?: boolean;
+  order?: boolean;
+}

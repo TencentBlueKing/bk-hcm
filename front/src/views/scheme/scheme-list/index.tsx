@@ -1,23 +1,25 @@
-import { defineComponent, ref, reactive } from "vue";
+import { defineComponent, ref, reactive, computed, onMounted } from "vue";
 import { useRouter } from 'vue-router';
 import { Plus } from "bkui-vue/lib/icon";
+import { useSchemeStore } from '@/store';
+import { QueryFilterType, IPageQuery } from '@/typings/common';
+import { ICollectedSchemeItem, ISchemeListItem } from '@/typings/scheme';
 import SearchInput from "../components/search-input/index";
 
 import './index.scss';
-
-interface ISchemeListItem {
-  id: number;
-  name: string;
-}
+import { data } from "autoprefixer";
 
 export default defineComponent({
   name: 'scheme-list-page',
   setup () {
+    const schemeStore = useSchemeStore();
 
     const router = useRouter();
 
     const searchStr = ref('');
-    const schemeList = reactive<ISchemeListItem[]>([{ name: '北美部署方案', id: 0 }]);
+    const collectionLoading = ref(false);
+    let collectionList = ref<ICollectedSchemeItem[]>([]);
+    let schemeList = ref<ISchemeListItem[]>([]);
     const schemeLoading = ref(false);
     const pagination = reactive({
         location: 'left',
@@ -38,40 +40,106 @@ export default defineComponent({
         label: '标签'
       },
       {
-        label: '业务类型'
+        label: '业务类型',
+        render: ({ data }: { data: ISchemeListItem }) => {
+          return data.biz_type
+        }
       },
       {
-        label: '用户分布地区'
+        label: '用户分布地区',
+        render: ({ data }: { data: ISchemeListItem }) => {
+          return data.user_distribution.map(item => `${item.name}, ${item.children.map(ch => ch.name).join(', ')}`).join('; ')
+        }
       },
       {
-        label: '部署架构'
+        label: '部署架构',
+        render: ({ data }: { data: ISchemeListItem }) => {
+          return data.deployment_architecture.join(', ')
+        }
       },
       {
-        label: '云厂商'
+        label: '云厂商',
+        render: ({ data }: { data: ISchemeListItem }) => {
+          return data.vendors.join(', ')
+        }
       },
       {
-        label: '综合评分'
+        label: '综合评分',
+        render: ({ data }: { data: ISchemeListItem }) => {
+          return data.composite_score
+        }
       },
       {
-        label: '创建人'
+        label: '创建人',
+        render: ({ data }: { data: ISchemeListItem }) => {
+          return data.creator
+        }
       },
       {
-        label: '更新时间'
+        label: '更新时间',
+        render: ({ data }: { data: ISchemeListItem }) => {
+          return data.updated_at
+        }
       },
       {
-        label: '操作'
+        label: '操作',
+        render: ({ data }: { data: ISchemeListItem }) => {
+          return <bk-button text theme="primary" onClick={() => handleDelScheme(data)}>删除</bk-button>
+        }
       },
     ]
+
+    const tableListData = computed(() => {
+      // const collectionLen = collectionList.length;
+      console.log([...collectionList.value, ...schemeList.value])
+      return [...collectionList.value, ...schemeList.value]
+    })
+
+    // 加载已收藏方案列表
+    const getSchemeCollection = async () => {
+      collectionLoading.value = true
+      const res = await schemeStore.listCollection();
+      collectionList.value = res.data;
+      console.log(res);
+      collectionLoading.value = false;
+    }
+
+    // 加载方案列表
+    const getSchemeList = async () => {
+      schemeLoading.value = true;
+      const filterQuery: QueryFilterType = {
+        op: 'and',
+        rules: []
+      };
+      const pageQuery: IPageQuery = {
+        start: 0,
+        limit: pagination.limit
+      };
+      const res = await schemeStore.listCloudSelectionScheme(filterQuery, pageQuery);
+      console.log(res);
+      schemeList.value = res.data.details;
+      schemeLoading.value = false;
+    }
 
     const goToCreate = () => {
       router.push({ name: 'scheme-recommendation' });
     };
 
-    const goToDetail = (id: number) => {
+    const goToDetail = (id: string) => {
       router.push({ name: 'scheme-detail', query: { sid: id } })
     }
 
     const handleSearch = () => {};
+
+    // 删除方案
+    const handleDelScheme = (scheme: ISchemeListItem) => {
+      console.log(scheme);
+    };
+
+    onMounted(() => {
+      getSchemeCollection();
+      getSchemeList();
+    });
 
     return () => (
       <div class="scheme-list-page">
@@ -84,7 +152,7 @@ export default defineComponent({
         </div>
         <div class="scheme-table-wrapper">
           <bk-table
-            data={schemeList}
+            data={tableListData.value}
             pagination={pagination}
             pagination-height={60}
             border={['outer']}
