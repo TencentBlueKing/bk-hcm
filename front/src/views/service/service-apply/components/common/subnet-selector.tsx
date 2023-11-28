@@ -152,7 +152,7 @@ export default defineComponent({
                   theme='primary'
                   class={'mr6'}
                   onClick={() => {
-                    const url = '/#/resource/service-apply/subnet';
+                    const url = '/#/resource/resource?type=subnet';
                     window.open(url, '_blank');
                   }}>
                   新建子网
@@ -166,7 +166,7 @@ export default defineComponent({
                     text
                     theme='primary'
                     onClick={() => {
-                      const url = '/#/business/service/service-apply/subnet';
+                      const url = '/#/business/subnet';
                       window.open(url, '_blank');
                     }}>
                     新建子网
