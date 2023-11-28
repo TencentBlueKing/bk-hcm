@@ -61,11 +61,11 @@ mysqlx() {
 
 ver_ge() {
     # great or equal
-    echo $1\\n$2 | sort -rV -C
+    echo -e $1\\n$2 | sort -rV -C
 }
 ver_le() {
     # less or equal
-    echo $1\\n$2 | sort -V -C
+    echo -e $1\\n$2 | sort -V -C
 }
 
 ver_gt() {

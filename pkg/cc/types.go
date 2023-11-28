@@ -27,6 +27,7 @@ import (
 	"os"
 	"time"
 
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/ssl"
 	"hcm/pkg/version"
@@ -511,6 +512,7 @@ type Web struct {
 	BkDomain               string `yaml:"bkDomain"`
 	BkCmdbCreateBizUrl     string `yaml:"bkCmdbCreateBizUrl"`
 	BkCmdbCreateBizDocsUrl string `yaml:"bkCmdbCreateBizDocsUrl"`
+	EnableCloudSelection   bool   `yaml:"enableCloudSelection"`
 }
 
 func (s Web) validate() error {
@@ -712,12 +714,23 @@ func (gt ApiGateway) GetAuthValue() string {
 
 // CloudSelection define cloud selection relation setting.
 type CloudSelection struct {
-	CoverRate       float64                  `yaml:"coverRate"`
-	CoverPingRanges []ThreshHoldRanges       `yaml:"coverPingRanges"`
-	IDCPriceRanges  []ThreshHoldRanges       `yaml:"idcPriceRanges"`
-	DataSourceType  string                   `yaml:"dataSourceType"`
-	TableNames      CloudSelectionTableNames `yaml:"tableNames"`
-	BkBase          BkBase                   `yaml:"bkBase"`
+	Enabled              bool                      `yaml:"enabled"`
+	DefaultSampleOffset  int                       `yaml:"userDistributionSampleOffset"`
+	AvgLatencySampleDays int                       `yaml:"avgLatencySampleDays"`
+	CoverRate            float64                   `yaml:"coverRate"`
+	CoverPingRanges      []ThreshHoldRanges        `yaml:"coverPingRanges"`
+	IDCPriceRanges       []ThreshHoldRanges        `yaml:"idcPriceRanges"`
+	AlgorithmPlugin      Plugin                    `yaml:"algorithmPlugin"`
+	TableNames           CloudSelectionTableNames  `yaml:"tableNames"`
+	DataSourceType       string                    `yaml:"dataSourceType"`
+	BkBase               BkBase                    `yaml:"bkBase"`
+	DefaultIdcPrice      map[enumor.Vendor]float64 `yaml:"defaultIdcPrice"`
+}
+
+// Plugin outside binary plugin
+type Plugin struct {
+	BinaryPath string   `yaml:"binaryPath"`
+	Args       []string `yaml:"args"`
 }
 
 // BkBase define bkbase relation setting.
@@ -756,9 +769,7 @@ func (c CloudSelection) Validate() error {
 
 // CloudSelectionTableNames ...
 type CloudSelectionTableNames struct {
-	LatencyPingCountryIdc    string `yaml:"latencyPingCountryIdc"`
 	LatencyPingProvinceIdc   string `yaml:"latencyPingProvinceIdc"`
-	LatencyBizCountryIdc     string `yaml:"latencyBizCountryIdc"`
 	LatencyBizProvinceIdc    string `yaml:"latencyBizProvinceIdc"`
 	UserCountryDistribution  string `yaml:"userCountryDistribution"`
 	UserProvinceDistribution string `yaml:"userProvinceDistribution"`

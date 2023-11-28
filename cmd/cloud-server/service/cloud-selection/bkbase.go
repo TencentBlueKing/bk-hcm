@@ -81,7 +81,7 @@ func (svc *service) QueryUserDistribution(cts *rest.Contexts) (any, error) {
 	}
 	result := make([]coresel.AreaValue[float64], 0, len(req.AreaTopo))
 
-	notBefore := times.DateAfterNow(-30)
+	notBefore := times.DateAfterNow(-svc.cfg.AvgLatencySampleDays)
 	total := float64(0)
 
 	for _, areaInfo := range req.AreaTopo {
@@ -188,7 +188,7 @@ func (svc *service) QueryServiceArea(cts *rest.Contexts) (any, error) {
 	idcNameToID := converter.SliceToMap(idcList, func(idc coresel.Idc) (string, string) {
 		return idc.Name, idc.ID
 	})
-	notBefore := times.DateAfterNow(-30)
+	notBefore := times.DateAfterNow(-svc.cfg.AvgLatencySampleDays)
 	bizID, idcNames, err := getBizIDAndIDCNames(idcList)
 	if err != nil {
 		logs.Errorf("fail to getBizIDAndIDCNames, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -284,7 +284,7 @@ func getBizIDAndIDCNames(idcList []coresel.Idc) (bizId int64, idcNames []string,
 func (svc *service) queryLatency(kt *kit.Kit, areaTopo []coresel.AreaInfo, table string, bizId int64,
 
 	idcNames []string) ([]cssel.MultiIdcTopo, error) {
-	notBefore := times.DateAfterNow(-30)
+	notBefore := times.DateAfterNow(-svc.cfg.AvgLatencySampleDays)
 	userDist := make([]cssel.MultiIdcTopo, 0, len(areaTopo))
 
 	// 根据国家查询不同层级结果
@@ -324,7 +324,7 @@ func (svc *service) queryLatency(kt *kit.Kit, areaTopo []coresel.AreaInfo, table
 
 func (svc *service) listAvailableCountry(kt *kit.Kit) ([]string, error) {
 
-	yesterday := times.DateAfterNow(-3)
+	yesterday := times.DateAfterNow(-svc.cfg.DefaultSampleOffset)
 
 	sql := fmt.Sprintf("SELECT DISTINCT country FROM %s WHERE thedate='%s' LIMIT 1000",
 		svc.cfg.TableNames.UserCountryDistribution, yesterday)

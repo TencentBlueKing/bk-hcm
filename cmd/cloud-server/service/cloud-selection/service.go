@@ -63,6 +63,8 @@ func InitService(c *capability.Capability) {
 	h.Add("QueryBizLatency", http.MethodPost, "/selections/latency/biz/query", svc.QueryBizLatency)
 	h.Add("QueryServiceArea", http.MethodPost, "/selections/idcs/services/areas/query", svc.QueryServiceArea)
 
+	h.Add("GenerateRecommendScheme", http.MethodPost, "/selections/schemes/generate", svc.GenerateRecommendScheme)
+
 	h.Load(c.WebService)
 }
 

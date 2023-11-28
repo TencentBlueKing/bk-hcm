@@ -45,6 +45,20 @@ service:
 
 # 云选型相关配置
 cloudSelection:
+  # 用户分布采样往前偏移的天数，2 代表用两天前的数据采集用户分布数据
+  userDistributionSampleOffset: 2
+  # 延迟数据平均值采样天数，30 代表使用前30天的数据
+  avgLatencySampleDays: 30
+  # 推荐算法可执行文件调用配置
+  algorithmPlugin:
+    binaryPath : plugin/algorithm
+    args: []
+  defaultIdcPrice:
+    huawei: 0.2
+    tcloud: 0.2
+    aws: 0.35
+    gcp: 0.35
+    azure: 0.35
   # 默认覆盖率
   coverRate: 0.7
   # 网络延迟评分阈值
@@ -69,20 +83,12 @@ cloudSelection:
   dataSourceType: bkbase
   # table names for data
   tableNames:
-    # 国家到IDC日均ping延迟
-    # select thedate, bk_biz_id, country, idc_name, avg_ping from <latencyPingCountryIdc>
-    latencyPingCountryIdc: latency_ping_country
     # 省份到IDC每日均ping延迟
     # select thedate, bk_biz_id, country, province, idc_name, avg_ping from <latencyPingProvinceIdc>
     latencyPingProvinceIdc: latency_ping_province
-
-    # 国家到IDC日均业务延迟数据
-    # select thedate, country, total from <latencyBizCountryIdc>
-    latencyBizCountryIdc: latency_biz_country
     # 省份到IDC日均业务延迟数据
     # select thedate, country, province, cnt from <latencyBizProvinceIdc>
     latencyBizProvinceIdc: latency_biz_province
-
     # 用户国家分布表
     # select thedate, country, total from <userCountryDistribution>
     userCountryDistribution: supported_country
