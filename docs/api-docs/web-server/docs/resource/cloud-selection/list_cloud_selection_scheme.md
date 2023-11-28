@@ -94,23 +94,23 @@ POST /api/v1/cloud/selections/schemes/list
 
 #### 查询参数介绍：
 
-| 参数名称                      | 参数类型         | 描述                             |
-|---------------------------|--------------|--------------------------------|
-| id                        | uint64       | 审计ID                           |
-| bk_biz_id                 | int          | 业务ID                           |
-| name                      | string       | 方案名                            |
-| biz_type                  | string       | 业务类型                           |
-| deployment_architecture   | string       | 部署架构                           |
-| network_latency_tolerance | double       | 用户容忍网络延迟                       |
-| composite_score           | double       | 综合评分                           |
-| net_score                 | double       | 网络评分                           |
-| cost_score                | double       | 成本评分                           |
-| cover_rate                | double       | 覆盖率                            |
-| result_idc_ids            | string array | 推荐结果机房ID列表                     |
-| creator                   | string       | 创建者                            |
-| reviser                   | string       | 更新者                            |
-| created_at                | string       | 创建时间，标准格式：2006-01-02T15:04:05Z |
-| updated_at                | string       | 更新时间，标准格式：2006-01-02T15:04:05Z |
+| 参数名称                    | 参数类型         | 描述                             |
+|-------------------------|--------------|--------------------------------|
+| id                      | uint64       | 审计ID                           |
+| bk_biz_id               | int          | 业务ID                           |
+| name                    | string       | 方案名                            |
+| biz_type                | string       | 业务类型                           |
+| deployment_architecture | string       | 部署架构                           |
+| cover_ping              | double       | 用户容忍网络延迟                       |
+| composite_score         | double       | 综合评分                           |
+| net_score               | double       | 网络评分                           |
+| cost_score              | double       | 成本评分                           |
+| cover_rate              | double       | 覆盖率                            |
+| result_idc_ids          | string array | 推荐结果机房ID列表                     |
+| creator                 | string       | 创建者                            |
+| reviser                 | string       | 更新者                            |
+| created_at              | string       | 创建时间，标准格式：2006-01-02T15:04:05Z |
+| updated_at              | string       | 更新时间，标准格式：2006-01-02T15:04:05Z |
 
 接口调用者可以根据以上参数自行根据查询场景设置查询规则。
 

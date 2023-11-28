@@ -276,7 +276,7 @@ func (svc *service) GenerateRecommendScheme(cts *rest.Contexts) (any, error) {
 		return nil, fmt.Errorf("init algorithm plugin fail")
 	}
 
-	algOut, err := algPlugin.Execute(algIn)
+	algOut, err := algPlugin.Execute(cts.Kit, algIn)
 	if err != nil {
 		logs.Errorf("fail to execute algorithm plugin, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
