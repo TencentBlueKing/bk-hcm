@@ -1,7 +1,7 @@
 import http from '@/http';
 import { defineStore } from 'pinia';
 import { QueryFilterType, IPageQuery } from '@/typings/common';
-import { IAreaInfo, IBizTypeResData, ICountriesListResData, IGenerateSchemesResData, IUserDistributionResData, IGenerateSchemesReqParams } from '@/typings/scheme';
+import { IAreaInfo, IBizTypeResData, ICountriesListResData, IGenerateSchemesResData, IUserDistributionResData, IGenerateSchemesReqParams, IRecommendSchemeList } from '@/typings/scheme';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -9,8 +9,17 @@ const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 // 资源选型模块相关状态管理和接口定义
 export const useSchemeStore = defineStore({
   id: 'schemeStore',
-  state: () => ({}),
+  state: () => ({
+    userDistribution: [] as Array<IAreaInfo>,
+    recommendationSchemes: [] as IRecommendSchemeList,
+  }),
   actions: {
+    setUserDistribution(data: Array<IAreaInfo>) {
+      this.userDistribution = data;
+    },
+    setRecommendationSchemes(data: IRecommendSchemeList) {
+      this.recommendationSchemes = data;
+    },
     /**
      * 获取资源选型方案列表
      * @param filter 过滤参数

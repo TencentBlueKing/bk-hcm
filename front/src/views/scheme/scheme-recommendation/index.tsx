@@ -31,7 +31,14 @@ export default defineComponent({
     });
 
     const countryChangeLoading = ref(false);
+    const clearLastData = () => {
+      formData.user_distribution = [];
+      schemeStore.setUserDistribution([]);
+      schemeStore.setRecommendationSchemes([]);
+      scene.value = "blank";
+    }
     const handleChangeCountry = async () => {
+      clearLastData();
       countryChangeLoading.value = true;
       const res = await schemeStore.queryUserDistributions(
         selectedCountriesList.value.reduce((prev, item) => {
@@ -40,8 +47,8 @@ export default defineComponent({
         }, [])
       );
       countryChangeLoading.value = false;
-      // todo: 存入 store
       formData.user_distribution = res.data;
+      schemeStore.setUserDistribution(res.data);
     };
     const isUserProportionDetailDialogShow = ref(false);
 
@@ -49,6 +56,7 @@ export default defineComponent({
       generateSchemesLoading.value = true;
       const res: IGenerateSchemesResData = await schemeStore.generateSchemes(formData);
       generateSchemesLoading.value = false;
+      schemeStore.setRecommendationSchemes(res.data);
       scene.value = "preview";
     };
     const formItemOptions = computed(() => [
@@ -61,7 +69,8 @@ export default defineComponent({
             v-model={selectedCountriesList.value}
             multiple
             show-select-all
-            onBlur={handleChangeCountry}>
+            onBlur={handleChangeCountry}
+            onClear={clearLastData}>
             {countriesList.value.map((country, index) => (
               <bk-option key={index} value={country} label={country} />
             ))}
@@ -175,7 +184,7 @@ export default defineComponent({
     );
 
     return () => (
-      <bk-loading loading={generateSchemesLoading.value} opacity='1'>
+      <bk-loading loading={generateSchemesLoading.value} opacity='1' style="height: 100%">
         <div class='scheme-recommendation-page'>
           <div class={`business-attributes-container${toggleClose.value ? ' close' : ''}`}>
             <div class='title-wrap'>

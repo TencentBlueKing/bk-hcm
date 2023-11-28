@@ -29,6 +29,7 @@
         line-height: 22px;
         background: #f0f1f5;
         border-radius: 2px;
+        font-size: 12px;
       }
     }
 
@@ -49,4 +50,16 @@
 
 .bk-tree .bk-node-row:nth-child(even) {
   background: #fff;
+}
+
+.bk-tree {
+  .is-root {
+    .bk-node-text {
+      font-weight: 700;
+      font-size: 14px;
+      color: #63656E;
+      letter-spacing: 0;
+      line-height: 22px;
+    }
+  }
 }
