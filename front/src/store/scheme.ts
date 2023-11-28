@@ -15,17 +15,32 @@ export const useSchemeStore = defineStore({
      * 获取资源选型方案列表
      * @param filter 过滤参数
      * @param page 分页参数
-     * @returns 
+     * @returns
      */
     listCloudSelectionScheme (filter: QueryFilterType, page: IPageQuery) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/schemes/list`, { filter, page });
     },
     /**
      * 获取收藏的资源选型方案列表
-     * @returns 
+     * @returns
      */
     listCollection () {
       return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/collections/cloud_selection_scheme/list`);
+    },
+    /** 添加收藏
+    * @param id 方案id
+    * @returns
+    */
+    createCollection (id: string) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/collections/create`, { res_type: 'cloud_selection_scheme', res_id: id });
+    },
+    /**
+      * 取消收藏
+      * @param id 方案id
+      * @returns
+      */
+    deleteCollection (id: string) {
+      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/collections/${id}`);
     },
     /**
      * 获取云选型数据支持的国家列表

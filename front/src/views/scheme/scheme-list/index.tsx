@@ -2,12 +2,11 @@ import { defineComponent, ref, reactive, computed, onMounted } from "vue";
 import { useRouter } from 'vue-router';
 import { Plus } from "bkui-vue/lib/icon";
 import { useSchemeStore } from '@/store';
-import { QueryFilterType, IPageQuery } from '@/typings/common';
+import { QueryFilterType, IPageQuery, QueryRuleOPEnum } from '@/typings/common';
 import { ICollectedSchemeItem, ISchemeListItem } from '@/typings/scheme';
 import SearchInput from "../components/search-input/index";
 
 import './index.scss';
-import { data } from "autoprefixer";
 
 export default defineComponent({
   name: 'scheme-list-page',
@@ -18,22 +17,30 @@ export default defineComponent({
 
     const searchStr = ref('');
     const collectionLoading = ref(false);
+    let collectionIds = reactive<string[]>([]);
     let collectionList = ref<ICollectedSchemeItem[]>([]);
     let schemeList = ref<ISchemeListItem[]>([]);
     const schemeLoading = ref(false);
+    const collectPending = ref(false);
     const pagination = reactive({
-        location: 'left',
-        align: 'right',
-        start: 1,
-        limit: 10,
+        current: 1,
         count: 0,
+        limit: 10,
     });
 
     const tableCols = [
       {
         label: '方案名称',
+        minWidth: 200,
         render: ({ data }: { data: ISchemeListItem }) => {
-          return <bk-button text theme="primary" onClick={() => { goToDetail(data.id) }}>{data.name}</bk-button>
+          return (
+            <div class="scheme-name">
+              <i
+                class={['hcm-icon', 'collect-icon', collectionIds.includes(data.id) ? 'bkhcm-icon-collect' : 'bkhcm-icon-not-favorited']}
+                onClick={() => handleToggleCollection(data)}/>
+              <bk-button text theme="primary" onClick={() => { goToDetail(data.id) }}>{data.name}</bk-button>
+            </div>
+          )
         },
       },
       {
@@ -95,49 +102,97 @@ export default defineComponent({
       return [...collectionList.value, ...schemeList.value]
     })
 
-    // 加载已收藏方案列表
+    // 加载已收藏方案
     const getSchemeCollection = async () => {
       collectionLoading.value = true
-      const res = await schemeStore.listCollection();
-      collectionList.value = res.data;
-      console.log(res);
+      const colRes = await schemeStore.listCollection();
+      collectionIds = colRes.data.map((item: ICollectedSchemeItem) => item.res_id)
+      if (collectionIds.length > 0) {
+        const filterQuery: QueryFilterType = {
+          op: 'and',
+          rules: [{ field: 'id', op: QueryRuleOPEnum.IN, value: collectionIds }]
+        };
+        const pageQuery: IPageQuery = {
+          start: 0,
+          limit: collectionIds.length
+        };
+        const schRes = await schemeStore.listCloudSelectionScheme(filterQuery, pageQuery);
+        collectionList.value = schRes.data.details;
+        console.log(colRes, schRes);
+      } else {
+        collectionList.value = [];
+      }
       collectionLoading.value = false;
     }
 
-    // 加载方案列表
+    // 加载排除已收藏方案的列表
     const getSchemeList = async () => {
       schemeLoading.value = true;
       const filterQuery: QueryFilterType = {
         op: 'and',
-        rules: []
+        rules: [{ field: 'id', op: QueryRuleOPEnum.NIN, value: collectionIds }]
       };
       const pageQuery: IPageQuery = {
-        start: 0,
+        start: (pagination.current - 1) * pagination.limit,
         limit: pagination.limit
       };
-      const res = await schemeStore.listCloudSelectionScheme(filterQuery, pageQuery);
-      console.log(res);
-      schemeList.value = res.data.details;
+      const [listRes, countRes] = await Promise.all([
+         schemeStore.listCloudSelectionScheme(filterQuery, pageQuery),
+         schemeStore.listCloudSelectionScheme(filterQuery, { start: 0, limit: 0, count: true }),
+      ])
+      schemeList.value = listRes.data.details;
+      pagination.count = countRes.data.count;
       schemeLoading.value = false;
     }
 
+    // 跳转创建方案
     const goToCreate = () => {
       router.push({ name: 'scheme-recommendation' });
     };
 
+    // 跳转方案详情
     const goToDetail = (id: string) => {
       router.push({ name: 'scheme-detail', query: { sid: id } })
     }
 
+    // 搜索方案
     const handleSearch = () => {};
+
+    // 收藏/取消收藏
+    const handleToggleCollection = async(scheme: ISchemeListItem) => {
+      if (collectPending.value) {
+        return;
+      }
+
+      collectPending.value = true;
+      if (collectionIds.includes(scheme.id)) {
+        await schemeStore.deleteCollection(scheme.id);
+      } else {
+        await schemeStore.createCollection(scheme.id);
+      }
+      collectPending.value = true;
+
+    };
 
     // 删除方案
     const handleDelScheme = (scheme: ISchemeListItem) => {
       console.log(scheme);
     };
 
-    onMounted(() => {
-      getSchemeCollection();
+    const handlePageValueChange = (val: number) => {
+      console.log('page change', val);
+    };
+
+    const handlePageLimitChange = (val: number) => {
+      console.log('page limit change', val);
+    }
+
+    const handleColumnSort = (val: string) => {
+      console.log('col sort', val)
+    }
+
+    onMounted(async() => {
+      await getSchemeCollection();
       getSchemeList();
     });
 
@@ -154,9 +209,14 @@ export default defineComponent({
           <bk-table
             data={tableListData.value}
             pagination={pagination}
+            remote-pagination
             pagination-height={60}
             border={['outer']}
-            columns={tableCols} />
+            columns={tableCols}
+            onPageValueChange={handlePageValueChange}
+            onPageLimitChange={handlePageLimitChange}
+            onColumnSort={handleColumnSort}>
+          </bk-table>
         </div>
       </div>
     );

@@ -1,4 +1,4 @@
-import { defineComponent, ref, PropType } from 'vue';
+import { defineComponent, ref } from 'vue';
 import { Search } from 'bkui-vue/lib/icon';
 
 import './index.scss';
@@ -8,20 +8,21 @@ export default defineComponent({
   emits: ['search', 'update:modelValue'],
   props: {
     width: {
-      type: Number as PropType<number>,
+      type: Number,
       default: 300
     },
     placeholder: {
-      type: String as PropType<string>,
+      type: String,
       default: '请输入'
     },
     modelValue: {
-      type: String as PropType<string>,
+      type: String,
+      default: ''
     },
   },
   setup(props, ctx) {
 
-    const inputVal = ref('')
+    const inputVal = ref(props.modelValue)
 
     const triggerSearch = () => {
       ctx.emit('update:modelValue', inputVal.value);
@@ -30,7 +31,7 @@ export default defineComponent({
 
     return () => (
       <bk-input
-        v-model={inputVal}
+        v-model={inputVal.value}
         style={{'width': `${props.width}px`}}
         clearable={true}
         onClear={() => triggerSearch}
