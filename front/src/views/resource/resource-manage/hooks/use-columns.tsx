@@ -233,7 +233,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         return h('span', [cell || '--']);
       },
     },
-    getLinkField('vpc', '所属 VPC', 'vpc_id', 'vpc_id', false),
+    getLinkField('vpc', '所属 VPC', 'cloud_vpc_id', 'vpc_id', false),
     {
       label: 'IPv4 CIDR',
       field: 'ipv4_cidr',
@@ -473,6 +473,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           v-bk-tooltips={{
             content: businessMapStore.businessMap.get(cell),
             disabled: !cell || cell === -1,
+            theme: 'light',
           }}
           theme={data.bk_biz_id === -1 ? false : 'success'}>
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
@@ -826,6 +827,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           v-bk-tooltips={{
             content: businessMapStore.businessMap.get(cell),
             disabled: !cell || cell === -1,
+            theme: 'light',
           }}
           theme={data.bk_biz_id === -1 ? false : 'success'}>
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
@@ -1030,6 +1032,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           v-bk-tooltips={{
             content: businessMapStore.businessMap.get(cell),
             disabled: !cell || cell === -1,
+            theme: 'light',
           }}
           theme={data.bk_biz_id === -1 ? false : 'success'}>
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}

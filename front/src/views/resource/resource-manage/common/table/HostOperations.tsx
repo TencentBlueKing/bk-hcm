@@ -329,6 +329,7 @@ export default defineComponent({
         Message({
           message: `${computedTitle.value}中, 请不要操作`,
           theme: 'warning',
+          delay: 1000,
         });
         if (operationType.value === Operations.Recycle) {
           const hostIds = targetHost.value.map(v => ({
@@ -347,10 +348,10 @@ export default defineComponent({
         });
         props.onFinished('confirm');
       } catch (err) {
-        Message({
-          message: '操作失败',
-          theme: 'error',
-        });
+        // Message({
+        //   message: '操作失败',
+        //   theme: 'error',
+        // });
       } finally {
         isLoading.value = false;
         operationType.value = Operations.None;

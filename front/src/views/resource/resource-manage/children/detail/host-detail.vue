@@ -226,7 +226,7 @@ const bktoolTipsOptions = computed(() => {
       <span>
         <bk-button
           v-bk-tooltips="bktoolTipsOptions || { disabled: true }"
-          class="w100 ml10"
+          class="btn"
           :class="{ 'hcm-no-permision-btn': !authVerifyData.permissionAction?.[actionName] }"
           theme="primary"
           :disabled="disabledOption"
@@ -245,7 +245,7 @@ const bktoolTipsOptions = computed(() => {
             content: `当前主机处于 ${CLOUD_HOST_STATUS[detail.status]} 状态`,
             disabled: !cvmInfo.start.status.includes(detail.status)
           }"
-          class="w100 ml10"
+          class="btn"
           :class="{ 'hcm-no-permision-btn': !authVerifyData.permissionAction?.[actionName] }"
           :disabled="disabledOption || (
             cvmInfo.start.status.includes(detail.status)
@@ -265,7 +265,7 @@ const bktoolTipsOptions = computed(() => {
             content: `当前主机处于 ${CLOUD_HOST_STATUS[detail.status]} 状态`,
             disabled: !cvmInfo.stop.status.includes(detail.status)
           }"
-          class="w100 ml10 mr10"
+          class="btn"
           :class="{ 'hcm-no-permision-btn': !authVerifyData.permissionAction?.[actionName] }"
           :disabled="
             disabledOption
@@ -404,5 +404,9 @@ const bktoolTipsOptions = computed(() => {
 .mb6-text {
   margin-bottom: 6px;
   color: #63656E;
+}
+.btn {
+  min-width: 64px;
+  margin-right: 8px;
 }
 </style>

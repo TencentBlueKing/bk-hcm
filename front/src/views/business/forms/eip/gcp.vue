@@ -63,7 +63,7 @@ defineExpose([validate]);
 </script>
 
 <template>
-  <bk-form ref="formRef" :model="formData" :rules="rules">
+  <bk-form label-width="150" ref="formRef" :model="formData" :rules="rules">
     <bk-form-item label="名称" property="eip_name" required>
       <bk-input v-model="formData.eip_name" placeholder="请输入名称" />
     </bk-form-item>
