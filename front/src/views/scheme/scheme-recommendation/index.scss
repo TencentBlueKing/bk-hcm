@@ -91,6 +91,11 @@
         color: #3a84ff;
         cursor: pointer;
 
+        &.disabled {
+          cursor: not-allowed;
+          user-select: none;
+        }
+
         .btn-text {
           font-size: 12px;
         }
