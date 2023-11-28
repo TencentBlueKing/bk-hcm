@@ -1,3 +1,5 @@
+import { IListResData, IQueryResData } from "@/typings";
+
 // 已收藏方案
 export interface ICollectedSchemeItem {
   id: string;
@@ -33,3 +35,54 @@ export interface IUserDistributionItem {
   name: string;
   children: { name: string; value: number; }[];
 }
+
+/**
+ * 查询国家列表
+ */
+export interface ICountriesListResData extends IListResData<Array<string>> {}
+
+/**
+ * 查询云选型用户分布占比
+ */
+export interface IUserDistributionResData extends IQueryResData<Array<IAreaInfo>> {}
+
+/**
+ * 查询业务类型列表
+ */
+export interface IBizType {
+  id: string;
+  biz_type: string;
+  cover_ping: number;
+  deployment_architecture: Array<'distributed' | 'centralized'>;
+  creator: string;
+  reviset: string;
+  created_at: string;
+  updated_at: string;
+}
+export type IBizTypeList = Array<IBizType>;
+export interface IBizTypeResData extends IListResData<IBizTypeList> {}
+
+/**
+ * 云资源选型方案
+ */
+export interface IAreaInfo {
+  name: string;
+  value?: number;
+  children?: Array<IAreaInfo>;
+}
+export interface IGenerateSchemesReqParams {
+  cover_ping: number;
+  deployment_architecture: Array<'distributed' | 'centralized'>;
+  biz_type: string;
+  user_distribution: Array<IAreaInfo>;
+  user_distribution_mode: string;
+}
+interface IRecommendScheme {
+  cover_rate: number;
+  composite_score: number;
+  net_score: number;
+  cost_score: number;
+  result_idc_ids: string[];
+}
+type IRecommendSchemeList = Array<IRecommendScheme>;
+export interface IGenerateSchemesResData extends IQueryResData<IRecommendSchemeList> {}

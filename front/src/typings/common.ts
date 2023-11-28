@@ -43,3 +43,18 @@ export interface IPageQuery {
   sort?: boolean;
   order?: boolean;
 }
+
+interface IBaseResData {
+  code: number;
+  message: string;
+}
+
+// list 接口响应
+export interface IListResData<T> extends IBaseResData{
+  data: { details: T; count: number };
+}
+
+// query 接口响应
+export interface IQueryResData<T> extends IBaseResData {
+  data: T;
+}
