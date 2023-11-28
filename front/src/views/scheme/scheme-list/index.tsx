@@ -1,10 +1,13 @@
 import { defineComponent, ref, reactive, computed, onMounted } from "vue";
 import { useRouter } from 'vue-router';
+import { Message } from 'bkui-vue/lib';
 import { Plus } from "bkui-vue/lib/icon";
 import { useSchemeStore } from '@/store';
 import { QueryFilterType, IPageQuery, QueryRuleOPEnum } from '@/typings/common';
 import { ICollectedSchemeItem, ISchemeListItem } from '@/typings/scheme';
+import { getScoreColor } from '@/common/util';
 import SearchInput from "../components/search-input/index";
+import CloudServiceTag from "../components/cloud-service-tag";
 
 import './index.scss';
 
@@ -16,17 +19,16 @@ export default defineComponent({
     const router = useRouter();
 
     const searchStr = ref('');
-    const collectionLoading = ref(false);
-    let collectionIds = reactive<string[]>([]);
-    let collectionList = ref<ICollectedSchemeItem[]>([]);
-    let schemeList = ref<ISchemeListItem[]>([]);
-    const schemeLoading = ref(false);
+    const collections = ref<{ id: number; res_id: string; }[]>([]);
     const collectPending = ref(false);
     const pagination = reactive({
         current: 1,
         count: 0,
         limit: 10,
     });
+
+    const tableListLoading = ref(false);
+    const tableListData = ref<ISchemeListItem[]>([]);
 
     const tableCols = [
       {
@@ -36,7 +38,7 @@ export default defineComponent({
           return (
             <div class="scheme-name">
               <i
-                class={['hcm-icon', 'collect-icon', collectionIds.includes(data.id) ? 'bkhcm-icon-collect' : 'bkhcm-icon-not-favorited']}
+                class={['hcm-icon', 'collect-icon', collections.value.findIndex(item => item.res_id === data.id) > -1 ? 'bkhcm-icon-collect' : 'bkhcm-icon-not-favorited']}
                 onClick={() => handleToggleCollection(data)}/>
               <bk-button text theme="primary" onClick={() => { goToDetail(data.id) }}>{data.name}</bk-button>
             </div>
@@ -67,13 +69,13 @@ export default defineComponent({
       {
         label: '云厂商',
         render: ({ data }: { data: ISchemeListItem }) => {
-          return data.vendors.join(', ')
+          return <div class="verdors-list">{ data.vendors.map(item => <CloudServiceTag type={item} />) }</div>
         }
       },
       {
         label: '综合评分',
         render: ({ data }: { data: ISchemeListItem }) => {
-          return data.composite_score
+          return <span style={{ color: getScoreColor(data.composite_score) }}>{data.composite_score || '-'}</span>
         }
       },
       {
@@ -96,54 +98,69 @@ export default defineComponent({
       },
     ]
 
-    const tableListData = computed(() => {
-      // const collectionLen = collectionList.length;
-      console.log([...collectionList.value, ...schemeList.value])
-      return [...collectionList.value, ...schemeList.value]
-    })
+    // 加载表格当前页数据
+    const getTableListData = async () => {
+      tableListLoading.value = true;
+      const [collectionRes, allUnCollectedRes] = await Promise.all([
+        schemeStore.listCollection(),
+        getUnCollectedScheme([], { start: 0, limit: 0, count: true })
+      ]);
+      collections.value = collectionRes.data.map((item: ICollectedSchemeItem) => ({ id: item.id, res_id: item.res_id }));
+      const collectionIds = collections.value.map(item => item.res_id);
+      pagination.count = allUnCollectedRes.data.count;
 
-    // 加载已收藏方案
-    const getSchemeCollection = async () => {
-      collectionLoading.value = true
-      const colRes = await schemeStore.listCollection();
-      collectionIds = colRes.data.map((item: ICollectedSchemeItem) => item.res_id)
-      if (collectionIds.length > 0) {
+      const currentPageStartNum = (pagination.current - 1) * pagination.limit;
+      const currentPageCollectedIdsLength = collectionIds.length - currentPageStartNum;
+
+      if (currentPageCollectedIdsLength > 0 && currentPageCollectedIdsLength < pagination.limit) {
+        // 当前页中收藏方案和非收藏方案混排
+        const ids = collectionIds.slice(currentPageStartNum);
+        const [collectedRes, unCollectedRes] = await Promise.all([
+          getCollectedSchemes(ids),
+          getUnCollectedScheme(collectionIds, { start: 0, limit: pagination.limit - ids.length })
+        ]);
+        tableListData.value = [...collectedRes.data.details, ...unCollectedRes.data.details];
+      } else if (currentPageCollectedIdsLength >= pagination.limit) {
+        // 当前页中只有收藏方案
+        const ids = collectionIds.slice(currentPageStartNum, currentPageStartNum + pagination.limit);
+        const res = await getCollectedSchemes(ids);
+        tableListData.value = res.data.details;
+      } else {
+        // 当前页中只有非收藏方案
+        const res = await getUnCollectedScheme(collectionIds, { start: currentPageStartNum - collectionIds.length, limit: pagination.limit })
+        tableListData.value = res.data.details;
+      }
+
+      tableListLoading.value = false;
+    }
+
+    // 获取已收藏方案列表
+    const getCollectedSchemes = (ids: string[]) => {
         const filterQuery: QueryFilterType = {
           op: 'and',
-          rules: [{ field: 'id', op: QueryRuleOPEnum.IN, value: collectionIds }]
+          rules: [{ field: 'id', op: QueryRuleOPEnum.IN, value: ids }]
         };
         const pageQuery: IPageQuery = {
           start: 0,
-          limit: collectionIds.length
+          limit: ids.length
         };
-        const schRes = await schemeStore.listCloudSelectionScheme(filterQuery, pageQuery);
-        collectionList.value = schRes.data.details;
-        console.log(colRes, schRes);
-      } else {
-        collectionList.value = [];
-      }
-      collectionLoading.value = false;
+
+        return schemeStore.listCloudSelectionScheme(filterQuery, pageQuery);
     }
 
-    // 加载排除已收藏方案的列表
-    const getSchemeList = async () => {
-      schemeLoading.value = true;
+    // 获取未被收藏的方案列表
+    const getUnCollectedScheme = (ids: string[], pageQuery: IPageQuery) => {
       const filterQuery: QueryFilterType = {
         op: 'and',
-        rules: [{ field: 'id', op: QueryRuleOPEnum.NIN, value: collectionIds }]
+        rules: []
       };
-      const pageQuery: IPageQuery = {
-        start: (pagination.current - 1) * pagination.limit,
-        limit: pagination.limit
-      };
-      const [listRes, countRes] = await Promise.all([
-         schemeStore.listCloudSelectionScheme(filterQuery, pageQuery),
-         schemeStore.listCloudSelectionScheme(filterQuery, { start: 0, limit: 0, count: true }),
-      ])
-      schemeList.value = listRes.data.details;
-      pagination.count = countRes.data.count;
-      schemeLoading.value = false;
-    }
+
+      if (ids.length > 0) {
+        filterQuery.rules.push({ field: 'id', op: QueryRuleOPEnum.NIN, value: ids })
+      }
+
+      return schemeStore.listCloudSelectionScheme(filterQuery, pageQuery)
+    };
 
     // 跳转创建方案
     const goToCreate = () => {
@@ -165,12 +182,23 @@ export default defineComponent({
       }
 
       collectPending.value = true;
-      if (collectionIds.includes(scheme.id)) {
-        await schemeStore.deleteCollection(scheme.id);
+      const index = collections.value.findIndex(item => item.res_id === scheme.id);
+      if (index > -1) {
+        await schemeStore.deleteCollection(collections.value[index].id);
+        collections.value.splice(index, 1);
+        Message({
+          theme: 'success',
+          message: '取消收藏成功',
+        });
       } else {
         await schemeStore.createCollection(scheme.id);
+        collections.value.push({ id: 0, res_id: scheme.id }); // @todo 收藏成功后, 需要后台接口返回收藏ID
+        Message({
+          theme: 'success',
+          message: '收藏成功',
+        });
       }
-      collectPending.value = true;
+      collectPending.value = false;
 
     };
 
@@ -181,10 +209,15 @@ export default defineComponent({
 
     const handlePageValueChange = (val: number) => {
       console.log('page change', val);
+      pagination.current = val;
+      getTableListData();
     };
 
     const handlePageLimitChange = (val: number) => {
       console.log('page limit change', val);
+      pagination.current = 1;
+      pagination.limit = val;
+      getTableListData();
     }
 
     const handleColumnSort = (val: string) => {
@@ -192,8 +225,7 @@ export default defineComponent({
     }
 
     onMounted(async() => {
-      await getSchemeCollection();
-      getSchemeList();
+      getTableListData();
     });
 
     return () => (

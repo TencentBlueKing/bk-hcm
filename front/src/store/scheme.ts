@@ -36,10 +36,10 @@ export const useSchemeStore = defineStore({
     },
     /**
       * 取消收藏
-      * @param id 方案id
+      * @param id 收藏id
       * @returns
       */
-    deleteCollection (id: string) {
+    deleteCollection (id: number) {
       return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/collections/${id}`);
     },
     /**

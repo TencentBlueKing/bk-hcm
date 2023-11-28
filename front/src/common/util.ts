@@ -147,3 +147,18 @@ export function formatStorageSize(value: number, digits = 0) {
   const size = value / (1024 ** index);
   return `${size.toFixed(digits)}${uints[index]}`;
 }
+
+/**
+ * 获取当前网络得分对应的颜色
+ * @param score 得分数值
+ */
+export function getScoreColor (score: number) {
+  if (score > 0 && score < 90) {
+    return '#00A62B';
+  } else if (score >= 90 && score <= 120) {
+    return '#FF9D00';
+  } else if ( score > 120 ) {
+    return '#EA3636';
+  }
+  return '#63656E';
+}
