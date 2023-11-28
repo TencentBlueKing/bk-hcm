@@ -1,4 +1,4 @@
-import { PropType, defineComponent, ref, watch } from 'vue';
+import { PropType, computed, defineComponent, ref } from 'vue';
 import { Dialog, Input, Tree } from 'bkui-vue';
 import './index.scss';
 import { IAreaInfo } from '@/typings/scheme';
@@ -18,14 +18,38 @@ export default defineComponent({
   setup(props, ctx) {
     const toggleShow = (isShow: boolean) => {
       ctx.emit('update:isShow', isShow);
+      searchVal.value = '';
     };
 
     const searchVal = ref('');
-    const treeData = ref<Array<IAreaInfo>>([]);
+    const treeData = computed(() => props.treeData.map(item => {
+      item.children = item.children.map(child => {
+        child.value = Math.ceil(child.value * 100) / 100;
+        return child;
+      })
+      item.value = +item.children.reduce((prev, curr) => prev + curr.value, 0).toFixed(2);
+      return item;
+    }));
 
-    watch(() => props.treeData, (val) => {
-      treeData.value = val;
-    })
+    const getPrefixIcon = (params: any) => {
+      const { __attr__: { isRoot, isOpen } } = params;
+      // 非根节点
+      if(!isRoot) return null;
+      // 根节点下钻
+      if (isOpen) return <i class='hcm-icon bkhcm-icon-minus-circle'></i>;
+      // 根节点未下钻
+      return <i class='hcm-icon bkhcm-icon-plus-circle'></i>;
+    }
+
+    const getNodeAppend = (node: any) => {
+      const { __attr__ : { isRoot, isOpen, hasChild } } = node;
+      // 非根节点 或 根节点无子节点
+      if (!isRoot || !hasChild) return <span class='proportion-num'>{node.value}</span>;
+      // 根节点下钻
+      if (isOpen) return null;
+      // 根节点未下钻
+      return <span class='proportion-num'>{node.value}</span>
+   };
 
     return () => (
       <Dialog
@@ -45,33 +69,17 @@ export default defineComponent({
           placeholder='请输入'
         />
         <Tree
-          data={props.treeData}
+          data={treeData.value}
           label='name'
           children='children'
           search={searchVal.value}
           show-node-type-icon={false}
-          prefixIcon={(params: any, renderType: any) => {
-            if (params.children?.length === 0) return null;
-            return params.isOpen ? (
-              <i class='hcm-icon bkhcm-icon-minus-circle'></i>
-            ) : (
-              <i class='hcm-icon bkhcm-icon-plus-circle'></i>
-            );
-          }}>
+          selectable={false}
+          indent={30}
+          line-height={36}
+          prefixIcon={getPrefixIcon}>
           {{
-            nodeAppend: (node: any) => {
-              const {hasChild, isOpen} = node;
-              if (hasChild) {
-                if (isOpen) {
-                  return null;
-                } else {
-                  // 计算子节点的权重之和, 展示到后面
-                  <span class='proportion-num'>{10}</span>
-                }
-              } else {
-                return <span class='proportion-num'>{node.value}</span>
-              }
-           },
+            nodeAppend: getNodeAppend,
           }}
         </Tree>
       </Dialog>

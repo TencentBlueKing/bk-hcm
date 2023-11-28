@@ -84,5 +84,5 @@ interface IRecommendScheme {
   cost_score: number;
   result_idc_ids: string[];
 }
-type IRecommendSchemeList = Array<IRecommendScheme>;
+export type IRecommendSchemeList = Array<IRecommendScheme>;
 export interface IGenerateSchemesResData extends IQueryResData<IRecommendSchemeList> {}
