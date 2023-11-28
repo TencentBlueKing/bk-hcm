@@ -22,6 +22,7 @@ package validator
 import (
 	"errors"
 	"regexp"
+	"unicode/utf8"
 )
 
 const (
@@ -45,8 +46,8 @@ func ValidateMemo(memo *string, required bool) error {
 	}
 
 	m := *memo
-	if len(m) > 256 {
-		return errors.New("invalid memo, length should <= 256")
+	if utf8.RuneCountInString(m) > 255 {
+		return errors.New("invalid memo, length should less than 255")
 	}
 
 	if !qualifiedMemoRegexp.MatchString(m) {
