@@ -200,8 +200,8 @@ export default defineComponent({
           message: '取消收藏成功',
         });
       } else {
-        await schemeStore.createCollection(scheme.id);
-        collections.value.push({ id: 0, res_id: scheme.id }); // @todo 收藏成功后, 需要后台接口返回收藏ID
+        const res = await schemeStore.createCollection(scheme.id);
+        collections.value.push({ id: res.data.id, res_id: scheme.id }); // @todo 收藏成功后, 需要后台接口返回收藏ID
         Message({
           theme: 'success',
           message: '收藏成功',
