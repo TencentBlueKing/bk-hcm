@@ -38,6 +38,8 @@ type AlgorithmInput struct {
 // Solution 算法解
 type Solution struct {
 	Idc       []string `json:"IDC"`
+	F1        float64  `json:"F1"`
+	F2        float64  `json:"F2"`
 	F1Score   float64  `json:"F1_SCORE"`
 	F2Score   float64  `json:"F2_SCORE"`
 	CoverRate float64  `json:"COVER_RATE"`

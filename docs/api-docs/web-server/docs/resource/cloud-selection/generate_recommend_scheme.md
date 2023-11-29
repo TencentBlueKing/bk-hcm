@@ -78,6 +78,7 @@ POST /api/v1/cloud/selections/schemes/generate
     {
       "cover_rate": 0.9,
       "composite_score": 75,
+      "avg_ping": 100.1,
       "net_score": 50,
       "cost_score": 100,
       "result_idc_ids": [
@@ -89,7 +90,6 @@ POST /api/v1/cloud/selections/schemes/generate
   ]
 }
 ```
-
 
 ### 响应参数说明
 
@@ -104,6 +104,7 @@ POST /api/v1/cloud/selections/schemes/generate
 | 字段名称            | 字段类型         | 描述         |
 |-----------------|--------------|------------|
 | cover_rate      | double       | 覆盖率        |
+| avg_ping        | double       | 平均延迟       |
 | composite_score | double       | 综合评分       |
 | net_score       | double       | 网络评分       |
 | cost_score      | double       | 成本评分       |
