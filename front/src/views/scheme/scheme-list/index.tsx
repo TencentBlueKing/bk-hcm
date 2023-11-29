@@ -1,13 +1,14 @@
 import { defineComponent, ref, reactive, computed, onMounted } from "vue";
 import { useRouter } from 'vue-router';
-import { Message } from 'bkui-vue/lib';
-import { Plus } from "bkui-vue/lib/icon";
+import { Plus, EditLine } from "bkui-vue/lib/icon";
+import { InfoBox, Message } from 'bkui-vue';
 import { useSchemeStore } from '@/store';
 import { QueryFilterType, IPageQuery, QueryRuleOPEnum } from '@/typings/common';
 import { ICollectedSchemeItem, ISchemeListItem } from '@/typings/scheme';
 import { getScoreColor } from '@/common/util';
 import SearchInput from "../components/search-input/index";
 import CloudServiceTag from "../components/cloud-service-tag";
+import SchemeEditDialog from '../components/scheme-edit-dialog';
 
 import './index.scss';
 
@@ -21,14 +22,19 @@ export default defineComponent({
     const searchStr = ref('');
     const collections = ref<{ id: number; res_id: string; }[]>([]);
     const collectPending = ref(false);
+    const tableListLoading = ref(false);
+    const tableListData = ref<ISchemeListItem[]>([]);
+    const isEditDialogOpen = ref(false);
+    const selectedScheme = ref<{ id: string; name: string; bk_biz_id: number; }>({
+      id: '',
+      name: '',
+      bk_biz_id: 0,
+    });
     const pagination = reactive({
         current: 1,
         count: 0,
         limit: 10,
     });
-
-    const tableListLoading = ref(false);
-    const tableListData = ref<ISchemeListItem[]>([]);
 
     const tableCols = [
       {
@@ -41,6 +47,9 @@ export default defineComponent({
                 class={['hcm-icon', 'collect-icon', collections.value.findIndex(item => item.res_id === data.id) > -1 ? 'bkhcm-icon-collect' : 'bkhcm-icon-not-favorited']}
                 onClick={() => handleToggleCollection(data)}/>
               <bk-button text theme="primary" onClick={() => { goToDetail(data.id) }}>{data.name}</bk-button>
+              <span class="edit-icon" onClick={() => handleOpenEditDialog(data) }>
+                <EditLine />
+              </span>
             </div>
           )
         },
@@ -172,7 +181,7 @@ export default defineComponent({
       router.push({ name: 'scheme-detail', query: { sid: id } })
     }
 
-    // 搜索方案
+    // @todo 搜索方案，参考项目其他搜索交互
     const handleSearch = () => {};
 
     // 收藏/取消收藏
@@ -202,27 +211,65 @@ export default defineComponent({
 
     };
 
+    const handleOpenEditDialog = (scheme: ISchemeListItem) => {
+      isEditDialogOpen.value = true;
+      selectedScheme.value = { id: scheme.id, name: scheme.name, bk_biz_id: scheme.bk_biz_id };
+    };
+
     // 删除方案
     const handleDelScheme = (scheme: ISchemeListItem) => {
       console.log(scheme);
+      InfoBox({
+        title: '请确认是否删除',
+        subTitle: `将删除【${scheme.name}】`,
+        theme: 'danger',
+        headerAlign: 'center',
+        footerAlign: 'center',
+        contentAlign: 'center',
+        onConfirm() {
+          schemeStore.deleteCloudSelectionScheme([scheme.id])
+            .then(() => {
+              if (tableListData.value.length === 1 && pagination.current !== 1) {
+                pagination.current = 1;
+              }
+              getTableListData();
+              Message({
+                theme: 'success',
+                message: '删除成功',
+              });
+            });
+        },
+      });
+    };
+
+    const saveSchemeFn = (data:{ name: string; bk_biz_id: number; }) => {
+      return schemeStore.updateCloudSelectionScheme(selectedScheme.value.id, data);
+    };
+
+    const handleConfirm = () => {
+      Message({
+        theme: 'success',
+        message: '方案编辑成功',
+      })
+      isEditDialogOpen.value = false;
+      getTableListData();
     };
 
     const handlePageValueChange = (val: number) => {
-      console.log('page change', val);
       pagination.current = val;
       getTableListData();
     };
 
     const handlePageLimitChange = (val: number) => {
-      console.log('page limit change', val);
       pagination.current = 1;
       pagination.limit = val;
       getTableListData();
-    }
+    };
 
+    // @todo 待确定哪些列需要排序
     const handleColumnSort = (val: string) => {
       console.log('col sort', val)
-    }
+    };
 
     onMounted(async() => {
       getTableListData();
@@ -250,6 +297,12 @@ export default defineComponent({
             onColumnSort={handleColumnSort}>
           </bk-table>
         </div>
+        <SchemeEditDialog
+          v-model:show={isEditDialogOpen.value}
+          title="编辑方案"
+          schemeData={selectedScheme || {}}
+          confirmFn={saveSchemeFn}
+          onConfirm={handleConfirm} />
       </div>
     );
   },

@@ -1,20 +1,26 @@
 .idc-map-display {
-  padding: 16px 24px;
+  padding: 16px 0;
   width: 480px;
   background: #ffffff;
   box-shadow: 0 2px 4px 0 #1919290d;
   .title {
+    padding: 0 24px;
     font-size: 14px;
     font-weight: 700px;
     line-height: 22px;
   }
   .map-container {
-    margin-top: 16px;
+    margin: 16px 24px;
     height: 270px;
     background: #f5f7fa;
   }
+  .deploy-list-wrapper {
+    padding: 0 24px;
+    height: calc(100% - 308px);
+    overflow: auto;
+  }
   .idc-group {
-    padding-top: 24px;
+    margin-bottom: 24px;
     .group-title {
       color: #313238;
       font-size: 14px;

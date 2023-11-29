@@ -20,6 +20,17 @@ export const useSchemeStore = defineStore({
     listCloudSelectionScheme (filter: QueryFilterType, page: IPageQuery) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/schemes/list`, { filter, page });
     },
+    deleteCloudSelectionScheme (ids: string[]) {
+      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/schemes/batch`, { data: { ids } });
+    },
+    /**
+     * 更新资源选型方案
+     * @param id 方案id
+     * @param data 方案数据
+     */
+    updateCloudSelectionScheme (id: string, data: { name: string; bk_biz_id?: number; }) {
+      return http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/schemes/${id}`, data);
+    },
     /**
      * 获取收藏的资源选型方案列表
      * @returns

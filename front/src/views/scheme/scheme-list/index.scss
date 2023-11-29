@@ -1,12 +1,12 @@
 .scheme-list-page {
-  padding: 24px 0;
+  padding: 24px;
   height: 100%;
   .operate-wrapper {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin: 0 auto;
-    width: 1280px;
+    // width: 1280px;
     .create-btn {
       min-width: 136px;
       .plus-icon {
@@ -15,12 +15,20 @@
     }
   }
   .scheme-table-wrapper {
-    margin: 16px auto 0;
-    width: 1280px;
+    margin-top: 16px;
+    // margin: 16px auto 0;
+    // width: 1280px;
   }
   .scheme-name {
     position: relative;
     padding-left: 18px;
+    padding-right: 18px;
+    width: 100%;
+    &:hover {
+      .edit-icon {
+        display: inline-block;
+      }
+    }
     .collect-icon {
       position: absolute;
       top: 12px;
@@ -33,6 +41,17 @@
       }
       &.bkhcm-icon-collect {
         color: #ffb848;
+      }
+    }
+    .edit-icon {
+      display: none;
+      position: absolute;
+      top: 0;
+      right: 4px;
+      color: #c4c6cc;
+      cursor: pointer;
+      &:hover {
+        color: #3a84ff;
       }
     }
   }
