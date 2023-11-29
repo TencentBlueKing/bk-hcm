@@ -55,7 +55,11 @@ export default defineComponent({
         },
       },
       {
-        label: '标签'
+        label: '标签',
+        render: ({ data }: { data: ISchemeListItem }) => {
+          // @todo 需要显示业务名称
+          return <span class="tag">{data.bk_biz_id}</span>
+        }
       },
       {
         label: '业务类型',
