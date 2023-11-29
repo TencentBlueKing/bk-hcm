@@ -2,6 +2,7 @@
   display: flex;
   align-items: center;
   .back-icon {
+    margin-right: 4px;
     font-size: 24px;
     color: #3a84ff;
     cursor: pointer;
@@ -10,6 +11,7 @@
     font-size: 16px;
     color: #313238;
     line-height: 24px;
+    cursor: pointer;
   }
   .arrow-icon {
     margin-left: 8px;

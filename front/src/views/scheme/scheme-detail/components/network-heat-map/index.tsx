@@ -1,31 +1,64 @@
-import { defineComponent, reactive, ref } from "vue";
+import { defineComponent, reactive, ref, PropType, onMounted } from "vue";
 import { BkTable, BkTableColumn } from "bkui-vue/lib/table";
+import { IAreaInfo } from '@/typings/scheme';
+import { useSchemeStore } from "@/store";
 import SearchInput from "../../../components/search-input/index";
 
 import './index.scss';
 
 export default defineComponent({
   name: 'network-heat-map',
-  setup () {
+  props: {
+    ids: Array as PropType<string[]>,
+    areaTopo: Array as PropType<IAreaInfo[]>,
+  },
+  setup (props) {
+    const schemeStore = useSchemeStore();
+
     const searchStr = ref('');
     const isHighlight = ref(false);
-    const idcList = reactive([
-      { id: 'New York', name: '纽约机房' },
-      { id: 'Silicon Valley', name: '硅谷机房' },
-      { id: 'Frank Furt', name: '法兰克福机房' },
-      { id: 'Brooklyn', name: '布鲁克林机房' },
-      { id: 'Singapore', name: '新加坡机房' },
-    ]);
+    const idcList = reactive([]);
     const idcData = reactive([]);
+    const activedTab = ref('biz');
+
+    const TABS = [
+      { id: 'biz', label: '业务数据' },
+      { id: 'ping', label: '裸 ping 数据' },
+    ];
 
     const handleSearch = () => {};
+
+    const getTableData = async() => {
+      let res;
+      if (activedTab.value === 'biz') {
+        res = await schemeStore.queryBizLatency(props.areaTopo, props.ids);
+      } else {
+        res = await schemeStore.queryPingLatency(props.areaTopo, props.ids);
+      }
+      console.log(res);
+    };
+
+    const handleSwitchTab = (id: string) => {
+      activedTab.value = id;
+      getTableData();
+    }
+
+    onMounted(() => {
+      getTableData();
+    });
+
     return () => (
       <div class="network-heat-map">
         <h3 class="title">网络热力分析</h3>
         <div class="data-switch-panel">
           <div class="data-type-tabs">
-            <div class="tab-item actived">业务数据</div>
-            <div class="tab-item">裸 ping 数据</div>
+            {
+              TABS.map(tab => {
+                return (
+                  <div class={['tab-item', activedTab.value === tab.id ? 'actived' : '']} onClick={() => { handleSwitchTab(tab.id) }}>{tab.label}</div>
+                )
+              })
+            }
           </div>
           <SearchInput v-model={searchStr.value} width={300} onSearch={handleSearch} />
         </div>

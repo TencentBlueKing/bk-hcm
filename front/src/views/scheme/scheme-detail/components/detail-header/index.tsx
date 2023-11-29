@@ -1,16 +1,30 @@
-import { defineComponent, reactive } from "vue";
+import { defineComponent, PropType } from "vue";
+import { DEPLOYMENT_ARCHITECTURE_MAP } from '@/constants';
 import SchemeSelector from "@/views/scheme/components/scheme-selector";
+import CloudServiceTag from "@/views/scheme/components/cloud-service-tag";
 
 import './index.scss';
 
+interface ISchemeData {
+  deployment_architecture: string[];
+  vendors: string[];
+  composite_score: number;
+  net_score: number;
+  cost_score: number;
+}
+
 export default defineComponent({
   name: 'scheme-detail-header',
-  setup () {
-    const schemeDetail = reactive({
-      composite_score: 80,
-      net_score: 70,
-      cost_score: 90,
-    })
+  emits: ['update'],
+  props: {
+    schemeList: Array,
+    schemeData: {
+      type: Object as PropType<ISchemeData>,
+      default: () => ({})
+    },
+    showEditIcon: Boolean,
+  },
+  setup (props, ctx) {
     const scores = [
       { id: 'composite_score', name: '综合评分' },
       { id: 'net_score', name: '网络评分' },
@@ -20,13 +34,22 @@ export default defineComponent({
     return () => (
       <div class="scheme-detail-header">
         <div class="header-content">
-          <SchemeSelector />
+          <SchemeSelector
+            schemeList={props.schemeList}
+            showEditIcon={props.showEditIcon}
+            schemeData={props.schemeData}
+            onUpdate={(data) => { ctx.emit('update', data) }} />
           <div class="tag-list">
-            <div class="tag deploy-type">分布式部署</div>
-            <div class="tag cloud-service-type">
-              <i class="hcm-icon bkhcm-icon-tengxunyun tencent-cloud-icon"></i>
-              腾讯云
-            </div>
+            {
+              props.schemeData.deployment_architecture.map((item: string) => {
+                return (<div class="deploy-type">{ DEPLOYMENT_ARCHITECTURE_MAP[item] }</div>)
+              })
+            }
+            {
+              props.schemeData.vendors.map((item: string) => {
+                return (<CloudServiceTag class="cloud-service-type" type={item} showIcon={true} />)
+              })
+            }
           </div>
           <div class="score-nums">
             {
@@ -34,7 +57,7 @@ export default defineComponent({
                 return (
                   <div class="num-item" key={item.id}>
                     <span class="label">{item.name}：</span>
-                    <span class="val">{item.id === 'cost_score' ? '$ ' : ''}{schemeDetail[item.id]}</span>
+                    <span class="val">{item.id === 'cost_score' ? '$ ' : ''}{props.schemeData[item.id]}</span>
                   </div>
                 )
               })
@@ -42,7 +65,7 @@ export default defineComponent({
           </div>
         </div>
         <div class="operate-area">
-          <bk-button>删除</bk-button>
+          { ctx.slots.operate() }
         </div>
       </div>
     )
