@@ -29,7 +29,10 @@ POST /api/v1/cloud/collections/create
 ```json
 {
   "code": 0,
-  "message": ""
+  "message": "",
+  "data": {
+    "id": "00000001"
+  }
 }
 ```
 
@@ -39,3 +42,10 @@ POST /api/v1/cloud/collections/create
 |---------|--------|------|
 | code    | int    | 状态码  |
 | message | string | 请求信息 |
+| data    | object | 调用数据 |
+
+#### data
+
+| 参数名称 | 参数类型   | 描述     |
+|------|--------|--------|
+| id   | string | 收藏记录ID |

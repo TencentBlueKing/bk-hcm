@@ -47,12 +47,13 @@ func (svc *service) CreateCollection(cts *rest.Contexts) (interface{}, error) {
 		ResType: req.ResType,
 		ResID:   req.ResID,
 	}
-	if _, err := svc.client.DataService().Global.UserCollection.Create(cts.Kit, createReq); err != nil {
+	result, err := svc.client.DataService().Global.UserCollection.Create(cts.Kit, createReq)
+	if err != nil {
 		logs.Errorf("create collection failed, err: %v, req: %+v, rid: %s", err, createReq, cts.Kit.Rid)
 		return nil, err
 	}
 
-	return nil, nil
+	return result, nil
 }
 
 // DeleteCollection delete collection.
