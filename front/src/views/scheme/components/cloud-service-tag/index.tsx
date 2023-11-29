@@ -70,7 +70,7 @@ export default defineComponent({
     return () => (
       <div class={['cloud-service-tag', props.small ? 'small-tag': '']} style={styleObj.value}>
         { props.showIcon ? <i class={['cloud-icon hcm-icon', cloudData.icon]}></i> :null }
-        <span class='name-text'>{ cloudData.name || '--' }</span>
+        <span class='tag-name-text'>{ cloudData.name || '--' }</span>
       </div>
     );
   },

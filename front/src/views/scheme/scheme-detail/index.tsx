@@ -1,9 +1,9 @@
-import { defineComponent, ref, reactive, computed, onMounted } from "vue";
+import { defineComponent, ref, reactive, computed, watch, onMounted } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import { InfoBox, Message } from "bkui-vue";
 import { useSchemeStore } from "@/store";
 import { QueryFilterType } from '@/typings/common';
-import { ISchemeListItem, ISchemeEditingData } from "@/typings/scheme";
+import { ISchemeListItem, ISchemeEditingData, ISchemeSelectorItem } from "@/typings/scheme";
 import DetailHeader from "./components/detail-header";
 import SchemeInfoCard from "./components/scheme-info-card";
 import IdcMapDisplay from "./components/idc-map-display";
@@ -17,16 +17,21 @@ export default defineComponent({
     const schemeStore = useSchemeStore();
     const router = useRouter();
     const route = useRoute();
-    const schemeId = route.query?.sid || '';
+    const schemeId = ref(route.query?.sid || '');
 
     let schemeDetail = ref<ISchemeListItem>();
     const detailLoading = ref(true);
     let schemeList = reactive<ISchemeListItem[]>([]);
     const schemeListLoading = ref(false);
 
+    watch(() => route.query?.sid, val => {
+      schemeId.value = val;
+      getSchemeDetail();
+    });
+
     const getSchemeDetail = async () => {
       detailLoading.value = true;
-      const res = await schemeStore.getCloudSelectionScheme(schemeId as string);
+      const res = await schemeStore.getCloudSelectionScheme(schemeId.value as string);
       schemeDetail.value = res.data;
       detailLoading.value = false;
     };
@@ -39,16 +44,15 @@ export default defineComponent({
         rules: [],
       };
       const res = await schemeStore.listCloudSelectionScheme(filterQuery, { start: 0, limit: 500 });
-      schemeList = res.data.details.map((item: ISchemeListItem) => ({ id: item.id, name: item.name }));
+      schemeList = res.data.details;
       schemeListLoading.value = false;
     }
 
-    const headerData = computed(() => {
+    const headerData = computed((): ISchemeSelectorItem => {
       if (schemeDetail.value) {
         const { id, name, bk_biz_id, deployment_architecture, vendors, composite_score, net_score, cost_score } = schemeDetail.value;
         return { id, name, bk_biz_id, deployment_architecture, vendors, composite_score, net_score, cost_score }
       }
-      return {};
     })
 
     const handleUpdate = (data: ISchemeEditingData) => {

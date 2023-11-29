@@ -38,6 +38,18 @@ export interface ISchemeEditingData {
   name: string;
 }
 
+// 方案切换下拉框单条数据
+export interface ISchemeSelectorItem {
+  id: string;
+  name: string;
+  bk_biz_id: number;
+  deployment_architecture: string[];
+  vendors: string[];
+  composite_score: number;
+  net_score: number;
+  cost_score: number;
+}
+
 // idc机房列表数据
 export interface IIdcListItem {
   id: string;

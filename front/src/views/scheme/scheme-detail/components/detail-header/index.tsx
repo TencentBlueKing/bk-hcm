@@ -1,5 +1,6 @@
 import { defineComponent, PropType } from "vue";
 import { DEPLOYMENT_ARCHITECTURE_MAP } from '@/constants';
+import { ISchemeSelectorItem } from '@/typings/scheme';
 import SchemeSelector from "@/views/scheme/components/scheme-selector";
 import CloudServiceTag from "@/views/scheme/components/cloud-service-tag";
 
@@ -17,7 +18,7 @@ export default defineComponent({
   name: 'scheme-detail-header',
   emits: ['update'],
   props: {
-    schemeList: Array,
+    schemeList: Array as PropType<ISchemeSelectorItem[]>,
     schemeData: {
       type: Object as PropType<ISchemeData>,
       default: () => ({})

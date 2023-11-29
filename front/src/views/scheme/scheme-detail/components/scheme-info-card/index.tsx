@@ -29,7 +29,7 @@ export default defineComponent({
         case 'network':
           return `网络延迟 < @todo待确认、ping抖动 < ${props.schemeDetail.cover_ping}、丢包率 < ${props.schemeDetail.cover_rate}%`
         case 'deployment_architecture':
-          return DEPLOYMENT_ARCHITECTURE_MAP[props.schemeDetail[id]];
+          return props.schemeDetail.deployment_architecture.map(item => DEPLOYMENT_ARCHITECTURE_MAP[item]).join(', ');
         default:
           return props.schemeDetail[id];
       }
@@ -55,9 +55,9 @@ export default defineComponent({
             })
           }
         </div>
-        <div class="recreate-btn">
+        {/* <div class="recreate-btn">
           <bk-button outline theme="primary">重新生成</bk-button>
-        </div>
+        </div> */}
       </div>
     )
   },

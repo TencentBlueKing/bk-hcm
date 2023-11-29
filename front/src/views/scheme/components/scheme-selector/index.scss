@@ -7,16 +7,29 @@
     color: #3a84ff;
     cursor: pointer;
   }
-  .scheme-name {
-    font-size: 16px;
-    color: #313238;
-    line-height: 24px;
-    cursor: pointer;
-  }
-  .arrow-icon {
-    margin-left: 8px;
-    font-size: 12px;
-    color: #c4c6cc;
+  .selector-trigger {
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+    &.opened {
+      background: #E1ECFF;
+      border-radius: 2px;
+      .arrow-icon {
+        color: #3a84ff;
+        transform: rotate(-180deg);
+      }
+    }
+    .scheme-name {
+      font-size: 16px;
+      color: #313238;
+      line-height: 24px;
+      cursor: pointer;
+    }
+    .arrow-icon {
+      margin-left: 8px;
+      font-size: 12px;
+      color: #c4c6cc;
+    }
   }
   .edit-btn {
     display: flex;
@@ -27,6 +40,58 @@
     cursor: pointer;
     .edit-icon {
       margin-right: 6px;
+    }
+  }
+}
+.resource-selection-scheme-list-popover.bk-popover {
+  padding: 8px 0;
+  .scheme-list {
+    width: 480px;
+    max-height: 400px;
+    overflow: auto;
+  }
+  .scheme-item {
+    padding: 16px 24px 22px;
+    cursor: pointer;
+    &:hover {
+      background: #f5f7fa;
+    }
+    &.actived {
+      background: #f0f5ff;
+    }
+    .scheme-name-area {
+      display: flex;
+      align-items: center;
+    }
+    .name-text {
+      font-size: 16px;
+      font-weight: 700;
+      color: #313238;
+    }
+    .deploy-type-tag {
+      display: flex;
+      align-items: center;
+      margin-right: 8px;
+      padding: 0 8px;
+      font-size: 12px;
+      line-height: 22px;
+      border-radius: 11px;
+      color: #45A0A5;
+      background: #D8F4F5;
+    }
+    .score-area {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 20px;
+      .score-item {
+        font-size: 12px;
+        line-height: 20px;
+        color: #313238;
+        .label {
+          color: #63656e;
+        }
+      }
     }
   }
 }
