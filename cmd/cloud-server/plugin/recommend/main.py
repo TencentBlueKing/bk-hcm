@@ -174,8 +174,8 @@ def resolve_x(res, algorithm_data):
             idc_list = list(set(idc_list + PICK_IDC_LIST))
         optimal = {
             'IDC': idc_list,
-            'F1': f'{res.F[_id][0]:.2f}ms',
-            'F2': f'${res.F[_id][1]:.0f}',
+            'F1': res.F[_id][0],
+            'F2': res.F[_id][1],
             'COVER_RATE': COVER_RATE - res.G[_id][0],
             # 新增解析f1与f2的评分
             'F1_SCORE': get_score_for_function(COVER_PING_RANGES, res.F[_id][0]),
@@ -184,7 +184,7 @@ def resolve_x(res, algorithm_data):
         if optimal not in pareto_list and idc_list:
             pareto_list.append(optimal)
     # pareto front排序
-    pareto_list = sorted(pareto_list, key=lambda o: float(o['F1'].replace('ms', '')), reverse=False)
+    pareto_list = sorted(pareto_list, key=lambda o: o['F1'], reverse=False)
     return pareto_list
 
 

@@ -23,6 +23,7 @@ import (
 	"errors"
 
 	"hcm/pkg/api/core"
+	coreselection "hcm/pkg/api/core/cloud-selection"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/table/types"
@@ -31,6 +32,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 // ListIdc ...
@@ -60,8 +62,11 @@ func (svc *service) ListIdc(cts *rest.Contexts) (interface{}, error) {
 		logs.Errorf("call dataservice to list idc failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-
-	return result, nil
+	// 添加idc价格，临时方案
+	withPrice := slice.Map(result.Details, func(i coreselection.Idc) coreselection.IdcWithPrice {
+		return coreselection.IdcWithPrice{Idc: i, Price: svc.cfg.DefaultIdcPrice[i.Vendor]}
+	})
+	return withPrice, nil
 }
 
 func (svc *service) getIdcVendorByIDs(kt *kit.Kit, ids []string) (types.StringArray, error) {
