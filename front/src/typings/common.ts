@@ -12,6 +12,7 @@ export enum QueryRuleOPEnum {
   LT = 'lt',
   LTE = 'lte',
   IN = 'in',
+  NIN = 'nin',
   CS = 'cs',
   CIS = 'cis',
   JSON_EQ = 'json_eq',
@@ -27,7 +28,7 @@ export type QueryFilterType = {
 export type RulesItem = {
   field: string;
   op: QueryRuleOPEnum;
-  value: string | number | string[];
+  value: string | number | string[] | number[];
 };
 
 export interface IOption {
