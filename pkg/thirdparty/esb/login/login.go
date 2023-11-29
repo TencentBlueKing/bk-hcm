@@ -55,13 +55,12 @@ func (l *login) IsLogin(ctx context.Context, bkToken string) (*IsLoginResp, erro
 	resp := new(IsLoginResp)
 
 	req := &IsLoginReq{
-		CommParams: types.GetCommParams(l.config),
-		BkToken:    bkToken,
+		BkToken: bkToken,
 	}
 
 	h := http.Header{}
 	h.Set(constant.RidKey, uuid.UUID())
-
+	types.SetCommonHeader(&h, l.config)
 	err := l.client.Post().
 		SubResourcef("/bk_login/is_login/").
 		WithContext(ctx).
