@@ -32,7 +32,6 @@ import (
 	"hcm/pkg/api/hc-service/subnet"
 	hcservice "hcm/pkg/api/hc-service/vpc"
 	dataclient "hcm/pkg/client/data-service"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
@@ -69,7 +68,7 @@ func (s *Subnet) AzureSubnetSync(kt *kit.Kit, req *AzureSubnetSyncOptions) (*cor
 
 	routeTableIDs := make([]string, 0, len(req.Subnets))
 	for _, subnet := range req.Subnets {
-		createReqs = append(createReqs, convertAzureSubnetCreateReq(&subnet, req.AccountID, constant.UnassignedBiz))
+		createReqs = append(createReqs, convertAzureSubnetCreateReq(&subnet, req.AccountID, req.BkBizID))
 		if subnet.Extension.CloudRouteTableID != nil {
 			routeTableIDs = append(routeTableIDs, *subnet.Extension.CloudRouteTableID)
 		}
@@ -223,7 +222,8 @@ func BatchCreateAzureSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq
 			if len(resource.Extension.CloudSecurityGroupID) != 0 {
 				sgID, exist := securityGroupMap[resource.Extension.CloudSecurityGroupID]
 				if !exist {
-					return nil, fmt.Errorf("security group: %s not sync from cloud", resource.Extension.CloudSecurityGroupID)
+					return nil, fmt.Errorf("security group: %s not sync from cloud",
+						resource.Extension.CloudSecurityGroupID)
 				}
 				newResources[index].Extension.SecurityGroupID = sgID
 			}
@@ -232,7 +232,7 @@ func BatchCreateAzureSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq
 		createReq := &cloud.SubnetBatchCreateReq[cloud.AzureSubnetCreateExt]{
 			Subnets: newResources,
 		}
-		res, err := dataCli.Azure.Subnet.BatchCreate(kt.Ctx, kt.Header(), createReq)
+		res, err := dataCli.Azure.Subnet.BatchCreate(kt, createReq)
 		if err != nil {
 			return nil, err
 		}
