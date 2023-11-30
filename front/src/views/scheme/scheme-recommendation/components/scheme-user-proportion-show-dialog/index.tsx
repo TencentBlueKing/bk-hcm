@@ -23,11 +23,11 @@ export default defineComponent({
 
     const searchVal = ref('');
     const treeData = computed(() => props.treeData.map(item => {
+      item.value = +item.children.reduce((prev, curr) => prev + curr.value, 0).toFixed(2);
       item.children = item.children.map(child => {
-        child.value = Math.ceil(child.value * 100) / 100;
+        child.value = +child.value.toFixed(2);
         return child;
       })
-      item.value = +item.children.reduce((prev, curr) => prev + curr.value, 0).toFixed(2);
       return item;
     }));
 

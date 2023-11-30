@@ -98,14 +98,14 @@ export default defineComponent({
               <bk-input type='number' v-model={formData.cover_ping}></bk-input>
             ),
           },
-          {
+          /* {
             label: 'ping抖动',
             content: () => <bk-input type='number' disabled></bk-input>,
           },
           {
             label: '丢包率',
             content: () => <bk-input type='number' disabled></bk-input>,
-          },
+          }, */
         ],
       },
       {
@@ -115,16 +115,13 @@ export default defineComponent({
             <bk-select class='flex-1' v-model={formData.user_distribution_mode}>
               <bk-option label='默认分布占比' value='default' />
             </bk-select>
-            <div class={`user-proportion-detail-btn-wrap${formData.user_distribution.length ? '' : ' disabled'}`}>
+            <div class={`user-proportion-detail-btn-wrap${formData.user_distribution.length ? '' : ' disabled'}`} 
+              onClick={() => {
+                formData.user_distribution.length &&
+                  (isUserProportionDetailDialogShow.value = true);
+              }}>
               <i class='hcm-icon bkhcm-icon-file'></i>
-              <span
-                class={'btn-text'}
-                onClick={() => {
-                  formData.user_distribution.length &&
-                    (isUserProportionDetailDialogShow.value = true);
-                }}>
-                占比详情
-              </span>
+              <span class={'btn-text'}>占比详情</span>
             </div>
           </div>
         ),
@@ -135,7 +132,7 @@ export default defineComponent({
         content: () => (
           <bk-checkbox-group v-model={formData.deployment_architecture}>
             <bk-checkbox label='distributed'>分布式部署</bk-checkbox>
-            <bk-checkbox label='centralized'>集中式部署</bk-checkbox>
+            <bk-checkbox label='centralized' disabled>集中式部署</bk-checkbox>
           </bk-checkbox-group>
         ),
       },
