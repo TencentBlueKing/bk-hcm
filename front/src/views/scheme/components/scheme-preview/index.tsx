@@ -1,4 +1,4 @@
-import { Select } from 'bkui-vue';
+import { Exception, Select } from 'bkui-vue';
 import { defineComponent, ref } from 'vue';
 import './index.scss';
 import { Info } from 'bkui-vue/lib/icon';
@@ -32,46 +32,51 @@ export default defineComponent({
   setup(props) {
     const sortChoice = ref(SchemeSortOptions[0].key);
     const schemeStore = useSchemeStore();
-    return () => <div class={'scheme-preview-container'}>
-      <div class={'scheme-preview-header'}>
-        <div class={'scheme-preview-header-title'}>
-          推荐方案
-        </div>
-        <Info
-          class={'scheme-preview-header-tip'}
-          v-bk-tooltips={{
-            content: '待产品补充',
-          }}
-        />
-        <Select
-          class={'scheme-preivew-header-sort-selector'}
-          v-model={sortChoice.value}
-          clearable={false}
-        >
-          {{
-            default: () => (SchemeSortOptions.map(({ key, val }) => (
-              <Option
-                value={key}
-                label={val}
-              ></Option>
-            ))),
-          }}
-        </Select>
-      </div>
-      <div class={'scheme-preview-content'}>
-        {
-          schemeStore.recommendationSchemes.map(({ composite_score, cost_score, net_score, result_idc_ids }, idx) => (
-          <SchemePreviewTableCard
-            compositeScore={composite_score}
-            costScore={cost_score}
-            netScore={net_score}
-            resultIdcIds={result_idc_ids}
-            idx={idx}
-            onViewDetail={props.onViewDetail}
+    return () => (
+      <div class={'scheme-preview-container'}>
+        <div class={'scheme-preview-header'}>
+          <div class={'scheme-preview-header-title'}>推荐方案</div>
+          <Info
+            class={'scheme-preview-header-tip'}
+            v-bk-tooltips={{
+              content: '待产品补充',
+            }}
           />
-          ))
-        }
+          <Select
+            class={'scheme-preivew-header-sort-selector'}
+            v-model={sortChoice.value}
+            clearable={false}>
+            {{
+              default: () => SchemeSortOptions.map(({ key, val }) => (
+                  <Option value={key} label={val}></Option>
+              )),
+            }}
+          </Select>
+        </div>
+        <div class={'scheme-preview-content'}>
+          {schemeStore.recommendationSchemes.length === 0
+            ? schemeStore.recommendationSchemes.map((
+              { composite_score, cost_score, net_score, result_idc_ids },
+              idx,
+            ) => (
+                  <SchemePreviewTableCard
+                    compositeScore={composite_score}
+                    costScore={cost_score}
+                    netScore={net_score}
+                    resultIdcIds={result_idc_ids}
+                    idx={idx}
+                    onViewDetail={props.onViewDetail}
+                  />
+            ))
+            : (
+              <Exception
+                type="empty"
+                scene="part"
+                description="没有数据"
+              ></Exception>
+            )}
+        </div>
       </div>
-    </div>;
+    );
   },
 });
