@@ -29,8 +29,21 @@ export const useSchemeStore = defineStore({
     listCloudSelectionScheme(filter: QueryFilterType, page: IPageQuery) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/schemes/list`, { filter, page });
     },
-    deleteCloudSelectionScheme(ids: string[]) {
+    /**
+     * 删除资源选型方案
+     * @param ids 方案id列表
+     * @returns 
+     */
+    deleteCloudSelectionScheme (ids: string[]) {
       return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/schemes/batch`, { data: { ids } });
+    },
+    /**
+     * 获取资源选型方案详情
+     * @param id 方案id
+     * @returns 
+     */
+    getCloudSelectionScheme (id: string) {
+      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/schemes/${id}`);
     },
     /**
      * 更新资源选型方案
@@ -61,6 +74,31 @@ export const useSchemeStore = defineStore({
       */
     deleteCollection(id: number) {
       return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/collections/${id}`);
+    },
+    /**
+     * 查询IDC机房列表
+     * @param filter 过滤参数
+     * @param page 分页参数
+     * @returns 
+     */
+    // listIdc (filter: QueryFilterType, page: IPageQuery) {
+    //   return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/idcs/list`, { filter, page });
+    // },
+    /**
+     * 查询业务延迟数据
+     * @param topo 拓扑列表
+     * @param ids idc列表
+     */
+    queryBizLatency(topo: IAreaInfo[], ids: string[]) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/latency/biz/query`, { area_topo: topo, idc_ids: ids });
+    },
+    /**
+     * 查询ping延迟数据
+     * @param topo 拓扑列表
+     * @param ids idc列表
+     */
+    queryPingLatency(topo: IAreaInfo[], ids: string[]) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/latency/ping/query`, { area_topo: topo, idc_ids: ids });
     },
     /**
      * 获取云选型数据支持的国家列表

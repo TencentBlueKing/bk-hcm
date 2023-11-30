@@ -1,5 +1,8 @@
 .scheme-detail-page {
   height: 100%;
+  .bk-nested-loading {
+    height: 100%;
+  }
   .detail-content-area {
     padding: 24px;
     height: calc(100% - 52px);

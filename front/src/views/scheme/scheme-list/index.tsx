@@ -226,7 +226,6 @@ export default defineComponent({
       InfoBox({
         title: '请确认是否删除',
         subTitle: `将删除【${scheme.name}】`,
-        theme: 'danger',
         headerAlign: 'center',
         footerAlign: 'center',
         contentAlign: 'center',
@@ -304,7 +303,7 @@ export default defineComponent({
         <SchemeEditDialog
           v-model:show={isEditDialogOpen.value}
           title="编辑方案"
-          schemeData={selectedScheme || {}}
+          schemeData={selectedScheme.value || {}}
           confirmFn={saveSchemeFn}
           onConfirm={handleConfirm} />
       </div>

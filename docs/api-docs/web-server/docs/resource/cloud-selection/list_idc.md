@@ -94,18 +94,19 @@ POST /api/v1/cloud/selections/idcs/list
 
 #### 查询参数介绍：
 
-| 参数名称       | 参数类型   | 描述                                   |
-|------------|--------|--------------------------------------|
-| id         | string | IDC的ID                               |
-| bk_biz_id  | int64  | 业务ID                                 |
-| vendor     | string | 云厂商（枚举值：tcloud、aws、azure、gcp、huawei） |
-| name       | string | IDC名                                 |
-| country    | string | 所在国家                                 |
-| region     | string | 地域                                   |
-| creator    | string | 创建者                                  |
-| reviser    | string | 更新者                                  |
-| created_at | string | 创建时间，标准格式：2006-01-02T15:04:05Z       |
-| updated_at | string | 更新时间，标准格式：2006-01-02T15:04:05Z       |
+| 参数名称       | 参数类型    | 描述                                   |
+|------------|---------|--------------------------------------|
+| id         | string  | IDC的ID                               |
+| bk_biz_id  | int64   | 业务ID                                 |
+| vendor     | string  | 云厂商（枚举值：tcloud、aws、azure、gcp、huawei） |
+| name       | string  | IDC名                                 |
+| country    | string  | 所在国家                                 |
+| region     | string  | 地域                                   |
+| price      | double | 单位价格                                 |
+| creator    | string  | 创建者                                  |
+| reviser    | string  | 更新者                                  |
+| created_at | string  | 创建时间，标准格式：2006-01-02T15:04:05Z       |
+| updated_at | string  | 更新时间，标准格式：2006-01-02T15:04:05Z       |
 
 接口调用者可以根据以上参数自行根据查询场景设置查询规则。
 
@@ -170,6 +171,7 @@ POST /api/v1/cloud/selections/idcs/list
         "bk_biz_id": 100,
         "country": "新加坡",
         "region": "ap-southeast-3",
+        "price": 2,
         "creator": "tom",
         "reviser": "tom",
         "created_at": "2019-07-29 11:57:20",

@@ -36,16 +36,11 @@ export default defineComponent({
     const bizList = ref([]);
     const bizLoading = ref(false);
     const formRef = ref<InstanceType<typeof Form>>();
-
-    const rules = [{
-      name: [
-        { trigger: 'blur', message: '名称必须以小写字母开头，后面最多可跟 32个小写字母、数字或连字符，但不能以连字符结尾' },
-      ]
-    }];
+    const pending = ref(false);
 
     watch(() => props.show, val => {
       if(val) {
-        const { id, name, bk_biz_id } = props.schemeData.value;
+        const { id, name, bk_biz_id } = props.schemeData;
         localVal.value = { id, name, bk_biz_id };
         getBizList();
       }
@@ -60,7 +55,9 @@ export default defineComponent({
 
     const handleConfirm = async() => {
       await formRef.value.validate();
-      const res = props.confirmFn(localVal.value);
+      pending.value = true;
+      const res = await props.confirmFn(localVal.value);
+      pending.value = true;
       ctx.emit('confirm', res);
     };
     const handleClose = () => {
@@ -72,6 +69,7 @@ export default defineComponent({
         title={props.title}
         width={480}
         quickClose={false}
+        isLoading={pending.value}
         onConfirm={handleConfirm}
         onClosed={handleClose}>
         <bk-form ref={formRef} form-type="vertical" model={localVal.value}>

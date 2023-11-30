@@ -103,6 +103,7 @@ func (r *GenSchemeReq) Validate() error {
 type GeneratedSchemeResult struct {
 	CoverRate      float64  `json:"cover_rate"`
 	CompositeScore float64  `json:"composite_score"`
+	AvgPing        float64  `json:"avg_ping"`
 	NetScore       float64  `json:"net_score"`
 	CostScore      float64  `json:"cost_score"`
 	ResultIdcIds   []string `json:"result_idc_ids"`

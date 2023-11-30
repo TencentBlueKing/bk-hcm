@@ -1,12 +1,27 @@
 .cloud-service-tag {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   padding: 0 8px;
   height: 22px;
   line-height: 22px;
   border-radius: 11px;
   color: #63656E;
   background: #F0F1F5;
-  .name-text {
+  &.small-tag {
+    padding: 0 4px;
+    height: 16px;
+    line-height: 1;
+    .tag-name-text {
+        display: inline-block;
+        font-size: 12px;
+        transform: scale(0.83);
+        transform-origin: top;
+    }
+  }
+  .cloud-icon {
+    margin-right: 2px;
+  }
+  .tag-name-text {
     font-size: 12px;
   }
 }

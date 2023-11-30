@@ -34,3 +34,9 @@ type Idc struct {
 	Region        string        `json:"region"`
 	core.Revision `json:",inline"`
 }
+
+// IdcWithPrice with unit price
+type IdcWithPrice struct {
+	Idc   `json:",inline"`
+	Price float64 `json:"price"`
+}
