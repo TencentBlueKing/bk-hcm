@@ -805,11 +805,7 @@ export default defineComponent({
                       index === 2 ? handleModifyScret : handleModifyAccount
                     }>
                     {/* <i class={'icon hcm-icon bkhcm-icon-invisible1 pl15 account-edit-icon'}/> */}
-                    <i
-                      class={
-                        'icon bk-icon icon-bianji pl15 account-edit-icon mr6'
-                      }
-                    />
+                    <i class={ 'icon bk-icon icon-bianji account-edit-icon' } />
                     编辑
                   </span>
                 ) : (
