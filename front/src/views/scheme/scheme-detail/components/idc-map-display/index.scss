@@ -9,10 +9,15 @@
     font-weight: 700px;
     line-height: 22px;
   }
-  .map-container {
+  .map-area {
     margin: 16px 24px;
     height: 270px;
-    background: #f5f7fa;
+    .map-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: #f5f7fa;
+    }
   }
   .deploy-list-wrapper {
     padding: 0 24px;

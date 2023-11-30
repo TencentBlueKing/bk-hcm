@@ -19,6 +19,7 @@ export default defineComponent({
   emits: ['update'],
   props: {
     schemeList: Array as PropType<ISchemeSelectorItem[]>,
+    schemeListLoading: Boolean,
     schemeData: {
       type: Object as PropType<ISchemeData>,
       default: () => ({})
@@ -37,6 +38,7 @@ export default defineComponent({
         <div class="header-content">
           <SchemeSelector
             schemeList={props.schemeList}
+            schemeListLoading={props.schemeListLoading}
             showEditIcon={props.showEditIcon}
             schemeData={props.schemeData}
             onUpdate={(data) => { ctx.emit('update', data) }} />
