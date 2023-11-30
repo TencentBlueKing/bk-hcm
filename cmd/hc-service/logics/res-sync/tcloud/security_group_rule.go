@@ -232,10 +232,11 @@ func (cli *client) updateSGRule(kt *kit.Kit, sgID string, updateRules map[string
 	for id, rule := range updateRules {
 		//  override id by map key
 		ruleSlice = append(ruleSlice, protocloud.TCloudSGRuleBatchUpdate{
-			ID:                         id,
-			CloudPolicyIndex:           rule.CloudPolicyIndex,
-			Version:                    rule.Version,
-			Protocol:                   rule.Protocol,
+			ID:               id,
+			CloudPolicyIndex: rule.CloudPolicyIndex,
+			Version:          rule.Version,
+			// 如果云上该字段被更新为空，会置于null，但对于海垒来说，空值是 ""，null是不更新。
+			Protocol:                   converter.ValToPtr(converter.PtrToVal(rule.Protocol)),
 			Port:                       rule.Port,
 			CloudServiceID:             rule.CloudServiceID,
 			CloudServiceGroupID:        rule.CloudServiceGroupID,
@@ -301,7 +302,7 @@ func (cli *client) createSGRule(kt *kit.Kit, sgID string, allRules []corecloud.
 			ruleCreates = append(ruleCreates, protocloud.TCloudSGRuleBatchCreate{
 				CloudPolicyIndex:           rule.CloudPolicyIndex,
 				Version:                    rule.Version,
-				Protocol:                   rule.Protocol,
+				Protocol:                   converter.ValToPtr(converter.PtrToVal(rule.Protocol)),
 				Port:                       rule.Port,
 				CloudServiceID:             rule.CloudServiceID,
 				CloudServiceGroupID:        rule.CloudServiceGroupID,
@@ -377,7 +378,7 @@ func isSGRuleChange(version string, cloud *vpc.SecurityGroupPolicy,
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(cloud.Protocol, db.Protocol) {
+	if !assert.IsPtrStringEqual(converter.ValToPtr(converter.PtrToVal(cloud.Protocol)), db.Protocol) {
 		return true
 	}
 
