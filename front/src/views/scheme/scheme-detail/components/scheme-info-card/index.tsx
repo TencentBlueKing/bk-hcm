@@ -1,47 +1,15 @@
-import { defineComponent, reactive } from "vue";
+import { defineComponent, PropType } from "vue";
+import { DEPLOYMENT_ARCHITECTURE_MAP } from '@/constants';
+import { ISchemeListItem } from "@/typings/scheme";
 
 import './index.scss';
 
 export default defineComponent({
   name: 'scheme-info-card',
-  setup () {
-    const schemeDetail = reactive({
-      "biz_type": "游戏",
-      "user_distribution": [
-        {
-          "name": "country_1",
-          "children": [
-            {
-              "name": "province_1_1",
-              "value": 0.1
-            },
-            {
-              "name": "province_1_2",
-              "value": 0.1
-            }
-          ]
-        },
-        {
-          "name": "country_2",
-          "children": [
-            {
-              "name": "province_2_1",
-              "value": 0.1
-            },
-            {
-              "name": "province_2_2",
-              "value": 0.1
-            }
-          ]
-        }
-      ],
-      "cover_ping": 120,
-      "cover_rate": 80,
-      "deployment_architecture": [
-        "xxxx"
-      ]
-    });
-
+  props: {
+    schemeDetail: Object as PropType<ISchemeListItem>,
+  },
+  setup (props) {
     const infos = [
       [
         { id: 'user_distribution', name: '用户据分布地区' },
@@ -57,11 +25,13 @@ export default defineComponent({
     const getValue = (id: string) => {
       switch (id) {
         case 'user_distribution':
-          return schemeDetail.user_distribution.map(item => item.name).join(', ');
+          return props.schemeDetail.user_distribution.map(item => item.name).join(', ');
         case 'network':
-          return `网络延迟 < @todo待确认、ping抖动 < ${schemeDetail.cover_ping}、丢包率 < ${schemeDetail.cover_rate}%`
+          return `网络延迟 < @todo待确认、ping抖动 < ${props.schemeDetail.cover_ping}、丢包率 < ${props.schemeDetail.cover_rate}%`
+        case 'deployment_architecture':
+          return props.schemeDetail.deployment_architecture.map(item => DEPLOYMENT_ARCHITECTURE_MAP[item]).join(', ');
         default:
-          return schemeDetail[id];
+          return props.schemeDetail[id];
       }
     };
 
@@ -85,9 +55,9 @@ export default defineComponent({
             })
           }
         </div>
-        <div class="recreate-btn">
+        {/* <div class="recreate-btn">
           <bk-button outline theme="primary">重新生成</bk-button>
-        </div>
+        </div> */}
       </div>
     )
   },

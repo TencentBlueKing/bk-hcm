@@ -16,27 +16,20 @@
   display: flex;
   align-items: center;
   margin-left: 52px;
-  .tag {
+  .deploy-type {
     display: flex;
     align-items: center;
+    margin-right: 8px;
     padding: 0 8px;
     font-size: 12px;
     line-height: 22px;
     border-radius: 11px;
-    &:not(:first-of-type) {
-      margin-left: 8px;
-    }
-  }
-  .deploy-type {
     color: #45A0A5;
     background: #D8F4F5;
   }
   .cloud-service-type {
-    color: #4193E5;
-    background: #DAE9FD;
-    .tencent-cloud-icon {
-      margin-right: 4px;
-      color: #3a84ff;
+    &:not(:last-of-type) {
+      margin-left: 8px;
     }
   }
 }

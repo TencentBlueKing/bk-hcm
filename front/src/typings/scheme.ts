@@ -31,6 +31,40 @@ export interface ISchemeListItem {
   updated_at: string;
 }
 
+// 方案编辑数据
+export interface ISchemeEditingData {
+  id?: string;
+  bk_biz_id: number;
+  name: string;
+}
+
+// 方案切换下拉框单条数据
+export interface ISchemeSelectorItem {
+  id: string;
+  name: string;
+  bk_biz_id: number;
+  deployment_architecture: string[];
+  vendors: string[];
+  composite_score: number;
+  net_score: number;
+  cost_score: number;
+}
+
+// idc机房列表数据
+export interface IIdcListItem {
+  id: string;
+  vendor: string;
+  name: string;
+  bk_biz_id: number;
+  country: string;
+  region: string;
+  price: number;
+  creator: string;
+  reviser: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface IUserDistributionItem {
   name: string;
   children: { name: string; value: number; }[];

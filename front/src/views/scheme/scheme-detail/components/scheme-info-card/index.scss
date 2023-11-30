@@ -14,7 +14,7 @@
     }
     .info-item {
       margin-bottom: 12px;
-      min-width: 360px;
+      min-width: 400px;
       &:last-child {
         margin-right: auto;
       }
@@ -23,7 +23,7 @@
       color: #63656e;
     }
   }
-  .recreate-btn {
-    flex-shrink: 0;
-  }
+  // .recreate-btn {
+  //   flex-shrink: 0;
+  // }
 }
