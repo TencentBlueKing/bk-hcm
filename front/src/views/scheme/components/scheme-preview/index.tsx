@@ -3,6 +3,7 @@ import { defineComponent, ref } from 'vue';
 import './index.scss';
 import { Info } from 'bkui-vue/lib/icon';
 import SchemePreviewTableCard from './components/scheme-preview-table-card';
+import { useSchemeStore } from '@/store';
 
 const { Option } = Select;
 
@@ -24,6 +25,7 @@ export const SchemeSortOptions = [
 export default defineComponent({
   setup() {
     const sortChoice = ref(SchemeSortOptions[0].key);
+    const schemeStore = useSchemeStore();
     return () => <div class={'scheme-preview-container'}>
       <div class={'scheme-preview-header'}>
         <div class={'scheme-preview-header-title'}>
@@ -55,7 +57,15 @@ export default defineComponent({
       </div>
       <div class={'scheme-preview-content'}>
         {
-          [1, 2, 3].map(_v => <SchemePreviewTableCard></SchemePreviewTableCard>)
+          schemeStore.recommendationSchemes.map(({ composite_score, cost_score, net_score, result_idc_ids }, idx) => (
+          <SchemePreviewTableCard
+            compositeScore={composite_score}
+            costScore={cost_score}
+            netScore={net_score}
+            resultIdcIds={result_idc_ids}
+            idx={idx}
+          />
+          ))
         }
       </div>
     </div>;

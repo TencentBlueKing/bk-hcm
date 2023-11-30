@@ -1,4 +1,4 @@
-import { defineComponent, ref } from 'vue';
+import { PropType, defineComponent, ref, watch } from 'vue';
 import './index.scss';
 import { Table, Tag, Loading, Button, Dialog, Form, Input } from 'bkui-vue';
 import { AngleDown, AngleRight } from 'bkui-vue/lib/icon';
@@ -6,12 +6,41 @@ import VendorTcloud from '@/assets/image/vendor-tcloud.png';
 // @ts-ignore
 import AppSelect from '@blueking/app-select';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
+import { useSchemeStore } from '@/store';
+import { QueryRuleOPEnum } from '@/typings';
+import { IServiceArea } from '@/typings/scheme';
 
 const { FormItem } = Form;
 
 export default defineComponent({
-  setup() {
+  props: {
+    compositeScore: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    costScore: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    netScore: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    resultIdcIds: {
+      type: Array as PropType<Array<string>>,
+      required: true,
+    },
+    idx: {
+      type: Number,
+      required: true,
+    },
+  },
+  setup(props) {
     const businessMapStore = useBusinessMapStore();
+    const schemeStore = useSchemeStore();
     const columns = [
       {
         field: 'name',
@@ -22,11 +51,11 @@ export default defineComponent({
         label: '云厂商',
       },
       {
-        field: 'abc',
+        field: 'region',
         label: '所在地',
       },
       {
-        field: 'edg',
+        field: 'service_areas',
         label: '服务区域',
       },
       {
@@ -36,8 +65,60 @@ export default defineComponent({
     ];
     const tableData = ref([]);
     const isLoading = ref(false);
-    const isExpanded = ref(true);
+    const isExpanded = ref(false);
     const isDialogShow = ref(false);
+    const idcServiceAreasMap = ref<Map<string, Array<IServiceArea>>>(new Map());
+
+    watch(
+      () => isExpanded.value,
+      async () => {
+        if (isExpanded.value && !tableData.value.length) {
+          isLoading.value = true;
+          const listIdcPromise = schemeStore.listIdc(
+            {
+              op: QueryRuleOPEnum.AND,
+              rules: [
+                {
+                  field: 'id',
+                  op: QueryRuleOPEnum.IN,
+                  value: props.resultIdcIds,
+                },
+              ],
+            },
+            {
+              start: 0,
+              limit: props.resultIdcIds.length,
+            },
+          );
+          const queryIdcServiceAreaPromise = schemeStore.queryIdcServiceArea(
+            props.resultIdcIds,
+            schemeStore.userDistribution,
+          );
+          const [listIdcRes, queryIdcServiceAreaRes] = await Promise.all([
+            listIdcPromise,
+            queryIdcServiceAreaPromise,
+          ]);
+          queryIdcServiceAreaRes.data.forEach((v) => {
+            idcServiceAreasMap.value.set(v.idc_id, v.service_areas);
+          });
+          tableData.value = listIdcRes.data.map(v => ({
+            name: v.name,
+            vendor: v.vendor,
+            region: v.region,
+            service_areas: idcServiceAreasMap.value.get(v.id).reduce((acc, cur) => {
+              acc += `${cur.country_name}, ${cur.province_name};`;
+              return acc;
+            }, ''),
+            ping: 0,
+          }));
+          isLoading.value = false;
+        }
+      },
+      {
+        immediate: true,
+      },
+    );
+
     return () => (
       <div class={'scheme-preview-table-card-container'}>
         <div
@@ -75,13 +156,14 @@ export default defineComponent({
           />
           <div class={'scheme-preview-table-card-header-score'}>
             <div class={'scheme-preview-table-card-header-score-item'}>
-              综合评分： <span class={'score-value'}>81</span>
+              综合评分：{' '}
+              <span class={'score-value'}>{props.compositeScore}</span>
             </div>
             <div class={'scheme-preview-table-card-header-score-item'}>
-              网络评分： <span class={'score-value'}>81</span>
+              网络评分： <span class={'score-value'}>{props.netScore}</span>
             </div>
             <div class={'scheme-preview-table-card-header-score-item'}>
-              方案成本： <span class={'score-value'}>$ 300</span>
+              方案成本： <span class={'score-value'}>$ {props.costScore}</span>
             </div>
           </div>
           <div class={'scheme-preview-table-card-header-operation'}>
