@@ -31,7 +31,6 @@ import (
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service/subnet"
 	dataclient "hcm/pkg/client/data-service"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
@@ -104,7 +103,7 @@ func (s *Subnet) TCloudSubnetCreate(kt *kit.Kit, req *hcservice.TCloudSubnetBatc
 	createReqs := make([]cloud.SubnetCreateReq[cloud.TCloudSubnetCreateExt], 0, len(createdSubnets))
 	cloudRTIDs := make([]string, 0, len(req.Subnets))
 	for _, subnet := range createdSubnets {
-		createReq := convertTCloudSubnetCreateReq(&subnet, req.AccountID, constant.UnassignedBiz)
+		createReq := convertTCloudSubnetCreateReq(&subnet, req.AccountID, req.BkBizID)
 		createReqs = append(createReqs, createReq)
 		cloudRTIDs = append(cloudRTIDs, createReq.CloudRouteTableID)
 	}
