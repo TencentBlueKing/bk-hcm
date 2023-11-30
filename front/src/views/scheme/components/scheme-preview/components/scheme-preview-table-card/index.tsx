@@ -37,6 +37,10 @@ export default defineComponent({
       type: Number,
       required: true,
     },
+    onViewDetail: {
+      required: true,
+      type: Function,
+    },
   },
   setup(props) {
     const businessMapStore = useBusinessMapStore();
@@ -148,7 +152,7 @@ export default defineComponent({
             theme='success'
             radius='11px'
             class={'scheme-preview-table-card-header-tag'}>
-            集中式部署
+            分布式部署
           </Tag>
           <img
             src={VendorTcloud}
@@ -167,7 +171,7 @@ export default defineComponent({
             </div>
           </div>
           <div class={'scheme-preview-table-card-header-operation'}>
-            <Button class={'mr8'}>查看详情</Button>
+            <Button class={'mr8'} onClick={props.onViewDetail}>查看详情</Button>
             <Button theme='primary' onClick={() => (isDialogShow.value = true)}>
               保存
             </Button>

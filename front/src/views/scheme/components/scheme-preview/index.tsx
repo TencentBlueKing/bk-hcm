@@ -1,4 +1,4 @@
-import { Button, Select } from 'bkui-vue';
+import { Select } from 'bkui-vue';
 import { defineComponent, ref } from 'vue';
 import './index.scss';
 import { Info } from 'bkui-vue/lib/icon';
@@ -23,7 +23,13 @@ export const SchemeSortOptions = [
 ];
 
 export default defineComponent({
-  setup() {
+  props: {
+    onViewDetail: {
+      required: true,
+      type: Function,
+    },
+  },
+  setup(props) {
     const sortChoice = ref(SchemeSortOptions[0].key);
     const schemeStore = useSchemeStore();
     return () => <div class={'scheme-preview-container'}>
@@ -49,9 +55,6 @@ export default defineComponent({
                 label={val}
               ></Option>
             ))),
-            suffix: () => (<Button>
-              123
-            </Button>),
           }}
         </Select>
       </div>
@@ -64,6 +67,7 @@ export default defineComponent({
             netScore={net_score}
             resultIdcIds={result_idc_ids}
             idx={idx}
+            onViewDetail={props.onViewDetail}
           />
           ))
         }
