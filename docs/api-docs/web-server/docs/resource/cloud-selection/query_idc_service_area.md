@@ -99,10 +99,11 @@ POST /api/v1/cloud/selections/idcs/services/areas/query
 
 #### IdcServiceAreaRel
 
-| 参数名称          | 参数类型              | 描述     |
-|---------------|-------------------|--------|
-| idc_id        | string            | 机房ID   |
-| service_areas | ServiceArea array | 服务区域列表 |
+| 参数名称          | 参数类型              | 描述         |
+|---------------|-------------------|------------|
+| idc_id        | string            | 机房ID       |
+| avg_latency   | float64           | 到服务区域的平均延迟 |
+| service_areas | ServiceArea array | 服务区域列表     |
 
 #### ServiceArea
 
