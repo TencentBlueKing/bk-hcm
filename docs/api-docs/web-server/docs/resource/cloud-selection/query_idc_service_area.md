@@ -6,7 +6,7 @@
 
 ### URL
 
-POST /api/v1/cloud/selection/idcs/services/areas/query
+POST /api/v1/cloud/selections/idcs/services/areas/query
 
 ### 输入参数
 
