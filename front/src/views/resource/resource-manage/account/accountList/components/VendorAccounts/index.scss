@@ -7,6 +7,12 @@
     position: sticky;
     top: 0;
     background-color: #fff;
+
+    & > svg {
+      margin: 0 9px 0 6px;
+      width: 20px;
+      height: 20px;
+    }
   }
 
   .vendor-account-menu,
@@ -30,9 +36,9 @@
     }
 
     .vendor-icon {
+      margin: 0 12px 0 8px;
       width: 16px;
       height: 16px;
-      margin-right: 3px;
     }
 
     .vendor-account-menu-count {
