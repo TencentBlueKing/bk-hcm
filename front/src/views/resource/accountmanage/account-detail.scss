@@ -11,8 +11,15 @@
 }
 
 .account-edit-icon {
-  color: #979BA5;
+  position: relative;
+  top: -1px;
+  margin: 0 6px 0 25px;
+  color: #3A84FF;
   cursor: pointer;
+
+  &:hover {
+    color: #3A84FF !important;
+  }
 }
 
 .button-warp {

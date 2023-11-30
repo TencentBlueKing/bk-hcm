@@ -868,7 +868,7 @@ export default defineComponent({
           {
             label: '密码',
             required: true,
-            description: '密码至少必须包含大写字母、小写字母、数字和特殊字符 !@$%^-_=+[{}]:,./? 中的三种',
+            description: '密码必须包含3种组合：1.大写字母，2.小写字母，3. 数字或特殊字符（!@$%^-_=+[{}]:,./?）',
             content: [
               {
                 property: 'username',

@@ -64,7 +64,7 @@ export default defineComponent({
                           ? 'icon bk-icon icon-down-shape vendor-account-menu-dropdown-icon'
                           : 'icon bk-icon icon-right-shape vendor-account-menu-dropdown-icon'
                       }></i>
-                    <img src={icon} class={'vendor-icon'}></img>
+                    {icon}
                     <span class={'vendor-account-title'}>{name}</span>
                     <span class={'vendor-account-menu-count'}>{count}</span>
                   </div>
