@@ -56,7 +56,7 @@ export default defineComponent({
         <div class={'scheme-preview-content'}>
           {schemeStore.recommendationSchemes.length > 0
             ? schemeStore.recommendationSchemes.map((
-              { composite_score, cost_score, net_score, result_idc_ids },
+              { composite_score, cost_score, net_score, result_idc_ids, cover_rate },
               idx,
             ) => (
                   <SchemePreviewTableCard
@@ -66,6 +66,7 @@ export default defineComponent({
                     resultIdcIds={result_idc_ids}
                     idx={idx}
                     onViewDetail={props.onViewDetail}
+                    coverRate={cover_rate}
                   />
             ))
             : (

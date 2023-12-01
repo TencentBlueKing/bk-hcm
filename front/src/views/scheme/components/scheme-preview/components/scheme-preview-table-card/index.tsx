@@ -42,6 +42,11 @@ export default defineComponent({
       required: true,
       type: Function,
     },
+    coverRate: {
+      required: true,
+      type: Number,
+      default: 0,
+    },
   },
   setup(props) {
     const businessMapStore = useBusinessMapStore();
