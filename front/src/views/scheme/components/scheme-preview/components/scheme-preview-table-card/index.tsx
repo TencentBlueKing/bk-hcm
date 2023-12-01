@@ -1,4 +1,4 @@
-import { PropType, defineComponent, ref, watch } from 'vue';
+import { PropType, defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
 import { Table, Tag, Loading, Button, Dialog, Form, Input } from 'bkui-vue';
 import { AngleDown, AngleRight } from 'bkui-vue/lib/icon';
@@ -75,6 +75,16 @@ export default defineComponent({
       service_areas: Array<IServiceArea>;
       avg_latency: number;
     }>>(new Map());
+    const formData = reactive({
+      name: `方案${props.idx + 1}`,
+      bk_biz_id: '',
+    });
+    const formInstance = ref(null);
+
+    const handleConfirm = async () => {
+      await formInstance.value.validate();
+      isDialogShow.value = false;
+    };
 
     watch(
       () => isExpanded.value,
@@ -153,7 +163,7 @@ export default defineComponent({
             />
           )}
 
-          <p class={'scheme-preview-table-card-header-title'}>方案一</p>
+          <p class={'scheme-preview-table-card-header-title'}>{formData.name}</p>
           <Tag
             theme='success'
             radius='11px'
@@ -196,13 +206,21 @@ export default defineComponent({
           title='保存该方案'
           isShow={isDialogShow.value}
           onClosed={() => (isDialogShow.value = false)}
-          onConfirm={() => (isDialogShow.value = false)}>
-          <Form formType='vertical'>
-            <FormItem label='方案名称' required>
-              <Input />
+          onConfirm={handleConfirm}>
+          <Form formType='vertical' model={formData} ref={formInstance}>
+            <FormItem label='方案名称' required property='name'>
+              <Input v-model={formData.name}/>
             </FormItem>
-            <FormItem label='标签'>
-              <AppSelect data={businessMapStore.businessList} />
+            <FormItem label='标签' required property='bk_biz_id'>
+              <AppSelect
+                data={businessMapStore.businessList}
+                value={formData.bk_biz_id}
+                onChange={
+                  (val: {id: string, val: string}) => {
+                    formData.bk_biz_id = val.id;
+                  }
+                }
+              />
             </FormItem>
           </Form>
         </Dialog>
