@@ -228,15 +228,19 @@ func (svc *service) QueryServiceArea(cts *rest.Contexts) (any, error) {
 				})
 		}
 	}
-
+	resp := make([]coresel.IdcServiceAreaRel, 0, len(idcIdToServiceArea))
 	// convert map to slice type
-	resp := converter.MapToSlice(idcIdToServiceArea,
-		func(idcID string, areas []coresel.FlatAreaInfo) coresel.IdcServiceAreaRel {
-			return coresel.IdcServiceAreaRel{
-				IdcID:        idcID,
-				ServiceAreas: areas,
-			}
+	for idcID, areas := range idcIdToServiceArea {
+		totalLatency := 0.0
+		for _, area := range areas {
+			totalLatency += area.NetworkLatency
+		}
+		resp = append(resp, coresel.IdcServiceAreaRel{
+			IdcID:        idcID,
+			AvgLatency:   totalLatency / float64(len(areas)),
+			ServiceAreas: areas,
 		})
+	}
 	return resp, nil
 }
 
