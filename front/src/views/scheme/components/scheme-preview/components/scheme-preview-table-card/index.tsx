@@ -94,6 +94,7 @@ export default defineComponent({
     });
     const formInstance = ref(null);
     const isSaved = ref(false);
+    const schemeVendors = ref([]);
 
     const handleConfirm = async () => {
       await formInstance.value.validate();
@@ -116,6 +117,17 @@ export default defineComponent({
       });
       isDialogShow.value = false;
       isSaved.value = true;
+    };
+
+    const handleViewDetail = () => {
+      schemeStore.setSchemeData({
+        deployment_architecture: [],
+        vendors: schemeVendors.value,
+        composite_score: props.compositeScore,
+        net_score: props.netScore,
+        cost_score: props.costScore,
+      });
+      props.onViewDetail();
     };
 
     watch(
@@ -163,6 +175,10 @@ export default defineComponent({
             }, ''),
             ping: idcServiceAreasMap.value.get(v.id).avg_latency,
           }));
+          schemeVendors.value = Array.from(listIdcRes.data.reduce((acc, cur) => {
+            acc.add(cur.vendor);
+            return acc;
+          }, new Set()));
           isLoading.value = false;
         }
       },
@@ -170,7 +186,6 @@ export default defineComponent({
         immediate: true,
       },
     );
-
     return () => (
       <div class={'scheme-preview-table-card-container'}>
         <div
@@ -219,7 +234,7 @@ export default defineComponent({
             </div>
           </div>
           <div class={'scheme-preview-table-card-header-operation'}>
-            <Button class={'mr8'} onClick={props.onViewDetail}>查看详情</Button>
+            <Button class={'mr8'} onClick={handleViewDetail}>查看详情</Button>
             <Button theme='primary' onClick={() => (isDialogShow.value = true)} disabled={isSaved.value}>
               保存
             </Button>
@@ -247,7 +262,7 @@ export default defineComponent({
               <AppSelect
                 data={businessMapStore.businessList}
                 value={{
-                  id: formData.bk_biz_id
+                  id: formData.bk_biz_id,
                 }}
                 onChange={
                   (val: {id: string, val: string}) => {

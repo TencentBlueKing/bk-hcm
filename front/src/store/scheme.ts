@@ -1,7 +1,7 @@
 import http from '@/http';
 import { defineStore } from 'pinia';
 import { QueryFilterType, IPageQuery, IQueryResData } from '@/typings/common';
-import { IAreaInfo, IBizTypeResData, ICountriesListResData, IGenerateSchemesResData, IUserDistributionResData, IGenerateSchemesReqParams, IRecommendSchemeList, IIdcServiceAreaRel, IIdcInfo } from '@/typings/scheme';
+import { IAreaInfo, IBizTypeResData, ICountriesListResData, IGenerateSchemesResData, IUserDistributionResData, IGenerateSchemesReqParams, IRecommendSchemeList, IIdcServiceAreaRel, IIdcInfo, ISchemeSelectorItem } from '@/typings/scheme';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -18,6 +18,14 @@ export const useSchemeStore = defineStore({
       biz_type: '',
       deployment_architecture: '',
     },
+    schemeList: [] as ISchemeSelectorItem[],
+    schemeData: {
+      deployment_architecture: [],
+      vendors: [],
+      composite_score: 0,
+      net_score: 0,
+      cost_score: 0,
+    },
   }),
   actions: {
     setUserDistribution(data: Array<IAreaInfo>) {
@@ -31,6 +39,12 @@ export const useSchemeStore = defineStore({
       this.schemeConfig.biz_type = biz_type;
       this.schemeConfig.deployment_architecture = deployment_architecture;
     },
+    setSchemeList(list: ISchemeSelectorItem[]) {
+      this.schemeList = list;
+    },
+    setSchemeData(data: typeof this.schemeData) {
+      this.schemeData = data;
+    },
     /**
      * 获取资源选型方案列表
      * @param filter 过滤参数
@@ -43,17 +57,17 @@ export const useSchemeStore = defineStore({
     /**
      * 删除资源选型方案
      * @param ids 方案id列表
-     * @returns 
+     * @returns
      */
-    deleteCloudSelectionScheme (ids: string[]) {
+    deleteCloudSelectionScheme(ids: string[]) {
       return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/schemes/batch`, { data: { ids } });
     },
     /**
      * 获取资源选型方案详情
      * @param id 方案id
-     * @returns 
+     * @returns
      */
-    getCloudSelectionScheme (id: string) {
+    getCloudSelectionScheme(id: string) {
       return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/schemes/${id}`);
     },
     /**
@@ -90,7 +104,7 @@ export const useSchemeStore = defineStore({
      * 查询IDC机房列表
      * @param filter 过滤参数
      * @param page 分页参数
-     * @returns 
+     * @returns
      */
     // listIdc (filter: QueryFilterType, page: IPageQuery) {
     //   return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/idcs/list`, { filter, page });
