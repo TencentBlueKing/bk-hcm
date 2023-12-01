@@ -76,8 +76,12 @@ export const useAllVendorsAccounts = () => {
           ? [
             { field: 'vendor', op: QueryRuleOPEnum.EQ, value: vendor },
             { field: 'name', op: QueryRuleOPEnum.CS, value: accountName },
+            { field: 'type', op: QueryRuleOPEnum.EQ, value: 'resource' },
           ]
-          : [{ field: 'vendor', op: QueryRuleOPEnum.EQ, value: vendor }],
+          : [
+            { field: 'vendor', op: QueryRuleOPEnum.EQ, value: vendor },
+            { field: 'type', op: QueryRuleOPEnum.EQ, value: 'resource' },
+          ],
       }))
       .map((filter) => {
         return [false, true].map(isCount => ({
