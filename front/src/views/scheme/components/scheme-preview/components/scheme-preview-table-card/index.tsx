@@ -1,6 +1,6 @@
 import { PropType, defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
-import { Table, Tag, Loading, Button, Dialog, Form, Input } from 'bkui-vue';
+import { Table, Tag, Loading, Button, Dialog, Form, Input, Message } from 'bkui-vue';
 import { AngleDown, AngleRight } from 'bkui-vue/lib/icon';
 import VendorTcloud from '@/assets/image/vendor-tcloud.png';
 // @ts-ignore
@@ -93,10 +93,29 @@ export default defineComponent({
       bk_biz_id: '',
     });
     const formInstance = ref(null);
+    const isSaved = ref(false);
 
     const handleConfirm = async () => {
       await formInstance.value.validate();
+      const saveData = {
+        ...formData,
+        user_distribution: schemeStore.userDistribution,
+        cover_rate: props.coverRate,
+        composite_score: props.compositeScore,
+        net_score: props.netScore,
+        cost_score: props.costScore,
+        result_idc_ids: props.resultIdcIds,
+        cover_ping: schemeStore.schemeConfig.cover_ping,
+        biz_type: schemeStore.schemeConfig.biz_type,
+        deployment_architecture: schemeStore.schemeConfig.deployment_architecture,
+      };
+      await schemeStore.createScheme(saveData);
+      Message({
+        theme: 'success',
+        message: '保存成功',
+      });
       isDialogShow.value = false;
+      isSaved.value = true;
     };
 
     watch(
@@ -201,7 +220,7 @@ export default defineComponent({
           </div>
           <div class={'scheme-preview-table-card-header-operation'}>
             <Button class={'mr8'} onClick={props.onViewDetail}>查看详情</Button>
-            <Button theme='primary' onClick={() => (isDialogShow.value = true)}>
+            <Button theme='primary' onClick={() => (isDialogShow.value = true)} disabled={isSaved.value}>
               保存
             </Button>
           </div>
@@ -227,7 +246,9 @@ export default defineComponent({
             <FormItem label='标签' required property='bk_biz_id'>
               <AppSelect
                 data={businessMapStore.businessList}
-                value={formData.bk_biz_id}
+                value={{
+                  id: formData.bk_biz_id
+                }}
                 onChange={
                   (val: {id: string, val: string}) => {
                     formData.bk_biz_id = val.id;

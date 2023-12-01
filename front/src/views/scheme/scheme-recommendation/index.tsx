@@ -71,6 +71,7 @@ export default defineComponent({
       const res: IGenerateSchemesResData = await schemeStore.generateSchemes(
         formData,
       );
+      schemeStore.setSchemeConfig(formData.cover_ping, formData.biz_type, formData.deployment_architecture);
       generateSchemesLoading.value = false;
       schemeStore.setRecommendationSchemes(res.data);
       scene.value = 'preview';

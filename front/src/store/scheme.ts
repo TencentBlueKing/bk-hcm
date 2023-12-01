@@ -12,6 +12,12 @@ export const useSchemeStore = defineStore({
   state: () => ({
     userDistribution: [] as Array<IAreaInfo>,
     recommendationSchemes: [] as IRecommendSchemeList,
+    // 用户选择的配置
+    schemeConfig: {
+      cover_ping: 0,
+      biz_type: '',
+      deployment_architecture: '',
+    },
   }),
   actions: {
     setUserDistribution(data: Array<IAreaInfo>) {
@@ -19,6 +25,11 @@ export const useSchemeStore = defineStore({
     },
     setRecommendationSchemes(data: IRecommendSchemeList) {
       this.recommendationSchemes = data;
+    },
+    setSchemeConfig(cover_ping: number, biz_type: string, deployment_architecture: string) {
+      this.schemeConfig.cover_ping = cover_ping;
+      this.schemeConfig.biz_type = biz_type;
+      this.schemeConfig.deployment_architecture = deployment_architecture;
     },
     /**
      * 获取资源选型方案列表
@@ -151,6 +162,9 @@ export const useSchemeStore = defineStore({
         filter,
         page,
       });
+    },
+    createScheme(data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/schemes/create`, data);
     },
   },
 });
