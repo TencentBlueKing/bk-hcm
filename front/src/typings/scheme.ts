@@ -65,6 +65,12 @@ export interface IIdcListItem {
   updated_at: string;
 }
 
+// idc机房延迟数据列表单条数据
+export interface IIdcLatencyListItem {
+  name: string;
+  children: { name: string; value: { [key: string]: number; } }[];
+}
+
 export interface IUserDistributionItem {
   name: string;
   children: { name: string; value: number; }[];
