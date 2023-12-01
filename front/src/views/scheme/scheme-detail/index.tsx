@@ -2,7 +2,8 @@ import { defineComponent, ref, reactive, computed, watch, onMounted } from "vue"
 import { useRoute, useRouter } from 'vue-router';
 import { InfoBox, Message } from "bkui-vue";
 import { useSchemeStore } from "@/store";
-import { QueryFilterType } from '@/typings/common';
+import { QueryFilterType, QueryRuleOPEnum } from '@/typings/common';
+import { IIdcListItem } from "@/typings/scheme";
 import { ISchemeListItem, ISchemeEditingData, ISchemeSelectorItem } from "@/typings/scheme";
 import DetailHeader from "./components/detail-header";
 import SchemeInfoCard from "./components/scheme-info-card";
@@ -23,12 +24,15 @@ export default defineComponent({
     const detailLoading = ref(true);
     let schemeList = reactive<ISchemeListItem[]>([]);
     const schemeListLoading = ref(false);
+    const idcList = ref<IIdcListItem[]>([]);
+    const idcListLoading = ref(false);
 
     watch(() => route.query?.sid, val => {
       schemeId.value = val;
       getSchemeDetail();
     });
 
+    // 获取方案详情
     const getSchemeDetail = async () => {
       detailLoading.value = true;
       const res = await schemeStore.getCloudSelectionScheme(schemeId.value as string);
@@ -46,7 +50,24 @@ export default defineComponent({
       const res = await schemeStore.listCloudSelectionScheme(filterQuery, { start: 0, limit: 500 });
       schemeList = res.data.details;
       schemeListLoading.value = false;
-    }
+    };
+
+    // 查询idc机房列表
+    const getIdcList = async () => {
+      idcListLoading.value = true;
+      const filterQuery: QueryFilterType = {
+        op: 'and',
+        rules: [{
+          field: 'id',
+          op: QueryRuleOPEnum.IN,
+          value: schemeDetail.value.result_idc_ids,
+        }]
+      };
+      const res = await schemeStore.listIdc(filterQuery, { start: 0, limit: 500 });
+      console.log(res);
+      idcList.value = res.data;
+      idcListLoading.value = false;
+    };
 
     const headerData = computed((): ISchemeSelectorItem => {
       if (schemeDetail.value) {
@@ -83,6 +104,7 @@ export default defineComponent({
       getSchemeList();
       if (schemeId) {
         await getSchemeDetail();
+        getIdcList();
       }
     });
 
@@ -94,6 +116,7 @@ export default defineComponent({
               <>
                 <DetailHeader
                   schemeList={schemeList}
+                  schemeListLoading={schemeListLoading.value}
                   schemeData={headerData.value}
                   showEditIcon={true}
                   onUpdate={handleUpdate}>
@@ -105,9 +128,9 @@ export default defineComponent({
                 </DetailHeader>
                 <section class="detail-content-area">
                   <SchemeInfoCard schemeDetail={schemeDetail.value} />
-                  <section  class="chart-content-wrapper">
-                    <IdcMapDisplay ids={schemeDetail.value.result_idc_ids} />
-                    <NetworkHeatMap ids={schemeDetail.value.result_idc_ids} areaTopo={schemeDetail.value.user_distribution} />
+                  <section class="chart-content-wrapper">
+                    <IdcMapDisplay list={idcList.value} />
+                    <NetworkHeatMap idcList={idcList.value} areaTopo={schemeDetail.value.user_distribution} />
                   </section>
                 </section>
               </>

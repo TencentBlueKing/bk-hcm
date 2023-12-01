@@ -11,6 +11,7 @@
     display: flex;
     align-items: center;
     padding: 4px 8px;
+    cursor: pointer;
     &.opened {
       background: #E1ECFF;
       border-radius: 2px;
@@ -23,7 +24,6 @@
       font-size: 16px;
       color: #313238;
       line-height: 24px;
-      cursor: pointer;
     }
     .arrow-icon {
       margin-left: 8px;
@@ -49,6 +49,10 @@
     width: 480px;
     max-height: 400px;
     overflow: auto;
+    .bk-loading-wrapper {
+      display: block;
+      padding: 50px 0;
+    }
   }
   .scheme-item {
     padding: 16px 24px 22px;
@@ -62,22 +66,32 @@
     .scheme-name-area {
       display: flex;
       align-items: center;
-    }
-    .name-text {
-      font-size: 16px;
-      font-weight: 700;
-      color: #313238;
-    }
-    .deploy-type-tag {
-      display: flex;
-      align-items: center;
-      margin-right: 8px;
-      padding: 0 8px;
-      font-size: 12px;
-      line-height: 22px;
-      border-radius: 11px;
-      color: #45A0A5;
-      background: #D8F4F5;
+      .name-text {
+        font-size: 16px;
+        font-weight: 700;
+        color: #313238;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+      }
+      .deploy-type-tag {
+        display: flex;
+        align-items: center;
+        padding: 0 8px;
+        font-size: 12px;
+        line-height: 22px;
+        border-radius: 11px;
+        color: #45A0A5;
+        background: #D8F4F5;
+      }
+      .tag-list {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+        .tag-item:not(:last-of-type) {
+          margin-right: 8px;
+        }
+      }
     }
     .score-area {
       display: flex;

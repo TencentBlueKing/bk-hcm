@@ -66,6 +66,12 @@ export interface IIdcListItem {
   updated_at: string;
 }
 
+// idc机房延迟数据列表单条数据
+export interface IIdcLatencyListItem {
+  name: string;
+  children: { name: string; value: { [key: string]: number; } }[];
+}
+
 export interface IUserDistributionItem {
   name: string;
   children: { name: string; value: number; }[];
@@ -106,6 +112,7 @@ export interface IAreaInfo {
   children?: Array<IAreaInfo>;
 }
 export interface IGenerateSchemesReqParams {
+  selected_countries: Array<string>,
   cover_ping: number;
   deployment_architecture: Array<'distributed' | 'centralized'>;
   biz_type: string;

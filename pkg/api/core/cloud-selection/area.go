@@ -61,5 +61,6 @@ type FlatAreaInfo struct {
 // IdcServiceAreaRel ...
 type IdcServiceAreaRel struct {
 	IdcID        string         `json:"idc_id,omitempty"`
+	AvgLatency   float64        `json:"avg_latency"`
 	ServiceAreas []FlatAreaInfo `json:"service_areas,omitempty"`
 }

@@ -28,7 +28,6 @@ export default defineComponent({
 
     const initLoading = ref(false);
     const countriesList = ref<Array<string>>([]);
-    const selectedCountriesList = ref<Array<string>>([]);
     const bizTypeList = ref<IBizTypeList>([]);
     const selectedBizType = computed<IBizType>(() =>
       bizTypeList.value.find((item) => item.biz_type === formData.biz_type),
@@ -36,6 +35,7 @@ export default defineComponent({
 
     const generateSchemesLoading = ref(false);
     const formData = reactive<IGenerateSchemesReqParams>({
+      selected_countries: [],
       biz_type: '',
       cover_ping: null,
       deployment_architecture: [],
@@ -54,7 +54,7 @@ export default defineComponent({
       clearLastData();
       countryChangeLoading.value = true;
       const res = await schemeStore.queryUserDistributions(
-        selectedCountriesList.value.reduce((prev, item) => {
+        formData.selected_countries.reduce((prev, item) => {
           prev.push({ name: item });
           return prev;
         }, []),
@@ -66,6 +66,7 @@ export default defineComponent({
     const isUserProportionDetailDialogShow = ref(false);
 
     const generateSchemes = async () => {
+      await formRef.value.validate();
       generateSchemesLoading.value = true;
       const res: IGenerateSchemesResData = await schemeStore.generateSchemes(
         formData,
@@ -83,10 +84,11 @@ export default defineComponent({
       {
         label: '用户分布地区',
         required: true,
+        property: 'selected_countries',
         content: () => (
           <bk-select
             loading={initLoading.value}
-            v-model={selectedCountriesList.value}
+            v-model={formData.selected_countries}
             multiple
             show-select-all
             onBlur={handleChangeCountry}
@@ -100,6 +102,7 @@ export default defineComponent({
       {
         label: '业务类型',
         required: true,
+        property: 'biz_type',
         content: () => (
           <bk-select loading={initLoading.value} v-model={formData.biz_type}>
             {bizTypeList.value.map((bizType) => (
@@ -115,6 +118,7 @@ export default defineComponent({
       {
         label: '用户网络容忍',
         extClass: 'prompt-icon-wrap',
+        property: 'cover_ping',
         content: [
           {
             label: '网络延迟',
@@ -182,6 +186,8 @@ export default defineComponent({
       },
     ]);
     const scene = ref<'blank' | 'preview' | 'detail'>('blank');
+    const formRef = ref();
+    const formRules = {};
 
     const getInitData = async () => {
       initLoading.value = true;
@@ -232,13 +238,10 @@ export default defineComponent({
                 onClick={() => (toggleClose.value = !toggleClose.value)}></i>
             </div>
             <div class='content-wrap'>
-              <bk-form form-type='vertical'>
+              <bk-form form-type='vertical' ref={formRef} model={formData} rules={formRules} >
                 {formItemOptions.value.map(
-                  ({ label, required, content, extClass }) => (
-                    <bk-form-item
-                      label={label}
-                      required={required}
-                      class={extClass}>
+                  ({ label, required, content, extClass, property }) => (
+                    <bk-form-item label={label} required={required} class={extClass} property={property}>
                       {Array.isArray(content) ? (
                         <div class='sub-form-item-wrap'>
                           {content.map((sub) => (

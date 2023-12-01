@@ -15,6 +15,7 @@ export default defineComponent({
   emits: ['update'],
   props: {
     schemeList: Array as PropType<ISchemeSelectorItem[]>,
+    schemeListLoading: Boolean,
     showEditIcon: Boolean,
     schemeData: Object,
   },
@@ -55,7 +56,9 @@ export default defineComponent({
             theme="light"
             placement="bottom-start"
             trigger="click"
-            arrow={false}>
+            arrow={false}
+            onAfterShow={() => { isSelectorOpen.value = true }}
+            onAfterHidden={() => { isSelectorOpen.value = false }}>
             {{
               default: () => (
                 <div class={['selector-trigger', isSelectorOpen.value ? 'opened' : '']}>
@@ -65,100 +68,53 @@ export default defineComponent({
               ),
               content: () => (
                 <div class="scheme-list">
-                  { props.schemeList.map(scheme => {
-                    return (
-                      <div
-                        class={['scheme-item', scheme.id === props.schemeData.id ? 'actived' : '']}
-                        onClick={() => { handleSelect(scheme.id) }}>
-                        <div class="scheme-name-area">
-                          <div class="name-text">{scheme.name}</div>
-                          <div class="tag-list">
-                            {
-                              scheme.deployment_architecture?.map(item => {
-                                return (<div class="deploy-type-tag" key={item}>{ DEPLOYMENT_ARCHITECTURE_MAP[item] }</div>)
-                              })
-                            }
-                            {
-                              scheme.vendors?.map(item => {
-                                return (<CloudServiceTag class="cloud-service-type" key={item} type={item} showIcon={true} />)
-                              })
-                            }
+                  {
+                    props.schemeListLoading
+                      ?
+                      <bk-loading loading={true}/>
+                      :
+                      props.schemeList.map(scheme => {
+                        return (
+                          <div
+                            class={['scheme-item', scheme.id === props.schemeData.id ? 'actived' : '']}
+                            onClick={() => { handleSelect(scheme.id) }}>
+                            <div class="scheme-name-area">
+                              <div class="name-text">{scheme.name}</div>
+                              <div class="tag-list">
+                                {
+                                  scheme.deployment_architecture?.map(item => {
+                                    return (<div class="tag-item deploy-type-tag" key={item}>{ DEPLOYMENT_ARCHITECTURE_MAP[item] }</div>)
+                                  })
+                                }
+                                {
+                                  scheme.vendors?.map(item => {
+                                    return (<CloudServiceTag class="tag-item" key={item} type={item} showIcon={true} />)
+                                  })
+                                }
+                              </div>
+                            </div>
+                            <div class="score-area">
+                              <div class="score-item">
+                                <span class="label">综合评分：</span>
+                                <span class="value">{scheme.composite_score}</span>
+                              </div>
+                              <div class="score-item">
+                                <span class="label">网络评分：</span>
+                                <span class="value">{scheme.net_score}</span>
+                              </div>
+                              <div class="score-item">
+                                <span class="label">方案成本：</span>
+                                <span class="value">$ {scheme.cost_score}</span>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                        <div class="score-area">
-                          <div class="score-item">
-                            <span class="label">综合评分：</span>
-                            <span class="value">{scheme.composite_score}</span>
-                          </div>
-                          <div class="score-item">
-                            <span class="label">网络评分：</span>
-                            <span class="value">{scheme.net_score}</span>
-                          </div>
-                          <div class="score-item">
-                            <span class="label">方案成本：</span>
-                            <span class="value">$ {scheme.cost_score}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  }) }
+                        )
+                      }) 
+                  }
                 </div>
               )
             }}
           </Popover>
-          {/* <div
-            class={['selector-trigger', isSelectorOpen.value ? 'opened' : '']}
-            v-bk-tooltips={{
-              placement: 'bottom-start',
-              arrow: false,
-              trigger: 'click',
-              theme: 'light',
-              extCls: 'resource-selection-scheme-list-popover',
-              onShow: () => { isSelectorOpen.value = true },
-              onHide: () => { isSelectorOpen.value = false },
-              content: (
-                <div class="scheme-list" onMousedown={withModifiers(() => { debugger }, ['stop', 'prevent'])}>
-                  { props.schemeList.map(scheme => {
-                    return (
-                      <div class={['scheme-item', scheme.id === props.schemeData.id ? 'actived' : '']}>
-                        <div class="scheme-name-area">
-                          <div class="name-text">{scheme.name}</div>
-                          <div class="tag-list">
-                            {
-                              scheme.deployment_architecture?.map(item => {
-                                return (<div class="deploy-type-tag" key={item}>{ DEPLOYMENT_ARCHITECTURE_MAP[item] }</div>)
-                              })
-                            }
-                            {
-                              scheme.vendors?.map(item => {
-                                return (<CloudServiceTag class="cloud-service-type" key={item} type={item} showIcon={true} />)
-                              })
-                            }
-                          </div>
-                        </div>
-                        <div class="score-area">
-                          <div class="score-item">
-                            <span class="label">综合评分：</span>
-                            <span class="value">{scheme.composite_score}</span>
-                          </div>
-                          <div class="score-item">
-                            <span class="label">网络评分：</span>
-                            <span class="value">{scheme.net_score}</span>
-                          </div>
-                          <div class="score-item">
-                            <span class="label">方案成本：</span>
-                            <span class="value">$ {scheme.cost_score}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  }) }
-                </div>
-              )
-            }}>
-            <div class="scheme-name">{props.schemeData.name}</div>
-            <AngleUpFill class="arrow-icon" />
-          </div> */}
           {
             props.showEditIcon ? 
               (<div class="edit-btn" onClick={() => { isEditDialogOpen.value = true }}>
