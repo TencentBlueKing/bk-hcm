@@ -61,10 +61,14 @@ export default defineComponent({
       {
         field: 'service_areas',
         label: '服务区域',
+        width: 500,
       },
       {
         field: 'ping',
         label: '平均延迟',
+        render: ({ cell }: {cell: number}) => {
+          return `${Math.floor(cell)} ms`;
+        },
       },
     ];
     const tableData = ref([]);
