@@ -1,6 +1,6 @@
 ### 描述
 
-- 该接口提供版本：v9.9.9+
+- 该接口提供版本：v1.2.1+
 - 该接口所需权限：账号录入。
 - 该接口功能描述：通过秘钥获取账号信息。
 
@@ -10,46 +10,46 @@ POST /api/v1/cloud/vendors/{vendor}/accounts/secret
 
 #### 路径参数说明
 
-| 参数名称   | 参数类型   | 必选  | 描述                                   |
-|--------|--------|-----|--------------------------------------|
-| vendor | string | 是   | 云厂商（枚举值：tcloud、aws、huawei、gcp、azure） |
+| 参数名称   | 参数类型   | 必选 | 描述                                   |
+|--------|--------|----|--------------------------------------|
+| vendor | string | 是  | 云厂商（枚举值：tcloud、aws、huawei、gcp、azure） |
 
 ### 输入参数
 
 #### TCloud
 
-| 参数名称             | 参数类型   | 必选  | 描述    |
-|------------------|--------|-----|-------|
-| cloud_secret_id  | string | 是   | 云加密ID |
-| cloud_secret_key | string | 是   | 云密钥   |
+| 参数名称             | 参数类型   | 必选 | 描述    |
+|------------------|--------|----|-------|
+| cloud_secret_id  | string | 是  | 云加密ID |
+| cloud_secret_key | string | 是  | 云密钥   |
 
 #### AWS
 
-| 参数名称             | 参数类型   | 必选  | 描述    |
-|------------------|--------|-----|-------|
-| cloud_secret_id  | string | 是   | 云加密ID |
-| cloud_secret_key | string | 是   | 云密钥   |
+| 参数名称             | 参数类型   | 必选 | 描述    |
+|------------------|--------|----|-------|
+| cloud_secret_id  | string | 是  | 云加密ID |
+| cloud_secret_key | string | 是  | 云密钥   |
 
 #### Azure
 
-| 参数名称                    | 参数类型   | 必选  | 描述     |
-|-------------------------|--------|-----|--------|
-| cloud_tenant_id         | string | 是   | 云租户ID  |
-| cloud_application_id    | string | 是   | 云应用ID  |
-| cloud_client_secret_key | string | 是   | 云客户端密钥 |
+| 参数名称                    | 参数类型   | 必选 | 描述     |
+|-------------------------|--------|----|--------|
+| cloud_tenant_id         | string | 是  | 云租户ID  |
+| cloud_application_id    | string | 是  | 云应用ID  |
+| cloud_client_secret_key | string | 是  | 云客户端密钥 |
 
 #### GCP
 
-| 参数名称                     | 参数类型   | 必选  | 描述    |
-|--------------------------|--------|-----|-------|
-| cloud_service_secret_key | string | 是   | 云服务密钥 |
+| 参数名称                     | 参数类型   | 必选 | 描述    |
+|--------------------------|--------|----|-------|
+| cloud_service_secret_key | string | 是  | 云服务密钥 |
 
 #### Huawei
 
-| 参数名称             | 参数类型   | 必选  | 描述    |
-|------------------|--------|-----|-------|
-| cloud_secret_id  | string | 是   | 云加密ID |
-| cloud_secret_key | string | 是   | 云密钥   |
+| 参数名称             | 参数类型   | 必选 | 描述    |
+|------------------|--------|----|-------|
+| cloud_secret_id  | string | 是  | 云加密ID |
+| cloud_secret_key | string | 是  | 云密钥   |
 
 ### 调用示例
 
@@ -146,7 +146,7 @@ POST /api/v1/cloud/vendors/{vendor}/accounts/secret
 
 | 参数名称                       | 参数类型   | 描述      |
 |----------------------------|--------|---------|
-| Email                      | string | 邮箱地址  |
+| Email                      | string | 邮箱地址    |
 | cloud_project_id           | string | 云项目ID   |
 | cloud_project_name         | string | 云项目名称   |
 | cloud_service_account_id   | string | 云服务账户ID |
