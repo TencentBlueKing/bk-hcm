@@ -54,7 +54,7 @@ export default defineComponent({
           </Select>
         </div>
         <div class={'scheme-preview-content'}>
-          {schemeStore.recommendationSchemes.length === 0
+          {schemeStore.recommendationSchemes.length > 0
             ? schemeStore.recommendationSchemes.map((
               { composite_score, cost_score, net_score, result_idc_ids },
               idx,

@@ -131,6 +131,7 @@ export interface IServiceArea {
 export interface IIdcServiceAreaRel {
   idc_id: string;
   service_areas: Array<IServiceArea>;
+  avg_latency: number;
 }
 
 export interface IIdcInfo {

@@ -71,7 +71,10 @@ export default defineComponent({
     const isLoading = ref(false);
     const isExpanded = ref(false);
     const isDialogShow = ref(false);
-    const idcServiceAreasMap = ref<Map<string, Array<IServiceArea>>>(new Map());
+    const idcServiceAreasMap = ref<Map<string, {
+      service_areas: Array<IServiceArea>;
+      avg_latency: number;
+    }>>(new Map());
 
     watch(
       () => isExpanded.value,
@@ -103,17 +106,20 @@ export default defineComponent({
             queryIdcServiceAreaPromise,
           ]);
           queryIdcServiceAreaRes.data.forEach((v) => {
-            idcServiceAreasMap.value.set(v.idc_id, v.service_areas);
+            idcServiceAreasMap.value.set(v.idc_id, {
+              service_areas: v.service_areas,
+              avg_latency: v.avg_latency,
+            });
           });
           tableData.value = listIdcRes.data.map(v => ({
             name: v.name,
             vendor: v.vendor,
             region: v.region,
-            service_areas: idcServiceAreasMap.value.get(v.id).reduce((acc, cur) => {
+            service_areas: idcServiceAreasMap.value.get(v.id).service_areas.reduce((acc, cur) => {
               acc += `${cur.country_name}, ${cur.province_name};`;
               return acc;
             }, ''),
-            ping: 0,
+            ping: idcServiceAreasMap.value.get(v.id).avg_latency,
           }));
           isLoading.value = false;
         }
