@@ -435,3 +435,11 @@ export enum SECURITY_GROUP_RULE_TYPE {
   INGRESS = 'ingress',
   EGRESS = 'egress',
 };
+
+export const VendorMap = {
+  [VendorEnum.AWS]: '亚马逊云',
+  [VendorEnum.AZURE]: '微软云',
+  [VendorEnum.GCP]: '谷歌云',
+  [VendorEnum.HUAWEI]: '华为云',
+  [VendorEnum.TCLOUD]: '腾讯云',
+};

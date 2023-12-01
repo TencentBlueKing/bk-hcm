@@ -9,6 +9,7 @@ import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useSchemeStore } from '@/store';
 import { QueryRuleOPEnum } from '@/typings';
 import { IServiceArea } from '@/typings/scheme';
+import { VendorEnum, VendorMap } from '@/common/constant';
 
 const { FormItem } = Form;
 
@@ -53,6 +54,9 @@ export default defineComponent({
       {
         field: 'vendor',
         label: '云厂商',
+        render: ({ cell }: {cell: VendorEnum}) => {
+          return VendorMap[cell];
+        },
       },
       {
         field: 'region',
