@@ -39,6 +39,7 @@ type AreaValue[V any] struct {
 
 // ProvinceToIDCLatency 省份到IDC 延迟
 type ProvinceToIDCLatency struct {
+	Country  string  `json:"country,omitempty"`
 	Province string  `json:"province,omitempty"`
 	IDCName  string  `json:"idc_name,omitempty"`
 	Latency  float64 `json:"latency,omitempty"`

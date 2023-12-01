@@ -81,6 +81,8 @@ POST /api/v1/cloud/selections/schemes/generate
       "avg_ping": 100.1,
       "net_score": 50,
       "cost_score": 100,
+      "vendors":["tcloud","huawei"],
+      "deployment_architecture": "distributed",
       "result_idc_ids": [
         "0000001",
         "0000002",
@@ -101,11 +103,13 @@ POST /api/v1/cloud/selections/schemes/generate
 
 #### data[n]
 
-| 字段名称            | 字段类型         | 描述         |
-|-----------------|--------------|------------|
-| cover_rate      | double       | 覆盖率        |
-| avg_ping        | double       | 平均延迟       |
-| composite_score | double       | 综合评分       |
-| net_score       | double       | 网络评分       |
-| cost_score      | double       | 成本评分       |
-| result_idc_ids  | string array | 推荐结果机房ID列表 |
+| 字段名称                    | 字段类型         | 描述         |
+|-------------------------|--------------|------------|
+| cover_rate              | double       | 覆盖率        |
+| avg_ping                | double       | 平均延迟       |
+| composite_score         | double       | 综合评分       |
+| net_score               | double       | 网络评分       |
+| cost_score              | double       | 成本评分       |
+| deployment_architecture | string       | 部署架构       |
+| vendors                 | string array | 机房厂商列表     |
+| result_idc_ids          | string array | 推荐结果机房ID列表 |
