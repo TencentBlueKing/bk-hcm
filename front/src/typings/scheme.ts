@@ -111,6 +111,7 @@ export interface IAreaInfo {
   children?: Array<IAreaInfo>;
 }
 export interface IGenerateSchemesReqParams {
+  selected_countries: Array<string>,
   cover_ping: number;
   deployment_architecture: Array<'distributed' | 'centralized'>;
   biz_type: string;
