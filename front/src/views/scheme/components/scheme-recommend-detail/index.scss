@@ -1,0 +1,24 @@
+.scheme-recommend-detial-container {
+  .chart-content-wrapper {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-top: 16px;
+    height: calc(100% - 110px);
+
+    .idc-map-display {
+      flex-shrink: 0;
+      margin-right: 16px;
+      height: 100%;
+      margin-left: 24px;
+      margin-bottom: 24px;
+    }
+
+    .network-heat-map {
+      flex: 1;
+      height: 100%;
+      margin-right: 24px;
+      margin-bottom: 24px;
+    }
+  }
+}

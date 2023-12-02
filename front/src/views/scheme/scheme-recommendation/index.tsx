@@ -229,6 +229,9 @@ export default defineComponent({
         style='height: 100%'>
         <div class='scheme-recommendation-page'>
           <div
+            style={{
+              display: scene.value !== 'detail' ? 'block' : 'none',
+            }}
             class={`business-attributes-container${
               toggleClose.value ? ' close' : ''
             }`}>

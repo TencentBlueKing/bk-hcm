@@ -4,7 +4,7 @@ import DetailHeader from '../../scheme-detail/components/detail-header';
 import { useSchemeStore } from '@/store';
 import { Button } from 'bkui-vue';
 import IdcMapDisplay from '../../scheme-detail/components/idc-map-display';
-// import NetworkHeatMap from '../../scheme-detail/components/network-heat-map';
+import NetworkHeatMap from '../../scheme-detail/components/network-heat-map';
 
 export default defineComponent({
   props: {
@@ -16,7 +16,7 @@ export default defineComponent({
   setup(props) {
     const schemeStore = useSchemeStore();
     return () => (
-      <div>
+      <div class={'scheme-recommend-detial-container'}>
         <DetailHeader
           schemeData={schemeStore.schemeData}
           schemeList={schemeStore.recommendationSchemes.map((v, idx) => ({
@@ -30,7 +30,10 @@ export default defineComponent({
             operate: () => <Button theme='primary'>保存</Button>,
           }}
         </DetailHeader>
-        <IdcMapDisplay list={[]}/>
+        <section class={'chart-content-wrapper'}>
+          <IdcMapDisplay list={[]} class={'idc-map-display'}/>
+          <NetworkHeatMap idcList={[]} areaTopo={schemeStore.userDistribution} class={'network-heat-map'}/>
+        </section>
       </div>
     );
   },
