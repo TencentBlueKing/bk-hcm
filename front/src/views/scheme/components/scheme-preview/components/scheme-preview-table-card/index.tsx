@@ -1,6 +1,6 @@
 import { PropType, defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
-import { Table, Tag, Loading, Button, Dialog, Form, Input, Message } from 'bkui-vue';
+import { Table, Tag, Loading, Button, Dialog, Form, Input, Message, PopConfirm } from 'bkui-vue';
 import { AngleDown, AngleRight } from 'bkui-vue/lib/icon';
 import VendorTcloud from '@/assets/image/vendor-tcloud.png';
 // @ts-ignore
@@ -71,6 +71,63 @@ export default defineComponent({
         field: 'service_areas',
         label: '服务区域',
         width: 500,
+        render: ({ cell, data }: any) => {
+          return (
+            <p class={'flex-row align-items-center service-areas-paragraph'}>
+              <PopConfirm
+                trigger='click'
+                width={600}
+              >
+                {{
+                  content: () => (
+                    <div class={'service-areas-table-container'}>
+                        <div class={'service-areas-table-header'}>
+                          <p class={'service-areas-table-header-title'}>
+                            服务质量排名
+                          </p>
+                        </div>
+                        <div class={'service-areas-table'}>
+                          <Table
+                            data={data.service_area_arr}
+                            align='center'
+                            columns={[
+                              {
+                                field: 'country_name_province_name',
+                                label: '地区',
+                                width: 400,
+                                render: ({ data, index }) => <p class={'index-number-box-container'}>
+                                  <div class={`index-number-box bg-color-${(index + 1) % 16}`}>
+                                    {`${index + 1} `}
+                                  </div>
+                                  {`${data.country_name},${data.province_name}`}
+                                </p>,
+                              },
+                              {
+                                field: 'network_latency',
+                                label: '网络延迟',
+                                render: ({ cell }: {cell: number}) => `${Math.floor(cell)} ms`,
+                                sort: true,
+                              },
+                            ]}
+                          >
+                          </Table>
+                        </div>
+                      </div>
+                  ),
+                  default: () => (
+                    <div
+                      class={'scheme-service-areas-icon-box mr4'}
+                    >
+                      <i class={'icon hcm-icon bkhcm-icon-paiming scheme-service-areas-icon'}></i>
+                    </div>
+                  ),
+                }}
+              </PopConfirm>
+
+              {cell}
+            </p>
+          );
+        },
       },
       {
         field: 'ping',
@@ -192,12 +249,13 @@ export default defineComponent({
           name: v.name,
           vendor: v.vendor,
           region: v.region,
-          service_areas: idcServiceAreasMap.value.get(v.id).service_areas.reduce((acc, cur) => {
+          service_areas: idcServiceAreasMap.value.get(v.id)?.service_areas.reduce((acc, cur) => {
             acc += `${cur.country_name}, ${cur.province_name};`;
             return acc;
           }, ''),
-          ping: idcServiceAreasMap.value.get(v.id).avg_latency,
+          ping: idcServiceAreasMap.value.get(v.id)?.avg_latency,
           id: v.id,
+          service_area_arr: idcServiceAreasMap.value.get(v.id)?.service_areas,
         }));
         schemeVendors.value = Array.from(listIdcRes.data.reduce((acc, cur) => {
           acc.add(cur.vendor);
