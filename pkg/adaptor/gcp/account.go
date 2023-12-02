@@ -185,7 +185,9 @@ func (g *Gcp) GetAccountInfoBySecret(kit *kit.Kit, cloudSecretKeyString string) 
 
 		return nil, fmt.Errorf("more than one project found:" + strings.Join(projects, ","))
 	}
-
+	if len(projectList.Projects) == 0 {
+		return nil, fmt.Errorf("not project avaiable, please check the permission of given screct")
+	}
 	projectId := projectList.Projects[0].ProjectId
 	iamClient, err := g.clientSet.iamServiceClient(kit)
 	if err != nil {
