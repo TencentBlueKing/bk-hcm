@@ -160,19 +160,20 @@ func (svc *routeTableSvc) genGcpRouteTable(kt *kit.Kit, txn *sqlx.Tx, netLinkLis
 		return nil, errf.New(errf.InvalidParameter, "some networks can not be found on database")
 	}
 
-	vpcCloudToLink := converter.SliceToMap(vpcList, func(v cloud.VpcTable) (string, string) {
+	vpcCloudIDToLink := converter.SliceToMap(vpcList, func(v cloud.VpcTable) (string, string) {
 		return v.CloudID, gjson.Get(string(v.Extension), "self_link").String()
 	})
 
-	// list route tables by self links
-	tables, err := svc.listGcpRouteTableInfo(kt, maps.Keys(vpcCloudToLink))
+	// list route tables by cloud_vpc_id
+	tables, err := svc.listGcpRouteTableInfo(kt, maps.Keys(vpcCloudIDToLink))
 	if err != nil {
 		return nil, err
 	}
 
+	// delete exists
 	netLinkToTable := make(map[string]tablecloud.RouteTableTable)
 	for _, table := range tables {
-		netLink := vpcCloudToLink[table.CloudVpcID]
+		netLink := vpcCloudIDToLink[table.CloudVpcID]
 		netLinkToTable[netLink] = table
 		delete(netLinkSet, netLink)
 	}
@@ -219,27 +220,28 @@ func (svc *routeTableSvc) genGcpRouteTable(kt *kit.Kit, txn *sqlx.Tx, netLinkLis
 
 	for i, table := range toCreateTables {
 		table.ID = createdIDs[i]
-		netLinkToTable[vpcCloudToLink[table.CloudVpcID]] = table
+		netLinkToTable[vpcCloudIDToLink[table.CloudVpcID]] = table
 	}
 	return netLinkToTable, nil
 }
 
-func (svc *routeTableSvc) listGcpRouteTableInfo(kt *kit.Kit, networks []string) ([]tablecloud.RouteTableTable, error) {
+func (svc *routeTableSvc) listGcpRouteTableInfo(kt *kit.Kit, cloudVpcIds []string) ([]tablecloud.RouteTableTable,
+	error) {
 	tableOpt := &types.ListOption{
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
-				filter.AtomRule{Field: "cloud_vpc_id", Op: filter.In.Factory(), Value: networks},
+				filter.AtomRule{Field: "cloud_vpc_id", Op: filter.In.Factory(), Value: cloudVpcIds},
 				filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: enumor.Gcp},
 			},
 		},
-		Page:   &core.BasePage{Limit: uint(len(networks))},
+		Page:   &core.BasePage{Limit: uint(len(cloudVpcIds))},
 		Fields: []string{"id", "cloud_vpc_id", "vpc_id"},
 	}
 
 	tableRes, err := svc.dao.RouteTable().List(kt, tableOpt)
 	if err != nil {
-		logs.Errorf("get route table by vpc(%s) failed, err: %v, rid: %s", networks, err, kt.Rid)
+		logs.Errorf("get route table by vpc(%s) failed, err: %v, rid: %s", cloudVpcIds, err, kt.Rid)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
