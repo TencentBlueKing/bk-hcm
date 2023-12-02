@@ -3,7 +3,7 @@ import './index.scss';
 import DetailHeader from '../../scheme-detail/components/detail-header';
 import { useSchemeStore } from '@/store';
 import { Button } from 'bkui-vue';
-// import IdcMapDisplay from '../../scheme-detail/components/idc-map-display';
+import IdcMapDisplay from '../../scheme-detail/components/idc-map-display';
 // import NetworkHeatMap from '../../scheme-detail/components/network-heat-map';
 
 export default defineComponent({
@@ -30,6 +30,7 @@ export default defineComponent({
             operate: () => <Button theme='primary'>保存</Button>,
           }}
         </DetailHeader>
+        <IdcMapDisplay list={[]}/>
       </div>
     );
   },
