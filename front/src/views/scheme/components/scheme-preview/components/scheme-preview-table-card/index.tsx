@@ -116,6 +116,10 @@ export default defineComponent({
         theme: 'success',
         message: '保存成功',
       });
+      schemeStore.setRecommendationSchemes(schemeStore.recommendationSchemes.map((scheme, idx) => {
+        if (idx === props.idx) scheme.name = formData.name;
+        return scheme;
+      }));
       isDialogShow.value = false;
       isSaved.value = true;
     };

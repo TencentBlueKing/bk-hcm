@@ -21,7 +21,6 @@ export default defineComponent({
           schemeData={schemeStore.schemeData}
           schemeList={schemeStore.recommendationSchemes.map((v, idx) => ({
             id: idx,
-            name: `方案${idx}`,
             ...v,
           }))}
           onBack={props.onBack}
