@@ -89,7 +89,7 @@ export default defineComponent({
       avg_latency: number;
     }>>(new Map());
     const formData = reactive({
-      name: `方案${props.idx + 1}`,
+      name: schemeStore.recommendationSchemes[props.idx].name,
       bk_biz_id: '',
     });
     const formInstance = ref(null);
