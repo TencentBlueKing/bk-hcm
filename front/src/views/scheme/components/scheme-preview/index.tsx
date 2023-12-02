@@ -1,5 +1,5 @@
 import { Exception, Select } from 'bkui-vue';
-import { defineComponent, ref } from 'vue';
+import { defineComponent, ref, watch } from 'vue';
 import './index.scss';
 import { Info } from 'bkui-vue/lib/icon';
 import SchemePreviewTableCard from './components/scheme-preview-table-card';
@@ -9,15 +9,15 @@ const { Option } = Select;
 
 export const SchemeSortOptions = [
   {
-    key: 1,
+    key: 'composite_score',
     val: '按综合评分排序',
   },
   {
-    key: 2,
+    key: 'net_score',
     val: '按网络评分排序',
   },
   {
-    key: 3,
+    key: 'cost_score',
     val: '按方案成本排序',
   },
 ];
@@ -32,6 +32,17 @@ export default defineComponent({
   setup(props) {
     const sortChoice = ref(SchemeSortOptions[0].key);
     const schemeStore = useSchemeStore();
+
+    watch(
+      () => sortChoice.value,
+      (choice) => {
+        schemeStore.sortSchemes(choice);
+      },
+      {
+        deep: true,
+      },
+    );
+
     return () => (
       <div class={'scheme-preview-container'}>
         <div class={'scheme-preview-header'}>
