@@ -21,12 +21,15 @@ package azure
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
-	"github.com/tidwall/gjson"
-
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	"github.com/microsoftgraph/msgraph-sdk-go/models/odataerrors"
+	"github.com/tidwall/gjson"
 )
 
 // errorf azure的error格式不可读，需要进行一层转换，取错误原因做为error返回。
@@ -63,5 +66,23 @@ func errorf(azureError error) error {
 		return errors.New(message)
 	} else {
 		return azureErr
+	}
+}
+
+// azure 的graph api sdk的错误被层层包裹，需要通过特殊手段解开。
+// ref: https://github.com/microsoftgraph/msgraph-sdk-go/issues/510
+// TODO: 验证升级到1.19.0是否能够直接返回错误信息
+func extractGraphError(graphErr error) error {
+	var oDataError *odataerrors.ODataError
+	switch {
+	case errors.As(graphErr, &oDataError):
+		if terr := oDataError.GetErrorEscaped(); terr != nil {
+			return fmt.Errorf("%v,%v,%v", oDataError, converter.PtrToVal(terr.GetCode()),
+				converter.PtrToVal(terr.GetMessage()))
+		}
+		return oDataError
+	default:
+		logs.Errorf("fail to get azure applications, error(%T): %#v", graphErr, graphErr)
+		return graphErr
 	}
 }
