@@ -1,11 +1,24 @@
-import { defineComponent, ref, reactive, computed, onMounted, watch } from 'vue';
+import {
+  defineComponent,
+  ref,
+  reactive,
+  computed,
+  onMounted,
+  watch,
+} from 'vue';
 import './index.scss';
 import SchemePreview from '../components/scheme-preview';
 import SchemeBlankPage from './components/scheme-blank-page';
 import SchemeUserProportionShowDialog from './components/scheme-user-proportion-show-dialog';
 import { IPageQuery } from '@/typings';
-import { IBizTypeList, IBizType, IGenerateSchemesReqParams, IGenerateSchemesResData } from '@/typings/scheme';
+import {
+  IBizTypeList,
+  IBizType,
+  IGenerateSchemesReqParams,
+  IGenerateSchemesResData,
+} from '@/typings/scheme';
 import { useSchemeStore } from '@/store';
+import SchemeRecommendDetail from '../components/scheme-recommend-detail';
 
 export default defineComponent({
   name: 'SchemeRecommendationPage',
@@ -35,8 +48,8 @@ export default defineComponent({
       formData.user_distribution = [];
       schemeStore.setUserDistribution([]);
       schemeStore.setRecommendationSchemes([]);
-      scene.value = "blank";
-    }
+      scene.value = 'blank';
+    };
     const handleChangeCountry = async () => {
       clearLastData();
       countryChangeLoading.value = true;
@@ -44,7 +57,7 @@ export default defineComponent({
         formData.selected_countries.reduce((prev, item) => {
           prev.push({ name: item });
           return prev;
-        }, [])
+        }, []),
       );
       countryChangeLoading.value = false;
       formData.user_distribution = res.data;
@@ -55,11 +68,23 @@ export default defineComponent({
     const generateSchemes = async () => {
       await formRef.value.validate();
       generateSchemesLoading.value = true;
-      const res: IGenerateSchemesResData = await schemeStore.generateSchemes(formData);
+      const res: IGenerateSchemesResData = await schemeStore.generateSchemes(
+        formData,
+      );
+      schemeStore.setSchemeConfig(formData.cover_ping, formData.biz_type, formData.deployment_architecture);
       generateSchemesLoading.value = false;
-      schemeStore.setRecommendationSchemes(res.data);
-      scene.value = "preview";
+      schemeStore.setRecommendationSchemes(res.data.map((item, idx) => ({
+        ...item,
+        id: `${idx}`,
+        name: `方案${idx + 1}`,
+      })));
+      scene.value = 'preview';
     };
+
+    const viewDetail = () => {
+      scene.value = 'detail';
+    };
+
     const formItemOptions = computed(() => [
       {
         label: '用户分布地区',
@@ -86,7 +111,11 @@ export default defineComponent({
         content: () => (
           <bk-select loading={initLoading.value} v-model={formData.biz_type}>
             {bizTypeList.value.map((bizType) => (
-              <bk-option key={bizType.id} value={bizType.biz_type} label={bizType.biz_type} />
+              <bk-option
+                key={bizType.id}
+                value={bizType.biz_type}
+                label={bizType.biz_type}
+              />
             ))}
           </bk-select>
         ),
@@ -119,7 +148,10 @@ export default defineComponent({
             <bk-select class='flex-1' v-model={formData.user_distribution_mode}>
               <bk-option label='默认分布占比' value='default' />
             </bk-select>
-            <div class={`user-proportion-detail-btn-wrap${formData.user_distribution.length ? '' : ' disabled'}`} 
+            <div
+              class={`user-proportion-detail-btn-wrap${
+                formData.user_distribution.length ? '' : ' disabled'
+              }`}
               onClick={() => {
                 formData.user_distribution.length &&
                   (isUserProportionDetailDialogShow.value = true);
@@ -136,7 +168,9 @@ export default defineComponent({
         content: () => (
           <bk-checkbox-group v-model={formData.deployment_architecture}>
             <bk-checkbox label='distributed'>分布式部署</bk-checkbox>
-            <bk-checkbox label='centralized' disabled>集中式部署</bk-checkbox>
+            <bk-checkbox label='centralized' disabled>
+              集中式部署
+            </bk-checkbox>
           </bk-checkbox-group>
         ),
       },
@@ -144,7 +178,11 @@ export default defineComponent({
         label: '',
         content: () => (
           <>
-            <bk-button class='mr8' theme='primary' onClick={generateSchemes} loading={countryChangeLoading.value}>
+            <bk-button
+              class='mr8'
+              theme='primary'
+              onClick={generateSchemes}
+              loading={countryChangeLoading.value}>
               选型推荐
             </bk-button>
             <bk-button>清空</bk-button>
@@ -152,7 +190,7 @@ export default defineComponent({
         ),
       },
     ]);
-    const scene = ref<'blank' | 'preview'>('blank');
+    const scene = ref<'blank' | 'preview' | 'detail'>('blank');
     const formRef = ref();
     const formRules = {};
 
@@ -161,7 +199,7 @@ export default defineComponent({
       const pageQuery: IPageQuery = {
         count: false,
         start: 0,
-        limit: 500
+        limit: 500,
       };
       const [res1, res2] = await Promise.all([
         schemeStore.listCountries(),
@@ -181,18 +219,31 @@ export default defineComponent({
       (val) => {
         Object.assign(formData, {
           cover_ping: val ? selectedBizType.value.cover_ping : null,
-          deployment_architecture: val ? selectedBizType.value.deployment_architecture : '',
-        })
+          deployment_architecture: val
+            ? selectedBizType.value.deployment_architecture
+            : '',
+        });
       },
     );
 
     return () => (
-      <bk-loading loading={generateSchemesLoading.value} opacity='1' style="height: 100%">
+      <bk-loading
+        loading={generateSchemesLoading.value}
+        opacity='1'
+        style='height: 100%'>
         <div class='scheme-recommendation-page'>
-          <div class={`business-attributes-container${toggleClose.value ? ' close' : ''}`}>
+          <div
+            style={{
+              display: scene.value !== 'detail' ? 'block' : 'none',
+            }}
+            class={`business-attributes-container${
+              toggleClose.value ? ' close' : ''
+            }`}>
             <div class='title-wrap'>
               <div class='title-text'>业务属性</div>
-              <i class='hcm-icon bkhcm-icon-shouqi' onClick={() => (toggleClose.value = !toggleClose.value)}></i>
+              <i
+                class='hcm-icon bkhcm-icon-shouqi'
+                onClick={() => (toggleClose.value = !toggleClose.value)}></i>
             </div>
             <div class='content-wrap'>
               <bk-form form-type='vertical' ref={formRef} model={formData} rules={formRules} >
@@ -221,7 +272,15 @@ export default defineComponent({
               {scene.value === 'blank' ? (
                 <SchemeBlankPage />
               ) : (
-                <SchemePreview />
+                <>
+                  <SchemePreview
+                    style={{
+                      display: scene.value === 'preview' ? 'block' : 'none',
+                    }}
+                    onViewDetail={viewDetail}
+                  />
+                  {scene.value === 'detail' ? <SchemeRecommendDetail onBack={() => scene.value = 'preview'}/> : null}
+                </>
               )}
             </div>
           </div>

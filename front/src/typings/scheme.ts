@@ -1,4 +1,5 @@
-import { IListResData, IQueryResData } from "@/typings";
+import { VendorEnum } from '@/common/constant';
+import { IListResData, IQueryResData } from '@/typings';
 
 // 已收藏方案
 export interface ICollectedSchemeItem {
@@ -42,7 +43,7 @@ export interface ISchemeEditingData {
 export interface ISchemeSelectorItem {
   id: string;
   name: string;
-  bk_biz_id: number;
+  bk_biz_id: number | string;
   deployment_architecture: string[];
   vendors: string[];
   composite_score: number;
@@ -79,12 +80,12 @@ export interface IUserDistributionItem {
 /**
  * 查询国家列表
  */
-export interface ICountriesListResData extends IListResData<Array<string>> {}
+export type ICountriesListResData = IListResData<Array<string>>;
 
 /**
  * 查询云选型用户分布占比
  */
-export interface IUserDistributionResData extends IQueryResData<Array<IAreaInfo>> {}
+export type IUserDistributionResData = IQueryResData<Array<IAreaInfo>>;
 
 /**
  * 查询业务类型列表
@@ -100,7 +101,7 @@ export interface IBizType {
   updated_at: string;
 }
 export type IBizTypeList = Array<IBizType>;
-export interface IBizTypeResData extends IListResData<IBizTypeList> {}
+export type IBizTypeResData = IListResData<IBizTypeList>;
 
 /**
  * 云资源选型方案
@@ -124,6 +125,30 @@ interface IRecommendScheme {
   net_score: number;
   cost_score: number;
   result_idc_ids: string[];
+  id: string;
+  name: string;
+  vendors: [];
+  deployment_architecture: [];
+  bk_biz_id: string;
 }
 export type IRecommendSchemeList = Array<IRecommendScheme>;
-export interface IGenerateSchemesResData extends IQueryResData<IRecommendSchemeList> {}
+export type IGenerateSchemesResData = IQueryResData<IRecommendSchemeList>;
+
+export interface IServiceArea {
+  country_name: string;
+  province_name: string;
+  network_latency: number;
+};
+
+export interface IIdcServiceAreaRel {
+  idc_id: string;
+  service_areas: Array<IServiceArea>;
+  avg_latency: number;
+}
+
+export interface IIdcInfo {
+  name: string;
+  vendor: VendorEnum;
+  region: string;
+  id: string;
+}
