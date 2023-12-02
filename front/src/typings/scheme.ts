@@ -43,7 +43,7 @@ export interface ISchemeEditingData {
 export interface ISchemeSelectorItem {
   id: string;
   name: string;
-  bk_biz_id: number;
+  bk_biz_id: number | string;
   deployment_architecture: string[];
   vendors: string[];
   composite_score: number;
@@ -125,6 +125,11 @@ interface IRecommendScheme {
   net_score: number;
   cost_score: number;
   result_idc_ids: string[];
+  id: string;
+  name: string;
+  vendors: [];
+  deployment_architecture: [];
+  bk_biz_id: string;
 }
 export type IRecommendSchemeList = Array<IRecommendScheme>;
 export type IGenerateSchemesResData = IQueryResData<IRecommendSchemeList>;

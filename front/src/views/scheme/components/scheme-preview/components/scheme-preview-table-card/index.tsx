@@ -126,6 +126,7 @@ export default defineComponent({
         composite_score: props.compositeScore,
         net_score: props.netScore,
         cost_score: props.costScore,
+        name: formData.name,
       });
       props.onViewDetail();
     };

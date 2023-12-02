@@ -18,6 +18,10 @@ export default defineComponent({
     schemeListLoading: Boolean,
     showEditIcon: Boolean,
     schemeData: Object,
+    onBack: {
+      type: Function,
+      required: false,
+    }
   },
   setup (props, ctx) {
     const schemeStore = useSchemeStore();
@@ -50,7 +54,7 @@ export default defineComponent({
     return () => (
       <>
         <div class="scheme-selector">
-          <ArrowsLeft class="back-icon" onClick={goToSchemeList} />
+          <ArrowsLeft class="back-icon" onClick={props.onBack || goToSchemeList} />
           <Popover
             extCls="resource-selection-scheme-list-popover"
             theme="light"
@@ -82,9 +86,13 @@ export default defineComponent({
                               <div class="name-text">{scheme.name}</div>
                               <div class="tag-list">
                                 {
-                                  scheme.deployment_architecture?.map(item => {
-                                    return (<div class="tag-item deploy-type-tag" key={item}>{ DEPLOYMENT_ARCHITECTURE_MAP[item] }</div>)
-                                  })
+                                  Array.isArray(scheme.deployment_architecture)
+                                    ? scheme.deployment_architecture?.map((item) => {
+                                      return (<div class="tag-item deploy-type-tag" key={item}>{ DEPLOYMENT_ARCHITECTURE_MAP[item] }</div>);
+                                    })
+                                    : (
+                                      <div class="tag-item deploy-type-tag">{ DEPLOYMENT_ARCHITECTURE_MAP[scheme.deployment_architecture] }</div>
+                                    )
                                 }
                                 {
                                   scheme.vendors?.map(item => {

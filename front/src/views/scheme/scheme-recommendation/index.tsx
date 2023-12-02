@@ -272,7 +272,7 @@ export default defineComponent({
                     }}
                     onViewDetail={viewDetail}
                   />
-                  {scene.value === 'detail' ? <SchemeRecommendDetail /> : null}
+                  {scene.value === 'detail' ? <SchemeRecommendDetail onBack={() => scene.value = 'preview'}/> : null}
                 </>
               )}
             </div>
