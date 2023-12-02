@@ -20,7 +20,6 @@
 package azure
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -29,8 +28,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
-
-	"github.com/microsoftgraph/msgraph-sdk-go/models/odataerrors"
 )
 
 // CountAccount count account.
@@ -65,8 +62,9 @@ func (az *Azure) ListAccount(kt *kit.Kit) ([]account.AzureAccount, error) {
 
 	resp, err := graphClient.Users().Get(kt.Ctx, nil)
 	if err != nil {
-		logs.Errorf("list users failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
+		extracted := extractGraphError(err)
+		logs.Errorf("list users failed, err: %v, rid: %s", extracted, kt.Rid)
+		return nil, extracted
 	}
 
 	users := resp.GetValue()
@@ -128,18 +126,9 @@ func (az *Azure) GetAccountInfoBySecret(kt *kit.Kit) (*cloud.AzureInfoBySecret, 
 	// 2. 获取应用信息 https://learn.microsoft.com/en-us/graph/api/application-list
 	resp, err := graphClient.Applications().Get(kt.Ctx, nil)
 	if err != nil {
-		var oDataError *odataerrors.ODataError
-		switch {
-		case errors.As(err, &oDataError):
-			if terr := oDataError.GetErrorEscaped(); terr != nil {
-				logs.Errorf("fail to get azure applications, code: %s,msg: %s, rid: %s",
-					converter.PtrToVal(terr.GetCode()), converter.PtrToVal(terr.GetMessage()), kt.Rid)
-			}
-			return nil, oDataError
-		default:
-			logs.Errorf("fail to get azure applications, error(%T): %#v", err, err)
-			return nil, err
-		}
+		extracted := extractGraphError(err)
+		logs.Errorf("fail to get azure applications, err: %v, rid: %s", extracted, kt.Rid)
+		return nil, extracted
 	}
 
 	for _, one := range resp.GetValue() {
