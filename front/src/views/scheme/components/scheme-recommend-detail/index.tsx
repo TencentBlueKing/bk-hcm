@@ -31,8 +31,8 @@ export default defineComponent({
           }}
         </DetailHeader>
         <section class={'chart-content-wrapper'}>
-          <IdcMapDisplay list={[]} class={'idc-map-display'}/>
-          <NetworkHeatMap idcList={[]} areaTopo={schemeStore.userDistribution} class={'network-heat-map'}/>
+          <IdcMapDisplay list={schemeStore.schemeData.idcList} class={'idc-map-display'}/>
+          <NetworkHeatMap idcList={schemeStore.schemeData.idcList} areaTopo={schemeStore.userDistribution} class={'network-heat-map'}/>
         </section>
       </div>
     );

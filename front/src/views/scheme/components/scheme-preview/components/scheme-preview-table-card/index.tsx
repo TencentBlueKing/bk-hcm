@@ -95,6 +95,7 @@ export default defineComponent({
     const formInstance = ref(null);
     const isSaved = ref(false);
     const schemeVendors = ref([]);
+    const isViewDetailBtnLoading = ref(false);
 
     const handleConfirm = async () => {
       await formInstance.value.validate();
@@ -119,7 +120,9 @@ export default defineComponent({
       isSaved.value = true;
     };
 
-    const handleViewDetail = () => {
+    const handleViewDetail = async () => {
+      isViewDetailBtnLoading.value = true;
+      await getSchemeDetails();
       schemeStore.setSchemeData({
         deployment_architecture: [],
         vendors: schemeVendors.value,
@@ -127,66 +130,79 @@ export default defineComponent({
         net_score: props.netScore,
         cost_score: props.costScore,
         name: formData.name,
+        idcList: tableData.value.map(item => ({
+          id: item.id,
+          name: item.name,
+          vendor: item.vendor,
+          country: item.region,
+        })),
       });
+      isViewDetailBtnLoading.value = false;
       props.onViewDetail();
     };
 
     watch(
       () => isExpanded.value,
       async () => {
-        if (isExpanded.value && !tableData.value.length) {
-          isLoading.value = true;
-          const listIdcPromise = schemeStore.listIdc(
-            {
-              op: QueryRuleOPEnum.AND,
-              rules: [
-                {
-                  field: 'id',
-                  op: QueryRuleOPEnum.IN,
-                  value: props.resultIdcIds,
-                },
-              ],
-            },
-            {
-              start: 0,
-              limit: props.resultIdcIds.length,
-            },
-          );
-          const queryIdcServiceAreaPromise = schemeStore.queryIdcServiceArea(
-            props.resultIdcIds,
-            schemeStore.userDistribution,
-          );
-          const [listIdcRes, queryIdcServiceAreaRes] = await Promise.all([
-            listIdcPromise,
-            queryIdcServiceAreaPromise,
-          ]);
-          queryIdcServiceAreaRes.data.forEach((v) => {
-            idcServiceAreasMap.value.set(v.idc_id, {
-              service_areas: v.service_areas,
-              avg_latency: v.avg_latency,
-            });
-          });
-          tableData.value = listIdcRes.data.map(v => ({
-            name: v.name,
-            vendor: v.vendor,
-            region: v.region,
-            service_areas: idcServiceAreasMap.value.get(v.id).service_areas.reduce((acc, cur) => {
-              acc += `${cur.country_name}, ${cur.province_name};`;
-              return acc;
-            }, ''),
-            ping: idcServiceAreasMap.value.get(v.id).avg_latency,
-          }));
-          schemeVendors.value = Array.from(listIdcRes.data.reduce((acc, cur) => {
-            acc.add(cur.vendor);
-            return acc;
-          }, new Set()));
-          isLoading.value = false;
-        }
+        if (isExpanded.value) await getSchemeDetails();
       },
       {
         immediate: true,
       },
     );
+
+    const getSchemeDetails = async () => {
+      if (!tableData.value.length) {
+        isLoading.value = true;
+        const listIdcPromise = schemeStore.listIdc(
+          {
+            op: QueryRuleOPEnum.AND,
+            rules: [
+              {
+                field: 'id',
+                op: QueryRuleOPEnum.IN,
+                value: props.resultIdcIds,
+              },
+            ],
+          },
+          {
+            start: 0,
+            limit: props.resultIdcIds.length,
+          },
+        );
+        const queryIdcServiceAreaPromise = schemeStore.queryIdcServiceArea(
+          props.resultIdcIds,
+          schemeStore.userDistribution,
+        );
+        const [listIdcRes, queryIdcServiceAreaRes] = await Promise.all([
+          listIdcPromise,
+          queryIdcServiceAreaPromise,
+        ]);
+        queryIdcServiceAreaRes.data.forEach((v) => {
+          idcServiceAreasMap.value.set(v.idc_id, {
+            service_areas: v.service_areas,
+            avg_latency: v.avg_latency,
+          });
+        });
+        tableData.value = listIdcRes.data.map(v => ({
+          name: v.name,
+          vendor: v.vendor,
+          region: v.region,
+          service_areas: idcServiceAreasMap.value.get(v.id).service_areas.reduce((acc, cur) => {
+            acc += `${cur.country_name}, ${cur.province_name};`;
+            return acc;
+          }, ''),
+          ping: idcServiceAreasMap.value.get(v.id).avg_latency,
+          id: v.id,
+        }));
+        schemeVendors.value = Array.from(listIdcRes.data.reduce((acc, cur) => {
+          acc.add(cur.vendor);
+          return acc;
+        }, new Set()));
+        isLoading.value = false;
+      }
+    };
+
     return () => (
       <div class={'scheme-preview-table-card-container'}>
         <div
@@ -235,7 +251,7 @@ export default defineComponent({
             </div>
           </div>
           <div class={'scheme-preview-table-card-header-operation'}>
-            <Button class={'mr8'} onClick={handleViewDetail}>查看详情</Button>
+            <Button class={'mr8'} onClick={handleViewDetail} loading={isViewDetailBtnLoading.value}>查看详情</Button>
             <Button theme='primary' onClick={() => (isDialogShow.value = true)} disabled={isSaved.value}>
               保存
             </Button>

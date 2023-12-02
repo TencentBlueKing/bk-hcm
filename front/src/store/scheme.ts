@@ -26,6 +26,7 @@ export const useSchemeStore = defineStore({
       net_score: 0,
       cost_score: 0,
       name: '',
+      idcList: [],
     },
   }),
   actions: {
