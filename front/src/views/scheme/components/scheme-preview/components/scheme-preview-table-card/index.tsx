@@ -89,14 +89,15 @@ export default defineComponent({
                         <div class={'service-areas-table'}>
                           <Table
                             data={data.service_area_arr}
-                            align='center'
+                            height={500}
                             columns={[
                               {
                                 field: 'country_name_province_name',
                                 label: '地区',
                                 width: 400,
+                                align: 'left',
                                 render: ({ data, index }) => <p class={'index-number-box-container'}>
-                                  <div class={`index-number-box bg-color-${(index + 1) % 16}`}>
+                                  <div class={`index-number-box bg-color-${index < 3 ? index + 1 : 4}`}>
                                     {`${index + 1} `}
                                   </div>
                                   {`${data.country_name},${data.province_name}`}
