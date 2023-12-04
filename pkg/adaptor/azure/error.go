@@ -77,7 +77,7 @@ func extractGraphError(graphErr error) error {
 	switch {
 	case errors.As(graphErr, &oDataError):
 		if terr := oDataError.GetErrorEscaped(); terr != nil {
-			return fmt.Errorf("%v,%v,%v", oDataError, converter.PtrToVal(terr.GetCode()),
+			return fmt.Errorf("%v, %v, %v", oDataError, converter.PtrToVal(terr.GetCode()),
 				converter.PtrToVal(terr.GetMessage()))
 		}
 		return oDataError
