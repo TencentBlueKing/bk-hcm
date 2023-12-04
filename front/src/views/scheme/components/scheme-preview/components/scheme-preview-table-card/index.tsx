@@ -96,9 +96,9 @@ export default defineComponent({
                                 label: '地区',
                                 width: 400,
                                 align: 'left',
-                                render: ({ data, index }) => <p class={'index-number-box-container'}>
-                                  <div class={`index-number-box bg-color-${index < 3 ? index + 1 : 4}`}>
-                                    {`${index + 1} `}
+                                render: ({ data }) => <p class={'index-number-box-container'}>
+                                  <div class={`index-number-box bg-color-${data.idx < 3 ? data.idx + 1 : 4}`}>
+                                    {`${data.idx + 1} `}
                                   </div>
                                   {`${data.country_name},${data.province_name}`}
                                 </p>,
@@ -256,7 +256,12 @@ export default defineComponent({
           }, ''),
           ping: idcServiceAreasMap.value.get(v.id)?.avg_latency,
           id: v.id,
-          service_area_arr: idcServiceAreasMap.value.get(v.id)?.service_areas,
+          service_area_arr: idcServiceAreasMap.value.get(v.id)?.service_areas.sort((a, b) => {
+            return Math.floor(a.network_latency) - Math.floor(b.network_latency);
+          }).map((v, idx) => ({
+            ...v,
+            idx,
+          })),
         }));
         schemeVendors.value = Array.from(listIdcRes.data.reduce((acc, cur) => {
           acc.add(cur.vendor);
