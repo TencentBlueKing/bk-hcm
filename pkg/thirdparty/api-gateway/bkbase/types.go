@@ -26,7 +26,7 @@ const (
 	CodeSuccess string = "00"
 
 	// DefaultQueryLimit is the bkbase default query batch size.
-	DefaultQueryLimit int = 2000
+	DefaultQueryLimit int = 5000
 )
 
 // QuerySyncReq query sync bkbase data request

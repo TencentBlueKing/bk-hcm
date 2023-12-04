@@ -97,6 +97,8 @@ cloudSelection:
     userProvinceDistribution: supported_province
   # bkbase 数据源配置
   bkBase:
+    # 单次查询最大数量
+    queryLimit: 10000
     # token for bkbase
     dataToken: token_here
     # endpoints is a seed list of host:port addresses of bkbase api gateway nodes.
