@@ -27,6 +27,7 @@ import (
 	dssync "hcm/pkg/api/data-service/cloud/sync"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/runtime/filter"
@@ -43,10 +44,10 @@ type SyncDetail struct {
 }
 
 // ResSyncStatusFailed ...
-func (s *SyncDetail) ResSyncStatusFailed(resName enumor.CloudResourceType, failedReason string) error {
+func (s *SyncDetail) ResSyncStatusFailed(resName enumor.CloudResourceType, failedErr error) error {
 
 	s.ResStatus = string(enumor.SyncFailed)
-	if err := s.changeResSyncStatus(string(resName), failedReason); err != nil {
+	if err := s.changeResSyncStatus(resName, failedErr); err != nil {
 		return err
 	}
 
@@ -57,7 +58,7 @@ func (s *SyncDetail) ResSyncStatusFailed(resName enumor.CloudResourceType, faile
 func (s *SyncDetail) ResSyncStatusSuccess(resName enumor.CloudResourceType) error {
 
 	s.ResStatus = string(enumor.SyncSuccess)
-	if err := s.changeResSyncStatus(string(resName), "{}"); err != nil {
+	if err := s.changeResSyncStatus(resName, nil); err != nil {
 		return err
 	}
 
@@ -68,14 +69,24 @@ func (s *SyncDetail) ResSyncStatusSuccess(resName enumor.CloudResourceType) erro
 func (s *SyncDetail) ResSyncStatusSyncing(resName enumor.CloudResourceType) error {
 
 	s.ResStatus = string(enumor.Syncing)
-	if err := s.changeResSyncStatus(string(resName), "{}"); err != nil {
+	if err := s.changeResSyncStatus(resName, nil); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *SyncDetail) changeResSyncStatus(resName, failedReason string) error {
+func (s *SyncDetail) changeResSyncStatus(resName enumor.CloudResourceType, failedErr error) error {
+
+	failedString := types.JsonField("")
+	if failedErr != nil {
+		if ef := errf.Error(failedErr); ef != nil && ef.Code == errf.Unknown {
+			// 对于未知错误，直接给Message
+			failedString, _ = types.NewJsonField(ef.Message)
+		} else {
+			failedString, _ = types.NewJsonField(failedErr)
+		}
+	}
 
 	listReq := &core.ListReq{
 		Filter: &filter.Expression{
@@ -116,10 +127,10 @@ func (s *SyncDetail) changeResSyncStatus(resName, failedReason string) error {
 				{
 					Vendor:          enumor.Vendor(s.Vendor),
 					AccountID:       s.AccountID,
-					ResName:         resName,
+					ResName:         string(resName),
 					ResStatus:       s.ResStatus,
 					ResEndTime:      ttimes.ConvStdTimeFormat(time.Now()),
-					ResFailedReason: types.JsonField(failedReason),
+					ResFailedReason: failedString,
 				},
 			},
 		}
@@ -135,7 +146,7 @@ func (s *SyncDetail) changeResSyncStatus(resName, failedReason string) error {
 					ID:              accountSyncDetail.Details[0].ID,
 					ResStatus:       s.ResStatus,
 					ResEndTime:      ttimes.ConvStdTimeFormat(time.Now()),
-					ResFailedReason: types.JsonField(failedReason),
+					ResFailedReason: failedString,
 				},
 			},
 		}
