@@ -714,7 +714,6 @@ func (gt ApiGateway) GetAuthValue() string {
 
 // CloudSelection define cloud selection relation setting.
 type CloudSelection struct {
-	Enabled              bool                      `yaml:"enabled"`
 	DefaultSampleOffset  int                       `yaml:"userDistributionSampleOffset"`
 	AvgLatencySampleDays int                       `yaml:"avgLatencySampleDays"`
 	CoverRate            float64                   `yaml:"coverRate"`
@@ -735,6 +734,7 @@ type Plugin struct {
 
 // BkBase define bkbase relation setting.
 type BkBase struct {
+	QueryLimit uint   `yaml:"queryLimit"`
 	DataToken  string `yaml:"dataToken"`
 	ApiGateway `yaml:"-,inline"`
 }

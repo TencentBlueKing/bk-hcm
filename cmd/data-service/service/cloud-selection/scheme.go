@@ -25,12 +25,15 @@ import (
 	"hcm/pkg/api/core"
 	coreselection "hcm/pkg/api/core/cloud-selection"
 	dsselection "hcm/pkg/api/data-service/cloud-selection"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	tableselection "hcm/pkg/dal/table/cloud-selection"
+	types2 "hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/slice"
 )
 
 // ListScheme ...
@@ -115,21 +118,22 @@ func (svc *service) CreateScheme(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	model := &tableselection.SchemeTable{
-		ID:                     "",
-		BkBizID:                req.BkBizID,
-		Name:                   req.Name,
-		BizType:                req.BizType,
-		Vendors:                req.Vendors,
-		DeploymentArchitecture: req.DeploymentArchitecture,
-		CoverPing:              req.CoverPing,
-		CompositeScore:         req.CompositeScore,
-		NetScore:               req.NetScore,
-		CostScore:              req.CostScore,
-		CoverRate:              req.CoverRate,
-		UserDistribution:       req.UserDistribution,
-		ResultIdcIDs:           req.ResultIdcIDs,
-		Creator:                cts.Kit.User,
-		Reviser:                cts.Kit.User,
+		ID:      "",
+		BkBizID: req.BkBizID,
+		Name:    req.Name,
+		BizType: req.BizType,
+		Vendors: req.Vendors,
+		DeploymentArchitecture: types2.StringArray(slice.Map(req.DeploymentArchitecture,
+			func(a enumor.SchemeDeployArch) string { return string(a) })),
+		CoverPing:        req.CoverPing,
+		CompositeScore:   req.CompositeScore,
+		NetScore:         req.NetScore,
+		CostScore:        req.CostScore,
+		CoverRate:        req.CoverRate,
+		UserDistribution: req.UserDistribution,
+		ResultIdcIDs:     req.ResultIdcIDs,
+		Creator:          cts.Kit.User,
+		Reviser:          cts.Kit.User,
 	}
 	id, err := svc.dao.CloudSelectionScheme().Create(cts.Kit, model)
 	if err != nil {

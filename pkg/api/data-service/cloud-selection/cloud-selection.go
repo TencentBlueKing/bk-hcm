@@ -22,6 +22,7 @@ package dsselection
 import (
 	"errors"
 
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/table/types"
 )
@@ -43,18 +44,18 @@ func (req SchemeUpdateReq) Validate() error {
 
 // SchemeCreateReq define scheme create request.
 type SchemeCreateReq struct {
-	BkBizID                int64             `json:"bk_biz_id" validate:"required"`
-	Name                   string            `json:"name" validate:"required"`
-	BizType                string            `json:"biz_type" validate:"required"`
-	Vendors                types.StringArray `json:"vendors" validate:"required"`
-	DeploymentArchitecture types.StringArray `json:"deployment_architecture" validate:"required"`
-	CoverPing              float64           `json:"cover_ping" validate:"required"`
-	CompositeScore         float64           `json:"composite_score" validate:"required"`
-	NetScore               float64           `json:"net_score" validate:"required"`
-	CostScore              float64           `json:"cost_score" validate:"required"`
-	CoverRate              float64           `json:"cover_rate" validate:"required"`
-	UserDistribution       types.AreaInfos   `json:"user_distribution" validate:"required"`
-	ResultIdcIDs           types.StringArray `json:"result_idc_ids" validate:"required"`
+	BkBizID                int64                     `json:"bk_biz_id" validate:"required"`
+	Name                   string                    `json:"name" validate:"required"`
+	BizType                string                    `json:"biz_type" validate:"required"`
+	Vendors                types.StringArray         `json:"vendors" validate:"required"`
+	DeploymentArchitecture []enumor.SchemeDeployArch `json:"deployment_architecture" validate:"required"`
+	CoverPing              float64                   `json:"cover_ping" validate:"required"`
+	CompositeScore         float64                   `json:"composite_score" validate:"required"`
+	NetScore               float64                   `json:"net_score" validate:"required"`
+	CostScore              float64                   `json:"cost_score" validate:"required"`
+	CoverRate              float64                   `json:"cover_rate" validate:"required"`
+	UserDistribution       types.AreaInfos           `json:"user_distribution" validate:"required"`
+	ResultIdcIDs           types.StringArray         `json:"result_idc_ids" validate:"required"`
 }
 
 // Validate SchemeCreateReq.

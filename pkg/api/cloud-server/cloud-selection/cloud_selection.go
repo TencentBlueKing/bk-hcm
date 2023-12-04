@@ -23,6 +23,7 @@ import (
 	"errors"
 
 	coreselection "hcm/pkg/api/core/cloud-selection"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/table/types"
 )
@@ -44,17 +45,17 @@ func (req SchemeUpdateReq) Validate() error {
 
 // SchemeCreateReq define scheme create request.
 type SchemeCreateReq struct {
-	BkBizID                int64             `json:"bk_biz_id" validate:"required"`
-	Name                   string            `json:"name" validate:"required"`
-	CoverPing              float64           `json:"cover_ping" validate:"required"`
-	BizType                string            `json:"biz_type" validate:"required"`
-	DeploymentArchitecture types.StringArray `json:"deployment_architecture" validate:"required"`
-	UserDistribution       types.AreaInfos   `json:"user_distribution" validate:"required"`
-	CoverRate              float64           `json:"cover_rate" validate:"required"`
-	CompositeScore         float64           `json:"composite_score" validate:"required"`
-	NetScore               float64           `json:"net_score" validate:"required"`
-	CostScore              float64           `json:"cost_score" validate:"required"`
-	ResultIdcIDs           types.StringArray `json:"result_idc_ids" validate:"required"`
+	BkBizID                int64                     `json:"bk_biz_id" validate:"required"`
+	Name                   string                    `json:"name" validate:"required"`
+	CoverPing              float64                   `json:"cover_ping" validate:"required"`
+	BizType                string                    `json:"biz_type" validate:"required"`
+	DeploymentArchitecture []enumor.SchemeDeployArch `json:"deployment_architecture" validate:"required"`
+	UserDistribution       types.AreaInfos           `json:"user_distribution" validate:"required"`
+	CoverRate              float64                   `json:"cover_rate" validate:"required"`
+	CompositeScore         float64                   `json:"composite_score" validate:"required"`
+	NetScore               float64                   `json:"net_score" validate:"required"`
+	CostScore              float64                   `json:"cost_score" validate:"required"`
+	ResultIdcIDs           types.StringArray         `json:"result_idc_ids" validate:"required"`
 }
 
 // Validate SchemeCreateReq.
@@ -90,7 +91,7 @@ type MultiIdcTopo = coreselection.AreaValue[map[string]float64]
 type GenSchemeReq struct {
 	CoverPing              int                                `json:"cover_ping" validate:"required"`
 	BizType                string                             `json:"biz_type" validate:"required"`
-	DeploymentArchitecture []string                           `json:"deployment_architecture" validate:"required"`
+	DeploymentArchitecture []enumor.SchemeDeployArch          `json:"deployment_architecture" validate:"required"`
 	UserDistributions      []coreselection.AreaValue[float64] `json:"user_distribution" validate:"required"`
 }
 
@@ -101,10 +102,12 @@ func (r *GenSchemeReq) Validate() error {
 
 // GeneratedSchemeResult ...
 type GeneratedSchemeResult struct {
-	CoverRate      float64  `json:"cover_rate"`
-	CompositeScore float64  `json:"composite_score"`
-	AvgPing        float64  `json:"avg_ping"`
-	NetScore       float64  `json:"net_score"`
-	CostScore      float64  `json:"cost_score"`
-	ResultIdcIds   []string `json:"result_idc_ids"`
+	CoverRate              float64                 `json:"cover_rate"`
+	CompositeScore         float64                 `json:"composite_score"`
+	AvgPing                float64                 `json:"avg_ping"`
+	NetScore               float64                 `json:"net_score"`
+	CostScore              float64                 `json:"cost_score"`
+	DeploymentArchitecture enumor.SchemeDeployArch `json:"deployment_architecture"`
+	Vendors                []enumor.Vendor         `json:"vendors"`
+	ResultIdcIds           []string                `json:"result_idc_ids"`
 }
