@@ -47,8 +47,10 @@ export const useSchemeStore = defineStore({
     setSchemeData(data: typeof this.schemeData) {
       this.schemeData = data;
     },
-    sortSchemes(choice: string) {
-      this.recommendationSchemes.sort((a, b) => a[choice] - b[choice]);
+    sortSchemes(choice: string, isAsc = true) {
+      this.recommendationSchemes = this.recommendationSchemes.sort(
+        (a, b) => (a[choice] - b[choice]) * (isAsc ? 1 : -1),
+      );
     },
     /**
      * 获取资源选型方案列表

@@ -1,4 +1,4 @@
-import { Exception, Select } from 'bkui-vue';
+import { Button, Exception, Select } from 'bkui-vue';
 import { defineComponent, ref, watch } from 'vue';
 import './index.scss';
 import { Info } from 'bkui-vue/lib/icon';
@@ -32,14 +32,19 @@ export default defineComponent({
   setup(props) {
     const sortChoice = ref(SchemeSortOptions[0].key);
     const schemeStore = useSchemeStore();
+    const isAsc = ref(true);
 
     watch(
-      () => sortChoice.value,
-      (choice) => {
-        schemeStore.sortSchemes(choice);
+      () => [
+        sortChoice.value,
+        isAsc.value,
+      ],
+      () => {
+        schemeStore.sortSchemes(sortChoice.value, isAsc.value);
       },
       {
         deep: true,
+        immediate: true,
       },
     );
 
@@ -50,7 +55,7 @@ export default defineComponent({
           <Info
             class={'scheme-preview-header-tip'}
             v-bk-tooltips={{
-              content: '待产品补充',
+              content: '本方案由系统的算法推荐出来，算法所使用的数据是平台的公共数据，暂不支持自定义数据。推荐的依据为业务分布地区，业务的类型，网络延迟，默认的用户分布占比等。',
             }}
           />
           <Select
@@ -63,6 +68,9 @@ export default defineComponent({
               )),
             }}
           </Select>
+          <Button onClick={() => isAsc.value = !isAsc.value}>
+            <i class={`${isAsc.value ? 'icon hcm-icon bkhcm-icon-shengxu' : 'hcm-icon bkhcm-icon-jiangxu'}`}/>
+          </Button>
         </div>
         <div class={'scheme-preview-content'}>
           {schemeStore.recommendationSchemes.length > 0
