@@ -1,7 +1,6 @@
-import { defineComponent, reactive, ref, PropType, onMounted, getTransitionRawChildren } from "vue";
+import { defineComponent, reactive, ref, watch, PropType, onMounted } from "vue";
 import { BkTable, BkTableColumn } from "bkui-vue/lib/table";
-import { IAreaInfo } from '@/typings/scheme';
-import { IIdcListItem, IIdcLatencyListItem } from "@/typings/scheme";
+import { IIdcInfo, IIdcLatencyListItem, IAreaInfo, IIdcServiceAreaRel } from "@/typings/scheme";
 import { useSchemeStore } from "@/store";
 import { getScoreColor } from '@/common/util';
 import SearchInput from "../../../components/search-input/index";
@@ -16,7 +15,7 @@ interface ITableDataItem {
 export default defineComponent({
   name: 'network-heat-map',
   props: {
-    idcList: Array as PropType<IIdcListItem[]>,
+    idcList: Array as PropType<IIdcInfo[]>,
     areaTopo: Array as PropType<IAreaInfo[]>,
   },
   setup (props) {
@@ -24,14 +23,22 @@ export default defineComponent({
 
     const searchStr = ref('');
     const isHighlight = ref(false);
-    let idcData = reactive<ITableDataItem[]>([]);
+    let idcData = ref<ITableDataItem[]>([]);
     const idcDataLoading = ref(false);
     const activedTab = ref('biz');
+    let idcServiceArea = reactive<IIdcServiceAreaRel[]>([]);
+    const containerRef = ref(null);
 
     const TABS = [
       { id: 'biz', label: '业务数据' },
       { id: 'ping', label: '裸 ping 数据' },
     ];
+
+    watch(() => props.idcList, val => {
+      if (val.length > 0) {
+        getTableData();
+      }
+    });
 
     const handleSearch = () => {};
 
@@ -45,8 +52,7 @@ export default defineComponent({
         } else {
           res = await schemeStore.queryPingLatency(props.areaTopo, idcs);
         }
-        console.log(res);
-        idcData = transToTableData(res.data.details);
+        idcData.value = transToTableData(res.data);
         idcDataLoading.value = false;
       } catch (e) {
         console.log(e);
@@ -56,6 +62,17 @@ export default defineComponent({
     const handleSwitchTab = (id: string) => {
       activedTab.value = id;
       getTableData();
+    }
+
+    const handleHighlightChange  = async (val: boolean) => {
+      isHighlight.value = val;
+      if (val) {
+        const idcs = props.idcList.map(item => item.id);
+        const res = await schemeStore.queryIdcServiceArea(idcs, props.areaTopo);
+        idcServiceArea = res.data;
+      } else {
+        idcServiceArea = [];
+      }
     }
 
     const transToTableData = (data: IIdcLatencyListItem[]) => {
@@ -87,18 +104,21 @@ export default defineComponent({
       return list;
     };
 
-    const renderValCell = (cell: string|number, data: ITableDataItem) => {
+    const renderValCell = (data: ITableDataItem, id: string) => {
       if (data) {
-        return (<div class="value-cell" style={{ color: getScoreColor(Number(cell)) }}>{`${cell}ms`}</div>);
+        const value = Number(data[id]);
+        return (<div class="value-cell" style={{ color: getScoreColor(value) }}>{`${value.toFixed(2)}ms`}</div>);
       }
     };
 
     onMounted(() => {
-      getTableData();
+      if (props.idcList.length > 0) {
+        getTableData();
+      }
     });
 
     return () => (
-      <div class="network-heat-map">
+      <div ref={containerRef.value} class="network-heat-map">
         <h3 class="title">网络热力分析</h3>
         <div class="data-switch-panel">
           <div class="data-type-tabs">
@@ -127,31 +147,33 @@ export default defineComponent({
               <span class="value">11ms</span>
             </div>
           </div>
-          <bk-checkbox v-model={isHighlight.value}>高亮服务区域</bk-checkbox>
+          <bk-checkbox v-model={isHighlight.value} onChange={handleHighlightChange}>高亮服务区域</bk-checkbox>
         </div>
         <div class="idc-data-table">
-          <BkTable key={activedTab.value} border={['col', 'outer']} data={idcData}>
-            <BkTableColumn label="国家 \ IDC" prop="rowName" fixed>
-              {{
-                default: ({ cell, data }: { cell: string| number, data: ITableDataItem }) => {
-                  if (data) {
-                    return <div class={['name-cell', { country: data.isCountry }]}>{cell}</div>
+          <bk-loading loading={idcDataLoading.value} style={{ height: '100%' }}>
+            <BkTable key={activedTab.value} border={['col', 'outer']} data={idcData.value}>
+              <BkTableColumn label="国家 \ IDC" prop="rowName" fixed>
+                {{
+                  default: ({ cell, data }: { cell: string| number, data: ITableDataItem }) => {
+                    if (data) {
+                      return <div class={['name-cell', { country: data.isCountry }]}>{cell}</div>
+                    }
                   }
-                }
-              }}
-            </BkTableColumn>
-            {
-              props.idcList.map(idc => {
-                return (
-                  <BkTableColumn key={idc.id} label={idc.name} prop={idc.id}>
-                    {{
-                      default: ({ cell, data }: { cell: string| number, data: ITableDataItem }) => renderValCell(cell, data)
-                    }}
-                  </BkTableColumn>
-                )
-              })
-            }
-          </BkTable>
+                }}
+              </BkTableColumn>
+              {
+                props.idcList.map(idc => {
+                  return (
+                    <BkTableColumn key={idc.id} label={idc.name} prop={idc.id}>
+                      {{
+                        default: ({ data }: { data: ITableDataItem }) => renderValCell(data, idc.name)
+                      }}
+                    </BkTableColumn>
+                  )
+                })
+              }
+            </BkTable>
+          </bk-loading>
         </div>
       </div>
     );

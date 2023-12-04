@@ -18,6 +18,7 @@ export default defineComponent({
     schemeListLoading: Boolean,
     showEditIcon: Boolean,
     schemeData: Object,
+    selectFn: Function,
     onBack: {
       type: Function,
       required: false,
@@ -31,13 +32,21 @@ export default defineComponent({
     const isEditDialogOpen = ref(false);
     let editedSchemeData = reactive({});
 
-    const goToSchemeList = () => {
-      router.push({ name: 'scheme-list' });
+    const handleBack = () => {
+      if (typeof props.onBack === 'function') {
+        props.onBack();
+      } else {
+        router.push({ name: 'scheme-list' });
+      }
     }
 
-    const handleSelect = (id: string) => {
-      if (id !== props.schemeData.id) {
-        router.push({ name: 'scheme-detail', query: { sid: id } })
+    const handleSelect = (scheme: ISchemeSelectorItem) => {
+      if (scheme.id !== props.schemeData.id) {
+        if (typeof props.selectFn === 'function') {
+          props.selectFn(scheme)
+        } else {
+          router.push({ name: 'scheme-detail', query: { sid: scheme.id } })
+        }
       }
     };
 
@@ -81,7 +90,7 @@ export default defineComponent({
                         return (
                           <div
                             class={['scheme-item', scheme.id === props.schemeData.id ? 'actived' : '']}
-                            onClick={() => { handleSelect(scheme.id) }}>
+                            onClick={() => { handleSelect(scheme) }}>
                             <div class="scheme-name-area">
                               <div class="name-text">{scheme.name}</div>
                               <div class="tag-list">

@@ -3,7 +3,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { InfoBox, Message } from "bkui-vue";
 import { useSchemeStore } from "@/store";
 import { QueryFilterType, QueryRuleOPEnum } from '@/typings/common';
-import { IIdcListItem } from "@/typings/scheme";
+import { IIdcInfo } from "@/typings/scheme";
 import { ISchemeListItem, ISchemeEditingData, ISchemeSelectorItem } from "@/typings/scheme";
 import DetailHeader from "./components/detail-header";
 import SchemeInfoCard from "./components/scheme-info-card";
@@ -24,12 +24,14 @@ export default defineComponent({
     const detailLoading = ref(true);
     let schemeList = reactive<ISchemeListItem[]>([]);
     const schemeListLoading = ref(false);
-    const idcList = ref<IIdcListItem[]>([]);
+    const idcList = ref<IIdcInfo[]>([]);
     const idcListLoading = ref(false);
 
     watch(() => route.query?.sid, val => {
-      schemeId.value = val;
-      getSchemeDetail();
+      if (val) {
+        schemeId.value = val;
+        getSchemeDetail();
+      }
     });
 
     // 获取方案详情
@@ -64,7 +66,6 @@ export default defineComponent({
         }]
       };
       const res = await schemeStore.listIdc(filterQuery, { start: 0, limit: 500 });
-      console.log(res);
       idcList.value = res.data;
       idcListLoading.value = false;
     };
