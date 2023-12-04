@@ -22,7 +22,7 @@ export default defineComponent({
 
     let schemeDetail = ref<ISchemeListItem>();
     const detailLoading = ref(true);
-    let schemeList = reactive<ISchemeListItem[]>([]);
+    const schemeList = ref<ISchemeListItem[]>([]);
     const schemeListLoading = ref(false);
     const idcList = ref<IIdcInfo[]>([]);
     const idcListLoading = ref(false);
@@ -50,7 +50,7 @@ export default defineComponent({
         rules: [],
       };
       const res = await schemeStore.listCloudSelectionScheme(filterQuery, { start: 0, limit: 500 });
-      schemeList = res.data.details;
+      schemeList.value = res.data.details;
       schemeListLoading.value = false;
     };
 
@@ -78,7 +78,12 @@ export default defineComponent({
     })
 
     const handleUpdate = (data: ISchemeEditingData) => {
-      schemeDetail = Object.assign({}, schemeDetail, data);
+      schemeDetail.value = Object.assign({}, schemeDetail.value, data);
+      const crtScheme = schemeList.value.find(item => item.id === schemeDetail.value.id);
+      if (crtScheme) {
+        crtScheme.name = data.name;
+        crtScheme.bk_biz_id = data.bk_biz_id;
+      }
     };
 
     const handleDel = () => {
@@ -116,7 +121,7 @@ export default defineComponent({
             detailLoading.value ? null : (
               <>
                 <DetailHeader
-                  schemeList={schemeList}
+                  schemeList={schemeList.value}
                   schemeListLoading={schemeListLoading.value}
                   schemeData={headerData.value}
                   showEditIcon={true}
