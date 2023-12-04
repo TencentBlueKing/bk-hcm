@@ -51,21 +51,6 @@ export interface ISchemeSelectorItem {
   cost_score: number;
 }
 
-// idc机房列表数据
-export interface IIdcListItem {
-  id: string;
-  vendor: string;
-  name: string;
-  bk_biz_id: number;
-  country: string;
-  region: string;
-  price: number;
-  creator: string;
-  reviser: string;
-  created_at: string;
-  updated_at: string;
-}
-
 // idc机房延迟数据列表单条数据
 export interface IIdcLatencyListItem {
   name: string;
@@ -151,4 +136,15 @@ export interface IIdcInfo {
   vendor: VendorEnum;
   region: string;
   id: string;
+  price: number;
+}
+
+// idc机房列表数据
+export interface IIdcListItem extends IIdcInfo {
+  bk_biz_id: number;
+  country: string;
+  creator: string;
+  reviser: string;
+  created_at: string;
+  updated_at: string;
 }

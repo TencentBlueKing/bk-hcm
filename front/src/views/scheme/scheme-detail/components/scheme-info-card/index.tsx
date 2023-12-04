@@ -1,6 +1,7 @@
-import { defineComponent, PropType } from "vue";
+import { defineComponent, PropType, ref } from "vue";
 import { DEPLOYMENT_ARCHITECTURE_MAP } from '@/constants';
 import { ISchemeListItem } from "@/typings/scheme";
+import SchemeUserProportionShowDialog from "@/views/scheme/scheme-recommendation/components/scheme-user-proportion-show-dialog";
 
 import './index.scss';
 
@@ -21,6 +22,7 @@ export default defineComponent({
         { id: 'deployment_architecture', name: '部署架构' },
       ]
     ];
+    const isProportionDialogShow = ref(false);
 
     const getValue = (id: string) => {
       switch (id) {
@@ -46,7 +48,11 @@ export default defineComponent({
                     return (
                       <div class="info-item" key={item.id}>
                         <span class="label">{item.name}：</span>
-                        <span class="value">{item.id === 'user_rate' ? <bk-button text theme="primary">查看详情</bk-button> : getValue(item.id)}</span>
+                        <span class="value">
+                          {
+                            item.id === 'user_rate' ? <bk-button text theme="primary" onClick={() => { isProportionDialogShow.value = true }}>查看详情</bk-button> : getValue(item.id)
+                          }
+                        </span>
                       </div>
                     )
                   })}
@@ -58,6 +64,7 @@ export default defineComponent({
         {/* <div class="recreate-btn">
           <bk-button outline theme="primary">重新生成</bk-button>
         </div> */}
+        <SchemeUserProportionShowDialog v-model:isShow={isProportionDialogShow.value} treeData={props.schemeDetail.user_distribution} />
       </div>
     )
   },

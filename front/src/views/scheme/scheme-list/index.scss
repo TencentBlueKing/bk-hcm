@@ -62,7 +62,11 @@
     color: #63656e;
     background: #f0f1f5;
     border-radius: 2px;
-
+  }
+  .verdors-list {
+    .cloud-service-tag:not(:last-of-type) {
+      margin-right: 4px;
+    }
   }
   .bk-table-footer {
     padding-left: 16px;
