@@ -545,22 +545,17 @@ export default defineComponent({
                         ['/service/my-apply'].includes(curPath.value)
                           ? 'view-warp no-padding'
                           : 'view-warp'
-                      }>
+                      } style={{ height: route.path !== '/business/host' ? 'calc(100vh - 52px)' : 'calc(100% - 104px)' }}>
                       {isRouterAlive.value ? renderRouterView() : null}
                     </div>
                   </>
                 ),
-
-                footer: () => (
-                  // eslint-disable-next-line max-len
-                  <div class='mt20'>
-                    {
-                      route.path === '/resource/resource'
-                        ? `Copyright © ${curYear.value} Tencent BlueKing. All Rights Reserved. ${VERSION}`
-                        : null
-                    }
-                  </div>
-                ),
+                footer: () => {
+                  if (route.path === '/business/host') {
+                    return (<div>Copyright © ${curYear.value} Tencent BlueKing. All Rights Reserved. ${VERSION}</div>);
+                  }
+                  return null;
+                },
               }}
             </Navigation>
           }

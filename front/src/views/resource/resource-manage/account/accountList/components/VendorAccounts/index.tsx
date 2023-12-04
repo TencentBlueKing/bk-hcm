@@ -52,54 +52,30 @@ export default defineComponent({
     return () => (
       <div class={'vendor-account-list'}>
         {props.accounts.map(({ vendor, count, name, icon, accounts, isExpand }) => (
-            <>
-              {count > 0 ? (
-                <>
-                  <div
-                    class={'vendor-account-menu'}
-                    onClick={() => props.handleExpand(vendor as VendorEnum)}>
-                    <i
-                      class={
-                        isExpand
-                          ? 'icon bk-icon icon-down-shape vendor-account-menu-dropdown-icon'
-                          : 'icon bk-icon icon-right-shape vendor-account-menu-dropdown-icon'
-                      }></i>
-                    {icon}
-                    <span class={'vendor-account-title'}>{name}</span>
-                    <span class={'vendor-account-menu-count'}>{count}</span>
-                  </div>
-                  {isExpand
-                    ? accounts.map(({ sync_status, name, id }) => (
-                        <div
-                          class={`vendor-account-menu-item ${resourceAccountStore.resourceAccount?.id === id ? 'actived-vendor-account-menu-item' : ''}`}
-                          onClick={() => props.handleSelect(id)}
-                        >
-                          <img
-                            src={
-                              sync_status === 'sync_success'
-                                ? successAccount
-                                : failedAccount
-                            }
-                            class={'vendor-icon'}></img>
-                          <span class={'vendor-account-menu-item-text'}>
-                            {name.length > 22
-                              ? (
-                                <span v-bk-tooltips={{
-                                  content: name,
-                                  placement: 'right',
-                                }}
-                              >
-                                  {`${name.substring(0, 22)}..`}
-                                </span>
-                              )
-                              : name}
-                          </span>
-                        </div>
-                    ))
-                    : null}
-                </>
-              ) : null}
-            </>
+            <div class='vendor-wrap'>
+              <div class={`vendor-item-wrap${isExpand ? ' sticky' : ''}`} onClick={() => props.handleExpand(vendor)}>
+                <i class={`icon bk-icon vendor-account-menu-dropdown-icon${isExpand ? ' icon-down-shape' : ' icon-right-shape'}`}></i>
+                {icon}
+                <div class='vendor-title'>{name}</div>
+                <div class='vendor-account-count'>{count}</div>
+              </div>
+              <div class={`account-list-wrap${isExpand ? ' expand' : ''}`}>
+                {
+                  accounts.map(({ sync_status, name, id }) => (
+                    <div class={`account-item${resourceAccountStore.resourceAccount?.id === id ? ' active' : ''}`} key={id} onClick={() => props.handleSelect(id)}>
+                      <img src={sync_status === 'sync_success' ? successAccount : failedAccount} alt='' class='sync-status-icon' />
+                      <span class='account-text'>
+                        {
+                          name.length > 22 ? (
+                            <span v-bk-tooltips={{ content: name, placement: 'right' }}>{`${name.substring(0, 22)}..`}</span>
+                          ) : (name)
+                        }
+                      </span>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
         ))}
       </div>
     );

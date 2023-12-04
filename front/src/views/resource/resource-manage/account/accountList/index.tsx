@@ -107,7 +107,7 @@ export default defineComponent({
             }
           }}
          </VirtualRender> */}
-        <Loading loading={isLoading.value}>
+        <Loading loading={isLoading.value} style={{ height: 'calc(100% - 85px)' }}>
           {searchVal.value.length ? null : (
             <div
               class={`all-vendors specific-vendor ${
