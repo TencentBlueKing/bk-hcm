@@ -204,7 +204,7 @@ func (svc *service) QueryServiceArea(cts *rest.Contexts) (any, error) {
 	allPingData, err := svc.listAllAvgProvincePingData(cts.Kit, svc.cfg.TableNames.LatencyPingProvinceIdc, notBefore,
 		bizID, idcNames)
 	if err != nil {
-		logs.Errorf("fail to query %s with area %s data, err: %v, rid: %s",
+		logs.Errorf("fail to query %s, err: %v, rid: %s",
 			svc.cfg.TableNames.LatencyPingProvinceIdc, err, cts.Kit.Rid)
 		return nil, err
 	}
@@ -299,7 +299,7 @@ func getBizIDAndIDCNames(idcList []coresel.Idc) (bizId int64, idcNames []string,
 		if bizId != -1 && bizId != idc.BkBizID {
 
 			return 0, nil, errf.Newf(errf.InvalidParameter,
-				"idc ids belong to more than one biz: %d,%d", bizId, idc.BkBizID)
+				"idc ids belong to more than one biz: %d, %d", bizId, idc.BkBizID)
 		}
 		bizId = idc.BkBizID
 		idcNames = append(idcNames, idc.Name)
