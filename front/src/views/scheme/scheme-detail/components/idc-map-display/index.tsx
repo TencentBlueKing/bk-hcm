@@ -1,7 +1,7 @@
 import { PropType, defineComponent, onMounted, reactive, ref } from "vue";
 import { Scene, PolygonLayer, LineLayer, Zoom  } from '@antv/l7';
 import { Mapbox } from '@antv/l7-maps';
-import { IIdcListItem } from "@/typings/scheme";
+import { IIdcInfo } from "@/typings/scheme";
 import geoData from "@/constants/geo-data";
 import CloudServiceTag from "@/views/scheme/components/cloud-service-tag";
 
@@ -10,7 +10,7 @@ import './index.scss';
 export default defineComponent({
   name: 'idc-map-display',
   props: {
-    list: Array as PropType<IIdcListItem[]>,
+    list: Array as PropType<IIdcInfo[]>,
   },
   setup(props) {
     const mapContainerRef = ref();
@@ -87,14 +87,6 @@ export default defineComponent({
                   )
                 })
               }
-              <div class="idc-card">
-                <div class="summary-head">
-                  <div class="status-dot"></div>
-                  <div class="idc-name">@todo 待删除</div>
-                  <CloudServiceTag type={'tcloud'} small={true} showIcon={true} />
-                </div>
-                <div class="cost">IDC 单位成本: $ 300</div>
-              </div>
             </div>
           </div>
         </div>

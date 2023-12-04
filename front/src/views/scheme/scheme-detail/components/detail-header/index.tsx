@@ -25,6 +25,7 @@ export default defineComponent({
       default: () => ({})
     },
     showEditIcon: Boolean,
+    selectFn: Function,
     onBack: Function,
   },
   setup (props, ctx) {
@@ -42,6 +43,7 @@ export default defineComponent({
             schemeListLoading={props.schemeListLoading}
             showEditIcon={props.showEditIcon}
             schemeData={props.schemeData}
+            selectFn={props.selectFn}
             onBack={props.onBack}
             onUpdate={(data) => { ctx.emit('update', data) }} />
           <div class="tag-list">

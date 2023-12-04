@@ -61,6 +61,8 @@
 }
 .idc-data-table {
   margin-top: 22px;
+  height: calc(100% - 140px);
+  overflow: auto;
   .bk-table {
     width: 100%;
     .bk-table-body table tbody tr td .cell {
