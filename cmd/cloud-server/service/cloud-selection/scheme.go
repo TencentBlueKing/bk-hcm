@@ -26,7 +26,9 @@ import (
 	"hcm/cmd/cloud-server/plugin/recommend"
 	csselection "hcm/pkg/api/cloud-server/cloud-selection"
 	"hcm/pkg/api/core"
+	coreselection "hcm/pkg/api/core/cloud-selection"
 	dsselection "hcm/pkg/api/data-service/cloud-selection"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
@@ -245,8 +247,19 @@ func (svc *service) GenerateRecommendScheme(cts *rest.Contexts) (any, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// idc 列表
+	idcResp, err := svc.client.DataService().Global.CloudSelection.ListIdc(cts.Kit,
+		&core.ListReq{Page: core.NewDefaultBasePage(), Filter: tools.AllExpression()})
+	if err != nil {
+		logs.Errorf("fail to list IDC, err: %v", err)
+		return nil, err
+	}
+	idcByID := converter.SliceToMap(idcResp.Details, func(idc coreselection.Idc) (string, coreselection.Idc) {
+		return idc.ID, idc
+	})
+
 	// 前端输入转算法输入
-	algIn, err := svc.buildALgIn(cts, req)
+	algIn, err := svc.buildALgIn(cts, req, idcByID)
 	if err != nil {
 		return nil, err
 	}
@@ -271,53 +284,56 @@ func (svc *service) GenerateRecommendScheme(cts *rest.Contexts) (any, error) {
 			NetScore:       s.F1Score,
 			CostScore:      s.F2Score,
 			ResultIdcIds:   s.Idc,
+			Vendors:        slice.Unique(slice.Map(s.Idc, func(id string) enumor.Vendor { return idcByID[id].Vendor })),
+			// only distributed is supported
+			DeploymentArchitecture: enumor.Distributed,
 		}
 	}), nil
 
 }
 
-func (svc *service) buildALgIn(cts *rest.Contexts, req *csselection.GenSchemeReq) (*recommend.AlgorithmInput, error) {
-	// idc 列表
-	idcResp, err := svc.client.DataService().Global.CloudSelection.ListIdc(cts.Kit,
-		&core.ListReq{Page: core.NewDefaultBasePage(), Filter: tools.AllExpression()})
-	if err != nil {
-		logs.Errorf("fail to list IDC, err: %v", err)
-		return nil, err
-	}
-	idcIDs := make([]string, 0, len(idcResp.Details))
-	idcPriceMap := make(map[string]float64, len(idcResp.Details))
-	idcName2ID := make(map[string]string, len(idcResp.Details))
+func (svc *service) buildALgIn(cts *rest.Contexts, req *csselection.GenSchemeReq,
+	idcByID map[string]coreselection.Idc) (*recommend.AlgorithmInput, error) {
+
+	idcPriceMap := make(map[string]float64, len(idcByID))
+	usedIdcIds := make([]string, 0, len(idcByID))
+	idcByName := make(map[string]coreselection.Idc, len(idcByID))
 	var idcBizID int64 = -1
-	for _, idc := range idcResp.Details {
+	for _, idc := range idcByID {
 		price, ok := svc.cfg.DefaultIdcPrice[idc.Vendor]
 		if !ok {
 			continue
 		}
+		usedIdcIds = append(usedIdcIds, idc.ID)
 		// TODO: use user input
 		idcBizID = idc.BkBizID
 		idcPriceMap[idc.ID] = price
-		idcIDs = append(idcIDs, idc.ID)
-		idcName2ID[idc.Name] = idc.ID
+		idcByName[idc.Name] = idc
 	}
 
 	// 人口分布和ping数据
 	notBefore := times.DateAfterNow(-svc.cfg.AvgLatencySampleDays)
 	userDistribution := map[string]float64{}
 	pingInfo := make(map[string]map[string]float64, len(req.UserDistributions))
+
+	allProvinceData, err := svc.listAllAvgProvincePingData(cts.Kit, svc.cfg.TableNames.LatencyPingProvinceIdc,
+		notBefore, idcBizID, converter.MapKeyToStringSlice(idcByName))
+	if err != nil {
+		logs.Errorf("fail to get avg ping data, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
 	for _, area := range req.UserDistributions {
 		// ping数据
-		pingData, err := svc.getAvgProvincePingData(cts.Kit, svc.cfg.TableNames.LatencyPingProvinceIdc,
-			area.Name, notBefore, idcBizID, converter.MapKeyToStringSlice(idcName2ID))
-		if err != nil {
-			logs.Errorf("fail to get avg ping data, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, err
+		pingData, exists := allProvinceData[area.Name]
+		if !exists {
+			return nil, errf.Newf(errf.InvalidParameter, "wrong country: %s", area.Name)
 		}
 		for _, pd := range pingData {
 			name := area.Name + "-" + pd.Province
 			if _, exists := pingInfo[name]; !exists {
-				pingInfo[name] = make(map[string]float64, len(idcIDs))
+				pingInfo[name] = make(map[string]float64, len(idcByID))
 			}
-			pingInfo[name][idcName2ID[pd.IDCName]] = pd.Latency
+			pingInfo[name][idcByName[pd.IDCName].ID] = pd.Latency
 		}
 		// 人口数据
 		for _, p := range area.Children {
@@ -332,7 +348,7 @@ func (svc *service) buildALgIn(cts *rest.Contexts, req *csselection.GenSchemeReq
 		CoverPing:       req.CoverPing,
 		PingInfo:        pingInfo,
 		IdcPrice:        idcPriceMap,
-		IdcList:         idcIDs,
+		IdcList:         usedIdcIds,
 		CoverPingRanges: svc.cfg.CoverPingRanges,
 		IDCPriceRanges:  svc.cfg.IDCPriceRanges,
 		BanIdcList:      []string{},

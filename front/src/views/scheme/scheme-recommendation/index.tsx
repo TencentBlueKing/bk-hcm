@@ -93,10 +93,12 @@ export default defineComponent({
         property: 'selected_countries',
         content: () => (
           <bk-select
-            loading={initLoading.value}
+            loading={initLoading.value || countryChangeLoading.value}
             v-model={formData.selected_countries}
             multiple
             show-select-all
+            filterable
+            input-search={false}
             onBlur={handleChangeCountry}
             onClear={clearLastData}>
             {countriesList.value.map((country, index) => (
@@ -129,7 +131,7 @@ export default defineComponent({
           {
             label: '网络延迟',
             content: () => (
-              <bk-input type='number' v-model={formData.cover_ping}></bk-input>
+              <bk-input class="with-suffix" type='number' v-model={formData.cover_ping} suffix="ms"></bk-input>
             ),
           },
           /* {
@@ -182,11 +184,10 @@ export default defineComponent({
             <bk-button
               class='mr8'
               theme='primary'
-              onClick={generateSchemes}
-              loading={countryChangeLoading.value}>
+              onClick={generateSchemes}>
               选型推荐
             </bk-button>
-            <bk-button>清空</bk-button>
+            <bk-button onClick={clearFormData}>清空</bk-button>
           </>
         ),
       },
@@ -194,6 +195,18 @@ export default defineComponent({
     const scene = ref<'blank' | 'preview' | 'detail'>('blank');
     const formRef = ref();
     const formRules = {};
+
+    const clearFormData = () => {
+      clearLastData();
+      Object.assign(formData, {
+        selected_countries: [],
+        biz_type: '',
+        cover_ping: null,
+        deployment_architecture: [],
+        user_distribution: [],
+        user_distribution_mode: 'default',
+      })
+    }
 
     const getInitData = async () => {
       initLoading.value = true;
@@ -209,6 +222,7 @@ export default defineComponent({
       initLoading.value = false;
       countriesList.value = res1.data.details;
       bizTypeList.value = res2.data.details;
+      formData.biz_type = bizTypeList.value?.[0].biz_type;
     };
 
     onMounted(() => {
