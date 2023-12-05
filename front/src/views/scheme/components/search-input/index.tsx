@@ -34,8 +34,9 @@ export default defineComponent({
         v-model={inputVal.value}
         style={{'width': `${props.width}px`}}
         clearable={true}
-        onClear={() => triggerSearch}
-        onInput={() => triggerSearch}>
+        placeholder={props.placeholder}
+        onClear={triggerSearch}
+        onEnter={triggerSearch}>
         {{
           suffix: () => <Search class="search-input-icon" />
         }}

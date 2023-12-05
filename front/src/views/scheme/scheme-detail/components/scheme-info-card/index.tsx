@@ -29,7 +29,7 @@ export default defineComponent({
         case 'user_distribution':
           return props.schemeDetail.user_distribution.map(item => item.name).join(', ');
         case 'network':
-          return `网络延迟 < @todo待确认、ping抖动 < ${props.schemeDetail.cover_ping}、丢包率 < ${props.schemeDetail.cover_rate}%`
+          return `网络延迟 < ${props.schemeDetail.cover_ping}ms`
         case 'deployment_architecture':
           return props.schemeDetail.deployment_architecture.map(item => DEPLOYMENT_ARCHITECTURE_MAP[item]).join(', ');
         default:

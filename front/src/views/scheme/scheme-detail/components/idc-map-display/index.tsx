@@ -1,8 +1,9 @@
-import { PropType, defineComponent, onMounted, reactive, ref } from "vue";
-import { Scene, PolygonLayer, LineLayer, Zoom  } from '@antv/l7';
+import { PropType, defineComponent, onMounted, ref, watch } from "vue";
+import { Scene, PolygonLayer, LineLayer, Zoom, Popup, PointLayer } from '@antv/l7';
 import { Mapbox } from '@antv/l7-maps';
 import { IIdcInfo } from "@/typings/scheme";
 import geoData from "@/constants/geo-data";
+import IdcReginData from "@/constants/idc-region-data";
 import CloudServiceTag from "@/views/scheme/components/cloud-service-tag";
 
 import './index.scss';
@@ -13,15 +14,35 @@ export default defineComponent({
     list: Array as PropType<IIdcInfo[]>,
   },
   setup(props) {
+
+    const REGION_MAP_COLORS = [
+      '#3762B8', '#3E96C2', '#61B2C2', '#85CCA8', '#FFC685', '#FFA66B', '#F5876C', '#D66F6B',
+      '#3A84FF', '#699DF4', '#2DCB56', '#6AD57C', '#FF9C01', '#FFB848', '#EA3636', '#EA5858',
+    ]
+
     const mapContainerRef = ref();
     const mapIns = ref();
 
+    watch(() => props.list, () => {
+      renderMap();
+    });
+
     const renderMap = () => {
+      if (props.list.length === 0) {
+        return;
+      }
+
+      const countryColors = {}
+      props.list.map((item, index) => {
+        countryColors[item.country] = REGION_MAP_COLORS[index % REGION_MAP_COLORS.length];
+      });
+
       mapIns.value = new Scene({
         id: mapContainerRef.value,
         map: new Mapbox ({
           pinch: 0,
-          center: [107.054293, 35.246265],
+          minZoom: 0.5,
+          center: [75.054293, 35.246265],
           style: 'blank',
         }),
         logoVisible: false,
@@ -30,11 +51,7 @@ export default defineComponent({
         // 行政区块
         const polygonLayer = new PolygonLayer({})
           .source(geoData)
-          .color('name', [
-            // '#3762B8', '#3E96C2', '#61B2C2', '#85CCA8', '#FFC685', '#FFA66B', '#F5876C', '#D66F6B',
-            // '#3A84FF', '#699DF4', '#2DCB56', '#6AD57C', '#FF9C01', '#FFB848', '#EA3636', '#EA5858',
-            '#d0d0d0'
-          ])
+          .color('name', (value) => countryColors?.[value] || '#d0d0d0')
           .shape('fill')
           .style({ opacity: 1 });
 
@@ -47,6 +64,32 @@ export default defineComponent({
           .size(0.6)
           .style({ opacity: 1 });
 
+        const regions: { type: string; features: any[] } = {
+          type: "FeatureCollection",
+          features: [],
+        };
+        props.list.forEach(item => {
+          const index = IdcReginData.features.findIndex(idc => idc.properties.region === item.region);
+          if (index > -1) {
+            regions.features.push(IdcReginData.features[index]);
+          }
+        })
+
+
+        console.log(regions)
+
+        const pointLayer = new PointLayer({
+          zIndex: 3,
+        })
+          .source(regions)
+          .shape('simple')
+          .size(5)
+          .color('#FF5656')
+          .style({
+            strokeColor: '#ffffff',
+            strokeWidth: 2,
+          });
+
         // 缩放组件
         const zoom = new Zoom({
           zoomInTitle: '放大',
@@ -55,7 +98,28 @@ export default defineComponent({
 
         mapIns.value.addLayer(polygonLayer);
         mapIns.value.addLayer(lineLayer);
+        mapIns.value.addLayer(pointLayer);
         mapIns.value.addControl(zoom);
+
+
+        let popup:Popup;
+        polygonLayer.on('mousemove', e => {
+          const name = e.feature.properties.name;
+          if (props.list.find(item => item.country === name)) {
+            popup = new Popup({
+              offsets: [ 0, 0 ],
+              closeButton: false
+            })
+              .setLnglat(e.lngLat)
+              .setHTML(`<span>${e.feature.properties.name}</span>`);
+  
+            mapIns.value.addPopup(popup);
+          } else {
+            if (popup) {
+              mapIns.value.removePopup(popup);
+            }
+          }
+        });
       })
     };
 

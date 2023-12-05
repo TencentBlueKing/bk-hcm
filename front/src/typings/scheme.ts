@@ -137,12 +137,12 @@ export interface IIdcInfo {
   region: string;
   id: string;
   price: number;
+  country?: string;
 }
 
 // idc机房列表数据
 export interface IIdcListItem extends IIdcInfo {
   bk_biz_id: number;
-  country: string;
   creator: string;
   reviser: string;
   created_at: string;

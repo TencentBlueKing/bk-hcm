@@ -4,13 +4,14 @@ import { IIdcInfo, IIdcLatencyListItem, IAreaInfo, IIdcServiceAreaRel } from "@/
 import { useSchemeStore } from "@/store";
 import { getScoreColor } from '@/common/util';
 import SearchInput from "../../../components/search-input/index";
+import RenderTable from './render-table/index';
 
 import './index.scss';
 
 interface ITableDataItem {
-  [key: string]: string|number|boolean;
+  [key: string]: any;
+  children?: ITableDataItem[];
 }
-
 
 export default defineComponent({
   name: 'network-heat-map',
@@ -23,10 +24,12 @@ export default defineComponent({
 
     const searchStr = ref('');
     const isHighlight = ref(false);
-    let idcData = ref<ITableDataItem[]>([]);
-    const idcDataLoading = ref(false);
+    const idcData = ref<ITableDataItem[]>([]);
+    const idcDataLoading = ref(true);
+    const IdcAreaDataLoading = ref(true);
     const activedTab = ref('biz');
-    let idcServiceArea = reactive<IIdcServiceAreaRel[]>([]);
+    let highlightArea = reactive<IIdcServiceAreaRel[]>([]);
+    let avePing = ref(0);
     const containerRef = ref(null);
 
     const TABS = [
@@ -37,10 +40,9 @@ export default defineComponent({
     watch(() => props.idcList, val => {
       if (val.length > 0) {
         getTableData();
+        getIdcAreaData();
       }
     });
-
-    const handleSearch = () => {};
 
     const getTableData = async() => {
       try {
@@ -64,15 +66,16 @@ export default defineComponent({
       getTableData();
     }
 
-    const handleHighlightChange  = async (val: boolean) => {
-      isHighlight.value = val;
-      if (val) {
-        const idcs = props.idcList.map(item => item.id);
-        const res = await schemeStore.queryIdcServiceArea(idcs, props.areaTopo);
-        idcServiceArea = res.data;
-      } else {
-        idcServiceArea = [];
-      }
+    // 获取idc区域数据，计算平均延迟以及高亮区域
+    const getIdcAreaData  = async () => {
+      IdcAreaDataLoading.value = true;
+      const idcs = props.idcList.map(item => item.id);
+      const res = await schemeStore.queryIdcServiceArea(idcs, props.areaTopo);
+      highlightArea = res.data;
+      avePing.value = res.data.reduce((acc, crt) => {
+        return acc + crt.avg_latency;
+      }, 0) / res.data.length;
+      IdcAreaDataLoading.value = false;
     }
 
     const transToTableData = (data: IIdcLatencyListItem[]) => {
@@ -97,23 +100,29 @@ export default defineComponent({
             obj[key] = (totalValue[key] / country.children.length).toFixed(2);
             return obj;
           }, {});
-          list.push({ rowName: country.name, isCountry: true, ...averagedValue });
-          list.push(...regionDataList);
+          list.push({
+            rowName: country.name,
+            isCountry: true,
+            isFold: false,
+            ...averagedValue,
+            children: regionDataList
+          })
         }
       });
       return list;
     };
 
-    const renderValCell = (data: ITableDataItem, id: string) => {
-      if (data) {
-        const value = Number(data[id]);
-        return (<div class="value-cell" style={{ color: getScoreColor(value) }}>{`${value.toFixed(2)}ms`}</div>);
+    const handleToggleCountry = (name: string) => {
+      const country = idcData.value.find(item => item.rowName === name);
+      if (country) {
+        country.isFold = !country.isFold;
       }
-    };
+    }
 
     onMounted(() => {
       if (props.idcList.length > 0) {
         getTableData();
+        getIdcAreaData();
       }
     });
 
@@ -130,49 +139,40 @@ export default defineComponent({
               })
             }
           </div>
-          <SearchInput v-model={searchStr.value} width={300} onSearch={handleSearch} />
+          <SearchInput v-model={searchStr.value} width={300} placeholder="请输入国家 \ IDC名称" />
         </div>
         <div class="data-content-wrapper">
           <div class="network-data">
             <div class="data-item">
               <span class="label">网络平均延迟: </span>
-              <span class="value">54ms</span>
-            </div>
-            <div class="data-item">
-              <span class="label">平均丢包率: </span>
-              <span class="value">3%</span>
-            </div>
-            <div class="data-item">
-              <span class="label">平均 ping 抖动: </span>
-              <span class="value">11ms</span>
+              <span class="value">
+                {
+                  IdcAreaDataLoading.value
+                  ?
+                  <bk-loading size="mini" theme="primary" mode="spin" />
+                  :
+                  `${avePing.value.toFixed(2)} ms`
+                }
+              </span>
             </div>
           </div>
-          <bk-checkbox v-model={isHighlight.value} onChange={handleHighlightChange}>高亮服务区域</bk-checkbox>
+          <bk-checkbox v-model={isHighlight.value}>高亮服务区域</bk-checkbox>
         </div>
         <div class="idc-data-table">
           <bk-loading loading={idcDataLoading.value} style={{ height: '100%' }}>
-            <BkTable key={activedTab.value} border={['col', 'outer']} data={idcData.value}>
-              <BkTableColumn label="国家 \ IDC" prop="rowName" fixed>
-                {{
-                  default: ({ cell, data }: { cell: string| number, data: ITableDataItem }) => {
-                    if (data) {
-                      return <div class={['name-cell', { country: data.isCountry }]}>{cell}</div>
-                    }
-                  }
-                }}
-              </BkTableColumn>
-              {
-                props.idcList.map(idc => {
-                  return (
-                    <BkTableColumn key={idc.id} label={idc.name} prop={idc.id}>
-                      {{
-                        default: ({ data }: { data: ITableDataItem }) => renderValCell(data, idc.name)
-                      }}
-                    </BkTableColumn>
-                  )
-                })
-              }
-            </BkTable>
+            {
+              idcDataLoading.value
+              ?
+              null
+              :
+              <RenderTable
+                idcList={props.idcList}
+                data={idcData.value}
+                searchStr={searchStr.value}
+                isHighlight={isHighlight.value}
+                highlightArea={highlightArea}
+                onToggleFold={handleToggleCountry} />
+            }
           </bk-loading>
         </div>
       </div>
