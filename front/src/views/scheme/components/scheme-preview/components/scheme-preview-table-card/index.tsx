@@ -2,7 +2,7 @@ import { PropType, defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
 import { Table, Tag, Loading, Button, Dialog, Form, Input, Message, PopConfirm } from 'bkui-vue';
 import { AngleDown, AngleRight } from 'bkui-vue/lib/icon';
-import VendorTcloud from '@/assets/image/vendor-tcloud.png';
+
 // @ts-ignore
 import AppSelect from '@blueking/app-select';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -10,6 +10,7 @@ import { useSchemeStore } from '@/store';
 import { QueryRuleOPEnum } from '@/typings';
 import { IServiceArea } from '@/typings/scheme';
 import { VendorEnum, VendorMap } from '@/common/constant';
+import { renderVendorIcons } from './renderVendorIcons';
 
 const { FormItem } = Form;
 
@@ -302,10 +303,12 @@ export default defineComponent({
             class={'scheme-preview-table-card-header-tag'}>
             分布式部署
           </Tag>
-          <img
-            src={VendorTcloud}
-            class={'scheme-preview-table-card-header-icon'}
-          />
+          {
+            renderVendorIcons(schemeStore.recommendationSchemes[props.idx].vendors)
+          }
+          {
+            schemeStore.recommendationSchemes[props.idx].vendors.map(v => v)
+          }
           <div class={'scheme-preview-table-card-header-score'}>
             <div class={'scheme-preview-table-card-header-score-item'}>
               综合评分：{' '}
@@ -321,7 +324,9 @@ export default defineComponent({
           <div class={'scheme-preview-table-card-header-operation'}>
             <Button class={'mr8'} onClick={handleViewDetail} loading={isViewDetailBtnLoading.value}>查看详情</Button>
             <Button theme='primary' onClick={() => (isDialogShow.value = true)} disabled={isSaved.value}>
-              保存
+              {
+                isSaved.value ? '已保存' : '保存'
+              }
             </Button>
           </div>
         </div>
