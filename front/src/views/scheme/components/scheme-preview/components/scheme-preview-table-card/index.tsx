@@ -203,6 +203,7 @@ export default defineComponent({
           name: item.name,
           vendor: item.vendor,
           country: item.region,
+          price: item.price,
         })),
       });
       isViewDetailBtnLoading.value = false;
