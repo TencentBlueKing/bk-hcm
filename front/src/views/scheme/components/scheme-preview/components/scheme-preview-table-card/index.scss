@@ -78,6 +78,11 @@
       background: #F0F1F5;
     }
 
+    &:active {
+      background: #E1ECFF;
+      color: #699DF4;
+    }
+
     .scheme-service-areas-icon {
       color: #A3C5FD;
       font-size: 13px;
