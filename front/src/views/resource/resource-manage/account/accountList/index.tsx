@@ -19,6 +19,7 @@ export default defineComponent({
       handleExpand,
       checkIsExpand,
       getAllVendorsAccountsList,
+      getVendorAccountList,
       accountsMatrix,
       isLoading,
     } = useAllVendorsAccounts();
@@ -133,6 +134,7 @@ export default defineComponent({
               handleExpand={handleExpand}
               handleSelect={setAccountId}
               checkIsExpand={checkIsExpand}
+              getVendorAccountList={getVendorAccountList}
             />
           )}
         </Loading>
