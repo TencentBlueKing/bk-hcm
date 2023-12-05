@@ -1,4 +1,4 @@
-import { PropType, defineComponent, watch } from 'vue';
+import { PropType, defineComponent, onMounted, ref, watch } from 'vue';
 import './index.scss';
 import successAccount from '@/assets/image/success-account.png';
 import failedAccount from '@/assets/image/failed-account.png';
@@ -19,6 +19,7 @@ export default defineComponent({
         icon: any;
         accounts: any[];
         isExpand: boolean;
+        hasNext: boolean;
       }>
       >,
     },
@@ -34,11 +35,17 @@ export default defineComponent({
       required: true,
       type: Function as PropType<(vendor: VendorEnum) => boolean>,
     },
+    getVendorAccountList: {
+      require: true,
+      type: Function as PropType<(vendor: VendorEnum) => void>,
+    },
   },
   setup(props) {
     const resourceAccountStore = useResourceAccountStore();
     const resourceStore = useResourceStore();
     const route = useRoute();
+
+    const loadingRef = ref([]);
 
     watch(() => route.query.accountId, (newVal, oldVal) => {
       if (!oldVal && newVal) {
@@ -49,10 +56,23 @@ export default defineComponent({
       }
     });
 
+    onMounted(() => {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            props.getVendorAccountList(entry.target.dataset.vendor);
+          }
+        });
+      });
+      loadingRef.value.forEach((vnode) => {
+        observer.observe(vnode.$el);
+      });
+    });
+
     return () => (
       <div class={'vendor-account-list'}>
-        {props.accounts.map(({ vendor, count, name, icon, accounts, isExpand }) => (
-            <div class='vendor-wrap'>
+        {props.accounts.map(({ vendor, count, name, icon, accounts, isExpand, hasNext }) => (
+          count > 0 && <div class='vendor-wrap'>
               <div class={`vendor-item-wrap${isExpand ? ' sticky' : ''}`} onClick={() => props.handleExpand(vendor)}>
                 <i class={`icon bk-icon vendor-account-menu-dropdown-icon${isExpand ? ' icon-down-shape' : ' icon-right-shape'}`}></i>
                 {icon}
@@ -73,6 +93,9 @@ export default defineComponent({
                       </span>
                     </div>
                   ))
+                }
+                {
+                  hasNext && <bk-loading ref={(ref: any) => loadingRef.value.push(ref)} data-vendor={vendor} size="small" loading><div style="width: 100%; height: 36px" /></bk-loading>
                 }
               </div>
             </div>
