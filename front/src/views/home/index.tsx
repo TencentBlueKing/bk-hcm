@@ -552,7 +552,7 @@ export default defineComponent({
                 ),
                 footer: () => {
                   if (route.path === '/business/host') {
-                    return (<div>Copyright © ${curYear.value} Tencent BlueKing. All Rights Reserved. ${VERSION}</div>);
+                    return (<div>Copyright © {curYear.value} Tencent BlueKing. All Rights Reserved. {VERSION}</div>);
                   }
                   return null;
                 },
