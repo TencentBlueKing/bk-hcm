@@ -306,9 +306,6 @@ export default defineComponent({
           {
             renderVendorIcons(schemeStore.recommendationSchemes[props.idx].vendors)
           }
-          {
-            schemeStore.recommendationSchemes[props.idx].vendors.map(v => v)
-          }
           <div class={'scheme-preview-table-card-header-score'}>
             <div class={'scheme-preview-table-card-header-score-item'}>
               综合评分：{' '}

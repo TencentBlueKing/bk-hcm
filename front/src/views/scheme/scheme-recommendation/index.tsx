@@ -5,6 +5,7 @@ import {
   computed,
   onMounted,
   watch,
+  onBeforeUnmount,
 } from 'vue';
 import './index.scss';
 import SchemePreview from '../components/scheme-preview';
@@ -225,6 +226,20 @@ export default defineComponent({
         });
       },
     );
+
+    function confirmLeave(event: any) {
+      (event || window.event).returnValue = '关闭提示';
+      return '关闭提示';
+    }
+
+    onBeforeUnmount(() => {
+      window.removeEventListener('beforeunload', confirmLeave);
+    });
+
+    onMounted(() => {
+      window.addEventListener('beforeunload', confirmLeave);
+    });
+
 
     return () => (
       <bk-loading
