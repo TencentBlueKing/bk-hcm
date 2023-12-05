@@ -252,7 +252,7 @@ export default defineComponent({
         region: v.region,
         price: v.price,
         service_areas: idcServiceAreasMap.value.get(v.id)?.service_areas.reduce((acc, cur) => {
-          acc += `${cur.country_name}, ${cur.province_name};`;
+          acc += `${cur.country_name} , ${cur.province_name} ; `;
           return acc;
         }, ''),
         ping: idcServiceAreasMap.value.get(v.id)?.avg_latency,
