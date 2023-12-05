@@ -28,10 +28,14 @@ export const useSchemeStore = defineStore({
       name: '',
       idcList: [],
     },
+    selectedSchemeIdx: 0,
   }),
   actions: {
     setUserDistribution(data: Array<IAreaInfo>) {
       this.userDistribution = data;
+    },
+    setSelectedSchemeIdx(idx: number) {
+      this.selectedSchemeIdx = idx;
     },
     setRecommendationSchemes(data: IRecommendSchemeList) {
       this.recommendationSchemes = data;

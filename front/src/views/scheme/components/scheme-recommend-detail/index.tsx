@@ -5,6 +5,7 @@ import { useSchemeStore } from '@/store';
 import { Button } from 'bkui-vue';
 import IdcMapDisplay from '../../scheme-detail/components/idc-map-display';
 import NetworkHeatMap from '../../scheme-detail/components/network-heat-map';
+import { ISchemeSelectorItem } from '@/typings/scheme';
 
 export default defineComponent({
   props: {
@@ -24,6 +25,9 @@ export default defineComponent({
             ...v,
           }))}
           onBack={props.onBack}
+          selectFn={(scheme: ISchemeSelectorItem) => {
+            schemeStore.setSelectedSchemeIdx(scheme.id  as number);
+          }}
         >
           {{
             operate: () => <Button theme='primary'>保存</Button>,

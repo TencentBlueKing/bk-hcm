@@ -191,6 +191,83 @@ export default defineComponent({
     const handleViewDetail = async () => {
       isViewDetailBtnLoading.value = true;
       await getSchemeDetails();
+      isViewDetailBtnLoading.value = false;
+      props.onViewDetail();
+    };
+
+    watch(
+      () => isExpanded.value,
+      async () => {
+        if (isExpanded.value) await getSchemeDetails();
+      },
+      {
+        immediate: true,
+      },
+    );
+
+    // 部署方案详情页里切换方案时重新拉数据
+    watch(
+      () => schemeStore.selectedSchemeIdx,
+      (idx) => {
+        if ((+idx) === props.idx) getSchemeDetails();
+      },
+    );
+
+    const getSchemeDetails = async () => {
+      // if (!tableData.value.length) {
+      isLoading.value = true;
+      const listIdcPromise = schemeStore.listIdc(
+        {
+          op: QueryRuleOPEnum.AND,
+          rules: [
+            {
+              field: 'id',
+              op: QueryRuleOPEnum.IN,
+              value: props.resultIdcIds,
+            },
+          ],
+        },
+        {
+          start: 0,
+          limit: props.resultIdcIds.length,
+        },
+      );
+      const queryIdcServiceAreaPromise = schemeStore.queryIdcServiceArea(
+        props.resultIdcIds,
+        schemeStore.userDistribution,
+      );
+      const [listIdcRes, queryIdcServiceAreaRes] = await Promise.all([
+        listIdcPromise,
+        queryIdcServiceAreaPromise,
+      ]);
+      queryIdcServiceAreaRes.data.forEach((v) => {
+        idcServiceAreasMap.value.set(v.idc_id, {
+          service_areas: v.service_areas,
+          avg_latency: v.avg_latency,
+        });
+      });
+      tableData.value = listIdcRes.data.map(v => ({
+        name: v.name,
+        vendor: v.vendor,
+        region: v.region,
+        price: v.price,
+        service_areas: idcServiceAreasMap.value.get(v.id)?.service_areas.reduce((acc, cur) => {
+          acc += `${cur.country_name}, ${cur.province_name};`;
+          return acc;
+        }, ''),
+        ping: idcServiceAreasMap.value.get(v.id)?.avg_latency,
+        id: v.id,
+        service_area_arr: idcServiceAreasMap.value.get(v.id)?.service_areas.sort((a, b) => {
+          return Math.floor(a.network_latency) - Math.floor(b.network_latency);
+        }).map((v, idx) => ({
+          ...v,
+          idx,
+        })),
+      }));
+      schemeVendors.value = Array.from(listIdcRes.data.reduce((acc, cur) => {
+        acc.add(cur.vendor);
+        return acc;
+      }, new Set()));
       schemeStore.setSchemeData({
         deployment_architecture: [],
         vendors: schemeVendors.value,
@@ -206,77 +283,8 @@ export default defineComponent({
           price: item.price,
         })),
       });
-      isViewDetailBtnLoading.value = false;
-      props.onViewDetail();
-    };
-
-    watch(
-      () => isExpanded.value,
-      async () => {
-        if (isExpanded.value) await getSchemeDetails();
-      },
-      {
-        immediate: true,
-      },
-    );
-
-    const getSchemeDetails = async () => {
-      if (!tableData.value.length) {
-        isLoading.value = true;
-        const listIdcPromise = schemeStore.listIdc(
-          {
-            op: QueryRuleOPEnum.AND,
-            rules: [
-              {
-                field: 'id',
-                op: QueryRuleOPEnum.IN,
-                value: props.resultIdcIds,
-              },
-            ],
-          },
-          {
-            start: 0,
-            limit: props.resultIdcIds.length,
-          },
-        );
-        const queryIdcServiceAreaPromise = schemeStore.queryIdcServiceArea(
-          props.resultIdcIds,
-          schemeStore.userDistribution,
-        );
-        const [listIdcRes, queryIdcServiceAreaRes] = await Promise.all([
-          listIdcPromise,
-          queryIdcServiceAreaPromise,
-        ]);
-        queryIdcServiceAreaRes.data.forEach((v) => {
-          idcServiceAreasMap.value.set(v.idc_id, {
-            service_areas: v.service_areas,
-            avg_latency: v.avg_latency,
-          });
-        });
-        tableData.value = listIdcRes.data.map(v => ({
-          name: v.name,
-          vendor: v.vendor,
-          region: v.region,
-          price: v.price,
-          service_areas: idcServiceAreasMap.value.get(v.id)?.service_areas.reduce((acc, cur) => {
-            acc += `${cur.country_name}, ${cur.province_name};`;
-            return acc;
-          }, ''),
-          ping: idcServiceAreasMap.value.get(v.id)?.avg_latency,
-          id: v.id,
-          service_area_arr: idcServiceAreasMap.value.get(v.id)?.service_areas.sort((a, b) => {
-            return Math.floor(a.network_latency) - Math.floor(b.network_latency);
-          }).map((v, idx) => ({
-            ...v,
-            idx,
-          })),
-        }));
-        schemeVendors.value = Array.from(listIdcRes.data.reduce((acc, cur) => {
-          acc.add(cur.vendor);
-          return acc;
-        }, new Set()));
-        isLoading.value = false;
-      }
+      isLoading.value = false;
+      // }
     };
 
     return () => (
