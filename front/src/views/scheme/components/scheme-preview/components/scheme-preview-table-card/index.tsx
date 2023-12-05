@@ -138,6 +138,11 @@ export default defineComponent({
           return `${Math.floor(cell)} ms`;
         },
       },
+      {
+        field: 'price',
+        label: 'IDC 单位成本',
+        render: ({ cell }: {cell: number}) => `$ ${cell}`,
+      },
     ];
     const tableData = ref([]);
     const isLoading = ref(false);
@@ -251,6 +256,7 @@ export default defineComponent({
           name: v.name,
           vendor: v.vendor,
           region: v.region,
+          price: v.price,
           service_areas: idcServiceAreasMap.value.get(v.id)?.service_areas.reduce((acc, cur) => {
             acc += `${cur.country_name}, ${cur.province_name};`;
             return acc;
