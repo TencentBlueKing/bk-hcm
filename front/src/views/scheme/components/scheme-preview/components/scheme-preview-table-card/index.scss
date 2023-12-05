@@ -105,7 +105,7 @@
 
   .index-number-box-container {
     display: flex;
-    justify-content: center;
+    justify-content: start;
     align-items: center;
 
     .index-number-box {
@@ -121,67 +121,19 @@
     }
 
     .bg-color-1 {
-      background-color: #3762B8;
+      background-color: #FF9C01;
     }
 
     .bg-color-2 {
-      background-color: #3E96C2;
+      background-color: #14A568;
     }
 
     .bg-color-3 {
-      background-color: #61B2C2;
+      background-color: #3A84FF;
     }
 
     .bg-color-4 {
-      background-color: #85CCA8;
-    }
-
-    .bg-color-5 {
-      background-color: #FFC685;
-    }
-
-    .bg-color-6 {
-      background-color: #FFA66B;
-    }
-
-    .bg-color-7 {
-      background-color: #FFF5876C;
-    }
-
-    .bg-color-8 {
-      background-color: #FFD66F6B;
-    }
-
-    .bg-color-9 {
-      background-color: #FF3A84FF;
-    }
-
-    .bg-color-10 {
-      background-color: #FF699DF4;
-    }
-
-    .bg-color-11 {
-      background-color: #FF2DCB56;
-    }
-
-    .bg-color-12 {
-      background-color: #FF6AD57C;
-    }
-
-    .bg-color-13 {
-      background-color: #FFFF9C01;
-    }
-
-    .bg-color-14 {
-      background-color: #FFFFB848;
-    }
-
-    .bg-color-15 {
-      background-color: #FFEA3636;
-    }
-
-    .bg-color-16 {
-      background-color: #FFEA5858;
+      background-color: #979BA5;
     }
   }
 }

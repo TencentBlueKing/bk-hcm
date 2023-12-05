@@ -2,7 +2,7 @@ import { PropType, defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
 import { Table, Tag, Loading, Button, Dialog, Form, Input, Message, PopConfirm } from 'bkui-vue';
 import { AngleDown, AngleRight } from 'bkui-vue/lib/icon';
-import VendorTcloud from '@/assets/image/vendor-tcloud.png';
+
 // @ts-ignore
 import AppSelect from '@blueking/app-select';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -10,6 +10,7 @@ import { useSchemeStore } from '@/store';
 import { QueryRuleOPEnum } from '@/typings';
 import { IServiceArea } from '@/typings/scheme';
 import { VendorEnum, VendorMap } from '@/common/constant';
+import { renderVendorIcons } from './renderVendorIcons';
 
 const { FormItem } = Form;
 
@@ -89,15 +90,16 @@ export default defineComponent({
                         <div class={'service-areas-table'}>
                           <Table
                             data={data.service_area_arr}
-                            align='center'
+                            height={500}
                             columns={[
                               {
                                 field: 'country_name_province_name',
                                 label: '地区',
                                 width: 400,
-                                render: ({ data, index }) => <p class={'index-number-box-container'}>
-                                  <div class={`index-number-box bg-color-${(index + 1) % 16}`}>
-                                    {`${index + 1} `}
+                                align: 'left',
+                                render: ({ data }) => <p class={'index-number-box-container'}>
+                                  <div class={`index-number-box bg-color-${data.idx < 3 ? data.idx + 1 : 4}`}>
+                                    {`${data.idx + 1} `}
                                   </div>
                                   {`${data.country_name},${data.province_name}`}
                                 </p>,
@@ -135,6 +137,11 @@ export default defineComponent({
         render: ({ cell }: {cell: number}) => {
           return `${Math.floor(cell)} ms`;
         },
+      },
+      {
+        field: 'price',
+        label: 'IDC 单位成本',
+        render: ({ cell }: {cell: number}) => `$ ${cell}`,
       },
     ];
     const tableData = ref([]);
@@ -184,20 +191,6 @@ export default defineComponent({
     const handleViewDetail = async () => {
       isViewDetailBtnLoading.value = true;
       await getSchemeDetails();
-      schemeStore.setSchemeData({
-        deployment_architecture: [],
-        vendors: schemeVendors.value,
-        composite_score: props.compositeScore,
-        net_score: props.netScore,
-        cost_score: props.costScore,
-        name: formData.name,
-        idcList: tableData.value.map(item => ({
-          id: item.id,
-          name: item.name,
-          vendor: item.vendor,
-          country: item.region,
-        })),
-      });
       isViewDetailBtnLoading.value = false;
       props.onViewDetail();
     };
@@ -212,57 +205,86 @@ export default defineComponent({
       },
     );
 
+    // 部署方案详情页里切换方案时重新拉数据
+    watch(
+      () => schemeStore.selectedSchemeIdx,
+      (idx) => {
+        if ((+idx) === props.idx) getSchemeDetails();
+      },
+    );
+
     const getSchemeDetails = async () => {
-      if (!tableData.value.length) {
-        isLoading.value = true;
-        const listIdcPromise = schemeStore.listIdc(
-          {
-            op: QueryRuleOPEnum.AND,
-            rules: [
-              {
-                field: 'id',
-                op: QueryRuleOPEnum.IN,
-                value: props.resultIdcIds,
-              },
-            ],
-          },
-          {
-            start: 0,
-            limit: props.resultIdcIds.length,
-          },
-        );
-        const queryIdcServiceAreaPromise = schemeStore.queryIdcServiceArea(
-          props.resultIdcIds,
-          schemeStore.userDistribution,
-        );
-        const [listIdcRes, queryIdcServiceAreaRes] = await Promise.all([
-          listIdcPromise,
-          queryIdcServiceAreaPromise,
-        ]);
-        queryIdcServiceAreaRes.data.forEach((v) => {
-          idcServiceAreasMap.value.set(v.idc_id, {
-            service_areas: v.service_areas,
-            avg_latency: v.avg_latency,
-          });
+      // if (!tableData.value.length) {
+      isLoading.value = true;
+      const listIdcPromise = schemeStore.listIdc(
+        {
+          op: QueryRuleOPEnum.AND,
+          rules: [
+            {
+              field: 'id',
+              op: QueryRuleOPEnum.IN,
+              value: props.resultIdcIds,
+            },
+          ],
+        },
+        {
+          start: 0,
+          limit: props.resultIdcIds.length,
+        },
+      );
+      const queryIdcServiceAreaPromise = schemeStore.queryIdcServiceArea(
+        props.resultIdcIds,
+        schemeStore.userDistribution,
+      );
+      const [listIdcRes, queryIdcServiceAreaRes] = await Promise.all([
+        listIdcPromise,
+        queryIdcServiceAreaPromise,
+      ]);
+      queryIdcServiceAreaRes.data.forEach((v) => {
+        idcServiceAreasMap.value.set(v.idc_id, {
+          service_areas: v.service_areas,
+          avg_latency: v.avg_latency,
         });
-        tableData.value = listIdcRes.data.map(v => ({
-          name: v.name,
-          vendor: v.vendor,
-          region: v.region,
-          service_areas: idcServiceAreasMap.value.get(v.id)?.service_areas.reduce((acc, cur) => {
-            acc += `${cur.country_name}, ${cur.province_name};`;
-            return acc;
-          }, ''),
-          ping: idcServiceAreasMap.value.get(v.id)?.avg_latency,
-          id: v.id,
-          service_area_arr: idcServiceAreasMap.value.get(v.id)?.service_areas,
-        }));
-        schemeVendors.value = Array.from(listIdcRes.data.reduce((acc, cur) => {
-          acc.add(cur.vendor);
+      });
+      tableData.value = listIdcRes.data.map(v => ({
+        name: v.name,
+        vendor: v.vendor,
+        region: v.region,
+        price: v.price,
+        service_areas: idcServiceAreasMap.value.get(v.id)?.service_areas.reduce((acc, cur) => {
+          acc += `${cur.country_name}, ${cur.province_name};`;
           return acc;
-        }, new Set()));
-        isLoading.value = false;
-      }
+        }, ''),
+        ping: idcServiceAreasMap.value.get(v.id)?.avg_latency,
+        id: v.id,
+        service_area_arr: idcServiceAreasMap.value.get(v.id)?.service_areas.sort((a, b) => {
+          return Math.floor(a.network_latency) - Math.floor(b.network_latency);
+        }).map((v, idx) => ({
+          ...v,
+          idx,
+        })),
+      }));
+      schemeVendors.value = Array.from(listIdcRes.data.reduce((acc, cur) => {
+        acc.add(cur.vendor);
+        return acc;
+      }, new Set()));
+      schemeStore.setSchemeData({
+        deployment_architecture: [],
+        vendors: schemeVendors.value,
+        composite_score: props.compositeScore,
+        net_score: props.netScore,
+        cost_score: props.costScore,
+        name: formData.name,
+        idcList: tableData.value.map(item => ({
+          id: item.id,
+          name: item.name,
+          vendor: item.vendor,
+          country: item.region,
+          price: item.price,
+        })),
+      });
+      isLoading.value = false;
+      // }
     };
 
     return () => (
@@ -296,10 +318,9 @@ export default defineComponent({
             class={'scheme-preview-table-card-header-tag'}>
             分布式部署
           </Tag>
-          <img
-            src={VendorTcloud}
-            class={'scheme-preview-table-card-header-icon'}
-          />
+          {
+            renderVendorIcons(schemeStore.recommendationSchemes[props.idx].vendors)
+          }
           <div class={'scheme-preview-table-card-header-score'}>
             <div class={'scheme-preview-table-card-header-score-item'}>
               综合评分：{' '}
@@ -315,7 +336,9 @@ export default defineComponent({
           <div class={'scheme-preview-table-card-header-operation'}>
             <Button class={'mr8'} onClick={handleViewDetail} loading={isViewDetailBtnLoading.value}>查看详情</Button>
             <Button theme='primary' onClick={() => (isDialogShow.value = true)} disabled={isSaved.value}>
-              保存
+              {
+                isSaved.value ? '已保存' : '保存'
+              }
             </Button>
           </div>
         </div>

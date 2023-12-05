@@ -41,7 +41,7 @@ export interface ISchemeEditingData {
 
 // 方案切换下拉框单条数据
 export interface ISchemeSelectorItem {
-  id: string;
+  id: string | number;
   name: string;
   bk_biz_id: number | string;
   deployment_architecture: string[];

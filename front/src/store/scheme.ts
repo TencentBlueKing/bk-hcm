@@ -28,10 +28,14 @@ export const useSchemeStore = defineStore({
       name: '',
       idcList: [],
     },
+    selectedSchemeIdx: 0,
   }),
   actions: {
     setUserDistribution(data: Array<IAreaInfo>) {
       this.userDistribution = data;
+    },
+    setSelectedSchemeIdx(idx: number) {
+      this.selectedSchemeIdx = idx;
     },
     setRecommendationSchemes(data: IRecommendSchemeList) {
       this.recommendationSchemes = data;
@@ -47,8 +51,10 @@ export const useSchemeStore = defineStore({
     setSchemeData(data: typeof this.schemeData) {
       this.schemeData = data;
     },
-    sortSchemes(choice: string) {
-      this.recommendationSchemes.sort((a, b) => a[choice] - b[choice]);
+    sortSchemes(choice: string, isAsc = true) {
+      this.recommendationSchemes = this.recommendationSchemes.sort(
+        (a, b) => (a[choice] - b[choice]) * (isAsc ? 1 : -1),
+      );
     },
     /**
      * 获取资源选型方案列表

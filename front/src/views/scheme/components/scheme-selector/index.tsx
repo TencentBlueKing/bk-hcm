@@ -63,7 +63,7 @@ export default defineComponent({
     return () => (
       <>
         <div class="scheme-selector">
-          <ArrowsLeft class="back-icon" onClick={handleBack} />
+          <ArrowsLeft class="back-icon" onClick={props.onBack || goToSchemeList} />
           <Popover
             extCls="resource-selection-scheme-list-popover"
             theme="light"
