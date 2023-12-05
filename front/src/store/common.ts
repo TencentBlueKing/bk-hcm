@@ -13,7 +13,7 @@ export const useCommonStore = defineStore({
     authVerifyParams: null as any,
     pageAuthData: [
       { type: 'account', action: 'find', id: 'account_find', path: '/resource/account' }, // 如果是列表查看权限 需要加上path
-      { type: 'account', action: 'import', id: 'account_import' },
+      { type: 'account', action: 'import', id: 'account_import', path: '/resource/resource' },
       { type: 'account', action: 'update', id: 'account_edit' },
 
       // 业务访问权限
