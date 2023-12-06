@@ -125,8 +125,10 @@ export default defineComponent({
       },
       {
         label: '用户网络容忍',
-        extClass: 'prompt-icon-wrap',
         property: 'cover_ping',
+        extClass: 'prompt-icon-wrap',
+        tips: '流向终端（LastMIle）的网络质量容忍',
+        left: '90px',
         content: [
           {
             label: '网络延迟',
@@ -168,6 +170,8 @@ export default defineComponent({
       {
         label: '部署架构',
         extClass: 'prompt-icon-wrap',
+        tips: '分布式部署：全局模块集中部署，功能模块分区域部署。\n集中式部署：适用于同一套服务器覆盖所有用户的场景。',
+        left: '62px',
         content: () => (
           <bk-checkbox-group v-model={formData.deployment_architecture}>
             <bk-checkbox label='distributed'>分布式部署</bk-checkbox>
@@ -277,8 +281,11 @@ export default defineComponent({
             <div class='content-wrap'>
               <bk-form form-type='vertical' ref={formRef} model={formData} rules={formRules} >
                 {formItemOptions.value.map(
-                  ({ label, required, content, extClass, property }) => (
+                  ({ label, required, content, extClass, property, tips, left }) => (
                     <bk-form-item label={label} required={required} class={extClass} property={property}>
+                      {
+                        extClass && tips && <i v-bk-tooltips={{ content: tips, placement: 'right' }} class='hcm-icon bkhcm-icon-prompt' style={{left}}></i>
+                      }
                       {Array.isArray(content) ? (
                         <div class='sub-form-item-wrap'>
                           {content.map((sub) => (

@@ -148,16 +148,11 @@
 .prompt-icon-wrap {
   position: relative;
 
-  & > .bk-form-label::after {
+  .bkhcm-icon-prompt {
     position: absolute;
-    content: '\e125';
-    font-family: 'hcm';
-    top: 0;
-    margin-left: 6px;
-    width: 14px;
-    height: 14px;
+    top: -24px;
+    font-size: 16px;
     color: #c4c6cc;
-    text-align: center;
     cursor: pointer;
   }
 }
