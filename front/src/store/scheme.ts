@@ -140,7 +140,7 @@ export const useSchemeStore = defineStore({
      * 获取云选型数据支持的国家列表
      * @returns
      */
-    listCountries(): ICountriesListResData {
+    listCountries(): Promise<ICountriesListResData> {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/countries/list`);
     },
     /**
@@ -148,7 +148,7 @@ export const useSchemeStore = defineStore({
      * @param page 分页参数
      * @returns
      */
-    listBizTypes(page: IPageQuery): IBizTypeResData {
+    listBizTypes(page: IPageQuery): Promise<IBizTypeResData> {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/biz_types/list`, { page });
     },
     /**
@@ -156,7 +156,7 @@ export const useSchemeStore = defineStore({
      * @param area_topo 需要查询的国家列表
      * @returns
      */
-    queryUserDistributions(area_topo: Array<IAreaInfo>): IUserDistributionResData {
+    queryUserDistributions(area_topo: Array<IAreaInfo>): Promise<IUserDistributionResData> {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/user_distributions/query`, { area_topo });
     },
     /**
@@ -164,7 +164,7 @@ export const useSchemeStore = defineStore({
      * @param formData 业务属性
      * @returns
      */
-    generateSchemes(data: IGenerateSchemesReqParams): IGenerateSchemesResData {
+    generateSchemes(data: IGenerateSchemesReqParams): Promise<IGenerateSchemesResData> {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/schemes/generate`, data);
     },
     /**
