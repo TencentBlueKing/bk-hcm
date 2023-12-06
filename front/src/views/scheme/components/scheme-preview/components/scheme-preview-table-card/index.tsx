@@ -57,7 +57,8 @@ export default defineComponent({
       {
         field: 'name',
         label: '部署点名称',
-        width: 100,
+        width: 200,
+        render: ({ data }: any) => `${data.country}机房`,
       },
       {
         field: 'vendor',
@@ -70,7 +71,8 @@ export default defineComponent({
       {
         field: 'region',
         label: '所在地',
-        width: 100,
+        width: 200,
+        render: ({ data }: any) => `${data.country},${data.region}`,
       },
       {
         field: 'service_areas',
@@ -256,6 +258,7 @@ export default defineComponent({
         vendor: v.vendor,
         region: v.region,
         price: v.price,
+        country: v.country,
         service_areas: idcServiceAreasMap.value.get(v.id)?.service_areas.reduce((acc, cur) => {
           acc += `${cur.country_name} , ${cur.province_name} ; `;
           return acc;
