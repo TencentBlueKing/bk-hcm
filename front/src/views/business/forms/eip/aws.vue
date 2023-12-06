@@ -34,7 +34,7 @@ defineExpose([validate]);
 </script>
 
 <template>
-  <bk-form ref="formRef" :model="formData">
+  <bk-form label-width="150" ref="formRef" :model="formData">
     <bk-form-item label="网络边界组" required>
       {{ region }}
     </bk-form-item>

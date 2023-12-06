@@ -1,4 +1,5 @@
 .detail-wrap {
+  overflow: auto;
   background-color: #fff;
   .formItem-cls {
     width: 50%;
@@ -11,8 +12,15 @@
 }
 
 .account-edit-icon {
-  color: #3a84ff;
+  position: relative;
+  top: -1px;
+  margin: 0 6px 0 25px;
+  color: #3A84FF;
   cursor: pointer;
+
+  &:hover {
+    color: #3A84FF !important;
+  }
 }
 
 .button-warp {
@@ -38,6 +46,7 @@
   display: flex;
   .validate-btn {
     margin-right: auto;
+    min-width: 88px;
   }
 }
 

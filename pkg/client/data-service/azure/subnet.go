@@ -27,6 +27,7 @@ import (
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -43,16 +44,16 @@ func NewSubnetClient(client rest.ClientInterface) *SubnetClient {
 }
 
 // BatchCreate batch create azure subnet.
-func (v *SubnetClient) BatchCreate(ctx context.Context, h http.Header,
+func (v *SubnetClient) BatchCreate(kt *kit.Kit,
 	req *protocloud.SubnetBatchCreateReq[protocloud.AzureSubnetCreateExt]) (*core.BatchCreateResult, error) {
 
 	resp := new(core.BatchCreateResp)
 
 	err := v.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(req).
 		SubResourcef("/subnets/batch/create").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {
@@ -67,7 +68,8 @@ func (v *SubnetClient) BatchCreate(ctx context.Context, h http.Header,
 }
 
 // Get azure subnet.
-func (v *SubnetClient) Get(ctx context.Context, h http.Header, id string) (*corecloud.Subnet[corecloud.AzureSubnetExtension],
+func (v *SubnetClient) Get(ctx context.Context, h http.Header,
+	id string) (*corecloud.Subnet[corecloud.AzureSubnetExtension],
 	error) {
 
 	resp := new(protocloud.SubnetGetResp[corecloud.AzureSubnetExtension])

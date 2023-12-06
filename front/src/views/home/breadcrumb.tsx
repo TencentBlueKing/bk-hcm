@@ -17,7 +17,7 @@ export default defineComponent({
           else prev.push(item);
           return prev;
         }, [])
-        .filter(item => item.meta.isShowBreadcrumb)
+        .filter(item => item.meta?.isShowBreadcrumb)
         .find(item => item.path === route.path)?.name;
     });
 

@@ -1,6 +1,6 @@
 ### 描述
 
-- 该接口提供版本：v9.9.9+。
+- 该接口提供版本：v1.2.1+。
 - 该接口所需权限：业务访问。
 - 该接口功能描述：查询回收站中的硬盘详情。已废弃：请通过普通get接口添加recycle_status='recycling' 过滤条件
 
@@ -10,10 +10,10 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/recycled/disks/{id}
 
 #### 路径参数说明
 
-| 参数名称 | 参数类型   | 必选  | 描述    |
-|------|--------|-----|-------|
-| bk_biz_id | int64     | 是  | 业务的ID   |
-| id   | string | 是   | 云盘 ID |
+| 参数名称      | 参数类型   | 必选 | 描述    |
+|-----------|--------|----|-------|
+| bk_biz_id | int64  | 是  | 业务的ID |
+| id        | string | 是  | 云盘 ID |
 
 ### 调用示例
 
@@ -59,24 +59,24 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/recycled/disks/{id}
 
 #### Data
 
-| 参数名称       | 参数类型                  | 描述                     |
-|------------|-----------------------|------------------------|
-| id         | string                | 云盘 ID                  |
-| vendor     | string                | 云厂商                    |
-| account_id | string                | 云账号 ID                 |
-| name       | string                | 云盘名                    |
-| bk_biz_id  | int                   | 分配给的cc 业务 ID， -1 表示未分配 |
-| cloud_id   | string                | 云盘在云厂商上的 ID            |
-| region     | string                | 地域                     |
-| zone       | string                | 可用区                    |
-| disk_size  | uint                  | 云盘大小                   |
-| disk_type  | string                | 云盘类型                   |
-| memo       | string                | 云盘备注                   | 
-| creator    | string                | 创建者                    |
-| reviser    | string                | 更新者                    |
-| created_at | string                | 创建时间，标准格式：2006-01-02T15:04:05Z                   |
-| updated_at | string                | 更新时间                   | 
-| extension  | DiskExtension[vendor] | 各云厂商的差异化字段             | 
+| 参数名称       | 参数类型                  | 描述                             |
+|------------|-----------------------|--------------------------------|
+| id         | string                | 云盘 ID                          |
+| vendor     | string                | 云厂商                            |
+| account_id | string                | 云账号 ID                         |
+| name       | string                | 云盘名                            |
+| bk_biz_id  | int                   | 分配给的cc 业务 ID， -1 表示未分配         |
+| cloud_id   | string                | 云盘在云厂商上的 ID                    |
+| region     | string                | 地域                             |
+| zone       | string                | 可用区                            |
+| disk_size  | uint                  | 云盘大小                           |
+| disk_type  | string                | 云盘类型                           |
+| memo       | string                | 云盘备注                           | 
+| creator    | string                | 创建者                            |
+| reviser    | string                | 更新者                            |
+| created_at | string                | 创建时间，标准格式：2006-01-02T15:04:05Z |
+| updated_at | string                | 更新时间                           | 
+| extension  | DiskExtension[vendor] | 各云厂商的差异化字段                     | 
 
 #### DiskExtension[tcloud]
 

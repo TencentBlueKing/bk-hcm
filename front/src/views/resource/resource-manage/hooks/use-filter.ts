@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 import {
   onMounted,
   ref,
@@ -15,6 +16,7 @@ import { QueryFilterType, QueryRuleOPEnum, RulesItem } from '@/typings';
 import { useRoute } from 'vue-router';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
+import { useRegionsStore } from '@/store/useRegionsStore';
 
 type PropsType = {
   filter?: FilterType,
@@ -48,6 +50,7 @@ const useFilter = (props: PropsType) => {
   const route = useRoute();
   const { whereAmI } = useWhereAmI();
   const resourceAccountStore = useResourceAccountStore();
+  const regionStore = useRegionsStore();
 
   const saveQueryInSearch = () => {
     let params = [] as typeof searchValue.value;
@@ -130,9 +133,9 @@ const useFilter = (props: PropsType) => {
 
         const condition = {
           field,
-          op: isAccurate.value ? QueryRuleOPEnum.EQ : QueryRuleOPEnum.CS,
+          op: field === 'cloud_vpc_ids' ? 'json_contains' : QueryRuleOPEnum.CS,
           value:
-            field === 'bk_cloud_id' ? Number(values[0].id) : values[0].id,
+            field === 'bk_cloud_id' ? Number(values[0].id) : field === 'region' ? regionStore.getRegionNameEN(values[0].id) : values[0].id,
         };
 
         if (!map.has(field)) {
@@ -145,6 +148,13 @@ const useFilter = (props: PropsType) => {
           rule.rules.push(condition);
           answer.push(rule);
         }
+      }
+      if (regionStore.vendor) {
+        answer.push({
+          field: 'vendor',
+          op: QueryRuleOPEnum.EQ,
+          value: regionStore.vendor,
+        });
       }
       if (props.whereAmI === ResourceManageSenario.image) {
         filter.value.rules = [];

@@ -24,6 +24,10 @@
         flex-direction: row;
         justify-content: start;
         padding: 0 300px 0 300px;
+
+        .bk-button {
+          min-width: 88px;
+        }
     }
     .mr8 {
         margin-right: 8px;
@@ -49,6 +53,12 @@
 
         .bk-modal-content {
           max-height: none !important;
+        }
+
+        .bk-modal-footer {
+          height: 52px !important;
+          display: flex;
+          align-items: center;
         }
 
         .bk-modal-close {

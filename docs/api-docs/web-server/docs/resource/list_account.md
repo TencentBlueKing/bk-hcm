@@ -1,6 +1,6 @@
 ### 描述
 
-- 该接口提供版本：v9.9.9+。
+- 该接口提供版本：v1.2.1+。
 - 该接口所需权限：账号查看。
 - 该接口功能描述：查询账号列表。
 
@@ -187,7 +187,7 @@ POST /api/v1/cloud/accounts/list
           310
         ],
         "sync_status": "success",
-        "sync_failed_reason":"",
+        "sync_failed_reason": "",
         "creator": "Jim",
         "reviser": "Jim",
         "created_at": "2022-12-26T07:42:15Z",

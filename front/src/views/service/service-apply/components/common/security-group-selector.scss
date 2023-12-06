@@ -1,7 +1,7 @@
 .image-selector-selected-block-container {
   display: flex;
   align-items: center;
-    
+
   .selected-block {
     margin-right: 18.25px;
     padding: 0 16px;
@@ -9,7 +9,7 @@
     background: #f0f5ff;
     border: 1px solid #a3c5fd;
     border-radius: 2px;
-    line-height: 32px;    
+    line-height: 32px;
   }
 }
 
@@ -39,19 +39,28 @@
 
 .security-container {
   display: flex;
+  height: 100%;
 
   .security-list {
     padding: 12px 16px 4px;
     flex-shrink: 0;
     width: 280px;
-    height: 596px;
-    background: #FAFBFD;
+    height: 100%;
+    background: #fafbfd;
+
+    & > .bk-nested-loading {
+      height: calc(100% - 40px);
+    }
   }
 
   .security-group-rules-wrap {
     padding: 12px 0 12px 24px;
     flex: 1;
-    height: 596px;
+    height: 100%;
+
+    & > .bk-nested-loading {
+      height: 100%;
+    }
 
     .security-group-rules-container {
       display: flex;

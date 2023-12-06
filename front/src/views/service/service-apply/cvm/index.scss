@@ -103,6 +103,7 @@
       padding-left: 130px;
 
       .purchase-cvm-bottom-bar-form-count-tip {
+        margin-top: 4px;
         color: #979BA5;
         .purchase-cvm-bottom-bar-form-count-tip-num {
           color: #3A84FF;
@@ -120,6 +121,10 @@
     margin-top: -16px;
     display: flex;
     align-items: center;
+
+    .bk-button {
+      min-width: 88px;
+    }
 
     .purchase-cvm-cost-wrap {
       display: flex;
@@ -153,6 +158,7 @@
   .subnet-create-tips {
     color: #EA3636;
     margin-right: 4px;
+    font-size: 12px;
   }
 }
 

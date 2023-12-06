@@ -9,6 +9,7 @@ export interface IProp {
 export interface IExtensionItem {
   label: string,
   value: string,
+  placeholder?: string,
 }
 export enum ValidateStatus {
   YES,
@@ -29,12 +30,14 @@ export const useSecretExtension = (props: IProp) => {
       cloud_sub_account_id: {
         value: '',
         label: '云子账户ID',
+        placeholder: '密钥校验成功后自动填充',
       },
     },
     output2: {
       cloud_main_account_id: {
         value: '',
         label: '云主账户ID',
+        placeholder: '密钥校验成功后自动填充',
       },
     },
     input: {
@@ -55,12 +58,14 @@ export const useSecretExtension = (props: IProp) => {
       cloud_account_id: {
         value: '',
         label: '云账号ID',
+        placeholder: '密钥校验成功后自动填充',
       },
     },
     output2: {
       cloud_iam_username: {
         value: '',
         label: '云IAM用户名',
+        placeholder: '密钥校验成功后自动填充',
       },
     },
     input: {
@@ -81,20 +86,24 @@ export const useSecretExtension = (props: IProp) => {
       cloud_sub_account_id: {
         value: '',
         label: '云子账户ID',
+        placeholder: '密钥校验成功后自动填充',
       },
     },
     output2: {
       cloud_sub_account_name: {
         value: '',
         label: '云子账户名称',
+        placeholder: '密钥校验成功后自动填充',
       },
       cloud_iam_user_id: {
         value: '',
         label: '云密钥ID',
+        placeholder: '密钥校验成功后自动填充',
       },
       cloud_iam_username: {
         value: '',
         label: '云IAM用户名称',
+        placeholder: '密钥校验成功后自动填充',
       },
     },
     input: {
@@ -115,24 +124,29 @@ export const useSecretExtension = (props: IProp) => {
       cloud_project_id: {
         label: '云项目ID',
         value: '',
+        placeholder: '密钥校验成功后自动填充',
       },
       cloud_project_name: {
         label: '云项目名称',
         value: '',
+        placeholder: '密钥校验成功后自动填充',
       },
     },
     output2: {
       cloud_service_account_id: {
         label: '云服务账户ID',
         value: '',
+        placeholder: '密钥校验成功后自动填充',
       },
       cloud_service_account_name: {
         label: '云服务账户名称',
         value: '',
+        placeholder: '密钥校验成功后自动填充',
       },
       cloud_service_secret_id: {
         label: '云服务密钥ID',
         value: '',
+        placeholder: '密钥校验成功后自动填充',
       },
     },
     input: {
@@ -149,16 +163,19 @@ export const useSecretExtension = (props: IProp) => {
       cloud_subscription_id: {
         value: '',
         label: '云订阅ID',
+        placeholder: '密钥校验成功后自动填充',
       },
     },
     output2: {
       cloud_subscription_name: {
         label: '云订阅名称',
         value: '',
+        placeholder: '密钥校验成功后自动填充',
       },
       cloud_application_name: {
         label: '云应用名称',
         value: '',
+        placeholder: '密钥校验成功后自动填充',
       },
     },
     input: {

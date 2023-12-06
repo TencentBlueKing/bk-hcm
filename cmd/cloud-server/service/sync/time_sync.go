@@ -136,13 +136,14 @@ func allAccountSync(kt *kit.Kit, cliSet *client.ClientSet, vendor enumor.Vendor)
 			}
 			if err != nil {
 				if resName != "" {
-					if err := sd.ResSyncStatusFailed(resName, err.Error()); err != nil {
+					if err := sd.ResSyncStatusFailed(resName, err); err != nil {
 						logs.Errorf("%s sync %s res detail failed, err: %v, accountID: %s, rid: %s", vendor,
 							resName, err, one.ID, kt.Rid)
 						return
 					}
 				}
 				logs.Errorf("sync %s all resource failed, err: %v, accountID: %s, rid: %s", vendor, err, one.ID, kt.Rid)
+				// 跳过当前账号
 				continue
 			}
 

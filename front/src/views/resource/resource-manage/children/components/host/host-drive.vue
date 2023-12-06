@@ -334,7 +334,7 @@ watch(
   >
     <span @click="showAuthDialog(actionName)">
       <bk-button
-        class="mt20 mr20 w100"
+        class="btn"
         theme="primary"
         :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]"
         @click="handleMountedDrive"
@@ -362,7 +362,7 @@ watch(
 </template>
 
 <style lang="scss" scoped>
-  .w100 {
-    width: 100px;
+  .btn {
+    min-width: 88px;
   }
 </style>

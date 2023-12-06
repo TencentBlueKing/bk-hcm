@@ -1,4 +1,4 @@
-import { PropType, defineComponent, watch } from 'vue';
+import { PropType, defineComponent, onMounted, ref, watch } from 'vue';
 import './index.scss';
 import successAccount from '@/assets/image/success-account.png';
 import failedAccount from '@/assets/image/failed-account.png';
@@ -19,6 +19,7 @@ export default defineComponent({
         icon: any;
         accounts: any[];
         isExpand: boolean;
+        hasNext: boolean;
       }>
       >,
     },
@@ -34,11 +35,17 @@ export default defineComponent({
       required: true,
       type: Function as PropType<(vendor: VendorEnum) => boolean>,
     },
+    getVendorAccountList: {
+      require: true,
+      type: Function as PropType<(vendor: VendorEnum) => void>,
+    },
   },
   setup(props) {
     const resourceAccountStore = useResourceAccountStore();
     const resourceStore = useResourceStore();
     const route = useRoute();
+
+    const loadingRef = ref([]);
 
     watch(() => route.query.accountId, (newVal, oldVal) => {
       if (!oldVal && newVal) {
@@ -49,57 +56,49 @@ export default defineComponent({
       }
     });
 
+    onMounted(() => {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            props.getVendorAccountList(entry.target.dataset.vendor);
+          }
+        });
+      });
+      loadingRef.value.forEach((vnode) => {
+        observer.observe(vnode.$el);
+      });
+    });
+
     return () => (
       <div class={'vendor-account-list'}>
-        {props.accounts.map(({ vendor, count, name, icon, accounts, isExpand }) => (
-            <>
-              {count > 0 ? (
-                <>
-                  <div
-                    class={'vendor-account-menu'}
-                    onClick={() => props.handleExpand(vendor as VendorEnum)}>
-                    <i
-                      class={
-                        isExpand
-                          ? 'hcm-icon bkhcm-icon-down-shape vendor-account-menu-dropdown-icon'
-                          : 'hcm-icon bkhcm-icon-right-shape vendor-account-menu-dropdown-icon'
-                      }></i>
-                    <img src={icon} class={'vendor-icon'}></img>
-                    <span class={'vendor-account-title'}>{name}</span>
-                    <span class={'vendor-account-menu-count'}>{count}</span>
-                  </div>
-                  {isExpand
-                    ? accounts.map(({ sync_status, name, id }) => (
-                        <div
-                          class={`vendor-account-menu-item ${resourceAccountStore.resourceAccount?.id === id ? 'actived-vendor-account-menu-item' : ''}`}
-                          onClick={() => props.handleSelect(id)}
-                        >
-                          <img
-                            src={
-                              sync_status === 'sync_success'
-                                ? successAccount
-                                : failedAccount
-                            }
-                            class={'vendor-icon'}></img>
-                          <span class={'vendor-account-menu-item-text'}>
-                            {name.length > 22
-                              ? (
-                                <span v-bk-tooltips={{
-                                  content: name,
-                                  placement: 'right',
-                                }}
-                              >
-                                  {`${name.substring(0, 22)}..`}
-                                </span>
-                              )
-                              : name}
-                          </span>
-                        </div>
-                    ))
-                    : null}
-                </>
-              ) : null}
-            </>
+        {props.accounts.map(({ vendor, count, name, icon, accounts, isExpand, hasNext }) => (
+          count > 0 && <div class='vendor-wrap'>
+              <div class={`vendor-item-wrap${isExpand ? ' sticky' : ''}`} onClick={() => props.handleExpand(vendor)}>
+                <i class={`icon hcm-icon vendor-account-menu-dropdown-icon${isExpand ? ' bkhcm-icon-down-shape' : ' bkhcm-icon-right-shape'}`}></i>
+                {icon}
+                <div class='vendor-title'>{name}</div>
+                <div class='vendor-account-count'>{count}</div>
+              </div>
+              <div class={`account-list-wrap${isExpand ? ' expand' : ''}`}>
+                {
+                  accounts.map(({ sync_status, name, id }) => (
+                    <div class={`account-item${resourceAccountStore.resourceAccount?.id === id ? ' active' : ''}`} key={id} onClick={() => props.handleSelect(id)}>
+                      <img src={sync_status === 'sync_success' ? successAccount : failedAccount} alt='' class='sync-status-icon' />
+                      <span class='account-text'>
+                        {
+                          name.length > 22 ? (
+                            <span v-bk-tooltips={{ content: name, placement: 'right' }}>{`${name.substring(0, 22)}..`}</span>
+                          ) : (name)
+                        }
+                      </span>
+                    </div>
+                  ))
+                }
+                {
+                  hasNext && <bk-loading ref={(ref: any) => loadingRef.value.push(ref)} data-vendor={vendor} size="small" loading><div style="width: 100%; height: 36px" /></bk-loading>
+                }
+              </div>
+            </div>
         ))}
       </div>
     );

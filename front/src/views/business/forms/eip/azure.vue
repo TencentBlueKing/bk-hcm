@@ -81,7 +81,7 @@ defineExpose([validate]);
 </script>
 
 <template>
-  <bk-form ref="formRef" :model="formData" :rules="rules">
+  <bk-form label-width="150" ref="formRef" :model="formData" :rules="rules">
     <bk-form-item label="资源组" property="resource_group_name" required>
       <resource-group
         :vendor="vendor"
