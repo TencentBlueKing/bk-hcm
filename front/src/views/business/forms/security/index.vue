@@ -111,7 +111,7 @@ const { datas, isLoading } = useQueryList(filter.value, 'vpcs'); // 只查aws的
       type="security"
       ref="formSelectRef"
     ></form-select>
-    <bk-form class="form-subnet" :model="formData" :rules="rules" ref="formRef">
+    <bk-form class="form-subnet" label-width="150" :model="formData" :rules="rules" ref="formRef">
       <bk-form-item
         :label="t('名称')"
         class="item-warp"
@@ -163,7 +163,7 @@ const { datas, isLoading } = useQueryList(filter.value, 'vpcs'); // 只查aws的
           v-model="formData.resource_group_name"
         />
       </bk-form-item>
-      <bk-form-item label-width="50" class="item-warp mt40">
+      <bk-form-item label-width="150" class="item-warp">
         <bk-button
           class="item-warp-button"
           theme="primary"
@@ -172,7 +172,7 @@ const { datas, isLoading } = useQueryList(filter.value, 'vpcs'); // 只查aws的
         >
           {{ t('提交创建') }}
         </bk-button>
-        <bk-button class="ml20 item-warp-button" @click="cancel">
+        <bk-button class="ml10 item-warp-button" @click="cancel">
           {{ t('取消') }}
         </bk-button>
       </bk-form-item>
@@ -183,12 +183,7 @@ const { datas, isLoading } = useQueryList(filter.value, 'vpcs'); // 只查aws的
 .form-subnet {
   padding-right: 20px;
   .item-warp-button {
-    width: 100px;
-  }
-  .item-button-group {
-    .item-button {
-      margin-left: 10px;
-    }
+    min-width: 88px;
   }
 }
 </style>

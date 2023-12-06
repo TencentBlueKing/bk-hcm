@@ -2,7 +2,7 @@ import http from '@/http';
 import { computed, defineComponent, PropType, ref, TransitionGroup, watch } from 'vue';
 import { Button, Checkbox, Dialog, Input, Loading, Table } from 'bkui-vue';
 import { SECURITY_GROUP_RULE_TYPE, VendorEnum } from '@/common/constant';
-import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import './security-group-selector.scss';
 import { EditLine, Plus } from 'bkui-vue/lib/icon';
 import DraggableCard from './DraggableCard';
@@ -36,6 +36,7 @@ export default defineComponent({
     const isRulesTableLoading = ref(false);
     const el = ref<UseDraggableReturn>();
     const selectedSecurityType = ref(SECURITY_GROUP_RULE_TYPE.INGRESS);
+    const { whereAmI } = useWhereAmI();
 
     const computedDisabled = computed(() => {
       return !(props.accountId && props.vendor && props.region);
@@ -222,7 +223,7 @@ export default defineComponent({
               : (
                 <div class={'security-selector-tips'}>
                   无可用的安全组，可 <Button theme='primary' text onClick={() => {
-                  const url = '/#/resource/resource?type=security';
+                  const url = whereAmI.value === Senarios.business ? '/#/business/security' : '/#/resource/resource?type=security';
                   window.open(url, '_blank');
                 }}>新建安全组</Button>
                 </div>
@@ -241,7 +242,8 @@ export default defineComponent({
             isDialogShow.value = false;
           }}
           title='选择安全组'
-          width={1500}>
+          width={'60vw'}
+          height={'80vh'}>
           <div class={'security-container'}>
             <div class={'security-list g-scroller'}>
               <Input

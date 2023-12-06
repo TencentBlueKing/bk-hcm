@@ -1,5 +1,5 @@
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0012,HCMVER=v1.2.1
 
     Notes:
         1. 添加子账号表。
@@ -17,7 +17,7 @@
 start transaction;
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.2.1' as `hcm_ver`, '0012' as `sql_ver`;
 
 -- 1. 添加子账号表
 create table if not exists `sub_account`

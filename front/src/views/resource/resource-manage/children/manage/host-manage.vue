@@ -105,6 +105,9 @@ const hostSearchData = computed(() => {
     }, {
       name: '内网IP',
       id: 'private_ipv4_addresses',
+    }, {
+      name: '所属VPC',
+      id: 'cloud_vpc_ids',
     }],
   ];
 });

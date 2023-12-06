@@ -1,10 +1,11 @@
 import http from '@/http';
 import { computed, defineComponent, PropType, ref, watch } from 'vue';
-import { Select } from 'bkui-vue';
+import { Button, Select } from 'bkui-vue';
 
 import { QueryRuleOPEnum } from '@/typings/common';
 import { VendorEnum } from '@/common/constant';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import './vpc-selector.scss';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 const { Option } = Select;
@@ -138,35 +139,51 @@ export default defineComponent({
     };
 
     return () => (
-      <Select
-        filterable={true}
-        modelValue={selected.value}
-        onUpdate:modelValue={val => (selected.value = val)}
-        onChange={handleChange}
-        loading={loading.value}
-        {...{ attrs }}
-      >
-        {list.value.map(({ cloud_id, name, current_zone_subnet_count, subnet_count, extension }) => {
-          return <Option
-              key={cloud_id}
-              value={cloud_id}
-              // eslint-disable-next-line max-len
-              disabled={
-                !(
-                  props.isSubnet
-                  || ([VendorEnum.AZURE, VendorEnum.GCP, VendorEnum.HUAWEI].includes(props.vendor) && subnet_count > 0)
-                  || current_zone_subnet_count > 0
-                )
-              }
-              label={`${cloud_id} ${name} ${
-                extension?.cidr ? extension?.cidr[0]?.cidr : ''
-              } 该VPC共${subnet_count}个子网
-                ${props.vendor === VendorEnum.TCLOUD || props.vendor === VendorEnum.AWS
-                ? `${`该可用区有${current_zone_subnet_count}个子网 ${current_zone_subnet_count === 0 ? '不可用' : '可用'}`}`
-                : ''
-                }`}></Option>;
-        })}
-      </Select>
+      <div class={'vpc-selector-container'}>
+        <Select
+          filterable={true}
+          modelValue={selected.value}
+          onUpdate:modelValue={val => (selected.value = val)}
+          onChange={handleChange}
+          loading={loading.value}
+          {...{ attrs }}
+        >
+          {list.value.map(({ cloud_id, name, current_zone_subnet_count, subnet_count, extension }) => {
+            return <Option
+                key={cloud_id}
+                value={cloud_id}
+                // eslint-disable-next-line max-len
+                disabled={
+                  !(
+                    props.isSubnet
+                    // eslint-disable-next-line max-len
+                    || ([VendorEnum.AZURE, VendorEnum.GCP, VendorEnum.HUAWEI].includes(props.vendor) && subnet_count > 0)
+                    || current_zone_subnet_count > 0
+                  )
+                }
+                label={`${cloud_id} ${name} ${
+                  extension?.cidr ? extension?.cidr[0]?.cidr : ''
+                } 该VPC共${subnet_count}个子网
+                  ${props.vendor === VendorEnum.TCLOUD || props.vendor === VendorEnum.AWS
+                  ? `${`该可用区有${current_zone_subnet_count}个子网 ${current_zone_subnet_count === 0 ? '不可用' : '可用'}`}`
+                  : ''
+                  }`}></Option>;
+          })}
+        </Select>
+        {
+          props.region && props.zone && !list.value.length ? (
+            <span class={'vpc-selector-list-tip'}>
+              该地域无可用的VPC网络，可切换地域，或点击
+              <Button theme='primary' text onClick={() => {
+                const url = whereAmI.value === Senarios.business
+                  ? '/#/business/vpc'
+                  : '/#/resource/resource?type=vpc';
+                window.open(url, '_blank');
+              }}>新建</Button>
+            </span>
+          ) : null
+        }
+      </div>
     );
   },
 });

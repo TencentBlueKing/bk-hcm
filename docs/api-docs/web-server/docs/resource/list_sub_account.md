@@ -1,6 +1,6 @@
 ### 描述
 
-- 该接口提供版本：v9.9.9+。
+- 该接口提供版本：v1.2.1+。
 - 该接口所需权限：资源查看。
 - 该接口功能描述：查询子账号列表。
 
@@ -94,22 +94,22 @@ POST /api/v1/cloud/sub_accounts/list
 
 #### 查询参数介绍：
 
-| 参数名称       | 参数类型         | 描述                                   |
-|------------|--------------|--------------------------------------|
-| id         | string       | 账号ID                                 |
-| vendor     | string       | 供应商（枚举值：tcloud、aws、azure、gcp、huawei） |
-| name       | string       | 名称                                   |
-| cloud_id   | string       | 账号云ID                                |
-| account_id | string       | 子账号所属资源账号ID                          |
-| account_type | string     | 账号类型 当前账号(current_account)   主账号(main_account)  |
-| managers   | string array | 账号管理者                                |
-| bk_biz_ids | int64 array  | 账号关联的业务ID列表                          |
-| site       | string       | 站点（枚举值：china:中国站、international:国际站）  |
-| memo       | string       | 备注                                   |
-| creator    | string       | 创建者                                  |
-| reviser    | string       | 更新者                                  |
-| created_at | string       | 创建时间，标准格式：2006-01-02T15:04:05Z       |
-| updated_at | string       | 更新时间，标准格式：2006-01-02T15:04:05Z       |
+| 参数名称         | 参数类型         | 描述                                             |
+|--------------|--------------|------------------------------------------------|
+| id           | string       | 账号ID                                           |
+| vendor       | string       | 供应商（枚举值：tcloud、aws、azure、gcp、huawei）           |
+| name         | string       | 名称                                             |
+| cloud_id     | string       | 账号云ID                                          |
+| account_id   | string       | 子账号所属资源账号ID                                    |
+| account_type | string       | 账号类型 当前账号(current_account)   主账号(main_account) |
+| managers     | string array | 账号管理者                                          |
+| bk_biz_ids   | int64 array  | 账号关联的业务ID列表                                    |
+| site         | string       | 站点（枚举值：china:中国站、international:国际站）            |
+| memo         | string       | 备注                                             |
+| creator      | string       | 创建者                                            |
+| reviser      | string       | 更新者                                            |
+| created_at   | string       | 创建时间，标准格式：2006-01-02T15:04:05Z                 |
+| updated_at   | string       | 更新时间，标准格式：2006-01-02T15:04:05Z                 |
 
 接口调用者可以根据以上参数自行根据查询场景设置查询规则。
 
@@ -223,19 +223,19 @@ POST /api/v1/cloud/sub_accounts/list
 
 #### data.details[n]
 
-| 参数名称       | 参数类型         | 描述                                   |
-|------------|--------------|--------------------------------------|
-| id         | string       | 账号ID                                 |
-| vendor     | string       | 供应商（枚举值：tcloud、aws、azure、gcp、huawei） |
-| name       | string       | 名称                                   |
-| cloud_id   | string       | 账号云ID                                |
-| account_id | string       | 子账号所属资源账号ID                          |
-| account_type | string     | 账号类型 当前账号(current_account)   主账号(main_account)  |
-| managers   | string array | 账号管理者                                |
-| bk_biz_ids | int64 array  | 账号关联的业务ID列表                          |
-| site       | string       | 站点（枚举值：china:中国站、international:国际站）  |
-| memo       | string       | 备注                                   |
-| creator    | string       | 创建者                                  |
-| reviser    | string       | 更新者                                  |
-| created_at | string       | 创建时间，标准格式：2006-01-02T15:04:05Z       |
-| updated_at | string       | 更新时间，标准格式：2006-01-02T15:04:05Z       |
+| 参数名称         | 参数类型         | 描述                                             |
+|--------------|--------------|------------------------------------------------|
+| id           | string       | 账号ID                                           |
+| vendor       | string       | 供应商（枚举值：tcloud、aws、azure、gcp、huawei）           |
+| name         | string       | 名称                                             |
+| cloud_id     | string       | 账号云ID                                          |
+| account_id   | string       | 子账号所属资源账号ID                                    |
+| account_type | string       | 账号类型 当前账号(current_account)   主账号(main_account) |
+| managers     | string array | 账号管理者                                          |
+| bk_biz_ids   | int64 array  | 账号关联的业务ID列表                                    |
+| site         | string       | 站点（枚举值：china:中国站、international:国际站）            |
+| memo         | string       | 备注                                             |
+| creator      | string       | 创建者                                            |
+| reviser      | string       | 更新者                                            |
+| created_at   | string       | 创建时间，标准格式：2006-01-02T15:04:05Z                 |
+| updated_at   | string       | 更新时间，标准格式：2006-01-02T15:04:05Z                 |

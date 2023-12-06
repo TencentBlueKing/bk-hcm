@@ -38,6 +38,7 @@ export default defineComponent({
     idx: {
       type: Number,
       required: true,
+      default: -1,
     },
     onViewDetail: {
       required: true,
@@ -56,10 +57,13 @@ export default defineComponent({
       {
         field: 'name',
         label: '部署点名称',
+        width: 200,
+        render: ({ data }: any) => `${data.country}机房`,
       },
       {
         field: 'vendor',
         label: '云厂商',
+        width: 100,
         render: ({ cell }: {cell: VendorEnum}) => {
           return VendorMap[cell];
         },
@@ -67,17 +71,18 @@ export default defineComponent({
       {
         field: 'region',
         label: '所在地',
+        width: 200,
+        render: ({ data }: any) => `${data.country},${data.region}`,
       },
       {
         field: 'service_areas',
         label: '服务区域',
-        width: 500,
         render: ({ cell, data }: any) => {
           return (
             <p class={'flex-row align-items-center service-areas-paragraph'}>
               <PopConfirm
                 trigger='click'
-                width={600}
+                width={454}
               >
                 {{
                   content: () => (
@@ -95,7 +100,6 @@ export default defineComponent({
                               {
                                 field: 'country_name_province_name',
                                 label: '地区',
-                                width: 400,
                                 align: 'left',
                                 render: ({ data }) => <p class={'index-number-box-container'}>
                                   <div class={`index-number-box bg-color-${data.idx < 3 ? data.idx + 1 : 4}`}>
@@ -107,6 +111,7 @@ export default defineComponent({
                               {
                                 field: 'network_latency',
                                 label: '网络延迟',
+                                width: 150,
                                 render: ({ cell }: {cell: number}) => `${Math.floor(cell)} ms`,
                                 sort: true,
                               },
@@ -137,11 +142,13 @@ export default defineComponent({
         render: ({ cell }: {cell: number}) => {
           return `${Math.floor(cell)} ms`;
         },
+        width: 100,
       },
       {
         field: 'price',
         label: 'IDC 单位成本',
         render: ({ cell }: {cell: number}) => `$ ${cell}`,
+        width: 200,
       },
     ];
     const tableData = ref([]);
@@ -154,7 +161,7 @@ export default defineComponent({
     }>>(new Map());
     const formData = reactive({
       name: schemeStore.recommendationSchemes[props.idx].name,
-      bk_biz_id: '',
+      bk_biz_id: 0,
     });
     const formInstance = ref(null);
     const isSaved = ref(false);
@@ -251,6 +258,7 @@ export default defineComponent({
         vendor: v.vendor,
         region: v.region,
         price: v.price,
+        country: v.country,
         service_areas: idcServiceAreasMap.value.get(v.id)?.service_areas.reduce((acc, cur) => {
           acc += `${cur.country_name} , ${cur.province_name} ; `;
           return acc;
@@ -286,6 +294,18 @@ export default defineComponent({
       isLoading.value = false;
       // }
     };
+
+    watch(
+      () => props.idx,
+      () => {
+        if (props.idx === 0) {
+          isExpanded.value = true;
+        }
+      },
+      {
+        immediate: true,
+      },
+    );
 
     return () => (
       <div class={'scheme-preview-table-card-container'}>
@@ -360,14 +380,14 @@ export default defineComponent({
             <FormItem label='方案名称' required property='name'>
               <Input v-model={formData.name}/>
             </FormItem>
-            <FormItem label='标签' required property='bk_biz_id'>
+            <FormItem label='标签' property='bk_biz_id'>
               <AppSelect
                 data={businessMapStore.businessList}
                 value={{
                   id: formData.bk_biz_id,
                 }}
                 onChange={
-                  (val: {id: string, val: string}) => {
+                  (val: {id: number, val: string}) => {
                     formData.bk_biz_id = val.id;
                   }
                 }

@@ -5,11 +5,15 @@ import { isChinese } from '@/language/i18n';
 import {
   CLOUD_AREA_REGION_GCP,
   CLOUD_AREA_REGION_AWS,
+  CLOUD_AREA_REGION_GCP_EN,
+  CLOUD_AREA_REGION_AWS_EN,
   VendorEnum } from '@/common/constant';
+import { swapMapKeysAndValuesToObj } from '@/common/util';
 
 export const useRegionsStore = defineStore('useRegions', () => {
   const tcloud = ref<Map<string, string>>(new Map());
   const huawei = ref<Map<string, string>>(new Map());
+  const vendor = ref('' as VendorEnum);
 
   const ressourceStore = useResourceStore();
 
@@ -58,8 +62,33 @@ export const useRegionsStore = defineStore('useRegions', () => {
     return id;
   };
 
+  const getRegionNameEN = (id: string) => {
+    if (!isChinese) return id;
+    const CLOUD_AREA_REGION_TCLOUD_EN = swapMapKeysAndValuesToObj(tcloud.value);
+    const CLOUD_AREA_REGION_HUAWEI_EN = swapMapKeysAndValuesToObj(huawei.value);
+    if (CLOUD_AREA_REGION_TCLOUD_EN[id]) {
+      vendor.value = VendorEnum.TCLOUD;
+      return CLOUD_AREA_REGION_TCLOUD_EN[id];
+    };
+    if (CLOUD_AREA_REGION_HUAWEI_EN[id]) {
+      vendor.value = VendorEnum.HUAWEI;
+      return CLOUD_AREA_REGION_HUAWEI_EN[id];
+    };
+    if (CLOUD_AREA_REGION_AWS_EN[id]) {
+      vendor.value = VendorEnum.AWS;
+      return CLOUD_AREA_REGION_AWS_EN[id];
+    }
+    if (CLOUD_AREA_REGION_GCP_EN[id]) {
+      vendor.value = VendorEnum.GCP;
+      return CLOUD_AREA_REGION_GCP_EN[id];
+    }
+    return id;
+  };
+
   return {
     getRegionName,
     fetchRegions,
+    getRegionNameEN,
+    vendor,
   };
 });

@@ -267,7 +267,7 @@ export default defineComponent({
     const formRules = {};
 
     return () => (
-      <div class={'mb30'}>
+      <div>
         <DetailHeader>
           <p class={'purchase-dish-header-title'}>购买硬盘</p>
         </DetailHeader>

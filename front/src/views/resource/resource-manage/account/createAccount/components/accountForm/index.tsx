@@ -277,9 +277,9 @@ export default defineComponent({
                       查看账号权限
                     </Button>
                     ) : null}
-                  {Object.entries(curExtension.value.output1).map(([property, { label, value }]) => (
+                  {Object.entries(curExtension.value.output1).map(([property, { label, value, placeholder }]) => (
                       <FormItem label={label} property={property}>
-                        <Input v-model={value} readonly placeholder={' '} />
+                        <Input v-model={value} readonly placeholder={placeholder} />
                       </FormItem>
                   ))}
                 </div>
@@ -345,9 +345,9 @@ export default defineComponent({
                 ],
               }}>
               {/* eslint-disable-next-line @typescript-eslint/no-unused-vars */}
-              {Object.entries(curExtension.value.output2).map(([, { label, value }]) => (
+              {Object.entries(curExtension.value.output2).map(([, { label, value, placeholder }]) => (
                   <FormItem label={label}>
-                    <Input v-model={value} readonly placeholder={' '}/>
+                    <Input v-model={value} readonly placeholder={placeholder}/>
                   </FormItem>
               ))}
               <FormItem
@@ -386,7 +386,7 @@ export default defineComponent({
                 </Select>
               </FormItem>
               <FormItem label='备注'>
-                <Input type={'textarea'} v-model={formModel.memo} maxlength={256} resize={false}/>
+                <Input type={'textarea'} v-model={formModel.memo} maxlength={255} resize={false}/>
               </FormItem>
             </Form>
           </div>
