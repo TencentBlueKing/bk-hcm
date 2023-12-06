@@ -154,7 +154,7 @@ export default defineComponent({
     }>>(new Map());
     const formData = reactive({
       name: schemeStore.recommendationSchemes[props.idx].name,
-      bk_biz_id: '',
+      bk_biz_id: 0,
     });
     const formInstance = ref(null);
     const isSaved = ref(false);
@@ -360,14 +360,14 @@ export default defineComponent({
             <FormItem label='方案名称' required property='name'>
               <Input v-model={formData.name}/>
             </FormItem>
-            <FormItem label='标签' required property='bk_biz_id'>
+            <FormItem label='标签' property='bk_biz_id'>
               <AppSelect
                 data={businessMapStore.businessList}
                 value={{
                   id: formData.bk_biz_id,
                 }}
                 onChange={
-                  (val: {id: string, val: string}) => {
+                  (val: {id: number, val: string}) => {
                     formData.bk_biz_id = val.id;
                   }
                 }
