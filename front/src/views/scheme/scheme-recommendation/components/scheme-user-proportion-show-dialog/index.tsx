@@ -60,7 +60,7 @@ export default defineComponent({
         onClosed={() => toggleShow(false)}>
         <div class='tips-wrap mb16'>
           <i class='hcm-icon bkhcm-icon-info-line'></i>
-          <div class='tips-text'>占比权重说明说明说明</div>
+          <div class='tips-text'>当前采用各地区玩家的活跃程度（如登录行为）作为用户分布占比权重的衡量依据，暂不可更改。用户在各地区的分布占比会影响到最终的推荐结果。</div>
         </div>
         <Input
           v-model={searchVal.value}

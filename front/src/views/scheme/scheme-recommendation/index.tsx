@@ -27,7 +27,8 @@ export default defineComponent({
     const toggleClose = ref(false);
     const schemeStore = useSchemeStore();
 
-    const initLoading = ref(false);
+    const countryInitLoading = ref(false);
+    const bizTypesInitLoading = ref(false);
     const countriesList = ref<Array<string>>([]);
     const bizTypeList = ref<IBizTypeList>([]);
     const selectedBizType = computed<IBizType>(() =>
@@ -48,8 +49,6 @@ export default defineComponent({
     const clearLastData = () => {
       formData.user_distribution = [];
       schemeStore.setUserDistribution([]);
-      schemeStore.setRecommendationSchemes([]);
-      scene.value = 'blank';
     };
     const handleChangeCountry = async () => {
       clearLastData();
@@ -93,7 +92,7 @@ export default defineComponent({
         property: 'selected_countries',
         content: () => (
           <bk-select
-            loading={initLoading.value || countryChangeLoading.value}
+            loading={countryInitLoading.value || countryChangeLoading.value}
             v-model={formData.selected_countries}
             multiple
             show-select-all
@@ -112,7 +111,7 @@ export default defineComponent({
         required: true,
         property: 'biz_type',
         content: () => (
-          <bk-select loading={initLoading.value} v-model={formData.biz_type}>
+          <bk-select loading={bizTypesInitLoading.value} v-model={formData.biz_type}>
             {bizTypeList.value.map((bizType) => (
               <bk-option
                 key={bizType.id}
@@ -150,7 +149,7 @@ export default defineComponent({
         label: '用户分布占比',
         content: () => (
           <div class='flex-row'>
-            <bk-select class='flex-1' v-model={formData.user_distribution_mode}>
+            <bk-select class='flex-1' v-model={formData.user_distribution_mode} clearable={false}>
               <bk-option label='默认分布占比' value='default' />
             </bk-select>
             <div
@@ -188,6 +187,7 @@ export default defineComponent({
             <bk-button
               class='mr8'
               theme='primary'
+              disabled={countryChangeLoading.value}
               onClick={generateSchemes}>
               选型推荐
             </bk-button>
@@ -212,25 +212,29 @@ export default defineComponent({
       })
     }
 
-    const getInitData = async () => {
-      initLoading.value = true;
+    const getInitCountryList = async () => {
+      countryInitLoading.value = true;
+      const res = await schemeStore.listCountries();
+      countryInitLoading.value = false;
+      countriesList.value = res.data.details.sort((prev, next) => prev.localeCompare(next, 'zh'));
+    }
+
+    const getInitBizTypeList = async () => {
+      bizTypesInitLoading.value = true;
       const pageQuery: IPageQuery = {
         count: false,
         start: 0,
         limit: 500,
       };
-      const [res1, res2] = await Promise.all([
-        schemeStore.listCountries(),
-        schemeStore.listBizTypes(pageQuery),
-      ]);
-      initLoading.value = false;
-      countriesList.value = res1.data.details;
-      bizTypeList.value = res2.data.details;
+      const res = await schemeStore.listBizTypes(pageQuery);
+      bizTypesInitLoading.value = false;
+      bizTypeList.value = res.data.details;
       formData.biz_type = bizTypeList.value?.[0].biz_type;
-    };
+    }
 
     onMounted(() => {
-      getInitData();
+      getInitCountryList();
+      getInitBizTypeList();
     });
 
     watch(
