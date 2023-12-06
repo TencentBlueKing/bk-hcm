@@ -56,10 +56,12 @@ export default defineComponent({
       {
         field: 'name',
         label: '部署点名称',
+        width: 100,
       },
       {
         field: 'vendor',
         label: '云厂商',
+        width: 100,
         render: ({ cell }: {cell: VendorEnum}) => {
           return VendorMap[cell];
         },
@@ -67,17 +69,17 @@ export default defineComponent({
       {
         field: 'region',
         label: '所在地',
+        width: 100,
       },
       {
         field: 'service_areas',
         label: '服务区域',
-        width: 500,
         render: ({ cell, data }: any) => {
           return (
             <p class={'flex-row align-items-center service-areas-paragraph'}>
               <PopConfirm
                 trigger='click'
-                width={600}
+                width={454}
               >
                 {{
                   content: () => (
@@ -95,7 +97,6 @@ export default defineComponent({
                               {
                                 field: 'country_name_province_name',
                                 label: '地区',
-                                width: 400,
                                 align: 'left',
                                 render: ({ data }) => <p class={'index-number-box-container'}>
                                   <div class={`index-number-box bg-color-${data.idx < 3 ? data.idx + 1 : 4}`}>
@@ -107,6 +108,7 @@ export default defineComponent({
                               {
                                 field: 'network_latency',
                                 label: '网络延迟',
+                                width: 100,
                                 render: ({ cell }: {cell: number}) => `${Math.floor(cell)} ms`,
                                 sort: true,
                               },
@@ -137,11 +139,13 @@ export default defineComponent({
         render: ({ cell }: {cell: number}) => {
           return `${Math.floor(cell)} ms`;
         },
+        width: 100,
       },
       {
         field: 'price',
         label: 'IDC 单位成本',
         render: ({ cell }: {cell: number}) => `$ ${cell}`,
+        width: 100,
       },
     ];
     const tableData = ref([]);
