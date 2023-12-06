@@ -38,6 +38,7 @@ export default defineComponent({
     idx: {
       type: Number,
       required: true,
+      default: -1,
     },
     onViewDetail: {
       required: true,
@@ -108,7 +109,7 @@ export default defineComponent({
                               {
                                 field: 'network_latency',
                                 label: '网络延迟',
-                                width: 100,
+                                width: 150,
                                 render: ({ cell }: {cell: number}) => `${Math.floor(cell)} ms`,
                                 sort: true,
                               },
@@ -290,6 +291,18 @@ export default defineComponent({
       isLoading.value = false;
       // }
     };
+
+    watch(
+      () => props.idx,
+      () => {
+        if (props.idx === 0) {
+          isExpanded.value = true;
+        }
+      },
+      {
+        immediate: true,
+      },
+    );
 
     return () => (
       <div class={'scheme-preview-table-card-container'}>
