@@ -795,7 +795,7 @@ export default defineComponent({
           )}
           {/* 基本信息 */}
           {formBaseInfo.map((baseItem, index) => (
-            <div class='mb32'>
+            <div class={index < formBaseInfo.length - 1 ? 'mb32' : 'mb16'}>
               <div class='font-bold pb8'>
                 {baseItem.name}
                 {index > 0 ? (
