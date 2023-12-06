@@ -32,15 +32,15 @@ export default defineComponent({
   setup(props) {
     const sortChoice = ref(SchemeSortOptions[0].key);
     const schemeStore = useSchemeStore();
-    const isAsc = ref(true);
+    const isDes = ref(true);
 
     watch(
       () => [
         sortChoice.value,
-        isAsc.value,
+        isDes.value,
       ],
       () => {
-        schemeStore.sortSchemes(sortChoice.value, isAsc.value);
+        schemeStore.sortSchemes(sortChoice.value, isDes.value);
       },
       {
         deep: true,
@@ -68,8 +68,8 @@ export default defineComponent({
               )),
             }}
           </Select>
-          <Button onClick={() => isAsc.value = !isAsc.value}>
-            <i class={`${isAsc.value ? 'icon hcm-icon bkhcm-icon-shengxu' : 'hcm-icon bkhcm-icon-jiangxu'}`}/>
+          <Button onClick={() => isDes.value = !isDes.value}>
+            <i class={`${isDes.value ? 'hcm-icon bkhcm-icon-jiangxu' : 'icon hcm-icon bkhcm-icon-shengxu'}`}/>
           </Button>
         </div>
         <div class={'scheme-preview-content'}>
@@ -79,6 +79,7 @@ export default defineComponent({
               idx,
             ) => (
                   <SchemePreviewTableCard
+                    key={result_idc_ids.join(',')}
                     compositeScore={composite_score}
                     costScore={cost_score}
                     netScore={net_score}

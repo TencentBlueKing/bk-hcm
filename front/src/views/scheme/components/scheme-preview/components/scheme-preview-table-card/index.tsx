@@ -146,7 +146,7 @@ export default defineComponent({
         field: 'price',
         label: 'IDC 单位成本',
         render: ({ cell }: {cell: number}) => `$ ${cell}`,
-        width: 100,
+        width: 200,
       },
     ];
     const tableData = ref([]);

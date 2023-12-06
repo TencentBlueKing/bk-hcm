@@ -51,9 +51,9 @@ export const useSchemeStore = defineStore({
     setSchemeData(data: typeof this.schemeData) {
       this.schemeData = data;
     },
-    sortSchemes(choice: string, isAsc = true) {
+    sortSchemes(choice: string, isDes = true) {
       this.recommendationSchemes = this.recommendationSchemes.sort(
-        (a, b) => (a[choice] - b[choice]) * (isAsc ? 1 : -1),
+        (a, b) => (b[choice] - a[choice]) * (isDes ? 1 : -1),
       );
     },
     /**
