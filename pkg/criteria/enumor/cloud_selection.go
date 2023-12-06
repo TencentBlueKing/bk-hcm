@@ -28,3 +28,13 @@ const (
 	// Centralized 集中式部署
 	Centralized SchemeDeployArch = "centralized"
 )
+
+// SelectionSourceType 云选型数据源类型
+type SelectionSourceType string
+
+const (
+	// BusinessDataSource 业务数据
+	BusinessDataSource SelectionSourceType = "biz"
+	// RawPingDatasource 裸ping数据
+	RawPingDatasource SelectionSourceType = "ping"
+)

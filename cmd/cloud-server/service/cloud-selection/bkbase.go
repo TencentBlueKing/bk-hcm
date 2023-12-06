@@ -20,12 +20,14 @@
 package csselection
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	cssel "hcm/pkg/api/cloud-server/cloud-selection"
 	"hcm/pkg/api/core"
 	coresel "hcm/pkg/api/core/cloud-selection"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
@@ -173,7 +175,7 @@ func (svc *service) QueryBizLatency(cts *rest.Contexts) (any, error) {
 // QueryServiceArea 查询机房服务区域接口
 func (svc *service) QueryServiceArea(cts *rest.Contexts) (any, error) {
 
-	topoList, idcList, err := svc.decodeAreaTopoIDCReq(cts)
+	topoList, idcList, tableName, err := svc.decodeQueryServiceReq(cts)
 	if err != nil {
 		return nil, err
 	}
@@ -190,24 +192,98 @@ func (svc *service) QueryServiceArea(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
-	idcNameToID := converter.SliceToMap(idcList, func(idc coresel.Idc) (string, string) {
-		return idc.Name, idc.ID
-	})
-	notBefore := times.DateAfterNow(-svc.cfg.AvgLatencySampleDays)
 	bizID, idcNames, err := getBizIDAndIDCNames(idcList)
 	if err != nil {
 		logs.Errorf("fail to getBizIDAndIDCNames, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	idcIdToServiceArea := make(map[string][]coresel.FlatAreaInfo, len(idcList))
-	allPingData, err := svc.listAllAvgProvincePingData(cts.Kit, svc.cfg.TableNames.LatencyPingProvinceIdc, notBefore,
-		bizID, idcNames)
+	notBefore := times.DateAfterNow(-svc.cfg.AvgLatencySampleDays)
+	allPingData, err := svc.listAllAvgProvincePingData(cts.Kit, tableName, notBefore, bizID, idcNames)
 	if err != nil {
 		logs.Errorf("fail to query %s, err: %v, rid: %s",
 			svc.cfg.TableNames.LatencyPingProvinceIdc, err, cts.Kit.Rid)
 		return nil, err
 	}
+
+	idcIdToServiceArea, err := svc.getServiceArea(idcList, topoList, allPingData)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := make([]coresel.IdcServiceAreaRel, 0, len(idcIdToServiceArea))
+	// convert map to slice type , and calculate average latency
+	for idcID, areas := range idcIdToServiceArea {
+		totalLatency := 0.0
+		for _, area := range areas {
+			totalLatency += area.NetworkLatency
+		}
+		avg := float64(0)
+		if len(areas) > 0 {
+			avg = totalLatency / float64(len(areas))
+		}
+		resp = append(resp, coresel.IdcServiceAreaRel{
+			IdcID:        idcID,
+			AvgLatency:   avg,
+			ServiceAreas: areas,
+		})
+	}
+	if len(idcIdToServiceArea) != len(idcList) {
+		// some idc may not serve any area
+		for _, idc := range idcList {
+			if _, exists := idcIdToServiceArea[idc.ID]; exists {
+				continue
+			}
+			resp = append(resp, coresel.IdcServiceAreaRel{IdcID: idc.ID, ServiceAreas: make([]coresel.FlatAreaInfo, 0)})
+		}
+	}
+	return resp, nil
+}
+
+func (svc *service) decodeQueryServiceReq(cts *rest.Contexts) (areaTopo []coresel.AreaInfo, idcList []coresel.Idc,
+	tableName string, err error) {
+
+	source := cts.PathParameter("datasource").String()
+	switch enumor.SelectionSourceType(source) {
+	case enumor.BusinessDataSource:
+		tableName = svc.cfg.TableNames.LatencyBizProvinceIdc
+	case enumor.RawPingDatasource:
+		tableName = svc.cfg.TableNames.LatencyPingProvinceIdc
+	default:
+		return nil, nil, "", errors.New("unknown data source type: " + source)
+	}
+
+	req := new(cssel.AreaTopoIDCQueryReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, nil, "", err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, nil, "", errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// query idc list first
+	idcResult, err := svc.client.DataService().Global.CloudSelection.ListIdc(cts.Kit, &core.ListReq{
+		Filter: tools.ContainersExpression("id", req.IDCIds),
+		Page:   core.NewDefaultBasePage(),
+	})
+
+	if err != nil {
+		logs.Errorf("fail to query idc info, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, nil, "", err
+	}
+	return req.AreaTopo, idcResult.Details, tableName, nil
+
+}
+
+// getServiceArea get service area of each idc
+func (svc *service) getServiceArea(idcList []coresel.Idc, topoList []coresel.AreaInfo,
+	allPingData map[string][]coresel.ProvinceToIDCLatency) (map[string][]coresel.FlatAreaInfo, error) {
+
+	idcIdToServiceArea := make(map[string][]coresel.FlatAreaInfo, len(idcList))
+	idcNameToID := converter.SliceToMap(idcList, func(idc coresel.Idc) (string, string) {
+		return idc.Name, idc.ID
+	})
 	// find ping latency data by top layer area
 	for _, topArea := range topoList {
 
@@ -236,34 +312,7 @@ func (svc *service) QueryServiceArea(cts *rest.Contexts) (any, error) {
 				})
 		}
 	}
-
-	resp := make([]coresel.IdcServiceAreaRel, 0, len(idcIdToServiceArea))
-	// convert map to slice type
-	for idcID, areas := range idcIdToServiceArea {
-		totalLatency := 0.0
-		for _, area := range areas {
-			totalLatency += area.NetworkLatency
-		}
-		avg := float64(0)
-		if len(areas) > 0 {
-			avg = totalLatency / float64(len(areas))
-		}
-		resp = append(resp, coresel.IdcServiceAreaRel{
-			IdcID:        idcID,
-			AvgLatency:   avg,
-			ServiceAreas: areas,
-		})
-	}
-	if len(idcIdToServiceArea) != len(idcList) {
-		// some idc may not serve any area
-		for _, idc := range idcList {
-			if _, exists := idcIdToServiceArea[idc.ID]; exists {
-				continue
-			}
-			resp = append(resp, coresel.IdcServiceAreaRel{IdcID: idc.ID, ServiceAreas: make([]coresel.FlatAreaInfo, 0)})
-		}
-	}
-	return resp, nil
+	return idcIdToServiceArea, nil
 }
 
 func (svc *service) decodeAreaTopoIDCReq(cts *rest.Contexts) (areaTopo []coresel.AreaInfo,
