@@ -76,8 +76,8 @@ type GcpRouteTable struct {
 	SelfLink string `db:"self_link" validate:"max=255" json:"self_link"`
 	// Name 路由名称
 	Name string `db:"name" validate:"max=128" json:"name"`
-	// DestRange 目的网段
-	DestRange string `db:"dest_range" validate:"cidr" json:"dest_range"`
+	// DestRange 目标 IP 地址范围, 可以是cidr或者具体ip地址
+	DestRange string `db:"dest_range" validate:"cidr|ip" json:"dest_range"`
 	// NextHopGateway 下一跳网关的URL
 	NextHopGateway *string `db:"next_hop_gateway" validate:"omitempty,max=255" json:"next_hop_gateway,omitempty"`
 	// NextHopIlb 下一跳内部负载均衡转发规则的URL或IP地址

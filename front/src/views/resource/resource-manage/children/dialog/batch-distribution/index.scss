@@ -9,3 +9,12 @@
 .mb32 {
   margin-bottom: 32px;
 }
+
+.batch-dialog {
+  .bk-dialog-header { 
+    padding: 16px 24px 20px !important;
+  }
+  .bk-modal-content {
+    padding-top: 0 !important;
+  }
+}

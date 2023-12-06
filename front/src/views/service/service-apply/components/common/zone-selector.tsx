@@ -119,7 +119,7 @@ export default defineComponent({
         {!loading.value
           && (!isEmptyCond.value ? (
             [
-              list.value.map(({ name, display_name }) => (
+              list.value.map(({ name, display_name, name_cn }) => (
                 <Tag
                   class='tag-checkable'
                   key={name}
@@ -127,7 +127,7 @@ export default defineComponent({
                   checkable
                   checked={selected.value.includes(name)}
                   onChange={checked => handleChange(checked, name)}>
-                  {display_name ?? name}
+                  {display_name || name_cn || name}
                 </Tag>
               )),
               !list.value.length && <span>该云地域无可用区可选择</span>,

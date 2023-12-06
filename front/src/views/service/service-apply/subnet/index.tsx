@@ -95,8 +95,8 @@ export default defineComponent({
 
     const handleSubmit = async () => {
       await formRef.value.validate();
-      if (formModel.vendor === VendorEnum.GCP || formModel.vendor === VendorEnum.AZURE) {
-        // formModel.ipv4_cidr = [formModel.ipv4_cidr] as string[];
+      if (formModel.vendor === VendorEnum.AZURE) {
+        formModel.ipv4_cidr = [formModel.ipv4_cidr] as string[];
       }
       submitLoading.value = true;
       try {

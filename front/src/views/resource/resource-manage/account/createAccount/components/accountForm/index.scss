@@ -14,6 +14,12 @@
 
     .account-form-card-content {
       padding: 16px 28px;
+
+      & > .bk-form {
+        & > .bk-form-item:last-of-type {
+          margin-bottom: 0; 
+        }
+      }
     }
 
     .account-form-card-content-grid {
@@ -60,6 +66,7 @@
       align-items: center;
       .account-validate-btn {
         margin: 0 12px 0 28px;
+        min-width: 88px;
       }
       .validate-icon {
         margin-right: 8px;

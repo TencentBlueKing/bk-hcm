@@ -65,8 +65,8 @@ const hostSearchData = computed(() => {
     ...searchData.value,
     ...[
       {
-        name: '所属vpc',
-        id: 'vpc_id',
+        name: '所属vpc id',
+        id: 'cloud_vpc_id',
       },
       {
         name: '云地域',

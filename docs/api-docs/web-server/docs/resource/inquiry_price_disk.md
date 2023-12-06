@@ -1,6 +1,6 @@
 ### 描述
 
-- 该接口提供版本：v9.9.9+。
+- 该接口提供版本：v1.2.1+。
 - 该接口所需权限：IaaS资源创建。
 - 该接口功能描述：查询硬盘售价。
 
@@ -75,6 +75,7 @@ POST /api/v1/cloud/disks/prices/inquiry
 ```
 
 **huawei**
+
 ```json
 {
   "account_id": "0000001z",
@@ -85,11 +86,11 @@ POST /api/v1/cloud/disks/prices/inquiry
   "disk_size": 50,
   "disk_count": 1,
   "disk_charge_type": "prePaid",
-  "disk_charge_prepaid":{
-        "period_num":1,
-        "period_type":"month",
-        "is_auto_renew":"ture"
-    },
+  "disk_charge_prepaid": {
+    "period_num": 1,
+    "period_type": "month",
+    "is_auto_renew": "ture"
+  },
   "memo": "test"
 }
 ```

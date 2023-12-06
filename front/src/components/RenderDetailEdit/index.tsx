@@ -165,7 +165,10 @@ export default defineComponent({
             {renderEdit.value ? (
               renderComponentsContent(props.fromType)
             ) : renderTextContent(props.fromType)}
-            {renderEdit.value || props.hideEdit ? '' : <i onClick={handleEdit} class={'icon hcm-icon bkhcm-icon-edit pl15 account-edit-icon'}/>}
+            {renderEdit.value || props.hideEdit
+              ? ''
+              : <i onClick={handleEdit} class={'icon bk-icon icon-bianji account-edit-icon'} style={{ marginLeft: '10px', color: '#979BA5' }} />
+            }
         </div>
     );
   },

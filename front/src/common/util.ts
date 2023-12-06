@@ -162,3 +162,15 @@ export function getScoreColor (score: number) {
   }
   return '#63656E';
 }
+/*
+ * 将 Map 类型的数据 key-value 互换，并输出一个对象
+ * @param map 需要转换的 Map 对象
+ * @returns 转换后的普通 js 对象
+ */
+export function swapMapKeysAndValuesToObj(map: Map<string, string>) {
+  const _obj = {};
+  for (const [key, value] of map) {
+    _obj[value] = key;
+  }
+  return _obj;
+}

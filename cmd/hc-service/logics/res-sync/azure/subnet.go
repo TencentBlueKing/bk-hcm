@@ -298,7 +298,7 @@ func (cli *client) createSubnet(kt *kit.Kit, accountID, resGroupName, cloudVpcID
 	createReq := &cloud.SubnetBatchCreateReq[cloud.AzureSubnetCreateExt]{
 		Subnets: subnets,
 	}
-	if _, err := cli.dbCli.Azure.Subnet.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
+	if _, err := cli.dbCli.Azure.Subnet.BatchCreate(kt, createReq); err != nil {
 		logs.Errorf("[%s] request dataservice to batch create subnet failed, err: %v, rid: %s", enumor.Azure, err,
 			kt.Rid)
 		return err

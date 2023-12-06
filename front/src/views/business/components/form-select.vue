@@ -222,7 +222,7 @@ defineExpose([validate]);
 getAccountList();
 </script>
 <template>
-  <bk-form class="mt20 pt20 bussine-form" :model="state.filter" ref="formRef">
+  <bk-form class="pt20 bussine-form" label-width="150" :model="state.filter" ref="formRef">
     <bk-form-item
       :label="t('云账号')"
       class="item-warp"
@@ -283,7 +283,7 @@ getAccountList();
               ? item.name
               : item.region_id || item.id
           "
-          :label="item.region_name || item.region_id || item.name"
+          :label="item.locales_zh_cn || item.region_name || item.region_id || item.name"
         />
       </bk-select>
     </bk-form-item>

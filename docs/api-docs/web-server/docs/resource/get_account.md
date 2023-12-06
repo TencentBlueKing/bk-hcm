@@ -1,6 +1,6 @@
 ### 描述
 
-- 该接口提供版本：v9.9.9+。
+- 该接口提供版本：v1.2.1+。
 - 该接口所需权限：账号查看。
 - 该接口功能描述：查询指定账号。
 
@@ -10,9 +10,9 @@ GET /api/v1/cloud/accounts/{account_id}
 
 ### 输入参数
 
-| 参数名称        | 参数类型   | 必选   | 描述    |
-|-------------|--------|------|-------|
-| account_id  | string | 是    | 账号ID  |
+| 参数名称       | 参数类型   | 必选 | 描述   |
+|------------|--------|----|------|
+| account_id | string | 是  | 账号ID |
 
 ### 调用示例
 
@@ -60,6 +60,7 @@ GET /api/v1/cloud/accounts/{account_id}
 | data    | object | 响应数据 |
 
 #### data
+
 | 参数名称       | 参数类型         | 描述                                                               |
 |------------|--------------|------------------------------------------------------------------|
 | id         | string       | 账号ID                                                             |
@@ -80,55 +81,55 @@ GET /api/v1/cloud/accounts/{account_id}
 
 ##### extension[tcloud]
 
-| 参数名称                  | 参数类型     | 描述     |
-|-----------------------|----------|--------|
-| cloud_main_account_id | string   | 云主账户ID |
-| cloud_sub_account_id  | string   | 云子账户ID |
-| cloud_secret_id       | string   | 云加密ID  |
-| cloud_secret_key      | string   | 云密钥    |
+| 参数名称                  | 参数类型   | 描述     |
+|-----------------------|--------|--------|
+| cloud_main_account_id | string | 云主账户ID |
+| cloud_sub_account_id  | string | 云子账户ID |
+| cloud_secret_id       | string | 云加密ID  |
+| cloud_secret_key      | string | 云密钥    |
 
 ##### extension[aws]
 
-| 参数名称                 | 参数类型      | 描述      |
-|----------------------|-----------|---------|
-| cloud_account_id     | string    | 云账户ID   |
-| cloud_iam_username   | string    | 云iam用户名 |
-| cloud_secret_id      | string    | 云加密ID   |
-| cloud_secret_key     | string    | 云密钥     |
+| 参数名称               | 参数类型   | 描述      |
+|--------------------|--------|---------|
+| cloud_account_id   | string | 云账户ID   |
+| cloud_iam_username | string | 云iam用户名 |
+| cloud_secret_id    | string | 云加密ID   |
+| cloud_secret_key   | string | 云密钥     |
 
 ##### extension[huawei]
 
-| 参数名称                    | 参数类型     | 描述        |
-|-------------------------|----------|-----------|
-| cloud_main_account_name | string   | 云主账户名称    |
-| cloud_sub_account_id    | string   | 云子账户ID    |
-| cloud_sub_account_name  | string   | 云子账户名称    |
-| cloud_iam_user_id       | string   | 云iam用户ID  |
-| cloud_iam_username      | string   | 云iam用户名   |
-| cloud_secret_id         | string   | 云加密ID     |
-| cloud_secret_key        | string   | 云密钥       |
+| 参数名称                    | 参数类型   | 描述       |
+|-------------------------|--------|----------|
+| cloud_main_account_name | string | 云主账户名称   |
+| cloud_sub_account_id    | string | 云子账户ID   |
+| cloud_sub_account_name  | string | 云子账户名称   |
+| cloud_iam_user_id       | string | 云iam用户ID |
+| cloud_iam_username      | string | 云iam用户名  |
+| cloud_secret_id         | string | 云加密ID    |
+| cloud_secret_key        | string | 云密钥      |
 
 ##### extension[gcp]
 
-| 参数名称                       | 参数类型     | 描述       |
-|----------------------------|----------|----------|
-| Email                      | string   | 邮箱地址  |
-| cloud_project_id           | string   | 云项目ID    |
-| cloud_project_name         | string   | 云项目名称    |
-| cloud_service_account_id   | string   | 云服务账户ID  |
-| cloud_service_account_name | string   | 云服务账户名称  |
-| cloud_service_secret_id    | string   | 云服务加密ID  |
-| cloud_service_secret_key   | string   | 云服务密钥    |
+| 参数名称                       | 参数类型   | 描述      |
+|----------------------------|--------|---------|
+| Email                      | string | 邮箱地址    |
+| cloud_project_id           | string | 云项目ID   |
+| cloud_project_name         | string | 云项目名称   |
+| cloud_service_account_id   | string | 云服务账户ID |
+| cloud_service_account_name | string | 云服务账户名称 |
+| cloud_service_secret_id    | string | 云服务加密ID |
+| cloud_service_secret_key   | string | 云服务密钥   |
 
 ##### extension[azure]
 
-| 参数名称                     | 参数类型     | 描述          |
-|--------------------------|----------|-------------|
-| display_name_name       | string    | 展示名称  |
-| cloud_tenant_id          | string   | 云租户ID       |
-| cloud_subscription_id    | string   | 云订阅ID       |
-| cloud_subscription_name  | string   | 云订阅名称       |
-| cloud_application_id     | string   | 云应用ID       |
-| cloud_application_name   | string   | 云应用名称       |
-| cloud_client_secret_id   | string   | 云客户端加密ID    |
-| cloud_client_secret_key  | string   | 云客户端密钥      |
+| 参数名称                    | 参数类型   | 描述       |
+|-------------------------|--------|----------|
+| display_name_name       | string | 展示名称     |
+| cloud_tenant_id         | string | 云租户ID    |
+| cloud_subscription_id   | string | 云订阅ID    |
+| cloud_subscription_name | string | 云订阅名称    |
+| cloud_application_id    | string | 云应用ID    |
+| cloud_application_name  | string | 云应用名称    |
+| cloud_client_secret_id  | string | 云客户端加密ID |
+| cloud_client_secret_key | string | 云客户端密钥   |

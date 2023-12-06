@@ -30,7 +30,6 @@
             
         }
         .view-warp{
-            height: calc(100% - 50px);
             overflow-y: auto;
 
             .i-detail-tap-wrap {
@@ -49,15 +48,18 @@
                 z-index: 9;
                 padding-left: 264px;
                 width: 100%;
-                height: 80px;
+                height: 52px;
                 display: flex;
                 align-items: center;
                 background-color: #fff;
                 border: 1px solid #dcdee5;
                 .bk-button {
-                    padding: 0 30px;
+                  min-width: 88px;
                 }
             }
+        }
+        .container-footer {
+          height: 52px;
         }
         .no-padding {
             padding: 0;
@@ -246,15 +248,18 @@
 }
 
 .resource-manage-container {
+  height: 100%;
   display: grid;
   grid-template-columns: 15% 85%;
+  overflow: hidden;
+
   .router-view-content {
     padding: 24px 24px 8px 24px;
   }
   .fixed-account-list-container {
+    height: calc(100vh - 52px);
     position: fixed;
     top: 52px;
-    bottom: -50px;
     left: 0;
     width: 15%;
     z-index: 99;
