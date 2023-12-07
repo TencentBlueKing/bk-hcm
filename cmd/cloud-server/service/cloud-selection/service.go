@@ -61,7 +61,8 @@ func InitService(c *capability.Capability) {
 	h.Add("QueryUserDistribution", http.MethodPost, "/selections/user_distributions/query", svc.QueryUserDistribution)
 	h.Add("QueryPingLatency", http.MethodPost, "/selections/latency/ping/query", svc.QueryPingLatency)
 	h.Add("QueryBizLatency", http.MethodPost, "/selections/latency/biz/query", svc.QueryBizLatency)
-	h.Add("QueryServiceArea", http.MethodPost, "/selections/idcs/services/areas/query", svc.QueryServiceArea)
+	h.Add("QueryServiceArea", http.MethodPost, "/selections/idcs/service_areas/{datasource}/query",
+		svc.QueryServiceArea)
 
 	h.Add("GenerateRecommendScheme", http.MethodPost, "/selections/schemes/generate", svc.GenerateRecommendScheme)
 

@@ -55,7 +55,7 @@ func (svc *service) BatchDeleteScheme(cts *rest.Contexts) (interface{}, error) {
 	for _, one := range req.IDs {
 		reses = append(reses, meta.ResourceAttribute{
 			Basic: &meta.Basic{
-				Type:       meta.CloudSelectionIdc,
+				Type:       meta.CloudSelectionScheme,
 				Action:     meta.Delete,
 				ResourceID: one,
 			},
@@ -87,7 +87,7 @@ func (svc *service) CreateScheme(cts *rest.Contexts) (interface{}, error) {
 
 	res := meta.ResourceAttribute{
 		Basic: &meta.Basic{
-			Type:   meta.CloudSelectionIdc,
+			Type:   meta.CloudSelectionScheme,
 			Action: meta.Create,
 		},
 	}
@@ -143,7 +143,7 @@ func (svc *service) UpdateScheme(cts *rest.Contexts) (interface{}, error) {
 
 	res := meta.ResourceAttribute{
 		Basic: &meta.Basic{
-			Type:       meta.CloudSelectionIdc,
+			Type:       meta.CloudSelectionScheme,
 			Action:     meta.Update,
 			ResourceID: id,
 		},
@@ -174,7 +174,7 @@ func (svc *service) GetScheme(cts *rest.Contexts) (interface{}, error) {
 
 	res := meta.ResourceAttribute{
 		Basic: &meta.Basic{
-			Type:       meta.CloudSelectionIdc,
+			Type:       meta.CloudSelectionScheme,
 			Action:     meta.Find,
 			ResourceID: id,
 		},
@@ -245,6 +245,16 @@ func (svc *service) GenerateRecommendScheme(cts *rest.Contexts) (any, error) {
 
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	res := meta.ResourceAttribute{Basic: &meta.Basic{
+		Type:   meta.CloudSelectionScheme,
+		Action: meta.Create,
+	},
+	}
+	if err := svc.authorizer.AuthorizeWithPerm(cts.Kit, res); err != nil {
+		logs.Errorf("generate scheme auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
 	}
 
 	// idc 列表
