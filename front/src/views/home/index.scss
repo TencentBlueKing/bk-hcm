@@ -251,6 +251,7 @@
 
   .router-view-content {
     padding: 24px 24px 8px 24px;
+    overflow-y: auto;
   }
   .fixed-account-list-container {
     height: calc(100vh - 52px);
