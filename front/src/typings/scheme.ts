@@ -115,6 +115,7 @@ interface IRecommendScheme {
   vendors: [];
   deployment_architecture: [];
   bk_biz_id: string;
+  isSaved: boolean;
 }
 export type IRecommendSchemeList = Array<IRecommendScheme>;
 export type IGenerateSchemesResData = IQueryResData<IRecommendSchemeList>;
