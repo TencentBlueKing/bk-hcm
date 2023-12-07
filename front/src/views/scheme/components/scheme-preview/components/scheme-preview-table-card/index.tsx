@@ -116,11 +116,11 @@ export default defineComponent({
                       </div>
                   ),
                   default: () => (
-                    <div
+                    <a
                       class={'scheme-service-areas-icon-box mr4'}
                     >
                       <i class={'icon hcm-icon bkhcm-icon-paiming scheme-service-areas-icon'}></i>
-                    </div>
+                    </a>
                   ),
                 }}
               </PopConfirm>
