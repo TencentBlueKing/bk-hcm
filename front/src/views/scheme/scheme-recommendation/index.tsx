@@ -73,12 +73,14 @@ export default defineComponent({
         ...item,
         id: `${idx}`,
         name: `方案${idx + 1}`,
+        isSaved: false,
       })));
       scene.value = 'preview';
     };
 
-    const viewDetail = () => {
+    const viewDetail = (idx: number) => {
       scene.value = 'detail';
+      schemeStore.setSelectedSchemeIdx(idx);
     };
 
     const formItemOptions = computed(() => [

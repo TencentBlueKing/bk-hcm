@@ -161,7 +161,7 @@ export default defineComponent({
       isViewDetailBtnLoading.value = true;
       await getSchemeDetails();
       isViewDetailBtnLoading.value = false;
-      props.onViewDetail();
+      props.onViewDetail(props.idx);
     };
 
     watch(

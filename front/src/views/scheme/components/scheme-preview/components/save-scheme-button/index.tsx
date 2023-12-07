@@ -1,4 +1,4 @@
-import { defineComponent, reactive, ref } from 'vue';
+import { defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
 import { Button, Dialog, Form, Input, Message } from 'bkui-vue';
 // @ts-ignore
@@ -17,7 +17,6 @@ export default defineComponent({
   },
   setup(props) {
     const isDialogShow = ref(false);
-    const isSaved = ref(false);
     const businessMapStore = useBusinessMapStore();
     const schemeStore = useSchemeStore();
     const formData = reactive({
@@ -46,19 +45,27 @@ export default defineComponent({
         message: '保存成功',
       });
       schemeStore.setRecommendationSchemes(schemeStore.recommendationSchemes.map((scheme, idx) => {
-        if (idx === props.idx) scheme.name = formData.name;
+        if (idx === props.idx) {
+          scheme.name = formData.name;
+          scheme.isSaved = true;
+        }
         return scheme;
       }));
       isDialogShow.value = false;
-      isSaved.value = true;
     };
+
+    watch(
+      () => schemeStore.selectedSchemeIdx,
+      (idx) => formData.name = schemeStore.recommendationSchemes[idx].name,
+    );
+
     return () => (
       <>
         <Button
           theme='primary'
           onClick={() => (isDialogShow.value = true)}
-          disabled={isSaved.value}>
-          {isSaved.value ? '已保存' : '保存'}
+          disabled={schemeStore.recommendationSchemes[props.idx].isSaved}>
+          {schemeStore.recommendationSchemes[props.idx].isSaved ? '已保存' : '保存'}
         </Button>
 
         <Dialog

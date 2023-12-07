@@ -85,7 +85,7 @@ export default defineComponent({
                     netScore={net_score}
                     resultIdcIds={result_idc_ids}
                     idx={idx}
-                    onViewDetail={props.onViewDetail}
+                    onViewDetail={(idx: number) => props.onViewDetail(idx)}
                     coverRate={cover_rate}
                   />
             ))
