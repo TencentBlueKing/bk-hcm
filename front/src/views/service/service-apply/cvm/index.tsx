@@ -1161,7 +1161,7 @@ export default defineComponent({
         </DetailHeader>
         <div
           class='create-form-container cvm-wrap'
-          style={whereAmI.value === Senarios.resource && { padding: 0 }}>
+          style={whereAmI.value === Senarios.resource && { padding: 0, marginBottom: '80px' }}>
           <ConditionOptions
             type={ResourceTypeEnum.CVM}
             v-model:bizId={cond.bizId}
