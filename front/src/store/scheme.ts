@@ -174,7 +174,7 @@ export const useSchemeStore = defineStore({
      * @returns 服务区
      */
     queryIdcServiceArea(idc_ids: Array<string>, area_topo: Array<IAreaInfo>): IQueryResData<Array<IIdcServiceAreaRel>> {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/idcs/services/areas/query`, {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/idcs/service_areas/ping/query`, {
         idc_ids,
         area_topo,
       });
