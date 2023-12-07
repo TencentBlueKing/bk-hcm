@@ -378,7 +378,7 @@ export default defineComponent({
           onConfirm={handleConfirm}>
           <Form formType='vertical' model={formData} ref={formInstance}>
             <FormItem label='方案名称' required property='name'>
-              <Input v-model={formData.name}/>
+              <Input v-model={formData.name} maxlength={28}/>
             </FormItem>
             <FormItem label='标签' property='bk_biz_id'>
               <AppSelect
