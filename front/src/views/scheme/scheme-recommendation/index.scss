@@ -65,13 +65,13 @@
 
           .bk-form-label {
             width: 80px;
-            text-align: right;
             line-height: 32px;
             margin-bottom: 0;
 
             &::after {
               content: '<';
               margin: 0 5px;
+              color: #63656E;
             }
           }
 
