@@ -22,7 +22,13 @@ export default defineComponent({
   },
   setup(props, ctx) {
 
-    const inputVal = ref(props.modelValue)
+    const inputVal = ref(props.modelValue);
+
+    const handleInput = (val: string) => {
+      if (val === '') {
+        triggerSearch();
+      }
+    }
 
     const triggerSearch = () => {
       ctx.emit('update:modelValue', inputVal.value);
@@ -36,7 +42,8 @@ export default defineComponent({
         clearable={true}
         placeholder={props.placeholder}
         onClear={triggerSearch}
-        onEnter={triggerSearch}>
+        onEnter={triggerSearch}
+        onInput={handleInput}>
         {{
           suffix: () => <Search class="search-input-icon" />
         }}

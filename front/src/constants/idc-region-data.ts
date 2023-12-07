@@ -28,8 +28,8 @@ export default {
       },
       "geometry": {
         "coordinates":[
-          -6.2146,
-          106.8451
+          106.8451,
+          -6.2146
         ],
         "type": "Point"
       }
@@ -44,8 +44,8 @@ export default {
       },
       "geometry": {
         "coordinates":[
-          35.6895,
-          139.6917
+          139.6917,
+          35.6895
         ],
         "type": "Point"
       }
@@ -60,8 +60,8 @@ export default {
       },
       "geometry": {
         "coordinates":[
-          50.1109,
-          8.6821
+          8.6821,
+          50.1109
         ],
         "type": "Point"
       }
@@ -76,8 +76,8 @@ export default {
       },
       "geometry": {
         "coordinates":[
-          37.4419,
-          -122.1430
+          -122.1430,
+          37.4419
         ],
         "type": "Point"
       }
@@ -92,8 +92,8 @@ export default {
       },
       "geometry": {
         "coordinates":[
-          37.4315,
-          -78.6569
+          -78.6569,
+          37.4315
         ],
         "type": "Point"
       }
@@ -108,8 +108,8 @@ export default {
       },
       "geometry": {
         "coordinates":[
-          -23.5505,
-          -46.6333
+          -46.6333,
+          -23.5505
         ],
         "type": "Point"
       }
@@ -124,8 +124,8 @@ export default {
       },
       "geometry": {
         "coordinates":[
-          23.6345,
-          -102.5528
+          -102.5528,
+          23.6345
         ],
         "type": "Point"
       }
@@ -140,8 +140,8 @@ export default {
       },
       "geometry": {
         "coordinates":[
-          -33.8688,
-          151.2093
+          151.2093,
+          -33.8688
         ],
         "type": "Point"
       }
@@ -156,8 +156,8 @@ export default {
       },
       "geometry": {
         "coordinates":[
-          60.1708,
-          24.9376
+          24.9376,
+          60.1708
         ],
         "type": "Point"
       }
@@ -172,8 +172,8 @@ export default {
       },
       "geometry": {
         "coordinates":[
-          22.3964,
-          114.1095
+          114.1095,
+          22.3964
         ],
         "type": "Point"
       }
@@ -188,8 +188,8 @@ export default {
       },
       "geometry": {
         "coordinates":[
-          25.2049,
-          55.2798
+          55.2798,
+          25.2049
         ],
         "type": "Point"
       }

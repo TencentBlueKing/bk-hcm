@@ -169,12 +169,13 @@ export const useSchemeStore = defineStore({
     },
     /**
      * 获取服务区
+     * @param datasource 数据来源：ping（裸ping数据）、biz（业务数据）
      * @param idc_ids 机房 id 列表
      * @param area_topo 国家城市拓扑
      * @returns 服务区
      */
-    queryIdcServiceArea(idc_ids: Array<string>, area_topo: Array<IAreaInfo>): IQueryResData<Array<IIdcServiceAreaRel>> {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/idcs/services/areas/query`, {
+    queryIdcServiceArea(datasource: string, idc_ids: Array<string>, area_topo: Array<IAreaInfo>): IQueryResData<Array<IIdcServiceAreaRel>> {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/idcs/service_areas/${datasource}/query`, {
         idc_ids,
         area_topo,
       });

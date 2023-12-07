@@ -2,7 +2,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
+  padding: 0 24px 0 16px;
   height: 52px;
   background: #ffffff;
   box-shadow: 0 3px 4px 0 #0000000a;
@@ -29,7 +29,7 @@
   }
   .cloud-service-type {
     &:not(:last-of-type) {
-      margin-left: 8px;
+      margin-right: 8px;
     }
   }
 }

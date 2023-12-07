@@ -153,11 +153,11 @@ export function formatStorageSize(value: number, digits = 0) {
  * @param score 得分数值
  */
 export function getScoreColor (score: number) {
-  if (score > 0 && score < 90) {
+  if (score > 0 && score < 180) {
     return '#00A62B';
-  } else if (score >= 90 && score <= 120) {
+  } else if (score >= 180 && score <= 360) {
     return '#FF9D00';
-  } else if ( score > 120 ) {
+  } else if ( score > 360 ) {
     return '#EA3636';
   }
   return '#63656E';

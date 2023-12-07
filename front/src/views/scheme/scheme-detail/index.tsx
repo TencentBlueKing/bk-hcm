@@ -27,10 +27,11 @@ export default defineComponent({
     const idcList = ref<IIdcInfo[]>([]);
     const idcListLoading = ref(false);
 
-    watch(() => route.query?.sid, val => {
+    watch(() => route.query?.sid, async(val) => {
       if (val) {
         schemeId.value = val;
-        getSchemeDetail();
+        await getSchemeDetail();
+        getIdcList();
       }
     });
 
@@ -128,7 +129,7 @@ export default defineComponent({
                   onUpdate={handleUpdate}>
                     {{
                       operate: () => (
-                        <bk-button onClick={handleDel}>删除</bk-button>
+                        <bk-button class="del-btn" onClick={handleDel}>删除</bk-button>
                       )
                     }}
                 </DetailHeader>
