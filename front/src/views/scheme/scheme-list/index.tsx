@@ -66,7 +66,7 @@ export default defineComponent({
               <i
                 class={['hcm-icon', 'collect-icon', collections.value.findIndex(item => item.res_id === data.id) > -1 ? 'bkhcm-icon-collect' : 'bkhcm-icon-not-favorited']}
                 onClick={() => handleToggleCollection(data)}/>
-                <span class="name-text" onClick={() => { goToDetail(data.id) }}>{data.name}{data.name}</span>
+                <span class="name-text" onClick={() => { goToDetail(data.id) }}>{data.name}</span>
               <span class="edit-icon" onClick={() => handleOpenEditDialog(data) }>
                 <EditLine />
               </span>
@@ -122,7 +122,7 @@ export default defineComponent({
         filter: {
           filterFn: () => true,
           list: VENDORS.map(item => {
-            return { text: item.name, value: item.name };
+            return { text: item.name, value: item.id };
           })
         },
         render: ({ data }: { data: ISchemeListItem }) => {
@@ -205,8 +205,8 @@ export default defineComponent({
       const col = tableCols.value.find(item => item.field === 'biz_type');
       if (col) {
         const list = res.data.details.map((item: IBizType) => {
-          const { id, biz_type } = item;
-          return { text: biz_type, value: id };
+          const { biz_type } = item;
+          return { text: biz_type, value: biz_type };
         });
         col.filter = {
           filterFn: () => true,
@@ -299,7 +299,13 @@ export default defineComponent({
 
       if (filterConfigs.length > 0) {
         filterConfigs.forEach(filter => {
-          rules.push({ field: filter.field, op: QueryRuleOPEnum.IN, value: filter.value });
+          if (['verdors', 'deployment_architecture'].includes(filter.field)) {
+            filter.value.forEach(val => {
+              rules.push({ field: filter.field, op: QueryRuleOPEnum.JSON_CONTAINS, value: val });
+            })
+          } else {
+            rules.push({ field: filter.field, op: QueryRuleOPEnum.IN, value: filter.value });
+          }
         })
       }
 
