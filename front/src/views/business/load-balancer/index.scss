@@ -1,5 +1,6 @@
 .business-loadbalancer-module {
   height: 100%;
+  background-color: #fff;
 
   .module-header {
     display: flex;
@@ -18,19 +19,19 @@
       line-height: 24px;
     }
 
-    .tab-list {
+    .tab-list-wrap {
       position: relative;
       left: -8px;
       display: flex;
 
       .tab-item {
+        position: relative;
         padding: 0 24px;
         height: 52px;
         line-height: 52px;
         cursor: pointer;
 
         &.active {
-          position: relative;
           background-color: #f0f5ff;
           color: #3a84ff;
 
@@ -39,15 +40,15 @@
             content: '';
             left: 0;
             width: 100%;
-            height: 2px;
+            height: 3px;
             background-color: #3a84ff;
           }
-
         }
       }
     }
   }
 
   .module-page-container {
+    height: calc(100% - 52px);
   }
 }

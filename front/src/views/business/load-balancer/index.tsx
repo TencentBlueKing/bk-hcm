@@ -4,7 +4,7 @@ import './index.scss';
 
 export default defineComponent({
   name: 'LoadBalancer',
-  setup(props, ctx) {
+  setup() {
     const router = useRouter();
     const route = useRoute();
 
@@ -25,7 +25,7 @@ export default defineComponent({
       <div class='business-loadbalancer-module'>
         <header class='module-header'>
           <section class='title-wrap'>负载均衡</section>
-          <section class='tab-list'>
+          <section class='tab-list-wrap'>
             {TAB_LIST.map(({ routeName, label }) => {
               return (
                 <div
