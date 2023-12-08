@@ -42,6 +42,7 @@ export default defineComponent({
       if(val) {
         const { id, name, bk_biz_id } = props.schemeData;
         localVal.value = { id, name, bk_biz_id };
+        pending.value = false;
         getBizList();
       }
     });
@@ -57,7 +58,7 @@ export default defineComponent({
       await formRef.value.validate();
       pending.value = true;
       const res = await props.confirmFn(localVal.value);
-      pending.value = true;
+      pending.value = false;
       ctx.emit('confirm', res);
     };
     const handleClose = () => {

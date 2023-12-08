@@ -6,7 +6,6 @@ import { useSchemeStore } from '@/store';
 import { useAccountStore } from '@/store';
 import { QueryFilterType, IPageQuery, QueryRuleOPEnum } from '@/typings/common';
 import { ICollectedSchemeItem, ISchemeListItem, IBizType } from '@/typings/scheme';
-import { getScoreColor } from '@/common/util';
 import { VENDORS } from '@/common/constant';
 import { DEPLOYMENT_ARCHITECTURE_MAP } from '@/constants';
 import CloudServiceTag from "../components/cloud-service-tag";
@@ -45,15 +44,11 @@ export default defineComponent({
       order: ''
     });
     const filterConfigs = reactive<{field: string; value: string[];}[]>([]);
-    const searchData = [
+    const searchData = ref([
       { id: 'name', name: '方案名称' },
       { id: 'bk_biz_id', name: '业务id' },
-      { id: 'biz_type', name: '业务类型' },
-      { id: 'deployment_architecture', name: '部署架构' },
-      { id: 'composite_score', name: '综合评分' },
-      { id: 'creator', name: '创建者' },
-      { id: 'reviser', name: '更新者' },
-    ];
+      { id: 'creator', name: '创建人' },
+    ]);
 
     const tableCols = ref([
       {
@@ -126,7 +121,7 @@ export default defineComponent({
           })
         },
         render: ({ data }: { data: ISchemeListItem }) => {
-          return <div class="verdors-list">{ data.vendors.map(item => <CloudServiceTag type={item} />) }</div>
+          return <div class="vendors-list">{ data.vendors.map(item => <CloudServiceTag type={item} />) }</div>
         }
       },
       {
@@ -202,6 +197,8 @@ export default defineComponent({
         limit: 500,
       };
       const res = await schemeStore.listBizTypes(pageQuery);
+
+      // 业务类型列筛选配置
       const col = tableCols.value.find(item => item.field === 'biz_type');
       if (col) {
         const list = res.data.details.map((item: IBizType) => {
@@ -291,7 +288,7 @@ export default defineComponent({
     // 获取未被收藏的方案列表
     const getUnCollectedScheme = (ids: string[], pageQuery: IPageQuery) => {
       const rules = searchValue.value.filter(item => item.values.length > 0).map(item =>{
-        if (item.id === 'bk_biz_id') {
+        if (['composite_score', 'bk_biz_id'].includes(item.id)) {
           return { field: item.id, op: QueryRuleOPEnum.EQ, value: Number( item.values[0].id) };
         }
         return { field: item.id, op: QueryRuleOPEnum.CIS, value: item.values[0].id };
@@ -299,7 +296,7 @@ export default defineComponent({
 
       if (filterConfigs.length > 0) {
         filterConfigs.forEach(filter => {
-          if (['verdors', 'deployment_architecture'].includes(filter.field)) {
+          if (['vendors', 'deployment_architecture'].includes(filter.field)) {
             filter.value.forEach(val => {
               rules.push({ field: filter.field, op: QueryRuleOPEnum.JSON_CONTAINS, value: val });
             })
@@ -454,7 +451,7 @@ export default defineComponent({
           <bk-search-select
             v-model={searchValue.value}
             class={"scheme-search-select"}
-            data={searchData}>
+            data={searchData.value}>
           </bk-search-select>
         </div>
         <div class="scheme-table-wrapper">
