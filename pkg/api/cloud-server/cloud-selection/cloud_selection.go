@@ -51,7 +51,7 @@ type SchemeCreateReq struct {
 	BizType                string                    `json:"biz_type" validate:"required"`
 	DeploymentArchitecture []enumor.SchemeDeployArch `json:"deployment_architecture" validate:"required"`
 	UserDistribution       types.AreaInfos           `json:"user_distribution" validate:"required"`
-	CoverRate              float64                   `json:"cover_rate" validate:"required"`
+	CoverRate              float64                   `json:"cover_rate" validate:"min=0"`
 	CompositeScore         float64                   `json:"composite_score" validate:"required"`
 	NetScore               float64                   `json:"net_score" validate:"required"`
 	CostScore              float64                   `json:"cost_score" validate:"required"`
