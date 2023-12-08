@@ -1,4 +1,4 @@
-import { defineComponent, PropType, reactive, ref, withModifiers  } from "vue";
+import { defineComponent, PropType, reactive, ref  } from "vue";
 import { useRouter } from 'vue-router';
 import { ArrowsLeft, AngleUpFill, EditLine } from "bkui-vue/lib/icon";
 import { Popover } from "bkui-vue";
@@ -120,7 +120,7 @@ export default defineComponent({
                                 <span class="value">{scheme.net_score}</span>
                               </div>
                               <div class="score-item">
-                                <span class="label">方案成本：</span>
+                                <span class="label">成本评分：</span>
                                 <span class="value">$ {scheme.cost_score}</span>
                               </div>
                             </div>

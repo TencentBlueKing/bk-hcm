@@ -287,7 +287,6 @@ export default defineComponent({
               width={'40px'}
               height={'30px'}
               fill='#63656E'
-              onClick={() => (isExpanded.value = !isExpanded.value)}
               class={'scheme-preview-table-card-header-expand-icon'}
             />
           )}
@@ -311,7 +310,7 @@ export default defineComponent({
               网络评分： <span class={'score-value'}>{props.netScore}</span>
             </div>
             <div class={'scheme-preview-table-card-header-score-item'}>
-              方案成本： <span class={'score-value'}>$ {props.costScore}</span>
+              成本评分： <span class={'score-value'}>$ {props.costScore}</span>
             </div>
           </div>
           <div class={'scheme-preview-table-card-header-operation'} onClick={e => e.stopPropagation()}>

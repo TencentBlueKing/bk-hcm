@@ -32,7 +32,7 @@ export default defineComponent({
     const scores = [
       { id: 'composite_score', name: '综合评分' },
       { id: 'net_score', name: '网络评分' },
-      { id: 'cost_score', name: '方案成本' },
+      { id: 'cost_score', name: '成本评分' },
     ]
 
     return () => (
