@@ -18,7 +18,7 @@ export const SchemeSortOptions = [
   },
   {
     key: 'cost_score',
-    val: '按方案成本排序',
+    val: '按成本评分排序',
   },
 ];
 
