@@ -41,8 +41,8 @@ export interface IPageQuery {
   count?: boolean;
   start: number;
   limit: number;
-  sort?: boolean;
-  order?: boolean;
+  sort?: string;
+  order?: string;
 }
 
 interface IBaseResData {

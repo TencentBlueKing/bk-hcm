@@ -200,6 +200,7 @@ export default defineComponent({
         },
       );
       const queryIdcServiceAreaPromise = schemeStore.queryIdcServiceArea(
+        'ping',
         props.resultIdcIds,
         schemeStore.userDistribution,
       );

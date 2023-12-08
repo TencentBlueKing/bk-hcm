@@ -5,8 +5,9 @@ import { InfoBox, Message } from 'bkui-vue';
 import { useSchemeStore } from '@/store';
 import { useAccountStore } from '@/store';
 import { QueryFilterType, IPageQuery, QueryRuleOPEnum } from '@/typings/common';
-import { ICollectedSchemeItem, ISchemeListItem } from '@/typings/scheme';
+import { ICollectedSchemeItem, ISchemeListItem, IBizType } from '@/typings/scheme';
 import { getScoreColor } from '@/common/util';
+import { VENDORS } from '@/common/constant';
 import { DEPLOYMENT_ARCHITECTURE_MAP } from '@/constants';
 import CloudServiceTag from "../components/cloud-service-tag";
 import SchemeEditDialog from '../components/scheme-edit-dialog';
@@ -39,6 +40,11 @@ export default defineComponent({
         count: 0,
         limit: 10,
     });
+    const sortConfig = reactive({
+      field: '',
+      order: ''
+    });
+    const filterConfigs = reactive<{field: string; value: string[];}[]>([]);
     const searchData = [
       { id: 'name', name: '方案名称' },
       { id: 'bk_biz_id', name: '业务id' },
@@ -49,17 +55,18 @@ export default defineComponent({
       { id: 'reviser', name: '更新者' },
     ];
 
-    const tableCols = [
+    const tableCols = ref([
       {
         label: '方案名称',
         minWidth: 200,
+        showOverflowTooltip: true,
         render: ({ data }: { data: ISchemeListItem }) => {
           return (
             <div class="scheme-name">
               <i
                 class={['hcm-icon', 'collect-icon', collections.value.findIndex(item => item.res_id === data.id) > -1 ? 'bkhcm-icon-collect' : 'bkhcm-icon-not-favorited']}
                 onClick={() => handleToggleCollection(data)}/>
-              <bk-button text theme="primary" onClick={() => { goToDetail(data.id) }}>{data.name}</bk-button>
+                <span class="name-text" onClick={() => { goToDetail(data.id) }}>{data.name}{data.name}</span>
               <span class="edit-icon" onClick={() => handleOpenEditDialog(data) }>
                 <EditLine />
               </span>
@@ -69,11 +76,11 @@ export default defineComponent({
       },
       {
         label: '标签',
+        field: 'bk_biz_id',
         render: ({ data }: { data: ISchemeListItem }) => {
           if (bizLoading.value) {
             return <bk-loading loading theme="primary" mode="spin" size="mini" />
           }
-          // @todo 需要显示业务名称
           if (data) {
             const biz = bizList.value.find(item => item.id === data.bk_biz_id);
             const name = biz ? biz.name : data.bk_biz_id;
@@ -83,6 +90,8 @@ export default defineComponent({
       },
       {
         label: '业务类型',
+        field: 'biz_type',
+        showOverflowTooltip: true,
         render: ({ data }: { data: ISchemeListItem }) => {
           return data.biz_type
         }
@@ -91,17 +100,31 @@ export default defineComponent({
         label: '用户分布地区',
         showOverflowTooltip: true,
         render: ({ data }: { data: ISchemeListItem }) => {
-          return data.user_distribution.map(item => `${item.name}, ${item.children.map(ch => ch.name).join(', ')}`).join('; ')
+          return data.user_distribution.map(item => `${item.name}`).join('; ')
         }
       },
       {
         label: '部署架构',
+        field: 'deployment_architecture',
+        filter: {
+          filterFn: () => true,
+          list: Object.keys(DEPLOYMENT_ARCHITECTURE_MAP).map(key => {
+            return { text: DEPLOYMENT_ARCHITECTURE_MAP[key], value: key };
+          })
+        },
         render: ({ data }: { data: ISchemeListItem }) => {
           return data.deployment_architecture.map(item => DEPLOYMENT_ARCHITECTURE_MAP[item]).join(', ')
         }
       },
       {
         label: '云厂商',
+        field: 'vendors',
+        filter: {
+          filterFn: () => true,
+          list: VENDORS.map(item => {
+            return { text: item.name, value: item.name };
+          })
+        },
         render: ({ data }: { data: ISchemeListItem }) => {
           return <div class="verdors-list">{ data.vendors.map(item => <CloudServiceTag type={item} />) }</div>
         }
@@ -109,8 +132,10 @@ export default defineComponent({
       {
         label: '综合评分',
         width: 120,
+        field: 'composite_score',
+        sort: true,
         render: ({ data }: { data: ISchemeListItem }) => {
-          return <span style={{ color: getScoreColor(data.composite_score) }}>{data.composite_score || '-'}</span>
+          return <span class="composite-score">{data.composite_score || '-'}</span>
         }
       },
       {
@@ -121,17 +146,20 @@ export default defineComponent({
       },
       {
         label: '更新时间',
+        field: 'updated_at',
+        sort: true,
         render: ({ data }: { data: ISchemeListItem }) => {
           return data.updated_at
         }
       },
       {
         label: '操作',
+        width: 120,
         render: ({ data }: { data: ISchemeListItem }) => {
           return <bk-button text theme="primary" onClick={() => handleDelScheme(data)}>删除</bk-button>
         }
       },
-    ]
+    ]);
 
     watch(() => searchValue.value, (val) => {
       pagination.current = 1;
@@ -139,7 +167,7 @@ export default defineComponent({
     });
 
     const getTableData = () => {
-      if (searchValue.value.length > 0) {
+      if (searchValue.value.length > 0 || sortConfig.field || filterConfigs.length > 0) {
         getSearchTableData();
       } else {
         getNormalTableData();
@@ -151,12 +179,47 @@ export default defineComponent({
       bizLoading.value = true;
       const res = await accountStore.getBizListWithAuth();
       bizList.value = res.data;
+      const col = tableCols.value.find(item => item.field === 'bk_biz_id');
+      if (col) {
+        const list = res.data.map((item: { id: string; name: string; }) => {
+          const { id, name } = item;
+          return { text: name, value: id };
+        });
+        col.filter = {
+          filterFn: () => true,
+          maxHeight: 300,
+          list
+        }
+      }
       bizLoading.value = false;
+    };
+
+    // 获取业务类型列表
+    const getBizTypeList = async () => {
+      const pageQuery: IPageQuery = {
+        count: false,
+        start: 0,
+        limit: 500,
+      };
+      const res = await schemeStore.listBizTypes(pageQuery);
+      const col = tableCols.value.find(item => item.field === 'biz_type');
+      if (col) {
+        const list = res.data.details.map((item: IBizType) => {
+          const { id, biz_type } = item;
+          return { text: biz_type, value: id };
+        });
+        col.filter = {
+          filterFn: () => true,
+          maxHeight: 300,
+          list
+        }
+      }
     };
 
     // 加载表格当前页数据
     const getNormalTableData = async () => {
       tableListLoading.value = true;
+      // 获取已收藏列表，未收藏列表count
       const [collectionRes, allUnCollectedRes] = await Promise.all([
         schemeStore.listCollection(),
         getUnCollectedScheme([], { start: 0, limit: 0, count: true })
@@ -193,8 +256,19 @@ export default defineComponent({
     // 搜索表格数据
     const getSearchTableData = async () => {
       tableListLoading.value = true;
-      const resWithCount = await getUnCollectedScheme([], { start: 0, limit: 0, count: true })
-      const res = await getUnCollectedScheme([], { start: (pagination.current - 1) * pagination.limit, limit: pagination.limit })
+      const resWithCount = await getUnCollectedScheme([], { start: 0, limit: 0, count: true });
+
+      const pageQuery: IPageQuery = {
+        start: (pagination.current - 1) * pagination.limit,
+        limit: pagination.limit
+      };
+
+      if (sortConfig.field) {
+        pageQuery.sort = sortConfig.field;
+        pageQuery.order = sortConfig.order.toUpperCase();
+      }
+
+      const res = await getUnCollectedScheme([], pageQuery)
       pagination.count = resWithCount.data.count;
       tableListData.value = res.data.details;
       tableListLoading.value = false;
@@ -222,6 +296,13 @@ export default defineComponent({
         }
         return { field: item.id, op: QueryRuleOPEnum.CIS, value: item.values[0].id };
       });
+
+      if (filterConfigs.length > 0) {
+        filterConfigs.forEach(filter => {
+          rules.push({ field: filter.field, op: QueryRuleOPEnum.IN, value: filter.value });
+        })
+      }
+
       const filterQuery: QueryFilterType = {
         op: 'and',
         rules,
@@ -278,7 +359,6 @@ export default defineComponent({
 
     // 删除方案
     const handleDelScheme = (scheme: ISchemeListItem) => {
-      console.log(scheme);
       InfoBox({
         title: '请确认是否删除',
         subTitle: `将删除【${scheme.name}】`,
@@ -325,13 +405,36 @@ export default defineComponent({
       getTableData();
     };
 
-    // @todo 待确定哪些列需要排序
-    const handleColumnSort = (val: string) => {
-      console.log('col sort', val)
+    // 列排序
+    const handleColumnSort = ({ type, column }: { type: string; column: { field: string; } }) => {
+      if (type !== 'null') {
+        sortConfig.field = column.field;
+        sortConfig.order = type;
+      } else {
+        sortConfig.field = '';
+        sortConfig.order = '';
+      }
+      getTableData();
     };
+
+    const handleColumnFilter = ({ checked, column }: { checked: string[], column: { field: string; } }) => {
+      console.log(checked, column.field);
+      const index = filterConfigs.findIndex(filter => filter.field === column.field);
+      if (index > -1) {
+        if (checked.length > 0) {
+          filterConfigs.splice(index, 1, { field: column.field, value: checked });
+        } else {
+          filterConfigs.splice(index, 1);
+        }
+      } else if (checked.length > 0) {
+        filterConfigs.push({ field: column.field, value: checked });
+      }
+      getTableData();
+    }
 
     onMounted(() => {
       getBizList();
+      getBizTypeList();
       getNormalTableData();
     });
 
@@ -356,10 +459,11 @@ export default defineComponent({
               remote-pagination
               pagination-height={60}
               border={['outer']}
-              columns={tableCols}
+              columns={tableCols.value}
               onPageValueChange={handlePageValueChange}
               onPageLimitChange={handlePageLimitChange}
-              onColumnSort={handleColumnSort}>
+              onColumnSort={handleColumnSort}
+              onColumnFilter={handleColumnFilter}>
             </bk-table>
           </bk-loading>
         </div>
