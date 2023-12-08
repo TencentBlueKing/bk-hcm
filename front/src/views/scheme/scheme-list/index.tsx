@@ -135,7 +135,7 @@ export default defineComponent({
         field: 'composite_score',
         sort: true,
         render: ({ data }: { data: ISchemeListItem }) => {
-          return <span style={{ color: getScoreColor(data.composite_score) }}>{data.composite_score || '-'}</span>
+          return <span class="composite-score">{data.composite_score || '-'}</span>
         }
       },
       {

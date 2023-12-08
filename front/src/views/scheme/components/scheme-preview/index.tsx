@@ -91,9 +91,9 @@ export default defineComponent({
             ))
             : (
               <Exception
-                type="empty"
-                scene="part"
-                description="没有数据"
+                type="search-empty"
+                scene="page"
+                description="暂无推荐结果"
               ></Exception>
             )}
         </div>

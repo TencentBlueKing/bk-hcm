@@ -106,7 +106,6 @@ export default defineComponent({
       },
       {
         label: '业务类型',
-        required: true,
         property: 'biz_type',
         content: () => (
           <bk-select loading={bizTypesInitLoading.value} v-model={formData.biz_type}>
@@ -122,13 +121,15 @@ export default defineComponent({
       },
       {
         label: '用户网络容忍',
-        property: 'cover_ping',
+        required: true,
         extClass: 'prompt-icon-wrap',
         tips: '流向终端（LastMIle）的网络质量容忍',
-        left: '90px',
+        left: '96px',
         content: [
           {
             label: '网络延迟',
+            property: 'cover_ping',
+            required: true,
             content: () => (
               <bk-input class="with-suffix" type='number' v-model={formData.cover_ping} suffix="ms"></bk-input>
             ),
@@ -145,6 +146,7 @@ export default defineComponent({
       },
       {
         label: '用户分布占比',
+        required: true,
         content: () => (
           <div class='flex-row'>
             <bk-select class='flex-1' v-model={formData.user_distribution_mode} clearable={false}>
@@ -166,9 +168,11 @@ export default defineComponent({
       },
       {
         label: '部署架构',
+        property: 'deployment_architecture',
+        required: true,
         extClass: 'prompt-icon-wrap',
         tips: '分布式部署：全局模块集中部署，功能模块分区域部署。\n集中式部署：适用于同一套服务器覆盖所有用户的场景。',
-        left: '62px',
+        left: '68px',
         content: () => (
           <bk-checkbox-group v-model={formData.deployment_architecture}>
             <bk-checkbox label='distributed'>分布式部署</bk-checkbox>
@@ -304,7 +308,7 @@ export default defineComponent({
                       {Array.isArray(content) ? (
                         <div class='sub-form-item-wrap'>
                           {content.map(sub => (
-                            <bk-form-item label={sub.label}>
+                            <bk-form-item label={sub.label} required={sub.required} property={sub.property}>
                               {sub.content()}
                             </bk-form-item>
                           ))}

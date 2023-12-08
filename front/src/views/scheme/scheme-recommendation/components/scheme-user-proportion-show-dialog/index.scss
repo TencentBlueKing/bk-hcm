@@ -10,16 +10,19 @@
       max-height: 60vh;
 
       .tips-wrap {
-        display: flex;
-        align-items: center;
-        line-height: 24px;
         background: #f0f8ff;
         border: 1px solid #c5daff;
         border-radius: 2px;
 
         .hcm-icon {
-          margin: 0 9px;
+          float: left;
+          margin: 4px 9px;
           color: #3a84ff;
+        }
+
+        .tips-text {
+          display: flow-root;
+          line-height: 24px;
         }
       }
 

@@ -2,8 +2,6 @@ import { PropType, defineComponent, ref, watch } from 'vue';
 import './index.scss';
 import { Table, Tag, Loading, Button, PopConfirm } from 'bkui-vue';
 import { AngleDown, AngleRight } from 'bkui-vue/lib/icon';
-
-// @ts-ignore
 import { useSchemeStore } from '@/store';
 import { QueryRuleOPEnum } from '@/typings';
 import { IServiceArea } from '@/typings/scheme';
@@ -118,11 +116,11 @@ export default defineComponent({
                       </div>
                   ),
                   default: () => (
-                    <div
+                    <a
                       class={'scheme-service-areas-icon-box mr4'}
                     >
                       <i class={'icon hcm-icon bkhcm-icon-paiming scheme-service-areas-icon'}></i>
-                    </div>
+                    </a>
                   ),
                 }}
               </PopConfirm>
@@ -202,6 +200,7 @@ export default defineComponent({
         },
       );
       const queryIdcServiceAreaPromise = schemeStore.queryIdcServiceArea(
+        'ping',
         props.resultIdcIds,
         schemeStore.userDistribution,
       );
@@ -272,6 +271,7 @@ export default defineComponent({
     return () => (
       <div class={'scheme-preview-table-card-container'}>
         <div
+          onClick={() => (isExpanded.value = !isExpanded.value)}
           class={`scheme-preview-table-card-header ${
             isExpanded.value ? '' : 'scheme-preview-table-card-header-closed'
           }`}>
@@ -280,7 +280,6 @@ export default defineComponent({
               width={'40px'}
               height={'30px'}
               fill='#63656E'
-              onClick={() => (isExpanded.value = !isExpanded.value)}
               class={'scheme-preview-table-card-header-expand-icon'}
             />
           ) : (
@@ -315,7 +314,7 @@ export default defineComponent({
               方案成本： <span class={'score-value'}>$ {props.costScore}</span>
             </div>
           </div>
-          <div class={'scheme-preview-table-card-header-operation'}>
+          <div class={'scheme-preview-table-card-header-operation'} onClick={e => e.stopPropagation()}>
             <Button class={'mr8'} onClick={handleViewDetail} loading={isViewDetailBtnLoading.value}>查看详情</Button>
             <SaveSchemeButton idx={props.idx}/>
           </div>
