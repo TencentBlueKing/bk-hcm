@@ -74,7 +74,19 @@ export default defineComponent({
                 <span class="name-text" onClick={() => {
                   goToDetail(data.id);
                 }}>{data.name}</span>
-              <span class="edit-icon" onClick={() => handleOpenEditDialog(data) }>
+              <span
+                class={
+                  `edit-icon ${
+                    authVerifyData.value.permissionAction.cloud_selection_edit
+                      ? ''
+                      : 'hcm-no-permision-text-btn'
+                  }`
+                }
+                onClick={() => {
+                  if (authVerifyData.value.permissionAction.cloud_selection_edit) handleOpenEditDialog(data);
+                  else handleAuth('cloud_selection_edit');
+                } }
+              >
                 <EditLine />
               </span>
             </div>
@@ -461,7 +473,16 @@ export default defineComponent({
     return () => (
       <div class="scheme-list-page">
         <div class="operate-wrapper">
-          <bk-button class="create-btn" theme="primary" onClick={goToCreate}>
+          <bk-button class={`create-btn ${
+            authVerifyData.value.permissionAction.cloud_selection_recommend
+              ? ''
+              : 'hcm-no-permision-btn'
+          }`} theme="primary" onClick={
+            () => {
+              if (authVerifyData.value.permissionAction.cloud_selection_recommend) goToCreate();
+              else handleAuth('cloud_selection_create');
+            }
+          }>
             <Plus class="plus-icon" />
             创建部署方案
           </bk-button>
