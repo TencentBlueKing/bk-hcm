@@ -52,7 +52,7 @@ export default defineComponent({
         field: 'name',
         label: '部署点名称',
         width: 200,
-        render: ({ data }: any) => `${data.country}机房`,
+        render: ({ data }: any) => `${data.region}机房`,
       },
       {
         field: 'vendor',

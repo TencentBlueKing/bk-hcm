@@ -155,7 +155,7 @@ export default defineComponent({
                     <div class="idc-card">
                       <div class="summary-head">
                         <div class="status-dot"></div>
-                        <div class="idc-name">{idc.name}</div>
+                        <div class="idc-name">{idc.region}机房</div>
                         <CloudServiceTag type={idc.vendor} small={true} />
                       </div>
                       <div class="cost">IDC 单位成本: $ {idc.price}</div>

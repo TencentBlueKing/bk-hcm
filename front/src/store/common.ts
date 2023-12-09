@@ -12,6 +12,13 @@ export const useCommonStore = defineStore({
     authVerifyData: null as any,
     authVerifyParams: null as any,
     pageAuthData: [
+      // { type: 'cloud_selection_scheme', action: 'create', id: 'cloud_selection_recommend' },
+      { type: 'cloud_selection_scheme', action: 'create', id: 'cloud_selection_recommend', path: '/scheme/recommendation' },
+      { type: 'cloud_selection_scheme', action: 'find', id: 'cloud_selection_find', path: '/scheme/deployment/list' },
+      { type: 'cloud_selection_scheme', action: 'update', id: 'cloud_selection_edit', path: '/scheme/recommendation' },
+      { type: 'cloud_selection_scheme', action: 'delete', id: 'cloud_selection_delete', path: '/scheme/recommendation' },
+
+
       { type: 'account', action: 'find', id: 'account_find', path: '/resource/account' }, // 如果是列表查看权限 需要加上path
       { type: 'account', action: 'import', id: 'account_import', path: '/resource/resource' },
       { type: 'account', action: 'update', id: 'account_edit' },
