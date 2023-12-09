@@ -272,7 +272,7 @@ export default defineComponent({
       } else {
         InfoBox({
           title: '确定离开当前页面?',
-          subTitle: '离开当前页面会导致推荐方案丢失，可先对方案进行保存后再离开',
+          subTitle: '离开当前页面后，推荐的方案列表不存留。如当前页面的方案或列表中的其他方案符合需求，则可将其保存后再离开。',
           onConfirm: () => next(),
         });
       }
