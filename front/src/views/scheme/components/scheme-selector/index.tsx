@@ -9,6 +9,8 @@ import SchemeEditDialog from "../scheme-edit-dialog";
 import CloudServiceTag from "../cloud-service-tag";
 
 import './index.scss';
+import PermissionDialog from "@/components/permission-dialog";
+import { useVerify } from "@/hooks";
 
 export default defineComponent({
   name: 'scheme-selector',
@@ -31,6 +33,15 @@ export default defineComponent({
     const isSelectorOpen = ref(false);
     const isEditDialogOpen = ref(false);
     let editedSchemeData = reactive({});
+
+    const {
+      authVerifyData,
+      handleAuth,
+      handlePermissionConfirm,
+      handlePermissionDialog,
+      showPermissionDialog,
+      permissionParams,
+    } = useVerify();
 
     const handleBack = () => {
       if (typeof props.onBack === 'function') {
@@ -132,14 +143,21 @@ export default defineComponent({
               )
             }}
           </Popover>
-          {
-            props.showEditIcon ? 
-              (<div class="edit-btn" onClick={() => { isEditDialogOpen.value = true }}>
-                <EditLine class="edit-icon" />
-                编辑
-              </div>)
-              : null
-          }
+          {props.showEditIcon ? (
+            <div
+              class={`edit-btn ${
+                authVerifyData.value.permissionAction.cloud_selection_edit
+                  ? ''
+                  : 'hcm-no-permision-text-btn'
+              }`}
+              onClick={() => {
+                if (authVerifyData.value.permissionAction.cloud_selection_edit) isEditDialogOpen.value = true;
+                else handleAuth('cloud_selection_edit');
+              }}>
+              <EditLine class='edit-icon' />
+              编辑
+            </div>
+          ) : null}
         </div>
         <SchemeEditDialog
           v-model:show={isEditDialogOpen.value}
@@ -147,6 +165,12 @@ export default defineComponent({
           schemeData={props.schemeData}
           confirmFn={saveSchemeFn}
           onConfirm={handleConfirm} />
+        <PermissionDialog
+          isShow={showPermissionDialog.value}
+          onConfirm={handlePermissionConfirm}
+          onCancel={handlePermissionDialog}
+          params={permissionParams.value}
+        />
       </>
     )
   },
