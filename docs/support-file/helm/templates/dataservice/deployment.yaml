@@ -49,8 +49,8 @@ spec:
         {{- end }}
       containers:
         - name: dataservice
-          image: {{ .Values.global.imageRegistry }}/{{ .Values.dataservice.image.repository }}:v{{ default .Values.global.imageTag .Values.dataservice.image.tag }}
-          imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
+          image:  {{ default .Values.global.imageRegistry .Values.image.registry}}/{{ .Values.dataservice.image.repository }}:v{{ default .Values.image.tag .Values.dataservice.image.tag }}
+          imagePullPolicy: {{ default .Values.global.imagePullPolicy .Values.image.pullPolicy | quote }}
           command:
             - /data/hcm/bk-hcm-dataservice
             - --bind-ip=$(POD_IP)
