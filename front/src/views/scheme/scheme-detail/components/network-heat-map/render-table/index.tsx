@@ -88,7 +88,7 @@ export default defineComponent({
               </th>
               {
                 props.idcList.map(idc => {
-                  return (<th class="thead-col">{idc.name}</th>)
+                  return (<th class="thead-col">{idc.region}机房</th>)
                 })
               }
             </tr>

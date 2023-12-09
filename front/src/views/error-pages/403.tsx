@@ -25,7 +25,6 @@ export default defineComponent({
       console.log(authVerifyData.urlParams, urlKey.value);
       if (authVerifyData) {       // 权限矩阵数据
         const params = authVerifyData.urlParams[urlKey.value];    // 获取权限链接需要的参数
-        debugger;
         if (params) {
           urlLoading.value = true;
           const res = await commonStore.authActionUrl(params);    // 列表的权限申请地址
