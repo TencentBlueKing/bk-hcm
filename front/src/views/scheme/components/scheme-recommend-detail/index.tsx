@@ -21,8 +21,8 @@ export default defineComponent({
         <DetailHeader
           schemeData={schemeStore.schemeData}
           schemeList={schemeStore.recommendationSchemes.map((v, idx) => ({
-            id: idx,
             ...v,
+            id: `${idx}`,
           }))}
           onBack={props.onBack}
           selectFn={(scheme: ISchemeSelectorItem) => {
