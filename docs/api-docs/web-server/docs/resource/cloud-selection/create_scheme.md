@@ -15,7 +15,7 @@ POST /api/v1/cloud/selections/schemes/create
 | bk_biz_id               | int            | 是  | 业务id                            |
 | name                    | string         | 是  | 方案名称                            |
 | cover_ping              | number         | 是  | 网络延迟ping值容忍                     |
-| biz_type                | string         | 是  | 业务类型                            |
+| biz_type                | string         | 否  | 业务类型                            |
 | deployment_architecture | string array   | 是  | 部署架构 取值：distributed,centralized |
 | user_distribution       | AreaInfo array | 是  | 用户分布                            |
 | cover_rate              | double         | 是  | 覆盖率                             |

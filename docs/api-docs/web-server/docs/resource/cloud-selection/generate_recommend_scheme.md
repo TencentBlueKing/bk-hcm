@@ -14,7 +14,7 @@ POST /api/v1/cloud/selections/schemes/generate
 |-------------------------|----------------|----|---------------------------------|
 | cover_ping              | number         | 是  | 网络延迟ping值容忍                     |
 | deployment_architecture | string array   | 是  | 部署架构 取值：distributed,centralized |
-| biz_type                | string         | 是  | 业务类型                            |
+| biz_type                | string         | 否  | 业务类型                            |
 | user_distribution       | AreaInfo array | 是  | 用户分布                            |
 
 #### AreaInfo
