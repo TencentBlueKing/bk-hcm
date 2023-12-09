@@ -21,7 +21,7 @@ export default defineComponent({
     const schemeStore = useSchemeStore();
     const formData = reactive({
       name: schemeStore.recommendationSchemes[props.idx].name,
-      bk_biz_id: 0,
+      bk_biz_id: -1,
     });
     const formInstance = ref(null);
 
@@ -56,7 +56,7 @@ export default defineComponent({
 
     watch(
       () => schemeStore.selectedSchemeIdx,
-      (idx) => formData.name = schemeStore.recommendationSchemes[idx].name,
+      idx => formData.name = schemeStore.recommendationSchemes[idx].name,
     );
 
     return () => (
