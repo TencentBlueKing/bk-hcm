@@ -25,6 +25,7 @@ export default defineComponent({
       console.log(authVerifyData.urlParams, urlKey.value);
       if (authVerifyData) {       // 权限矩阵数据
         const params = authVerifyData.urlParams[urlKey.value];    // 获取权限链接需要的参数
+        debugger;
         if (params) {
           urlLoading.value = true;
           const res = await commonStore.authActionUrl(params);    // 列表的权限申请地址
@@ -33,6 +34,23 @@ export default defineComponent({
         }
       }
     };
+
+    watch(
+      () => route.path,
+      (path) => {
+        if (['/scheme/recommendation'].includes(path)) {
+          urlKey.value = 'cloud_selection_recommend';
+          getAuthActionUrl();
+        }
+        if (['/scheme/deployment/list'].includes(path)) {
+          urlKey.value = 'cloud_selection_find';
+          getAuthActionUrl();
+        }
+      },
+      {
+        immediate: true,
+      },
+    );
 
     watch(() => route.params.id, (key: any, oldKey: any) => {
       if (key === oldKey) return;
@@ -73,6 +91,16 @@ export default defineComponent({
           <h2 class="mt20">
             权限申请说明：
           </h2>
+          {this.urlKey === 'cloud_selection_recommend' && (
+            <>
+              <p class="mt5 sub-describe">{'当前无“资源选型-选型推荐”的权限'}</p>
+            </>
+          )}
+          {this.urlKey === 'cloud_selection_find' && (
+            <>
+              <p class="mt5 sub-describe">{'当前无“部署方案-方案查看”的权限'}</p>
+            </>
+          )}
           {this.urlKey === 'resource_find' && (   // 资源列表权限说明
             <>
               <p class="mt5 sub-describe">{this.t('该功能由平台资源的管理员维护，属于管理员的权限。')}</p>
@@ -114,6 +142,16 @@ export default defineComponent({
           <h2 class="mt20">
           功能说明：
           </h2>
+          {this.urlKey === 'cloud_selection_recommend' && (
+          <>
+            <p class="mt5 sub-describe">{'资源选型，是根据业务需求，推荐出业务的部署地点，云资源方案的功能。当前页面访问受限，可到权限中心申请权限'}</p>
+          </>
+          )}
+          {this.urlKey === 'cloud_selection_find' && (
+          <>
+            <p class="mt5 sub-describe">{'部署方案，是系统推荐出的，由用户保存的选型推荐方案。当前页面访问受限，可到权限中心申请权限'}</p>
+          </>
+          )}
           {this.urlKey === 'resource_find' && (   // 资源列表功能说明
           <>
             <p class="mt5 sub-describe">{this.t('资源管理功能，屏蔽了各种不同云之间的底层差异，提供了统一的管理模式，方便资源管理员统一全局的管理功能')}</p>

@@ -10,6 +10,8 @@ import { VENDORS } from '@/common/constant';
 import { DEPLOYMENT_ARCHITECTURE_MAP } from '@/constants';
 import CloudServiceTag from "../components/cloud-service-tag";
 import SchemeEditDialog from '../components/scheme-edit-dialog';
+import { useVerify } from '@/hooks';
+import ErrorPage from '@/views/error-pages/403';
 
 import './index.scss';
 
@@ -49,6 +51,9 @@ export default defineComponent({
       { id: 'bk_biz_id', name: '业务id' },
       { id: 'creator', name: '创建人' },
     ]);
+    const {
+      authVerifyData,
+    } = useVerify();
 
     const tableCols = ref([
       {
@@ -440,6 +445,8 @@ export default defineComponent({
       getBizTypeList();
       getNormalTableData();
     });
+
+    if (!authVerifyData.value.permissionAction.cloud_selection_find) return () => <ErrorPage />;
 
     return () => (
       <div class="scheme-list-page">
