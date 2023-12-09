@@ -44,3 +44,5 @@ data:
       {{- toYaml .Values.cloudserver.billConfig | nindent 6 }}
     itsm:
       {{- toYaml .Values.itsm | nindent 6 }}
+    cloudSelection:
+      {{- toYaml .Values.cloudserver.cloudSelection | nindent 6 }}

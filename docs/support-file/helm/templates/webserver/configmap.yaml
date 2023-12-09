@@ -47,5 +47,7 @@ data:
       bkCmdbCreateBizUrl: {{ .Values.bkCmdbCreateBizUrl }}
       # 蓝鲸配置平台创建业务文档跳转链接
       bkCmdbCreateBizDocsUrl: {{ .Values.bkCmdbCreateBizDocsUrl }}
+      # 启用云选型
+      enableCloudSelection: {{ .Values.enableCloudSelection }}
     itsm:
       {{- toYaml .Values.itsm | nindent 6 }}
