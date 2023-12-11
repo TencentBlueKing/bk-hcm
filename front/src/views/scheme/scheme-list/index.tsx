@@ -102,7 +102,7 @@ export default defineComponent({
           }
           if (data) {
             const biz = bizList.value.find(item => item.id === data.bk_biz_id);
-            const name = biz ? biz.name : data.bk_biz_id;
+            const name = biz ? biz.name : '--';
             return <span class="tag">{name}</span>;
           }
         },
