@@ -324,7 +324,14 @@ export default defineComponent({
             isExpanded.value ? '' : 'scheme-preview-table-card-panel-invisable'
           }`}>
           <Loading loading={isLoading.value}>
-            <Table data={tableData.value} columns={columns} />
+            <Table data={tableData.value} columns={columns}>
+              {{
+                empty: () => {
+                  if (isLoading.value) return null;
+                  return '暂无数据';
+                },
+              }}
+            </Table>
           </Loading>
         </div>
 
