@@ -62,6 +62,10 @@
     background: #FFFFFF;
     box-shadow: 0 2px 4px 0 #1919290d;
     border-radius: 2px;
+
+    .bk-table-head {
+      z-index: 1 !important;
+    }
   }
 
   .scheme-preview-table-card-panel-invisable {
