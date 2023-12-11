@@ -138,7 +138,7 @@ export default defineComponent({
             property: 'cover_ping',
             required: true,
             content: () => (
-              <bk-input class="with-suffix" type='number' v-model={formData.cover_ping} suffix="ms"></bk-input>
+              <bk-input class="with-suffix" type='number' v-model={formData.cover_ping} min={1} suffix="ms"></bk-input>
             ),
           },
           /* {
@@ -330,7 +330,7 @@ export default defineComponent({
             </div>
           </div>
           <div class='scheme-recommendation-container'>
-            <div class='content-container'>
+            <div class='content-container' style={{padding: toggleClose.value ? '0 26px' : '0'}}>
               {scene.value === 'blank' ? (
                 <SchemeBlankPage />
               ) : (
