@@ -71,7 +71,7 @@ export default defineComponent({
             `${data?.related_resource_types[0]?.type_name || '--'}${
               whereAmI.value === Senarios.resource ?  (
                 resourceAccountStore.resourceAccount?.name ? `: ${resourceAccountStore.resourceAccount?.name}` : ''
-              ) : `: ${businessMapStore.getNameFromBusinessMap(accountStore.bizs)}`}`,
+              ) : ` ${businessMapStore.getNameFromBusinessMap(accountStore.bizs)}`}`,
           ],
         );
       },
