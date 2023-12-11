@@ -45,8 +45,8 @@ func (req SchemeUpdateReq) Validate() error {
 // SchemeCreateReq define scheme create request.
 type SchemeCreateReq struct {
 	BkBizID                int64                     `json:"bk_biz_id" validate:"required"`
-	Name                   string                    `json:"name" validate:"required"`
-	BizType                string                    `json:"biz_type" validate:"required"`
+	Name                   string                    `json:"name" validate:"required,max=255"`
+	BizType                string                    `json:"biz_type" validate:"max=64"`
 	Vendors                types.StringArray         `json:"vendors" validate:"required"`
 	DeploymentArchitecture []enumor.SchemeDeployArch `json:"deployment_architecture" validate:"required"`
 	CoverPing              float64                   `json:"cover_ping" validate:"required"`
