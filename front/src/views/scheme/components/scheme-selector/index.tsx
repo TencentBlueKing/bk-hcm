@@ -132,7 +132,7 @@ export default defineComponent({
                               </div>
                               <div class="score-item">
                                 <span class="label">成本评分：</span>
-                                <span class="value">$ {scheme.cost_score}</span>
+                                <span class="value">{scheme.cost_score}</span>
                               </div>
                             </div>
                           </div>

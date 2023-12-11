@@ -64,7 +64,7 @@ export default defineComponent({
                 return (
                   <div class="num-item" key={item.id}>
                     <span class="label">{item.name}：</span>
-                    <span class="val">{item.id === 'cost_score' ? '$ ' : ''}{props.schemeData[item.id]}</span>
+                    <span class="val">{props.schemeData[item.id]}</span>
                   </div>
                 )
               })

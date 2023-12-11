@@ -141,7 +141,7 @@ export default defineComponent({
       {
         field: 'price',
         label: 'IDC 单位成本',
-        render: ({ cell }: {cell: number}) => `$ ${cell}`,
+        render: ({ cell }: {cell: number}) => `${cell}`,
         width: 200,
       },
     ];
@@ -311,7 +311,7 @@ export default defineComponent({
               网络评分： <span class={'score-value'}>{props.netScore}</span>
             </div>
             <div class={'scheme-preview-table-card-header-score-item'}>
-              成本评分： <span class={'score-value'}>$ {props.costScore}</span>
+              成本评分： <span class={'score-value'}>{props.costScore}</span>
             </div>
           </div>
           <div class={'scheme-preview-table-card-header-operation'} onClick={e => e.stopPropagation()}>
