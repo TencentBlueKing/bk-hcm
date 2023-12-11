@@ -3,7 +3,7 @@ import { useRouter } from 'vue-router';
 import { Plus, EditLine } from 'bkui-vue/lib/icon';
 import { InfoBox, Message } from 'bkui-vue';
 import { useSchemeStore, useAccountStore } from '@/store';
-import { QueryFilterType, IPageQuery, QueryRuleOPEnum } from '@/typings/common';
+import { QueryFilterType, IPageQuery, QueryRuleOPEnum, RulesItem } from '@/typings/common';
 import { ICollectedSchemeItem, ISchemeListItem, IBizType } from '@/typings/scheme';
 import { VENDORS } from '@/common/constant';
 import { DEPLOYMENT_ARCHITECTURE_MAP } from '@/constants';
@@ -101,6 +101,9 @@ export default defineComponent({
             return <bk-loading loading theme="primary" mode="spin" size="mini" />;
           }
           if (data) {
+            if (data.bk_biz_id < 1) {
+              return '--';
+            }
             const biz = bizList.value.find(item => item.id === data.bk_biz_id);
             const name = biz ? biz.name : '--';
             return <span class="tag">{name}</span>;
@@ -325,9 +328,12 @@ export default defineComponent({
       if (filterConfigs.length > 0) {
         filterConfigs.forEach((filter) => {
           if (['vendors', 'deployment_architecture'].includes(filter.field)) {
+            const multiFieldsRule: { op: QueryRuleOPEnum; rules: RulesItem[] } = { op: QueryRuleOPEnum.OR, rules: [] };
             filter.value.forEach((val) => {
-              rules.push({ field: filter.field, op: QueryRuleOPEnum.JSON_CONTAINS, value: val });
+              multiFieldsRule.rules.push({ field: filter.field, op: QueryRuleOPEnum.JSON_CONTAINS, value: val })
             });
+            // @ts-ignore
+            rules.push(multiFieldsRule);
           } else {
             rules.push({ field: filter.field, op: QueryRuleOPEnum.IN, value: filter.value });
           }
@@ -459,6 +465,7 @@ export default defineComponent({
       } else if (checked.length > 0) {
         filterConfigs.push({ field: column.field, value: checked });
       }
+      pagination.current = 1;
       getTableData();
     };
 
