@@ -87,7 +87,12 @@ export const useSchemeStore = defineStore({
      * @param data 方案数据
      */
     updateCloudSelectionScheme(id: string, data: { name: string; bk_biz_id?: number; }) {
-      return http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/schemes/${id}`, data);
+      const { name, bk_biz_id } = data;
+      const params: { name: string; bk_biz_id?: number; } = { name };
+      if (bk_biz_id) {
+        params.bk_biz_id = bk_biz_id;
+      }
+      return http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/schemes/${id}`, params);
     },
     /**
      * 获取收藏的资源选型方案列表
