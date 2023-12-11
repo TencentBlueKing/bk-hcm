@@ -330,7 +330,7 @@ export default defineComponent({
             </div>
           </div>
           <div class='scheme-recommendation-container'>
-            <div class='content-container'>
+            <div class='content-container' style={{padding: toggleClose.value ? '0 26px' : '0'}}>
               {scene.value === 'blank' ? (
                 <SchemeBlankPage />
               ) : (
