@@ -244,6 +244,7 @@ export default defineComponent({
         net_score: props.netScore,
         cost_score: props.costScore,
         name: schemeStore.recommendationSchemes[props.idx].name,
+        id: `${props.idx}`,
         idcList: tableData.value.map(item => ({
           id: item.id,
           name: item.name,
