@@ -73,7 +73,15 @@ export default defineComponent({
           isShow={isDialogShow.value}
           onClosed={() => (isDialogShow.value = false)}
           onConfirm={handleConfirm}>
-          <Form formType='vertical' model={formData} ref={formInstance}>
+          <Form formType='vertical' model={formData} ref={formInstance} rules={{
+            name: [
+              {
+                trigger: 'change',
+                message: '方案名称不能为空',
+                validator: (val: string) => val.trim().length,
+              },
+            ],
+          }}>
             <FormItem label='方案名称' required property='name'>
               <Input v-model={formData.name} maxlength={28}/>
             </FormItem>

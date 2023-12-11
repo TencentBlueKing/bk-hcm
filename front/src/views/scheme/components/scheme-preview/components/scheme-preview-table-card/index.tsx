@@ -248,8 +248,9 @@ export default defineComponent({
           id: item.id,
           name: item.name,
           vendor: item.vendor,
-          country: item.region,
+          country: item.country,
           price: item.price,
+          region: item.region,
         })),
       });
       isLoading.value = false;
