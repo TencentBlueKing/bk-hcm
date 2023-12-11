@@ -30,6 +30,12 @@ export default defineComponent({
       });
       return item;
     }));
+    const searchOption = computed(() => {
+      return {
+        value: searchVal.value,
+        showChildNodes: false,
+      };
+    });
 
     const getPrefixIcon = (params: any) => {
       const { __attr__: { isRoot, isOpen } } = params;
@@ -73,7 +79,7 @@ export default defineComponent({
           data={treeData.value}
           label='name'
           children='children'
-          search={searchVal.value}
+          search={searchOption.value}
           show-node-type-icon={false}
           selectable={false}
           indent={30}
