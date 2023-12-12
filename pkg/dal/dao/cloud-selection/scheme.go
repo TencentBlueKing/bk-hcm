@@ -97,6 +97,9 @@ func (dao SchemeDao) Create(kt *kit.Kit, model *tableselection.SchemeTable) (str
 
 	err = dao.Orm.Do().Insert(kt.Ctx, sql, model)
 	if err != nil {
+		if em := errf.GetMySQLDuplicated(err); em != nil {
+			return "", errf.New(errf.RecordDuplicated, em.Message)
+		}
 		logs.Errorf("insert %s failed, err: %v, sql: %s, model: %+v, rid: %s",
 			model.TableName(), err, sql, model, kt.Rid)
 		return "", fmt.Errorf("insert %s failed, err: %v", model.TableName(), err)

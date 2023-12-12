@@ -21,9 +21,7 @@
 package errf
 
 import (
-	"encoding/json"
 	"fmt"
-	"strings"
 
 	"hcm/pkg/iam/meta"
 )
@@ -100,49 +98,4 @@ func Newf(code int32, format string, args ...interface{}) error {
 // NewWithPerm create an error with error code and message and need apply permission.
 func NewWithPerm(code int32, message string, permissions *meta.IamPermission) error {
 	return &ErrorF{Code: code, Message: message, Permissions: permissions}
-}
-
-// Error try to convert the error to ErrorF if possible.
-// it is used by the RPC client to wrap the response error response
-// by the RPC server to the ErrorF, user can use this ErrorF to test
-// if an error is returned or not, if yes, then use the ErrorF to
-// response with error code and message.
-func Error(err error) *ErrorF {
-	if err == nil {
-		return nil
-	}
-
-	ef, ok := err.(*ErrorF)
-	if ok {
-		return ef
-	}
-
-	s := err.Error()
-
-	// test if the error is a json error,
-	// if not, then this is an error without error code.
-	if !strings.HasPrefix(s, "{") {
-		return &ErrorF{
-			Code:    Unknown,
-			Message: s,
-		}
-	}
-
-	// this is a json error, try decoding it to standard error directly.
-	ef = new(ErrorF)
-	if err := json.Unmarshal([]byte(s), ef); err != nil {
-		return &ErrorF{
-			Code:    Unknown,
-			Message: s,
-		}
-	}
-
-	if ef.Code == 0 {
-		return &ErrorF{
-			Code:    Unknown,
-			Message: s,
-		}
-	}
-
-	return ef
 }
