@@ -1,7 +1,10 @@
-import { defineComponent, onMounted, ref } from "vue";
+import { defineComponent, onMounted, ref, inject } from "vue";
 import { throttle } from "lodash";
 import axios from "axios";
 import './index.scss';
+import clbIcon from "@/assets/image/clb.png";
+import listenerIcon from "@/assets/image/listener.png";
+import domainIcon from "@/assets/image/domain.png";
 
 /**
  * 基于 bkui-vue Tree 的动态树，支持滚动加载数据。
@@ -20,20 +23,14 @@ export default defineComponent({
     treeData: {
       type: Object,
       required: true,
-    },
-    rootType: {
-      type: String,
-      required: true,
-    },
-    typeIconMap: {
-      type: Object,
-      required: true,
     }
   },
   emits: ["update:treeData"],
   setup(props, ctx) {
     const loadingRef = ref();
     const rootPageNum = ref(1);
+    const treeRef = inject('treeRef');
+    const currentExpandItems: any = inject('currentExpandItems');
 
     // Intersection Observer 监听器
     const observer = new IntersectionObserver((entries) => {
@@ -45,34 +42,42 @@ export default defineComponent({
       });
     });
 
+    // _depth 与 type 的映射关系
+    const depthTypeMap = ['clb', 'listener', 'domain'];
+    // type 与 icon 的映射关系
+    const typeIconMap = {
+      clb: clbIcon,
+      listener: listenerIcon,
+      domain: domainIcon
+    };
+
     /**
      * 加载数据
-     * @param {*} _item 需要加载数据的节点
-     * @param {*} _depth 需要加载数据的节点的深度
-     * @param {*} isLoadRoot 值为 true 时，加载根节点；建议为 true 时，前两个参数设置为 null 和 -1。
+     * @param {*} _item 需要加载数据的节点，值为 null 表示加载根节点的数据
+     * @param {*} _depth 需要加载数据的节点的深度，取值为：0, 1, 2
      */
-    const loadRemoteData = async(_item: any, _depth: number, isLoadRoot?: boolean) => {
-      const url = props.baseUrl + `/${isLoadRoot ? props.rootType : _item.subType}`;
+    const loadRemoteData = async(_item: any, _depth: number) => {
+      const url = props.baseUrl + `/${!_item ? depthTypeMap[_depth] : depthTypeMap[_depth+1]}`;
       const params = { 
-        _page: isLoadRoot ? rootPageNum.value : _item.pageNum, 
+        _page: !_item ? rootPageNum.value : _item.pageNum,
         _limit: 50, 
-        parentId: isLoadRoot ? null : _item.id // 根节点没有 parentId，或者后端给个 null 也行，这样前端这里就不需要判断了
+        parentId: !_item ? null : _item.id // 根节点没有 parentId
       };
-      const [res1, res2] = await Promise.all([ axios.get(url, {params}), axios.get(url, {params: { parentId: isLoadRoot ? null : _item.id }}) ]);
+      const [res1, res2] = await Promise.all([ axios.get(url, {params}), axios.get(url, {params: { parentId: !_item ? null : _item.id }}) ]);
 
       // 组装新增的节点
       const _increamentNodes = res1.data.map((item: any) => {
-        // 如果是加载根节点的数据，就不用设置 item.type
-        !isLoadRoot && (item.type = _item.subType);
-        // 如果是加载根节点或非叶子节点的数据，需要给每个 item 添加 async = true 以及初始化 pageNum = 1
-        if (_depth < 3 || isLoadRoot) {
+        // 如果是加载根节点的数据，则 type 设置为当前 type；如果是加载子节点的数据，则 type 设置为下一级 type
+        !_item ? (item.type = depthTypeMap[_depth]) : (item.type = depthTypeMap[_depth+1]);
+        // 如果是加载根节点或非叶子节点的数据，需要给每个 item 添加 async = true 用于异步加载，以及初始化 pageNum = 1
+        if (_depth < 1 || !_item) {
           item.async = true;
           item.pageNum = 1;
         }
         return item;
       })
       
-      if (isLoadRoot) {
+      if (!_item) {
         const _treeData = [...props.treeData, ..._increamentNodes];
         if (_treeData.length < res2.data.length) {
           ctx.emit('update:treeData',  [..._treeData, {type: "loading"}]);
@@ -100,43 +105,77 @@ export default defineComponent({
         //2.更新分页参数
         data._parent.pageNum++;
         //3.请求下一页数据
-        loadRemoteData(data._parent, attributes.fullPath.split("-").length);
+        loadRemoteData(data._parent, attributes.fullPath.split("-").length-2);
       } else {
         ctx.emit('update:treeData', props.treeData.slice(0, -1));
         rootPageNum.value++;
-        loadRemoteData(null, -1, true);
+        loadRemoteData(null, 0);
       }
+    }
+    
+    /**
+     * 节点展开时触发的事件
+     * @param _item 触发事件的节点
+     */
+    const handleNodeExpand = (_item: any) => {
+      currentExpandItems.value.push(_item);
+    }
+
+    /**
+     * 节点收起时触发的事件
+     * @param _item 触发事件的节点
+     */
+    const handleNodeCollapse = (_item: any) => {
+      currentExpandItems.value = currentExpandItems.value.filter((item: any) => item !== _item);
     }
 
     onMounted(() => {
       // 组件挂载，加载 root node
-      loadRemoteData(null, -1, true);
+      loadRemoteData(null, 0);
     })
 
     return () => (
-      <div>
-        <bk-tree data={props.treeData} label="name" children="children" level-line virtual-render line-height={36} offset-left={16}
+      <div class='dynamic-tree-wrap'>
+        <bk-tree ref={treeRef} data={props.treeData} label="name" children="children" level-line virtual-render line-height={36}
+          node-content-action={['selected', 'click']}
           onScroll={throttle(() => { loadingRef.value && observer.observe(loadingRef.value.$el); }, 300)}
-          async={{ callback: (_item: any, _callback: Function, _schema: any) => { loadRemoteData(_item, _schema.fullPath.split("-").length + 1) }, cache: true }}>
+          onNodeExpand={handleNodeExpand} onNodeCollapse={handleNodeCollapse}
+          async={{ 
+            callback: (_item: any, _callback: Function, _schema: any) => { 
+              // 异步加载当前点击节点的 children node
+              loadRemoteData(_item, _schema.fullPath.split("-").length-1); 
+            }, 
+            cache: true 
+          }}>
           {{
             default: ({ data, attributes }: any) => {
-              if (data?.type === 'loading') {
+              if (data.type === 'loading') {
                 return (
                   <bk-loading ref={loadingRef} loading size="small" onLoadDataByScroll={() => { 
                     // 因为在标签上使用 data-xxx 会丢失引用，但我需要 data._parent 的引用（因为加载数据时会直接操作该对象），所以这里借用了闭包的特性。
                     handleLoadDataByScroll(data, attributes)
                   }}>
-                    <div style={{height: "36px"}}></div>
+                    <div style={{ height: "36px" }}></div>
                   </bk-loading>
                 )
               }
               return <div class='i-tree-node-item-wrap'>
-                <span class='node-name'>{data.name}</span>
-                <div class='right-wrap'>5</div>
+                <div class='left-wrap'>
+                  {data.name}
+                  {
+                    attributes.fullPath.split("-").length === 3 && <bk-tag class='tag' theme="warning" radius="2px">默认</bk-tag>
+                  }
+                </div>
+                <div class='right-wrap'>
+                  <div class='count'>{data.id}</div>
+                  <div class='more-action'>
+                    <i class='hcm-icon bkhcm-icon-more-fill'></i>
+                  </div>
+                </div>
               </div>
             },
             nodeType: (node: any) => {
-              return <img src={props.typeIconMap[node?.type]} alt="" style="padding-right: 8px;"/>
+              return <img src={typeIconMap[node.type]} alt="" style="padding-right: 8px;"/>
             }
           }}
         </bk-tree>

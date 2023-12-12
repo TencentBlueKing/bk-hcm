@@ -3,7 +3,7 @@
   display: flex;
 
   .left-container {
-    width: 320px;
+    width: 300px;
     height: 100%;
     box-shadow: 1px 0 0 0 #DCDEE5;
 
@@ -42,12 +42,14 @@
       height: calc(100% - 56px);
 
       .all-clbs {
+        position: relative;
         padding: 0 16px;
         height: 36px; 
         line-height: 36px;
         display: flex;
         justify-content: space-between;
         box-shadow: 0 -1px 0 0 #EAEBF0, 0 1px 0 0 #EAEBF0;
+        cursor: pointer;
         
         .left-wrap {
           display: flex;
@@ -65,16 +67,53 @@
         }
 
         .right-wrap {
+          position: absolute;
+          top: 0;
+          right: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: space-around;
+          width: 24px;
+          height: 36px;
+          text-align: center;
 
+          .count {
+            font-size: 12px;
+            color: #c4c6cc;
+          }
+
+          .more-action {
+            position: relative;
+            display: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            transition: background-color .2s;
+
+            .hcm-icon {
+              position: absolute;
+              left: 50%;
+              top: 50%;
+              transform: translate(-50%, -50%);
+            }
+    
+            &:hover {
+              background-color: #dcdee5;
+            }
+          }
         }
-      }
 
-      .dynamic-tree-wrap {
-        height: calc(100% - 36px);
-        overflow: hidden;
+        &:hover {
+          background-color: #F0F1F5;
 
-        .bk-nested-loading {
-          left: -25px;
+          .right-wrap {
+            .count {
+              display: none;
+            }
+            .more-action {
+              display: block;
+            }
+          }
         }
       }
     }
