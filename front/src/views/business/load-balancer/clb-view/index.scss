@@ -1,0 +1,94 @@
+.clb-view-page {
+  height: 100%;
+  display: flex;
+
+  .left-container {
+    width: 320px;
+    height: 100%;
+    box-shadow: 1px 0 0 0 #DCDEE5;
+
+    .search-wrap {
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+
+      // 覆盖组件样式
+      .bk-search-select {
+        flex: 1;
+        background: #F0F1F5;
+        .bk-search-select-container {
+          border: none;
+          &.is-focus {
+            color: #c4c6cc;
+            background-color: #F0F1F5 !important;
+          }
+          .search-nextfix .search-nextfix-icon.is-focus {
+            color: #c4c6cc;
+            background-color: #F0F1F5 !important;
+          }
+        }
+      }
+
+      .advanced-search-icon {
+        margin-left: 8px;
+        width: 32px;
+        height: 32px;
+        background: #F0F1F5;
+        cursor: pointer;
+      }
+    }
+
+    .tree-wrap {
+      height: calc(100% - 56px);
+
+      .all-clbs {
+        padding: 0 16px;
+        height: 36px; 
+        line-height: 36px;
+        display: flex;
+        justify-content: space-between;
+        box-shadow: 0 -1px 0 0 #EAEBF0, 0 1px 0 0 #EAEBF0;
+        
+        .left-wrap {
+          display: flex;
+          align-items: center;
+
+          .prefix-icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+          }
+
+          .text {
+            color: #313238;
+          }
+        }
+
+        .right-wrap {
+
+        }
+      }
+
+      .dynamic-tree-wrap {
+        height: calc(100% - 36px);
+        overflow: hidden;
+
+        .bk-nested-loading {
+          left: -25px;
+        }
+      }
+    }
+  }
+
+  .advanced-search {
+    height: 100%;
+    width: 300px;
+    background-color: #acf;
+  }
+
+  .main-container {
+    flex: 1;
+    height: 100%;
+    background-color: #acb;
+  }
+}

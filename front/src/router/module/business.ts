@@ -281,6 +281,27 @@ const businesseMenus: RouteRecordRaw[] = [
           isShowBreadcrumb: true,
         },
       },
+      {
+        path: 'loadbalancer',
+        name: '负载均衡',
+        component: () => import('@/views/business/load-balancer/index'),
+        redirect: '/business/loadbalancer/clb-view',
+        children: [
+          {
+            path: 'clb-view',
+            name: 'loadbalancer-view',
+            component: () => import('@/views/business/load-balancer/clb-view/index'),
+          },
+          {
+            path: 'group-view',
+            name: 'target-group-view',
+            component: () => import('@/views/business/load-balancer/group-view/index'),
+          },
+        ],
+        meta: {
+          activeKey: 'businessLoadbalancer',
+        }
+      }
     ],
   },
   {

@@ -50,6 +50,10 @@ export const RESOURCE_TYPES = [
     name: '镜像',
     type: 'image',
   },
+  {
+    name: '负载均衡',
+    type: 'load-balancer',
+  },
 ];
 
 // 云厂商
