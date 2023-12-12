@@ -6,7 +6,7 @@
     left: -25px;
   }
 
-  .i-tree-node-item-wrap {
+  .bk-node-text {
     position: relative;
     padding-right: 16px;
 
@@ -38,12 +38,12 @@
       }
 
       .more-action {
-        position: relative;
-        display: none;
+        position: absolute;
         width: 24px;
         height: 24px;
         border-radius: 50%;
         transition: background-color .2s;
+        opacity: 0;
 
         .hcm-icon {
           position: absolute;
@@ -57,19 +57,19 @@
         }
       }
     }
-
-    &:hover .right-wrap {
-      .count {
-        display: none;
-      }
-      .more-action {
-        display: block;
-      }
-    }
   }
 
   .bk-node-row:hover {
     background-color: #F0F1F5;
+
+    .right-wrap {
+      .count {
+        opacity: 0;
+      }
+      .more-action {
+        opacity: 1;
+      }
+    }
   }
   .bk-node-row.is-selected {
     background-color: #E1ECFF;

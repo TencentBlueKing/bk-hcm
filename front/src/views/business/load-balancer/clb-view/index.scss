@@ -83,12 +83,12 @@
           }
 
           .more-action {
-            position: relative;
-            display: none;
+            position: absolute;
             width: 24px;
             height: 24px;
             border-radius: 50%;
             transition: background-color .2s;
+            opacity: 0;
 
             .hcm-icon {
               position: absolute;
@@ -108,10 +108,10 @@
 
           .right-wrap {
             .count {
-              display: none;
+              opacity: 0;
             }
             .more-action {
-              display: block;
+              opacity: 1;
             }
           }
         }
@@ -128,6 +128,6 @@
   .main-container {
     flex: 1;
     height: 100%;
-    background-color: #acb;
+    padding: 24px;
   }
 }

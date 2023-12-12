@@ -3,6 +3,7 @@ import './index.scss';
 import { SearchSelect } from 'bkui-vue';
 import allVendors from '@/assets/image/all-vendors.png';
 import DynamicTree from '../components/dynamic-tree';
+import LoadBalancerDropdownMenu from '../components/clb-dropdown-menu';
 // import Funnel from 'bkui-vue/lib/icon/funnel';
 
 export default defineComponent({
@@ -15,7 +16,6 @@ export default defineComponent({
     const isAdvancedSearchShow = ref(false);
     provide('treeRef', treeRef)
     provide('currentExpandItems', currentExpandItems)
-
 
     return () => (
       <div class='clb-view-page'>
@@ -32,9 +32,7 @@ export default defineComponent({
               </div>
               <div class='right-wrap'>
                 <div class='count'>{6654}</div>
-                <div class='more-action'>
-                  <i class='hcm-icon bkhcm-icon-more-fill'></i>
-                </div>
+                <LoadBalancerDropdownMenu uuid='all' type='all' />
               </div>
             </div>
             <DynamicTree v-model:treeData={treeData.value} baseUrl={baseUrl}></DynamicTree>
@@ -44,10 +42,17 @@ export default defineComponent({
           isAdvancedSearchShow.value && <div class='advanced-search'>高级搜索</div>
         }
         <div class='main-container'>
-          <bk-button onClick={() => {
+          <bk-button style={{margin: '0 10px 10px 0'}} theme='primary' onClick={() => {
             currentExpandItems.value.length && treeRef.value.setNodeOpened(currentExpandItems.value.pop(), false);
             }}>
-              收起当前节点，支持多级收起
+            收起当前节点，支持逐级级收起
+          </bk-button>
+          <bk-button theme='warning' onClick={() => {
+            currentExpandItems.value.length && currentExpandItems.value.forEach(node => {
+              treeRef.value.setNodeOpened(node, false);
+            })
+          }}>
+            收起全部节点
           </bk-button>
           <div>
             <p>当前展开的节点记录如下：</p>

@@ -5,6 +5,7 @@ import './index.scss';
 import clbIcon from "@/assets/image/clb.png";
 import listenerIcon from "@/assets/image/listener.png";
 import domainIcon from "@/assets/image/domain.png";
+import LoadBalancerDropdownMenu from "../clb-dropdown-menu";
 
 /**
  * 基于 bkui-vue Tree 的动态树，支持滚动加载数据。
@@ -126,7 +127,8 @@ export default defineComponent({
      * @param _item 触发事件的节点
      */
     const handleNodeCollapse = (_item: any) => {
-      currentExpandItems.value = currentExpandItems.value.filter((item: any) => item !== _item);
+      if (_item.type === 'clb') currentExpandItems.value = [];
+      else currentExpandItems.value = currentExpandItems.value.filter((item: any) => item !== _item);
     }
 
     onMounted(() => {
@@ -159,20 +161,20 @@ export default defineComponent({
                   </bk-loading>
                 )
               }
-              return <div class='i-tree-node-item-wrap'>
-                <div class='left-wrap'>
-                  {data.name}
-                  {
-                    attributes.fullPath.split("-").length === 3 && <bk-tag class='tag' theme="warning" radius="2px">默认</bk-tag>
-                  }
-                </div>
-                <div class='right-wrap'>
-                  <div class='count'>{data.id}</div>
-                  <div class='more-action'>
-                    <i class='hcm-icon bkhcm-icon-more-fill'></i>
+              return (
+                <>
+                  <div class='left-wrap'>
+                    {data.name}
+                    {
+                      attributes.fullPath.split("-").length === 3 && <bk-tag class='tag' theme="warning" radius="2px">默认</bk-tag>
+                    }
                   </div>
-                </div>
-              </div>
+                  <div class='right-wrap'>
+                    <div class='count'>{data.id}</div>
+                    <LoadBalancerDropdownMenu uuid={attributes.uuid} type={data.type} />
+                  </div>
+                </>
+              )
             },
             nodeType: (node: any) => {
               return <img src={typeIconMap[node.type]} alt="" style="padding-right: 8px;"/>
