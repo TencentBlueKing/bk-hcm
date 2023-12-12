@@ -38,8 +38,8 @@ spec:
         {{- include "bk-hcm.wait-for-pod-init-container" (list . (printf "%s-dataservice" (include "bk-hcm.fullname" .)) "-lcomponent=dataservice") | nindent 8 }}
       containers:
         - name: hcservice
-          image: {{ .Values.global.imageRegistry }}/{{ .Values.hcservice.image.repository }}:v{{ default .Values.global.imageTag .Values.hcservice.image.tag }}
-          imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
+          image:  {{ default .Values.global.imageRegistry .Values.image.registry}}/{{ .Values.hcservice.image.repository }}:v{{ default .Values.image.tag .Values.hcservice.image.tag }}
+          imagePullPolicy: {{ default .Values.global.imagePullPolicy .Values.image.pullPolicy | quote }}
           command:
             - /data/hcm/bk-hcm-hcservice
             - --bind-ip=$(POD_IP)

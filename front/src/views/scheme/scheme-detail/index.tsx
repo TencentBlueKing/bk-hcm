@@ -1,36 +1,47 @@
-import { defineComponent, ref, reactive, computed, watch, onMounted } from "vue";
+import { defineComponent, ref, reactive, computed, watch, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { InfoBox, Message } from "bkui-vue";
-import { useSchemeStore } from "@/store";
+import { InfoBox, Message } from 'bkui-vue';
+import { useSchemeStore } from '@/store';
 import { QueryFilterType, QueryRuleOPEnum } from '@/typings/common';
-import { IIdcInfo } from "@/typings/scheme";
-import { ISchemeListItem, ISchemeEditingData, ISchemeSelectorItem } from "@/typings/scheme";
-import DetailHeader from "./components/detail-header";
-import SchemeInfoCard from "./components/scheme-info-card";
-import IdcMapDisplay from "./components/idc-map-display";
-import NetworkHeatMap from "./components/network-heat-map";
+import { IIdcInfo, ISchemeListItem, ISchemeEditingData, ISchemeSelectorItem } from '@/typings/scheme';
+import DetailHeader from './components/detail-header';
+import SchemeInfoCard from './components/scheme-info-card';
+import IdcMapDisplay from './components/idc-map-display';
+import NetworkHeatMap from './components/network-heat-map';
 
 import './index.scss';
+import { useVerify } from '@/hooks';
+import PermissionDialog from '@/components/permission-dialog';
 
 export default defineComponent({
-  name: 'scheme-detail-page',
-  setup () {
+  name: 'SchemeDetailPage',
+  setup() {
     const schemeStore = useSchemeStore();
     const router = useRouter();
     const route = useRoute();
     const schemeId = ref(route.query?.sid || '');
 
-    let schemeDetail = ref<ISchemeListItem>();
+    const schemeDetail = ref<ISchemeListItem>();
     const detailLoading = ref(true);
     const schemeList = ref<ISchemeListItem[]>([]);
     const schemeListLoading = ref(false);
     const idcList = ref<IIdcInfo[]>([]);
     const idcListLoading = ref(false);
 
-    watch(() => route.query?.sid, val => {
+    const {
+      authVerifyData,
+      handleAuth,
+      handlePermissionConfirm,
+      handlePermissionDialog,
+      showPermissionDialog,
+      permissionParams,
+    } = useVerify();
+
+    watch(() => route.query?.sid, async (val) => {
       if (val) {
         schemeId.value = val;
-        getSchemeDetail();
+        await getSchemeDetail();
+        getIdcList();
       }
     });
 
@@ -63,7 +74,7 @@ export default defineComponent({
           field: 'id',
           op: QueryRuleOPEnum.IN,
           value: schemeDetail.value.result_idc_ids,
-        }]
+        }],
       };
       const res = await schemeStore.listIdc(filterQuery, { start: 0, limit: 500 });
       idcList.value = res.data;
@@ -73,9 +84,9 @@ export default defineComponent({
     const headerData = computed((): ISchemeSelectorItem => {
       if (schemeDetail.value) {
         const { id, name, bk_biz_id, deployment_architecture, vendors, composite_score, net_score, cost_score } = schemeDetail.value;
-        return { id, name, bk_biz_id, deployment_architecture, vendors, composite_score, net_score, cost_score }
+        return { id, name, bk_biz_id, deployment_architecture, vendors, composite_score, net_score, cost_score };
       }
-    })
+    });
 
     const handleUpdate = (data: ISchemeEditingData) => {
       schemeDetail.value = Object.assign({}, schemeDetail.value, data);
@@ -104,11 +115,11 @@ export default defineComponent({
             });
         },
       });
-    }
+    };
 
-    onMounted(async() => {
+    onMounted(async () => {
       getSchemeList();
-      if (schemeId) {
+      if (schemeId.value) {
         await getSchemeDetail();
         getIdcList();
       }
@@ -128,8 +139,15 @@ export default defineComponent({
                   onUpdate={handleUpdate}>
                     {{
                       operate: () => (
-                        <bk-button onClick={handleDel}>删除</bk-button>
-                      )
+                        <bk-button
+                          onClick={
+                            () => {
+                              if (authVerifyData.value.permissionAction.cloud_selection_delete) handleDel();
+                              else handleAuth('cloud_selection_delete');
+                            }
+                          }
+                          class={`del-btn ${!authVerifyData.value.permissionAction.cloud_selection_delete ? 'hcm-no-permision-btn' : ''}`}>删除</bk-button>
+                      ),
                     }}
                 </DetailHeader>
                 <section class="detail-content-area">
@@ -143,6 +161,12 @@ export default defineComponent({
             )
           }
         </bk-loading>
+        <PermissionDialog
+          isShow={showPermissionDialog.value}
+          onConfirm={handlePermissionConfirm}
+          onCancel={handlePermissionDialog}
+          params={permissionParams.value}
+        />
       </div>
     );
   },

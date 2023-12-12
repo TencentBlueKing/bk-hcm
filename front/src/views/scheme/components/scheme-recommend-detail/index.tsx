@@ -2,10 +2,10 @@ import { defineComponent } from 'vue';
 import './index.scss';
 import DetailHeader from '../../scheme-detail/components/detail-header';
 import { useSchemeStore } from '@/store';
-import { Button } from 'bkui-vue';
 import IdcMapDisplay from '../../scheme-detail/components/idc-map-display';
 import NetworkHeatMap from '../../scheme-detail/components/network-heat-map';
 import { ISchemeSelectorItem } from '@/typings/scheme';
+import SaveSchemeButton from '../scheme-preview/components/save-scheme-button';
 
 export default defineComponent({
   props: {
@@ -21,16 +21,16 @@ export default defineComponent({
         <DetailHeader
           schemeData={schemeStore.schemeData}
           schemeList={schemeStore.recommendationSchemes.map((v, idx) => ({
-            id: idx,
             ...v,
+            id: `${idx}`,
           }))}
           onBack={props.onBack}
           selectFn={(scheme: ISchemeSelectorItem) => {
-            schemeStore.setSelectedSchemeIdx(scheme.id  as number);
+            schemeStore.setSelectedSchemeIdx(+scheme.id  as number);
           }}
         >
           {{
-            operate: () => <Button theme='primary'>保存</Button>,
+            operate: () => <SaveSchemeButton idx={schemeStore.selectedSchemeIdx}/>,
           }}
         </DetailHeader>
         <section class={'chart-content-wrapper'}>

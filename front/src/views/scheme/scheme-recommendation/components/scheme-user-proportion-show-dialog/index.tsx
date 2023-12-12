@@ -12,7 +12,7 @@ export default defineComponent({
     },
     treeData: {
       type: Array<IAreaInfo> as PropType<Array<IAreaInfo>>,
-    }
+    },
   },
   emits: ['update:isShow'],
   setup(props, ctx) {
@@ -22,34 +22,40 @@ export default defineComponent({
     };
 
     const searchVal = ref('');
-    const treeData = computed(() => props.treeData.map(item => {
+    const treeData = computed(() => props.treeData.map((item) => {
       item.value = +item.children.reduce((prev, curr) => prev + curr.value, 0).toFixed(2);
-      item.children = item.children.map(child => {
+      item.children = item.children.map((child) => {
         child.value = +child.value.toFixed(2);
         return child;
-      })
+      });
       return item;
     }));
+    const searchOption = computed(() => {
+      return {
+        value: searchVal.value,
+        showChildNodes: false,
+      };
+    });
 
     const getPrefixIcon = (params: any) => {
       const { __attr__: { isRoot, isOpen } } = params;
       // 非根节点
-      if(!isRoot) return null;
+      if (!isRoot) return null;
       // 根节点下钻
       if (isOpen) return <i class='hcm-icon bkhcm-icon-minus-circle'></i>;
       // 根节点未下钻
       return <i class='hcm-icon bkhcm-icon-plus-circle'></i>;
-    }
+    };
 
     const getNodeAppend = (node: any) => {
-      const { __attr__ : { isRoot, isOpen, hasChild } } = node;
+      const { __attr__: { isRoot, isOpen, hasChild } } = node;
       // 非根节点 或 根节点无子节点
       if (!isRoot || !hasChild) return <span class='proportion-num'>{node.value}</span>;
       // 根节点下钻
       if (isOpen) return null;
       // 根节点未下钻
-      return <span class='proportion-num'>{node.value}</span>
-   };
+      return <span class='proportion-num'>{node.value}</span>;
+    };
 
     return () => (
       <Dialog
@@ -57,6 +63,7 @@ export default defineComponent({
         class='user-proportion-detail-dialog'
         isShow={props.isShow}
         title='分布权重占比'
+        quickClose={false}
         onClosed={() => toggleShow(false)}>
         <div class='tips-wrap mb16'>
           <i class='hcm-icon bkhcm-icon-info-line'></i>
@@ -72,7 +79,7 @@ export default defineComponent({
           data={treeData.value}
           label='name'
           children='children'
-          search={searchVal.value}
+          search={searchOption.value}
           show-node-type-icon={false}
           selectable={false}
           indent={30}

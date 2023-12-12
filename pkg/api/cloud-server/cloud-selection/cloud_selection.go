@@ -46,12 +46,12 @@ func (req SchemeUpdateReq) Validate() error {
 // SchemeCreateReq define scheme create request.
 type SchemeCreateReq struct {
 	BkBizID                int64                     `json:"bk_biz_id" validate:"required"`
-	Name                   string                    `json:"name" validate:"required"`
+	Name                   string                    `json:"name" validate:"required,max=255"`
 	CoverPing              float64                   `json:"cover_ping" validate:"required"`
-	BizType                string                    `json:"biz_type" validate:"required"`
+	BizType                string                    `json:"biz_type" validate:"max=64"`
 	DeploymentArchitecture []enumor.SchemeDeployArch `json:"deployment_architecture" validate:"required"`
 	UserDistribution       types.AreaInfos           `json:"user_distribution" validate:"required"`
-	CoverRate              float64                   `json:"cover_rate" validate:"required"`
+	CoverRate              float64                   `json:"cover_rate" validate:"min=0"`
 	CompositeScore         float64                   `json:"composite_score" validate:"required"`
 	NetScore               float64                   `json:"net_score" validate:"required"`
 	CostScore              float64                   `json:"cost_score" validate:"required"`
@@ -90,7 +90,7 @@ type MultiIdcTopo = coreselection.AreaValue[map[string]float64]
 // GenSchemeReq request definition of generate recommend scheme
 type GenSchemeReq struct {
 	CoverPing              int                                `json:"cover_ping" validate:"required"`
-	BizType                string                             `json:"biz_type" validate:"required"`
+	BizType                string                             `json:"biz_type" validate:"max=64"`
 	DeploymentArchitecture []enumor.SchemeDeployArch          `json:"deployment_architecture" validate:"required"`
 	UserDistributions      []coreselection.AreaValue[float64] `json:"user_distribution" validate:"required"`
 }

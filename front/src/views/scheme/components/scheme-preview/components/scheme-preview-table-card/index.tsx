@@ -1,18 +1,13 @@
-import { PropType, defineComponent, reactive, ref, watch } from 'vue';
+import { PropType, defineComponent, ref, watch } from 'vue';
 import './index.scss';
-import { Table, Tag, Loading, Button, Dialog, Form, Input, Message, PopConfirm } from 'bkui-vue';
+import { Table, Tag, Loading, Button, PopConfirm } from 'bkui-vue';
 import { AngleDown, AngleRight } from 'bkui-vue/lib/icon';
-
-// @ts-ignore
-import AppSelect from '@blueking/app-select';
-import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useSchemeStore } from '@/store';
 import { QueryRuleOPEnum } from '@/typings';
 import { IServiceArea } from '@/typings/scheme';
 import { VendorEnum, VendorMap } from '@/common/constant';
 import { renderVendorIcons } from './renderVendorIcons';
-
-const { FormItem } = Form;
+import SaveSchemeButton from '../save-scheme-button';
 
 export default defineComponent({
   props: {
@@ -51,14 +46,13 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const businessMapStore = useBusinessMapStore();
     const schemeStore = useSchemeStore();
     const columns = [
       {
         field: 'name',
         label: '部署点名称',
         width: 200,
-        render: ({ data }: any) => `${data.country}机房`,
+        render: ({ data }: any) => `${data.region}机房`,
       },
       {
         field: 'vendor',
@@ -122,11 +116,11 @@ export default defineComponent({
                       </div>
                   ),
                   default: () => (
-                    <div
+                    <a
                       class={'scheme-service-areas-icon-box mr4'}
                     >
                       <i class={'icon hcm-icon bkhcm-icon-paiming scheme-service-areas-icon'}></i>
-                    </div>
+                    </a>
                   ),
                 }}
               </PopConfirm>
@@ -154,52 +148,18 @@ export default defineComponent({
     const tableData = ref([]);
     const isLoading = ref(false);
     const isExpanded = ref(false);
-    const isDialogShow = ref(false);
     const idcServiceAreasMap = ref<Map<string, {
       service_areas: Array<IServiceArea>;
       avg_latency: number;
     }>>(new Map());
-    const formData = reactive({
-      name: schemeStore.recommendationSchemes[props.idx].name,
-      bk_biz_id: 0,
-    });
-    const formInstance = ref(null);
-    const isSaved = ref(false);
     const schemeVendors = ref([]);
     const isViewDetailBtnLoading = ref(false);
-
-    const handleConfirm = async () => {
-      await formInstance.value.validate();
-      const saveData = {
-        ...formData,
-        user_distribution: schemeStore.userDistribution,
-        cover_rate: props.coverRate,
-        composite_score: props.compositeScore,
-        net_score: props.netScore,
-        cost_score: props.costScore,
-        result_idc_ids: props.resultIdcIds,
-        cover_ping: schemeStore.schemeConfig.cover_ping,
-        biz_type: schemeStore.schemeConfig.biz_type,
-        deployment_architecture: schemeStore.schemeConfig.deployment_architecture,
-      };
-      await schemeStore.createScheme(saveData);
-      Message({
-        theme: 'success',
-        message: '保存成功',
-      });
-      schemeStore.setRecommendationSchemes(schemeStore.recommendationSchemes.map((scheme, idx) => {
-        if (idx === props.idx) scheme.name = formData.name;
-        return scheme;
-      }));
-      isDialogShow.value = false;
-      isSaved.value = true;
-    };
 
     const handleViewDetail = async () => {
       isViewDetailBtnLoading.value = true;
       await getSchemeDetails();
       isViewDetailBtnLoading.value = false;
-      props.onViewDetail();
+      props.onViewDetail(props.idx);
     };
 
     watch(
@@ -240,6 +200,7 @@ export default defineComponent({
         },
       );
       const queryIdcServiceAreaPromise = schemeStore.queryIdcServiceArea(
+        'ping',
         props.resultIdcIds,
         schemeStore.userDistribution,
       );
@@ -259,13 +220,13 @@ export default defineComponent({
         region: v.region,
         price: v.price,
         country: v.country,
-        service_areas: idcServiceAreasMap.value.get(v.id)?.service_areas.reduce((acc, cur) => {
+        service_areas: idcServiceAreasMap.value.get(v.id)?.service_areas?.reduce((acc, cur) => {
           acc += `${cur.country_name} , ${cur.province_name} ; `;
           return acc;
         }, ''),
         ping: idcServiceAreasMap.value.get(v.id)?.avg_latency,
         id: v.id,
-        service_area_arr: idcServiceAreasMap.value.get(v.id)?.service_areas.sort((a, b) => {
+        service_area_arr: idcServiceAreasMap.value.get(v.id)?.service_areas?.sort((a, b) => {
           return Math.floor(a.network_latency) - Math.floor(b.network_latency);
         }).map((v, idx) => ({
           ...v,
@@ -282,7 +243,7 @@ export default defineComponent({
         composite_score: props.compositeScore,
         net_score: props.netScore,
         cost_score: props.costScore,
-        name: formData.name,
+        name: schemeStore.recommendationSchemes[props.idx].name,
         idcList: tableData.value.map(item => ({
           id: item.id,
           name: item.name,
@@ -310,6 +271,7 @@ export default defineComponent({
     return () => (
       <div class={'scheme-preview-table-card-container'}>
         <div
+          onClick={() => (isExpanded.value = !isExpanded.value)}
           class={`scheme-preview-table-card-header ${
             isExpanded.value ? '' : 'scheme-preview-table-card-header-closed'
           }`}>
@@ -318,7 +280,6 @@ export default defineComponent({
               width={'40px'}
               height={'30px'}
               fill='#63656E'
-              onClick={() => (isExpanded.value = !isExpanded.value)}
               class={'scheme-preview-table-card-header-expand-icon'}
             />
           ) : (
@@ -326,12 +287,11 @@ export default defineComponent({
               width={'40px'}
               height={'30px'}
               fill='#63656E'
-              onClick={() => (isExpanded.value = !isExpanded.value)}
               class={'scheme-preview-table-card-header-expand-icon'}
             />
           )}
 
-          <p class={'scheme-preview-table-card-header-title'}>{formData.name}</p>
+          <p class={'scheme-preview-table-card-header-title'}>{schemeStore.recommendationSchemes[props.idx].name}</p>
           <Tag
             theme='success'
             radius='11px'
@@ -350,16 +310,12 @@ export default defineComponent({
               网络评分： <span class={'score-value'}>{props.netScore}</span>
             </div>
             <div class={'scheme-preview-table-card-header-score-item'}>
-              方案成本： <span class={'score-value'}>$ {props.costScore}</span>
+              成本评分： <span class={'score-value'}>$ {props.costScore}</span>
             </div>
           </div>
-          <div class={'scheme-preview-table-card-header-operation'}>
+          <div class={'scheme-preview-table-card-header-operation'} onClick={e => e.stopPropagation()}>
             <Button class={'mr8'} onClick={handleViewDetail} loading={isViewDetailBtnLoading.value}>查看详情</Button>
-            <Button theme='primary' onClick={() => (isDialogShow.value = true)} disabled={isSaved.value}>
-              {
-                isSaved.value ? '已保存' : '保存'
-              }
-            </Button>
+            <SaveSchemeButton idx={props.idx}/>
           </div>
         </div>
         <div
@@ -371,30 +327,6 @@ export default defineComponent({
           </Loading>
         </div>
 
-        <Dialog
-          title='保存该方案'
-          isShow={isDialogShow.value}
-          onClosed={() => (isDialogShow.value = false)}
-          onConfirm={handleConfirm}>
-          <Form formType='vertical' model={formData} ref={formInstance}>
-            <FormItem label='方案名称' required property='name'>
-              <Input v-model={formData.name}/>
-            </FormItem>
-            <FormItem label='标签' property='bk_biz_id'>
-              <AppSelect
-                data={businessMapStore.businessList}
-                value={{
-                  id: formData.bk_biz_id,
-                }}
-                onChange={
-                  (val: {id: number, val: string}) => {
-                    formData.bk_biz_id = val.id;
-                  }
-                }
-              />
-            </FormItem>
-          </Form>
-        </Dialog>
       </div>
     );
   },

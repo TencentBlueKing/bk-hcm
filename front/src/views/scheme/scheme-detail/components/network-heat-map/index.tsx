@@ -1,8 +1,6 @@
 import { defineComponent, reactive, ref, watch, PropType, onMounted } from "vue";
-import { BkTable, BkTableColumn } from "bkui-vue/lib/table";
 import { IIdcInfo, IIdcLatencyListItem, IAreaInfo, IIdcServiceAreaRel } from "@/typings/scheme";
 import { useSchemeStore } from "@/store";
-import { getScoreColor } from '@/common/util';
 import SearchInput from "../../../components/search-input/index";
 import RenderTable from './render-table/index';
 
@@ -23,18 +21,18 @@ export default defineComponent({
     const schemeStore = useSchemeStore();
 
     const searchStr = ref('');
-    const isHighlight = ref(false);
+    const isHighlight = ref(true);
     const idcData = ref<ITableDataItem[]>([]);
     const idcDataLoading = ref(true);
     const IdcAreaDataLoading = ref(true);
-    const activedTab = ref('biz');
+    const activedTab = ref('ping');
     let highlightArea = reactive<IIdcServiceAreaRel[]>([]);
     let avePing = ref(0);
     const containerRef = ref(null);
 
     const TABS = [
-      { id: 'biz', label: '业务数据' },
       { id: 'ping', label: '裸 ping 数据' },
+      { id: 'biz', label: '业务数据' },
     ];
 
     watch(() => props.idcList, val => {
@@ -64,13 +62,14 @@ export default defineComponent({
     const handleSwitchTab = (id: string) => {
       activedTab.value = id;
       getTableData();
+      getIdcAreaData();
     }
 
     // 获取idc区域数据，计算平均延迟以及高亮区域
     const getIdcAreaData  = async () => {
       IdcAreaDataLoading.value = true;
       const idcs = props.idcList.map(item => item.id);
-      const res = await schemeStore.queryIdcServiceArea(idcs, props.areaTopo);
+      const res = await schemeStore.queryIdcServiceArea(activedTab.value, idcs, props.areaTopo);
       highlightArea = res.data;
       avePing.value = res.data.reduce((acc, crt) => {
         return acc + crt.avg_latency;

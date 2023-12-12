@@ -7,6 +7,7 @@
     padding: 7px 24px;
     background: #F0F5FF;
     border-radius: 2px 2px 0 0;
+    cursor: pointer;
 
     .scheme-preview-table-card-header-expand-icon {
       cursor: pointer;
@@ -96,6 +97,9 @@
 .bk-pop-confirm-footer {
   display: none !important;
 }
+.bk-popover.bk-pop-confirm-box {
+  padding: 18px 16px !important;
+}
 
 .service-areas-table-container {
   max-width: 700px;
@@ -120,6 +124,7 @@
       border-radius: 2px;
       margin-right: 4px;
       width: 14px;
+      min-width: 14px;
       height: 16px;
       color: #FFFFFF;
       display: flex;

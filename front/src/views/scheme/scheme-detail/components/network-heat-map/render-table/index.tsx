@@ -52,6 +52,7 @@ export default defineComponent({
 
     const renderValCell = (val: ITableDataItem, idc: IIdcInfo) => {
       const cellValue = Number(val[idc.name]);
+
       let cls = '';
       if (props.isHighlight) {
         const area = props.highlightArea.find(area => area.idc_id === idc.id);
@@ -72,7 +73,7 @@ export default defineComponent({
       }
       return (
         <td class="tbody-col">
-          <div class={['cell', cls]} style={{ color: getScoreColor(cellValue) }}>{`${cellValue.toFixed(2)}ms`}</div>
+          <div class={['cell', cls]} style={{ color: getScoreColor(cellValue) }}>{Number.isNaN(cellValue) ? '' : `${cellValue.toFixed(2)}ms`}</div>
         </td>
       )
     }
@@ -87,15 +88,25 @@ export default defineComponent({
               </th>
               {
                 props.idcList.map(idc => {
-                  return (<th class="thead-col">{idc.name}</th>)
+                  return (<th class="thead-col">{idc.region}机房</th>)
                 })
               }
             </tr>
           </thead>
           <tbody>
             {
-              tableData.value.length > 0 && !props.searchStr
+              props.searchStr && tableData.value.length === 0
               ?
+              <tr>
+                <td colspan={props.idcList.length + 1}>
+                  <bk-exception
+                    class="search-empty-exception"
+                    type="search-empty"
+                    scene="part"
+                    description="搜索为空"/>
+                </td>
+              </tr>
+              :
               tableData.value.map(item => {
                 return (
                   <>
@@ -137,16 +148,6 @@ export default defineComponent({
                   </>
                 )
               })
-              :
-              <tr>
-                <td colspan={props.idcList.length + 1}>
-                  <bk-exception
-                    class="search-empty-exception"
-                    type="search-empty"
-                    scene="part"
-                    description="搜索为空"/>
-                </td>
-              </tr>
             }
           </tbody>
         </table>

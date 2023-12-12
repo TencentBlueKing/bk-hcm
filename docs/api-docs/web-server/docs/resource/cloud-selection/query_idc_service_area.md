@@ -6,14 +6,15 @@
 
 ### URL
 
-POST /api/v1/cloud/selections/idcs/services/areas/query
+POST /api/v1/cloud/selections/idcs/service_areas/{datasource}/query
 
 ### 输入参数
 
-| 参数名称      | 参数类型           | 必选 | 描述     |
-|-----------|----------------|----|--------|
-| idc_ids   | string array   | 是  | 机房ID列表 |
-| area_topo | AreaInfo array | 是  | 地理拓扑   |
+| 参数名称       | 参数类型           | 必选 | 描述                             |
+|------------|----------------|----|--------------------------------|
+| datasource | string         | 是  | 数据来源，枚举值：ping=裸ping数据，biz=业务数据 |
+| idc_ids    | string array   | 是  | 机房ID列表                         |
+| area_topo  | AreaInfo array | 是  | 地理拓扑                           |
 
 #### AreaInfo
 

@@ -20,6 +20,10 @@ import {
 } from '@/typings/scheme';
 import { useSchemeStore } from '@/store';
 import SchemeRecommendDetail from '../components/scheme-recommend-detail';
+import { onBeforeRouteLeave } from 'vue-router';
+import { InfoBox } from 'bkui-vue';
+import { useVerify } from '@/hooks';
+import ErrorPage from '@/views/error-pages/403';
 
 export default defineComponent({
   name: 'SchemeRecommendationPage',
@@ -31,9 +35,7 @@ export default defineComponent({
     const bizTypesInitLoading = ref(false);
     const countriesList = ref<Array<string>>([]);
     const bizTypeList = ref<IBizTypeList>([]);
-    const selectedBizType = computed<IBizType>(() =>
-      bizTypeList.value.find((item) => item.biz_type === formData.biz_type),
-    );
+    const selectedBizType = computed<IBizType>(() => bizTypeList.value.find(item => item.biz_type === formData.biz_type));
 
     const generateSchemesLoading = ref(false);
     const formData = reactive<IGenerateSchemesReqParams>({
@@ -50,15 +52,18 @@ export default defineComponent({
       formData.user_distribution = [];
       schemeStore.setUserDistribution([]);
     };
+
+    const {
+      authVerifyData,
+    } = useVerify();
+
     const handleChangeCountry = async () => {
       clearLastData();
       countryChangeLoading.value = true;
-      const res = await schemeStore.queryUserDistributions(
-        formData.selected_countries.reduce((prev, item) => {
-          prev.push({ name: item });
-          return prev;
-        }, []),
-      );
+      const res = await schemeStore.queryUserDistributions(formData.selected_countries.reduce((prev, item) => {
+        prev.push({ name: item });
+        return prev;
+      }, []));
       countryChangeLoading.value = false;
       formData.user_distribution = res.data;
       schemeStore.setUserDistribution(res.data);
@@ -68,21 +73,21 @@ export default defineComponent({
     const generateSchemes = async () => {
       await formRef.value.validate();
       generateSchemesLoading.value = true;
-      const res: IGenerateSchemesResData = await schemeStore.generateSchemes(
-        formData,
-      );
+      const res: IGenerateSchemesResData = await schemeStore.generateSchemes(formData);
       schemeStore.setSchemeConfig(formData.cover_ping, formData.biz_type, formData.deployment_architecture);
       generateSchemesLoading.value = false;
       schemeStore.setRecommendationSchemes(res.data.map((item, idx) => ({
         ...item,
         id: `${idx}`,
         name: `方案${idx + 1}`,
+        isSaved: false,
       })));
       scene.value = 'preview';
     };
 
-    const viewDetail = () => {
+    const viewDetail = (idx: number) => {
       scene.value = 'detail';
+      schemeStore.setSelectedSchemeIdx(idx);
     };
 
     const formItemOptions = computed(() => [
@@ -108,11 +113,10 @@ export default defineComponent({
       },
       {
         label: '业务类型',
-        required: true,
         property: 'biz_type',
         content: () => (
           <bk-select loading={bizTypesInitLoading.value} v-model={formData.biz_type}>
-            {bizTypeList.value.map((bizType) => (
+            {bizTypeList.value.map(bizType => (
               <bk-option
                 key={bizType.id}
                 value={bizType.biz_type}
@@ -124,15 +128,17 @@ export default defineComponent({
       },
       {
         label: '用户网络容忍',
-        property: 'cover_ping',
+        required: true,
         extClass: 'prompt-icon-wrap',
         tips: '流向终端（LastMIle）的网络质量容忍',
-        left: '90px',
+        left: '96px',
         content: [
           {
             label: '网络延迟',
+            property: 'cover_ping',
+            required: true,
             content: () => (
-              <bk-input class="with-suffix" type='number' v-model={formData.cover_ping} suffix="ms"></bk-input>
+              <bk-input class="with-suffix" type='number' v-model={formData.cover_ping} min={1} suffix="ms"></bk-input>
             ),
           },
           /* {
@@ -147,6 +153,7 @@ export default defineComponent({
       },
       {
         label: '用户分布占比',
+        required: true,
         content: () => (
           <div class='flex-row'>
             <bk-select class='flex-1' v-model={formData.user_distribution_mode} clearable={false}>
@@ -157,8 +164,8 @@ export default defineComponent({
                 formData.user_distribution.length ? '' : ' disabled'
               }`}
               onClick={() => {
-                formData.user_distribution.length &&
-                  (isUserProportionDetailDialogShow.value = true);
+                formData.user_distribution.length
+                  && (isUserProportionDetailDialogShow.value = true);
               }}>
               <i class='hcm-icon bkhcm-icon-file'></i>
               <span class={'btn-text'}>占比详情</span>
@@ -168,9 +175,11 @@ export default defineComponent({
       },
       {
         label: '部署架构',
+        property: 'deployment_architecture',
+        required: true,
         extClass: 'prompt-icon-wrap',
         tips: '分布式部署：全局模块集中部署，功能模块分区域部署。\n集中式部署：适用于同一套服务器覆盖所有用户的场景。',
-        left: '62px',
+        left: '68px',
         content: () => (
           <bk-checkbox-group v-model={formData.deployment_architecture}>
             <bk-checkbox label='distributed'>分布式部署</bk-checkbox>
@@ -209,15 +218,15 @@ export default defineComponent({
         deployment_architecture: [],
         user_distribution: [],
         user_distribution_mode: 'default',
-      })
-    }
+      });
+    };
 
     const getInitCountryList = async () => {
       countryInitLoading.value = true;
       const res = await schemeStore.listCountries();
       countryInitLoading.value = false;
       countriesList.value = res.data.details.sort((prev, next) => prev.localeCompare(next, 'zh'));
-    }
+    };
 
     const getInitBizTypeList = async () => {
       bizTypesInitLoading.value = true;
@@ -230,7 +239,7 @@ export default defineComponent({
       bizTypesInitLoading.value = false;
       bizTypeList.value = res.data.details;
       formData.biz_type = bizTypeList.value?.[0].biz_type;
-    }
+    };
 
     onMounted(() => {
       getInitCountryList();
@@ -250,6 +259,8 @@ export default defineComponent({
     );
 
     function confirmLeave(event: any) {
+      if (!schemeStore.recommendationSchemes.length || !formData.selected_countries.length) return;
+      // 生成选型方案后再让离开的用户二次确认
       (event || window.event).returnValue = '关闭提示';
       return '关闭提示';
     }
@@ -262,6 +273,19 @@ export default defineComponent({
       window.addEventListener('beforeunload', confirmLeave);
     });
 
+    onBeforeRouteLeave((to, from, next) => {
+      if (!schemeStore.recommendationSchemes.length || !formData.selected_countries.length) {
+        next();
+      } else {
+        InfoBox({
+          title: '确定离开当前页面?',
+          subTitle: '离开当前页面后，推荐的方案列表不存留。如当前页面的方案或列表中的其他方案符合需求，则可将其保存后再离开。',
+          onConfirm: () => next(),
+        });
+      }
+    });
+
+    if (!authVerifyData.value.permissionAction.cloud_selection_recommend) return () => <ErrorPage />;
 
     return () => (
       <bk-loading
@@ -284,16 +308,15 @@ export default defineComponent({
             </div>
             <div class='content-wrap'>
               <bk-form form-type='vertical' ref={formRef} model={formData} rules={formRules} >
-                {formItemOptions.value.map(
-                  ({ label, required, content, extClass, property, tips, left }) => (
+                {formItemOptions.value.map(({ label, required, content, extClass, property, tips, left }) => (
                     <bk-form-item label={label} required={required} class={extClass} property={property}>
                       {
-                        extClass && tips && <i v-bk-tooltips={{ content: tips, placement: 'right' }} class='hcm-icon bkhcm-icon-prompt' style={{left}}></i>
+                        extClass && tips && <i v-bk-tooltips={{ content: tips, placement: 'right' }} class='hcm-icon bkhcm-icon-prompt' style={{ left }}></i>
                       }
                       {Array.isArray(content) ? (
                         <div class='sub-form-item-wrap'>
-                          {content.map((sub) => (
-                            <bk-form-item label={sub.label}>
+                          {content.map(sub => (
+                            <bk-form-item label={sub.label} required={sub.required} property={sub.property}>
                               {sub.content()}
                             </bk-form-item>
                           ))}
@@ -302,13 +325,12 @@ export default defineComponent({
                         content()
                       )}
                     </bk-form-item>
-                  ),
-                )}
+                ))}
               </bk-form>
             </div>
           </div>
           <div class='scheme-recommendation-container'>
-            <div class='content-container'>
+            <div class='content-container' style={{padding: toggleClose.value ? '0 26px' : '0'}}>
               {scene.value === 'blank' ? (
                 <SchemeBlankPage />
               ) : (

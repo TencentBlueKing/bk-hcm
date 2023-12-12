@@ -17,7 +17,8 @@ export enum QueryRuleOPEnum {
   CIS = 'cis',
   JSON_EQ = 'json_eq',
   OR = 'or',
-  AND = 'and'
+  AND = 'and',
+  JSON_CONTAINS = 'json_contains'
 }
 
 export type QueryFilterType = {
@@ -41,8 +42,8 @@ export interface IPageQuery {
   count?: boolean;
   start: number;
   limit: number;
-  sort?: boolean;
-  order?: boolean;
+  sort?: string;
+  order?: string;
 }
 
 interface IBaseResData {

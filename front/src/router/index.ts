@@ -100,6 +100,8 @@ router.beforeEach((to: RouteLocationNormalized, from: RouteLocationNormalized, n
       const { authVerifyData } = commonStore;
       toCurrentPage(authVerifyData, currentFindAuthData, next, to);
     });
+  } else if (['/scheme/recommendation', '/scheme/deployment/list'].includes(to.path)) {
+    next();
   } else {
     toCurrentPage(authVerifyData, currentFindAuthData, next);
   }

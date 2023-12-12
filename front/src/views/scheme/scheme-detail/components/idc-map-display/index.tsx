@@ -28,13 +28,18 @@ export default defineComponent({
     });
 
     const renderMap = () => {
+      if (mapIns.value) {
+        mapIns.value.destroy();
+      }
+
       if (props.list.length === 0) {
         return;
       }
 
       const countryColors = {}
       props.list.map((item, index) => {
-        countryColors[item.country] = REGION_MAP_COLORS[index % REGION_MAP_COLORS.length];
+        const countryName = transCountryName(item.country);
+        countryColors[countryName] = REGION_MAP_COLORS[index % REGION_MAP_COLORS.length];
       });
 
       mapIns.value = new Scene({
@@ -51,7 +56,9 @@ export default defineComponent({
         // 行政区块
         const polygonLayer = new PolygonLayer({})
           .source(geoData)
-          .color('name', (value) => countryColors?.[value] || '#d0d0d0')
+          .color('name', (value) => {
+            return countryColors?.[value] || '#d0d0d0'
+          })
           .shape('fill')
           .style({ opacity: 1 });
 
@@ -74,9 +81,6 @@ export default defineComponent({
             regions.features.push(IdcReginData.features[index]);
           }
         })
-
-
-        console.log(regions)
 
         const pointLayer = new PointLayer({
           zIndex: 3,
@@ -105,7 +109,8 @@ export default defineComponent({
         let popup:Popup;
         polygonLayer.on('mousemove', e => {
           const name = e.feature.properties.name;
-          if (props.list.find(item => item.country === name)) {
+          console.log(name)
+          if (props.list.find(item => transCountryName(item.country) === name)) {
             popup = new Popup({
               offsets: [ 0, 0 ],
               closeButton: false
@@ -122,6 +127,13 @@ export default defineComponent({
         });
       })
     };
+
+    const transCountryName = (name: string) => {
+      if(['中国香港', '中国澳门', '中国台湾'].includes(name)) {
+        return '中国'
+      }
+      return name;
+    }
 
     onMounted(() => {
       renderMap();
@@ -143,7 +155,7 @@ export default defineComponent({
                     <div class="idc-card">
                       <div class="summary-head">
                         <div class="status-dot"></div>
-                        <div class="idc-name">{idc.name}</div>
+                        <div class="idc-name">{idc.region}机房</div>
                         <CloudServiceTag type={idc.vendor} small={true} />
                       </div>
                       <div class="cost">IDC 单位成本: $ {idc.price}</div>
