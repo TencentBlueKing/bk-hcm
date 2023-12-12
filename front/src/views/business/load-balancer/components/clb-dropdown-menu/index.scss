@@ -1,0 +1,13 @@
+.dropdown-menu-dialog {
+  width: auto;
+
+  .bk-modal-header {
+    display: none;
+  }
+
+  .bk-modal-content {
+    padding: 4px 12px !important;
+    height: auto !important;
+    min-height: auto !important;
+  }
+}

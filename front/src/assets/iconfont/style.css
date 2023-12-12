@@ -95,6 +95,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .bkhcm-icon-angle-up-fill:before {
 	content: "\e108";
 }
+.bkhcm-icon-more-fill:before {
+	content: "\e14b";
+}
 .bkhcm-icon-grag-fill:before {
 	content: "\e11c";
 }
