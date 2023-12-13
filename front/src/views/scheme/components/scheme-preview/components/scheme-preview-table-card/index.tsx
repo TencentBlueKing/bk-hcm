@@ -89,7 +89,7 @@ export default defineComponent({
                         <div class={'service-areas-table'}>
                           <Table
                             data={data.service_area_arr}
-                            height={500}
+                            maxHeight={500}
                             columns={[
                               {
                                 field: 'country_name_province_name',
