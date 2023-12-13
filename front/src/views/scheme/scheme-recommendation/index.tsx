@@ -130,7 +130,7 @@ export default defineComponent({
         label: '用户网络容忍',
         required: true,
         extClass: 'prompt-icon-wrap',
-        tips: '流向终端（LastMIle）的网络质量容忍',
+        tips: '用户到 IDC 的网络质量容忍',
         left: '96px',
         content: [
           {
@@ -330,7 +330,7 @@ export default defineComponent({
             </div>
           </div>
           <div class='scheme-recommendation-container'>
-            <div class='content-container' style={{padding: toggleClose.value ? '0 26px' : '0'}}>
+            <div class='content-container' style={{ padding: toggleClose.value ? '0 26px' : '0' }}>
               {scene.value === 'blank' ? (
                 <SchemeBlankPage />
               ) : (
