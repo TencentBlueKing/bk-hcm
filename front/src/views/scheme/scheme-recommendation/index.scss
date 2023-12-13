@@ -35,17 +35,20 @@
         position: relative;
         left: 0px;
         border-radius: 2px;
-        transition: all 0.5s;
+        transition: all 0.3s;
         cursor: pointer;
+
+        &:hover {
+          background: #eaebf0;
+        }
 
         &::before {
           display: block;
           width: 32px;
           height: 32px;
-          background: #eaebf0;
           line-height: 32px;
           font-size: 16px;
-          transition: background 0.2s;
+          transition: background 0.3s;
         }
       }
     }
