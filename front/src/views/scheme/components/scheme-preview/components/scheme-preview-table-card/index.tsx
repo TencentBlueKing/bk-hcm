@@ -134,6 +134,7 @@ export default defineComponent({
       {
         field: 'ping',
         label: '平均延迟',
+        align: 'right',
         render: ({ cell }: {cell: number}) => {
           return `${Math.floor(cell)} ms`;
         },
@@ -141,6 +142,7 @@ export default defineComponent({
       },
       {
         field: 'price',
+        align: 'right',
         label: 'IDC 单位成本',
         render: ({ cell }: {cell: number}) => `${cell}`,
         width: 200,

@@ -54,7 +54,8 @@ export default defineComponent({
     const handleSelect = (scheme: ISchemeSelectorItem) => {
       if (scheme.id !== props.schemeData.id) {
         if (typeof props.selectFn === 'function') {
-          props.selectFn(scheme)
+          props.selectFn(scheme);
+          setTimeout(() => isSelectorOpen.value = false, 800);
         } else {
           router.push({ name: 'scheme-detail', query: { sid: scheme.id } })
         }
@@ -81,6 +82,7 @@ export default defineComponent({
             placement="bottom-start"
             trigger="click"
             arrow={false}
+            isShow={isSelectorOpen.value}
             onAfterShow={() => { isSelectorOpen.value = true }}
             onAfterHidden={() => { isSelectorOpen.value = false }}>
             {{
