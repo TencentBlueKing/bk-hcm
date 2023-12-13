@@ -122,6 +122,17 @@ func (svc *service) CreateScheme(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
+	// 尝试注册创建者权限
+	regCreatorReq := &meta.RegisterResCreatorActionInst{
+		Type: meta.CloudSelectionScheme.String(),
+		ID:   result.ID,
+		Name: req.Name,
+	}
+
+	if err := svc.authorizer.RegisterResourceCreatorAction(cts.Kit, regCreatorReq); err != nil {
+		return nil, err
+	}
+
 	return result, nil
 }
 
