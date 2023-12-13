@@ -155,7 +155,7 @@ export default defineComponent({
         label: '用户分布占比',
         required: true,
         content: () => (
-          <div class='flex-row'>
+          <div class='flex-row' style={{overflow: 'hidden'}}>
             <bk-select class='flex-1' v-model={formData.user_distribution_mode} clearable={false}>
               <bk-option label='默认分布占比' value='default' />
             </bk-select>
@@ -302,9 +302,9 @@ export default defineComponent({
             }`}>
             <div class='title-wrap'>
               <div class='title-text'>业务属性</div>
-              <i
-                class='hcm-icon bkhcm-icon-shouqi'
-                onClick={() => (toggleClose.value = !toggleClose.value)}></i>
+              {
+                toggleClose.value && <i class='hcm-icon bkhcm-icon-shouqi' onClick={() => (toggleClose.value = !toggleClose.value)}></i>
+              }
             </div>
             <div class='content-wrap'>
               <bk-form form-type='vertical' ref={formRef} model={formData} rules={formRules} >
@@ -328,6 +328,9 @@ export default defineComponent({
                 ))}
               </bk-form>
             </div>
+            {
+              !toggleClose.value && <div class='right-handle' onClick={() => (toggleClose.value = !toggleClose.value)}></div>
+            }
           </div>
           <div class='scheme-recommendation-container'>
             <div class='content-container' style={{ padding: toggleClose.value ? '0 26px' : '0' }}>
