@@ -68,7 +68,9 @@ export default defineComponent({
               )),
             }}
           </Select>
-          <Button onClick={() => isDes.value = !isDes.value}>
+          <Button onClick={() => isDes.value = !isDes.value}  v-bk-tooltips={{
+            content: isDes.value ? '降序' : '升序',
+          }}>
             <i class={`${isDes.value ? 'hcm-icon bkhcm-icon-jiangxu' : 'icon hcm-icon bkhcm-icon-shengxu'}`}/>
           </Button>
         </div>
