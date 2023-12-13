@@ -35,7 +35,9 @@ export default defineComponent({
     const bizTypesInitLoading = ref(false);
     const countriesList = ref<Array<string>>([]);
     const bizTypeList = ref<IBizTypeList>([]);
-    const selectedBizType = computed<IBizType>(() => bizTypeList.value.find(item => item.biz_type === formData.biz_type));
+    const selectedBizType = computed<IBizType>(() => {
+      return bizTypeList.value.find(item => item.biz_type === formData.biz_type);
+    });
 
     const generateSchemesLoading = ref(false);
     const formData = reactive<IGenerateSchemesReqParams>({
@@ -45,6 +47,13 @@ export default defineComponent({
       deployment_architecture: [],
       user_distribution: [],
       user_distribution_mode: 'default',
+    });
+
+    const isAllSchemeSaved = computed(() => {
+      return schemeStore.recommendationSchemes.reduce((acc, cur) => {
+        acc &&= cur.isSaved;
+        return acc;
+      }, true);
     });
 
     const countryChangeLoading = ref(false);
@@ -155,7 +164,7 @@ export default defineComponent({
         label: '用户分布占比',
         required: true,
         content: () => (
-          <div class='flex-row' style={{overflow: 'hidden'}}>
+          <div class='flex-row' style={{ overflow: 'hidden' }}>
             <bk-select class='flex-1' v-model={formData.user_distribution_mode} clearable={false}>
               <bk-option label='默认分布占比' value='default' />
             </bk-select>
@@ -259,7 +268,9 @@ export default defineComponent({
     );
 
     function confirmLeave(event: any) {
-      if (!schemeStore.recommendationSchemes.length || !formData.selected_countries.length) return;
+      if (!schemeStore.recommendationSchemes.length
+        || !formData.selected_countries.length
+        || isAllSchemeSaved.value) return;
       // 生成选型方案后再让离开的用户二次确认
       (event || window.event).returnValue = '关闭提示';
       return '关闭提示';
@@ -274,7 +285,7 @@ export default defineComponent({
     });
 
     onBeforeRouteLeave((to, from, next) => {
-      if (!schemeStore.recommendationSchemes.length || !formData.selected_countries.length) {
+      if (!schemeStore.recommendationSchemes.length || !formData.selected_countries.length || isAllSchemeSaved.value) {
         next();
       } else {
         InfoBox({

@@ -11,6 +11,7 @@ import CloudServiceTag from '../components/cloud-service-tag';
 import SchemeEditDialog from '../components/scheme-edit-dialog';
 import { useVerify } from '@/hooks';
 import ErrorPage from '@/views/error-pages/403';
+import moment from 'moment';
 
 import './index.scss';
 import PermissionDialog from '@/components/permission-dialog';
@@ -171,7 +172,7 @@ export default defineComponent({
         field: 'updated_at',
         sort: true,
         render: ({ data }: { data: ISchemeListItem }) => {
-          return data.updated_at;
+          return moment(data.updated_at).format('YYYY-MM-DD HH:mm:ss');
         },
       },
       {
@@ -318,7 +319,7 @@ export default defineComponent({
 
     // 获取未被收藏的方案列表
     const getUnCollectedScheme = (ids: string[], pageQuery: IPageQuery) => {
-      const rules = searchValue.value.filter(item => item.values.length > 0).map((item) => {
+      const rules = searchValue.value.filter(item => item.values?.length > 0).map((item) => {
         if (['composite_score', 'bk_biz_id'].includes(item.id)) {
           return { field: item.id, op: QueryRuleOPEnum.EQ, value: Number(item.values[0].id) };
         }
