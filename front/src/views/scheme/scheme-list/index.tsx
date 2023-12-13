@@ -319,7 +319,7 @@ export default defineComponent({
 
     // 获取未被收藏的方案列表
     const getUnCollectedScheme = (ids: string[], pageQuery: IPageQuery) => {
-      const rules = searchValue.value.filter(item => item.values.length > 0).map((item) => {
+      const rules = searchValue.value.filter(item => item.values?.length > 0).map((item) => {
         if (['composite_score', 'bk_biz_id'].includes(item.id)) {
           return { field: item.id, op: QueryRuleOPEnum.EQ, value: Number(item.values[0].id) };
         }
