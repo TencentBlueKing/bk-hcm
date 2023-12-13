@@ -187,7 +187,7 @@ export default defineComponent({
       },
     ]);
 
-    watch(() => searchValue.value, (val) => {
+    watch(() => searchValue.value, () => {
       pagination.current = 1;
       getTableData();
     });
@@ -491,7 +491,7 @@ export default defineComponent({
             }
           }>
             <Plus class="plus-icon" />
-            创建部署方案
+            创建选型方案
           </bk-button>
           <bk-search-select
             v-model={searchValue.value}
