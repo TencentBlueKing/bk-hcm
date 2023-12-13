@@ -110,12 +110,12 @@ export default defineComponent({
                 trigger: 'change',
                 message: '方案名称与已存在的方案名重复',
                 validator: () => !isNameDuplicate.value,
-              }
+              },
             ],
           }}>
             <FormItem label='方案名称' required property='name'>
               {/* <Input v-model={formData.name} maxlength={28} onInput={debounce(checkNameIsDuplicate, 300)}/> */}
-              <Input v-model={formData.name} maxlength={28}/>/
+              <Input v-model={formData.name} maxlength={28}/>
             </FormItem>
             {/* <FormItem label='标签' property='bk_biz_id'>
               <AppSelect
