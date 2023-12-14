@@ -1,4 +1,4 @@
-import { defineComponent, computed } from 'vue';
+import { defineComponent } from 'vue';
 import { useRouter, useRoute, RouterView } from 'vue-router';
 
 import './index.scss';
@@ -12,7 +12,7 @@ export default defineComponent({
 
     const TAB_LIST = [
       { routeName: 'scheme-recommendation', label: '资源选型', icon: 'bkhcm-icon-xuanze' },
-      { routeName: 'scheme-list', label: '部署方案', icon: 'bkhcm-icon-bushu' },
+      { routeName: 'scheme-list', label: '选型方案', icon: 'bkhcm-icon-bushu' },
     ];
 
     const isActived = (name: string) => {
