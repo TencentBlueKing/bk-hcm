@@ -125,8 +125,7 @@ export default defineComponent({
                   ),
                 }}
               </PopConfirm>
-
-              {cell}
+              <span v-bk-tooltips={{content: cell, placement: 'top-start'}} >{cell}</span>
             </p>
           );
         },
