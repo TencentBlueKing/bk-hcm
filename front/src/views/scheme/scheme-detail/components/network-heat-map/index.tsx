@@ -162,9 +162,10 @@ export default defineComponent({
               </span>
             </div>
           </div>
-          <bk-checkbox v-model={isHighlight.value}>高亮服务区域
-            <info v-bk-tooltips="在用户分布区域中，当前机房最适合服务的区域" class="bk-tooltips-base" />
-          </bk-checkbox>
+          <div class='checkbox-wrap'>
+            <bk-checkbox v-model={isHighlight.value}>高亮服务区域</bk-checkbox> 
+            <info style={{marginLeft: '5px', fontSize: '16px', cursor: 'pointer', color:' #c4c6cc'}} v-bk-tooltips={{content: "在用户分布地区中，当前机房最适合服务的区域", placement: 'top-start'}} />
+          </div>
         </div>
         <div class="idc-data-table">
           <bk-loading loading={idcDataLoading.value} style={{ height: '100%' }}>
