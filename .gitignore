@@ -14,3 +14,6 @@ cmd/*-server/bk-hcm-*server
 cmd/*-service/bk-hcm-*service
 .run/
 .vscode
+front/.husky/commit-msg
+front/.husky/commit-msg-bkcodeai
+front/.husky/pre-commit-bkcodeai
