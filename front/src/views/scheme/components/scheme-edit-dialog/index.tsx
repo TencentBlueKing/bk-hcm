@@ -31,7 +31,7 @@ export default defineComponent({
     const localVal = ref({
       id: '',
       name: '',
-      bk_biz_id: 0,
+      bk_biz_id: -1,
     });
     const bizList = ref([]);
     const bizLoading = ref(false);
@@ -85,13 +85,13 @@ export default defineComponent({
           <bk-form-item label="方案名称" property="name" required={true}>
             <bk-input v-model={localVal.value.name} />
           </bk-form-item>
-          <bk-form-item label="项目标签">
+          {/* <bk-form-item label="项目标签">
             <bk-select v-model={localVal.value.bk_biz_id} loading={bizLoading.value}>
               {bizList.value.map((item) => {
                 return (<bk-option key={item.id} value={item.id} label={item.name} />);
               })}
             </bk-select>
-          </bk-form-item>
+          </bk-form-item> */}
         </bk-form>
       </Dialog>
     );

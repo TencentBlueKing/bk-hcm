@@ -94,23 +94,23 @@ export default defineComponent({
           );
         },
       },
-      {
-        label: '标签',
-        field: 'bk_biz_id',
-        render: ({ data }: { data: ISchemeListItem }) => {
-          if (bizLoading.value) {
-            return <bk-loading loading theme="primary" mode="spin" size="mini" />;
-          }
-          if (data) {
-            if (data.bk_biz_id < 1) {
-              return '--';
-            }
-            const biz = bizList.value.find(item => item.id === data.bk_biz_id);
-            const name = biz ? biz.name : '--';
-            return <span class="tag">{name}</span>;
-          }
-        },
-      },
+      // {
+      //   label: '标签',
+      //   field: 'bk_biz_id',
+      //   render: ({ data }: { data: ISchemeListItem }) => {
+      //     if (bizLoading.value) {
+      //       return <bk-loading loading theme="primary" mode="spin" size="mini" />;
+      //     }
+      //     if (data) {
+      //       if (data.bk_biz_id < 1) {
+      //         return '--';
+      //       }
+      //       const biz = bizList.value.find(item => item.id === data.bk_biz_id);
+      //       const name = biz ? biz.name : '--';
+      //       return <span class="tag">{name}</span>;
+      //     }
+      //   },
+      // },
       {
         label: '业务类型',
         field: 'biz_type',
