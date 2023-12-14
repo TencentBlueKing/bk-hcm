@@ -125,7 +125,7 @@ export default defineComponent({
                 }}
               </PopConfirm>
 
-              {cell}
+              <span v-bk-tooltips={{content: cell, placement: 'top-start'}} >{cell}</span>
             </p>
           );
         },
@@ -221,7 +221,7 @@ export default defineComponent({
         price: v.price,
         country: v.country,
         service_areas: idcServiceAreasMap.value.get(v.id)?.service_areas?.reduce((acc, cur) => {
-          acc += `${cur.country_name} , ${cur.province_name} ; `;
+          acc += `${cur.country_name},${cur.province_name}; `;
           return acc;
         }, ''),
         ping: idcServiceAreasMap.value.get(v.id)?.avg_latency,
