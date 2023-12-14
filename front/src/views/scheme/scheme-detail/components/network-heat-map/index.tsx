@@ -3,7 +3,8 @@ import { IIdcInfo, IIdcLatencyListItem, IAreaInfo, IIdcServiceAreaRel } from '@/
 import { useSchemeStore } from '@/store';
 import SearchInput from '../../../components/search-input/index';
 import RenderTable from './render-table/index';
-
+import { bkTooltips } from 'bkui-vue';
+import { Info } from 'bkui-vue/lib/icon';
 import './index.scss';
 
 interface ITableDataItem {
@@ -16,6 +17,12 @@ export default defineComponent({
   props: {
     idcList: Array as PropType<IIdcInfo[]>,
     areaTopo: Array as PropType<IAreaInfo[]>,
+  },
+  components: {
+    Info
+  },
+  directives: {
+    bkTooltips
   },
   setup(props) {
     const schemeStore = useSchemeStore();
@@ -127,7 +134,7 @@ export default defineComponent({
 
     return () => (
       <div ref={containerRef.value} class="network-heat-map">
-        <h3 class="title">网络热力分析</h3>
+        <h3 class="title">网络质量分析</h3>
         <div class="data-switch-panel">
           <div class="data-type-tabs">
             {
@@ -155,7 +162,9 @@ export default defineComponent({
               </span>
             </div>
           </div>
-          <bk-checkbox v-model={isHighlight.value}>高亮服务区域</bk-checkbox>
+          <bk-checkbox v-model={isHighlight.value}>高亮服务区域
+            <info v-bk-tooltips="在用户分布区域中，当前机房最适合服务的区域" class="bk-tooltips-base" />
+          </bk-checkbox>
         </div>
         <div class="idc-data-table">
           <bk-loading loading={idcDataLoading.value} style={{ height: '100%' }}>

@@ -89,7 +89,8 @@ export default defineComponent({
                         <div class={'service-areas-table'}>
                           <Table
                             data={data.service_area_arr}
-                            maxHeight={500}
+                            show-overflow-tooltip
+                            height={500}
                             columns={[
                               {
                                 field: 'country_name_province_name',
@@ -223,7 +224,7 @@ export default defineComponent({
         price: v.price,
         country: v.country,
         service_areas: idcServiceAreasMap.value.get(v.id)?.service_areas?.reduce((acc, cur) => {
-          acc += `${cur.country_name} , ${cur.province_name} ; `;
+          acc += `${cur.country_name},${cur.province_name}; `;
           return acc;
         }, ''),
         ping: idcServiceAreasMap.value.get(v.id)?.avg_latency,
@@ -327,7 +328,7 @@ export default defineComponent({
             isExpanded.value ? '' : 'scheme-preview-table-card-panel-invisable'
           }`}>
           <Loading loading={isLoading.value}>
-            <Table data={tableData.value} columns={columns}>
+            <Table data={tableData.value} columns={columns} show-overflow-tooltip>
               {{
                 empty: () => {
                   if (isLoading.value) return null;
