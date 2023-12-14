@@ -314,7 +314,7 @@ export default defineComponent({
             <div class='title-wrap'>
               <div class='title-text'>业务属性</div>
               {
-                toggleClose.value && <i class='hcm-icon bkhcm-icon-shouqi' onClick={() => (toggleClose.value = !toggleClose.value)}></i>
+                <i class='hcm-icon bkhcm-icon-shouqi' onClick={() => (toggleClose.value = !toggleClose.value)}></i>
               }
             </div>
             <div class='content-wrap'>

@@ -44,7 +44,11 @@
           height: 32px;
           line-height: 32px;
           font-size: 16px;
-          transition: background 0.3s;
+          transition: background-color 0.3s;
+        }
+
+        &:hover {
+          background-color: #eaebf0;
         }
       }
     }

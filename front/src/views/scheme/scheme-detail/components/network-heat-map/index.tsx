@@ -32,14 +32,14 @@ export default defineComponent({
     const idcData = ref<ITableDataItem[]>([]);
     const idcDataLoading = ref(true);
     const IdcAreaDataLoading = ref(true);
-    const activedTab = ref('ping');
+    const activedTab = ref('biz');
     let highlightArea = reactive<IIdcServiceAreaRel[]>([]);
     const avePing = ref(0);
     const containerRef = ref(null);
 
     const TABS = [
-      { id: 'ping', label: '裸 ping 数据' },
       { id: 'biz', label: '业务数据' },
+      { id: 'ping', label: '裸 ping 数据' },
     ];
 
     watch(() => props.idcList, (val) => {

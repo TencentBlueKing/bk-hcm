@@ -327,7 +327,7 @@ export default defineComponent({
             isExpanded.value ? '' : 'scheme-preview-table-card-panel-invisable'
           }`}>
           <Loading loading={isLoading.value}>
-            <Table data={tableData.value} columns={columns}>
+            <Table data={tableData.value} columns={columns} show-overflow-tooltip>
               {{
                 empty: () => {
                   if (isLoading.value) return null;

@@ -55,6 +55,10 @@ export default defineComponent({
         }
         return scheme;
       }));
+      schemeStore.setSchemeData({
+        ...schemeStore.schemeData,
+        name: formData.name,
+      });
       isDialogShow.value = false;
     };
 
