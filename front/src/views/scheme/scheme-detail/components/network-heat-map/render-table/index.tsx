@@ -62,7 +62,7 @@ export default defineComponent({
       },
     );
 
-    const renderValCell = (val: ITableDataItem, idc: IIdcInfo) => {
+    const renderValCell = (val: ITableDataItem, idc: IIdcInfo, countryName = '') => {
       const cellValue = Number(val[idc.name]);
 
       let cls = '';
@@ -83,7 +83,9 @@ export default defineComponent({
               cls = 'no-highlight-cell';
             }
           } else {
-            cls = area.service_areas?.some(item => item.province_name === val.rowName)
+            cls = area.service_areas?.some((item) => {
+              return item.province_name === val.rowName && countryName === item.country_name;
+            })
               ? 'highlight-cell'
               : 'no-highlight-cell';
           }
@@ -146,16 +148,16 @@ export default defineComponent({
                       })}
                     </tr>
                     {!item.isFold && Array.isArray(item.children)
-                      ? item.children.map((item) => {
+                      ? item.children.map((subItem) => {
                         return (
                             <tr>
                               <td class='tbody-col row-name-col'>
                                 <div class='cell'>
-                                  <div class='name-text'>{item.rowName}</div>
+                                  <div class='name-text'>{subItem.rowName}</div>
                                 </div>
                               </td>
                               {props.idcList.map((idc) => {
-                                return renderValCell(item, idc);
+                                return renderValCell(subItem, idc, item.rowName);
                               })}
                             </tr>
                         );
