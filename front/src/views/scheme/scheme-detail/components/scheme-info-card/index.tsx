@@ -4,6 +4,7 @@ import { ISchemeListItem } from '@/typings/scheme';
 import SchemeUserProportionShowDialog from '@/views/scheme/scheme-recommendation/components/scheme-user-proportion-show-dialog';
 
 import './index.scss';
+import { Info } from 'bkui-vue/lib/icon';
 
 export default defineComponent({
   name: 'SchemeInfoCard',
@@ -51,7 +52,7 @@ export default defineComponent({
                   return (
                     <div class='info-item' key={item.id}>
                       <span class='label'>{item.name}：</span>
-                      <span class='value'>
+                      <span class='info-item-value'>
                         {item.id === 'user_rate' ? (
                           <bk-button
                             text
@@ -64,6 +65,10 @@ export default defineComponent({
                         ) : (
                           getValue(item.id)
                         )}
+
+                        {
+                          item.id === 'network' ? <Info v-bk-tooltips={{ content: '用户到 IDC 的网络质量容忍' }} class={'ml6'}/> : ''
+                        }
                       </span>
                     </div>
                   );
