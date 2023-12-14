@@ -1,9 +1,10 @@
-import { defineComponent, reactive, ref, watch, PropType, onMounted } from "vue";
-import { IIdcInfo, IIdcLatencyListItem, IAreaInfo, IIdcServiceAreaRel } from "@/typings/scheme";
-import { useSchemeStore } from "@/store";
-import SearchInput from "../../../components/search-input/index";
+import { defineComponent, reactive, ref, watch, PropType, onMounted } from 'vue';
+import { IIdcInfo, IIdcLatencyListItem, IAreaInfo, IIdcServiceAreaRel } from '@/typings/scheme';
+import { useSchemeStore } from '@/store';
+import SearchInput from '../../../components/search-input/index';
 import RenderTable from './render-table/index';
-
+import { bkTooltips } from 'bkui-vue';
+import { Info } from 'bkui-vue/lib/icon';
 import './index.scss';
 
 interface ITableDataItem {
@@ -12,12 +13,18 @@ interface ITableDataItem {
 }
 
 export default defineComponent({
-  name: 'network-heat-map',
+  name: 'NetworkHeatMap',
   props: {
     idcList: Array as PropType<IIdcInfo[]>,
     areaTopo: Array as PropType<IAreaInfo[]>,
   },
-  setup (props) {
+  components: {
+    Info
+  },
+  directives: {
+    bkTooltips
+  },
+  setup(props) {
     const schemeStore = useSchemeStore();
 
     const searchStr = ref('');
@@ -27,7 +34,7 @@ export default defineComponent({
     const IdcAreaDataLoading = ref(true);
     const activedTab = ref('ping');
     let highlightArea = reactive<IIdcServiceAreaRel[]>([]);
-    let avePing = ref(0);
+    const avePing = ref(0);
     const containerRef = ref(null);
 
     const TABS = [
@@ -35,14 +42,14 @@ export default defineComponent({
       { id: 'biz', label: '业务数据' },
     ];
 
-    watch(() => props.idcList, val => {
+    watch(() => props.idcList, (val) => {
       if (val.length > 0) {
         getTableData();
         getIdcAreaData();
       }
     });
 
-    const getTableData = async() => {
+    const getTableData = async () => {
       try {
         idcDataLoading.value = true;
         let res;
@@ -63,7 +70,7 @@ export default defineComponent({
       activedTab.value = id;
       getTableData();
       getIdcAreaData();
-    }
+    };
 
     // 获取idc区域数据，计算平均延迟以及高亮区域
     const getIdcAreaData  = async () => {
@@ -75,17 +82,17 @@ export default defineComponent({
         return acc + crt.avg_latency;
       }, 0) / res.data.length;
       IdcAreaDataLoading.value = false;
-    }
+    };
 
     const transToTableData = (data: IIdcLatencyListItem[]) => {
       const list: ITableDataItem[] = [];
-      data.forEach(country => {
+      data.forEach((country) => {
         const totalValue = {};
         const regionDataList: ITableDataItem[] = [];
-        country.children.forEach(item => {
+        country.children.forEach((item) => {
           const { name, value } = item;
           regionDataList.push({ rowName: name, ...value });
-          Object.keys(value).forEach(key => {
+          Object.keys(value).forEach((key) => {
             const val = value[key];
             if (!(key in totalValue)) {
               totalValue[key] = val;
@@ -104,8 +111,8 @@ export default defineComponent({
             isCountry: true,
             isFold: false,
             ...averagedValue,
-            children: regionDataList
-          })
+            children: regionDataList,
+          });
         }
       });
       return list;
@@ -116,7 +123,7 @@ export default defineComponent({
       if (country) {
         country.isFold = !country.isFold;
       }
-    }
+    };
 
     onMounted(() => {
       if (props.idcList.length > 0) {
@@ -127,14 +134,16 @@ export default defineComponent({
 
     return () => (
       <div ref={containerRef.value} class="network-heat-map">
-        <h3 class="title">网络热力分析</h3>
+        <h3 class="title">网络质量分析</h3>
         <div class="data-switch-panel">
           <div class="data-type-tabs">
             {
-              TABS.map(tab => {
+              TABS.map((tab) => {
                 return (
-                  <div class={['tab-item', activedTab.value === tab.id ? 'actived' : '']} onClick={() => { handleSwitchTab(tab.id) }}>{tab.label}</div>
-                )
+                  <div class={['tab-item', activedTab.value === tab.id ? 'actived' : '']} onClick={() => {
+                    handleSwitchTab(tab.id);
+                  }}>{tab.label}</div>
+                );
               })
             }
           </div>
@@ -147,24 +156,22 @@ export default defineComponent({
               <span class="value">
                 {
                   IdcAreaDataLoading.value
-                  ?
-                  <bk-loading size="mini" theme="primary" mode="spin" />
-                  :
-                  `${avePing.value.toFixed(2)} ms`
+                    ?                  <bk-loading size="mini" theme="primary" mode="spin" />
+                    :                  `${avePing.value.toFixed(2)} ms`
                 }
               </span>
             </div>
           </div>
-          <bk-checkbox v-model={isHighlight.value}>高亮服务区域</bk-checkbox>
+          <bk-checkbox v-model={isHighlight.value}>高亮服务区域
+            <info v-bk-tooltips="在用户分布区域中，当前机房最适合服务的区域" class="bk-tooltips-base" />
+          </bk-checkbox>
         </div>
         <div class="idc-data-table">
           <bk-loading loading={idcDataLoading.value} style={{ height: '100%' }}>
             {
               idcDataLoading.value
-              ?
-              null
-              :
-              <RenderTable
+                ?              null
+                :              <RenderTable
                 idcList={props.idcList}
                 data={idcData.value}
                 searchStr={searchStr.value}

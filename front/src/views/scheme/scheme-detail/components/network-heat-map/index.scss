@@ -58,6 +58,19 @@
       }
     }
   }
+  
+  .bk-checkbox {
+    .bk-checkbox-label {
+      display: flex;
+      align-items: center;
+
+      .bk-tooltips-base {
+        margin-left: 5px;
+        font-size: 16px;
+        color: #c4c6cc;
+      }
+    } 
+  }
 }
 .idc-data-table {
   margin-top: 22px;
