@@ -1,10 +1,7 @@
 .dynamic-tree-wrap {
   height: calc(100% - 36px);
+  flex: 1;
   overflow: hidden;
-
-  .bk-nested-loading {
-    left: -25px;
-  }
 
   .bk-node-text {
     position: relative;

@@ -1,4 +1,4 @@
-import { defineComponent, onMounted, ref, inject } from "vue";
+import { defineComponent, onMounted, ref, inject, computed } from "vue";
 import { throttle } from "lodash";
 import axios from "axios";
 import './index.scss';
@@ -17,21 +17,34 @@ import LoadBalancerDropdownMenu from "../clb-dropdown-menu";
 export default defineComponent({
   name: "DynamicTree",
   props: {
-    baseUrl: {
+    searchValue: {
       type: String,
       required: true,
     },
-    treeData: {
-      type: Object,
-      required: true,
-    }
   },
-  emits: ["update:treeData"],
-  setup(props, ctx) {
+  setup(props) {
+    const treeData = ref([]);
+    const baseUrl = 'http://localhost:3000';
     const loadingRef = ref();
     const rootPageNum = ref(1);
     const treeRef = inject('treeRef');
     const currentExpandItems: any = inject('currentExpandItems');
+    const searchResultCount: any = inject('searchResultCount');
+    const toggleResultExpand: any = inject('toggleResultExpand');
+
+    const searchOption = computed(() => {
+      return {
+        value: props.searchValue,
+        match: (searchValue: string, itemText: string) => {
+          const result = new RegExp(searchValue, 'g').test(itemText);
+          if (result) {
+            searchResultCount.value++;
+          }
+          return result;
+        },
+        showChildNodes: false,
+      }
+    });
 
     // Intersection Observer 监听器
     const observer = new IntersectionObserver((entries) => {
@@ -58,7 +71,7 @@ export default defineComponent({
      * @param {*} _depth 需要加载数据的节点的深度，取值为：0, 1, 2
      */
     const loadRemoteData = async(_item: any, _depth: number) => {
-      const url = props.baseUrl + `/${!_item ? depthTypeMap[_depth] : depthTypeMap[_depth+1]}`;
+      const url = baseUrl + `/${!_item ? depthTypeMap[_depth] : depthTypeMap[_depth+1]}`;
       const params = { 
         _page: !_item ? rootPageNum.value : _item.pageNum,
         _limit: 50, 
@@ -79,11 +92,11 @@ export default defineComponent({
       })
       
       if (!_item) {
-        const _treeData = [...props.treeData, ..._increamentNodes];
+        const _treeData = [...treeData.value, ..._increamentNodes];
         if (_treeData.length < res2.data.length) {
-          ctx.emit('update:treeData',  [..._treeData, {type: "loading"}]);
+          treeData.value = [..._treeData, {type: "loading"}];
         } else {
-          ctx.emit('update:treeData', _treeData);
+          treeData.value = _treeData;
         }
       } else {
         _item.children = [..._item.children, ..._increamentNodes];
@@ -108,7 +121,7 @@ export default defineComponent({
         //3.请求下一页数据
         loadRemoteData(data._parent, attributes.fullPath.split("-").length-2);
       } else {
-        ctx.emit('update:treeData', props.treeData.slice(0, -1));
+        treeData.value = treeData.value.slice(0, -1);
         rootPageNum.value++;
         loadRemoteData(null, 0);
       }
@@ -120,6 +133,7 @@ export default defineComponent({
      */
     const handleNodeExpand = (_item: any) => {
       currentExpandItems.value.push(_item);
+      toggleResultExpand.value = currentExpandItems.value.some((item: any) => !item.isOpen);
     }
 
     /**
@@ -129,6 +143,7 @@ export default defineComponent({
     const handleNodeCollapse = (_item: any) => {
       if (_item.type === 'clb') currentExpandItems.value = [];
       else currentExpandItems.value = currentExpandItems.value.filter((item: any) => item !== _item);
+      toggleResultExpand.value = currentExpandItems.value.every((item: any) => item.isOpen);
     }
 
     onMounted(() => {
@@ -138,12 +153,12 @@ export default defineComponent({
 
     return () => (
       <div class='dynamic-tree-wrap'>
-        <bk-tree ref={treeRef} data={props.treeData} label="name" children="children" level-line virtual-render line-height={36}
-          node-content-action={['selected', 'click']}
-          onScroll={throttle(() => { loadingRef.value && observer.observe(loadingRef.value.$el); }, 300)}
+        <bk-tree ref={treeRef} data={treeData.value} label="name" children="children" level-line virtual-render line-height={36} 
+          node-content-action={['selected', 'click']} search={searchOption.value}
+          onScroll={props.searchValue ? null : throttle(() => { loadingRef.value && observer.observe(loadingRef.value.$el); }, 300)}
           onNodeExpand={handleNodeExpand} onNodeCollapse={handleNodeCollapse}
-          async={{ 
-            callback: (_item: any, _callback: Function, _schema: any) => { 
+          async={props.searchValue ? null : { 
+            callback: (_item: any, _callback: Function, _schema: any) => {
               // 异步加载当前点击节点的 children node
               loadRemoteData(_item, _schema.fullPath.split("-").length-1); 
             }, 
@@ -164,7 +179,11 @@ export default defineComponent({
               return (
                 <>
                   <div class='left-wrap'>
-                    {data.name}
+                    {
+                      props.searchValue 
+                        ? <span v-html={data.name?.replace(new RegExp(props.searchValue, 'g'), `<font color='#3A84FF'>${props.searchValue}</font>`)}></span>
+                        : data.name
+                    }
                     {
                       attributes.fullPath.split("-").length === 3 && <bk-tag class='tag' theme="warning" radius="2px">默认</bk-tag>
                     }
