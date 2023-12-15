@@ -11,7 +11,7 @@ export default defineComponent({
     type: {
       type: String,
       required: true,
-    }
+    },
   },
   setup(props) {
     const typeMenuMap = {
@@ -36,8 +36,8 @@ export default defineComponent({
     };
 
     return () => (
-      <bk-dropdown key={props.uuid} class='more-action' trigger='click' placement='bottom-start' onClick={(e: MouseEvent) => { 
-        e.stopPropagation(); 
+      <bk-dropdown key={props.uuid} class='more-action' trigger='click' placement='right-start' onClick={(e: MouseEvent) => {
+        e.stopPropagation();
       }}>
         {{
           default: () => <i class='hcm-icon bkhcm-icon-more-fill'></i>,
