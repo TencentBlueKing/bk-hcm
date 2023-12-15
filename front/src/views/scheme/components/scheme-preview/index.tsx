@@ -82,7 +82,7 @@ export default defineComponent({
         </div>
         <div class={'scheme-preview-content'}>
           {schemeStore.recommendationSchemes.length > 0
-            ? schemeStore.recommendationSchemes.filter(({ cover_rate }) => cover_rate >= 0.65).map((
+            ? schemeStore.recommendationSchemes.map((
               { composite_score, cost_score, net_score, result_idc_ids, cover_rate, id },
               idx,
             ) => (

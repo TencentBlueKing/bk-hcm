@@ -85,7 +85,7 @@ export default defineComponent({
       const res: IGenerateSchemesResData = await schemeStore.generateSchemes(formData);
       schemeStore.setSchemeConfig(formData.cover_ping, formData.biz_type, formData.deployment_architecture);
       generateSchemesLoading.value = false;
-      schemeStore.setRecommendationSchemes(res.data.map((item, idx) => ({
+      schemeStore.setRecommendationSchemes(res.data.filter(({ cover_rate }) => cover_rate >= 0.65).map((item, idx) => ({
         ...item,
         id: `${idx}`,
         name: `方案${idx + 1}`,

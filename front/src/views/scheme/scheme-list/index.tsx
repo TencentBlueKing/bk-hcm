@@ -58,7 +58,7 @@ export default defineComponent({
     const filterConfigs = reactive<{ field: string; value: string[] }[]>([]);
     const searchData = ref([
       { id: 'name', name: '方案名称' },
-      { id: 'bk_biz_id', name: '业务id' },
+      // { id: 'bk_biz_id', name: '业务id' },
       { id: 'creator', name: '创建人' },
     ]);
     const {

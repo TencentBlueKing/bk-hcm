@@ -20,6 +20,7 @@
       color: #63656E;
       // margin-left: 13.31px;
       margin-right: 12px;
+      white-space: nowrap;
     }
 
     .scheme-preview-table-card-header-tag {
@@ -48,6 +49,7 @@
 
     .scheme-preview-table-card-header-operation {
       margin-left: auto;
+      display: flex;
     }
   }
 
