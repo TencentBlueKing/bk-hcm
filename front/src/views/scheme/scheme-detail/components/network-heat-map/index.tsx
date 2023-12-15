@@ -198,20 +198,20 @@ export default defineComponent({
             <info style={{marginLeft: '5px', fontSize: '16px', cursor: 'pointer', color:' #c4c6cc'}} v-bk-tooltips={{content: "在用户分布地区中，当前机房最适合服务的区域", placement: 'top-start'}} />
           </div>
         </div>
-        <div class='idc-data-table'>
-          <bk-loading loading={idcDataLoading.value} style={{ height: '100%' }}>
-            {idcDataLoading.value ? null : (
-              <RenderTable
-                idcList={props.idcList}
-                data={idcData.value}
-                searchStr={searchStr.value}
-                isHighlight={isHighlight.value}
-                highlightArea={highlightArea}
-                onToggleFold={handleToggleCountry}
-              />
-            )}
-          </bk-loading>
-        </div>
+        <bk-loading loading={idcDataLoading.value} opacity={1} style={{ height: 'calc(100% - 140px)' }}>
+          <div class='idc-data-table'>
+              {idcDataLoading.value ? null : (
+                <RenderTable
+                  idcList={props.idcList}
+                  data={idcData.value}
+                  searchStr={searchStr.value}
+                  isHighlight={isHighlight.value}
+                  highlightArea={highlightArea}
+                  onToggleFold={handleToggleCountry}
+                />
+              )}
+          </div>
+        </bk-loading>
       </div>
     );
   },
