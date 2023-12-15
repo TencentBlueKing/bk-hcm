@@ -326,11 +326,7 @@ func (svc *service) buildALgIn(cts *rest.Contexts, req *csselection.GenSchemeReq
 	userDistribution := map[string]float64{}
 	pingInfo := make(map[string]map[string]float64, len(req.UserDistributions))
 
-	tableName := svc.cfg.TableNames.RecommendDataSource
-	if tableName == "" {
-		tableName = svc.cfg.TableNames.LatencyPingProvinceIdc
-	}
-	allProvinceData, err := svc.listAllAvgProvincePingData(cts.Kit, tableName, notBefore, idcBizID,
+	allProvinceData, err := svc.listAllAvgProvincePingData(cts.Kit, svc.getRecommendDataSource(), notBefore, idcBizID,
 		converter.MapKeyToStringSlice(idcByName))
 	if err != nil {
 		logs.Errorf("fail to get avg ping data, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -369,4 +365,12 @@ func (svc *service) buildALgIn(cts *rest.Contexts, req *csselection.GenSchemeReq
 		PickIdcList:     []string{},
 	}
 	return algIn, nil
+}
+
+func (svc *service) getRecommendDataSource() string {
+	tableName := svc.cfg.TableNames.RecommendDataSource
+	if tableName == "" {
+		tableName = svc.cfg.TableNames.LatencyPingProvinceIdc
+	}
+	return tableName
 }
