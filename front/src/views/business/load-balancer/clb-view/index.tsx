@@ -8,32 +8,40 @@ import LoadBalancerDropdownMenu from '../components/clb-dropdown-menu';
 export default defineComponent({
   name: 'LoadBalancerView',
   setup() {
-    const treeRef = ref();
-    const currentExpandItems = ref([]);
-    const lastExpandItems = ref([]);
+    const treeData = ref([]);
+    provide('treeData', treeData);
     const isAdvancedSearchShow = ref(false);
-    provide('treeRef', treeRef);
-    provide('currentExpandItems', currentExpandItems);
 
     const searchValue = ref('');
     const searchResultCount = ref(0);
-    const toggleResultExpand = ref(true);
     provide('searchResultCount', searchResultCount);
-    provide('toggleResultExpand', toggleResultExpand);
 
-    const handleToggleResultExpand = (isExpand: boolean) => {
-      toggleResultExpand.value = isExpand;
-      if (isExpand) {
-        lastExpandItems.value.forEach(node => { treeRef.value.setNodeOpened(node, isExpand); }) 
-        lastExpandItems.value = [];
-      } else {
-        lastExpandItems.value = currentExpandItems.value;
-        currentExpandItems.value.forEach(node => { treeRef.value.setNodeOpened(node, isExpand); }) 
-      }
+    const toggleExpand = ref(false);
+    const handleToggleResultExpand = (isOpen: boolean, shallow?: boolean) => {
+      toggleExpand.value = !isOpen;
+      treeData.value = treeData.value.map((item) => {
+        item.isOpen = isOpen;
+        if (!shallow && item.children?.length) {
+          item.children = item.children.map((subItem: any) => {
+            subItem.isOpen = isOpen;
+            return subItem;
+          });
+        }
+        return item;
+      });
     }
 
     watch(searchValue, () => {
       searchResultCount.value = 0;
+    })
+
+    watch(searchResultCount, (val) => {
+      console.log(val);
+      if (val <= 20) {
+        handleToggleResultExpand(true, true);
+      } else {
+        handleToggleResultExpand(false);
+      }
     })
 
     return () => (
@@ -50,11 +58,10 @@ export default defineComponent({
                   <div class='search-result-wrap'>
                     <span class='left-text'>共 {searchResultCount.value} 条搜索结果</span>
                     {
-                      currentExpandItems.value.length && toggleResultExpand.value
-                        ? ( <span class='right-text' onClick={() => handleToggleResultExpand(false)}>全部收起</span> )
-                        : ( <span class='right-text' onClick={() => handleToggleResultExpand(true)}>全部展开</span> )
+                      toggleExpand.value 
+                        ? <span class='right-text' onClick={() => handleToggleResultExpand(true)}>全部展开</span>
+                        : <span class='right-text' onClick={() => handleToggleResultExpand(false)}>全部收起</span>
                     }
-                    
                   </div>
                 ) : null) 
                 : (
@@ -77,34 +84,7 @@ export default defineComponent({
           isAdvancedSearchShow.value && <div class='advanced-search'>高级搜索</div>
         }
         <div class='main-container'>
-          <bk-button style={{margin: '0 10px 10px 0'}} theme='primary' onClick={() => {
-            currentExpandItems.value.length && treeRef.value.setNodeOpened(currentExpandItems.value.pop(), false);
-            }}>
-            收起当前节点，支持逐级级收起
-          </bk-button>
-          <bk-button theme='warning' onClick={() => {
-            currentExpandItems.value.length && currentExpandItems.value.forEach(node => {
-              treeRef.value.setNodeOpened(node, false);
-            })
-          }}>
-            收起全部节点
-          </bk-button>
-          <div>
-            <p>当前展开的节点记录如下：</p>
-            {
-              currentExpandItems.value.map((item) => {
-                return <p style={{paddingLeft: '2em'}}>{item.name}</p>
-              })
-            }
-          </div>
-          <div>
-            <p>上次全部收起的节点记录如下：</p>
-            {
-              lastExpandItems.value.map((item) => {
-                return <p style={{paddingLeft: '2em'}}>{item.name}</p>
-              })
-            }
-          </div>
+          
         </div>
       </div>
     );

@@ -23,14 +23,12 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const treeData = ref([]);
+    const treeData: any = inject('treeData');
     const baseUrl = 'http://localhost:3000';
     const loadingRef = ref();
     const rootPageNum = ref(1);
     const treeRef = inject('treeRef');
-    const currentExpandItems: any = inject('currentExpandItems');
     const searchResultCount: any = inject('searchResultCount');
-    const toggleResultExpand: any = inject('toggleResultExpand');
 
     const searchOption = computed(() => {
       return {
@@ -127,25 +125,6 @@ export default defineComponent({
       }
     }
     
-    /**
-     * 节点展开时触发的事件
-     * @param _item 触发事件的节点
-     */
-    const handleNodeExpand = (_item: any) => {
-      currentExpandItems.value.push(_item);
-      toggleResultExpand.value = currentExpandItems.value.some((item: any) => !item.isOpen);
-    }
-
-    /**
-     * 节点收起时触发的事件
-     * @param _item 触发事件的节点
-     */
-    const handleNodeCollapse = (_item: any) => {
-      if (_item.type === 'clb') currentExpandItems.value = [];
-      else currentExpandItems.value = currentExpandItems.value.filter((item: any) => item !== _item);
-      toggleResultExpand.value = currentExpandItems.value.every((item: any) => item.isOpen);
-    }
-
     onMounted(() => {
       // 组件挂载，加载 root node
       loadRemoteData(null, 0);
@@ -156,7 +135,6 @@ export default defineComponent({
         <bk-tree ref={treeRef} data={treeData.value} label="name" children="children" level-line virtual-render line-height={36} 
           node-content-action={['selected', 'click']} search={searchOption.value}
           onScroll={props.searchValue ? null : throttle(() => { loadingRef.value && observer.observe(loadingRef.value.$el); }, 300)}
-          onNodeExpand={handleNodeExpand} onNodeCollapse={handleNodeCollapse}
           async={props.searchValue ? null : { 
             callback: (_item: any, _callback: Function, _schema: any) => {
               // 异步加载当前点击节点的 children node
