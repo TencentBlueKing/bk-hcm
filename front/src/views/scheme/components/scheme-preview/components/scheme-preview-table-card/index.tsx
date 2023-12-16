@@ -72,7 +72,7 @@ export default defineComponent({
         field: 'service_areas',
         label: '服务区域',
         render: ({ cell, data }: any) => {
-          return (
+          return data.service_area_arr?.length ? (
             <p class={'flex-row align-items-center service-areas-paragraph'}>
               <PopConfirm
                 trigger='click'
@@ -125,9 +125,9 @@ export default defineComponent({
                   ),
                 }}
               </PopConfirm>
-              <span v-bk-tooltips={{content: cell, placement: 'top-start'}} >{cell}</span>
+              <span v-bk-tooltips={{ content: cell, placement: 'top-start' }} >{cell}</span>
             </p>
-          );
+          ) : '--';
         },
       },
       {
