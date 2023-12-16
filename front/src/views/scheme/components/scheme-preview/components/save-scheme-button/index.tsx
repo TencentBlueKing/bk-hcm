@@ -5,7 +5,7 @@ import { Button, Dialog, Form, Input, Message } from 'bkui-vue';
 // import AppSelect from '@blueking/app-select';
 // import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useSchemeStore } from '@/store';
-// import { debounce } from 'lodash-es';
+import { debounce } from 'lodash-es';
 import { QueryFilterType, QueryRuleOPEnum } from '@/typings';
 
 const { FormItem } = Form;
@@ -30,6 +30,7 @@ export default defineComponent({
 
     const handleConfirm = async () => {
       await checkNameIsDuplicate();
+      if (isNameDuplicate.value) return;
       await formInstance.value.validate();
       const saveData = {
         ...formData,
@@ -110,16 +111,22 @@ export default defineComponent({
                 message: '方案名称不能为空',
                 validator: (val: string) => val.trim().length,
               },
-              {
-                trigger: 'change',
-                message: '方案名称与已存在的方案名重复',
-                validator: () => !isNameDuplicate.value,
-              },
             ],
           }}>
             <FormItem label='方案名称' required property='name'>
-              {/* <Input v-model={formData.name} maxlength={28} onInput={debounce(checkNameIsDuplicate, 300)}/> */}
-              <Input v-model={formData.name} maxlength={28}/>
+              <Input v-model={formData.name} maxlength={28} onInput={debounce(checkNameIsDuplicate, 300)}/>
+              {
+                isNameDuplicate.value
+                  ? (
+                    <span style={{
+                      color: '#ea3636',
+                      fontSize: '12px',
+                    }}>
+                      方案名称与已存在的方案名重复
+                    </span>
+                  )
+                  : null
+              }
             </FormItem>
             {/* <FormItem label='标签' property='bk_biz_id'>
               <AppSelect
