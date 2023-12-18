@@ -38,24 +38,24 @@ export default () => {
     },
   );
 
-  const handleSelectionChange = (selection: SelectionType, isCurRowSelectEnable: (row: any) => void) => {
+  const handleSelectionChange = (selection: SelectionType, isCurRowSelectEnable: (row: any) => void, isAll = false) => {
     console.log(666, selection);
     // 全选
-    if (selection.isAll && selection.checked) {
+    if (isAll && selection.checked) {
       selections.value = JSON.parse(JSON.stringify(selection.data));
       selections.value = selections.value.filter(row => isCurRowSelectEnable(row));
       console.log(66666, selections.value);
     }
     // 取消全选
-    if (selection.isAll && !selection.checked) {
+    if (isAll && !selection.checked) {
       selections.value = [];
     }
     // 选择某一个
-    if (!selection.isAll && selection.checked) {
+    if (!isAll && selection.checked) {
       selections.value.push(selection.row);
     }
     // 取消选择某一个
-    if (!selection.isAll && !selection.checked) {
+    if (!isAll && !selection.checked) {
       const index = selections.value.findIndex(item => item === selection.row);
       selections.value.splice(index, 1);
     }

@@ -295,7 +295,8 @@ const isCurRowSelectEnable = (row: any) => {
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
       @column-sort="handleSort"
-      @selection-change="(selections) => handleSelectionChange(selections, isCurRowSelectEnable)"
+      @selection-change="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable)"
+      @select-all="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true)"
       row-key="id"
     />
   </bk-loading>
