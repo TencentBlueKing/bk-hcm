@@ -331,7 +331,7 @@ const renderColumns = [
         {{ curVpc.name || '--' }}
       </bk-form-item>
       <bk-form-item label="管控区名称">
-        <bk-select v-model="curCloudArea">
+        <bk-select v-model="curCloudArea" :input-search="false" filterable>
           <bk-option
             v-for="(item, index) in cloudAreaList"
             :key="index"
