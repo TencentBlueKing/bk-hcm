@@ -90,7 +90,7 @@ export default defineComponent({
                           <Table
                             data={data.service_area_arr}
                             show-overflow-tooltip
-                            height={500}
+                            maxHeight={500}
                             columns={[
                               {
                                 field: 'country_name_province_name',
