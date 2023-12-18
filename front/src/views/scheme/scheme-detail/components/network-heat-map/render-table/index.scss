@@ -1,31 +1,60 @@
 .render-table-comp {
   height: 100%;
   table {
-    border-collapse: collapse;
     table-layout: fixed;
+    border-collapse: collapse;
     width: 100%;
-    border: 1px solid #DCDEE5;
     th,
     td {
+      position: relative;
       min-width: 100px;
       height: 42px;
       font-size: 12px;
       text-align: center;
-      border-right: 1px solid #DCDEE5;
-      border-bottom: 1px solid #DCDEE5;
-      &:first-child {
-        position: sticky;
-        left: 0;
-        z-index: 1;
+      // 底部border
+      &:before {
+        content: '';
+        display: block;
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        height: 1px;
+        width: 100%;
+        background: linear-gradient(0deg, transparent 50%, #DCDEE5 50%);
+      }
+      // 右侧border
+      &:not(:last-child) {
+        &:after {
+          content: '';
+          display: block;
+          position: absolute;
+          top: 0;
+          right: 0;
+          width: 1px;
+          height: 100%;
+          background: linear-gradient(90deg, transparent 50%, #DCDEE5 50%);
+        }
       }
     }
-    .thead-col {
+    tbody tr:last-child td:before {
+      background: none;
+    }
+    th {
       position: sticky;
       top: 0;
       font-weight: normal;
       color: #313238;
       background: #FAFBFD;
+      z-index: 3;
       &:first-child {
+        left: 0;
+        z-index: 4;
+      }
+    }
+    td {
+      &:first-child {
+        position: sticky;
+        left: 0;
         z-index: 2;
       }
     }
@@ -64,6 +93,7 @@
         font-size: 14px;
         font-weight: 700;
         color: #313238;
+        box-shadow: inset;
         .arrow-icon {
           margin-right: 4px;
           font-size: 12px;
