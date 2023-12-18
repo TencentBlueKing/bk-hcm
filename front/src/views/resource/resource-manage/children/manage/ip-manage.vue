@@ -238,6 +238,7 @@ defineExpose({ fetchComponentsData });
       @page-value-change="handlePageChange"
       @column-sort="handleSort"
       @selection-change="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable)"
+      @select-all="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true)"
       row-key="id"
     />
   </bk-loading>
