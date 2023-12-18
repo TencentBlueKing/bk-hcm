@@ -334,6 +334,7 @@ getCloudAreas();
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
       @selection-change="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable)"
+      @select-all="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true)"
       @column-sort="handleSort"
       row-key="id"
     />

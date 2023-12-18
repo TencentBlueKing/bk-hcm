@@ -306,6 +306,7 @@ const renderColumns = [
       :is-row-select-enable="isRowSelectEnable"
       show-overflow-tooltip
       @selection-change="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable)"
+      @select-all="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true)"
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
       @column-sort="handleSort"
