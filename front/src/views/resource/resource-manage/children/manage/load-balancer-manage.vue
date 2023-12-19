@@ -1,89 +1,84 @@
 <template>
-   <bk-loading :loading="isLoading">
-  <section>
-    <div
-      class="flex-row operate-warp justify-content-between align-items-center mb20"
-    >
-      <div>
-        <bk-button theme="primary">
-          {{ t('购买') }}
-        </bk-button>
-        <bk-button style="margin-left: 10px">
-          {{ t('分配') }}
-        </bk-button>
-        <bk-button style="margin-left: 10px">
-          {{ t('批量删除') }}
-        </bk-button>
-      </div>
-
+  <bk-loading :loading="isLoading">
+    <section>
       <div
-        class="flex-row input-warp justify-content-between align-items-center"
+        class="flex-row operate-warp justify-content-between align-items-center mb20"
       >
-        <bk-search-select
-          class="w500 ml10 mr15"
-          clearable
-          :conditions="[]"
-          :data="loadSearchData"
-          v-model="searchValue"
-        />
+        <div>
+          <bk-button theme="primary">
+            {{ t('购买') }}
+          </bk-button>
+          <bk-button style="margin-left: 10px">
+            {{ t('分配') }}
+          </bk-button>
+          <bk-button style="margin-left: 10px">
+            {{ t('批量删除') }}
+          </bk-button>
+        </div>
+
+        <div
+          class="flex-row input-warp justify-content-between align-items-center"
+        >
+          <bk-search-select
+            class="w500 ml10 mr15"
+            clearable
+            :conditions="[]"
+            :data="loadSearchData"
+            v-model="searchValue"
+          />
+        </div>
       </div>
-    </div>
-  </section>
- 
+    </section>
+
+    <bk-table
+      class="mt20"
+      row-hover="auto"
+      :columns="distribColumns"
+      :data="datas"
+      :settings="tableSettings"
+      :pagination="pagination"
+      remote-pagination
+      show-overflow-tooltip
+      row-key="id"
+    />
+
+    <bk-dialog
+      width="820"
+      :title="t('主机分配')"
+      theme="primary"
+      quick-close
+      @confirm="handleDistributionConfirm"
+    >
+      <section class="distribution-cls">
+        目标业务
+        <bk-select class="ml20" filterable>
+          <bk-option />
+        </bk-select>
+      </section>
       <bk-table
         class="mt20"
         row-hover="auto"
         :columns="distribColumns"
-        :data="datas"
-        :settings="tableSettings"
-        :pagination="pagination"
-        remote-pagination
+        :data="selections"
         show-overflow-tooltip
-        row-key="id"
       />
+    </bk-dialog>
 
-      <bk-dialog 
-        width="820" :title="t('主机分配')" 
-        theme="primary"
-        quick-close
-        @confirm="handleDistributionConfirm">
-        <section class="distribution-cls">
-          目标业务
-          <bk-select 
-          class="ml20" 
-          filterable>
-            <bk-option 
-            
-            />
-          </bk-select>
-        </section>
-        <bk-table
-          class="mt20"
-          row-hover="auto"
-          :columns="distribColumns"
-          :data="selections"
-          show-overflow-tooltip
-        />
-      </bk-dialog>
-
-      <bk-dialog
-        :is-show="isDialogShow"
-        title="主机分配"
-        :theme="'primary'"
-        quick-close
-      >
-        <p class="selected-host-count-tip">
-          已选择
-          <span class="selected-host-count">{{ selections.length }}</span>
-          台主机，可选择所需分配的目标业务
-        </p>
-        <p class="mb6">目标业务</p>
-        <business-selector
-          class="mb32"
-        >
-        </business-selector>
-      </bk-dialog>
-    </bk-loading>
+    <bk-dialog
+      :is-show="isDialogShow"
+      title="主机分配"
+      :theme="'primary'"
+      quick-close
+    >
+      <p class="selected-host-count-tip">
+        已选择
+        <span class="selected-host-count">{{ selections.length }}</span>
+        台主机，可选择所需分配的目标业务
+      </p>
+      <p class="mb6">目标业务</p>
+      <business-selector class="mb32"></business-selector>
+    </bk-dialog>
+  </bk-loading>
 </template>
 
 <script setup lang="ts">
@@ -247,8 +242,8 @@ const distribColumns = [
     field: 'state',
   },
   {
-      label: '分配状态',
-      field: 'fpstate',
+    label: '分配状态',
+    field: 'fpstate',
   },
   {
     label: '所属网络',
