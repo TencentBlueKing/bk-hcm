@@ -63,7 +63,6 @@ export default defineComponent({
         class='user-proportion-detail-dialog'
         isShow={props.isShow}
         title='分布权重占比'
-        quickClose={false}
         onClosed={() => toggleShow(false)}>
         <div class='tips-wrap mb16'>
           <i class='hcm-icon bkhcm-icon-info-line'></i>

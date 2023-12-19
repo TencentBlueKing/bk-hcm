@@ -1,9 +1,12 @@
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0013,HCMVER=v1.3.0
 
     Notes:
     1. 添加云选型方案表
 */
+
+START TRANSACTION;
+
 create table if not exists `cloud_selection_scheme`
 (
     `id`                      varchar(64)  not null,
@@ -71,3 +74,8 @@ create table if not exists `cloud_selection_idc`
 
 insert into id_generator(`resource`, `max_id`)
 values ('cloud_selection_idc', '0');
+
+CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
+SELECT 'v1.3.0' as `hcm_ver`, '0013' as `sql_ver`;
+
+COMMIT

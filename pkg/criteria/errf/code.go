@@ -59,4 +59,6 @@ const (
 	UserNoAppAccess int32 = 2000009
 	// RecordNotUpdate DB数据一行都没有被更新
 	RecordNotUpdate int32 = 2000010
+	// RecordDuplicated 数据重复，对应 MySQL Error 1062 (23000)
+	RecordDuplicated int32 = 2000011
 )

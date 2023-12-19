@@ -122,6 +122,17 @@ func (svc *service) CreateScheme(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
+	// 尝试注册创建者权限
+	regCreatorReq := &meta.RegisterResCreatorActionInst{
+		Type: meta.CloudSelectionScheme.String(),
+		ID:   result.ID,
+		Name: req.Name,
+	}
+
+	if err := svc.authorizer.RegisterResourceCreatorAction(cts.Kit, regCreatorReq); err != nil {
+		return nil, err
+	}
+
 	return result, nil
 }
 
@@ -326,8 +337,8 @@ func (svc *service) buildALgIn(cts *rest.Contexts, req *csselection.GenSchemeReq
 	userDistribution := map[string]float64{}
 	pingInfo := make(map[string]map[string]float64, len(req.UserDistributions))
 
-	allProvinceData, err := svc.listAllAvgProvincePingData(cts.Kit, svc.cfg.TableNames.LatencyPingProvinceIdc,
-		notBefore, idcBizID, converter.MapKeyToStringSlice(idcByName))
+	allProvinceData, err := svc.listAllAvgProvincePingData(cts.Kit, svc.getRecommendDataSource(), notBefore, idcBizID,
+		converter.MapKeyToStringSlice(idcByName))
 	if err != nil {
 		logs.Errorf("fail to get avg ping data, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -365,4 +376,12 @@ func (svc *service) buildALgIn(cts *rest.Contexts, req *csselection.GenSchemeReq
 		PickIdcList:     []string{},
 	}
 	return algIn, nil
+}
+
+func (svc *service) getRecommendDataSource() string {
+	tableName := svc.cfg.TableNames.RecommendDataSource
+	if tableName == "" {
+		tableName = svc.cfg.TableNames.LatencyPingProvinceIdc
+	}
+	return tableName
 }

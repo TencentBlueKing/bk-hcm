@@ -86,6 +86,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .bkhcm-icon-fenxiang:before {
 	content: "\e11e";
 }
+.bkhcm-icon-jiantou_fanhui:before {
+	content: "\e14c";
+}
 .bkhcm-icon-arrows--right--line:before {
 	content: "\e106";
 }

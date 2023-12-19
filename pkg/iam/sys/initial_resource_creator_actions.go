@@ -50,6 +50,10 @@ func GenerateResourceCreatorActions() client.ResourceCreatorActions {
 						ID:         CloudSelectionSchemeEdit,
 						IsRequired: false,
 					},
+					{
+						ID:         CloudSelectionSchemeDelete,
+						IsRequired: false,
+					},
 				},
 				SubResourceTypes: nil,
 			},

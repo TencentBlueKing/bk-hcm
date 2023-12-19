@@ -92,12 +92,16 @@ func (dao SchemeDao) Create(kt *kit.Kit, model *tableselection.SchemeTable) (str
 	}
 	model.ID = id
 
-	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, model.TableName(), tableselection.SchemeTableColumns.ColumnExpr(),
-		tableselection.SchemeTableColumns.ColonNameExpr())
+	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, model.TableName(),
+		tableselection.SchemeTableColumns.ColumnExpr(), tableselection.SchemeTableColumns.ColonNameExpr())
 
 	err = dao.Orm.Do().Insert(kt.Ctx, sql, model)
 	if err != nil {
-		logs.Errorf("insert %s failed, err: %v, sql: %s, model: %+v, rid: %s", err, sql, model, kt.Rid)
+		if em := errf.GetMySQLDuplicated(err); em != nil {
+			return "", errf.New(errf.RecordDuplicated, em.Message)
+		}
+		logs.Errorf("insert %s failed, err: %v, sql: %s, model: %+v, rid: %s",
+			model.TableName(), err, sql, model, kt.Rid)
 		return "", fmt.Errorf("insert %s failed, err: %v", model.TableName(), err)
 	}
 
