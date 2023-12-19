@@ -1,20 +1,19 @@
-import { defineComponent, PropType, reactive, ref  } from "vue";
+import { defineComponent, PropType, reactive, ref  } from 'vue';
 import { useRouter } from 'vue-router';
-import { ArrowsLeft, AngleUpFill, EditLine } from "bkui-vue/lib/icon";
-import { Popover } from "bkui-vue";
-import { useSchemeStore } from "@/store";
+import { ArrowsLeft, AngleUpFill, EditLine } from 'bkui-vue/lib/icon';
+import { Popover } from 'bkui-vue';
+import { useSchemeStore } from '@/store';
 import { ISchemeSelectorItem } from '@/typings/scheme';
 import { DEPLOYMENT_ARCHITECTURE_MAP } from '@/constants';
-import SchemeEditDialog from "../scheme-edit-dialog";
-import CloudServiceTag from "../cloud-service-tag";
+import SchemeEditDialog from '../scheme-edit-dialog';
+import CloudServiceTag from '../cloud-service-tag';
 
 import './index.scss';
-import PermissionDialog from "@/components/permission-dialog";
-import { useVerify } from "@/hooks";
+import PermissionDialog from '@/components/permission-dialog';
+import { useVerify } from '@/hooks';
 
 export default defineComponent({
-  name: 'scheme-selector',
-  emits: ['update'],
+  name: 'SchemeSelector',
   props: {
     schemeList: Array as PropType<ISchemeSelectorItem[]>,
     schemeListLoading: Boolean,
@@ -24,9 +23,10 @@ export default defineComponent({
     onBack: {
       type: Function,
       required: false,
-    }
+    },
   },
-  setup (props, ctx) {
+  emits: ['update'],
+  setup(props, ctx) {
     const schemeStore = useSchemeStore();
     const router = useRouter();
 
@@ -49,19 +49,20 @@ export default defineComponent({
       } else {
         router.push({ name: 'scheme-list' });
       }
-    }
+    };
 
     const handleSelect = (scheme: ISchemeSelectorItem) => {
       if (scheme.id !== props.schemeData.id) {
         if (typeof props.selectFn === 'function') {
-          props.selectFn(scheme)
+          props.selectFn(scheme);
+          setTimeout(() => isSelectorOpen.value = false, 800);
         } else {
-          router.push({ name: 'scheme-detail', query: { sid: scheme.id } })
+          router.push({ name: 'scheme-detail', query: { sid: scheme.id } });
         }
       }
     };
 
-    const saveSchemeFn = (data:{ name: string; bk_biz_id: number; }) => {
+    const saveSchemeFn = (data: { name: string; bk_biz_id: number; }) => {
       editedSchemeData = data;
       return schemeStore.updateCloudSelectionScheme(props.schemeData.id, data);
     };
@@ -69,7 +70,7 @@ export default defineComponent({
     const handleConfirm = () => {
       isEditDialogOpen.value = false;
       ctx.emit('update', editedSchemeData);
-    }
+    };
 
     return () => (
       <>
@@ -81,8 +82,13 @@ export default defineComponent({
             placement="bottom-start"
             trigger="click"
             arrow={false}
-            onAfterShow={() => { isSelectorOpen.value = true }}
-            onAfterHidden={() => { isSelectorOpen.value = false }}>
+            isShow={isSelectorOpen.value}
+            onAfterShow={() => {
+              isSelectorOpen.value = true;
+            }}
+            onAfterHidden={() => {
+              isSelectorOpen.value = false;
+            }}>
             {{
               default: () => (
                 <div class={['selector-trigger', isSelectorOpen.value ? 'opened' : '']}>
@@ -94,14 +100,14 @@ export default defineComponent({
                 <div class="scheme-list">
                   {
                     props.schemeListLoading
-                      ?
-                      <bk-loading loading={true}/>
-                      :
-                      props.schemeList.map(scheme => {
+                      ?                      <bk-loading loading={true}/>
+                      :                      props.schemeList.map((scheme) => {
                         return (
                           <div
                             class={['scheme-item', scheme.id === props.schemeData.id ? 'actived' : '']}
-                            onClick={() => { handleSelect(scheme) }}>
+                            onClick={() => {
+                              handleSelect(scheme);
+                            }}>
                             <div class="scheme-name-area">
                               <div class="name-text">{scheme.name}</div>
                               <div class="tag-list">
@@ -115,8 +121,8 @@ export default defineComponent({
                                     )
                                 }
                                 {
-                                  scheme.vendors?.map(item => {
-                                    return (<CloudServiceTag class="tag-item" key={item} type={item} showIcon={true} />)
+                                  scheme.vendors?.map((item) => {
+                                    return (<CloudServiceTag class="tag-item" key={item} type={item} showIcon={true} />);
                                   })
                                 }
                               </div>
@@ -132,15 +138,15 @@ export default defineComponent({
                               </div>
                               <div class="score-item">
                                 <span class="label">成本评分：</span>
-                                <span class="value">$ {scheme.cost_score}</span>
+                                <span class="value">{scheme.cost_score}</span>
                               </div>
                             </div>
                           </div>
-                        )
-                      }) 
+                        );
+                      })
                   }
                 </div>
-              )
+              ),
             }}
           </Popover>
           {props.showEditIcon ? (
@@ -172,6 +178,6 @@ export default defineComponent({
           params={permissionParams.value}
         />
       </>
-    )
+    );
   },
 });

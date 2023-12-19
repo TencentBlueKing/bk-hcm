@@ -271,6 +271,7 @@ defineExpose({ fetchComponentsData });
       show-overflow-tooltip
       :is-row-select-enable="isRowSelectEnable"
       @selection-change="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable)"
+      @select-all="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true)"
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
       @column-sort="handleSort"

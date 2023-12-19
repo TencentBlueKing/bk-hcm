@@ -3,14 +3,24 @@ import { useRouter } from 'vue-router';
 import { Plus, EditLine } from 'bkui-vue/lib/icon';
 import { InfoBox, Message } from 'bkui-vue';
 import { useSchemeStore, useAccountStore } from '@/store';
-import { QueryFilterType, IPageQuery, QueryRuleOPEnum } from '@/typings/common';
-import { ICollectedSchemeItem, ISchemeListItem, IBizType } from '@/typings/scheme';
+import {
+  QueryFilterType,
+  IPageQuery,
+  QueryRuleOPEnum,
+  RulesItem,
+} from '@/typings/common';
+import {
+  ICollectedSchemeItem,
+  ISchemeListItem,
+  IBizType,
+} from '@/typings/scheme';
 import { VENDORS } from '@/common/constant';
 import { DEPLOYMENT_ARCHITECTURE_MAP } from '@/constants';
 import CloudServiceTag from '../components/cloud-service-tag';
 import SchemeEditDialog from '../components/scheme-edit-dialog';
 import { useVerify } from '@/hooks';
 import ErrorPage from '@/views/error-pages/403';
+import moment from 'moment';
 
 import './index.scss';
 import PermissionDialog from '@/components/permission-dialog';
@@ -26,12 +36,12 @@ export default defineComponent({
     const searchValue = ref([]);
     const bizList = ref([]);
     const bizLoading = ref(false);
-    const collections = ref<{ id: number; res_id: string; }[]>([]);
+    const collections = ref<{ id: number; res_id: string }[]>([]);
     const collectPending = ref(false);
     const tableListLoading = ref(false);
     const tableListData = ref<ISchemeListItem[]>([]);
     const isEditDialogOpen = ref(false);
-    const selectedScheme = ref<{ id: string; name: string; bk_biz_id: number; }>({
+    const selectedScheme = ref<{ id: string; name: string; bk_biz_id: number }>({
       id: '',
       name: '',
       bk_biz_id: 0,
@@ -45,10 +55,10 @@ export default defineComponent({
       field: '',
       order: '',
     });
-    const filterConfigs = reactive<{field: string; value: string[];}[]>([]);
+    const filterConfigs = reactive<{ field: string; value: string[] }[]>([]);
     const searchData = ref([
       { id: 'name', name: '方案名称' },
-      { id: 'bk_biz_id', name: '业务id' },
+      // { id: 'bk_biz_id', name: '业务id' },
       { id: 'creator', name: '创建人' },
     ]);
     const {
@@ -67,46 +77,59 @@ export default defineComponent({
         showOverflowTooltip: true,
         render: ({ data }: { data: ISchemeListItem }) => {
           return (
-            <div class="scheme-name">
+            <div class='scheme-name'>
               <i
-                class={['hcm-icon', 'collect-icon', collections.value.findIndex(item => item.res_id === data.id) > -1 ? 'bkhcm-icon-collect' : 'bkhcm-icon-not-favorited']}
-                onClick={() => handleToggleCollection(data)}/>
-                <span class="name-text" onClick={() => {
-                  goToDetail(data.id);
-                }}>{data.name}</span>
+                class={[
+                  'hcm-icon',
+                  'collect-icon',
+                  collections.value.findIndex(item => item.res_id === data.id) > -1
+                    ? 'bkhcm-icon-collect'
+                    : 'bkhcm-icon-not-favorited',
+                ]}
+                onClick={() => handleToggleCollection(data)}
+              />
               <span
-                class={
-                  `edit-icon ${
-                    authVerifyData.value.permissionAction.cloud_selection_edit
-                      ? ''
-                      : 'hcm-no-permision-text-btn'
-                  }`
-                }
+                class='name-text'
                 onClick={() => {
-                  if (authVerifyData.value.permissionAction.cloud_selection_edit) handleOpenEditDialog(data);
+                  goToDetail(data.id);
+                }}>
+                {data.name}
+              </span>
+              <span
+                class={`edit-icon ${
+                  authVerifyData.value.permissionAction.cloud_selection_edit
+                    ? ''
+                    : 'hcm-no-permision-text-btn'
+                }`}
+                onClick={() => {
+                  if (
+                    authVerifyData.value.permissionAction.cloud_selection_edit
+                  ) handleOpenEditDialog(data);
                   else handleAuth('cloud_selection_edit');
-                } }
-              >
+                }}>
                 <EditLine />
               </span>
             </div>
           );
         },
       },
-      {
-        label: '标签',
-        field: 'bk_biz_id',
-        render: ({ data }: { data: ISchemeListItem }) => {
-          if (bizLoading.value) {
-            return <bk-loading loading theme="primary" mode="spin" size="mini" />;
-          }
-          if (data) {
-            const biz = bizList.value.find(item => item.id === data.bk_biz_id);
-            const name = biz ? biz.name : data.bk_biz_id;
-            return <span class="tag">{name}</span>;
-          }
-        },
-      },
+      // {
+      //   label: '标签',
+      //   field: 'bk_biz_id',
+      //   render: ({ data }: { data: ISchemeListItem }) => {
+      //     if (bizLoading.value) {
+      //       return <bk-loading loading theme="primary" mode="spin" size="mini" />;
+      //     }
+      //     if (data) {
+      //       if (data.bk_biz_id < 1) {
+      //         return '--';
+      //       }
+      //       const biz = bizList.value.find(item => item.id === data.bk_biz_id);
+      //       const name = biz ? biz.name : '--';
+      //       return <span class="tag">{name}</span>;
+      //     }
+      //   },
+      // },
       {
         label: '业务类型',
         field: 'biz_type',
@@ -119,7 +142,9 @@ export default defineComponent({
         label: '用户分布地区',
         showOverflowTooltip: true,
         render: ({ data }: { data: ISchemeListItem }) => {
-          return data.user_distribution.map(item => `${item.name}`).join('; ');
+          return data.user_distribution
+            .map(item => `${item.name}`)
+            .join('; ');
         },
       },
       {
@@ -132,7 +157,9 @@ export default defineComponent({
           }),
         },
         render: ({ data }: { data: ISchemeListItem }) => {
-          return data.deployment_architecture.map(item => DEPLOYMENT_ARCHITECTURE_MAP[item]).join(', ');
+          return data.deployment_architecture
+            .map(item => DEPLOYMENT_ARCHITECTURE_MAP[item])
+            .join(', ');
         },
       },
       {
@@ -145,7 +172,13 @@ export default defineComponent({
           }),
         },
         render: ({ data }: { data: ISchemeListItem }) => {
-          return <div class="vendors-list">{ data.vendors.map(item => <CloudServiceTag type={item} />) }</div>;
+          return (
+            <div class='vendors-list'>
+              {data.vendors.map(item => (
+                <CloudServiceTag type={item} />
+              ))}
+            </div>
+          );
         },
       },
       {
@@ -154,7 +187,9 @@ export default defineComponent({
         field: 'composite_score',
         sort: true,
         render: ({ data }: { data: ISchemeListItem }) => {
-          return <span class="composite-score">{data.composite_score || '-'}</span>;
+          return (
+            <span class='composite-score'>{data.composite_score || '-'}</span>
+          );
         },
       },
       {
@@ -168,29 +203,49 @@ export default defineComponent({
         field: 'updated_at',
         sort: true,
         render: ({ data }: { data: ISchemeListItem }) => {
-          return data.updated_at;
+          return moment(data.updated_at).format('YYYY-MM-DD HH:mm:ss');
         },
       },
       {
         label: '操作',
         width: 120,
         render: ({ data }: { data: ISchemeListItem }) => {
-          return <bk-button text theme="primary" onClick={() => {
-            if (!authVerifyData.value.permissionAction.cloud_selection_delete) handleAuth('cloud_selection_delete');
-            else handleDelScheme(data);
-          }}
-          class={authVerifyData.value.permissionAction.cloud_selection_delete ? '' : 'hcm-no-permision-text-btn'}>删除</bk-button>;
+          return (
+            <bk-button
+              text
+              theme='primary'
+              onClick={() => {
+                if (
+                  !authVerifyData.value.permissionAction.cloud_selection_delete
+                ) handleAuth('cloud_selection_delete');
+                else handleDelScheme(data);
+              }}
+              class={
+                authVerifyData.value.permissionAction.cloud_selection_delete
+                  ? ''
+                  : 'hcm-no-permision-text-btn'
+              }>
+              删除
+            </bk-button>
+          );
         },
       },
     ]);
 
-    watch(() => searchValue.value, (val) => {
-      pagination.current = 1;
-      getTableData();
-    });
+    watch(
+      () => searchValue.value,
+      () => {
+        pagination.current = 1;
+        getTableData();
+      },
+    );
 
     const getTableData = () => {
-      if (searchValue.value.length > 0 || sortConfig.field || filterConfigs.length > 0) {
+      if (
+        searchValue.value.length > 0
+        || sortConfig.field
+        || filterConfigs.length > 0
+      ) {
         getSearchTableData();
       } else {
         getNormalTableData();
@@ -204,7 +259,7 @@ export default defineComponent({
       bizList.value = res.data;
       const col = tableCols.value.find(item => item.field === 'bk_biz_id');
       if (col) {
-        const list = res.data.map((item: { id: string; name: string; }) => {
+        const list = res.data.map((item: { id: string; name: string }) => {
           const { id, name } = item;
           return { text: name, value: id };
         });
@@ -249,29 +304,46 @@ export default defineComponent({
         schemeStore.listCollection(),
         getUnCollectedScheme([], { start: 0, limit: 0, count: true }),
       ]);
-      collections.value = collectionRes.data.map((item: ICollectedSchemeItem) => ({ id: item.id, res_id: item.res_id }));
+      collections.value = collectionRes.data.map((item: ICollectedSchemeItem) => {
+        return { id: item.id, res_id: item.res_id };
+      });
       const collectionIds = collections.value.map(item => item.res_id);
       pagination.count = allUnCollectedRes.data.count;
 
       const currentPageStartNum = (pagination.current - 1) * pagination.limit;
-      const currentPageCollectedIdsLength = collectionIds.length - currentPageStartNum;
+      const currentPageCollectedIdsLength =        collectionIds.length - currentPageStartNum;
 
-      if (currentPageCollectedIdsLength > 0 && currentPageCollectedIdsLength < pagination.limit) {
+      if (
+        currentPageCollectedIdsLength > 0
+        && currentPageCollectedIdsLength < pagination.limit
+      ) {
         // 当前页中收藏方案和非收藏方案混排
         const ids = collectionIds.slice(currentPageStartNum);
         const [collectedRes, unCollectedRes] = await Promise.all([
           getCollectedSchemes(ids),
-          getUnCollectedScheme(collectionIds, { start: 0, limit: pagination.limit - ids.length }),
+          getUnCollectedScheme(collectionIds, {
+            start: 0,
+            limit: pagination.limit - ids.length,
+          }),
         ]);
-        tableListData.value = [...collectedRes.data.details, ...unCollectedRes.data.details];
+        tableListData.value = [
+          ...collectedRes.data.details,
+          ...unCollectedRes.data.details,
+        ];
       } else if (currentPageCollectedIdsLength >= pagination.limit) {
         // 当前页中只有收藏方案
-        const ids = collectionIds.slice(currentPageStartNum, currentPageStartNum + pagination.limit);
+        const ids = collectionIds.slice(
+          currentPageStartNum,
+          currentPageStartNum + pagination.limit,
+        );
         const res = await getCollectedSchemes(ids);
         tableListData.value = res.data.details;
       } else {
         // 当前页中只有非收藏方案
-        const res = await getUnCollectedScheme(collectionIds, { start: currentPageStartNum - collectionIds.length, limit: pagination.limit });
+        const res = await getUnCollectedScheme(collectionIds, {
+          start: currentPageStartNum - collectionIds.length,
+          limit: pagination.limit,
+        });
         tableListData.value = res.data.details;
       }
 
@@ -281,7 +353,11 @@ export default defineComponent({
     // 搜索表格数据
     const getSearchTableData = async () => {
       tableListLoading.value = true;
-      const resWithCount = await getUnCollectedScheme([], { start: 0, limit: 0, count: true });
+      const resWithCount = await getUnCollectedScheme([], {
+        start: 0,
+        limit: 0,
+        count: true,
+      });
 
       const pageQuery: IPageQuery = {
         start: (pagination.current - 1) * pagination.limit,
@@ -315,21 +391,42 @@ export default defineComponent({
 
     // 获取未被收藏的方案列表
     const getUnCollectedScheme = (ids: string[], pageQuery: IPageQuery) => {
-      const rules = searchValue.value.filter(item => item.values.length > 0).map((item) => {
-        if (['composite_score', 'bk_biz_id'].includes(item.id)) {
-          return { field: item.id, op: QueryRuleOPEnum.EQ, value: Number(item.values[0].id) };
-        }
-        return { field: item.id, op: QueryRuleOPEnum.CIS, value: item.values[0].id };
-      });
+      const rules = searchValue.value
+        .filter(item => item.values?.length > 0)
+        .map((item) => {
+          if (['composite_score', 'bk_biz_id'].includes(item.id)) {
+            return {
+              field: item.id,
+              op: QueryRuleOPEnum.EQ,
+              value: Number(item.values[0].id),
+            };
+          }
+          return {
+            field: item.id,
+            op: QueryRuleOPEnum.CIS,
+            value: item.values[0].id,
+          };
+        });
 
       if (filterConfigs.length > 0) {
         filterConfigs.forEach((filter) => {
           if (['vendors', 'deployment_architecture'].includes(filter.field)) {
+            const multiFieldsRule: { op: QueryRuleOPEnum; rules: RulesItem[] } = { op: QueryRuleOPEnum.OR, rules: [] };
             filter.value.forEach((val) => {
-              rules.push({ field: filter.field, op: QueryRuleOPEnum.JSON_CONTAINS, value: val });
+              multiFieldsRule.rules.push({
+                field: filter.field,
+                op: QueryRuleOPEnum.JSON_CONTAINS,
+                value: val,
+              });
             });
+            // @ts-ignore
+            rules.push(multiFieldsRule);
           } else {
-            rules.push({ field: filter.field, op: QueryRuleOPEnum.IN, value: filter.value });
+            rules.push({
+              field: filter.field,
+              op: QueryRuleOPEnum.IN,
+              value: filter.value,
+            });
           }
         });
       }
@@ -340,7 +437,11 @@ export default defineComponent({
       };
 
       if (ids.length > 0) {
-        filterQuery.rules.push({ field: 'id', op: QueryRuleOPEnum.NIN, value: ids });
+        filterQuery.rules.push({
+          field: 'id',
+          op: QueryRuleOPEnum.NIN,
+          value: ids,
+        });
       }
 
       return schemeStore.listCloudSelectionScheme(filterQuery, pageQuery);
@@ -384,7 +485,11 @@ export default defineComponent({
 
     const handleOpenEditDialog = (scheme: ISchemeListItem) => {
       isEditDialogOpen.value = true;
-      selectedScheme.value = { id: scheme.id, name: scheme.name, bk_biz_id: scheme.bk_biz_id };
+      selectedScheme.value = {
+        id: scheme.id,
+        name: scheme.name,
+        bk_biz_id: scheme.bk_biz_id,
+      };
     };
 
     // 删除方案
@@ -396,23 +501,25 @@ export default defineComponent({
         footerAlign: 'center',
         contentAlign: 'center',
         onConfirm() {
-          schemeStore.deleteCloudSelectionScheme([scheme.id])
-            .then(() => {
-              if (tableListData.value.length === 1 && pagination.current !== 1) {
-                pagination.current = 1;
-              }
-              getTableData();
-              Message({
-                theme: 'success',
-                message: '删除成功',
-              });
+          schemeStore.deleteCloudSelectionScheme([scheme.id]).then(() => {
+            if (tableListData.value.length === 1 && pagination.current !== 1) {
+              pagination.current = 1;
+            }
+            getTableData();
+            Message({
+              theme: 'success',
+              message: '删除成功',
             });
+          });
         },
       });
     };
 
-    const saveSchemeFn = (data: { name: string; bk_biz_id: number; }) => {
-      return schemeStore.updateCloudSelectionScheme(selectedScheme.value.id, data);
+    const saveSchemeFn = (data: { name: string; bk_biz_id: number }) => {
+      return schemeStore.updateCloudSelectionScheme(
+        selectedScheme.value.id,
+        data,
+      );
     };
 
     const handleConfirm = () => {
@@ -436,7 +543,13 @@ export default defineComponent({
     };
 
     // 列排序
-    const handleColumnSort = ({ type, column }: { type: string; column: { field: string; } }) => {
+    const handleColumnSort = ({
+      type,
+      column,
+    }: {
+      type: string;
+      column: { field: string };
+    }) => {
       if (type !== 'null') {
         sortConfig.field = column.field;
         sortConfig.order = type;
@@ -447,18 +560,28 @@ export default defineComponent({
       getTableData();
     };
 
-    const handleColumnFilter = ({ checked, column }: { checked: string[], column: { field: string; } }) => {
+    const handleColumnFilter = ({
+      checked,
+      column,
+    }: {
+      checked: string[];
+      column: { field: string };
+    }) => {
       console.log(checked, column.field);
       const index = filterConfigs.findIndex(filter => filter.field === column.field);
       if (index > -1) {
         if (checked.length > 0) {
-          filterConfigs.splice(index, 1, { field: column.field, value: checked });
+          filterConfigs.splice(index, 1, {
+            field: column.field,
+            value: checked,
+          });
         } else {
           filterConfigs.splice(index, 1);
         }
       } else if (checked.length > 0) {
         filterConfigs.push({ field: column.field, value: checked });
       }
+      pagination.current = 1;
       getTableData();
     };
 
@@ -471,28 +594,30 @@ export default defineComponent({
     if (!authVerifyData.value.permissionAction.cloud_selection_find) return () => <ErrorPage />;
 
     return () => (
-      <div class="scheme-list-page">
-        <div class="operate-wrapper">
-          <bk-button class={`create-btn ${
-            authVerifyData.value.permissionAction.cloud_selection_recommend
-              ? ''
-              : 'hcm-no-permision-btn'
-          }`} theme="primary" onClick={
-            () => {
-              if (authVerifyData.value.permissionAction.cloud_selection_recommend) goToCreate();
+      <div class='scheme-list-page'>
+        <div class='operate-wrapper'>
+          <bk-button
+            class={`create-btn ${
+              authVerifyData.value.permissionAction.cloud_selection_recommend
+                ? ''
+                : 'hcm-no-permision-btn'
+            }`}
+            theme='primary'
+            onClick={() => {
+              if (
+                authVerifyData.value.permissionAction.cloud_selection_recommend
+              ) goToCreate();
               else handleAuth('cloud_selection_create');
-            }
-          }>
-            <Plus class="plus-icon" />
-            创建部署方案
+            }}>
+            <Plus class='plus-icon' />
+            创建选型方案
           </bk-button>
           <bk-search-select
             v-model={searchValue.value}
             class={'scheme-search-select'}
-            data={searchData.value}>
-          </bk-search-select>
+            data={searchData.value}></bk-search-select>
         </div>
-        <div class="scheme-table-wrapper">
+        <div class='scheme-table-wrapper'>
           <bk-loading loading={tableListLoading.value}>
             <bk-table
               data={tableListData.value}
@@ -504,16 +629,16 @@ export default defineComponent({
               onPageValueChange={handlePageValueChange}
               onPageLimitChange={handlePageLimitChange}
               onColumnSort={handleColumnSort}
-              onColumnFilter={handleColumnFilter}>
-            </bk-table>
+              onColumnFilter={handleColumnFilter}></bk-table>
           </bk-loading>
         </div>
         <SchemeEditDialog
           v-model:show={isEditDialogOpen.value}
-          title="编辑方案"
+          title='编辑方案'
           schemeData={selectedScheme.value || {}}
           confirmFn={saveSchemeFn}
-          onConfirm={handleConfirm} />
+          onConfirm={handleConfirm}
+        />
         <PermissionDialog
           isShow={showPermissionDialog.value}
           onConfirm={handlePermissionConfirm}

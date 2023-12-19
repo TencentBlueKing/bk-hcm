@@ -22,6 +22,10 @@
     .label {
       color: #63656e;
     }
+    .info-item-value {
+      display: inline-flex;
+      align-items: center;
+    }
   }
   // .recreate-btn {
   //   flex-shrink: 0;
