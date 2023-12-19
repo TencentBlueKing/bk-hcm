@@ -56,14 +56,19 @@ export const useTable = (props: IProp) => {
     isLoading.value = false;
   };
   const CommonTable = defineComponent({
-    setup() {
+    setup(_props, { slots }) {
       return () => (
         <>
-          <SearchSelect
-            class='w500 common-search-selector'
-            v-model={searchVal.value}
-            data={props.searchData}
-          />
+          <section class='operation-wrap'>
+            <div class='operate-btn-groups'>
+              {slots.operation?.()}
+            </div>
+            <SearchSelect
+              class='w500 common-search-selector'
+              v-model={searchVal.value}
+              data={props.searchData}
+            />
+          </section>
           <Loading loading={isLoading.value}>
             <Table
               data={dataList.value}
