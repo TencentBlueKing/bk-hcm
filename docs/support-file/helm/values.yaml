@@ -217,6 +217,9 @@ cloudserver:
       # 用户省份分布表
       # select thedate, country, province, cnt from <userProvinceDistribution>
       userProvinceDistribution: supported_province
+      # 推荐算法延迟数据源，如果留空默认使用 latencyPingProvinceIdc 所配置的数据源
+      # select thedate, bk_biz_id, country, province, idc_name, avg_ping
+      recommendDataSource:
     # bkbase 数据源配置
     bkBase:
       # 单次查询最大数量
