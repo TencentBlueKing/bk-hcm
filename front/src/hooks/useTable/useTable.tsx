@@ -1,13 +1,14 @@
 import http from '@/http';
 import { QueryRuleOPEnum } from '@/typings/common';
 import { Loading, SearchSelect, Table } from 'bkui-vue';
-import type { Column } from 'bkui-vue/lib/table/props';
+import type { Column, Settings } from 'bkui-vue/lib/table/props';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
 
 export interface IProp {
   columns: Array<Column>;
+  settings: Settings;
   searchData: Array<ISearchItem>;
   searchUrl: string; // 如`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/sub_accounts/list`，
 }
@@ -69,16 +70,25 @@ export const useTable = (props: IProp) => {
               data={props.searchData}
             />
           </section>
-          <Loading loading={isLoading.value}>
+          <Loading loading={isLoading.value} class='loading-table-container'>
             <Table
+              height='100%'
               data={dataList.value}
               columns={props.columns}
+              settings={props.settings}
               pagination={pagination}
               remotePagination
               onPageLimitChange={handlePageLimitChange}
               onPageValueChange={handlePageValueCHange}
               onColumnSort={() => {}}
-              onColumnFilter={() => {}}></Table>
+              onColumnFilter={() => {}}>
+                {{
+                  empty: () => {
+                    if (isLoading.value) return null;
+                    else return '暂无数据';
+                  }
+                }}
+              </Table>
           </Loading>
         </>
       );
