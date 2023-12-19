@@ -773,6 +773,7 @@ type CloudSelectionTableNames struct {
 	LatencyBizProvinceIdc    string `yaml:"latencyBizProvinceIdc"`
 	UserCountryDistribution  string `yaml:"userCountryDistribution"`
 	UserProvinceDistribution string `yaml:"userProvinceDistribution"`
+	RecommendDataSource      string `yaml:"recommendDataSource"`
 }
 
 // ThreshHoldRanges 评分范围

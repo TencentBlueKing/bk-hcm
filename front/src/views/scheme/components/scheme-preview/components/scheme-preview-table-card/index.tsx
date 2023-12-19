@@ -72,7 +72,7 @@ export default defineComponent({
         field: 'service_areas',
         label: '服务区域',
         render: ({ cell, data }: any) => {
-          return (
+          return data.service_area_arr?.length ? (
             <p class={'flex-row align-items-center service-areas-paragraph'}>
               <PopConfirm
                 trigger='click'
@@ -89,7 +89,8 @@ export default defineComponent({
                         <div class={'service-areas-table'}>
                           <Table
                             data={data.service_area_arr}
-                            height={500}
+                            show-overflow-tooltip
+                            maxHeight={500}
                             columns={[
                               {
                                 field: 'country_name_province_name',
@@ -124,15 +125,15 @@ export default defineComponent({
                   ),
                 }}
               </PopConfirm>
-
-              {cell}
+              <span v-bk-tooltips={{ content: cell, placement: 'top-start' }} >{cell}</span>
             </p>
-          );
+          ) : '--';
         },
       },
       {
         field: 'ping',
         label: '平均延迟',
+        align: 'right',
         render: ({ cell }: {cell: number}) => {
           return `${Math.floor(cell)} ms`;
         },
@@ -140,8 +141,9 @@ export default defineComponent({
       },
       {
         field: 'price',
+        align: 'right',
         label: 'IDC 单位成本',
-        render: ({ cell }: {cell: number}) => `$ ${cell}`,
+        render: ({ cell }: {cell: number}) => `${cell}`,
         width: 200,
       },
     ];
@@ -221,7 +223,7 @@ export default defineComponent({
         price: v.price,
         country: v.country,
         service_areas: idcServiceAreasMap.value.get(v.id)?.service_areas?.reduce((acc, cur) => {
-          acc += `${cur.country_name} , ${cur.province_name} ; `;
+          acc += `${cur.country_name},${cur.province_name}; `;
           return acc;
         }, ''),
         ping: idcServiceAreasMap.value.get(v.id)?.avg_latency,
@@ -244,12 +246,14 @@ export default defineComponent({
         net_score: props.netScore,
         cost_score: props.costScore,
         name: schemeStore.recommendationSchemes[props.idx].name,
+        id: `${props.idx}`,
         idcList: tableData.value.map(item => ({
           id: item.id,
           name: item.name,
           vendor: item.vendor,
-          country: item.region,
+          country: item.country,
           price: item.price,
+          region: item.region,
         })),
       });
       isLoading.value = false;
@@ -310,7 +314,7 @@ export default defineComponent({
               网络评分： <span class={'score-value'}>{props.netScore}</span>
             </div>
             <div class={'scheme-preview-table-card-header-score-item'}>
-              成本评分： <span class={'score-value'}>$ {props.costScore}</span>
+              成本评分： <span class={'score-value'}>{props.costScore}</span>
             </div>
           </div>
           <div class={'scheme-preview-table-card-header-operation'} onClick={e => e.stopPropagation()}>
@@ -323,7 +327,14 @@ export default defineComponent({
             isExpanded.value ? '' : 'scheme-preview-table-card-panel-invisable'
           }`}>
           <Loading loading={isLoading.value}>
-            <Table data={tableData.value} columns={columns} />
+            <Table data={tableData.value} columns={columns} show-overflow-tooltip>
+              {{
+                empty: () => {
+                  if (isLoading.value) return null;
+                  return '暂无数据';
+                },
+              }}
+            </Table>
           </Loading>
         </div>
 

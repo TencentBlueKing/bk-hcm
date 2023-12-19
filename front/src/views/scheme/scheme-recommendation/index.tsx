@@ -35,7 +35,9 @@ export default defineComponent({
     const bizTypesInitLoading = ref(false);
     const countriesList = ref<Array<string>>([]);
     const bizTypeList = ref<IBizTypeList>([]);
-    const selectedBizType = computed<IBizType>(() => bizTypeList.value.find(item => item.biz_type === formData.biz_type));
+    const selectedBizType = computed<IBizType>(() => {
+      return bizTypeList.value.find(item => item.biz_type === formData.biz_type);
+    });
 
     const generateSchemesLoading = ref(false);
     const formData = reactive<IGenerateSchemesReqParams>({
@@ -45,6 +47,13 @@ export default defineComponent({
       deployment_architecture: [],
       user_distribution: [],
       user_distribution_mode: 'default',
+    });
+
+    const isAllSchemeSaved = computed(() => {
+      return schemeStore.recommendationSchemes.reduce((acc, cur) => {
+        acc &&= cur.isSaved;
+        return acc;
+      }, true);
     });
 
     const countryChangeLoading = ref(false);
@@ -76,7 +85,7 @@ export default defineComponent({
       const res: IGenerateSchemesResData = await schemeStore.generateSchemes(formData);
       schemeStore.setSchemeConfig(formData.cover_ping, formData.biz_type, formData.deployment_architecture);
       generateSchemesLoading.value = false;
-      schemeStore.setRecommendationSchemes(res.data.map((item, idx) => ({
+      schemeStore.setRecommendationSchemes(res.data.filter(({ cover_rate }) => cover_rate >= 0.65).map((item, idx) => ({
         ...item,
         id: `${idx}`,
         name: `方案${idx + 1}`,
@@ -130,7 +139,7 @@ export default defineComponent({
         label: '用户网络容忍',
         required: true,
         extClass: 'prompt-icon-wrap',
-        tips: '流向终端（LastMIle）的网络质量容忍',
+        tips: '用户到 IDC 的网络质量容忍',
         left: '96px',
         content: [
           {
@@ -155,7 +164,7 @@ export default defineComponent({
         label: '用户分布占比',
         required: true,
         content: () => (
-          <div class='flex-row'>
+          <div class='flex-row' style={{ overflow: 'hidden' }}>
             <bk-select class='flex-1' v-model={formData.user_distribution_mode} clearable={false}>
               <bk-option label='默认分布占比' value='default' />
             </bk-select>
@@ -259,7 +268,9 @@ export default defineComponent({
     );
 
     function confirmLeave(event: any) {
-      if (!schemeStore.recommendationSchemes.length || !formData.selected_countries.length) return;
+      if (!schemeStore.recommendationSchemes.length
+        || !formData.selected_countries.length
+        || isAllSchemeSaved.value) return;
       // 生成选型方案后再让离开的用户二次确认
       (event || window.event).returnValue = '关闭提示';
       return '关闭提示';
@@ -274,12 +285,12 @@ export default defineComponent({
     });
 
     onBeforeRouteLeave((to, from, next) => {
-      if (!schemeStore.recommendationSchemes.length || !formData.selected_countries.length) {
+      if (!schemeStore.recommendationSchemes.length || !formData.selected_countries.length || isAllSchemeSaved.value) {
         next();
       } else {
         InfoBox({
           title: '确定离开当前页面?',
-          subTitle: '离开当前页面后，推荐的方案列表不存留。如当前页面的方案或列表中的其他方案符合需求，则可将其保存后再离开。',
+          subTitle: '离开会导致未保存方案丢失',
           onConfirm: () => next(),
         });
       }
@@ -302,9 +313,9 @@ export default defineComponent({
             }`}>
             <div class='title-wrap'>
               <div class='title-text'>业务属性</div>
-              <i
-                class='hcm-icon bkhcm-icon-shouqi'
-                onClick={() => (toggleClose.value = !toggleClose.value)}></i>
+              {
+                <i class='hcm-icon bkhcm-icon-shouqi' onClick={() => (toggleClose.value = !toggleClose.value)}></i>
+              }
             </div>
             <div class='content-wrap'>
               <bk-form form-type='vertical' ref={formRef} model={formData} rules={formRules} >
@@ -328,9 +339,12 @@ export default defineComponent({
                 ))}
               </bk-form>
             </div>
+            {
+              !toggleClose.value && <div class='right-handle' onClick={() => (toggleClose.value = !toggleClose.value)}></div>
+            }
           </div>
           <div class='scheme-recommendation-container'>
-            <div class='content-container' style={{padding: toggleClose.value ? '0 26px' : '0'}}>
+            <div class='content-container' style={{ padding: toggleClose.value ? '0 26px' : '0' }}>
               {scene.value === 'blank' ? (
                 <SchemeBlankPage />
               ) : (

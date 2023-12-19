@@ -12,7 +12,6 @@ export default defineComponent({
   setup() {
     const route = useRoute();
     const router = useRouter();
-
     const treeData = ref([]);
     provide('treeData', treeData);
     const isAdvancedSearchShow = ref(false);
@@ -48,7 +47,7 @@ export default defineComponent({
         handleToggleResultExpand(false);
       }
     })
-
+      
     const isAllClbsSelected = ref(true);
     const handleSelectAllClbs = () => {
       isAllClbsSelected.value = !isAllClbsSelected.value;

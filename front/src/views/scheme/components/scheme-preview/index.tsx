@@ -55,7 +55,13 @@ export default defineComponent({
           <Info
             class={'scheme-preview-header-tip'}
             v-bk-tooltips={{
-              content: '本方案由系统的算法推荐出来，算法所使用的数据是平台的公共数据，暂不支持自定义数据。推荐的依据为业务分布地区，业务的类型，网络延迟，默认的用户分布占比等。',
+              content: `方案基于平台的公共数据进行算法推荐，算法的影响因子包括网络质量、机房成本、地区覆盖率等。
+              方案相关指标说明如下：
+              网络评分：衡量网络质量的优劣程度，例如网络延迟等。
+              成本评分：衡量当前方案中机房的综合成本。
+              IDC单位成本：主流机型的单位时间的单核价格，一定程度上代表该IDC的相对成本。
+              服务区域：玩家分布地区中，当前机房最适合服务的区域。
+              `,
             }}
           />
           <Select
@@ -68,7 +74,9 @@ export default defineComponent({
               )),
             }}
           </Select>
-          <Button onClick={() => isDes.value = !isDes.value}>
+          <Button onClick={() => isDes.value = !isDes.value}  v-bk-tooltips={{
+            content: isDes.value ? '降序' : '升序',
+          }}>
             <i class={`${isDes.value ? 'hcm-icon bkhcm-icon-jiangxu' : 'icon hcm-icon bkhcm-icon-shengxu'}`}/>
           </Button>
         </div>

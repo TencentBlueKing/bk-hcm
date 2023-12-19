@@ -74,3 +74,7 @@ test/unit/coverage
 *.sln
 index-dev.html
 env.dev.js
+
+.husky/commit-msg
+.husky/commit-msg-bkcodeai
+.husky/pre-commit-bkcodeai

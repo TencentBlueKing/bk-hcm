@@ -121,6 +121,7 @@ watch(
     state.pagination.current = 1;
     state.pagination.limit = 10;
     handleSwtichType(v);
+    resetSelections();
   },
 );
 
@@ -729,7 +730,7 @@ const securityHandleShowDelete = (data: any) => {
       </section>
     </section>
 
-    <bk-loading :loading="state.isLoading">
+    <bk-loading :key="activeType" :loading="state.isLoading">
       <bk-table
         v-if="activeType === 'group'"
         :settings="groupSettings"
@@ -742,6 +743,7 @@ const securityHandleShowDelete = (data: any) => {
         show-overflow-tooltip
         :is-row-select-enable="isRowSelectEnable"
         @selection-change="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable)"
+        @select-all="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true)"
         @page-limit-change="state.handlePageSizeChange"
         @page-value-change="state.handlePageChange"
         @column-sort="state.handleSort"
@@ -759,6 +761,7 @@ const securityHandleShowDelete = (data: any) => {
         show-overflow-tooltip
         :is-row-select-enable="isRowSelectEnable"
         @selection-change="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable)"
+        @select-all="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true)"
         @page-limit-change="state.handlePageSizeChange"
         @page-value-change="state.handlePageChange"
         @column-sort="state.handleSort"
