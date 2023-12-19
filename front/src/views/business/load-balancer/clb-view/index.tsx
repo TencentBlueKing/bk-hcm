@@ -31,6 +31,12 @@ export default defineComponent({
       });
     };
 
+    const componentMap = {
+      clb: <div>clb</div>,
+      lisenter: <div>lisenter</div>,
+      domain: <div>domain</div>,
+    };
+
     watch(searchValue, () => {
       searchResultCount.value = 0;
     });
@@ -43,6 +49,10 @@ export default defineComponent({
         handleToggleResultExpand(false);
       }
     });
+
+    const renderComponent = (type: 'clb' | 'listener' | 'domain') => {
+      return componentMap[type];
+    };
 
     return () => (
       <div class='clb-view-page'>
@@ -84,7 +94,9 @@ export default defineComponent({
           isAdvancedSearchShow.value && <div class='advanced-search'>高级搜索</div>
         }
         <div class='main-container'>
-
+          {
+            renderComponent('clb')
+          }
         </div>
       </div>
     );
