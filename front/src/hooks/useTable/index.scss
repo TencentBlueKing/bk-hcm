@@ -1,4 +1,15 @@
-.common-search-selector {
-  margin-left: auto;
+.operation-wrap {
+  display: flex;
+  justify-content: space-between;
   margin-bottom: 16px;
+
+  .operate-btn-groups {
+    .bk-button {
+      min-width: 64px;
+
+      &:not(:last-of-type) {
+        margin-right: 12px;
+      }
+    }
+  }
 }
