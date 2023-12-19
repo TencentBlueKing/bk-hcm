@@ -109,8 +109,14 @@ const props = defineProps({
 });
 const { t } = useI18n();
 const { searchData, searchValue, filter } = useFilter(props);
-const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange } =
-  useQueryList({ filter: filter.value }, 'cvms');
+const { 
+  datas, 
+  pagination, 
+  isLoading, 
+  handlePageChange, 
+  handlePageSizeChange 
+  } = useQueryList({ filter: filter.value }, 'cvms');
+
 const isShowDistribution = ref(false);
 const handleDistributionConfirm = () => {
   isShowDistribution.value = true;
@@ -144,6 +150,7 @@ const loadSearchData = computed(() => {
     },
   ];
 });
+
 const tableColumns = [];
 const tableSettings = ref({
   fields: [
