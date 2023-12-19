@@ -8,11 +8,9 @@
         <bk-button theme="primary">
           {{ t('购买') }}
         </bk-button>
-
         <bk-button style="margin-left: 10px">
           {{ t('分配') }}
         </bk-button>
-        
         <bk-button style="margin-left: 10px">
           {{ t('批量删除') }}
         </bk-button>
@@ -119,8 +117,6 @@ const { searchData, searchValue, filter } = useFilter(props);
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange } =
   useQueryList({ filter: filter.value }, 'cvms');
 const isShowDistribution = ref(false);
-
-// const { columns, generateColumnsSettings } = useColumns('cvms');
 const handleDistributionConfirm = () => {
   isShowDistribution.value = true;
 };
