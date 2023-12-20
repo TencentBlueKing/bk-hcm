@@ -9,7 +9,7 @@ import {
 } from '@/typings';
 import { useAccountStore } from '@/store';
 import { Button } from 'bkui-vue';
-import type { Field } from 'bkui-vue/lib/table/props';
+import type { Settings } from 'bkui-vue/lib/table/props';
 import { h, ref } from 'vue';
 import type { Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -1057,6 +1057,69 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
   ];
 
+  const clbsColumns = [
+    {
+      type: 'selection',
+      width: '100',
+      onlyShowOnList: true,
+    },
+    getLinkField('clbs', '负载均衡名称'),
+    {
+      label: '负载均衡域名',
+      field: 'clb_domain',
+      isDefaultShow: true,
+    },
+    {
+      label: '负载均衡VIP',
+      field: 'clb_vip',
+      isDefaultShow: true,
+    },
+    {
+      label: '网络类型',
+      field: 'net_type',
+      isDefaultShow: true,
+    },
+    {
+      label: '监听器数量',
+      field: 'listener_count',
+      isDefaultShow: true,
+    },
+    {
+      label: '分配状态',
+      field: 'is_distibute',
+      isDefaultShow: true,
+    },
+    {
+      label: 'IP版本',
+      field: 'ip_version',
+      isDefaultShow: true,
+    },
+    {
+      label: '云厂商',
+      field: 'vendor',
+    },
+    {
+      label: '地域',
+      field: 'region',
+    },
+    {
+      label: '可用区域',
+      field: 'zone',
+    },
+    {
+      label: '类型',
+      field: 'type',
+    },
+    {
+      label: '状态',
+      field: 'status',
+    },
+    {
+      label: '所属网络',
+      field: 'vpc_id',
+    },
+  ];
+
   const columnsMap = {
     vpc: vpcColumns,
     subnet: subnetColumns,
@@ -1069,6 +1132,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     cvms: cvmsColumns,
     securityCommon: securityCommonColumns,
     eips: eipColumns,
+    clbs: clbsColumns,
   };
 
   let columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);
@@ -1091,10 +1155,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     if (whereAmI.value !== Senarios.resource) {
       fields = fields.filter(field => !field.isOnlyShowInResource);
     }
-    const settings: Ref<{
-      fields: Array<Field>;
-      checked: Array<string>;
-    }> = ref({
+    const settings: Ref<Settings> = ref({
       fields,
       checked: fields
         .filter(field => field.isDefaultShow)
