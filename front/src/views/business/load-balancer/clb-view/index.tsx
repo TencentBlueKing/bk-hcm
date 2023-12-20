@@ -29,11 +29,17 @@ export default defineComponent({
         }
         return item;
       });
-    }
+    };
+
+    const componentMap = {
+      clb: <div>clb</div>,
+      lisenter: <div>lisenter</div>,
+      domain: <div>domain</div>,
+    };
 
     watch(searchValue, () => {
       searchResultCount.value = 0;
-    })
+    });
 
     watch(searchResultCount, (val) => {
       console.log(val);
@@ -42,28 +48,32 @@ export default defineComponent({
       } else {
         handleToggleResultExpand(false);
       }
-    })
+    });
+
+    const renderComponent = (type: 'clb' | 'listener' | 'domain') => {
+      return componentMap[type];
+    };
 
     return () => (
       <div class='clb-view-page'>
         <div class='left-container'>
           <div class='search-wrap'>
             <bk-input v-model={searchValue.value} type='search' clearable placeholder='搜索负载均衡名称、VIP'></bk-input>
-            {/* <Funnel class='advanced-search-icon' onClick={() => isAdvancedSearchShow.value = !isAdvancedSearchShow.value}></Funnel> */}
           </div>
           <div class='tree-wrap'>
             {
-              searchValue.value 
+              // eslint-disable-next-line no-nested-ternary
+              searchValue.value
                 ? (searchResultCount.value ? (
                   <div class='search-result-wrap'>
                     <span class='left-text'>共 {searchResultCount.value} 条搜索结果</span>
                     {
-                      toggleExpand.value 
+                      toggleExpand.value
                         ? <span class='right-text' onClick={() => handleToggleResultExpand(true)}>全部展开</span>
                         : <span class='right-text' onClick={() => handleToggleResultExpand(false)}>全部收起</span>
                     }
                   </div>
-                ) : null) 
+                ) : null)
                 : (
                 <div class='all-clbs'>
                   <div class='left-wrap'>
@@ -75,7 +85,7 @@ export default defineComponent({
                     <LoadBalancerDropdownMenu uuid='all' type='all' />
                   </div>
                 </div>
-              )
+                )
             }
             <DynamicTree searchValue={searchValue.value} />
           </div>
@@ -84,7 +94,9 @@ export default defineComponent({
           isAdvancedSearchShow.value && <div class='advanced-search'>高级搜索</div>
         }
         <div class='main-container'>
-          
+          {
+            renderComponent('clb')
+          }
         </div>
       </div>
     );
