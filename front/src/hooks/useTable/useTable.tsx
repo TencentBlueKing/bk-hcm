@@ -85,8 +85,8 @@ export const useTable = (props: IProp) => {
                 {{
                   empty: () => {
                     if (isLoading.value) return null;
-                    else return '暂无数据';
-                  }
+                    return '暂无数据';
+                  },
                 }}
               </Table>
           </Loading>

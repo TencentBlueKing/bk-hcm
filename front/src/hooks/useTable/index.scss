@@ -4,10 +4,12 @@
   margin-bottom: 16px;
 
   .operate-btn-groups {
+    display: flex;
+    
     .bk-button {
       min-width: 64px;
 
-      &:not(:last-of-type) {
+      &:not(:last-child) {
         margin-right: 12px;
       }
     }
