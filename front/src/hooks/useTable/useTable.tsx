@@ -5,6 +5,7 @@ import type { Column, Settings } from 'bkui-vue/lib/table/props';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
+import Empty from '@/components/empty';
 
 export interface IProp {
   columns: Array<Column>;
@@ -85,7 +86,7 @@ export const useTable = (props: IProp) => {
                 {{
                   empty: () => {
                     if (isLoading.value) return null;
-                    return '暂无数据';
+                    return <Empty />;
                   },
                 }}
               </Table>

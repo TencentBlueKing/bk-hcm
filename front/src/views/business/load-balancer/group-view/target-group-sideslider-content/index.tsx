@@ -2,6 +2,7 @@ import { computed, defineComponent, reactive, ref } from 'vue';
 import { Form, Select, Input, SearchSelect, Loading, Table } from 'bkui-vue';
 import { useAccountStore } from '@/store';
 import AccountSelector from '@/components/account-selector/index.vue';
+import Empty from '@/components/empty';
 import './index.scss';
 
 const { FormItem } = Form;
@@ -122,7 +123,14 @@ export default defineComponent({
               </div>
             </div>
             <Loading loading={isTableLoading.value}>
-              <Table data={[]} columns={columns} emptyText='暂未添加实例'></Table>
+              <Table data={[]} columns={columns}>
+                {{
+                  empty: () => {
+                    if (isTableLoading.value) return null;
+                    return <Empty text='暂未添加实例' />;
+                  },
+                }}
+              </Table>
             </Loading>
           </>
         ),
