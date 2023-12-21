@@ -1,0 +1,55 @@
+import { defineComponent } from 'vue';
+import { Sideslider, Button } from 'bkui-vue';
+import './index.scss';
+
+export default defineComponent({
+  name: 'CommonSideslider',
+  props: {
+    isShow: {
+      type: Boolean,
+      default: false,
+      required: true,
+    },
+    title: {
+      type: String,
+      required: true,
+    },
+    width: {
+      type: Number,
+      default: 400,
+    },
+  },
+  emits: ['update:isShow', 'handleSubmit'],
+  setup(props, ctx) {
+    const triggerShow = (isShow: boolean) => {
+      ctx.emit('update:isShow', isShow);
+    };
+
+    const handleSubmit = () => {
+      ctx.emit('handleSubmit');
+      triggerShow(false);
+    };
+
+    return () => (
+      <Sideslider
+        class='common-sideslider'
+        width={props.width}
+        isShow={props.isShow}
+        title={props.title}
+        quickClose={true}
+        onClosed={() => triggerShow(false)}>
+        {{
+          default: () => ctx.slots.default?.(),
+          footer: () => (
+            <>
+              <Button theme='primary' onClick={handleSubmit}>
+                提交
+              </Button>
+              <Button onClick={() => triggerShow(false)}>取消</Button>
+            </>
+          ),
+        }}
+      </Sideslider>
+    );
+  },
+});

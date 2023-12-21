@@ -2,10 +2,13 @@ import { defineComponent, ref } from 'vue';
 import { Input, Button, VirtualRender, Dropdown } from 'bkui-vue';
 import { Plus, AngleDown } from 'bkui-vue/lib/icon';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
-import allIcon from '@/assets/image/all-vendors.png';
 import { useTable } from '@/hooks/useTable/useTable';
+import allIcon from '@/assets/image/all-vendors.png';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+import CommonSideslider from '../components/common-sideslider';
+import TargetGroupSidesliderContent from './target-group-sideslider-content';
 import './index.scss';
+
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 const { DropdownMenu, DropdownItem } = Dropdown;
 
@@ -47,10 +50,11 @@ export default defineComponent({
         name: 'RS的IP',
       },
     ];
+    const searchUrl = `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vpcs/list`;
     const { CommonTable } = useTable({
       columns,
       settings: settings.value,
-      searchUrl: `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vpcs/list`,
+      searchUrl,
       searchData,
     });
     const searchValue = ref('');
@@ -64,6 +68,10 @@ export default defineComponent({
           count: Math.floor(Math.random() * 10) + 1,
         };
       });
+
+    // 新建目标组 sideslider
+    const isTargetGroupSideslider = ref(false);
+    const handleSubmit = () => {};
 
     return () => (
       <div class='group-view-page'>
@@ -87,8 +95,8 @@ export default defineComponent({
               </div>
             </div>
             <VirtualRender
-              height='calc(100% - 36px)'
               list={renderList}
+              height='calc(100% - 36px)'
               lineHeight={36}>
               {{
                 default: ({ data }: any) => {
@@ -116,7 +124,9 @@ export default defineComponent({
               {{
                 operation: () => (
                   <>
-                    <Button theme='primary'>
+                    <Button
+                      theme='primary'
+                      onClick={() => (isTargetGroupSideslider.value = true)}>
                       <Plus class='f20' />
                       新建
                     </Button>
@@ -142,6 +152,13 @@ export default defineComponent({
             </CommonTable>
           </div>
         </div>
+        <CommonSideslider
+          title='新建目标组'
+          width={960}
+          v-model:isShow={isTargetGroupSideslider.value}
+          onHandleSubmit={handleSubmit}>
+          <TargetGroupSidesliderContent />
+        </CommonSideslider>
       </div>
     );
   },
