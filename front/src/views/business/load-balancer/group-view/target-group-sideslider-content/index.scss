@@ -1,0 +1,18 @@
+.operation-wrap {
+  margin-bottom: 12px;
+
+  .left-wrap {
+    display: flex;
+    align-items: center;
+    color: #3A84FF;
+    cursor: pointer;
+
+    .hcm-icon {
+      margin-right: 5px;
+    }
+  }
+
+  .search-wrap {
+    width: 300px;
+  }
+}

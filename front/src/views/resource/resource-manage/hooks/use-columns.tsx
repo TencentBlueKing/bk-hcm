@@ -1120,6 +1120,63 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
   ];
 
+  const targetGroupColumns = [
+    {
+      type: 'selection',
+      width: '100',
+      onlyShowOnList: true,
+    },
+    getLinkField('target_group_name', '目标组名称'),
+    {
+      label: '关联的负载均衡',
+      field: 'clb_name',
+      isDefaultShow: true,
+    },
+    {
+      label: '绑定监听器数量',
+      field: 'listener_count',
+      isDefaultShow: true,
+    },
+    {
+      label: '协议',
+      field: 'protocol',
+      isDefaultShow: true,
+    },
+    {
+      label: '端口',
+      field: 'port',
+      isDefaultShow: true,
+    },
+    {
+      label: '云厂商',
+      field: 'vendor',
+    },
+    {
+      label: '地域',
+      field: 'region',
+    },
+    {
+      label: '可用区域',
+      field: 'zone',
+    },
+    {
+      label: '资源类型',
+      field: 'type',
+    },
+    {
+      label: '所属VPC',
+      field: 'vpc_id',
+    },
+    {
+      label: '健康检查端口',
+      field: 'health_check_port',
+    },
+    {
+      label: 'IP地址类型',
+      field: 'ip_type',
+    },
+  ];
+
   const columnsMap = {
     vpc: vpcColumns,
     subnet: subnetColumns,
@@ -1133,6 +1190,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     securityCommon: securityCommonColumns,
     eips: eipColumns,
     clbs: clbsColumns,
+    'target-group': targetGroupColumns,
   };
 
   let columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);
