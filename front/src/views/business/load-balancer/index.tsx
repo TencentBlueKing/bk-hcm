@@ -19,7 +19,7 @@ export default defineComponent({
 
     const handleTabChange = (routeName: string) => {
       router.push({ name: routeName });
-    }
+    };
 
     return () => (
       <div class='business-loadbalancer-module'>
@@ -31,8 +31,7 @@ export default defineComponent({
                 <div
                   key={routeName}
                   class={`tab-item${isActive(routeName) ? ' active' : ''}`}
-                  onClick={() => handleTabChange(routeName)}
-                  >
+                  onClick={() => handleTabChange(routeName)}>
                   {label}
                 </div>
               );

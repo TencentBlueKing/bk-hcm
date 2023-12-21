@@ -32,7 +32,8 @@
       width: 300px;
       height: calc(100% - 56px);
 
-      .all-groups-wrap, .group-item-wrap {
+      .all-groups-wrap,
+      .group-item-wrap {
         height: 36px;
         padding: 0 16px;
         display: flex;
@@ -60,12 +61,12 @@
         }
 
         &:hover {
-          background-color: #F0F1F5;
+          background-color: #f0f1f5;
         }
       }
 
       .all-groups-wrap {
-        box-shadow: 0 -1px 0 0 #EAEBF0, 0 1px 0 0 #EAEBF0;
+        box-shadow: 0 -1px 0 0 #eaebf0, 0 1px 0 0 #eaebf0;
       }
     }
   }
