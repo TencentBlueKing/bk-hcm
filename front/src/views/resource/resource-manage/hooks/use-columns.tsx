@@ -1177,6 +1177,45 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
   ];
 
+  const domainColumns = [
+    {
+      type: 'selection',
+      width: '100',
+      onlyShowOnList: true,
+    },
+    getLinkField('domain_name', '域名'),
+    {
+      label: '协议',
+      field: 'protocol',
+      isDefaultShow: true,
+      filter: true,
+    },
+    {
+      label: '端口',
+      field: 'port',
+      isDefaultShow: true,
+      filter: true,
+    },
+    {
+      label: '轮询方式',
+      field: 'health_check_type',
+      isDefaultShow: true,
+      filter: true,
+    },
+    {
+      label: 'URL数量',
+      field: 'url_count',
+      isDefaultShow: true,
+      sort: true,
+    },
+    {
+      label: '同步状态',
+      field: 'sync_status',
+      isDefaultShow: true,
+      filter: true,
+    },
+  ];
+
   const columnsMap = {
     vpc: vpcColumns,
     subnet: subnetColumns,
@@ -1191,6 +1230,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     eips: eipColumns,
     clbs: clbsColumns,
     'target-group': targetGroupColumns,
+    domain: domainColumns,
   };
 
   let columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);

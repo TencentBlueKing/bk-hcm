@@ -4,6 +4,7 @@ import allVendors from '@/assets/image/all-vendors.png';
 import DynamicTree from '../components/dynamic-tree';
 import LoadBalancerDropdownMenu from '../components/clb-dropdown-menu';
 import AllClbsManager from './all-clbs-manager';
+import ListenerManager from './listener-manager';
 
 export default defineComponent({
   name: 'LoadBalancerView',
@@ -34,7 +35,7 @@ export default defineComponent({
     const componentMap = {
       all: <AllClbsManager />,
       clb: <div>clb</div>,
-      listener: <div>lisenter</div>,
+      listener: <ListenerManager />,
       domain: <div>domain</div>,
     };
     const renderComponent = (type: 'all' | 'clb' | 'listener' | 'domain') => {
@@ -74,19 +75,13 @@ export default defineComponent({
               searchValue.value ? (
                 searchResultCount.value ? (
                   <div class='search-result-wrap'>
-                    <span class='left-text'>
-                      共 {searchResultCount.value} 条搜索结果
-                    </span>
+                    <span class='left-text'>共 {searchResultCount.value} 条搜索结果</span>
                     {toggleExpand.value ? (
-                      <span
-                        class='right-text'
-                        onClick={() => handleToggleResultExpand(true)}>
+                      <span class='right-text' onClick={() => handleToggleResultExpand(true)}>
                         全部展开
                       </span>
                     ) : (
-                      <span
-                        class='right-text'
-                        onClick={() => handleToggleResultExpand(false)}>
+                      <span class='right-text' onClick={() => handleToggleResultExpand(false)}>
                         全部收起
                       </span>
                     )}
@@ -94,9 +89,7 @@ export default defineComponent({
                 ) : null
               ) : (
                 <div
-                  class={`all-clbs${
-                    activeType.value === 'all' ? ' selected' : ''
-                  }`}
+                  class={`all-clbs${activeType.value === 'all' ? ' selected' : ''}`}
                   onClick={() => handleTypeChange('all')}>
                   <div class='left-wrap'>
                     <img src={allVendors} alt='' class='prefix-icon' />
@@ -112,14 +105,8 @@ export default defineComponent({
             <DynamicTree searchValue={searchValue.value} onHandleTypeChange={handleTypeChange} />
           </div>
         </div>
-        {isAdvancedSearchShow.value && (
-          <div class='advanced-search'>高级搜索</div>
-        )}
-        <div class='main-container'>
-          <div class='common-card-wrap'>
-            {renderComponent(activeType.value)}
-          </div>
-        </div>
+        {isAdvancedSearchShow.value && <div class='advanced-search'>高级搜索</div>}
+        <div class='main-container'>{renderComponent('listener')}</div>
       </div>
     );
   },

@@ -60,3 +60,18 @@
   background-color: #fff;
   box-sizing: border-box;
 }
+
+.operate-groups {
+  span {
+    color: #3A84FF;
+    cursor: pointer;
+
+    &:not(:last-child) {
+      margin-right: 10px;
+    }
+  }
+}
+
+.f20 {
+  font-size: 20px;
+}
