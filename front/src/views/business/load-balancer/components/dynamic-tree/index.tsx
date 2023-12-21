@@ -22,7 +22,8 @@ export default defineComponent({
       required: true,
     },
   },
-  setup(props) {
+  emits: ['handleTypeChange'],
+  setup(props, ctx) {
     const treeData: any = inject('treeData');
     const baseUrl = 'http://localhost:3000';
     const loadingRef = ref();
@@ -128,14 +129,14 @@ export default defineComponent({
       }
     };
 
-    const handleTreeScroll = () => {
+    const getTreeScrollFunc = () => {
       if (props.searchValue) return null;
       return throttle(() => {
         loadingRef.value && observer.observe(loadingRef.value.$el);
       }, 300);
     };
 
-    const handleTreeAsync = () => {
+    const getTreeAsyncOption = () => {
       if (props.searchValue) return null;
       return {
         callback: (_item: any, _callback: Function, _schema: any) => {
@@ -187,6 +188,10 @@ export default defineComponent({
       );
     };
 
+    const handleNodeClick = (node: any) => {
+      ctx.emit('handleTypeChange', node.type);
+    };
+
     onMounted(() => {
       // 组件挂载，加载 root node
       loadRemoteData(null, 0);
@@ -204,8 +209,9 @@ export default defineComponent({
           line-height={36}
           node-content-action={['selected', 'click']}
           search={searchOption.value}
-          onScroll={handleTreeScroll()}
-          async={handleTreeAsync()}>
+          onNodeClick={handleNodeClick}
+          onScroll={getTreeScrollFunc()}
+          async={getTreeAsyncOption()}>
           {{
             default: ({ data, attributes }: any) => renderDefaultNode(data, attributes),
             nodeType: (node: any) => {
