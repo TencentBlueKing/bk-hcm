@@ -1183,7 +1183,11 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       width: '100',
       onlyShowOnList: true,
     },
-    getLinkField('domain_name', '域名'),
+    {
+      label: '域名',
+      field: 'domain',
+      isDefaultShow: true,
+    },
     {
       label: '协议',
       field: 'protocol',

@@ -1,9 +1,11 @@
-import { defineComponent } from 'vue';
+import { defineComponent, ref } from 'vue';
 import { Button } from 'bkui-vue';
 import './index.scss';
 import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import { Plus } from 'bkui-vue/lib/icon';
+import CommonSideslider from '../../../components/common-sideslider';
+import DomainSidesliderContent from '../domain-sideslider-content';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -34,20 +36,32 @@ export default defineComponent({
       searchData,
     });
 
+    const isDomainSidesliderShow = ref(false);
+    const handleSubmit = () => {};
+
     return () => (
-      <CommonTable>
-        {{
-          operation: () => (
-            <>
-              <Button theme='primary'>
-                <Plus class='f20' />
-                新增域名
-              </Button>
-              <Button>批量删除</Button>
-            </>
-          ),
-        }}
-      </CommonTable>
+      <>
+        <CommonTable>
+          {{
+            operation: () => (
+              <>
+                <Button theme='primary' onClick={() => (isDomainSidesliderShow.value = true)}>
+                  <Plus class='f20' />
+                  新增域名
+                </Button>
+                <Button>批量删除</Button>
+              </>
+            ),
+          }}
+        </CommonTable>
+        <CommonSideslider
+          title='新建域名'
+          width={640}
+          v-model:isShow={isDomainSidesliderShow.value}
+          onHandleSubmit={handleSubmit}>
+            <DomainSidesliderContent />
+          </CommonSideslider>
+      </>
     );
   },
 });
