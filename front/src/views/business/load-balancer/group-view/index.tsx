@@ -77,12 +77,7 @@ export default defineComponent({
       <div class='group-view-page'>
         <div class='left-container'>
           <div class='search-wrap'>
-            <Input
-              v-model={searchValue.value}
-              type='search'
-              clearable
-              placeholder='搜索目标组'
-            />
+            <Input v-model={searchValue.value} type='search' clearable placeholder='搜索目标组' />
           </div>
           <div class='group-list-wrap'>
             <div class='all-groups-wrap'>
@@ -94,10 +89,7 @@ export default defineComponent({
                 <div class='count'>{6654}</div>
               </div>
             </div>
-            <VirtualRender
-              list={renderList}
-              height='calc(100% - 36px)'
-              lineHeight={36}>
+            <VirtualRender list={renderList} height='calc(100% - 36px)' lineHeight={36}>
               {{
                 default: ({ data }: any) => {
                   return data.map((item: any) => {
@@ -124,9 +116,7 @@ export default defineComponent({
               {{
                 operation: () => (
                   <>
-                    <Button
-                      theme='primary'
-                      onClick={() => (isTargetGroupSideslider.value = true)}>
+                    <Button theme='primary' onClick={() => (isTargetGroupSideslider.value = true)}>
                       <Plus class='f20' />
                       新建
                     </Button>

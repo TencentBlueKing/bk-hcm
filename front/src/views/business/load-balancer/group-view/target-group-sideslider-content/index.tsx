@@ -176,20 +176,14 @@ export default defineComponent({
               {Array.isArray(item) ? (
                 item.map(subItem => (
                   <bk-col span={subItem.span}>
-                    <FormItem
-                      label={subItem.label}
-                      property={subItem.property}
-                      required={subItem.required}>
+                    <FormItem label={subItem.label} property={subItem.property} required={subItem.required}>
                       {subItem.content()}
                     </FormItem>
                   </bk-col>
                 ))
               ) : (
                 <bk-col span={item.span}>
-                  <FormItem
-                    label={item.label}
-                    property={item.property}
-                    required={item.required}>
+                  <FormItem label={item.label} property={item.property} required={item.required}>
                     {item.content()}
                   </FormItem>
                 </bk-col>
