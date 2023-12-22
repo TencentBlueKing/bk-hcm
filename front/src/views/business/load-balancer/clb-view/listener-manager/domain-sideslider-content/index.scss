@@ -1,0 +1,20 @@
+.readonly-info {
+  display: flex;
+  align-items: center;
+  height: 40px;
+
+  .label {
+    margin-right: 5px;
+    width: 80px;
+    text-align: right;
+  }
+
+  .value {
+    margin-left: 10px;
+    color: #313238;
+  }
+
+  &:last-of-type {
+    margin-bottom: 12px;
+  }
+}
