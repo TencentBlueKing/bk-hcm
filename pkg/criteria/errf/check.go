@@ -37,6 +37,14 @@ func GetMySQLDuplicated(err error) (merr *mysql.MySQLError) {
 	return nil
 }
 
+// IsContextCanceled return true if error contains string "context canceled"
+func IsContextCanceled(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "context canceled")
+}
+
 // IsDuplicated return true if error is a duplicated error
 func IsDuplicated(err error) bool {
 	var merr *mysql.MySQLError
