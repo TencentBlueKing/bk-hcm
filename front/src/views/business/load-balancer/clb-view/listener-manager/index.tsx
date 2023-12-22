@@ -10,9 +10,10 @@ export default defineComponent({
   name: 'ListenerManager',
   setup() {
     const activeTab = ref('domain' as 'domain | info');
+    const protocolType = ref('UDP' as 'HTTP | HTTPS' | 'TCP' | 'UDP');
     const tabList = [
       { name: 'domain', label: '域名', component: <DomainList /> },
-      { name: 'info', label: '基本信息', component: <ListenerInfo /> },
+      { name: 'info', label: '基本信息', component: <ListenerInfo protocolType={protocolType.value} /> },
     ];
 
     return () => (

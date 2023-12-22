@@ -1,0 +1,54 @@
+.listener-detail-wrap {
+  margin-top: 8px;
+  position: relative;
+
+  .fixed-edit-btn {
+    position: fixed;
+    top: 192px;
+    right: 51px;
+    min-width: 64px;
+  }
+
+  .listener-info-wrap {
+    .listener-info-title {
+      margin-bottom: 16px;
+      font-weight: 700;
+
+      .status-tag {
+        margin: 0 0 0 8px;
+      }
+    }
+
+    .listener-info-content {
+      .listener-info-item {
+        margin-left: 14px;
+        display: flex;
+        line-height: 40px;
+
+        .listener-info-item-label {
+          margin-right: 5px;
+          width: 100px;
+          text-align: right;
+        }
+
+        .listener-info-item-content {
+          margin-left: 20px;
+          color: #313238;
+
+          &.multiline {
+            padding-top: 0.7em;
+            line-height: normal;
+          }
+        }
+      }
+    }
+
+    &:not(:last-of-type) {
+      margin-bottom: 32px;
+    }
+
+    &:last-of-type {
+      padding-bottom: 24px;
+    }
+  }
+}

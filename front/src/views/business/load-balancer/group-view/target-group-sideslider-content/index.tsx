@@ -18,7 +18,7 @@ export default defineComponent({
       bizId: -1,
       cloudAccountId: '',
       targetGroupName: '',
-      protocal: '',
+      protocol: '',
       port: 80,
       region: '',
       net: '',
@@ -67,7 +67,7 @@ export default defineComponent({
           span: 12,
           content: () => (
             <div class='flex-row'>
-              <Select v-model={formData.protocal}>
+              <Select v-model={formData.protocol}>
                 <Option name='1'>选项一</Option>
                 <Option name='2'>选项二</Option>
                 <Option name='3'>选项三</Option>
