@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core/cloud"
+	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -55,7 +56,7 @@ func (a *accountSvc) Get(cts *rest.Contexts) (interface{}, error) {
 		if account != nil {
 			account.Extension.CloudSecretKey = ""
 		}
-		account.RecycleReserveTime = convertRecycleReverseTime(account.RecycleReserveTime)
+		accountDetailFullFill(a, cts, account)
 		return account, err
 	case enumor.Aws:
 		account, err := a.client.DataService().Aws.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
@@ -63,7 +64,7 @@ func (a *accountSvc) Get(cts *rest.Contexts) (interface{}, error) {
 		if account != nil {
 			account.Extension.CloudSecretKey = ""
 		}
-		account.RecycleReserveTime = convertRecycleReverseTime(account.RecycleReserveTime)
+		accountDetailFullFill(a, cts, account)
 		return account, err
 	case enumor.HuaWei:
 		account, err := a.client.DataService().HuaWei.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
@@ -71,7 +72,7 @@ func (a *accountSvc) Get(cts *rest.Contexts) (interface{}, error) {
 		if account != nil {
 			account.Extension.CloudSecretKey = ""
 		}
-		account.RecycleReserveTime = convertRecycleReverseTime(account.RecycleReserveTime)
+		accountDetailFullFill(a, cts, account)
 		return account, err
 	case enumor.Gcp:
 		account, err := a.client.DataService().Gcp.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
@@ -79,7 +80,7 @@ func (a *accountSvc) Get(cts *rest.Contexts) (interface{}, error) {
 		if account != nil {
 			account.Extension.CloudServiceSecretKey = ""
 		}
-		account.RecycleReserveTime = convertRecycleReverseTime(account.RecycleReserveTime)
+		accountDetailFullFill(a, cts, account)
 		return account, err
 	case enumor.Azure:
 		account, err := a.client.DataService().Azure.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
@@ -87,11 +88,25 @@ func (a *accountSvc) Get(cts *rest.Contexts) (interface{}, error) {
 		if account != nil {
 			account.Extension.CloudClientSecretKey = ""
 		}
-		account.RecycleReserveTime = convertRecycleReverseTime(account.RecycleReserveTime)
+		accountDetailFullFill(a, cts, account)
 		return account, err
 	default:
 		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", baseInfo.Vendor))
 	}
+}
+
+// 补充回收详情，转换回收时间
+func accountDetailFullFill[T protocloud.AccountExtensionGetResp](svc *accountSvc, cts *rest.Contexts,
+	acc *protocloud.AccountGetResult[T]) (*protocloud.AccountGetResult[T], error) {
+	acc.RecycleReserveTime = convertRecycleReverseTime(acc.RecycleReserveTime)
+	status, failedReason, err := svc.getAccountSyncDetail(cts, acc.ID, string(acc.Vendor))
+	if err != nil {
+		logs.Errorf("fail to get account sync detail, accountID: %s, rid: %s", acc.ID, cts.Kit.Rid)
+		return nil, err
+	}
+	acc.SyncStatus = status
+	acc.SyncFailedReason = failedReason
+	return acc, nil
 }
 
 func convertRecycleReverseTime(val int) int {
