@@ -4,8 +4,10 @@ import './index.scss';
 import allVendors from '@/assets/image/all-vendors.png';
 import DynamicTree from '../components/dynamic-tree';
 import LoadBalancerDropdownMenu from '../components/clb-dropdown-menu';
+import SpecificClbManager from './specific-clb-manager';
+import SpecificDomainManager from './specific-domain-manager';
 // import Funnel from 'bkui-vue/lib/icon/funnel';
-import AllClbsManager from './all-clbs-manager';
+// import AllClbsManager from './all-clbs-manager';
 
 export default defineComponent({
   name: 'LoadBalancerView',
@@ -36,9 +38,9 @@ export default defineComponent({
     };
 
     const componentMap = {
-      clb: <div>clb</div>,
+      clb: <SpecificClbManager/>,
       lisenter: <div>lisenter</div>,
-      domain: <div>domain</div>,
+      domain: <SpecificDomainManager/>,
     };
 
     watch(searchValue, () => {
@@ -51,8 +53,8 @@ export default defineComponent({
       } else {
         handleToggleResultExpand(false);
       }
-    })
-      
+    });
+
     const isAllClbsSelected = ref(true);
     const handleSelectAllClbs = () => {
       isAllClbsSelected.value = !isAllClbsSelected.value;
@@ -61,10 +63,10 @@ export default defineComponent({
           query: {
             ...route.query,
             type: 'all',
-          }
+          },
         });
       }
-    }
+    };
 
     const renderComponent = (type: 'clb' | 'listener' | 'domain') => {
       return componentMap[type];
@@ -112,7 +114,7 @@ export default defineComponent({
         <div class='main-container'>
           <div class='common-card-wrap'>
             {
-              renderComponent('clb')
+              renderComponent('domain')
             }
           </div>
         </div>
