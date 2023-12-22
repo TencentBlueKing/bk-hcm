@@ -1,120 +1,46 @@
-import { defineComponent } from 'vue';
+import { defineComponent, ref } from 'vue';
 import './index.scss';
-import { useTable } from '@/hooks/useTable/useTable';
+import ListenerList from './listener-list';
+import SecurityGroup from './security-group';
+import ClbDetail from './clb-detail';
+import { Tab } from 'bkui-vue';
+import { BkTabPanel } from 'bkui-vue/lib/tab';
+export enum TypeEnum {
+  listener = 'listener',
+  detail = 'detail',
+  security = 'security',
+}
 
 export default defineComponent({
   setup() {
-    const { CommonTable } = useTable({
-      columns: [
-        {
-          label: '监听器名称',
-          field: 'listenerName',
-        },
-        {
-          label: '协议',
-          field: 'protocol',
-        },
-        {
-          label: '端口',
-          field: 'port',
-        },
-        {
-          label: '均衡方式',
-          field: 'balanceMode',
-        },
-        {
-          label: '域名数量',
-          field: 'domainCount',
-        },
-        {
-          label: 'URL数量',
-          field: 'urlCount',
-        },
-        {
-          label: '同步状态',
-          field: 'syncStatus',
-        },
-        {
-          label: '操作',
-          field: 'actions',
-        },
-      ],
-      settings: {
-        fields: [],
-        checked: [],
-        limit: 0,
-        size: '',
-        sizeList: [],
-        showLineHeight: false,
+    const activeTab = ref(TypeEnum.listener);
+    const tabList = [
+      {
+        name: TypeEnum.listener,
+        label: '监听器',
+        component: <ListenerList />,
       },
-      searchData: [
+      {
+        name: TypeEnum.detail,
+        label: '基本信息',
+        component: <ClbDetail />,
+      },
+      {
+        name: TypeEnum.security,
+        label: '安全组',
+        component: <SecurityGroup />,
+      },
+    ];
+    return () => (
+      <Tab v-model:active={activeTab.value} type={'card-grid'}>
         {
-          name: '监听器名称',
-          id: 'listenerName',
-        },
-        {
-          name: '协议',
-          id: 'protocol',
-        },
-        {
-          name: '端口',
-          id: 'port',
-        },
-        {
-          name: '均衡方式',
-          id: 'balanceMode',
-        },
-        {
-          name: '域名数量',
-          id: 'domainCount',
-        },
-        {
-          name: 'URL数量',
-          id: 'urlCount',
-        },
-        {
-          name: '同步状态',
-          id: 'syncStatus',
-        },
-        {
-          name: '操作',
-          id: 'actions',
-        },
-      ],
-      searchUrl: '',
-      tableData: [
-        {
-          listenerName: 'Listener001',
-          protocol: 'HTTP',
-          port: 80,
-          balanceMode: 'RoundRobin',
-          domainCount: 5,
-          urlCount: 10,
-          syncStatus: 'Synchronized',
-          actions: 'Edit',
-        },
-        {
-          listenerName: 'Listener002',
-          protocol: 'HTTPS',
-          port: 443,
-          balanceMode: 'LeastConnections',
-          domainCount: 3,
-          urlCount: 5,
-          syncStatus: 'Pending',
-          actions: 'Delete',
-        },
-        {
-          listenerName: 'Listener003',
-          protocol: 'TCP',
-          port: 22,
-          balanceMode: 'IPHash',
-          domainCount: 2,
-          urlCount: 7,
-          syncStatus: 'Failed',
-          actions: 'Update',
-        },
-      ],
-    });
-    return () => <CommonTable />;
+          tabList.map(tab => (
+            <BkTabPanel key={tab.name} name={tab.name} label={tab.label} class={'clb-list-tab-content-container'}>
+              <div>{tab.component}</div>
+            </BkTabPanel>
+          ))
+        }
+      </Tab>
+    );
   },
 });
