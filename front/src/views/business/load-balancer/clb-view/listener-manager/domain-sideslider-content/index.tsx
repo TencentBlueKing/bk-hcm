@@ -32,9 +32,8 @@ export default defineComponent({
         required: true,
         content: () => (
           <Select v-model={formData.mode} placeholder='请选择模式'>
-            <Option name='1'>1</Option>
-            <Option name='2'>2</Option>
-            <Option name='3'>3</Option>
+            <Option id='1' name='1' />
+            <Option id='2' name='2' />
           </Select>
         ),
       },
@@ -49,10 +48,10 @@ export default defineComponent({
           <span class='label'>协议端口</span>:<span class='value'>HTTP:50</span>
         </p>
         <Form formType='vertical'>
-          {formItemOptions.value.map((item) => {
+          {formItemOptions.value.map(({ label, required, property, content }) => {
             return (
-              <FormItem label={item.label} required={item.required} key={item.property}>
-                {item.content()}
+              <FormItem label={label} required={required} key={property}>
+                {content()}
               </FormItem>
             );
           })}
