@@ -1,7 +1,7 @@
 ### 描述
 
 - 该接口提供版本：v9.9.9+。
-- 该接口所需权限：x。
+- 该接口所需权限：负载均衡创建。
 - 该接口功能描述：创建负载均衡。
 
 ### URL
@@ -21,7 +21,7 @@ POST /api/v1/cloud/vendors/tcloud/clbs/create
 | zones                      | string array | 是  | 主可用区                                                          |
 | backup_zones               | string array | 否  | 备可用区，目前仅广州、上海、南京、北京、中国香港、首尔地域的 IPv4 版本的 CLB 支持主备可用区。          |
 | address_ip_version         | string       | 否  | ip版本，IPV4,IPV6(ipv6 nat64),IPv6FullChain(ipv6)                |
-| cloud_vpc_id               | string       | 否  | 云VpcID                                                        |
+| cloud_vpc_id               | string       | 是  | 云VpcID                                                        |
 | cloud_subnet_id            | string       | 否  | 云子网ID ，内网型必填                                                  |
 | vip                        | string       | 否  | 绑定已有eip的ip地址，，ipv6 nat64 不支持                                  |
 | vip_id                     | string       | 否  | 绑定eip id                                                      |
