@@ -12,6 +12,7 @@ export interface IProp {
   settings: Settings;
   searchData: Array<ISearchItem>;
   searchUrl: string; // 如`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/sub_accounts/list`，
+  tableData?: Array<Record<string, any>>;  // 临时看看效果
 }
 
 export const useTable = (props: IProp) => {
@@ -38,6 +39,10 @@ export const useTable = (props: IProp) => {
     field: string,
     value: string | number,
   }> = []) => {
+    if (props.tableData) {
+      dataList.value = props.tableData;
+      return;
+    }
     isLoading.value = true;
     const [detailsRes, countRes] = await Promise.all([false, true].map(isCount => http.post(props.searchUrl, {
       page: {

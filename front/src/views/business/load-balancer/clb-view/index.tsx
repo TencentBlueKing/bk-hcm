@@ -5,6 +5,8 @@ import DynamicTree from '../components/dynamic-tree';
 import LoadBalancerDropdownMenu from '../components/clb-dropdown-menu';
 import AllClbsManager from './all-clbs-manager';
 import ListenerManager from './listener-manager';
+import SpecificClbManager from './specific-clb-manager';
+import SpecificDomainManager from './specific-domain-manager';
 
 export default defineComponent({
   name: 'LoadBalancerView',
@@ -34,9 +36,9 @@ export default defineComponent({
 
     const componentMap = {
       all: <AllClbsManager />,
-      clb: <div>clb</div>,
+      clb: <SpecificClbManager />,
       listener: <ListenerManager />,
-      domain: <div>domain</div>,
+      domain: <SpecificDomainManager />,
     };
     const renderComponent = (type: 'all' | 'clb' | 'listener' | 'domain') => {
       return componentMap[type];
@@ -106,7 +108,7 @@ export default defineComponent({
           </div>
         </div>
         {isAdvancedSearchShow.value && <div class='advanced-search'>高级搜索</div>}
-        <div class='main-container'>{renderComponent('listener')}</div>
+        <div class='main-container'>{renderComponent(activeType.value)}</div>
       </div>
     );
   },
