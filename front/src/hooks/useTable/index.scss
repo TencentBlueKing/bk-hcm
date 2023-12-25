@@ -18,4 +18,8 @@
 
 .loading-table-container {
   height: calc(100% - 64px);
+
+  .table-container {
+    max-height: 100%;
+  }
 }
