@@ -103,6 +103,10 @@ func (am *Manager) RegisterFlowTpl(templates ...FlowTemplate) error {
 			}
 		}
 
+		// 校验模板合法性
+		if err := tpl.Validate(); err != nil {
+			return err
+		}
 		am.flowTplMap[tpl.Name] = tpl
 	}
 
