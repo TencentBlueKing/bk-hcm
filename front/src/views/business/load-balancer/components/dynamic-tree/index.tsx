@@ -34,10 +34,15 @@ export default defineComponent({
     const searchOption = computed(() => {
       return {
         value: props.searchValue,
-        match: (searchValue: string, itemText: string) => {
-          const result = new RegExp(searchValue, 'g').test(itemText);
-          if (result) {
-            searchResultCount.value = searchResultCount.value + 1;
+        match: (searchValue: string, itemText: string, item: any) => {
+          // todo: 需要补充搜索关键词的映射，如 key=clb_name，则需要匹配 type=clb 且 name=searchValue 的项
+          const v = searchValue.split(':')[1];
+          let result = false;
+          if (item.type === 'clb') {
+            result = new RegExp(v, 'g').test(itemText);
+            if (result) {
+              searchResultCount.value = searchResultCount.value + 1;
+            }
           }
           return result;
         },
@@ -133,7 +138,7 @@ export default defineComponent({
       if (props.searchValue) return null;
       return throttle(() => {
         loadingRef.value && observer.observe(loadingRef.value.$el);
-      }, 300);
+      }, 200);
     };
 
     const getTreeAsyncOption = () => {
@@ -168,8 +173,8 @@ export default defineComponent({
             {props.searchValue ? (
               <span
                 v-html={data.name?.replace(
-                  new RegExp(props.searchValue, 'g'),
-                  `<font color='#3A84FF'>${props.searchValue}</font>`,
+                  new RegExp(props.searchValue.split(':')[1], 'g'),
+                  `<font color='#3A84FF'>${props.searchValue.split(':')[1]}</font>`,
                 )}></span>
             ) : (
               data.name
@@ -182,7 +187,7 @@ export default defineComponent({
           </div>
           <div class='right-wrap'>
             <div class='count'>{data.id}</div>
-            <LoadBalancerDropdownMenu uuid={attributes.uuid} type={data.type} />
+            <LoadBalancerDropdownMenu class='more-action' type={data.type} />
           </div>
         </>
       );

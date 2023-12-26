@@ -78,7 +78,7 @@ export const useTable = (props: IProp) => {
           </section>
           <Loading loading={isLoading.value} class='loading-table-container'>
             <Table
-              height='100%'
+              class='table-container'
               data={dataList.value}
               columns={props.columns}
               settings={props.settings}

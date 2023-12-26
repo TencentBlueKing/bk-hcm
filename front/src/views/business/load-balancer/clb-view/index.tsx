@@ -7,6 +7,7 @@ import AllClbsManager from './all-clbs-manager';
 import ListenerManager from './listener-manager';
 import SpecificClbManager from './specific-clb-manager';
 import SpecificDomainManager from './specific-domain-manager';
+import SimpleSearchSelect from '../components/simple-search-select';
 
 export default defineComponent({
   name: 'LoadBalancerView',
@@ -16,6 +17,14 @@ export default defineComponent({
     const isAdvancedSearchShow = ref(false);
 
     const searchValue = ref('');
+    const searchDataList = [
+      { id: 'clb_name', name: '负载均衡名称' },
+      { id: 'clb_vip', name: '负载均衡VIP' },
+      { id: 'listener_name', name: '监听器名称' },
+      { id: 'protocol', name: '协议' },
+      { id: 'port', name: '端口' },
+      { id: 'domain', name: '域名' },
+    ];
     const searchResultCount = ref(0);
     provide('searchResultCount', searchResultCount);
 
@@ -49,6 +58,9 @@ export default defineComponent({
       activeType.value = type;
     };
 
+    const popInstance = ref(null);
+    provide('popInstance', popInstance);
+
     watch(searchValue, () => {
       searchResultCount.value = 0;
     });
@@ -64,13 +76,7 @@ export default defineComponent({
     return () => (
       <div class='clb-view-page'>
         <div class='left-container'>
-          <div class='search-wrap'>
-            <bk-input
-              v-model={searchValue.value}
-              type='search'
-              clearable
-              placeholder='搜索负载均衡名称、VIP'></bk-input>
-          </div>
+          <SimpleSearchSelect v-model:searchValue={searchValue.value} dataList={searchDataList} />
           <div class='tree-wrap'>
             {
               // eslint-disable-next-line no-nested-ternary
@@ -99,7 +105,7 @@ export default defineComponent({
                   </div>
                   <div class='right-wrap'>
                     <div class='count'>{6654}</div>
-                    <LoadBalancerDropdownMenu uuid='all' type='all' />
+                    <LoadBalancerDropdownMenu class='more-action' type='all' />
                   </div>
                 </div>
               )

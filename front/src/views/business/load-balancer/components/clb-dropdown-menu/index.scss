@@ -1,13 +1,15 @@
-.dropdown-menu-dialog {
-  width: auto;
+.dropdown-popover-wrap {
+  padding: 4px 0 !important;
 
-  .bk-modal-header {
-    display: none;
-  }
+  .dropdown-list {
+    .dropdown-item {
+      padding: 0 12px;
+      line-height: 32px;
+      cursor: pointer;
 
-  .bk-modal-content {
-    padding: 4px 12px !important;
-    height: auto !important;
-    min-height: auto !important;
+      &:hover {
+        background-color: #f5f7fb;
+      }
+    }
   }
 }

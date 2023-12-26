@@ -1,4 +1,14 @@
-.common-search-selector {
-  margin-left: auto;
+.tab-radio-group-wrap {
+  display: flex;
+  justify-content: space-between;
   margin-bottom: 16px;
+
+  .bk-radio-button-label {
+    padding: 0 16px;
+    font-size: 14px;
+  }
+}
+
+.common-search-selector {
+  width: 400px;
 }
