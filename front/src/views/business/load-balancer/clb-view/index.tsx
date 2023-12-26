@@ -49,6 +49,9 @@ export default defineComponent({
       activeType.value = type;
     };
 
+    const popInstance = ref(null);
+    provide('popInstance', popInstance);
+
     watch(searchValue, () => {
       searchResultCount.value = 0;
     });
@@ -99,7 +102,7 @@ export default defineComponent({
                   </div>
                   <div class='right-wrap'>
                     <div class='count'>{6654}</div>
-                    <LoadBalancerDropdownMenu uuid='all' type='all' />
+                    <LoadBalancerDropdownMenu class='more-action' type='all' />
                   </div>
                 </div>
               )

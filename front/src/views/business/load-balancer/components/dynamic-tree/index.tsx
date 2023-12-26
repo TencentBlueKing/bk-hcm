@@ -133,7 +133,7 @@ export default defineComponent({
       if (props.searchValue) return null;
       return throttle(() => {
         loadingRef.value && observer.observe(loadingRef.value.$el);
-      }, 300);
+      }, 200);
     };
 
     const getTreeAsyncOption = () => {
@@ -182,7 +182,7 @@ export default defineComponent({
           </div>
           <div class='right-wrap'>
             <div class='count'>{data.id}</div>
-            <LoadBalancerDropdownMenu uuid={attributes.uuid} type={data.type} />
+            <LoadBalancerDropdownMenu class='more-action' type={data.type} />
           </div>
         </>
       );

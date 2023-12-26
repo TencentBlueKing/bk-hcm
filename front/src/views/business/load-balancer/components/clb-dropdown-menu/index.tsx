@@ -1,19 +1,17 @@
-import { defineComponent } from 'vue';
+import { defineComponent, inject } from 'vue';
+import { $bkPopover } from 'bkui-vue';
 import './index.scss';
 
 export default defineComponent({
   name: 'LoadBalancerDropdownMenu',
   props: {
-    uuid: {
-      type: String,
-      required: true,
-    },
     type: {
       type: String,
       required: true,
     },
   },
   setup(props) {
+    const popInstance: any = inject('popInstance');
     const typeMenuMap = {
       all: [{ label: '购买负载均衡', url: 'add' }],
       clb: [
@@ -35,21 +33,41 @@ export default defineComponent({
       ],
     };
 
+    const handleDropdownItemClick = () => {
+      // dropdown item click event
+    };
+
+    const initPopInstance = () => {
+      popInstance.value?.close();
+      popInstance.value = $bkPopover({
+        content: (
+          <div class='dropdown-list'>
+            {typeMenuMap[props.type].map(item => (
+              <div class='dropdown-item' onClick={handleDropdownItemClick}>
+                {item.label}
+              </div>
+            ))}
+          </div>
+        ),
+        trigger: 'click',
+        placement: 'bottom-start',
+        theme: 'light',
+        extCls: 'dropdown-popover-wrap',
+      });
+      popInstance.value.show();
+    };
+
+    const handleMoreActionClick = (e: Event) => {
+      e.stopPropagation();
+      initPopInstance();
+      popInstance.value?.update(e);
+      popInstance.value?.show();
+    };
+
     return () => (
-      <bk-dropdown key={props.uuid} class='more-action' trigger='click' placement='right-start' onClick={(e: MouseEvent) => {
-        e.stopPropagation();
-      }}>
-        {{
-          default: () => <i class='hcm-icon bkhcm-icon-more-fill'></i>,
-          content: () => (
-            <bk-dropdown-menu>
-              {typeMenuMap[props.type].map((item: any) => {
-                return <bk-dropdown-item key={item.label}>{item.label}</bk-dropdown-item>;
-              })}
-            </bk-dropdown-menu>
-          ),
-        }}
-      </bk-dropdown>
+      <div onClick={handleMoreActionClick}>
+        <i class='hcm-icon bkhcm-icon-more-fill'></i>
+      </div>
     );
   },
 });
