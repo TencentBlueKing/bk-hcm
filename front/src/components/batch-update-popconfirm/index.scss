@@ -1,0 +1,20 @@
+.batch-update-popconfirm {
+  padding: 0 !important;
+
+  .batch-update-popconfirm-content {
+    padding: 16px;
+
+    .title {
+      margin-bottom: 6px;
+      color: #63656E;
+    }
+  }
+
+  .bk-pop-confirm-footer {
+    padding: 0 16px;
+    height: 42px;
+    line-height: 42px;
+    border: 1px solid #eaebf0;
+    background: #fafbfd;
+  }
+}

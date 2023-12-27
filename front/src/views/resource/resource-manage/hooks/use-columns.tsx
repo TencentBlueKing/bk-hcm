@@ -1136,16 +1136,19 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '绑定监听器数量',
       field: 'listener_count',
       isDefaultShow: true,
+      sort: true,
     },
     {
       label: '协议',
       field: 'protocol',
       isDefaultShow: true,
+      filter: true,
     },
     {
       label: '端口',
       field: 'port',
       isDefaultShow: true,
+      filter: true,
     },
     {
       label: '云厂商',
@@ -1174,6 +1177,35 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: 'IP地址类型',
       field: 'ip_type',
+    },
+  ];
+
+  const rsConfigColumns = [
+    {
+      label: '内网IP',
+      field: 'privateIp',
+      isDefaultShow: true,
+    },
+    {
+      label: '公网IP',
+      field: 'publicIp',
+    },
+    {
+      label: '名称',
+      field: 'name',
+      isDefaultShow: true,
+    },
+    {
+      label: '地域',
+      field: 'region',
+    },
+    {
+      label: '资源类型',
+      field: 'resourceType',
+    },
+    {
+      label: '所属网络',
+      field: 'network',
     },
   ];
 
@@ -1233,7 +1265,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     securityCommon: securityCommonColumns,
     eips: eipColumns,
     clbs: clbsColumns,
-    'target-group': targetGroupColumns,
+    targetGroup: targetGroupColumns,
+    rsConfig: rsConfigColumns,
     domain: domainColumns,
   };
 

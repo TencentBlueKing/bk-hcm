@@ -19,6 +19,7 @@ export default defineComponent({
       ...columns,
       {
         label: '操作',
+        width: 120,
         render() {
           return (
             <div class='operate-groups'>

@@ -84,6 +84,7 @@ export const useTable = (props: IProp) => {
               settings={props.settings}
               pagination={pagination}
               remotePagination
+              showOverflowTooltip
               onPageLimitChange={handlePageLimitChange}
               onPageValueChange={handlePageValueCHange}
               onColumnSort={() => {}}
