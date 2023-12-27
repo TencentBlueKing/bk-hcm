@@ -37,7 +37,7 @@ export default defineComponent({
       },
     });
 
-    // rs配置
+    // rs配置表单项
     const isTableLoading = ref(false);
     const { columns, settings } = useColumns('rsConfig');
     const handleBatchUpdatePort = (_port: number) => {};
@@ -71,11 +71,11 @@ export default defineComponent({
         render: () => <i class='hcm-icon bkhcm-icon-minus-circle-shape' onClick={handleDeleteRs}></i>,
       },
     ];
-    const rsTableSettings = Object.assign(settings.value);
-    rsTableSettings.checked.push('port', 'weight');
-    rsTableSettings.fields.push(
-      { label: '端口', field: 'port', isDefaultShow: true },
-      { label: '权重', field: 'weight', isDefaultShow: true },
+    // 补充 port 和 weight 的 settings 配置
+    settings.value.checked.push('port', 'weight');
+    settings.value.fields.push(
+      { label: '端口', field: 'port' },
+      { label: '权重', field: 'weight' },
     );
     const rsConfigData = [
       {

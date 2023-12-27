@@ -76,7 +76,6 @@ export default defineComponent({
       }
     };
     const handleSelectAll = ({ checked, data }: { checked: boolean; data: Array<any> }) => {
-      console.log(typeof checked);
       if (checked) {
         selectedCount.value = data.length > paginationConfig.limit ? paginationConfig.limit : data.length;
       } else {
@@ -86,7 +85,7 @@ export default defineComponent({
     const handleClear = () => {
       tableRef.value.clearSelection();
     };
-    const paginationConfig = reactive({ small: true, align: 'left', limit: 10, 'limit-list': [10, 20, 50, 100] });
+    const paginationConfig = reactive({ small: true, align: 'left', limit: 10, limitList: [10, 20, 50, 100] });
     return () => (
       <div class='add-rs-dialog-content'>
         <SearchSelect class='mb16' v-model={searchValue.value} data={searchData} />

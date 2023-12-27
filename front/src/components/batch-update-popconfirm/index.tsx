@@ -12,10 +12,10 @@ export default defineComponent({
   },
   emits: ['updateValue'],
   setup(props, { emit }) {
-    const inputVal = ref('');
+    const inputValue = ref('');
     const handleConfirm = () => {
-      emit('updateValue', inputVal.value);
-      inputVal.value = '';
+      emit('updateValue', inputValue.value);
+      inputValue.value = '';
     };
     return () => (
       <PopConfirm
@@ -28,8 +28,8 @@ export default defineComponent({
           default: () => <i class='hcm-icon bkhcm-icon-batch-edit'></i>,
           content: () => (
             <div class='batch-update-popconfirm-content'>
-              <div class='title'>批量删除{props.title}</div>
-              <Input v-model={inputVal.value}></Input>
+              <div class='title'>批量修改{props.title}</div>
+              <Input v-model={inputValue.value}></Input>
             </div>
           ),
         }}
