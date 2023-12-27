@@ -15,7 +15,20 @@ const { DropdownMenu, DropdownItem } = Dropdown;
 export default defineComponent({
   name: 'TargetGroupView',
   setup() {
-    const { columns, settings } = useColumns('target-group');
+    const { columns, settings } = useColumns('targetGroup');
+    const tableColumns = [
+      ...columns,
+      {
+        label: '操作',
+        width: 120,
+        render: () => (
+          <div class='operate-groups'>
+            <span>编辑</span>
+            <span>删除</span>
+          </div>
+        ),
+      },
+    ];
     const searchData: ISearchItem[] = [
       {
         id: 'target_group_name',
@@ -51,11 +64,56 @@ export default defineComponent({
       },
     ];
     const searchUrl = `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vpcs/list`;
+    const tableData = [
+      {
+        target_group_name: 'TargetGroup1',
+        clb_name: 'CLB1',
+        listener_count: 3,
+        protocol: 'HTTP',
+        port: 80,
+        vendor: 'Amazon',
+        region: 'us-west-1',
+        zone: 'us-west-1a',
+        type: 'public',
+        vpc_id: 'vpc-1234abcd',
+        health_check_port: 8080,
+        ip_type: 'ipv4',
+      },
+      {
+        target_group_name: 'TargetGroup2',
+        clb_name: 'CLB2',
+        listener_count: 5,
+        protocol: 'HTTPS',
+        port: 443,
+        vendor: 'Amazon',
+        region: 'eu-central-1',
+        zone: 'eu-central-1b',
+        type: 'internal',
+        vpc_id: 'vpc-5678efgh',
+        health_check_port: 8443,
+        ip_type: 'ipv6',
+      },
+      {
+        target_group_name: 'TargetGroup3',
+        clb_name: 'CLB3',
+        listener_count: 2,
+        protocol: 'TCP',
+        port: 22,
+        vendor: 'Amazon',
+        region: 'ap-southeast-1',
+        zone: 'ap-southeast-1c',
+        type: 'public',
+        vpc_id: 'vpc-90ab12cd',
+        health_check_port: 8000,
+        ip_type: 'ipv4',
+      }, // 尾后逗号
+    ];
     const { CommonTable } = useTable({
-      columns,
+      columns: tableColumns,
       settings: settings.value,
       searchUrl,
       searchData,
+      tableData,
     });
     const searchValue = ref('');
 
