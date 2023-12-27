@@ -84,6 +84,7 @@ export default defineComponent({
     };
     const handleClear = () => {
       tableRef.value.clearSelection();
+      selectedCount.value = 0;
     };
     const paginationConfig = reactive({ small: true, align: 'left', limit: 10, limitList: [10, 20, 50, 100] });
     return () => (
