@@ -6,7 +6,7 @@
 
 ### URL
 
-POST /api/v1/cloud/cert/assign/bizs
+POST /api/v1/cloud/certs/assign/bizs
 
 ### 输入参数
 
