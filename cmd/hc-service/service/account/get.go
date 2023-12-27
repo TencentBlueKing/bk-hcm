@@ -22,7 +22,6 @@ package account
 import (
 	"context"
 	"errors"
-	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -463,7 +462,7 @@ func (svc *service) TCloudGetResCountBySecret(cts *rest.Contexts) (interface{}, 
 				count, countErr := counter(newKit, region)
 				if countErr != nil {
 					// 过滤因其他goroutine失败导致的错误
-					if !strings.Contains(countErr.Error(), "context canceled") {
+					if !errf.IsContextCanceled(countErr) {
 						globalErr = countErr
 						cancelCtx()
 					}
@@ -478,7 +477,7 @@ func (svc *service) TCloudGetResCountBySecret(cts *rest.Contexts) (interface{}, 
 	}
 	// 单独处理子账号
 	accountCount, err := tcloudClient.CountAccount(newKit)
-	if err != nil {
+	if err != nil && !errf.IsContextCanceled(err) {
 		globalErr = err
 		cancelCtx()
 	}

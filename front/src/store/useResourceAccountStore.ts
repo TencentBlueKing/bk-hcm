@@ -20,6 +20,17 @@ export type IAccount = {
   updated_at: string;
   vendor: VendorEnum;
   recycle_reserve_time: number;
+  extension?: {
+    cloud_main_account_id?: string;
+    cloud_account_id?: string;
+    cloud_iam_username?: string;
+    cloud_project_id?: string;
+    cloud_project_name?: string;
+    cloud_tenant_id?: string;
+    cloud_subscription_name?: string;
+    cloud_sub_account_id?: string;
+    cloud_sub_account_name?: string;
+  }
 };
 
 export const useResourceAccountStore = defineStore(
