@@ -20,7 +20,7 @@ import firewallForm from '@/views/business/forms/firewall';
 import BkTab, { BkTabPanel } from 'bkui-vue/lib/tab';
 import { RouterView, useRouter, useRoute } from 'vue-router';
 
-import { RESOURCE_TYPES, RESOURCE_TABS } from '@/common/constant';
+import { RESOURCE_TYPES, RESOURCE_TABS, VendorEnum } from '@/common/constant';
 
 import { useI18n } from 'vue-i18n';
 import useSteps from './hooks/use-steps';
@@ -382,9 +382,33 @@ getResourceAccountList();
           <span class="main-account-name">
             {{ resourceAccountStore?.resourceAccount?.name || "全部账号" }}
           </span>
-          <span v-if="resourceAccountStore?.resourceAccount?.id" class="main-account-id pl20">
-            主账号ID：{{ resourceAccountStore.resourceAccount.id }}
-          </span>
+          <template v-if="resourceAccountStore?.resourceAccount?.id">
+            <div v-if="resourceAccountStore?.resourceAccount?.vendor === VendorEnum.TCLOUD"
+                 class="extension">
+              <span>主账号ID：{{ resourceAccountStore.resourceAccount.extension.cloud_main_account_id }}</span>
+              <span>子账号ID：{{ resourceAccountStore.resourceAccount.extension.cloud_sub_account_id }}</span>
+            </div>
+            <div v-else-if="resourceAccountStore?.resourceAccount?.vendor === VendorEnum.AWS"
+                 class="extension">
+              <span>云账号ID：{{ resourceAccountStore.resourceAccount.extension.cloud_account_id }}</span>
+              <span>云iam用户名：{{ resourceAccountStore.resourceAccount.extension.cloud_iam_username }}</span>
+            </div>
+            <div v-else-if="resourceAccountStore?.resourceAccount?.vendor === VendorEnum.GCP"
+                 class="extension">
+              <span>云项目ID：{{ resourceAccountStore.resourceAccount.extension.cloud_project_id }}</span>
+              <span>云项目名称：{{ resourceAccountStore.resourceAccount.extension.cloud_project_name }}</span>
+            </div>
+            <div v-else-if="resourceAccountStore?.resourceAccount?.vendor === VendorEnum.AZURE"
+                 class="extension">
+              <span>云租户ID：{{ resourceAccountStore.resourceAccount.extension.cloud_tenant_id }}</span>
+              <span>云订阅名称：{{ resourceAccountStore.resourceAccount.extension.cloud_subscription_name }}</span>
+            </div>
+            <div v-else-if="resourceAccountStore?.resourceAccount?.vendor === VendorEnum.HUAWEI"
+                 class="extension">
+              <span>子账号ID：{{ resourceAccountStore.resourceAccount.extension.cloud_sub_account_id }}</span>
+              <span>云子账号名称：{{ resourceAccountStore.resourceAccount.extension.cloud_sub_account_name }}</span>
+            </div>
+          </template>
         </p>
         <BkTab
           class="resource-tab-wrap ml15"
@@ -574,9 +598,13 @@ getResourceAccountList();
   display: flex;
   align-items: center;
 
-  .main-account-id {
+  .extension {
     font-size: 14px;
     color: #313238;
+
+    span {
+      margin-left: 20px;
+    }
   }
 }
 .bk-tab-content {
