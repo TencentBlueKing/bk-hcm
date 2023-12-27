@@ -31,17 +31,18 @@ export const BUSINESS_TYPE = [
 ];
 
 export const ACCOUNT_TYPE = [
+  // {
+  //   label: '资源账号',
+  //   value: 'resource',
+  // },
   {
-    label: '资源账号',
-    value: 'resource',
-  }, {
     label: '登记账号',
     value: 'registration',
   },
-  {
-    label: '安全审计账号',
-    value: 'security_audit',
-  },
+  // {
+  //   label: '安全审计账号',
+  //   value: 'security_audit',
+  // },
 ];
 
 export const SITE_TYPE = [
