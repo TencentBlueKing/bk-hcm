@@ -1,3 +1,4 @@
 dist
 public
 .eslintrc.js
+src/assets/iconfont/iconcool.js
