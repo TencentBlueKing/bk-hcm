@@ -104,6 +104,7 @@ POST /api/v1/cloud/certs/list
 | cert_type          | string | 证书类型（CA:客户端证书，SVR:服务器证书）          |
 | encrypt_algo       | string | 加密算法                                       |
 | cert_status        | string | 证书状态                                       |
+| cloud_created_time | string | 上传时间，标准格式：2006-01-02T15:04:05Z         |
 | cloud_expired_time | string | 过期时间，标准格式：2006-01-02T15:04:05Z         |
 
 接口调用者可以根据以上参数自行根据查询场景设置查询规则。
@@ -178,6 +179,7 @@ POST /api/v1/cloud/certs/list
                 "cert_type": "CA",
                 "encrypt_algo": "rsa",
                 "cert_status": "1",
+                "cloud_created_time": "2023-02-12 14:47:39",
                 "cloud_expired_time": "2022-02-22 14:47:39",
                 "memo": "xxxx",
                 "creator": "Jim",
@@ -230,6 +232,7 @@ POST /api/v1/cloud/certs/list
 | cert_type          | string       | 证书类型（CA:客户端证书，SVR:服务器证书）          |
 | encrypt_algo       | string       | 加密算法                                       |
 | cert_status        | string       | 证书状态                                       |
+| cloud_created_time | string       | 上传时间，标准格式：2006-01-02T15:04:05Z         |
 | cloud_expired_time | string       | 过期时间，标准格式：2006-01-02T15:04:05Z         |
 | memo               | string       | 备注                                           |
 | creator            | string       | 创建者                                         |
