@@ -396,10 +396,6 @@ getResourceAccountList();
             :label="item.label"
             :key="item.key"
             :name="item.key"
-            :disabled="
-              item.key === '/resource/resource/account' &&
-                !resourceAccountStore?.resourceAccount?.id
-            "
           />
         </BkTab>
       </div>
