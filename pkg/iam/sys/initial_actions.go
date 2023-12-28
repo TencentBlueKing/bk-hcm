@@ -237,6 +237,14 @@ func genResourceAccessActions() []client.ResourceAction {
 		RelatedResourceTypes: accountResource,
 		RelatedActions:       nil,
 		Version:              1,
+	}, {
+		ID:                   AccountDelete,
+		Name:                 ActionIDNameMap[AccountDelete],
+		NameEn:               "Delete Account",
+		Type:                 Delete,
+		RelatedResourceTypes: accountResource,
+		RelatedActions:       nil,
+		Version:              1,
 	}}
 
 	actions = append(actions, genIaaSResAccessActions()...)

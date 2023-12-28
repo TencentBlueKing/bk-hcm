@@ -1,6 +1,5 @@
 import { useAccountStore } from '@/store';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
-import { QueryRuleOPEnum } from '@/typings';
 import { ref, watch, watchEffect } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -44,20 +43,8 @@ export const useResourceAccount = () => {
       resourceAccountStore.setResourceAccount({});
       return;
     }
-    const res = await accountStore.getAccountList({
-      filter: {
-        op: QueryRuleOPEnum.AND,
-        rules: [
-          { field: 'id', op: QueryRuleOPEnum.EQ, value: accountId.value },
-        ],
-      },
-      page: {
-        start: 0,
-        limit: 1,
-      },
-    });
-    resourceAccountStore.setResourceAccount(res?.data?.details?.[0] || {});
-    console.log(666666, res, resourceAccountStore.resourceAccount);
+    const res = await accountStore.getAccountDetail(accountId.value);
+    resourceAccountStore.setResourceAccount(res?.data || {});
   });
 
   watch(

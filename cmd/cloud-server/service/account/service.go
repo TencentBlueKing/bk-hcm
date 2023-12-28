@@ -41,6 +41,9 @@ func InitAccountService(c *capability.Capability) {
 	}
 
 	h := rest.NewHandler()
+	// 兼容登记账号校验，过渡方案，后期去除
+	h.Add("Check", http.MethodPost, "/accounts/check", svc.Check)
+
 	h.Add("GetResCountBySecret", http.MethodPost, "/vendors/{vendor}/accounts/res_counts/by_secrets",
 		svc.GetResCountBySecret)
 	h.Add("GetAccountBySecret", http.MethodPost, "/vendors/{vendor}/accounts/secret", svc.GetAccountBySecret)
@@ -55,7 +58,8 @@ func InitAccountService(c *capability.Capability) {
 	h.Add("DeleteValidate", http.MethodPost, "/accounts/{account_id}/delete/validate", svc.DeleteValidate)
 
 	// 获取账号配额
-	h.Add("GetBizTCloudZoneQuota", http.MethodPost, "/bizs/{bk_biz_id}/vendors/tcloud/accounts/{account_id}/zones/quotas",
+	h.Add("GetBizTCloudZoneQuota", http.MethodPost,
+		"/bizs/{bk_biz_id}/vendors/tcloud/accounts/{account_id}/zones/quotas",
 		svc.GetBizTCloudZoneQuota)
 	h.Add("GetBizHuaWeiRegionQuota", http.MethodPost,
 		"/bizs/{bk_biz_id}/vendors/huawei/accounts/{account_id}/regions/quotas", svc.GetBizHuaWeiRegionQuota)
