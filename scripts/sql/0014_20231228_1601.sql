@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0014,HCMVER=v1.3.3
 
     Notes:
     1. 修改子账号表唯一键索引为vendor, account_id, cloud_id
@@ -33,6 +33,6 @@ alter table sub_account
     add constraint idx_uk_vendor_account_id_cloud_id unique (vendor, account_id, cloud_id);
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.3.3' as `hcm_ver`, '0014' as `sql_ver`;
 
 COMMIT
