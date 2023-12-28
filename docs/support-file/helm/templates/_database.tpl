@@ -27,6 +27,12 @@ database: {{ .Values.externalDatabase.database }}
 user: {{ .Values.externalDatabase.user }}
 password: {{ .Values.externalDatabase.password }}
 {{- end }}
+dialTimeoutSec: {{ .Values.dbConnConfig.dialTimeoutSec }}
+readTimeoutSec: {{ .Values.dbConnConfig.readTimeoutSec }}
+writeTimeoutSec: {{ .Values.dbConnConfig.writeTimeoutSec }}
+maxIdleTimeoutMin: {{ .Values.dbConnConfig.maxIdleTimeoutMin }}
+maxOpenConn: {{ .Values.dbConnConfig.maxOpenConn }}
+maxIdleConn: {{ .Values.dbConnConfig.maxIdleConn }}
 {{- end -}}
 
 {{- define "bk-hcm.databaseConfig" -}}
@@ -37,12 +43,12 @@ resource:
   database: {{ $cfg.database }}
   user: {{ $cfg.user }}
   password: {{ $cfg.password }}
-  dialTimeoutSec:
-  readTimeoutSec:
-  writeTimeoutSec:
-  maxIdleTimeoutMin:
-  maxOpenConn:
-  maxIdleConn:
+  dialTimeoutSec: {{ $cfg.dialTimeoutSec }}
+  readTimeoutSec: {{ $cfg.readTimeoutSec }}
+  writeTimeoutSec: {{ $cfg.writeTimeoutSec }}
+  maxIdleTimeoutMin: {{ $cfg.maxIdleTimeoutMin }}
+  maxOpenConn: {{ $cfg.maxOpenConn }}
+  maxIdleConn: {{ $cfg.maxIdleConn }}
   tls:
     insecureSkipVerify:
     certFile:

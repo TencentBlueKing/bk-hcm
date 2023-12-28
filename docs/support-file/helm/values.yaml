@@ -581,6 +581,14 @@ externalDatabase:
   password: ""
   database: hcm
 
+dbConnConfig:
+  dialTimeoutSec: 60
+  readTimeoutSec: 60
+  writeTimeoutSec: 30
+  maxIdleTimeoutMin: 10
+  maxOpenConn: 500
+  maxIdleConn: 100
+
 ## 内置Etcd
 ##
 etcd:
