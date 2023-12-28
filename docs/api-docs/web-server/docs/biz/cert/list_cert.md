@@ -103,7 +103,6 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/certs/list
 | vendor             | string | 供应商（枚举值：tcloud、aws、azure、gcp、huawei） |
 | account_id         | string | 账号ID                                        |
 | cert_type          | string | 证书类型（CA:客户端证书，SVR:服务器证书）          |
-| encrypt_algo       | string | 加密算法                                       |
 | cert_status        | string | 证书状态                                       |
 | cloud_created_time | string | 上传时间，标准格式：2006-01-02T15:04:05Z         |
 | cloud_expired_time | string | 过期时间，标准格式：2006-01-02T15:04:05Z         |
@@ -178,7 +177,6 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/certs/list
                     "xxxx.com"
                 ],
                 "cert_type": "CA",
-                "encrypt_algo": "rsa",
                 "cert_status": "1",
                 "cloud_created_time": "2023-02-12 14:47:39",
                 "cloud_expired_time": "2022-02-22 14:47:39",
@@ -231,7 +229,6 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/certs/list
 | account_id         | string       | 账号ID                                        |
 | domain             | string array | 证书域名                                       |
 | cert_type          | string       | 证书类型（CA:客户端证书，SVR:服务器证书）          |
-| encrypt_algo       | string       | 加密算法                                       |
 | cert_status        | string       | 证书状态                                       |
 | cloud_created_time | string       | 上传时间，标准格式：2006-01-02T15:04:05Z         |
 | cloud_expired_time | string       | 过期时间，标准格式：2006-01-02T15:04:05Z         |
