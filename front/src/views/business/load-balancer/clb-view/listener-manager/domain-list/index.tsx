@@ -4,7 +4,7 @@ import { BkRadioGroup, BkRadioButton } from 'bkui-vue/lib/radio';
 import { Plus } from 'bkui-vue/lib/icon';
 import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
-import CommonSideslider from '../../../components/common-sideslider';
+import CommonSideslider from '@/components/common-sideslider';
 import DomainSidesliderContent from '../domain-sideslider-content';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import './index.scss';

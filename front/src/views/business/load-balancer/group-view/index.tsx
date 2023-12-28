@@ -5,7 +5,7 @@ import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { useTable } from '@/hooks/useTable/useTable';
 import allIcon from '@/assets/image/all-vendors.png';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
-import CommonSideslider from '../components/common-sideslider';
+import CommonSideslider from '@/components/common-sideslider';
 import TargetGroupSidesliderContent from './target-group-sideslider-content';
 import './index.scss';
 
