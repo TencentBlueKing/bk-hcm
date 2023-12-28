@@ -65,12 +65,15 @@ func (a *ApplicationOfAddAccount) Deliver() (enumor.ApplicationStatus, map[strin
 			"but add create action associate permissions failed, err: %v", err)}, err
 	}
 
-	go func() {
-		err = account.Sync(a.Cts.Kit, a.Client, a.req.Vendor, accountID)
-		if err != nil {
-			logs.Errorf("sync account: %s failed, err: %v, rid: %s", accountID, err, a.Cts.Kit.Rid)
-		}
-	}()
+	// 不同步登记账号
+	if a.req.Type != enumor.RegistrationAccount {
+		go func() {
+			err = account.Sync(a.Cts.Kit, a.Client, a.req.Vendor, accountID)
+			if err != nil {
+				logs.Errorf("sync account: %s failed, err: %v, rid: %s", accountID, err, a.Cts.Kit.Rid)
+			}
+		}()
+	}
 
 	// TODO: 之后考虑如果添加权限失败，账号回滚
 
