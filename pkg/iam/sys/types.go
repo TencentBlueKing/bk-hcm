@@ -115,6 +115,8 @@ const (
 	AccountEdit client.ActionID = "account_edit"
 	// SubAccountEdit sub account edit action id to register iam.
 	SubAccountEdit client.ActionID = "sub_account_edit"
+	// AccountDelete account delete action id to register iam.
+	AccountDelete client.ActionID = "account_delete"
 
 	// ResourceFind resource find action id to register iam.
 	ResourceFind client.ActionID = "resource_find"
@@ -184,6 +186,7 @@ var ActionIDNameMap = map[client.ActionID]string{
 	AccountFind:    "资源-账号查看",
 	AccountImport:  "资源-账号录入",
 	AccountEdit:    "资源-账号编辑",
+	AccountDelete:  "资源-账号删除",
 	SubAccountEdit: "资源-子账号编辑",
 	ResourceFind:   "资源-资源查看",
 	ResourceAssign: "资源-资源分配",
@@ -197,7 +200,7 @@ var ActionIDNameMap = map[client.ActionID]string{
 	RecycleBinOperate:   "资源-回收站操作",
 	RecycleBinConfig:    "资源-回收站配置",
 	OperationRecordFind: "资源-操作记录查看",
-	
+
 	CloudSelectionRecommend:    "选型推荐",
 	CloudSelectionSchemeFind:   "方案查看",
 	CloudSelectionSchemeEdit:   "方案编辑",
