@@ -132,6 +132,7 @@ func genResourceAccessActionGroups() client.ActionGroup {
 					{ID: AccountImport},
 					{ID: AccountEdit},
 					{ID: SubAccountEdit},
+					{ID: AccountDelete},
 				},
 			},
 			{
