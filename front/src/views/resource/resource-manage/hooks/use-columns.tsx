@@ -27,8 +27,6 @@ import {
 } from '../common/table/HostOperations';
 import './use-columns.scss';
 
-
-
 import { ISchemeListItem } from '@/typings/scheme';
 import moment from 'moment';
 
@@ -134,7 +132,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'region',
       sort: true,
       isDefaultShow: true,
-      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell) || '--',
+      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) =>
+        getRegionName(row.vendor, cell) || '--',
     },
     {
       label: '是否分配',
@@ -163,7 +162,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '所属业务',
       field: 'bk_biz_id2',
       isOnlyShowInResource: true,
-      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
+      render: ({ data }: any) =>
+        businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
       label: '管控区域',
@@ -227,7 +227,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'region',
       sort: true,
       isDefaultShow: true,
-      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell),
+      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) =>
+        getRegionName(row.vendor, cell),
     },
     {
       label: '可用区',
@@ -289,7 +290,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '所属业务',
       field: 'bk_biz_id2',
       isOnlyShowInResource: true,
-      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
+      render: ({ data }: any) =>
+        businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
       label: '创建时间',
@@ -329,7 +331,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '地域',
       field: 'region',
-      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell),
+      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) =>
+        getRegionName(row.vendor, cell),
     },
     {
       label: '描述',
@@ -413,7 +416,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'region',
       sort: true,
       isDefaultShow: true,
-      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell),
+      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) =>
+        getRegionName(row.vendor, cell),
     },
     {
       label: '可用区',
@@ -577,7 +581,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'region',
       sort: true,
       isDefaultShow: true,
-      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell),
+      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) =>
+        getRegionName(row.vendor, cell),
     },
     {
       label: '可用区',
@@ -621,9 +626,9 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render({ data }: any) {
         return [
           h('span', {}, [
-            data?.private_ipv4.join(',')
-              || data?.private_ipv6.join(',')
-              || '--',
+            data?.private_ipv4.join(',') ||
+              data?.private_ipv6.join(',') ||
+              '--',
           ]),
         ];
       },
@@ -647,7 +652,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'bk_biz_id',
       sort: true,
       isOnlyShowInResource: true,
-      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
+      render: ({ data }: any) =>
+        businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
       label: '创建时间',
@@ -690,7 +696,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'region',
       sort: true,
       isDefaultShow: true,
-      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell),
+      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) =>
+        getRegionName(row.vendor, cell),
     },
     getLinkField('vpc', '所属网络(VPC)', 'vpc_id', 'vpc_id'),
     // {
@@ -703,7 +710,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'bk_biz_id',
       isOnlyShowInResource: true,
       sort: true,
-      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
+      render: ({ data }: any) =>
+        businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
       label: '创建时间',
@@ -742,7 +750,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       'private_ipv4_addresses',
       'id',
       false,
-      data => [...data.private_ipv4_addresses, ...data.private_ipv6_addresses].join(','),
+      (data) =>
+        [...data.private_ipv4_addresses, ...data.private_ipv6_addresses].join(
+          ',',
+        ),
       false,
     ),
     {
@@ -750,7 +761,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'vendor',
       isDefaultShow: true,
       onlyShowOnList: true,
-      render: ({ data }: any) => [...data.public_ipv4_addresses, ...data.public_ipv6_addresses].join(',') || '--',
+      render: ({ data }: any) =>
+        [...data.public_ipv4_addresses, ...data.public_ipv6_addresses].join(
+          ',',
+        ) || '--',
     },
     {
       label: '所属VPC',
@@ -775,7 +789,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'region',
       sort: true,
       isDefaultShow: true,
-      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell),
+      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) =>
+        getRegionName(row.vendor, cell),
     },
     {
       label: '主机名称',
@@ -844,7 +859,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '所属业务',
       field: 'bk_biz_id2',
       isOnlyShowInResource: true,
-      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
+      render: ({ data }: any) =>
+        businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
       label: '管控区域',
@@ -888,26 +904,26 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'resource',
       render({ data }: any) {
         return h('span', {}, [
-          data.cloud_address_group_id
-            || data.cloud_address_id
-            || data.cloud_service_group_id
-            || data.cloud_service_id
-            || data.cloud_target_security_group_id
-            || data.ipv4_cidr
-            || data.ipv6_cidr
-            || data.cloud_remote_group_id
-            || data.remote_ip_prefix
-            || (data.source_address_prefix === '*'
+          data.cloud_address_group_id ||
+            data.cloud_address_id ||
+            data.cloud_service_group_id ||
+            data.cloud_service_id ||
+            data.cloud_target_security_group_id ||
+            data.ipv4_cidr ||
+            data.ipv6_cidr ||
+            data.cloud_remote_group_id ||
+            data.remote_ip_prefix ||
+            (data.source_address_prefix === '*'
               ? t('任何')
-              : data.source_address_prefix)
-            || data.source_address_prefixes
-            || data.cloud_source_security_group_ids
-            || (data.destination_address_prefix === '*'
+              : data.source_address_prefix) ||
+            data.source_address_prefixes ||
+            data.cloud_source_security_group_ids ||
+            (data.destination_address_prefix === '*'
               ? t('任何')
-              : data.destination_address_prefix)
-            || data.destination_address_prefixes
-            || data.cloud_destination_security_group_ids
-            || '--',
+              : data.destination_address_prefix) ||
+            data.destination_address_prefixes ||
+            data.cloud_destination_security_group_ids ||
+            '--',
         ]);
       },
     },
@@ -919,14 +935,14 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           vendor === 'aws' && data.protocol === '-1' && data.to_port === -1
             ? t('全部')
             : vendor === 'huawei' && !data.protocol && !data.port
-              ? t('全部')
-              : vendor === 'azure'
-              && data.protocol === '*'
-              && data.destination_port_range === '*'
-                ? t('全部')
-                : `${data.protocol}:${
-                  data.port || data.to_port || data.destination_port_range || '--'
-                }`,
+            ? t('全部')
+            : vendor === 'azure' &&
+              data.protocol === '*' &&
+              data.destination_port_range === '*'
+            ? t('全部')
+            : `${data.protocol}:${
+                data.port || data.to_port || data.destination_port_range || '--'
+              }`,
         ]);
       },
     },
@@ -938,10 +954,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           vendor === 'huawei'
             ? HuaweiSecurityRuleEnum[data.action]
             : vendor === 'azure'
-              ? AzureSecurityRuleEnum[data.access]
-              : vendor === 'aws'
-                ? t('允许')
-                : SecurityRuleEnum[data.action] || '--',
+            ? AzureSecurityRuleEnum[data.access]
+            : vendor === 'aws'
+            ? t('允许')
+            : SecurityRuleEnum[data.action] || '--',
         ]);
       },
     },
@@ -993,7 +1009,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'region',
       sort: true,
       isDefaultShow: true,
-      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell),
+      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) =>
+        getRegionName(row.vendor, cell),
     },
     {
       label: '公网 IP',
@@ -1011,7 +1028,15 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     //     return h('span', [cell || '--']);
     //   },
     // },
-    getLinkField('host', '绑定的资源实例', 'cvm_id', 'cvm_id', false, data => data.host, false),
+    getLinkField(
+      'host',
+      '绑定的资源实例',
+      'cvm_id',
+      'cvm_id',
+      false,
+      (data) => data.host,
+      false,
+    ),
     {
       label: '绑定的资源类型',
       field: 'instance_type',
@@ -1048,7 +1073,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '所属业务',
       field: 'bk_biz_id2',
       isOnlyShowInResource: true,
-      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
+      render: ({ data }: any) =>
+        businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
       label: '创建时间',
@@ -1124,108 +1150,99 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'vpc_id',
     },
   ];
-const certificateColums = [
-  // getLinkField('operation'),
-  {
-    label: '资源ID',
-    field: 'cloud_security_group_ids',
-    isDefaultShow: true,
-    render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
+  const certificateColums = [
+    // getLinkField('operation'),
+    {
+      label: '资源ID',
+      field: 'cloud_security_group_ids',
+      isDefaultShow: true,
+      render({ data }: any) {
+        return h('span', {}, [
           data.bk_cloud_id === -1 ? '未分配' : data.bk_cloud_id,
-        ],
-      );
+        ]);
+      },
     },
-  },
-  {
-    label: '云厂商',
-    field: 'vendor',
-    isDefaultShow: true,
-    
-  },
-  {
-    label: '证书类型',
-    field: 'cert_type',
-    isDefaultShow: true,
-    render({ cell }: { cell: number }) {
-      return cell ? '服务器证书' : '客户端CA证书';
+    {
+      label: '云厂商',
+      field: 'vendor',
+      isDefaultShow: true,
     },
-  },
-  {
-    label: '域名',
-    field: 'domain',
-    isDefaultShow: true,
-    render({ cell }: { cell: string }) {
-      return h('span', [cell || '--']);
+    {
+      label: '证书类型',
+      field: 'cert_type',
+      isDefaultShow: true,
+      render({ cell }: { cell: number }) {
+        return cell ? '服务器证书' : '客户端CA证书';
+      },
     },
-  },
-  {
-    label: '上传时间',
-    field: 'cloud_created_time',
-    isDefaultShow: true,
-    render: ({ data }: { data: ISchemeListItem }) => {
-      return moment(data.updated_at).format('YYYY-MM-DD HH:mm:ss');
+    {
+      label: '域名',
+      field: 'domain',
+      isDefaultShow: true,
+      render({ cell }: { cell: string }) {
+        return h('span', [cell || '--']);
+      },
     },
-  },
-  {
-    label: '过期时间',
-    field: 'cloud_expired_time',
-    isDefaultShow: true,
-    render: ({ data }: { data: ISchemeListItem }) => {
-      return moment(data.updated_at).format('YYYY-MM-DD HH:mm:ss');
+    {
+      label: '上传时间',
+      field: 'cloud_created_time',
+      isDefaultShow: true,
+      render: ({ data }: { data: ISchemeListItem }) => {
+        return moment(data.updated_at).format('YYYY-MM-DD HH:mm:ss');
+      },
     },
-  },
-  
-  {
-    label: '证书状态',
-    field: 'cert_status',
-    isDefaultShow: true,
-    render({ data }: any) {
-      // return h('span', {}, [CLOUD_HOST_STATUS[data.status] || data.status]);
-      return (
-        <div class={'cvm-status-container'}>
-          {HOST_SHUTDOWN_STATUS.includes(data.status) ? (
-            <img
-              src={StatusAbnormal}
-              class={'mr6'}
-              width={13}
-              height={13}></img>
-          ) : HOST_RUNNING_STATUS.includes(data.status) ? (
-            <img
-              src={StatusNormal}
-              class={'mr6'}
-              width={13}
-              height={13}></img>
-          ) : (
-            <img
-              src={StatusUnknown}
-              class={'mr6'}
-              width={13}
-              height={13}></img>
-          )}
-          <span>{CLOUD_HOST_STATUS[data.status] || data.status}</span>
-        </div>
-      );
+    {
+      label: '过期时间',
+      field: 'cloud_expired_time',
+      isDefaultShow: true,
+      render: ({ data }: { data: ISchemeListItem }) => {
+        return moment(data.updated_at).format('YYYY-MM-DD HH:mm:ss');
+      },
     },
-    
-  },
-  {
-    label: '操作',
-    field: 'operation',
-    isDefaultShow: true,
-    render: ({ data }: any) => (
-      <Button
-        text
-        theme='primary'
-        >
-        删除
-      </Button>
-    ),
-  }
-]
+
+    {
+      label: '证书状态',
+      field: 'cert_status',
+      isDefaultShow: true,
+      render({ data }: any) {
+        // return h('span', {}, [CLOUD_HOST_STATUS[data.status] || data.status]);
+        return (
+          <div class={'cvm-status-container'}>
+            {HOST_SHUTDOWN_STATUS.includes(data.status) ? (
+              <img
+                src={StatusAbnormal}
+                class={'mr6'}
+                width={13}
+                height={13}></img>
+            ) : HOST_RUNNING_STATUS.includes(data.status) ? (
+              <img
+                src={StatusNormal}
+                class={'mr6'}
+                width={13}
+                height={13}></img>
+            ) : (
+              <img
+                src={StatusUnknown}
+                class={'mr6'}
+                width={13}
+                height={13}></img>
+            )}
+            <span>{CLOUD_HOST_STATUS[data.status] || data.status}</span>
+          </div>
+        );
+      },
+    },
+    {
+      label: '操作',
+      field: 'operation',
+      isDefaultShow: true,
+      render: ({ data }: any) => (
+        <Button text theme='primary'>
+          删除
+        </Button>
+      ),
+    },
+  ];
 
   const columnsMap = {
     vpc: vpcColumns,
@@ -1240,11 +1257,14 @@ const certificateColums = [
     securityCommon: securityCommonColumns,
     eips: eipColumns,
     clbs: clbsColumns,
-    certificate: certificateColums
+    certificate: certificateColums,
   };
 
-  let columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);
-  if (whereAmI.value !== Senarios.resource) columns = columns.filter((column: any) => !column.isOnlyShowInResource);
+  let columns = (columnsMap[type] || []).filter(
+    (column: any) => !isSimpleShow || !column.onlyShowOnList,
+  );
+  if (whereAmI.value !== Senarios.resource)
+    columns = columns.filter((column: any) => !column.isOnlyShowInResource);
 
   type ColumnsType = typeof columns;
   const generateColumnsSettings = (columns: ColumnsType) => {
@@ -1261,13 +1281,13 @@ const certificateColums = [
       }
     }
     if (whereAmI.value !== Senarios.resource) {
-      fields = fields.filter(field => !field.isOnlyShowInResource);
+      fields = fields.filter((field) => !field.isOnlyShowInResource);
     }
     const settings: Ref<Settings> = ref({
       fields,
       checked: fields
-        .filter(field => field.isDefaultShow)
-        .map(field => field.field),
+        .filter((field) => field.isDefaultShow)
+        .map((field) => field.field),
     });
 
     return settings;
