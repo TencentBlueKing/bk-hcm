@@ -332,7 +332,7 @@ export default defineComponent({
                 header: () => (
                   <header class='bk-hcm-header'>
                     <section class='flex-row justify-content-between header-width'>
-                      {headRouteConfig.filter(({ id }) => (!ENABLE_CLOUD_SELECTION && id !== 'scheme') || ENABLE_CLOUD_SELECTION).map(({ id, route, name, href }) => (
+                      {headRouteConfig.filter(({ id }) => (ENABLE_CLOUD_SELECTION !== 'true' && id !== 'scheme') || ENABLE_CLOUD_SELECTION === 'true').map(({ id, route, name, href }) => (
                         <a
                           class={classes(
                             {
