@@ -27,6 +27,11 @@ import {
 } from '../common/table/HostOperations';
 import './use-columns.scss';
 
+
+
+import { ISchemeListItem } from '@/typings/scheme';
+import moment from 'moment';
+
 export default (type: string, isSimpleShow = false, vendor?: string) => {
   const router = useRouter();
   const route = useRoute();
@@ -1119,6 +1124,80 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'vpc_id',
     },
   ];
+const certificateColums = [
+  // getLinkField('operation'),
+  {
+    label: '资源ID',
+    field: 'cloud_security_group_ids',
+    isDefaultShow: true,
+    render({ data }: any) {
+      return h(
+        'span',
+        {},
+        [
+          data.bk_cloud_id === -1 ? '未分配' : data.bk_cloud_id,
+        ],
+      );
+    },
+  },
+  {
+    label: '云厂商',
+    field: 'vendor',
+    isDefaultShow: true,
+    
+  },
+  {
+    label: '证书类型',
+    field: 'cert_type',
+    isDefaultShow: true,
+    render({ cell }: { cell: number }) {
+      return cell ? '服务器证书' : '客户端CA证书';
+    },
+  },
+  {
+    label: '域名',
+    field: 'domain',
+    isDefaultShow: true,
+    render({ cell }: { cell: string }) {
+      return h('span', [cell || '--']);
+    },
+  },
+  {
+    label: '上传时间',
+    field: 'cloud_created_time',
+    isDefaultShow: true,
+    render: ({ data }: { data: ISchemeListItem }) => {
+      return moment(data.updated_at).format('YYYY-MM-DD HH:mm:ss');
+    },
+  },
+  {
+    label: '过期时间',
+    field: 'cloud_expired_time',
+    isDefaultShow: true,
+    render: ({ data }: { data: ISchemeListItem }) => {
+      return moment(data.updated_at).format('YYYY-MM-DD HH:mm:ss');
+    },
+  },
+  {
+    label: '证书状态',
+    field: 'cert_status',
+    isDefaultShow: true,
+    
+  },
+  {
+    label: '操作',
+    field: 'operation',
+    isDefaultShow: true,
+    render: ({ data }: any) => (
+      <Button
+        text
+        theme='primary'
+        >
+        删除
+      </Button>
+    ),
+  }
+]
 
   const columnsMap = {
     vpc: vpcColumns,
@@ -1133,6 +1212,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     securityCommon: securityCommonColumns,
     eips: eipColumns,
     clbs: clbsColumns,
+    certificate: certificateColums
   };
 
   let columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);

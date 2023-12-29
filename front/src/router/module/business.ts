@@ -301,7 +301,26 @@ const businesseMenus: RouteRecordRaw[] = [
         meta: {
           activeKey: 'businessLoadbalancer',
         }
-      }
+      },
+      {
+        path: '/business/certificate-custody',
+        name: '证书托管',
+        children: [
+          {
+            path: '',
+            component: () => import('@/views/business/certificate-custody/index'),
+            meta: {
+              activeKey: 'businessCertificateTable',
+              breadcrumb: ['证书托管'],
+            },
+          },
+        ],
+        meta: {
+          activeKey: 'businessCertificateTable',
+          breadcrumb: ['证书托管'],
+          isShowBreadcrumb: true,
+        },
+      },
     ],
   },
   {
