@@ -43,7 +43,7 @@ import '@blueking/app-select/dist/style.css';
 import { getFavoriteList, useFavorite } from '@/hooks/useFavorite';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import AccountList from '../resource/resource-manage/account/accountList';
-
+const { ENABLE_CLOUD_SELECTION } = window.PROJECT_CONFIG;
 // import { CogShape } from 'bkui-vue/lib/icon';
 // import { useProjectList } from '@/hooks';
 // import AddProjectDialog from '@/components/AddProjectDialog';
@@ -332,7 +332,7 @@ export default defineComponent({
                 header: () => (
                   <header class='bk-hcm-header'>
                     <section class='flex-row justify-content-between header-width'>
-                      {headRouteConfig.map(({ id, route, name, href }) => (
+                      {headRouteConfig.filter(({ id }) => (!ENABLE_CLOUD_SELECTION && id !== 'scheme') || ENABLE_CLOUD_SELECTION).map(({ id, route, name, href }) => (
                         <a
                           class={classes(
                             {
