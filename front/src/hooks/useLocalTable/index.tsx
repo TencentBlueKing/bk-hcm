@@ -22,7 +22,7 @@ export const useLocalTable = (props: IProp) => {
       const isLoading = ref(false);
       return () => (
         <>
-          <section class='tab-radio-group-wrap'>
+          <section class='operation-wrap'>
             {slots.tab?.()}
             <SearchSelect
               class='common-search-selector'

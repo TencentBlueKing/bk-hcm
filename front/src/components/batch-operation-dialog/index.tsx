@@ -9,7 +9,7 @@ export default defineComponent({
   props: {
     isShow: {
       type: Boolean as PropType<boolean>,
-      required: true,
+      default: false,
     },
     title: {
       type: String as PropType<string>,
@@ -26,6 +26,10 @@ export default defineComponent({
     tableProps: {
       type: Object as PropType<IProp>,
     },
+    custom: {
+      type: Boolean,
+      default: false,
+    },
   },
   emits: ['update:isShow', 'handleConfirm'],
   setup(props, { emit, slots }) {
@@ -36,8 +40,24 @@ export default defineComponent({
       emit('handleConfirm');
       triggerShow(false);
     };
-    const { CommonLocalTable } = useLocalTable(props.tableProps);
-
+    // 默认渲染
+    const renderDefaultSlot = () => {
+      const { CommonLocalTable } = useLocalTable(props.tableProps);
+      return (
+        <div class='batch-operation-dialog-content'>
+          <div class='tips'>{slots.tips?.()}</div>
+          <CommonLocalTable>
+            {{
+              tab: () => slots.tab?.(),
+            }}
+          </CommonLocalTable>
+        </div>
+      );
+    };
+    // 自定义渲染
+    const renderCustomDefaultSlot = () => {
+      return (<div class='batch-operation-dialog-content'>自定义内容</div>);
+    };
     return () => (
       <Dialog
         class='batch-operation-dialog'
@@ -49,16 +69,7 @@ export default defineComponent({
         onConfirm={handleConfirm}
         onClosed={() => triggerShow(false)}>
         {{
-          default: () => (
-            <div class='batch-operation-dialog-content'>
-              <div class='tips'>{slots.tips?.()}</div>
-              <CommonLocalTable>
-                {{
-                  tab: () => slots.tab?.(),
-                }}
-              </CommonLocalTable>
-            </div>
-          ),
+          default: props.custom ? renderCustomDefaultSlot : renderDefaultSlot,
         }}
       </Dialog>
     );

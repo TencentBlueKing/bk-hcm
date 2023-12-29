@@ -8,7 +8,6 @@ export default defineComponent({
     isShow: {
       type: Boolean,
       default: false,
-      required: true,
     },
     title: {
       type: String,
@@ -36,7 +35,6 @@ export default defineComponent({
         width={props.width}
         isShow={props.isShow}
         title={props.title}
-        quickClose={true}
         onClosed={() => triggerShow(false)}>
         {{
           default: () => ctx.slots.default?.(),
