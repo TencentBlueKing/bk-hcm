@@ -1178,6 +1178,7 @@ const certificateColums = [
       return moment(data.updated_at).format('YYYY-MM-DD HH:mm:ss');
     },
   },
+  
   {
     label: '证书状态',
     field: 'cert_status',
