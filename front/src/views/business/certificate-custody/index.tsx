@@ -41,7 +41,6 @@ export default defineComponent({
       return false;
     };
     // const handleSubmit = () => {};
-
     // const triggerShow = () => {};
 
     const handleOpenSlider = () => {

@@ -1205,7 +1205,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'cert_status',
       isDefaultShow: true,
       render({ data }: any) {
-        // return h('span', {}, [CLOUD_HOST_STATUS[data.status] || data.status]);
         return (
           <div class={'cvm-status-container'}>
             {HOST_SHUTDOWN_STATUS.includes(data.status) ? (
