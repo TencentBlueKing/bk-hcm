@@ -1,0 +1,15 @@
+.rs-sideslider-content {
+  margin-top: -8px;
+
+  .selected-target-groups {
+    display: flex;
+    align-items: center;
+    margin-bottom: 24px;
+
+    .label {
+      margin-right: 8px;
+      font-size: 14px;
+      color: #313238;
+    }
+  }
+}

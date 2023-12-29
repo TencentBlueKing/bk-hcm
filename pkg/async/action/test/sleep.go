@@ -47,6 +47,10 @@ var SleepTpl = action.FlowTemplate{
 			},
 			Retry: &tableasync.Retry{
 				Enable: true,
+				Policy: &tableasync.RetryPolicy{
+					Count:        1,
+					SleepRangeMS: [2]uint{100, 200},
+				},
 			},
 			DependOn: nil,
 		},
@@ -57,7 +61,7 @@ var SleepTpl = action.FlowTemplate{
 				Type: SleepParams{},
 			},
 			Retry: &tableasync.Retry{
-				Enable: true,
+				Enable: false,
 			},
 			DependOn: []action.ActIDType{"1"},
 		},
@@ -69,6 +73,10 @@ var SleepTpl = action.FlowTemplate{
 			},
 			Retry: &tableasync.Retry{
 				Enable: true,
+				Policy: &tableasync.RetryPolicy{
+					Count:        1,
+					SleepRangeMS: [2]uint{100, 200},
+				},
 			},
 			DependOn: []action.ActIDType{"1"},
 		},
@@ -80,6 +88,10 @@ var SleepTpl = action.FlowTemplate{
 			},
 			Retry: &tableasync.Retry{
 				Enable: true,
+				Policy: &tableasync.RetryPolicy{
+					Count:        1,
+					SleepRangeMS: [2]uint{100, 200},
+				},
 			},
 			DependOn: []action.ActIDType{"2", "3"},
 		},

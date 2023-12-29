@@ -1,4 +1,4 @@
-FROM hub.bktencent.com/blueking/bk-hcm-base:v1.0
+FROM hub.bktencent.com/blueking/bk-hcm-base:v1.1
 
 # RUN mkdir -p /data/hcm/plugin
 COPY bk-hcm-cloudserver /data/hcm/

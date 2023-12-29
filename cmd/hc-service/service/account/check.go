@@ -182,7 +182,7 @@ func (svc *service) GcpAccountCheck(cts *rest.Contexts) (interface{}, error) {
 	}
 	if infoBySecret.CloudServiceAccountName != req.CloudServiceAccountName {
 		return nil, errf.New(errf.InvalidParameter,
-			"CloudProjectID does not match the account to which the secret belongs")
+			"CloudServiceAccountName does not match the account to which the secret belongs")
 	}
 	if infoBySecret.CloudServiceSecretID != req.CloudServiceSecretID {
 		return nil, errf.New(errf.InvalidParameter,

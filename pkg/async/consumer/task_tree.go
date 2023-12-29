@@ -93,7 +93,7 @@ func (t *TaskNode) CanBeExecuted() bool {
 	return true
 }
 
-// Executable check can executable
+// Executable check can executable: no parent or all parents CanExecuteChild(state == TaskSuccess )
 func (t *TaskNode) Executable() bool {
 	if t.State != enumor.TaskPending {
 		return false

@@ -61,23 +61,26 @@ GET /api/v1/cloud/accounts/{account_id}
 
 #### data
 
-| 参数名称       | 参数类型         | 描述                                                               |
-|------------|--------------|------------------------------------------------------------------|
-| id         | string       | 账号ID                                                             |
-| vendor     | string       | 供应商（枚举值：tcloud、aws、azure、gcp、huawei）                             |
-| name       | string       | 名称                                                               |
-| managers   | string array | 账号管理者                                                            |
-| type       | string       | 账号类型 (枚举值：resource:资源账号、registration:登记账号、security_audit:安全审计账号) |
-| site       | string       | 站点（枚举值：china:中国站、international:国际站）                              |
-| price      | string       | 余额                                                               |
-| price_unit | string       | 余额单位                                                             |
-| memo       | string       | 备注                                                               |
-| bk_biz_ids | int64 array  | 账号关联的业务ID列表                                                      |
-| creator    | string       | 创建者                                                              |
-| reviser    | string       | 更新者                                                              |
-| created_at | string       | 创建时间，标准格式：2006-01-02T15:04:05Z                                   |
-| updated_at | string       | 更新时间，标准格式：2006-01-02T15:04:05Z                                   |
-| extension  | object       | 混合云差异字段                                                          |
+| 参数名称                 | 参数类型         | 描述                                                               |
+|----------------------|--------------|------------------------------------------------------------------|
+| id                   | string       | 账号ID                                                             |
+| vendor               | string       | 供应商（枚举值：tcloud、aws、azure、gcp、huawei）                             |
+| name                 | string       | 名称                                                               |
+| managers             | string array | 账号管理者                                                            |
+| type                 | string       | 账号类型 (枚举值：resource:资源账号、registration:登记账号、security_audit:安全审计账号) |
+| site                 | string       | 站点（枚举值：china:中国站、international:国际站）                              |
+| price                | string       | 余额                                                               |
+| price_unit           | string       | 余额单位                                                             |
+| memo                 | string       | 备注                                                               |
+| bk_biz_ids           | int64 array  | 账号关联的业务ID列表                                                      |
+| recycle_reserve_time | int          | 回收站资源的保留时长，单位小时                                                  |
+| sync_status          | string       | 资源同步状态                                                           |
+| sync_failed_reason   | string       | 资源同步失败原因                                                         |
+| creator              | string       | 创建者                                                              |
+| reviser              | string       | 更新者                                                              |
+| created_at           | string       | 创建时间，标准格式：2006-01-02T15:04:05Z                                   |
+| updated_at           | string       | 更新时间，标准格式：2006-01-02T15:04:05Z                                   |
+| extension            | object       | 混合云差异字段                                                          |
 
 ##### extension[tcloud]
 

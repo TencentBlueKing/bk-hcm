@@ -113,14 +113,14 @@
           sort
         >
         </bk-table-column>
-        <bk-table-column
+        <!-- <bk-table-column
           :label="t('余额')"
           prop="price"
         >
           <template #default="{ data }">
             {{data?.price || '--'}}{{data?.price_unit}}
           </template>
-        </bk-table-column>
+        </bk-table-column> -->
         <bk-table-column
           :label="t('创建时间')"
           prop="created_at"
@@ -426,7 +426,7 @@ export default defineComponent({
       };
       if (id) {
         routerConfig.query = {
-          id,
+          accountId: id,
           isDetail,
         };
       }

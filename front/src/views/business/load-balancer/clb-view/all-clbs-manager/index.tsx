@@ -19,16 +19,18 @@ export default defineComponent({
     });
 
     return () => (
-      <CommonTable>
-        {{
-          operation: () => (
-            <>
-              <Button theme='primary'>购买</Button>
-              <Button>批量删除</Button>
-            </>
-          ),
-        }}
-      </CommonTable>
+      <div class='common-card-wrap'>
+        <CommonTable>
+          {{
+            operation: () => (
+              <>
+                <Button theme='primary'>购买</Button>
+                <Button>批量删除</Button>
+              </>
+            ),
+          }}
+        </CommonTable>
+      </div>
     );
   },
 });

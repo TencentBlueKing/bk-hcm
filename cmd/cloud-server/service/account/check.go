@@ -21,6 +21,7 @@ package account
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"hcm/cmd/cloud-server/service/common"
@@ -35,6 +36,38 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 )
+
+// Check account for RegistrationAccount，for backward compatibility
+func (a *accountSvc) Check(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AccountCheckReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	if req.Type != enumor.RegistrationAccount {
+		return nil, errors.New("only support check registration account")
+	}
+
+	var err error
+	switch req.Vendor {
+	case enumor.TCloud:
+		_, err = ParseAndCheckTCloudExtension(cts, a.client, req.Type, req.Extension)
+	case enumor.Aws:
+		_, err = ParseAndCheckAwsExtension(cts, a.client, req.Type, req.Extension)
+	case enumor.HuaWei:
+		_, err = ParseAndCheckHuaWeiExtension(cts, a.client, req.Type, req.Extension)
+	case enumor.Gcp:
+		_, err = ParseAndCheckGcpExtension(cts, a.client, req.Type, req.Extension)
+	case enumor.Azure:
+		_, err = ParseAndCheckAzureExtension(cts, a.client, req.Type, req.Extension)
+	default:
+		err = fmt.Errorf("no support vendor: %s", req.Vendor)
+	}
+
+	return nil, errf.NewFromErr(errf.InvalidParameter, err)
+}
 
 // TODO: ParseAndCheckXXXXExtension 公开是为了与申请新增账号复用，但是这里只是复用，没有抽象，不应该复用XXXXAccountExtensionCreateReq数据结构
 

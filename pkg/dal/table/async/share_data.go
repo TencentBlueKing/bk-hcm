@@ -51,7 +51,7 @@ type ShareData struct {
 // Scan is used to decode raw message which is read from db into ShareData.
 func (d *ShareData) Scan(raw interface{}) error {
 	d.Dict = make(map[string]string)
-	return types.Scan(raw, d.Dict)
+	return types.Scan(raw, &d.Dict)
 }
 
 // Value encode the ShareData to a json raw, so that it can be stored to db with json raw.

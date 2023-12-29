@@ -1199,6 +1199,138 @@ const certificateColums = [
   }
 ]
 
+  const targetGroupColumns = [
+    {
+      type: 'selection',
+      width: '100',
+      onlyShowOnList: true,
+    },
+    getLinkField('target_group_name', '目标组名称'),
+    {
+      label: '关联的负载均衡',
+      field: 'clb_name',
+      isDefaultShow: true,
+    },
+    {
+      label: '绑定监听器数量',
+      field: 'listener_count',
+      isDefaultShow: true,
+      sort: true,
+    },
+    {
+      label: '协议',
+      field: 'protocol',
+      isDefaultShow: true,
+      filter: true,
+    },
+    {
+      label: '端口',
+      field: 'port',
+      isDefaultShow: true,
+      filter: true,
+    },
+    {
+      label: '云厂商',
+      field: 'vendor',
+    },
+    {
+      label: '地域',
+      field: 'region',
+    },
+    {
+      label: '可用区域',
+      field: 'zone',
+    },
+    {
+      label: '资源类型',
+      field: 'type',
+    },
+    {
+      label: '所属VPC',
+      field: 'vpc_id',
+    },
+    {
+      label: '健康检查端口',
+      field: 'health_check_port',
+    },
+    {
+      label: 'IP地址类型',
+      field: 'ip_type',
+    },
+  ];
+
+  const rsConfigColumns = [
+    {
+      label: '内网IP',
+      field: 'privateIp',
+      isDefaultShow: true,
+    },
+    {
+      label: '公网IP',
+      field: 'publicIp',
+    },
+    {
+      label: '名称',
+      field: 'name',
+      isDefaultShow: true,
+    },
+    {
+      label: '地域',
+      field: 'region',
+    },
+    {
+      label: '资源类型',
+      field: 'resourceType',
+    },
+    {
+      label: '所属网络',
+      field: 'network',
+    },
+  ];
+
+  const domainColumns = [
+    {
+      type: 'selection',
+      width: '100',
+      onlyShowOnList: true,
+    },
+    {
+      label: '域名',
+      field: 'domain',
+      isDefaultShow: true,
+    },
+    {
+      label: '协议',
+      field: 'protocol',
+      isDefaultShow: true,
+      filter: true,
+    },
+    {
+      label: '端口',
+      field: 'port',
+      isDefaultShow: true,
+      filter: true,
+    },
+    {
+      label: '轮询方式',
+      field: 'health_check_type',
+      isDefaultShow: true,
+      filter: true,
+    },
+    {
+      label: 'URL数量',
+      field: 'url_count',
+      isDefaultShow: true,
+      sort: true,
+    },
+    {
+      label: '同步状态',
+      field: 'sync_status',
+      isDefaultShow: true,
+      filter: true,
+    },
+  ];
+
   const columnsMap = {
     vpc: vpcColumns,
     subnet: subnetColumns,
@@ -1213,6 +1345,9 @@ const certificateColums = [
     eips: eipColumns,
     clbs: clbsColumns,
     certificate: certificateColums
+    targetGroup: targetGroupColumns,
+    rsConfig: rsConfigColumns,
+    domain: domainColumns,
   };
 
   let columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);

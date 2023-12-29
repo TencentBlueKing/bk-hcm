@@ -52,6 +52,17 @@ const resourceMenus: RouteRecordRaw[] = [
         },
       },
       {
+        path: '/resource/account',
+        name: t('账户'),
+        alias: '',
+        component: () => import('@/views/resource/accountmanage/index.vue'),
+        meta: {
+          activeKey: 'resourceAccount',
+          breadcrumb: [t('云管'), t('账户')],
+          action: 'account_find',
+        },
+      },
+      {
         path: '/resource/detail/:type',
         name: 'resourceDetail',
         component: () => import('@/views/resource/resource-manage/resource-detail.vue'),

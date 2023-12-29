@@ -296,7 +296,7 @@ func (sch *scheduler) parseFlowAndPushTask(kt *kit.Kit, flow *Flow) error {
 		taskIDMap[one.ID] = one
 	}
 
-	// 可执行任务推送到执行器
+	// 所有可执行任务推送到执行器
 	flow.State = enumor.FlowRunning
 	for _, taskID := range executableTaskNodes {
 		sch.executor.Push(flow, taskIDMap[taskID])

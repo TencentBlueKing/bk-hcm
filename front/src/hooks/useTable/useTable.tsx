@@ -5,12 +5,14 @@ import type { Column, Settings } from 'bkui-vue/lib/table/props';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
+import Empty from '@/components/empty';
 
 export interface IProp {
   columns: Array<Column>;
   settings: Settings;
   searchData: Array<ISearchItem>;
   searchUrl: string; // 如`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/sub_accounts/list`，
+  tableData?: Array<Record<string, any>>;  // 临时看看效果
 }
 
 export const useTable = (props: IProp) => {
@@ -37,6 +39,10 @@ export const useTable = (props: IProp) => {
     field: string,
     value: string | number,
   }> = []) => {
+    if (props.tableData) {
+      dataList.value = props.tableData;
+      return;
+    }
     isLoading.value = true;
     const [detailsRes, countRes] = await Promise.all([false, true].map(isCount => http.post(props.searchUrl, {
       page: {
@@ -72,12 +78,13 @@ export const useTable = (props: IProp) => {
           </section>
           <Loading loading={isLoading.value} class='loading-table-container'>
             <Table
-              height='100%'
+              class='table-container'
               data={dataList.value}
               columns={props.columns}
               settings={props.settings}
               pagination={pagination}
               remotePagination
+              showOverflowTooltip
               onPageLimitChange={handlePageLimitChange}
               onPageValueChange={handlePageValueCHange}
               onColumnSort={() => {}}
@@ -85,8 +92,8 @@ export const useTable = (props: IProp) => {
                 {{
                   empty: () => {
                     if (isLoading.value) return null;
-                    else return '暂无数据';
-                  }
+                    return <Empty />;
+                  },
                 }}
               </Table>
           </Loading>

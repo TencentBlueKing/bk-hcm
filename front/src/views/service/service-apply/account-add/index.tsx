@@ -19,7 +19,7 @@ export default defineComponent({
 
     const initProjectModel: ProjectModel = {
       id: 0,
-      type: 'resource', // 账号类型
+      type: 'registration', // 账号类型
       name: '', // 名称
       vendor: 'tcloud', // 云厂商
       managers: [], // 责任人
@@ -244,24 +244,24 @@ export default defineComponent({
                 <Input class='w450' placeholder={t('请输入IAM用户名称')} v-model={projectModel.iamUsername} />
               ),
             },
-            {
-              label: t('SecretId/密钥ID'),
-              formName: t('API 密钥'),
-              noBorBottom: true,
-              required: projectModel.type !== 'registration',
-              property: 'secretId',
-              component: () => (
-                <Input class='w450' placeholder={t('请输入SecretId/密钥ID')} v-model={projectModel.secretId} />
-              ),
-            },
-            {
-              label: 'SecretKey',
-              required: projectModel.type !== 'registration',
-              property: 'secretKey',
-              component: () => (
-                <Input class='w450' placeholder={t('请输入SecretKey')} v-model={projectModel.secretKey} />
-              ),
-            },
+            // {
+            //   label: t('SecretId/密钥ID'),
+            //   formName: t('API 密钥'),
+            //   noBorBottom: true,
+            //   required: projectModel.type !== 'registration',
+            //   property: 'secretId',
+            //   component: () => (
+            //     <Input class='w450' placeholder={t('请输入SecretId/密钥ID')} v-model={projectModel.secretId} />
+            //   ),
+            // },
+            // {
+            //   label: 'SecretKey',
+            //   required: projectModel.type !== 'registration',
+            //   property: 'secretKey',
+            //   component: () => (
+            //     <Input class='w450' placeholder={t('请输入SecretKey')} v-model={projectModel.secretKey} />
+            //   ),
+            // },
           ];
           projectModel.site = 'international';
           break;
@@ -294,24 +294,24 @@ export default defineComponent({
                 <Input class='w450' placeholder={t('请输入IAM用户名称')} v-model={projectModel.iamUsername} />
               ),
             },
-            {
-              label: t('SecretId/密钥ID'),
-              formName: t('API 密钥'),
-              noBorBottom: true,
-              required: projectModel.type !== 'registration',
-              property: 'secretId',
-              component: () => (
-                <Input class='w450' placeholder={t('请输入SecretId/密钥ID')} v-model={projectModel.secretId} />
-              ),
-            },
-            {
-              label: 'SecretKey',
-              required: projectModel.type !== 'registration',
-              property: 'secretKey',
-              component: () => (
-                <Input class='w450' placeholder={t('请输入SecretKey')} v-model={projectModel.secretKey} />
-              ),
-            },
+            // {
+            //   label: t('SecretId/密钥ID'),
+            //   formName: t('API 密钥'),
+            //   noBorBottom: true,
+            //   required: projectModel.type !== 'registration',
+            //   property: 'secretId',
+            //   component: () => (
+            //     <Input class='w450' placeholder={t('请输入SecretId/密钥ID')} v-model={projectModel.secretId} />
+            //   ),
+            // },
+            // {
+            //   label: 'SecretKey',
+            //   required: projectModel.type !== 'registration',
+            //   property: 'secretKey',
+            //   component: () => (
+            //     <Input class='w450' placeholder={t('请输入SecretKey')} v-model={projectModel.secretKey} />
+            //   ),
+            // },
           ];
           projectModel.site = 'china';
           break;
@@ -346,42 +346,42 @@ export default defineComponent({
                 <Input class='w450' placeholder={t('请输入项目名称')} v-model={projectModel.projectName} />
               ),
             },
-            {
-              label: t('服务账号ID'),
-              formName: t('API 密钥'),
-              noBorBottom: true,
-              required: projectModel.type !== 'registration',
-              property: 'accountId',
-              component: () => (
-                <Input class='w450' placeholder={t('请输入服务账号ID')} v-model={projectModel.accountId} />
-              ),
-            },
-            {
-              label: t('服务账号名称'),
-              noBorBottom: true,
-              required: projectModel.type !== 'registration',
-              property: 'accountName',
-              component: () => (
-                <Input class='w450' placeholder={t('请输入服务账号名称')} v-model={projectModel.accountName} />
-              ),
-            },
-            {
-              label: '服务账号密钥ID',
-              noBorBottom: true,
-              required: projectModel.type !== 'registration',
-              property: 'secretId',
-              component: () => (
-                <Input class='w450' placeholder={t('请输入服务账号密钥ID')} v-model={projectModel.secretId} />
-              ),
-            },
-            {
-              label: '服务账号密钥',
-              required: projectModel.type !== 'registration',
-              property: 'secretKey',
-              component: () => (
-                <Input class='w450' placeholder={t('请输入服务账号密钥')} v-model={projectModel.secretKey} />
-              ),
-            },
+            // {
+            //   label: t('服务账号ID'),
+            //   formName: t('API 密钥'),
+            //   noBorBottom: true,
+            //   required: projectModel.type !== 'registration',
+            //   property: 'accountId',
+            //   component: () => (
+            //     <Input class='w450' placeholder={t('请输入服务账号ID')} v-model={projectModel.accountId} />
+            //   ),
+            // },
+            // {
+            //   label: t('服务账号名称'),
+            //   noBorBottom: true,
+            //   required: projectModel.type !== 'registration',
+            //   property: 'accountName',
+            //   component: () => (
+            //     <Input class='w450' placeholder={t('请输入服务账号名称')} v-model={projectModel.accountName} />
+            //   ),
+            // },
+            // {
+            //   label: '服务账号密钥ID',
+            //   noBorBottom: true,
+            //   required: projectModel.type !== 'registration',
+            //   property: 'secretId',
+            //   component: () => (
+            //     <Input class='w450' placeholder={t('请输入服务账号密钥ID')} v-model={projectModel.secretId} />
+            //   ),
+            // },
+            // {
+            //   label: '服务账号密钥',
+            //   required: projectModel.type !== 'registration',
+            //   property: 'secretKey',
+            //   component: () => (
+            //     <Input class='w450' placeholder={t('请输入服务账号密钥')} v-model={projectModel.secretKey} />
+            //   ),
+            // },
           ];
           projectModel.site = 'international';
           break;
@@ -425,42 +425,42 @@ export default defineComponent({
                 <Input class='w450' placeholder={t('请输入订阅名称')} v-model={projectModel.subScriptionName} />
               ),
             },
-            {
-              label: t('应用(客户端) ID'),
-              formName: t('API 密钥'),
-              noBorBottom: true,
-              required: projectModel.type !== 'registration',
-              property: 'applicationId',
-              component: () => (
-                <Input class='w450' placeholder={t('请输入应用程序(客户端) ID')} v-model={projectModel.applicationId} />
-              ),
-            },
-            {
-              label: t('应用程序名称'),
-              noBorBottom: true,
-              required: projectModel.type !== 'registration',
-              property: 'applicationName',
-              component: () => (
-                <Input class='w450' placeholder={t('请输入应用程序名称')} v-model={projectModel.applicationName} />
-              ),
-            },
-            {
-              label: t('客户端密钥ID'),
-              noBorBottom: true,
-              required: projectModel.type !== 'registration',
-              property: 'secretId',
-              component: () => (
-                <Input class='w450' placeholder={t('请输入客户端密钥ID')} v-model={projectModel.secretId} />
-              ),
-            },
-            {
-              label: t('客户端密钥'),
-              required: projectModel.type !== 'registration',
-              property: 'secretKey',
-              component: () => (
-                <Input class='w450' placeholder={t('请输入客户端密钥')} v-model={projectModel.secretKey} />
-              ),
-            },
+            // {
+            //   label: t('应用(客户端) ID'),
+            //   formName: t('API 密钥'),
+            //   noBorBottom: true,
+            //   required: projectModel.type !== 'registration',
+            //   property: 'applicationId',
+            //   component: () => (
+            //     <Input class='w450' placeholder={t('请输入应用程序(客户端) ID')} v-model={projectModel.applicationId} />
+            //   ),
+            // },
+            // {
+            //   label: t('应用程序名称'),
+            //   noBorBottom: true,
+            //   required: projectModel.type !== 'registration',
+            //   property: 'applicationName',
+            //   component: () => (
+            //     <Input class='w450' placeholder={t('请输入应用程序名称')} v-model={projectModel.applicationName} />
+            //   ),
+            // },
+            // {
+            //   label: t('客户端密钥ID'),
+            //   noBorBottom: true,
+            //   required: projectModel.type !== 'registration',
+            //   property: 'secretId',
+            //   component: () => (
+            //     <Input class='w450' placeholder={t('请输入客户端密钥ID')} v-model={projectModel.secretId} />
+            //   ),
+            // },
+            // {
+            //   label: t('客户端密钥'),
+            //   required: projectModel.type !== 'registration',
+            //   property: 'secretKey',
+            //   component: () => (
+            //     <Input class='w450' placeholder={t('请输入客户端密钥')} v-model={projectModel.secretKey} />
+            //   ),
+            // },
           ];
           projectModel.site = 'international';
           break;
@@ -493,22 +493,22 @@ export default defineComponent({
               property: 'subAccount',
               component: () => <Input class='w450' placeholder={t('请输入子账号')} v-model={projectModel.subAccount} />,
             },
-            {
-              label: 'SecretId',
-              formName: t('API 密钥'),
-              noBorBottom: true,
-              required: projectModel.type !== 'registration',
-              property: 'secretId',
-              component: () => <Input class='w450' placeholder={t('请输入SecretId')} v-model={projectModel.secretId} />,
-            },
-            {
-              label: 'SecretKey',
-              required: projectModel.type !== 'registration',
-              property: 'secretKey',
-              component: () => (
-                <Input class='w450' placeholder={t('请输入SecretKey')} v-model={projectModel.secretKey} />
-              ),
-            },
+            // {
+            //   label: 'SecretId',
+            //   formName: t('API 密钥'),
+            //   noBorBottom: true,
+            //   required: projectModel.type !== 'registration',
+            //   property: 'secretId',
+            //   component: () => <Input class='w450' placeholder={t('请输入SecretId')} v-model={projectModel.secretId} />,
+            // },
+            // {
+            //   label: 'SecretKey',
+            //   required: projectModel.type !== 'registration',
+            //   property: 'secretKey',
+            //   component: () => (
+            //     <Input class='w450' placeholder={t('请输入SecretKey')} v-model={projectModel.secretKey} />
+            //   ),
+            // },
           ];
           break;
         default:
