@@ -66,7 +66,7 @@ func (c *cmdbSvc) ListCloudHost(cts *rest.Contexts) (interface{}, error) {
 			},
 		},
 	}
-	result, err := c.esbClient.Cmdb().ListBizHost(cts.Kit.Ctx, params)
+	result, err := c.esbClient.Cmdb().ListBizHost(cts.Kit, params)
 	if err != nil {
 		logs.Errorf("call cmdb to list biz host failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
 		return nil, err
