@@ -81,7 +81,7 @@ func AddCloudHostToBiz[T cvm.Extension](c *CmdbLogics, kt *kit.Kit, req *AddClou
 		BizID:    req.BizID,
 		HostInfo: hosts,
 	}
-	_, err := c.client.AddCloudHostToBiz(kt.Ctx, params)
+	_, err := c.client.AddCloudHostToBiz(kt, params)
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func AddBaseCloudHostToBiz(c *CmdbLogics, kt *kit.Kit, req *AddBaseCloudHostToBi
 		BizID:    req.BizID,
 		HostInfo: hosts,
 	}
-	_, err := c.client.AddCloudHostToBiz(kt.Ctx, params)
+	_, err := c.client.AddCloudHostToBiz(kt, params)
 	if err != nil {
 		return err
 	}
@@ -169,7 +169,7 @@ func (c *CmdbLogics) DeleteCloudHostFromBiz(kt *kit.Kit, req *DeleteCloudHostFro
 			},
 		},
 	}
-	hosts, err := c.client.ListBizHost(kt.Ctx, listParams)
+	hosts, err := c.client.ListBizHost(kt, listParams)
 	if err != nil {
 		return err
 	}
@@ -188,7 +188,7 @@ func (c *CmdbLogics) DeleteCloudHostFromBiz(kt *kit.Kit, req *DeleteCloudHostFro
 		BizID:   req.BizID,
 		HostIDs: hostIDs,
 	}
-	err = c.client.DeleteCloudHostFromBiz(kt.Ctx, delParams)
+	err = c.client.DeleteCloudHostFromBiz(kt, delParams)
 	if err != nil {
 		return err
 	}

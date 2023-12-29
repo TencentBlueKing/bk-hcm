@@ -20,50 +20,18 @@
 package cmdb
 
 import (
-	"context"
-	"fmt"
-	"net/http"
-
-	"hcm/pkg/criteria/constant"
+	"hcm/pkg/kit"
+	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/esb/types"
-	"hcm/pkg/tools/uuid"
 )
 
 // GetBizBriefCacheTopo 根据业务ID,查询该业务的全量简明拓扑树信息。
 // 该业务拓扑的全量信息，包含了从业务这个根节点开始，到自定义层级实例(如果主线的拓扑层级中包含)，到集群、模块等中间的所有拓扑层级树数据。
-func (c *cmdb) GetBizBriefCacheTopo(ctx context.Context, params *GetBizBriefCacheTopoParams) (
+func (c *cmdb) GetBizBriefCacheTopo(kt *kit.Kit, params *GetBizBriefCacheTopoParams) (
 	*GetBizBriefCacheTopoResult, error) {
 
-	req := &struct {
-		*types.CommParams
-		*GetBizBriefCacheTopoParams
-	}{
-		CommParams:                 types.GetCommParams(c.config),
-		GetBizBriefCacheTopoParams: params,
-	}
-
-	resp := &struct {
-		types.BaseResponse
-		Data *GetBizBriefCacheTopoResult `json:"data"`
-	}{}
-
-	h := http.Header{}
-	h.Set(constant.RidKey, uuid.UUID())
-	err := c.client.Post().
-		SubResourcef("/cc/get_biz_brief_cache_topo/").
-		WithContext(ctx).
-		WithHeaders(h).
-		Body(req).
-		Do().Into(resp)
-	if err != nil {
-		return nil, err
-	}
-	if !resp.Result || resp.Code != 0 {
-		return nil, fmt.Errorf("get biz brief cache topo failed, code: %d, msg: %s, rid: %s",
-			resp.Code, resp.Message, resp.Rid)
-	}
-
-	return resp.Data, nil
+	return types.EsbCall[GetBizBriefCacheTopoParams, GetBizBriefCacheTopoResult](c.client, c.config, rest.POST, kt,
+		params, "/cc/get_biz_brief_cache_topo/")
 }
 
 // GetBizBriefCacheTopoParams define get biz brief cache topo params.

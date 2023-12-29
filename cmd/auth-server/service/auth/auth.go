@@ -492,7 +492,7 @@ func (a *Auth) getBizIDNameMap(kt *kit.Kit, rawIDs []string) (map[string]string,
 			},
 		},
 	}
-	bizResp, err := a.esbCli.Cmdb().SearchBusiness(kt.Ctx, bizReq)
+	bizResp, err := a.esbCli.Cmdb().SearchBusiness(kt, bizReq)
 	if err != nil {
 		return nil, err
 	}

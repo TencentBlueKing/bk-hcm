@@ -25,7 +25,6 @@ import (
 
 // IsLoginReq is esb call is_login api parameter.
 type IsLoginReq struct {
-	*types.CommParams
 	BkToken string `json:"bk_token"`
 }
 
