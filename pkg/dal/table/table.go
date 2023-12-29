@@ -145,6 +145,9 @@ const (
 	CloudSelectionBizTypeTable Name = "cloud_selection_biz_type"
 	// CloudSelectionIdcTable 云选型机房信息
 	CloudSelectionIdcTable Name = "cloud_selection_idc"
+
+	// SslCertTable is ssl cert table's name.
+	SslCertTable Name = "ssl_cert"
 )
 
 // Validate whether the table name is valid or not.
@@ -211,6 +214,7 @@ var TableMap = map[Name]struct{}{
 	CloudSelectionSchemeTable:    {},
 	CloudSelectionBizTypeTable:   {},
 	CloudSelectionIdcTable:       {},
+	SslCertTable:                 {},
 
 	// TODO: 临时方案
 	RecycleRecordTableTaskID: {},

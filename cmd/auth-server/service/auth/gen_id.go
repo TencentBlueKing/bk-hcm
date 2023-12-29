@@ -524,3 +524,8 @@ func genCostManageResource(a *meta.ResourceAttribute) (client.ActionID, []client
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
+
+// genCertResource generate cert related iam resource.
+func genCertResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	return genIaaSResourceResource(a)
+}

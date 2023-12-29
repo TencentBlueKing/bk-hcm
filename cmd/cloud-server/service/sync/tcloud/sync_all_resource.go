@@ -121,5 +121,9 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 		return enumor.SubAccountCloudResType, hitErr
 	}
 
+	if hitErr = SyncCert(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
+		return enumor.CertCloudResType, hitErr
+	}
+
 	return "", nil
 }

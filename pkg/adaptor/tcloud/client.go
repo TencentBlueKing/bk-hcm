@@ -29,6 +29,7 @@ import (
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
+	ssl "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/ssl/v20191205"
 	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
 
@@ -95,6 +96,15 @@ func (c *clientSet) billClient() (*billing.Client, error) {
 
 func (c *clientSet) clbClient(region string) (*clb.Client, error) {
 	client, err := clb.NewClient(c.credential, region, c.profile)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+func (c *clientSet) certClient() (*ssl.Client, error) {
+	client, err := ssl.NewClient(c.credential, "", c.profile)
 	if err != nil {
 		return nil, err
 	}
