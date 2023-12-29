@@ -87,7 +87,7 @@ export default defineComponent({
                       <bk-form-item label='证书上传' required>
                         <bk-Upload
                           theme='button'
-                          limit="limit"
+                          limit='limit'
                           onExceed={handleExceed}
                           tip="'支持扩展名：.crt或.pem'"></bk-Upload>
 
@@ -101,7 +101,7 @@ export default defineComponent({
                       <bk-form-item label='密钥上传' required>
                         <bk-upload
                           theme='button'
-                          limit="limit"
+                          limit='limit'
                           onExceed={handleExceed}
                           tip="'支持扩展名：.crt或.pem'"></bk-upload>
                         <bk-input

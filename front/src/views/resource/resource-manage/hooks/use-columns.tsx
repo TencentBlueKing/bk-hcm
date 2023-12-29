@@ -1182,6 +1182,33 @@ const certificateColums = [
     label: '证书状态',
     field: 'cert_status',
     isDefaultShow: true,
+    render({ data }: any) {
+      // return h('span', {}, [CLOUD_HOST_STATUS[data.status] || data.status]);
+      return (
+        <div class={'cvm-status-container'}>
+          {HOST_SHUTDOWN_STATUS.includes(data.status) ? (
+            <img
+              src={StatusAbnormal}
+              class={'mr6'}
+              width={13}
+              height={13}></img>
+          ) : HOST_RUNNING_STATUS.includes(data.status) ? (
+            <img
+              src={StatusNormal}
+              class={'mr6'}
+              width={13}
+              height={13}></img>
+          ) : (
+            <img
+              src={StatusUnknown}
+              class={'mr6'}
+              width={13}
+              height={13}></img>
+          )}
+          <span>{CLOUD_HOST_STATUS[data.status] || data.status}</span>
+        </div>
+      );
+    },
     
   },
   {
