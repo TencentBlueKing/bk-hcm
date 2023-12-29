@@ -1,4 +1,4 @@
-FROM hub.bktencent.com/blueking/bk-hcm-base:v1.0
+FROM hub.bktencent.com/blueking/bk-hcm-base:v1.1
 
 COPY bk-hcm-webserver /data/hcm/
 COPY front /data/hcm/front

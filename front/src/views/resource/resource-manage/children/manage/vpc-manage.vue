@@ -203,16 +203,6 @@ const renderColumns = [
     render({ data }: any) {
       return h(h(
         'span',
-        {
-          onClick() {
-            emit(
-              'auth',
-              props.isResourcePage
-                ? 'iaas_resource_delete'
-                : 'biz_iaas_resource_delete',
-            );
-          },
-        },
         [
           whereAmI.value === Senarios.resource
             ? h(
@@ -220,15 +210,13 @@ const renderColumns = [
               {
                 text: true,
                 theme: 'primary',
-                class: 'mr16',
-                disabled:
-                      !props.authVerifyData?.permissionAction[
-                        props.isResourcePage
-                          ? 'iaas_resource_delete'
-                          : 'biz_iaas_resource_delete'
-                      ] || data.bk_cloud_id !== -1,
+                class: `mr16 ${props.authVerifyData?.permissionAction.iaas_resource_operate ? '' : 'hcm-no-permision-text-btn'}`,
+                disabled: data.bk_cloud_id !== -1,
                 onClick() {
-                  handleBindRegion(data);
+                  if (props.authVerifyData?.permissionAction.iaas_resource_operate) handleBindRegion(data);
+                  else {
+                    emit('auth', 'iaas_resource_operate');
+                  }
                 },
               },
               ['绑定管控区'],

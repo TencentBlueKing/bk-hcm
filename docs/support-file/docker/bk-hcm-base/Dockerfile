@@ -6,7 +6,7 @@ RUN ln -snf /usr/share/zoneinfo/$TimeZone /etc/localtime \
     && echo $TimeZone >/etc/timezone\
     && apt update \
     && apt install -y -q --no-install-recommends \
-    ca-certificates iputils-ping telnet procps curl less \
+    ca-certificates iputils-ping telnet procps curl iproute2 less \
     && apt-get clean \
     && rm -r /var/lib/apt/lists/* \
     && mkdir -p /data/hcm/etc/certs \
