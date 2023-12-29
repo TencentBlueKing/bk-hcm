@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/account"
 	typesBill "hcm/pkg/adaptor/types/bill"
+	"hcm/pkg/adaptor/types/clb"
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/adaptor/types/disk"
@@ -122,4 +123,6 @@ type TCloud interface {
 		*cvm.InquiryPriceResult, error)
 	ListPoliciesGrantingServiceAccess(kt *kit.Kit, opt *account.TCloudListPolicyOption) (
 		[]*v20190116.ListGrantServiceAccessNode, error)
+	CreateClb(kt *kit.Kit, opt *clb.TCloudCreateClbOption) (*poller.BaseDoneResult, error)
+	ListClb(kt *kit.Kit, opt *clb.TCloudListOption) ([]clb.TCloudClb, error)
 }
