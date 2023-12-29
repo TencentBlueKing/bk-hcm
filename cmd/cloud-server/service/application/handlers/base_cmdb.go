@@ -28,7 +28,7 @@ import (
 // ListBizNames 查询业务名称列表
 func (a *BaseApplicationHandler) ListBizNames(bkBizIDs []int64) ([]string, error) {
 	// 查询CC业务
-	searchResp, err := a.EsbClient.Cmdb().SearchBusiness(a.Cts.Kit.Ctx, &cmdb.SearchBizParams{
+	searchResp, err := a.EsbClient.Cmdb().SearchBusiness(a.Cts.Kit, &cmdb.SearchBizParams{
 		Fields: []string{"bk_biz_id", "bk_biz_name"},
 	})
 	if err != nil {
@@ -36,7 +36,7 @@ func (a *BaseApplicationHandler) ListBizNames(bkBizIDs []int64) ([]string, error
 	}
 	// 业务ID和Name映射关系
 	bizNameMap := map[int64]string{}
-	for _, biz := range searchResp.SearchBizResult.Info {
+	for _, biz := range searchResp.Info {
 		bizNameMap[biz.BizID] = biz.BizName
 	}
 	// 匹配出业务名称列表
@@ -61,7 +61,7 @@ func (a *BaseApplicationHandler) GetBizName(bkBizID int64) (string, error) {
 // GetCloudAreaName 查询云区域名称
 func (a *BaseApplicationHandler) GetCloudAreaName(bkCloudAreaID int64) (string, error) {
 	res, err := a.EsbClient.Cmdb().SearchCloudArea(
-		a.Cts.Kit.Ctx,
+		a.Cts.Kit,
 		&cmdb.SearchCloudAreaParams{
 			Fields: []string{"bk_cloud_id", "bk_cloud_name"},
 			Page: cmdb.BasePage{
