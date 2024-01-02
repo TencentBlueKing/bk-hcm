@@ -6,11 +6,11 @@ import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import CommonSideslider from '@/components/common-sideslider';
-import TargetGroupSidesliderContent from '../target-group-sideslider-content';
+import TargetGroupSidesliderContent from './target-group-sideslider-content';
 import CommonDialog from '@/components/common-dialog';
-import AddRsDialogContent from '../add-rs-dialog-content';
+import AddRsDialogContent from './add-rs-dialog-content';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
-import RsSidesliderContent from '../rs-sideslider-content';
+import RsSidesliderContent from './rs-sideslider-content';
 import './index.scss';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;

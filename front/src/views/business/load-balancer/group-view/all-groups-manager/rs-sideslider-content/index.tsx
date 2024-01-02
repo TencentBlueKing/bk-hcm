@@ -22,7 +22,7 @@ export default defineComponent({
             ))}
           </div>
         </div>
-        <RsConfigTable onShowAddRsDialog={() => emit('showAddRsDialog')} />
+        <RsConfigTable onShowAddRsDialog={() => emit('showAddRsDialog')} noSearch />
       </div>
     );
   },

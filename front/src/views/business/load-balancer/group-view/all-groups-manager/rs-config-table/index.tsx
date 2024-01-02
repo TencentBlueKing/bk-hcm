@@ -7,8 +7,11 @@ import './index.scss';
 
 export default defineComponent({
   name: 'RsConfigTable',
+  props: {
+    noSearch: Boolean,
+  },
   emits: ['showAddRsDialog'],
-  setup(_props, { emit }) {
+  setup(props, { emit }) {
     // rs配置表单项
     const isTableLoading = ref(false);
     const { columns, settings } = useColumns('rsConfig');
@@ -85,9 +88,13 @@ export default defineComponent({
             <i class='hcm-icon bkhcm-icon-plus-circle-shape'></i>
             <span>添加 RS</span>
           </div>
-          <div class='search-wrap'>
-            <SearchSelect></SearchSelect>
-          </div>
+          {
+            props.noSearch ? null : (
+              <div class='search-wrap'>
+                <SearchSelect></SearchSelect>
+              </div>
+            )
+          }
         </div>
         <Loading loading={isTableLoading.value}>
           <Table data={rsConfigData} columns={rsTableColumns} settings={settings.value} showOverflowTooltip>
