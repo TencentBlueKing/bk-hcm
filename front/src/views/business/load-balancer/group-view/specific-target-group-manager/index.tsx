@@ -1,21 +1,21 @@
 import { defineComponent, ref } from 'vue';
 import { Tab } from 'bkui-vue';
 import './index.scss';
-import DomainList from './domain-list';
-import ListenerDetail from './listener-detail';
+import ListenerList from './listener-list';
+import TargetGroupDetail from './target-group-detail';
+import HealthCheckupPage from './health-checkup';
 
 const { TabPanel } = Tab;
 
 export default defineComponent({
-  name: 'SpecificListenerManager',
+  name: 'SpecificTargetGroupManager',
   setup() {
-    const activeTab = ref('domain' as 'domain | info');
-    const protocolType = ref('UDP' as 'HTTP | HTTPS' | 'TCP' | 'UDP');
+    const activeTab = ref('listener' as 'listener' | 'info' | 'health');
     const tabList = [
-      { name: 'domain', label: '域名', component: <DomainList /> },
-      { name: 'info', label: '基本信息', component: <ListenerDetail protocolType={protocolType.value} /> },
+      { name: 'listener', label: '绑定的监听器', component: <ListenerList /> },
+      { name: 'info', label: '基本信息', component: <TargetGroupDetail /> },
+      { name: 'health', label: '健康检查', component: <HealthCheckupPage /> },
     ];
-
     return () => (
       <Tab class='manager-tab-wrap' v-model:active={activeTab.value} type='card-grid'>
         {tabList.map(tab => (

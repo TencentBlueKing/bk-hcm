@@ -2,6 +2,7 @@ import { defineComponent, ref } from 'vue';
 import { Input, VirtualRender } from 'bkui-vue';
 import allIcon from '@/assets/image/all-vendors.png';
 import AllGroupsManager from './all-groups-manager';
+import SpecificTargetGroupManager from './specific-target-group-manager';
 import './index.scss';
 
 export default defineComponent({
@@ -22,7 +23,7 @@ export default defineComponent({
 
     const componentMap = {
       all: <AllGroupsManager />,
-      specific: <div>具体的目标组</div>,
+      specific: <SpecificTargetGroupManager />,
     };
     const renderComponent = (type: 'all' | 'specific') => {
       return componentMap[type];
