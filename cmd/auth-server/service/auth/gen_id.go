@@ -60,6 +60,9 @@ func genAccountResource(a *meta.ResourceAttribute) (client.ActionID, []client.Re
 	case meta.UpdateRRT:
 		// update account RecycleReserveTime is related to hcm account resource
 		return sys.RecycleBinConfig, []client.Resource{res}, nil
+	case meta.Delete:
+		// update account RecycleReserveTime is related to hcm account resource
+		return sys.AccountDelete, []client.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}

@@ -11,7 +11,7 @@ global:
 image:
   registry: hub.bktencent.com
   pullPolicy: IfNotPresent
-  tag: 1.2.1.5
+  tag: 1.3.3
 
 serviceAccount:
   create: true
@@ -580,6 +580,14 @@ externalDatabase:
   user: hcm
   password: ""
   database: hcm
+
+dbConnConfig:
+  dialTimeoutSec: 60
+  readTimeoutSec: 60
+  writeTimeoutSec: 30
+  maxIdleTimeoutMin: 10
+  maxOpenConn: 500
+  maxIdleConn: 100
 
 ## 内置Etcd
 ##

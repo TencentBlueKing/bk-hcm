@@ -20,27 +20,22 @@
 package cmdb
 
 import (
-	"context"
-	"fmt"
-	"net/http"
-
 	"hcm/pkg/cc"
-	"hcm/pkg/criteria/constant"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/esb/types"
-	"hcm/pkg/tools/uuid"
 )
 
 // Client is an esb client to request cmdb.
 type Client interface {
-	SearchBusiness(ctx context.Context, params *SearchBizParams) (*SearchBizResp, error)
-	SearchCloudArea(ctx context.Context, params *SearchCloudAreaParams) (*SearchCloudAreaResult, error)
-	AddCloudHostToBiz(ctx context.Context, params *AddCloudHostToBizParams) (*BatchCreateResult, error)
-	DeleteCloudHostFromBiz(ctx context.Context, params *DeleteCloudHostFromBizParams) error
-	ListBizHost(ctx context.Context, params *ListBizHostParams) (*ListBizHostResult, error)
-	GetBizBriefCacheTopo(ctx context.Context, params *GetBizBriefCacheTopoParams) (*GetBizBriefCacheTopoResult, error)
-	FindHostTopoRelation(ctx context.Context, params *FindHostTopoRelationParams) (*HostTopoRelationResult, error)
-	SearchModule(ctx context.Context, params *SearchModuleParams) (*ModuleInfoResult, error)
+	SearchBusiness(kt *kit.Kit, params *SearchBizParams) (*SearchBizResult, error)
+	SearchCloudArea(kt *kit.Kit, params *SearchCloudAreaParams) (*SearchCloudAreaResult, error)
+	AddCloudHostToBiz(kt *kit.Kit, params *AddCloudHostToBizParams) (*BatchCreateResult, error)
+	DeleteCloudHostFromBiz(kt *kit.Kit, params *DeleteCloudHostFromBizParams) error
+	ListBizHost(kt *kit.Kit, params *ListBizHostParams) (*ListBizHostResult, error)
+	GetBizBriefCacheTopo(kt *kit.Kit, params *GetBizBriefCacheTopoParams) (*GetBizBriefCacheTopoResult, error)
+	FindHostTopoRelation(kt *kit.Kit, params *FindHostTopoRelationParams) (*HostTopoRelationResult, error)
+	SearchModule(kt *kit.Kit, params *SearchModuleParams) (*ModuleInfoResult, error)
 }
 
 // NewClient initialize a new cmdb client
@@ -60,195 +55,52 @@ type cmdb struct {
 	client rest.ClientInterface
 }
 
-// SearchBusiness search business.
-func (c *cmdb) SearchBusiness(ctx context.Context, params *SearchBizParams) (*SearchBizResp, error) {
-	resp := new(SearchBizResp)
-	req := &esbSearchBizParams{
-		CommParams:      types.GetCommParams(c.config),
-		SearchBizParams: params,
-	}
-	h := http.Header{}
-	h.Set(constant.RidKey, uuid.UUID())
-	err := c.client.Post().
-		SubResourcef("/cc/search_business/").
-		WithContext(ctx).
-		WithHeaders(h).
-		Body(req).
-		Do().Into(resp)
-	if err != nil {
-		return nil, err
-	}
-	if !resp.Result || resp.Code != 0 {
-		return nil, fmt.Errorf("search business failed, code: %d, msg: %s, rid: %s", resp.Code, resp.Message, resp.Rid)
-	}
-	return resp, nil
+// SearchBusiness search business
+func (c *cmdb) SearchBusiness(kt *kit.Kit, params *SearchBizParams) (*SearchBizResult, error) {
+
+	return types.EsbCall[SearchBizParams, SearchBizResult](c.client, c.config, rest.POST, kt, params,
+		"/cc/search_business/")
 }
 
 // SearchCloudArea search cmdb cloud area
-func (c *cmdb) SearchCloudArea(ctx context.Context, params *SearchCloudAreaParams) (*SearchCloudAreaResult, error) {
-	resp := new(SearchCloudAreaResp)
+func (c *cmdb) SearchCloudArea(kt *kit.Kit, params *SearchCloudAreaParams) (*SearchCloudAreaResult, error) {
 
-	req := &esbSearchCloudAreaParams{
-		CommParams:            types.GetCommParams(c.config),
-		SearchCloudAreaParams: params,
-	}
-
-	h := http.Header{}
-	h.Set(constant.RidKey, uuid.UUID())
-
-	err := c.client.Post().
-		SubResourcef("/cc/search_cloud_area/").
-		WithContext(ctx).
-		WithHeaders(h).
-		Body(req).
-		Do().Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if !resp.Result || resp.Code != 0 {
-		return nil, fmt.Errorf("find cloud area failed, code: %d, msg: %s, rid: %s", resp.Code, resp.Message, resp.Rid)
-	}
-	return resp.Data, nil
+	return types.EsbCall[SearchCloudAreaParams, SearchCloudAreaResult](c.client, c.config, rest.POST, kt, params,
+		"/cc/search_cloud_area/")
 }
 
 // AddCloudHostToBiz add cmdb cloud host to biz.
-func (c *cmdb) AddCloudHostToBiz(ctx context.Context, params *AddCloudHostToBizParams) (*BatchCreateResult, error) {
-	resp := new(BatchCreateResp)
+func (c *cmdb) AddCloudHostToBiz(kt *kit.Kit, params *AddCloudHostToBizParams) (*BatchCreateResult, error) {
 
-	req := &esbAddCloudHostToBizParams{
-		CommParams:              types.GetCommParams(c.config),
-		AddCloudHostToBizParams: params,
-	}
-
-	h := http.Header{}
-	h.Set(constant.RidKey, uuid.UUID())
-
-	err := c.client.Post().
-		SubResourcef("/cc/add_cloud_host_to_biz/").
-		WithContext(ctx).
-		WithHeaders(h).
-		Body(req).
-		Do().Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if !resp.Result || resp.Code != 0 {
-		return nil, fmt.Errorf("add cloud host to biz failed, code: %d, msg: %s, rid: %s", resp.Code, resp.Message,
-			resp.Rid)
-	}
-	return resp.Data, nil
+	return types.EsbCall[AddCloudHostToBizParams, BatchCreateResult](c.client, c.config, rest.POST, kt, params,
+		"/cc/add_cloud_host_to_biz/")
 }
 
 // DeleteCloudHostFromBiz delete cmdb cloud host from biz.
-func (c *cmdb) DeleteCloudHostFromBiz(ctx context.Context, params *DeleteCloudHostFromBizParams) error {
-	resp := new(types.BaseResponse)
-
-	req := &esbDeleteCloudHostFromBizParams{
-		CommParams:                   types.GetCommParams(c.config),
-		DeleteCloudHostFromBizParams: params,
-	}
-
-	h := http.Header{}
-	h.Set(constant.RidKey, uuid.UUID())
-
-	err := c.client.Post().
-		SubResourcef("/cc/delete_cloud_host_from_biz/").
-		WithContext(ctx).
-		WithHeaders(h).
-		Body(req).
-		Do().Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if !resp.Result || resp.Code != 0 {
-		return fmt.Errorf("delete cloud host from biz failed, code: %d, msg: %s, rid: %s", resp.Code, resp.Message,
-			resp.Rid)
-	}
-	return nil
+func (c *cmdb) DeleteCloudHostFromBiz(kt *kit.Kit, params *DeleteCloudHostFromBizParams) error {
+	_, err := types.EsbCall[DeleteCloudHostFromBizParams, struct{}](c.client, c.config, rest.POST, kt, params,
+		"/cc/delete_cloud_host_from_biz/")
+	return err
 }
 
 // ListBizHost list cmdb host in biz.
-func (c *cmdb) ListBizHost(ctx context.Context, params *ListBizHostParams) (*ListBizHostResult, error) {
-	resp := new(ListBizHostResp)
+func (c *cmdb) ListBizHost(kt *kit.Kit, params *ListBizHostParams) (*ListBizHostResult, error) {
 
-	req := &esbListBizHostParams{
-		CommParams:        types.GetCommParams(c.config),
-		ListBizHostParams: params,
-	}
-
-	h := http.Header{}
-	h.Set(constant.RidKey, uuid.UUID())
-
-	err := c.client.Post().
-		SubResourcef("/cc/list_biz_hosts/").
-		WithContext(ctx).
-		WithHeaders(h).
-		Body(req).
-		Do().Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if !resp.Result || resp.Code != 0 {
-		return nil, fmt.Errorf("list biz host failed, code: %d, msg: %s, rid: %s", resp.Code, resp.Message, resp.Rid)
-	}
-	return resp.ListBizHostResult, nil
+	return types.EsbCall[ListBizHostParams, ListBizHostResult](c.client, c.config, rest.POST, kt, params,
+		"/cc/list_biz_hosts/")
 }
 
 // FindHostTopoRelation 获取主机拓扑
-func (c *cmdb) FindHostTopoRelation(ctx context.Context, params *FindHostTopoRelationParams) (
+func (c *cmdb) FindHostTopoRelation(kt *kit.Kit, params *FindHostTopoRelationParams) (
 	*HostTopoRelationResult, error) {
 
-	resp := new(findHostTopoRelationResp)
-
-	req := &esbFindHostTopoRelationParams{
-		CommParams:                 types.GetCommParams(c.config),
-		FindHostTopoRelationParams: params,
-	}
-	h := http.Header{}
-	h.Set(constant.RidKey, uuid.UUID())
-	err := c.client.Post().
-		SubResourcef("/cc/find_host_topo_relation/").
-		WithContext(ctx).
-		WithHeaders(h).
-		Body(req).
-		Do().Into(resp)
-	if err != nil {
-		return nil, err
-	}
-	if !resp.Result || resp.Code != 0 {
-		return nil, fmt.Errorf("find host topo relation failed, code: %d, msg: %s, rid: %s", resp.Code, resp.Message,
-			resp.Rid)
-	}
-	return resp.Data, nil
+	return types.EsbCall[FindHostTopoRelationParams, HostTopoRelationResult](c.client, c.config, rest.POST, kt, params,
+		"/cc/find_host_topo_relation/")
 }
 
 // SearchModule 查询模块信息
-func (c *cmdb) SearchModule(ctx context.Context, params *SearchModuleParams) (*ModuleInfoResult, error) {
+func (c *cmdb) SearchModule(kt *kit.Kit, params *SearchModuleParams) (*ModuleInfoResult, error) {
 
-	resp := new(searchModuleResp)
-
-	req := &esbSearchModuleParams{
-		CommParams:         types.GetCommParams(c.config),
-		SearchModuleParams: params,
-	}
-	h := http.Header{}
-	h.Set(constant.RidKey, uuid.UUID())
-	err := c.client.Post().
-		SubResourcef("/cc/search_module/").
-		WithContext(ctx).
-		WithHeaders(h).
-		Body(req).
-		Do().Into(resp)
-	if err != nil {
-		return nil, err
-	}
-	if !resp.Result || resp.Code != 0 {
-		return nil, fmt.Errorf("search module failed, code: %d, msg: %s, rid: %s", resp.Code, resp.Message,
-			resp.Rid)
-	}
-	return resp.Data, nil
+	return types.EsbCall[SearchModuleParams, ModuleInfoResult](c.client, c.config, rest.POST, kt, params,
+		"/cc/search_module/")
 }

@@ -15,5 +15,6 @@ cmd/*-service/bk-hcm-*service
 .run/
 .vscode
 front/.husky/commit-msg
+
 pre-*-bkcodeai
 front/.husky/pre-push

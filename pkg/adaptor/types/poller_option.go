@@ -55,3 +55,11 @@ func NewBatchOperateCvmPollerOpt() *poller.PollUntilDoneOption {
 		Retry:             retry.NewRetryPolicy(10, [2]uint{1000, 5000}),
 	}
 }
+
+// NewBatchCreateClbPollerOption 超时时间半小时，10次之内重试间隔时间2s，10次之后重试间隔时间2-30s之间
+func NewBatchCreateClbPollerOption() *poller.PollUntilDoneOption {
+	return &poller.PollUntilDoneOption{
+		TimeoutTimeSecond: 30 * 60,
+		Retry:             retry.NewRetryPolicy(10, [2]uint{2000, 30000}),
+	}
+}

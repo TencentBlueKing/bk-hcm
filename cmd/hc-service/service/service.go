@@ -33,6 +33,7 @@ import (
 	"hcm/cmd/hc-service/service/account"
 	"hcm/cmd/hc-service/service/bill"
 	"hcm/cmd/hc-service/service/capability"
+	"hcm/cmd/hc-service/service/clb"
 	"hcm/cmd/hc-service/service/cvm"
 	"hcm/cmd/hc-service/service/disk"
 	"hcm/cmd/hc-service/service/eip"
@@ -164,6 +165,7 @@ func (s *Service) apiSet() *restful.Container {
 	instancetype.InitInstanceTypeService(c)
 	sync.InitService(c)
 	bill.InitBillService(c)
+	clb.InitClbService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }
