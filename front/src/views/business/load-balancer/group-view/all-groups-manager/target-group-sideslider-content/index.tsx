@@ -2,8 +2,8 @@ import { computed, defineComponent, reactive } from 'vue';
 import { Form, Select, Input } from 'bkui-vue';
 import { useAccountStore } from '@/store';
 import AccountSelector from '@/components/account-selector/index.vue';
-import './index.scss';
 import RsConfigTable from '../rs-config-table';
+import './index.scss';
 
 const { FormItem } = Form;
 const { Option } = Select;

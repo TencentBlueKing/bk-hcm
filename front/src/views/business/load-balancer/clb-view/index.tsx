@@ -4,7 +4,7 @@ import allVendors from '@/assets/image/all-vendors.png';
 import DynamicTree from '../components/dynamic-tree';
 import LoadBalancerDropdownMenu from '../components/clb-dropdown-menu';
 import AllClbsManager from './all-clbs-manager';
-import ListenerManager from './listener-manager';
+import SpecificListenerManager from './specific-listener-manager';
 import SpecificClbManager from './specific-clb-manager';
 import SpecificDomainManager from './specific-domain-manager';
 import SimpleSearchSelect from '../components/simple-search-select';
@@ -46,7 +46,7 @@ export default defineComponent({
     const componentMap = {
       all: <AllClbsManager />,
       clb: <SpecificClbManager />,
-      listener: <ListenerManager />,
+      listener: <SpecificListenerManager />,
       domain: <SpecificDomainManager />,
     };
     const renderComponent = (type: 'all' | 'clb' | 'listener' | 'domain') => {
