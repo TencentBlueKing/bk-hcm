@@ -9,8 +9,8 @@
     min-width: 64px;
   }
 
-  .listener-info-wrap {
-    .listener-info-title {
+  .listener-detail-info-wrap {
+    .info-title {
       margin-bottom: 16px;
       font-weight: 700;
 
@@ -19,19 +19,19 @@
       }
     }
 
-    .listener-info-content {
-      .listener-info-item {
+    .info-content {
+      .info-item {
         margin-left: 14px;
         display: flex;
         line-height: 40px;
 
-        .listener-info-item-label {
+        .info-item-label {
           margin-right: 5px;
           width: 100px;
           text-align: right;
         }
 
-        .listener-info-item-content {
+        .info-item-content {
           margin-left: 20px;
           color: #313238;
 

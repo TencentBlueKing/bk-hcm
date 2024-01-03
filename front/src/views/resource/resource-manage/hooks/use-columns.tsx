@@ -1253,6 +1253,68 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
   ];
 
+  const targetGroupListenerColumns = [
+    {
+      label: '绑定的监听器',
+      field: 'listener',
+      isDefaultShow: true,
+    },
+    {
+      label: '关联的负载均衡',
+      field: 'loadBalancer',
+      isDefaultShow: true,
+    },
+    {
+      label: '关联的URL',
+      field: 'url',
+      isDefaultShow: true,
+    },
+    {
+      label: '资源类型',
+      field: 'resourceType',
+      isDefaultShow: true,
+    },
+    {
+      label: '协议',
+      field: 'protocol',
+      isDefaultShow: true,
+      filter: true,
+    },
+    {
+      label: '端口',
+      field: 'port',
+      isDefaultShow: true,
+      filter: true,
+    },
+    {
+      label: '异常端口数',
+      field: 'abnormalPortCount',
+      isDefaultShow: true,
+      sort: true,
+    },
+    {
+      label: '所在VPC',
+      field: 'vpc',
+      isDefaultShow: true,
+    },
+    {
+      label: '云厂商',
+      field: 'cloudProvider',
+    },
+    {
+      label: '地域',
+      field: 'region',
+    },
+    {
+      label: '可用区域',
+      field: 'availabilityZone',
+    },
+    {
+      label: 'IP地址类型',
+      field: 'ipAddressType',
+    },
+  ];
+
   const urlColumns = [
     {
       type: 'selection',
@@ -1298,6 +1360,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     rsConfig: rsConfigColumns,
     domain: domainColumns,
     url: urlColumns,
+    targetGroupListener: targetGroupListenerColumns,
   };
 
   let columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);

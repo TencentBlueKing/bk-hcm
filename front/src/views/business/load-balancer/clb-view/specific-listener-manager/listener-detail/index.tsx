@@ -3,7 +3,7 @@ import { Button, Tag } from 'bkui-vue';
 import './index.scss';
 
 export default defineComponent({
-  name: 'ListenerInfo',
+  name: 'ListenerDetail',
   props: {
     protocolType: {
       type: String,
@@ -110,8 +110,8 @@ export default defineComponent({
             return null;
           }
           return (
-            <div class='listener-info-wrap'>
-              <div class='listener-info-title'>
+            <div class='listener-detail-info-wrap'>
+              <div class='info-title'>
                 {title} {/*  eslint-disable-next-line no-nested-ternary */}
                 {open_state === undefined ? null : open_state ? (
                   <Tag theme='success' class='status-tag'>
@@ -121,16 +121,16 @@ export default defineComponent({
                   <Tag class='status-tag'>未开启</Tag>
                 )}{' '}
               </div>
-              <div class='listener-info-content'>
+              <div class='info-content'>
                 {open_state !== false
                   && content.map(({ label, value, sub_hidden }) => {
                     if (sub_hidden) {
                       return null;
                     }
                     return (
-                      <div class='listener-info-item'>
-                        <div class='listener-info-item-label'>{label}</div>:
-                        <div class={`listener-info-item-content${Array.isArray(value) ? ' multiline' : ''}`}>
+                      <div class='info-item'>
+                        <div class='info-item-label'>{label}</div>:
+                        <div class={`info-item-content${Array.isArray(value) ? ' multiline' : ''}`}>
                           {Array.isArray(value)
                             ? value.map(v => (
                                 <>

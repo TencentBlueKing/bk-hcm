@@ -18,6 +18,10 @@
     .search-wrap {
       width: 300px;
     }
+
+    &.jc-right {
+      justify-content: flex-end;
+    }
   }
 
   .bkhcm-icon-batch-edit {
