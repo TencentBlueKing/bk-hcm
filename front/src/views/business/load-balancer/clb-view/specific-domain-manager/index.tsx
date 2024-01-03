@@ -9,7 +9,7 @@ import CommonSideslider from '@/components/common-sideslider';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import StatusSuccess from '@/assets/image/success-account.png';
 import StatusFailure from '@/assets/image/failed-account.png';
-import StatusPartialSuccess from '@/assets/image/Result-waiting.png';
+import StatusPartialSuccess from '@/assets/image/result-waiting.png';
 import { SYNC_STAUS_MAP } from '@/common/constant';
 const { FormItem } = Form;
 
