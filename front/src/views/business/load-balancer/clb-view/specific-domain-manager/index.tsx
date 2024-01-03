@@ -2,11 +2,15 @@ import { useTable } from '@/hooks/useTable/useTable';
 import { defineComponent, ref } from 'vue';
 import './index.scss';
 import { Button, Form, Input, Select } from 'bkui-vue';
-import { Plus } from 'bkui-vue/lib/icon';
+import { Done, EditLine, Error, Plus, Spinner } from 'bkui-vue/lib/icon';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import CommonSideslider from '@/components/common-sideslider';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+import StatusSuccess from '@/assets/image/success-account.png';
+import StatusFailure from '@/assets/image/failed-account.png';
+import StatusPartialSuccess from '@/assets/image/Result-waiting.png';
+import { SYNC_STAUS_MAP } from '@/common/constant';
 const { FormItem } = Form;
 
 export default defineComponent({
@@ -14,38 +18,92 @@ export default defineComponent({
     const isBatchDeleteDialogShow = ref(false);
     const radioGroupValue = ref(false);
     const isDomainSidesliderShow = ref(false);
-    const { columns, settings } = useColumns('url');
+    const { columns, generateColumnsSettings } = useColumns('url');
+    const editingID = ref('');
+    const tableColumns = [
+      ...columns,
+      {
+        label: '目标组',
+        field: 'targetGroup',
+        isDefaultShow: true,
+        render: ({ cell }: any) => (
+          <div class={'flex-row align-item-center target-group-name'}>
+            {
+              editingID.value === cell
+                ? (
+                  <div class={'flex-row align-item-center'}>
+                    <Select />
+                    <Done  width={20} height={20} class={'submit-edition-icon'} onClick={() => editingID.value = ''}/>
+                    <Error width={13} height={13} class={'submit-edition-icon'} onClick={() => editingID.value = ''}/>
+                  </div>
+                )
+                : (
+                <span class={'flex-row align-item-center'}>
+                  <span class={'target-group-name-btn'}>{cell}</span>
+                  <EditLine class={'target-group-edit-icon'} onClick={() => editingID.value = cell}/>
+                </span>
+                )
+            }
+          </div>
+        ),
+      },
+      {
+        label: '同步状态',
+        field: 'syncStatus',
+        isDefaultShow: true,
+        render: ({ cell }: any) => {
+          let icon = StatusFailure;
+          switch (cell) {
+            case 'b': {
+              icon = StatusSuccess;
+              break;
+            }
+            case 'c': {
+              icon = StatusFailure;
+              break;
+            }
+            case 'd': {
+              icon = StatusPartialSuccess;
+              break;
+            }
+          }
+          return (
+            <div class={'url-status-container'}>
+              {
+                cell === 'a'
+                  ? <Spinner fill='#3A84FF' width={13} height={13} class={'mr6'}/>
+                  : <img src={icon} class='mr6' width={13} height={13} />
+              }
+              <span
+                class={`${cell === 'd' ? 'url-sync-partial-success-status' : ''}`}
+                v-bk-tooltips={{
+                  content: '成功 89 个，失败 105 个',
+                  disabled: cell !== 'd',
+                }}
+              >
+                {
+                  SYNC_STAUS_MAP[cell]
+                }
+              </span>
+            </div>
+          );
+        },
+      },
+      {
+        label: '操作',
+        field: 'actions',
+        isDefaultShow: true,
+        render: () => (
+          <div>
+            <Button text theme='primary' class={'mr8'}>编辑</Button>
+            <Button text theme='primary'>删除</Button>
+          </div>
+        ),
+      },
+    ];
+    const tableSettings = generateColumnsSettings(tableColumns);
     const tableProps = {
-      columns: [
-        {
-          label: 'URL路径',
-          field: 'urlPath',
-        },
-        {
-          label: '协议',
-          field: 'protocol',
-        },
-        {
-          label: '端口',
-          field: 'port',
-        },
-        {
-          label: '轮询方式',
-          field: 'pollingMethod',
-        },
-        {
-          label: '目标组',
-          field: 'targetGroup',
-        },
-        {
-          label: '同步状态',
-          field: 'syncStatus',
-        },
-        {
-          label: '操作',
-          field: 'actions',
-        },
-      ],
+      columns: tableColumns,
       data: [
         {
           urlPath: '/home',
@@ -107,8 +165,8 @@ export default defineComponent({
       ],
     };
     const { CommonTable } = useTable({
-      columns,
-      settings: settings.value,
+      columns: tableColumns,
+      settings: tableSettings.value,
       searchData: [
         {
           name: 'URL路径',

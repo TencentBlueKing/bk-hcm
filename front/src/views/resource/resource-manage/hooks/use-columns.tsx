@@ -13,22 +13,20 @@ import type { Settings } from 'bkui-vue/lib/table/props';
 import { h, ref } from 'vue';
 import type { Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { CLOUD_HOST_STATUS, SYNC_STAUS_MAP, VendorEnum } from '@/common/constant';
+import { CLOUD_HOST_STATUS, VendorEnum } from '@/common/constant';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useCloudAreaStore } from '@/store/useCloudAreaStore';
 import StatusAbnormal from '@/assets/image/Status-abnormal.png';
-import StatusSuccess from '@/assets/image/success-account.png';
-import StatusFailure from '@/assets/image/failed-account.png';
-import StatusPartialSuccess from '@/assets/image/Result-waiting.png';
+import StatusNormal from '@/assets/image/Status-normal.png';
+import StatusUnknown from '@/assets/image/Status-unknown.png';
 
 import {
   HOST_RUNNING_STATUS,
   HOST_SHUTDOWN_STATUS,
 } from '../common/table/HostOperations';
 import './use-columns.scss';
-import { Spinner } from 'bkui-vue/lib/icon';
 
 export default (type: string, isSimpleShow = false, vendor?: string) => {
   const router = useRouter();
@@ -1280,64 +1278,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '轮询方式',
       field: 'pollingMethod',
       isDefaultShow: true,
-    },
-    {
-      label: '目标组',
-      field: 'targetGroup',
-      isDefaultShow: true,
-    },
-    {
-      label: '同步状态',
-      field: 'syncStatus',
-      isDefaultShow: true,
-      render: ({ cell }: any) => {
-        let icon = StatusFailure;
-        switch (cell) {
-          case 'b': {
-            icon = StatusSuccess;
-            break;
-          }
-          case 'c': {
-            icon = StatusFailure;
-            break;
-          }
-          case 'd': {
-            icon = StatusPartialSuccess;
-            break;
-          }
-        }
-        return (
-          <div class={'cvm-status-container'}>
-            {
-              cell === 'a'
-                ? <Spinner fill='#3A84FF' width={13} height={13} class={'mr6'}/>
-                : <img src={icon} class='mr6' width={13} height={13} />
-            }
-            <span
-              class={`${cell === 'd' ? 'url-sync-partial-success-status' : ''}`}
-              v-bk-tooltips={{
-                content: '成功 89 个，失败 105 个',
-                disabled: cell !== 'd',
-              }}
-            >
-              {
-                SYNC_STAUS_MAP[cell]
-              }
-            </span>
-          </div>
-        );
-      },
-    },
-    {
-      label: '操作',
-      field: 'actions',
-      isDefaultShow: true,
-      render: () => (
-        <div>
-          <Button text theme='primary' class={'mr8'}>编辑</Button>
-          <Button text theme='primary'>删除</Button>
-        </div>
-      ),
     },
   ];
 
