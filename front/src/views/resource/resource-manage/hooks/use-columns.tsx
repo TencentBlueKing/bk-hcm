@@ -1257,28 +1257,39 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
 
   const urlColumns = [
     {
+      type: 'selection',
+      width: '100',
+      onlyShowOnList: true,
+    },
+    {
       label: 'URL路径',
       field: 'urlPath',
+      isDefaultShow: true,
     },
     {
       label: '协议',
       field: 'protocol',
+      isDefaultShow: true,
     },
     {
       label: '端口',
       field: 'port',
+      isDefaultShow: true,
     },
     {
       label: '轮询方式',
       field: 'pollingMethod',
+      isDefaultShow: true,
     },
     {
       label: '目标组',
       field: 'targetGroup',
+      isDefaultShow: true,
     },
     {
       label: '同步状态',
       field: 'syncStatus',
+      isDefaultShow: true,
       render: ({ cell }: any) => {
         let icon = StatusFailure;
         switch (cell) {
@@ -1320,6 +1331,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '操作',
       field: 'actions',
+      isDefaultShow: true,
+      render: () => (
+        <div>
+          <Button text theme='primary' class={'mr8'}>编辑</Button>
+          <Button text theme='primary'>删除</Button>
+        </div>
+      ),
     },
   ];
 

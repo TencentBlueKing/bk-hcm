@@ -14,7 +14,7 @@ export default defineComponent({
     const isBatchDeleteDialogShow = ref(false);
     const radioGroupValue = ref(false);
     const isDomainSidesliderShow = ref(false);
-    const { columns } = useColumns('url');
+    const { columns, settings } = useColumns('url');
     const tableProps = {
       columns: [
         {
@@ -108,14 +108,7 @@ export default defineComponent({
     };
     const { CommonTable } = useTable({
       columns,
-      settings: {
-        fields: [],
-        checked: [],
-        limit: 0,
-        size: '',
-        sizeList: [],
-        showLineHeight: false,
-      },
+      settings: settings.value,
       searchData: [
         {
           name: 'URL路径',
