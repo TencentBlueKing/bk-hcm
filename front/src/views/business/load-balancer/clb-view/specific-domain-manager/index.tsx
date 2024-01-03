@@ -1,15 +1,18 @@
 import { useTable } from '@/hooks/useTable/useTable';
 import { defineComponent, ref } from 'vue';
 import './index.scss';
-import { Button } from 'bkui-vue';
+import { Button, Form, Input, Select } from 'bkui-vue';
 import { Plus } from 'bkui-vue/lib/icon';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
+import CommonSideslider from '@/components/common-sideslider';
+const { FormItem } = Form;
 
 export default defineComponent({
   setup() {
     const isBatchDeleteDialogShow = ref(false);
     const radioGroupValue = ref(false);
+    const isDomainSidesliderShow = ref(false);
     const tableProps = {
       columns: [
         {
@@ -203,6 +206,7 @@ export default defineComponent({
     });
 
     const handleBatchDelete = () => {};
+    const handleSubmit = () => {};
 
     return () => (
       <div class={'url-list-container'}>
@@ -210,7 +214,7 @@ export default defineComponent({
         {{
           operation: () => (
               <div class={'flex-row align-item-center'}>
-                <Button theme={'primary'}><Plus class={'f20'}/>新增 URL 路径</Button>
+                <Button theme={'primary'} onClick={() => isDomainSidesliderShow.value = true}><Plus class={'f20'}/>新增 URL 路径</Button>
                 <Button onClick={() => isBatchDeleteDialogShow.value = true}>批量删除</Button>
               </div>
           ),
@@ -237,6 +241,35 @@ export default defineComponent({
             ),
           }}
         </BatchOperationDialog>
+        <CommonSideslider
+          title='新建域名'
+          width={640}
+          v-model:isShow={isDomainSidesliderShow.value}
+          onHandleSubmit={handleSubmit}>
+            <p class={'create-url-text-item'}>
+              <span class={'create-url-text-item-label'}>监听器名称：</span>
+              <span class={'create-url-text-item-value'}>web站点</span>
+            </p>
+            <p class={'create-url-text-item'}>
+              <span class={'create-url-text-item-label'}>协议端口：</span>
+              <span class={'create-url-text-item-value'}>666666</span>
+            </p>
+            <p class={'create-url-text-item'}>
+              <span class={'create-url-text-item-label'}>域名：</span>
+              <span class={'create-url-text-item-value'}>aaaaaaaaaa</span>
+            </p>
+            <Form formType='vertical'>
+              <FormItem label='URL 路径'>
+                <Input />
+              </FormItem>
+              <FormItem label='均衡方式'>
+                <Select />
+              </FormItem>
+              <FormItem label='目标组'>
+                <Select />
+              </FormItem>
+            </Form>
+        </CommonSideslider>
       </div>
     );
   },
