@@ -25,7 +25,7 @@ export const useLocalTable = (props: IProp) => {
           <section class='operation-wrap'>
             {slots.tab?.()}
             <SearchSelect
-              class='common-search-selector'
+              class='common-search-selector w400'
               v-model={searchVal.value}
               data={props.searchData}
             />

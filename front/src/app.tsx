@@ -14,6 +14,8 @@ export default defineComponent({
       const clientWidth = docEl.getBoundingClientRect().width || window.innerWidth;
       const flexibleRem = Math.max(Math.min(clientWidth / designWidth, maxRate), minRate) * 100;
       docEl.style.fontSize = `${flexibleRem}px`;
+      // 项目中没有做 rem 适配, 所以这里直接设置 rem 为 14px, 解决 MagicBox 适配 rem 失效问题
+      docEl.style.fontSize = '14px';
     };
     const userStore = useUserStore();
     userStore.userInfo();

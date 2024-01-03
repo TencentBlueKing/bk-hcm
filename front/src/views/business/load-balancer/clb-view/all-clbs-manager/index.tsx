@@ -9,10 +9,18 @@ export default defineComponent({
   name: 'AllClbsManager',
   setup() {
     const { columns, settings } = useColumns('clbs');
+    const tableColumns = [
+      ...columns,
+      {
+        label: '操作',
+        width: 120,
+        render: () => (<span class='operate-text-btn'>删除</span>),
+      },
+    ];
     const searchData: any = [];
     const searchUrl = `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vpcs/list`;
     const { CommonTable } = useTable({
-      columns,
+      columns: tableColumns,
       settings: settings.value,
       searchData,
       searchUrl,
