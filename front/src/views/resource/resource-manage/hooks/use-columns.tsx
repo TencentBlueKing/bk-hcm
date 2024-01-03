@@ -19,14 +19,16 @@ import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useCloudAreaStore } from '@/store/useCloudAreaStore';
 import StatusAbnormal from '@/assets/image/Status-abnormal.png';
-import StatusNormal from '@/assets/image/Status-normal.png';
-import StatusUnknown from '@/assets/image/Status-unknown.png';
-import StatusPending from '@/assets/image/status_loading.png';
+import StatusSuccess from '@/assets/image/success-account.png';
+import StatusFailure from '@/assets/image/failed-account.png';
+import StatusPartialSuccess from '@/assets/image/Result-waiting.png';
+
 import {
   HOST_RUNNING_STATUS,
   HOST_SHUTDOWN_STATUS,
 } from '../common/table/HostOperations';
 import './use-columns.scss';
+import { Spinner } from 'bkui-vue/lib/icon';
 
 export default (type: string, isSimpleShow = false, vendor?: string) => {
   const router = useRouter();
@@ -1278,31 +1280,39 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '同步状态',
       field: 'syncStatus',
       render: ({ cell }: any) => {
-        let icon = StatusUnknown;
+        let icon = StatusFailure;
         switch (cell) {
-          case 'a': {
-            icon = StatusPending;
-            break;
-          }
           case 'b': {
-            icon = StatusNormal;
+            icon = StatusSuccess;
             break;
           }
           case 'c': {
-            icon = StatusAbnormal;
+            icon = StatusFailure;
             break;
           }
           case 'd': {
-            icon = StatusUnknown;
+            icon = StatusPartialSuccess;
             break;
           }
         }
         return (
           <div class={'cvm-status-container'}>
-            <img src={icon} class='mr6' width={13} height={13} />
             {
-              SYNC_STAUS_MAP[cell]
+              cell === 'a'
+                ? <Spinner fill='#3A84FF' width={13} height={13} class={'mr6'}/>
+                : <img src={icon} class='mr6' width={13} height={13} />
             }
+            <span
+              class={`${cell === 'd' ? 'url-sync-partial-success-status' : ''}`}
+              v-bk-tooltips={{
+                content: '成功 89 个，失败 105 个',
+                disabled: cell !== 'd',
+              }}
+            >
+              {
+                SYNC_STAUS_MAP[cell]
+              }
+            </span>
           </div>
         );
       },
