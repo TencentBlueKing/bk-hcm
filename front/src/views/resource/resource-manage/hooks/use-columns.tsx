@@ -13,7 +13,7 @@ import type { Settings } from 'bkui-vue/lib/table/props';
 import { h, ref } from 'vue';
 import type { Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { CLOUD_HOST_STATUS, VendorEnum } from '@/common/constant';
+import { CLOUD_HOST_STATUS, SYNC_STAUS_MAP, VendorEnum } from '@/common/constant';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -21,6 +21,7 @@ import { useCloudAreaStore } from '@/store/useCloudAreaStore';
 import StatusAbnormal from '@/assets/image/Status-abnormal.png';
 import StatusNormal from '@/assets/image/Status-normal.png';
 import StatusUnknown from '@/assets/image/Status-unknown.png';
+import StatusPending from '@/assets/image/status_loading.png';
 import {
   HOST_RUNNING_STATUS,
   HOST_SHUTDOWN_STATUS,
@@ -1252,6 +1253,66 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
   ];
 
+  const urlColumns = [
+    {
+      label: 'URL路径',
+      field: 'urlPath',
+    },
+    {
+      label: '协议',
+      field: 'protocol',
+    },
+    {
+      label: '端口',
+      field: 'port',
+    },
+    {
+      label: '轮询方式',
+      field: 'pollingMethod',
+    },
+    {
+      label: '目标组',
+      field: 'targetGroup',
+    },
+    {
+      label: '同步状态',
+      field: 'syncStatus',
+      render: ({ cell }: any) => {
+        let icon = StatusUnknown;
+        switch (cell) {
+          case 'a': {
+            icon = StatusPending;
+            break;
+          }
+          case 'b': {
+            icon = StatusNormal;
+            break;
+          }
+          case 'c': {
+            icon = StatusAbnormal;
+            break;
+          }
+          case 'd': {
+            icon = StatusUnknown;
+            break;
+          }
+        }
+        return (
+          <div class={'cvm-status-container'}>
+            <img src={icon} class='mr6' width={13} height={13} />
+            {
+              SYNC_STAUS_MAP[cell]
+            }
+          </div>
+        );
+      },
+    },
+    {
+      label: '操作',
+      field: 'actions',
+    },
+  ];
+
   const columnsMap = {
     vpc: vpcColumns,
     subnet: subnetColumns,
@@ -1268,6 +1329,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     targetGroup: targetGroupColumns,
     rsConfig: rsConfigColumns,
     domain: domainColumns,
+    url: urlColumns,
   };
 
   let columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);

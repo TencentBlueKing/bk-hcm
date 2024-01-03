@@ -6,6 +6,7 @@ import { Plus } from 'bkui-vue/lib/icon';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import CommonSideslider from '@/components/common-sideslider';
+import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 const { FormItem } = Form;
 
 export default defineComponent({
@@ -13,6 +14,7 @@ export default defineComponent({
     const isBatchDeleteDialogShow = ref(false);
     const radioGroupValue = ref(false);
     const isDomainSidesliderShow = ref(false);
+    const { columns } = useColumns('url');
     const tableProps = {
       columns: [
         {
@@ -105,36 +107,7 @@ export default defineComponent({
       ],
     };
     const { CommonTable } = useTable({
-      columns: [
-        {
-          label: 'URL路径',
-          field: 'urlPath',
-        },
-        {
-          label: '协议',
-          field: 'protocol',
-        },
-        {
-          label: '端口',
-          field: 'port',
-        },
-        {
-          label: '轮询方式',
-          field: 'pollingMethod',
-        },
-        {
-          label: '目标组',
-          field: 'targetGroup',
-        },
-        {
-          label: '同步状态',
-          field: 'syncStatus',
-        },
-        {
-          label: '操作',
-          field: 'actions',
-        },
-      ],
+      columns,
       settings: {
         fields: [],
         checked: [],
@@ -181,7 +154,7 @@ export default defineComponent({
           port: 80,
           pollingMethod: 'RoundRobin',
           targetGroup: 'GroupA',
-          syncStatus: 'Synchronized',
+          syncStatus: 'a',
           actions: 'Edit',
         },
         {
@@ -190,7 +163,7 @@ export default defineComponent({
           port: 443,
           pollingMethod: 'LeastConnections',
           targetGroup: 'GroupB',
-          syncStatus: 'Pending',
+          syncStatus: 'b',
           actions: 'Delete',
         },
         {
@@ -199,7 +172,16 @@ export default defineComponent({
           port: 22,
           pollingMethod: 'SourceIP',
           targetGroup: 'GroupC',
-          syncStatus: 'Failed',
+          syncStatus: 'c',
+          actions: 'Update',
+        },
+        {
+          urlPath: '/contact',
+          protocol: 'TCP',
+          port: 22,
+          pollingMethod: 'SourceIP',
+          targetGroup: 'GroupC',
+          syncStatus: 'd',
           actions: 'Update',
         },
       ],
