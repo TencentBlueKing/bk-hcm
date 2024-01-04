@@ -517,3 +517,10 @@ export const VendorMap = {
   [VendorEnum.HUAWEI]: '华为云',
   [VendorEnum.TCLOUD]: '腾讯云',
 };
+
+export const SYNC_STAUS_MAP = {
+  a: '绑定中',
+  b: '成功',
+  c: '失败',
+  d: '部分成功',
+};

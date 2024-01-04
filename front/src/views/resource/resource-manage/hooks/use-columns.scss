@@ -1,4 +1,10 @@
 .cvm-status-container {
   display: flex;
   align-items: center;
+  padding-top: 10px;
+  line-height: 20px;
+}
+
+.url-sync-partial-success-status {
+  border-bottom: 1px dashed rgb(151, 155, 165);
 }

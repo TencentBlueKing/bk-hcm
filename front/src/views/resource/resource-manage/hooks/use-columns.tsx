@@ -21,6 +21,7 @@ import { useCloudAreaStore } from '@/store/useCloudAreaStore';
 import StatusAbnormal from '@/assets/image/Status-abnormal.png';
 import StatusNormal from '@/assets/image/Status-normal.png';
 import StatusUnknown from '@/assets/image/Status-unknown.png';
+
 import {
   HOST_RUNNING_STATUS,
   HOST_SHUTDOWN_STATUS,
@@ -1314,6 +1315,34 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
   ];
 
+  const urlColumns = [
+    {
+      type: 'selection',
+      width: '100',
+      onlyShowOnList: true,
+    },
+    {
+      label: 'URL路径',
+      field: 'urlPath',
+      isDefaultShow: true,
+    },
+    {
+      label: '协议',
+      field: 'protocol',
+      isDefaultShow: true,
+    },
+    {
+      label: '端口',
+      field: 'port',
+      isDefaultShow: true,
+    },
+    {
+      label: '轮询方式',
+      field: 'pollingMethod',
+      isDefaultShow: true,
+    },
+  ];
+
   const columnsMap = {
     vpc: vpcColumns,
     subnet: subnetColumns,
@@ -1330,6 +1359,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     targetGroup: targetGroupColumns,
     rsConfig: rsConfigColumns,
     domain: domainColumns,
+    url: urlColumns,
     targetGroupListener: targetGroupListenerColumns,
   };
 
