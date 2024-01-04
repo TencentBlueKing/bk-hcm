@@ -205,6 +205,7 @@ export default defineComponent({
     return () => (
       <div class='dynamic-tree-wrap'>
         <bk-tree
+          node-key='name'
           ref={treeRef}
           data={treeData.value}
           label='name'
@@ -212,7 +213,6 @@ export default defineComponent({
           level-line
           virtual-render
           line-height={36}
-          node-content-action={['selected', 'click']}
           search={searchOption.value}
           onNodeClick={handleNodeClick}
           onScroll={getTreeScrollFunc()}

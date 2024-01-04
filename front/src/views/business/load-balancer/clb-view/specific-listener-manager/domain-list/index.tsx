@@ -58,26 +58,33 @@ export default defineComponent({
         {
           label: '协议',
           field: 'protocol',
+          filter: true,
         },
         {
           label: '端口',
           field: 'port',
+          filter: true,
         },
         {
           label: '均衡方式',
           field: 'balanceMode',
+          filter: true,
         },
         {
           label: '是否绑定目标组',
           field: 'isBoundToTargetGroup',
+          filter: true,
         },
         {
           label: 'RS权重为O',
           field: 'rsWeight',
+          sort: true,
+          align: 'right',
         },
         {
           label: '',
           width: 80,
+          align: 'right',
           render: () => <i class='hcm-icon bkhcm-icon-minus-circle-shape batch-delete-listener-icon'></i>,
         },
       ],

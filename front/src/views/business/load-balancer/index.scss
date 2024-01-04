@@ -63,13 +63,18 @@
 
 .operate-groups {
   span {
-    color: #3A84FF;
+    color: #3a84ff;
     cursor: pointer;
 
     &:not(:last-child) {
       margin-right: 16px;
     }
   }
+}
+
+.operate-text-btn, .link-text-btn {
+  color: #3a84ff;
+  cursor: pointer;
 }
 
 .f20 {

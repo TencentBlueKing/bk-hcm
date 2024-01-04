@@ -42,6 +42,13 @@ export default defineComponent({
             value: '加权轮询',
           },
           {
+            label: '目标组',
+            value: () => (
+              <span class='link-text-btn'>目标组134</span>
+            ),
+            sub_hidden: ['HTTP', 'HTTPS'].includes(props.protocolType),
+          },
+          {
             label: '创建时间',
             value: '2023-07-03  18:00:00',
           },
@@ -127,18 +134,26 @@ export default defineComponent({
                     if (sub_hidden) {
                       return null;
                     }
+                    let valueVNode = null;
+                    if (typeof value === 'function') {
+                      valueVNode = value();
+                    } else {
+                      if (Array.isArray(value)) {
+                        valueVNode = value.map(v => (
+                          <>
+                            {' '}
+                            {v};<br />{' '}
+                          </>
+                        ));
+                      } else {
+                        valueVNode = value;
+                      }
+                    }
                     return (
                       <div class='info-item'>
                         <div class='info-item-label'>{label}</div>:
                         <div class={`info-item-content${Array.isArray(value) ? ' multiline' : ''}`}>
-                          {Array.isArray(value)
-                            ? value.map(v => (
-                                <>
-                                  {' '}
-                                  {v};<br />{' '}
-                                </>
-                            ))
-                            : value}
+                          {valueVNode}
                         </div>
                       </div>
                     );
