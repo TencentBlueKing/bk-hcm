@@ -136,30 +136,30 @@ export default defineComponent({
         </Button>
         <div class='detail-info-container'>
           {healthDetailInfo.value.map(({ label, value }) => {
-            let _valueNode = null;
+            let valueVNode = null;
             if (typeof value === 'function') {
-              _valueNode = value();
+              valueVNode = value();
             } else {
               if (isOpen.value) {
                 if (Array.isArray(value)) {
-                  _valueNode = value.map(v => (
+                  valueVNode = value.map(v => (
                     <>
                       {' '}
                       {v};<br />{' '}
                     </>
                   ));
                 } else {
-                  _valueNode = value;
+                  valueVNode = value;
                 }
               } else {
-                _valueNode = '-';
+                valueVNode = '-';
               }
             }
             return (
               <div class='info-item'>
                 <span class='info-item-label'>{label}</span>
                 {typeof value === 'function' ? null : ':'}
-                <span class={`info-item-value${Array.isArray(value) ? ' multiline' : ''}`}>{_valueNode}</span>
+                <span class={`info-item-value${Array.isArray(value) ? ' multiline' : ''}`}>{valueVNode}</span>
               </div>
             );
           })}

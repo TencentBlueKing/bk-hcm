@@ -134,26 +134,26 @@ export default defineComponent({
                     if (sub_hidden) {
                       return null;
                     }
-                    let _valueNode = null;
+                    let valueVNode = null;
                     if (typeof value === 'function') {
-                      _valueNode = value();
+                      valueVNode = value();
                     } else {
                       if (Array.isArray(value)) {
-                        _valueNode = value.map(v => (
+                        valueVNode = value.map(v => (
                           <>
                             {' '}
                             {v};<br />{' '}
                           </>
                         ));
                       } else {
-                        _valueNode = value;
+                        valueVNode = value;
                       }
                     }
                     return (
                       <div class='info-item'>
                         <div class='info-item-label'>{label}</div>:
                         <div class={`info-item-content${Array.isArray(value) ? ' multiline' : ''}`}>
-                          {_valueNode}
+                          {valueVNode}
                         </div>
                       </div>
                     );
