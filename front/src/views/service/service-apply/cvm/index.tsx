@@ -1162,17 +1162,22 @@ export default defineComponent({
         <div
           class='create-form-container cvm-wrap'
           style={whereAmI.value === Senarios.resource && { padding: 0, marginBottom: '80px' }}>
-          <ConditionOptions
-            type={ResourceTypeEnum.CVM}
-            v-model:bizId={cond.bizId}
-            v-model:cloudAccountId={cond.cloudAccountId}
-            v-model:vendor={cond.vendor}
-            v-model:region={cond.region}
-            v-model:resourceGroup={cond.resourceGroup}>
-            {{
-              default: () => (
-                <Form formType='vertical'>
-                  <FormItem label={'可用区'}>
+          <Form
+            model={formData}
+            rules={formRules}
+            ref={formRef}
+            onSubmit={handleFormSubmit}
+            formType='vertical'>
+            <ConditionOptions
+              type={ResourceTypeEnum.CVM}
+              v-model:bizId={cond.bizId}
+              v-model:cloudAccountId={cond.cloudAccountId}
+              v-model:vendor={cond.vendor}
+              v-model:region={cond.region}
+              v-model:resourceGroup={cond.resourceGroup}>
+              {{
+                default: () => (
+                  <FormItem label={'可用区'} required property='zone'>
                     <ZoneSelector
                       ref={zoneSelectorRef}
                       v-model={formData.zone}
@@ -1181,27 +1186,18 @@ export default defineComponent({
                       onChange={handleZoneChange}
                     />
                   </FormItem>
-                </Form>
-              ),
-              appendix: () => ([VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum) ? (
-                  <Form formType='vertical'>
-                    <FormItem label='计费模式' required>
-                      <RadioGroup v-model={formData.instance_charge_type}>
-                        {billingModes.value.map(item => (
-                          <RadioButton label={item.id}>{item.name}</RadioButton>
-                        ))}
-                      </RadioGroup>
-                    </FormItem>
-                  </Form>
-              ) : null),
-            }}
-          </ConditionOptions>
-          <Form
-            model={formData}
-            rules={formRules}
-            ref={formRef}
-            onSubmit={handleFormSubmit}
-            formType='vertical'>
+                ),
+                appendix: () => ([VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum) ? (
+                  <FormItem label='计费模式' required property='instance_charge_type'>
+                    <RadioGroup v-model={formData.instance_charge_type}>
+                      {billingModes.value.map(item => (
+                        <RadioButton label={item.id}>{item.name}</RadioButton>
+                      ))}
+                    </RadioGroup>
+                  </FormItem>
+                ) : null),
+              }}
+            </ConditionOptions>
             {formConfig.value
               .filter(({ display }) => display !== false)
               .map(({ title, children }) => (
