@@ -12,5 +12,6 @@ module.exports = {
     '@typescript-eslint/naming-convention': 0,
     '@typescript-eslint/no-misused-promises': 0,
     'prefer-spread': 'off',
+    'linebreak-style': 0,
   },
 };
