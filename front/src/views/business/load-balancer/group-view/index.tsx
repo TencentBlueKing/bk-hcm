@@ -1,4 +1,4 @@
-import { defineComponent, ref } from 'vue';
+import { defineComponent, ref, reactive } from 'vue';
 import { Input, VirtualRender, Popover } from 'bkui-vue';
 import allIcon from '@/assets/image/all-vendors.png';
 import AllGroupsManager from './all-groups-manager';
@@ -18,6 +18,7 @@ export default defineComponent({
           id: index + 1,
           name: `clb-group-${index + 1}`,
           count: Math.floor(Math.random() * 10) + 1,
+          isDropdownListShow: false,
         };
       });
 
@@ -30,12 +31,13 @@ export default defineComponent({
     };
     const activeType = ref('all' as 'all' | 'specific');
     const highlightItemIndex = ref(-1);
+    const allTargetGroupsItem = reactive({ isDropdownListShow: false });
     const handleTypeChange = (type: 'all' | 'specific', index: number) => {
       activeType.value = type;
       highlightItemIndex.value = index;
     };
 
-    const renderDropdownActionList = () => {
+    const renderDropdownActionList = (item: any) => {
       return (
         <Popover
           trigger='click'
@@ -43,10 +45,13 @@ export default defineComponent({
           renderType='shown'
           placement='bottom-start'
           arrow={false}
-          extCls='more-action-dropdown-menu'>
+          extCls='more-action-dropdown-menu'
+          onAfterHidden={({ isShow }) => (item.isDropdownListShow = isShow)}>
           {{
             default: () => (
-              <div class='more-action'>
+              <div
+                class={`more-action${item.isDropdownListShow ? ' click' : ''}`}
+                onClick={() => (item.isDropdownListShow = !item.isDropdownListShow)}>
                 <i class='hcm-icon bkhcm-icon-more-fill'></i>
               </div>
             ),
@@ -77,7 +82,7 @@ export default defineComponent({
               </div>
               <div class='right-wrap'>
                 <div class='count'>{6654}</div>
-                {renderDropdownActionList()}
+                {renderDropdownActionList(allTargetGroupsItem)}
               </div>
             </div>
             <VirtualRender list={renderList} height='calc(100% - 36px)' lineHeight={36}>
@@ -95,7 +100,7 @@ export default defineComponent({
                         </div>
                         <div class='right-wrap'>
                           <div class='count'>{item.count}</div>
-                          {renderDropdownActionList()}
+                          {renderDropdownActionList(item)}
                         </div>
                       </div>
                     );
