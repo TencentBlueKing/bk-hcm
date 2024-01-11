@@ -9,10 +9,12 @@ import Empty from '@/components/empty';
 
 export interface IProp {
   columns: Array<Column>;
-  settings: Settings;
+  settings?: Settings;
   searchData: Array<ISearchItem>;
   searchUrl: string; // 如`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/sub_accounts/list`，
-  tableData?: Array<Record<string, any>>;  // 临时看看效果
+  tableData?: Array<Record<string, any>>; // 临时看看效果
+  noSearch?: boolean;
+  tableExtraOptions?: object; // 表格属性及事件
 }
 
 export const useTable = (props: IProp) => {
@@ -67,14 +69,10 @@ export const useTable = (props: IProp) => {
       return () => (
         <>
           <section class='operation-wrap'>
-            <div class='operate-btn-groups'>
-              {slots.operation?.()}
-            </div>
-            <SearchSelect
-              class='w500 common-search-selector'
-              v-model={searchVal.value}
-              data={props.searchData}
-            />
+            <div class='operate-btn-groups'>{slots.operation?.()}</div>
+            {!props.noSearch && (
+              <SearchSelect class='w500 common-search-selector' v-model={searchVal.value} data={props.searchData} />
+            )}
           </section>
           <Loading loading={isLoading.value} class='loading-table-container'>
             <Table
@@ -85,6 +83,7 @@ export const useTable = (props: IProp) => {
               pagination={pagination}
               remotePagination
               showOverflowTooltip
+              {...(props.tableExtraOptions || {})}
               onPageLimitChange={handlePageLimitChange}
               onPageValueChange={handlePageValueCHange}
               onColumnSort={() => {}}

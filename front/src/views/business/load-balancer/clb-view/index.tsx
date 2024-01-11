@@ -1,8 +1,8 @@
-import { defineComponent, ref, provide, watch } from 'vue';
+import { defineComponent, ref, provide, watch, reactive } from 'vue';
+import { Popover } from 'bkui-vue';
 import './index.scss';
 import allVendors from '@/assets/image/all-vendors.png';
 import DynamicTree from '../components/dynamic-tree';
-import LoadBalancerDropdownMenu from '../components/clb-dropdown-menu';
 import AllClbsManager from './all-clbs-manager';
 import SpecificListenerManager from './specific-listener-manager';
 import SpecificClbManager from './specific-clb-manager';
@@ -58,8 +58,41 @@ export default defineComponent({
       activeType.value = type;
     };
 
-    const popInstance = ref(null);
-    provide('popInstance', popInstance);
+    const allClbsItem = reactive({ isDropdownListShow: false });
+    const handleMoreActionClick = (e: Event, node: any) => {
+      e.stopPropagation();
+      node.isDropdownListShow = !node.isDropdownListShow;
+    };
+    const handleDropdownItemClick = () => {
+      // dropdown item click event
+    };
+    const renderDropdownActionList = (node: any) => {
+      return (
+        <Popover
+          trigger='click'
+          theme='light'
+          renderType='shown'
+          placement='bottom-start'
+          arrow={false}
+          extCls='dropdown-popover-wrap'
+          onAfterHidden={({ isShow }) => (node.isDropdownListShow = isShow)}>
+          {{
+            default: () => (
+              <div class='more-action' onClick={e => handleMoreActionClick(e, node)}>
+                <i class='hcm-icon bkhcm-icon-more-fill'></i>
+              </div>
+            ),
+            content: () => (
+              <div class='dropdown-list'>
+                <div class='dropdown-item' onClick={handleDropdownItemClick}>
+                  购买负载均衡
+                </div>
+              </div>
+            ),
+          }}
+        </Popover>
+      );
+    };
 
     watch(searchValue, () => {
       searchResultCount.value = 0;
@@ -97,15 +130,15 @@ export default defineComponent({
                 ) : null
               ) : (
                 <div
-                  class={`all-clbs${activeType.value === 'all' ? ' selected' : ''}`}
+                  class={['all-clbs', `${activeType.value === 'all' ? ' selected' : ''}`]}
                   onClick={() => handleTypeChange('all')}>
                   <div class='left-wrap'>
                     <img src={allVendors} alt='' class='prefix-icon' />
                     <span class='text'>全部负载均衡</span>
                   </div>
-                  <div class='right-wrap'>
+                  <div class={`right-wrap${allClbsItem.isDropdownListShow ? ' show-dropdown' : ''}`}>
                     <div class='count'>{6654}</div>
-                    <LoadBalancerDropdownMenu class='more-action' type='all' />
+                    {renderDropdownActionList(allClbsItem)}
                   </div>
                 </div>
               )

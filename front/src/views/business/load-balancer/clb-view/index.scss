@@ -11,6 +11,7 @@
       height: calc(100% - 56px);
       display: flex;
       flex-direction: column;
+      overflow: hidden;
 
       .all-clbs {
         position: relative;
@@ -72,10 +73,20 @@
               background-color: #dcdee5;
             }
           }
+
+          &.show-dropdown {
+            .count {
+              opacity: 0;
+            }
+            .more-action {
+              background-color: #dcdee5;
+              opacity: 1;
+            }
+          }
         }
 
         &.selected {
-          background-color: #E1ECFF !important;
+          background-color: #e1ecff !important;
         }
 
         &:hover {
@@ -101,7 +112,7 @@
         font-size: 12px;
 
         .right-text {
-          color: #3A84FF;
+          color: #3a84ff;
           cursor: pointer;
         }
       }
@@ -120,5 +131,21 @@
     height: 100%;
     padding: 24px;
     background-color: #f5f7fb;
+  }
+}
+
+.dropdown-popover-wrap {
+  padding: 0 !important;
+  .dropdown-list {
+    padding: 4px 0;
+    .dropdown-item {
+      padding: 0 12px;
+      line-height: 32px;
+      cursor: pointer;
+
+      &:hover {
+        background-color: #f5f7fa;
+      }
+    }
   }
 }

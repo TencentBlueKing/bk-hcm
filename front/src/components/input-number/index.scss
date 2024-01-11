@@ -1,0 +1,16 @@
+.input-number {
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  width: 137px;
+
+  .bk-button {
+    width: 24px;
+    height: 24px;
+    background-color: #f5f7fa;
+  }
+
+  .bk-input--text {
+    text-align: center;
+  }
+}

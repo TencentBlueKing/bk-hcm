@@ -1,7 +1,23 @@
 .dynamic-tree-wrap {
+  position: relative;
   height: calc(100% - 36px);
   flex: 1;
-  overflow: hidden;
+
+  .fixed-operation-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 999;
+    padding: 0 16px;
+    width: 88px;
+    height: 32px;
+    line-height: 32px;
+    border-radius: 2px;
+    background-color: #fff;
+    box-shadow: 0 2px 8px 0 #00000026;
+    color: #3a84ff;
+    cursor: pointer;
+  }
 
   .bk-node-text {
     position: relative;
@@ -53,6 +69,16 @@
           background-color: #dcdee5;
         }
       }
+
+      &.show-dropdown {
+        .count {
+          opacity: 0;
+        }
+        .more-action {
+          background-color: #dcdee5;
+          opacity: 1;
+        }
+      }
     }
   }
 
@@ -76,3 +102,16 @@
   }
 }
 
+.fixed-operation-btn-enter-active {
+  transition: all 0.3s ease-out;
+}
+
+.fixed-operation-btn-leave-active {
+  transition: all 0.5s cubic-bezier(1, 0.5, 0.8, 1);
+}
+
+.fixed-operation-btn-enter-from,
+.fixed-operation-btn-leave-to {
+  transform: translateX(20px);
+  opacity: 0;
+}
