@@ -17,6 +17,7 @@ import EipForm from '@/views/business/forms/eip/index.vue';
 import subnetForm from '@/views/business/forms/subnet/index.vue';
 import securityForm from '@/views/business/forms/security/index.vue';
 import firewallForm from '@/views/business/forms/firewall';
+import TemplateDialog from '@/views/resource/resource-manage/children/dialog/template-dialog';
 import BkTab, { BkTabPanel } from 'bkui-vue/lib/tab';
 import { RouterView, useRouter, useRoute } from 'vue-router';
 
@@ -72,6 +73,7 @@ const securityType = ref('group');
 const isEdit = ref(false);
 const formDetail = ref({});
 const activeResourceTab = ref(RESOURCE_TABS[0].key);
+const isTempalteDialogShow = ref(false);
 
 provide('securityType', securityType);
 
@@ -148,6 +150,10 @@ const filterData = (key: string, val: string | number) => {
 
 const handleAdd = () => {
   // ['host', 'vpc', 'drive', ||| 'security', 'subnet', 'ip']
+  if (activeTab.value === 'security' && securityType.value === 'template') {
+    isTempalteDialogShow.value = true;
+    return;
+  }
   switch (activeTab.value) {
     case 'host':
       router.push({
@@ -178,7 +184,7 @@ const handleAdd = () => {
   }
 };
 
-const handleTabChange = (val: 'group' | 'gcp') => {
+const handleTabChange = (val: 'group' | 'gcp' | 'template') => {
   securityType.value = val;
 };
 
@@ -326,56 +332,6 @@ getResourceAccountList();
 
 <template>
   <div>
-    <!-- <section class="flex-center resource-header">
-      <section class="flex-center" v-if="activeTab !== 'image'">
-        <div class="mr10">{{t('云账号')}}</div>
-        <div class="mr20">
-          <account-selector
-            :is-resource-page="isResourcePage"
-            :filter="accountFilter"
-            v-model="accountId"
-          />
-        </div>
-      </section>
-      <section class="flex-center" v-if="activeTab !== 'image'">
-        <div class="mr10">{{t('分配状态')}}</div>
-        <div class="mr20">
-          <bk-select
-            v-model="status"
-          >
-            <bk-option
-              v-for="(item, index) in DISTRIBUTE_STATUS_LIST"
-              :key="index"
-              :value="item.value"
-              :label="item.label"
-            />
-          </bk-select>
-        </div>
-      </section>
-      <section class="flex-center">
-        <bk-button
-          theme="primary"
-          class="ml10"
-          @click="handleDistribution"
-        >
-          {{ t('快速分配') }}
-        </bk-button>
-      </section>
-      <section class="flex-center">
-        <bk-checkbox
-          v-model="isAccurate"
-        >
-          {{ t('精确') }}
-        </bk-checkbox>
-        <bk-search-select
-          class="search-filter ml10"
-          clearable
-          :data="searchData"
-          v-model="searchValue"
-        />
-      </section>
-    </section> -->
-
     <div class="navigation-resource">
       <div class="card-layout">
         <p class="resource-title">
@@ -557,7 +513,13 @@ getResourceAccountList();
         @cancel="handlePermissionDialog"
         @confirm="handlePermissionConfirm"
       ></permission-dialog>
+
+      <TemplateDialog
+        :is-show="isTempalteDialogShow"
+        :handle-close="() => isTempalteDialogShow = false"
+      />
     </div>
+
 
     <RouterView v-else></RouterView>
   </div>

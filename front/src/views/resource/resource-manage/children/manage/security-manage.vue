@@ -130,10 +130,14 @@ const handleSwtichType = async (type: string) => {
     fetchUrl.value = 'vendors/gcp/firewalls/rules/list';
     state.params.fetchUrl = 'vendors/gcp/firewalls/rules';
     state.params.columns = 'gcp';
-  } else {
+  } else if (type === 'group') {
     fetchUrl.value = 'security_groups/list';
     state.params.fetchUrl = 'security_groups';
     state.params.columns = 'group';
+  } else if (type === 'template') {
+    fetchUrl.value = 'searchDataListInterface/list';
+    state.params.fetchUrl = 'searchDataListInterface';
+    state.params.columns = 'template';
   }
   emit('handleSecrityType', type);
 };
@@ -626,9 +630,162 @@ const gcpColumns = [
 
 const gcpSettings = generateColumnsSettings(gcpColumns);
 
+const templateColumns = [
+  {
+    type: 'selection',
+    width: '100',
+    onlyShowOnList: true,
+  },
+  {
+    label: '模板ID',
+    field: 'templateId',
+  },
+  {
+    label: '模板名称',
+    field: 'templateName',
+  },
+  {
+    label: '云厂商',
+    field: 'cloudProvider',
+  },
+  {
+    label: '类型',
+    field: 'type',
+  },
+  {
+    label: '关联实例',
+    field: 'associatedInstance',
+  },
+  {
+    label: '规则数',
+    field: 'ruleCount',
+  },
+  {
+    label: '是否分配',
+    field: 'isAssigned',
+  },
+  {
+    label: '操作',
+    field: 'actions',
+    render({ data }: any) {
+      return h('span', {}, [
+        h(
+          'span',
+          {
+            onClick() {
+              emit(
+                'auth',
+                props.isResourcePage
+                  ? 'iaas_resource_operate'
+                  : 'biz_iaas_resource_operate',
+              );
+            },
+          },
+          [
+            h(
+              Button,
+              {
+                text: true,
+                theme: 'primary',
+                onClick() {
+                  const routeInfo: any = {
+                    query: {
+                      activeTab: 'rule',
+                      id: data.id,
+                      vendor: data.vendor,
+                    },
+                  };
+                  // 业务下
+                  if (route.path.includes('business')) {
+                    Object.assign(routeInfo, {
+                      name: 'securityBusinessDetail',
+                    });
+                  } else {
+                    Object.assign(routeInfo, {
+                      name: 'resourceDetail',
+                      params: {
+                        type: 'security',
+                      },
+                    });
+                  }
+                  router.push(routeInfo);
+                },
+              },
+              ['编辑'],
+            ),
+          ],
+        ),
+        h(
+          'span',
+          {
+            onClick() {
+              emit(
+                'auth',
+                props.isResourcePage
+                  ? 'iaas_resource_delete'
+                  : 'biz_iaas_resource_delete',
+              );
+            },
+          },
+          [
+            h(
+              Button,
+              {
+                class: 'ml10',
+                text: true,
+                theme: 'primary',
+                onClick() {
+                  securityHandleShowDelete(data);
+                },
+              },
+              [t('删除')],
+            ),
+          ],
+        ),
+      ]);
+    },
+  },
+];
+
+const templateSettings = generateColumnsSettings(templateColumns);
+
+const templateData = [
+  {
+    templateId: 'tmpl-001',
+    templateName: '基础网络设置',
+    cloudProvider: '阿里云',
+    type: '网络',
+    associatedInstance: 'ecs-001',
+    ruleCount: 5,
+    isAssigned: '是',
+    actions: '编辑',
+  },
+  {
+    templateId: 'tmpl-002',
+    templateName: '数据库优化',
+    cloudProvider: '腾讯云',
+    type: '数据库',
+    associatedInstance: 'db-002',
+    ruleCount: 8,
+    isAssigned: '否',
+    actions: '配置',
+  },
+  {
+    templateId: 'tmpl-003',
+    templateName: '内容分发网络',
+    cloudProvider: '华为云',
+    type: 'CDN',
+    associatedInstance: 'cdn-003',
+    ruleCount: 3,
+    isAssigned: '是',
+    actions: '删除',
+  },
+];
+
 const types = [
   { name: 'group', label: t('安全组') },
   { name: 'gcp', label: t('GCP防火墙规则') },
+  { name: 'template', label: '参数模板' },
 ];
 
 const securityType = ref('group');
@@ -750,7 +907,7 @@ const securityHandleShowDelete = (data: any) => {
       />
 
       <bk-table
-        v-if="activeType === 'gcp'"
+        v-else-if="activeType === 'gcp'"
         :settings="gcpSettings"
         class="mt20"
         row-hover="auto"
@@ -758,6 +915,24 @@ const securityHandleShowDelete = (data: any) => {
         :pagination="state.pagination"
         :columns="gcpColumns"
         :data="state.datas"
+        show-overflow-tooltip
+        :is-row-select-enable="isRowSelectEnable"
+        @selection-change="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable)"
+        @select-all="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true)"
+        @page-limit-change="state.handlePageSizeChange"
+        @page-value-change="state.handlePageChange"
+        @column-sort="state.handleSort"
+      />
+
+      <bk-table
+        v-else-if="activeType === 'template'"
+        :settings="templateSettings"
+        class="mt20"
+        row-hover="auto"
+        remote-pagination
+        :pagination="state.pagination"
+        :columns="templateColumns"
+        :data="templateData"
         show-overflow-tooltip
         :is-row-select-enable="isRowSelectEnable"
         @selection-change="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable)"
