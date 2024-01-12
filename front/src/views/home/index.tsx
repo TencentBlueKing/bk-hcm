@@ -557,7 +557,7 @@ export default defineComponent({
                         ['/service/my-apply'].includes(curPath.value)
                           ? 'view-warp no-padding'
                           : 'view-warp'
-                      } style={{ height: route.path !== '/business/host' ? 'calc(100vh - 52px)' : 'calc(100% - 104px)' }}>
+                      } style={{ height: route.path !== '/business/host' ? 'calc(100% - 52px)' : 'calc(100% - 104px)' }}>
                       {isRouterAlive.value ? renderRouterView() : null}
                     </div>
                   </>

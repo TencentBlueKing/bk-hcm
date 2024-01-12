@@ -1365,6 +1365,37 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
   ];
 
+  const certColumns = [
+    {
+      label: '资源ID',
+      field: 'resourceId',
+    },
+    {
+      label: '云厂商',
+      field: 'cloudProvider',
+    },
+    {
+      label: '证书类型',
+      field: 'certificateType',
+    },
+    {
+      label: '域名',
+      field: 'domainName',
+    },
+    {
+      label: '上传时间',
+      field: 'uploadTime',
+    },
+    {
+      label: '过期时间',
+      field: 'expirationTime',
+    },
+    {
+      label: '证书状态',
+      field: 'certificateStatus',
+    },
+  ];
+
   const columnsMap = {
     vpc: vpcColumns,
     subnet: subnetColumns,
@@ -1383,6 +1414,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     domain: domainColumns,
     url: urlColumns,
     targetGroupListener: targetGroupListenerColumns,
+    cert: certColumns,
   };
 
   let columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);
