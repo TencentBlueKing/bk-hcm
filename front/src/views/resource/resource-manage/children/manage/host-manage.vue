@@ -322,7 +322,7 @@ getCloudAreas();
     </section>
 
     <bk-table
-      class="mt20"
+      class="mt20 has-selection"
       row-hover="auto"
       :columns="tableColumns"
       :data="datas"
