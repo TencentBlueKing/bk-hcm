@@ -162,8 +162,10 @@ const { selections, handleSelectionChange, resetSelections } = useSelection();
 const groupColumns = [
   {
     type: 'selection',
-    width: '100',
+    width: 32,
+    minWidth: 32,
     onlyShowOnList: true,
+    align: 'right',
   },
   {
     label: '安全组 ID',
@@ -392,8 +394,10 @@ const groupSettings = generateColumnsSettings(groupColumns);
 const gcpColumns = [
   {
     type: 'selection',
-    width: '100',
+    width: 32,
+    minWidth: 32,
     onlyShowOnList: true,
+    align: 'right',
   },
   {
     label: '防火墙 ID	',
@@ -734,7 +738,7 @@ const securityHandleShowDelete = (data: any) => {
       <bk-table
         v-if="activeType === 'group'"
         :settings="groupSettings"
-        class="mt20"
+        class="mt20 has-selection"
         row-hover="auto"
         remote-pagination
         :pagination="state.pagination"
@@ -752,7 +756,7 @@ const securityHandleShowDelete = (data: any) => {
       <bk-table
         v-if="activeType === 'gcp'"
         :settings="gcpSettings"
-        class="mt20"
+        class="mt20 has-selection"
         row-hover="auto"
         remote-pagination
         :pagination="state.pagination"

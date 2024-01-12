@@ -68,7 +68,7 @@
             >
               <bk-table
                 :key="selectedType"
-                class="table-layout"
+                class="table-layout has-selection"
                 :data="datas"
                 remote-pagination
                 :pagination="pagination"
@@ -82,7 +82,9 @@
                 show-overflow-tooltip
               >
                 <bk-table-column
-                  width="100"
+                  width="32"
+                  min-width="32"
+                  align="right"
                   type="selection"
                 />
                 <bk-table-column
