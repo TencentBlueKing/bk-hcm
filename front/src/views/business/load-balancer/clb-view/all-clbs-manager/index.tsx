@@ -1,4 +1,5 @@
 import { defineComponent } from 'vue';
+import { useRouter } from 'vue-router';
 import { Button } from 'bkui-vue';
 import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
@@ -8,6 +9,7 @@ const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 export default defineComponent({
   name: 'AllClbsManager',
   setup() {
+    const router = useRouter();
     const { columns, settings } = useColumns('clbs');
     const tableColumns = [
       ...columns,
@@ -26,13 +28,19 @@ export default defineComponent({
       searchUrl,
     });
 
+    const handleApply = () => {
+      router.push({
+        path: '/business/service/service-apply/clb',
+      });
+    };
+
     return () => (
       <div class='common-card-wrap'>
         <CommonTable>
           {{
             operation: () => (
               <>
-                <Button theme='primary'>购买</Button>
+                <Button theme='primary' onClick={handleApply}>购买</Button>
                 <Button>批量删除</Button>
               </>
             ),

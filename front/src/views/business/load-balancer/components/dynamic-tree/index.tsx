@@ -1,11 +1,11 @@
-import { defineComponent, onMounted, ref, inject, computed } from 'vue';
+import { defineComponent, onMounted, ref, inject, computed, Transition } from 'vue';
+import { Popover, Tree } from 'bkui-vue';
 import { throttle } from 'lodash';
 import axios from 'axios';
 import './index.scss';
 import clbIcon from '@/assets/image/clb.png';
 import listenerIcon from '@/assets/image/listener.png';
 import domainIcon from '@/assets/image/domain.png';
-import LoadBalancerDropdownMenu from '../clb-dropdown-menu';
 
 /**
  * 基于 bkui-vue Tree 的动态树，支持滚动加载数据。
@@ -28,8 +28,10 @@ export default defineComponent({
     const baseUrl = 'http://localhost:3000';
     const loadingRef = ref();
     const rootPageNum = ref(1);
-    const treeRef = inject('treeRef');
+    const treeRef = ref(null);
     const searchResultCount: any = inject('searchResultCount');
+    const expandedNodeArr = ref([]);
+    const isShowFixedOperationBtn = ref(false);
 
     const searchOption = computed(() => {
       return {
@@ -68,6 +70,26 @@ export default defineComponent({
       listener: listenerIcon,
       domain: domainIcon,
     };
+    // type 与 dropdown menu 的映射关系
+    const typeMenuMap = {
+      clb: [
+        { label: '新增监听器', url: 'add' },
+        { label: '查看详情', url: 'detail' },
+        { label: '编辑', url: 'edit' },
+        { label: '删除', url: 'delete' },
+      ],
+      listener: [
+        { label: '新增域名', url: 'add' },
+        { label: '查看详情', url: 'detail' },
+        { label: '编辑', url: 'edit' },
+        { label: '删除', url: 'delete' },
+      ],
+      domain: [
+        { label: '新增 URL 路径', url: 'add' },
+        { label: '编辑', url: 'edit' },
+        { label: '删除', url: 'delete' },
+      ],
+    };
 
     /**
      * 加载数据
@@ -95,6 +117,8 @@ export default defineComponent({
           item.async = true;
           item.pageNum = 1;
         }
+        // dropdown 是否显示的标识
+        item.isDropdownListShow = false;
         return item;
       });
 
@@ -138,6 +162,11 @@ export default defineComponent({
       if (props.searchValue) return null;
       return throttle(() => {
         loadingRef.value && observer.observe(loadingRef.value.$el);
+        if (treeRef.value.$el.scrollTop >= 1800) {
+          isShowFixedOperationBtn.value = true;
+        } else {
+          isShowFixedOperationBtn.value = false;
+        }
       }, 200);
     };
 
@@ -152,6 +181,43 @@ export default defineComponent({
       };
     };
 
+    // dropdown 相关
+    const handleMoreActionClick = (e: Event, node: any) => {
+      e.stopPropagation();
+      node.isDropdownListShow = !node.isDropdownListShow;
+    };
+    const handleDropdownItemClick = () => {
+      // dropdown item click event
+    };
+    const renderDropdownActionList = (node: any) => {
+      return (
+        <Popover
+          trigger='click'
+          theme='light'
+          renderType='shown'
+          placement='bottom-start'
+          arrow={false}
+          extCls='dropdown-popover-wrap'
+          onAfterHidden={({ isShow }) => (node.isDropdownListShow = isShow)}>
+          {{
+            default: () => (
+              <div class='more-action' onClick={e => handleMoreActionClick(e, node)}>
+                <i class='hcm-icon bkhcm-icon-more-fill'></i>
+              </div>
+            ),
+            content: () => (
+              <div class='dropdown-list'>
+                {typeMenuMap[node.type].map(item => (
+                  <div class='dropdown-item' onClick={handleDropdownItemClick}>
+                    {item.label}
+                  </div>
+                ))}
+              </div>
+            ),
+          }}
+        </Popover>
+      );
+    };
     const renderDefaultNode = (data: any, attributes: any) => {
       if (data.type === 'loading') {
         return (
@@ -185,9 +251,9 @@ export default defineComponent({
               </bk-tag>
             )}
           </div>
-          <div class='right-wrap'>
+          <div class={`right-wrap${data.isDropdownListShow ? ' show-dropdown' : ''}`}>
             <div class='count'>{data.id}</div>
-            <LoadBalancerDropdownMenu class='more-action' type={data.type} />
+            {renderDropdownActionList(data)}
           </div>
         </>
       );
@@ -197,6 +263,15 @@ export default defineComponent({
       ctx.emit('handleTypeChange', node.type);
     };
 
+    const handleNodeExpand = (node: any) => {
+      expandedNodeArr.value.push(node);
+    };
+
+    const handleAllCollapse = () => {
+      treeRef.value.setOpen(expandedNodeArr.value, false);
+      treeRef.value.scrollToTop();
+    };
+
     onMounted(() => {
       // 组件挂载，加载 root node
       loadRemoteData(null, 0);
@@ -204,7 +279,12 @@ export default defineComponent({
 
     return () => (
       <div class='dynamic-tree-wrap'>
-        <bk-tree
+        <Transition name='fixed-operation-btn'>
+          <div v-show={isShowFixedOperationBtn.value} class='fixed-operation-btn' onClick={handleAllCollapse}>
+            全部收起
+          </div>
+        </Transition>
+        <Tree
           node-key='name'
           ref={treeRef}
           data={treeData.value}
@@ -216,14 +296,15 @@ export default defineComponent({
           search={searchOption.value}
           onNodeClick={handleNodeClick}
           onScroll={getTreeScrollFunc()}
-          async={getTreeAsyncOption()}>
+          async={getTreeAsyncOption()}
+          onNodeExpand={handleNodeExpand}>
           {{
             default: ({ data, attributes }: any) => renderDefaultNode(data, attributes),
             nodeType: (node: any) => {
               return <img src={typeIconMap[node.type]} alt='' style='padding-right: 8px;' />;
             },
           }}
-        </bk-tree>
+        </Tree>
       </div>
     );
   },

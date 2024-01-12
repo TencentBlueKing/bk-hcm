@@ -4,12 +4,13 @@ import ConditionOptions from '../components/common/condition-options.vue';
 import VpcSelector from '@/views/service/service-apply/components/common/vpc-selector';
 import ZoneSelector from '@/components/zone-selector/index.vue';
 import { defineComponent, reactive, ref, watch } from 'vue';
-import { Button, Card, Form, Input, Select, Message } from 'bkui-vue';
+import { Button, Form, Input, Select, Message } from 'bkui-vue';
 import './index.scss';
 import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
 import { useAccountStore, useBusinessStore, useResourceStore } from '@/store';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useRouter } from 'vue-router';
+import CommonCard from '@/components/CommonCard';
 
 const { FormItem } = Form;
 const { Option } = Select;
@@ -156,31 +157,30 @@ export default defineComponent({
         <DetailHeader>
           <span class={'subnet-title'}>新建子网</span>
         </DetailHeader>
-        <div class='create-form-container subnet-wrap' style={whereAmI.value === Senarios.resource && { padding: 0, marginBottom: '68px' }}>
-          <ConditionOptions
-            type={ResourceTypeEnum.CVM}
-            v-model:bizId={formModel.biz_id}
-            v-model:cloudAccountId={formModel.account_id}
-            v-model:vendor={formModel.vendor}
-            v-model:region={formModel.region}
-            v-model:resourceGroup={formModel.resource_group}>
-            {{
-              default: () => (
-                <Form formType='vertical'>
-                  <FormItem label={'可用区'}>
+        <div
+          class='create-form-container subnet-wrap'
+          style={whereAmI.value === Senarios.resource && { padding: 0, marginBottom: '68px' }}>
+          <Form formType='vertical' model={formModel} ref={formRef} rules={formRules}>
+            <ConditionOptions
+              type={ResourceTypeEnum.SUBNET}
+              v-model:bizId={formModel.biz_id}
+              v-model:cloudAccountId={formModel.account_id}
+              v-model:vendor={formModel.vendor}
+              v-model:region={formModel.region}
+              v-model:resourceGroup={formModel.resource_group}>
+              {{
+                default: () => (
+                  <FormItem label={'可用区'} required property='zone'>
                     <ZoneSelector
                       v-model={formModel.zone}
                       vendor={formModel.vendor}
                       region={formModel.region}
                     />
                   </FormItem>
-                </Form>
-              ),
-            }}
-          </ConditionOptions>
-          <Card showHeader={false} class={'subnet-basic-info'}>
-            <p class={'info-title'}>子网信息</p>
-            <Form formType='vertical' model={formModel} class={'ml30'} ref={formRef} rules={formRules}>
+                ),
+              }}
+            </ConditionOptions>
+            <CommonCard title={() => '子网信息'}>
               <FormItem
                 label='所属VPC网络'
                 property='cloud_vpc_id'
@@ -217,7 +217,7 @@ export default defineComponent({
                   {
                     `${subIpv4cidr.value[0]}.${subIpv4cidr.value[1]}.`
                   }
-                   <Input
+                  <Input
                     class={'cidr-selector'}
                     placeholder='16'
                     v-model={cidr_host1.value}
@@ -264,8 +264,8 @@ export default defineComponent({
                     <Input v-model={formModel.gateway_ip} placeholder='请输入网关地址'></Input>
                   </FormItem>
               }
-            </Form>
-          </Card>
+            </CommonCard>
+          </Form>
         </div>
         <div class={'button-group'} style={{ paddingLeft: isResourcePage && 'calc(15% + 24px)' }}>
           <Button
