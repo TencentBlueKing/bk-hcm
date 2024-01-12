@@ -116,13 +116,17 @@ func (svc *securityGroupSvc) updateTCloudSGRule(cts *rest.Contexts, sgBaseInfo *
 	updateReq := &hcproto.TCloudSGRuleUpdateReq{
 		Protocol:                   req.Protocol,
 		Port:                       req.Port,
+		CloudServiceID:             req.CloudServiceID,
+		CloudServiceGroupID:        req.CloudServiceGroupID,
 		IPv4Cidr:                   req.IPv4Cidr,
 		IPv6Cidr:                   req.IPv6Cidr,
+		CloudAddressID:             req.CloudAddressID,
+		CloudAddressGroupID:        req.CloudAddressGroupID,
 		CloudTargetSecurityGroupID: req.CloudTargetSecurityGroupID,
 		Action:                     req.Action,
 		Memo:                       req.Memo,
 	}
-	if err := svc.client.HCService().TCloud.SecurityGroup.UpdateSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(),
+	if err = svc.client.HCService().TCloud.SecurityGroup.UpdateSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(),
 		sgBaseInfo.ID, id, updateReq); err != nil {
 		return nil, err
 	}

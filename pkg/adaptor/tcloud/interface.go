@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/account"
+	typeargstpl "hcm/pkg/adaptor/types/argument-template"
 	typesBill "hcm/pkg/adaptor/types/bill"
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/cvm"
@@ -122,4 +123,28 @@ type TCloud interface {
 		*cvm.InquiryPriceResult, error)
 	ListPoliciesGrantingServiceAccess(kt *kit.Kit, opt *account.TCloudListPolicyOption) (
 		[]*v20190116.ListGrantServiceAccessNode, error)
+	ListArgsTplAddress(kt *kit.Kit, opt *typeargstpl.TCloudListOption) (
+		[]typeargstpl.TCloudArgsTplAddress, uint64, error)
+	CreateArgsTplAddress(kt *kit.Kit, opt *typeargstpl.TCloudCreateAddressOption) (*v20170312.AddressTemplate, error)
+	DeleteArgsTplAddress(kt *kit.Kit, opt *typeargstpl.TCloudDeleteOption) error
+	UpdateArgsTplAddress(kt *kit.Kit, opt *typeargstpl.TCloudUpdateAddressOption) (*poller.BaseDoneResult, error)
+	ListArgsTplAddressGroup(kt *kit.Kit, opt *typeargstpl.TCloudListOption) (
+		[]typeargstpl.TCloudArgsTplAddressGroup, uint64, error)
+	CreateArgsTplAddressGroup(kt *kit.Kit, opt *typeargstpl.TCloudCreateAddressGroupOption) (
+		*v20170312.AddressTemplateGroup, error)
+	DeleteArgsTplAddressGroup(kt *kit.Kit, opt *typeargstpl.TCloudDeleteOption) error
+	UpdateArgsTplAddressGroup(kt *kit.Kit, opt *typeargstpl.TCloudUpdateAddressGroupOption) (
+		*poller.BaseDoneResult, error)
+	ListArgsTplService(kt *kit.Kit, opt *typeargstpl.TCloudListOption) (
+		[]typeargstpl.TCloudArgsTplService, uint64, error)
+	CreateArgsTplService(kt *kit.Kit, opt *typeargstpl.TCloudCreateServiceOption) (*v20170312.ServiceTemplate, error)
+	DeleteArgsTplService(kt *kit.Kit, opt *typeargstpl.TCloudDeleteOption) error
+	UpdateArgsTplService(kt *kit.Kit, opt *typeargstpl.TCloudUpdateServiceOption) (*poller.BaseDoneResult, error)
+	ListArgsTplServiceGroup(kt *kit.Kit, opt *typeargstpl.TCloudListOption) (
+		[]typeargstpl.TCloudArgsTplServiceGroup, uint64, error)
+	CreateArgsTplServiceGroup(kt *kit.Kit, opt *typeargstpl.TCloudCreateServiceGroupOption) (
+		*v20170312.ServiceTemplateGroup, error)
+	DeleteArgsTplServiceGroup(kt *kit.Kit, opt *typeargstpl.TCloudDeleteOption) error
+	UpdateArgsTplServiceGroup(kt *kit.Kit, opt *typeargstpl.TCloudUpdateServiceGroupOption) (
+		*poller.BaseDoneResult, error)
 }

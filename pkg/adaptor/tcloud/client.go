@@ -32,22 +32,34 @@ import (
 )
 
 const (
+	// ErrNotFound TCloud Not Found code
 	ErrNotFound = "Code=ResourceNotFound"
 )
 
+// ClientSet interface to get tcloud sdk client set
+type ClientSet interface {
+	CamServiceClient(region string) (*cam.Client, error)
+	CvmClient(region string) (*cvm.Client, error)
+	CbsClient(region string) (*cbs.Client, error)
+	VpcClient(region string) (*vpc.Client, error)
+	BillClient() (*billing.Client, error)
+}
+
+// clientSet to get tcloud sdk client set
 type clientSet struct {
 	credential *common.Credential
 	profile    *profile.ClientProfile
 }
 
-func newClientSet(s *types.BaseSecret, profile *profile.ClientProfile) *clientSet {
+func newClientSet(s *types.BaseSecret, profile *profile.ClientProfile) ClientSet {
 	return &clientSet{
 		credential: common.NewCredential(s.CloudSecretID, s.CloudSecretKey),
 		profile:    profile,
 	}
 }
 
-func (c *clientSet) camServiceClient(region string) (*cam.Client, error) {
+// CamServiceClient tcloud sdk cam client
+func (c *clientSet) CamServiceClient(region string) (*cam.Client, error) {
 	client, err := cam.NewClient(c.credential, region, c.profile)
 	if err != nil {
 		return nil, err
@@ -56,7 +68,8 @@ func (c *clientSet) camServiceClient(region string) (*cam.Client, error) {
 	return client, nil
 }
 
-func (c *clientSet) cvmClient(region string) (*cvm.Client, error) {
+// CvmClient tcloud sdk cvm client
+func (c *clientSet) CvmClient(region string) (*cvm.Client, error) {
 	client, err := cvm.NewClient(c.credential, region, c.profile)
 	if err != nil {
 		return nil, err
@@ -65,7 +78,8 @@ func (c *clientSet) cvmClient(region string) (*cvm.Client, error) {
 	return client, nil
 }
 
-func (c *clientSet) cbsClient(region string) (*cbs.Client, error) {
+// CbsClient tcloud sdk cbs client
+func (c *clientSet) CbsClient(region string) (*cbs.Client, error) {
 	client, err := cbs.NewClient(c.credential, region, c.profile)
 	if err != nil {
 		return nil, err
@@ -74,7 +88,8 @@ func (c *clientSet) cbsClient(region string) (*cbs.Client, error) {
 	return client, nil
 }
 
-func (c *clientSet) vpcClient(region string) (*vpc.Client, error) {
+// VpcClient tcloud sdk vpc client
+func (c *clientSet) VpcClient(region string) (*vpc.Client, error) {
 	client, err := vpc.NewClient(c.credential, region, c.profile)
 	if err != nil {
 		return nil, err
@@ -83,7 +98,8 @@ func (c *clientSet) vpcClient(region string) (*vpc.Client, error) {
 	return client, nil
 }
 
-func (c *clientSet) billClient() (*billing.Client, error) {
+// BillClient tcloud sdk bill client
+func (c *clientSet) BillClient() (*billing.Client, error) {
 	client, err := billing.NewClient(c.credential, "", c.profile)
 	if err != nil {
 		return nil, err

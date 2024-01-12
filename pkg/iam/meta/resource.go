@@ -79,4 +79,6 @@ const (
 	CloudSelectionBizType ResourceType = "cloud_selection_biz_type"
 	// CloudSelectionDataSource 云选型数据
 	CloudSelectionDataSource ResourceType = "cloud_selection_data_source"
+	// ArgumentTemplate 参数模版
+	ArgumentTemplate ResourceType = "argument_template"
 )

@@ -78,8 +78,12 @@ func (g *securityGroup) BatchCreateTCloudSGRule(cts *rest.Contexts) (interface{}
 			opt.EgressRuleSet = append(opt.EgressRuleSet, securitygrouprule.TCloud{
 				Protocol:                   rule.Protocol,
 				Port:                       rule.Port,
+				CloudServiceID:             rule.CloudServiceID,
+				CloudServiceGroupID:        rule.CloudServiceGroupID,
 				IPv4Cidr:                   rule.IPv4Cidr,
 				IPv6Cidr:                   rule.IPv6Cidr,
+				CloudAddressID:             rule.CloudAddressID,
+				CloudAddressGroupID:        rule.CloudAddressGroupID,
 				CloudTargetSecurityGroupID: rule.CloudTargetSecurityGroupID,
 				Action:                     rule.Action,
 				Description:                rule.Memo,
@@ -94,15 +98,19 @@ func (g *securityGroup) BatchCreateTCloudSGRule(cts *rest.Contexts) (interface{}
 			opt.IngressRuleSet = append(opt.IngressRuleSet, securitygrouprule.TCloud{
 				Protocol:                   rule.Protocol,
 				Port:                       rule.Port,
+				CloudServiceID:             rule.CloudServiceID,
+				CloudServiceGroupID:        rule.CloudServiceGroupID,
 				IPv4Cidr:                   rule.IPv4Cidr,
 				IPv6Cidr:                   rule.IPv6Cidr,
+				CloudAddressID:             rule.CloudAddressID,
+				CloudAddressGroupID:        rule.CloudAddressGroupID,
 				CloudTargetSecurityGroupID: rule.CloudTargetSecurityGroupID,
 				Action:                     rule.Action,
 				Description:                rule.Memo,
 			})
 		}
 	}
-	if err := client.CreateSecurityGroupRule(cts.Kit, opt); err != nil {
+	if err = client.CreateSecurityGroupRule(cts.Kit, opt); err != nil {
 		logs.Errorf("request adaptor to create tcloud security group rule failed, err: %v, opt: %v, rid: %s", err, opt,
 			cts.Kit.Rid)
 
@@ -178,8 +186,12 @@ func (g *securityGroup) UpdateTCloudSGRule(cts *rest.Contexts) (interface{}, err
 				CloudPolicyIndex:           rule.CloudPolicyIndex,
 				Protocol:                   req.Protocol,
 				Port:                       req.Port,
+				CloudServiceID:             req.CloudServiceID,
+				CloudServiceGroupID:        req.CloudServiceGroupID,
 				IPv4Cidr:                   req.IPv4Cidr,
 				IPv6Cidr:                   req.IPv6Cidr,
+				CloudAddressID:             req.CloudAddressID,
+				CloudAddressGroupID:        req.CloudAddressGroupID,
 				CloudTargetSecurityGroupID: req.CloudTargetSecurityGroupID,
 				Action:                     req.Action,
 				Description:                req.Memo,
@@ -191,8 +203,12 @@ func (g *securityGroup) UpdateTCloudSGRule(cts *rest.Contexts) (interface{}, err
 				CloudPolicyIndex:           rule.CloudPolicyIndex,
 				Protocol:                   req.Protocol,
 				Port:                       req.Port,
+				CloudServiceID:             req.CloudServiceID,
+				CloudServiceGroupID:        req.CloudServiceGroupID,
 				IPv4Cidr:                   req.IPv4Cidr,
 				IPv6Cidr:                   req.IPv6Cidr,
+				CloudAddressID:             req.CloudAddressID,
+				CloudAddressGroupID:        req.CloudAddressGroupID,
 				CloudTargetSecurityGroupID: req.CloudTargetSecurityGroupID,
 				Action:                     req.Action,
 				Description:                req.Memo,
@@ -202,7 +218,7 @@ func (g *securityGroup) UpdateTCloudSGRule(cts *rest.Contexts) (interface{}, err
 		return nil, fmt.Errorf("unknown security group rule type: %s", rule.Type)
 	}
 
-	if err := client.UpdateSecurityGroupRule(cts.Kit, opt); err != nil {
+	if err = client.UpdateSecurityGroupRule(cts.Kit, opt); err != nil {
 		logs.Errorf("request adaptor to update tcloud security group rule failed, err: %v, opt: %v, rid: %s", err, opt,
 			cts.Kit.Rid)
 

@@ -40,7 +40,7 @@ func (t *TCloudImpl) GetBillList(kt *kit.Kit, opt *typesBill.TCloudBillListOptio
 		return nil, err
 	}
 
-	billClient, err := t.clientSet.billClient()
+	BillClient, err := t.clientSet.BillClient()
 	if err != nil {
 		return nil, fmt.Errorf("new bill client failed, err: %v, rid: %s", err, kt.Rid)
 	}
@@ -60,7 +60,7 @@ func (t *TCloudImpl) GetBillList(kt *kit.Kit, opt *typesBill.TCloudBillListOptio
 	// 是否需要访问列表的总记录数，用于前端分页(1-表示需要 0-表示不需要)
 	req.NeedRecordNum = proto.Int64(1)
 
-	resp, err := billClient.DescribeBillDetail(req)
+	resp, err := BillClient.DescribeBillDetail(req)
 	if err != nil {
 		logs.Errorf("get tencent cloud bill list failed, opt: %+v, err: %v, rid: %s", opt, err, kt.Rid)
 		return nil, err
