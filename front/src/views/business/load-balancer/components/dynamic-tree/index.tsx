@@ -109,7 +109,7 @@ export default defineComponent({
       ]);
 
       // 组装新增的节点
-      const _increamentNodes = res1.data.map((item: any) => {
+      const _incrementNodes = res1.data.map((item: any) => {
         // 如果是加载根节点的数据，则 type 设置为当前 type；如果是加载子节点的数据，则 type 设置为下一级 type
         !_item ? (item.type = depthTypeMap[_depth]) : (item.type = depthTypeMap[_depth + 1]);
         // 如果是加载根节点或非叶子节点的数据，需要给每个 item 添加 async = true 用于异步加载，以及初始化 pageNum = 1
@@ -123,14 +123,14 @@ export default defineComponent({
       });
 
       if (!_item) {
-        const _treeData = [...treeData.value, ..._increamentNodes];
+        const _treeData = [...treeData.value, ..._incrementNodes];
         if (_treeData.length < res2.data.length) {
           treeData.value = [..._treeData, { type: 'loading' }];
         } else {
           treeData.value = _treeData;
         }
       } else {
-        _item.children = [..._item.children, ..._increamentNodes];
+        _item.children = [..._item.children, ..._incrementNodes];
         if (_item.children.length < res2.data.length) {
           _item.children.push({ type: 'loading', _parent: _item });
         }

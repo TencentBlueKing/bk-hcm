@@ -10,7 +10,7 @@ import IpManage from './children/manage/ip-manage.vue';
 import RoutingManage from './children/manage/routing-manage.vue';
 import ImageManage from './children/manage/image-manage.vue';
 import NetworkInterfaceManage from './children/manage/network-interface-manage.vue';
-import LoadBalancerManage from "./children/manage/load-balancer-manage.vue";
+import LoadBalancerManage from './children/manage/load-balancer-manage.vue';
 // import AccountSelector from '@/components/account-selector/index.vue';
 import { DISTRIBUTE_STATUS_LIST } from '@/constants';
 import { useDistributionStore } from '@/store/distribution';
@@ -593,6 +593,24 @@ getResourceAccountList();
     // border-right: 1px solid #dcdee5;
     border-bottom: 1px solid #dcdee5;
     padding: 20px;
+  }
+
+  :deep(.bk-table.has-selection) {
+    .bk-table-head .bk-checkbox {
+      vertical-align: middle;
+    }
+    .bk-table-head tr th:nth-of-type(2) .cell{
+      padding-left: 8px;
+    }
+    .bk-table-body .cell.selection {
+      text-align: right;
+      .bk-checkbox {
+        vertical-align: middle;
+      }
+    }
+    .bk-table-body tr td:nth-of-type(2) .cell {
+      padding-left: 8px;
+    }
   }
 }
 .search-filter {

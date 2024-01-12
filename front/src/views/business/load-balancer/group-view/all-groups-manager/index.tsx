@@ -196,7 +196,7 @@ export default defineComponent({
     const handleBatchAddRsSubmit = () => {};
 
     return () => (
-      <div class='common-card-wrap'>
+      <div class='common-card-wrap has-selection'>
         <CommonTable>
           {{
             operation: () => (

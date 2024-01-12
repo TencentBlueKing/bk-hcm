@@ -94,8 +94,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const vpcColumns = [
     {
       type: 'selection',
-      width: '100',
+      width: 32,
+      minWidth: 32,
       onlyShowOnList: true,
+      align: 'right',
     },
     getLinkField('vpc', 'VPC ID', 'cloud_id'),
     // {
@@ -187,8 +189,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const subnetColumns = [
     {
       type: 'selection',
-      width: '100',
+      width: 32,
+      minWidth: 32,
       onlyShowOnList: true,
+      align: 'right',
     },
     getLinkField('subnet', '子网 ID', 'cloud_id', 'id', false),
     // {
@@ -302,8 +306,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const groupColumns = [
     {
       type: 'selection',
-      width: '100',
+      width: 32,
+      minWidth: 32,
       onlyShowOnList: true,
+      align: 'right',
     },
     getLinkField('subnet'),
     {
@@ -336,8 +342,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const gcpColumns = [
     {
       type: 'selection',
-      width: '100',
+      width: 32,
+      minWidth: 32,
       onlyShowOnList: true,
+      align: 'right',
     },
     getLinkField('subnet'),
     {
@@ -379,8 +387,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const driveColumns: any[] = [
     {
       type: 'selection',
-      width: '100',
+      width: 32,
+      minWidth: 32,
       onlyShowOnList: true,
+      align: 'right',
     },
     getLinkField('drive', '云硬盘ID', 'cloud_id'),
     // {
@@ -716,8 +726,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const cvmsColumns = [
     {
       type: 'selection',
-      width: '100',
+      width: 32,
+      minWidth: 32,
       onlyShowOnList: true,
+      align: 'right',
     },
     //   移除 ID 搜索条件
     // {
@@ -957,8 +969,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const eipColumns = [
     {
       type: 'selection',
-      width: '100',
+      width: 32,
+      minWidth: 32,
       onlyShowOnList: true,
+      align: 'right',
     },
     getLinkField('eips', 'IP资源ID', 'cloud_id', 'id'),
     // {
@@ -1061,8 +1075,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const clbsColumns = [
     {
       type: 'selection',
-      width: '100',
+      width: 32,
+      minWidth: 32,
       onlyShowOnList: true,
+      align: 'right',
     },
     getLinkField('clbs', '负载均衡名称'),
     {
@@ -1124,8 +1140,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const targetGroupColumns = [
     {
       type: 'selection',
-      width: '100',
+      width: 32,
+      minWidth: 32,
       onlyShowOnList: true,
+      align: 'right',
     },
     getLinkField('target_group_name', '目标组名称'),
     {
@@ -1213,8 +1231,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const domainColumns = [
     {
       type: 'selection',
-      width: '100',
+      width: 32,
+      minWidth: 32,
       onlyShowOnList: true,
+      align: 'right',
     },
     {
       label: '域名',
@@ -1318,8 +1338,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const urlColumns = [
     {
       type: 'selection',
-      width: '100',
+      width: 32,
+      minWidth: 32,
       onlyShowOnList: true,
+      align: 'right',
     },
     {
       label: 'URL路径',

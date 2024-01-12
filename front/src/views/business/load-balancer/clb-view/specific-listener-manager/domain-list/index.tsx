@@ -152,7 +152,7 @@ export default defineComponent({
       // batch delete handler
     };
     return () => (
-      <>
+      <div class='has-selection'>
         <CommonTable>
           {{
             operation: () => (
@@ -195,7 +195,7 @@ export default defineComponent({
             ),
           }}
         </BatchOperationDialog>
-      </>
+      </div>
     );
   },
 });
