@@ -73,7 +73,7 @@ const securityType = ref('group');
 const isEdit = ref(false);
 const formDetail = ref({});
 const activeResourceTab = ref(RESOURCE_TABS[0].key);
-const isTempalteDialogShow = ref(false);
+const isTemplateDialogShow = ref(false);
 
 provide('securityType', securityType);
 
@@ -151,7 +151,7 @@ const filterData = (key: string, val: string | number) => {
 const handleAdd = () => {
   // ['host', 'vpc', 'drive', ||| 'security', 'subnet', 'ip']
   if (activeTab.value === 'security' && securityType.value === 'template') {
-    isTempalteDialogShow.value = true;
+    isTemplateDialogShow.value = true;
     return;
   }
   switch (activeTab.value) {
@@ -515,8 +515,8 @@ getResourceAccountList();
       ></permission-dialog>
 
       <TemplateDialog
-        :is-show="isTempalteDialogShow"
-        :handle-close="() => isTempalteDialogShow = false"
+        :is-show="isTemplateDialogShow"
+        :handle-close="() => isTemplateDialogShow = false"
       />
     </div>
 
