@@ -1,5 +1,5 @@
 import { Button, Dialog, Form, Input, Select, Table } from 'bkui-vue';
-import { PropType, defineComponent, ref, watch } from 'vue';
+import { PropType, defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 const { FormItem } = Form;
@@ -24,32 +24,77 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const selectedTemplateType = ref(TemplateType.IP);
+    const formData = reactive({
+      name: '',
+      type: TemplateType.IP,
+    });
     const ipTableData = ref([
       {
-        ipAddress: '192.168.1.1',
-        note: '主服务器',
-        actions: '修改',
-      },
-      {
-        ipAddress: '192.168.1.2',
-        note: '备份服务器',
-        actions: '检查',
-      },
-      {
-        ipAddress: '192.168.1.3',
-        note: '数据库服务器',
-        actions: '重启',
+        ipAddress: '',
+        note: '',
       },
     ]);
+    const ipGroupData = ref([]);
+    const portTableData = ref([]);
+    const portGroupData = ref([]);
+
+    const ipGroupList = ref([]);
+    const portGroupList = ref([]);
+
+    const handleSubmit = () => {
+      let data = {};
+      switch (formData.type) {
+        case TemplateType.IP: {
+          data = {
+            ...formData,
+            ip: ipTableData.value,
+          };
+          break;
+        }
+        case TemplateType.IP_GROUP: {
+          data = {
+            ...formData,
+            ip: ipGroupData.value,
+          };
+          break;
+        }
+        case TemplateType.PORT: {
+          data = {
+            ...formData,
+            ip: portTableData.value,
+          };
+          break;
+        }
+        case TemplateType.PORT_GROUP: {
+          data = {
+            ...formData,
+            ip: portGroupData.value,
+          };
+          break;
+        }
+      }
+      console.log(666666, data);
+    };
 
     watch(
-      () => selectedTemplateType.value,
+      () => formData.type,
       (type) => {
-        console.log(666, type);
-      },
-      {
-        immediate: true,
+        if (type === TemplateType.IP_GROUP) {
+          ipGroupList.value = [
+            {
+              key: 'qweqwe',
+              value: '123',
+            },
+          ];
+        }
+        if (type === TemplateType.PORT_GROUP) {
+          portGroupList.value = [
+            {
+              key: 'qweqwe',
+              value: '456',
+            },
+          ];
+        }
       },
     );
 
@@ -57,69 +102,96 @@ export default defineComponent({
       <Dialog
         isShow={props.isShow}
         onClosed={() => props.handleClose()}
-        onConfirm={() => props.handleClose()}
+        onConfirm={() => {
+          handleSubmit();
+          props.handleClose();
+        }}
         title='新建参数模板'
         maxHeight={'720px'}
         width={1000}>
-        <Form>
-          <FormItem label='参数模板名称'>
-            <Input placeholder='输入参数模板名称' />
+        <Form model={formData}>
+          <FormItem label='参数模板名称' property='name' required>
+            <Input placeholder='输入参数模板名称' v-model={formData.name}/>
           </FormItem>
-          <FormItem label='参数模板类型'>
+          <FormItem label='参数模板类型' property='type' required>
             <BkButtonGroup>
               <Button
-                selected={selectedTemplateType.value === TemplateType.IP}
+                selected={formData.type === TemplateType.IP}
                 onClick={() => {
-                  selectedTemplateType.value = TemplateType.IP;
+                  formData.type = TemplateType.IP;
                 }}>
                 IP地址
               </Button>
               <Button
-                selected={selectedTemplateType.value === TemplateType.IP_GROUP}
+                selected={formData.type === TemplateType.IP_GROUP}
                 onClick={() => {
-                  selectedTemplateType.value = TemplateType.IP_GROUP;
+                  formData.type = TemplateType.IP_GROUP;
                 }}>
                 IP地址组
               </Button>
               <Button
-                selected={selectedTemplateType.value === TemplateType.PORT}
+                selected={formData.type === TemplateType.PORT}
                 onClick={() => {
-                  selectedTemplateType.value = TemplateType.PORT;
+                  formData.type = TemplateType.PORT;
                 }}>
                 端口
               </Button>
               <Button
-                selected={
-                  selectedTemplateType.value === TemplateType.PORT_GROUP
-                }
+                selected={formData.type === TemplateType.PORT_GROUP}
                 onClick={() => {
-                  selectedTemplateType.value = TemplateType.PORT_GROUP;
+                  formData.type = TemplateType.PORT_GROUP;
                 }}>
                 端口组
               </Button>
             </BkButtonGroup>
           </FormItem>
-          {[TemplateType.IP_GROUP, TemplateType.PORT_GROUP].includes(selectedTemplateType.value) ? (
+          {[TemplateType.IP_GROUP].includes(formData.type) ? (
             <FormItem label='IP地址'>
-              <Select>
-                <Option>213123</Option>
+              <Select v-model={ipGroupData.value}>
+                {
+                  ipGroupList.value.map(v => (
+                    <Option key={v.key}  id={v.key} name={v.value}></Option>
+                  ))
+                }
+              </Select>
+            </FormItem>
+          ) : null}
+          {[TemplateType.PORT_GROUP].includes(formData.type) ? (
+            <FormItem label='IP地址'>
+              <Select v-model={portGroupData}>
+              {
+                  portGroupList.value.map(v => (
+                    <Option key={v.key}  id={v.key} name={v.value}></Option>
+                  ))
+                }
               </Select>
             </FormItem>
           ) : null}
         </Form>
-        {[TemplateType.IP, TemplateType.PORT].includes(selectedTemplateType.value) ? (
+        {[TemplateType.IP, TemplateType.PORT].includes(formData.type) ? (
           <>
             <Table
+              maxHeight={500}
               columns={[
                 {
                   label: 'IP地址',
                   field: 'ipAddress',
-                  render: () => <Input placeholder='输入IP地址' />,
+                  render: ({ index }: { index: number }) => (
+                    <Input
+                      placeholder='输入IP地址'
+                      v-model={ipTableData.value[index].ipAddress}
+                    />
+                  ),
                 },
                 {
                   label: '备注',
                   field: 'note',
-                  render: () => <Input placeholder='备注信息' />,
+                  render: ({ index }: { index: number }) => (
+                    <Input
+                      placeholder='备注信息'
+                      v-model={ipTableData.value[index].note}
+                    />
+                  ),
                 },
                 {
                   label: '操作',
@@ -148,9 +220,8 @@ export default defineComponent({
               class={'mt20'}
               onClick={() => {
                 ipTableData.value.push({
-                  ipAddress: '192.168.1.3',
-                  note: '数据库服务器',
-                  actions: '重启',
+                  ipAddress: '',
+                  note: '',
                 });
               }}>
               新增一行
