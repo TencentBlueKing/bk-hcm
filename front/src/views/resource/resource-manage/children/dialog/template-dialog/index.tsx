@@ -2,14 +2,16 @@ import { Button, Dialog, Form, Input, Select, Table } from 'bkui-vue';
 import { PropType, defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
+import { VendorEnum } from '@/common/constant';
+import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 const { FormItem } = Form;
 const { Option } = Select;
 
 export enum TemplateType {
-  IP = 'ip',
-  IP_GROUP = 'ip_group',
-  PORT = 'port',
-  PORT_GROUP = 'port_group',
+  IP = 'address',
+  IP_GROUP = 'address_group',
+  PORT = 'service',
+  PORT_GROUP = 'service_group',
 }
 
 export default defineComponent({
@@ -24,9 +26,15 @@ export default defineComponent({
     },
   },
   setup(props) {
+    const resourceAccountStore = useResourceAccountStore();
     const formData = reactive({
       name: '',
       type: TemplateType.IP,
+      vendor: VendorEnum.TCLOUD,
+      account_id: resourceAccountStore.resourceAccount.id || '',
+      templates: [],
+      group_templates: [],
+      bk_biz_id: -1,
     });
     const ipTableData = ref([
       {
@@ -35,7 +43,12 @@ export default defineComponent({
       },
     ]);
     const ipGroupData = ref([]);
-    const portTableData = ref([]);
+    const portTableData = ref([
+      {
+        port: '',
+        note: '',
+      },
+    ]);
     const portGroupData = ref([]);
 
     const ipGroupList = ref([]);
@@ -111,7 +124,7 @@ export default defineComponent({
         width={1000}>
         <Form model={formData}>
           <FormItem label='参数模板名称' property='name' required>
-            <Input placeholder='输入参数模板名称' v-model={formData.name}/>
+            <Input placeholder='输入参数模板名称' v-model={formData.name} />
           </FormItem>
           <FormItem label='参数模板类型' property='type' required>
             <BkButtonGroup>
@@ -148,22 +161,18 @@ export default defineComponent({
           {[TemplateType.IP_GROUP].includes(formData.type) ? (
             <FormItem label='IP地址'>
               <Select v-model={ipGroupData.value}>
-                {
-                  ipGroupList.value.map(v => (
-                    <Option key={v.key}  id={v.key} name={v.value}></Option>
-                  ))
-                }
+                {ipGroupList.value.map(v => (
+                  <Option key={v.key} id={v.key} name={v.value}></Option>
+                ))}
               </Select>
             </FormItem>
           ) : null}
           {[TemplateType.PORT_GROUP].includes(formData.type) ? (
             <FormItem label='IP地址'>
               <Select v-model={portGroupData}>
-              {
-                  portGroupList.value.map(v => (
-                    <Option key={v.key}  id={v.key} name={v.value}></Option>
-                  ))
-                }
+                {portGroupList.value.map(v => (
+                  <Option key={v.key} id={v.key} name={v.value}></Option>
+                ))}
               </Select>
             </FormItem>
           ) : null}
@@ -174,13 +183,22 @@ export default defineComponent({
               maxHeight={500}
               columns={[
                 {
-                  label: 'IP地址',
+                  label: formData.type === TemplateType.IP ? 'IP地址' : '协议端口',
                   field: 'ipAddress',
                   render: ({ index }: { index: number }) => (
-                    <Input
-                      placeholder='输入IP地址'
-                      v-model={ipTableData.value[index].ipAddress}
-                    />
+                    <div>
+                      {formData.type === TemplateType.IP ? (
+                        <Input
+                          placeholder='输入IP地址'
+                          v-model={ipTableData.value[index].ipAddress}
+                        />
+                      ) : (
+                        <Input
+                          placeholder='输入协议端口'
+                          v-model={portTableData.value[index].port}
+                        />
+                      )}
+                    </div>
                   ),
                 },
                 {
