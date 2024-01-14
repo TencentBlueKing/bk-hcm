@@ -284,6 +284,10 @@ watch(
   },
 );
 
+const handleTemplateEdit = (payload: any) => {
+  isTemplateDialogShow.value = true;
+};
+
 const getResourceAccountList = async () => {
   try {
     const params = {
@@ -454,6 +458,7 @@ getResourceAccountList();
             @tabchange="handleTabChange"
             ref="componentRef"
             @edit="handleEdit"
+            @editTemplate="handleTemplateEdit"
           >
             <span
               v-if="

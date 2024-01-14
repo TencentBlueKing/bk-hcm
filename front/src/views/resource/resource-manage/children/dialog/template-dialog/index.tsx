@@ -14,6 +14,13 @@ export enum TemplateType {
   PORT_GROUP = 'service_group',
 }
 
+export const TemplateTypeMap = {
+  [TemplateType.IP]: 'IP地址',
+  [TemplateType.IP_GROUP]: 'IP地址组',
+  [TemplateType.PORT]: '协议端口',
+  [TemplateType.PORT_GROUP]: '协议端口组',
+};
+
 export default defineComponent({
   props: {
     isShow: {
