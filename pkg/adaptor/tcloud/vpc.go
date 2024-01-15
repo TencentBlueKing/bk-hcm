@@ -44,7 +44,7 @@ func (t *TCloudImpl) CreateVpc(kt *kit.Kit, opt *types.TCloudVpcCreateOption) (*
 		return nil, err
 	}
 
-	vpcClient, err := t.clientSet.vpcClient(opt.Extension.Region)
+	VpcClient, err := t.clientSet.VpcClient(opt.Extension.Region)
 	if err != nil {
 		return nil, fmt.Errorf("new vpc client failed, err: %v", err)
 	}
@@ -53,7 +53,7 @@ func (t *TCloudImpl) CreateVpc(kt *kit.Kit, opt *types.TCloudVpcCreateOption) (*
 	req.VpcName = converter.ValToPtr(opt.Name)
 	req.CidrBlock = converter.ValToPtr(opt.Extension.IPv4Cidr)
 
-	resp, err := vpcClient.CreateVpcWithContext(kt.Ctx, req)
+	resp, err := VpcClient.CreateVpcWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("create tencent cloud vpc failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -89,7 +89,7 @@ func (t *TCloudImpl) DeleteVpc(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) 
 		return err
 	}
 
-	vpcClient, err := t.clientSet.vpcClient(opt.Region)
+	VpcClient, err := t.clientSet.VpcClient(opt.Region)
 	if err != nil {
 		return fmt.Errorf("new vpc client failed, err: %v", err)
 	}
@@ -97,7 +97,7 @@ func (t *TCloudImpl) DeleteVpc(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) 
 	req := vpc.NewDeleteVpcRequest()
 	req.VpcId = converter.ValToPtr(opt.ResourceID)
 
-	_, err = vpcClient.DeleteVpcWithContext(kt.Ctx, req)
+	_, err = VpcClient.DeleteVpcWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("delete tencent cloud vpc failed, err: %v, rid: %s", err, kt.Rid)
 		return err
@@ -113,7 +113,7 @@ func (t *TCloudImpl) ListVpc(kt *kit.Kit, opt *core.TCloudListOption) (*types.TC
 		return nil, err
 	}
 
-	vpcClient, err := t.clientSet.vpcClient(opt.Region)
+	VpcClient, err := t.clientSet.VpcClient(opt.Region)
 	if err != nil {
 		return nil, fmt.Errorf("new vpc client failed, err: %v", err)
 	}
@@ -128,7 +128,7 @@ func (t *TCloudImpl) ListVpc(kt *kit.Kit, opt *core.TCloudListOption) (*types.TC
 		req.Limit = converter.ValToPtr(strconv.FormatUint(opt.Page.Limit, 10))
 	}
 
-	resp, err := vpcClient.DescribeVpcsWithContext(kt.Ctx, req)
+	resp, err := VpcClient.DescribeVpcsWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("list tencent cloud vpc failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, fmt.Errorf("list tencent cloud vpc failed, err: %v", err)
@@ -147,7 +147,7 @@ func (t *TCloudImpl) ListVpc(kt *kit.Kit, opt *core.TCloudListOption) (*types.TC
 // reference: https://cloud.tencent.com/document/api/215/15778
 func (t *TCloudImpl) CountVpc(kt *kit.Kit, region string) (int32, error) {
 
-	client, err := t.clientSet.vpcClient(region)
+	client, err := t.clientSet.VpcClient(region)
 	if err != nil {
 		return 0, fmt.Errorf("new tcloud vpc client failed, err: %v", err)
 	}
@@ -254,12 +254,12 @@ func (h *createVpcPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs
 		req.VpcIds = partIDs
 		req.Limit = converter.ValToPtr(strconv.FormatUint(uint64(core.TCloudQueryLimit), 10))
 
-		vpcClient, err := client.clientSet.vpcClient(h.region)
+		VpcClient, err := client.clientSet.VpcClient(h.region)
 		if err != nil {
 			return nil, err
 		}
 
-		resp, err := vpcClient.DescribeVpcsWithContext(kt.Ctx, req)
+		resp, err := VpcClient.DescribeVpcsWithContext(kt.Ctx, req)
 		if err != nil {
 			return nil, err
 		}

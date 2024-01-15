@@ -45,7 +45,7 @@ func (t *TCloudImpl) DeleteRouteTable(kt *kit.Kit, opt *core.BaseRegionalDeleteO
 		return err
 	}
 
-	vpcClient, err := t.clientSet.vpcClient(opt.Region)
+	VpcClient, err := t.clientSet.VpcClient(opt.Region)
 	if err != nil {
 		return fmt.Errorf("new route table client failed, err: %v", err)
 	}
@@ -53,7 +53,7 @@ func (t *TCloudImpl) DeleteRouteTable(kt *kit.Kit, opt *core.BaseRegionalDeleteO
 	req := vpc.NewDeleteRouteTableRequest()
 	req.RouteTableId = converter.ValToPtr(opt.ResourceID)
 
-	_, err = vpcClient.DeleteRouteTableWithContext(kt.Ctx, req)
+	_, err = VpcClient.DeleteRouteTableWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("delete tencent cloud route table failed, err: %v, rid: %s", err, kt.Rid)
 		return err
@@ -71,7 +71,7 @@ func (t *TCloudImpl) ListRouteTable(kt *kit.Kit, opt *core.TCloudListOption) (*r
 		return nil, err
 	}
 
-	vpcClient, err := t.clientSet.vpcClient(opt.Region)
+	VpcClient, err := t.clientSet.VpcClient(opt.Region)
 	if err != nil {
 		return nil, fmt.Errorf("new route table client failed, err: %v", err)
 	}
@@ -88,7 +88,7 @@ func (t *TCloudImpl) ListRouteTable(kt *kit.Kit, opt *core.TCloudListOption) (*r
 	}
 
 	// **NOTICE** this api will not return default route
-	resp, err := vpcClient.DescribeRouteTablesWithContext(kt.Ctx, req)
+	resp, err := VpcClient.DescribeRouteTablesWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("list tencent cloud route table failed, opt: %+v, err: %v, rid: %s", opt, err, kt.Rid)
 		return nil, fmt.Errorf("list tencent cloud route table failed, err: %v", err)
@@ -107,7 +107,7 @@ func (t *TCloudImpl) ListRouteTable(kt *kit.Kit, opt *core.TCloudListOption) (*r
 // reference: https://cloud.tencent.com/document/api/215/15763
 func (t *TCloudImpl) CountRouteTable(kt *kit.Kit, region string) (int32, error) {
 
-	client, err := t.clientSet.vpcClient(region)
+	client, err := t.clientSet.VpcClient(region)
 	if err != nil {
 		return 0, fmt.Errorf("new tcloud vpc client failed, err: %v", err)
 	}

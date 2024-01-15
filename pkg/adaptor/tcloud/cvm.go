@@ -48,7 +48,7 @@ func (t *TCloudImpl) ListCvm(kt *kit.Kit, opt *typecvm.TCloudListOption) ([]type
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.cvmClient(opt.Region)
+	client, err := t.clientSet.CvmClient(opt.Region)
 	if err != nil {
 		return nil, fmt.Errorf("new tcloud vpc client failed, err: %v", err)
 	}
@@ -82,7 +82,7 @@ func (t *TCloudImpl) ListCvm(kt *kit.Kit, opt *typecvm.TCloudListOption) ([]type
 // reference: https://cloud.tencent.com/document/api/213/15728
 func (t *TCloudImpl) CountCvm(kt *kit.Kit, region string) (int32, error) {
 
-	client, err := t.clientSet.cvmClient(region)
+	client, err := t.clientSet.CvmClient(region)
 	if err != nil {
 		return 0, fmt.Errorf("new tcloud cvm client failed, err: %v", err)
 	}
@@ -108,7 +108,7 @@ func (t *TCloudImpl) DeleteCvm(kt *kit.Kit, opt *typecvm.TCloudDeleteOption) err
 		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.cvmClient(opt.Region)
+	client, err := t.clientSet.CvmClient(opt.Region)
 	if err != nil {
 		return fmt.Errorf("init tencent cloud client failed, err: %v", err)
 	}
@@ -136,7 +136,7 @@ func (t *TCloudImpl) StartCvm(kt *kit.Kit, opt *typecvm.TCloudStartOption) error
 		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.cvmClient(opt.Region)
+	client, err := t.clientSet.CvmClient(opt.Region)
 	if err != nil {
 		return fmt.Errorf("init tencent cloud client failed, err: %v", err)
 	}
@@ -174,7 +174,7 @@ func (t *TCloudImpl) StopCvm(kt *kit.Kit, opt *typecvm.TCloudStopOption) error {
 		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.cvmClient(opt.Region)
+	client, err := t.clientSet.CvmClient(opt.Region)
 	if err != nil {
 		return fmt.Errorf("init tencent cloud client failed, err: %v", err)
 	}
@@ -215,7 +215,7 @@ func (t *TCloudImpl) RebootCvm(kt *kit.Kit, opt *typecvm.TCloudRebootOption) err
 		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.cvmClient(opt.Region)
+	client, err := t.clientSet.CvmClient(opt.Region)
 	if err != nil {
 		return fmt.Errorf("init tencent cloud client failed, err: %v", err)
 	}
@@ -255,7 +255,7 @@ func (t *TCloudImpl) ResetCvmPwd(kt *kit.Kit, opt *typecvm.TCloudResetPwdOption)
 		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.cvmClient(opt.Region)
+	client, err := t.clientSet.CvmClient(opt.Region)
 	if err != nil {
 		return fmt.Errorf("init tencent cloud client failed, err: %v", err)
 	}
@@ -298,7 +298,7 @@ func (t *TCloudImpl) CreateCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (*p
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.cvmClient(opt.Region)
+	client, err := t.clientSet.CvmClient(opt.Region)
 	if err != nil {
 		return nil, fmt.Errorf("init tencent cloud client failed, err: %v", err)
 	}
@@ -395,7 +395,7 @@ func (t *TCloudImpl) InquiryPriceCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOptio
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.cvmClient(opt.Region)
+	client, err := t.clientSet.CvmClient(opt.Region)
 	if err != nil {
 		return nil, fmt.Errorf("init tencent cloud client failed, err: %v", err)
 	}
@@ -564,7 +564,7 @@ func poll(client *TCloudImpl, kt *kit.Kit, region string, cloudIDs []*string) ([
 		req.InstanceIds = partIDs
 		req.Limit = converter.ValToPtr(int64(core.TCloudQueryLimit))
 
-		cvmCli, err := client.clientSet.cvmClient(region)
+		cvmCli, err := client.clientSet.CvmClient(region)
 		if err != nil {
 			return nil, err
 		}
@@ -584,6 +584,7 @@ type createCvmPollingHandler struct {
 	region string
 }
 
+// Done poll 获取到数据后，用该方法判断是否符合预期
 func (h *createCvmPollingHandler) Done(cvms []*cvm.Instance) (bool, *poller.BaseDoneResult) {
 
 	result := &poller.BaseDoneResult{
@@ -613,6 +614,7 @@ func (h *createCvmPollingHandler) Done(cvms []*cvm.Instance) (bool, *poller.Base
 	return flag, result
 }
 
+// Poll 轮询结果
 func (h *createCvmPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs []*string) ([]*cvm.Instance, error) {
 
 	cloudIDSplit := slice.Split(cloudIDs, core.TCloudQueryLimit)
@@ -623,7 +625,7 @@ func (h *createCvmPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs
 		req.InstanceIds = partIDs
 		req.Limit = converter.ValToPtr(int64(core.TCloudQueryLimit))
 
-		cvmCli, err := client.clientSet.cvmClient(h.region)
+		cvmCli, err := client.clientSet.CvmClient(h.region)
 		if err != nil {
 			return nil, err
 		}

@@ -39,7 +39,12 @@ func NewTCloud(s *types.BaseSecret) (TCloud, error) {
 
 // TCloudImpl is tencent cloud operator.
 type TCloudImpl struct {
-	clientSet *clientSet
+	clientSet ClientSet
+}
+
+// SetClientSet set new client set
+func (t *TCloudImpl) SetClientSet(c ClientSet) {
+	t.clientSet = c
 }
 
 func validateSecret(s *types.BaseSecret) error {

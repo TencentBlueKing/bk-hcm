@@ -38,7 +38,7 @@ import (
 func (t *TCloudImpl) ListImage(kt *kit.Kit,
 	opt *image.TCloudImageListOption) (*image.TCloudImageListResult, error) {
 
-	client, err := t.clientSet.cvmClient(opt.Region)
+	client, err := t.clientSet.CvmClient(opt.Region)
 	if err != nil {
 		return nil, err
 	}

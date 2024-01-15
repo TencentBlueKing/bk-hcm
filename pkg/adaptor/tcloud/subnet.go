@@ -44,7 +44,7 @@ func (t *TCloudImpl) CreateSubnet(kt *kit.Kit, opt *adtysubnet.TCloudSubnetCreat
 		return nil, err
 	}
 
-	subnetClient, err := t.clientSet.vpcClient(opt.Extension.Region)
+	subnetClient, err := t.clientSet.VpcClient(opt.Extension.Region)
 	if err != nil {
 		return nil, fmt.Errorf("new subnet client failed, err: %v", err)
 	}
@@ -72,7 +72,7 @@ func (t *TCloudImpl) CreateSubnets(kt *kit.Kit, opt *adtysubnet.TCloudSubnetsCre
 		return nil, err
 	}
 
-	subnetClient, err := t.clientSet.vpcClient(opt.Region)
+	subnetClient, err := t.clientSet.VpcClient(opt.Region)
 	if err != nil {
 		return nil, fmt.Errorf("new subnet client failed, err: %v", err)
 	}
@@ -128,7 +128,7 @@ func (t *TCloudImpl) DeleteSubnet(kt *kit.Kit, opt *core.BaseRegionalDeleteOptio
 		return err
 	}
 
-	vpcClient, err := t.clientSet.vpcClient(opt.Region)
+	VpcClient, err := t.clientSet.VpcClient(opt.Region)
 	if err != nil {
 		return fmt.Errorf("new subnet client failed, err: %v", err)
 	}
@@ -136,7 +136,7 @@ func (t *TCloudImpl) DeleteSubnet(kt *kit.Kit, opt *core.BaseRegionalDeleteOptio
 	req := vpc.NewDeleteSubnetRequest()
 	req.SubnetId = converter.ValToPtr(opt.ResourceID)
 
-	_, err = vpcClient.DeleteSubnetWithContext(kt.Ctx, req)
+	_, err = VpcClient.DeleteSubnetWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("delete tencent cloud subnet failed, err: %v, rid: %s", err, kt.Rid)
 		return err
@@ -152,7 +152,7 @@ func (t *TCloudImpl) ListSubnet(kt *kit.Kit, opt *core.TCloudListOption) (*adtys
 		return nil, err
 	}
 
-	vpcClient, err := t.clientSet.vpcClient(opt.Region)
+	VpcClient, err := t.clientSet.VpcClient(opt.Region)
 	if err != nil {
 		return nil, fmt.Errorf("new subnet client failed, err: %v", err)
 	}
@@ -168,7 +168,7 @@ func (t *TCloudImpl) ListSubnet(kt *kit.Kit, opt *core.TCloudListOption) (*adtys
 		req.Limit = converter.ValToPtr(strconv.FormatUint(opt.Page.Limit, 10))
 	}
 
-	resp, err := vpcClient.DescribeSubnetsWithContext(kt.Ctx, req)
+	resp, err := VpcClient.DescribeSubnetsWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("list tencent cloud subnet failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, fmt.Errorf("list tencent cloud subnet failed, err: %v", err)
@@ -187,7 +187,7 @@ func (t *TCloudImpl) ListSubnet(kt *kit.Kit, opt *core.TCloudListOption) (*adtys
 // reference: https://cloud.tencent.com/document/api/215/15784
 func (t *TCloudImpl) CountSubnet(kt *kit.Kit, region string) (int32, error) {
 
-	client, err := t.clientSet.vpcClient(region)
+	client, err := t.clientSet.VpcClient(region)
 	if err != nil {
 		return 0, fmt.Errorf("new tcloud vpc client failed, err: %v", err)
 	}
@@ -267,12 +267,12 @@ func (h *createSubnetPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloud
 		req.SubnetIds = partIDs
 		req.Limit = converter.ValToPtr(strconv.FormatUint(core.TCloudQueryLimit, 10))
 
-		vpcClient, err := client.clientSet.vpcClient(h.region)
+		VpcClient, err := client.clientSet.VpcClient(h.region)
 		if err != nil {
 			return nil, fmt.Errorf("new subnet client failed, err: %v", err)
 		}
 
-		resp, err := vpcClient.DescribeSubnetsWithContext(kt.Ctx, req)
+		resp, err := VpcClient.DescribeSubnetsWithContext(kt.Ctx, req)
 		if err != nil {
 			return nil, err
 		}
