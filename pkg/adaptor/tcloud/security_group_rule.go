@@ -44,7 +44,7 @@ func (t *TCloudImpl) CreateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule
 		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.vpcClient(opt.Region)
+	client, err := t.clientSet.VpcClient(opt.Region)
 	if err != nil {
 		return fmt.Errorf("init tcloud vpc client failed, err: %v", err)
 	}
@@ -109,7 +109,7 @@ func (t *TCloudImpl) DeleteSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule
 		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.vpcClient(opt.Region)
+	client, err := t.clientSet.VpcClient(opt.Region)
 	if err != nil {
 		return fmt.Errorf("init tcloud vpc client failed, err: %v", err)
 	}
@@ -165,7 +165,7 @@ func (t *TCloudImpl) UpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule
 		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.vpcClient(opt.Region)
+	client, err := t.clientSet.VpcClient(opt.Region)
 	if err != nil {
 		return fmt.Errorf("init tcloud vpc client failed, err: %v", err)
 	}
@@ -237,7 +237,7 @@ func (t *TCloudImpl) ListSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.T
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.vpcClient(opt.Region)
+	client, err := t.clientSet.VpcClient(opt.Region)
 	if err != nil {
 		return nil, fmt.Errorf("init tcloud vpc client failed, err: %v", err)
 	}

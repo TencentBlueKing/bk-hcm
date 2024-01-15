@@ -31,12 +31,12 @@ import (
 // ListRegion list region.
 // reference: https://cloud.tencent.com/document/product/1278/55255
 func (t *TCloudImpl) ListRegion(kt *kit.Kit) (*typesRegion.TCloudRegionListResult, error) {
-	cvmClient, err := t.clientSet.cvmClient("")
+	CvmClient, err := t.clientSet.CvmClient("")
 	if err != nil {
 		return nil, fmt.Errorf("new cvm client failed, err: %v", err)
 	}
 
-	resp, err := cvmClient.DescribeRegionsWithContext(kt.Ctx, nil)
+	resp, err := CvmClient.DescribeRegionsWithContext(kt.Ctx, nil)
 	if err != nil {
 		logs.Errorf("list tcloud region failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, fmt.Errorf("list tcloud region failed, err: %v", err)

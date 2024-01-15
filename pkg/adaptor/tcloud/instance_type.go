@@ -39,7 +39,7 @@ func (t *TCloudImpl) ListInstanceType(kt *kit.Kit, opt *typesinstancetype.TCloud
 		return nil, errf.New(errf.InvalidParameter, "list option is required")
 	}
 
-	client, err := t.clientSet.cvmClient(opt.Region)
+	client, err := t.clientSet.CvmClient(opt.Region)
 	if err != nil {
 		return nil, err
 	}

@@ -44,7 +44,7 @@ func (t *TCloudImpl) ListPoliciesGrantingServiceAccess(kt *kit.Kit, opt *typeacc
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.camServiceClient("ap-guangzhou")
+	client, err := t.clientSet.CamServiceClient("ap-guangzhou")
 	if err != nil {
 		return nil, fmt.Errorf("new cam client failed, err: %v", err)
 	}

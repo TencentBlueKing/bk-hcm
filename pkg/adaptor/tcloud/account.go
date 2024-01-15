@@ -39,7 +39,7 @@ import (
 // reference: https://cloud.tencent.com/document/api/598/34587
 func (t *TCloudImpl) ListAccount(kt *kit.Kit) ([]typeaccount.TCloudAccount, error) {
 
-	camClient, err := t.clientSet.camServiceClient("")
+	camClient, err := t.clientSet.CamServiceClient("")
 	if err != nil {
 		return nil, fmt.Errorf("new cam client failed, err: %v", err)
 	}
@@ -74,7 +74,7 @@ func (t *TCloudImpl) ListAccount(kt *kit.Kit) ([]typeaccount.TCloudAccount, erro
 // reference: https://cloud.tencent.com/document/api/598/34587
 func (t *TCloudImpl) CountAccount(kt *kit.Kit) (int32, error) {
 
-	camClient, err := t.clientSet.camServiceClient("")
+	camClient, err := t.clientSet.CamServiceClient("")
 	if err != nil {
 		return 0, fmt.Errorf("new cam client failed, err: %v", err)
 	}
@@ -102,7 +102,7 @@ func (t *TCloudImpl) GetAccountZoneQuota(kt *kit.Kit, opt *typeaccount.GetTCloud
 		return nil, err
 	}
 
-	client, err := t.clientSet.cvmClient(opt.Region)
+	client, err := t.clientSet.CvmClient(opt.Region)
 	if err != nil {
 		return nil, fmt.Errorf("init tencent cloud client failed, err: %v", err)
 	}
@@ -203,7 +203,7 @@ func validateDescribeAccountQuotaResp(resp *cvm.DescribeAccountQuotaResponse) er
 // reference: https://cloud.tencent.com/document/api/598/70416
 func (t *TCloudImpl) GetAccountInfoBySecret(kt *kit.Kit) (*cloud.TCloudInfoBySecret, error) {
 
-	camClient, err := t.clientSet.camServiceClient("")
+	camClient, err := t.clientSet.CamServiceClient("")
 	if err != nil {
 		return nil, fmt.Errorf("new cam client failed, err: %v", err)
 	}

@@ -47,7 +47,7 @@ func (t *TCloudImpl) ListClb(kt *kit.Kit, opt *typeclb.TCloudListOption) ([]type
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.clbClient(opt.Region)
+	client, err := t.clientSet.ClbClient(opt.Region)
 	if err != nil {
 		return nil, fmt.Errorf("new tcloud clb client failed, region: %s, err: %v", opt.Region, err)
 	}
@@ -81,7 +81,7 @@ func (t *TCloudImpl) ListClb(kt *kit.Kit, opt *typeclb.TCloudListOption) ([]type
 // CountClb count clb of region
 // reference: https://cloud.tencent.com/document/api/214/30685
 func (t *TCloudImpl) CountClb(kt *kit.Kit, region string) (int32, error) {
-	client, err := t.clientSet.clbClient(region)
+	client, err := t.clientSet.ClbClient(region)
 	if err != nil {
 		return 0, fmt.Errorf("new tcloud clb client failed, region: %s, err: %v", region, err)
 	}
@@ -110,7 +110,7 @@ func (t *TCloudImpl) ListListeners(kt *kit.Kit, opt *typeclb.TCloudListListeners
 		return nil, 0, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.clbClient(opt.Region)
+	client, err := t.clientSet.ClbClient(opt.Region)
 	if err != nil {
 		return nil, 0, fmt.Errorf("new tcloud clb client failed, region: %s, err: %v", opt.Region, err)
 	}
@@ -162,7 +162,7 @@ func (t *TCloudImpl) ListTargets(kt *kit.Kit, opt *typeclb.TCloudListTargetsOpti
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.clbClient(opt.Region)
+	client, err := t.clientSet.ClbClient(opt.Region)
 	if err != nil {
 		return nil, fmt.Errorf("new tcloud targets client failed, region: %s, err: %v", opt.Region, err)
 	}
@@ -208,7 +208,7 @@ func (t *TCloudImpl) CreateClb(kt *kit.Kit, opt *typeclb.TCloudCreateClbOption) 
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.clbClient(opt.Region)
+	client, err := t.clientSet.ClbClient(opt.Region)
 	if err != nil {
 		return nil, fmt.Errorf("init tencent cloud clb client failed, region: %s, err: %v", opt.Region, err)
 	}
@@ -295,6 +295,7 @@ type createClbPollingHandler struct {
 	region string
 }
 
+// Done ...
 func (h *createClbPollingHandler) Done(clbs []typeclb.TCloudClb) (bool, *poller.BaseDoneResult) {
 	result := &poller.BaseDoneResult{
 		SuccessCloudIDs: make([]string, 0),
@@ -316,6 +317,7 @@ func (h *createClbPollingHandler) Done(clbs []typeclb.TCloudClb) (bool, *poller.
 	return flag, result
 }
 
+// Poll ...
 func (h *createClbPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs []*string) (
 	[]typeclb.TCloudClb, error) {
 

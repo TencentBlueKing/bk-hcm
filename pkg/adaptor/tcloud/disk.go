@@ -62,7 +62,7 @@ func (t *TCloudImpl) InquiryPriceDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOpt
 		return nil, errf.New(errf.InvalidParameter, "option is required")
 	}
 
-	client, err := t.clientSet.cbsClient(opt.Region)
+	client, err := t.clientSet.CbsClient(opt.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (t *TCloudImpl) InquiryPriceDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOpt
 }
 
 func (t *TCloudImpl) createDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*cbs.CreateDisksResponse, error) {
-	client, err := t.clientSet.cbsClient(opt.Region)
+	client, err := t.clientSet.CbsClient(opt.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func (t *TCloudImpl) ListDisk(kt *kit.Kit, opt *core.TCloudListOption) ([]disk.T
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.cbsClient(opt.Region)
+	client, err := t.clientSet.CbsClient(opt.Region)
 	if err != nil {
 		return nil, fmt.Errorf("new tcloud cbs client failed, err: %v", err)
 	}
@@ -164,7 +164,7 @@ func (t *TCloudImpl) ListDisk(kt *kit.Kit, opt *core.TCloudListOption) ([]disk.T
 // reference: https://cloud.tencent.com/document/api/362/16315
 func (t *TCloudImpl) CountDisk(kt *kit.Kit, region string) (int32, error) {
 
-	client, err := t.clientSet.cbsClient(region)
+	client, err := t.clientSet.CbsClient(region)
 	if err != nil {
 		return 0, fmt.Errorf("new tcloud cbs client failed, err: %v", err)
 	}
@@ -191,7 +191,7 @@ func (t *TCloudImpl) DeleteDisk(kt *kit.Kit, opt *disk.TCloudDiskDeleteOption) e
 		return err
 	}
 
-	client, err := t.clientSet.cbsClient(opt.Region)
+	client, err := t.clientSet.CbsClient(opt.Region)
 	if err != nil {
 		return fmt.Errorf("new tcloud cbs client failed, err: %v", err)
 	}
@@ -217,7 +217,7 @@ func (t *TCloudImpl) AttachDisk(kt *kit.Kit, opt *disk.TCloudDiskAttachOption) e
 		return err
 	}
 
-	client, err := t.clientSet.cbsClient(opt.Region)
+	client, err := t.clientSet.CbsClient(opt.Region)
 	if err != nil {
 		return fmt.Errorf("new tcloud cbs client failed, err: %v", err)
 	}
@@ -247,7 +247,7 @@ func (t *TCloudImpl) DetachDisk(kt *kit.Kit, opt *disk.TCloudDiskDetachOption) e
 		return err
 	}
 
-	client, err := t.clientSet.cbsClient(opt.Region)
+	client, err := t.clientSet.CbsClient(opt.Region)
 	if err != nil {
 		return fmt.Errorf("new tcloud cbs client failed, err: %v", err)
 	}
@@ -269,6 +269,7 @@ type createDiskPollingHandler struct {
 	region string
 }
 
+// Done 判断是否满足结束条件
 func (h *createDiskPollingHandler) Done(pollResult []disk.TCloudDisk) (bool, *poller.BaseDoneResult) {
 	successCloudIDs := make([]string, 0)
 	unknownCloudIDs := make([]string, 0)
@@ -292,6 +293,7 @@ func (h *createDiskPollingHandler) Done(pollResult []disk.TCloudDisk) (bool, *po
 	}
 }
 
+// Poll 轮询结果
 func (h *createDiskPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs []*string) ([]disk.TCloudDisk,
 	error) {
 	cIDs := converter.PtrToSlice(cloudIDs)
@@ -318,6 +320,7 @@ type attachDiskPollingHandler struct {
 	region string
 }
 
+// Done 判断结束
 func (h *attachDiskPollingHandler) Done(pollResult []disk.TCloudDisk) (bool, *poller.BaseDoneResult) {
 	r := pollResult[0]
 	if converter.PtrToVal(r.DiskState) != "ATTACHED" {
@@ -326,6 +329,7 @@ func (h *attachDiskPollingHandler) Done(pollResult []disk.TCloudDisk) (bool, *po
 	return true, nil
 }
 
+// Poll 轮询
 func (h *attachDiskPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs []*string) ([]disk.TCloudDisk,
 	error) {
 	if len(cloudIDs) != 1 {
@@ -341,6 +345,7 @@ type detachDiskPollingHandler struct {
 	region string
 }
 
+// Done ...
 func (h *detachDiskPollingHandler) Done(pollResult []disk.TCloudDisk) (bool, *poller.BaseDoneResult) {
 	r := pollResult[0]
 	if converter.PtrToVal(r.DiskState) != "UNATTACHED" {
@@ -349,6 +354,7 @@ func (h *detachDiskPollingHandler) Done(pollResult []disk.TCloudDisk) (bool, *po
 	return true, nil
 }
 
+// Poll ...
 func (h *detachDiskPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs []*string) ([]disk.TCloudDisk,
 	error) {
 	if len(cloudIDs) != 1 {
