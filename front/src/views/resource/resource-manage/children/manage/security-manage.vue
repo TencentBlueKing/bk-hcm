@@ -717,6 +717,7 @@ const templateColumns = [
                 group_templates: data.group_templates,
                 name: data.name,
                 bk_biz_id: data.bk_biz_id,
+                id: data.id,
               });
             },
           },

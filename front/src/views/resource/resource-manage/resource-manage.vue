@@ -527,7 +527,7 @@ getResourceAccountList();
 
       <TemplateDialog
         :is-show="isTemplateDialogShow"
-        :is-edit="isTemplateDialogShow"
+        :is-edit="isTemplateDialogEdit"
         :payload="templateDialogPayload"
         :handle-close="() => isTemplateDialogShow = false"
       />
