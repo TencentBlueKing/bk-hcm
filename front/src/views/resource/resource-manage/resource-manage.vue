@@ -74,6 +74,8 @@ const isEdit = ref(false);
 const formDetail = ref({});
 const activeResourceTab = ref(RESOURCE_TABS[0].key);
 const isTemplateDialogShow = ref(false);
+const isTemplateDialogEdit = ref(false);
+const templateDialogPayload = ref({});
 
 provide('securityType', securityType);
 
@@ -152,6 +154,8 @@ const handleAdd = () => {
   // ['host', 'vpc', 'drive', ||| 'security', 'subnet', 'ip']
   if (activeTab.value === 'security' && securityType.value === 'template') {
     isTemplateDialogShow.value = true;
+    isTemplateDialogEdit.value = false;
+    templateDialogPayload.value = {};
     return;
   }
   switch (activeTab.value) {
@@ -286,6 +290,8 @@ watch(
 
 const handleTemplateEdit = (payload: any) => {
   isTemplateDialogShow.value = true;
+  isTemplateDialogEdit.value = true;
+  templateDialogPayload.value = payload;
 };
 
 const getResourceAccountList = async () => {
@@ -521,6 +527,8 @@ getResourceAccountList();
 
       <TemplateDialog
         :is-show="isTemplateDialogShow"
+        :is-edit="isTemplateDialogShow"
+        :payload="templateDialogPayload"
         :handle-close="() => isTemplateDialogShow = false"
       />
     </div>

@@ -23,6 +23,7 @@ import {
   DResourceType,
 } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 import { TemplateTypeMap } from '../dialog/template-dialog';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 const props = defineProps({
   filter: {
@@ -51,6 +52,7 @@ const activeType = ref('group');
 const fetchUrl = ref<string>('security_groups/list');
 const resourceStore = useResourceStore();
 const accountStore = useAccountStore();
+const { whereAmI } = useWhereAmI();
 
 const emit = defineEmits([
   'auth',
@@ -157,8 +159,8 @@ const handleSwtichType = async (type: string) => {
     state.params.fetchUrl = 'security_groups';
     state.params.columns = 'group';
   } else if (type === 'template') {
-    fetchUrl.value = 'argument_template/list';
-    state.params.fetchUrl = 'argument_template';
+    fetchUrl.value = 'argument_templates/list';
+    state.params.fetchUrl = 'argument_templates';
     state.params.columns = 'template';
   }
   emit('handleSecrityType', type);
@@ -669,12 +671,12 @@ const templateColumns = [
   {
     label: '云厂商',
     field: 'vendor',
-    render: ({cell}: any) => VendorMap[cell],
+    render: ({ cell }: any) => VendorMap[cell],
   },
   {
     label: '类型',
     field: 'type',
-    render: ({cell}: any) => TemplateTypeMap[cell],
+    render: ({ cell }: any) => TemplateTypeMap[cell],
 
   },
   // {
@@ -713,12 +715,14 @@ const templateColumns = [
                 type: data.type,
                 templates: data.templates,
                 group_templates: data.group_templates,
+                name: data.name,
+                bk_biz_id: data.bk_biz_id,
               });
             },
           },
           ['编辑'],
         ),
-        h(
+        whereAmI.value === Senarios.business && h(
           Button,
           {
             class: 'ml10',
@@ -794,7 +798,7 @@ const securityHandleShowDelete = (data: any) => {
           break;
         }
         case 'template': {
-          type = 'argument_template';
+          type = 'argument_templates';
           break;
         }
       }
