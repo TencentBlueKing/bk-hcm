@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/adaptor/types/cert"
 	typecore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/hc-service/sync"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -97,7 +98,7 @@ func (hd *certHandler) Sync(kt *kit.Kit, cloudIDs []string) error {
 		Region:    hd.request.Region,
 		CloudIDs:  cloudIDs,
 	}
-	if _, err := hd.syncCli.Cert(kt, params, new(tcloud.SyncCertOption)); err != nil {
+	if _, err := hd.syncCli.Cert(kt, params, &tcloud.SyncCertOption{BkBizID: constant.UnassignedBiz}); err != nil {
 		logs.Errorf("sync tcloud cert failed, opt: %v, err: %v, rid: %s", params, err, kt.Rid)
 		return err
 	}

@@ -31,6 +31,7 @@ import (
 	"hcm/pkg/api/core/cloud/cert"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	protocert "hcm/pkg/api/hc-service/cert"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -87,12 +88,17 @@ func (svc *certSvc) CreateTCloudCert(cts *rest.Contexts) (interface{}, error) {
 	cloudIDs := result.SuccessCloudIDs
 	syncClient := synctcloud.NewClient(svc.dataCli, tcloud)
 
+	var bkBizID int64
+	if req.BkBizID <= 0 {
+		bkBizID = constant.UnassignedBiz
+	}
+
 	params := &synctcloud.SyncBaseParams{
 		AccountID: req.AccountID,
 		Region:    "region",
 		CloudIDs:  cloudIDs,
 	}
-	_, err = syncClient.Cert(cts.Kit, params, &synctcloud.SyncCertOption{BkBizID: req.BkBizID})
+	_, err = syncClient.Cert(cts.Kit, params, &synctcloud.SyncCertOption{BkBizID: bkBizID})
 	if err != nil {
 		logs.Errorf("sync tcloud cert failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
 		return nil, err
