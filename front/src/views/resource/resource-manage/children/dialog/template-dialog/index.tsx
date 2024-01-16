@@ -1,5 +1,5 @@
 /* eslint-disable no-nested-ternary */
-import { Button, Dialog, Form, Input, Select } from 'bkui-vue';
+import { Button, Dialog, Form, Input, Message, Select } from 'bkui-vue';
 import { PropType, defineComponent, ref, watch } from 'vue';
 import './index.scss';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
@@ -91,7 +91,6 @@ export default defineComponent({
       isLoading.value = true;
       let data = {
         ...formData.value,
-        account_id: resourceAccountStore.resourceAccount.id,
       };
       switch (formData.value.type) {
         case TemplateType.IP: {
@@ -131,6 +130,10 @@ export default defineComponent({
         ? resourceStore.update('argument_templates', data, props.payload.id)
         : resourceStore.add('argument_templates/create', data);
       await submitPromise;
+      Message({
+        theme: 'success',
+        message: props.isEdit ? '编辑成功' : '创建成功',
+      });
     };
 
     watch(
