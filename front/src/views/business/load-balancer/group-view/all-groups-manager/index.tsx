@@ -114,10 +114,12 @@ export default defineComponent({
     ];
     const { CommonTable } = useTable({
       columns: tableColumns,
-      settings: settings.value,
       searchUrl,
       searchData,
       tableData,
+      tableExtraOptions: {
+        settings: settings.value,
+      },
     });
 
     const currentScene = ref('');

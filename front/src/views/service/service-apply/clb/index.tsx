@@ -21,35 +21,44 @@ const { FormItem } = Form;
 const { Option } = Select;
 const { Column } = Table;
 
+enum VIP_ISP_TYPE {
+  CMCC = 'CMCC',
+  CUCC = 'CUCC',
+  CTCC = 'CTCC',
+  BGP = 'BGP',
+}
+
 export default defineComponent({
   name: 'ApplyLoadBalancer',
   setup() {
     const formModel = reactive({
-      bizId: '' as string,
-      cloudAccountId: '' as string, // 云账号
+      bk_biz_id: '' as string, // 业务ID
+      account_id: '' as string, // 账号ID
       accountType: 'standard' as 'traditional' | 'standard', // 账户类型
       vendor: null as VendorEnum, // 云厂商
       region: '' as string, // 云地域
-      netType: 'public' as 'public' | 'intra', // 网络类型
-      ipType: 'ipv4' as 'ipv4' | 'ipv6' | 'ipv6_nat64', // IP类型
+      load_balance_type: 'OPEN' as 'OPEN' | 'INTERNAL', // 网络类型
+      address_ip_version: 'IPV4' as 'IPV4' | 'IPv6FullChain' | 'IPV6', // IP版本
       zoneType: 'single' as 'single' | 'primaryStand', // 可用区类型
       zone: '' as string | string[], // 可用区
       cloud_vpc_id: '' as string, // 所属的VPC网络
       cloud_subnet_id: '' as string, // 所属的子网
-      clbSpecType: '' as string, // CLB规格类型
-      carrierType: '1' as string, // 运营商类型
-      eip_id: '' as string, // 弹性IP
+      sla_type: '' as string, // CLB规格类型, 性能容量型规格, 留空为共享型
+      vip_isp: 'CMCC' as VIP_ISP_TYPE, // 运营商类型
+      vip: '' as string, // 绑定已有eip的ip地址, ipv6 nat64 不支持
+      vip_id: '' as string, // 弹性IP
       instanceChargeType: '包年包月' as string, // 实例计费类型
-      networkChargeType: '1' as string, // 网络计费类型
-      bandwidth: 0 as number, // 带宽上限
-      quantity: 1 as number, // 购买数量
+      internet_charge_type: '1' as string, // 网络计费类型
+      internet_max_bandwidth_out: 0 as number, // 带宽上限
+      bandwidth_package_id: '' as string, // 带宽包id, 计费模式为带宽包计费时必填
+      require_count: 1 as number, // 购买数量
       duration: 1 as number, // 购买时长
-      autoRenewal: false, // 自动续费
+      auto_renew: false, // 自动续费
       name: '', // 名称
       memo: '', // 实例备注
       remark: '', // 申请单备注
     });
-    const isIntranet = computed(() => formModel.netType === 'intra');
+    const isIntranet = computed(() => formModel.load_balance_type === 'INTERNAL');
     const vpcId = ref('');
     const vpcData = ref(null);
     const subnetData = ref(null);
@@ -82,13 +91,13 @@ export default defineComponent({
             {
               label: '网络类型',
               required: true,
-              property: 'netType',
+              property: 'load_balance_type',
               content: () => (
-                <BkRadioGroup v-model={formModel.netType}>
-                  <BkRadioButton label='public' class='w120'>
+                <BkRadioGroup v-model={formModel.load_balance_type}>
+                  <BkRadioButton label='OPEN' class='w120'>
                     公网
                   </BkRadioButton>
-                  <BkRadioButton label='intra' class='w120'>
+                  <BkRadioButton label='INTERNAL' class='w120'>
                     内网
                   </BkRadioButton>
                 </BkRadioGroup>
@@ -97,17 +106,17 @@ export default defineComponent({
             {
               label: 'IP版本',
               required: true,
-              property: 'ipType',
+              property: 'address_ip_version',
               hidden: isIntranet.value,
               content: () => (
-                <BkRadioGroup v-model={formModel.ipType}>
-                  <BkRadioButton label='ipv4' class='w120'>
+                <BkRadioGroup v-model={formModel.address_ip_version}>
+                  <BkRadioButton label='IPV4' class='w120'>
                     IPv4
                   </BkRadioButton>
-                  <BkRadioButton label='ipv6' class='w120'>
+                  <BkRadioButton label='IPv6FullChain' class='w120'>
                     Ipv6
                   </BkRadioButton>
-                  <BkRadioButton label='ipv6_nat64' class='w120'>
+                  <BkRadioButton label='IPV6' class='w120'>
                     Ipv6 NAT64
                   </BkRadioButton>
                 </BkRadioGroup>
@@ -173,8 +182,8 @@ export default defineComponent({
                 <VpcSelector
                   class='base'
                   v-model={formModel.cloud_vpc_id}
-                  bizId={formModel.bizId}
-                  accountId={formModel.cloudAccountId}
+                  bizId={formModel.bk_biz_id}
+                  accountId={formModel.account_id}
                   vendor={formModel.vendor}
                   region={formModel.region}
                   zone={formModel.zone}
@@ -201,11 +210,11 @@ export default defineComponent({
                 <SubnetSelector
                   class='base'
                   v-model={formModel.cloud_subnet_id}
-                  bizId={formModel.bizId}
+                  bizId={formModel.bk_biz_id}
                   vpcId={vpcId.value}
                   vendor={formModel.vendor}
                   region={formModel.region}
-                  accountId={formModel.cloudAccountId}
+                  accountId={formModel.account_id}
                   zone={formModel.zone}
                   clearable={false}
                   handleChange={handleSubnetDataChange}
@@ -226,10 +235,10 @@ export default defineComponent({
           {
             label: '负载均衡规格类型',
             required: true,
-            property: 'clbSpecType',
+            property: 'sla_type',
             hidden: isIntranet.value,
             content: () => (
-              <BkRadioGroup v-model={formModel.clbSpecType}>
+              <BkRadioGroup v-model={formModel.sla_type}>
                 <BkRadioButton label='' class='w120'>
                   共享型
                 </BkRadioButton>
@@ -242,12 +251,14 @@ export default defineComponent({
           {
             label: '运营商类型',
             required: true,
-            property: 'carrierType',
+            property: 'vip_isp',
             hidden: isIntranet.value,
             content: () => (
-              <Select v-model={formModel.carrierType}>
-                <Option label='1' value='1' />
-                <Option label='2' value='2' />
+              <Select v-model={formModel.vip_isp}>
+                <Option label='CMCC' value={VIP_ISP_TYPE.CMCC} />
+                <Option label='CUCC' value={VIP_ISP_TYPE.CUCC} />
+                <Option label='CTCC' value={VIP_ISP_TYPE.CTCC} />
+                <Option label='BGP' value={VIP_ISP_TYPE.BGP} />
               </Select>
             ),
           },
@@ -286,10 +297,11 @@ export default defineComponent({
           {
             label: '网络计费模式',
             required: true,
-            property: 'networkChargeType',
-            hidden: (formModel.netType === 'public' && formModel.accountType === 'traditional') || isIntranet.value,
+            property: 'internet_charge_type',
+            hidden:
+              (formModel.load_balance_type === 'OPEN' && formModel.accountType === 'traditional') || isIntranet.value,
             content: () => (
-              <BkRadioGroup v-model={formModel.networkChargeType}>
+              <BkRadioGroup v-model={formModel.internet_charge_type}>
                 <BkRadioButton label='1' class='w88'>
                   包月
                 </BkRadioButton>
@@ -308,14 +320,14 @@ export default defineComponent({
           {
             label: '带宽上限（Mbps）',
             required: true,
-            property: 'bandwidth',
-            hidden: (formModel.netType === 'public' && formModel.accountType === 'traditional') || isIntranet.value,
+            property: 'internet_max_bandwidth_out',
+            hidden:
+              (formModel.load_balance_type === 'OPEN' && formModel.accountType === 'traditional') || isIntranet.value,
             content: () => (
               <div class='slider-wrap'>
                 <Slider
-                  v-model={formModel.bandwidth}
+                  v-model={formModel.internet_max_bandwidth_out}
                   maxValue={5120}
-                  step={256}
                   customContent={{
                     0: { label: '0' },
                     256: { label: '256' },
@@ -334,10 +346,10 @@ export default defineComponent({
             {
               label: '购买数量',
               required: true,
-              property: 'quantity',
+              property: 'require_count',
               content: () => (
                 <>
-                  <InputNumber v-model={formModel.quantity} min={1} />
+                  <InputNumber v-model={formModel.require_count} min={1} />
                   <div class='quota-info'>
                     所在地域配额为 <span class='quota-number'>{130}</span> / 500
                   </div>
@@ -366,7 +378,7 @@ export default defineComponent({
                       ),
                     }}
                   </Input>
-                  <Checkbox class='ml24' v-model={formModel.autoRenewal}>
+                  <Checkbox class='ml24' v-model={formModel.auto_renew}>
                     自动续费
                   </Checkbox>
                 </div>
@@ -471,7 +483,7 @@ export default defineComponent({
       },
     });
     const handleBindEip = () => {
-      formModel.eip_id = selectedEipData.id;
+      formModel.vip_id = selectedEipData.id;
     };
 
     // 性能容量型弹窗
@@ -562,13 +574,15 @@ export default defineComponent({
       },
     });
     const handleSelectClbSpecType = () => {
-      formModel.clbSpecType = selectedClbSpecType.model;
+      formModel.sla_type = selectedClbSpecType.model;
     };
 
     watch(
-      () => [formModel.netType, formModel.ipType],
-      ([netType, ipType]) => {
-        if (netType === 'intra' || ipType === 'ipv6' || ipType === 'ipv6_nat64') {
+      () => [formModel.load_balance_type, formModel.address_ip_version],
+      ([load_balance_type, address_ip_version]) => {
+        if (
+          load_balance_type === 'INTERNAL' || address_ip_version === 'IPv6FullChain' || address_ip_version === 'IPV6'
+        ) {
           formModel.instanceChargeType = '按量计费';
         } else {
           formModel.instanceChargeType = '包年包月';
@@ -586,7 +600,7 @@ export default defineComponent({
     );
 
     watch(
-      () => formModel.clbSpecType,
+      () => formModel.sla_type,
       (val) => {
         isClbSpecTypeDialogShow.value = !!val;
       },
@@ -604,8 +618,8 @@ export default defineComponent({
         <Form class='apply-clb-form-container' formType='vertical' model={formModel}>
           <ConditionOptions
             type={ResourceTypeEnum.CLB}
-            v-model:bizId={formModel.bizId}
-            v-model:cloudAccountId={formModel.cloudAccountId}
+            v-model:bizId={formModel.bk_biz_id}
+            v-model:cloudAccountId={formModel.account_id}
             v-model:vendor={formModel.vendor}
             v-model:region={formModel.region}
           />

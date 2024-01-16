@@ -18,7 +18,14 @@ export default defineComponent({
 
     const { columns } = useColumns('cert');
     const { CommonTable } = useTable({
-      columns,
+      columns: [
+        ...columns,
+        {
+          label: '操作',
+          width: 120,
+          render: () => (<span class='operate-text-btn'>删除</span>),
+        },
+      ],
       searchUrl: '',
       searchData: [
         {
@@ -58,7 +65,7 @@ export default defineComponent({
           domainName: 'example.com',
           uploadTime: '2023-01-01 10:00:00',
           expirationTime: '2024-01-01 10:00:00',
-          certificateStatus: '有效',
+          certificateStatus: '正常',
         },
         {
           resourceId: 'res-456',
@@ -67,7 +74,7 @@ export default defineComponent({
           domainName: 'example.net',
           uploadTime: '2023-02-01 11:00:00',
           expirationTime: '2024-02-01 11:00:00',
-          certificateStatus: '即将过期',
+          certificateStatus: '正常',
         },
         {
           resourceId: 'res-789',

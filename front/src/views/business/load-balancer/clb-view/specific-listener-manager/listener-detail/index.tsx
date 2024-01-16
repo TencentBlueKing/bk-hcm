@@ -1,6 +1,7 @@
 import { defineComponent } from 'vue';
 import { Button, Tag } from 'bkui-vue';
 import './index.scss';
+import StatusLoading from '@/assets/image/status_loading.png';
 
 export default defineComponent({
   name: 'ListenerDetail',
@@ -44,7 +45,12 @@ export default defineComponent({
           {
             label: '目标组',
             value: () => (
-              <span class='link-text-btn'>目标组134</span>
+              <div class='target-group-wrap'>
+                <span class='link-text-btn'>目标组134</span>
+                {
+                  true && <img class='loading-icon spin-icon' src={StatusLoading} alt="" />
+                }
+              </div>
             ),
             sub_hidden: ['HTTP', 'HTTPS'].includes(props.protocolType),
           },

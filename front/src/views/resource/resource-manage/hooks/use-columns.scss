@@ -8,3 +8,20 @@
 .url-sync-partial-success-status {
   border-bottom: 1px dashed rgb(151, 155, 165);
 }
+
+.sync_status_wrap {
+  display: flex;
+  align-items: center;
+  padding-top: 10px;
+  line-height: 20px;
+
+  .sync_status_icon {
+    margin-right: 7px;
+    width: 14px;
+    height: 14px;
+  }
+  
+  .sync-partial-success-status_text {
+    border-bottom: 1px dashed rgb(151, 155, 165);
+  }
+}
