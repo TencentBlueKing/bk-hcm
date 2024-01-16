@@ -21,14 +21,15 @@ export default defineComponent({
       type: String,
       required: true,
     },
+    currentSelectedTreeNode: Object,
   },
-  emits: ['handleTypeChange'],
+  emits: ['handleTypeChange', 'update:currentSelectedTreeNode'],
   setup(props, ctx) {
     const treeData: any = inject('treeData');
+    const treeRef: any = inject('treeRef');
     const baseUrl = 'http://localhost:3000';
     const loadingRef = ref();
     const rootPageNum = ref(1);
-    const treeRef = ref(null);
     const searchResultCount: any = inject('searchResultCount');
     const expandedNodeArr = ref([]);
     const isShowFixedOperationBtn = ref(false);
@@ -261,6 +262,7 @@ export default defineComponent({
 
     const handleNodeClick = (node: any) => {
       ctx.emit('handleTypeChange', node.type);
+      ctx.emit('update:currentSelectedTreeNode', node);
     };
 
     const handleNodeExpand = (node: any) => {

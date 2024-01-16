@@ -557,7 +557,13 @@ export default defineComponent({
                         ['/service/my-apply'].includes(curPath.value)
                           ? 'view-warp no-padding'
                           : 'view-warp'
-                      } style={{ height: route.path !== '/business/host' ? 'calc(100% - 52px)' : 'calc(100% - 104px)' }}>
+                      } style={{
+                        // eslint-disable-next-line no-nested-ternary
+                        height: route.path !== '/business/host'
+                          ? route.path.includes('/business/loadbalancer')
+                            ? '100%' : 'calc(100% - 52px)'
+                          : 'calc(100% - 104px)',
+                      }}>
                       {isRouterAlive.value ? renderRouterView() : null}
                     </div>
                   </>

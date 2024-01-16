@@ -14,6 +14,8 @@ export default defineComponent({
   setup() {
     const treeData = ref([]);
     provide('treeData', treeData);
+    const treeRef = ref(null);
+    provide('treeRef', treeRef);
     const isAdvancedSearchShow = ref(false);
 
     const searchValue = ref('');
@@ -54,8 +56,12 @@ export default defineComponent({
     };
 
     const activeType = ref('all' as 'all' | 'clb' | 'listener' | 'domain');
+    const currentSelectedTreeNode = ref(null);
     const handleTypeChange = (type: 'all' | 'clb' | 'listener' | 'domain') => {
       activeType.value = type;
+      if (type === 'all') {
+        treeRef.value.setSelect(currentSelectedTreeNode.value, false);
+      }
     };
 
     const allClbsItem = reactive({ isDropdownListShow: false });
@@ -143,7 +149,10 @@ export default defineComponent({
                 </div>
               )
             }
-            <DynamicTree searchValue={searchValue.value} onHandleTypeChange={handleTypeChange} />
+            <DynamicTree
+              searchValue={searchValue.value}
+              v-model:currentSelectedTreeNode={currentSelectedTreeNode.value}
+              onHandleTypeChange={handleTypeChange} />
           </div>
         </div>
         {isAdvancedSearchShow.value && <div class='advanced-search'>高级搜索</div>}
