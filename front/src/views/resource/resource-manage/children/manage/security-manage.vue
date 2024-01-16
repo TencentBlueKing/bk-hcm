@@ -827,7 +827,7 @@ const securityHandleShowDelete = (data: any) => {
         :type="
           activeType === 'group'
             ? DResourceType.security_groups
-            : DResourceType.firewall
+            : activeType === 'template' ? DResourceType.templates : DResourceType.firewall
         "
         :get-data="
           () => {
