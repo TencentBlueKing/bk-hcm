@@ -5,7 +5,8 @@ import './index.scss';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 import { VendorEnum } from '@/common/constant';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
-import { useResourceStore } from '@/store';
+import { useAccountStore, useResourceStore } from '@/store';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 const { FormItem } = Form;
 const { Option } = Select;
 
@@ -55,7 +56,10 @@ export default defineComponent({
   setup(props) {
     const resourceAccountStore = useResourceAccountStore();
     const resourceStore = useResourceStore();
+    const accountStore = useAccountStore();
+    const { whereAmI } = useWhereAmI();
     const isLoading = ref(false);
+    const accountList = ref([]);
     const formData = ref({
       name: props.payload?.name || '',
       type: props.payload?.type || TemplateType.IP,
@@ -123,9 +127,18 @@ export default defineComponent({
           break;
         }
       }
-      const submitPromise = props.isEdit ? resourceStore.update('argument_templates', data, props.payload.id) : resourceStore.add('argument_templates/create', data);
+      const submitPromise = props.isEdit
+        ? resourceStore.update('argument_templates', data, props.payload.id)
+        : resourceStore.add('argument_templates/create', data);
       await submitPromise;
     };
+
+    watch(
+      () => props.isShow,
+      (isShow) => {
+        if (isShow) getAccountList();
+      },
+    );
 
     watch(
       () => formData.value.type,
@@ -236,7 +249,14 @@ export default defineComponent({
       else return null;
       return list.map((_, idx) => (
         <Form class={'template-table-item'} formType='vertical'>
-          <FormItem label={`${idx > 0 ? '' : (formData.value.type === TemplateType.IP ? 'IP地址' : '协议端口')}`}>
+          <FormItem
+            label={`${
+              idx > 0
+                ? ''
+                : formData.value.type === TemplateType.IP
+                  ? 'IP地址'
+                  : '协议端口'
+            }`}>
             <Input placeholder='输入IP地址' v-model={list[idx].address} />
           </FormItem>
           <FormItem label={`${idx > 0 ? '' : '备注'}`}>
@@ -257,6 +277,37 @@ export default defineComponent({
       ));
     };
 
+    const getAccountList = async () => {
+      const isResource = whereAmI.value === Senarios.resource;
+      const payload = isResource
+        ? {
+          page: {
+            count: false,
+            limit: 100,
+            start: 0,
+          },
+          filter: { op: 'and', rules: [
+            {
+              field: 'vendor',
+              op: 'eq',
+              value: VendorEnum.TCLOUD,
+            },
+          ] },
+        }
+        : {
+          params: {
+            account_type: 'resource',
+          },
+        };
+      const res = await accountStore.getAccountList(payload, accountStore.bizs);
+      if (resourceAccountStore.resourceAccount?.id) {
+        accountList.value = res.data?.details
+          .filter(({ id }: {id: string}) => id === resourceAccountStore.resourceAccount.id);
+        return;
+      }
+      accountList.value = isResource ? res?.data?.details : res?.data;
+    };
+
     return () => (
       <Dialog
         isShow={props.isShow}
@@ -269,6 +320,21 @@ export default defineComponent({
         maxHeight={'720px'}
         width={1000}>
         <Form model={formData.value}>
+          <FormItem label='云账号' property='account_id' required>
+            <Select
+              v-model={formData.value.account_id}
+            >
+              {
+                accountList.value.map(item => (
+                  <Option
+                    key={item.id}
+                    id={item.id}
+                    name={item.name}
+                  ></Option>
+                ))
+              }
+            </Select>
+          </FormItem>
           <FormItem label='参数模板名称' property='name' required>
             <Input
               placeholder='输入参数模板名称'
