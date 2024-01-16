@@ -8,6 +8,7 @@ import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { useAccountStore, useResourceStore } from '@/store';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { isPortAvailable, validateIpCidr } from '../security-rule/security-rule-validators';
+import { TCLOUD_SECURITY_RULE_PROTOCALS } from '@/constants';
 const { FormItem } = Form;
 const { Option } = Select;
 
@@ -280,29 +281,40 @@ export default defineComponent({
                     message: formData.value.type === TemplateType.IP ? '请填写正确的IP地址' : '请填写合法的端口',
                     validator: (val: string) => {
                       if (formData.value.type === TemplateType.IP) return validateIpCidr(val) !== 'invalid';
-                      return isPortAvailable(val);
+                      if (formData.value.type === TemplateType.PORT) {
+                        const arr = val.trim().split(':');
+                        if (arr.length !== 2) return false;
+                        const [protocal, port] = arr;
+                        const protocols = TCLOUD_SECURITY_RULE_PROTOCALS.map(item => item.name);
+                        if (!protocols.includes(protocal)) return false;
+                        if (!isPortAvailable(port)) return false;
+                        return true;
+                      }
                     },
                   },
                 ],
               }}>
-              <FormItem
-                property='address'
-                label={`${
-                  idx > 0
-                    ? ''
-                    : formData.value.type === TemplateType.IP
-                      ? 'IP地址'
-                      : '协议端口'
-                }`}>
-                <Input
-                  placeholder={
-                    formData.value.type === TemplateType.IP
-                      ? '输入IP地址'
-                      : '输入协议端口'
-                  }
-                  v-model={list[idx].address}
-                />
-              </FormItem>
+              {
+                formData.value.type === TemplateType.IP ? (
+                  <FormItem
+                    property='address'
+                    label={'IP地址'}>
+                    <Input
+                      placeholder={'输入IP地址'}
+                      v-model={list[idx].address}
+                    />
+                  </FormItem>
+                ) : (
+                  <FormItem
+                    property='address'
+                    label={'协议端口'}>
+                    <Input
+                      placeholder={'输入端口'}
+                      v-model={list[idx].address}
+                    />
+                  </FormItem>
+                )
+              }
               <FormItem
                 label={`${idx > 0 ? '' : '备注'}`}
                 property='description'>
