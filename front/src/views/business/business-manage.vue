@@ -19,6 +19,7 @@ import EipForm from './forms/eip/index.vue';
 import subnetForm from './forms/subnet/index.vue';
 import securityForm from './forms/security/index.vue';
 import firewallForm from './forms/firewall';
+import TemplateDialog from '@/views/resource/resource-manage/children/dialog/template-dialog';
 
 import { useRoute, useRouter } from 'vue-router';
 
@@ -29,6 +30,10 @@ const isShowSideSlider = ref(false);
 const isShowGcpAdd = ref(false);
 const componentRef = ref();
 const securityType = ref('group');
+
+const isTemplateDialogShow = ref(false);
+const isTemplateDialogEdit = ref(false);
+const templateDialogPayload = ref({});
 
 // use hooks
 const route = useRoute();
@@ -87,6 +92,11 @@ const isResourcePage = computed(() => {
 });
 
 const handleAdd = () => {
+  if (securityType.value === 'template' && renderComponent.value === SecurityManage) {
+    isTemplateDialogShow.value = true;
+    isTemplateDialogEdit.value = false;
+    return;
+  }
   if (renderComponent.value === DriveManage) {
     router.push({
       path: '/business/service/service-apply/disk',
@@ -128,6 +138,13 @@ const handleSuccess = () => {
 const handleSecrityType = (val: string) => {
   securityType.value = val;
   console.log(' securityType.value', securityType.value);
+};
+
+
+const handleTemplateEdit = (payload: any) => {
+  isTemplateDialogShow.value = true;
+  isTemplateDialogEdit.value = true;
+  templateDialogPayload.value = payload;
 };
 
 // 新增修改防火墙规则
@@ -190,6 +207,7 @@ const {
           }"
           @handleSecrityType="handleSecrityType"
           @edit="handleEdit"
+          @editTemplate="handleTemplateEdit"
         >
           <span>
             <bk-button
@@ -256,6 +274,13 @@ const {
       :detail="{}"
       @submit="submit"
     ></gcp-add>
+
+    <TemplateDialog
+      :is-show="isTemplateDialogShow"
+      :is-edit="isTemplateDialogEdit"
+      :payload="templateDialogPayload"
+      :handle-close="() => isTemplateDialogShow = false"
+    />
   </div>
 </template>
 

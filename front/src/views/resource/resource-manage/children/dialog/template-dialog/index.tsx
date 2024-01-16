@@ -68,7 +68,7 @@ export default defineComponent({
       name: props.payload?.name || '',
       type: props.payload?.type || TemplateType.IP,
       vendor: VendorEnum.TCLOUD,
-      account_id: resourceAccountStore.resourceAccount.id || '',
+      account_id: resourceAccountStore.resourceAccount?.id || '',
       templates: props.payload?.templates || [],
       group_templates: props.payload?.group_templates || [],
       bk_biz_id: props.payload?.bk_biz_id || -1,
@@ -205,7 +205,7 @@ export default defineComponent({
             name: '',
             type: TemplateType.IP,
             vendor: VendorEnum.TCLOUD,
-            account_id: resourceAccountStore.resourceAccount.id || '',
+            account_id: resourceAccountStore.resourceAccount?.id || '',
             templates: [],
             group_templates: [],
             bk_biz_id: -1,
@@ -215,7 +215,7 @@ export default defineComponent({
             name: props.payload?.name || '',
             type: props.payload?.type || TemplateType.IP,
             vendor: VendorEnum.TCLOUD,
-            account_id: resourceAccountStore.resourceAccount.id || '',
+            account_id: resourceAccountStore.resourceAccount?.id || '',
             templates: props.payload?.templates || [],
             group_templates: props.payload?.group_templates || [],
             bk_biz_id: props.payload?.bk_biz_id || -1,
@@ -378,7 +378,7 @@ export default defineComponent({
         };
       const res = await accountStore.getAccountList(payload, accountStore.bizs);
       if (resourceAccountStore.resourceAccount?.id) {
-        accountList.value = res.data?.details.filter(({ id }) => id === resourceAccountStore.resourceAccount.id);
+        accountList.value = res.data?.details.filter(({ id }) => id === resourceAccountStore.resourceAccount?.id);
         return;
       }
       accountList.value = isResource ? res?.data?.details : res?.data;
