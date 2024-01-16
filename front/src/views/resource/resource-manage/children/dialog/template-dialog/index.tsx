@@ -7,6 +7,7 @@ import { VendorEnum } from '@/common/constant';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { useAccountStore, useResourceStore } from '@/store';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { isPortAvailable, validateIpCidr } from '../security-rule/security-rule-validators';
 const { FormItem } = Form;
 const { Option } = Select;
 
@@ -60,6 +61,8 @@ export default defineComponent({
     const { whereAmI } = useWhereAmI();
     const isLoading = ref(false);
     const accountList = ref([]);
+    const basicForm = ref(null);
+    let formInstances = [ref(null)];
     const formData = ref({
       name: props.payload?.name || '',
       type: props.payload?.type || TemplateType.IP,
@@ -88,6 +91,8 @@ export default defineComponent({
     const portGroupList = ref([]);
 
     const handleSubmit = async () => {
+      await basicForm.value.validate();
+      await Promise.all(formInstances.map(formInstance => formInstance.value?.validate()));
       isLoading.value = true;
       let data = {
         ...formData.value,
@@ -134,6 +139,7 @@ export default defineComponent({
         theme: 'success',
         message: props.isEdit ? '编辑成功' : '创建成功',
       });
+      props.handleClose();
     };
 
     watch(
@@ -221,6 +227,7 @@ export default defineComponent({
                   description: '',
                 },
               ];
+              formInstances = ipTableData.value.map(_v => ref(null));
               break;
             }
             case TemplateType.IP_GROUP: {
@@ -234,6 +241,7 @@ export default defineComponent({
                   description: '',
                 },
               ];
+              formInstances = ipTableData.value.map(_v => ref(null));
               break;
             }
             case TemplateType.PORT_GROUP: {
@@ -250,34 +258,85 @@ export default defineComponent({
       if (type === TemplateType.IP) list = ipTableData.value;
       else if (type === TemplateType.PORT) list = portTableData.value;
       else return null;
-      return list.map((_, idx) => (
-        <Form class={'template-table-item'} formType='vertical'>
-          <FormItem
-            label={`${
-              idx > 0
-                ? ''
-                : formData.value.type === TemplateType.IP
-                  ? 'IP地址'
-                  : '协议端口'
-            }`}>
-            <Input placeholder='输入IP地址' v-model={list[idx].address} />
-          </FormItem>
-          <FormItem label={`${idx > 0 ? '' : '备注'}`}>
-            <Input placeholder='备注信息' v-model={list[idx].description} />
-          </FormItem>
-          <FormItem label={`${idx > 0 ? '' : '操作'}`}>
-            <Button
-              text
-              class={'ml6'}
-              theme='primary'
-              onClick={() => {
-                list.splice(idx, 1);
+      return (
+        <div>
+          {list.map((data, idx) => (
+            <Form
+              class={'template-table-item'}
+              formType='vertical'
+              ref={formInstances[idx]}
+              model={data}
+              rules={{
+                description: [
+                  {
+                    trigger: 'blur',
+                    message: '备注不能为空',
+                    validator: (val: string) => !!val,
+                  },
+                ],
+                address: [
+                  {
+                    trigger: 'blur',
+                    message: formData.value.type === TemplateType.IP ? '请填写正确的IP地址' : '请填写合法的端口',
+                    validator: (val: string) => {
+                      if (formData.value.type === TemplateType.IP) return validateIpCidr(val) !== 'invalid';
+                      return isPortAvailable(val);
+                    },
+                  },
+                ],
               }}>
-              删除
-            </Button>
-          </FormItem>
-        </Form>
-      ));
+              <FormItem
+                property='address'
+                label={`${
+                  idx > 0
+                    ? ''
+                    : formData.value.type === TemplateType.IP
+                      ? 'IP地址'
+                      : '协议端口'
+                }`}>
+                <Input
+                  placeholder={
+                    formData.value.type === TemplateType.IP
+                      ? '输入IP地址'
+                      : '输入协议端口'
+                  }
+                  v-model={list[idx].address}
+                />
+              </FormItem>
+              <FormItem
+                label={`${idx > 0 ? '' : '备注'}`}
+                property='description'>
+                <Input placeholder='备注信息' v-model={list[idx].description} />
+              </FormItem>
+              <FormItem label={`${idx > 0 ? '' : '操作'}`}>
+                <Button
+                  text
+                  class={'ml6'}
+                  theme='primary'
+                  onClick={() => {
+                    list.splice(idx, 1);
+                    formInstances.splice(idx, 1);
+                  }}>
+                  删除
+                </Button>
+              </FormItem>
+            </Form>
+          ))}
+          <Button
+            text
+            theme='primary'
+            class={'mt20'}
+            onClick={() => {
+              list.push({
+                address: '',
+                description: '',
+              });
+              formInstances.push(ref(null));
+            }}>
+            新增一行
+          </Button>
+        </div>
+      );
     };
 
     const getAccountList = async () => {
@@ -289,13 +348,16 @@ export default defineComponent({
             limit: 100,
             start: 0,
           },
-          filter: { op: 'and', rules: [
-            {
-              field: 'vendor',
-              op: 'eq',
-              value: VendorEnum.TCLOUD,
-            },
-          ] },
+          filter: {
+            op: 'and',
+            rules: [
+              {
+                field: 'vendor',
+                op: 'eq',
+                value: VendorEnum.TCLOUD,
+              },
+            ],
+          },
         }
         : {
           params: {
@@ -304,8 +366,7 @@ export default defineComponent({
         };
       const res = await accountStore.getAccountList(payload, accountStore.bizs);
       if (resourceAccountStore.resourceAccount?.id) {
-        accountList.value = res.data?.details
-          .filter(({ id }: {id: string}) => id === resourceAccountStore.resourceAccount.id);
+        accountList.value = res.data?.details.filter(({ id }) => id === resourceAccountStore.resourceAccount.id);
         return;
       }
       accountList.value = isResource ? res?.data?.details : res?.data;
@@ -317,25 +378,16 @@ export default defineComponent({
         onClosed={() => props.handleClose()}
         onConfirm={() => {
           handleSubmit();
-          props.handleClose();
         }}
         title='新建参数模板'
         maxHeight={'720px'}
         width={1000}>
-        <Form model={formData.value}>
+        <Form model={formData.value} ref={basicForm}>
           <FormItem label='云账号' property='account_id' required>
-            <Select
-              v-model={formData.value.account_id}
-            >
-              {
-                accountList.value.map(item => (
-                  <Option
-                    key={item.id}
-                    id={item.id}
-                    name={item.name}
-                  ></Option>
-                ))
-              }
+            <Select v-model={formData.value.account_id}>
+              {accountList.value.map(item => (
+                <Option key={item.id} id={item.id} name={item.name}></Option>
+              ))}
             </Select>
           </FormItem>
           <FormItem label='参数模板名称' property='name' required>
@@ -402,21 +454,7 @@ export default defineComponent({
           ) : null}
         </Form>
         {[TemplateType.IP, TemplateType.PORT].includes(formData.value.type) ? (
-          <>
-            {renderTable(formData.value.type)}
-            <Button
-              text
-              theme='primary'
-              class={'mt20'}
-              onClick={() => {
-                ipTableData.value.push({
-                  address: '',
-                  description: '',
-                });
-              }}>
-              新增一行
-            </Button>
-          </>
+          <>{renderTable(formData.value.type)}</>
         ) : null}
       </Dialog>
     );
