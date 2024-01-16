@@ -54,7 +54,7 @@ export const RESOURCE_TYPES = [
   },
   {
     name: '负载均衡',
-    type: 'load-balancer',
+    type: 'clbs',
   },
 ];
 
