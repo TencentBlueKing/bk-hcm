@@ -302,6 +302,15 @@ const businesseMenus: RouteRecordRaw[] = [
           activeKey: 'businessLoadBalancer',
         },
       },
+      {
+        path: '/business/cert',
+        name: '证书托管',
+        component: () => import('@/views/business/cert-manager/index'),
+        meta: {
+          activeKey: 'businessCert',
+          isShowBreadcrumb: true,
+        },
+      },
     ],
   },
   {

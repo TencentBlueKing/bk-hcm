@@ -41,14 +41,6 @@ export default defineComponent({
           field: 'actions',
         },
       ],
-      settings: {
-        fields: [],
-        checked: [],
-        limit: 0,
-        size: '',
-        sizeList: [],
-        showLineHeight: false,
-      },
       searchData: [
         {
           name: '监听器名称',
@@ -116,6 +108,16 @@ export default defineComponent({
           actions: 'Update',
         },
       ],
+      tableExtraOptions: {
+        settings: {
+          fields: [],
+          checked: [],
+          limit: 0,
+          size: '',
+          sizeList: [],
+          showLineHeight: false,
+        },
+      },
     });
     return () => (
       <div>

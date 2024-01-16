@@ -1,5 +1,5 @@
 import { defineComponent, ref } from 'vue';
-import { Button } from 'bkui-vue';
+import { Button, Tag } from 'bkui-vue';
 import { BkRadioGroup, BkRadioButton } from 'bkui-vue/lib/radio';
 import { Plus } from 'bkui-vue/lib/icon';
 import { useTable } from '@/hooks/useTable/useTable';
@@ -9,13 +9,38 @@ import DomainSidesliderContent from '../domain-sideslider-content';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import './index.scss';
 
-const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
-
 export default defineComponent({
   name: 'DomainList',
   setup() {
     const { columns, settings } = useColumns('domain');
     const tableColumns = [
+      {
+        type: 'selection',
+        width: 32,
+        minWidth: 32,
+        align: 'right',
+      },
+      {
+        label: '域名',
+        field: 'domain',
+        isDefaultShow: true,
+        render: ({ data, cell }: { data: any; cell: string }) => {
+          return (
+            <div class='set-default-operation-wrap'>
+              <span class='cell-value'>{cell}</span>
+              {data?.is_default ? (
+                <Tag theme='info' class='default-tag'>
+                  默认
+                </Tag>
+              ) : (
+                <Button text theme='primary' class='set-default-btn'>
+                  设为默认
+                </Button>
+              )}
+            </div>
+          );
+        },
+      },
       ...columns,
       {
         label: '操作',
@@ -30,13 +55,92 @@ export default defineComponent({
         },
       },
     ];
-    const searchData: any = [];
-    const searchUrl = `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vpcs/list`;
+    const searchData: any = [
+      {
+        name: '域名',
+        id: 'domain',
+      },
+      {
+        name: '协议',
+        id: 'protocol',
+      },
+      {
+        name: '端口',
+        id: 'port',
+      },
+      {
+        name: '轮询方式',
+        id: 'polling_method',
+      },
+      {
+        name: 'URL数量',
+        id: 'url_count',
+      },
+      {
+        name: '同步状态',
+        id: 'sync_status',
+      },
+    ];
+    const searchUrl = '';
     const { CommonTable } = useTable({
       columns: tableColumns,
-      settings: settings.value,
       searchUrl,
       searchData,
+      tableData: [
+        {
+          domain: 'example.com',
+          protocol: 'HTTP',
+          port: '80',
+          polling_method: '轮询',
+          url_count: '10',
+          sync_status: '成功',
+          is_default: false,
+        },
+        {
+          domain: 'example.org',
+          protocol: 'HTTPS',
+          port: '443',
+          polling_method: '加权轮询',
+          url_count: '15',
+          sync_status: '失败',
+          is_default: false,
+        },
+        {
+          domain: 'example.net',
+          protocol: 'FTP',
+          port: '21',
+          polling_method: '源地址哈希',
+          url_count: '5',
+          sync_status: '部分成功',
+          is_default: true,
+        },
+        {
+          domain: 'example.edu',
+          protocol: 'HTTP',
+          port: '8080',
+          polling_method: '最少连接',
+          url_count: '8',
+          sync_status: '绑定中',
+          is_default: false,
+        },
+        {
+          domain: 'example.biz',
+          protocol: 'TCP',
+          port: '22',
+          polling_method: '随机',
+          url_count: '12',
+          sync_status: '成功',
+          is_default: false,
+        },
+      ],
+      tableExtraOptions: {
+        settings: settings.value,
+        'row-class': ({ sync_status }: { sync_status: string }) => {
+          if (sync_status === '绑定中') {
+            return 'binding-row';
+          }
+        },
+      },
     });
 
     const isDomainSidesliderShow = ref(false);
@@ -74,6 +178,9 @@ export default defineComponent({
           label: '是否绑定目标组',
           field: 'isBoundToTargetGroup',
           filter: true,
+          render: ({ cell }: { cell: boolean }) => {
+            return cell ? <Tag theme='success'>已绑定</Tag> : <Tag>未绑定</Tag>;
+          },
         },
         {
           label: 'RS权重为O',
@@ -95,7 +202,7 @@ export default defineComponent({
           protocol: 'HTTP',
           port: 80,
           balanceMode: '轮询',
-          isBoundToTargetGroup: '是',
+          isBoundToTargetGroup: true,
           rsWeight: 1,
         },
         {
@@ -104,7 +211,7 @@ export default defineComponent({
           protocol: 'HTTPS',
           port: 443,
           balanceMode: '最小连接数',
-          isBoundToTargetGroup: '否',
+          isBoundToTargetGroup: false,
           rsWeight: 5,
         },
         {
@@ -113,7 +220,7 @@ export default defineComponent({
           protocol: 'TCP',
           port: 21,
           balanceMode: '源IP',
-          isBoundToTargetGroup: '是',
+          isBoundToTargetGroup: true,
           rsWeight: 10,
         },
       ],
@@ -152,7 +259,7 @@ export default defineComponent({
       // batch delete handler
     };
     return () => (
-      <div class='has-selection'>
+      <div class='domain-list-page has-selection'>
         <CommonTable>
           {{
             operation: () => (

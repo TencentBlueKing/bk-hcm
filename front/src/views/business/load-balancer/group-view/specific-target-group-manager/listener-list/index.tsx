@@ -109,10 +109,12 @@ export default defineComponent({
 
     const { CommonTable } = useTable({
       columns,
-      settings: settings.value,
       searchData,
       searchUrl,
       tableData,
+      tableExtraOptions: {
+        settings: settings.value,
+      },
     });
     return () => <div class='listener-list-page'>
       <CommonTable></CommonTable>

@@ -137,7 +137,10 @@ watch(
         ></business-selector>
       </div>
     </div>
-    <FormItem label="云账号" required :property="type === ResourceTypeEnum.SUBNET ? 'account_id' : 'cloudAccountId'">
+    <FormItem
+      label="云账号"
+      required
+      :property="[ResourceTypeEnum.SUBNET, ResourceTypeEnum.CLB].includes(type) ? 'account_id' : 'cloudAccountId'">
       <account-selector
         v-model="selectedCloudAccountId"
         :disabled="!!resourceAccountStore?.resourceAccount?.id"

@@ -1,7 +1,7 @@
 import http from '@/http';
 import { QueryRuleOPEnum } from '@/typings/common';
 import { Loading, SearchSelect, Table } from 'bkui-vue';
-import type { Column, Settings } from 'bkui-vue/lib/table/props';
+import type { Column } from 'bkui-vue/lib/table/props';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
@@ -9,12 +9,11 @@ import Empty from '@/components/empty';
 
 export interface IProp {
   columns: Array<Column>;
-  settings?: Settings;
   searchData: Array<ISearchItem>;
   searchUrl: string; // 如`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/sub_accounts/list`，
   tableData?: Array<Record<string, any>>; // 临时看看效果
-  noSearch?: boolean;
-  tableExtraOptions?: object; // 表格属性及事件
+  noSearch?: boolean; // 是否不需要搜索
+  tableExtraOptions?: object; // 额外的表格属性及事件
 }
 
 export const useTable = (props: IProp) => {
@@ -79,7 +78,6 @@ export const useTable = (props: IProp) => {
               class='table-container'
               data={dataList.value}
               columns={props.columns}
-              settings={props.settings}
               pagination={pagination}
               remotePagination
               showOverflowTooltip

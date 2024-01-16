@@ -166,7 +166,6 @@ export default defineComponent({
     };
     const { CommonTable } = useTable({
       columns: tableColumns,
-      settings: tableSettings.value,
       searchData: [
         {
           name: 'URL路径',
@@ -236,6 +235,14 @@ export default defineComponent({
           actions: 'Update',
         },
       ],
+      tableExtraOptions: {
+        settings: tableSettings.value,
+        'row-class': ({ syncStatus }: { syncStatus: string }) => {
+          if (syncStatus === 'a') {
+            return 'binding-row';
+          }
+        },
+      },
     });
 
     const handleBatchDelete = () => {};

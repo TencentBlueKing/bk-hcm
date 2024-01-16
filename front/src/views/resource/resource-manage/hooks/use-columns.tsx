@@ -21,6 +21,10 @@ import { useCloudAreaStore } from '@/store/useCloudAreaStore';
 import StatusAbnormal from '@/assets/image/Status-abnormal.png';
 import StatusNormal from '@/assets/image/Status-normal.png';
 import StatusUnknown from '@/assets/image/Status-unknown.png';
+import StatusSuccess from '@/assets/image/success-account.png';
+import StatusFailure from '@/assets/image/failed-account.png';
+import StatusPartialSuccess from '@/assets/image/result-waiting.png';
+import StatusLoading from '@/assets/image/status_loading.png';
 
 import {
   HOST_RUNNING_STATUS,
@@ -1230,18 +1234,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
 
   const domainColumns = [
     {
-      type: 'selection',
-      width: 32,
-      minWidth: 32,
-      onlyShowOnList: true,
-      align: 'right',
-    },
-    {
-      label: '域名',
-      field: 'domain',
-      isDefaultShow: true,
-    },
-    {
       label: '协议',
       field: 'protocol',
       isDefaultShow: true,
@@ -1255,7 +1247,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: '轮询方式',
-      field: 'health_check_type',
+      field: 'polling_method',
       isDefaultShow: true,
       filter: true,
     },
@@ -1270,6 +1262,36 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'sync_status',
       isDefaultShow: true,
       filter: true,
+      render: ({ cell }: { cell: string }) => {
+        let icon;
+        switch (cell) {
+          case '绑定中':
+            icon = StatusLoading;
+            break;
+          case '成功':
+            icon = StatusSuccess;
+            break;
+          case '失败':
+            icon = StatusFailure;
+            break;
+          case '部分成功':
+            icon = StatusPartialSuccess;
+            break;
+        }
+        return (
+          <div class='sync_status_wrap'>
+            <img class={`sync_status_icon${cell === '绑定中' ? ' spin-icon' : ''}`} src={icon} alt='' />
+            <span
+              class={cell === '部分成功' ? 'sync-partial-success-status_text' : ''}
+              v-bk-tooltips={{
+                content: '成功 89 个，失败 105 个',
+                disabled: cell !== '部分成功',
+              }}>
+              {cell}
+            </span>
+          </div>
+        );
+      },
     },
   ];
 
@@ -1365,6 +1387,54 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
   ];
 
+  const certColumns = [
+    {
+      label: '资源ID',
+      field: 'resourceId',
+    },
+    {
+      label: '云厂商',
+      field: 'cloudProvider',
+    },
+    {
+      label: '证书类型',
+      field: 'certificateType',
+    },
+    {
+      label: '域名',
+      field: 'domainName',
+    },
+    {
+      label: '上传时间',
+      field: 'uploadTime',
+    },
+    {
+      label: '过期时间',
+      field: 'expirationTime',
+    },
+    {
+      label: '证书状态',
+      field: 'certificateStatus',
+      render: ({ cell }: { cell: string }) => {
+        let icon;
+        switch (cell) {
+          case '正常':
+            icon = StatusNormal;
+            break;
+          case '已过期':
+            icon = StatusAbnormal;
+            break;
+        }
+        return (
+          <div class='sync_status_wrap'>
+            <img class='sync_status_icon' src={icon} alt='' />
+            <span>{cell}</span>
+          </div>
+        );
+      },
+    },
+  ];
+
   const columnsMap = {
     vpc: vpcColumns,
     subnet: subnetColumns,
@@ -1383,6 +1453,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     domain: domainColumns,
     url: urlColumns,
     targetGroupListener: targetGroupListenerColumns,
+    cert: certColumns,
   };
 
   let columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);

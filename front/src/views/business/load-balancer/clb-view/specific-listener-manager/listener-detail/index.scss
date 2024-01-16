@@ -51,4 +51,15 @@
       padding-bottom: 24px;
     }
   }
+
+  .target-group-wrap {
+    display: flex;
+    align-items: center;
+
+    .loading-icon {
+      margin-left: 10px;
+      width: 14px;
+      height: 14px;  
+    }
+  }
 }

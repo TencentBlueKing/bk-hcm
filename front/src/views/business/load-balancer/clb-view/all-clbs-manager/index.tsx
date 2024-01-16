@@ -23,9 +23,11 @@ export default defineComponent({
     const searchUrl = `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vpcs/list`;
     const { CommonTable } = useTable({
       columns: tableColumns,
-      settings: settings.value,
       searchData,
       searchUrl,
+      tableExtraOptions: {
+        settings: settings.value,
+      },
     });
 
     const handleApply = () => {

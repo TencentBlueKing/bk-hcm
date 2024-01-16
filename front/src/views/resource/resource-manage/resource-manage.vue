@@ -103,7 +103,7 @@ const componentMap = {
   routing: RoutingManage,
   image: ImageManage,
   'network-interface': NetworkInterfaceManage,
-  'load-balancer': LoadBalancerManage,
+  clbs: LoadBalancerManage,
 };
 
 // 标签相关数据
@@ -503,7 +503,7 @@ getResourceAccountList();
           >
             <span
               v-if="
-                ['host', 'vpc', 'drive', 'security', 'subnet', 'ip'].includes(
+                ['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clbs'].includes(
                   activeTab,
                 )
               "
@@ -520,7 +520,7 @@ getResourceAccountList();
                   }
                 }"
               >
-                {{ activeTab === 'host' ? '购买' : '新建' }}
+                {{ ['host', 'clbs'].includes(activeTab) ? '购买' : '新建' }}
               </bk-button>
             </span>
           </component>
