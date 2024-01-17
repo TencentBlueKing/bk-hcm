@@ -8,6 +8,7 @@ import {
   HUAWEI_TYPE_LIST,
   AZURE_PROTOCOL_LIST,
   SECURITY_RULES_MAP,
+  TCLOUD_SOURCE_IP_TYPE_LIST,
 } from '@/constants';
 import Confirm from '@/components/confirm';
 import { useI18n } from 'vue-i18n';
@@ -69,6 +70,9 @@ export default defineComponent({
     isEdit: {
       type: Boolean as PropType<boolean>,
     },
+    templateData: {
+      type: Object as PropType<Record<string, Array<any>>>,
+    },
   },
 
   emits: ['update:isShow', 'submit'],
@@ -81,7 +85,6 @@ export default defineComponent({
     const protocolList = ref<any>(SECURITY_RULES_MAP[props.vendor]);
 
     const securityGroupSource = ref([
-      // 华为源
       {
         id: 'remote_ip_prefix',
         name: t('IP地址'),
@@ -162,7 +165,9 @@ export default defineComponent({
       | 'source_address_prefix' // AZURE 源 IP地址
       | 'cloud_source_security_group_ids' // AZURE 源 安全组
       | 'remote_ip_prefix' // HUAWEI IP地址
-      | 'cloud_remote_group_id', // HUAWEI 安全组
+      | 'cloud_remote_group_id' // HUAWEI 安全组
+      | 'cloud_address_id' // 腾讯云 IP参数模板
+      | 'cloud_address_group_id', // 腾讯云 IP参数模板组
     ) => {
       [
         'cloud_target_security_group_id',
@@ -172,6 +177,8 @@ export default defineComponent({
         'cloud_source_security_group_ids',
         'remote_ip_prefix',
         'cloud_remote_group_id',
+        'cloud_address_id',
+        'cloud_address_group_id',
       ].forEach(dataKey => dataKey !== key && delete data[dataKey]);
 
       const prefix = () => (
@@ -199,15 +206,34 @@ export default defineComponent({
         </>
       );
 
+      let list = [];
+      switch (key) {
+        case 'cloud_target_security_group_id':
+        case 'cloud_source_security_group_ids':
+        case 'cloud_remote_group_id': {
+          list = props.relatedSecurityGroups;
+          break;
+        }
+        case 'cloud_address_id': {
+          list = props.templateData.ipList;
+          break;
+        }
+        case 'cloud_address_group_id': {
+          list = props.templateData.ipGroupList;
+        }
+      }
+
       return [
         'cloud_target_security_group_id',
         'cloud_source_security_group_ids',
         'cloud_remote_group_id',
+        'cloud_address_id',
+        'cloud_address_group_id',
       ].includes(key) ? (
         <div class={'security-group-select w120'}>
           {prefix()}
           <Select v-model={data[key]}>
-            {props.relatedSecurityGroups.map((securityGroup: {
+            {list.map((securityGroup: {
               cloud_id: string | number | symbol;
               name: string;
             }) => (
@@ -323,7 +349,7 @@ export default defineComponent({
                   )}>
                   {props.vendor === 'azure' ? (
                     <FormItem
-                      class="w150"
+                      class='w150'
                       label={index === 0 ? t('名称') : ''}
                       required
                       property='name'>
@@ -335,7 +361,7 @@ export default defineComponent({
                   {props.vendor !== 'tcloud' && props.vendor !== 'aws' ? (
                     <>
                       <FormItem
-                        class="w150"
+                        class='w150'
                         label={index === 0 ? t('优先级') : ''}
                         required
                         property='priority'
@@ -352,7 +378,7 @@ export default defineComponent({
                   )}
                   {props.vendor === 'huawei' ? (
                     <FormItem
-                      class="w150"
+                      class='w150'
                       label={index === 0 ? t('类型') : ''}
                       property='ethertype'
                       required>
@@ -372,7 +398,7 @@ export default defineComponent({
                   {props.vendor === 'azure' ? (
                     <>
                       <FormItem
-                        class="w200"
+                        class='w200'
                         label={index === 0 ? t('源') : ''}
                         property='sourceAddress'
                         required
@@ -385,7 +411,7 @@ export default defineComponent({
                         )}
                       </FormItem>
                       <FormItem
-                        class="w200"
+                        class='w200'
                         label={index === 0 ? t('源端口') : ''}
                         property='source_port_range'
                         required
@@ -395,7 +421,7 @@ export default defineComponent({
                           v-model={data.source_port_range}></Input>
                       </FormItem>
                       <FormItem
-                        class="w249"
+                        class='w249'
                         label={index === 0 ? t('目标') : ''}
                         property='targetAddress'
                         required
@@ -408,7 +434,7 @@ export default defineComponent({
                         )}
                       </FormItem>
                       <FormItem
-                        class="w200"
+                        class='w200'
                         label={index === 0 ? t('目标协议端口') : ''}
                         property='destination_port_range'>
                         <Input
@@ -491,7 +517,9 @@ export default defineComponent({
                           data.sourceAddress as
                             | 'cloud_target_security_group_id'
                             | 'ipv6_cidr'
-                            | 'ipv4_cidr',
+                            | 'ipv4_cidr'
+                            | 'cloud_address_id'
+                            | 'cloud_address_group_id',
                         )}
                       </FormItem>
                     </>
@@ -500,7 +528,7 @@ export default defineComponent({
                   )}
                   {props.vendor !== 'aws' ? ( // aws没有策略
                     <FormItem
-                      class="w100"
+                      class='w100'
                       label={index === 0 ? t('策略') : ''}
                       property={props.vendor === 'azure' ? 'access' : 'action'}
                       required>
@@ -601,6 +629,7 @@ export default defineComponent({
                 name: t('安全组'),
               },
             ],
+            ...(props.vendor === 'tcloud' ? TCLOUD_SOURCE_IP_TYPE_LIST : []),
           ];
           sourceAddressData = securityGroupSource.value.filter((e: any) => resourceStore.securityRuleDetail[e.id]);
         } else if (props.vendor === 'azure') {
@@ -710,7 +739,10 @@ export default defineComponent({
         } else if (e.protocol === '-1') {
           e.port = '-1';
         }
-        if (e.protocol === 'huaweiAll' || (e.protocol === 'icmp' && props.vendor === VendorEnum.HUAWEI)) {
+        if (
+          e.protocol === 'huaweiAll'
+          || (e.protocol === 'icmp' && props.vendor === VendorEnum.HUAWEI)
+        ) {
           e.port = undefined;
         }
       });

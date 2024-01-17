@@ -187,6 +187,17 @@ export const IP_TYPE_LIST = [
   },
 ];
 
+export const TCLOUD_SOURCE_IP_TYPE_LIST = [
+  {
+    id: 'cloud_address_id',
+    name: 'IP地址',
+  },
+  {
+    id: 'cloud_address_group_id',
+    name: 'IP地址组',
+  },
+];
+
 export const HUAWEI_TYPE_LIST = [
   {
     id: 'ipv4',
