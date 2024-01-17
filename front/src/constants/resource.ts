@@ -296,6 +296,14 @@ export const TCLOUD_SECURITY_RULE_PROTOCALS = [
     id: 'gre',
     name: 'GRE',
   },
+  {
+    id: 'cloud_service_id',
+    name: '参数模板-端口',
+  },
+  {
+    id: 'cloud_service_group_id',
+    name: '参数模板-端口组',
+  },
 ];
 
 export const AWS_SECURITY_RULE_PEOTOCALS = [

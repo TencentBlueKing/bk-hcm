@@ -33,6 +33,8 @@ export type SecurityRule = {
   access: string;
   action: string;
   memo: string;
+  cloud_service_id: string;
+  cloud_service_group_id: string;
 };
 
 export enum IP_CIDR {
@@ -477,34 +479,71 @@ export default defineComponent({
                             : '请输入0-65535之间数字或者ALL'
                         }>
                         {
-                          <Input
-                            disabled={
-                              data?.protocol === 'ALL'
-                              || data?.protocol === 'huaweiAll'
-                              || data?.protocol === '-1'
-                              || ['icmpv6', 'gre', 'icmp'].includes(data?.protocol)
-                            }
-                            placeholder='请输入0-65535之间数字、ALL'
-                            class='input-select-warp'
-                            v-model={data.port}>
-                            {{
-                              prefix: () => (
-                                <Select
-                                  v-model={data.protocol}
-                                  clearable={false}
-                                  class='input-prefix-select'
-                                  onChange={handleChange}>
-                                  {protocolList.value.map((ele: any) => (
-                                    <Option
-                                      value={ele.id}
-                                      label={ele.name}
-                                      key={ele.id}
-                                    />
-                                  ))}
-                                </Select>
-                              ),
-                            }}
-                          </Input>
+                          (() => {
+                            const prefix = () => (
+                              <Select
+                                v-model={data.protocol}
+                                clearable={false}
+                                class='input-prefix-large-select'
+                                onChange={handleChange}>
+                                {protocolList.value.map((ele: any) => (
+                                  <Option
+                                    value={ele.id}
+                                    label={ele.name}
+                                    key={ele.id}
+                                  />
+                                ))}
+                              </Select>
+                            );
+
+                            return ['cloud_service_id', 'cloud_service_group_id'].includes(data.protocol) ? (
+                              <div class={'flex-row'}>
+                                {
+                                  prefix()
+                                }
+                                {
+                                  data.protocol === 'cloud_service_id' ? (
+                                    <Select v-model={data.cloud_service_id}>
+                                      {
+                                         props.templateData.portList.map(item => (
+                                          <Option
+                                            name={item.name}
+                                            id={item.cloud_id}
+                                            key={item.cloud_id}
+                                          />
+                                         ))
+                                      }
+                                    </Select>
+                                  ) : (
+                                    <Select v-model={data.cloud_service_group_id}>
+                                      {
+                                        props.templateData.portGroupList.map(item => (
+                                          <Option
+                                            name={item.name}
+                                            id={item.cloud_id}
+                                            key={item.cloud_id}
+                                          />
+                                        ))
+                                      }
+                                    </Select>
+                                  )
+                                }
+                              </div>
+                            ) : (<Input
+                              disabled={
+                                data?.protocol === 'ALL'
+                                || data?.protocol === 'huaweiAll'
+                                || data?.protocol === '-1'
+                                || ['icmpv6', 'gre', 'icmp'].includes(data?.protocol)
+                              }
+                              placeholder='请输入0-65535之间数字、ALL'
+                              class='input-select-warp'
+                              v-model={data.port}>
+                              {{
+                                prefix,
+                              }}
+                            </Input>);
+                          })()
                         }
                       </FormItem>
                       <FormItem
@@ -678,10 +717,6 @@ export default defineComponent({
 
     const handleConfirm = async () => {
       try {
-        console.log(
-          666666,
-          formInstances.map(formInstance => formInstance.value.validate()),
-        );
         await Promise.all(formInstances.map(formInstance => formInstance.value.validate()));
       } catch (err) {
         console.log(err);
@@ -699,6 +734,7 @@ export default defineComponent({
           e.destination_port_ranges = e.destination_port_range.split(',');
           delete e.destination_port_range;
         }
+        if (['cloud_service_id', 'cloud_service_group_id'].includes(e.protocol)) delete e.protocol;
       }
 
       emit('submit', tableData.value);
