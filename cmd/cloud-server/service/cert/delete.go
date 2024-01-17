@@ -87,9 +87,7 @@ func (svc *certSvc) deleteCertSvc(cts *rest.Contexts, validHandler handler.Valid
 	deleteReq := &dataproto.CertBatchDeleteReq{
 		Filter: tools.EqualExpression("id", id),
 	}
-	if err = svc.client.DataService().Global.BatchDeleteCert(
-		cts.Kit.Ctx, cts.Kit.Header(), deleteReq,
-	); err != nil {
+	if err = svc.client.DataService().Global.BatchDeleteCert(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
 		logs.Errorf("[%s] request dataservice to batch delete cert failed, id: %s, err: %v, rid: %s",
 			enumor.TCloud, id, err, cts.Kit.Rid)
 		return nil, err

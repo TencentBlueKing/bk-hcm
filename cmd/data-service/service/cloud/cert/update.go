@@ -47,13 +47,26 @@ func (svc *certSvc) BatchUpdateCert(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	updateData := &tablecert.SslCertTable{
-		BkBizID:          req.BkBizID,
-		Domain:           req.Domain,
-		CertType:         req.CertType,
-		CertStatus:       req.CertStatus,
-		CloudExpiredTime: req.CloudExpiredTime,
-		Reviser:          cts.Kit.User,
+		BkBizID: req.BkBizID,
+		Reviser: cts.Kit.User,
 	}
+
+	if len(req.Domain) > 0 && !req.Domain.IsEmpty() {
+		updateData.Domain = req.Domain
+	}
+
+	if len(req.CertType) > 0 {
+		updateData.CertType = req.CertType
+	}
+
+	if len(req.CertStatus) > 0 {
+		updateData.CertStatus = req.CertStatus
+	}
+
+	if len(req.CloudExpiredTime) > 0 {
+		updateData.CloudExpiredTime = req.CloudExpiredTime
+	}
+
 	if err := svc.dao.Cert().Update(cts.Kit, tools.ContainersExpression("id", req.IDs), updateData); err != nil {
 		return nil, err
 	}

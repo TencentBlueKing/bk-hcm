@@ -23,6 +23,7 @@ import (
 	"hcm/pkg/api/core"
 	protoaudit "hcm/pkg/api/data-service/audit"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	tableaudit "hcm/pkg/dal/table/audit"
@@ -30,6 +31,53 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
+
+func (ad Audit) certAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudResourceAssignInfo) (
+	[]*tableaudit.AuditTable, error) {
+
+	ids := make([]string, 0, len(assigns))
+	for _, one := range assigns {
+		ids = append(ids, one.ResID)
+	}
+	idMap, err := ad.listCert(kt, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	audits := make([]*tableaudit.AuditTable, 0, len(assigns))
+	for _, one := range assigns {
+		tmpData, exist := idMap[one.ResID]
+		if !exist {
+			continue
+		}
+
+		changed := make(map[string]interface{})
+		if one.AssignedResType != enumor.BizAuditAssignedResType {
+			return nil, errf.New(errf.InvalidParameter, "assigned resource type is invalid")
+		}
+		changed["bk_biz_id"] = one.AssignedResID
+
+		audits = append(audits, &tableaudit.AuditTable{
+			ResID:      one.ResID,
+			CloudResID: tmpData.CloudID,
+			ResName:    tmpData.Name,
+			ResType:    enumor.SslCertAuditResType,
+			Action:     enumor.Assign,
+			BkBizID:    tmpData.BkBizID,
+			Vendor:     tmpData.Vendor,
+			AccountID:  tmpData.AccountID,
+			Operator:   kt.User,
+			Source:     kt.GetRequestSource(),
+			Rid:        kt.Rid,
+			AppCode:    kt.AppCode,
+			Detail: &tableaudit.BasicDetail{
+				Changed: changed,
+			},
+		})
+	}
+
+	return audits, nil
+}
 
 func (ad Audit) certDeleteAuditBuild(kt *kit.Kit, deletes []protoaudit.CloudResourceDeleteInfo) (
 	[]*tableaudit.AuditTable, error) {
