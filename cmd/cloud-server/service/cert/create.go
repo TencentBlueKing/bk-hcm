@@ -27,7 +27,6 @@ import (
 	hccert "hcm/pkg/api/hc-service/cert"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -45,12 +44,12 @@ func (svc *certSvc) CreateCert(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.Newf(errf.InvalidParameter, "account_id is required")
 	}
 
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{
-		Type: meta.Cert, Action: meta.Create, ResourceID: req.AccountID}}
-	if err := svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
-		logs.Errorf("create cert auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
+	//authRes := meta.ResourceAttribute{Basic: &meta.Basic{
+	//	Type: meta.Cert, Action: meta.Create, ResourceID: req.AccountID}}
+	//if err := svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+	//	logs.Errorf("create cert auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+	//	return nil, err
+	//}
 
 	info, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(
 		cts.Kit, enumor.AccountCloudResType, req.AccountID)

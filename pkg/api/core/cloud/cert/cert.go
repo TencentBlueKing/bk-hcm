@@ -33,7 +33,7 @@ type BaseCert struct {
 	Vendor           enumor.Vendor `json:"vendor"`
 	BkBizID          int64         `json:"bk_biz_id"`
 	AccountID        string        `json:"account_id"`
-	Domain           *[]string     `json:"domain"`
+	Domain           []*string     `json:"domain"`
 	CertType         string        `json:"cert_type"`
 	CloudCreatedTime string        `json:"cloud_created_time"`
 	CloudExpiredTime string        `json:"cloud_expired_time"`

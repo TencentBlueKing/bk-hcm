@@ -22,6 +22,7 @@ package tcloud
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"hcm/cmd/hc-service/logics/res-sync/common"
 	typecert "hcm/pkg/adaptor/types/cert"
@@ -38,6 +39,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
 )
 
@@ -61,14 +63,16 @@ func (cli *client) Cert(kt *kit.Kit, params *SyncBaseParams, opt *SyncCertOption
 	if err != nil {
 		return nil, err
 	}
-	logs.Infof("[%s] hcservice sync cert listCertFromCloud success, params: %+v, cloud_cert_count: %d, rid: %s",
+
+	logs.Errorf("[%s] hcservice sync cert listCertFromCloud success, params: %+v, cloud_cert_count: %d, rid: %s",
 		enumor.TCloud, params, len(certFromCloud), kt.Rid)
 
 	certFromDB, err := cli.listCertFromDB(kt, params)
 	if err != nil {
 		return nil, err
 	}
-	logs.Infof("[%s] hcservice sync cert listCertFromDB success, db_cert_count: %d, rid: %s",
+
+	logs.Errorf("[%s] hcservice sync cert listCertFromDB success, db_cert_count: %d, rid: %s",
 		enumor.TCloud, len(certFromDB), kt.Rid)
 
 	if len(certFromCloud) == 0 && len(certFromDB) == 0 {
@@ -78,7 +82,7 @@ func (cli *client) Cert(kt *kit.Kit, params *SyncBaseParams, opt *SyncCertOption
 	addSlice, updateMap, delCloudIDs := common.Diff[typecert.TCloudCert, *corecert.Cert[corecert.TCloudCertExtension]](
 		certFromCloud, certFromDB, isCertChange)
 
-	logs.Infof("[%s] hcservice sync cert diff success, addNum: %d, updateNum: %d, delNum: %d, rid: %s",
+	logs.Errorf("[%s] hcservice sync cert diff success, addNum: %d, updateNum: %d, delNum: %d, rid: %s",
 		enumor.TCloud, len(addSlice), len(updateMap), len(delCloudIDs), kt.Rid)
 
 	if len(delCloudIDs) > 0 {
@@ -132,7 +136,7 @@ func (cli *client) deleteCert(kt *kit.Kit, accountID, region string, delCloudIDs
 		return err
 	}
 
-	logs.Infof("[%s] sync cert to delete cert success, accountID: %s, count: %d, rid: %s", enumor.TCloud,
+	logs.Errorf("[%s] sync cert to delete cert success, accountID: %s, count: %d, rid: %s", enumor.TCloud,
 		accountID, len(delCloudIDs), kt.Rid)
 
 	return nil
@@ -176,7 +180,7 @@ func (cli *client) updateCert(kt *kit.Kit, accountID string, updateMap map[strin
 		return err
 	}
 
-	logs.Infof("[%s] sync cert to update cert success, accountID: %s, count: %d, rid: %s", enumor.TCloud,
+	logs.Errorf("[%s] sync cert to update cert success, accountID: %s, count: %d, rid: %s", enumor.TCloud,
 		accountID, len(updateMap), kt.Rid)
 
 	return nil
@@ -210,18 +214,21 @@ func (cli *client) createCert(kt *kit.Kit, accountID string, opt *SyncCertOption
 			},
 		}
 
+		logs.Errorf("[%s] request dataservice to create tcloud cert DEBUG:218, accountID: %s, createReq: %+v, opt: %+v, rid: %s",
+			enumor.TCloud, accountID, cert, opt, kt.Rid)
+
 		createReq.Certs = append(createReq.Certs, cert...)
 	}
 
-	_, err := cli.dbCli.TCloud.BatchCreateCert(kt.Ctx, kt.Header(), createReq)
+	newIDs, err := cli.dbCli.TCloud.BatchCreateCert(kt.Ctx, kt.Header(), createReq)
 	if err != nil {
 		logs.Errorf("[%s] request dataservice to create tcloud cert failed, createReq: %+v, err: %v, rid: %s",
 			enumor.TCloud, createReq, err, kt.Rid)
 		return err
 	}
 
-	logs.Infof("[%s] sync cert to create cert success, accountID: %s, count: %d, rid: %s", enumor.TCloud,
-		accountID, len(addSlice), kt.Rid)
+	logs.Errorf("[%s] sync cert to create cert success, accountID: %s, count: %d, newIDs: %v, opt: %+v, rid: %s", enumor.TCloud,
+		accountID, len(addSlice), newIDs, opt, kt.Rid)
 
 	return nil
 }
@@ -290,6 +297,10 @@ func isCertChange(cloud typecert.TCloudCert, db *corecert.Cert[corecert.TCloudCe
 		return true
 	}
 
+	if !assert.IsPtrStringSliceEqual(cloud.SubjectAltName, db.Domain) {
+		return true
+	}
+
 	if converter.PtrToVal(cloud.CertificateType) != db.CertType {
 		return true
 	}
@@ -299,7 +310,22 @@ func isCertChange(cloud typecert.TCloudCert, db *corecert.Cert[corecert.TCloudCe
 		return true
 	}
 
-	if converter.PtrToVal(cloud.CertEndTime) != db.CloudExpiredTime {
+	cloudEndTime := converter.PtrToVal(cloud.CertEndTime)
+	if len(cloudEndTime) == 0 && len(db.CloudExpiredTime) > 0 {
+		return true
+	}
+
+	if len(cloudEndTime) > 0 && len(db.CloudExpiredTime) == 0 {
+		return true
+	}
+
+	expireTime, err := time.Parse(constant.TimeStdFormat, db.CloudExpiredTime)
+	if err != nil {
+		logs.Errorf("cert sync expired time parse failed, dbExpireTime: %s, err: %v", db.CloudExpiredTime, err)
+		return true
+	}
+
+	if cloudEndTime != expireTime.Format(constant.DateTimeLayout) {
 		return true
 	}
 

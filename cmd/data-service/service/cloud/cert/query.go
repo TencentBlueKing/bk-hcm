@@ -33,6 +33,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 )
 
@@ -77,7 +78,7 @@ func (svc *certSvc) ListCert(cts *rest.Contexts) (interface{}, error) {
 }
 
 func convTableToBaseCert(one *tablecert.SslCertTable) (*corecert.BaseCert, error) {
-	domain := new([]string)
+	domain := new([]*string)
 	err := json.UnmarshalFromString(string(one.Domain), domain)
 	if err != nil {
 		return nil, fmt.Errorf("UnmarshalFromString db domain failed, err: %v", err)
@@ -90,7 +91,7 @@ func convTableToBaseCert(one *tablecert.SslCertTable) (*corecert.BaseCert, error
 		Vendor:           one.Vendor,
 		BkBizID:          one.BkBizID,
 		AccountID:        one.AccountID,
-		Domain:           domain,
+		Domain:           converter.PtrToVal(domain),
 		CertType:         one.CertType,
 		CertStatus:       one.CertStatus,
 		CloudCreatedTime: one.CloudCreatedTime,
