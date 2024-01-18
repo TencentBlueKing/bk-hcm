@@ -20,6 +20,7 @@
 package tcloud
 
 import (
+	"errors"
 	"fmt"
 
 	"hcm/pkg/adaptor/poller"
@@ -33,6 +34,7 @@ import (
 	"hcm/pkg/tools/slice"
 
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
+	terr "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
 	ssl "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/ssl/v20191205"
 )
 
@@ -156,6 +158,13 @@ func (t *TCloudImpl) DeleteCert(kt *kit.Kit, opt *typecert.TCloudDeleteOption) e
 
 	_, err = client.DeleteCertificateWithContext(kt.Ctx, req)
 	if err != nil {
+		// 兼容证书不存在
+		var tErr *terr.TencentCloudSDKError
+		if errors.As(err, &tErr) && tErr.GetCode() == "FailedOperation.CertificateNotFound" {
+			logs.Errorf("delete cert instance failed, cert not exist, opt: %+v, err: %v, rid: %s", opt, err, kt.Rid)
+			return nil
+		}
+
 		logs.Errorf("delete cert instance failed, opt: %+v, err: %v, rid: %s", opt, err, kt.Rid)
 		return err
 	}

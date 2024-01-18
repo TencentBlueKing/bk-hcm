@@ -165,7 +165,7 @@ func (svc *certSvc) DeleteTCloudCert(cts *rest.Contexts) (interface{}, error) {
 		CloudID: listResp.Details[0].CloudID,
 	}
 	if err = client.DeleteCert(cts.Kit, opt); err != nil {
-		logs.Errorf("request adaptor to delete tcloud cert failed, err: %v, opt: %v, rid: %s", err, opt, cts.Kit.Rid)
+		logs.Errorf("request adaptor to delete tcloud cert failed, err: %v, opt: %+v, rid: %s", err, opt, cts.Kit.Rid)
 		return nil, err
 	}
 

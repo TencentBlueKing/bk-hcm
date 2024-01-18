@@ -25,7 +25,6 @@ import (
 	protocert "hcm/pkg/api/hc-service/cert"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
@@ -83,16 +82,6 @@ func (svc *certSvc) deleteCertSvc(cts *rest.Contexts, validHandler handler.Valid
 	})
 	if err != nil {
 		logs.Errorf("[%s] request hcservice to delete cert failed, id: %s, err: %v, rid: %s",
-			enumor.TCloud, id, err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	// delete tcloud db cert
-	deleteReq := &dataproto.CertBatchDeleteReq{
-		Filter: tools.EqualExpression("id", id),
-	}
-	if err = svc.client.DataService().Global.BatchDeleteCert(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
-		logs.Errorf("[%s] request dataservice to batch delete cert failed, id: %s, err: %v, rid: %s",
 			enumor.TCloud, id, err, cts.Kit.Rid)
 		return nil, err
 	}
