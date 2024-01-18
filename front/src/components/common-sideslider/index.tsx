@@ -26,7 +26,6 @@ export default defineComponent({
 
     const handleSubmit = () => {
       ctx.emit('handleSubmit');
-      triggerShow(false);
     };
 
     return () => (

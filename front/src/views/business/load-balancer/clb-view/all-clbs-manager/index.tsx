@@ -4,7 +4,6 @@ import { Button } from 'bkui-vue';
 import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import './index.scss';
-const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export default defineComponent({
   name: 'AllClbsManager',
@@ -20,11 +19,10 @@ export default defineComponent({
       },
     ];
     const searchData: any = [];
-    const searchUrl = `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vpcs/list`;
     const { CommonTable } = useTable({
       columns: tableColumns,
       searchData,
-      searchUrl,
+      type: 'clbs',
       tableExtraOptions: {
         settings: settings.value,
       },

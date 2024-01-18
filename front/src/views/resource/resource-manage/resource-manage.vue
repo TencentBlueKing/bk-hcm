@@ -11,6 +11,7 @@ import RoutingManage from './children/manage/routing-manage.vue';
 import ImageManage from './children/manage/image-manage.vue';
 import NetworkInterfaceManage from './children/manage/network-interface-manage.vue';
 import LoadBalancerManage from './children/manage/load-balancer-manage.vue';
+import CertManager from '@/views/business/cert-manager';
 // import AccountSelector from '@/components/account-selector/index.vue';
 import { DISTRIBUTE_STATUS_LIST } from '@/constants';
 import { useDistributionStore } from '@/store/distribution';
@@ -104,6 +105,7 @@ const componentMap = {
   image: ImageManage,
   'network-interface': NetworkInterfaceManage,
   clbs: LoadBalancerManage,
+  certs: CertManager,
 };
 
 // 标签相关数据

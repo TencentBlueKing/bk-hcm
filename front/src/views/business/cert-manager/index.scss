@@ -11,6 +11,28 @@
     background-color: #fff;
     box-sizing: border-box;
   }
+
+  &.has-selection {
+    padding: 0;
+    .common-card-wrap {
+      padding: 0;
+    }
+    .bk-table .bk-table-head .bk-checkbox {
+      vertical-align: middle;
+    }
+    .bk-table .bk-table-head tr th:nth-of-type(2) .cell {
+      padding-left: 8px;
+    }
+    .bk-table .bk-table-body .cell.selection {
+      text-align: right;
+      .bk-checkbox {
+        vertical-align: middle;
+      }
+    }
+    .bk-table .bk-table-body tr td:nth-of-type(2) .cell {
+      padding-left: 8px;
+    }
+  }
 }
 
 .cert-upload-sideslider {
