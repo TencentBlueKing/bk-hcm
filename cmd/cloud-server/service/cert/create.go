@@ -25,15 +25,30 @@ import (
 
 	cloudserver "hcm/pkg/api/cloud-server"
 	hccert "hcm/pkg/api/hc-service/cert"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/types"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/hooks/handler"
 )
 
-// CreateCert create cert.
+// CreateCert create resource cert.
 func (svc *certSvc) CreateCert(cts *rest.Contexts) (interface{}, error) {
+	return svc.createCert(cts, handler.ResOperateAuth, false)
+}
+
+// CreateBizCert create biz cert.
+func (svc *certSvc) CreateBizCert(cts *rest.Contexts) (interface{}, error) {
+	return svc.createCert(cts, handler.BizOperateAuth, true)
+}
+
+func (svc *certSvc) createCert(cts *rest.Contexts, authHandler handler.ValidWithAuthHandler, bizRequired bool) (
+	interface{}, error) {
+
 	req := new(cloudserver.ResourceCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		logs.Errorf("create cert request decode failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
@@ -44,12 +59,25 @@ func (svc *certSvc) CreateCert(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.Newf(errf.InvalidParameter, "account_id is required")
 	}
 
-	//authRes := meta.ResourceAttribute{Basic: &meta.Basic{
-	//	Type: meta.Cert, Action: meta.Create, ResourceID: req.AccountID}}
-	//if err := svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
-	//	logs.Errorf("create cert auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
-	//	return nil, err
-	//}
+	var bkBizID int64 = constant.UnassignedBiz
+	var err error
+	if bizRequired {
+		bkBizID, err = cts.PathParameter("bk_biz_id").Int64()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// create authorized instances
+	basicInfo := &types.CloudResourceBasicInfo{
+		AccountID: req.AccountID,
+	}
+	err = authHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Cert,
+		Action: meta.Create, BasicInfo: basicInfo})
+	if err != nil {
+		logs.Errorf("create cert auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
 
 	info, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(
 		cts.Kit, enumor.AccountCloudResType, req.AccountID)
@@ -60,13 +88,13 @@ func (svc *certSvc) CreateCert(cts *rest.Contexts) (interface{}, error) {
 
 	switch info.Vendor {
 	case enumor.TCloud:
-		return svc.createTCloudCert(cts.Kit, req.Data)
+		return svc.createTCloudCert(cts.Kit, req.Data, bkBizID)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", info.Vendor)
 	}
 }
 
-func (svc *certSvc) createTCloudCert(kt *kit.Kit, body json.RawMessage) (interface{}, error) {
+func (svc *certSvc) createTCloudCert(kt *kit.Kit, body json.RawMessage, bkBizID int64) (interface{}, error) {
 	req := new(hccert.TCloudCreateReq)
 	if err := json.Unmarshal(body, req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -77,6 +105,7 @@ func (svc *certSvc) createTCloudCert(kt *kit.Kit, body json.RawMessage) (interfa
 		logs.Errorf("create tcloud cert decode publickey failed, pk: %s, err: %v, rid: %s", req.PublicKey, err, kt.Rid)
 		return nil, err
 	}
+
 	privateKey, err := base64.URLEncoding.DecodeString(req.PrivateKey)
 	if err != nil {
 		logs.Errorf("create tcloud cert decode privatekey failed, ik: %s, err: %v, rid: %s", req.PublicKey, err, kt.Rid)
@@ -84,8 +113,9 @@ func (svc *certSvc) createTCloudCert(kt *kit.Kit, body json.RawMessage) (interfa
 	}
 	req.PublicKey = string(publicKey)
 	req.PrivateKey = string(privateKey)
+	req.BkBizID = bkBizID
 
-	if err = req.Validate(true); err != nil {
+	if err = req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 

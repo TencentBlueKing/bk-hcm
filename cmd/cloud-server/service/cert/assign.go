@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
@@ -57,6 +58,7 @@ func (svc *certSvc) AssignCertToBiz(cts *rest.Contexts) (interface{}, error) {
 	}
 	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
 	if err != nil {
+		logs.Errorf("assign cert to biz auth failed, authRes: %+v, err: %v, rid: %s", authRes, err, cts.Kit.Rid)
 		return nil, err
 	}
 

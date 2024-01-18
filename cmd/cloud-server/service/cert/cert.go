@@ -42,12 +42,14 @@ func InitCertService(c *capability.Capability) {
 
 	// cert apis in biz
 	h.Add("ListBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/certs/list", svc.ListBizCert)
-	h.Add("CreateCert", http.MethodPost, "/bizs/{bk_biz_id}/certs/create", svc.CreateCert)
-	h.Add("DeleteCert", http.MethodDelete, "/bizs/{bk_biz_id}/certs/{id}", svc.DeleteBizCert)
+	h.Add("CreateBizCert", http.MethodPost, "/bizs/{bk_biz_id}/certs/create", svc.CreateBizCert)
+	h.Add("DeleteBizCert", http.MethodDelete, "/bizs/{bk_biz_id}/certs/{id}", svc.DeleteBizCert)
 
 	// cert apis in resource
 	h.Add("ListCert", http.MethodPost, "/certs/list", svc.ListCert)
 	h.Add("AssignCertToBiz", http.MethodPost, "/certs/assign/bizs", svc.AssignCertToBiz)
+	h.Add("CreateCert", http.MethodPost, "/certs/create", svc.CreateCert)
+	h.Add("DeleteCert", http.MethodDelete, "/certs/{id}", svc.DeleteCert)
 
 	h.Load(c.WebService)
 }

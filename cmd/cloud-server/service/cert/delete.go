@@ -33,14 +33,17 @@ import (
 	"hcm/pkg/tools/hooks/handler"
 )
 
+// DeleteCert delete resource cert.
+func (svc *certSvc) DeleteCert(cts *rest.Contexts) (interface{}, error) {
+	return svc.deleteCertSvc(cts, handler.ResOperateAuth)
+}
+
 // DeleteBizCert delete biz cert.
 func (svc *certSvc) DeleteBizCert(cts *rest.Contexts) (interface{}, error) {
 	return svc.deleteCertSvc(cts, handler.BizOperateAuth)
 }
 
-func (svc *certSvc) deleteCertSvc(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
-	interface{}, error) {
-
+func (svc *certSvc) deleteCertSvc(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	id := cts.PathParameter("id").String()
 
 	basicInfoReq := dataproto.ListResourceBasicInfoReq{
@@ -58,6 +61,7 @@ func (svc *certSvc) deleteCertSvc(cts *rest.Contexts, validHandler handler.Valid
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Cert,
 		Action: meta.Delete, BasicInfos: basicInfoMap})
 	if err != nil {
+		logs.Errorf("delete cert auth failed, id: %s, err: %v, rid: %s", id, err, cts.Kit.Rid)
 		return nil, err
 	}
 

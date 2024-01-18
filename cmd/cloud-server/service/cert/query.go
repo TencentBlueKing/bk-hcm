@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/hooks/handler"
 )
@@ -53,6 +54,7 @@ func (svc *certSvc) listCert(cts *rest.Contexts, authHandler handler.ListAuthRes
 	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
 		ResType: meta.Cert, Action: meta.Find, Filter: req.Filter})
 	if err != nil {
+		logs.Errorf("list cert auth failed, noPermFlag: %v, err: %v, rid: %s", noPermFlag, err, cts.Kit.Rid)
 		return nil, err
 	}
 

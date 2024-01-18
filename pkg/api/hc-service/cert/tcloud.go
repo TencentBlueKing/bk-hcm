@@ -21,8 +21,6 @@
 package hccert
 
 import (
-	"errors"
-
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
@@ -56,11 +54,7 @@ type TCloudCreateReq struct {
 }
 
 // Validate request.
-func (req *TCloudCreateReq) Validate(bizRequired bool) error {
-	if bizRequired && req.BkBizID == 0 {
-		return errors.New("bk_biz_id is required")
-	}
-
+func (req *TCloudCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 

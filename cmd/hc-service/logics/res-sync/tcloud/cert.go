@@ -64,7 +64,7 @@ func (cli *client) Cert(kt *kit.Kit, params *SyncBaseParams, opt *SyncCertOption
 		return nil, err
 	}
 
-	logs.Errorf("[%s] hcservice sync cert listCertFromCloud success, params: %+v, cloud_cert_count: %d, rid: %s",
+	logs.Infof("[%s] hcservice sync cert listCertFromCloud success, params: %+v, cloud_cert_count: %d, rid: %s",
 		enumor.TCloud, params, len(certFromCloud), kt.Rid)
 
 	certFromDB, err := cli.listCertFromDB(kt, params)
@@ -72,7 +72,7 @@ func (cli *client) Cert(kt *kit.Kit, params *SyncBaseParams, opt *SyncCertOption
 		return nil, err
 	}
 
-	logs.Errorf("[%s] hcservice sync cert listCertFromDB success, db_cert_count: %d, rid: %s",
+	logs.Infof("[%s] hcservice sync cert listCertFromDB success, db_cert_count: %d, rid: %s",
 		enumor.TCloud, len(certFromDB), kt.Rid)
 
 	if len(certFromCloud) == 0 && len(certFromDB) == 0 {
@@ -82,7 +82,7 @@ func (cli *client) Cert(kt *kit.Kit, params *SyncBaseParams, opt *SyncCertOption
 	addSlice, updateMap, delCloudIDs := common.Diff[typecert.TCloudCert, *corecert.Cert[corecert.TCloudCertExtension]](
 		certFromCloud, certFromDB, isCertChange)
 
-	logs.Errorf("[%s] hcservice sync cert diff success, addNum: %d, updateNum: %d, delNum: %d, rid: %s",
+	logs.Infof("[%s] hcservice sync cert diff success, addNum: %d, updateNum: %d, delNum: %d, rid: %s",
 		enumor.TCloud, len(addSlice), len(updateMap), len(delCloudIDs), kt.Rid)
 
 	if len(delCloudIDs) > 0 {
@@ -136,7 +136,7 @@ func (cli *client) deleteCert(kt *kit.Kit, accountID, region string, delCloudIDs
 		return err
 	}
 
-	logs.Errorf("[%s] sync cert to delete cert success, accountID: %s, count: %d, rid: %s", enumor.TCloud,
+	logs.Infof("[%s] sync cert to delete cert success, accountID: %s, count: %d, rid: %s", enumor.TCloud,
 		accountID, len(delCloudIDs), kt.Rid)
 
 	return nil
@@ -180,7 +180,7 @@ func (cli *client) updateCert(kt *kit.Kit, accountID string, updateMap map[strin
 		return err
 	}
 
-	logs.Errorf("[%s] sync cert to update cert success, accountID: %s, count: %d, rid: %s", enumor.TCloud,
+	logs.Infof("[%s] sync cert to update cert success, accountID: %s, count: %d, rid: %s", enumor.TCloud,
 		accountID, len(updateMap), kt.Rid)
 
 	return nil
@@ -214,9 +214,6 @@ func (cli *client) createCert(kt *kit.Kit, accountID string, opt *SyncCertOption
 			},
 		}
 
-		logs.Errorf("[%s] request dataservice to create tcloud cert DEBUG:218, accountID: %s, createReq: %+v, opt: %+v, rid: %s",
-			enumor.TCloud, accountID, cert, opt, kt.Rid)
-
 		createReq.Certs = append(createReq.Certs, cert...)
 	}
 
@@ -227,7 +224,7 @@ func (cli *client) createCert(kt *kit.Kit, accountID string, opt *SyncCertOption
 		return err
 	}
 
-	logs.Errorf("[%s] sync cert to create cert success, accountID: %s, count: %d, newIDs: %v, opt: %+v, rid: %s", enumor.TCloud,
+	logs.Infof("[%s] sync cert to create cert success, accountID: %s, count: %d, newIDs: %v, opt: %+v, rid: %s", enumor.TCloud,
 		accountID, len(addSlice), newIDs, opt, kt.Rid)
 
 	return nil
