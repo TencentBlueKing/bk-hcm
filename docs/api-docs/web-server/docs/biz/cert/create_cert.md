@@ -28,7 +28,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/certs/create
 |--------------|--------|------|----------------------------------------------|
 | cert_type    | string | 是   | 证书类型（CA:客户端证书，SVR:服务器证书）          |
 | public_key   | string | 是   | 证书内容，需要做base64编码                       |
-| private_key  | string | 是   | 私钥内容，需要做base64编码                       |
+| private_key  | string | 否   | 私钥内容，需要做base64编码，CA证书可不传该参数      |
 
 ### 腾讯云调用示例
 

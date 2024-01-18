@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/api/core"
 	corecert "hcm/pkg/api/core/cloud/cert"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
@@ -46,7 +47,7 @@ type CertBatchCreate[Extension corecert.Extension] struct {
 	AccountID        string          `json:"account_id" validate:"required"`
 	BkBizID          int64           `json:"bk_biz_id" validate:"omitempty"`
 	Domain           types.JsonField `json:"domain"`
-	CertType         string          `json:"cert_type"`
+	CertType         enumor.CertType `json:"cert_type"`
 	CertStatus       string          `json:"cert_status"`
 	CloudCreatedTime string          `json:"cloud_created_time"`
 	CloudExpiredTime string          `json:"cloud_expired_time"`
@@ -73,7 +74,7 @@ type CertExtUpdateReq[T corecert.Extension] struct {
 	BkBizID          uint64          `json:"bk_biz_id"`
 	AccountID        string          `json:"account_id"`
 	Domain           types.JsonField `json:"domain"`
-	CertType         string          `json:"cert_type"`
+	CertType         enumor.CertType `json:"cert_type"`
 	CertStatus       string          `json:"cert_status"`
 	CloudCreatedTime string          `json:"cloud_created_time"`
 	CloudExpiredTime string          `json:"cloud_expired_time"`
@@ -108,7 +109,7 @@ type CertBatchUpdateExprReq struct {
 	IDs              []string        `json:"ids" validate:"required"`
 	BkBizID          int64           `json:"bk_biz_id"`
 	Domain           types.JsonField `json:"domain"`
-	CertType         string          `json:"cert_type"`
+	CertType         enumor.CertType `json:"cert_type"`
 	CertStatus       string          `json:"cert_status"`
 	CloudCreatedTime string          `json:"cloud_created_time"`
 	CloudExpiredTime string          `json:"cloud_expired_time"`

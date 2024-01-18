@@ -27,16 +27,16 @@ import (
 
 // BaseCert define base cert.
 type BaseCert struct {
-	ID               string        `json:"id"`
-	CloudID          string        `json:"cloud_id"`
-	Name             string        `json:"name"`
-	Vendor           enumor.Vendor `json:"vendor"`
-	BkBizID          int64         `json:"bk_biz_id"`
-	AccountID        string        `json:"account_id"`
-	Domain           []*string     `json:"domain"`
-	CertType         string        `json:"cert_type"`
-	CloudCreatedTime string        `json:"cloud_created_time"`
-	CloudExpiredTime string        `json:"cloud_expired_time"`
+	ID               string          `json:"id"`
+	CloudID          string          `json:"cloud_id"`
+	Name             string          `json:"name"`
+	Vendor           enumor.Vendor   `json:"vendor"`
+	BkBizID          int64           `json:"bk_biz_id"`
+	AccountID        string          `json:"account_id"`
+	Domain           []*string       `json:"domain"`
+	CertType         enumor.CertType `json:"cert_type"`
+	CloudCreatedTime string          `json:"cloud_created_time"`
+	CloudExpiredTime string          `json:"cloud_expired_time"`
 	/*
 		tcloud: 0：审核中，1：已通过，2：审核失败，3：已过期，4：验证方式为 DNS_AUTO 类型的证书， 已添加DNS记录，5：企业证书，待提交
 			6：订单取消中，7：已取消，8：已提交资料， 待上传确认函，9：证书吊销中，10：已吊销，11：重颁发中，12：待上传吊销确认函

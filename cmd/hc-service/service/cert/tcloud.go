@@ -67,7 +67,7 @@ func (svc *certSvc) CreateTCloudCert(cts *rest.Contexts) (interface{}, error) {
 
 	createOpt := &typecert.TCloudCreateOption{
 		Name:       req.Name,
-		CertType:   req.CertType,
+		CertType:   string(req.CertType),
 		PublicKey:  req.PublicKey,
 		PrivateKey: req.PrivateKey,
 		Repeatable: true,

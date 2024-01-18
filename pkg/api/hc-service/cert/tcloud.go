@@ -22,6 +22,8 @@ package hccert
 
 import (
 	"hcm/pkg/adaptor/types/core"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
 )
@@ -43,18 +45,22 @@ func (req *TCloudDeleteReq) Validate() error {
 
 // TCloudCreateReq tcloud create req.
 type TCloudCreateReq struct {
-	BkBizID    int64  `json:"bk_biz_id" validate:"omitempty"`
-	AccountID  string `json:"account_id" validate:"required"`
-	Vendor     string `json:"vendor" validate:"required"`
-	Name       string `json:"name" validate:"required"`
-	CertType   string `json:"cert_type" validate:"required"`
-	PublicKey  string `json:"public_key" validate:"required"`
-	PrivateKey string `json:"private_key" validate:"required"`
-	Memo       string `json:"memo"`
+	BkBizID    int64           `json:"bk_biz_id" validate:"omitempty"`
+	AccountID  string          `json:"account_id" validate:"required"`
+	Vendor     string          `json:"vendor" validate:"required"`
+	Name       string          `json:"name" validate:"required"`
+	CertType   enumor.CertType `json:"cert_type" validate:"required"`
+	PublicKey  string          `json:"public_key" validate:"required"`
+	PrivateKey string          `json:"private_key" validate:"omitempty"`
+	Memo       string          `json:"memo"`
 }
 
 // Validate request.
 func (req *TCloudCreateReq) Validate() error {
+	if req.CertType == enumor.SVRServiceCertType && len(req.PrivateKey) == 0 {
+		return errf.Newf(errf.InvalidParameter, "private_key is required when cert_type is SVR")
+	}
+
 	return validator.Validate.Struct(req)
 }
 

@@ -161,7 +161,7 @@ func (cli *client) updateCert(kt *kit.Kit, accountID string, updateMap map[strin
 			Vendor:           string(enumor.TCloud),
 			AccountID:        accountID,
 			Domain:           domainJson,
-			CertType:         converter.PtrToVal(one.CertificateType),
+			CertType:         enumor.CertType(converter.PtrToVal(one.CertificateType)),
 			CertStatus:       strconv.FormatUint(converter.PtrToVal(one.Status), 10),
 			CloudCreatedTime: converter.PtrToVal(one.InsertTime),
 			CloudExpiredTime: converter.PtrToVal(one.CertEndTime),
@@ -207,7 +207,7 @@ func (cli *client) createCert(kt *kit.Kit, accountID string, opt *SyncCertOption
 				AccountID:        accountID,
 				BkBizID:          opt.BkBizID,
 				Domain:           domainJson,
-				CertType:         converter.PtrToVal(one.CertificateType),
+				CertType:         enumor.CertType(converter.PtrToVal(one.CertificateType)),
 				CertStatus:       strconv.FormatUint(converter.PtrToVal(one.Status), 10),
 				CloudCreatedTime: converter.PtrToVal(one.InsertTime),
 				CloudExpiredTime: converter.PtrToVal(one.CertEndTime),
@@ -298,7 +298,7 @@ func isCertChange(cloud typecert.TCloudCert, db *corecert.Cert[corecert.TCloudCe
 		return true
 	}
 
-	if converter.PtrToVal(cloud.CertificateType) != db.CertType {
+	if enumor.CertType(converter.PtrToVal(cloud.CertificateType)) != db.CertType {
 		return true
 	}
 

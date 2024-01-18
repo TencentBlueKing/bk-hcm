@@ -69,7 +69,7 @@ type SslCertTable struct {
 	// Domain 域名
 	Domain types.JsonField `db:"domain" json:"domain"`
 	// CertType 证书类型
-	CertType string `db:"cert_type" json:"cert_type"`
+	CertType enumor.CertType `db:"cert_type" json:"cert_type"`
 	// CertStatus 证书状态
 	CertStatus string `db:"cert_status" json:"cert_status"`
 	// CloudCreatedTime 证书上传时间
