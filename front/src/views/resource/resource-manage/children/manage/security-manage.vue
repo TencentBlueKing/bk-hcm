@@ -723,7 +723,7 @@ const templateColumns = [
           },
           ['编辑'],
         ),
-        whereAmI.value === Senarios.business && h(
+        h(
           Button,
           {
             class: 'ml10',
@@ -738,7 +738,7 @@ const templateColumns = [
       ]);
     },
   },
-];
+].filter(({ field }) => (whereAmI.value === Senarios.resource && !['actions'].includes(field)) || whereAmI.value !== Senarios.resource);
 
 const templateSettings = generateColumnsSettings(templateColumns);
 
