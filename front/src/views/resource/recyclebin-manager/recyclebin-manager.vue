@@ -221,23 +221,23 @@
                   </template>
                 </bk-table-column>
               </bk-table>
-              <bk-dialog
-                :is-show="showDeleteBox"
-                :title="deleteBoxTitle"
-                :theme="'primary'"
-                :quick-close="false"
-                @closed="showDeleteBox = false"
-                @confirm="handleDialogConfirm"
-              >
-                <div v-if="type === 'destroy'">{{`${selectedType === 'cvm' ? '销毁之后无法恢复主机信息' : '销毁之后无法从云上恢复硬盘'}`}}</div>
-                <div v-else>{{t(`将恢复${selectedType === 'cvm' ? '主机' : '硬盘'}信息`)}}</div>
-              </bk-dialog>
             </bk-loading>
           </bk-tab-panel>
         </bk-tab>
       </div>
     </div>
 
+    <bk-dialog
+      :is-show="showDeleteBox"
+      :title="deleteBoxTitle"
+      :theme="'primary'"
+      :quick-close="false"
+      @closed="showDeleteBox = false"
+      @confirm="handleDialogConfirm"
+    >
+      <div v-if="type === 'destroy'">{{`${selectedType === 'cvm' ? '销毁之后无法恢复主机信息' : '销毁之后无法从云上恢复硬盘'}`}}</div>
+      <div v-else>{{t(`将恢复${selectedType === 'cvm' ? '主机' : '硬盘'}信息`)}}</div>
+    </bk-dialog>
 
     <bk-dialog
       :is-show="showResourceInfo"

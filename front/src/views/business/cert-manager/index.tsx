@@ -1,5 +1,5 @@
 import { computed, defineComponent, reactive, ref } from 'vue';
-import { Button, Form, Input, Upload, Message, PopConfirm } from 'bkui-vue';
+import { Button, Form, Input, Upload, Message } from 'bkui-vue';
 import BkRadio, { BkRadioGroup } from 'bkui-vue/lib/radio';
 import './index.scss';
 import { VendorEnum } from '@/common/constant';
@@ -45,12 +45,17 @@ export default defineComponent({
           label: '操作',
           width: 120,
           render: ({ data }: { data: any }) => (
-            <PopConfirm
-              trigger='click'
-              content={`是否删除证书「${data.name}」？`}
-              onConfirm={() => handleDeleteCert(data)}>
-              <span class='operate-text-btn'>删除</span>
-            </PopConfirm>
+            <Button
+              text
+              theme='primary'
+              onClick={() => handleDeleteCert(data)}
+              disabled={isResourcePage && data.bk_biz_id !== -1}
+              v-bk-tooltips={{
+                content: '该证书已分配业务, 仅可在业务下操作',
+                disabled: isBusinessPage || data.bk_biz_id === -1,
+              }}>
+              删除
+            </Button>
           ),
         },
       ];
