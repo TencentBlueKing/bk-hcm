@@ -89,6 +89,7 @@ const unableRecycled = (data: {
   instance_id: string;
   vendor: VendorEnum;
   status: string;
+  bk_biz_id: number;
 }) => {
   return (
     !props.authVerifyData?.permissionAction[
@@ -97,6 +98,7 @@ const unableRecycled = (data: {
         : 'biz_iaas_resource_operate'
     ]
     || data.instance_id
+    || (props.isResourcePage && data.bk_biz_id !== -1)
     || isDisabledRecycle(data?.vendor, data?.status)
   );
 };
