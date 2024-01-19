@@ -1,4 +1,3 @@
-import http from '@/http';
 import { QueryRuleOPEnum } from '@/typings/common';
 import { Loading, SearchSelect, Table } from 'bkui-vue';
 import type { Column } from 'bkui-vue/lib/table/props';
@@ -6,17 +5,22 @@ import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
 import Empty from '@/components/empty';
+import { useAccountStore, useResourceStore } from '@/store';
+import { useWhereAmI } from '../useWhereAmI';
 
 export interface IProp {
   columns: Array<Column>;
   searchData: Array<ISearchItem>;
-  searchUrl: string; // 如`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/sub_accounts/list`，
+  type: string; // 资源类型
   tableData?: Array<Record<string, any>>; // 临时看看效果
   noSearch?: boolean; // 是否不需要搜索
   tableExtraOptions?: object; // 额外的表格属性及事件
 }
 
 export const useTable = (props: IProp) => {
+  const { isBusinessPage } = useWhereAmI();
+  const resourceStore = useResourceStore();
+  const accountStore = useAccountStore();
   const searchVal = ref('');
   const dataList = ref([]);
   const isLoading = ref(false);
@@ -45,7 +49,7 @@ export const useTable = (props: IProp) => {
       return;
     }
     isLoading.value = true;
-    const [detailsRes, countRes] = await Promise.all([false, true].map(isCount => http.post(props.searchUrl, {
+    const [detailsRes, countRes] = await Promise.all([false, true].map(isCount => resourceStore.list({
       page: {
         limit: isCount ? 0 : pagination.limit,
         start: isCount ? 0 : pagination.start,
@@ -53,12 +57,9 @@ export const useTable = (props: IProp) => {
       },
       filter: {
         op: filter.op,
-        rules: [
-          ...filter.rules,
-          ...customRules,
-        ],
+        rules: [...filter.rules, ...customRules],
       },
-    })));
+    }, props.type)));
     dataList.value = detailsRes?.data?.details;
     pagination.count = countRes?.data?.count;
     isLoading.value = false;
@@ -108,12 +109,15 @@ export const useTable = (props: IProp) => {
     },
   );
   watch(
-    () => searchVal.value,
-    (vals) => {
-      console.log(vals);
-      filter.rules = Array.isArray(vals) ? vals.map((val: any) => ({
+    [
+      () => searchVal.value,
+      () => accountStore.bizs,
+    ],
+    ([searchVal, bizs]) => {
+      if (isBusinessPage && !bizs) return;
+      filter.rules = Array.isArray(searchVal) ? searchVal.map((val: any) => ({
         field: val?.id,
-        op: QueryRuleOPEnum.EQ,
+        op: val?.id === 'domain' ? QueryRuleOPEnum.JSON_CONTAINS : QueryRuleOPEnum.EQ,
         value: val?.values?.[0]?.id,
       })) : [];
       getListData();

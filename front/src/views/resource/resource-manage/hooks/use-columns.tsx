@@ -1389,49 +1389,118 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
 
   const certColumns = [
     {
+      label: '证书名称',
+      field: 'name',
+    },
+    {
       label: '资源ID',
-      field: 'resourceId',
+      field: 'cloud_id',
     },
     {
       label: '云厂商',
-      field: 'cloudProvider',
+      field: 'vendor',
+      render: ({ cell }: { cell: string }) => {
+        return CloudType[cell];
+      },
     },
     {
       label: '证书类型',
-      field: 'certificateType',
+      field: 'cert_type',
+      filter: {
+        list: [
+          {
+            text: '服务器证书',
+            value: 'SVR',
+          },
+          {
+            text: '客户端CA证书',
+            value: 'CA',
+          },
+        ],
+        checked: [],
+      },
+      render: ({ cell }: { cell: string }) => {
+        return cell === 'SVR' ? '服务器证书' : '客户端CA证书';
+      },
     },
     {
       label: '域名',
-      field: 'domainName',
+      field: 'domain',
+      render: ({ cell }: { cell: string[] }) => {
+        return cell.join(';');
+      },
     },
     {
       label: '上传时间',
-      field: 'uploadTime',
+      field: 'cloud_created_time',
+      sort: true,
     },
     {
       label: '过期时间',
-      field: 'expirationTime',
+      field: 'cloud_expired_time',
+      sort: true,
     },
     {
       label: '证书状态',
-      field: 'certificateStatus',
-      render: ({ cell }: { cell: string }) => {
+      field: 'cert_status',
+      filter: {
+        list: [
+          {
+            text: '已通过',
+            value: '1',
+          },
+          {
+            text: '已过期',
+            value: '3',
+          },
+        ],
+        checked: [],
+      },
+      render: ({ data, cell }: { data: any, cell: string }) => {
         let icon;
+        const getStatusText = (vendor: VendorEnum, cert_status: string) => {
+          switch (vendor) {
+            case VendorEnum.TCLOUD:
+              switch (cert_status) {
+                case '1':
+                  return '已通过';
+                case '3':
+                  return '已过期';
+              }
+              break;
+          }
+        };
         switch (cell) {
-          case '正常':
+          case '1':
             icon = StatusNormal;
             break;
-          case '已过期':
+          case '3':
             icon = StatusAbnormal;
             break;
         }
         return (
           <div class='sync_status_wrap'>
             <img class='sync_status_icon' src={icon} alt='' />
-            <span>{cell}</span>
+            <span>{getStatusText(data.vendor, cell)}</span>
           </div>
         );
       },
+    },
+    {
+      label: '分配状态',
+      field: 'bk_biz_id',
+      isOnlyShowInResource: true,
+      isDefaultShow: true,
+      render: ({ data, cell }: { data: { bk_biz_id: number }, cell: number }) => (
+        <bk-tag
+          v-bk-tooltips={{
+            content: businessMapStore.businessMap.get(cell),
+            disabled: !cell || cell === -1,
+          }}
+          theme={data.bk_biz_id === -1 ? false : 'success'}>
+          {data.bk_biz_id === -1 ? '未分配' : '已分配'}
+        </bk-tag>
+      ),
     },
   ];
 

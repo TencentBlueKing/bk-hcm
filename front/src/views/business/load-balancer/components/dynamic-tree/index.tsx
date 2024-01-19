@@ -32,7 +32,10 @@ export default defineComponent({
     const rootPageNum = ref(1);
     const searchResultCount: any = inject('searchResultCount');
     const expandedNodeArr = ref([]);
-    const isShowFixedOperationBtn = ref(false);
+    const isScrollOnePageHeight = ref(false);
+    const isShowFixedOperationBtn = computed(() => {
+      return isScrollOnePageHeight.value && expandedNodeArr.value.length > 0;
+    });
 
     const searchOption = computed(() => {
       return {
@@ -163,10 +166,13 @@ export default defineComponent({
       if (props.searchValue) return null;
       return throttle(() => {
         loadingRef.value && observer.observe(loadingRef.value.$el);
-        if (treeRef.value.$el.scrollTop >= 1800) {
-          isShowFixedOperationBtn.value = true;
+
+        // 记录当前是否滚动了一屏的高度
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+        if (treeRef.value.$el.scrollTop >= viewportHeight) {
+          isScrollOnePageHeight.value = true;
         } else {
-          isShowFixedOperationBtn.value = false;
+          isScrollOnePageHeight.value = false;
         }
       }, 200);
     };
@@ -269,9 +275,15 @@ export default defineComponent({
       expandedNodeArr.value.push(node);
     };
 
+    const handleNodeCollapse = (node: any) => {
+      const idx = expandedNodeArr.value.findIndex(item => item === node);
+      expandedNodeArr.value.splice(idx, 1);
+    };
+
     const handleAllCollapse = () => {
       treeRef.value.setOpen(expandedNodeArr.value, false);
       treeRef.value.scrollToTop();
+      expandedNodeArr.value = [];
     };
 
     onMounted(() => {
@@ -299,7 +311,8 @@ export default defineComponent({
           onNodeClick={handleNodeClick}
           onScroll={getTreeScrollFunc()}
           async={getTreeAsyncOption()}
-          onNodeExpand={handleNodeExpand}>
+          onNodeExpand={handleNodeExpand}
+          onNodeCollapse={handleNodeCollapse}>
           {{
             default: ({ data, attributes }: any) => renderDefaultNode(data, attributes),
             nodeType: (node: any) => {

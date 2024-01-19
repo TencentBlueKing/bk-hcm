@@ -56,6 +56,10 @@ export const RESOURCE_TYPES = [
     name: '负载均衡',
     type: 'clbs',
   },
+  {
+    name: '证书管理',
+    type: 'certs',
+  },
 ];
 
 // 云厂商
