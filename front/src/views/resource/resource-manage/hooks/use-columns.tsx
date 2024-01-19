@@ -31,6 +31,7 @@ import {
   HOST_SHUTDOWN_STATUS,
 } from '../common/table/HostOperations';
 import './use-columns.scss';
+import moment from 'moment';
 
 export default (type: string, isSimpleShow = false, vendor?: string) => {
   const router = useRouter();
@@ -1434,11 +1435,17 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '上传时间',
       field: 'cloud_created_time',
       sort: true,
+      render: ({ cell }: { cell: string }) => {
+        return moment(cell).format('YYYY-MM-DD HH:mm:ss');
+      },
     },
     {
       label: '过期时间',
       field: 'cloud_expired_time',
       sort: true,
+      render: ({ cell }: { cell: string }) => {
+        return moment(cell).format('YYYY-MM-DD HH:mm:ss');
+      },
     },
     {
       label: '证书状态',
@@ -1446,7 +1453,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       filter: {
         list: [
           {
-            text: '已通过',
+            text: '正常',
             value: '1',
           },
           {
@@ -1463,7 +1470,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
             case VendorEnum.TCLOUD:
               switch (cert_status) {
                 case '1':
-                  return '已通过';
+                  return '正常';
                 case '3':
                   return '已过期';
               }
