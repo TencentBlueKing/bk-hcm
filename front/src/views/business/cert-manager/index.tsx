@@ -92,6 +92,10 @@ export default defineComponent({
         },
       ],
       filter: props.filter,
+      sortOption: {
+        sort: 'cloud_created_time',
+        order: 'DESC',
+      },
       tableExtraOptions: {
         isRowSelectEnable,
         onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
@@ -108,7 +112,17 @@ export default defineComponent({
       public_key: '' as string, // 证书信息
       private_key: '' as string, // 私钥信息
     });
-    const uploadErrorText = ref('');
+
+    // 上传证书错误提示
+    const uploadPublicKeyErrorText = ref('');
+    const uploadPrivateKeyErrorText = ref('');
+    // 错误提示映射
+    const errorTextMap = {
+      public_key: uploadPublicKeyErrorText,
+      private_key: uploadPrivateKeyErrorText,
+    };
+
+    // 表单项配置
     const formItemOptions = computed(() => [
       {
         label: '云账号',
@@ -154,13 +168,13 @@ export default defineComponent({
               multiple={false}
               custom-request={({ file }: { file: any }) => handleUploadCertKey(file)}
               onDelete={() => handleUploadFileDelete('public_key')}
-              onError={handleUploadError}
-              onExceed={handleUploadExceed}
+              onError={(_: any, fileList: any, error: Error) => handleUploadError(fileList, error, 'public_key')}
+              onExceed={() => handleUploadExceed('public_key')}
             />
             {
-              uploadErrorText.value && <div class='upload-error-text'>{uploadErrorText.value}</div>
+              uploadPublicKeyErrorText.value && <div class='upload-error-text'>{uploadPublicKeyErrorText.value}</div>
             }
-            <Input v-model={formModel.public_key} type='textarea' rows={5} style={{ maxWidth: '100%' }}></Input>
+            <Input v-model={formModel.public_key} type='textarea' rows={5} class='upload-textarea-wrap'></Input>
           </>
         ),
       },
@@ -179,16 +193,19 @@ export default defineComponent({
               multiple={false}
               custom-request={({ file }: { file: any }) => handleUploadPrimaryKey(file)}
               onDelete={() => handleUploadFileDelete('private_key')}
-              onError={handleUploadError}
-              onExceed={handleUploadExceed}
+              onError={(_: any, fileList: any, error: Error) => handleUploadError(fileList, error, 'private_key')}
+              onExceed={() => handleUploadExceed('private_key')}
             />
-            <Input v-model={formModel.private_key} type='textarea' rows={5} style={{ maxWidth: '100%' }}></Input>
+            {
+              uploadPrivateKeyErrorText.value && <div class='upload-error-text'>{uploadPrivateKeyErrorText.value}</div>
+            }
+            <Input v-model={formModel.private_key} type='textarea' rows={5} class='upload-textarea-wrap'></Input>
           </>
         ),
       },
     ]);
 
-    const resetFormParams = () => {
+    const resetForm = () => {
       Object.assign(formModel, {
         account_id: resourceAccountStore?.resourceAccount?.id || '',
         name: '',
@@ -197,11 +214,13 @@ export default defineComponent({
         public_key: '',
         private_key: '',
       });
+      uploadPublicKeyErrorText.value = '';
+      uploadPrivateKeyErrorText.value = '';
     };
 
     const showCreateCertSideslider = () => {
       isCertUploadSidesliderShow.value = true;
-      resetFormParams();
+      resetForm();
     };
 
     // 回显证书内容
@@ -211,49 +230,45 @@ export default defineComponent({
         formModel[key] = e.target.result;
       };
       fileReader.readAsText(file);
-      uploadErrorText.value = '';
     };
     // 处理证书上传文件成功执行的事件
     const handleUploadCertKey = (file: any) => {
       echoCertContent(file, 'public_key');
+      uploadPublicKeyErrorText.value = '';
     };
     // 处理密钥上传文件成功执行的事件
     const handleUploadPrimaryKey = (file: any) => {
       echoCertContent(file, 'private_key');
+      uploadPrivateKeyErrorText.value = '';
     };
     // 处理文件上传失败的事件
-    const handleUploadError = (_: any, fileList: any, error: Error) => {
+    const handleUploadError = (fileList: any, error: Error, type: string) => {
       if (error.message === 'invalid filename') {
-        uploadErrorText.value = '请上传正确的证书文件，该证书将于 2s 后移除！';
+        errorTextMap[type].value = '请上传正确的证书文件，该证书将于 2s 后移除！';
         setTimeout(() => {
           fileList.pop();
-          uploadErrorText.value = '';
+          errorTextMap[type].value = '';
         }, 2000);
       }
     };
     // 处理文件上传个数超出限制后的事件
-    const handleUploadExceed = () => {
-      uploadErrorText.value = '证书文件只支持上传 1 个，如需更换，请移除当前证书文件后再进行上传操作！';
+    const handleUploadExceed = (type: string) => {
+      errorTextMap[type].value = '证书文件只支持上传 1 个，如需更换，请移除当前证书文件后再进行上传操作！';
     };
     // 处理
-    const handleUploadFileDelete = (key: 'public_key' | 'private_key') => {
-      formModel[key] = '';
-      uploadErrorText.value = '';
+    const handleUploadFileDelete = (type: 'public_key' | 'private_key') => {
+      formModel[type] = '';
+      errorTextMap[type].value = '';
     };
 
-    // 处理参数
-    const resolveFormParams = () => {
-      // 证书内容转 base64
-      Object.assign(formModel, {
-        public_key: btoa(formModel.public_key),
-        private_key: btoa(formModel.private_key),
-      });
-    };
     // 证书上传
     const handleCreateCert = async () => {
       await formRef.value.validate();
-      resolveFormParams();
-      await resourceStore.create('certs', formModel);
+      await resourceStore.create('certs', {
+        ...formModel,
+        public_key: btoa(formModel.public_key),
+        private_key: btoa(formModel.private_key),
+      });
       Message({ theme: 'success', message: '证书上传成功' });
       isCertUploadSidesliderShow.value = false;
       await getListData();

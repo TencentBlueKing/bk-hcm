@@ -52,6 +52,14 @@
   cursor: pointer;
 } 
 
+.upload-textarea-wrap {
+  min-width: 100%;
+  max-width: 100%;
+  textarea {
+    height: 100%;
+  }
+}
+
 .upload-error-text {
   margin-bottom: 8px;
   font-size: 12px;

@@ -12,10 +12,14 @@ import { useWhereAmI } from '../useWhereAmI';
 export interface IProp {
   columns: Array<Column>;
   searchData: Array<ISearchItem>;
-  filter?: FilterType;
+  filter?: FilterType; // 资源下业务筛选条件
   type: string; // 资源类型
   tableData?: Array<Record<string, any>>; // 临时看看效果
   noSearch?: boolean; // 是否不需要搜索
+  sortOption?: {
+    sort: string;
+    order: 'ASC' | 'DESC';
+  }; // 排序条件
   tableExtraOptions?: object; // 额外的表格属性及事件
 }
 
@@ -58,6 +62,8 @@ export const useTable = (props: IProp) => {
       page: {
         limit: isCount ? 0 : pagination.limit,
         start: isCount ? 0 : pagination.start,
+        sort: isCount ? null : (props.sortOption?.sort || ''),
+        order: isCount ? null : (props.sortOption?.order || ''),
         count: isCount,
       },
       filter: {
