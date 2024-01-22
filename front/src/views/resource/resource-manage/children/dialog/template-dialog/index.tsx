@@ -133,6 +133,7 @@ export default defineComponent({
             group_templates: portGroupData.value,
             templates: undefined,
           };
+          debugger;
           break;
         }
       }
@@ -451,19 +452,19 @@ export default defineComponent({
                   <Option
                     key={v.cloud_id}
                     id={v.cloud_id}
-                    name={v.cloud_id}></Option>
+                    name={`${v.cloud_id} (${v.name})`}></Option>
                 ))}
               </Select>
             </FormItem>
           ) : null}
           {[TemplateType.PORT_GROUP].includes(formData.value.type) ? (
             <FormItem label='IP地址'>
-              <Select v-model={portGroupData} multiple>
+              <Select v-model={portGroupData.value} multiple>
                 {portGroupList.value.map(v => (
                   <Option
                     key={v.cloud_id}
                     id={v.cloud_id}
-                    name={v.cloud_id}></Option>
+                    name={`${v.cloud_id} (${v.name})`}></Option>
                 ))}
               </Select>
             </FormItem>

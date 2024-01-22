@@ -190,11 +190,11 @@ export const IP_TYPE_LIST = [
 export const TCLOUD_SOURCE_IP_TYPE_LIST = [
   {
     id: 'cloud_address_id',
-    name: 'IP地址',
+    name: '参数模板-IP地址',
   },
   {
     id: 'cloud_address_group_id',
-    name: 'IP地址组',
+    name: '参数模板-IP地址组',
   },
 ];
 

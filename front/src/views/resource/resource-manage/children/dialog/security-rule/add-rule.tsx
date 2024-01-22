@@ -197,7 +197,7 @@ export default defineComponent({
           ) : (
             <Select
               clearable={false}
-              class='input-prefix-select w120'
+              class='input-prefix-large-select'
               v-model={data.sourceAddress}
               disabled={props.isEdit}>
               {securityGroupSource.value.map(ele => (
@@ -234,14 +234,20 @@ export default defineComponent({
       ].includes(key) ? (
         <div class={'security-group-select w120'}>
           {prefix()}
-          <Select v-model={data[key]}>
+          <Select v-model={data[key]} class={'input-prefix-large-select'}>
             {list.map((securityGroup: {
               cloud_id: string | number | symbol;
               name: string;
             }) => (
                 <Option
                   value={securityGroup.cloud_id}
-                  label={securityGroup.name}
+                  label={
+                    [
+                      'cloud_address_id',
+                      'cloud_address_group_id',
+                    ].includes(key) ? `${String(securityGroup.cloud_id)} (${securityGroup.name})`
+                      : securityGroup.name
+                  }
                   key={securityGroup.cloud_id}
                 />
             ))}
@@ -507,7 +513,7 @@ export default defineComponent({
                                       {
                                          props.templateData.portList.map(item => (
                                           <Option
-                                            name={item.name}
+                                            name={`${item.cloud_id} (${item.name})`}
                                             id={item.cloud_id}
                                             key={item.cloud_id}
                                           />
@@ -519,7 +525,7 @@ export default defineComponent({
                                       {
                                         props.templateData.portGroupList.map(item => (
                                           <Option
-                                            name={item.name}
+                                            name={`${item.cloud_id} (${item.name})`}
                                             id={item.cloud_id}
                                             key={item.cloud_id}
                                           />
