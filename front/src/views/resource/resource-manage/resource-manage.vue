@@ -529,7 +529,13 @@ getResourceAccountList();
         :is-show="isTemplateDialogShow"
         :is-edit="isTemplateDialogEdit"
         :payload="templateDialogPayload"
-        :handle-close="() => isTemplateDialogShow = false"
+        :handle-close="() => {
+          isTemplateDialogShow = false;
+        }"
+        :handle-success="() => {
+          isTemplateDialogShow = false;
+          handleSuccess();
+        }"
       />
     </div>
 

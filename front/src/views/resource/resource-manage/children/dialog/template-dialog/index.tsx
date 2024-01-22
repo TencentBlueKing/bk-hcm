@@ -36,6 +36,10 @@ export default defineComponent({
       required: true,
       type: Function as PropType<() => void>,
     },
+    handleSuccess: {
+      required: true,
+      type: Function as PropType<() => void>,
+    },
     isEdit: {
       required: true,
       type: Boolean,
@@ -140,7 +144,7 @@ export default defineComponent({
         theme: 'success',
         message: props.isEdit ? '编辑成功' : '创建成功',
       });
-      props.handleClose();
+      props.handleSuccess();
     };
 
     watch(
