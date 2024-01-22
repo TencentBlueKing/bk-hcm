@@ -270,6 +270,22 @@ export default defineComponent({
       },
     );
 
+    const clearFormData = () => {
+      formData.value = {
+        name: '',
+        type: TemplateType.IP,
+        vendor: VendorEnum.TCLOUD,
+        account_id: resourceAccountStore.resourceAccount?.id || '',
+        templates: [],
+        group_templates: [],
+        bk_biz_id: -1,
+      };
+      ipGroupData.value = [];
+      ipTableData.value = [];
+      portGroupData.value = [];
+      portTableData.value = [];
+    };
+
     const renderTable = (type: TemplateType) => {
       let list = [] as typeof ipTableData.value;
       if (type === TemplateType.IP) list = ipTableData.value;
@@ -403,9 +419,13 @@ export default defineComponent({
     return () => (
       <Dialog
         isShow={props.isShow}
-        onClosed={() => props.handleClose()}
+        onClosed={() => {
+          props.handleClose();
+          clearFormData();
+        }}
         onConfirm={() => {
           handleSubmit();
+          clearFormData();
         }}
         title='新建参数模板'
         maxHeight={'720px'}
