@@ -718,6 +718,7 @@ const templateColumns = [
                 name: data.name,
                 bk_biz_id: data.bk_biz_id,
                 id: data.id,
+                account_id: data.account_id,
               });
             },
           },
