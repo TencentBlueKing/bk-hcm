@@ -67,6 +67,7 @@ export default defineComponent({
     const isLoading = ref(false);
     const accountList = ref([]);
     const basicForm = ref(null);
+    const isGroupLoading = ref(false);
     let formInstances = [ref(null)];
     const formData = ref({
       name: props.payload?.name || '',
@@ -156,8 +157,10 @@ export default defineComponent({
     );
 
     watch(
-      () => formData.value.type,
-      async (type) => {
+      () => [formData.value.type, formData.value.account_id],
+      async ([type, accountID]) => {
+        if (!accountID) return;
+        isGroupLoading.value = true;
         const params = {
           filter: {
             op: 'and',
@@ -171,6 +174,11 @@ export default defineComponent({
                 field: 'type',
                 op: 'eq',
                 value: 'address',
+              },
+              {
+                field: 'account_id',
+                op: 'eq',
+                value: formData.value.account_id,
               },
             ],
           },
@@ -186,6 +194,7 @@ export default defineComponent({
             params,
             'argument_templates/list',
           );
+          ipGroupData.value = [];
           ipGroupList.value = res.data.details;
         }
         if (type === TemplateType.PORT_GROUP) {
@@ -194,8 +203,10 @@ export default defineComponent({
             params,
             'argument_templates/list',
           );
+          portGroupData.value = [];
           portGroupList.value = res.data.details;
         }
+        isGroupLoading.value = false;
       },
       {
         immediate: true,
@@ -447,7 +458,7 @@ export default defineComponent({
           </FormItem>
           {[TemplateType.IP_GROUP].includes(formData.value.type) ? (
             <FormItem label='IP地址'>
-              <Select v-model={ipGroupData.value} multiple>
+              <Select v-model={ipGroupData.value} multiple multipleMode='tag'>
                 {ipGroupList.value.map(v => (
                   <Option
                     key={v.cloud_id}
@@ -459,7 +470,7 @@ export default defineComponent({
           ) : null}
           {[TemplateType.PORT_GROUP].includes(formData.value.type) ? (
             <FormItem label='IP地址'>
-              <Select v-model={portGroupData.value} multiple>
+              <Select v-model={portGroupData.value} multiple multipleMode='tag'>
                 {portGroupList.value.map(v => (
                   <Option
                     key={v.cloud_id}
