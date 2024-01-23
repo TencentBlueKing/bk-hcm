@@ -162,7 +162,7 @@ watch(
   async (data) => {
     if (activeType.value === 'template') {
       templateData.value = data;
-      const ids = data.map(({ cloud_id }) => cloud_id);
+      const ids = data.map(({ id }) => id);
       const url = `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud${whereAmI.value === Senarios.business ? `/bizs/${accountStore.bizs}` : ''}/argument_templates/instance/rule/list`;
       const res = await http.post(url, {
         ids,
