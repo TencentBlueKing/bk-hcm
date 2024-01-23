@@ -429,7 +429,7 @@ getSecurityGroupsList();
       v-if="props.data.vendor === 'tcloud' || props.data.vendor === 'aws' || props.data.vendor === 'huawei'"
       @click="showAuthDialog(actionName)">
       <bk-button
-        class="mt20" theme="primary"
+        theme="primary"
         :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]"
         @click="handleSecurityDialog">
         {{t('绑定')}}

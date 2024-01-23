@@ -156,6 +156,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           v-bk-tooltips={{
             content: businessMapStore.businessMap.get(cell),
             disabled: !cell || cell === -1,
+            theme: 'light',
           }}
           theme={data.bk_biz_id === -1 ? false : 'success'}>
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
@@ -284,6 +285,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           v-bk-tooltips={{
             content: businessMapStore.businessMap.get(cell),
             disabled: !cell || cell === -1,
+            theme: 'light',
           }}
           theme={data.bk_biz_id === -1 ? false : 'success'}>
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
@@ -805,23 +807,15 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         return (
           <div class={'cvm-status-container'}>
             {HOST_SHUTDOWN_STATUS.includes(data.status) ? (
-              <img
-                src={StatusAbnormal}
-                class={'mr6'}
-                width={13}
-                height={13}></img>
+              data.status.toLowerCase() === 'stopped' ? (
+                <img src={StatusUnknown} class={'mr6'} width={14} height={14}></img>
+              ) : (
+                <img src={StatusAbnormal} class={'mr6'} width={14} height={14}></img>
+              )
             ) : HOST_RUNNING_STATUS.includes(data.status) ? (
-              <img
-                src={StatusNormal}
-                class={'mr6'}
-                width={13}
-                height={13}></img>
+              <img src={StatusNormal} class={'mr6'} width={14} height={14}></img>
             ) : (
-              <img
-                src={StatusUnknown}
-                class={'mr6'}
-                width={13}
-                height={13}></img>
+              <img src={StatusUnknown} class={'mr6'} width={14} height={14}></img>
             )}
             <span>{CLOUD_HOST_STATUS[data.status] || data.status}</span>
           </div>

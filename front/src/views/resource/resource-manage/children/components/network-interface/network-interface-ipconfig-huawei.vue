@@ -50,7 +50,6 @@ watchEffect(() => {
 
 <template>
   <bk-table
-    class="mt20"
     row-hover="auto"
     :columns="columns"
     :data="ipConfigData"

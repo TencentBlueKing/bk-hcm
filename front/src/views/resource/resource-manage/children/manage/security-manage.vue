@@ -4,9 +4,9 @@ import type {
   FilterType,
 } from '@/typings/resource';
 import { GcpTypeEnum, CloudType } from '@/typings';
-import { Button, InfoBox, Message, Tag } from 'bkui-vue';
+import { Button, InfoBox, Message, Tag, bkTooltips } from 'bkui-vue';
 import { useResourceStore, useAccountStore } from '@/store';
-import { ref, h, PropType, watch, reactive, defineExpose, computed } from 'vue';
+import { ref, h, PropType, watch, reactive, defineExpose, computed, withDirectives } from 'vue';
 
 import { useI18n } from 'vue-i18n';
 import { useRouter, useRoute } from 'vue-router';
@@ -245,14 +245,20 @@ const groupColumns = [
     sort: true,
     isOnlyShowInResource: true,
     isDefaultShow: true,
-    render: ({ data }: { data: { bk_biz_id: number }; cell: number }) => {
-      return h(
+    render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => {
+      return withDirectives(h(
         Tag,
         {
           theme: data.bk_biz_id === -1 ? false : 'success',
         },
         [data.bk_biz_id === -1 ? '未分配' : '已分配'],
-      );
+      ), [
+        [bkTooltips, {
+          content: businessMapStore.businessMap.get(cell),
+          disabled: !cell || cell === -1,
+          theme: 'light',
+        }],
+      ]);
     },
   },
   {
@@ -518,14 +524,20 @@ const gcpColumns = [
     sort: true,
     isOnlyShowInResource: true,
     isDefaultShow: true,
-    render: ({ data }: { data: { bk_biz_id: number }; cell: number }) => {
-      return h(
+    render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => {
+      return withDirectives(h(
         Tag,
         {
           theme: data.bk_biz_id === -1 ? false : 'success',
         },
         [data.bk_biz_id === -1 ? '未分配' : '已分配'],
-      );
+      ), [
+        [bkTooltips, {
+          content: businessMapStore.businessMap.get(cell),
+          disabled: !cell || cell === -1,
+          theme: 'light',
+        }],
+      ]);
     },
   },
   {

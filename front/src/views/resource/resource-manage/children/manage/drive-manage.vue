@@ -274,7 +274,7 @@ const isCurRowSelectEnable = (row: any) => {
       </bk-button>
       <div class="flex-row align-items-center justify-content-arround mlauto">
         <bk-search-select
-          class="w500 ml10 mr15"
+          class="w500"
           clearable
           :conditions="[]"
           :data="selectSearchData"

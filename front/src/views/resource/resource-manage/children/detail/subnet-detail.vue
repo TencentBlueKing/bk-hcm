@@ -48,11 +48,11 @@ const hostTabs = ref<any[]>([
 
 const settingFields = ref<any[]>([
   {
-    name: '资源 ID',
+    name: '资源ID',
     prop: 'id',
   },
   {
-    name: '云资源 ID',
+    name: '云资源ID',
     prop: 'cloud_id',
   },
   {
@@ -79,7 +79,7 @@ const settingFields = ref<any[]>([
     },
   },
   {
-    name: '所属 VPC',
+    name: '所属VPC',
     prop: 'vpc_id',
   },
   {
@@ -87,7 +87,7 @@ const settingFields = ref<any[]>([
     prop: 'ipv4_cidr',
   },
   {
-    name: '可用 IPv4 地址数',
+    name: '可用IPv4地址数',
     prop: 'ipv4_nums',
   },
   {
@@ -179,7 +179,7 @@ const {
             prop: 'zone',
           },
           {
-            name: '自动分配公有 IPv4 地址',
+            name: '自动分配公有IPv4地址',
             prop: 'map_public_ip_on_launch',
             render(val: boolean) {
               return val ? '是' : '否';
@@ -193,7 +193,7 @@ const {
             },
           },
           {
-            name: '自动分配 IPv6 地址',
+            name: '自动分配IPv6地址',
             prop: 'assign_ipv6_address_on_creation',
             render(val: boolean) {
               return val ? '是' : '否';
@@ -225,11 +225,11 @@ const {
             render: () => getRegionName(detail.vendor, detail.region),
           },
           {
-            name: 'IP 栈类型',
+            name: 'IP栈类型',
             prop: 'stack_type',
           },
           {
-            name: 'IPv6 权限类型',
+            name: 'IPv6权限类型',
             prop: 'ipv6_access_type',
           },
           {
@@ -237,7 +237,7 @@ const {
             prop: 'gateway_address',
           },
           {
-            name: '专用 Google 访问通道',
+            name: '专用Google访问通道',
             prop: 'private_ip_google_access',
             render(val: boolean) {
               return val ? '启用' : '关闭';
@@ -276,11 +276,11 @@ const {
             prop: 'gateway_ip',
           },
           {
-            name: 'DNS 服务器地址',
+            name: 'DNS服务器地址',
             prop: 'dns_list',
           },
           {
-            name: 'NTP 服务器地址',
+            name: 'NTP服务器地址',
             prop: 'ntp_addresses',
           },
         ]);
@@ -434,5 +434,8 @@ onBeforeMount(() => {
 }
 .w60 {
   width: 60px;
+}
+:deep(.detail-info-main .info-list-item .item-field) {
+  width: 150px !important;
 }
 </style>

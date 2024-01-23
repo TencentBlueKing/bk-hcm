@@ -130,7 +130,7 @@ const settingInfo = [
     prop: 'os_name',
   },
   {
-    name: '镜像id',
+    name: '镜像ID',
     prop: 'cloud_image_id',
     render: () => useRouteLinkBtn(props.data, {
       id: 'image_id',
@@ -163,13 +163,3 @@ const settingInfo = [
     ></detail-info>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.info-title {
-  font-size: 14px;
-  margin-bottom: 8px;
-}
-:deep(.host-info) .detail-info-main {
-  height: auto !important;
-}
-</style>
