@@ -24,6 +24,9 @@ import {
 } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 import { TemplateTypeMap } from '../dialog/template-dialog';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import http from '@/http';
+
+const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 const props = defineProps({
   filter: {
@@ -80,6 +83,8 @@ const state = reactive<any>({
     columns: 'group',
   },
 });
+
+const templateData = ref([]);
 
 const { searchData, searchValue, filter } = useFilter(props);
 
@@ -149,6 +154,29 @@ watch(
     state.pagination.limit = 10;
     handleSwtichType(v);
     resetSelections();
+  },
+);
+
+watch(
+  () => datas.value,
+  async (data) => {
+    if (activeType.value === 'template') {
+      templateData.value = data;
+      const ids = data.map(({ cloud_id }) => cloud_id);
+      const url = `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud${whereAmI.value === Senarios.business ? `/bizs/${accountStore.bizs}` : ''}/argument_templates/instance/rule/list`;
+      const res = await http.post(url, {
+        ids,
+        bk_biz_id: whereAmI.value === Senarios.business ? accountStore.bizs : undefined,
+      });
+      for (let i = 0;i < templateData.value.length;i++) {
+        const item = templateData.value[i];
+        item.instance_num = res.data?.details?.[i].instance_num || '--';
+        item.rule_num = res.data?.details?.[i].rule_num || '--';
+      }
+    }
+  },
+  {
+    deep: true,
   },
 );
 
@@ -682,14 +710,14 @@ const templateColumns = [
     render: ({ cell }: any) => TemplateTypeMap[cell],
 
   },
-  // {
-  //   label: '关联实例',
-  //   field: 'associatedInstance',
-  // },
-  // {
-  //   label: '规则数',
-  //   field: 'ruleCount',
-  // },
+  {
+    label: '关联实例数',
+    field: 'instance_num',
+  },
+  {
+    label: '规则数',
+    field: 'rule_num',
+  },
   {
     label: '是否分配',
     field: 'bk_biz_id',
