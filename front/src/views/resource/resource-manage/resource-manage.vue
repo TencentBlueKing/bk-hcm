@@ -483,7 +483,54 @@ getResourceAccountList();
             </bk-select>
           </div>
         </template>
-        <bk-tab-panel
+        <!-- Only Tencent Cloud offers certificate hosting -->
+        <template v-for="item in tabs" :key="item.name">
+          <bk-tab-panel
+            :name="item.name"
+            :label="item.type"
+            v-if="item.name !== 'certs' || (item.name === 'certs' &&
+              (resourceAccountStore.resourceAccount.vendor === VendorEnum.TCLOUD ||
+                !resourceAccountStore.resourceAccount.vendor))">
+            <component
+              v-if="item.name === activeTab"
+              :is="item.component"
+              :filter="filter"
+              :where-am-i="activeTab"
+              :is-resource-page="isResourcePage"
+              :auth-verify-data="authVerifyData"
+              @auth="(val: string) => {
+                handleAuth(val)
+              }"
+              @tabchange="handleTabChange"
+              ref="componentRef"
+              @edit="handleEdit"
+            >
+              <span
+                v-if="
+                  ['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clbs'].includes(
+                    activeTab,
+                  )
+                "
+              >
+                <bk-button
+                  theme="primary"
+                  class="new-button"
+                  :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.iaas_resource_create }"
+                  @click="() => {
+                    if (!authVerifyData?.permissionAction?.iaas_resource_create) {
+                      handleAuth('iaas_resource_create');
+                    } else {
+                      handleAdd();
+                    }
+                  }"
+                >
+                  {{ ['host', 'clbs'].includes(activeTab) ? '购买' : '新建' }}
+                </bk-button>
+              </span>
+            </component>
+          </bk-tab-panel>
+        </template>
+        <!-- <bk-tab-panel
           v-for="item in tabs"
           :key="item.name"
           :name="item.name"
@@ -526,7 +573,7 @@ getResourceAccountList();
               </bk-button>
             </span>
           </component>
-        </bk-tab-panel>
+        </bk-tab-panel> -->
       </bk-tab>
 
       <bk-sideslider

@@ -384,6 +384,22 @@ const businesseMenus: RouteRecordRaw[] = [
       },
     ],
   },
+  {
+    path: '/business',
+    name: '其他',
+    children: [
+      {
+        path: '/business/record',
+        name: '操作记录',
+        component: () => import('@/views/resource/resource-manage/operationRecord/index'),
+        meta: {
+          activeKey: 'record',
+          breadcrumb: ['其他', '操作记录'],
+          isShowBreadcrumb: true,
+        },
+      },
+    ],
+  },
 ];
 
 export default businesseMenus;

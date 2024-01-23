@@ -1,9 +1,9 @@
-import { computed, defineComponent, reactive, ref } from 'vue';
+import { computed, defineComponent, reactive, ref, PropType } from 'vue';
 import { Button, Form, Input, Upload, Message } from 'bkui-vue';
 import BkRadio, { BkRadioGroup } from 'bkui-vue/lib/radio';
 import './index.scss';
 import { VendorEnum } from '@/common/constant';
-import { DoublePlainObject } from '@/typings';
+import { DoublePlainObject, FilterType } from '@/typings';
 import { useTable } from '@/hooks/useTable/useTable';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { useAccountStore, useResourceStore } from '@/store';
@@ -13,12 +13,16 @@ import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import CommonSideslider from '@/components/common-sideslider';
 import AccountSelector from '@/components/account-selector/index.vue';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
+import Confirm from '@/components/confirm';
 
 const { FormItem } = Form;
 
 export default defineComponent({
   name: 'CertManager',
-  setup() {
+  props: {
+    filter: Object as PropType<FilterType>,
+  },
+  setup(props) {
     const { isResourcePage, isBusinessPage } = useWhereAmI();
     const accountStore = useAccountStore();
     const resourceStore = useResourceStore();
@@ -87,6 +91,11 @@ export default defineComponent({
           id: 'domain',
         },
       ],
+      filter: props.filter,
+      sortOption: {
+        sort: 'cloud_created_time',
+        order: 'DESC',
+      },
       tableExtraOptions: {
         isRowSelectEnable,
         onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
@@ -103,6 +112,17 @@ export default defineComponent({
       public_key: '' as string, // 证书信息
       private_key: '' as string, // 私钥信息
     });
+
+    // 上传证书错误提示
+    const uploadPublicKeyErrorText = ref('');
+    const uploadPrivateKeyErrorText = ref('');
+    // 错误提示映射
+    const errorTextMap = {
+      public_key: uploadPublicKeyErrorText,
+      private_key: uploadPrivateKeyErrorText,
+    };
+
+    // 表单项配置
     const formItemOptions = computed(() => [
       {
         label: '云账号',
@@ -144,11 +164,17 @@ export default defineComponent({
               theme='button'
               tip='支持扩展名: .crt或.pem'
               validate-name={/\.(crt|pem)$/i}
+              limit={1}
               multiple={false}
               custom-request={({ file }: { file: any }) => handleUploadCertKey(file)}
-              onDelete={() => (formModel.public_key = '')}
+              onDelete={() => handleUploadFileDelete('public_key')}
+              onError={(_: any, fileList: any, error: Error) => handleUploadError(fileList, error, 'public_key')}
+              onExceed={() => handleUploadExceed('public_key')}
             />
-            <Input v-model={formModel.public_key} type='textarea' resize={false} rows={3}></Input>
+            {
+              uploadPublicKeyErrorText.value && <div class='upload-error-text'>{uploadPublicKeyErrorText.value}</div>
+            }
+            <Input v-model={formModel.public_key} type='textarea' rows={5} class='upload-textarea-wrap'></Input>
           </>
         ),
       },
@@ -163,17 +189,23 @@ export default defineComponent({
               theme='button'
               tip='支持扩展名: .key'
               validate-name={/\.key$/i}
+              limit={1}
               multiple={false}
               custom-request={({ file }: { file: any }) => handleUploadPrimaryKey(file)}
-              onDelete={() => (formModel.private_key = '')}
+              onDelete={() => handleUploadFileDelete('private_key')}
+              onError={(_: any, fileList: any, error: Error) => handleUploadError(fileList, error, 'private_key')}
+              onExceed={() => handleUploadExceed('private_key')}
             />
-            <Input v-model={formModel.private_key} type='textarea' resize={false} rows={3}></Input>
+            {
+              uploadPrivateKeyErrorText.value && <div class='upload-error-text'>{uploadPrivateKeyErrorText.value}</div>
+            }
+            <Input v-model={formModel.private_key} type='textarea' rows={5} class='upload-textarea-wrap'></Input>
           </>
         ),
       },
     ]);
 
-    const resetFormParams = () => {
+    const resetForm = () => {
       Object.assign(formModel, {
         account_id: resourceAccountStore?.resourceAccount?.id || '',
         name: '',
@@ -182,11 +214,13 @@ export default defineComponent({
         public_key: '',
         private_key: '',
       });
+      uploadPublicKeyErrorText.value = '';
+      uploadPrivateKeyErrorText.value = '';
     };
 
     const showCreateCertSideslider = () => {
       isCertUploadSidesliderShow.value = true;
-      resetFormParams();
+      resetForm();
     };
 
     // 回显证书内容
@@ -197,37 +231,56 @@ export default defineComponent({
       };
       fileReader.readAsText(file);
     };
-    // 证书上传文件之间执行的钩子
+    // 处理证书上传文件成功执行的事件
     const handleUploadCertKey = (file: any) => {
       echoCertContent(file, 'public_key');
+      uploadPublicKeyErrorText.value = '';
     };
-    // 密钥上传文件之间执行的钩子
+    // 处理密钥上传文件成功执行的事件
     const handleUploadPrimaryKey = (file: any) => {
       echoCertContent(file, 'private_key');
+      uploadPrivateKeyErrorText.value = '';
+    };
+    // 处理文件上传失败的事件
+    const handleUploadError = (fileList: any, error: Error, type: string) => {
+      if (error.message === 'invalid filename') {
+        errorTextMap[type].value = '请上传正确的证书文件，该证书将于 2s 后移除！';
+        setTimeout(() => {
+          fileList.pop();
+          errorTextMap[type].value = '';
+        }, 2000);
+      }
+    };
+    // 处理文件上传个数超出限制后的事件
+    const handleUploadExceed = (type: string) => {
+      errorTextMap[type].value = '证书文件只支持上传 1 个，如需更换，请移除当前证书文件后再进行上传操作！';
+    };
+    // 处理
+    const handleUploadFileDelete = (type: 'public_key' | 'private_key') => {
+      formModel[type] = '';
+      errorTextMap[type].value = '';
     };
 
-    // 处理参数
-    const resolveFormParams = () => {
-      // 证书内容转 base64
-      Object.assign(formModel, {
-        public_key: btoa(formModel.public_key),
-        private_key: btoa(formModel.private_key),
-      });
-    };
     // 证书上传
     const handleCreateCert = async () => {
       await formRef.value.validate();
-      resolveFormParams();
-      await resourceStore.create('certs', formModel);
+      await resourceStore.create('certs', {
+        ...formModel,
+        public_key: btoa(formModel.public_key),
+        private_key: btoa(formModel.private_key),
+      });
       Message({ theme: 'success', message: '证书上传成功' });
       isCertUploadSidesliderShow.value = false;
       await getListData();
     };
     // 删除指定证书
     const handleDeleteCert = async (cert: any) => {
-      await resourceStore.delete('certs', cert.id);
-      Message({ theme: 'success', message: '证书删除成功' });
-      await getListData();
+      Confirm('请确定删除证书', `将删除证书【${cert.name}】`, () => {
+        resourceStore.delete('certs', cert.id).then(() => {
+          Message({ theme: 'success', message: '证书删除成功' });
+          getListData();
+        });
+      });
     };
 
     return () => (

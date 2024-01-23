@@ -1,4 +1,5 @@
 import { QueryRuleOPEnum } from '@/typings/common';
+import { FilterType } from '@/typings';
 import { Loading, SearchSelect, Table } from 'bkui-vue';
 import type { Column } from 'bkui-vue/lib/table/props';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
@@ -11,14 +12,19 @@ import { useWhereAmI } from '../useWhereAmI';
 export interface IProp {
   columns: Array<Column>;
   searchData: Array<ISearchItem>;
+  filter?: FilterType; // 资源下业务筛选条件
   type: string; // 资源类型
   tableData?: Array<Record<string, any>>; // 临时看看效果
   noSearch?: boolean; // 是否不需要搜索
+  sortOption?: {
+    sort: string;
+    order: 'ASC' | 'DESC';
+  }; // 排序条件
   tableExtraOptions?: object; // 额外的表格属性及事件
 }
 
 export const useTable = (props: IProp) => {
-  const { isBusinessPage } = useWhereAmI();
+  const { isBusinessPage, isResourcePage } = useWhereAmI();
   const resourceStore = useResourceStore();
   const accountStore = useAccountStore();
   const searchVal = ref('');
@@ -35,9 +41,12 @@ export const useTable = (props: IProp) => {
   });
   const handlePageLimitChange = (v: number) => {
     pagination.limit = v;
+    pagination.start = 0;
+    getListData();
   };
   const handlePageValueCHange = (v: number) => {
     pagination.start = (v - 1) * pagination.limit;
+    getListData();
   };
   const getListData = async (customRules: Array<{
     op: QueryRuleOPEnum,
@@ -53,6 +62,8 @@ export const useTable = (props: IProp) => {
       page: {
         limit: isCount ? 0 : pagination.limit,
         start: isCount ? 0 : pagination.start,
+        sort: isCount ? null : (props.sortOption?.sort || ''),
+        order: isCount ? null : (props.sortOption?.order || ''),
         count: isCount,
       },
       filter: {
@@ -99,15 +110,7 @@ export const useTable = (props: IProp) => {
       );
     },
   });
-  watch(
-    () => pagination,
-    () => {
-      getListData();
-    },
-    {
-      deep: true,
-    },
-  );
+
   watch(
     [
       () => searchVal.value,
@@ -120,12 +123,31 @@ export const useTable = (props: IProp) => {
         op: val?.id === 'domain' ? QueryRuleOPEnum.JSON_CONTAINS : QueryRuleOPEnum.EQ,
         value: val?.values?.[0]?.id,
       })) : [];
+      // 页码重置
+      pagination.start = 0;
       getListData();
     },
     {
       immediate: true,
     },
   );
+
+  // 分配业务筛选
+  watch(() => props.filter, (val) => {
+    if (isResourcePage) searchVal.value = '';
+    const idx = filter.rules.findIndex(rule => rule.field === 'bk_biz_id');
+    const bizFilter = val.rules[0];
+    if (bizFilter) {
+      if (idx !== -1) {
+        filter.rules[idx] = bizFilter;
+      } else {
+        filter.rules.push(val.rules[0]);
+      }
+    } else {
+      filter.rules.splice(idx, 1);
+    }
+    getListData();
+  }, { deep: true });
 
   return {
     CommonTable,
