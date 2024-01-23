@@ -120,12 +120,15 @@ const selectSearchData = computed(() => {
       id: 'cloud_id',
     },
     ...searchData.value,
-    ...[
-      {
-        name: '云地域',
-        id: 'region',
-      },
-    ],
+    ...(
+      activeType.value === 'template'
+        ? []
+        : [{
+          name: '云地域',
+          id: 'region',
+        },
+        ]
+    ),
   ];
 });
 
