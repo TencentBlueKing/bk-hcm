@@ -459,11 +459,10 @@ export const RESOURCE_TABS = [
     key: '/resource/resource/account',
     label: '账号信息',
   },
-  // 下期再做
-  // {
-  //   key: '/resource/resource/record',
-  //   label: '操作记录',
-  // },
+  {
+    key: '/resource/resource/record',
+    label: '操作记录',
+  },
   {
     key: '/resource/resource/recycle',
     label: '回收站',

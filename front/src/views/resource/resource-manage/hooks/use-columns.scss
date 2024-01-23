@@ -9,19 +9,19 @@
   border-bottom: 1px dashed rgb(151, 155, 165);
 }
 
-.sync_status_wrap {
+.status-column-cell {
   display: flex;
   align-items: center;
   padding-top: 10px;
   line-height: 20px;
 
-  .sync_status_icon {
+  .status-icon {
     margin-right: 7px;
     width: 14px;
     height: 14px;
   }
   
-  .sync-partial-success-status_text {
+  .partial-success-status-text {
     border-bottom: 1px dashed rgb(151, 155, 165);
   }
 }

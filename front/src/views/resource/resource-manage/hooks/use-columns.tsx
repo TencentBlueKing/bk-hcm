@@ -1280,10 +1280,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
             break;
         }
         return (
-          <div class='sync_status_wrap'>
-            <img class={`sync_status_icon${cell === '绑定中' ? ' spin-icon' : ''}`} src={icon} alt='' />
+          <div class='status-column-cell'>
+            <img class={`status-icon${cell === '绑定中' ? ' spin-icon' : ''}`} src={icon} alt='' />
             <span
-              class={cell === '部分成功' ? 'sync-partial-success-status_text' : ''}
+              class={cell === '部分成功' ? 'partial-success-status-text' : ''}
               v-bk-tooltips={{
                 content: '成功 89 个，失败 105 个',
                 disabled: cell !== '部分成功',
@@ -1486,8 +1486,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
             break;
         }
         return (
-          <div class='sync_status_wrap'>
-            <img class='sync_status_icon' src={icon} alt='' />
+          <div class='status-column-cell'>
+            <img class='status-icon' src={icon} alt='' />
             <span>{getStatusText(data.vendor, cell)}</span>
           </div>
         );
@@ -1511,6 +1511,79 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
   ];
 
+  const operationRecordColumns = [
+    {
+      label: '操作时间',
+      field: 'actionTime',
+      isDefaultShow: true,
+      sort: true,
+    },
+    {
+      label: '资源名称',
+      field: 'resourceName',
+    },
+    {
+      label: '云资源ID',
+      field: 'cloudResourceId',
+    },
+    {
+      label: '资源类型',
+      field: 'resourceType',
+      isDefaultShow: true,
+    },
+    {
+      label: '操作方式',
+      field: 'operationMethod',
+      isDefaultShow: true,
+      filter: true,
+    },
+    {
+      label: '操作来源',
+      field: 'operationSource',
+      isDefaultShow: true,
+      filter: true,
+    },
+    {
+      label: '云厂商',
+      field: 'cloudProvider',
+    },
+    {
+      label: '云账号',
+      field: 'cloudAccount',
+    },
+    {
+      label: '任务状态',
+      field: 'taskStatus',
+      isDefaultShow: true,
+      filter: true,
+      render: ({ cell }: { cell: string }) => {
+        let icon;
+        switch (cell) {
+          case 'success':
+            icon = StatusSuccess;
+            break;
+          case 'fail':
+            icon = StatusFailure;
+            break;
+          case 'partial_success':
+            icon = StatusPartialSuccess;
+            break;
+        }
+        return (
+          <div class='status-column-cell'>
+            <img class='status-icon' src={icon} alt='' />
+            <span>{cell === 'success' ? '成功' : cell === 'fail' ? '失败' : '部分成功'}</span>
+          </div>
+        );
+      },
+    },
+    {
+      label: '操作人',
+      field: 'operator',
+      isDefaultShow: true,
+    },
+  ];
+
   const columnsMap = {
     vpc: vpcColumns,
     subnet: subnetColumns,
@@ -1530,6 +1603,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     url: urlColumns,
     targetGroupListener: targetGroupListenerColumns,
     cert: certColumns,
+    operationRecord: operationRecordColumns,
   };
 
   let columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);

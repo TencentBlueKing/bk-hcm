@@ -1,0 +1,14 @@
+.operation-record-module {
+  padding: 16px 24px;
+  border-radius: 2px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px 0 #1919290d;
+  .resource-radio-group {
+    height: 32px;
+  }
+  .operation-cell {
+    .bk-button {
+      margin-right: 10px;
+    }
+  }
+}
