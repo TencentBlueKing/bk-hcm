@@ -110,32 +110,32 @@ const netInfo = [
   //   prop: 'vendorName',
   // },
   {
-    name: '私有 IPv4 地址',
+    name: '私有IPv4地址',
     prop: 'private_ipv4_addresses',
     render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
   },
   {
-    name: '公有 IPv4 地址',
+    name: '公有IPv4地址',
     prop: 'public_ipv4_addresses',
     render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
   },
   {
-    name: '私有 IPv6 地址',
+    name: '私有IPv6地址',
     prop: 'private_ipv6_addresses',
     render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
   },
   {
-    name: '公有IPv6 地址',
+    name: '公有IPv6地址',
     prop: 'public_ipv6_addresses',
     render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
   },
   {
-    name: '私有 IP DNS 名称(仅限 IPv4)',
+    name: '私有IP DNS名称(仅限IPv4)',
     prop: 'private_dns_name',
     render: ({ cell }: any) => cell || '--',
   },
   {
-    name: '公有 IPv4 DNS',
+    name: '公有IPv4 DNS',
     prop: 'dns_name',
     render: ({ cell }: any) => cell || '--',
   },
@@ -157,7 +157,7 @@ const settingInfo = [
     prop: 'os_name',
   },
   {
-    name: '镜像id',
+    name: '镜像ID',
     prop: 'cloud_image_id',
     render: () => useRouteLinkBtn(props.data, {
       id: 'image_id',
@@ -192,11 +192,7 @@ const settingInfo = [
 </template>
 
 <style lang="scss" scoped>
-.info-title {
-  font-size: 14px;
-  margin-bottom: 8px;
-}
-:deep(.host-info) .detail-info-main {
-  height: auto !important;
+:deep(.detail-info-main .info-list-item .item-field) {
+  width: 200px !important;
 }
 </style>

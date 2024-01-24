@@ -531,7 +531,7 @@ if (props.vendor === 'huawei') {
     <bk-loading
       :loading="state.isLoading"
     >
-      <section class="mt20 rule-main">
+      <section class="rule-main">
         <bk-radio-group
           v-model="activeType"
           :disabled="state.isLoading"

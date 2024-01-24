@@ -124,7 +124,6 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange } =
 <template>
   <bk-loading :loading="isLoading">
     <bk-table
-      class="mt20"
       row-hover="auto"
       remote-pagination
       :pagination="pagination"

@@ -85,22 +85,22 @@ const netInfo = [
     prop: 'cloud_network_interface_ids',
   },
   {
-    name: '私有 IPv4 地址',
+    name: '私有IPv4地址',
     prop: 'private_ipv4_addresses',
     render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
   },
   {
-    name: '公有 IPv4 地址',
+    name: '公有IPv4地址',
     prop: 'public_ipv4_addresses',
     render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
   },
   {
-    name: '私有 IPv6 地址',
+    name: '私有IPv6地址',
     prop: 'private_ipv6_addresses',
     render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
   },
   {
-    name: '公有IPv6 地址',
+    name: '公有IPv6地址',
     prop: 'public_ipv6_addresses',
     render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
   },
@@ -168,13 +168,3 @@ const settingInfo = [
     ></detail-info>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.info-title {
-  font-size: 14px;
-  margin-bottom: 8px;
-}
-:deep(.host-info) .detail-info-main {
-  height: auto !important;
-}
-</style>

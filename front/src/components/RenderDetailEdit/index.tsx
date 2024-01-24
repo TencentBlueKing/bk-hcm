@@ -3,6 +3,7 @@ import { defineComponent, ref, nextTick, watch, PropType, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import MemberSelect from '@/components/MemberSelect';
 import OrganizationSelect from '@/components/OrganizationSelect';
+import './index.scss';
 
 export default defineComponent({
   props: {
@@ -161,7 +162,7 @@ export default defineComponent({
       }
     };
     return () => (
-        <div class="flex-row align-items-center">
+        <div class="flex-row align-items-center render-detail-edit-wrap">
             {renderEdit.value ? (
               renderComponentsContent(props.fromType)
             ) : renderTextContent(props.fromType)}

@@ -24,11 +24,11 @@ const fileds = ref<any[]>([
     prop: 'name',
   },
   {
-    name: '路由表 ID',
+    name: '路由表ID',
     prop: 'id',
   },
   {
-    name: '云资源 ID',
+    name: '云资源ID',
     prop: 'cloud_id',
   },
   {
@@ -365,7 +365,7 @@ const handlePageSizeChange = (limit: number) => {
 
 <template>
   <bk-loading :loading="isLoading">
-    <detail-info class="mt20" :fields="fileds" :detail="detail"></detail-info>
+    <detail-info :fields="fileds" :detail="detail"></detail-info>
     <bk-table
       class="mt20"
       row-hover="auto"

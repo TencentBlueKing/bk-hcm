@@ -19,11 +19,11 @@ const { getNameFromBusinessMap } = useBusinessMapStore();
 
 const fields = ref([
   {
-    name: '资源 ID',
+    name: '资源ID',
     prop: 'id',
   },
   {
-    name: '云资源 ID',
+    name: '云资源ID',
     prop: 'cloud_id',
   },
   {
@@ -87,7 +87,7 @@ const fields = ref([
     },
   },
   {
-    name: '所属网络(VPC)',
+    name: '所属VPC',
     prop: 'cloud_vpc_id',
     render(val: string) {
       if (!val) {
@@ -148,21 +148,8 @@ watchEffect(() => {
 <template>
   <div class="field-list">
     <detail-info
-      class="field-list mt20"
       :detail="data"
       :fields="fields"
     />
   </div>
 </template>
-
-<style lang="scss" scoped>
-.field-list {
-  :deep(.cell-content-list) {
-    line-height: normal;
-    .cell-content-item {
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-  }
-}
-</style>

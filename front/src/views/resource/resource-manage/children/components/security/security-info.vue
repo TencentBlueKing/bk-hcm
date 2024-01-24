@@ -150,6 +150,6 @@ const handleChange = async (val: any) => {
   <bk-loading
     :loading="props.loading"
   >
-    <detail-info class="mt20" :fields="settingInfo" :detail="props.detail" @change="handleChange"></detail-info>
+    <detail-info :fields="settingInfo" :detail="props.detail" @change="handleChange"></detail-info>
   </bk-loading>
 </template>
