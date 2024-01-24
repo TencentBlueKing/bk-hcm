@@ -52,7 +52,7 @@ const settingFields = ref<any[]>([
     prop: 'id',
   },
   {
-    name: '资源 ID',
+    name: '资源ID',
     prop: 'cloud_id',
     render(cell = '') {
       const index = cell.lastIndexOf('/') <= 0 ? 0 : cell.lastIndexOf('/') + 1;

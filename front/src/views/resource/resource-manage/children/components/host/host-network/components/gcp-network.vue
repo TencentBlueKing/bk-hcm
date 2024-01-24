@@ -198,7 +198,6 @@ getNetWorkList();
       {{ t('绑定已有网络接口') }}
     </bk-button> -->
     <bk-table
-      class="mt20"
       row-hover="auto"
       :columns="columns"
       :data="tableData"
