@@ -82,7 +82,7 @@ export const useTable = (props: IProp) => {
           <section class='operation-wrap'>
             <div class='operate-btn-groups'>{slots.operation?.()}</div>
             {!props.noSearch && (
-              <SearchSelect class='w500 common-search-selector' v-model={searchVal.value} data={props.searchData} />
+              <SearchSelect class='w500' v-model={searchVal.value} data={props.searchData} />
             )}
           </section>
           <Loading loading={isLoading.value} class='loading-table-container'>
