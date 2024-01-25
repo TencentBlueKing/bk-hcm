@@ -1508,49 +1508,59 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const operationRecordColumns = [
     {
       label: '操作时间',
-      field: 'actionTime',
+      field: 'created_at',
       isDefaultShow: true,
       sort: true,
-    },
-    {
-      label: '资源名称',
-      field: 'resourceName',
-    },
-    {
-      label: '云资源ID',
-      field: 'cloudResourceId',
+      render: ({ cell }: { cell: string }) => {
+        return moment(cell).format('YYYY-MM-DD HH:mm:ss');
+      },
     },
     {
       label: '资源类型',
-      field: 'resourceType',
-      isDefaultShow: true,
+      field: 'res_type',
     },
     {
+      label: '资源名称',
+      field: 'res_name',
+      isDefaultShow: true,
+    },
+    // {
+    //   label: '云资源ID',
+    //   field: 'cloud_res_id',
+    // },
+    {
       label: '操作方式',
-      field: 'operationMethod',
+      field: 'action',
       isDefaultShow: true,
       filter: true,
     },
     {
       label: '操作来源',
-      field: 'operationSource',
+      field: 'source',
       isDefaultShow: true,
       filter: true,
     },
     {
-      label: '云厂商',
-      field: 'cloudProvider',
+      label: '所属业务',
+      field: 'bk_biz_id',
+      isOnlyShowInResource: true,
+      render: ({ cell }: { cell: number }) => businessMapStore.businessMap.get(cell) || '未分配',
     },
+    // {
+    //   label: '云厂商',
+    //   field: 'vendor',
+    // },
     {
       label: '云账号',
-      field: 'cloudAccount',
+      field: 'account_id',
     },
     {
       label: '任务状态',
-      field: 'taskStatus',
+      field: 'task_status',
       isDefaultShow: true,
       filter: true,
       render: ({ cell }: { cell: string }) => {
+        if (!cell) return '--';
         let icon;
         switch (cell) {
           case 'success':

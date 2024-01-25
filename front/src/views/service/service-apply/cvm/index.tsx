@@ -533,7 +533,6 @@ export default defineComponent({
             label: 'VPC',
             required: true,
             property: 'cloud_vpc_id',
-            description: '',
             content: () => (
               <div class={'component-with-detail-container'}>
                 <VpcSelector
@@ -564,7 +563,6 @@ export default defineComponent({
           {
             label: '子网',
             required: true,
-            description: '',
             property: 'cloud_subnet_id',
             content: () => (
               <>
@@ -615,7 +613,7 @@ export default defineComponent({
           // },
           {
             label: '管控区域',
-            description: '管控区是蓝鲸可以管控的Agent网络区域，以实现跨网管理。一个VPC，对应一个管控区。如VPC未绑定管控区，请到资源接入-VPC-绑定管控区操作',
+            description: '管控区是蓝鲸可以管控的Agent网络区域，以实现跨网管理。\n一个VPC，对应一个管控区。如VPC未绑定管控区，请到资源接入-VPC-绑定管控区操作。',
             display: whereAmI.value === Senarios.business,
             content: () => (
               <>
@@ -640,7 +638,6 @@ export default defineComponent({
             label: '安全组',
             display: cond.vendor !== VendorEnum.GCP,
             required: true,
-            description: '',
             property: 'cloud_security_group_ids',
             content: () => (
               <div class={'component-with-detail-container'}>
@@ -709,7 +706,6 @@ export default defineComponent({
           {
             label: '机型',
             required: true,
-            description: '',
             property: 'instance_type',
             content: () => (
               <MachineTypeSelector
@@ -728,7 +724,6 @@ export default defineComponent({
           {
             label: '镜像',
             required: true,
-            description: '',
             property: 'cloud_image_id',
             content: () => (
               <Imagelector

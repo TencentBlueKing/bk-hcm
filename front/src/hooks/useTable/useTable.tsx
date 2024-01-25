@@ -1,4 +1,4 @@
-import { QueryRuleOPEnum } from '@/typings/common';
+import { QueryRuleOPEnum, RulesItem } from '@/typings/common';
 import { FilterType } from '@/typings';
 import { Loading, SearchSelect, Table } from 'bkui-vue';
 import type { Column } from 'bkui-vue/lib/table/props';
@@ -7,26 +7,37 @@ import { defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
 import Empty from '@/components/empty';
 import { useAccountStore, useResourceStore } from '@/store';
+import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useWhereAmI } from '../useWhereAmI';
-
 export interface IProp {
-  columns: Array<Column>;
-  searchData: Array<ISearchItem>;
-  filter?: FilterType; // 资源下业务筛选条件
-  type: string; // 资源类型
-  tableData?: Array<Record<string, any>>; // 临时看看效果
-  noSearch?: boolean; // 是否不需要搜索
-  sortOption?: {
-    sort: string;
-    order: 'ASC' | 'DESC';
-  }; // 排序条件
-  tableExtraOptions?: object; // 额外的表格属性及事件
+  // search-select 相关字段
+  searchOptions: {
+    searchData: Array<ISearchItem>; // search-select 可选项
+    disabled?: boolean, // 是否禁用 search-select
+    extra?: Object, // 其他 search-select 属性/自定义事件, 比如 placeholder, onSearch...
+  },
+  // table 相关字段
+  tableOptions: {
+    columns: Array<Column>; // 表格字段
+    reviewData?: Array<Record<string, any>>; // 用于预览效果的数据
+    extra?: Object, // 其他 table 属性/自定义事件, 比如 settings, onSelectionChange...
+  },
+  // 请求相关字段
+  requestOption: {
+    type: string, // 资源类型
+    sort?: string, // 需要排序的字段, 与 order 配合使用
+    order?: 'ASC' | 'DESC', // 排序方式, 与 sort 配合使用
+    rules?: Array<RulesItem>, // 筛选规则
+  },
+  // 资源下筛选业务功能相关的 prop
+  bizFilter?: FilterType,
 }
 
 export const useTable = (props: IProp) => {
   const { isBusinessPage, isResourcePage } = useWhereAmI();
   const resourceStore = useResourceStore();
   const accountStore = useAccountStore();
+  const businessMapStore = useBusinessMapStore();
   const searchVal = ref('');
   const dataList = ref([]);
   const isLoading = ref(false);
@@ -53,8 +64,9 @@ export const useTable = (props: IProp) => {
     field: string,
     value: string | number,
   }> = []) => {
-    if (props.tableData) {
-      dataList.value = props.tableData;
+    // 预览
+    if (props.tableOptions.reviewData) {
+      dataList.value = props.tableOptions.reviewData;
       return;
     }
     isLoading.value = true;
@@ -62,15 +74,15 @@ export const useTable = (props: IProp) => {
       page: {
         limit: isCount ? 0 : pagination.limit,
         start: isCount ? 0 : pagination.start,
-        sort: isCount ? null : (props.sortOption?.sort || ''),
-        order: isCount ? null : (props.sortOption?.order || ''),
+        sort: isCount ? null : (props.requestOption.sort || ''),
+        order: isCount ? null : (props.requestOption.order || ''),
         count: isCount,
       },
       filter: {
         op: filter.op,
         rules: [...filter.rules, ...customRules],
       },
-    }, props.type)));
+    }, props.requestOption.type)));
     dataList.value = detailsRes?.data?.details;
     pagination.count = countRes?.data?.count;
     isLoading.value = false;
@@ -81,30 +93,35 @@ export const useTable = (props: IProp) => {
         <>
           <section class='operation-wrap'>
             <div class='operate-btn-groups'>{slots.operation?.()}</div>
-            {!props.noSearch && (
-              <SearchSelect class='w500 common-search-selector' v-model={searchVal.value} data={props.searchData} />
+            {!props.searchOptions.disabled && (
+              <SearchSelect
+                class='w500'
+                v-model={searchVal.value}
+                data={props.searchOptions.searchData}
+                {...(props.searchOptions.extra || {})}
+              />
             )}
           </section>
           <Loading loading={isLoading.value} class='loading-table-container'>
             <Table
               class='table-container'
               data={dataList.value}
-              columns={props.columns}
+              columns={props.tableOptions.columns}
               pagination={pagination}
               remotePagination
               showOverflowTooltip
-              {...(props.tableExtraOptions || {})}
+              {...(props.tableOptions.extra || {})}
               onPageLimitChange={handlePageLimitChange}
               onPageValueChange={handlePageValueCHange}
               onColumnSort={() => {}}
               onColumnFilter={() => {}}>
-                {{
-                  empty: () => {
-                    if (isLoading.value) return null;
-                    return <Empty />;
-                  },
-                }}
-              </Table>
+              {{
+                empty: () => {
+                  if (isLoading.value) return null;
+                  return <Empty />;
+                },
+              }}
+            </Table>
           </Loading>
         </>
       );
@@ -118,11 +135,14 @@ export const useTable = (props: IProp) => {
     ],
     ([searchVal, bizs]) => {
       if (isBusinessPage && !bizs) return;
-      filter.rules = Array.isArray(searchVal) ? searchVal.map((val: any) => ({
-        field: val?.id,
-        op: val?.id === 'domain' ? QueryRuleOPEnum.JSON_CONTAINS : QueryRuleOPEnum.EQ,
-        value: val?.values?.[0]?.id,
-      })) : [];
+      filter.rules = Array.isArray(searchVal) ? searchVal.map((val: any) => {
+        const field = val?.id;
+        const op = val?.id === 'domain' ? QueryRuleOPEnum.JSON_CONTAINS : QueryRuleOPEnum.EQ;
+        const value = field === 'bk_biz_id'
+          ? (businessMapStore.businessNameToIDMap.get(val?.values?.[0]?.id) || Number(val?.values?.[0]?.id))
+          : val?.values?.[0]?.id;
+        return { field, op, value };
+      }) : [];
       // 页码重置
       pagination.start = 0;
       getListData();
@@ -133,7 +153,7 @@ export const useTable = (props: IProp) => {
   );
 
   // 分配业务筛选
-  watch(() => props.filter, (val) => {
+  watch(() => props.bizFilter, (val) => {
     if (isResourcePage) searchVal.value = '';
     const idx = filter.rules.findIndex(rule => rule.field === 'bk_biz_id');
     const bizFilter = val.rules[0];
@@ -148,6 +168,24 @@ export const useTable = (props: IProp) => {
     }
     getListData();
   }, { deep: true });
+
+  watch(() => props.requestOption.rules, (val) => {
+    if (!val) return;
+    const idx = filter.rules.findIndex(rule => rule.field === 'res_type');
+    if (idx === -1) {
+      filter.rules.push(...val);
+    } else {
+      const rule = val[0];
+      if (!rule.value) {
+        filter.rules.splice(idx, 1);
+      } else {
+        filter.rules[idx] = rule;
+      }
+    }
+    getListData();
+  }, {
+    deep: true,
+  });
 
   return {
     CommonTable,
