@@ -222,7 +222,7 @@ export default defineComponent({
           name: props.payload?.name || '',
           type: props.payload?.type || TemplateType.IP,
           vendor: VendorEnum.TCLOUD,
-          account_id: `${props.payload?.account_id}` || resourceAccountStore.resourceAccount?.id || '',
+          account_id: props.payload?.account_id || resourceAccountStore.resourceAccount?.id || '',
           templates: props.payload?.templates || [],
           group_templates: props.payload?.group_templates || [],
           bk_biz_id: props.payload?.bk_biz_id || -1,

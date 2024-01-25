@@ -738,8 +738,8 @@ const templateColumns = [
     },
   },
   {
-    label: '操作',
     field: 'actions',
+    label: '操作',
     render({ data }: any) {
       return h('span', {}, [
         h(
