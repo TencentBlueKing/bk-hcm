@@ -15,7 +15,7 @@ const resourceMenus: RouteRecordRaw[] = [
         children: [
           {
             path: 'record',
-            name: t('操作记录'),
+            name: 'operationRecord',
             component: () => import('@/views/resource/resource-manage/operationRecord/index'),
           },
           {

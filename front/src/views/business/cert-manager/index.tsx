@@ -75,32 +75,36 @@ export default defineComponent({
       return result;
     });
     const { CommonTable, getListData } = useTable({
-      columns: tableColumns.value,
-      type: 'certs',
-      searchData: [
-        {
-          name: '证书名称',
-          id: 'name',
+      searchOptions: {
+        searchData: [
+          {
+            name: '证书名称',
+            id: 'name',
+          },
+          {
+            name: '资源ID',
+            id: 'cloud_id',
+          },
+          {
+            name: '域名',
+            id: 'domain',
+          },
+        ],
+      },
+      tableOptions: {
+        columns: tableColumns.value,
+        extra: {
+          isRowSelectEnable,
+          onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
+          onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
         },
-        {
-          name: '资源ID',
-          id: 'cloud_id',
-        },
-        {
-          name: '域名',
-          id: 'domain',
-        },
-      ],
-      filter: props.filter,
-      sortOption: {
+      },
+      requestOption: {
+        type: 'certs',
         sort: 'cloud_created_time',
         order: 'DESC',
       },
-      tableExtraOptions: {
-        isRowSelectEnable,
-        onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
-        onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
-      },
+      bizFilter: props.filter,
     });
     const isCertUploadSidesliderShow = ref(false);
     const formRef = ref();

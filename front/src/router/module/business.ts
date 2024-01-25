@@ -394,7 +394,6 @@ const businesseMenus: RouteRecordRaw[] = [
         component: () => import('@/views/resource/resource-manage/operationRecord/index'),
         meta: {
           activeKey: 'record',
-          breadcrumb: ['其他', '操作记录'],
           isShowBreadcrumb: true,
         },
       },
