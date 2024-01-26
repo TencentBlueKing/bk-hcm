@@ -101,8 +101,10 @@ export default defineComponent({
       },
       requestOption: {
         type: 'certs',
-        sort: 'cloud_created_time',
-        order: 'DESC',
+        sortOption: {
+          sort: 'cloud_created_time',
+          order: 'DESC',
+        },
       },
       bizFilter: props.filter,
     });

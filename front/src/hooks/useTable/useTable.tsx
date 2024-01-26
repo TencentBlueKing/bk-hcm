@@ -9,6 +9,7 @@ import Empty from '@/components/empty';
 import { useAccountStore, useResourceStore } from '@/store';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useWhereAmI } from '../useWhereAmI';
+import { getDifferenceSet } from '@/common/util';
 export interface IProp {
   // search-select 相关字段
   searchOptions: {
@@ -25,16 +26,24 @@ export interface IProp {
   // 请求相关字段
   requestOption: {
     type: string, // 资源类型
-    sort?: string, // 需要排序的字段, 与 order 配合使用
-    order?: 'ASC' | 'DESC', // 排序方式, 与 sort 配合使用
-    rules?: Array<RulesItem>, // 筛选规则
+    sortOption?: {
+      sort: string, // 需要排序的字段
+      order: 'ASC' | 'DESC', // 排序方式
+    }, // 排序参数
+    filterOption?: {
+      rules: Array<RulesItem>, // 规则
+      deleteOption?: {
+        field: string,
+        flagValue: string, // 当 rule.value = flagValue 时, 删除该 rule
+      }, // Tab 切换时选用项(如选中全部时, 删除对应的 rule)
+    }, // 筛选参数
   },
   // 资源下筛选业务功能相关的 prop
   bizFilter?: FilterType,
 }
 
 export const useTable = (props: IProp) => {
-  const { isBusinessPage, isResourcePage } = useWhereAmI();
+  const { isBusinessPage } = useWhereAmI();
   const resourceStore = useResourceStore();
   const accountStore = useAccountStore();
   const businessMapStore = useBusinessMapStore();
@@ -55,7 +64,7 @@ export const useTable = (props: IProp) => {
     pagination.start = 0;
     getListData();
   };
-  const handlePageValueCHange = (v: number) => {
+  const handlePageValueChange = (v: number) => {
     pagination.start = (v - 1) * pagination.limit;
     getListData();
   };
@@ -74,8 +83,7 @@ export const useTable = (props: IProp) => {
       page: {
         limit: isCount ? 0 : pagination.limit,
         start: isCount ? 0 : pagination.start,
-        sort: isCount ? null : (props.requestOption.sort || ''),
-        order: isCount ? null : (props.requestOption.order || ''),
+        ...(isCount ? {} : (props.requestOption.sortOption || {})),
         count: isCount,
       },
       filter: {
@@ -112,7 +120,7 @@ export const useTable = (props: IProp) => {
               showOverflowTooltip
               {...(props.tableOptions.extra || {})}
               onPageLimitChange={handlePageLimitChange}
-              onPageValueChange={handlePageValueCHange}
+              onPageValueChange={handlePageValueChange}
               onColumnSort={() => {}}
               onColumnFilter={() => {}}>
               {{
@@ -128,21 +136,82 @@ export const useTable = (props: IProp) => {
     },
   });
 
+  /**
+   * 构建请求筛选条件
+   * @param options 配置对象
+   */
+  const buildFilter = (options: {
+    rules: Array<RulesItem>; // 规则列表
+    deleteOption?: { field: string; flagValue: any }; // 删除选项(可选, 用于 tab 切换时, 删除规则)
+    differenceFields?: string[]; // search-select 移除条件时的搜索字段差集(只用于 search-select 组件)
+  }) => {
+    const { rules, deleteOption, differenceFields } = options;
+    const filterMap = new Map();
+    // 先添加新的规则
+    rules.forEach((rule) => {
+      const tmpRule = filterMap.get(rule.field);
+      if (tmpRule) {
+        if (Array.isArray(tmpRule.rules)) {
+          filterMap.set(rule.field, { op: QueryRuleOPEnum.OR, rules: [...tmpRule.rules, rule] });
+        } else {
+          filterMap.set(rule.field, { op: QueryRuleOPEnum.OR, rules: [tmpRule, rule] });
+        }
+      } else {
+        filterMap.set(rule.field, JSON.parse(JSON.stringify(rule)));
+      }
+    });
+    // 后添加 filter 的规则
+    filter.rules.forEach((rule) => {
+      if (!filterMap.get(rule.field) && !rule.rules) {
+        filterMap.set(rule.field, rule);
+      }
+    });
+    // 如果配置了 deleteOption, 则当符合条件时, 删除对应规则
+    if (deleteOption) {
+      const { field, flagValue } = deleteOption;
+      const rule = filterMap.get(field);
+      rule && rule.value === flagValue && filterMap.delete(field);
+    }
+    // 如果配置了 differenceFields, 则移除 differenceFields 中对应的规则
+    if (differenceFields) {
+      differenceFields.forEach((field) => {
+        if (filterMap.has(field)) {
+          filterMap.delete(field);
+        }
+      });
+    }
+    // 整合后的规则重新赋值给 filter.rules
+    filter.rules = [...filterMap.values()];
+  };
+
   watch(
     [
       () => searchVal.value,
       () => accountStore.bizs,
     ],
-    ([searchVal, bizs]) => {
+    ([searchVal, bizs], [oldSearchVal]) => {
       if (isBusinessPage && !bizs) return;
-      filter.rules = Array.isArray(searchVal) ? searchVal.map((val: any) => {
+      // 记录上一次 search-select 的规则名
+      const oldSearchFieldList: string[] = (Array.isArray(oldSearchVal)
+        && oldSearchVal.reduce((prev: any, item: any) => [...prev, item.id], [])) || [];
+      // 记录此次 search-select 规则名
+      const searchFieldList: string[] = [];
+      // 构建当前 search-select 规则
+      const searchRules = Array.isArray(searchVal) ? searchVal.map((val: any) => {
         const field = val?.id;
         const op = val?.id === 'domain' ? QueryRuleOPEnum.JSON_CONTAINS : QueryRuleOPEnum.EQ;
         const value = field === 'bk_biz_id'
           ? (businessMapStore.businessNameToIDMap.get(val?.values?.[0]?.id) || Number(val?.values?.[0]?.id))
           : val?.values?.[0]?.id;
+        searchFieldList.push(field);
         return { field, op, value };
       }) : [];
+      // 如果 search-select 的条件减少, 则移除差集中的规则
+      if (oldSearchFieldList.length > searchFieldList.length) {
+        buildFilter({ rules: searchRules, differenceFields: getDifferenceSet(oldSearchFieldList, searchFieldList) });
+      } else {
+        buildFilter({ rules: searchRules });
+      }
       // 页码重置
       pagination.start = 0;
       getListData();
@@ -154,7 +223,6 @@ export const useTable = (props: IProp) => {
 
   // 分配业务筛选
   watch(() => props.bizFilter, (val) => {
-    if (isResourcePage) searchVal.value = '';
     const idx = filter.rules.findIndex(rule => rule.field === 'bk_biz_id');
     const bizFilter = val.rules[0];
     if (bizFilter) {
@@ -169,23 +237,18 @@ export const useTable = (props: IProp) => {
     getListData();
   }, { deep: true });
 
-  watch(() => props.requestOption.rules, (val) => {
-    if (!val) return;
-    const idx = filter.rules.findIndex(rule => rule.field === 'res_type');
-    if (idx === -1) {
-      filter.rules.push(...val);
-    } else {
-      const rule = val[0];
-      if (!rule.value) {
-        filter.rules.splice(idx, 1);
-      } else {
-        filter.rules[idx] = rule;
-      }
-    }
-    getListData();
-  }, {
-    deep: true,
-  });
+  watch(
+    () => props.requestOption.filterOption,
+    (val) => {
+      if (!val) return;
+      const { rules, deleteOption } = val;
+      buildFilter({ rules, deleteOption });
+      getListData();
+    },
+    {
+      deep: true,
+    },
+  );
 
   return {
     CommonTable,

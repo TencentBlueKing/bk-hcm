@@ -174,3 +174,14 @@ export function swapMapKeysAndValuesToObj(map: Map<string, string>) {
   }
   return _obj;
 }
+
+// 求两个数组的差集
+export function getDifferenceSet(origin: Array<string>, compare: Array<string>) {
+  const set = new Set(origin);
+  compare.forEach((item) => {
+    if (set.has(item)) {
+      set.delete(item);
+    }
+  });
+  return Array.from(set);
+};
