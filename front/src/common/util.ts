@@ -152,12 +152,12 @@ export function formatStorageSize(value: number, digits = 0) {
  * 获取当前网络得分对应的颜色
  * @param score 得分数值
  */
-export function getScoreColor(score: number) {
+export function getScoreColor (score: number) {
   if (score > 0 && score < 180) {
     return '#00A62B';
-  } if (score >= 180 && score <= 360) {
+  } else if (score >= 180 && score <= 360) {
     return '#FF9D00';
-  } if (score > 360) {
+  } else if ( score > 360 ) {
     return '#EA3636';
   }
   return '#63656E';
