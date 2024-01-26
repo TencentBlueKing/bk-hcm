@@ -15,7 +15,7 @@ export default defineComponent({
 
     // 表格
     const { columns, settings } = useColumns('operationRecord');
-    const searchRule = reactive<RulesItem>({ field: 'res_type', op: QueryRuleOPEnum.EQ, value: '' });
+    const searchRule = reactive<RulesItem>({ field: 'res_type', op: QueryRuleOPEnum.EQ, value: 'all' });
     const tableColumns = [
       ...columns,
       {
@@ -71,7 +71,7 @@ export default defineComponent({
       searchOptions: {
         searchData,
         extra: {
-          placeholder: '请输入实例名称或实例ID搜索',
+          placeholder: '请输入',
         },
       },
       tableOptions: {
@@ -82,9 +82,11 @@ export default defineComponent({
       },
       requestOption: {
         type: 'audits',
-        sort: 'created_at',
-        order: 'DESC',
-        rules: [searchRule],
+        sortOption: { sort: 'created_at', order: 'DESC' },
+        filterOption: {
+          rules: [searchRule],
+          deleteOption: { field: 'res_type', flagValue: 'all' },
+        },
       },
     });
 
@@ -155,9 +157,7 @@ export default defineComponent({
       },
     ]);
 
-    watch(activeResourceType, (val) => {
-      val === 'all' ? (searchRule.value = '') : (searchRule.value = val);
-    });
+    watch(activeResourceType, val => (searchRule.value = val));
 
     return () => (
       <div class={`operation-record-module${isResourcePage ? ' resource-apply' : ''}`}>
