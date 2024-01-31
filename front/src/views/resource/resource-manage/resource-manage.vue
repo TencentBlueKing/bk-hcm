@@ -77,6 +77,9 @@ const activeResourceTab = ref(RESOURCE_TABS[0].key);
 
 provide('securityType', securityType);
 
+// 用于判断 sideslider 中的表单数据是否改变
+const isFormDataChanged = ref(false);
+
 const formMap = {
   ip: EipForm,
   subnet: subnetForm,
@@ -179,6 +182,8 @@ const handleAdd = () => {
       break;
     default:
       isShowSideSlider.value = true;
+      // 标记初始化
+      isFormDataChanged.value = false;
   }
 };
 
@@ -317,14 +322,18 @@ const handleEdit = (detail: any) => {
 };
 
 const handleBeforeClose = () => {
-  InfoBox({
-    title: '请确认是否关闭侧栏？',
-    subTitle: '关闭后，内容需要重新填写！',
-    theme: 'warning',
-    onConfirm() {
-      handleCancel();
-    },
-  });
+  if (isFormDataChanged.value) {
+    InfoBox({
+      title: '请确认是否关闭侧栏？',
+      subTitle: '关闭后，内容需要重新填写！',
+      quickClose: false,
+      onConfirm() {
+        handleCancel();
+      },
+    });
+  } else {
+    handleCancel();
+  }
 };
 
 getResourceAccountList();
@@ -506,6 +515,7 @@ getResourceAccountList();
               @tabchange="handleTabChange"
               ref="componentRef"
               @edit="handleEdit"
+              v-model:isFormDataChanged="isFormDataChanged"
             >
               <span
                 v-if="
@@ -593,6 +603,8 @@ getResourceAccountList();
             @success="handleSuccess"
             :is-edit="isEdit"
             :detail="formDetail"
+            @edit="handleEdit"
+            v-model:isFormDataChanged="isFormDataChanged"
           ></component>
         </template>
       </bk-sideslider>

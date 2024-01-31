@@ -43,6 +43,9 @@ const isEdit = ref(false);
 
 provide('securityType', securityType); // 将数据传入孙组件
 
+// 用于判断 sideslider 中的表单数据是否改变
+const isFormDataChanged = ref(false);
+
 // 组件map
 const componentMap = {
   host: HostManage,
@@ -106,6 +109,8 @@ const handleAdd = () => {
   } else {
     isEdit.value = false;
     isShowSideSlider.value = true;
+    // 标记初始化
+    isFormDataChanged.value = false;
   }
 };
 
@@ -153,14 +158,18 @@ const submit = async (data: any) => {
 // };
 
 const handleBeforeClose = () => {
-  InfoBox({
-    title: '请确认是否关闭侧栏？',
-    subTitle: '关闭后，内容需要重新填写！',
-    theme: 'warning',
-    onConfirm() {
-      handleCancel();
-    },
-  });
+  if (isFormDataChanged.value) {
+    InfoBox({
+      title: '请确认是否关闭侧栏？',
+      subTitle: '关闭后，内容需要重新填写！',
+      quickClose: false,
+      onConfirm() {
+        handleCancel();
+      },
+    });
+  } else {
+    handleCancel();
+  }
 };
 
 // 权限hook
@@ -190,6 +199,7 @@ const {
           }"
           @handleSecrityType="handleSecrityType"
           @edit="handleEdit"
+          v-model:isFormDataChanged="isFormDataChanged"
         >
           <span>
             <bk-button
@@ -238,6 +248,7 @@ const {
           @success="handleSuccess"
           :detail="formDetail"
           :is-edit="isEdit"
+          v-model:isFormDataChanged="isFormDataChanged"
         ></component>
       </template>
     </bk-sideslider>
