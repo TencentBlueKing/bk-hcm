@@ -13,7 +13,6 @@ import BatchOperationDialog from '@/components/batch-operation-dialog';
 import RsSidesliderContent from './rs-sideslider-content';
 import './index.scss';
 
-const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 const { DropdownMenu, DropdownItem } = Dropdown;
 
 export default defineComponent({
@@ -67,7 +66,6 @@ export default defineComponent({
         name: 'RS的IP',
       },
     ];
-    const searchUrl = `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vpcs/list`;
     const tableData = [
       {
         target_group_name: 'TargetGroup1',
@@ -113,12 +111,18 @@ export default defineComponent({
       }, // 尾后逗号
     ];
     const { CommonTable } = useTable({
-      columns: tableColumns,
-      searchUrl,
-      searchData,
-      tableData,
-      tableExtraOptions: {
-        settings: settings.value,
+      searchOptions: {
+        searchData,
+      },
+      tableOptions: {
+        columns: tableColumns,
+        reviewData: tableData,
+        extra: {
+          settings: settings.value,
+        },
+      },
+      requestOption: {
+        type: '',
       },
     });
 

@@ -104,16 +104,16 @@ export default defineComponent({
       const url = `${baseUrl}/${!_item ? depthTypeMap[_depth] : depthTypeMap[_depth + 1]}`;
       const params = {
         _page: !_item ? rootPageNum.value : _item.pageNum,
-        _limit: 50,
-        parentId: !_item ? null : _item.id, // 根节点没有 parentId
+        _per_page: 50,
+        // parentId: !_item ? null : _item.id, // 根节点没有 parentId
       };
       const [res1, res2] = await Promise.all([
         axios.get(url, { params }),
-        axios.get(url, { params: { parentId: !_item ? null : _item.id } }),
+        axios.get(url/* , { params: { parentId: !_item ? null : _item.id } } */),
       ]);
 
       // 组装新增的节点
-      const _incrementNodes = res1.data.map((item: any) => {
+      const _incrementNodes = res1.data.data.map((item: any) => {
         // 如果是加载根节点的数据，则 type 设置为当前 type；如果是加载子节点的数据，则 type 设置为下一级 type
         !_item ? (item.type = depthTypeMap[_depth]) : (item.type = depthTypeMap[_depth + 1]);
         // 如果是加载根节点或非叶子节点的数据，需要给每个 item 添加 async = true 用于异步加载，以及初始化 pageNum = 1

@@ -20,11 +20,17 @@ export default defineComponent({
     ];
     const searchData: any = [];
     const { CommonTable } = useTable({
-      columns: tableColumns,
-      searchData,
-      type: 'clbs',
-      tableExtraOptions: {
-        settings: settings.value,
+      searchOptions: {
+        searchData,
+      },
+      tableOptions: {
+        columns: tableColumns,
+        extra: {
+          settings: settings.value,
+        },
+      },
+      requestOption: {
+        type: '',
       },
     });
 
