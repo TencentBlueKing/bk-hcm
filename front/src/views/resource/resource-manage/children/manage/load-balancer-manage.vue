@@ -15,7 +15,7 @@
           }
         "
       />
-      <Button>批量删除</Button>
+      <Button class="mw88">批量删除</Button>
       <div class="flex-row align-items-center justify-content-arround search-selector-container">
         <bk-search-select
           class="w500"

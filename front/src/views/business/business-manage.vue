@@ -194,7 +194,7 @@ const {
           <span>
             <bk-button
               theme="primary"
-              class="new-button mr10"
+              class="mw64 mr10"
               :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.biz_iaas_resource_create }"
               @click="() => {
                 if (authVerifyData?.permissionAction?.biz_iaas_resource_create) {
@@ -284,7 +284,13 @@ const {
     }
   }
 }
-.new-button {
-  width: 100px;
+</style>
+
+<style lang="scss">
+.mw64 {
+  min-width: 64px;
+}
+.mw88 {
+  min-width: 88px;
 }
 </style>

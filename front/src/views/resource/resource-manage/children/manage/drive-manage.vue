@@ -249,9 +249,8 @@ const isCurRowSelectEnable = (row: any) => {
         "
       />
       <bk-button
-        class="w100"
+        class="mw88"
         :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.biz_iaas_resource_delete }"
-        theme="primary"
         :disabled="authVerifyData?.permissionAction?.biz_iaas_resource_delete && selections.length <= 0"
         @click="
           () => {
@@ -270,7 +269,7 @@ const isCurRowSelectEnable = (row: any) => {
           }
         "
       >
-        {{ t('回收') }}
+        {{ t('批量回收') }}
       </bk-button>
       <div class="flex-row align-items-center justify-content-arround mlauto">
         <bk-search-select

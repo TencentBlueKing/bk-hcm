@@ -312,6 +312,8 @@ const handleEdit = (detail: any) => {
   formDetail.value = detail;
   isEdit.value = true;
   isShowSideSlider.value = true;
+  // 初始化标记
+  isFormDataChanged.value = false;
 };
 
 const handleBeforeClose = () => {
@@ -715,5 +717,11 @@ getResourceAccountList();
   .bk-info-sub-title {
     word-break: break-all;
   }
+}
+.mw64 {
+  min-width: 64px;
+}
+.mw88 {
+  min-width: 88px;
 }
 </style>

@@ -6,12 +6,20 @@
   .operate-btn-groups {
     display: flex;
 
-    .bk-button {
-      min-width: 88px;
+    .bk-button:not(:last-child) {
+      margin-right: 12px;
+    }
 
-      &:not(:last-child) {
-        margin-right: 12px;
-      }
+    .mw64 {
+      min-width: 64px;
+    }
+
+    .mw88 {
+      min-width: 88px;
+    }
+
+    .f26 {
+      font-size: 26px;
     }
   }
 }
