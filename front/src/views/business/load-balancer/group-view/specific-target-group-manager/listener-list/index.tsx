@@ -105,15 +105,20 @@ export default defineComponent({
         id: 'ipAddressType',
       },
     ];
-    const searchUrl = '';
 
     const { CommonTable } = useTable({
-      columns,
-      searchData,
-      searchUrl,
-      tableData,
-      tableExtraOptions: {
-        settings: settings.value,
+      searchOptions: {
+        searchData,
+      },
+      tableOptions: {
+        columns,
+        reviewData: tableData,
+        extra: {
+          settings: settings.value,
+        },
+      },
+      requestOption: {
+        type: '',
       },
     });
     return () => <div class='listener-list-page'>

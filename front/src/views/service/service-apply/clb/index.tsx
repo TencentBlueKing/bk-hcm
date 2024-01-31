@@ -426,60 +426,66 @@ export default defineComponent({
     const isBindEipDialogShow = ref(false);
     const selectedEipData = reactive({ id: '', name: '', elasticIP: '' });
     const bindEipTable = useTable({
-      columns: [
-        {
-          label: 'ID',
-          field: 'id',
-          render: ({ data }: any) => {
-            return <Radio v-model={selectedEipData.id} label={data.id} />;
+      searchOptions: {
+        searchData: [
+          {
+            name: 'ID',
+            id: 'id',
+          },
+          {
+            name: '名称',
+            id: 'name',
+          },
+          {
+            name: '弹性公网IP',
+            id: 'elasticIP',
+          },
+        ],
+        disabled: true,
+      },
+      tableOptions: {
+        columns: [
+          {
+            label: 'ID',
+            field: 'id',
+            render: ({ data }: any) => {
+              return <Radio v-model={selectedEipData.id} label={data.id} />;
+            },
+          },
+          {
+            label: '名称',
+            field: 'name',
+          },
+          {
+            label: '弹性公网IP',
+            field: 'elasticIP',
+          },
+        ],
+        reviewData: [
+          {
+            id: '1',
+            name: '服务器A',
+            elasticIP: '123.123.123.123',
+          },
+          {
+            id: '2',
+            name: '服务器B',
+            elasticIP: '234.234.234.234',
+          },
+          {
+            id: '3',
+            name: '服务器C',
+            elasticIP: '345.345.345.345',
+          },
+        ],
+        extra: {
+          onRowClick: (_event: Event, _row: any) => {
+            Object.assign(selectedEipData, _row);
           },
         },
-        {
-          label: '名称',
-          field: 'name',
-        },
-        {
-          label: '弹性公网IP',
-          field: 'elasticIP',
-        },
-      ],
-      searchData: [
-        {
-          name: 'ID',
-          id: 'id',
-        },
-        {
-          name: '名称',
-          id: 'name',
-        },
-        {
-          name: '弹性公网IP',
-          id: 'elasticIP',
-        },
-      ],
-      searchUrl: '',
-      tableData: [
-        {
-          id: '1',
-          name: '服务器A',
-          elasticIP: '123.123.123.123',
-        },
-        {
-          id: '2',
-          name: '服务器B',
-          elasticIP: '234.234.234.234',
-        },
-        {
-          id: '3',
-          name: '服务器C',
-          elasticIP: '345.345.345.345',
-        },
-      ],
-      noSearch: true,
-      tableExtraOptions: {
-        onRowClick: (_event: Event, _row: any) => {
-          Object.assign(selectedEipData, _row);
-        },
+      },
+      requestOption: {
+        type: '',
       },
     });
     const handleBindEip = () => {
@@ -496,81 +502,87 @@ export default defineComponent({
       bandwidthLimit: '',
     });
     const clbSpecTypeTable = useTable({
-      columns: [
-        {
-          label: '型号',
-          field: 'model',
-          render: ({ data }: any) => {
-            return <Radio v-model={selectedClbSpecType.model} label={data.model} />;
+      searchOptions: {
+        searchData: [
+          {
+            name: '型号',
+            id: 'model',
+          },
+          {
+            name: '最大并发连接数(个)',
+            id: 'maxConcurrentConnections',
+          },
+          {
+            name: '每秒新建连接数(个)',
+            id: 'newConnectionsPerSecond',
+          },
+          {
+            name: '每秒查询数(个)',
+            id: 'queriesPerSecond',
+          },
+          {
+            name: '带宽上限(Mbps)',
+            id: 'bandwidthLimit',
+          },
+        ],
+      },
+      tableOptions: {
+        columns: [
+          {
+            label: '型号',
+            field: 'model',
+            render: ({ data }: any) => {
+              return <Radio v-model={selectedClbSpecType.model} label={data.model} />;
+            },
+          },
+          {
+            label: '最大并发连接数(个)',
+            field: 'maxConcurrentConnections',
+          },
+          {
+            label: '每秒新建连接数(个)',
+            field: 'newConnectionsPerSecond',
+          },
+          {
+            label: '每秒查询数(个)',
+            field: 'queriesPerSecond',
+          },
+          {
+            label: '带宽上限(Mbps)',
+            field: 'bandwidthLimit',
+          },
+        ],
+        reviewData: [
+          {
+            model: 'Model-A',
+            maxConcurrentConnections: '10000',
+            newConnectionsPerSecond: '500',
+            queriesPerSecond: '2000',
+            bandwidthLimit: '100',
+          },
+          {
+            model: 'Model-B',
+            maxConcurrentConnections: '20000',
+            newConnectionsPerSecond: '1000',
+            queriesPerSecond: '4000',
+            bandwidthLimit: '200',
+          },
+          {
+            model: 'Model-C',
+            maxConcurrentConnections: '30000',
+            newConnectionsPerSecond: '1500',
+            queriesPerSecond: '6000',
+            bandwidthLimit: '300',
+          },
+        ],
+        extra: {
+          onRowClick: (_event: Event, _row: any) => {
+            Object.assign(selectedClbSpecType, _row);
           },
         },
-        {
-          label: '最大并发连接数(个)',
-          field: 'maxConcurrentConnections',
-        },
-        {
-          label: '每秒新建连接数(个)',
-          field: 'newConnectionsPerSecond',
-        },
-        {
-          label: '每秒查询数(个)',
-          field: 'queriesPerSecond',
-        },
-        {
-          label: '带宽上限(Mbps)',
-          field: 'bandwidthLimit',
-        },
-      ],
-      searchData: [
-        {
-          name: '型号',
-          id: 'model',
-        },
-        {
-          name: '最大并发连接数(个)',
-          id: 'maxConcurrentConnections',
-        },
-        {
-          name: '每秒新建连接数(个)',
-          id: 'newConnectionsPerSecond',
-        },
-        {
-          name: '每秒查询数(个)',
-          id: 'queriesPerSecond',
-        },
-        {
-          name: '带宽上限(Mbps)',
-          id: 'bandwidthLimit',
-        },
-      ],
-      searchUrl: '',
-      tableData: [
-        {
-          model: 'Model-A',
-          maxConcurrentConnections: '10000',
-          newConnectionsPerSecond: '500',
-          queriesPerSecond: '2000',
-          bandwidthLimit: '100',
-        },
-        {
-          model: 'Model-B',
-          maxConcurrentConnections: '20000',
-          newConnectionsPerSecond: '1000',
-          queriesPerSecond: '4000',
-          bandwidthLimit: '200',
-        },
-        {
-          model: 'Model-C',
-          maxConcurrentConnections: '30000',
-          newConnectionsPerSecond: '1500',
-          queriesPerSecond: '6000',
-          bandwidthLimit: '300',
-        },
-      ],
-      tableExtraOptions: {
-        onRowClick: (_event: Event, _row: any) => {
-          Object.assign(selectedClbSpecType, _row);
-        },
+      },
+      requestOption: {
+        type: '',
       },
     });
     const handleSelectClbSpecType = () => {

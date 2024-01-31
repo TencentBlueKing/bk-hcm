@@ -81,65 +81,68 @@ export default defineComponent({
         id: 'sync_status',
       },
     ];
-    const searchUrl = '';
     const { CommonTable } = useTable({
-      columns: tableColumns,
-      searchUrl,
-      searchData,
-      tableData: [
-        {
-          domain: 'example.com',
-          protocol: 'HTTP',
-          port: '80',
-          polling_method: '轮询',
-          url_count: '10',
-          sync_status: '成功',
-          is_default: false,
+      searchOptions: { searchData },
+      tableOptions: {
+        columns: tableColumns,
+        reviewData: [
+          {
+            domain: 'example.com',
+            protocol: 'HTTP',
+            port: '80',
+            polling_method: '轮询',
+            url_count: '10',
+            sync_status: '成功',
+            is_default: false,
+          },
+          {
+            domain: 'example.org',
+            protocol: 'HTTPS',
+            port: '443',
+            polling_method: '加权轮询',
+            url_count: '15',
+            sync_status: '失败',
+            is_default: false,
+          },
+          {
+            domain: 'example.net',
+            protocol: 'FTP',
+            port: '21',
+            polling_method: '源地址哈希',
+            url_count: '5',
+            sync_status: '部分成功',
+            is_default: true,
+          },
+          {
+            domain: 'example.edu',
+            protocol: 'HTTP',
+            port: '8080',
+            polling_method: '最少连接',
+            url_count: '8',
+            sync_status: '绑定中',
+            is_default: false,
+          },
+          {
+            domain: 'example.biz',
+            protocol: 'TCP',
+            port: '22',
+            polling_method: '随机',
+            url_count: '12',
+            sync_status: '成功',
+            is_default: false,
+          },
+        ],
+        extra: {
+          settings: settings.value,
+          'row-class': ({ sync_status }: { sync_status: string }) => {
+            if (sync_status === '绑定中') {
+              return 'binding-row';
+            }
+          },
         },
-        {
-          domain: 'example.org',
-          protocol: 'HTTPS',
-          port: '443',
-          polling_method: '加权轮询',
-          url_count: '15',
-          sync_status: '失败',
-          is_default: false,
-        },
-        {
-          domain: 'example.net',
-          protocol: 'FTP',
-          port: '21',
-          polling_method: '源地址哈希',
-          url_count: '5',
-          sync_status: '部分成功',
-          is_default: true,
-        },
-        {
-          domain: 'example.edu',
-          protocol: 'HTTP',
-          port: '8080',
-          polling_method: '最少连接',
-          url_count: '8',
-          sync_status: '绑定中',
-          is_default: false,
-        },
-        {
-          domain: 'example.biz',
-          protocol: 'TCP',
-          port: '22',
-          polling_method: '随机',
-          url_count: '12',
-          sync_status: '成功',
-          is_default: false,
-        },
-      ],
-      tableExtraOptions: {
-        settings: settings.value,
-        'row-class': ({ sync_status }: { sync_status: string }) => {
-          if (sync_status === '绑定中') {
-            return 'binding-row';
-          }
-        },
+      },
+      requestOption: {
+        type: '',
       },
     });
 

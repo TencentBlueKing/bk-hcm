@@ -165,83 +165,89 @@ export default defineComponent({
       ],
     };
     const { CommonTable } = useTable({
-      columns: tableColumns,
-      searchData: [
-        {
-          name: 'URL路径',
-          id: 'urlPath',
+      searchOptions: {
+        searchData: [
+          {
+            name: 'URL路径',
+            id: 'urlPath',
+          },
+          {
+            name: '协议',
+            id: 'protocol',
+          },
+          {
+            name: '端口',
+            id: 'port',
+          },
+          {
+            name: '轮询方式',
+            id: 'pollingMethod',
+          },
+          {
+            name: '目标组',
+            id: 'targetGroup',
+          },
+          {
+            name: '同步状态',
+            id: 'syncStatus',
+          },
+          {
+            name: '操作',
+            id: 'actions',
+          },
+        ],
+      },
+      tableOptions: {
+        columns: tableColumns,
+        reviewData: [
+          {
+            urlPath: '/home',
+            protocol: 'HTTP',
+            port: 80,
+            pollingMethod: 'RoundRobin',
+            targetGroup: 'GroupA',
+            syncStatus: 'a',
+            actions: 'Edit',
+          },
+          {
+            urlPath: '/about',
+            protocol: 'HTTPS',
+            port: 443,
+            pollingMethod: 'LeastConnections',
+            targetGroup: 'GroupB',
+            syncStatus: 'b',
+            actions: 'Delete',
+          },
+          {
+            urlPath: '/contact',
+            protocol: 'TCP',
+            port: 22,
+            pollingMethod: 'SourceIP',
+            targetGroup: 'GroupC',
+            syncStatus: 'c',
+            actions: 'Update',
+          },
+          {
+            urlPath: '/contact',
+            protocol: 'TCP',
+            port: 22,
+            pollingMethod: 'SourceIP',
+            targetGroup: 'GroupC',
+            syncStatus: 'd',
+            actions: 'Update',
+          },
+        ],
+        extra: {
+          settings: tableSettings.value,
+          'row-class': ({ syncStatus }: { syncStatus: string }) => {
+            if (syncStatus === 'a') {
+              return 'binding-row';
+            }
+          },
         },
-        {
-          name: '协议',
-          id: 'protocol',
-        },
-        {
-          name: '端口',
-          id: 'port',
-        },
-        {
-          name: '轮询方式',
-          id: 'pollingMethod',
-        },
-        {
-          name: '目标组',
-          id: 'targetGroup',
-        },
-        {
-          name: '同步状态',
-          id: 'syncStatus',
-        },
-        {
-          name: '操作',
-          id: 'actions',
-        },
-      ],
-      searchUrl: '',
-      tableData: [
-        {
-          urlPath: '/home',
-          protocol: 'HTTP',
-          port: 80,
-          pollingMethod: 'RoundRobin',
-          targetGroup: 'GroupA',
-          syncStatus: 'a',
-          actions: 'Edit',
-        },
-        {
-          urlPath: '/about',
-          protocol: 'HTTPS',
-          port: 443,
-          pollingMethod: 'LeastConnections',
-          targetGroup: 'GroupB',
-          syncStatus: 'b',
-          actions: 'Delete',
-        },
-        {
-          urlPath: '/contact',
-          protocol: 'TCP',
-          port: 22,
-          pollingMethod: 'SourceIP',
-          targetGroup: 'GroupC',
-          syncStatus: 'c',
-          actions: 'Update',
-        },
-        {
-          urlPath: '/contact',
-          protocol: 'TCP',
-          port: 22,
-          pollingMethod: 'SourceIP',
-          targetGroup: 'GroupC',
-          syncStatus: 'd',
-          actions: 'Update',
-        },
-      ],
-      tableExtraOptions: {
-        settings: tableSettings.value,
-        'row-class': ({ syncStatus }: { syncStatus: string }) => {
-          if (syncStatus === 'a') {
-            return 'binding-row';
-          }
-        },
+      },
+      requestOption: {
+        type: '',
       },
     });
 
