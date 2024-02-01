@@ -3,6 +3,8 @@
     padding: 0 !important;
     overflow: hidden !important;
     .container-content {
+      display: flex;
+      flex-direction: column;
         width: 100%;
         padding: 0 !important;
         overflow: hidden !important;
@@ -30,6 +32,7 @@
             
         }
         .view-warp{
+          flex: 1;
             overflow-y: auto;
 
             .i-detail-tap-wrap {
@@ -265,5 +268,12 @@
     width: 15%;
     z-index: 99;
     border-right: 1px solid #EAEBF0;
+  }
+}
+
+.home-page {
+  .no-footer .container-footer{
+    height: 0;
+    overflow: hidden;
   }
 }
