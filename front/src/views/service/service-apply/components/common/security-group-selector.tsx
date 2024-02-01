@@ -349,6 +349,7 @@ export default defineComponent({
                                 data={data}
                                 columns={securityRulesColumns}
                                 showOverflowTooltip
+                                stripe={true}
                               />
                             </DraggableCard>
                         ))}
