@@ -28,7 +28,7 @@
       </div>
     </section>
     <Table
-      class="mt20 has-selection"
+      class="has-selection"
       :columns="columns"
       :data="datas"
       :settings="settings"

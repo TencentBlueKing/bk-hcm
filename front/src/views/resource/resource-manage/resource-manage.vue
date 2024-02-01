@@ -648,14 +648,22 @@ getResourceAccountList();
 
     .bk-tab-header-item {
       padding: 0 24px;
+      height: 42px;
     }
   }
 
   :deep(.bk-tab-content) {
-    // border-left: 1px solid #dcdee5;
-    // border-right: 1px solid #dcdee5;
+    height: calc(100% - 42px);
     border-bottom: 1px solid #dcdee5;
     padding: 20px;
+
+    & > .bk-tab-panel > .bk-nested-loading {
+      height: 100%;
+      .bk-table {
+        margin-top: 16px;
+        max-height: calc(100% - 52px);
+      }
+    }
   }
 
   :deep(.bk-table.has-selection) {

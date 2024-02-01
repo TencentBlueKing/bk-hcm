@@ -285,7 +285,7 @@ const isCurRowSelectEnable = (row: any) => {
 
     <bk-table
       :settings="settings"
-      class="mt20 has-selection"
+      class="has-selection"
       row-hover="auto"
       remote-pagination
       show-overflow-tooltip
