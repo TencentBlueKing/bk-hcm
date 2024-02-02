@@ -435,7 +435,10 @@ onBeforeMount(() => {
 .w60 {
   width: 60px;
 }
-:deep(.detail-info-main .info-list-item .item-field) {
-  width: 150px !important;
+:deep(.detail-info-main) {
+  max-height: 100%;
+  .info-list-item .item-field {
+    width: 150px !important;
+  }
 }
 </style>

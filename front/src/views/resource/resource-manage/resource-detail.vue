@@ -91,4 +91,10 @@ bus.$on('auth', (authActionName: string) => {   // bus监听
 :deep(.detail-info-main .info-list-item .item-field) {
   width: 120px;
 }
+:deep(.i-detail-tap-wrap) {
+  .detail-tab-main .info-title {
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+}
 </style>

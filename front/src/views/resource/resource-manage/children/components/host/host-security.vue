@@ -79,6 +79,10 @@ const actionName = computed(() => {   // 资源下没有业务ID
   return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
 });
 
+// 是否显示表格上方的绑定按钮
+const isBindBtnShow = computed(() => {
+  return props.data.vendor === 'tcloud' || props.data.vendor === 'aws' || props.data.vendor === 'huawei';
+});
 
 // 权限弹窗 bus通知最外层弹出
 const showAuthDialog = (authActionName: string) => {
@@ -424,11 +428,12 @@ getSecurityGroupsList();
 </script>
 
 <template>
-  <div>
+  <div class="host-security-container" :class="isBindBtnShow ? 'show-bind-btn' : ''">
     <span
-      v-if="props.data.vendor === 'tcloud' || props.data.vendor === 'aws' || props.data.vendor === 'huawei'"
+      v-if="isBindBtnShow"
       @click="showAuthDialog(actionName)">
       <bk-button
+        class="mw88"
         theme="primary"
         :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]"
         @click="handleSecurityDialog">
@@ -439,7 +444,7 @@ getSecurityGroupsList();
       :loading="isListLoading"
     >
       <bk-table
-        class="mt20"
+        class="security-list-table"
         row-hover="auto"
         :columns="columns"
         :data="tableData"
@@ -546,6 +551,15 @@ getSecurityGroupsList();
 </template>
 
 <style lang="scss" scoped>
+.host-security-container {
+  .security-list-table {
+    max-height: 100% !important;
+  }
+  &.show-bind-btn .security-list-table {
+    margin-top: 16px;
+    max-height: calc(100% - 48px) !important;
+  }
+}
   .security-head {
     display: flex;
     align-items: center;

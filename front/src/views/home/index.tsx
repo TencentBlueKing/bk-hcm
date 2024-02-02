@@ -273,7 +273,6 @@ export default defineComponent({
           <div class='fixed-account-list-container'>
             <AccountList />
           </div>
-          <div></div>
           <RouterView class={'router-view-content'} />
         </div>
       );
