@@ -654,7 +654,6 @@ getResourceAccountList();
 
   :deep(.bk-tab-content) {
     height: calc(100% - 42px);
-    border-bottom: 1px solid #dcdee5;
     padding: 16px 24px;
 
     & > .bk-tab-panel > .bk-nested-loading {

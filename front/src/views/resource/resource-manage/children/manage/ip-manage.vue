@@ -192,7 +192,7 @@ defineExpose({ fetchComponentsData });
 <template>
   <bk-loading :loading="isLoading">
     <section
-      class="flex-row align-items-center mb20"
+      class="flex-row align-items-center"
       :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'"
     >
       <slot></slot>

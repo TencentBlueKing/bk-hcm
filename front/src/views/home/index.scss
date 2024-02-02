@@ -39,6 +39,14 @@
               margin-top: 52px;
               padding: 24px;
               height: calc(100% - 52px);
+
+              .detail-info-main .info-list-item .item-field {
+                width: 120px;
+              }
+              .detail-tab-main .info-title {
+                margin-bottom: 8px;
+                font-size: 14px;
+              }
             }
 
             .action-bar, .button-group {

@@ -184,55 +184,58 @@ const {
 </script>
 
 <template>
-  <div>
-    <section class="business-manage-wrapper">
-      <bk-loading :loading="!accountStore.bizs">
-        <component
-          v-if="accountStore.bizs"
-          ref="componentRef"
-          :is="renderComponent"
-          :filter="filter"
-          :is-resource-page="isResourcePage"
-          :auth-verify-data="authVerifyData"
-          @auth="(val: string) => {
-            handleAuth(val)
-          }"
-          @handleSecrityType="handleSecrityType"
-          @edit="handleEdit"
-          v-model:isFormDataChanged="isFormDataChanged"
-        >
-          <span>
-            <bk-button
-              theme="primary"
-              class="mw64 mr10"
-              :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.biz_iaas_resource_create }"
-              @click="() => {
-                if (authVerifyData?.permissionAction?.biz_iaas_resource_create) {
-                  handleAdd();
-                } else {
-                  handleAuth('biz_iaas_resource_create')
-                }
-              }"
-            >
-              {{
-                renderComponent === DriveManage ||
-                  renderComponent === HostManage ||
-                  renderComponent === SubnetManage ||
-                  renderComponent === VpcManage
-                  ? '申请'
-                  : '新增'
-              }}
-            </bk-button>
-          </span>
+  <div
+    class="business-manage-wrapper"
+    :class="[
+      route.path === '/business/host' ? 'is-host-page' : '',
+      route.path === '/business/recyclebin' ? 'is-recycle-page' : '',
+    ]">
+    <bk-loading class="common-card-wrap" :loading="!accountStore.bizs">
+      <component
+        v-if="accountStore.bizs"
+        ref="componentRef"
+        :is="renderComponent"
+        :filter="filter"
+        :is-resource-page="isResourcePage"
+        :auth-verify-data="authVerifyData"
+        @auth="(val: string) => {
+          handleAuth(val)
+        }"
+        @handleSecrityType="handleSecrityType"
+        @edit="handleEdit"
+        v-model:isFormDataChanged="isFormDataChanged"
+      >
+        <span>
+          <bk-button
+            theme="primary"
+            class="mw64 mr10"
+            :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.biz_iaas_resource_create }"
+            @click="() => {
+              if (authVerifyData?.permissionAction?.biz_iaas_resource_create) {
+                handleAdd();
+              } else {
+                handleAuth('biz_iaas_resource_create')
+              }
+            }"
+          >
+            {{
+              renderComponent === DriveManage ||
+                renderComponent === HostManage ||
+                renderComponent === SubnetManage ||
+                renderComponent === VpcManage
+                ? '申请'
+                : '新增'
+            }}
+          </bk-button>
+        </span>
 
-          <template #recycleHistory>
-            <!-- <bk-button class="f-right" theme="primary" @click="handleToPage">
-              {{ '回收记录' }}
-            </bk-button> -->
-          </template>
-        </component>
-      </bk-loading>
-    </section>
+        <template #recycleHistory>
+          <!-- <bk-button class="f-right" theme="primary" @click="handleToPage">
+            {{ '回收记录' }}
+          </bk-button> -->
+        </template>
+      </component>
+    </bk-loading>
     <bk-sideslider
       v-model:isShow="isShowSideSlider"
       width="800"
@@ -272,10 +275,39 @@ const {
 
 <style lang="scss" scoped>
 .business-manage-wrapper {
-  height: calc(100% - 20px);
+  padding: 24px;
+  height: 100%;
   overflow-y: auto;
-  // background-color: #fff;
-  padding: 20px;
+
+  .common-card-wrap {
+    padding: 16px 24px;
+    height: 100%;
+    background-color: #fff;
+
+    & > :deep(.bk-nested-loading) {
+      height: 100%;
+      .bk-table {
+        margin-top: 16px;
+        max-height: calc(100% - 48px);
+      }
+    }
+  }
+
+  &.is-host-page {
+    padding-bottom: 0;
+  }
+
+  &.is-recycle-page .common-card-wrap {
+    padding: 0;
+    background-color: transparent;
+
+    :deep(.recycle-manager-page) {
+      height: 100%;
+      .bk-tab {
+        height: 100%;
+      }
+    }
+  }
 
   :deep(.bk-table.has-selection) {
     .bk-table-head .bk-checkbox {
