@@ -26,6 +26,7 @@ import {
   useAccountStore,
 } from '@/store/account';
 import { INSTANCE_CHARGE_MAP, VendorEnum } from '@/common/constant';
+import { timeFormatter } from '@/common/util';
 
 const props = defineProps({
   data: {
@@ -286,7 +287,7 @@ watch(
           label: '到期时间',
           field: '',
           render({ cell }: any) {
-            return cell || '--';
+            return timeFormatter(cell) || '--';
           },
         },
       ]);

@@ -31,7 +31,7 @@ import {
   HOST_SHUTDOWN_STATUS,
 } from '../common/table/HostOperations';
 import './use-columns.scss';
-import moment from 'moment';
+import { timeFormatter } from '@/common/util';
 
 export default (type: string, isSimpleShow = false, vendor?: string) => {
   const router = useRouter();
@@ -184,11 +184,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
   ];
 
@@ -302,11 +304,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
   ];
 
@@ -502,11 +506,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
   ];
 
@@ -560,11 +566,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
   ];
 
@@ -665,13 +673,14 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '创建时间',
       field: 'created_at',
-      width: 180,
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
   ];
 
@@ -722,11 +731,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
   ];
 
@@ -881,11 +892,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
   ];
 
@@ -962,6 +975,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: t('修改时间'),
       field: 'updated_at',
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
   ];
 
@@ -1063,11 +1077,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
   ];
 
@@ -1429,17 +1445,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '上传时间',
       field: 'cloud_created_time',
       sort: true,
-      render: ({ cell }: { cell: string }) => {
-        return moment(cell).format('YYYY-MM-DD HH:mm:ss');
-      },
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
     {
       label: '过期时间',
       field: 'cloud_expired_time',
       sort: true,
-      render: ({ cell }: { cell: string }) => {
-        return moment(cell).format('YYYY-MM-DD HH:mm:ss');
-      },
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
     {
       label: '证书状态',
@@ -1511,9 +1523,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'created_at',
       isDefaultShow: true,
       sort: true,
-      render: ({ cell }: { cell: string }) => {
-        return moment(cell).format('YYYY-MM-DD HH:mm:ss');
-      },
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
     {
       label: '资源类型',

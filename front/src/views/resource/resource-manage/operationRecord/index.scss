@@ -54,5 +54,9 @@
     background: #455070;
     font-size: 12px;
     color: #bfc6e0;
+
+    pre {
+      overflow-x: auto;
+    }
   }
 }
