@@ -6,6 +6,7 @@ import { PropType } from 'vue';
 import { TypeEnum, useRouteLinkBtn } from '@/hooks/useRouteLinkBtn';
 import { CLOUD_HOST_STATUS, VendorEnum } from '@/common/constant';
 import { useRegionsStore } from '@/store/useRegionsStore';
+import { timeFormatter } from '@/common/util';
 
 const { getRegionName } = useRegionsStore();
 
@@ -58,6 +59,9 @@ const cvmInfo = [
   {
     name: '启动时间',
     prop: 'cloud_launched_time',
+    render() {
+      return timeFormatter(props.data.cloud_launched_time);
+    },
   },
   {
     name: '当前状态',

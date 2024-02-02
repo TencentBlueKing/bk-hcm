@@ -179,17 +179,21 @@
                   label="进入回收站时间"
                   prop="created_at"
                   :sort="true"
-                />
+                >
+                  <template #default="{ cell }">
+                    {{ timeFormatter(cell) }}
+                  </template>
+                </bk-table-column>
                 <bk-table-column
                   label="过期时间"
                   prop="recycled_at"
                   :sort="true"
                 >
-                  <template #default="{ data }">
+                  <template #default="{ cell }">
                     <bk-tag theme="danger">
-                      {{ moment(data?.recycled_at).fromNow() }}
+                      {{ moment(cell).fromNow() }}
                     </bk-tag>
-                    {{data?.recycled_at}}
+                    {{ timeFormatter(cell) }}
                   </template>
                 </bk-table-column>
                 <bk-table-column
@@ -296,6 +300,7 @@ import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import moment from 'moment';
 import http from '@/http';
 import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
+import { timeFormatter } from '@/common/util';
 
 export default defineComponent({
   name: 'RecyclebinManageList',
@@ -708,6 +713,7 @@ export default defineComponent({
       RESERVE_TIME_SET,
       handleSettingConfirm,
       moment,
+      timeFormatter,
       handleClick,
       isSettingDialogLoading,
       resourceAccountStore,

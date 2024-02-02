@@ -11,6 +11,7 @@ import {
   VendorEnum,
 } from '@/common/constant';
 import { useRegionsStore } from '@/store/useRegionsStore';
+import { timeFormatter } from '@/common/util';
 
 const { getRegionName } = useRegionsStore();
 
@@ -63,6 +64,9 @@ const cvmInfo = [
   {
     name: '启动时间',
     prop: 'cloud_launched_time',
+    render() {
+      return timeFormatter(props.data.cloud_launched_time);
+    },
   },
   {
     name: '当前状态',
@@ -177,6 +181,9 @@ const priceInfo = [
   {
     name: '创建时间',
     prop: 'cloud_created_time',
+    render() {
+      return timeFormatter(props.data.cloud_created_time);
+    },
   },
   {
     name: '网络计费模式',
@@ -188,6 +195,9 @@ const priceInfo = [
   {
     name: '到期时间',
     prop: 'cloud_expired_time',
+    render() {
+      return timeFormatter(props.data.cloud_expired_time);
+    },
   },
 ];
 </script>

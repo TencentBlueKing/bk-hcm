@@ -12,6 +12,7 @@ import DetailList from '../../../common/info/detail-info';
 import DetailTab from '../../../common/tab/detail-tab';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useRegionsStore } from '@/store/useRegionsStore';
+import { timeFormatter } from '@/common/util';
 
 const props = defineProps({
   detail: Object,
@@ -121,6 +122,7 @@ const baseInfo = ref([
   {
     name: '创建时间',
     prop: 'created_at',
+    render: (val: string) => timeFormatter(val),
   },
 ]);
 const bindInfo = ref<any>([

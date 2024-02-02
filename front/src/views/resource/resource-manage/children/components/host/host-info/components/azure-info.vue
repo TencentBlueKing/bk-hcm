@@ -5,6 +5,7 @@ import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info
 import { PropType } from 'vue';
 import { TypeEnum, useRouteLinkBtn } from '@/hooks/useRouteLinkBtn';
 import { CLOUD_HOST_STATUS } from '@/common/constant';
+import { timeFormatter } from '@/common/util';
 
 const shortCutStr = (str: string) => {
   if (!str) return str;
@@ -62,6 +63,9 @@ const cvmInfo = [
   {
     name: '创建时间',
     prop: 'cloud_created_time',
+    render() {
+      return timeFormatter(props.data.cloud_created_time);
+    },
   },
   {
     name: '当前状态',

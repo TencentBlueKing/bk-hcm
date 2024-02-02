@@ -34,6 +34,7 @@ import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { VendorEnum } from '@/common/constant';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { timeFormatter } from '@/common/util';
 
 const { getRegionName } = useRegionsStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
@@ -92,6 +93,7 @@ const VPCFields = ref([
   {
     name: '创建时间',
     prop: 'created_at',
+    render: (val: string) => timeFormatter(val),
   },
   {
     name: '备注',

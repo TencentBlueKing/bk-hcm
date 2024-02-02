@@ -25,6 +25,7 @@ import {
 
 import { ref, watch } from 'vue';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { timeFormatter } from '@/common/util';
 
 const route = useRoute();
 const resourceStore = useResourceStore();
@@ -161,10 +162,12 @@ const gcpFields = [
   {
     name: t('创建时间'),
     prop: 'created_at',
+    render: (val: string) => timeFormatter(val),
   },
   {
     name: t('修改时间'),
     prop: 'updated_at',
+    render: (val: string) => timeFormatter(val),
   },
   {
     name: t('备注'),

@@ -26,6 +26,7 @@ import {
   useAccountStore,
 } from '@/store/account';
 import { INSTANCE_CHARGE_MAP, VendorEnum } from '@/common/constant';
+import { timeFormatter } from '@/common/util';
 
 const props = defineProps({
   data: {
@@ -92,7 +93,7 @@ const generateTooltipsOptions = (data: any) => {
   if (data?.is_system_disk) return {
     content: '系统盘不可以卸载',
     disabled: !data.is_system_disk,
-  }
+  };
 
   return {
     disabled: true,
@@ -199,21 +200,21 @@ const columns = ref([
         },
         [
           withDirectives(h(
-              Button,
-              {
-                text: true,
-                theme: 'primary',
-                disabled: !authVerifyData.value?.permissionAction[actionName.value] || data.is_system_disk
+            Button,
+            {
+              text: true,
+              theme: 'primary',
+              disabled: !authVerifyData.value?.permissionAction[actionName.value] || data.is_system_disk
                     || (isResourcePage.value && props.data?.bk_biz_id !== -1),
-                onClick() {
-                  handleUninstallDrive(data);
-                },
+              onClick() {
+                handleUninstallDrive(data);
               },
-              [
-                '卸载',
-              ],
+            },
+            [
+              '卸载',
+            ],
           ), [
-              [bkTooltips, generateTooltipsOptions(data)]
+            [bkTooltips, generateTooltipsOptions(data)],
           ])],
       );
     },
@@ -285,7 +286,7 @@ watch(
           label: '到期时间',
           field: '',
           render({ cell }: any) {
-            return cell || '--';
+            return timeFormatter(cell) || '--';
           },
         },
       ]);
