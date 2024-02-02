@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <div class="flex-row operate-warp justify-content-between align-items-center mb20">
+  <div class="recycle-manager-page">
+    <div class="flex-row operate-warp justify-content-between align-items-center">
       <div>
         <!-- <bk-button-group>
           <bk-button
@@ -51,7 +51,7 @@
                 }"
                 @click="handleAuth('recycle_bin_manage')">
                 <bk-button
-                  class="ml10 mb20"
+                  class="ml8"
                   :disabled="!selections.length || !authVerifyData?.permissionAction?.recycle_bin_manage"
                   @click="handleOperate('recover')"
                 >{{ t('立即恢复') }}
@@ -722,6 +722,25 @@ export default defineComponent({
 });
 </script>
 <style lang="scss" scoped>
+.recycle-manager-page {
+  :deep(.bk-tab) {
+    height: calc(100vh - 200px);
+    .bk-tab-header-item {
+      height: 42px;
+    }
+    .bk-tab-content {
+      padding: 16px 24px;
+      height: calc(100% - 42px);
+
+      .bk-nested-loading {
+        height: calc(100% - 48px);
+        .bk-table {
+          max-height: 100%;
+        }
+      }
+    }
+  }
+}
 .operate-warp {
   :deep(.bk-tab-header) {
     line-height: normal !important;
@@ -776,6 +795,7 @@ export default defineComponent({
   }
   .header-container {
     display: flex;
+    justify-content: space-between;
   }
 @-webkit-keyframes move {
   from {
