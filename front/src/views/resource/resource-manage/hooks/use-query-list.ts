@@ -38,8 +38,8 @@ export default (
     limit: 20,
     count: 0,
   });
-  const sort = ref();
-  const order = ref();
+  const sort = ref('created_at');
+  const order = ref('DESC');
   const isFilter = ref(false);
   const { whereAmI } = useWhereAmI();
   const accountStore = useAccountStore();
