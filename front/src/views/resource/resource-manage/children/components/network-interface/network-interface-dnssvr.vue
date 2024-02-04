@@ -19,14 +19,8 @@ const data = ref([]);
 watchEffect(() => {
   data.value = props.detail.dns_settings?.applied_dns_servers?.map((item: any) => ({ name: item }));
 });
-
 </script>
 
 <template>
-  <bk-table
-    row-hover="auto"
-    :columns="columns"
-    :data="data"
-    show-overflow-tooltip
-  />
+  <bk-table row-hover="auto" :columns="columns" :data="data" show-overflow-tooltip />
 </template>

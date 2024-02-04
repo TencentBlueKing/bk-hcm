@@ -16,85 +16,93 @@ watch(
   () => {
     switch (props.detail.vendor) {
       case 'tcloud':
-        columns.value.push(...[
-          {
-            label: '子网ID',
-            field: 'id',
-          },
-          {
-            label: '名称',
-            field: 'name',
-          },
-          {
-            label: '可用区',
-            field: 'cloud_gateway_id',
-            render({ cell }: any) {
-              return cell || '--';
+        columns.value.push(
+          ...[
+            {
+              label: '子网ID',
+              field: 'id',
             },
-          },
-          {
-            label: 'CIDR',
-            field: 'ipv4_cidr',
-          },
-        ]);
+            {
+              label: '名称',
+              field: 'name',
+            },
+            {
+              label: '可用区',
+              field: 'cloud_gateway_id',
+              render({ cell }: any) {
+                return cell || '--';
+              },
+            },
+            {
+              label: 'CIDR',
+              field: 'ipv4_cidr',
+            },
+          ],
+        );
         break;
       case 'azure':
-        columns.value.push(...[
-          {
-            label: '名称',
-            field: 'name',
-          },
-          {
-            label: '地址范围',
-            field: '',
-            render({ cell }: { cell: string }) {
-              return cell || '--';
+        columns.value.push(
+          ...[
+            {
+              label: '名称',
+              field: 'name',
             },
-          },
-          {
-            label: 'CIDR',
-            field: 'ipv4_cidr',
-          },
-          {
-            label: '安全组',
-            field: '',
-            render({ cell }: { cell: string }) {
-              return cell || '--';
+            {
+              label: '地址范围',
+              field: '',
+              render({ cell }: { cell: string }) {
+                return cell || '--';
+              },
             },
-          },
-        ]);
+            {
+              label: 'CIDR',
+              field: 'ipv4_cidr',
+            },
+            {
+              label: '安全组',
+              field: '',
+              render({ cell }: { cell: string }) {
+                return cell || '--';
+              },
+            },
+          ],
+        );
         break;
       case 'aws':
-        columns.value.push(...[
-          {
-            label: '子网ID',
-            field: 'id',
-          },
-          {
-            label: 'CIDR',
-            field: 'ipv4_cidr',
-          },
-        ]);
+        columns.value.push(
+          ...[
+            {
+              label: '子网ID',
+              field: 'id',
+            },
+            {
+              label: 'CIDR',
+              field: 'ipv4_cidr',
+            },
+          ],
+        );
         break;
       case 'huawei':
-        columns.value.push(...[
-          {
-            label: '子网ID',
-            field: 'id',
-          },
-          {
-            label: '名称',
-            field: 'name',
-          },
-          {
-            label: 'IPv4 CIDR',
-            field: 'ipv4_cidr',
-          },
-          {
-            label: 'IPv6 CIDR',
-            field: 'ipv6_cidr',
-          },
-        ]);
+        columns.value.push(
+          ...[
+            {
+              label: '子网ID',
+              field: 'id',
+            },
+            {
+              label: '名称',
+              field: 'name',
+            },
+            {
+              label: 'IPv4 CIDR',
+              field: 'ipv4_cidr',
+            },
+            {
+              label: 'IPv6 CIDR',
+              field: 'ipv6_cidr',
+            },
+          ],
+        );
         break;
     }
   },
@@ -104,7 +112,7 @@ watch(
   },
 );
 
-const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange } =  useQueryList(
+const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange } = useQueryList(
   {
     filter: {
       op: 'and',

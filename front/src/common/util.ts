@@ -4,7 +4,7 @@ export function getCookies(strCookie = document.cookie): any {
   if (!strCookie) {
     return {};
   }
-  const arrCookie = strCookie.split('; ');// 分割
+  const arrCookie = strCookie.split('; '); // 分割
   const cookiesObj = {};
   arrCookie.forEach((cookieStr) => {
     const arr = cookieStr.split('=');
@@ -22,9 +22,8 @@ export function getCookies(strCookie = document.cookie): any {
  * @returns {boolean}
  */
 export function isObject(item: any) {
-  return (item && Object.prototype.toString.apply(item) === '[object Object]');
+  return item && Object.prototype.toString.apply(item) === '[object Object]';
 }
-
 
 /**
  * 深度合并多个对象
@@ -59,11 +58,12 @@ export function timeFormatter(val: any, format = 'YYYY-MM-DD HH:mm:ss') {
 }
 
 export function classes(dynamicCls: object, constCls = ''): string {
-  return Object.entries(dynamicCls).filter(entry => entry[1])
-    .map(entry => entry[0])
+  return Object.entries(dynamicCls)
+    .filter((entry) => entry[1])
+    .map((entry) => entry[0])
     .join(' ')
     .concat(constCls ? ` ${constCls}` : '');
-};
+}
 
 /**
  * 获取Cookie
@@ -99,12 +99,12 @@ export function json2Query(param: any, key?: any) {
   const separator = '&';
   let paramStr = '';
   if (
-    param instanceof String
-      || typeof param === 'string'
-      || param instanceof Number
-      || typeof param === 'number'
-      || param instanceof Boolean
-      || typeof param === 'boolean'
+    param instanceof String ||
+    typeof param === 'string' ||
+    param instanceof Number ||
+    typeof param === 'number' ||
+    param instanceof Boolean ||
+    typeof param === 'boolean'
   ) {
     // @ts-ignore
     paramStr += separator + key + mappingOperator + encodeURIComponent(param);
@@ -112,9 +112,8 @@ export function json2Query(param: any, key?: any) {
     if (param) {
       Object.keys(param).forEach((p) => {
         const value = param[p];
-        const k = key === null || key === '' || key === undefined
-          ? p
-          : key + (param instanceof Array ? `[${p}]` : `.${p}`);
+        const k =
+          key === null || key === '' || key === undefined ? p : key + (param instanceof Array ? `[${p}]` : `.${p}`);
         paramStr += separator + json2Query(value, k);
       });
     }
@@ -128,9 +127,8 @@ export function json2Query(param: any, key?: any) {
  * @return {number} 浏览器视口的高度
  */
 export function getWindowHeight() {
-  const windowHeight = document.compatMode === 'CSS1Compat'
-    ? document.documentElement.clientHeight
-    : document.body.clientHeight;
+  const windowHeight =
+    document.compatMode === 'CSS1Compat' ? document.documentElement.clientHeight : document.body.clientHeight;
 
   return windowHeight;
 }
@@ -144,7 +142,7 @@ export function getWindowHeight() {
 export function formatStorageSize(value: number, digits = 0) {
   const uints = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
   const index = Math.floor(Math.log(value) / Math.log(1024));
-  const size = value / (1024 ** index);
+  const size = value / 1024 ** index;
   return `${size.toFixed(digits)}${uints[index]}`;
 }
 
@@ -152,12 +150,14 @@ export function formatStorageSize(value: number, digits = 0) {
  * 获取当前网络得分对应的颜色
  * @param score 得分数值
  */
-export function getScoreColor (score: number) {
+export function getScoreColor(score: number) {
   if (score > 0 && score < 180) {
     return '#00A62B';
-  } else if (score >= 180 && score <= 360) {
+  }
+  if (score >= 180 && score <= 360) {
     return '#FF9D00';
-  } else if ( score > 360 ) {
+  }
+  if (score > 360) {
     return '#EA3636';
   }
   return '#63656E';
@@ -184,4 +184,4 @@ export function getDifferenceSet(origin: Array<string>, compare: Array<string>) 
     }
   });
   return Array.from(set);
-};
+}

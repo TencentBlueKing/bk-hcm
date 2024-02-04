@@ -1,4 +1,3 @@
-
 import http from '@/http';
 import { nextTick, reactive, ref, watch } from 'vue';
 import { VendorEnum } from '@/common/constant';
@@ -154,7 +153,7 @@ export default (cond: Cond) => {
       'instance_charge_type',
       'auto_renew',
     ];
-    keys.forEach(key => resetFormItemData(key));
+    keys.forEach((key) => resetFormItemData(key));
   };
 
   const resetFormItemData = (key: string) => {

@@ -1,19 +1,12 @@
-import {
-  defineComponent,
-  PropType,
-} from 'vue';
+import { defineComponent, PropType } from 'vue';
 
 import { Share, Copy } from 'bkui-vue/lib/icon';
 
-import {
-  Message,
-} from 'bkui-vue';
+import { Message } from 'bkui-vue';
 
 import RenderDetailEdit from '@/components/RenderDetailEdit';
 
-import {
-  useI18n,
-} from 'vue-i18n';
+import { useI18n } from 'vue-i18n';
 
 import './info-list.scss';
 
@@ -43,9 +36,7 @@ export default defineComponent({
   emits: ['change'],
 
   setup(_, { emit }) {
-    const {
-      t,
-    } = useI18n();
+    const { t } = useI18n();
 
     const handleCopy = (val: string) => {
       const handleSuccessCopy = () => {
@@ -56,10 +47,7 @@ export default defineComponent({
       };
 
       if (window.isSecureContext && navigator.clipboard) {
-        navigator
-          .clipboard
-          .writeText(val)
-          .then(handleSuccessCopy);
+        navigator.clipboard.writeText(val).then(handleSuccessCopy);
       } else {
         const input = document.createElement('input');
         document.body.appendChild(input);
@@ -91,7 +79,8 @@ export default defineComponent({
         case '[object Array]':
           return field.value.map((e: string, index: number) => (
             <>
-              <span>{e}</span>{field.value.length - 1 === index ? '' : ';'}
+              <span>{e}</span>
+              {field.value.length - 1 === index ? '' : ';'}
             </>
           ));
         default:
@@ -99,59 +88,77 @@ export default defineComponent({
       }
     };
 
-
     // 渲染可编辑文本
-    const renderEditTxt = (field: Field) => <RenderDetailEdit
-      modelValue={field.value}
-      needValidate={false}
-      fromKey={field.prop}
-      onChange={this.handleblur}
-    ></RenderDetailEdit>;
+    const renderEditTxt = (field: Field) => (
+      <RenderDetailEdit
+        modelValue={field.value}
+        needValidate={false}
+        fromKey={field.prop}
+        onChange={this.handleblur}></RenderDetailEdit>
+    );
 
     // 渲染链接
-    const renderLink = (field: Field) => <bk-link theme="primary" href={typeof field.link === 'function' ? field.link(field.value) : field.link}>{ field.value }</bk-link>;
+    const renderLink = (field: Field) => (
+      <bk-link theme='primary' href={typeof field.link === 'function' ? field.link(field.value) : field.link}>
+        {field.value}
+      </bk-link>
+    );
 
     // 渲染跳转
     const renderTxtBtn = (field: Field) => {
-      return field.value ? <bk-button text theme="primary" onClick={() => field.txtBtn(field.value)}>{ field.value }</bk-button> : '--';
+      return field.value ? (
+        <bk-button text theme='primary' onClick={() => field.txtBtn(field.value)}>
+          {field.value}
+        </bk-button>
+      ) : (
+        '--'
+      );
     };
 
     // 渲染方法
     const renderField = (field: Field) => {
       if (field.render) {
         return field.render(field.value);
-      } if (field.link) {
+      }
+      if (field.link) {
         return renderLink(field);
-      } if (field.edit) {
+      }
+      if (field.edit) {
         return renderEditTxt(field);
-      } if (field.txtBtn) {
+      }
+      if (field.txtBtn) {
         return renderTxtBtn(field);
       }
       return renderTxt(field);
     };
 
-    return <ul class="info-list-main g-scroller">
-      {
-        this.fields.map((field) => {
-          return <>
-            <li class="info-list-item">
-              {
-                field.tipsContent ? (
+    return (
+      <ul class='info-list-main g-scroller'>
+        {this.fields.map((field) => {
+          return (
+            <>
+              <li class='info-list-item'>
+                {field.tipsContent ? (
                   <div class='item-field has-tips'>
-                    <span v-BkTooltips={{ content: field.tipsContent }}>{ field.name }</span>
+                    <span v-BkTooltips={{ content: field.tipsContent }}>{field.name}</span>
                   </div>
                 ) : (
-                  <span class='item-field'>{ field.name }</span>
-                )
-              }
-              :<span class={['item-value', typeof field.cls === 'function' ? field.cls(field.value) : field.cls]}>{ renderField(field) }</span>
-              {
-                field.copy ? <copy class="info-item-copy ml5" onClick={() => this.handleCopy(field.value)}></copy> : ''
-              }
-            </li>
-          </>;
-        })
-      }
-    </ul>;
+                  <span class='item-field'>{field.name}</span>
+                )}
+                :
+                <span class={['item-value', typeof field.cls === 'function' ? field.cls(field.value) : field.cls]}>
+                  {renderField(field)}
+                </span>
+                {field.copy ? (
+                  <copy class='info-item-copy ml5' onClick={() => this.handleCopy(field.value)}></copy>
+                ) : (
+                  ''
+                )}
+              </li>
+            </>
+          );
+        })}
+      </ul>
+    );
   },
 });

@@ -4,9 +4,7 @@ import DetailTab from '../../common/tab/detail-tab';
 import RouteInfo from '../components/route/route-info.vue';
 import RouteSubnet from '../components/route/route-subnet.vue';
 
-import {
-  useRoute,
-} from 'vue-router';
+import { useRoute } from 'vue-router';
 import useDetail from '../../hooks/use-detail';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
@@ -24,20 +22,12 @@ const routeTabs = [
   },
 ];
 
-const {
-  loading,
-  detail,
-} = useDetail(
-  'route_tables',
-  route.query.id as string,
-);
+const { loading, detail } = useDetail('route_tables', route.query.id as string);
 </script>
 
 <template>
   <bk-loading :loading="loading">
-    <detail-header>
-      路由表：（{{ detail.id }}）
-    </detail-header>
+    <detail-header>路由表：（{{ detail.id }}）</detail-header>
     <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
       <detail-tab :tabs="routeTabs" class="route-tab">
         <template #default="type">

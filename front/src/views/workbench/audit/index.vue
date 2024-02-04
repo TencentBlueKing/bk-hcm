@@ -9,9 +9,7 @@ import ErrorPages from '@/views/error-pages/403.tsx';
 import { computed, reactive, ref, watch, h } from 'vue';
 import dayjs from 'dayjs';
 import { useRoute } from 'vue-router';
-import {
-  useI18n,
-} from 'vue-i18n';
+import { useI18n } from 'vue-i18n';
 import useList from './use-list';
 import { AUDIT_RESOURCE_TYPES } from '@/common/constant';
 import { timeFormatter } from '@/common/util';
@@ -20,9 +18,7 @@ import { Button } from 'bkui-vue';
 
 import { useVerify } from '@/hooks';
 
-const {
-  t,
-} = useI18n();
+const { t } = useI18n();
 const route = useRoute();
 
 const businessSelectorComp = ref(null);
@@ -31,7 +27,8 @@ const tabs = [
   {
     type: 'biz',
     label: '业务',
-  }, {
+  },
+  {
     type: 'resource',
     label: '资源',
   },
@@ -69,20 +66,15 @@ const sourceOptions = Object.entries(AUDIT_SOURCE_MAP);
 
 const resourceTypeOptions = AUDIT_RESOURCE_TYPES;
 
-const {
-  query,
-  datas,
-  isLoading,
-  pagination,
-  handlePageChange,
-  handlePageSizeChange,
-  handleSort,
-} = useList({ filter, filterOptions });
+const { query, datas, isLoading, pagination, handlePageChange, handlePageSizeChange, handleSort } = useList({
+  filter,
+  filterOptions,
+});
 
 const isBizType = computed(() => filterOptions.auditType === 'biz');
 
 const getBizName = (id: number) => {
-  return businessSelectorComp?.value?.businessList?.find(item => item.id === id)?.name ?? '--';
+  return businessSelectorComp?.value?.businessList?.find((item) => item.id === id)?.name ?? '--';
 };
 
 const columns = computed(() => {
@@ -98,12 +90,7 @@ const columns = computed(() => {
       showOverflowTooltip: true,
       sort: true,
       render({ cell }: { cell: string }) {
-        return h(
-          'span',
-          [
-            cell || '--',
-          ],
-        );
+        return h('span', [cell || '--']);
       },
     },
     {
@@ -121,12 +108,7 @@ const columns = computed(() => {
       field: 'action',
       sort: true,
       render({ cell }: { cell: string }) {
-        return h(
-          'span',
-          [
-            AUDIT_ACTION_MAP[cell] || '--',
-          ],
-        );
+        return h('span', [AUDIT_ACTION_MAP[cell] || '--']);
       },
     },
     {
@@ -152,12 +134,7 @@ const columns = computed(() => {
       field: 'source',
       sort: true,
       render({ cell }: { cell: string }) {
-        return h(
-          'span',
-          [
-            AUDIT_SOURCE_MAP[cell] || '--',
-          ],
-        );
+        return h('span', [AUDIT_SOURCE_MAP[cell] || '--']);
       },
     },
     {
@@ -165,12 +142,7 @@ const columns = computed(() => {
       field: 'created_at',
       sort: true,
       render({ cell }: { cell: string }) {
-        return h(
-          'span',
-          [
-            timeFormatter(cell),
-          ],
-        );
+        return h('span', [timeFormatter(cell)]);
       },
     },
     {
@@ -184,15 +156,15 @@ const columns = computed(() => {
             onClick() {
               handleShowDetailSlider(data);
             },
-          }, '详情',
+          },
+          '详情',
         );
       },
     },
   ];
 
-  return values.filter(item => item.visible !== false);
+  return values.filter((item) => item.visible !== false);
 });
-
 
 const handleSearch = () => {
   query();
@@ -207,12 +179,16 @@ const handleShowDetailSlider = (row: any) => {
   details.show = true;
 };
 
-watch(() => filter.bk_biz_id, (bizId, oldBizId) => {
-  console.log(bizId);
-  if (oldBizId === null && bizId !== oldBizId) {
-    query();
-  }
-}, { immediate: true });
+watch(
+  () => filter.bk_biz_id,
+  (bizId, oldBizId) => {
+    console.log(bizId);
+    if (oldBizId === null && bizId !== oldBizId) {
+      query();
+    }
+  },
+  { immediate: true },
+);
 
 watch(isBizType, (isBizType) => {
   if (!isBizType) {
@@ -221,26 +197,19 @@ watch(isBizType, (isBizType) => {
   datas.value = [];
 });
 
-const {
-  authVerifyData,
-} = useVerify();
+const { authVerifyData } = useVerify();
 </script>
 
 <template>
   <div class="audit-container">
-    <bk-tab
-      v-model:active="filterOptions.auditType"
-      type="card"
-      class="resource-main g-scroller"
-    >
+    <bk-tab v-model:active="filterOptions.auditType" type="card" class="resource-main g-scroller">
       <bk-tab-panel
         v-for="item in tabs"
         :key="item.type"
         :name="item.type"
         :label="item.label"
         render-directive="if"
-      >
-      </bk-tab-panel>
+      ></bk-tab-panel>
     </bk-tab>
     <div v-if="authVerifyData?.permissionAction?.resource_audit_find">
       <div class="audit-filter">
@@ -267,18 +236,14 @@ const {
               :type="'resource'"
               filterable
               multiple
-              allow-create />
+              allow-create
+            />
           </div>
         </div>
         <div class="filter-item">
           <div class="filter-item-label">资源类型</div>
           <div class="filter-item-content">
-            <bk-select
-              v-model="filter.res_type"
-              filterable
-              :multiple="false"
-              @change="filter.action = ''"
-            >
+            <bk-select v-model="filter.res_type" filterable :multiple="false" @change="filter.action = ''">
               <bk-option
                 v-for="(item, index) in resourceTypeOptions"
                 :key="index"
@@ -297,12 +262,7 @@ const {
         <div class="filter-item">
           <div class="filter-item-label">时间</div>
           <div class="filter-item-content">
-            <bk-date-picker
-              class="audit-date-picker"
-              v-model="filter.created_at"
-              :clearable="false"
-              type="daterange"
-            />
+            <bk-date-picker class="audit-date-picker" v-model="filter.created_at" :clearable="false" type="daterange" />
           </div>
         </div>
         <div class="filter-item">
@@ -333,12 +293,7 @@ const {
           <div class="filter-item-label">来源</div>
           <div class="filter-item-content">
             <bk-select v-model="filter.source">
-              <bk-option
-                v-for="(item, index) in sourceOptions"
-                :key="index"
-                :value="item[0]"
-                :label="item[1]"
-              />
+              <bk-option v-for="(item, index) in sourceOptions" :key="index" :value="item[0]" :label="item[1]" />
             </bk-select>
           </div>
         </div>
@@ -348,9 +303,7 @@ const {
         </div>
       </div>
 
-      <bk-loading
-        :loading="isLoading"
-      >
+      <bk-loading :loading="isLoading">
         <bk-table
           class="audit-list-table"
           row-hover="auto"
@@ -366,12 +319,7 @@ const {
         />
       </bk-loading>
 
-      <bk-sideslider
-        v-model:isShow="details.show"
-        title="审计详情"
-        width="670"
-        quick-close
-      >
+      <bk-sideslider v-model:isShow="details.show" title="审计详情" width="670" quick-close>
         <template #default>
           <audit-detail :id="details.id" :biz-id="details.bizId" :type="filterOptions.auditType"></audit-detail>
         </template>

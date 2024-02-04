@@ -6,10 +6,10 @@ import isEqual from 'lodash/isEqual';
 const { t } = useI18n();
 
 const props = defineProps<{
-  action: string,
-  detail: { data: any, changed?: any },
-  businessList: any[],
-  auditType: string
+  action: string;
+  detail: { data: any; changed?: any };
+  businessList: any[];
+  auditType: string;
 }>();
 
 const properties = computed(() => {
@@ -32,17 +32,19 @@ const properties = computed(() => {
 const isShowBefore = computed(() => props.action !== 'create');
 const isShowAfter = computed(() => props.action !== 'delete');
 
-const rows = computed(() => properties.value.map((item) => {
-  const before = props.detail?.data?.[item.id];
-  const after = props.detail?.changed?.[item.id];
-  return {
-    prop: item,
-    field: item.name,
-    before: before || '--',
-    after: after || before || '--',
-    changed: before && after && !isEqual(before, after),
-  };
-}));
+const rows = computed(() =>
+  properties.value.map((item) => {
+    const before = props.detail?.data?.[item.id];
+    const after = props.detail?.changed?.[item.id];
+    return {
+      prop: item,
+      field: item.name,
+      before: before || '--',
+      after: after || before || '--',
+      changed: before && after && !isEqual(before, after),
+    };
+  }),
+);
 const getCellStyle = (column, index, row) => {
   if (index > 0 && row.changed) {
     return {

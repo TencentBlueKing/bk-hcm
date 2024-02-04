@@ -15,8 +15,7 @@ const getBusinessApiPath = () => {
 
 export const useBusinessStore = defineStore({
   id: 'businessStore',
-  state: () => ({
-  }),
+  state: () => ({}),
   actions: {
     /**
      * @description: 新增安全组

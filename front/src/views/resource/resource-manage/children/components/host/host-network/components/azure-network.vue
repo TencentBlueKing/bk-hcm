@@ -4,18 +4,11 @@ import type {
   // PlainObject,
   FilterType,
 } from '@/typings/resource';
-import {
-  ref,
-  h,
-  PropType,
-} from 'vue';
-import {
-// Button,
+import { ref, h, PropType } from 'vue';
+import // Button,
 // InfoBox,
-} from 'bkui-vue';
-import {
-  useResourceStore,
-} from '@/store/resource';
+'bkui-vue';
+import { useResourceStore } from '@/store/resource';
 
 const props = defineProps({
   filter: {
@@ -41,44 +34,20 @@ const columns = [
     label: t('类型'),
     field: 'id',
     render({ data }: any) {
-      return [
-        h(
-          'span',
-          {},
-          [
-            data?.extension?.type || '--',
-          ],
-        ),
-      ];
+      return [h('span', {}, [data?.extension?.type || '--'])];
     },
   },
   {
     label: t('内网IP'),
     render({ data }: any) {
-      return [
-        h(
-          'span',
-          {},
-          [
-            data.private_ipv4.join(',') || data.private_ipv6.join(',') || '--',
-          ],
-        ),
-      ];
+      return [h('span', {}, [data.private_ipv4.join(',') || data.private_ipv6.join(',') || '--'])];
     },
   },
   {
     label: t('普通公网IP/EIP'),
     field: 'public_ip',
     render({ data }: any) {
-      return [
-        h(
-          'span',
-          {},
-          [
-            data.public_ipv4.join(',') || data.public_ipv6.join(',') || '--',
-          ],
-        ),
-      ];
+      return [h('span', {}, [data.public_ipv4.join(',') || data.public_ipv6.join(',') || '--'])];
     },
   },
   {
@@ -111,7 +80,6 @@ const columns = [
   //   },
   // },
 ];
-
 
 const handleToggleShow = () => {
   showBind.value = !showBind.value;
@@ -154,14 +122,10 @@ const getNetWorkList = async () => {
 };
 
 getNetWorkList();
-
-
 </script>
 
 <template>
-  <bk-loading
-    :loading="isLoading"
-  >
+  <bk-loading :loading="isLoading">
     <!-- <bk-button
       class="mt20"
       theme="primary"
@@ -169,13 +133,7 @@ getNetWorkList();
     >
       {{ t('绑定已有网络接口') }}
     </bk-button> -->
-    <bk-table
-      row-hover="auto"
-      :columns="columns"
-      :data="tableData"
-      show-overflow-tooltip
-    />
-
+    <bk-table row-hover="auto" :columns="columns" :data="tableData" show-overflow-tooltip />
 
     <bk-dialog
       :is-show="showBind"
@@ -184,55 +142,51 @@ getNetWorkList();
       theme="primary"
       quick-close
       @closed="handleToggleShow"
-      @confirm="handleConfirmBind">
-      <bk-table
-        class="mt20"
-        :columns="columns"
-        show-overflow-tooltip
-      >
-        <bk-table-column
-          label="内网IP"
-        >
+      @confirm="handleConfirmBind"
+    >
+      <bk-table class="mt20" :columns="columns" show-overflow-tooltip>
+        <bk-table-column label="内网IP">
           <div class="cell-flex">
             <bk-radio
-              label="" @click="() => {
-                handleRadio(data)
-              }" />
+              label=""
+              @click="
+                () => {
+                  handleRadio(data);
+                }
+              "
+            />
             <span class="pl10">{{ data.ip }}</span>
           </div>
         </bk-table-column>
-        <bk-table-column
-          label="已绑定的EIP"
-          prop="ip"
-        />
+        <bk-table-column label="已绑定的EIP" prop="ip" />
       </bk-table>
     </bk-dialog>
   </bk-loading>
 </template>
 
 <style lang="scss" scoped>
-  .info-title {
-    font-size: 14px;
-    margin-bottom: 8px;
-  }
-  .sub-title{
-    font-size: 12px;
-  }
-  .cell-flex{
+.info-title {
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+.sub-title {
+  font-size: 12px;
+}
+.cell-flex {
+  display: flex;
+  align-items: center;
+}
+.table-warp {
+  padding: 20px;
+  border: 1px dashed rgb(225, 221, 221);
+  .table-flex {
     display: flex;
+    justify-content: space-between;
     align-items: center;
   }
-  .table-warp{
-    padding: 20px;
-    border: 1px dashed rgb(225, 221, 221);
-    .table-flex{
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-  }
-  .flex{
-    display: flex;
-    align-items: center;
-  }
+}
+.flex {
+  display: flex;
+  align-items: center;
+}
 </style>

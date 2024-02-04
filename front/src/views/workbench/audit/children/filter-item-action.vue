@@ -82,21 +82,11 @@ const selectedValue = computed({
   },
 });
 
-watch(selectedValue, v => console.log(v));
+watch(selectedValue, (v) => console.log(v));
 </script>
 
 <template>
-  <bk-select
-    :key="props.type"
-    v-model="selectedValue"
-    filterable
-    :multiple="false"
-  >
-    <bk-option
-      v-for="(item, index) in actions"
-      :key="index"
-      :value="item.id"
-      :label="item.name"
-    />
+  <bk-select :key="props.type" v-model="selectedValue" filterable :multiple="false">
+    <bk-option v-for="(item, index) in actions" :key="index" :value="item.id" :label="item.name" />
   </bk-select>
 </template>

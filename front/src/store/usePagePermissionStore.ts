@@ -5,8 +5,8 @@ import { ref } from 'vue';
 export default defineStore('usePagePermissionStore', () => {
   const hasPagePermission = ref(true);
   const permissionMsg = ref('');
-  const setHasPagePermission = (val: boolean) => hasPagePermission.value = val;
-  const setPermissionMsg = (val: string) => permissionMsg.value = val;
+  const setHasPagePermission = (val: boolean) => (hasPagePermission.value = val);
+  const setPermissionMsg = (val: string) => (permissionMsg.value = val);
 
   const logout = () => {
     deleteCookie('bk_token');

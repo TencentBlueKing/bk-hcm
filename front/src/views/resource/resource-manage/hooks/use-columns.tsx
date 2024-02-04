@@ -1,12 +1,7 @@
 /* eslint-disable no-nested-ternary */
 // table 字段相关信息
 import i18n from '@/language/i18n';
-import {
-  CloudType,
-  SecurityRuleEnum,
-  HuaweiSecurityRuleEnum,
-  AzureSecurityRuleEnum,
-} from '@/typings';
+import { CloudType, SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
 import { useAccountStore } from '@/store';
 import { Button } from 'bkui-vue';
 import type { Settings } from 'bkui-vue/lib/table/props';
@@ -26,10 +21,7 @@ import StatusFailure from '@/assets/image/failed-account.png';
 import StatusPartialSuccess from '@/assets/image/result-waiting.png';
 import StatusLoading from '@/assets/image/status_loading.png';
 
-import {
-  HOST_RUNNING_STATUS,
-  HOST_SHUTDOWN_STATUS,
-} from '../common/table/HostOperations';
+import { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../common/table/HostOperations';
 import './use-columns.scss';
 import { timeFormatter } from '@/common/util';
 
@@ -145,13 +137,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       sort: true,
       isOnlyShowInResource: true,
       isDefaultShow: true,
-      render: ({
-        data,
-        cell,
-      }: {
-        data: { bk_biz_id: number };
-        cell: number;
-      }) => (
+      render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => (
         <bk-tag
           v-bk-tooltips={{
             content: businessMapStore.businessMap.get(cell),
@@ -184,13 +170,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
   ];
 
@@ -276,13 +262,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       sort: true,
       isOnlyShowInResource: true,
       isDefaultShow: true,
-      render: ({
-        data,
-        cell,
-      }: {
-        data: { bk_biz_id: number };
-        cell: number;
-      }) => (
+      render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => (
         <bk-tag
           v-bk-tooltips={{
             content: businessMapStore.businessMap.get(cell),
@@ -304,13 +284,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
   ];
 
@@ -484,13 +464,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       sort: true,
       isOnlyShowInResource: true,
       isDefaultShow: true,
-      render: ({
-        data,
-        cell,
-      }: {
-        data: { bk_biz_id: number };
-        cell: number;
-      }) => (
+      render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => (
         <bk-tag
           v-bk-tooltips={{
             content: businessMapStore.businessMap.get(cell),
@@ -506,13 +480,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
   ];
 
@@ -566,13 +540,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
   ];
 
@@ -640,13 +614,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'private_ipv4_or_ipv6',
       isDefaultShow: true,
       render({ data }: any) {
-        return [
-          h('span', {}, [
-            data?.private_ipv4.join(',')
-              || data?.private_ipv6.join(',')
-              || '--',
-          ]),
-        ];
+        return [h('span', {}, [data?.private_ipv4.join(',') || data?.private_ipv6.join(',') || '--'])];
       },
     },
     {
@@ -656,11 +624,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       // sort: true,
       isDefaultShow: true,
       render({ data }: any) {
-        return [
-          h('span', {}, [
-            data?.public_ipv4.join(',') || data?.public_ipv6.join(',') || '--',
-          ]),
-        ];
+        return [h('span', {}, [data?.public_ipv4.join(',') || data?.public_ipv6.join(',') || '--'])];
       },
     },
     {
@@ -674,13 +638,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
   ];
 
@@ -731,13 +695,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
   ];
 
@@ -768,7 +732,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       'private_ipv4_addresses',
       'id',
       false,
-      data => [...data.private_ipv4_addresses, ...data.private_ipv6_addresses].join(','),
+      (data) => [...data.private_ipv4_addresses, ...data.private_ipv6_addresses].join(','),
       false,
     ),
     {
@@ -839,13 +803,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       sort: true,
       isOnlyShowInResource: true,
       isDefaultShow: true,
-      render: ({
-        data,
-        cell,
-      }: {
-        data: { bk_biz_id: number };
-        cell: number;
-      }) => (
+      render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => (
         <bk-tag
           v-bk-tooltips={{
             content: businessMapStore.businessMap.get(cell),
@@ -892,13 +850,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
   ];
 
@@ -908,26 +866,22 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'resource',
       render({ data }: any) {
         return h('span', {}, [
-          data.cloud_address_group_id
-            || data.cloud_address_id
-            || data.cloud_service_group_id
-            || data.cloud_service_id
-            || data.cloud_target_security_group_id
-            || data.ipv4_cidr
-            || data.ipv6_cidr
-            || data.cloud_remote_group_id
-            || data.remote_ip_prefix
-            || (data.source_address_prefix === '*'
-              ? t('任何')
-              : data.source_address_prefix)
-            || data.source_address_prefixes
-            || data.cloud_source_security_group_ids
-            || (data.destination_address_prefix === '*'
-              ? t('任何')
-              : data.destination_address_prefix)
-            || data.destination_address_prefixes
-            || data.cloud_destination_security_group_ids
-            || '--',
+          data.cloud_address_group_id ||
+            data.cloud_address_id ||
+            data.cloud_service_group_id ||
+            data.cloud_service_id ||
+            data.cloud_target_security_group_id ||
+            data.ipv4_cidr ||
+            data.ipv6_cidr ||
+            data.cloud_remote_group_id ||
+            data.remote_ip_prefix ||
+            (data.source_address_prefix === '*' ? t('任何') : data.source_address_prefix) ||
+            data.source_address_prefixes ||
+            data.cloud_source_security_group_ids ||
+            (data.destination_address_prefix === '*' ? t('任何') : data.destination_address_prefix) ||
+            data.destination_address_prefixes ||
+            data.cloud_destination_security_group_ids ||
+            '--',
         ]);
       },
     },
@@ -939,14 +893,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           vendor === 'aws' && data.protocol === '-1' && data.to_port === -1
             ? t('全部')
             : vendor === 'huawei' && !data.protocol && !data.port
-              ? t('全部')
-              : vendor === 'azure'
-              && data.protocol === '*'
-              && data.destination_port_range === '*'
-                ? t('全部')
-                : `${data.protocol}:${
-                  data.port || data.to_port || data.destination_port_range || '--'
-                }`,
+            ? t('全部')
+            : vendor === 'azure' && data.protocol === '*' && data.destination_port_range === '*'
+            ? t('全部')
+            : `${data.protocol}:${data.port || data.to_port || data.destination_port_range || '--'}`,
         ]);
       },
     },
@@ -958,10 +908,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           vendor === 'huawei'
             ? HuaweiSecurityRuleEnum[data.action]
             : vendor === 'azure'
-              ? AzureSecurityRuleEnum[data.access]
-              : vendor === 'aws'
-                ? t('允许')
-                : SecurityRuleEnum[data.action] || '--',
+            ? AzureSecurityRuleEnum[data.access]
+            : vendor === 'aws'
+            ? t('允许')
+            : SecurityRuleEnum[data.action] || '--',
         ]);
       },
     },
@@ -975,7 +925,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: t('修改时间'),
       field: 'updated_at',
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
   ];
 
@@ -1034,7 +984,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     //     return h('span', [cell || '--']);
     //   },
     // },
-    getLinkField('host', '绑定的资源实例', 'cvm_id', 'cvm_id', false, data => data.host, false),
+    getLinkField('host', '绑定的资源实例', 'cvm_id', 'cvm_id', false, (data) => data.host, false),
     {
       label: '绑定的资源类型',
       field: 'instance_type',
@@ -1049,13 +999,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       sort: true,
       isOnlyShowInResource: true,
       isDefaultShow: true,
-      render: ({
-        data,
-        cell,
-      }: {
-        data: { bk_biz_id: number };
-        cell: number;
-      }) => (
+      render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => (
         <bk-tag
           v-bk-tooltips={{
             content: businessMapStore.businessMap.get(cell),
@@ -1077,13 +1021,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
   ];
 
@@ -1445,13 +1389,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '上传时间',
       field: 'cloud_created_time',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
     {
       label: '过期时间',
       field: 'cloud_expired_time',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
     {
       label: '证书状态',
@@ -1469,7 +1413,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         ],
         checked: [],
       },
-      render: ({ data, cell }: { data: any, cell: string }) => {
+      render: ({ data, cell }: { data: any; cell: string }) => {
         let icon;
         const getStatusText = (vendor: VendorEnum, cert_status: string) => {
           switch (vendor) {
@@ -1504,7 +1448,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'bk_biz_id',
       isOnlyShowInResource: true,
       isDefaultShow: true,
-      render: ({ data, cell }: { data: { bk_biz_id: number }, cell: number }) => (
+      render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => (
         <bk-tag
           v-bk-tooltips={{
             content: businessMapStore.businessMap.get(cell),
@@ -1523,7 +1467,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'created_at',
       isDefaultShow: true,
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
     {
       label: '资源类型',
@@ -1638,13 +1582,11 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       }
     }
     if (whereAmI.value !== Senarios.resource) {
-      fields = fields.filter(field => !field.isOnlyShowInResource);
+      fields = fields.filter((field) => !field.isOnlyShowInResource);
     }
     const settings: Ref<Settings> = ref({
       fields,
-      checked: fields
-        .filter(field => field.isDefaultShow)
-        .map(field => field.field),
+      checked: fields.filter((field) => field.isDefaultShow).map((field) => field.field),
     });
 
     return settings;

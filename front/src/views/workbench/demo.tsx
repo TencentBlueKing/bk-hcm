@@ -4,11 +4,9 @@ import bus from '@/common/bus';
 
 export default defineComponent({
   setup() {
-    onMounted(() => {
-    });
+    onMounted(() => {});
 
-    onUnmounted(() => {
-    });
+    onUnmounted(() => {});
 
     const { t } = useI18n();
 
@@ -31,8 +29,6 @@ export default defineComponent({
     };
   },
   render() {
-    return (
-      <span class="test">{this.t('你好世界')}</span>
-    );
+    return <span class='test'>{this.t('你好世界')}</span>;
   },
 });

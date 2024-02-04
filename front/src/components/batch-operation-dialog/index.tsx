@@ -56,7 +56,7 @@ export default defineComponent({
     };
     // 自定义渲染
     const renderCustomDefaultSlot = () => {
-      return (<div class='batch-operation-dialog-content'>自定义内容</div>);
+      return <div class='batch-operation-dialog-content'>自定义内容</div>;
     };
     return () => (
       <Dialog

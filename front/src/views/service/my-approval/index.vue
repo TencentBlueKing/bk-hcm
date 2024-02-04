@@ -24,17 +24,19 @@ export default defineComponent({
     const accountStore = useAccountStore();
 
     const state = reactive({
-      isAccurate: false,    // 是否精确
+      isAccurate: false, // 是否精确
       searchValue: [],
       searchData: [
         {
           name: '名称',
           id: 'name',
-        }, {
+        },
+        {
           name: '云厂商',
           id: 'vendor',
           children: VENDORS,
-        }, {
+        },
+        {
           name: '负责人',
           id: 'managers',
         },
@@ -64,8 +66,7 @@ export default defineComponent({
       // getListCount(); // 数量
       // init(); // 列表
     });
-    onUnmounted(() => {
-    });
+    onUnmounted(() => {});
 
     // 请求获取列表的总条数
     const getListCount = async () => {
@@ -140,7 +141,6 @@ export default defineComponent({
       },
     );
 
-
     const init = () => {
       state.pagination.current = 1;
       state.pagination.limit = 10;
@@ -151,9 +151,11 @@ export default defineComponent({
     // 弹窗确认
     const handleDialogConfirm = async (diaType: string) => {
       try {
-        if (diaType === 'del') {    // 删除
+        if (diaType === 'del') {
+          // 删除
           await accountStore.accountDelete(state.dataId);
-        } else if (diaType === 'sync') {    // 同步
+        } else if (diaType === 'sync') {
+          // 同步
           await accountStore.accountSync(state.dataId);
         }
         Message({

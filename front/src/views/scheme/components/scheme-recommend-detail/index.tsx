@@ -26,16 +26,19 @@ export default defineComponent({
           }))}
           onBack={props.onBack}
           selectFn={(scheme: ISchemeSelectorItem) => {
-            schemeStore.setSelectedSchemeIdx(+scheme.id  as number);
-          }}
-        >
+            schemeStore.setSelectedSchemeIdx(+scheme.id as number);
+          }}>
           {{
-            operate: () => <SaveSchemeButton idx={schemeStore.selectedSchemeIdx}/>,
+            operate: () => <SaveSchemeButton idx={schemeStore.selectedSchemeIdx} />,
           }}
         </DetailHeader>
         <section class={'chart-content-wrapper'}>
-          <IdcMapDisplay list={schemeStore.schemeData.idcList} class={'idc-map-display'}/>
-          <NetworkHeatMap idcList={schemeStore.schemeData.idcList} areaTopo={schemeStore.userDistribution} class={'network-heat-map'}/>
+          <IdcMapDisplay list={schemeStore.schemeData.idcList} class={'idc-map-display'} />
+          <NetworkHeatMap
+            idcList={schemeStore.schemeData.idcList}
+            areaTopo={schemeStore.userDistribution}
+            class={'network-heat-map'}
+          />
         </section>
       </div>
     );

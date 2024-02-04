@@ -3,17 +3,8 @@ import { useRouter } from 'vue-router';
 import { Plus, EditLine } from 'bkui-vue/lib/icon';
 import { InfoBox, Message } from 'bkui-vue';
 import { useSchemeStore, useAccountStore } from '@/store';
-import {
-  QueryFilterType,
-  IPageQuery,
-  QueryRuleOPEnum,
-  RulesItem,
-} from '@/typings/common';
-import {
-  ICollectedSchemeItem,
-  ISchemeListItem,
-  IBizType,
-} from '@/typings/scheme';
+import { QueryFilterType, IPageQuery, QueryRuleOPEnum, RulesItem } from '@/typings/common';
+import { ICollectedSchemeItem, ISchemeListItem, IBizType } from '@/typings/scheme';
 import { VENDORS } from '@/common/constant';
 import { DEPLOYMENT_ARCHITECTURE_MAP } from '@/constants';
 import CloudServiceTag from '../components/cloud-service-tag';
@@ -82,7 +73,7 @@ export default defineComponent({
                 class={[
                   'hcm-icon',
                   'collect-icon',
-                  collections.value.findIndex(item => item.res_id === data.id) > -1
+                  collections.value.findIndex((item) => item.res_id === data.id) > -1
                     ? 'bkhcm-icon-collect'
                     : 'bkhcm-icon-not-favorited',
                 ]}
@@ -97,14 +88,10 @@ export default defineComponent({
               </span>
               <span
                 class={`edit-icon ${
-                  authVerifyData.value.permissionAction.cloud_selection_edit
-                    ? ''
-                    : 'hcm-no-permision-text-btn'
+                  authVerifyData.value.permissionAction.cloud_selection_edit ? '' : 'hcm-no-permision-text-btn'
                 }`}
                 onClick={() => {
-                  if (
-                    authVerifyData.value.permissionAction.cloud_selection_edit
-                  ) handleOpenEditDialog(data);
+                  if (authVerifyData.value.permissionAction.cloud_selection_edit) handleOpenEditDialog(data);
                   else handleAuth('cloud_selection_edit');
                 }}>
                 <EditLine />
@@ -142,9 +129,7 @@ export default defineComponent({
         label: '用户分布地区',
         showOverflowTooltip: true,
         render: ({ data }: { data: ISchemeListItem }) => {
-          return data.user_distribution
-            .map(item => `${item.name}`)
-            .join('; ');
+          return data.user_distribution.map((item) => `${item.name}`).join('; ');
         },
       },
       {
@@ -157,9 +142,7 @@ export default defineComponent({
           }),
         },
         render: ({ data }: { data: ISchemeListItem }) => {
-          return data.deployment_architecture
-            .map(item => DEPLOYMENT_ARCHITECTURE_MAP[item])
-            .join(', ');
+          return data.deployment_architecture.map((item) => DEPLOYMENT_ARCHITECTURE_MAP[item]).join(', ');
         },
       },
       {
@@ -174,7 +157,7 @@ export default defineComponent({
         render: ({ data }: { data: ISchemeListItem }) => {
           return (
             <div class='vendors-list'>
-              {data.vendors.map(item => (
+              {data.vendors.map((item) => (
                 <CloudServiceTag type={item} />
               ))}
             </div>
@@ -187,9 +170,7 @@ export default defineComponent({
         field: 'composite_score',
         sort: true,
         render: ({ data }: { data: ISchemeListItem }) => {
-          return (
-            <span class='composite-score'>{data.composite_score || '-'}</span>
-          );
+          return <span class='composite-score'>{data.composite_score || '-'}</span>;
         },
       },
       {
@@ -215,16 +196,10 @@ export default defineComponent({
               text
               theme='primary'
               onClick={() => {
-                if (
-                  !authVerifyData.value.permissionAction.cloud_selection_delete
-                ) handleAuth('cloud_selection_delete');
+                if (!authVerifyData.value.permissionAction.cloud_selection_delete) handleAuth('cloud_selection_delete');
                 else handleDelScheme(data);
               }}
-              class={
-                authVerifyData.value.permissionAction.cloud_selection_delete
-                  ? ''
-                  : 'hcm-no-permision-text-btn'
-              }>
+              class={authVerifyData.value.permissionAction.cloud_selection_delete ? '' : 'hcm-no-permision-text-btn'}>
               删除
             </bk-button>
           );
@@ -241,11 +216,7 @@ export default defineComponent({
     );
 
     const getTableData = () => {
-      if (
-        searchValue.value.length > 0
-        || sortConfig.field
-        || filterConfigs.length > 0
-      ) {
+      if (searchValue.value.length > 0 || sortConfig.field || filterConfigs.length > 0) {
         getSearchTableData();
       } else {
         getNormalTableData();
@@ -257,7 +228,7 @@ export default defineComponent({
       bizLoading.value = true;
       const res = await accountStore.getBizListWithAuth();
       bizList.value = res.data;
-      const col = tableCols.value.find(item => item.field === 'bk_biz_id');
+      const col = tableCols.value.find((item) => item.field === 'bk_biz_id');
       if (col) {
         const list = res.data.map((item: { id: string; name: string }) => {
           const { id, name } = item;
@@ -282,7 +253,7 @@ export default defineComponent({
       const res = await schemeStore.listBizTypes(pageQuery);
 
       // 业务类型列筛选配置
-      const col = tableCols.value.find(item => item.field === 'biz_type');
+      const col = tableCols.value.find((item) => item.field === 'biz_type');
       if (col) {
         const list = res.data.details.map((item: IBizType) => {
           const { biz_type } = item;
@@ -307,16 +278,13 @@ export default defineComponent({
       collections.value = collectionRes.data.map((item: ICollectedSchemeItem) => {
         return { id: item.id, res_id: item.res_id };
       });
-      const collectionIds = collections.value.map(item => item.res_id);
+      const collectionIds = collections.value.map((item) => item.res_id);
       pagination.count = allUnCollectedRes.data.count;
 
       const currentPageStartNum = (pagination.current - 1) * pagination.limit;
-      const currentPageCollectedIdsLength =        collectionIds.length - currentPageStartNum;
+      const currentPageCollectedIdsLength = collectionIds.length - currentPageStartNum;
 
-      if (
-        currentPageCollectedIdsLength > 0
-        && currentPageCollectedIdsLength < pagination.limit
-      ) {
+      if (currentPageCollectedIdsLength > 0 && currentPageCollectedIdsLength < pagination.limit) {
         // 当前页中收藏方案和非收藏方案混排
         const ids = collectionIds.slice(currentPageStartNum);
         const [collectedRes, unCollectedRes] = await Promise.all([
@@ -326,16 +294,10 @@ export default defineComponent({
             limit: pagination.limit - ids.length,
           }),
         ]);
-        tableListData.value = [
-          ...collectedRes.data.details,
-          ...unCollectedRes.data.details,
-        ];
+        tableListData.value = [...collectedRes.data.details, ...unCollectedRes.data.details];
       } else if (currentPageCollectedIdsLength >= pagination.limit) {
         // 当前页中只有收藏方案
-        const ids = collectionIds.slice(
-          currentPageStartNum,
-          currentPageStartNum + pagination.limit,
-        );
+        const ids = collectionIds.slice(currentPageStartNum, currentPageStartNum + pagination.limit);
         const res = await getCollectedSchemes(ids);
         tableListData.value = res.data.details;
       } else {
@@ -392,7 +354,7 @@ export default defineComponent({
     // 获取未被收藏的方案列表
     const getUnCollectedScheme = (ids: string[], pageQuery: IPageQuery) => {
       const rules = searchValue.value
-        .filter(item => item.values?.length > 0)
+        .filter((item) => item.values?.length > 0)
         .map((item) => {
           if (['composite_score', 'bk_biz_id'].includes(item.id)) {
             return {
@@ -464,7 +426,7 @@ export default defineComponent({
       }
 
       collectPending.value = true;
-      const index = collections.value.findIndex(item => item.res_id === scheme.id);
+      const index = collections.value.findIndex((item) => item.res_id === scheme.id);
       if (index > -1) {
         await schemeStore.deleteCollection(collections.value[index].id);
         collections.value.splice(index, 1);
@@ -516,10 +478,7 @@ export default defineComponent({
     };
 
     const saveSchemeFn = (data: { name: string; bk_biz_id: number }) => {
-      return schemeStore.updateCloudSelectionScheme(
-        selectedScheme.value.id,
-        data,
-      );
+      return schemeStore.updateCloudSelectionScheme(selectedScheme.value.id, data);
     };
 
     const handleConfirm = () => {
@@ -543,13 +502,7 @@ export default defineComponent({
     };
 
     // 列排序
-    const handleColumnSort = ({
-      type,
-      column,
-    }: {
-      type: string;
-      column: { field: string };
-    }) => {
+    const handleColumnSort = ({ type, column }: { type: string; column: { field: string } }) => {
       if (type !== 'null') {
         sortConfig.field = column.field;
         sortConfig.order = type;
@@ -560,15 +513,9 @@ export default defineComponent({
       getTableData();
     };
 
-    const handleColumnFilter = ({
-      checked,
-      column,
-    }: {
-      checked: string[];
-      column: { field: string };
-    }) => {
+    const handleColumnFilter = ({ checked, column }: { checked: string[]; column: { field: string } }) => {
       console.log(checked, column.field);
-      const index = filterConfigs.findIndex(filter => filter.field === column.field);
+      const index = filterConfigs.findIndex((filter) => filter.field === column.field);
       if (index > -1) {
         if (checked.length > 0) {
           filterConfigs.splice(index, 1, {
@@ -598,15 +545,11 @@ export default defineComponent({
         <div class='operate-wrapper'>
           <bk-button
             class={`create-btn ${
-              authVerifyData.value.permissionAction.cloud_selection_recommend
-                ? ''
-                : 'hcm-no-permision-btn'
+              authVerifyData.value.permissionAction.cloud_selection_recommend ? '' : 'hcm-no-permision-btn'
             }`}
             theme='primary'
             onClick={() => {
-              if (
-                authVerifyData.value.permissionAction.cloud_selection_recommend
-              ) goToCreate();
+              if (authVerifyData.value.permissionAction.cloud_selection_recommend) goToCreate();
               else handleAuth('cloud_selection_create');
             }}>
             <Plus class='plus-icon' />

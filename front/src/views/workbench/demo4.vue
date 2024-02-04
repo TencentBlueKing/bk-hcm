@@ -1,6 +1,4 @@
-<template>
-  demo4-{{state.aaa}}
-</template>
+<template>demo4-{{ state.aaa }}</template>
 
 <script lang="ts" setup>
 import { reactive } from 'vue';

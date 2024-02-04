@@ -9,12 +9,8 @@ const lang: ILANG = {
   你好世界: ['hello world'],
   海垒: ['HCM'],
   退出: ['Quit'],
-  '非平台用户，请联系管理员授权': [
-    'No platform users, please contact the administrator for authorization',
-  ],
-  请联系项目管理员关联业务: [
-    'Please contact the project administrator to associate the business',
-  ],
+  '非平台用户，请联系管理员授权': ['No platform users, please contact the administrator for authorization'],
+  请联系项目管理员关联业务: ['Please contact the project administrator to associate the business'],
   请联系项目管理员关联业务或者授权业务权限: [
     'Please contact the project administrator to associate business or authorize business permissions',
   ],
@@ -99,9 +95,7 @@ const lang: ILANG = {
   容量只能为数字: ['Capacity can only numeric'],
   容量不能为负数: ['Capacity cannot be negative'],
   容量不能超过1000: ['Capacity cannot exceed 1000'],
-  修改的容量不能小于已使用配额: [
-    'The modified capacity cannot be less than the used quota',
-  ],
+  修改的容量不能小于已使用配额: ['The modified capacity cannot be less than the used quota'],
   容量和超分配额的总量不能小于已分配额: [
     'The total amount of capacity and over quota cannot be less than the allocated quota',
   ],
@@ -110,15 +104,11 @@ const lang: ILANG = {
   输入参数: ['Input parameter'],
   调用该API传递的参数信息: ['Parameter information passed by calling the API'],
   返回变量: ['Return variable'],
-  调用成功后API将会返回的变量信息: [
-    'The variable information that the API will return after the call is successful',
-  ],
+  调用成功后API将会返回的变量信息: ['The variable information that the API will return after the call is successful'],
   变量名: ['Variable name'],
   变量值: ['Variable value'],
   接口返回: ['Interface return'],
-  调用成功后API将会返回的数据信息: [
-    'The data information that the API will return after the call is successful',
-  ],
+  调用成功后API将会返回的数据信息: ['The data information that the API will return after the call is successful'],
   附件来源: ['Attachment source'],
   文件类型: ['File type'],
   搜索: ['Search'],
@@ -216,9 +206,7 @@ const lang: ILANG = {
   关联负载均衡次数: ['Associated load balancing times'],
   端口: ['Port'],
   权重: ['Weight'],
-  '温馨提示：所选服务器的vpc段必须相同': [
-    'Warm tip: the VPC segments of the selected server must be the same',
-  ],
+  '温馨提示：所选服务器的vpc段必须相同': ['Warm tip: the VPC segments of the selected server must be the same'],
   添加端口: ['Add port'],
   移除: ['Remove'],
   上一步: ['Previous step'],
@@ -358,14 +346,10 @@ const lang: ILANG = {
   请输入磁盘名称: ['Please enter a disk name'],
   请选择挂载虚拟机: ['Please choose to mount the virtual machine'],
   请选择存储类型: ['Please select storage type'],
-  '输入磁盘容量，限定为40~4000的整数': [
-    'Enter the disk capacity, which is limited to an integer of 40 ~ 4000',
-  ],
+  '输入磁盘容量，限定为40~4000的整数': ['Enter the disk capacity, which is limited to an integer of 40 ~ 4000'],
   请选择站点: ['Please select a site'],
   请选择存储: ['Please select storage'],
-  '输入磁盘容量，限定为大于100的整数': [
-    'Enter the disk capacity, limited to an integer greater than 100',
-  ],
+  '输入磁盘容量，限定为大于100的整数': ['Enter the disk capacity, limited to an integer greater than 100'],
   请选择磁盘种类: ['Please select a disk type'],
   请选择镜像: ['Please select a image'],
   存储大小: ['Storage size'],
@@ -385,12 +369,8 @@ const lang: ILANG = {
   站点不能为空: ['Site cannot be empty'],
   存储不能为空: ['Storage cannot be empty'],
   挂载主机不能为空: ['Mount host cannot be empty'],
-  '磁盘正在创建中，请稍后刷新页面查看': [
-    'The disk is being created. Please refresh the page later',
-  ],
-  挂载后才会显示到虚拟机详情中: [
-    'After mounting, it will be displayed in the virtual machine details',
-  ],
+  '磁盘正在创建中，请稍后刷新页面查看': ['The disk is being created. Please refresh the page later'],
+  挂载后才会显示到虚拟机详情中: ['After mounting, it will be displayed in the virtual machine details'],
   请选择项目: ['Please select an item'],
   云资源分布: ['Cloud Resource Distribution'],
   成本组成: ['Cost composition'],
@@ -427,9 +407,7 @@ const lang: ILANG = {
   资源名称: ['Resource Name'],
   邮箱: ['Mail'],
   电话: ['Phone'],
-  '资源快速入口最多存在4个, 还可以选择': [
-    'There are at most 4 resource quick entries, and you can also choose',
-  ],
+  '资源快速入口最多存在4个, 还可以选择': ['There are at most 4 resource quick entries, and you can also choose'],
   新增成功: ['Added successfully'],
   '私有网络（Virtual Private Cloud，VPC）是您自己独有专属云上网络空间，您可以完全掌控自己的专有网络，不同私有网络间完全逻辑隔离。您可以自定义网络环境、路由表、安全策略等；同时，私有网络支持多种方式连接 Internet、连接其他 VPC、连接您的本地数据中心，助力您轻松部署云上网络。':
     [
@@ -485,9 +463,7 @@ const lang: ILANG = {
   开始时间不能大于结束时间: ['Start time cannot be greater than end time'],
   占总消费: ['Share in total consumption'],
   半年成本趋势图: ['Half year cost trend chart'],
-  当月成本最高的虚拟机TOP5: [
-    'Top 5 virtual machines with the highest cost in the month',
-  ],
+  当月成本最高的虚拟机TOP5: ['Top 5 virtual machines with the highest cost in the month'],
   虚拟机当月总消费: ['Monthly total consumption of virtual machines'],
   计算机资源当月消费: ['Monthly consumption of computer resources'],
   磁盘当月消费: ['Disk consumption in the current month'],
@@ -650,9 +626,7 @@ const lang: ILANG = {
   脚本名称不能为空: ['Script name cannot be empty'],
   输出参数: ['Output parameters'],
   脚本不能为空: ['script cannot be empty'],
-  请确认必选参数是否全部填写: [
-    'Please confirm whether all required parameters are filled in',
-  ],
+  请确认必选参数是否全部填写: ['Please confirm whether all required parameters are filled in'],
   脚本详情: ['Script details'],
   新增脚本: ['Add script'],
   值: ['Value'],
@@ -691,9 +665,7 @@ const lang: ILANG = {
   区域资源分布: ['Regional Resource Distribution'],
   规格分布: ['Specification Distribution'],
   集群虚拟机数量TOP5: ['The number of cluster virtual machines TOP5'],
-  esxi主机的虚拟机数量TOP5: [
-    'The number of virtual machines on the esxi host TOP5',
-  ],
+  esxi主机的虚拟机数量TOP5: ['The number of virtual machines on the esxi host TOP5'],
   集群容量TOP5: ['Cluster Capacity TOP5'],
   esxi主机容量TOP5: ['esxi host capacity TOP5'],
   使用率: ['Usage'],
@@ -820,10 +792,9 @@ const lang: ILANG = {
   ],
   解绑: ['Unbind'],
   选择资源: ['Choose a resource'],
-  '标签键和标签值最大支持127个半角字符，支持 UTF-8 格式表示的字符、空格和数字以及特殊字符：+-=._:/@()[]（）【】':
-    [
-      'The label key and label value support up to 127 half width characters, and support UTF-8 format characters, spaces, numbers and special characters: + - =. _:/@ ()[]（）【】',
-    ],
+  '标签键和标签值最大支持127个半角字符，支持 UTF-8 格式表示的字符、空格和数字以及特殊字符：+-=._:/@()[]（）【】': [
+    'The label key and label value support up to 127 half width characters, and support UTF-8 format characters, spaces, numbers and special characters: + - =. _:/@ ()[]（）【】',
+  ],
   资源标签: ['Resource tab'],
   页面进行管理: ['Page to manage'],
   查看资源: ['View resources'],
@@ -1005,12 +976,8 @@ const lang: ILANG = {
   CPU必填且不可为负数: ['CPU is required and cannot be negative'],
   内存必填且不可为负数: ['Memory is required and cannot be negative'],
   块存储必填且不可为负数: ['Block storage is required and cannot be negative'],
-  快照数必填且不可为负数: [
-    'The number of snapshots is required and cannot be negative',
-  ],
-  弹性公网IP数必填且不可为负数: [
-    'The number of EIPs is required and cannot be negative',
-  ],
+  快照数必填且不可为负数: ['The number of snapshots is required and cannot be negative'],
+  弹性公网IP数必填且不可为负数: ['The number of EIPs is required and cannot be negative'],
   配额修改成功: ['Quota modified successfully'],
   新增快照: ['Add snapshot'],
   快照ID: ['Snapshot ID'],
@@ -1039,9 +1006,7 @@ const lang: ILANG = {
   '资源池配置：': ['Resource pool configuration: '],
   请选择关联的项目: ['Please select an associated item'],
   请选择租户资源池: ['Please select a tenant resource pool'],
-  请完善资源池配置信息: [
-    'Please complete the resource pool configuration information',
-  ],
+  请完善资源池配置信息: ['Please complete the resource pool configuration information'],
   新增租户资源池成功: ['Added tenant resource pool successfully'],
   按名称搜索: ['Search by name'],
   资源区域: ['Resource area'],
@@ -1117,9 +1082,7 @@ const lang: ILANG = {
   请选择关联组织: ['Please select an affiliate'],
   用户已存在: ['User already exists'],
   '下列用户：': ['The following users:'],
-  '已经存在于其他项目中，无法继续创建项目': [
-    'Already exists in another project, cannot continue to create project',
-  ],
+  '已经存在于其他项目中，无法继续创建项目': ['Already exists in another project, cannot continue to create project'],
   项目详情: ['Project details'],
   项目标识: ['Project ID'],
   折扣管理: ['Discount Management'],
@@ -1196,9 +1159,7 @@ const lang: ILANG = {
   测试订单: ['Test order'],
   名称不能为空: ['Name cannot be empty'],
   服务申请提交成功: ['Service application submitted successfully'],
-  '3秒之后将返回服务目录': [
-    'After 3 seconds, the service directory will be returned',
-  ],
+  '3秒之后将返回服务目录': ['After 3 seconds, the service directory will be returned'],
   查看订单: ['Check order'],
   请勾选审批流程: ['Please tick the approval process'],
   创建订单失败: ['Failed to create order'],
@@ -1217,9 +1178,7 @@ const lang: ILANG = {
     'Doing this will create a new ticket and jump to the ticket page, please confirm whether to submit',
   ],
   服务添加到购物车成功: ['Service added to cart successfully'],
-  '3秒之后将返回服务申请': [
-    'The service request will be returned after 3 seconds',
-  ],
+  '3秒之后将返回服务申请': ['The service request will be returned after 3 seconds'],
   购物车: ['Shopping cart'],
   返回服务申请: ['Back to Service Request'],
   保存清单成功: ['List saved successfully'],
@@ -1242,12 +1201,8 @@ const lang: ILANG = {
   '请确认所选虚拟机已关机，否则将执行失败': [
     'Please confirm that the selected virtual machine is powered off, otherwise the execution will fail',
   ],
-  虚拟机密码不符合规范: [
-    'The virtual machine password is out of specification',
-  ],
-  '项目名称已被占用，请重新命名': [
-    'Project name is already taken, please rename',
-  ],
+  虚拟机密码不符合规范: ['The virtual machine password is out of specification'],
+  '项目名称已被占用，请重新命名': ['Project name is already taken, please rename'],
   提单人: ['Drawer'],
   工单节点已完成: ['Work Order Node Completed'],
   必选: ['Required'],
@@ -1268,35 +1223,26 @@ const lang: ILANG = {
   赋值1: ['assign 1'],
   赋值2: ['assign 2'],
   上传完成: ['upload completed'],
-  '支持的附件格式：txt，log，pdf，doc，ppt，xls，docx，pptx，xlsx，zip，jpg，png，每个文件不超过200Mb':
-    [
-      'Supported attachment formats: txt, log, pdf, doc, ppt, xls, docx, pptx, xlsx, zip, jpg, png, each file does not exceed 200Mb',
-    ],
+  '支持的附件格式：txt，log，pdf，doc，ppt，xls，docx，pptx，xlsx，zip，jpg，png，每个文件不超过200Mb': [
+    'Supported attachment formats: txt, log, pdf, doc, ppt, xls, docx, pptx, xlsx, zip, jpg, png, each file does not exceed 200Mb',
+  ],
   点击上传: ['Click to upload'],
   文件不能超过: ['File cannot exceed'],
   文件名不合法: ['Invalid filename'],
   '不能上传同名文件！': ['Cannot upload a file with the same name!'],
   '附件格式不支持！': ['Attachment format not supported!'],
-  '只允许上传JPG|PNG|JPEG格式的图片': [
-    'Only images in JPG|PNG|JPEG format are allowed to be uploaded',
-  ],
+  '只允许上传JPG|PNG|JPEG格式的图片': ['Only images in JPG|PNG|JPEG format are allowed to be uploaded'],
   图片大小不能超过: ['Image size cannot exceed'],
-  请选择在哪朵云上创建资源: [
-    'Please select which cloud to create the resource on',
-  ],
+  请选择在哪朵云上创建资源: ['Please select which cloud to create the resource on'],
   实例名: ['Instance name'],
   请输入实例名: ['Please enter an instance name'],
   网络类型: ['Network Type'],
   可用区类型: ['Availability Zone Type'],
   所属运营商: ['carrier'],
   带宽上限: ['Bandwidth cap'],
-  '按使用流量计费，请输入带宽上限': [
-    'Billed by usage, please enter a bandwidth limit',
-  ],
+  '按使用流量计费，请输入带宽上限': ['Billed by usage, please enter a bandwidth limit'],
   虚拟网络: ['Virtual network'],
-  请根据所需选择合适的网络: [
-    'Please select the appropriate network according to your needs',
-  ],
+  请根据所需选择合适的网络: ['Please select the appropriate network according to your needs'],
   申请数量: ['Number of applications'],
   集团总部: ['Group headquarters'],
   公网: ['Public net'],
@@ -1316,9 +1262,7 @@ const lang: ILANG = {
   导入数据: ['Import Data'],
   下载表格: ['Download form'],
   默认行不能删除: ['Default row cannot be deleted'],
-  '确认要删除此条数据？': [
-    'Are you sure you want to delete this piece of data?',
-  ],
+  '确认要删除此条数据？': ['Are you sure you want to delete this piece of data?'],
   请导入有效的文件: ['Please import a valid file'],
   '该列为多选类型，请从下列选项中输入以英文逗号分隔的key值。': [
     'This column is a multi-select type, please enter the key values separated by English commas from the following options.',
@@ -1326,12 +1270,8 @@ const lang: ILANG = {
   '该列为单选类型，请从下列选项中输入一个key值。': [
     'The column is a radio type, please enter a key value from the following options.',
   ],
-  '该列为日期类型，请按以下格式输入': [
-    'The column is a date type, please enter it in the following format',
-  ],
-  '该列为时间类型，请按以下格式输入': [
-    'The column is a time type, please enter it in the following format',
-  ],
+  '该列为日期类型，请按以下格式输入': ['The column is a date type, please enter it in the following format'],
+  '该列为时间类型，请按以下格式输入': ['The column is a time type, please enter it in the following format'],
   资源账号区域: ['Resource account area'],
   申请理由: ['Reason for Application'],
   请输入理由: ['Please enter a reason'],
@@ -1352,9 +1292,7 @@ const lang: ILANG = {
   公共镜像: ['Public image'],
   选择日期: ['Select date'],
   选择日期时间范围: ['Select date time range'],
-  请选择在哪朵云上修改资源: [
-    'Please select which cloud to modify the resource on',
-  ],
+  请选择在哪朵云上修改资源: ['Please select which cloud to modify the resource on'],
   云可用区: ['Cloud Availability Zone'],
   描述详情: ['Description details'],
   请详细描述删除原因: ['Please describe in detail the reason for deletion'],
@@ -1366,10 +1304,9 @@ const lang: ILANG = {
   文件体积过大: ['File size is too large'],
   图片格式错误: ['Wrong image format'],
   '模板下载：': ['Template download: '],
-  '支持的附件格式：txt，log，pdf，doc，ppt，xls，docx，pptx，xlsx，zip，jpg，png，msg，每个文件不超过200Mb':
-    [
-      'Supported attachment formats: txt, log, pdf, doc, ppt, xls, docx, pptx, xlsx, zip, jpg, png, msg, each file does not exceed 200Mb',
-    ],
+  '支持的附件格式：txt，log，pdf，doc，ppt，xls，docx，pptx，xlsx，zip，jpg，png，msg，每个文件不超过200Mb': [
+    'Supported attachment formats: txt, log, pdf, doc, ppt, xls, docx, pptx, xlsx, zip, jpg, png, msg, each file does not exceed 200Mb',
+  ],
   '支持的附件格式：': ['Supported attachment formats:'],
   '，每个文件不超过': ['], each file does not exceed'],
   '中文名：': ['Chinese name: '],
@@ -1408,9 +1345,7 @@ const lang: ILANG = {
   副本只读: ['Replica read-only'],
   'Redis4.0主从版': ['Redis4.0 master slave'],
   '请输入1~5范围内的数字': ['Please enter a number in the range 1~5'],
-  '请输入1024~65535范围内的数字': [
-    'Please enter a number in the range of 1024 ~ 65535',
-  ],
+  '请输入1024~65535范围内的数字': ['Please enter a number in the range of 1024 ~ 65535'],
   选择: ['Choose'],
   主可用区: ['Primary Availability Zone'],
   从可用区: ['From Availability Zone'],
@@ -1432,9 +1367,7 @@ const lang: ILANG = {
   一主三从: ['One master and three slaves'],
   一主四从: ['One master and four slaves'],
   一主五从: ['One master and five slaves'],
-  '请输入10-1500范围内的数字且为10的倍数': [
-    'A number in the range of 1500 and a multiple of 10',
-  ],
+  '请输入10-1500范围内的数字且为10的倍数': ['A number in the range of 1500 and a multiple of 10'],
   集群名称: ['Cluster name'],
   Kubernetes版本: ['Kubernetes version'],
   Master节点规格: ['Master Node Specifications'],
@@ -1579,9 +1512,7 @@ const lang: ILANG = {
   '预计完成时间：': ['Estimated finish time: '],
   当前节点其他用户正在处理: ['Other users of the current node are processing'],
   该单据已结束: ['The document has ended'],
-  '任务进行中，完成后将自动刷新': [
-    'The task is in progress and will be refreshed automatically after completion',
-  ],
+  '任务进行中，完成后将自动刷新': ['The task is in progress and will be refreshed automatically after completion'],
   '超时：': ['Time out:'],
   处理中: ['Processing'],
   被挂起: ['Suspended'],
@@ -1601,13 +1532,9 @@ const lang: ILANG = {
   '剩余：': ['Remaining: '],
   请选择评论节点: ['Please select a comment node'],
   请输入评论: ['Please enter a comment'],
-  请搜索并选择需要通知的用户: [
-    'Please search and select the user who needs to be notified',
-  ],
+  请搜索并选择需要通知的用户: ['Please search and select the user who needs to be notified'],
   '评论节点：': ['Comment node: '],
-  '输入“@”可搜索并选择需要通知的用户': [
-    'Type "@" to search and select users to notify',
-  ],
+  '输入“@”可搜索并选择需要通知的用户': ['Type "@" to search and select users to notify'],
   附件上传: ['Updating files'],
   单据所有处理人: ['Document owner'],
   提交评论: ['Submit comments'],
@@ -1662,9 +1589,7 @@ const lang: ILANG = {
   '45天内到期': ['Expires in 45 days'],
   '60天内到期': ['Expires in 60 days'],
   kubernetes版本: ['kubernetes version'],
-  请前往服务目录内提单删除资源: [
-    'Please go to the bill of lading in the service catalog to delete the resource',
-  ],
+  请前往服务目录内提单删除资源: ['Please go to the bill of lading in the service catalog to delete the resource'],
   独立集群: ['Standalone cluster'],
   托管集群: ['Managed cluster'],
   完成: ['Finish'],
@@ -1677,14 +1602,12 @@ const lang: ILANG = {
   已选节点: ['Selected node'],
   确认密码: ['Confirm Password'],
   安全加固: ['Security hardening'],
-  '提示：以上节点需要重装系统，同时会将以上节点迁移至当前集群的新增资源所属项目下。':
-    [
-      'Tip: The above nodes need to be reinstalled, and the above nodes will be migrated to the project to which the new resources of the current cluster belong.',
-    ],
-  '注意：重装后，节点系统盘内的所有数据将被清除，恢复到初始状态；迁移项目后原安全组解绑，需要重新绑定安全组。':
-    [
-      'Note: After reinstallation, all data in the node system disk will be cleared and restored to the initial state; after the project is migrated, the original security group will be unbound, and the security group needs to be re-bound.',
-    ],
+  '提示：以上节点需要重装系统，同时会将以上节点迁移至当前集群的新增资源所属项目下。': [
+    'Tip: The above nodes need to be reinstalled, and the above nodes will be migrated to the project to which the new resources of the current cluster belong.',
+  ],
+  '注意：重装后，节点系统盘内的所有数据将被清除，恢复到初始状态；迁移项目后原安全组解绑，需要重新绑定安全组。': [
+    'Note: After reinstallation, all data in the node system disk will be cleared and restored to the initial state; after the project is migrated, the original security group will be unbound, and the security group needs to be re-bound.',
+  ],
   免费开通: ['Open for free'],
   '安装组件免费开通DDoS防护、WAF和云镜主机防护': [
     'The installation components enable free DDoS protection, WAF and cloud image host protection',
@@ -1746,9 +1669,7 @@ const lang: ILANG = {
   已隔离: ['Quarantined'],
   已删除: ['deleted'],
   新标签不能为空: ['New label cannot be empty'],
-  '新增Mariadb成功，稍后将自动更新数据': [
-    'Added Mariadb successfully, data will be updated automatically later',
-  ],
+  '新增Mariadb成功，稍后将自动更新数据': ['Added Mariadb successfully, data will be updated automatically later'],
   新增MariaDB: ['Added MariaDB'],
   存储: ['Storage'],
   内网端口: ['Intranet port'],
@@ -1782,9 +1703,7 @@ const lang: ILANG = {
   实例规格不能为空: ['The instance specification cannot be empty'],
   分片数量不能为空: ['The number of shards cannot be empty'],
   每片节点数量不能为空: ['The number of nodes per slice cannot be empty'],
-  '磁盘容量不能为空,不能小于250': [
-    'Disk capacity cannot be empty and cannot be less than 250',
-  ],
+  '磁盘容量不能为空,不能小于250': ['Disk capacity cannot be empty and cannot be less than 250'],
   密码不能为空: ['Password can not be blank'],
   '密码必须包含字母、数字和特殊字符（长度8-16位）': [
     'Password must contain letters, numbers and special characters (8-16 characters in length)',
@@ -1816,9 +1735,7 @@ const lang: ILANG = {
   权限组不能为空: ['Permission group cannot be empty'],
   标准版: ['Standard Edition'],
   集群版: ['Cluster Edition'],
-  '新增Redis成功，稍后将自动更新数据': [
-    'Successfully added Redis, the data will be automatically updated later',
-  ],
+  '新增Redis成功，稍后将自动更新数据': ['Successfully added Redis, the data will be automatically updated later'],
   规格信息: ['Specification information'],
   网络信息: ['Internet Information'],
   内网PV4地址: ['Intranet PV4 address'],
@@ -1839,12 +1756,8 @@ const lang: ILANG = {
   '日志磁盘：': ['log disk: '],
   不能超过机型CPU总量: ['Cannot exceed the total amount of CPU of the model'],
   不能超过机型内存总量: ['Cannot exceed the total memory of the model'],
-  不能超过机型数据磁盘总量: [
-    'Cannot exceed the total amount of data disks of the model',
-  ],
-  不能超过机型日志磁盘总量: [
-    'Cannot exceed the total number of log disks of the model',
-  ],
+  不能超过机型数据磁盘总量: ['Cannot exceed the total amount of data disks of the model'],
+  不能超过机型日志磁盘总量: ['Cannot exceed the total number of log disks of the model'],
   '容灾模式：': ['Disaster recovery mode: '],
   一主零备: ['One main and spare'],
   一主一备: ['One master and one backup'],
@@ -1938,9 +1851,7 @@ const lang: ILANG = {
   '过期时间：': ['Expiration: '],
   永不过期: ['Never expires'],
   '读写方式：': ['Read and write: '],
-  '【正常账号】只选择主机进行读写': [
-    '[Normal account] Only select the host for reading and writing',
-  ],
+  '【正常账号】只选择主机进行读写': ['[Normal account] Only select the host for reading and writing'],
   '【只读账号】优先在备机进行读,如果备机的延迟都大于设置的延迟，则从主机读取': [
     '[Read-only account] Read on the standby machine first, if the delay of the standby machine is greater than the set delay, read from the host machine',
   ],
@@ -1948,9 +1859,7 @@ const lang: ILANG = {
     '[Read-only account] Only select the standby machine for reading, if all the standby machines are greater than the set delay, an error will be reported directly',
   ],
   '当只读时，将：': ['When read-only, will: '],
-  选择正常的备机进行读操作: [
-    'Select the normal standby machine for read operation',
-  ],
+  选择正常的备机进行读操作: ['Select the normal standby machine for read operation'],
   选择watch节点进行读: ['Select the watch node to read'],
   '只读备机延迟值：': ['Standby-only latency value:'],
   修改权限: ['Edit permission'],
@@ -1999,9 +1908,7 @@ const lang: ILANG = {
   设置binlog和备份保存天数: ['Set binlog and backup save days'],
   删除免切成功: ['Delete without cutting succeeded'],
   '是否确认初始化：': ['Confirm initialization: '],
-  '初始化成功，稍后请查看数据': [
-    'Initialization succeeded. Please check the data later',
-  ],
+  '初始化成功，稍后请查看数据': ['Initialization succeeded. Please check the data later'],
   设置分布式事务: ['Set up distributed transactions'],
   工作模式: ['Operating mode'],
   开启分布式事务: ['Start distributed transactions'],
@@ -2021,17 +1928,13 @@ const lang: ILANG = {
   约束: ['constraint'],
   默认值: ['Defaults'],
   批量修改: ['Batch Edit'],
-  '修改成功，稍后数据会同步更新': [
-    'Update successful, will be updated synchronously later',
-  ],
+  '修改成功，稍后数据会同步更新': ['Update successful, will be updated synchronously later'],
   新增SET: ['Add SET'],
   同步异步模式: ['Synchronous asynchronous mode'],
   所属实例: ['owning instance'],
   请补全必需参数: ['Please complete the required parameters'],
   隔离中: ['in isolation'],
-  '新增成功，数据正在同步更新中，请稍后查看...': [
-    'Create successful, updated synchronously, please check later',
-  ],
+  '新增成功，数据正在同步更新中，请稍后查看...': ['Create successful, updated synchronously, please check later'],
   '扩(缩)容': ['Expand (shrink) capacity'],
   '1主0备': ['1 main 0 backup'],
   '1主1备': ['1 main 1 backup'],
@@ -2093,15 +1996,13 @@ const lang: ILANG = {
   关联硬盘: ['Associative hard drive'],
   新增快照成功: ['Snapshot added successfully'],
   您确定要把: ['Confirm to '],
-  的数据回滚到: [' \'s data is rolled back to '],
+  的数据回滚到: [" 's data is rolled back to "],
   '时刻吗？': [' time?'],
   回滚后立即启动实例: ['Start instance immediately after rollback'],
   虚拟机批量分配: ['Virtual machine batch allocation'],
   重置密码: ['Reset Password'],
   '确认密码：': ['Confirm Password: '],
-  '修改密码后需要重启实例生效。': [
-    'After changing password, need to restart the instance to take effect.',
-  ],
+  '修改密码后需要重启实例生效。': ['After changing password, need to restart the instance to take effect.'],
   '您已经选择1台实例：': ['You have selected 1 instance: '],
   重启: ['reboot'],
   '绑定/解绑安全组': ['Bind/Unbind security group'],
@@ -2178,7 +2079,7 @@ const lang: ILANG = {
   批量释放弹性公网IP: ['Release elastic public IP addresses in batches'],
   批量释放: ['batch release'],
   计费模式不能为空: ['The billing mode cannot be empty'],
-  购买时长不能为空: ['Can\'t be empty for purchasing time'],
+  购买时长不能为空: ["Can't be empty for purchasing time"],
   带宽大小不能为空: ['Bandwidth cannot be empty'],
   带宽名称不能为空: ['The bandwidth name cannot be empty'],
   带宽类型不能为空: ['Bandwidth type cannot be empty'],
@@ -2235,12 +2136,8 @@ const lang: ILANG = {
   请先选择后端服务器类型: ['Please select the back -end server type first'],
   请先添加服务器: ['Please add the server first'],
   请输入端口信息: ['Please enter port information'],
-  请填写负载均衡SLB对外服务的端口: [
-    'Please fill in the port of the load balancing SLB external service',
-  ],
-  '如不填写，系统默认为‘协议_端口’': [
-    'If you do not fill in, the system defaults to ‘protocol_ port’',
-  ],
+  请填写负载均衡SLB对外服务的端口: ['Please fill in the port of the load balancing SLB external service'],
+  '如不填写，系统默认为‘协议_端口’': ['If you do not fill in, the system defaults to ‘protocol_ port’'],
   选择负载均衡协议: ['Select load balancing protocol'],
   请先选择负载均衡协议: ['Please select the load balancing protocol first'],
   请先输入监听端口: ['Please enter the monitoring port first'],
@@ -2283,10 +2180,9 @@ const lang: ILANG = {
   虚拟服务器组名称: ['Virtual server group name'],
   请先输入服务器组名称: ['Please enter the server group name first'],
   已添加服务器: ['Added server'],
-  '存在关联监听或关联转发策略，需要先解除监听或转发策略的关联关系，才可以删除该虚拟服务器组':
-    [
-      'There is a correlation strategy of associated monitoring or associated forwarding, and the relationship between listening or forwarding strategies must be lifted first before you can delete the virtual server group',
-    ],
+  '存在关联监听或关联转发策略，需要先解除监听或转发策略的关联关系，才可以删除该虚拟服务器组': [
+    'There is a correlation strategy of associated monitoring or associated forwarding, and the relationship between listening or forwarding strategies must be lifted first before you can delete the virtual server group',
+  ],
   删除后端服务器: ['delete backend server'],
   请将端口信息填写完全: ['Please fill in the port information completely'],
   创建: ['Create'],
@@ -2338,9 +2234,7 @@ const lang: ILANG = {
   出站规则: ['Outbound Rules'],
   允许: ['allow'],
   拒绝: ['reject'],
-  '除备注外，其他字段均不能为空！': [
-    'Except for remarks, other fields cannot be empty!',
-  ],
+  '除备注外，其他字段均不能为空！': ['Except for remarks, other fields cannot be empty!'],
   '协议端口支持以下格式：': ['Protocol ports support the following formats: '],
   '其他协议: ICMP,ICMPv6或GRE': ['Other protocols: ICMP, ICMPv6 or GRE'],
   '规则：': ['Rule: '],
@@ -2386,10 +2280,9 @@ const lang: ILANG = {
   子网可用区不能为空: ['Subnet Availability Zone cannot be empty'],
   新增VPC成功: ['Added VPC successfully'],
   新增子网: ['Add subnet'],
-  '子网的CIDR必须是所在私有网络CIDR的一部分，且不能和该私有网络下已有的CIDR重叠':
-    [
-      'The CIDR of the subnet must be part of the CIDR of the private network, and it cannot overlap with the existing CIDR under the private network',
-    ],
+  '子网的CIDR必须是所在私有网络CIDR的一部分，且不能和该私有网络下已有的CIDR重叠': [
+    'The CIDR of the subnet must be part of the CIDR of the private network, and it cannot overlap with the existing CIDR under the private network',
+  ],
   '阿里云安全组名称：长度为2~128个英文或中文字符。必须以大小字母或中文开头。可以包含数字、半角冒号（:）、下划线（_）或者连字符（-）':
     [
       'Security group name: 2 to 128 English or Chinese characters in length. Must start with upper and lower letters or Chinese. Can contain numbers, colons (:), underscores (_), or hyphens (-)',
@@ -2559,17 +2452,11 @@ const lang: ILANG = {
   同步结果: ['Sync result'],
   余额: ['Balance'],
   所属云账号: ['own cloud account'],
-  至少有一组集群名和操作接口: [
-    'At least one set of cluster name and operation interface',
-  ],
+  至少有一组集群名和操作接口: ['At least one set of cluster name and operation interface'],
   新增账号成功: ['Successfully added account'],
   修改账号成功: ['Modify account successfully'],
-  '请输入服务器名、IP、账号、密码、项目ID': [
-    'Please enter server name, IP, account, password, project ID',
-  ],
-  '请输入账号名、SECRETID、SECRET密钥': [
-    'Please enter account name, SECRETID, SECRET key',
-  ],
+  '请输入服务器名、IP、账号、密码、项目ID': ['Please enter server name, IP, account, password, project ID'],
+  '请输入账号名、SECRETID、SECRET密钥': ['Please enter account name, SECRETID, SECRET key'],
   测试连接成功: ['Test connection is successful'],
   删除账号: ['delete account'],
   至少存在一条集群和接口: ['At least one cluster and interface exists'],
@@ -2620,14 +2507,12 @@ const lang: ILANG = {
   新增存储资源类型: ['Added storage resource type'],
   '价格 元/(天*GB)：': ['Price RMB/(day*GB):'],
   关联: ['association'],
-  '计算资源类型关联计算资源（如：集群），用于对某个计算资源的成本。若没有关联，默认对整个云平台生效。':
-    [
-      'Computing resource type is associated with a computing resource (such as a cluster), and is used for the cost of a computing resource. If there is no association, it will take effect for the entire cloud platform by default.',
-    ],
-  '存储资源类型关联存储资源（如：本地存储），用于对某个存储资源的成本。若没有关联，默认对整个云平台生效。':
-    [
-      'Storage resource type is associated with storage resources (such as: local storage), which is used for the cost of a storage resource. If there is no association, it will take effect for the entire cloud platform by default.',
-    ],
+  '计算资源类型关联计算资源（如：集群），用于对某个计算资源的成本。若没有关联，默认对整个云平台生效。': [
+    'Computing resource type is associated with a computing resource (such as a cluster), and is used for the cost of a computing resource. If there is no association, it will take effect for the entire cloud platform by default.',
+  ],
+  '存储资源类型关联存储资源（如：本地存储），用于对某个存储资源的成本。若没有关联，默认对整个云平台生效。': [
+    'Storage resource type is associated with storage resources (such as: local storage), which is used for the cost of a storage resource. If there is no association, it will take effect for the entire cloud platform by default.',
+  ],
   账号选择: ['Account selection'],
   计算资源定价: ['Computing resource pricing'],
   存储资源定价: ['Storage resource pricing'],
@@ -2699,9 +2584,7 @@ const lang: ILANG = {
   时间范围不能为空: ['Time range cannot be empty'],
   生效范围不能为空: ['Effective range cannot be empty'],
   周期不能为空: ['Period cannot be empty'],
-  '5min使用率百分比和次数不可为空': [
-    '5min usage percentage and times cannot be empty',
-  ],
+  '5min使用率百分比和次数不可为空': ['5min usage percentage and times cannot be empty'],
   CPU_5min使用率: ['CPU_5min usage'],
   load_5min使用率: ['load_5min usage'],
   大于: ['more than'],
@@ -2712,9 +2595,7 @@ const lang: ILANG = {
   规格名称不能为空: ['Specs name cannot be empty'],
   规格不能为空: ['Specs cannot be empty'],
   请先选择资源类型: ['Please select the resource type first'],
-  '该映射关系已存在，请重新选择': [
-    'The mapping relationship already exists, please select again',
-  ],
+  '该映射关系已存在，请重新选择': ['The mapping relationship already exists, please select again'],
   CPU和内存均不可为空: ['Neither CPU nor memory can be empty'],
   编辑规格: ['Edit specs'],
   请输入规格名: ['Please enter specification name'],
@@ -2742,7 +2623,7 @@ const lang: ILANG = {
   参数配置: ['Params Config'],
   开: ['open'],
   关: ['close'],
-  不操作: ['don\'t operate'],
+  不操作: ["don't operate"],
   新增标签: ['Add tag'],
   请输入标签键: ['Please enter tag key'],
   请输入标签值: ['Please enter tag value'],
@@ -2760,15 +2641,9 @@ const lang: ILANG = {
   请输入loadBalance名称: ['Please enter a loadBalance name'],
   修改端口: ['Update Port'],
   修改权重: ['Update Weight'],
-  '正在开机中，已开机的虚拟机不会进行任何操作!': [
-    'Powering on, the powered on virtual machine will not do anything',
-  ],
-  '正在关机中，请不要立刻进行其他操作': [
-    'Shutting down, please do not perform other operations immediately',
-  ],
-  '正在重启中，请不要立刻进行其他操作': [
-    'Restarting, please do not perform other operations immediately',
-  ],
+  '正在开机中，已开机的虚拟机不会进行任何操作!': ['Powering on, the powered on virtual machine will not do anything'],
+  '正在关机中，请不要立刻进行其他操作': ['Shutting down, please do not perform other operations immediately'],
+  '正在重启中，请不要立刻进行其他操作': ['Restarting, please do not perform other operations immediately'],
   监听器管理: ['Listener management'],
   '4 层': ['Four'],
   '7 层': ['Seven'],
@@ -2818,7 +2693,7 @@ const lang: ILANG = {
   请输入备注: ['Please enter Remark'],
   请选择使用业务: ['Please choose to business'],
   请输入SecretKey: ['Please enter SecretKey'],
-  的: ['\'s '],
+  的: ["'s "],
   端口已被占用: ['Port is already occupied'],
   多个相同主机: ['multiple identical hosts'],
   不能设置同样的端口: ['Cannot set the same port'],
@@ -2838,9 +2713,7 @@ const lang: ILANG = {
   '密码长度12-32位，必须包含英文小写字母+大写字母+数字+特殊字符': [
     'Password is 12-32 characters long and must contain lowercase letters + uppercase letters + numbers + special characters',
   ],
-  '请输入10 - 16380 之间的10的倍数': [
-    'Please enter a multiple of 10 between 10 - 16380',
-  ],
+  '请输入10 - 16380 之间的10的倍数': ['Please enter a multiple of 10 between 10 - 16380'],
   请选择所属云区域: ['Please select the cloud region'],
   请选择网络类型: ['Please select network type'],
   请选择权限组: ['Please select permission group'],
@@ -2904,9 +2777,7 @@ const lang: ILANG = {
   所属网络不能为空: ['Network cannot be empty'],
   最大出带宽不能为空: ['Max bandwidth cannot be empty'],
   最大出带宽只能为数字: ['Max output bandwidth can only be numbers'],
-  '最大出带宽最大值为 2048，最小值为 1': [
-    'Max bandwidth max value is 2048, and the min value is 1',
-  ],
+  '最大出带宽最大值为 2048，最小值为 1': ['Max bandwidth max value is 2048, and the min value is 1'],
   '如果创建公网负载均衡，且使用的账号是传统账户类型，计费模式和最大出带宽参数不生效。如需创建传统类型账户的公网CLB，需要在腾讯云官网控制台创建，详细说明见：':
     [
       'If the public network load is balanced and the account used is the type of traditional account, the billing mode and the maximum bandwidth parameter do not take effect.If you need to create a traditional type of account CLB, you need to create on the official website of the Tencent Cloud Website. For details, please refer to:',
@@ -2921,9 +2792,7 @@ const lang: ILANG = {
   监听协议端口只能为数字: ['Listening protocol port can only be numbers'],
   均衡方式不能为空: ['Balance method cannot be empty'],
   未选择任何安全组: ['No safety group'],
-  是否确认解除以下安全组的绑定: [
-    'Whether to confirm the binding of the following security group',
-  ],
+  是否确认解除以下安全组的绑定: ['Whether to confirm the binding of the following security group'],
   请选择安全组: ['Please select the security group'],
   精确: ['Exact'],
   请输入资源名称搜索: ['Please enter resource name'],
@@ -2935,24 +2804,17 @@ const lang: ILANG = {
   移出成功: ['removed successfully'],
   撤回申请成功: ['Withdrawal of application succeeded'],
   请输入数字: ['Please key in numbers'],
-  '(处于关机状态虚拟机才能被删除)': [
-    'The virtual machine can only be deleted when it is powered off',
-  ],
-  '正在关机中，请不要立刻进行其他操作!': [
-    'It is shutting down, please do not perform other operations immediately!',
-  ],
+  '(处于关机状态虚拟机才能被删除)': ['The virtual machine can only be deleted when it is powered off'],
+  '正在关机中，请不要立刻进行其他操作!': ['It is shutting down, please do not perform other operations immediately!'],
   新增镜像成功: ['Added image successfully'],
-  '可以是任间网段，如： 0.0.0.0/0， ::/0, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16':
-    [
-      'Can be any network segment, such as: 0.0.0.0/0, ::/0, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16',
-    ],
+  '可以是任间网段，如： 0.0.0.0/0， ::/0, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16': [
+    'Can be any network segment, such as: 0.0.0.0/0, ::/0, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16',
+  ],
   '支持格式：': ['Supported formats:'],
   '单个IP: 192.168.0.1 或 FF05::B5': ['Single IP: 192.168.0.1 or FF05::B5'],
   '所有IPv4地址：0.0.0.0/0': ['All IPv4 addresses: 0.0.0.0/0'],
   '所有IPv6地址：0::0/0或者::/0': ['All IPv6 addresses: 0::0/0 or ::/0'],
-  'CIDR: 192.168.1.0/24 或 FF05:B5::/60': [
-    'CIDR: 192.168.1.0/24 or FF05:B5::/60',
-  ],
+  'CIDR: 192.168.1.0/24 或 FF05:B5::/60': ['CIDR: 192.168.1.0/24 or FF05:B5::/60'],
   '单个端口: TCP:80': ['Single port: TCP:80'],
   '多个端口: UDP:80,443': ['Multiple ports: UDP: 80,443'],
   '连续端口: TCP:3306-20000': ['Serial Port: TCP:3306-20000'],
@@ -2995,10 +2857,9 @@ const lang: ILANG = {
   '您已选择 {count} 台实例，进行关机操作前，请确认': [
     'You have selected {count} instances, before shutting down, please make sure that.',
   ],
-  '您已选择 {count} 台实例，进行重启操作，重启期间，实例将无法正常提供服务，请您做好准备，以免造成影响请确认':
-    [
-      'You have selected {count} instances for reboot operation, during the reboot, the instances will not be able to provide normal services, please be prepared to avoid the impact please confirm',
-    ],
+  '您已选择 {count} 台实例，进行重启操作，重启期间，实例将无法正常提供服务，请您做好准备，以免造成影响请确认': [
+    'You have selected {count} instances for reboot operation, during the reboot, the instances will not be able to provide normal services, please be prepared to avoid the impact please confirm',
+  ],
   '您已选择 {count} 台实例，进行重置密码操作': [
     'You have selected {count} station instance for password reset operation',
   ],
@@ -3011,9 +2872,7 @@ const lang: ILANG = {
   '密码长度8-20位，必须包含英文字母、数字和特殊字符': [
     'Password length 8-20 digits, must contain English letters, numbers and special characters',
   ],
-  确认密码必须和新密码一致: [
-    'Confirm that the password must be the same as the new password',
-  ],
+  确认密码必须和新密码一致: ['Confirm that the password must be the same as the new password'],
   强制关机: ['Forced shutdown'],
   同时退还挂载在实例上的包年包月弹性数据盘: [
     'Also return the annual and monthly flexible data disk mounted on the instance',
@@ -3058,10 +2917,9 @@ const lang: ILANG = {
   'win实例：强烈建议您在卸载之前，对该硬盘执行脱机操作': [
     'win example: it is highly recommended that you perform offline operations on this drive before uninstalling',
   ],
-  'linux实例：建议您在卸载之前，确保该硬盘的所有分区处于非加载状态 (umounted)。部分linux操作系统可能不支持硬盘热拔插':
-    [
-      'linux example: It is recommended that you make sure that all partitions of the drive are unmounted (umounted) before unmounting it. Some linux operating systems may not support hot-plugging of hard drives',
-    ],
+  'linux实例：建议您在卸载之前，确保该硬盘的所有分区处于非加载状态 (umounted)。部分linux操作系统可能不支持硬盘热拔插': [
+    'linux example: It is recommended that you make sure that all partitions of the drive are unmounted (umounted) before unmounting it. Some linux operating systems may not support hot-plugging of hard drives',
+  ],
   卸载云硬盘: ['Uninstall Cloud Drive'],
   'VPC：{name}': ['VPC：{name}'],
   密钥信息: ['key information'],
@@ -3077,10 +2935,9 @@ const lang: ILANG = {
   修改人: ['Edited by'],
   删除安全组: ['Delete security group'],
   删除防火墙规则: ['delete firewall rules'],
-  '安全组被实例关联或者被其他安全组规则关联时不能直接删除，请删除关联关系后再进行删除':
-    [
-      'When a security group is associated with an instance or other security group rules, it cannot be deleted directly. Please delete the association relationship before deleting',
-    ],
+  '安全组被实例关联或者被其他安全组规则关联时不能直接删除，请删除关联关系后再进行删除': [
+    'When a security group is associated with an instance or other security group rules, it cannot be deleted directly. Please delete the association relationship before deleting',
+  ],
   查看关联实例: ['View associated instances'],
   防火墙规则被实例关联: ['Firewall rules are associated with instances'],
   '请注意删除防火墙规则后无法恢复，请谨慎操作': [

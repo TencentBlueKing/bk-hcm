@@ -22,7 +22,7 @@ export default defineComponent({
 
     watchEffect(async () => {
       const result = await Promise.all(reqs.value);
-      result.forEach(res => names.value.push(res?.data?.full_name ?? '--'));
+      result.forEach((res) => names.value.push(res?.data?.full_name ?? '--'));
     });
 
     return { names };

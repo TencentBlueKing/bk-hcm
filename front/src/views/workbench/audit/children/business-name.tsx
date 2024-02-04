@@ -1,7 +1,6 @@
 import { computed, defineComponent, ref, watchEffect } from 'vue';
 import { useAccountStore } from '@/store';
 
-
 export default defineComponent({
   props: {
     id: [Array, String],
@@ -24,7 +23,7 @@ export default defineComponent({
     const names = computed(() => {
       const result = [];
       ids.value.forEach((id) => {
-        result.push(businessList.value.find(item => item.id === id)?.name ?? props.emptyText);
+        result.push(businessList.value.find((item) => item.id === id)?.name ?? props.emptyText);
       });
 
       return result.join(',');

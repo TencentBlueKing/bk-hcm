@@ -1,49 +1,31 @@
 <template>
-  <bk-select
-    filterable
-    :modelValue="modelValue"
-    :loading="isLoading"
-    @scroll-end="getData"
-    @change="handleChange"
-  >
-    <bk-option
-      v-for="(item, index) in list"
-      :key="index"
-      :value="item.id"
-      :label="item.name"
-    />
+  <bk-select filterable :model-value="modelValue" :loading="isLoading" @scroll-end="getData" @change="handleChange">
+    <bk-option v-for="(item, index) in list" :key="index" :value="item.id" :label="item.name" />
   </bk-select>
 </template>
 
 <script lang="ts" setup>
-import {
-  defineProps,
-  defineEmits,
-  ref,
-  watch,  
-} from 'vue';
+import { defineProps, defineEmits, ref, watch } from 'vue';
 
-import {
-  useResourceStore,
-} from '@/store';
+import { useResourceStore } from '@/store';
 
 const props = defineProps({
   filter: {
     type: Object,
     default: {
       op: 'and',
-      rules: []
-    }
+      rules: [],
+    },
   },
   type: {
-    type: String
+    type: String,
   },
   modelValue: {
-    type: [String, Array]
-  }
+    type: [String, Array],
+  },
 });
 
-const emits = defineEmits(['update:modelValue'])
+const emits = defineEmits(['update:modelValue']);
 
 const resourceStore = useResourceStore();
 
@@ -57,7 +39,7 @@ const limit = 100;
 const getData = () => {
   if (isLoading.value || hasLoadEnd.value) return;
 
-  isLoading.value = true
+  isLoading.value = true;
   resourceStore
     .list(
       {
@@ -79,35 +61,32 @@ const getData = () => {
           ...item.revision,
           ...item.extension,
         };
-      })
+      });
       pageIndex.value += 1;
       hasLoadEnd.value = data.length < limit;
       list.value.push(...data);
     })
     .finally(() => {
-      isLoading.value = false
-    })
-}
+      isLoading.value = false;
+    });
+};
 
 // 选中
 const handleChange = (val: any) => {
-  emits('update:modelValue', val)
-}
+  emits('update:modelValue', val);
+};
 
 watch(
-  [
-    () => props.filter,
-    () => props.type
-  ],
+  [() => props.filter, () => props.type],
   () => {
     list.value = [];
     pageIndex.value = 0;
     hasLoadEnd.value = false;
-    getData()
+    getData();
   },
   {
     deep: true,
-    immediate: true
-  }
-)
+    immediate: true,
+  },
+);
 </script>

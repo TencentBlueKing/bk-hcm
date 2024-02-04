@@ -1,12 +1,5 @@
 import { PropType, defineComponent, onMounted, ref, watch } from 'vue';
-import {
-  Scene,
-  PolygonLayer,
-  LineLayer,
-  Zoom,
-  Popup,
-  PointLayer,
-} from '@antv/l7';
+import { Scene, PolygonLayer, LineLayer, Zoom, Popup, PointLayer } from '@antv/l7';
 import { Mapbox } from '@antv/l7-maps';
 import { IIdcInfo } from '@/typings/scheme';
 import geoData from '@/constants/geo-data';
@@ -60,9 +53,10 @@ export default defineComponent({
       }
 
       const countryColors = {};
+      // eslint-disable-next-line array-callback-return
       props.list.map((item, index) => {
         const countryName = transCountryName(item.country);
-        countryColors[countryName] =          REGION_MAP_COLORS[index % REGION_MAP_COLORS.length];
+        countryColors[countryName] = REGION_MAP_COLORS[index % REGION_MAP_COLORS.length];
       });
 
       mapIns.value = new Scene({
@@ -99,7 +93,7 @@ export default defineComponent({
           features: [],
         };
         props.list.forEach((item) => {
-          const index = IdcReginData.features.findIndex(idc => idc.properties.region === item.region);
+          const index = IdcReginData.features.findIndex((idc) => idc.properties.region === item.region);
           if (index > -1) {
             regions.features.push(IdcReginData.features[index]);
           }
@@ -132,9 +126,7 @@ export default defineComponent({
         polygonLayer.on('mousemove', (e) => {
           const { name } = e.feature.properties;
           console.log(name);
-          if (
-            props.list.find(item => transCountryName(item.country) === name)
-          ) {
+          if (props.list.find((item) => transCountryName(item.country) === name)) {
             popup = new Popup({
               offsets: [0, 0],
               closeButton: false,
@@ -167,10 +159,7 @@ export default defineComponent({
       <div class='idc-map-display'>
         <h3 class='title'>地图展示</h3>
         <div class='map-area'>
-          <div
-            ref={mapContainerRef}
-            id='map-container'
-            class='map-container'></div>
+          <div ref={mapContainerRef} id='map-container' class='map-container'></div>
         </div>
         <div class='deploy-list-wrapper'>
           <div class='idc-group'>

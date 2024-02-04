@@ -14,8 +14,7 @@ export default defineComponent({
         class='exception-wrap-item'
         type='403'
         title={t('无该应用访问权限')}
-        description={ props.message }>
-      </bk-exception>
+        description={props.message}></bk-exception>
     );
   },
 });

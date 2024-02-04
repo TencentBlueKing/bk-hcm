@@ -27,7 +27,7 @@ export default defineComponent({
       updateDepartment,
       checkedDept,
     } = useDepartment();
-    const isLoading = computed(() => !props.modelValue.every(id => isAllLoaded(id)));
+    const isLoading = computed(() => !props.modelValue.every((id) => isAllLoaded(id)));
     const dispalyValue = computed(() => {
       if (!isLoading.value) {
         props.modelValue.forEach((id) => {
@@ -37,22 +37,23 @@ export default defineComponent({
           }
         });
       }
-      const nameValues = props.modelValue.map(id => departmentMap.value.get(id)?.full_name ?? id);
+      const nameValues = props.modelValue.map((id) => departmentMap.value.get(id)?.full_name ?? id);
       return isLoading.value ? [] : nameValues;
     });
 
-
-    watch(() => isLoading.value, async (loading) => {
-      if (!loading) {
-        props.modelValue.forEach((id) => {
-          const dept = departmentMap.value.get(id);
-          if (!dept.checked) {
-            handleCheck(true, dept, false);
-          }
-        });
-      }
-    });
-
+    watch(
+      () => isLoading.value,
+      async (loading) => {
+        if (!loading) {
+          props.modelValue.forEach((id) => {
+            const dept = departmentMap.value.get(id);
+            if (!dept.checked) {
+              handleCheck(true, dept, false);
+            }
+          });
+        }
+      },
+    );
 
     function isAllLoaded(id: number): boolean {
       if (!id) return true;
@@ -75,7 +76,8 @@ export default defineComponent({
     // }
 
     function handleCheck(checked: boolean, department: Department, update = true) {
-      Array.from(departmentMap.value.values()).forEach((e) => {   // 只能选中一条
+      Array.from(departmentMap.value.values()).forEach((e) => {
+        // 只能选中一条
         e.checked = e.id === department.id;
         e.indeterminate = e.id === department.id;
       });
@@ -86,16 +88,10 @@ export default defineComponent({
         indeterminate: false,
       });
       if (has_children && loaded) {
-        recursionCheckChildDept(
-          children,
-          !!checked,
-        );
+        recursionCheckChildDept(children, !!checked);
       }
       if (parent) {
-        recursionCheckParentDept(
-          department.id,
-          !!checked,
-        );
+        recursionCheckParentDept(department.id, !!checked);
       }
 
       if (update) {
@@ -139,41 +135,35 @@ export default defineComponent({
         disabled={props.disabled}
         customContent
         modelValue={dispalyValue.value}
-        multipleMode="tag"
+        multipleMode='tag'
         multiple={false}
         loading={isLoading.value}
         onChange={handleChange}
         onToggle={handleToggle}
-        clearable={false}
-      >
-        <Tree
-          node-key="id"
-          showNodeTypeIcon={false}
-          onNodeExpand={expandDepartment}
-          data={organizationTree.value}
-        >
+        clearable={false}>
+        <Tree node-key='id' showNodeTypeIcon={false} onNodeExpand={expandDepartment} data={organizationTree.value}>
           {{
             nodeAction: ({ __attr__, loading, has_children }: any) => (
-                <span class="organization-tree-action-span">
-                  {
-                    has_children && (
-                      // eslint-disable-next-line no-nested-ternary
-                      loading ? <i class="icon hcm-icon bkhcm-icon-loading-circle organization-tree-action-circle"></i>
-                        : (__attr__.isOpen
-                          ? <i class="icon hcm-icon bkhcm-icon-angle-up-fill"></i>
-                          : <i class="icon hcm-icon bkhcm-icon-right-shape"></i>)
-                    )
-                  }
-                </span>
+              <span class='organization-tree-action-span'>
+                {has_children &&
+                  // eslint-disable-next-line no-nested-ternary
+                  (loading ? (
+                    <i class='icon hcm-icon bkhcm-icon-loading-circle organization-tree-action-circle'></i>
+                  ) : __attr__.isOpen ? (
+                    <i class='icon hcm-icon bkhcm-icon-angle-up-fill'></i>
+                  ) : (
+                    <i class='icon hcm-icon bkhcm-icon-right-shape'></i>
+                  ))}
+              </span>
             ),
             node: (department: Department) => (
-              <span class="flex-row align-items-center" onClick={e => e.stopPropagation()}>
+              <span class='flex-row align-items-center' onClick={(e) => e.stopPropagation()}>
                 <Checkbox
                   modelValue={department.checked}
                   indeterminate={department.indeterminate}
-                  onChange={checked => handleCheck(checked, department)}
+                  onChange={(checked) => handleCheck(checked, department)}
                 />
-                <span class="ml8">{ department.name }</span>
+                <span class='ml8'>{department.name}</span>
               </span>
             ),
           }}

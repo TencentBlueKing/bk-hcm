@@ -177,9 +177,7 @@ export default defineComponent({
               onError={(_: any, fileList: any, error: Error) => handleUploadError(fileList, error, 'public_key')}
               onExceed={() => handleUploadExceed('public_key')}
             />
-            {
-              uploadPublicKeyErrorText.value && <div class='upload-error-text'>{uploadPublicKeyErrorText.value}</div>
-            }
+            {uploadPublicKeyErrorText.value && <div class='upload-error-text'>{uploadPublicKeyErrorText.value}</div>}
             <Input v-model={formModel.public_key} type='textarea' rows={5} class='upload-textarea-wrap'></Input>
           </>
         ),
@@ -202,9 +200,7 @@ export default defineComponent({
               onError={(_: any, fileList: any, error: Error) => handleUploadError(fileList, error, 'private_key')}
               onExceed={() => handleUploadExceed('private_key')}
             />
-            {
-              uploadPrivateKeyErrorText.value && <div class='upload-error-text'>{uploadPrivateKeyErrorText.value}</div>
-            }
+            {uploadPrivateKeyErrorText.value && <div class='upload-error-text'>{uploadPrivateKeyErrorText.value}</div>}
             <Input v-model={formModel.private_key} type='textarea' rows={5} class='upload-textarea-wrap'></Input>
           </>
         ),

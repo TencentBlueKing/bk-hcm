@@ -3,9 +3,7 @@ import {
   ref,
 } from 'vue';
 
-import {
-  useResourceStore,
-} from '@/store/resource';
+import { useResourceStore } from '@/store/resource';
 
 import { Message } from 'bkui-vue';
 import i18n from '@/language/i18n';
@@ -48,7 +46,6 @@ export default (type: string, data: any, id?: number) => {
       loading.value = false;
     }
 
-
     // resourceStore
     //   .update(type, data, id)
     //   .then(() => {
@@ -67,4 +64,3 @@ export default (type: string, data: any, id?: number) => {
     updateData,
   };
 };
-

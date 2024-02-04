@@ -1,9 +1,6 @@
 import { defineComponent, ref, watch, PropType } from 'vue';
 import { DownShape } from 'bkui-vue/lib/icon';
-import {
-  IIdcInfo,
-  IIdcServiceAreaRel,
-} from '@/typings/scheme';
+import { IIdcInfo, IIdcServiceAreaRel } from '@/typings/scheme';
 import { getScoreColor } from '@/common/util';
 
 import './index.scss';
@@ -39,14 +36,12 @@ export default defineComponent({
         if (val) {
           const result: ITableDataItem[] = [];
           props.data.forEach((country) => {
-            if (
-              (country.rowName as string)
-                .toLowerCase()
-                .includes(val.toLowerCase())
-            ) {
+            if ((country.rowName as string).toLowerCase().includes(val.toLowerCase())) {
               result.push(country);
             } else if (Array.isArray(country.children)) {
-              const children = country.children.filter(item => item.rowName.toLowerCase().includes(val.toLowerCase()));
+              const children = country.children.filter((item) =>
+                item.rowName.toLowerCase().includes(val.toLowerCase()),
+              );
               if (children.length) {
                 result.push({
                   ...country,
@@ -67,15 +62,15 @@ export default defineComponent({
 
       let cls = '';
       if (props.isHighlight) {
-        const area = props.highlightArea.find(area => area.idc_id === idc.id);
+        const area = props.highlightArea.find((area) => area.idc_id === idc.id);
         if (!area) {
           cls = 'no-highlight-cell';
         } else {
           if (val.isCountry) {
-            const countryData = props.data.find(item => item.rowName === val.rowName);
+            const countryData = props.data.find((item) => item.rowName === val.rowName);
             if (countryData && Array.isArray(countryData.children)) {
               cls = countryData.children.some((region) => {
-                return area.service_areas?.some(item => item.province_name === region.rowName);
+                return area.service_areas?.some((item) => item.province_name === region.rowName);
               })
                 ? 'highlight-cell'
                 : 'no-highlight-cell';
@@ -93,9 +88,7 @@ export default defineComponent({
       }
       return (
         <td class='tbody-col'>
-          <div
-            class={['cell', cls]}
-            style={{ color: getScoreColor(cellValue) }}>
+          <div class={['cell', cls]} style={{ color: getScoreColor(cellValue) }}>
             {Number.isNaN(cellValue) ? '' : `${cellValue.toFixed(2)}ms`}
           </div>
         </td>
@@ -149,7 +142,7 @@ export default defineComponent({
                     </tr>
                     {!item.isFold && Array.isArray(item.children)
                       ? item.children.map((subItem) => {
-                        return (
+                          return (
                             <tr>
                               <td class='tbody-col row-name-col'>
                                 <div class='cell'>
@@ -160,8 +153,8 @@ export default defineComponent({
                                 return renderValCell(subItem, idc, item.rowName);
                               })}
                             </tr>
-                        );
-                      })
+                          );
+                        })
                       : null}
                   </>
                 );

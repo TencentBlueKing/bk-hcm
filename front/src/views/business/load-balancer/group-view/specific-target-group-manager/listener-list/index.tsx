@@ -121,8 +121,10 @@ export default defineComponent({
         type: '',
       },
     });
-    return () => <div class='listener-list-page'>
-      <CommonTable></CommonTable>
-    </div>;
+    return () => (
+      <div class='listener-list-page'>
+        <CommonTable></CommonTable>
+      </div>
+    );
   },
 });
