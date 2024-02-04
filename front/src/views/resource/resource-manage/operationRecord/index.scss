@@ -1,0 +1,62 @@
+.operation-record-module {
+  height: 100%;
+  padding: 24px;
+
+  .common-card-wrap {
+    height: 100%;
+    padding: 16px 24px;
+    border-radius: 2px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px 0 #1919290d;
+  }
+
+  .resource-radio-group {
+    height: 32px;
+  }
+  .operation-cell {
+    .bk-button {
+      margin-right: 10px;
+    }
+  }
+
+  &.resource-apply {
+    padding: 0;
+    height: calc(100% - 100px);
+  }
+}
+
+.record-detail-sideslider {
+  .detail-info-container {
+    padding: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    .info-item {
+      height: 40px;
+      width: 50%;
+      display: flex;
+      align-items: center;
+      .item-label {
+        flex-shrink: 0;
+        margin-right: 5px;
+        width: 80px;
+        text-align: right;
+      }
+      .item-value {
+        flex: 1;
+        margin-left: 10px;
+        overflow: hidden;
+      }
+    }
+  }
+  .detail-json-container {
+    margin: 0 24px 20px;
+    border-radius: 2px;
+    background: #455070;
+    font-size: 12px;
+    color: #bfc6e0;
+
+    pre {
+      overflow-x: auto;
+    }
+  }
+}

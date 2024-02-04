@@ -31,6 +31,7 @@ import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import router from '@/router';
+import { timeFormatter } from '@/common/util';
 
 const { getNameFromBusinessMap } = useBusinessMapStore();
 const { whereAmI } = useWhereAmI();
@@ -97,6 +98,7 @@ const settingFields = ref<any[]>([
   {
     name: '创建时间',
     prop: 'created_at',
+    render: (val: string) => timeFormatter(val),
   },
   {
     name: '备注',
