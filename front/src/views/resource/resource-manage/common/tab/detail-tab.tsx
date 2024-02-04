@@ -39,7 +39,6 @@ export default defineComponent({
           this.tabs.map((tab) => {
             return <>
               <bk-tab-panel
-                class="g-scroller"
                 name={tab.value}
                 label={tab.name}
                 key={tab.name}

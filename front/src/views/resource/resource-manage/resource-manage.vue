@@ -77,6 +77,9 @@ const activeResourceTab = ref(RESOURCE_TABS[0].key);
 
 provide('securityType', securityType);
 
+// 用于判断 sideslider 中的表单数据是否改变
+const isFormDataChanged = ref(false);
+
 const formMap = {
   ip: EipForm,
   subnet: subnetForm,
@@ -179,6 +182,8 @@ const handleAdd = () => {
       break;
     default:
       isShowSideSlider.value = true;
+      // 标记初始化
+      isFormDataChanged.value = false;
   }
 };
 
@@ -312,17 +317,23 @@ const handleEdit = (detail: any) => {
   formDetail.value = detail;
   isEdit.value = true;
   isShowSideSlider.value = true;
+  // 初始化标记
+  isFormDataChanged.value = false;
 };
 
 const handleBeforeClose = () => {
-  InfoBox({
-    title: '请确认是否关闭侧栏？',
-    subTitle: '关闭后，内容需要重新填写！',
-    theme: 'warning',
-    onConfirm() {
-      handleCancel();
-    },
-  });
+  if (isFormDataChanged.value) {
+    InfoBox({
+      title: '请确认是否关闭侧栏？',
+      subTitle: '关闭后，内容需要重新填写！',
+      quickClose: false,
+      onConfirm() {
+        handleCancel();
+      },
+    });
+  } else {
+    handleCancel();
+  }
 };
 
 getResourceAccountList();
@@ -504,6 +515,7 @@ getResourceAccountList();
               @tabchange="handleTabChange"
               ref="componentRef"
               @edit="handleEdit"
+              v-model:isFormDataChanged="isFormDataChanged"
             >
               <span
                 v-if="
@@ -591,6 +603,8 @@ getResourceAccountList();
             @success="handleSuccess"
             :is-edit="isEdit"
             :detail="formDetail"
+            @edit="handleEdit"
+            v-model:isFormDataChanged="isFormDataChanged"
           ></component>
         </template>
       </bk-sideslider>
@@ -634,14 +648,21 @@ getResourceAccountList();
 
     .bk-tab-header-item {
       padding: 0 24px;
+      height: 42px;
     }
   }
 
   :deep(.bk-tab-content) {
-    // border-left: 1px solid #dcdee5;
-    // border-right: 1px solid #dcdee5;
-    border-bottom: 1px solid #dcdee5;
-    padding: 20px;
+    height: calc(100% - 42px);
+    padding: 16px 24px;
+
+    & > .bk-tab-panel > .bk-nested-loading {
+      height: 100%;
+      .bk-table {
+        margin-top: 16px;
+        max-height: calc(100% - 52px);
+      }
+    }
   }
 
   :deep(.bk-table.has-selection) {
@@ -715,5 +736,11 @@ getResourceAccountList();
   .bk-info-sub-title {
     word-break: break-all;
   }
+}
+.mw64 {
+  min-width: 64px;
+}
+.mw88 {
+  min-width: 88px;
 }
 </style>

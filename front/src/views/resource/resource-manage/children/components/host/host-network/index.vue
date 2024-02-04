@@ -35,7 +35,7 @@ const filter = ref({ op: 'and', rules: [] });
 </script>
 
 <template>
-  <div>
+  <div class="host-network-container">
     <component :is="renderComponent" :data="props.data" :filter="filter"></component>
 
     <!-- <bk-dialog
@@ -63,3 +63,11 @@ const filter = ref({ op: 'and', rules: [] });
   </bk-dialog> -->
   </div>
 </template>
+
+<style lang="scss" scoped>
+.host-network-container {
+  :deep(.bk-table) {
+    max-height: 100% !important;
+  }
+}
+</style>

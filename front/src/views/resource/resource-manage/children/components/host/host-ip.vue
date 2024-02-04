@@ -114,21 +114,21 @@ const columns = ref([
           },
           [
             withDirectives(h(
-                Button,
-                {
-                  text: true,
-                  theme: 'primary',
-                  disabled: !authVerifyData.value?.permissionAction[actionName.value]
+              Button,
+              {
+                text: true,
+                theme: 'primary',
+                disabled: !authVerifyData.value?.permissionAction[actionName.value]
                       || (isResourcePage.value && props.data?.bk_biz_id !== -1),
-                  onClick() {
-                    handleToggleShowUnbind(data);
-                  },
+                onClick() {
+                  handleToggleShowUnbind(data);
                 },
-                [
-                  '解绑',
-                ],
+              },
+              [
+                '解绑',
+              ],
             ), [
-                [bkTooltips, generateTooltipsOptions()]
+              [bkTooltips, generateTooltipsOptions()],
             ]),
           ],
         ),
@@ -352,7 +352,7 @@ watch(
       </bk-button>
     </span>
     <bk-table
-      class="mt20"
+      class="mt16"
       row-hover="auto"
       :columns="columns"
       :data="datas"
@@ -469,6 +469,7 @@ watch(
         label="ID"
         prop="public_ip"
       >
+        <!-- eslint-disable-next-line vue/no-template-shadow -->
         <template #default="{ data }">
           <bk-radio
             :model-value="bindData.eip_id"

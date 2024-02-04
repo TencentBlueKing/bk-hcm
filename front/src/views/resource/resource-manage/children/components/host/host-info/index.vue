@@ -41,16 +41,10 @@ const renderComponent = componentMap[props.type];
 </script>
 
 <template>
-  <div>
-    <component :is="renderComponent" :data="props.data"></component>
-  </div>
+  <component :is="renderComponent" :data="props.data"></component>
 </template>
 <style lang="scss" scoped>
 .f-right{
   float: right;
-}
-:deep(.info-title) {
-  font-size: 14px;
-  margin-bottom: 8px;
 }
 </style>

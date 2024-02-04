@@ -185,6 +185,7 @@ const columns = ref([
     render({ data }: any) {
       const attachment = data?.extension?.attachment;
       const host = attachment?.find((x: any) => x.instance_id === props.data.cloud_id);
+      // eslint-disable-next-line no-nested-ternary
       return host ? (host.delete_on_termination ? '是' : '否') : '--';
     },
   },
@@ -342,7 +343,7 @@ watch(
       >挂载</bk-button>
     </span>
     <bk-table
-      class="mt20"
+      class="mt16"
       row-hover="auto"
       :columns="columns"
       :data="datas"

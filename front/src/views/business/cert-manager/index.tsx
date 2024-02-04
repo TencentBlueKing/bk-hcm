@@ -296,7 +296,7 @@ export default defineComponent({
             {{
               operation: () => (
                 <>
-                  <Button theme='primary' onClick={showCreateCertSideslider}>
+                  <Button class='mw88' theme='primary' onClick={showCreateCertSideslider}>
                     上传证书
                   </Button>
                   <BatchDistribution

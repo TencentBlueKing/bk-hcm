@@ -180,7 +180,6 @@ const settingInfo = [
   <h3 class="info-title">网络信息</h3>
   <div class="wrap-info">
     <detail-info
-      class="mt20"
       :fields="netInfo"
       :detail="props.data"
     ></detail-info>
@@ -188,7 +187,6 @@ const settingInfo = [
   <h3 class="info-title">配置信息</h3>
   <div class="wrap-info">
     <detail-info
-      class="mt20"
       :fields="settingInfo"
       :detail="props.data"
     ></detail-info>
