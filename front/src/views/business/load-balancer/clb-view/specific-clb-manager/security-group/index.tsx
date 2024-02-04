@@ -3,8 +3,6 @@ import './index.scss';
 
 export default defineComponent({
   setup() {
-    return () => (
-      <div>安全组</div>
-    );
+    return () => <div>安全组</div>;
   },
 });

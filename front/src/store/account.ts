@@ -143,7 +143,7 @@ export const useAccountStore = defineStore({
      * @return {*}
      */
     async accountDeleteValidate(id: number) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${id}/delete/validate`) ;
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${id}/delete/validate`);
     },
     /**
      * @description: 申请账号
@@ -188,8 +188,9 @@ export const useAccountStore = defineStore({
 
     async updateAccountList(data: any) {
       console.log('data', data);
-      this.accountList = data?.map(({ id, name }: {id: string, name: string}) => ({
-        id, name,
+      this.accountList = data?.map(({ id, name }: { id: string; name: string }) => ({
+        id,
+        name,
       }));
       console.log('this.accountList', this.accountList);
     },

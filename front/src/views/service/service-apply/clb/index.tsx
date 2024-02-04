@@ -593,7 +593,9 @@ export default defineComponent({
       () => [formModel.load_balance_type, formModel.address_ip_version],
       ([load_balance_type, address_ip_version]) => {
         if (
-          load_balance_type === 'INTERNAL' || address_ip_version === 'IPv6FullChain' || address_ip_version === 'IPV6'
+          load_balance_type === 'INTERNAL' ||
+          address_ip_version === 'IPv6FullChain' ||
+          address_ip_version === 'IPV6'
         ) {
           formModel.instanceChargeType = '按量计费';
         } else {

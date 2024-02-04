@@ -159,7 +159,7 @@ export default defineComponent({
       },
     ]);
 
-    watch(activeResourceType, val => (searchRule.value = val));
+    watch(activeResourceType, (val) => (searchRule.value = val));
 
     return () => (
       <div class={`operation-record-module${isResourcePage ? ' resource-apply' : ''}`}>

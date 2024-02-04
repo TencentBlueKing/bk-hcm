@@ -148,21 +148,19 @@ export default defineComponent({
     }
 
     const translateAll = (ipType: string) => {
-      return ['ipv4_cidr'].includes(ipType)
-        ? IP_CIDR.IPV4_ALL
-        : IP_CIDR.IPV6_ALL;
+      return ['ipv4_cidr'].includes(ipType) ? IP_CIDR.IPV4_ALL : IP_CIDR.IPV6_ALL;
     };
 
     const renderSourceAddressSlot = (
       data: SecurityRule,
       key:
-      | 'cloud_target_security_group_id'
-      | 'ipv6_cidr'
-      | 'ipv4_cidr'
-      | 'source_address_prefix' // AZURE 源 IP地址
-      | 'cloud_source_security_group_ids' // AZURE 源 安全组
-      | 'remote_ip_prefix' // HUAWEI IP地址
-      | 'cloud_remote_group_id', // HUAWEI 安全组
+        | 'cloud_target_security_group_id'
+        | 'ipv6_cidr'
+        | 'ipv4_cidr'
+        | 'source_address_prefix' // AZURE 源 IP地址
+        | 'cloud_source_security_group_ids' // AZURE 源 安全组
+        | 'remote_ip_prefix' // HUAWEI IP地址
+        | 'cloud_remote_group_id', // HUAWEI 安全组
     ) => {
       [
         'cloud_target_security_group_id',
@@ -172,16 +170,13 @@ export default defineComponent({
         'cloud_source_security_group_ids',
         'remote_ip_prefix',
         'cloud_remote_group_id',
-      ].forEach(dataKey => dataKey !== key && delete data[dataKey]);
+      ].forEach((dataKey) => dataKey !== key && delete data[dataKey]);
 
       const prefix = () => (
         <>
           {props.vendor === 'azure' ? (
-            <Select
-              clearable={false}
-              class='input-prefix-select w120'
-              v-model={data.sourceAddress}>
-              {azureSecurityGroupSource.value.map(ele => (
+            <Select clearable={false} class='input-prefix-select w120' v-model={data.sourceAddress}>
+              {azureSecurityGroupSource.value.map((ele) => (
                 <Option value={ele.id} label={ele.name} key={ele.id} />
               ))}
             </Select>
@@ -191,7 +186,7 @@ export default defineComponent({
               class='input-prefix-select w120'
               v-model={data.sourceAddress}
               disabled={props.isEdit}>
-              {securityGroupSource.value.map(ele => (
+              {securityGroupSource.value.map((ele) => (
                 <Option value={ele.id} label={ele.name} key={ele.id} />
               ))}
             </Select>
@@ -199,27 +194,18 @@ export default defineComponent({
         </>
       );
 
-      return [
-        'cloud_target_security_group_id',
-        'cloud_source_security_group_ids',
-        'cloud_remote_group_id',
-      ].includes(key) ? (
+      return ['cloud_target_security_group_id', 'cloud_source_security_group_ids', 'cloud_remote_group_id'].includes(
+        key,
+      ) ? (
         <div class={'security-group-select w120'}>
           {prefix()}
           <Select v-model={data[key]}>
-            {props.relatedSecurityGroups.map((securityGroup: {
-              cloud_id: string | number | symbol;
-              name: string;
-            }) => (
-                <Option
-                  value={securityGroup.cloud_id}
-                  label={securityGroup.name}
-                  key={securityGroup.cloud_id}
-                />
+            {props.relatedSecurityGroups.map((securityGroup: { cloud_id: string | number | symbol; name: string }) => (
+              <Option value={securityGroup.cloud_id} label={securityGroup.name} key={securityGroup.cloud_id} />
             ))}
           </Select>
         </div>
-        ) : (
+      ) : (
         <Input
           class=' input-select-warp'
           placeholder='请输入'
@@ -229,26 +215,22 @@ export default defineComponent({
               data[key] = translateAll(data.sourceAddress);
             }
           }}
-          disabled={
-            data.protocol === 'icmpv6' && data.sourceAddress === 'ipv4_cidr'
-          }>
+          disabled={data.protocol === 'icmpv6' && data.sourceAddress === 'ipv4_cidr'}>
           {{
             prefix,
           }}
         </Input>
-        );
+      );
     };
 
     const renderTargetAddressSlot = (
       data: SecurityRule,
-      key:
-      | 'destination_address_prefix'
-      | 'cloud_destination_security_group_ids',
+      key: 'destination_address_prefix' | 'cloud_destination_security_group_ids',
     ) => {
       [
         'destination_address_prefix', // AZURE 目标 IP地址
         'cloud_destination_security_group_ids', // AZURE 目标 安全组
-      ].forEach(dataKey => dataKey !== key && delete data[dataKey]);
+      ].forEach((dataKey) => dataKey !== key && delete data[dataKey]);
       console.log(key);
       return key !== 'cloud_destination_security_group_ids' ? (
         <Input
@@ -263,10 +245,8 @@ export default defineComponent({
           {{
             prefix: () => (
               <>
-                <Select
-                  class='input-prefix-select w100'
-                  v-model={data.targetAddress}>
-                  {azureSecurityGroupTarget.value.map(ele => (
+                <Select class='input-prefix-select w100' v-model={data.targetAddress}>
+                  {azureSecurityGroupTarget.value.map((ele) => (
                     <Option value={ele.id} label={ele.name} key={ele.id} />
                   ))}
                 </Select>
@@ -277,24 +257,17 @@ export default defineComponent({
       ) : (
         <>
           <div class='flex-row align-items-center'>
-            <Select
-              class='tag-input-prefix-select w100'
-              v-model={data.targetAddress}>
-              {azureSecurityGroupTarget.value.map(ele => (
+            <Select class='tag-input-prefix-select w100' v-model={data.targetAddress}>
+              {azureSecurityGroupTarget.value.map((ele) => (
                 <Option value={ele.id} label={ele.name} key={ele.id} />
               ))}
             </Select>
             <Select v-model={data[key]} class='tag-input-select-warp w100'>
-              {props.relatedSecurityGroups.map((securityGroup: {
-                cloud_id: string | number | symbol;
-                name: string;
-              }) => (
-                  <Option
-                    value={securityGroup.cloud_id}
-                    label={securityGroup.name}
-                    key={securityGroup.cloud_id}
-                  />
-              ))}
+              {props.relatedSecurityGroups.map(
+                (securityGroup: { cloud_id: string | number | symbol; name: string }) => (
+                  <Option value={securityGroup.cloud_id} label={securityGroup.name} key={securityGroup.cloud_id} />
+                ),
+              )}
             </Select>
           </div>
         </>
@@ -317,16 +290,9 @@ export default defineComponent({
                     display: 'flex',
                     justifyContent: 'space-around',
                   }}
-                  rules={securityRuleValidators(
-                    data,
-                    props.vendor as VendorEnum,
-                  )}>
+                  rules={securityRuleValidators(data, props.vendor as VendorEnum)}>
                   {props.vendor === 'azure' ? (
-                    <FormItem
-                      class="w150"
-                      label={index === 0 ? t('名称') : ''}
-                      required
-                      property='name'>
+                    <FormItem class='w150' label={index === 0 ? t('名称') : ''} required property='name'>
                       <Input v-model={data.name}></Input>
                     </FormItem>
                   ) : (
@@ -335,7 +301,7 @@ export default defineComponent({
                   {props.vendor !== 'tcloud' && props.vendor !== 'aws' ? (
                     <>
                       <FormItem
-                        class="w150"
+                        class='w150'
                         label={index === 0 ? t('优先级') : ''}
                         required
                         property='priority'
@@ -351,18 +317,10 @@ export default defineComponent({
                     ''
                   )}
                   {props.vendor === 'huawei' ? (
-                    <FormItem
-                      class="w150"
-                      label={index === 0 ? t('类型') : ''}
-                      property='ethertype'
-                      required>
+                    <FormItem class='w150' label={index === 0 ? t('类型') : ''} property='ethertype' required>
                       <Select v-model={data.ethertype}>
-                        {HUAWEI_TYPE_LIST.map(ele => (
-                          <Option
-                            value={ele.id}
-                            label={ele.name}
-                            key={ele.id}
-                          />
+                        {HUAWEI_TYPE_LIST.map((ele) => (
+                          <Option value={ele.id} label={ele.name} key={ele.id} />
                         ))}
                       </Select>
                     </FormItem>
@@ -372,43 +330,37 @@ export default defineComponent({
                   {props.vendor === 'azure' ? (
                     <>
                       <FormItem
-                        class="w200"
+                        class='w200'
                         label={index === 0 ? t('源') : ''}
                         property='sourceAddress'
                         required
                         description='源过滤器可为“任意”、一个 IP 地址范围、一个应用程序安全组或一个默认标记。它指定此规则将允许或拒绝的特定源 IP 地址范围的传入流量'>
                         {renderSourceAddressSlot(
                           data,
-                          data.sourceAddress as
-                            | 'source_address_prefix'
-                            | 'cloud_source_security_group_ids',
+                          data.sourceAddress as 'source_address_prefix' | 'cloud_source_security_group_ids',
                         )}
                       </FormItem>
                       <FormItem
-                        class="w200"
+                        class='w200'
                         label={index === 0 ? t('源端口') : ''}
                         property='source_port_range'
                         required
                         description='提供单个端口(如 80)、端口范围(如 1024-65535)，或单个端口和/或端口范围的以逗号分隔的列表(如 80,1024-65535)。\n\r 这指定了根据此规则将允许或拒绝哪些端口的流量。提供星号(*)可允许任何端口的流量'>
-                        <Input
-                          placeholder='单个(80)、范围(1024-65535)'
-                          v-model={data.source_port_range}></Input>
+                        <Input placeholder='单个(80)、范围(1024-65535)' v-model={data.source_port_range}></Input>
                       </FormItem>
                       <FormItem
-                        class="w249"
+                        class='w249'
                         label={index === 0 ? t('目标') : ''}
                         property='targetAddress'
                         required
                         description='提供采用 CIDR 表示法的地址范围(例如 192.168.99.0/24 或 2001:1234::/64)或提供 IP 地址(例如 192.168.99.0 或 2001:1234::)。\n\r 还可提供一个由采用 IPv4 或 IPv6 的 IP 地址或地址范围构成的列表(以逗号分隔)'>
                         {renderTargetAddressSlot(
                           data,
-                          data.targetAddress as
-                            | 'destination_address_prefix'
-                            | 'cloud_destination_security_group_ids',
+                          data.targetAddress as 'destination_address_prefix' | 'cloud_destination_security_group_ids',
                         )}
                       </FormItem>
                       <FormItem
-                        class="w200"
+                        class='w200'
                         label={index === 0 ? t('目标协议端口') : ''}
                         property='destination_port_range'>
                         <Input
@@ -424,12 +376,8 @@ export default defineComponent({
                                   delete data.destination_port_range;
                                   if (val === '*') data.destination_port_range = '*';
                                 }}>
-                                {AZURE_PROTOCOL_LIST.map(ele => (
-                                  <Option
-                                    value={ele.id}
-                                    label={ele.name}
-                                    key={ele.id}
-                                  />
+                                {AZURE_PROTOCOL_LIST.map((ele) => (
+                                  <Option value={ele.id} label={ele.name} key={ele.id} />
                                 ))}
                               </Select>
                             ),
@@ -453,10 +401,10 @@ export default defineComponent({
                         {
                           <Input
                             disabled={
-                              data?.protocol === 'ALL'
-                              || data?.protocol === 'huaweiAll'
-                              || data?.protocol === '-1'
-                              || ['icmpv6', 'gre', 'icmp'].includes(data?.protocol)
+                              data?.protocol === 'ALL' ||
+                              data?.protocol === 'huaweiAll' ||
+                              data?.protocol === '-1' ||
+                              ['icmpv6', 'gre', 'icmp'].includes(data?.protocol)
                             }
                             placeholder='请输入0-65535之间数字、ALL'
                             class='input-select-warp'
@@ -469,11 +417,7 @@ export default defineComponent({
                                   class='input-prefix-select'
                                   onChange={handleChange}>
                                   {protocolList.value.map((ele: any) => (
-                                    <Option
-                                      value={ele.id}
-                                      label={ele.name}
-                                      key={ele.id}
-                                    />
+                                    <Option value={ele.id} label={ele.name} key={ele.id} />
                                   ))}
                                 </Select>
                               ),
@@ -488,10 +432,7 @@ export default defineComponent({
                         description='必须指定 CIDR 数据块 或者 安全组 ID'>
                         {renderSourceAddressSlot(
                           data,
-                          data.sourceAddress as
-                            | 'cloud_target_security_group_id'
-                            | 'ipv6_cidr'
-                            | 'ipv4_cidr',
+                          data.sourceAddress as 'cloud_target_security_group_id' | 'ipv6_cidr' | 'ipv4_cidr',
                         )}
                       </FormItem>
                     </>
@@ -500,31 +441,20 @@ export default defineComponent({
                   )}
                   {props.vendor !== 'aws' ? ( // aws没有策略
                     <FormItem
-                      class="w100"
+                      class='w100'
                       label={index === 0 ? t('策略') : ''}
                       property={props.vendor === 'azure' ? 'access' : 'action'}
                       required>
                       {props.vendor === 'azure' ? (
                         <Select v-model={data.access}>
                           {AZURE_ACTION_STATUS.map((ele: any) => (
-                            <Option
-                              value={ele.id}
-                              label={ele.name}
-                              key={ele.id}
-                            />
+                            <Option value={ele.id} label={ele.name} key={ele.id} />
                           ))}
                         </Select>
                       ) : (
                         <Select v-model={data.action}>
-                          {(props.vendor === 'huawei'
-                            ? HUAWEI_ACTION_STATUS
-                            : ACTION_STATUS
-                          ).map((ele: any) => (
-                            <Option
-                              value={ele.id}
-                              label={ele.name}
-                              key={ele.id}
-                            />
+                          {(props.vendor === 'huawei' ? HUAWEI_ACTION_STATUS : ACTION_STATUS).map((ele: any) => (
+                            <Option value={ele.id} label={ele.name} key={ele.id} />
                           ))}
                         </Select>
                       )}
@@ -532,9 +462,7 @@ export default defineComponent({
                   ) : (
                     ''
                   )}
-                  <FormItem
-                    label={index === 0 ? t('描述') : ''}
-                    description='请输入英文描述, 最大不超过256个字符'>
+                  <FormItem label={index === 0 ? t('描述') : ''} description='请输入英文描述, 最大不超过256个字符'>
                     <Input placeholder='请输入描述' v-model={data.memo}></Input>
                   </FormItem>
                   {!securityRuleId.value ? (
@@ -568,11 +496,7 @@ export default defineComponent({
             {securityRuleId.value ? (
               ''
             ) : (
-              <Button
-                text
-                theme='primary'
-                class='ml20 mt20'
-                onClick={handlerAdd}>
+              <Button text theme='primary' class='ml20 mt20' onClick={handlerAdd}>
                 {t('新增一条规则')}
               </Button>
             )}
@@ -651,9 +575,9 @@ export default defineComponent({
       try {
         console.log(
           666666,
-          formInstances.map(formInstance => formInstance.value.validate()),
+          formInstances.map((formInstance) => formInstance.value.validate()),
         );
-        await Promise.all(formInstances.map(formInstance => formInstance.value.validate()));
+        await Promise.all(formInstances.map((formInstance) => formInstance.value.validate()));
       } catch (err) {
         console.log(err);
         return;
@@ -700,10 +624,10 @@ export default defineComponent({
     const handleChange = () => {
       tableData.value.forEach((e: any) => {
         if (
-          e.protocol === 'ALL'
-          || e.protocol === '-1'
-          || e.protocol === '*'
-          || ['icmpv6', 'gre', 'icmp'].includes(e.protocol)
+          e.protocol === 'ALL' ||
+          e.protocol === '-1' ||
+          e.protocol === '*' ||
+          ['icmpv6', 'gre', 'icmp'].includes(e.protocol)
         ) {
           // 依次为tcloud AWS AZURE HUAWEI
           e.port = 'ALL';

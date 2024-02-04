@@ -84,7 +84,7 @@ export default defineComponent({
           onAfterHidden={({ isShow }) => (node.isDropdownListShow = isShow)}>
           {{
             default: () => (
-              <div class='more-action' onClick={e => handleMoreActionClick(e, node)}>
+              <div class='more-action' onClick={(e) => handleMoreActionClick(e, node)}>
                 <i class='hcm-icon bkhcm-icon-more-fill'></i>
               </div>
             ),
@@ -152,7 +152,8 @@ export default defineComponent({
             <DynamicTree
               searchValue={searchValue.value}
               v-model:currentSelectedTreeNode={currentSelectedTreeNode.value}
-              onHandleTypeChange={handleTypeChange} />
+              onHandleTypeChange={handleTypeChange}
+            />
           </div>
         </div>
         {isAdvancedSearchShow.value && <div class='advanced-search'>高级搜索</div>}

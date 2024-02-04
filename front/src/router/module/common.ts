@@ -25,29 +25,29 @@ const common: RouteRecordRaw[] = [
       breadcrumb: ['申请权限'],
     },
   },
-//   {
-//     path: '/root',
-//     name: 'root',
-//     alias: '/',
-//     component: import('@/views/home/RootPath'),
-//   },
-//   {
-//     path: '/test',
-//     name: 'test',
-//     component: () => import('@/views/test/index'),
-//   },
-//   {
-//     path: '/exception',
-//     name: 'exception',
-//     component: () => import('@/views/exception'),
-//     meta: {
-//       isHideNav: true,
-//     },
-//   },
-//   {
-//     path: '/403',
-//     name: '403',
-//     component: () => import('@/views/403'),
-//   },
+  //   {
+  //     path: '/root',
+  //     name: 'root',
+  //     alias: '/',
+  //     component: import('@/views/home/RootPath'),
+  //   },
+  //   {
+  //     path: '/test',
+  //     name: 'test',
+  //     component: () => import('@/views/test/index'),
+  //   },
+  //   {
+  //     path: '/exception',
+  //     name: 'exception',
+  //     component: () => import('@/views/exception'),
+  //     meta: {
+  //       isHideNav: true,
+  //     },
+  //   },
+  //   {
+  //     path: '/403',
+  //     name: '403',
+  //     component: () => import('@/views/403'),
+  //   },
 ];
 export default common;

@@ -1,22 +1,15 @@
 <template>
-  <bk-loading
-    :opacity="1"
-    :loading="loading"
-  >
+  <bk-loading :opacity="1" :loading="loading">
     <div class="iam-apply-detail-wrapper">
       <template v-if="isShowPage">
         <BasicInfo :data="basicInfo" />
         <ProcessStatus :data="basicInfo" />
         <ApplyProcess :link="basicInfo.ticket_url" />
         <div class="action">
-          <bk-button
-            :loading="cancelLoading"
-            @click="handleCancel"
-            :disabled="isShowRevoke"
-          >
+          <bk-button :loading="cancelLoading" @click="handleCancel" :disabled="isShowRevoke">
             {{ t('撤销') }}
           </bk-button>
-        <!-- <bk-button
+          <!-- <bk-button
           :disabled="isCloneDisabled"
           :loading="loading"
           @click="handleCancel"
@@ -75,14 +68,18 @@ export default defineComponent({
     //   console.log('克隆');
     // };
 
-
-    watch(() => props.params, async (payload: Record<string, any>) => {
-      if (Object.keys(payload).length) {
-        basicInfo.value = { ...basicInfo.value, ...payload };
-      } else {}
-    }, {
-      immediate: true,
-    });
+    watch(
+      () => props.params,
+      async (payload: Record<string, any>) => {
+        if (Object.keys(payload).length) {
+          basicInfo.value = { ...basicInfo.value, ...payload };
+        } else {
+        }
+      },
+      {
+        immediate: true,
+      },
+    );
 
     const isShowRevoke = computed(() => {
       return !['pending', 'reject'].includes(basicInfo.value.status);
@@ -91,7 +88,6 @@ export default defineComponent({
     const isCloneDisabled = computed(() => {
       return !['pass', 'reject'].includes(basicInfo.value.status);
     });
-
 
     return {
       t,
@@ -109,5 +105,5 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-@import "./index.scss"
+@import './index.scss';
 </style>

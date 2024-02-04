@@ -1,9 +1,9 @@
-import { defineComponent, reactive, computed, watch } from "vue";
+import { defineComponent, reactive, computed, watch } from 'vue';
 
 import './index.scss';
 
 export default defineComponent({
-  name: 'scheme-selector',
+  name: 'SchemeSelector',
   props: {
     type: String,
     small: {
@@ -13,9 +13,9 @@ export default defineComponent({
     showIcon: {
       type: Boolean,
       default: false,
-    }
+    },
   },
-  setup (props) {
+  setup(props) {
     const CLOUD_SERVICE_MAP = {
       tcloud: {
         name: '腾讯云',
@@ -47,30 +47,34 @@ export default defineComponent({
         bgColor: '#FFDDDD',
         icon: 'bkhcm-icon-huaweiyun',
       },
-    }
+    };
 
-    let cloudData = reactive<{ [key: string]: string; }>({})
+    let cloudData = reactive<{ [key: string]: string }>({});
 
-    watch(() => props.type, (val) => {
-      cloudData = CLOUD_SERVICE_MAP[val] || {};
-    }, {
-      immediate: true
-    });
+    watch(
+      () => props.type,
+      (val) => {
+        cloudData = CLOUD_SERVICE_MAP[val] || {};
+      },
+      {
+        immediate: true,
+      },
+    );
 
     const styleObj = computed(() => {
       if (CLOUD_SERVICE_MAP[props.type]) {
         return {
           color: `${cloudData.color}`,
           background: `${cloudData.bgColor}`,
-        }
+        };
       }
       return {};
-    })
+    });
 
     return () => (
-      <div class={['cloud-service-tag', props.small ? 'small-tag': '']} style={styleObj.value}>
-        { props.showIcon ? <i class={['cloud-icon hcm-icon', cloudData.icon]}></i> :null }
-        <span class='tag-name-text'>{ cloudData.name || '--' }</span>
+      <div class={['cloud-service-tag', props.small ? 'small-tag' : '']} style={styleObj.value}>
+        {props.showIcon ? <i class={['cloud-icon hcm-icon', cloudData.icon]}></i> : null}
+        <span class='tag-name-text'>{cloudData.name || '--'}</span>
       </div>
     );
   },

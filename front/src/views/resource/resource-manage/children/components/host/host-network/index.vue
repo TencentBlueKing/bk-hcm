@@ -5,10 +5,7 @@ import AzureNetwork from './components/azure-network.vue';
 import GcpNetwork from './components/gcp-network.vue';
 import AwsNetwork from './components/aws-network.vue';
 
-import {
-  PropType,
-  ref,
-} from 'vue';
+import { PropType, ref } from 'vue';
 
 const props = defineProps({
   data: {
@@ -30,8 +27,6 @@ const componentMap = {
 // const renderComponent = componentMap[route.params.type as string];
 const renderComponent = componentMap[props.type];
 const filter = ref({ op: 'and', rules: [] });
-
-
 </script>
 
 <template>

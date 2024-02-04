@@ -100,7 +100,7 @@ export default defineComponent({
         if (checked) {
           selected.value.push(name);
         } else {
-          const index = selected.value.findIndex(itemName => itemName === name);
+          const index = selected.value.findIndex((itemName) => itemName === name);
           selected.value.splice(index, 1);
         }
       } else {
@@ -116,8 +116,8 @@ export default defineComponent({
 
     return () => (
       <>
-        {!loading.value
-          && (!isEmptyCond.value ? (
+        {!loading.value &&
+          (!isEmptyCond.value ? (
             [
               list.value.map(({ name, display_name, name_cn }) => (
                 <Tag
@@ -126,7 +126,7 @@ export default defineComponent({
                   type='stroke'
                   checkable
                   checked={selected.value.includes(name)}
-                  onChange={checked => handleChange(checked, name)}>
+                  onChange={(checked) => handleChange(checked, name)}>
                   {display_name || name_cn || name}
                 </Tag>
               )),

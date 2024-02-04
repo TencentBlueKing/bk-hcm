@@ -1,9 +1,5 @@
 <template>
-  <bk-loading
-    :opacity="1"
-    :loading="pageLoading"
-    class="my-apply-page"
-  >
+  <bk-loading :opacity="1" :loading="pageLoading" class="my-apply-page">
     <div class="page-layout views-layout">
       <div class="left-layout">
         <LeftSide
@@ -48,19 +44,16 @@ export default defineComponent({
   },
   setup() {
     const accountStore = useAccountStore();
-    const COM_MAP = Object.freeze(new Map([
-      [
-        ['add_account', 'service_apply', 'create_cvm', 'create_disk', 'create_vpc'],
-        'ApplyDetail',
-      ],
-    ]));
+    const COM_MAP = Object.freeze(
+      new Map([[['add_account', 'service_apply', 'create_cvm', 'create_disk', 'create_vpc'], 'ApplyDetail']]),
+    );
 
     const currCom = computed(() => {
       let com = '';
       for (const [key, value] of COM_MAP.entries()) {
         if (
-          Object.keys(state.comInfo.currentApplyData).length > 0
-          && key.includes(state.comInfo.currentApplyData.type)
+          Object.keys(state.comInfo.currentApplyData).length > 0 &&
+          key.includes(state.comInfo.currentApplyData.type)
         ) {
           com = value;
           break;
@@ -137,15 +130,18 @@ export default defineComponent({
       if (payload.value === '*') {
         filterParams.value.filter = { op: 'and', rules: [] };
       } else {
-        filterParams.value.filter = { op: 'and', rules: [{
-          field: 'created_at',
-          op: 'gt',
-          value: '',
-        }] };
-        const value = moment().add(-payload.value, 'd')
-          .format('YYYY-MM-DD HH:mm:ss');
-        const time = new Date(value).toISOString()
-          .replace('.000Z', 'Z');
+        filterParams.value.filter = {
+          op: 'and',
+          rules: [
+            {
+              field: 'created_at',
+              op: 'gt',
+              value: '',
+            },
+          ],
+        };
+        const value = moment().add(-payload.value, 'd').format('YYYY-MM-DD HH:mm:ss');
+        const time = new Date(value).toISOString().replace('.000Z', 'Z');
         filterParams.value.filter.rules[0].value = time;
       }
       getMyApplyList();
@@ -163,7 +159,6 @@ export default defineComponent({
       };
     };
 
-
     const handleChange = (id: string) => {
       getMyApplyDetail(id);
     };
@@ -178,7 +173,7 @@ export default defineComponent({
         applyList.value.push(...res.data.details);
       } catch (error) {
         console.log('error', error);
-      }  finally {
+      } finally {
         isApplyLoading.value = false;
       }
     };
@@ -211,7 +206,7 @@ export default defineComponent({
         }
       } catch (error) {
         console.log('error', error);
-      }  finally {
+      } finally {
         isApplyLoading.value = false;
         initRequestQueue.value.length > 0 && initRequestQueue.value.shift();
       }

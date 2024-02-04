@@ -28,22 +28,18 @@ export default defineComponent({
         isDefaultShow: true,
         render: ({ cell }: any) => (
           <div class={'flex-row align-item-center target-group-name'}>
-            {
-              editingID.value === cell
-                ? (
-                  <div class={'flex-row align-item-center'}>
-                    <Select />
-                    <Done  width={20} height={20} class={'submit-edition-icon'} onClick={() => editingID.value = ''}/>
-                    <Error width={13} height={13} class={'submit-edition-icon'} onClick={() => editingID.value = ''}/>
-                  </div>
-                )
-                : (
-                <span class={'flex-row align-item-center'}>
-                  <span class={'target-group-name-btn'}>{cell}</span>
-                  <EditLine class={'target-group-edit-icon'} onClick={() => editingID.value = cell}/>
-                </span>
-                )
-            }
+            {editingID.value === cell ? (
+              <div class={'flex-row align-item-center'}>
+                <Select />
+                <Done width={20} height={20} class={'submit-edition-icon'} onClick={() => (editingID.value = '')} />
+                <Error width={13} height={13} class={'submit-edition-icon'} onClick={() => (editingID.value = '')} />
+              </div>
+            ) : (
+              <span class={'flex-row align-item-center'}>
+                <span class={'target-group-name-btn'}>{cell}</span>
+                <EditLine class={'target-group-edit-icon'} onClick={() => (editingID.value = cell)} />
+              </span>
+            )}
           </div>
         ),
       },
@@ -69,21 +65,18 @@ export default defineComponent({
           }
           return (
             <div class={'url-status-container'}>
-              {
-                cell === 'a'
-                  ? <Spinner fill='#3A84FF' width={13} height={13} class={'mr6'}/>
-                  : <img src={icon} class='mr6' width={13} height={13} />
-              }
+              {cell === 'a' ? (
+                <Spinner fill='#3A84FF' width={13} height={13} class={'mr6'} />
+              ) : (
+                <img src={icon} class='mr6' width={13} height={13} />
+              )}
               <span
                 class={`${cell === 'd' ? 'url-sync-partial-success-status' : ''}`}
                 v-bk-tooltips={{
                   content: '成功 89 个，失败 105 个',
                   disabled: cell !== 'd',
-                }}
-              >
-                {
-                  SYNC_STAUS_MAP[cell]
-                }
+                }}>
+                {SYNC_STAUS_MAP[cell]}
               </span>
             </div>
           );
@@ -95,8 +88,12 @@ export default defineComponent({
         isDefaultShow: true,
         render: () => (
           <div>
-            <Button text theme='primary' class={'mr8'}>编辑</Button>
-            <Button text theme='primary'>删除</Button>
+            <Button text theme='primary' class={'mr8'}>
+              编辑
+            </Button>
+            <Button text theme='primary'>
+              删除
+            </Button>
           </div>
         ),
       },
@@ -257,14 +254,17 @@ export default defineComponent({
     return () => (
       <div class={'url-list-container has-selection'}>
         <CommonTable>
-        {{
-          operation: () => (
+          {{
+            operation: () => (
               <div class={'flex-row align-item-center'}>
-                <Button theme={'primary'} onClick={() => isDomainSidesliderShow.value = true}><Plus class={'f20'}/>新增 URL 路径</Button>
-                <Button onClick={() => isBatchDeleteDialogShow.value = true}>批量删除</Button>
+                <Button theme={'primary'} onClick={() => (isDomainSidesliderShow.value = true)}>
+                  <Plus class={'f20'} />
+                  新增 URL 路径
+                </Button>
+                <Button onClick={() => (isBatchDeleteDialogShow.value = true)}>批量删除</Button>
               </div>
-          ),
-        }}
+            ),
+          }}
         </CommonTable>
         <BatchOperationDialog
           v-model:isShow={isBatchDeleteDialogShow.value}
@@ -292,29 +292,29 @@ export default defineComponent({
           width={640}
           v-model:isShow={isDomainSidesliderShow.value}
           onHandleSubmit={handleSubmit}>
-            <p class={'create-url-text-item'}>
-              <span class={'create-url-text-item-label'}>监听器名称：</span>
-              <span class={'create-url-text-item-value'}>web站点</span>
-            </p>
-            <p class={'create-url-text-item'}>
-              <span class={'create-url-text-item-label'}>协议端口：</span>
-              <span class={'create-url-text-item-value'}>666666</span>
-            </p>
-            <p class={'create-url-text-item'}>
-              <span class={'create-url-text-item-label'}>域名：</span>
-              <span class={'create-url-text-item-value'}>aaaaaaaaaa</span>
-            </p>
-            <Form formType='vertical'>
-              <FormItem label='URL 路径'>
-                <Input />
-              </FormItem>
-              <FormItem label='均衡方式'>
-                <Select />
-              </FormItem>
-              <FormItem label='目标组'>
-                <Select />
-              </FormItem>
-            </Form>
+          <p class={'create-url-text-item'}>
+            <span class={'create-url-text-item-label'}>监听器名称：</span>
+            <span class={'create-url-text-item-value'}>web站点</span>
+          </p>
+          <p class={'create-url-text-item'}>
+            <span class={'create-url-text-item-label'}>协议端口：</span>
+            <span class={'create-url-text-item-value'}>666666</span>
+          </p>
+          <p class={'create-url-text-item'}>
+            <span class={'create-url-text-item-label'}>域名：</span>
+            <span class={'create-url-text-item-value'}>aaaaaaaaaa</span>
+          </p>
+          <Form formType='vertical'>
+            <FormItem label='URL 路径'>
+              <Input />
+            </FormItem>
+            <FormItem label='均衡方式'>
+              <Select />
+            </FormItem>
+            <FormItem label='目标组'>
+              <Select />
+            </FormItem>
+          </Form>
         </CommonSideslider>
       </div>
     );

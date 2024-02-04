@@ -1,6 +1,4 @@
-<template>
-  demo3-{{aaa}}
-</template>
+<template>demo3-{{ aaa }}</template>
 
 <script lang="ts">
 import { reactive, toRefs, defineComponent, onMounted, onUnmounted } from 'vue';
@@ -18,8 +16,7 @@ export default defineComponent({
       console.log(12213, res);
     });
 
-    onUnmounted(() => {
-    });
+    onUnmounted(() => {});
 
     return {
       ...toRefs(state),

@@ -13,16 +13,20 @@ export function useBlock(accessType: AccessType) {
     accessSourceStore.fetchAccessSourceClassify(route.params.projectId as string);
   }
 
-  watch(() => route.params.projectId, async (projectId) => {
-    isFetching.value = true;
-    await accessSourceStore.fetchAccessSource(projectId as string);
-    isFetching.value = false;
-  }, {
-    immediate: true,
-  });
+  watch(
+    () => route.params.projectId,
+    async (projectId) => {
+      isFetching.value = true;
+      await accessSourceStore.fetchAccessSource(projectId as string);
+      isFetching.value = false;
+    },
+    {
+      immediate: true,
+    },
+  );
 
   const accessList = computed(() => accessSourceStore.accessDataMap[accessType]);
-  const classifyList = computed(() => (accessSourceStore.accessClassifyMap?.[accessType] ?? []));
+  const classifyList = computed(() => accessSourceStore.accessClassifyMap?.[accessType] ?? []);
 
   function insertDataAccess() {
     const access = {
@@ -45,7 +49,7 @@ export function useBlock(accessType: AccessType) {
   }
 
   function getOauthUrlByPlatform(dataType: Platform) {
-    return classifyList.value.find(item => item.type === dataType)?.oauth_url ?? '';
+    return classifyList.value.find((item) => item.type === dataType)?.oauth_url ?? '';
   }
 
   function removeDataAccess(index: number, access: Access) {

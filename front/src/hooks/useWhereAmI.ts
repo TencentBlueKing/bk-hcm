@@ -1,4 +1,4 @@
-import { Ref, computed, watch } from 'vue';
+import { Ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 
 export const useWhereAmI = (): {

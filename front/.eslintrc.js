@@ -1,6 +1,6 @@
 module.exports = {
   root: true,
-  extends: ['@blueking/eslint-config-bk/tsvue3'],
+  extends: ['@blueking/eslint-config-bk/tsvue3', 'plugin:prettier/recommended'],
   parserOptions: {
     project: './tsconfig.eslint.json',
     tsconfigRootDir: __dirname,

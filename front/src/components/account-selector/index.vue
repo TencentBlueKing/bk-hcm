@@ -74,7 +74,7 @@ const getAccoutList = async (bizs?: number) => {
   }
   // cert filter, if support other clouds, remove this line
   if ((isResourcePage && route.query.type === 'certs') || (isBusinessPage && route.path.includes('cert'))) {
-    accountList.value = accountList.value.filter(item => item.vendor === 'tcloud');
+    accountList.value = accountList.value.filter((item) => item.vendor === 'tcloud');
   }
   loading.value = false;
 };
@@ -93,12 +93,15 @@ watch(
   },
 );
 
-watch(() => accountStore.bizs, (bizs) => {
-  getAccoutList(bizs);
-});
+watch(
+  () => accountStore.bizs,
+  (bizs) => {
+    getAccoutList(bizs);
+  },
+);
 
 const handleChange = (val: string) => {
-  const data = accountList.value.find(item => item.id === val);
+  const data = accountList.value.find((item) => item.id === val);
   emit('change', data);
 };
 

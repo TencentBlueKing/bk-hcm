@@ -10,60 +10,50 @@
         {{ item.name }}
       </bk-button>
     </bk-button-group> -->
-    <bk-tab
-      type="card-grid"
-      v-model:active="selectedType"
-    >
+    <bk-tab type="card-grid" v-model:active="selectedType">
       <template #setting>
         <div
           class="setting-icon-container"
-          @click="() => isSettingDialogShow = true"
+          @click="() => (isSettingDialogShow = true)"
           v-show="resourceAccountStore.resourceAccount?.id"
         >
           <i class="hcm-icon bkhcm-icon-shezhi" diasbled></i>
         </div>
       </template>
-      <bk-tab-panel
-        v-for="item in recycleTypeData"
-        :key="item.value"
-        :name="item.value"
-        :label="item.name"
-      >
+      <bk-tab-panel v-for="item in recycleTypeData" :key="item.value" :name="item.value" :label="item.name">
         <section class="header-container">
           <span
             v-bk-tooltips="{
               content: `请勾选${selectedType === 'cvm' ? '主机' : '硬盘'}信息`,
-              disabled: selections.length
+              disabled: selections.length,
             }"
-            @click="handleAuth('recycle_bin_manage')">
+            @click="handleAuth('recycle_bin_manage')"
+          >
             <bk-button
               :disabled="!selections.length || !authVerifyData?.permissionAction?.recycle_bin_manage"
               @click="handleOperate('destroy')"
-            >{{ t('立即销毁') }}
+            >
+              {{ t('立即销毁') }}
             </bk-button>
           </span>
           <span
             v-bk-tooltips="{
               content: `请勾选${selectedType === 'cvm' ? '主机' : '硬盘'}信息`,
-              disabled: selections.length
+              disabled: selections.length,
             }"
-            @click="handleAuth('recycle_bin_manage')">
+            @click="handleAuth('recycle_bin_manage')"
+          >
             <bk-button
               class="ml8"
               :disabled="!selections.length || !authVerifyData?.permissionAction?.recycle_bin_manage"
               @click="handleOperate('recover')"
-            >{{ t('立即恢复') }}
+            >
+              {{ t('立即恢复') }}
             </bk-button>
           </span>
-          <SearchSelect
-            class="w500 common-search-selector"
-            v-model="searchVal"
-            :data="searchData"
-          />
+          <SearchSelect class="w500 common-search-selector" v-model="searchVal" :data="searchData" />
         </section>
-        <bk-loading
-          :loading="isLoading"
-        >
+        <bk-loading :loading="isLoading">
           <bk-table
             :key="selectedType"
             class="table-layout has-selection"
@@ -79,33 +69,22 @@
             :is-row-select-enable="isRowSelectEnable"
             show-overflow-tooltip
           >
-            <bk-table-column
-              width="32"
-              min-width="32"
-              align="right"
-              type="selection"
-            />
-            <bk-table-column
-              :label="`${selectedType === 'cvm' ? '主机' : '硬盘'}ID`"
-              prop="cloud_res_id"
-              sort
-            >
+            <bk-table-column width="32" min-width="32" align="right" type="selection" />
+            <bk-table-column :label="`${selectedType === 'cvm' ? '主机' : '硬盘'}ID`" prop="cloud_res_id" sort>
               <template #default="props">
                 <bk-button
                   theme="primary"
                   text
-                  @click="() => handleClick(props?.data?.vendor,
-                                            props?.data?.res_id,
-                                            selectedType === 'cvm' ? 'host' : 'drive')"
+                  @click="
+                    () =>
+                      handleClick(props?.data?.vendor, props?.data?.res_id, selectedType === 'cvm' ? 'host' : 'drive')
+                  "
                 >
-                  {{props?.data?.cloud_res_id}}
+                  {{ props?.data?.cloud_res_id }}
                 </bk-button>
               </template>
             </bk-table-column>
-            <bk-table-column
-              label="名称"
-              prop="res_name"
-            >
+            <bk-table-column label="名称" prop="res_name">
               <template #default="{ cell }">
                 {{ cell || '--' }}
               </template>
@@ -123,15 +102,9 @@
               prop="account_id"
             >
             </bk-table-column> -->
-            <bk-table-column
-              label="所属主机"
-              prop="detail_cvm_id"
-              v-if="selectedType === 'disk'"
-            >
+            <bk-table-column label="所属主机" prop="detail_cvm_id" v-if="selectedType === 'disk'">
               <template #default="{ data }">
-                {{
-                  data?.detail?.cvm_id || '--'
-                }}
+                {{ data?.detail?.cvm_id || '--' }}
                 <i
                   class="hcm-icon bkhcm-icon-link related-cvm-link"
                   v-if="data?.detail?.cvm_id"
@@ -139,14 +112,9 @@
                 />
               </template>
             </bk-table-column>
-            <bk-table-column
-              :label="t('地域')"
-              prop="region"
-            >
+            <bk-table-column :label="t('地域')" prop="region">
               <template #default="{ data }">
-                {{
-                  getRegionName(data?.vendor, data?.region)
-                }}
+                {{ getRegionName(data?.vendor, data?.region) }}
               </template>
             </bk-table-column>
             <!-- <bk-table-column
@@ -168,25 +136,13 @@
               prop="res_name"
             >
             </bk-table-column> -->
-            <bk-table-column
-              label="回收人"
-              prop="reviser"
-            >
-            </bk-table-column>
-            <bk-table-column
-              label="进入回收站时间"
-              prop="created_at"
-              :sort="true"
-            >
+            <bk-table-column label="回收人" prop="reviser"></bk-table-column>
+            <bk-table-column label="进入回收站时间" prop="created_at" :sort="true">
               <template #default="{ cell }">
                 {{ timeFormatter(cell) }}
               </template>
             </bk-table-column>
-            <bk-table-column
-              label="过期时间"
-              prop="recycled_at"
-              :sort="true"
-            >
+            <bk-table-column label="过期时间" prop="recycled_at" :sort="true">
               <template #default="{ cell }">
                 <bk-tag theme="danger">
                   {{ moment(cell).fromNow() }}
@@ -194,29 +150,36 @@
                 {{ timeFormatter(cell) }}
               </template>
             </bk-table-column>
-            <bk-table-column
-              v-if="isResourcePage"
-              :label="t('操作')"
-              :min-width="150"
-            >
+            <bk-table-column v-if="isResourcePage" :label="t('操作')" :min-width="150">
               <template #default="{ data }">
                 <span @click="handleAuth('recycle_bin_manage')">
                   <bk-button
-                    text class="mr10" theme="primary" @click="handleOperate('destroy', [data.id])"
+                    text
+                    class="mr10"
+                    theme="primary"
+                    @click="handleOperate('destroy', [data.id])"
                     v-bk-tooltips="generateTooltipsOptions(data)"
-                    :disabled="!authVerifyData?.permissionAction?.recycle_bin_manage
-                      || data?.recycle_type === 'related'
-                      || ( whereAmI === Senarios.resource && data?.bk_biz_id !== -1)">
+                    :disabled="
+                      !authVerifyData?.permissionAction?.recycle_bin_manage ||
+                      data?.recycle_type === 'related' ||
+                      (whereAmI === Senarios.resource && data?.bk_biz_id !== -1)
+                    "
+                  >
                     销毁
                   </bk-button>
                 </span>
                 <span @click="handleAuth('recycle_bin_manage')">
                   <bk-button
-                    text theme="primary" @click="handleOperate('recover', [data.id])"
+                    text
+                    theme="primary"
+                    @click="handleOperate('recover', [data.id])"
                     v-bk-tooltips="generateTooltipsOptions(data)"
-                    :disabled="!authVerifyData?.permissionAction?.recycle_bin_manage
-                      || data?.recycle_type === 'related'
-                      || ( whereAmI === Senarios.resource && data?.bk_biz_id !== -1)">
+                    :disabled="
+                      !authVerifyData?.permissionAction?.recycle_bin_manage ||
+                      data?.recycle_type === 'related' ||
+                      (whereAmI === Senarios.resource && data?.bk_biz_id !== -1)
+                    "
+                  >
                     恢复
                   </bk-button>
                 </span>
@@ -235,14 +198,13 @@
       @closed="showDeleteBox = false"
       @confirm="handleDialogConfirm"
     >
-      <div v-if="type === 'destroy'">{{`${selectedType === 'cvm' ? '销毁之后无法恢复主机信息' : '销毁之后无法从云上恢复硬盘'}`}}</div>
-      <div v-else>{{t(`将恢复${selectedType === 'cvm' ? '主机' : '硬盘'}信息`)}}</div>
+      <div v-if="type === 'destroy'">
+        {{ `${selectedType === 'cvm' ? '销毁之后无法恢复主机信息' : '销毁之后无法从云上恢复硬盘'}` }}
+      </div>
+      <div v-else>{{ t(`将恢复${selectedType === 'cvm' ? '主机' : '硬盘'}信息`) }}</div>
     </bk-dialog>
 
-    <bk-dialog
-      :is-show="showResourceInfo"
-      :title="selectedType === 'cvm' ? '主机详情' : '硬盘详情'"
-      theme="primary">
+    <bk-dialog :is-show="showResourceInfo" :title="selectedType === 'cvm' ? '主机详情' : '硬盘详情'" theme="primary">
       <HostInfo v-if="selectedType === 'cvm'" :data="detail" :type="vendor"></HostInfo>
       <HostDrive v-else :data="detail" :type="vendor"></HostDrive>
     </bk-dialog>
@@ -250,21 +212,14 @@
     <bk-dialog
       :is-show="isSettingDialogShow"
       title="回收站配置"
-      @closed="() => isSettingDialogShow = false"
+      @closed="() => (isSettingDialogShow = false)"
       @confirm="handleSettingConfirm"
       theme="primary"
-      :is-loading="isSettingDialogLoading">
+      :is-loading="isSettingDialogLoading"
+    >
       保留时长
-      <bk-select
-        v-model="recycleReserveTime"
-        class="mt6"
-      >
-        <bk-option
-          v-for="(item) in RESERVE_TIME_SET"
-          :key="item.value"
-          :value="item.value"
-          :label="item.label"
-        />
+      <bk-select v-model="recycleReserveTime" class="mt6">
+        <bk-option v-for="item in RESERVE_TIME_SET" :key="item.value" :value="item.value" :label="item.label" />
       </bk-select>
     </bk-dialog>
 
@@ -332,24 +287,23 @@ export default defineComponent({
     };
 
     const isCurRowSelectEnable = (row: any) => {
-      return !(
-        row?.recycle_type === 'related'
-        || (whereAmI.value === Senarios.resource && row?.bk_biz_id !== -1)
-      );
+      return !(row?.recycle_type === 'related' || (whereAmI.value === Senarios.resource && row?.bk_biz_id !== -1));
     };
 
     const state = reactive({
-      isAccurate: false,    // 是否精确
+      isAccurate: false, // 是否精确
       searchValue: [],
       searchData: [
         {
           name: '名称',
           id: 'name',
-        }, {
+        },
+        {
           name: '云厂商',
           id: 'vendor',
           children: VENDORS,
-        }, {
+        },
+        {
           name: '负责人',
           id: 'managers',
         },
@@ -359,11 +313,17 @@ export default defineComponent({
       loading: true,
       dataId: 0,
       CloudType,
-      filter: { op: 'and', rules: [
-        { field: 'res_type', op: 'eq', value: 'cvm' },
-        { field: 'status', op: 'eq', value: 'wait_recycle' },
-      ] },
-      recycleTypeData: [{ name: t('主机回收'), value: 'cvm' }, { name: t('硬盘回收'), value: 'disk' }],
+      filter: {
+        op: 'and',
+        rules: [
+          { field: 'res_type', op: 'eq', value: 'cvm' },
+          { field: 'status', op: 'eq', value: 'wait_recycle' },
+        ],
+      },
+      recycleTypeData: [
+        { name: t('主机回收'), value: 'cvm' },
+        { name: t('硬盘回收'), value: 'disk' },
+      ],
       selectedType: 'cvm',
       type: '',
       selectedIds: [],
@@ -375,37 +335,33 @@ export default defineComponent({
     const isSettingDialogShow = ref(false);
     const isSettingDialogLoading = ref(false);
     const recycleReserveTime = ref(48);
-    const RESERVE_TIME_SET = new Array(8).fill(0)
+    const RESERVE_TIME_SET = new Array(8)
+      .fill(0)
       .map((_val, idx) => idx)
-      .map(num => ({
+      .map((num) => ({
         label: `${num}${num > 0 ? '天' : ''}`,
         value: num * 24,
       }));
 
     // hooks
-    const {
-      datas,
-      isLoading,
-      pagination,
-      handlePageSizeChange,
-      handlePageChange,
-      getList,
-    } = useQueryCommonList({ filter: state.filter as FilterType }, fetchUrl);
+    const { datas, isLoading, pagination, handlePageSizeChange, handlePageChange, getList } = useQueryCommonList(
+      { filter: state.filter as FilterType },
+      fetchUrl,
+    );
 
-    const {
-      selections,
-      handleSelectionChange,
-      resetSelections,
-    } = useSelection();
+    const { selections, handleSelectionChange, resetSelections } = useSelection();
 
     // 确定回收站保留时长
     const handleSettingConfirm = async () => {
       isSettingDialogLoading.value = true;
       try {
-        await http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${resourceAccountStore.resourceAccount?.id}`, {
-          account_id: resourceAccountStore.resourceAccount?.id,
-          recycle_reserve_time: recycleReserveTime.value,
-        });
+        await http.patch(
+          `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${resourceAccountStore.resourceAccount?.id}`,
+          {
+            account_id: resourceAccountStore.resourceAccount?.id,
+            recycle_reserve_time: recycleReserveTime.value,
+          },
+        );
         Message({
           theme: 'success',
           message: '配置成功',
@@ -490,11 +446,15 @@ export default defineComponent({
         const idx = state.filter.rules.findIndex(({ field }) => field === 'res_id');
         if (idx !== -1) state.filter.rules.splice(idx, 1);
         if (!vals.length) return;
-        state.filter.rules = state.filter.rules.concat(Array.isArray(vals) ? vals.map((val: any) => ({
-          field: val.id,
-          op: QueryRuleOPEnum.EQ,
-          value: val.values[0].id,
-        })) : []);
+        state.filter.rules = state.filter.rules.concat(
+          Array.isArray(vals)
+            ? vals.map((val: any) => ({
+                field: val.id,
+                op: QueryRuleOPEnum.EQ,
+                value: val.values[0].id,
+              }))
+            : [],
+        );
       },
       {
         immediate: true,
@@ -562,7 +522,8 @@ export default defineComponent({
       });
     });
 
-    const isResourcePage = computed(() => {   // 资源下没有业务ID
+    const isResourcePage = computed(() => {
+      // 资源下没有业务ID
       return !accountStore.bizs;
     });
 
@@ -613,7 +574,8 @@ export default defineComponent({
           content: '该硬盘随主机回收，不可单独操作',
           disabled: data?.recycle_type !== 'related',
         };
-      } if (data?.bk_biz_id !== -1) {
+      }
+      if (data?.bk_biz_id !== -1) {
         return {
           content: '该硬盘仅可在业务下操作',
           disabled: data?.bk_biz_id === -1,
@@ -625,7 +587,7 @@ export default defineComponent({
     };
     const handleOperate = (type: string, ids?: string[]) => {
       console.log('selections', ids, selections.value);
-      state.selectedIds = ids ? ids : selections.value.map(e => e.id);
+      state.selectedIds = ids ? ids : selections.value.map((e) => e.id);
       console.log('state.selectedIds', state.selectedIds);
       state.type = type;
       state.deleteBoxTitle = `确认要 ${type === 'destroy' ? t('销毁') : t('恢复')}`;
@@ -643,7 +605,7 @@ export default defineComponent({
       }
     };
 
-    const handleClick = (vendor: VendorEnum, id: number, type: 'drive'|'host') => {
+    const handleClick = (vendor: VendorEnum, id: number, type: 'drive' | 'host') => {
       const routeInfo: any = {
         query: {
           id,
@@ -752,71 +714,70 @@ export default defineComponent({
     }
   }
 }
-  .sync-dialog-warp{
-    height: 150px;
-    .t-icon{
-      height: 42px;
-      width: 110px;
+.sync-dialog-warp {
+  height: 150px;
+  .t-icon {
+    height: 42px;
+    width: 110px;
+  }
+  .logo-icon {
+    height: 42px;
+    width: 42px;
+  }
+  .arrow-icon {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+    height: 13px;
+    line-height: 13px;
+    .content {
+      width: 130px;
+      position: absolute;
+      left: 200px;
+      animation: 3s move infinite linear;
     }
-    .logo-icon{
-        height: 42px;
-        width: 42px;
-    }
-    .arrow-icon{
-      position: relative;
-      flex: 1;
-      overflow: hidden;
-      height: 13px;
-      line-height: 13px;
-      .content{
-        width: 130px;
-        position: absolute;
-        left: 200px;
-        animation: 3s move infinite linear;
-      }
-    }
   }
-  .setting-icon-container {
-    width: 32px;
-    height: 32px;
-    background: #FFFFFF;
-    box-shadow: 0 2px 4px 0 #1919290d;
-    border-radius: 2px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-  }
-  .mt6 {
-    margin-top: 6px;
-  }
-  .related-cvm-link {
-    margin-left: 4px;
-    cursor: pointer;
-    color: #3A84FF;
-  }
-  .header-container {
-    display: flex;
-    justify-content: space-between;
-  }
+}
+.setting-icon-container {
+  width: 32px;
+  height: 32px;
+  background: #ffffff;
+  box-shadow: 0 2px 4px 0 #1919290d;
+  border-radius: 2px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+.mt6 {
+  margin-top: 6px;
+}
+.related-cvm-link {
+  margin-left: 4px;
+  cursor: pointer;
+  color: #3a84ff;
+}
+.header-container {
+  display: flex;
+  justify-content: space-between;
+}
 @-webkit-keyframes move {
   from {
-		left: 0%;
-	}
+    left: 0%;
+  }
 
-	to {
-		left: 100%;
-	}
+  to {
+    left: 100%;
+  }
 }
 
 @keyframes move {
-	from {
-		left: 0%;
-	}
+  from {
+    left: 0%;
+  }
 
-	to {
-		left: 100%;
-	}
+  to {
+    left: 100%;
+  }
 }
 </style>
-

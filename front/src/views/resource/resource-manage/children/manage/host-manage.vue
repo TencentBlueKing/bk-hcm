@@ -4,36 +4,23 @@ import type {
   DoublePlainObject,
   FilterType,
 } from '@/typings/resource';
-import {
-  Message,
-} from 'bkui-vue';
+import { Message } from 'bkui-vue';
 
-import {
-  PropType,
-  h,
-  ref,
-  computed,
-} from 'vue';
-import {
-  useI18n,
-} from 'vue-i18n';
+import { PropType, h, ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
 import useColumns from '../../hooks/use-columns';
-import useFilter  from '@/views/resource/resource-manage/hooks/use-filter';
+import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import { HostCloudEnum, CloudType } from '@/typings';
-import {
-  useResourceStore,
-} from '@/store';
+import { useResourceStore } from '@/store';
 import HostOperations from '../../common/table/HostOperations';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import BusinessSelector from '@/components/business-selector/index.vue';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 // use hook
-const {
-  t,
-} = useI18n();
+const { t } = useI18n();
 
 const props = defineProps({
   filter: {
@@ -52,27 +39,14 @@ const cloudAreaPage = ref(0);
 const cloudAreas = ref([]);
 const { whereAmI } = useWhereAmI();
 
-const {
-  searchData,
-  searchValue,
-  filter,
-} = useFilter(props);
+const { searchData, searchValue, filter } = useFilter(props);
 
-const {
-  datas,
-  pagination,
-  isLoading,
-  handlePageChange,
-  handlePageSizeChange,
-  handleSort,
-  triggerApi,
-} = useQueryList({ filter: filter.value }, 'cvms');
+const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, triggerApi } = useQueryList(
+  { filter: filter.value },
+  'cvms',
+);
 
-const {
-  selections,
-  handleSelectionChange,
-  resetSelections,
-} = useSelection();
+const { selections, handleSelectionChange, resetSelections } = useSelection();
 
 const isShowDistribution = ref(false);
 const businessId = ref('');
@@ -90,25 +64,32 @@ const hostSearchData = computed(() => {
       id: 'cloud_id',
     },
     ...searchData.value,
-    ...[{
-      name: '管控区域',
-      id: 'bk_cloud_id',
-    }, {
-      name: '操作系统',
-      id: 'os_name',
-    }, {
-      name: '云地域',
-      id: 'region',
-    }, {
-      name: '公网IP',
-      id: 'public_ipv4_addresses',
-    }, {
-      name: '内网IP',
-      id: 'private_ipv4_addresses',
-    }, {
-      name: '所属VPC',
-      id: 'cloud_vpc_ids',
-    }],
+    ...[
+      {
+        name: '管控区域',
+        id: 'bk_cloud_id',
+      },
+      {
+        name: '操作系统',
+        id: 'os_name',
+      },
+      {
+        name: '云地域',
+        id: 'region',
+      },
+      {
+        name: '公网IP',
+        id: 'public_ipv4_addresses',
+      },
+      {
+        name: '内网IP',
+        id: 'private_ipv4_addresses',
+      },
+      {
+        name: '所属VPC',
+        id: 'cloud_vpc_ids',
+      },
+    ],
   ];
 });
 
@@ -166,13 +147,7 @@ const distribColumns = [
   {
     label: '云厂商',
     render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          CloudType[data.vendor],
-        ],
-      );
+      return h('span', {}, [CloudType[data.vendor]]);
     },
   },
   {
@@ -186,45 +161,26 @@ const distribColumns = [
   {
     label: '状态',
     render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          HostCloudEnum[data.status] || data.status,
-        ],
-      );
+      return h('span', {}, [HostCloudEnum[data.status] || data.status]);
     },
   },
   {
     label: '操作系统',
     render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          data.os_name || '--',
-        ],
-      );
+      return h('span', {}, [data.os_name || '--']);
     },
   },
   {
     label: '云区域ID',
     field: 'bk_cloud_id',
     render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          data.bk_cloud_id === -1 ? '未分配' : data.bk_cloud_id,
-        ],
-      );
+      return h('span', {}, [data.bk_cloud_id === -1 ? '未分配' : data.bk_cloud_id]);
     },
   },
 ];
 
-
 const distributionCvm = async () => {
-  const cvmIds = selections.value.map(e => e.id);
+  const cvmIds = selections.value.map((e) => e.id);
   try {
     await resourceStore.cvmAssignBizs({ cvm_ids: cvmIds, bk_biz_id: businessId.value });
     Message({
@@ -265,7 +221,7 @@ const getCloudAreas = () => {
     })
     .then((res: any) => {
       cloudAreaPage.value += 1;
-      cloudAreas.value.push(...res?.data?.info || []);
+      cloudAreas.value.push(...(res?.data?.info || []));
     })
     .finally(() => {
       isLoadingCloudAreas.value = false;
@@ -275,7 +231,7 @@ const getCloudAreas = () => {
 const handleConfirm = async () => {
   isDialogBtnLoading.value = true;
   await resourceStore.assignBusiness('cvms', {
-    cvm_ids: selections.value?.map(v => v.id) || [],
+    cvm_ids: selections.value?.map((v) => v.id) || [],
     bk_biz_id: selectedBizId.value,
   });
   triggerApi();
@@ -284,41 +240,37 @@ const handleConfirm = async () => {
 };
 
 getCloudAreas();
-
 </script>
 
 <template>
-  <bk-loading
-    :loading="isLoading"
-  >
+  <bk-loading :loading="isLoading">
     <section
       class="flex-row align-items-center"
-      :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
+      :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'"
+    >
       <slot></slot>
       <BatchDistribution
         :selections="selections"
         :type="DResourceType.cvms"
-        :get-data="() => {
-          triggerApi();
-          resetSelections();
-        }"
+        :get-data="
+          () => {
+            triggerApi();
+            resetSelections();
+          }
+        "
       />
-      <HostOperations :selections="selections" :on-finished="(type: 'confirm' | 'cancel' = 'confirm') => {
+      <HostOperations
+        :selections="selections"
+        :on-finished="(type: 'confirm' | 'cancel' = 'confirm') => {
         if(type === 'confirm') triggerApi();
         resetSelections();
-      }"></HostOperations>
+      }"
+      ></HostOperations>
 
       <div class="flex-row align-items-center justify-content-arround search-selector-container">
-        <bk-search-select
-          class="w500"
-          clearable
-          :conditions="[]"
-          :data="hostSearchData"
-          v-model="searchValue"
-        />
+        <bk-search-select class="w500" clearable :conditions="[]" :data="hostSearchData" v-model="searchValue" />
         <slot name="recycleHistory"></slot>
       </div>
-
     </section>
 
     <bk-table
@@ -345,29 +297,15 @@ getCloudAreas();
       :title="t('主机分配')"
       theme="primary"
       quick-close
-      @confirm="handleDistributionConfirm">
+      @confirm="handleDistributionConfirm"
+    >
       <section class="distribution-cls">
         目标业务
-        <bk-select
-          class="ml20"
-          v-model="businessId"
-          filterable
-        >
-          <bk-option
-            v-for="item in businessList"
-            :key="item.id"
-            :value="item.id"
-            :label="item.name"
-          />
+        <bk-select class="ml20" v-model="businessId" filterable>
+          <bk-option v-for="item in businessList" :key="item.id" :value="item.id" :label="item.name" />
         </bk-select>
       </section>
-      <bk-table
-        class="mt20"
-        row-hover="auto"
-        :columns="distribColumns"
-        :data="selections"
-        show-overflow-tooltip
-      />
+      <bk-table class="mt20" row-hover="auto" :columns="distribColumns" :data="selections" show-overflow-tooltip />
     </bk-dialog>
 
     <bk-dialog
@@ -375,22 +313,18 @@ getCloudAreas();
       title="主机分配"
       :theme="'primary'"
       quick-close
-      @closed="() => isDialogShow = false"
+      @closed="() => (isDialogShow = false)"
       @confirm="handleConfirm"
       :is-loading="isDialogBtnLoading"
     >
       <p class="selected-host-count-tip">
-        已选择 <span class="selected-host-count">{{ selections.length }}</span> 台主机，可选择所需分配的目标业务
+        已选择
+        <span class="selected-host-count">{{ selections.length }}</span>
+        台主机，可选择所需分配的目标业务
       </p>
       <p class="mb6">目标业务</p>
-      <business-selector
-        v-model="selectedBizId"
-        :authed="true"
-        class="mb32"
-        :auto-select="true">
-      </business-selector>
+      <business-selector v-model="selectedBizId" :authed="true" class="mb32" :auto-select="true"></business-selector>
     </bk-dialog>
-
   </bk-loading>
 </template>
 
@@ -407,7 +341,7 @@ getCloudAreas();
 .mb32 {
   margin-bottom: 32px;
 }
-.distribution-cls{
+.distribution-cls {
   display: flex;
   align-items: center;
 }
@@ -423,9 +357,9 @@ getCloudAreas();
   display: flex;
   align-items: center;
   justify-content: center;
-      // cursor: pointer;
+  // cursor: pointer;
   &:hover {
-    background: #F0F1F5;
+    background: #f0f1f5;
   }
 }
 </style>

@@ -1,28 +1,22 @@
 <script lang="ts" setup>
 import useQueryList from '../../../hooks/use-query-list';
 import useColumns from '../../../hooks/use-columns';
-import {
-  useRoute,
-} from 'vue-router';
+import { useRoute } from 'vue-router';
 
 const route = useRoute();
 const { columns, settings } = useColumns('route');
 
-const {
-  datas,
-  pagination,
-  isLoading,
-  handlePageChange,
-  handlePageSizeChange,
-} = useQueryList(
+const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange } = useQueryList(
   {
     filter: {
       op: 'and',
-      rules: [{
-        field: 'vpc_id',
-        op: 'eq',
-        value: route.query.id,
-      }],
+      rules: [
+        {
+          field: 'vpc_id',
+          op: 'eq',
+          value: route.query.id,
+        },
+      ],
     },
   },
   'route_tables',
@@ -30,9 +24,7 @@ const {
 </script>
 
 <template>
-  <bk-loading
-    :loading="isLoading"
-  >
+  <bk-loading :loading="isLoading">
     <bk-table
       :settings="settings"
       row-hover="auto"

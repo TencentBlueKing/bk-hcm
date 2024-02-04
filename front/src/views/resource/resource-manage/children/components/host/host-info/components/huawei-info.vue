@@ -28,11 +28,12 @@ const cvmInfo = [
   {
     name: '账号',
     prop: 'account_id',
-    render: () => useRouteLinkBtn(props.data, {
-      id: 'account_id',
-      name: 'account_id',
-      type: TypeEnum.ACCOUNT,
-    }),
+    render: () =>
+      useRouteLinkBtn(props.data, {
+        id: 'account_id',
+        name: 'account_id',
+        type: TypeEnum.ACCOUNT,
+      }),
   },
   {
     name: '云厂商',
@@ -51,9 +52,7 @@ const cvmInfo = [
     name: '业务',
     prop: 'bk_biz_id',
     render() {
-      return props.data.bk_biz_id === -1
-        ? '未分配'
-        : `${props.data.bk_biz_id_name} (${props.data.bk_biz_id})`;
+      return props.data.bk_biz_id === -1 ? '未分配' : `${props.data.bk_biz_id_name} (${props.data.bk_biz_id})`;
     },
   },
   {
@@ -101,20 +100,22 @@ const netInfo = [
   {
     name: '所属网络',
     prop: 'cloud_vpc_ids',
-    render: () => useRouteLinkBtn(props.data, {
-      id: 'vpc_ids',
-      name: 'cloud_vpc_ids',
-      type: TypeEnum.VPC,
-    }),
+    render: () =>
+      useRouteLinkBtn(props.data, {
+        id: 'vpc_ids',
+        name: 'cloud_vpc_ids',
+        type: TypeEnum.VPC,
+      }),
   },
   {
     name: '所属子网',
     prop: 'cloud_subnet_ids',
-    render: () => useRouteLinkBtn(props.data, {
-      id: 'subnet_ids',
-      name: 'cloud_subnet_ids',
-      type: TypeEnum.SUBNET,
-    }),
+    render: () =>
+      useRouteLinkBtn(props.data, {
+        id: 'subnet_ids',
+        name: 'cloud_subnet_ids',
+        type: TypeEnum.SUBNET,
+      }),
   },
   {
     name: '私有IPv4地址',
@@ -142,21 +143,23 @@ const expandNetInfo = [
   {
     name: '所属网络',
     prop: 'cloud_vpc_ids',
-    render: () => useRouteLinkBtn(props.data, {
-      id: 'vpc_ids',
-      name: 'cloud_vpc_ids',
-      type: TypeEnum.VPC,
-    }),
+    render: () =>
+      useRouteLinkBtn(props.data, {
+        id: 'vpc_ids',
+        name: 'cloud_vpc_ids',
+        type: TypeEnum.VPC,
+      }),
   },
   {
     name: '所属子网',
     prop: 'cloud_subnet_ids',
-    render: () => useRouteLinkBtn(props.data, {
-      id: 'subnet_ids',
-      name: 'cloud_subnet_ids',
-      type: TypeEnum.SUBNET,
-      isExpand: true,
-    }),
+    render: () =>
+      useRouteLinkBtn(props.data, {
+        id: 'subnet_ids',
+        name: 'cloud_subnet_ids',
+        type: TypeEnum.SUBNET,
+        isExpand: true,
+      }),
   },
   {
     name: '拓展IPv4内网IP',
@@ -192,11 +195,12 @@ const settingInfo = [
   {
     name: '镜像ID',
     prop: 'cloud_image_id',
-    render: () => useRouteLinkBtn(props.data, {
-      id: 'image_id',
-      type: TypeEnum.IMAGE,
-      name: 'cloud_image_id',
-    }),
+    render: () =>
+      useRouteLinkBtn(props.data, {
+        id: 'image_id',
+        type: TypeEnum.IMAGE,
+        name: 'cloud_image_id',
+      }),
   },
 ];
 </script>
@@ -208,23 +212,14 @@ const settingInfo = [
   </div>
   <h3 class="info-title">网络信息-主网卡</h3>
   <div class="wrap-info">
-    <detail-info
-      :fields="netInfo"
-      :detail="props.data"
-    ></detail-info>
+    <detail-info :fields="netInfo" :detail="props.data"></detail-info>
   </div>
   <h3 class="info-title">网络信息-扩展网卡</h3>
   <div class="wrap-info">
-    <detail-info
-      :fields="expandNetInfo"
-      :detail="props.data"
-    ></detail-info>
+    <detail-info :fields="expandNetInfo" :detail="props.data"></detail-info>
   </div>
   <h3 class="info-title">配置信息</h3>
   <div class="wrap-info">
-    <detail-info
-      :fields="settingInfo"
-      :detail="props.data"
-    ></detail-info>
+    <detail-info :fields="settingInfo" :detail="props.data"></detail-info>
   </div>
 </template>

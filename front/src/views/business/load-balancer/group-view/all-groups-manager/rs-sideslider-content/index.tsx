@@ -17,7 +17,7 @@ export default defineComponent({
         <div class='selected-target-groups'>
           <span class='label'>已选择目标组</span>
           <div>
-            {props.selectedTargetGroups.map(item => (
+            {props.selectedTargetGroups.map((item) => (
               <Tag>{item.target_group_name}</Tag>
             ))}
           </div>

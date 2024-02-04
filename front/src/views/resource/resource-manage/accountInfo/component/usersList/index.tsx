@@ -1,17 +1,7 @@
 import { defineComponent, ref, reactive, watch } from 'vue';
 import './index.scss';
 import http from '@/http';
-import {
-  Loading,
-  SearchSelect,
-  Table,
-  Button,
-  Dialog,
-  Form,
-  Input,
-  Select,
-  Message,
-} from 'bkui-vue';
+import { Loading, SearchSelect, Table, Button, Dialog, Form, Input, Select, Message } from 'bkui-vue';
 import { useI18n } from 'vue-i18n';
 import MemberSelect from '@/components/MemberSelect';
 import type { Column } from 'bkui-vue/lib/table/props';
@@ -51,13 +41,14 @@ export default defineComponent({
       {
         label: '所属业务',
         field: 'bk_biz_ids',
-        render: ({ data }: any) => (data?.bk_biz_ids.length > 0
-          ? data?.bk_biz_ids
-            .map((bk_biz_id: number) => {
-              return businessMapStore.getNameFromBusinessMap(bk_biz_id);
-            })
-            ?.join(',')
-          : '--'),
+        render: ({ data }: any) =>
+          data?.bk_biz_ids.length > 0
+            ? data?.bk_biz_ids
+                .map((bk_biz_id: number) => {
+                  return businessMapStore.getNameFromBusinessMap(bk_biz_id);
+                })
+                ?.join(',')
+            : '--',
       },
       {
         label: '备注',
@@ -76,16 +67,13 @@ export default defineComponent({
       {
         label: '更新时间',
         field: 'updated_at',
-        render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+        render: ({ cell }: { cell: string }) => timeFormatter(cell),
       },
       {
         label: '操作',
         field: 'operation',
         render: ({ data }: any) => (
-          <Button
-            text
-            theme='primary'
-            onClick={() => handleModifyAccount(data)}>
+          <Button text theme='primary' onClick={() => handleModifyAccount(data)}>
             编辑
           </Button>
         ),
@@ -108,13 +96,14 @@ export default defineComponent({
     const changeColumns = () => {
       [VendorEnum.TCLOUD, VendorEnum.AWS, VendorEnum.HUAWEI].includes(resourceAccountStore.resourceAccount.vendor)
         ? (columns.value = [
-          {
-            label: '账号名称',
-            field: 'name',
-            render: ({ data }: any) => {
-              return (
+            {
+              label: '账号名称',
+              field: 'name',
+              render: ({ data }: any) => {
+                return (
                   <>
                     {data?.name}
+                    {/* eslint-disable-next-line no-nested-ternary */}
                     {data?.account_type === 'current_account' ? (
                       <bk-tag theme='info' class='users-list-bk-tag'>
                         当前账号
@@ -127,145 +116,142 @@ export default defineComponent({
                       ''
                     )}
                   </>
-              );
+                );
+              },
             },
-          },
-          {
-            label: '账号 ID',
-            field: 'id',
-          },
-          {
-            label: '所属业务',
-            field: 'bk_biz_ids',
-            render: ({ data }: any) => (data?.bk_biz_ids.length > 0
-              ? data?.bk_biz_ids
-                .map((bk_biz_id: number) => {
-                  return businessMapStore.getNameFromBusinessMap(bk_biz_id);
-                })
-                ?.join(',')
-              : '--'),
-          },
-          {
-            label: '备注',
-            field: 'memo',
-            render: ({ cell }: any) => cell || '--',
-          },
-          {
-            label: '负责人',
-            field: 'managers',
-            render: ({ data }: any) => data?.managers?.join(',') || '--',
-          },
-          {
-            label: '更新人',
-            field: 'reviser',
-          },
-          {
-            label: '更新时间',
-            field: 'updated_at',
-            render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
-          },
-          {
-            label: '操作',
-            field: 'operation',
-            render: ({ data }: any) => (
-                <Button
-                  text
-                  theme='primary'
-                  onClick={() => handleModifyAccount(data)}>
+            {
+              label: '账号 ID',
+              field: 'id',
+            },
+            {
+              label: '所属业务',
+              field: 'bk_biz_ids',
+              render: ({ data }: any) =>
+                data?.bk_biz_ids.length > 0
+                  ? data?.bk_biz_ids
+                      .map((bk_biz_id: number) => {
+                        return businessMapStore.getNameFromBusinessMap(bk_biz_id);
+                      })
+                      ?.join(',')
+                  : '--',
+            },
+            {
+              label: '备注',
+              field: 'memo',
+              render: ({ cell }: any) => cell || '--',
+            },
+            {
+              label: '负责人',
+              field: 'managers',
+              render: ({ data }: any) => data?.managers?.join(',') || '--',
+            },
+            {
+              label: '更新人',
+              field: 'reviser',
+            },
+            {
+              label: '更新时间',
+              field: 'updated_at',
+              render: ({ cell }: { cell: string }) => timeFormatter(cell),
+            },
+            {
+              label: '操作',
+              field: 'operation',
+              render: ({ data }: any) => (
+                <Button text theme='primary' onClick={() => handleModifyAccount(data)}>
                   编辑
                 </Button>
-            ),
-          },
-        ])
+              ),
+            },
+          ])
         : (columns.value = [
-          {
-            label: '账号名称',
-            field: 'name',
-            render: ({ data }: any) => {
-              return (
+            {
+              label: '账号名称',
+              field: 'name',
+              render: ({ data }: any) => {
+                return (
                   <>
                     {data?.name}
-                    {
-                      data?.account_type !== '' && (
-                        <bk-tag
-                          theme={data?.account_type === 'current_account' ? 'info' : 'success'}
-                          class='users-list-bk-tag'>
-                          { data?.account_type === 'current_account' ? '当前账号' : '主账号'}
-                        </bk-tag>
-                      )
-                    }
+                    {data?.account_type !== '' && (
+                      <bk-tag
+                        theme={data?.account_type === 'current_account' ? 'info' : 'success'}
+                        class='users-list-bk-tag'>
+                        {data?.account_type === 'current_account' ? '当前账号' : '主账号'}
+                      </bk-tag>
+                    )}
                   </>
-              );
+                );
+              },
             },
-          },
-          {
-            label: '所属业务',
-            field: 'bk_biz_ids',
-            render: ({ data }: any) => (data?.bk_biz_ids.length > 0
-              ? data?.bk_biz_ids
-                .map((bk_biz_id: number) => {
-                  return businessMapStore.getNameFromBusinessMap(bk_biz_id);
-                })
-                ?.join(',')
-              : '--'),
-          },
-          {
-            label: '备注',
-            field: 'memo',
-            render: ({ cell }: any) => cell || '--',
-          },
-          {
-            label: '负责人',
-            field: 'managers',
-            render: ({ data }: any) => data?.managers?.join(',') || '--',
-          },
-          {
-            label: '更新人',
-            field: 'reviser',
-          },
-          {
-            label: '更新时间',
-            field: 'updated_at',
-            render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
-          },
-          {
-            label: '操作',
-            field: 'operation',
-            render: ({ data }: any) => (
-                <Button
-                  text
-                  theme='primary'
-                  onClick={() => handleModifyAccount(data)}>
+            {
+              label: '所属业务',
+              field: 'bk_biz_ids',
+              render: ({ data }: any) =>
+                data?.bk_biz_ids.length > 0
+                  ? data?.bk_biz_ids
+                      .map((bk_biz_id: number) => {
+                        return businessMapStore.getNameFromBusinessMap(bk_biz_id);
+                      })
+                      ?.join(',')
+                  : '--',
+            },
+            {
+              label: '备注',
+              field: 'memo',
+              render: ({ cell }: any) => cell || '--',
+            },
+            {
+              label: '负责人',
+              field: 'managers',
+              render: ({ data }: any) => data?.managers?.join(',') || '--',
+            },
+            {
+              label: '更新人',
+              field: 'reviser',
+            },
+            {
+              label: '更新时间',
+              field: 'updated_at',
+              render: ({ cell }: { cell: string }) => timeFormatter(cell),
+            },
+            {
+              label: '操作',
+              field: 'operation',
+              render: ({ data }: any) => (
+                <Button text theme='primary' onClick={() => handleModifyAccount(data)}>
                   编辑
                 </Button>
-            ),
-          },
-        ]);
+              ),
+            },
+          ]);
     };
     const filter = reactive({
       op: QueryRuleOPEnum.AND,
       rules: [],
     });
-    const getUserList = async (customRules: Array<{
-      op: QueryRuleOPEnum;
-      field: string;
-      value: string | number;
-    }> = []) => {
+    const getUserList = async (
+      customRules: Array<{
+        op: QueryRuleOPEnum;
+        field: string;
+        value: string | number;
+      }> = [],
+    ) => {
       isLoading.value = true;
-      const [detailsRes, countRes] = await Promise.all([false, true].map(isCount => http.post(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/sub_accounts/list`,
-        {
-          filter: {
-            op: QueryRuleOPEnum.AND,
-            rules: [...filter.rules, ...customRules],
-          },
-          page: {
-            limit: isCount ? 0 : pagination.limit,
-            start: isCount ? 0 : pagination.start,
-            count: isCount,
-          },
-        },
-      )));
+      const [detailsRes, countRes] = await Promise.all(
+        [false, true].map((isCount) =>
+          http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/sub_accounts/list`, {
+            filter: {
+              op: QueryRuleOPEnum.AND,
+              rules: [...filter.rules, ...customRules],
+            },
+            page: {
+              limit: isCount ? 0 : pagination.limit,
+              start: isCount ? 0 : pagination.start,
+              count: isCount,
+            },
+          }),
+        ),
+      );
       isLoading.value = false;
       dataList.value = detailsRes?.data?.details;
       pagination.count = countRes?.data?.count;
@@ -304,10 +290,7 @@ export default defineComponent({
       await formRef.value.validate();
       try {
         isUserDialogLoading.value = true;
-        await http.patch(
-          `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/sub_accounts/${userFormModel.id}`,
-          userFormModel,
-        );
+        await http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/sub_accounts/${userFormModel.id}`, userFormModel);
         Message({
           theme: 'success',
           message: t('编辑成功'),
@@ -347,13 +330,13 @@ export default defineComponent({
         console.log(vals);
         filter.rules = Array.isArray(vals)
           ? [
-            filter.rules[0],
-            ...vals.map((val: any) => ({
-              field: val?.id,
-              op: QueryRuleOPEnum.EQ,
-              value: val?.values?.[0]?.id,
-            })),
-          ]
+              filter.rules[0],
+              ...vals.map((val: any) => ({
+                field: val?.id,
+                op: QueryRuleOPEnum.EQ,
+                value: val?.values?.[0]?.id,
+              })),
+            ]
           : [];
         getUserList();
       },
@@ -361,11 +344,7 @@ export default defineComponent({
 
     return () => (
       <div>
-        <SearchSelect
-          class='w500 common-search-selector'
-          v-model={searchVal.value}
-          data={searchData.value}
-        />
+        <SearchSelect class='w500 common-search-selector' v-model={searchVal.value} data={searchData.value} />
         <Loading loading={isLoading.value}>
           <Table
             data={dataList.value}
@@ -387,45 +366,22 @@ export default defineComponent({
           onConfirm={handleModifyUserSubmit}
           onClosed={() => (isShowModifyUserDialog.value = false)}
           theme='primary'>
-          <Form
-            v-model={userFormModel}
-            formType='vertical'
-            ref={formRef}
-            rules={formRules}>
-            <FormItem
-              label='所属业务'
-              class={'api-secret-selector'}
-              property='bk_biz_ids'>
-              <Select
-                v-model={userFormModel.bk_biz_ids}
-                showSelectAll
-                multiple
-                multipleMode='tag'
-                collapseTags>
+          <Form v-model={userFormModel} formType='vertical' ref={formRef} rules={formRules}>
+            <FormItem label='所属业务' class={'api-secret-selector'} property='bk_biz_ids'>
+              <Select v-model={userFormModel.bk_biz_ids} showSelectAll multiple multipleMode='tag' collapseTags>
                 {businessMapStore.businessList.map((businessItem) => {
                   return (
-                    <bk-option
-                      key={businessItem.id}
-                      value={businessItem.id}
-                      label={businessItem.name}></bk-option>
+                    <bk-option key={businessItem.id} value={businessItem.id} label={businessItem.name}></bk-option>
                   );
                 })}
                 <bk-option></bk-option>
               </Select>
             </FormItem>
-            <FormItem
-              label='负责人'
-              class={'api-secret-selector'}
-              property='managers'>
+            <FormItem label='负责人' class={'api-secret-selector'} property='managers'>
               <MemberSelect v-model={userFormModel.managers} />
             </FormItem>
             <FormItem label='备注'>
-              <Input
-                type={'textarea'}
-                v-model={userFormModel.memo}
-                maxlength={256}
-                resize={false}
-              />
+              <Input type={'textarea'} v-model={userFormModel.memo} maxlength={256} resize={false} />
             </FormItem>
           </Form>
         </Dialog>

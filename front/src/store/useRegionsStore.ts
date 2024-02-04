@@ -7,7 +7,8 @@ import {
   CLOUD_AREA_REGION_AWS,
   CLOUD_AREA_REGION_GCP_EN,
   CLOUD_AREA_REGION_AWS_EN,
-  VendorEnum } from '@/common/constant';
+  VendorEnum,
+} from '@/common/constant';
 import { swapMapKeysAndValuesToObj } from '@/common/util';
 
 export const useRegionsStore = defineStore('useRegions', () => {
@@ -69,11 +70,11 @@ export const useRegionsStore = defineStore('useRegions', () => {
     if (CLOUD_AREA_REGION_TCLOUD_EN[id]) {
       vendor.value = VendorEnum.TCLOUD;
       return CLOUD_AREA_REGION_TCLOUD_EN[id];
-    };
+    }
     if (CLOUD_AREA_REGION_HUAWEI_EN[id]) {
       vendor.value = VendorEnum.HUAWEI;
       return CLOUD_AREA_REGION_HUAWEI_EN[id];
-    };
+    }
     if (CLOUD_AREA_REGION_AWS_EN[id]) {
       vendor.value = VendorEnum.AWS;
       return CLOUD_AREA_REGION_AWS_EN[id];

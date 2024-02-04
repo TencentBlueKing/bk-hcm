@@ -24,34 +24,36 @@ export default defineComponent({
   setup(props) {
     const isSelected = ref(false);
     const isDialogShow = ref(false);
-    const columns = [{
-      label: '类型',
-      field: 'instance_family',
-    },
-    {
-      label: '规格',
-      field: 'instance_type',
-    },
-    {
-      label: 'CPU',
-      field: 'cpu',
-    },
-    {
-      label: '内存',
-      field: 'memory',
-    },
-    {
-      label: '处理器型号',
-      field: 'cpu_type',
-    },
-    {
-      label: '网络收发包',
-      field: 'instance_pps',
-    },
-    {
-      label: '参考费用',
-      field: 'price',
-    }];
+    const columns = [
+      {
+        label: '类型',
+        field: 'instance_family',
+      },
+      {
+        label: '规格',
+        field: 'instance_type',
+      },
+      {
+        label: 'CPU',
+        field: 'cpu',
+      },
+      {
+        label: '内存',
+        field: 'memory',
+      },
+      {
+        label: '处理器型号',
+        field: 'cpu_type',
+      },
+      {
+        label: '网络收发包',
+        field: 'instance_pps',
+      },
+      {
+        label: '参考费用',
+        field: 'price',
+      },
+    ];
     const { CommonTable } = useTable({
       columns,
       searchData: [],
@@ -84,9 +86,7 @@ export default defineComponent({
         <div>
           {isSelected.value ? (
             <div class={'selected-block-container'}>
-              <div class={'selected-block'}>
-                Amazon Linux 2 AMI (HVM) - Kernel 5.10, SSD Volume Type
-              </div>
+              <div class={'selected-block'}>Amazon Linux 2 AMI (HVM) - Kernel 5.10, SSD Volume Type</div>
             </div>
           ) : (
             <Button onClick={() => (isDialogShow.value = true)}>
@@ -98,10 +98,9 @@ export default defineComponent({
         <Dialog
           isShow={isDialogShow.value}
           title={'选择机型'}
-          onClosed={() => isDialogShow.value = false}
-          onConfirm={() => isDialogShow.value = true}
-        >
-          <CommonTable/>
+          onClosed={() => (isDialogShow.value = false)}
+          onConfirm={() => (isDialogShow.value = true)}>
+          <CommonTable />
         </Dialog>
       </>
     );

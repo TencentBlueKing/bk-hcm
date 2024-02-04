@@ -85,21 +85,17 @@ export default defineComponent({
     return () => (
       <div class='rs-config-table'>
         <div class={`rs-config-operation-wrap${props.noOperation ? ' jc-right' : ''}`}>
-          {
-            props.noOperation ? null : (
-              <div class='left-wrap' onClick={() => emit('showAddRsDialog')}>
-                <i class='hcm-icon bkhcm-icon-plus-circle-shape'></i>
-                <span>添加 RS</span>
-              </div>
-            )
-          }
-          {
-            props.noSearch ? null : (
-              <div class='search-wrap'>
-                <SearchSelect></SearchSelect>
-              </div>
-            )
-          }
+          {props.noOperation ? null : (
+            <div class='left-wrap' onClick={() => emit('showAddRsDialog')}>
+              <i class='hcm-icon bkhcm-icon-plus-circle-shape'></i>
+              <span>添加 RS</span>
+            </div>
+          )}
+          {props.noSearch ? null : (
+            <div class='search-wrap'>
+              <SearchSelect></SearchSelect>
+            </div>
+          )}
         </div>
         <Loading loading={isTableLoading.value}>
           <Table data={rsConfigData} columns={rsTableColumns} settings={settings.value} showOverflowTooltip>

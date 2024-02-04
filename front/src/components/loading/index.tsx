@@ -15,7 +15,7 @@ export default defineComponent({
   },
   render() {
     return (
-      <div class="full-width full-height flex-row align-items-center justify-content-center">
+      <div class='full-width full-height flex-row align-items-center justify-content-center'>
         <Loading size={this.size} title={this.title} />
       </div>
     );

@@ -5,7 +5,6 @@ import { classes } from '@/utils/utils';
 import { computed, onBeforeMount, ref } from 'vue';
 import { RouteParams, useRoute } from 'vue-router';
 
-
 export function useRecommendStatus() {
   const accessSourceStore = useAccessSourceStore();
   const route = useRoute();
@@ -22,22 +21,29 @@ export function useRecommendStatus() {
     accessSourceStore.fetchRecommendStatus();
   }
 
-  const mappingStatus = computed(() => accessSourceStore.recommendStatus.map((status: Status) => {
-    const isMap = !!mappedStatus.value?.has(status.status_map);
-    const personalStatus = mappedStatus.value?.get(status.status_map);
-    const cls = classes({
-      active: isMap,
-    }, 'bk-metrics-status-block');
-    return {
-      ...status,
-      is_mapped: isMap,
-      ...(isMap ? {
-        status_name: personalStatus?.status_name,
-        status: personalStatus?.status,
-      } : {}),
-      cls,
-    };
-  }));
+  const mappingStatus = computed(() =>
+    accessSourceStore.recommendStatus.map((status: Status) => {
+      const isMap = !!mappedStatus.value?.has(status.status_map);
+      const personalStatus = mappedStatus.value?.get(status.status_map);
+      const cls = classes(
+        {
+          active: isMap,
+        },
+        'bk-metrics-status-block',
+      );
+      return {
+        ...status,
+        is_mapped: isMap,
+        ...(isMap
+          ? {
+              status_name: personalStatus?.status_name,
+              status: personalStatus?.status,
+            }
+          : {}),
+        cls,
+      };
+    }),
+  );
 
   async function fetchPersonalStatus({ projectId, platform, identification }: RouteParams) {
     try {
@@ -49,7 +55,7 @@ export function useRecommendStatus() {
           project_id: projectId,
         },
       });
-      const unMapped = list.filter(status => !status.is_mapped);
+      const unMapped = list.filter((status) => !status.is_mapped);
       const mapped = list.reduce((acc: Map<string, Status>, status: Status) => {
         if (status.is_mapped) {
           acc.set(status.status_map, status);
@@ -75,7 +81,7 @@ export function useRecommendStatus() {
     });
 
     if (!dragStatus.is_mapped) {
-      unMappedStatus.value = unMappedStatus.value.filter(status => status.status_name !== dragStatus.status_name);
+      unMappedStatus.value = unMappedStatus.value.filter((status) => status.status_name !== dragStatus.status_name);
     } else if (mappedStatus.value.has(dragStatus.status_map)) {
       mappedStatus.value.delete(dragStatus.status_map);
     }
@@ -99,4 +105,3 @@ export function useRecommendStatus() {
     removeMappedStatus,
   };
 }
-

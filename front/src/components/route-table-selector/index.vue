@@ -1,9 +1,6 @@
 <script lang="ts" setup>
 import { ref, watchEffect, defineExpose, watch } from 'vue';
-import {
-  useBusinessStore,
-  useAccountStore,
-} from '@/store';
+import { useBusinessStore, useAccountStore } from '@/store';
 
 const props = defineProps({
   modelValue: {
@@ -28,7 +25,8 @@ console.log(accountStore.bizs);
 const getSelectData = async () => {
   if (!hasMoreData.value || !props.cloudVpcId) return;
   loading.value = true;
-  const res = await businessStore.getRouteTableList({ // { field: 'bk_biz_id', op: 'eq', value: accountStore.bizs },
+  const res = await businessStore.getRouteTableList({
+    // { field: 'bk_biz_id', op: 'eq', value: accountStore.bizs },
     filter: { op: 'and', rules: [{ field: 'cloud_vpc_id', op: 'eq', value: props.cloudVpcId }] },
     page: {
       start: page.value * 100,
@@ -36,26 +34,35 @@ const getSelectData = async () => {
     },
   });
   page.value += 1;
-  tableList.value.push(...res?.data?.details || []);
-  hasMoreData.value = res?.data?.details?.length >= 100;   // 100条数据说明还有数据 可翻页
+  tableList.value.push(...(res?.data?.details || []));
+  hasMoreData.value = res?.data?.details?.length >= 100; // 100条数据说明还有数据 可翻页
   loading.value = false;
 };
 
-watchEffect(void (async () => {
-  getSelectData();
-})());
+watchEffect(
+  void (async () => {
+    getSelectData();
+  })(),
+);
 
-watch(() => selectedValue.value, (val) => {
-  emit('update:modelValue', val);
-});
+watch(
+  () => selectedValue.value,
+  (val) => {
+    emit('update:modelValue', val);
+  },
+);
 
-watch(() => props.cloudVpcId, () => {
-  page.value = 0;
-  hasMoreData.value = true;
-  selectedValue.value = '';
-  tableList.value = [];
-  getSelectData();
-}, { deep: true });
+watch(
+  () => props.cloudVpcId,
+  () => {
+    page.value = 0;
+    hasMoreData.value = true;
+    selectedValue.value = '';
+    tableList.value = [];
+    getSelectData();
+  },
+  { deep: true },
+);
 
 defineExpose({
   tableList,
@@ -63,17 +70,7 @@ defineExpose({
 </script>
 
 <template>
-  <bk-select
-    v-model="selectedValue"
-    filterable
-    @scroll-end="getSelectData"
-    :loading="loading"
-  >
-    <bk-option
-      v-for="(item, index) in tableList"
-      :key="index"
-      :value="item.cloud_id"
-      :label="item.name"
-    />
+  <bk-select v-model="selectedValue" filterable @scroll-end="getSelectData" :loading="loading">
+    <bk-option v-for="(item, index) in tableList" :key="index" :value="item.cloud_id" :label="item.name" />
   </bk-select>
 </template>

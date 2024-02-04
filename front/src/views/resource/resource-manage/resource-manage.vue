@@ -395,55 +395,60 @@ getResourceAccountList();
       <div class="card-layout">
         <p class="resource-title">
           <span class="main-account-name">
-            {{ resourceAccountStore?.resourceAccount?.name || "全部账号" }}
+            {{ resourceAccountStore?.resourceAccount?.name || '全部账号' }}
           </span>
           <template v-if="resourceAccountStore?.resourceAccount?.id">
-            <div v-if="resourceAccountStore?.resourceAccount?.vendor === VendorEnum.TCLOUD"
-                 class="extension">
-              <span>主账号ID：
+            <div v-if="resourceAccountStore?.resourceAccount?.vendor === VendorEnum.TCLOUD" class="extension">
+              <span>
+                主账号ID：
                 <span class="info-text">
                   {{ resourceAccountStore.resourceAccount.extension.cloud_main_account_id }}
                 </span>
               </span>
-              <span>子账号ID：
+              <span>
+                子账号ID：
                 <span class="info-text">{{ resourceAccountStore.resourceAccount.extension.cloud_sub_account_id }}</span>
               </span>
             </div>
-            <div v-else-if="resourceAccountStore?.resourceAccount?.vendor === VendorEnum.AWS"
-                 class="extension">
-              <span>云账号ID：
+            <div v-else-if="resourceAccountStore?.resourceAccount?.vendor === VendorEnum.AWS" class="extension">
+              <span>
+                云账号ID：
                 <span class="info-text">{{ resourceAccountStore.resourceAccount.extension.cloud_account_id }}</span>
               </span>
-              <span>云iam用户名：
+              <span>
+                云iam用户名：
                 <span class="info-text">{{ resourceAccountStore.resourceAccount.extension.cloud_iam_username }}</span>
               </span>
             </div>
-            <div v-else-if="resourceAccountStore?.resourceAccount?.vendor === VendorEnum.GCP"
-                 class="extension">
-              <span>云项目ID：
+            <div v-else-if="resourceAccountStore?.resourceAccount?.vendor === VendorEnum.GCP" class="extension">
+              <span>
+                云项目ID：
                 <span class="info-text">{{ resourceAccountStore.resourceAccount.extension.cloud_project_id }}</span>
               </span>
-              <span>云项目名称：
+              <span>
+                云项目名称：
                 <span class="info-text">{{ resourceAccountStore.resourceAccount.extension.cloud_project_name }}</span>
               </span>
             </div>
-            <div v-else-if="resourceAccountStore?.resourceAccount?.vendor === VendorEnum.AZURE"
-                 class="extension">
-              <span>云租户ID：
+            <div v-else-if="resourceAccountStore?.resourceAccount?.vendor === VendorEnum.AZURE" class="extension">
+              <span>
+                云租户ID：
                 <span class="info-text">{{ resourceAccountStore.resourceAccount.extension.cloud_tenant_id }}</span>
               </span>
-              <span>云订阅名称：
+              <span>
+                云订阅名称：
                 <span class="info-text">
                   {{ resourceAccountStore.resourceAccount.extension.cloud_subscription_name }}
                 </span>
               </span>
             </div>
-            <div v-else-if="resourceAccountStore?.resourceAccount?.vendor === VendorEnum.HUAWEI"
-                 class="extension">
-              <span>子账号ID：
+            <div v-else-if="resourceAccountStore?.resourceAccount?.vendor === VendorEnum.HUAWEI" class="extension">
+              <span>
+                子账号ID：
                 <span class="info-text">{{ resourceAccountStore.resourceAccount.extension.cloud_sub_account_id }}</span>
               </span>
-              <span>云子账号名称：
+              <span>
+                云子账号名称：
                 <span class="info-text">
                   {{ resourceAccountStore.resourceAccount.extension.cloud_sub_account_name }}
                 </span>
@@ -451,17 +456,8 @@ getResourceAccountList();
             </div>
           </template>
         </p>
-        <BkTab
-          class="resource-tab-wrap ml15"
-          type="unborder-card"
-          v-model:active="activeResourceTab"
-        >
-          <BkTabPanel
-            v-for="item of RESOURCE_TABS"
-            :label="item.label"
-            :key="item.key"
-            :name="item.key"
-          />
+        <BkTab class="resource-tab-wrap ml15" type="unborder-card" v-model:active="activeResourceTab">
+          <BkTabPanel v-for="item of RESOURCE_TABS" :label="item.label" :key="item.key" :name="item.key" />
         </BkTab>
       </div>
     </div>
@@ -477,11 +473,7 @@ getResourceAccountList();
           {{ resourceAccountStore?.resourceAccount?.sync_failed_reason }}
         </template>
       </bk-alert>
-      <bk-tab
-        v-model:active="activeTab"
-        type="card-grid"
-        class="resource-main g-scroller"
-      >
+      <bk-tab v-model:active="activeTab" type="card-grid" class="resource-main g-scroller">
         <template #setting>
           <div style="margin: 0 10px">
             <bk-select v-model="status" :clearable="false" class="w80">
@@ -499,9 +491,13 @@ getResourceAccountList();
           <bk-tab-panel
             :name="item.name"
             :label="item.type"
-            v-if="item.name !== 'certs' || (item.name === 'certs' &&
-              (resourceAccountStore.resourceAccount.vendor === VendorEnum.TCLOUD ||
-                !resourceAccountStore.resourceAccount.vendor))">
+            v-if="
+              item.name !== 'certs' ||
+              (item.name === 'certs' &&
+                (resourceAccountStore.resourceAccount.vendor === VendorEnum.TCLOUD ||
+                  !resourceAccountStore.resourceAccount.vendor))
+            "
+          >
             <component
               v-if="item.name === activeTab"
               :is="item.component"
@@ -517,24 +513,20 @@ getResourceAccountList();
               @edit="handleEdit"
               v-model:isFormDataChanged="isFormDataChanged"
             >
-              <span
-                v-if="
-                  ['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clbs'].includes(
-                    activeTab,
-                  )
-                "
-              >
+              <span v-if="['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clbs'].includes(activeTab)">
                 <bk-button
                   theme="primary"
                   class="new-button"
                   :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.iaas_resource_create }"
-                  @click="() => {
-                    if (!authVerifyData?.permissionAction?.iaas_resource_create) {
-                      handleAuth('iaas_resource_create');
-                    } else {
-                      handleAdd();
+                  @click="
+                    () => {
+                      if (!authVerifyData?.permissionAction?.iaas_resource_create) {
+                        handleAuth('iaas_resource_create');
+                      } else {
+                        handleAdd();
+                      }
                     }
-                  }"
+                  "
                 >
                   {{ ['host', 'clbs'].includes(activeTab) ? '购买' : '新建' }}
                 </bk-button>
@@ -669,7 +661,7 @@ getResourceAccountList();
     .bk-table-head .bk-checkbox {
       vertical-align: middle;
     }
-    .bk-table-head tr th:nth-of-type(2) .cell{
+    .bk-table-head tr th:nth-of-type(2) .cell {
       padding-left: 8px;
     }
     .bk-table-body .cell.selection {
@@ -712,9 +704,9 @@ getResourceAccountList();
 
   .extension {
     font-size: 14px;
-    color: #63656E;
+    color: #63656e;
 
-    &>span {
+    & > span {
       margin-left: 20px;
 
       .info-text {
@@ -732,7 +724,8 @@ getResourceAccountList();
 </style>
 
 <style lang="scss">
-.delete-resource-infobox, .recycle-resource-infobox {
+.delete-resource-infobox,
+.recycle-resource-infobox {
   .bk-info-sub-title {
     word-break: break-all;
   }

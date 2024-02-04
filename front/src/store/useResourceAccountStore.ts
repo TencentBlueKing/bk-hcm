@@ -30,20 +30,17 @@ export type IAccount = {
     cloud_subscription_name?: string;
     cloud_sub_account_id?: string;
     cloud_sub_account_name?: string;
-  }
+  };
 };
 
-export const useResourceAccountStore = defineStore(
-  'useResourceAccountStore',
-  () => {
-    const resourceAccount = ref<IAccount>(null);
-    const setResourceAccount = (val: IAccount) => {
-      resourceAccount.value = val;
-    };
+export const useResourceAccountStore = defineStore('useResourceAccountStore', () => {
+  const resourceAccount = ref<IAccount>(null);
+  const setResourceAccount = (val: IAccount) => {
+    resourceAccount.value = val;
+  };
 
-    return {
-      resourceAccount,
-      setResourceAccount,
-    };
-  },
-);
+  return {
+    resourceAccount,
+    setResourceAccount,
+  };
+});

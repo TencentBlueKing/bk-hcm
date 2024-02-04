@@ -14,7 +14,6 @@ import { CLOUD_VENDOR } from '@/constants/resource';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 import { useVerify } from '@/hooks';
 
-
 const props = defineProps({
   filter: {
     type: Object as PropType<FilterType>,
@@ -55,14 +54,17 @@ const emit = defineEmits(['auth']);
 
 const { selections, handleSelectionChange, resetSelections } = useSelection();
 
-const {
-  handleAuth,
-} = useVerify();
+const { handleAuth } = useVerify();
 
-const {
-  handleShowDelete,
-  DeleteDialog,
-} = useDelete(columns, selections, 'eips', '删除 EIP', true, 'delete', triggerApi);
+const { handleShowDelete, DeleteDialog } = useDelete(
+  columns,
+  selections,
+  'eips',
+  '删除 EIP',
+  true,
+  'delete',
+  triggerApi,
+);
 
 // 抛出请求数据的方法，新增成功使用
 const fetchComponentsData = () => {
@@ -92,29 +94,33 @@ const hasNoRelateResource = ({ vendor, status }: IEip): boolean => {
 };
 const canDelete = (data: IEip): boolean => {
   // 分配到业务下面后不可删除
-  const isInBusiness =    !props.authVerifyData?.permissionAction[
-    props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'
-  ]
-    || data.cvm_id
-    || (data.bk_biz_id !== -1 && !location.href.includes('business'));
+  const isInBusiness =
+    !props.authVerifyData?.permissionAction[
+      props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'
+    ] ||
+    data.cvm_id ||
+    (data.bk_biz_id !== -1 && !location.href.includes('business'));
   return hasNoRelateResource(data) && !isInBusiness;
 };
 
 const generateTooltipsOptions = (data: IEip) => {
   const action_name = props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete';
 
-  if (!props.authVerifyData?.permissionAction[action_name]) return {
-    content: '当前用户无权限操作该按钮',
-    disabled: props.authVerifyData?.permissionAction[action_name],
-  };
-  if (props.isResourcePage && data?.bk_biz_id !== -1) return {
-    content: '该弹性IP已分配到业务，仅可在业务下操作',
-    disabled: data.bk_biz_id === -1,
-  };
-  if (data?.cvm_id || !hasNoRelateResource(data)) return {
-    content: '该弹性IP已绑定资源，不可以删除',
-    disabled: !(data?.cvm_id || !hasNoRelateResource(data)),
-  };
+  if (!props.authVerifyData?.permissionAction[action_name])
+    return {
+      content: '当前用户无权限操作该按钮',
+      disabled: props.authVerifyData?.permissionAction[action_name],
+    };
+  if (props.isResourcePage && data?.bk_biz_id !== -1)
+    return {
+      content: '该弹性IP已分配到业务，仅可在业务下操作',
+      disabled: data.bk_biz_id === -1,
+    };
+  if (data?.cvm_id || !hasNoRelateResource(data))
+    return {
+      content: '该弹性IP已绑定资源，不可以删除',
+      disabled: !(data?.cvm_id || !hasNoRelateResource(data)),
+    };
 
   return {
     disabled: true,
@@ -126,47 +132,50 @@ const renderColumns = [
   {
     label: '操作',
     render({ data }: any) {
-      return h(h(
-        'span',
-        {
-          onClick() {
-            emit('auth', props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete');
-          },
-        },
-        [
-          withDirectives(h(
-            Button,
-            {
-              text: true,
-              theme: 'primary',
-              disabled: !canDelete(data),
-              onClick() {
-                InfoBox({
-                  title: '请确认是否删除',
-                  subTitle: `将删除【${data.cloud_id}${data.name ? ` - ${data.name}` : ''}】`,
-                  theme: 'danger',
-                  headerAlign: 'center',
-                  footerAlign: 'center',
-                  contentAlign: 'center',
-                  extCls: 'delete-resource-infobox',
-                  onConfirm() {
-                    resourceStore
-                      .deleteBatch('eips', {
-                        ids: [data.id],
-                      })
-                      .then(() => {
-                        triggerApi();
-                      });
-                  },
-                });
-              },
+      return h(
+        h(
+          'span',
+          {
+            onClick() {
+              emit('auth', props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete');
             },
-            ['删除'],
-          ), [
-            [bkTooltips, generateTooltipsOptions(data)],
-          ]),
-        ],
-      ));
+          },
+          [
+            withDirectives(
+              h(
+                Button,
+                {
+                  text: true,
+                  theme: 'primary',
+                  disabled: !canDelete(data),
+                  onClick() {
+                    InfoBox({
+                      title: '请确认是否删除',
+                      subTitle: `将删除【${data.cloud_id}${data.name ? ` - ${data.name}` : ''}】`,
+                      theme: 'danger',
+                      headerAlign: 'center',
+                      footerAlign: 'center',
+                      contentAlign: 'center',
+                      extCls: 'delete-resource-infobox',
+                      onConfirm() {
+                        resourceStore
+                          .deleteBatch('eips', {
+                            ids: [data.id],
+                          })
+                          .then(() => {
+                            triggerApi();
+                          });
+                      },
+                    });
+                  },
+                },
+                ['删除'],
+              ),
+              [[bkTooltips, generateTooltipsOptions(data)]],
+            ),
+          ],
+        ),
+      );
     },
   },
 ];
@@ -175,7 +184,7 @@ const renderColumns = [
  * 资源下，未绑定 且 未分配 可删除；
  * 业务下，未绑定 可删除；
  */
-const isRowSelectEnable = ({ row, isCheckAll }: { row: IEip, isCheckAll: boolean }) => {
+const isRowSelectEnable = ({ row, isCheckAll }: { row: IEip; isCheckAll: boolean }) => {
   if (isCheckAll) return true;
   return isCurRowSelectEnable(row);
 };
@@ -199,10 +208,12 @@ defineExpose({ fetchComponentsData });
       <BatchDistribution
         :selections="selections"
         :type="DResourceType.eips"
-        :get-data="() => {
-          triggerApi();
-          resetSelections();
-        }"
+        :get-data="
+          () => {
+            triggerApi();
+            resetSelections();
+          }
+        "
       />
       <bk-button
         class="mw88"
@@ -211,16 +222,22 @@ defineExpose({ fetchComponentsData });
         @click="
           () => {
             if (authVerifyData?.permissionAction?.biz_iaas_resource_delete) {
-              handleShowDelete(selections.filter(selection => canDelete(selection)).map((selection) => selection.id));
+              handleShowDelete(selections.filter((selection) => canDelete(selection)).map((selection) => selection.id));
             } else {
-              handleAuth('biz_iaas_resource_delete')
+              handleAuth('biz_iaas_resource_delete');
             }
-          }"
+          }
+        "
       >
         批量删除
       </bk-button>
-      <bk-search-select class="w500 ml10 mlauto" clearable :conditions="[]"
-                        :data="selectSearchData" v-model="searchValue" />
+      <bk-search-select
+        class="w500 ml10 mlauto"
+        clearable
+        :conditions="[]"
+        :data="selectSearchData"
+        v-model="searchValue"
+      />
     </section>
 
     <bk-table

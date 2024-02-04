@@ -1,12 +1,5 @@
-import {
-  defineComponent,
-  ref,
-  VNode,
-  PropType,
-} from 'vue';
-import {
-  useI18n,
-} from 'vue-i18n';
+import { defineComponent, ref, VNode, PropType } from 'vue';
+import { useI18n } from 'vue-i18n';
 import './step.dialog.scss';
 
 type StepType = {
@@ -56,9 +49,7 @@ export default defineComponent({
   emits: ['confirm', 'cancel', 'next'],
 
   setup(_, { emit }) {
-    const {
-      t,
-    } = useI18n();
+    const { t } = useI18n();
 
     const curStep = ref(1);
 
@@ -92,76 +83,73 @@ export default defineComponent({
   },
 
   render() {
-    return <>
-      <bk-dialog
-        class="step-dialog"
-        width={this.dialogWidth}
-        height={this.dialogHeight}
-        theme="primary"
-        headerAlign="center"
-        size={this.size}
-        title={this.title}
-        isShow={this.isShow}
-        onClosed={this.handleClose}
-      >
-        {{
-          default: () => {
-            return <>
-              {
-                this.steps.length > 1
-                  ? <bk-steps
-                      class="dialog-steps"
-                      steps={this.steps}
-                      cur-step={this.curStep}
-                    />
-                  : ''
-              }
-              {
-                this.steps[this.curStep - 1].component()
-              }
-            </>;
-          },
-          footer: () => {
-            return <>
-              {
-                this.steps[this.curStep - 1].footer?.()
-              }
-              {
-                this.curStep > 1
-                  ? <bk-button
-                      class="mr10 dialog-button"
-                      onClick={this.handlePreviousStep}
-                    >{this.t('上一步')}</bk-button>
-                  : ''
-              }
-              {
-                this.curStep < this.steps.length
-                  ? <bk-button
-                      class="mr10 dialog-button"
-                      theme="primary"
+    return (
+      <>
+        <bk-dialog
+          class='step-dialog'
+          width={this.dialogWidth}
+          height={this.dialogHeight}
+          theme='primary'
+          headerAlign='center'
+          size={this.size}
+          title={this.title}
+          isShow={this.isShow}
+          onClosed={this.handleClose}>
+          {{
+            default: () => {
+              return (
+                <>
+                  {this.steps.length > 1 ? (
+                    <bk-steps class='dialog-steps' steps={this.steps} cur-step={this.curStep} />
+                  ) : (
+                    ''
+                  )}
+                  {this.steps[this.curStep - 1].component()}
+                </>
+              );
+            },
+            footer: () => {
+              return (
+                <>
+                  {this.steps[this.curStep - 1].footer?.()}
+                  {this.curStep > 1 ? (
+                    <bk-button class='mr10 dialog-button' onClick={this.handlePreviousStep}>
+                      {this.t('上一步')}
+                    </bk-button>
+                  ) : (
+                    ''
+                  )}
+                  {this.curStep < this.steps.length ? (
+                    <bk-button
+                      class='mr10 dialog-button'
+                      theme='primary'
                       disabled={this.steps[this.curStep - 1].disableNext || (this.curStep > 1 ? !this.business : false)}
-                      onClick={this.handleNextStep}
-                    >{this.t('下一步')}</bk-button>
-                  : ''
-              }
-              {
-                this.curStep >= this.steps.length
-                  ? <bk-button
-                      class="mr10 dialog-button"
-                      theme="primary"
+                      onClick={this.handleNextStep}>
+                      {this.t('下一步')}
+                    </bk-button>
+                  ) : (
+                    ''
+                  )}
+                  {this.curStep >= this.steps.length ? (
+                    <bk-button
+                      class='mr10 dialog-button'
+                      theme='primary'
                       loading={this.steps[this.curStep - 1].isConfirmLoading || this.loading}
-                      onClick={this.handleConfirm}
-                    >{this.t('确认')}</bk-button>
-                  : ''
-              }
-              <bk-button
-                class="dialog-button"
-                onClick={this.handleClose}
-              >{this.t('取消')}</bk-button>
-            </>;
-          },
-        }}
-      </bk-dialog>
-    </>;
+                      onClick={this.handleConfirm}>
+                      {this.t('确认')}
+                    </bk-button>
+                  ) : (
+                    ''
+                  )}
+                  <bk-button class='dialog-button' onClick={this.handleClose}>
+                    {this.t('取消')}
+                  </bk-button>
+                </>
+              );
+            },
+          }}
+        </bk-dialog>
+      </>
+    );
   },
 });

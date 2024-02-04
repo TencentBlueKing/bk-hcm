@@ -142,7 +142,7 @@ export default defineComponent({
             } else {
               if (isOpen.value) {
                 if (Array.isArray(value)) {
-                  valueVNode = value.map(v => (
+                  valueVNode = value.map((v) => (
                     <>
                       {' '}
                       {v};<br />{' '}
@@ -171,7 +171,7 @@ export default defineComponent({
           width='640'>
           <Form formType='vertical'>
             <Container margin={0}>
-              {formItemOptions.value.map(item => (
+              {formItemOptions.value.map((item) => (
                 <Row>
                   {Array.isArray(item) ? (
                     item.map(({ label, property, required, span, content }) => (
