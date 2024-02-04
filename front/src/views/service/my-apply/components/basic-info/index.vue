@@ -25,7 +25,7 @@
     </div>
     <div class="item">
       <label class="label">{{ t('申请时间') }}：</label>
-      <div class="content">{{ data.created_at }}</div>
+      <div class="content">{{ timeFormatter(data.created_at) }}</div>
     </div>
   </div>
 </template>
@@ -34,6 +34,7 @@
 import { computed, defineComponent } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ServiceAccountType } from '@/typings';
+import { timeFormatter } from '@/common/util';
 
 export default defineComponent({
   name: 'MyApplyBasicInfo',
@@ -66,6 +67,7 @@ export default defineComponent({
     };
     return {
       t,
+      timeFormatter,
       curLanguageIsCn,
       getApplyTypeDisplay,
       ServiceAccountType,

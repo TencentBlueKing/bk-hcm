@@ -7,6 +7,7 @@ import { useTable } from '@/hooks/useTable/useTable';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import useColumns from '../hooks/use-columns';
+import { timeFormatter } from '@/common/util';
 
 export default defineComponent({
   setup() {
@@ -146,6 +147,7 @@ export default defineComponent({
       {
         label: '操作时间',
         field: 'created_at',
+        renderValue: (cell: string) => timeFormatter(cell),
       },
       {
         label: '请求ID',

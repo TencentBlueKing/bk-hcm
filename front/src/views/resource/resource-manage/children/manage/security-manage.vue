@@ -22,6 +22,7 @@ import {
   BatchDistribution,
   DResourceType,
 } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
+import { timeFormatter } from '@/common/util';
 
 const props = defineProps({
   filter: {
@@ -291,11 +292,15 @@ const groupColumns = [
     label: t('创建时间'),
     field: 'created_at',
     sort: true,
+    render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
   },
   {
     label: t('修改时间'),
     field: 'updated_at',
     sort: true,
+    render({ cell }: { cell: string }) {
+      return timeFormatter(cell);
+    },
   },
   {
     label: t('操作'),
@@ -556,11 +561,13 @@ const gcpColumns = [
     label: t('创建时间'),
     field: 'created_at',
     sort: true,
+    render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
   },
   {
     label: t('修改时间'),
     field: 'updated_at',
     sort: true,
+    render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
   },
   {
     label: t('操作'),
