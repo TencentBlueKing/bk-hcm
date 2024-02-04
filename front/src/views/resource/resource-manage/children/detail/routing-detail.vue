@@ -57,8 +57,4 @@ const {
 .w60 {
   width: 60px;
 }
-
-:deep(.detail-tab-main) .bk-tab-content {
-  height: calc(100vh - 300px);
-}
 </style>

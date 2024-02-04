@@ -273,7 +273,6 @@ export default defineComponent({
           <div class='fixed-account-list-container'>
             <AccountList />
           </div>
-          <div></div>
           <RouterView class={'router-view-content'} />
         </div>
       );
@@ -312,7 +311,7 @@ export default defineComponent({
     if (!hasPagePermission) return () => <NoPermission message={permissionMsg} />;
 
     return () => (
-      <main class='flex-column full-page'>
+      <main class='flex-column full-page home-page'>
         {/* <Header></Header> */}
         <div class='flex-1'>
           {
@@ -321,7 +320,8 @@ export default defineComponent({
               hoverWidth={NAV_WIDTH}
               defaultOpen={isMenuOpen.value}
               needMenu={isNeedSideMenu.value}
-              onToggle={handleToggle}>
+              onToggle={handleToggle}
+              class={route.path !== '/business/host' ? 'no-footer' : ''}>
               {{
                 'side-header': () => (
                   <div class='left-header flex-row justify-content-between align-items-center'>
@@ -557,23 +557,12 @@ export default defineComponent({
                         ['/service/my-apply'].includes(curPath.value)
                           ? 'view-warp no-padding'
                           : 'view-warp'
-                      } style={{
-                        // eslint-disable-next-line no-nested-ternary
-                        height: route.path !== '/business/host'
-                          ? route.path.includes('/business/loadbalancer')
-                            ? '100%' : 'calc(100% - 52px)'
-                          : 'calc(100% - 104px)',
-                      }}>
+                      }>
                       {isRouterAlive.value ? renderRouterView() : null}
                     </div>
                   </>
                 ),
-                footer: () => {
-                  if (route.path === '/business/host') {
-                    return (<div>Copyright © {curYear.value} Tencent BlueKing. All Rights Reserved. {VERSION}</div>);
-                  }
-                  return null;
-                },
+                footer: () => `Copyright © ${curYear.value} Tencent BlueKing. All Rights Reserved. ${VERSION}`,
               }}
             </Navigation>
           }

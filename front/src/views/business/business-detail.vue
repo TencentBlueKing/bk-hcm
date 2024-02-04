@@ -70,13 +70,11 @@ bus.$on('auth', (authActionName: string) => {   // bus监听
 </script>
 
 <template>
-  <div>
-    <component :is="renderComponent"></component>
-    <permission-dialog
-      v-model:is-show="showPermissionDialog"
-      :params="permissionParams"
-      @cancel="handlePermissionDialog"
-      @confirm="handlePermissionConfirm"
-    ></permission-dialog>
-  </div>
+  <component :is="renderComponent"></component>
+  <permission-dialog
+    v-model:is-show="showPermissionDialog"
+    :params="permissionParams"
+    @cancel="handlePermissionDialog"
+    @confirm="handlePermissionConfirm"
+  ></permission-dialog>
 </template>
