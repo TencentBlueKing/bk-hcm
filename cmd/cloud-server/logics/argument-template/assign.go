@@ -20,6 +20,7 @@
 package argstpl
 
 import (
+	"errors"
 	"fmt"
 
 	logicaudit "hcm/cmd/cloud-server/logics/audit"
@@ -38,7 +39,7 @@ import (
 // Assign 分配参数模版到业务下
 func Assign(kt *kit.Kit, cli *dataservice.Client, ids []string, bizID int64) error {
 	if len(ids) == 0 {
-		return fmt.Errorf("ids is required")
+		return errors.New("ids is required")
 	}
 
 	if err := ValidateBeforeAssign(kt, cli, ids); err != nil {

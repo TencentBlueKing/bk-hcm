@@ -110,7 +110,7 @@ func (svc *argsTplSvc) createTCloudArgumentTemplate(kt *kit.Kit, body json.RawMe
 	if err != nil {
 		logs.Errorf("create tcloud argument template failed, req: %+v, result: %+v, err: %v, rid: %s",
 			req, result, err, kt.Rid)
-		return result, err
+		return nil, err
 	}
 
 	return result, nil

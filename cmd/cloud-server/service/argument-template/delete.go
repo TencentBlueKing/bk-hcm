@@ -21,8 +21,6 @@
 package argstpl
 
 import (
-	"fmt"
-
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	protoargstpl "hcm/pkg/api/hc-service/argument-template"
@@ -82,7 +80,7 @@ func (svc *argsTplSvc) deleteArgsTplSvc(cts *rest.Contexts, validHandler handler
 		basicInfo, exists := basicInfoMap[id]
 		if !exists {
 			logs.Errorf("argument template record is not found, id: %s, rid: %s", id, cts.Kit.Rid)
-			return nil, errf.New(errf.InvalidParameter, fmt.Sprintf("id %s record is not found", id))
+			return nil, errf.Newf(errf.InvalidParameter, "id %s record is not found", id)
 		}
 
 		err = svc.client.HCService().TCloud.ArgsTpl.DeleteArgsTpl(cts.Kit, &protoargstpl.TCloudDeleteReq{
