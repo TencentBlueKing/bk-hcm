@@ -48,6 +48,7 @@ type TCloudSGRule interface {
 	List(kt *kit.Kit, opt *types.SGRuleListOption) (*types.ListTCloudSGRuleDetails, error)
 	Delete(kt *kit.Kit, expr *filter.Expression) error
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
+	ListExt(kt *kit.Kit, opt *types.ListOption) (*types.ListTCloudSGRuleDetails, error)
 }
 
 var _ TCloudSGRule = new(TCloudSGRuleDao)
@@ -102,7 +103,7 @@ func (dao *TCloudSGRuleDao) batchCreateAudit(kt *kit.Kit, tx *sqlx.Tx,
 	}
 
 	sgIDs := make([]string, 0, len(sgIDMap))
-	for id, _ := range sgIDMap {
+	for id := range sgIDMap {
 		sgIDs = append(sgIDs, id)
 	}
 
@@ -261,6 +262,52 @@ func (dao *TCloudSGRuleDao) List(kt *kit.Kit, opt *types.SGRuleListOption) (*typ
 		},
 	}
 	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(whereOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	if opt.Page.Count {
+		// this is a count request, then do count operation only.
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.TCloudSecurityGroupRuleTable, whereExpr)
+
+		count, err := dao.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		if err != nil {
+			logs.ErrorJson("count tcloud security group rule failed, err: %v, filter: %s, rid: %s", err,
+				opt.Filter, kt.Rid)
+			return nil, err
+		}
+
+		return &types.ListTCloudSGRuleDetails{Count: count}, nil
+	}
+
+	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
+	if err != nil {
+		return nil, err
+	}
+
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, cloud.TCloudSGRuleColumns.FieldsNamedExpr(opt.Fields),
+		table.TCloudSecurityGroupRuleTable, whereExpr, pageExpr)
+
+	details := make([]cloud.TCloudSecurityGroupRuleTable, 0)
+	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+		return nil, err
+	}
+
+	return &types.ListTCloudSGRuleDetails{Details: details}, nil
+}
+
+// ListExt list ext rules.
+func (dao *TCloudSGRuleDao) ListExt(kt *kit.Kit, opt *types.ListOption) (*types.ListTCloudSGRuleDetails, error) {
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "list options is nil")
+	}
+
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(cloud.TCloudSGRuleColumns.ColumnTypes())),
+		core.NewDefaultPageOption()); err != nil {
+		return nil, err
+	}
+
+	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return nil, err
 	}

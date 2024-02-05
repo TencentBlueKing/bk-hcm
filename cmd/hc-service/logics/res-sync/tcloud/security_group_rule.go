@@ -23,6 +23,7 @@ import (
 	securitygrouprule "hcm/pkg/adaptor/types/security-group-rule"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
+	coreargstpl "hcm/pkg/api/core/cloud/argument-template"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -97,8 +98,16 @@ func (cli *client) securityGroupRule(kt *kit.Kit, opt *syncSGRuleOption) (*SyncR
 		return nil, err
 	}
 
-	version, egressRuleMaps, ingressRuleMaps, err := cli.listSGRuleFromCloud(kt, sg.Region, sg.CloudID)
+	version, egressRuleMaps, ingressRuleMaps, argsTplCloudIDs, err := cli.listSGRuleFromCloud(kt, sg.Region, sg.CloudID)
 	if err != nil {
+		return nil, err
+	}
+
+	// 获取模版参数列表
+	argsTplMap, err := cli.listArgumentTemplateMapFromDB(kt, argsTplCloudIDs)
+	if err != nil {
+		logs.Errorf("[%s] request dataservice get TCloud argument template failed, cloudIDs: %v, err: %v, rid: %s",
+			enumor.TCloud, argsTplCloudIDs, err, kt.Rid)
 		return nil, err
 	}
 
@@ -128,18 +137,18 @@ func (cli *client) securityGroupRule(kt *kit.Kit, opt *syncSGRuleOption) (*SyncR
 		}
 		delete(ruleMap, one.CloudPolicyIndex)
 		if isSGRuleChange(version, policy, one) {
-			updateRules[one.ID] = convTCloudRule(policy, &sg.BaseSecurityGroup, version, one.Type)
+			updateRules[one.ID] = convTCloudRule(policy, &sg.BaseSecurityGroup, version, one.Type, argsTplMap)
 		}
 	}
 
 	createRules := make([]corecloud.TCloudSecurityGroupRule, 0)
 	for _, policy := range egressRuleMaps {
-		rule := convTCloudRule(policy, &sg.BaseSecurityGroup, version, enumor.Egress)
+		rule := convTCloudRule(policy, &sg.BaseSecurityGroup, version, enumor.Egress, argsTplMap)
 		createRules = append(createRules, *rule)
 	}
 
 	for _, policy := range ingressRuleMaps {
-		rule := convTCloudRule(policy, &sg.BaseSecurityGroup, version, enumor.Ingress)
+		rule := convTCloudRule(policy, &sg.BaseSecurityGroup, version, enumor.Ingress, argsTplMap)
 		createRules = append(createRules, *rule)
 	}
 
@@ -198,7 +207,7 @@ func (cli *client) listSGRuleFromDB(kt *kit.Kit, sgID string) (
 
 // listSGRuleFromCloud list tcloud security group rule from cloud
 func (cli *client) listSGRuleFromCloud(kt *kit.Kit, region, cloudSGID string) (string,
-	map[int64]*vpc.SecurityGroupPolicy, map[int64]*vpc.SecurityGroupPolicy, error) {
+	map[int64]*vpc.SecurityGroupPolicy, map[int64]*vpc.SecurityGroupPolicy, []string, error) {
 	listOpt := &securitygrouprule.TCloudListOption{
 		Region:               region,
 		CloudSecurityGroupID: cloudSGID,
@@ -207,20 +216,40 @@ func (cli *client) listSGRuleFromCloud(kt *kit.Kit, region, cloudSGID string) (s
 	if err != nil {
 		logs.Errorf("[%s] request adaptor to list tcloud security group rule failed, err: %v, rid: %s", enumor.TCloud,
 			err, kt.Rid)
-		return "", nil, nil, err
+		return "", nil, nil, nil, err
 	}
 
+	// 该安全规则绑定的参数模版的云端ID数组
+	argsTplCloudIDs := make([]string, 0)
 	egressRuleMaps := make(map[int64]*vpc.SecurityGroupPolicy, len(rules.Egress))
 	ingressRuleMaps := make(map[int64]*vpc.SecurityGroupPolicy, len(rules.Ingress))
 	for _, egress := range rules.Egress {
 		egressRuleMaps[*egress.PolicyIndex] = egress
+		// 该安全组规则绑定的参数模版
+		if egress.AddressTemplate != nil {
+			argsTplCloudIDs = append(argsTplCloudIDs, converter.PtrToVal(egress.AddressTemplate.AddressId))
+			argsTplCloudIDs = append(argsTplCloudIDs, converter.PtrToVal(egress.AddressTemplate.AddressGroupId))
+		}
+		if egress.ServiceTemplate != nil {
+			argsTplCloudIDs = append(argsTplCloudIDs, converter.PtrToVal(egress.ServiceTemplate.ServiceId))
+			argsTplCloudIDs = append(argsTplCloudIDs, converter.PtrToVal(egress.ServiceTemplate.ServiceGroupId))
+		}
 	}
 
 	for _, ingress := range rules.Ingress {
 		ingressRuleMaps[*ingress.PolicyIndex] = ingress
+		// 该安全组规则绑定的参数模版
+		if ingress.AddressTemplate != nil {
+			argsTplCloudIDs = append(argsTplCloudIDs, converter.PtrToVal(ingress.AddressTemplate.AddressId))
+			argsTplCloudIDs = append(argsTplCloudIDs, converter.PtrToVal(ingress.AddressTemplate.AddressGroupId))
+		}
+		if ingress.ServiceTemplate != nil {
+			argsTplCloudIDs = append(argsTplCloudIDs, converter.PtrToVal(ingress.ServiceTemplate.ServiceId))
+			argsTplCloudIDs = append(argsTplCloudIDs, converter.PtrToVal(ingress.ServiceTemplate.ServiceGroupId))
+		}
 	}
 
-	return converter.PtrToVal(rules.Version), egressRuleMaps, ingressRuleMaps, nil
+	return converter.PtrToVal(rules.Version), egressRuleMaps, ingressRuleMaps, argsTplCloudIDs, nil
 }
 
 // updateSGRule update security group rule
@@ -238,12 +267,16 @@ func (cli *client) updateSGRule(kt *kit.Kit, sgID string, updateRules map[string
 			// 如果云上该字段被更新为空，会置于null，但对于海垒来说，空值是 ""，null是不更新。
 			Protocol:                   converter.ValToPtr(converter.PtrToVal(rule.Protocol)),
 			Port:                       rule.Port,
+			ServiceID:                  rule.ServiceID,
 			CloudServiceID:             rule.CloudServiceID,
+			ServiceGroupID:             rule.ServiceGroupID,
 			CloudServiceGroupID:        rule.CloudServiceGroupID,
 			IPv4Cidr:                   rule.IPv4Cidr,
 			IPv6Cidr:                   rule.IPv6Cidr,
 			CloudTargetSecurityGroupID: rule.CloudTargetSecurityGroupID,
+			AddressID:                  rule.AddressID,
 			CloudAddressID:             rule.CloudAddressID,
+			AddressGroupID:             rule.AddressGroupID,
 			CloudAddressGroupID:        rule.CloudAddressGroupID,
 			Action:                     rule.Action,
 			Memo:                       rule.Memo,
@@ -304,12 +337,16 @@ func (cli *client) createSGRule(kt *kit.Kit, sgID string, allRules []corecloud.
 				Version:                    rule.Version,
 				Protocol:                   converter.ValToPtr(converter.PtrToVal(rule.Protocol)),
 				Port:                       rule.Port,
+				ServiceID:                  rule.ServiceID,
 				CloudServiceID:             rule.CloudServiceID,
+				ServiceGroupID:             rule.ServiceGroupID,
 				CloudServiceGroupID:        rule.CloudServiceGroupID,
 				IPv4Cidr:                   rule.IPv4Cidr,
 				IPv6Cidr:                   rule.IPv6Cidr,
 				CloudTargetSecurityGroupID: rule.CloudTargetSecurityGroupID,
+				AddressID:                  rule.AddressID,
 				CloudAddressID:             rule.CloudAddressID,
+				AddressGroupID:             rule.AddressGroupID,
 				CloudAddressGroupID:        rule.CloudAddressGroupID,
 				Action:                     rule.Action,
 				Memo:                       rule.Memo,
@@ -335,7 +372,8 @@ func (cli *client) createSGRule(kt *kit.Kit, sgID string, allRules []corecloud.
 }
 
 func convTCloudRule(policy *vpc.SecurityGroupPolicy, sg *corecloud.BaseSecurityGroup, version string,
-	ruleType enumor.SecurityGroupRuleType) *corecloud.TCloudSecurityGroupRule {
+	ruleType enumor.SecurityGroupRuleType,
+	argsTplMap map[string]coreargstpl.BaseArgsTpl) *corecloud.TCloudSecurityGroupRule {
 
 	spec := &corecloud.TCloudSecurityGroupRule{
 		CloudPolicyIndex:           *policy.PolicyIndex,
@@ -357,11 +395,37 @@ func convTCloudRule(policy *vpc.SecurityGroupPolicy, sg *corecloud.BaseSecurityG
 	if policy.ServiceTemplate != nil {
 		spec.CloudServiceID = policy.ServiceTemplate.ServiceId
 		spec.CloudServiceGroupID = policy.ServiceTemplate.ServiceGroupId
+
+		// 该安全组规则绑定的[协议端口]参数模版的本地ID
+		if argsTplInfo, ok := argsTplMap[converter.PtrToVal(spec.CloudServiceID)]; ok {
+			spec.ServiceID = converter.ValToPtr(argsTplInfo.ID)
+		} else {
+			spec.ServiceID = converter.ValToPtr("")
+		}
+
+		if argsTplInfo, ok := argsTplMap[converter.PtrToVal(spec.CloudServiceGroupID)]; ok {
+			spec.ServiceGroupID = converter.ValToPtr(argsTplInfo.ID)
+		} else {
+			spec.ServiceGroupID = converter.ValToPtr("")
+		}
 	}
 
 	if policy.AddressTemplate != nil {
 		spec.CloudAddressID = policy.AddressTemplate.AddressId
 		spec.CloudAddressGroupID = policy.AddressTemplate.AddressGroupId
+
+		// 该安全组规则绑定的[IP]参数模版的本地ID
+		if argsTplInfo, ok := argsTplMap[converter.PtrToVal(spec.CloudAddressID)]; ok {
+			spec.AddressID = converter.ValToPtr(argsTplInfo.ID)
+		} else {
+			spec.AddressID = converter.ValToPtr("")
+		}
+
+		if argsTplInfo, ok := argsTplMap[converter.PtrToVal(spec.CloudAddressGroupID)]; ok {
+			spec.AddressGroupID = converter.ValToPtr(argsTplInfo.ID)
+		} else {
+			spec.AddressGroupID = converter.ValToPtr("")
+		}
 	}
 
 	return spec
@@ -386,17 +450,27 @@ func isSGRuleChange(version string, cloud *vpc.SecurityGroupPolicy,
 		return true
 	}
 
-	if cloud.ServiceTemplate != nil && (db.CloudServiceID != nil || db.CloudServiceGroupID != nil) {
-		if !assert.IsPtrStringEqual(cloud.ServiceTemplate.ServiceId, db.CloudServiceID) {
+	if cloud.ServiceTemplate != nil {
+		// 参数模版-协议端口、协议端口组为空，则需要更新
+		if (converter.PtrToVal(cloud.ServiceTemplate.ServiceId) != "" && db.ServiceID == nil) ||
+			(converter.PtrToVal(cloud.ServiceTemplate.ServiceGroupId) != "" && db.ServiceGroupID == nil) {
 			return true
 		}
 
-		if !assert.IsPtrStringEqual(cloud.ServiceTemplate.ServiceGroupId, db.CloudServiceGroupID) {
-			return true
+		if db.CloudServiceID != nil || db.CloudServiceGroupID != nil {
+			if !assert.IsPtrStringEqual(cloud.ServiceTemplate.ServiceId, db.CloudServiceID) {
+				return true
+			}
+
+			if !assert.IsPtrStringEqual(cloud.ServiceTemplate.ServiceGroupId, db.CloudServiceGroupID) {
+				return true
+			}
 		}
 	}
 
-	if cloud.ServiceTemplate == nil && (db.CloudServiceID != nil || db.CloudServiceGroupID != nil) {
+	if cloud.ServiceTemplate == nil && (converter.PtrToVal(db.ServiceID) != "" ||
+		converter.PtrToVal(db.CloudServiceID) != "" || converter.PtrToVal(db.ServiceGroupID) != "" ||
+		converter.PtrToVal(db.CloudServiceGroupID) != "") {
 		return true
 	}
 
@@ -412,17 +486,27 @@ func isSGRuleChange(version string, cloud *vpc.SecurityGroupPolicy,
 		return true
 	}
 
-	if cloud.AddressTemplate != nil && (db.CloudAddressID != nil || db.CloudAddressGroupID != nil) {
-		if !assert.IsPtrStringEqual(cloud.AddressTemplate.AddressId, db.CloudAddressID) {
+	if cloud.AddressTemplate != nil {
+		// 参数模版-IP地址、IP地址组为空，则需要更新
+		if (converter.PtrToVal(cloud.AddressTemplate.AddressId) != "" && db.AddressID == nil) ||
+			(converter.PtrToVal(cloud.AddressTemplate.AddressGroupId) != "" && db.AddressGroupID == nil) {
 			return true
 		}
 
-		if !assert.IsPtrStringEqual(cloud.AddressTemplate.AddressGroupId, db.CloudAddressGroupID) {
-			return true
+		if db.CloudAddressID != nil || db.CloudAddressGroupID != nil {
+			if !assert.IsPtrStringEqual(cloud.AddressTemplate.AddressId, db.CloudAddressID) {
+				return true
+			}
+
+			if !assert.IsPtrStringEqual(cloud.AddressTemplate.AddressGroupId, db.CloudAddressGroupID) {
+				return true
+			}
 		}
 	}
 
-	if cloud.AddressTemplate == nil && (db.CloudAddressID != nil || db.CloudAddressGroupID != nil) {
+	if cloud.AddressTemplate == nil && (converter.PtrToVal(db.AddressID) != "" ||
+		converter.PtrToVal(db.CloudAddressID) != "" || converter.PtrToVal(db.AddressGroupID) != "" ||
+		converter.PtrToVal(db.CloudAddressGroupID) != "") {
 		return true
 	}
 
@@ -435,4 +519,35 @@ func isSGRuleChange(version string, cloud *vpc.SecurityGroupPolicy,
 	}
 
 	return false
+}
+
+// listArgumentTemplateMapFromDB list tcloud argument template from database
+func (cli *client) listArgumentTemplateMapFromDB(kt *kit.Kit, cloudIDs []string) (
+	map[string]coreargstpl.BaseArgsTpl, error) {
+
+	listReq := &core.ListReq{
+		Filter: tools.ContainersExpression("cloud_id", cloudIDs),
+		Page:   core.NewDefaultBasePage(),
+	}
+	start := uint32(0)
+	argsTplMap := make(map[string]coreargstpl.BaseArgsTpl, 0)
+	for {
+		listReq.Page.Start = start
+		listResp, err := cli.dbCli.Global.ArgsTpl.ListArgsTpl(kt, listReq)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, item := range listResp.Details {
+			argsTplMap[item.CloudID] = item
+		}
+
+		if len(listResp.Details) < int(core.DefaultMaxPageLimit) {
+			break
+		}
+
+		start += uint32(core.DefaultMaxPageLimit)
+	}
+
+	return argsTplMap, nil
 }

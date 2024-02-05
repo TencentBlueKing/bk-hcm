@@ -59,12 +59,16 @@ type TCloudSGRuleBatchCreate struct {
 	Version                    string                       `json:"version"`
 	Protocol                   *string                      `json:"protocol"`
 	Port                       *string                      `json:"port"`
+	ServiceID                  *string                      `json:"service_id"`
 	CloudServiceID             *string                      `json:"cloud_service_id"`
+	ServiceGroupID             *string                      `json:"service_group_id"`
 	CloudServiceGroupID        *string                      `json:"cloud_service_group_id"`
 	IPv4Cidr                   *string                      `json:"ipv4_cidr"`
 	IPv6Cidr                   *string                      `json:"ipv6_cidr"`
 	CloudTargetSecurityGroupID *string                      `json:"cloud_target_security_group_id"`
+	AddressID                  *string                      `json:"address_id"`
 	CloudAddressID             *string                      `json:"cloud_address_id"`
+	AddressGroupID             *string                      `json:"address_group_id"`
 	CloudAddressGroupID        *string                      `json:"cloud_address_group_id"`
 	Action                     string                       `json:"action"`
 	Memo                       *string                      `json:"memo"`
@@ -89,12 +93,16 @@ type TCloudSGRuleBatchUpdate struct {
 	Version                    string                       `json:"version"`
 	Protocol                   *string                      `json:"protocol"`
 	Port                       *string                      `json:"port"`
+	ServiceID                  *string                      `json:"service_id"`
 	CloudServiceID             *string                      `json:"cloud_service_id"`
+	ServiceGroupID             *string                      `json:"service_group_id"`
 	CloudServiceGroupID        *string                      `json:"cloud_service_group_id"`
 	IPv4Cidr                   *string                      `json:"ipv4_cidr"`
 	IPv6Cidr                   *string                      `json:"ipv6_cidr"`
 	CloudTargetSecurityGroupID *string                      `json:"cloud_target_security_group_id"`
+	AddressID                  *string                      `json:"address_id"`
 	CloudAddressID             *string                      `json:"cloud_address_id"`
+	AddressGroupID             *string                      `json:"address_group_id"`
 	CloudAddressGroupID        *string                      `json:"cloud_address_group_id"`
 	Action                     string                       `json:"action"`
 	Memo                       *string                      `json:"memo"`
@@ -142,6 +150,19 @@ type TCloudSGRuleListResult struct {
 type TCloudSGRuleListResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          *TCloudSGRuleListResult `json:"data"`
+}
+
+// TCloudSGRuleListExtResult define tcloud security group rule list ext result.
+type TCloudSGRuleListExtResult struct {
+	Count             uint64                              `json:"count,omitempty"`
+	SecurityGroup     []corecloud.BaseSecurityGroup       `json:"security_group,omitempty"`
+	SecurityGroupRule []corecloud.TCloudSecurityGroupRule `json:"security_group_rule,omitempty"`
+}
+
+// TCloudSGRuleListExtResp define tcloud security group rule list ext resp.
+type TCloudSGRuleListExtResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *TCloudSGRuleListExtResult `json:"data"`
 }
 
 // -------------------------- Delete --------------------------

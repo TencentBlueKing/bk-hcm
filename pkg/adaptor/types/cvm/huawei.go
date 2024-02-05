@@ -308,7 +308,7 @@ const (
 type HuaWeiNetworkInterface struct {
 	SubnetID   string  `json:"subnet_id" validate:"required"`
 	IPAddress  *string `json:"ip_address" validate:"omitempty"`
-	IPv6Enable *bool   `json:"i_pv_6_enable" validate:"omitempty"`
+	IPv6Enable *bool   `json:"ipv6_enable" validate:"omitempty"`
 }
 
 // HuaWeiCvm for model ServerDetail

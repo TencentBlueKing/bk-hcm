@@ -40,7 +40,7 @@ func (t *TCloudImpl) GetBillList(kt *kit.Kit, opt *typesBill.TCloudBillListOptio
 		return nil, err
 	}
 
-	billClient, err := t.clientSet.billClient()
+	billClient, err := t.clientSet.BillClient()
 	if err != nil {
 		return nil, fmt.Errorf("new bill client failed, err: %v, rid: %s", err, kt.Rid)
 	}

@@ -105,6 +105,11 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 		return enumor.EipCloudResType, hitErr
 	}
 
+	// 参数模版同步需要放到安全组前面
+	if hitErr = SyncArgsTpl(kt, cliSet, opt.AccountID, sd); hitErr != nil {
+		return enumor.ArgumentTemplateResType, hitErr
+	}
+
 	if hitErr = SyncSG(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
 		return enumor.SecurityGroupCloudResType, hitErr
 	}

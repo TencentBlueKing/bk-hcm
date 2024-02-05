@@ -55,8 +55,12 @@ func (req *TCloudSGRuleCreateReq) Validate() error {
 type TCloudSGRuleCreate struct {
 	Protocol                   *string `json:"protocol"`
 	Port                       *string `json:"port"`
+	CloudServiceID             *string `json:"cloud_service_id"`
+	CloudServiceGroupID        *string `json:"cloud_service_group_id"`
 	IPv4Cidr                   *string `json:"ipv4_cidr"`
 	IPv6Cidr                   *string `json:"ipv6_cidr"`
+	CloudAddressID             *string `json:"cloud_address_id"`
+	CloudAddressGroupID        *string `json:"cloud_address_group_id"`
 	CloudTargetSecurityGroupID *string `json:"cloud_target_security_group_id"`
 	Action                     string  `json:"action"`
 	Memo                       *string `json:"memo"`
@@ -68,8 +72,12 @@ type TCloudSGRuleCreate struct {
 type TCloudSGRuleUpdateReq struct {
 	Protocol                   *string `json:"protocol"`
 	Port                       *string `json:"port"`
+	CloudServiceID             *string `json:"cloud_service_id"`
+	CloudServiceGroupID        *string `json:"cloud_service_group_id"`
 	IPv4Cidr                   *string `json:"ipv4_cidr"`
 	IPv6Cidr                   *string `json:"ipv6_cidr"`
+	CloudAddressID             *string `json:"cloud_address_id"`
+	CloudAddressGroupID        *string `json:"cloud_address_group_id"`
 	CloudTargetSecurityGroupID *string `json:"cloud_target_security_group_id"`
 	Action                     string  `json:"action"`
 	Memo                       *string `json:"memo"`

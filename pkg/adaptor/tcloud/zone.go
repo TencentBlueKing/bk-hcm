@@ -42,7 +42,7 @@ func (t *TCloudImpl) ListZone(kt *kit.Kit, opt *typeszone.TCloudZoneListOption) 
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.cvmClient(opt.Region)
+	client, err := t.clientSet.CvmClient(opt.Region)
 	if err != nil {
 		return nil, fmt.Errorf("new tcloud cvm client failed, err: %v", err)
 	}
