@@ -117,11 +117,12 @@ export default defineComponent({
               class='exception-wrap-item exception-part'
               type='search-empty'
               scene='part'
-              description='搜索为空'
+              description='无搜索结果'
             />
           ) : (
             <VendorAccounts
               accounts={accountsMatrix}
+              searchVal={searchVal.value}
               handleExpand={handleExpand}
               handleSelect={setAccountId}
               checkIsExpand={checkIsExpand}

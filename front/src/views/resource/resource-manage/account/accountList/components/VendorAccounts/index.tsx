@@ -23,6 +23,7 @@ export default defineComponent({
         }>
       >,
     },
+    searchVal: String,
     handleExpand: {
       required: true,
       type: Function as PropType<(vendor: VendorEnum) => void>,
@@ -46,6 +47,18 @@ export default defineComponent({
     const route = useRoute();
 
     const loadingRef = ref([]);
+
+    // 高亮命中关键词
+    function getHighLightNameText(name: string, rootCls: string) {
+      return (
+        <div
+          class={rootCls}
+          v-html={name?.replace(
+            new RegExp(props.searchVal, 'g'),
+            `<span class='search-result-highlight'>${props.searchVal}</span>`,
+          )}></div>
+      );
+    }
 
     watch(
       () => route.query.accountId,
@@ -84,7 +97,7 @@ export default defineComponent({
                       isExpand ? ' bkhcm-icon-down-shape' : ' bkhcm-icon-right-shape'
                     }`}></i>
                   <img class={'vendor-icon'} src={icon} alt={name} />
-                  <div class='vendor-title'>{name}</div>
+                  {props.searchVal ? getHighLightNameText(name, 'vendor-title') : name}
                   <div class='vendor-account-count'>{count}</div>
                 </div>
                 <div class={`account-list-wrap${isExpand ? ' expand' : ''}`}>
@@ -98,16 +111,7 @@ export default defineComponent({
                         alt=''
                         class='sync-status-icon'
                       />
-                      <span class='account-text'>
-                        {name.length > 22 ? (
-                          <span v-bk-tooltips={{ content: name, placement: 'right' }}>{`${name.substring(
-                            0,
-                            22,
-                          )}..`}</span>
-                        ) : (
-                          name
-                        )}
-                      </span>
+                      {props.searchVal ? getHighLightNameText(name, 'account-text') : name}
                     </div>
                   ))}
                   {hasNext && (

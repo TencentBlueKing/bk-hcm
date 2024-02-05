@@ -3,7 +3,8 @@
   overflow-y: auto;
 
   .vendor-wrap {
-    .vendor-item-wrap, .account-item {
+    .vendor-item-wrap,
+    .account-item {
       line-height: 36px;
       cursor: pointer;
     }
@@ -34,7 +35,7 @@
         background-color: #fff;
       }
     }
-    
+
     .account-list-wrap {
       display: none;
 
@@ -56,12 +57,12 @@
         }
 
         &:hover {
-          background-color: #F5F7FA;
+          background-color: #f5f7fa;
         }
 
         &.active {
           position: relative;
-          background-color: #E1ECFF;
+          background-color: #e1ecff;
 
           &::before {
             position: absolute;
@@ -78,5 +79,9 @@
         display: block;
       }
     }
+  }
+
+  .search-result-highlight {
+    color: #3a84ff;
   }
 }
