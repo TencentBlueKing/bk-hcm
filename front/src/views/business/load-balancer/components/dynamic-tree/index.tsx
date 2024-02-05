@@ -109,7 +109,7 @@ export default defineComponent({
       };
       const [res1, res2] = await Promise.all([
         axios.get(url, { params }),
-        axios.get(url/* , { params: { parentId: !_item ? null : _item.id } } */),
+        axios.get(url /* , { params: { parentId: !_item ? null : _item.id } } */),
       ]);
 
       // 组装新增的节点
@@ -208,13 +208,13 @@ export default defineComponent({
           onAfterHidden={({ isShow }) => (node.isDropdownListShow = isShow)}>
           {{
             default: () => (
-              <div class='more-action' onClick={e => handleMoreActionClick(e, node)}>
+              <div class='more-action' onClick={(e) => handleMoreActionClick(e, node)}>
                 <i class='hcm-icon bkhcm-icon-more-fill'></i>
               </div>
             ),
             content: () => (
               <div class='dropdown-list'>
-                {typeMenuMap[node.type].map(item => (
+                {typeMenuMap[node.type].map((item) => (
                   <div class='dropdown-item' onClick={handleDropdownItemClick}>
                     {item.label}
                   </div>
@@ -276,7 +276,7 @@ export default defineComponent({
     };
 
     const handleNodeCollapse = (node: any) => {
-      const idx = expandedNodeArr.value.findIndex(item => item === node);
+      const idx = expandedNodeArr.value.findIndex((item) => item === node);
       expandedNodeArr.value.splice(idx, 1);
     };
 

@@ -38,7 +38,7 @@ watchEffect(() => {
     },
   ];
 
-  props.detail?.virtual_ip_list?.forEach(({ ip, elasticity_ip }: { ip: string, elasticity_ip: string }) => {
+  props.detail?.virtual_ip_list?.forEach(({ ip, elasticity_ip }: { ip: string; elasticity_ip: string }) => {
     ipConfigData.value.push({
       type: '虚拟IP地址',
       internalIp: ip || '--',
@@ -49,10 +49,5 @@ watchEffect(() => {
 </script>
 
 <template>
-  <bk-table
-    row-hover="auto"
-    :columns="columns"
-    :data="ipConfigData"
-    show-overflow-tooltip
-  />
+  <bk-table row-hover="auto" :columns="columns" :data="ipConfigData" show-overflow-tooltip />
 </template>

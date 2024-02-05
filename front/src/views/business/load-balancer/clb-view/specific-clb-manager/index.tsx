@@ -33,13 +33,11 @@ export default defineComponent({
     ];
     return () => (
       <Tab v-model:active={activeTab.value} type={'card-grid'}>
-        {
-          tabList.map(tab => (
-            <BkTabPanel key={tab.name} name={tab.name} label={tab.label} class={'clb-list-tab-content-container'}>
-              <div>{tab.component}</div>
-            </BkTabPanel>
-          ))
-        }
+        {tabList.map((tab) => (
+          <BkTabPanel key={tab.name} name={tab.name} label={tab.label} class={'clb-list-tab-content-container'}>
+            <div>{tab.component}</div>
+          </BkTabPanel>
+        ))}
       </Tab>
     );
   },

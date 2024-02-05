@@ -4,7 +4,6 @@ import QueryString from 'qs';
 import { shallowRef } from 'vue';
 const { BK_COMPONENT_API_URL } = window.PROJECT_CONFIG;
 
-
 export const useStaffStore = defineStore({
   id: 'staffStore',
   state: () => ({
@@ -31,7 +30,7 @@ export const useStaffStore = defineStore({
 
       const headTag = document.getElementsByTagName('head')[0];
       // @ts-ignore
-      window[params.callback] = ({ data, result }: { data: any, result: boolean }) => {
+      window[params.callback] = ({ data, result }: { data: any; result: boolean }) => {
         if (result) {
           this.fetching = false;
           // this.list = [...data.results, ...this.list];

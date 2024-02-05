@@ -4,12 +4,7 @@ import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info
 
 import { PropType } from 'vue';
 import { TypeEnum, useRouteLinkBtn } from '@/hooks/useRouteLinkBtn';
-import {
-  CLOUD_HOST_STATUS,
-  INSTANCE_CHARGE_MAP,
-  NET_CHARGE_MAP,
-  VendorEnum,
-} from '@/common/constant';
+import { CLOUD_HOST_STATUS, INSTANCE_CHARGE_MAP, NET_CHARGE_MAP, VendorEnum } from '@/common/constant';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { timeFormatter } from '@/common/util';
 
@@ -33,11 +28,12 @@ const cvmInfo = [
   {
     name: '账号',
     prop: 'account_id',
-    render: () => useRouteLinkBtn(props.data, {
-      id: 'account_id',
-      name: 'account_id',
-      type: TypeEnum.ACCOUNT,
-    }),
+    render: () =>
+      useRouteLinkBtn(props.data, {
+        id: 'account_id',
+        name: 'account_id',
+        type: TypeEnum.ACCOUNT,
+      }),
   },
   {
     name: '云厂商',
@@ -56,9 +52,7 @@ const cvmInfo = [
     name: '业务',
     prop: 'bk_biz_id',
     render() {
-      return props.data.bk_biz_id === -1
-        ? '未分配'
-        : `${props.data.bk_biz_id_name} (${props.data.bk_biz_id})`;
+      return props.data.bk_biz_id === -1 ? '未分配' : `${props.data.bk_biz_id_name} (${props.data.bk_biz_id})`;
     },
   },
   {
@@ -95,20 +89,22 @@ const netInfo = [
   {
     name: '所属网络',
     prop: 'cloud_vpc_ids',
-    render: () => useRouteLinkBtn(props.data, {
-      id: 'vpc_ids',
-      name: 'cloud_vpc_ids',
-      type: TypeEnum.VPC,
-    }),
+    render: () =>
+      useRouteLinkBtn(props.data, {
+        id: 'vpc_ids',
+        name: 'cloud_vpc_ids',
+        type: TypeEnum.VPC,
+      }),
   },
   {
     name: '所属子网',
     prop: 'cloud_subnet_ids',
-    render: () => useRouteLinkBtn(props.data, {
-      id: 'subnet_ids',
-      name: 'cloud_subnet_ids',
-      type: TypeEnum.SUBNET,
-    }),
+    render: () =>
+      useRouteLinkBtn(props.data, {
+        id: 'subnet_ids',
+        name: 'cloud_subnet_ids',
+        type: TypeEnum.SUBNET,
+      }),
   },
   // {
   //   name: '用作公网网关',
@@ -164,11 +160,12 @@ const settingInfo = [
   {
     name: '镜像ID',
     prop: 'cloud_image_id',
-    render: () => useRouteLinkBtn(props.data, {
-      id: 'image_id',
-      type: TypeEnum.IMAGE,
-      name: 'cloud_image_id',
-    }),
+    render: () =>
+      useRouteLinkBtn(props.data, {
+        id: 'image_id',
+        type: TypeEnum.IMAGE,
+        name: 'cloud_image_id',
+      }),
   },
 ];
 
@@ -188,9 +185,7 @@ const priceInfo = [
   {
     name: '网络计费模式',
     prop: 'internet_charge_type',
-    render: () => NET_CHARGE_MAP[
-      props?.data?.extension?.internet_accessible?.internet_charge_type
-    ],
+    render: () => NET_CHARGE_MAP[props?.data?.extension?.internet_accessible?.internet_charge_type],
   },
   {
     name: '到期时间',
@@ -209,24 +204,14 @@ const priceInfo = [
   </div>
   <h3 class="info-title">网络信息</h3>
   <div class="wrap-info">
-    <detail-info
-      :fields="netInfo"
-      :detail="props.data"
-    ></detail-info>
+    <detail-info :fields="netInfo" :detail="props.data"></detail-info>
   </div>
   <h3 class="info-title">配置信息</h3>
   <div class="wrap-info">
-    <detail-info
-      :fields="settingInfo"
-      :detail="props.data"
-    ></detail-info>
+    <detail-info :fields="settingInfo" :detail="props.data"></detail-info>
   </div>
   <h3 class="info-title">计费信息</h3>
   <div class="wrap-info">
-    <detail-info
-      :fields="priceInfo"
-      :detail="props.data"
-    ></detail-info>
+    <detail-info :fields="priceInfo" :detail="props.data"></detail-info>
   </div>
 </template>
-

@@ -117,10 +117,10 @@ export default defineComponent({
     return () => (
       <bk-container margin={0} class='target-group-sideslider-content'>
         <Form formType='vertical'>
-          {formItemOptions.value.map(item => (
+          {formItemOptions.value.map((item) => (
             <bk-row>
               {Array.isArray(item) ? (
-                item.map(subItem => (
+                item.map((subItem) => (
                   <bk-col span={subItem.span}>
                     <FormItem label={subItem.label} property={subItem.property} required={subItem.required}>
                       {subItem.content()}

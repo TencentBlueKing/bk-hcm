@@ -1,23 +1,10 @@
-import {
-  defineComponent,
-  ref,
-  reactive,
-  computed,
-  onMounted,
-  watch,
-  onBeforeUnmount,
-} from 'vue';
+import { defineComponent, ref, reactive, computed, onMounted, watch, onBeforeUnmount } from 'vue';
 import './index.scss';
 import SchemePreview from '../components/scheme-preview';
 import SchemeBlankPage from './components/scheme-blank-page';
 import SchemeUserProportionShowDialog from './components/scheme-user-proportion-show-dialog';
 import { IPageQuery } from '@/typings';
-import {
-  IBizTypeList,
-  IBizType,
-  IGenerateSchemesReqParams,
-  IGenerateSchemesResData,
-} from '@/typings/scheme';
+import { IBizTypeList, IBizType, IGenerateSchemesReqParams, IGenerateSchemesResData } from '@/typings/scheme';
 import { useSchemeStore } from '@/store';
 import SchemeRecommendDetail from '../components/scheme-recommend-detail';
 import { onBeforeRouteLeave } from 'vue-router';
@@ -36,7 +23,7 @@ export default defineComponent({
     const countriesList = ref<Array<string>>([]);
     const bizTypeList = ref<IBizTypeList>([]);
     const selectedBizType = computed<IBizType>(() => {
-      return bizTypeList.value.find(item => item.biz_type === formData.biz_type);
+      return bizTypeList.value.find((item) => item.biz_type === formData.biz_type);
     });
 
     const generateSchemesLoading = ref(false);
@@ -62,17 +49,17 @@ export default defineComponent({
       schemeStore.setUserDistribution([]);
     };
 
-    const {
-      authVerifyData,
-    } = useVerify();
+    const { authVerifyData } = useVerify();
 
     const handleChangeCountry = async () => {
       clearLastData();
       countryChangeLoading.value = true;
-      const res = await schemeStore.queryUserDistributions(formData.selected_countries.reduce((prev, item) => {
-        prev.push({ name: item });
-        return prev;
-      }, []));
+      const res = await schemeStore.queryUserDistributions(
+        formData.selected_countries.reduce((prev, item) => {
+          prev.push({ name: item });
+          return prev;
+        }, []),
+      );
       countryChangeLoading.value = false;
       formData.user_distribution = res.data;
       schemeStore.setUserDistribution(res.data);
@@ -85,12 +72,16 @@ export default defineComponent({
       const res: IGenerateSchemesResData = await schemeStore.generateSchemes(formData);
       schemeStore.setSchemeConfig(formData.cover_ping, formData.biz_type, formData.deployment_architecture);
       generateSchemesLoading.value = false;
-      schemeStore.setRecommendationSchemes(res.data.filter(({ cover_rate }) => cover_rate >= 0.65).map((item, idx) => ({
-        ...item,
-        id: `${idx}`,
-        name: `方案${idx + 1}`,
-        isSaved: false,
-      })));
+      schemeStore.setRecommendationSchemes(
+        res.data
+          .filter(({ cover_rate }) => cover_rate >= 0.65)
+          .map((item, idx) => ({
+            ...item,
+            id: `${idx}`,
+            name: `方案${idx + 1}`,
+            isSaved: false,
+          })),
+      );
       scene.value = 'preview';
     };
 
@@ -125,12 +116,8 @@ export default defineComponent({
         property: 'biz_type',
         content: () => (
           <bk-select loading={bizTypesInitLoading.value} v-model={formData.biz_type}>
-            {bizTypeList.value.map(bizType => (
-              <bk-option
-                key={bizType.id}
-                value={bizType.biz_type}
-                label={bizType.biz_type}
-              />
+            {bizTypeList.value.map((bizType) => (
+              <bk-option key={bizType.id} value={bizType.biz_type} label={bizType.biz_type} />
             ))}
           </bk-select>
         ),
@@ -147,7 +134,7 @@ export default defineComponent({
             property: 'cover_ping',
             required: true,
             content: () => (
-              <bk-input class="with-suffix" type='number' v-model={formData.cover_ping} min={1} suffix="ms"></bk-input>
+              <bk-input class='with-suffix' type='number' v-model={formData.cover_ping} min={1} suffix='ms'></bk-input>
             ),
           },
           /* {
@@ -169,12 +156,9 @@ export default defineComponent({
               <bk-option label='默认分布占比' value='default' />
             </bk-select>
             <div
-              class={`user-proportion-detail-btn-wrap${
-                formData.user_distribution.length ? '' : ' disabled'
-              }`}
+              class={`user-proportion-detail-btn-wrap${formData.user_distribution.length ? '' : ' disabled'}`}
               onClick={() => {
-                formData.user_distribution.length
-                  && (isUserProportionDetailDialogShow.value = true);
+                formData.user_distribution.length && (isUserProportionDetailDialogShow.value = true);
               }}>
               <i class='hcm-icon bkhcm-icon-file'></i>
               <span class={'btn-text'}>占比详情</span>
@@ -202,11 +186,7 @@ export default defineComponent({
         label: '',
         content: () => (
           <>
-            <bk-button
-              class='mr8'
-              theme='primary'
-              disabled={countryChangeLoading.value}
-              onClick={generateSchemes}>
+            <bk-button class='mr8' theme='primary' disabled={countryChangeLoading.value} onClick={generateSchemes}>
               选型推荐
             </bk-button>
             <bk-button onClick={clearFormData}>清空</bk-button>
@@ -260,17 +240,14 @@ export default defineComponent({
       (val) => {
         Object.assign(formData, {
           cover_ping: val ? selectedBizType.value.cover_ping : null,
-          deployment_architecture: val
-            ? selectedBizType.value.deployment_architecture
-            : '',
+          deployment_architecture: val ? selectedBizType.value.deployment_architecture : '',
         });
       },
     );
 
     function confirmLeave(event: any) {
-      if (!schemeStore.recommendationSchemes.length
-        || !formData.selected_countries.length
-        || isAllSchemeSaved.value) return;
+      if (!schemeStore.recommendationSchemes.length || !formData.selected_countries.length || isAllSchemeSaved.value)
+        return;
       // 生成选型方案后再让离开的用户二次确认
       (event || window.event).returnValue = '关闭提示';
       return '关闭提示';
@@ -299,49 +276,45 @@ export default defineComponent({
     if (!authVerifyData.value.permissionAction.cloud_selection_recommend) return () => <ErrorPage />;
 
     return () => (
-      <bk-loading
-        loading={generateSchemesLoading.value}
-        opacity='1'
-        style='height: 100%'>
+      <bk-loading loading={generateSchemesLoading.value} opacity='1' style='height: 100%'>
         <div class='scheme-recommendation-page'>
           <div
             style={{
               display: scene.value !== 'detail' ? 'block' : 'none',
             }}
-            class={`business-attributes-container${
-              toggleClose.value ? ' close' : ''
-            }`}>
+            class={`business-attributes-container${toggleClose.value ? ' close' : ''}`}>
             <div class='title-wrap'>
               <div class='title-text'>业务属性</div>
-              {
-                <i class='hcm-icon bkhcm-icon-shouqi' onClick={() => (toggleClose.value = !toggleClose.value)}></i>
-              }
+              {<i class='hcm-icon bkhcm-icon-shouqi' onClick={() => (toggleClose.value = !toggleClose.value)}></i>}
             </div>
             <div class='content-wrap'>
-              <bk-form form-type='vertical' ref={formRef} model={formData} rules={formRules} >
+              <bk-form form-type='vertical' ref={formRef} model={formData} rules={formRules}>
                 {formItemOptions.value.map(({ label, required, content, extClass, property, tips, left }) => (
-                    <bk-form-item label={label} required={required} class={extClass} property={property}>
-                      {
-                        extClass && tips && <i v-bk-tooltips={{ content: tips, placement: 'right' }} class='hcm-icon bkhcm-icon-prompt' style={{ left }}></i>
-                      }
-                      {Array.isArray(content) ? (
-                        <div class='sub-form-item-wrap'>
-                          {content.map(sub => (
-                            <bk-form-item label={sub.label} required={sub.required} property={sub.property}>
-                              {sub.content()}
-                            </bk-form-item>
-                          ))}
-                        </div>
-                      ) : (
-                        content()
-                      )}
-                    </bk-form-item>
+                  <bk-form-item label={label} required={required} class={extClass} property={property}>
+                    {extClass && tips && (
+                      <i
+                        v-bk-tooltips={{ content: tips, placement: 'right' }}
+                        class='hcm-icon bkhcm-icon-prompt'
+                        style={{ left }}></i>
+                    )}
+                    {Array.isArray(content) ? (
+                      <div class='sub-form-item-wrap'>
+                        {content.map((sub) => (
+                          <bk-form-item label={sub.label} required={sub.required} property={sub.property}>
+                            {sub.content()}
+                          </bk-form-item>
+                        ))}
+                      </div>
+                    ) : (
+                      content()
+                    )}
+                  </bk-form-item>
                 ))}
               </bk-form>
             </div>
-            {
-              !toggleClose.value && <div class='right-handle' onClick={() => (toggleClose.value = !toggleClose.value)}></div>
-            }
+            {!toggleClose.value && (
+              <div class='right-handle' onClick={() => (toggleClose.value = !toggleClose.value)}></div>
+            )}
           </div>
           <div class='scheme-recommendation-container'>
             <div class='content-container' style={{ padding: toggleClose.value ? '0 26px' : '0' }}>
@@ -355,7 +328,7 @@ export default defineComponent({
                     }}
                     onViewDetail={viewDetail}
                   />
-                  {scene.value === 'detail' ? <SchemeRecommendDetail onBack={() => scene.value = 'preview'}/> : null}
+                  {scene.value === 'detail' ? <SchemeRecommendDetail onBack={() => (scene.value = 'preview')} /> : null}
                 </>
               )}
             </div>

@@ -11,10 +11,10 @@ export interface IVpcItem {
   bk_cloud_id: number; // 管控区域ID
   extension: {
     cidr: Array<{
-      cidr: string;   // CIDR
-    }>
-  }
-};
+      cidr: string; // CIDR
+    }>;
+  };
+}
 
 export default defineComponent({
   props: {
@@ -46,10 +46,13 @@ export default defineComponent({
             <svg
               onClick={() => {
                 if (!props.data.cloud_id) return;
-                const url = whereAmI.value === Senarios.resource ? `/#/resource/resource?cloud_id=${props.data.cloud_id}&type=vpc` : `/#/business/vpc?cloud_id=${props.data.cloud_id}`;
+                const url =
+                  whereAmI.value === Senarios.resource
+                    ? `/#/resource/resource?cloud_id=${props.data.cloud_id}&type=vpc`
+                    : `/#/business/vpc?cloud_id=${props.data.cloud_id}`;
                 window.open(url, '_blank');
               }}
-              class="vpc-dialog-highligt-icon"
+              class='vpc-dialog-highligt-icon'
               viewBox='0 0 1024 1024'
               version='1.1'
               xmlns='http://www.w3.org/2000/svg'
@@ -62,13 +65,11 @@ export default defineComponent({
             <span class={'vpc-dialog-highlit-font'}>{props.data.name}</span>
           </FormItem>
           <FormItem label='管控区域ID：'>
-            <span class={'vpc-dialog-highlit-font'}>
-              {props.data.bk_cloud_id}
-            </span>
+            <span class={'vpc-dialog-highlit-font'}>{props.data.bk_cloud_id}</span>
           </FormItem>
           <FormItem label='CIDR：'>
             <span class={'vpc-dialog-highlit-font'}>
-              {props.data?.extension?.cidr?.map(obj => (
+              {props.data?.extension?.cidr?.map((obj) => (
                 <p>{obj.cidr}</p>
               ))}
             </span>
@@ -78,4 +79,3 @@ export default defineComponent({
     );
   },
 });
-

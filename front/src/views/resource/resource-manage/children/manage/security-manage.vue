@@ -18,10 +18,7 @@ import { VendorEnum } from '@/common/constant';
 import { cloneDeep } from 'lodash-es';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import useSelection from '../../hooks/use-selection';
-import {
-  BatchDistribution,
-  DResourceType,
-} from '@/views/resource/resource-manage/children/dialog/batch-distribution';
+import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 import { timeFormatter } from '@/common/util';
 
 const props = defineProps({
@@ -75,14 +72,7 @@ const state = reactive<any>({
 
 const { searchData, searchValue, filter } = useFilter(props);
 
-const {
-  datas,
-  pagination,
-  isLoading,
-  handlePageChange,
-  handlePageSizeChange,
-  getList,
-} = useQueryCommonList(
+const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, getList } = useQueryCommonList(
   {
     ...props,
     filter: filter.value,
@@ -247,19 +237,25 @@ const groupColumns = [
     isOnlyShowInResource: true,
     isDefaultShow: true,
     render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => {
-      return withDirectives(h(
-        Tag,
-        {
-          theme: data.bk_biz_id === -1 ? false : 'success',
-        },
-        [data.bk_biz_id === -1 ? '未分配' : '已分配'],
-      ), [
-        [bkTooltips, {
-          content: businessMapStore.businessMap.get(cell),
-          disabled: !cell || cell === -1,
-          theme: 'light',
-        }],
-      ]);
+      return withDirectives(
+        h(
+          Tag,
+          {
+            theme: data.bk_biz_id === -1 ? false : 'success',
+          },
+          [data.bk_biz_id === -1 ? '未分配' : '已分配'],
+        ),
+        [
+          [
+            bkTooltips,
+            {
+              content: businessMapStore.businessMap.get(cell),
+              disabled: !cell || cell === -1,
+              theme: 'light',
+            },
+          ],
+        ],
+      );
     },
   },
   {
@@ -267,11 +263,7 @@ const groupColumns = [
     field: 'bk_biz_id2',
     isOnlyShowInResource: true,
     render({ data }: any) {
-      return h('span', {}, [
-        data.bk_biz_id === -1
-          ? t('未分配')
-          : businessMapStore.businessMap.get(data.bk_biz_id),
-      ]);
+      return h('span', {}, [data.bk_biz_id === -1 ? t('未分配') : businessMapStore.businessMap.get(data.bk_biz_id)]);
     },
   },
   {
@@ -292,7 +284,7 @@ const groupColumns = [
     label: t('创建时间'),
     field: 'created_at',
     sort: true,
-    render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+    render: ({ cell }: { cell: string }) => timeFormatter(cell),
   },
   {
     label: t('修改时间'),
@@ -312,12 +304,7 @@ const groupColumns = [
           'span',
           {
             onClick() {
-              emit(
-                'auth',
-                props.isResourcePage
-                  ? 'iaas_resource_operate'
-                  : 'biz_iaas_resource_operate',
-              );
+              emit('auth', props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate');
             },
           },
           [
@@ -327,11 +314,9 @@ const groupColumns = [
                 text: true,
                 disabled:
                   !props.authVerifyData?.permissionAction[
-                    props.isResourcePage
-                      ? 'iaas_resource_operate'
-                      : 'biz_iaas_resource_operate'
-                  ]
-                  || (data.bk_biz_id !== -1 && props.isResourcePage),
+                    props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate'
+                  ] ||
+                  (data.bk_biz_id !== -1 && props.isResourcePage),
                 theme: 'primary',
                 onClick() {
                   const routeInfo: any = {
@@ -365,12 +350,7 @@ const groupColumns = [
           'span',
           {
             onClick() {
-              emit(
-                'auth',
-                props.isResourcePage
-                  ? 'iaas_resource_delete'
-                  : 'biz_iaas_resource_delete',
-              );
+              emit('auth', props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete');
             },
           },
           [
@@ -380,11 +360,9 @@ const groupColumns = [
                 class: 'ml10',
                 disabled:
                   !props.authVerifyData?.permissionAction[
-                    props.isResourcePage
-                      ? 'iaas_resource_delete'
-                      : 'biz_iaas_resource_delete'
-                  ]
-                  || (data.bk_biz_id !== -1 && props.isResourcePage),
+                    props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'
+                  ] ||
+                  (data.bk_biz_id !== -1 && props.isResourcePage),
                 text: true,
                 theme: 'primary',
                 onClick() {
@@ -497,9 +475,7 @@ const gcpColumns = [
     sort: true,
     isDefaultShow: true,
     render({ data }: any) {
-      return h('span', {}, [
-        data.target_tags || data.target_service_accounts || '--',
-      ]);
+      return h('span', {}, [data.target_tags || data.target_service_accounts || '--']);
     },
   },
   // {
@@ -517,8 +493,8 @@ const gcpColumns = [
         {},
         data?.allowed || data?.denied
           ? (data?.allowed || data?.denied).map((e: any) => {
-            return h('div', {}, `${e.protocol}:${e.port}`);
-          })
+              return h('div', {}, `${e.protocol}:${e.port}`);
+            })
           : '--',
       );
     },
@@ -530,19 +506,25 @@ const gcpColumns = [
     isOnlyShowInResource: true,
     isDefaultShow: true,
     render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => {
-      return withDirectives(h(
-        Tag,
-        {
-          theme: data.bk_biz_id === -1 ? false : 'success',
-        },
-        [data.bk_biz_id === -1 ? '未分配' : '已分配'],
-      ), [
-        [bkTooltips, {
-          content: businessMapStore.businessMap.get(cell),
-          disabled: !cell || cell === -1,
-          theme: 'light',
-        }],
-      ]);
+      return withDirectives(
+        h(
+          Tag,
+          {
+            theme: data.bk_biz_id === -1 ? false : 'success',
+          },
+          [data.bk_biz_id === -1 ? '未分配' : '已分配'],
+        ),
+        [
+          [
+            bkTooltips,
+            {
+              content: businessMapStore.businessMap.get(cell),
+              disabled: !cell || cell === -1,
+              theme: 'light',
+            },
+          ],
+        ],
+      );
     },
   },
   {
@@ -550,24 +532,20 @@ const gcpColumns = [
     field: 'bk_biz_id2',
     isOnlyShowInResource: true,
     render({ data }: any) {
-      return h('span', {}, [
-        data.bk_biz_id === -1
-          ? t('未分配')
-          : businessMapStore.businessMap.get(data.bk_biz_id),
-      ]);
+      return h('span', {}, [data.bk_biz_id === -1 ? t('未分配') : businessMapStore.businessMap.get(data.bk_biz_id)]);
     },
   },
   {
     label: t('创建时间'),
     field: 'created_at',
     sort: true,
-    render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+    render: ({ cell }: { cell: string }) => timeFormatter(cell),
   },
   {
     label: t('修改时间'),
     field: 'updated_at',
     sort: true,
-    render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+    render: ({ cell }: { cell: string }) => timeFormatter(cell),
   },
   {
     label: t('操作'),
@@ -579,12 +557,7 @@ const gcpColumns = [
           'span',
           {
             onClick() {
-              emit(
-                'auth',
-                props.isResourcePage
-                  ? 'iaas_resource_operate'
-                  : 'biz_iaas_resource_operate',
-              );
+              emit('auth', props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate');
             },
           },
           [
@@ -595,11 +568,9 @@ const gcpColumns = [
                 theme: 'primary',
                 disabled:
                   !props.authVerifyData?.permissionAction[
-                    props.isResourcePage
-                      ? 'iaas_resource_operate'
-                      : 'biz_iaas_resource_operate'
-                  ]
-                  || (data.bk_biz_id !== -1 && props.isResourcePage),
+                    props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate'
+                  ] ||
+                  (data.bk_biz_id !== -1 && props.isResourcePage),
                 onClick() {
                   emit('edit', cloneDeep(data));
                 },
@@ -612,12 +583,7 @@ const gcpColumns = [
           'span',
           {
             onClick() {
-              emit(
-                'auth',
-                props.isResourcePage
-                  ? 'iaas_resource_operate'
-                  : 'biz_iaas_resource_operate',
-              );
+              emit('auth', props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate');
             },
           },
           [
@@ -628,11 +594,9 @@ const gcpColumns = [
                 text: true,
                 disabled:
                   !props.authVerifyData?.permissionAction[
-                    props.isResourcePage
-                      ? 'iaas_resource_delete'
-                      : 'biz_iaas_resource_delete'
-                  ]
-                  || (data.bk_biz_id !== -1 && props.isResourcePage),
+                    props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'
+                  ] ||
+                  (data.bk_biz_id !== -1 && props.isResourcePage),
                 theme: 'primary',
                 onClick() {
                   securityHandleShowDelete(data);
@@ -696,9 +660,7 @@ const securityHandleShowDelete = (data: any) => {
     async onConfirm() {
       try {
         await resourceStore.deleteBatch(
-          activeType.value === 'group'
-            ? 'security_groups'
-            : 'vendors/gcp/firewalls/rules',
+          activeType.value === 'group' ? 'security_groups' : 'vendors/gcp/firewalls/rules',
           { ids: [data.id] },
         );
         getList();
@@ -720,11 +682,7 @@ const securityHandleShowDelete = (data: any) => {
       <slot></slot>
       <BatchDistribution
         :selections="selections"
-        :type="
-          activeType === 'group'
-            ? DResourceType.security_groups
-            : DResourceType.firewall
-        "
+        :type="activeType === 'group' ? DResourceType.security_groups : DResourceType.firewall"
         :get-data="
           () => {
             getList();
@@ -734,12 +692,7 @@ const securityHandleShowDelete = (data: any) => {
       />
       <section class="flex-row align-items-center mt20">
         <bk-radio-group v-model="activeType" :disabled="state.isLoading">
-          <bk-radio-button
-            v-for="item in types"
-            :key="item.name"
-            :label="item.name"
-            v-model="securityType"
-          >
+          <bk-radio-button v-for="item in types" :key="item.name" :label="item.name" v-model="securityType">
             {{ item.label }}
           </bk-radio-button>
         </bk-radio-group>

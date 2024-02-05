@@ -35,10 +35,7 @@ export default defineComponent({
     const isDes = ref(true);
 
     watch(
-      () => [
-        sortChoice.value,
-        isDes.value,
-      ],
+      () => [sortChoice.value, isDes.value],
       () => {
         schemeStore.sortSchemes(sortChoice.value, isDes.value);
       },
@@ -64,46 +61,38 @@ export default defineComponent({
               `,
             }}
           />
-          <Select
-            class={'scheme-preivew-header-sort-selector'}
-            v-model={sortChoice.value}
-            clearable={false}>
+          <Select class={'scheme-preivew-header-sort-selector'} v-model={sortChoice.value} clearable={false}>
             {{
-              default: () => SchemeSortOptions.map(({ key, val }) => (
-                  <Option value={key} label={val}></Option>
-              )),
+              default: () => SchemeSortOptions.map(({ key, val }) => <Option value={key} label={val}></Option>),
             }}
           </Select>
-          <Button onClick={() => isDes.value = !isDes.value}  v-bk-tooltips={{
-            content: isDes.value ? '降序' : '升序',
-          }}>
-            <i class={`${isDes.value ? 'hcm-icon bkhcm-icon-jiangxu' : 'icon hcm-icon bkhcm-icon-shengxu'}`}/>
+          <Button
+            onClick={() => (isDes.value = !isDes.value)}
+            v-bk-tooltips={{
+              content: isDes.value ? '降序' : '升序',
+            }}>
+            <i class={`${isDes.value ? 'hcm-icon bkhcm-icon-jiangxu' : 'icon hcm-icon bkhcm-icon-shengxu'}`} />
           </Button>
         </div>
         <div class={'scheme-preview-content'}>
-          {schemeStore.recommendationSchemes.length > 0
-            ? schemeStore.recommendationSchemes.map((
-              { composite_score, cost_score, net_score, result_idc_ids, cover_rate, id },
-              idx,
-            ) => (
-                  <SchemePreviewTableCard
-                    key={result_idc_ids.join(',') + id}
-                    compositeScore={composite_score}
-                    costScore={cost_score}
-                    netScore={net_score}
-                    resultIdcIds={result_idc_ids}
-                    idx={idx}
-                    onViewDetail={(idx: number) => props.onViewDetail(idx)}
-                    coverRate={cover_rate}
-                  />
-            ))
-            : (
-              <Exception
-                type="search-empty"
-                scene="page"
-                description="暂无推荐结果"
-              ></Exception>
-            )}
+          {schemeStore.recommendationSchemes.length > 0 ? (
+            schemeStore.recommendationSchemes.map(
+              ({ composite_score, cost_score, net_score, result_idc_ids, cover_rate, id }, idx) => (
+                <SchemePreviewTableCard
+                  key={result_idc_ids.join(',') + id}
+                  compositeScore={composite_score}
+                  costScore={cost_score}
+                  netScore={net_score}
+                  resultIdcIds={result_idc_ids}
+                  idx={idx}
+                  onViewDetail={(idx: number) => props.onViewDetail(idx)}
+                  coverRate={cover_rate}
+                />
+              ),
+            )
+          ) : (
+            <Exception type='search-empty' scene='page' description='暂无推荐结果'></Exception>
+          )}
         </div>
       </div>
     );

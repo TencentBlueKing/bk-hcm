@@ -1,25 +1,11 @@
+<!-- eslint-disable no-nested-ternary -->
 <script lang="ts" setup>
-import {
-  ref,
-  watch,
-  h,
-  reactive,
-  PropType,
-  inject,
-  computed,
-} from 'vue';
-import {
-  useI18n,
-} from 'vue-i18n';
+import { ref, watch, h, reactive, PropType, inject, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 
-import {
-  Button,
-  Message,
-} from 'bkui-vue';
+import { Button, Message } from 'bkui-vue';
 
-import {
-  useResourceStore,
-} from '@/store';
+import { useResourceStore } from '@/store';
 
 import { SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
 
@@ -44,15 +30,9 @@ const props = defineProps({
 });
 
 // use hook
-const {
-  t,
-} = useI18n();
+const { t } = useI18n();
 
-const {
-  isShowSecurityRule,
-  handleSecurityRule,
-  SecurityRule,
-} = UseSecurityRule();
+const { isShowSecurityRule, handleSecurityRule, SecurityRule } = UseSecurityRule();
 
 const resourceStore = useResourceStore();
 
@@ -68,7 +48,8 @@ const azureDefaultColumns = ref([]);
 const authVerifyData: any = inject('authVerifyData');
 const isResourcePage: any = inject('isResourcePage');
 
-const actionName = computed(() => {   // 资源下没有业务ID
+const actionName = computed(() => {
+  // 资源下没有业务ID
   return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
 });
 
@@ -113,14 +94,11 @@ const getDefaultList = async (type: string) => {
 };
 
 // 获取列表数据
-const {
-  datas,
-  pagination,
-  isLoading,
-  handlePageChange,
-  handlePageSizeChange,
-  getList,
-} = useQueryCommonList(props, fetchUrl, props.vendor === 'tcloud' ? { sort: 'cloud_policy_index', order: 'ASC' } : '');
+const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, getList } = useQueryCommonList(
+  props,
+  fetchUrl,
+  props.vendor === 'tcloud' ? { sort: 'cloud_policy_index', order: 'ASC' } : '',
+);
 
 state.datas = datas;
 state.isLoading = isLoading;
@@ -156,7 +134,8 @@ const handleDeleteConfirm = () => {
 const handleSubmitRule = async (tableData: any) => {
   const data = JSON.parse(JSON.stringify(tableData));
   securityRuleLoading.value = true;
-  if (props.vendor === 'aws') {   // aws 需要from_port 、to_port
+  if (props.vendor === 'aws') {
+    // aws 需要from_port 、to_port
     data.forEach((e: any) => {
       if (typeof e.port === 'string' && e?.port.includes('-')) {
         // eslint-disable-next-line prefer-destructuring
@@ -182,7 +161,8 @@ const handleSubmitRule = async (tableData: any) => {
       e.destination_port_range = '';
     }
     e.port = AllData.value[e.protocol] ? AllData.value[e.protocol] : e.port;
-    Object.keys(e).forEach((item: any) => { // 删除没有val的key
+    Object.keys(e).forEach((item: any) => {
+      // 删除没有val的key
       if (!e[item] || e[item] === 'huaweiAll') {
         if (e[item] === 'huaweiAll') {
           delete e.port;
@@ -234,48 +214,56 @@ const inColumns = [
   {
     label: t('来源'),
     render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          data.cloud_address_group_id || data.cloud_address_id
-          || data.cloud_service_group_id || data.cloud_service_id || data.cloud_target_security_group_id
-          || data.ipv4_cidr || data.ipv6_cidr || data.cloud_remote_group_id || data.remote_ip_prefix
-          || (data.source_address_prefix === '*' ? t('任何') : data.source_address_prefix) || data.source_address_prefixes || data.cloud_source_security_group_ids
-          || data.destination_address_prefix || data.destination_address_prefixes
-          || data.cloud_destination_security_group_ids || (data?.ethertype === 'IPv6' ? '::/0' : '0.0.0.0/0'),
-        ],
-      );
+      return h('span', {}, [
+        data.cloud_address_group_id ||
+          data.cloud_address_id ||
+          data.cloud_service_group_id ||
+          data.cloud_service_id ||
+          data.cloud_target_security_group_id ||
+          data.ipv4_cidr ||
+          data.ipv6_cidr ||
+          data.cloud_remote_group_id ||
+          data.remote_ip_prefix ||
+          (data.source_address_prefix === '*' ? t('任何') : data.source_address_prefix) ||
+          data.source_address_prefixes ||
+          data.cloud_source_security_group_ids ||
+          data.destination_address_prefix ||
+          data.destination_address_prefixes ||
+          data.cloud_destination_security_group_ids ||
+          (data?.ethertype === 'IPv6' ? '::/0' : '0.0.0.0/0'),
+      ]);
     },
   },
   {
     label: t('协议端口'),
     render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          // eslint-disable-next-line no-nested-ternary
-          props.vendor === 'aws' && (data.protocol === '-1' && data.to_port === -1) ? t('全部')
-            // eslint-disable-next-line no-nested-ternary
-            : props.vendor === 'huawei' && (!data.protocol && !data.port) ? t('全部')
-              : props.vendor === 'azure' && (data.protocol === '*' && data.destination_port_range === '*') ? t('全部') :  `${data.protocol}:${data.port || data.to_port || data.destination_port_range || data.destination_port_ranges || '--'}`,
-        ],
-      );
+      return h('span', {}, [
+        // eslint-disable-next-line no-nested-ternary
+        props.vendor === 'aws' && data.protocol === '-1' && data.to_port === -1
+          ? t('全部')
+          : // eslint-disable-next-line no-nested-ternary
+          props.vendor === 'huawei' && !data.protocol && !data.port
+          ? t('全部')
+          : props.vendor === 'azure' && data.protocol === '*' && data.destination_port_range === '*'
+          ? t('全部')
+          : `${data.protocol}:${
+              data.port || data.to_port || data.destination_port_range || data.destination_port_ranges || '--'
+            }`,
+      ]);
     },
   },
   {
     label: t('策略'),
     render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          // eslint-disable-next-line no-nested-ternary
-          props.vendor === 'huawei' ? HuaweiSecurityRuleEnum[data.action] : props.vendor === 'azure' ? AzureSecurityRuleEnum[data.access]
-            : props.vendor === 'aws' ? t('允许') : (SecurityRuleEnum[data.action] || '--'),
-        ],
-      );
+      return h('span', {}, [
+        props.vendor === 'huawei'
+          ? HuaweiSecurityRuleEnum[data.action]
+          : props.vendor === 'azure'
+          ? AzureSecurityRuleEnum[data.access]
+          : props.vendor === 'aws'
+          ? t('允许')
+          : SecurityRuleEnum[data.action] || '--',
+      ]);
     },
   },
   {
@@ -292,11 +280,9 @@ const inColumns = [
     label: t('操作'),
     field: 'operate',
     render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          props.vendor !== 'huawei' && h(
+      return h('span', {}, [
+        props.vendor !== 'huawei' &&
+          h(
             'span',
             {
               onClick() {
@@ -314,42 +300,35 @@ const inColumns = [
                     handleSecurityRuleDialog(data);
                   },
                 },
-                [
-                  t('编辑'),
-                ],
+                [t('编辑')],
               ),
             ],
-
           ),
-          h(
-            'span',
-            {
-              onClick() {
-                showAuthDialog(actionName.value);
-              },
+        h(
+          'span',
+          {
+            onClick() {
+              showAuthDialog(actionName.value);
             },
-            [
-              h(
-                Button,
-                {
-                  class: 'ml10',
-                  text: true,
-                  theme: 'primary',
-                  disabled: !authVerifyData.value?.permissionAction[actionName.value],
-                  onClick() {
-                    deleteDialogShow.value = true;
-                    deleteId.value = data.id;
-                  },
+          },
+          [
+            h(
+              Button,
+              {
+                class: 'ml10',
+                text: true,
+                theme: 'primary',
+                disabled: !authVerifyData.value?.permissionAction[actionName.value],
+                onClick() {
+                  deleteDialogShow.value = true;
+                  deleteId.value = data.id;
                 },
-                [
-                  t('删除'),
-                ],
-              ),
-
-            ],
-          ),
-        ],
-      );
+              },
+              [t('删除')],
+            ),
+          ],
+        ),
+      ]);
     },
   },
 ];
@@ -358,48 +337,52 @@ const outColumns = [
   {
     label: t('目标'),
     render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          data.cloud_address_group_id || data.cloud_address_id
-          || data.cloud_service_group_id || data.cloud_service_id || data.cloud_target_security_group_id
-          || data.ipv4_cidr || data.ipv6_cidr || data.cloud_remote_group_id || data.remote_ip_prefix
-          || data.cloud_source_security_group_ids
-          || (data.destination_address_prefix === '*' ? t('任何') : data.destination_address_prefix) || data.destination_address_prefixes
-          || data.cloud_destination_security_group_ids || (data?.ethertype === 'IPv6' ? '::/0' : '0.0.0.0/0'),
-        ],
-      );
+      return h('span', {}, [
+        data.cloud_address_group_id ||
+          data.cloud_address_id ||
+          data.cloud_service_group_id ||
+          data.cloud_service_id ||
+          data.cloud_target_security_group_id ||
+          data.ipv4_cidr ||
+          data.ipv6_cidr ||
+          data.cloud_remote_group_id ||
+          data.remote_ip_prefix ||
+          data.cloud_source_security_group_ids ||
+          (data.destination_address_prefix === '*' ? t('任何') : data.destination_address_prefix) ||
+          data.destination_address_prefixes ||
+          data.cloud_destination_security_group_ids ||
+          (data?.ethertype === 'IPv6' ? '::/0' : '0.0.0.0/0'),
+      ]);
     },
   },
   {
     label: t('协议端口'),
     render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          // eslint-disable-next-line no-nested-ternary
-          props.vendor === 'aws' && (data.protocol === '-1' && data.to_port === -1) ? t('全部')
-            // eslint-disable-next-line no-nested-ternary
-            : props.vendor === 'huawei' && (!data.protocol && !data.port) ? t('全部')
-              : props.vendor === 'azure' && (data.protocol === '*' && data.destination_port_range === '*') ? t('全部') :  `${data.protocol}:${data.port || data.to_port || data.destination_port_range || '--'}`,
-        ],
-      );
+      return h('span', {}, [
+        // eslint-disable-next-line no-nested-ternary
+        props.vendor === 'aws' && data.protocol === '-1' && data.to_port === -1
+          ? t('全部')
+          : // eslint-disable-next-line no-nested-ternary
+          props.vendor === 'huawei' && !data.protocol && !data.port
+          ? t('全部')
+          : props.vendor === 'azure' && data.protocol === '*' && data.destination_port_range === '*'
+          ? t('全部')
+          : `${data.protocol}:${data.port || data.to_port || data.destination_port_range || '--'}`,
+      ]);
     },
   },
   {
     label: t('策略'),
     render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          // eslint-disable-next-line no-nested-ternary
-          props.vendor === 'huawei' ? HuaweiSecurityRuleEnum[data.action] : props.vendor === 'azure' ? AzureSecurityRuleEnum[data.access]
-            : props.vendor === 'aws' ? t('允许') : (SecurityRuleEnum[data.action] || '--'),
-        ],
-      );
+      return h('span', {}, [
+        props.vendor === 'huawei'
+          ? HuaweiSecurityRuleEnum[data.action]
+          : props.vendor === 'azure'
+          ? AzureSecurityRuleEnum[data.access]
+          : props.vendor === 'aws'
+          ? t('允许')
+          : SecurityRuleEnum[data.action] || '--',
+      ]);
     },
   },
   {
@@ -416,11 +399,9 @@ const outColumns = [
     label: t('操作'),
     field: 'operate',
     render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          props.vendor !== 'huawei' && h(
+      return h('span', {}, [
+        props.vendor !== 'huawei' &&
+          h(
             'span',
             {
               onClick() {
@@ -438,42 +419,35 @@ const outColumns = [
                     handleSecurityRuleDialog(data);
                   },
                 },
-                [
-                  t('编辑'),
-                ],
+                [t('编辑')],
               ),
             ],
-
           ),
-          h(
-            'span',
-            {
-              onClick() {
-                showAuthDialog(actionName.value);
-              },
+        h(
+          'span',
+          {
+            onClick() {
+              showAuthDialog(actionName.value);
             },
-            [
-              h(
-                Button,
-                {
-                  class: 'ml10',
-                  text: true,
-                  theme: 'primary',
-                  disabled: !authVerifyData.value?.permissionAction[actionName.value],
-                  onClick() {
-                    deleteDialogShow.value = true;
-                    deleteId.value = data.id;
-                  },
+          },
+          [
+            h(
+              Button,
+              {
+                class: 'ml10',
+                text: true,
+                theme: 'primary',
+                disabled: !authVerifyData.value?.permissionAction[actionName.value],
+                onClick() {
+                  deleteDialogShow.value = true;
+                  deleteId.value = data.id;
                 },
-                [
-                  t('删除'),
-                ],
-              ),
-
-            ],
-          ),
-        ],
-      );
+              },
+              [t('删除')],
+            ),
+          ],
+        ),
+      ]);
     },
   },
 ];
@@ -484,82 +458,97 @@ const types = [
 ];
 
 if (props.vendor === 'huawei') {
-  inColumns.unshift({
-    label: t('优先级'),
-    field: 'priority',
-  }, {
-    label: t('类型'),
-    field: 'ethertype',
-  });
-  outColumns.unshift({
-    label: t('优先级'),
-    field: 'priority',
-  }, {
-    label: t('类型'),
-    field: 'ethertype',
-  });
-} else if (props.vendor === 'azure')  {
-  inColumns.unshift({
-    label: t('名称'),
-    field: 'name',
-  }, {
-    label: t('优先级'),
-    field: 'priority',
-  }, {
-    label: t('目标'),
-    render({ data }: any) {
-      return (data.destination_address_prefix === '*' ? t('任何') : data.destination_address_prefix) || data.destination_address_prefixes || data.cloud_destination_security_group_ids;
+  inColumns.unshift(
+    {
+      label: t('优先级'),
+      field: 'priority',
     },
-  });
-  outColumns.unshift({
-    label: t('名称'),
-    field: 'name',
-  }, {
-    label: t('优先级'),
-    field: 'priority',
-  }, {
-    label: t('来源'),
-    render({ data }: any) {
-      return (data.source_address_prefix === '*' ? t('任何') : data.source_address_prefix) || data.source_address_prefixes || data.cloud_source_security_group_ids;
+    {
+      label: t('类型'),
+      field: 'ethertype',
     },
-  });
+  );
+  outColumns.unshift(
+    {
+      label: t('优先级'),
+      field: 'priority',
+    },
+    {
+      label: t('类型'),
+      field: 'ethertype',
+    },
+  );
+} else if (props.vendor === 'azure') {
+  inColumns.unshift(
+    {
+      label: t('名称'),
+      field: 'name',
+    },
+    {
+      label: t('优先级'),
+      field: 'priority',
+    },
+    {
+      label: t('目标'),
+      render({ data }: any) {
+        return (
+          (data.destination_address_prefix === '*' ? t('任何') : data.destination_address_prefix) ||
+          data.destination_address_prefixes ||
+          data.cloud_destination_security_group_ids
+        );
+      },
+    },
+  );
+  outColumns.unshift(
+    {
+      label: t('名称'),
+      field: 'name',
+    },
+    {
+      label: t('优先级'),
+      field: 'priority',
+    },
+    {
+      label: t('来源'),
+      render({ data }: any) {
+        return (
+          (data.source_address_prefix === '*' ? t('任何') : data.source_address_prefix) ||
+          data.source_address_prefixes ||
+          data.cloud_source_security_group_ids
+        );
+      },
+    },
+  );
   const defaultColumns = activeType.value === 'ingress' ? inColumns : outColumns;
-  azureDefaultColumns.value = defaultColumns.filter((item: any) => item.field !== 'operate' && item.field !== 'updated_at');   // azure默认规则没有操作和修改时间
+  azureDefaultColumns.value = defaultColumns.filter(
+    (item: any) => item.field !== 'operate' && item.field !== 'updated_at',
+  ); // azure默认规则没有操作和修改时间
 }
-
 </script>
 
 <template>
   <div>
-    <bk-loading
-      :loading="state.isLoading"
-    >
+    <bk-loading :loading="state.isLoading">
       <section class="rule-main">
-        <bk-radio-group
-          v-model="activeType"
-          :disabled="state.isLoading"
-        >
-          <bk-radio-button
-            v-for="item in types"
-            :key="item.name"
-            :label="item.name"
-          >
+        <bk-radio-group v-model="activeType" :disabled="state.isLoading">
+          <bk-radio-button v-for="item in types" :key="item.name" :label="item.name">
             {{ item.label }}
           </bk-radio-button>
         </bk-radio-group>
 
         <div @click="showAuthDialog(actionName)">
           <bk-button
-            :disabled="!authVerifyData?.
-              permissionAction[actionName]"
-            theme="primary" @click="handleSecurityRuleDialog({})">
-            {{t('新增规则')}}
+            :disabled="!authVerifyData?.permissionAction[actionName]"
+            theme="primary"
+            @click="handleSecurityRuleDialog({})"
+          >
+            {{ t('新增规则') }}
           </bk-button>
         </div>
       </section>
 
       <div v-if="props.vendor === 'azure'" class="mb20">
-        <h4 class="mt10">Azure默认{{activeType === 'ingress' ? t('入站') : t('出站')}}规则</h4>
+        <h4 class="mt10">Azure默认{{ activeType === 'ingress' ? t('入站') : t('出站') }}规则</h4>
         <bk-table
           class="mt10"
           row-hover="auto"
@@ -569,7 +558,9 @@ if (props.vendor === 'huawei') {
         />
       </div>
 
-      <h4 v-if="props.vendor === 'azure'" class="mt10">Azure{{activeType === 'ingress' ? t('入站') : t('出站')}}规则</h4>
+      <h4 v-if="props.vendor === 'azure'" class="mt10">
+        Azure{{ activeType === 'ingress' ? t('入站') : t('出站') }}规则
+      </h4>
       <bk-table
         v-if="activeType === 'ingress'"
         class="mt20"
@@ -595,7 +586,6 @@ if (props.vendor === 'huawei') {
         @page-limit-change="state.handlePageSizeChange"
         @page-value-change="state.handlePageChange"
       />
-
     </bk-loading>
 
     <security-rule
@@ -603,19 +593,20 @@ if (props.vendor === 'huawei') {
       :loading="securityRuleLoading"
       dialog-width="1680"
       :active-type="activeType"
-      :title="t(activeType === 'egress' ? `${dataId ? '编辑' : '添加'}出站规则` : `${dataId ? '编辑' : '添加'}入站规则`)"
+      :title="
+        t(activeType === 'egress' ? `${dataId ? '编辑' : '添加'}出站规则` : `${dataId ? '编辑' : '添加'}入站规则`)
+      "
       :is-edit="!!dataId"
       :vendor="vendor"
       @submit="handleSubmitRule"
       :related-security-groups="props.relatedSecurityGroups"
     />
 
-
     <bk-dialog
       v-model:is-show="deleteDialogShow"
       :title="'确定删除要该条规则?'"
       :theme="'primary'"
-      @closed="() => deleteDialogShow = false"
+      @closed="() => (deleteDialogShow = false)"
       :is-loading="securityRuleLoading"
       @confirm="handleDeleteConfirm()"
     >
@@ -625,9 +616,9 @@ if (props.vendor === 'huawei') {
 </template>
 
 <style lang="scss" scoped>
-  .rule-main {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
+.rule-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 </style>

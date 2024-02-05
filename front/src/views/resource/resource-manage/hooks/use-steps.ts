@@ -1,9 +1,7 @@
 /**
  * 分配相关事件和状态
  */
-import {
-  ref,
-} from 'vue';
+import { ref } from 'vue';
 
 import ResourceDistribution from '../children/dialog/steps/resource-distribution';
 

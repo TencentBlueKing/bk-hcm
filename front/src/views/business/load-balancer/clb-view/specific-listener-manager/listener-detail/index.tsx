@@ -47,9 +47,7 @@ export default defineComponent({
             value: () => (
               <div class='target-group-wrap'>
                 <span class='link-text-btn'>目标组134</span>
-                {
-                  true && <img class='loading-icon spin-icon' src={StatusLoading} alt="" />
-                }
+                {true && <img class='loading-icon spin-icon' src={StatusLoading} alt='' />}
               </div>
             ),
             sub_hidden: ['HTTP', 'HTTPS'].includes(props.protocolType),
@@ -135,8 +133,8 @@ export default defineComponent({
                 )}{' '}
               </div>
               <div class='info-content'>
-                {open_state !== false
-                  && content.map(({ label, value, sub_hidden }) => {
+                {open_state !== false &&
+                  content.map(({ label, value, sub_hidden }) => {
                     if (sub_hidden) {
                       return null;
                     }
@@ -145,7 +143,7 @@ export default defineComponent({
                       valueVNode = value();
                     } else {
                       if (Array.isArray(value)) {
-                        valueVNode = value.map(v => (
+                        valueVNode = value.map((v) => (
                           <>
                             {' '}
                             {v};<br />{' '}
@@ -158,9 +156,7 @@ export default defineComponent({
                     return (
                       <div class='info-item'>
                         <div class='info-item-label'>{label}</div>:
-                        <div class={`info-item-content${Array.isArray(value) ? ' multiline' : ''}`}>
-                          {valueVNode}
-                        </div>
+                        <div class={`info-item-content${Array.isArray(value) ? ' multiline' : ''}`}>{valueVNode}</div>
                       </div>
                     );
                   })}

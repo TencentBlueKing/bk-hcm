@@ -30,7 +30,6 @@ const fields = ref([
   },
 ]);
 
-
 const columns = ref([]);
 const ipConfigData = ref([]);
 
@@ -84,17 +83,8 @@ watch(
 
 <template>
   <div class="ipconfig">
-    <detail-info
-      :detail="detail"
-      :fields="fields"
-    />
-    <bk-table
-      class="mt20"
-      row-hover="auto"
-      :columns="columns"
-      :data="ipConfigData"
-      show-overflow-tooltip
-    />
+    <detail-info :detail="detail" :fields="fields" />
+    <bk-table class="mt20" row-hover="auto" :columns="columns" :data="ipConfigData" show-overflow-tooltip />
   </div>
 </template>
 

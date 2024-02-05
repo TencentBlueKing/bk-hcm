@@ -1,8 +1,6 @@
 <script lang="ts" setup>
 import { ref, watchEffect, defineExpose, watch } from 'vue';
-import {
-  useBusinessStore,
-} from '@/store';
+import { useBusinessStore } from '@/store';
 
 const props = defineProps({
   modelValue: {
@@ -33,18 +31,23 @@ const getResourceGroupData = async () => {
     },
   });
   zonePage.value += 1;
-  resourceGroupList.value.push(...res?.data?.details || []);
-  hasMoreData.value = res?.data?.details?.length >= 100;   // 100条数据说明还有数据 可翻页
+  resourceGroupList.value.push(...(res?.data?.details || []));
+  hasMoreData.value = res?.data?.details?.length >= 100; // 100条数据说明还有数据 可翻页
   loading.value = false;
 };
 
-watchEffect(void (async () => {
-  getResourceGroupData();
-})());
+watchEffect(
+  void (async () => {
+    getResourceGroupData();
+  })(),
+);
 
-watch(() => selectedValue.value, (val) => {
-  emit('update:modelValue', val);
-});
+watch(
+  () => selectedValue.value,
+  (val) => {
+    emit('update:modelValue', val);
+  },
+);
 
 defineExpose({
   resourceGroupList,
@@ -52,12 +55,7 @@ defineExpose({
 </script>
 
 <template>
-  <bk-select
-    v-model="selectedValue"
-    filterable
-    @scroll-end="getResourceGroupData"
-    :loading="loading"
-  >
+  <bk-select v-model="selectedValue" filterable @scroll-end="getResourceGroupData" :loading="loading">
     <bk-option
       v-for="(item, index) in resourceGroupList"
       :key="index"

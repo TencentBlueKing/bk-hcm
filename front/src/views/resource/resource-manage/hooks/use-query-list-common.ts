@@ -3,23 +3,17 @@
  */
 import type { FilterType } from '@/typings/resource';
 
-import {
-  useResourceStore,
-} from '@/store/resource';
-import {
-  Ref,
-  ref,
-  watch,
-} from 'vue';
+import { useResourceStore } from '@/store/resource';
+import { Ref, ref, watch } from 'vue';
 
 type SortType = {
   column: {
-    field: string
+    field: string;
   };
-  type: string
+  type: string;
 };
 type PropsType = {
-  filter?: FilterType
+  filter?: FilterType;
 };
 
 export default (props: PropsType, url: Ref<string>, extraConfig?: any) => {
@@ -41,31 +35,31 @@ export default (props: PropsType, url: Ref<string>, extraConfig?: any) => {
   const triggerApi = () => {
     isLoading.value = true;
 
-    Promise
-      .all([
-        resourceStore.getCommonList(
-          {
-            page: {
-              count: false,
-              start: (pagination.value.current - 1) * pagination.value.limit,
-              limit: pagination.value.limit,
-              sort: extraConfig?.sort ? extraConfig.sort : sort.value,
-              order: extraConfig?.order ? extraConfig.order : order.value,
-            },
-            filter: props.filter,
+    Promise.all([
+      resourceStore.getCommonList(
+        {
+          page: {
+            count: false,
+            start: (pagination.value.current - 1) * pagination.value.limit,
+            limit: pagination.value.limit,
+            sort: extraConfig?.sort ? extraConfig.sort : sort.value,
+            order: extraConfig?.order ? extraConfig.order : order.value,
           },
-          url.value,
-        ),
-        resourceStore.getCommonList(
-          {
-            page: {
-              count: true,
-            },
-            filter: props.filter,
+          filter: props.filter,
+        },
+        url.value,
+      ),
+      resourceStore.getCommonList(
+        {
+          page: {
+            count: true,
           },
-          url.value,
-        ),
-      ]).then(([listResult, countResult]: [any, any]) => {
+          filter: props.filter,
+        },
+        url.value,
+      ),
+    ])
+      .then(([listResult, countResult]: [any, any]) => {
         datas.value = (listResult?.data?.details || []).map((item: any) => {
           return {
             ...item,
@@ -103,13 +97,9 @@ export default (props: PropsType, url: Ref<string>, extraConfig?: any) => {
   };
 
   // 过滤发生变化的时候，获取数据
-  watch(
-    () => props.filter,
-    triggerApi,
-    {
-      deep: true,
-    },
-  );
+  watch(() => props.filter, triggerApi, {
+    deep: true,
+  });
 
   // 切换tab重新获取数据
   watch(
@@ -119,7 +109,6 @@ export default (props: PropsType, url: Ref<string>, extraConfig?: any) => {
     },
     { deep: true },
   );
-
 
   const getList = () => {
     triggerApi();

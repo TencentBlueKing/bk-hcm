@@ -21,34 +21,19 @@ export default defineComponent({
     const isExpand = ref(true);
     watch(
       () => props.isAllExpand,
-      val => isExpand.value = val,
+      (val) => (isExpand.value = val),
     );
     return () => (
       <div class={'draggable-container mb12'}>
         <div class='draggable-card-header'>
-          <div onClick={() => isExpand.value = !isExpand.value} class={'draggable-card-header-icon'}>
-            {
-              isExpand.value ? <AngleUp width={17} height={14}/> : <AngleDown width={17} height={14}/>
-            }
+          <div onClick={() => (isExpand.value = !isExpand.value)} class={'draggable-card-header-icon'}>
+            {isExpand.value ? <AngleUp width={17} height={14} /> : <AngleDown width={17} height={14} />}
           </div>
-          <span class={'draggable-card-header-title'}>
-            { props.title }
-          </span>
-          <div class={'draggable-card-header-index'}>
-            { props.index }
-          </div>
+          <span class={'draggable-card-header-title'}>{props.title}</span>
+          <div class={'draggable-card-header-index'}>{props.index}</div>
           <i class={'hcm-icon bkhcm-icon-grag-fill mr16 draggable-card-header-draggable-btn'}></i>
         </div>
-        {
-          isExpand.value ? (
-            <div class={'draggable-card-container'}>
-                {
-                  slots.default?.()
-                }
-            </div>
-          )
-            : null
-        }
+        {isExpand.value ? <div class={'draggable-card-container'}>{slots.default?.()}</div> : null}
       </div>
     );
   },

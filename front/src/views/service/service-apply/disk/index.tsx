@@ -23,11 +23,8 @@ export default defineComponent({
   props: {},
   setup() {
     const { cond, isEmptyCond } = useCondtion(ResourceTypeEnum.DISK);
-    const { formData, formRef, handleFormSubmit, submitting } =      useDiskFormData(cond);
-    const { diskTypes, billingModes, purchaseDurationUnits } = useDiskOptions(
-      cond,
-      formData,
-    );
+    const { formData, formRef, handleFormSubmit, submitting } = useDiskFormData(cond);
+    const { diskTypes, billingModes, purchaseDurationUnits } = useDiskOptions(cond, formData);
     const { t } = useI18n();
     const { isResourcePage } = useWhereAmI();
     const router = useRouter();
@@ -53,8 +50,7 @@ export default defineComponent({
         },
         [VendorEnum.GCP]: {
           pattern: /^[a-z][a-z0-9-]{0,61}(?<!-)$/,
-          message:
-            '必须以小写字母开头，后面最多可跟 62 个小写字母、数字或连字符，但不能以连字符结尾',
+          message: '必须以小写字母开头，后面最多可跟 62 个小写字母、数字或连字符，但不能以连字符结尾',
           trigger: 'change',
         },
         [VendorEnum.AZURE]: {
@@ -108,9 +104,7 @@ export default defineComponent({
           validator: (value: number) => {
             return value >= min && value <= max;
           },
-          message: `${
-            disk_type === '' ? '请选择云硬盘类型' : `${min}-${max}GB`
-          }`,
+          message: `${disk_type === '' ? '请选择云硬盘类型' : `${min}-${max}GB`}`,
           trigger: 'change',
         },
       };
@@ -137,31 +131,20 @@ export default defineComponent({
             property: 'disk_name',
             rules: [nameRules.value],
             // description: nameRules.value.message,
-            content: () => (
-              <Input
-                placeholder='填写硬盘的名称'
-                v-model={formData.disk_name}
-              />
-            ),
+            content: () => <Input placeholder='填写硬盘的名称' v-model={formData.disk_name} />,
           },
           {
             label: '可用区',
             required: true,
             property: 'zone',
-            content: () => (
-              <ZoneSelector
-                v-model={formData.zone}
-                vendor={cond.vendor}
-                region={cond.region}
-              />
-            ),
+            content: () => <ZoneSelector v-model={formData.zone} vendor={cond.vendor} region={cond.region} />,
           },
           {
             label: '云硬盘类型',
             required: true,
             property: 'disk_type',
             content: () => (
-              <Select v-model={formData.disk_type} clearable={false} onChange={() => formData.disk_size = null}>
+              <Select v-model={formData.disk_type} clearable={false} onChange={() => (formData.disk_size = null)}>
                 {diskTypes.value.map(({ id, name }: IOption) => (
                   <Option key={id} value={id} label={name}></Option>
                 ))}
@@ -187,13 +170,7 @@ export default defineComponent({
             label: '购买数量',
             required: true,
             property: 'disk_count',
-            content: () => (
-              <Input
-                type='number'
-                min={1}
-                max={500}
-                v-model={formData.disk_count}></Input>
-            ),
+            content: () => <Input type='number' min={1} max={500} v-model={formData.disk_count}></Input>,
           },
           {
             label: '计费模式',
@@ -215,19 +192,12 @@ export default defineComponent({
             content: [
               {
                 property: 'purchase_duration.size',
-                content: () => (
-                  <Input
-                    type='number'
-                    min={1}
-                    v-model={formData.purchase_duration.count}></Input>
-                ),
+                content: () => <Input type='number' min={1} v-model={formData.purchase_duration.count}></Input>,
               },
               {
                 property: 'purchase_duration.unit',
                 content: () => (
-                  <Select
-                    v-model={formData.purchase_duration.unit}
-                    clearable={false}>
+                  <Select v-model={formData.purchase_duration.unit} clearable={false}>
                     {purchaseDurationUnits.map(({ id, name }: IOption) => (
                       <Option key={id} value={id} label={name}></Option>
                     ))}
@@ -241,11 +211,7 @@ export default defineComponent({
             display: ['PREPAID', 'prePaid'].includes(formData.disk_charge_type),
             required: true,
             property: 'auto_renew',
-            content: () => (
-              <Checkbox v-model={formData.auto_renew}>
-                账号余额足够时，设备到期后按月自动续费
-              </Checkbox>
-            ),
+            content: () => <Checkbox v-model={formData.auto_renew}>账号余额足够时，设备到期后按月自动续费</Checkbox>,
           },
           {
             label: '申请单备注',
@@ -271,13 +237,8 @@ export default defineComponent({
         <DetailHeader>
           <p class={'purchase-dish-header-title'}>购买硬盘</p>
         </DetailHeader>
-        <div class="create-form-container disk-wrap" style={isResourcePage && { padding: 0 }}>
-          <Form
-            model={formData}
-            rules={formRules}
-            ref={formRef}
-            onSubmit={handleFormSubmit}
-            formType='vertical'>
+        <div class='create-form-container disk-wrap' style={isResourcePage && { padding: 0 }}>
+          <Form model={formData} rules={formRules} ref={formRef} onSubmit={handleFormSubmit} formType='vertical'>
             <ConditionOptions
               type={ResourceTypeEnum.DISK}
               v-model:bizId={cond.bizId}
@@ -292,46 +253,34 @@ export default defineComponent({
                 <CommonCard title={() => title} class={'mb16'}>
                   {children
                     .filter(({ display }) => display !== false)
-                    .map(({
-                      label,
-                      description,
-                      tips,
-                      rules,
-                      required,
-                      property,
-                      content,
-                    }) => (
-                        <FormItem
-                          label={label}
-                          required={required}
-                          property={property}
-                          rules={rules}
-                          description={description}>
-                          {Array.isArray(content) ? (
-                            <div class='flex-row'>
-                              {content
-                                .filter(sub => sub.display !== false)
-                                .map(sub => (
-                                  <FormItem
-                                    label={sub.label}
-                                    required={sub.required}
-                                    property={sub.property}
-                                    description={sub?.description}
-                                    class={'mr8'}>
-                                    {sub.content()}
-                                    {sub.tips && (
-                                      <div class='form-item-tips'>
-                                        {sub.tips()}
-                                      </div>
-                                    )}
-                                  </FormItem>
-                                ))}
-                            </div>
-                          ) : (
-                            content()
-                          )}
-                          {tips && <div class='form-item-tips'>{tips()}</div>}
-                        </FormItem>
+                    .map(({ label, description, tips, rules, required, property, content }) => (
+                      <FormItem
+                        label={label}
+                        required={required}
+                        property={property}
+                        rules={rules}
+                        description={description}>
+                        {Array.isArray(content) ? (
+                          <div class='flex-row'>
+                            {content
+                              .filter((sub) => sub.display !== false)
+                              .map((sub) => (
+                                <FormItem
+                                  label={sub.label}
+                                  required={sub.required}
+                                  property={sub.property}
+                                  description={sub?.description}
+                                  class={'mr8'}>
+                                  {sub.content()}
+                                  {sub.tips && <div class='form-item-tips'>{sub.tips()}</div>}
+                                </FormItem>
+                              ))}
+                          </div>
+                        ) : (
+                          content()
+                        )}
+                        {tips && <div class='form-item-tips'>{tips()}</div>}
+                      </FormItem>
                     ))}
                 </CommonCard>
               ))}

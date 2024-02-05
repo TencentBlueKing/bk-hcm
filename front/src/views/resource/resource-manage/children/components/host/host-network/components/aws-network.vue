@@ -1,7 +1,5 @@
 <script lang="ts" setup>
-import {
-  ref,
-} from 'vue';
+import { ref } from 'vue';
 
 // const { t } = useI18n();
 const showBind = ref(false);
@@ -58,7 +56,6 @@ const tableData = [
   },
 ];
 
-
 const handleToggleShow = () => {
   showBind.value = !showBind.value;
 };
@@ -83,8 +80,6 @@ const handleConfirmBind = () => {
 const handleRadio = (item: any) => {
   console.log(item);
 };
-
-
 </script>
 
 <template>
@@ -95,14 +90,7 @@ const handleRadio = (item: any) => {
   >
     {{ t('绑定已有网络接口') }}
   </bk-button> -->
-  <bk-table
-    class="mt20"
-    row-hover="auto"
-    :columns="columns"
-    :data="tableData"
-    show-overflow-tooltip
-  />
-
+  <bk-table class="mt20" row-hover="auto" :columns="columns" :data="tableData" show-overflow-tooltip />
 
   <bk-dialog
     :is-show="showBind"
@@ -111,58 +99,52 @@ const handleRadio = (item: any) => {
     theme="primary"
     quick-close
     @closed="handleToggleShow"
-    @confirm="handleConfirmBind">
-    <bk-table
-      class="mt20"
-      dark-header
-      :data="[{ ip: 'testetstt' }]"
-      :outer-border="false"
-      show-overflow-tooltip
-    >
-      <bk-table-column
-        label="内网IP"
-      >
-        <template #default="{ data } ">
+    @confirm="handleConfirmBind"
+  >
+    <bk-table class="mt20" dark-header :data="[{ ip: 'testetstt' }]" :outer-border="false" show-overflow-tooltip>
+      <bk-table-column label="内网IP">
+        <template #default="{ data }">
           <div class="cell-flex">
             <bk-radio
-              label="" @click="() => {
-                handleRadio(data)
-              }" />
+              label=""
+              @click="
+                () => {
+                  handleRadio(data);
+                }
+              "
+            />
             <span class="pl10">{{ data.ip }}</span>
           </div>
         </template>
       </bk-table-column>
-      <bk-table-column
-        label="已绑定的EIP"
-        prop="ip"
-      />
+      <bk-table-column label="已绑定的EIP" prop="ip" />
     </bk-table>
   </bk-dialog>
 </template>
 
 <style lang="scss" scoped>
-  .info-title {
-    font-size: 14px;
-    margin-bottom: 8px;
-  }
-  .sub-title{
-    font-size: 12px;
-  }
-  .cell-flex{
+.info-title {
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+.sub-title {
+  font-size: 12px;
+}
+.cell-flex {
+  display: flex;
+  align-items: center;
+}
+.table-warp {
+  padding: 20px;
+  border: 1px dashed rgb(225, 221, 221);
+  .table-flex {
     display: flex;
+    justify-content: space-between;
     align-items: center;
   }
-  .table-warp{
-    padding: 20px;
-    border: 1px dashed rgb(225, 221, 221);
-    .table-flex{
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-  }
-  .flex{
-    display: flex;
-    align-items: center;
-  }
+}
+.flex {
+  display: flex;
+  align-items: center;
+}
 </style>

@@ -24,12 +24,7 @@ const pinia = createPinia();
 app.config.globalProperties.$bus = bus;
 app.config.globalProperties.$http = http;
 
-app.use(i18n)
-  .use(directive)
-  .use(router)
-  .use(components)
-  .use(pinia)
-  .use(bkui);
+app.use(i18n).use(directive).use(router).use(components).use(pinia).use(bkui);
 
 router.isReady().then(() => {
   app.mount('#app');

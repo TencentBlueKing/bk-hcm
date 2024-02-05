@@ -62,9 +62,7 @@ export default defineComponent({
         }}
         class={'create-account-dialog-container'}>
         {{
-          tools: () => (
-            <div class={'create-account-dialog-tools'}>云账号接入</div>
-          ),
+          tools: () => <div class={'create-account-dialog-tools'}>云账号接入</div>,
           default: () => (
             <div class={'create-account-dialog-content'}>
               {step.value < 3 ? (
@@ -81,28 +79,23 @@ export default defineComponent({
                   ]}
                 />
               ) : (
-                <ResultPage
-                  errMsg={errMsg.value}
-                  type={errMsg.value.length > 0 ? 'failure' : 'success'}
-                />
+                <ResultPage errMsg={errMsg.value} type={errMsg.value.length > 0 ? 'failure' : 'success'} />
               )}
-                <AccountForm
-                  changeEnableNextStep={changeEnableNextStep}
-                  changeSubmitData={changeSubmitData}
-                  changeValidateForm={callback => (validateForm.value = callback)
-                  }
-                  changeExtension={extension => (secretIds.value = extension)}
-                  style={
-                    step.value === 1 ? '' : {
-                      display: 'none',
-                    }
-                  }
-                />
+              <AccountForm
+                changeEnableNextStep={changeEnableNextStep}
+                changeSubmitData={changeSubmitData}
+                changeValidateForm={(callback) => (validateForm.value = callback)}
+                changeExtension={(extension) => (secretIds.value = extension)}
+                style={
+                  step.value === 1
+                    ? ''
+                    : {
+                        display: 'none',
+                      }
+                }
+              />
               {step.value === 2 ? (
-                <AccountResource
-                  secretIds={submitData.value?.extension}
-                  vendor={submitData.value?.vendor}
-                />
+                <AccountResource secretIds={submitData.value?.extension} vendor={submitData.value?.vendor} />
               ) : null}
             </div>
           ),
@@ -117,19 +110,11 @@ export default defineComponent({
                       </Button>
                     ) : null}
                     {step.value < 2 ? (
-                      <Button
-                        theme={'primary'}
-                        class={'mr8'}
-                        disabled={!enableNextStep.value}
-                        onClick={handleNextStep}>
+                      <Button theme={'primary'} class={'mr8'} disabled={!enableNextStep.value} onClick={handleNextStep}>
                         下一步
                       </Button>
                     ) : (
-                      <Button
-                        theme={'primary'}
-                        class={'mr8'}
-                        loading={isSubmitLoading.value}
-                        onClick={handleSubmit}>
+                      <Button theme={'primary'} class={'mr8'} loading={isSubmitLoading.value} onClick={handleSubmit}>
                         提交
                       </Button>
                     )}

@@ -28,7 +28,7 @@ export default defineComponent({
     };
     const handleEnter = (v: string) => {
       const [searchName, searchVal] = v.split('：');
-      const target = props.dataList.find(item => item.name === searchName);
+      const target = props.dataList.find((item) => item.name === searchName);
       ctx.emit('update:searchValue', `${target.id}:${searchVal}`);
     };
     const handleClear = () => {
@@ -52,7 +52,7 @@ export default defineComponent({
             ),
             content: () => (
               <div class='search-data-list' onClick={handleSearchDataClick}>
-                {props.dataList.map(item => (
+                {props.dataList.map((item) => (
                   <div class='search-data-item' key={item.id} data-name={item.name}>
                     {item.name}
                   </div>

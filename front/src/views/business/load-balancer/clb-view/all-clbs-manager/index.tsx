@@ -15,7 +15,7 @@ export default defineComponent({
       {
         label: '操作',
         width: 120,
-        render: () => (<span class='operate-text-btn'>删除</span>),
+        render: () => <span class='operate-text-btn'>删除</span>,
       },
     ];
     const searchData: any = [];
@@ -46,7 +46,9 @@ export default defineComponent({
           {{
             operation: () => (
               <>
-                <Button class='mw64' theme='primary' onClick={handleApply}>购买</Button>
+                <Button class='mw64' theme='primary' onClick={handleApply}>
+                  购买
+                </Button>
                 <Button class='mw88'>批量删除</Button>
               </>
             ),

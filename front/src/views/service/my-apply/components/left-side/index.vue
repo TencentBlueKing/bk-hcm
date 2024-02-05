@@ -1,15 +1,7 @@
 <template>
-  <bk-loading
-    :loading="listLoading"
-    :opacity="1"
-  >
+  <bk-loading :loading="listLoading" :opacity="1">
     <div class="apply-left-wrapper">
-      <HeaderSelect
-        :title="title"
-        :filter-data="filterData"
-        :active="active"
-        @on-select="handleSelectChange"
-      />
+      <HeaderSelect :title="title" :filter-data="filterData" :active="active" @on-select="handleSelectChange" />
       <div class="apply-left-wrapper-list" @scroll="handleScroll">
         <template v-if="list.length">
           <apply-item
@@ -24,12 +16,12 @@
         <template v-else>
           <div class="empty-wrapper">
             <img class="empty-img" :src="emptyChart" alt="error" />
-            <div class="empty-tip">{{ t("暂无数据") }}</div>
+            <div class="empty-tip">{{ t('暂无数据') }}</div>
           </div>
         </template>
       </div>
       <div class="loading-more pt10" v-if="!canScrollLoad">
-        {{ t("没有更多数据") }}
+        {{ t('没有更多数据') }}
       </div>
     </div>
   </bk-loading>
@@ -91,7 +83,7 @@ export default defineComponent({
       emit('on-filter-change', payload);
     };
 
-    const handleResetScrollLoading = ()  => {
+    const handleResetScrollLoading = () => {
       state = Object.assign(state, { isShowNoDataTips: false, isScrollLoading: false });
     };
 
@@ -111,18 +103,22 @@ export default defineComponent({
       }
     }, 500);
 
-    watch(() => props.list, (payload: any[]) => {
-      if (!payload.length) {
-        state = Object.assign(state, { currentActive: '',  isShowNoDataTips: false });
-        return;
-      }
-      if (!payload.some((item: Record<string, any>) => item.id === state.currentActive)) {
-        state.currentActive = payload[0].id;
-      }
-    },  {
-      immediate: true,
-      deep: true,
-    });
+    watch(
+      () => props.list,
+      (payload: any[]) => {
+        if (!payload.length) {
+          state = Object.assign(state, { currentActive: '', isShowNoDataTips: false });
+          return;
+        }
+        if (!payload.some((item: Record<string, any>) => item.id === state.currentActive)) {
+          state.currentActive = payload[0].id;
+        }
+      },
+      {
+        immediate: true,
+        deep: true,
+      },
+    );
     return {
       emptyChart,
       ...toRefs(state),
@@ -137,7 +133,7 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-$borderColor:  #f5f6fa;
+$borderColor: #f5f6fa;
 .apply-left-wrapper {
   display: flex;
   flex-direction: column;
@@ -151,18 +147,17 @@ $borderColor:  #f5f6fa;
     overflow-x: hidden;
     overflow-y: auto;
   }
-  .loading-more{
+  .loading-more {
     text-align: center;
     font-size: 12px;
   }
 
-  .empty-wrapper{
+  .empty-wrapper {
     text-align: center;
     margin-top: 50px;
-    .empty-img{
+    .empty-img {
       width: 150px;
     }
   }
 }
-
 </style>

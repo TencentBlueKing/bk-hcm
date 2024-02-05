@@ -93,8 +93,11 @@ const fields = ref([
       if (!val) {
         return '--';
       }
-      return h('div', { class: 'cell-content-list' }, val?.split(';')
-        .map(item => h('p', { class: 'cell-content-item' }, item?.split('/')?.pop())));
+      return h(
+        'div',
+        { class: 'cell-content-list' },
+        val?.split(';').map((item) => h('p', { class: 'cell-content-item' }, item?.split('/')?.pop())),
+      );
     },
   },
   {
@@ -104,8 +107,11 @@ const fields = ref([
       if (!val) {
         return '--';
       }
-      return h('div', { class: 'cell-content-list' }, val?.split(';')
-        .map(item => h('p', { class: 'cell-content-item' }, item?.split('/')?.pop())));
+      return h(
+        'div',
+        { class: 'cell-content-list' },
+        val?.split(';').map((item) => h('p', { class: 'cell-content-item' }, item?.split('/')?.pop())),
+      );
     },
   },
   {
@@ -115,7 +121,7 @@ const fields = ref([
       if (props.isResourcePage) {
         return val ? `/#/resource/detail/host?id=${val}&type=gcp` : '--';
       }
-      return  val ? `/#/business/host/detail?id=${val}&type=gcp&bizs=${props.detail.bk_biz_id}` : '--';
+      return val ? `/#/business/host/detail?id=${val}&type=gcp&bizs=${props.detail.bk_biz_id}` : '--';
     },
   },
   {
@@ -130,7 +136,7 @@ const fields = ref([
     name: 'IP转发',
     prop: 'can_ip_forward',
     render(val: boolean) {
-      return  val ? '开启' : '关闭';
+      return val ? '开启' : '关闭';
     },
   },
 ]);
@@ -147,9 +153,6 @@ watchEffect(() => {
 
 <template>
   <div class="field-list">
-    <detail-info
-      :detail="data"
-      :fields="fields"
-    />
+    <detail-info :detail="data" :fields="fields" />
   </div>
 </template>

@@ -17,13 +17,7 @@
       />
       <Button class="mw88">批量删除</Button>
       <div class="flex-row align-items-center justify-content-arround search-selector-container">
-        <bk-search-select
-          class="w500"
-          clearable
-          :conditions="[]"
-          :data="clbsSearchData"
-          v-model="searchValue"
-        />
+        <bk-search-select class="w500" clearable :conditions="[]" :data="clbsSearchData" v-model="searchValue" />
         <slot name="recycleHistory"></slot>
       </div>
     </section>
@@ -127,7 +121,7 @@ const isCurRowSelectEnable = (row: any) => {
 const handleConfirm = async () => {
   isDialogBtnLoading.value = true;
   await resourceStore.assignBusiness('clbs', {
-    clb_ids: selections.value?.map(v => v.id) || [],
+    clb_ids: selections.value?.map((v) => v.id) || [],
     bk_biz_id: selectedBizId.value,
   });
   triggerApi();

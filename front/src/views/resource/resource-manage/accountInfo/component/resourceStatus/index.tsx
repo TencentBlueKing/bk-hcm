@@ -24,23 +24,23 @@ export default defineComponent({
       {
         label: '任务状态',
         field: 'res_status',
-        render: ({ cell }: { cell: string }) => (<div class={'resource-status'}>
-          <img
-            // eslint-disable-next-line no-nested-ternary
-            src={ cell === 'sync_success' ? successStatus : cell === 'sync_failed' ? failedStatus : loadingStatus }
-            class={`resource-status-icon ${cell === 'syncing' && 'loading'}`}
-            height={16}
-            width={16}
-          />
-          <span>
-            {RESOURCES_SYNC_STATUS_MAP[cell]}
-          </span>
-        </div>),
+        render: ({ cell }: { cell: string }) => (
+          <div class={'resource-status'}>
+            <img
+              // eslint-disable-next-line no-nested-ternary
+              src={cell === 'sync_success' ? successStatus : cell === 'sync_failed' ? failedStatus : loadingStatus}
+              class={`resource-status-icon ${cell === 'syncing' && 'loading'}`}
+              height={16}
+              width={16}
+            />
+            <span>{RESOURCES_SYNC_STATUS_MAP[cell]}</span>
+          </div>
+        ),
       },
       {
         label: '最近同步时间',
         field: 'res_end_time',
-        render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+        render: ({ cell }: { cell: string }) => timeFormatter(cell),
       },
       {
         label: '同步周期',
@@ -74,11 +74,7 @@ export default defineComponent({
     );
     return () => (
       <Loading loading={isLoading.value} style={{ margin: '8px 0' }}>
-        <Table
-          data={statusList.value}
-          columns={tableColumns}
-          border={['row', 'outer']}
-        ></Table>
+        <Table data={statusList.value} columns={tableColumns} border={['row', 'outer']}></Table>
       </Loading>
     );
   },

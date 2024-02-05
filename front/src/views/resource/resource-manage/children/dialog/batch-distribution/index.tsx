@@ -91,8 +91,7 @@ export const BatchDistribution = defineComponent({
       isLoading.value = true;
       try {
         await resourceStore.assignBusiness(props.type, {
-          [DResourceTypeMap[props.type].key]:
-            props.selections?.map(v => v.id) || [],
+          [DResourceTypeMap[props.type].key]: props.selections?.map((v) => v.id) || [],
           bk_biz_id: selectedBizId.value,
         });
         Message({
@@ -130,12 +129,11 @@ export const BatchDistribution = defineComponent({
           quickClose
           onClosed={() => (isShow.value = false)}
           onConfirm={handleConfirm}
-          isLoading={isLoading.value}
-          >
+          isLoading={isLoading.value}>
           <p class='selected-host-count-tip'>
             已选择
-            <span class='selected-host-count'>{props.selections.length}</span>个
-            {DResourceTypeMap[props.type].name}，可选择所需分配的目标业务
+            <span class='selected-host-count'>{props.selections.length}</span>个{DResourceTypeMap[props.type].name}
+            ，可选择所需分配的目标业务
           </p>
           <p class='mb6'>目标业务</p>
           <BusinessSelector

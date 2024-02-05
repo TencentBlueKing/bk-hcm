@@ -6,27 +6,11 @@ import DetailTab from '../../common/tab/detail-tab';
 import DetailInfo from '../../common/info/detail-info';
 // import { useAccountStore } from '@/store';
 
-import {
-  ref,
-  computed,
-  h,
-  withDirectives,
-  inject,
-} from 'vue';
-import {
-  useRoute,
-  useRouter,
-} from 'vue-router';
-import {
-  InfoBox,
-  bkTooltips,
-} from 'bkui-vue';
-import {
-  useI18n,
-} from 'vue-i18n';
-import {
-  useResourceStore,
-} from '@/store/resource';
+import { ref, computed, h, withDirectives, inject } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { InfoBox, bkTooltips } from 'bkui-vue';
+import { useI18n } from 'vue-i18n';
+import { useResourceStore } from '@/store/resource';
 import useDetail from '../../hooks/use-detail';
 import useMountedDrive from '../../hooks/use-choose-host-drive';
 import useUninstallDrive from '../../hooks/use-uninstall-drive';
@@ -58,17 +42,7 @@ const settingFields = ref<any[]>([
     render(cell = '') {
       const index = cell.lastIndexOf('/') <= 0 ? 0 : cell.lastIndexOf('/') + 1;
       const value = cell.slice(index);
-      return withDirectives(
-        h(
-          'span',
-          [
-            value || '--',
-          ],
-        ),
-        [
-          [bkTooltips, cell],
-        ],
-      );
+      return withDirectives(h('span', [value || '--']), [[bkTooltips, cell]]);
     },
   },
   {
@@ -141,22 +115,16 @@ const settingFields = ref<any[]>([
       };
       // 业务下
       if (route.path.includes('business')) {
-        Object.assign(
-          routeInfo,
-          {
-            name: `${type}BusinessDetail`,
-          },
-        );
+        Object.assign(routeInfo, {
+          name: `${type}BusinessDetail`,
+        });
       } else {
-        Object.assign(
-          routeInfo,
-          {
-            name: 'resourceDetail',
-            params: {
-              type,
-            },
+        Object.assign(routeInfo, {
+          name: 'resourceDetail',
+          params: {
+            type,
           },
-        );
+        });
       }
       router.push(routeInfo);
     },
@@ -189,33 +157,17 @@ const router = useRouter();
 //   return !accountStore.bizs;
 // });
 
-const {
-  t,
-} = useI18n();
+const { t } = useI18n();
 
-const {
-  isShowMountedDrive,
-  handleMountedDrive,
-  MountedDrive,
-} = useMountedDrive();
+const { isShowMountedDrive, handleMountedDrive, MountedDrive } = useMountedDrive();
 
-const {
-  isShowUninstallDrive,
-  handleUninstallDrive,
-  UninstallDrive,
-} = useUninstallDrive();
+const { isShowUninstallDrive, handleUninstallDrive, UninstallDrive } = useUninstallDrive();
 
-const {
-  loading,
-  detail,
-  getDetail,
-} = useDetail(
-  'disks',
-  route.query.id as string,
-  (detail: any) => {
-    switch (detail.vendor) {
-      case 'tcloud':
-        settingFields.value.push(...[
+const { loading, detail, getDetail } = useDetail('disks', route.query.id as string, (detail: any) => {
+  switch (detail.vendor) {
+    case 'tcloud':
+      settingFields.value.push(
+        ...[
           {
             name: '是否随实例销毁',
             prop: 'delete_with_instance',
@@ -251,10 +203,14 @@ const {
               return timeFormatter(detail.extension.expire_time) || '--';
             },
           },
-        ]);
-        break;
-      case 'azure':
-        settingFields.value.splice(9, 1, ...[
+        ],
+      );
+      break;
+    case 'azure':
+      settingFields.value.splice(
+        9,
+        1,
+        ...[
           {
             name: '资源组',
             prop: 'resource_group_name',
@@ -263,10 +219,12 @@ const {
             name: '硬盘类型',
             prop: 'sku_name',
           },
-        ]);
-        break;
-      case 'huawei':
-        settingFields.value.push(...[
+        ],
+      );
+      break;
+    case 'huawei':
+      settingFields.value.push(
+        ...[
           {
             name: '硬盘用途',
             prop: '',
@@ -288,11 +246,11 @@ const {
               return timeFormatter(detail.extension.expire_time) || '--';
             },
           },
-        ]);
-        break;
-    }
-  },
-);
+        ],
+      );
+      break;
+  }
+});
 
 const handleShowDelete = () => {
   InfoBox({
@@ -305,12 +263,10 @@ const handleShowDelete = () => {
     extCls: 'recycle-resource-infobox',
     onConfirm() {
       return resourceStore
-        .recycled(
-          'disks',
-          {
-            infos: [{ id: detail.value.id }],
-          },
-        ).then(() => {
+        .recycled('disks', {
+          infos: [{ id: detail.value.id }],
+        })
+        .then(() => {
           router.replace({
             path: location.href.includes('business') ? 'recyclebin/disk' : '/resource/resource/recycle',
             query: {
@@ -337,15 +293,17 @@ const bkTooltipsOptions = computed(() => {
   //     disabled: authVerifyData.value.permissionAction[actionName.value],
   // }
   // 资源下，是否分配业务
-  if (isResourcePage.value && detail.value?.bk_biz_id !== -1) return {
-    content: '该硬盘仅可在业务下操作',
-    disabled: detail.value.bk_biz_id === -1,
-  };
+  if (isResourcePage.value && detail.value?.bk_biz_id !== -1)
+    return {
+      content: '该硬盘仅可在业务下操作',
+      disabled: detail.value.bk_biz_id === -1,
+    };
   // 业务/资源下，是否已被回收
-  if (detail.value?.recycle_status === 'recycling') return {
-    content: '已回收的资源，不支持操作',
-    disabled: detail.value.recycle_status !== 'recycling',
-  };
+  if (detail.value?.recycle_status === 'recycling')
+    return {
+      content: '已回收的资源，不支持操作',
+      disabled: detail.value.recycle_status !== 'recycling',
+    };
 
   return null;
 });
@@ -366,24 +324,46 @@ const bkTooltipsOptions = computed(() => {
     <detail-header>
       云硬盘：ID（{{ detail.id }}）
       <template #right>
-        <bk-button v-if="!detail.instance_id" v-bk-tooltips="bkTooltipsOptions || { disabled: true }" class="w100 ml10"
-                   theme="primary" :disabled="disabledOption" @click="handleMountedDrive">
+        <bk-button
+          v-if="!detail.instance_id"
+          v-bk-tooltips="bkTooltipsOptions || { disabled: true }"
+          class="w100 ml10"
+          theme="primary"
+          :disabled="disabledOption"
+          @click="handleMountedDrive"
+        >
           {{ t('挂载') }}
         </bk-button>
         <bk-button
-          v-else class="w100 ml10" theme="primary"
-          v-bk-tooltips="bkTooltipsOptions || (detail.is_system_disk ? {
-            content: '该硬盘是系统盘，不允许卸载',
-            disabled: !detail.is_system_disk,
-          } : { disabled: true })"
-          :disabled="disabledOption || detail.is_system_disk" @click="handleUninstallDrive(detail)">
+          v-else
+          class="w100 ml10"
+          theme="primary"
+          v-bk-tooltips="
+            bkTooltipsOptions ||
+            (detail.is_system_disk
+              ? {
+                  content: '该硬盘是系统盘，不允许卸载',
+                  disabled: !detail.is_system_disk,
+                }
+              : { disabled: true })
+          "
+          :disabled="disabledOption || detail.is_system_disk"
+          @click="handleUninstallDrive(detail)"
+        >
           {{ t('卸载') }}
         </bk-button>
-        <bk-button v-bk-tooltips="bkTooltipsOptions || {
-                     content: '该硬盘已绑定主机，不可单独回收',
-                     disabled: !detail.instance_id,
-                   }" class="w100 ml10" theme="primary" :disabled="!!detail.instance_id || disabledOption"
-                   @click="handleShowDelete">
+        <bk-button
+          v-bk-tooltips="
+            bkTooltipsOptions || {
+              content: '该硬盘已绑定主机，不可单独回收',
+              disabled: !detail.instance_id,
+            }
+          "
+          class="w100 ml10"
+          theme="primary"
+          :disabled="!!detail.instance_id || disabledOption"
+          @click="handleShowDelete"
+        >
           {{ t('回收') }}
         </bk-button>
       </template>

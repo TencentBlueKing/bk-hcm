@@ -131,7 +131,10 @@ export default defineComponent({
           {{
             operation: () => (
               <div class={'flex-row align-item-center'}>
-                <Button theme={'primary'}><Plus class={'f20'}/>新增监听器</Button>
+                <Button theme={'primary'}>
+                  <Plus class={'f20'} />
+                  新增监听器
+                </Button>
                 <Button>批量删除</Button>
               </div>
             ),
