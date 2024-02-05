@@ -4,9 +4,9 @@ import type {
   FilterType,
 } from '@/typings/resource';
 import { GcpTypeEnum, CloudType } from '@/typings';
-import { Button, InfoBox, Message, Tag } from 'bkui-vue';
+import { Button, InfoBox, Message, Tag, bkTooltips } from 'bkui-vue';
 import { useResourceStore, useAccountStore } from '@/store';
-import { ref, h, PropType, watch, reactive, defineExpose, computed } from 'vue';
+import { ref, h, PropType, watch, reactive, defineExpose, computed, withDirectives } from 'vue';
 
 import { useI18n } from 'vue-i18n';
 import { useRouter, useRoute } from 'vue-router';
@@ -14,7 +14,7 @@ import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import { useRegionsStore } from '@/store/useRegionsStore';
-import { VendorEnum } from '@/common/constant';
+import { VendorEnum, VendorMap } from '@/common/constant';
 import { cloneDeep } from 'lodash-es';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import useSelection from '../../hooks/use-selection';
@@ -22,6 +22,11 @@ import {
   BatchDistribution,
   DResourceType,
 } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
+import { TemplateTypeMap } from '../dialog/template-dialog';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import http from '@/http';
+
+const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 const props = defineProps({
   filter: {
@@ -50,8 +55,15 @@ const activeType = ref('group');
 const fetchUrl = ref<string>('security_groups/list');
 const resourceStore = useResourceStore();
 const accountStore = useAccountStore();
+const { whereAmI } = useWhereAmI();
 
-const emit = defineEmits(['auth', 'handleSecrityType', 'edit', 'tabchange']);
+const emit = defineEmits([
+  'auth',
+  'handleSecrityType',
+  'edit',
+  'tabchange',
+  'editTemplate',
+]);
 const { columns, generateColumnsSettings } = useColumns('group');
 const businessMapStore = useBusinessMapStore();
 
@@ -72,6 +84,8 @@ const state = reactive<any>({
   },
 });
 
+const templateData = ref([]);
+
 const { searchData, searchValue, filter } = useFilter(props);
 
 const {
@@ -90,18 +104,36 @@ const {
 );
 
 const selectSearchData = computed(() => {
+  let searchName = '安全组 ID';
+  switch (activeType.value) {
+    case 'group': {
+      searchName = '安全组 ID';
+      break;
+    }
+    case 'gcp': {
+      searchName = '防火墙 ID';
+      break;
+    }
+    case 'template': {
+      searchName = '模板 ID';
+      break;
+    }
+  }
   return [
     {
-      name: activeType.value === 'group' ? '安全组 ID' : '防火墙 ID',
+      name: searchName,
       id: 'cloud_id',
     },
     ...searchData.value,
-    ...[
-      {
-        name: '云地域',
-        id: 'region',
-      },
-    ],
+    ...(
+      activeType.value === 'template'
+        ? []
+        : [{
+          name: '云地域',
+          id: 'region',
+        },
+        ]
+    ),
   ];
 });
 
@@ -125,15 +157,42 @@ watch(
   },
 );
 
+watch(
+  () => datas.value,
+  async (data) => {
+    if (activeType.value === 'template') {
+      templateData.value = data;
+      const ids = data.map(({ id }) => id);
+      const url = `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud${whereAmI.value === Senarios.business ? `/bizs/${accountStore.bizs}` : ''}/argument_templates/instance/rule/list`;
+      const res = await http.post(url, {
+        ids,
+        bk_biz_id: whereAmI.value === Senarios.business ? accountStore.bizs : undefined,
+      });
+      for (let i = 0;i < templateData.value.length;i++) {
+        const item = templateData.value[i];
+        item.instance_num = res.data?.details?.[i].instance_num || '--';
+        item.rule_num = res.data?.details?.[i].rule_num || '--';
+      }
+    }
+  },
+  {
+    deep: true,
+  },
+);
+
 const handleSwtichType = async (type: string) => {
   if (type === 'gcp') {
     fetchUrl.value = 'vendors/gcp/firewalls/rules/list';
     state.params.fetchUrl = 'vendors/gcp/firewalls/rules';
     state.params.columns = 'gcp';
-  } else {
+  } else if (type === 'group') {
     fetchUrl.value = 'security_groups/list';
     state.params.fetchUrl = 'security_groups';
     state.params.columns = 'group';
+  } else if (type === 'template') {
+    fetchUrl.value = 'argument_templates/list';
+    state.params.fetchUrl = 'argument_templates';
+    state.params.columns = 'template';
   }
   emit('handleSecrityType', type);
 };
@@ -626,9 +685,105 @@ const gcpColumns = [
 
 const gcpSettings = generateColumnsSettings(gcpColumns);
 
+const templateColumns = [
+  {
+    type: 'selection',
+    width: '100',
+    onlyShowOnList: true,
+  },
+  {
+    label: '模板ID',
+    field: 'cloud_id',
+  },
+  {
+    label: '模板名称',
+    field: 'name',
+  },
+  {
+    label: '云厂商',
+    field: 'vendor',
+    render: ({ cell }: any) => VendorMap[cell],
+  },
+  {
+    label: '类型',
+    field: 'type',
+    render: ({ cell }: any) => TemplateTypeMap[cell],
+
+  },
+  {
+    label: '关联实例数',
+    field: 'instance_num',
+  },
+  {
+    label: '规则数',
+    field: 'rule_num',
+  },
+  {
+    label: '是否分配',
+    field: 'bk_biz_id',
+    render: ({ data }: { data: { bk_biz_id: number }; cell: number }) => {
+      return withDirectives(h(
+        Tag,
+        {
+          theme: data.bk_biz_id === -1 ? false : 'success',
+        },
+        [data.bk_biz_id === -1 ? '未分配' : '已分配'],
+      ), [
+        [bkTooltips, {
+          content: businessMapStore.businessMap.get(data.bk_biz_id),
+          disabled: !data.bk_biz_id || data.bk_biz_id === -1,
+          theme: 'light',
+        }],
+      ]);
+    },
+  },
+  {
+    field: 'actions',
+    label: '操作',
+    render({ data }: any) {
+      return h('span', {}, [
+        h(
+          Button,
+          {
+            text: true,
+            theme: 'primary',
+            onClick() {
+              emit('editTemplate', {
+                type: data.type,
+                templates: data.templates,
+                group_templates: data.group_templates,
+                name: data.name,
+                bk_biz_id: data.bk_biz_id,
+                id: data.id,
+                account_id: data.account_id,
+              });
+            },
+          },
+          ['编辑'],
+        ),
+        h(
+          Button,
+          {
+            class: 'ml10',
+            text: true,
+            theme: 'primary',
+            onClick() {
+              securityHandleShowDelete(data);
+            },
+          },
+          [t('删除')],
+        ),
+      ]);
+    },
+  },
+].filter(({ field }) => (whereAmI.value === Senarios.resource && !['actions'].includes(field)) || whereAmI.value !== Senarios.resource);
+
+const templateSettings = generateColumnsSettings(templateColumns);
+
 const types = [
   { name: 'group', label: t('安全组') },
   { name: 'gcp', label: t('GCP防火墙规则') },
+  { name: 'template', label: '参数模板' },
 ];
 
 const securityType = ref('group');
@@ -671,13 +826,23 @@ const securityHandleShowDelete = (data: any) => {
     contentAlign: 'center',
     extCls: 'delete-resource-infobox',
     async onConfirm() {
+      let type = '';
+      switch (activeType.value) {
+        case 'group': {
+          type = 'security_groups';
+          break;
+        }
+        case 'gcp': {
+          type = 'vendors/gcp/firewalls/rules';
+          break;
+        }
+        case 'template': {
+          type = 'argument_templates';
+          break;
+        }
+      }
       try {
-        await resourceStore.deleteBatch(
-          activeType.value === 'group'
-            ? 'security_groups'
-            : 'vendors/gcp/firewalls/rules',
-          { ids: [data.id] },
-        );
+        await resourceStore.deleteBatch(type, { ids: [data.id] });
         getList();
         Message({
           message: t('删除成功'),
@@ -700,7 +865,7 @@ const securityHandleShowDelete = (data: any) => {
         :type="
           activeType === 'group'
             ? DResourceType.security_groups
-            : DResourceType.firewall
+            : activeType === 'template' ? DResourceType.templates : DResourceType.firewall
         "
         :get-data="
           () => {
@@ -750,13 +915,31 @@ const securityHandleShowDelete = (data: any) => {
       />
 
       <bk-table
-        v-if="activeType === 'gcp'"
+        v-else-if="activeType === 'gcp'"
         :settings="gcpSettings"
         class="mt20"
         row-hover="auto"
         remote-pagination
         :pagination="state.pagination"
         :columns="gcpColumns"
+        :data="state.datas"
+        show-overflow-tooltip
+        :is-row-select-enable="isRowSelectEnable"
+        @selection-change="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable)"
+        @select-all="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true)"
+        @page-limit-change="state.handlePageSizeChange"
+        @page-value-change="state.handlePageChange"
+        @column-sort="state.handleSort"
+      />
+
+      <bk-table
+        v-else-if="activeType === 'template'"
+        :settings="templateSettings"
+        class="mt20"
+        row-hover="auto"
+        remote-pagination
+        :pagination="state.pagination"
+        :columns="templateColumns"
         :data="state.datas"
         show-overflow-tooltip
         :is-row-select-enable="isRowSelectEnable"

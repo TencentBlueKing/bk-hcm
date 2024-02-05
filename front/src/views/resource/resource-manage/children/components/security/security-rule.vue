@@ -40,6 +40,9 @@ const props = defineProps({
   relatedSecurityGroups: {
     type: Array as PropType<Array<any>>,
   },
+  templateData: {
+    type: Object as PropType<Record<string, Array<any>>>,
+  },
 });
 
 // use hook
@@ -605,6 +608,7 @@ if (props.vendor === 'huawei') {
       :vendor="vendor"
       @submit="handleSubmitRule"
       :related-security-groups="props.relatedSecurityGroups"
+      :template-data="props.templateData"
     />
 
 
