@@ -83,7 +83,7 @@ export default defineComponent({
                     class={`icon hcm-icon vendor-account-menu-dropdown-icon${
                       isExpand ? ' bkhcm-icon-down-shape' : ' bkhcm-icon-right-shape'
                     }`}></i>
-                  {icon}
+                  <img class={'vendor-icon'} src={icon} alt={name} />
                   <div class='vendor-title'>{name}</div>
                   <div class='vendor-account-count'>{count}</div>
                 </div>
