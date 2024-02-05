@@ -55,8 +55,12 @@ type SecurityGroupRuleListResult[T cloud.SecurityGroupRule] struct {
 type TCloudSGRuleUpdateReq struct {
 	Protocol                   *string `json:"protocol"`
 	Port                       *string `json:"port"`
+	CloudServiceID             *string `json:"cloud_service_id"`
+	CloudServiceGroupID        *string `json:"cloud_service_group_id"`
 	IPv4Cidr                   *string `json:"ipv4_cidr"`
 	IPv6Cidr                   *string `json:"ipv6_cidr"`
+	CloudAddressID             *string `json:"cloud_address_id" validate:"omitempty"`
+	CloudAddressGroupID        *string `json:"cloud_address_group_id" validate:"omitempty"`
 	CloudTargetSecurityGroupID *string `json:"cloud_target_security_group_id"`
 	Action                     string  `json:"action"`
 	Memo                       *string `json:"memo"`
@@ -143,10 +147,14 @@ type SecurityGroupRule interface {
 
 // TCloudSecurityGroupRule define tcloud security group rule spec.
 type TCloudSecurityGroupRule struct {
-	Protocol                   *string `json:"protocol" validate:"required"`
-	Port                       *string `json:"port" validate:"required"`
+	Protocol                   *string `json:"protocol" validate:"omitempty"`
+	Port                       *string `json:"port" validate:"omitempty"`
+	CloudServiceID             *string `json:"cloud_service_id" validate:"omitempty"`
+	CloudServiceGroupID        *string `json:"cloud_service_group_id" validate:"omitempty"`
 	IPv4Cidr                   *string `json:"ipv4_cidr" validate:"omitempty"`
 	IPv6Cidr                   *string `json:"ipv6_cidr" validate:"omitempty"`
+	CloudAddressID             *string `json:"cloud_address_id" validate:"omitempty"`
+	CloudAddressGroupID        *string `json:"cloud_address_group_id" validate:"omitempty"`
 	CloudTargetSecurityGroupID *string `json:"cloud_target_security_group_id" validate:"omitempty"`
 	Action                     string  `json:"action" validate:"required"`
 	Memo                       *string `json:"memo" validate:"omitempty"`
@@ -154,8 +162,15 @@ type TCloudSecurityGroupRule struct {
 
 // ValidateSGRule ...
 func (req TCloudSecurityGroupRule) ValidateSGRule() error {
-	if req.IPv4Cidr == nil && req.IPv6Cidr == nil && req.CloudTargetSecurityGroupID == nil {
-		return fmt.Errorf("source address (ipv4_cidr、ipv6_cidr、cloud_target_security_group_id) at least one is required")
+	if req.Protocol == nil && req.Port == nil && req.CloudServiceID == nil && req.CloudServiceGroupID == nil {
+		return fmt.Errorf("service port (protocol、port、cloud_service_id、cloud_service_group_id) " +
+			"at least one is required")
+	}
+
+	if req.IPv4Cidr == nil && req.IPv6Cidr == nil && req.CloudTargetSecurityGroupID == nil &&
+		req.CloudAddressID == nil && req.CloudAddressGroupID == nil {
+		return fmt.Errorf("source address (ipv4_cidr、ipv6_cidr、cloud_target_security_group_id、cloud_address_id、" +
+			"cloud_address_group_id) at least one is required")
 	}
 	return validator.Validate.Struct(req)
 }

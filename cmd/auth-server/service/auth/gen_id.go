@@ -525,6 +525,11 @@ func genCostManageResource(a *meta.ResourceAttribute) (client.ActionID, []client
 	}
 }
 
+// genArgumentTemplateResource generate argument template related iam resource.
+func genArgumentTemplateResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	return genIaaSResourceResource(a)
+}
+
 // genCertResource generate cert related iam resource.
 func genCertResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
 	res := client.Resource{

@@ -211,6 +211,30 @@ func (cli *SecurityGroupClient) ListSecurityGroupRule(ctx context.Context, h htt
 	return resp.Data, nil
 }
 
+// ListSecurityGroupRuleExt list security group rule ext.
+func (cli *SecurityGroupClient) ListSecurityGroupRuleExt(ctx context.Context, h http.Header, request *protocloud.
+	TCloudSGRuleListReq) (*protocloud.TCloudSGRuleListExtResult, error) {
+
+	resp := new(protocloud.TCloudSGRuleListExtResp)
+
+	err := cli.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/security_groups/rules/list").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
 // BatchDeleteSecurityGroupRule delete security group rule.
 func (cli *SecurityGroupClient) BatchDeleteSecurityGroupRule(ctx context.Context, h http.Header, request *protocloud.
 	TCloudSGRuleBatchDeleteReq, sgID string) error {

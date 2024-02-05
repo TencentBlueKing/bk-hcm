@@ -95,6 +95,8 @@ func (ad Audit) buildDeleteAuditInfo(kt *kit.Kit, resType enumor.AuditResourceTy
 		audits, err = ad.eipDeleteAuditBuild(kt, deletes)
 	case enumor.DiskAuditResType:
 		audits, err = ad.diskDeleteAuditBuild(kt, deletes)
+	case enumor.ArgumentTemplateAuditResType:
+		audits, err = ad.argsTplDeleteAuditBuild(kt, deletes)
 	case enumor.SslCertAuditResType:
 		audits, err = ad.certDeleteAuditBuild(kt, deletes)
 

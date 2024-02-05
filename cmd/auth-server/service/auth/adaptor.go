@@ -88,6 +88,8 @@ func AdaptAuthOptions(a *meta.ResourceAttribute) (client.ActionID, []client.Reso
 		return sys.CloudSelectionRecommend, make([]client.Resource, 0), nil
 	case meta.CloudSelectionDataSource:
 		return sys.CloudSelectionRecommend, make([]client.Resource, 0), nil
+	case meta.ArgumentTemplate:
+		return genArgumentTemplateResource(a)
 	case meta.Cert:
 		return genCertResource(a)
 	case meta.Clb:

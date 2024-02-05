@@ -34,6 +34,7 @@ import (
 	"hcm/cmd/cloud-server/service/application"
 	appcvm "hcm/cmd/cloud-server/service/application/handlers/cvm"
 	approvalprocess "hcm/cmd/cloud-server/service/approval_process"
+	argstpl "hcm/cmd/cloud-server/service/argument-template"
 	"hcm/cmd/cloud-server/service/assign"
 	"hcm/cmd/cloud-server/service/audit"
 	"hcm/cmd/cloud-server/service/bill"
@@ -301,6 +302,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 
 	approvalprocess.InitService(c)
 	cloudselection.InitService(c)
+	argstpl.InitArgsTplService(c)
 	cert.InitCertService(c)
 	clb.InitService(c)
 

@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/dal/dao/auth"
 	"hcm/pkg/dal/dao/cloud"
 	daoselection "hcm/pkg/dal/dao/cloud-selection"
+	argstpl "hcm/pkg/dal/dao/cloud/argument-template"
 	"hcm/pkg/dal/dao/cloud/bill"
 	"hcm/pkg/dal/dao/cloud/cert"
 	"hcm/pkg/dal/dao/cloud/clb"
@@ -108,6 +109,7 @@ type Set interface {
 	CloudSelectionScheme() daoselection.SchemeInterface
 	CloudSelectionBizType() daoselection.BizTypeInterface
 	CloudSelectionIdc() daoselection.IdcInterface
+	ArgsTpl() argstpl.Interface
 	Cert() cert.Interface
 	LoadBalancer() clb.ClbInterface
 	LoadBalancerListener() clb.ListenerInterface
@@ -524,6 +526,15 @@ func (s *set) CloudSelectionIdc() daoselection.IdcInterface {
 	return &daoselection.IdcDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
+	}
+}
+
+// ArgsTpl return argument template dao.
+func (s *set) ArgsTpl() argstpl.Interface {
+	return &argstpl.Dao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
 	}
 }
 

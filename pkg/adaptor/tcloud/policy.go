@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	typeaccount "hcm/pkg/adaptor/types/account"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -44,7 +45,7 @@ func (t *TCloudImpl) ListPoliciesGrantingServiceAccess(kt *kit.Kit, opt *typeacc
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.CamServiceClient("ap-guangzhou")
+	client, err := t.clientSet.CamServiceClient(constant.TCloudDefaultRegion)
 	if err != nil {
 		return nil, fmt.Errorf("new cam client failed, err: %v", err)
 	}

@@ -146,6 +146,9 @@ const (
 	// CloudSelectionIdcTable 云选型机房信息
 	CloudSelectionIdcTable Name = "cloud_selection_idc"
 
+	// ArgumentTemplateTable is argument template table's name.
+	ArgumentTemplateTable Name = "argument_template"
+
 	// SslCertTable is ssl cert table's name.
 	SslCertTable Name = "ssl_cert"
 
@@ -240,6 +243,8 @@ var TableMap = map[Name]struct{}{
 
 	AsyncFlowTable:     {},
 	AsyncFlowTaskTable: {},
+
+	ArgumentTemplateTable: {},
 
 	LoadBalancerTable:            {},
 	SecurityGroupCommonRelTable:  {},

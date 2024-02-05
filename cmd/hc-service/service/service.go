@@ -31,6 +31,7 @@ import (
 	"hcm/cmd/hc-service/logics/cloud-adaptor"
 	ressync "hcm/cmd/hc-service/logics/res-sync"
 	"hcm/cmd/hc-service/service/account"
+	argstpl "hcm/cmd/hc-service/service/argument-template"
 	"hcm/cmd/hc-service/service/bill"
 	"hcm/cmd/hc-service/service/capability"
 	"hcm/cmd/hc-service/service/cert"
@@ -166,6 +167,7 @@ func (s *Service) apiSet() *restful.Container {
 	instancetype.InitInstanceTypeService(c)
 	sync.InitService(c)
 	bill.InitBillService(c)
+	argstpl.InitArgsTplService(c)
 	clb.InitClbService(c)
 	cert.InitCertService(c)
 
