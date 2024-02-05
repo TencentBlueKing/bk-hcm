@@ -21,7 +21,6 @@ package argstpl
 
 import (
 	"fmt"
-	"reflect"
 
 	"hcm/pkg/api/core"
 	coreargstpl "hcm/pkg/api/core/cloud/argument-template"
@@ -93,8 +92,7 @@ func batchCreateArgsTpl[T coreargstpl.Extension](cts *rest.Contexts, svc *argsTp
 
 	ids, ok := result.([]string)
 	if !ok {
-		return nil, fmt.Errorf("batch create argument template but return id type is not []string, id type: %v",
-			reflect.TypeOf(result).String())
+		return nil, fmt.Errorf("batch create argument template but return id type is not []string, id type: %T", result)
 	}
 	return &core.BatchCreateResult{IDs: ids}, nil
 }
