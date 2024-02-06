@@ -1,0 +1,77 @@
+.rs-check-selector-container {
+    padding-bottom: 12px;
+    .rs-check-selector, .rs-check-selector-active {
+        height: 40px;
+        background: #F5F7FA;
+        border-radius: 2px;
+        width: 640px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        cursor: pointer;
+        border: 1px solid #ffffff00;
+    }
+    .rs-check-selector-active {
+        background: #E1ECFF;
+        border: 1px solid #A3C5FD;
+        border-radius: 2px;
+    }
+}
+.security-rule-container {
+    .security-rule-container-title {
+        font-weight: 700;
+        font-size: 14px;
+        color: #313238;
+        margin-right: 16px;
+    }
+    .security-rule-container-desc {
+        font-size: 12px;
+        color: #979BA5;
+    }
+    .security-rule-container-operations {
+        margin-top: 12px;
+        display: flex;
+        .security-rule-container-searcher {
+            margin-left: auto;
+        }
+    }
+}
+.specific-security-rule-tables {
+    // max-height: 70vh;
+    // overflow: scroll;
+    .security-rule-table-container {
+        margin-top: 16px;
+        border: 1px solid #EAEBF0;
+        border-radius: 2px;
+        .security-rule-table-header {
+            display: flex;
+            align-items: center;
+            height: 32px;
+            background: #F0F1F5;
+            border-radius: 2px 2px 0 0;
+            padding: 0 17px;
+        }
+        .security-rule-table-panel {
+
+        }
+    }
+}
+
+.config-security-rule-contianer {
+    .config-security-rule-operation {
+        display: flex;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+    .config-security-item,  .config-security-item-active{
+        height: 40px;
+        background: #F5F7FA;
+        border-radius: 2px;
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+        padding: 9px 8px;
+        cursor: pointer;
+    }
+}
