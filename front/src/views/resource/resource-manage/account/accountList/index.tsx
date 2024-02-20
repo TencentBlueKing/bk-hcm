@@ -105,9 +105,12 @@ export default defineComponent({
           {searchVal.value.length ? null : (
             <div
               class={`all-vendors specific-vendor ${
-                !resourceAccountStore.resourceAccount?.id ? ' actived-specfic-account' : ''
+                !(route.query.accountId || resourceAccountStore.currentVendor) ? ' actived-specfic-account' : ''
               }`}
-              onClick={() => setAccountId('')}>
+              onClick={() => {
+                setAccountId('');
+                resourceAccountStore.setCurrentVendor(null);
+              }}>
               <img src={allVendors} alt='全部账号' class={'vendor-icon'} />
               <div>全部账号</div>
             </div>

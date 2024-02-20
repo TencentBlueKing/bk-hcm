@@ -6,6 +6,7 @@ import { VendorEnum } from '@/common/constant';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { useRoute } from 'vue-router';
 import { useResourceStore } from '@/store';
+import { storeToRefs } from 'pinia';
 
 export default defineComponent({
   props: {
@@ -45,6 +46,8 @@ export default defineComponent({
     const resourceAccountStore = useResourceAccountStore();
     const resourceStore = useResourceStore();
     const route = useRoute();
+
+    const { currentVendor } = storeToRefs(resourceAccountStore);
 
     const loadingRef = ref([]);
 
@@ -91,7 +94,11 @@ export default defineComponent({
           ({ vendor, count, name, icon, accounts, isExpand, hasNext }) =>
             count > 0 && (
               <div class='vendor-wrap'>
-                <div class={`vendor-item-wrap${isExpand ? ' sticky' : ''}`} onClick={() => props.handleExpand(vendor)}>
+                <div
+                  class={`vendor-item-wrap${isExpand ? ' sticky' : ''}${
+                    currentVendor.value === vendor ? ' active' : ''
+                  }`}
+                  onClick={() => props.handleExpand(vendor)}>
                   <i
                     class={`icon hcm-icon vendor-account-menu-dropdown-icon${
                       isExpand ? ' bkhcm-icon-down-shape' : ' bkhcm-icon-right-shape'
@@ -103,7 +110,7 @@ export default defineComponent({
                 <div class={`account-list-wrap${isExpand ? ' expand' : ''}`}>
                   {accounts.map(({ sync_status, name, id }) => (
                     <div
-                      class={`account-item${resourceAccountStore.resourceAccount?.id === id ? ' active' : ''}`}
+                      class={`account-item${route.query.accountId === id ? ' active' : ''}`}
                       key={id}
                       onClick={() => props.handleSelect(id)}>
                       <img
