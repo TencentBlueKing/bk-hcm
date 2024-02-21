@@ -12,6 +12,7 @@ export const useResourceAccount = () => {
   const accountId = ref('');
 
   const setAccountId = (val: string) => {
+    resourceAccountStore.setCurrentVendor(null);
     accountId.value = val;
     const WHITE_LIST = [
       '/resource/service-apply/cvm',

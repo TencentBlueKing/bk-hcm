@@ -6,6 +6,7 @@ import { VendorEnum } from '@/common/constant';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { useRoute } from 'vue-router';
 import { useResourceStore } from '@/store';
+import { storeToRefs } from 'pinia';
 
 export default defineComponent({
   props: {
@@ -23,6 +24,7 @@ export default defineComponent({
         }>
       >,
     },
+    searchVal: String,
     handleExpand: {
       required: true,
       type: Function as PropType<(vendor: VendorEnum) => void>,
@@ -45,7 +47,21 @@ export default defineComponent({
     const resourceStore = useResourceStore();
     const route = useRoute();
 
+    const { currentVendor } = storeToRefs(resourceAccountStore);
+
     const loadingRef = ref([]);
+
+    // 高亮命中关键词
+    function getHighLightNameText(name: string, rootCls: string) {
+      return (
+        <div
+          class={rootCls}
+          v-html={name?.replace(
+            new RegExp(props.searchVal, 'g'),
+            `<span class='search-result-highlight'>${props.searchVal}</span>`,
+          )}></div>
+      );
+    }
 
     watch(
       () => route.query.accountId,
@@ -78,19 +94,23 @@ export default defineComponent({
           ({ vendor, count, name, icon, accounts, isExpand, hasNext }) =>
             count > 0 && (
               <div class='vendor-wrap'>
-                <div class={`vendor-item-wrap${isExpand ? ' sticky' : ''}`} onClick={() => props.handleExpand(vendor)}>
+                <div
+                  class={`vendor-item-wrap${isExpand ? ' sticky' : ''}${
+                    currentVendor.value === vendor ? ' active' : ''
+                  }`}
+                  onClick={() => props.handleExpand(vendor)}>
                   <i
                     class={`icon hcm-icon vendor-account-menu-dropdown-icon${
                       isExpand ? ' bkhcm-icon-down-shape' : ' bkhcm-icon-right-shape'
                     }`}></i>
-                  {icon}
-                  <div class='vendor-title'>{name}</div>
+                  <img class={'vendor-icon'} src={icon} alt={name} />
+                  {props.searchVal ? getHighLightNameText(name, 'vendor-title') : name}
                   <div class='vendor-account-count'>{count}</div>
                 </div>
                 <div class={`account-list-wrap${isExpand ? ' expand' : ''}`}>
                   {accounts.map(({ sync_status, name, id }) => (
                     <div
-                      class={`account-item${resourceAccountStore.resourceAccount?.id === id ? ' active' : ''}`}
+                      class={`account-item${route.query.accountId === id ? ' active' : ''}`}
                       key={id}
                       onClick={() => props.handleSelect(id)}>
                       <img
@@ -98,16 +118,7 @@ export default defineComponent({
                         alt=''
                         class='sync-status-icon'
                       />
-                      <span class='account-text'>
-                        {name.length > 22 ? (
-                          <span v-bk-tooltips={{ content: name, placement: 'right' }}>{`${name.substring(
-                            0,
-                            22,
-                          )}..`}</span>
-                        ) : (
-                          name
-                        )}
-                      </span>
+                      {props.searchVal ? getHighLightNameText(name, 'account-text') : name}
                     </div>
                   ))}
                   {hasNext && (
