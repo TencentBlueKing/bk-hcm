@@ -69,7 +69,6 @@ export default defineComponent({
     let topMenuActiveItem = '';
     let menus: RouteRecordRaw[] = [];
     const openedKeys: string[] = [];
-    let path = '';
     const curPath = ref('');
     const businessId = ref<number>(0);
     const businessList = ref<any[]>([]);
@@ -108,57 +107,45 @@ export default defineComponent({
         }
         businessId.value = accountStore.bizs || res?.data[0].id; // 默认取第一个业务
         accountStore.updateBizsId(businessId.value); // 设置全局业务id
-      } catch (error) {
-        console.log(error);
-      }
+      } catch (error) {}
     };
 
     const changeMenus = (id: string, ...subPath: string[]) => {
-      console.log('subPath', subPath, id);
       openedKeys.push(`/${id}`);
       switch (id) {
         case 'business':
           topMenuActiveItem = 'business';
           menus = reactive(business);
-          path = '/business/host';
           // if (!accountStore.bizs) accountStore.updateBizsId(useBusinessMapStore().businessList?.[0]?.id);
           getBusinessList(); // 业务下需要获取业务列表
           break;
         case 'resource':
           topMenuActiveItem = 'resource';
           menus = reactive(resource);
-          path = '/resource/resource';
           accountStore.updateBizsId(0); // 初始化业务ID
           break;
         case 'service':
           topMenuActiveItem = 'service';
           menus = reactive(service);
-          path = '/service/service-apply';
           break;
         case 'workbench':
           topMenuActiveItem = 'workbench';
           menus = reactive(workbench);
-          // path = '/workbench/auto';
-          path = '/workbench/audit';
           accountStore.updateBizsId(0); // 初始化业务ID
           break;
         case 'scheme':
           topMenuActiveItem = 'scheme';
           menus = reactive(scheme);
-          path = '/scheme/recommendation';
           accountStore.updateBizsId(0); // 初始化业务ID
           break;
         default:
           if (subPath[0] === 'biz_access') {
             topMenuActiveItem = 'business';
             menus = reactive(business);
-            path = '/business/host';
           } else {
             topMenuActiveItem = 'resource';
             menus = reactive(resource);
-            path = '/resource/resource';
           }
-          console.log(path);
           accountStore.updateBizsId(''); // 初始化业务ID
           break;
       }
@@ -504,13 +491,7 @@ export default defineComponent({
                                         key={child.meta?.activeKey as string}>
                                         {/* {route.meta.activeKey} */}
                                         {{
-                                          icon: () => (
-                                            <i
-                                              class={
-                                                'hcm-icon bkhcm-icon-automatic-typesetting'
-                                              }
-                                            />
-                                          ),
+                                          icon: () => <i class={child.meta.icon} />,
                                           default: () => (
                                             <p class='flex-row flex-1 justify-content-between align-items-center pr16'>
                                               <span class='flex-1 text-ov'>
@@ -531,13 +512,7 @@ export default defineComponent({
                                 key={menuItem.meta.activeKey as string}>
                                 {/* {menuItem.meta.activeKey} */}
                                 {{
-                                  icon: () => (
-                                    <i
-                                      class={
-                                        'hcm-icon bkhcm-icon-automatic-typesetting'
-                                      }
-                                    />
-                                  ),
+                                  icon: () => <i class={menuItem.meta.icon} />,
                                   default: () => menuItem.name as string,
                                 }}
                               </Menu.Item>

@@ -40,6 +40,20 @@ export default (
   });
   const sort = ref('created_at');
   const order = ref('DESC');
+
+  // 连表查询时, sort 按照 created_at 字段排序时需要指定资源前缀
+  switch (apiName) {
+    case 'getUnbindCvmEips':
+      sort.value = `eip.${sort.value}`;
+      break;
+    case 'getUnbindCvmDisks':
+      sort.value = `disk.${sort.value}`;
+      break;
+    case 'getUnbindDiskCvms':
+      sort.value = `cvm.${sort.value}`;
+      break;
+  }
+
   const isFilter = ref(false);
   const { whereAmI } = useWhereAmI();
   const accountStore = useAccountStore();
