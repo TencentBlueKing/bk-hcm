@@ -19,7 +19,12 @@
 
 package bkbase
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"time"
+
+	"hcm/pkg/tools/times"
+)
 
 const (
 	// CodeSuccess is the response code which represents a success request.
@@ -27,7 +32,19 @@ const (
 
 	// DefaultQueryLimit is the bkbase default query batch size.
 	DefaultQueryLimit int = 5000
+
+	// DateTimeLayout layout for bkbase '%Y%m%d'
+	DateTimeLayout = "20060102"
 )
+
+// Date is a date represented as a string used to specify the date range in a BKBase SQL query.
+type Date string
+
+// DateBefore returns a date that is prior to the current time.
+// It is intended for use in comparisons with the `thedate` column for the purpose of filtering by a date range.
+func DateBefore(nDays int) Date {
+	return Date(time.Now().Add(times.Day * time.Duration(-nDays)).Format(DateTimeLayout))
+}
 
 // QuerySyncReq query sync bkbase data request
 type QuerySyncReq struct {
