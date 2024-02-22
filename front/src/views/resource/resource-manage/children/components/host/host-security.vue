@@ -254,8 +254,6 @@ const getSecurityGroupsList = async () => {
       res = await resourceStore.getSecurityGroupsListByCvmId(props.data.id);
     }
     tableData.value = res.data;
-  } catch (error) {
-    console.log(error);
   } finally {
     isListLoading.value = false;
   }
@@ -295,12 +293,6 @@ if (props.data.vendor === 'aws') {
 if (isResourcePage.value) {
   securityFetchFilter.value.filter.rules.push({ field: 'bk_biz_id', op: 'eq', value: -1 });   // 资源下才需要查未绑定的数据
 }
-if (isResourcePage.value) {
-  securityFetchFilter.value.filter.rules.push({ field: 'bk_biz_id', op: 'eq', value: -1 });   // 资源下才需要查未绑定的数据
-}
-
-//   // { field: 'id', op: 'not_in', value: ['000000cx'] }
-// }
 
 const {
   datas: securityDatas,
@@ -377,7 +369,6 @@ const handleSecurityConfirm = async () => {
 const unBind = async (dataItem: any) => {
   unBindShow.value = true;
   tableItem.value = dataItem;
-  console.log('tableItem.value', tableItem.value);
 };
 
 // 确认解绑
@@ -404,7 +395,6 @@ const handleConfirmUnBind = async () => {
       theme: 'success',
     });
     getSecurityGroupsList();
-  } catch (error) {
   } finally {
     unBindLoading.value = false;
   }
