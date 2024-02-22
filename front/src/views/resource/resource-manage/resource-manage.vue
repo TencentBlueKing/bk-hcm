@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed, provide } from 'vue';
-
+import { ref, watch, computed, provide, onMounted } from 'vue';
 import HostManage from './children/manage/host-manage.vue';
 import VpcManage from './children/manage/vpc-manage.vue';
 import SubnetManage from './children/manage/subnet-manage.vue';
@@ -19,16 +18,11 @@ import securityForm from '@/views/business/forms/security/index.vue';
 import firewallForm from '@/views/business/forms/firewall';
 import BkTab, { BkTabPanel } from 'bkui-vue/lib/tab';
 import { RouterView, useRouter, useRoute } from 'vue-router';
-
 import { RESOURCE_TYPES, RESOURCE_TABS, VendorEnum } from '@/common/constant';
-
 import { useI18n } from 'vue-i18n';
 import useSteps from './hooks/use-steps';
-
 import type { FilterType } from '@/typings/resource';
-
 import { useAccountStore } from '@/store';
-
 import { useVerify } from '@/hooks';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { InfoBox } from 'bkui-vue';
@@ -43,6 +37,54 @@ const { isShowDistribution, ResourceDistribution } = useSteps();
 const isResourcePage = computed(() => {
   // 资源下没有业务ID
   return !accountStore.bizs;
+});
+
+// 账号 extension 信息
+const headerExtensionMap = computed(() => {
+  const map = { firstLabel: '', firstField: '', secondLabel: '', secondField: '' };
+  switch (resourceAccountStore.resourceAccount.vendor) {
+    case VendorEnum.TCLOUD:
+      Object.assign(map, {
+        firstLabel: '主账号ID',
+        firstField: 'cloud_main_account_id',
+        secondLabel: '子账号ID',
+        secondField: 'cloud_sub_account_id',
+      });
+      break;
+    case VendorEnum.AWS:
+      Object.assign(map, {
+        firstLabel: '云账号ID',
+        firstField: 'cloud_account_id',
+        secondLabel: '云iam用户名',
+        secondField: 'cloud_iam_username',
+      });
+      break;
+    case VendorEnum.AZURE:
+      Object.assign(map, {
+        firstLabel: '云租户ID',
+        firstField: 'cloud_tenant_id',
+        secondLabel: '云订阅名称',
+        secondField: 'cloud_subscription_name',
+      });
+      break;
+    case VendorEnum.GCP:
+      Object.assign(map, {
+        firstLabel: '云项目ID',
+        firstField: 'cloud_project_id',
+        secondLabel: '云项目名称',
+        secondField: 'cloud_project_name',
+      });
+      break;
+    case VendorEnum.HUAWEI:
+      Object.assign(map, {
+        firstLabel: '子账号ID',
+        firstField: 'cloud_sub_account_id',
+        secondLabel: '云子账号名称',
+        secondField: 'cloud_sub_account_name',
+      });
+      break;
+  }
+  return map;
 });
 
 // 权限hook
@@ -273,18 +315,15 @@ watch(
   () => resourceAccountStore.currentVendor,
   (vendor: VendorEnum) => {
     if (vendor) {
-      if (!filter.value.rules.length) {
+      const vendorRuleIdx = filter.value.rules.findIndex((e: any) => e.field === 'vendor');
+      if (vendorRuleIdx === -1) {
         filter.value.rules.push({
           field: 'vendor',
           op: 'eq',
           value: vendor,
         });
       } else {
-        filter.value.rules.forEach((e: any) => {
-          if (e.field === 'vendor') {
-            e.value = vendor;
-          }
-        });
+        filter.value.rules[vendorRuleIdx].value = vendor;
       }
     } else {
       filter.value.rules = filter.value.rules.filter((e: any) => e.field !== 'vendor');
@@ -354,7 +393,9 @@ const handleBeforeClose = () => {
   }
 };
 
-getResourceAccountList();
+onMounted(() => {
+  getResourceAccountList();
+});
 </script>
 
 <template>
@@ -416,54 +457,17 @@ getResourceAccountList();
             {{ resourceAccountStore?.resourceAccount?.name || "全部账号" }}
           </span>
           <template v-if="resourceAccountStore?.resourceAccount?.id">
-            <div v-if="resourceAccountStore?.resourceAccount?.vendor === VendorEnum.TCLOUD"
-                 class="extension">
-              <span>主账号ID：
+            <div class="extension">
+              <span>
+                {{ headerExtensionMap.firstLabel }}：
                 <span class="info-text">
-                  {{ resourceAccountStore.resourceAccount.extension.cloud_main_account_id }}
+                  {{ resourceAccountStore.resourceAccount.extension[headerExtensionMap.firstField] }}
                 </span>
               </span>
-              <span>子账号ID：
-                <span class="info-text">{{ resourceAccountStore.resourceAccount.extension.cloud_sub_account_id }}</span>
-              </span>
-            </div>
-            <div v-else-if="resourceAccountStore?.resourceAccount?.vendor === VendorEnum.AWS"
-                 class="extension">
-              <span>云账号ID：
-                <span class="info-text">{{ resourceAccountStore.resourceAccount.extension.cloud_account_id }}</span>
-              </span>
-              <span>云iam用户名：
-                <span class="info-text">{{ resourceAccountStore.resourceAccount.extension.cloud_iam_username }}</span>
-              </span>
-            </div>
-            <div v-else-if="resourceAccountStore?.resourceAccount?.vendor === VendorEnum.GCP"
-                 class="extension">
-              <span>云项目ID：
-                <span class="info-text">{{ resourceAccountStore.resourceAccount.extension.cloud_project_id }}</span>
-              </span>
-              <span>云项目名称：
-                <span class="info-text">{{ resourceAccountStore.resourceAccount.extension.cloud_project_name }}</span>
-              </span>
-            </div>
-            <div v-else-if="resourceAccountStore?.resourceAccount?.vendor === VendorEnum.AZURE"
-                 class="extension">
-              <span>云租户ID：
-                <span class="info-text">{{ resourceAccountStore.resourceAccount.extension.cloud_tenant_id }}</span>
-              </span>
-              <span>云订阅名称：
+              <span>
+                {{ headerExtensionMap.secondLabel }}：
                 <span class="info-text">
-                  {{ resourceAccountStore.resourceAccount.extension.cloud_subscription_name }}
-                </span>
-              </span>
-            </div>
-            <div v-else-if="resourceAccountStore?.resourceAccount?.vendor === VendorEnum.HUAWEI"
-                 class="extension">
-              <span>子账号ID：
-                <span class="info-text">{{ resourceAccountStore.resourceAccount.extension.cloud_sub_account_id }}</span>
-              </span>
-              <span>云子账号名称：
-                <span class="info-text">
-                  {{ resourceAccountStore.resourceAccount.extension.cloud_sub_account_name }}
+                  {{ resourceAccountStore.resourceAccount.extension[headerExtensionMap.secondField] }}
                 </span>
               </span>
             </div>
