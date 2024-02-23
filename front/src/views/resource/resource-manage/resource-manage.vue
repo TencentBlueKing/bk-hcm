@@ -9,8 +9,6 @@ import IpManage from './children/manage/ip-manage.vue';
 import RoutingManage from './children/manage/routing-manage.vue';
 import ImageManage from './children/manage/image-manage.vue';
 import NetworkInterfaceManage from './children/manage/network-interface-manage.vue';
-import LoadBalancerManage from './children/manage/load-balancer-manage.vue';
-import CertManager from '@/views/business/cert-manager';
 // import AccountSelector from '@/components/account-selector/index.vue';
 import { DISTRIBUTE_STATUS_LIST } from '@/constants';
 import { useDistributionStore } from '@/store/distribution';
@@ -149,8 +147,6 @@ const componentMap = {
   routing: RoutingManage,
   image: ImageManage,
   'network-interface': NetworkInterfaceManage,
-  clbs: LoadBalancerManage,
-  certs: CertManager,
 };
 
 // 标签相关数据
@@ -458,7 +454,7 @@ onMounted(() => {
       <div class="card-layout">
         <p class="resource-title">
           <span class="main-account-name">
-            {{ resourceAccountStore?.resourceAccount?.name || "全部账号" }}
+            {{ resourceAccountStore?.resourceAccount?.name || '全部账号' }}
           </span>
           <template v-if="resourceAccountStore?.resourceAccount?.id">
             <div class="extension">
@@ -550,22 +546,35 @@ onMounted(() => {
             >
               <span
                 v-if="
-                  ['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clbs'].includes(
-                    activeTab,
-                  )
+                  [
+                    'host',
+                    'vpc',
+                    'drive',
+                    'security',
+                    'subnet',
+                    'ip',
+                    'clbs',
+                  ].includes(activeTab)
                 "
               >
                 <bk-button
                   theme="primary"
                   class="new-button"
-                  :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.iaas_resource_create }"
-                  @click="() => {
-                    if (!authVerifyData?.permissionAction?.iaas_resource_create) {
-                      handleAuth('iaas_resource_create');
-                    } else {
-                      handleAdd();
-                    }
+                  :class="{
+                    'hcm-no-permision-btn':
+                      !authVerifyData?.permissionAction?.iaas_resource_create,
                   }"
+                  @click="
+                    () => {
+                      if (
+                        !authVerifyData?.permissionAction?.iaas_resource_create
+                      ) {
+                        handleAuth('iaas_resource_create');
+                      } else {
+                        handleAdd();
+                      }
+                    }
+                  "
                 >
                   {{ ['host', 'clbs'].includes(activeTab) ? '购买' : '新建' }}
                 </bk-button>
@@ -700,7 +709,7 @@ onMounted(() => {
     .bk-table-head .bk-checkbox {
       vertical-align: middle;
     }
-    .bk-table-head tr th:nth-of-type(2) .cell{
+    .bk-table-head tr th:nth-of-type(2) .cell {
       padding-left: 8px;
     }
     .bk-table-body .cell.selection {
@@ -743,9 +752,9 @@ onMounted(() => {
 
   .extension {
     font-size: 14px;
-    color: #63656E;
+    color: #63656e;
 
-    &>span {
+    & > span {
       margin-left: 20px;
 
       .info-text {
@@ -763,7 +772,8 @@ onMounted(() => {
 </style>
 
 <style lang="scss">
-.delete-resource-infobox, .recycle-resource-infobox {
+.delete-resource-infobox,
+.recycle-resource-infobox {
   .bk-info-sub-title {
     word-break: break-all;
   }
