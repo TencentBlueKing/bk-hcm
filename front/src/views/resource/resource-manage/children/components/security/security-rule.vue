@@ -566,7 +566,18 @@ if (props.vendor === 'huawei') {
           :columns="azureDefaultColumns"
           :data="azureDefaultList"
           show-overflow-tooltip
-        />
+        >
+          <template #empty>
+            <div class="security-empty-container">
+              <bk-exception
+                class="exception-wrap-item exception-part"
+                type="empty"
+                scene="part"
+                description="无规则，默认拒绝所有流量"
+              />
+            </div>
+          </template>
+        </bk-table>
       </div>
 
       <h4 v-if="props.vendor === 'azure'" class="mt10">Azure{{activeType === 'ingress' ? t('入站') : t('出站')}}规则</h4>
@@ -581,7 +592,18 @@ if (props.vendor === 'huawei') {
         show-overflow-tooltip
         @page-limit-change="state.handlePageSizeChange"
         @page-value-change="state.handlePageChange"
-      />
+      >
+        <template #empty>
+          <div class="security-empty-container">
+            <bk-exception
+              class="exception-wrap-item exception-part"
+              type="empty"
+              scene="part"
+              description="无规则，默认拒绝所有流量"
+            />
+          </div>
+        </template>
+      </bk-table>
 
       <bk-table
         v-if="activeType === 'egress'"
@@ -594,7 +616,18 @@ if (props.vendor === 'huawei') {
         show-overflow-tooltip
         @page-limit-change="state.handlePageSizeChange"
         @page-value-change="state.handlePageChange"
-      />
+      >
+        <template #empty>
+          <div class="security-empty-container">
+            <bk-exception
+              class="exception-wrap-item exception-part"
+              type="empty"
+              scene="part"
+              description="无规则，默认拒绝所有流量"
+            />
+          </div>
+        </template>
+      </bk-table>
 
     </bk-loading>
 
@@ -630,5 +663,11 @@ if (props.vendor === 'huawei') {
     display: flex;
     align-items: center;
     justify-content: space-between;
+  }
+
+  .security-empty-container {
+    display: felx;
+    align-items: center;
+    margin: auto;
   }
 </style>
