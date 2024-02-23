@@ -394,7 +394,7 @@ export default defineComponent({
               default: () => (
                 <Button disabled={operationsDisabled.value}>
                   批量操作
-                  <AngleDown class={'f20'}></AngleDown>
+                  <AngleDown class={'f26'}></AngleDown>
                 </Button>
               ),
               content: () => (

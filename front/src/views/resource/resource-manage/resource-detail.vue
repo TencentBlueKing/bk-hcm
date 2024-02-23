@@ -86,9 +86,3 @@ bus.$on('auth', (authActionName: string) => {   // bus监听
   }
 }
 </style>
-
-<style lang="scss" scoped>
-:deep(.detail-info-main .info-list-item .item-field) {
-  width: 120px;
-}
-</style>

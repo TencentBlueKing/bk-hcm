@@ -1,0 +1,32 @@
+.add-rs-dialog-content {
+  height: 100%;
+
+  .loading-table-container {
+    height: calc(100% - 48px);
+
+    .table-container {
+      max-height: 100%;
+
+      .table-prepend-wrap {
+        line-height: 32px;
+        text-align: center;
+        background-color: #eff1f5;
+        font-size: 12px;
+
+        .number {
+          font-weight: 700;
+        }
+
+        .clear {
+          color: #3a84ff;
+          cursor: pointer;
+        }
+      }
+
+      // 将 picker 顶到最右边
+      .bk-table-footer .bk-pagination .bk-pagination-limit {
+        flex: 1;
+      }
+    }
+  }
+}

@@ -1,4 +1,36 @@
 .common-search-selector {
   margin-left: auto;
   margin-bottom: 16px;
+
+  .operate-btn-groups {
+    display: flex;
+
+    .bk-button:not(:last-child) {
+      margin-right: 12px;
+    }
+
+    .mw64 {
+      min-width: 64px;
+    }
+
+    .mw88 {
+      min-width: 88px;
+    }
+
+    .f26 {
+      font-size: 26px;
+    }
+  }
+}
+
+.loading-table-container {
+  height: calc(100% - 48px);
+
+  .table-container {
+    max-height: 100%;
+
+    .binding-row td{
+      background-color: #f2fff4 !important;
+    }
+  }
 }

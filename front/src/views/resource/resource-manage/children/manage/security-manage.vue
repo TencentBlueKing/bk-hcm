@@ -708,7 +708,7 @@ const securityHandleShowDelete = (data: any) => {
 </script>
 
 <template>
-  <div>
+  <div class="security-manager-page">
     <section>
       <slot></slot>
       <BatchDistribution
@@ -750,7 +750,7 @@ const securityHandleShowDelete = (data: any) => {
       <bk-table
         v-if="activeType === 'group'"
         :settings="groupSettings"
-        class="mt20 has-selection"
+        class="has-selection"
         row-hover="auto"
         remote-pagination
         :pagination="state.pagination"
@@ -768,7 +768,7 @@ const securityHandleShowDelete = (data: any) => {
       <bk-table
         v-if="activeType === 'gcp'"
         :settings="gcpSettings"
-        class="mt20 has-selection"
+        class="has-selection"
         row-hover="auto"
         remote-pagination
         :pagination="state.pagination"
@@ -804,5 +804,15 @@ const securityHandleShowDelete = (data: any) => {
 }
 .ml10 {
   margin-left: 10px;
+}
+.security-manager-page {
+  height: 100%;
+  :deep(.bk-nested-loading) {
+    margin-top: 16px;
+    height: calc(100% - 100px);
+    .bk-table {
+      max-height: 100%;
+    }
+  }
 }
 </style>

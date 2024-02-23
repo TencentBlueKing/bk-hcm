@@ -10,6 +10,8 @@ import IpManage from './children/manage/ip-manage.vue';
 import RoutingManage from './children/manage/routing-manage.vue';
 import ImageManage from './children/manage/image-manage.vue';
 import NetworkInterfaceManage from './children/manage/network-interface-manage.vue';
+import LoadBalancerManage from './children/manage/load-balancer-manage.vue';
+import CertManager from '@/views/business/cert-manager';
 // import AccountSelector from '@/components/account-selector/index.vue';
 import { DISTRIBUTE_STATUS_LIST } from '@/constants';
 import { useDistributionStore } from '@/store/distribution';
@@ -75,6 +77,9 @@ const activeResourceTab = ref(RESOURCE_TABS[0].key);
 
 provide('securityType', securityType);
 
+// 用于判断 sideslider 中的表单数据是否改变
+const isFormDataChanged = ref(false);
+
 const formMap = {
   ip: EipForm,
   subnet: subnetForm,
@@ -102,6 +107,8 @@ const componentMap = {
   routing: RoutingManage,
   image: ImageManage,
   'network-interface': NetworkInterfaceManage,
+  clbs: LoadBalancerManage,
+  certs: CertManager,
 };
 
 // 标签相关数据
@@ -175,6 +182,8 @@ const handleAdd = () => {
       break;
     default:
       isShowSideSlider.value = true;
+      // 标记初始化
+      isFormDataChanged.value = false;
   }
 };
 
@@ -308,17 +317,23 @@ const handleEdit = (detail: any) => {
   formDetail.value = detail;
   isEdit.value = true;
   isShowSideSlider.value = true;
+  // 初始化标记
+  isFormDataChanged.value = false;
 };
 
 const handleBeforeClose = () => {
-  InfoBox({
-    title: '请确认是否关闭侧栏？',
-    subTitle: '关闭后，内容需要重新填写！',
-    theme: 'warning',
-    onConfirm() {
-      handleCancel();
-    },
-  });
+  if (isFormDataChanged.value) {
+    InfoBox({
+      title: '请确认是否关闭侧栏？',
+      subTitle: '关闭后，内容需要重新填写！',
+      quickClose: false,
+      onConfirm() {
+        handleCancel();
+      },
+    });
+  } else {
+    handleCancel();
+  }
 };
 
 getResourceAccountList();
@@ -479,7 +494,55 @@ getResourceAccountList();
             </bk-select>
           </div>
         </template>
-        <bk-tab-panel
+        <!-- Only Tencent Cloud offers certificate hosting -->
+        <template v-for="item in tabs" :key="item.name">
+          <bk-tab-panel
+            :name="item.name"
+            :label="item.type"
+            v-if="item.name !== 'certs' || (item.name === 'certs' &&
+              (resourceAccountStore.resourceAccount.vendor === VendorEnum.TCLOUD ||
+                !resourceAccountStore.resourceAccount.vendor))">
+            <component
+              v-if="item.name === activeTab"
+              :is="item.component"
+              :filter="filter"
+              :where-am-i="activeTab"
+              :is-resource-page="isResourcePage"
+              :auth-verify-data="authVerifyData"
+              @auth="(val: string) => {
+                handleAuth(val)
+              }"
+              @tabchange="handleTabChange"
+              ref="componentRef"
+              @edit="handleEdit"
+              v-model:isFormDataChanged="isFormDataChanged"
+            >
+              <span
+                v-if="
+                  ['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clbs'].includes(
+                    activeTab,
+                  )
+                "
+              >
+                <bk-button
+                  theme="primary"
+                  class="new-button"
+                  :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.iaas_resource_create }"
+                  @click="() => {
+                    if (!authVerifyData?.permissionAction?.iaas_resource_create) {
+                      handleAuth('iaas_resource_create');
+                    } else {
+                      handleAdd();
+                    }
+                  }"
+                >
+                  {{ ['host', 'clbs'].includes(activeTab) ? '购买' : '新建' }}
+                </bk-button>
+              </span>
+            </component>
+          </bk-tab-panel>
+        </template>
+        <!-- <bk-tab-panel
           v-for="item in tabs"
           :key="item.name"
           :name="item.name"
@@ -501,7 +564,7 @@ getResourceAccountList();
           >
             <span
               v-if="
-                ['host', 'vpc', 'drive', 'security', 'subnet', 'ip'].includes(
+                ['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clbs'].includes(
                   activeTab,
                 )
               "
@@ -518,11 +581,11 @@ getResourceAccountList();
                   }
                 }"
               >
-                {{ activeTab === 'host' ? '购买' : '新建' }}
+                {{ ['host', 'clbs'].includes(activeTab) ? '购买' : '新建' }}
               </bk-button>
             </span>
           </component>
-        </bk-tab-panel>
+        </bk-tab-panel> -->
       </bk-tab>
 
       <bk-sideslider
@@ -540,6 +603,8 @@ getResourceAccountList();
             @success="handleSuccess"
             :is-edit="isEdit"
             :detail="formDetail"
+            @edit="handleEdit"
+            v-model:isFormDataChanged="isFormDataChanged"
           ></component>
         </template>
       </bk-sideslider>
@@ -583,14 +648,21 @@ getResourceAccountList();
 
     .bk-tab-header-item {
       padding: 0 24px;
+      height: 42px;
     }
   }
 
   :deep(.bk-tab-content) {
-    // border-left: 1px solid #dcdee5;
-    // border-right: 1px solid #dcdee5;
-    border-bottom: 1px solid #dcdee5;
-    padding: 20px;
+    height: calc(100% - 42px);
+    padding: 16px 24px;
+
+    & > .bk-tab-panel > .bk-nested-loading {
+      height: 100%;
+      .bk-table {
+        margin-top: 16px;
+        max-height: calc(100% - 52px);
+      }
+    }
   }
 
   :deep(.bk-table.has-selection) {
@@ -664,5 +736,11 @@ getResourceAccountList();
   .bk-info-sub-title {
     word-break: break-all;
   }
+}
+.mw64 {
+  min-width: 64px;
+}
+.mw88 {
+  min-width: 88px;
 }
 </style>
