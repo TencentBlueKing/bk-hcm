@@ -1,11 +1,12 @@
 import { InfoBox } from 'bkui-vue';
+import { VNode } from 'vue';
 export const confirmInstance = InfoBox({
   isShow: false,
   headerAlign: 'left',
   footerAlign: 'left',
   contentAlign: 'left',
 });
-const Confirm = (title: string, content: string, onConfirm: () => void, onClosed?: () => void) => {
+const Confirm = (title: string, content: string | VNode, onConfirm: () => void, onClosed?: () => void) => {
   confirmInstance.update({
     title,
     subTitle: content,

@@ -134,7 +134,6 @@ const filterData = (key: string, val: string | number) => {
     });
   } else {
     filter.value.rules.forEach((e: any) => {
-      console.log(e.field, key, e.field === key);
       if (e.field === key) {
         e.op = val === 1 ? 'neq' : 'eq';
         return;
@@ -271,6 +270,29 @@ watch(
   {
     deep: true,
     immediate: true,
+  },
+);
+
+watch(
+  () => resourceAccountStore.currentVendor,
+  (vendor: VendorEnum) => {
+    if (vendor) {
+      if (!filter.value.rules.length) {
+        filter.value.rules.push({
+          field: 'vendor',
+          op: 'eq',
+          value: vendor,
+        });
+      } else {
+        filter.value.rules.forEach((e: any) => {
+          if (e.field === 'vendor') {
+            e.value = vendor;
+          }
+        });
+      }
+    } else {
+      filter.value.rules = filter.value.rules.filter((e: any) => e.field !== 'vendor');
+    }
   },
 );
 
