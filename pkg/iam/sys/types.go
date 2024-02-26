@@ -92,6 +92,11 @@ const (
 	// BizCLBResDelete biz clb resource delete action id to register iam.
 	// BizCLBResDelete client.ActionID = "biz_clb_resource_delete"
 
+	// BizCertResCreate biz cert resource create action id to register iam.
+	BizCertResCreate client.ActionID = "biz_cert_resource_create"
+	// BizCertResDelete biz cert resource delete action id to register iam.
+	BizCertResDelete client.ActionID = "biz_cert_resource_delete"
+
 	// BizArrangeResCreate biz arrange resource create action id to register iam.
 	// BizArrangeResCreate client.ActionID = "biz_arrange_resource_create"
 	// BizArrangeResOperate biz arrange resource operate action id to register iam.
@@ -176,6 +181,8 @@ var ActionIDNameMap = map[client.ActionID]string{
 	// BizCLBResCreate:        "业务-负载均衡创建",
 	// BizCLBResOperate:       "业务-负载均衡操作",
 	// BizCLBResDelete:        "负载均衡删除",
+	BizCertResCreate: "证书创建",
+	BizCertResDelete: "证书删除",
 	// BizArrangeResCreate:    "业务-资源编排创建",
 	// BizArrangeResOperate:   "业务-资源编排操作",
 	// BizArrangeResDelete:    "业务-资源编排删除",

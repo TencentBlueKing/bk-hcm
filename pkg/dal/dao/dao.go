@@ -33,6 +33,7 @@ import (
 	"hcm/pkg/dal/dao/cloud"
 	daoselection "hcm/pkg/dal/dao/cloud-selection"
 	"hcm/pkg/dal/dao/cloud/bill"
+	"hcm/pkg/dal/dao/cloud/cert"
 	"hcm/pkg/dal/dao/cloud/cvm"
 	"hcm/pkg/dal/dao/cloud/disk"
 	diskcvmrel "hcm/pkg/dal/dao/cloud/disk-cvm-rel"
@@ -105,6 +106,7 @@ type Set interface {
 	CloudSelectionScheme() daoselection.SchemeInterface
 	CloudSelectionBizType() daoselection.BizTypeInterface
 	CloudSelectionIdc() daoselection.IdcInterface
+	Cert() cert.Interface
 
 	Txn() *Txn
 }
@@ -511,5 +513,14 @@ func (s *set) CloudSelectionIdc() daoselection.IdcInterface {
 	return &daoselection.IdcDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
+	}
+}
+
+// Cert return cert dao.
+func (s *set) Cert() cert.Interface {
+	return &cert.Dao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
 	}
 }

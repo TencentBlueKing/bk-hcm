@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/adaptor/types/account"
 	typesBill "hcm/pkg/adaptor/types/bill"
 	"hcm/pkg/adaptor/types/clb"
+	"hcm/pkg/adaptor/types/cert"
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/adaptor/types/disk"
@@ -125,4 +126,7 @@ type TCloud interface {
 		[]*v20190116.ListGrantServiceAccessNode, error)
 	CreateClb(kt *kit.Kit, opt *clb.TCloudCreateClbOption) (*poller.BaseDoneResult, error)
 	ListClb(kt *kit.Kit, opt *clb.TCloudListOption) ([]clb.TCloudClb, error)
+	CreateCert(kt *kit.Kit, opt *cert.TCloudCreateOption) (*poller.BaseDoneResult, error)
+	DeleteCert(kt *kit.Kit, opt *cert.TCloudDeleteOption) error
+	ListCert(kt *kit.Kit, opt *cert.TCloudListOption) ([]cert.TCloudCert, error)
 }

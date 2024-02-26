@@ -34,8 +34,9 @@ require (
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam v1.0.648
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs v1.0.648
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb v1.0.824
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.824
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.827
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm v1.0.648
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/ssl v1.0.827
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc v1.0.648
 	github.com/tidwall/gjson v1.14.4
 	go.etcd.io/etcd/api/v3 v3.5.6

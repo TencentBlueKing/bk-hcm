@@ -524,3 +524,31 @@ func genCostManageResource(a *meta.ResourceAttribute) (client.ActionID, []client
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
+
+// genCertResource generate cert related iam resource.
+func genCertResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	res := client.Resource{
+		System: sys.SystemIDHCM,
+		Type:   sys.Account,
+	}
+
+	// compatible for authorize any
+	if len(a.ResourceID) > 0 {
+		res.ID = a.ResourceID
+	}
+
+	switch a.Basic.Action {
+	case meta.Find, meta.Assign:
+		return genCloudResResource(a)
+	case meta.Create:
+		return sys.BizCertResCreate, []client.Resource{res}, nil
+	case meta.Update:
+		// update resource is related to hcm account resource
+		return sys.IaaSResOperate, []client.Resource{res}, nil
+	case meta.Delete:
+		return sys.BizCertResDelete, []client.Resource{res}, nil
+
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}

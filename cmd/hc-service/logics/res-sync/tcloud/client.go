@@ -63,6 +63,9 @@ type Interface interface {
 	Region(kt *kit.Kit, opt *SyncRegionOption) (*SyncResult, error)
 
 	SubAccount(kt *kit.Kit, opt *SyncSubAccountOption) (*SyncResult, error)
+
+	Cert(kt *kit.Kit, params *SyncBaseParams, opt *SyncCertOption) (*SyncResult, error)
+	RemoveCertDeleteFromCloud(kt *kit.Kit, accountID string, region string) error
 }
 
 var _ Interface = new(client)

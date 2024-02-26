@@ -22,6 +22,7 @@ package common
 import (
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/account"
+	"hcm/pkg/adaptor/types/cert"
 	typescvm "hcm/pkg/adaptor/types/cvm"
 	typesdisk "hcm/pkg/adaptor/types/disk"
 	typeseip "hcm/pkg/adaptor/types/eip"
@@ -36,6 +37,7 @@ import (
 	adtysubnet "hcm/pkg/adaptor/types/subnet"
 	typeszone "hcm/pkg/adaptor/types/zone"
 	cloudcore "hcm/pkg/api/core/cloud"
+	corecert "hcm/pkg/api/core/cloud/cert"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	coredisk "hcm/pkg/api/core/cloud/disk"
 	coreimage "hcm/pkg/api/core/cloud/image"
@@ -134,7 +136,9 @@ type CloudResType interface {
 		account.GcpAccount |
 
 		corerecyclerecord.EipBindInfo |
-		corerecyclerecord.DiskAttachInfo
+		corerecyclerecord.DiskAttachInfo |
+
+		cert.TCloudCert
 }
 
 type DBResType interface {
@@ -220,7 +224,9 @@ type DBResType interface {
 		coresubaccount.SubAccount[coresubaccount.GcpExtension] |
 
 		corerecyclerecord.EipBindInfo |
-		corerecyclerecord.DiskAttachInfo
+		corerecyclerecord.DiskAttachInfo |
+
+		*corecert.Cert[corecert.TCloudCertExtension]
 }
 
 // Diff 对比云和db资源，划分出新增数据，更新数据，删除数据。

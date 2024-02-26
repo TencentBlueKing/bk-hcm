@@ -58,8 +58,15 @@ func genResManagementActionGroups() []client.ActionGroup {
 						{ID: BizCLBResOperate},
 						{ID: BizCLBResDelete},
 					},
+				},*/{
+					Name:   "证书管理",
+					NameEn: "Biz Cert Resource Management",
+					Actions: []client.ActionWithID{
+						{ID: BizCertResCreate},
+						{ID: BizCertResDelete},
+					},
 				},
-				{
+				/*{
 					Name:   "资源编排",
 					NameEn: "Biz Arrange Resource Management",
 					Actions: []client.ActionWithID{

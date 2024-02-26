@@ -38,6 +38,7 @@ import (
 	"hcm/cmd/cloud-server/service/audit"
 	"hcm/cmd/cloud-server/service/bill"
 	"hcm/cmd/cloud-server/service/capability"
+	"hcm/cmd/cloud-server/service/cert"
 	cloudselection "hcm/cmd/cloud-server/service/cloud-selection"
 	"hcm/cmd/cloud-server/service/cvm"
 	"hcm/cmd/cloud-server/service/disk"
@@ -94,66 +95,9 @@ type Service struct {
 
 // NewService create a service instance.
 func NewService(sd serviced.ServiceDiscover) (*Service, error) {
-	tls := cc.CloudServer().Network.TLS
-
-	var tlsConfig *ssl.TLSConfig
-	if tls.Enable() {
-		tlsConfig = &ssl.TLSConfig{
-			InsecureSkipVerify: tls.InsecureSkipVerify,
-			CertFile:           tls.CertFile,
-			KeyFile:            tls.KeyFile,
-			CAFile:             tls.CAFile,
-			Password:           tls.Password,
-		}
-	}
-
-	// initiate system api client set.
-	restCli, err := restcli.NewClient(tlsConfig)
+	apiClientSet, esbClient, svr, err := getCloudClientSvr(sd)
 	if err != nil {
 		return nil, err
-	}
-	apiClientSet := client.NewClientSet(restCli, sd)
-
-	authorizer, err := auth.NewAuthorizer(sd, tls)
-	if err != nil {
-		return nil, err
-	}
-
-	// 加解密器
-	cipher, err := newCipherFromConfig(cc.CloudServer().Crypto)
-	if err != nil {
-		return nil, err
-	}
-
-	// 创建ESB Client
-	esbConfig := cc.CloudServer().Esb
-	esbClient, err := esb.NewClient(&esbConfig, metrics.Register())
-	if err != nil {
-		return nil, err
-	}
-
-	itsmCfg := cc.CloudServer().Itsm
-	itsmCli, err := itsm.NewClient(&itsmCfg, metrics.Register())
-	if err != nil {
-		logs.Errorf("failed to create itsm client, err: %v", err)
-		return nil, err
-	}
-
-	bkbaseCfg := cc.CloudServer().CloudSelection.BkBase
-	bkbaseCli, err := bkbase.NewClient(&bkbaseCfg.ApiGateway, metrics.Register())
-	if err != nil {
-		logs.Errorf("failed to create bkbase client, err: %v", err)
-		return nil, err
-	}
-
-	svr := &Service{
-		client:     apiClientSet,
-		authorizer: authorizer,
-		audit:      logicaudit.NewAudit(apiClientSet.DataService()),
-		cipher:     cipher,
-		esbClient:  esbClient,
-		itsmCli:    itsmCli,
-		bkBaseCli:  bkbaseCli,
 	}
 
 	etcdCfg, err := cc.CloudServer().Service.Etcd.ToConfig()
@@ -180,6 +124,72 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 	go appcvm.TimingHandleDeliverApplication(svr.client, 2*time.Second)
 
 	return svr, nil
+}
+
+func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, esb.Client, *Service, error) {
+	tls := cc.CloudServer().Network.TLS
+
+	var tlsConfig *ssl.TLSConfig
+	if tls.Enable() {
+		tlsConfig = &ssl.TLSConfig{
+			InsecureSkipVerify: tls.InsecureSkipVerify,
+			CertFile:           tls.CertFile,
+			KeyFile:            tls.KeyFile,
+			CAFile:             tls.CAFile,
+			Password:           tls.Password,
+		}
+	}
+
+	// initiate system api client set.
+	restCli, err := restcli.NewClient(tlsConfig)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	apiClientSet := client.NewClientSet(restCli, sd)
+
+	authorizer, err := auth.NewAuthorizer(sd, tls)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	// 加解密器
+	cipher, err := newCipherFromConfig(cc.CloudServer().Crypto)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	// 创建ESB Client
+	esbConfig := cc.CloudServer().Esb
+	esbClient, err := esb.NewClient(&esbConfig, metrics.Register())
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	itsmCfg := cc.CloudServer().Itsm
+	itsmCli, err := itsm.NewClient(&itsmCfg, metrics.Register())
+	if err != nil {
+		logs.Errorf("failed to create itsm client, err: %v", err)
+		return nil, nil, nil, err
+	}
+
+	bkbaseCfg := cc.CloudServer().CloudSelection.BkBase
+	bkbaseCli, err := bkbase.NewClient(&bkbaseCfg.ApiGateway, metrics.Register())
+	if err != nil {
+		logs.Errorf("failed to create bkbase client, err: %v", err)
+		return nil, nil, nil, err
+	}
+
+	svr := &Service{
+		client:     apiClientSet,
+		authorizer: authorizer,
+		audit:      logicaudit.NewAudit(apiClientSet.DataService()),
+		cipher:     cipher,
+		esbClient:  esbClient,
+		itsmCli:    itsmCli,
+		bkBaseCli:  bkbaseCli,
+	}
+
+	return apiClientSet, esbClient, svr, nil
 }
 
 // newCipherFromConfig 根据配置文件里的加密配置，选择配置的算法并生成对应的加解密器
@@ -290,6 +300,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 
 	approvalprocess.InitService(c)
 	cloudselection.InitService(c)
+	cert.InitCertService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }
