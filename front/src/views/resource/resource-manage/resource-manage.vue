@@ -10,8 +10,6 @@ import IpManage from './children/manage/ip-manage.vue';
 import RoutingManage from './children/manage/routing-manage.vue';
 import ImageManage from './children/manage/image-manage.vue';
 import NetworkInterfaceManage from './children/manage/network-interface-manage.vue';
-import LoadBalancerManage from './children/manage/load-balancer-manage.vue';
-import CertManager from '@/views/business/cert-manager';
 // import AccountSelector from '@/components/account-selector/index.vue';
 import { DISTRIBUTE_STATUS_LIST } from '@/constants';
 import { useDistributionStore } from '@/store/distribution';
@@ -107,8 +105,6 @@ const componentMap = {
   routing: RoutingManage,
   image: ImageManage,
   'network-interface': NetworkInterfaceManage,
-  clbs: LoadBalancerManage,
-  certs: CertManager,
 };
 
 // 标签相关数据
@@ -494,55 +490,7 @@ getResourceAccountList();
             </bk-select>
           </div>
         </template>
-        <!-- Only Tencent Cloud offers certificate hosting -->
-        <template v-for="item in tabs" :key="item.name">
-          <bk-tab-panel
-            :name="item.name"
-            :label="item.type"
-            v-if="item.name !== 'certs' || (item.name === 'certs' &&
-              (resourceAccountStore.resourceAccount.vendor === VendorEnum.TCLOUD ||
-                !resourceAccountStore.resourceAccount.vendor))">
-            <component
-              v-if="item.name === activeTab"
-              :is="item.component"
-              :filter="filter"
-              :where-am-i="activeTab"
-              :is-resource-page="isResourcePage"
-              :auth-verify-data="authVerifyData"
-              @auth="(val: string) => {
-                handleAuth(val)
-              }"
-              @tabchange="handleTabChange"
-              ref="componentRef"
-              @edit="handleEdit"
-              v-model:isFormDataChanged="isFormDataChanged"
-            >
-              <span
-                v-if="
-                  ['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clbs'].includes(
-                    activeTab,
-                  )
-                "
-              >
-                <bk-button
-                  theme="primary"
-                  class="new-button"
-                  :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.iaas_resource_create }"
-                  @click="() => {
-                    if (!authVerifyData?.permissionAction?.iaas_resource_create) {
-                      handleAuth('iaas_resource_create');
-                    } else {
-                      handleAdd();
-                    }
-                  }"
-                >
-                  {{ ['host', 'clbs'].includes(activeTab) ? '购买' : '新建' }}
-                </bk-button>
-              </span>
-            </component>
-          </bk-tab-panel>
-        </template>
-        <!-- <bk-tab-panel
+        <bk-tab-panel
           v-for="item in tabs"
           :key="item.name"
           :name="item.name"
@@ -564,7 +512,7 @@ getResourceAccountList();
           >
             <span
               v-if="
-                ['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clbs'].includes(
+                ['host', 'vpc', 'drive', 'security', 'subnet', 'ip'].includes(
                   activeTab,
                 )
               "
@@ -581,11 +529,11 @@ getResourceAccountList();
                   }
                 }"
               >
-                {{ ['host', 'clbs'].includes(activeTab) ? '购买' : '新建' }}
+                {{ ['host'].includes(activeTab) ? '购买' : '新建' }}
               </bk-button>
             </span>
           </component>
-        </bk-tab-panel> -->
+        </bk-tab-panel>
       </bk-tab>
 
       <bk-sideslider

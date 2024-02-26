@@ -11,7 +11,6 @@ export enum ResourceTypeEnum {
   VPC = 'vpc',
   DISK = 'disk',
   SUBNET = 'subnet',
-  CLB = 'clb',
 }
 
 // 资源类型
@@ -51,14 +50,6 @@ export const RESOURCE_TYPES = [
   {
     name: '镜像',
     type: 'image',
-  },
-  {
-    name: '负载均衡',
-    type: 'clbs',
-  },
-  {
-    name: '证书管理',
-    type: 'certs',
   },
 ];
 

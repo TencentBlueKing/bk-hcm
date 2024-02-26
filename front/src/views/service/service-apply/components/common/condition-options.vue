@@ -140,7 +140,7 @@ watch(
     <FormItem
       label="云账号"
       required
-      :property="[ResourceTypeEnum.SUBNET, ResourceTypeEnum.CLB].includes(type) ? 'account_id' : 'cloudAccountId'">
+      :property="ResourceTypeEnum.SUBNET === type ? 'account_id' : 'cloudAccountId'">
       <account-selector
         v-model="selectedCloudAccountId"
         :disabled="!!resourceAccountStore?.resourceAccount?.id"

@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import { computed, ref, defineExpose, PropType, useAttrs, watch, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
 import { useAccountStore } from '@/store';
 
 import type {
@@ -30,8 +29,7 @@ const accountStore = useAccountStore();
 const accountList = ref([]);
 const loading = ref(null);
 const accountPage = ref(0);
-const { whereAmI, isResourcePage, isBusinessPage } = useWhereAmI();
-const route = useRoute();
+const { whereAmI } = useWhereAmI();
 
 const selectedValue = computed({
   get() {
@@ -71,10 +69,6 @@ const getAccoutList = async (bizs?: number) => {
     accountList.value.push(...(res?.data || []));
   } else {
     accountList.value.push(...(res?.data?.details || []));
-  }
-  // cert filter, if support other clouds, remove this line
-  if ((isResourcePage && route.query.type === 'certs') || (isBusinessPage && route.path.includes('cert'))) {
-    accountList.value = accountList.value.filter(item => item.vendor === 'tcloud');
   }
   loading.value = false;
 };
