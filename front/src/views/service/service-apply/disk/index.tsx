@@ -272,20 +272,20 @@ export default defineComponent({
           <p class={'purchase-dish-header-title'}>购买硬盘</p>
         </DetailHeader>
         <div class="create-form-container disk-wrap" style={isResourcePage && { padding: 0 }}>
-          <ConditionOptions
-            type={ResourceTypeEnum.DISK}
-            v-model:bizId={cond.bizId}
-            v-model:cloudAccountId={cond.cloudAccountId}
-            v-model:vendor={cond.vendor}
-            v-model:region={cond.region}
-            v-model:resourceGroup={cond.resourceGroup}
-          />
           <Form
             model={formData}
             rules={formRules}
             ref={formRef}
             onSubmit={handleFormSubmit}
             formType='vertical'>
+            <ConditionOptions
+              type={ResourceTypeEnum.DISK}
+              v-model:bizId={cond.bizId}
+              v-model:cloudAccountId={cond.cloudAccountId}
+              v-model:vendor={cond.vendor}
+              v-model:region={cond.region}
+              v-model:resourceGroup={cond.resourceGroup}
+            />
             {formConfig.value
               .filter(({ display }) => display !== false)
               .map(({ title, children }) => (

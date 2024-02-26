@@ -133,8 +133,9 @@ export default (cond: Cond) => {
     formData[key] = defaultData[key];
   };
 
-  watch(cond, () => {
+  watch(cond, (val) => {
     resetFormData();
+    Object.assign(formData, val);
 
     nextTick(() => {
       formRef.value.clearValidate();

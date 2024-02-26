@@ -29,6 +29,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .bkhcm-icon-plus-circle:before {
 	content: "\e10c";
 }
+.bkhcm-icon-template-orchestration:before {
+	content: "\e154";
+}
 .bkhcm-icon-check-circle-fill:before {
 	content: "\e128";
 }
@@ -50,6 +53,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .bkhcm-icon-fullscreen:before {
 	content: "\e12a";
 }
+.bkhcm-icon-set-fill:before {
+	content: "\e14e";
+}
 .bkhcm-icon-info-line:before {
 	content: "\e149";
 }
@@ -61,6 +67,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 }
 .bkhcm-icon-38moxingshibai-01:before {
 	content: "\e120";
+}
+.bkhcm-icon-batch-edit:before {
+	content: "\e14d";
 }
 .bkhcm-icon-file:before {
 	content: "\e147";
@@ -104,8 +113,14 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .bkhcm-icon-grag-fill:before {
 	content: "\e11c";
 }
+.bkhcm-icon-operation-record:before {
+	content: "\e155";
+}
 .bkhcm-icon-jump-fill:before {
 	content: "\e123";
+}
+.bkhcm-icon-exchange-line:before {
+	content: "\e151";
 }
 .bkhcm-icon-invisible1:before {
 	content: "\e104";
@@ -209,37 +224,37 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .bkhcm-icon-home:before {
 	content: "\e139";
 }
-.bkhcm-icon-anquanzu:before {
+.bkhcm-icon-security-group:before {
 	content: "\e13a";
 }
-.bkhcm-icon-danxingip:before {
+.bkhcm-icon-eip:before {
 	content: "\e13b";
 }
-.bkhcm-icon-fuzaijunheng:before {
+.bkhcm-icon-loadbalancer:before {
 	content: "\e13e";
 }
-.bkhcm-icon-huishouxiang:before {
+.bkhcm-icon-recyclebin:before {
 	content: "\e13c";
 }
-.bkhcm-icon-jingxiang:before {
+.bkhcm-icon-image:before {
 	content: "\e13d";
 }
-.bkhcm-icon-luyoubiao:before {
+.bkhcm-icon-route-table:before {
 	content: "\e13f";
 }
-.bkhcm-icon-wangluojiekou:before {
+.bkhcm-icon-network-interface:before {
 	content: "\e140";
 }
-.bkhcm-icon-yingpan:before {
+.bkhcm-icon-disk:before {
 	content: "\e141";
 }
-.bkhcm-icon-zhengshu:before {
+.bkhcm-icon-cert:before {
 	content: "\e143";
 }
-.bkhcm-icon-zhuji:before {
+.bkhcm-icon-host:before {
 	content: "\e142";
 }
-.bkhcm-icon-ziwang:before {
+.bkhcm-icon-subnet:before {
 	content: "\e144";
 }
 .bkhcm-icon-vpc:before {

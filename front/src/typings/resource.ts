@@ -13,7 +13,7 @@ export type FilterType = {
   op: 'and' | 'or' | QueryRuleOPEnum;
   rules: {
     field: string;
-    op: string;
+    op: QueryRuleOPEnum;
     value: string | number | string[] | any;
   }[]
 };

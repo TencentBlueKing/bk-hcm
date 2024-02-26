@@ -2,7 +2,7 @@
 // @ts-nocheck
 import DetailHeader from '../../common/header/detail-header';
 import DetailInfo from '../../common/info/detail-info';
-// import DetailTab from '../../common/tab/detail-tab';
+import DetailTab from '../../common/tab/detail-tab';
 // import GcpRelate from '../components/gcp/gcp-relate.vue';
 import useDetail from '@/views/resource/resource-manage/hooks/use-detail';
 import useAdd from '@/views/resource/resource-manage/hooks/use-add';
@@ -25,6 +25,7 @@ import {
 
 import { ref, watch } from 'vue';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { timeFormatter } from '@/common/util';
 
 const route = useRoute();
 const resourceStore = useResourceStore();
@@ -34,6 +35,13 @@ const { whereAmI } = useWhereAmI();
 const {
   t,
 } = useI18n();
+
+const hostTabs = [
+  {
+    name: '基本信息',
+    value: 'detail',
+  },
+];
 
 const id = route.query?.id;
 const gcpDetail = ref({});
@@ -120,7 +128,7 @@ const gcpFields = [
     prop: 'log_enable',
   },
   {
-    name: 'vpc',
+    name: 'VPC',
     prop: 'vpc_id',
   },
   {
@@ -154,10 +162,12 @@ const gcpFields = [
   {
     name: t('创建时间'),
     prop: 'created_at',
+    render: (val: string) => timeFormatter(val),
   },
   {
     name: t('修改时间'),
     prop: 'updated_at',
+    render: (val: string) => timeFormatter(val),
   },
   {
     name: t('备注'),
@@ -252,45 +262,45 @@ const submit = async (data: any) => {
 </script>
 
 <template>
-  <div>
-    <detail-header>
-      {{ t('GCP防火墙') }}：ID（{{ `${id}` }}）
-      <template #right>
-        <!-- <div @click="showAuthDialog(actionName)">
-          <bk-button
-            :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]"
-            class="w100 ml10"
-            theme="primary"
-            @click="handleGcpAdd(false)"
-          >
-            {{ t('修改') }}
-          </bk-button>
-        </div> -->
-        <!-- <bk-button
-        class="w100 ml10"
-        theme="primary"
-      >
-        {{ t('删除') }}
-      </bk-button> -->
-      </template>
-    </detail-header>
-    <!-- <detail-info
-    :fields="gcpFields"
-    :detail="gcpDetail"
-  /> -->
-    <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
-      <bk-loading :loading="gcpLoading">
+  <detail-header>
+    {{ t('GCP防火墙') }}：ID（{{ `${id}` }}）
+    <template #right>
+      <!-- <div @click="showAuthDialog(actionName)">
+        <bk-button
+          :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]"
+          class="w100 ml10"
+          theme="primary"
+          @click="handleGcpAdd(false)"
+        >
+          {{ t('修改') }}
+        </bk-button>
+      </div> -->
+      <!-- <bk-button
+      class="w100 ml10"
+      theme="primary"
+    >
+      {{ t('删除') }}
+    </bk-button> -->
+    </template>
+  </detail-header>
+  <!-- <detail-info
+  :fields="gcpFields"
+  :detail="gcpDetail"
+/> -->
+  <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+    <detail-tab :tabs="hostTabs">
+      <template #default>
         <detail-info :fields="gcpFields" :detail="gcpDetail" />
-      </bk-loading>
-    </div>
-    <!-- <detail-tab
-    :tabs="tabs"
-  >
-    <gcp-relate></gcp-relate>
-  </detail-tab> -->
-    <gcp-add v-model:is-show="isShowGcpAdd" :gcp-title="gcpTitle" :is-add="isAdd" :loading="isLoading" :detail="detail"
-             @submit="submit"></gcp-add>
+      </template>
+    </detail-tab>
   </div>
+  <!-- <detail-tab
+  :tabs="tabs"
+>
+  <gcp-relate></gcp-relate>
+</detail-tab> -->
+  <gcp-add v-model:is-show="isShowGcpAdd" :gcp-title="gcpTitle" :is-add="isAdd" :loading="isLoading" :detail="detail"
+           @submit="submit"></gcp-add>
 </template>
 
 <style lang="scss" scoped>
@@ -300,5 +310,9 @@ const submit = async (data: any) => {
 
 .w60 {
   width: 60px;
+}
+
+:deep(.detail-info-main .info-list-item .item-field) {
+  width: 150px !important;
 }
 </style>

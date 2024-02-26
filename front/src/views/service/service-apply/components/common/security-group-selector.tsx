@@ -10,6 +10,7 @@ import { type UseDraggableReturn, VueDraggable } from 'vue-draggable-plus';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 import { QueryRuleOPEnum } from '@/typings';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+import { useResourceStore } from '@/store';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -26,6 +27,7 @@ export default defineComponent({
   },
   emits: ['update:modelValue'],
   setup(props) {
+    const resourceStore = useResourceStore();
     const list = ref([]);
     const loading = ref(false);
     const { isServicePage } = useWhereAmI();
@@ -126,8 +128,7 @@ export default defineComponent({
             value: vpcId,
           });
         }
-        const result = await http.post(
-          `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/security_groups/list`,
+        const result = await resourceStore.getCommonList(
           {
             filter: {
               op: 'and',
@@ -139,6 +140,7 @@ export default defineComponent({
               limit: 500,
             },
           },
+          'security_groups/list',
         );
         list.value = result?.data?.details ?? [];
         loading.value = false;
@@ -152,14 +154,6 @@ export default defineComponent({
           searchVal.value = '';
           securityGroupRules.value = [];
         }
-      },
-    );
-
-    watch(
-      () => securityGroupRules.value,
-      arr => console.log(111, arr.map(({ id }) => securityGroupKVMap.value.get(id))),
-      {
-        deep: true,
       },
     );
 
@@ -349,6 +343,7 @@ export default defineComponent({
                                 data={data}
                                 columns={securityRulesColumns}
                                 showOverflowTooltip
+                                stripe={true}
                               />
                             </DraggableCard>
                         ))}

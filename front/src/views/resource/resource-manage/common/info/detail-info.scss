@@ -1,10 +1,9 @@
-.detail-info-main {
-  background: #fff;
-  padding: 0px 60px;
-}
-
 .wrap-info {
   margin-bottom: 32px;
+
+  &:last-of-type {
+    margin-bottom: 0;
+  }
 }
 
 .wrap-info .detail-info-main {

@@ -192,7 +192,7 @@ defineExpose({ fetchComponentsData });
 <template>
   <bk-loading :loading="isLoading">
     <section
-      class="flex-row align-items-center mb20"
+      class="flex-row align-items-center"
       :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'"
     >
       <slot></slot>
@@ -205,9 +205,8 @@ defineExpose({ fetchComponentsData });
         }"
       />
       <bk-button
-        class="w100"
+        class="mw88"
         :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.biz_iaas_resource_delete }"
-        theme="primary"
         :disabled="authVerifyData?.permissionAction?.biz_iaas_resource_delete && selections.length <= 0"
         @click="
           () => {
@@ -218,7 +217,7 @@ defineExpose({ fetchComponentsData });
             }
           }"
       >
-        删除
+        批量删除
       </bk-button>
       <bk-search-select class="w500 ml10 mlauto" clearable :conditions="[]"
                         :data="selectSearchData" v-model="searchValue" />
@@ -226,7 +225,7 @@ defineExpose({ fetchComponentsData });
 
     <bk-table
       :settings="settings"
-      class="mt20"
+      class="has-selection"
       row-hover="auto"
       remote-pagination
       :pagination="pagination"

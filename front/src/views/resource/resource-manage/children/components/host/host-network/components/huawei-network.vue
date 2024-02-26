@@ -48,7 +48,7 @@ const formInfo = [
     prop: 'name',
   },
   {
-    name: '接口id',
+    name: '接口ID',
     prop: 'instance_id',
   },
   {
@@ -160,7 +160,7 @@ getNetWorkList();
     >
       添加网络接口
     </bk-button> -->
-    <div class="main-network table-warp mt20">
+    <div class="main-network table-warp">
       <!-- <div class="table-flex">
         <div>主网卡</div>
         <div>
@@ -198,9 +198,7 @@ getNetWorkList();
           </bk-button>
         </div>
       </div> -->
-      <div class="wrap-info">
-        <detail-info class="mt20" :fields="formInfo" :detail="item"></detail-info>
-      </div>
+      <detail-info :fields="formInfo" :detail="item"></detail-info>
     </div>
   </section>
 

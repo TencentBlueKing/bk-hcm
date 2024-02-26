@@ -45,24 +45,25 @@
   .mb16 {
     margin-bottom: 16px;
   }
-}
 
-.bk-tree .bk-node-row:nth-child(odd) {
-  background: #fafbfd;
-}
-
-.bk-tree .bk-node-row:nth-child(even) {
-  background: #fff;
-}
-
-.bk-tree {
-  .is-root {
-    .bk-node-text {
-      font-weight: 700;
-      font-size: 14px;
-      color: #63656E;
-      letter-spacing: 0;
-      line-height: 22px;
+  .bk-tree .bk-node-row:nth-child(odd) {
+    background: #fafbfd;
+  }
+  
+  .bk-tree .bk-node-row:nth-child(even) {
+    background: #fff;
+  }
+  
+  .bk-tree {
+    .is-root {
+      .bk-node-text {
+        font-weight: 700;
+        font-size: 14px;
+        color: #63656E;
+        letter-spacing: 0;
+        line-height: 22px;
+      }
     }
   }
 }
+

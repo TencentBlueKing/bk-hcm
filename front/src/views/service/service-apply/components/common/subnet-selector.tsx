@@ -23,6 +23,10 @@ export default defineComponent({
     zone: String as PropType<string>,
     resourceGroup: String as PropType<string>,
     handleChange: Function as PropType<(data: ISubnetItem) => void>,
+    clearable: {
+      type: Boolean,
+      default: true,
+    },
   },
   emits: ['update:modelValue'],
   setup(props, { emit, attrs, expose }) {
@@ -127,6 +131,7 @@ export default defineComponent({
           modelValue={selected.value}
           onUpdate:modelValue={val => selected.value = val}
           loading={loading.value}
+          clearable={props.clearable}
           {...{ attrs }}
           onChange={(cloud_id: string) => {
             console.log(cloud_id);

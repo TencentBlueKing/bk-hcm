@@ -14,10 +14,11 @@
 @import './cursos-point-event.scss';
 @import './fixedBkMagicBox';
 @import './page/setting.scss';
+@import './override/index.scss';
 
 
 .spin-icon {
-  animation: loading .8s linear infinite;
+  animation: loading 2s linear infinite;
 }
 @keyframes loading {
   from {

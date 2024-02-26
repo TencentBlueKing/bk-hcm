@@ -1,6 +1,8 @@
 .common-card {
-  padding: 16px 4px;
+  padding: 16px 0 8px;
   background-color: #fff;
+  box-shadow: 0 2px 4px 0 #1919290d;
+  cursor: default;
 
   .common-card-title {
     font-weight: 700;
@@ -12,7 +14,7 @@
   }
 
   .common-card-content {
-    padding: 16px 28px;
+    padding: 0 28px;
     width: 80%;
   }
 
@@ -20,6 +22,5 @@
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     column-gap: 24px;
-    row-gap: 24px;
   }
 }

@@ -17,6 +17,7 @@ export default defineComponent({
     return () => (
       <Card
         class={'common-card'}
+        border={false}
         showHeader={false}
         showFooter={false}
       >

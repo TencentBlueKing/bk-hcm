@@ -20,11 +20,11 @@ import {
 } from 'vue';
 import './index.scss';
 import { VendorEnum } from '@/common/constant';
-import tcloudVendor from '@/assets/image/vendor-tcloud.png';
-import awsVendor from '@/assets/image/vendor-aws.png';
-import azureVendor from '@/assets/image/vendor-azure.png';
-import gcpVendor from '@/assets/image/vendor-gcp.png';
-import huaweiVendor from '@/assets/image/vendor-huawei.png';
+import tcloudVendor from '@/assets/image/vendor-tcloud.svg';
+import awsVendor from '@/assets/image/vendor-aws.svg';
+import azureVendor from '@/assets/image/vendor-azure.svg';
+import gcpVendor from '@/assets/image/vendor-gcp.svg';
+import huaweiVendor from '@/assets/image/vendor-huawei.svg';
 import { Success, InfoLine, TextFile } from 'bkui-vue/lib/icon';
 import http from '@/http';
 import successIcon from '@/assets/image/corret-fill.png';
@@ -271,7 +271,6 @@ export default defineComponent({
                       class={'api-form-btn'}
                       onClick={() => {
                         isAuthDialogShow.value = true;
-                        console.log(666, isAuthDialogShow.value);
                       }}>
                       <TextFile fill='#3A84FF' />
                       查看账号权限
@@ -355,7 +354,7 @@ export default defineComponent({
                 class={'api-secret-selector'}
                 required
                 property='name'
-                description='必须以小写字母开头, 后面可跟小写字母、数字、连字符 - 或 下划线 _ , 但不能以连字符 - 或下划线 _ 结尾。名称长度不少于 3 个字符，且不多于 64 个字符'>
+                description={'必须以小写字母开头，后面可跟小写字母、数字、连字符 - 或 下划线 _ ，但不能以连字符 - 或下划线 _ 结尾。\n名称长度不少于 3 个字符，且不多于 64 个字符。'}>
                 <Input v-model={formModel.name} />
               </FormItem>
               <FormItem
