@@ -50,6 +50,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .bkhcm-icon-fullscreen:before {
 	content: "\e12a";
 }
+.bkhcm-icon-set-fill:before {
+	content: "\e14e";
+}
 .bkhcm-icon-info-line:before {
 	content: "\e149";
 }
@@ -61,6 +64,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 }
 .bkhcm-icon-38moxingshibai-01:before {
 	content: "\e120";
+}
+.bkhcm-icon-batch-edit:before {
+	content: "\e14d";
 }
 .bkhcm-icon-file:before {
 	content: "\e147";
@@ -106,6 +112,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 }
 .bkhcm-icon-jump-fill:before {
 	content: "\e123";
+}
+.bkhcm-icon-exchange-line:before {
+	content: "\e151";
 }
 .bkhcm-icon-invisible1:before {
 	content: "\e104";

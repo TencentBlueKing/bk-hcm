@@ -355,7 +355,7 @@ export default defineComponent({
                 class={'api-secret-selector'}
                 required
                 property='name'
-                description='必须以小写字母开头, 后面可跟小写字母、数字、连字符 - 或 下划线 _ , 但不能以连字符 - 或下划线 _ 结尾。名称长度不少于 3 个字符，且不多于 64 个字符'>
+                description={'必须以小写字母开头，后面可跟小写字母、数字、连字符 - 或 下划线 _ ，但不能以连字符 - 或下划线 _ 结尾。\n名称长度不少于 3 个字符，且不多于 64 个字符。'}>
                 <Input v-model={formModel.name} />
               </FormItem>
               <FormItem

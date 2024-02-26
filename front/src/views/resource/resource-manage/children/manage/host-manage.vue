@@ -310,7 +310,7 @@ getCloudAreas();
 
       <div class="flex-row align-items-center justify-content-arround search-selector-container">
         <bk-search-select
-          class="w500 ml10 mr15"
+          class="w500"
           clearable
           :conditions="[]"
           :data="hostSearchData"
@@ -322,7 +322,7 @@ getCloudAreas();
     </section>
 
     <bk-table
-      class="mt20"
+      class="has-selection"
       row-hover="auto"
       :columns="tableColumns"
       :data="datas"

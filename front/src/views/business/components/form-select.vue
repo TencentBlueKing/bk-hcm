@@ -174,6 +174,8 @@ const getAccountList = async () => {
     if (resourceAccountStore.resourceAccount?.id) {
       accountList.value = res.data?.details
         .filter(({ id }: {id: string}) => id === resourceAccountStore.resourceAccount.id);
+      // 自动填充当前账号
+      state.filter.account_id = accountList.value?.[0].id;
       return;
     }
     accountList.value = isResourcePage ? res?.data?.details : res?.data;

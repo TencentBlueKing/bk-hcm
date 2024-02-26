@@ -126,9 +126,10 @@ watch(
 </script>
 
 <template>
-  <detail-info
-    class="mt20"
-    :detail="detail"
-    :fields="fields"
-  />
+  <div class="field-list">
+    <detail-info
+      :detail="detail"
+      :fields="fields"
+    />
+  </div>
 </template>

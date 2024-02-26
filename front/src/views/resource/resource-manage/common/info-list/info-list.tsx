@@ -3,10 +3,7 @@ import {
   PropType,
 } from 'vue';
 
-import {
-  Share,
-  Copy,
-  Info } from 'bkui-vue/lib/icon';
+import { Share, Copy } from 'bkui-vue/lib/icon';
 
 import {
   Message,
@@ -92,13 +89,13 @@ export default defineComponent({
       const type = Object.prototype.toString.call(field.value);
       switch (type) {
         case '[object Array]':
-          return (field.value.map((e: string, index: number) => (
-            <span class="item-value">
+          return field.value.map((e: string, index: number) => (
+            <>
               <span>{e}</span>{field.value.length - 1 === index ? '' : ';'}
-            </span>
-          )));
+            </>
+          ));
         default:
-          return <span class="item-value">{field.value || '--'}</span>;
+          return field.value || '--';
       }
     };
 
@@ -138,9 +135,16 @@ export default defineComponent({
         this.fields.map((field) => {
           return <>
             <li class="info-list-item">
-              <span class="item-field">{ field.name }</span>
-              {field.tipsContent && <Info v-BkTooltips={{ content: field.tipsContent }}></Info>}
-              ：<span class={['item-value', typeof field.cls === 'function' ? field.cls(field.value) : field.cls]}>{ renderField(field) }</span>
+              {
+                field.tipsContent ? (
+                  <div class='item-field has-tips'>
+                    <span v-BkTooltips={{ content: field.tipsContent }}>{ field.name }</span>
+                  </div>
+                ) : (
+                  <span class='item-field'>{ field.name }</span>
+                )
+              }
+              :<span class={['item-value', typeof field.cls === 'function' ? field.cls(field.value) : field.cls]}>{ renderField(field) }</span>
               {
                 field.copy ? <copy class="info-item-copy ml5" onClick={() => this.handleCopy(field.value)}></copy> : ''
               }

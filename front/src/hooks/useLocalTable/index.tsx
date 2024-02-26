@@ -12,7 +12,7 @@ export interface IProp {
 
 export const useLocalTable = (props: IProp) => {
   const CommonLocalTable = defineComponent({
-    setup() {
+    setup(_props, { slots }) {
       const pagination = reactive({
         start: 0,
         limit: 10,
@@ -22,11 +22,14 @@ export const useLocalTable = (props: IProp) => {
       const isLoading = ref(false);
       return () => (
         <>
-          <SearchSelect
-            class='w500 common-search-selector'
-            v-model={searchVal.value}
-            data={props.searchData}
-          />
+          <section class='operation-wrap'>
+            {slots.tab?.()}
+            <SearchSelect
+              class='common-search-selector w400'
+              v-model={searchVal.value}
+              data={props.searchData}
+            />
+          </section>
           <Loading loading={isLoading.value}>
           <Table
               data={props.data}

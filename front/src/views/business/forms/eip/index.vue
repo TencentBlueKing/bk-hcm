@@ -19,8 +19,12 @@ import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { useI18n } from 'vue-i18n';
 import { Message } from 'bkui-vue';
 
+// define props
+const props = defineProps<{
+  isFormDataChanged: boolean
+}>();
 // define emits
-const emits = defineEmits(['cancel', 'success']);
+const emits = defineEmits(['cancel', 'success', 'update:isFormDataChanged']);
 
 // use hooks
 const businessStore = useBusinessStore();
@@ -29,7 +33,7 @@ const accountStore = useAccountStore();
 // define var
 const isSubmiting = ref(false);
 const formRef = ref(null);
-const type = ref('tcloud');
+const type = ref();
 const formData = ref<{
   account_id: string | number,
   region: string | number
@@ -52,6 +56,7 @@ const handleFormFilter = (value: BusinessFormFilter) => {
   formData.value.account_id = value.account_id;
   formData.value.region = value.region;
   type.value = value.vendor;
+  !props.isFormDataChanged && emits('update:isFormDataChanged', true);
 };
 
 const handleFormChange = (val: any) => {

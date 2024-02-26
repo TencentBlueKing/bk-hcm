@@ -2,6 +2,7 @@
   <bk-loading
     :opacity="1"
     :loading="pageLoading"
+    class="my-apply-page"
   >
     <div class="page-layout views-layout">
       <div class="left-layout">
@@ -263,7 +264,11 @@ export default defineComponent({
 });
 </script>
 <style lang="scss" scoped>
+.my-apply-page {
+  height: 100%;
+}
 .page-layout {
+  height: 100%;
   display: flex;
   padding: 0;
 }
@@ -275,16 +280,17 @@ export default defineComponent({
 
 .left-layout {
   flex: 0 0 280px;
-  height: calc(100vh - 61px);
   background: #fff;
   overflow: hidden;
+  :deep(.bk-nested-loading) {
+    height: 100%;
+  }
 }
 
 .right-layout {
   padding: 30px;
   flex: 1 0 auto;
   width: calc(100% - 280px);
-  height: calc(100vh - 61px);
   background: #f5f6fa;
   overflow-y: auto;
 }

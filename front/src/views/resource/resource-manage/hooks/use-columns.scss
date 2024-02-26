@@ -1,4 +1,27 @@
 .cvm-status-container {
   display: flex;
   align-items: center;
+  padding-top: 10px;
+  line-height: 20px;
+}
+
+.url-sync-partial-success-status {
+  border-bottom: 1px dashed rgb(151, 155, 165);
+}
+
+.status-column-cell {
+  display: flex;
+  align-items: center;
+  padding-top: 10px;
+  line-height: 20px;
+
+  .status-icon {
+    margin-right: 7px;
+    width: 14px;
+    height: 14px;
+  }
+  
+  .partial-success-status-text {
+    border-bottom: 1px dashed rgb(151, 155, 165);
+  }
 }

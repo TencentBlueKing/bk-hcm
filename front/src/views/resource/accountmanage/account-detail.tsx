@@ -23,6 +23,7 @@ import {
   useSecretExtension,
 } from '../resource-manage/account/createAccount/components/accountForm/useSecretExtension';
 import { VendorEnum } from '@/common/constant';
+import { timeFormatter } from '@/common/util';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 const { FormItem } = Form;
 const { Option } = Select;
@@ -653,7 +654,7 @@ export default defineComponent({
             label: t('创建时间'),
             required: false,
             property: 'created_at',
-            component: () => <span>{projectModel.created_at}</span>,
+            component: () => <span>{timeFormatter(projectModel.created_at)}</span>,
           },
           {
             label: t('修改人'),
@@ -665,7 +666,7 @@ export default defineComponent({
             label: t('修改时间'),
             required: false,
             property: 'updated_at',
-            component: () => <span>{projectModel.updated_at}</span>,
+            component: () => <span>{timeFormatter(projectModel.updated_at)}</span>,
           },
 
           // {

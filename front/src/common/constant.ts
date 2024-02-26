@@ -10,6 +10,8 @@ export enum ResourceTypeEnum {
   CVM = 'cvm',
   VPC = 'vpc',
   DISK = 'disk',
+  SUBNET = 'subnet',
+  CLB = 'clb',
 }
 
 // 资源类型
@@ -49,6 +51,14 @@ export const RESOURCE_TYPES = [
   {
     name: '镜像',
     type: 'image',
+  },
+  {
+    name: '负载均衡',
+    type: 'clbs',
+  },
+  {
+    name: '证书管理',
+    type: 'certs',
   },
 ];
 
@@ -449,11 +459,10 @@ export const RESOURCE_TABS = [
     key: '/resource/resource/account',
     label: '账号信息',
   },
-  // 下期再做
-  // {
-  //   key: '/resource/resource/record',
-  //   label: '操作记录',
-  // },
+  {
+    key: '/resource/resource/record',
+    label: '操作记录',
+  },
   {
     key: '/resource/resource/recycle',
     label: '回收站',
@@ -512,4 +521,11 @@ export const VendorMap = {
   [VendorEnum.GCP]: '谷歌云',
   [VendorEnum.HUAWEI]: '华为云',
   [VendorEnum.TCLOUD]: '腾讯云',
+};
+
+export const SYNC_STAUS_MAP = {
+  a: '绑定中',
+  b: '成功',
+  c: '失败',
+  d: '部分成功',
 };

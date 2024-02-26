@@ -127,7 +127,7 @@
           sort
         >
           <template #default="props">
-            {{props?.row.created_at}}
+            {{timeFormatter(props?.row.created_at)}}
           </template>
         </bk-table-column>
         <bk-table-column
@@ -135,6 +135,9 @@
           prop="updated_at"
           sort
         >
+          <template #default="props">
+            {{timeFormatter(props?.row.updated_at)}}
+          </template>
         </bk-table-column>
         <bk-table-column
           :label="t('备注')"
@@ -214,7 +217,7 @@ import { ACCOUNT_TYPES, SITE_TYPES, SITE_TYPE_MAP, VENDORS } from '@/common/cons
 import { useVerify } from '@/hooks';
 import { useMemoPagination, DEFAULT_PAGE_INDEX, DEFAULT_PAGE_SIZE } from '@/hooks/useMemoPagination';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
-
+import { timeFormatter } from '@/common/util';
 
 export default defineComponent({
   name: 'AccountManageList',
@@ -484,6 +487,7 @@ export default defineComponent({
       SITE_TYPE_MAP,
       getNameFromBusinessMap,
       businessMap,
+      timeFormatter,
     };
   },
 });

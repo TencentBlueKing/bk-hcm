@@ -3,6 +3,8 @@
     padding: 0 !important;
     overflow: hidden !important;
     .container-content {
+      display: flex;
+      flex-direction: column;
         width: 100%;
         padding: 0 !important;
         overflow: hidden !important;
@@ -30,14 +32,20 @@
             
         }
         .view-warp{
+          flex: 1;
             overflow-y: auto;
 
             .i-detail-tap-wrap {
               margin-top: 52px;
               padding: 24px;
+              height: calc(100% - 52px);
 
-              .bk-tab-header-item {
-                padding: 0 24px;
+              .detail-info-main .info-list-item .item-field {
+                width: 120px;
+              }
+              .detail-tab-main .info-title {
+                margin-bottom: 8px;
+                font-size: 14px;
               }
             }
 
@@ -249,21 +257,29 @@
 
 .resource-manage-container {
   height: 100%;
-  display: grid;
-  grid-template-columns: 15% 85%;
-  overflow: hidden;
+  display: flex;
 
   .router-view-content {
-    padding: 24px 24px 8px 24px;
+    padding: 24px;
+    height: 100%;
+    width: 85%;
+    margin-left: 15%;
     overflow-y: auto;
   }
   .fixed-account-list-container {
-    height: calc(100vh - 52px);
+    flex-shrink: 0;
     position: fixed;
-    top: 52px;
     left: 0;
+    height: calc(100vh - 52px);
     width: 15%;
-    z-index: 99;
     border-right: 1px solid #EAEBF0;
+    z-index: 99;
+  }
+}
+
+.home-page {
+  .no-footer .container-footer{
+    height: 0;
+    overflow: hidden;
   }
 }

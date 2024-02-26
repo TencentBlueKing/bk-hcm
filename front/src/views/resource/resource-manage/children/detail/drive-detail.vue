@@ -33,6 +33,7 @@ import useUninstallDrive from '../../hooks/use-uninstall-drive';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { timeFormatter } from '@/common/util';
 
 const { getRegionName } = useRegionsStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
@@ -52,7 +53,7 @@ const settingFields = ref<any[]>([
     prop: 'id',
   },
   {
-    name: '资源 ID',
+    name: '资源ID',
     prop: 'cloud_id',
     render(cell = '') {
       const index = cell.lastIndexOf('/') <= 0 ? 0 : cell.lastIndexOf('/') + 1;
@@ -170,6 +171,7 @@ const settingFields = ref<any[]>([
   {
     name: '创建时间',
     prop: 'created_at',
+    render: (cell: string) => timeFormatter(cell),
   },
   {
     name: '备注',
@@ -246,7 +248,7 @@ const {
             name: '到期时间',
             prop: 'extension.expire_time',
             render() {
-              return detail.extension.expire_time || '--';
+              return timeFormatter(detail.extension.expire_time) || '--';
             },
           },
         ]);
@@ -283,7 +285,7 @@ const {
             name: '到期时间',
             prop: 'extension.expire_time',
             render() {
-              return detail.extension.expire_time || '--';
+              return timeFormatter(detail.extension.expire_time) || '--';
             },
           },
         ]);

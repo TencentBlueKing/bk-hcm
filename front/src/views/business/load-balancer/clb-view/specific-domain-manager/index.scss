@@ -1,0 +1,58 @@
+.url-list-container {
+  padding: 16px 24px;
+  background-color: #ffffff;
+}
+
+.create-url-text-item {
+  display: flex;
+  line-height: 40px;
+  font-size: 14px;
+  margin-bottom: 18px;
+
+  .create-url-text-item-label {
+    width: 100px;
+    text-align: right;
+  }
+  
+  .create-url-text-item-value {
+    margin-left: 8px;
+    color: #313238;
+  }
+}
+
+.url-status-container {
+  display: flex;
+  align-items: center;
+  padding-top: 10px;
+  line-height: 20px;
+}
+
+.url-sync-partial-success-status {
+  border-bottom: 1px dashed rgb(151, 155, 165);
+}
+
+.target-group-name {
+  &:hover {
+    .target-group-edit-icon {
+      color: #c4c6cc;
+    }
+  }
+  .target-group-name-btn {
+    cursor: pointer;
+    color: #3A84FF;
+  }
+  .target-group-edit-icon {
+    color: #ffffff;
+    margin-left: 4px;
+    cursor: pointer;
+    &:hover {
+      color: #3a84ff;
+    }
+  }
+  .submit-edition-icon {
+    cursor: pointer;
+    &:hover {
+      color: #3A84FF;
+    }
+  }
+}
