@@ -96,7 +96,6 @@ type Service struct {
 // NewService create a service instance.
 func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 	tls := cc.CloudServer().Network.TLS
-
 	var tlsConfig *ssl.TLSConfig
 	if tls.Enable() {
 		tlsConfig = &ssl.TLSConfig{
@@ -114,7 +113,6 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 		return nil, err
 	}
 	apiClientSet := client.NewClientSet(restCli, sd)
-
 	authorizer, err := auth.NewAuthorizer(sd, tls)
 	if err != nil {
 		return nil, err
@@ -165,21 +163,17 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	if cc.CloudServer().CloudResource.Sync.Enable {
 		interval := time.Duration(cc.CloudServer().CloudResource.Sync.SyncIntervalMin) * time.Minute
 		go sync.CloudResourceSync(interval, sd, apiClientSet)
 	}
-
 	if cc.CloudServer().BillConfig.Enable {
 		interval := time.Duration(cc.CloudServer().BillConfig.SyncIntervalMin) * time.Minute
 		go bill.CloudBillConfigCreate(interval, sd, apiClientSet)
 	}
-
 	recycle.RecycleTiming(apiClientSet, sd, cc.CloudServer().Recycle, esbClient)
 
 	go appcvm.TimingHandleDeliverApplication(svr.client, 2*time.Second)
-
 	return svr, nil
 }
 
