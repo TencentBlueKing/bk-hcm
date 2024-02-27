@@ -27,7 +27,6 @@ watchEffect(() => {
 
 <template>
   <detail-info
-    class="mt20"
     :detail="data"
     :fields="fields"
   />

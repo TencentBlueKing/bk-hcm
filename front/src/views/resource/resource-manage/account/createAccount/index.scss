@@ -52,6 +52,7 @@
         background: #F5F7FA !important;
 
         .bk-modal-content {
+          height: calc(100% - 52px) !important;
           max-height: none !important;
         }
 

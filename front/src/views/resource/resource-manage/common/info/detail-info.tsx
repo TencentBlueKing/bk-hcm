@@ -52,12 +52,10 @@ export default defineComponent({
 
 
   render() {
-    return <>
-      <info-list
-        class="detail-info-main g-scroller"
-        fields={ this.renderFields }
-        onChange={this.handleChange}
-      />
-    </>;
+    return <info-list
+      class="detail-info-main g-scroller"
+      fields={ this.renderFields }
+      onChange={this.handleChange}
+    />;
   },
 });

@@ -25,6 +25,7 @@ import (
 
 	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types/eip"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -97,7 +98,12 @@ func (h *HuaWei) ListEip(kt *kit.Kit, opt *eip.HuaWeiEipListOption) (*eip.HuaWei
 		if publicIp.BandwidthId != nil {
 			request := &model.ShowBandwidthRequest{}
 			request.BandwidthId = converter.PtrToVal(publicIp.BandwidthId)
-			response, _ := client.ShowBandwidth(request)
+			response, err := client.ShowBandwidth(request)
+			if err != nil {
+				logs.Errorf("[%s] fail to ShowBandwidth, err: %v, BandwidthId: %s, rid: %s",
+					enumor.HuaWei, err, request.BandwidthId, kt.Rid)
+				return nil, err
+			}
 			if response.Bandwidth != nil {
 				if response.Bandwidth.ChargeMode != nil {
 					eips[idx].ChargeMode = response.Bandwidth.ChargeMode.Value()

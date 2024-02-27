@@ -4,12 +4,15 @@ import AccountSelector from '@/components/account-selector/index.vue';
 import RegionSelector from './region-selector';
 import ResourceGroupSelector from './resource-group-selector';
 import { CloudType } from '@/typings';
-import { VendorEnum } from '@/common/constant';
+import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
 import { ref, PropType, computed, watch } from 'vue';
 import { useAccountStore } from '@/store';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import CommonCard from '@/components/CommonCard';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
+import { Form } from 'bkui-vue';
+
+const { FormItem } = Form;
 
 const accountStore = useAccountStore();
 
@@ -134,56 +137,51 @@ watch(
         ></business-selector>
       </div>
     </div>
-    <div>
-      <div class="mb8">云账号</div>
-      <div>
-        <account-selector
-          v-model="selectedCloudAccountId"
-          :disabled="!!resourceAccountStore?.resourceAccount?.id"
-          :must-biz="!isResourcePage"
-          :biz-id="selectedBizId"
-          @change="handleChangeAccount"
-          :type="'resource'"
-        ></account-selector>
-      </div>
-    </div>
-    <div>
-      <div class="mb8">云厂商</div>
-      <div>
-        <bk-select
-          :clearable="false"
-          v-model="selectedVendorName"
-          :disabled="!!resourceAccountStore?.resourceAccount?.id"
-        >
-          <bk-option
-            v-for="(item, index) in vendorList"
-            :key="index"
-            :value="item.id"
-            :label="item.name"
-          />
-        </bk-select>
-      </div>
-    </div>
-    <div v-if="selectedVendor === VendorEnum.AZURE">
-      <div class="mb8">资源组</div>
-      <div>
-        <resource-group-selector
-          :account-id="selectedCloudAccountId"
-          v-model="selectedResourceGroup"
+    <FormItem
+      label="云账号"
+      required
+      :property="ResourceTypeEnum.SUBNET === type ? 'account_id' : 'cloudAccountId'">
+      <account-selector
+        v-model="selectedCloudAccountId"
+        :disabled="!!resourceAccountStore?.resourceAccount?.id"
+        :must-biz="!isResourcePage"
+        :biz-id="selectedBizId"
+        @change="handleChangeAccount"
+        :type="'resource'"
+      ></account-selector>
+    </FormItem>
+    <FormItem label="云厂商" required property="vendor">
+      <bk-select
+        :clearable="false"
+        v-model="selectedVendorName"
+        :disabled="!!resourceAccountStore?.resourceAccount?.id"
+      >
+        <bk-option
+          v-for="(item, index) in vendorList"
+          :key="index"
+          :value="item.id"
+          :label="item.name"
         />
-      </div>
-    </div>
-    <div>
-      <div class="mb8">云地域</div>
-      <div>
-        <region-selector
-          v-model="selectedRegion"
-          :type="type"
-          :vendor="selectedVendor"
-          :account-id="selectedCloudAccountId"
-        />
-      </div>
-    </div>
+      </bk-select>
+    </FormItem>
+    <FormItem
+      label="资源组"
+      required
+      :property="type === ResourceTypeEnum.SUBNET ? 'resource_group' : 'resourceGroup'"
+      v-if="selectedVendor === VendorEnum.AZURE">
+      <resource-group-selector
+        :account-id="selectedCloudAccountId"
+        v-model="selectedResourceGroup"
+      />
+    </FormItem>
+    <FormItem label="云地域" required property="region">
+      <region-selector
+        v-model="selectedRegion"
+        :type="type"
+        :vendor="selectedVendor"
+        :account-id="selectedCloudAccountId"
+      />
+    </FormItem>
     <slot />
     <slot name="appendix" />
   </CommonCard>

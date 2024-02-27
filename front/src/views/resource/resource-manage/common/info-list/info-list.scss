@@ -8,15 +8,30 @@
 
 .info-list-item {
   float: left;
-  width: 30%;
+  width: 40%;
   margin-right: 10px;
   display: flex;
   align-items: center;
   line-height: 40px;
   .item-field {
+    margin-right: 5px;
+    text-align: right;
     color: #63656E;
+    &.has-tips span{
+      position: relative;
+      cursor: pointer;
+      &::after {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        content: '';
+        width: 100%;
+        border-bottom: 1px dashed rgb(151, 155, 165);
+      }
+    }
   }
   .item-value{
+    margin-left: 10px;
     color: #313238;
     overflow: hidden;
     text-overflow: ellipsis;

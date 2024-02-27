@@ -79,6 +79,10 @@ const actionName = computed(() => {   // 资源下没有业务ID
   return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
 });
 
+// 是否显示表格上方的绑定按钮
+const isBindBtnShow = computed(() => {
+  return props.data.vendor === 'tcloud' || props.data.vendor === 'aws' || props.data.vendor === 'huawei';
+});
 
 // 权限弹窗 bus通知最外层弹出
 const showAuthDialog = (authActionName: string) => {
@@ -250,8 +254,6 @@ const getSecurityGroupsList = async () => {
       res = await resourceStore.getSecurityGroupsListByCvmId(props.data.id);
     }
     tableData.value = res.data;
-  } catch (error) {
-    console.log(error);
   } finally {
     isListLoading.value = false;
   }
@@ -291,12 +293,6 @@ if (props.data.vendor === 'aws') {
 if (isResourcePage.value) {
   securityFetchFilter.value.filter.rules.push({ field: 'bk_biz_id', op: 'eq', value: -1 });   // 资源下才需要查未绑定的数据
 }
-if (isResourcePage.value) {
-  securityFetchFilter.value.filter.rules.push({ field: 'bk_biz_id', op: 'eq', value: -1 });   // 资源下才需要查未绑定的数据
-}
-
-//   // { field: 'id', op: 'not_in', value: ['000000cx'] }
-// }
 
 const {
   datas: securityDatas,
@@ -373,7 +369,6 @@ const handleSecurityConfirm = async () => {
 const unBind = async (dataItem: any) => {
   unBindShow.value = true;
   tableItem.value = dataItem;
-  console.log('tableItem.value', tableItem.value);
 };
 
 // 确认解绑
@@ -400,7 +395,6 @@ const handleConfirmUnBind = async () => {
       theme: 'success',
     });
     getSecurityGroupsList();
-  } catch (error) {
   } finally {
     unBindLoading.value = false;
   }
@@ -424,12 +418,13 @@ getSecurityGroupsList();
 </script>
 
 <template>
-  <div>
+  <div class="host-security-container" :class="isBindBtnShow ? 'show-bind-btn' : ''">
     <span
-      v-if="props.data.vendor === 'tcloud' || props.data.vendor === 'aws' || props.data.vendor === 'huawei'"
+      v-if="isBindBtnShow"
       @click="showAuthDialog(actionName)">
       <bk-button
-        class="mt20" theme="primary"
+        class="mw88"
+        theme="primary"
         :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]"
         @click="handleSecurityDialog">
         {{t('绑定')}}
@@ -439,7 +434,7 @@ getSecurityGroupsList();
       :loading="isListLoading"
     >
       <bk-table
-        class="mt20"
+        class="security-list-table"
         row-hover="auto"
         :columns="columns"
         :data="tableData"
@@ -546,6 +541,15 @@ getSecurityGroupsList();
 </template>
 
 <style lang="scss" scoped>
+.host-security-container {
+  .security-list-table {
+    max-height: 100% !important;
+  }
+  &.show-bind-btn .security-list-table {
+    margin-top: 16px;
+    max-height: calc(100% - 48px) !important;
+  }
+}
   .security-head {
     display: flex;
     align-items: center;

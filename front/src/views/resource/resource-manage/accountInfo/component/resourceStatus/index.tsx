@@ -7,6 +7,7 @@ import successStatus from '@/assets/image/success-account.png';
 import failedStatus from '@/assets/image/failed-account.png';
 import loadingStatus from '@/assets/image/status_loading.png';
 import './index.scss';
+import { timeFormatter } from '@/common/util';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export default defineComponent({
@@ -39,6 +40,7 @@ export default defineComponent({
       {
         label: '最近同步时间',
         field: 'res_end_time',
+        render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
       },
       {
         label: '同步周期',

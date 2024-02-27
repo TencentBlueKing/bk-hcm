@@ -89,7 +89,8 @@ const useFilter = (props: PropsType) => {
   watch(
     () => route.query,
     () => {
-      saveQueryInSearch();
+      if (Object.entries(route.query).map(([queryName]) => queryName)
+        .includes('cloud_id')) saveQueryInSearch();
     },
     {
       deep: true,

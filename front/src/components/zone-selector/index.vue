@@ -16,6 +16,11 @@ const props = defineProps({
   modelValue: {
     type: String,
   },
+  // 暂时用 delayed 来取消 props.vendor 的即时监听
+  delayed: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -102,7 +107,7 @@ watch(() => props.vendor, (val) => {
   }
   resetData();
   getZonesData();
-}, { immediate: true });
+}, { immediate: !props.delayed });
 
 watch(() => props.region, () => {
   resetData();

@@ -33,17 +33,21 @@ export type IAccount = {
   }
 };
 
-export const useResourceAccountStore = defineStore(
-  'useResourceAccountStore',
-  () => {
-    const resourceAccount = ref<IAccount>(null);
-    const setResourceAccount = (val: IAccount) => {
-      resourceAccount.value = val;
-    };
+export const useResourceAccountStore = defineStore('useResourceAccountStore', () => {
+  const resourceAccount = ref<IAccount>(null);
+  const currentVendor = ref<VendorEnum>(null);
 
-    return {
-      resourceAccount,
-      setResourceAccount,
-    };
-  },
-);
+  const setResourceAccount = (val: IAccount) => {
+    resourceAccount.value = val;
+  };
+  const setCurrentVendor = (val: VendorEnum) => {
+    currentVendor.value = val;
+  };
+
+  return {
+    resourceAccount,
+    setResourceAccount,
+    currentVendor,
+    setCurrentVendor,
+  };
+});

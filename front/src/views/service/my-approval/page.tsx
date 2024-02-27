@@ -1,6 +1,7 @@
 import { useAccountStore } from '@/store';
 import { defineComponent, ref } from 'vue';
 import './index.scss';
+import { timeFormatter } from '@/common/util';
 
 enum ApprovalType {
   pass = 'pass',
@@ -36,6 +37,7 @@ export default defineComponent({
       {
         field: 'create_at',
         label: '提单时间',
+        render: ({ cell }: { cell: string }) => timeFormatter(cell),
       },
       {
         field: 'creator',

@@ -66,10 +66,12 @@ export default defineComponent({
       default: {},
       type: Object as PropType<(typeof _formModel)>,
     },
+    isFormDataChanged: Boolean,
   },
   emits: [
     'cancel',
     'success',
+    'update:isFormDataChanged',
   ],
   setup(props, { emit }) {
     let formModel = reactive({
@@ -169,6 +171,10 @@ export default defineComponent({
         protocolAndPorts.protocol = '';
       },
     );
+
+    watch(formModel, () => {
+      !props.isFormDataChanged && emit('update:isFormDataChanged', true);
+    });
 
     return () => (
       <div class={'firewall-form-container'}>

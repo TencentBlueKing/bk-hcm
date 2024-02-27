@@ -59,13 +59,13 @@ const {
 const hostSearchData = computed(() => {
   return [
     {
-      name: '子网 ID',
+      name: '子网ID',
       id: 'cloud_id',
     },
     ...searchData.value,
     ...[
       {
-        name: '所属vpc id',
+        name: '所属VPC ID',
         id: 'cloud_vpc_id',
       },
       {
@@ -262,7 +262,7 @@ defineExpose({ fetchComponentsData });
 
     <bk-table
       :settings="settings"
-      class="mt20"
+      class="has-selection"
       row-hover="auto"
       remote-pagination
       :pagination="pagination"

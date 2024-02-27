@@ -21,6 +21,7 @@ import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { VendorEnum } from '@/common/constant';
 import { useRoute } from 'vue-router';
+import { timeFormatter } from '@/common/util';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 const { FormItem } = Form;
 
@@ -75,6 +76,7 @@ export default defineComponent({
       {
         label: '更新时间',
         field: 'updated_at',
+        render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
       },
       {
         label: '操作',
@@ -160,6 +162,7 @@ export default defineComponent({
           {
             label: '更新时间',
             field: 'updated_at',
+            render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
           },
           {
             label: '操作',
@@ -223,6 +226,7 @@ export default defineComponent({
           {
             label: '更新时间',
             field: 'updated_at',
+            render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
           },
           {
             label: '操作',
