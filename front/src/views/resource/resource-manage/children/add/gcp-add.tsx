@@ -3,6 +3,7 @@ import { Form, Input, Select, Radio, Button, Dialog, TagInput } from 'bkui-vue';
 import { useI18n } from 'vue-i18n';
 import { GCP_TYPE_STATUS, GCP_MATCH_STATUS, GCP_SOURCE_LIST, GCP_TARGET_LIST, GCP_PROTOCOL_LIST, GCP_EXECUTION_STATUS, COMMON_STATUS } from '@/constants';
 import './gcp-add.scss';
+import { timeFormatter } from '@/common/util';
 export default defineComponent({
   name: 'GcpAdd',
   props: {
@@ -244,12 +245,12 @@ export default defineComponent({
         {
           label: t('创建时间'),
           property: 'resource-id',
-          component: () => <span>{state.projectModel.created_at}</span>,
+          component: () => <span>{timeFormatter(state.projectModel.created_at)}</span>,
         },
         {
           label: t('修改时间'),
           property: 'resource-id',
-          component: () => <span>{state.projectModel.updated_at}</span>,
+          component: () => <span>{timeFormatter(state.projectModel.updated_at)}</span>,
         },
         {
           label: t('备注'),

@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed, provide } from 'vue';
-
+import { ref, watch, computed, provide, onMounted } from 'vue';
 import HostManage from './children/manage/host-manage.vue';
 import VpcManage from './children/manage/vpc-manage.vue';
 import SubnetManage from './children/manage/subnet-manage.vue';
@@ -20,16 +19,11 @@ import firewallForm from '@/views/business/forms/firewall';
 import TemplateDialog from '@/views/resource/resource-manage/children/dialog/template-dialog';
 import BkTab, { BkTabPanel } from 'bkui-vue/lib/tab';
 import { RouterView, useRouter, useRoute } from 'vue-router';
-
 import { RESOURCE_TYPES, RESOURCE_TABS, VendorEnum } from '@/common/constant';
-
 import { useI18n } from 'vue-i18n';
 import useSteps from './hooks/use-steps';
-
 import type { FilterType } from '@/typings/resource';
-
 import { useAccountStore } from '@/store';
-
 import { useVerify } from '@/hooks';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { InfoBox } from 'bkui-vue';
@@ -44,6 +38,54 @@ const { isShowDistribution, ResourceDistribution } = useSteps();
 const isResourcePage = computed(() => {
   // 资源下没有业务ID
   return !accountStore.bizs;
+});
+
+// 账号 extension 信息
+const headerExtensionMap = computed(() => {
+  const map = { firstLabel: '', firstField: '', secondLabel: '', secondField: '' };
+  switch (resourceAccountStore.resourceAccount.vendor) {
+    case VendorEnum.TCLOUD:
+      Object.assign(map, {
+        firstLabel: '主账号ID',
+        firstField: 'cloud_main_account_id',
+        secondLabel: '子账号ID',
+        secondField: 'cloud_sub_account_id',
+      });
+      break;
+    case VendorEnum.AWS:
+      Object.assign(map, {
+        firstLabel: '云账号ID',
+        firstField: 'cloud_account_id',
+        secondLabel: '云iam用户名',
+        secondField: 'cloud_iam_username',
+      });
+      break;
+    case VendorEnum.AZURE:
+      Object.assign(map, {
+        firstLabel: '云租户ID',
+        firstField: 'cloud_tenant_id',
+        secondLabel: '云订阅名称',
+        secondField: 'cloud_subscription_name',
+      });
+      break;
+    case VendorEnum.GCP:
+      Object.assign(map, {
+        firstLabel: '云项目ID',
+        firstField: 'cloud_project_id',
+        secondLabel: '云项目名称',
+        secondField: 'cloud_project_name',
+      });
+      break;
+    case VendorEnum.HUAWEI:
+      Object.assign(map, {
+        firstLabel: '子账号ID',
+        firstField: 'cloud_sub_account_id',
+        secondLabel: '云子账号名称',
+        secondField: 'cloud_sub_account_name',
+      });
+      break;
+  }
+  return map;
 });
 
 // 权限hook
@@ -78,6 +120,9 @@ const isTemplateDialogEdit = ref(false);
 const templateDialogPayload = ref({});
 
 provide('securityType', securityType);
+
+// 用于判断 sideslider 中的表单数据是否改变
+const isFormDataChanged = ref(false);
 
 const formMap = {
   ip: EipForm,
@@ -131,7 +176,6 @@ const filterData = (key: string, val: string | number) => {
     });
   } else {
     filter.value.rules.forEach((e: any) => {
-      console.log(e.field, key, e.field === key);
       if (e.field === key) {
         e.op = val === 1 ? 'neq' : 'eq';
         return;
@@ -185,6 +229,8 @@ const handleAdd = () => {
       break;
     default:
       isShowSideSlider.value = true;
+      // 标记初始化
+      isFormDataChanged.value = false;
   }
 };
 
@@ -276,6 +322,26 @@ watch(
 );
 
 watch(
+  () => resourceAccountStore.currentVendor,
+  (vendor: VendorEnum) => {
+    if (vendor) {
+      const vendorRuleIdx = filter.value.rules.findIndex((e: any) => e.field === 'vendor');
+      if (vendorRuleIdx === -1) {
+        filter.value.rules.push({
+          field: 'vendor',
+          op: 'eq',
+          value: vendor,
+        });
+      } else {
+        filter.value.rules[vendorRuleIdx].value = vendor;
+      }
+    } else {
+      filter.value.rules = filter.value.rules.filter((e: any) => e.field !== 'vendor');
+    }
+  },
+);
+
+watch(
   () => activeResourceTab.value,
   (val) => {
     router.push({
@@ -324,20 +390,28 @@ const handleEdit = (detail: any) => {
   formDetail.value = detail;
   isEdit.value = true;
   isShowSideSlider.value = true;
+  // 初始化标记
+  isFormDataChanged.value = false;
 };
 
 const handleBeforeClose = () => {
-  InfoBox({
-    title: '请确认是否关闭侧栏？',
-    subTitle: '关闭后，内容需要重新填写！',
-    theme: 'warning',
-    onConfirm() {
-      handleCancel();
-    },
-  });
+  if (isFormDataChanged.value) {
+    InfoBox({
+      title: '请确认是否关闭侧栏？',
+      subTitle: '关闭后，内容需要重新填写！',
+      quickClose: false,
+      onConfirm() {
+        handleCancel();
+      },
+    });
+  } else {
+    handleCancel();
+  }
 };
 
-getResourceAccountList();
+onMounted(() => {
+  getResourceAccountList();
+});
 </script>
 
 <template>
@@ -349,54 +423,17 @@ getResourceAccountList();
             {{ resourceAccountStore?.resourceAccount?.name || "全部账号" }}
           </span>
           <template v-if="resourceAccountStore?.resourceAccount?.id">
-            <div v-if="resourceAccountStore?.resourceAccount?.vendor === VendorEnum.TCLOUD"
-                 class="extension">
-              <span>主账号ID：
+            <div class="extension">
+              <span>
+                {{ headerExtensionMap.firstLabel }}：
                 <span class="info-text">
-                  {{ resourceAccountStore.resourceAccount.extension.cloud_main_account_id }}
+                  {{ resourceAccountStore.resourceAccount.extension[headerExtensionMap.firstField] }}
                 </span>
               </span>
-              <span>子账号ID：
-                <span class="info-text">{{ resourceAccountStore.resourceAccount.extension.cloud_sub_account_id }}</span>
-              </span>
-            </div>
-            <div v-else-if="resourceAccountStore?.resourceAccount?.vendor === VendorEnum.AWS"
-                 class="extension">
-              <span>云账号ID：
-                <span class="info-text">{{ resourceAccountStore.resourceAccount.extension.cloud_account_id }}</span>
-              </span>
-              <span>云iam用户名：
-                <span class="info-text">{{ resourceAccountStore.resourceAccount.extension.cloud_iam_username }}</span>
-              </span>
-            </div>
-            <div v-else-if="resourceAccountStore?.resourceAccount?.vendor === VendorEnum.GCP"
-                 class="extension">
-              <span>云项目ID：
-                <span class="info-text">{{ resourceAccountStore.resourceAccount.extension.cloud_project_id }}</span>
-              </span>
-              <span>云项目名称：
-                <span class="info-text">{{ resourceAccountStore.resourceAccount.extension.cloud_project_name }}</span>
-              </span>
-            </div>
-            <div v-else-if="resourceAccountStore?.resourceAccount?.vendor === VendorEnum.AZURE"
-                 class="extension">
-              <span>云租户ID：
-                <span class="info-text">{{ resourceAccountStore.resourceAccount.extension.cloud_tenant_id }}</span>
-              </span>
-              <span>云订阅名称：
+              <span>
+                {{ headerExtensionMap.secondLabel }}：
                 <span class="info-text">
-                  {{ resourceAccountStore.resourceAccount.extension.cloud_subscription_name }}
-                </span>
-              </span>
-            </div>
-            <div v-else-if="resourceAccountStore?.resourceAccount?.vendor === VendorEnum.HUAWEI"
-                 class="extension">
-              <span>子账号ID：
-                <span class="info-text">{{ resourceAccountStore.resourceAccount.extension.cloud_sub_account_id }}</span>
-              </span>
-              <span>云子账号名称：
-                <span class="info-text">
-                  {{ resourceAccountStore.resourceAccount.extension.cloud_sub_account_name }}
+                  {{ resourceAccountStore.resourceAccount.extension[headerExtensionMap.secondField] }}
                 </span>
               </span>
             </div>
@@ -485,7 +522,7 @@ getResourceAccountList();
                   }
                 }"
               >
-                {{ activeTab === 'host' ? '购买' : '新建' }}
+                {{ ['host'].includes(activeTab) ? '购买' : '新建' }}
               </bk-button>
             </span>
           </component>
@@ -507,6 +544,8 @@ getResourceAccountList();
             @success="handleSuccess"
             :is-edit="isEdit"
             :detail="formDetail"
+            @edit="handleEdit"
+            v-model:isFormDataChanged="isFormDataChanged"
           ></component>
         </template>
       </bk-sideslider>
@@ -564,14 +603,39 @@ getResourceAccountList();
 
     .bk-tab-header-item {
       padding: 0 24px;
+      height: 42px;
     }
   }
 
   :deep(.bk-tab-content) {
-    // border-left: 1px solid #dcdee5;
-    // border-right: 1px solid #dcdee5;
-    border-bottom: 1px solid #dcdee5;
-    padding: 20px;
+    height: calc(100% - 42px);
+    padding: 16px 24px;
+
+    & > .bk-tab-panel > .bk-nested-loading {
+      height: 100%;
+      .bk-table {
+        margin-top: 16px;
+        max-height: calc(100% - 52px);
+      }
+    }
+  }
+
+  :deep(.bk-table.has-selection) {
+    .bk-table-head .bk-checkbox {
+      vertical-align: middle;
+    }
+    .bk-table-head tr th:nth-of-type(2) .cell{
+      padding-left: 8px;
+    }
+    .bk-table-body .cell.selection {
+      text-align: right;
+      .bk-checkbox {
+        vertical-align: middle;
+      }
+    }
+    .bk-table-body tr td:nth-of-type(2) .cell {
+      padding-left: 8px;
+    }
   }
 }
 .search-filter {
@@ -627,5 +691,11 @@ getResourceAccountList();
   .bk-info-sub-title {
     word-break: break-all;
   }
+}
+.mw64 {
+  min-width: 64px;
+}
+.mw88 {
+  min-width: 88px;
 }
 </style>

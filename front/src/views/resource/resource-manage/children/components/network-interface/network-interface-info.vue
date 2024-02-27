@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
-import { ref, watch } from 'vue';
+import { ref } from 'vue';
 import { CloudType } from '@/typings';
 import { useRegionsStore } from '@/store/useRegionsStore';
 
@@ -49,86 +49,76 @@ const fields = ref([
     render: (val: string) => getRegionName(props?.detail?.vendor, val),
   },
 ]);
-
-watch(
-  () => props.detail,
-  (detail) => {
-    console.log('detail', detail);
-    switch (detail.vendor) {
-      case 'azure':
-        fields.value.push(...[
-          {
-            name: '内网IPv4地址',
-            prop: 'private_ipv4',
-            render(cell: string[]) {
-              return cell.length ? cell.join(',') : '--';
-            },
-          },
-          {
-            name: '公网IPv4地址',
-            prop: 'public_ipv4',
-            render(cell: string[]) {
-              return cell.length ? cell.join(',') : '--';
-            },
-          },
-          {
-            name: '专用IP地址(IPv6)',
-            prop: 'private_ipv6',
-            render(cell: string[]) {
-              return cell.length ? cell.join(',') : '--';
-            },
-          },
-          {
-            name: '公用IP地址(IPv6)',
-            prop: 'public_ipv6',
-            render(cell: string[]) {
-              return cell.length ? cell.join(',') : '--';
-            },
-          },
-          {
-            name: '更快的网络连接',
-            prop: 'enable_accelerated_networking',
-            render(val: boolean) {
-              return val ? '是' : '否';
-            },
-          },
-          {
-            name: '已关联到主机ID',
-            prop: 'instance_id',
-            render(cell: string) {
-              return cell || '--';
-            },
-          },
-          {
-            name: '已关联到安全组ID',
-            prop: 'cloud_security_group_id',
-            render(cell: string) {
-              return cell || '--';
-            },
-          },
-          {
-            name: '虚拟网络/子网',
-            prop: 'virtualNetworkSubnetId',
-          },
-          {
-            name: 'MAC地址',
-            prop: 'mac_address',
-          },
-        ]);
-        break;
-    }
-  },
-  {
-    deep: true,
-    immediate: true,
-  },
-);
+switch (props?.detail.vendor) {
+  case 'azure':
+    fields.value.push(...[
+      {
+        name: '内网IPv4地址',
+        prop: 'private_ipv4',
+        render(cell: string[]) {
+          return cell.length ? cell.join(',') : '--';
+        },
+      },
+      {
+        name: '公网IPv4地址',
+        prop: 'public_ipv4',
+        render(cell: string[]) {
+          return cell.length ? cell.join(',') : '--';
+        },
+      },
+      {
+        name: '专用IP地址(IPv6)',
+        prop: 'private_ipv6',
+        render(cell: string[]) {
+          return cell.length ? cell.join(',') : '--';
+        },
+      },
+      {
+        name: '公用IP地址(IPv6)',
+        prop: 'public_ipv6',
+        render(cell: string[]) {
+          return cell.length ? cell.join(',') : '--';
+        },
+      },
+      {
+        name: '更快的网络连接',
+        prop: 'enable_accelerated_networking',
+        render(val: boolean) {
+          return val ? '是' : '否';
+        },
+      },
+      {
+        name: '已关联到主机ID',
+        prop: 'instance_id',
+        render(cell: string) {
+          return cell || '--';
+        },
+      },
+      {
+        name: '已关联到安全组ID',
+        prop: 'cloud_security_group_id',
+        render(cell: string) {
+          return cell || '--';
+        },
+      },
+      {
+        name: '虚拟网络/子网',
+        prop: 'virtualNetworkSubnetId',
+      },
+      {
+        name: 'MAC地址',
+        prop: 'mac_address',
+      },
+    ]);
+    break;
+}
 </script>
 
 <template>
-  <detail-info
-    class="mt20"
-    :detail="detail"
-    :fields="fields"
-  />
+  <div class="field-list">
+    <detail-info
+      :detail="detail"
+      :fields="fields"
+    />
+  </div>
 </template>

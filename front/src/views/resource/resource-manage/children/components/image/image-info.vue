@@ -14,7 +14,7 @@ const props = defineProps({
 
 const fields = ref([
   {
-    name: '实例 ID',
+    name: '实例ID',
     prop: 'cloud_id',
   },
   {
@@ -74,7 +74,6 @@ const {
     :loading="loading"
   >
     <detail-info
-      class="mt20"
       :detail="detail"
       :fields="fields"
     />

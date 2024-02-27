@@ -27,6 +27,7 @@ import UseSecurityRule from '@/views/resource/resource-manage/hooks/use-security
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import bus from '@/common/bus';
+import { timeFormatter } from '@/common/util';
 const props = defineProps({
   filter: {
     type: Object as PropType<any>,
@@ -288,6 +289,7 @@ const inColumns = [
   {
     label: t('修改时间'),
     field: 'updated_at',
+    render: ({ cell }: { cell: string }) => timeFormatter(cell),
   },
   {
     label: t('操作'),
@@ -411,6 +413,7 @@ const outColumns = [
   {
     label: t('修改时间'),
     field: 'updated_at',
+    render: ({ cell }: { cell: string }) => timeFormatter(cell),
   },
   {
     label: t('操作'),
@@ -534,7 +537,7 @@ if (props.vendor === 'huawei') {
     <bk-loading
       :loading="state.isLoading"
     >
-      <section class="mt20 rule-main">
+      <section class="rule-main">
         <bk-radio-group
           v-model="activeType"
           :disabled="state.isLoading"

@@ -26,6 +26,7 @@ import {
   useAccountStore,
 } from '@/store/account';
 import { INSTANCE_CHARGE_MAP, VendorEnum } from '@/common/constant';
+import { timeFormatter } from '@/common/util';
 
 const props = defineProps({
   data: {
@@ -92,7 +93,7 @@ const generateTooltipsOptions = (data: any) => {
   if (data?.is_system_disk) return {
     content: '系统盘不可以卸载',
     disabled: !data.is_system_disk,
-  }
+  };
 
   return {
     disabled: true,
@@ -184,6 +185,7 @@ const columns = ref([
     render({ data }: any) {
       const attachment = data?.extension?.attachment;
       const host = attachment?.find((x: any) => x.instance_id === props.data.cloud_id);
+      // eslint-disable-next-line no-nested-ternary
       return host ? (host.delete_on_termination ? '是' : '否') : '--';
     },
   },
@@ -199,21 +201,21 @@ const columns = ref([
         },
         [
           withDirectives(h(
-              Button,
-              {
-                text: true,
-                theme: 'primary',
-                disabled: !authVerifyData.value?.permissionAction[actionName.value] || data.is_system_disk
+            Button,
+            {
+              text: true,
+              theme: 'primary',
+              disabled: !authVerifyData.value?.permissionAction[actionName.value] || data.is_system_disk
                     || (isResourcePage.value && props.data?.bk_biz_id !== -1),
-                onClick() {
-                  handleUninstallDrive(data);
-                },
+              onClick() {
+                handleUninstallDrive(data);
               },
-              [
-                '卸载',
-              ],
+            },
+            [
+              '卸载',
+            ],
           ), [
-              [bkTooltips, generateTooltipsOptions(data)]
+            [bkTooltips, generateTooltipsOptions(data)],
           ])],
       );
     },
@@ -285,7 +287,7 @@ watch(
           label: '到期时间',
           field: '',
           render({ cell }: any) {
-            return cell || '--';
+            return timeFormatter(cell) || '--';
           },
         },
       ]);
@@ -341,7 +343,7 @@ watch(
       >挂载</bk-button>
     </span>
     <bk-table
-      class="mt20"
+      class="mt16"
       row-hover="auto"
       :columns="columns"
       :data="datas"

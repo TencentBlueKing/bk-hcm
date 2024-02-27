@@ -62,6 +62,7 @@ export default defineComponent({
               [ResourceTypeEnum.CVM]: 'ecs',
               [ResourceTypeEnum.VPC]: 'vpc',
               [ResourceTypeEnum.DISK]: 'ecs',
+              [ResourceTypeEnum.SUBNET]: 'vpc',
             };
             filter.rules = [
               {

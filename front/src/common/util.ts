@@ -152,12 +152,12 @@ export function formatStorageSize(value: number, digits = 0) {
  * 获取当前网络得分对应的颜色
  * @param score 得分数值
  */
-export function getScoreColor (score: number) {
+export function getScoreColor(score: number) {
   if (score > 0 && score < 180) {
     return '#00A62B';
-  } else if (score >= 180 && score <= 360) {
+  } if (score >= 180 && score <= 360) {
     return '#FF9D00';
-  } else if ( score > 360 ) {
+  } if (score > 360) {
     return '#EA3636';
   }
   return '#63656E';
@@ -174,3 +174,14 @@ export function swapMapKeysAndValuesToObj(map: Map<string, string>) {
   }
   return _obj;
 }
+
+// 求两个数组的差集
+export function getDifferenceSet(origin: Array<string>, compare: Array<string>) {
+  const set = new Set(origin);
+  compare.forEach((item) => {
+    if (set.has(item)) {
+      set.delete(item);
+    }
+  });
+  return Array.from(set);
+};

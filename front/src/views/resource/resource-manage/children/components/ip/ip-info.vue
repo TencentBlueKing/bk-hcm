@@ -12,6 +12,7 @@ import DetailList from '../../../common/info/detail-info';
 import DetailTab from '../../../common/tab/detail-tab';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useRegionsStore } from '@/store/useRegionsStore';
+import { timeFormatter } from '@/common/util';
 
 const props = defineProps({
   detail: Object,
@@ -121,6 +122,7 @@ const baseInfo = ref([
   {
     name: '创建时间',
     prop: 'created_at',
+    render: (val: string) => timeFormatter(val),
   },
 ]);
 const bindInfo = ref<any>([
@@ -156,7 +158,7 @@ const bandInfo = [
   //   prop: '',
   // },
   {
-    name: '带宽大小 (Mbit/s)',
+    name: '带宽大小(Mbit/s)',
     prop: 'bandwidth_size',
   },
   {
@@ -247,7 +249,7 @@ watch(
             prop: 'sku_tier',
           },
           {
-            name: 'DNS 名称',
+            name: 'DNS名称',
             prop: '',
           },
         ];
@@ -292,7 +294,6 @@ watch(
   >
     <template #default>
       <detail-list
-        class="mt20"
         :fields="baseInfo"
         :detail="detail"
       ></detail-list>
@@ -305,7 +306,6 @@ watch(
   >
     <template #default>
       <detail-list
-        class="mt20"
         :fields="bindInfo"
         :detail="detail"
       ></detail-list>
@@ -318,7 +318,6 @@ watch(
   >
     <template #default>
       <detail-list
-        class="mt20"
         :fields="otherInfo"
         :detail="detail"
       ></detail-list>
@@ -332,7 +331,6 @@ watch(
   >
     <template #default>
       <detail-list
-        class="mt20"
         :fields="bandInfo"
         :detail="detail"
       ></detail-list>
@@ -340,7 +338,7 @@ watch(
   </detail-tab>
 </template>
 
-<style lang="scss">
+<style lang="scss" scoped>
   .auto-tab {
     .bk-tab-content, .detail-info-main, .bk-tab-panel {
       height: auto !important;

@@ -5,6 +5,7 @@ import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info
 import { PropType } from 'vue';
 import { TypeEnum, useRouteLinkBtn } from '@/hooks/useRouteLinkBtn';
 import { CLOUD_HOST_STATUS } from '@/common/constant';
+import { timeFormatter } from '@/common/util';
 
 const shortCutStr = (str: string) => {
   if (!str) return str;
@@ -62,6 +63,9 @@ const cvmInfo = [
   {
     name: '创建时间',
     prop: 'cloud_created_time',
+    render() {
+      return timeFormatter(props.data.cloud_created_time);
+    },
   },
   {
     name: '当前状态',
@@ -130,7 +134,7 @@ const settingInfo = [
     prop: 'os_name',
   },
   {
-    name: '镜像id',
+    name: '镜像ID',
     prop: 'cloud_image_id',
     render: () => useRouteLinkBtn(props.data, {
       id: 'image_id',
@@ -149,7 +153,6 @@ const settingInfo = [
   <h3 class="info-title">网络信息</h3>
   <div class="wrap-info">
     <detail-info
-      class="mt20"
       :fields="netInfo"
       :detail="props.data"
     ></detail-info>
@@ -157,19 +160,8 @@ const settingInfo = [
   <h3 class="info-title">配置信息</h3>
   <div class="wrap-info">
     <detail-info
-      class="mt20"
       :fields="settingInfo"
       :detail="props.data"
     ></detail-info>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.info-title {
-  font-size: 14px;
-  margin-bottom: 8px;
-}
-:deep(.host-info) .detail-info-main {
-  height: auto !important;
-}
-</style>

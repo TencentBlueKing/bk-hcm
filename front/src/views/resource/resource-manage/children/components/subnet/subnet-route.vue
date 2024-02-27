@@ -235,7 +235,7 @@ const handlePageSizeChange = (limit: number) => {
     :loading="isLoading"
   >
     <bk-table
-      class="mt20"
+      class="mt16"
       row-hover="auto"
       remote-pagination
       :pagination="pagination"
@@ -250,7 +250,9 @@ const handlePageSizeChange = (limit: number) => {
 
 <style lang="scss" scoped>
   .info-title {
+    margin-bottom: 0 !important;
+    height: 32px;
+    line-height: 32px;
     font-size: 14px;
-    margin-bottom: 8px;
   }
 </style>
