@@ -48,7 +48,6 @@ func (g *securityGroup) BatchCreateTCloudSGRule(cts *rest.Contexts) (interface{}
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -59,7 +58,6 @@ func (g *securityGroup) BatchCreateTCloudSGRule(cts *rest.Contexts) (interface{}
 			cts.Kit.Rid)
 		return nil, err
 	}
-
 	if sg.AccountID != req.AccountID {
 		return nil, fmt.Errorf("'%s' security group does not belong to '%s' account", sgID, req.AccountID)
 	}
@@ -73,7 +71,6 @@ func (g *securityGroup) BatchCreateTCloudSGRule(cts *rest.Contexts) (interface{}
 	opt := &securitygrouprule.TCloudCreateOption{Region: sg.Region, CloudSecurityGroupID: sg.CloudID}
 	if req.EgressRuleSet != nil {
 		opt.EgressRuleSet = make([]securitygrouprule.TCloud, 0, len(req.EgressRuleSet))
-
 		for _, rule := range req.EgressRuleSet {
 			opt.EgressRuleSet = append(opt.EgressRuleSet, securitygrouprule.TCloud{
 				Protocol:                   rule.Protocol,
@@ -93,7 +90,6 @@ func (g *securityGroup) BatchCreateTCloudSGRule(cts *rest.Contexts) (interface{}
 
 	if req.IngressRuleSet != nil {
 		opt.IngressRuleSet = make([]securitygrouprule.TCloud, 0, len(req.IngressRuleSet))
-
 		for _, rule := range req.IngressRuleSet {
 			opt.IngressRuleSet = append(opt.IngressRuleSet, securitygrouprule.TCloud{
 				Protocol:                   rule.Protocol,
@@ -113,7 +109,6 @@ func (g *securityGroup) BatchCreateTCloudSGRule(cts *rest.Contexts) (interface{}
 	if err = client.CreateSecurityGroupRule(cts.Kit, opt); err != nil {
 		logs.Errorf("request adaptor to create tcloud security group rule failed, err: %v, opt: %v, rid: %s", err, opt,
 			cts.Kit.Rid)
-
 		// 里面已经有日志了，不处理
 		_, _ = g.syncSGRule(cts.Kit, syncParam)
 		return nil, err
@@ -148,7 +143,6 @@ func (g *securityGroup) UpdateTCloudSGRule(cts *rest.Contexts) (interface{}, err
 	if len(sgID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "security_group_id is required")
 	}
-
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
@@ -158,7 +152,6 @@ func (g *securityGroup) UpdateTCloudSGRule(cts *rest.Contexts) (interface{}, err
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -181,39 +174,35 @@ func (g *securityGroup) UpdateTCloudSGRule(cts *rest.Contexts) (interface{}, err
 	}
 	switch rule.Type {
 	case enumor.Egress:
-		opt.EgressRuleSet = []securitygrouprule.TCloudUpdateSpec{
-			{
-				CloudPolicyIndex:           rule.CloudPolicyIndex,
-				Protocol:                   req.Protocol,
-				Port:                       req.Port,
-				CloudServiceID:             req.CloudServiceID,
-				CloudServiceGroupID:        req.CloudServiceGroupID,
-				IPv4Cidr:                   req.IPv4Cidr,
-				IPv6Cidr:                   req.IPv6Cidr,
-				CloudAddressID:             req.CloudAddressID,
-				CloudAddressGroupID:        req.CloudAddressGroupID,
-				CloudTargetSecurityGroupID: req.CloudTargetSecurityGroupID,
-				Action:                     req.Action,
-				Description:                req.Memo,
-			}}
-
+		opt.EgressRuleSet = []securitygrouprule.TCloudUpdateSpec{{
+			CloudPolicyIndex:           rule.CloudPolicyIndex,
+			Protocol:                   req.Protocol,
+			Port:                       req.Port,
+			CloudServiceID:             req.CloudServiceID,
+			CloudServiceGroupID:        req.CloudServiceGroupID,
+			IPv4Cidr:                   req.IPv4Cidr,
+			IPv6Cidr:                   req.IPv6Cidr,
+			CloudAddressID:             req.CloudAddressID,
+			CloudAddressGroupID:        req.CloudAddressGroupID,
+			CloudTargetSecurityGroupID: req.CloudTargetSecurityGroupID,
+			Action:                     req.Action,
+			Description:                req.Memo,
+		}}
 	case enumor.Ingress:
-		opt.IngressRuleSet = []securitygrouprule.TCloudUpdateSpec{
-			{
-				CloudPolicyIndex:           rule.CloudPolicyIndex,
-				Protocol:                   req.Protocol,
-				Port:                       req.Port,
-				CloudServiceID:             req.CloudServiceID,
-				CloudServiceGroupID:        req.CloudServiceGroupID,
-				IPv4Cidr:                   req.IPv4Cidr,
-				IPv6Cidr:                   req.IPv6Cidr,
-				CloudAddressID:             req.CloudAddressID,
-				CloudAddressGroupID:        req.CloudAddressGroupID,
-				CloudTargetSecurityGroupID: req.CloudTargetSecurityGroupID,
-				Action:                     req.Action,
-				Description:                req.Memo,
-			}}
-
+		opt.IngressRuleSet = []securitygrouprule.TCloudUpdateSpec{{
+			CloudPolicyIndex:           rule.CloudPolicyIndex,
+			Protocol:                   req.Protocol,
+			Port:                       req.Port,
+			CloudServiceID:             req.CloudServiceID,
+			CloudServiceGroupID:        req.CloudServiceGroupID,
+			IPv4Cidr:                   req.IPv4Cidr,
+			IPv6Cidr:                   req.IPv6Cidr,
+			CloudAddressID:             req.CloudAddressID,
+			CloudAddressGroupID:        req.CloudAddressGroupID,
+			CloudTargetSecurityGroupID: req.CloudTargetSecurityGroupID,
+			Action:                     req.Action,
+			Description:                req.Memo,
+		}}
 	default:
 		return nil, fmt.Errorf("unknown security group rule type: %s", rule.Type)
 	}
@@ -221,11 +210,9 @@ func (g *securityGroup) UpdateTCloudSGRule(cts *rest.Contexts) (interface{}, err
 	if err = client.UpdateSecurityGroupRule(cts.Kit, opt); err != nil {
 		logs.Errorf("request adaptor to update tcloud security group rule failed, err: %v, opt: %v, rid: %s", err, opt,
 			cts.Kit.Rid)
-
 		_, _ = g.syncSGRule(cts.Kit, syncParam)
 		return nil, err
 	}
-
 	if _, syncErr := g.syncSGRule(cts.Kit, syncParam); syncErr != nil {
 		return nil, syncErr
 	}
