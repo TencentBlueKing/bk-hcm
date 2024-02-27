@@ -62,7 +62,6 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 				hitErr, opt.AccountID, kt.Rid)
 			return
 		}
-
 		logs.V(3).Infof("tcloud account[%s] sync all resource end, cost: %v, opt: %v, rid: %s", opt.AccountID,
 			time.Since(start), opt, kt.Rid)
 	}()

@@ -65,7 +65,7 @@ type BindArgsTplInstanceRuleResp struct {
 
 // ArgsTplBatchIDsReq argument template batch ids request.
 type ArgsTplBatchIDsReq struct {
-	IDs []string `json:"ids" validate:"required"`
+	IDs []string `json:"ids" validate:"required,min=1"`
 }
 
 // Validate argument template batch ids validate.

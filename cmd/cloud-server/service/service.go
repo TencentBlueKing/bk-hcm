@@ -130,7 +130,6 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 
 func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, esb.Client, *Service, error) {
 	tls := cc.CloudServer().Network.TLS
-
 	var tlsConfig *ssl.TLSConfig
 	if tls.Enable() {
 		tlsConfig = &ssl.TLSConfig{
@@ -148,7 +147,6 @@ func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, esb.Clie
 		return nil, nil, nil, err
 	}
 	apiClientSet := client.NewClientSet(restCli, sd)
-
 	authorizer, err := auth.NewAuthorizer(sd, tls)
 	if err != nil {
 		return nil, nil, nil, err

@@ -90,7 +90,6 @@ func (opt syncSGRuleOption) Validate() error {
 }
 
 func (cli *client) securityGroupRule(kt *kit.Kit, opt *syncSGRuleOption) (*SyncResult, error) {
-
 	sg, err := cli.dbCli.TCloud.SecurityGroup.GetSecurityGroup(kt.Ctx, kt.Header(), opt.SGID)
 	if err != nil {
 		logs.Errorf("[%s] request dataservice get TCloud security group failed, err: %v, rid: %s", enumor.TCloud,
@@ -146,7 +145,6 @@ func (cli *client) securityGroupRule(kt *kit.Kit, opt *syncSGRuleOption) (*SyncR
 		rule := convTCloudRule(policy, &sg.BaseSecurityGroup, version, enumor.Egress, argsTplMap)
 		createRules = append(createRules, *rule)
 	}
-
 	for _, policy := range ingressRuleMaps {
 		rule := convTCloudRule(policy, &sg.BaseSecurityGroup, version, enumor.Ingress, argsTplMap)
 		createRules = append(createRules, *rule)
@@ -157,7 +155,6 @@ func (cli *client) securityGroupRule(kt *kit.Kit, opt *syncSGRuleOption) (*SyncR
 			return nil, err
 		}
 	}
-
 	if len(updateRules) != 0 {
 		if err = cli.updateSGRule(kt, sg.ID, updateRules); err != nil {
 			return nil, err
@@ -171,7 +168,6 @@ func (cli *client) securityGroupRule(kt *kit.Kit, opt *syncSGRuleOption) (*SyncR
 			return nil, err
 		}
 	}
-
 	return syncResult, nil
 }
 
@@ -431,21 +427,16 @@ func convTCloudRule(policy *vpc.SecurityGroupPolicy, sg *corecloud.BaseSecurityG
 	return spec
 }
 
-func isSGRuleChange(version string, cloud *vpc.SecurityGroupPolicy,
-	db corecloud.TCloudSecurityGroupRule) bool {
-
+func isSGRuleChange(version string, cloud *vpc.SecurityGroupPolicy, db corecloud.TCloudSecurityGroupRule) bool {
 	if version != db.Version {
 		return true
 	}
-
 	if converter.PtrToVal(cloud.PolicyIndex) != db.CloudPolicyIndex {
 		return true
 	}
-
 	if !assert.IsPtrStringEqual(converter.ValToPtr(converter.PtrToVal(cloud.Protocol)), db.Protocol) {
 		return true
 	}
-
 	if !assert.IsPtrStringEqual(cloud.Port, db.Port) {
 		return true
 	}
@@ -477,11 +468,9 @@ func isSGRuleChange(version string, cloud *vpc.SecurityGroupPolicy,
 	if !assert.IsPtrStringEqual(cloud.CidrBlock, db.IPv4Cidr) {
 		return true
 	}
-
 	if !assert.IsPtrStringEqual(cloud.Ipv6CidrBlock, db.IPv6Cidr) {
 		return true
 	}
-
 	if !assert.IsPtrStringEqual(cloud.SecurityGroupId, db.CloudTargetSecurityGroupID) {
 		return true
 	}
@@ -513,11 +502,9 @@ func isSGRuleChange(version string, cloud *vpc.SecurityGroupPolicy,
 	if converter.PtrToVal(cloud.Action) != db.Action {
 		return true
 	}
-
 	if !assert.IsPtrStringEqual(cloud.PolicyDescription, db.Memo) {
 		return true
 	}
-
 	return false
 }
 
@@ -525,12 +512,16 @@ func isSGRuleChange(version string, cloud *vpc.SecurityGroupPolicy,
 func (cli *client) listArgumentTemplateMapFromDB(kt *kit.Kit, cloudIDs []string) (
 	map[string]coreargstpl.BaseArgsTpl, error) {
 
+	argsTplMap := make(map[string]coreargstpl.BaseArgsTpl, 0)
+	if len(cloudIDs) == 0 {
+		return argsTplMap, nil
+	}
+
 	listReq := &core.ListReq{
 		Filter: tools.ContainersExpression("cloud_id", cloudIDs),
 		Page:   core.NewDefaultBasePage(),
 	}
 	start := uint32(0)
-	argsTplMap := make(map[string]coreargstpl.BaseArgsTpl, 0)
 	for {
 		listReq.Page.Start = start
 		listResp, err := cli.dbCli.Global.ArgsTpl.ListArgsTpl(kt, listReq)
