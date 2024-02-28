@@ -185,3 +185,27 @@ export function getDifferenceSet(origin: Array<string>, compare: Array<string>) 
   });
   return Array.from(set);
 };
+
+// localStorage 操作类
+export const localStorageActions = {
+  set(key: string, value: any) {
+    if (typeof value === 'object') {
+      value = JSON.stringify(value);
+    }
+    localStorage.setItem(key, value);
+  },
+  get(key: string) {
+    const value = localStorage.getItem(key);
+    if (value) {
+      return JSON.parse(value);
+    }
+    return null;
+  },
+  remove(key: string) {
+    localStorage.removeItem(key);
+  },
+  clear() {
+    localStorage.clear();
+  },
+};
+
