@@ -127,12 +127,14 @@ export default defineComponent({
 
     // 选择业务
     const handleChange = async (val: { id: number }) => {
+      if (businessId.value === val.id) return;
       businessId.value = val.id;
       accountStore.updateBizsId(businessId.value); // 设置全局业务id
       // 持久化存储全局业务id
       localStorageActions.set('bizs', businessId.value);
+      // @ts-ignore
       // 如果当前页面为详情页, 则当业务id切换时, 跳转至对应资源的列表页
-      const isBusinessDetail = (route.name as string).includes('BusinessDetail');
+      const isBusinessDetail = route.name?.includes('BusinessDetail');
       if (isBusinessDetail) {
         router.push({
           path: route.path.split('/detail')[0],
@@ -398,7 +400,7 @@ export default defineComponent({
                               default: () => menuItem.children
                                 .filter(child => !child.meta?.notMenu)
                                 .map(child => (
-                                    <RouterLink to={`${child.path}`}>
+                                    <RouterLink to={{ path: `${child.path}`, query: { bizs: accountStore.bizs } }}>
                                       <Menu.Item
                                         key={child.meta?.activeKey as string}>
                                         {/* {route.meta.activeKey} */}
