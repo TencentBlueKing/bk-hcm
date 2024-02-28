@@ -25,6 +25,7 @@ import {
 import { TemplateTypeMap } from '../dialog/template-dialog';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import http from '@/http';
+import { timeFormatter } from '@/common/util';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -163,6 +164,7 @@ watch(
     if (activeType.value === 'template') {
       templateData.value = data;
       const ids = data.map(({ id }) => id);
+      if (!ids.length) return;
       const url = `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud${whereAmI.value === Senarios.business ? `/bizs/${accountStore.bizs}` : ''}/argument_templates/instance/rule/list`;
       const res = await http.post(url, {
         ids,
@@ -221,8 +223,10 @@ const { selections, handleSelectionChange, resetSelections } = useSelection();
 const groupColumns = [
   {
     type: 'selection',
-    width: '100',
+    width: 32,
+    minWidth: 32,
     onlyShowOnList: true,
+    align: 'right',
   },
   {
     label: '安全组 ID',
@@ -302,14 +306,20 @@ const groupColumns = [
     sort: true,
     isOnlyShowInResource: true,
     isDefaultShow: true,
-    render: ({ data }: { data: { bk_biz_id: number }; cell: number }) => {
-      return h(
+    render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => {
+      return withDirectives(h(
         Tag,
         {
           theme: data.bk_biz_id === -1 ? false : 'success',
         },
         [data.bk_biz_id === -1 ? '未分配' : '已分配'],
-      );
+      ), [
+        [bkTooltips, {
+          content: businessMapStore.businessMap.get(cell),
+          disabled: !cell || cell === -1,
+          theme: 'light',
+        }],
+      ]);
     },
   },
   {
@@ -342,11 +352,15 @@ const groupColumns = [
     label: t('创建时间'),
     field: 'created_at',
     sort: true,
+    render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
   },
   {
     label: t('修改时间'),
     field: 'updated_at',
     sort: true,
+    render({ cell }: { cell: string }) {
+      return timeFormatter(cell);
+    },
   },
   {
     label: t('操作'),
@@ -451,8 +465,10 @@ const groupSettings = generateColumnsSettings(groupColumns);
 const gcpColumns = [
   {
     type: 'selection',
-    width: '100',
+    width: 32,
+    minWidth: 32,
     onlyShowOnList: true,
+    align: 'right',
   },
   {
     label: '防火墙 ID	',
@@ -573,14 +589,20 @@ const gcpColumns = [
     sort: true,
     isOnlyShowInResource: true,
     isDefaultShow: true,
-    render: ({ data }: { data: { bk_biz_id: number }; cell: number }) => {
-      return h(
+    render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => {
+      return withDirectives(h(
         Tag,
         {
           theme: data.bk_biz_id === -1 ? false : 'success',
         },
         [data.bk_biz_id === -1 ? '未分配' : '已分配'],
-      );
+      ), [
+        [bkTooltips, {
+          content: businessMapStore.businessMap.get(cell),
+          disabled: !cell || cell === -1,
+          theme: 'light',
+        }],
+      ]);
     },
   },
   {
@@ -599,11 +621,13 @@ const gcpColumns = [
     label: t('创建时间'),
     field: 'created_at',
     sort: true,
+    render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
   },
   {
     label: t('修改时间'),
     field: 'updated_at',
     sort: true,
+    render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
   },
   {
     label: t('操作'),
@@ -857,7 +881,7 @@ const securityHandleShowDelete = (data: any) => {
 </script>
 
 <template>
-  <div>
+  <div class="security-manager-page">
     <section>
       <slot></slot>
       <BatchDistribution
@@ -899,7 +923,7 @@ const securityHandleShowDelete = (data: any) => {
       <bk-table
         v-if="activeType === 'group'"
         :settings="groupSettings"
-        class="mt20"
+        class="has-selection"
         row-hover="auto"
         remote-pagination
         :pagination="state.pagination"
@@ -917,7 +941,7 @@ const securityHandleShowDelete = (data: any) => {
       <bk-table
         v-else-if="activeType === 'gcp'"
         :settings="gcpSettings"
-        class="mt20"
+        class="has-selection"
         row-hover="auto"
         remote-pagination
         :pagination="state.pagination"
@@ -971,5 +995,15 @@ const securityHandleShowDelete = (data: any) => {
 }
 .ml10 {
   margin-left: 10px;
+}
+.security-manager-page {
+  height: 100%;
+  :deep(.bk-nested-loading) {
+    margin-top: 16px;
+    height: calc(100% - 100px);
+    .bk-table {
+      max-height: 100%;
+    }
+  }
 }
 </style>

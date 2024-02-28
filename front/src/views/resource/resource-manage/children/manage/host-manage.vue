@@ -4,32 +4,24 @@ import type {
   DoublePlainObject,
   FilterType,
 } from '@/typings/resource';
-import {
-  Message,
-} from 'bkui-vue';
+import { Button, Dropdown, Message, Checkbox, bkTooltips } from 'bkui-vue';
 
-import {
-  PropType,
-  h,
-  ref,
-  computed,
-} from 'vue';
-import {
-  useI18n,
-} from 'vue-i18n';
+import { PropType, h, ref, computed, withDirectives } from 'vue';
+import { useI18n } from 'vue-i18n';
 import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
 import useColumns from '../../hooks/use-columns';
-import useFilter  from '@/views/resource/resource-manage/hooks/use-filter';
-import { HostCloudEnum, CloudType } from '@/typings';
-import {
-  useResourceStore,
-} from '@/store';
-import HostOperations from '../../common/table/HostOperations';
-import { useBusinessMapStore } from '@/store/useBusinessMap';
+import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
+import { useResourceStore } from '@/store';
+import HostOperations, { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../../common/table/HostOperations';
 import BusinessSelector from '@/components/business-selector/index.vue';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import Confirm, { confirmInstance } from '@/components/confirm';
+import { CLOUD_HOST_STATUS } from '@/common/constant';
+
+const { DropdownMenu, DropdownItem } = Dropdown;
+
 // use hook
 const {
   t,
@@ -50,7 +42,7 @@ const props = defineProps({
 const isLoadingCloudAreas = ref(false);
 const cloudAreaPage = ref(0);
 const cloudAreas = ref([]);
-const { whereAmI } = useWhereAmI();
+const { whereAmI, isResourcePage, isBusinessPage } = useWhereAmI();
 
 const {
   searchData,
@@ -74,9 +66,7 @@ const {
   resetSelections,
 } = useSelection();
 
-const isShowDistribution = ref(false);
-const businessId = ref('');
-const businessList = ref(useBusinessMapStore().businessList);
+const currentOperateCvm = ref(null);
 const { columns, generateColumnsSettings } = useColumns('cvms');
 const isDialogShow = ref(false);
 const isDialogBtnLoading = ref(false);
@@ -112,134 +102,201 @@ const hostSearchData = computed(() => {
   ];
 });
 
+const operationDropdownList = [
+  { label: '开机', type: 'start' },
+  { label: '关机', type: 'stop' },
+  { label: '重启', type: 'reboot' },
+  { label: '回收', type: 'recycle', hidden: isBusinessPage },
+];
+const currentOperateRowIndex = ref(-1);
+// 操作的相关信息
+const cvmInfo = ref({
+  start: { op: '开机', loading: false, status: HOST_RUNNING_STATUS },
+  stop: {
+    op: '关机',
+    loading: false,
+    status: HOST_SHUTDOWN_STATUS,
+  },
+  reboot: { op: '重启', loading: false, status: HOST_SHUTDOWN_STATUS },
+  recycle: { op: '回收', loading: false, status: HOST_SHUTDOWN_STATUS },
+});
+const getBkToolTipsOption = (data: any) => {
+  if (isResourcePage) {
+    return {
+      content: '该主机仅可在业务下操作',
+      disabled: !(isResourcePage && data.bk_biz_id !== -1),
+    };
+  }
+  if (isBusinessPage) {
+    return {
+      content: `当前主机处于 ${CLOUD_HOST_STATUS[data.status]} 状态`,
+      disabled: !(isBusinessPage && cvmInfo.value.stop.status.includes(data.status)),
+    };
+  }
+  return {
+    disabled: true,
+  };
+};
 const tableColumns = [
   ...columns,
-  // {
-  //   label: '操作',
-  //   field: 'operation',
-  //   isDefaultShow: true,
-  //   render: () => {
-  //     return h(
-  //       'div',
-  //       {
-  //         class: 'flex-row',
-  //       },
-  //       [
-  //         h(
-  //           Button,
-  //           {
-  //             text: true,
-  //             theme: 'primary',
-  //             class: 'mr10',
-  //             onClick: () => {},
-  //           },
-  //           [
-  //             '分配',
-  //           ],
-  //         ),
-  //         h(
-  //           'div',
-  //           {
-  //             class: 'operations-container',
-  //           },
-  //           [
-  //             '⋮',
-  //           ],
-  //         ),
-  //       ],
-  //     );
-  //   },
-  // },
+  {
+    label: '操作',
+    width: 120,
+    showOverflowTooltip: false,
+    render: ({ data, index }: { data: any; index: number }) => {
+      return h('div', { class: 'operation-column' }, [
+        withDirectives(
+          h(
+            Button,
+            {
+              text: true,
+              theme: 'primary',
+              class: 'mr10',
+              onClick: () => {
+                // isResourcePage && 主机分配
+                isResourcePage && handleSingleDistribution(data);
+                // isBusinessPage && 主机回收
+                isBusinessPage && handleCvmOperate('回收', 'recycle', data);
+              },
+              // TODO: 权限
+              disabled:
+                (isResourcePage && data.bk_biz_id !== -1)
+                || (isBusinessPage && cvmInfo.value.stop.status.includes(data.status)),
+            },
+            isResourcePage ? '分配' : '回收',
+          ),
+          [[bkTooltips, getBkToolTipsOption(data)]],
+        ),
+        withDirectives(
+          h(
+            Dropdown,
+            {
+              trigger: 'click',
+              popoverOptions: {
+                renderType: 'shown',
+                onAfterShow: () => (currentOperateRowIndex.value = index),
+                onAfterHidden: () => (currentOperateRowIndex.value = -1),
+              },
+              // TODO: 权限
+              disabled: isResourcePage && data.bk_biz_id !== -1,
+            },
+            {
+              default: () => h(
+                'div',
+                {
+                  class: [
+                    `more-action${currentOperateRowIndex.value === index ? ' current-operate-row' : ''}`,
+                    isResourcePage && data.bk_biz_id !== -1 ? 'disabled' : '',
+                  ],
+                },
+                h('i', { class: 'hcm-icon bkhcm-icon-more-fill' }),
+              ),
+              content: () => h(
+                DropdownMenu,
+                null,
+                operationDropdownList
+                  .filter(action => !action.hidden)
+                  .map(({ label, type }) => {
+                    return withDirectives(
+                      h(
+                        DropdownItem,
+                        {
+                          key: type,
+                          onClick: () => handleCvmOperate(label, type, data),
+                          extCls: `more-action-item${
+                            cvmInfo.value[type].status.includes(data.status) ? ' disabled' : ''
+                          }`,
+                        },
+                        label,
+                      ),
+                      [
+                        [
+                          bkTooltips,
+                          {
+                            content: `当前主机处于 ${CLOUD_HOST_STATUS[data.status]} 状态`,
+                            disabled: !cvmInfo.value[type].status.includes(data.status),
+                          },
+                        ],
+                      ],
+                    );
+                  }),
+              ),
+            },
+          ),
+          [[bkTooltips, { content: '该主机仅可在业务下操作', disabled: !(isResourcePage && data.bk_biz_id !== -1) }]],
+        ),
+      ]);
+    },
+  },
 ];
 
 const tableSettings = generateColumnsSettings(tableColumns);
 
-const distribColumns = [
-  {
-    label: 'ID',
-    field: 'id',
-  },
-  {
-    label: '实例 ID',
-    field: 'cloud_id',
-  },
-  {
-    label: '云厂商',
-    render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          CloudType[data.vendor],
-        ],
-      );
-    },
-  },
-  {
-    label: '地域',
-    field: 'region',
-  },
-  {
-    label: '名称',
-    field: 'name',
-  },
-  {
-    label: '状态',
-    render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          HostCloudEnum[data.status] || data.status,
-        ],
-      );
-    },
-  },
-  {
-    label: '操作系统',
-    render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          data.os_name || '--',
-        ],
-      );
-    },
-  },
-  {
-    label: '云区域ID',
-    field: 'bk_cloud_id',
-    render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          data.bk_cloud_id === -1 ? '未分配' : data.bk_cloud_id,
-        ],
-      );
-    },
-  },
-];
-
-
-const distributionCvm = async () => {
-  const cvmIds = selections.value.map(e => e.id);
-  try {
-    await resourceStore.cvmAssignBizs({ cvm_ids: cvmIds, bk_biz_id: businessId.value });
-    Message({
-      message: t('操作成功'),
-      theme: 'success',
-    });
-  } catch (error) {
-    console.log(error);
-  } finally {
-  }
+// 回收参数「云硬盘/EIP 随主机回收」
+const isRecycleDiskWithCvm = ref(false);
+const isRecycleEipWithCvm = ref(false);
+// 重置回收参数
+const resetRecycleSingleCvmParams = () => {
+  isRecycleDiskWithCvm.value = false;
+  isRecycleEipWithCvm.value = false;
 };
-
-const handleDistributionConfirm = () => {
-  isShowDistribution.value = true;
-  distributionCvm();
+// 主机相关操作 - 单个操作
+const handleCvmOperate = async (label: string, type: string, data: any) => {
+  // 判断当前主机是否可以执行对应操作
+  if (cvmInfo.value[type].status.includes(data.status)) return;
+  resetRecycleSingleCvmParams();
+  let infoboxContent;
+  if (type === 'recycle') {
+    // 请求 cvm 所关联的资源(硬盘, eip)个数
+    const {
+      data: [target],
+    } = await resourceStore.getRelResByCvmIds({ ids: [data.id] });
+    const { disk_count, eip_count, eip } = target;
+    infoboxContent = h('div', { style: { textAlign: 'justify' } }, [
+      h('div', { style: { marginBottom: '10px' } }, [
+        `当前操作主机为：${data.name}`,
+        h('br'),
+        `共关联 ${disk_count - 1} 个数据盘，${eip_count} 个弹性 IP${eip ? '('.concat(eip.join(','), ')') : ''}`,
+      ]),
+      h('div', null, [
+        h(
+          Checkbox,
+          {
+            checked: isRecycleDiskWithCvm.value,
+            onChange: (checked: boolean) => (isRecycleDiskWithCvm.value = checked),
+          },
+          '云硬盘随主机回收',
+        ),
+        h(
+          Checkbox,
+          {
+            checked: isRecycleEipWithCvm.value,
+            onChange: (checked: boolean) => (isRecycleEipWithCvm.value = checked),
+          },
+          '弹性 IP 随主机回收',
+        ),
+      ]),
+    ]);
+  } else {
+    infoboxContent = `当前操作主机为：${data.name}`;
+  }
+  Confirm(`确定${label}`, infoboxContent, async () => {
+    confirmInstance.hide();
+    isLoading.value = true;
+    try {
+      if (type === 'recycle') {
+        await resourceStore.recycledCvmsData({
+          infos: [{ id: data.id, with_disk: isRecycleDiskWithCvm.value, with_eip: isRecycleEipWithCvm.value }],
+        });
+      } else {
+        await resourceStore.cvmOperate(type, { ids: [data.id] });
+      }
+      Message({ message: t('操作成功'), theme: 'success' });
+      triggerApi();
+    } finally {
+      isLoading.value = false;
+    }
+  });
 };
 
 const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
@@ -272,15 +329,24 @@ const getCloudAreas = () => {
     });
 };
 
-const handleConfirm = async () => {
+// 主机相关操作 - 分配业务
+const handleSingleDistribution = (cvm: any) => {
+  isDialogShow.value = true;
+  currentOperateCvm.value = cvm;
+};
+const handleSingleDistributionConfirm = async () => {
   isDialogBtnLoading.value = true;
-  await resourceStore.assignBusiness('cvms', {
-    cvm_ids: selections.value?.map(v => v.id) || [],
-    bk_biz_id: selectedBizId.value,
-  });
-  triggerApi();
-  isDialogBtnLoading.value = false;
-  isDialogShow.value = false;
+  try {
+    await resourceStore.assignBusiness('cvms', {
+      cvm_ids: [currentOperateCvm.value.id],
+      bk_biz_id: selectedBizId.value,
+    });
+    Message({ message: t('操作成功'), theme: 'success' });
+    triggerApi();
+  } finally {
+    isDialogShow.value = false;
+    isDialogBtnLoading.value = false;
+  }
 };
 
 getCloudAreas();
@@ -310,7 +376,7 @@ getCloudAreas();
 
       <div class="flex-row align-items-center justify-content-arround search-selector-container">
         <bk-search-select
-          class="w500 ml10 mr15"
+          class="w500"
           clearable
           :conditions="[]"
           :data="hostSearchData"
@@ -322,7 +388,7 @@ getCloudAreas();
     </section>
 
     <bk-table
-      class="mt20"
+      class="has-selection"
       row-hover="auto"
       :columns="tableColumns"
       :data="datas"
@@ -340,55 +406,17 @@ getCloudAreas();
     />
 
     <bk-dialog
-      v-model:is-show="isShowDistribution"
-      width="820"
-      :title="t('主机分配')"
-      theme="primary"
-      quick-close
-      @confirm="handleDistributionConfirm">
-      <section class="distribution-cls">
-        目标业务
-        <bk-select
-          class="ml20"
-          v-model="businessId"
-          filterable
-        >
-          <bk-option
-            v-for="item in businessList"
-            :key="item.id"
-            :value="item.id"
-            :label="item.name"
-          />
-        </bk-select>
-      </section>
-      <bk-table
-        class="mt20"
-        row-hover="auto"
-        :columns="distribColumns"
-        :data="selections"
-        show-overflow-tooltip
-      />
-    </bk-dialog>
-
-    <bk-dialog
       :is-show="isDialogShow"
       title="主机分配"
       :theme="'primary'"
       quick-close
-      @closed="() => isDialogShow = false"
-      @confirm="handleConfirm"
+      @closed="() => (isDialogShow = false)"
+      @confirm="handleSingleDistributionConfirm"
       :is-loading="isDialogBtnLoading"
     >
-      <p class="selected-host-count-tip">
-        已选择 <span class="selected-host-count">{{ selections.length }}</span> 台主机，可选择所需分配的目标业务
-      </p>
-      <p class="mb6">目标业务</p>
-      <business-selector
-        v-model="selectedBizId"
-        :authed="true"
-        class="mb32"
-        :auto-select="true">
-      </business-selector>
+      <p class="selected-host-info">当前操作主机为：{{ currentOperateCvm.name }}</p>
+      <p class="mb6">请选择所需分配的目标业务</p>
+      <business-selector v-model="selectedBizId" :authed="true" class="mb32" :auto-select="true"></business-selector>
     </bk-dialog>
 
   </bk-loading>
@@ -411,21 +439,56 @@ getCloudAreas();
   display: flex;
   align-items: center;
 }
-.mr15 {
-  margin-right: 15px;
+.mr10 {
+  margin-right: 10px;
 }
 .search-selector-container {
   margin-left: auto;
 }
-.operations-container {
-  width: 24px;
-  height: 24px;
+:deep(.operation-column) {
+  height: 100%;
   display: flex;
   align-items: center;
-  justify-content: center;
-      // cursor: pointer;
-  &:hover {
-    background: #F0F1F5;
+
+  .more-action {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+
+    & > i {
+      position: absolute;
+    }
+
+    &:hover {
+      background-color: #f0f1f5;
+    }
+
+    &.current-operate-row {
+      background-color: #f0f1f5;
+    }
+
+    &.disabled {
+      background-color: #fff;
+      color: #dcdee5;
+      cursor: not-allowed;
+    }
+  }
+}
+.selected-host-info {
+  margin-bottom: 16px;
+}
+</style>
+
+<style lang="scss">
+.more-action-item {
+  &.disabled {
+    color: #dcdee5;
+    cursor: not-allowed;
   }
 }
 </style>

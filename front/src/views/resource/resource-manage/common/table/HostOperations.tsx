@@ -67,7 +67,7 @@ export default defineComponent({
     const selected = ref('target');
     const withDiskSet = ref(new Set());
     const withEipSet = ref(new Set());
-    const cvmDiskNumMap = ref(new Map());
+    const cvmRelResMap = ref(new Map());
     const isDialogLoading = ref(false);
 
     const previousOperationType = usePreviousState(operationType);
@@ -142,7 +142,7 @@ export default defineComponent({
                   if (isChecked) withDiskSet.value.add(data.id);
                   else withDiskSet.value.delete(data.id);
                 }}>
-                { +cvmDiskNumMap.value.get(data.id) - 1 } 个数据盘
+                {cvmRelResMap.value.get(data.id)?.disk_count - 1} 个数据盘
               </Checkbox>
             </div>
         ),
@@ -157,10 +157,7 @@ export default defineComponent({
                 if (isChecked) withEipSet.value.add(data.id);
                 else withEipSet.value.delete(data.id);
               }}>
-              {[
-                ...data.public_ipv4_addresses,
-                ...data.public_ipv6_addresses,
-              ].join(',') || '--'}
+              {cvmRelResMap.value.get(data.id)?.eip.join(',') || '--'}
             </Checkbox>
         ),
       },
@@ -365,9 +362,8 @@ export default defineComponent({
         const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/cvms/rel_res/batch`, {
           ids,
         });
-        for (let i = 0;i < res.data.length;i++) {
-          const { disk_count } = res.data[i];
-          cvmDiskNumMap.value.set(ids[i], disk_count);
+        for (let i = 0; i < res.data.length; i++) {
+          cvmRelResMap.value.set(ids[i], res.data[i]);
         }
       } finally {
         isDialogLoading.value = false;
@@ -394,7 +390,7 @@ export default defineComponent({
               default: () => (
                 <Button disabled={operationsDisabled.value}>
                   批量操作
-                  <AngleDown class={'f20'}></AngleDown>
+                  <AngleDown class={'f26'}></AngleDown>
                 </Button>
               ),
               content: () => (

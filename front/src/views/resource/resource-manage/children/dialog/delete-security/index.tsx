@@ -44,7 +44,7 @@ export default defineComponent({
         field: 'id',
       },
       {
-        label: '资源 ID',
+        label: '资源ID',
         field: 'cid',
       },
       {
@@ -84,7 +84,7 @@ export default defineComponent({
         field: 'status',
       },
       {
-        label: '默认 VPC',
+        label: '默认VPC',
         field: 'is_default',
       },
     ];

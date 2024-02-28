@@ -1,0 +1,20 @@
+.common-dialog {
+  .bk-modal-body {
+    .bk-modal-header .bk-dialog-header {
+      padding: 16px 24px;
+      line-height: normal;
+    }
+
+    .bk-modal-footer {
+      .bk-button {
+        min-width: 64px;
+      }
+    }
+
+    .bk-modal-close {
+      top: 0 !important;
+      right: 4px !important;
+      font-size: 28px !important;
+    }
+  }
+}

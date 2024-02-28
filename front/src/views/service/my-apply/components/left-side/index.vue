@@ -139,13 +139,15 @@ export default defineComponent({
 <style lang="scss" scoped>
 $borderColor:  #f5f6fa;
 .apply-left-wrapper {
+  display: flex;
+  flex-direction: column;
   flex: 0 0 280px;
-  height: calc(100vh - 61px);
+  height: 100%;
   background: #fff;
   overflow: hidden;
   &-list {
+    flex: 1;
     position: relative;
-    height: calc(100vh - 180px);
     overflow-x: hidden;
     overflow-y: auto;
   }

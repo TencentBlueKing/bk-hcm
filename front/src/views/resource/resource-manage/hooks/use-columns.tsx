@@ -9,7 +9,7 @@ import {
 } from '@/typings';
 import { useAccountStore } from '@/store';
 import { Button } from 'bkui-vue';
-import type { Field } from 'bkui-vue/lib/table/props';
+import type { Settings } from 'bkui-vue/lib/table/props';
 import { h, ref } from 'vue';
 import type { Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -21,11 +21,16 @@ import { useCloudAreaStore } from '@/store/useCloudAreaStore';
 import StatusAbnormal from '@/assets/image/Status-abnormal.png';
 import StatusNormal from '@/assets/image/Status-normal.png';
 import StatusUnknown from '@/assets/image/Status-unknown.png';
+import StatusSuccess from '@/assets/image/success-account.png';
+import StatusFailure from '@/assets/image/failed-account.png';
+import StatusPartialSuccess from '@/assets/image/result-waiting.png';
+
 import {
   HOST_RUNNING_STATUS,
   HOST_SHUTDOWN_STATUS,
 } from '../common/table/HostOperations';
 import './use-columns.scss';
+import { timeFormatter } from '@/common/util';
 
 export default (type: string, isSimpleShow = false, vendor?: string) => {
   const router = useRouter();
@@ -93,8 +98,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const vpcColumns = [
     {
       type: 'selection',
-      width: '100',
+      width: 32,
+      minWidth: 32,
       onlyShowOnList: true,
+      align: 'right',
     },
     getLinkField('vpc', 'VPC ID', 'cloud_id'),
     // {
@@ -148,6 +155,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           v-bk-tooltips={{
             content: businessMapStore.businessMap.get(cell),
             disabled: !cell || cell === -1,
+            theme: 'light',
           }}
           theme={data.bk_biz_id === -1 ? false : 'success'}>
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
@@ -175,19 +183,23 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
   ];
 
   const subnetColumns = [
     {
       type: 'selection',
-      width: '100',
+      width: 32,
+      minWidth: 32,
       onlyShowOnList: true,
+      align: 'right',
     },
     getLinkField('subnet', '子网 ID', 'cloud_id', 'id', false),
     // {
@@ -274,6 +286,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           v-bk-tooltips={{
             content: businessMapStore.businessMap.get(cell),
             disabled: !cell || cell === -1,
+            theme: 'light',
           }}
           theme={data.bk_biz_id === -1 ? false : 'success'}>
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
@@ -290,19 +303,23 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
   ];
 
   const groupColumns = [
     {
       type: 'selection',
-      width: '100',
+      width: 32,
+      minWidth: 32,
       onlyShowOnList: true,
+      align: 'right',
     },
     getLinkField('subnet'),
     {
@@ -335,8 +352,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const gcpColumns = [
     {
       type: 'selection',
-      width: '100',
+      width: 32,
+      minWidth: 32,
       onlyShowOnList: true,
+      align: 'right',
     },
     getLinkField('subnet'),
     {
@@ -378,8 +397,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const driveColumns: any[] = [
     {
       type: 'selection',
-      width: '100',
+      width: 32,
+      minWidth: 32,
       onlyShowOnList: true,
+      align: 'right',
     },
     getLinkField('drive', '云硬盘ID', 'cloud_id'),
     // {
@@ -484,11 +505,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
   ];
 
@@ -542,11 +565,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
   ];
 
@@ -647,13 +672,14 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '创建时间',
       field: 'created_at',
-      width: 180,
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
   ];
 
@@ -704,19 +730,23 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
   ];
 
   const cvmsColumns = [
     {
       type: 'selection',
-      width: '100',
+      width: 32,
+      minWidth: 32,
       onlyShowOnList: true,
+      align: 'right',
     },
     //   移除 ID 搜索条件
     // {
@@ -787,23 +817,15 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         return (
           <div class={'cvm-status-container'}>
             {HOST_SHUTDOWN_STATUS.includes(data.status) ? (
-              <img
-                src={StatusAbnormal}
-                class={'mr6'}
-                width={13}
-                height={13}></img>
+              data.status.toLowerCase() === 'stopped' ? (
+                <img src={StatusUnknown} class={'mr6'} width={14} height={14}></img>
+              ) : (
+                <img src={StatusAbnormal} class={'mr6'} width={14} height={14}></img>
+              )
             ) : HOST_RUNNING_STATUS.includes(data.status) ? (
-              <img
-                src={StatusNormal}
-                class={'mr6'}
-                width={13}
-                height={13}></img>
+              <img src={StatusNormal} class={'mr6'} width={14} height={14}></img>
             ) : (
-              <img
-                src={StatusUnknown}
-                class={'mr6'}
-                width={13}
-                height={13}></img>
+              <img src={StatusUnknown} class={'mr6'} width={14} height={14}></img>
             )}
             <span>{CLOUD_HOST_STATUS[data.status] || data.status}</span>
           </div>
@@ -869,11 +891,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
   ];
 
@@ -950,14 +974,17 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: t('修改时间'),
       field: 'updated_at',
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
   ];
 
   const eipColumns = [
     {
       type: 'selection',
-      width: '100',
+      width: 32,
+      minWidth: 32,
       onlyShowOnList: true,
+      align: 'right',
     },
     getLinkField('eips', 'IP资源ID', 'cloud_id', 'id'),
     // {
@@ -1049,11 +1076,94 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+    },
+  ];
+
+  const operationRecordColumns = [
+    {
+      label: '操作时间',
+      field: 'created_at',
+      isDefaultShow: true,
+      sort: true,
+      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+    },
+    {
+      label: '资源类型',
+      field: 'res_type',
+    },
+    {
+      label: '资源名称',
+      field: 'res_name',
+      isDefaultShow: true,
+    },
+    // {
+    //   label: '云资源ID',
+    //   field: 'cloud_res_id',
+    // },
+    {
+      label: '操作方式',
+      field: 'action',
+      isDefaultShow: true,
+      filter: true,
+    },
+    {
+      label: '操作来源',
+      field: 'source',
+      isDefaultShow: true,
+      filter: true,
+    },
+    {
+      label: '所属业务',
+      field: 'bk_biz_id',
+      isOnlyShowInResource: true,
+      render: ({ cell }: { cell: number }) => businessMapStore.businessMap.get(cell) || '未分配',
+    },
+    // {
+    //   label: '云厂商',
+    //   field: 'vendor',
+    // },
+    {
+      label: '云账号',
+      field: 'account_id',
+    },
+    {
+      label: '任务状态',
+      field: 'task_status',
+      isDefaultShow: true,
+      filter: true,
+      render: ({ cell }: { cell: string }) => {
+        if (!cell) return '--';
+        let icon;
+        switch (cell) {
+          case 'success':
+            icon = StatusSuccess;
+            break;
+          case 'fail':
+            icon = StatusFailure;
+            break;
+          case 'partial_success':
+            icon = StatusPartialSuccess;
+            break;
+        }
+        return (
+          <div class='status-column-cell'>
+            <img class='status-icon' src={icon} alt='' />
+            <span>{cell === 'success' ? '成功' : cell === 'fail' ? '失败' : '部分成功'}</span>
+          </div>
+        );
+      },
+    },
+    {
+      label: '操作人',
+      field: 'operator',
+      isDefaultShow: true,
     },
   ];
 
@@ -1069,6 +1179,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     cvms: cvmsColumns,
     securityCommon: securityCommonColumns,
     eips: eipColumns,
+    operationRecord: operationRecordColumns,
   };
 
   let columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);
@@ -1091,10 +1202,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     if (whereAmI.value !== Senarios.resource) {
       fields = fields.filter(field => !field.isOnlyShowInResource);
     }
-    const settings: Ref<{
-      fields: Array<Field>;
-      checked: Array<string>;
-    }> = ref({
+    const settings: Ref<Settings> = ref({
       fields,
       checked: fields
         .filter(field => field.isDefaultShow)

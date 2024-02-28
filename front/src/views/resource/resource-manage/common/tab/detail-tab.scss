@@ -1,11 +1,29 @@
 .detail-tab-main {
-  margin-bottom: 16px;
-  box-shadow: 1px 2px 3px 0 rgb(0 0 0 / 5%);
+  height: 100%;
+
+  &:nth-of-type(n + 2) {
+    margin-top: 16px;
+  }
+
+  .bk-tab-header .bk-tab-header-item {
+    padding: 0 24px;
+    height: 42px;
+  }
+
   .bk-tab-content {
     padding: 0;
+    max-height: calc(100% - 42px);
     flex: none;
+    overflow: auto;
+    
     .bk-tab-panel {
       padding: 16px 24px 20px;
+      .bk-nested-loading {
+          height: 100%;
+          .bk-table {
+            max-height: calc(100% - 48px);
+          }
+      }
     }
   }
 }

@@ -35,7 +35,6 @@ const {
   >
     <bk-table
       :settings="settings"
-      class="mt20"
       row-hover="auto"
       remote-pagination
       :pagination="pagination"

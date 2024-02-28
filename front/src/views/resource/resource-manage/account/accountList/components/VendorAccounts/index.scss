@@ -1,10 +1,10 @@
 .vendor-account-list {
   height: calc(100% - 35px);
   overflow-y: auto;
-  box-shadow: 0 -1px 0 0 #EAEBF0, 0 1px 0 0 #EAEBF0;
 
   .vendor-wrap {
-    .vendor-item-wrap, .account-item {
+    .vendor-item-wrap,
+    .account-item {
       line-height: 36px;
       cursor: pointer;
     }
@@ -17,7 +17,7 @@
       .vendor-account-menu-dropdown-icon {
         color: #979ba5;
       }
-      & > svg {
+      .vendor-icon {
         margin: 0 9px 0 6px;
         width: 20px;
         height: 20px;
@@ -34,8 +34,12 @@
         z-index: 1;
         background-color: #fff;
       }
+
+      &.active {
+        background-color: #e1ecff;
+      }
     }
-    
+
     .account-list-wrap {
       display: none;
 
@@ -57,12 +61,12 @@
         }
 
         &:hover {
-          background-color: #F5F7FA;
+          background-color: #f5f7fa;
         }
 
         &.active {
           position: relative;
-          background-color: #E1ECFF;
+          background-color: #e1ecff;
 
           &::before {
             position: absolute;
@@ -79,5 +83,9 @@
         display: block;
       }
     }
+  }
+
+  .search-result-highlight {
+    color: #3a84ff;
   }
 }

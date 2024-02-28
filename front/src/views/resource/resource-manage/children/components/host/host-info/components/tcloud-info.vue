@@ -11,6 +11,7 @@ import {
   VendorEnum,
 } from '@/common/constant';
 import { useRegionsStore } from '@/store/useRegionsStore';
+import { timeFormatter } from '@/common/util';
 
 const { getRegionName } = useRegionsStore();
 
@@ -63,6 +64,9 @@ const cvmInfo = [
   {
     name: '启动时间',
     prop: 'cloud_launched_time',
+    render() {
+      return timeFormatter(props.data.cloud_launched_time);
+    },
   },
   {
     name: '当前状态',
@@ -115,22 +119,22 @@ const netInfo = [
   //   prop: 'vendorName',
   // },
   {
-    name: '私有 IPv4 地址',
+    name: '私有IPv4地址',
     prop: 'private_ipv4_addresses',
     render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
   },
   {
-    name: '公有 IPv4 地址',
+    name: '公有IPv4地址',
     prop: 'public_ipv4_addresses',
     render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
   },
   {
-    name: '私有 IPv6 地址',
+    name: '私有IPv6地址',
     prop: 'private_ipv6_addresses',
     render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
   },
   {
-    name: '公有IPv6 地址',
+    name: '公有IPv6地址',
     prop: 'public_ipv6_addresses',
     render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
   },
@@ -158,7 +162,7 @@ const settingInfo = [
     prop: 'os_name',
   },
   {
-    name: '镜像id',
+    name: '镜像ID',
     prop: 'cloud_image_id',
     render: () => useRouteLinkBtn(props.data, {
       id: 'image_id',
@@ -177,6 +181,9 @@ const priceInfo = [
   {
     name: '创建时间',
     prop: 'cloud_created_time',
+    render() {
+      return timeFormatter(props.data.cloud_created_time);
+    },
   },
   {
     name: '网络计费模式',
@@ -188,6 +195,9 @@ const priceInfo = [
   {
     name: '到期时间',
     prop: 'cloud_expired_time',
+    render() {
+      return timeFormatter(props.data.cloud_expired_time);
+    },
   },
 ];
 </script>
@@ -200,7 +210,6 @@ const priceInfo = [
   <h3 class="info-title">网络信息</h3>
   <div class="wrap-info">
     <detail-info
-      class="mt20"
       :fields="netInfo"
       :detail="props.data"
     ></detail-info>
@@ -208,7 +217,6 @@ const priceInfo = [
   <h3 class="info-title">配置信息</h3>
   <div class="wrap-info">
     <detail-info
-      class="mt20"
       :fields="settingInfo"
       :detail="props.data"
     ></detail-info>
@@ -216,19 +224,9 @@ const priceInfo = [
   <h3 class="info-title">计费信息</h3>
   <div class="wrap-info">
     <detail-info
-      class="mt20"
       :fields="priceInfo"
       :detail="props.data"
     ></detail-info>
   </div>
 </template>
 
-<style lang="scss" scoped>
-.info-title {
-  font-size: 14px;
-  margin-bottom: 8px;
-}
-:deep(.host-info) .detail-info-main {
-  height: auto !important;
-}
-</style>
