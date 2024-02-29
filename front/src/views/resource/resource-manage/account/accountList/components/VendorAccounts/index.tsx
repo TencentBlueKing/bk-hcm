@@ -66,14 +66,16 @@ export default defineComponent({
     // 点击云厂商
     const handleClickVendor = (vendor: VendorEnum) => {
       resourceAccountStore.setCurrentVendor(vendor);
+      resourceAccountStore.setCurrentAccountVendor(null);
       props.handleExpand(vendor);
       props.handleSelect('');
     };
 
     // 点击账号
-    const handleClickAccount = (id: string) => {
+    const handleClickAccount = (id: string, vendor: VendorEnum) => {
       props.handleSelect(id);
       resourceAccountStore.setCurrentVendor(null);
+      resourceAccountStore.setCurrentAccountVendor(vendor);
     };
 
     watch(
@@ -119,11 +121,11 @@ export default defineComponent({
                   <div class='vendor-account-count'>{count}</div>
                 </div>
                 <div class={`account-list-wrap${isExpand ? ' expand' : ''}`}>
-                  {accounts.map(({ sync_status, name, id }) => (
+                  {accounts.map(({ sync_status, name, id, vendor }) => (
                     <div
                       class={`account-item${route.query.accountId === id ? ' active' : ''}`}
                       key={id}
-                      onClick={() => handleClickAccount(id)}>
+                      onClick={() => handleClickAccount(id, vendor)}>
                       <img
                         src={sync_status === 'sync_success' ? successAccount : failedAccount}
                         alt=''

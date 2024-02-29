@@ -335,6 +335,10 @@ watch(
       } else {
         filter.value.rules[vendorRuleIdx].value = vendor;
       }
+      // 安全组列表下, 需要对 vendor = GCP 做额外的处理(GCP防火墙规则不支持vendor搜索条件)
+      if (activeTab.value === 'security' && vendor === VendorEnum.GCP) {
+        filter.value.rules = filter.value.rules.filter((e: any) => e.field !== 'vendor');
+      }
     } else {
       filter.value.rules = filter.value.rules.filter((e: any) => e.field !== 'vendor');
     }

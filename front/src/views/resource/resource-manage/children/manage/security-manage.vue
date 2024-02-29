@@ -17,6 +17,7 @@ import { useRegionsStore } from '@/store/useRegionsStore';
 import { VendorEnum, VendorMap } from '@/common/constant';
 import { cloneDeep } from 'lodash-es';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
+import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import useSelection from '../../hooks/use-selection';
 import {
   BatchDistribution,
@@ -26,6 +27,7 @@ import { TemplateTypeMap } from '../dialog/template-dialog';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import http from '@/http';
 import { timeFormatter } from '@/common/util';
+import { storeToRefs } from 'pinia';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -49,14 +51,16 @@ const { t } = useI18n();
 
 const { getRegionName } = useRegionsStore();
 const router = useRouter();
-
 const route = useRoute();
+const { whereAmI } = useWhereAmI();
+
+const resourceAccountStore = useResourceAccountStore();
+const { currentVendor, currentAccountVendor } = storeToRefs(resourceAccountStore);
+const resourceStore = useResourceStore();
+const accountStore = useAccountStore();
 
 const activeType = ref('group');
 const fetchUrl = ref<string>('security_groups/list');
-const resourceStore = useResourceStore();
-const accountStore = useAccountStore();
-const { whereAmI } = useWhereAmI();
 
 const emit = defineEmits([
   'auth',
@@ -149,7 +153,6 @@ state.handlePageSizeChange = handlePageSizeChange;
 watch(
   () => activeType.value,
   (v) => {
-    console.log(1);
     state.isLoading = true;
     state.pagination.current = 1;
     state.pagination.limit = 10;
@@ -804,24 +807,37 @@ const templateColumns = [
 
 const templateSettings = generateColumnsSettings(templateColumns);
 
-const types = [
-  { name: 'group', label: t('安全组') },
-  { name: 'gcp', label: t('GCP防火墙规则') },
-  { name: 'template', label: '参数模板' },
-];
-
-const securityType = ref('group');
-
-watch(
-  () => securityType.value,
-  (val) => {
-    emit('tabchange', val);
-  },
-  {
-    immediate: true,
-  },
-);
-
+const isAllVendor = computed(() => {
+  return !currentVendor.value && !currentAccountVendor.value;
+});
+const isGcpVendor = computed(() => {
+  return [currentVendor.value, currentAccountVendor.value].includes(VendorEnum.GCP);
+});
+const isTcloudVendor = computed(() => {
+  return [currentVendor.value, currentAccountVendor.value].includes(VendorEnum.TCLOUD);
+});
+const types = computed(() => {
+  const securityType = { name: 'group', label: t('安全组') };
+  const gcpType = { name: 'gcp', label: t('GCP防火墙规则') };
+  const templateType = { name: 'template', label: '参数模板' };
+  if (isAllVendor.value) {
+    return [securityType, gcpType, templateType];
+  }
+  if (isGcpVendor.value) {
+    return [gcpType];
+  }
+  if (isTcloudVendor.value) {
+    return [securityType, templateType];
+  }
+  return [securityType];
+});
+watch(types, () => {
+  if (isGcpVendor.value) {
+    activeType.value = 'gcp';
+  } else {
+    activeType.value = 'group';
+  }
+});
 // const computedSettings = computed(() => {
 //   const fields = [];
 //   const columns = securityType.value === 'group' ? groupColumns : gcpColumns;
@@ -904,7 +920,6 @@ const securityHandleShowDelete = (data: any) => {
             v-for="item in types"
             :key="item.name"
             :label="item.name"
-            v-model="securityType"
           >
             {{ item.label }}
           </bk-radio-button>
