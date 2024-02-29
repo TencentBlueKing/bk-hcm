@@ -1,4 +1,4 @@
-import dayjs from 'dayjs';
+import dayjs, { OpUnitType, QUnitType } from 'dayjs';
 // 获取 cookie object
 export function getCookies(strCookie = document.cookie): any {
   if (!strCookie) {
@@ -56,6 +56,15 @@ export function deepMerge(...objectArray: any) {
  */
 export function timeFormatter(val: any, format = 'YYYY-MM-DD HH:mm:ss') {
   return val ? dayjs(val).format(format) : '--';
+}
+
+/**
+ * 相对当前的时间
+ * @param val 待比较的时间
+ * @returns 相对的时间字符串
+ */
+export function timeFromNow(val: string, unit: QUnitType | OpUnitType = 'minute') {
+  return dayjs().diff(val, unit);
 }
 
 export function classes(dynamicCls: object, constCls = ''): string {
