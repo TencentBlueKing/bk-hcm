@@ -290,6 +290,26 @@ const businesseMenus: RouteRecordRaw[] = [
           icon: 'hcm-icon bkhcm-icon-security-group',
         },
       },
+      {
+        path: 'gcp/detail',
+        name: 'gcpBusinessDetail',
+        component: () => import('@/views/business/business-detail.vue'),
+        meta: {
+          activeKey: 'gcpBusinessDetail',
+          breadcrumb: ['资源', 'gcp防火墙', '详情'],
+          notMenu: true,
+        },
+      },
+      {
+        path: 'template/detail',
+        name: 'templateBusinessDetail',
+        component: () => import('@/views/business/business-detail.vue'),
+        meta: {
+          activeKey: 'templateBusinessDetail',
+          breadcrumb: ['资源', '参数模板', '详情'],
+          notMenu: true,
+        },
+      },
     ],
   },
   {

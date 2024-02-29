@@ -428,7 +428,13 @@ export default defineComponent({
         width={1000}>
         <Form model={formData.value} ref={basicForm}>
           <FormItem label='云账号' property='account_id' required>
-            <Select v-model={formData.value.account_id}>
+            <Select
+              v-model={formData.value.account_id}
+              onChange={(account_id) => {
+                const idx = accountList.value.findIndex(({ id }) => id === account_id);
+                formData.value.vendor = accountList.value[idx].vendor;
+              }}
+            >
               {accountList.value.map(item => (
                 <Option key={item.id} id={item.id} name={item.name}></Option>
               ))}
