@@ -8,7 +8,7 @@ import {
   AzureSecurityRuleEnum,
 } from '@/typings';
 import { useAccountStore } from '@/store';
-import { Button } from 'bkui-vue';
+import { Button, Tag } from 'bkui-vue';
 import type { Settings } from 'bkui-vue/lib/table/props';
 import { h, ref } from 'vue';
 import type { Ref } from 'vue';
@@ -30,7 +30,7 @@ import {
   HOST_SHUTDOWN_STATUS,
 } from '../common/table/HostOperations';
 import './use-columns.scss';
-import { timeFormatter } from '@/common/util';
+import { timeFormatter, timeFromNow } from '@/common/util';
 
 export default (type: string, isSimpleShow = false, vendor?: string) => {
   const router = useRouter();
@@ -60,7 +60,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       isDefaultShow: true,
       render({ data }: { cell: string; data: any }) {
         if (data[idFiled] < 0 || !data[idFiled]) return '--';
-        return (
+        return (<>
           <Button
             text
             theme='primary'
@@ -90,7 +90,9 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
             }}>
             {render ? render(data) : data[field] || '--'}
           </Button>
-        );
+          {timeFromNow(data.created_at) < 5
+            && <Tag theme='success' radius='4px' extCls='new-resource-tag'>new</Tag>}
+        </>);
       },
     };
   };
