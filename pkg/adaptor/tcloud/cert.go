@@ -49,7 +49,7 @@ func (t *TCloudImpl) CreateCert(kt *kit.Kit, opt *typecert.TCloudCreateOption) (
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.certClient()
+	client, err := t.clientSet.CertClient()
 	if err != nil {
 		return nil, fmt.Errorf("init tencent cloud cert client failed, err: %v", err)
 	}
@@ -89,7 +89,7 @@ func (t *TCloudImpl) ListCert(kt *kit.Kit, opt *typecert.TCloudListOption) ([]ty
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.certClient()
+	client, err := t.clientSet.CertClient()
 	if err != nil {
 		return nil, fmt.Errorf("new tcloud cert client failed, err: %v", err)
 	}
@@ -121,7 +121,7 @@ func (t *TCloudImpl) ListCert(kt *kit.Kit, opt *typecert.TCloudListOption) ([]ty
 // CountCert count cert in given region
 // reference: https://cloud.tencent.com/document/api/400/41671
 func (t *TCloudImpl) CountCert(kt *kit.Kit) (int32, error) {
-	client, err := t.clientSet.certClient()
+	client, err := t.clientSet.CertClient()
 	if err != nil {
 		return 0, fmt.Errorf("new tcloud cert client failed, err: %v", err)
 	}
@@ -148,7 +148,7 @@ func (t *TCloudImpl) DeleteCert(kt *kit.Kit, opt *typecert.TCloudDeleteOption) e
 		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.certClient()
+	client, err := t.clientSet.CertClient()
 	if err != nil {
 		return fmt.Errorf("init tencent cloud cert client failed, err: %v", err)
 	}

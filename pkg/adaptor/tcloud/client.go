@@ -46,6 +46,7 @@ type ClientSet interface {
 	VpcClient(region string) (*vpc.Client, error)
 	BillClient() (*billing.Client, error)
 	ClbClient(region string) (*clb.Client, error)
+	CertClient() (*ssl.Client, error)
 }
 
 // clientSet to get tcloud sdk client set
@@ -121,7 +122,7 @@ func (c *clientSet) ClbClient(region string) (*clb.Client, error) {
 	return client, nil
 }
 
-func (c *clientSet) certClient() (*ssl.Client, error) {
+func (c *clientSet) CertClient() (*ssl.Client, error) {
 	client, err := ssl.NewClient(c.credential, "", c.profile)
 	if err != nil {
 		return nil, err
