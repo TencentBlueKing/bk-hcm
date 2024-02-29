@@ -175,8 +175,8 @@ watch(
       });
       for (let i = 0;i < templateData.value.length;i++) {
         const item = templateData.value[i];
-        item.instance_num = res.data?.details?.[i].instance_num || '--';
-        item.rule_num = res.data?.details?.[i].rule_num || '--';
+        item.instance_num = res.data?.[i]?.instance_num || '--';
+        item.rule_num = res.data?.[i]?.rule_num || '--';
       }
     }
   },
