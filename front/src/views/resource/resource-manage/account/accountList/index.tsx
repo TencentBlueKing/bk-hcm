@@ -117,6 +117,7 @@ export default defineComponent({
               onClick={() => {
                 setAccountId('');
                 resourceAccountStore.setCurrentVendor(null);
+                resourceAccountStore.setCurrentAccountVendor(null);
               }}>
               <img src={allVendors} alt='全部账号' class={'vendor-icon'} />
               <div>全部账号</div>
