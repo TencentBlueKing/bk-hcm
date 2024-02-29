@@ -33,17 +33,38 @@ const (
 	// DefaultQueryLimit is the bkbase default query batch size.
 	DefaultQueryLimit int = 5000
 
-	// DateTimeLayout layout for bkbase '%Y%m%d'
-	DateTimeLayout = "20060102"
+	// DateLayout layout for bkbase date, '%Y%m%d'
+	DateLayout = "20060102"
 )
 
-// Date is a date represented as a string used to specify the date range in a BKBase SQL query.
-type Date string
+// Date is used to specify the date range in a BKBase SQL query.
+type Date time.Time
+
+// NewDate returns a new instance of Date from given time.Time instance
+func NewDate(t time.Time) *Date {
+	date := Date(t)
+	return &date
+}
+
+// Layout return the layout of Date
+func (d *Date) Layout() string {
+	return DateLayout
+}
+
+// Format  as a string ('%Y%m%d')
+func (d *Date) Format() string {
+	return time.Time(*d).Format(DateLayout)
+}
+
+// String implements fmt.Stringer, used in fmt.Sprintf
+func (d *Date) String() string {
+	return d.Format()
+}
 
 // DateBefore returns a date that is prior to the current time.
 // It is intended for use in comparisons with the `thedate` column for the purpose of filtering by a date range.
-func DateBefore(nDays int) Date {
-	return Date(time.Now().Add(times.Day * time.Duration(-nDays)).Format(DateTimeLayout))
+func DateBefore(nDays int) *Date {
+	return NewDate(time.Now().Add(times.Day * time.Duration(-nDays)))
 }
 
 // QuerySyncReq query sync bkbase data request

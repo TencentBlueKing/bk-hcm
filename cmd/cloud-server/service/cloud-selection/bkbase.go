@@ -413,7 +413,7 @@ func (svc *service) listAvailableCountry(kt *kit.Kit) ([]string, error) {
 	return slice.Map(countries, func(c coresel.CountryInfo) string { return c.Country }), nil
 }
 
-func (svc *service) listAllCountryUserDistDist(kt *kit.Kit, startDate bkbase.Date) (
+func (svc *service) listAllCountryUserDistDist(kt *kit.Kit, startDate *bkbase.Date) (
 	map[string][]coresel.UserDistribution, error) {
 
 	sql := fmt.Sprintf(`
@@ -435,7 +435,7 @@ func (svc *service) listAllCountryUserDistDist(kt *kit.Kit, startDate bkbase.Dat
 }
 
 // list all country data
-func (svc *service) listAllAvgProvincePingData(kt *kit.Kit, table string, startDate bkbase.Date, idcBizId int64, idcNames []string) (map[string][]coresel.ProvinceToIDCLatency, error) {
+func (svc *service) listAllAvgProvincePingData(kt *kit.Kit, table string, startDate *bkbase.Date, idcBizId int64, idcNames []string) (map[string][]coresel.ProvinceToIDCLatency, error) {
 
 	fullMap := map[string][]coresel.ProvinceToIDCLatency{}
 	page := core.BasePage{Limit: svc.cfg.BkBase.QueryLimit}
@@ -461,7 +461,7 @@ func (svc *service) listAllAvgProvincePingData(kt *kit.Kit, table string, startD
 }
 
 // list all country data
-func (svc *service) listAllAvgProvincePingList(kt *kit.Kit, table string, startDate bkbase.Date,
+func (svc *service) listAllAvgProvincePingList(kt *kit.Kit, table string, startDate *bkbase.Date,
 	idcBizId int64, idcNames []string, page core.BasePage) ([]coresel.ProvinceToIDCLatency, error) {
 
 	sql := fmt.Sprintf(`SELECT country, province, idc_name, avg(avg_ping) AS latency 
