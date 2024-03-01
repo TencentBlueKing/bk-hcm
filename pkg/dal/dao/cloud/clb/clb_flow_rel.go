@@ -26,7 +26,7 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/audit"
-	idgenerator "hcm/pkg/dal/dao/id-generator"
+	idgen "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
@@ -55,7 +55,7 @@ var _ ClbFlowRelInterface = new(ClbFlowRelDao)
 // ClbFlowRelDao clb flow rel dao.
 type ClbFlowRelDao struct {
 	Orm   orm.Interface
-	IDGen idgenerator.IDGenInterface
+	IDGen idgen.IDGenInterface
 	Audit audit.Interface
 }
 

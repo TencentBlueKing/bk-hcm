@@ -75,7 +75,7 @@ create table `load_balancer`
 -- 2. 通用安全组资源关联表
 create table `security_group_common_rel`
 (
-    `id`                bigint(1)   unsigned not null auto_increment,
+    `id`                bigint      unsigned not null auto_increment,
     `vendor`            varchar(16) not null,
     `res_id`            varchar(64) not null,
     `res_type`          varchar(64) not null,
