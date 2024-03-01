@@ -148,6 +148,25 @@ const (
 
 	// SslCertTable is ssl cert table's name.
 	SslCertTable Name = "ssl_cert"
+
+	// LoadBalancerTable is load_balancer table's name.
+	LoadBalancerTable Name = "load_balancer"
+	// SecurityGroupCommonRelTable is security group common rel table's name.
+	SecurityGroupCommonRelTable Name = "security_group_common_rel"
+	// LoadBalancerListenerTable is load_balancer_listener table's name.
+	LoadBalancerListenerTable Name = "load_balancer_listener"
+	// TCloudClbUrlRuleTable is tcloud_lb_url_rule table's name.
+	TCloudClbUrlRuleTable Name = "tcloud_lb_url_rule"
+	// LoadBalancerTargetTable is load_balancer_target table's name.
+	LoadBalancerTargetTable Name = "load_balancer_target"
+	// LoadBalancerTargetGroupTable is load_balancer_target_group table's name.
+	LoadBalancerTargetGroupTable Name = "load_balancer_target_group"
+	// TargetListenerRuleRelTable is target_listener_rule_rel table's name.
+	TargetListenerRuleRelTable Name = "target_listener_rule_rel"
+	// ClbFlowRelTable is clb_flow_rel table's name.
+	ClbFlowRelTable Name = "clb_flow_rel"
+	// ClbFlowLockTable is clb_flow_lock table's name.
+	ClbFlowLockTable Name = "clb_flow_lock"
 )
 
 // Validate whether the table name is valid or not.
@@ -221,6 +240,16 @@ var TableMap = map[Name]struct{}{
 
 	AsyncFlowTable:     {},
 	AsyncFlowTaskTable: {},
+
+	LoadBalancerTable:            {},
+	SecurityGroupCommonRelTable:  {},
+	LoadBalancerListenerTable:    {},
+	TCloudClbUrlRuleTable:        {},
+	LoadBalancerTargetTable:      {},
+	LoadBalancerTargetGroupTable: {},
+	TargetListenerRuleRelTable:   {},
+	ClbFlowRelTable:              {},
+	ClbFlowLockTable:             {},
 }
 
 // Register 注册表名
