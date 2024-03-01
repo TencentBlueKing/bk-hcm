@@ -212,9 +212,12 @@ export default defineComponent({
                 {![
                   VendorEnum.AZURE,
                   VendorEnum.GCP,
-                  VendorEnum.HUAWEI,
                 ].includes(formModel.vendor) ? (
-                  <Radio label={'china'} v-model={formModel.site}>
+                  <Radio
+                    label={'china'}
+                    v-model={formModel.site}
+                    disabled={[VendorEnum.HUAWEI, VendorEnum.AWS].includes(formModel.vendor)}
+                  >
                     中国站
                   </Radio>
                   ) : null}
