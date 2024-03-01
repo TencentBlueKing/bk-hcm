@@ -25,9 +25,11 @@ import (
 	"hcm/cmd/hc-service/service/capability"
 	typeclb "hcm/pkg/adaptor/types/clb"
 	adcore "hcm/pkg/adaptor/types/core"
+	"hcm/pkg/api/core"
 	protoclb "hcm/pkg/api/hc-service/clb"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 
@@ -40,6 +42,8 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 
 	h.Add("BatchCreateTCloudClb", http.MethodPost, "/vendors/tcloud/clbs/batch/create", svc.BatchCreateTCloudClb)
 	h.Add("ListTCloudClb", http.MethodPost, "/vendors/tcloud/clbs/list", svc.ListTCloudClb)
+	h.Add("BatchCreateTCloudClb", http.MethodPost, "/vendors/tcloud/clbs/batch/security_groups",
+		svc.BatchSetTCloudClbSecurityGroup)
 
 	h.Load(cap.WebService)
 }
@@ -145,6 +149,56 @@ func (svc *clbSvc) ListTCloudClb(cts *rest.Contexts) (interface{}, error) {
 	result, err := tcloud.ListClb(cts.Kit, opt)
 	if err != nil {
 		logs.Errorf("[%s] list tcloud clb failed, req: %+v, err: %v, rid: %s", enumor.TCloud, req, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// BatchSetTCloudClbSecurityGroup 设置负载均衡实例的安全组
+func (svc *clbSvc) BatchSetTCloudClbSecurityGroup(cts *rest.Contexts) (interface{}, error) {
+	req := new(protoclb.TCloudSetClbSecurityGroupReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	tcloud, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 根据负载均衡ID，查询CLB基本信息
+	clbReq := &core.ListReq{
+		Filter: tools.EqualExpression("id", req.LoadBalancerID),
+		Page:   core.NewDefaultBasePage(),
+	}
+	clbResults, err := svc.dataCli.Global.LoadBalancer.ListClb(cts.Kit, clbReq)
+	if err != nil {
+		logs.Errorf("[%s] batch list clb failed. err: %v, accountID: %s, req: %+v, rid: %s",
+			enumor.TCloud, err, req.AccountID, req, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if len(clbResults.Details) == 0 {
+		return nil, errf.Newf(errf.RecordNotFound, "[%s]clb id is not found", req.LoadBalancerID)
+	}
+
+	region := clbResults.Details[0].Region
+	setOpt := &typeclb.TCloudSetClbSecurityGroupOption{
+		Region:         region,
+		LoadBalancerID: req.LoadBalancerID,
+	}
+	if len(req.SecurityGroups) > 0 {
+		setOpt.SecurityGroups = req.SecurityGroups
+	}
+
+	result, err := tcloud.SetClbSecurityGroups(cts.Kit, setOpt)
+	if err != nil {
+		logs.Errorf("create tcloud clb failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

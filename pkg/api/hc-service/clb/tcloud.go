@@ -20,8 +20,12 @@
 package hcclb
 
 import (
+	"errors"
+	"fmt"
+
 	typeclb "hcm/pkg/adaptor/types/clb"
 	"hcm/pkg/adaptor/types/core"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
 )
@@ -88,6 +92,32 @@ func (opt TCloudListOption) Validate() error {
 		if err := opt.Page.Validate(); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+// --------------------------[设置负载均衡实例的安全组]--------------------------
+
+// TCloudSetClbSecurityGroupReq defines options to set tcloud clb security-group request.
+type TCloudSetClbSecurityGroupReq struct {
+	AccountID      string   `json:"account_id" validate:"required"`
+	LoadBalancerID string   `json:"load_balancer_id" validate:"required"`
+	SecurityGroups []string `json:"security_groups" validate:"omitempty,max=50"`
+}
+
+// Validate tcloud clb security-group option.
+func (opt TCloudSetClbSecurityGroupReq) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.LoadBalancerID) == 0 {
+		return errors.New("load_balancer_id is required")
+	}
+
+	if len(opt.SecurityGroups) > constant.LoadBalancerBindSecurityGroupMaxLimit {
+		return fmt.Errorf("invalid page.limit max value: %d", constant.LoadBalancerBindSecurityGroupMaxLimit)
 	}
 
 	return nil

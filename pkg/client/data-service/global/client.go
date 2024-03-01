@@ -54,6 +54,7 @@ type Client struct {
 	UserCollection *UserCollectionClient
 
 	CloudSelection *CloudSelectionClient
+	LoadBalancer   *ClbClient
 }
 
 type restClient struct {
@@ -91,5 +92,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		UserCollection: NewUserCollectionClient(client),
 
 		CloudSelection: NewCloudCloudSelectionClient(client),
+		LoadBalancer:   NewClbClient(client),
 	}
 }

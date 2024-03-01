@@ -26,8 +26,8 @@ import (
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/account"
 	typesBill "hcm/pkg/adaptor/types/bill"
-	"hcm/pkg/adaptor/types/clb"
 	"hcm/pkg/adaptor/types/cert"
+	"hcm/pkg/adaptor/types/clb"
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/adaptor/types/disk"
@@ -45,6 +45,7 @@ import (
 
 	billing "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/billing/v20180709"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
+	tclb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
 
@@ -129,4 +130,6 @@ type TCloud interface {
 	CreateCert(kt *kit.Kit, opt *cert.TCloudCreateOption) (*poller.BaseDoneResult, error)
 	DeleteCert(kt *kit.Kit, opt *cert.TCloudDeleteOption) error
 	ListCert(kt *kit.Kit, opt *cert.TCloudListOption) ([]cert.TCloudCert, error)
+	SetClbSecurityGroups(kt *kit.Kit, opt *clb.TCloudSetClbSecurityGroupOption) (
+		*tclb.SetLoadBalancerSecurityGroupsResponseParams, error)
 }

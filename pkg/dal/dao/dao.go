@@ -34,6 +34,7 @@ import (
 	daoselection "hcm/pkg/dal/dao/cloud-selection"
 	"hcm/pkg/dal/dao/cloud/bill"
 	"hcm/pkg/dal/dao/cloud/cert"
+	"hcm/pkg/dal/dao/cloud/clb"
 	"hcm/pkg/dal/dao/cloud/cvm"
 	"hcm/pkg/dal/dao/cloud/disk"
 	diskcvmrel "hcm/pkg/dal/dao/cloud/disk-cvm-rel"
@@ -46,6 +47,7 @@ import (
 	resourcegroup "hcm/pkg/dal/dao/cloud/resource-group"
 	routetable "hcm/pkg/dal/dao/cloud/route-table"
 	securitygroup "hcm/pkg/dal/dao/cloud/security-group"
+	sgcomrel "hcm/pkg/dal/dao/cloud/security-group-common-rel"
 	sgcvmrel "hcm/pkg/dal/dao/cloud/security-group-cvm-rel"
 	daosubaccount "hcm/pkg/dal/dao/cloud/sub-account"
 	daosync "hcm/pkg/dal/dao/cloud/sync"
@@ -107,6 +109,15 @@ type Set interface {
 	CloudSelectionBizType() daoselection.BizTypeInterface
 	CloudSelectionIdc() daoselection.IdcInterface
 	Cert() cert.Interface
+	LoadBalancer() clb.ClbInterface
+	LoadBalancerListener() clb.ListenerInterface
+	LoadBalancerTarget() clb.TargetInterface
+	LoadBalancerTargetGroup() clb.TargetGroupInterface
+	LoadBalancerTargetListenerRuleRel() clb.TargetListenerRuleRelInterface
+	LoadBalancerTCloudUrlRule() clb.ClbTCloudUrlRuleInterface
+	ClbFlowRel() clb.ClbFlowRelInterface
+	ClbFlowLock() clb.ClbFlowLockInterface
+	SGCommonRel() sgcomrel.Interface
 
 	Txn() *Txn
 }
@@ -522,5 +533,84 @@ func (s *set) Cert() cert.Interface {
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,
+	}
+}
+
+// LoadBalancer return clb dao.
+func (s *set) LoadBalancer() clb.ClbInterface {
+	return &clb.ClbDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// LoadBalancerListener return clb listener dao.
+func (s *set) LoadBalancerListener() clb.ListenerInterface {
+	return &clb.ListenerDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// LoadBalancerTarget return clb target dao.
+func (s *set) LoadBalancerTarget() clb.TargetInterface {
+	return &clb.TargetDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// LoadBalancerTargetGroup return clb target group dao.
+func (s *set) LoadBalancerTargetGroup() clb.TargetGroupInterface {
+	return &clb.TargetGroupDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// LoadBalancerTargetListenerRuleRel return clb target listener rule rel dao.
+func (s *set) LoadBalancerTargetListenerRuleRel() clb.TargetListenerRuleRelInterface {
+	return &clb.TargetListenerRuleRelDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// LoadBalancerTCloudUrlRule return clb tcloud url rule dao.
+func (s *set) LoadBalancerTCloudUrlRule() clb.ClbTCloudUrlRuleInterface {
+	return &clb.ClbTCloudUrlRuleDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// ClbFlowRel return clb flow rel dao.
+func (s *set) ClbFlowRel() clb.ClbFlowRelInterface {
+	return &clb.ClbFlowRelDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// ClbFlowLock return clb flow lock dao.
+func (s *set) ClbFlowLock() clb.ClbFlowLockInterface {
+	return &clb.ClbFlowLockDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// SGCommonRel return security group common rel dao.
+func (s *set) SGCommonRel() sgcomrel.Interface {
+	return &sgcomrel.Dao{
+		Orm: s.orm,
 	}
 }
