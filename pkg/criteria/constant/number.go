@@ -33,4 +33,7 @@ const (
 
 	// BatchCreateCvmFromCloudMaxLimit 批量创建主机从公有云上的最大限制数量
 	BatchCreateCvmFromCloudMaxLimit = 100
+
+	// LoadBalancerBindSecurityGroupMaxLimit 一个负载均衡实例最多可绑定安全组的最大数量限制
+	LoadBalancerBindSecurityGroupMaxLimit = 50
 )
