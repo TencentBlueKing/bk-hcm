@@ -807,6 +807,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '主机名称',
       field: 'name',
+      sort: true,
       isDefaultShow: true,
     },
     {
