@@ -68,7 +68,7 @@ type SGCommonRelListResp struct {
 
 // SGCommonRelWithSecurityGroupListReq ...
 type SGCommonRelWithSecurityGroupListReq struct {
-	ResIDs []string `json:"res_ids" validate:"required"`
+	ResIDs []string `json:"res_ids" validate:"required,min=1"`
 }
 
 // Validate SGCommonRelWithSecurityGroupListReq.

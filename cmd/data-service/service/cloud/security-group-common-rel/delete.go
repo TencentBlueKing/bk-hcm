@@ -50,10 +50,10 @@ func (svc *sgComRelSvc) BatchDelete(cts *rest.Contexts) (interface{}, error) {
 		Filter: req.Filter,
 		Page:   core.NewDefaultBasePage(),
 	}
-	listResp, err := svc.dao.SGCvmRel().List(cts.Kit, opt)
+	listResp, err := svc.dao.SGCommonRel().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list security group cvm rels failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list security group cvm rels failed, err: %v", err)
+		logs.Errorf("list security group common rels failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list security group common rels failed, err: %v", err)
 	}
 
 	if len(listResp.Details) == 0 {
@@ -66,14 +66,14 @@ func (svc *sgComRelSvc) BatchDelete(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		if err := svc.dao.SGCvmRel().DeleteWithTx(cts.Kit, txn, tools.ContainersExpression("id", delIDs)); err != nil {
+		if err := svc.dao.SGCommonRel().DeleteWithTx(cts.Kit, txn, tools.ContainersExpression("id", delIDs)); err != nil {
 			return nil, err
 		}
 
 		return nil, nil
 	})
 	if err != nil {
-		logs.Errorf("delete security group cvm rels failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("delete security group common rels failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

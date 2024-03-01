@@ -41,6 +41,7 @@ type ListSGCommonRelsJoinSGDetails struct {
 type SecurityGroupWithCommonID struct {
 	cloud.SecurityGroupTable `db:",inline" json:",inline"`
 	ResID                    string     `db:"res_id" json:"res_id"`
+	ResType                  string     `db:"res_type" json:"res_type"`
 	Priority                 int64      `db:"priority" json:"priority"`
 	RelCreator               string     `db:"rel_creator" json:"rel_creator"`
 	RelCreatedAt             *time.Time `db:"rel_created_at" json:"rel_created_at"`

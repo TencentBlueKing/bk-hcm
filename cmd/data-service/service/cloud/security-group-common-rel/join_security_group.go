@@ -29,7 +29,7 @@ import (
 
 // ListWithSecurityGroup ...
 func (svc *sgComRelSvc) ListWithSecurityGroup(cts *rest.Contexts) (interface{}, error) {
-	req := new(protocloud.SGCvmRelWithSecurityGroupListReq)
+	req := new(protocloud.SGCommonRelWithSecurityGroupListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -38,16 +38,16 @@ func (svc *sgComRelSvc) ListWithSecurityGroup(cts *rest.Contexts) (interface{}, 
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	details, err := svc.dao.SGCvmRel().ListJoinSecurityGroup(cts.Kit, req.CvmIDs)
+	details, err := svc.dao.SGCommonRel().ListJoinSecurityGroup(cts.Kit, req.ResIDs)
 	if err != nil {
-		logs.Errorf("list sg cvm rels join security group failed, err: %v, cvmIDs: %v, rid: %s", err,
-			req.CvmIDs, cts.Kit.Rid)
+		logs.Errorf("list sg common rels join security group failed, err: %v, resIDs: %v, rid: %s", err,
+			req.ResIDs, cts.Kit.Rid)
 		return nil, err
 	}
 
-	sgs := make([]corecloud.SGCvmRelWithBaseSecurityGroup, 0, len(details.Details))
+	sgs := make([]corecloud.SGCommonRelWithBaseSecurityGroup, 0, len(details.Details))
 	for _, one := range details.Details {
-		sgs = append(sgs, corecloud.SGCvmRelWithBaseSecurityGroup{
+		sgs = append(sgs, corecloud.SGCommonRelWithBaseSecurityGroup{
 			BaseSecurityGroup: corecloud.BaseSecurityGroup{
 				ID:        one.ID,
 				Vendor:    one.Vendor,
@@ -62,7 +62,9 @@ func (svc *sgComRelSvc) ListWithSecurityGroup(cts *rest.Contexts) (interface{}, 
 				CreatedAt: one.CreatedAt.String(),
 				UpdatedAt: one.UpdatedAt.String(),
 			},
-			CvmID:        one.CvmID,
+			ResID:        one.ResID,
+			ResType:      one.ResType,
+			Priority:     one.Priority,
 			RelCreator:   one.RelCreator,
 			RelCreatedAt: one.RelCreatedAt.String(),
 		})

@@ -22,10 +22,14 @@ package cloud
 // SecurityGroupCommonRel define security group common rel.
 type SecurityGroupCommonRel struct {
 	ID              uint64 `json:"id"`
-	CvmID           string `json:"cvm_id"`
+	ResID           string `json:"res_id"`
+	ResType         string `json:"res_type"`
+	Priority        int64  `json:"priority"`
 	SecurityGroupID string `json:"security_group_id"`
 	Creator         string `json:"creator"`
+	Reviser         string `json:"reviser"`
 	CreatedAt       string `json:"created_at"`
+	UpdatedAt       string `json:"updated_at"`
 }
 
 // SGCommonRelWithBaseSecurityGroup define security group with common id.

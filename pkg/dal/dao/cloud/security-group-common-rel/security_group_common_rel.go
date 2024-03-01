@@ -60,15 +60,18 @@ func (dao Dao) ListJoinSecurityGroup(kt *kit.Kit, resIDs []string) (*types.ListS
 		return nil, errf.Newf(errf.InvalidParameter, "res ids is required")
 	}
 
-	sql := fmt.Sprintf(`SELECT %s, %s FROM %s as rel left join %s AS sg ON rel.security_group_id = sg.id 
-	where res_id in (:res_ids)`,
-		cloud.SecurityGroupColumns.FieldsNamedExprWithout(types.DefaultRelJoinWithoutField),
+	var withoutFields = []string{"vendor", "reviser", "updated_at"}
+	withoutFields = append(withoutFields, types.DefaultRelJoinWithoutField...)
+	sql := fmt.Sprintf(`SELECT %s, %s, sg.vendor AS vendor,sg.reviser AS reviser,sg.updated_at AS updated_at,
+		rel.res_type,rel.priority FROM %s AS rel LEFT JOIN %s AS sg ON rel.security_group_id = sg.id 
+		WHERE res_id IN (:res_ids)`,
+		cloud.SecurityGroupColumns.FieldsNamedExprWithout(withoutFields),
 		tools.BaseRelJoinSqlBuild("rel", "sg", "id", "res_id"),
 		table.SecurityGroupCommonRelTable, table.SecurityGroupTable)
 
 	details := make([]types.SecurityGroupWithCommonID, 0)
 	if err := dao.Orm.Do().Select(kt.Ctx, &details, sql, map[string]interface{}{"res_ids": resIDs}); err != nil {
-		logs.ErrorJson("select sg common rels join sg failed, err: %v, sql: (%s), rid: %s", err, sql, kt.Rid)
+		logs.Errorf("select sg common rels join sg failed, err: %v, sql: (%s), rid: %s", err, sql, kt.Rid)
 		return nil, err
 	}
 

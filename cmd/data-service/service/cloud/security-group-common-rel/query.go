@@ -47,26 +47,30 @@ func (svc *sgComRelSvc) List(cts *rest.Contexts) (interface{}, error) {
 		Filter: req.Filter,
 		Page:   req.Page,
 	}
-	result, err := svc.dao.SGCvmRel().List(cts.Kit, opt)
+	result, err := svc.dao.SGCommonRel().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list security group cvm rels failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list security group cvm rels failed, err: %v", err)
+		logs.Errorf("list security group common rels failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list security group common rels failed, err: %v", err)
 	}
 
 	if req.Page.Count {
-		return &protocloud.SGCvmRelListResult{Count: result.Count}, nil
+		return &protocloud.SGCommonRelListResult{Count: result.Count}, nil
 	}
 
-	details := make([]corecloud.SecurityGroupCvmRel, 0, len(result.Details))
+	details := make([]corecloud.SecurityGroupCommonRel, 0, len(result.Details))
 	for _, one := range result.Details {
-		details = append(details, corecloud.SecurityGroupCvmRel{
+		details = append(details, corecloud.SecurityGroupCommonRel{
 			ID:              one.ID,
-			CvmID:           one.CvmID,
+			ResID:           one.ResID,
+			ResType:         one.ResType,
+			Priority:        one.Priority,
 			SecurityGroupID: one.SecurityGroupID,
 			Creator:         one.Creator,
+			Reviser:         one.Reviser,
 			CreatedAt:       one.CreatedAt.String(),
+			UpdatedAt:       one.UpdatedAt.String(),
 		})
 	}
 
-	return &protocloud.SGCvmRelListResult{Details: details}, nil
+	return &protocloud.SGCommonRelListResult{Details: details}, nil
 }
