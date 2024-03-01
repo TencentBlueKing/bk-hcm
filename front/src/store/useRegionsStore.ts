@@ -49,17 +49,24 @@ export const useRegionsStore = defineStore('useRegions', () => {
 
   const getRegionName = (vendor: VendorEnum, id: string) => {
     if (!isChinese) return id;
+    let regionName;
     switch (vendor) {
       case VendorEnum.AWS:
-        return CLOUD_AREA_REGION_AWS[id] || id;
+        regionName = CLOUD_AREA_REGION_AWS[id] || id;
+        break;
       case VendorEnum.GCP:
-        return CLOUD_AREA_REGION_GCP[id] || id;
+        regionName = CLOUD_AREA_REGION_GCP[id] || id;
+        break;
       case VendorEnum.HUAWEI:
-        return huawei.value.get(id) || id;
+        regionName = huawei.value.get(id) || id;
+        break;
       case VendorEnum.TCLOUD:
-        return tcloud.value.get(id) || id;
+        regionName = tcloud.value.get(id) || id;
+        break;
+      default:
+        regionName = id;
     }
-    return id;
+    return regionName || '--';
   };
 
   const getRegionNameEN = (id: string) => {
