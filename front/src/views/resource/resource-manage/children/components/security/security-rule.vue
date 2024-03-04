@@ -242,7 +242,7 @@ const inColumns = [
         {},
         [
           data.cloud_address_group_id || data.cloud_address_id
-          || data.cloud_service_group_id || data.cloud_service_id || data.cloud_target_security_group_id
+          || data.cloud_service_group_id || data.cloud_target_security_group_id
           || data.ipv4_cidr || data.ipv6_cidr || data.cloud_remote_group_id || data.remote_ip_prefix
           || (data.source_address_prefix === '*' ? t('任何') : data.source_address_prefix) || data.source_address_prefixes || data.cloud_source_security_group_ids
           || data.destination_address_prefix || data.destination_address_prefixes
@@ -259,10 +259,10 @@ const inColumns = [
         {},
         [
           // eslint-disable-next-line no-nested-ternary
-          props.vendor === 'aws' && (data.protocol === '-1' && data.to_port === -1) ? t('全部')
+          data.cloud_service_id || (props.vendor === 'aws' && (data.protocol === '-1' && data.to_port === -1) ? t('全部')
             // eslint-disable-next-line no-nested-ternary
             : props.vendor === 'huawei' && (!data.protocol && !data.port) ? t('全部')
-              : props.vendor === 'azure' && (data.protocol === '*' && data.destination_port_range === '*') ? t('全部') :  `${data.protocol}:${data.port || data.to_port || data.destination_port_range || data.destination_port_ranges || '--'}`,
+              : props.vendor === 'azure' && (data.protocol === '*' && data.destination_port_range === '*') ? t('全部') :  `${data.protocol}:${data.port || data.to_port || data.destination_port_range || data.destination_port_ranges || '--'}`),
         ],
       );
     },
@@ -366,7 +366,7 @@ const outColumns = [
         {},
         [
           data.cloud_address_group_id || data.cloud_address_id
-          || data.cloud_service_group_id || data.cloud_service_id || data.cloud_target_security_group_id
+          || data.cloud_service_group_id || data.cloud_target_security_group_id
           || data.ipv4_cidr || data.ipv6_cidr || data.cloud_remote_group_id || data.remote_ip_prefix
           || data.cloud_source_security_group_ids
           || (data.destination_address_prefix === '*' ? t('任何') : data.destination_address_prefix) || data.destination_address_prefixes
@@ -383,10 +383,10 @@ const outColumns = [
         {},
         [
           // eslint-disable-next-line no-nested-ternary
-          props.vendor === 'aws' && (data.protocol === '-1' && data.to_port === -1) ? t('全部')
+          data.cloud_service_id || (props.vendor === 'aws' && (data.protocol === '-1' && data.to_port === -1) ? t('全部')
             // eslint-disable-next-line no-nested-ternary
             : props.vendor === 'huawei' && (!data.protocol && !data.port) ? t('全部')
-              : props.vendor === 'azure' && (data.protocol === '*' && data.destination_port_range === '*') ? t('全部') :  `${data.protocol}:${data.port || data.to_port || data.destination_port_range || '--'}`,
+              : props.vendor === 'azure' && (data.protocol === '*' && data.destination_port_range === '*') ? t('全部') :  `${data.protocol}:${data.port || data.to_port || data.destination_port_range || '--'}`),
         ],
       );
     },

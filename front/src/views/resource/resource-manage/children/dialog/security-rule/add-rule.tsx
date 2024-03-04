@@ -486,6 +486,8 @@ export default defineComponent({
                         }>
                         {
                           (() => {
+                            if (data.protocol === '' && data.cloud_service_id) data.protocol = 'cloud_service_id';
+                            if (data.protocol === '' && data.cloud_service_group_id) data.protocol = 'cloud_service_group_id';
                             const prefix = () => (
                               <Select
                                 v-model={data.protocol}
@@ -494,8 +496,8 @@ export default defineComponent({
                                 onChange={handleChange}>
                                 {protocolList.value.map((ele: any) => (
                                   <Option
-                                    value={ele.id}
-                                    label={ele.name}
+                                    id={ele.id}
+                                    name={ele.name}
                                     key={ele.id}
                                   />
                                 ))}
