@@ -6,13 +6,14 @@
 
 ### URL
 
-GET /api/v1/cloud/security_groups/clbs/{clb_id}
+GET /api/v1/cloud/security_groups/res/{res_type}/{res_id}
 
 ### 输入参数
 
-| 参数名称 | 参数类型 | 必选  | 描述      |
-|---------|--------|-------|----------|
-| clb_id  | string | 是    | 负载均衡ID |
+| 参数名称  | 参数类型 | 必选  | 描述      |
+|----------|--------|-------|----------|
+| res_id   | string | 是    | 负载均衡ID |
+| res_type | string | 是    | 资源类型   |
 
 ### 调用示例
 
@@ -40,6 +41,7 @@ GET /api/v1/cloud/security_groups/clbs/{clb_id}
       "created_at": "2023-02-25T18:28:46Z",
       "updated_at": "2023-02-27T19:14:33Z",
       "res_id": "0000000x",
+      "res_type": "clb",
       "priority": 1,
       "rel_creator": "Jim",
       "rel_created_at": "2023-02-27T19:31:33Z"
@@ -73,6 +75,7 @@ GET /api/v1/cloud/security_groups/clbs/{clb_id}
 | created_at     | string | 安全组创建时间，标准格式：2006-01-02T15:04:05Z             |
 | updated_at     | string | 安全组最后一次修改时间，标准格式：2006-01-02T15:04:05Z      |
 | res_id         | string | 资源ID                       |
+| res_type       | string | 资源类型                      |
 | priority       | int64  | 安全组排序ID                  |
 | rel_creator    | string | 负载均衡和安全组绑定操作人       |
 | rel_created_at | string | 负载均衡和安全组绑定时间（标准格式：2006-01-02T15:04:05Z）   |
