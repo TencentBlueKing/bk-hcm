@@ -2,11 +2,11 @@
 
 - 该接口提供版本：v9.9.9+。
 - 该接口所需权限： 负载均衡操作。
-- 该接口功能描述：给指定的负载均衡，批量取消与安全组的关联（仅支持：tcloud）。
+- 该接口功能描述：给指定的负载均衡，取消与安全组的关联（仅支持：tcloud）。
 
 ### URL
 
-POST /api/v1/cloud/bizs/{bk_biz_id}/clbs/disassociate/security_group
+POST /api/v1/cloud/bizs/{bk_biz_id}/security_groups/disassociate/clbs
 
 ### 输入参数
 

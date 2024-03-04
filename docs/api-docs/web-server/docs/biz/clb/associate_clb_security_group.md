@@ -6,7 +6,7 @@
 
 ### URL
 
-POST /api/v1/cloud/bizs/{bk_biz_id}/clbs/associate/security_groups
+POST /api/v1/cloud/bizs/{bk_biz_id}/security_groups/associate/clbs
 
 ### 输入参数
 
