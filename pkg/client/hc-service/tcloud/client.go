@@ -39,6 +39,7 @@ type Client struct {
 	InstanceType  *InstanceTypeClient
 	Bill          *BillClient
 	Cert          *CertClient
+	Clb           *ClbClient
 }
 
 // NewClient create a new tcloud api client.
@@ -58,5 +59,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		InstanceType:  NewInstanceTypeClient(client),
 		Bill:          NewBillClient(client),
 		Cert:          NewCertClient(client),
+		Clb:           NewClbClient(client),
 	}
 }

@@ -17,20 +17,31 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package constant
+package tcloud
 
-// Note:
-// This scope is used to define all the constant keys which is used inside and outside
-// the HCM system.
-const (
-	// BatchOperationMaxLimit 批量操作最大上限，包括批量创建、批量更新、批量删除。
-	BatchOperationMaxLimit = 100
-
-	// CloudResourceSyncMaxLimit 单次云资源同步最大数量限制。
-	CloudResourceSyncMaxLimit = 100
-	// SyncConcurrencyDefaultMaxLimit 同步并发最大限制
-	SyncConcurrencyDefaultMaxLimit = 10
-
-	// BatchCreateCvmFromCloudMaxLimit 批量创建主机从公有云上的最大限制数量
-	BatchCreateCvmFromCloudMaxLimit = 100
+import (
+	protoclb "hcm/pkg/api/hc-service/clb"
+	"hcm/pkg/client/common"
+	"hcm/pkg/kit"
+	"hcm/pkg/rest"
 )
+
+// NewClbClient create a new clb api client.
+func NewClbClient(client rest.ClientInterface) *ClbClient {
+	return &ClbClient{
+		client: client,
+	}
+}
+
+// ClbClient is hc service clb api client.
+type ClbClient struct {
+	client rest.ClientInterface
+}
+
+// BatchSetTCloudClbSecurityGroup batch set clb security group resource.
+func (cli *ClbClient) BatchSetTCloudClbSecurityGroup(kt *kit.Kit,
+	request *protoclb.TCloudSetClbSecurityGroupReq) error {
+
+	return common.RequestNoResp[protoclb.TCloudSetClbSecurityGroupReq](cli.client, rest.POST, kt, request,
+		"/clbs/batch/security_groups")
+}

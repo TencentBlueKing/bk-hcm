@@ -122,3 +122,9 @@ func (opt TCloudSetClbSecurityGroupReq) Validate() error {
 
 	return nil
 }
+
+// ClbCommonResp ...
+type ClbCommonResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          interface{} `json:"data"`
+}

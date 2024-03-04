@@ -19,18 +19,8 @@
 
 package constant
 
-// Note:
-// This scope is used to define all the constant keys which is used inside and outside
-// the HCM system.
+// 负载均衡相关的常量
 const (
-	// BatchOperationMaxLimit 批量操作最大上限，包括批量创建、批量更新、批量删除。
-	BatchOperationMaxLimit = 100
-
-	// CloudResourceSyncMaxLimit 单次云资源同步最大数量限制。
-	CloudResourceSyncMaxLimit = 100
-	// SyncConcurrencyDefaultMaxLimit 同步并发最大限制
-	SyncConcurrencyDefaultMaxLimit = 10
-
-	// BatchCreateCvmFromCloudMaxLimit 批量创建主机从公有云上的最大限制数量
-	BatchCreateCvmFromCloudMaxLimit = 100
+	// LoadBalancerBindSecurityGroupMaxLimit 一个负载均衡实例最多可绑定安全组的最大数量限制
+	LoadBalancerBindSecurityGroupMaxLimit = 50
 )

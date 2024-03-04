@@ -64,6 +64,8 @@ func (rt CloudResourceType) ConvTableName() (table.Name, error) {
 		return table.AzureRGTable, nil
 	case CertCloudResType:
 		return table.SslCertTable, nil
+	case ClbCloudResType:
+		return table.LoadBalancerTable, nil
 	default:
 		return "", fmt.Errorf("%s does not have a corresponding table name", rt)
 	}
@@ -88,4 +90,5 @@ const (
 	ZoneCloudResType             CloudResourceType = "zone"
 	AzureResourceGroup           CloudResourceType = "azure_resource_group"
 	CertCloudResType             CloudResourceType = "cert"
+	ClbCloudResType              CloudResourceType = "clb"
 )

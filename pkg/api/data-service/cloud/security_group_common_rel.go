@@ -25,6 +25,7 @@ import (
 	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 )
 
@@ -37,10 +38,10 @@ type SGCommonRelBatchCreateReq struct {
 
 // SGCommonRelCreate ...
 type SGCommonRelCreate struct {
-	SecurityGroupID string `json:"security_group_id" validate:"required"`
-	ResID           string `json:"res_id" validate:"required"`
-	ResType         string `json:"res_type" validate:"omitempty"`
-	Priority        int64  `json:"priority" validate:"omitempty"`
+	SecurityGroupID string            `json:"security_group_id" validate:"required"`
+	ResID           string            `json:"res_id" validate:"required"`
+	ResType         meta.ResourceType `json:"res_type" validate:"omitempty"`
+	Priority        int64             `json:"priority" validate:"omitempty"`
 }
 
 // Validate security group common rel create request.

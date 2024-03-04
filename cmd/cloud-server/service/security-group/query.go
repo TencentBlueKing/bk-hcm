@@ -351,3 +351,49 @@ func (svc *securityGroupSvc) listSGByCvmIDForAzure(kt *kit.Kit, cvmID string) (i
 
 	return sgs, nil
 }
+
+// ListSecurityGroupsByClbID list security groups by clb_id.
+func (svc *securityGroupSvc) ListSecurityGroupsByClbID(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSGByClbID(cts, handler.ResOperateAuth)
+}
+
+// ListBizSecurityGroupsByClbID list biz security groups by clb_id.
+func (svc *securityGroupSvc) ListBizSecurityGroupsByClbID(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSGByClbID(cts, handler.BizOperateAuth)
+}
+
+func (svc *securityGroupSvc) listSGByClbID(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
+	resID := cts.PathParameter("clb_id").String()
+	if len(resID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "clb_id is required")
+	}
+
+	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.ClbCloudResType, resID)
+	if err != nil {
+		logs.Errorf("get resource vendor failed, err: %s, resID: %s, rid: %s", err, resID, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
+		Action: meta.Find, BasicInfo: baseInfo})
+	if err != nil {
+		logs.Errorf("list security group by clbID failed, id: %s, err: %v, rid: %s", resID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	listReq := &dataproto.SGCommonRelWithSecurityGroupListReq{
+		ResIDs: []string{resID},
+	}
+	result, err := svc.client.DataService().Global.SGCommonRel.ListWithSecurityGroup(cts.Kit.Ctx,
+		cts.Kit.Header(), listReq)
+	if err != nil {
+		logs.Errorf("list security group by res_id failed, resID: %s, err: %v, req: %v, rid: %s",
+			resID, err, cts.Kit.Rid, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return result, nil
+}

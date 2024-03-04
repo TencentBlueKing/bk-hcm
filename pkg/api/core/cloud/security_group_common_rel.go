@@ -19,25 +19,27 @@
 
 package cloud
 
+import "hcm/pkg/iam/meta"
+
 // SecurityGroupCommonRel define security group common rel.
 type SecurityGroupCommonRel struct {
-	ID              uint64 `json:"id"`
-	ResID           string `json:"res_id"`
-	ResType         string `json:"res_type"`
-	Priority        int64  `json:"priority"`
-	SecurityGroupID string `json:"security_group_id"`
-	Creator         string `json:"creator"`
-	Reviser         string `json:"reviser"`
-	CreatedAt       string `json:"created_at"`
-	UpdatedAt       string `json:"updated_at"`
+	ID              uint64            `json:"id"`
+	ResID           string            `json:"res_id"`
+	ResType         meta.ResourceType `json:"res_type"`
+	Priority        int64             `json:"priority"`
+	SecurityGroupID string            `json:"security_group_id"`
+	Creator         string            `json:"creator"`
+	Reviser         string            `json:"reviser"`
+	CreatedAt       string            `json:"created_at"`
+	UpdatedAt       string            `json:"updated_at"`
 }
 
 // SGCommonRelWithBaseSecurityGroup define security group with common id.
 type SGCommonRelWithBaseSecurityGroup struct {
 	BaseSecurityGroup `json:",inline"`
-	ResID             string `json:"res_id"`
-	ResType           string `json:"res_type"`
-	Priority          int64  `json:"priority"`
-	RelCreator        string `db:"rel_creator" json:"rel_creator"`
-	RelCreatedAt      string `db:"rel_created_at" json:"rel_created_at"`
+	ResID             string            `json:"res_id"`
+	ResType           meta.ResourceType `json:"res_type"`
+	Priority          int64             `json:"priority"`
+	RelCreator        string            `db:"rel_creator" json:"rel_creator"`
+	RelCreatedAt      string            `db:"rel_created_at" json:"rel_created_at"`
 }
