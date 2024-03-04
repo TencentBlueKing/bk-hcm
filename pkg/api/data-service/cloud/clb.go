@@ -26,7 +26,6 @@ import (
 	coreclb "hcm/pkg/api/core/cloud/clb"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 )
@@ -46,22 +45,22 @@ type ClbBatchCreate[Extension coreclb.Extension] struct {
 	AccountID string `json:"account_id" validate:"required"`
 	BkBizID   int64  `json:"bk_biz_id" validate:"omitempty"`
 
-	Region               string          `json:"region" validate:"omitempty"`
-	Zones                types.JsonField `json:"zones"`
-	BackupZones          types.JsonField `json:"backup_zones"`
-	VpcID                string          `json:"vpc_id" validate:"omitempty"`
-	CloudVpcID           string          `json:"cloud_vpc_id" validate:"omitempty"`
-	SubnetID             string          `json:"subnet_id" validate:"omitempty"`
-	CloudSubnetID        string          `json:"cloud_subnet_id" validate:"omitempty"`
-	PrivateIPv4Addresses types.JsonField `json:"private_ipv4_addresses"`
-	PrivateIPv6Addresses types.JsonField `json:"private_ipv6_addresses"`
-	PublicIPv4Addresses  types.JsonField `json:"public_ipv4_addresses"`
-	PublicIPv6Addresses  types.JsonField `json:"public_ipv6_addresses"`
-	Domain               string          `json:"domain"`
-	Status               string          `json:"status"`
-	CloudCreatedTime     string          `json:"cloud_created_time"`
-	CloudStatusTime      string          `json:"cloud_status_time"`
-	CloudExpiredTime     string          `json:"cloud_expired_time"`
+	Region               string   `json:"region" validate:"omitempty"`
+	Zones                []string `json:"zones"`
+	BackupZones          []string `json:"backup_zones"`
+	VpcID                string   `json:"vpc_id" validate:"omitempty"`
+	CloudVpcID           string   `json:"cloud_vpc_id" validate:"omitempty"`
+	SubnetID             string   `json:"subnet_id" validate:"omitempty"`
+	CloudSubnetID        string   `json:"cloud_subnet_id" validate:"omitempty"`
+	PrivateIPv4Addresses []string `json:"private_ipv4_addresses"`
+	PrivateIPv6Addresses []string `json:"private_ipv6_addresses"`
+	PublicIPv4Addresses  []string `json:"public_ipv4_addresses"`
+	PublicIPv6Addresses  []string `json:"public_ipv6_addresses"`
+	Domain               string   `json:"domain"`
+	Status               string   `json:"status"`
+	CloudCreatedTime     string   `json:"cloud_created_time"`
+	CloudStatusTime      string   `json:"cloud_status_time"`
+	CloudExpiredTime     string   `json:"cloud_expired_time"`
 
 	Memo      *string    `json:"memo"`
 	Extension *Extension `json:"extension"`
@@ -86,23 +85,23 @@ type ClbExtUpdateReq[T coreclb.Extension] struct {
 	AccountID string `json:"account_id"`
 	BkBizID   uint64 `json:"bk_biz_id"`
 
-	Region               string          `json:"region" validate:"omitempty"`
-	Zones                types.JsonField `json:"zones"`
-	BackupZones          types.JsonField `json:"backup_zones"`
-	VpcID                string          `json:"vpc_id" validate:"omitempty"`
-	CloudVpcID           string          `json:"cloud_vpc_id" validate:"omitempty"`
-	SubnetID             string          `json:"subnet_id" validate:"omitempty"`
-	CloudSubnetID        string          `json:"cloud_subnet_id" validate:"omitempty"`
-	PrivateIPv4Addresses types.JsonField `json:"private_ipv4_addresses"`
-	PrivateIPv6Addresses types.JsonField `json:"private_ipv6_addresses"`
-	PublicIPv4Addresses  types.JsonField `json:"public_ipv4_addresses"`
-	PublicIPv6Addresses  types.JsonField `json:"public_ipv6_addresses"`
-	Domain               string          `json:"domain"`
-	Status               string          `json:"status"`
-	CloudCreatedTime     string          `json:"cloud_created_time"`
-	CloudStatusTime      string          `json:"cloud_status_time"`
-	CloudExpiredTime     string          `json:"cloud_expired_time"`
-	Memo                 *string         `json:"memo"`
+	Region               string   `json:"region" validate:"omitempty"`
+	Zones                []string `json:"zones"`
+	BackupZones          []string `json:"backup_zones"`
+	VpcID                string   `json:"vpc_id" validate:"omitempty"`
+	CloudVpcID           string   `json:"cloud_vpc_id" validate:"omitempty"`
+	SubnetID             string   `json:"subnet_id" validate:"omitempty"`
+	CloudSubnetID        string   `json:"cloud_subnet_id" validate:"omitempty"`
+	PrivateIPv4Addresses []string `json:"private_ipv4_addresses"`
+	PrivateIPv6Addresses []string `json:"private_ipv6_addresses"`
+	PublicIPv4Addresses  []string `json:"public_ipv4_addresses"`
+	PublicIPv6Addresses  []string `json:"public_ipv6_addresses"`
+	Domain               string   `json:"domain"`
+	Status               string   `json:"status"`
+	CloudCreatedTime     string   `json:"cloud_created_time"`
+	CloudStatusTime      string   `json:"cloud_status_time"`
+	CloudExpiredTime     string   `json:"cloud_expired_time"`
+	Memo                 *string  `json:"memo"`
 
 	*core.Revision `json:",inline"`
 	Extension      *T `json:"extension"`

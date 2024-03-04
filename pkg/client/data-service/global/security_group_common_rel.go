@@ -20,15 +20,11 @@
 package global
 
 import (
-	"context"
-	"net/http"
-
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	proto "hcm/pkg/api/data-service"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/client/common"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
@@ -64,25 +60,9 @@ func (cli *SGCommonRelClient) List(kt *kit.Kit, request *core.ListReq) (*protocl
 }
 
 // ListWithSecurityGroup security group common rels with security group.
-func (cli *SGCommonRelClient) ListWithSecurityGroup(ctx context.Context, h http.Header,
-	request *protocloud.SGCommonRelWithSecurityGroupListReq) ([]corecloud.SGCommonRelWithBaseSecurityGroup, error) {
+func (cli *SGCommonRelClient) ListWithSecurityGroup(kt *kit.Kit,
+	request *protocloud.SGCommonRelWithSecurityGroupListReq) (*[]corecloud.SGCommonRelWithBaseSecurityGroup, error) {
 
-	resp := new(protocloud.SGCommonRelWithSGListResp)
-
-	err := cli.client.Post().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/security_group_common_rels/with/security_group/list").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
+	return common.Request[protocloud.SGCommonRelWithSecurityGroupListReq, []corecloud.SGCommonRelWithBaseSecurityGroup](
+		cli.client, rest.POST, kt, request, "/security_group_common_rels/with/security_group/list")
 }

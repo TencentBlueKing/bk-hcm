@@ -26,7 +26,6 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/rest"
 )
 
 // -------------------------- Create --------------------------
@@ -61,12 +60,6 @@ type SGCommonRelListResult struct {
 	Details []corecloud.SecurityGroupCommonRel `json:"details,omitempty"`
 }
 
-// SGCommonRelListResp define list resp.
-type SGCommonRelListResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          *SGCommonRelListResult `json:"data"`
-}
-
 // SGCommonRelWithSecurityGroupListReq ...
 type SGCommonRelWithSecurityGroupListReq struct {
 	ResIDs  []string                 `json:"res_ids" validate:"required,min=1"`
@@ -88,10 +81,4 @@ func (req *SGCommonRelWithSecurityGroupListReq) Validate() error {
 	}
 
 	return nil
-}
-
-// SGCommonRelWithSGListResp define list resp.
-type SGCommonRelWithSGListResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          []corecloud.SGCommonRelWithBaseSecurityGroup `json:"data"`
 }
