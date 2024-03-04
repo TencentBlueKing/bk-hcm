@@ -858,7 +858,7 @@ const types = computed(() => {
   const securityType = { name: 'group', label: t('安全组') };
   const gcpType = { name: 'gcp', label: t('GCP防火墙规则') };
   const templateType = { name: 'template', label: '参数模板' };
-  if (isAllVendor.value) {
+  if (whereAmI.value === Senarios.business || isAllVendor.value) {
     return [securityType, gcpType, templateType];
   }
   if (isGcpVendor.value) {
@@ -875,6 +875,11 @@ watch(types, () => {
   } else {
     activeType.value = 'group';
   }
+});
+watch(activeType, (val) => {
+  emit('tabchange', val);
+}, {
+  immediate: true,
 });
 // const computedSettings = computed(() => {
 //   const fields = [];

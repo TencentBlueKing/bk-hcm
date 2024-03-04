@@ -6,7 +6,7 @@ import {
 } from 'vue';
 
 import type { FilterType } from '@/typings/resource';
-import { FILTER_DATA, SEARCH_VALUE_IDS } from '@/common/constant';
+import { FILTER_DATA, SEARCH_VALUE_IDS, VendorEnum } from '@/common/constant';
 import cloneDeep  from 'lodash/cloneDeep';
 
 import {
@@ -169,6 +169,9 @@ const useFilter = (props: PropsType) => {
           ];
         }
       } else filter.value.rules = props.filter.rules;
+      if (resourceAccountStore.currentVendor === VendorEnum.GCP && props.whereAmI === ResourceManageSenario.security) {
+        filter.value.rules = filter.value.rules.filter((e: any) => e.field !== 'vendor');
+      }
       filter.value.rules = filter.value.rules.concat(answer);
     },
     {
