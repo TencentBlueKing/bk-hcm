@@ -25,6 +25,7 @@ import (
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	dataproto "hcm/pkg/api/data-service"
 	protocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
@@ -46,6 +47,31 @@ func buildSGCvmRelDeleteReq(sgID, cvmID string) *dataproto.BatchDeleteReq {
 					Field: "cvm_id",
 					Op:    filter.Equal.Factory(),
 					Value: cvmID,
+				},
+			},
+		},
+	}
+}
+
+func buildSGCommonRelDeleteReq(sgID, resID string, resType enumor.CloudResourceType) *dataproto.BatchDeleteReq {
+	return &dataproto.BatchDeleteReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "security_group_id",
+					Op:    filter.Equal.Factory(),
+					Value: sgID,
+				},
+				&filter.AtomRule{
+					Field: "res_id",
+					Op:    filter.Equal.Factory(),
+					Value: resID,
+				},
+				&filter.AtomRule{
+					Field: "res_type",
+					Op:    filter.Equal.Factory(),
+					Value: resType,
 				},
 			},
 		},

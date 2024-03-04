@@ -97,13 +97,12 @@ func (opt TCloudListOption) Validate() error {
 	return nil
 }
 
-// --------------------------[设置负载均衡实例的安全组]--------------------------
+// --------------------------[Associate 设置负载均衡实例的安全组]--------------------------
 
 // TCloudSetClbSecurityGroupReq defines options to set tcloud clb security-group request.
 type TCloudSetClbSecurityGroupReq struct {
-	AccountID      string   `json:"account_id" validate:"required"`
-	LoadBalancerID string   `json:"load_balancer_id" validate:"required"`
-	SecurityGroups []string `json:"security_groups" validate:"omitempty,max=50"`
+	LoadBalancerID   string   `json:"load_balancer_id" validate:"required"`
+	SecurityGroupIDs []string `json:"security_group_ids" validate:"omitempty,max=50"`
 }
 
 // Validate tcloud clb security-group option.
@@ -116,8 +115,33 @@ func (opt TCloudSetClbSecurityGroupReq) Validate() error {
 		return errors.New("load_balancer_id is required")
 	}
 
-	if len(opt.SecurityGroups) > constant.LoadBalancerBindSecurityGroupMaxLimit {
-		return fmt.Errorf("invalid page.limit max value: %d", constant.LoadBalancerBindSecurityGroupMaxLimit)
+	if len(opt.SecurityGroupIDs) > constant.LoadBalancerBindSecurityGroupMaxLimit {
+		return fmt.Errorf("invalid security_group_ids max value: %d", constant.LoadBalancerBindSecurityGroupMaxLimit)
+	}
+
+	return nil
+}
+
+// --------------------------[DisAssociate 设置负载均衡实例的安全组]--------------------------
+
+// TCloudDisAssociateClbSecurityGroupReq defines options to DisAssociate tcloud clb security-group request.
+type TCloudDisAssociateClbSecurityGroupReq struct {
+	LoadBalancerID  string `json:"load_balancer_id" validate:"required"`
+	SecurityGroupID string `json:"security_group_id" validate:"required"`
+}
+
+// Validate tcloud clb security-group option.
+func (opt TCloudDisAssociateClbSecurityGroupReq) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.LoadBalancerID) == 0 {
+		return errors.New("load_balancer_id is required")
+	}
+
+	if len(opt.SecurityGroupID) == 0 {
+		return errors.New("security_group_id is required")
 	}
 
 	return nil

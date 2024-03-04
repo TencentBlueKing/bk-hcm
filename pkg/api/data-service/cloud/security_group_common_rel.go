@@ -69,8 +69,8 @@ type SGCommonRelListResp struct {
 
 // SGCommonRelWithSecurityGroupListReq ...
 type SGCommonRelWithSecurityGroupListReq struct {
-	ResIDs  []string `json:"res_ids" validate:"required,min=1"`
-	ResType string   `json:"res_type" validate:"required"`
+	ResIDs  []string                 `json:"res_ids" validate:"required,min=1"`
+	ResType enumor.CloudResourceType `json:"res_type" validate:"required"`
 }
 
 // Validate SGCommonRelWithSecurityGroupListReq.

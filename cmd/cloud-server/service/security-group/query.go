@@ -370,13 +370,12 @@ func (svc *securityGroupSvc) listSGByResID(cts *rest.Contexts, validHandler hand
 		return nil, errf.New(errf.InvalidParameter, "res_id is required")
 	}
 
-	resType := cts.PathParameter("res_type").String()
+	resType := enumor.CloudResourceType(cts.PathParameter("res_type").String())
 	if len(resType) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "res_type is required")
 	}
 
-	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(
-		cts.Kit, enumor.CloudResourceType(resType), resID)
+	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, resType, resID)
 	if err != nil {
 		logs.Errorf("get resource vendor failed, err: %s, resID: %s, resType: %s, rid: %s",
 			err, resID, resType, cts.Kit.Rid)

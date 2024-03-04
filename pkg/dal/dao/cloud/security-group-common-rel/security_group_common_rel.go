@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/cloud/clb"
 	securitygroup "hcm/pkg/dal/dao/cloud/security-group"
@@ -44,7 +45,8 @@ type Interface interface {
 	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []cloud.SecurityGroupCommonRelTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*types.ListSecurityGroupCommonRelDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
-	ListJoinSecurityGroup(kt *kit.Kit, resIDs []string, resType string) (*types.ListSGCommonRelsJoinSGDetails, error)
+	ListJoinSecurityGroup(kt *kit.Kit, resIDs []string, resType enumor.CloudResourceType) (
+		*types.ListSGCommonRelsJoinSGDetails, error)
 }
 
 var _ Interface = new(Dao)
@@ -55,7 +57,7 @@ type Dao struct {
 }
 
 // ListJoinSecurityGroup rels with security groups.
-func (dao Dao) ListJoinSecurityGroup(kt *kit.Kit, resIDs []string, resType string) (
+func (dao Dao) ListJoinSecurityGroup(kt *kit.Kit, resIDs []string, resType enumor.CloudResourceType) (
 	*types.ListSGCommonRelsJoinSGDetails, error) {
 
 	if len(resIDs) == 0 {

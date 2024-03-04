@@ -22,14 +22,20 @@ package securitygroup
 import (
 	"errors"
 
+	"hcm/pkg/adaptor/types/clb"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
+	coreclb "hcm/pkg/api/core/cloud/clb"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	proto "hcm/pkg/api/hc-service"
+	hcclb "hcm/pkg/api/hc-service/clb"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -294,6 +300,163 @@ func (g *securityGroup) UpdateTCloudSecurityGroup(cts *rest.Contexts) (interface
 
 		logs.Errorf("request dataservice BatchUpdateSecurityGroup failed, err: %v, id: %s, rid: %s", err, id,
 			cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+// TCloudSecurityGroupAssociateClb ...
+func (g *securityGroup) TCloudSecurityGroupAssociateClb(cts *rest.Contexts) (interface{}, error) {
+	req := new(hcclb.TCloudSetClbSecurityGroupReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	sgList, clbInfo, err := g.getSecurityGroupAndClb(cts.Kit, req.SecurityGroupIDs, req.LoadBalancerID)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := g.ad.TCloud(cts.Kit, clbInfo.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	sgCloudIDs := make([]string, len(sgList))
+	for _, sg := range sgList {
+		sgCloudIDs = append(sgCloudIDs, sg.CloudID)
+	}
+
+	opt := &clb.TCloudSetClbSecurityGroupOption{
+		Region:         clbInfo.Region,
+		LoadBalancerID: clbInfo.CloudID,
+		SecurityGroups: sgCloudIDs,
+	}
+	if _, err = client.SetClbSecurityGroups(cts.Kit, opt); err != nil {
+		logs.Errorf("request adaptor to tcloud security group associate clb failed, err: %v, opt: %v, rid: %s",
+			err, opt, cts.Kit.Rid)
+		return nil, err
+	}
+
+	createReq := &protocloud.SGCommonRelBatchCreateReq{Rels: make([]protocloud.SGCommonRelCreate, 0)}
+	for _, sgID := range req.SecurityGroupIDs {
+		createReq.Rels = append(createReq.Rels, protocloud.SGCommonRelCreate{
+			SecurityGroupID: sgID,
+			ResID:           req.LoadBalancerID,
+			ResType:         enumor.ClbCloudResType,
+			Priority:        constant.LoadBalancerBindSecurityGroupMaxLimit,
+		})
+	}
+
+	if err = g.dataCli.Global.SGCommonRel.BatchCreate(cts.Kit, createReq); err != nil {
+		logs.Errorf("request dataservice create security group clb rels failed, err: %v, req: %+v, rid: %s",
+			err, createReq, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+func (g *securityGroup) getSecurityGroupAndClb(kt *kit.Kit, sgIDs []string, clbID string) (
+	[]corecloud.BaseSecurityGroup, *coreclb.BaseClb, error) {
+
+	sgReq := &protocloud.SecurityGroupListReq{
+		Filter: tools.ContainersExpression("id", sgIDs),
+		Page:   core.NewDefaultBasePage(),
+	}
+	sgResult, err := g.dataCli.Global.SecurityGroup.ListSecurityGroup(kt.Ctx, kt.Header(), sgReq)
+	if err != nil {
+		logs.Errorf("request dataservice list tcloud security group failed, err: %v, ids: %v, rid: %s",
+			err, sgIDs, kt.Rid)
+		return nil, nil, err
+	}
+
+	if len(sgResult.Details) == 0 {
+		return nil, nil, errf.Newf(errf.RecordNotFound, "security group: %v not found", sgIDs)
+	}
+
+	clbReq := &core.ListReq{
+		Filter: tools.EqualExpression("id", clbID),
+		Page:   core.NewDefaultBasePage(),
+	}
+	result, err := g.dataCli.Global.LoadBalancer.ListClb(kt, clbReq)
+	if err != nil {
+		logs.Errorf("request dataservice list tcloud clb failed, err: %v, id: %s, rid: %s", err, clbID, kt.Rid)
+		return nil, nil, err
+	}
+
+	if len(result.Details) == 0 {
+		return nil, nil, errf.Newf(errf.RecordNotFound, "clb: %s not found", clbID)
+	}
+
+	return sgResult.Details, &result.Details[0], nil
+}
+
+// TCloudSecurityGroupDisassociateClb ...
+func (g *securityGroup) TCloudSecurityGroupDisassociateClb(cts *rest.Contexts) (interface{}, error) {
+	req := new(hcclb.TCloudDisAssociateClbSecurityGroupReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	_, clbInfo, err := g.getSecurityGroupAndClb(cts.Kit, []string{req.SecurityGroupID}, req.LoadBalancerID)
+	if err != nil {
+		return nil, err
+	}
+
+	sgReq := &protocloud.SGCommonRelWithSecurityGroupListReq{
+		ResIDs:  []string{req.LoadBalancerID},
+		ResType: enumor.ClbCloudResType,
+	}
+	sgComList, err := g.dataCli.Global.SGCommonRel.ListWithSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), sgReq)
+	if err != nil {
+		logs.Errorf("request dataservice list tcloud security group failed, err: %v, req: %+v, rid: %s",
+			err, req, cts.Kit.Rid)
+		return nil, err
+	}
+
+	allSGIDs := make([]string, 0)
+	existSG := false
+	for _, sg := range sgComList {
+		if sg.ID == req.SecurityGroupID {
+			existSG = true
+			continue
+		}
+		allSGIDs = append(allSGIDs, sg.CloudID)
+	}
+	if !existSG {
+		return nil, errf.Newf(errf.RecordNotFound, "not found sg id: %s", req.SecurityGroupID)
+	}
+
+	client, err := g.ad.TCloud(cts.Kit, clbInfo.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &clb.TCloudSetClbSecurityGroupOption{
+		Region:         clbInfo.Region,
+		LoadBalancerID: clbInfo.CloudID,
+		SecurityGroups: allSGIDs,
+	}
+	if _, err = client.SetClbSecurityGroups(cts.Kit, opt); err != nil {
+		logs.Errorf("request adaptor to tcloud security group disAssociate clb failed, err: %v, opt: %v, rid: %s",
+			err, opt, cts.Kit.Rid)
+		return nil, err
+	}
+
+	deleteReq := buildSGCommonRelDeleteReq(req.SecurityGroupID, req.LoadBalancerID, enumor.ClbCloudResType)
+	if err = g.dataCli.Global.SGCvmRel.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+		logs.Errorf("request dataservice delete security group clb rels failed, err: %v, req: %+v, rid: %s",
+			err, deleteReq, cts.Kit.Rid)
 		return nil, err
 	}
 

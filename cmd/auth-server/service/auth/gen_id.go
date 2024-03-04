@@ -552,3 +552,32 @@ func genCertResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resou
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
+
+// genClbResource generate clb related iam resource.
+func genClbResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	res := client.Resource{
+		System: sys.SystemIDHCM,
+		Type:   sys.Account,
+	}
+
+	// compatible for authorize any
+	if len(a.ResourceID) > 0 {
+		res.ID = a.ResourceID
+	}
+
+	bizRes := client.Resource{
+		System: sys.SystemIDCMDB,
+		Type:   sys.Biz,
+		ID:     strconv.FormatInt(a.BizID, 10),
+	}
+
+	switch a.Basic.Action {
+	case meta.Associate, meta.Disassociate:
+		if a.BizID > 0 {
+			return sys.BizIaaSResOperate, []client.Resource{bizRes}, nil
+		}
+		return sys.IaaSResOperate, []client.Resource{res}, nil
+	default:
+		return genIaaSResourceResource(a)
+	}
+}

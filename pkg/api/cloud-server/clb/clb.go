@@ -76,3 +76,16 @@ func (req *UnBindClbSecurityGroupReq) Validate() error {
 
 	return nil
 }
+
+// -------------------------- Associate --------------------------
+
+// SecurityGroupAssociateClbReq define security group associate clb option.
+type SecurityGroupAssociateClbReq struct {
+	ClbID            string   `json:"clb_id" validate:"required"`
+	SecurityGroupIDs []string `json:"security_group_ids" validate:"required,max=50"`
+}
+
+// Validate security group associate clb request.
+func (req *SecurityGroupAssociateClbReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

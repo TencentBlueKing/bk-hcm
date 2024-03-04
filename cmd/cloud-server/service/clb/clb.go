@@ -21,8 +21,6 @@
 package clb
 
 import (
-	"net/http"
-
 	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/logics/cvm"
 	"hcm/cmd/cloud-server/logics/disk"
@@ -35,20 +33,16 @@ import (
 
 // InitService initialize the clb service.
 func InitService(c *capability.Capability) {
-	svc := &clbSvc{
-		client:     c.ApiClient,
-		authorizer: c.Authorizer,
-		audit:      c.Audit,
-		cvmLgc:     c.Logics.Cvm,
-	}
+	//svc := &clbSvc{
+	//	client:     c.ApiClient,
+	//	authorizer: c.Authorizer,
+	//	audit:      c.Audit,
+	//	cvmLgc:     c.Logics.Cvm,
+	//}
 
 	h := rest.NewHandler()
 
 	// clb apis in biz
-	h.Add("BatchBindSecurityGroupBizClb", http.MethodPost, "/bizs/{bk_biz_id}/clbs/associate/security_groups",
-		svc.BatchBindSecurityGroupBizClb)
-	h.Add("UnBindSecurityGroupBizClb", http.MethodPost, "/bizs/{bk_biz_id}/clbs/disassociate/security_group",
-		svc.UnBindSecurityGroupBizClb)
 
 	h.Load(c.WebService)
 }
