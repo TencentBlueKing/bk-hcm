@@ -38,10 +38,10 @@ func (svc *sgComRelSvc) ListWithSecurityGroup(cts *rest.Contexts) (interface{}, 
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	details, err := svc.dao.SGCommonRel().ListJoinSecurityGroup(cts.Kit, req.ResIDs)
+	details, err := svc.dao.SGCommonRel().ListJoinSecurityGroup(cts.Kit, req.ResIDs, req.ResType)
 	if err != nil {
-		logs.Errorf("list sg common rels join security group failed, err: %v, resIDs: %v, rid: %s", err,
-			req.ResIDs, cts.Kit.Rid)
+		logs.Errorf("list sg common rels join security group failed, err: %v, resIDs: %v, resType: %s, rid: %s",
+			err, req.ResIDs, req.ResType, cts.Kit.Rid)
 		return nil, err
 	}
 

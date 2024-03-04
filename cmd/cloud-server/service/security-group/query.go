@@ -352,27 +352,34 @@ func (svc *securityGroupSvc) listSGByCvmIDForAzure(kt *kit.Kit, cvmID string) (i
 	return sgs, nil
 }
 
-// ListSecurityGroupsByClbID list security groups by clb_id.
-func (svc *securityGroupSvc) ListSecurityGroupsByClbID(cts *rest.Contexts) (interface{}, error) {
-	return svc.listSGByClbID(cts, handler.ResOperateAuth)
+// ListSecurityGroupsByResID list security groups by res_id.
+func (svc *securityGroupSvc) ListSecurityGroupsByResID(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSGByResID(cts, handler.ResOperateAuth)
 }
 
-// ListBizSecurityGroupsByClbID list biz security groups by clb_id.
-func (svc *securityGroupSvc) ListBizSecurityGroupsByClbID(cts *rest.Contexts) (interface{}, error) {
-	return svc.listSGByClbID(cts, handler.BizOperateAuth)
+// ListBizSecurityGroupsByResID list biz security groups by res_id.
+func (svc *securityGroupSvc) ListBizSecurityGroupsByResID(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSGByResID(cts, handler.BizOperateAuth)
 }
 
-func (svc *securityGroupSvc) listSGByClbID(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+func (svc *securityGroupSvc) listSGByResID(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
 	interface{}, error) {
 
-	resID := cts.PathParameter("clb_id").String()
+	resID := cts.PathParameter("res_id").String()
 	if len(resID) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "clb_id is required")
+		return nil, errf.New(errf.InvalidParameter, "res_id is required")
 	}
 
-	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.ClbCloudResType, resID)
+	resType := cts.PathParameter("res_type").String()
+	if len(resType) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "res_type is required")
+	}
+
+	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(
+		cts.Kit, enumor.CloudResourceType(resType), resID)
 	if err != nil {
-		logs.Errorf("get resource vendor failed, err: %s, resID: %s, rid: %s", err, resID, cts.Kit.Rid)
+		logs.Errorf("get resource vendor failed, err: %s, resID: %s, resType: %s, rid: %s",
+			err, resID, resType, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -380,12 +387,13 @@ func (svc *securityGroupSvc) listSGByClbID(cts *rest.Contexts, validHandler hand
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
 		Action: meta.Find, BasicInfo: baseInfo})
 	if err != nil {
-		logs.Errorf("list security group by clbID failed, id: %s, err: %v, rid: %s", resID, err, cts.Kit.Rid)
+		logs.Errorf("list security group by resID failed, id: %s, err: %v, rid: %s", resID, err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	listReq := &dataproto.SGCommonRelWithSecurityGroupListReq{
-		ResIDs: []string{resID},
+		ResIDs:  []string{resID},
+		ResType: resType,
 	}
 	result, err := svc.client.DataService().Global.SGCommonRel.ListWithSecurityGroup(cts.Kit.Ctx,
 		cts.Kit.Header(), listReq)

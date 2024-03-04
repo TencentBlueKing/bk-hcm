@@ -102,7 +102,7 @@ func (svc *clbSvc) bindSecurityGroupBizClb(cts *rest.Contexts, validHandler hand
 		sgComReq.Rels = append(sgComReq.Rels, dataproto.SGCommonRelCreate{
 			SecurityGroupID: tmpSGID,
 			ResID:           req.ClbID,
-			ResType:         meta.Clb,
+			ResType:         enumor.ClbCloudResType,
 			Priority:        tmpPriority,
 		})
 	}

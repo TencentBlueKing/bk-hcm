@@ -24,8 +24,8 @@ import (
 
 	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 )
 
@@ -38,10 +38,10 @@ type SGCommonRelBatchCreateReq struct {
 
 // SGCommonRelCreate ...
 type SGCommonRelCreate struct {
-	SecurityGroupID string            `json:"security_group_id" validate:"required"`
-	ResID           string            `json:"res_id" validate:"required"`
-	ResType         meta.ResourceType `json:"res_type" validate:"omitempty"`
-	Priority        int64             `json:"priority" validate:"omitempty"`
+	SecurityGroupID string                   `json:"security_group_id" validate:"required"`
+	ResID           string                   `json:"res_id" validate:"required"`
+	ResType         enumor.CloudResourceType `json:"res_type" validate:"omitempty"`
+	Priority        int64                    `json:"priority" validate:"omitempty"`
 }
 
 // Validate security group common rel create request.
@@ -69,12 +69,25 @@ type SGCommonRelListResp struct {
 
 // SGCommonRelWithSecurityGroupListReq ...
 type SGCommonRelWithSecurityGroupListReq struct {
-	ResIDs []string `json:"res_ids" validate:"required,min=1"`
+	ResIDs  []string `json:"res_ids" validate:"required,min=1"`
+	ResType string   `json:"res_type" validate:"required"`
 }
 
 // Validate SGCommonRelWithSecurityGroupListReq.
 func (req *SGCommonRelWithSecurityGroupListReq) Validate() error {
-	return validator.Validate.Struct(req)
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	if len(req.ResIDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("res_ids count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	if len(req.ResType) == 0 {
+		return fmt.Errorf("res_type is required")
+	}
+
+	return nil
 }
 
 // SGCommonRelWithSGListResp define list resp.

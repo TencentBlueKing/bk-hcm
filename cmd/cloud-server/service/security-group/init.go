@@ -46,7 +46,8 @@ func InitSecurityGroupService(c *capability.Capability) {
 	h.Add("BatchDeleteSecurityGroup", http.MethodDelete, "/security_groups/batch", svc.BatchDeleteSecurityGroup)
 	h.Add("ListSecurityGroup", http.MethodPost, "/security_groups/list", svc.ListSecurityGroup)
 	h.Add("ListSecurityGroupsByCvmID", http.MethodGet, "/security_groups/cvms/{cvm_id}", svc.ListSecurityGroupsByCvmID)
-	h.Add("ListSecurityGroupsByClbID", http.MethodGet, "/security_groups/clbs/{clb_id}", svc.ListSecurityGroupsByClbID)
+	h.Add("ListSecurityGroupsByResID", http.MethodGet, "/security_groups/res/{res_type}/{res_id}",
+		svc.ListSecurityGroupsByResID)
 	h.Add("AssignSecurityGroupToBiz", http.MethodPost, "/security_groups/assign/bizs", svc.AssignSecurityGroupToBiz)
 	h.Add("AssociateCvm", http.MethodPost, "/security_groups/associate/cvms", svc.AssociateCvm)
 	h.Add("DisassociateCvm", http.MethodPost, "/security_groups/disassociate/cvms", svc.DisassociateCvm)
