@@ -35,10 +35,6 @@ type BatchBindClbSecurityGroupReq struct {
 
 // Validate validate.
 func (req *BatchBindClbSecurityGroupReq) Validate() error {
-	if err := validator.Validate.Struct(req); err != nil {
-		return err
-	}
-
 	if len(req.ClbID) == 0 {
 		return errors.New("clb_id is required")
 	}
@@ -51,7 +47,7 @@ func (req *BatchBindClbSecurityGroupReq) Validate() error {
 		return fmt.Errorf("security_group_ids should <= %d", constant.LoadBalancerBindSecurityGroupMaxLimit)
 	}
 
-	return nil
+	return validator.Validate.Struct(req)
 }
 
 // UnBindClbSecurityGroupReq unbind clb security group req.
@@ -62,10 +58,6 @@ type UnBindClbSecurityGroupReq struct {
 
 // Validate validate.
 func (req *UnBindClbSecurityGroupReq) Validate() error {
-	if err := validator.Validate.Struct(req); err != nil {
-		return err
-	}
-
 	if len(req.ClbID) == 0 {
 		return errors.New("clb_id is required")
 	}
@@ -74,7 +66,7 @@ func (req *UnBindClbSecurityGroupReq) Validate() error {
 		return errors.New("security_group_id is required")
 	}
 
-	return nil
+	return validator.Validate.Struct(req)
 }
 
 // -------------------------- Associate --------------------------

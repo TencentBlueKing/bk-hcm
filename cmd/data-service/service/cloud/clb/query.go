@@ -30,7 +30,6 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
 	tableclb "hcm/pkg/dal/table/cloud/clb"
-	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
@@ -64,20 +63,15 @@ func (svc *clbSvc) ListClb(cts *rest.Contexts) (interface{}, error) {
 
 	details := make([]coreclb.BaseClb, 0, len(result.Details))
 	for _, one := range result.Details {
-		tmpOne, tErr := convTableToBaseClb(&one)
-		if tErr != nil {
-			logs.Errorf("list loop clb detail failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			continue
-		}
-
+		tmpOne := convTableToBaseClb(&one)
 		details = append(details, *tmpOne)
 	}
 
 	return &protocloud.ClbListResult{Details: details}, nil
 }
 
-func convTableToBaseClb(one *tableclb.LoadBalancerTable) (*coreclb.BaseClb, error) {
-	base := &coreclb.BaseClb{
+func convTableToBaseClb(one *tableclb.LoadBalancerTable) *coreclb.BaseClb {
+	return &coreclb.BaseClb{
 		ID:                   one.ID,
 		CloudID:              one.CloudID,
 		Name:                 one.Name,
@@ -108,8 +102,6 @@ func convTableToBaseClb(one *tableclb.LoadBalancerTable) (*coreclb.BaseClb, erro
 			UpdatedAt: one.UpdatedAt.String(),
 		},
 	}
-
-	return base, nil
 }
 
 // ListClbExt list clb ext.
@@ -141,23 +133,18 @@ func (svc *clbSvc) ListClbExt(cts *rest.Contexts) (interface{}, error) {
 
 	switch vendor {
 	case enumor.TCloud:
-		return convClbListResult[coreclb.TCloudClbExtension](cts.Kit, data.Details)
+		return convClbListResult[coreclb.TCloudClbExtension](data.Details)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
 	}
 }
 
-func convClbListResult[T coreclb.Extension](kt *kit.Kit, tables []tableclb.LoadBalancerTable) (
+func convClbListResult[T coreclb.Extension](tables []tableclb.LoadBalancerTable) (
 	*protocloud.ClbExtListResult[T], error) {
 
 	details := make([]coreclb.Clb[T], 0, len(tables))
 	for _, one := range tables {
-		tmpClb, err := convTableToBaseClb(&one)
-		if err != nil {
-			logs.Errorf("list loop clb detail failed, err: %v, rid: %s", err, kt.Rid)
-			continue
-		}
-
+		tmpClb := convTableToBaseClb(&one)
 		extension := new(T)
 		details = append(details, coreclb.Clb[T]{
 			BaseClb:   *tmpClb,
