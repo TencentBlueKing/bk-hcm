@@ -69,31 +69,31 @@ var LoadBalancerColumnsDescriptor = utils.ColumnDescriptors{
 
 // LoadBalancerTable 负载均衡表
 type LoadBalancerTable struct {
-	ID                   string          `db:"id" validate:"lte=64" json:"id"`
-	CloudID              string          `db:"cloud_id" validate:"lte=255" json:"cloud_id"`
-	Name                 string          `db:"name" validate:"lte=255" json:"name"`
-	Vendor               enumor.Vendor   `db:"vendor" validate:"lte=16"  json:"vendor"`
-	AccountID            string          `db:"account_id" validate:"lte=64" json:"account_id"`
-	BkBizID              int64           `db:"bk_biz_id" json:"bk_biz_id"`
-	Region               string          `db:"region" validate:"lte=20" json:"region"`
-	Zones                types.JsonField `db:"zones" validate:"lte=20" json:"zones"`
-	BackupZones          types.JsonField `db:"backup_zones" json:"backup_zones"`
-	LBType               string          `db:"lb_type" json:"lb_type"`
-	VpcID                string          `db:"vpc_id" json:"vpc_id"`
-	CloudVpcID           string          `db:"cloud_vpc_id" json:"cloud_vpc_id"`
-	SubnetID             string          `db:"subnet_id" json:"subnet_id"`
-	CloudSubnetID        string          `db:"cloud_subnet_id" validate:"-" json:"cloud_subnet_id"`
-	PrivateIPv4Addresses types.JsonField `db:"private_ipv4_addresses" validate:"-" json:"private_ipv4_addresses"`
-	PrivateIPv6Addresses types.JsonField `db:"private_ipv6_addresses" validate:"-" json:"private_ipv6_addresses"`
-	PublicIPv4Addresses  types.JsonField `db:"public_ipv4_addresses" json:"public_ipv4_addresses"`
-	PublicIPv6Addresses  types.JsonField `db:"public_ipv6_addresses" json:"public_ipv6_addresses"`
-	Domain               string          `db:"domain" json:"domain"`
-	Status               string          `db:"status" json:"status"`
-	Memo                 string          `db:"memo" json:"memo"`
-	CloudCreatedTime     string          `db:"cloud_created_time" json:"cloud_created_time"`
-	CloudStatusTime      string          `db:"cloud_status_time" json:"cloud_status_time"`
-	CloudExpiredTime     string          `db:"cloud_expired_time" json:"cloud_expired_time"`
-	Extension            types.JsonField `db:"extension" json:"extension"`
+	ID                   string            `db:"id" validate:"lte=64" json:"id"`
+	CloudID              string            `db:"cloud_id" validate:"lte=255" json:"cloud_id"`
+	Name                 string            `db:"name" validate:"lte=255" json:"name"`
+	Vendor               enumor.Vendor     `db:"vendor" validate:"lte=16"  json:"vendor"`
+	AccountID            string            `db:"account_id" validate:"lte=64" json:"account_id"`
+	BkBizID              int64             `db:"bk_biz_id" json:"bk_biz_id"`
+	Region               string            `db:"region" validate:"lte=20" json:"region"`
+	Zones                types.StringArray `db:"zones" validate:"lte=20" json:"zones"`
+	BackupZones          types.StringArray `db:"backup_zones" json:"backup_zones"`
+	LBType               string            `db:"lb_type" json:"lb_type"`
+	VpcID                string            `db:"vpc_id" json:"vpc_id"`
+	CloudVpcID           string            `db:"cloud_vpc_id" json:"cloud_vpc_id"`
+	SubnetID             string            `db:"subnet_id" json:"subnet_id"`
+	CloudSubnetID        string            `db:"cloud_subnet_id" validate:"-" json:"cloud_subnet_id"`
+	PrivateIPv4Addresses types.StringArray `db:"private_ipv4_addresses" validate:"-" json:"private_ipv4_addresses"`
+	PrivateIPv6Addresses types.StringArray `db:"private_ipv6_addresses" validate:"-" json:"private_ipv6_addresses"`
+	PublicIPv4Addresses  types.StringArray `db:"public_ipv4_addresses" json:"public_ipv4_addresses"`
+	PublicIPv6Addresses  types.StringArray `db:"public_ipv6_addresses" json:"public_ipv6_addresses"`
+	Domain               string            `db:"domain" json:"domain"`
+	Status               string            `db:"status" json:"status"`
+	Memo                 string            `db:"memo" json:"memo"`
+	CloudCreatedTime     string            `db:"cloud_created_time" json:"cloud_created_time"`
+	CloudStatusTime      string            `db:"cloud_status_time" json:"cloud_status_time"`
+	CloudExpiredTime     string            `db:"cloud_expired_time" json:"cloud_expired_time"`
+	Extension            types.JsonField   `db:"extension" json:"extension"`
 
 	Creator   string     `db:"creator" validate:"lte=64" json:"creator"`
 	Reviser   string     `db:"reviser" validate:"lte=64" json:"reviser"`

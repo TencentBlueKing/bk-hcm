@@ -81,4 +81,6 @@ const (
 	CloudSelectionDataSource ResourceType = "cloud_selection_data_source"
 	// Cert defines cert hcm auth resource type
 	Cert ResourceType = "cert"
+	// Clb defines clb hcm auth resource type
+	Clb ResourceType = "clb"
 )

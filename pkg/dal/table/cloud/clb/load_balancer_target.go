@@ -61,18 +61,18 @@ type LoadBalancerTargetTable struct {
 	ID        string `db:"id" validate:"lte=64" json:"id"`
 	AccountID string `db:"account_id" validate:"lte=64" json:"account_id"`
 
-	InstType           string          `db:"inst_type" validate:"lte=255" json:"inst_type"`
-	InstID             string          `db:"inst_id" validate:"lte=255" json:"inst_id"`
-	CloudInstID        string          `db:"cloud_inst_id" validate:"lte=255" json:"cloud_inst_id"`
-	InstName           string          `db:"inst_name" validate:"lte=255" json:"inst_name"`
-	TargetGroupID      string          `db:"target_group_id" validate:"lte=255" json:"target_group_id"`
-	CloudTargetGroupID string          `db:"cloud_target_group_id" validate:"lte=255" json:"cloud_target_group_id"`
-	Port               int64           `db:"port" json:"port"`
-	Weight             int64           `db:"weight" json:"weight"`
-	PrivateIPAddress   types.JsonField `db:"private_ip_address" json:"private_ip_address"`
-	PublicIPAddress    types.JsonField `db:"public_ip_address" json:"public_ip_address"`
-	Zone               string          `db:"zone" json:"zone"`
-	Memo               string          `db:"memo" json:"memo"`
+	InstType           string            `db:"inst_type" validate:"lte=255" json:"inst_type"`
+	InstID             string            `db:"inst_id" validate:"lte=255" json:"inst_id"`
+	CloudInstID        string            `db:"cloud_inst_id" validate:"lte=255" json:"cloud_inst_id"`
+	InstName           string            `db:"inst_name" validate:"lte=255" json:"inst_name"`
+	TargetGroupID      string            `db:"target_group_id" validate:"lte=255" json:"target_group_id"`
+	CloudTargetGroupID string            `db:"cloud_target_group_id" validate:"lte=255" json:"cloud_target_group_id"`
+	Port               int64             `db:"port" json:"port"`
+	Weight             int64             `db:"weight" json:"weight"`
+	PrivateIPAddress   types.StringArray `db:"private_ip_address" json:"private_ip_address"`
+	PublicIPAddress    types.StringArray `db:"public_ip_address" json:"public_ip_address"`
+	Zone               string            `db:"zone" json:"zone"`
+	Memo               string            `db:"memo" json:"memo"`
 
 	Creator   string     `db:"creator" validate:"lte=64" json:"creator"`
 	Reviser   string     `db:"reviser" validate:"lte=64" json:"reviser"`

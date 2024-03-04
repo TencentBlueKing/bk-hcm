@@ -22,6 +22,7 @@ package types
 import (
 	"time"
 
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/table/cloud"
 )
 
@@ -40,8 +41,9 @@ type ListSGCommonRelsJoinSGDetails struct {
 // SecurityGroupWithCommonID security group with common id.
 type SecurityGroupWithCommonID struct {
 	cloud.SecurityGroupTable `db:",inline" json:",inline"`
-	ResID                    string     `db:"res_id" json:"res_id"`
-	Priority                 int64      `db:"priority" json:"priority"`
-	RelCreator               string     `db:"rel_creator" json:"rel_creator"`
-	RelCreatedAt             *time.Time `db:"rel_created_at" json:"rel_created_at"`
+	ResID                    string                   `db:"res_id" json:"res_id"`
+	ResType                  enumor.CloudResourceType `db:"res_type" json:"res_type"`
+	Priority                 int64                    `db:"priority" json:"priority"`
+	RelCreator               string                   `db:"rel_creator" json:"rel_creator"`
+	RelCreatedAt             *time.Time               `db:"rel_created_at" json:"rel_created_at"`
 }
