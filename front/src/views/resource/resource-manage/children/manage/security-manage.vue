@@ -876,6 +876,11 @@ watch(types, () => {
     activeType.value = 'group';
   }
 });
+watch(activeType, (val) => {
+  emit('tabchange', val);
+}, {
+  immediate: true,
+});
 // const computedSettings = computed(() => {
 //   const fields = [];
 //   const columns = securityType.value === 'group' ? groupColumns : gcpColumns;
