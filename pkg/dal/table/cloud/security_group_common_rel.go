@@ -49,16 +49,16 @@ var SecurityGroupCommonRelColumnDescriptor = utils.ColumnDescriptors{
 
 // SecurityGroupCommonRelTable define security group common rel table.
 type SecurityGroupCommonRelTable struct {
-	ID              uint64        `db:"id" json:"id"`
-	Vendor          enumor.Vendor `db:"vendor" validate:"lte=16" json:"vendor"`
-	ResID           string        `db:"res_id" validate:"lte=64" json:"res_id"`
-	ResType         string        `db:"res_type" validate:"required,lte=64" json:"res_type"`
-	Priority        int64         `db:"priority" validate:"min=0,max=65535" json:"priority"`
-	SecurityGroupID string        `db:"security_group_id" validate:"required,lte=64" json:"security_group_id"`
-	Creator         string        `db:"creator" validate:"lte=64" json:"creator"`
-	Reviser         string        `db:"reviser" validate:"lte=64" json:"reviser"`
-	CreatedAt       types.Time    `db:"created_at" validate:"excluded_unless" json:"created_at"`
-	UpdatedAt       types.Time    `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
+	ID              uint64                   `db:"id" json:"id"`
+	Vendor          enumor.Vendor            `db:"vendor" validate:"lte=16" json:"vendor"`
+	ResID           string                   `db:"res_id" validate:"lte=64" json:"res_id"`
+	ResType         enumor.CloudResourceType `db:"res_type" validate:"required,lte=64" json:"res_type"`
+	Priority        int64                    `db:"priority" validate:"min=0,max=65535" json:"priority"`
+	SecurityGroupID string                   `db:"security_group_id" validate:"required,lte=64" json:"security_group_id"`
+	Creator         string                   `db:"creator" validate:"lte=64" json:"creator"`
+	Reviser         string                   `db:"reviser" validate:"lte=64" json:"reviser"`
+	CreatedAt       types.Time               `db:"created_at" validate:"excluded_unless" json:"created_at"`
+	UpdatedAt       types.Time               `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
 }
 
 // TableName return security group and common rel table name.

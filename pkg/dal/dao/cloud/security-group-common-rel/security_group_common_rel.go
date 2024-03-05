@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/cloud/clb"
 	securitygroup "hcm/pkg/dal/dao/cloud/security-group"
@@ -44,7 +45,8 @@ type Interface interface {
 	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []cloud.SecurityGroupCommonRelTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*types.ListSecurityGroupCommonRelDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
-	ListJoinSecurityGroup(kt *kit.Kit, resIDs []string) (*types.ListSGCommonRelsJoinSGDetails, error)
+	ListJoinSecurityGroup(kt *kit.Kit, resIDs []string, resType enumor.CloudResourceType) (
+		*types.ListSGCommonRelsJoinSGDetails, error)
 }
 
 var _ Interface = new(Dao)
@@ -55,20 +57,27 @@ type Dao struct {
 }
 
 // ListJoinSecurityGroup rels with security groups.
-func (dao Dao) ListJoinSecurityGroup(kt *kit.Kit, resIDs []string) (*types.ListSGCommonRelsJoinSGDetails, error) {
+func (dao Dao) ListJoinSecurityGroup(kt *kit.Kit, resIDs []string, resType enumor.CloudResourceType) (
+	*types.ListSGCommonRelsJoinSGDetails, error) {
+
 	if len(resIDs) == 0 {
 		return nil, errf.Newf(errf.InvalidParameter, "res ids is required")
 	}
 
-	sql := fmt.Sprintf(`SELECT %s, %s FROM %s as rel left join %s AS sg ON rel.security_group_id = sg.id 
-	where res_id in (:res_ids)`,
-		cloud.SecurityGroupColumns.FieldsNamedExprWithout(types.DefaultRelJoinWithoutField),
+	var withoutFields = []string{"vendor", "reviser", "updated_at"}
+	withoutFields = append(withoutFields, types.DefaultRelJoinWithoutField...)
+	sql := fmt.Sprintf(`SELECT %s, %s, sg.vendor AS vendor,sg.reviser AS reviser,sg.updated_at AS updated_at,
+		rel.res_type,rel.priority FROM %s AS rel LEFT JOIN %s AS sg ON rel.security_group_id = sg.id 
+		WHERE res_id IN (:res_ids) AND res_type = :res_type`,
+		cloud.SecurityGroupColumns.FieldsNamedExprWithout(withoutFields),
 		tools.BaseRelJoinSqlBuild("rel", "sg", "id", "res_id"),
 		table.SecurityGroupCommonRelTable, table.SecurityGroupTable)
 
 	details := make([]types.SecurityGroupWithCommonID, 0)
-	if err := dao.Orm.Do().Select(kt.Ctx, &details, sql, map[string]interface{}{"res_ids": resIDs}); err != nil {
-		logs.ErrorJson("select sg common rels join sg failed, err: %v, sql: (%s), rid: %s", err, sql, kt.Rid)
+	updateMap := map[string]interface{}{"res_ids": resIDs, "res_type": resType}
+	if err := dao.Orm.Do().Select(kt.Ctx, &details, sql, updateMap); err != nil {
+		logs.Errorf("select sg common rels join sg failed, err: %v, sql: (%s), resIDs: %v, resType: %s, rid: %s",
+			err, resIDs, resType, sql, kt.Rid)
 		return nil, err
 	}
 

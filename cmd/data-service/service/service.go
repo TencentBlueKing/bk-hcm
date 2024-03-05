@@ -38,6 +38,7 @@ import (
 	accountbizrel "hcm/cmd/data-service/service/cloud/account-biz-rel"
 	"hcm/cmd/data-service/service/cloud/bill"
 	"hcm/cmd/data-service/service/cloud/cert"
+	"hcm/cmd/data-service/service/cloud/clb"
 	"hcm/cmd/data-service/service/cloud/cvm"
 	"hcm/cmd/data-service/service/cloud/disk"
 	diskcvmrel "hcm/cmd/data-service/service/cloud/disk-cvm-rel"
@@ -49,6 +50,7 @@ import (
 	"hcm/cmd/data-service/service/cloud/region"
 	resourcegroup "hcm/cmd/data-service/service/cloud/resource-group"
 	routetable "hcm/cmd/data-service/service/cloud/route-table"
+	sgcomrel "hcm/cmd/data-service/service/cloud/security-group-common-rel"
 	sgcvmrel "hcm/cmd/data-service/service/cloud/security-group-cvm-rel"
 	subaccount "hcm/cmd/data-service/service/cloud/sub-account"
 	sync "hcm/cmd/data-service/service/cloud/sync"
@@ -215,6 +217,8 @@ func (s *Service) apiSet() *restful.Container {
 	user.InitService(capability)
 	cloudselection.InitService(capability)
 	cert.InitService(capability)
+	clb.InitService(capability)
+	sgcomrel.InitService(capability)
 
 	return restful.NewContainer().Add(capability.WebService)
 }
