@@ -34,6 +34,10 @@ spec:
       tolerations:
         {{ toYaml . | indent 8 }}
       {{- end }}
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+          {{- toYaml . |nindent 8 }}
+      {{- end }}
       initContainers:
         {{- if .Values.migration.enabled }}
         - name: check-migrate-job

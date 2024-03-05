@@ -79,6 +79,8 @@ const (
 	CloudSelectionBizType ResourceType = "cloud_selection_biz_type"
 	// CloudSelectionDataSource 云选型数据
 	CloudSelectionDataSource ResourceType = "cloud_selection_data_source"
+	// ArgumentTemplate 参数模版
+	ArgumentTemplate ResourceType = "argument_template"
 	// Cert defines cert hcm auth resource type
 	Cert ResourceType = "cert"
 	// Clb defines clb hcm auth resource type

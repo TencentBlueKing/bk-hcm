@@ -50,11 +50,9 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 	if err := opt.Validate(); err != nil {
 		return "", err
 	}
-
 	start := time.Now()
 	logs.V(3).Infof("tcloud account[%s] sync all resource start, time: %v, opt: %v, rid: %s", opt.AccountID,
 		start, opt, kt.Rid)
-
 	var hitErr error
 	defer func() {
 		if hitErr != nil {
@@ -62,7 +60,6 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 				hitErr, opt.AccountID, kt.Rid)
 			return
 		}
-
 		logs.V(3).Infof("tcloud account[%s] sync all resource end, cost: %v, opt: %v, rid: %s", opt.AccountID,
 			time.Since(start), opt, kt.Rid)
 	}()
@@ -88,7 +85,6 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 		AccountID: opt.AccountID,
 		Vendor:    string(enumor.TCloud),
 	}
-
 	if hitErr = SyncDisk(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
 		return enumor.DiskCloudResType, hitErr
 	}
@@ -103,6 +99,11 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 
 	if hitErr = SyncEip(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
 		return enumor.EipCloudResType, hitErr
+	}
+
+	// 参数模版同步需要放到安全组前面
+	if hitErr = SyncArgsTpl(kt, cliSet, opt.AccountID, sd); hitErr != nil {
+		return enumor.ArgumentTemplateResType, hitErr
 	}
 
 	if hitErr = SyncSG(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
@@ -124,6 +125,5 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 	if hitErr = SyncCert(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
 		return enumor.CertCloudResType, hitErr
 	}
-
 	return "", nil
 }

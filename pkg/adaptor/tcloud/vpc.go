@@ -44,7 +44,7 @@ func (t *TCloudImpl) CreateVpc(kt *kit.Kit, opt *types.TCloudVpcCreateOption) (*
 		return nil, err
 	}
 
-	VpcClient, err := t.clientSet.VpcClient(opt.Extension.Region)
+	vpcClient, err := t.clientSet.VpcClient(opt.Extension.Region)
 	if err != nil {
 		return nil, fmt.Errorf("new vpc client failed, err: %v", err)
 	}
@@ -53,7 +53,7 @@ func (t *TCloudImpl) CreateVpc(kt *kit.Kit, opt *types.TCloudVpcCreateOption) (*
 	req.VpcName = converter.ValToPtr(opt.Name)
 	req.CidrBlock = converter.ValToPtr(opt.Extension.IPv4Cidr)
 
-	resp, err := VpcClient.CreateVpcWithContext(kt.Ctx, req)
+	resp, err := vpcClient.CreateVpcWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("create tencent cloud vpc failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err

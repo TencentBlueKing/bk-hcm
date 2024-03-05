@@ -36,6 +36,7 @@ import (
 	cloudselection "hcm/cmd/data-service/service/cloud-selection"
 	"hcm/cmd/data-service/service/cloud/account"
 	accountbizrel "hcm/cmd/data-service/service/cloud/account-biz-rel"
+	argstpl "hcm/cmd/data-service/service/cloud/argument-template"
 	"hcm/cmd/data-service/service/cloud/bill"
 	"hcm/cmd/data-service/service/cloud/cert"
 	"hcm/cmd/data-service/service/cloud/clb"
@@ -216,6 +217,7 @@ func (s *Service) apiSet() *restful.Container {
 	sync.InitService(capability)
 	user.InitService(capability)
 	cloudselection.InitService(capability)
+	argstpl.InitService(capability)
 	cert.InitService(capability)
 	clb.InitService(capability)
 	sgcomrel.InitService(capability)

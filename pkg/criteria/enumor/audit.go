@@ -40,6 +40,7 @@ const (
 	EipAuditResType               AuditResourceType = "eip"
 	GcpFirewallRuleAuditResType   AuditResourceType = "gcp_firewall_rule"
 	NetworkInterfaceAuditResType  AuditResourceType = "network_interface"
+	ArgumentTemplateAuditResType  AuditResourceType = "argument_template"
 	SslCertAuditResType           AuditResourceType = "ssl_cert"
 	ClbAuditResType               AuditResourceType = "clb"
 )
@@ -58,6 +59,7 @@ var AuditResourceTypeEnums = map[AuditResourceType]struct{}{
 	EipAuditResType:               {},
 	GcpFirewallRuleAuditResType:   {},
 	NetworkInterfaceAuditResType:  {},
+	ArgumentTemplateAuditResType:  {},
 	SslCertAuditResType:           {},
 	ClbAuditResType:               {},
 }

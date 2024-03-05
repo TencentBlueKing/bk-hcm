@@ -22,6 +22,7 @@ package common
 import (
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/account"
+	typeargstpl "hcm/pkg/adaptor/types/argument-template"
 	"hcm/pkg/adaptor/types/cert"
 	typescvm "hcm/pkg/adaptor/types/cvm"
 	typesdisk "hcm/pkg/adaptor/types/disk"
@@ -37,6 +38,7 @@ import (
 	adtysubnet "hcm/pkg/adaptor/types/subnet"
 	typeszone "hcm/pkg/adaptor/types/zone"
 	cloudcore "hcm/pkg/api/core/cloud"
+	coreargstpl "hcm/pkg/api/core/cloud/argument-template"
 	corecert "hcm/pkg/api/core/cloud/cert"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	coredisk "hcm/pkg/api/core/cloud/disk"
@@ -138,6 +140,11 @@ type CloudResType interface {
 		corerecyclerecord.EipBindInfo |
 		corerecyclerecord.DiskAttachInfo |
 
+		typeargstpl.TCloudArgsTplAddress |
+		typeargstpl.TCloudArgsTplAddressGroup |
+		typeargstpl.TCloudArgsTplService |
+		typeargstpl.TCloudArgsTplServiceGroup |
+
 		cert.TCloudCert
 }
 
@@ -225,6 +232,8 @@ type DBResType interface {
 
 		corerecyclerecord.EipBindInfo |
 		corerecyclerecord.DiskAttachInfo |
+
+		*coreargstpl.ArgsTpl[coreargstpl.TCloudArgsTplExtension] |
 
 		*corecert.Cert[corecert.TCloudCertExtension]
 }

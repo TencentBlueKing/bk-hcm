@@ -34,6 +34,10 @@ spec:
       tolerations:
         {{ toYaml . | indent 8 }}
       {{- end }}
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+          {{- toYaml . |nindent 8 }}
+      {{- end }}
       initContainers:
         {{- include "bk-hcm.wait-for-pod-init-container" (list . (printf "%s-cloudserver" (include "bk-hcm.fullname" .)) "-lcomponent=cloudserver") | nindent 8 }}
       containers:

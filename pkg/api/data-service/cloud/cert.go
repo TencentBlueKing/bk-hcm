@@ -170,14 +170,14 @@ type CertExtListResp[T corecert.Extension] struct {
 	Data          *CertExtListResult[T] `json:"data"`
 }
 
-// ListExtResp ...
-type ListExtResp[T corecert.Extension] struct {
+// CertListExtResp ...
+type CertListExtResp[T corecert.Extension] struct {
 	rest.BaseResp `json:",inline"`
-	Data          *ListExtResult[T] `json:"data"`
+	Data          *CertListExtResult[T] `json:"data"`
 }
 
-// ListExtResult ...
-type ListExtResult[T corecert.Extension] struct {
+// CertListExtResult ...
+type CertListExtResult[T corecert.Extension] struct {
 	Count   uint64              `json:"count,omitempty"`
 	Details []*corecert.Cert[T] `json:"details"`
 }

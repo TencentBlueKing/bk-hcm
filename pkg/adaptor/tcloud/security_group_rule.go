@@ -58,10 +58,18 @@ func (t *TCloudImpl) CreateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule
 
 		for _, rule := range opt.EgressRuleSet {
 			policies = append(policies, &vpc.SecurityGroupPolicy{
-				Protocol:          rule.Protocol,
-				Port:              rule.Port,
-				CidrBlock:         rule.IPv4Cidr,
-				Ipv6CidrBlock:     rule.IPv6Cidr,
+				Protocol: rule.Protocol,
+				Port:     rule.Port,
+				ServiceTemplate: &vpc.ServiceTemplateSpecification{
+					ServiceId:      rule.CloudServiceID,
+					ServiceGroupId: rule.CloudServiceGroupID,
+				},
+				CidrBlock:     rule.IPv4Cidr,
+				Ipv6CidrBlock: rule.IPv6Cidr,
+				AddressTemplate: &vpc.AddressTemplateSpecification{
+					AddressId:      rule.CloudAddressID,
+					AddressGroupId: rule.CloudAddressGroupID,
+				},
 				SecurityGroupId:   rule.CloudTargetSecurityGroupID,
 				Action:            aws.String(rule.Action),
 				PolicyDescription: rule.Description,
@@ -76,10 +84,18 @@ func (t *TCloudImpl) CreateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule
 
 		for _, rule := range opt.IngressRuleSet {
 			policies = append(policies, &vpc.SecurityGroupPolicy{
-				Protocol:          rule.Protocol,
-				Port:              rule.Port,
-				CidrBlock:         rule.IPv4Cidr,
-				Ipv6CidrBlock:     rule.IPv6Cidr,
+				Protocol: rule.Protocol,
+				Port:     rule.Port,
+				ServiceTemplate: &vpc.ServiceTemplateSpecification{
+					ServiceId:      rule.CloudServiceID,
+					ServiceGroupId: rule.CloudServiceGroupID,
+				},
+				CidrBlock:     rule.IPv4Cidr,
+				Ipv6CidrBlock: rule.IPv6Cidr,
+				AddressTemplate: &vpc.AddressTemplateSpecification{
+					AddressId:      rule.CloudAddressID,
+					AddressGroupId: rule.CloudAddressGroupID,
+				},
 				SecurityGroupId:   rule.CloudTargetSecurityGroupID,
 				Action:            common.StringPtr(rule.Action),
 				PolicyDescription: rule.Description,
@@ -160,7 +176,6 @@ func (t *TCloudImpl) UpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "security group rule update option is required")
 	}
-
 	if err := opt.Validate(); err != nil {
 		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -179,14 +194,21 @@ func (t *TCloudImpl) UpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule
 
 	if opt.EgressRuleSet != nil {
 		policies := make([]*vpc.SecurityGroupPolicy, 0, len(opt.EgressRuleSet))
-
 		for _, rule := range opt.EgressRuleSet {
 			policies = append(policies, &vpc.SecurityGroupPolicy{
-				PolicyIndex:       common.Int64Ptr(rule.CloudPolicyIndex),
-				Protocol:          rule.Protocol,
-				Port:              rule.Port,
-				CidrBlock:         rule.IPv4Cidr,
-				Ipv6CidrBlock:     rule.IPv6Cidr,
+				PolicyIndex: common.Int64Ptr(rule.CloudPolicyIndex),
+				Protocol:    rule.Protocol,
+				Port:        rule.Port,
+				ServiceTemplate: &vpc.ServiceTemplateSpecification{
+					ServiceId:      rule.CloudServiceID,
+					ServiceGroupId: rule.CloudServiceGroupID,
+				},
+				CidrBlock:     rule.IPv4Cidr,
+				Ipv6CidrBlock: rule.IPv6Cidr,
+				AddressTemplate: &vpc.AddressTemplateSpecification{
+					AddressId:      rule.CloudAddressID,
+					AddressGroupId: rule.CloudAddressGroupID,
+				},
 				SecurityGroupId:   rule.CloudTargetSecurityGroupID,
 				Action:            aws.String(rule.Action),
 				PolicyDescription: rule.Description,
@@ -198,14 +220,21 @@ func (t *TCloudImpl) UpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule
 
 	if opt.IngressRuleSet != nil {
 		policies := make([]*vpc.SecurityGroupPolicy, 0, len(opt.IngressRuleSet))
-
 		for _, rule := range opt.IngressRuleSet {
 			policies = append(policies, &vpc.SecurityGroupPolicy{
-				PolicyIndex:       common.Int64Ptr(rule.CloudPolicyIndex),
-				Protocol:          rule.Protocol,
-				Port:              rule.Port,
-				CidrBlock:         rule.IPv4Cidr,
-				Ipv6CidrBlock:     rule.IPv6Cidr,
+				PolicyIndex: common.Int64Ptr(rule.CloudPolicyIndex),
+				Protocol:    rule.Protocol,
+				Port:        rule.Port,
+				ServiceTemplate: &vpc.ServiceTemplateSpecification{
+					ServiceId:      rule.CloudServiceID,
+					ServiceGroupId: rule.CloudServiceGroupID,
+				},
+				CidrBlock:     rule.IPv4Cidr,
+				Ipv6CidrBlock: rule.IPv6Cidr,
+				AddressTemplate: &vpc.AddressTemplateSpecification{
+					AddressId:      rule.CloudAddressID,
+					AddressGroupId: rule.CloudAddressGroupID,
+				},
 				SecurityGroupId:   rule.CloudTargetSecurityGroupID,
 				Action:            common.StringPtr(rule.Action),
 				PolicyDescription: rule.Description,

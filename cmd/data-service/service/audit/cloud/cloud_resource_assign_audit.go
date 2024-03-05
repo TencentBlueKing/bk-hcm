@@ -112,6 +112,8 @@ func (ad Audit) buildAssignAuditInfo(kt *kit.Kit, resType enumor.AuditResourceTy
 		audits, err = ad.networkInterface.NetworkInterfaceAssignAuditBuild(kt, assigns)
 	case enumor.RouteTableAuditResType:
 		audits, err = ad.routeTable.RouteTableAssignAuditBuild(kt, assigns)
+	case enumor.ArgumentTemplateAuditResType:
+		audits, err = ad.argsTplAssignAuditBuild(kt, assigns)
 	case enumor.SslCertAuditResType:
 		audits, err = ad.certAssignAuditBuild(kt, assigns)
 	default:
