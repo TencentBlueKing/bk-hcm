@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=9999
+    SQLVER=0015,HCMVER=v1.4.0
 
     Notes:
     1. 新增参数模版的数据表
@@ -56,5 +56,8 @@ alter table tcloud_security_group_rule
     add column `service_group_id` varchar(64) default null after `cloud_service_id`,
     add column `address_id` varchar(64) default null after `cloud_target_security_group_id`,
     add column `address_group_id` varchar(64) default null after `cloud_address_id`;
+
+CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
+SELECT 'v1.4.0' as `hcm_ver`, '0015' as `sql_ver`;
 
 COMMIT
