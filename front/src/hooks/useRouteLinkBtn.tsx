@@ -71,9 +71,14 @@ export const useRouteLinkBtn = (data: IDetail, meta: IMeta) => {
     router.push(routeInfo);
   };
 
-  return (
-    <bk-button text theme="primary" onClick={handleClick}>
-      {computedName.value}
-    </bk-button>
-  );
+  const render = () => {
+    if (!computedName.value) return '--';
+    return (
+      <bk-button text theme="primary" onClick={handleClick}>
+        {computedName.value}
+      </bk-button>
+    );
+  };
+
+  return render();
 };

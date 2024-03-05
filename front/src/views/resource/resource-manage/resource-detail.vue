@@ -9,6 +9,7 @@ import IpDetail from './children/detail/ip-detail.vue';
 import RoutingDetail from './children/detail/routing-detail.vue';
 import ImageDetail from './children/detail/image-detail.vue';
 import NetworkInterfaceDetail from './children/detail/network-interface-detail.vue';
+import TemplateDetail from './children/detail/template-detail';
 import { useVerify } from '@/hooks';
 import bus from '@/common/bus';
 
@@ -49,6 +50,7 @@ const componentMap = {
   gcp: GcpDetail,
   image: ImageDetail,
   'network-interface': NetworkInterfaceDetail,
+  template: TemplateDetail,
 };
 
 const renderComponent = computed(() => {

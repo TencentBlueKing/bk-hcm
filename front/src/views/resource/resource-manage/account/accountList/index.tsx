@@ -8,6 +8,7 @@ import { useAllVendorsAccounts } from './useAllVendorsAccountsList';
 import { useResourceAccount } from './useResourceAccount';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { useRoute, useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
 
 export default defineComponent({
   setup() {
@@ -25,6 +26,7 @@ export default defineComponent({
     } = useAllVendorsAccounts();
     const { setAccountId } = useResourceAccount();
     const resourceAccountStore = useResourceAccountStore();
+    const { currentVendor, currentAccountVendor } = storeToRefs(resourceAccountStore);
 
     const handleCancel = () => {
       // isCreateAccountDialogShow.value = false;
@@ -108,15 +110,17 @@ export default defineComponent({
             }
           }}
          </VirtualRender> */}
-        <Loading loading={isLoading.value} style={{ height: 'calc(100% - 85px)' }}>
+        <Loading loading={isLoading.value} style={{ height: 'calc(100% - 87px)' }}>
           {searchVal.value.length ? null : (
             <div
               class={`all-vendors specific-vendor ${
-                !resourceAccountStore.resourceAccount?.id
-                  ? ' actived-specfic-account'
-                  : ''
+                !(currentAccountVendor.value || currentVendor.value) ? ' actived-specfic-account' : ''
               }`}
-              onClick={() => setAccountId('')}>
+              onClick={() => {
+                setAccountId('');
+                resourceAccountStore.setCurrentVendor(null);
+                resourceAccountStore.setCurrentAccountVendor(null);
+              }}>
               <img src={allVendors} alt='全部账号' class={'vendor-icon'} />
               <div>全部账号</div>
             </div>
@@ -126,11 +130,12 @@ export default defineComponent({
               class='exception-wrap-item exception-part'
               type='search-empty'
               scene='part'
-              description='搜索为空'
+              description='无搜索结果'
             />
           ) : (
             <VendorAccounts
               accounts={accountsMatrix}
+              searchVal={searchVal.value}
               handleExpand={handleExpand}
               handleSelect={setAccountId}
               checkIsExpand={checkIsExpand}

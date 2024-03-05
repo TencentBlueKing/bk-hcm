@@ -62,7 +62,6 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 				hitErr, opt.AccountID, kt.Rid)
 			return
 		}
-
 		logs.V(3).Infof("tcloud account[%s] sync all resource end, cost: %v, opt: %v, rid: %s", opt.AccountID,
 			time.Since(start), opt, kt.Rid)
 	}()
@@ -103,6 +102,11 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 
 	if hitErr = SyncEip(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
 		return enumor.EipCloudResType, hitErr
+	}
+
+	// 参数模版同步需要放到安全组前面
+	if hitErr = SyncArgsTpl(kt, cliSet, opt.AccountID, sd); hitErr != nil {
+		return enumor.ArgumentTemplateResType, hitErr
 	}
 
 	if hitErr = SyncSG(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {

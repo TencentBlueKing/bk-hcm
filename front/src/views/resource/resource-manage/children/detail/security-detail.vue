@@ -8,7 +8,7 @@ import {
   useI18n,
 } from 'vue-i18n';
 
-import { watch, ref } from 'vue';
+import { watch, ref, reactive } from 'vue';
 
 
 import {
@@ -30,7 +30,14 @@ const securityId = ref(route.query?.id);
 const vendor = ref(route.query?.vendor);
 const resourceStore = useResourceStore();
 const relatedSecurityGroups = ref([]);
+const templateData = reactive({
+  ipList: [],
+  ipGroupList: [],
+  portList: [],
+  portGroupList: [],
+});
 const { whereAmI } = useWhereAmI();
+const resoureStore = useResourceStore();
 
 const {
   loading,
@@ -64,6 +71,7 @@ watch(
   () => detail.value,
   (val: { account_id: string; region: string; }) => {
     getRelatedSecurityGroups(val);
+    getTemplateData(val);
   },
 );
 
@@ -95,6 +103,58 @@ const getRelatedSecurityGroups = async (detail: { account_id: string; region: st
   relatedSecurityGroups.value = res?.data?.details;
 };
 
+const getTemplateData = async (detail: { account_id: string;}) => {
+  const [
+    ipListPromise,
+    ipGroupListPromise,
+    portListPromise,
+    portGroupListPromise,
+  ] = [
+    'address',
+    'address_group',
+    'service',
+    'service_group',
+  ].map(type => resoureStore.getCommonList(
+    {
+      filter: {
+        op: 'and',
+        rules: [
+          {
+            field: 'vendor',
+            op: 'eq',
+            value: 'tcloud',
+          },
+          {
+            field: 'account_id',
+            op: QueryRuleOPEnum.CS,
+            value: detail.account_id,
+          },
+          {
+            field: 'type',
+            op: 'eq',
+            value: type,
+          },
+        ],
+      },
+      page: {
+        start: 0,
+        limit: 500,
+      },
+    },
+    'argument_templates/list',
+  ));
+  const res = await Promise.all([
+    ipListPromise,
+    ipGroupListPromise,
+    portListPromise,
+    portGroupListPromise,
+  ]);
+  templateData.ipList = res[0]?.data?.details;
+  templateData.ipGroupList = res[1]?.data?.details;
+  templateData.portList = res[2]?.data?.details;
+  templateData.portGroupList = res[3]?.data?.details;
+};
+
 </script>
 
 <template>
@@ -109,7 +169,7 @@ const getRelatedSecurityGroups = async (detail: { account_id: string; region: st
                        :get-detail="getDetail" />
         <security-relate v-if="type === 'relate'" />
         <security-rule v-if="type === 'rule'" :filter="filter" :id="securityId" :vendor="vendor"
-                       :related-security-groups="relatedSecurityGroups" />
+                       :related-security-groups="relatedSecurityGroups" :template-data="templateData" />
       </template>
     </detail-tab>
   </div>

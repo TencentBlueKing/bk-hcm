@@ -19,6 +19,7 @@ import EipForm from './forms/eip/index.vue';
 import subnetForm from './forms/subnet/index.vue';
 import securityForm from './forms/security/index.vue';
 import firewallForm from './forms/firewall';
+import TemplateDialog from '@/views/resource/resource-manage/children/dialog/template-dialog';
 
 import { useRoute, useRouter } from 'vue-router';
 
@@ -29,6 +30,10 @@ const isShowSideSlider = ref(false);
 const isShowGcpAdd = ref(false);
 const componentRef = ref();
 const securityType = ref('group');
+
+const isTemplateDialogShow = ref(false);
+const isTemplateDialogEdit = ref(false);
+const templateDialogPayload = ref({});
 
 // use hooks
 const route = useRoute();
@@ -42,6 +47,9 @@ const formDetail = ref({});
 const isEdit = ref(false);
 
 provide('securityType', securityType); // 将数据传入孙组件
+
+// 用于判断 sideslider 中的表单数据是否改变
+const isFormDataChanged = ref(false);
 
 // 组件map
 const componentMap = {
@@ -87,6 +95,11 @@ const isResourcePage = computed(() => {
 });
 
 const handleAdd = () => {
+  if (securityType.value === 'template' && renderComponent.value === SecurityManage) {
+    isTemplateDialogShow.value = true;
+    isTemplateDialogEdit.value = false;
+    return;
+  }
   if (renderComponent.value === DriveManage) {
     router.push({
       path: '/business/service/service-apply/disk',
@@ -106,6 +119,8 @@ const handleAdd = () => {
   } else {
     isEdit.value = false;
     isShowSideSlider.value = true;
+    // 标记初始化
+    isFormDataChanged.value = false;
   }
 };
 
@@ -153,14 +168,18 @@ const submit = async (data: any) => {
 // };
 
 const handleBeforeClose = () => {
-  InfoBox({
-    title: '请确认是否关闭侧栏？',
-    subTitle: '关闭后，内容需要重新填写！',
-    theme: 'warning',
-    onConfirm() {
-      handleCancel();
-    },
-  });
+  if (isFormDataChanged.value) {
+    InfoBox({
+      title: '请确认是否关闭侧栏？',
+      subTitle: '关闭后，内容需要重新填写！',
+      quickClose: false,
+      onConfirm() {
+        handleCancel();
+      },
+    });
+  } else {
+    handleCancel();
+  }
 };
 
 // 权限hook
@@ -175,54 +194,58 @@ const {
 </script>
 
 <template>
-  <div>
-    <section class="business-manage-wrapper">
-      <bk-loading :loading="!accountStore.bizs">
-        <component
-          v-if="accountStore.bizs"
-          ref="componentRef"
-          :is="renderComponent"
-          :filter="filter"
-          :is-resource-page="isResourcePage"
-          :auth-verify-data="authVerifyData"
-          @auth="(val: string) => {
-            handleAuth(val)
-          }"
-          @handleSecrityType="handleSecrityType"
-          @edit="handleEdit"
-        >
-          <span>
-            <bk-button
-              theme="primary"
-              class="new-button mr10"
-              :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.biz_iaas_resource_create }"
-              @click="() => {
-                if (authVerifyData?.permissionAction?.biz_iaas_resource_create) {
-                  handleAdd();
-                } else {
-                  handleAuth('biz_iaas_resource_create')
-                }
-              }"
-            >
-              {{
-                renderComponent === DriveManage ||
-                  renderComponent === HostManage ||
-                  renderComponent === SubnetManage ||
-                  renderComponent === VpcManage
-                  ? '申请'
-                  : '新增'
-              }}
-            </bk-button>
-          </span>
+  <div
+    class="business-manage-wrapper"
+    :class="[
+      route.path === '/business/host' ? 'is-host-page' : '',
+      route.path === '/business/recyclebin' ? 'is-recycle-page' : '',
+    ]">
+    <bk-loading class="common-card-wrap" :loading="!accountStore.bizs">
+      <component
+        v-if="accountStore.bizs"
+        ref="componentRef"
+        :is="renderComponent"
+        :filter="filter"
+        :is-resource-page="isResourcePage"
+        :auth-verify-data="authVerifyData"
+        @auth="(val: string) => {
+          handleAuth(val)
+        }"
+        @handleSecrityType="handleSecrityType"
+        @edit="handleEdit"
+        v-model:isFormDataChanged="isFormDataChanged"
+      >
+        <span>
+          <bk-button
+            theme="primary"
+            class="mw64 mr10"
+            :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.biz_iaas_resource_create }"
+            @click="() => {
+              if (authVerifyData?.permissionAction?.biz_iaas_resource_create) {
+                handleAdd();
+              } else {
+                handleAuth('biz_iaas_resource_create')
+              }
+            }"
+          >
+            {{
+              renderComponent === DriveManage ||
+                renderComponent === HostManage ||
+                renderComponent === SubnetManage ||
+                renderComponent === VpcManage
+                ? '申请'
+                : '新增'
+            }}
+          </bk-button>
+        </span>
 
-          <template #recycleHistory>
-            <!-- <bk-button class="f-right" theme="primary" @click="handleToPage">
-              {{ '回收记录' }}
-            </bk-button> -->
-          </template>
-        </component>
-      </bk-loading>
-    </section>
+        <template #recycleHistory>
+          <!-- <bk-button class="f-right" theme="primary" @click="handleToPage">
+            {{ '回收记录' }}
+          </bk-button> -->
+        </template>
+      </component>
+    </bk-loading>
     <bk-sideslider
       v-model:isShow="isShowSideSlider"
       width="800"
@@ -238,6 +261,7 @@ const {
           @success="handleSuccess"
           :detail="formDetail"
           :is-edit="isEdit"
+          v-model:isFormDataChanged="isFormDataChanged"
         ></component>
       </template>
     </bk-sideslider>
@@ -256,17 +280,81 @@ const {
       :detail="{}"
       @submit="submit"
     ></gcp-add>
+
+    <TemplateDialog
+      :is-show="isTemplateDialogShow"
+      :is-edit="isTemplateDialogEdit"
+      :payload="templateDialogPayload"
+      :handle-close="() => isTemplateDialogShow = false"
+      :handle-success="() => {
+        isTemplateDialogShow = false;
+        handleSuccess();
+      }"
+    />
   </div>
 </template>
 
 <style lang="scss" scoped>
 .business-manage-wrapper {
-  height: calc(100% - 20px);
+  padding: 24px;
+  height: 100%;
   overflow-y: auto;
-  // background-color: #fff;
-  padding: 20px;
+
+  .common-card-wrap {
+    padding: 16px 24px;
+    height: 100%;
+    background-color: #fff;
+
+    & > :deep(.bk-nested-loading) {
+      height: 100%;
+      .bk-table {
+        margin-top: 16px;
+        max-height: calc(100% - 48px);
+      }
+    }
+  }
+
+  &.is-host-page {
+    padding-bottom: 0;
+  }
+
+  &.is-recycle-page .common-card-wrap {
+    padding: 0;
+    background-color: transparent;
+
+    :deep(.recycle-manager-page) {
+      height: 100%;
+      .bk-tab {
+        height: 100%;
+      }
+    }
+  }
+
+  :deep(.bk-table.has-selection) {
+    .bk-table-head .bk-checkbox {
+      vertical-align: middle;
+    }
+    .bk-table-head tr th:nth-of-type(2) .cell{
+      padding-left: 8px;
+    }
+    .bk-table-body .cell.selection {
+      text-align: right;
+      .bk-checkbox {
+        vertical-align: middle;
+      }
+    }
+    .bk-table-body tr td:nth-of-type(2) .cell {
+      padding-left: 8px;
+    }
+  }
 }
-.new-button {
-  width: 100px;
+</style>
+
+<style lang="scss">
+.mw64 {
+  min-width: 64px;
+}
+.mw88 {
+  min-width: 88px;
 }
 </style>

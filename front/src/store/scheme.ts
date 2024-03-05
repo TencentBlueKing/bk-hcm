@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 import http from '@/http';
 import { defineStore } from 'pinia';
 import { QueryFilterType, IPageQuery, IQueryResData } from '@/typings/common';
@@ -53,9 +54,7 @@ export const useSchemeStore = defineStore({
       this.schemeData = data;
     },
     sortSchemes(choice: string, isDes = true) {
-      this.recommendationSchemes = this.recommendationSchemes.sort(
-        (a, b) => (b[choice] - a[choice]) * (isDes ? 1 : -1),
-      );
+      this.recommendationSchemes = this.recommendationSchemes.sort((a, b) => (b[choice] - a[choice]) * (isDes ? 1 : -1));
     },
     /**
      * 获取资源选型方案列表

@@ -17,6 +17,7 @@ import IpDetail from '@/views/resource/resource-manage/children/detail/ip-detail
 import RoutingDetail from '@/views/resource/resource-manage/children/detail/routing-detail.vue';
 import ImageDetail from '@/views/resource/resource-manage/children/detail/image-detail.vue';
 import NetworkInterfaceDetail from '@/views/resource/resource-manage/children/detail/network-interface-detail.vue';
+import TemplateDetail from '../resource/resource-manage/children/detail/template-detail';
 import { useVerify } from '@/hooks';
 import bus from '@/common/bus';
 
@@ -48,6 +49,7 @@ const componentMap = {
   gcp: GcpDetail,
   image: ImageDetail,
   'network-interface': NetworkInterfaceDetail,
+  template: TemplateDetail,
 };
 
 const renderComponent = computed(() => {
@@ -70,13 +72,11 @@ bus.$on('auth', (authActionName: string) => {   // bus监听
 </script>
 
 <template>
-  <div>
-    <component :is="renderComponent"></component>
-    <permission-dialog
-      v-model:is-show="showPermissionDialog"
-      :params="permissionParams"
-      @cancel="handlePermissionDialog"
-      @confirm="handlePermissionConfirm"
-    ></permission-dialog>
-  </div>
+  <component :is="renderComponent"></component>
+  <permission-dialog
+    v-model:is-show="showPermissionDialog"
+    :params="permissionParams"
+    @cancel="handlePermissionDialog"
+    @confirm="handlePermissionConfirm"
+  ></permission-dialog>
 </template>

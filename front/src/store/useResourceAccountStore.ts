@@ -33,17 +33,27 @@ export type IAccount = {
   }
 };
 
-export const useResourceAccountStore = defineStore(
-  'useResourceAccountStore',
-  () => {
-    const resourceAccount = ref<IAccount>(null);
-    const setResourceAccount = (val: IAccount) => {
-      resourceAccount.value = val;
-    };
+export const useResourceAccountStore = defineStore('useResourceAccountStore', () => {
+  const resourceAccount = ref<IAccount>(null);
+  const currentVendor = ref<VendorEnum>(null); // 当前选中的云厂商
+  const currentAccountVendor = ref<VendorEnum>(null); // 当前选中账号的 vendor
 
-    return {
-      resourceAccount,
-      setResourceAccount,
-    };
-  },
-);
+  const setResourceAccount = (val: IAccount) => {
+    resourceAccount.value = val;
+  };
+  const setCurrentVendor = (val: VendorEnum) => {
+    currentVendor.value = val;
+  };
+  const setCurrentAccountVendor = (val: VendorEnum) => {
+    currentAccountVendor.value = val;
+  };
+
+  return {
+    resourceAccount,
+    setResourceAccount,
+    currentVendor,
+    setCurrentVendor,
+    currentAccountVendor,
+    setCurrentAccountVendor,
+  };
+});

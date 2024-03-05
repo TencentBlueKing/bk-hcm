@@ -132,6 +132,11 @@ export const useResourceStore = defineStore({
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/recover`, data);
     },
 
+    // 主机所关联资源(硬盘, eip)的个数
+    getRelResByCvmIds(data: { ids: string[] }) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/cvms/rel_res/batch`, data);
+    },
+
     // 虚拟机回收
     recycledCvmsData(data: any) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath('cvms')}cvms/recycle`, data);
@@ -180,6 +185,10 @@ export const useResourceStore = defineStore({
     // 获取未绑定主机的eips列表
     getUnbindCvmEips(data: any) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}eip_cvm_rels/with/eips/without/cvm/list`, data);
+    },
+    // 创建
+    create(type: string, data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/create`, data);
     },
   },
 });

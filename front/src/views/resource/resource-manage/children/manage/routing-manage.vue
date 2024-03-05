@@ -60,7 +60,7 @@ const { columns, settings } = useColumns('route');
     :loading="isLoading"
   >
     <section
-      class="flex-row align-items-center mb20 justify-content-end">
+      class="flex-row align-items-center justify-content-end">
       <bk-search-select
         class="w500 ml10"
         clearable

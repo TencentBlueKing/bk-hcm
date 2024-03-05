@@ -4,6 +4,7 @@ import DetailInfo from '../../../common/info/detail-info';
 import { useResourceStore } from '@/store/resource';
 import { useRouter, useRoute } from 'vue-router';
 import { useRegionsStore } from '@/store/useRegionsStore';
+import { timeFormatter } from '@/common/util';
 
 const props = defineProps({
   detail: {
@@ -24,11 +25,11 @@ const fileds = ref<any[]>([
     prop: 'name',
   },
   {
-    name: '路由表 ID',
+    name: '路由表ID',
     prop: 'id',
   },
   {
-    name: '云资源 ID',
+    name: '云资源ID',
     prop: 'cloud_id',
   },
   {
@@ -142,6 +143,7 @@ watch(
           {
             name: '创建时间',
             prop: 'created_at',
+            render: () => timeFormatter(props.detail.created_at),
           },
         ]);
         columns.value.push(...[
@@ -191,6 +193,7 @@ watch(
           {
             name: '创建时间',
             prop: 'created_at',
+            render: () => timeFormatter(props.detail.created_at),
           },
         ]);
         columns.value.push(...[
@@ -231,6 +234,7 @@ watch(
           {
             name: '创建时间',
             prop: 'created_at',
+            render: () => timeFormatter(props.detail.created_at),
           },
         ]);
         columns.value.push(...[
@@ -268,6 +272,7 @@ watch(
           {
             name: '创建时间',
             prop: 'created_at',
+            render: () => timeFormatter(props.detail.created_at),
           },
         ]);
         columns.value.push(...[
@@ -316,6 +321,7 @@ watch(
           {
             name: '创建时间',
             prop: 'created_at',
+            render: () => timeFormatter(props.detail.created_at),
           },
         ]);
         columns.value.push(...[
@@ -365,7 +371,7 @@ const handlePageSizeChange = (limit: number) => {
 
 <template>
   <bk-loading :loading="isLoading">
-    <detail-info class="mt20" :fields="fileds" :detail="detail"></detail-info>
+    <detail-info :fields="fileds" :detail="detail"></detail-info>
     <bk-table
       class="mt20"
       row-hover="auto"

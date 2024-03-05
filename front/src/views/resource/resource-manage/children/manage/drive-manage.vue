@@ -89,6 +89,7 @@ const unableRecycled = (data: {
   instance_id: string;
   vendor: VendorEnum;
   status: string;
+  bk_biz_id: number;
 }) => {
   return (
     !props.authVerifyData?.permissionAction[
@@ -97,6 +98,7 @@ const unableRecycled = (data: {
         : 'biz_iaas_resource_operate'
     ]
     || data.instance_id
+    || (props.isResourcePage && data.bk_biz_id !== -1)
     || isDisabledRecycle(data?.vendor, data?.status)
   );
 };
@@ -247,9 +249,8 @@ const isCurRowSelectEnable = (row: any) => {
         "
       />
       <bk-button
-        class="w100"
+        class="mw88"
         :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.biz_iaas_resource_delete }"
-        theme="primary"
         :disabled="authVerifyData?.permissionAction?.biz_iaas_resource_delete && selections.length <= 0"
         @click="
           () => {
@@ -268,11 +269,11 @@ const isCurRowSelectEnable = (row: any) => {
           }
         "
       >
-        {{ t('回收') }}
+        {{ t('批量回收') }}
       </bk-button>
       <div class="flex-row align-items-center justify-content-arround mlauto">
         <bk-search-select
-          class="w500 ml10 mr15"
+          class="w500"
           clearable
           :conditions="[]"
           :data="selectSearchData"
@@ -284,7 +285,7 @@ const isCurRowSelectEnable = (row: any) => {
 
     <bk-table
       :settings="settings"
-      class="mt20"
+      class="has-selection"
       row-hover="auto"
       remote-pagination
       show-overflow-tooltip

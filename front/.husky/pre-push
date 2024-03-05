@@ -1,0 +1,24 @@
+#!/bin/bash
+bash ./front/.husky/pre-push-bkcodeai $1 $2
+
+protected_branch_fragment="bcc"
+
+while read local_ref local_sha remote_ref remote_sha
+do
+    if [ -z "$local_ref" ]; then
+        continue
+    fi
+
+    local_branch=${local_ref##*/}
+    
+    remote_url=$(git remote get-url --push "$1")
+    
+    if [[ "$local_branch" == *"$protected_branch_fragment"* ]]; then
+        if [[ "$remote_url" == *"github.com"* ]]; then
+            echo "ERROR: You are trying to push internal code to the GitHub repository. Branch '$local_branch' contains the '$protected_branch_fragment' fragment."
+            exit 1
+        fi
+    fi
+done
+
+exit 0

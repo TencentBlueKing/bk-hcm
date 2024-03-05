@@ -15,6 +15,7 @@ export enum DResourceType {
   security_groups = 'security_groups',
   subnets = 'subnets',
   vpcs = 'vpcs',
+  templates = 'argument_templates',
 }
 
 export const DResourceTypeMap = {
@@ -53,6 +54,10 @@ export const DResourceTypeMap = {
   [DResourceType.vpcs]: {
     key: 'vpc_ids',
     name: 'VPC',
+  },
+  [DResourceType.templates]: {
+    key: 'template_ids',
+    name: '参数模板',
   },
 };
 
@@ -104,7 +109,7 @@ export const BatchDistribution = defineComponent({
       <>
         {whereAmI.value === Senarios.resource ? (
           <Button
-            class={'ml8 mr8'}
+            class={'mw88 ml8 mr8'}
             onClick={() => {
               isShow.value = true;
             }}

@@ -127,3 +127,15 @@ const tabs = computed(() => {
     </div>
   </bk-loading>
 </template>
+
+<style lang="scss" scoped>
+.field-list {
+  :deep(.cell-content-list) {
+    line-height: normal;
+    .cell-content-item {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+}
+</style>

@@ -34,18 +34,25 @@ import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { VendorEnum } from '@/common/constant';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { timeFormatter } from '@/common/util';
 
 const { getRegionName } = useRegionsStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
 const { whereAmI } = useWhereAmI();
 
+const hostTabs = [
+  {
+    name: '基本信息',
+    value: 'detail',
+  },
+];
 const VPCFields = ref([
   {
-    name: '资源 ID',
+    name: '资源ID',
     prop: 'id',
   },
   {
-    name: '云资源 ID',
+    name: '云资源ID',
     prop: 'cloud_id',
     render(cell = '') {
       const index = cell.lastIndexOf('/') <= 0 ? 0 : cell.lastIndexOf('/') + 1;
@@ -86,6 +93,7 @@ const VPCFields = ref([
   {
     name: '创建时间',
     prop: 'created_at',
+    render: (val: string) => timeFormatter(val),
   },
   {
     name: '备注',
@@ -176,14 +184,14 @@ const {
             prop: 'state',
           },
           {
-            name: 'DNS 主机名',
+            name: 'DNS主机名',
             prop: 'enable_dns_hostnames',
             render(val: boolean) {
               return val ? '已启用' : '未启用';
             },
           },
           {
-            name: 'DNS 解析',
+            name: 'DNS解析',
             prop: 'enable_dns_support',
             render(val: boolean) {
               return val ? '已启用' : '未启用';
@@ -221,8 +229,8 @@ const {
           {
             name: 'DNS服务器',
             prop: 'dns_servers',
-            render(val: any) {
-              return val ? val : 'Azure提供的DNS服务';
+            render(val: any[]) {
+              return val.length > 0 ? val : 'Azure提供的DNS服务';
             },
           },
         ]);
@@ -242,7 +250,7 @@ const {
             prop: 'routing_mode',
           },
           {
-            name: 'VPC 网络 ULA 内部 IPv6 范围',
+            name: 'VPC网络ULA内部IPv6范围',
             prop: 'enable_ula_internal_ipv6',
             render(val: boolean) {
               return val ? '已启用' : '未启用';
@@ -406,7 +414,11 @@ const handleDeleteVpc = (data: any) => {
     </detail-header>
 
     <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
-      <detail-info :detail="detail" :fields="VPCFields" />
+      <detail-tab :tabs="hostTabs">
+        <template #default>
+          <detail-info :detail="detail" :fields="VPCFields" />
+        </template>
+      </detail-tab>
 
       <detail-tab class="mt16" :tabs="VPCTabs">
         <template #default="type">
@@ -426,5 +438,9 @@ const handleDeleteVpc = (data: any) => {
 
 .w60 {
   width: 60px;
+}
+
+:deep(.detail-info-main .info-list-item .item-field) {
+  width: 180px !important;
 }
 </style>

@@ -44,12 +44,16 @@ var TCloudSGRuleColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "action", NamedC: "action", Type: enumor.String},
 	{Column: "protocol", NamedC: "protocol", Type: enumor.String},
 	{Column: "port", NamedC: "port", Type: enumor.String},
+	{Column: "service_id", NamedC: "service_id", Type: enumor.String},
 	{Column: "cloud_service_id", NamedC: "cloud_service_id", Type: enumor.String},
+	{Column: "service_group_id", NamedC: "service_group_id", Type: enumor.String},
 	{Column: "cloud_service_group_id", NamedC: "cloud_service_group_id", Type: enumor.String},
 	{Column: "ipv4_cidr", NamedC: "ipv4_cidr", Type: enumor.String},
 	{Column: "ipv6_cidr", NamedC: "ipv6_cidr", Type: enumor.String},
 	{Column: "cloud_target_security_group_id", NamedC: "cloud_target_security_group_id", Type: enumor.String},
+	{Column: "address_id", NamedC: "address_id", Type: enumor.String},
 	{Column: "cloud_address_id", NamedC: "cloud_address_id", Type: enumor.String},
+	{Column: "address_group_id", NamedC: "address_group_id", Type: enumor.String},
 	{Column: "cloud_address_group_id", NamedC: "cloud_address_group_id", Type: enumor.String},
 	{Column: "region", NamedC: "region", Type: enumor.String},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
@@ -71,12 +75,16 @@ type TCloudSecurityGroupRuleTable struct {
 	Action                     string     `db:"action" validate:"lte=10" json:"action"`
 	Protocol                   *string    `db:"protocol" validate:"omitempty,lte=10" json:"protocol"`
 	Port                       *string    `db:"port" validate:"omitempty,lte=255" json:"port"`
+	ServiceID                  *string    `db:"service_id" validate:"omitempty,lte=64" json:"service_id"`
 	CloudServiceID             *string    `db:"cloud_service_id" validate:"omitempty,lte=255" json:"cloud_service_id"`
+	ServiceGroupID             *string    `db:"service_group_id" validate:"omitempty,lte=64" json:"service_group_id"`
 	CloudServiceGroupID        *string    `db:"cloud_service_group_id" validate:"omitempty,lte=255" json:"cloud_service_group_id"`
-	IPv4Cidr                   *string    `db:"ipv4_cidr" validate:"omitempty,lte=255" json:"i_pv_4_cidr"`
-	IPv6Cidr                   *string    `db:"ipv6_cidr" validate:"omitempty,lte=255" json:"i_pv_6_cidr"`
+	IPv4Cidr                   *string    `db:"ipv4_cidr" validate:"omitempty,lte=255" json:"ipv4_cidr"`
+	IPv6Cidr                   *string    `db:"ipv6_cidr" validate:"omitempty,lte=255" json:"ipv6_cidr"`
 	CloudTargetSecurityGroupID *string    `db:"cloud_target_security_group_id" validate:"omitempty,lte=255" json:"cloud_target_security_group_id"`
+	AddressID                  *string    `db:"address_id" validate:"omitempty,lte=64" json:"address_id"`
 	CloudAddressID             *string    `db:"cloud_address_id" validate:"omitempty,lte=255" json:"cloud_address_id"`
+	AddressGroupID             *string    `db:"address_group_id" validate:"omitempty,lte=64" json:"address_group_id"`
 	CloudAddressGroupID        *string    `db:"cloud_address_group_id" validate:"omitempty,lte=255" json:"cloud_address_group_id"`
 	Region                     string     `db:"region" validate:"lte=20" json:"region"`
 	Memo                       *string    `db:"memo" validate:"omitempty,lte=255" json:"memo"`

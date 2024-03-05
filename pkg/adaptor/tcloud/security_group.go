@@ -49,7 +49,7 @@ func (t *TCloudImpl) CreateSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudC
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	vpcCli, err := t.clientSet.vpcClient(opt.Region)
+	vpcCli, err := t.clientSet.VpcClient(opt.Region)
 	if err != nil {
 		return nil, fmt.Errorf("new tcloud vpc client failed, err: %v", err)
 	}
@@ -82,7 +82,7 @@ func (t *TCloudImpl) DeleteSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudD
 		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.vpcClient(opt.Region)
+	client, err := t.clientSet.VpcClient(opt.Region)
 	if err != nil {
 		return fmt.Errorf("new tcloud vpc client failed, err: %v", err)
 	}
@@ -110,7 +110,7 @@ func (t *TCloudImpl) UpdateSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudU
 		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.vpcClient(opt.Region)
+	client, err := t.clientSet.VpcClient(opt.Region)
 	if err != nil {
 		return fmt.Errorf("new tcloud vpc client failed, err: %v", err)
 	}
@@ -144,7 +144,7 @@ func (t *TCloudImpl) ListSecurityGroupNew(kt *kit.Kit, opt *securitygroup.TCloud
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.vpcClient(opt.Region)
+	client, err := t.clientSet.VpcClient(opt.Region)
 	if err != nil {
 		return nil, fmt.Errorf("new tcloud vpc client failed, err: %v", err)
 	}
@@ -177,7 +177,7 @@ func (t *TCloudImpl) ListSecurityGroupNew(kt *kit.Kit, opt *securitygroup.TCloud
 // reference: https://cloud.tencent.com/document/api/215/15808
 func (t *TCloudImpl) CountSecurityGroup(kt *kit.Kit, region string) (int32, error) {
 
-	client, err := t.clientSet.vpcClient(region)
+	client, err := t.clientSet.VpcClient(region)
 	if err != nil {
 		return 0, fmt.Errorf("new tcloud vpc client failed, err: %v", err)
 	}
@@ -204,7 +204,7 @@ func (t *TCloudImpl) SecurityGroupCvmAssociate(kt *kit.Kit, opt *securitygroup.T
 		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.cvmClient(opt.Region)
+	client, err := t.clientSet.CvmClient(opt.Region)
 	if err != nil {
 		return fmt.Errorf("new tcloud cvm client failed, err: %v", err)
 	}
@@ -237,7 +237,7 @@ func (t *TCloudImpl) SecurityGroupCvmDisassociate(kt *kit.Kit, opt *securitygrou
 		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.cvmClient(opt.Region)
+	client, err := t.clientSet.CvmClient(opt.Region)
 	if err != nil {
 		return fmt.Errorf("new tcloud cvm client failed, err: %v", err)
 	}

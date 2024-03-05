@@ -56,8 +56,12 @@ func (opt TCloudCreateOption) Validate() error {
 type TCloud struct {
 	Protocol                   *string `json:"protocol"`
 	Port                       *string `json:"port"`
+	CloudServiceID             *string `json:"cloud_service_id"`
+	CloudServiceGroupID        *string `json:"cloud_service_group_id"`
 	IPv4Cidr                   *string `json:"ipv4_cidr"`
 	IPv6Cidr                   *string `json:"ipv6_cidr"`
+	CloudAddressID             *string `json:"cloud_address_id"`
+	CloudAddressGroupID        *string `json:"cloud_address_group_id"`
 	CloudTargetSecurityGroupID *string `json:"cloud_target_security_group_id"`
 	Action                     string  `json:"action"`
 	Description                *string `json:"description"`
@@ -123,9 +127,13 @@ func (opt TCloudUpdateOption) Validate() error {
 type TCloudUpdateSpec struct {
 	CloudPolicyIndex           int64   `json:"cloud_policy_index" validate:"required"`
 	Protocol                   *string `json:"protocol"`
+	CloudServiceID             *string `json:"cloud_service_id"`
+	CloudServiceGroupID        *string `json:"cloud_service_group_id"`
 	Port                       *string `json:"port"`
 	IPv4Cidr                   *string `json:"ipv4_cidr"`
 	IPv6Cidr                   *string `json:"ipv6_cidr"`
+	CloudAddressID             *string `json:"cloud_address_id"`
+	CloudAddressGroupID        *string `json:"cloud_address_group_id"`
 	CloudTargetSecurityGroupID *string `json:"cloud_target_security_group_id"`
 	Action                     string  `json:"action"`
 	Description                *string `json:"memo"`

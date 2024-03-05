@@ -42,7 +42,7 @@ func (t *TCloudImpl) ListEip(kt *kit.Kit, opt *eip.TCloudEipListOption) (*eip.TC
 		return nil, err
 	}
 
-	client, err := t.clientSet.vpcClient(opt.Region)
+	client, err := t.clientSet.VpcClient(opt.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (t *TCloudImpl) ListEip(kt *kit.Kit, opt *eip.TCloudEipListOption) (*eip.TC
 // reference: https://cloud.tencent.com/document/api/215/16702
 func (t *TCloudImpl) CountEip(kt *kit.Kit, region string) (int32, error) {
 
-	client, err := t.clientSet.vpcClient(region)
+	client, err := t.clientSet.VpcClient(region)
 	if err != nil {
 		return 0, fmt.Errorf("new tcloud vpc client failed, err: %v", err)
 	}
@@ -131,7 +131,7 @@ func (t *TCloudImpl) DeleteEip(kt *kit.Kit, opt *eip.TCloudEipDeleteOption) erro
 		return err
 	}
 
-	client, err := t.clientSet.vpcClient(opt.Region)
+	client, err := t.clientSet.VpcClient(opt.Region)
 	if err != nil {
 		return err
 	}
@@ -157,7 +157,7 @@ func (t *TCloudImpl) AssociateEip(kt *kit.Kit, opt *eip.TCloudEipAssociateOption
 		return err
 	}
 
-	client, err := t.clientSet.vpcClient(opt.Region)
+	client, err := t.clientSet.VpcClient(opt.Region)
 	if err != nil {
 		return err
 	}
@@ -190,7 +190,7 @@ func (t *TCloudImpl) DisassociateEip(kt *kit.Kit, opt *eip.TCloudEipDisassociate
 		return err
 	}
 
-	client, err := t.clientSet.vpcClient(opt.Region)
+	client, err := t.clientSet.VpcClient(opt.Region)
 	if err != nil {
 		return err
 	}
@@ -219,7 +219,7 @@ func (t *TCloudImpl) DetermineIPv6Type(kt *kit.Kit, region string, ipv6Addresses
 		return nil, nil, errors.New("region and ipv6Addresses is required")
 	}
 
-	client, err := t.clientSet.vpcClient(region)
+	client, err := t.clientSet.VpcClient(region)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -268,7 +268,7 @@ func (t *TCloudImpl) CreateEip(kt *kit.Kit, opt *eip.TCloudEipCreateOption) (*po
 		return nil, err
 	}
 
-	client, err := t.clientSet.vpcClient(opt.Region)
+	client, err := t.clientSet.VpcClient(opt.Region)
 	if err != nil {
 		return nil, err
 	}

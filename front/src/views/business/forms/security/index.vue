@@ -22,10 +22,14 @@ const filter = ref<any>({
 });
 
 const useBusiness = useBusinessStore();
-const emit = defineEmits(['cancel', 'success']);
+const props = defineProps<{
+  isFormDataChanged: boolean
+}>();
+const emit = defineEmits(['cancel', 'success', 'update:isFormDataChanged']);
 const handleFormFilter = (value: BusinessFormFilter) => {
   formFilter.value = { ...value };
   type.value = value.vendor;
+  !props.isFormDataChanged && emit('update:isFormDataChanged', true);
 };
 const formData = ref({ name: '', memo: '', resource_group_name: '' });
 
@@ -81,7 +85,6 @@ const submit = async () => {
 watch(
   () => formFilter.value.region,
   (val) => {
-    console.log('val', val);
     if (val) {
       filter.value.filter.rules = [
         { field: 'vendor', op: 'eq', value: 'aws' },
@@ -100,6 +103,10 @@ watch(
     deep: true,
   },
 );
+
+watch(() => formData, () => {
+  !props.isFormDataChanged && emit('update:isFormDataChanged', true);
+}, { deep: true });
 
 const { datas, isLoading } = useQueryList(filter.value, 'vpcs'); // 只查aws的vpcs
 </script>

@@ -524,3 +524,8 @@ func genCostManageResource(a *meta.ResourceAttribute) (client.ActionID, []client
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
+
+// genArgumentTemplateResource generate argument template related iam resource.
+func genArgumentTemplateResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	return genIaaSResourceResource(a)
+}
