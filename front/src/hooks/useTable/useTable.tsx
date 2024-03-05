@@ -68,11 +68,7 @@ export const useTable = (props: IProp) => {
     pagination.start = (v - 1) * pagination.limit;
     getListData();
   };
-  const getListData = async (customRules: Array<{
-    op: QueryRuleOPEnum,
-    field: string,
-    value: string | number,
-  }> = []) => {
+  const getListData = async (customRules: Array<RulesItem> = []) => {
     // 预览
     if (props.tableOptions.reviewData) {
       dataList.value = props.tableOptions.reviewData;
@@ -106,6 +102,7 @@ export const useTable = (props: IProp) => {
                 class='w500'
                 v-model={searchVal.value}
                 data={props.searchOptions.searchData}
+                valueBehavior='need-key'
                 {...(props.searchOptions.extra || {})}
               />
             )}
@@ -214,7 +211,9 @@ export const useTable = (props: IProp) => {
       }
       // 页码重置
       pagination.start = 0;
-      getListData();
+      // 如果有初始筛选条件, 则加入初始筛选条件
+      const { rules, deleteOption } = props.requestOption.filterOption;
+      getListData(deleteOption ? [] : rules);
     },
     {
       immediate: true,
