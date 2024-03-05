@@ -31,9 +31,9 @@ import (
 
 // ListCert 查询证书列表(带 extension 字段)
 func (rc *restClient) ListCert(ctx context.Context, h http.Header, request *core.ListReq) (
-	*protocloud.ListExtResult[corecert.TCloudCertExtension], error) {
+	*protocloud.CertListExtResult[corecert.TCloudCertExtension], error) {
 
-	resp := new(protocloud.ListExtResp[corecert.TCloudCertExtension])
+	resp := new(protocloud.CertListExtResp[corecert.TCloudCertExtension])
 	err := rc.client.Post().
 		WithContext(ctx).
 		Body(request).
