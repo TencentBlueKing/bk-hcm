@@ -8,6 +8,7 @@ import { useAllVendorsAccounts } from './useAllVendorsAccountsList';
 import { useResourceAccount } from './useResourceAccount';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { useRoute, useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
 
 export default defineComponent({
   setup() {
@@ -25,6 +26,7 @@ export default defineComponent({
     } = useAllVendorsAccounts();
     const { setAccountId } = useResourceAccount();
     const resourceAccountStore = useResourceAccountStore();
+    const { currentVendor, currentAccountVendor } = storeToRefs(resourceAccountStore);
 
     const handleCancel = () => {
       // isCreateAccountDialogShow.value = false;
@@ -112,11 +114,12 @@ export default defineComponent({
           {searchVal.value.length ? null : (
             <div
               class={`all-vendors specific-vendor ${
-                !(route.query.accountId || resourceAccountStore.currentVendor) ? ' actived-specfic-account' : ''
+                !(currentAccountVendor.value || currentVendor.value) ? ' actived-specfic-account' : ''
               }`}
               onClick={() => {
                 setAccountId('');
                 resourceAccountStore.setCurrentVendor(null);
+                resourceAccountStore.setCurrentAccountVendor(null);
               }}>
               <img src={allVendors} alt='全部账号' class={'vendor-icon'} />
               <div>全部账号</div>

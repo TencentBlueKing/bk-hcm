@@ -62,6 +62,8 @@ func (rt CloudResourceType) ConvTableName() (table.Name, error) {
 		return table.ZoneTable, nil
 	case AzureResourceGroup:
 		return table.AzureRGTable, nil
+	case ArgumentTemplateResType:
+		return table.ArgumentTemplateTable, nil
 	default:
 		return "", fmt.Errorf("%s does not have a corresponding table name", rt)
 	}
@@ -85,4 +87,5 @@ const (
 	ImageCloudResType            CloudResourceType = "image"
 	ZoneCloudResType             CloudResourceType = "zone"
 	AzureResourceGroup           CloudResourceType = "azure_resource_group"
+	ArgumentTemplateResType      CloudResourceType = "argument_template"
 )

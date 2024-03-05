@@ -145,6 +145,9 @@ const (
 	CloudSelectionBizTypeTable Name = "cloud_selection_biz_type"
 	// CloudSelectionIdcTable 云选型机房信息
 	CloudSelectionIdcTable Name = "cloud_selection_idc"
+
+	// ArgumentTemplateTable is argument template table's name.
+	ArgumentTemplateTable Name = "argument_template"
 )
 
 // Validate whether the table name is valid or not.
@@ -217,6 +220,8 @@ var TableMap = map[Name]struct{}{
 
 	AsyncFlowTable:     {},
 	AsyncFlowTaskTable: {},
+
+	ArgumentTemplateTable: {},
 }
 
 // Register 注册表名

@@ -12,6 +12,7 @@ export const securityRuleValidators = (
         trigger: 'change',
         message: '协议和端口均不能为空',
         validator: () => {
+          if (['cloud_service_id', 'cloud_service_group_id'].includes(data.protocol)) return true;
           return (!!data.port || vendor === VendorEnum.HUAWEI) && !!data.protocol;
         },
       },
@@ -20,6 +21,7 @@ export const securityRuleValidators = (
         message:
           '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
         validator: () => {
+          if (['cloud_service_id', 'cloud_service_group_id'].includes(data.protocol)) return true;
           return vendor === VendorEnum.HUAWEI || isPortAvailable(data.port);
         },
       },

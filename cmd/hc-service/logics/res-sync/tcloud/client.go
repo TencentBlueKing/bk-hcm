@@ -63,6 +63,15 @@ type Interface interface {
 	Region(kt *kit.Kit, opt *SyncRegionOption) (*SyncResult, error)
 
 	SubAccount(kt *kit.Kit, opt *SyncSubAccountOption) (*SyncResult, error)
+
+	ArgsTplAddress(kt *kit.Kit, params *SyncBaseParams, opt *SyncArgsTplOption) (*SyncResult, error)
+	RemoveArgsTplAddressDeleteFromCloud(kt *kit.Kit, accountID string, region string) error
+	ArgsTplAddressGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncArgsTplOption) (*SyncResult, error)
+	RemoveArgsTplAddressGroupDeleteFromCloud(kt *kit.Kit, accountID string, region string) error
+	ArgsTplService(kt *kit.Kit, params *SyncBaseParams, opt *SyncArgsTplOption) (*SyncResult, error)
+	RemoveArgsTplServiceDeleteFromCloud(kt *kit.Kit, accountID string, region string) error
+	ArgsTplServiceGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncArgsTplOption) (*SyncResult, error)
+	RemoveArgsTplServiceGroupDeleteFromCloud(kt *kit.Kit, accountID string, region string) error
 }
 
 var _ Interface = new(client)
