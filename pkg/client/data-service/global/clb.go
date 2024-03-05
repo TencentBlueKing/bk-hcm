@@ -21,7 +21,7 @@ package global
 
 import (
 	"hcm/pkg/api/core"
-	protocloud "hcm/pkg/api/data-service/cloud"
+	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/client/common"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
@@ -40,6 +40,13 @@ func NewClbClient(client rest.ClientInterface) *ClbClient {
 }
 
 // ListClb list clb.
-func (cli *ClbClient) ListClb(kt *kit.Kit, req *core.ListReq) (*protocloud.ClbListResult, error) {
-	return common.Request[core.ListReq, protocloud.ClbListResult](cli.client, rest.POST, kt, req, "/clbs/list")
+func (cli *ClbClient) ListClb(kt *kit.Kit, req *core.ListReq) (*dataproto.ClbListResult, error) {
+	return common.Request[core.ListReq, dataproto.ClbListResult](cli.client, rest.POST, kt, req, "/clbs/list")
+}
+
+// BatchCreateTCloudClb 批量创建腾讯云CLB
+func (cli *ClbClient) BatchCreateTCloudClb(kt *kit.Kit, req *dataproto.TCloudCLBCreateReq) (
+	*core.BatchCreateResult, error) {
+	return common.Request[dataproto.TCloudCLBCreateReq, core.BatchCreateResult](
+		cli.client, rest.POST, kt, req, "/vendors/tcloud/clbs/batch/create")
 }

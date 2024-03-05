@@ -34,8 +34,10 @@ import (
 
 // ClbBatchCreateReq clb create req.
 type ClbBatchCreateReq[Extension coreclb.Extension] struct {
-	Clbs []ClbBatchCreate[Extension] `json:"clbs" validate:"required"`
+	Clbs []ClbBatchCreate[Extension] `json:"clbs" validate:"required,min=1"`
 }
+
+type TCloudCLBCreateReq = ClbBatchCreateReq[coreclb.TCloudClbExtension]
 
 // ClbBatchCreate define clb batch create.
 type ClbBatchCreate[Extension coreclb.Extension] struct {
@@ -45,8 +47,9 @@ type ClbBatchCreate[Extension coreclb.Extension] struct {
 	AccountID string `json:"account_id" validate:"required"`
 	BkBizID   int64  `json:"bk_biz_id" validate:"omitempty"`
 
+	LoadBalancerType     string   `json:"load_balancer_type" validate:"required"`
 	Region               string   `json:"region" validate:"omitempty"`
-	Zones                []string `json:"zones"`
+	Zones                []string `json:"zones" `
 	BackupZones          []string `json:"backup_zones"`
 	VpcID                string   `json:"vpc_id" validate:"omitempty"`
 	CloudVpcID           string   `json:"cloud_vpc_id" validate:"omitempty"`

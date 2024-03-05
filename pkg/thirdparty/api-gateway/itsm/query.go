@@ -20,6 +20,7 @@
 package itsm
 
 import (
+	"errors"
 	"fmt"
 
 	"hcm/pkg/kit"
@@ -64,6 +65,8 @@ func (i *itsm) GetTicketResult(kt *kit.Kit, sn string) (result TicketResult, err
 	if err != nil {
 		return result, err
 	}
-
+	if len(results) == 0 {
+		return result, errors.New("empty results from itsm")
+	}
 	return results[0], nil
 }

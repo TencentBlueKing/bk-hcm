@@ -208,3 +208,11 @@ func MapToJsonStr(m map[string]string) (string, error) {
 
 	return string(jsonByte), nil
 }
+
+// StrNilPtr return pointer of string. return nil if string == ""
+func StrNilPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
