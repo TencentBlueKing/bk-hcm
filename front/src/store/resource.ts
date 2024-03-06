@@ -229,9 +229,5 @@ export const useResourceStore = defineStore({
     create(type: string, data: any) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/create`, data);
     },
-    // 创建
-    create(type: string, data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/create`, data);
-    },
   },
 });
