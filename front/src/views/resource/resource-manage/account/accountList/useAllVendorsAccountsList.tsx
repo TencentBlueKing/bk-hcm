@@ -8,11 +8,9 @@ import awsVendor from '@/assets/image/vendor-aws.svg';
 import azureVendor from '@/assets/image/vendor-azure.svg';
 import gcpVendor from '@/assets/image/vendor-gcp.svg';
 import huaweiVendor from '@/assets/image/vendor-huawei.svg';
-import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 
 export const useAllVendorsAccounts = () => {
   const accountStore = useAccountStore();
-  const resourceAccountStore = useResourceAccountStore();
   const isLoading = ref(false);
 
   const accountsMatrix = reactive([
@@ -92,7 +90,6 @@ export const useAllVendorsAccounts = () => {
   const checkIsExpand = (vendorName: VendorEnum) => accountsMatrix.find((item) => item.vendor === vendorName)?.isExpand;
 
   const handleExpand = (vendorName: VendorEnum) => {
-    resourceAccountStore.setCurrentVendor(vendorName);
     for (const item of accountsMatrix) {
       if (item.vendor === vendorName) {
         item.isExpand = !item.isExpand;

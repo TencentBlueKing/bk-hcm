@@ -187,6 +187,17 @@ export const IP_TYPE_LIST = [
   },
 ];
 
+export const TCLOUD_SOURCE_IP_TYPE_LIST = [
+  {
+    id: 'cloud_address_id',
+    name: '参数模板-IP地址',
+  },
+  {
+    id: 'cloud_address_group_id',
+    name: '参数模板-IP地址组',
+  },
+];
+
 export const HUAWEI_TYPE_LIST = [
   {
     id: 'ipv4',
@@ -284,6 +295,14 @@ export const TCLOUD_SECURITY_RULE_PROTOCALS = [
   {
     id: 'gre',
     name: 'GRE',
+  },
+  {
+    id: 'cloud_service_id',
+    name: '参数模板-端口',
+  },
+  {
+    id: 'cloud_service_group_id',
+    name: '参数模板-端口组',
   },
 ];
 

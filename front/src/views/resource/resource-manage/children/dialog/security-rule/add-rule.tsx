@@ -8,6 +8,7 @@ import {
   HUAWEI_TYPE_LIST,
   AZURE_PROTOCOL_LIST,
   SECURITY_RULES_MAP,
+  TCLOUD_SOURCE_IP_TYPE_LIST,
 } from '@/constants';
 import Confirm from '@/components/confirm';
 import { useI18n } from 'vue-i18n';
@@ -32,6 +33,8 @@ export type SecurityRule = {
   access: string;
   action: string;
   memo: string;
+  cloud_service_id: string;
+  cloud_service_group_id: string;
 };
 
 export enum IP_CIDR {
@@ -69,6 +72,9 @@ export default defineComponent({
     isEdit: {
       type: Boolean as PropType<boolean>,
     },
+    templateData: {
+      type: Object as PropType<Record<string, Array<any>>>,
+    },
   },
 
   emits: ['update:isShow', 'submit'],
@@ -81,7 +87,6 @@ export default defineComponent({
     const protocolList = ref<any>(SECURITY_RULES_MAP[props.vendor]);
 
     const securityGroupSource = ref([
-      // 华为源
       {
         id: 'remote_ip_prefix',
         name: t('IP地址'),
@@ -160,7 +165,9 @@ export default defineComponent({
         | 'source_address_prefix' // AZURE 源 IP地址
         | 'cloud_source_security_group_ids' // AZURE 源 安全组
         | 'remote_ip_prefix' // HUAWEI IP地址
-        | 'cloud_remote_group_id', // HUAWEI 安全组
+        | 'cloud_remote_group_id' // HUAWEI 安全组
+        | 'cloud_address_id' // 腾讯云 IP参数模板
+        | 'cloud_address_group_id', // 腾讯云 IP参数模板组
     ) => {
       [
         'cloud_target_security_group_id',
@@ -170,6 +177,8 @@ export default defineComponent({
         'cloud_source_security_group_ids',
         'remote_ip_prefix',
         'cloud_remote_group_id',
+        'cloud_address_id',
+        'cloud_address_group_id',
       ].forEach((dataKey) => dataKey !== key && delete data[dataKey]);
 
       const prefix = () => (
@@ -183,7 +192,7 @@ export default defineComponent({
           ) : (
             <Select
               clearable={false}
-              class='input-prefix-select w120'
+              class='input-prefix-large-select'
               v-model={data.sourceAddress}
               disabled={props.isEdit}>
               {securityGroupSource.value.map((ele) => (
@@ -194,14 +203,43 @@ export default defineComponent({
         </>
       );
 
-      return ['cloud_target_security_group_id', 'cloud_source_security_group_ids', 'cloud_remote_group_id'].includes(
-        key,
-      ) ? (
+      let list = [];
+      switch (key) {
+        case 'cloud_target_security_group_id':
+        case 'cloud_source_security_group_ids':
+        case 'cloud_remote_group_id': {
+          list = props.relatedSecurityGroups;
+          break;
+        }
+        case 'cloud_address_id': {
+          list = props.templateData.ipList;
+          break;
+        }
+        case 'cloud_address_group_id': {
+          list = props.templateData.ipGroupList;
+        }
+      }
+
+      return [
+        'cloud_target_security_group_id',
+        'cloud_source_security_group_ids',
+        'cloud_remote_group_id',
+        'cloud_address_id',
+        'cloud_address_group_id',
+      ].includes(key) ? (
         <div class={'security-group-select w120'}>
           {prefix()}
-          <Select v-model={data[key]}>
-            {props.relatedSecurityGroups.map((securityGroup: { cloud_id: string | number | symbol; name: string }) => (
-              <Option value={securityGroup.cloud_id} label={securityGroup.name} key={securityGroup.cloud_id} />
+          <Select v-model={data[key]} class={'input-prefix-large-select'}>
+            {list.map((securityGroup: { cloud_id: string | number | symbol; name: string }) => (
+              <Option
+                value={securityGroup.cloud_id}
+                label={
+                  ['cloud_address_id', 'cloud_address_group_id'].includes(key)
+                    ? `${String(securityGroup.cloud_id)} (${securityGroup.name})`
+                    : securityGroup.name
+                }
+                key={securityGroup.cloud_id}
+              />
             ))}
           </Select>
         </div>
@@ -231,7 +269,6 @@ export default defineComponent({
         'destination_address_prefix', // AZURE 目标 IP地址
         'cloud_destination_security_group_ids', // AZURE 目标 安全组
       ].forEach((dataKey) => dataKey !== key && delete data[dataKey]);
-      console.log(key);
       return key !== 'cloud_destination_security_group_ids' ? (
         <Input
           class=' input-select-warp w120'
@@ -398,32 +435,64 @@ export default defineComponent({
                             ? '对于 TCP、UDP 协议，允许的端口范围。您可以指定单个端口号（例如 22）或端口号范围（例如7000-8000）'
                             : '请输入0-65535之间数字或者ALL'
                         }>
-                        {
-                          <Input
-                            disabled={
-                              data?.protocol === 'ALL' ||
-                              data?.protocol === 'huaweiAll' ||
-                              data?.protocol === '-1' ||
-                              ['icmpv6', 'gre', 'icmp'].includes(data?.protocol)
-                            }
-                            placeholder='请输入0-65535之间数字、ALL'
-                            class='input-select-warp'
-                            v-model={data.port}>
-                            {{
-                              prefix: () => (
-                                <Select
-                                  v-model={data.protocol}
-                                  clearable={false}
-                                  class='input-prefix-select'
-                                  onChange={handleChange}>
-                                  {protocolList.value.map((ele: any) => (
-                                    <Option value={ele.id} label={ele.name} key={ele.id} />
+                        {(() => {
+                          if (data.protocol === '' && data.cloud_service_id) data.protocol = 'cloud_service_id';
+                          if (data.protocol === '' && data.cloud_service_group_id)
+                            data.protocol = 'cloud_service_group_id';
+                          const prefix = () => (
+                            <Select
+                              v-model={data.protocol}
+                              clearable={false}
+                              class='input-prefix-large-select'
+                              onChange={handleChange}>
+                              {protocolList.value.map((ele: any) => (
+                                <Option id={ele.id} name={ele.name} key={ele.id} />
+                              ))}
+                            </Select>
+                          );
+
+                          return ['cloud_service_id', 'cloud_service_group_id'].includes(data.protocol) ? (
+                            <div class={'flex-row'}>
+                              {prefix()}
+                              {data.protocol === 'cloud_service_id' ? (
+                                <Select v-model={data.cloud_service_id}>
+                                  {props.templateData.portList.map((item) => (
+                                    <Option
+                                      name={`${item.cloud_id} (${item.name})`}
+                                      id={item.cloud_id}
+                                      key={item.cloud_id}
+                                    />
                                   ))}
                                 </Select>
-                              ),
-                            }}
-                          </Input>
-                        }
+                              ) : (
+                                <Select v-model={data.cloud_service_group_id}>
+                                  {props.templateData.portGroupList.map((item) => (
+                                    <Option
+                                      name={`${item.cloud_id} (${item.name})`}
+                                      id={item.cloud_id}
+                                      key={item.cloud_id}
+                                    />
+                                  ))}
+                                </Select>
+                              )}
+                            </div>
+                          ) : (
+                            <Input
+                              disabled={
+                                data?.protocol === 'ALL' ||
+                                data?.protocol === 'huaweiAll' ||
+                                data?.protocol === '-1' ||
+                                ['icmpv6', 'gre', 'icmp'].includes(data?.protocol)
+                              }
+                              placeholder='请输入0-65535之间数字、ALL'
+                              class='input-select-warp'
+                              v-model={data.port}>
+                              {{
+                                prefix,
+                              }}
+                            </Input>
+                          );
+                        })()}
                       </FormItem>
                       <FormItem
                         label={index === 0 ? t('源地址') : ''}
@@ -432,7 +501,12 @@ export default defineComponent({
                         description='必须指定 CIDR 数据块 或者 安全组 ID'>
                         {renderSourceAddressSlot(
                           data,
-                          data.sourceAddress as 'cloud_target_security_group_id' | 'ipv6_cidr' | 'ipv4_cidr',
+                          data.sourceAddress as
+                            | 'cloud_target_security_group_id'
+                            | 'ipv6_cidr'
+                            | 'ipv4_cidr'
+                            | 'cloud_address_id'
+                            | 'cloud_address_group_id',
                         )}
                       </FormItem>
                     </>
@@ -525,6 +599,7 @@ export default defineComponent({
                 name: t('安全组'),
               },
             ],
+            ...(props.vendor === 'tcloud' ? TCLOUD_SOURCE_IP_TYPE_LIST : []),
           ];
           sourceAddressData = securityGroupSource.value.filter((e: any) => resourceStore.securityRuleDetail[e.id]);
         } else if (props.vendor === 'azure') {
@@ -573,13 +648,8 @@ export default defineComponent({
 
     const handleConfirm = async () => {
       try {
-        console.log(
-          666666,
-          formInstances.map((formInstance) => formInstance.value.validate()),
-        );
         await Promise.all(formInstances.map((formInstance) => formInstance.value.validate()));
       } catch (err) {
-        console.log(err);
         return;
       }
 
@@ -594,6 +664,7 @@ export default defineComponent({
           e.destination_port_ranges = e.destination_port_range.split(',');
           delete e.destination_port_range;
         }
+        if (['cloud_service_id', 'cloud_service_group_id'].includes(e.protocol)) delete e.protocol;
       }
 
       emit('submit', tableData.value);

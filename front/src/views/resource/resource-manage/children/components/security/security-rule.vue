@@ -27,6 +27,9 @@ const props = defineProps({
   relatedSecurityGroups: {
     type: Array as PropType<Array<any>>,
   },
+  templateData: {
+    type: Object as PropType<Record<string, Array<any>>>,
+  },
 });
 
 // use hook
@@ -143,7 +146,6 @@ const handleSubmitRule = async (tableData: any) => {
         // eslint-disable-next-line prefer-destructuring
         e.to_port = Number(e.port.split('-')[1]);
       } else {
-        console.log('-1', e.port);
         e.from_port = e.port === 'ALL' ? -1 : Number(e.port);
         e.to_port = e.port === 'ALL' ? -1 : Number(e.port);
       }
@@ -187,15 +189,12 @@ const handleSubmitRule = async (tableData: any) => {
     });
     getList();
     isShowSecurityRule.value = false;
-  } catch (error) {
-    console.log(error);
   } finally {
     securityRuleLoading.value = false;
   }
 };
 
 const handleSecurityRuleDialog = (data: any) => {
-  console.log('data', data);
   dataId.value = data?.id;
   resourceStore.setSecurityRuleDetail(data);
   handleSecurityRule();
@@ -218,7 +217,6 @@ const inColumns = [
         data.cloud_address_group_id ||
           data.cloud_address_id ||
           data.cloud_service_group_id ||
-          data.cloud_service_id ||
           data.cloud_target_security_group_id ||
           data.ipv4_cidr ||
           data.ipv6_cidr ||
@@ -239,16 +237,17 @@ const inColumns = [
     render({ data }: any) {
       return h('span', {}, [
         // eslint-disable-next-line no-nested-ternary
-        props.vendor === 'aws' && data.protocol === '-1' && data.to_port === -1
-          ? t('全部')
-          : // eslint-disable-next-line no-nested-ternary
-          props.vendor === 'huawei' && !data.protocol && !data.port
-          ? t('全部')
-          : props.vendor === 'azure' && data.protocol === '*' && data.destination_port_range === '*'
-          ? t('全部')
-          : `${data.protocol}:${
-              data.port || data.to_port || data.destination_port_range || data.destination_port_ranges || '--'
-            }`,
+        data.cloud_service_id ||
+          (props.vendor === 'aws' && data.protocol === '-1' && data.to_port === -1
+            ? t('全部')
+            : // eslint-disable-next-line no-nested-ternary
+            props.vendor === 'huawei' && !data.protocol && !data.port
+            ? t('全部')
+            : props.vendor === 'azure' && data.protocol === '*' && data.destination_port_range === '*'
+            ? t('全部')
+            : `${data.protocol}:${
+                data.port || data.to_port || data.destination_port_range || data.destination_port_ranges || '--'
+              }`),
       ]);
     },
   },
@@ -341,7 +340,6 @@ const outColumns = [
         data.cloud_address_group_id ||
           data.cloud_address_id ||
           data.cloud_service_group_id ||
-          data.cloud_service_id ||
           data.cloud_target_security_group_id ||
           data.ipv4_cidr ||
           data.ipv6_cidr ||
@@ -360,14 +358,15 @@ const outColumns = [
     render({ data }: any) {
       return h('span', {}, [
         // eslint-disable-next-line no-nested-ternary
-        props.vendor === 'aws' && data.protocol === '-1' && data.to_port === -1
-          ? t('全部')
-          : // eslint-disable-next-line no-nested-ternary
-          props.vendor === 'huawei' && !data.protocol && !data.port
-          ? t('全部')
-          : props.vendor === 'azure' && data.protocol === '*' && data.destination_port_range === '*'
-          ? t('全部')
-          : `${data.protocol}:${data.port || data.to_port || data.destination_port_range || '--'}`,
+        data.cloud_service_id ||
+          (props.vendor === 'aws' && data.protocol === '-1' && data.to_port === -1
+            ? t('全部')
+            : // eslint-disable-next-line no-nested-ternary
+            props.vendor === 'huawei' && !data.protocol && !data.port
+            ? t('全部')
+            : props.vendor === 'azure' && data.protocol === '*' && data.destination_port_range === '*'
+            ? t('全部')
+            : `${data.protocol}:${data.port || data.to_port || data.destination_port_range || '--'}`),
       ]);
     },
   },
@@ -555,7 +554,18 @@ if (props.vendor === 'huawei') {
           :columns="azureDefaultColumns"
           :data="azureDefaultList"
           show-overflow-tooltip
-        />
+        >
+          <template #empty>
+            <div class="security-empty-container">
+              <bk-exception
+                class="exception-wrap-item exception-part"
+                type="empty"
+                scene="part"
+                description="无规则，默认拒绝所有流量"
+              />
+            </div>
+          </template>
+        </bk-table>
       </div>
 
       <h4 v-if="props.vendor === 'azure'" class="mt10">
@@ -572,7 +582,18 @@ if (props.vendor === 'huawei') {
         show-overflow-tooltip
         @page-limit-change="state.handlePageSizeChange"
         @page-value-change="state.handlePageChange"
-      />
+      >
+        <template #empty>
+          <div class="security-empty-container">
+            <bk-exception
+              class="exception-wrap-item exception-part"
+              type="empty"
+              scene="part"
+              description="无规则，默认拒绝所有流量"
+            />
+          </div>
+        </template>
+      </bk-table>
 
       <bk-table
         v-if="activeType === 'egress'"
@@ -585,7 +606,18 @@ if (props.vendor === 'huawei') {
         show-overflow-tooltip
         @page-limit-change="state.handlePageSizeChange"
         @page-value-change="state.handlePageChange"
-      />
+      >
+        <template #empty>
+          <div class="security-empty-container">
+            <bk-exception
+              class="exception-wrap-item exception-part"
+              type="empty"
+              scene="part"
+              description="无规则，默认拒绝所有流量"
+            />
+          </div>
+        </template>
+      </bk-table>
     </bk-loading>
 
     <security-rule
@@ -600,6 +632,7 @@ if (props.vendor === 'huawei') {
       :vendor="vendor"
       @submit="handleSubmitRule"
       :related-security-groups="props.relatedSecurityGroups"
+      :template-data="props.templateData"
     />
 
     <bk-dialog
@@ -620,5 +653,11 @@ if (props.vendor === 'huawei') {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.security-empty-container {
+  display: felx;
+  align-items: center;
+  margin: auto;
 }
 </style>

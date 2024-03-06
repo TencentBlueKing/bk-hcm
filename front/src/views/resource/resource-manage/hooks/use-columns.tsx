@@ -1554,6 +1554,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     cvms: cvmsColumns,
     securityCommon: securityCommonColumns,
     eips: eipColumns,
+    operationRecord: operationRecordColumns,
     clbs: clbsColumns,
     targetGroup: targetGroupColumns,
     rsConfig: rsConfigColumns,
@@ -1561,7 +1562,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     url: urlColumns,
     targetGroupListener: targetGroupListenerColumns,
     cert: certColumns,
-    operationRecord: operationRecordColumns,
   };
 
   let columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);

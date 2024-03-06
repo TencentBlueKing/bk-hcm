@@ -14,5 +14,6 @@ module.exports = {
     'prefer-spread': 'off',
     'no-console': 'error',
     'no-debugger': 'error',
+    'linebreak-style': 0,
   },
 };
