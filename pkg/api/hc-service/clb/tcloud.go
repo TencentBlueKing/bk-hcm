@@ -94,3 +94,14 @@ func (opt TCloudListOption) Validate() error {
 
 	return nil
 }
+
+// TCloudDescribeResourcesOption ...
+type TCloudDescribeResourcesOption struct {
+	AccountID                              string `json:"account_id" validate:"required"`
+	*typeclb.TCloudDescribeResourcesOption `json:",inline" validate:"required"`
+}
+
+// Validate tcloud clb list option.
+func (opt TCloudDescribeResourcesOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}

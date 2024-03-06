@@ -215,9 +215,9 @@ func (t *TCloudImpl) CreateClb(kt *kit.Kit, opt *typeclb.TCloudCreateClbOption) 
 
 	req := t.formatCreateClbRequest(opt)
 
-	resp, err := client.CreateLoadBalancer(req)
+	resp, err := client.CreateLoadBalancerWithContext(kt.Ctx, req)
 	if err != nil {
-		logs.Errorf("run tencent cloud clb instance failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
+		logs.Errorf("create tencent cloud clb instance failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
 		return nil, err
 	}
 
@@ -231,6 +231,54 @@ func (t *TCloudImpl) CreateClb(kt *kit.Kit, opt *typeclb.TCloudCreateClbOption) 
 	}
 
 	return result, nil
+}
+
+// DescribeResources 查询用户在当前地域支持可用区列表和资源列表
+// https://cloud.tencent.com/document/api/214/70213
+func (t *TCloudImpl) DescribeResources(kt *kit.Kit, opt *typeclb.TCloudDescribeResourcesOption) (
+	*clb.DescribeResourcesResponseParams, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "describe resource option can not be nil")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.ClbClient(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("init tencent cloud clb client failed, region: %s, err: %v", opt.Region, err)
+	}
+	req := clb.NewDescribeResourcesRequest()
+	if len(opt.MasterZones) != 0 {
+		req.Filters = append(req.Filters, &clb.Filter{
+			Name:   common.StringPtr("master-zone"),
+			Values: common.StringPtrs(opt.MasterZones),
+		})
+	}
+	if len(opt.ISP) != 0 {
+		req.Filters = append(req.Filters, &clb.Filter{
+			Name:   common.StringPtr("isp"),
+			Values: common.StringPtrs(opt.ISP),
+		})
+	}
+	if len(opt.IPVersion) != 0 {
+		req.Filters = append(req.Filters, &clb.Filter{
+			Name:   common.StringPtr("ip-version"),
+			Values: common.StringPtrs(opt.IPVersion),
+		})
+	}
+
+	req.Limit = opt.Limit
+	req.Offset = opt.Offset
+
+	resp, err := client.DescribeResourcesWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("tencent cloud describe resources failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
+		return nil, err
+	}
+	return resp.Response, nil
 }
 
 func (t *TCloudImpl) formatCreateClbRequest(opt *typeclb.TCloudCreateClbOption) *clb.CreateLoadBalancerRequest {

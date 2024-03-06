@@ -42,6 +42,7 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 
 	h.Add("BatchCreateTCloudClb", http.MethodPost, "/vendors/tcloud/clbs/batch/create", svc.BatchCreateTCloudClb)
 	h.Add("ListTCloudClb", http.MethodPost, "/vendors/tcloud/clbs/list", svc.ListTCloudClb)
+	h.Add("TCloudDescribeResources", http.MethodPost, "/vendors/tcloud/clbs/resources/describe", svc.TCloudDescribeResources)
 
 	h.Load(cap.WebService)
 }
@@ -178,4 +179,22 @@ func (svc *clbSvc) ListTCloudClb(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return result, nil
+}
+
+func (svc *clbSvc) TCloudDescribeResources(cts *rest.Contexts) (any, error) {
+	req := new(protoclb.TCloudDescribeResourcesOption)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.DescribeResources(cts.Kit, req.TCloudDescribeResourcesOption)
 }

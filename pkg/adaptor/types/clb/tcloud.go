@@ -198,3 +198,18 @@ const (
 	// SuccessStatus 负载均衡实例的状态-正常运行
 	SuccessStatus TCloudLoadBalancerStatus = 1
 )
+
+// TCloudDescribeResourcesOption defines options to list tcloud listeners instances.
+type TCloudDescribeResourcesOption struct {
+	Region      string   `json:"region" validate:"required"`
+	MasterZones []string `json:"master_zone" validate:"omitempty"`
+	IPVersion   []string `json:"ip_version" validate:"omitempty"`
+	ISP         []string `json:"isp" validate:"omitempty"`
+	Limit       *uint64  `json:"limit"  validate:"omitempty"`
+	Offset      *uint64  `json:"offset" validate:"omitempty"`
+}
+
+// Validate tcloud listeners list option.
+func (opt TCloudDescribeResourcesOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
