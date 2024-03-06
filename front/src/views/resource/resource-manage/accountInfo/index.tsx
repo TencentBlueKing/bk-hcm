@@ -33,7 +33,7 @@ export default defineComponent({
               <AccountManage />
             ) : (
               RESOURCE_DETAIL_TABS.map(({ key, label }) => (
-                <BkTabPanel key={key} label={label} name={key}>
+                <BkTabPanel key={key} label={label} name={key} renderDirective='if'>
                   <RouterView />
                 </BkTabPanel>
               ))

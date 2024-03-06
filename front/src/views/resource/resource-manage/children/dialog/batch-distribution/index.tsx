@@ -15,6 +15,7 @@ export enum DResourceType {
   security_groups = 'security_groups',
   subnets = 'subnets',
   vpcs = 'vpcs',
+  templates = 'argument_templates',
   clbs = 'clbs',
   certs = 'certs',
 }
@@ -55,6 +56,10 @@ export const DResourceTypeMap = {
   [DResourceType.vpcs]: {
     key: 'vpc_ids',
     name: 'VPC',
+  },
+  [DResourceType.templates]: {
+    key: 'template_ids',
+    name: '参数模板',
   },
   [DResourceType.clbs]: {
     key: 'clb_ids',

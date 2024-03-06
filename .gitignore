@@ -16,3 +16,6 @@ cmd/*-service/bk-hcm-*service
 .vscode
 
 pre-*-bkcodeai
+front/.husky/pre-push
+vetur.config.js
+bkcodeai.json
