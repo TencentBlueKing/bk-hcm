@@ -29,18 +29,18 @@ import (
 )
 
 // BatchCreateArgsTpl batch create argument template.
-func (cli *restClient) BatchCreateArgsTpl(kt *kit.Kit,
+func (rc *restClient) BatchCreateArgsTpl(kt *kit.Kit,
 	request *protocloud.ArgsTplBatchCreateReq[coreargstpl.TCloudArgsTplExtension]) (*core.BatchCreateResult, error) {
 
 	return common.Request[protocloud.ArgsTplBatchCreateReq[coreargstpl.TCloudArgsTplExtension], core.BatchCreateResult](
-		cli.client, rest.POST, kt, request,
+		rc.client, rest.POST, kt, request,
 		"/argument_templates/create")
 }
 
 // ListArgsTplExt list argument template.
-func (cli *restClient) ListArgsTplExt(kt *kit.Kit, request *core.ListReq) (
+func (rc *restClient) ListArgsTplExt(kt *kit.Kit, request *core.ListReq) (
 	*protocloud.ArgsTplExtListResult[coreargstpl.TCloudArgsTplExtension], error) {
 
 	return common.Request[core.ListReq, protocloud.ArgsTplExtListResult[coreargstpl.TCloudArgsTplExtension]](
-		cli.client, rest.POST, kt, request, "/argument_templates/list")
+		rc.client, rest.POST, kt, request, "/argument_templates/list")
 }

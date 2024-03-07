@@ -20,8 +20,6 @@
 package clb
 
 import (
-	"errors"
-
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/converter"
@@ -125,53 +123,39 @@ type TCloudCreateClbOption struct {
 	Region                   string                     `json:"region" validate:"required"`
 	LoadBalancerType         TCloudLoadBalancerType     `json:"load_balancer_type" validate:"required"`
 	Forward                  TCloudLoadBalancerInstType `json:"forward" validate:"omitempty"`
-	LoadBalancerName         string                     `json:"load_balancer_name" validate:"omitempty,max=60"`
-	VpcID                    string                     `json:"vpc_id" validate:"omitempty"`
-	SubnetID                 string                     `json:"subnet_id" validate:"omitempty"`
-	ProjectID                int64                      `json:"project_id" validate:"omitempty"`
-	AddressIPVersion         TCloudAddressIPVersion     `json:"address_ip_version" validate:"omitempty"`
-	Number                   uint64                     `json:"number" validate:"omitempty"`
-	MasterZoneID             string                     `json:"master_zone_id" validate:"omitempty"`
-	ZoneID                   string                     `json:"zone_id" validate:"omitempty"`
-	InternetAccessible       *tclb.InternetAccessible   `json:"internet_accessible" validate:"omitempty"`
-	VipIsp                   string                     `json:"vip_isp" validate:"omitempty"`
+	LoadBalancerName         *string                    `json:"load_balancer_name" validate:"omitempty,max=60"`
+	VpcID                    *string                    `json:"vpc_id" validate:"omitempty"`
+	SubnetID                 *string                    `json:"subnet_id" validate:"omitempty"`
+	ProjectID                *int64                     `json:"project_id" validate:"omitempty"`
+	AddressIPVersion         *TCloudAddressIPVersion    `json:"address_ip_version" validate:"omitempty"`
+	Number                   *uint64                    `json:"number" validate:"omitempty"`
+	MasterZoneID             *string                    `json:"master_zone_id" validate:"omitempty"`
+	ZoneID                   *string                    `json:"zone_id" validate:"omitempty"`
+	VipIsp                   *string                    `json:"vip_isp" validate:"omitempty"`
 	Tags                     []*tclb.TagInfo            `json:"tags" validate:"omitempty"`
-	Vip                      string                     `json:"vip" validate:"omitempty"`
-	BandwidthPackageID       string                     `json:"bandwidth_package_id" validate:"omitempty"`
+	Vip                      *string                    `json:"vip" validate:"omitempty"`
+	BandwidthPackageID       *string                    `json:"bandwidth_package_id" validate:"omitempty"`
 	ExclusiveCluster         *tclb.ExclusiveCluster     `json:"exclusive_cluster" validate:"omitempty"`
-	SlaType                  string                     `json:"sla_type" validate:"omitempty"`
+	SlaType                  *string                    `json:"sla_type" validate:"omitempty"`
 	ClusterIds               []*string                  `json:"cluster_ids" validate:"omitempty"`
-	ClientToken              string                     `json:"client_token" validate:"omitempty"`
-	SnatPro                  bool                       `json:"snat_pro" validate:"omitempty"`
+	ClientToken              *string                    `json:"client_token" validate:"omitempty"`
+	SnatPro                  *bool                      `json:"snat_pro" validate:"omitempty"`
 	SnatIps                  []*tclb.SnatIp             `json:"snat_ips" validate:"omitempty"`
-	ClusterTag               string                     `json:"cluster_tag" validate:"omitempty"`
-	SlaveZoneID              string                     `json:"slave_zone_id" validate:"omitempty"`
-	EipAddressID             string                     `json:"eip_address_id" validate:"omitempty"`
-	LoadBalancerPassToTarget bool                       `json:"load_balancer_pass_to_target" validate:"omitempty"`
-	DynamicVip               bool                       `json:"dynamic_vip" validate:"omitempty"`
-	Egress                   string                     `json:"egress" validate:"omitempty"`
+	ClusterTag               *string                    `json:"cluster_tag" validate:"omitempty"`
+	SlaveZoneID              *string                    `json:"slave_zone_id" validate:"omitempty"`
+	EipAddressID             *string                    `json:"eip_address_id" validate:"omitempty"`
+	LoadBalancerPassToTarget *bool                      `json:"load_balancer_pass_to_target" validate:"omitempty"`
+	DynamicVip               *bool                      `json:"dynamic_vip" validate:"omitempty"`
+	Egress                   *string                    `json:"egress" validate:"omitempty"`
+
+	InternetChargeType      *string `json:"internet_charge_type"`
+	InternetMaxBandwidthOut *int64  `json:"internet_max_bandwidth_out" `
+	BandwidthpkgSubType     *string `json:"bandwidthpkg_sub_type" validate:"omitempty"`
 }
 
 // Validate tcloud clb create option.
 func (opt TCloudCreateClbOption) Validate() error {
-	if err := validator.Validate.Struct(opt); err != nil {
-		return err
-	}
-
-	if opt.LoadBalancerType != OpenLoadBalancerType && opt.LoadBalancerType != InternalLoadBalancerType {
-		return errors.New("load_balancer_type is illegal")
-	}
-
-	if opt.Forward != 0 && opt.Forward != DefaultLoadBalancerInstType {
-		return errors.New("forward is illegal")
-	}
-
-	if len(opt.AddressIPVersion) != 0 && opt.AddressIPVersion != IPV4AddressVersion &&
-		opt.AddressIPVersion != IPV6AddressVersion && opt.AddressIPVersion != IPV6FullChainAddressVersion {
-		return errors.New("address_ip_version is illegal")
-	}
-
-	return nil
+	return validator.Validate.Struct(opt)
 }
 
 // TCloudLoadBalancerType 负载均衡实例的网络类型
@@ -214,3 +198,18 @@ const (
 	// SuccessStatus 负载均衡实例的状态-正常运行
 	SuccessStatus TCloudLoadBalancerStatus = 1
 )
+
+// TCloudDescribeResourcesOption defines options to list tcloud listeners instances.
+type TCloudDescribeResourcesOption struct {
+	Region      string   `json:"region" validate:"required"`
+	MasterZones []string `json:"master_zone" validate:"omitempty"`
+	IPVersion   []string `json:"ip_version" validate:"omitempty"`
+	ISP         []string `json:"isp" validate:"omitempty"`
+	Limit       *uint64  `json:"limit"  validate:"omitempty"`
+	Offset      *uint64  `json:"offset" validate:"omitempty"`
+}
+
+// Validate tcloud listeners list option.
+func (opt TCloudDescribeResourcesOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}

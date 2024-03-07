@@ -27,8 +27,8 @@ import (
 	"hcm/pkg/adaptor/types/account"
 	typeargstpl "hcm/pkg/adaptor/types/argument-template"
 	typesBill "hcm/pkg/adaptor/types/bill"
-	"hcm/pkg/adaptor/types/clb"
 	"hcm/pkg/adaptor/types/cert"
+	"hcm/pkg/adaptor/types/clb"
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/adaptor/types/disk"
@@ -46,6 +46,7 @@ import (
 
 	billing "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/billing/v20180709"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
+	tclb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
 
@@ -151,6 +152,9 @@ type TCloud interface {
 		*poller.BaseDoneResult, error)
 	CreateClb(kt *kit.Kit, opt *clb.TCloudCreateClbOption) (*poller.BaseDoneResult, error)
 	ListClb(kt *kit.Kit, opt *clb.TCloudListOption) ([]clb.TCloudClb, error)
+	DescribeResources(kt *kit.Kit, opt *clb.TCloudDescribeResourcesOption) (
+		*tclb.DescribeResourcesResponseParams, error)
+	DescribeNetworkAccountType(kt *kit.Kit) (*v20170312.DescribeNetworkAccountTypeResponseParams, error)
 	CreateCert(kt *kit.Kit, opt *cert.TCloudCreateOption) (*poller.BaseDoneResult, error)
 	DeleteCert(kt *kit.Kit, opt *cert.TCloudDeleteOption) error
 	ListCert(kt *kit.Kit, opt *cert.TCloudListOption) ([]cert.TCloudCert, error)

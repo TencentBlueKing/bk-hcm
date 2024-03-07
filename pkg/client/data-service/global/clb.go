@@ -21,7 +21,7 @@ package global
 
 import (
 	"hcm/pkg/api/core"
-	protocloud "hcm/pkg/api/data-service/cloud"
+	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/client/common"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
@@ -40,6 +40,6 @@ func NewClbClient(client rest.ClientInterface) *ClbClient {
 }
 
 // ListClb list clb.
-func (cli *ClbClient) ListClb(kt *kit.Kit, req *core.ListReq) (*protocloud.ClbListResult, error) {
-	return common.Request[core.ListReq, protocloud.ClbListResult](cli.client, rest.POST, kt, req, "/clbs/list")
+func (cli *ClbClient) ListClb(kt *kit.Kit, req *core.ListReq) (*dataproto.ClbListResult, error) {
+	return common.Request[core.ListReq, dataproto.ClbListResult](cli.client, rest.POST, kt, req, "/clbs/list")
 }

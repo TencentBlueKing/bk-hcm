@@ -22,7 +22,6 @@ package clb
 import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/rest"
 )
 
 // BaseClb define base clb.
@@ -74,15 +73,4 @@ func (cert Clb[T]) GetCloudID() string {
 // Extension extension.
 type Extension interface {
 	TCloudClbExtension
-}
-
-// ClbCreateResp ...
-type ClbCreateResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          *ClbCreateResult `json:"data"`
-}
-
-// ClbCreateResult ...
-type ClbCreateResult struct {
-	ID string `json:"id"`
 }

@@ -22,6 +22,7 @@ package itsm
 import (
 	"fmt"
 
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/thirdparty/api-gateway"
 )
@@ -64,6 +65,8 @@ func (i *itsm) GetTicketResult(kt *kit.Kit, sn string) (result TicketResult, err
 	if err != nil {
 		return result, err
 	}
-
+	if len(results) == 0 {
+		return result, errf.New(errf.RecordNotFound, "itsm returns empty result")
+	}
 	return results[0], nil
 }

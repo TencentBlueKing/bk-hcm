@@ -53,12 +53,12 @@ func (rc *restClient) ListCert(ctx context.Context, h http.Header, request *core
 }
 
 // BatchCreateCert batch create cert.
-func (cli *restClient) BatchCreateCert(ctx context.Context, h http.Header,
+func (rc *restClient) BatchCreateCert(ctx context.Context, h http.Header,
 	request *protocloud.CertBatchCreateReq[corecert.TCloudCertExtension]) (*core.BatchCreateResult, error) {
 
 	resp := new(core.BatchCreateResp)
 
-	err := cli.client.Post().
+	err := rc.client.Post().
 		WithContext(ctx).
 		Body(request).
 		SubResourcef("/certs/create").
@@ -77,11 +77,11 @@ func (cli *restClient) BatchCreateCert(ctx context.Context, h http.Header,
 }
 
 // BatchUpdateCert batch update cert.
-func (cli *restClient) BatchUpdateCert(ctx context.Context, h http.Header,
+func (rc *restClient) BatchUpdateCert(ctx context.Context, h http.Header,
 	request *protocloud.CertExtBatchUpdateReq[corecert.TCloudCertExtension]) (interface{}, error) {
 
 	resp := new(core.UpdateResp)
-	err := cli.client.Patch().
+	err := rc.client.Patch().
 		WithContext(ctx).
 		Body(request).
 		SubResourcef("/certs").

@@ -20,19 +20,21 @@
 package clb
 
 import (
+	"fmt"
 	"net/http"
 
 	"hcm/cmd/hc-service/service/capability"
 	typeclb "hcm/pkg/adaptor/types/clb"
 	adcore "hcm/pkg/adaptor/types/core"
+	coreclb "hcm/pkg/api/core/cloud/clb"
+	"hcm/pkg/api/data-service/cloud"
 	protoclb "hcm/pkg/api/hc-service/clb"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-
-	tclb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
-	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
+	"hcm/pkg/tools/converter"
 )
 
 func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
@@ -40,6 +42,7 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 
 	h.Add("BatchCreateTCloudClb", http.MethodPost, "/vendors/tcloud/clbs/batch/create", svc.BatchCreateTCloudClb)
 	h.Add("ListTCloudClb", http.MethodPost, "/vendors/tcloud/clbs/list", svc.ListTCloudClb)
+	h.Add("TCloudDescribeResources", http.MethodPost, "/vendors/tcloud/clbs/resources/describe", svc.TCloudDescribeResources)
 
 	h.Load(cap.WebService)
 }
@@ -68,13 +71,14 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		SubnetID:         req.CloudSubnetID,
 		Vip:              req.Vip,
 		VipIsp:           req.VipIsp,
-		InternetAccessible: &tclb.InternetAccessible{
-			InternetChargeType:      common.StringPtr(req.InternetChargeType),
-			InternetMaxBandwidthOut: common.Int64Ptr(req.InternetMaxBandwidthOut),
-		},
+
+		InternetChargeType:      req.InternetChargeType,
+		InternetMaxBandwidthOut: req.InternetMaxBandwidthOut,
+
 		BandwidthPackageID: req.BandwidthPackageID,
 		SlaType:            req.SlaType,
 		Number:             req.RequireCount,
+		ClientToken:        converter.StrNilPtr(cts.Kit.Rid),
 	}
 	// 负载均衡实例的网络类型-公网属性
 	if req.LoadBalancerType == typeclb.OpenLoadBalancerType {
@@ -84,15 +88,15 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		createOpt.VipIsp = req.VipIsp
 		// 可用区ID-仅适用于公网负载均衡
 		if len(req.Zones) > 0 {
-			createOpt.ZoneID = req.Zones[0]
+			createOpt.ZoneID = converter.ValToPtr(req.Zones[0])
 		}
 		// 设置跨可用区容灾时的主可用区ID-仅适用于公网负载均衡
 		if len(req.BackupZones) > 0 {
-			createOpt.MasterZoneID = req.BackupZones[0]
+			createOpt.MasterZoneID = converter.ValToPtr(req.BackupZones[0])
 		}
 		// 设置跨可用区容灾时的备可用区ID-仅适用于公网负载均衡
 		if len(req.BackupZones) > 1 {
-			createOpt.SlaveZoneID = req.BackupZones[1]
+			createOpt.SlaveZoneID = converter.ValToPtr(req.BackupZones[1])
 		}
 	}
 
@@ -112,7 +116,32 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 	if len(result.SuccessCloudIDs) == 0 {
 		return respData, nil
 	}
+	dbCreateReq := &cloud.TCloudCLBCreateReq{
+		Clbs: make([]cloud.ClbBatchCreate[coreclb.TCloudClbExtension], 0, len(result.SuccessCloudIDs)),
+	}
+	// 预创建数据库记录
+	for i, cloudID := range result.SuccessCloudIDs {
+		var name = converter.PtrToVal(createOpt.LoadBalancerName)
+		if converter.PtrToVal(req.RequireCount) > 1 {
+			name = name + fmt.Sprintf("-%d", i+1)
+		}
+		dbCreateReq.Clbs = append(dbCreateReq.Clbs, cloud.ClbBatchCreate[coreclb.TCloudClbExtension]{
+			BkBizID:          constant.UnassignedBiz,
+			CloudID:          cloudID,
+			Name:             name,
+			Vendor:           enumor.TCloud,
+			LoadBalancerType: string(req.LoadBalancerType),
+			AccountID:        req.AccountID,
+			Zones:            req.Zones,
+			Region:           req.Region,
+		})
+	}
 
+	_, err = svc.dataCli.TCloud.LoadBalancer.BatchCreateTCloudClb(cts.Kit, dbCreateReq)
+	if err != nil {
+		logs.Errorf("fail to pre-insert clb record to db, err: %v , rid: %s", err, cts.Kit.Rid)
+		// still try to sync
+	}
 	// TODO 补充CLB同步逻辑
 
 	return respData, nil
@@ -144,9 +173,28 @@ func (svc *clbSvc) ListTCloudClb(cts *rest.Contexts) (interface{}, error) {
 	}
 	result, err := tcloud.ListClb(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("[%s] list tcloud clb failed, req: %+v, err: %v, rid: %s", enumor.TCloud, req, err, cts.Kit.Rid)
+		logs.Errorf("[%s] list tcloud clb failed, req: %+v, err: %v, rid: %s",
+			enumor.TCloud, req, err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	return result, nil
+}
+
+func (svc *clbSvc) TCloudDescribeResources(cts *rest.Contexts) (any, error) {
+	req := new(protoclb.TCloudDescribeResourcesOption)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.DescribeResources(cts.Kit, req.TCloudDescribeResourcesOption)
 }

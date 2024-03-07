@@ -20,7 +20,14 @@
 package tcloud
 
 import (
+	"net/http"
+
+	protoclb "hcm/pkg/api/hc-service/clb"
+	"hcm/pkg/client/common"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
+
+	tclb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 )
 
 // NewClbClient create a new clb api client.
@@ -33,4 +40,16 @@ func NewClbClient(client rest.ClientInterface) *ClbClient {
 // ClbClient is hc service clb api client.
 type ClbClient struct {
 	client rest.ClientInterface
+}
+
+func (c *ClbClient) DescribeResources(kt *kit.Kit, req *protoclb.TCloudDescribeResourcesOption) (
+	*tclb.DescribeResourcesResponseParams, error) {
+
+	return common.Request[protoclb.TCloudDescribeResourcesOption, tclb.DescribeResourcesResponseParams](
+		c.client, http.MethodPost, kt, req, "clbs/resources/describe")
+}
+
+func (c *ClbClient) BatchCreate(kt *kit.Kit, req *protoclb.TCloudBatchCreateReq) (*protoclb.BatchCreateResult, error) {
+	return common.Request[protoclb.TCloudBatchCreateReq, protoclb.BatchCreateResult](
+		c.client, http.MethodPost, kt, req, "clbs/batch/create")
 }

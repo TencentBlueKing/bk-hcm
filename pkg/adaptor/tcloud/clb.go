@@ -215,9 +215,9 @@ func (t *TCloudImpl) CreateClb(kt *kit.Kit, opt *typeclb.TCloudCreateClbOption) 
 
 	req := t.formatCreateClbRequest(opt)
 
-	resp, err := client.CreateLoadBalancer(req)
+	resp, err := client.CreateLoadBalancerWithContext(kt.Ctx, req)
 	if err != nil {
-		logs.Errorf("run tencent cloud clb instance failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
+		logs.Errorf("create tencent cloud clb instance failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
 		return nil, err
 	}
 
@@ -233,48 +233,96 @@ func (t *TCloudImpl) CreateClb(kt *kit.Kit, opt *typeclb.TCloudCreateClbOption) 
 	return result, nil
 }
 
+// DescribeResources 查询用户在当前地域支持可用区列表和资源列表
+// https://cloud.tencent.com/document/api/214/70213
+func (t *TCloudImpl) DescribeResources(kt *kit.Kit, opt *typeclb.TCloudDescribeResourcesOption) (
+	*clb.DescribeResourcesResponseParams, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "describe resource option can not be nil")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.ClbClient(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("init tencent cloud clb client failed, region: %s, err: %v", opt.Region, err)
+	}
+	req := clb.NewDescribeResourcesRequest()
+	if len(opt.MasterZones) != 0 {
+		req.Filters = append(req.Filters, &clb.Filter{
+			Name:   common.StringPtr("master-zone"),
+			Values: common.StringPtrs(opt.MasterZones),
+		})
+	}
+	if len(opt.ISP) != 0 {
+		req.Filters = append(req.Filters, &clb.Filter{
+			Name:   common.StringPtr("isp"),
+			Values: common.StringPtrs(opt.ISP),
+		})
+	}
+	if len(opt.IPVersion) != 0 {
+		req.Filters = append(req.Filters, &clb.Filter{
+			Name:   common.StringPtr("ip-version"),
+			Values: common.StringPtrs(opt.IPVersion),
+		})
+	}
+
+	req.Limit = opt.Limit
+	req.Offset = opt.Offset
+
+	resp, err := client.DescribeResourcesWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("tencent cloud describe resources failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
+		return nil, err
+	}
+	return resp.Response, nil
+}
+
 func (t *TCloudImpl) formatCreateClbRequest(opt *typeclb.TCloudCreateClbOption) *clb.CreateLoadBalancerRequest {
 	req := clb.NewCreateLoadBalancerRequest()
 	// 负载均衡实例的名称
-	req.LoadBalancerName = common.StringPtr(opt.LoadBalancerName)
+	req.LoadBalancerName = opt.LoadBalancerName
 	// 负载均衡实例的网络类型。OPEN：公网属性， INTERNAL：内网属性。
 	req.LoadBalancerType = common.StringPtr(string(opt.LoadBalancerType))
 	// 仅适用于公网负载均衡, IP版本
-	req.AddressIPVersion = common.StringPtr(string(opt.AddressIPVersion))
+	req.AddressIPVersion = (*string)(opt.AddressIPVersion)
 	// 负载均衡后端目标设备所属的网络
-	req.VpcId = common.StringPtr(opt.VpcID)
+	req.VpcId = opt.VpcID
 	// 负载均衡实例的类型。1：通用的负载均衡实例，目前只支持传入1。
 	req.Forward = common.Int64Ptr(int64(typeclb.DefaultLoadBalancerInstType))
 	// 是否支持绑定跨地域/跨Vpc绑定IP的功能
-	req.SnatPro = common.BoolPtr(opt.SnatPro)
+	req.SnatPro = opt.SnatPro
 	// Target是否放通来自CLB的流量。开启放通（true）：只验证CLB上的安全组；不开启放通（false）：需同时验证CLB和后端实例上的安全组
-	req.LoadBalancerPassToTarget = common.BoolPtr(opt.LoadBalancerPassToTarget)
+	req.LoadBalancerPassToTarget = opt.LoadBalancerPassToTarget
 	// 是否创建域名化负载均衡
-	req.DynamicVip = common.BoolPtr(opt.DynamicVip)
-	req.SubnetId = common.StringPtr(opt.SubnetID)
-	req.Vip = common.StringPtr(opt.Vip)
-	req.Number = common.Uint64Ptr(opt.Number)
-	req.ProjectId = common.Int64Ptr(opt.ProjectID)
-	req.SlaType = common.StringPtr(opt.SlaType)
+	req.DynamicVip = opt.DynamicVip
+	req.SubnetId = opt.SubnetID
+	req.Vip = opt.Vip
+	req.Number = opt.Number
+	req.ProjectId = opt.ProjectID
+	req.SlaType = opt.SlaType
 	req.ClusterIds = append(req.ClusterIds, opt.ClusterIds...)
 	// 用于保证请求幂等性的字符串。该字符串由客户生成，需保证不同请求之间唯一，最大值不超过64个字符。若不指定该参数则无法保证请求的幂等性。
-	req.ClientToken = common.StringPtr(opt.ClientToken)
-	req.ClusterTag = common.StringPtr(opt.ClusterTag)
-	req.EipAddressId = common.StringPtr(opt.EipAddressID)
-	req.SlaveZoneId = common.StringPtr(opt.SlaveZoneID)
-	req.Egress = common.StringPtr(opt.Egress)
-	req.MasterZoneId = common.StringPtr(opt.MasterZoneID)
-	req.ZoneId = common.StringPtr(opt.ZoneID)
-	req.VipIsp = common.StringPtr(opt.VipIsp)
-	req.BandwidthPackageId = common.StringPtr(opt.BandwidthPackageID)
+	req.ClientToken = opt.ClientToken
+	req.ClusterTag = opt.ClusterTag
+	req.EipAddressId = opt.EipAddressID
+	req.SlaveZoneId = opt.SlaveZoneID
+	req.Egress = opt.Egress
+	req.ZoneId = opt.ZoneID
+	req.MasterZoneId = opt.MasterZoneID
+	req.VipIsp = opt.VipIsp
+	req.BandwidthPackageId = opt.BandwidthPackageID
 	req.Tags = opt.Tags
 	req.SnatIps = opt.SnatIps
 
-	if opt.InternetAccessible != nil {
+	if opt.InternetChargeType != nil || opt.InternetMaxBandwidthOut != nil {
 		req.InternetAccessible = &clb.InternetAccessible{
-			InternetChargeType:      opt.InternetAccessible.InternetChargeType,
-			InternetMaxBandwidthOut: opt.InternetAccessible.InternetMaxBandwidthOut,
-			BandwidthpkgSubType:     opt.InternetAccessible.BandwidthpkgSubType,
+			InternetChargeType:      opt.InternetChargeType,
+			InternetMaxBandwidthOut: opt.InternetMaxBandwidthOut,
+			BandwidthpkgSubType:     opt.BandwidthpkgSubType,
 		}
 	}
 

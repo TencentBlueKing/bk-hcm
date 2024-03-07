@@ -18,7 +18,7 @@ POST /api/v1/cloud/vendors/tcloud/clbs/create
 | region                     | string       | 是  | 地域                                                            |
 | load_balance_type          | string       | 是  | 网络类型  公网 OPEN，内网 INTERNAL                                     |
 | name                       | string       | 是  | 名称                                                            |
-| zones                      | string array | 是  | 主可用区                                                          |
+| zones                      | string array | 否  | 主可用区,，仅限公网型                                                   |
 | backup_zones               | string array | 否  | 备可用区，目前仅广州、上海、南京、北京、中国香港、首尔地域的 IPv4 版本的 CLB 支持主备可用区。          |
 | address_ip_version         | string       | 否  | ip版本，IPV4,IPV6(ipv6 nat64),IPv6FullChain(ipv6)                |
 | cloud_vpc_id               | string       | 是  | 云VpcID                                                        |

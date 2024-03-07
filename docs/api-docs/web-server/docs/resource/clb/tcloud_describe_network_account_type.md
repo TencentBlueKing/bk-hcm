@@ -6,18 +6,24 @@
 
 ### URL
 
-GET /api/v1/cloud/vendors/tcloud/network_account_type
+GET /api/v1/cloud/vendors/tcloud/accounts/{account_id}/network_type
 
 ### 输入参数
 
-| 参数名称   | 参数类型   | 必选 | 描述 |
-|--------|--------|----|----|
-| region | string | 是  | 地域 |
+| 参数名称       | 参数类型   | 必选 | 描述    |
+|------------|--------|----|-------|
+| account_id | string | 是  | 云账户id |
 
 ### 响应参数说明
 
-| 参数名称                 | 参数类型   | 描述                                  |
-|----------------------|--------|-------------------------------------|
-| code                 | int32  | 状态码                                 |
-| message              | string | 请求信息                                |
-| network_account_type | string | 用户账号的网络类型，STANDARD为标准用户，LEGACY为传统用户 |
+| 参数名称    | 参数类型            | 描述   |
+|---------|-----------------|------|
+| code    | int32           | 状态码  |
+| message | string          | 请求信息 |
+| data    | AccountTypeInfo |      |
+
+### AccountTypeResp
+
+| 参数名称               | 参数类型   | 描述                                  |
+|--------------------|--------|-------------------------------------|
+| NetworkAccountType | string | 用户账号的网络类型，STANDARD为标准用户，LEGACY为传统用户 |

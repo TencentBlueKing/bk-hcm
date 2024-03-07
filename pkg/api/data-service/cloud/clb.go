@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/api/core"
 	coreclb "hcm/pkg/api/core/cloud/clb"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -34,19 +35,22 @@ import (
 
 // ClbBatchCreateReq clb create req.
 type ClbBatchCreateReq[Extension coreclb.Extension] struct {
-	Clbs []ClbBatchCreate[Extension] `json:"clbs" validate:"required"`
+	Clbs []ClbBatchCreate[Extension] `json:"clbs" validate:"required,min=1"`
 }
+
+type TCloudCLBCreateReq = ClbBatchCreateReq[coreclb.TCloudClbExtension]
 
 // ClbBatchCreate define clb batch create.
 type ClbBatchCreate[Extension coreclb.Extension] struct {
-	CloudID   string `json:"cloud_id" validate:"required"`
-	Name      string `json:"name" validate:"required"`
-	Vendor    string `json:"vendor" validate:"required"`
-	AccountID string `json:"account_id" validate:"required"`
-	BkBizID   int64  `json:"bk_biz_id" validate:"omitempty"`
+	CloudID   string        `json:"cloud_id" validate:"required"`
+	Name      string        `json:"name" validate:"required"`
+	Vendor    enumor.Vendor `json:"vendor" validate:"required"`
+	AccountID string        `json:"account_id" validate:"required"`
+	BkBizID   int64         `json:"bk_biz_id" validate:"omitempty"`
 
+	LoadBalancerType     string   `json:"load_balancer_type" validate:"required"`
 	Region               string   `json:"region" validate:"omitempty"`
-	Zones                []string `json:"zones"`
+	Zones                []string `json:"zones" `
 	BackupZones          []string `json:"backup_zones"`
 	VpcID                string   `json:"vpc_id" validate:"omitempty"`
 	CloudVpcID           string   `json:"cloud_vpc_id" validate:"omitempty"`
