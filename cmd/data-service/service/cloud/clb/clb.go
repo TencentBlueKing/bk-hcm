@@ -38,8 +38,9 @@ func InitService(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("ListCert", http.MethodPost, "/clbs/list", svc.ListClb)
-	h.Add("ListCertExt", http.MethodPost, "/vendors/{vendor}/clbs/list", svc.ListClbExt)
+	h.Add("Get", http.MethodGet, "/vendors/{vendor}/clbs/{id}", svc.GetLoadBalancer)
+	h.Add("ListLoadBalancer", http.MethodPost, "/clbs/list", svc.ListLoadBalancer)
+	h.Add("ListLoadBalancerExt", http.MethodPost, "/vendors/{vendor}/clbs/list", svc.ListLoadBalancerExt)
 	h.Add("BatchCreateCLB", http.MethodPost, "/vendors/{vendor}/clbs/batch/create", svc.BatchCreateCLB)
 
 	h.Load(cap.WebService)

@@ -28,6 +28,7 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud/eip"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	tableclb "hcm/pkg/dal/table/cloud/clb"
 	"hcm/pkg/logs"
@@ -35,8 +36,8 @@ import (
 	"hcm/pkg/tools/converter"
 )
 
-// ListClb list clb.
-func (svc *clbSvc) ListClb(cts *rest.Contexts) (interface{}, error) {
+// ListLoadBalancer list clb.
+func (svc *clbSvc) ListLoadBalancer(cts *rest.Contexts) (interface{}, error) {
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -104,8 +105,8 @@ func convTableToBaseClb(one *tableclb.LoadBalancerTable) *coreclb.BaseClb {
 	}
 }
 
-// ListClbExt list clb ext.
-func (svc *clbSvc) ListClbExt(cts *rest.Contexts) (interface{}, error) {
+// ListLoadBalancerExt list clb ext.
+func (svc *clbSvc) ListLoadBalancerExt(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -136,6 +137,41 @@ func (svc *clbSvc) ListClbExt(cts *rest.Contexts) (interface{}, error) {
 		return convClbListResult[coreclb.TCloudClbExtension](data.Details)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
+	}
+}
+
+// GetLoadBalancer ...
+func (svc *clbSvc) GetLoadBalancer(cts *rest.Contexts) (any, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	id := cts.PathParameter("id").String()
+	if len(id) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "clb id is required")
+	}
+
+	opt := &types.ListOption{
+		Filter: tools.EqualExpression("id", id),
+		Page:   core.NewDefaultBasePage(),
+	}
+	result, err := svc.dao.LoadBalancer().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list clb(%s) failed, err: %v, rid: %s", err, id, cts.Kit.Rid)
+		return nil, fmt.Errorf("get clb failed, err: %v", err)
+	}
+
+	if len(result.Details) != 1 {
+		return nil, errf.New(errf.RecordNotFound, "load balancer not found")
+	}
+
+	clbTable := result.Details[0]
+	switch clbTable.Vendor {
+	case enumor.TCloud:
+		return convTableToBaseClb(&clbTable), nil
+	default:
+		return nil, fmt.Errorf("unsupport vendor: %s", vendor)
 	}
 }
 

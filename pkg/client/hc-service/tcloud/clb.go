@@ -42,6 +42,7 @@ type ClbClient struct {
 	client rest.ClientInterface
 }
 
+// DescribeResources ...
 func (c *ClbClient) DescribeResources(kt *kit.Kit, req *protoclb.TCloudDescribeResourcesOption) (
 	*tclb.DescribeResourcesResponseParams, error) {
 
@@ -49,6 +50,7 @@ func (c *ClbClient) DescribeResources(kt *kit.Kit, req *protoclb.TCloudDescribeR
 		c.client, http.MethodPost, kt, req, "clbs/resources/describe")
 }
 
+// BatchCreate ...
 func (c *ClbClient) BatchCreate(kt *kit.Kit, req *protoclb.TCloudBatchCreateReq) (*protoclb.BatchCreateResult, error) {
 	return common.Request[protoclb.TCloudBatchCreateReq, protoclb.BatchCreateResult](
 		c.client, http.MethodPost, kt, req, "clbs/batch/create")
