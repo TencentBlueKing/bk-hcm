@@ -104,5 +104,5 @@ func (c *Clb) baseOperationAuditBuild(kt *kit.Kit, operations []protoaudit.Cloud
 func (c *Clb) assOperationAuditBuild(_ *kit.Kit, _ []protoaudit.CloudResourceOperationInfo) (
 	[]*tableaudit.AuditTable, error) {
 
-	return nil, errors.New("暂不支持")
+	return nil, errors.New("not supported")
 }

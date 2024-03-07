@@ -229,17 +229,9 @@ type TCloudSetClbSecurityGroupOption struct {
 
 // Validate tcloud clb security-group option.
 func (opt TCloudSetClbSecurityGroupOption) Validate() error {
-	if err := validator.Validate.Struct(opt); err != nil {
-		return err
-	}
-
-	if len(opt.LoadBalancerID) == 0 {
-		return errors.New("load_balancer_id is required")
-	}
-
 	if len(opt.SecurityGroups) > constant.LoadBalancerBindSecurityGroupMaxLimit {
 		return fmt.Errorf("invalid page.limit max value: %d", constant.LoadBalancerBindSecurityGroupMaxLimit)
 	}
 
-	return nil
+	return validator.Validate.Struct(opt)
 }

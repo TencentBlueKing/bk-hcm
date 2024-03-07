@@ -139,13 +139,5 @@ type TCloudDisAssociateClbSecurityGroupReq struct {
 
 // Validate tcloud clb security-group option.
 func (opt TCloudDisAssociateClbSecurityGroupReq) Validate() error {
-	if len(opt.ClbID) == 0 {
-		return errors.New("clb_id is required")
-	}
-
-	if len(opt.SecurityGroupID) == 0 {
-		return errors.New("security_group_id is required")
-	}
-
 	return validator.Validate.Struct(opt)
 }
