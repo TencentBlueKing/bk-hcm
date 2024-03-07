@@ -36,6 +36,13 @@ const hostTabs = [
   },
 ];
 
+const hostTabs = [
+  {
+    name: '基本信息',
+    value: 'detail',
+  },
+];
+
 const id = route.query?.id;
 const gcpDetail = ref({});
 const gcpLoading = ref(true);
@@ -64,8 +71,6 @@ const fetchDetail = async () => {
     };
     gcpDetail.value = { ...detail.value };
     handleDetailData();
-  } catch (error) {
-    console.log(error);
   } finally {
     gcpLoading.value = false;
   }
@@ -163,7 +168,6 @@ const gcpFields = [
   },
 ];
 const handleDetailData = () => {
-  console.log('detail', detail.value.account_id);
   detail.target_service_accounts = detail.value.target_service_accounts || [];
   detail.destination_ranges = detail.value.destination_ranges || [];
   detail.target_tags = detail.value.target_tags || [];
@@ -189,7 +193,6 @@ const handleDetailData = () => {
       return p;
     }, []);
   gcpDetail.value.ports = gcpDetail.value.operate === t('允许') ? gcpDetail.value.allowed : gcpDetail.value.denied;
-  console.log('gcpDetail.value.ports', gcpDetail.value.ports);
   // eslint-disable-next-line max-len
   gcpDetail.value.target = [...detail?.destination_ranges, ...detail?.target_service_accounts, ...detail?.target_tags]
     .length

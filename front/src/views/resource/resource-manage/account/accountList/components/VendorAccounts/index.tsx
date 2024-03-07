@@ -52,7 +52,7 @@ export default defineComponent({
     const loadingRef = ref([]);
 
     // 高亮命中关键词
-    function getHighLightNameText(name: string, rootCls: string) {
+    const getHighLightNameText = (name: string, rootCls: string) => {
       return (
         <div
           class={rootCls}
@@ -61,7 +61,22 @@ export default defineComponent({
             `<span class='search-result-highlight'>${props.searchVal}</span>`,
           )}></div>
       );
-    }
+    };
+
+    // 点击云厂商
+    const handleClickVendor = (vendor: VendorEnum) => {
+      resourceAccountStore.setCurrentVendor(vendor);
+      resourceAccountStore.setCurrentAccountVendor(null);
+      props.handleExpand(vendor);
+      props.handleSelect('');
+    };
+
+    // 点击账号
+    const handleClickAccount = (id: string, vendor: VendorEnum) => {
+      props.handleSelect(id);
+      resourceAccountStore.setCurrentVendor(null);
+      resourceAccountStore.setCurrentAccountVendor(vendor);
+    };
 
     watch(
       () => route.query.accountId,
@@ -98,7 +113,7 @@ export default defineComponent({
                   class={`vendor-item-wrap${isExpand ? ' sticky' : ''}${
                     currentVendor.value === vendor ? ' active' : ''
                   }`}
-                  onClick={() => props.handleExpand(vendor)}>
+                  onClick={() => handleClickVendor(vendor)}>
                   <i
                     class={`icon hcm-icon vendor-account-menu-dropdown-icon${
                       isExpand ? ' bkhcm-icon-down-shape' : ' bkhcm-icon-right-shape'
@@ -108,11 +123,11 @@ export default defineComponent({
                   <div class='vendor-account-count'>{count}</div>
                 </div>
                 <div class={`account-list-wrap${isExpand ? ' expand' : ''}`}>
-                  {accounts.map(({ sync_status, name, id }) => (
+                  {accounts.map(({ sync_status, name, id, vendor }) => (
                     <div
                       class={`account-item${route.query.accountId === id ? ' active' : ''}`}
                       key={id}
-                      onClick={() => props.handleSelect(id)}>
+                      onClick={() => handleClickAccount(id, vendor)}>
                       <img
                         src={sync_status === 'sync_success' ? successAccount : failedAccount}
                         alt=''
