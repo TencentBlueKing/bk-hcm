@@ -158,4 +158,6 @@ type TCloud interface {
 	CreateCert(kt *kit.Kit, opt *cert.TCloudCreateOption) (*poller.BaseDoneResult, error)
 	DeleteCert(kt *kit.Kit, opt *cert.TCloudDeleteOption) error
 	ListCert(kt *kit.Kit, opt *cert.TCloudListOption) ([]cert.TCloudCert, error)
+	SetClbSecurityGroups(kt *kit.Kit, opt *clb.TCloudSetClbSecurityGroupOption) (
+		*tclb.SetLoadBalancerSecurityGroupsResponseParams, error)
 }

@@ -20,6 +20,7 @@
 package cloud
 
 import (
+	"hcm/cmd/data-service/service/audit/cloud/clb"
 	"hcm/cmd/data-service/service/audit/cloud/cvm"
 	"hcm/cmd/data-service/service/audit/cloud/firewall"
 	networkinterface "hcm/cmd/data-service/service/audit/cloud/network-interface"
@@ -39,6 +40,7 @@ func NewCloudAudit(dao dao.Set) *Audit {
 		subnet:           subnet.NewSubnet(dao),
 		networkInterface: networkinterface.NewNetworkInterface(dao),
 		routeTable:       routetable.NewRouteTable(dao),
+		clb:              clb.NewClb(dao),
 	}
 }
 
@@ -51,4 +53,5 @@ type Audit struct {
 	subnet           *subnet.Subnet
 	networkInterface *networkinterface.NetworkInterface
 	routeTable       *routetable.RouteTable
+	clb              *clb.Clb
 }

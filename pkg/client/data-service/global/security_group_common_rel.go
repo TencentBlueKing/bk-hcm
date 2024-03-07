@@ -47,6 +47,12 @@ func (cli *SGCommonRelClient) BatchCreate(kt *kit.Kit, request *protocloud.SGCom
 		"/security_group_common_rels/batch/create")
 }
 
+// BatchUpsert security group common rels.
+func (cli *SGCommonRelClient) BatchUpsert(kt *kit.Kit, request *protocloud.SGCommonRelBatchUpsertReq) error {
+	return common.RequestNoResp[protocloud.SGCommonRelBatchUpsertReq](cli.client, rest.POST, kt, request,
+		"/security_group_common_rels/batch/upsert")
+}
+
 // BatchDelete security group common rels.
 func (cli *SGCommonRelClient) BatchDelete(kt *kit.Kit, request *proto.BatchDeleteReq) error {
 	return common.RequestNoResp[proto.BatchDeleteReq](cli.client, rest.DELETE, kt, request,

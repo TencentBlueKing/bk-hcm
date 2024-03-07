@@ -36,6 +36,7 @@ func InitService(cap *capability.Capability) {
 	h := rest.NewHandler()
 
 	h.Add("BatchCreate", http.MethodPost, "/security_group_common_rels/batch/create", svc.BatchCreate)
+	h.Add("BatchUpsert", http.MethodPost, "/security_group_common_rels/batch/upsert", svc.BatchUpsert)
 	h.Add("BatchDelete", http.MethodDelete, "/security_group_common_rels/batch", svc.BatchDelete)
 	h.Add("List", http.MethodPost, "/security_group_common_rels/list", svc.List)
 	h.Add("ListWithSecurityGroup", http.MethodPost, "/security_group_common_rels/with/security_group/list",

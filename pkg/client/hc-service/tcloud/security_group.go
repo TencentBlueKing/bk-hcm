@@ -25,6 +25,7 @@ import (
 
 	"hcm/pkg/api/core"
 	proto "hcm/pkg/api/hc-service"
+	hcclb "hcm/pkg/api/hc-service/clb"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -241,6 +242,54 @@ func (cli *SecurityGroupClient) DisassociateCvm(ctx context.Context, h http.Head
 		WithContext(ctx).
 		Body(req).
 		SubResourcef("/security_groups/disassociate/cvms").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
+// AssociateClb ...
+func (cli *SecurityGroupClient) AssociateClb(ctx context.Context, h http.Header,
+	req *hcclb.TCloudSetClbSecurityGroupReq) error {
+
+	resp := new(rest.BaseResp)
+
+	err := cli.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/security_groups/associate/clbs").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
+// DisassociateClb ...
+func (cli *SecurityGroupClient) DisassociateClb(ctx context.Context, h http.Header,
+	req *hcclb.TCloudDisAssociateClbSecurityGroupReq) error {
+
+	resp := new(rest.BaseResp)
+
+	err := cli.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/security_groups/disassociate/clbs").
 		WithHeaders(h).
 		Do().
 		Into(resp)

@@ -20,7 +20,10 @@
 package clb
 
 import (
+	"fmt"
+
 	"hcm/pkg/adaptor/types/core"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/converter"
 
@@ -211,5 +214,23 @@ type TCloudDescribeResourcesOption struct {
 
 // Validate tcloud listeners list option.
 func (opt TCloudDescribeResourcesOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// --------------------------[设置负载均衡实例的安全组]--------------------------
+
+// TCloudSetClbSecurityGroupOption defines options to set tcloud clb security-group option.
+type TCloudSetClbSecurityGroupOption struct {
+	Region         string   `json:"region" validate:"required"`
+	LoadBalancerID string   `json:"load_balancer_id" validate:"required"`
+	SecurityGroups []string `json:"security_groups" validate:"omitempty,max=50"`
+}
+
+// Validate tcloud clb security-group option.
+func (opt TCloudSetClbSecurityGroupOption) Validate() error {
+	if len(opt.SecurityGroups) > constant.LoadBalancerBindSecurityGroupMaxLimit {
+		return fmt.Errorf("invalid page.limit max value: %d", constant.LoadBalancerBindSecurityGroupMaxLimit)
+	}
+
 	return validator.Validate.Struct(opt)
 }
