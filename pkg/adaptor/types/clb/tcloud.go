@@ -20,7 +20,6 @@
 package clb
 
 import (
-	"errors"
 	"fmt"
 
 	"hcm/pkg/adaptor/types/core"
