@@ -36,13 +36,6 @@ const hostTabs = [
   },
 ];
 
-const hostTabs = [
-  {
-    name: '基本信息',
-    value: 'detail',
-  },
-];
-
 const id = route.query?.id;
 const gcpDetail = ref({});
 const gcpLoading = ref(true);
