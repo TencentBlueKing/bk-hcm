@@ -182,13 +182,17 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/listeners/li
         "lb_id": "xxxx",
         "lb_name": "xxxx",
         "cloud_lb_id": "lb-xxxx",
+        "target_group_id": "xxxx",
+        "cloud_target_group_id": "cloud-tg-xxxx",
         "private_ipv4_addresses": "127.0.0.1",
         "private_ipv6_addresses": "xxxx",
         "public_ipv4_addresses": "127.0.0.1",
         "public_ipv6_addresses": "xxxx",
         "protocol": "https",
         "port": 80,
-        "url": "www.qq.com",
+        "domain": "www.qq.com",
+        "url": "/",
+        "scheduler": "WRR",
         "inst_type": "cvm",
         "vpc_id": "vpc-123",
         "vpc_name": "vpc-name",
@@ -238,19 +242,24 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/listeners/li
 | id                     | string       | 资源ID                                 |
 | cloud_id               | string       | 云资源ID                                |
 | name                   | string       | 资源名称                                |
+| rule_type              | string       | URL规则类型                             |
 | lbl_id                 | string       | 监听器ID                                |
 | lbl_name               | string       | 监听器名称                              |
 | cloud_lbl_id           | string       | 云监听器ID                              |
 | lb_id                  | string       | 负载均衡ID                              |
 | lb_name                | string       | 云负载均衡名称                           |
 | cloud_lb_id            | string       | 云负载均衡ID                            |
+| target_group_id        | string       | 目标组ID                               |
+| cloud_target_group_id  | string       | 云目标组ID                             |
 | private_ipv4_addresses | string       | 负载均衡的私有IPv4地址                   |
 | private_ipv6_addresses | string       | 负载均衡的私有IPv6地址                   |
 | public_ipv4_addresses  | string       | 负载均衡的公有IPv4地址                   |
 | public_ipv6_addresses  | string       | 负载均衡的公有IPv6地址                   |
 | protocol               | string       | 协议                                   |
 | port                   | string       | 端口                                   |
+| domain                 | string       | 关联的域名                              |
 | url                    | string       | 关联的URL                              |
+| scheduler              | string       | 均衡方式                               |
 | inst_type              | string       | 资源实例类型                            |
 | vpc_id                 | string       | VPCID                                 |
 | vpc_name               | string       | VPC名称                                |
