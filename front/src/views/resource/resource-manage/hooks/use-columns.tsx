@@ -3,7 +3,7 @@
 import i18n from '@/language/i18n';
 import { CloudType, SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
 import { useAccountStore } from '@/store';
-import { Button } from 'bkui-vue';
+import { Button, Tag } from 'bkui-vue';
 import type { Settings } from 'bkui-vue/lib/table/props';
 import { h, ref } from 'vue';
 import type { Ref } from 'vue';
@@ -23,7 +23,7 @@ import StatusLoading from '@/assets/image/status_loading.png';
 
 import { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../common/table/HostOperations';
 import './use-columns.scss';
-import { timeFormatter } from '@/common/util';
+import { timeFormatter, timeFromNow } from '@/common/util';
 
 export default (type: string, isSimpleShow = false, vendor?: string) => {
   const router = useRouter();
@@ -54,35 +54,42 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render({ data }: { cell: string; data: any }) {
         if (data[idFiled] < 0 || !data[idFiled]) return '--';
         return (
-          <Button
-            text
-            theme='primary'
-            onClick={() => {
-              const routeInfo: any = {
-                query: {
-                  ...route.query,
-                  id: data[idFiled],
-                  type: data.vendor,
-                },
-              };
-              // 业务下
-              if (route.path.includes('business')) {
-                routeInfo.query.bizs = accountStore.bizs;
-                Object.assign(routeInfo, {
-                  name: `${type}BusinessDetail`,
-                });
-              } else {
-                Object.assign(routeInfo, {
-                  name: 'resourceDetail',
-                  params: {
-                    type,
+          <>
+            <Button
+              text
+              theme='primary'
+              onClick={() => {
+                const routeInfo: any = {
+                  query: {
+                    ...route.query,
+                    id: data[idFiled],
+                    type: data.vendor,
                   },
-                });
-              }
-              router.push(routeInfo);
-            }}>
-            {render ? render(data) : data[field] || '--'}
-          </Button>
+                };
+                // 业务下
+                if (route.path.includes('business')) {
+                  routeInfo.query.bizs = accountStore.bizs;
+                  Object.assign(routeInfo, {
+                    name: `${type}BusinessDetail`,
+                  });
+                } else {
+                  Object.assign(routeInfo, {
+                    name: 'resourceDetail',
+                    params: {
+                      type,
+                    },
+                  });
+                }
+                router.push(routeInfo);
+              }}>
+              {render ? render(data) : data[field] || '--'}
+            </Button>
+            {timeFromNow(data.created_at) < 5 && (
+              <Tag theme='success' radius='4px' extCls='new-resource-tag'>
+                new
+              </Tag>
+            )}
+          </>
         );
       },
     };
@@ -770,6 +777,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '主机名称',
       field: 'name',
+      sort: true,
       isDefaultShow: true,
     },
     {

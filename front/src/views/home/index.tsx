@@ -1,15 +1,9 @@
-import { defineComponent, reactive, computed, watch, ref, nextTick, onMounted } from 'vue';
+import { defineComponent, computed, watch, ref, nextTick, onMounted } from 'vue';
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
-import type { RouteRecordRaw } from 'vue-router';
 import { Menu, Navigation, Dropdown, Dialog, Exception, Button } from 'bkui-vue';
 import { headRouteConfig } from '@/router/header-config';
 import Breadcrumb from './breadcrumb';
-import workbench from '@/router/module/workbench';
-import resource from '@/router/module/resource';
-import service from '@/router/module/service';
-import business from '@/router/module/business';
-import scheme from '@/router/module/scheme';
-import { classes } from '@/common/util';
+import { classes, localStorageActions } from '@/common/util';
 import logo from '@/assets/image/logo.png';
 import './index.scss';
 import { useUserStore, useAccountStore, useCommonStore } from '@/store';
@@ -28,6 +22,8 @@ import '@blueking/app-select/dist/style.css';
 import { getFavoriteList, useFavorite } from '@/hooks/useFavorite';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import AccountList from '../resource/resource-manage/account/accountList';
+import useChangeHeaderTab from './hooks/useChangeHeaderTab';
+
 const { ENABLE_CLOUD_SELECTION } = window.PROJECT_CONFIG;
 // import { CogShape } from 'bkui-vue/lib/icon';
 // import { useProjectList } from '@/hooks';
@@ -51,13 +47,9 @@ export default defineComponent({
     const { fetchAllCloudAreas } = useCloudAreaStore();
     const { whereAmI } = useWhereAmI();
 
-    let topMenuActiveItem = '';
-    let menus: RouteRecordRaw[] = [];
     const openedKeys: string[] = [];
-    const curPath = ref('');
     const businessId = ref<number>(0);
     const businessList = ref<any[]>([]);
-    const loading = ref<Boolean>(false);
     const isRouterAlive = ref<Boolean>(true);
     const curYear = ref(new Date().getFullYear());
     const isMenuOpen = ref<boolean>(true);
@@ -70,86 +62,8 @@ export default defineComponent({
     const { favoriteSet, addToFavorite, removeFromFavorite } = useFavorite(businessId.value, favoriteList.value);
 
     const { hasPagePermission, permissionMsg, logout } = usePagePermissionStore();
-    // 获取业务列表
-    const getBusinessList = async () => {
-      try {
-        loading.value = true;
-        const res = await accountStore.getBizListWithAuth();
-        loading.value = false;
-        businessList.value = res?.data;
-        if (!businessList.value.length && whereAmI.value === Senarios.business) {
-          // 没有权限
-          router.push({
-            name: '403',
-            params: {
-              id: 'biz_access',
-            },
-          });
-          return;
-        }
-        businessId.value = accountStore.bizs || res?.data[0].id; // 默认取第一个业务
-        accountStore.updateBizsId(businessId.value); // 设置全局业务id
-      } catch (error) {}
-    };
 
-    const changeMenus = (id: string, ...subPath: string[]) => {
-      openedKeys.push(`/${id}`);
-      switch (id) {
-        case 'business':
-          topMenuActiveItem = 'business';
-          menus = reactive(business);
-          // if (!accountStore.bizs) accountStore.updateBizsId(useBusinessMapStore().businessList?.[0]?.id);
-          getBusinessList(); // 业务下需要获取业务列表
-          break;
-        case 'resource':
-          topMenuActiveItem = 'resource';
-          menus = reactive(resource);
-          accountStore.updateBizsId(0); // 初始化业务ID
-          break;
-        case 'service':
-          topMenuActiveItem = 'service';
-          menus = reactive(service);
-          break;
-        case 'workbench':
-          topMenuActiveItem = 'workbench';
-          menus = reactive(workbench);
-          accountStore.updateBizsId(0); // 初始化业务ID
-          break;
-        case 'scheme':
-          topMenuActiveItem = 'scheme';
-          menus = reactive(scheme);
-          accountStore.updateBizsId(0); // 初始化业务ID
-          break;
-        default:
-          if (subPath[0] === 'biz_access') {
-            topMenuActiveItem = 'business';
-            menus = reactive(business);
-          } else {
-            topMenuActiveItem = 'resource';
-            menus = reactive(resource);
-          }
-          accountStore.updateBizsId(''); // 初始化业务ID
-          break;
-      }
-    };
-
-    watch(
-      () => route,
-      (val) => {
-        const { bizs } = val.query;
-        if (bizs) {
-          businessId.value = Number(bizs); // 取地址栏的业务id
-          accountStore.updateBizsId(businessId.value); // 设置全局业务id
-        }
-        curPath.value = route.path;
-        const pathArr = val.path.slice(1, val.path.length).split('/');
-        changeMenus(pathArr.shift(), ...pathArr);
-      },
-      {
-        immediate: true,
-        deep: true,
-      },
-    );
+    const { topMenuActiveItem, menus, curPath, handleHeaderMenuClick } = useChangeHeaderTab(businessId, businessList);
 
     watch(
       () => accountStore.bizs,
@@ -170,13 +84,6 @@ export default defineComponent({
       },
       { immediate: true },
     );
-
-    const handleHeaderMenuClick = async (id: string, routeName: string): Promise<any> => {
-      if (route.name !== routeName) {
-        changeMenus(id);
-        await getBusinessList();
-      }
-    };
 
     const saveLanguage = async (val: string) => {
       return new Promise((resovle) => {
@@ -203,16 +110,28 @@ export default defineComponent({
 
     // 选择业务
     const handleChange = async (val: { id: number }) => {
+      if (businessId.value === val.id) return;
       businessId.value = val.id;
       accountStore.updateBizsId(businessId.value); // 设置全局业务id
+      // 持久化存储全局业务id
+      localStorageActions.set('bizs', businessId.value);
       // @ts-ignore
-      const isbusinessDetail = route.name?.includes('BusinessDetail');
-      if (isbusinessDetail) {
-        const businessListPath = route.path.split('/detail')[0];
+      // 如果当前页面为详情页, 则当业务id切换时, 跳转至对应资源的列表页
+      const isBusinessDetail = route.name?.includes('BusinessDetail');
+      if (isBusinessDetail) {
         router.push({
-          path: businessListPath,
+          path: route.path.split('/detail')[0],
+          query: {
+            bizs: businessId.value,
+          },
         });
       } else {
+        router.push({
+          path: route.path,
+          query: {
+            bizs: businessId.value,
+          },
+        });
         reload();
       }
     };
@@ -303,20 +222,20 @@ export default defineComponent({
                           ({ id }) =>
                             (ENABLE_CLOUD_SELECTION !== 'true' && id !== 'scheme') || ENABLE_CLOUD_SELECTION === 'true',
                         )
-                        .map(({ id, route, name, href }) => (
-                          <a
+                        .map(({ id, name, path }) => (
+                          <Button
+                            text
                             class={classes(
                               {
-                                active: topMenuActiveItem === id,
+                                active: topMenuActiveItem.value === id,
                               },
                               'header-title',
                             )}
                             key={id}
                             aria-current='page'
-                            href={href}
-                            onClick={() => handleHeaderMenuClick(id, route)}>
+                            onClick={() => handleHeaderMenuClick(id, path)}>
                             {t(name)}
-                          </a>
+                          </Button>
                         ))}
                     </section>
                     <aside class='header-lang'>
@@ -377,7 +296,7 @@ export default defineComponent({
                 ),
                 menu: () => (
                   <div class={'home-menu'}>
-                    {topMenuActiveItem === 'business' && isMenuOpen.value ? (
+                    {topMenuActiveItem.value === 'business' && isMenuOpen.value ? (
                       <AppSelect
                         data={businessList.value}
                         onChange={handleChange}
@@ -444,7 +363,7 @@ export default defineComponent({
                       uniqueOpen={false}
                       openedKeys={openedKeys}
                       activeKey={route.meta.activeKey as string}>
-                      {menus.map((menuItem) =>
+                      {menus.value.map((menuItem) =>
                         Array.isArray(menuItem.children) ? (
                           <Menu.Group key={menuItem.path as string} name={menuItem.name as string}>
                             {{
