@@ -1031,6 +1031,87 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
   ];
 
+  const operationRecordColumns = [
+    {
+      label: '操作时间',
+      field: 'created_at',
+      isDefaultShow: true,
+      sort: true,
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
+    },
+    {
+      label: '资源类型',
+      field: 'res_type',
+    },
+    {
+      label: '资源名称',
+      field: 'res_name',
+      isDefaultShow: true,
+    },
+    // {
+    //   label: '云资源ID',
+    //   field: 'cloud_res_id',
+    // },
+    {
+      label: '操作方式',
+      field: 'action',
+      isDefaultShow: true,
+      filter: true,
+    },
+    {
+      label: '操作来源',
+      field: 'source',
+      isDefaultShow: true,
+      filter: true,
+    },
+    {
+      label: '所属业务',
+      field: 'bk_biz_id',
+      isOnlyShowInResource: true,
+      render: ({ cell }: { cell: number }) => businessMapStore.businessMap.get(cell) || '未分配',
+    },
+    // {
+    //   label: '云厂商',
+    //   field: 'vendor',
+    // },
+    {
+      label: '云账号',
+      field: 'account_id',
+    },
+    {
+      label: '任务状态',
+      field: 'task_status',
+      isDefaultShow: true,
+      filter: true,
+      render: ({ cell }: { cell: string }) => {
+        if (!cell) return '--';
+        let icon;
+        switch (cell) {
+          case 'success':
+            icon = StatusSuccess;
+            break;
+          case 'fail':
+            icon = StatusFailure;
+            break;
+          case 'partial_success':
+            icon = StatusPartialSuccess;
+            break;
+        }
+        return (
+          <div class='status-column-cell'>
+            <img class='status-icon' src={icon} alt='' />
+            <span>{cell === 'success' ? '成功' : cell === 'fail' ? '失败' : '部分成功'}</span>
+          </div>
+        );
+      },
+    },
+    {
+      label: '操作人',
+      field: 'operator',
+      isDefaultShow: true,
+    },
+  ];
+
   const clbsColumns = [
     {
       type: 'selection',
@@ -1458,87 +1539,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
         </bk-tag>
       ),
-    },
-  ];
-
-  const operationRecordColumns = [
-    {
-      label: '操作时间',
-      field: 'created_at',
-      isDefaultShow: true,
-      sort: true,
-      render: ({ cell }: { cell: string }) => timeFormatter(cell),
-    },
-    {
-      label: '资源类型',
-      field: 'res_type',
-    },
-    {
-      label: '资源名称',
-      field: 'res_name',
-      isDefaultShow: true,
-    },
-    // {
-    //   label: '云资源ID',
-    //   field: 'cloud_res_id',
-    // },
-    {
-      label: '操作方式',
-      field: 'action',
-      isDefaultShow: true,
-      filter: true,
-    },
-    {
-      label: '操作来源',
-      field: 'source',
-      isDefaultShow: true,
-      filter: true,
-    },
-    {
-      label: '所属业务',
-      field: 'bk_biz_id',
-      isOnlyShowInResource: true,
-      render: ({ cell }: { cell: number }) => businessMapStore.businessMap.get(cell) || '未分配',
-    },
-    // {
-    //   label: '云厂商',
-    //   field: 'vendor',
-    // },
-    {
-      label: '云账号',
-      field: 'account_id',
-    },
-    {
-      label: '任务状态',
-      field: 'task_status',
-      isDefaultShow: true,
-      filter: true,
-      render: ({ cell }: { cell: string }) => {
-        if (!cell) return '--';
-        let icon;
-        switch (cell) {
-          case 'success':
-            icon = StatusSuccess;
-            break;
-          case 'fail':
-            icon = StatusFailure;
-            break;
-          case 'partial_success':
-            icon = StatusPartialSuccess;
-            break;
-        }
-        return (
-          <div class='status-column-cell'>
-            <img class='status-icon' src={icon} alt='' />
-            <span>{cell === 'success' ? '成功' : cell === 'fail' ? '失败' : '部分成功'}</span>
-          </div>
-        );
-      },
-    },
-    {
-      label: '操作人',
-      field: 'operator',
-      isDefaultShow: true,
     },
   ];
 
