@@ -72,7 +72,7 @@ type LoadBalancerTargetTable struct {
 	PrivateIPAddress   types.StringArray `db:"private_ip_address" json:"private_ip_address"`
 	PublicIPAddress    types.StringArray `db:"public_ip_address" json:"public_ip_address"`
 	Zone               string            `db:"zone" json:"zone"`
-	Memo               string            `db:"memo" json:"memo"`
+	Memo               *string           `db:"memo" json:"memo"`
 
 	Creator   string     `db:"creator" validate:"lte=64" json:"creator"`
 	Reviser   string     `db:"reviser" validate:"lte=64" json:"reviser"`

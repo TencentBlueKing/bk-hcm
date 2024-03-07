@@ -33,7 +33,6 @@ import (
 	tableclb "hcm/pkg/dal/table/cloud/clb"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/tools/converter"
 )
 
 // ListLoadBalancer list clb.
@@ -95,7 +94,7 @@ func convTableToBaseClb(one *tableclb.LoadBalancerTable) *coreclb.BaseClb {
 		CloudCreatedTime:     one.CloudCreatedTime,
 		CloudStatusTime:      one.CloudStatusTime,
 		CloudExpiredTime:     one.CloudExpiredTime,
-		Memo:                 converter.ValToPtr(one.Memo),
+		Memo:                 one.Memo,
 		Revision: &core.Revision{
 			Creator:   one.Creator,
 			Reviser:   one.Reviser,

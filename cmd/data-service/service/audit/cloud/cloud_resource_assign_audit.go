@@ -116,6 +116,8 @@ func (ad Audit) buildAssignAuditInfo(kt *kit.Kit, resType enumor.AuditResourceTy
 		audits, err = ad.argsTplAssignAuditBuild(kt, assigns)
 	case enumor.SslCertAuditResType:
 		audits, err = ad.certAssignAuditBuild(kt, assigns)
+	case enumor.ClbAuditResType:
+		audits, err = ad.clb.ClbAssignAuditBuild(kt, assigns)
 	default:
 		return nil, fmt.Errorf("cloud resource type: %s not support", resType)
 	}

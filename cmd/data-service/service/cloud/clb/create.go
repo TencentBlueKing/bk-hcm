@@ -34,7 +34,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 
 	"github.com/jmoiron/sqlx"
@@ -123,7 +122,7 @@ func convClbReqToTable[T coreclb.Extension](kt *kit.Kit, vendor enumor.Vendor, l
 		PublicIPv6Addresses:  lb.PublicIPv6Addresses,
 		Domain:               lb.Domain,
 		Status:               lb.Status,
-		Memo:                 converter.PtrToVal(lb.Memo),
+		Memo:                 lb.Memo,
 		CloudCreatedTime:     lb.CloudCreatedTime,
 		CloudStatusTime:      lb.CloudStatusTime,
 		CloudExpiredTime:     lb.CloudExpiredTime,
