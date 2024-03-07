@@ -21,9 +21,11 @@ package hcclb
 
 import (
 	"errors"
+	"fmt"
 
 	typeclb "hcm/pkg/adaptor/types/clb"
 	"hcm/pkg/adaptor/types/core"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/converter"
 )
@@ -103,5 +105,47 @@ type TCloudDescribeResourcesOption struct {
 
 // Validate tcloud clb list option.
 func (opt TCloudDescribeResourcesOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// --------------------------[Associate 设置负载均衡实例的安全组]--------------------------
+
+// TCloudSetClbSecurityGroupReq defines options to set tcloud clb security-group request.
+type TCloudSetClbSecurityGroupReq struct {
+	ClbID            string   `json:"clb_id" validate:"required"`
+	SecurityGroupIDs []string `json:"security_group_ids" validate:"required,max=50"`
+}
+
+// Validate tcloud clb security-group option.
+func (opt TCloudSetClbSecurityGroupReq) Validate() error {
+	if len(opt.ClbID) == 0 {
+		return errors.New("clb_id is required")
+	}
+
+	if len(opt.SecurityGroupIDs) > constant.LoadBalancerBindSecurityGroupMaxLimit {
+		return fmt.Errorf("invalid security_group_ids max value: %d", constant.LoadBalancerBindSecurityGroupMaxLimit)
+	}
+
+	return validator.Validate.Struct(opt)
+}
+
+// --------------------------[DisAssociate 设置负载均衡实例的安全组]--------------------------
+
+// TCloudDisAssociateClbSecurityGroupReq defines options to DisAssociate tcloud clb security-group request.
+type TCloudDisAssociateClbSecurityGroupReq struct {
+	ClbID           string `json:"clb_id" validate:"required"`
+	SecurityGroupID string `json:"security_group_id" validate:"required"`
+}
+
+// Validate tcloud clb security-group option.
+func (opt TCloudDisAssociateClbSecurityGroupReq) Validate() error {
+	if len(opt.ClbID) == 0 {
+		return errors.New("clb_id is required")
+	}
+
+	if len(opt.SecurityGroupID) == 0 {
+		return errors.New("security_group_id is required")
+	}
+
 	return validator.Validate.Struct(opt)
 }

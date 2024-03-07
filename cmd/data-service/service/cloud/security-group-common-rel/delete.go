@@ -66,7 +66,8 @@ func (svc *sgComRelSvc) BatchDelete(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		if err := svc.dao.SGCommonRel().DeleteWithTx(cts.Kit, txn, tools.ContainersExpression("id", delIDs)); err != nil {
+		if err = svc.dao.SGCommonRel().DeleteWithTx(
+			cts.Kit, txn, tools.ContainersExpression("id", delIDs)); err != nil {
 			return nil, err
 		}
 

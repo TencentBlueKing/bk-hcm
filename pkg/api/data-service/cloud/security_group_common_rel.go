@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	corecloud "hcm/pkg/api/core/cloud"
+	dataproto "hcm/pkg/api/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -38,6 +39,7 @@ type SGCommonRelBatchCreateReq struct {
 // SGCommonRelCreate ...
 type SGCommonRelCreate struct {
 	SecurityGroupID string                   `json:"security_group_id" validate:"required"`
+	Vendor          enumor.Vendor            `json:"vendor" validate:"required"`
 	ResID           string                   `json:"res_id" validate:"required"`
 	ResType         enumor.CloudResourceType `json:"res_type" validate:"omitempty"`
 	Priority        int64                    `json:"priority" validate:"omitempty"`
@@ -45,6 +47,23 @@ type SGCommonRelCreate struct {
 
 // Validate security group common rel create request.
 func (req *SGCommonRelBatchCreateReq) Validate() error {
+	if len(req.Rels) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("rels count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	return validator.Validate.Struct(req)
+}
+
+// -------------------------- Upsert --------------------------
+
+// SGCommonRelBatchUpsertReq ...
+type SGCommonRelBatchUpsertReq struct {
+	Rels      []SGCommonRelCreate       `json:"rels" validate:"required,min=1"`
+	DeleteReq *dataproto.BatchDeleteReq `json:"delete_req"`
+}
+
+// Validate security group common rel upsert request.
+func (req *SGCommonRelBatchUpsertReq) Validate() error {
 	if len(req.Rels) > constant.BatchOperationMaxLimit {
 		return fmt.Errorf("rels count should <= %d", constant.BatchOperationMaxLimit)
 	}
