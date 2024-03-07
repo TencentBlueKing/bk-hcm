@@ -13,7 +13,6 @@ GET /api/v1/cloud/vendors/tcloud/accounts/{account_id}/network_type
 | 参数名称       | 参数类型   | 必选 | 描述    |
 |------------|--------|----|-------|
 | account_id | string | 是  | 云账户id |
-| region     | string | 是  | 地域    |
 
 ### 响应参数说明
 

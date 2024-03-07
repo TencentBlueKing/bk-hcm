@@ -129,7 +129,7 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 			BkBizID:          constant.UnassignedBiz,
 			CloudID:          cloudID,
 			Name:             name,
-			Vendor:           string(enumor.TCloud),
+			Vendor:           enumor.TCloud,
 			LoadBalancerType: string(req.LoadBalancerType),
 			AccountID:        req.AccountID,
 			Zones:            req.Zones,
@@ -137,7 +137,7 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		})
 	}
 
-	_, err = svc.dataCli.Global.LoadBalancer.BatchCreateTCloudClb(cts.Kit, dbCreateReq)
+	_, err = svc.dataCli.TCloud.LoadBalancer.BatchCreateTCloudClb(cts.Kit, dbCreateReq)
 	if err != nil {
 		logs.Errorf("fail to pre-insert clb record to db, err: %v , rid: %s", err, cts.Kit.Rid)
 		// still try to sync

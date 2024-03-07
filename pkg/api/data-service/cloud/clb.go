@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/api/core"
 	coreclb "hcm/pkg/api/core/cloud/clb"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -41,11 +42,11 @@ type TCloudCLBCreateReq = ClbBatchCreateReq[coreclb.TCloudClbExtension]
 
 // ClbBatchCreate define clb batch create.
 type ClbBatchCreate[Extension coreclb.Extension] struct {
-	CloudID   string `json:"cloud_id" validate:"required"`
-	Name      string `json:"name" validate:"required"`
-	Vendor    string `json:"vendor" validate:"required"`
-	AccountID string `json:"account_id" validate:"required"`
-	BkBizID   int64  `json:"bk_biz_id" validate:"omitempty"`
+	CloudID   string        `json:"cloud_id" validate:"required"`
+	Name      string        `json:"name" validate:"required"`
+	Vendor    enumor.Vendor `json:"vendor" validate:"required"`
+	AccountID string        `json:"account_id" validate:"required"`
+	BkBizID   int64         `json:"bk_biz_id" validate:"omitempty"`
 
 	LoadBalancerType     string   `json:"load_balancer_type" validate:"required"`
 	Region               string   `json:"region" validate:"omitempty"`
