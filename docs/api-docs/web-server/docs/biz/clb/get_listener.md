@@ -61,6 +61,14 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/listeners/{id}
       "http_check_method": "GET",
       "source_ip_type": 1
     },
+    "certificate": {
+      "ssl_mode": "MUTUAL",
+      "cert_id": "cert-001",
+      "cert_ca_id": "ca-001",
+      "ext_cert_ids": ["ext-001"]
+    },
+    "domain_num": 50,
+    "url_num": 100,
     "memo": "memo-test",
     "creator": "Jim",
     "reviser": "Jim",
@@ -99,6 +107,9 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/listeners/{id}
 | session_type           | string         | 会话保持类型                             |
 | session_expire         | int            | 会话保持时间，0为关闭                     |
 | health_check           | object         | 健康检查                                |
+| certificate            | object         | 证书信息                                |
+| domain_num             | int            | 域名数量                                |
+| url_num                | int            | URL数量                                |
 | memo                   | string         | 备注                                    |
 | creator                | string         | 创建者                                  |
 | reviser                | string         | 修改者                                  |
@@ -121,3 +132,12 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/listeners/{id}
 | http_check_domain | string | 健康检查域名 |
 | http_check_method | string | 健康检查方法（仅适用于HTTP/HTTPS转发规则、TCP监听器的HTTP健康检查方式），默认值：HEAD，可选值HEAD或GET |
 | source_ip_type    | string | 健康检查源IP类型：0（使用LB的VIP作为源IP），1（使用100.64网段IP作为源IP） |
+
+### certificate
+
+| 参数名称      | 参数类型       | 描述          |
+|--------------|--------------|---------------|
+| ssl_mode     | string       | 认证类型，UNIDIRECTIONAL：单向认证，MUTUAL：双向认证  |
+| cert_id      | string       | 服务端证书的ID  |
+| cert_ca_id   | string       | 客户端证书的 ID |
+| ext_cert_ids | string array | 多本服务器证书场景扩展的服务器证书ID |

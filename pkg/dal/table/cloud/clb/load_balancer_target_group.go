@@ -65,14 +65,14 @@ type LoadBalancerTargetGroupTable struct {
 	AccountID string        `db:"account_id" validate:"lte=64" json:"account_id"`
 	BkBizID   int64         `db:"bk_biz_id" json:"bk_biz_id"`
 
-	TargetGroupID string          `db:"target_group_id" validate:"lte=255" json:"target_group_id"`
-	VpcID         string          `db:"vpc_id" json:"vpc_id"`
-	CloudVpcID    string          `db:"cloud_vpc_id" json:"cloud_vpc_id"`
-	Region        string          `db:"region" validate:"lte=20" json:"region"`
-	Port          int64           `db:"port" json:"port"`
-	Weight        int64           `db:"weight" json:"weight"`
-	HealthCheck   types.JsonField `db:"health_check" json:"health_check"`
-	Memo          string          `db:"memo" json:"memo"`
+	TargetGroupType string          `db:"target_group_type" validate:"lte=16" json:"target_group_type"`
+	VpcID           string          `db:"vpc_id" json:"vpc_id"`
+	CloudVpcID      string          `db:"cloud_vpc_id" json:"cloud_vpc_id"`
+	Region          string          `db:"region" validate:"lte=20" json:"region"`
+	Port            int64           `db:"port" json:"port"`
+	Weight          int64           `db:"weight" json:"weight"`
+	HealthCheck     types.JsonField `db:"health_check" json:"health_check"`
+	Memo            string          `db:"memo" json:"memo"`
 
 	Creator   string     `db:"creator" validate:"lte=64" json:"creator"`
 	Reviser   string     `db:"reviser" validate:"lte=64" json:"reviser"`

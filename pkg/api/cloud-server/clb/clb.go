@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 
+	coreclb "hcm/pkg/api/core/cloud/clb"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 )
@@ -80,4 +81,65 @@ type SecurityGroupAssociateClbReq struct {
 // Validate security group associate clb request.
 func (req *SecurityGroupAssociateClbReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// -------------------------- List Listener--------------------------
+
+// ListListenerResult defines list listener result.
+type ListListenerResult struct {
+	Count   uint64             `json:"count"`
+	Details []ListListenerBase `json:"details"`
+}
+
+// ListListenerBase define list listener base.
+type ListListenerBase struct {
+	coreclb.BaseListener
+	TargetGroupID string                   `json:"target_group_id"`
+	Scheduler     string                   `json:"scheduler"`
+	DomainNum     int64                    `json:"domain_num"`
+	UrlNum        int64                    `json:"url_num"`
+	HealthCheck   *coreclb.HealthCheckInfo `json:"health_check"`
+	Certificate   *coreclb.CertificateInfo `json:"certificate"`
+}
+
+// -------------------------- Get Listener --------------------------
+
+// GetListenerDetail define get listener detail.
+type GetListenerDetail struct {
+	coreclb.BaseListener
+	LblID              string                   `json:"lbl_id"`
+	LblName            string                   `json:"lbl_name"`
+	CloudLblID         string                   `json:"cloud_lbl_id"`
+	TargetGroupID      string                   `json:"target_group_id"`
+	TargetGroupName    string                   `json:"target_group_name"`
+	CloudTargetGroupID string                   `json:"cloud_target_group_id"`
+	HealthCheck        *coreclb.HealthCheckInfo `json:"health_check"`
+	Certificate        *coreclb.CertificateInfo `json:"certificate"`
+	DomainNum          int64                    `json:"domain_num"`
+	UrlNum             int64                    `json:"url_num"`
+}
+
+// -------------------------- List Clb Url Rule --------------------------
+
+// ListClbUrlRuleResult defines list clb url rule result.
+type ListClbUrlRuleResult struct {
+	Count   uint64               `json:"count"`
+	Details []ListClbUrlRuleBase `json:"details"`
+}
+
+// ListClbUrlRuleBase define list clb url rule base.
+type ListClbUrlRuleBase struct {
+	coreclb.BaseTCloudClbURLRule
+	LblName              string   `json:"lbl_name"`
+	LbName               string   `json:"lb_name"`
+	PrivateIPv4Addresses []string `json:"private_ipv4_addresses"`
+	PrivateIPv6Addresses []string `json:"private_ipv6_addresses"`
+	PublicIPv4Addresses  []string `json:"public_ipv4_addresses"`
+	PublicIPv6Addresses  []string `json:"public_ipv6_addresses"`
+	Protocol             string   `json:"protocol"`
+	Port                 int64    `json:"port"`
+	VpcID                string   `json:"vpc_id"`
+	VpcName              string   `json:"vpc_name"`
+	CloudVpcID           string   `json:"cloud_vpc_id"`
+	InstType             string   `json:"inst_type"`
 }

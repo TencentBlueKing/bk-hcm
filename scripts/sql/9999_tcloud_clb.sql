@@ -233,6 +233,7 @@ create table `target_listener_rule_rel`
     `listener_rule_type` varchar(64) not null,
     `target_group_id`    varchar(64) not null,
     `lb_id`              varchar(64) not null,
+    `lbl_id`             varchar(64) not null,
     `binding_status`     varchar(64) not null,
     `detail`             json                 default null,
 

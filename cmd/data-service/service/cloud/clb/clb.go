@@ -42,6 +42,12 @@ func InitService(cap *capability.Capability) {
 	h.Add("ListLoadBalancer", http.MethodPost, "/clbs/list", svc.ListLoadBalancer)
 	h.Add("ListLoadBalancerExt", http.MethodPost, "/vendors/{vendor}/clbs/list", svc.ListLoadBalancerExt)
 	h.Add("BatchCreateCLB", http.MethodPost, "/vendors/{vendor}/clbs/batch/create", svc.BatchCreateCLB)
+	h.Add("GetListener", http.MethodGet, "/vendors/{vendor}/listeners/{id}", svc.GetListener)
+	h.Add("ListClbWithListener", http.MethodPost, "/clbs/with/listeners/list", svc.ListClbWithListener)
+	h.Add("ListClbWithUrlRule", http.MethodPost, "/clbs/with/url_rules/list", svc.ListClbWithUrlRule)
+	h.Add("ListClbTarget", http.MethodPost, "/clbs/with/targets/list", svc.ListClbTarget)
+	h.Add("ListClbTargetGroup", http.MethodPost, "/clbs/with/target_groups/list", svc.ListClbTargetGroup)
+
 
 	h.Load(cap.WebService)
 }

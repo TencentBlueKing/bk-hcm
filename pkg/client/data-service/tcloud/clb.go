@@ -51,3 +51,8 @@ func (cli *LoadBalancerClient) Get(kt *kit.Kit, id string) (*clb.Clb[clb.TCloudC
 	return common.Request[common.Empty, clb.Clb[clb.TCloudClbExtension]](
 		cli.client, rest.GET, kt, nil, "/clbs/%s", id)
 }
+
+// GetListener 获取监听器详情
+func (cli *LoadBalancerClient) GetListener(kt *kit.Kit, id string) (*clb.BaseListener, error) {
+	return common.Request[common.Empty, clb.BaseListener](cli.client, rest.GET, kt, nil, "/listeners/%s", id)
+}

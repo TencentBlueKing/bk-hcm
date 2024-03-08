@@ -43,3 +43,31 @@ func NewClbClient(client rest.ClientInterface) *ClbClient {
 func (cli *ClbClient) ListClb(kt *kit.Kit, req *core.ListReq) (*dataproto.ClbListResult, error) {
 	return common.Request[core.ListReq, dataproto.ClbListResult](cli.client, rest.POST, kt, req, "/clbs/list")
 }
+
+// ListClbWithListener list clb with listener.
+func (cli *ClbClient) ListClbWithListener(kt *kit.Kit, req *dataproto.ListListenerReq) (
+	*dataproto.ListenerListResult, error) {
+
+	return common.Request[dataproto.ListListenerReq, dataproto.ListenerListResult](
+		cli.client, rest.POST, kt, req, "/clbs/with/listeners/list")
+}
+
+// ListClbWithUrlRule list clb with url rule.
+func (cli *ClbClient) ListClbWithUrlRule(kt *kit.Kit, req *dataproto.ListTCloudURLRuleReq) (
+	*dataproto.TCloudURLRuleListResult, error) {
+
+	return common.Request[dataproto.ListTCloudURLRuleReq, dataproto.TCloudURLRuleListResult](
+		cli.client, rest.POST, kt, req, "/clbs/with/url_rules/list")
+}
+
+// ListClbTarget list clb target.
+func (cli *ClbClient) ListClbTarget(kt *kit.Kit, req *core.ListReq) (*dataproto.ClbTargetListResult, error) {
+	return common.Request[core.ListReq, dataproto.ClbTargetListResult](
+		cli.client, rest.POST, kt, req, "/clbs/with/targets/list")
+}
+
+// ListClbTargetGroup list clb target group.
+func (cli *ClbClient) ListClbTargetGroup(kt *kit.Kit, req *core.ListReq) (*dataproto.ClbTargetGroupListResult, error) {
+	return common.Request[core.ListReq, dataproto.ClbTargetGroupListResult](
+		cli.client, rest.POST, kt, req, "/clbs/with/target_groups/list")
+}

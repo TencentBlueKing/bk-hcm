@@ -94,6 +94,8 @@ func AdaptAuthOptions(a *meta.ResourceAttribute) (client.ActionID, []client.Reso
 		return genCertResource(a)
 	case meta.Clb:
 		return genClbResource(a)
+	case meta.Listener:
+		return genListenerResource(a)
 
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm auth type: %s", a.Basic.Type)

@@ -63,14 +63,14 @@ var TCloudClbUrlRuleColumnsDescriptor = utils.ColumnDescriptors{
 
 // TCloudClbUrlRuleTable 腾讯云负载均衡四层/七层规则表
 type TCloudClbUrlRuleTable struct {
-	ID       string `db:"id" validate:"lte=64" json:"id"`
-	CloudID  string `db:"cloud_id" validate:"lte=255" json:"cloud_id"`
-	Name     string `db:"name" validate:"lte=255" json:"name"`
-	RuleType string `db:"rule_type" validate:"lte=64" json:"rule_type"`
+	ID       string          `db:"id" validate:"lte=64" json:"id"`
+	CloudID  string          `db:"cloud_id" validate:"lte=255" json:"cloud_id"`
+	Name     string          `db:"name" validate:"lte=255" json:"name"`
+	RuleType enumor.RuleType `db:"rule_type" validate:"lte=64" json:"rule_type"`
 
-	LBID               string          `db:"lb_id" validate:"lte=255" json:"lb_id"`
-	CloudLBID          string          `db:"cloud_lb_id" validate:"lte=255" json:"cloud_lb_id"`
-	LBLID              string          `db:"lbl_id" validate:"lte=255" json:"lbl_id"`
+	LbID               string          `db:"lb_id" validate:"lte=255" json:"lb_id"`
+	CloudLbID          string          `db:"cloud_lb_id" validate:"lte=255" json:"cloud_lb_id"`
+	LblID              string          `db:"lbl_id" validate:"lte=255" json:"lbl_id"`
 	CloudLBLID         string          `db:"cloud_lbl_id" validate:"lte=255" json:"cloud_lbl_id"`
 	TargetGroupID      string          `db:"target_group_id" validate:"lte=255" json:"target_group_id"`
 	CloudTargetGroupID string          `db:"cloud_target_group_id" validate:"lte=255" json:"cloud_target_group_id"`
@@ -109,7 +109,7 @@ func (tlbur TCloudClbUrlRuleTable) InsertValidate() error {
 		return errors.New("name is required")
 	}
 
-	if len(tlbur.LBLID) == 0 {
+	if len(tlbur.LblID) == 0 {
 		return errors.New("lbl_id is required")
 	}
 
