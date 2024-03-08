@@ -109,7 +109,7 @@ create table `load_balancer_listener`
     `cloud_lb_id`    varchar(255) not null,
     `protocol`       varchar(64)  not null,
     `port`           bigint       not null,
-    `default_domain` varchar(255) not null,
+    `default_domain` varchar(255)          default null,
     `zones`          json,
     `memo`           varchar(255)          default '',
 
@@ -143,7 +143,7 @@ create table `tcloud_lb_url_rule`
     `url`                   varchar(255)          default '',
     `scheduler`             varchar(64)  not null,
     `sni_switch`            bigint                default 0,
-    `session_type`          varchar(64)  not null,
+    `session_type`          varchar(64)           default '',
     `session_expire`        bigint                default 0,
     `health_check`          json                  default null,
     `certificate`           json                  default null,
@@ -188,7 +188,7 @@ create table `load_balancer_target`
     `updated_at`            timestamp    not null default current_timestamp on update current_timestamp,
 
     primary key (`id`),
-    unique key `idx_uk_cloud_target_group_id_cloud_inst_id` (`cloud_target_group_id`, `cloud_inst_id`)
+    unique key `idx_uk_cloud_target_group_id_cloud_inst_id_port` (`cloud_target_group_id`, `cloud_inst_id`, `port`)
 ) engine = innodb
   default charset = utf8mb4
   collate = utf8mb4_bin comment ='负载均衡目标';
@@ -210,7 +210,7 @@ create table `load_balancer_target_group`
 
     `region`            varchar(20)  not null,
     `port`              bigint       not null,
-    `weight`            bigint       not null,
+    `weight`            bigint       not null default -1,
     `health_check`      json                  default null,
 
     `memo`              varchar(255)          default '',
