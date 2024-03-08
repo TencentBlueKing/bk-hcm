@@ -181,6 +181,7 @@ func (svc *clbSvc) ListTCloudClb(cts *rest.Contexts) (interface{}, error) {
 	return result, nil
 }
 
+// TCloudDescribeResources 查询clb地域下可用资源
 func (svc *clbSvc) TCloudDescribeResources(cts *rest.Contexts) (any, error) {
 	req := new(protoclb.TCloudDescribeResourcesOption)
 	if err := cts.DecodeInto(req); err != nil {

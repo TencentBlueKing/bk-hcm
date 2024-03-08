@@ -47,10 +47,14 @@ func InitService(c *capability.Capability) {
 	// clb apis in biz
 	h.Add("BatchBindSecurityGroupBizClb", http.MethodPost, "/bizs/{bk_biz_id}/clbs/associate/security_groups",
 		svc.BatchBindSecurityGroupBizClb)
+	h.Add("ListLoadBalancer", http.MethodPost, "/clbs/list", svc.ListLoadBalancer)
+	h.Add("GetBizLoadBalancer", http.MethodGet, "/bizs/{bk_biz_id}/clbs/{id}", svc.GetBizLoadBalancer)
+	h.Add("ListBizLoadBalancer", http.MethodPost, "/bizs/{bk_biz_id}/clbs/list", svc.ListBizLoadBalancer)
+
+	h.Add("GetLoadBalancer", http.MethodGet, "/clbs/{id}", svc.GetLoadBalancer)
+	h.Add("BatchCreateCLB", http.MethodPost, "/clbs/create", svc.BatchCreateCLB)
 	h.Add("TCloudDescribeResources", http.MethodPost, "/vendors/tcloud/clbs/resources/describe",
 		svc.TCloudDescribeResources)
-	h.Add("BatchCreateCLB", http.MethodPost, "/clbs/create",
-		svc.BatchCreateCLB)
 
 	h.Load(c.WebService)
 }
