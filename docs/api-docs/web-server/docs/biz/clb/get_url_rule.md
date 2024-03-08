@@ -1,6 +1,6 @@
 ### 描述
 
-- 该接口提供版本：v1.0.0+。
+- 该接口提供版本：v9.9.9+。
 - 该接口所需权限：业务访问。
 - 该接口功能描述：查询URL规则详情。
 
@@ -47,24 +47,24 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/url_rules/{id}
     "session_type": "NORMAL",
     "session_expire": 0,
     "health_check": {
-      "HealthSwitch": 1,
-      "TimeOut": 2,
-      "IntervalTime": 5,
-      "HealthNum": 3,
-      "UnHealthNum": 3,
-      "CheckPort": 80,
-      "CheckType": "HTTP",
-      "HttpVersion": "HTTP/1.0",
-      "HttpCheckPath": "/",
-      "HttpCheckDomain": "www.weixin.com",
-      "HttpCheckMethod": "GET",
-      "SourceIpType": 1
+      "health_switch": 1,
+      "time_out": 2,
+      "interval_time": 5,
+      "health_num": 3,
+      "un_health_num": 3,
+      "check_port": 80,
+      "check_type": "HTTP",
+      "http_version": "HTTP/1.0",
+      "http_check_path": "/",
+      "http_check_domain": "www.weixin.com",
+      "http_check_method": "GET",
+      "source_ip_type": 1
     },
     "certificate": {
-      "SSLMode": "MUTUAL",
-      "CertId": "cert-001",
-      "CertCaId": "ca-001",
-      "ExtCertIds": ["ext-001"]
+      "ssl_mode": "MUTUAL",
+      "cert_id": "cert-001",
+      "cert_ca_id": "ca-001",
+      "ext_cert_ids": ["ext-001"]
     },
     "memo": "memo-test",
     "creator": "Jim",
@@ -112,27 +112,27 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/url_rules/{id}
 
 ### health_check
 
-| 参数名称          | 参数类型 | 描述        |
-|------------------|--------|-------------|
-| HealthSwitch     | int    | 是否开启健康检查：1（开启）、0（关闭）  |
-| TimeOut          | int    | 健康检查的响应超时时间，可选值：2~60，单位：秒 |
-| IntervalTime     | int    | 健康检查探测间隔时间 |
-| HealthNum        | int    | 健康阈值 |
-| UnHealthNum      | int    | 不健康阈值 |
-| CheckPort        | int    | 自定义探测相关参数。健康检查端口，默认为后端服务的端口 |
-| CheckType        | string | 健康检查使用的协议。取值 TCP | HTTP | HTTPS | GRPC | PING | CUSTOM  |
-| HttpVersion      | string | HTTP版本  |
-| HttpCheckPath    | string | 健康检查路径（仅适用于HTTP/HTTPS转发规则、TCP监听器的HTTP健康检查方式） |
-| HttpCheckDomain  | string | 健康检查域名 |
-| HttpCheckMethod  | string | 健康检查方法（仅适用于HTTP/HTTPS转发规则、TCP监听器的HTTP健康检查方式），默认值：HEAD，可选值HEAD或GET |
-| SourceIpType     | string | 健康检查源IP类型：0（使用LB的VIP作为源IP），1（使用100.64网段IP作为源IP） |
+| 参数名称           | 参数类型 | 描述        |
+|-------------------|--------|-------------|
+| health_switch     | int    | 是否开启健康检查：1（开启）、0（关闭）  |
+| time_out          | int    | 健康检查的响应超时时间，可选值：2~60，单位：秒 |
+| interval_time     | int    | 健康检查探测间隔时间 |
+| health_num        | int    | 健康阈值 |
+| un_health_num     | int    | 不健康阈值 |
+| check_port        | int    | 自定义探测相关参数。健康检查端口，默认为后端服务的端口 |
+| check_type        | string | 健康检查使用的协议。取值 TCP | HTTP | HTTPS | GRPC | PING | CUSTOM  |
+| http_version      | string | HTTP版本  |
+| http_check_path   | string | 健康检查路径（仅适用于HTTP/HTTPS转发规则、TCP监听器的HTTP健康检查方式） |
+| http_check_domain | string | 健康检查域名 |
+| http_check_method | string | 健康检查方法（仅适用于HTTP/HTTPS转发规则、TCP监听器的HTTP健康检查方式），默认值：HEAD，可选值HEAD或GET |
+| source_ip_type    | string | 健康检查源IP类型：0（使用LB的VIP作为源IP），1（使用100.64网段IP作为源IP） |
 
 ### certificate
 
-| 参数名称     | 参数类型       | 描述          |
-|-------------|--------------|---------------|
-| SSLMode     | string       | 认证类型，UNIDIRECTIONAL：单向认证，MUTUAL：双向认证  |
-| CertId      | string       | 服务端证书的ID  |
-| CertCaId    | string       | 客户端证书的 ID |
-| ExtCertIds  | string array | 多本服务器证书场景扩展的服务器证书ID |
+| 参数名称      | 参数类型       | 描述          |
+|--------------|--------------|---------------|
+| ssl_mode     | string       | 认证类型，UNIDIRECTIONAL：单向认证，MUTUAL：双向认证  |
+| cert_id      | string       | 服务端证书的ID  |
+| cert_ca_id   | string       | 客户端证书的 ID |
+| ext_cert_ids | string array | 多本服务器证书场景扩展的服务器证书ID |
 

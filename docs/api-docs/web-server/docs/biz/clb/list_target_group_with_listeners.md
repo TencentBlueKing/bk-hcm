@@ -184,10 +184,10 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/listeners/li
         "cloud_lb_id": "lb-xxxx",
         "target_group_id": "xxxx",
         "cloud_target_group_id": "cloud-tg-xxxx",
-        "private_ipv4_addresses": "127.0.0.1",
-        "private_ipv6_addresses": "xxxx",
-        "public_ipv4_addresses": "127.0.0.1",
-        "public_ipv6_addresses": "xxxx",
+        "private_ipv4_addresses": ["127.0.0.1"],
+        "private_ipv6_addresses": [],
+        "public_ipv4_addresses": ["127.0.0.1"],
+        "public_ipv6_addresses": [],
         "protocol": "https",
         "port": 80,
         "domain": "www.qq.com",
@@ -251,10 +251,10 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/listeners/li
 | cloud_lb_id            | string       | 云负载均衡ID                            |
 | target_group_id        | string       | 目标组ID                               |
 | cloud_target_group_id  | string       | 云目标组ID                             |
-| private_ipv4_addresses | string       | 负载均衡的私有IPv4地址                   |
-| private_ipv6_addresses | string       | 负载均衡的私有IPv6地址                   |
-| public_ipv4_addresses  | string       | 负载均衡的公有IPv4地址                   |
-| public_ipv6_addresses  | string       | 负载均衡的公有IPv6地址                   |
+| private_ipv4_addresses | string array | 负载均衡的内网IPv4地址                   |
+| private_ipv6_addresses | string array | 负载均衡的内网IPv6地址                   |
+| public_ipv4_addresses  | string array | 负载均衡的外网IPv4地址                   |
+| public_ipv6_addresses  | string array | 负载均衡的外网IPv6地址                   |
 | protocol               | string       | 协议                                   |
 | port                   | string       | 端口                                   |
 | domain                 | string       | 关联的域名                              |
