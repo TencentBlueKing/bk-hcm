@@ -174,8 +174,11 @@ export default defineComponent({
                 </div>
               </FormItem>
               <FormItem required label='站点种类'>
-                {![VendorEnum.AZURE, VendorEnum.GCP, VendorEnum.HUAWEI].includes(formModel.vendor) ? (
-                  <Radio label={'china'} v-model={formModel.site}>
+                {![VendorEnum.AZURE, VendorEnum.GCP].includes(formModel.vendor) ? (
+                  <Radio
+                    label={'china'}
+                    v-model={formModel.site}
+                    disabled={[VendorEnum.HUAWEI, VendorEnum.AWS].includes(formModel.vendor)}>
                     中国站
                   </Radio>
                 ) : null}
