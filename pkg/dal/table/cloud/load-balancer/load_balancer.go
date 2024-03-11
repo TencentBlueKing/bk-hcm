@@ -17,7 +17,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package loadbalancer
+// Package tablelb table definition of load balancer related resources
+package tablelb
 
 import (
 	"errors"

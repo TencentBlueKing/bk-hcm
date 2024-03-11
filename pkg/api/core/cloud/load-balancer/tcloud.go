@@ -19,6 +19,9 @@
 
 package loadbalancer
 
+// TCloudLoadBalancer ...
+type TCloudLoadBalancer = LoadBalancer[TCloudClbExtension]
+
 // TCloudClbExtension tcloud clb extension.
 type TCloudClbExtension struct {
 	/*

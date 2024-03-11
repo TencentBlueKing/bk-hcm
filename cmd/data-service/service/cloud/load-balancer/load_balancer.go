@@ -28,11 +28,11 @@ import (
 	"hcm/pkg/rest"
 )
 
-var svc *clbSvc
+var svc *lbSvc
 
 // InitService initial the clb service
 func InitService(cap *capability.Capability) {
-	svc = &clbSvc{
+	svc = &lbSvc{
 		dao: cap.Dao,
 	}
 
@@ -50,10 +50,11 @@ func InitService(cap *capability.Capability) {
 	h.Add("ListUrlRule", http.MethodPost, "/load_balancers/url_rules/list", svc.ListUrlRule)
 	h.Add("ListTarget", http.MethodPost, "/load_balancers/targets/list", svc.ListTarget)
 	h.Add("ListTargetGroup", http.MethodPost, "/load_balancers/target_groups/list", svc.ListTargetGroup)
+	h.Add("BatchDeleteLoadBalancer", http.MethodDelete, "/load_balancers/batch", svc.BatchDeleteLoadBalancer)
 
 	h.Load(cap.WebService)
 }
 
-type clbSvc struct {
+type lbSvc struct {
 	dao dao.Set
 }

@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package loadbalancer
+package tablelb
 
 import (
 	"errors"
