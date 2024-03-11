@@ -209,6 +209,7 @@ create table `load_balancer_target_group`
     `cloud_vpc_id`      varchar(255) not null,
 
     `region`            varchar(20)  not null,
+    `protocol`          varchar(64)  not null,
     `port`              bigint       not null,
     `weight`            bigint       not null default -1,
     `health_check`      json                  default null,

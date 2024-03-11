@@ -175,6 +175,7 @@ type BaseClbTargetGroup struct {
 	TargetGroupType string           `json:"target_group_type"`
 	VpcID           string           `json:"vpc_id"`
 	CloudVpcID      string           `json:"cloud_vpc_id"`
+	Protocol        string           `json:"protocol"`
 	Region          string           `json:"region"`
 	Port            int64            `json:"port"`
 	Weight          int64            `json:"weight"`

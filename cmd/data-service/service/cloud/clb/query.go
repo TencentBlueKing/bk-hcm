@@ -479,6 +479,7 @@ func convTableToBaseClbTargetGroup(kt *kit.Kit, one *tableclb.LoadBalancerTarget
 		TargetGroupType: one.TargetGroupType,
 		VpcID:           one.VpcID,
 		CloudVpcID:      one.CloudVpcID,
+		Protocol:        one.Protocol,
 		Region:          one.Region,
 		Port:            one.Port,
 		Weight:          one.Weight,

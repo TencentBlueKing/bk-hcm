@@ -45,6 +45,7 @@ var LoadBalancerTargetGroupColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "vpc_id", NamedC: "vpc_id", Type: enumor.String},
 	{Column: "cloud_vpc_id", NamedC: "cloud_vpc_id", Type: enumor.String},
 	{Column: "region", NamedC: "region", Type: enumor.String},
+	{Column: "protocol", NamedC: "protocol", Type: enumor.String},
 	{Column: "port", NamedC: "port", Type: enumor.Numeric},
 	{Column: "weight", NamedC: "weight", Type: enumor.Numeric},
 	{Column: "health_check", NamedC: "health_check", Type: enumor.Json},
@@ -69,6 +70,7 @@ type LoadBalancerTargetGroupTable struct {
 	VpcID           string          `db:"vpc_id" json:"vpc_id"`
 	CloudVpcID      string          `db:"cloud_vpc_id" json:"cloud_vpc_id"`
 	Region          string          `db:"region" validate:"lte=20" json:"region"`
+	Protocol        string          `db:"protocol" json:"protocol"`
 	Port            int64           `db:"port" json:"port"`
 	Weight          int64           `db:"weight" json:"weight"`
 	HealthCheck     types.JsonField `db:"health_check" json:"health_check"`
