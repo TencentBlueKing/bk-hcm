@@ -31,11 +31,11 @@ import (
 	"hcm/pkg/api/core"
 	coreclb "hcm/pkg/api/core/cloud/clb"
 	"hcm/pkg/client"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 )
 
 // InitService initialize the clb service.
@@ -58,13 +58,10 @@ func InitService(c *capability.Capability) {
 	h.Add("BatchCreateCLB", http.MethodPost, "/clbs/create", svc.BatchCreateCLB)
 	h.Add("TCloudDescribeResources", http.MethodPost, "/vendors/tcloud/clbs/resources/describe",
 		svc.TCloudDescribeResources)
-	h.Add("BatchCreateCLB", http.MethodPost, "/clbs/create",
-		svc.BatchCreateCLB)
 	h.Add("ListBizListener", http.MethodPost, "/bizs/{bk_biz_id}/clbs/{clb_id}/listeners/list", svc.ListBizListener)
 	h.Add("ListBizClbUrlRule", http.MethodPost, "/bizs/{bk_biz_id}/target_groups/{target_group_id}/listeners/list",
 		svc.ListBizClbUrlRule)
 	h.Add("GetBizListener", http.MethodGet, "/bizs/{bk_biz_id}/listeners/{id}", svc.GetBizListener)
-	h.Add("GetListener", http.MethodGet, "/listeners/{id}", svc.GetListener)
 
 	h.Load(c.WebService)
 }
@@ -84,17 +81,8 @@ func (svc *clbSvc) listLoadBalancerMap(kt *kit.Kit, clbIDs []string) (map[string
 	}
 
 	clbReq := &core.ListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				filter.AtomRule{
-					Field: "id",
-					Op:    filter.In.Factory(),
-					Value: clbIDs,
-				},
-			},
-		},
-		Page: core.NewDefaultBasePage(),
+		Filter: tools.ContainersExpression("id", clbIDs),
+		Page:   core.NewDefaultBasePage(),
 	}
 	clbList, err := svc.client.DataService().Global.LoadBalancer.ListClb(kt, clbReq)
 	if err != nil {

@@ -89,7 +89,7 @@ type LoadBalancerTable struct {
 	PublicIPv6Addresses  types.StringArray `db:"public_ipv6_addresses" json:"public_ipv6_addresses"`
 	Domain               string            `db:"domain" json:"domain"`
 	Status               string            `db:"status" json:"status"`
-	Memo                 string            `db:"memo" json:"memo"`
+	Memo                 *string           `db:"memo" json:"memo"`
 	CloudCreatedTime     string            `db:"cloud_created_time" json:"cloud_created_time"`
 	CloudStatusTime      string            `db:"cloud_status_time" json:"cloud_status_time"`
 	CloudExpiredTime     string            `db:"cloud_expired_time" json:"cloud_expired_time"`

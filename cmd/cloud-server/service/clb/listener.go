@@ -7,6 +7,7 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -159,17 +160,8 @@ func (svc *clbSvc) listListenerMap(kt *kit.Kit, lblIDs []string) (map[string]cor
 
 	lblReq := &dataproto.ListListenerReq{
 		ListReq: core.ListReq{
-			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					filter.AtomRule{
-						Field: "id",
-						Op:    filter.In.Factory(),
-						Value: lblIDs,
-					},
-				},
-			},
-			Page: core.NewDefaultBasePage(),
+			Filter: tools.ContainersExpression("id", lblIDs),
+			Page:   core.NewDefaultBasePage(),
 		},
 	}
 	lblList, err := svc.client.DataService().Global.LoadBalancer.ListClbWithListener(kt, lblReq)
@@ -268,17 +260,8 @@ func (svc *clbSvc) getTCloudListener(kt *kit.Kit, lblID string) (*csclb.GetListe
 
 func (svc *clbSvc) getTargetGroupByID(kt *kit.Kit, targetGroupID string) ([]coreclb.BaseClbTargetGroup, error) {
 	tgReq := &core.ListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				filter.AtomRule{
-					Field: "id",
-					Op:    filter.Equal.Factory(),
-					Value: targetGroupID,
-				},
-			},
-		},
-		Page: core.NewDefaultBasePage(),
+		Filter: tools.EqualExpression("id", targetGroupID),
+		Page:   core.NewDefaultBasePage(),
 	}
 	targetGroupInfo, err := svc.client.DataService().Global.LoadBalancer.ListClbTargetGroup(kt, tgReq)
 	if err != nil {

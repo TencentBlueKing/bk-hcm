@@ -7,11 +7,11 @@ import (
 	coreclb "hcm/pkg/api/core/cloud/clb"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -163,17 +163,8 @@ func (svc *clbSvc) listVpcMap(kt *kit.Kit, vpcIDs []string) (map[string]cloud.Ba
 	}
 
 	vpcReq := &core.ListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				filter.AtomRule{
-					Field: "id",
-					Op:    filter.In.Factory(),
-					Value: vpcIDs,
-				},
-			},
-		},
-		Page: core.NewDefaultBasePage(),
+		Filter: tools.ContainersExpression("id", vpcIDs),
+		Page:   core.NewDefaultBasePage(),
 	}
 	list, err := svc.client.DataService().Global.Vpc.List(kt.Ctx, kt.Header(), vpcReq)
 	if err != nil {
@@ -195,17 +186,8 @@ func (svc *clbSvc) listClbTargetMap(kt *kit.Kit, targetIDs []string) (map[string
 	}
 
 	targetReq := &core.ListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				filter.AtomRule{
-					Field: "target_group_id",
-					Op:    filter.In.Factory(),
-					Value: targetIDs,
-				},
-			},
-		},
-		Page: core.NewDefaultBasePage(),
+		Filter: tools.ContainersExpression("target_group_id", targetIDs),
+		Page:   core.NewDefaultBasePage(),
 	}
 	list, err := svc.client.DataService().Global.LoadBalancer.ListClbTarget(kt, targetReq)
 	if err != nil {

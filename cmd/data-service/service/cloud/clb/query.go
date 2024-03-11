@@ -35,7 +35,6 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
-	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 )
 
@@ -98,7 +97,7 @@ func convTableToBaseClb(one *tableclb.LoadBalancerTable) *coreclb.BaseClb {
 		CloudCreatedTime:     one.CloudCreatedTime,
 		CloudStatusTime:      one.CloudStatusTime,
 		CloudExpiredTime:     one.CloudExpiredTime,
-		Memo:                 converter.ValToPtr(one.Memo),
+		Memo:                 one.Memo,
 		Revision: &core.Revision{
 			Creator:   one.Creator,
 			Reviser:   one.Reviser,
@@ -257,7 +256,7 @@ func convTableToBaseListener(one *tableclb.LoadBalancerListenerTable) *coreclb.B
 		Port:          one.Port,
 		DefaultDomain: one.DefaultDomain,
 		Zones:         one.Zones,
-		Memo:          converter.ValToPtr(one.Memo),
+		Memo:          one.Memo,
 		Revision: &core.Revision{
 			Creator:   one.Creator,
 			Reviser:   one.Reviser,
@@ -353,7 +352,7 @@ func convTableToBaseTCloudClbURLRule(kt *kit.Kit, one *tableclb.TCloudClbUrlRule
 		SessionExpire:      one.SessionExpire,
 		HealthCheck:        healthCheck,
 		Certificate:        certInfo,
-		Memo:               converter.ValToPtr(one.Memo),
+		Memo:               one.Memo,
 		Revision: &core.Revision{
 			Creator:   one.Creator,
 			Reviser:   one.Reviser,
@@ -412,7 +411,7 @@ func convTableToBaseClbTarget(one *tableclb.LoadBalancerTargetTable) *coreclb.Ba
 		PrivateIPAddress:   one.PrivateIPAddress,
 		PublicIPAddress:    one.PublicIPAddress,
 		Zone:               one.Zone,
-		Memo:               converter.ValToPtr(one.Memo),
+		Memo:               one.Memo,
 		Revision: &core.Revision{
 			Creator:   one.Creator,
 			Reviser:   one.Reviser,
@@ -484,7 +483,7 @@ func convTableToBaseClbTargetGroup(kt *kit.Kit, one *tableclb.LoadBalancerTarget
 		Port:            one.Port,
 		Weight:          one.Weight,
 		HealthCheck:     healthCheck,
-		Memo:            converter.ValToPtr(one.Memo),
+		Memo:            one.Memo,
 		Revision: &core.Revision{
 			Creator:   one.Creator,
 			Reviser:   one.Reviser,
