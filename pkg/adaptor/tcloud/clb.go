@@ -463,7 +463,7 @@ func (t *TCloudImpl) DeleteLoadBalancer(kt *kit.Kit, opt *typeclb.TCloudDeleteOp
 func (t *TCloudImpl) UpdateLoadBalancer(kt *kit.Kit, opt *typeclb.TCloudUpdateOption) (dealName *string, err error) {
 
 	if opt == nil {
-		return nil, errf.New(errf.InvalidParameter, "delete clb option is required")
+		return nil, errf.New(errf.InvalidParameter, "update clb option is required")
 	}
 
 	if err := opt.Validate(); err != nil {

@@ -83,30 +83,19 @@ func batchUpdateClb[T clb.Extension](cts *rest.Contexts, svc *clbSvc) (any, erro
 			update := &tableclb.LoadBalancerTable{
 				Name:    lb.Name,
 				BkBizID: lb.BkBizID,
+				Domain:  lb.Domain,
+				Status:  lb.Status,
 
-				Domain:           lb.Domain,
-				Status:           lb.Status,
+				PrivateIPv4Addresses: lb.PrivateIPv4Addresses,
+				PrivateIPv6Addresses: lb.PrivateIPv6Addresses,
+				PublicIPv4Addresses:  lb.PublicIPv4Addresses,
+				PublicIPv6Addresses:  lb.PublicIPv6Addresses,
+
 				CloudCreatedTime: lb.CloudCreatedTime,
 				CloudStatusTime:  lb.CloudStatusTime,
 				CloudExpiredTime: lb.CloudExpiredTime,
 				Memo:             lb.Memo,
 				Reviser:          cts.Kit.User,
-			}
-
-			if len(update.PrivateIPv4Addresses) == 0 {
-				update.PrivateIPv4Addresses = lb.PrivateIPv4Addresses
-			}
-
-			if len(update.PrivateIPv6Addresses) == 0 {
-				update.PrivateIPv6Addresses = lb.PrivateIPv6Addresses
-			}
-
-			if len(update.PublicIPv4Addresses) == 0 {
-				update.PublicIPv4Addresses = lb.PublicIPv4Addresses
-			}
-
-			if len(update.PublicIPv6Addresses) == 0 {
-				update.PublicIPv6Addresses = lb.PublicIPv6Addresses
 			}
 
 			if lb.Extension != nil {
@@ -123,8 +112,8 @@ func batchUpdateClb[T clb.Extension](cts *rest.Contexts, svc *clbSvc) (any, erro
 			}
 
 			if err := svc.dao.LoadBalancer().UpdateByIDWithTx(cts.Kit, txn, lb.ID, update); err != nil {
-				logs.Errorf("update security group by id failed, err: %v, id: %s, rid: %s", err, lb.ID, cts.Kit.Rid)
-				return nil, fmt.Errorf("update security group failed, err: %v", err)
+				logs.Errorf("update load balancer by id failed, err: %v, id: %s, rid: %s", err, lb.ID, cts.Kit.Rid)
+				return nil, fmt.Errorf("update load balancer failed, err: %v", err)
 			}
 		}
 

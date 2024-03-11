@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
 )
@@ -44,12 +45,13 @@ func (svc *clbSvc) AssignClbToBiz(cts *rest.Contexts) (any, error) {
 	}
 
 	// 权限校验
-	basicInfoReq := dataproto.ListResourceBasicInfoReq{
+	clbInfoReq := dataproto.ListResourceBasicInfoReq{
 		ResourceType: enumor.ClbCloudResType,
 		IDs:          req.ClbIDs,
 	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, clbInfoReq)
 	if err != nil {
+		logs.Errorf("list clb info failed, err: %s, clb_ids: %v, rid: %s", err, req.ClbIDs, cts.Kit.Rid)
 		return nil, err
 	}
 
