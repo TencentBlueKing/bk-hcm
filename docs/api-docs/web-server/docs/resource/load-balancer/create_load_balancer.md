@@ -16,7 +16,7 @@ POST /api/v1/cloud/vendors/tcloud/load_balancers/create
 |----------------------------|--------------|----|---------------------------------------------------------------|
 | account_id                 | string       | 是  | 账号ID                                                          |
 | region                     | string       | 是  | 地域                                                            |
-| load_balance_type          | string       | 是  | 网络类型  公网 OPEN，内网 INTERNAL                                     |
+| load_balancer_type         | string       | 是  | 网络类型  公网 OPEN，内网 INTERNAL                                     |
 | name                       | string       | 是  | 名称                                                            |
 | zones                      | string array | 否  | 主可用区,，仅限公网型                                                   |
 | backup_zones               | string array | 否  | 备可用区，目前仅广州、上海、南京、北京、中国香港、首尔地域的 IPv4 版本的 CLB 支持主备可用区。          |
