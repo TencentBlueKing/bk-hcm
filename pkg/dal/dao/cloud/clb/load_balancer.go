@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/audit"
 	idgen "hcm/pkg/dal/dao/id-generator"
@@ -32,6 +33,7 @@ import (
 	"hcm/pkg/dal/dao/types"
 	typesclb "hcm/pkg/dal/dao/types/clb"
 	"hcm/pkg/dal/table"
+	tableaudit "hcm/pkg/dal/table/audit"
 	tableclb "hcm/pkg/dal/table/cloud/clb"
 	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
@@ -80,6 +82,32 @@ func (dao ClbDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tableclb
 	if err = dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", tableName, err, kt.Rid)
 		return nil, fmt.Errorf("insert %s failed, err: %v", tableName, err)
+	}
+
+	// clb create audit.
+	audits := make([]*tableaudit.AuditTable, 0, len(models))
+	for _, one := range models {
+		audits = append(audits, &tableaudit.AuditTable{
+			ResID:      one.ID,
+			CloudResID: one.CloudID,
+			ResName:    one.Name,
+			ResType:    enumor.ClbAuditResType,
+			Action:     enumor.Create,
+			BkBizID:    one.BkBizID,
+			Vendor:     one.Vendor,
+			AccountID:  one.AccountID,
+			Operator:   kt.User,
+			Source:     kt.GetRequestSource(),
+			Rid:        kt.Rid,
+			AppCode:    kt.AppCode,
+			Detail: &tableaudit.BasicDetail{
+				Data: one,
+			},
+		})
+	}
+	if err = dao.Audit.BatchCreateWithTx(kt, tx, audits); err != nil {
+		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
 	}
 
 	return ids, nil

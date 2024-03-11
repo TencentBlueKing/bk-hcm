@@ -32,10 +32,12 @@ import (
 
 // TCloudBatchCreateReq tcloud batch create req.
 type TCloudBatchCreateReq struct {
-	AccountID               string                          `json:"account_id" validate:"required"`
-	Region                  string                          `json:"region" validate:"required"`
-	LoadBalancerType        typeclb.TCloudLoadBalancerType  `json:"load_balancer_type" validate:"required"`
-	Name                    *string                         `json:"name" validate:"required,max=60"`
+	AccountID        string                         `json:"account_id" validate:"required"`
+	Region           string                         `json:"region" validate:"required"`
+	LoadBalancerType typeclb.TCloudLoadBalancerType `json:"load_balancer_type" validate:"required"`
+	Name             *string                        `json:"name" validate:"required,max=60"`
+	// 公网	单可用区		传递zones（单元素数组）
+	// 公网	主备可用区	传递zones（单元素数组），以及backup_zones
 	Zones                   []string                        `json:"zones" validate:"omitempty"`
 	BackupZones             []string                        `json:"backup_zones" validate:"omitempty"`
 	AddressIPVersion        *typeclb.TCloudAddressIPVersion `json:"address_ip_version" validate:"required"`
@@ -55,12 +57,20 @@ type TCloudBatchCreateReq struct {
 
 // Validate request.
 func (req *TCloudBatchCreateReq) Validate() error {
-	if req.LoadBalancerType == typeclb.InternalLoadBalancerType {
+	switch req.LoadBalancerType {
+	case typeclb.InternalLoadBalancerType:
 		// 内网校验
 		if converter.PtrToVal(req.CloudSubnetID) == "" {
-			return errors.New("subnet id  is required for internal type load balancer")
+			return errors.New("subnet id  is required for load balancer type 'INTERNAL'")
 		}
+	case typeclb.OpenLoadBalancerType:
+		if len(req.Zones) == 0 {
+			return errors.New("zones is required for load balancer type 'OPEN'")
+		}
+	default:
+		return fmt.Errorf("unknown load balancer type: '%s'", req.LoadBalancerType)
 	}
+
 	return validator.Validate.Struct(req)
 }
 

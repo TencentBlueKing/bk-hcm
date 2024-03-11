@@ -86,17 +86,15 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		createOpt.AddressIPVersion = req.AddressIPVersion
 		// 静态单线IP 线路类型-仅适用于公网负载均衡, 如果不指定本参数，则默认使用BGP
 		createOpt.VipIsp = req.VipIsp
-		// 可用区ID-仅适用于公网负载均衡
-		if len(req.Zones) > 0 {
-			createOpt.ZoneID = converter.ValToPtr(req.Zones[0])
-		}
-		// 设置跨可用区容灾时的主可用区ID-仅适用于公网负载均衡
+
+		// 设置跨可用区容灾时的可用区ID-仅适用于公网负载均衡
 		if len(req.BackupZones) > 0 {
-			createOpt.MasterZoneID = converter.ValToPtr(req.BackupZones[0])
-		}
-		// 设置跨可用区容灾时的备可用区ID-仅适用于公网负载均衡
-		if len(req.BackupZones) > 1 {
-			createOpt.SlaveZoneID = converter.ValToPtr(req.BackupZones[1])
+			// 主备可用区，传递zones（单元素数组），以及backup_zones
+			createOpt.MasterZoneID = converter.ValToPtr(req.Zones[0])
+			createOpt.SlaveZoneID = converter.ValToPtr(req.BackupZones[0])
+		} else {
+			//单可用区
+			createOpt.ZoneID = converter.ValToPtr(req.Zones[0])
 		}
 	}
 
