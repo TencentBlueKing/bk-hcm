@@ -51,3 +51,9 @@ func (cli *LoadBalancerClient) Get(kt *kit.Kit, id string) (*clb.Clb[clb.TCloudC
 	return common.Request[common.Empty, clb.Clb[clb.TCloudClbExtension]](
 		cli.client, rest.GET, kt, nil, "/clbs/%s", id)
 }
+
+// BatchUpdate 批量更新CLB
+func (cli *LoadBalancerClient) BatchUpdate(kt *kit.Kit, req *dataproto.TCloudClbBatchUpdateReq) error {
+	return common.RequestNoResp[dataproto.TCloudClbBatchUpdateReq](cli.client,
+		rest.PATCH, kt, req, "clbs/batch/update")
+}

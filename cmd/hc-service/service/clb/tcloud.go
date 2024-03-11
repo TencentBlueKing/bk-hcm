@@ -27,7 +27,7 @@ import (
 	typeclb "hcm/pkg/adaptor/types/clb"
 	adcore "hcm/pkg/adaptor/types/core"
 	coreclb "hcm/pkg/api/core/cloud/clb"
-	"hcm/pkg/api/data-service/cloud"
+	dataproto "hcm/pkg/api/data-service/cloud"
 	protoclb "hcm/pkg/api/hc-service/clb"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -42,7 +42,9 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 
 	h.Add("BatchCreateTCloudClb", http.MethodPost, "/vendors/tcloud/clbs/batch/create", svc.BatchCreateTCloudClb)
 	h.Add("ListTCloudClb", http.MethodPost, "/vendors/tcloud/clbs/list", svc.ListTCloudClb)
-	h.Add("TCloudDescribeResources", http.MethodPost, "/vendors/tcloud/clbs/resources/describe", svc.TCloudDescribeResources)
+	h.Add("TCloudDescribeResources", http.MethodPost,
+		"/vendors/tcloud/clbs/resources/describe", svc.TCloudDescribeResources)
+	h.Add("TCloudUpdateCLB", http.MethodPatch, "/vendors/tcloud/clbs/{id}", svc.TCloudUpdateCLB)
 
 	h.Load(cap.WebService)
 }
@@ -114,8 +116,8 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 	if len(result.SuccessCloudIDs) == 0 {
 		return respData, nil
 	}
-	dbCreateReq := &cloud.TCloudCLBCreateReq{
-		Clbs: make([]cloud.ClbBatchCreate[coreclb.TCloudClbExtension], 0, len(result.SuccessCloudIDs)),
+	dbCreateReq := &dataproto.TCloudCLBCreateReq{
+		Clbs: make([]dataproto.ClbBatchCreate[coreclb.TCloudClbExtension], 0, len(result.SuccessCloudIDs)),
 	}
 	// 预创建数据库记录
 	for i, cloudID := range result.SuccessCloudIDs {
@@ -123,7 +125,7 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		if converter.PtrToVal(req.RequireCount) > 1 {
 			name = name + fmt.Sprintf("-%d", i+1)
 		}
-		dbCreateReq.Clbs = append(dbCreateReq.Clbs, cloud.ClbBatchCreate[coreclb.TCloudClbExtension]{
+		dbCreateReq.Clbs = append(dbCreateReq.Clbs, dataproto.ClbBatchCreate[coreclb.TCloudClbExtension]{
 			BkBizID:          constant.UnassignedBiz,
 			CloudID:          cloudID,
 			Name:             name,
@@ -196,4 +198,95 @@ func (svc *clbSvc) TCloudDescribeResources(cts *rest.Contexts) (any, error) {
 	}
 
 	return client.DescribeResources(cts.Kit, req.TCloudDescribeResourcesOption)
+}
+
+// TCloudUpdateCLB 更新clb属性
+func (svc *clbSvc) TCloudUpdateCLB(cts *rest.Contexts) (any, error) {
+	lbID := cts.PathParameter("id").String()
+	if len(lbID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	req := new(protoclb.TCloudUpdateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// 获取lb基本信息
+	lb, err := svc.dataCli.TCloud.LoadBalancer.Get(cts.Kit, lbID)
+	if err != nil {
+		logs.Errorf("fail to get tcloud clb(%s), err: %v, rid: %s", lbID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// 调用云上更新接口
+	client, err := svc.ad.TCloud(cts.Kit, lb.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	adtOpt := &typeclb.TCloudUpdateOption{
+		Region:                   lb.Region,
+		LoadBalancerId:           lb.CloudID,
+		LoadBalancerName:         req.Name,
+		InternetChargeType:       req.InternetChargeType,
+		InternetMaxBandwidthOut:  req.InternetMaxBandwidthOut,
+		BandwidthpkgSubType:      req.BandwidthpkgSubType,
+		LoadBalancerPassToTarget: req.LoadBalancerPassToTarget,
+		SnatPro:                  req.SnatPro,
+		DeleteProtect:            req.DeleteProtect,
+		ModifyClassicDomain:      req.ModifyClassicDomain,
+	}
+
+	_, err = client.UpdateLoadBalancer(cts.Kit, adtOpt)
+	if err != nil {
+		logs.Errorf("fail to call tcloud update clb(id:%s),err: %v, rid: %s", lbID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// 更新数据库信息
+	return nil, svc.updateDbClb(cts, req, lb)
+
+}
+
+func (svc *clbSvc) updateDbClb(cts *rest.Contexts,
+	req *protoclb.TCloudUpdateReq, lb *coreclb.Clb[coreclb.TCloudClbExtension]) error {
+
+	if lb.Extension == nil {
+		lb.Extension = &coreclb.TCloudClbExtension{}
+	}
+	if req.SnatPro != nil {
+		lb.Extension.SnatPro = converter.PtrToVal(req.SnatPro)
+	}
+	if req.DeleteProtect != nil {
+		lb.Extension.DeleteProtect = converter.PtrToVal(req.DeleteProtect)
+	}
+	if req.InternetMaxBandwidthOut != nil {
+		lb.Extension.InternetMaxBandwidthOut = converter.PtrToVal(req.InternetMaxBandwidthOut)
+	}
+	if req.InternetChargeType != nil {
+		lb.Extension.InternetChargeType = converter.PtrToVal(req.InternetChargeType)
+	}
+	if req.BandwidthpkgSubType != nil {
+		lb.Extension.BandwidthpkgSubType = converter.PtrToVal(req.BandwidthpkgSubType)
+	}
+	one := &dataproto.ClbExtUpdateReq[coreclb.TCloudClbExtension]{
+		ID:        lb.ID,
+		Name:      converter.PtrToVal(req.Name),
+		Memo:      req.Memo,
+		Extension: lb.Extension,
+	}
+	dataReq := &dataproto.TCloudClbBatchUpdateReq{
+		Clbs: []*dataproto.ClbExtUpdateReq[coreclb.TCloudClbExtension]{one},
+	}
+	err := svc.dataCli.TCloud.LoadBalancer.BatchUpdate(cts.Kit, dataReq)
+	if err != nil {
+		logs.Errorf("fail to call data service to update clb info, err: %v, rid: %s", err, cts.Kit.Rid)
+		return err
+	}
+	return nil
 }

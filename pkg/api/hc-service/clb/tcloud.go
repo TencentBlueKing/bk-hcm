@@ -151,3 +151,27 @@ type TCloudDisAssociateClbSecurityGroupReq struct {
 func (opt TCloudDisAssociateClbSecurityGroupReq) Validate() error {
 	return validator.Validate.Struct(opt)
 }
+
+// TCloudUpdateReq security group update request.
+type TCloudUpdateReq struct {
+	ClbID string `json:"load_balancer_id" validate:"omitempty"`
+
+	Name *string `json:"name" validate:"omitempty"`
+	Memo *string `json:"memo" validate:"omitempty"`
+
+	// 网络计费相关参数
+	InternetChargeType      *string `json:"internet_charge_type" validate:"omitempty"`
+	InternetMaxBandwidthOut *int64  `json:"internet_max_bandwidth_out" validate:"omitempty"`
+	BandwidthpkgSubType     *string `json:"bandwidthpkg_sub_type" validate:"omitempty"`
+
+	// Target是否放通来自CLB的流量。开启放通（true）：只验证CLB上的安全组；不开启放通（false）：需同时验证CLB和后端实例上的安全组。
+	LoadBalancerPassToTarget *bool `json:"load_balancer_pass_to_target" validate:"omitempty"`
+	SnatPro                  *bool `json:"snat_pro" validate:"omitempty"`
+	DeleteProtect            *bool `json:"delete_protect" validate:"omitempty"`
+	ModifyClassicDomain      *bool `json:"modify_classic_domain" validate:"omitempty"`
+}
+
+// Validate tcloud security group update request.
+func (req *TCloudUpdateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

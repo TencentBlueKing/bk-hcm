@@ -118,6 +118,8 @@ func (req *ClbExtBatchUpdateReq[T]) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
+type TCloudClbBatchUpdateReq = ClbExtBatchUpdateReq[coreclb.TCloudClbExtension]
+
 // ClbBizBatchUpdateReq 批量更新业务id
 type ClbBizBatchUpdateReq struct {
 	IDs     []string `json:"ids" validate:"required"`

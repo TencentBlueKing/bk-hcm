@@ -49,12 +49,16 @@ func InitService(c *capability.Capability) {
 		svc.BatchBindSecurityGroupBizClb)
 	h.Add("ListLoadBalancer", http.MethodPost, "/clbs/list", svc.ListLoadBalancer)
 	h.Add("GetBizLoadBalancer", http.MethodGet, "/bizs/{bk_biz_id}/clbs/{id}", svc.GetBizLoadBalancer)
+	h.Add("UpdateBizTCloudLoadBalancer", http.MethodPatch, "/bizs/{bk_biz_id}/vendors/tcloud/clbs/{id}",
+		svc.UpdateBizTCloudLoadBalancer)
 	h.Add("ListBizLoadBalancer", http.MethodPost, "/bizs/{bk_biz_id}/clbs/list", svc.ListBizLoadBalancer)
 
 	h.Add("GetLoadBalancer", http.MethodGet, "/clbs/{id}", svc.GetLoadBalancer)
 	h.Add("BatchCreateCLB", http.MethodPost, "/clbs/create", svc.BatchCreateCLB)
 	h.Add("TCloudDescribeResources", http.MethodPost, "/vendors/tcloud/clbs/resources/describe",
 		svc.TCloudDescribeResources)
+	h.Add("BatchCreateCLB", http.MethodPost, "/clbs/create", svc.BatchCreateCLB)
+	h.Add("AssignClbToBiz", http.MethodPost, "/clbs/assign/bizs", svc.AssignClbToBiz)
 
 	h.Load(c.WebService)
 }
