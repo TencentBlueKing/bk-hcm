@@ -49,11 +49,10 @@ func (svc *clbSvc) listClbUrlRule(cts *rest.Contexts, authHandler handler.ListAu
 		return nil, err
 	}
 
-	resList := &csclb.ListClbUrlRuleResult{Count: 0, Details: make([]csclb.ListClbUrlRuleBase, 0)}
 	if noPermFlag {
 		logs.Errorf("list clb url rule no perm auth, targetGroupID: %s, noPermFlag: %v, rid: %s",
 			tgID, noPermFlag, cts.Kit.Rid)
-		return resList, nil
+		return &csclb.ListClbUrlRuleResult{Count: 0, Details: make([]csclb.ListClbUrlRuleBase, 0)}, nil
 	}
 
 	urlRuleReq := core.ListReq{Filter: expr, Page: req.Page}
@@ -63,13 +62,24 @@ func (svc *clbSvc) listClbUrlRule(cts *rest.Contexts, authHandler handler.ListAu
 	}
 
 	if len(urlRuleList.Details) == 0 {
-		return resList, nil
+		return &csclb.ListClbUrlRuleResult{Count: 0, Details: make([]csclb.ListClbUrlRuleBase, 0)}, nil
 	}
 
-	resList.Count = urlRuleList.Count
+	resList, err := svc.listTCloudClbUrlRule(cts.Kit, urlRuleList)
+	if err != nil {
+		return nil, err
+	}
+
+	return resList, nil
+}
+
+func (svc *clbSvc) listTCloudClbUrlRule(kt *kit.Kit, urlRuleList *dataproto.TCloudURLRuleListResult) (
+	interface{}, error) {
+
 	lbIDs := make([]string, 0)
 	lblIDs := make([]string, 0)
 	targetIDs := make([]string, 0)
+	resList := &csclb.ListClbUrlRuleResult{Count: urlRuleList.Count, Details: make([]csclb.ListClbUrlRuleBase, 0)}
 	for _, ruleItem := range urlRuleList.Details {
 		lbIDs = append(lbIDs, ruleItem.LbID)
 		lblIDs = append(lblIDs, ruleItem.LblID)
@@ -80,13 +90,13 @@ func (svc *clbSvc) listClbUrlRule(cts *rest.Contexts, authHandler handler.ListAu
 	}
 
 	// 批量获取clb信息
-	clbMap, err := svc.listLoadBalancerMap(cts.Kit, lbIDs)
+	clbMap, err := svc.listLoadBalancerMap(kt, lbIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	// 批量获取listener信息
-	listenerMap, err := svc.listListenerMap(cts.Kit, lblIDs)
+	listenerMap, err := svc.listListenerMap(kt, lblIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -96,13 +106,13 @@ func (svc *clbSvc) listClbUrlRule(cts *rest.Contexts, authHandler handler.ListAu
 	for _, item := range clbMap {
 		vpcIDs = append(vpcIDs, item.VpcID)
 	}
-	vpcMap, err := svc.listVpcMap(cts.Kit, vpcIDs)
+	vpcMap, err := svc.listVpcMap(kt, vpcIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	// 批量获取target信息
-	targetMap, err := svc.listClbTargetMap(cts.Kit, targetIDs)
+	targetMap, err := svc.listClbTargetMap(kt, targetIDs)
 	if err != nil {
 		return nil, err
 	}
