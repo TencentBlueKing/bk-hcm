@@ -313,10 +313,16 @@ func (t *TCloudImpl) formatCreateClbRequest(opt *typelb.TCloudCreateClbOption) *
 	req.Egress = opt.Egress
 	req.ZoneId = opt.ZoneID
 	req.MasterZoneId = opt.MasterZoneID
-	req.VipIsp = opt.VipIsp
+
 	req.BandwidthPackageId = opt.BandwidthPackageID
 	req.Tags = opt.Tags
 	req.SnatIps = opt.SnatIps
+
+	// 使用默认ISP时传递空即可
+	ispVal := converter.PtrToVal(opt.VipIsp)
+	if ispVal != "" && ispVal != typeclb.TCloudDefaultISP {
+		req.VipIsp = opt.VipIsp
+	}
 
 	if opt.InternetChargeType != nil || opt.InternetMaxBandwidthOut != nil {
 		req.InternetAccessible = &clb.InternetAccessible{
