@@ -181,9 +181,14 @@ func convClbListResult[T corelb.Extension](tables []tablelb.LoadBalancerTable) (
 	*protocloud.ClbExtListResult[T], error) {
 
 	details := make([]corelb.LoadBalancer[T], 0, len(tables))
-	for _, one := range tables {
-		tmpClb := convTableToBaseLB(&one)
+	for _, tableLB := range tables {
+		tmpClb := convTableToBaseLB(&tableLB)
 		extension := new(T)
+		if tableLB.Extension != "" {
+			if err := json.UnmarshalFromString(string(tableLB.Extension), extension); err != nil {
+				return nil, fmt.Errorf("fail unmarshal load balancer extension, err: %v", err)
+			}
+		}
 		details = append(details, corelb.LoadBalancer[T]{
 			BaseLoadBalancer: *tmpClb,
 			Extension:        extension,

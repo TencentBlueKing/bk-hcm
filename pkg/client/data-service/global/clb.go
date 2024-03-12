@@ -78,3 +78,9 @@ func (cli *ClbClient) ListTargetGroup(kt *kit.Kit, req *core.ListReq) (*dataprot
 	return common.Request[core.ListReq, dataproto.ClbTargetGroupListResult](
 		cli.client, rest.POST, kt, req, "/load_balancers/target_groups/list")
 }
+
+// BatchDelete 批量删除
+func (cli *ClbClient) BatchDelete(kt *kit.Kit, req *dataproto.ClbBatchDeleteReq) error {
+	return common.RequestNoResp[dataproto.ClbBatchDeleteReq](cli.client, rest.DELETE,
+		kt, req, "/load_balancers/batch")
+}

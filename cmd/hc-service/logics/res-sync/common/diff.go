@@ -29,6 +29,7 @@ import (
 	typeseip "hcm/pkg/adaptor/types/eip"
 	firewallrule "hcm/pkg/adaptor/types/firewall-rule"
 	typesimage "hcm/pkg/adaptor/types/image"
+	typesclb "hcm/pkg/adaptor/types/load-balancer"
 	typesni "hcm/pkg/adaptor/types/network-interface"
 	typesregion "hcm/pkg/adaptor/types/region"
 	typesresourcegroup "hcm/pkg/adaptor/types/resource-group"
@@ -43,6 +44,7 @@ import (
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	coredisk "hcm/pkg/api/core/cloud/disk"
 	coreimage "hcm/pkg/api/core/cloud/image"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	corecloudni "hcm/pkg/api/core/cloud/network-interface"
 	coreregion "hcm/pkg/api/core/cloud/region"
 	coreresourcegroup "hcm/pkg/api/core/cloud/resource-group"
@@ -145,7 +147,8 @@ type CloudResType interface {
 		typeargstpl.TCloudArgsTplService |
 		typeargstpl.TCloudArgsTplServiceGroup |
 
-		cert.TCloudCert
+		cert.TCloudCert |
+		typesclb.TCloudClb
 }
 
 type DBResType interface {
@@ -235,7 +238,9 @@ type DBResType interface {
 
 		*coreargstpl.ArgsTpl[coreargstpl.TCloudArgsTplExtension] |
 
-		*corecert.Cert[corecert.TCloudCertExtension]
+		*corecert.Cert[corecert.TCloudCertExtension] |
+
+		corelb.TCloudLoadBalancer
 }
 
 // Diff 对比云和db资源，划分出新增数据，更新数据，删除数据。

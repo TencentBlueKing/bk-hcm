@@ -101,3 +101,26 @@ func And(rules ...filter.RuleFactory) (*filter.Expression, error) {
 		Rules: andRules,
 	}, nil
 }
+
+// RuleEqual 生成资源字段等于查询的AtomRule，即fieldName=value
+func RuleEqual(fieldName string, value any) *filter.AtomRule {
+	return &filter.AtomRule{Field: fieldName, Op: filter.Equal.Factory(), Value: value}
+}
+
+// RuleIn 生成资源字段等于查询的AtomRule，即fieldName in value
+func RuleIn(fieldName string, value any) *filter.AtomRule {
+	return &filter.AtomRule{Field: fieldName, Op: filter.In.Factory(), Value: value}
+}
+
+// ExpressionAnd expression with op and
+func ExpressionAnd(rules ...*filter.AtomRule) *filter.Expression {
+	// for type transformation
+	var factories = make([]filter.RuleFactory, len(rules))
+	for i, rule := range rules {
+		factories[i] = rule
+	}
+	return &filter.Expression{
+		Op:    filter.And,
+		Rules: factories,
+	}
+}

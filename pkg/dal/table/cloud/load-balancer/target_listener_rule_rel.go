@@ -49,7 +49,7 @@ var TargetListenerRuleRelColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "updated_at", NamedC: "updated_at", Type: enumor.Time},
 }
 
-// TargetListenerRuleRelTable 腾讯云负载均衡四层/七层规则表
+// TargetListenerRuleRelTable 目标组监听器关系表
 type TargetListenerRuleRelTable struct {
 	ID               string          `db:"id" validate:"lte=64" json:"id"`
 	ListenerRuleID   string          `db:"listener_rule_id" validate:"lte=64" json:"listener_rule_id"`

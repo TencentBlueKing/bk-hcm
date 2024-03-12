@@ -26,10 +26,7 @@ import (
 	"hcm/cmd/hc-service/service/capability"
 	adcore "hcm/pkg/adaptor/types/core"
 	typelb "hcm/pkg/adaptor/types/load-balancer"
-	corelb "hcm/pkg/api/core/cloud/load-balancer"
-	dataproto "hcm/pkg/api/data-service/cloud"
 	protolb "hcm/pkg/api/hc-service/load-balancer"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
@@ -277,6 +274,9 @@ func (svc *clbSvc) updateDbClb(cts *rest.Contexts,
 	}
 	if req.BandwidthpkgSubType != nil {
 		lb.Extension.BandwidthpkgSubType = converter.PtrToVal(req.BandwidthpkgSubType)
+	}
+	if req.LoadBalancerPassToTarget != nil {
+		lb.Extension.LoadBalancerPassToTarget = converter.PtrToVal(req.LoadBalancerPassToTarget)
 	}
 	one := &dataproto.LoadBalancerExtUpdateReq[corelb.TCloudClbExtension]{
 		ID:        lb.ID,

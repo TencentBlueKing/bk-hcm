@@ -20,6 +20,8 @@
 package tcloud
 
 import (
+	"strings"
+
 	"hcm/pkg/adaptor/types"
 
 	billing "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/billing/v20180709"
@@ -129,4 +131,9 @@ func (c *clientSet) CertClient() (*ssl.Client, error) {
 	}
 
 	return client, nil
+}
+
+// IsNotFoundErr 是否为资源未找到
+func IsNotFoundErr(err error) bool {
+	return err != nil && strings.Contains(err.Error(), ErrNotFound)
 }

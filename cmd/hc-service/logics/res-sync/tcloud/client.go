@@ -75,6 +75,9 @@ type Interface interface {
 
 	Cert(kt *kit.Kit, params *SyncBaseParams, opt *SyncCertOption) (*SyncResult, error)
 	RemoveCertDeleteFromCloud(kt *kit.Kit, accountID string, region string) error
+
+	LoadBalancer(kt *kit.Kit, params *SyncBaseParams, opt *SyncLBOption) (*SyncResult, error)
+	RemoveLoadBalancerDeleteFromCloud(kt *kit.Kit, accountID string, region string) error
 }
 
 var _ Interface = new(client)

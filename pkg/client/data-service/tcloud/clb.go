@@ -71,6 +71,6 @@ func (cli *LoadBalancerClient) ListLoadBalancer(kt *kit.Kit, req *core.ListReq) 
 	*core.ListResultT[corelb.TCloudLoadBalancer], error) {
 
 	return common.Request[core.ListReq, core.ListResultT[corelb.TCloudLoadBalancer]](
-		cli.client, rest.POST, kt, req, "/clbs/list")
+		cli.client, rest.POST, kt, req, "/load_balancers/list")
 
 }
