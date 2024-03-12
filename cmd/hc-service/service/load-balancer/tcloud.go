@@ -74,6 +74,7 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		SubnetID:         req.CloudSubnetID,
 		Vip:              req.Vip,
 		VipIsp:           req.VipIsp,
+		EipAddressID:     req.CloudEipID,
 
 		InternetChargeType:      req.InternetChargeType,
 		InternetMaxBandwidthOut: req.InternetMaxBandwidthOut,

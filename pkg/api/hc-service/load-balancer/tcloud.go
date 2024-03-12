@@ -23,7 +23,6 @@ import (
 	"errors"
 	"fmt"
 
-	typeclb "hcm/pkg/adaptor/types/clb"
 	"hcm/pkg/adaptor/types/core"
 	typelb "hcm/pkg/adaptor/types/load-balancer"
 	"hcm/pkg/criteria/constant"
@@ -45,7 +44,7 @@ type TCloudBatchCreateReq struct {
 	CloudVpcID              *string                        `json:"cloud_vpc_id" validate:"required"`
 	CloudSubnetID           *string                        `json:"cloud_subnet_id" validate:"omitempty"`
 	Vip                     *string                        `json:"vip" validate:"omitempty"`
-	VipID                   *string                        `json:"vip_id" validate:"omitempty"`
+	CloudEipID              *string                        `json:"cloud_eip_id" validate:"omitempty"`
 	VipIsp                  *string                        `json:"vip_isp" validate:"omitempty"`
 	InternetChargeType      *string                        `json:"internet_charge_type" validate:"omitempty"`
 	InternetMaxBandwidthOut *int64                         `json:"internet_max_bandwidth_out" validate:"omitempty"`
