@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 
+	typeclb "hcm/pkg/adaptor/types/clb"
 	"hcm/pkg/adaptor/types/core"
 	typelb "hcm/pkg/adaptor/types/load-balancer"
 	"hcm/pkg/criteria/constant"
