@@ -36,7 +36,7 @@ import (
 
 // LoadBalancerBatchCreateReq clb create req.
 type LoadBalancerBatchCreateReq[Extension corelb.Extension] struct {
-	Clbs []ClbBatchCreate[Extension] `json:"clbs" validate:"required,min=1"`
+	Lbs []ClbBatchCreate[Extension] `json:"lbs" validate:"required,min=1"`
 }
 
 type TCloudCLBCreateReq = LoadBalancerBatchCreateReq[corelb.TCloudClbExtension]
@@ -73,7 +73,7 @@ type ClbBatchCreate[Extension corelb.Extension] struct {
 
 // Validate clb create request.
 func (req *LoadBalancerBatchCreateReq[T]) Validate() error {
-	if len(req.Clbs) > constant.BatchOperationMaxLimit {
+	if len(req.Lbs) > constant.BatchOperationMaxLimit {
 		return fmt.Errorf("clbs count should <= %d", constant.BatchOperationMaxLimit)
 	}
 

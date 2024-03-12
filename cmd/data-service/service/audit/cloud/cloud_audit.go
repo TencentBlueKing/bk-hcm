@@ -41,7 +41,7 @@ func NewCloudAudit(dao dao.Set) *Audit {
 		subnet:           subnet.NewSubnet(dao),
 		networkInterface: networkinterface.NewNetworkInterface(dao),
 		routeTable:       routetable.NewRouteTable(dao),
-		clb:              loadbalancer.NewLoadBalancer(dao),
+		loadBalancer:     loadbalancer.NewLoadBalancer(dao),
 	}
 }
 
@@ -54,5 +54,5 @@ type Audit struct {
 	subnet           *subnet.Subnet
 	networkInterface *networkinterface.NetworkInterface
 	routeTable       *routetable.RouteTable
-	clb              *loadbalancer.LoadBalancer
+	loadBalancer     *loadbalancer.LoadBalancer
 }

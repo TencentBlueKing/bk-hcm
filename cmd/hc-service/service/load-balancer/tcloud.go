@@ -40,7 +40,8 @@ import (
 func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 	h := rest.NewHandler()
 
-	h.Add("BatchCreateTCloudClb", http.MethodPost, "/vendors/tcloud/load_balancers/batch/create", svc.BatchCreateTCloudClb)
+	h.Add("BatchCreateTCloudClb", http.MethodPost, "/vendors/tcloud/load_balancers/batch/create",
+		svc.BatchCreateTCloudClb)
 	h.Add("ListTCloudClb", http.MethodPost, "/vendors/tcloud/load_balancers/list", svc.ListTCloudClb)
 	h.Add("TCloudDescribeResources", http.MethodPost,
 		"/vendors/tcloud/load_balancers/resources/describe", svc.TCloudDescribeResources)
@@ -95,7 +96,7 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 			createOpt.MasterZoneID = converter.ValToPtr(req.Zones[0])
 			createOpt.SlaveZoneID = converter.ValToPtr(req.BackupZones[0])
 		} else {
-			//单可用区
+			// 单可用区
 			createOpt.ZoneID = converter.ValToPtr(req.Zones[0])
 		}
 	}
@@ -117,7 +118,7 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		return respData, nil
 	}
 	dbCreateReq := &dataproto.TCloudCLBCreateReq{
-		Clbs: make([]dataproto.ClbBatchCreate[corelb.TCloudClbExtension], 0, len(result.SuccessCloudIDs)),
+		Lbs: make([]dataproto.ClbBatchCreate[corelb.TCloudClbExtension], 0, len(result.SuccessCloudIDs)),
 	}
 	// 预创建数据库记录
 	for i, cloudID := range result.SuccessCloudIDs {
@@ -125,7 +126,7 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		if converter.PtrToVal(req.RequireCount) > 1 {
 			name = name + fmt.Sprintf("-%d", i+1)
 		}
-		dbCreateReq.Clbs = append(dbCreateReq.Clbs, dataproto.ClbBatchCreate[corelb.TCloudClbExtension]{
+		dbCreateReq.Lbs = append(dbCreateReq.Lbs, dataproto.ClbBatchCreate[corelb.TCloudClbExtension]{
 			BkBizID:          constant.UnassignedBiz,
 			CloudID:          cloudID,
 			Name:             name,

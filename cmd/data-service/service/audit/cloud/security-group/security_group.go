@@ -23,7 +23,7 @@ import (
 	"fmt"
 
 	"hcm/cmd/data-service/service/audit/cloud/cvm"
-	auditclb "hcm/cmd/data-service/service/audit/cloud/load-balancer"
+	auditlb "hcm/cmd/data-service/service/audit/cloud/load-balancer"
 	networkinterface "hcm/cmd/data-service/service/audit/cloud/network-interface"
 	"hcm/cmd/data-service/service/audit/cloud/subnet"
 	"hcm/pkg/api/core"
@@ -483,7 +483,7 @@ func (s *SecurityGroup) clbAssOperationAuditBuild(kt *kit.Kit, operations []prot
 		return nil, err
 	}
 
-	clbIDMap, err := auditclb.ListLoadBalancer(kt, s.dao, clbIDs)
+	clbIDMap, err := auditlb.ListLoadBalancer(kt, s.dao, clbIDs)
 	if err != nil {
 		return nil, err
 	}

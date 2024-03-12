@@ -61,7 +61,7 @@ func InitService(c *capability.Capability) {
 		svc.TCloudDescribeResources)
 	h.Add("BatchCreateCLB", http.MethodPost, "/load_balancers/create", svc.BatchCreateCLB)
 	h.Add("AssignClbToBiz", http.MethodPost, "/load_balancers/assign/bizs", svc.AssignClbToBiz)
-	h.Add("ListBizListener", http.MethodPost, "/bizs/{bk_biz_id}/load_balancers/{clb_id}/listeners/list",
+	h.Add("ListBizListener", http.MethodPost, "/bizs/{bk_biz_id}/load_balancers/{lb_id}/listeners/list",
 		svc.ListBizListener)
 	h.Add("ListBizClbUrlRule", http.MethodPost, "/bizs/{bk_biz_id}/target_groups/{target_group_id}/listeners/list",
 		svc.ListBizClbUrlRule)

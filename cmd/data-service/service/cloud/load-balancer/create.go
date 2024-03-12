@@ -65,8 +65,8 @@ func batchCreateClb[T corelb.Extension](cts *rest.Contexts, svc *clbSvc, vendor 
 	}
 
 	result, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
-		models := make([]*tablelb.LoadBalancerTable, 0, len(req.Clbs))
-		for _, lb := range req.Clbs {
+		models := make([]*tablelb.LoadBalancerTable, 0, len(req.Lbs))
+		for _, lb := range req.Lbs {
 			lbTable, err := convClbReqToTable(cts.Kit, vendor, lb)
 			if err != nil {
 				return nil, err
