@@ -22,7 +22,6 @@ package loadbalancer
 import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/dal/table/types"
 )
 
 // BaseLoadBalancer define base clb.
@@ -96,8 +95,8 @@ type BaseListener struct {
 	*core.Revision `json:",inline"`
 }
 
-// BaseTCloudClbURLRule define base tcloud clb url rule.
-type BaseTCloudClbURLRule struct {
+// BaseTCloudLbUrlRule define base tcloud lb url rule.
+type BaseTCloudLbUrlRule struct {
 	ID      string `json:"id"`
 	CloudID string `json:"cloud_id"`
 	Name    string `json:"name"`
@@ -144,42 +143,4 @@ type CertificateInfo struct {
 	CertId     string   `json:"cert_id"`
 	CertCaId   string   `json:"cert_ca_id"`
 	ExtCertIds []string `json:"ext_cert_ids"`
-}
-
-// BaseClbTarget define base clb target.
-type BaseClbTarget struct {
-	ID                 string            `json:"id"`
-	AccountID          string            `json:"account_id"`
-	InstType           string            `json:"inst_type"`
-	CloudInstID        string            `json:"cloud_inst_id"`
-	InstName           string            `json:"inst_name"`
-	TargetGroupID      string            `json:"target_group_id"`
-	CloudTargetGroupID string            `json:"cloud_target_group_id"`
-	Port               int64             `json:"port"`
-	Weight             int64             `json:"weight"`
-	PrivateIPAddress   types.StringArray `json:"private_ip_address"`
-	PublicIPAddress    types.StringArray `json:"public_ip_address"`
-	Zone               string            `json:"zone"`
-	Memo               *string           `json:"memo"`
-	*core.Revision     `json:",inline"`
-}
-
-// BaseClbTargetGroup define base clb target group.
-type BaseClbTargetGroup struct {
-	ID              string           `json:"id"`
-	CloudID         string           `json:"cloud_id"`
-	Name            string           `json:"name"`
-	Vendor          enumor.Vendor    `json:"vendor"`
-	AccountID       string           `json:"account_id"`
-	BkBizID         int64            `json:"bk_biz_id"`
-	TargetGroupType string           `json:"target_group_type"`
-	VpcID           string           `json:"vpc_id"`
-	CloudVpcID      string           `json:"cloud_vpc_id"`
-	Protocol        string           `json:"protocol"`
-	Region          string           `json:"region"`
-	Port            int64            `json:"port"`
-	Weight          int64            `json:"weight"`
-	HealthCheck     *HealthCheckInfo `json:"health_check"`
-	Memo            *string          `json:"memo"`
-	*core.Revision  `json:",inline"`
 }

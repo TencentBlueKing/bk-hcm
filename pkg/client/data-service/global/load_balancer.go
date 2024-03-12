@@ -40,8 +40,8 @@ func NewLoadBalancerClient(client rest.ClientInterface) *LoadBalancerClient {
 }
 
 // ListLoadBalancer list lb.
-func (cli *LoadBalancerClient) ListLoadBalancer(kt *kit.Kit, req *core.ListReq) (*dataproto.ClbListResult, error) {
-	return common.Request[core.ListReq, dataproto.ClbListResult](cli.client, rest.POST, kt, req, "/load_balancers/list")
+func (cli *LoadBalancerClient) ListLoadBalancer(kt *kit.Kit, req *core.ListReq) (*dataproto.LbListResult, error) {
+	return common.Request[core.ListReq, dataproto.LbListResult](cli.client, rest.POST, kt, req, "/load_balancers/list")
 }
 
 // BatchUpdateClbBizInfo update biz
@@ -68,15 +68,15 @@ func (cli *LoadBalancerClient) ListUrlRule(kt *kit.Kit, req *dataproto.ListTClou
 }
 
 // ListTarget list target.
-func (cli *LoadBalancerClient) ListTarget(kt *kit.Kit, req *core.ListReq) (*dataproto.ClbTargetListResult, error) {
-	return common.Request[core.ListReq, dataproto.ClbTargetListResult](
+func (cli *LoadBalancerClient) ListTarget(kt *kit.Kit, req *core.ListReq) (*dataproto.TargetListResult, error) {
+	return common.Request[core.ListReq, dataproto.TargetListResult](
 		cli.client, rest.POST, kt, req, "/load_balancers/targets/list")
 }
 
 // ListTargetGroup list target group.
-func (cli *LoadBalancerClient) ListTargetGroup(kt *kit.Kit, req *core.ListReq) (*dataproto.ClbTargetGroupListResult,
+func (cli *LoadBalancerClient) ListTargetGroup(kt *kit.Kit, req *core.ListReq) (*dataproto.TargetGroupListResult,
 	error) {
-	return common.Request[core.ListReq, dataproto.ClbTargetGroupListResult](
+	return common.Request[core.ListReq, dataproto.TargetGroupListResult](
 		cli.client, rest.POST, kt, req, "/load_balancers/target_groups/list")
 }
 
@@ -84,4 +84,17 @@ func (cli *LoadBalancerClient) ListTargetGroup(kt *kit.Kit, req *core.ListReq) (
 func (cli *LoadBalancerClient) BatchDelete(kt *kit.Kit, req *dataproto.LoadBalancerBatchDeleteReq) error {
 	return common.RequestNoResp[dataproto.LoadBalancerBatchDeleteReq](cli.client, rest.DELETE,
 		kt, req, "/load_balancers/batch")
+}
+
+// ListTargetGroupListenerRel list target group listener rel.
+func (cli *LoadBalancerClient) ListTargetGroupListenerRel(kt *kit.Kit, req *core.ListReq) (
+	*dataproto.TargetListenerRuleRelListResult, error) {
+
+	return common.Request[core.ListReq, dataproto.TargetListenerRuleRelListResult](
+		cli.client, rest.POST, kt, req, "/target_group_listener_rels/list")
+}
+
+// DeleteTargetGroup delete target group.
+func (cli *LoadBalancerClient) DeleteTargetGroup(kt *kit.Kit, req *core.ListReq) error {
+	return common.RequestNoResp[core.ListReq](cli.client, rest.DELETE, kt, req, "/target_groups/batch")
 }

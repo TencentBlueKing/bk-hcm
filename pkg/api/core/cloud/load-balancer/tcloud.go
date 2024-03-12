@@ -131,3 +131,7 @@ func (ip *SnatIp) Hash() string {
 func (ip *SnatIp) String() string {
 	return cvt.PtrToVal(ip.SubnetId) + "," + cvt.PtrToVal(ip.Ip)
 }
+
+// TCloudTargetGroupExtension tcloud target group extension.
+type TCloudTargetGroupExtension struct {
+}

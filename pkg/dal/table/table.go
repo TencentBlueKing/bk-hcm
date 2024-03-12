@@ -158,8 +158,8 @@ const (
 	SecurityGroupCommonRelTable Name = "security_group_common_rel"
 	// LoadBalancerListenerTable is load_balancer_listener table's name.
 	LoadBalancerListenerTable Name = "load_balancer_listener"
-	// TCloudClbUrlRuleTable is tcloud_lb_url_rule table's name.
-	TCloudClbUrlRuleTable Name = "tcloud_lb_url_rule"
+	// TCloudLbUrlRuleTable is tcloud_lb_url_rule table's name.
+	TCloudLbUrlRuleTable Name = "tcloud_lb_url_rule"
 	// LoadBalancerTargetTable is load_balancer_target table's name.
 	LoadBalancerTargetTable Name = "load_balancer_target"
 	// LoadBalancerTargetGroupTable is load_balancer_target_group table's name.
@@ -249,7 +249,7 @@ var TableMap = map[Name]struct{}{
 	LoadBalancerTable:            {},
 	SecurityGroupCommonRelTable:  {},
 	LoadBalancerListenerTable:    {},
-	TCloudClbUrlRuleTable:        {},
+	TCloudLbUrlRuleTable:         {},
 	LoadBalancerTargetTable:      {},
 	LoadBalancerTargetGroupTable: {},
 	TargetListenerRuleRelTable:   {},

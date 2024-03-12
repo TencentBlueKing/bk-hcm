@@ -25,6 +25,7 @@ import (
 	"fmt"
 
 	cloudserver "hcm/pkg/api/cloud-server"
+	dataproto "hcm/pkg/api/data-service/cloud"
 	protolb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -81,4 +82,56 @@ func (svc *lbSvc) batchCreateTCloudLB(kt *kit.Kit, rawReq json.RawMessage) (any,
 	}
 
 	return svc.client.HCService().TCloud.Clb.BatchCreate(kt, req)
+}
+
+func (svc *lbSvc) CreateBizTargetGroup(cts *rest.Contexts) (any, error) {
+	req := new(cloudserver.ResourceCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		logs.Errorf("create target group request decode failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if len(req.AccountID) == 0 {
+		return nil, errf.Newf(errf.InvalidParameter, "account_id is required")
+	}
+
+	// 权限校验
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{
+		Type:       meta.TargetGroup,
+		Action:     meta.Create,
+		ResourceID: req.AccountID,
+	}}
+	if err := svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+		logs.Errorf("create target group auth failed, err: %v, account id: %s, rid: %s",
+			err, req.AccountID, cts.Kit.Rid)
+		return nil, err
+	}
+
+	accountInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(
+		cts.Kit, enumor.AccountCloudResType, req.AccountID)
+	if err != nil {
+		logs.Errorf("get account basic info failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	switch accountInfo.Vendor {
+	case enumor.TCloud:
+		return svc.batchCreateTCloudTargetGroup(cts.Kit, req.Data)
+	default:
+		return nil, fmt.Errorf("vendor: %s not support", accountInfo.Vendor)
+	}
+}
+
+func (svc *lbSvc) batchCreateTCloudTargetGroup(kt *kit.Kit, rawReq json.RawMessage) (any, error) {
+	req := new(dataproto.TCloudTargetGroupCreateReq)
+	if err := json.Unmarshal(rawReq, req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	// 参数校验
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	return svc.client.DataService().TCloud.LoadBalancer.BatchCreateTCloudTargetGroup(kt, req)
 }

@@ -74,3 +74,25 @@ func (cli *LoadBalancerClient) ListLoadBalancer(kt *kit.Kit, req *core.ListReq) 
 		cli.client, rest.POST, kt, req, "/load_balancers/list")
 
 }
+
+// BatchCreateTCloudTargetGroup 批量创建腾讯云目标组
+func (cli *LoadBalancerClient) BatchCreateTCloudTargetGroup(kt *kit.Kit, req *dataproto.TCloudTargetGroupCreateReq) (
+	*core.BatchCreateResult, error) {
+
+	return common.Request[dataproto.TCloudTargetGroupCreateReq, core.BatchCreateResult](
+		cli.client, rest.POST, kt, req, "/target_groups/batch/create")
+}
+
+// BatchUpdateTCloudTargetGroup 批量更新腾讯云目标组
+func (cli *LoadBalancerClient) BatchUpdateTCloudTargetGroup(kt *kit.Kit, req *dataproto.TargetGroupUpdateReq) error {
+	return common.RequestNoResp[dataproto.TargetGroupUpdateReq](
+		cli.client, rest.PATCH, kt, req, "/target_groups")
+}
+
+// GetTargetGroup 获取目标组详情
+func (cli *LoadBalancerClient) GetTargetGroup(kt *kit.Kit, id string) (
+	*corelb.TargetGroup[corelb.TCloudTargetGroupExtension], error) {
+
+	return common.Request[common.Empty, corelb.TargetGroup[corelb.TCloudTargetGroupExtension]](
+		cli.client, rest.GET, kt, nil, "/target_groups/%s", id)
+}

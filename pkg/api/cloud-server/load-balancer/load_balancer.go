@@ -29,14 +29,14 @@ import (
 	"hcm/pkg/criteria/validator"
 )
 
-// BatchBindClbSecurityGroupReq batch bind clb security group req.
-type BatchBindClbSecurityGroupReq struct {
+// BatchBindLbSecurityGroupReq batch bind lb security group req.
+type BatchBindLbSecurityGroupReq struct {
 	ClbID            string   `json:"clb_id" validate:"required"`
 	SecurityGroupIDs []string `json:"security_group_ids" validate:"required,max=50"`
 }
 
 // Validate validate.
-func (req *BatchBindClbSecurityGroupReq) Validate() error {
+func (req *BatchBindLbSecurityGroupReq) Validate() error {
 	if len(req.ClbID) == 0 {
 		return errors.New("clb_id is required")
 	}
@@ -143,12 +143,12 @@ type GetListenerDetail struct {
 
 // -------------------------- List LoadBalancer Url Rule --------------------------
 
-// ListClbUrlRuleResult defines list clb url rule result.
-type ListClbUrlRuleResult = core.ListResultT[ListClbUrlRuleBase]
+// ListLbUrlRuleResult defines list lb url rule result.
+type ListLbUrlRuleResult = core.ListResultT[ListLbUrlRuleBase]
 
-// ListClbUrlRuleBase define list clb url rule base.
-type ListClbUrlRuleBase struct {
-	corelb.BaseTCloudClbURLRule
+// ListLbUrlRuleBase define list lb url rule base.
+type ListLbUrlRuleBase struct {
+	corelb.BaseTCloudLbUrlRule
 	LblName              string   `json:"lbl_name"`
 	LbName               string   `json:"lb_name"`
 	PrivateIPv4Addresses []string `json:"private_ipv4_addresses"`
@@ -161,4 +161,29 @@ type ListClbUrlRuleBase struct {
 	VpcName              string   `json:"vpc_name"`
 	CloudVpcID           string   `json:"cloud_vpc_id"`
 	InstType             string   `json:"inst_type"`
+}
+
+// -------------------------- List TargetGroup --------------------------
+
+// ListTargetGroupResult defines list target group result.
+type ListTargetGroupResult = core.ListResultT[ListTargetGroupSummary]
+
+// ListTargetGroupSummary define list listener summary.
+type ListTargetGroupSummary struct {
+	corelb.BaseTargetGroup
+	LbID                 string   `json:"lb_id"`
+	LbName               string   `json:"lb_name"`
+	PrivateIPv4Addresses []string `json:"private_ipv4_addresses"`
+	PrivateIPv6Addresses []string `json:"private_ipv6_addresses"`
+	PublicIPv4Addresses  []string `json:"public_ipv4_addresses"`
+	PublicIPv6Addresses  []string `json:"public_ipv6_addresses"`
+	ListenerNum          int64    `json:"listener_num"`
+}
+
+// -------------------------- Get TargetGroup --------------------------
+
+// GetTargetGroupDetail define get target group detail.
+type GetTargetGroupDetail struct {
+	corelb.BaseTargetGroup
+	TargetList []corelb.BaseTarget `json:"target_list"`
 }

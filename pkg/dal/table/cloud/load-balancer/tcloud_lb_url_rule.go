@@ -61,8 +61,8 @@ var TCloudClbUrlRuleColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "updated_at", NamedC: "updated_at", Type: enumor.Time},
 }
 
-// TCloudClbUrlRuleTable 腾讯云负载均衡四层/七层规则表
-type TCloudClbUrlRuleTable struct {
+// TCloudLbUrlRuleTable 腾讯云负载均衡四层/七层规则表
+type TCloudLbUrlRuleTable struct {
 	ID       string          `db:"id" validate:"lte=64" json:"id"`
 	CloudID  string          `db:"cloud_id" validate:"lte=255" json:"cloud_id"`
 	Name     string          `db:"name" validate:"lte=255" json:"name"`
@@ -91,12 +91,12 @@ type TCloudClbUrlRuleTable struct {
 }
 
 // TableName return tcloud_lb_url_rule table name.
-func (tlbur TCloudClbUrlRuleTable) TableName() table.Name {
-	return table.TCloudClbUrlRuleTable
+func (tlbur TCloudLbUrlRuleTable) TableName() table.Name {
+	return table.TCloudLbUrlRuleTable
 }
 
 // InsertValidate tcloud_lb_url_rule table when insert.
-func (tlbur TCloudClbUrlRuleTable) InsertValidate() error {
+func (tlbur TCloudLbUrlRuleTable) InsertValidate() error {
 	if err := validator.Validate.Struct(tlbur); err != nil {
 		return err
 	}
@@ -121,7 +121,7 @@ func (tlbur TCloudClbUrlRuleTable) InsertValidate() error {
 }
 
 // UpdateValidate tcloud_lb_url_rule table when update.
-func (tlbur TCloudClbUrlRuleTable) UpdateValidate() error {
+func (tlbur TCloudLbUrlRuleTable) UpdateValidate() error {
 	if err := validator.Validate.Struct(tlbur); err != nil {
 		return err
 	}

@@ -67,20 +67,16 @@ func (svc *lbSvc) listLbUrlRule(cts *rest.Contexts, authHandler handler.ListAuth
 	if noPermFlag {
 		logs.Errorf("list lb url rule no perm auth, targetGroupID: %s, noPermFlag: %v, rid: %s",
 			tgID, noPermFlag, cts.Kit.Rid)
-		return &cslb.ListClbUrlRuleResult{Count: 0, Details: make([]cslb.ListClbUrlRuleBase, 0)}, nil
+		return &cslb.ListLbUrlRuleResult{Count: 0, Details: make([]cslb.ListLbUrlRuleBase, 0)}, nil
 	}
 
-	//urlRuleReq := core.ListReq{Filter: expr, Page: req.Page}
 	urlRuleList, err := svc.getTCloudUrlRule(cts.Kit, tgID, req)
-
-	logs.Errorf("list lb url rule no perm DEBUG:61, targetGroupID: %s, req: %+v, urlRuleList: %+v, rid: %s",
-		tgID, req, urlRuleList, cts.Kit.Rid)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(urlRuleList.Details) == 0 {
-		return &cslb.ListClbUrlRuleResult{Count: 0, Details: make([]cslb.ListClbUrlRuleBase, 0)}, nil
+	if req.Page.Count {
+		return &cslb.ListLbUrlRuleResult{Count: urlRuleList.Count}, nil
 	}
 
 	resList, err := svc.listTCloudClbUrlRule(cts.Kit, urlRuleList)
@@ -97,13 +93,13 @@ func (svc *lbSvc) listTCloudClbUrlRule(kt *kit.Kit, urlRuleList *dataproto.TClou
 	lbIDs := make([]string, 0)
 	lblIDs := make([]string, 0)
 	targetIDs := make([]string, 0)
-	resList := &cslb.ListClbUrlRuleResult{Count: urlRuleList.Count, Details: make([]cslb.ListClbUrlRuleBase, 0)}
+	resList := &cslb.ListLbUrlRuleResult{Count: urlRuleList.Count, Details: make([]cslb.ListLbUrlRuleBase, 0)}
 	for _, ruleItem := range urlRuleList.Details {
 		lbIDs = append(lbIDs, ruleItem.LbID)
 		lblIDs = append(lblIDs, ruleItem.LblID)
 		targetIDs = append(targetIDs, ruleItem.TargetGroupID)
-		resList.Details = append(resList.Details, cslb.ListClbUrlRuleBase{
-			BaseTCloudClbURLRule: ruleItem,
+		resList.Details = append(resList.Details, cslb.ListLbUrlRuleBase{
+			BaseTCloudLbUrlRule: ruleItem,
 		})
 	}
 
@@ -198,7 +194,7 @@ func (svc *lbSvc) listVpcMap(kt *kit.Kit, vpcIDs []string) (map[string]cloud.Bas
 	return vpcMap, nil
 }
 
-func (svc *lbSvc) listClbTargetMap(kt *kit.Kit, targetIDs []string) (map[string][]corelb.BaseClbTarget, error) {
+func (svc *lbSvc) listClbTargetMap(kt *kit.Kit, targetIDs []string) (map[string][]corelb.BaseTarget, error) {
 	if len(targetIDs) == 0 {
 		return nil, nil
 	}
@@ -213,10 +209,10 @@ func (svc *lbSvc) listClbTargetMap(kt *kit.Kit, targetIDs []string) (map[string]
 		return nil, err
 	}
 
-	targetMap := make(map[string][]corelb.BaseClbTarget, len(list.Details))
+	targetMap := make(map[string][]corelb.BaseTarget, len(list.Details))
 	for _, item := range list.Details {
 		if _, ok := targetMap[item.TargetGroupID]; !ok {
-			targetMap[item.TargetGroupID] = make([]corelb.BaseClbTarget, 0)
+			targetMap[item.TargetGroupID] = make([]corelb.BaseTarget, 0)
 		}
 		targetMap[item.TargetGroupID] = append(targetMap[item.TargetGroupID], item)
 	}

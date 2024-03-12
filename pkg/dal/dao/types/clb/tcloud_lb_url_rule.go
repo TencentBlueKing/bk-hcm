@@ -23,6 +23,6 @@ import tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 
 // ListClbUrlRuleDetails list clb url rule details.
 type ListClbUrlRuleDetails struct {
-	Count   uint64                          `json:"count,omitempty"`
-	Details []tablelb.TCloudClbUrlRuleTable `json:"details,omitempty"`
+	Count   uint64                         `json:"count,omitempty"`
+	Details []tablelb.TCloudLbUrlRuleTable `json:"details,omitempty"`
 }

@@ -161,3 +161,69 @@ func (svc *lbSvc) BatchUpdateClbBizInfo(cts *rest.Contexts) (any, error) {
 	}
 	return nil, svc.dao.LoadBalancer().Update(cts.Kit, updateFilter, updateFiled)
 }
+
+// UpdateTargetGroup batch update argument template
+func (svc *lbSvc) UpdateTargetGroup(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocloud.TargetGroupUpdateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	if len(req.IDs) == 0 {
+		return nil, errf.Newf(errf.InvalidParameter, "ids is empty")
+	}
+
+	updateData := &tablelb.LoadBalancerTargetGroupTable{
+		BkBizID: req.BkBizID,
+		Reviser: cts.Kit.User,
+	}
+
+	if len(req.Name) > 0 {
+		updateData.Name = req.Name
+	}
+	if len(req.TargetGroupType) > 0 {
+		updateData.TargetGroupType = req.TargetGroupType
+	}
+	if len(req.CloudVpcID) > 0 {
+		updateData.CloudVpcID = req.CloudVpcID
+	}
+	if len(req.VpcID) > 0 {
+		// 根据vpcID查询VPC信息，如查不到cloudVpcID则报错
+		updateData.VpcID = req.VpcID
+		vpcReq := []protocloud.TargetGroupBatchCreate[corelb.TCloudTargetGroupExtension]{{VpcID: req.VpcID}}
+		vpcInfoMap, err := getVpcMapByIDs(cts.Kit, vpcReq)
+		if err != nil {
+			return nil, err
+		}
+		if len(req.VpcID) > 0 {
+			vpcInfo, ok := vpcInfoMap[req.VpcID]
+			if !ok {
+				return nil, errf.Newf(errf.RecordNotFound, "vpcID[%s] not found", req.VpcID)
+			}
+			updateData.CloudVpcID = vpcInfo.CloudID
+		}
+	}
+	if len(req.Region) > 0 {
+		updateData.Region = req.Region
+	}
+	if len(req.Protocol) > 0 {
+		updateData.Protocol = req.Protocol
+	}
+	if req.Port >= 0 {
+		updateData.Port = req.Port
+	}
+	if len(req.HealthCheck) > 0 {
+		updateData.HealthCheck = req.HealthCheck
+	}
+
+	if err := svc.dao.LoadBalancerTargetGroup().Update(
+		cts.Kit, tools.ContainersExpression("id", req.IDs), updateData); err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
