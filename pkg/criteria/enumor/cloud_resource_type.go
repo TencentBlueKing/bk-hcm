@@ -66,7 +66,7 @@ func (rt CloudResourceType) ConvTableName() (table.Name, error) {
 		return table.ArgumentTemplateTable, nil
 	case CertCloudResType:
 		return table.SslCertTable, nil
-	case ClbCloudResType:
+	case LoadBalancerCloudResType:
 		return table.LoadBalancerTable, nil
 	case ListenerCloudResType:
 		return table.LoadBalancerListenerTable, nil
@@ -95,6 +95,6 @@ const (
 	AzureResourceGroup           CloudResourceType = "azure_resource_group"
 	ArgumentTemplateResType      CloudResourceType = "argument_template"
 	CertCloudResType             CloudResourceType = "cert"
-	ClbCloudResType              CloudResourceType = "clb"
+	LoadBalancerCloudResType     CloudResourceType = "load_balancer"
 	ListenerCloudResType         CloudResourceType = "listener"
 )

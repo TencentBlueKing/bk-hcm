@@ -42,7 +42,7 @@ const (
 	NetworkInterfaceAuditResType  AuditResourceType = "network_interface"
 	ArgumentTemplateAuditResType  AuditResourceType = "argument_template"
 	SslCertAuditResType           AuditResourceType = "ssl_cert"
-	ClbAuditResType               AuditResourceType = "clb"
+	LoadBalancerAuditResType      AuditResourceType = "load_balancer"
 )
 
 // AuditResourceTypeEnums resource type map.
@@ -61,7 +61,7 @@ var AuditResourceTypeEnums = map[AuditResourceType]struct{}{
 	NetworkInterfaceAuditResType:  {},
 	ArgumentTemplateAuditResType:  {},
 	SslCertAuditResType:           {},
-	ClbAuditResType:               {},
+	LoadBalancerAuditResType:      {},
 }
 
 // Exist judge enum value exist.

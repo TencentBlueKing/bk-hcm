@@ -34,7 +34,7 @@ import (
 	typesclb "hcm/pkg/dal/dao/types/clb"
 	"hcm/pkg/dal/table"
 	tableaudit "hcm/pkg/dal/table/audit"
-	tableclb "hcm/pkg/dal/table/cloud/clb"
+	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -45,9 +45,9 @@ import (
 
 // ClbInterface only used for clb.
 type ClbInterface interface {
-	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tableclb.LoadBalancerTable) ([]string, error)
-	Update(kt *kit.Kit, expr *filter.Expression, model *tableclb.LoadBalancerTable) error
-	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tableclb.LoadBalancerTable) error
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerTable) ([]string, error)
+	Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.LoadBalancerTable) error
+	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.LoadBalancerTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
@@ -62,7 +62,7 @@ type ClbDao struct {
 }
 
 // BatchCreateWithTx clb.
-func (dao ClbDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tableclb.LoadBalancerTable) ([]string, error) {
+func (dao ClbDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerTable) ([]string, error) {
 	tableName := table.LoadBalancerTable
 	ids, err := dao.IDGen.Batch(kt, tableName, len(models))
 	if err != nil {
@@ -77,7 +77,7 @@ func (dao ClbDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tableclb
 	}
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, tableName,
-		tableclb.LoadBalancerColumns.ColumnExpr(), tableclb.LoadBalancerColumns.ColonNameExpr())
+		tablelb.LoadBalancerColumns.ColumnExpr(), tablelb.LoadBalancerColumns.ColonNameExpr())
 
 	if err = dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", tableName, err, kt.Rid)
@@ -91,7 +91,7 @@ func (dao ClbDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tableclb
 			ResID:      one.ID,
 			CloudResID: one.CloudID,
 			ResName:    one.Name,
-			ResType:    enumor.ClbAuditResType,
+			ResType:    enumor.LoadBalancerAuditResType,
 			Action:     enumor.Create,
 			BkBizID:    one.BkBizID,
 			Vendor:     one.Vendor,
@@ -114,7 +114,7 @@ func (dao ClbDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tableclb
 }
 
 // Update clb.
-func (dao ClbDao) Update(kt *kit.Kit, expr *filter.Expression, model *tableclb.LoadBalancerTable) error {
+func (dao ClbDao) Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.LoadBalancerTable) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
 	}
@@ -157,7 +157,7 @@ func (dao ClbDao) Update(kt *kit.Kit, expr *filter.Expression, model *tableclb.L
 }
 
 // UpdateByIDWithTx clb.
-func (dao ClbDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tableclb.LoadBalancerTable) error {
+func (dao ClbDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.LoadBalancerTable) error {
 	if len(id) == 0 {
 		return errf.New(errf.InvalidParameter, "id is required")
 	}
@@ -190,7 +190,7 @@ func (dao ClbDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbDet
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tableclb.LoadBalancerColumns.ColumnTypes())),
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablelb.LoadBalancerColumns.ColumnTypes())),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
@@ -218,10 +218,10 @@ func (dao ClbDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbDet
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tableclb.LoadBalancerColumns.FieldsNamedExpr(opt.Fields),
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablelb.LoadBalancerColumns.FieldsNamedExpr(opt.Fields),
 		table.LoadBalancerTable, whereExpr, pageExpr)
 
-	details := make([]tableclb.LoadBalancerTable, 0)
+	details := make([]tablelb.LoadBalancerTable, 0)
 	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
@@ -250,16 +250,16 @@ func (dao ClbDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression
 }
 
 // ListClbByIDs clb
-func ListClbByIDs(kt *kit.Kit, orm orm.Interface, ids []string) (map[string]tableclb.LoadBalancerTable, error) {
-	sql := fmt.Sprintf(`SELECT %s FROM %s WHERE id IN (:ids)`, tableclb.LoadBalancerColumns.FieldsNamedExpr(nil),
+func ListClbByIDs(kt *kit.Kit, orm orm.Interface, ids []string) (map[string]tablelb.LoadBalancerTable, error) {
+	sql := fmt.Sprintf(`SELECT %s FROM %s WHERE id IN (:ids)`, tablelb.LoadBalancerColumns.FieldsNamedExpr(nil),
 		table.LoadBalancerTable)
 
-	clbs := make([]tableclb.LoadBalancerTable, 0)
+	clbs := make([]tablelb.LoadBalancerTable, 0)
 	if err := orm.Do().Select(kt.Ctx, &clbs, sql, map[string]interface{}{"ids": ids}); err != nil {
 		return nil, err
 	}
 
-	idMap := make(map[string]tableclb.LoadBalancerTable, len(ids))
+	idMap := make(map[string]tablelb.LoadBalancerTable, len(ids))
 	for _, one := range clbs {
 		idMap[one.ID] = one
 	}

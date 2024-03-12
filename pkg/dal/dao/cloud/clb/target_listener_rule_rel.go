@@ -32,7 +32,7 @@ import (
 	"hcm/pkg/dal/dao/types"
 	typesclb "hcm/pkg/dal/dao/types/clb"
 	"hcm/pkg/dal/table"
-	tableclb "hcm/pkg/dal/table/cloud/clb"
+	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -43,9 +43,9 @@ import (
 
 // TargetListenerRuleRelInterface only used for clb target listener rule rel.
 type TargetListenerRuleRelInterface interface {
-	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tableclb.TargetListenerRuleRelTable) ([]string, error)
-	Update(kt *kit.Kit, expr *filter.Expression, model *tableclb.TargetListenerRuleRelTable) error
-	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tableclb.TargetListenerRuleRelTable) error
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.TargetListenerRuleRelTable) ([]string, error)
+	Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.TargetListenerRuleRelTable) error
+	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.TargetListenerRuleRelTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbTargetListenerRuleRelDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
@@ -61,7 +61,7 @@ type TargetListenerRuleRelDao struct {
 
 // BatchCreateWithTx clb target listener rule rel.
 func (dao TargetListenerRuleRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
-	models []*tableclb.TargetListenerRuleRelTable) ([]string, error) {
+	models []*tablelb.TargetListenerRuleRelTable) ([]string, error) {
 
 	tableName := table.TargetListenerRuleRelTable
 	ids, err := dao.IDGen.Batch(kt, tableName, len(models))
@@ -77,7 +77,7 @@ func (dao TargetListenerRuleRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
 	}
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, tableName,
-		tableclb.TargetListenerRuleRelColumns.ColumnExpr(), tableclb.TargetListenerRuleRelColumns.ColonNameExpr())
+		tablelb.TargetListenerRuleRelColumns.ColumnExpr(), tablelb.TargetListenerRuleRelColumns.ColonNameExpr())
 
 	if err = dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", tableName, err, kt.Rid)
@@ -89,7 +89,7 @@ func (dao TargetListenerRuleRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
 
 // Update clb target listener rule rel.
 func (dao TargetListenerRuleRelDao) Update(kt *kit.Kit, expr *filter.Expression,
-	model *tableclb.TargetListenerRuleRelTable) error {
+	model *tablelb.TargetListenerRuleRelTable) error {
 
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
@@ -135,7 +135,7 @@ func (dao TargetListenerRuleRelDao) Update(kt *kit.Kit, expr *filter.Expression,
 
 // UpdateByIDWithTx clb target listener rule rel.
 func (dao TargetListenerRuleRelDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
-	model *tableclb.TargetListenerRuleRelTable) error {
+	model *tablelb.TargetListenerRuleRelTable) error {
 
 	if len(id) == 0 {
 		return errf.New(errf.InvalidParameter, "id is required")
@@ -172,7 +172,7 @@ func (dao TargetListenerRuleRelDao) List(kt *kit.Kit, opt *types.ListOption) (
 	}
 
 	if err := opt.Validate(filter.NewExprOption(
-		filter.RuleFields(tableclb.TargetListenerRuleRelColumns.ColumnTypes())),
+		filter.RuleFields(tablelb.TargetListenerRuleRelColumns.ColumnTypes())),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
@@ -201,10 +201,10 @@ func (dao TargetListenerRuleRelDao) List(kt *kit.Kit, opt *types.ListOption) (
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tableclb.TargetListenerRuleRelColumns.FieldsNamedExpr(opt.Fields),
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablelb.TargetListenerRuleRelColumns.FieldsNamedExpr(opt.Fields),
 		table.TargetListenerRuleRelTable, whereExpr, pageExpr)
 
-	details := make([]tableclb.TargetListenerRuleRelTable, 0)
+	details := make([]tablelb.TargetListenerRuleRelTable, 0)
 	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}

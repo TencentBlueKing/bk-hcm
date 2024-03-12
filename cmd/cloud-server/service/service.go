@@ -40,7 +40,6 @@ import (
 	"hcm/cmd/cloud-server/service/bill"
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/cmd/cloud-server/service/cert"
-	"hcm/cmd/cloud-server/service/clb"
 	cloudselection "hcm/cmd/cloud-server/service/cloud-selection"
 	"hcm/cmd/cloud-server/service/cvm"
 	"hcm/cmd/cloud-server/service/disk"
@@ -48,6 +47,7 @@ import (
 	"hcm/cmd/cloud-server/service/firewall"
 	"hcm/cmd/cloud-server/service/image"
 	instancetype "hcm/cmd/cloud-server/service/instance-type"
+	loadbalancer "hcm/cmd/cloud-server/service/load-balancer"
 	networkinterface "hcm/cmd/cloud-server/service/network-interface"
 	"hcm/cmd/cloud-server/service/recycle"
 	"hcm/cmd/cloud-server/service/region"
@@ -302,7 +302,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	cloudselection.InitService(c)
 	argstpl.InitArgsTplService(c)
 	cert.InitCertService(c)
-	clb.InitService(c)
+	loadbalancer.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

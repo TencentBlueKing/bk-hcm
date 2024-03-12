@@ -6,7 +6,7 @@
 
 ### URL
 
-DELETE /api/v1/cloud/bizs/{bk_biz_id}/clbs/batch
+DELETE /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/batch
 
 ### 输入参数
 

@@ -19,10 +19,10 @@
 
 package clb
 
-import tableclb "hcm/pkg/dal/table/cloud/clb"
+import tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 
 // ListClbTargetGroupDetails list clb target group details.
 type ListClbTargetGroupDetails struct {
-	Count   uint64                                  `json:"count,omitempty"`
-	Details []tableclb.LoadBalancerTargetGroupTable `json:"details,omitempty"`
+	Count   uint64                                 `json:"count,omitempty"`
+	Details []tablelb.LoadBalancerTargetGroupTable `json:"details,omitempty"`
 }

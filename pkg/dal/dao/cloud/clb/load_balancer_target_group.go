@@ -32,7 +32,7 @@ import (
 	"hcm/pkg/dal/dao/types"
 	typesclb "hcm/pkg/dal/dao/types/clb"
 	"hcm/pkg/dal/table"
-	tableclb "hcm/pkg/dal/table/cloud/clb"
+	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -43,9 +43,9 @@ import (
 
 // TargetGroupInterface only used for clb target group.
 type TargetGroupInterface interface {
-	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tableclb.LoadBalancerTargetGroupTable) ([]string, error)
-	Update(kt *kit.Kit, expr *filter.Expression, model *tableclb.LoadBalancerTargetGroupTable) error
-	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tableclb.LoadBalancerTargetGroupTable) error
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerTargetGroupTable) ([]string, error)
+	Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.LoadBalancerTargetGroupTable) error
+	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.LoadBalancerTargetGroupTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbTargetGroupDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
@@ -60,7 +60,7 @@ type TargetGroupDao struct {
 }
 
 // BatchCreateWithTx clb target group.
-func (dao TargetGroupDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tableclb.LoadBalancerTargetGroupTable) (
+func (dao TargetGroupDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerTargetGroupTable) (
 	[]string, error) {
 
 	tableName := table.LoadBalancerTargetGroupTable
@@ -77,7 +77,7 @@ func (dao TargetGroupDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*
 	}
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, tableName,
-		tableclb.LoadBalancerTargetGroupColumns.ColumnExpr(), tableclb.LoadBalancerTargetGroupColumns.ColonNameExpr())
+		tablelb.LoadBalancerTargetGroupColumns.ColumnExpr(), tablelb.LoadBalancerTargetGroupColumns.ColonNameExpr())
 
 	if err = dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", tableName, err, kt.Rid)
@@ -89,7 +89,7 @@ func (dao TargetGroupDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*
 
 // Update clb target group.
 func (dao TargetGroupDao) Update(kt *kit.Kit, expr *filter.Expression,
-	model *tableclb.LoadBalancerTargetGroupTable) error {
+	model *tablelb.LoadBalancerTargetGroupTable) error {
 
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
@@ -134,7 +134,7 @@ func (dao TargetGroupDao) Update(kt *kit.Kit, expr *filter.Expression,
 
 // UpdateByIDWithTx clb target group.
 func (dao TargetGroupDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
-	model *tableclb.LoadBalancerTargetGroupTable) error {
+	model *tablelb.LoadBalancerTargetGroupTable) error {
 
 	if len(id) == 0 {
 		return errf.New(errf.InvalidParameter, "id is required")
@@ -169,7 +169,7 @@ func (dao TargetGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.Li
 	}
 
 	if err := opt.Validate(filter.NewExprOption(
-		filter.RuleFields(tableclb.LoadBalancerTargetGroupColumns.ColumnTypes())),
+		filter.RuleFields(tablelb.LoadBalancerTargetGroupColumns.ColumnTypes())),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
@@ -198,10 +198,10 @@ func (dao TargetGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.Li
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tableclb.LoadBalancerTargetGroupColumns.FieldsNamedExpr(opt.Fields),
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablelb.LoadBalancerTargetGroupColumns.FieldsNamedExpr(opt.Fields),
 		table.LoadBalancerTargetGroupTable, whereExpr, pageExpr)
 
-	details := make([]tableclb.LoadBalancerTargetGroupTable, 0)
+	details := make([]tablelb.LoadBalancerTargetGroupTable, 0)
 	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}

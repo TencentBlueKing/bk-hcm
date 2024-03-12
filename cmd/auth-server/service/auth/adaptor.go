@@ -92,7 +92,7 @@ func AdaptAuthOptions(a *meta.ResourceAttribute) (client.ActionID, []client.Reso
 		return genArgumentTemplateResource(a)
 	case meta.Cert:
 		return genCertResource(a)
-	case meta.Clb:
+	case meta.LoadBalancer:
 		return genClbResource(a)
 	case meta.Listener:
 		return genListenerResource(a)

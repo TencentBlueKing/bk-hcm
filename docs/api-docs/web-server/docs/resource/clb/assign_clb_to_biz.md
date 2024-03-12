@@ -6,7 +6,7 @@
 
 ### URL
 
-POST /api/v1/cloud/clbs/assign/bizs
+POST /api/v1/cloud/load_balancers/assign/bizs
 
 ### 输入参数
 

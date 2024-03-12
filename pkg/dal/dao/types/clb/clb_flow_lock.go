@@ -19,10 +19,10 @@
 
 package clb
 
-import tableclb "hcm/pkg/dal/table/cloud/clb"
+import tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 
 // ListClbFlowLockDetails list clb flow lock details.
 type ListClbFlowLockDetails struct {
-	Count   uint64                      `json:"count,omitempty"`
-	Details []tableclb.ClbFlowLockTable `json:"details,omitempty"`
+	Count   uint64                     `json:"count,omitempty"`
+	Details []tablelb.ClbFlowLockTable `json:"details,omitempty"`
 }

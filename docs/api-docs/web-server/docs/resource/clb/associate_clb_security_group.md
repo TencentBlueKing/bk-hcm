@@ -6,7 +6,7 @@
 
 ### URL
 
-POST /api/v1/cloud/clbs/bind/security_groups
+POST /api/v1/cloud/load_balancers/bind/security_groups
 
 ### 输入参数
 
@@ -22,7 +22,7 @@ POST /api/v1/cloud/clbs/bind/security_groups
     "clb_id": "00000001",
     "sg_ids": [
         "00000002",
-        "00000003",
+        "00000003"
     ]
 }
 ```

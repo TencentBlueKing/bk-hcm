@@ -24,7 +24,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
-	coreclb "hcm/pkg/api/core/cloud/clb"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -34,15 +34,15 @@ import (
 
 // -------------------------- Create --------------------------
 
-// ClbBatchCreateReq clb create req.
-type ClbBatchCreateReq[Extension coreclb.Extension] struct {
-	Clbs []ClbBatchCreate[Extension] `json:"clbs" validate:"required,min=1"`
+// LoadBalancerBatchCreateReq clb create req.
+type LoadBalancerBatchCreateReq[Extension corelb.Extension] struct {
+	Lbs []ClbBatchCreate[Extension] `json:"lbs" validate:"required,min=1"`
 }
 
-type TCloudCLBCreateReq = ClbBatchCreateReq[coreclb.TCloudClbExtension]
+type TCloudCLBCreateReq = LoadBalancerBatchCreateReq[corelb.TCloudClbExtension]
 
 // ClbBatchCreate define clb batch create.
-type ClbBatchCreate[Extension coreclb.Extension] struct {
+type ClbBatchCreate[Extension corelb.Extension] struct {
 	CloudID   string        `json:"cloud_id" validate:"required"`
 	Name      string        `json:"name" validate:"required"`
 	Vendor    enumor.Vendor `json:"vendor" validate:"required"`
@@ -72,8 +72,8 @@ type ClbBatchCreate[Extension coreclb.Extension] struct {
 }
 
 // Validate clb create request.
-func (req *ClbBatchCreateReq[T]) Validate() error {
-	if len(req.Clbs) > constant.BatchOperationMaxLimit {
+func (req *LoadBalancerBatchCreateReq[T]) Validate() error {
+	if len(req.Lbs) > constant.BatchOperationMaxLimit {
 		return fmt.Errorf("clbs count should <= %d", constant.BatchOperationMaxLimit)
 	}
 
@@ -82,8 +82,8 @@ func (req *ClbBatchCreateReq[T]) Validate() error {
 
 // -------------------------- Update --------------------------
 
-// ClbExtUpdateReq ...
-type ClbExtUpdateReq[T coreclb.Extension] struct {
+// LoadBalancerExtUpdateReq ...
+type LoadBalancerExtUpdateReq[T corelb.Extension] struct {
 	ID      string `json:"id" validate:"required"`
 	Name    string `json:"name"`
 	BkBizID int64  `json:"bk_biz_id"`
@@ -104,13 +104,13 @@ type ClbExtUpdateReq[T coreclb.Extension] struct {
 }
 
 // Validate ...
-func (req *ClbExtUpdateReq[T]) Validate() error {
+func (req *LoadBalancerExtUpdateReq[T]) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
 // ClbExtBatchUpdateReq ...
-type ClbExtBatchUpdateReq[T coreclb.Extension] struct {
-	Clbs []*ClbExtUpdateReq[T] `json:"clbs" validate:"min=1"`
+type ClbExtBatchUpdateReq[T corelb.Extension] struct {
+	Lbs []*LoadBalancerExtUpdateReq[T] `json:"lbs" validate:"min=1"`
 }
 
 // Validate ...
@@ -118,7 +118,7 @@ func (req *ClbExtBatchUpdateReq[T]) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-type TCloudClbBatchUpdateReq = ClbExtBatchUpdateReq[coreclb.TCloudClbExtension]
+type TCloudClbBatchUpdateReq = ClbExtBatchUpdateReq[corelb.TCloudClbExtension]
 
 // ClbBizBatchUpdateReq 批量更新业务id
 type ClbBizBatchUpdateReq struct {
@@ -147,8 +147,8 @@ func (req *ClbBizBatchUpdateReq) Validate() error {
 
 // ClbListResult define clb list result.
 type ClbListResult struct {
-	Count   uint64            `json:"count"`
-	Details []coreclb.BaseClb `json:"details"`
+	Count   uint64                    `json:"count"`
+	Details []corelb.BaseLoadBalancer `json:"details"`
 }
 
 // ClbListResp define list resp.
@@ -170,9 +170,9 @@ func (req *ClbExtListReq) Validate() error {
 }
 
 // ClbExtListResult define clb with extension list result.
-type ClbExtListResult[T coreclb.Extension] struct {
-	Count   uint64           `json:"count,omitempty"`
-	Details []coreclb.Clb[T] `json:"details,omitempty"`
+type ClbExtListResult[T corelb.Extension] struct {
+	Count   uint64                   `json:"count,omitempty"`
+	Details []corelb.LoadBalancer[T] `json:"details,omitempty"`
 }
 
 // -------------------------- Delete --------------------------
@@ -201,17 +201,17 @@ func (req *ListListenerReq) Validate() error {
 }
 
 // ListenerListResult define listener list result.
-type ListenerListResult = core.ListResultT[coreclb.BaseListener]
+type ListenerListResult = core.ListResultT[corelb.BaseListener]
 
 // -------------------------- List Listener Target --------------------------
 
 // ClbTargetListResult define clb target list result.
-type ClbTargetListResult = core.ListResultT[coreclb.BaseClbTarget]
+type ClbTargetListResult = core.ListResultT[corelb.BaseClbTarget]
 
 // -------------------------- List Listener Target Group --------------------------
 
 // ClbTargetGroupListResult define clb target group list result.
-type ClbTargetGroupListResult = core.ListResultT[coreclb.BaseClbTargetGroup]
+type ClbTargetGroupListResult = core.ListResultT[corelb.BaseClbTargetGroup]
 
 // -------------------------- List TCloud Url Rule --------------------------
 
@@ -227,4 +227,4 @@ func (req *ListTCloudURLRuleReq) Validate() error {
 }
 
 // TCloudURLRuleListResult define tcloud url rule list result.
-type TCloudURLRuleListResult = core.ListResultT[coreclb.BaseTCloudClbURLRule]
+type TCloudURLRuleListResult = core.ListResultT[corelb.BaseTCloudClbURLRule]

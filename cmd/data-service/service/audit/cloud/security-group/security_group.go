@@ -22,8 +22,8 @@ package securitygroup
 import (
 	"fmt"
 
-	auditclb "hcm/cmd/data-service/service/audit/cloud/clb"
 	"hcm/cmd/data-service/service/audit/cloud/cvm"
+	auditlb "hcm/cmd/data-service/service/audit/cloud/load-balancer"
 	networkinterface "hcm/cmd/data-service/service/audit/cloud/network-interface"
 	"hcm/cmd/data-service/service/audit/cloud/subnet"
 	"hcm/pkg/api/core"
@@ -221,7 +221,7 @@ func (s *SecurityGroup) OperationAuditBuild(kt *kit.Kit, operations []protoaudit
 				subnetAssOperations = append(subnetAssOperations, operation)
 			case enumor.NetworkInterfaceAuditResType:
 				niAssOperations = append(niAssOperations, operation)
-			case enumor.ClbAuditResType:
+			case enumor.LoadBalancerAuditResType:
 				clbAssOperations = append(clbAssOperations, operation)
 			default:
 				return nil, fmt.Errorf("audit associated resource type: %s not support", operation.AssociatedResType)
@@ -483,7 +483,7 @@ func (s *SecurityGroup) clbAssOperationAuditBuild(kt *kit.Kit, operations []prot
 		return nil, err
 	}
 
-	clbIDMap, err := auditclb.ListClb(kt, s.dao, clbIDs)
+	clbIDMap, err := auditlb.ListLoadBalancer(kt, s.dao, clbIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -520,7 +520,7 @@ func (s *SecurityGroup) clbAssOperationAuditBuild(kt *kit.Kit, operations []prot
 			AppCode:    kt.AppCode,
 			Detail: &tableaudit.BasicDetail{
 				Data: &tableaudit.AssociatedOperationAudit{
-					AssResType:    enumor.ClbAuditResType,
+					AssResType:    enumor.LoadBalancerAuditResType,
 					AssResID:      clbInfo.ID,
 					AssResCloudID: clbInfo.CloudID,
 					AssResName:    clbInfo.Name,

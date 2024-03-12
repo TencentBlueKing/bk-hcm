@@ -150,15 +150,15 @@ type TCloud interface {
 	DeleteArgsTplServiceGroup(kt *kit.Kit, opt *typeargstpl.TCloudDeleteOption) error
 	UpdateArgsTplServiceGroup(kt *kit.Kit, opt *typeargstpl.TCloudUpdateServiceGroupOption) (
 		*poller.BaseDoneResult, error)
-	CreateClb(kt *kit.Kit, opt *clb.TCloudCreateClbOption) (*poller.BaseDoneResult, error)
-	ListClb(kt *kit.Kit, opt *clb.TCloudListOption) ([]clb.TCloudClb, error)
+	CreateLoadBalancer(kt *kit.Kit, opt *clb.TCloudCreateClbOption) (*poller.BaseDoneResult, error)
+	ListLoadBalancer(kt *kit.Kit, opt *clb.TCloudListOption) ([]clb.TCloudClb, error)
 	DescribeResources(kt *kit.Kit, opt *clb.TCloudDescribeResourcesOption) (
 		*tclb.DescribeResourcesResponseParams, error)
 	DescribeNetworkAccountType(kt *kit.Kit) (*v20170312.DescribeNetworkAccountTypeResponseParams, error)
 	CreateCert(kt *kit.Kit, opt *cert.TCloudCreateOption) (*poller.BaseDoneResult, error)
 	DeleteCert(kt *kit.Kit, opt *cert.TCloudDeleteOption) error
 	ListCert(kt *kit.Kit, opt *cert.TCloudListOption) ([]cert.TCloudCert, error)
-	SetClbSecurityGroups(kt *kit.Kit, opt *clb.TCloudSetClbSecurityGroupOption) (
+	SetLoadBalancerSecurityGroups(kt *kit.Kit, opt *clb.TCloudSetClbSecurityGroupOption) (
 		*tclb.SetLoadBalancerSecurityGroupsResponseParams, error)
 	DeleteLoadBalancer(kt *kit.Kit, opt *clb.TCloudDeleteOption) error
 	UpdateLoadBalancer(kt *kit.Kit, opt *clb.TCloudUpdateOption) (*string, error)

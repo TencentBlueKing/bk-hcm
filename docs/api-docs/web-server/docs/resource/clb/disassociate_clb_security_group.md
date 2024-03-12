@@ -6,7 +6,7 @@
 
 ### URL
 
-POST /api/v1/cloud/clbs/unbind/security_group
+POST /api/v1/cloud/load_balancers/unbind/security_group
 
 ### 输入参数
 

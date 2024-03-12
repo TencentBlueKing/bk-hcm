@@ -22,7 +22,7 @@ package tcloud
 
 import (
 	"hcm/pkg/api/core"
-	"hcm/pkg/api/core/cloud/clb"
+	"hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/client/common"
 	"hcm/pkg/kit"
@@ -42,23 +42,23 @@ func (cli *LoadBalancerClient) BatchCreateTCloudClb(kt *kit.Kit, req *dataproto.
 	*core.BatchCreateResult, error) {
 
 	return common.Request[dataproto.TCloudCLBCreateReq, core.BatchCreateResult](
-		cli.client, rest.POST, kt, req, "/clbs/batch/create")
+		cli.client, rest.POST, kt, req, "/load_balancers/batch/create")
 }
 
 // Get 获取clb 详情
-func (cli *LoadBalancerClient) Get(kt *kit.Kit, id string) (*clb.Clb[clb.TCloudClbExtension], error) {
+func (cli *LoadBalancerClient) Get(kt *kit.Kit, id string) (*loadbalancer.LoadBalancer[loadbalancer.TCloudClbExtension], error) {
 
-	return common.Request[common.Empty, clb.Clb[clb.TCloudClbExtension]](
-		cli.client, rest.GET, kt, nil, "/clbs/%s", id)
+	return common.Request[common.Empty, loadbalancer.LoadBalancer[loadbalancer.TCloudClbExtension]](
+		cli.client, rest.GET, kt, nil, "/load_balancers/%s", id)
 }
 
 // BatchUpdate 批量更新CLB
 func (cli *LoadBalancerClient) BatchUpdate(kt *kit.Kit, req *dataproto.TCloudClbBatchUpdateReq) error {
 	return common.RequestNoResp[dataproto.TCloudClbBatchUpdateReq](cli.client,
-		rest.PATCH, kt, req, "clbs/batch/update")
+		rest.PATCH, kt, req, "/load_balancers/batch/update")
 }
 
 // GetListener 获取监听器详情
-func (cli *LoadBalancerClient) GetListener(kt *kit.Kit, id string) (*clb.BaseListener, error) {
-	return common.Request[common.Empty, clb.BaseListener](cli.client, rest.GET, kt, nil, "/listeners/%s", id)
+func (cli *LoadBalancerClient) GetListener(kt *kit.Kit, id string) (*loadbalancer.BaseListener, error) {
+	return common.Request[common.Empty, loadbalancer.BaseListener](cli.client, rest.GET, kt, nil, "/listeners/%s", id)
 }

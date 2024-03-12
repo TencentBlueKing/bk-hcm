@@ -27,7 +27,7 @@ import (
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
-	coreclb "hcm/pkg/api/core/cloud/clb"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	proto "hcm/pkg/api/hc-service"
 	hcclb "hcm/pkg/api/hc-service/clb"
@@ -340,7 +340,7 @@ func (g *securityGroup) TCloudSecurityGroupAssociateClb(cts *rest.Contexts) (int
 		LoadBalancerID: clbInfo.CloudID,
 		SecurityGroups: sgCloudIDs,
 	}
-	if _, err = client.SetClbSecurityGroups(cts.Kit, opt); err != nil {
+	if _, err = client.SetLoadBalancerSecurityGroups(cts.Kit, opt); err != nil {
 		logs.Errorf("request adaptor to tcloud security group associate clb failed, err: %v, opt: %v, rid: %s",
 			err, opt, cts.Kit.Rid)
 		return nil, err
@@ -377,7 +377,8 @@ func (g *securityGroup) getUpsertSGIDsParams(kt *kit.Kit, req *hcclb.TCloudSetCl
 		Rels: make([]protocloud.SGCommonRelCreate, 0, len(req.SecurityGroupIDs)),
 	}
 	if len(delSGIDs) > 0 {
-		sgComReq.DeleteReq = buildSGCommonRelDeleteReq(enumor.TCloud, req.ClbID, delSGIDs, enumor.ClbCloudResType)
+		sgComReq.DeleteReq = buildSGCommonRelDeleteReq(
+			enumor.TCloud, req.ClbID, delSGIDs, enumor.LoadBalancerCloudResType)
 	}
 
 	tmpPriority := int64(0)
@@ -387,7 +388,7 @@ func (g *securityGroup) getUpsertSGIDsParams(kt *kit.Kit, req *hcclb.TCloudSetCl
 			SecurityGroupID: newSGID,
 			Vendor:          enumor.TCloud,
 			ResID:           req.ClbID,
-			ResType:         enumor.ClbCloudResType,
+			ResType:         enumor.LoadBalancerCloudResType,
 			Priority:        tmpPriority,
 		})
 	}
@@ -468,14 +469,14 @@ func (g *securityGroup) TCloudSecurityGroupDisassociateClb(cts *rest.Contexts) (
 		LoadBalancerID: clbInfo.CloudID,
 		SecurityGroups: sgCloudIDs,
 	}
-	if _, err = client.SetClbSecurityGroups(cts.Kit, opt); err != nil {
+	if _, err = client.SetLoadBalancerSecurityGroups(cts.Kit, opt); err != nil {
 		logs.Errorf("request adaptor to tcloud security group disAssociate clb failed, err: %v, opt: %v, rid: %s",
 			err, opt, cts.Kit.Rid)
 		return nil, err
 	}
 
 	deleteReq := buildSGCommonRelDeleteReq(
-		enumor.TCloud, req.ClbID, []string{req.SecurityGroupID}, enumor.ClbCloudResType)
+		enumor.TCloud, req.ClbID, []string{req.SecurityGroupID}, enumor.LoadBalancerCloudResType)
 	if err = g.dataCli.Global.SGCommonRel.BatchDelete(cts.Kit, deleteReq); err != nil {
 		logs.Errorf("request dataservice tcloud delete security group clb rels failed, err: %v, req: %+v, rid: %s",
 			err, req, cts.Kit.Rid)
@@ -486,13 +487,13 @@ func (g *securityGroup) TCloudSecurityGroupDisassociateClb(cts *rest.Contexts) (
 }
 
 func (g *securityGroup) getClbInfoAndSGComRels(kt *kit.Kit, clbID string) (
-	*coreclb.BaseClb, *protocloud.SGCommonRelListResult, error) {
+	*corelb.BaseLoadBalancer, *protocloud.SGCommonRelListResult, error) {
 
 	clbReq := &core.ListReq{
 		Filter: tools.EqualExpression("id", clbID),
 		Page:   core.NewDefaultBasePage(),
 	}
-	clbList, err := g.dataCli.Global.LoadBalancer.ListClb(kt, clbReq)
+	clbList, err := g.dataCli.Global.LoadBalancer.ListLoadBalancer(kt, clbReq)
 	if err != nil {
 		logs.Errorf("list load balancer by id failed, id: %s, err: %v, rid: %s", clbID, err, kt.Rid)
 		return nil, nil, err
@@ -521,7 +522,7 @@ func (g *securityGroup) getClbInfoAndSGComRels(kt *kit.Kit, clbID string) (
 				&filter.AtomRule{
 					Field: "res_type",
 					Op:    filter.Equal.Factory(),
-					Value: meta.Clb,
+					Value: meta.LoadBalancer,
 				},
 			},
 		},

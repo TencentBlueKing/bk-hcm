@@ -32,7 +32,7 @@ import (
 	"hcm/pkg/dal/dao/types"
 	typesclb "hcm/pkg/dal/dao/types/clb"
 	"hcm/pkg/dal/table"
-	tableclb "hcm/pkg/dal/table/cloud/clb"
+	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -43,9 +43,9 @@ import (
 
 // ClbFlowLockInterface only used for clb flow lock.
 type ClbFlowLockInterface interface {
-	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *tableclb.ClbFlowLockTable) error
-	Update(kt *kit.Kit, expr *filter.Expression, model *tableclb.ClbFlowLockTable) error
-	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, resID, resType, owner string, model *tableclb.ClbFlowLockTable) error
+	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *tablelb.ClbFlowLockTable) error
+	Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.ClbFlowLockTable) error
+	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, resID, resType, owner string, model *tablelb.ClbFlowLockTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbFlowLockDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
@@ -60,14 +60,14 @@ type ClbFlowLockDao struct {
 }
 
 // CreateWithTx clb flow lock.
-func (dao ClbFlowLockDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *tableclb.ClbFlowLockTable) error {
+func (dao ClbFlowLockDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *tablelb.ClbFlowLockTable) error {
 	if err := model.InsertValidate(); err != nil {
 		return err
 	}
 
 	tableName := table.ClbFlowLockTable
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, tableName,
-		tableclb.ClbFlowLockColumns.ColumnExpr(), tableclb.ClbFlowLockColumns.ColonNameExpr())
+		tablelb.ClbFlowLockColumns.ColumnExpr(), tablelb.ClbFlowLockColumns.ColonNameExpr())
 
 	if err := dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, model); err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", tableName, err, kt.Rid)
@@ -78,7 +78,7 @@ func (dao ClbFlowLockDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *tableclb
 }
 
 // Update clb flow lock.
-func (dao ClbFlowLockDao) Update(kt *kit.Kit, expr *filter.Expression, model *tableclb.ClbFlowLockTable) error {
+func (dao ClbFlowLockDao) Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.ClbFlowLockTable) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
 	}
@@ -122,7 +122,7 @@ func (dao ClbFlowLockDao) Update(kt *kit.Kit, expr *filter.Expression, model *ta
 
 // UpdateByIDWithTx clb flow lock.
 func (dao ClbFlowLockDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, resID, resType, owner string,
-	model *tableclb.ClbFlowLockTable) error {
+	model *tablelb.ClbFlowLockTable) error {
 
 	if len(resID) == 0 {
 		return errf.New(errf.InvalidParameter, "res_id is required")
@@ -168,7 +168,7 @@ func (dao ClbFlowLockDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.Li
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tableclb.ClbFlowLockColumns.ColumnTypes())),
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablelb.ClbFlowLockColumns.ColumnTypes())),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
@@ -197,10 +197,10 @@ func (dao ClbFlowLockDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.Li
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tableclb.ClbFlowLockColumns.FieldsNamedExpr(opt.Fields),
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablelb.ClbFlowLockColumns.FieldsNamedExpr(opt.Fields),
 		table.ClbFlowLockTable, whereExpr, pageExpr)
 
-	details := make([]tableclb.ClbFlowLockTable, 0)
+	details := make([]tablelb.ClbFlowLockTable, 0)
 	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
