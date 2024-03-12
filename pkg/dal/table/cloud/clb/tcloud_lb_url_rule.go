@@ -82,7 +82,7 @@ type TCloudClbUrlRuleTable struct {
 	SessionExpire      int64           `db:"session_expire" json:"session_expire"`
 	HealthCheck        types.JsonField `db:"health_check" json:"health_check"`
 	Certificate        types.JsonField `db:"certificate" json:"certificate"`
-	Memo               string          `db:"memo" json:"memo"`
+	Memo               *string         `db:"memo" json:"memo"`
 
 	Creator   string     `db:"creator" validate:"lte=64" json:"creator"`
 	Reviser   string     `db:"reviser" validate:"lte=64" json:"reviser"`

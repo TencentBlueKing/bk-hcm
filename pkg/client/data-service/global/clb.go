@@ -43,3 +43,10 @@ func NewClbClient(client rest.ClientInterface) *ClbClient {
 func (cli *ClbClient) ListClb(kt *kit.Kit, req *core.ListReq) (*dataproto.ClbListResult, error) {
 	return common.Request[core.ListReq, dataproto.ClbListResult](cli.client, rest.POST, kt, req, "/clbs/list")
 }
+
+// BatchUpdateClbBizInfo update biz
+func (cli *ClbClient) BatchUpdateClbBizInfo(kt *kit.Kit, req *dataproto.ClbBizBatchUpdateReq) error {
+	return common.RequestNoResp[dataproto.ClbBizBatchUpdateReq](cli.client, rest.PATCH,
+		kt, req, "/clbs/biz/batch/update")
+
+}

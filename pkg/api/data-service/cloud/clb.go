@@ -20,6 +20,7 @@
 package cloud
 
 import (
+	"errors"
 	"fmt"
 
 	"hcm/pkg/api/core"
@@ -83,19 +84,10 @@ func (req *ClbBatchCreateReq[T]) Validate() error {
 
 // ClbExtUpdateReq ...
 type ClbExtUpdateReq[T coreclb.Extension] struct {
-	ID        string `json:"id" validate:"required"`
-	Name      string `json:"name"`
-	Vendor    string `json:"vendor"`
-	AccountID string `json:"account_id"`
-	BkBizID   uint64 `json:"bk_biz_id"`
+	ID      string `json:"id" validate:"required"`
+	Name    string `json:"name"`
+	BkBizID int64  `json:"bk_biz_id"`
 
-	Region               string   `json:"region" validate:"omitempty"`
-	Zones                []string `json:"zones"`
-	BackupZones          []string `json:"backup_zones"`
-	VpcID                string   `json:"vpc_id" validate:"omitempty"`
-	CloudVpcID           string   `json:"cloud_vpc_id" validate:"omitempty"`
-	SubnetID             string   `json:"subnet_id" validate:"omitempty"`
-	CloudSubnetID        string   `json:"cloud_subnet_id" validate:"omitempty"`
 	PrivateIPv4Addresses []string `json:"private_ipv4_addresses"`
 	PrivateIPv6Addresses []string `json:"private_ipv6_addresses"`
 	PublicIPv4Addresses  []string `json:"public_ipv4_addresses"`
@@ -117,14 +109,35 @@ func (req *ClbExtUpdateReq[T]) Validate() error {
 }
 
 // ClbExtBatchUpdateReq ...
-type ClbExtBatchUpdateReq[T coreclb.Extension] []*ClbExtUpdateReq[T]
+type ClbExtBatchUpdateReq[T coreclb.Extension] struct {
+	Clbs []*ClbExtUpdateReq[T] `json:"clbs" validate:"min=1"`
+}
 
 // Validate ...
 func (req *ClbExtBatchUpdateReq[T]) Validate() error {
-	for _, r := range *req {
-		if err := r.Validate(); err != nil {
-			return err
-		}
+	return validator.Validate.Struct(req)
+}
+
+type TCloudClbBatchUpdateReq = ClbExtBatchUpdateReq[coreclb.TCloudClbExtension]
+
+// ClbBizBatchUpdateReq 批量更新业务id
+type ClbBizBatchUpdateReq struct {
+	IDs     []string `json:"ids" validate:"required"`
+	BkBizID int64    `json:"bk_biz_id" validate:"required"`
+}
+
+// Validate ...
+func (req *ClbBizBatchUpdateReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	if len(req.IDs) == 0 {
+		return errors.New("ids required")
+	}
+
+	if len(req.IDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("ids count should <= %d", constant.BatchOperationMaxLimit)
 	}
 
 	return nil
@@ -160,24 +173,6 @@ func (req *ClbExtListReq) Validate() error {
 type ClbExtListResult[T coreclb.Extension] struct {
 	Count   uint64           `json:"count,omitempty"`
 	Details []coreclb.Clb[T] `json:"details,omitempty"`
-}
-
-// ClbExtListResp define clb list resp.
-type ClbExtListResp[T coreclb.Extension] struct {
-	rest.BaseResp `json:",inline"`
-	Data          *ClbExtListResult[T] `json:"data"`
-}
-
-// ClbListExtResp ...
-type ClbListExtResp[T coreclb.Extension] struct {
-	rest.BaseResp `json:",inline"`
-	Data          *ClbListExtResult[T] `json:"data"`
-}
-
-// ClbListExtResult ...
-type ClbListExtResult[T coreclb.Extension] struct {
-	Count   uint64            `json:"count,omitempty"`
-	Details []*coreclb.Clb[T] `json:"details"`
 }
 
 // -------------------------- Delete --------------------------

@@ -234,3 +234,49 @@ func (opt TCloudSetClbSecurityGroupOption) Validate() error {
 
 	return validator.Validate.Struct(opt)
 }
+
+// TCloudDeleteOption 批量删除
+type TCloudDeleteOption struct {
+	Region   string   `json:"region" validate:"required"`
+	CloudIDs []string `json:"cloud_ids" validate:"required,min=1"`
+}
+
+// Validate ...
+func (opt TCloudDeleteOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// TCloudUpdateOption ...
+type TCloudUpdateOption struct {
+	Region string `json:"region" validate:"required"`
+	// 负载均衡的唯一ID
+	LoadBalancerId string `json:"load_balancer_id" validate:"required"`
+
+	// 负载均衡实例名称
+	LoadBalancerName *string `json:"load_balancer_name"`
+
+	// 设置负载均衡跨地域绑定1.0的后端服务信息
+	TargetRegionInfo *tclb.TargetRegionInfo `json:"target_region_info" `
+
+	// 网络计费相关参数
+	InternetChargeType      *string `json:"internet_charge_type"`
+	InternetMaxBandwidthOut *int64  `json:"internet_max_bandwidth_out" `
+	BandwidthpkgSubType     *string `json:"bandwidthpkg_sub_type" validate:"omitempty"`
+
+	// Target是否放通来自CLB的流量。开启放通（true）：只验证CLB上的安全组；不开启放通（false）：需同时验证CLB和后端实例上的安全组。
+	LoadBalancerPassToTarget *bool `json:"load_balancer_pass_to_target"`
+
+	// 是否开启跨地域绑定2.0功能
+	SnatPro *bool `json:"snat_pro" `
+
+	// 是否开启删除保护
+	DeleteProtect *bool `json:"delete_protect" `
+
+	// 将负载均衡二级域名由mycloud.com改为tencentclb.com，子域名也会变换。修改后mycloud.com域名将失效。
+	ModifyClassicDomain *bool `json:"modify_classic_domain" `
+}
+
+// Validate ...
+func (opt TCloudUpdateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}

@@ -428,3 +428,75 @@ func (t *TCloudImpl) SetClbSecurityGroups(kt *kit.Kit, opt *typeclb.TCloudSetClb
 
 	return resp.Response, nil
 }
+
+// DeleteLoadBalancer reference: https://cloud.tencent.com/document/api/214/30689
+func (t *TCloudImpl) DeleteLoadBalancer(kt *kit.Kit, opt *typeclb.TCloudDeleteOption) error {
+
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "delete clb option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.ClbClient(opt.Region)
+	if err != nil {
+		return fmt.Errorf("init tencent cloud clb client failed, region: %s, err: %v", opt.Region, err)
+	}
+
+	req := clb.NewDeleteLoadBalancerRequest()
+
+	req.LoadBalancerIds = common.StringPtrs(opt.CloudIDs)
+
+	resp, err := client.DeleteLoadBalancerWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("delete tcloud clb failed(RequestID:%s ), opt: %+v, err: %v, rid: %s",
+			resp.Response.RequestId, opt, err, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// UpdateLoadBalancer https://cloud.tencent.com/document/api/214/30680
+func (t *TCloudImpl) UpdateLoadBalancer(kt *kit.Kit, opt *typeclb.TCloudUpdateOption) (dealName *string, err error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "update clb option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.ClbClient(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("init tencent cloud clb client failed, region: %s, err: %v", opt.Region, err)
+	}
+
+	req := clb.NewModifyLoadBalancerAttributesRequest()
+
+	req.LoadBalancerId = converter.ValToPtr(opt.LoadBalancerId)
+	req.LoadBalancerPassToTarget = opt.LoadBalancerPassToTarget
+	req.LoadBalancerName = opt.LoadBalancerName
+	req.TargetRegionInfo = opt.TargetRegionInfo
+	req.SnatPro = opt.SnatPro
+	req.DeleteProtect = opt.DeleteProtect
+	req.ModifyClassicDomain = opt.ModifyClassicDomain
+
+	if opt.InternetChargeType != nil || opt.InternetMaxBandwidthOut != nil {
+		req.InternetChargeInfo = &clb.InternetAccessible{
+			InternetChargeType:      opt.InternetChargeType,
+			InternetMaxBandwidthOut: opt.InternetMaxBandwidthOut,
+			BandwidthpkgSubType:     opt.BandwidthpkgSubType,
+		}
+	}
+	resp, err := client.ModifyLoadBalancerAttributesWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("delete tcloud clb failed,  err: %v, resp: %+v, opt: %+v,rid: %s", err, resp, opt, kt.Rid)
+		return dealName, err
+	}
+
+	return resp.Response.DealName, nil
+}

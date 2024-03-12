@@ -70,7 +70,7 @@ type LoadBalancerListenerTable struct {
 	Port          int64             `db:"port" json:"port"`
 	DefaultDomain string            `db:"default_domain" json:"default_domain"`
 	Zones         types.StringArray `db:"zones" json:"zones"`
-	Memo          string            `db:"memo" json:"memo"`
+	Memo          *string           `db:"memo" json:"memo"`
 
 	Creator   string     `db:"creator" validate:"lte=64" json:"creator"`
 	Reviser   string     `db:"reviser" validate:"lte=64" json:"reviser"`

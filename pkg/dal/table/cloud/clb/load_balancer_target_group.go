@@ -72,7 +72,7 @@ type LoadBalancerTargetGroupTable struct {
 	Port          int64           `db:"port" json:"port"`
 	Weight        int64           `db:"weight" json:"weight"`
 	HealthCheck   types.JsonField `db:"health_check" json:"health_check"`
-	Memo          string          `db:"memo" json:"memo"`
+	Memo          *string         `db:"memo" json:"memo"`
 
 	Creator   string     `db:"creator" validate:"lte=64" json:"creator"`
 	Reviser   string     `db:"reviser" validate:"lte=64" json:"reviser"`
