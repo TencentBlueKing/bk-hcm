@@ -148,7 +148,7 @@ func (svc *clbSvc) getTCloudUrlRule(kt *kit.Kit, tgID string, listReq core.ListR
 		TargetGroupID: tgID,
 		ListReq:       listReq,
 	}
-	urlRuleList, err := svc.client.DataService().Global.LoadBalancer.ListClbWithUrlRule(kt, tcloudUrlRuleReq)
+	urlRuleList, err := svc.client.DataService().Global.LoadBalancer.ListUrlRule(kt, tcloudUrlRuleReq)
 	if err != nil {
 		logs.Errorf("[clb] list tcloud url rule failed, targetGroupID: %s, err: %v, rid: %s", tgID, err, kt.Rid)
 		return nil, err
@@ -189,9 +189,9 @@ func (svc *clbSvc) listClbTargetMap(kt *kit.Kit, targetIDs []string) (map[string
 		Filter: tools.ContainersExpression("target_group_id", targetIDs),
 		Page:   core.NewDefaultBasePage(),
 	}
-	list, err := svc.client.DataService().Global.LoadBalancer.ListClbTarget(kt, targetReq)
+	list, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, targetReq)
 	if err != nil {
-		logs.Errorf("[clb] list clb target failed, targetIDs: %v, err: %v, rid: %s", targetIDs, err, kt.Rid)
+		logs.Errorf("[clb] list target failed, targetIDs: %v, err: %v, rid: %s", targetIDs, err, kt.Rid)
 		return nil, err
 	}
 

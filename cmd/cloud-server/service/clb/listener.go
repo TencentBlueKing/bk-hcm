@@ -63,7 +63,7 @@ func (svc *clbSvc) listClbListener(cts *rest.Contexts, authHandler handler.ListA
 			Page:   req.Page,
 		},
 	}
-	listenerList, err := svc.client.DataService().Global.LoadBalancer.ListClbWithListener(cts.Kit, listenerReq)
+	listenerList, err := svc.client.DataService().Global.LoadBalancer.ListListener(cts.Kit, listenerReq)
 	if err != nil {
 		logs.Errorf("[clb] list listener failed, clbID: %s, err: %v, rid: %s", clbID, err, cts.Kit.Rid)
 		return nil, err
@@ -118,9 +118,9 @@ func (svc *clbSvc) listTCloudClbUrlRuleMap(kt *kit.Kit, clbID string, lblIDs []s
 			Page: core.NewDefaultBasePage(),
 		},
 	}
-	urlRuleList, err := svc.client.DataService().Global.LoadBalancer.ListClbWithUrlRule(kt, urlRuleReq)
+	urlRuleList, err := svc.client.DataService().Global.LoadBalancer.ListUrlRule(kt, urlRuleReq)
 	if err != nil {
-		logs.Errorf("[clb] list tcloud clb url rule failed, clbID: %s, lblIDs: %v, err: %v, rid: %s",
+		logs.Errorf("[clb] list tcloud url rule failed, clbID: %s, lblIDs: %v, err: %v, rid: %s",
 			clbID, lblIDs, err, kt.Rid)
 		return nil, err
 	}
@@ -164,7 +164,7 @@ func (svc *clbSvc) listListenerMap(kt *kit.Kit, lblIDs []string) (map[string]cor
 			Page:   core.NewDefaultBasePage(),
 		},
 	}
-	lblList, err := svc.client.DataService().Global.LoadBalancer.ListClbWithListener(kt, lblReq)
+	lblList, err := svc.client.DataService().Global.LoadBalancer.ListListener(kt, lblReq)
 	if err != nil {
 		logs.Errorf("[clb] list clb listener failed, lblIDs: %v, err: %v, rid: %s", lblIDs, err, kt.Rid)
 		return nil, err
@@ -207,7 +207,7 @@ func (svc *clbSvc) getListener(cts *rest.Contexts, validHandler handler.ListAuth
 		return nil, err
 	}
 	if noPerm {
-		return nil, errf.New(errf.PermissionDenied, "permission denied for get listener")
+		//return nil, errf.New(errf.PermissionDenied, "permission denied for get listener")
 	}
 
 	switch basicInfo.Vendor {
@@ -263,9 +263,9 @@ func (svc *clbSvc) getTargetGroupByID(kt *kit.Kit, targetGroupID string) ([]core
 		Filter: tools.EqualExpression("id", targetGroupID),
 		Page:   core.NewDefaultBasePage(),
 	}
-	targetGroupInfo, err := svc.client.DataService().Global.LoadBalancer.ListClbTargetGroup(kt, tgReq)
+	targetGroupInfo, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroup(kt, tgReq)
 	if err != nil {
-		logs.Errorf("[clb] list clb target group failed, tgID: %s, err: %v, rid: %s", targetGroupID, err, kt.Rid)
+		logs.Errorf("[clb] list target group failed, tgID: %s, err: %v, rid: %s", targetGroupID, err, kt.Rid)
 		return nil, err
 	}
 

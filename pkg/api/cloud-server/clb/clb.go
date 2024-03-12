@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 
+	"hcm/pkg/api/core"
 	coreclb "hcm/pkg/api/core/cloud/clb"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
@@ -86,10 +87,7 @@ func (req *SecurityGroupAssociateClbReq) Validate() error {
 // -------------------------- List Listener--------------------------
 
 // ListListenerResult defines list listener result.
-type ListListenerResult struct {
-	Count   uint64             `json:"count"`
-	Details []ListListenerBase `json:"details"`
-}
+type ListListenerResult = core.ListResultT[ListListenerBase]
 
 // ListListenerBase define list listener base.
 type ListListenerBase struct {
@@ -122,10 +120,7 @@ type GetListenerDetail struct {
 // -------------------------- List Clb Url Rule --------------------------
 
 // ListClbUrlRuleResult defines list clb url rule result.
-type ListClbUrlRuleResult struct {
-	Count   uint64               `json:"count"`
-	Details []ListClbUrlRuleBase `json:"details"`
-}
+type ListClbUrlRuleResult = core.ListResultT[ListClbUrlRuleBase]
 
 // ListClbUrlRuleBase define list clb url rule base.
 type ListClbUrlRuleBase struct {

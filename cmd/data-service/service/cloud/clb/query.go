@@ -195,8 +195,8 @@ func convClbListResult[T coreclb.Extension](tables []tableclb.LoadBalancerTable)
 	}, nil
 }
 
-// ListClbWithListener list clb with listener.
-func (svc *clbSvc) ListClbWithListener(cts *rest.Contexts) (interface{}, error) {
+// ListListener list listener.
+func (svc *clbSvc) ListListener(cts *rest.Contexts) (interface{}, error) {
 	req := new(protocloud.ListListenerReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -266,8 +266,8 @@ func convTableToBaseListener(one *tableclb.LoadBalancerListenerTable) *coreclb.B
 	}
 }
 
-// ListClbWithUrlRule list clb with url rule.
-func (svc *clbSvc) ListClbWithUrlRule(cts *rest.Contexts) (interface{}, error) {
+// ListUrlRule list url rule.
+func (svc *clbSvc) ListUrlRule(cts *rest.Contexts) (interface{}, error) {
 	req := new(protocloud.ListTCloudURLRuleReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -362,8 +362,8 @@ func convTableToBaseTCloudClbURLRule(kt *kit.Kit, one *tableclb.TCloudClbUrlRule
 	}, nil
 }
 
-// ListClbTarget list clb target.
-func (svc *clbSvc) ListClbTarget(cts *rest.Contexts) (interface{}, error) {
+// ListTarget list target.
+func (svc *clbSvc) ListTarget(cts *rest.Contexts) (interface{}, error) {
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -421,8 +421,8 @@ func convTableToBaseClbTarget(one *tableclb.LoadBalancerTargetTable) *coreclb.Ba
 	}
 }
 
-// ListClbTargetGroup list clb target group.
-func (svc *clbSvc) ListClbTargetGroup(cts *rest.Contexts) (interface{}, error) {
+// ListTargetGroup list target group.
+func (svc *clbSvc) ListTargetGroup(cts *rest.Contexts) (interface{}, error) {
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err

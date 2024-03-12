@@ -206,26 +206,17 @@ func (req *ListListenerReq) Validate() error {
 }
 
 // ListenerListResult define listener list result.
-type ListenerListResult struct {
-	Count   uint64                 `json:"count"`
-	Details []coreclb.BaseListener `json:"details"`
-}
+type ListenerListResult = core.ListResultT[coreclb.BaseListener]
 
 // -------------------------- List Listener Target --------------------------
 
 // ClbTargetListResult define clb target list result.
-type ClbTargetListResult struct {
-	Count   uint64                  `json:"count"`
-	Details []coreclb.BaseClbTarget `json:"details"`
-}
+type ClbTargetListResult = core.ListResultT[coreclb.BaseClbTarget]
 
 // -------------------------- List Listener Target Group --------------------------
 
 // ClbTargetGroupListResult define clb target group list result.
-type ClbTargetGroupListResult struct {
-	Count   uint64                       `json:"count"`
-	Details []coreclb.BaseClbTargetGroup `json:"details"`
-}
+type ClbTargetGroupListResult = core.ListResultT[coreclb.BaseClbTargetGroup]
 
 // -------------------------- List TCloud Url Rule --------------------------
 
@@ -241,7 +232,4 @@ func (req *ListTCloudURLRuleReq) Validate() error {
 }
 
 // TCloudURLRuleListResult define tcloud url rule list result.
-type TCloudURLRuleListResult struct {
-	Count   uint64                         `json:"count"`
-	Details []coreclb.BaseTCloudClbURLRule `json:"details"`
-}
+type TCloudURLRuleListResult = core.ListResultT[coreclb.BaseTCloudClbURLRule]
