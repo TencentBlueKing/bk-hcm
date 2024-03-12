@@ -187,3 +187,15 @@ type GetTargetGroupDetail struct {
 	corelb.BaseTargetGroup
 	TargetList []corelb.BaseTarget `json:"target_list"`
 }
+
+// GetListenerDomainResult 监听器下域名列表
+type GetListenerDomainResult struct {
+	DefaultDomain string       `json:"default_domain"`
+	DomainList    []DomainInfo `json:"domain_list"`
+}
+
+// DomainInfo 七层监听器下的域名信息
+type DomainInfo struct {
+	Domain   string `json:"domain"`
+	UrlCount int    `json:"url_count"`
+}

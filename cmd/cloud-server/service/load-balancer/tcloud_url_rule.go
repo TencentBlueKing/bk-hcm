@@ -219,3 +219,56 @@ func (svc *lbSvc) ListBizUrlRulesByListener(cts *rest.Contexts) (any, error) {
 	// 查询规则列表
 	return svc.listRuleWithCondition(cts.Kit, req, tools.RuleEqual("lbl_id", lblID))
 }
+
+// GetBizListenerDomains 指定监听器下的域名列表
+func (svc *lbSvc) GetBizListenerDomains(cts *rest.Contexts) (any, error) {
+	lblID := cts.PathParameter("lbl_id").String()
+	if len(lblID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "listener is required")
+	}
+
+	req := new(core.ListReq)
+	req.Filter = tools.EqualExpression("lbl_id", lblID)
+	req.Page = core.NewDefaultBasePage()
+
+	lbl, err := svc.client.DataService().TCloud.LoadBalancer.GetListener(cts.Kit, lblID)
+	if err != nil {
+		logs.Errorf("fail to get listener, err: %v, id: %s, rid: %s", err, lblID, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// 业务校验、鉴权
+	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, meta.ResourceAttribute{
+		Basic: &meta.Basic{
+			Type:   meta.Listener,
+			Action: meta.Find,
+		},
+		BizID: lbl.BkBizID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// 查询规则列表
+	ruleList, err := svc.listRuleWithCondition(cts.Kit, req)
+	if err != nil {
+		logs.Errorf("fail list rule under listener(id=%s), err: %v, rid: %s", lblID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// 统计url数量
+	domainList := make([]cslb.DomainInfo, 0)
+	domainIndex := make(map[string]int)
+	for _, detail := range ruleList.Details {
+		if _, exists := domainIndex[detail.Domain]; !exists {
+			domainIndex[detail.Domain] = len(domainList)
+			domainList = append(domainList, cslb.DomainInfo{Domain: detail.Domain})
+		}
+		domainList[domainIndex[detail.Domain]].UrlCount += 1
+	}
+
+	return cslb.GetListenerDomainResult{
+		DefaultDomain: lbl.DefaultDomain,
+		DomainList:    domainList,
+	}, nil
+}
