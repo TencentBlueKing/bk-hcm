@@ -18,7 +18,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package clb
+package loadbalancer
 
 import (
 	protoclb "hcm/pkg/api/hc-service/clb"

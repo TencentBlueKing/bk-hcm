@@ -1,4 +1,4 @@
-package clb
+package loadbalancer
 
 import (
 	csclb "hcm/pkg/api/cloud-server/clb"
@@ -42,7 +42,7 @@ func (svc *clbSvc) listClbUrlRule(cts *rest.Contexts, authHandler handler.ListAu
 
 	// list authorized instances
 	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
-		ResType: meta.Clb, Action: meta.Find, Filter: req.Filter})
+		ResType: meta.LoadBalancer, Action: meta.Find, Filter: req.Filter})
 	if err != nil {
 		logs.Errorf("list clb url rule auth failed, targetGroupID: %s, noPermFlag: %v, err: %v, rid: %s",
 			tgID, noPermFlag, err, cts.Kit.Rid)

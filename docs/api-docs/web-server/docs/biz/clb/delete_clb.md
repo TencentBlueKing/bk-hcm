@@ -6,7 +6,7 @@
 
 ### URL
 
-DELETE /api/v1/bizs/{bk_biz_id}/cloud/clbs/{id}
+DELETE /api/v1/bizs/{bk_biz_id}/cloud/load_balancers/{id}
 
 ### 输入参数
 
@@ -19,7 +19,7 @@ DELETE /api/v1/bizs/{bk_biz_id}/cloud/clbs/{id}
 
 ID 是 00000002
 
-/api/v1/cloud/clbs/00000002
+/api/v1/cloud/load_balancers/00000002
 
 ```json
 {}

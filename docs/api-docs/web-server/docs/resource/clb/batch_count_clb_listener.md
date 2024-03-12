@@ -6,7 +6,7 @@
 
 ### URL
 
-POST /api/v1/cloud/clbs/listeners/count/batch
+POST /api/v1/cloud/load_balancers/listeners/count/batch
 
 ### 输入参数
 

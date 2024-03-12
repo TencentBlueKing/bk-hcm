@@ -150,8 +150,8 @@ type TCloud interface {
 	DeleteArgsTplServiceGroup(kt *kit.Kit, opt *typeargstpl.TCloudDeleteOption) error
 	UpdateArgsTplServiceGroup(kt *kit.Kit, opt *typeargstpl.TCloudUpdateServiceGroupOption) (
 		*poller.BaseDoneResult, error)
-	CreateClb(kt *kit.Kit, opt *clb.TCloudCreateClbOption) (*poller.BaseDoneResult, error)
-	ListClb(kt *kit.Kit, opt *clb.TCloudListOption) ([]clb.TCloudClb, error)
+	CreateLoadBalancer(kt *kit.Kit, opt *clb.TCloudCreateClbOption) (*poller.BaseDoneResult, error)
+	ListLoadBalancer(kt *kit.Kit, opt *clb.TCloudListOption) ([]clb.TCloudClb, error)
 	DescribeResources(kt *kit.Kit, opt *clb.TCloudDescribeResourcesOption) (
 		*tclb.DescribeResourcesResponseParams, error)
 	DescribeNetworkAccountType(kt *kit.Kit) (*v20170312.DescribeNetworkAccountTypeResponseParams, error)

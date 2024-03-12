@@ -221,7 +221,7 @@ func (s *SecurityGroup) OperationAuditBuild(kt *kit.Kit, operations []protoaudit
 				subnetAssOperations = append(subnetAssOperations, operation)
 			case enumor.NetworkInterfaceAuditResType:
 				niAssOperations = append(niAssOperations, operation)
-			case enumor.ClbAuditResType:
+			case enumor.LoadBalancerAuditResType:
 				clbAssOperations = append(clbAssOperations, operation)
 			default:
 				return nil, fmt.Errorf("audit associated resource type: %s not support", operation.AssociatedResType)
@@ -520,7 +520,7 @@ func (s *SecurityGroup) clbAssOperationAuditBuild(kt *kit.Kit, operations []prot
 			AppCode:    kt.AppCode,
 			Detail: &tableaudit.BasicDetail{
 				Data: &tableaudit.AssociatedOperationAudit{
-					AssResType:    enumor.ClbAuditResType,
+					AssResType:    enumor.LoadBalancerAuditResType,
 					AssResID:      clbInfo.ID,
 					AssResCloudID: clbInfo.CloudID,
 					AssResName:    clbInfo.Name,

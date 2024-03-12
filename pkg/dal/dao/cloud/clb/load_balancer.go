@@ -91,7 +91,7 @@ func (dao ClbDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tableclb
 			ResID:      one.ID,
 			CloudResID: one.CloudID,
 			ResName:    one.Name,
-			ResType:    enumor.ClbAuditResType,
+			ResType:    enumor.LoadBalancerAuditResType,
 			Action:     enumor.Create,
 			BkBizID:    one.BkBizID,
 			Vendor:     one.Vendor,

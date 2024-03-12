@@ -18,7 +18,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package clb
+package loadbalancer
 
 import (
 	proto "hcm/pkg/api/cloud-server"
@@ -54,7 +54,7 @@ func (svc *clbSvc) listLoadBalancer(cts *rest.Contexts, authHandler handler.List
 	// list authorized instances
 	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{
 		Authorizer: svc.authorizer,
-		ResType:    meta.Clb,
+		ResType:    meta.LoadBalancer,
 		Action:     meta.Find,
 		Filter:     req.Filter,
 	})
@@ -89,7 +89,7 @@ func (svc *clbSvc) getLoadBalancer(cts *rest.Contexts, validHandler handler.List
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.ClbCloudResType, id)
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.LoadBalancerCloudResType, id)
 	if err != nil {
 		logs.Errorf("fail to get clb basic info, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -97,7 +97,7 @@ func (svc *clbSvc) getLoadBalancer(cts *rest.Contexts, validHandler handler.List
 
 	// validate biz and authorize
 	_, noPerm, err := validHandler(cts,
-		&handler.ListAuthResOption{Authorizer: svc.authorizer, ResType: meta.Clb, Action: meta.Find})
+		&handler.ListAuthResOption{Authorizer: svc.authorizer, ResType: meta.LoadBalancer, Action: meta.Find})
 	if err != nil {
 		return nil, err
 	}

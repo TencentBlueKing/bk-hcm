@@ -17,8 +17,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package clb ...
-package clb
+// Package loadbalancer ...
+package loadbalancer
 
 import (
 	"net/http"
@@ -50,18 +50,18 @@ func InitService(c *capability.Capability) {
 	h := rest.NewHandler()
 
 	// clb apis in biz
-	h.Add("ListLoadBalancer", http.MethodPost, "/clbs/list", svc.ListLoadBalancer)
-	h.Add("GetBizLoadBalancer", http.MethodGet, "/bizs/{bk_biz_id}/clbs/{id}", svc.GetBizLoadBalancer)
-	h.Add("UpdateBizTCloudLoadBalancer", http.MethodPatch, "/bizs/{bk_biz_id}/vendors/tcloud/clbs/{id}",
+	h.Add("ListLoadBalancer", http.MethodPost, "/load_balancers/list", svc.ListLoadBalancer)
+	h.Add("GetBizLoadBalancer", http.MethodGet, "/bizs/{bk_biz_id}/load_balancers/{id}", svc.GetBizLoadBalancer)
+	h.Add("UpdateBizTCloudLoadBalancer", http.MethodPatch, "/bizs/{bk_biz_id}/vendors/tcloud/load_balancers/{id}",
 		svc.UpdateBizTCloudLoadBalancer)
-	h.Add("ListBizLoadBalancer", http.MethodPost, "/bizs/{bk_biz_id}/clbs/list", svc.ListBizLoadBalancer)
+	h.Add("ListBizLoadBalancer", http.MethodPost, "/bizs/{bk_biz_id}/load_balancers/list", svc.ListBizLoadBalancer)
 
-	h.Add("GetLoadBalancer", http.MethodGet, "/clbs/{id}", svc.GetLoadBalancer)
-	h.Add("TCloudDescribeResources", http.MethodPost, "/vendors/tcloud/clbs/resources/describe",
+	h.Add("GetLoadBalancer", http.MethodGet, "/load_balancers/{id}", svc.GetLoadBalancer)
+	h.Add("TCloudDescribeResources", http.MethodPost, "/vendors/tcloud/load_balancers/resources/describe",
 		svc.TCloudDescribeResources)
-	h.Add("BatchCreateCLB", http.MethodPost, "/clbs/create", svc.BatchCreateCLB)
-	h.Add("AssignClbToBiz", http.MethodPost, "/clbs/assign/bizs", svc.AssignClbToBiz)
-	h.Add("ListBizListener", http.MethodPost, "/bizs/{bk_biz_id}/clbs/{clb_id}/listeners/list", svc.ListBizListener)
+	h.Add("BatchCreateCLB", http.MethodPost, "/load_balancers/create", svc.BatchCreateCLB)
+	h.Add("AssignClbToBiz", http.MethodPost, "/load_balancers/assign/bizs", svc.AssignClbToBiz)
+	h.Add("ListBizListener", http.MethodPost, "/bizs/{bk_biz_id}/load_balancers/{clb_id}/listeners/list", svc.ListBizListener)
 	h.Add("ListBizClbUrlRule", http.MethodPost, "/bizs/{bk_biz_id}/target_groups/{target_group_id}/listeners/list",
 		svc.ListBizClbUrlRule)
 	h.Add("GetBizListener", http.MethodGet, "/bizs/{bk_biz_id}/listeners/{id}", svc.GetBizListener)

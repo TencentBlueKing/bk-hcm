@@ -6,7 +6,7 @@
 
 ### URL
 
-PATCH /api/v1/cloud/bizs/{bk_biz_id}/clbs/{id}/basic
+PATCH /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/{id}/basic
 
 ### 输入参数
 

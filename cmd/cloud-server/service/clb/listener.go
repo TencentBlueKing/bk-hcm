@@ -1,4 +1,4 @@
-package clb
+package loadbalancer
 
 import (
 	csclb "hcm/pkg/api/cloud-server/clb"
@@ -43,7 +43,7 @@ func (svc *clbSvc) listClbListener(cts *rest.Contexts, authHandler handler.ListA
 
 	// list authorized instances
 	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
-		ResType: meta.Clb, Action: meta.Find, Filter: req.Filter})
+		ResType: meta.LoadBalancer, Action: meta.Find, Filter: req.Filter})
 	if err != nil {
 		logs.Errorf("list listener auth failed, clbID: %s, noPermFlag: %v, err: %v, rid: %s",
 			clbID, noPermFlag, err, cts.Kit.Rid)

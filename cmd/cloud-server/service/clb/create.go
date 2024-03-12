@@ -18,7 +18,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package clb
+package loadbalancer
 
 import (
 	"encoding/json"
@@ -44,7 +44,7 @@ func (svc *clbSvc) BatchCreateCLB(cts *rest.Contexts) (any, error) {
 
 	// 权限校验
 	authRes := meta.ResourceAttribute{Basic: &meta.Basic{
-		Type:       meta.Clb,
+		Type:       meta.LoadBalancer,
 		Action:     meta.Create,
 		ResourceID: req.AccountID,
 	}}

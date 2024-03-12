@@ -100,7 +100,7 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		}
 	}
 
-	result, err := tcloud.CreateClb(cts.Kit, createOpt)
+	result, err := tcloud.CreateLoadBalancer(cts.Kit, createOpt)
 	if err != nil {
 		logs.Errorf("create tcloud clb failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -171,7 +171,7 @@ func (svc *clbSvc) ListTCloudClb(cts *rest.Contexts) (interface{}, error) {
 			Limit:  adcore.TCloudQueryLimit,
 		},
 	}
-	result, err := tcloud.ListClb(cts.Kit, opt)
+	result, err := tcloud.ListLoadBalancer(cts.Kit, opt)
 	if err != nil {
 		logs.Errorf("[%s] list tcloud clb failed, req: %+v, err: %v, rid: %s",
 			enumor.TCloud, req, err, cts.Kit.Rid)

@@ -6,7 +6,7 @@
 
 ### URL
 
-POST /api/v1/cloud/vendors/tcloud/clbs/resources/describe
+POST /api/v1/cloud/vendors/tcloud/load_balancers/resources/describe
 
 ### 输入参数
 

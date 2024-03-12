@@ -6,7 +6,7 @@
 
 ### URL
 
-POST /api/v1/cloud/bizs/{bk_biz_id}/clbs/{clb_id}/listeners/list
+POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/{clb_id}/listeners/list
 
 ### 输入参数
 

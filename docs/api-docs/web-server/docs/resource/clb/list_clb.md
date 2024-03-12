@@ -6,7 +6,7 @@
 
 ### URL
 
-POST /api/v1/cloud/clbs/list
+POST /api/v1/cloud/load_balancers/list
 
 ### 输入参数
 

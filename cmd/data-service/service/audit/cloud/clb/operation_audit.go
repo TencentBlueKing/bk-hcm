@@ -85,7 +85,7 @@ func (c *Clb) baseOperationAuditBuild(kt *kit.Kit, operations []protoaudit.Cloud
 			ResID:      one.ResID,
 			CloudResID: clbInfo.CloudID,
 			ResName:    clbInfo.Name,
-			ResType:    enumor.ClbAuditResType,
+			ResType:    enumor.LoadBalancerAuditResType,
 			Action:     action,
 			BkBizID:    clbInfo.BkBizID,
 			Vendor:     clbInfo.Vendor,

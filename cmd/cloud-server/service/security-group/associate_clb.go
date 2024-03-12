@@ -59,7 +59,7 @@ func (svc *securityGroupSvc) associateClb(cts *rest.Contexts, validHandler handl
 		Items: []cloud.ListResourceBasicInfoReq{
 			{ResourceType: enumor.SecurityGroupCloudResType, IDs: req.SecurityGroupIDs,
 				Fields: types.CommonBasicInfoFields},
-			{ResourceType: enumor.ClbCloudResType, IDs: []string{req.ClbID}, Fields: types.CommonBasicInfoFields},
+			{ResourceType: enumor.LoadBalancerCloudResType, IDs: []string{req.ClbID}, Fields: types.CommonBasicInfoFields},
 		},
 	}
 
@@ -89,7 +89,7 @@ func (svc *securityGroupSvc) associateClb(cts *rest.Contexts, validHandler handl
 			ResType:           enumor.SecurityGroupRuleAuditResType,
 			ResID:             sgID,
 			Action:            protoaudit.Associate,
-			AssociatedResType: enumor.ClbAuditResType,
+			AssociatedResType: enumor.LoadBalancerAuditResType,
 			AssociatedResID:   req.ClbID,
 		}
 		if err = svc.audit.ResOperationAudit(cts.Kit, audit); err != nil {
@@ -140,7 +140,7 @@ func (svc *securityGroupSvc) disassociateClb(cts *rest.Contexts, validHandler ha
 		Items: []cloud.ListResourceBasicInfoReq{
 			{ResourceType: enumor.SecurityGroupCloudResType, IDs: []string{req.SecurityGroupID},
 				Fields: types.CommonBasicInfoFields},
-			{ResourceType: enumor.ClbCloudResType, IDs: []string{req.ClbID}, Fields: types.CommonBasicInfoFields},
+			{ResourceType: enumor.LoadBalancerCloudResType, IDs: []string{req.ClbID}, Fields: types.CommonBasicInfoFields},
 		},
 	}
 
@@ -169,7 +169,7 @@ func (svc *securityGroupSvc) disassociateClb(cts *rest.Contexts, validHandler ha
 		ResType:           enumor.SecurityGroupRuleAuditResType,
 		ResID:             req.SecurityGroupID,
 		Action:            protoaudit.Disassociate,
-		AssociatedResType: enumor.ClbAuditResType,
+		AssociatedResType: enumor.LoadBalancerAuditResType,
 		AssociatedResID:   req.ClbID,
 	}
 	if err = svc.audit.ResOperationAudit(cts.Kit, audit); err != nil {

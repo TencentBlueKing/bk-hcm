@@ -36,9 +36,9 @@ import (
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 )
 
-// ListClb list clb.
+// ListLoadBalancer list clb.
 // reference: https://cloud.tencent.com/document/api/214/30685
-func (t *TCloudImpl) ListClb(kt *kit.Kit, opt *typeclb.TCloudListOption) ([]typeclb.TCloudClb, error) {
+func (t *TCloudImpl) ListLoadBalancer(kt *kit.Kit, opt *typeclb.TCloudListOption) ([]typeclb.TCloudClb, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list option is required")
 	}
@@ -199,7 +199,7 @@ func (t *TCloudImpl) ListTargets(kt *kit.Kit, opt *typeclb.TCloudListTargetsOpti
 // CreateClb reference: https://cloud.tencent.com/document/api/214/30692
 // NOTE：返回实例`ID`列表并不代表实例创建成功，可根据 [DescribeLoadBalancers](https://cloud.tencent.com/document/api/214/30685)
 // 接口查询返回的LoadBalancerSet中对应实例的`ID`的状态来判断创建是否完成；如果实例状态由“0(创建中)”变为“1(正常运行)”，则为创建成功。
-func (t *TCloudImpl) CreateClb(kt *kit.Kit, opt *typeclb.TCloudCreateClbOption) (*poller.BaseDoneResult, error) {
+func (t *TCloudImpl) CreateLoadBalancer(kt *kit.Kit, opt *typeclb.TCloudCreateClbOption) (*poller.BaseDoneResult, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "create option is required")
 	}
@@ -382,7 +382,7 @@ func (h *createClbPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs
 				Limit:  uint64(core.TCloudQueryLimit),
 			},
 		}
-		resp, err := client.ListClb(kt, opt)
+		resp, err := client.ListLoadBalancer(kt, opt)
 		if err != nil {
 			return nil, err
 		}

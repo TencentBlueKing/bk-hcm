@@ -6,7 +6,7 @@
 
 ### URL
 
-POST /api/v1/cloud/bizs/{bk_biz_id}/security_groups/disassociate/clbs
+POST /api/v1/cloud/bizs/{bk_biz_id}/security_groups/disassociate/load_balancers
 
 ### 输入参数
 

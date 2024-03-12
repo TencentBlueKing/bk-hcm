@@ -83,8 +83,8 @@ const (
 	ArgumentTemplate ResourceType = "argument_template"
 	// Cert defines cert hcm auth resource type
 	Cert ResourceType = "cert"
-	// Clb defines clb hcm auth resource type
-	Clb ResourceType = "clb"
+	// LoadBalancer defines clb hcm auth resource type
+	LoadBalancer ResourceType = "load_balancer"
 	// Listener defines listener hcm auth resource type
 	Listener ResourceType = "listener"
 )

@@ -40,7 +40,7 @@ import (
 	"hcm/cmd/cloud-server/service/bill"
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/cmd/cloud-server/service/cert"
-	"hcm/cmd/cloud-server/service/clb"
+	loadbalancer "hcm/cmd/cloud-server/service/clb"
 	cloudselection "hcm/cmd/cloud-server/service/cloud-selection"
 	"hcm/cmd/cloud-server/service/cvm"
 	"hcm/cmd/cloud-server/service/disk"
@@ -302,7 +302,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	cloudselection.InitService(c)
 	argstpl.InitArgsTplService(c)
 	cert.InitCertService(c)
-	clb.InitService(c)
+	loadbalancer.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

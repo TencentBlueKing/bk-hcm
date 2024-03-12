@@ -18,7 +18,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package clb
+package loadbalancer
 
 import (
 	"hcm/cmd/cloud-server/logics/clb"
@@ -46,7 +46,7 @@ func (svc *clbSvc) AssignClbToBiz(cts *rest.Contexts) (any, error) {
 
 	// 权限校验
 	clbInfoReq := dataproto.ListResourceBasicInfoReq{
-		ResourceType: enumor.ClbCloudResType,
+		ResourceType: enumor.LoadBalancerCloudResType,
 		IDs:          req.ClbIDs,
 	}
 	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, clbInfoReq)
@@ -58,7 +58,7 @@ func (svc *clbSvc) AssignClbToBiz(cts *rest.Contexts) (any, error) {
 	authRes := converter.MapToSlice(basicInfoMap, func(k string, v types.CloudResourceBasicInfo) meta.ResourceAttribute {
 		return meta.ResourceAttribute{
 			Basic: &meta.Basic{
-				Type:       meta.Clb,
+				Type:       meta.LoadBalancer,
 				Action:     meta.Assign,
 				ResourceID: v.AccountID,
 			},

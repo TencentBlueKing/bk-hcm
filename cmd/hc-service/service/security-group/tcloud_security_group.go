@@ -377,7 +377,8 @@ func (g *securityGroup) getUpsertSGIDsParams(kt *kit.Kit, req *hcclb.TCloudSetCl
 		Rels: make([]protocloud.SGCommonRelCreate, 0, len(req.SecurityGroupIDs)),
 	}
 	if len(delSGIDs) > 0 {
-		sgComReq.DeleteReq = buildSGCommonRelDeleteReq(enumor.TCloud, req.ClbID, delSGIDs, enumor.ClbCloudResType)
+		sgComReq.DeleteReq = buildSGCommonRelDeleteReq(
+			enumor.TCloud, req.ClbID, delSGIDs, enumor.LoadBalancerCloudResType)
 	}
 
 	tmpPriority := int64(0)
@@ -387,7 +388,7 @@ func (g *securityGroup) getUpsertSGIDsParams(kt *kit.Kit, req *hcclb.TCloudSetCl
 			SecurityGroupID: newSGID,
 			Vendor:          enumor.TCloud,
 			ResID:           req.ClbID,
-			ResType:         enumor.ClbCloudResType,
+			ResType:         enumor.LoadBalancerCloudResType,
 			Priority:        tmpPriority,
 		})
 	}
@@ -475,7 +476,7 @@ func (g *securityGroup) TCloudSecurityGroupDisassociateClb(cts *rest.Contexts) (
 	}
 
 	deleteReq := buildSGCommonRelDeleteReq(
-		enumor.TCloud, req.ClbID, []string{req.SecurityGroupID}, enumor.ClbCloudResType)
+		enumor.TCloud, req.ClbID, []string{req.SecurityGroupID}, enumor.LoadBalancerCloudResType)
 	if err = g.dataCli.Global.SGCommonRel.BatchDelete(cts.Kit, deleteReq); err != nil {
 		logs.Errorf("request dataservice tcloud delete security group clb rels failed, err: %v, req: %+v, rid: %s",
 			err, req, cts.Kit.Rid)
@@ -521,7 +522,7 @@ func (g *securityGroup) getClbInfoAndSGComRels(kt *kit.Kit, clbID string) (
 				&filter.AtomRule{
 					Field: "res_type",
 					Op:    filter.Equal.Factory(),
-					Value: meta.Clb,
+					Value: meta.LoadBalancer,
 				},
 			},
 		},

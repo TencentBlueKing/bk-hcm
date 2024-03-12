@@ -18,7 +18,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package clb
+package loadbalancer
 
 import (
 	"fmt"
@@ -50,7 +50,7 @@ func (svc *clbSvc) UpdateBizTCloudLoadBalancer(cts *rest.Contexts) (any, error) 
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.ClbCloudResType, lbID)
+	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.LoadBalancerCloudResType, lbID)
 	if err != nil {
 		logs.Errorf("getLoadBalancer resource vendor failed, id: %s, err: %s, rid: %s", lbID, err, cts.Kit.Rid)
 		return nil, err
@@ -59,7 +59,7 @@ func (svc *clbSvc) UpdateBizTCloudLoadBalancer(cts *rest.Contexts) (any, error) 
 	// validate biz and authorize
 	err = handler.BizOperateAuth(cts, &handler.ValidWithAuthOption{
 		Authorizer: svc.authorizer,
-		ResType:    meta.Clb,
+		ResType:    meta.LoadBalancer,
 		Action:     meta.Update,
 		BasicInfo:  baseInfo})
 	if err != nil {
@@ -72,7 +72,7 @@ func (svc *clbSvc) UpdateBizTCloudLoadBalancer(cts *rest.Contexts) (any, error) 
 		logs.Errorf("convert request to map failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-	if err = svc.audit.ResUpdateAudit(cts.Kit, enumor.ClbAuditResType, lbID, updateFields); err != nil {
+	if err = svc.audit.ResUpdateAudit(cts.Kit, enumor.LoadBalancerAuditResType, lbID, updateFields); err != nil {
 		logs.Errorf("create update audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}

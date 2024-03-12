@@ -59,7 +59,7 @@ func Assign(kt *kit.Kit, cli *dataservice.Client, ids []string, bizID int64) err
 
 	// create assign audit
 	audit := logicaudit.NewAudit(cli)
-	if err := audit.ResBizAssignAudit(kt, enumor.ClbAuditResType, ids, bizID); err != nil {
+	if err := audit.ResBizAssignAudit(kt, enumor.LoadBalancerAuditResType, ids, bizID); err != nil {
 		logs.Errorf("create assign clb audit failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}

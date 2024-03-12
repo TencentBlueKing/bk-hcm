@@ -93,7 +93,7 @@ func (ad Audit) buildUpdateAuditInfo(kt *kit.Kit, resType enumor.AuditResourceTy
 		audits, err = ad.subnet.SubnetUpdateAuditBuild(kt, updates)
 	case enumor.CvmAuditResType:
 		audits, err = ad.cvm.CvmUpdateAuditBuild(kt, updates)
-	case enumor.ClbAuditResType:
+	case enumor.LoadBalancerAuditResType:
 		audits, err = ad.clb.ClbUpdateAuditBuild(kt, updates)
 
 	default:
