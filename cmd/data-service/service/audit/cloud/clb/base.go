@@ -33,27 +33,27 @@ import (
 	"hcm/pkg/logs"
 )
 
-// NewClb new clb.
-func NewClb(dao dao.Set) *Clb {
-	return &Clb{
+// NewLoadBalancer new clb.
+func NewLoadBalancer(dao dao.Set) *LoadBalancer {
+	return &LoadBalancer{
 		dao: dao,
 	}
 }
 
-// Clb define clb audit.
-type Clb struct {
+// LoadBalancer define clb audit.
+type LoadBalancer struct {
 	dao dao.Set
 }
 
-// ClbUpdateAuditBuild clb update audit build.
-func (c *Clb) ClbUpdateAuditBuild(kt *kit.Kit, updates []protoaudit.CloudResourceUpdateInfo) (
+// LoadBalancerUpdateAuditBuild clb update audit build.
+func (c *LoadBalancer) LoadBalancerUpdateAuditBuild(kt *kit.Kit, updates []protoaudit.CloudResourceUpdateInfo) (
 	[]*tableaudit.AuditTable, error) {
 
 	ids := make([]string, 0, len(updates))
 	for _, one := range updates {
 		ids = append(ids, one.ResID)
 	}
-	idMap, err := ListClb(kt, c.dao, ids)
+	idMap, err := ListLoadBalancer(kt, c.dao, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -88,15 +88,15 @@ func (c *Clb) ClbUpdateAuditBuild(kt *kit.Kit, updates []protoaudit.CloudResourc
 	return audits, nil
 }
 
-// ClbDeleteAuditBuild clb delete audit build.
-func (c *Clb) ClbDeleteAuditBuild(kt *kit.Kit, deletes []protoaudit.CloudResourceDeleteInfo) (
+// LoadBalancerDeleteAuditBuild clb delete audit build.
+func (c *LoadBalancer) LoadBalancerDeleteAuditBuild(kt *kit.Kit, deletes []protoaudit.CloudResourceDeleteInfo) (
 	[]*tableaudit.AuditTable, error) {
 
 	ids := make([]string, 0, len(deletes))
 	for _, one := range deletes {
 		ids = append(ids, one.ResID)
 	}
-	idMap, err := ListClb(kt, c.dao, ids)
+	idMap, err := ListLoadBalancer(kt, c.dao, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -130,15 +130,15 @@ func (c *Clb) ClbDeleteAuditBuild(kt *kit.Kit, deletes []protoaudit.CloudResourc
 	return audits, nil
 }
 
-// ClbAssignAuditBuild clb assign audit build.
-func (c *Clb) ClbAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudResourceAssignInfo) (
+// LoadBalancerAssignAuditBuild clb assign audit build.
+func (c *LoadBalancer) LoadBalancerAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudResourceAssignInfo) (
 	[]*tableaudit.AuditTable, error) {
 
 	ids := make([]string, 0, len(assigns))
 	for _, one := range assigns {
 		ids = append(ids, one.ResID)
 	}
-	idMap, err := ListClb(kt, c.dao, ids)
+	idMap, err := ListLoadBalancer(kt, c.dao, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -185,8 +185,8 @@ func (c *Clb) ClbAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudResourc
 	return audits, nil
 }
 
-// ListClb list clb.
-func ListClb(kt *kit.Kit, dao dao.Set, ids []string) (map[string]tableclb.LoadBalancerTable, error) {
+// ListLoadBalancer list clb.
+func ListLoadBalancer(kt *kit.Kit, dao dao.Set, ids []string) (map[string]tableclb.LoadBalancerTable, error) {
 	opt := &types.ListOption{
 		Filter: tools.ContainersExpression("id", ids),
 		Page:   core.NewDefaultBasePage(),

@@ -340,7 +340,7 @@ func (g *securityGroup) TCloudSecurityGroupAssociateClb(cts *rest.Contexts) (int
 		LoadBalancerID: clbInfo.CloudID,
 		SecurityGroups: sgCloudIDs,
 	}
-	if _, err = client.SetClbSecurityGroups(cts.Kit, opt); err != nil {
+	if _, err = client.SetLoadBalancerSecurityGroups(cts.Kit, opt); err != nil {
 		logs.Errorf("request adaptor to tcloud security group associate clb failed, err: %v, opt: %v, rid: %s",
 			err, opt, cts.Kit.Rid)
 		return nil, err
@@ -469,7 +469,7 @@ func (g *securityGroup) TCloudSecurityGroupDisassociateClb(cts *rest.Contexts) (
 		LoadBalancerID: clbInfo.CloudID,
 		SecurityGroups: sgCloudIDs,
 	}
-	if _, err = client.SetClbSecurityGroups(cts.Kit, opt); err != nil {
+	if _, err = client.SetLoadBalancerSecurityGroups(cts.Kit, opt); err != nil {
 		logs.Errorf("request adaptor to tcloud security group disAssociate clb failed, err: %v, opt: %v, rid: %s",
 			err, opt, cts.Kit.Rid)
 		return nil, err
@@ -487,13 +487,13 @@ func (g *securityGroup) TCloudSecurityGroupDisassociateClb(cts *rest.Contexts) (
 }
 
 func (g *securityGroup) getClbInfoAndSGComRels(kt *kit.Kit, clbID string) (
-	*coreclb.BaseClb, *protocloud.SGCommonRelListResult, error) {
+	*coreclb.BaseLoadBalancer, *protocloud.SGCommonRelListResult, error) {
 
 	clbReq := &core.ListReq{
 		Filter: tools.EqualExpression("id", clbID),
 		Page:   core.NewDefaultBasePage(),
 	}
-	clbList, err := g.dataCli.Global.LoadBalancer.ListClb(kt, clbReq)
+	clbList, err := g.dataCli.Global.LoadBalancer.ListLoadBalancer(kt, clbReq)
 	if err != nil {
 		logs.Errorf("list load balancer by id failed, id: %s, err: %v, rid: %s", clbID, err, kt.Rid)
 		return nil, nil, err

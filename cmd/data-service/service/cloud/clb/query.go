@@ -64,7 +64,7 @@ func (svc *clbSvc) ListLoadBalancer(cts *rest.Contexts) (interface{}, error) {
 		return &protocloud.ClbListResult{Count: result.Count}, nil
 	}
 
-	details := make([]coreclb.BaseClb, 0, len(result.Details))
+	details := make([]coreclb.BaseLoadBalancer, 0, len(result.Details))
 	for _, one := range result.Details {
 		tmpOne := convTableToBaseClb(&one)
 		details = append(details, *tmpOne)
@@ -73,8 +73,8 @@ func (svc *clbSvc) ListLoadBalancer(cts *rest.Contexts) (interface{}, error) {
 	return &protocloud.ClbListResult{Details: details}, nil
 }
 
-func convTableToBaseClb(one *tableclb.LoadBalancerTable) *coreclb.BaseClb {
-	return &coreclb.BaseClb{
+func convTableToBaseClb(one *tableclb.LoadBalancerTable) *coreclb.BaseLoadBalancer {
+	return &coreclb.BaseLoadBalancer{
 		ID:                   one.ID,
 		CloudID:              one.CloudID,
 		Name:                 one.Name,
@@ -180,13 +180,13 @@ func (svc *clbSvc) GetLoadBalancer(cts *rest.Contexts) (any, error) {
 func convClbListResult[T coreclb.Extension](tables []tableclb.LoadBalancerTable) (
 	*protocloud.ClbExtListResult[T], error) {
 
-	details := make([]coreclb.Clb[T], 0, len(tables))
+	details := make([]coreclb.LoadBalancer[T], 0, len(tables))
 	for _, one := range tables {
 		tmpClb := convTableToBaseClb(&one)
 		extension := new(T)
-		details = append(details, coreclb.Clb[T]{
-			BaseClb:   *tmpClb,
-			Extension: extension,
+		details = append(details, coreclb.LoadBalancer[T]{
+			BaseLoadBalancer: *tmpClb,
+			Extension:        extension,
 		})
 	}
 

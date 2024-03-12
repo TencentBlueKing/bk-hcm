@@ -38,17 +38,17 @@ func InitService(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("Get", http.MethodGet, "/vendors/{vendor}/clbs/{id}", svc.GetLoadBalancer)
-	h.Add("ListLoadBalancer", http.MethodPost, "/clbs/list", svc.ListLoadBalancer)
-	h.Add("ListLoadBalancerExt", http.MethodPost, "/vendors/{vendor}/clbs/list", svc.ListLoadBalancerExt)
-	h.Add("BatchCreateCLB", http.MethodPost, "/vendors/{vendor}/clbs/batch/create", svc.BatchCreateCLB)
-	h.Add("BatchUpdateClb", http.MethodPatch, "/vendors/{vendor}/clbs/batch/update", svc.BatchUpdateClb)
-	h.Add("BatchUpdateClbBizInfo", http.MethodPatch, "/clbs/biz/batch/update", svc.BatchUpdateClbBizInfo)
+	h.Add("GetLoadBalancer", http.MethodGet, "/vendors/{vendor}/load_balancers/{id}", svc.GetLoadBalancer)
+	h.Add("ListLoadBalancer", http.MethodPost, "/load_balancers/list", svc.ListLoadBalancer)
+	h.Add("ListLoadBalancerExt", http.MethodPost, "/vendors/{vendor}/load_balancers/list", svc.ListLoadBalancerExt)
+	h.Add("BatchCreateCLB", http.MethodPost, "/vendors/{vendor}/load_balancers/batch/create", svc.BatchCreateCLB)
+	h.Add("BatchUpdateLoadBalancer", http.MethodPatch, "/vendors/{vendor}/load_balancers/batch/update", svc.BatchUpdateLoadBalancer)
+	h.Add("BatchUpdateClbBizInfo", http.MethodPatch, "/load_balancers/biz/batch/update", svc.BatchUpdateClbBizInfo)
 	h.Add("GetListener", http.MethodGet, "/vendors/{vendor}/listeners/{id}", svc.GetListener)
-	h.Add("ListListener", http.MethodPost, "/clbs/listeners/list", svc.ListListener)
-	h.Add("ListUrlRule", http.MethodPost, "/clbs/url_rules/list", svc.ListUrlRule)
-	h.Add("ListTarget", http.MethodPost, "/clbs/targets/list", svc.ListTarget)
-	h.Add("ListTargetGroup", http.MethodPost, "/clbs/target_groups/list", svc.ListTargetGroup)
+	h.Add("ListListener", http.MethodPost, "/load_balancers/listeners/list", svc.ListListener)
+	h.Add("ListUrlRule", http.MethodPost, "/load_balancers/url_rules/list", svc.ListUrlRule)
+	h.Add("ListTarget", http.MethodPost, "/load_balancers/targets/list", svc.ListTarget)
+	h.Add("ListTargetGroup", http.MethodPost, "/load_balancers/target_groups/list", svc.ListTargetGroup)
 
 	h.Load(cap.WebService)
 }

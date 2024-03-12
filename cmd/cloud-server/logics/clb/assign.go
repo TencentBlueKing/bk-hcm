@@ -108,7 +108,7 @@ func ValidateBeforeAssign(kt *kit.Kit, cli *dataservice.Client, ids []string) er
 		Filter: tools.ContainersExpression("id", ids),
 		Page:   core.NewDefaultBasePage(),
 	}
-	result, err := cli.Global.LoadBalancer.ListClb(kt, listReq)
+	result, err := cli.Global.LoadBalancer.ListLoadBalancer(kt, listReq)
 	if err != nil {
 		logs.Errorf("list clb failed, err: %v, rid: %s", err, kt.Rid)
 		return err

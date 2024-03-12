@@ -55,7 +55,7 @@ func (svc *clbSvc) BatchCreateCLB(cts *rest.Contexts) (any, error) {
 
 }
 func batchCreateClb[T coreclb.Extension](cts *rest.Contexts, svc *clbSvc, vendor enumor.Vendor) (any, error) {
-	req := new(dataproto.ClbBatchCreateReq[T])
+	req := new(dataproto.LoadBalancerBatchCreateReq[T])
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}

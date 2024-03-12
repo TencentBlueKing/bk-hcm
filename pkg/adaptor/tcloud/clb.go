@@ -398,7 +398,7 @@ func (h *createClbPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs
 }
 
 // SetClbSecurityGroups reference: https://cloud.tencent.com/document/api/214/34903
-func (t *TCloudImpl) SetClbSecurityGroups(kt *kit.Kit, opt *typeclb.TCloudSetClbSecurityGroupOption) (
+func (t *TCloudImpl) SetLoadBalancerSecurityGroups(kt *kit.Kit, opt *typeclb.TCloudSetClbSecurityGroupOption) (
 	*clb.SetLoadBalancerSecurityGroupsResponseParams, error) {
 
 	if opt == nil {

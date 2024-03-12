@@ -40,11 +40,11 @@ import (
 func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 	h := rest.NewHandler()
 
-	h.Add("BatchCreateTCloudClb", http.MethodPost, "/vendors/tcloud/clbs/batch/create", svc.BatchCreateTCloudClb)
-	h.Add("ListTCloudClb", http.MethodPost, "/vendors/tcloud/clbs/list", svc.ListTCloudClb)
+	h.Add("BatchCreateTCloudClb", http.MethodPost, "/vendors/tcloud/load_balancers/batch/create", svc.BatchCreateTCloudClb)
+	h.Add("ListTCloudClb", http.MethodPost, "/vendors/tcloud/load_balancers/list", svc.ListTCloudClb)
 	h.Add("TCloudDescribeResources", http.MethodPost,
-		"/vendors/tcloud/clbs/resources/describe", svc.TCloudDescribeResources)
-	h.Add("TCloudUpdateCLB", http.MethodPatch, "/vendors/tcloud/clbs/{id}", svc.TCloudUpdateCLB)
+		"/vendors/tcloud/load_balancers/resources/describe", svc.TCloudDescribeResources)
+	h.Add("TCloudUpdateCLB", http.MethodPatch, "/vendors/tcloud/load_balancers/{id}", svc.TCloudUpdateCLB)
 
 	h.Load(cap.WebService)
 }
@@ -254,7 +254,7 @@ func (svc *clbSvc) TCloudUpdateCLB(cts *rest.Contexts) (any, error) {
 }
 
 func (svc *clbSvc) updateDbClb(cts *rest.Contexts,
-	req *protoclb.TCloudUpdateReq, lb *coreclb.Clb[coreclb.TCloudClbExtension]) error {
+	req *protoclb.TCloudUpdateReq, lb *coreclb.LoadBalancer[coreclb.TCloudClbExtension]) error {
 
 	if lb.Extension == nil {
 		lb.Extension = &coreclb.TCloudClbExtension{}
@@ -274,14 +274,14 @@ func (svc *clbSvc) updateDbClb(cts *rest.Contexts,
 	if req.BandwidthpkgSubType != nil {
 		lb.Extension.BandwidthpkgSubType = converter.PtrToVal(req.BandwidthpkgSubType)
 	}
-	one := &dataproto.ClbExtUpdateReq[coreclb.TCloudClbExtension]{
+	one := &dataproto.LoadBalancerExtUpdateReq[coreclb.TCloudClbExtension]{
 		ID:        lb.ID,
 		Name:      converter.PtrToVal(req.Name),
 		Memo:      req.Memo,
 		Extension: lb.Extension,
 	}
 	dataReq := &dataproto.TCloudClbBatchUpdateReq{
-		Clbs: []*dataproto.ClbExtUpdateReq[coreclb.TCloudClbExtension]{one},
+		Lbs: []*dataproto.LoadBalancerExtUpdateReq[coreclb.TCloudClbExtension]{one},
 	}
 	err := svc.dataCli.TCloud.LoadBalancer.BatchUpdate(cts.Kit, dataReq)
 	if err != nil {

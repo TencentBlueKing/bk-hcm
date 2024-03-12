@@ -70,7 +70,7 @@ func (svc *clbSvc) listLoadBalancer(cts *rest.Contexts, authHandler handler.List
 		Filter: expr,
 		Page:   req.Page,
 	}
-	return svc.client.DataService().Global.LoadBalancer.ListClb(cts.Kit, listReq)
+	return svc.client.DataService().Global.LoadBalancer.ListLoadBalancer(cts.Kit, listReq)
 }
 
 // GetLoadBalancer getLoadBalancer clb.

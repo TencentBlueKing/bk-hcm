@@ -78,7 +78,7 @@ type clbSvc struct {
 	eipLgc     eip.Interface
 }
 
-func (svc *clbSvc) listLoadBalancerMap(kt *kit.Kit, clbIDs []string) (map[string]coreclb.BaseClb, error) {
+func (svc *clbSvc) listLoadBalancerMap(kt *kit.Kit, clbIDs []string) (map[string]coreclb.BaseLoadBalancer, error) {
 	if len(clbIDs) == 0 {
 		return nil, nil
 	}
@@ -87,13 +87,13 @@ func (svc *clbSvc) listLoadBalancerMap(kt *kit.Kit, clbIDs []string) (map[string
 		Filter: tools.ContainersExpression("id", clbIDs),
 		Page:   core.NewDefaultBasePage(),
 	}
-	clbList, err := svc.client.DataService().Global.LoadBalancer.ListClb(kt, clbReq)
+	clbList, err := svc.client.DataService().Global.LoadBalancer.ListLoadBalancer(kt, clbReq)
 	if err != nil {
 		logs.Errorf("[clb] list load balancer failed, clbIDs: %v, err: %v, rid: %s", clbIDs, err, kt.Rid)
 		return nil, err
 	}
 
-	clbMap := make(map[string]coreclb.BaseClb, len(clbList.Details))
+	clbMap := make(map[string]coreclb.BaseLoadBalancer, len(clbList.Details))
 	for _, clbItem := range clbList.Details {
 		clbMap[clbItem.ID] = clbItem
 	}

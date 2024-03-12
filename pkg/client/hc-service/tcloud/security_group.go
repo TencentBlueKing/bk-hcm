@@ -265,7 +265,7 @@ func (cli *SecurityGroupClient) AssociateClb(ctx context.Context, h http.Header,
 	err := cli.client.Post().
 		WithContext(ctx).
 		Body(req).
-		SubResourcef("/security_groups/associate/clbs").
+		SubResourcef("/security_groups/associate/load_balancers").
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -289,7 +289,7 @@ func (cli *SecurityGroupClient) DisassociateClb(ctx context.Context, h http.Head
 	err := cli.client.Post().
 		WithContext(ctx).
 		Body(req).
-		SubResourcef("/security_groups/disassociate/clbs").
+		SubResourcef("/security_groups/disassociate/load_balancers").
 		WithHeaders(h).
 		Do().
 		Into(resp)

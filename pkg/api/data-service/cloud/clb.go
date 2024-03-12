@@ -34,12 +34,12 @@ import (
 
 // -------------------------- Create --------------------------
 
-// ClbBatchCreateReq clb create req.
-type ClbBatchCreateReq[Extension coreclb.Extension] struct {
+// LoadBalancerBatchCreateReq clb create req.
+type LoadBalancerBatchCreateReq[Extension coreclb.Extension] struct {
 	Clbs []ClbBatchCreate[Extension] `json:"clbs" validate:"required,min=1"`
 }
 
-type TCloudCLBCreateReq = ClbBatchCreateReq[coreclb.TCloudClbExtension]
+type TCloudCLBCreateReq = LoadBalancerBatchCreateReq[coreclb.TCloudClbExtension]
 
 // ClbBatchCreate define clb batch create.
 type ClbBatchCreate[Extension coreclb.Extension] struct {
@@ -72,7 +72,7 @@ type ClbBatchCreate[Extension coreclb.Extension] struct {
 }
 
 // Validate clb create request.
-func (req *ClbBatchCreateReq[T]) Validate() error {
+func (req *LoadBalancerBatchCreateReq[T]) Validate() error {
 	if len(req.Clbs) > constant.BatchOperationMaxLimit {
 		return fmt.Errorf("clbs count should <= %d", constant.BatchOperationMaxLimit)
 	}
@@ -82,8 +82,8 @@ func (req *ClbBatchCreateReq[T]) Validate() error {
 
 // -------------------------- Update --------------------------
 
-// ClbExtUpdateReq ...
-type ClbExtUpdateReq[T coreclb.Extension] struct {
+// LoadBalancerExtUpdateReq ...
+type LoadBalancerExtUpdateReq[T coreclb.Extension] struct {
 	ID      string `json:"id" validate:"required"`
 	Name    string `json:"name"`
 	BkBizID int64  `json:"bk_biz_id"`
@@ -104,13 +104,13 @@ type ClbExtUpdateReq[T coreclb.Extension] struct {
 }
 
 // Validate ...
-func (req *ClbExtUpdateReq[T]) Validate() error {
+func (req *LoadBalancerExtUpdateReq[T]) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
 // ClbExtBatchUpdateReq ...
 type ClbExtBatchUpdateReq[T coreclb.Extension] struct {
-	Clbs []*ClbExtUpdateReq[T] `json:"clbs" validate:"min=1"`
+	Lbs []*LoadBalancerExtUpdateReq[T] `json:"lbs" validate:"min=1"`
 }
 
 // Validate ...
@@ -147,8 +147,8 @@ func (req *ClbBizBatchUpdateReq) Validate() error {
 
 // ClbListResult define clb list result.
 type ClbListResult struct {
-	Count   uint64            `json:"count"`
-	Details []coreclb.BaseClb `json:"details"`
+	Count   uint64                     `json:"count"`
+	Details []coreclb.BaseLoadBalancer `json:"details"`
 }
 
 // ClbListResp define list resp.
@@ -171,8 +171,8 @@ func (req *ClbExtListReq) Validate() error {
 
 // ClbExtListResult define clb with extension list result.
 type ClbExtListResult[T coreclb.Extension] struct {
-	Count   uint64           `json:"count,omitempty"`
-	Details []coreclb.Clb[T] `json:"details,omitempty"`
+	Count   uint64                    `json:"count,omitempty"`
+	Details []coreclb.LoadBalancer[T] `json:"details,omitempty"`
 }
 
 // -------------------------- Delete --------------------------

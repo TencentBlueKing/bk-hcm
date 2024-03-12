@@ -43,8 +43,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// BatchUpdateClb 批量跟新clb信息
-func (svc *clbSvc) BatchUpdateClb(cts *rest.Contexts) (any, error) {
+// BatchUpdateLoadBalancer 批量跟新clb信息
+func (svc *clbSvc) BatchUpdateLoadBalancer(cts *rest.Contexts) (any, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -52,7 +52,7 @@ func (svc *clbSvc) BatchUpdateClb(cts *rest.Contexts) (any, error) {
 
 	switch vendor {
 	case enumor.TCloud:
-		return batchUpdateClb[clb.TCloudClbExtension](cts, svc)
+		return batchUpdateLoadBalancer[clb.TCloudClbExtension](cts, svc)
 
 	default:
 		return nil, fmt.Errorf("unsupport  vendor %s", vendor)
@@ -60,7 +60,7 @@ func (svc *clbSvc) BatchUpdateClb(cts *rest.Contexts) (any, error) {
 
 }
 
-func batchUpdateClb[T clb.Extension](cts *rest.Contexts, svc *clbSvc) (any, error) {
+func batchUpdateLoadBalancer[T clb.Extension](cts *rest.Contexts, svc *clbSvc) (any, error) {
 
 	req := new(protocloud.ClbExtBatchUpdateReq[T])
 	if err := cts.DecodeInto(req); err != nil {
@@ -71,15 +71,15 @@ func batchUpdateClb[T clb.Extension](cts *rest.Contexts, svc *clbSvc) (any, erro
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	clbIds := slice.Map(req.Clbs, func(one *protocloud.ClbExtUpdateReq[T]) string { return one.ID })
+	lbIds := slice.Map(req.Lbs, func(one *protocloud.LoadBalancerExtUpdateReq[T]) string { return one.ID })
 
-	extensionMap, err := svc.listClbExt(cts.Kit, clbIds)
+	extensionMap, err := svc.listClbExt(cts.Kit, lbIds)
 	if err != nil {
 		return nil, err
 	}
 
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
-		for _, lb := range req.Clbs {
+		for _, lb := range req.Lbs {
 			update := &tableclb.LoadBalancerTable{
 				Name:    lb.Name,
 				BkBizID: lb.BkBizID,

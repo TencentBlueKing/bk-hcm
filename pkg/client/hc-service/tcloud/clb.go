@@ -47,16 +47,16 @@ func (c *ClbClient) DescribeResources(kt *kit.Kit, req *protoclb.TCloudDescribeR
 	*tclb.DescribeResourcesResponseParams, error) {
 
 	return common.Request[protoclb.TCloudDescribeResourcesOption, tclb.DescribeResourcesResponseParams](
-		c.client, http.MethodPost, kt, req, "clbs/resources/describe")
+		c.client, http.MethodPost, kt, req, "/load_balancers/resources/describe")
 }
 
 // BatchCreate ...
 func (c *ClbClient) BatchCreate(kt *kit.Kit, req *protoclb.TCloudBatchCreateReq) (*protoclb.BatchCreateResult, error) {
 	return common.Request[protoclb.TCloudBatchCreateReq, protoclb.BatchCreateResult](
-		c.client, http.MethodPost, kt, req, "clbs/batch/create")
+		c.client, http.MethodPost, kt, req, "/load_balancers/batch/create")
 }
 
 // Update ...
 func (c *ClbClient) Update(kt *kit.Kit, id string, req *protoclb.TCloudUpdateReq) error {
-	return common.RequestNoResp[protoclb.TCloudUpdateReq](c.client, http.MethodPatch, kt, req, "clbs/%s", id)
+	return common.RequestNoResp[protoclb.TCloudUpdateReq](c.client, http.MethodPatch, kt, req, "/load_balancers/%s", id)
 }

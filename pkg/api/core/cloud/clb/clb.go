@@ -25,8 +25,8 @@ import (
 	"hcm/pkg/dal/table/types"
 )
 
-// BaseClb define base clb.
-type BaseClb struct {
+// BaseLoadBalancer define base clb.
+type BaseLoadBalancer struct {
 	ID        string        `json:"id"`
 	CloudID   string        `json:"cloud_id"`
 	Name      string        `json:"name"`
@@ -55,20 +55,20 @@ type BaseClb struct {
 	*core.Revision `json:",inline"`
 }
 
-// Clb define clb.
-type Clb[Ext Extension] struct {
-	BaseClb   `json:",inline"`
-	Extension *Ext `json:"extension"`
+// LoadBalancer define clb.
+type LoadBalancer[Ext Extension] struct {
+	BaseLoadBalancer `json:",inline"`
+	Extension        *Ext `json:"extension"`
 }
 
 // GetID ...
-func (cert Clb[T]) GetID() string {
-	return cert.BaseClb.ID
+func (lb LoadBalancer[T]) GetID() string {
+	return lb.BaseLoadBalancer.ID
 }
 
 // GetCloudID ...
-func (cert Clb[T]) GetCloudID() string {
-	return cert.BaseClb.CloudID
+func (lb LoadBalancer[T]) GetCloudID() string {
+	return lb.BaseLoadBalancer.CloudID
 }
 
 // Extension extension.

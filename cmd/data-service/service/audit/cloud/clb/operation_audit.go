@@ -30,7 +30,7 @@ import (
 )
 
 // ClbOperationAuditBuild clb operation audit build.
-func (c *Clb) ClbOperationAuditBuild(kt *kit.Kit, operations []protoaudit.CloudResourceOperationInfo) (
+func (c *LoadBalancer) ClbOperationAuditBuild(kt *kit.Kit, operations []protoaudit.CloudResourceOperationInfo) (
 	[]*tableaudit.AuditTable, error) {
 
 	assOperations := make([]protoaudit.CloudResourceOperationInfo, 0)
@@ -57,14 +57,14 @@ func (c *Clb) ClbOperationAuditBuild(kt *kit.Kit, operations []protoaudit.CloudR
 	return audits, nil
 }
 
-func (c *Clb) baseOperationAuditBuild(kt *kit.Kit, operations []protoaudit.CloudResourceOperationInfo) (
+func (c *LoadBalancer) baseOperationAuditBuild(kt *kit.Kit, operations []protoaudit.CloudResourceOperationInfo) (
 	[]*tableaudit.AuditTable, error) {
 
 	ids := make([]string, 0, len(operations))
 	for _, one := range operations {
 		ids = append(ids, one.ResID)
 	}
-	idMap, err := ListClb(kt, c.dao, ids)
+	idMap, err := ListLoadBalancer(kt, c.dao, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (c *Clb) baseOperationAuditBuild(kt *kit.Kit, operations []protoaudit.Cloud
 	return audits, nil
 }
 
-func (c *Clb) assOperationAuditBuild(_ *kit.Kit, _ []protoaudit.CloudResourceOperationInfo) (
+func (c *LoadBalancer) assOperationAuditBuild(_ *kit.Kit, _ []protoaudit.CloudResourceOperationInfo) (
 	[]*tableaudit.AuditTable, error) {
 
 	return nil, errors.New("not supported")

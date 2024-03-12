@@ -483,7 +483,7 @@ func (s *SecurityGroup) clbAssOperationAuditBuild(kt *kit.Kit, operations []prot
 		return nil, err
 	}
 
-	clbIDMap, err := auditclb.ListClb(kt, s.dao, clbIDs)
+	clbIDMap, err := auditclb.ListLoadBalancer(kt, s.dao, clbIDs)
 	if err != nil {
 		return nil, err
 	}

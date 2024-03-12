@@ -141,7 +141,7 @@ type GetListenerDetail struct {
 	UrlNum             int64                    `json:"url_num"`
 }
 
-// -------------------------- List Clb Url Rule --------------------------
+// -------------------------- List LoadBalancer Url Rule --------------------------
 
 // ListClbUrlRuleResult defines list clb url rule result.
 type ListClbUrlRuleResult = core.ListResultT[ListClbUrlRuleBase]
