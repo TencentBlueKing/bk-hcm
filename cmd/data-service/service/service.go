@@ -39,13 +39,13 @@ import (
 	argstpl "hcm/cmd/data-service/service/cloud/argument-template"
 	"hcm/cmd/data-service/service/cloud/bill"
 	"hcm/cmd/data-service/service/cloud/cert"
-	"hcm/cmd/data-service/service/cloud/clb"
 	"hcm/cmd/data-service/service/cloud/cvm"
 	"hcm/cmd/data-service/service/cloud/disk"
 	diskcvmrel "hcm/cmd/data-service/service/cloud/disk-cvm-rel"
 	"hcm/cmd/data-service/service/cloud/eip"
 	eipcvmrel "hcm/cmd/data-service/service/cloud/eip-cvm-rel"
 	"hcm/cmd/data-service/service/cloud/image"
+	"hcm/cmd/data-service/service/cloud/load-balancer"
 	networkinterface "hcm/cmd/data-service/service/cloud/network-interface"
 	networkcvmrel "hcm/cmd/data-service/service/cloud/network-interface-cvm-rel"
 	"hcm/cmd/data-service/service/cloud/region"
@@ -219,7 +219,7 @@ func (s *Service) apiSet() *restful.Container {
 	cloudselection.InitService(capability)
 	argstpl.InitService(capability)
 	cert.InitService(capability)
-	clb.InitService(capability)
+	loadbalancer.InitService(capability)
 	sgcomrel.InitService(capability)
 
 	return restful.NewContainer().Add(capability.WebService)

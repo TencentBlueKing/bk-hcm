@@ -35,12 +35,12 @@ import (
 	"hcm/cmd/hc-service/service/bill"
 	"hcm/cmd/hc-service/service/capability"
 	"hcm/cmd/hc-service/service/cert"
-	"hcm/cmd/hc-service/service/clb"
 	"hcm/cmd/hc-service/service/cvm"
 	"hcm/cmd/hc-service/service/disk"
 	"hcm/cmd/hc-service/service/eip"
 	"hcm/cmd/hc-service/service/firewall"
 	instancetype "hcm/cmd/hc-service/service/instance-type"
+	loadbalancer "hcm/cmd/hc-service/service/load-balancer"
 	routetable "hcm/cmd/hc-service/service/route-table"
 	securitygroup "hcm/cmd/hc-service/service/security-group"
 	"hcm/cmd/hc-service/service/subnet"
@@ -168,7 +168,7 @@ func (s *Service) apiSet() *restful.Container {
 	sync.InitService(c)
 	bill.InitBillService(c)
 	argstpl.InitArgsTplService(c)
-	clb.InitClbService(c)
+	loadbalancer.InitLoadBalancerService(c)
 	cert.InitCertService(c)
 
 	return restful.NewContainer().Add(c.WebService)

@@ -32,7 +32,7 @@ import (
 	"hcm/pkg/dal/dao/types"
 	typesclb "hcm/pkg/dal/dao/types/clb"
 	"hcm/pkg/dal/table"
-	tableclb "hcm/pkg/dal/table/cloud/clb"
+	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -43,9 +43,9 @@ import (
 
 // ListenerInterface only used for clb listener.
 type ListenerInterface interface {
-	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tableclb.LoadBalancerListenerTable) ([]string, error)
-	Update(kt *kit.Kit, expr *filter.Expression, model *tableclb.LoadBalancerListenerTable) error
-	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tableclb.LoadBalancerListenerTable) error
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerListenerTable) ([]string, error)
+	Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.LoadBalancerListenerTable) error
+	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.LoadBalancerListenerTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbListenerDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
@@ -60,7 +60,7 @@ type ListenerDao struct {
 }
 
 // BatchCreateWithTx clb listener.
-func (dao ListenerDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tableclb.LoadBalancerListenerTable) (
+func (dao ListenerDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerListenerTable) (
 	[]string, error) {
 
 	tableName := table.LoadBalancerListenerTable
@@ -77,7 +77,7 @@ func (dao ListenerDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tab
 	}
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, tableName,
-		tableclb.LoadBalancerListenerColumns.ColumnExpr(), tableclb.LoadBalancerListenerColumns.ColonNameExpr())
+		tablelb.LoadBalancerListenerColumns.ColumnExpr(), tablelb.LoadBalancerListenerColumns.ColonNameExpr())
 
 	if err = dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", tableName, err, kt.Rid)
@@ -88,7 +88,7 @@ func (dao ListenerDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tab
 }
 
 // Update clb listener.
-func (dao ListenerDao) Update(kt *kit.Kit, expr *filter.Expression, model *tableclb.LoadBalancerListenerTable) error {
+func (dao ListenerDao) Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.LoadBalancerListenerTable) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
 	}
@@ -132,7 +132,7 @@ func (dao ListenerDao) Update(kt *kit.Kit, expr *filter.Expression, model *table
 
 // UpdateByIDWithTx clb listener.
 func (dao ListenerDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
-	model *tableclb.LoadBalancerListenerTable) error {
+	model *tablelb.LoadBalancerListenerTable) error {
 
 	if len(id) == 0 {
 		return errf.New(errf.InvalidParameter, "id is required")
@@ -166,7 +166,7 @@ func (dao ListenerDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListC
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tableclb.LoadBalancerListenerColumns.ColumnTypes())),
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablelb.LoadBalancerListenerColumns.ColumnTypes())),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
@@ -194,10 +194,10 @@ func (dao ListenerDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListC
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tableclb.LoadBalancerListenerColumns.FieldsNamedExpr(opt.Fields),
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablelb.LoadBalancerListenerColumns.FieldsNamedExpr(opt.Fields),
 		table.LoadBalancerListenerTable, whereExpr, pageExpr)
 
-	details := make([]tableclb.LoadBalancerListenerTable, 0)
+	details := make([]tablelb.LoadBalancerListenerTable, 0)
 	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}

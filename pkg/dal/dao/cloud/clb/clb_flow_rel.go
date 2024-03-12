@@ -32,7 +32,7 @@ import (
 	"hcm/pkg/dal/dao/types"
 	typesclb "hcm/pkg/dal/dao/types/clb"
 	"hcm/pkg/dal/table"
-	tableclb "hcm/pkg/dal/table/cloud/clb"
+	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -43,9 +43,9 @@ import (
 
 // ClbFlowRelInterface only used for clb flow rel.
 type ClbFlowRelInterface interface {
-	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tableclb.ClbFlowRelTable) ([]string, error)
-	Update(kt *kit.Kit, expr *filter.Expression, model *tableclb.ClbFlowRelTable) error
-	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tableclb.ClbFlowRelTable) error
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.ClbFlowRelTable) ([]string, error)
+	Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.ClbFlowRelTable) error
+	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.ClbFlowRelTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbFlowRelDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
@@ -60,7 +60,7 @@ type ClbFlowRelDao struct {
 }
 
 // BatchCreateWithTx clb flow rel.
-func (dao ClbFlowRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tableclb.ClbFlowRelTable) (
+func (dao ClbFlowRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.ClbFlowRelTable) (
 	[]string, error) {
 
 	tableName := table.ClbFlowRelTable
@@ -77,7 +77,7 @@ func (dao ClbFlowRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*t
 	}
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, tableName,
-		tableclb.ClbFlowRelColumns.ColumnExpr(), tableclb.ClbFlowRelColumns.ColonNameExpr())
+		tablelb.ClbFlowRelColumns.ColumnExpr(), tablelb.ClbFlowRelColumns.ColonNameExpr())
 
 	if err = dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", tableName, err, kt.Rid)
@@ -88,7 +88,7 @@ func (dao ClbFlowRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*t
 }
 
 // Update clb flow rel.
-func (dao ClbFlowRelDao) Update(kt *kit.Kit, expr *filter.Expression, model *tableclb.ClbFlowRelTable) error {
+func (dao ClbFlowRelDao) Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.ClbFlowRelTable) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
 	}
@@ -132,7 +132,7 @@ func (dao ClbFlowRelDao) Update(kt *kit.Kit, expr *filter.Expression, model *tab
 
 // UpdateByIDWithTx clb flow rel.
 func (dao ClbFlowRelDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
-	model *tableclb.ClbFlowRelTable) error {
+	model *tablelb.ClbFlowRelTable) error {
 
 	if len(id) == 0 {
 		return errf.New(errf.InvalidParameter, "id is required")
@@ -166,7 +166,7 @@ func (dao ClbFlowRelDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.Lis
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tableclb.ClbFlowRelColumns.ColumnTypes())),
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablelb.ClbFlowRelColumns.ColumnTypes())),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
@@ -195,10 +195,10 @@ func (dao ClbFlowRelDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.Lis
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tableclb.ClbFlowRelColumns.FieldsNamedExpr(opt.Fields),
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablelb.ClbFlowRelColumns.FieldsNamedExpr(opt.Fields),
 		table.ClbFlowRelTable, whereExpr, pageExpr)
 
-	details := make([]tableclb.ClbFlowRelTable, 0)
+	details := make([]tablelb.ClbFlowRelTable, 0)
 	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}

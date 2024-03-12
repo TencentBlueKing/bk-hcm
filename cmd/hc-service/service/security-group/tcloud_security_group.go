@@ -27,7 +27,7 @@ import (
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
-	coreclb "hcm/pkg/api/core/cloud/clb"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	proto "hcm/pkg/api/hc-service"
 	hcclb "hcm/pkg/api/hc-service/clb"
@@ -487,7 +487,7 @@ func (g *securityGroup) TCloudSecurityGroupDisassociateClb(cts *rest.Contexts) (
 }
 
 func (g *securityGroup) getClbInfoAndSGComRels(kt *kit.Kit, clbID string) (
-	*coreclb.BaseLoadBalancer, *protocloud.SGCommonRelListResult, error) {
+	*corelb.BaseLoadBalancer, *protocloud.SGCommonRelListResult, error) {
 
 	clbReq := &core.ListReq{
 		Filter: tools.EqualExpression("id", clbID),

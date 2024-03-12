@@ -32,7 +32,7 @@ import (
 	"hcm/pkg/dal/dao/types"
 	typesclb "hcm/pkg/dal/dao/types/clb"
 	"hcm/pkg/dal/table"
-	tableclb "hcm/pkg/dal/table/cloud/clb"
+	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -43,9 +43,9 @@ import (
 
 // TargetInterface only used for clb target.
 type TargetInterface interface {
-	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tableclb.LoadBalancerTargetTable) ([]string, error)
-	Update(kt *kit.Kit, expr *filter.Expression, model *tableclb.LoadBalancerTargetTable) error
-	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tableclb.LoadBalancerTargetTable) error
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerTargetTable) ([]string, error)
+	Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.LoadBalancerTargetTable) error
+	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.LoadBalancerTargetTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbTargetDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
@@ -60,7 +60,7 @@ type TargetDao struct {
 }
 
 // BatchCreateWithTx clb target.
-func (dao TargetDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tableclb.LoadBalancerTargetTable) (
+func (dao TargetDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerTargetTable) (
 	[]string, error) {
 
 	tableName := table.LoadBalancerTargetTable
@@ -77,7 +77,7 @@ func (dao TargetDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*table
 	}
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, tableName,
-		tableclb.LoadBalancerTargetColumns.ColumnExpr(), tableclb.LoadBalancerTargetColumns.ColonNameExpr())
+		tablelb.LoadBalancerTargetColumns.ColumnExpr(), tablelb.LoadBalancerTargetColumns.ColonNameExpr())
 
 	if err = dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", tableName, err, kt.Rid)
@@ -88,7 +88,7 @@ func (dao TargetDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*table
 }
 
 // Update clb target.
-func (dao TargetDao) Update(kt *kit.Kit, expr *filter.Expression, model *tableclb.LoadBalancerTargetTable) error {
+func (dao TargetDao) Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.LoadBalancerTargetTable) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
 	}
@@ -132,7 +132,7 @@ func (dao TargetDao) Update(kt *kit.Kit, expr *filter.Expression, model *tablecl
 
 // UpdateByIDWithTx clb target.
 func (dao TargetDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
-	model *tableclb.LoadBalancerTargetTable) error {
+	model *tablelb.LoadBalancerTargetTable) error {
 
 	if len(id) == 0 {
 		return errf.New(errf.InvalidParameter, "id is required")
@@ -166,7 +166,7 @@ func (dao TargetDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClb
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tableclb.LoadBalancerTargetColumns.ColumnTypes())),
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablelb.LoadBalancerTargetColumns.ColumnTypes())),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
@@ -194,10 +194,10 @@ func (dao TargetDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClb
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tableclb.LoadBalancerTargetColumns.FieldsNamedExpr(opt.Fields),
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablelb.LoadBalancerTargetColumns.FieldsNamedExpr(opt.Fields),
 		table.LoadBalancerTargetTable, whereExpr, pageExpr)
 
-	details := make([]tableclb.LoadBalancerTargetTable, 0)
+	details := make([]tablelb.LoadBalancerTargetTable, 0)
 	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}

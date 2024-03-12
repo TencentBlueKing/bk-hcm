@@ -22,7 +22,7 @@ package tcloud
 
 import (
 	"hcm/pkg/api/core"
-	"hcm/pkg/api/core/cloud/clb"
+	"hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/client/common"
 	"hcm/pkg/kit"
@@ -46,9 +46,9 @@ func (cli *LoadBalancerClient) BatchCreateTCloudClb(kt *kit.Kit, req *dataproto.
 }
 
 // Get 获取clb 详情
-func (cli *LoadBalancerClient) Get(kt *kit.Kit, id string) (*clb.LoadBalancer[clb.TCloudClbExtension], error) {
+func (cli *LoadBalancerClient) Get(kt *kit.Kit, id string) (*loadbalancer.LoadBalancer[loadbalancer.TCloudClbExtension], error) {
 
-	return common.Request[common.Empty, clb.LoadBalancer[clb.TCloudClbExtension]](
+	return common.Request[common.Empty, loadbalancer.LoadBalancer[loadbalancer.TCloudClbExtension]](
 		cli.client, rest.GET, kt, nil, "/load_balancers/%s", id)
 }
 
@@ -59,6 +59,6 @@ func (cli *LoadBalancerClient) BatchUpdate(kt *kit.Kit, req *dataproto.TCloudClb
 }
 
 // GetListener 获取监听器详情
-func (cli *LoadBalancerClient) GetListener(kt *kit.Kit, id string) (*clb.BaseListener, error) {
-	return common.Request[common.Empty, clb.BaseListener](cli.client, rest.GET, kt, nil, "/listeners/%s", id)
+func (cli *LoadBalancerClient) GetListener(kt *kit.Kit, id string) (*loadbalancer.BaseListener, error) {
+	return common.Request[common.Empty, loadbalancer.BaseListener](cli.client, rest.GET, kt, nil, "/listeners/%s", id)
 }

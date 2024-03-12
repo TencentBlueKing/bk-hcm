@@ -91,7 +91,8 @@ func InitSecurityGroupService(c *capability.Capability) {
 		svc.DisAssociateBizNIC)
 	h.Add("ListBizSecurityGroupsByResID", http.MethodGet, "/bizs/{bk_biz_id}/security_groups/res/{res_type}/{res_id}",
 		svc.ListBizSecurityGroupsByResID)
-	h.Add("AssociateClb", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/associate/load_balancers", svc.AssociateBizClb)
+	h.Add("AssociateClb",
+		http.MethodPost, "/bizs/{bk_biz_id}/security_groups/associate/load_balancers", svc.AssociateBizClb)
 	h.Add("DisassociateClb", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/disassociate/load_balancers",
 		svc.DisassociateBizClb)
 

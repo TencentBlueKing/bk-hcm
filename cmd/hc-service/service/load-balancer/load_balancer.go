@@ -17,12 +17,26 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package clb
+// Package loadbalancer ...
+package loadbalancer
 
-import tablelb "hcm/pkg/dal/table/cloud/load-balancer"
+import (
+	"hcm/cmd/hc-service/logics/cloud-adaptor"
+	"hcm/cmd/hc-service/service/capability"
+	dataservice "hcm/pkg/client/data-service"
+)
 
-// ListClbFlowRelDetails list clb flow rel details.
-type ListClbFlowRelDetails struct {
-	Count   uint64                    `json:"count,omitempty"`
-	Details []tablelb.ClbFlowRelTable `json:"details,omitempty"`
+// InitLoadBalancerService initial the clb service.
+func InitLoadBalancerService(cap *capability.Capability) {
+	svc := &clbSvc{
+		ad:      cap.CloudAdaptor,
+		dataCli: cap.ClientSet.DataService(),
+	}
+
+	svc.initTCloudClbService(cap)
+}
+
+type clbSvc struct {
+	ad      *cloudadaptor.CloudAdaptorClient
+	dataCli *dataservice.Client
 }

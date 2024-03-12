@@ -22,8 +22,8 @@ package securitygroup
 import (
 	"fmt"
 
-	auditclb "hcm/cmd/data-service/service/audit/cloud/clb"
 	"hcm/cmd/data-service/service/audit/cloud/cvm"
+	auditclb "hcm/cmd/data-service/service/audit/cloud/load-balancer"
 	networkinterface "hcm/cmd/data-service/service/audit/cloud/network-interface"
 	"hcm/cmd/data-service/service/audit/cloud/subnet"
 	"hcm/pkg/api/core"
