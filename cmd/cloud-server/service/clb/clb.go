@@ -28,8 +28,13 @@ import (
 	"hcm/cmd/cloud-server/logics/disk"
 	"hcm/cmd/cloud-server/logics/eip"
 	"hcm/cmd/cloud-server/service/capability"
+	"hcm/pkg/api/core"
+	coreclb "hcm/pkg/api/core/cloud/clb"
 	"hcm/pkg/client"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/auth"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
@@ -45,8 +50,6 @@ func InitService(c *capability.Capability) {
 	h := rest.NewHandler()
 
 	// clb apis in biz
-	h.Add("BatchBindSecurityGroupBizClb", http.MethodPost, "/bizs/{bk_biz_id}/clbs/associate/security_groups",
-		svc.BatchBindSecurityGroupBizClb)
 	h.Add("ListLoadBalancer", http.MethodPost, "/clbs/list", svc.ListLoadBalancer)
 	h.Add("GetBizLoadBalancer", http.MethodGet, "/bizs/{bk_biz_id}/clbs/{id}", svc.GetBizLoadBalancer)
 	h.Add("UpdateBizTCloudLoadBalancer", http.MethodPatch, "/bizs/{bk_biz_id}/vendors/tcloud/clbs/{id}",
@@ -54,11 +57,14 @@ func InitService(c *capability.Capability) {
 	h.Add("ListBizLoadBalancer", http.MethodPost, "/bizs/{bk_biz_id}/clbs/list", svc.ListBizLoadBalancer)
 
 	h.Add("GetLoadBalancer", http.MethodGet, "/clbs/{id}", svc.GetLoadBalancer)
-	h.Add("BatchCreateCLB", http.MethodPost, "/clbs/create", svc.BatchCreateCLB)
 	h.Add("TCloudDescribeResources", http.MethodPost, "/vendors/tcloud/clbs/resources/describe",
 		svc.TCloudDescribeResources)
 	h.Add("BatchCreateCLB", http.MethodPost, "/clbs/create", svc.BatchCreateCLB)
 	h.Add("AssignClbToBiz", http.MethodPost, "/clbs/assign/bizs", svc.AssignClbToBiz)
+	h.Add("ListBizListener", http.MethodPost, "/bizs/{bk_biz_id}/clbs/{clb_id}/listeners/list", svc.ListBizListener)
+	h.Add("ListBizClbUrlRule", http.MethodPost, "/bizs/{bk_biz_id}/target_groups/{target_group_id}/listeners/list",
+		svc.ListBizClbUrlRule)
+	h.Add("GetBizListener", http.MethodGet, "/bizs/{bk_biz_id}/listeners/{id}", svc.GetBizListener)
 
 	h.Load(c.WebService)
 }
@@ -70,4 +76,27 @@ type clbSvc struct {
 	diskLgc    disk.Interface
 	cvmLgc     cvm.Interface
 	eipLgc     eip.Interface
+}
+
+func (svc *clbSvc) listLoadBalancerMap(kt *kit.Kit, clbIDs []string) (map[string]coreclb.BaseClb, error) {
+	if len(clbIDs) == 0 {
+		return nil, nil
+	}
+
+	clbReq := &core.ListReq{
+		Filter: tools.ContainersExpression("id", clbIDs),
+		Page:   core.NewDefaultBasePage(),
+	}
+	clbList, err := svc.client.DataService().Global.LoadBalancer.ListClb(kt, clbReq)
+	if err != nil {
+		logs.Errorf("[clb] list load balancer failed, clbIDs: %v, err: %v, rid: %s", clbIDs, err, kt.Rid)
+		return nil, err
+	}
+
+	clbMap := make(map[string]coreclb.BaseClb, len(clbList.Details))
+	for _, clbItem := range clbList.Details {
+		clbMap[clbItem.ID] = clbItem
+	}
+
+	return clbMap, nil
 }

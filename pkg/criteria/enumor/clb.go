@@ -17,20 +17,15 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package clb
+package enumor
 
-import (
-	"hcm/pkg/rest"
-	"hcm/pkg/tools/hooks/handler"
+// RuleType 负载均衡类型
+type RuleType string
+
+// 负载均衡类型
+const (
+	// LayerFourRuleType 4层负载均衡
+	LayerFourRuleType RuleType = "layer_4"
+	// LayerSevenRuleType 7层负载均衡
+	LayerSevenRuleType RuleType = "layer_7"
 )
-
-// BatchBindSecurityGroupBizClb batch bind security group biz clb.
-func (svc *clbSvc) BatchBindSecurityGroupBizClb(cts *rest.Contexts) (interface{}, error) {
-	return svc.bindSecurityGroupBizClb(cts, handler.BizOperateAuth)
-}
-
-func (svc *clbSvc) bindSecurityGroupBizClb(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
-	interface{}, error) {
-
-	return nil, nil
-}

@@ -22,6 +22,7 @@ package clb
 import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/table/types"
 )
 
 // BaseClb define base clb.
@@ -73,4 +74,112 @@ func (cert Clb[T]) GetCloudID() string {
 // Extension extension.
 type Extension interface {
 	TCloudClbExtension
+}
+
+// BaseListener define base listener.
+type BaseListener struct {
+	ID        string        `json:"id"`
+	CloudID   string        `json:"cloud_id"`
+	Name      string        `json:"name"`
+	Vendor    enumor.Vendor `json:"vendor"`
+	AccountID string        `json:"account_id"`
+	BkBizID   int64         `json:"bk_biz_id"`
+
+	LbID          string   `json:"lb_id"`
+	CloudLbID     string   `json:"cloud_lb_id"`
+	Protocol      string   `json:"protocol"`
+	Port          int64    `json:"port"`
+	DefaultDomain string   `json:"default_domain"`
+	Zones         []string `json:"zones"`
+
+	Memo           *string `json:"memo"`
+	*core.Revision `json:",inline"`
+}
+
+// BaseTCloudClbURLRule define base tcloud clb url rule.
+type BaseTCloudClbURLRule struct {
+	ID      string `json:"id"`
+	CloudID string `json:"cloud_id"`
+	Name    string `json:"name"`
+
+	RuleType           enumor.RuleType  `json:"rule_type"`
+	LbID               string           `json:"lb_id"`
+	CloudLbID          string           `json:"cloud_lb_id"`
+	LblID              string           `json:"lbl_id"`
+	CloudLBLID         string           `json:"cloud_lbl_id"`
+	TargetGroupID      string           `json:"target_group_id"`
+	CloudTargetGroupID string           `json:"cloud_target_group_id"`
+	Domain             string           `json:"domain"`
+	URL                string           `json:"url"`
+	Scheduler          string           `json:"scheduler"`
+	SniSwitch          int64            `json:"sni_switch"`
+	SessionType        string           `json:"session_type"`
+	SessionExpire      int64            `json:"session_expire"`
+	HealthCheck        *HealthCheckInfo `json:"health_check"`
+	Certificate        *CertificateInfo `json:"certificate"`
+
+	Memo           *string `json:"memo"`
+	*core.Revision `json:",inline"`
+}
+
+// HealthCheckInfo define health check.
+type HealthCheckInfo struct {
+	HealthSwitch    int64  `json:"health_switch"`
+	TimeOut         int64  `json:"time_out"`
+	IntervalTime    int64  `json:"interval_time"`
+	HealthNum       int64  `json:"health_num"`
+	UnHealthNum     int64  `json:"un_health_num"`
+	CheckPort       int64  `json:"check_port"`
+	CheckType       string `json:"check_type"`
+	HttpVersion     string `json:"http_version"`
+	HttpCheckPath   string `json:"http_check_path"`
+	HttpCheckDomain string `json:"http_check_domain"`
+	HttpCheckMethod string `json:"http_check_method"`
+	SourceIpType    int64  `json:"source_ip_type"`
+}
+
+// CertificateInfo define certificate.
+type CertificateInfo struct {
+	SSLMode    string   `json:"ssl_mode"`
+	CertId     string   `json:"cert_id"`
+	CertCaId   string   `json:"cert_ca_id"`
+	ExtCertIds []string `json:"ext_cert_ids"`
+}
+
+// BaseClbTarget define base clb target.
+type BaseClbTarget struct {
+	ID                 string            `json:"id"`
+	AccountID          string            `json:"account_id"`
+	InstType           string            `json:"inst_type"`
+	CloudInstID        string            `json:"cloud_inst_id"`
+	InstName           string            `json:"inst_name"`
+	TargetGroupID      string            `json:"target_group_id"`
+	CloudTargetGroupID string            `json:"cloud_target_group_id"`
+	Port               int64             `json:"port"`
+	Weight             int64             `json:"weight"`
+	PrivateIPAddress   types.StringArray `json:"private_ip_address"`
+	PublicIPAddress    types.StringArray `json:"public_ip_address"`
+	Zone               string            `json:"zone"`
+	Memo               *string           `json:"memo"`
+	*core.Revision     `json:",inline"`
+}
+
+// BaseClbTargetGroup define base clb target group.
+type BaseClbTargetGroup struct {
+	ID              string           `json:"id"`
+	CloudID         string           `json:"cloud_id"`
+	Name            string           `json:"name"`
+	Vendor          enumor.Vendor    `json:"vendor"`
+	AccountID       string           `json:"account_id"`
+	BkBizID         int64            `json:"bk_biz_id"`
+	TargetGroupType string           `json:"target_group_type"`
+	VpcID           string           `json:"vpc_id"`
+	CloudVpcID      string           `json:"cloud_vpc_id"`
+	Protocol        string           `json:"protocol"`
+	Region          string           `json:"region"`
+	Port            int64            `json:"port"`
+	Weight          int64            `json:"weight"`
+	HealthCheck     *HealthCheckInfo `json:"health_check"`
+	Memo            *string          `json:"memo"`
+	*core.Revision  `json:",inline"`
 }

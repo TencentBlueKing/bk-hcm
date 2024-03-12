@@ -85,4 +85,6 @@ const (
 	Cert ResourceType = "cert"
 	// Clb defines clb hcm auth resource type
 	Clb ResourceType = "clb"
+	// Listener defines listener hcm auth resource type
+	Listener ResourceType = "listener"
 )

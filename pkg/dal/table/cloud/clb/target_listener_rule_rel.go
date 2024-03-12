@@ -39,6 +39,7 @@ var TargetListenerRuleRelColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "listener_rule_type", NamedC: "listener_rule_type", Type: enumor.String},
 	{Column: "target_group_id", NamedC: "target_group_id", Type: enumor.String},
 	{Column: "lb_id", NamedC: "lb_id", Type: enumor.String},
+	{Column: "lbl_id", NamedC: "lbl_id", Type: enumor.String},
 	{Column: "binding_status", NamedC: "binding_status", Type: enumor.String},
 	{Column: "detail", NamedC: "detail", Type: enumor.Json},
 
@@ -54,7 +55,8 @@ type TargetListenerRuleRelTable struct {
 	ListenerRuleID   string          `db:"listener_rule_id" validate:"lte=64" json:"listener_rule_id"`
 	ListenerRuleType string          `db:"listener_rule_type" validate:"lte=64" json:"listener_rule_type"`
 	TargetGroupID    string          `db:"target_group_id" validate:"lte=64" json:"target_group_id"`
-	LBID             string          `db:"lb_id" validate:"lte=64" json:"lb_id"`
+	LbID             string          `db:"lb_id" validate:"lte=64" json:"lb_id"`
+	LblID            string          `db:"lbl_id" validate:"lte=64" json:"lbl_id"`
 	BindingStatus    string          `db:"binding_status" validate:"lte=64" json:"binding_status"`
 	Detail           types.JsonField `db:"detail" json:"detail"`
 

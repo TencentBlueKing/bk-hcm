@@ -186,3 +186,45 @@ type ClbBatchDeleteReq struct {
 func (req *ClbBatchDeleteReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// -------------------------- List Listener --------------------------
+
+// ListListenerReq ...
+type ListListenerReq struct {
+	ClbID        string `json:"clb_id" validate:"omitempty"`
+	core.ListReq `json:",inline"`
+}
+
+// Validate list request.
+func (req *ListListenerReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// ListenerListResult define listener list result.
+type ListenerListResult = core.ListResultT[coreclb.BaseListener]
+
+// -------------------------- List Listener Target --------------------------
+
+// ClbTargetListResult define clb target list result.
+type ClbTargetListResult = core.ListResultT[coreclb.BaseClbTarget]
+
+// -------------------------- List Listener Target Group --------------------------
+
+// ClbTargetGroupListResult define clb target group list result.
+type ClbTargetGroupListResult = core.ListResultT[coreclb.BaseClbTargetGroup]
+
+// -------------------------- List TCloud Url Rule --------------------------
+
+// ListTCloudURLRuleReq ...
+type ListTCloudURLRuleReq struct {
+	TargetGroupID string `json:"target_group_id" validate:"omitempty"`
+	core.ListReq  `json:",inline"`
+}
+
+// Validate list request.
+func (req *ListTCloudURLRuleReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// TCloudURLRuleListResult define tcloud url rule list result.
+type TCloudURLRuleListResult = core.ListResultT[coreclb.BaseTCloudClbURLRule]

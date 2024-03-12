@@ -31,8 +31,11 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	tableclb "hcm/pkg/dal/table/cloud/clb"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/json"
 )
 
 // ListLoadBalancer list clb.
@@ -190,4 +193,337 @@ func convClbListResult[T coreclb.Extension](tables []tableclb.LoadBalancerTable)
 	return &protocloud.ClbExtListResult[T]{
 		Details: details,
 	}, nil
+}
+
+// ListListener list listener.
+func (svc *clbSvc) ListListener(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocloud.ListListenerReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	reqFilter := &filter.Expression{
+		Op: filter.And,
+	}
+	if len(req.ClbID) > 0 {
+		reqFilter.Rules = append(reqFilter.Rules,
+			filter.AtomRule{Field: "lb_id", Op: filter.Equal.Factory(), Value: req.ClbID})
+	}
+	// 加上请求里过滤条件
+	if req.Filter != nil && !req.Filter.IsEmpty() {
+		reqFilter.Rules = append(reqFilter.Rules, req.Filter)
+	}
+
+	opt := &types.ListOption{
+		Fields: req.Fields,
+		Filter: reqFilter,
+		Page:   req.Page,
+	}
+	result, err := svc.dao.LoadBalancerListener().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list listener failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list listener failed, err: %v", err)
+	}
+
+	if req.Page.Count {
+		return &protocloud.ListenerListResult{Count: result.Count}, nil
+	}
+
+	details := make([]coreclb.BaseListener, 0, len(result.Details))
+	for _, one := range result.Details {
+		tmpOne := convTableToBaseListener(&one)
+		details = append(details, *tmpOne)
+	}
+
+	return &protocloud.ListenerListResult{Details: details}, nil
+}
+
+func convTableToBaseListener(one *tableclb.LoadBalancerListenerTable) *coreclb.BaseListener {
+	return &coreclb.BaseListener{
+		ID:            one.ID,
+		CloudID:       one.CloudID,
+		Name:          one.Name,
+		Vendor:        one.Vendor,
+		AccountID:     one.AccountID,
+		BkBizID:       one.BkBizID,
+		LbID:          one.LBID,
+		CloudLbID:     one.CloudLBID,
+		Protocol:      one.Protocol,
+		Port:          one.Port,
+		DefaultDomain: one.DefaultDomain,
+		Zones:         one.Zones,
+		Memo:          one.Memo,
+		Revision: &core.Revision{
+			Creator:   one.Creator,
+			Reviser:   one.Reviser,
+			CreatedAt: one.CreatedAt.String(),
+			UpdatedAt: one.UpdatedAt.String(),
+		},
+	}
+}
+
+// ListUrlRule list url rule.
+func (svc *clbSvc) ListUrlRule(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocloud.ListTCloudURLRuleReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	reqFilter := &filter.Expression{
+		Op: filter.And,
+	}
+	if len(req.TargetGroupID) > 0 {
+		reqFilter.Rules = append(reqFilter.Rules,
+			filter.AtomRule{Field: "target_group_id", Op: filter.Equal.Factory(), Value: req.TargetGroupID})
+	}
+	// 加上请求里过滤条件
+	if req.Filter != nil && !req.Filter.IsEmpty() {
+		reqFilter.Rules = append(reqFilter.Rules, req.Filter)
+	}
+
+	opt := &types.ListOption{
+		Fields: req.Fields,
+		Filter: reqFilter,
+		Page:   req.Page,
+	}
+	result, err := svc.dao.LoadBalancerTCloudUrlRule().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list tcloud clb url rule failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list tcloud clb url rule failed, err: %v", err)
+	}
+
+	if req.Page.Count {
+		return &protocloud.TCloudURLRuleListResult{Count: result.Count}, nil
+	}
+
+	details := make([]coreclb.BaseTCloudClbURLRule, 0, len(result.Details))
+	for _, one := range result.Details {
+		tmpOne, err := convTableToBaseTCloudClbURLRule(cts.Kit, &one)
+		if err != nil {
+			continue
+		}
+		details = append(details, *tmpOne)
+	}
+
+	return &protocloud.TCloudURLRuleListResult{Details: details}, nil
+}
+
+func convTableToBaseTCloudClbURLRule(kt *kit.Kit, one *tableclb.TCloudClbUrlRuleTable) (
+	*coreclb.BaseTCloudClbURLRule, error) {
+
+	var healthCheck *coreclb.HealthCheckInfo
+	err := json.UnmarshalFromString(string(one.HealthCheck), &healthCheck)
+	if err != nil {
+		logs.Errorf("unmarshal healthCheck failed, one: %+v, err: %v, rid: %s", one, err, kt.Rid)
+		return nil, err
+	}
+
+	var certInfo *coreclb.CertificateInfo
+	err = json.UnmarshalFromString(string(one.Certificate), &certInfo)
+	if err != nil {
+		logs.Errorf("unmarshal certificate failed, one: %+v, err: %v, rid: %s", one, err, kt.Rid)
+		return nil, err
+	}
+
+	return &coreclb.BaseTCloudClbURLRule{
+		ID:                 one.ID,
+		CloudID:            one.CloudID,
+		Name:               one.Name,
+		RuleType:           one.RuleType,
+		LbID:               one.LbID,
+		CloudLbID:          one.CloudLbID,
+		LblID:              one.LblID,
+		CloudLBLID:         one.CloudLBLID,
+		TargetGroupID:      one.TargetGroupID,
+		CloudTargetGroupID: one.CloudTargetGroupID,
+		Domain:             one.Domain,
+		URL:                one.URL,
+		Scheduler:          one.Scheduler,
+		SniSwitch:          one.SniSwitch,
+		SessionType:        one.SessionType,
+		SessionExpire:      one.SessionExpire,
+		HealthCheck:        healthCheck,
+		Certificate:        certInfo,
+		Memo:               one.Memo,
+		Revision: &core.Revision{
+			Creator:   one.Creator,
+			Reviser:   one.Reviser,
+			CreatedAt: one.CreatedAt.String(),
+			UpdatedAt: one.UpdatedAt.String(),
+		},
+	}, nil
+}
+
+// ListTarget list target.
+func (svc *clbSvc) ListTarget(cts *rest.Contexts) (interface{}, error) {
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Fields: req.Fields,
+		Filter: req.Filter,
+		Page:   req.Page,
+	}
+	result, err := svc.dao.LoadBalancerTarget().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list clb target failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list clb target failed, err: %v", err)
+	}
+
+	if req.Page.Count {
+		return &protocloud.ClbTargetListResult{Count: result.Count}, nil
+	}
+
+	details := make([]coreclb.BaseClbTarget, 0, len(result.Details))
+	for _, one := range result.Details {
+		tmpOne := convTableToBaseClbTarget(&one)
+		details = append(details, *tmpOne)
+	}
+
+	return &protocloud.ClbTargetListResult{Details: details}, nil
+}
+
+func convTableToBaseClbTarget(one *tableclb.LoadBalancerTargetTable) *coreclb.BaseClbTarget {
+	return &coreclb.BaseClbTarget{
+		ID:                 one.ID,
+		AccountID:          one.AccountID,
+		InstType:           one.InstType,
+		CloudInstID:        one.CloudInstID,
+		InstName:           one.InstName,
+		TargetGroupID:      one.TargetGroupID,
+		CloudTargetGroupID: one.CloudTargetGroupID,
+		Port:               one.Port,
+		Weight:             one.Weight,
+		PrivateIPAddress:   one.PrivateIPAddress,
+		PublicIPAddress:    one.PublicIPAddress,
+		Zone:               one.Zone,
+		Memo:               one.Memo,
+		Revision: &core.Revision{
+			Creator:   one.Creator,
+			Reviser:   one.Reviser,
+			CreatedAt: one.CreatedAt.String(),
+			UpdatedAt: one.UpdatedAt.String(),
+		},
+	}
+}
+
+// ListTargetGroup list target group.
+func (svc *clbSvc) ListTargetGroup(cts *rest.Contexts) (interface{}, error) {
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Fields: req.Fields,
+		Filter: req.Filter,
+		Page:   req.Page,
+	}
+	result, err := svc.dao.LoadBalancerTargetGroup().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list clb target group failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list clb target group failed, err: %v", err)
+	}
+
+	if req.Page.Count {
+		return &protocloud.ClbTargetGroupListResult{Count: result.Count}, nil
+	}
+
+	details := make([]coreclb.BaseClbTargetGroup, 0, len(result.Details))
+	for _, one := range result.Details {
+		tmpOne, err := convTableToBaseClbTargetGroup(cts.Kit, &one)
+		if err != nil {
+			continue
+		}
+		details = append(details, *tmpOne)
+	}
+
+	return &protocloud.ClbTargetGroupListResult{Details: details}, nil
+}
+
+func convTableToBaseClbTargetGroup(kt *kit.Kit, one *tableclb.LoadBalancerTargetGroupTable) (
+	*coreclb.BaseClbTargetGroup, error) {
+
+	var healthCheck *coreclb.HealthCheckInfo
+	err := json.UnmarshalFromString(string(one.HealthCheck), &healthCheck)
+	if err != nil {
+		logs.Errorf("unmarshal healthCheck failed, one: %+v, err: %v, rid: %s", one, err, kt.Rid)
+		return nil, err
+	}
+
+	return &coreclb.BaseClbTargetGroup{
+		ID:              one.ID,
+		CloudID:         one.CloudID,
+		Name:            one.Name,
+		Vendor:          one.Vendor,
+		AccountID:       one.AccountID,
+		BkBizID:         one.BkBizID,
+		TargetGroupType: one.TargetGroupType,
+		VpcID:           one.VpcID,
+		CloudVpcID:      one.CloudVpcID,
+		Protocol:        one.Protocol,
+		Region:          one.Region,
+		Port:            one.Port,
+		Weight:          one.Weight,
+		HealthCheck:     healthCheck,
+		Memo:            one.Memo,
+		Revision: &core.Revision{
+			Creator:   one.Creator,
+			Reviser:   one.Reviser,
+			CreatedAt: one.CreatedAt.String(),
+			UpdatedAt: one.UpdatedAt.String(),
+		},
+	}, nil
+}
+
+func (svc *clbSvc) GetListener(cts *rest.Contexts) (any, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	id := cts.PathParameter("id").String()
+	if len(id) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "listener id is required")
+	}
+
+	opt := &types.ListOption{
+		Filter: tools.EqualExpression("id", id),
+		Page:   core.NewDefaultBasePage(),
+	}
+	result, err := svc.dao.LoadBalancerListener().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list listener failed, lblID: %s, err: %v, rid: %s", id, err, cts.Kit.Rid)
+		return nil, fmt.Errorf("get listener failed, err: %v", err)
+	}
+
+	if len(result.Details) != 1 {
+		return nil, errf.New(errf.RecordNotFound, "listener is not found")
+	}
+
+	lblInfo := result.Details[0]
+	switch lblInfo.Vendor {
+	case enumor.TCloud:
+		return convTableToBaseListener(&lblInfo), nil
+	default:
+		return nil, fmt.Errorf("unsupport vendor: %s", vendor)
+	}
 }

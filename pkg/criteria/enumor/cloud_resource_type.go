@@ -68,6 +68,8 @@ func (rt CloudResourceType) ConvTableName() (table.Name, error) {
 		return table.SslCertTable, nil
 	case ClbCloudResType:
 		return table.LoadBalancerTable, nil
+	case ListenerCloudResType:
+		return table.LoadBalancerListenerTable, nil
 	default:
 		return "", fmt.Errorf("%s does not have a corresponding table name", rt)
 	}
@@ -94,4 +96,5 @@ const (
 	ArgumentTemplateResType      CloudResourceType = "argument_template"
 	CertCloudResType             CloudResourceType = "cert"
 	ClbCloudResType              CloudResourceType = "clb"
+	ListenerCloudResType         CloudResourceType = "listener"
 )

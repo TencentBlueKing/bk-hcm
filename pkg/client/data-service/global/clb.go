@@ -50,3 +50,31 @@ func (cli *ClbClient) BatchUpdateClbBizInfo(kt *kit.Kit, req *dataproto.ClbBizBa
 		kt, req, "/clbs/biz/batch/update")
 
 }
+
+// ListListener list listener.
+func (cli *ClbClient) ListListener(kt *kit.Kit, req *dataproto.ListListenerReq) (
+	*dataproto.ListenerListResult, error) {
+
+	return common.Request[dataproto.ListListenerReq, dataproto.ListenerListResult](
+		cli.client, rest.POST, kt, req, "/clbs/listeners/list")
+}
+
+// ListUrlRule list url rule.
+func (cli *ClbClient) ListUrlRule(kt *kit.Kit, req *dataproto.ListTCloudURLRuleReq) (
+	*dataproto.TCloudURLRuleListResult, error) {
+
+	return common.Request[dataproto.ListTCloudURLRuleReq, dataproto.TCloudURLRuleListResult](
+		cli.client, rest.POST, kt, req, "/clbs/url_rules/list")
+}
+
+// ListTarget list target.
+func (cli *ClbClient) ListTarget(kt *kit.Kit, req *core.ListReq) (*dataproto.ClbTargetListResult, error) {
+	return common.Request[core.ListReq, dataproto.ClbTargetListResult](
+		cli.client, rest.POST, kt, req, "/clbs/targets/list")
+}
+
+// ListTargetGroup list target group.
+func (cli *ClbClient) ListTargetGroup(kt *kit.Kit, req *core.ListReq) (*dataproto.ClbTargetGroupListResult, error) {
+	return common.Request[core.ListReq, dataproto.ClbTargetGroupListResult](
+		cli.client, rest.POST, kt, req, "/clbs/target_groups/list")
+}

@@ -57,3 +57,8 @@ func (cli *LoadBalancerClient) BatchUpdate(kt *kit.Kit, req *dataproto.TCloudClb
 	return common.RequestNoResp[dataproto.TCloudClbBatchUpdateReq](cli.client,
 		rest.PATCH, kt, req, "clbs/batch/update")
 }
+
+// GetListener 获取监听器详情
+func (cli *LoadBalancerClient) GetListener(kt *kit.Kit, id string) (*clb.BaseListener, error) {
+	return common.Request[common.Empty, clb.BaseListener](cli.client, rest.GET, kt, nil, "/listeners/%s", id)
+}

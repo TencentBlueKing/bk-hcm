@@ -586,3 +586,8 @@ func genClbResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resour
 		return genIaaSResourceResource(a)
 	}
 }
+
+// genListenerResource generate clb listener related iam resource.
+func genListenerResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	return genIaaSResourceResource(a)
+}

@@ -209,6 +209,7 @@ create table `load_balancer_target_group`
     `cloud_vpc_id`      varchar(255) not null,
 
     `region`            varchar(20)  not null,
+    `protocol`          varchar(64)  not null,
     `port`              bigint       not null,
     `weight`            bigint       not null default -1,
     `health_check`      json                  default null,
@@ -233,6 +234,7 @@ create table `target_listener_rule_rel`
     `listener_rule_type` varchar(64) not null,
     `target_group_id`    varchar(64) not null,
     `lb_id`              varchar(64) not null,
+    `lbl_id`             varchar(64) not null,
     `binding_status`     varchar(64) not null,
     `detail`             json                 default null,
 
