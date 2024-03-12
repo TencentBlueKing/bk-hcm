@@ -55,3 +55,8 @@ func (c *ClbClient) BatchCreate(kt *kit.Kit, req *protoclb.TCloudBatchCreateReq)
 	return common.Request[protoclb.TCloudBatchCreateReq, protoclb.BatchCreateResult](
 		c.client, http.MethodPost, kt, req, "clbs/batch/create")
 }
+
+// Update ...
+func (c *ClbClient) Update(kt *kit.Kit, id string, req *protoclb.TCloudUpdateReq) error {
+	return common.RequestNoResp[protoclb.TCloudUpdateReq](c.client, http.MethodPatch, kt, req, "clbs/%s", id)
+}

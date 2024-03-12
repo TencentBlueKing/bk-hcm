@@ -23,7 +23,6 @@ package clb
 import (
 	"hcm/cmd/hc-service/logics/cloud-adaptor"
 	"hcm/cmd/hc-service/service/capability"
-	"hcm/pkg/client"
 	dataservice "hcm/pkg/client/data-service"
 )
 
@@ -40,5 +39,4 @@ func InitClbService(cap *capability.Capability) {
 type clbSvc struct {
 	ad      *cloudadaptor.CloudAdaptorClient
 	dataCli *dataservice.Client
-	client  *client.ClientSet
 }

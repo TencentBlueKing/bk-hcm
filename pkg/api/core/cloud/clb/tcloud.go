@@ -88,4 +88,28 @@ type TCloudClbExtension struct {
 		示例值：bwp-pnbe****
 	*/
 	BandwidthPackageId string `json:"bandwidth_package_id,omitempty"`
+
+	// IP地址版本为ipv6时此字段有意义， IPv6Nat64 | IPv6FullChain
+	IPv6Mode string `json:"ipv6_mode,omitempty"`
+
+	// 在 2016 年 12 月份之前的传统型内网负载均衡都是开启了 snat 的。
+	Snat bool `json:"snat,omitempty" `
+
+	// 是否开启SnatPro。
+	SnatPro bool `json:"snat_pro,omitempty"`
+
+	// 开启SnatPro负载均衡后，SnatIp列表。
+	SnatIps []SnatIp `json:"snat_ips,omitempty"`
+
+	// 删除保护
+	DeleteProtect bool `json:"delete_protect,omitnil" `
+}
+
+// SnatIp ...
+type SnatIp struct {
+	// 私有网络子网的唯一性id，如subnet-12345678
+	SubnetId *string `json:"subnet_id" `
+
+	// IP地址，如192.168.0.1
+	Ip *string `json:"ip"`
 }

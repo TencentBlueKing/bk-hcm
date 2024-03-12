@@ -44,6 +44,13 @@ func (cli *ClbClient) ListClb(kt *kit.Kit, req *core.ListReq) (*dataproto.ClbLis
 	return common.Request[core.ListReq, dataproto.ClbListResult](cli.client, rest.POST, kt, req, "/clbs/list")
 }
 
+// BatchUpdateClbBizInfo update biz
+func (cli *ClbClient) BatchUpdateClbBizInfo(kt *kit.Kit, req *dataproto.ClbBizBatchUpdateReq) error {
+	return common.RequestNoResp[dataproto.ClbBizBatchUpdateReq](cli.client, rest.PATCH,
+		kt, req, "/clbs/biz/batch/update")
+
+}
+
 // ListListener list listener.
 func (cli *ClbClient) ListListener(kt *kit.Kit, req *dataproto.ListListenerReq) (
 	*dataproto.ListenerListResult, error) {
