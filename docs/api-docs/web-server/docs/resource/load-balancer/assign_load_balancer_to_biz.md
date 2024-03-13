@@ -12,14 +12,14 @@ POST /api/v1/cloud/load_balancers/assign/bizs
 
 | 参数名称      | 参数类型         | 必选 | 描述        |
 |-----------|--------------|----|-----------|
-| clb_ids   | string array | 是  | 负载均衡的ID列表 |
+| lb_ids    | string array | 是  | 负载均衡的ID列表 |
 | bk_biz_id | int64        | 是  | 业务的ID     |
 
 ### 调用示例
 
 ```json
 {
-  "clb_ids": [
+  "lb_ids": [
     "00000001",
     "00000002"
   ],
