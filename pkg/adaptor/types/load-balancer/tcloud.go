@@ -20,6 +20,7 @@
 package loadbalancer
 
 import (
+	"errors"
 	"fmt"
 
 	"hcm/pkg/adaptor/types/core"
@@ -281,5 +282,21 @@ type TCloudUpdateOption struct {
 
 // Validate ...
 func (opt TCloudUpdateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// TCloudDescribeTaskStatusOption 查询异步任务状态
+type TCloudDescribeTaskStatusOption struct {
+	Region string `json:"region" validate:"required"`
+	// TaskId 请求ID，即接口返回的 RequestId 参数。
+	TaskId   string `json:"task_id"`
+	DealName string `json:"deal_name"`
+}
+
+// Validate ...
+func (opt TCloudDescribeTaskStatusOption) Validate() error {
+	if len(opt.TaskId)+len(opt.DealName) == 0 {
+		return errors.New("both task_id and deal_name is empty")
+	}
 	return validator.Validate.Struct(opt)
 }

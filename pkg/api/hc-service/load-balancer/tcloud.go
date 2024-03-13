@@ -64,9 +64,6 @@ func (req *TCloudBatchCreateReq) Validate() error {
 			return errors.New("subnet id  is required for load balancer type 'INTERNAL'")
 		}
 	case typelb.OpenLoadBalancerType:
-		if len(req.Zones) == 0 {
-			return errors.New("zones is required for load balancer type 'OPEN'")
-		}
 	default:
 		return fmt.Errorf("unknown load balancer type: '%s'", req.LoadBalancerType)
 	}
