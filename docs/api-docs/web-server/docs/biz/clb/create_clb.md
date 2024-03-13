@@ -99,9 +99,9 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/create
 
 #### data
 
-| 参数名称              | 参数类型   | 描述            |
-|-------------------|--------|---------------|
-| unknown_cloud_ids | string | 未知创建状态的clb id |
-| success_cloud_ids | string | 成功创建的clb id   |
-| failed_cloud_ids  | string | 创建失败的clb id   |
-| failed_message    | string | 失败原因          |
+| 参数名称              | 参数类型   | 描述           |
+|-------------------|--------|--------------|
+| unknown_cloud_ids | string | 未知创建状态的lb id |
+| success_cloud_ids | string | 成功创建的lb id   |
+| failed_cloud_ids  | string | 创建失败的lb id   |
+| failed_message    | string | 失败原因         |

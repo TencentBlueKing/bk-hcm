@@ -98,9 +98,9 @@ POST /api/v1/cloud/vendors/tcloud/load_balancers/create
 
 #### data
 
-| 参数名称              | 参数类型   | 描述            |
-|-------------------|--------|---------------|
-| unknown_cloud_ids | string | 未知创建状态的clb id |
-| success_cloud_ids | string | 成功创建的clb id   |
-| failed_cloud_ids  | string | 创建失败的clb id   |
-| failed_message    | string | 失败原因          |
+| 参数名称              | 参数类型   | 描述             |
+|-------------------|--------|----------------|
+| unknown_cloud_ids | string | 未知创建状态的负载均衡 id |
+| success_cloud_ids | string | 成功创建的负载均衡 id   |
+| failed_cloud_ids  | string | 创建失败的负载均衡 id   |
+| failed_message    | string | 失败原因           |

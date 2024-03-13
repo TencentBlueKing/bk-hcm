@@ -2,7 +2,7 @@
 
 - 该接口提供版本：v9.9.9+。
 - 该接口所需权限：业务访问。
-- 该接口功能描述：批量查询clb下监听器数量。
+- 该接口功能描述：批量查询负载均衡下监听器数量。
 
 ### URL
 
@@ -111,9 +111,9 @@ POST /api/v1/cloud/load_balancers/listeners/count/batch
 | memo               | string | 备注                                   |
 | status             | string | 状态                                   |
 | domain             | string | 域名                                   |
-| cloud_created_time | string | clb在云上创建时间，标准格式：2006-01-02T15:04:05Z |
-| cloud_status_time  | string | clb状态变更时间，标准格式：2006-01-02T15:04:05Z  |
-| cloud_expired_time | string | clb过期时间，标准格式：2006-01-02T15:04:05Z    |
+| cloud_created_time | string | lb在云上创建时间，标准格式：2006-01-02T15:04:05Z  |
+| cloud_status_time  | string | lb状态变更时间，标准格式：2006-01-02T15:04:05Z   |
+| cloud_expired_time | string | lb过期时间，标准格式：2006-01-02T15:04:05Z     |
 | creator            | string | 创建者                                  |
 | reviser            | string | 修改者                                  |
 | created_at         | string | 创建时间，标准格式：2006-01-02T15:04:05Z       |
@@ -187,8 +187,13 @@ POST /api/v1/cloud/load_balancers/listeners/count/batch
         "bk_biz_id": -1,
         "account_id": "0000001",
         "region": "ap-hk",
-        "main_zones":[ "ap-hk-1"],
-        "backup_zones":[ "ap-hk-2","ap-hk-3"],
+        "main_zones": [
+          "ap-hk-1"
+        ],
+        "backup_zones": [
+          "ap-hk-2",
+          "ap-hk-3"
+        ],
         "cloud_vpc_id": "vpc-123",
         "vpc_id": "00000002",
         "network_type": "ipv4",

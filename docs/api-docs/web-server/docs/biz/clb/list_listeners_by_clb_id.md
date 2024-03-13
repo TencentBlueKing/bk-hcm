@@ -13,7 +13,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/{lb_id}/listeners/list
 | 参数名称      | 参数类型   | 必选 | 描述     |
 |-----------|--------|----|--------|
 | bk_biz_id | int    | 是  | 业务ID   |
-| clb_id    | string | 是  | 负载均衡ID |
+| lb_id     | string | 是  | 负载均衡ID |
 | filter    | object | 否  | 查询过滤条件 |
 | page      | object | 是  | 分页设置   |
 

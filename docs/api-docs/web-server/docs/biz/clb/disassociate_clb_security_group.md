@@ -10,17 +10,17 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/security_groups/disassociate/load_balancers
 
 ### 输入参数
 
-| 参数名称            | 参数类型  | 必选   | 描述      |
-|-------------------|----------|--------|----------|
-| bk_biz_id         | int64    | 是     | 业务ID    |
-| clb_id            | string   | 是     | 负载均衡ID |
-| security_group_id | string   | 是     | 安全组ID   |
+| 参数名称              | 参数类型   | 必选 | 描述     |
+|-------------------|--------|----|--------|
+| bk_biz_id         | int64  | 是  | 业务ID   |
+| lb_id             | string | 是  | 负载均衡ID |
+| security_group_id | string | 是  | 安全组ID  |
 
 ### 调用示例
 
 ```json
 {
-  "clb_id": "00001112",
+  "lb_id": "00001112",
   "security_group_id": "00001111"
 }
 ```
@@ -36,7 +36,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/security_groups/disassociate/load_balancers
 
 ### 响应参数说明
 
-| 参数名称 | 参数类型 | 描述    |
-|---------|--------|---------|
-| code    | int    | 状态码   |
+| 参数名称    | 参数类型   | 描述   |
+|---------|--------|------|
+| code    | int    | 状态码  |
 | message | string | 请求信息 |
