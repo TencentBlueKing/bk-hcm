@@ -61,9 +61,12 @@ func (req *TCloudBatchCreateReq) Validate() error {
 	case typelb.InternalLoadBalancerType:
 		// 内网校验
 		if converter.PtrToVal(req.CloudSubnetID) == "" {
-			return errors.New("subnet id  is required for load balancer type 'INTERNAL'")
+			return errors.New("subnet id is required for load balancer type 'INTERNAL'")
 		}
 	case typelb.OpenLoadBalancerType:
+		if converter.PtrToVal(req.CloudEipID) != "" {
+			return errors.New("eip id only support load balancer type 'INTERNAL'")
+		}
 	default:
 		return fmt.Errorf("unknown load balancer type: '%s'", req.LoadBalancerType)
 	}
