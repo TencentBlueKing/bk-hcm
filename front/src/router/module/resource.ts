@@ -114,6 +114,17 @@ const resourceMenus: RouteRecordRaw[] = [
         },
       },
       {
+        path: '/resource/service-apply/clb',
+        name: 'resourceApplyClb',
+        component: () => import('@/views/service/service-apply/clb'),
+        meta: {
+          backRouter: -1,
+          activeKey: 'resourceResource',
+          breadcrumb: [t('云管'), t('资源'), '新建负载均衡'],
+          notMenu: true,
+        },
+      },
+      {
         path: '/resource/recyclebin',
         name: t('回收站'),
         component: () => import('@/views/resource/recyclebin-manager/recyclebin-manager.vue'),

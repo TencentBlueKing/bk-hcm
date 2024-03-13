@@ -328,7 +328,7 @@ const businesseMenus: RouteRecordRaw[] = [
           },
         ],
         meta: {
-          activeKey: 'businessLoadBalancer',
+          activeKey: 'businessClb',
           icon: 'hcm-icon bkhcm-icon-loadbalancer',
         },
       },
@@ -421,11 +421,11 @@ const businesseMenus: RouteRecordRaw[] = [
       },
       {
         path: '/business/service/service-apply/clb',
-        name: 'applyLoadBalancer',
+        name: 'applyClb',
         component: () => import('@/views/service/service-apply/clb'),
         meta: {
           backRouter: -1,
-          activeKey: 'businessLoadBalancer',
+          activeKey: 'businessClb',
           breadcrumb: ['资源管理', '负载均衡'],
           notMenu: true,
         },
