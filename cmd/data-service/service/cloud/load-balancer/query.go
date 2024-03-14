@@ -171,10 +171,23 @@ func (svc *lbSvc) GetLoadBalancer(cts *rest.Contexts) (any, error) {
 	clbTable := result.Details[0]
 	switch clbTable.Vendor {
 	case enumor.TCloud:
-		return convTableToBaseLB(&clbTable), nil
+		return convLoadBalancerWithExt(&clbTable)
 	default:
 		return nil, fmt.Errorf("unsupport vendor: %s", vendor)
 	}
+}
+func convLoadBalancerWithExt[T corelb.Extension](tableLB *tablelb.LoadBalancerTable) (*corelb.LoadBalancer[T], error) {
+	base := convTableToBaseLB(tableLB)
+	extension := new(T)
+	if tableLB.Extension != "" {
+		if err := json.UnmarshalFromString(string(tableLB.Extension), extension); err != nil {
+			return nil, fmt.Errorf("fail unmarshal load balancer extension, err: %v", err)
+		}
+	}
+	return &corelb.LoadBalancer[T]{
+		BaseLoadBalancer: *base,
+		Extension:        extension,
+	}, nil
 }
 
 func convClbListResult[T corelb.Extension](tables []tablelb.LoadBalancerTable) (
@@ -182,7 +195,7 @@ func convClbListResult[T corelb.Extension](tables []tablelb.LoadBalancerTable) (
 
 	details := make([]corelb.LoadBalancer[T], 0, len(tables))
 	for _, tableLB := range tables {
-		tmpClb := convTableToBaseLB(&tableLB)
+		base := convTableToBaseLB(&tableLB)
 		extension := new(T)
 		if tableLB.Extension != "" {
 			if err := json.UnmarshalFromString(string(tableLB.Extension), extension); err != nil {
@@ -190,7 +203,7 @@ func convClbListResult[T corelb.Extension](tables []tablelb.LoadBalancerTable) (
 			}
 		}
 		details = append(details, corelb.LoadBalancer[T]{
-			BaseLoadBalancer: *tmpClb,
+			BaseLoadBalancer: *base,
 			Extension:        extension,
 		})
 	}
