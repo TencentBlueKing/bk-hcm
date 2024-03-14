@@ -65,6 +65,9 @@
         width: 50vw;
         .bk-slider-runway {
           left: 4px;
+          .bk-slider-button {
+            z-index: 1;
+          }
         }
 
         .bk-slider-input {
@@ -122,6 +125,7 @@
     justify-content: flex-end;
     border-top: 1px solid #dcdee5;
     background-color: #fafbfd;
+    z-index: 9;
 
     .info-wrap {
       position: relative;

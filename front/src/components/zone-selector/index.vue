@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, watchEffect, defineExpose, watch } from 'vue';
+import { ref, watchEffect, defineExpose, watch, computed } from 'vue';
 import { QueryFilterType, QueryRuleOPEnum } from '@/typings';
 import { VendorEnum } from '@/common/constant';
 import { useBusinessStore } from '@/store';
@@ -27,7 +27,14 @@ const businessStore = useBusinessStore();
 const zonesList = ref([]);
 const loading = ref(null);
 const zonePage = ref(0);
-const selectedValue = ref(props.modelValue);
+const selectedValue = computed({
+  get() {
+    return props.modelValue;
+  },
+  set(val) {
+    emit('update:modelValue', val);
+  },
+});
 const hasMoreData = ref(true);
 
 const filter = ref<QueryFilterType>({
@@ -118,13 +125,6 @@ watch(
   () => {
     resetData();
     getZonesData();
-  },
-);
-
-watch(
-  () => selectedValue.value,
-  (val) => {
-    emit('update:modelValue', val);
   },
 );
 
