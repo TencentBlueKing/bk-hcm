@@ -13,7 +13,7 @@ import { getDifferenceSet } from '@/common/util';
 export interface IProp {
   // search-select 相关字段
   searchOptions: {
-    searchData: Array<ISearchItem>; // search-select 可选项
+    searchData?: Array<ISearchItem>; // search-select 可选项
     disabled?: boolean; // 是否禁用 search-select
     extra?: Object; // 其他 search-select 属性/自定义事件, 比如 placeholder, onSearch...
   };

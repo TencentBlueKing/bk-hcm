@@ -265,6 +265,10 @@
     width: 85%;
     margin-left: 15%;
     overflow-y: auto;
+
+    .apply-clb-form-container {
+      padding: 0 !important;
+    }
   }
   .fixed-account-list-container {
     flex-shrink: 0;
