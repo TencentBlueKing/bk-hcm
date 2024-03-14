@@ -20,6 +20,7 @@
 package loadbalancer
 
 import (
+	"errors"
 	"fmt"
 
 	"hcm/pkg/adaptor/types/core"
@@ -179,6 +180,9 @@ const (
 	DefaultLoadBalancerInstType TCloudLoadBalancerInstType = 1
 )
 
+// TCloudDefaultISP 默认ISP
+const TCloudDefaultISP = "BGP"
+
 // TCloudAddressIPVersion 仅适用于公网负载均衡。IP版本，可取值：IPV4、IPV6、IPv6FullChain，不区分大小写，默认值 IPV4。
 // 说明：取值为IPV6表示为IPV6 NAT64版本；取值为IPv6FullChain，表示为IPv6版本。
 type TCloudAddressIPVersion string
@@ -278,5 +282,21 @@ type TCloudUpdateOption struct {
 
 // Validate ...
 func (opt TCloudUpdateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// TCloudDescribeTaskStatusOption 查询异步任务状态
+type TCloudDescribeTaskStatusOption struct {
+	Region string `json:"region" validate:"required"`
+	// TaskId 请求ID，即接口返回的 RequestId 参数。
+	TaskId   string `json:"task_id"`
+	DealName string `json:"deal_name"`
+}
+
+// Validate ...
+func (opt TCloudDescribeTaskStatusOption) Validate() error {
+	if len(opt.TaskId)+len(opt.DealName) == 0 {
+		return errors.New("both task_id and deal_name is empty")
+	}
 	return validator.Validate.Struct(opt)
 }

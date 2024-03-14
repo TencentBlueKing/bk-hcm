@@ -83,6 +83,9 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		Number:             req.RequireCount,
 		ClientToken:        converter.StrNilPtr(cts.Kit.Rid),
 	}
+	if converter.PtrToVal(req.CloudEipID) != "" {
+		createOpt.EipAddressID = req.CloudEipID
+	}
 	// 负载均衡实例的网络类型-公网属性
 	if req.LoadBalancerType == typelb.OpenLoadBalancerType {
 		// IP版本-仅适用于公网负载均衡
@@ -91,11 +94,11 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		createOpt.VipIsp = req.VipIsp
 
 		// 设置跨可用区容灾时的可用区ID-仅适用于公网负载均衡
-		if len(req.BackupZones) > 0 {
+		if len(req.BackupZones) > 0 && len(req.Zones) > 0 {
 			// 主备可用区，传递zones（单元素数组），以及backup_zones
 			createOpt.MasterZoneID = converter.ValToPtr(req.Zones[0])
 			createOpt.SlaveZoneID = converter.ValToPtr(req.BackupZones[0])
-		} else {
+		} else if len(req.Zones) > 0 {
 			// 单可用区
 			createOpt.ZoneID = converter.ValToPtr(req.Zones[0])
 		}

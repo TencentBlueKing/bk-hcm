@@ -44,7 +44,7 @@ type TCloudBatchCreateReq struct {
 	CloudVpcID              *string                        `json:"cloud_vpc_id" validate:"required"`
 	CloudSubnetID           *string                        `json:"cloud_subnet_id" validate:"omitempty"`
 	Vip                     *string                        `json:"vip" validate:"omitempty"`
-	VipID                   *string                        `json:"vip_id" validate:"omitempty"`
+	CloudEipID              *string                        `json:"cloud_eip_id" validate:"omitempty"`
 	VipIsp                  *string                        `json:"vip_isp" validate:"omitempty"`
 	InternetChargeType      *string                        `json:"internet_charge_type" validate:"omitempty"`
 	InternetMaxBandwidthOut *int64                         `json:"internet_max_bandwidth_out" validate:"omitempty"`
@@ -61,11 +61,11 @@ func (req *TCloudBatchCreateReq) Validate() error {
 	case typelb.InternalLoadBalancerType:
 		// 内网校验
 		if converter.PtrToVal(req.CloudSubnetID) == "" {
-			return errors.New("subnet id  is required for load balancer type 'INTERNAL'")
+			return errors.New("subnet id is required for load balancer type 'INTERNAL'")
 		}
 	case typelb.OpenLoadBalancerType:
-		if len(req.Zones) == 0 {
-			return errors.New("zones is required for load balancer type 'OPEN'")
+		if converter.PtrToVal(req.CloudEipID) != "" {
+			return errors.New("eip id only support load balancer type 'INTERNAL'")
 		}
 	default:
 		return fmt.Errorf("unknown load balancer type: '%s'", req.LoadBalancerType)

@@ -20,6 +20,7 @@
 package tcloud
 
 import (
+	"errors"
 	"fmt"
 
 	"hcm/pkg/adaptor/poller"
@@ -30,13 +31,12 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
-	"hcm/pkg/tools/slice"
 
 	clb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 )
 
-// ListLoadBalancer list load balancer.
+// ListLoadBalancer 查询clb列表：如果指定的LoadBalancerIds不存在，该接口不会报错
 // reference: https://cloud.tencent.com/document/api/214/30685
 func (t *TCloudImpl) ListLoadBalancer(kt *kit.Kit, opt *typelb.TCloudListOption) ([]typelb.TCloudClb, error) {
 	if opt == nil {
@@ -197,9 +197,9 @@ func (t *TCloudImpl) ListTargets(kt *kit.Kit, opt *typelb.TCloudListTargetsOptio
 }
 
 // CreateLoadBalancer reference: https://cloud.tencent.com/document/api/214/30692
-// NOTE：返回实例`ID`列表并不代表实例创建成功，可根据 [DescribeLoadBalancers](https://cloud.tencent.com/document/api/214/30685)
-// 接口查询返回的LoadBalancerSet中对应实例的`ID`的状态来判断创建是否完成；如果实例状态由“0(创建中)”变为“1(正常运行)”，则为创建成功。
-func (t *TCloudImpl) CreateLoadBalancer(kt *kit.Kit, opt *typelb.TCloudCreateClbOption) (*poller.BaseDoneResult, error) {
+// 如果创建成功返回对应clb id, 需要检查对应的`SuccessCloudIDs`参数。
+func (t *TCloudImpl) CreateLoadBalancer(kt *kit.Kit, opt *typelb.TCloudCreateClbOption) (
+	*poller.BaseDoneResult, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "create option is required")
 	}
@@ -215,21 +215,30 @@ func (t *TCloudImpl) CreateLoadBalancer(kt *kit.Kit, opt *typelb.TCloudCreateClb
 
 	req := t.formatCreateClbRequest(opt)
 
-	resp, err := client.CreateLoadBalancerWithContext(kt.Ctx, req)
+	createResp, err := client.CreateLoadBalancerWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("create tencent cloud clb instance failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
 		return nil, err
 	}
+	/*
+		NOTE：云上接口`CreateLoadBalancer`返回实例`ID`列表并不代表实例创建成功。`CreateLoadBalancer`接口文档声称可根据
+		[DescribeLoadBalancers](https://cloud.tencent.com/document/api/214/30685)接口返回的`LoadBalancerSet`中
+		对应实例的`ID`的状态来判断创建是否完成：如果实例状态由“0(创建中)”变为“1(正常运行)”，则为创建成功。
+		但是实际上对于创建失败的任务使用`DescribeLoadBalancers`接口无法判断，该情况并不会返回错误，只会静默返回空值。
+		因此，用`DescribeLoadBalancers`这个接口难以确定是创建时间过长还是创建失败。
+		这里通过`DescribeTaskStatus`接口查询对应CLB创建任务状态，该接口可以明确创建失败。
+		具体实现参考`createClbPollingHandler`中 `Poll`和`Done`方法的实现。
+	*/
 
-	handler := &createClbPollingHandler{
-		opt.Region,
+	respPoller := poller.Poller[*TCloudImpl, map[string]*clb.DescribeTaskStatusResponseParams, poller.BaseDoneResult]{
+		Handler: &createClbPollingHandler{opt.Region},
 	}
-	respPoller := poller.Poller[*TCloudImpl, []typelb.TCloudClb, poller.BaseDoneResult]{Handler: handler}
-	result, err := respPoller.PollUntilDone(t, kt, resp.Response.LoadBalancerIds, types.NewBatchCreateClbPollerOption())
+
+	reqID := createResp.Response.RequestId
+	result, err := respPoller.PollUntilDone(t, kt, []*string{reqID}, types.NewBatchCreateClbPollerOption())
 	if err != nil {
 		return nil, err
 	}
-
 	return result, nil
 }
 
@@ -313,10 +322,16 @@ func (t *TCloudImpl) formatCreateClbRequest(opt *typelb.TCloudCreateClbOption) *
 	req.Egress = opt.Egress
 	req.ZoneId = opt.ZoneID
 	req.MasterZoneId = opt.MasterZoneID
-	req.VipIsp = opt.VipIsp
+
 	req.BandwidthPackageId = opt.BandwidthPackageID
 	req.Tags = opt.Tags
 	req.SnatIps = opt.SnatIps
+
+	// 使用默认ISP时传递空即可
+	ispVal := converter.PtrToVal(opt.VipIsp)
+	if ispVal != "" && ispVal != typelb.TCloudDefaultISP {
+		req.VipIsp = opt.VipIsp
+	}
 
 	if opt.InternetChargeType != nil || opt.InternetMaxBandwidthOut != nil {
 		req.InternetAccessible = &clb.InternetAccessible{
@@ -337,64 +352,59 @@ func (t *TCloudImpl) formatCreateClbRequest(opt *typelb.TCloudCreateClbOption) *
 	return req
 }
 
-var _ poller.PollingHandler[*TCloudImpl, []typelb.TCloudClb, poller.BaseDoneResult] = new(createClbPollingHandler)
+var _ poller.PollingHandler[*TCloudImpl, map[string]*clb.DescribeTaskStatusResponseParams, poller.BaseDoneResult] = new(createClbPollingHandler)
 
 type createClbPollingHandler struct {
 	region string
 }
 
-// Done ...
-func (h *createClbPollingHandler) Done(clbs []typelb.TCloudClb) (bool, *poller.BaseDoneResult) {
+// Done CLB 创建成功状态判断
+func (h *createClbPollingHandler) Done(clbStatusMap map[string]*clb.DescribeTaskStatusResponseParams) (
+	bool, *poller.BaseDoneResult) {
+
 	result := &poller.BaseDoneResult{
 		SuccessCloudIDs: make([]string, 0),
 		FailedCloudIDs:  make([]string, 0),
 		UnknownCloudIDs: make([]string, 0),
 	}
-	flag := true
-	for _, item := range clbs {
-		// 不是[正常运行]的状态
-		if converter.PtrToVal(item.Status) != uint64(typelb.SuccessStatus) {
-			flag = false
-			result.FailedCloudIDs = append(result.FailedCloudIDs, *item.LoadBalancerId)
-			continue
+
+	for _, status := range clbStatusMap {
+		if status.Status == nil {
+			return false, nil
 		}
-
-		result.SuccessCloudIDs = append(result.SuccessCloudIDs, *item.LoadBalancerId)
+		switch converter.PtrToVal(status.Status) {
+		case CLBTaskStatusRunning:
+			// 还有任务在运行则是没有成功
+			return false, nil
+		case CLBTaskStatusFail:
+			result.FailedCloudIDs = converter.PtrToSlice(status.LoadBalancerIds)
+		case CLBTaskStatusSuccess:
+			result.SuccessCloudIDs = converter.PtrToSlice(status.LoadBalancerIds)
+		}
 	}
-
-	return flag, result
+	return true, result
 }
 
-// Poll ...
-func (h *createClbPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs []*string) (
-	[]typelb.TCloudClb, error) {
+// Poll 返回CLB创建任务结果
+func (h *createClbPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, requestIDs []*string) (
+	map[string]*clb.DescribeTaskStatusResponseParams, error) {
 
-	// 负载均衡实例ID。实例ID数量上限为20个
-	cloudIDSplit := slice.Split(cloudIDs, 20)
-
-	clbs := make([]typelb.TCloudClb, 0, len(cloudIDs))
-	for idx, partIDs := range cloudIDSplit {
-		opt := &typelb.TCloudListOption{
-			Region:   h.region,
-			CloudIDs: converter.PtrToSlice(partIDs),
-			Page: &core.TCloudPage{
-				Offset: uint64(idx),
-				Limit:  uint64(core.TCloudQueryLimit),
-			},
+	taskOpt := &typelb.TCloudDescribeTaskStatusOption{Region: h.region}
+	result := make(map[string]*clb.DescribeTaskStatusResponseParams)
+	// 查询对应异步任务状态
+	for _, reqID := range requestIDs {
+		taskOpt.TaskId = converter.PtrToVal(reqID)
+		if taskOpt.TaskId == "" {
+			return nil, errors.New("empty request ID")
 		}
-		resp, err := client.ListLoadBalancer(kt, opt)
+		status, err := client.CLBDescribeTaskStatus(kt, taskOpt)
 		if err != nil {
 			return nil, err
 		}
 
-		clbs = append(clbs, resp...)
+		result[taskOpt.TaskId] = status
 	}
-
-	if len(clbs) != len(cloudIDs) {
-		return nil, fmt.Errorf("batch query clb count: %d not equal return count: %d", len(cloudIDs), len(clbs))
-	}
-
-	return clbs, nil
+	return result, nil
 }
 
 // SetLoadBalancerSecurityGroups reference: https://cloud.tencent.com/document/api/214/34903
@@ -499,4 +509,45 @@ func (t *TCloudImpl) UpdateLoadBalancer(kt *kit.Kit, opt *typelb.TCloudUpdateOpt
 	}
 
 	return resp.Response.DealName, nil
+}
+
+const (
+	CLBTaskStatusSuccess = 0
+	CLBTaskStatusFail    = 1
+	CLBTaskStatusRunning = 2
+)
+
+// CLBDescribeTaskStatus 查询异步任务状态。
+// 对于非查询类的接口（创建/删除负载均衡实例、监听器、规则以及绑定或解绑后端服务等），
+// 在接口调用成功后，都需要使用本接口查询任务最终是否执行成功。
+// https://cloud.tencent.com/document/api/214/30683
+func (t *TCloudImpl) CLBDescribeTaskStatus(kt *kit.Kit, opt *typelb.TCloudDescribeTaskStatusOption) (
+	*clb.DescribeTaskStatusResponseParams, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "describe task status option can not be nil")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.ClbClient(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("init tencent cloud clb client failed, region: %s, err: %v", opt.Region, err)
+	}
+	req := clb.NewDescribeTaskStatusRequest()
+	if opt.TaskId != "" {
+		req.TaskId = converter.ValToPtr(opt.TaskId)
+	}
+	if opt.DealName != "" {
+		req.DealName = converter.ValToPtr(opt.DealName)
+	}
+
+	resp, err := client.DescribeTaskStatusWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("tencent cloud describe task status failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
+		return nil, err
+	}
+	return resp.Response, nil
 }
