@@ -63,5 +63,31 @@ export const useBusinessStore = defineStore({
       if (isRes) return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/subnets/create`, data);
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${bizs}/subnets/create`, data);
     },
+    /**
+     * 获取当前CLB绑定的安全组列表
+    */
+    async listCLBSecurityGroups(clb_id: string) {
+      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/res/load_balancer/${clb_id}`);
+    },
+    /**
+     * 给当前负载均衡绑定安全组
+     */
+    async bindSecurityToCLB(data: {
+      bk_biz_id: number,
+      lb_id: string,
+      security_group_ids: Array<string>,
+    }) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/associate/load_balancers`,  data)
+    },
+    /**
+     * 给当前负载均衡解绑指定的安全组
+     */
+    async unbindSecurityToCLB(data: {
+      bk_biz_id: number,
+      lb_id: string,
+      security_group_id: string,
+    }) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/disassociate/load_balancers`,  data);
+    }
   },
 });

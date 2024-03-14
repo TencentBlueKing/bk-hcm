@@ -1,10 +1,15 @@
-import { defineComponent, ref } from 'vue';
+import { defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
-import { Button, Table, Tag } from 'bkui-vue';
+import { Button, InfoBox, Message, Tab, Table, Tag } from 'bkui-vue';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 import SearchInput from '@/views/scheme/components/search-input';
 import CommonSideslider from '@/components/common-sideslider';
 import CommonDialog from '@/components/common-dialog';
+import { useAccountStore, useBusinessStore } from '@/store';
+import { Plus } from 'bkui-vue/lib/icon';
+import { useTable } from '@/hooks/useTable/useTable';
+import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
+import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 
 export default defineComponent({
   setup() {
@@ -12,6 +17,104 @@ export default defineComponent({
     const securityRuleType = ref('in');
     const isSideSliderShow = ref(false);
     const hanldeSubmit = () => {};
+    const businessStore = useBusinessStore();
+    const accountStore = useAccountStore();
+    const { selections, handleSelectionChange } = useSelection();
+    const clbId = ref('');
+    const securityGroups = ref([]);
+    const isDialogShow = ref(false);
+    const bindedSet = reactive(new Set());
+
+    const tableColumns = [
+      {
+        type: 'selection',
+        width: 32,
+        minWidth: 32,
+      },
+      {
+        label: '安全组名称',
+        field: 'name',
+      },
+      {
+        label: 'ID',
+        field: 'id',
+      },
+      {
+        label: '备注',
+        field: 'memo',
+      },
+    ];
+    const searchData: ISearchItem[] = [
+      {
+        id: 'name',
+        name: '安全组名称',
+      },
+      {
+        id: 'id',
+        name: 'ID',
+      },
+    ];
+
+    const { CommonTable } = useTable({
+      searchOptions: {
+        searchData,
+      },
+      tableOptions: {
+        columns: tableColumns,
+        extra: {
+          onSelectionChange: (selections: any) => handleSelectionChange(selections, () => true),
+          onSelectAll: (selections: any) => handleSelectionChange(selections, () => true, true),
+        }
+      },
+      requestOption: {
+        type: 'security_groups',
+      },
+    });
+
+    const handleBind = async () => {
+      await businessStore.bindSecurityToCLB({
+        bk_biz_id: accountStore.bizs,
+        lb_id: clbId.value,
+        security_group_ids: selections.value.map(({id}) => id),
+      });
+      getBindedSecurityList();
+      Message({
+        message: '绑定成功',
+        theme: 'success',
+      });
+    };
+
+    const handleUnbind = async (security_group_id: string) => {
+      await businessStore.unbindSecurityToCLB({
+        bk_biz_id: accountStore.bizs,
+        security_group_id: security_group_id,
+        lb_id: clbId.value,
+      });
+      getBindedSecurityList();
+      Message({
+        message: '解绑成功',
+        theme: 'success',
+      });
+    }
+
+    const getBindedSecurityList = async () => {
+      const res = await businessStore.listCLBSecurityGroups(clbId.value);
+      securityGroups.value = res.data;
+      for(let item of res.data) {
+        bindedSet.add(item.id);
+      }
+    };
+
+    watch(
+      () => clbId.value,
+      async () => {
+        getBindedSecurityList();
+      },
+      {
+        immediate: true,
+      },
+    );
+
     return () => (
       <div>
         <div class={'rs-check-selector-container'}>
@@ -65,9 +168,13 @@ export default defineComponent({
             </div>
           </div>
           <div class={'specific-security-rule-tables'}>
-            {[1, 2, 3].map(() => (
+            {securityGroups.value.map(({ name, cloud_id }, idx) => (
               <div class={'security-rule-table-container'}>
-                <div class={'security-rule-table-header'}>title</div>
+                <div class={'security-rule-table-header'}>
+                  <div class={'config-security-item-idx'}>{idx}</div>
+                  <span class={'config-security-item-name'}>{name}</span>
+                  <span class={'config-security-item-id'}>({cloud_id})</span>
+                </div>
                 <div class={'security-rule-table-panel'}>
                   <Table
                     stripe
@@ -122,17 +229,46 @@ export default defineComponent({
           onHandleSubmit={hanldeSubmit}>
           <div class={'config-security-rule-contianer'}>
             <div class={'config-security-rule-operation'}>
-              <Button>新增绑定</Button>
-              <SearchInput />
+              <BkButtonGroup>
+                <Button onClick={() => (isDialogShow.value = true)}>
+                  <Plus class={'f22'}></Plus>新增绑定
+                </Button>
+              </BkButtonGroup>
+              <SearchInput class={'operation-search-input'} />
             </div>
             <div>
-              {[1, 2, 3].map(() => (
-                <div class={'config-security-item'}>testdddd</div>
+              {securityGroups.value.map(({ name, cloud_id, id }, idx) => (
+                <div class={'config-security-item'}>
+                  <i class={'hcm-icon bkhcm-icon-grag-fill mr16 draggable-card-header-draggable-btn'}></i>
+                  <div class={'config-security-item-idx'}>{idx}</div>
+                  <span class={'config-security-item-name'}>{name}</span>
+                  <span class={'config-security-item-id'}>({cloud_id})</span>
+                  <div class={'config-security-item-edit-block'}>
+                    <Button text theme='primary' class={'mr27'}>
+                      去编辑
+                      <span class="icon hcm-icon bkhcm-icon-jump-fill ml5"></span>
+                    </Button>
+                    <Button text theme='danger' onClick={() => {
+                      InfoBox({
+                        infoType: 'warning',
+                        title: '是否确定解绑当前安全组',
+                        onConfirm() {
+                          handleUnbind(id);
+                        },
+                      });
+                      
+                    }}>
+                      解绑
+                    </Button>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
         </CommonSideslider>
-        <CommonDialog />
+        <CommonDialog v-model:isShow={isDialogShow.value} title={'绑定安全组'} width={640} onHandleConfirm={handleBind}>
+          <CommonTable />
+        </CommonDialog>
       </div>
     );
   },
