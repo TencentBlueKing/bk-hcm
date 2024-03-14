@@ -40,7 +40,7 @@ import (
 
 // InitService initialize the clb service.
 func InitService(c *capability.Capability) {
-	svc := &clbSvc{
+	svc := &lbSvc{
 		client:     c.ApiClient,
 		authorizer: c.Authorizer,
 		audit:      c.Audit,
@@ -59,18 +59,18 @@ func InitService(c *capability.Capability) {
 	h.Add("GetLoadBalancer", http.MethodGet, "/load_balancers/{id}", svc.GetLoadBalancer)
 	h.Add("TCloudDescribeResources", http.MethodPost, "/vendors/tcloud/load_balancers/resources/describe",
 		svc.TCloudDescribeResources)
-	h.Add("BatchCreateCLB", http.MethodPost, "/load_balancers/create", svc.BatchCreateCLB)
-	h.Add("AssignClbToBiz", http.MethodPost, "/load_balancers/assign/bizs", svc.AssignClbToBiz)
+	h.Add("BatchCreateLB", http.MethodPost, "/load_balancers/create", svc.BatchCreateLB)
+	h.Add("AssignLbToBiz", http.MethodPost, "/load_balancers/assign/bizs", svc.AssignLbToBiz)
 	h.Add("ListBizListener", http.MethodPost, "/bizs/{bk_biz_id}/load_balancers/{lb_id}/listeners/list",
 		svc.ListBizListener)
-	h.Add("ListBizClbUrlRule", http.MethodPost, "/bizs/{bk_biz_id}/target_groups/{target_group_id}/listeners/list",
-		svc.ListBizClbUrlRule)
+	h.Add("ListBizLbUrlRule", http.MethodPost, "/bizs/{bk_biz_id}/target_groups/{target_group_id}/listeners/list",
+		svc.ListBizLbUrlRule)
 	h.Add("GetBizListener", http.MethodGet, "/bizs/{bk_biz_id}/listeners/{id}", svc.GetBizListener)
 
 	h.Load(c.WebService)
 }
 
-type clbSvc struct {
+type lbSvc struct {
 	client     *client.ClientSet
 	authorizer auth.Authorizer
 	audit      audit.Interface
@@ -79,7 +79,7 @@ type clbSvc struct {
 	eipLgc     eip.Interface
 }
 
-func (svc *clbSvc) listLoadBalancerMap(kt *kit.Kit, clbIDs []string) (map[string]corelb.BaseLoadBalancer, error) {
+func (svc *lbSvc) listLoadBalancerMap(kt *kit.Kit, clbIDs []string) (map[string]corelb.BaseLoadBalancer, error) {
 	if len(clbIDs) == 0 {
 		return nil, nil
 	}

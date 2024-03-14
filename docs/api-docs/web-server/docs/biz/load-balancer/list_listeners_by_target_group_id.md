@@ -193,6 +193,31 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/listeners/li
         "domain": "www.qq.com",
         "url": "/",
         "scheduler": "WRR",
+        "sni_switch": 0,
+        "session_type": "NORMAL",
+        "session_expire": 0,
+        "health_check": {
+          "health_switch": 1,
+          "time_out": 2,
+          "interval_time": 5,
+          "health_num": 3,
+          "un_health_num": 3,
+          "check_port": 80,
+          "check_type": "HTTP",
+          "http_version": "HTTP/1.0",
+          "http_check_path": "/",
+          "http_check_domain": "www.weixin.com",
+          "http_check_method": "GET",
+          "source_ip_type": 1
+        },
+        "certificate": {
+          "ssl_mode": "MUTUAL",
+          "cert_id": "cert-001",
+          "cert_ca_id": "ca-001",
+          "ext_cert_ids": [
+            "ext-001"
+          ]
+        },
         "inst_type": "cvm",
         "vpc_id": "vpc-123",
         "vpc_name": "vpc-name",
@@ -260,6 +285,11 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/listeners/li
 | domain                 | string       | 关联的域名                              |
 | url                    | string       | 关联的URL                              |
 | scheduler              | string       | 均衡方式                               |
+| sni_switch             | int          | 是否开启SNI特性，此参数仅适用于HTTPS监听器  |
+| session_type           | string       | 会话保持类型                            |
+| session_expire         | int          | 会话保持时间，0为关闭                    |
+| health_check           | object       | 健康检查                               |
+| certificate            | object       | 证书信息                               |
 | inst_type              | string       | 资源实例类型                            |
 | vpc_id                 | string       | VPCID                                 |
 | vpc_name               | string       | VPC名称                                |

@@ -31,17 +31,17 @@ import (
 	"hcm/pkg/tools/hooks/handler"
 )
 
-// ListLoadBalancer list clb.
-func (svc *clbSvc) ListLoadBalancer(cts *rest.Contexts) (interface{}, error) {
+// ListLoadBalancer list load balancer.
+func (svc *lbSvc) ListLoadBalancer(cts *rest.Contexts) (interface{}, error) {
 	return svc.listLoadBalancer(cts, handler.ListResourceAuthRes)
 }
 
-// ListBizLoadBalancer list biz clb.
-func (svc *clbSvc) ListBizLoadBalancer(cts *rest.Contexts) (interface{}, error) {
+// ListBizLoadBalancer list biz load balancer.
+func (svc *lbSvc) ListBizLoadBalancer(cts *rest.Contexts) (interface{}, error) {
 	return svc.listLoadBalancer(cts, handler.ListBizAuthRes)
 }
 
-func (svc *clbSvc) listLoadBalancer(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (interface{}, error) {
+func (svc *lbSvc) listLoadBalancer(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (interface{}, error) {
 	req := new(proto.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -74,16 +74,16 @@ func (svc *clbSvc) listLoadBalancer(cts *rest.Contexts, authHandler handler.List
 }
 
 // GetLoadBalancer getLoadBalancer clb.
-func (svc *clbSvc) GetLoadBalancer(cts *rest.Contexts) (interface{}, error) {
+func (svc *lbSvc) GetLoadBalancer(cts *rest.Contexts) (interface{}, error) {
 	return svc.getLoadBalancer(cts, handler.ListResourceAuthRes)
 }
 
 // GetBizLoadBalancer getLoadBalancer biz clb.
-func (svc *clbSvc) GetBizLoadBalancer(cts *rest.Contexts) (interface{}, error) {
+func (svc *lbSvc) GetBizLoadBalancer(cts *rest.Contexts) (interface{}, error) {
 	return svc.getLoadBalancer(cts, handler.ListBizAuthRes)
 }
 
-func (svc *clbSvc) getLoadBalancer(cts *rest.Contexts, validHandler handler.ListAuthResHandler) (any, error) {
+func (svc *lbSvc) getLoadBalancer(cts *rest.Contexts, validHandler handler.ListAuthResHandler) (any, error) {
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")

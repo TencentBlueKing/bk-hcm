@@ -25,7 +25,7 @@ import (
 
 	"hcm/pkg/api/core"
 	proto "hcm/pkg/api/hc-service"
-	hcclb "hcm/pkg/api/hc-service/clb"
+	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -256,9 +256,9 @@ func (cli *SecurityGroupClient) DisassociateCvm(ctx context.Context, h http.Head
 	return nil
 }
 
-// AssociateClb ...
-func (cli *SecurityGroupClient) AssociateClb(ctx context.Context, h http.Header,
-	req *hcclb.TCloudSetClbSecurityGroupReq) error {
+// AssociateLb ...
+func (cli *SecurityGroupClient) AssociateLb(ctx context.Context, h http.Header,
+	req *hclb.TCloudSetClbSecurityGroupReq) error {
 
 	resp := new(rest.BaseResp)
 
@@ -280,9 +280,9 @@ func (cli *SecurityGroupClient) AssociateClb(ctx context.Context, h http.Header,
 	return nil
 }
 
-// DisassociateClb ...
-func (cli *SecurityGroupClient) DisassociateClb(ctx context.Context, h http.Header,
-	req *hcclb.TCloudDisAssociateClbSecurityGroupReq) error {
+// DisassociateLb ...
+func (cli *SecurityGroupClient) DisassociateLb(ctx context.Context, h http.Header,
+	req *hclb.TCloudDisAssociateClbSecurityGroupReq) error {
 
 	resp := new(rest.BaseResp)
 

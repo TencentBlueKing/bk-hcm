@@ -22,7 +22,7 @@ package securitygroup
 import (
 	protoaudit "hcm/pkg/api/data-service/audit"
 	"hcm/pkg/api/data-service/cloud"
-	hcclb "hcm/pkg/api/hc-service/clb"
+	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
@@ -32,20 +32,20 @@ import (
 	"hcm/pkg/tools/hooks/handler"
 )
 
-// AssociateClb associate clb.
-func (svc *securityGroupSvc) AssociateClb(cts *rest.Contexts) (interface{}, error) {
-	return svc.associateClb(cts, handler.ResOperateAuth)
+// AssociateLb associate lb.
+func (svc *securityGroupSvc) AssociateLb(cts *rest.Contexts) (interface{}, error) {
+	return svc.associateLb(cts, handler.ResOperateAuth)
 }
 
-// AssociateBizClb associate biz clb.
-func (svc *securityGroupSvc) AssociateBizClb(cts *rest.Contexts) (interface{}, error) {
-	return svc.associateClb(cts, handler.BizOperateAuth)
+// AssociateBizLb associate biz lb.
+func (svc *securityGroupSvc) AssociateBizLb(cts *rest.Contexts) (interface{}, error) {
+	return svc.associateLb(cts, handler.BizOperateAuth)
 }
 
-func (svc *securityGroupSvc) associateClb(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+func (svc *securityGroupSvc) associateLb(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
 	interface{}, error) {
 
-	req := new(hcclb.TCloudSetClbSecurityGroupReq)
+	req := new(hclb.TCloudSetClbSecurityGroupReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -59,13 +59,13 @@ func (svc *securityGroupSvc) associateClb(cts *rest.Contexts, validHandler handl
 		Items: []cloud.ListResourceBasicInfoReq{
 			{ResourceType: enumor.SecurityGroupCloudResType, IDs: req.SecurityGroupIDs,
 				Fields: types.CommonBasicInfoFields},
-			{ResourceType: enumor.LoadBalancerCloudResType, IDs: []string{req.ClbID}, Fields: types.CommonBasicInfoFields},
+			{ResourceType: enumor.LoadBalancerCloudResType, IDs: []string{req.LbID}, Fields: types.CommonBasicInfoFields},
 		},
 	}
 
 	basicInfos, err := svc.client.DataService().Global.Cloud.BatchListResBasicInfo(cts.Kit, basicReq)
 	if err != nil {
-		logs.Errorf("batch list clb resource basic info failed, err: %v, req: %+v, rid: %s", err, basicReq, cts.Kit.Rid)
+		logs.Errorf("batch list lb resource basic info failed, err: %v, req: %+v, rid: %s", err, basicReq, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -73,7 +73,7 @@ func (svc *securityGroupSvc) associateClb(cts *rest.Contexts, validHandler handl
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
 		Action: meta.Associate, BasicInfos: basicInfos})
 	if err != nil {
-		logs.Errorf("batch list clb resource basic info failed, err: %v, req: %+v, rid: %s", err, basicReq, cts.Kit.Rid)
+		logs.Errorf("batch list lb resource basic info failed, err: %v, req: %+v, rid: %s", err, basicReq, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -90,43 +90,43 @@ func (svc *securityGroupSvc) associateClb(cts *rest.Contexts, validHandler handl
 			ResID:             sgID,
 			Action:            protoaudit.Associate,
 			AssociatedResType: enumor.LoadBalancerAuditResType,
-			AssociatedResID:   req.ClbID,
+			AssociatedResID:   req.LbID,
 		}
 		if err = svc.audit.ResOperationAudit(cts.Kit, audit); err != nil {
-			logs.Errorf("create clb operation audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			logs.Errorf("create lb operation audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
 	}
 
 	switch vendor {
 	case enumor.TCloud:
-		err = svc.client.HCService().TCloud.SecurityGroup.AssociateClb(cts.Kit.Ctx, cts.Kit.Header(), req)
+		err = svc.client.HCService().TCloud.SecurityGroup.AssociateLb(cts.Kit.Ctx, cts.Kit.Header(), req)
 	default:
 		return nil, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
 	}
 
 	if err != nil {
-		logs.Errorf("security group associate clb failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
+		logs.Errorf("security group associate lb failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
 		return nil, err
 	}
 
 	return nil, nil
 }
 
-// DisassociateClb disassociate clb.
-func (svc *securityGroupSvc) DisassociateClb(cts *rest.Contexts) (interface{}, error) {
-	return svc.disassociateClb(cts, handler.ResOperateAuth)
+// DisassociateLb disassociate lb.
+func (svc *securityGroupSvc) DisassociateLb(cts *rest.Contexts) (interface{}, error) {
+	return svc.disassociateLb(cts, handler.ResOperateAuth)
 }
 
-// DisassociateBizClb disassociate biz clb.
-func (svc *securityGroupSvc) DisassociateBizClb(cts *rest.Contexts) (interface{}, error) {
-	return svc.disassociateClb(cts, handler.BizOperateAuth)
+// DisassociateBizLb disassociate biz lb.
+func (svc *securityGroupSvc) DisassociateBizLb(cts *rest.Contexts) (interface{}, error) {
+	return svc.disassociateLb(cts, handler.BizOperateAuth)
 }
 
-func (svc *securityGroupSvc) disassociateClb(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+func (svc *securityGroupSvc) disassociateLb(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
 	interface{}, error) {
 
-	req := new(hcclb.TCloudDisAssociateClbSecurityGroupReq)
+	req := new(hclb.TCloudDisAssociateClbSecurityGroupReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -140,13 +140,14 @@ func (svc *securityGroupSvc) disassociateClb(cts *rest.Contexts, validHandler ha
 		Items: []cloud.ListResourceBasicInfoReq{
 			{ResourceType: enumor.SecurityGroupCloudResType, IDs: []string{req.SecurityGroupID},
 				Fields: types.CommonBasicInfoFields},
-			{ResourceType: enumor.LoadBalancerCloudResType, IDs: []string{req.ClbID}, Fields: types.CommonBasicInfoFields},
+			{ResourceType: enumor.LoadBalancerCloudResType,
+				IDs: []string{req.LbID}, Fields: types.CommonBasicInfoFields},
 		},
 	}
 
 	basicInfos, err := svc.client.DataService().Global.Cloud.BatchListResBasicInfo(cts.Kit, basicReq)
 	if err != nil {
-		logs.Errorf("batch list clb resource basic info failed, err: %v, req: %+v, rid: %s", err, basicReq, cts.Kit.Rid)
+		logs.Errorf("batch list lb resource basic info failed, err: %v, req: %+v, rid: %s", err, basicReq, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -154,7 +155,7 @@ func (svc *securityGroupSvc) disassociateClb(cts *rest.Contexts, validHandler ha
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
 		Action: meta.Disassociate, BasicInfos: basicInfos})
 	if err != nil {
-		logs.Errorf("batch list clb resource basic info failed, err: %v, req: %+v, rid: %s", err, basicReq, cts.Kit.Rid)
+		logs.Errorf("batch list lb resource basic info failed, err: %v, req: %+v, rid: %s", err, basicReq, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -170,7 +171,7 @@ func (svc *securityGroupSvc) disassociateClb(cts *rest.Contexts, validHandler ha
 		ResID:             req.SecurityGroupID,
 		Action:            protoaudit.Disassociate,
 		AssociatedResType: enumor.LoadBalancerAuditResType,
-		AssociatedResID:   req.ClbID,
+		AssociatedResID:   req.LbID,
 	}
 	if err = svc.audit.ResOperationAudit(cts.Kit, audit); err != nil {
 		logs.Errorf("create operation audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -179,13 +180,13 @@ func (svc *securityGroupSvc) disassociateClb(cts *rest.Contexts, validHandler ha
 
 	switch vendor {
 	case enumor.TCloud:
-		err = svc.client.HCService().TCloud.SecurityGroup.DisassociateClb(cts.Kit.Ctx, cts.Kit.Header(), req)
+		err = svc.client.HCService().TCloud.SecurityGroup.DisassociateLb(cts.Kit.Ctx, cts.Kit.Header(), req)
 	default:
 		return nil, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
 	}
 
 	if err != nil {
-		logs.Errorf("security group disassociate clb failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
+		logs.Errorf("security group disassociate lb failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
 		return nil, err
 	}
 

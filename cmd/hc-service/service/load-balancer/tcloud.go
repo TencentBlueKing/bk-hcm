@@ -24,11 +24,11 @@ import (
 	"net/http"
 
 	"hcm/cmd/hc-service/service/capability"
-	typeclb "hcm/pkg/adaptor/types/clb"
 	adcore "hcm/pkg/adaptor/types/core"
+	typelb "hcm/pkg/adaptor/types/load-balancer"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
-	protoclb "hcm/pkg/api/hc-service/clb"
+	protolb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -52,7 +52,7 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 
 // BatchCreateTCloudClb ...
 func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error) {
-	req := new(protoclb.TCloudBatchCreateReq)
+	req := new(protolb.TCloudBatchCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -66,7 +66,7 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		return nil, err
 	}
 
-	createOpt := &typeclb.TCloudCreateClbOption{
+	createOpt := &typelb.TCloudCreateClbOption{
 		Region:           req.Region,
 		LoadBalancerType: req.LoadBalancerType,
 		LoadBalancerName: req.Name,
@@ -84,7 +84,7 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		ClientToken:        converter.StrNilPtr(cts.Kit.Rid),
 	}
 	// 负载均衡实例的网络类型-公网属性
-	if req.LoadBalancerType == typeclb.OpenLoadBalancerType {
+	if req.LoadBalancerType == typelb.OpenLoadBalancerType {
 		// IP版本-仅适用于公网负载均衡
 		createOpt.AddressIPVersion = req.AddressIPVersion
 		// 静态单线IP 线路类型-仅适用于公网负载均衡, 如果不指定本参数，则默认使用BGP
@@ -107,7 +107,7 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		return nil, err
 	}
 
-	respData := &protoclb.BatchCreateResult{
+	respData := &protolb.BatchCreateResult{
 		UnknownCloudIDs: result.UnknownCloudIDs,
 		SuccessCloudIDs: result.SuccessCloudIDs,
 		FailedCloudIDs:  result.FailedCloudIDs,
@@ -150,7 +150,7 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 
 // ListTCloudClb list tcloud clb
 func (svc *clbSvc) ListTCloudClb(cts *rest.Contexts) (interface{}, error) {
-	req := new(protoclb.TCloudListOption)
+	req := new(protolb.TCloudListOption)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -164,7 +164,7 @@ func (svc *clbSvc) ListTCloudClb(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	opt := &typeclb.TCloudListOption{
+	opt := &typelb.TCloudListOption{
 		Region:   req.Region,
 		CloudIDs: req.CloudIDs,
 		Page: &adcore.TCloudPage{
@@ -184,7 +184,7 @@ func (svc *clbSvc) ListTCloudClb(cts *rest.Contexts) (interface{}, error) {
 
 // TCloudDescribeResources 查询clb地域下可用资源
 func (svc *clbSvc) TCloudDescribeResources(cts *rest.Contexts) (any, error) {
-	req := new(protoclb.TCloudDescribeResourcesOption)
+	req := new(protolb.TCloudDescribeResourcesOption)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -208,7 +208,7 @@ func (svc *clbSvc) TCloudUpdateCLB(cts *rest.Contexts) (any, error) {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	req := new(protoclb.TCloudUpdateReq)
+	req := new(protolb.TCloudUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -230,7 +230,7 @@ func (svc *clbSvc) TCloudUpdateCLB(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
-	adtOpt := &typeclb.TCloudUpdateOption{
+	adtOpt := &typelb.TCloudUpdateOption{
 		Region:                   lb.Region,
 		LoadBalancerId:           lb.CloudID,
 		LoadBalancerName:         req.Name,
@@ -255,7 +255,7 @@ func (svc *clbSvc) TCloudUpdateCLB(cts *rest.Contexts) (any, error) {
 }
 
 func (svc *clbSvc) updateDbClb(cts *rest.Contexts,
-	req *protoclb.TCloudUpdateReq, lb *corelb.LoadBalancer[corelb.TCloudClbExtension]) error {
+	req *protolb.TCloudUpdateReq, lb *corelb.LoadBalancer[corelb.TCloudClbExtension]) error {
 
 	if lb.Extension == nil {
 		lb.Extension = &corelb.TCloudClbExtension{}

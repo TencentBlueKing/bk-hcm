@@ -34,14 +34,14 @@ import (
 
 // -------------------------- Create --------------------------
 
-// LoadBalancerBatchCreateReq clb create req.
+// LoadBalancerBatchCreateReq load balancer create req.
 type LoadBalancerBatchCreateReq[Extension corelb.Extension] struct {
 	Lbs []ClbBatchCreate[Extension] `json:"lbs" validate:"required,min=1"`
 }
 
 type TCloudCLBCreateReq = LoadBalancerBatchCreateReq[corelb.TCloudClbExtension]
 
-// ClbBatchCreate define clb batch create.
+// ClbBatchCreate define load balancer batch create.
 type ClbBatchCreate[Extension corelb.Extension] struct {
 	CloudID   string        `json:"cloud_id" validate:"required"`
 	Name      string        `json:"name" validate:"required"`
@@ -71,10 +71,10 @@ type ClbBatchCreate[Extension corelb.Extension] struct {
 	Extension *Extension `json:"extension"`
 }
 
-// Validate clb create request.
+// Validate load balancer create request.
 func (req *LoadBalancerBatchCreateReq[T]) Validate() error {
 	if len(req.Lbs) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("clbs count should <= %d", constant.BatchOperationMaxLimit)
+		return fmt.Errorf("lbs count should <= %d", constant.BatchOperationMaxLimit)
 	}
 
 	return validator.Validate.Struct(req)
@@ -191,7 +191,7 @@ func (req *ClbBatchDeleteReq) Validate() error {
 
 // ListListenerReq ...
 type ListListenerReq struct {
-	ClbID        string `json:"clb_id" validate:"omitempty"`
+	LbID         string `json:"lb_id" validate:"omitempty"`
 	core.ListReq `json:",inline"`
 }
 
@@ -218,7 +218,7 @@ type ClbTargetGroupListResult = core.ListResultT[corelb.BaseClbTargetGroup]
 // ListTCloudURLRuleReq ...
 type ListTCloudURLRuleReq struct {
 	TargetGroupID string `json:"target_group_id" validate:"omitempty"`
-	core.ListReq  `json:",inline"`
+	*core.ListReq `json:",inline"`
 }
 
 // Validate list request.
