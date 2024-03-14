@@ -83,16 +83,7 @@ func (cli *client) LoadBalancer(kt *kit.Kit, params *SyncBaseParams, opt *SyncLB
 		return nil, err
 	}
 
-	// 同步安全组规则
-	lbFromDB, err = cli.listLBFromDB(kt, params)
-	if err != nil {
-		return nil, err
-	}
-
-	lbIDs := make([]string, 0, len(lbFromDB))
-	for _, one := range lbFromDB {
-		lbIDs = append(lbIDs, one.ID)
-	}
+	//  TODO: 同步监听器
 
 	return new(SyncResult), nil
 }
