@@ -24,8 +24,8 @@ import (
 
 	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types"
-	typeclb "hcm/pkg/adaptor/types/clb"
 	"hcm/pkg/adaptor/types/core"
+	typelb "hcm/pkg/adaptor/types/load-balancer"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -36,9 +36,9 @@ import (
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 )
 
-// ListLoadBalancer list clb.
+// ListLoadBalancer list load balancer.
 // reference: https://cloud.tencent.com/document/api/214/30685
-func (t *TCloudImpl) ListLoadBalancer(kt *kit.Kit, opt *typeclb.TCloudListOption) ([]typeclb.TCloudClb, error) {
+func (t *TCloudImpl) ListLoadBalancer(kt *kit.Kit, opt *typelb.TCloudListOption) ([]typelb.TCloudClb, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list option is required")
 	}
@@ -70,9 +70,9 @@ func (t *TCloudImpl) ListLoadBalancer(kt *kit.Kit, opt *typeclb.TCloudListOption
 		return nil, err
 	}
 
-	clbs := make([]typeclb.TCloudClb, 0, len(resp.Response.LoadBalancerSet))
+	clbs := make([]typelb.TCloudClb, 0, len(resp.Response.LoadBalancerSet))
 	for _, one := range resp.Response.LoadBalancerSet {
-		clbs = append(clbs, typeclb.TCloudClb{LoadBalancer: one})
+		clbs = append(clbs, typelb.TCloudClb{LoadBalancer: one})
 	}
 
 	return clbs, nil
@@ -99,8 +99,8 @@ func (t *TCloudImpl) CountClb(kt *kit.Kit, region string) (int32, error) {
 
 // ListListeners list listeners.
 // reference: https://cloud.tencent.com/document/api/214/30686
-func (t *TCloudImpl) ListListeners(kt *kit.Kit, opt *typeclb.TCloudListListenersOption) (
-	[]typeclb.TCloudListeners, int32, error) {
+func (t *TCloudImpl) ListListeners(kt *kit.Kit, opt *typelb.TCloudListListenersOption) (
+	[]typelb.TCloudListeners, int32, error) {
 
 	if opt == nil {
 		return nil, 0, errf.New(errf.InvalidParameter, "list option is required")
@@ -136,9 +136,9 @@ func (t *TCloudImpl) ListListeners(kt *kit.Kit, opt *typeclb.TCloudListListeners
 		return nil, 0, err
 	}
 
-	listeners := make([]typeclb.TCloudListeners, 0, len(resp.Response.Listeners))
+	listeners := make([]typelb.TCloudListeners, 0, len(resp.Response.Listeners))
 	for _, one := range resp.Response.Listeners {
-		listeners = append(listeners, typeclb.TCloudListeners{Listener: one})
+		listeners = append(listeners, typelb.TCloudListeners{Listener: one})
 	}
 
 	totalCount := int32(0)
@@ -151,8 +151,8 @@ func (t *TCloudImpl) ListListeners(kt *kit.Kit, opt *typeclb.TCloudListListeners
 
 // ListTargets 获取监听器后端绑定的机器列表信息.
 // reference: https://cloud.tencent.com/document/api/214/30686
-func (t *TCloudImpl) ListTargets(kt *kit.Kit, opt *typeclb.TCloudListTargetsOption) (
-	[]typeclb.TCloudListenerTargets, error) {
+func (t *TCloudImpl) ListTargets(kt *kit.Kit, opt *typelb.TCloudListTargetsOption) (
+	[]typelb.TCloudListenerTargets, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list option is required")
@@ -188,18 +188,18 @@ func (t *TCloudImpl) ListTargets(kt *kit.Kit, opt *typeclb.TCloudListTargetsOpti
 		return nil, err
 	}
 
-	listeners := make([]typeclb.TCloudListenerTargets, 0, len(resp.Response.Listeners))
+	listeners := make([]typelb.TCloudListenerTargets, 0, len(resp.Response.Listeners))
 	for _, one := range resp.Response.Listeners {
-		listeners = append(listeners, typeclb.TCloudListenerTargets{ListenerBackend: one})
+		listeners = append(listeners, typelb.TCloudListenerTargets{ListenerBackend: one})
 	}
 
 	return listeners, nil
 }
 
-// CreateClb reference: https://cloud.tencent.com/document/api/214/30692
+// CreateLoadBalancer reference: https://cloud.tencent.com/document/api/214/30692
 // NOTE：返回实例`ID`列表并不代表实例创建成功，可根据 [DescribeLoadBalancers](https://cloud.tencent.com/document/api/214/30685)
 // 接口查询返回的LoadBalancerSet中对应实例的`ID`的状态来判断创建是否完成；如果实例状态由“0(创建中)”变为“1(正常运行)”，则为创建成功。
-func (t *TCloudImpl) CreateLoadBalancer(kt *kit.Kit, opt *typeclb.TCloudCreateClbOption) (*poller.BaseDoneResult, error) {
+func (t *TCloudImpl) CreateLoadBalancer(kt *kit.Kit, opt *typelb.TCloudCreateClbOption) (*poller.BaseDoneResult, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "create option is required")
 	}
@@ -224,7 +224,7 @@ func (t *TCloudImpl) CreateLoadBalancer(kt *kit.Kit, opt *typeclb.TCloudCreateCl
 	handler := &createClbPollingHandler{
 		opt.Region,
 	}
-	respPoller := poller.Poller[*TCloudImpl, []typeclb.TCloudClb, poller.BaseDoneResult]{Handler: handler}
+	respPoller := poller.Poller[*TCloudImpl, []typelb.TCloudClb, poller.BaseDoneResult]{Handler: handler}
 	result, err := respPoller.PollUntilDone(t, kt, resp.Response.LoadBalancerIds, types.NewBatchCreateClbPollerOption())
 	if err != nil {
 		return nil, err
@@ -235,7 +235,7 @@ func (t *TCloudImpl) CreateLoadBalancer(kt *kit.Kit, opt *typeclb.TCloudCreateCl
 
 // DescribeResources 查询用户在当前地域支持可用区列表和资源列表
 // https://cloud.tencent.com/document/api/214/70213
-func (t *TCloudImpl) DescribeResources(kt *kit.Kit, opt *typeclb.TCloudDescribeResourcesOption) (
+func (t *TCloudImpl) DescribeResources(kt *kit.Kit, opt *typelb.TCloudDescribeResourcesOption) (
 	*clb.DescribeResourcesResponseParams, error) {
 
 	if opt == nil {
@@ -281,7 +281,7 @@ func (t *TCloudImpl) DescribeResources(kt *kit.Kit, opt *typeclb.TCloudDescribeR
 	return resp.Response, nil
 }
 
-func (t *TCloudImpl) formatCreateClbRequest(opt *typeclb.TCloudCreateClbOption) *clb.CreateLoadBalancerRequest {
+func (t *TCloudImpl) formatCreateClbRequest(opt *typelb.TCloudCreateClbOption) *clb.CreateLoadBalancerRequest {
 	req := clb.NewCreateLoadBalancerRequest()
 	// 负载均衡实例的名称
 	req.LoadBalancerName = opt.LoadBalancerName
@@ -292,7 +292,7 @@ func (t *TCloudImpl) formatCreateClbRequest(opt *typeclb.TCloudCreateClbOption) 
 	// 负载均衡后端目标设备所属的网络
 	req.VpcId = opt.VpcID
 	// 负载均衡实例的类型。1：通用的负载均衡实例，目前只支持传入1。
-	req.Forward = common.Int64Ptr(int64(typeclb.DefaultLoadBalancerInstType))
+	req.Forward = common.Int64Ptr(int64(typelb.DefaultLoadBalancerInstType))
 	// 是否支持绑定跨地域/跨Vpc绑定IP的功能
 	req.SnatPro = opt.SnatPro
 	// Target是否放通来自CLB的流量。开启放通（true）：只验证CLB上的安全组；不开启放通（false）：需同时验证CLB和后端实例上的安全组
@@ -337,14 +337,14 @@ func (t *TCloudImpl) formatCreateClbRequest(opt *typeclb.TCloudCreateClbOption) 
 	return req
 }
 
-var _ poller.PollingHandler[*TCloudImpl, []typeclb.TCloudClb, poller.BaseDoneResult] = new(createClbPollingHandler)
+var _ poller.PollingHandler[*TCloudImpl, []typelb.TCloudClb, poller.BaseDoneResult] = new(createClbPollingHandler)
 
 type createClbPollingHandler struct {
 	region string
 }
 
 // Done ...
-func (h *createClbPollingHandler) Done(clbs []typeclb.TCloudClb) (bool, *poller.BaseDoneResult) {
+func (h *createClbPollingHandler) Done(clbs []typelb.TCloudClb) (bool, *poller.BaseDoneResult) {
 	result := &poller.BaseDoneResult{
 		SuccessCloudIDs: make([]string, 0),
 		FailedCloudIDs:  make([]string, 0),
@@ -353,7 +353,7 @@ func (h *createClbPollingHandler) Done(clbs []typeclb.TCloudClb) (bool, *poller.
 	flag := true
 	for _, item := range clbs {
 		// 不是[正常运行]的状态
-		if converter.PtrToVal(item.Status) != uint64(typeclb.SuccessStatus) {
+		if converter.PtrToVal(item.Status) != uint64(typelb.SuccessStatus) {
 			flag = false
 			result.FailedCloudIDs = append(result.FailedCloudIDs, *item.LoadBalancerId)
 			continue
@@ -367,14 +367,14 @@ func (h *createClbPollingHandler) Done(clbs []typeclb.TCloudClb) (bool, *poller.
 
 // Poll ...
 func (h *createClbPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs []*string) (
-	[]typeclb.TCloudClb, error) {
+	[]typelb.TCloudClb, error) {
 
 	// 负载均衡实例ID。实例ID数量上限为20个
 	cloudIDSplit := slice.Split(cloudIDs, 20)
 
-	clbs := make([]typeclb.TCloudClb, 0, len(cloudIDs))
+	clbs := make([]typelb.TCloudClb, 0, len(cloudIDs))
 	for idx, partIDs := range cloudIDSplit {
-		opt := &typeclb.TCloudListOption{
+		opt := &typelb.TCloudListOption{
 			Region:   h.region,
 			CloudIDs: converter.PtrToSlice(partIDs),
 			Page: &core.TCloudPage{
@@ -397,8 +397,8 @@ func (h *createClbPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs
 	return clbs, nil
 }
 
-// SetClbSecurityGroups reference: https://cloud.tencent.com/document/api/214/34903
-func (t *TCloudImpl) SetLoadBalancerSecurityGroups(kt *kit.Kit, opt *typeclb.TCloudSetClbSecurityGroupOption) (
+// SetLoadBalancerSecurityGroups reference: https://cloud.tencent.com/document/api/214/34903
+func (t *TCloudImpl) SetLoadBalancerSecurityGroups(kt *kit.Kit, opt *typelb.TCloudSetClbSecurityGroupOption) (
 	*clb.SetLoadBalancerSecurityGroupsResponseParams, error) {
 
 	if opt == nil {
@@ -430,7 +430,7 @@ func (t *TCloudImpl) SetLoadBalancerSecurityGroups(kt *kit.Kit, opt *typeclb.TCl
 }
 
 // DeleteLoadBalancer reference: https://cloud.tencent.com/document/api/214/30689
-func (t *TCloudImpl) DeleteLoadBalancer(kt *kit.Kit, opt *typeclb.TCloudDeleteOption) error {
+func (t *TCloudImpl) DeleteLoadBalancer(kt *kit.Kit, opt *typelb.TCloudDeleteOption) error {
 
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "delete clb option is required")
@@ -460,13 +460,13 @@ func (t *TCloudImpl) DeleteLoadBalancer(kt *kit.Kit, opt *typeclb.TCloudDeleteOp
 }
 
 // UpdateLoadBalancer https://cloud.tencent.com/document/api/214/30680
-func (t *TCloudImpl) UpdateLoadBalancer(kt *kit.Kit, opt *typeclb.TCloudUpdateOption) (dealName *string, err error) {
+func (t *TCloudImpl) UpdateLoadBalancer(kt *kit.Kit, opt *typelb.TCloudUpdateOption) (dealName *string, err error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "update clb option is required")
 	}
 
-	if err := opt.Validate(); err != nil {
+	if err = opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
@@ -494,7 +494,7 @@ func (t *TCloudImpl) UpdateLoadBalancer(kt *kit.Kit, opt *typeclb.TCloudUpdateOp
 	}
 	resp, err := client.ModifyLoadBalancerAttributesWithContext(kt.Ctx, req)
 	if err != nil {
-		logs.Errorf("delete tcloud clb failed,  err: %v, resp: %+v, opt: %+v,rid: %s", err, resp, opt, kt.Rid)
+		logs.Errorf("delete tcloud lb failed,  err: %v, resp: %+v, opt: %+v,rid: %s", err, resp, opt, kt.Rid)
 		return dealName, err
 	}
 

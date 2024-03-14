@@ -25,7 +25,7 @@ import (
 	"fmt"
 
 	cloudserver "hcm/pkg/api/cloud-server"
-	protoclb "hcm/pkg/api/hc-service/clb"
+	protolb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
@@ -34,7 +34,7 @@ import (
 	"hcm/pkg/rest"
 )
 
-func (svc *clbSvc) BatchCreateCLB(cts *rest.Contexts) (any, error) {
+func (svc *lbSvc) BatchCreateLB(cts *rest.Contexts) (any, error) {
 
 	req := new(cloudserver.ResourceCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -63,15 +63,15 @@ func (svc *clbSvc) BatchCreateCLB(cts *rest.Contexts) (any, error) {
 
 	switch accountInfo.Vendor {
 	case enumor.TCloud:
-		return svc.batchCreateTCloudCLB(cts.Kit, req.Data)
+		return svc.batchCreateTCloudLB(cts.Kit, req.Data)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", accountInfo.Vendor)
 	}
 
 }
 
-func (svc *clbSvc) batchCreateTCloudCLB(kt *kit.Kit, rawReq json.RawMessage) (any, error) {
-	req := new(protoclb.TCloudBatchCreateReq)
+func (svc *lbSvc) batchCreateTCloudLB(kt *kit.Kit, rawReq json.RawMessage) (any, error) {
+	req := new(protolb.TCloudBatchCreateReq)
 	if err := json.Unmarshal(rawReq, req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}

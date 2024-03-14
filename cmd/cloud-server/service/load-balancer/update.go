@@ -23,7 +23,7 @@ package loadbalancer
 import (
 	"fmt"
 
-	hcclb "hcm/pkg/api/hc-service/clb"
+	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
@@ -34,14 +34,14 @@ import (
 )
 
 // UpdateBizTCloudLoadBalancer  业务下更新clb
-func (svc *clbSvc) UpdateBizTCloudLoadBalancer(cts *rest.Contexts) (any, error) {
+func (svc *lbSvc) UpdateBizTCloudLoadBalancer(cts *rest.Contexts) (any, error) {
 
 	lbID := cts.PathParameter("id").String()
 	if len(lbID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	req := new(hcclb.TCloudUpdateReq)
+	req := new(hclb.TCloudUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}

@@ -17,14 +17,14 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package hcclb
+package hclb
 
 import (
 	"errors"
 	"fmt"
 
-	typeclb "hcm/pkg/adaptor/types/clb"
 	"hcm/pkg/adaptor/types/core"
+	typelb "hcm/pkg/adaptor/types/load-balancer"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/converter"
@@ -32,38 +32,38 @@ import (
 
 // TCloudBatchCreateReq tcloud batch create req.
 type TCloudBatchCreateReq struct {
-	AccountID        string                         `json:"account_id" validate:"required"`
-	Region           string                         `json:"region" validate:"required"`
-	LoadBalancerType typeclb.TCloudLoadBalancerType `json:"load_balancer_type" validate:"required"`
-	Name             *string                        `json:"name" validate:"required,max=60"`
+	AccountID        string                        `json:"account_id" validate:"required"`
+	Region           string                        `json:"region" validate:"required"`
+	LoadBalancerType typelb.TCloudLoadBalancerType `json:"load_balancer_type" validate:"required"`
+	Name             *string                       `json:"name" validate:"required,max=60"`
 	// 公网	单可用区		传递zones（单元素数组）
 	// 公网	主备可用区	传递zones（单元素数组），以及backup_zones
-	Zones                   []string                        `json:"zones" validate:"omitempty"`
-	BackupZones             []string                        `json:"backup_zones" validate:"omitempty"`
-	AddressIPVersion        *typeclb.TCloudAddressIPVersion `json:"address_ip_version" validate:"required"`
-	CloudVpcID              *string                         `json:"cloud_vpc_id" validate:"required"`
-	CloudSubnetID           *string                         `json:"cloud_subnet_id" validate:"omitempty"`
-	Vip                     *string                         `json:"vip" validate:"omitempty"`
-	VipID                   *string                         `json:"vip_id" validate:"omitempty"`
-	VipIsp                  *string                         `json:"vip_isp" validate:"omitempty"`
-	InternetChargeType      *string                         `json:"internet_charge_type" validate:"omitempty"`
-	InternetMaxBandwidthOut *int64                          `json:"internet_max_bandwidth_out" validate:"omitempty"`
-	BandwidthPackageID      *string                         `json:"bandwidth_package_id" validate:"omitempty"`
-	SlaType                 *string                         `json:"sla_type" validate:"omitempty"`
-	AutoRenew               *bool                           `json:"auto_renew" validate:"omitempty"`
-	RequireCount            *uint64                         `json:"require_count" validate:"omitempty"`
-	Memo                    string                          `json:"memo" validate:"omitempty"`
+	Zones                   []string                       `json:"zones" validate:"omitempty"`
+	BackupZones             []string                       `json:"backup_zones" validate:"omitempty"`
+	AddressIPVersion        *typelb.TCloudAddressIPVersion `json:"address_ip_version" validate:"required"`
+	CloudVpcID              *string                        `json:"cloud_vpc_id" validate:"required"`
+	CloudSubnetID           *string                        `json:"cloud_subnet_id" validate:"omitempty"`
+	Vip                     *string                        `json:"vip" validate:"omitempty"`
+	VipID                   *string                        `json:"vip_id" validate:"omitempty"`
+	VipIsp                  *string                        `json:"vip_isp" validate:"omitempty"`
+	InternetChargeType      *string                        `json:"internet_charge_type" validate:"omitempty"`
+	InternetMaxBandwidthOut *int64                         `json:"internet_max_bandwidth_out" validate:"omitempty"`
+	BandwidthPackageID      *string                        `json:"bandwidth_package_id" validate:"omitempty"`
+	SlaType                 *string                        `json:"sla_type" validate:"omitempty"`
+	AutoRenew               *bool                          `json:"auto_renew" validate:"omitempty"`
+	RequireCount            *uint64                        `json:"require_count" validate:"omitempty"`
+	Memo                    string                         `json:"memo" validate:"omitempty"`
 }
 
 // Validate request.
 func (req *TCloudBatchCreateReq) Validate() error {
 	switch req.LoadBalancerType {
-	case typeclb.InternalLoadBalancerType:
+	case typelb.InternalLoadBalancerType:
 		// 内网校验
 		if converter.PtrToVal(req.CloudSubnetID) == "" {
 			return errors.New("subnet id  is required for load balancer type 'INTERNAL'")
 		}
-	case typeclb.OpenLoadBalancerType:
+	case typelb.OpenLoadBalancerType:
 		if len(req.Zones) == 0 {
 			return errors.New("zones is required for load balancer type 'OPEN'")
 		}
@@ -109,8 +109,8 @@ func (opt TCloudListOption) Validate() error {
 
 // TCloudDescribeResourcesOption ...
 type TCloudDescribeResourcesOption struct {
-	AccountID                              string `json:"account_id" validate:"required"`
-	*typeclb.TCloudDescribeResourcesOption `json:",inline" validate:"required"`
+	AccountID                             string `json:"account_id" validate:"required"`
+	*typelb.TCloudDescribeResourcesOption `json:",inline" validate:"required"`
 }
 
 // Validate tcloud clb list option.
@@ -122,14 +122,14 @@ func (opt TCloudDescribeResourcesOption) Validate() error {
 
 // TCloudSetClbSecurityGroupReq defines options to set tcloud clb security-group request.
 type TCloudSetClbSecurityGroupReq struct {
-	ClbID            string   `json:"clb_id" validate:"required"`
+	LbID             string   `json:"lb_id" validate:"required"`
 	SecurityGroupIDs []string `json:"security_group_ids" validate:"required,max=50"`
 }
 
 // Validate tcloud clb security-group option.
 func (opt TCloudSetClbSecurityGroupReq) Validate() error {
-	if len(opt.ClbID) == 0 {
-		return errors.New("clb_id is required")
+	if len(opt.LbID) == 0 {
+		return errors.New("lb_id is required")
 	}
 
 	if len(opt.SecurityGroupIDs) > constant.LoadBalancerBindSecurityGroupMaxLimit {
@@ -143,7 +143,7 @@ func (opt TCloudSetClbSecurityGroupReq) Validate() error {
 
 // TCloudDisAssociateClbSecurityGroupReq defines options to DisAssociate tcloud clb security-group request.
 type TCloudDisAssociateClbSecurityGroupReq struct {
-	ClbID           string `json:"clb_id" validate:"required"`
+	LbID            string `json:"lb_id" validate:"required"`
 	SecurityGroupID string `json:"security_group_id" validate:"required"`
 }
 

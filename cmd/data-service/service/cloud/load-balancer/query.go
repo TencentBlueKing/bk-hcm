@@ -209,9 +209,9 @@ func (svc *clbSvc) ListListener(cts *rest.Contexts) (interface{}, error) {
 	reqFilter := &filter.Expression{
 		Op: filter.And,
 	}
-	if len(req.ClbID) > 0 {
+	if len(req.LbID) > 0 {
 		reqFilter.Rules = append(reqFilter.Rules,
-			filter.AtomRule{Field: "lb_id", Op: filter.Equal.Factory(), Value: req.ClbID})
+			filter.AtomRule{Field: "lb_id", Op: filter.Equal.Factory(), Value: req.LbID})
 	}
 	// 加上请求里过滤条件
 	if req.Filter != nil && !req.Filter.IsEmpty() {

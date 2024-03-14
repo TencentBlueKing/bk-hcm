@@ -17,19 +17,19 @@ import (
 )
 
 // ListListener list listener.
-func (svc *clbSvc) ListListener(cts *rest.Contexts) (interface{}, error) {
-	return svc.listClbListener(cts, handler.ListResourceAuthRes)
+func (svc *lbSvc) ListListener(cts *rest.Contexts) (interface{}, error) {
+	return svc.listListener(cts, handler.ListResourceAuthRes)
 }
 
 // ListBizListener list biz listener.
-func (svc *clbSvc) ListBizListener(cts *rest.Contexts) (interface{}, error) {
-	return svc.listClbListener(cts, handler.ListBizAuthRes)
+func (svc *lbSvc) ListBizListener(cts *rest.Contexts) (interface{}, error) {
+	return svc.listListener(cts, handler.ListBizAuthRes)
 }
 
-func (svc *clbSvc) listClbListener(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (interface{}, error) {
-	clbID := cts.PathParameter("clb_id").String()
-	if len(clbID) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "clb_id is required")
+func (svc *lbSvc) listListener(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (interface{}, error) {
+	lbID := cts.PathParameter("lb_id").String()
+	if len(lbID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "lb_id is required")
 	}
 
 	req := new(core.ListReq)
@@ -45,19 +45,19 @@ func (svc *clbSvc) listClbListener(cts *rest.Contexts, authHandler handler.ListA
 	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
 		ResType: meta.LoadBalancer, Action: meta.Find, Filter: req.Filter})
 	if err != nil {
-		logs.Errorf("list listener auth failed, clbID: %s, noPermFlag: %v, err: %v, rid: %s",
-			clbID, noPermFlag, err, cts.Kit.Rid)
+		logs.Errorf("list listener auth failed, lbID: %s, noPermFlag: %v, err: %v, rid: %s",
+			lbID, noPermFlag, err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	resList := &cslb.ListListenerResult{Count: 0, Details: make([]cslb.ListListenerBase, 0)}
 	if noPermFlag {
-		logs.Errorf("list listener no perm auth, clbID: %s, noPermFlag: %v, rid: %s", clbID, noPermFlag, cts.Kit.Rid)
+		logs.Errorf("list listener no perm auth, lbID: %s, noPermFlag: %v, rid: %s", lbID, noPermFlag, cts.Kit.Rid)
 		return resList, nil
 	}
 
 	listenerReq := &dataproto.ListListenerReq{
-		ClbID: clbID,
+		LbID: lbID,
 		ListReq: core.ListReq{
 			Filter: expr,
 			Page:   req.Page,
@@ -65,7 +65,7 @@ func (svc *clbSvc) listClbListener(cts *rest.Contexts, authHandler handler.ListA
 	}
 	listenerList, err := svc.client.DataService().Global.LoadBalancer.ListListener(cts.Kit, listenerReq)
 	if err != nil {
-		logs.Errorf("[clb] list listener failed, clbID: %s, err: %v, rid: %s", clbID, err, cts.Kit.Rid)
+		logs.Errorf("list listener failed, lbID: %s, err: %v, rid: %s", lbID, err, cts.Kit.Rid)
 		return nil, err
 	}
 	if len(listenerList.Details) == 0 {
@@ -81,7 +81,7 @@ func (svc *clbSvc) listClbListener(cts *rest.Contexts, authHandler handler.ListA
 		})
 	}
 
-	urlRuleMap, err := svc.listTCloudClbUrlRuleMap(cts.Kit, clbID, lblIDs)
+	urlRuleMap, err := svc.listTCloudLbUrlRuleMap(cts.Kit, lbID, lblIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -95,18 +95,18 @@ func (svc *clbSvc) listClbListener(cts *rest.Contexts, authHandler handler.ListA
 	return resList, nil
 }
 
-func (svc *clbSvc) listTCloudClbUrlRuleMap(kt *kit.Kit, clbID string, lblIDs []string) (
+func (svc *lbSvc) listTCloudLbUrlRuleMap(kt *kit.Kit, lbID string, lblIDs []string) (
 	map[string]cslb.ListListenerBase, error) {
 
 	urlRuleReq := &dataproto.ListTCloudURLRuleReq{
-		ListReq: core.ListReq{
+		ListReq: &core.ListReq{
 			Filter: &filter.Expression{
 				Op: filter.And,
 				Rules: []filter.RuleFactory{
 					filter.AtomRule{
 						Field: "lb_id",
 						Op:    filter.Equal.Factory(),
-						Value: clbID,
+						Value: lbID,
 					},
 					filter.AtomRule{
 						Field: "lbl_id",
@@ -120,8 +120,7 @@ func (svc *clbSvc) listTCloudClbUrlRuleMap(kt *kit.Kit, clbID string, lblIDs []s
 	}
 	urlRuleList, err := svc.client.DataService().Global.LoadBalancer.ListUrlRule(kt, urlRuleReq)
 	if err != nil {
-		logs.Errorf("[clb] list tcloud url rule failed, clbID: %s, lblIDs: %v, err: %v, rid: %s",
-			clbID, lblIDs, err, kt.Rid)
+		logs.Errorf("list tcloud url rule failed, lbID: %s, lblIDs: %v, err: %v, rid: %s", lbID, lblIDs, err, kt.Rid)
 		return nil, err
 	}
 
@@ -153,7 +152,7 @@ func (svc *clbSvc) listTCloudClbUrlRuleMap(kt *kit.Kit, clbID string, lblIDs []s
 	return listenerRuleMap, nil
 }
 
-func (svc *clbSvc) listListenerMap(kt *kit.Kit, lblIDs []string) (map[string]corelb.BaseListener, error) {
+func (svc *lbSvc) listListenerMap(kt *kit.Kit, lblIDs []string) (map[string]corelb.BaseListener, error) {
 	if len(lblIDs) == 0 {
 		return nil, nil
 	}
@@ -179,16 +178,16 @@ func (svc *clbSvc) listListenerMap(kt *kit.Kit, lblIDs []string) (map[string]cor
 }
 
 // GetListener get clb listener.
-func (svc *clbSvc) GetListener(cts *rest.Contexts) (interface{}, error) {
+func (svc *lbSvc) GetListener(cts *rest.Contexts) (interface{}, error) {
 	return svc.getListener(cts, handler.ListResourceAuthRes)
 }
 
 // GetBizListener get biz clb listener.
-func (svc *clbSvc) GetBizListener(cts *rest.Contexts) (interface{}, error) {
+func (svc *lbSvc) GetBizListener(cts *rest.Contexts) (interface{}, error) {
 	return svc.getListener(cts, handler.ListBizAuthRes)
 }
 
-func (svc *clbSvc) getListener(cts *rest.Contexts, validHandler handler.ListAuthResHandler) (any, error) {
+func (svc *lbSvc) getListener(cts *rest.Contexts, validHandler handler.ListAuthResHandler) (any, error) {
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
@@ -219,13 +218,13 @@ func (svc *clbSvc) getListener(cts *rest.Contexts, validHandler handler.ListAuth
 	}
 }
 
-func (svc *clbSvc) getTCloudListener(kt *kit.Kit, lblID string) (*cslb.GetListenerDetail, error) {
+func (svc *lbSvc) getTCloudListener(kt *kit.Kit, lblID string) (*cslb.GetListenerDetail, error) {
 	listenerInfo, err := svc.client.DataService().TCloud.LoadBalancer.GetListener(kt, lblID)
 	if err != nil {
 		logs.Errorf("[clb] get tcloud listener detail failed, lblID: %s, err: %v, rid: %s", lblID, err, kt.Rid)
 	}
 
-	urlRuleMap, err := svc.listTCloudClbUrlRuleMap(kt, listenerInfo.LbID, []string{lblID})
+	urlRuleMap, err := svc.listTCloudLbUrlRuleMap(kt, listenerInfo.LbID, []string{lblID})
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +244,7 @@ func (svc *clbSvc) getTCloudListener(kt *kit.Kit, lblID string) (*cslb.GetListen
 
 	// 只有4层监听器才显示目标组信息
 	if len(listenerInfo.DefaultDomain) == 0 {
-		targetGroupList, err := svc.getTargetGroupByID(kt, targetGroupID)
+		targetGroupList, err := svc.getTargetGroupByID(kt, targetGroupID, 0)
 		if err != nil {
 			return nil, err
 		}
@@ -258,14 +257,25 @@ func (svc *clbSvc) getTCloudListener(kt *kit.Kit, lblID string) (*cslb.GetListen
 	return result, nil
 }
 
-func (svc *clbSvc) getTargetGroupByID(kt *kit.Kit, targetGroupID string) ([]corelb.BaseClbTargetGroup, error) {
+func (svc *lbSvc) getTargetGroupByID(kt *kit.Kit, targetGroupID string, bkBizID int64) (
+	[]corelb.BaseClbTargetGroup, error) {
+
 	tgReq := &core.ListReq{
 		Filter: tools.EqualExpression("id", targetGroupID),
 		Page:   core.NewDefaultBasePage(),
 	}
+	if bkBizID > 0 {
+		bizReq, err := tools.And(
+			filter.AtomRule{Field: "bk_biz_id", Op: filter.Equal.Factory(), Value: bkBizID}, tgReq.Filter,
+		)
+		if err != nil {
+			return nil, err
+		}
+		tgReq.Filter = bizReq
+	}
 	targetGroupInfo, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroup(kt, tgReq)
 	if err != nil {
-		logs.Errorf("[clb] list target group failed, tgID: %s, err: %v, rid: %s", targetGroupID, err, kt.Rid)
+		logs.Errorf("list target group failed, tgID: %s, err: %v, rid: %s", targetGroupID, err, kt.Rid)
 		return nil, err
 	}
 

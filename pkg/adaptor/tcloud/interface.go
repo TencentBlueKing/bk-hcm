@@ -28,13 +28,13 @@ import (
 	typeargstpl "hcm/pkg/adaptor/types/argument-template"
 	typesBill "hcm/pkg/adaptor/types/bill"
 	"hcm/pkg/adaptor/types/cert"
-	"hcm/pkg/adaptor/types/clb"
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/adaptor/types/eip"
 	"hcm/pkg/adaptor/types/image"
 	"hcm/pkg/adaptor/types/instance-type"
+	typelb "hcm/pkg/adaptor/types/load-balancer"
 	"hcm/pkg/adaptor/types/region"
 	"hcm/pkg/adaptor/types/route-table"
 	"hcm/pkg/adaptor/types/security-group"
@@ -150,16 +150,16 @@ type TCloud interface {
 	DeleteArgsTplServiceGroup(kt *kit.Kit, opt *typeargstpl.TCloudDeleteOption) error
 	UpdateArgsTplServiceGroup(kt *kit.Kit, opt *typeargstpl.TCloudUpdateServiceGroupOption) (
 		*poller.BaseDoneResult, error)
-	CreateLoadBalancer(kt *kit.Kit, opt *clb.TCloudCreateClbOption) (*poller.BaseDoneResult, error)
-	ListLoadBalancer(kt *kit.Kit, opt *clb.TCloudListOption) ([]clb.TCloudClb, error)
-	DescribeResources(kt *kit.Kit, opt *clb.TCloudDescribeResourcesOption) (
+	CreateLoadBalancer(kt *kit.Kit, opt *typelb.TCloudCreateClbOption) (*poller.BaseDoneResult, error)
+	ListLoadBalancer(kt *kit.Kit, opt *typelb.TCloudListOption) ([]typelb.TCloudClb, error)
+	DescribeResources(kt *kit.Kit, opt *typelb.TCloudDescribeResourcesOption) (
 		*tclb.DescribeResourcesResponseParams, error)
 	DescribeNetworkAccountType(kt *kit.Kit) (*v20170312.DescribeNetworkAccountTypeResponseParams, error)
 	CreateCert(kt *kit.Kit, opt *cert.TCloudCreateOption) (*poller.BaseDoneResult, error)
 	DeleteCert(kt *kit.Kit, opt *cert.TCloudDeleteOption) error
 	ListCert(kt *kit.Kit, opt *cert.TCloudListOption) ([]cert.TCloudCert, error)
-	SetLoadBalancerSecurityGroups(kt *kit.Kit, opt *clb.TCloudSetClbSecurityGroupOption) (
+	SetLoadBalancerSecurityGroups(kt *kit.Kit, opt *typelb.TCloudSetClbSecurityGroupOption) (
 		*tclb.SetLoadBalancerSecurityGroupsResponseParams, error)
-	DeleteLoadBalancer(kt *kit.Kit, opt *clb.TCloudDeleteOption) error
-	UpdateLoadBalancer(kt *kit.Kit, opt *clb.TCloudUpdateOption) (*string, error)
+	DeleteLoadBalancer(kt *kit.Kit, opt *typelb.TCloudDeleteOption) error
+	UpdateLoadBalancer(kt *kit.Kit, opt *typelb.TCloudUpdateOption) (*string, error)
 }

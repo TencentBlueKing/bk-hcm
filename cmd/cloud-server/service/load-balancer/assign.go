@@ -33,8 +33,8 @@ import (
 	"hcm/pkg/tools/converter"
 )
 
-// AssignClbToBiz 分配到业务下
-func (svc *clbSvc) AssignClbToBiz(cts *rest.Contexts) (any, error) {
+// AssignLbToBiz 分配到业务下
+func (svc *lbSvc) AssignLbToBiz(cts *rest.Contexts) (any, error) {
 	// 分配关联资源预检
 	req := new(cslb.AssignClbToBizReq)
 	if err := cts.DecodeInto(req); err != nil {

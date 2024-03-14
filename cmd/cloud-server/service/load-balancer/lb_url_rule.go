@@ -6,6 +6,7 @@ import (
 	"hcm/pkg/api/core/cloud"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
@@ -15,17 +16,23 @@ import (
 	"hcm/pkg/tools/hooks/handler"
 )
 
-// ListClbUrlRule list clb url rule.
-func (svc *clbSvc) ListClbUrlRule(cts *rest.Contexts) (interface{}, error) {
-	return svc.listClbUrlRule(cts, handler.ListResourceAuthRes)
+// ListLbUrlRule list lb url rule.
+func (svc *lbSvc) ListLbUrlRule(cts *rest.Contexts) (interface{}, error) {
+	return svc.listLbUrlRule(cts, handler.ListResourceAuthRes, constant.UnassignedBiz)
 }
 
-// ListBizClbUrlRule list biz clb url rule.
-func (svc *clbSvc) ListBizClbUrlRule(cts *rest.Contexts) (interface{}, error) {
-	return svc.listClbUrlRule(cts, handler.ListBizAuthRes)
+// ListBizLbUrlRule list biz lb url rule.
+func (svc *lbSvc) ListBizLbUrlRule(cts *rest.Contexts) (interface{}, error) {
+	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	return svc.listLbUrlRule(cts, handler.ListBizAuthRes, bkBizID)
 }
 
-func (svc *clbSvc) listClbUrlRule(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (interface{}, error) {
+func (svc *lbSvc) listLbUrlRule(cts *rest.Contexts, authHandler handler.ListAuthResHandler, bkBizID int64) (
+	interface{}, error) {
+
 	tgID := cts.PathParameter("target_group_id").String()
 	if len(tgID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "target_group_id is required")
@@ -40,23 +47,34 @@ func (svc *clbSvc) listClbUrlRule(cts *rest.Contexts, authHandler handler.ListAu
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	tgList, err := svc.getTargetGroupByID(cts.Kit, tgID, bkBizID)
+	if err != nil {
+		return nil, err
+	}
+	if len(tgList) == 0 {
+		return nil, errf.Newf(errf.RecordNotFound, "target group %s is not found", tgID)
+	}
+
 	// list authorized instances
-	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+	_, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
 		ResType: meta.LoadBalancer, Action: meta.Find, Filter: req.Filter})
 	if err != nil {
-		logs.Errorf("list clb url rule auth failed, targetGroupID: %s, noPermFlag: %v, err: %v, rid: %s",
+		logs.Errorf("list lb url rule auth failed, targetGroupID: %s, noPermFlag: %v, err: %v, rid: %s",
 			tgID, noPermFlag, err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	if noPermFlag {
-		logs.Errorf("list clb url rule no perm auth, targetGroupID: %s, noPermFlag: %v, rid: %s",
+		logs.Errorf("list lb url rule no perm auth, targetGroupID: %s, noPermFlag: %v, rid: %s",
 			tgID, noPermFlag, cts.Kit.Rid)
 		return &cslb.ListClbUrlRuleResult{Count: 0, Details: make([]cslb.ListClbUrlRuleBase, 0)}, nil
 	}
 
-	urlRuleReq := core.ListReq{Filter: expr, Page: req.Page}
-	urlRuleList, err := svc.getTCloudUrlRule(cts.Kit, tgID, urlRuleReq)
+	//urlRuleReq := core.ListReq{Filter: expr, Page: req.Page}
+	urlRuleList, err := svc.getTCloudUrlRule(cts.Kit, tgID, req)
+
+	logs.Errorf("list lb url rule no perm DEBUG:61, targetGroupID: %s, req: %+v, urlRuleList: %+v, rid: %s",
+		tgID, req, urlRuleList, cts.Kit.Rid)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +91,7 @@ func (svc *clbSvc) listClbUrlRule(cts *rest.Contexts, authHandler handler.ListAu
 	return resList, nil
 }
 
-func (svc *clbSvc) listTCloudClbUrlRule(kt *kit.Kit, urlRuleList *dataproto.TCloudURLRuleListResult) (
+func (svc *lbSvc) listTCloudClbUrlRule(kt *kit.Kit, urlRuleList *dataproto.TCloudURLRuleListResult) (
 	interface{}, error) {
 
 	lbIDs := make([]string, 0)
@@ -141,7 +159,7 @@ func (svc *clbSvc) listTCloudClbUrlRule(kt *kit.Kit, urlRuleList *dataproto.TClo
 	return resList, nil
 }
 
-func (svc *clbSvc) getTCloudUrlRule(kt *kit.Kit, tgID string, listReq core.ListReq) (
+func (svc *lbSvc) getTCloudUrlRule(kt *kit.Kit, tgID string, listReq *core.ListReq) (
 	*dataproto.TCloudURLRuleListResult, error) {
 
 	tcloudUrlRuleReq := &dataproto.ListTCloudURLRuleReq{
@@ -150,14 +168,14 @@ func (svc *clbSvc) getTCloudUrlRule(kt *kit.Kit, tgID string, listReq core.ListR
 	}
 	urlRuleList, err := svc.client.DataService().Global.LoadBalancer.ListUrlRule(kt, tcloudUrlRuleReq)
 	if err != nil {
-		logs.Errorf("[clb] list tcloud url rule failed, targetGroupID: %s, err: %v, rid: %s", tgID, err, kt.Rid)
+		logs.Errorf("list tcloud url rule failed, targetGroupID: %s, err: %v, rid: %s", tgID, err, kt.Rid)
 		return nil, err
 	}
 
 	return urlRuleList, nil
 }
 
-func (svc *clbSvc) listVpcMap(kt *kit.Kit, vpcIDs []string) (map[string]cloud.BaseVpc, error) {
+func (svc *lbSvc) listVpcMap(kt *kit.Kit, vpcIDs []string) (map[string]cloud.BaseVpc, error) {
 	if len(vpcIDs) == 0 {
 		return nil, nil
 	}
@@ -180,7 +198,7 @@ func (svc *clbSvc) listVpcMap(kt *kit.Kit, vpcIDs []string) (map[string]cloud.Ba
 	return vpcMap, nil
 }
 
-func (svc *clbSvc) listClbTargetMap(kt *kit.Kit, targetIDs []string) (map[string][]corelb.BaseClbTarget, error) {
+func (svc *lbSvc) listClbTargetMap(kt *kit.Kit, targetIDs []string) (map[string][]corelb.BaseClbTarget, error) {
 	if len(targetIDs) == 0 {
 		return nil, nil
 	}

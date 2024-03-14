@@ -22,7 +22,7 @@ package tcloud
 import (
 	"net/http"
 
-	protoclb "hcm/pkg/api/hc-service/clb"
+	protolb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/client/common"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
@@ -43,20 +43,20 @@ type ClbClient struct {
 }
 
 // DescribeResources ...
-func (c *ClbClient) DescribeResources(kt *kit.Kit, req *protoclb.TCloudDescribeResourcesOption) (
+func (c *ClbClient) DescribeResources(kt *kit.Kit, req *protolb.TCloudDescribeResourcesOption) (
 	*tclb.DescribeResourcesResponseParams, error) {
 
-	return common.Request[protoclb.TCloudDescribeResourcesOption, tclb.DescribeResourcesResponseParams](
+	return common.Request[protolb.TCloudDescribeResourcesOption, tclb.DescribeResourcesResponseParams](
 		c.client, http.MethodPost, kt, req, "/load_balancers/resources/describe")
 }
 
 // BatchCreate ...
-func (c *ClbClient) BatchCreate(kt *kit.Kit, req *protoclb.TCloudBatchCreateReq) (*protoclb.BatchCreateResult, error) {
-	return common.Request[protoclb.TCloudBatchCreateReq, protoclb.BatchCreateResult](
+func (c *ClbClient) BatchCreate(kt *kit.Kit, req *protolb.TCloudBatchCreateReq) (*protolb.BatchCreateResult, error) {
+	return common.Request[protolb.TCloudBatchCreateReq, protolb.BatchCreateResult](
 		c.client, http.MethodPost, kt, req, "/load_balancers/batch/create")
 }
 
 // Update ...
-func (c *ClbClient) Update(kt *kit.Kit, id string, req *protoclb.TCloudUpdateReq) error {
-	return common.RequestNoResp[protoclb.TCloudUpdateReq](c.client, http.MethodPatch, kt, req, "/load_balancers/%s", id)
+func (c *ClbClient) Update(kt *kit.Kit, id string, req *protolb.TCloudUpdateReq) error {
+	return common.RequestNoResp[protolb.TCloudUpdateReq](c.client, http.MethodPatch, kt, req, "/load_balancers/%s", id)
 }

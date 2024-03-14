@@ -21,7 +21,7 @@
 package loadbalancer
 
 import (
-	protoclb "hcm/pkg/api/hc-service/clb"
+	protolb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
@@ -29,8 +29,8 @@ import (
 	"hcm/pkg/rest"
 )
 
-func (svc *clbSvc) TCloudDescribeResources(cts *rest.Contexts) (any, error) {
-	req := new(protoclb.TCloudDescribeResourcesOption)
+func (svc *lbSvc) TCloudDescribeResources(cts *rest.Contexts) (any, error) {
+	req := new(protolb.TCloudDescribeResourcesOption)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
