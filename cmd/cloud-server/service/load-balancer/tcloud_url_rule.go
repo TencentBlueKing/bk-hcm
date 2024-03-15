@@ -56,13 +56,9 @@ func (svc *lbSvc) listTCloudLbUrlRuleByTG(cts *rest.Contexts, validHandler handl
 		return nil, err
 	}
 
-	urlRuleList, err := svc.listRuleByTargetGroup(cts.Kit, tgID, req)
+	urlRuleList, err := svc.listRuleWithCondition(cts.Kit, req, tools.RuleEqual("target_group_id", tgID))
 	if err != nil {
 		return nil, err
-	}
-
-	if len(urlRuleList.Details) == 0 {
-		return &cslb.ListLbUrlRuleResult{Count: urlRuleList.Count, Details: make([]cslb.ListLbUrlRuleBase, 0)}, nil
 	}
 
 	resList, err := svc.fillRuleRelatedRes(cts.Kit, urlRuleList)
@@ -73,9 +69,13 @@ func (svc *lbSvc) listTCloudLbUrlRuleByTG(cts *rest.Contexts, validHandler handl
 	return resList, nil
 }
 
-// fillRuleRelatedRes 填充 监听器、vpc相关信息
+// fillRuleRelatedRes 填充 监听器的协议、端口信息、所在vpc信息
 func (svc *lbSvc) fillRuleRelatedRes(kt *kit.Kit, urlRuleList *dataproto.TCloudURLRuleListResult) (
 	interface{}, error) {
+
+	if len(urlRuleList.Details) == 0 {
+		return &cslb.ListLbUrlRuleResult{Count: urlRuleList.Count, Details: make([]cslb.ListClbUrlRuleBase, 0)}, nil
+	}
 
 	lbIDs := make([]string, 0)
 	lblIDs := make([]string, 0)
@@ -132,24 +132,29 @@ func (svc *lbSvc) fillRuleRelatedRes(kt *kit.Kit, urlRuleList *dataproto.TCloudU
 	return resList, nil
 }
 
-func (svc *lbSvc) listRuleByTargetGroup(kt *kit.Kit, tgID string, listReq *core.ListReq) (
+// listRuleWithCondition list rule with additional rules
+func (svc *lbSvc) listRuleWithCondition(kt *kit.Kit, listReq *core.ListReq, conditions ...filter.RuleFactory) (
 	*dataproto.TCloudURLRuleListResult, error) {
 
-	combinedFilter, err := tools.And(listReq.Filter,
-		filter.AtomRule{Field: "target_group_id", Op: filter.Equal.Factory(), Value: tgID})
-	if err != nil {
-		logs.Errorf("fail to merge list request, err: %v, listReq: %+v, rid: %s", err, listReq, kt.Rid)
-		return nil, err
-	}
-
 	req := &core.ListReq{
-		Filter: combinedFilter,
+		Filter: listReq.Filter,
 		Page:   listReq.Page,
 		Fields: listReq.Fields,
 	}
+	if len(conditions) > 0 {
+		conditions = append(conditions, listReq.Filter)
+		combinedFilter, err := tools.And(conditions...)
+		if err != nil {
+			logs.Errorf("fail to merge list request, err: %v, listReq: %+v, rid: %s", err, listReq, kt.Rid)
+			return nil, err
+		}
+		req.Filter = combinedFilter
+	}
+
 	urlRuleList, err := svc.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, req)
 	if err != nil {
-		logs.Errorf("list tcloud url rule failed, targetGroupID: %s, err: %v, rid: %s", tgID, err, kt.Rid)
+		logs.Errorf("list tcloud url with rule failed,  err: %v, req: %+v, conditions: %+v, rid: %s",
+			err, listReq, conditions, kt.Rid)
 		return nil, err
 	}
 
@@ -177,4 +182,40 @@ func (svc *lbSvc) listVpcMap(kt *kit.Kit, vpcIDs []string) (map[string]cloud.Bas
 	}
 
 	return vpcMap, nil
+}
+
+// ListBizUrlRulesByListener 指定监听器下的url规则
+func (svc *lbSvc) ListBizUrlRulesByListener(cts *rest.Contexts) (any, error) {
+	lblID := cts.PathParameter("lbl_id").String()
+	if len(lblID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "listener is required")
+	}
+
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.ListenerCloudResType, lblID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 业务校验、鉴权
+	err = handler.BizOperateAuth(cts, &handler.ValidWithAuthOption{
+		Authorizer: svc.authorizer,
+		ResType:    meta.Listener,
+		Action:     meta.Find,
+		BasicInfo:  basicInfo,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// 查询规则列表
+	return svc.listRuleWithCondition(cts.Kit, req, tools.RuleEqual("lbl_id", lblID))
 }
