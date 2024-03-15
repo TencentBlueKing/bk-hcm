@@ -21,7 +21,7 @@ export const useLocalTable = (props: IProp) => {
       const searchVal = ref([]);
       const isLoading = ref(false);
       return () => (
-        <>
+        <div class='local-table-container'>
           <section class='operation-wrap'>
             {slots.tab?.()}
             <SearchSelect class='common-search-selector w400' v-model={searchVal.value} data={props.searchData} />
@@ -29,7 +29,7 @@ export const useLocalTable = (props: IProp) => {
           <Loading loading={isLoading.value}>
             <Table data={props.data} columns={props.columns} pagination={pagination} />
           </Loading>
-        </>
+        </div>
       );
     },
   });
