@@ -68,7 +68,7 @@ export const useTable = (props: IProp) => {
     pagination.start = (v - 1) * pagination.limit;
     getListData();
   };
-  const getListData = async (customRules: Array<RulesItem> = []) => {
+  const getListData = async (customRules: Array<RulesItem> = [], type?: string) => {
     // 预览
     if (props.tableOptions.reviewData) {
       dataList.value = props.tableOptions.reviewData;
@@ -90,7 +90,7 @@ export const useTable = (props: IProp) => {
               rules: [...filter.rules, ...customRules],
             },
           },
-          props.requestOption.type,
+          type ? type : props.requestOption.type,
         ),
       ),
     );
