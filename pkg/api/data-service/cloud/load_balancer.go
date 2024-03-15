@@ -177,13 +177,13 @@ type ClbExtListResult[T corelb.Extension] struct {
 
 // -------------------------- Delete --------------------------
 
-// ClbBatchDeleteReq delete request.
-type ClbBatchDeleteReq struct {
+// LoadBalancerBatchDeleteReq delete request.
+type LoadBalancerBatchDeleteReq struct {
 	Filter *filter.Expression `json:"filter" validate:"required"`
 }
 
 // Validate delete request.
-func (req *ClbBatchDeleteReq) Validate() error {
+func (req *LoadBalancerBatchDeleteReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 

@@ -122,7 +122,7 @@ type SnatIp struct {
 	Ip *string `json:"ip"`
 }
 
-// Hash use to compare
+// Hash use to compare: {SubnetId},{Ip}
 func (ip *SnatIp) Hash() string {
 	return ip.String()
 }

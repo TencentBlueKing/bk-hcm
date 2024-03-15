@@ -39,7 +39,7 @@ import (
 
 // BatchDeleteLoadBalancer delete clb
 func (svc *lbSvc) BatchDeleteLoadBalancer(cts *rest.Contexts) (any, error) {
-	req := new(dataproto.ClbBatchDeleteReq)
+	req := new(dataproto.LoadBalancerBatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -55,8 +55,8 @@ func (svc *lbSvc) BatchDeleteLoadBalancer(cts *rest.Contexts) (any, error) {
 	}
 	listResp, err := svc.dao.LoadBalancer().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list clb failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list clb failed, err: %v", err)
+		logs.Errorf("list lb failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list lb failed, err: %v", err)
 	}
 
 	if len(listResp.Details) == 0 {
@@ -81,7 +81,7 @@ func (svc *lbSvc) BatchDeleteLoadBalancer(cts *rest.Contexts) (any, error) {
 		return nil, svc.dao.LoadBalancer().DeleteWithTx(cts.Kit, txn, delFilter)
 	})
 	if err != nil {
-		logs.Errorf("delete clb(ids=%v) failed, err: %v, rid: %s", lbIds, err, cts.Kit.Rid)
+		logs.Errorf("delete lb(ids=%v) failed, err: %v, rid: %s", lbIds, err, cts.Kit.Rid)
 		return nil, err
 	}
 

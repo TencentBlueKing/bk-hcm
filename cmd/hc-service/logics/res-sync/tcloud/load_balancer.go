@@ -25,11 +25,10 @@ import (
 	"strconv"
 
 	"hcm/cmd/hc-service/logics/res-sync/common"
-	"hcm/pkg/adaptor/tcloud"
 	typecore "hcm/pkg/adaptor/types/core"
-	typesclb "hcm/pkg/adaptor/types/load-balancer"
+	typeslb "hcm/pkg/adaptor/types/load-balancer"
 	"hcm/pkg/api/core"
-	coreclb "hcm/pkg/api/core/cloud/load-balancer"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -65,7 +64,7 @@ func (cli *client) LoadBalancer(kt *kit.Kit, params *SyncBaseParams, opt *SyncLB
 		return new(SyncResult), nil
 	}
 
-	addSlice, updateMap, delCloudIDs := common.Diff[typesclb.TCloudClb, coreclb.TCloudLoadBalancer](
+	addSlice, updateMap, delCloudIDs := common.Diff[typeslb.TCloudClb, corelb.TCloudLoadBalancer](
 		lbFromCloud, lbFromDB, isLBChange)
 
 	// 删除云上已经删除的负载均衡实例
@@ -79,7 +78,7 @@ func (cli *client) LoadBalancer(kt *kit.Kit, params *SyncBaseParams, opt *SyncLB
 		return nil, err
 	}
 	// 更新变更负载均衡
-	if err = cli.updateLoadBalancer(kt, params.AccountID, params.Region, updateMap); err != nil {
+	if err = cli.updateLoadBalancer(kt, updateMap); err != nil {
 		return nil, err
 	}
 
@@ -108,7 +107,7 @@ func (cli *client) RemoveLoadBalancerDeleteFromCloud(kt *kit.Kit, accountID stri
 			return err
 		}
 
-		cloudIDs := slice.Map(lbFromDB.Details, func(lb coreclb.BaseLoadBalancer) string { return lb.CloudID })
+		cloudIDs := slice.Map(lbFromDB.Details, func(lb corelb.BaseLoadBalancer) string { return lb.CloudID })
 
 		if len(cloudIDs) == 0 {
 			break
@@ -150,7 +149,7 @@ func (cli *client) listRemoveLBID(kt *kit.Kit, params *SyncBaseParams) ([]string
 	}
 	lbMap := cvt.StringSliceToMap(params.CloudIDs)
 
-	for _, batchCloudID := range slice.Split(params.CloudIDs, DescribeMax) {
+	for _, batchCloudID := range slice.Split(params.CloudIDs, CLBDescribeMax) {
 		batchParam.CloudIDs = batchCloudID
 		found, err := cli.listLBFromCloud(kt, batchParam)
 		if err != nil {
@@ -164,16 +163,16 @@ func (cli *client) listRemoveLBID(kt *kit.Kit, params *SyncBaseParams) ([]string
 	return cvt.MapKeyToSlice(lbMap), nil
 }
 
-// call data service to create lb
+// createLoadBalancer call data service to create lb
 func (cli *client) createLoadBalancer(kt *kit.Kit, accountID string, region string,
-	addSlice []typesclb.TCloudClb) (interface{}, error) {
+	addSlice []typeslb.TCloudClb) (interface{}, error) {
 
 	if len(addSlice) <= 0 {
 		return nil, nil
 	}
 
-	cloudVpcIds := slice.Map(addSlice, func(lb typesclb.TCloudClb) string { return cvt.PtrToVal(lb.VpcId) })
-	cloudSubnetIDs := slice.Map(addSlice, func(lb typesclb.TCloudClb) string { return cvt.PtrToVal(lb.SubnetId) })
+	cloudVpcIds := slice.Map(addSlice, func(lb typeslb.TCloudClb) string { return cvt.PtrToVal(lb.VpcId) })
+	cloudSubnetIDs := slice.Map(addSlice, func(lb typeslb.TCloudClb) string { return cvt.PtrToVal(lb.SubnetId) })
 
 	vpcMap, subnetMap, err := cli.getLoadBalancerRelatedRes(kt, accountID, region, cloudVpcIds, cloudSubnetIDs)
 	if err != nil {
@@ -198,13 +197,14 @@ func (cli *client) createLoadBalancer(kt *kit.Kit, accountID string, region stri
 	return nil, nil
 }
 
-// return vpc map and subnet map of given cloud id
+// getLoadBalancerRelatedRes return vpc map and subnet map of given cloud id
 func (cli *client) getLoadBalancerRelatedRes(kt *kit.Kit, accountID string, region string, cloudVpcIds []string,
 	cloudSubnetIDs []string) (vpcMap map[string]*common.VpcDB, subnetMap map[string]string, err error) {
+
 	vpcMap, err = cli.getVpcMap(kt, accountID, region, cloudVpcIds)
 	if err != nil {
 		logs.Errorf("fail to get vpc of load balancer during syncing, err: %v, account: %s, vpcIds: %v, rid:%s",
-			err, accountID, cloudSubnetIDs, kt.Rid)
+			err, accountID, cloudVpcIds, kt.Rid)
 		return nil, nil, err
 	}
 
@@ -217,9 +217,8 @@ func (cli *client) getLoadBalancerRelatedRes(kt *kit.Kit, accountID string, regi
 	return vpcMap, subnetMap, nil
 }
 
-// call data service to update lb
-func (cli *client) updateLoadBalancer(kt *kit.Kit, accountID string, region string,
-	updateMap map[string]typesclb.TCloudClb) error {
+// updateLoadBalancer call data service to update lb
+func (cli *client) updateLoadBalancer(kt *kit.Kit, updateMap map[string]typeslb.TCloudClb) error {
 
 	if len(updateMap) == 0 {
 		return nil
@@ -259,7 +258,7 @@ func (cli *client) deleteLoadBalancer(kt *kit.Kit, accountID string, region stri
 		return fmt.Errorf("lb not exist before sync deletion")
 	}
 
-	deleteReq := &protocloud.ClbBatchDeleteReq{
+	deleteReq := &protocloud.LoadBalancerBatchDeleteReq{
 		Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
 	}
 	if err = cli.dbCli.Global.LoadBalancer.BatchDelete(kt, deleteReq); err != nil {
@@ -275,8 +274,8 @@ func (cli *client) deleteLoadBalancer(kt *kit.Kit, accountID string, region stri
 }
 
 // listLBFromCloud list load balancer from cloud vendor
-func (cli *client) listLBFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]typesclb.TCloudClb, error) {
-	opt := &typesclb.TCloudListOption{
+func (cli *client) listLBFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]typeslb.TCloudClb, error) {
+	opt := &typeslb.TCloudListOption{
 		Region:   params.Region,
 		CloudIDs: params.CloudIDs,
 		Page: &typecore.TCloudPage{
@@ -286,10 +285,6 @@ func (cli *client) listLBFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]types
 	}
 	result, err := cli.cloudCli.ListLoadBalancer(kt, opt)
 	if err != nil {
-		if tcloud.IsNotFoundErr(err) {
-			return nil, nil
-		}
-
 		logs.Errorf("[%s] list lb from cloud failed, err: %v, account: %s, opt: %v, rid: %s",
 			enumor.TCloud, err, params.AccountID, opt, kt.Rid)
 		return nil, err
@@ -299,8 +294,8 @@ func (cli *client) listLBFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]types
 
 }
 
-// list load balancer from database
-func (cli *client) listLBFromDB(kt *kit.Kit, params *SyncBaseParams) ([]coreclb.TCloudLoadBalancer, error) {
+// listLBFromDB list load balancer from database
+func (cli *client) listLBFromDB(kt *kit.Kit, params *SyncBaseParams) ([]corelb.TCloudLoadBalancer, error) {
 
 	req := &core.ListReq{
 		Filter: tools.ExpressionAnd(
@@ -320,12 +315,12 @@ func (cli *client) listLBFromDB(kt *kit.Kit, params *SyncBaseParams) ([]coreclb.
 	return result.Details, nil
 }
 
-func convCloudToDBCreate(cloud typesclb.TCloudClb, accountID string, region string, vpcMap map[string]*common.VpcDB,
-	subnetMap map[string]string) protocloud.ClbBatchCreate[coreclb.TCloudClbExtension] {
+func convCloudToDBCreate(cloud typeslb.TCloudClb, accountID string, region string, vpcMap map[string]*common.VpcDB,
+	subnetMap map[string]string) protocloud.ClbBatchCreate[corelb.TCloudClbExtension] {
 
 	cloudVpcID := cvt.PtrToVal(cloud.VpcId)
 	subnetID := cvt.PtrToVal(cloud.SubnetId)
-	lb := protocloud.ClbBatchCreate[coreclb.TCloudClbExtension]{
+	lb := protocloud.ClbBatchCreate[corelb.TCloudClbExtension]{
 		CloudID:          cloud.GetCloudID(),
 		Name:             cvt.PtrToVal(cloud.LoadBalancerName),
 		Vendor:           enumor.TCloud,
@@ -345,7 +340,7 @@ func convCloudToDBCreate(cloud typesclb.TCloudClb, accountID string, region stri
 		// 备注字段云上没有
 		Memo: nil,
 
-		Extension: &coreclb.TCloudClbExtension{
+		Extension: &corelb.TCloudClbExtension{
 			SlaType:                  cvt.PtrToVal(cloud.SlaType),
 			VipIsp:                   cvt.PtrToVal(cloud.VipIsp),
 			AddressIpVersion:         cvt.PtrToVal(cloud.AddressIPVersion),
@@ -363,21 +358,21 @@ func convCloudToDBCreate(cloud typesclb.TCloudClb, accountID string, region stri
 		lb.Extension.BandwidthpkgSubType = cvt.PtrToVal(cloud.NetworkAttributes.BandwidthpkgSubType)
 	}
 	if cloud.SnatIps != nil {
-		ipList := make([]coreclb.SnatIp, 0, len(cloud.SnatIps))
+		ipList := make([]corelb.SnatIp, 0, len(cloud.SnatIps))
 		for _, snatIP := range cloud.SnatIps {
 			if snatIP == nil {
 				continue
 			}
-			ipList = append(ipList, coreclb.SnatIp{SubnetId: snatIP.SubnetId, Ip: snatIP.Ip})
+			ipList = append(ipList, corelb.SnatIp{SubnetId: snatIP.SubnetId, Ip: snatIP.Ip})
 		}
 		lb.Extension.SnatIps = ipList
 	}
 	// IP地址判断
 	if len(cloud.LoadBalancerVips) != 0 {
-		switch typesclb.TCloudLoadBalancerType(cvt.PtrToVal(cloud.LoadBalancerType)) {
-		case typesclb.InternalLoadBalancerType:
+		switch typeslb.TCloudLoadBalancerType(cvt.PtrToVal(cloud.LoadBalancerType)) {
+		case typeslb.InternalLoadBalancerType:
 			lb.PrivateIPv4Addresses = cvt.PtrToSlice(cloud.LoadBalancerVips)
-		case typesclb.OpenLoadBalancerType:
+		case typeslb.OpenLoadBalancerType:
 			lb.PublicIPv4Addresses = cvt.PtrToSlice(cloud.LoadBalancerVips)
 		}
 	}
@@ -386,7 +381,7 @@ func convCloudToDBCreate(cloud typesclb.TCloudClb, accountID string, region stri
 	}
 
 	//  可用区判断
-	if typesclb.TCloudLoadBalancerType(lb.LoadBalancerType) == typesclb.OpenLoadBalancerType && cloud.MasterZone != nil {
+	if typeslb.TCloudLoadBalancerType(lb.LoadBalancerType) == typeslb.OpenLoadBalancerType && cloud.MasterZone != nil {
 		lb.Zones = []string{cvt.PtrToVal(cloud.MasterZone.Zone)}
 	}
 
@@ -402,9 +397,9 @@ func convCloudToDBCreate(cloud typesclb.TCloudClb, accountID string, region stri
 }
 
 func convCloudToDBUpdate(id string,
-	cloud typesclb.TCloudClb) *protocloud.LoadBalancerExtUpdateReq[coreclb.TCloudClbExtension] {
+	cloud typeslb.TCloudClb) *protocloud.LoadBalancerExtUpdateReq[corelb.TCloudClbExtension] {
 
-	lb := protocloud.LoadBalancerExtUpdateReq[coreclb.TCloudClbExtension]{
+	lb := protocloud.LoadBalancerExtUpdateReq[corelb.TCloudClbExtension]{
 		ID:               id,
 		Name:             cvt.PtrToVal(cloud.LoadBalancerName),
 		BkBizID:          constant.UnassignedBiz,
@@ -414,7 +409,7 @@ func convCloudToDBUpdate(id string,
 		CloudStatusTime:  cvt.PtrToVal(cloud.StatusTime),
 		CloudExpiredTime: cvt.PtrToVal(cloud.ExpireTime),
 
-		Extension: &coreclb.TCloudClbExtension{
+		Extension: &corelb.TCloudClbExtension{
 			SlaType:                  cvt.PtrToVal(cloud.SlaType),
 			VipIsp:                   cvt.PtrToVal(cloud.VipIsp),
 			AddressIpVersion:         cvt.PtrToVal(cloud.AddressIPVersion),
@@ -431,21 +426,21 @@ func convCloudToDBUpdate(id string,
 		lb.Extension.BandwidthpkgSubType = cvt.PtrToVal(cloud.NetworkAttributes.BandwidthpkgSubType)
 	}
 	if cloud.SnatIps != nil {
-		ipList := make([]coreclb.SnatIp, 0, len(cloud.SnatIps))
+		ipList := make([]corelb.SnatIp, 0, len(cloud.SnatIps))
 		for _, snatIP := range cloud.SnatIps {
 			if snatIP == nil {
 				continue
 			}
-			ipList = append(ipList, coreclb.SnatIp{SubnetId: snatIP.SubnetId, Ip: snatIP.Ip})
+			ipList = append(ipList, corelb.SnatIp{SubnetId: snatIP.SubnetId, Ip: snatIP.Ip})
 		}
 		lb.Extension.SnatIps = ipList
 	}
 
 	if len(cloud.LoadBalancerVips) != 0 {
-		switch typesclb.TCloudLoadBalancerType(cvt.PtrToVal(cloud.LoadBalancerType)) {
-		case typesclb.InternalLoadBalancerType:
+		switch typeslb.TCloudLoadBalancerType(cvt.PtrToVal(cloud.LoadBalancerType)) {
+		case typeslb.InternalLoadBalancerType:
 			lb.PrivateIPv4Addresses = cvt.PtrToSlice(cloud.LoadBalancerVips)
-		case typesclb.OpenLoadBalancerType:
+		case typeslb.OpenLoadBalancerType:
 			lb.PublicIPv4Addresses = cvt.PtrToSlice(cloud.LoadBalancerVips)
 		}
 	}
@@ -467,7 +462,7 @@ func convCloudToDBUpdate(id string,
 	return &lb
 }
 
-func isLBChange(cloud typesclb.TCloudClb, db coreclb.TCloudLoadBalancer) bool {
+func isLBChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) bool {
 
 	if db.Name != cvt.PtrToVal(cloud.LoadBalancerName) {
 		return true
@@ -491,10 +486,10 @@ func isLBChange(cloud typesclb.TCloudClb, db coreclb.TCloudLoadBalancer) bool {
 
 	if len(cloud.LoadBalancerVips) != 0 {
 		var dbIPList []string
-		switch typesclb.TCloudLoadBalancerType(cvt.PtrToVal(cloud.LoadBalancerType)) {
-		case typesclb.InternalLoadBalancerType:
+		switch typeslb.TCloudLoadBalancerType(cvt.PtrToVal(cloud.LoadBalancerType)) {
+		case typeslb.InternalLoadBalancerType:
 			dbIPList = db.PrivateIPv4Addresses
-		case typesclb.OpenLoadBalancerType:
+		case typeslb.OpenLoadBalancerType:
 			dbIPList = db.PublicIPv4Addresses
 		}
 		if len(dbIPList) == 0 {
@@ -517,7 +512,7 @@ func isLBChange(cloud typesclb.TCloudClb, db coreclb.TCloudLoadBalancer) bool {
 	return isLBExtensionChange(cloud, db)
 }
 
-func isLBExtensionChange(cloud typesclb.TCloudClb, db coreclb.TCloudLoadBalancer) bool {
+func isLBExtensionChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) bool {
 	if db.Extension == nil {
 		return true
 	}
@@ -549,6 +544,9 @@ func isLBExtensionChange(cloud typesclb.TCloudClb, db coreclb.TCloudLoadBalancer
 	if db.Extension.IPv6Mode != cvt.PtrToVal(cloud.IPv6Mode) {
 		return true
 	}
+	if db.Extension.Egress != cvt.PtrToVal(cloud.Egress) {
+		return true
+	}
 	if db.Extension.Snat != cvt.PtrToVal(cloud.Snat) {
 		return true
 	}
@@ -557,40 +555,58 @@ func isLBExtensionChange(cloud typesclb.TCloudClb, db coreclb.TCloudLoadBalancer
 	}
 
 	// SnatIP列表对比
-	if len(db.Extension.SnatIps) != len(cloud.SnatIps) {
+	if isSnatIPChange(cloud, db) {
 		return true
-	} else if len(cloud.SnatIps) != 0 {
-		// 将云上的SnatIP转化为map，key为 {SubnetId},{Ip}
-		cloudSnatMap := cvt.SliceToMap(cloud.SnatIps, func(ip *tclb.SnatIp) (string, struct{}) {
-			if ip == nil {
-				return ",", struct{}{}
-			}
-			return cvt.PtrToVal(ip.SubnetId) + "," + cvt.PtrToVal(ip.Ip), struct{}{}
-		})
-		for _, local := range db.Extension.SnatIps {
-			delete(cloudSnatMap, local.Hash())
-		}
-		// 数量相等的情况下，应该刚好删除干净
-		if len(cloudSnatMap) != 0 {
-			return true
-		}
 	}
 
-	// AttributeFlags
+	// 云上AttributeFlags 转map
 	attrs := make(map[string]struct{}, len(cloud.AttributeFlags))
 	for _, flag := range cloud.AttributeFlags {
 		attrs[cvt.PtrToVal(flag)] = struct{}{}
 	}
 
+	// 逐个判断每种类型
 	if _, deleteProtect := attrs[DeleteProtectAttrFlag]; deleteProtect != db.Extension.DeleteProtect {
 		return true
 	}
 
-	if db.Extension.Egress != cvt.PtrToVal(cloud.Egress) {
+	return false
+}
+
+// 云上SnatIP列表与本地对比
+func isSnatIPChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) bool {
+
+	if len(db.Extension.SnatIps) != len(cloud.SnatIps) {
 		return true
 	}
+	if len(cloud.SnatIps) == 0 {
+		// 相等，且都为零
+		return false
+	}
+	// 转为map逐个比较
+	cloudSnatMap := cloudSnatSliceToMap(cloud.SnatIps)
+	for _, local := range db.Extension.SnatIps {
+		delete(cloudSnatMap, local.Hash())
+	}
+	// 数量相等的情况下，应该刚好删除干净。因此非零就是存在不同
+	return len(cloudSnatMap) != 0
+}
 
-	return false
+// 将云上的SnatIP转化为map，key为 {SubnetId},{Ip}
+func cloudSnatSliceToMap(cloudSlice []*tclb.SnatIp) map[string]struct{} {
+	cloudSnatMap := make(map[string]struct{}, len(cloudSlice))
+	for _, ip := range cloudSlice {
+		cloudSnatMap[hashCloudSnatIP(ip)] = struct{}{}
+	}
+	return cloudSnatMap
+}
+
+// hashCloudSnatIP key为 {SubnetId},{Ip}
+func hashCloudSnatIP(ip *tclb.SnatIp) string {
+	if ip == nil {
+		return ","
+	}
+	return cvt.PtrToVal(ip.SubnetId) + "," + cvt.PtrToVal(ip.Ip)
 }
 
 // SyncLBOption ...
@@ -602,5 +618,8 @@ func (o *SyncLBOption) Validate() error {
 	return validator.Validate.Struct(o)
 }
 
-const DescribeMax = 20
+// CLBDescribeMax 腾讯云CLB默认查询大小
+const CLBDescribeMax = 20
+
+// DeleteProtectAttrFlag 腾讯云负载均衡删除保护
 const DeleteProtectAttrFlag = "DeleteProtect"

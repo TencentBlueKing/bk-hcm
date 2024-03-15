@@ -103,11 +103,28 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 		enumor.RouteTableCloudResType:    SyncRouteTable,
 		enumor.SubAccountCloudResType:    SyncSubAccount,
 	}
-	for resType, syncFunc := range syncFuncMap {
-		if hitErr = syncFunc(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
+
+	for _, resType := range getSyncOrder() {
+		if hitErr = syncFuncMap[resType](kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
 			return resType, hitErr
 		}
 	}
 
 	return "", nil
+}
+
+func getSyncOrder() []enumor.CloudResourceType {
+	return []enumor.CloudResourceType{
+		enumor.DiskCloudResType,
+		enumor.VpcCloudResType,
+		enumor.SubnetCloudResType,
+		enumor.EipCloudResType,
+		enumor.ArgumentTemplateResType,
+		enumor.SecurityGroupCloudResType,
+		enumor.CvmCloudResType,
+		enumor.CertCloudResType,
+		enumor.LoadBalancerCloudResType,
+		enumor.RouteTableCloudResType,
+		enumor.SubAccountCloudResType,
+	}
 }

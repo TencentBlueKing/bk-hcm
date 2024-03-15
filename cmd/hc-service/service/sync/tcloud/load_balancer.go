@@ -117,7 +117,7 @@ func (hd *lbHandler) RemoveDeleteFromCloud(kt *kit.Kit) error {
 	return nil
 }
 
-// Name ...
+// Name load_balancer
 func (hd *lbHandler) Name() enumor.CloudResourceType {
 	return enumor.LoadBalancerCloudResType
 }

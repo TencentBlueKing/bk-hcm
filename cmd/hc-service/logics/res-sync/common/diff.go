@@ -29,7 +29,7 @@ import (
 	typeseip "hcm/pkg/adaptor/types/eip"
 	firewallrule "hcm/pkg/adaptor/types/firewall-rule"
 	typesimage "hcm/pkg/adaptor/types/image"
-	typesclb "hcm/pkg/adaptor/types/load-balancer"
+	typeslb "hcm/pkg/adaptor/types/load-balancer"
 	typesni "hcm/pkg/adaptor/types/network-interface"
 	typesregion "hcm/pkg/adaptor/types/region"
 	typesresourcegroup "hcm/pkg/adaptor/types/resource-group"
@@ -148,7 +148,7 @@ type CloudResType interface {
 		typeargstpl.TCloudArgsTplServiceGroup |
 
 		cert.TCloudCert |
-		typesclb.TCloudClb
+		typeslb.TCloudClb
 }
 
 type DBResType interface {
