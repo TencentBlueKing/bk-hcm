@@ -20,18 +20,17 @@
 package loadbalancer
 
 import (
-	"fmt"
 	"net/http"
 
+	synctcloud "hcm/cmd/hc-service/logics/res-sync/tcloud"
 	"hcm/cmd/hc-service/service/capability"
+	"hcm/pkg/adaptor/tcloud"
 	adcore "hcm/pkg/adaptor/types/core"
 	typelb "hcm/pkg/adaptor/types/load-balancer"
-	corelb "hcm/pkg/api/core/cloud/load-balancer"
-	dataproto "hcm/pkg/api/data-service/cloud"
 	protolb "hcm/pkg/api/hc-service/load-balancer"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
@@ -61,7 +60,7 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	tcloud, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	tcloudAdpt, err := svc.ad.TCloud(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +103,7 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		}
 	}
 
-	result, err := tcloud.CreateLoadBalancer(cts.Kit, createOpt)
+	result, err := tcloudAdpt.CreateLoadBalancer(cts.Kit, createOpt)
 	if err != nil {
 		logs.Errorf("create tcloud clb failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -120,33 +119,10 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 	if len(result.SuccessCloudIDs) == 0 {
 		return respData, nil
 	}
-	dbCreateReq := &dataproto.TCloudCLBCreateReq{
-		Lbs: make([]dataproto.ClbBatchCreate[corelb.TCloudClbExtension], 0, len(result.SuccessCloudIDs)),
-	}
-	// 预创建数据库记录
-	for i, cloudID := range result.SuccessCloudIDs {
-		var name = converter.PtrToVal(createOpt.LoadBalancerName)
-		if converter.PtrToVal(req.RequireCount) > 1 {
-			name = name + fmt.Sprintf("-%d", i+1)
-		}
-		dbCreateReq.Lbs = append(dbCreateReq.Lbs, dataproto.ClbBatchCreate[corelb.TCloudClbExtension]{
-			BkBizID:          constant.UnassignedBiz,
-			CloudID:          cloudID,
-			Name:             name,
-			Vendor:           enumor.TCloud,
-			LoadBalancerType: string(req.LoadBalancerType),
-			AccountID:        req.AccountID,
-			Zones:            req.Zones,
-			Region:           req.Region,
-		})
-	}
 
-	_, err = svc.dataCli.TCloud.LoadBalancer.BatchCreateTCloudClb(cts.Kit, dbCreateReq)
-	if err != nil {
-		logs.Errorf("fail to pre-insert clb record to db, err: %v , rid: %s", err, cts.Kit.Rid)
-		// still try to sync
+	if err := svc.lbSync(cts.Kit, tcloudAdpt, req.AccountID, req.Region, result.SuccessCloudIDs); err != nil {
+		return nil, err
 	}
-	// TODO 补充CLB同步逻辑
 
 	return respData, nil
 }
@@ -162,7 +138,7 @@ func (svc *clbSvc) ListTCloudClb(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	tcloud, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	tcloudAdpt, err := svc.ad.TCloud(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +151,7 @@ func (svc *clbSvc) ListTCloudClb(cts *rest.Contexts) (interface{}, error) {
 			Limit:  adcore.TCloudQueryLimit,
 		},
 	}
-	result, err := tcloud.ListLoadBalancer(cts.Kit, opt)
+	result, err := tcloudAdpt.ListLoadBalancer(cts.Kit, opt)
 	if err != nil {
 		logs.Errorf("[%s] list tcloud clb failed, req: %+v, err: %v, rid: %s",
 			enumor.TCloud, req, err, cts.Kit.Rid)
@@ -248,48 +224,27 @@ func (svc *clbSvc) TCloudUpdateCLB(cts *rest.Contexts) (any, error) {
 
 	_, err = client.UpdateLoadBalancer(cts.Kit, adtOpt)
 	if err != nil {
-		logs.Errorf("fail to call tcloud update clb(id:%s),err: %v, rid: %s", lbID, err, cts.Kit.Rid)
+		logs.Errorf("fail to call tcloud update load balancer(id:%s),err: %v, rid: %s", lbID, err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	// 更新数据库信息
-	return nil, svc.updateDbClb(cts, req, lb)
+	// 同步云上变更信息
+	return nil, svc.lbSync(cts.Kit, client, lb.AccountID, lb.Region, []string{lb.CloudID})
 
 }
 
-func (svc *clbSvc) updateDbClb(cts *rest.Contexts,
-	req *protolb.TCloudUpdateReq, lb *corelb.LoadBalancer[corelb.TCloudClbExtension]) error {
+// 同步云上资源
+func (svc *clbSvc) lbSync(kt *kit.Kit, tcloud tcloud.TCloud, accountID string, region string, lbIDs []string) error {
 
-	if lb.Extension == nil {
-		lb.Extension = &corelb.TCloudClbExtension{}
+	syncClient := synctcloud.NewClient(svc.dataCli, tcloud)
+	params := &synctcloud.SyncBaseParams{
+		AccountID: accountID,
+		Region:    region,
+		CloudIDs:  lbIDs,
 	}
-	if req.SnatPro != nil {
-		lb.Extension.SnatPro = converter.PtrToVal(req.SnatPro)
-	}
-	if req.DeleteProtect != nil {
-		lb.Extension.DeleteProtect = converter.PtrToVal(req.DeleteProtect)
-	}
-	if req.InternetMaxBandwidthOut != nil {
-		lb.Extension.InternetMaxBandwidthOut = converter.PtrToVal(req.InternetMaxBandwidthOut)
-	}
-	if req.InternetChargeType != nil {
-		lb.Extension.InternetChargeType = converter.PtrToVal(req.InternetChargeType)
-	}
-	if req.BandwidthpkgSubType != nil {
-		lb.Extension.BandwidthpkgSubType = converter.PtrToVal(req.BandwidthpkgSubType)
-	}
-	one := &dataproto.LoadBalancerExtUpdateReq[corelb.TCloudClbExtension]{
-		ID:        lb.ID,
-		Name:      converter.PtrToVal(req.Name),
-		Memo:      req.Memo,
-		Extension: lb.Extension,
-	}
-	dataReq := &dataproto.TCloudClbBatchUpdateReq{
-		Lbs: []*dataproto.LoadBalancerExtUpdateReq[corelb.TCloudClbExtension]{one},
-	}
-	err := svc.dataCli.TCloud.LoadBalancer.BatchUpdate(cts.Kit, dataReq)
+	_, err := syncClient.LoadBalancer(kt, params, &synctcloud.SyncLBOption{})
 	if err != nil {
-		logs.Errorf("fail to call data service to update clb info, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync load  balancer failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 	return nil

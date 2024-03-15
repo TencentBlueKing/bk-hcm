@@ -40,7 +40,7 @@ import (
 )
 
 // BatchCreateCLB 批量创建clb
-func (svc *clbSvc) BatchCreateCLB(cts *rest.Contexts) (any, error) {
+func (svc *lbSvc) BatchCreateCLB(cts *rest.Contexts) (any, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -54,7 +54,7 @@ func (svc *clbSvc) BatchCreateCLB(cts *rest.Contexts) (any, error) {
 	}
 
 }
-func batchCreateClb[T corelb.Extension](cts *rest.Contexts, svc *clbSvc, vendor enumor.Vendor) (any, error) {
+func batchCreateClb[T corelb.Extension](cts *rest.Contexts, svc *lbSvc, vendor enumor.Vendor) (any, error) {
 	req := new(dataproto.LoadBalancerBatchCreateReq[T])
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)

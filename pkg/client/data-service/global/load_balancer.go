@@ -27,32 +27,32 @@ import (
 	"hcm/pkg/rest"
 )
 
-// ClbClient is data service clb api client.
-type ClbClient struct {
+// LoadBalancerClient is data service load balancer api client.
+type LoadBalancerClient struct {
 	client rest.ClientInterface
 }
 
-// NewClbClient create a new clb api client.
-func NewClbClient(client rest.ClientInterface) *ClbClient {
-	return &ClbClient{
+// NewLoadBalancerClient create a new load balancer api client.
+func NewLoadBalancerClient(client rest.ClientInterface) *LoadBalancerClient {
+	return &LoadBalancerClient{
 		client: client,
 	}
 }
 
-// ListLoadBalancer list clb.
-func (cli *ClbClient) ListLoadBalancer(kt *kit.Kit, req *core.ListReq) (*dataproto.ClbListResult, error) {
+// ListLoadBalancer list lb.
+func (cli *LoadBalancerClient) ListLoadBalancer(kt *kit.Kit, req *core.ListReq) (*dataproto.ClbListResult, error) {
 	return common.Request[core.ListReq, dataproto.ClbListResult](cli.client, rest.POST, kt, req, "/load_balancers/list")
 }
 
 // BatchUpdateClbBizInfo update biz
-func (cli *ClbClient) BatchUpdateClbBizInfo(kt *kit.Kit, req *dataproto.ClbBizBatchUpdateReq) error {
+func (cli *LoadBalancerClient) BatchUpdateClbBizInfo(kt *kit.Kit, req *dataproto.ClbBizBatchUpdateReq) error {
 	return common.RequestNoResp[dataproto.ClbBizBatchUpdateReq](cli.client, rest.PATCH,
 		kt, req, "/load_balancers/biz/batch/update")
 
 }
 
 // ListListener list listener.
-func (cli *ClbClient) ListListener(kt *kit.Kit, req *dataproto.ListListenerReq) (
+func (cli *LoadBalancerClient) ListListener(kt *kit.Kit, req *dataproto.ListListenerReq) (
 	*dataproto.ListenerListResult, error) {
 
 	return common.Request[dataproto.ListListenerReq, dataproto.ListenerListResult](
@@ -60,7 +60,7 @@ func (cli *ClbClient) ListListener(kt *kit.Kit, req *dataproto.ListListenerReq) 
 }
 
 // ListUrlRule list url rule.
-func (cli *ClbClient) ListUrlRule(kt *kit.Kit, req *dataproto.ListTCloudURLRuleReq) (
+func (cli *LoadBalancerClient) ListUrlRule(kt *kit.Kit, req *dataproto.ListTCloudURLRuleReq) (
 	*dataproto.TCloudURLRuleListResult, error) {
 
 	return common.Request[dataproto.ListTCloudURLRuleReq, dataproto.TCloudURLRuleListResult](
@@ -68,13 +68,20 @@ func (cli *ClbClient) ListUrlRule(kt *kit.Kit, req *dataproto.ListTCloudURLRuleR
 }
 
 // ListTarget list target.
-func (cli *ClbClient) ListTarget(kt *kit.Kit, req *core.ListReq) (*dataproto.ClbTargetListResult, error) {
+func (cli *LoadBalancerClient) ListTarget(kt *kit.Kit, req *core.ListReq) (*dataproto.ClbTargetListResult, error) {
 	return common.Request[core.ListReq, dataproto.ClbTargetListResult](
 		cli.client, rest.POST, kt, req, "/load_balancers/targets/list")
 }
 
 // ListTargetGroup list target group.
-func (cli *ClbClient) ListTargetGroup(kt *kit.Kit, req *core.ListReq) (*dataproto.ClbTargetGroupListResult, error) {
+func (cli *LoadBalancerClient) ListTargetGroup(kt *kit.Kit, req *core.ListReq) (*dataproto.ClbTargetGroupListResult,
+	error) {
 	return common.Request[core.ListReq, dataproto.ClbTargetGroupListResult](
 		cli.client, rest.POST, kt, req, "/load_balancers/target_groups/list")
+}
+
+// BatchDelete 批量删除
+func (cli *LoadBalancerClient) BatchDelete(kt *kit.Kit, req *dataproto.LoadBalancerBatchDeleteReq) error {
+	return common.RequestNoResp[dataproto.LoadBalancerBatchDeleteReq](cli.client, rest.DELETE,
+		kt, req, "/load_balancers/batch")
 }

@@ -22,17 +22,19 @@ package tcloud
 
 import (
 	"hcm/pkg/api/core"
-	"hcm/pkg/api/core/cloud/load-balancer"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/client/common"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
+// LoadBalancerClient ...
 type LoadBalancerClient struct {
 	client rest.ClientInterface
 }
 
+// NewLoadBalancerClient ...
 func NewLoadBalancerClient(client rest.ClientInterface) *LoadBalancerClient {
 	return &LoadBalancerClient{client: client}
 }
@@ -46,9 +48,10 @@ func (cli *LoadBalancerClient) BatchCreateTCloudClb(kt *kit.Kit, req *dataproto.
 }
 
 // Get 获取clb 详情
-func (cli *LoadBalancerClient) Get(kt *kit.Kit, id string) (*loadbalancer.LoadBalancer[loadbalancer.TCloudClbExtension], error) {
+func (cli *LoadBalancerClient) Get(kt *kit.Kit, id string) (*corelb.LoadBalancer[corelb.TCloudClbExtension],
+	error) {
 
-	return common.Request[common.Empty, loadbalancer.LoadBalancer[loadbalancer.TCloudClbExtension]](
+	return common.Request[common.Empty, corelb.LoadBalancer[corelb.TCloudClbExtension]](
 		cli.client, rest.GET, kt, nil, "/load_balancers/%s", id)
 }
 
@@ -59,6 +62,15 @@ func (cli *LoadBalancerClient) BatchUpdate(kt *kit.Kit, req *dataproto.TCloudClb
 }
 
 // GetListener 获取监听器详情
-func (cli *LoadBalancerClient) GetListener(kt *kit.Kit, id string) (*loadbalancer.BaseListener, error) {
-	return common.Request[common.Empty, loadbalancer.BaseListener](cli.client, rest.GET, kt, nil, "/listeners/%s", id)
+func (cli *LoadBalancerClient) GetListener(kt *kit.Kit, id string) (*corelb.BaseListener, error) {
+	return common.Request[common.Empty, corelb.BaseListener](cli.client, rest.GET, kt, nil, "/listeners/%s", id)
+}
+
+// ListLoadBalancer list tcloud load balancer
+func (cli *LoadBalancerClient) ListLoadBalancer(kt *kit.Kit, req *core.ListReq) (
+	*core.ListResultT[corelb.TCloudLoadBalancer], error) {
+
+	return common.Request[core.ListReq, core.ListResultT[corelb.TCloudLoadBalancer]](
+		cli.client, rest.POST, kt, req, "/load_balancers/list")
+
 }

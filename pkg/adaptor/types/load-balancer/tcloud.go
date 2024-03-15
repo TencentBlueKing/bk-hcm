@@ -36,7 +36,7 @@ import (
 // TCloudListOption defines options to list tcloud clb instances.
 type TCloudListOption struct {
 	Region   string           `json:"region" validate:"required"`
-	CloudIDs []string         `json:"cloud_ids" validate:"omitempty,max=200"`
+	CloudIDs []string         `json:"cloud_ids" validate:"omitempty,max=20"`
 	Page     *core.TCloudPage `json:"page" validate:"omitempty"`
 }
 

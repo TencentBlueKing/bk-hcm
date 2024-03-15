@@ -19,6 +19,11 @@
 
 package loadbalancer
 
+import cvt "hcm/pkg/tools/converter"
+
+// TCloudLoadBalancer ...
+type TCloudLoadBalancer = LoadBalancer[TCloudClbExtension]
+
 // TCloudClbExtension tcloud clb extension.
 type TCloudClbExtension struct {
 	/*
@@ -87,7 +92,7 @@ type TCloudClbExtension struct {
 		非上移用户购买的 IPv6 负载均衡实例，且运营商类型非 BGP 时 ，不支持指定具体带宽包id。
 		示例值：bwp-pnbe****
 	*/
-	BandwidthPackageId string `json:"bandwidth_package_id,omitempty"`
+	BandwidthPackageId *string `json:"bandwidth_package_id,omitempty"`
 
 	// IP地址版本为ipv6时此字段有意义， IPv6Nat64 | IPv6FullChain
 	IPv6Mode string `json:"ipv6_mode,omitempty"`
@@ -102,7 +107,10 @@ type TCloudClbExtension struct {
 	SnatIps []SnatIp `json:"snat_ips,omitempty"`
 
 	// 删除保护
-	DeleteProtect bool `json:"delete_protect,omitnil" `
+	DeleteProtect bool `json:"delete_protect,omitempty"`
+
+	// 网络出口
+	Egress string `json:"egress,omitempty"`
 }
 
 // SnatIp ...
@@ -112,4 +120,14 @@ type SnatIp struct {
 
 	// IP地址，如192.168.0.1
 	Ip *string `json:"ip"`
+}
+
+// Hash use to compare: {SubnetId},{Ip}
+func (ip *SnatIp) Hash() string {
+	return ip.String()
+}
+
+// String()
+func (ip *SnatIp) String() string {
+	return cvt.PtrToVal(ip.SubnetId) + "," + cvt.PtrToVal(ip.Ip)
 }

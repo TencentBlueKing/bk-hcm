@@ -39,7 +39,7 @@ import (
 )
 
 // ListLoadBalancer list clb.
-func (svc *clbSvc) ListLoadBalancer(cts *rest.Contexts) (interface{}, error) {
+func (svc *lbSvc) ListLoadBalancer(cts *rest.Contexts) (interface{}, error) {
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -66,14 +66,14 @@ func (svc *clbSvc) ListLoadBalancer(cts *rest.Contexts) (interface{}, error) {
 
 	details := make([]corelb.BaseLoadBalancer, 0, len(result.Details))
 	for _, one := range result.Details {
-		tmpOne := convTableToBaseClb(&one)
+		tmpOne := convTableToBaseLB(&one)
 		details = append(details, *tmpOne)
 	}
 
 	return &protocloud.ClbListResult{Details: details}, nil
 }
 
-func convTableToBaseClb(one *tablelb.LoadBalancerTable) *corelb.BaseLoadBalancer {
+func convTableToBaseLB(one *tablelb.LoadBalancerTable) *corelb.BaseLoadBalancer {
 	return &corelb.BaseLoadBalancer{
 		ID:                   one.ID,
 		CloudID:              one.CloudID,
@@ -108,7 +108,7 @@ func convTableToBaseClb(one *tablelb.LoadBalancerTable) *corelb.BaseLoadBalancer
 }
 
 // ListLoadBalancerExt list clb ext.
-func (svc *clbSvc) ListLoadBalancerExt(cts *rest.Contexts) (interface{}, error) {
+func (svc *lbSvc) ListLoadBalancerExt(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -143,7 +143,7 @@ func (svc *clbSvc) ListLoadBalancerExt(cts *rest.Contexts) (interface{}, error) 
 }
 
 // GetLoadBalancer ...
-func (svc *clbSvc) GetLoadBalancer(cts *rest.Contexts) (any, error) {
+func (svc *lbSvc) GetLoadBalancer(cts *rest.Contexts) (any, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -171,21 +171,39 @@ func (svc *clbSvc) GetLoadBalancer(cts *rest.Contexts) (any, error) {
 	clbTable := result.Details[0]
 	switch clbTable.Vendor {
 	case enumor.TCloud:
-		return convTableToBaseClb(&clbTable), nil
+		return convLoadBalancerWithExt(&clbTable)
 	default:
 		return nil, fmt.Errorf("unsupport vendor: %s", vendor)
 	}
+}
+func convLoadBalancerWithExt[T corelb.Extension](tableLB *tablelb.LoadBalancerTable) (*corelb.LoadBalancer[T], error) {
+	base := convTableToBaseLB(tableLB)
+	extension := new(T)
+	if tableLB.Extension != "" {
+		if err := json.UnmarshalFromString(string(tableLB.Extension), extension); err != nil {
+			return nil, fmt.Errorf("fail unmarshal load balancer extension, err: %v", err)
+		}
+	}
+	return &corelb.LoadBalancer[T]{
+		BaseLoadBalancer: *base,
+		Extension:        extension,
+	}, nil
 }
 
 func convClbListResult[T corelb.Extension](tables []tablelb.LoadBalancerTable) (
 	*protocloud.ClbExtListResult[T], error) {
 
 	details := make([]corelb.LoadBalancer[T], 0, len(tables))
-	for _, one := range tables {
-		tmpClb := convTableToBaseClb(&one)
+	for _, tableLB := range tables {
+		base := convTableToBaseLB(&tableLB)
 		extension := new(T)
+		if tableLB.Extension != "" {
+			if err := json.UnmarshalFromString(string(tableLB.Extension), extension); err != nil {
+				return nil, fmt.Errorf("fail unmarshal load balancer extension, err: %v", err)
+			}
+		}
 		details = append(details, corelb.LoadBalancer[T]{
-			BaseLoadBalancer: *tmpClb,
+			BaseLoadBalancer: *base,
 			Extension:        extension,
 		})
 	}
@@ -196,7 +214,7 @@ func convClbListResult[T corelb.Extension](tables []tablelb.LoadBalancerTable) (
 }
 
 // ListListener list listener.
-func (svc *clbSvc) ListListener(cts *rest.Contexts) (interface{}, error) {
+func (svc *lbSvc) ListListener(cts *rest.Contexts) (interface{}, error) {
 	req := new(protocloud.ListListenerReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -267,7 +285,7 @@ func convTableToBaseListener(one *tablelb.LoadBalancerListenerTable) *corelb.Bas
 }
 
 // ListUrlRule list url rule.
-func (svc *clbSvc) ListUrlRule(cts *rest.Contexts) (interface{}, error) {
+func (svc *lbSvc) ListUrlRule(cts *rest.Contexts) (interface{}, error) {
 	req := new(protocloud.ListTCloudURLRuleReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -363,7 +381,7 @@ func convTableToBaseTCloudClbURLRule(kt *kit.Kit, one *tablelb.TCloudClbUrlRuleT
 }
 
 // ListTarget list target.
-func (svc *clbSvc) ListTarget(cts *rest.Contexts) (interface{}, error) {
+func (svc *lbSvc) ListTarget(cts *rest.Contexts) (interface{}, error) {
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -422,7 +440,7 @@ func convTableToBaseClbTarget(one *tablelb.LoadBalancerTargetTable) *corelb.Base
 }
 
 // ListTargetGroup list target group.
-func (svc *clbSvc) ListTargetGroup(cts *rest.Contexts) (interface{}, error) {
+func (svc *lbSvc) ListTargetGroup(cts *rest.Contexts) (interface{}, error) {
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -494,7 +512,7 @@ func convTableToBaseClbTargetGroup(kt *kit.Kit, one *tablelb.LoadBalancerTargetG
 	}, nil
 }
 
-func (svc *clbSvc) GetListener(cts *rest.Contexts) (any, error) {
+func (svc *lbSvc) GetListener(cts *rest.Contexts) (any, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)

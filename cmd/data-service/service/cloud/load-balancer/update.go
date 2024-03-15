@@ -44,7 +44,7 @@ import (
 )
 
 // BatchUpdateLoadBalancer 批量跟新clb信息
-func (svc *clbSvc) BatchUpdateLoadBalancer(cts *rest.Contexts) (any, error) {
+func (svc *lbSvc) BatchUpdateLoadBalancer(cts *rest.Contexts) (any, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -60,7 +60,7 @@ func (svc *clbSvc) BatchUpdateLoadBalancer(cts *rest.Contexts) (any, error) {
 
 }
 
-func batchUpdateLoadBalancer[T corelb.Extension](cts *rest.Contexts, svc *clbSvc) (any, error) {
+func batchUpdateLoadBalancer[T corelb.Extension](cts *rest.Contexts, svc *lbSvc) (any, error) {
 
 	req := new(protocloud.ClbExtBatchUpdateReq[T])
 	if err := cts.DecodeInto(req); err != nil {
@@ -126,7 +126,7 @@ func batchUpdateLoadBalancer[T corelb.Extension](cts *rest.Contexts, svc *clbSvc
 	return nil, nil
 }
 
-func (svc *clbSvc) listClbExt(kt *kit.Kit, ids []string) (map[string]tabletype.JsonField, error) {
+func (svc *lbSvc) listClbExt(kt *kit.Kit, ids []string) (map[string]tabletype.JsonField, error) {
 	opt := &types.ListOption{
 		Filter: tools.ContainersExpression("id", ids),
 		Page:   &core.BasePage{Limit: core.DefaultMaxPageLimit},
@@ -144,7 +144,7 @@ func (svc *clbSvc) listClbExt(kt *kit.Kit, ids []string) (map[string]tabletype.J
 }
 
 // BatchUpdateClbBizInfo 批量更新业务信息
-func (svc *clbSvc) BatchUpdateClbBizInfo(cts *rest.Contexts) (any, error) {
+func (svc *lbSvc) BatchUpdateClbBizInfo(cts *rest.Contexts) (any, error) {
 	req := new(protocloud.ClbBizBatchUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)

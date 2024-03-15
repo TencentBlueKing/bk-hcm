@@ -23,6 +23,7 @@ import (
 	"net/http"
 
 	protolb "hcm/pkg/api/hc-service/load-balancer"
+	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/client/common"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
@@ -40,6 +41,12 @@ func NewClbClient(client rest.ClientInterface) *ClbClient {
 // ClbClient is hc service clb api client.
 type ClbClient struct {
 	client rest.ClientInterface
+}
+
+// SyncLoadBalancer 同步负载均衡
+func (c *ClbClient) SyncLoadBalancer(kt *kit.Kit, req *sync.TCloudSyncReq) error {
+
+	return common.RequestNoResp[sync.TCloudSyncReq](c.client, http.MethodPost, kt, req, "/load_balancers/sync")
 }
 
 // DescribeResources ...

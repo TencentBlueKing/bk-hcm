@@ -239,6 +239,10 @@ func (t *TCloudImpl) CreateLoadBalancer(kt *kit.Kit, opt *typelb.TCloudCreateClb
 	if err != nil {
 		return nil, err
 	}
+	if len(result.SuccessCloudIDs) == 0 {
+		return nil, errf.Newf(errf.CloudVendorError,
+			"no any lb being created, TencentCloudSDK RequestId: %s", converter.PtrToVal(reqID))
+	}
 	return result, nil
 }
 

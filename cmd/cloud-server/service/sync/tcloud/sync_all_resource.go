@@ -38,6 +38,10 @@ type SyncAllResourceOption struct {
 	SyncPublicResource bool `json:"sync_public_resource" validate:"omitempty"`
 }
 
+// ResSyncFunc 资源同步函数
+type ResSyncFunc func(kt *kit.Kit, cliSet *client.ClientSet, accountID string, regions []string,
+	sd *detail.SyncDetail) error
+
 // Validate SyncAllResourceOption
 func (opt *SyncAllResourceOption) Validate() error {
 	return validator.Validate.Struct(opt)
@@ -85,45 +89,42 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 		AccountID: opt.AccountID,
 		Vendor:    string(enumor.TCloud),
 	}
-	if hitErr = SyncDisk(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
-		return enumor.DiskCloudResType, hitErr
+
+	syncFuncMap := map[enumor.CloudResourceType]ResSyncFunc{
+		enumor.DiskCloudResType:          SyncDisk,
+		enumor.VpcCloudResType:           SyncVpc,
+		enumor.SubnetCloudResType:        SyncSubnet,
+		enumor.EipCloudResType:           SyncEip,
+		enumor.ArgumentTemplateResType:   SyncArgsTpl,
+		enumor.SecurityGroupCloudResType: SyncSG,
+		enumor.CvmCloudResType:           SyncCvm,
+		enumor.CertCloudResType:          SyncCert,
+		enumor.LoadBalancerCloudResType:  SyncLoadBalancer,
+		enumor.RouteTableCloudResType:    SyncRouteTable,
+		enumor.SubAccountCloudResType:    SyncSubAccount,
 	}
 
-	if hitErr = SyncVpc(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
-		return enumor.VpcCloudResType, hitErr
+	for _, resType := range getSyncOrder() {
+		if hitErr = syncFuncMap[resType](kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
+			return resType, hitErr
+		}
 	}
 
-	if hitErr = SyncSubnet(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
-		return enumor.SubnetCloudResType, hitErr
-	}
-
-	if hitErr = SyncEip(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
-		return enumor.EipCloudResType, hitErr
-	}
-
-	// 参数模版同步需要放到安全组前面
-	if hitErr = SyncArgsTpl(kt, cliSet, opt.AccountID, sd); hitErr != nil {
-		return enumor.ArgumentTemplateResType, hitErr
-	}
-
-	if hitErr = SyncSG(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
-		return enumor.SecurityGroupCloudResType, hitErr
-	}
-
-	if hitErr = SyncCvm(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
-		return enumor.CvmCloudResType, hitErr
-	}
-
-	if hitErr = SyncRouteTable(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
-		return enumor.RouteTableCloudResType, hitErr
-	}
-
-	if hitErr = SyncSubAccount(kt, cliSet, opt.AccountID, sd); hitErr != nil {
-		return enumor.SubAccountCloudResType, hitErr
-	}
-
-	if hitErr = SyncCert(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
-		return enumor.CertCloudResType, hitErr
-	}
 	return "", nil
+}
+
+func getSyncOrder() []enumor.CloudResourceType {
+	return []enumor.CloudResourceType{
+		enumor.DiskCloudResType,
+		enumor.VpcCloudResType,
+		enumor.SubnetCloudResType,
+		enumor.EipCloudResType,
+		enumor.ArgumentTemplateResType,
+		enumor.SecurityGroupCloudResType,
+		enumor.CvmCloudResType,
+		enumor.CertCloudResType,
+		enumor.LoadBalancerCloudResType,
+		enumor.RouteTableCloudResType,
+		enumor.SubAccountCloudResType,
+	}
 }
