@@ -59,14 +59,6 @@ func (cli *LoadBalancerClient) ListListener(kt *kit.Kit, req *dataproto.ListList
 		cli.client, rest.POST, kt, req, "/load_balancers/listeners/list")
 }
 
-// ListUrlRule list url rule.
-func (cli *LoadBalancerClient) ListUrlRule(kt *kit.Kit, req *dataproto.ListTCloudURLRuleReq) (
-	*dataproto.TCloudURLRuleListResult, error) {
-
-	return common.Request[dataproto.ListTCloudURLRuleReq, dataproto.TCloudURLRuleListResult](
-		cli.client, rest.POST, kt, req, "/load_balancers/url_rules/list")
-}
-
 // ListTarget list target.
 func (cli *LoadBalancerClient) ListTarget(kt *kit.Kit, req *core.ListReq) (*dataproto.TargetListResult, error) {
 	return common.Request[core.ListReq, dataproto.TargetListResult](

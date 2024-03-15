@@ -12,7 +12,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -98,27 +97,14 @@ func (svc *lbSvc) listListener(cts *rest.Contexts, authHandler handler.ListAuthR
 func (svc *lbSvc) listTCloudLbUrlRuleMap(kt *kit.Kit, lbID string, lblIDs []string) (
 	map[string]cslb.ListListenerBase, error) {
 
-	urlRuleReq := &dataproto.ListTCloudURLRuleReq{
-		ListReq: &core.ListReq{
-			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					filter.AtomRule{
-						Field: "lb_id",
-						Op:    filter.Equal.Factory(),
-						Value: lbID,
-					},
-					filter.AtomRule{
-						Field: "lbl_id",
-						Op:    filter.In.Factory(),
-						Value: lblIDs,
-					},
-				},
-			},
-			Page: core.NewDefaultBasePage(),
-		},
+	urlRuleReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("lb_id", lbID),
+			tools.RuleIn("lbl_id", lbID),
+		),
+		Page: core.NewDefaultBasePage(),
 	}
-	urlRuleList, err := svc.client.DataService().Global.LoadBalancer.ListUrlRule(kt, urlRuleReq)
+	urlRuleList, err := svc.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, urlRuleReq)
 	if err != nil {
 		logs.Errorf("list tcloud url rule failed, lbID: %s, lblIDs: %v, err: %v, rid: %s", lbID, lblIDs, err, kt.Rid)
 		return nil, err
@@ -214,7 +200,7 @@ func (svc *lbSvc) getListener(cts *rest.Contexts, validHandler handler.ListAuthR
 		return svc.getTCloudListener(cts.Kit, id)
 
 	default:
-		return nil, errf.Newf(errf.Unknown, "id: %s vendor: %s not support", id, basicInfo.Vendor)
+		return nil, errf.Newf(errf.InvalidParameter, "id: %s vendor: %s not support", id, basicInfo.Vendor)
 	}
 }
 

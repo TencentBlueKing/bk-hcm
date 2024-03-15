@@ -84,25 +84,25 @@ func (req *SecurityGroupAssociateClbReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// AssignClbToBizReq define assign clb to biz req.
-type AssignClbToBizReq struct {
+// AssignLbToBizReq define assign clb to biz req.
+type AssignLbToBizReq struct {
 	BkBizID int64    `json:"bk_biz_id" validate:"required,min=0"`
-	ClbIDs  []string `json:"clb_ids" validate:"required,min=1"`
+	LbIDs   []string `json:"lb_ids" validate:"required,min=1"`
 }
 
 // Validate assign clb to biz request.
-func (req *AssignClbToBizReq) Validate() error {
+func (req *AssignLbToBizReq) Validate() error {
 
 	if req.BkBizID <= 0 {
 		return errors.New("bk_biz_id should >= 0")
 	}
 
-	if len(req.ClbIDs) == 0 {
-		return errors.New("clb ids is required")
+	if len(req.LbIDs) == 0 {
+		return errors.New("lb ids is required")
 	}
 
-	if len(req.ClbIDs) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("clb ids should <= %d", constant.BatchOperationMaxLimit)
+	if len(req.LbIDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("lb ids should <= %d", constant.BatchOperationMaxLimit)
 	}
 
 	return validator.Validate.Struct(req)

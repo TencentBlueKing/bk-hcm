@@ -4,34 +4,30 @@ import (
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
-	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
-// ListLbUrlRule list lb url rule.
-func (svc *lbSvc) ListLbUrlRule(cts *rest.Contexts) (interface{}, error) {
-	return svc.listLbUrlRule(cts, handler.ListResourceAuthRes, constant.UnassignedBiz)
+// ListTCloudRuleByTG ...
+func (svc *lbSvc) ListTCloudRuleByTG(cts *rest.Contexts) (interface{}, error) {
+	return svc.listTCloudLbUrlRuleByTG(cts, handler.ResOperateAuth)
 }
 
-// ListBizLbUrlRule list biz lb url rule.
-func (svc *lbSvc) ListBizLbUrlRule(cts *rest.Contexts) (interface{}, error) {
-	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
-	if err != nil {
-		return nil, err
-	}
-	return svc.listLbUrlRule(cts, handler.ListBizAuthRes, bkBizID)
+// ListBizTCloudRuleByTG ...
+func (svc *lbSvc) ListBizTCloudRuleByTG(cts *rest.Contexts) (interface{}, error) {
+	return svc.listTCloudLbUrlRuleByTG(cts, handler.BizOperateAuth)
 }
 
-func (svc *lbSvc) listLbUrlRule(cts *rest.Contexts, authHandler handler.ListAuthResHandler, bkBizID int64) (
-	interface{}, error) {
+// listTCloudLbUrlRuleByTG 返回目标组绑定的四层监听器或者七层规则（都能绑定目标组或者rs）
+func (svc *lbSvc) listTCloudLbUrlRuleByTG(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (any, error) {
 
 	tgID := cts.PathParameter("target_group_id").String()
 	if len(tgID) == 0 {
@@ -47,39 +43,29 @@ func (svc *lbSvc) listLbUrlRule(cts *rest.Contexts, authHandler handler.ListAuth
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	tgList, err := svc.getTargetGroupByID(cts.Kit, tgID, bkBizID)
-	if err != nil {
-		return nil, err
-	}
-	if len(tgList) == 0 {
-		return nil, errf.Newf(errf.RecordNotFound, "target group %s is not found", tgID)
-	}
-
-	// list authorized instances
-	_, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
-		ResType: meta.LoadBalancer, Action: meta.Find, Filter: req.Filter})
-	if err != nil {
-		logs.Errorf("list lb url rule auth failed, targetGroupID: %s, noPermFlag: %v, err: %v, rid: %s",
-			tgID, noPermFlag, err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	if noPermFlag {
-		logs.Errorf("list lb url rule no perm auth, targetGroupID: %s, noPermFlag: %v, rid: %s",
-			tgID, noPermFlag, cts.Kit.Rid)
-		return &cslb.ListLbUrlRuleResult{Count: 0, Details: make([]cslb.ListLbUrlRuleBase, 0)}, nil
-	}
-
-	urlRuleList, err := svc.getTCloudUrlRule(cts.Kit, tgID, req)
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
+		enumor.TargetGroupCloudResType, tgID)
 	if err != nil {
 		return nil, err
 	}
 
-	if req.Page.Count {
-		return &cslb.ListLbUrlRuleResult{Count: urlRuleList.Count}, nil
+	// 业务校验、鉴权
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.TargetGroup,
+		Action: meta.Find, BasicInfo: basicInfo})
+	if err != nil {
+		return nil, err
 	}
 
-	resList, err := svc.listTCloudClbUrlRule(cts.Kit, urlRuleList)
+	urlRuleList, err := svc.listRuleByTargetGroup(cts.Kit, tgID, req)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(urlRuleList.Details) == 0 {
+		return &cslb.ListLbUrlRuleResult{Count: urlRuleList.Count, Details: make([]cslb.ListLbUrlRuleBase, 0)}, nil
+	}
+
+	resList, err := svc.fillRuleRelatedRes(cts.Kit, urlRuleList)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +73,8 @@ func (svc *lbSvc) listLbUrlRule(cts *rest.Contexts, authHandler handler.ListAuth
 	return resList, nil
 }
 
-func (svc *lbSvc) listTCloudClbUrlRule(kt *kit.Kit, urlRuleList *dataproto.TCloudURLRuleListResult) (
+// fillRuleRelatedRes 填充 监听器、vpc相关信息
+func (svc *lbSvc) fillRuleRelatedRes(kt *kit.Kit, urlRuleList *dataproto.TCloudURLRuleListResult) (
 	interface{}, error) {
 
 	lbIDs := make([]string, 0)
@@ -98,9 +85,7 @@ func (svc *lbSvc) listTCloudClbUrlRule(kt *kit.Kit, urlRuleList *dataproto.TClou
 		lbIDs = append(lbIDs, ruleItem.LbID)
 		lblIDs = append(lblIDs, ruleItem.LblID)
 		targetIDs = append(targetIDs, ruleItem.TargetGroupID)
-		resList.Details = append(resList.Details, cslb.ListLbUrlRuleBase{
-			BaseTCloudLbUrlRule: ruleItem,
-		})
+		resList.Details = append(resList.Details, cslb.ListLbUrlRuleBase{BaseTCloudLbUrlRule: ruleItem})
 	}
 
 	// 批量获取clb信息
@@ -120,13 +105,8 @@ func (svc *lbSvc) listTCloudClbUrlRule(kt *kit.Kit, urlRuleList *dataproto.TClou
 	for _, item := range clbMap {
 		vpcIDs = append(vpcIDs, item.VpcID)
 	}
-	vpcMap, err := svc.listVpcMap(kt, vpcIDs)
-	if err != nil {
-		return nil, err
-	}
 
-	// 批量获取target信息
-	targetMap, err := svc.listClbTargetMap(kt, targetIDs)
+	vpcMap, err := svc.listVpcMap(kt, vpcIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -147,22 +127,27 @@ func (svc *lbSvc) listTCloudClbUrlRule(kt *kit.Kit, urlRuleList *dataproto.TClou
 		resList.Details[idx].Protocol = listenerMap[ruleItem.LblID].Protocol
 		resList.Details[idx].Port = listenerMap[ruleItem.LblID].Port
 
-		if len(targetMap[ruleItem.TargetGroupID]) > 0 {
-			resList.Details[idx].InstType = targetMap[ruleItem.TargetGroupID][0].InstType
-		}
 	}
 
 	return resList, nil
 }
 
-func (svc *lbSvc) getTCloudUrlRule(kt *kit.Kit, tgID string, listReq *core.ListReq) (
+func (svc *lbSvc) listRuleByTargetGroup(kt *kit.Kit, tgID string, listReq *core.ListReq) (
 	*dataproto.TCloudURLRuleListResult, error) {
 
-	tcloudUrlRuleReq := &dataproto.ListTCloudURLRuleReq{
-		TargetGroupID: tgID,
-		ListReq:       listReq,
+	combinedFilter, err := tools.And(listReq.Filter,
+		filter.AtomRule{Field: "target_group_id", Op: filter.Equal.Factory(), Value: tgID})
+	if err != nil {
+		logs.Errorf("fail to merge list request, err: %v, listReq: %+v, rid: %s", err, listReq, kt.Rid)
+		return nil, err
 	}
-	urlRuleList, err := svc.client.DataService().Global.LoadBalancer.ListUrlRule(kt, tcloudUrlRuleReq)
+
+	req := &core.ListReq{
+		Filter: combinedFilter,
+		Page:   listReq.Page,
+		Fields: listReq.Fields,
+	}
+	urlRuleList, err := svc.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, req)
 	if err != nil {
 		logs.Errorf("list tcloud url rule failed, targetGroupID: %s, err: %v, rid: %s", tgID, err, kt.Rid)
 		return nil, err
@@ -192,30 +177,4 @@ func (svc *lbSvc) listVpcMap(kt *kit.Kit, vpcIDs []string) (map[string]cloud.Bas
 	}
 
 	return vpcMap, nil
-}
-
-func (svc *lbSvc) listClbTargetMap(kt *kit.Kit, targetIDs []string) (map[string][]corelb.BaseTarget, error) {
-	if len(targetIDs) == 0 {
-		return nil, nil
-	}
-
-	targetReq := &core.ListReq{
-		Filter: tools.ContainersExpression("target_group_id", targetIDs),
-		Page:   core.NewDefaultBasePage(),
-	}
-	list, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, targetReq)
-	if err != nil {
-		logs.Errorf("[clb] list target failed, targetIDs: %v, err: %v, rid: %s", targetIDs, err, kt.Rid)
-		return nil, err
-	}
-
-	targetMap := make(map[string][]corelb.BaseTarget, len(list.Details))
-	for _, item := range list.Details {
-		if _, ok := targetMap[item.TargetGroupID]; !ok {
-			targetMap[item.TargetGroupID] = make([]corelb.BaseTarget, 0)
-		}
-		targetMap[item.TargetGroupID] = append(targetMap[item.TargetGroupID], item)
-	}
-
-	return targetMap, nil
 }

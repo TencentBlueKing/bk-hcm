@@ -44,7 +44,6 @@ func InitService(c *capability.Capability) {
 		client:     c.ApiClient,
 		authorizer: c.Authorizer,
 		audit:      c.Audit,
-		cvmLgc:     c.Logics.Cvm,
 	}
 
 	h := rest.NewHandler()
@@ -63,8 +62,9 @@ func InitService(c *capability.Capability) {
 	h.Add("AssignLbToBiz", http.MethodPost, "/load_balancers/assign/bizs", svc.AssignLbToBiz)
 	h.Add("ListBizListener", http.MethodPost, "/bizs/{bk_biz_id}/load_balancers/{lb_id}/listeners/list",
 		svc.ListBizListener)
-	h.Add("ListBizLbUrlRule", http.MethodPost, "/bizs/{bk_biz_id}/target_groups/{target_group_id}/listeners/list",
-		svc.ListBizLbUrlRule)
+
+	h.Add("ListBizTCloudRuleByTG", http.MethodPost,
+		"/bizs/{bk_biz_id}/vendors/tcloud/target_groups/{target_group_id}/rules/list", svc.ListBizTCloudRuleByTG)
 	h.Add("GetBizListener", http.MethodGet, "/bizs/{bk_biz_id}/listeners/{id}", svc.GetBizListener)
 
 	h.Add("CreateBizTargetGroup", http.MethodPost, "/bizs/{bk_biz_id}/target_groups/create", svc.CreateBizTargetGroup)

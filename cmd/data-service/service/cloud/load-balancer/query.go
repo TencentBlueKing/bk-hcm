@@ -284,9 +284,9 @@ func convTableToBaseListener(one *tablelb.LoadBalancerListenerTable) *corelb.Bas
 	}
 }
 
-// ListUrlRule list url rule.
-func (svc *lbSvc) ListUrlRule(cts *rest.Contexts) (interface{}, error) {
-	req := new(protocloud.ListTCloudURLRuleReq)
+// ListTCloudUrlRule list tcloud url rule.
+func (svc *lbSvc) ListTCloudUrlRule(cts *rest.Contexts) (any, error) {
+	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -295,21 +295,9 @@ func (svc *lbSvc) ListUrlRule(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	reqFilter := &filter.Expression{
-		Op: filter.And,
-	}
-	if len(req.TargetGroupID) > 0 {
-		reqFilter.Rules = append(reqFilter.Rules,
-			filter.AtomRule{Field: "target_group_id", Op: filter.Equal.Factory(), Value: req.TargetGroupID})
-	}
-	// 加上请求里过滤条件
-	if req.Filter != nil && !req.Filter.IsEmpty() {
-		reqFilter.Rules = append(reqFilter.Rules, req.Filter)
-	}
-
 	opt := &types.ListOption{
 		Fields: req.Fields,
-		Filter: reqFilter,
+		Filter: req.Filter,
 		Page:   req.Page,
 	}
 	result, err := svc.dao.LoadBalancerTCloudUrlRule().List(cts.Kit, opt)
