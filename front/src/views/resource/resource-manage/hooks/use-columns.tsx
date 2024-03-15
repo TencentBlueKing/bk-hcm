@@ -1361,13 +1361,35 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const targetGroupListenerColumns = [
     {
       label: '绑定的监听器',
-      field: 'listener',
+      field: 'lbl_name',
       isDefaultShow: true,
     },
     {
       label: '关联的负载均衡',
-      field: 'loadBalancer',
+      field: '',
       isDefaultShow: true,
+      width: 300,
+      render: ({ data }: any) => {
+        const {
+          lb_name,
+          private_ipv4_addresses,
+          private_ipv6_addresses,
+          public_ipv4_addresses,
+          public_ipv6_addresses,
+        } = data;
+        if (public_ipv4_addresses.length > 0) {
+          return `${lb_name}（${public_ipv4_addresses.join(',')}）`;
+        }
+        if (public_ipv6_addresses.length > 0) {
+          return `${lb_name}（${public_ipv6_addresses.join(',')}）`;
+        }
+        if (private_ipv4_addresses.length > 0) {
+          return `${lb_name}（${private_ipv4_addresses.join(',')}）`;
+        }
+        if (private_ipv6_addresses.length > 0) {
+          return `${lb_name}（${private_ipv6_addresses.join(',')}）`;
+        }
+      },
     },
     {
       label: '关联的URL',
@@ -1376,7 +1398,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: '资源类型',
-      field: 'resourceType',
+      field: 'inst_type',
       isDefaultShow: true,
     },
     {
@@ -1393,30 +1415,18 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: '异常端口数',
-      field: 'abnormalPortCount',
+      field: 'health_check',
       isDefaultShow: true,
       sort: true,
-    },
-    {
-      label: '所在VPC',
-      field: 'vpc',
-      isDefaultShow: true,
-    },
-    {
-      label: '云厂商',
-      field: 'cloudProvider',
-    },
-    {
-      label: '地域',
-      field: 'region',
-    },
-    {
-      label: '可用区域',
-      field: 'availabilityZone',
-    },
-    {
-      label: 'IP地址类型',
-      field: 'ipAddressType',
+      render: ({ cell }: any) => {
+        const { un_health_num, health_num } = cell;
+        const total = un_health_num + health_num;
+        return (
+          <div class='port-status-col'>
+            <span class={un_health_num ? 'un-health' : 'health'}>{un_health_num}</span>/<span>{total}</span>
+          </div>
+        );
+      },
     },
   ];
 
