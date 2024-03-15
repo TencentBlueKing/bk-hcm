@@ -18,7 +18,7 @@ export default defineComponent({
     };
 
     const handleTabChange = (routeName: string) => {
-      router.push({ name: routeName });
+      router.push({ name: routeName, query: { bizs: route.query.bizs } });
     };
 
     return () => (
