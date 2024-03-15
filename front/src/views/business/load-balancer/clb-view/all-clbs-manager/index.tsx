@@ -9,7 +9,7 @@ export default defineComponent({
   name: 'AllClbsManager',
   setup() {
     const router = useRouter();
-    const { columns, settings } = useColumns('clbs');
+    const { columns, settings } = useColumns('lb');
     const tableColumns = [
       ...columns,
       {
@@ -30,7 +30,7 @@ export default defineComponent({
         },
       },
       requestOption: {
-        type: '',
+        type: 'load_balancers',
       },
     });
 

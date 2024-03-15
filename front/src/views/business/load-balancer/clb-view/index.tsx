@@ -47,17 +47,17 @@ export default defineComponent({
 
     const componentMap = {
       all: <AllClbsManager />,
-      clb: <SpecificClbManager />,
-      listener: <SpecificListenerManager />,
+      load_balancers: <SpecificClbManager />,
+      listeners: <SpecificListenerManager />,
       domain: <SpecificDomainManager />,
     };
-    const renderComponent = (type: 'all' | 'clb' | 'listener' | 'domain') => {
+    const renderComponent = (type: 'all' | 'load_balancers' | 'listeners' | 'domain') => {
       return componentMap[type];
     };
 
-    const activeType = ref('all' as 'all' | 'clb' | 'listener' | 'domain');
+    const activeType = ref('all' as 'all' | 'load_balancers' | 'listeners' | 'domain');
     const currentSelectedTreeNode = ref(null);
-    const handleTypeChange = (type: 'all' | 'clb' | 'listener' | 'domain') => {
+    const handleTypeChange = (type: 'all' | 'load_balancers' | 'listeners' | 'domain') => {
       activeType.value = type;
       if (type === 'all') {
         treeRef.value.setSelect(currentSelectedTreeNode.value, false);

@@ -7,7 +7,7 @@
       <slot></slot>
       <BatchDistribution
         :selections="selections"
-        :type="DResourceType.clbs"
+        :type="DResourceType.load_balancers"
         :get-data="
           () => {
             triggerApi();
@@ -89,10 +89,10 @@ const { whereAmI } = useWhereAmI();
 const { searchData, searchValue, filter } = useFilter(props);
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, triggerApi } = useQueryList(
   { filter: filter.value },
-  'clbs',
+  'load_balancers',
 );
 const { selections, handleSelectionChange, resetSelections } = useSelection();
-const { columns, settings } = useColumns('clbs');
+const { columns, settings } = useColumns('lb');
 const resourceStore = useResourceStore();
 
 const selectedBizId = ref(0);
