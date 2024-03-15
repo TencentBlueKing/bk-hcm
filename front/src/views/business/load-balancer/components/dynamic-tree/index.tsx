@@ -1,11 +1,15 @@
 import { defineComponent, onMounted, ref, inject, computed, Transition } from 'vue';
 import { Popover, Tree } from 'bkui-vue';
 import { throttle } from 'lodash';
-import axios from 'axios';
 import './index.scss';
 import clbIcon from '@/assets/image/clb.png';
 import listenerIcon from '@/assets/image/listener.png';
 import domainIcon from '@/assets/image/domain.png';
+import http from '@/http';
+import { localStorageActions } from '@/common/util';
+import { QueryRuleOPEnum } from '@/typings';
+
+const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 /**
  * 基于 bkui-vue Tree 的动态树，支持滚动加载数据。
@@ -27,9 +31,8 @@ export default defineComponent({
   setup(props, ctx) {
     const treeData: any = inject('treeData');
     const treeRef: any = inject('treeRef');
-    const baseUrl = 'http://localhost:3000';
     const loadingRef = ref();
-    const rootPageNum = ref(1);
+    const rootStart = ref(0);
     const searchResultCount: any = inject('searchResultCount');
     const expandedNodeArr = ref([]);
     const isScrollOnePageHeight = ref(false);
@@ -67,7 +70,7 @@ export default defineComponent({
     });
 
     // _depth 与 type 的映射关系
-    const depthTypeMap = ['clb', 'listener', 'domain'];
+    const depthTypeMap = ['load_balancers', 'listeners', 'domains'];
     // type 与 icon 的映射关系
     const typeIconMap = {
       clb: clbIcon,
@@ -101,25 +104,34 @@ export default defineComponent({
      * @param {*} _depth 需要加载数据的节点的深度，取值为：0, 1, 2
      */
     const loadRemoteData = async (_item: any, _depth: number) => {
-      const url = `${baseUrl}/${!_item ? depthTypeMap[_depth] : depthTypeMap[_depth + 1]}`;
-      const params = {
-        _page: !_item ? rootPageNum.value : _item.pageNum,
-        _per_page: 50,
-        // parentId: !_item ? null : _item.id, // 根节点没有 parentId
-      };
-      const [res1, res2] = await Promise.all([
-        axios.get(url, { params }),
-        axios.get(url /* , { params: { parentId: !_item ? null : _item.id } } */),
-      ]);
+      const url = `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${localStorageActions.get('bizs')}/${
+        !_item ? depthTypeMap[_depth] : `${depthTypeMap[_depth]}/${_item.id}/${depthTypeMap[_depth + 1]}`
+      }/list`;
+      const startIdx = !_item ? rootStart.value : _item.start;
+      const [detailsRes, countRes] = await Promise.all(
+        [false, true].map((isCount) =>
+          http.post(url, {
+            filter: {
+              op: QueryRuleOPEnum.AND,
+              rules: [],
+            },
+            page: {
+              count: isCount,
+              start: isCount ? 0 : startIdx,
+              limit: isCount ? 0 : 50,
+            },
+          }),
+        ),
+      );
 
       // 组装新增的节点
-      const _incrementNodes = res1.data.data.map((item: any) => {
+      const _incrementNodes = detailsRes.data.details.map((item: any) => {
         // 如果是加载根节点的数据，则 type 设置为当前 type；如果是加载子节点的数据，则 type 设置为下一级 type
         !_item ? (item.type = depthTypeMap[_depth]) : (item.type = depthTypeMap[_depth + 1]);
-        // 如果是加载根节点或非叶子节点的数据，需要给每个 item 添加 async = true 用于异步加载，以及初始化 pageNum = 1
+        // 如果是加载根节点或非叶子节点的数据，需要给每个 item 添加 async = true 用于异步加载，以及初始化 start = 0
         if (_depth < 1 || !_item) {
           item.async = true;
-          item.pageNum = 1;
+          item.start = 0;
         }
         // dropdown 是否显示的标识
         item.isDropdownListShow = false;
@@ -128,14 +140,14 @@ export default defineComponent({
 
       if (!_item) {
         const _treeData = [...treeData.value, ..._incrementNodes];
-        if (_treeData.length < res2.data.length) {
+        if (_treeData.length < countRes.data.count) {
           treeData.value = [..._treeData, { type: 'loading' }];
         } else {
           treeData.value = _treeData;
         }
       } else {
         _item.children = [..._item.children, ..._incrementNodes];
-        if (_item.children.length < res2.data.length) {
+        if (_item.children.length < countRes.data.count) {
           _item.children.push({ type: 'loading', _parent: _item });
         }
       }
@@ -152,12 +164,12 @@ export default defineComponent({
         // 1.移除loading节点
         data._parent.children.pop();
         // 2.更新分页参数
-        data._parent.pageNum = data._parent.pageNum + 1;
+        data._parent.start = data._parent.start + 50;
         // 3.请求下一页数据
         loadRemoteData(data._parent, attributes.fullPath.split('-').length - 2);
       } else {
         treeData.value = treeData.value.slice(0, -1);
-        rootPageNum.value = rootPageNum.value + 1;
+        rootStart.value = rootStart.value + 50;
         loadRemoteData(null, 0);
       }
     };
