@@ -1120,7 +1120,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
   ];
 
-  const clbsColumns = [
+  const lbColumns = [
     {
       type: 'selection',
       width: 32,
@@ -1128,20 +1128,28 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       onlyShowOnList: true,
       align: 'right',
     },
-    getLinkField('clbs', '负载均衡名称'),
+    getLinkField('name', '负载均衡名称'),
     {
       label: '负载均衡域名',
-      field: 'clb_domain',
+      field: 'domain',
       isDefaultShow: true,
+      render: ({ cell }: { cell: string }) => cell || '--',
     },
     {
       label: '负载均衡VIP',
-      field: 'clb_vip',
+      field: '',
       isDefaultShow: true,
+      render: ({ data }: any) => {
+        const { private_ipv4_addresses, private_ipv6_addresses, public_ipv4_addresses, public_ipv6_addresses } = data;
+        if (public_ipv4_addresses.length > 0) return public_ipv4_addresses.join(',');
+        if (public_ipv6_addresses.length > 0) return public_ipv6_addresses.join(',');
+        if (private_ipv4_addresses.length > 0) return private_ipv4_addresses.join(',');
+        if (private_ipv6_addresses.length > 0) return private_ipv6_addresses.join(',');
+      },
     },
     {
       label: '网络类型',
-      field: 'net_type',
+      field: 'lb_type',
       isDefaultShow: true,
     },
     {
@@ -1153,15 +1161,29 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '分配状态',
       field: 'is_distibute',
       isDefaultShow: true,
+      isOnlyShowInResource: true,
+      render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => (
+        <bk-tag
+          v-bk-tooltips={{
+            content: businessMapStore.businessMap.get(cell),
+            disabled: !cell || cell === -1,
+          }}
+          theme={data.bk_biz_id === -1 ? false : 'success'}>
+          {data.bk_biz_id === -1 ? '未分配' : '已分配'}
+        </bk-tag>
+      ),
     },
     {
       label: 'IP版本',
-      field: 'ip_version',
+      field: 'network_type',
       isDefaultShow: true,
     },
     {
       label: '云厂商',
       field: 'vendor',
+      render({ cell }: { cell: string }) {
+        return h('span', [CloudType[cell] || '--']);
+      },
     },
     {
       label: '地域',
@@ -1169,18 +1191,15 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: '可用区域',
-      field: 'zone',
-    },
-    {
-      label: '类型',
-      field: 'type',
+      field: 'zones',
+      render: ({ cell }: { cell: string[] }) => cell.join(','),
     },
     {
       label: '状态',
       field: 'status',
     },
     {
-      label: '所属网络',
+      label: '所属vpc',
       field: 'vpc_id',
     },
   ];
@@ -1563,7 +1582,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     securityCommon: securityCommonColumns,
     eips: eipColumns,
     operationRecord: operationRecordColumns,
-    clbs: clbsColumns,
+    lb: lbColumns,
     targetGroup: targetGroupColumns,
     rsConfig: rsConfigColumns,
     domain: domainColumns,
