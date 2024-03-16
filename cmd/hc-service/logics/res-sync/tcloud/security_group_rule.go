@@ -223,12 +223,24 @@ func (cli *client) listSGRuleFromCloud(kt *kit.Kit, region, cloudSGID string) (s
 		egressRuleMaps[*egress.PolicyIndex] = egress
 		// 该安全组规则绑定的参数模版
 		if egress.AddressTemplate != nil {
-			argsTplCloudIDs = append(argsTplCloudIDs, converter.PtrToVal(egress.AddressTemplate.AddressId))
-			argsTplCloudIDs = append(argsTplCloudIDs, converter.PtrToVal(egress.AddressTemplate.AddressGroupId))
+			tmpAddressID := converter.PtrToVal(egress.AddressTemplate.AddressId)
+			if len(tmpAddressID) != 0 {
+				argsTplCloudIDs = append(argsTplCloudIDs, tmpAddressID)
+			}
+			tmpAddressGroupID := converter.PtrToVal(egress.AddressTemplate.AddressGroupId)
+			if len(tmpAddressGroupID) != 0 {
+				argsTplCloudIDs = append(argsTplCloudIDs, tmpAddressGroupID)
+			}
 		}
 		if egress.ServiceTemplate != nil {
-			argsTplCloudIDs = append(argsTplCloudIDs, converter.PtrToVal(egress.ServiceTemplate.ServiceId))
-			argsTplCloudIDs = append(argsTplCloudIDs, converter.PtrToVal(egress.ServiceTemplate.ServiceGroupId))
+			tmpServiceID := converter.PtrToVal(egress.ServiceTemplate.ServiceId)
+			if len(tmpServiceID) != 0 {
+				argsTplCloudIDs = append(argsTplCloudIDs, tmpServiceID)
+			}
+			tmpServiceGroupID := converter.PtrToVal(egress.ServiceTemplate.ServiceGroupId)
+			if len(tmpServiceGroupID) != 0 {
+				argsTplCloudIDs = append(argsTplCloudIDs, tmpServiceGroupID)
+			}
 		}
 	}
 
@@ -236,12 +248,24 @@ func (cli *client) listSGRuleFromCloud(kt *kit.Kit, region, cloudSGID string) (s
 		ingressRuleMaps[*ingress.PolicyIndex] = ingress
 		// 该安全组规则绑定的参数模版
 		if ingress.AddressTemplate != nil {
-			argsTplCloudIDs = append(argsTplCloudIDs, converter.PtrToVal(ingress.AddressTemplate.AddressId))
-			argsTplCloudIDs = append(argsTplCloudIDs, converter.PtrToVal(ingress.AddressTemplate.AddressGroupId))
+			tmpAddressID := converter.PtrToVal(ingress.AddressTemplate.AddressId)
+			if len(tmpAddressID) != 0 {
+				argsTplCloudIDs = append(argsTplCloudIDs, tmpAddressID)
+			}
+			tmpAddressGroupID := converter.PtrToVal(ingress.AddressTemplate.AddressGroupId)
+			if len(tmpAddressGroupID) != 0 {
+				argsTplCloudIDs = append(argsTplCloudIDs, tmpAddressGroupID)
+			}
 		}
 		if ingress.ServiceTemplate != nil {
-			argsTplCloudIDs = append(argsTplCloudIDs, converter.PtrToVal(ingress.ServiceTemplate.ServiceId))
-			argsTplCloudIDs = append(argsTplCloudIDs, converter.PtrToVal(ingress.ServiceTemplate.ServiceGroupId))
+			tmpServiceID := converter.PtrToVal(ingress.ServiceTemplate.ServiceId)
+			if len(tmpServiceID) != 0 {
+				argsTplCloudIDs = append(argsTplCloudIDs, tmpServiceID)
+			}
+			tmpServiceGroupID := converter.PtrToVal(ingress.ServiceTemplate.ServiceGroupId)
+			if len(tmpServiceGroupID) != 0 {
+				argsTplCloudIDs = append(argsTplCloudIDs, tmpServiceGroupID)
+			}
 		}
 	}
 
