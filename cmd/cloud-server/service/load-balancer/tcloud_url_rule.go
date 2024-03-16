@@ -272,3 +272,50 @@ func (svc *lbSvc) GetBizListenerDomains(cts *rest.Contexts) (any, error) {
 		DomainList:    domainList,
 	}, nil
 }
+
+// GetBizTCloudUrlRule 业务下腾讯云url规则
+func (svc *lbSvc) GetBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
+	lblID := cts.PathParameter("lbl_id").String()
+	if len(lblID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "listener is required")
+	}
+
+	ruleID := cts.PathParameter("rule_id").String()
+	if len(lblID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "rule is required")
+	}
+
+	lblInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.ListenerCloudResType, lblID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 业务校验、鉴权
+	err = handler.BizOperateAuth(cts,
+		&handler.ValidWithAuthOption{
+			Authorizer: svc.authorizer,
+			ResType:    meta.TargetGroup,
+			Action:     meta.Find,
+			BasicInfo:  lblInfo,
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	req := &core.ListReq{
+		Filter: tools.ExpressionAnd(tools.RuleEqual("id", ruleID), tools.RuleEqual("lbl_id", lblID)),
+		Page:   core.NewDefaultBasePage(),
+	}
+
+	urlRuleList, err := svc.client.DataService().TCloud.LoadBalancer.ListUrlRule(cts.Kit, req)
+	if err != nil {
+		logs.Errorf("list tcloud url failed,  err: %v, lblID: %s, ruleID: %s, conditions: %+v, rid: %s",
+			err, lblID, ruleID, cts.Kit.Rid)
+		return nil, err
+	}
+	if len(urlRuleList.Details) == 0 {
+		return nil, errf.New(errf.RecordNotFound, "")
+	}
+
+	return urlRuleList.Details[0], nil
+}
