@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -89,7 +90,8 @@ func (svc *lbSvc) getLoadBalancer(cts *rest.Contexts, validHandler handler.ListA
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.LoadBalancerCloudResType, id)
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.LoadBalancerCloudResType,
+		id)
 	if err != nil {
 		logs.Errorf("fail to get clb basic info, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -112,4 +114,59 @@ func (svc *lbSvc) getLoadBalancer(cts *rest.Contexts, validHandler handler.ListA
 	default:
 		return nil, errf.Newf(errf.Unknown, "id: %s vendor: %s not support", id, basicInfo.Vendor)
 	}
+}
+
+// ListTargetsByTGID ...
+func (svc *lbSvc) ListTargetsByTGID(cts *rest.Contexts) (interface{}, error) {
+	return svc.listTargetsByTGID(cts, handler.ResOperateAuth)
+}
+
+// ListBizTargetsByTGID ...
+func (svc *lbSvc) ListBizTargetsByTGID(cts *rest.Contexts) (interface{}, error) {
+	return svc.listTargetsByTGID(cts, handler.BizOperateAuth)
+}
+
+// listTargetsByTGID 目标组下RS列表
+func (svc *lbSvc) listTargetsByTGID(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},
+	error) {
+	tgID := cts.PathParameter("target_group_id").String()
+	if len(tgID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "target_group_id is required")
+	}
+
+	req := new(proto.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
+		enumor.TargetGroupCloudResType, tgID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 业务校验、鉴权
+	err = validHandler(cts, &handler.ValidWithAuthOption{
+		Authorizer: svc.authorizer,
+		ResType:    meta.TargetGroup,
+		Action:     meta.Find,
+		BasicInfo:  basicInfo,
+	})
+	if err != nil {
+		return nil, err
+	}
+	filter, err := tools.And(req.Filter, tools.RuleEqual("target_group_id", tgID))
+	if err != nil {
+		logs.Errorf("merge filter failed, err: %v, target_group_id: %s, rid: %s", err, tgID, cts.Kit.Rid)
+		return nil, err
+	}
+	listReq := &core.ListReq{
+		Filter: filter,
+		Page:   req.Page,
+	}
+	return svc.client.DataService().Global.LoadBalancer.ListTarget(cts.Kit, listReq)
 }
