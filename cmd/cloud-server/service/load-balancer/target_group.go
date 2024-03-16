@@ -193,11 +193,7 @@ func (svc *lbSvc) getTCloudTargetGroup(kt *kit.Kit, tgID string) (*cslb.GetTarge
 		return nil, err
 	}
 
-	req := &core.ListReq{
-		Filter: tools.EqualExpression("target_group_id", tgID),
-		Page:   core.NewDefaultBasePage(),
-	}
-	targetList, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, req)
+	targetList, err := svc.getTargetByTGIDs(kt, []string{tgID})
 	if err != nil {
 		logs.Errorf("list target db failed, tgID: %s, err: %v, rid: %s", tgID, err, kt.Rid)
 		return nil, err
@@ -205,7 +201,7 @@ func (svc *lbSvc) getTCloudTargetGroup(kt *kit.Kit, tgID string) (*cslb.GetTarge
 
 	result := &cslb.GetTargetGroupDetail{
 		BaseTargetGroup: targetGroupInfo.BaseTargetGroup,
-		TargetList:      targetList.Details,
+		TargetList:      targetList,
 	}
 
 	return result, nil
@@ -234,4 +230,18 @@ func (svc *lbSvc) getTargetGroupByID(kt *kit.Kit, targetGroupID string, bkBizID 
 	}
 
 	return targetGroupInfo.Details, nil
+}
+
+func (svc *lbSvc) getTargetByTGIDs(kt *kit.Kit, targetGroupIDs []string) ([]corelb.BaseTarget, error) {
+	tgReq := &core.ListReq{
+		Filter: tools.ContainersExpression("target_group_id", targetGroupIDs),
+		Page:   core.NewDefaultBasePage(),
+	}
+	targetResult, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, tgReq)
+	if err != nil {
+		logs.Errorf("list target by tgIDs failed, tgIDs: %s, err: %v, rid: %s", targetGroupIDs, err, kt.Rid)
+		return nil, err
+	}
+
+	return targetResult.Details, nil
 }

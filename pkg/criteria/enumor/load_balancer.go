@@ -40,3 +40,12 @@ const (
 	// CloudTargetGroupType 云端目标组类型
 	CloudTargetGroupType TargetGroupType = "cloud"
 )
+
+// BindingStatus 绑定状态
+type BindingStatus string
+
+// 目标组类型
+const (
+	// SuccessBindingStatus 绑定状态-成功
+	SuccessBindingStatus BindingStatus = "success"
+)

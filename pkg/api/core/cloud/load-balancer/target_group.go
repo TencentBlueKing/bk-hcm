@@ -87,13 +87,13 @@ type BaseTarget struct {
 
 // BaseTargetListenerRuleRel define base target listener rule rel.
 type BaseTargetListenerRuleRel struct {
-	ID               string          `json:"id"`
-	ListenerRuleID   string          `json:"listener_rule_id"`
-	ListenerRuleType string          `json:"listener_rule_type"`
-	TargetGroupID    string          `json:"target_group_id"`
-	LbID             string          `json:"lb_id"`
-	LblID            string          `json:"lbl_id"`
-	BindingStatus    string          `json:"binding_status"`
-	Detail           types.JsonField `json:"detail"`
+	ID               string               `json:"id"`
+	ListenerRuleID   string               `json:"listener_rule_id"`
+	ListenerRuleType enumor.RuleType      `json:"listener_rule_type"`
+	TargetGroupID    string               `json:"target_group_id"`
+	LbID             string               `json:"lb_id"`
+	LblID            string               `json:"lbl_id"`
+	BindingStatus    enumor.BindingStatus `json:"binding_status"`
+	Detail           types.JsonField      `json:"detail"`
 	*core.Revision   `json:",inline"`
 }

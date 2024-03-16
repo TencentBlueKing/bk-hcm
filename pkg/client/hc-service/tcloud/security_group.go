@@ -258,7 +258,7 @@ func (cli *SecurityGroupClient) DisassociateCvm(ctx context.Context, h http.Head
 
 // AssociateLb ...
 func (cli *SecurityGroupClient) AssociateLb(ctx context.Context, h http.Header,
-	req *hclb.TCloudSetClbSecurityGroupReq) error {
+	req *hclb.TCloudSetLbSecurityGroupReq) error {
 
 	resp := new(rest.BaseResp)
 
@@ -282,7 +282,7 @@ func (cli *SecurityGroupClient) AssociateLb(ctx context.Context, h http.Header,
 
 // DisassociateLb ...
 func (cli *SecurityGroupClient) DisassociateLb(ctx context.Context, h http.Header,
-	req *hclb.TCloudDisAssociateClbSecurityGroupReq) error {
+	req *hclb.TCloudDisAssociateLbSecurityGroupReq) error {
 
 	resp := new(rest.BaseResp)
 

@@ -20,24 +20,29 @@
 package loadbalancer
 
 import (
-	"errors"
 	"fmt"
 
 	protoaudit "hcm/pkg/api/data-service/audit"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	tableaudit "hcm/pkg/dal/table/audit"
 	"hcm/pkg/kit"
 )
 
-// ClbOperationAuditBuild clb operation audit build.
-func (c *LoadBalancer) ClbOperationAuditBuild(kt *kit.Kit, operations []protoaudit.CloudResourceOperationInfo) (
+// TargetGroupOperationAuditBuild target group operation audit build.
+func (c *LoadBalancer) TargetGroupOperationAuditBuild(kt *kit.Kit, operations []protoaudit.CloudResourceOperationInfo) (
 	[]*tableaudit.AuditTable, error) {
 
-	assOperations := make([]protoaudit.CloudResourceOperationInfo, 0)
+	lblAssOperations := make([]protoaudit.CloudResourceOperationInfo, 0)
 	for _, operation := range operations {
 		switch operation.Action {
 		case protoaudit.Associate, protoaudit.Disassociate:
-			assOperations = append(assOperations, operation)
+			switch operation.AssociatedResType {
+			case enumor.ListenerGroupAuditResType:
+				lblAssOperations = append(lblAssOperations, operation)
+			default:
+				return nil, fmt.Errorf("audit associated resource type: %s not support", operation.AssociatedResType)
+			}
 
 		default:
 			return nil, fmt.Errorf("audit action: %s not support", operation.Action)
@@ -45,8 +50,8 @@ func (c *LoadBalancer) ClbOperationAuditBuild(kt *kit.Kit, operations []protoaud
 	}
 
 	audits := make([]*tableaudit.AuditTable, 0, len(operations))
-	if len(assOperations) != 0 {
-		audit, err := c.assOperationAuditBuild(kt, assOperations)
+	if len(lblAssOperations) != 0 {
+		audit, err := c.listenerAssOperationAuditBuild(kt, lblAssOperations)
 		if err != nil {
 			return nil, err
 		}
@@ -57,23 +62,36 @@ func (c *LoadBalancer) ClbOperationAuditBuild(kt *kit.Kit, operations []protoaud
 	return audits, nil
 }
 
-func (c *LoadBalancer) baseOperationAuditBuild(kt *kit.Kit, operations []protoaudit.CloudResourceOperationInfo) (
-	[]*tableaudit.AuditTable, error) {
+func (c *LoadBalancer) listenerAssOperationAuditBuild(kt *kit.Kit,
+	operations []protoaudit.CloudResourceOperationInfo) ([]*tableaudit.AuditTable, error) {
 
-	ids := make([]string, 0, len(operations))
+	tgIDs := make([]string, 0)
+	lblIDs := make([]string, 0)
 	for _, one := range operations {
-		ids = append(ids, one.ResID)
+		tgIDs = append(tgIDs, one.ResID)
+		lblIDs = append(lblIDs, one.AssociatedResID)
 	}
-	idMap, err := ListLoadBalancer(kt, c.dao, ids)
+
+	tgIDMap, err := ListTargetGroup(kt, c.dao, tgIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	lblIDMap, err := ListListener(kt, c.dao, lblIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	audits := make([]*tableaudit.AuditTable, 0, len(operations))
 	for _, one := range operations {
-		clbInfo, exist := idMap[one.ResID]
+		tgInfo, exist := tgIDMap[one.ResID]
 		if !exist {
-			continue
+			return nil, errf.Newf(errf.RecordNotFound, "target group: %s not found", one.ResID)
+		}
+
+		lblInfo, exist := lblIDMap[one.AssociatedResID]
+		if !exist {
+			return nil, errf.Newf(errf.RecordNotFound, "listener: %s not found", one.AssociatedResID)
 		}
 
 		action, err := one.Action.ConvAuditAction()
@@ -82,27 +100,28 @@ func (c *LoadBalancer) baseOperationAuditBuild(kt *kit.Kit, operations []protoau
 		}
 
 		audits = append(audits, &tableaudit.AuditTable{
-			ResID:      one.ResID,
-			CloudResID: clbInfo.CloudID,
-			ResName:    clbInfo.Name,
-			ResType:    enumor.LoadBalancerAuditResType,
+			ResID:      tgInfo.ID,
+			CloudResID: tgInfo.CloudID,
+			ResName:    tgInfo.Name,
+			ResType:    enumor.TargetGroupAuditResType,
 			Action:     action,
-			BkBizID:    clbInfo.BkBizID,
-			Vendor:     clbInfo.Vendor,
-			AccountID:  clbInfo.AccountID,
+			BkBizID:    tgInfo.BkBizID,
+			Vendor:     tgInfo.Vendor,
+			AccountID:  tgInfo.AccountID,
 			Operator:   kt.User,
 			Source:     kt.GetRequestSource(),
 			Rid:        kt.Rid,
 			AppCode:    kt.AppCode,
-			Detail:     &tableaudit.BasicDetail{},
+			Detail: &tableaudit.BasicDetail{
+				Data: &tableaudit.AssociatedOperationAudit{
+					AssResType:    enumor.ListenerGroupAuditResType,
+					AssResID:      lblInfo.ID,
+					AssResCloudID: lblInfo.CloudID,
+					AssResName:    lblInfo.Name,
+				},
+			},
 		})
 	}
 
 	return audits, nil
-}
-
-func (c *LoadBalancer) assOperationAuditBuild(_ *kit.Kit, _ []protoaudit.CloudResourceOperationInfo) (
-	[]*tableaudit.AuditTable, error) {
-
-	return nil, errors.New("not supported")
 }

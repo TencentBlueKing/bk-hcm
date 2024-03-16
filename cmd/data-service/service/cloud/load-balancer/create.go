@@ -264,3 +264,60 @@ func getVpcMapByIDs[T corelb.TargetGroupExtension](kt *kit.Kit, tgList []datapro
 
 	return idMap, nil
 }
+
+// CreateTargetGroupListenerRel 批量创建目标组与监听器的绑定关系
+func (svc *lbSvc) CreateTargetGroupListenerRel(cts *rest.Contexts) (any, error) {
+	req := new(dataproto.TargetGroupListenerRelCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	result, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
+		if len(req.CloudTargetGroupID) == 0 {
+			return nil, errf.Newf(errf.InvalidParameter, "cloud_target_group_id can not empty")
+		}
+		ruleModel := &tablelb.TCloudLbUrlRuleTable{
+			TargetGroupID:      req.TargetGroupID,
+			CloudTargetGroupID: req.CloudTargetGroupID,
+			Reviser:            cts.Kit.User,
+		}
+		err := svc.dao.LoadBalancerTCloudUrlRule().UpdateByIDWithTx(cts.Kit, txn, req.ListenerRuleID, ruleModel)
+		if err != nil {
+			return nil, err
+		}
+
+		models := make([]*tablelb.TargetListenerRuleRelTable, 0)
+		models = append(models, &tablelb.TargetListenerRuleRelTable{
+			ListenerRuleID:   req.ListenerRuleID,
+			ListenerRuleType: req.ListenerRuleType,
+			TargetGroupID:    req.TargetGroupID,
+			LbID:             req.LbID,
+			LblID:            req.LblID,
+			BindingStatus:    req.BindingStatus,
+			Detail:           req.Detail,
+			Creator:          cts.Kit.User,
+			Reviser:          cts.Kit.User,
+		})
+		ids, err := svc.dao.LoadBalancerTargetListenerRuleRel().BatchCreateWithTx(cts.Kit, txn, models)
+		if err != nil {
+			logs.Errorf("[%s]fail to batch create target group listener rel, err: %v, rid:%s", err, cts.Kit.Rid)
+			return nil, fmt.Errorf("batch create target group listener rel failed, err: %v", err)
+		}
+		return ids, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ids, ok := result.([]string)
+	if !ok {
+		return nil, fmt.Errorf("batch create target group listener rel but return id type is not []string, id type: %v",
+			reflect.TypeOf(result).String())
+	}
+
+	return &core.BatchCreateResult{IDs: ids}, nil
+}

@@ -185,7 +185,7 @@ func (c *LoadBalancer) LoadBalancerAssignAuditBuild(kt *kit.Kit, assigns []proto
 	return audits, nil
 }
 
-// ListLoadBalancer list clb.
+// ListLoadBalancer list load balancer.
 func ListLoadBalancer(kt *kit.Kit, dao dao.Set, ids []string) (map[string]tablelb.LoadBalancerTable, error) {
 	opt := &types.ListOption{
 		Filter: tools.ContainersExpression("id", ids),
@@ -193,11 +193,51 @@ func ListLoadBalancer(kt *kit.Kit, dao dao.Set, ids []string) (map[string]tablel
 	}
 	list, err := dao.LoadBalancer().List(kt, opt)
 	if err != nil {
-		logs.Errorf("list clb failed, err: %v, ids: %v, rid: %f", err, ids, kt.Rid)
+		logs.Errorf("list load balancer failed, err: %v, ids: %v, rid: %f", err, ids, kt.Rid)
 		return nil, err
 	}
 
 	result := make(map[string]tablelb.LoadBalancerTable, len(list.Details))
+	for _, one := range list.Details {
+		result[one.ID] = one
+	}
+
+	return result, nil
+}
+
+// ListTargetGroup list target group.
+func ListTargetGroup(kt *kit.Kit, dao dao.Set, ids []string) (map[string]tablelb.LoadBalancerTargetGroupTable, error) {
+	opt := &types.ListOption{
+		Filter: tools.ContainersExpression("id", ids),
+		Page:   core.NewDefaultBasePage(),
+	}
+	list, err := dao.LoadBalancerTargetGroup().List(kt, opt)
+	if err != nil {
+		logs.Errorf("list target group failed, err: %v, ids: %v, rid: %f", err, ids, kt.Rid)
+		return nil, err
+	}
+
+	result := make(map[string]tablelb.LoadBalancerTargetGroupTable, len(list.Details))
+	for _, one := range list.Details {
+		result[one.ID] = one
+	}
+
+	return result, nil
+}
+
+// ListListener list listener.
+func ListListener(kt *kit.Kit, dao dao.Set, ids []string) (map[string]tablelb.LoadBalancerListenerTable, error) {
+	opt := &types.ListOption{
+		Filter: tools.ContainersExpression("id", ids),
+		Page:   core.NewDefaultBasePage(),
+	}
+	list, err := dao.LoadBalancerListener().List(kt, opt)
+	if err != nil {
+		logs.Errorf("list listener failed, err: %v, ids: %v, rid: %f", err, ids, kt.Rid)
+		return nil, err
+	}
+
+	result := make(map[string]tablelb.LoadBalancerListenerTable, len(list.Details))
 	for _, one := range list.Details {
 		result[one.ID] = one
 	}

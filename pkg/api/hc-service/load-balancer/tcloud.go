@@ -120,14 +120,14 @@ func (opt TCloudDescribeResourcesOption) Validate() error {
 
 // --------------------------[Associate 设置负载均衡实例的安全组]--------------------------
 
-// TCloudSetClbSecurityGroupReq defines options to set tcloud clb security-group request.
-type TCloudSetClbSecurityGroupReq struct {
+// TCloudSetLbSecurityGroupReq defines options to set tcloud lb security-group request.
+type TCloudSetLbSecurityGroupReq struct {
 	LbID             string   `json:"lb_id" validate:"required"`
 	SecurityGroupIDs []string `json:"security_group_ids" validate:"required,max=50"`
 }
 
-// Validate tcloud clb security-group option.
-func (opt TCloudSetClbSecurityGroupReq) Validate() error {
+// Validate tcloud lb security-group option.
+func (opt TCloudSetLbSecurityGroupReq) Validate() error {
 	if len(opt.LbID) == 0 {
 		return errors.New("lb_id is required")
 	}
@@ -141,14 +141,14 @@ func (opt TCloudSetClbSecurityGroupReq) Validate() error {
 
 // --------------------------[DisAssociate 设置负载均衡实例的安全组]--------------------------
 
-// TCloudDisAssociateClbSecurityGroupReq defines options to DisAssociate tcloud clb security-group request.
-type TCloudDisAssociateClbSecurityGroupReq struct {
+// TCloudDisAssociateLbSecurityGroupReq defines options to DisAssociate tcloud lb security-group request.
+type TCloudDisAssociateLbSecurityGroupReq struct {
 	LbID            string `json:"lb_id" validate:"required"`
 	SecurityGroupID string `json:"security_group_id" validate:"required"`
 }
 
-// Validate tcloud clb security-group option.
-func (opt TCloudDisAssociateClbSecurityGroupReq) Validate() error {
+// Validate tcloud lb security-group option.
+func (opt TCloudDisAssociateLbSecurityGroupReq) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
