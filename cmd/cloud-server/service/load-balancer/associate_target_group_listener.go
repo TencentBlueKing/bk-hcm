@@ -20,6 +20,7 @@
 package loadbalancer
 
 import (
+	lblogic "hcm/cmd/cloud-server/logics/load-balancer"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
 	protoaudit "hcm/pkg/api/data-service/audit"
@@ -73,7 +74,8 @@ func (svc *lbSvc) associateTargetGroupListenerRel(cts *rest.Contexts, validHandl
 	}
 	basicInfos, err := svc.client.DataService().Global.Cloud.BatchListResBasicInfo(cts.Kit, basicReq)
 	if err != nil {
-		logs.Errorf("batch list lb resource basic info failed, err: %v, req: %+v, rid: %s", err, basicReq, cts.Kit.Rid)
+		logs.Errorf("batch list listener or target group resource basic info failed, err: %v, req: %+v, rid: %s",
+			err, basicReq, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -116,12 +118,9 @@ func (svc *lbSvc) associateTargetGroupListenerRel(cts *rest.Contexts, validHandl
 func (svc *lbSvc) tcloudTargetGroupListenerRel(kt *kit.Kit, req *cslb.TargetGroupListenerRelAssociateReq,
 	bkBizID int64) (interface{}, error) {
 
-	lblList, err := svc.listListenerByID(kt, req.ListenerID, bkBizID)
+	lblInfo, err := lblogic.GetListenerByID(kt, svc.client.DataService(), req.ListenerID, bkBizID)
 	if err != nil {
 		return nil, err
-	}
-	if len(lblList) == 0 {
-		return nil, errf.Newf(errf.RecordNotFound, "listener_id: %s not found", req.ListenerID)
 	}
 
 	// 查询目标组基本信息
@@ -133,12 +132,12 @@ func (svc *lbSvc) tcloudTargetGroupListenerRel(kt *kit.Kit, req *cslb.TargetGrou
 		return nil, errf.Newf(errf.RecordNotFound, "target_group_id: %s not found", req.TargetGroupID)
 	}
 	// 查询目标组下，是否有RS信息
-	targetList, err := svc.getTargetByTGIDs(kt, []string{req.TargetGroupID})
+	targetList, err := svc.getTargetByTGID(kt, req.TargetGroupID)
 	if err != nil {
 		return nil, err
 	}
 	if len(targetList) > 0 {
-		return nil, errf.Newf(errf.InvalidParameter, "target_group_id: %s has bind rs", req.TargetGroupID)
+		return nil, errf.Newf(errf.InvalidParameter, "target_group_id: %s has bound rs", req.TargetGroupID)
 	}
 
 	// 根据ruleID，查询规则详情信息
@@ -171,7 +170,7 @@ func (svc *lbSvc) tcloudTargetGroupListenerRel(kt *kit.Kit, req *cslb.TargetGrou
 		return nil, err
 	}
 	if len(tgLblRelList.Details) > 0 {
-		return nil, errf.Newf(errf.RecordDuplicated, "target group %s or listener %s has already exists",
+		return nil, errf.Newf(errf.RecordDuplicated, "target group %s or listener %s rel already exists",
 			req.TargetGroupID, req.ListenerID)
 	}
 
@@ -180,7 +179,7 @@ func (svc *lbSvc) tcloudTargetGroupListenerRel(kt *kit.Kit, req *cslb.TargetGrou
 		ListenerRuleType:   ruleList.Details[0].RuleType,
 		TargetGroupID:      req.TargetGroupID,
 		CloudTargetGroupID: targetGroupList[0].CloudID,
-		LbID:               lblList[0].LbID,
+		LbID:               lblInfo.LbID,
 		LblID:              req.ListenerID,
 		BindingStatus:      enumor.SuccessBindingStatus,
 	}

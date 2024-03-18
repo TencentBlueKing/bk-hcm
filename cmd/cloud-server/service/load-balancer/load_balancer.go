@@ -28,16 +28,9 @@ import (
 	"hcm/cmd/cloud-server/logics/disk"
 	"hcm/cmd/cloud-server/logics/eip"
 	"hcm/cmd/cloud-server/service/capability"
-	"hcm/pkg/api/core"
-	corelb "hcm/pkg/api/core/cloud/load-balancer"
-	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/client"
-	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/auth"
-	"hcm/pkg/kit"
-	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 )
 
 // InitService initialize the clb service.
@@ -65,8 +58,6 @@ func InitService(c *capability.Capability) {
 	h.Add("DeleteBizTargetGroup", http.MethodDelete, "/bizs/{bk_biz_id}/target_groups/batch", svc.DeleteBizTargetGroup)
 	h.Add("ListBizTargetGroup", http.MethodPost, "/bizs/{bk_biz_id}/target_groups/list", svc.ListBizTargetGroup)
 	h.Add("GetTargetGroup", http.MethodGet, "/target_groups/{id}", svc.GetTargetGroup)
-	h.Add("AssociateBizTargetGroupListenerRel", http.MethodPost, "/bizs/{bk_biz_id}/listeners/associate/target_group",
-		svc.AssociateBizTargetGroupListenerRel)
 
 	h.Load(c.WebService)
 
@@ -88,6 +79,8 @@ func InitService(c *capability.Capability) {
 
 	bizH.Add("ListBizTargetsByTGID", http.MethodPost,
 		"/vendors/tcloud/target_groups/{target_group_id}/targets/list", svc.ListBizTargetsByTGID)
+	bizH.Add("AssociateBizTargetGroupListenerRel", http.MethodPost, "/listeners/associate/target_group",
+		svc.AssociateBizTargetGroupListenerRel)
 	bizH.Load(c.WebService)
 }
 
@@ -98,52 +91,4 @@ type lbSvc struct {
 	diskLgc    disk.Interface
 	cvmLgc     cvm.Interface
 	eipLgc     eip.Interface
-}
-
-func (svc *lbSvc) listLoadBalancerMap(kt *kit.Kit, lbIDs []string) (map[string]corelb.BaseLoadBalancer, error) {
-	if len(lbIDs) == 0 {
-		return nil, nil
-	}
-
-	clbReq := &core.ListReq{
-		Filter: tools.ContainersExpression("id", lbIDs),
-		Page:   core.NewDefaultBasePage(),
-	}
-	lbList, err := svc.client.DataService().Global.LoadBalancer.ListLoadBalancer(kt, clbReq)
-	if err != nil {
-		logs.Errorf("list load balancer failed, lbIDs: %v, err: %v, rid: %s", lbIDs, err, kt.Rid)
-		return nil, err
-	}
-
-	lbMap := make(map[string]corelb.BaseLoadBalancer, len(lbList.Details))
-	for _, lbItem := range lbList.Details {
-		lbMap[lbItem.ID] = lbItem
-	}
-
-	return lbMap, nil
-}
-
-func (svc *lbSvc) listListenerByID(kt *kit.Kit, lblID string, bkBizID int64) ([]corelb.BaseListener, error) {
-	lblReq := &dataproto.ListListenerReq{
-		ListReq: core.ListReq{
-			Filter: tools.EqualExpression("id", lblID),
-			Page:   core.NewDefaultBasePage(),
-		},
-	}
-	if bkBizID > 0 {
-		bizReq, err := tools.And(
-			filter.AtomRule{Field: "bk_biz_id", Op: filter.Equal.Factory(), Value: bkBizID}, lblReq.Filter,
-		)
-		if err != nil {
-			return nil, err
-		}
-		lblReq.Filter = bizReq
-	}
-	lblList, err := svc.client.DataService().Global.LoadBalancer.ListListener(kt, lblReq)
-	if err != nil {
-		logs.Errorf("list listener by id failed, lblID: %s, err: %v, rid: %s", lblID, err, kt.Rid)
-		return nil, err
-	}
-
-	return lblList.Details, nil
 }

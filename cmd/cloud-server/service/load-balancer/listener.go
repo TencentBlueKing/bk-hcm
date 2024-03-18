@@ -5,6 +5,7 @@ import (
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -165,15 +166,19 @@ func (svc *lbSvc) listListenerMap(kt *kit.Kit, lblIDs []string) (map[string]core
 
 // GetListener get clb listener.
 func (svc *lbSvc) GetListener(cts *rest.Contexts) (interface{}, error) {
-	return svc.getListener(cts, handler.ListResourceAuthRes)
+	return svc.getListener(cts, handler.ListResourceAuthRes, constant.UnassignedBiz)
 }
 
 // GetBizListener get biz clb listener.
 func (svc *lbSvc) GetBizListener(cts *rest.Contexts) (interface{}, error) {
-	return svc.getListener(cts, handler.ListBizAuthRes)
+	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	return svc.getListener(cts, handler.ListBizAuthRes, bkBizID)
 }
 
-func (svc *lbSvc) getListener(cts *rest.Contexts, validHandler handler.ListAuthResHandler) (any, error) {
+func (svc *lbSvc) getListener(cts *rest.Contexts, validHandler handler.ListAuthResHandler, bkBizID int64) (any, error) {
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
@@ -197,14 +202,14 @@ func (svc *lbSvc) getListener(cts *rest.Contexts, validHandler handler.ListAuthR
 
 	switch basicInfo.Vendor {
 	case enumor.TCloud:
-		return svc.getTCloudListener(cts.Kit, id)
+		return svc.getTCloudListener(cts.Kit, id, bkBizID)
 
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "id: %s vendor: %s not support", id, basicInfo.Vendor)
 	}
 }
 
-func (svc *lbSvc) getTCloudListener(kt *kit.Kit, lblID string) (*cslb.GetListenerDetail, error) {
+func (svc *lbSvc) getTCloudListener(kt *kit.Kit, lblID string, bkBizID int64) (*cslb.GetListenerDetail, error) {
 	listenerInfo, err := svc.client.DataService().TCloud.LoadBalancer.GetListener(kt, lblID)
 	if err != nil {
 		logs.Errorf("[clb] get tcloud listener detail failed, lblID: %s, err: %v, rid: %s", lblID, err, kt.Rid)
@@ -230,7 +235,7 @@ func (svc *lbSvc) getTCloudListener(kt *kit.Kit, lblID string) (*cslb.GetListene
 
 	// 只有4层监听器才显示目标组信息
 	if len(listenerInfo.DefaultDomain) == 0 {
-		targetGroupList, err := svc.getTargetGroupByID(kt, targetGroupID, 0)
+		targetGroupList, err := svc.getTargetGroupByID(kt, targetGroupID, bkBizID)
 		if err != nil {
 			return nil, err
 		}
