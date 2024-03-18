@@ -107,9 +107,9 @@ func RuleEqual(fieldName string, value any) *filter.AtomRule {
 	return &filter.AtomRule{Field: fieldName, Op: filter.Equal.Factory(), Value: value}
 }
 
-// RuleIn 生成资源字段等于查询的AtomRule，即fieldName in value
-func RuleIn(fieldName string, value any) *filter.AtomRule {
-	return &filter.AtomRule{Field: fieldName, Op: filter.In.Factory(), Value: value}
+// RuleIn 生成资源字段等于查询的AtomRule，即fieldName in values
+func RuleIn[T any](fieldName string, values []T) *filter.AtomRule {
+	return &filter.AtomRule{Field: fieldName, Op: filter.In.Factory(), Value: values}
 }
 
 // ExpressionAnd expression with op and

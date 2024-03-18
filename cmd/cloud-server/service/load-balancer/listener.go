@@ -101,7 +101,7 @@ func (svc *lbSvc) listTCloudLbUrlRuleMap(kt *kit.Kit, lbID string, lblIDs []stri
 	urlRuleReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("lb_id", lbID),
-			tools.RuleIn("lbl_id", lbID),
+			tools.RuleIn("lbl_id", lblIDs),
 		),
 		Page: core.NewDefaultBasePage(),
 	}
