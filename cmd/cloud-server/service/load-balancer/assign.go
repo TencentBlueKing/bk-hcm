@@ -26,17 +26,15 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/tools/converter"
 )
 
 // AssignLbToBiz 分配到业务下
 func (svc *lbSvc) AssignLbToBiz(cts *rest.Contexts) (any, error) {
 	// 分配关联资源预检
-	req := new(cslb.AssignClbToBizReq)
+	req := new(cslb.AssignLbToBizReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -47,29 +45,30 @@ func (svc *lbSvc) AssignLbToBiz(cts *rest.Contexts) (any, error) {
 	// 权限校验
 	clbInfoReq := dataproto.ListResourceBasicInfoReq{
 		ResourceType: enumor.LoadBalancerCloudResType,
-		IDs:          req.ClbIDs,
+		IDs:          req.LbIDs,
 	}
 	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, clbInfoReq)
 	if err != nil {
-		logs.Errorf("list clb info failed, err: %s, clb_ids: %v, rid: %s", err, req.ClbIDs, cts.Kit.Rid)
+		logs.Errorf("list clb info failed, err: %s, clb_ids: %v, rid: %s", err, req.LbIDs, cts.Kit.Rid)
 		return nil, err
 	}
 
-	authRes := converter.MapToSlice(basicInfoMap, func(k string, v types.CloudResourceBasicInfo) meta.ResourceAttribute {
-		return meta.ResourceAttribute{
+	authRes := make([]meta.ResourceAttribute, 0, len(basicInfoMap))
+	for _, info := range basicInfoMap {
+		authRes = append(authRes, meta.ResourceAttribute{
 			Basic: &meta.Basic{
 				Type:       meta.LoadBalancer,
 				Action:     meta.Assign,
-				ResourceID: v.AccountID,
+				ResourceID: info.AccountID,
 			},
 			BizID: req.BkBizID,
-		}
-	})
+		})
+	}
 
 	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
 	if err != nil {
 		return nil, err
 	}
 
-	return nil, lblogic.Assign(cts.Kit, svc.client.DataService(), req.ClbIDs, req.BkBizID)
+	return nil, lblogic.Assign(cts.Kit, svc.client.DataService(), req.LbIDs, req.BkBizID)
 }

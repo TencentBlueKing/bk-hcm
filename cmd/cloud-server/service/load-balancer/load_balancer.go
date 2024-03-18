@@ -44,28 +44,19 @@ func InitService(c *capability.Capability) {
 		client:     c.ApiClient,
 		authorizer: c.Authorizer,
 		audit:      c.Audit,
-		cvmLgc:     c.Logics.Cvm,
 	}
 
 	h := rest.NewHandler()
 
+	bizH := rest.NewHandler()
+	bizH.Path("/bizs/{bk_biz_id}")
 	// clb apis in biz
 	h.Add("ListLoadBalancer", http.MethodPost, "/load_balancers/list", svc.ListLoadBalancer)
-	h.Add("GetBizLoadBalancer", http.MethodGet, "/bizs/{bk_biz_id}/load_balancers/{id}", svc.GetBizLoadBalancer)
-	h.Add("UpdateBizTCloudLoadBalancer", http.MethodPatch, "/bizs/{bk_biz_id}/vendors/tcloud/load_balancers/{id}",
-		svc.UpdateBizTCloudLoadBalancer)
-	h.Add("ListBizLoadBalancer", http.MethodPost, "/bizs/{bk_biz_id}/load_balancers/list", svc.ListBizLoadBalancer)
-
+	h.Add("BatchCreateLB", http.MethodPost, "/load_balancers/create", svc.BatchCreateLB)
+	h.Add("AssignLbToBiz", http.MethodPost, "/load_balancers/assign/bizs", svc.AssignLbToBiz)
 	h.Add("GetLoadBalancer", http.MethodGet, "/load_balancers/{id}", svc.GetLoadBalancer)
 	h.Add("TCloudDescribeResources", http.MethodPost, "/vendors/tcloud/load_balancers/resources/describe",
 		svc.TCloudDescribeResources)
-	h.Add("BatchCreateLB", http.MethodPost, "/load_balancers/create", svc.BatchCreateLB)
-	h.Add("AssignLbToBiz", http.MethodPost, "/load_balancers/assign/bizs", svc.AssignLbToBiz)
-	h.Add("ListBizListener", http.MethodPost, "/bizs/{bk_biz_id}/load_balancers/{lb_id}/listeners/list",
-		svc.ListBizListener)
-	h.Add("ListBizLbUrlRule", http.MethodPost, "/bizs/{bk_biz_id}/target_groups/{target_group_id}/listeners/list",
-		svc.ListBizLbUrlRule)
-	h.Add("GetBizListener", http.MethodGet, "/bizs/{bk_biz_id}/listeners/{id}", svc.GetBizListener)
 
 	h.Add("CreateBizTargetGroup", http.MethodPost, "/bizs/{bk_biz_id}/target_groups/create", svc.CreateBizTargetGroup)
 	h.Add("UpdateBizTargetGroup", http.MethodPatch, "/bizs/{bk_biz_id}/target_groups/{id}", svc.UpdateBizTargetGroup)
@@ -74,6 +65,26 @@ func InitService(c *capability.Capability) {
 	h.Add("GetTargetGroup", http.MethodGet, "/target_groups/{id}", svc.GetTargetGroup)
 
 	h.Load(c.WebService)
+
+	bizH.Add("UpdateBizTCloudLoadBalancer", http.MethodPatch, "/vendors/tcloud/load_balancers/{id}",
+		svc.UpdateBizTCloudLoadBalancer)
+	bizH.Add("ListBizLoadBalancer", http.MethodPost, "/load_balancers/list", svc.ListBizLoadBalancer)
+	bizH.Add("GetBizLoadBalancer", http.MethodGet, "/load_balancers/{id}", svc.GetBizLoadBalancer)
+
+	bizH.Add("ListBizListener", http.MethodPost, "/load_balancers/{lb_id}/listeners/list", svc.ListBizListener)
+	bizH.Add("ListBizUrlRulesByListener", http.MethodPost,
+		"/vendors/tcloud/listeners/{lbl_id}/rules/list", svc.ListBizUrlRulesByListener)
+	bizH.Add("ListBizTCloudRuleByTG", http.MethodPost,
+		"/vendors/tcloud/target_groups/{target_group_id}/rules/list", svc.ListBizTCloudRuleByTG)
+	bizH.Add("GetBizListener", http.MethodGet, "/listeners/{id}", svc.GetBizListener)
+	bizH.Add("GetBizListenerDomains", http.MethodGet,
+		"/vendors/tcloud/listeners/{lbl_id}/domains", svc.GetBizListenerDomains)
+	bizH.Add("GetBizTCloudUrlRule", http.MethodGet,
+		"/vendors/tcloud/listeners/{lbl_id}/rules/{rule_id}", svc.GetBizTCloudUrlRule)
+
+	bizH.Add("ListBizTargetsByTGID", http.MethodPost,
+		"/vendors/tcloud/target_groups/{target_group_id}/targets/list", svc.ListBizTargetsByTGID)
+	bizH.Load(c.WebService)
 }
 
 type lbSvc struct {

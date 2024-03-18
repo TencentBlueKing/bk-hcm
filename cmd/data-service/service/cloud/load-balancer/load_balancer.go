@@ -42,12 +42,13 @@ func InitService(cap *capability.Capability) {
 	h.Add("ListLoadBalancer", http.MethodPost, "/load_balancers/list", svc.ListLoadBalancer)
 	h.Add("ListLoadBalancerExt", http.MethodPost, "/vendors/{vendor}/load_balancers/list", svc.ListLoadBalancerExt)
 	h.Add("BatchCreateCLB", http.MethodPost, "/vendors/{vendor}/load_balancers/batch/create", svc.BatchCreateCLB)
+
 	h.Add("BatchUpdateLoadBalancer",
 		http.MethodPatch, "/vendors/{vendor}/load_balancers/batch/update", svc.BatchUpdateLoadBalancer)
 	h.Add("BatchUpdateClbBizInfo", http.MethodPatch, "/load_balancers/biz/batch/update", svc.BatchUpdateClbBizInfo)
 	h.Add("GetListener", http.MethodGet, "/vendors/{vendor}/listeners/{id}", svc.GetListener)
 	h.Add("ListListener", http.MethodPost, "/load_balancers/listeners/list", svc.ListListener)
-	h.Add("ListUrlRule", http.MethodPost, "/load_balancers/url_rules/list", svc.ListUrlRule)
+	h.Add("ListTCloudUrlRule", http.MethodPost, "/vendors/tcloud/load_balancers/url_rules/list", svc.ListTCloudUrlRule)
 	h.Add("ListTarget", http.MethodPost, "/load_balancers/targets/list", svc.ListTarget)
 	h.Add("ListTargetGroup", http.MethodPost, "/load_balancers/target_groups/list", svc.ListTargetGroup)
 	h.Add("BatchDeleteLoadBalancer", http.MethodDelete, "/load_balancers/batch", svc.BatchDeleteLoadBalancer)

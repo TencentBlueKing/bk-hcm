@@ -28,7 +28,6 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 )
 
@@ -146,28 +145,7 @@ func (req *ClbBizBatchUpdateReq) Validate() error {
 // -------------------------- List --------------------------
 
 // LbListResult define lb list result.
-type LbListResult struct {
-	Count   uint64                    `json:"count"`
-	Details []corelb.BaseLoadBalancer `json:"details"`
-}
-
-// LbListResp define list resp.
-type LbListResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          *LbListResult `json:"data"`
-}
-
-// LbExtListReq list req.
-type LbExtListReq struct {
-	Field  []string           `json:"field" validate:"omitempty"`
-	Filter *filter.Expression `json:"filter" validate:"required"`
-	Page   *core.BasePage     `json:"page" validate:"required"`
-}
-
-// Validate list request.
-func (req *LbExtListReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
+type LbListResult = core.ListResultT[corelb.BaseLoadBalancer]
 
 // LbExtListResult define lb with extension list result.
 type LbExtListResult[T corelb.Extension] struct {
@@ -209,17 +187,6 @@ type ListenerListResult = core.ListResultT[corelb.BaseListener]
 type TargetListResult = core.ListResultT[corelb.BaseTarget]
 
 // -------------------------- List TCloud Url Rule --------------------------
-
-// ListTCloudURLRuleReq ...
-type ListTCloudURLRuleReq struct {
-	TargetGroupID string `json:"target_group_id" validate:"omitempty"`
-	*core.ListReq `json:",inline"`
-}
-
-// Validate list request.
-func (req *ListTCloudURLRuleReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
 
 // TCloudURLRuleListResult define tcloud url rule list result.
 type TCloudURLRuleListResult = core.ListResultT[corelb.BaseTCloudLbUrlRule]

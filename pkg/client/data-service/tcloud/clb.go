@@ -75,6 +75,13 @@ func (cli *LoadBalancerClient) ListLoadBalancer(kt *kit.Kit, req *core.ListReq) 
 
 }
 
+// ListUrlRule list url rule.
+func (cli *LoadBalancerClient) ListUrlRule(kt *kit.Kit, req *core.ListReq) (*dataproto.TCloudURLRuleListResult, error) {
+
+	return common.Request[core.ListReq, dataproto.TCloudURLRuleListResult](
+		cli.client, rest.POST, kt, req, "/load_balancers/url_rules/list")
+}
+
 // BatchCreateTCloudTargetGroup 批量创建腾讯云目标组
 func (cli *LoadBalancerClient) BatchCreateTCloudTargetGroup(kt *kit.Kit, req *dataproto.TCloudTargetGroupCreateReq) (
 	*core.BatchCreateResult, error) {
