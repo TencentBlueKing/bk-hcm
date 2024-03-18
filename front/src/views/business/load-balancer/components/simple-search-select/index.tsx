@@ -5,15 +5,10 @@ import './index.scss';
 export default defineComponent({
   name: 'SimpleSearchSelect',
   props: {
-    searchValue: {
-      type: String,
-      required: true,
-    },
-    dataList: {
-      type: Array<{ id: string; name: string }>,
-    },
+    modelValue: String,
+    dataList: Array<{ id: string; name: string }>,
   },
-  emits: ['update:searchValue'],
+  emits: ['update:modelValue'],
   setup(props, ctx) {
     const isShow = ref(false);
     const searchVal = ref('');
@@ -29,10 +24,10 @@ export default defineComponent({
     const handleEnter = (v: string) => {
       const [searchName, searchVal] = v.split('：');
       const target = props.dataList.find((item) => item.name === searchName);
-      ctx.emit('update:searchValue', `${target.id}:${searchVal}`);
+      ctx.emit('update:modelValue', `${target.id}:${searchVal}`);
     };
     const handleClear = () => {
-      ctx.emit('update:searchValue', '');
+      ctx.emit('update:modelValue', '');
       isShow.value = true;
     };
     return () => (
