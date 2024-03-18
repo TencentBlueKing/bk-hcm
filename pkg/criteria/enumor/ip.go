@@ -31,6 +31,8 @@ func (i IPAddressType) Validate() error {
 	switch i {
 	case Ipv4:
 	case Ipv6:
+	case Ipv6Nat64:
+	case Ipv6DualStack:
 	default:
 		return fmt.Errorf("unsupported ip address type: %s", i)
 	}
@@ -43,4 +45,8 @@ const (
 	Ipv4 IPAddressType = "ipv4"
 	// Ipv6 is ipv6 address type.
 	Ipv6 IPAddressType = "ipv6"
+	// Ipv6DualStack  双栈，同时支持v4和v6
+	Ipv6DualStack IPAddressType = "ipv6_dual_stack"
+	// Ipv6Nat64  6转4模式 腾讯云CLB支持该模式
+	Ipv6Nat64 IPAddressType = "ipv6_nat64"
 )

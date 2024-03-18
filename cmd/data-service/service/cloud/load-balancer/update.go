@@ -86,6 +86,7 @@ func batchUpdateLoadBalancer[T corelb.Extension](cts *rest.Contexts, svc *lbSvc)
 				Domain:  lb.Domain,
 				Status:  lb.Status,
 
+				IPVersion:            string(lb.IPVersion),
 				PrivateIPv4Addresses: lb.PrivateIPv4Addresses,
 				PrivateIPv6Addresses: lb.PrivateIPv6Addresses,
 				PublicIPv4Addresses:  lb.PublicIPv4Addresses,

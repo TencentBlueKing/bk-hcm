@@ -42,6 +42,7 @@ create table `load_balancer`
     `zones`                  json         not null,
     `backup_zones`           json                  default null,
     `lb_type`                varchar(64)  not null,
+    `ip_version`             varchar(64)  not null default "",
 
     `vpc_id`                 varchar(255) not null,
     `cloud_vpc_id`           varchar(255) not null,

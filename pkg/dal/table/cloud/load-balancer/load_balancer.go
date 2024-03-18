@@ -46,6 +46,7 @@ var LoadBalancerColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "zones", NamedC: "zones", Type: enumor.Json},
 	{Column: "backup_zones", NamedC: "backup_zones", Type: enumor.Json},
 	{Column: "lb_type", NamedC: "lb_type", Type: enumor.String},
+	{Column: "ip_version", NamedC: "ip_version", Type: enumor.String},
 	{Column: "vpc_id", NamedC: "vpc_id", Type: enumor.String},
 	{Column: "cloud_vpc_id", NamedC: "cloud_vpc_id", Type: enumor.String},
 	{Column: "subnet_id", NamedC: "subnet_id", Type: enumor.String},
@@ -80,6 +81,7 @@ type LoadBalancerTable struct {
 	Zones                types.StringArray `db:"zones" validate:"lte=20" json:"zones"`
 	BackupZones          types.StringArray `db:"backup_zones" json:"backup_zones"`
 	LBType               string            `db:"lb_type" json:"lb_type"`
+	IPVersion            string            `db:"ip_version"  json:"ip_version"`
 	VpcID                string            `db:"vpc_id" json:"vpc_id"`
 	CloudVpcID           string            `db:"cloud_vpc_id" json:"cloud_vpc_id"`
 	SubnetID             string            `db:"subnet_id" json:"subnet_id"`

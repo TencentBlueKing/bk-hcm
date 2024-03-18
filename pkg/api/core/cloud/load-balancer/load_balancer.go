@@ -27,12 +27,14 @@ import (
 
 // BaseLoadBalancer define base clb.
 type BaseLoadBalancer struct {
-	ID        string        `json:"id"`
-	CloudID   string        `json:"cloud_id"`
-	Name      string        `json:"name"`
-	Vendor    enumor.Vendor `json:"vendor"`
-	AccountID string        `json:"account_id"`
-	BkBizID   int64         `json:"bk_biz_id"`
+	ID               string               `json:"id"`
+	CloudID          string               `json:"cloud_id"`
+	Name             string               `json:"name"`
+	Vendor           enumor.Vendor        `json:"vendor"`
+	AccountID        string               `json:"account_id"`
+	BkBizID          int64                `json:"bk_biz_id"`
+	IPVersion        enumor.IPAddressType `json:"ip_version"`
+	LoadBalancerType string               `json:"lb_type"`
 
 	Region               string   `json:"region" validate:"omitempty"`
 	Zones                []string `json:"zones"`

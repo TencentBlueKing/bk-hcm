@@ -19,7 +19,9 @@
 
 package loadbalancer
 
-import cvt "hcm/pkg/tools/converter"
+import (
+	cvt "hcm/pkg/tools/converter"
+)
 
 // TCloudLoadBalancer ...
 type TCloudLoadBalancer = LoadBalancer[TCloudClbExtension]
@@ -47,14 +49,7 @@ type TCloudClbExtension struct {
 		如果不指定本参数，则默认使用BGP。可通过 DescribeResources 接口查询一个地域所支持的Isp。
 	*/
 	VipIsp string `json:"vip_isp,omitempty"`
-	/*
 
-		AddressIpVersion IP版本,仅适用于公网负载均衡.
-		可取值：IPV4、IPV6、IPv6FullChain，不区分大小写，默认值 IPV4。
-		说明：取值为IPV6表示为IPV6 NAT64版本；取值为IPv6FullChain，表示为IPv6版本。
-
-	*/
-	AddressIpVersion string `json:"address_ip_version,omitempty"`
 	/*
 		LoadBalancerPassToTarget Target是否放通来自CLB的流量。
 		开启放通（true）：只验证CLB上的安全组；
@@ -111,6 +106,9 @@ type TCloudClbExtension struct {
 
 	// 网络出口
 	Egress string `json:"egress,omitempty"`
+
+	// 双栈混绑 开启IPv6FullChain负载均衡7层监听器支持混绑IPv4/IPv6目标功能。
+	MixIpTarget bool `json:"mix_ip_target,omitempty"`
 }
 
 // SnatIp ...

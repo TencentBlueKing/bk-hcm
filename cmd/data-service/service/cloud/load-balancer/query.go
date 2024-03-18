@@ -80,6 +80,8 @@ func convTableToBaseLB(one *tablelb.LoadBalancerTable) *corelb.BaseLoadBalancer 
 		Name:                 one.Name,
 		Vendor:               one.Vendor,
 		AccountID:            one.AccountID,
+		LoadBalancerType:     one.LBType,
+		IPVersion:            enumor.IPAddressType(one.IPVersion),
 		BkBizID:              one.BkBizID,
 		Region:               one.Region,
 		Zones:                one.Zones,
