@@ -61,7 +61,7 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/listeners/{lbl_id}/domains
 | default_domain | string | 默认域名   |
 | domain_list    | array  | 域名信息列表 |
 
-#### data.details[n]
+#### data.domain_list[n]
 
 | 参数名称      | 参数类型   | 描述    |
 |-----------|--------|-------|

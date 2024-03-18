@@ -122,7 +122,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/listeners/{lbl_id}/rules/list
 
 #### 获取详细信息请求参数示例
 
-查询创建者是Jim的Cvm列表。
+查询创建者是Jim的监听器列表。
 
 ```json
 {
@@ -146,7 +146,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/listeners/{lbl_id}/rules/list
 
 #### 获取数量请求参数示例
 
-查询创建者是Jim的Cvm数量。
+查询创建者是Jim的监听器数量。
 
 ```json
 {

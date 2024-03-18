@@ -52,7 +52,6 @@ func InitService(c *capability.Capability) {
 	bizH.Path("/bizs/{bk_biz_id}")
 	// clb apis in biz
 	h.Add("ListLoadBalancer", http.MethodPost, "/load_balancers/list", svc.ListLoadBalancer)
-	h.Add("GetBizLoadBalancer", http.MethodGet, "/load_balancers/{id}", svc.GetBizLoadBalancer)
 	h.Add("BatchCreateLB", http.MethodPost, "/load_balancers/create", svc.BatchCreateLB)
 	h.Add("AssignLbToBiz", http.MethodPost, "/load_balancers/assign/bizs", svc.AssignLbToBiz)
 	h.Add("GetLoadBalancer", http.MethodGet, "/load_balancers/{id}", svc.GetLoadBalancer)
@@ -70,6 +69,7 @@ func InitService(c *capability.Capability) {
 	bizH.Add("UpdateBizTCloudLoadBalancer", http.MethodPatch, "/vendors/tcloud/load_balancers/{id}",
 		svc.UpdateBizTCloudLoadBalancer)
 	bizH.Add("ListBizLoadBalancer", http.MethodPost, "/load_balancers/list", svc.ListBizLoadBalancer)
+	bizH.Add("GetBizLoadBalancer", http.MethodGet, "/load_balancers/{id}", svc.GetBizLoadBalancer)
 
 	bizH.Add("ListBizListener", http.MethodPost, "/load_balancers/{lb_id}/listeners/list", svc.ListBizListener)
 	bizH.Add("ListBizUrlRulesByListener", http.MethodPost,
@@ -79,7 +79,7 @@ func InitService(c *capability.Capability) {
 	bizH.Add("GetBizListener", http.MethodGet, "/listeners/{id}", svc.GetBizListener)
 	bizH.Add("GetBizListenerDomains", http.MethodGet,
 		"/vendors/tcloud/listeners/{lbl_id}/domains", svc.GetBizListenerDomains)
-	bizH.Add("ListBizUrlRulesByListener", http.MethodGet,
+	bizH.Add("GetBizTCloudUrlRule", http.MethodGet,
 		"/vendors/tcloud/listeners/{lbl_id}/rules/{rule_id}", svc.GetBizTCloudUrlRule)
 
 	bizH.Add("ListBizTargetsByTGID", http.MethodPost,

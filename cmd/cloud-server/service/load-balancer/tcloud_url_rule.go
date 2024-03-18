@@ -71,10 +71,10 @@ func (svc *lbSvc) listTCloudLbUrlRuleByTG(cts *rest.Contexts, validHandler handl
 
 // fillRuleRelatedRes 填充 监听器的协议、端口信息、所在vpc信息
 func (svc *lbSvc) fillRuleRelatedRes(kt *kit.Kit, urlRuleList *dataproto.TCloudURLRuleListResult) (
-	interface{}, error) {
+	any, error) {
 
 	if len(urlRuleList.Details) == 0 {
-		return &cslb.ListLbUrlRuleResult{Count: urlRuleList.Count, Details: make([]cslb.ListClbUrlRuleBase, 0)}, nil
+		return &cslb.ListLbUrlRuleResult{Count: urlRuleList.Count, Details: make([]cslb.ListLbUrlRuleBase, 0)}, nil
 	}
 
 	lbIDs := make([]string, 0)
@@ -303,18 +303,21 @@ func (svc *lbSvc) GetBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 	}
 
 	req := &core.ListReq{
-		Filter: tools.ExpressionAnd(tools.RuleEqual("id", ruleID), tools.RuleEqual("lbl_id", lblID)),
-		Page:   core.NewDefaultBasePage(),
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("id", ruleID),
+			tools.RuleEqual("lbl_id", lblID),
+		),
+		Page: core.NewDefaultBasePage(),
 	}
 
 	urlRuleList, err := svc.client.DataService().TCloud.LoadBalancer.ListUrlRule(cts.Kit, req)
 	if err != nil {
-		logs.Errorf("list tcloud url failed,  err: %v, lblID: %s, ruleID: %s, conditions: %+v, rid: %s",
+		logs.Errorf("list tcloud url failed, err: %v, lblID: %s, ruleID: %s, rid: %s",
 			err, lblID, ruleID, cts.Kit.Rid)
 		return nil, err
 	}
 	if len(urlRuleList.Details) == 0 {
-		return nil, errf.New(errf.RecordNotFound, "")
+		return nil, errf.New(errf.RecordNotFound, "rule not found, id: "+ruleID)
 	}
 
 	return urlRuleList.Details[0], nil

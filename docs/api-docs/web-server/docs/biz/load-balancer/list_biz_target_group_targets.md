@@ -96,25 +96,22 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{tg_id}/targets/list
 
 #### 查询参数介绍：
 
-| 参数名称              | 参数类型   | 描述                             |
-|-------------------|--------|--------------------------------|
-| id                | string | 资源ID                           |
-| cloud_id          | string | 云资源ID                          |
-| name              | string | 名称                             |
-| vendor            | string | 供应商（枚举值：tcloud）                |
-| account_id        | string | 账号ID                           |
-| target_group_type | string | 目标组类型                          |
-| region            | string | 地域                             |
-| protocol          | string | 协议                             |
-| port              | int    | 端口                             |
-| weight            | int    | 权重                             |
-| cloud_vpc_id      | string | 云vpcID                         |
-| vpc_id            | string | vpcID                          |
-| memo              | string | 备注                             |
-| creator           | string | 创建者                            |
-| reviser           | string | 修改者                            |
-| created_at        | string | 创建时间，标准格式：2006-01-02T15:04:05Z |
-| updated_at        | string | 修改时间，标准格式：2006-01-02T15:04:05Z |
+| 参数名称                 | 参数类型         | 描述                             |
+|----------------------|--------------|--------------------------------|
+| id                   | string       |                                |
+| inst_name            | string       | 绑定的实例名称                        |
+| inst_type            | string       | 实例类型                           |
+| account_id           | string       | 账号ID                           |
+| port                 | int          | 端口                             |
+| weight               | int          | 权重                             |
+| private_ip_addresses | string array | 内网IP地址                         |
+| public_ip_addresses  | string array | 外网IP地址                         |
+| zone                 | string       | 可用区                            |
+| memo                 | string       | 备注                             |
+| creator              | string       | 创建者                            |
+| reviser              | string       | 修改者                            |
+| created_at           | string       | 创建时间，标准格式：2006-01-02T15:04:05Z |
+| updated_at           | string       | 修改时间，标准格式：2006-01-02T15:04:05Z |
 
 接口调用者可以根据以上参数自行根据查询场景设置查询规则。
 
@@ -122,7 +119,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{tg_id}/targets/list
 
 #### 获取详细信息请求参数示例
 
-查询创建者是Jim的目标组列表。
+查询创建者是Jim的RS列表。
 
 ```json
 {
@@ -146,7 +143,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{tg_id}/targets/list
 
 #### 获取数量请求参数示例
 
-查询创建者是Jim的目标组数量。
+查询创建者是Jim的RS数量。
 
 ```json
 {
@@ -177,34 +174,23 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{tg_id}/targets/list
   "data": {
     "details": [
       {
-        "id": "00000001",
-        "cloud_id": "clb-123",
-        "name": "clb-test",
-        "vendor": "tcloud",
-        "account_id": "0000001",
-        "bk_biz_id": -1,
-        "target_group_type": "local",
-        "region": "ap-hk",
-        "protocol": "TCP",
-        "port": 22,
-        "weight": 22,
-        "memo": "memo-test",
-        "creator": "Jim",
-        "reviser": "Jim",
-        "created_at": "2023-02-12T14:47:39Z",
-        "updated_at": "2023-02-12T14:55:40Z",
-        "lb_id": "xxxx",
-        "lb_name": "xxxx",
-        "cloud_lb_id": "lb-xxxx",
-        "private_ipv4_addresses": [
-          "127.0.0.1"
+        "id": "00000003",
+        "account_id": "00002024",
+        "inst_type": "cvm",
+        "cloud_inst_id": "ins-abcdefg",
+        "inst_name": "server1",
+        "port": 81,
+        "weight": 10,
+        "private_ip_address": [
+          "10.10.10.10"
         ],
-        "private_ipv6_addresses": [],
-        "public_ipv4_addresses": [
-          "127.0.0.1"
-        ],
-        "public_ipv6_addresses": [],
-        "lbl_num": 10
+        "public_ip_address": ["1.2.3.4"],
+        "zone": "ap-guangzhou",
+        "memo": "",
+        "creator": "admin",
+        "reviser": "admin",
+        "created_at": "2024-02-29T11:52:42Z",
+        "updated_at": "2024-02-29T15:26:33Z"
       }
     ]
   }
@@ -240,30 +226,20 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{tg_id}/targets/list
 
 #### data.details[n]
 
-| 参数名称                   | 参数类型         | 描述                             |
-|------------------------|--------------|--------------------------------|
-| id                     | string       | 资源ID                           |
-| cloud_id               | string       | 云资源ID                          |
-| name                   | string       | 名称                             |
-| vendor                 | string       | 供应商（枚举值：tcloud）                |
-| account_id             | string       | 账号ID                           |
-| bk_biz_id              | int          | 业务ID                           |
-| target_group_type      | string       | 目标组类型                          |
-| region                 | string       | 地域                             |
-| protocol               | string       | 协议                             |
-| port                   | int          | 端口                             |
-| weight                 | int          | 权重                             |
-| vpc_id                 | string array | vpcID数组                        |
-| memo                   | string       | 备注                             |
-| creator                | string       | 创建者                            |
-| reviser                | string       | 修改者                            |
-| created_at             | string       | 创建时间，标准格式：2006-01-02T15:04:05Z |
-| updated_at             | string       | 修改时间，标准格式：2006-01-02T15:04:05Z |
-| lb_id                  | string       | 负载均衡ID                         |
-| lb_name                | string       | 云负载均衡名称                        |
-| cloud_lb_id            | string       | 云负载均衡ID                        |
-| private_ipv4_addresses | string array | 负载均衡的内网IPv4地址                  |
-| private_ipv6_addresses | string array | 负载均衡的内网IPv6地址                  |
-| public_ipv4_addresses  | string array | 负载均衡的外网IPv4地址                  |
-| public_ipv6_addresses  | string array | 负载均衡的外网IPv6地址                  |
-| lbl_num                | int          | 绑定的监听器数量                       |
+| 参数名称                 | 参数类型         | 描述                             |
+|----------------------|--------------|--------------------------------|
+| id                   | string       |                                |
+| inst_name            | string       | 绑定的实例名称                        |
+| inst_type            | string       | 实例类型                           |
+| account_id           | string       | 账号ID                           |
+| port                 | int          | 端口                             |
+| weight               | int          | 权重                             |
+| private_ip_addresses | string array | 内网IP地址                         |
+| public_ip_addresses  | string array | 外网IP地址                         |
+| zone                 | string       | 可用区                            |
+| memo                 | string       | 备注                             |
+| creator              | string       | 创建者                            |
+| reviser              | string       | 修改者                            |
+| created_at           | string       | 创建时间，标准格式：2006-01-02T15:04:05Z |
+| updated_at           | string       | 修改时间，标准格式：2006-01-02T15:04:05Z |
+

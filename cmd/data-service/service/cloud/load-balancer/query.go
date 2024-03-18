@@ -408,6 +408,7 @@ func convTableToBaseTarget(one *tablelb.LoadBalancerTargetTable) *corelb.BaseTar
 		ID:                 one.ID,
 		AccountID:          one.AccountID,
 		InstType:           one.InstType,
+		InstID:             one.InstID,
 		CloudInstID:        one.CloudInstID,
 		InstName:           one.InstName,
 		TargetGroupID:      one.TargetGroupID,
