@@ -10,6 +10,7 @@ import { Plus } from 'bkui-vue/lib/icon';
 import { useTable } from '@/hooks/useTable/useTable';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
+import { useLoadBalancerStore } from '@/store/loadbalancer';
 
 export default defineComponent({
   setup() {
@@ -20,10 +21,10 @@ export default defineComponent({
     const businessStore = useBusinessStore();
     const accountStore = useAccountStore();
     const { selections, handleSelectionChange } = useSelection();
-    const clbId = ref('');
     const securityGroups = ref([]);
     const isDialogShow = ref(false);
     const bindedSet = reactive(new Set());
+    const loadBalancerStore = useLoadBalancerStore();
 
     const tableColumns = [
       {
@@ -74,7 +75,7 @@ export default defineComponent({
     const handleBind = async () => {
       await businessStore.bindSecurityToCLB({
         bk_biz_id: accountStore.bizs,
-        lb_id: clbId.value,
+        lb_id: loadBalancerStore.lb.id,
         security_group_ids: selections.value.map(({ id }) => id),
       });
       getBindedSecurityList();
@@ -88,7 +89,7 @@ export default defineComponent({
       await businessStore.unbindSecurityToCLB({
         bk_biz_id: accountStore.bizs,
         security_group_id,
-        lb_id: clbId.value,
+        lb_id: loadBalancerStore.lb.id,
       });
       getBindedSecurityList();
       Message({
@@ -98,7 +99,7 @@ export default defineComponent({
     };
 
     const getBindedSecurityList = async () => {
-      const res = await businessStore.listCLBSecurityGroups(clbId.value);
+      const res = await businessStore.listCLBSecurityGroups(loadBalancerStore.lb.id);
       securityGroups.value = res.data;
       for (const item of res.data) {
         bindedSet.add(item.id);
@@ -106,7 +107,7 @@ export default defineComponent({
     };
 
     watch(
-      () => clbId.value,
+      () => loadBalancerStore.lb.id,
       async () => {
         getBindedSecurityList();
       },

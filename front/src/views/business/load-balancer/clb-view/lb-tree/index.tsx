@@ -13,6 +13,7 @@ import lbIcon from '@/assets/image/loadbalancer.svg';
 import listenerIcon from '@/assets/image/listener.svg';
 import domainIcon from '@/assets/image/domain.svg';
 import './index.scss';
+import { useLoadBalancerStore } from '@/store/loadbalancer';
 
 type NodeType = 'all' | 'load_balancers' | 'listeners' | 'domains';
 
@@ -45,6 +46,7 @@ export default defineComponent({
 
     const { loadRemoteData, handleLoadDataByScroll } = useLoadTreeData(treeData);
     const { renderDropdownActionList } = useRenderDropdownList();
+    const loadBalancerStore = useLoadBalancerStore();
 
     // const searchOption = computed(() => {
     //   return {
@@ -156,6 +158,7 @@ export default defineComponent({
     const handleNodeClick = (node: any) => {
       if (node.type !== 'all') {
         lastSelectedNode.value = node;
+        if (node.type === 'load_balancers') loadBalancerStore.setLB(node);
       } else {
         treeRef.value.setSelect(lastSelectedNode.value, false);
       }
