@@ -68,7 +68,7 @@ export const useTable = (props: IProp) => {
     pagination.start = (v - 1) * pagination.limit;
     getListData();
   };
-  const getListData = async (customRules: Array<RulesItem> = []) => {
+  const getListData = async (customRules: Array<RulesItem> = [], type?: string) => {
     // 预览
     if (props.tableOptions.reviewData) {
       dataList.value = props.tableOptions.reviewData;
@@ -90,7 +90,7 @@ export const useTable = (props: IProp) => {
               rules: [...filter.rules, ...customRules],
             },
           },
-          props.requestOption.type,
+          type ? type : props.requestOption.type,
         ),
       ),
     );
@@ -101,12 +101,12 @@ export const useTable = (props: IProp) => {
   const CommonTable = defineComponent({
     setup(_props, { slots }) {
       return () => (
-        <>
+        <div class={`remote-table-container${props.searchOptions.disabled ? ' no-search' : ''}`}>
           <section class='operation-wrap'>
             <div class='operate-btn-groups'>{slots.operation?.()}</div>
             {!props.searchOptions.disabled && (
               <SearchSelect
-                class='w500'
+                class='table-search-selector'
                 v-model={searchVal.value}
                 data={props.searchOptions.searchData}
                 valueBehavior='need-key'
@@ -135,7 +135,7 @@ export const useTable = (props: IProp) => {
               }}
             </Table>
           </Loading>
-        </>
+        </div>
       );
     },
   });

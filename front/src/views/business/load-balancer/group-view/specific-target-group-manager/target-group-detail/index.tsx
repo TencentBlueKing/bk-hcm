@@ -23,7 +23,7 @@ export default defineComponent({
             value: '目标组1123',
           },
           {
-            label: '网络',
+            label: '所属vpc',
             value: '1290.34.2342',
           },
           {
