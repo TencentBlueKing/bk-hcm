@@ -60,6 +60,8 @@ func InitService(cap *capability.Capability) {
 	h.Add("UpdateTargetGroup", http.MethodPatch, "/vendors/{vendor}/target_groups", svc.UpdateTargetGroup)
 	h.Add("BatchDeleteTargetGroup", http.MethodDelete, "/target_groups/batch", svc.BatchDeleteTargetGroup)
 	h.Add("GetTargetGroup", http.MethodGet, "/vendors/{vendor}/target_groups/{id}", svc.GetTargetGroup)
+	h.Add("CreateTargetGroupListenerRel", http.MethodPost, "/target_group_listener_rels/create",
+		svc.CreateTargetGroupListenerRel)
 
 	h.Load(cap.WebService)
 }

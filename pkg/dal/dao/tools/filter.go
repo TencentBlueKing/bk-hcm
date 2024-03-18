@@ -124,3 +124,16 @@ func ExpressionAnd(rules ...*filter.AtomRule) *filter.Expression {
 		Rules: factories,
 	}
 }
+
+// ExpressionOr expression with op or
+func ExpressionOr(rules ...*filter.AtomRule) *filter.Expression {
+	// for type transformation
+	var factories = make([]filter.RuleFactory, len(rules))
+	for i, rule := range rules {
+		factories[i] = rule
+	}
+	return &filter.Expression{
+		Op:    filter.Or,
+		Rules: factories,
+	}
+}

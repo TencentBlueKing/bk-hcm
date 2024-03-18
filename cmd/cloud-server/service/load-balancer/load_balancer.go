@@ -28,13 +28,8 @@ import (
 	"hcm/cmd/cloud-server/logics/disk"
 	"hcm/cmd/cloud-server/logics/eip"
 	"hcm/cmd/cloud-server/service/capability"
-	"hcm/pkg/api/core"
-	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/client"
-	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/auth"
-	"hcm/pkg/kit"
-	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
@@ -84,6 +79,8 @@ func InitService(c *capability.Capability) {
 
 	bizH.Add("ListBizTargetsByTGID", http.MethodPost,
 		"/vendors/tcloud/target_groups/{target_group_id}/targets/list", svc.ListBizTargetsByTGID)
+	bizH.Add("AssociateBizTargetGroupListenerRel", http.MethodPost, "/listeners/associate/target_group",
+		svc.AssociateBizTargetGroupListenerRel)
 	bizH.Load(c.WebService)
 }
 
@@ -94,27 +91,4 @@ type lbSvc struct {
 	diskLgc    disk.Interface
 	cvmLgc     cvm.Interface
 	eipLgc     eip.Interface
-}
-
-func (svc *lbSvc) listLoadBalancerMap(kt *kit.Kit, clbIDs []string) (map[string]corelb.BaseLoadBalancer, error) {
-	if len(clbIDs) == 0 {
-		return nil, nil
-	}
-
-	clbReq := &core.ListReq{
-		Filter: tools.ContainersExpression("id", clbIDs),
-		Page:   core.NewDefaultBasePage(),
-	}
-	clbList, err := svc.client.DataService().Global.LoadBalancer.ListLoadBalancer(kt, clbReq)
-	if err != nil {
-		logs.Errorf("[clb] list load balancer failed, clbIDs: %v, err: %v, rid: %s", clbIDs, err, kt.Rid)
-		return nil, err
-	}
-
-	clbMap := make(map[string]corelb.BaseLoadBalancer, len(clbList.Details))
-	for _, clbItem := range clbList.Details {
-		clbMap[clbItem.ID] = clbItem
-	}
-
-	return clbMap, nil
 }

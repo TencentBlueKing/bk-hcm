@@ -51,14 +51,14 @@ var TargetListenerRuleRelColumnsDescriptor = utils.ColumnDescriptors{
 
 // TargetListenerRuleRelTable 目标组监听器关系表
 type TargetListenerRuleRelTable struct {
-	ID               string          `db:"id" validate:"lte=64" json:"id"`
-	ListenerRuleID   string          `db:"listener_rule_id" validate:"lte=64" json:"listener_rule_id"`
-	ListenerRuleType string          `db:"listener_rule_type" validate:"lte=64" json:"listener_rule_type"`
-	TargetGroupID    string          `db:"target_group_id" validate:"lte=64" json:"target_group_id"`
-	LbID             string          `db:"lb_id" validate:"lte=64" json:"lb_id"`
-	LblID            string          `db:"lbl_id" validate:"lte=64" json:"lbl_id"`
-	BindingStatus    string          `db:"binding_status" validate:"lte=64" json:"binding_status"`
-	Detail           types.JsonField `db:"detail" json:"detail"`
+	ID               string               `db:"id" validate:"lte=64" json:"id"`
+	ListenerRuleID   string               `db:"listener_rule_id" validate:"lte=64" json:"listener_rule_id"`
+	ListenerRuleType enumor.RuleType      `db:"listener_rule_type" validate:"lte=64" json:"listener_rule_type"`
+	TargetGroupID    string               `db:"target_group_id" validate:"lte=64" json:"target_group_id"`
+	LbID             string               `db:"lb_id" validate:"lte=64" json:"lb_id"`
+	LblID            string               `db:"lbl_id" validate:"lte=64" json:"lbl_id"`
+	BindingStatus    enumor.BindingStatus `db:"binding_status" validate:"lte=64" json:"binding_status"`
+	Detail           types.JsonField      `db:"detail" json:"detail"`
 
 	Creator   string     `db:"creator" validate:"lte=64" json:"creator"`
 	Reviser   string     `db:"reviser" validate:"lte=64" json:"reviser"`

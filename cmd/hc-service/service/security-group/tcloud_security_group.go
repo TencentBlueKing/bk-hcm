@@ -38,7 +38,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 )
 
@@ -310,7 +309,7 @@ func (g *securityGroup) UpdateTCloudSecurityGroup(cts *rest.Contexts) (interface
 
 // TCloudSecurityGroupAssociateLoadBalancer ...
 func (g *securityGroup) TCloudSecurityGroupAssociateLoadBalancer(cts *rest.Contexts) (interface{}, error) {
-	req := new(hclb.TCloudSetClbSecurityGroupReq)
+	req := new(hclb.TCloudSetLbSecurityGroupReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -355,7 +354,7 @@ func (g *securityGroup) TCloudSecurityGroupAssociateLoadBalancer(cts *rest.Conte
 	return nil, nil
 }
 
-func (g *securityGroup) getUpsertSGIDsParams(kt *kit.Kit, req *hclb.TCloudSetClbSecurityGroupReq,
+func (g *securityGroup) getUpsertSGIDsParams(kt *kit.Kit, req *hclb.TCloudSetLbSecurityGroupReq,
 	sgComList *protocloud.SGCommonRelListResult) ([]string, *protocloud.SGCommonRelBatchUpsertReq, error) {
 
 	newSGIDsMap := converter.StringSliceToMap(req.SecurityGroupIDs)
@@ -416,7 +415,7 @@ func (g *securityGroup) getUpsertSGIDsParams(kt *kit.Kit, req *hclb.TCloudSetClb
 
 // TCloudSecurityGroupDisassociateLoadBalancer ...
 func (g *securityGroup) TCloudSecurityGroupDisassociateLoadBalancer(cts *rest.Contexts) (interface{}, error) {
-	req := new(hclb.TCloudDisAssociateClbSecurityGroupReq)
+	req := new(hclb.TCloudDisAssociateLbSecurityGroupReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -506,26 +505,11 @@ func (g *securityGroup) getClbInfoAndSGComRels(kt *kit.Kit, lbID string) (
 	lbInfo := lbList.Details[0]
 	// 查询目前绑定的安全组
 	sgcomReq := &core.ListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{
-					Field: "vendor",
-					Op:    filter.Equal.Factory(),
-					Value: lbInfo.Vendor,
-				},
-				&filter.AtomRule{
-					Field: "res_id",
-					Op:    filter.Equal.Factory(),
-					Value: lbID,
-				},
-				&filter.AtomRule{
-					Field: "res_type",
-					Op:    filter.Equal.Factory(),
-					Value: meta.LoadBalancer,
-				},
-			},
-		},
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("vendor", lbInfo.Vendor),
+			tools.RuleEqual("res_id", lbID),
+			tools.RuleEqual("res_type", meta.LoadBalancer),
+		),
 		Page: &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit, Sort: "priority", Order: "ASC"},
 	}
 	sgComList, err := g.dataCli.Global.SGCommonRel.List(kt, sgcomReq)

@@ -199,3 +199,16 @@ type DomainInfo struct {
 	Domain   string `json:"domain"`
 	UrlCount int    `json:"url_count"`
 }
+
+// -------------------------- Create Target Group Listener Rel --------------------------
+
+// TargetGroupListenerRelAssociateReq target group listener rel associate req.
+type TargetGroupListenerRelAssociateReq struct {
+	ListenerID     string `json:"listener_id" validate:"required"`
+	ListenerRuleID string `json:"listener_rule_id" validate:"required"`
+	TargetGroupID  string `json:"target_group_id" validate:"required"`
+}
+
+func (req *TargetGroupListenerRelAssociateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

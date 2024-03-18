@@ -45,7 +45,7 @@ func (svc *securityGroupSvc) AssociateBizLb(cts *rest.Contexts) (interface{}, er
 func (svc *securityGroupSvc) associateLb(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
 	interface{}, error) {
 
-	req := new(hclb.TCloudSetClbSecurityGroupReq)
+	req := new(hclb.TCloudSetLbSecurityGroupReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -59,7 +59,8 @@ func (svc *securityGroupSvc) associateLb(cts *rest.Contexts, validHandler handle
 		Items: []cloud.ListResourceBasicInfoReq{
 			{ResourceType: enumor.SecurityGroupCloudResType, IDs: req.SecurityGroupIDs,
 				Fields: types.CommonBasicInfoFields},
-			{ResourceType: enumor.LoadBalancerCloudResType, IDs: []string{req.LbID}, Fields: types.CommonBasicInfoFields},
+			{ResourceType: enumor.LoadBalancerCloudResType, IDs: []string{req.LbID},
+				Fields: types.CommonBasicInfoFields},
 		},
 	}
 
@@ -126,7 +127,7 @@ func (svc *securityGroupSvc) DisassociateBizLb(cts *rest.Contexts) (interface{},
 func (svc *securityGroupSvc) disassociateLb(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
 	interface{}, error) {
 
-	req := new(hclb.TCloudDisAssociateClbSecurityGroupReq)
+	req := new(hclb.TCloudDisAssociateLbSecurityGroupReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}

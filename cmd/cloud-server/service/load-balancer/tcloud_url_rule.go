@@ -1,6 +1,7 @@
 package loadbalancer
 
 import (
+	lblogic "hcm/cmd/cloud-server/logics/load-balancer"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
@@ -88,8 +89,8 @@ func (svc *lbSvc) fillRuleRelatedRes(kt *kit.Kit, urlRuleList *dataproto.TCloudU
 		resList.Details = append(resList.Details, cslb.ListLbUrlRuleBase{BaseTCloudLbUrlRule: ruleItem})
 	}
 
-	// 批量获取clb信息
-	clbMap, err := svc.listLoadBalancerMap(kt, lbIDs)
+	// 批量获取lb信息
+	lbMap, err := lblogic.ListLoadBalancerMap(kt, svc.client.DataService(), lbIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +103,7 @@ func (svc *lbSvc) fillRuleRelatedRes(kt *kit.Kit, urlRuleList *dataproto.TCloudU
 
 	// 批量获取vpc信息
 	vpcIDs := make([]string, 0)
-	for _, item := range clbMap {
+	for _, item := range lbMap {
 		vpcIDs = append(vpcIDs, item.VpcID)
 	}
 
@@ -112,14 +113,14 @@ func (svc *lbSvc) fillRuleRelatedRes(kt *kit.Kit, urlRuleList *dataproto.TCloudU
 	}
 
 	for idx, ruleItem := range resList.Details {
-		resList.Details[idx].LbName = clbMap[ruleItem.LbID].Name
-		tmpVpcID := clbMap[ruleItem.LbID].VpcID
+		resList.Details[idx].LbName = lbMap[ruleItem.LbID].Name
+		tmpVpcID := lbMap[ruleItem.LbID].VpcID
 		resList.Details[idx].VpcID = tmpVpcID
-		resList.Details[idx].CloudVpcID = clbMap[ruleItem.LbID].CloudVpcID
-		resList.Details[idx].PrivateIPv4Addresses = clbMap[ruleItem.LbID].PrivateIPv4Addresses
-		resList.Details[idx].PrivateIPv6Addresses = clbMap[ruleItem.LbID].PrivateIPv6Addresses
-		resList.Details[idx].PublicIPv4Addresses = clbMap[ruleItem.LbID].PublicIPv4Addresses
-		resList.Details[idx].PublicIPv6Addresses = clbMap[ruleItem.LbID].PublicIPv6Addresses
+		resList.Details[idx].CloudVpcID = lbMap[ruleItem.LbID].CloudVpcID
+		resList.Details[idx].PrivateIPv4Addresses = lbMap[ruleItem.LbID].PrivateIPv4Addresses
+		resList.Details[idx].PrivateIPv6Addresses = lbMap[ruleItem.LbID].PrivateIPv6Addresses
+		resList.Details[idx].PublicIPv4Addresses = lbMap[ruleItem.LbID].PublicIPv4Addresses
+		resList.Details[idx].PublicIPv6Addresses = lbMap[ruleItem.LbID].PublicIPv6Addresses
 
 		resList.Details[idx].VpcName = vpcMap[tmpVpcID].Name
 

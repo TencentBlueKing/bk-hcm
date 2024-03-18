@@ -39,7 +39,7 @@ func NewLoadBalancerClient(client rest.ClientInterface) *LoadBalancerClient {
 	}
 }
 
-// ListLoadBalancer list lb.
+// ListLoadBalancer list load balancer.
 func (cli *LoadBalancerClient) ListLoadBalancer(kt *kit.Kit, req *core.ListReq) (*dataproto.LbListResult, error) {
 	return common.Request[core.ListReq, dataproto.LbListResult](cli.client, rest.POST, kt, req, "/load_balancers/list")
 }
@@ -89,4 +89,12 @@ func (cli *LoadBalancerClient) ListTargetGroupListenerRel(kt *kit.Kit, req *core
 // DeleteTargetGroup delete target group.
 func (cli *LoadBalancerClient) DeleteTargetGroup(kt *kit.Kit, req *core.ListReq) error {
 	return common.RequestNoResp[core.ListReq](cli.client, rest.DELETE, kt, req, "/target_groups/batch")
+}
+
+// CreateTargetGroupListenerRel create target group listener rel.
+func (cli *LoadBalancerClient) CreateTargetGroupListenerRel(kt *kit.Kit,
+	req *dataproto.TargetGroupListenerRelCreateReq) (*core.BatchCreateResult, error) {
+
+	return common.Request[dataproto.TargetGroupListenerRelCreateReq, core.BatchCreateResult](
+		cli.client, rest.POST, kt, req, "/target_group_listener_rels/create")
 }

@@ -31,7 +31,7 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
-// -------------------------- Create --------------------------
+// -------------------------- Create Target Group --------------------------
 
 // TargetGroupBatchCreateReq target group create req.
 type TargetGroupBatchCreateReq[Extension corelb.TargetGroupExtension] struct {
@@ -152,7 +152,7 @@ type TargetGroupExtListResult[T corelb.TargetGroupExtension] struct {
 	Details []corelb.TargetGroup[T] `json:"details,omitempty"`
 }
 
-// -------------------------- Delete --------------------------
+// -------------------------- Delete Target Group --------------------------
 
 // TargetGroupBatchDeleteReq delete request.
 type TargetGroupBatchDeleteReq struct {
@@ -168,3 +168,21 @@ func (req *TargetGroupBatchDeleteReq) Validate() error {
 
 // TargetListenerRuleRelListResult define target listener rule rel list result.
 type TargetListenerRuleRelListResult = core.ListResultT[corelb.BaseTargetListenerRuleRel]
+
+// -------------------------- Create Target Group Listener Rel --------------------------
+
+// TargetGroupListenerRelCreateReq target group listener rel create req.
+type TargetGroupListenerRelCreateReq struct {
+	ListenerRuleID     string               `json:"listener_rule_id" validate:"required"`
+	ListenerRuleType   enumor.RuleType      `json:"listener_rule_type" validate:"required"`
+	TargetGroupID      string               `json:"target_group_id" validate:"required"`
+	LbID               string               `json:"lb_id" validate:"required"`
+	LblID              string               `json:"lbl_id" validate:"required"`
+	BindingStatus      enumor.BindingStatus `json:"binding_status" validate:"omitempty"`
+	Detail             types.JsonField      `json:"detail" validate:"omitempty"`
+	CloudTargetGroupID string               `json:"cloud_target_group_id" validate:"omitempty"`
+}
+
+func (req *TargetGroupListenerRelCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
