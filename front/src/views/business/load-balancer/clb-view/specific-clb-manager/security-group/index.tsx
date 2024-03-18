@@ -1,6 +1,6 @@
 import { defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
-import { Button, InfoBox, Message, Tab, Table, Tag } from 'bkui-vue';
+import { Button, Exception, InfoBox, Message, Table, Tag } from 'bkui-vue';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 import SearchInput from '@/views/scheme/components/search-input';
 import CommonSideslider from '@/components/common-sideslider';
@@ -64,7 +64,7 @@ export default defineComponent({
         extra: {
           onSelectionChange: (selections: any) => handleSelectionChange(selections, () => true),
           onSelectAll: (selections: any) => handleSelectionChange(selections, () => true, true),
-        }
+        },
       },
       requestOption: {
         type: 'security_groups',
@@ -75,7 +75,7 @@ export default defineComponent({
       await businessStore.bindSecurityToCLB({
         bk_biz_id: accountStore.bizs,
         lb_id: clbId.value,
-        security_group_ids: selections.value.map(({id}) => id),
+        security_group_ids: selections.value.map(({ id }) => id),
       });
       getBindedSecurityList();
       Message({
@@ -87,7 +87,7 @@ export default defineComponent({
     const handleUnbind = async (security_group_id: string) => {
       await businessStore.unbindSecurityToCLB({
         bk_biz_id: accountStore.bizs,
-        security_group_id: security_group_id,
+        security_group_id,
         lb_id: clbId.value,
       });
       getBindedSecurityList();
@@ -95,12 +95,12 @@ export default defineComponent({
         message: '解绑成功',
         theme: 'success',
       });
-    }
+    };
 
     const getBindedSecurityList = async () => {
       const res = await businessStore.listCLBSecurityGroups(clbId.value);
       securityGroups.value = res.data;
-      for(let item of res.data) {
+      for (const item of res.data) {
         bindedSet.add(item.id);
       }
     };
@@ -168,58 +168,62 @@ export default defineComponent({
             </div>
           </div>
           <div class={'specific-security-rule-tables'}>
-            {securityGroups.value.map(({ name, cloud_id }, idx) => (
-              <div class={'security-rule-table-container'}>
-                <div class={'security-rule-table-header'}>
-                  <div class={'config-security-item-idx'}>{idx}</div>
-                  <span class={'config-security-item-name'}>{name}</span>
-                  <span class={'config-security-item-id'}>({cloud_id})</span>
+            {securityGroups.value.length ? (
+              securityGroups.value.map(({ name, cloud_id }, idx) => (
+                <div class={'security-rule-table-container'}>
+                  <div class={'security-rule-table-header'}>
+                    <div class={'config-security-item-idx'}>{idx}</div>
+                    <span class={'config-security-item-name'}>{name}</span>
+                    <span class={'config-security-item-id'}>({cloud_id})</span>
+                  </div>
+                  <div class={'security-rule-table-panel'}>
+                    <Table
+                      stripe
+                      data={[
+                        {
+                          target: 'any',
+                          source: 'Any',
+                          portProtocol: 'abnc',
+                          policy: '允许',
+                        },
+                        {
+                          target: '1abc',
+                          source: '1ads',
+                          portProtocol: 'abc',
+                          policy: '拒绝',
+                        },
+                        {
+                          target: 'abc',
+                          source: 'abc',
+                          portProtocol: 'Tabv3',
+                          policy: '允许',
+                        },
+                      ]}
+                      columns={[
+                        {
+                          label: '目标',
+                          field: 'target',
+                        },
+                        {
+                          label: '来源',
+                          field: 'source',
+                        },
+                        {
+                          label: '端口协议',
+                          field: 'portProtocol',
+                        },
+                        {
+                          label: '策略',
+                          field: 'policy',
+                        },
+                      ]}
+                    />
+                  </div>
                 </div>
-                <div class={'security-rule-table-panel'}>
-                  <Table
-                    stripe
-                    data={[
-                      {
-                        target: 'any',
-                        source: 'Any',
-                        portProtocol: 'abnc',
-                        policy: '允许',
-                      },
-                      {
-                        target: '1abc',
-                        source: '1ads',
-                        portProtocol: 'abc',
-                        policy: '拒绝',
-                      },
-                      {
-                        target: 'abc',
-                        source: 'abc',
-                        portProtocol: 'Tabv3',
-                        policy: '允许',
-                      },
-                    ]}
-                    columns={[
-                      {
-                        label: '目标',
-                        field: 'target',
-                      },
-                      {
-                        label: '来源',
-                        field: 'source',
-                      },
-                      {
-                        label: '端口协议',
-                        field: 'portProtocol',
-                      },
-                      {
-                        label: '策略',
-                        field: 'policy',
-                      },
-                    ]}
-                  />
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <Exception type='empty' scene='part' description='没有数据'></Exception>
+            )}
           </div>
         </div>
         <CommonSideslider
@@ -246,18 +250,20 @@ export default defineComponent({
                   <div class={'config-security-item-edit-block'}>
                     <Button text theme='primary' class={'mr27'}>
                       去编辑
-                      <span class="icon hcm-icon bkhcm-icon-jump-fill ml5"></span>
+                      <span class='icon hcm-icon bkhcm-icon-jump-fill ml5'></span>
                     </Button>
-                    <Button text theme='danger' onClick={() => {
-                      InfoBox({
-                        infoType: 'warning',
-                        title: '是否确定解绑当前安全组',
-                        onConfirm() {
-                          handleUnbind(id);
-                        },
-                      });
-                      
-                    }}>
+                    <Button
+                      text
+                      theme='danger'
+                      onClick={() => {
+                        InfoBox({
+                          infoType: 'warning',
+                          title: '是否确定解绑当前安全组',
+                          onConfirm() {
+                            handleUnbind(id);
+                          },
+                        });
+                      }}>
                       解绑
                     </Button>
                   </div>
