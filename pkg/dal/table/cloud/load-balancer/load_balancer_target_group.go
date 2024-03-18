@@ -40,7 +40,6 @@ var LoadBalancerTargetGroupColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
 	{Column: "account_id", NamedC: "account_id", Type: enumor.String},
 	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
-
 	{Column: "target_group_type", NamedC: "target_group_type", Type: enumor.String},
 	{Column: "vpc_id", NamedC: "vpc_id", Type: enumor.String},
 	{Column: "cloud_vpc_id", NamedC: "cloud_vpc_id", Type: enumor.String},
@@ -49,8 +48,8 @@ var LoadBalancerTargetGroupColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "port", NamedC: "port", Type: enumor.Numeric},
 	{Column: "weight", NamedC: "weight", Type: enumor.Numeric},
 	{Column: "health_check", NamedC: "health_check", Type: enumor.Json},
+	{Column: "extension", NamedC: "extension", Type: enumor.Json},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
-
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
@@ -59,27 +58,26 @@ var LoadBalancerTargetGroupColumnsDescriptor = utils.ColumnDescriptors{
 
 // LoadBalancerTargetGroupTable 负载均衡目标组表
 type LoadBalancerTargetGroupTable struct {
-	ID        string        `db:"id" validate:"lte=64" json:"id"`
-	CloudID   string        `db:"cloud_id" validate:"lte=255" json:"cloud_id"`
-	Name      string        `db:"name" validate:"lte=255" json:"name"`
-	Vendor    enumor.Vendor `db:"vendor" validate:"lte=16"  json:"vendor"`
-	AccountID string        `db:"account_id" validate:"lte=64" json:"account_id"`
-	BkBizID   int64         `db:"bk_biz_id" json:"bk_biz_id"`
-
-	TargetGroupType string          `db:"target_group_type" validate:"lte=16" json:"target_group_type"`
-	VpcID           string          `db:"vpc_id" json:"vpc_id"`
-	CloudVpcID      string          `db:"cloud_vpc_id" json:"cloud_vpc_id"`
-	Region          string          `db:"region" validate:"lte=20" json:"region"`
-	Protocol        string          `db:"protocol" json:"protocol"`
-	Port            int64           `db:"port" json:"port"`
-	Weight          int64           `db:"weight" json:"weight"`
-	HealthCheck     types.JsonField `db:"health_check" json:"health_check"`
-	Memo            *string         `db:"memo" json:"memo"`
-
-	Creator   string     `db:"creator" validate:"lte=64" json:"creator"`
-	Reviser   string     `db:"reviser" validate:"lte=64" json:"reviser"`
-	CreatedAt types.Time `db:"created_at" validate:"excluded_unless" json:"created_at"`
-	UpdatedAt types.Time `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
+	ID              string                 `db:"id" validate:"lte=64" json:"id"`
+	CloudID         string                 `db:"cloud_id" validate:"lte=255" json:"cloud_id"`
+	Name            string                 `db:"name" validate:"lte=255" json:"name"`
+	Vendor          enumor.Vendor          `db:"vendor" validate:"lte=16"  json:"vendor"`
+	AccountID       string                 `db:"account_id" validate:"lte=64" json:"account_id"`
+	BkBizID         int64                  `db:"bk_biz_id" json:"bk_biz_id"`
+	TargetGroupType enumor.TargetGroupType `db:"target_group_type" validate:"lte=64" json:"target_group_type"`
+	VpcID           string                 `db:"vpc_id" json:"vpc_id"`
+	CloudVpcID      string                 `db:"cloud_vpc_id" json:"cloud_vpc_id"`
+	Region          string                 `db:"region" validate:"lte=20" json:"region"`
+	Protocol        string                 `db:"protocol" json:"protocol"`
+	Port            int64                  `db:"port" json:"port"`
+	Weight          int64                  `db:"weight" json:"weight"`
+	HealthCheck     types.JsonField        `db:"health_check" json:"health_check"`
+	Extension       types.JsonField        `db:"extension" json:"extension"`
+	Memo            *string                `db:"memo" json:"memo"`
+	Creator         string                 `db:"creator" validate:"lte=64" json:"creator"`
+	Reviser         string                 `db:"reviser" validate:"lte=64" json:"reviser"`
+	CreatedAt       types.Time             `db:"created_at" validate:"excluded_unless" json:"created_at"`
+	UpdatedAt       types.Time             `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
 }
 
 // TableName return load_balancer_target_group table name.
@@ -89,31 +87,39 @@ func (lbtg LoadBalancerTargetGroupTable) TableName() table.Name {
 
 // InsertValidate load_balancer_target_group table when insert.
 func (lbtg LoadBalancerTargetGroupTable) InsertValidate() error {
-	if err := validator.Validate.Struct(lbtg); err != nil {
-		return err
-	}
-
-	if len(lbtg.CloudID) == 0 {
-		return errors.New("cloud_id is required")
+	if len(lbtg.Name) == 0 {
+		return errors.New("name is required")
 	}
 
 	if len(lbtg.Vendor) == 0 {
 		return errors.New("vendor is required")
 	}
 
+	if len(lbtg.AccountID) == 0 {
+		return errors.New("account_id is required")
+	}
+
+	if len(lbtg.VpcID) == 0 {
+		return errors.New("vpc_id is required")
+	}
+
+	if len(lbtg.Region) == 0 {
+		return errors.New("region is required")
+	}
+
+	if len(lbtg.Protocol) == 0 {
+		return errors.New("protocol is required")
+	}
+
 	if len(lbtg.Creator) == 0 {
 		return errors.New("creator is required")
 	}
 
-	return nil
+	return validator.Validate.Struct(lbtg)
 }
 
 // UpdateValidate load_balancer_target_group table when update.
 func (lbtg LoadBalancerTargetGroupTable) UpdateValidate() error {
-	if err := validator.Validate.Struct(lbtg); err != nil {
-		return err
-	}
-
 	if len(lbtg.Creator) != 0 {
 		return errors.New("creator can not update")
 	}
@@ -122,5 +128,5 @@ func (lbtg LoadBalancerTargetGroupTable) UpdateValidate() error {
 		return errors.New("reviser can not be empty")
 	}
 
-	return nil
+	return validator.Validate.Struct(lbtg)
 }

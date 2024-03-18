@@ -206,7 +206,7 @@ func (svc *lbSvc) getListener(cts *rest.Contexts, validHandler handler.ListAuthR
 		return nil, err
 	}
 	if noPerm {
-		//return nil, errf.New(errf.PermissionDenied, "permission denied for get listener")
+		return nil, errf.New(errf.PermissionDenied, "permission denied for get listener")
 	}
 
 	switch basicInfo.Vendor {
@@ -255,29 +255,4 @@ func (svc *lbSvc) getTCloudListener(kt *kit.Kit, lblID string) (*cslb.GetListene
 	}
 
 	return result, nil
-}
-
-func (svc *lbSvc) getTargetGroupByID(kt *kit.Kit, targetGroupID string, bkBizID int64) (
-	[]corelb.BaseClbTargetGroup, error) {
-
-	tgReq := &core.ListReq{
-		Filter: tools.EqualExpression("id", targetGroupID),
-		Page:   core.NewDefaultBasePage(),
-	}
-	if bkBizID > 0 {
-		bizReq, err := tools.And(
-			filter.AtomRule{Field: "bk_biz_id", Op: filter.Equal.Factory(), Value: bkBizID}, tgReq.Filter,
-		)
-		if err != nil {
-			return nil, err
-		}
-		tgReq.Filter = bizReq
-	}
-	targetGroupInfo, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroup(kt, tgReq)
-	if err != nil {
-		logs.Errorf("list target group failed, tgID: %s, err: %v, rid: %s", targetGroupID, err, kt.Rid)
-		return nil, err
-	}
-
-	return targetGroupInfo.Details, nil
 }

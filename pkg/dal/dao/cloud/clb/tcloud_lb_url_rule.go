@@ -43,9 +43,9 @@ import (
 
 // ClbTCloudUrlRuleInterface only used for clb tcloud url rule.
 type ClbTCloudUrlRuleInterface interface {
-	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.TCloudClbUrlRuleTable) ([]string, error)
-	Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.TCloudClbUrlRuleTable) error
-	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.TCloudClbUrlRuleTable) error
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.TCloudLbUrlRuleTable) ([]string, error)
+	Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.TCloudLbUrlRuleTable) error
+	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.TCloudLbUrlRuleTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbUrlRuleDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
@@ -60,10 +60,10 @@ type ClbTCloudUrlRuleDao struct {
 }
 
 // BatchCreateWithTx clb url rule.
-func (dao ClbTCloudUrlRuleDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.TCloudClbUrlRuleTable) (
+func (dao ClbTCloudUrlRuleDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.TCloudLbUrlRuleTable) (
 	[]string, error) {
 
-	tableName := table.TCloudClbUrlRuleTable
+	tableName := table.TCloudLbUrlRuleTable
 	ids, err := dao.IDGen.Batch(kt, tableName, len(models))
 	if err != nil {
 		return nil, err
@@ -88,7 +88,7 @@ func (dao ClbTCloudUrlRuleDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model
 }
 
 // Update clb url rule.
-func (dao ClbTCloudUrlRuleDao) Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.TCloudClbUrlRuleTable) error {
+func (dao ClbTCloudUrlRuleDao) Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.TCloudLbUrlRuleTable) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
 	}
@@ -130,9 +130,9 @@ func (dao ClbTCloudUrlRuleDao) Update(kt *kit.Kit, expr *filter.Expression, mode
 	return nil
 }
 
-// UpdateByIDWithTx clb url rule.
+// UpdateByIDWithTx lb url rule.
 func (dao ClbTCloudUrlRuleDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
-	model *tablelb.TCloudClbUrlRuleTable) error {
+	model *tablelb.TCloudLbUrlRuleTable) error {
 
 	if len(id) == 0 {
 		return errf.New(errf.InvalidParameter, "id is required")
@@ -160,7 +160,7 @@ func (dao ClbTCloudUrlRuleDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id str
 	return nil
 }
 
-// List clb url rule.
+// List lb url rule.
 func (dao ClbTCloudUrlRuleDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbUrlRuleDetails, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
@@ -178,7 +178,7 @@ func (dao ClbTCloudUrlRuleDao) List(kt *kit.Kit, opt *types.ListOption) (*typesc
 
 	if opt.Page.Count {
 		// this is a count request, then do count operation only.
-		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.TCloudClbUrlRuleTable, whereExpr)
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.TCloudLbUrlRuleTable, whereExpr)
 
 		count, err := dao.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
@@ -195,9 +195,9 @@ func (dao ClbTCloudUrlRuleDao) List(kt *kit.Kit, opt *types.ListOption) (*typesc
 	}
 
 	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablelb.TCloudClbUrlRuleColumns.FieldsNamedExpr(opt.Fields),
-		table.TCloudClbUrlRuleTable, whereExpr, pageExpr)
+		table.TCloudLbUrlRuleTable, whereExpr, pageExpr)
 
-	details := make([]tablelb.TCloudClbUrlRuleTable, 0)
+	details := make([]tablelb.TCloudLbUrlRuleTable, 0)
 	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
@@ -216,7 +216,7 @@ func (dao ClbTCloudUrlRuleDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filt
 		return err
 	}
 
-	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.TCloudClbUrlRuleTable, whereExpr)
+	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.TCloudLbUrlRuleTable, whereExpr)
 	if _, err = dao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
 		logs.Errorf("delete load balancer url rule failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
 		return err

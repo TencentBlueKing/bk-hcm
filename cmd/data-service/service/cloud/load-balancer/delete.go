@@ -129,8 +129,56 @@ func (svc *lbSvc) deleteRule(kt *kit.Kit, txn *sqlx.Tx, listenerID string) error
 	if len(ruleResp.Details) == 0 {
 		return nil
 	}
-	ruleIds := slice.Map(ruleResp.Details, func(r tablelb.TCloudClbUrlRuleTable) string { return r.ID })
+	ruleIds := slice.Map(ruleResp.Details, func(r tablelb.TCloudLbUrlRuleTable) string { return r.ID })
 
 	ruleIDFilter := tools.ContainersExpression("lbl_id", ruleIds)
 	return svc.dao.LoadBalancerTCloudUrlRule().DeleteWithTx(kt, txn, ruleIDFilter)
+}
+
+// BatchDeleteTargetGroup batch delete target group.
+func (svc *lbSvc) BatchDeleteTargetGroup(cts *rest.Contexts) (interface{}, error) {
+	req := new(dataproto.TargetGroupBatchDeleteReq)
+	if err := cts.DecodeInto(req); err != nil {
+		logs.Errorf("batch delete target group decode failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		logs.Errorf("batch delete target group validate failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Fields: []string{"id", "vendor", "cloud_id", "bk_biz_id"},
+		Filter: req.Filter,
+		Page:   core.NewDefaultBasePage(),
+	}
+	listResp, err := svc.dao.LoadBalancerTargetGroup().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list target group db failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list target group failed, err: %v", err)
+	}
+
+	if len(listResp.Details) == 0 {
+		return nil, nil
+	}
+
+	delIDs := make([]string, len(listResp.Details))
+	for index, one := range listResp.Details {
+		delIDs[index] = one.ID
+	}
+
+	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		delFilter := tools.ContainersExpression("id", delIDs)
+		if err = svc.dao.LoadBalancerTargetGroup().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	if err != nil {
+		logs.Errorf("delete target group failed, delIDs: %v, err: %v, rid: %s", delIDs, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
 }

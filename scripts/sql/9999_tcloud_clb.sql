@@ -215,6 +215,7 @@ create table `load_balancer_target_group`
     `health_check`      json                  default null,
 
     `memo`              varchar(255)          default '',
+    `extension`         json         not null default ('{}'),
 
     `creator`           varchar(64)  not null,
     `reviser`           varchar(64)  not null,

@@ -87,4 +87,6 @@ const (
 	LoadBalancer ResourceType = "load_balancer"
 	// Listener defines listener hcm auth resource type
 	Listener ResourceType = "listener"
+	// TargetGroup defines target group hcm auth resource type
+	TargetGroup ResourceType = "target_group"
 )

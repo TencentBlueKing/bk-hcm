@@ -67,6 +67,12 @@ func InitService(c *capability.Capability) {
 		svc.ListBizLbUrlRule)
 	h.Add("GetBizListener", http.MethodGet, "/bizs/{bk_biz_id}/listeners/{id}", svc.GetBizListener)
 
+	h.Add("CreateBizTargetGroup", http.MethodPost, "/bizs/{bk_biz_id}/target_groups/create", svc.CreateBizTargetGroup)
+	h.Add("UpdateBizTargetGroup", http.MethodPatch, "/bizs/{bk_biz_id}/target_groups/{id}", svc.UpdateBizTargetGroup)
+	h.Add("DeleteBizTargetGroup", http.MethodDelete, "/bizs/{bk_biz_id}/target_groups/batch", svc.DeleteBizTargetGroup)
+	h.Add("ListBizTargetGroup", http.MethodPost, "/bizs/{bk_biz_id}/target_groups/list", svc.ListBizTargetGroup)
+	h.Add("GetTargetGroup", http.MethodGet, "/target_groups/{id}", svc.GetTargetGroup)
+
 	h.Load(c.WebService)
 }
 

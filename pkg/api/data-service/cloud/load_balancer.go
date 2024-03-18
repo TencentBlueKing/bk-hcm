@@ -145,32 +145,32 @@ func (req *ClbBizBatchUpdateReq) Validate() error {
 
 // -------------------------- List --------------------------
 
-// ClbListResult define clb list result.
-type ClbListResult struct {
+// LbListResult define lb list result.
+type LbListResult struct {
 	Count   uint64                    `json:"count"`
 	Details []corelb.BaseLoadBalancer `json:"details"`
 }
 
-// ClbListResp define list resp.
-type ClbListResp struct {
+// LbListResp define list resp.
+type LbListResp struct {
 	rest.BaseResp `json:",inline"`
-	Data          *ClbListResult `json:"data"`
+	Data          *LbListResult `json:"data"`
 }
 
-// ClbExtListReq list req.
-type ClbExtListReq struct {
+// LbExtListReq list req.
+type LbExtListReq struct {
 	Field  []string           `json:"field" validate:"omitempty"`
 	Filter *filter.Expression `json:"filter" validate:"required"`
 	Page   *core.BasePage     `json:"page" validate:"required"`
 }
 
 // Validate list request.
-func (req *ClbExtListReq) Validate() error {
+func (req *LbExtListReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// ClbExtListResult define clb with extension list result.
-type ClbExtListResult[T corelb.Extension] struct {
+// LbExtListResult define lb with extension list result.
+type LbExtListResult[T corelb.Extension] struct {
 	Count   uint64                   `json:"count,omitempty"`
 	Details []corelb.LoadBalancer[T] `json:"details,omitempty"`
 }
@@ -203,15 +203,10 @@ func (req *ListListenerReq) Validate() error {
 // ListenerListResult define listener list result.
 type ListenerListResult = core.ListResultT[corelb.BaseListener]
 
-// -------------------------- List Listener Target --------------------------
+// -------------------------- List Target --------------------------
 
-// ClbTargetListResult define clb target list result.
-type ClbTargetListResult = core.ListResultT[corelb.BaseClbTarget]
-
-// -------------------------- List Listener Target Group --------------------------
-
-// ClbTargetGroupListResult define clb target group list result.
-type ClbTargetGroupListResult = core.ListResultT[corelb.BaseClbTargetGroup]
+// TargetListResult define target list result.
+type TargetListResult = core.ListResultT[corelb.BaseTarget]
 
 // -------------------------- List TCloud Url Rule --------------------------
 
@@ -227,4 +222,4 @@ func (req *ListTCloudURLRuleReq) Validate() error {
 }
 
 // TCloudURLRuleListResult define tcloud url rule list result.
-type TCloudURLRuleListResult = core.ListResultT[corelb.BaseTCloudClbURLRule]
+type TCloudURLRuleListResult = core.ListResultT[corelb.BaseTCloudLbUrlRule]

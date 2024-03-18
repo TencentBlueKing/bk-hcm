@@ -29,3 +29,14 @@ const (
 	// LayerSevenRuleType 7层负载均衡
 	LayerSevenRuleType RuleType = "layer_7"
 )
+
+// TargetGroupType 目标组类型
+type TargetGroupType string
+
+// 目标组类型
+const (
+	// LocalTargetGroupType 本地目标组类型
+	LocalTargetGroupType TargetGroupType = "local"
+	// CloudTargetGroupType 云端目标组类型
+	CloudTargetGroupType TargetGroupType = "cloud"
+)

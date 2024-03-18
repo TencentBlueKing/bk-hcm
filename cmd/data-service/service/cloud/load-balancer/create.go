@@ -29,6 +29,9 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
+	"hcm/pkg/dal/dao/tools"
+	typesdao "hcm/pkg/dal/dao/types"
+	"hcm/pkg/dal/table/cloud"
 	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
@@ -130,4 +133,134 @@ func convClbReqToTable[T corelb.Extension](kt *kit.Kit, vendor enumor.Vendor, lb
 		Creator:              kt.User,
 		Reviser:              kt.User,
 	}, nil
+}
+
+// BatchCreateTargetGroup 批量创建目标组
+func (svc *lbSvc) BatchCreateTargetGroup(cts *rest.Contexts) (any, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return batchCreateTargetGroup[corelb.TCloudTargetGroupExtension](cts, svc, vendor)
+	default:
+		return nil, errf.New(errf.InvalidParameter, "unsupported vendor: "+string(vendor))
+	}
+}
+
+func batchCreateTargetGroup[T corelb.TargetGroupExtension](cts *rest.Contexts,
+	svc *lbSvc, vendor enumor.Vendor) (any, error) {
+
+	req := new(dataproto.TargetGroupBatchCreateReq[T])
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	result, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
+		vpcInfoMap, err := getVpcMapByIDs(cts.Kit, req.TargetGroups)
+		if err != nil {
+			return nil, err
+		}
+		models := make([]*tablelb.LoadBalancerTargetGroupTable, 0, len(req.TargetGroups))
+		for _, lb := range req.TargetGroups {
+			tgTable, err := convTargetGroupCreateReqToTable(cts.Kit, vendor, lb, vpcInfoMap)
+			if err != nil {
+				return nil, err
+			}
+			models = append(models, tgTable)
+		}
+
+		ids, err := svc.dao.LoadBalancerTargetGroup().BatchCreateWithTx(cts.Kit, txn, models)
+		if err != nil {
+			logs.Errorf("[%s]fail to batch create target group, err: %v, rid:%s", vendor, err, cts.Kit.Rid)
+			return nil, fmt.Errorf("batch create target group failed, err: %v", err)
+		}
+
+		return ids, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ids, ok := result.([]string)
+	if !ok {
+		return nil, fmt.Errorf("batch create target group but return id type is not []string, id type: %v",
+			reflect.TypeOf(result).String())
+	}
+
+	return &core.BatchCreateResult{IDs: ids}, nil
+}
+
+func convTargetGroupCreateReqToTable[T corelb.TargetGroupExtension](kt *kit.Kit, vendor enumor.Vendor,
+	tg dataproto.TargetGroupBatchCreate[T], vpcInfoMap map[string]cloud.VpcTable) (
+	*tablelb.LoadBalancerTargetGroupTable, error) {
+
+	extensionJSON, err := types.NewJsonField(tg.Extension)
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	targetGroup := &tablelb.LoadBalancerTargetGroupTable{
+		Name:            tg.Name,
+		Vendor:          vendor,
+		AccountID:       tg.AccountID,
+		BkBizID:         tg.BkBizID,
+		TargetGroupType: tg.TargetGroupType,
+		VpcID:           tg.VpcID,
+		CloudVpcID:      tg.CloudVpcID,
+		Region:          tg.Region,
+		Protocol:        tg.Protocol,
+		Port:            tg.Port,
+		Weight:          tg.Weight,
+		HealthCheck:     tg.HealthCheck,
+		Memo:            tg.Memo,
+		Extension:       extensionJSON,
+		Creator:         kt.User,
+		Reviser:         kt.User,
+	}
+	if len(tg.TargetGroupType) == 0 {
+		targetGroup.TargetGroupType = enumor.LocalTargetGroupType
+	}
+	if tg.Weight == 0 {
+		targetGroup.Weight = -1
+	}
+	if len(tg.VpcID) > 0 && len(tg.CloudVpcID) == 0 {
+		if vpcInfo, ok := vpcInfoMap[tg.VpcID]; ok {
+			targetGroup.CloudVpcID = vpcInfo.CloudID
+		}
+	}
+	return targetGroup, nil
+}
+
+func getVpcMapByIDs[T corelb.TargetGroupExtension](kt *kit.Kit, tgList []dataproto.TargetGroupBatchCreate[T]) (
+	map[string]cloud.VpcTable, error) {
+
+	vpcIDs := make([]string, 0)
+	for _, item := range tgList {
+		if len(item.VpcID) > 0 {
+			vpcIDs = append(vpcIDs, item.VpcID)
+		}
+	}
+	vpcOpt := &typesdao.ListOption{
+		Filter: tools.ContainersExpression("id", vpcIDs),
+		Page:   core.NewDefaultBasePage(),
+	}
+	vpcResult, err := svc.dao.Vpc().List(kt, vpcOpt)
+	if err != nil {
+		logs.Errorf("list vpc by ids failed, vpcIDs: %v, err: %v, rid: %s", vpcIDs, err, kt.Rid)
+		return nil, fmt.Errorf("list vpc by ids failed, err: %v", err)
+	}
+
+	idMap := make(map[string]cloud.VpcTable, len(vpcResult.Details))
+	for _, item := range vpcResult.Details {
+		idMap[item.ID] = item
+	}
+
+	return idMap, nil
 }

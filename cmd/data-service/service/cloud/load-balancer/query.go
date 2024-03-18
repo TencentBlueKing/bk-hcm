@@ -38,7 +38,7 @@ import (
 	"hcm/pkg/tools/json"
 )
 
-// ListLoadBalancer list clb.
+// ListLoadBalancer list load balancer.
 func (svc *lbSvc) ListLoadBalancer(cts *rest.Contexts) (interface{}, error) {
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -56,12 +56,12 @@ func (svc *lbSvc) ListLoadBalancer(cts *rest.Contexts) (interface{}, error) {
 	}
 	result, err := svc.dao.LoadBalancer().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list clb failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list clb failed, err: %v", err)
+		logs.Errorf("list lb failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list lb failed, err: %v", err)
 	}
 
 	if req.Page.Count {
-		return &protocloud.ClbListResult{Count: result.Count}, nil
+		return &protocloud.LbListResult{Count: result.Count}, nil
 	}
 
 	details := make([]corelb.BaseLoadBalancer, 0, len(result.Details))
@@ -70,7 +70,7 @@ func (svc *lbSvc) ListLoadBalancer(cts *rest.Contexts) (interface{}, error) {
 		details = append(details, *tmpOne)
 	}
 
-	return &protocloud.ClbListResult{Details: details}, nil
+	return &protocloud.LbListResult{Details: details}, nil
 }
 
 func convTableToBaseLB(one *tablelb.LoadBalancerTable) *corelb.BaseLoadBalancer {
@@ -107,7 +107,7 @@ func convTableToBaseLB(one *tablelb.LoadBalancerTable) *corelb.BaseLoadBalancer 
 	}
 }
 
-// ListLoadBalancerExt list clb ext.
+// ListLoadBalancerExt list load balancer ext.
 func (svc *lbSvc) ListLoadBalancerExt(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	if err := vendor.Validate(); err != nil {
@@ -136,7 +136,7 @@ func (svc *lbSvc) ListLoadBalancerExt(cts *rest.Contexts) (interface{}, error) {
 
 	switch vendor {
 	case enumor.TCloud:
-		return convClbListResult[corelb.TCloudClbExtension](data.Details)
+		return convLbListResult[corelb.TCloudClbExtension](data.Details)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
 	}
@@ -151,7 +151,7 @@ func (svc *lbSvc) GetLoadBalancer(cts *rest.Contexts) (any, error) {
 
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "clb id is required")
+		return nil, errf.New(errf.InvalidParameter, "lb id is required")
 	}
 
 	opt := &types.ListOption{
@@ -160,18 +160,18 @@ func (svc *lbSvc) GetLoadBalancer(cts *rest.Contexts) (any, error) {
 	}
 	result, err := svc.dao.LoadBalancer().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list clb(%s) failed, err: %v, rid: %s", err, id, cts.Kit.Rid)
-		return nil, fmt.Errorf("get clb failed, err: %v", err)
+		logs.Errorf("list lb(%s) failed, err: %v, rid: %s", err, id, cts.Kit.Rid)
+		return nil, fmt.Errorf("list lb failed, err: %v", err)
 	}
 
 	if len(result.Details) != 1 {
 		return nil, errf.New(errf.RecordNotFound, "load balancer not found")
 	}
 
-	clbTable := result.Details[0]
-	switch clbTable.Vendor {
+	lbTable := result.Details[0]
+	switch lbTable.Vendor {
 	case enumor.TCloud:
-		return convLoadBalancerWithExt(&clbTable)
+		return convLoadBalancerWithExt(&lbTable)
 	default:
 		return nil, fmt.Errorf("unsupport vendor: %s", vendor)
 	}
@@ -190,8 +190,8 @@ func convLoadBalancerWithExt[T corelb.Extension](tableLB *tablelb.LoadBalancerTa
 	}, nil
 }
 
-func convClbListResult[T corelb.Extension](tables []tablelb.LoadBalancerTable) (
-	*protocloud.ClbExtListResult[T], error) {
+func convLbListResult[T corelb.Extension](tables []tablelb.LoadBalancerTable) (
+	*protocloud.LbExtListResult[T], error) {
 
 	details := make([]corelb.LoadBalancer[T], 0, len(tables))
 	for _, tableLB := range tables {
@@ -208,7 +208,7 @@ func convClbListResult[T corelb.Extension](tables []tablelb.LoadBalancerTable) (
 		})
 	}
 
-	return &protocloud.ClbExtListResult[T]{
+	return &protocloud.LbExtListResult[T]{
 		Details: details,
 	}, nil
 }
@@ -314,17 +314,17 @@ func (svc *lbSvc) ListUrlRule(cts *rest.Contexts) (interface{}, error) {
 	}
 	result, err := svc.dao.LoadBalancerTCloudUrlRule().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list tcloud clb url rule failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list tcloud clb url rule failed, err: %v", err)
+		logs.Errorf("list tcloud lb url rule failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list tcloud lb url rule failed, err: %v", err)
 	}
 
 	if req.Page.Count {
 		return &protocloud.TCloudURLRuleListResult{Count: result.Count}, nil
 	}
 
-	details := make([]corelb.BaseTCloudClbURLRule, 0, len(result.Details))
+	details := make([]corelb.BaseTCloudLbUrlRule, 0, len(result.Details))
 	for _, one := range result.Details {
-		tmpOne, err := convTableToBaseTCloudClbURLRule(cts.Kit, &one)
+		tmpOne, err := convTableToBaseTCloudLbURLRule(cts.Kit, &one)
 		if err != nil {
 			continue
 		}
@@ -334,8 +334,8 @@ func (svc *lbSvc) ListUrlRule(cts *rest.Contexts) (interface{}, error) {
 	return &protocloud.TCloudURLRuleListResult{Details: details}, nil
 }
 
-func convTableToBaseTCloudClbURLRule(kt *kit.Kit, one *tablelb.TCloudClbUrlRuleTable) (
-	*corelb.BaseTCloudClbURLRule, error) {
+func convTableToBaseTCloudLbURLRule(kt *kit.Kit, one *tablelb.TCloudLbUrlRuleTable) (
+	*corelb.BaseTCloudLbUrlRule, error) {
 
 	var healthCheck *corelb.HealthCheckInfo
 	err := json.UnmarshalFromString(string(one.HealthCheck), &healthCheck)
@@ -351,7 +351,7 @@ func convTableToBaseTCloudClbURLRule(kt *kit.Kit, one *tablelb.TCloudClbUrlRuleT
 		return nil, err
 	}
 
-	return &corelb.BaseTCloudClbURLRule{
+	return &corelb.BaseTCloudLbUrlRule{
 		ID:                 one.ID,
 		CloudID:            one.CloudID,
 		Name:               one.Name,
@@ -398,25 +398,25 @@ func (svc *lbSvc) ListTarget(cts *rest.Contexts) (interface{}, error) {
 	}
 	result, err := svc.dao.LoadBalancerTarget().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list clb target failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list clb target failed, err: %v", err)
+		logs.Errorf("list lb target failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list lb target failed, err: %v", err)
 	}
 
 	if req.Page.Count {
-		return &protocloud.ClbTargetListResult{Count: result.Count}, nil
+		return &protocloud.TargetListResult{Count: result.Count}, nil
 	}
 
-	details := make([]corelb.BaseClbTarget, 0, len(result.Details))
+	details := make([]corelb.BaseTarget, 0, len(result.Details))
 	for _, one := range result.Details {
-		tmpOne := convTableToBaseClbTarget(&one)
+		tmpOne := convTableToBaseTarget(&one)
 		details = append(details, *tmpOne)
 	}
 
-	return &protocloud.ClbTargetListResult{Details: details}, nil
+	return &protocloud.TargetListResult{Details: details}, nil
 }
 
-func convTableToBaseClbTarget(one *tablelb.LoadBalancerTargetTable) *corelb.BaseClbTarget {
-	return &corelb.BaseClbTarget{
+func convTableToBaseTarget(one *tablelb.LoadBalancerTargetTable) *corelb.BaseTarget {
+	return &corelb.BaseTarget{
 		ID:                 one.ID,
 		AccountID:          one.AccountID,
 		InstType:           one.InstType,
@@ -457,28 +457,62 @@ func (svc *lbSvc) ListTargetGroup(cts *rest.Contexts) (interface{}, error) {
 	}
 	result, err := svc.dao.LoadBalancerTargetGroup().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list clb target group failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list clb target group failed, err: %v", err)
+		logs.Errorf("list target group failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list target group failed, err: %v", err)
 	}
 
 	if req.Page.Count {
-		return &protocloud.ClbTargetGroupListResult{Count: result.Count}, nil
+		return &protocloud.TargetGroupListResult{Count: result.Count}, nil
 	}
 
-	details := make([]corelb.BaseClbTargetGroup, 0, len(result.Details))
+	details := make([]corelb.BaseTargetGroup, 0, len(result.Details))
 	for _, one := range result.Details {
-		tmpOne, err := convTableToBaseClbTargetGroup(cts.Kit, &one)
+		tmpOne, err := convTableToBaseTargetGroup(cts.Kit, &one)
 		if err != nil {
 			continue
 		}
 		details = append(details, *tmpOne)
 	}
 
-	return &protocloud.ClbTargetGroupListResult{Details: details}, nil
+	return &protocloud.TargetGroupListResult{Details: details}, nil
 }
 
-func convTableToBaseClbTargetGroup(kt *kit.Kit, one *tablelb.LoadBalancerTargetGroupTable) (
-	*corelb.BaseClbTargetGroup, error) {
+func (svc *lbSvc) GetTargetGroup(cts *rest.Contexts) (any, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	id := cts.PathParameter("id").String()
+	if len(id) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "target group id is required")
+	}
+
+	opt := &types.ListOption{
+		Filter: tools.EqualExpression("id", id),
+		Page:   core.NewDefaultBasePage(),
+	}
+	result, err := svc.dao.LoadBalancerTargetGroup().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list target group failed, lblID: %s, err: %v, rid: %s", id, err, cts.Kit.Rid)
+		return nil, fmt.Errorf("get target group failed, err: %v", err)
+	}
+
+	if len(result.Details) != 1 {
+		return nil, errf.New(errf.RecordNotFound, "target group is not found")
+	}
+
+	tgInfo := result.Details[0]
+	switch tgInfo.Vendor {
+	case enumor.TCloud:
+		return convTableToBaseTargetGroup(cts.Kit, &tgInfo)
+	default:
+		return nil, fmt.Errorf("unsupport vendor: %s", vendor)
+	}
+}
+
+func convTableToBaseTargetGroup(kt *kit.Kit, one *tablelb.LoadBalancerTargetGroupTable) (
+	*corelb.BaseTargetGroup, error) {
 
 	var healthCheck *corelb.HealthCheckInfo
 	err := json.UnmarshalFromString(string(one.HealthCheck), &healthCheck)
@@ -487,7 +521,7 @@ func convTableToBaseClbTargetGroup(kt *kit.Kit, one *tablelb.LoadBalancerTargetG
 		return nil, err
 	}
 
-	return &corelb.BaseClbTargetGroup{
+	return &corelb.BaseTargetGroup{
 		ID:              one.ID,
 		CloudID:         one.CloudID,
 		Name:            one.Name,
@@ -543,5 +577,59 @@ func (svc *lbSvc) GetListener(cts *rest.Contexts) (any, error) {
 		return convTableToBaseListener(&lblInfo), nil
 	default:
 		return nil, fmt.Errorf("unsupport vendor: %s", vendor)
+	}
+}
+
+// ListTargetGroupListenerRel list target group listener rel.
+func (svc *lbSvc) ListTargetGroupListenerRel(cts *rest.Contexts) (interface{}, error) {
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Fields: req.Fields,
+		Filter: req.Filter,
+		Page:   req.Page,
+	}
+	result, err := svc.dao.LoadBalancerTargetListenerRuleRel().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list target listener rule rel failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list target listener rule rel failed, err: %v", err)
+	}
+
+	if req.Page.Count {
+		return &protocloud.TargetListenerRuleRelListResult{Count: result.Count}, nil
+	}
+
+	details := make([]corelb.BaseTargetListenerRuleRel, 0, len(result.Details))
+	for _, one := range result.Details {
+		tmpOne := convTableToBaseTargetListenerRuleRel(&one)
+		details = append(details, *tmpOne)
+	}
+
+	return &protocloud.TargetListenerRuleRelListResult{Details: details}, nil
+}
+
+func convTableToBaseTargetListenerRuleRel(one *tablelb.TargetListenerRuleRelTable) *corelb.BaseTargetListenerRuleRel {
+	return &corelb.BaseTargetListenerRuleRel{
+		ID:               one.ID,
+		ListenerRuleID:   one.ListenerRuleID,
+		ListenerRuleType: one.ListenerRuleType,
+		TargetGroupID:    one.TargetGroupID,
+		LbID:             one.LbID,
+		LblID:            one.LblID,
+		BindingStatus:    one.BindingStatus,
+		Detail:           one.Detail,
+		Revision: &core.Revision{
+			Creator:   one.Creator,
+			Reviser:   one.Reviser,
+			CreatedAt: one.CreatedAt.String(),
+			UpdatedAt: one.UpdatedAt.String(),
+		},
 	}
 }
