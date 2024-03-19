@@ -327,6 +327,7 @@ func convCloudToDBCreate(cloud typeslb.TCloudClb, accountID string, region strin
 		AccountID:        accountID,
 		BkBizID:          constant.UnassignedBiz,
 		LoadBalancerType: cvt.PtrToVal(cloud.LoadBalancerType),
+		IPVersion:        cloud.GetIPVersion(),
 		Region:           region,
 		VpcID:            vpcMap[cloudVpcID].VpcID,
 		CloudVpcID:       cloudVpcID,
@@ -339,34 +340,8 @@ func convCloudToDBCreate(cloud typeslb.TCloudClb, accountID string, region strin
 		CloudExpiredTime: cvt.PtrToVal(cloud.ExpireTime),
 		// 备注字段云上没有
 		Memo: nil,
+	}
 
-		Extension: &corelb.TCloudClbExtension{
-			SlaType:                  cvt.PtrToVal(cloud.SlaType),
-			VipIsp:                   cvt.PtrToVal(cloud.VipIsp),
-			AddressIpVersion:         cvt.PtrToVal(cloud.AddressIPVersion),
-			LoadBalancerPassToTarget: cvt.PtrToVal(cloud.LoadBalancerPassToTarget),
-			IPv6Mode:                 cvt.PtrToVal(cloud.IPv6Mode),
-			Snat:                     cvt.PtrToVal(cloud.Snat),
-			SnatPro:                  cvt.PtrToVal(cloud.SnatPro),
-			// 该接口无法获取下列字段
-			BandwidthPackageId: nil,
-		},
-	}
-	if cloud.NetworkAttributes != nil {
-		lb.Extension.InternetMaxBandwidthOut = cvt.PtrToVal(cloud.NetworkAttributes.InternetMaxBandwidthOut)
-		lb.Extension.InternetChargeType = cvt.PtrToVal(cloud.NetworkAttributes.InternetChargeType)
-		lb.Extension.BandwidthpkgSubType = cvt.PtrToVal(cloud.NetworkAttributes.BandwidthpkgSubType)
-	}
-	if cloud.SnatIps != nil {
-		ipList := make([]corelb.SnatIp, 0, len(cloud.SnatIps))
-		for _, snatIP := range cloud.SnatIps {
-			if snatIP == nil {
-				continue
-			}
-			ipList = append(ipList, corelb.SnatIp{SubnetId: snatIP.SubnetId, Ip: snatIP.Ip})
-		}
-		lb.Extension.SnatIps = ipList
-	}
 	// IP地址判断
 	if len(cloud.LoadBalancerVips) != 0 {
 		switch typeslb.TCloudLoadBalancerType(cvt.PtrToVal(cloud.LoadBalancerType)) {
@@ -385,15 +360,48 @@ func convCloudToDBCreate(cloud typeslb.TCloudClb, accountID string, region strin
 		lb.Zones = []string{cvt.PtrToVal(cloud.MasterZone.Zone)}
 	}
 
+	lb.Extension = convertTCloudExtension(cloud)
+
+	return lb
+}
+
+func convertTCloudExtension(cloud typeslb.TCloudClb) *corelb.TCloudClbExtension {
+	ext := &corelb.TCloudClbExtension{
+		SlaType:                  cvt.PtrToVal(cloud.SlaType),
+		VipIsp:                   cvt.PtrToVal(cloud.VipIsp),
+		LoadBalancerPassToTarget: cvt.PtrToVal(cloud.LoadBalancerPassToTarget),
+		IPv6Mode:                 cvt.PtrToVal(cloud.IPv6Mode),
+		Snat:                     cvt.PtrToVal(cloud.Snat),
+		SnatPro:                  cvt.PtrToVal(cloud.SnatPro),
+		MixIpTarget:              cvt.PtrToVal(cloud.MixIpTarget),
+		// 该接口无法获取下列字段
+		BandwidthPackageId: nil,
+	}
+	if cloud.NetworkAttributes != nil {
+		ext.InternetMaxBandwidthOut = cvt.PtrToVal(cloud.NetworkAttributes.InternetMaxBandwidthOut)
+		ext.InternetChargeType = cvt.PtrToVal(cloud.NetworkAttributes.InternetChargeType)
+		ext.BandwidthpkgSubType = cvt.PtrToVal(cloud.NetworkAttributes.BandwidthpkgSubType)
+	}
+	if cloud.SnatIps != nil {
+		ipList := make([]corelb.SnatIp, 0, len(cloud.SnatIps))
+		for _, snatIP := range cloud.SnatIps {
+			if snatIP == nil {
+				continue
+			}
+			ipList = append(ipList, corelb.SnatIp{SubnetId: snatIP.SubnetId, Ip: snatIP.Ip})
+		}
+		ext.SnatIps = ipList
+	}
+
 	// 没有碰到的则默认是false
 	for _, flag := range cloud.AttributeFlags {
 		switch cvt.PtrToVal(flag) {
 		case DeleteProtectAttrFlag:
-			lb.Extension.DeleteProtect = true
+			ext.DeleteProtect = true
 		}
 	}
 
-	return lb
+	return ext
 }
 
 func convCloudToDBUpdate(id string,
@@ -404,6 +412,7 @@ func convCloudToDBUpdate(id string,
 		Name:             cvt.PtrToVal(cloud.LoadBalancerName),
 		BkBizID:          constant.UnassignedBiz,
 		Domain:           cvt.PtrToVal(cloud.LoadBalancerDomain),
+		IPVersion:        cloud.GetIPVersion(),
 		Status:           strconv.FormatUint(cvt.PtrToVal(cloud.Status), 10),
 		CloudCreatedTime: cvt.PtrToVal(cloud.CreateTime),
 		CloudStatusTime:  cvt.PtrToVal(cloud.StatusTime),
@@ -412,7 +421,6 @@ func convCloudToDBUpdate(id string,
 		Extension: &corelb.TCloudClbExtension{
 			SlaType:                  cvt.PtrToVal(cloud.SlaType),
 			VipIsp:                   cvt.PtrToVal(cloud.VipIsp),
-			AddressIpVersion:         cvt.PtrToVal(cloud.AddressIPVersion),
 			LoadBalancerPassToTarget: cvt.PtrToVal(cloud.LoadBalancerPassToTarget),
 
 			IPv6Mode: cvt.PtrToVal(cloud.IPv6Mode),
@@ -468,6 +476,9 @@ func isLBChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) bool {
 		return true
 	}
 
+	if db.IPVersion != cloud.GetIPVersion() {
+		return true
+	}
 	if db.Domain != cvt.PtrToVal(cloud.LoadBalancerDomain) {
 		return true
 	}
@@ -535,9 +546,7 @@ func isLBExtensionChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) 
 	if db.Extension.VipIsp != cvt.PtrToVal(cloud.VipIsp) {
 		return true
 	}
-	if db.Extension.AddressIpVersion != cvt.PtrToVal(cloud.AddressIPVersion) {
-		return true
-	}
+
 	if db.Extension.LoadBalancerPassToTarget != cvt.PtrToVal(cloud.LoadBalancerPassToTarget) {
 		return true
 	}

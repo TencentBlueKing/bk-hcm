@@ -6,7 +6,7 @@
 
 ### URL
 
-GET /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/listeners/{lbl_id}/domains
+POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/listeners/{lbl_id}/domains/list
 
 ### 输入参数
 

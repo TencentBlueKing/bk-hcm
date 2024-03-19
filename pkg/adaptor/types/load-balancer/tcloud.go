@@ -22,9 +22,11 @@ package loadbalancer
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/converter"
 
@@ -63,6 +65,24 @@ type TCloudClb struct {
 // GetCloudID get cloud id
 func (clb TCloudClb) GetCloudID() string {
 	return converter.PtrToVal(clb.LoadBalancerId)
+}
+
+// GetIPVersion 返回ip版本信息
+func (clb TCloudClb) GetIPVersion() enumor.IPAddressType {
+
+	ver := strings.ToLower(converter.PtrToVal(clb.AddressIPVersion))
+	if ver == "ipv4" {
+		return enumor.Ipv4
+	}
+	mode := strings.ToLower(converter.PtrToVal(clb.IPv6Mode))
+	if ver == "ipv6" && mode == "ipv6fullchain" {
+		return enumor.Ipv6
+	}
+	if ver == "ipv6" && mode == "ipv6nat64" {
+		return enumor.Ipv6Nat64
+	}
+	// fall back to unknown
+	return enumor.IPAddressType(ver)
 }
 
 // -------------------------- List Listeners--------------------------
@@ -131,7 +151,7 @@ type TCloudCreateClbOption struct {
 	VpcID                    *string                    `json:"vpc_id" validate:"omitempty"`
 	SubnetID                 *string                    `json:"subnet_id" validate:"omitempty"`
 	ProjectID                *int64                     `json:"project_id" validate:"omitempty"`
-	AddressIPVersion         *TCloudAddressIPVersion    `json:"address_ip_version" validate:"omitempty"`
+	AddressIPVersion         *TCloudIPVersionForCreate  `json:"address_ip_version" validate:"omitempty"`
 	Number                   *uint64                    `json:"number" validate:"omitempty"`
 	MasterZoneID             *string                    `json:"master_zone_id" validate:"omitempty"`
 	ZoneID                   *string                    `json:"zone_id" validate:"omitempty"`
@@ -183,17 +203,17 @@ const (
 // TCloudDefaultISP 默认ISP
 const TCloudDefaultISP = "BGP"
 
-// TCloudAddressIPVersion 仅适用于公网负载均衡。IP版本，可取值：IPV4、IPV6、IPv6FullChain，不区分大小写，默认值 IPV4。
+// TCloudIPVersionForCreate 仅适用于公网负载均衡。IP版本，可取值：IPV4、IPV6、IPv6FullChain，不区分大小写，默认值 IPV4。
 // 说明：取值为IPV6表示为IPV6 NAT64版本；取值为IPv6FullChain，表示为IPv6版本。
-type TCloudAddressIPVersion string
+type TCloudIPVersionForCreate string
 
 const (
-	// IPV4AddressVersion IPV4版本
-	IPV4AddressVersion TCloudAddressIPVersion = "IPV4"
-	// IPV6AddressVersion IPV6版本
-	IPV6AddressVersion TCloudAddressIPVersion = "IPV6"
-	// IPV6FullChainAddressVersion IPv6FullChain版本
-	IPV6FullChainAddressVersion TCloudAddressIPVersion = "IPv6FullChain"
+	// IPV4IPVersion IPV4版本
+	IPV4IPVersion TCloudIPVersionForCreate = "IPV4"
+	// IPV6NAT64IPVersion IPV6版本
+	IPV6NAT64IPVersion TCloudIPVersionForCreate = "IPV6"
+	// IPV6FullChainIPVersion IPv6FullChain版本
+	IPV6FullChainIPVersion TCloudIPVersionForCreate = "IPv6FullChain"
 )
 
 // TCloudLoadBalancerStatus 负载均衡实例的状态

@@ -115,6 +115,7 @@ func convClbReqToTable[T corelb.Extension](kt *kit.Kit, vendor enumor.Vendor, lb
 		Zones:                lb.Zones,
 		BackupZones:          lb.BackupZones,
 		LBType:               lb.LoadBalancerType,
+		IPVersion:            string(lb.IPVersion),
 		VpcID:                lb.VpcID,
 		CloudVpcID:           lb.CloudVpcID,
 		SubnetID:             lb.SubnetID,

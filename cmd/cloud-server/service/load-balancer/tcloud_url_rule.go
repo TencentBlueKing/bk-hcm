@@ -221,8 +221,8 @@ func (svc *lbSvc) ListBizUrlRulesByListener(cts *rest.Contexts) (any, error) {
 	return svc.listRuleWithCondition(cts.Kit, req, tools.RuleEqual("lbl_id", lblID))
 }
 
-// GetBizListenerDomains 指定监听器下的域名列表
-func (svc *lbSvc) GetBizListenerDomains(cts *rest.Contexts) (any, error) {
+// ListBizListenerDomains 指定监听器下的域名列表
+func (svc *lbSvc) ListBizListenerDomains(cts *rest.Contexts) (any, error) {
 	lblID := cts.PathParameter("lbl_id").String()
 	if len(lblID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "listener is required")
