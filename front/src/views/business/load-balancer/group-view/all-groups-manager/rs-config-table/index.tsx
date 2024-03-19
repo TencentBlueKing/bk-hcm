@@ -10,6 +10,10 @@ export default defineComponent({
   props: {
     noOperation: Boolean,
     noSearch: Boolean,
+    details: {
+      type: Array,
+      required: true,
+    },
   },
   emits: ['showAddRsDialog'],
   setup(props, { emit }) {
@@ -50,38 +54,6 @@ export default defineComponent({
     // 补充 port 和 weight 的 settings 配置
     settings.value.checked.push('port', 'weight');
     settings.value.fields.push({ label: '端口', field: 'port' }, { label: '权重', field: 'weight' });
-    const rsConfigData = [
-      {
-        privateIp: '10.0.0.1',
-        publicIp: '203.0.113.10',
-        name: '服务器A',
-        region: '华北1区',
-        resourceType: 'VM',
-        network: 'VPC-XYZ',
-        port: 8080,
-        weight: 20,
-      },
-      {
-        privateIp: '10.0.1.2',
-        publicIp: '203.0.113.20',
-        name: '数据库B',
-        region: '华东2区',
-        resourceType: 'RDS',
-        network: 'VPC-ABC',
-        port: 3306,
-        weight: 10,
-      },
-      {
-        privateIp: '10.0.2.3',
-        publicIp: '203.0.113.30',
-        name: '负载均衡C',
-        region: '华南3区',
-        resourceType: 'LoadBalancer',
-        network: 'VPC-DEF',
-        port: 80,
-        weight: 30,
-      },
-    ];
     return () => (
       <div class='rs-config-table'>
         <div class={`rs-config-operation-wrap${props.noOperation ? ' jc-right' : ''}`}>
@@ -98,7 +70,7 @@ export default defineComponent({
           )}
         </div>
         <Loading loading={isTableLoading.value}>
-          <Table data={rsConfigData} columns={rsTableColumns} settings={settings.value} showOverflowTooltip>
+          <Table data={props.details} columns={rsTableColumns} settings={settings.value} showOverflowTooltip>
             {{
               empty: () => {
                 if (isTableLoading.value) return null;

@@ -135,7 +135,9 @@ export default defineComponent({
       isTargetGroupSidesliderShow.value = true;
       isDropdownShow.value = false;
     };
-    const handleAddTargetGroupSubmit = () => {};
+    const handleAddTargetGroupSubmit = () => {
+      
+    };
 
     // 添加单个RS
     const isAddRsDialogShow = ref(false);

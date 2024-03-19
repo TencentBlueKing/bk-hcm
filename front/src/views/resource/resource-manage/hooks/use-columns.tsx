@@ -1269,16 +1269,18 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const rsConfigColumns = [
     {
       label: '内网IP',
-      field: 'privateIp',
+      field: 'private_ip_address',
+      render: ({ cell }: any) => cell.join(','),
       isDefaultShow: true,
     },
     {
       label: '公网IP',
-      field: 'publicIp',
+      field: 'public_ip_address',
+      render: ({ cell }: any) => cell.join(','),
     },
     {
       label: '名称',
-      field: 'name',
+      field: 'inst_name',
       isDefaultShow: true,
     },
     {
@@ -1287,7 +1289,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: '资源类型',
-      field: 'resourceType',
+      field: 'inst_type',
     },
     {
       label: '所属网络',

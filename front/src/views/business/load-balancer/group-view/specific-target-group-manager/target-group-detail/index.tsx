@@ -1,53 +1,59 @@
-import { defineComponent } from 'vue';
+import { computed, defineComponent } from 'vue';
 import { Button } from 'bkui-vue';
 import './index.scss';
 import RsConfigTable from '../../all-groups-manager/rs-config-table';
 
 export default defineComponent({
   name: 'TargetGroupDetail',
-  setup() {
-    const targetGroupDetail = [
+  props: {
+    detail: {
+      required: true,
+      type: Object,
+    },
+  },
+  setup(props) {
+    const targetGroupDetail = computed(() => [
       {
         title: '基本信息',
         content: [
           {
             label: '云账号',
-            value: '腾讯云222',
+            value: props.detail.account_id,
           },
           {
             label: '地域',
-            value: '新加坡',
+            value: props.detail.region,
           },
           {
             label: '目标组名称',
-            value: '目标组1123',
+            value: props.detail.name,
           },
           {
             label: '所属vpc',
-            value: '1290.34.2342',
+            value: props.detail.cloud_vpc_id,
           },
           {
             label: '协议端口',
-            value: 'TCP:4600',
+            value: `${props.detail.protocol}:${props.detail.port}`,
           },
           {
             label: '创建时间',
-            value: '2023-07-03 18:00:00',
+            value: props.detail.created_at,
           },
         ],
       },
       {
         title: 'RS 信息',
-        content: <RsConfigTable noOperation />,
+        content: <RsConfigTable noOperation details={props.detail.target_list} />,
       },
-    ];
+    ]);
     return () => (
       <div class='target-group-detail-page'>
         <Button class='fixed-operate-btn' outline theme='primary'>
           编辑
         </Button>
         <div class='detail-info-container'>
-          {targetGroupDetail.map(({ title, content }) => (
+          {targetGroupDetail.value.map(({ title, content }) => (
             <div class='detail-info-wrap'>
               <h3 class='info-title'>{title}</h3>
               <div class='info-content'>
