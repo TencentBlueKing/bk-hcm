@@ -63,5 +63,32 @@ export const useBusinessStore = defineStore({
       if (isRes) return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/subnets/create`, data);
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${bizs}/subnets/create`, data);
     },
+    /**
+     * 新建目标组
+     */
+    createTargetGroups(data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/create`, data);
+    },
+    /**
+     * 获取目标组详情（基本信息和健康检查）
+     */
+    getTargetGroupDetail(id: string) {
+      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${id}`);
+    },
+    /**
+     * 批量删除目标组
+     */
+    deleteTargetGroups(data: {
+      bk_biz_id: number;
+      ids: string[];
+    }) {
+      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/batch`, data);
+    },
+    /**
+     * 编辑目标组基本信息
+     */
+    editTargetGroups(id: string, data: any) {
+      return http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${id}`, data);
+    },
   },
 });
