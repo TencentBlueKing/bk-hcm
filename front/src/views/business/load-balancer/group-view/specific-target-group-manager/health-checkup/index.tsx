@@ -1,4 +1,4 @@
-import { computed, defineComponent, reactive, ref } from 'vue';
+import { computed, defineComponent, reactive, ref, watch } from 'vue';
 import { Container, Button, Switcher, Form, Tag, Input } from 'bkui-vue';
 import { BkRadio, BkRadioGroup } from 'bkui-vue/lib/radio';
 import './index.scss';
@@ -9,8 +9,14 @@ const { FormItem } = Form;
 
 export default defineComponent({
   name: 'HealthCheckupPage',
-  setup() {
-    const isOpen = ref(true);
+  props: {
+    detail: {
+      required: true,
+      type: Object,
+    },
+  },
+  setup(props) {
+    const isOpen = ref(false);
     const healthDetailInfo = computed(() => [
       {
         label: '是否启用',
@@ -18,19 +24,24 @@ export default defineComponent({
       },
       {
         label: '健康探测源IP',
-        value: '100.64.0.0/10网段',
+        value: props.detail.health_check?.http_check_domain || '-',
       },
       {
         label: '检查方式',
-        value: 'TCP',
+        value: props.detail.health_check?.http_check_method || '-',
       },
       {
         label: '检查端口',
-        value: '4600',
+        value: props.detail.health_check?.check_port || '-',
       },
       {
-        label: '检查端口',
-        value: ['响应超时(2秒)', '检查间隔(5秒)', '不健康阈值(3次)', '健康阈值(3次),'],
+        label: '检查选型',
+        value: [
+          `响应超时(${props.detail.health_check?.time_out}秒)`,
+          `检查间隔(${props.detail.health_check?.interval_time}秒)`,
+          `不健康阈值(${props.detail.health_check?.un_health_num}次)`,
+          `健康阈值(${props.detail.health_check?.health_num}次),`,
+        ],
       },
     ]);
     const isHealthCheckupConfigShow = ref(false);
@@ -125,6 +136,18 @@ export default defineComponent({
         },
       ],
     ]);
+
+    watch(
+      () => props.detail,
+      (detail) => {
+        isOpen.value = !!detail.health_check?.health_switch;
+      },
+      {
+        immediate: true,
+        deep: true,
+      },
+    );
+
     return () => (
       <div class='health-checkup-page'>
         <Button

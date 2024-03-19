@@ -17,13 +17,13 @@ export default defineComponent({
   setup() {
     const businessStore = useBusinessStore();
     const route = useRoute();
+    const tgDetail = ref({});
     const activeTab = ref<TabType>('listener');
     const tabList = [
-      { name: 'listener', label: '绑定的监听器', component: <ListenerList /> },
-      { name: 'info', label: '基本信息', component: <TargetGroupDetail /> },
-      { name: 'health', label: '健康检查', component: <HealthCheckupPage /> },
+      { name: 'listener', label: '绑定的监听器', component: ListenerList },
+      { name: 'info', label: '基本信息', component: TargetGroupDetail },
+      { name: 'health', label: '健康检查', component: HealthCheckupPage },
     ];
-    const tgDetail = ref({});
 
     const getTargetGroupDetail = async (id: string) => {
       const res = await businessStore.getTargetGroupDetail(id);
@@ -33,20 +33,20 @@ export default defineComponent({
     watch(
       () => route.query.tgId,
       (id) => {
-        if(id) {
+        if (id) {
           getTargetGroupDetail(id as string);
         }
       },
       {
         immediate: true,
-      }
-    )
+      },
+    );
 
     return () => (
       <Tab class='manager-tab-wrap' v-model:active={activeTab.value} type='card-grid'>
         {tabList.map((tab) => (
           <TabPanel key={tab.name} name={tab.name} label={tab.label}>
-            <div class='common-card-wrap'>{tab.component}</div>
+            <div class='common-card-wrap'>{<tab.component detail={tgDetail.value} />}</div>
           </TabPanel>
         ))}
       </Tab>
