@@ -98,7 +98,7 @@ func batchCreateClb[T corelb.Extension](cts *rest.Contexts, svc *lbSvc, vendor e
 	return &core.BatchCreateResult{IDs: ids}, nil
 }
 
-func convClbReqToTable[T corelb.Extension](kt *kit.Kit, vendor enumor.Vendor, lb dataproto.ClbBatchCreate[T]) (
+func convClbReqToTable[T corelb.Extension](kt *kit.Kit, vendor enumor.Vendor, lb dataproto.LbBatchCreate[T]) (
 	*tablelb.LoadBalancerTable, error) {
 	extension, err := json.MarshalToString(lb.Extension)
 	if err != nil {
@@ -316,6 +316,83 @@ func (svc *lbSvc) CreateTargetGroupListenerRel(cts *rest.Contexts) (any, error) 
 	ids, ok := result.([]string)
 	if !ok {
 		return nil, fmt.Errorf("batch create target group listener rel but return id type is not []string, id type: %v",
+			reflect.TypeOf(result).String())
+	}
+
+	return &core.BatchCreateResult{IDs: ids}, nil
+}
+
+// BatchCreateTCloudUrlRule 批量创建腾讯云url规则 纯规则条目创建，不校验监听器
+func (svc *lbSvc) BatchCreateTCloudUrlRule(cts *rest.Contexts) (any, error) {
+	req := new(dataproto.TCloudUrlRuleBatchCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		logs.Errorf("[ds] BatchCreateTCloudUrlRule request validate failed, err:%v, req: %+v, rid: %s",
+			err, req, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	models := make([]*tablelb.TCloudLbUrlRuleTable, 0, len(req.UrlRules))
+	for _, rule := range req.UrlRules {
+
+		ruleModel := &tablelb.TCloudLbUrlRuleTable{
+			CloudID:            rule.CloudID,
+			Name:               rule.Name,
+			RuleType:           rule.RuleType,
+			LbID:               rule.LbID,
+			CloudLbID:          rule.CloudLbID,
+			LblID:              rule.LblID,
+			CloudLBLID:         rule.CloudLBLID,
+			TargetGroupID:      rule.TargetGroupID,
+			CloudTargetGroupID: rule.CloudTargetGroupID,
+			Domain:             rule.Domain,
+			URL:                rule.URL,
+			Scheduler:          rule.Scheduler,
+			SniSwitch:          rule.SniSwitch,
+			SessionType:        rule.SessionType,
+			SessionExpire:      rule.SessionExpire,
+			Memo:               rule.Memo,
+
+			Creator: cts.Kit.User,
+			Reviser: cts.Kit.User,
+		}
+		healthCheckJson, err := json.MarshalToString(rule.HealthCheck)
+		if err != nil {
+			logs.Errorf("fail to marshal health check into json, err: %v, healthcheck: %+v, rid: %s",
+				err, rule.HealthCheck, cts.Kit.Rid)
+			return nil, err
+		}
+		ruleModel.HealthCheck = types.JsonField(healthCheckJson)
+		certJson, err := json.MarshalToString(rule.Certificate)
+		if err != nil {
+			logs.Errorf("fail to marshal certificate into json, err: %v, certificate: %+v, rid: %s",
+				err, rule.Certificate, cts.Kit.Rid)
+			return nil, err
+		}
+		ruleModel.Certificate = types.JsonField(certJson)
+		models = append(models, ruleModel)
+	}
+
+	// 创建
+	result, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
+
+		ids, err := svc.dao.LoadBalancerTCloudUrlRule().BatchCreateWithTx(cts.Kit, txn, models)
+		if err != nil {
+			logs.Errorf("[%s]fail to batch create lb rule, err: %v, rid:%s", err, cts.Kit.Rid)
+			return nil, fmt.Errorf("batch create lb rule failed, err: %v", err)
+		}
+		return ids, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ids, ok := result.([]string)
+	if !ok {
+		return nil, fmt.Errorf("batch create tcloud url rule but return id type is not []string, id type: %v",
 			reflect.TypeOf(result).String())
 	}
 

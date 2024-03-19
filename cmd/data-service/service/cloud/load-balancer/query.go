@@ -325,14 +325,14 @@ func (svc *lbSvc) ListTCloudUrlRule(cts *rest.Contexts) (any, error) {
 func convTableToBaseTCloudLbURLRule(kt *kit.Kit, one *tablelb.TCloudLbUrlRuleTable) (
 	*corelb.BaseTCloudLbUrlRule, error) {
 
-	var healthCheck *corelb.HealthCheckInfo
+	var healthCheck *corelb.TCloudHealthCheckInfo
 	err := json.UnmarshalFromString(string(one.HealthCheck), &healthCheck)
 	if err != nil {
 		logs.Errorf("unmarshal healthCheck failed, one: %+v, err: %v, rid: %s", one, err, kt.Rid)
 		return nil, err
 	}
 
-	var certInfo *corelb.CertificateInfo
+	var certInfo *corelb.TCloudCertificateInfo
 	err = json.UnmarshalFromString(string(one.Certificate), &certInfo)
 	if err != nil {
 		logs.Errorf("unmarshal certificate failed, one: %+v, err: %v, rid: %s", one, err, kt.Rid)
@@ -503,7 +503,7 @@ func (svc *lbSvc) GetTargetGroup(cts *rest.Contexts) (any, error) {
 func convTableToBaseTargetGroup(kt *kit.Kit, one *tablelb.LoadBalancerTargetGroupTable) (
 	*corelb.BaseTargetGroup, error) {
 
-	var healthCheck *corelb.HealthCheckInfo
+	var healthCheck *corelb.TCloudHealthCheckInfo
 	err := json.UnmarshalFromString(string(one.HealthCheck), &healthCheck)
 	if err != nil {
 		logs.Errorf("unmarshal healthCheck failed, one: %+v, err: %v, rid: %s", one, err, kt.Rid)

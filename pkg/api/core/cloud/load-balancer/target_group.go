@@ -40,7 +40,7 @@ type BaseTargetGroup struct {
 	Protocol        string                 `json:"protocol"`
 	Port            int64                  `json:"port"`
 	Weight          int64                  `json:"weight"`
-	HealthCheck     *HealthCheckInfo       `json:"health_check"`
+	HealthCheck     *TCloudHealthCheckInfo `json:"health_check"`
 	Memo            *string                `json:"memo"`
 	*core.Revision  `json:",inline"`
 }

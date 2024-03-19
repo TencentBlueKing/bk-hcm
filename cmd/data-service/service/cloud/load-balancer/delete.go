@@ -182,3 +182,45 @@ func (svc *lbSvc) BatchDeleteTargetGroup(cts *rest.Contexts) (interface{}, error
 
 	return nil, nil
 }
+
+// BatchDeleteTCloudUrlRule 批量删除腾讯云规则
+func (svc *lbSvc) BatchDeleteTCloudUrlRule(cts *rest.Contexts) (any, error) {
+	req := new(dataproto.LoadBalancerBatchDeleteReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Fields: []string{"id", "cloud_id"},
+		Filter: req.Filter,
+		Page:   core.NewDefaultBasePage(),
+	}
+	listResp, err := svc.dao.LoadBalancerTCloudUrlRule().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list tcloud lb rule  failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list tcloud lb rule failed, err: %v", err)
+	}
+
+	if len(listResp.Details) == 0 {
+		return nil, nil
+	}
+
+	ruleIds := slice.Map(listResp.Details, func(one tablelb.TCloudLbUrlRuleTable) string { return one.ID })
+
+	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
+
+		// 删除对应的规则
+		delFilter := tools.ContainersExpression("id", ruleIds)
+		return nil, svc.dao.LoadBalancerTCloudUrlRule().DeleteWithTx(cts.Kit, txn, delFilter)
+	})
+	if err != nil {
+		logs.Errorf("delete rules(ids=%v) failed, err: %v, rid: %s", ruleIds, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
+}

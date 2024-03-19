@@ -17,13 +17,14 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package clb 负载均衡目标组的Package
-package clb
+// Package loadbalancer 负载均衡目标组的Package
+package loadbalancer
 
 import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/audit"
 	idgen "hcm/pkg/dal/dao/id-generator"
@@ -32,6 +33,7 @@ import (
 	"hcm/pkg/dal/dao/types"
 	typesclb "hcm/pkg/dal/dao/types/clb"
 	"hcm/pkg/dal/table"
+	tableaudit "hcm/pkg/dal/table/audit"
 	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
@@ -41,29 +43,29 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// TargetListenerRuleRelInterface only used for clb target listener rule rel.
-type TargetListenerRuleRelInterface interface {
-	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.TargetListenerRuleRelTable) ([]string, error)
-	Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.TargetListenerRuleRelTable) error
-	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.TargetListenerRuleRelTable) error
-	List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbTargetListenerRuleRelDetails, error)
+// TargetGroupInterface only used for clb target group.
+type TargetGroupInterface interface {
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerTargetGroupTable) ([]string, error)
+	Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.LoadBalancerTargetGroupTable) error
+	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.LoadBalancerTargetGroupTable) error
+	List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbTargetGroupDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
 
-var _ TargetListenerRuleRelInterface = new(TargetListenerRuleRelDao)
+var _ TargetGroupInterface = new(TargetGroupDao)
 
-// TargetListenerRuleRelDao clb target listener rule rel dao.
-type TargetListenerRuleRelDao struct {
+// TargetGroupDao clb target group dao.
+type TargetGroupDao struct {
 	Orm   orm.Interface
 	IDGen idgen.IDGenInterface
 	Audit audit.Interface
 }
 
-// BatchCreateWithTx clb target listener rule rel.
-func (dao TargetListenerRuleRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
-	models []*tablelb.TargetListenerRuleRelTable) ([]string, error) {
+// BatchCreateWithTx lb target group.
+func (dao TargetGroupDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerTargetGroupTable) (
+	[]string, error) {
 
-	tableName := table.TargetListenerRuleRelTable
+	tableName := table.LoadBalancerTargetGroupTable
 	ids, err := dao.IDGen.Batch(kt, tableName, len(models))
 	if err != nil {
 		return nil, err
@@ -74,22 +76,50 @@ func (dao TargetListenerRuleRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
 			return nil, err
 		}
 		model.ID = ids[index]
+		if len(model.CloudID) == 0 {
+			model.CloudID = model.ID
+		}
 	}
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, tableName,
-		tablelb.TargetListenerRuleRelColumns.ColumnExpr(), tablelb.TargetListenerRuleRelColumns.ColonNameExpr())
-
+		tablelb.LoadBalancerTargetGroupColumns.ColumnExpr(), tablelb.LoadBalancerTargetGroupColumns.ColonNameExpr())
 	if err = dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", tableName, err, kt.Rid)
 		return nil, fmt.Errorf("insert %s failed, err: %v", tableName, err)
 	}
 
+	// clb create audit.
+	audits := make([]*tableaudit.AuditTable, 0, len(models))
+	for _, one := range models {
+		audits = append(audits, &tableaudit.AuditTable{
+			ResID:      one.ID,
+			CloudResID: one.CloudID,
+			ResName:    one.Name,
+			ResType:    enumor.TargetGroupAuditResType,
+			Action:     enumor.Create,
+			BkBizID:    one.BkBizID,
+			Vendor:     one.Vendor,
+			AccountID:  one.AccountID,
+			Operator:   kt.User,
+			Source:     kt.GetRequestSource(),
+			Rid:        kt.Rid,
+			AppCode:    kt.AppCode,
+			Detail: &tableaudit.BasicDetail{
+				Data: one,
+			},
+		})
+	}
+	if err = dao.Audit.BatchCreateWithTx(kt, tx, audits); err != nil {
+		logs.Errorf("batch create target group audit failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
 	return ids, nil
 }
 
-// Update clb target listener rule rel.
-func (dao TargetListenerRuleRelDao) Update(kt *kit.Kit, expr *filter.Expression,
-	model *tablelb.TargetListenerRuleRelTable) error {
+// Update lb target group.
+func (dao TargetGroupDao) Update(kt *kit.Kit, expr *filter.Expression,
+	model *tablelb.LoadBalancerTargetGroupTable) error {
 
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
@@ -120,8 +150,7 @@ func (dao TargetListenerRuleRelDao) Update(kt *kit.Kit, expr *filter.Expression,
 		}
 
 		if effect == 0 {
-			logs.Infof("update load balancer target listener rule rel, but record not found, sql: %s, rid: %v",
-				sql, kt.Rid)
+			logs.Infof("update load balancer target group, but record not found, sql: %s, rid: %v", sql, kt.Rid)
 		}
 
 		return nil, nil
@@ -133,9 +162,9 @@ func (dao TargetListenerRuleRelDao) Update(kt *kit.Kit, expr *filter.Expression,
 	return nil
 }
 
-// UpdateByIDWithTx clb target listener rule rel.
-func (dao TargetListenerRuleRelDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
-	model *tablelb.TargetListenerRuleRelTable) error {
+// UpdateByIDWithTx lb target group.
+func (dao TargetGroupDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
+	model *tablelb.LoadBalancerTargetGroupTable) error {
 
 	if len(id) == 0 {
 		return errf.New(errf.InvalidParameter, "id is required")
@@ -156,23 +185,21 @@ func (dao TargetListenerRuleRelDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, i
 	toUpdate["id"] = id
 	_, err = dao.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
-		logs.Errorf("update load balancer target listener rule rel failed, id: %s, err: %v, rid: %v", id, err, kt.Rid)
+		logs.Errorf("update load balancer target group failed, id: %s, err: %v, rid: %v", id, err, kt.Rid)
 		return err
 	}
 
 	return nil
 }
 
-// List clb target listener rule rel.
-func (dao TargetListenerRuleRelDao) List(kt *kit.Kit, opt *types.ListOption) (
-	*typesclb.ListClbTargetListenerRuleRelDetails, error) {
-
+// List lb target group.
+func (dao TargetGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbTargetGroupDetails, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
 
 	if err := opt.Validate(filter.NewExprOption(
-		filter.RuleFields(tablelb.TargetListenerRuleRelColumns.ColumnTypes())),
+		filter.RuleFields(tablelb.LoadBalancerTargetGroupColumns.ColumnTypes())),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
@@ -184,16 +211,16 @@ func (dao TargetListenerRuleRelDao) List(kt *kit.Kit, opt *types.ListOption) (
 
 	if opt.Page.Count {
 		// this is a count request, then do count operation only.
-		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.TargetListenerRuleRelTable, whereExpr)
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.LoadBalancerTargetGroupTable, whereExpr)
 
 		count, err := dao.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
-			logs.Errorf("count load balancer target listener rule rel failed, err: %v, filter: %s, rid: %s",
+			logs.Errorf("count load balancer target group failed, err: %v, filter: %s, rid: %s",
 				err, opt.Filter, kt.Rid)
 			return nil, err
 		}
 
-		return &typesclb.ListClbTargetListenerRuleRelDetails{Count: count}, nil
+		return &typesclb.ListClbTargetGroupDetails{Count: count}, nil
 	}
 
 	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
@@ -201,19 +228,19 @@ func (dao TargetListenerRuleRelDao) List(kt *kit.Kit, opt *types.ListOption) (
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablelb.TargetListenerRuleRelColumns.FieldsNamedExpr(opt.Fields),
-		table.TargetListenerRuleRelTable, whereExpr, pageExpr)
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablelb.LoadBalancerTargetGroupColumns.FieldsNamedExpr(opt.Fields),
+		table.LoadBalancerTargetGroupTable, whereExpr, pageExpr)
 
-	details := make([]tablelb.TargetListenerRuleRelTable, 0)
+	details := make([]tablelb.LoadBalancerTargetGroupTable, 0)
 	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
 
-	return &typesclb.ListClbTargetListenerRuleRelDetails{Details: details}, nil
+	return &typesclb.ListClbTargetGroupDetails{Details: details}, nil
 }
 
-// DeleteWithTx clb target listener rule rel.
-func (dao TargetListenerRuleRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
+// DeleteWithTx clb target group.
+func (dao TargetGroupDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
@@ -223,10 +250,9 @@ func (dao TargetListenerRuleRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr 
 		return err
 	}
 
-	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.TargetListenerRuleRelTable, whereExpr)
+	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.LoadBalancerTargetGroupTable, whereExpr)
 	if _, err = dao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
-		logs.Errorf("delete load balancer target listener rule rel failed, err: %v, filter: %s, rid: %s",
-			err, expr, kt.Rid)
+		logs.Errorf("delete load balancer target group failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
 		return err
 	}
 

@@ -17,8 +17,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package clb 负载均衡监听器的Package
-package clb
+// Package loadbalancer 负载均衡监听器的Package
+package loadbalancer
 
 import (
 	"fmt"
