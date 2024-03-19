@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/adaptor/types/core"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/converter"
@@ -122,7 +123,7 @@ type TCloudListenerTargets struct {
 
 // -------------------------- Create Clb--------------------------
 
-// TCloudCreateClbOption defines options to create tloud clb instances.
+// TCloudCreateClbOption defines options to create tcloud clb instances.
 type TCloudCreateClbOption struct {
 	Region                   string                     `json:"region" validate:"required"`
 	LoadBalancerType         TCloudLoadBalancerType     `json:"load_balancer_type" validate:"required"`
@@ -298,5 +299,244 @@ func (opt TCloudDescribeTaskStatusOption) Validate() error {
 	if len(opt.TaskId)+len(opt.DealName) == 0 {
 		return errors.New("both task_id and deal_name is empty")
 	}
+	return validator.Validate.Struct(opt)
+}
+
+// -------------------------- Create Listener --------------------------
+
+// TCloudCreateListenerOption defines options to create tcloud listener instances.
+type TCloudCreateListenerOption struct {
+	// Region 地域
+	Region string `json:"region" validate:"required"`
+	// LoadBalancerId 负载均衡实例 ID
+	LoadBalancerId string `json:"load_balancer_id" validate:"required"`
+	// ListenerName 要创建的监听器名称
+	ListenerName string `json:"listener_name"`
+	// Protocol 监听器协议： TCP | UDP | HTTP | HTTPS | TCP_SSL | QUIC
+	Protocol string `json:"protocol"`
+	// Port 要将监听器创建到哪个端口
+	Port int64 `json:"port"`
+	// HealthCheck 健康检查相关参数，此参数仅适用于TCP/UDP/TCP_SSL/QUIC监听器
+	HealthCheck *corelb.TCloudHealthCheckInfo `json:"health_check"`
+	// Certificate 证书相关信息，此参数仅适用于TCP_SSL监听器和未开启SNI特性的HTTPS监听器。此参数和MultiCertInfo不能同时传入
+	Certificate *corelb.TCloudCertificateInfo `json:"certificate"`
+	// SessionExpireTime 会话保持时间，单位：秒。可选值：30~3600，默认 0，表示不开启。此参数仅适用于TCP/UDP监听器
+	SessionExpireTime int64 `json:"session_expire_time"`
+	// 监听器转发的方式。可选值：WRR、LEAST_CONN
+	// Scheduler 分别表示按权重轮询、最小连接数， 默认为 WRR。此参数仅适用于TCP/UDP/TCP_SSL/QUIC监听器。
+	Scheduler string `json:"scheduler"`
+	// SniSwitch 是否开启SNI特性，此参数仅适用于HTTPS监听器。
+	SniSwitch int64 `json:"sni_switch"`
+	// TargetType 后端目标类型，NODE表示绑定普通节点，TARGETGROUP表示绑定目标组
+	TargetType string `json:"target_type"`
+	// 会话保持类型。不传或传NORMAL表示默认会话保持类型。
+	// SessionType QUIC_CID 表示根据Quic Connection ID做会话保持。QUIC_CID只支持UDP协议
+	SessionType *string `json:"session_type"`
+	// KeepaliveEnable 是否开启长连接，此参数仅适用于HTTP/HTTPS监听器，0:关闭；1:开启， 默认关闭
+	KeepaliveEnable int64 `json:"keepalive_enable"`
+	// 创建端口段监听器时必须传入此参数，用以标识结束端口。同时，入参Ports只允许传入一个成员，用以标识开始端口。
+	// EndPort 【如果您需要体验端口段功能，请通过 [工单申请](https://console.cloud.tencent.com/workorder/category)】。
+	EndPort uint64 `json:"end_port"`
+	// MultiCertInfo 证书信息，支持同时传入不同算法类型的多本服务端证书；
+	// 此参数仅适用于未开启SNI特性的HTTPS监听器。此参数和Certificate不能同时传入。
+	MultiCertInfo *corelb.MultiCertInfo `json:"multi_cert_info"`
+}
+
+// Validate tcloud listener create option.
+func (opt TCloudCreateListenerOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// -------------------------- Update Listener --------------------------
+
+// TCloudUpdateListenerOption ...
+type TCloudUpdateListenerOption struct {
+	Region string `json:"region" validate:"required"`
+	// LoadBalancerId 负载均衡实例ID
+	LoadBalancerId string `json:"load_balancer_id" validate:"required"`
+	// ListenerId 负载均衡监听器ID
+	ListenerId string `json:"listener_id" validate:"required"`
+	// ListenerName 新的监听器名称
+	ListenerName string `json:"listener_name"`
+	// SessionExpireTime 会话保持时间，单位：秒。可选值：30~3600，默认 0，表示不开启。此参数仅适用于TCP/UDP监听器。
+	SessionExpireTime int64 `json:"session_expire_time"`
+	// HealthCheck 健康检查相关参数，此参数仅适用于TCP/UDP/TCP_SSL/QUIC监听器。
+	HealthCheck *corelb.TCloudHealthCheckInfo `json:"health_check"`
+	// Certificate 证书相关信息，此参数仅适用于HTTPS/TCP_SSL/QUIC监听器；此参数和MultiCertInfo不能同时传入。
+	Certificate *corelb.TCloudCertificateInfo `json:"certificate"`
+	// 监听器转发的方式。可选值：WRR、LEAST_CONN
+	// Scheduler 分别表示按权重轮询、最小连接数， 默认为 WRR。
+	Scheduler string `json:"scheduler"`
+	// SniSwitch 是否开启SNI特性，此参数仅适用于HTTPS监听器。注意：未开启SNI的监听器可以开启SNI；已开启SNI的监听器不能关闭SNI。
+	SniSwitch int64 `json:"sni_wwitch"`
+	// TargetType 后端目标类型，NODE表示绑定普通节点，TARGETGROUP表示绑定目标组。
+	TargetType string `json:"target_type"`
+	// KeepaliveEnable 是否开启长连接，此参数仅适用于HTTP/HTTPS监听器。
+	KeepaliveEnable int64 `json:"keepalive_enable"`
+	// SessionType 会话保持类型。NORMAL表示默认会话保持类型。QUIC_CID表示根据Quic Connection ID做会话保持。QUIC_CID只支持UDP协议。
+	SessionType string `json:"session_type"`
+	// MultiCertInfo 证书信息，支持同时传入不同算法类型的多本服务端证书；
+	// 此参数仅适用于未开启SNI特性的HTTPS监听器。此参数和Certificate不能同时传入。
+	MultiCertInfo *corelb.MultiCertInfo `json:"multi_cert_info"`
+}
+
+// Validate ...
+func (opt TCloudUpdateListenerOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// -------------------------- Delete Listener --------------------------
+
+// TCloudDeleteListenerOption 批量删除监听器
+type TCloudDeleteListenerOption struct {
+	Region         string   `json:"region" validate:"required"`
+	LoadBalancerId string   `json:"load_balancer_id" validate:"required"`
+	CloudIDs       []string `json:"cloud_ids" validate:"required,min=1"`
+}
+
+// Validate ...
+func (opt TCloudDeleteListenerOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// -------------------------- Create Rule --------------------------
+
+// TCloudCreateRuleOption defines options to create tcloud rule instances.
+type TCloudCreateRuleOption struct {
+	// Region 地域
+	Region string `json:"region" validate:"required"`
+	// LoadBalancerId 负载均衡实例ID
+	LoadBalancerId string `json:"load_balancer_id" validate:"required"`
+	// ListenerId监听器ID
+	ListenerId string `json:"listener_id" validate:"required"`
+	// Rules 新建转发规则的信息
+	Rules []*RuleInfo `json:"rules"`
+}
+
+type RuleInfo struct {
+	// Url 转发规则的路径。长度限制为：1~200。
+	Url *string `json:"url"`
+	// Domain 转发规则的域名。长度限制为：1~80。Domain和Domains只需要传一个，单域名规则传Domain，多域名规则传Domains。
+	Domain *string `json:"domain"`
+	// SessionExpireTime 会话保持时间。设置为0表示关闭会话保持，开启会话保持可取值30~86400，单位：秒。
+	SessionExpireTime *int64 `json:"session_expire_time"`
+	// HealthCheck 健康检查信息。详情请参见：[健康检查](https://cloud.tencent.com/document/product/214/6097)
+	HealthCheck *corelb.TCloudHealthCheckInfo `json:"health_check"`
+	// Certificate 证书信息；此参数和MultiCertInfo不能同时传入。
+	Certificate *corelb.TCloudCertificateInfo `json:"certificate"`
+	// 规则的请求转发方式，可选值：WRR、LEAST_CONN、IP_HASH
+	// Scheduler 分别表示按权重轮询、最小连接数、按IP哈希， 默认为 WRR。
+	Scheduler *string `json:"scheduler"`
+	// ForwardType 负载均衡与后端服务之间的转发协议，目前支持 HTTP/HTTPS/GRPC/TRPC，TRPC暂未对外开放，默认HTTP。
+	ForwardType *string `json:"forward_type"`
+	// DefaultServer 是否将该域名设为默认域名，注意，一个监听器下只能设置一个默认域名。
+	DefaultServer *bool `json:"default_server"`
+	// Http2 是否开启Http2，注意，只有HTTPS域名才能开启Http2。
+	Http2 *bool `json:"http2"`
+	// TargetType 后端目标类型，NODE表示绑定普通节点，TARGETGROUP表示绑定目标组
+	TargetType *string `json:"target_type"`
+	// TrpcCallee TRPC被调服务器路由，ForwardType为TRPC时必填。目前暂未对外开放。
+	TrpcCallee *string `json:"trpc_callee"`
+	// TrpcFunc TRPC调用服务接口，ForwardType为TRPC时必填。目前暂未对外开放
+	TrpcFunc *string `json:"trpc_func"`
+	// Quic 是否开启QUIC，注意，只有HTTPS域名才能开启QUIC
+	Quic *bool `json:"quic"`
+	// Domains 转发规则的域名列表。每个域名的长度限制为：1~80。Domain和Domains只需要传一个，单域名规则传Domain，多域名规则传Domains。
+	Domains []*string `json:"domains"`
+	// MultiCertInfo 证书信息，支持同时传入不同算法类型的多本服务端证书；此参数和Certificate不能同时传入。
+	MultiCertInfo *corelb.MultiCertInfo `json:"multi_cert_info"`
+}
+
+// Validate tcloud rule create option.
+func (opt TCloudCreateRuleOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// -------------------------- Update Rule --------------------------
+
+// TCloudUpdateRuleOption defines options to update tcloud rule instances.
+type TCloudUpdateRuleOption struct {
+	// Region 地域
+	Region string `json:"region" validate:"required"`
+	// LoadBalancerId 负载均衡实例ID
+	LoadBalancerId string `json:"load_balancer_id" validate:"required"`
+	// ListenerId监听器ID
+	ListenerId string `json:"listener_id" validate:"required"`
+	// 转发规则的新的转发路径，如不需修改Url，则不需提供此参数。
+	Url string `json:"url"`
+	// 健康检查信息。
+	HealthCheck *corelb.TCloudHealthCheckInfo `json:"health_check"`
+	// 规则的请求转发方式，可选值：WRR、LEAST_CONN、IP_HASH
+	// 分别表示按权重轮询、最小连接数、按IP哈希， 默认为 WRR。
+	Scheduler string `json:"scheduler"`
+	// 会话保持时间。
+	SessionExpireTime int64 `json:"session_expire_time"`
+	// 负载均衡实例与后端服务之间的转发协议，默认HTTP，可取值：HTTP、HTTPS、TRPC。
+	ForwardType string `json:"forward_type"`
+	// TRPC被调服务器路由，ForwardType为TRPC时必填。目前暂未对外开放。
+	TrpcCallee string `json:"trpc_callee"`
+	// TRPC调用服务接口，ForwardType为TRPC时必填。目前暂未对外开放。
+	TrpcFunc string `json:"trpc_func"`
+}
+
+// Validate tcloud rule update option.
+func (opt TCloudUpdateRuleOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// -------------------------- Update Domain Attr --------------------------
+
+// TCloudUpdateDomainAttrOption defines options to update tcloud domain attr instances.
+type TCloudUpdateDomainAttrOption struct {
+	// Region 地域
+	Region string `json:"region" validate:"required"`
+	// LoadBalancerId 负载均衡实例ID
+	LoadBalancerId string `json:"load_balancer_id" validate:"required"`
+	// ListenerId监听器ID
+	ListenerId string `json:"listener_id" validate:"required"`
+	// 域名（必须是已经创建的转发规则下的域名），如果是多域名，可以指定多域名列表中的任意一个。
+	Domain string `json:"domain"`
+	// 要修改的新域名。NewDomain和NewDomains只能传一个。
+	NewDomain string `json:"new_domain"`
+	// 域名相关的证书信息，注意，仅对启用SNI的监听器适用，不可和MultiCertInfo 同时传入。
+	Certificate *corelb.TCloudCertificateInfo `json:"certificate"`
+	// 是否开启Http2，注意，只有HTTPS域名才能开启Http2。
+	Http2 bool `json:"http2"`
+	// 是否设为默认域名，注意，一个监听器下只能设置一个默认域名。
+	DefaultServer *bool `json:"default_server"`
+	// 是否开启Quic，注意，只有HTTPS域名才能开启Quic
+	Quic bool `json:"quic"`
+	// 监听器下必须配置一个默认域名，若要关闭原默认域名，必须同时指定另一个域名作为新的默认域名，如果新的默认域名是多域名，可以指定多域名列表中的任意一个。
+	NewDefaultServerDomain string `json:"new_default_server_domain"`
+	// 要修改的新域名列表。NewDomain和NewDomains只能传一个。
+	NewDomains []*string `json:"new_domains"`
+	// 域名相关的证书信息，注意，仅对启用SNI的监听器适用；支持同时传入多本算法类型不同的服务器证书，不可和MultiCertInfo 同时传入。
+	MultiCertInfo *corelb.MultiCertInfo `json:"multi_cert_info"`
+}
+
+// Validate tcloud domain attr update option.
+func (opt TCloudUpdateDomainAttrOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// -------------------------- Delete Rule --------------------------
+
+// TCloudDeleteRuleOption 批量删除规则
+type TCloudDeleteRuleOption struct {
+	Region         string   `json:"region" validate:"required"`
+	LoadBalancerId string   `json:"load_balancer_id" validate:"required"`
+	ListenerId     string   `json:"listener_id" validate:"required"`
+	CloudIDs       []string `json:"cloud_ids" validate:"required,min=1"`
+	// Domain 要删除的转发规则的域名，如果是多域名，可以指定多域名列表中的任意一个。
+	Domain string `json:"domain"`
+	// Url 要删除的转发规则的转发路径。
+	Url string `json:"url"`
+	// NewDefaultServerDomain 监听器下必须配置一个默认域名，当需要删除默认域名时，可以指定另一个域名作为新的默认域名，
+	// 如果新的默认域名是多域名，可以指定多域名列表中的任意一个。
+	NewDefaultServerDomain string `json:"new_default_server_domain"`
+}
+
+// Validate ...
+func (opt TCloudDeleteRuleOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
