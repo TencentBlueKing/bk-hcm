@@ -7,7 +7,7 @@ import SpecificClbManager from './specific-clb-manager';
 import SpecificDomainManager from './specific-domain-manager';
 import './index.scss';
 
-type NodeType = 'all' | 'load_balancers' | 'listeners' | 'domains';
+type NodeType = 'all' | 'lb' | 'listener' | 'domain';
 
 export default defineComponent({
   name: 'LoadBalancerView',
@@ -16,8 +16,8 @@ export default defineComponent({
 
     const componentMap = {
       all: <AllClbsManager />,
-      load_balancers: <SpecificClbManager />,
-      listeners: <SpecificListenerManager />,
+      lb: <SpecificClbManager />,
+      listener: <SpecificListenerManager />,
       domain: <SpecificDomainManager />,
     };
     const renderComponent = (type: NodeType) => {
@@ -32,7 +32,16 @@ export default defineComponent({
           <LbTree v-model:activeType={activeType.value} />
         </div>
         {isAdvancedSearchShow.value && <div class='advanced-search'>高级搜索</div>}
-        <div class='main-container'>{renderComponent(activeType.value)}</div>
+        <div class='main-container'>
+          {/* 
+            面包屑技术设计:
+              1. 这里引入面包屑组件
+              2. 当 lb-tree 触发 node-click 事件时, 如果 type 不为 'lb', 则组装面包屑内容. 使用 bus 进行通信
+                面包屑组件    bus.$on('showBreadcrumb', (...names) => { 组装面包屑内容 })
+                lb-tree组件  emit('showBreadcrumb', names)
+          */}
+          {renderComponent(activeType.value)}
+        </div>
       </div>
     );
   },
