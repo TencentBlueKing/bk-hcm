@@ -62,6 +62,9 @@ func (svc *lbSvc) listTargetGroup(cts *rest.Contexts, authHandler handler.ListAu
 		resList.Count = targetGroupList.Count
 		return resList, nil
 	}
+	if len(targetGroupList.Details) == 0 {
+		return resList, nil
+	}
 
 	resList.Count = targetGroupList.Count
 	targetGroupIDs := make([]string, 0)
