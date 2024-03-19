@@ -413,6 +413,7 @@ type TCloudCreateRuleOption struct {
 	Rules []*RuleInfo `json:"rules"`
 }
 
+// RuleInfo 规则基本信息
 type RuleInfo struct {
 	// Url 转发规则的路径。长度限制为：1~200。
 	Url *string `json:"url,omitempty"`
