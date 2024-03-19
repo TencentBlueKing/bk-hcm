@@ -66,8 +66,8 @@ func InitService(c *capability.Capability) {
 	bizH.Add("ListBizTCloudRuleByTG", http.MethodPost,
 		"/vendors/tcloud/target_groups/{target_group_id}/rules/list", svc.ListBizTCloudRuleByTG)
 	bizH.Add("GetBizListener", http.MethodGet, "/listeners/{id}", svc.GetBizListener)
-	bizH.Add("GetBizListenerDomains", http.MethodGet,
-		"/vendors/tcloud/listeners/{lbl_id}/domains", svc.GetBizListenerDomains)
+	bizH.Add("ListBizListenerDomains", http.MethodPost,
+		"/vendors/tcloud/listeners/{lbl_id}/domains/list", svc.ListBizListenerDomains)
 	bizH.Add("GetBizTCloudUrlRule", http.MethodGet,
 		"/vendors/tcloud/listeners/{lbl_id}/rules/{rule_id}", svc.GetBizTCloudUrlRule)
 
