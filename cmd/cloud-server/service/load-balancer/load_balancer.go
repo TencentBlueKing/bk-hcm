@@ -53,12 +53,6 @@ func InitService(c *capability.Capability) {
 	h.Add("TCloudDescribeResources", http.MethodPost, "/vendors/tcloud/load_balancers/resources/describe",
 		svc.TCloudDescribeResources)
 
-	h.Add("CreateBizTargetGroup", http.MethodPost, "/bizs/{bk_biz_id}/target_groups/create", svc.CreateBizTargetGroup)
-	h.Add("UpdateBizTargetGroup", http.MethodPatch, "/bizs/{bk_biz_id}/target_groups/{id}", svc.UpdateBizTargetGroup)
-	h.Add("DeleteBizTargetGroup", http.MethodDelete, "/bizs/{bk_biz_id}/target_groups/batch", svc.DeleteBizTargetGroup)
-	h.Add("ListBizTargetGroup", http.MethodPost, "/bizs/{bk_biz_id}/target_groups/list", svc.ListBizTargetGroup)
-	h.Add("GetTargetGroup", http.MethodGet, "/target_groups/{id}", svc.GetTargetGroup)
-
 	h.Load(c.WebService)
 
 	bizH.Add("UpdateBizTCloudLoadBalancer", http.MethodPatch, "/vendors/tcloud/load_balancers/{id}",
@@ -81,6 +75,13 @@ func InitService(c *capability.Capability) {
 		"/vendors/tcloud/target_groups/{target_group_id}/targets/list", svc.ListBizTargetsByTGID)
 	bizH.Add("AssociateBizTargetGroupListenerRel", http.MethodPost, "/listeners/associate/target_group",
 		svc.AssociateBizTargetGroupListenerRel)
+
+	bizH.Add("CreateBizTargetGroup", http.MethodPost, "/target_groups/create", svc.CreateBizTargetGroup)
+	bizH.Add("UpdateBizTargetGroup", http.MethodPatch, "/target_groups/{id}", svc.UpdateBizTargetGroup)
+	bizH.Add("DeleteBizTargetGroup", http.MethodDelete, "/target_groups/batch", svc.DeleteBizTargetGroup)
+	bizH.Add("ListBizTargetGroup", http.MethodPost, "/target_groups/list", svc.ListBizTargetGroup)
+	bizH.Add("GetBizTargetGroup", http.MethodGet, "/target_groups/{id}", svc.GetBizTargetGroup)
+
 	bizH.Load(c.WebService)
 }
 

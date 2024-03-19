@@ -174,7 +174,7 @@ func (svc *lbSvc) getTargetGroup(cts *rest.Contexts, validHandler handler.ListAu
 	}
 	if noPerm {
 		logs.Errorf("get target group no perm auth, noPerm: %v, rid: %s", noPerm, cts.Kit.Rid)
-		return nil, errf.New(errf.PermissionDenied, "permission denied for get listener")
+		return nil, errf.New(errf.PermissionDenied, "permission denied for get target group")
 	}
 
 	switch basicInfo.Vendor {
