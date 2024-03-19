@@ -1175,7 +1175,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: 'IP版本',
-      field: 'network_type',
+      field: 'ip_version',
       isDefaultShow: true,
     },
     {

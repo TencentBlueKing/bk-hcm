@@ -62,8 +62,7 @@ export const DResourceTypeMap = {
     name: '参数模板',
   },
   [DResourceType.load_balancers]: {
-    // 后面要改为 lb_ids
-    key: 'clb_ids',
+    key: 'lb_ids',
     name: '负载均衡',
   },
   [DResourceType.certs]: {

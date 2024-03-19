@@ -15,7 +15,7 @@
           }
         "
       />
-      <Button class="mw88">批量删除</Button>
+      <Button class="mw88">{{ t('批量删除') }}</Button>
       <div class="flex-row align-items-center justify-content-arround search-selector-container">
         <bk-search-select class="w500" clearable :conditions="[]" :data="clbsSearchData" v-model="searchValue" />
         <slot name="recycleHistory"></slot>
@@ -37,39 +37,19 @@
       @column-sort="handleSort"
       row-key="id"
     />
-
-    <Dialog
-      :is-show="isDialogShow"
-      :title="t('负载均衡分配')"
-      :theme="'primary'"
-      quick-close
-      @closed="() => (isDialogShow = false)"
-      @confirm="handleConfirm"
-      :is-loading="isDialogBtnLoading"
-    >
-      <p class="selected-host-count-tip">
-        已选择
-        <span class="selected-host-count">{{ selections.length }}</span>
-        台负载均衡，可选择所需分配的目标业务
-      </p>
-      <p class="mb6">目标业务</p>
-      <BusinessSelector v-model="selectedBizId" :authed="true" class="mb32" :auto-select="true" />
-    </Dialog>
   </Loading>
 </template>
 
 <script setup lang="ts">
-import { PropType, ref, computed } from 'vue';
-import { Loading, Table, Button, Dialog } from 'bkui-vue';
+import { PropType, computed } from 'vue';
+import { Loading, Table, Button } from 'bkui-vue';
 import { BatchDistribution, DResourceType } from '../dialog/batch-distribution';
-import BusinessSelector from '@/components/business-selector/index.vue';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import type { DoublePlainObject, FilterType } from '@/typings/resource';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
 import useColumns from '../../hooks/use-columns';
-import { useResourceStore } from '@/store';
 import { useI18n } from 'vue-i18n';
 
 const props = defineProps({
@@ -93,15 +73,10 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ha
 );
 const { selections, handleSelectionChange, resetSelections } = useSelection();
 const { columns, settings } = useColumns('lb');
-const resourceStore = useResourceStore();
-
-const selectedBizId = ref(0);
-const isDialogShow = ref(false);
-const isDialogBtnLoading = ref(false);
 
 const clbsSearchData = computed(() => [
   {
-    name: '负载均衡ID',
+    name: t('负载均衡ID'),
     id: 'cloud_id',
   },
   ...searchData.value,
@@ -116,17 +91,6 @@ const isCurRowSelectEnable = (row: any) => {
   if (row.id) {
     return row.bk_biz_id === -1;
   }
-};
-
-const handleConfirm = async () => {
-  isDialogBtnLoading.value = true;
-  await resourceStore.assignBusiness('clbs', {
-    clb_ids: selections.value?.map((v) => v.id) || [],
-    bk_biz_id: selectedBizId.value,
-  });
-  triggerApi();
-  isDialogBtnLoading.value = false;
-  isDialogShow.value = false;
 };
 </script>
 
