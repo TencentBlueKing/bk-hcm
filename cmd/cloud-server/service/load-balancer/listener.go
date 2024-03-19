@@ -43,7 +43,7 @@ func (svc *lbSvc) listListener(cts *rest.Contexts, authHandler handler.ListAuthR
 
 	// list authorized instances
 	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
-		ResType: meta.LoadBalancer, Action: meta.Find, Filter: req.Filter})
+		ResType: meta.Listener, Action: meta.Find, Filter: req.Filter})
 	if err != nil {
 		logs.Errorf("list listener auth failed, lbID: %s, noPermFlag: %v, err: %v, rid: %s",
 			lbID, noPermFlag, err, cts.Kit.Rid)
@@ -68,7 +68,8 @@ func (svc *lbSvc) listListener(cts *rest.Contexts, authHandler handler.ListAuthR
 		logs.Errorf("list listener failed, lbID: %s, err: %v, rid: %s", lbID, err, cts.Kit.Rid)
 		return nil, err
 	}
-	if len(listenerList.Details) == 0 {
+	if req.Page.Count {
+		resList.Count = listenerList.Count
 		return resList, nil
 	}
 
@@ -101,7 +102,7 @@ func (svc *lbSvc) listTCloudLbUrlRuleMap(kt *kit.Kit, lbID string, lblIDs []stri
 	urlRuleReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("lb_id", lbID),
-			tools.RuleIn("lbl_id", lbID),
+			tools.RuleIn("lbl_id", lblIDs),
 		),
 		Page: core.NewDefaultBasePage(),
 	}
