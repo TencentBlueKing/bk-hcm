@@ -35,13 +35,13 @@ import (
 
 // LoadBalancerBatchCreateReq load balancer create req.
 type LoadBalancerBatchCreateReq[Extension corelb.Extension] struct {
-	Lbs []ClbBatchCreate[Extension] `json:"lbs" validate:"required,min=1"`
+	Lbs []LbBatchCreate[Extension] `json:"lbs" validate:"required,min=1"`
 }
 
 type TCloudCLBCreateReq = LoadBalancerBatchCreateReq[corelb.TCloudClbExtension]
 
-// ClbBatchCreate define load balancer batch create.
-type ClbBatchCreate[Extension corelb.Extension] struct {
+// LbBatchCreate define load balancer batch create.
+type LbBatchCreate[Extension corelb.Extension] struct {
 	CloudID   string        `json:"cloud_id" validate:"required"`
 	Name      string        `json:"name" validate:"required"`
 	Vendor    enumor.Vendor `json:"vendor" validate:"required"`
@@ -107,17 +107,20 @@ func (req *LoadBalancerExtUpdateReq[T]) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// ClbExtBatchUpdateReq ...
-type ClbExtBatchUpdateReq[T corelb.Extension] struct {
+// LbExtBatchUpdateReq ...
+type LbExtBatchUpdateReq[T corelb.Extension] struct {
 	Lbs []*LoadBalancerExtUpdateReq[T] `json:"lbs" validate:"min=1"`
 }
 
 // Validate ...
-func (req *ClbExtBatchUpdateReq[T]) Validate() error {
+func (req *LbExtBatchUpdateReq[T]) Validate() error {
+	if len(req.Lbs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("lbs length count should <= %d", constant.BatchOperationMaxLimit)
+	}
 	return validator.Validate.Struct(req)
 }
 
-type TCloudClbBatchUpdateReq = ClbExtBatchUpdateReq[corelb.TCloudClbExtension]
+type TCloudClbBatchUpdateReq = LbExtBatchUpdateReq[corelb.TCloudClbExtension]
 
 // ClbBizBatchUpdateReq 批量更新业务id
 type ClbBizBatchUpdateReq struct {
@@ -127,9 +130,6 @@ type ClbBizBatchUpdateReq struct {
 
 // Validate ...
 func (req *ClbBizBatchUpdateReq) Validate() error {
-	if err := validator.Validate.Struct(req); err != nil {
-		return err
-	}
 
 	if len(req.IDs) == 0 {
 		return errors.New("ids required")
@@ -139,7 +139,7 @@ func (req *ClbBizBatchUpdateReq) Validate() error {
 		return fmt.Errorf("ids count should <= %d", constant.BatchOperationMaxLimit)
 	}
 
-	return nil
+	return validator.Validate.Struct(req)
 }
 
 // -------------------------- List --------------------------
@@ -190,3 +190,80 @@ type TargetListResult = core.ListResultT[corelb.BaseTarget]
 
 // TCloudURLRuleListResult define tcloud url rule list result.
 type TCloudURLRuleListResult = core.ListResultT[corelb.BaseTCloudLbUrlRule]
+
+// TCloudUrlRuleBatchCreateReq ...
+type TCloudUrlRuleBatchCreateReq struct {
+	UrlRules []TCloudUrlRuleCreate `json:"url_rules" validate:"required,min=1"`
+}
+
+// Validate ...
+func (r *TCloudUrlRuleBatchCreateReq) Validate() error {
+	if len(r.UrlRules) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("url_rules length count should <= %d", constant.BatchOperationMaxLimit)
+	}
+	return validator.Validate.Struct(r)
+}
+
+// TCloudUrlRuleCreate tcloud url rule create.
+type TCloudUrlRuleCreate struct {
+	LbID       string `json:"lb_id" validate:"required,lte=255"`
+	CloudLbID  string `json:"cloud_lb_id" validate:"required,lte=255"`
+	LblID      string `json:"lbl_id" validate:"required,lte=255"`
+	CloudLBLID string `json:"cloud_lbl_id" validate:"required,lte=255"`
+
+	CloudID            string                        `json:"cloud_id" validate:"required,lte=255"`
+	Name               string                        `json:"name" validate:"lte=255"`
+	RuleType           enumor.RuleType               `json:"rule_type" validate:"required,lte=64"`
+	TargetGroupID      string                        `json:"target_group_id" validate:"lte=255"`
+	CloudTargetGroupID string                        `json:"cloud_target_group_id" validate:"lte=255"`
+	Domain             string                        `json:"domain"`
+	URL                string                        `json:"url"`
+	Scheduler          string                        `json:"scheduler"`
+	SniSwitch          int64                         `json:"sni_switch"`
+	SessionType        string                        `json:"session_type"`
+	SessionExpire      int64                         `json:"session_expire"`
+	HealthCheck        *corelb.TCloudHealthCheckInfo `json:"health_check" validate:"required"`
+	Certificate        *corelb.TCloudCertificateInfo `json:"certificate" validate:"required"`
+	Memo               *string                       `json:"memo" validate:"lte=255"`
+}
+
+// Validate ...
+func (req *TCloudUrlRuleCreate) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// TCloudUrlRuleBatchUpdateReq 批量更新url规则
+type TCloudUrlRuleBatchUpdateReq struct {
+	UrlRules []*TCloudUrlRuleUpdate `json:"url_rules" validate:"required,min=1"`
+}
+
+// Validate ...
+func (r *TCloudUrlRuleBatchUpdateReq) Validate() error {
+	if len(r.UrlRules) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("url_rules length count should <= %d", constant.BatchOperationMaxLimit)
+	}
+	return validator.Validate.Struct(r)
+}
+
+// TCloudUrlRuleUpdate tcloud url rule update.
+type TCloudUrlRuleUpdate struct {
+	ID string `json:"id" validate:"required,lte=255"`
+
+	Name               string                        `json:"name" validate:"lte=255"`
+	TargetGroupID      string                        `json:"target_group_id" validate:"lte=255"`
+	CloudTargetGroupID string                        `json:"cloud_target_group_id" validate:"lte=255"`
+	Domain             string                        `json:"domain"`
+	URL                string                        `json:"url"`
+	Scheduler          string                        `json:"scheduler"`
+	SniSwitch          int64                         `json:"sni_switch"`
+	SessionType        string                        `json:"session_type"`
+	SessionExpire      int64                         `json:"session_expire"`
+	HealthCheck        *corelb.TCloudHealthCheckInfo `json:"health_check" validate:"required"`
+	Certificate        *corelb.TCloudCertificateInfo `json:"certificate" validate:"required"`
+	Memo               *string                       `json:"memo" validate:"lte=255"`
+}
+
+// Validate ...
+func (req *TCloudUrlRuleUpdate) Validate() error {
+	return validator.Validate.Struct(req)
+}

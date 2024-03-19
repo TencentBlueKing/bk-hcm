@@ -17,8 +17,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package clb 负载均衡目标组的Package
-package clb
+// Package loadbalancer 负载均衡的Package
+package loadbalancer
 
 import (
 	"fmt"
@@ -43,29 +43,27 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// TargetGroupInterface only used for clb target group.
-type TargetGroupInterface interface {
-	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerTargetGroupTable) ([]string, error)
-	Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.LoadBalancerTargetGroupTable) error
-	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.LoadBalancerTargetGroupTable) error
-	List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbTargetGroupDetails, error)
+// ClbInterface only used for clb.
+type ClbInterface interface {
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerTable) ([]string, error)
+	Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.LoadBalancerTable) error
+	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.LoadBalancerTable) error
+	List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
 
-var _ TargetGroupInterface = new(TargetGroupDao)
+var _ ClbInterface = new(ClbDao)
 
-// TargetGroupDao clb target group dao.
-type TargetGroupDao struct {
+// ClbDao clb dao.
+type ClbDao struct {
 	Orm   orm.Interface
 	IDGen idgen.IDGenInterface
 	Audit audit.Interface
 }
 
-// BatchCreateWithTx lb target group.
-func (dao TargetGroupDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerTargetGroupTable) (
-	[]string, error) {
-
-	tableName := table.LoadBalancerTargetGroupTable
+// BatchCreateWithTx clb.
+func (dao ClbDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerTable) ([]string, error) {
+	tableName := table.LoadBalancerTable
 	ids, err := dao.IDGen.Batch(kt, tableName, len(models))
 	if err != nil {
 		return nil, err
@@ -76,13 +74,11 @@ func (dao TargetGroupDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*
 			return nil, err
 		}
 		model.ID = ids[index]
-		if len(model.CloudID) == 0 {
-			model.CloudID = model.ID
-		}
 	}
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, tableName,
-		tablelb.LoadBalancerTargetGroupColumns.ColumnExpr(), tablelb.LoadBalancerTargetGroupColumns.ColonNameExpr())
+		tablelb.LoadBalancerColumns.ColumnExpr(), tablelb.LoadBalancerColumns.ColonNameExpr())
+
 	if err = dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", tableName, err, kt.Rid)
 		return nil, fmt.Errorf("insert %s failed, err: %v", tableName, err)
@@ -95,7 +91,7 @@ func (dao TargetGroupDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*
 			ResID:      one.ID,
 			CloudResID: one.CloudID,
 			ResName:    one.Name,
-			ResType:    enumor.TargetGroupAuditResType,
+			ResType:    enumor.LoadBalancerAuditResType,
 			Action:     enumor.Create,
 			BkBizID:    one.BkBizID,
 			Vendor:     one.Vendor,
@@ -110,17 +106,15 @@ func (dao TargetGroupDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*
 		})
 	}
 	if err = dao.Audit.BatchCreateWithTx(kt, tx, audits); err != nil {
-		logs.Errorf("batch create target group audit failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
 	return ids, nil
 }
 
-// Update lb target group.
-func (dao TargetGroupDao) Update(kt *kit.Kit, expr *filter.Expression,
-	model *tablelb.LoadBalancerTargetGroupTable) error {
-
+// Update clb.
+func (dao ClbDao) Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.LoadBalancerTable) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
 	}
@@ -145,12 +139,12 @@ func (dao TargetGroupDao) Update(kt *kit.Kit, expr *filter.Expression,
 	_, err = dao.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		effect, err := dao.Orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
-			logs.Errorf("update load balancer target group failed, err: %v, filter: %s, rid: %v", err, expr, kt.Rid)
+			logs.Errorf("update load balancer failed, err: %v, filter: %s, rid: %v", err, expr, kt.Rid)
 			return nil, err
 		}
 
 		if effect == 0 {
-			logs.Infof("update load balancer target group, but record not found, sql: %s, rid: %v", sql, kt.Rid)
+			logs.Infof("update load balancer, but record not found, sql: %s, rid: %v", sql, kt.Rid)
 		}
 
 		return nil, nil
@@ -162,10 +156,8 @@ func (dao TargetGroupDao) Update(kt *kit.Kit, expr *filter.Expression,
 	return nil
 }
 
-// UpdateByIDWithTx lb target group.
-func (dao TargetGroupDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
-	model *tablelb.LoadBalancerTargetGroupTable) error {
-
+// UpdateByIDWithTx clb.
+func (dao ClbDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.LoadBalancerTable) error {
 	if len(id) == 0 {
 		return errf.New(errf.InvalidParameter, "id is required")
 	}
@@ -185,21 +177,20 @@ func (dao TargetGroupDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
 	toUpdate["id"] = id
 	_, err = dao.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
-		logs.Errorf("update load balancer target group failed, id: %s, err: %v, rid: %v", id, err, kt.Rid)
+		logs.Errorf("update load balancer failed, id: %s, err: %v, rid: %v", id, err, kt.Rid)
 		return err
 	}
 
 	return nil
 }
 
-// List lb target group.
-func (dao TargetGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbTargetGroupDetails, error) {
+// List clb.
+func (dao ClbDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbDetails, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(
-		filter.RuleFields(tablelb.LoadBalancerTargetGroupColumns.ColumnTypes())),
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablelb.LoadBalancerColumns.ColumnTypes())),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
@@ -211,16 +202,15 @@ func (dao TargetGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.Li
 
 	if opt.Page.Count {
 		// this is a count request, then do count operation only.
-		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.LoadBalancerTargetGroupTable, whereExpr)
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.LoadBalancerTable, whereExpr)
 
 		count, err := dao.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
-			logs.Errorf("count load balancer target group failed, err: %v, filter: %s, rid: %s",
-				err, opt.Filter, kt.Rid)
+			logs.Errorf("count load balancer failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
 		}
 
-		return &typesclb.ListClbTargetGroupDetails{Count: count}, nil
+		return &typesclb.ListClbDetails{Count: count}, nil
 	}
 
 	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
@@ -228,19 +218,19 @@ func (dao TargetGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.Li
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablelb.LoadBalancerTargetGroupColumns.FieldsNamedExpr(opt.Fields),
-		table.LoadBalancerTargetGroupTable, whereExpr, pageExpr)
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablelb.LoadBalancerColumns.FieldsNamedExpr(opt.Fields),
+		table.LoadBalancerTable, whereExpr, pageExpr)
 
-	details := make([]tablelb.LoadBalancerTargetGroupTable, 0)
+	details := make([]tablelb.LoadBalancerTable, 0)
 	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
 
-	return &typesclb.ListClbTargetGroupDetails{Details: details}, nil
+	return &typesclb.ListClbDetails{Details: details}, nil
 }
 
-// DeleteWithTx clb target group.
-func (dao TargetGroupDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
+// DeleteWithTx clb.
+func (dao ClbDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
@@ -250,11 +240,29 @@ func (dao TargetGroupDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Ex
 		return err
 	}
 
-	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.LoadBalancerTargetGroupTable, whereExpr)
+	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.LoadBalancerTable, whereExpr)
 	if _, err = dao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
-		logs.Errorf("delete load balancer target group failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
+		logs.Errorf("delete load balancer failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
 		return err
 	}
 
 	return nil
+}
+
+// ListClbByIDs clb
+func ListClbByIDs(kt *kit.Kit, orm orm.Interface, ids []string) (map[string]tablelb.LoadBalancerTable, error) {
+	sql := fmt.Sprintf(`SELECT %s FROM %s WHERE id IN (:ids)`, tablelb.LoadBalancerColumns.FieldsNamedExpr(nil),
+		table.LoadBalancerTable)
+
+	clbs := make([]tablelb.LoadBalancerTable, 0)
+	if err := orm.Do().Select(kt.Ctx, &clbs, sql, map[string]interface{}{"ids": ids}); err != nil {
+		return nil, err
+	}
+
+	idMap := make(map[string]tablelb.LoadBalancerTable, len(ids))
+	for _, one := range clbs {
+		idMap[one.ID] = one
+	}
+
+	return idMap, nil
 }

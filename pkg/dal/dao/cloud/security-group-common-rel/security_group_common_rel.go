@@ -25,7 +25,7 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao/cloud/clb"
+	"hcm/pkg/dal/dao/cloud/load-balancer"
 	securitygroup "hcm/pkg/dal/dao/cloud/security-group"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
@@ -105,7 +105,7 @@ func (dao Dao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []cloud.Security
 		return fmt.Errorf("get security group count not right")
 	}
 
-	resMap, err := clb.ListClbByIDs(kt, dao.Orm, resIDs)
+	resMap, err := loadbalancer.ListClbByIDs(kt, dao.Orm, resIDs)
 	if err != nil {
 		logs.Errorf("list clb by ids failed, err: %v, sgIDs: %v, resIDs: %v, rid: %s", err, sgIDs, resIDs, kt.Rid)
 		return err

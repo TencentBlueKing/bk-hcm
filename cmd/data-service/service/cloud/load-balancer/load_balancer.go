@@ -63,6 +63,14 @@ func InitService(cap *capability.Capability) {
 	h.Add("CreateTargetGroupListenerRel", http.MethodPost, "/target_group_listener_rels/create",
 		svc.CreateTargetGroupListenerRel)
 
+	// url规则
+	h.Add("BatchCreateTCloudUrlRule",
+		http.MethodPost, "/vendors/tcloud/url_rules/batch/create", svc.BatchCreateTCloudUrlRule)
+	h.Add("BatchUpdateTCloudUrlRule",
+		http.MethodPatch, "/vendors/tcloud/url_rules/batch/update", svc.BatchDeleteTCloudUrlRule)
+	h.Add("BatchDeleteTCloudUrlRule",
+		http.MethodDelete, "/vendors/tcloud/url_rules/batch", svc.BatchDeleteTCloudUrlRule)
+
 	h.Load(cap.WebService)
 }
 

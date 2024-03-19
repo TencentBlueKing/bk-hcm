@@ -316,11 +316,11 @@ func (cli *client) listLBFromDB(kt *kit.Kit, params *SyncBaseParams) ([]corelb.T
 }
 
 func convCloudToDBCreate(cloud typeslb.TCloudClb, accountID string, region string, vpcMap map[string]*common.VpcDB,
-	subnetMap map[string]string) protocloud.ClbBatchCreate[corelb.TCloudClbExtension] {
+	subnetMap map[string]string) protocloud.LbBatchCreate[corelb.TCloudClbExtension] {
 
 	cloudVpcID := cvt.PtrToVal(cloud.VpcId)
 	subnetID := cvt.PtrToVal(cloud.SubnetId)
-	lb := protocloud.ClbBatchCreate[corelb.TCloudClbExtension]{
+	lb := protocloud.LbBatchCreate[corelb.TCloudClbExtension]{
 		CloudID:          cloud.GetCloudID(),
 		Name:             cvt.PtrToVal(cloud.LoadBalancerName),
 		Vendor:           enumor.TCloud,

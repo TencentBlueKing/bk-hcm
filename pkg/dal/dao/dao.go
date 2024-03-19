@@ -35,13 +35,13 @@ import (
 	argstpl "hcm/pkg/dal/dao/cloud/argument-template"
 	"hcm/pkg/dal/dao/cloud/bill"
 	"hcm/pkg/dal/dao/cloud/cert"
-	"hcm/pkg/dal/dao/cloud/clb"
 	"hcm/pkg/dal/dao/cloud/cvm"
 	"hcm/pkg/dal/dao/cloud/disk"
 	diskcvmrel "hcm/pkg/dal/dao/cloud/disk-cvm-rel"
 	"hcm/pkg/dal/dao/cloud/eip"
 	eipcvmrel "hcm/pkg/dal/dao/cloud/eip-cvm-rel"
 	cimage "hcm/pkg/dal/dao/cloud/image"
+	"hcm/pkg/dal/dao/cloud/load-balancer"
 	networkinterface "hcm/pkg/dal/dao/cloud/network-interface"
 	nicvmrel "hcm/pkg/dal/dao/cloud/network-interface-cvm-rel"
 	"hcm/pkg/dal/dao/cloud/region"
@@ -111,14 +111,14 @@ type Set interface {
 	CloudSelectionIdc() daoselection.IdcInterface
 	ArgsTpl() argstpl.Interface
 	Cert() cert.Interface
-	LoadBalancer() clb.ClbInterface
-	LoadBalancerListener() clb.ListenerInterface
-	LoadBalancerTarget() clb.TargetInterface
-	LoadBalancerTargetGroup() clb.TargetGroupInterface
-	LoadBalancerTargetListenerRuleRel() clb.TargetListenerRuleRelInterface
-	LoadBalancerTCloudUrlRule() clb.ClbTCloudUrlRuleInterface
-	ClbFlowRel() clb.ClbFlowRelInterface
-	ClbFlowLock() clb.ClbFlowLockInterface
+	LoadBalancer() loadbalancer.ClbInterface
+	LoadBalancerListener() loadbalancer.ListenerInterface
+	LoadBalancerTarget() loadbalancer.TargetInterface
+	LoadBalancerTargetGroup() loadbalancer.TargetGroupInterface
+	LoadBalancerTargetListenerRuleRel() loadbalancer.TargetListenerRuleRelInterface
+	LoadBalancerTCloudUrlRule() loadbalancer.ClbTCloudUrlRuleInterface
+	ClbFlowRel() loadbalancer.ClbFlowRelInterface
+	ClbFlowLock() loadbalancer.ClbFlowLockInterface
 	SGCommonRel() sgcomrel.Interface
 
 	Txn() *Txn
@@ -548,8 +548,8 @@ func (s *set) Cert() cert.Interface {
 }
 
 // LoadBalancer return clb dao.
-func (s *set) LoadBalancer() clb.ClbInterface {
-	return &clb.ClbDao{
+func (s *set) LoadBalancer() loadbalancer.ClbInterface {
+	return &loadbalancer.ClbDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,
@@ -557,8 +557,8 @@ func (s *set) LoadBalancer() clb.ClbInterface {
 }
 
 // LoadBalancerListener return clb listener dao.
-func (s *set) LoadBalancerListener() clb.ListenerInterface {
-	return &clb.ListenerDao{
+func (s *set) LoadBalancerListener() loadbalancer.ListenerInterface {
+	return &loadbalancer.ListenerDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,
@@ -566,8 +566,8 @@ func (s *set) LoadBalancerListener() clb.ListenerInterface {
 }
 
 // LoadBalancerTarget return clb target dao.
-func (s *set) LoadBalancerTarget() clb.TargetInterface {
-	return &clb.TargetDao{
+func (s *set) LoadBalancerTarget() loadbalancer.TargetInterface {
+	return &loadbalancer.TargetDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,
@@ -575,8 +575,8 @@ func (s *set) LoadBalancerTarget() clb.TargetInterface {
 }
 
 // LoadBalancerTargetGroup return clb target group dao.
-func (s *set) LoadBalancerTargetGroup() clb.TargetGroupInterface {
-	return &clb.TargetGroupDao{
+func (s *set) LoadBalancerTargetGroup() loadbalancer.TargetGroupInterface {
+	return &loadbalancer.TargetGroupDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,
@@ -584,8 +584,8 @@ func (s *set) LoadBalancerTargetGroup() clb.TargetGroupInterface {
 }
 
 // LoadBalancerTargetListenerRuleRel return clb target listener rule rel dao.
-func (s *set) LoadBalancerTargetListenerRuleRel() clb.TargetListenerRuleRelInterface {
-	return &clb.TargetListenerRuleRelDao{
+func (s *set) LoadBalancerTargetListenerRuleRel() loadbalancer.TargetListenerRuleRelInterface {
+	return &loadbalancer.TargetListenerRuleRelDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,
@@ -593,8 +593,8 @@ func (s *set) LoadBalancerTargetListenerRuleRel() clb.TargetListenerRuleRelInter
 }
 
 // LoadBalancerTCloudUrlRule return clb tcloud url rule dao.
-func (s *set) LoadBalancerTCloudUrlRule() clb.ClbTCloudUrlRuleInterface {
-	return &clb.ClbTCloudUrlRuleDao{
+func (s *set) LoadBalancerTCloudUrlRule() loadbalancer.ClbTCloudUrlRuleInterface {
+	return &loadbalancer.ClbTCloudUrlRuleDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,
@@ -602,8 +602,8 @@ func (s *set) LoadBalancerTCloudUrlRule() clb.ClbTCloudUrlRuleInterface {
 }
 
 // ClbFlowRel return clb flow rel dao.
-func (s *set) ClbFlowRel() clb.ClbFlowRelInterface {
-	return &clb.ClbFlowRelDao{
+func (s *set) ClbFlowRel() loadbalancer.ClbFlowRelInterface {
+	return &loadbalancer.ClbFlowRelDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,
@@ -611,8 +611,8 @@ func (s *set) ClbFlowRel() clb.ClbFlowRelInterface {
 }
 
 // ClbFlowLock return clb flow lock dao.
-func (s *set) ClbFlowLock() clb.ClbFlowLockInterface {
-	return &clb.ClbFlowLockDao{
+func (s *set) ClbFlowLock() loadbalancer.ClbFlowLockInterface {
+	return &loadbalancer.ClbFlowLockDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,

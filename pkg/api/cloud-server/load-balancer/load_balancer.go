@@ -116,12 +116,12 @@ type ListListenerResult = core.ListResultT[ListListenerBase]
 // ListListenerBase define list listener base.
 type ListListenerBase struct {
 	corelb.BaseListener
-	TargetGroupID string                  `json:"target_group_id"`
-	Scheduler     string                  `json:"scheduler"`
-	DomainNum     int64                   `json:"domain_num"`
-	UrlNum        int64                   `json:"url_num"`
-	HealthCheck   *corelb.HealthCheckInfo `json:"health_check"`
-	Certificate   *corelb.CertificateInfo `json:"certificate"`
+	TargetGroupID string                        `json:"target_group_id"`
+	Scheduler     string                        `json:"scheduler"`
+	DomainNum     int64                         `json:"domain_num"`
+	UrlNum        int64                         `json:"url_num"`
+	HealthCheck   *corelb.TCloudHealthCheckInfo `json:"health_check"`
+	Certificate   *corelb.TCloudCertificateInfo `json:"certificate"`
 }
 
 // -------------------------- Get Listener --------------------------
@@ -129,16 +129,16 @@ type ListListenerBase struct {
 // GetListenerDetail define get listener detail.
 type GetListenerDetail struct {
 	corelb.BaseListener
-	LblID              string                  `json:"lbl_id"`
-	LblName            string                  `json:"lbl_name"`
-	CloudLblID         string                  `json:"cloud_lbl_id"`
-	TargetGroupID      string                  `json:"target_group_id"`
-	TargetGroupName    string                  `json:"target_group_name"`
-	CloudTargetGroupID string                  `json:"cloud_target_group_id"`
-	HealthCheck        *corelb.HealthCheckInfo `json:"health_check"`
-	Certificate        *corelb.CertificateInfo `json:"certificate"`
-	DomainNum          int64                   `json:"domain_num"`
-	UrlNum             int64                   `json:"url_num"`
+	LblID              string                        `json:"lbl_id"`
+	LblName            string                        `json:"lbl_name"`
+	CloudLblID         string                        `json:"cloud_lbl_id"`
+	TargetGroupID      string                        `json:"target_group_id"`
+	TargetGroupName    string                        `json:"target_group_name"`
+	CloudTargetGroupID string                        `json:"cloud_target_group_id"`
+	HealthCheck        *corelb.TCloudHealthCheckInfo `json:"health_check"`
+	Certificate        *corelb.TCloudCertificateInfo `json:"certificate"`
+	DomainNum          int64                         `json:"domain_num"`
+	UrlNum             int64                         `json:"url_num"`
 }
 
 // -------------------------- List LoadBalancer Url Rule --------------------------

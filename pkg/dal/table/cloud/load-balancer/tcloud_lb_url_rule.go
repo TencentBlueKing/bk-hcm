@@ -105,10 +105,6 @@ func (tlbur TCloudLbUrlRuleTable) InsertValidate() error {
 		return errors.New("cloud_id is required")
 	}
 
-	if len(tlbur.Name) == 0 {
-		return errors.New("name is required")
-	}
-
 	if len(tlbur.LblID) == 0 {
 		return errors.New("lbl_id is required")
 	}

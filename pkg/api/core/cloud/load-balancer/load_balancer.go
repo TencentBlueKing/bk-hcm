@@ -102,48 +102,48 @@ type BaseTCloudLbUrlRule struct {
 	CloudID string `json:"cloud_id"`
 	Name    string `json:"name"`
 
-	RuleType           enumor.RuleType  `json:"rule_type"`
-	LbID               string           `json:"lb_id"`
-	CloudLbID          string           `json:"cloud_lb_id"`
-	LblID              string           `json:"lbl_id"`
-	CloudLBLID         string           `json:"cloud_lbl_id"`
-	TargetGroupID      string           `json:"target_group_id"`
-	CloudTargetGroupID string           `json:"cloud_target_group_id"`
-	Domain             string           `json:"domain"`
-	URL                string           `json:"url"`
-	Scheduler          string           `json:"scheduler"`
-	SniSwitch          int64            `json:"sni_switch"`
-	SessionType        string           `json:"session_type"`
-	SessionExpire      int64            `json:"session_expire"`
-	HealthCheck        *HealthCheckInfo `json:"health_check"`
-	Certificate        *CertificateInfo `json:"certificate"`
+	RuleType           enumor.RuleType        `json:"rule_type"`
+	LbID               string                 `json:"lb_id"`
+	CloudLbID          string                 `json:"cloud_lb_id"`
+	LblID              string                 `json:"lbl_id"`
+	CloudLBLID         string                 `json:"cloud_lbl_id"`
+	TargetGroupID      string                 `json:"target_group_id"`
+	CloudTargetGroupID string                 `json:"cloud_target_group_id"`
+	Domain             string                 `json:"domain"`
+	URL                string                 `json:"url"`
+	Scheduler          string                 `json:"scheduler"`
+	SniSwitch          int64                  `json:"sni_switch"`
+	SessionType        string                 `json:"session_type"`
+	SessionExpire      int64                  `json:"session_expire"`
+	HealthCheck        *TCloudHealthCheckInfo `json:"health_check"`
+	Certificate        *TCloudCertificateInfo `json:"certificate"`
 
 	Memo           *string `json:"memo"`
 	*core.Revision `json:",inline"`
 }
 
-// HealthCheckInfo define health check.
-type HealthCheckInfo struct {
-	HealthSwitch    int64  `json:"health_switch"`
-	TimeOut         int64  `json:"time_out"`
-	IntervalTime    int64  `json:"interval_time"`
-	HealthNum       int64  `json:"health_num"`
-	UnHealthNum     int64  `json:"un_health_num"`
-	CheckPort       int64  `json:"check_port"`
-	CheckType       string `json:"check_type"`
-	HttpVersion     string `json:"http_version"`
-	HttpCheckPath   string `json:"http_check_path"`
-	HttpCheckDomain string `json:"http_check_domain"`
-	HttpCheckMethod string `json:"http_check_method"`
-	SourceIpType    int64  `json:"source_ip_type"`
+// TCloudHealthCheckInfo define health check.
+type TCloudHealthCheckInfo struct {
+	HealthSwitch    int64  `json:"health_switch,omitempty"`
+	TimeOut         int64  `json:"time_out,omitempty"`
+	IntervalTime    int64  `json:"interval_time,omitempty"`
+	HealthNum       int64  `json:"health_num,omitempty"`
+	UnHealthNum     int64  `json:"un_health_num,omitempty"`
+	CheckPort       int64  `json:"check_port,omitempty"`
+	CheckType       string `json:"check_type,omitempty"`
+	HttpVersion     string `json:"http_version,omitempty"`
+	HttpCheckPath   string `json:"http_check_path,omitempty"`
+	HttpCheckDomain string `json:"http_check_domain,omitempty"`
+	HttpCheckMethod string `json:"http_check_method,omitempty"`
+	SourceIpType    int64  `json:"source_ip_type,omitempty"`
 }
 
-// CertificateInfo define certificate.
-type CertificateInfo struct {
-	SSLMode    string   `json:"ssl_mode"`
-	CertId     string   `json:"cert_id"`
-	CertCaId   string   `json:"cert_ca_id"`
-	ExtCertIds []string `json:"ext_cert_ids"`
+// TCloudCertificateInfo define certificate.
+type TCloudCertificateInfo struct {
+	SSLMode    string   `json:"ssl_mode,omitempty"`
+	CertId     string   `json:"cert_id,omitempty"`
+	CertCaId   string   `json:"cert_ca_id,omitempty"`
+	ExtCertIds []string `json:"ext_cert_ids,omitempty"`
 }
 
 // BaseClbTarget define base clb target.
@@ -167,20 +167,20 @@ type BaseClbTarget struct {
 
 // BaseClbTargetGroup define base clb target group.
 type BaseClbTargetGroup struct {
-	ID              string           `json:"id"`
-	CloudID         string           `json:"cloud_id"`
-	Name            string           `json:"name"`
-	Vendor          enumor.Vendor    `json:"vendor"`
-	AccountID       string           `json:"account_id"`
-	BkBizID         int64            `json:"bk_biz_id"`
-	TargetGroupType string           `json:"target_group_type"`
-	VpcID           string           `json:"vpc_id"`
-	CloudVpcID      string           `json:"cloud_vpc_id"`
-	Protocol        string           `json:"protocol"`
-	Region          string           `json:"region"`
-	Port            int64            `json:"port"`
-	Weight          int64            `json:"weight"`
-	HealthCheck     *HealthCheckInfo `json:"health_check"`
-	Memo            *string          `json:"memo"`
+	ID              string                 `json:"id"`
+	CloudID         string                 `json:"cloud_id"`
+	Name            string                 `json:"name"`
+	Vendor          enumor.Vendor          `json:"vendor"`
+	AccountID       string                 `json:"account_id"`
+	BkBizID         int64                  `json:"bk_biz_id"`
+	TargetGroupType string                 `json:"target_group_type"`
+	VpcID           string                 `json:"vpc_id"`
+	CloudVpcID      string                 `json:"cloud_vpc_id"`
+	Protocol        string                 `json:"protocol"`
+	Region          string                 `json:"region"`
+	Port            int64                  `json:"port"`
+	Weight          int64                  `json:"weight"`
+	HealthCheck     *TCloudHealthCheckInfo `json:"health_check"`
+	Memo            *string                `json:"memo"`
 	*core.Revision  `json:",inline"`
 }

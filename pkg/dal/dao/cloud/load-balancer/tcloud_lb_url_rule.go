@@ -17,8 +17,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package clb 负载均衡四层/七层规则的Package
-package clb
+// Package loadbalancer 负载均衡四层/七层规则的Package
+package loadbalancer
 
 import (
 	"fmt"
