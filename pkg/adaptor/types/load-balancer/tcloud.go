@@ -311,11 +311,11 @@ type TCloudCreateListenerOption struct {
 	// LoadBalancerId 负载均衡实例 ID
 	LoadBalancerId string `json:"load_balancer_id" validate:"required"`
 	// ListenerName 要创建的监听器名称
-	ListenerName string `json:"listener_name"`
+	ListenerName string `json:"listener_name" validate:"required"`
 	// Protocol 监听器协议： TCP | UDP | HTTP | HTTPS | TCP_SSL | QUIC
-	Protocol string `json:"protocol"`
+	Protocol string `json:"protocol" validate:"required"`
 	// Port 要将监听器创建到哪个端口
-	Port int64 `json:"port"`
+	Port int64 `json:"port" validate:"required"`
 	// HealthCheck 健康检查相关参数，此参数仅适用于TCP/UDP/TCP_SSL/QUIC监听器
 	HealthCheck *corelb.TCloudHealthCheckInfo `json:"health_check"`
 	// Certificate 证书相关信息，此参数仅适用于TCP_SSL监听器和未开启SNI特性的HTTPS监听器。此参数和MultiCertInfo不能同时传入
@@ -415,36 +415,36 @@ type TCloudCreateRuleOption struct {
 
 type RuleInfo struct {
 	// Url 转发规则的路径。长度限制为：1~200。
-	Url *string `json:"url"`
+	Url *string `json:"url,omitempty"`
 	// Domain 转发规则的域名。长度限制为：1~80。Domain和Domains只需要传一个，单域名规则传Domain，多域名规则传Domains。
-	Domain *string `json:"domain"`
+	Domain *string `json:"domain,omitempty"`
 	// SessionExpireTime 会话保持时间。设置为0表示关闭会话保持，开启会话保持可取值30~86400，单位：秒。
-	SessionExpireTime *int64 `json:"session_expire_time"`
+	SessionExpireTime *int64 `json:"session_expire_time,omitempty"`
 	// HealthCheck 健康检查信息。详情请参见：[健康检查](https://cloud.tencent.com/document/product/214/6097)
-	HealthCheck *corelb.TCloudHealthCheckInfo `json:"health_check"`
+	HealthCheck *corelb.TCloudHealthCheckInfo `json:"health_check,omitempty"`
 	// Certificate 证书信息；此参数和MultiCertInfo不能同时传入。
-	Certificate *corelb.TCloudCertificateInfo `json:"certificate"`
+	Certificate *corelb.TCloudCertificateInfo `json:"certificate,omitempty"`
 	// 规则的请求转发方式，可选值：WRR、LEAST_CONN、IP_HASH
 	// Scheduler 分别表示按权重轮询、最小连接数、按IP哈希， 默认为 WRR。
-	Scheduler *string `json:"scheduler"`
+	Scheduler *string `json:"scheduler,omitempty"`
 	// ForwardType 负载均衡与后端服务之间的转发协议，目前支持 HTTP/HTTPS/GRPC/TRPC，TRPC暂未对外开放，默认HTTP。
-	ForwardType *string `json:"forward_type"`
+	ForwardType *string `json:"forward_type,omitempty"`
 	// DefaultServer 是否将该域名设为默认域名，注意，一个监听器下只能设置一个默认域名。
-	DefaultServer *bool `json:"default_server"`
+	DefaultServer *bool `json:"default_server,omitempty"`
 	// Http2 是否开启Http2，注意，只有HTTPS域名才能开启Http2。
-	Http2 *bool `json:"http2"`
+	Http2 *bool `json:"http2,omitempty"`
 	// TargetType 后端目标类型，NODE表示绑定普通节点，TARGETGROUP表示绑定目标组
-	TargetType *string `json:"target_type"`
+	TargetType *string `json:"target_type,omitempty"`
 	// TrpcCallee TRPC被调服务器路由，ForwardType为TRPC时必填。目前暂未对外开放。
-	TrpcCallee *string `json:"trpc_callee"`
+	TrpcCallee *string `json:"trpc_callee,omitempty"`
 	// TrpcFunc TRPC调用服务接口，ForwardType为TRPC时必填。目前暂未对外开放
-	TrpcFunc *string `json:"trpc_func"`
+	TrpcFunc *string `json:"trpc_func,omitempty"`
 	// Quic 是否开启QUIC，注意，只有HTTPS域名才能开启QUIC
-	Quic *bool `json:"quic"`
+	Quic *bool `json:"quic,omitempty"`
 	// Domains 转发规则的域名列表。每个域名的长度限制为：1~80。Domain和Domains只需要传一个，单域名规则传Domain，多域名规则传Domains。
-	Domains []*string `json:"domains"`
+	Domains []*string `json:"domains,omitempty"`
 	// MultiCertInfo 证书信息，支持同时传入不同算法类型的多本服务端证书；此参数和Certificate不能同时传入。
-	MultiCertInfo *corelb.MultiCertInfo `json:"multi_cert_info"`
+	MultiCertInfo *corelb.MultiCertInfo `json:"multi_cert_info,omitempty"`
 }
 
 // Validate tcloud rule create option.
@@ -463,20 +463,20 @@ type TCloudUpdateRuleOption struct {
 	// ListenerId监听器ID
 	ListenerId string `json:"listener_id" validate:"required"`
 	// 转发规则的新的转发路径，如不需修改Url，则不需提供此参数。
-	Url string `json:"url"`
+	Url string `json:"url,omitempty"`
 	// 健康检查信息。
 	HealthCheck *corelb.TCloudHealthCheckInfo `json:"health_check"`
 	// 规则的请求转发方式，可选值：WRR、LEAST_CONN、IP_HASH
 	// 分别表示按权重轮询、最小连接数、按IP哈希， 默认为 WRR。
-	Scheduler string `json:"scheduler"`
+	Scheduler string `json:"scheduler,omitempty"`
 	// 会话保持时间。
-	SessionExpireTime int64 `json:"session_expire_time"`
+	SessionExpireTime int64 `json:"session_expire_time,omitempty"`
 	// 负载均衡实例与后端服务之间的转发协议，默认HTTP，可取值：HTTP、HTTPS、TRPC。
-	ForwardType string `json:"forward_type"`
+	ForwardType string `json:"forward_type,omitempty"`
 	// TRPC被调服务器路由，ForwardType为TRPC时必填。目前暂未对外开放。
-	TrpcCallee string `json:"trpc_callee"`
+	TrpcCallee string `json:"trpc_callee,omitempty"`
 	// TRPC调用服务接口，ForwardType为TRPC时必填。目前暂未对外开放。
-	TrpcFunc string `json:"trpc_func"`
+	TrpcFunc string `json:"trpc_func,omitempty"`
 }
 
 // Validate tcloud rule update option.
@@ -495,23 +495,23 @@ type TCloudUpdateDomainAttrOption struct {
 	// ListenerId监听器ID
 	ListenerId string `json:"listener_id" validate:"required"`
 	// 域名（必须是已经创建的转发规则下的域名），如果是多域名，可以指定多域名列表中的任意一个。
-	Domain string `json:"domain"`
+	Domain string `json:"domain,omitempty"`
 	// 要修改的新域名。NewDomain和NewDomains只能传一个。
-	NewDomain string `json:"new_domain"`
+	NewDomain string `json:"new_domain,omitempty"`
 	// 域名相关的证书信息，注意，仅对启用SNI的监听器适用，不可和MultiCertInfo 同时传入。
-	Certificate *corelb.TCloudCertificateInfo `json:"certificate"`
+	Certificate *corelb.TCloudCertificateInfo `json:"certificate,omitempty"`
 	// 是否开启Http2，注意，只有HTTPS域名才能开启Http2。
 	Http2 bool `json:"http2"`
 	// 是否设为默认域名，注意，一个监听器下只能设置一个默认域名。
-	DefaultServer *bool `json:"default_server"`
+	DefaultServer *bool `json:"default_server,omitempty"`
 	// 是否开启Quic，注意，只有HTTPS域名才能开启Quic
-	Quic bool `json:"quic"`
+	Quic bool `json:"quic,omitempty"`
 	// 监听器下必须配置一个默认域名，若要关闭原默认域名，必须同时指定另一个域名作为新的默认域名，如果新的默认域名是多域名，可以指定多域名列表中的任意一个。
-	NewDefaultServerDomain string `json:"new_default_server_domain"`
+	NewDefaultServerDomain string `json:"new_default_server_domain,omitempty"`
 	// 要修改的新域名列表。NewDomain和NewDomains只能传一个。
-	NewDomains []*string `json:"new_domains"`
+	NewDomains []*string `json:"new_domains,omitempty"`
 	// 域名相关的证书信息，注意，仅对启用SNI的监听器适用；支持同时传入多本算法类型不同的服务器证书，不可和MultiCertInfo 同时传入。
-	MultiCertInfo *corelb.MultiCertInfo `json:"multi_cert_info"`
+	MultiCertInfo *corelb.MultiCertInfo `json:"multi_cert_info,omitempty"`
 }
 
 // Validate tcloud domain attr update option.
@@ -528,12 +528,12 @@ type TCloudDeleteRuleOption struct {
 	ListenerId     string   `json:"listener_id" validate:"required"`
 	CloudIDs       []string `json:"cloud_ids" validate:"required,min=1"`
 	// Domain 要删除的转发规则的域名，如果是多域名，可以指定多域名列表中的任意一个。
-	Domain string `json:"domain"`
+	Domain string `json:"domain,omitempty"`
 	// Url 要删除的转发规则的转发路径。
-	Url string `json:"url"`
+	Url string `json:"url,omitempty"`
 	// NewDefaultServerDomain 监听器下必须配置一个默认域名，当需要删除默认域名时，可以指定另一个域名作为新的默认域名，
 	// 如果新的默认域名是多域名，可以指定多域名列表中的任意一个。
-	NewDefaultServerDomain string `json:"new_default_server_domain"`
+	NewDefaultServerDomain string `json:"new_default_server_domain,omitempty"`
 }
 
 // Validate ...

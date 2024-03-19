@@ -20,7 +20,6 @@
 package tcloud
 
 import (
-	"errors"
 	"fmt"
 
 	"hcm/pkg/adaptor/poller"
@@ -59,11 +58,11 @@ func (t *TCloudImpl) CreateListener(kt *kit.Kit, opt *typelb.TCloudCreateListene
 		return nil, err
 	}
 	respPoller := poller.Poller[*TCloudImpl, map[string]*clb.DescribeTaskStatusResponseParams, poller.BaseDoneResult]{
-		Handler: &createListenerPollingHandler{opt.Region},
+		Handler: &createClbPollingHandler{opt.Region},
 	}
 
 	reqID := createResp.Response.RequestId
-	result, err := respPoller.PollUntilDone(t, kt, []*string{reqID}, types.NewBatchCreateListenerPollerOption())
+	result, err := respPoller.PollUntilDone(t, kt, []*string{reqID}, types.NewLoadBalancerDefaultPollerOption())
 	if err != nil {
 		return nil, err
 	}
@@ -77,15 +76,9 @@ func (t *TCloudImpl) CreateListener(kt *kit.Kit, opt *typelb.TCloudCreateListene
 func (t *TCloudImpl) formatCreateListenerRequest(opt *typelb.TCloudCreateListenerOption) *clb.CreateListenerRequest {
 	req := clb.NewCreateListenerRequest()
 	req.LoadBalancerId = converter.ValToPtr(opt.LoadBalancerId)
-	if len(opt.ListenerName) > 0 {
-		req.ListenerNames = append(req.ListenerNames, converter.ValToPtr(opt.ListenerName))
-	}
-	if len(opt.Protocol) > 0 {
-		req.Protocol = converter.ValToPtr(opt.Protocol)
-	}
-	if opt.Port > 0 {
-		req.Ports = append(req.Ports, converter.ValToPtr(opt.Port))
-	}
+	req.ListenerNames = append(req.ListenerNames, converter.ValToPtr(opt.ListenerName))
+	req.Protocol = converter.ValToPtr(opt.Protocol)
+	req.Ports = append(req.Ports, converter.ValToPtr(opt.Port))
 	if len(opt.Scheduler) > 0 {
 		req.Scheduler = converter.ValToPtr(opt.Scheduler)
 	}
@@ -131,62 +124,6 @@ func (t *TCloudImpl) formatCreateListenerRequest(opt *typelb.TCloudCreateListene
 	return req
 }
 
-var _ poller.PollingHandler[*TCloudImpl, map[string]*clb.DescribeTaskStatusResponseParams,
-	poller.BaseDoneResult] = new(createListenerPollingHandler)
-
-type createListenerPollingHandler struct {
-	region string
-}
-
-// Done 操作成功状态判断
-func (h *createListenerPollingHandler) Done(clbStatusMap map[string]*clb.DescribeTaskStatusResponseParams) (
-	bool, *poller.BaseDoneResult) {
-
-	result := &poller.BaseDoneResult{
-		SuccessCloudIDs: make([]string, 0),
-		FailedCloudIDs:  make([]string, 0),
-		UnknownCloudIDs: make([]string, 0),
-	}
-
-	for _, status := range clbStatusMap {
-		if status.Status == nil {
-			return false, nil
-		}
-		switch converter.PtrToVal(status.Status) {
-		case CLBTaskStatusRunning:
-			// 还有任务在运行则是没有成功
-			return false, nil
-		case CLBTaskStatusFail:
-			result.FailedCloudIDs = converter.PtrToSlice(status.LoadBalancerIds)
-		case CLBTaskStatusSuccess:
-			result.SuccessCloudIDs = converter.PtrToSlice(status.LoadBalancerIds)
-		}
-	}
-	return true, result
-}
-
-// Poll 返回任务结果
-func (h *createListenerPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, requestIDs []*string) (
-	map[string]*clb.DescribeTaskStatusResponseParams, error) {
-
-	taskOpt := &typelb.TCloudDescribeTaskStatusOption{Region: h.region}
-	result := make(map[string]*clb.DescribeTaskStatusResponseParams)
-	// 查询对应异步任务状态
-	for _, reqID := range requestIDs {
-		taskOpt.TaskId = converter.PtrToVal(reqID)
-		if taskOpt.TaskId == "" {
-			return nil, errors.New("empty tcloud request ID")
-		}
-		status, err := client.CLBDescribeTaskStatus(kt, taskOpt)
-		if err != nil {
-			return nil, err
-		}
-
-		result[taskOpt.TaskId] = status
-	}
-	return result, nil
-}
-
 // UpdateListener 更新监听器 reference: https://cloud.tencent.com/document/api/214/30681
 func (t *TCloudImpl) UpdateListener(kt *kit.Kit, opt *typelb.TCloudUpdateListenerOption) (
 	*poller.BaseDoneResult, error) {
@@ -213,70 +150,17 @@ func (t *TCloudImpl) UpdateListener(kt *kit.Kit, opt *typelb.TCloudUpdateListene
 	}
 
 	respPoller := poller.Poller[*TCloudImpl, map[string]*clb.DescribeTaskStatusResponseParams, poller.BaseDoneResult]{
-		Handler: &updateListenerPollingHandler{opt.Region},
+		Handler: &createClbPollingHandler{opt.Region},
 	}
 
 	reqID := updateResp.Response.RequestId
-	result, err := respPoller.PollUntilDone(t, kt, []*string{reqID}, types.NewBatchUpdateListenerPollerOption())
+	result, err := respPoller.PollUntilDone(t, kt, []*string{reqID}, types.NewLoadBalancerDefaultPollerOption())
 	if err != nil {
 		return nil, err
 	}
 	if len(result.SuccessCloudIDs) == 0 {
 		return nil, errf.Newf(errf.CloudVendorError,
 			"no any listener being updated, TencentCloudSDK RequestId: %s", converter.PtrToVal(reqID))
-	}
-	return result, nil
-}
-
-type updateListenerPollingHandler struct {
-	region string
-}
-
-// Done 操作成功状态判断
-func (h *updateListenerPollingHandler) Done(clbStatusMap map[string]*clb.DescribeTaskStatusResponseParams) (
-	bool, *poller.BaseDoneResult) {
-
-	result := &poller.BaseDoneResult{
-		SuccessCloudIDs: make([]string, 0),
-		FailedCloudIDs:  make([]string, 0),
-		UnknownCloudIDs: make([]string, 0),
-	}
-
-	for _, status := range clbStatusMap {
-		if status.Status == nil {
-			return false, nil
-		}
-		switch converter.PtrToVal(status.Status) {
-		case CLBTaskStatusRunning:
-			// 还有任务在运行则是没有成功
-			return false, nil
-		case CLBTaskStatusFail:
-			result.FailedCloudIDs = converter.PtrToSlice(status.LoadBalancerIds)
-		case CLBTaskStatusSuccess:
-			result.SuccessCloudIDs = converter.PtrToSlice(status.LoadBalancerIds)
-		}
-	}
-	return true, result
-}
-
-// Poll 返回创建任务结果
-func (h *updateListenerPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, requestIDs []*string) (
-	map[string]*clb.DescribeTaskStatusResponseParams, error) {
-
-	taskOpt := &typelb.TCloudDescribeTaskStatusOption{Region: h.region}
-	result := make(map[string]*clb.DescribeTaskStatusResponseParams)
-	// 查询对应异步任务状态
-	for _, reqID := range requestIDs {
-		taskOpt.TaskId = converter.PtrToVal(reqID)
-		if taskOpt.TaskId == "" {
-			return nil, errors.New("empty tcloud request ID")
-		}
-		status, err := client.CLBDescribeTaskStatus(kt, taskOpt)
-		if err != nil {
-			return nil, err
-		}
-
-		result[taskOpt.TaskId] = status
 	}
 	return result, nil
 }
@@ -363,73 +247,17 @@ func (t *TCloudImpl) DeleteListener(kt *kit.Kit, opt *typelb.TCloudDeleteListene
 	}
 
 	respPoller := poller.Poller[*TCloudImpl, map[string]*clb.DescribeTaskStatusResponseParams, poller.BaseDoneResult]{
-		Handler: &deleteListenerPollingHandler{opt.Region},
+		Handler: &createClbPollingHandler{opt.Region},
 	}
 
 	reqID := deleteResp.Response.RequestId
-	result, err := respPoller.PollUntilDone(t, kt, []*string{reqID}, types.NewBatchDeleteListenerPollerOption())
+	result, err := respPoller.PollUntilDone(t, kt, []*string{reqID}, types.NewLoadBalancerDefaultPollerOption())
 	if err != nil {
 		return nil, err
 	}
 	if len(result.SuccessCloudIDs) == 0 {
 		return nil, errf.Newf(errf.CloudVendorError,
 			"no any listener being deleted, TencentCloudSDK RequestId: %s", converter.PtrToVal(reqID))
-	}
-	return result, nil
-}
-
-var _ poller.PollingHandler[*TCloudImpl, map[string]*clb.DescribeTaskStatusResponseParams,
-	poller.BaseDoneResult] = new(deleteListenerPollingHandler)
-
-type deleteListenerPollingHandler struct {
-	region string
-}
-
-// Done 操作成功状态判断
-func (h *deleteListenerPollingHandler) Done(clbStatusMap map[string]*clb.DescribeTaskStatusResponseParams) (
-	bool, *poller.BaseDoneResult) {
-
-	result := &poller.BaseDoneResult{
-		SuccessCloudIDs: make([]string, 0),
-		FailedCloudIDs:  make([]string, 0),
-		UnknownCloudIDs: make([]string, 0),
-	}
-
-	for _, status := range clbStatusMap {
-		if status.Status == nil {
-			return false, nil
-		}
-		switch converter.PtrToVal(status.Status) {
-		case CLBTaskStatusRunning:
-			// 还有任务在运行则是没有成功
-			return false, nil
-		case CLBTaskStatusFail:
-			result.FailedCloudIDs = converter.PtrToSlice(status.LoadBalancerIds)
-		case CLBTaskStatusSuccess:
-			result.SuccessCloudIDs = converter.PtrToSlice(status.LoadBalancerIds)
-		}
-	}
-	return true, result
-}
-
-// Poll 返回任务结果
-func (h *deleteListenerPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, requestIDs []*string) (
-	map[string]*clb.DescribeTaskStatusResponseParams, error) {
-
-	taskOpt := &typelb.TCloudDescribeTaskStatusOption{Region: h.region}
-	result := make(map[string]*clb.DescribeTaskStatusResponseParams)
-	// 查询对应异步任务状态
-	for _, reqID := range requestIDs {
-		taskOpt.TaskId = converter.PtrToVal(reqID)
-		if taskOpt.TaskId == "" {
-			return nil, errors.New("empty tcloud request ID")
-		}
-		status, err := client.CLBDescribeTaskStatus(kt, taskOpt)
-		if err != nil {
-			return nil, err
-		}
-
-		result[taskOpt.TaskId] = status
 	}
 	return result, nil
 }
@@ -458,73 +286,17 @@ func (t *TCloudImpl) CreateRule(kt *kit.Kit, opt *typelb.TCloudCreateRuleOption)
 		return nil, err
 	}
 	respPoller := poller.Poller[*TCloudImpl, map[string]*clb.DescribeTaskStatusResponseParams, poller.BaseDoneResult]{
-		Handler: &createRulePollingHandler{opt.Region},
+		Handler: &createClbPollingHandler{opt.Region},
 	}
 
 	reqID := createResp.Response.RequestId
-	result, err := respPoller.PollUntilDone(t, kt, []*string{reqID}, types.NewBatchCreateRulePollerOption())
+	result, err := respPoller.PollUntilDone(t, kt, []*string{reqID}, types.NewLoadBalancerDefaultPollerOption())
 	if err != nil {
 		return nil, err
 	}
 	if len(result.SuccessCloudIDs) == 0 {
 		return nil, errf.Newf(errf.CloudVendorError,
 			"no any rule being created, TencentCloudSDK RequestId: %s", converter.PtrToVal(reqID))
-	}
-	return result, nil
-}
-
-var _ poller.PollingHandler[*TCloudImpl, map[string]*clb.DescribeTaskStatusResponseParams,
-	poller.BaseDoneResult] = new(createRulePollingHandler)
-
-type createRulePollingHandler struct {
-	region string
-}
-
-// Done 操作成功状态判断
-func (h *createRulePollingHandler) Done(clbStatusMap map[string]*clb.DescribeTaskStatusResponseParams) (
-	bool, *poller.BaseDoneResult) {
-
-	result := &poller.BaseDoneResult{
-		SuccessCloudIDs: make([]string, 0),
-		FailedCloudIDs:  make([]string, 0),
-		UnknownCloudIDs: make([]string, 0),
-	}
-
-	for _, status := range clbStatusMap {
-		if status.Status == nil {
-			return false, nil
-		}
-		switch converter.PtrToVal(status.Status) {
-		case CLBTaskStatusRunning:
-			// 还有任务在运行则是没有成功
-			return false, nil
-		case CLBTaskStatusFail:
-			result.FailedCloudIDs = converter.PtrToSlice(status.LoadBalancerIds)
-		case CLBTaskStatusSuccess:
-			result.SuccessCloudIDs = converter.PtrToSlice(status.LoadBalancerIds)
-		}
-	}
-	return true, result
-}
-
-// Poll 返回任务结果
-func (h *createRulePollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, requestIDs []*string) (
-	map[string]*clb.DescribeTaskStatusResponseParams, error) {
-
-	taskOpt := &typelb.TCloudDescribeTaskStatusOption{Region: h.region}
-	result := make(map[string]*clb.DescribeTaskStatusResponseParams)
-	// 查询对应异步任务状态
-	for _, reqID := range requestIDs {
-		taskOpt.TaskId = converter.PtrToVal(reqID)
-		if taskOpt.TaskId == "" {
-			return nil, errors.New("empty tcloud request ID")
-		}
-		status, err := client.CLBDescribeTaskStatus(kt, taskOpt)
-		if err != nil {
-			return nil, err
-		}
-
-		result[taskOpt.TaskId] = status
 	}
 	return result, nil
 }
@@ -634,73 +406,17 @@ func (t *TCloudImpl) UpdateRule(kt *kit.Kit, opt *typelb.TCloudUpdateRuleOption)
 		return nil, err
 	}
 	respPoller := poller.Poller[*TCloudImpl, map[string]*clb.DescribeTaskStatusResponseParams, poller.BaseDoneResult]{
-		Handler: &updateRulePollingHandler{opt.Region},
+		Handler: &createClbPollingHandler{opt.Region},
 	}
 
 	reqID := updateResp.Response.RequestId
-	result, err := respPoller.PollUntilDone(t, kt, []*string{reqID}, types.NewBatchUpdateRulePollerOption())
+	result, err := respPoller.PollUntilDone(t, kt, []*string{reqID}, types.NewLoadBalancerDefaultPollerOption())
 	if err != nil {
 		return nil, err
 	}
 	if len(result.SuccessCloudIDs) == 0 {
 		return nil, errf.Newf(errf.CloudVendorError,
 			"no any rule being updated, TencentCloudSDK RequestId: %s", converter.PtrToVal(reqID))
-	}
-	return result, nil
-}
-
-var _ poller.PollingHandler[*TCloudImpl, map[string]*clb.DescribeTaskStatusResponseParams,
-	poller.BaseDoneResult] = new(updateRulePollingHandler)
-
-type updateRulePollingHandler struct {
-	region string
-}
-
-// Done 操作成功状态判断
-func (h *updateRulePollingHandler) Done(clbStatusMap map[string]*clb.DescribeTaskStatusResponseParams) (
-	bool, *poller.BaseDoneResult) {
-
-	result := &poller.BaseDoneResult{
-		SuccessCloudIDs: make([]string, 0),
-		FailedCloudIDs:  make([]string, 0),
-		UnknownCloudIDs: make([]string, 0),
-	}
-
-	for _, status := range clbStatusMap {
-		if status.Status == nil {
-			return false, nil
-		}
-		switch converter.PtrToVal(status.Status) {
-		case CLBTaskStatusRunning:
-			// 还有任务在运行则是没有成功
-			return false, nil
-		case CLBTaskStatusFail:
-			result.FailedCloudIDs = converter.PtrToSlice(status.LoadBalancerIds)
-		case CLBTaskStatusSuccess:
-			result.SuccessCloudIDs = converter.PtrToSlice(status.LoadBalancerIds)
-		}
-	}
-	return true, result
-}
-
-// Poll 返回任务结果
-func (h *updateRulePollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, requestIDs []*string) (
-	map[string]*clb.DescribeTaskStatusResponseParams, error) {
-
-	taskOpt := &typelb.TCloudDescribeTaskStatusOption{Region: h.region}
-	result := make(map[string]*clb.DescribeTaskStatusResponseParams)
-	// 查询对应异步任务状态
-	for _, reqID := range requestIDs {
-		taskOpt.TaskId = converter.PtrToVal(reqID)
-		if taskOpt.TaskId == "" {
-			return nil, errors.New("empty tcloud request ID")
-		}
-		status, err := client.CLBDescribeTaskStatus(kt, taskOpt)
-		if err != nil {
-			return nil, err
-		}
-
-		result[taskOpt.TaskId] = status
 	}
 	return result, nil
 }
@@ -743,73 +459,17 @@ func (t *TCloudImpl) UpdateDomainAttr(kt *kit.Kit, opt *typelb.TCloudUpdateDomai
 		return nil, err
 	}
 	respPoller := poller.Poller[*TCloudImpl, map[string]*clb.DescribeTaskStatusResponseParams, poller.BaseDoneResult]{
-		Handler: &updateDomainAttrPollingHandler{opt.Region},
+		Handler: &createClbPollingHandler{opt.Region},
 	}
 
 	reqID := updateResp.Response.RequestId
-	result, err := respPoller.PollUntilDone(t, kt, []*string{reqID}, types.NewBatchCreateRulePollerOption())
+	result, err := respPoller.PollUntilDone(t, kt, []*string{reqID}, types.NewLoadBalancerDefaultPollerOption())
 	if err != nil {
 		return nil, err
 	}
 	if len(result.SuccessCloudIDs) == 0 {
 		return nil, errf.Newf(errf.CloudVendorError,
 			"no any domain attributes being updated, TencentCloudSDK RequestId: %s", converter.PtrToVal(reqID))
-	}
-	return result, nil
-}
-
-var _ poller.PollingHandler[*TCloudImpl, map[string]*clb.DescribeTaskStatusResponseParams,
-	poller.BaseDoneResult] = new(updateDomainAttrPollingHandler)
-
-type updateDomainAttrPollingHandler struct {
-	region string
-}
-
-// Done 操作成功状态判断
-func (h *updateDomainAttrPollingHandler) Done(clbStatusMap map[string]*clb.DescribeTaskStatusResponseParams) (
-	bool, *poller.BaseDoneResult) {
-
-	result := &poller.BaseDoneResult{
-		SuccessCloudIDs: make([]string, 0),
-		FailedCloudIDs:  make([]string, 0),
-		UnknownCloudIDs: make([]string, 0),
-	}
-
-	for _, status := range clbStatusMap {
-		if status.Status == nil {
-			return false, nil
-		}
-		switch converter.PtrToVal(status.Status) {
-		case CLBTaskStatusRunning:
-			// 还有任务在运行则是没有成功
-			return false, nil
-		case CLBTaskStatusFail:
-			result.FailedCloudIDs = converter.PtrToSlice(status.LoadBalancerIds)
-		case CLBTaskStatusSuccess:
-			result.SuccessCloudIDs = converter.PtrToSlice(status.LoadBalancerIds)
-		}
-	}
-	return true, result
-}
-
-// Poll 返回任务结果
-func (h *updateDomainAttrPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, requestIDs []*string) (
-	map[string]*clb.DescribeTaskStatusResponseParams, error) {
-
-	taskOpt := &typelb.TCloudDescribeTaskStatusOption{Region: h.region}
-	result := make(map[string]*clb.DescribeTaskStatusResponseParams)
-	// 查询对应异步任务状态
-	for _, reqID := range requestIDs {
-		taskOpt.TaskId = converter.PtrToVal(reqID)
-		if taskOpt.TaskId == "" {
-			return nil, errors.New("empty tcloud request ID")
-		}
-		status, err := client.CLBDescribeTaskStatus(kt, taskOpt)
-		if err != nil {
-			return nil, err
-		}
-
-		result[taskOpt.TaskId] = status
 	}
 	return result, nil
 }
@@ -852,73 +512,17 @@ func (t *TCloudImpl) DeleteRule(kt *kit.Kit, opt *typelb.TCloudDeleteRuleOption)
 	}
 
 	respPoller := poller.Poller[*TCloudImpl, map[string]*clb.DescribeTaskStatusResponseParams, poller.BaseDoneResult]{
-		Handler: &createListenerPollingHandler{opt.Region},
+		Handler: &createClbPollingHandler{opt.Region},
 	}
 
 	reqID := deleteResp.Response.RequestId
-	result, err := respPoller.PollUntilDone(t, kt, []*string{reqID}, types.NewBatchDeleteRulePollerOption())
+	result, err := respPoller.PollUntilDone(t, kt, []*string{reqID}, types.NewLoadBalancerDefaultPollerOption())
 	if err != nil {
 		return nil, err
 	}
 	if len(result.SuccessCloudIDs) == 0 {
 		return nil, errf.Newf(errf.CloudVendorError,
-			"no any listener being deleted, TencentCloudSDK RequestId: %s", converter.PtrToVal(reqID))
-	}
-	return result, nil
-}
-
-var _ poller.PollingHandler[*TCloudImpl, map[string]*clb.DescribeTaskStatusResponseParams,
-	poller.BaseDoneResult] = new(deleteRulePollingHandler)
-
-type deleteRulePollingHandler struct {
-	region string
-}
-
-// Done 操作成功状态判断
-func (h *deleteRulePollingHandler) Done(clbStatusMap map[string]*clb.DescribeTaskStatusResponseParams) (
-	bool, *poller.BaseDoneResult) {
-
-	result := &poller.BaseDoneResult{
-		SuccessCloudIDs: make([]string, 0),
-		FailedCloudIDs:  make([]string, 0),
-		UnknownCloudIDs: make([]string, 0),
-	}
-
-	for _, status := range clbStatusMap {
-		if status.Status == nil {
-			return false, nil
-		}
-		switch converter.PtrToVal(status.Status) {
-		case CLBTaskStatusRunning:
-			// 还有任务在运行则是没有成功
-			return false, nil
-		case CLBTaskStatusFail:
-			result.FailedCloudIDs = converter.PtrToSlice(status.LoadBalancerIds)
-		case CLBTaskStatusSuccess:
-			result.SuccessCloudIDs = converter.PtrToSlice(status.LoadBalancerIds)
-		}
-	}
-	return true, result
-}
-
-// Poll 返回任务结果
-func (h *deleteRulePollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, requestIDs []*string) (
-	map[string]*clb.DescribeTaskStatusResponseParams, error) {
-
-	taskOpt := &typelb.TCloudDescribeTaskStatusOption{Region: h.region}
-	result := make(map[string]*clb.DescribeTaskStatusResponseParams)
-	// 查询对应异步任务状态
-	for _, reqID := range requestIDs {
-		taskOpt.TaskId = converter.PtrToVal(reqID)
-		if taskOpt.TaskId == "" {
-			return nil, errors.New("empty tcloud request ID")
-		}
-		status, err := client.CLBDescribeTaskStatus(kt, taskOpt)
-		if err != nil {
-			return nil, err
-		}
-
-		result[taskOpt.TaskId] = status
+			"no any rule being deleted, TencentCloudSDK RequestId: %s", converter.PtrToVal(reqID))
 	}
 	return result, nil
 }

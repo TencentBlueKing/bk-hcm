@@ -88,48 +88,8 @@ func NewBatchCreateCertPollerOption() *poller.PollUntilDoneOption {
 	}
 }
 
-// NewBatchCreateListenerPollerOption 超时时间5分钟，10次之内重试间隔时间2s，10次之后重试间隔时间2-30s之间
-func NewBatchCreateListenerPollerOption() *poller.PollUntilDoneOption {
-	return &poller.PollUntilDoneOption{
-		TimeoutTimeSecond: 5 * 60,
-		Retry:             retry.NewRetryPolicy(10, [2]uint{2000, 30000}),
-	}
-}
-
-// NewBatchUpdateListenerPollerOption 超时时间5分钟，10次之内重试间隔时间2s，10次之后重试间隔时间2-30s之间
-func NewBatchUpdateListenerPollerOption() *poller.PollUntilDoneOption {
-	return &poller.PollUntilDoneOption{
-		TimeoutTimeSecond: 5 * 60,
-		Retry:             retry.NewRetryPolicy(10, [2]uint{2000, 30000}),
-	}
-}
-
-// NewBatchDeleteListenerPollerOption 超时时间5分钟，10次之内重试间隔时间2s，10次之后重试间隔时间2-30s之间
-func NewBatchDeleteListenerPollerOption() *poller.PollUntilDoneOption {
-	return &poller.PollUntilDoneOption{
-		TimeoutTimeSecond: 5 * 60,
-		Retry:             retry.NewRetryPolicy(10, [2]uint{2000, 30000}),
-	}
-}
-
-// NewBatchCreateRulePollerOption 超时时间5分钟，10次之内重试间隔时间2s，10次之后重试间隔时间2-30s之间
-func NewBatchCreateRulePollerOption() *poller.PollUntilDoneOption {
-	return &poller.PollUntilDoneOption{
-		TimeoutTimeSecond: 5 * 60,
-		Retry:             retry.NewRetryPolicy(10, [2]uint{2000, 30000}),
-	}
-}
-
-// NewBatchUpdateRulePollerOption 超时时间5分钟，10次之内重试间隔时间2s，10次之后重试间隔时间2-30s之间
-func NewBatchUpdateRulePollerOption() *poller.PollUntilDoneOption {
-	return &poller.PollUntilDoneOption{
-		TimeoutTimeSecond: 5 * 60,
-		Retry:             retry.NewRetryPolicy(10, [2]uint{2000, 30000}),
-	}
-}
-
-// NewBatchDeleteRulePollerOption 超时时间5分钟，10次之内重试间隔时间2s，10次之后重试间隔时间2-30s之间
-func NewBatchDeleteRulePollerOption() *poller.PollUntilDoneOption {
+// NewLoadBalancerDefaultPollerOption 超时时间5分钟，10次之内重试间隔时间2s，10次之后重试间隔时间2-30s之间
+func NewLoadBalancerDefaultPollerOption() *poller.PollUntilDoneOption {
 	return &poller.PollUntilDoneOption{
 		TimeoutTimeSecond: 5 * 60,
 		Retry:             retry.NewRetryPolicy(10, [2]uint{2000, 30000}),
