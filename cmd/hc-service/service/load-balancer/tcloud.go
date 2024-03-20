@@ -52,8 +52,6 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 
 	h.Add("TCloudCreateUrlRule", http.MethodPatch,
 		"/vendors/tcloud/listeners/{lbl_id}/rules/batch/create", svc.TCloudCreateUrlRule)
-	h.Add("TCloudUpdateRule", http.MethodPatch,
-		"/vendors/tcloud/listeners/{lbl_id}/rules/{rule_id}", svc.TCloudUpdateRule)
 
 	h.Load(cap.WebService)
 }
@@ -359,7 +357,6 @@ func convRuleCreate(r protolb.TCloudRuleCreate) *typelb.RuleInfo {
 		SessionExpireTime: r.SessionExpireTime,
 		HealthCheck:       r.HealthCheck,
 		Certificate:       r.Certificates,
-		MultiCertInfo:     r.MultiCertInfo,
 		Scheduler:         r.Scheduler,
 		ForwardType:       r.ForwardType,
 		DefaultServer:     r.DefaultServer,
@@ -377,66 +374,4 @@ func convRuleCreate(r protolb.TCloudRuleCreate) *typelb.RuleInfo {
 	}
 
 	return cloud
-}
-
-// ------------------- 更新七层规则
-
-// TCloudUpdateRule 更新七层规则
-func (svc *clbSvc) TCloudUpdateRule(cts *rest.Contexts) (any, error) {
-
-	lblID := cts.PathParameter("lbl_id").String()
-	if len(lblID) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "listener id is required")
-	}
-
-	ruleID := cts.PathParameter("rule_id").String()
-	if len(ruleID) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "rule_id is required")
-	}
-	// TODO
-
-	req := new(protolb.TCloudLBUpdateReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	// 获取lb基本信息
-	lb, err := svc.dataCli.TCloud.LoadBalancer.Get(cts.Kit, lbID)
-	if err != nil {
-		logs.Errorf("fail to get tcloud clb(%s), err: %v, rid: %s", lbID, err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	// 调用云上更新接口
-	client, err := svc.ad.TCloud(cts.Kit, lb.AccountID)
-	if err != nil {
-		return nil, err
-	}
-
-	adtOpt := &typelb.TCloudUpdateOption{
-		Region:                   lb.Region,
-		LoadBalancerId:           lb.CloudID,
-		LoadBalancerName:         req.Name,
-		InternetChargeType:       req.InternetChargeType,
-		InternetMaxBandwidthOut:  req.InternetMaxBandwidthOut,
-		BandwidthpkgSubType:      req.BandwidthpkgSubType,
-		LoadBalancerPassToTarget: req.LoadBalancerPassToTarget,
-		SnatPro:                  req.SnatPro,
-		DeleteProtect:            req.DeleteProtect,
-		ModifyClassicDomain:      req.ModifyClassicDomain,
-	}
-
-	_, err = client.UpdateLoadBalancer(cts.Kit, adtOpt)
-	if err != nil {
-		logs.Errorf("fail to call tcloud update load balancer(id:%s),err: %v, rid: %s", lbID, err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	// 同步云上变更信息
-	return nil, svc.lbSync(cts.Kit, client, lb.AccountID, lb.Region, []string{lb.CloudID})
-
 }

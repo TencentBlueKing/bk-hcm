@@ -65,6 +65,6 @@ func (c *ClbClient) BatchCreate(kt *kit.Kit, req *protolb.TCloudBatchCreateReq) 
 
 // Update ...
 func (c *ClbClient) Update(kt *kit.Kit, id string, req *protolb.TCloudLBUpdateReq) error {
-	return common.RequestNoResp[protolb.TCloudLBUpdateReq](c.client, http.MethodPatch, kt, req, "/load_balancers/%s",
-		id)
+	return common.RequestNoResp[protolb.TCloudLBUpdateReq](c.client, http.MethodPatch,
+		kt, req, "/load_balancers/%s", id)
 }

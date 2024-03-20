@@ -201,9 +201,8 @@ type TCloudRuleCreate struct {
 	TrpcFunc          *string  `json:"trpc_func,omitempty"`
 	TrpcCallee        *string  `json:"trpc_callee,omitempty"`
 
-	HealthCheck   *corelb.TCloudHealthCheckInfo `json:"health_check,omitempty"`
-	Certificates  *corelb.TCloudCertificateInfo `json:"certificates,omitempty"`
-	MultiCertInfo *corelb.MultiCertInfo         `json:"multi_cert_info,omitempty"`
+	HealthCheck  *corelb.TCloudHealthCheckInfo `json:"health_check,omitempty"`
+	Certificates *corelb.TCloudCertificateInfo `json:"certificates,omitempty"`
 }
 
 // Validate request.

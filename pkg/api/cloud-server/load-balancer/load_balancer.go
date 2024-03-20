@@ -121,7 +121,7 @@ type ListListenerBase struct {
 	DomainNum     int64                         `json:"domain_num"`
 	UrlNum        int64                         `json:"url_num"`
 	HealthCheck   *corelb.TCloudHealthCheckInfo `json:"health_check"`
-	MultiCert     *corelb.MultiCertInfo         `json:"multi_cert"`
+	Certificate   *corelb.TCloudCertificateInfo `json:"certificate"`
 }
 
 // -------------------------- Get Listener --------------------------
@@ -136,7 +136,7 @@ type GetListenerDetail struct {
 	TargetGroupName    string                        `json:"target_group_name"`
 	CloudTargetGroupID string                        `json:"cloud_target_group_id"`
 	HealthCheck        *corelb.TCloudHealthCheckInfo `json:"health_check"`
-	MultiCert          *corelb.MultiCertInfo         `json:"multi_cert"`
+	Certificate        *corelb.TCloudCertificateInfo `json:"certificate"`
 	DomainNum          int64                         `json:"domain_num"`
 	UrlNum             int64                         `json:"url_num"`
 }

@@ -124,7 +124,7 @@ func (svc *lbSvc) listTCloudLbUrlRuleMap(kt *kit.Kit, lbID string, lblIDs []stri
 			listenerRuleMap[ruleItem.LblID] = cslb.ListListenerBase{
 				TargetGroupID: ruleItem.TargetGroupID,
 				HealthCheck:   ruleItem.HealthCheck,
-				MultiCert:     ruleItem.MultiCert,
+				Certificate:   ruleItem.Certificate,
 			}
 		}
 
@@ -235,7 +235,7 @@ func (svc *lbSvc) getTCloudListener(kt *kit.Kit, lblID string, bkBizID int64) (*
 		DomainNum:     urlRuleMap[listenerInfo.ID].DomainNum,
 		UrlNum:        urlRuleMap[listenerInfo.ID].UrlNum,
 		HealthCheck:   urlRuleMap[listenerInfo.ID].HealthCheck,
-		MultiCert:     urlRuleMap[listenerInfo.ID].MultiCert,
+		Certificate:   urlRuleMap[listenerInfo.ID].Certificate,
 	}
 
 	// 只有4层监听器才显示目标组信息
