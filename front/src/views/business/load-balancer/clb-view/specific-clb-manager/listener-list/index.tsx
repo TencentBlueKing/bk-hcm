@@ -1,12 +1,24 @@
-import { defineComponent } from 'vue';
-import './index.scss';
-import { useTable } from '@/hooks/useTable/useTable';
+import { defineComponent, watch } from 'vue';
+// import components
 import { Button } from 'bkui-vue';
 import { Plus } from 'bkui-vue/lib/icon';
+// import stores
+import { useLoadBalancerStore } from '@/store/loadbalancer';
+// import custom hooks
+import { useTable } from '@/hooks/useTable/useTable';
+import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+import { useI18n } from 'vue-i18n';
+import './index.scss';
 
 export default defineComponent({
   setup() {
-    const { CommonTable } = useTable({
+    // use hooks
+    const { t } = useI18n();
+    // use stores
+    const loadBalancerStore = useLoadBalancerStore();
+
+    const { columns, settings } = useColumns('listener');
+    const { CommonTable, getListData } = useTable({
       searchOptions: {
         searchData: [
           {
@@ -45,86 +57,39 @@ export default defineComponent({
       },
       tableOptions: {
         columns: [
+          ...columns,
           {
-            label: '监听器名称',
-            field: 'listenerName',
-          },
-          {
-            label: '协议',
-            field: 'protocol',
-          },
-          {
-            label: '端口',
-            field: 'port',
-          },
-          {
-            label: '均衡方式',
-            field: 'balanceMode',
-          },
-          {
-            label: '域名数量',
-            field: 'domainCount',
-          },
-          {
-            label: 'URL数量',
-            field: 'urlCount',
-          },
-          {
-            label: '同步状态',
-            field: 'syncStatus',
-          },
-          {
-            label: '操作',
+            label: t('操作'),
             field: 'actions',
-          },
-        ],
-        reviewData: [
-          {
-            listenerName: 'Listener001',
-            protocol: 'HTTP',
-            port: 80,
-            balanceMode: 'RoundRobin',
-            domainCount: 5,
-            urlCount: 10,
-            syncStatus: 'Synchronized',
-            actions: 'Edit',
-          },
-          {
-            listenerName: 'Listener002',
-            protocol: 'HTTPS',
-            port: 443,
-            balanceMode: 'LeastConnections',
-            domainCount: 3,
-            urlCount: 5,
-            syncStatus: 'Pending',
-            actions: 'Delete',
-          },
-          {
-            listenerName: 'Listener003',
-            protocol: 'TCP',
-            port: 22,
-            balanceMode: 'IPHash',
-            domainCount: 2,
-            urlCount: 7,
-            syncStatus: 'Failed',
-            actions: 'Update',
+            render: () => (
+              <div class='operate-groups'>
+                <Button text theme='primary'>
+                  {t('编辑')}
+                </Button>
+                <Button text theme='primary'>
+                  {t('删除')}
+                </Button>
+              </div>
+            ),
           },
         ],
         extra: {
-          settings: {
-            fields: [],
-            checked: [],
-            limit: 0,
-            size: '',
-            sizeList: [],
-            showLineHeight: false,
-          },
+          settings: settings.value,
         },
       },
       requestOption: {
-        type: '',
+        type: `load_balancers/${loadBalancerStore.currentSelectedTreeNode.id}/listeners`,
       },
     });
+
+    watch(
+      () => loadBalancerStore.currentSelectedTreeNode.id,
+      (val) => {
+        if (!val) return;
+        getListData([], `load_balancers/${val}/listeners`);
+      },
+    );
+
     return () => (
       <div>
         <CommonTable>
@@ -133,9 +98,9 @@ export default defineComponent({
               <div class={'flex-row align-item-center'}>
                 <Button theme={'primary'}>
                   <Plus class={'f20'} />
-                  新增监听器
+                  {t('新增监听器')}
                 </Button>
-                <Button>批量删除</Button>
+                <Button>{t('批量删除')}</Button>
               </div>
             ),
           }}

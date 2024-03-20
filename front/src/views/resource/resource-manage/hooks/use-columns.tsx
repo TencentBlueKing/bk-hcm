@@ -1128,7 +1128,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       onlyShowOnList: true,
       align: 'right',
     },
-    getLinkField('name', '负载均衡名称'),
+    getLinkField('lb', '负载均衡名称', 'name'),
     {
       label: '负载均衡域名',
       field: 'domain',
@@ -1201,6 +1201,40 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '所属vpc',
       field: 'vpc_id',
+    },
+  ];
+
+  const listenerColumns = [
+    getLinkField('listener', '监听器名称', 'name'),
+    {
+      label: '协议',
+      field: 'protocol',
+      isDefaultShow: true,
+    },
+    {
+      label: '端口',
+      field: 'port',
+      isDefaultShow: true,
+    },
+    {
+      label: '均衡方式',
+      field: 'scheduler',
+      isDefaultShow: true,
+    },
+    {
+      label: '域名数量',
+      field: 'domain_num',
+      isDefaultShow: true,
+    },
+    {
+      label: 'URL数量',
+      field: 'url_num',
+      isDefaultShow: true,
+    },
+    {
+      label: '同步状态',
+      field: 'syncStatus',
+      isDefaultShow: true,
     },
   ];
 
@@ -1595,6 +1629,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     eips: eipColumns,
     operationRecord: operationRecordColumns,
     lb: lbColumns,
+    listener: listenerColumns,
     targetGroup: targetGroupColumns,
     rsConfig: rsConfigColumns,
     domain: domainColumns,
