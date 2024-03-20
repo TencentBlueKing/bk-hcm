@@ -430,13 +430,13 @@ type TCloudCreateRuleOption struct {
 	// ListenerId监听器ID
 	ListenerId string `json:"listener_id" validate:"required"`
 	// Rules 新建转发规则的信息
-	Rules []*RuleInfo `json:"rules"`
+	Rules []*RuleInfo `json:"rules" validate:"required,min=1"`
 }
 
 // RuleInfo 规则基本信息
 type RuleInfo struct {
 	// Url 转发规则的路径。长度限制为：1~200。
-	Url *string `json:"url,omitempty"`
+	Url *string `json:"url,omitempty"  validate:"required"`
 	// Domain 转发规则的域名。长度限制为：1~80。Domain和Domains只需要传一个，单域名规则传Domain，多域名规则传Domains。
 	Domain *string `json:"domain,omitempty"`
 	// SessionExpireTime 会话保持时间。设置为0表示关闭会话保持，开启会话保持可取值30~86400，单位：秒。

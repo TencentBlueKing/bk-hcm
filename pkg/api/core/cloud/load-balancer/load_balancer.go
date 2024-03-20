@@ -118,7 +118,7 @@ type BaseTCloudLbUrlRule struct {
 	SessionType        string                 `json:"session_type"`
 	SessionExpire      int64                  `json:"session_expire"`
 	HealthCheck        *TCloudHealthCheckInfo `json:"health_check"`
-	Certificate        *TCloudCertificateInfo `json:"certificate"`
+	MultiCert          *MultiCertInfo         `json:"multi_cert"`
 
 	Memo           *string `json:"memo"`
 	*core.Revision `json:",inline"`

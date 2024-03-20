@@ -345,6 +345,22 @@ func (t *TCloudImpl) formatCreateRuleRequest(opt *typelb.TCloudCreateRuleOption)
 				CertCaContent: item.Certificate.CertCaContent,
 			}
 		}
+		// 双向认证支持
+		if item.MultiCertInfo != nil {
+			tmpRule.MultiCertInfo = &clb.MultiCertInfo{
+				SSLMode:  item.Certificate.SSLMode,
+				CertList: nil,
+			}
+			certs := make([]*clb.CertInfo, 0, len(tmpRule.MultiCertInfo.CertList))
+			for _, cert := range item.MultiCertInfo.CertList {
+				certs = append(certs, &clb.CertInfo{
+					CertId:      cert.CertId,
+					CertName:    cert.CertCaName,
+					CertContent: cert.CertContent,
+					CertKey:     cert.CertKey,
+				})
+			}
+		}
 		req.Rules = append(req.Rules, tmpRule)
 	}
 	return req

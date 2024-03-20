@@ -25,6 +25,7 @@ import (
 
 	"hcm/pkg/adaptor/types/core"
 	typelb "hcm/pkg/adaptor/types/load-balancer"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/converter"
@@ -152,8 +153,8 @@ func (opt TCloudDisAssociateLbSecurityGroupReq) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
-// TCloudUpdateReq security group update request.
-type TCloudUpdateReq struct {
+// TCloudLBUpdateReq tcloud load balancer  update request.
+type TCloudLBUpdateReq struct {
 	ClbID string `json:"load_balancer_id" validate:"omitempty"`
 
 	Name *string `json:"name" validate:"omitempty"`
@@ -172,6 +173,40 @@ type TCloudUpdateReq struct {
 }
 
 // Validate tcloud security group update request.
-func (req *TCloudUpdateReq) Validate() error {
+func (req *TCloudLBUpdateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// TCloudRuleBatchCreateReq tcloud lb url rule batch create req.
+type TCloudRuleBatchCreateReq struct {
+	Rules []TCloudRuleCreate `json:"rules" validate:"min=1"`
+}
+
+// Validate request.
+func (req *TCloudRuleBatchCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// TCloudRuleCreate 腾讯云url规则创建
+type TCloudRuleCreate struct {
+	Url               string   `json:"url,omitempty" validate:"required"`
+	Domains           []string `json:"domains,omitempty"`
+	SessionExpireTime *int64   `json:"session_expire_time,omitempty"`
+	Scheduler         *string  `json:"scheduler,omitempty"`
+	ForwardType       *string  `json:"forward_type,omitempty"`
+	DefaultServer     *bool    `json:"default_server,omitempty"`
+	Http2             *bool    `json:"http2,omitempty"`
+	TargetType        *string  `json:"target_type,omitempty"`
+	Quic              *bool    `json:"quic,omitempty"`
+	TrpcFunc          *string  `json:"trpc_func,omitempty"`
+	TrpcCallee        *string  `json:"trpc_callee,omitempty"`
+
+	HealthCheck   *corelb.TCloudHealthCheckInfo `json:"health_check,omitempty"`
+	Certificates  *corelb.TCloudCertificateInfo `json:"certificates,omitempty"`
+	MultiCertInfo *corelb.MultiCertInfo         `json:"multi_cert_info,omitempty"`
+}
+
+// Validate request.
+func (req *TCloudRuleCreate) Validate() error {
 	return validator.Validate.Struct(req)
 }
