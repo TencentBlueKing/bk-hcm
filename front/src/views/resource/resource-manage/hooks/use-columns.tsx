@@ -1333,24 +1333,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
 
   const domainColumns = [
     {
-      label: '协议',
-      field: 'protocol',
-      isDefaultShow: true,
-      filter: true,
-    },
-    {
-      label: '端口',
-      field: 'port',
-      isDefaultShow: true,
-      filter: true,
-    },
-    {
-      label: '轮询方式',
-      field: 'polling_method',
-      isDefaultShow: true,
-      filter: true,
-    },
-    {
       label: 'URL数量',
       field: 'url_count',
       isDefaultShow: true,
