@@ -87,15 +87,15 @@ type BaseListener struct {
 	AccountID string        `json:"account_id"`
 	BkBizID   int64         `json:"bk_biz_id"`
 
-	LbID          string   `json:"lb_id"`
-	CloudLbID     string   `json:"cloud_lb_id"`
-	Protocol      string   `json:"protocol"`
-	Port          int64    `json:"port"`
-	DefaultDomain string   `json:"default_domain"`
-	Zones         []string `json:"zones"`
+	LbID          string              `json:"lb_id"`
+	CloudLbID     string              `json:"cloud_lb_id"`
+	Protocol      enumor.ProtocolType `json:"protocol"`
+	Port          int64               `json:"port"`
+	DefaultDomain string              `json:"default_domain"`
+	Zones         []string            `json:"zones"`
 	// 腾讯云 CLB 的七层 HTTPS 监听器支持 SNI，即支持绑定多个证书，监听规则中的不同域名可使用不同证书。
 	// SNI关闭，证书在监听器上；SNI关闭，证书在对应规则上
-	SniSwitch int64 `json:"sni_switch"`
+	SniSwitch enumor.SniType `json:"sni_switch"`
 
 	Memo           *string `json:"memo"`
 	*core.Revision `json:",inline"`
@@ -168,7 +168,7 @@ type BaseClbTargetGroup struct {
 	TargetGroupType string                 `json:"target_group_type"`
 	VpcID           string                 `json:"vpc_id"`
 	CloudVpcID      string                 `json:"cloud_vpc_id"`
-	Protocol        string                 `json:"protocol"`
+	Protocol        enumor.ProtocolType    `json:"protocol"`
 	Region          string                 `json:"region"`
 	Port            int64                  `json:"port"`
 	Weight          int64                  `json:"weight"`

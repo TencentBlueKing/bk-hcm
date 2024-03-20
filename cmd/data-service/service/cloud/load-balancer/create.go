@@ -398,3 +398,191 @@ func (svc *lbSvc) BatchCreateTCloudUrlRule(cts *rest.Contexts) (any, error) {
 
 	return &core.BatchCreateResult{IDs: ids}, nil
 }
+
+// BatchCreateListener 批量创建监听器
+func (svc *lbSvc) BatchCreateListener(cts *rest.Contexts) (any, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return batchCreateListener(cts, svc)
+	default:
+		return nil, errf.New(errf.InvalidParameter, "unsupported vendor: "+string(vendor))
+	}
+}
+
+func batchCreateListener(cts *rest.Contexts, svc *lbSvc) (any, error) {
+	req := new(dataproto.ListenerBatchCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	result, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
+		models := make([]*tablelb.LoadBalancerListenerTable, 0, len(req.Listeners))
+		for _, item := range req.Listeners {
+			models = append(models, &tablelb.LoadBalancerListenerTable{
+				CloudID:       item.CloudID,
+				Name:          item.Name,
+				Vendor:        item.Vendor,
+				AccountID:     item.AccountID,
+				BkBizID:       item.BkBizID,
+				LBID:          item.LbID,
+				CloudLBID:     item.CloudLbID,
+				Protocol:      item.Protocol,
+				Port:          item.Port,
+				DefaultDomain: item.Domain,
+				Creator:       cts.Kit.User,
+				Reviser:       cts.Kit.User,
+			})
+		}
+		ids, err := svc.dao.LoadBalancerListener().BatchCreateWithTx(cts.Kit, txn, models)
+		if err != nil {
+			logs.Errorf("[%s]fail to batch create listener, err: %v, rid:%s", err, cts.Kit.Rid)
+			return nil, fmt.Errorf("batch create listener failed, err: %v", err)
+		}
+		return ids, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ids, ok := result.([]string)
+	if !ok {
+		return nil, fmt.Errorf("batch create listener but return id type is not []string, id type: %v",
+			reflect.TypeOf(result).String())
+	}
+
+	return &core.BatchCreateResult{IDs: ids}, nil
+}
+
+// BatchCreateListenerWithRule 批量创建监听器及规则
+func (svc *lbSvc) BatchCreateListenerWithRule(cts *rest.Contexts) (any, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return svc.batchCreateTCloudListenerWithRule(cts)
+	default:
+		return nil, errf.New(errf.InvalidParameter, "unsupported vendor: "+string(vendor))
+	}
+}
+
+func (svc *lbSvc) batchCreateTCloudListenerWithRule(cts *rest.Contexts) (any, error) {
+	req := new(dataproto.ListenerWithRuleBatchCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	ids, err := svc.insertListenerWithRule(cts.Kit, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &core.BatchCreateResult{IDs: ids}, nil
+}
+
+func (svc *lbSvc) insertListenerWithRule(kt *kit.Kit, req *dataproto.ListenerWithRuleBatchCreateReq) ([]string, error) {
+	result, err := svc.dao.Txn().AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
+		models := make([]*tablelb.LoadBalancerListenerTable, 0, len(req.ListenerWithRules))
+		for _, item := range req.ListenerWithRules {
+			models = append(models, &tablelb.LoadBalancerListenerTable{
+				CloudID:       item.CloudID,
+				Name:          item.Name,
+				Vendor:        item.Vendor,
+				AccountID:     item.AccountID,
+				BkBizID:       item.BkBizID,
+				LBID:          item.LbID,
+				CloudLBID:     item.CloudLbID,
+				Protocol:      item.Protocol,
+				Port:          item.Port,
+				DefaultDomain: item.Domain,
+				SniSwitch:     item.SniSwitch,
+				Creator:       kt.User,
+				Reviser:       kt.User,
+			})
+		}
+		lblIDs, err := svc.dao.LoadBalancerListener().BatchCreateWithTx(kt, txn, models)
+		if err != nil {
+			logs.Errorf("[%s]fail to batch create listener, err: %v, rid:%s", err, kt.Rid)
+			return nil, fmt.Errorf("batch create listener failed, err: %v", err)
+		}
+
+		ruleModels := make([]*tablelb.TCloudLbUrlRuleTable, 0, len(req.ListenerWithRules))
+		for _, item := range req.ListenerWithRules {
+			certJSON, err := json.MarshalToString(item.Certificate)
+			if err != nil {
+				logs.Errorf("json marshal Certificate failed, err: %v", err)
+				return nil, errf.NewFromErr(errf.InvalidParameter, err)
+			}
+
+			ruleModels = append(ruleModels, &tablelb.TCloudLbUrlRuleTable{
+				CloudID:            item.CloudRuleID,
+				RuleType:           item.RuleType,
+				LbID:               item.LbID,
+				CloudLbID:          item.CloudLbID,
+				LblID:              lblIDs[0],
+				CloudLBLID:         item.CloudID,
+				TargetGroupID:      item.TargetGroupID,
+				CloudTargetGroupID: item.CloudTargetGroupID,
+				Domain:             item.Domain,
+				URL:                item.Url,
+				Scheduler:          item.Scheduler,
+				SessionType:        item.SessionType,
+				SessionExpire:      item.SessionExpire,
+				Certificate:        types.JsonField(certJSON),
+				Creator:            kt.User,
+				Reviser:            kt.User,
+			})
+		}
+		ruleIDs, err := svc.dao.LoadBalancerTCloudUrlRule().BatchCreateWithTx(kt, txn, ruleModels)
+		if err != nil {
+			logs.Errorf("[%s]fail to batch create listener url rule, err: %v, rid:%s", err, kt.Rid)
+			return nil, fmt.Errorf("batch create listener url rule failed, err: %v", err)
+		}
+
+		ruleRelModels := make([]*tablelb.TargetListenerRuleRelTable, 0, len(req.ListenerWithRules))
+		for _, item := range req.ListenerWithRules {
+			ruleRelModels = append(ruleRelModels, &tablelb.TargetListenerRuleRelTable{
+				ListenerRuleID:   ruleIDs[0],
+				ListenerRuleType: item.RuleType,
+				TargetGroupID:    item.TargetGroupID,
+				LbID:             item.LbID,
+				LblID:            lblIDs[0],
+				BindingStatus:    enumor.SuccessBindingStatus,
+				Creator:          kt.User,
+				Reviser:          kt.User,
+			})
+		}
+		_, err = svc.dao.LoadBalancerTargetListenerRuleRel().BatchCreateWithTx(kt, txn, ruleRelModels)
+		if err != nil {
+			logs.Errorf("[%s]fail to batch create listener rule rel, err: %v, rid:%s", err, kt.Rid)
+			return nil, fmt.Errorf("batch create listener rule rel failed, err: %v", err)
+		}
+
+		return lblIDs, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ids, ok := result.([]string)
+	if !ok {
+		return nil, fmt.Errorf("batch create listener with rule but return id type is not []string, id type: %v",
+			reflect.TypeOf(result).String())
+	}
+	return ids, nil
+}

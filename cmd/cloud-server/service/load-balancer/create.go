@@ -27,7 +27,7 @@ import (
 	cloudserver "hcm/pkg/api/cloud-server"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
-	protolb "hcm/pkg/api/hc-service/load-balancer"
+	hcproto "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
@@ -75,7 +75,7 @@ func (svc *lbSvc) BatchCreateLB(cts *rest.Contexts) (any, error) {
 }
 
 func (svc *lbSvc) batchCreateTCloudLB(kt *kit.Kit, rawReq json.RawMessage) (any, error) {
-	req := new(protolb.TCloudBatchCreateReq)
+	req := new(hcproto.TCloudBatchCreateReq)
 	if err := json.Unmarshal(rawReq, req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -162,4 +162,75 @@ func (svc *lbSvc) batchCreateTCloudTargetGroup(kt *kit.Kit, rawReq json.RawMessa
 		},
 	}
 	return svc.client.DataService().TCloud.LoadBalancer.BatchCreateTCloudTargetGroup(kt, opt)
+}
+
+// CreateBizListener create biz listener.
+func (svc *lbSvc) CreateBizListener(cts *rest.Contexts) (any, error) {
+	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	return svc.createListener(cts, handler.BizOperateAuth, bkBizID)
+}
+
+func (svc *lbSvc) createListener(cts *rest.Contexts, authHandler handler.ValidWithAuthHandler,
+	bkBizID int64) (any, error) {
+
+	req := new(cloudserver.ResourceCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		logs.Errorf("create listener request decode failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if len(req.AccountID) == 0 {
+		return nil, errf.Newf(errf.InvalidParameter, "account_id is required")
+	}
+
+	lbID := cts.PathParameter("lb_id").String()
+	if len(lbID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "lb_id is required")
+	}
+
+	// authorized instances
+	basicInfo := &types.CloudResourceBasicInfo{
+		AccountID: req.AccountID,
+	}
+	err := authHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Listener,
+		Action: meta.Create, BasicInfo: basicInfo})
+	if err != nil {
+		logs.Errorf("create listener auth failed, err: %v, account id: %s, rid: %s", err, req.AccountID, cts.Kit.Rid)
+		return nil, err
+	}
+
+	accountInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(
+		cts.Kit, enumor.AccountCloudResType, req.AccountID)
+	if err != nil {
+		logs.Errorf("get account basic info failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	switch accountInfo.Vendor {
+	case enumor.TCloud:
+		return svc.batchCreateTCloudListener(cts.Kit, req.Data, bkBizID, lbID)
+	default:
+		return nil, fmt.Errorf("vendor: %s not support", accountInfo.Vendor)
+	}
+}
+
+func (svc *lbSvc) batchCreateTCloudListener(kt *kit.Kit, rawReq json.RawMessage, bkBizID int64,
+	lbID string) (any, error) {
+
+	req := new(hcproto.ListenerWithRuleCreateReq)
+	if err := json.Unmarshal(rawReq, req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	// 参数校验
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req.BkBizID = bkBizID
+	req.LbID = lbID
+	return svc.client.HCService().TCloud.Clb.CreateListener(kt, req)
 }

@@ -144,11 +144,11 @@ func (clb TCloudClb) GetIPVersion() enumor.IPAddressType {
 
 // TCloudListListenersOption defines options to list tcloud listeners instances.
 type TCloudListListenersOption struct {
-	Region         string   `json:"region" validate:"required"`
-	LoadBalancerId string   `json:"load_balancer_id" validate:"required"`
-	CloudIDs       []string `json:"cloud_ids" validate:"omitempty"`
-	Protocol       string   `json:"protocol" validate:"omitempty"`
-	Port           int64    `json:"port" validate:"omitempty"`
+	Region         string              `json:"region" validate:"required"`
+	LoadBalancerId string              `json:"load_balancer_id" validate:"required"`
+	CloudIDs       []string            `json:"cloud_ids" validate:"omitempty"`
+	Protocol       enumor.ProtocolType `json:"protocol" validate:"omitempty"`
+	Port           int64               `json:"port" validate:"omitempty"`
 }
 
 // Validate tcloud listeners list option.
@@ -174,11 +174,11 @@ func (clb TCloudListener) GetCloudID() string {
 
 // TCloudListTargetsOption defines options to list tcloud targets instances.
 type TCloudListTargetsOption struct {
-	Region         string   `json:"region" validate:"required"`
-	LoadBalancerId string   `json:"load_balancer_id" validate:"required"`
-	CloudIDs       []string `json:"cloud_ids" validate:"omitempty"`
-	Protocol       string   `json:"protocol" validate:"omitempty"`
-	Port           int64    `json:"port" validate:"omitempty"`
+	Region         string              `json:"region" validate:"required"`
+	LoadBalancerId string              `json:"load_balancer_id" validate:"required"`
+	CloudIDs       []string            `json:"cloud_ids" validate:"omitempty"`
+	Protocol       enumor.ProtocolType `json:"protocol" validate:"omitempty"`
+	Port           int64               `json:"port" validate:"omitempty"`
 }
 
 // Validate tcloud targets list option.
@@ -343,7 +343,7 @@ type TCloudCreateListenerOption struct {
 	// ListenerName 要创建的监听器名称
 	ListenerName string `json:"listener_name" validate:"required"`
 	// Protocol 监听器协议： TCP | UDP | HTTP | HTTPS | TCP_SSL | QUIC
-	Protocol string `json:"protocol" validate:"required"`
+	Protocol enumor.ProtocolType `json:"protocol" validate:"required"`
 	// Port 要将监听器创建到哪个端口
 	Port int64 `json:"port" validate:"required"`
 	// HealthCheck 健康检查相关参数，此参数仅适用于TCP/UDP/TCP_SSL/QUIC监听器
@@ -356,7 +356,7 @@ type TCloudCreateListenerOption struct {
 	// Scheduler 分别表示按权重轮询、最小连接数， 默认为 WRR。此参数仅适用于TCP/UDP/TCP_SSL/QUIC监听器。
 	Scheduler string `json:"scheduler"`
 	// SniSwitch 是否开启SNI特性，此参数仅适用于HTTPS监听器。
-	SniSwitch int64 `json:"sni_switch"`
+	SniSwitch enumor.SniType `json:"sni_switch"`
 	// TargetType 后端目标类型，NODE表示绑定普通节点，TARGETGROUP表示绑定目标组
 	TargetType string `json:"target_type"`
 	// 会话保持类型。不传或传NORMAL表示默认会话保持类型。
@@ -395,7 +395,7 @@ type TCloudUpdateListenerOption struct {
 	// Scheduler 分别表示按权重轮询、最小连接数， 默认为 WRR。
 	Scheduler string `json:"scheduler"`
 	// SniSwitch 是否开启SNI特性，此参数仅适用于HTTPS监听器。注意：未开启SNI的监听器可以开启SNI；已开启SNI的监听器不能关闭SNI。
-	SniSwitch int64 `json:"sni_wwitch"`
+	SniSwitch enumor.SniType `json:"sni_switch"`
 	// TargetType 后端目标类型，NODE表示绑定普通节点，TARGETGROUP表示绑定目标组。
 	TargetType string `json:"target_type"`
 	// KeepaliveEnable 是否开启长连接，此参数仅适用于HTTP/HTTPS监听器。

@@ -103,3 +103,51 @@ func (cli *LoadBalancerClient) GetTargetGroup(kt *kit.Kit, id string) (
 	return common.Request[common.Empty, corelb.TargetGroup[corelb.TCloudTargetGroupExtension]](
 		cli.client, rest.GET, kt, nil, "/target_groups/%s", id)
 }
+
+// BatchCreateTCloudUrlRule 批量创建腾讯云Url规则
+func (cli *LoadBalancerClient) BatchCreateTCloudUrlRule(kt *kit.Kit, req *dataproto.TCloudUrlRuleBatchCreateReq) (
+	*core.BatchCreateResult, error) {
+
+	return common.Request[dataproto.TCloudUrlRuleBatchCreateReq, core.BatchCreateResult](
+		cli.client, rest.POST, kt, req, "/url_rules/batch/create")
+}
+
+// BatchUpdateTCloudUrlRule 批量更新腾讯云Url规则
+func (cli *LoadBalancerClient) BatchUpdateTCloudUrlRule(kt *kit.Kit, req *dataproto.TCloudUrlRuleBatchUpdateReq) (
+	*core.BatchCreateResult, error) {
+
+	return common.Request[dataproto.TCloudUrlRuleBatchUpdateReq, core.BatchCreateResult](
+		cli.client, rest.PATCH, kt, req, "/url_rules/batch/update")
+}
+
+// BatchDeleteTCloudUrlRule 批量删除腾讯云Url规则
+func (cli *LoadBalancerClient) BatchDeleteTCloudUrlRule(kt *kit.Kit, req *dataproto.LoadBalancerBatchDeleteReq) (
+	*core.BatchCreateResult, error) {
+
+	return common.Request[dataproto.LoadBalancerBatchDeleteReq, core.BatchCreateResult](
+		cli.client, rest.DELETE, kt, req, "/url_rules/batch")
+}
+
+// BatchCreateTCloudListener 批量创建腾讯云监听器
+func (cli *LoadBalancerClient) BatchCreateTCloudListener(kt *kit.Kit, req *dataproto.ListenerBatchCreateReq) (
+	*core.BatchCreateResult, error) {
+
+	return common.Request[dataproto.ListenerBatchCreateReq, core.BatchCreateResult](
+		cli.client, rest.POST, kt, req, "/listeners/batch/create")
+}
+
+// BatchCreateTCloudListenerWithRule 批量创建腾讯云监听器+规则
+func (cli *LoadBalancerClient) BatchCreateTCloudListenerWithRule(kt *kit.Kit,
+	req *dataproto.ListenerWithRuleBatchCreateReq) (*core.BatchCreateResult, error) {
+
+	return common.Request[dataproto.ListenerWithRuleBatchCreateReq, core.BatchCreateResult](
+		cli.client, rest.POST, kt, req, "/listeners/rules/batch/create")
+}
+
+// BatchUpdateTCloudListener 批量更新腾讯云监听器
+func (cli *LoadBalancerClient) BatchUpdateTCloudListener(kt *kit.Kit, req *dataproto.TCloudListenerUpdateReq) (
+	*core.BatchCreateResult, error) {
+
+	return common.Request[dataproto.TCloudListenerUpdateReq, core.BatchCreateResult](
+		cli.client, rest.PATCH, kt, req, "/listeners/batch/update")
+}

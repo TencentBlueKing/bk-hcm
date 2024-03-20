@@ -22,6 +22,7 @@ package tcloud
 import (
 	"net/http"
 
+	"hcm/pkg/api/core"
 	protolb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/client/common"
@@ -67,4 +68,20 @@ func (c *ClbClient) BatchCreate(kt *kit.Kit, req *protolb.TCloudBatchCreateReq) 
 func (c *ClbClient) Update(kt *kit.Kit, id string, req *protolb.TCloudLBUpdateReq) error {
 	return common.RequestNoResp[protolb.TCloudLBUpdateReq](c.client, http.MethodPatch,
 		kt, req, "/load_balancers/%s", id)
+}
+
+// CreateListener 创建监听器
+func (c *ClbClient) CreateListener(kt *kit.Kit, req *protolb.ListenerWithRuleCreateReq) (
+	*core.BatchCreateResult, error) {
+
+	return common.Request[protolb.ListenerWithRuleCreateReq, core.BatchCreateResult](
+		c.client, http.MethodPost, kt, req, "/listeners/create")
+}
+
+// UpdateListener 更新监听器
+func (c *ClbClient) UpdateListener(kt *kit.Kit, id string, req *protolb.ListenerWithRuleUpdateReq) (
+	*protolb.BatchCreateResult, error) {
+
+	return common.Request[protolb.ListenerWithRuleUpdateReq, protolb.BatchCreateResult](
+		c.client, http.MethodPatch, kt, req, "/listeners/%s", id)
 }

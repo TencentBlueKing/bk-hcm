@@ -123,7 +123,7 @@ func (t *TCloudImpl) ListListeners(kt *kit.Kit, opt *typelb.TCloudListListenersO
 	}
 
 	if len(opt.Protocol) != 0 {
-		req.Protocol = common.StringPtr(opt.Protocol)
+		req.Protocol = common.StringPtr(string(opt.Protocol))
 	}
 
 	if opt.Port > 0 {
@@ -175,7 +175,7 @@ func (t *TCloudImpl) ListTargets(kt *kit.Kit, opt *typelb.TCloudListTargetsOptio
 	}
 
 	if len(opt.Protocol) != 0 {
-		req.Protocol = common.StringPtr(opt.Protocol)
+		req.Protocol = common.StringPtr(string(opt.Protocol))
 	}
 
 	if opt.Port > 0 {
