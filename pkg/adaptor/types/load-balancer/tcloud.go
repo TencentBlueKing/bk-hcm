@@ -106,13 +106,13 @@ func (opt TCloudListListenersOption) Validate() error {
 	return nil
 }
 
-// TCloudListeners for listeners Instance
-type TCloudListeners struct {
+// TCloudListener for listener Instance
+type TCloudListener struct {
 	*tclb.Listener
 }
 
 // GetCloudID get cloud id
-func (clb TCloudListeners) GetCloudID() string {
+func (clb TCloudListener) GetCloudID() string {
 	return converter.PtrToVal(clb.ListenerId)
 }
 
@@ -136,8 +136,8 @@ func (opt TCloudListTargetsOption) Validate() error {
 	return nil
 }
 
-// TCloudListenerTargets for listener targets Instance
-type TCloudListenerTargets struct {
+// TCloudListenerTarget for listener target Instance
+type TCloudListenerTarget struct {
 	*tclb.ListenerBackend
 }
 

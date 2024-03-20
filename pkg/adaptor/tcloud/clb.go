@@ -100,7 +100,7 @@ func (t *TCloudImpl) CountClb(kt *kit.Kit, region string) (int32, error) {
 // ListListeners list listeners.
 // reference: https://cloud.tencent.com/document/api/214/30686
 func (t *TCloudImpl) ListListeners(kt *kit.Kit, opt *typelb.TCloudListListenersOption) (
-	[]typelb.TCloudListeners, int32, error) {
+	[]typelb.TCloudListener, int32, error) {
 
 	if opt == nil {
 		return nil, 0, errf.New(errf.InvalidParameter, "list option is required")
@@ -136,9 +136,9 @@ func (t *TCloudImpl) ListListeners(kt *kit.Kit, opt *typelb.TCloudListListenersO
 		return nil, 0, err
 	}
 
-	listeners := make([]typelb.TCloudListeners, 0, len(resp.Response.Listeners))
+	listeners := make([]typelb.TCloudListener, 0, len(resp.Response.Listeners))
 	for _, one := range resp.Response.Listeners {
-		listeners = append(listeners, typelb.TCloudListeners{Listener: one})
+		listeners = append(listeners, typelb.TCloudListener{Listener: one})
 	}
 
 	totalCount := int32(0)
@@ -152,7 +152,7 @@ func (t *TCloudImpl) ListListeners(kt *kit.Kit, opt *typelb.TCloudListListenersO
 // ListTargets 获取监听器后端绑定的机器列表信息.
 // reference: https://cloud.tencent.com/document/api/214/30686
 func (t *TCloudImpl) ListTargets(kt *kit.Kit, opt *typelb.TCloudListTargetsOption) (
-	[]typelb.TCloudListenerTargets, error) {
+	[]typelb.TCloudListenerTarget, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list option is required")
@@ -188,9 +188,9 @@ func (t *TCloudImpl) ListTargets(kt *kit.Kit, opt *typelb.TCloudListTargetsOptio
 		return nil, err
 	}
 
-	listeners := make([]typelb.TCloudListenerTargets, 0, len(resp.Response.Listeners))
+	listeners := make([]typelb.TCloudListenerTarget, 0, len(resp.Response.Listeners))
 	for _, one := range resp.Response.Listeners {
-		listeners = append(listeners, typelb.TCloudListenerTargets{ListenerBackend: one})
+		listeners = append(listeners, typelb.TCloudListenerTarget{ListenerBackend: one})
 	}
 
 	return listeners, nil
