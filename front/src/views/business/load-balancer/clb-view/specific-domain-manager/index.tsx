@@ -1,20 +1,33 @@
-import { useTable } from '@/hooks/useTable/useTable';
-import { defineComponent, ref } from 'vue';
-import './index.scss';
+import { defineComponent, ref, watch } from 'vue';
+// import components
 import { Button, Form, Input, Select } from 'bkui-vue';
 import { Done, EditLine, Error, Plus, Spinner } from 'bkui-vue/lib/icon';
-import BatchOperationDialog from '@/components/batch-operation-dialog';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
+import BatchOperationDialog from '@/components/batch-operation-dialog';
 import CommonSideslider from '@/components/common-sideslider';
+// use stores
+import { useLoadBalancerStore } from '@/store/loadbalancer';
+// import custom hooks
+import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+import { useI18n } from 'vue-i18n';
+// import constants
+import { SYNC_STAUS_MAP } from '@/common/constant';
+// import static resources
 import StatusSuccess from '@/assets/image/success-account.png';
 import StatusFailure from '@/assets/image/failed-account.png';
 import StatusPartialSuccess from '@/assets/image/result-waiting.png';
-import { SYNC_STAUS_MAP } from '@/common/constant';
+import './index.scss';
+
 const { FormItem } = Form;
 
 export default defineComponent({
   setup() {
+    // use hooks
+    const { t } = useI18n();
+    // use stores
+    const loadBalancerStore = useLoadBalancerStore();
+
     const isBatchDeleteDialogShow = ref(false);
     const radioGroupValue = ref(false);
     const isDomainSidesliderShow = ref(false);
@@ -23,8 +36,8 @@ export default defineComponent({
     const tableColumns = [
       ...columns,
       {
-        label: '目标组',
-        field: 'targetGroup',
+        label: t('目标组'),
+        field: 'cloud_target_group_id',
         isDefaultShow: true,
         render: ({ cell }: any) => (
           <div class={'flex-row align-item-center target-group-name'}>
@@ -44,7 +57,7 @@ export default defineComponent({
         ),
       },
       {
-        label: '同步状态',
+        label: t('同步状态'),
         field: 'syncStatus',
         isDefaultShow: true,
         render: ({ cell }: any) => {
@@ -83,16 +96,16 @@ export default defineComponent({
         },
       },
       {
-        label: '操作',
+        label: t('操作'),
         field: 'actions',
         isDefaultShow: true,
         render: () => (
-          <div>
-            <Button text theme='primary' class={'mr8'}>
-              编辑
+          <div class='operate-groups'>
+            <Button text theme='primary'>
+              {t('编辑')}
             </Button>
             <Button text theme='primary'>
-              删除
+              {t('删除')}
             </Button>
           </div>
         ),
@@ -161,7 +174,7 @@ export default defineComponent({
         },
       ],
     };
-    const { CommonTable } = useTable({
+    const { CommonTable, getListData } = useTable({
       searchOptions: {
         searchData: [
           {
@@ -196,44 +209,6 @@ export default defineComponent({
       },
       tableOptions: {
         columns: tableColumns,
-        reviewData: [
-          {
-            urlPath: '/home',
-            protocol: 'HTTP',
-            port: 80,
-            pollingMethod: 'RoundRobin',
-            targetGroup: 'GroupA',
-            syncStatus: 'a',
-            actions: 'Edit',
-          },
-          {
-            urlPath: '/about',
-            protocol: 'HTTPS',
-            port: 443,
-            pollingMethod: 'LeastConnections',
-            targetGroup: 'GroupB',
-            syncStatus: 'b',
-            actions: 'Delete',
-          },
-          {
-            urlPath: '/contact',
-            protocol: 'TCP',
-            port: 22,
-            pollingMethod: 'SourceIP',
-            targetGroup: 'GroupC',
-            syncStatus: 'c',
-            actions: 'Update',
-          },
-          {
-            urlPath: '/contact',
-            protocol: 'TCP',
-            port: 22,
-            pollingMethod: 'SourceIP',
-            targetGroup: 'GroupC',
-            syncStatus: 'd',
-            actions: 'Update',
-          },
-        ],
         extra: {
           settings: tableSettings.value,
           'row-class': ({ syncStatus }: { syncStatus: string }) => {
@@ -244,9 +219,18 @@ export default defineComponent({
         },
       },
       requestOption: {
-        type: '',
+        type: `vendors/tcloud/listeners/${loadBalancerStore.currentSelectedTreeNode.listener_id}/rules`,
       },
     });
+
+    watch(
+      () => loadBalancerStore.currentSelectedTreeNode,
+      (val) => {
+        const { listener_id } = val;
+        if (!listener_id) return;
+        getListData([], `vendors/tcloud/listeners/${listener_id}/rules`);
+      },
+    );
 
     const handleBatchDelete = () => {};
     const handleSubmit = () => {};
@@ -259,9 +243,9 @@ export default defineComponent({
               <div class={'flex-row align-item-center'}>
                 <Button theme={'primary'} onClick={() => (isDomainSidesliderShow.value = true)}>
                   <Plus class={'f20'} />
-                  新增 URL 路径
+                  {t('新增 URL 路径')}
                 </Button>
-                <Button onClick={() => (isBatchDeleteDialogShow.value = true)}>批量删除</Button>
+                <Button onClick={() => (isBatchDeleteDialogShow.value = true)}>{t('批量删除')}</Button>
               </div>
             ),
           }}
@@ -281,8 +265,8 @@ export default defineComponent({
             ),
             tab: () => (
               <BkRadioGroup v-model={radioGroupValue.value}>
-                <BkRadioButton label={false}>权重为0</BkRadioButton>
-                <BkRadioButton label={true}>权重不为0</BkRadioButton>
+                <BkRadioButton label={false}>{t('权重为0')}</BkRadioButton>
+                <BkRadioButton label={true}>{t('权重不为0')}</BkRadioButton>
               </BkRadioGroup>
             ),
           }}
@@ -293,25 +277,25 @@ export default defineComponent({
           v-model:isShow={isDomainSidesliderShow.value}
           onHandleSubmit={handleSubmit}>
           <p class={'create-url-text-item'}>
-            <span class={'create-url-text-item-label'}>监听器名称：</span>
+            <span class={'create-url-text-item-label'}>{t('监听器名称')}：</span>
             <span class={'create-url-text-item-value'}>web站点</span>
           </p>
           <p class={'create-url-text-item'}>
-            <span class={'create-url-text-item-label'}>协议端口：</span>
+            <span class={'create-url-text-item-label'}>{t('协议端口')}：</span>
             <span class={'create-url-text-item-value'}>666666</span>
           </p>
           <p class={'create-url-text-item'}>
-            <span class={'create-url-text-item-label'}>域名：</span>
+            <span class={'create-url-text-item-label'}>{t('域名')}：</span>
             <span class={'create-url-text-item-value'}>aaaaaaaaaa</span>
           </p>
           <Form formType='vertical'>
-            <FormItem label='URL 路径'>
+            <FormItem label={t('URL路径')}>
               <Input />
             </FormItem>
-            <FormItem label='均衡方式'>
+            <FormItem label={t('均衡方式')}>
               <Select />
             </FormItem>
-            <FormItem label='目标组'>
+            <FormItem label={t('目标组')}>
               <Select />
             </FormItem>
           </Form>

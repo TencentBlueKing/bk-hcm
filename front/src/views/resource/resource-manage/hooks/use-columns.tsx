@@ -1458,22 +1458,12 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: 'URL路径',
-      field: 'urlPath',
-      isDefaultShow: true,
-    },
-    {
-      label: '协议',
-      field: 'protocol',
-      isDefaultShow: true,
-    },
-    {
-      label: '端口',
-      field: 'port',
+      field: 'url',
       isDefaultShow: true,
     },
     {
       label: '轮询方式',
-      field: 'pollingMethod',
+      field: 'scheduler',
       isDefaultShow: true,
     },
   ];
