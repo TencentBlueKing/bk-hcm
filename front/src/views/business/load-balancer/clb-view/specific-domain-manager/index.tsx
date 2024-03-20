@@ -226,8 +226,9 @@ export default defineComponent({
     watch(
       () => loadBalancerStore.currentSelectedTreeNode,
       (val) => {
-        const { listener_id } = val;
-        if (!listener_id) return;
+        const { listener_id, type } = val;
+        if (type !== 'domain') return;
+        // 只有 type='domain' 时, 才去请求对应 listener+domain 下的 url 列表
         getListData([], `vendors/tcloud/listeners/${listener_id}/rules`);
       },
     );

@@ -102,10 +102,12 @@ export default defineComponent({
     });
 
     watch(
-      () => loadBalancerStore.currentSelectedTreeNode.id,
+      () => loadBalancerStore.currentSelectedTreeNode,
       (val) => {
-        if (!val) return;
-        getListData([], `vendors/tcloud/listeners/${val}/domains`);
+        const { id, type } = val;
+        if (type !== 'listener') return;
+        // 只有 type='listener' 时, 才去请求对应 listener 下的 domain 列表
+        getListData([], `vendors/tcloud/listeners/${id}/domains`);
       },
     );
 

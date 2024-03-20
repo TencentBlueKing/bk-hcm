@@ -83,10 +83,12 @@ export default defineComponent({
     });
 
     watch(
-      () => loadBalancerStore.currentSelectedTreeNode.id,
+      () => loadBalancerStore.currentSelectedTreeNode,
       (val) => {
-        if (!val) return;
-        getListData([], `load_balancers/${val}/listeners`);
+        const { id, type } = val;
+        if (type !== 'lb') return;
+        // 只有当 type='lb' 时, 才去请求对应 lb 下的 listener 列表
+        getListData([], `load_balancers/${id}/listeners`);
       },
     );
 
