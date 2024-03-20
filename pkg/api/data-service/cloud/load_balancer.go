@@ -169,17 +169,6 @@ func (req *LoadBalancerBatchDeleteReq) Validate() error {
 
 // -------------------------- List Listener --------------------------
 
-// ListListenerReq ...
-type ListListenerReq struct {
-	LbID         string `json:"lb_id" validate:"omitempty"`
-	core.ListReq `json:",inline"`
-}
-
-// Validate list request.
-func (req *ListListenerReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
-
 // ListenerListResult define listener list result.
 type ListenerListResult = core.ListResultT[corelb.BaseListener]
 

@@ -4,7 +4,6 @@ import (
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
-	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -41,9 +40,15 @@ func (svc *lbSvc) listListener(cts *rest.Contexts, authHandler handler.ListAuthR
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	filterWithLb, err := tools.And(tools.RuleEqual("lb_id", lbID), req.Filter)
+	if err != nil {
+		logs.Errorf("fail to merge loadbalancer id rule into request filter, err: %v, req.Filter: %+v, rid: %s",
+			err, req.Filter, cts.Kit.Rid)
+		return nil, err
+	}
 	// list authorized instances
 	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
-		ResType: meta.Listener, Action: meta.Find, Filter: req.Filter})
+		ResType: meta.LoadBalancer, Action: meta.Find, Filter: filterWithLb})
 	if err != nil {
 		logs.Errorf("list listener auth failed, lbID: %s, noPermFlag: %v, err: %v, rid: %s",
 			lbID, noPermFlag, err, cts.Kit.Rid)
@@ -56,12 +61,9 @@ func (svc *lbSvc) listListener(cts *rest.Contexts, authHandler handler.ListAuthR
 		return resList, nil
 	}
 
-	listenerReq := &dataproto.ListListenerReq{
-		LbID: lbID,
-		ListReq: core.ListReq{
-			Filter: expr,
-			Page:   req.Page,
-		},
+	listenerReq := &core.ListReq{
+		Filter: expr,
+		Page:   req.Page,
 	}
 	listenerList, err := svc.client.DataService().Global.LoadBalancer.ListListener(cts.Kit, listenerReq)
 	if err != nil {
@@ -70,6 +72,10 @@ func (svc *lbSvc) listListener(cts *rest.Contexts, authHandler handler.ListAuthR
 	}
 	if req.Page.Count {
 		resList.Count = listenerList.Count
+		return resList, nil
+	}
+
+	if len(listenerList.Details) == 0 {
 		return resList, nil
 	}
 
@@ -145,11 +151,9 @@ func (svc *lbSvc) listListenerMap(kt *kit.Kit, lblIDs []string) (map[string]core
 		return nil, nil
 	}
 
-	lblReq := &dataproto.ListListenerReq{
-		ListReq: core.ListReq{
-			Filter: tools.ContainersExpression("id", lblIDs),
-			Page:   core.NewDefaultBasePage(),
-		},
+	lblReq := &core.ListReq{
+		Filter: tools.ContainersExpression("id", lblIDs),
+		Page:   core.NewDefaultBasePage(),
 	}
 	lblList, err := svc.client.DataService().Global.LoadBalancer.ListListener(kt, lblReq)
 	if err != nil {

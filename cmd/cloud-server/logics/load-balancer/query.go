@@ -23,7 +23,6 @@ package lblogic
 import (
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
-	dataproto "hcm/pkg/api/data-service/cloud"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -59,14 +58,12 @@ func ListLoadBalancerMap(kt *kit.Kit, cli *dataservice.Client, lbIDs []string) (
 // GetListenerByID 根据监听器ID、业务ID获取监听器信息
 func GetListenerByID(kt *kit.Kit, cli *dataservice.Client, lblID string, bkBizID int64) (corelb.BaseListener, error) {
 	listenerInfo := corelb.BaseListener{}
-	lblReq := &dataproto.ListListenerReq{
-		ListReq: core.ListReq{
-			Filter: tools.ExpressionAnd(
-				tools.RuleEqual("id", lblID),
-				tools.RuleEqual("bk_biz_id", bkBizID),
-			),
-			Page: core.NewDefaultBasePage(),
-		},
+	lblReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("id", lblID),
+			tools.RuleEqual("bk_biz_id", bkBizID),
+		),
+		Page: core.NewDefaultBasePage(),
 	}
 	lblList, err := cli.Global.LoadBalancer.ListListener(kt, lblReq)
 	if err != nil {

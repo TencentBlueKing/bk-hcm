@@ -52,11 +52,11 @@ func (cli *LoadBalancerClient) BatchUpdateClbBizInfo(kt *kit.Kit, req *dataproto
 }
 
 // ListListener list listener.
-func (cli *LoadBalancerClient) ListListener(kt *kit.Kit, req *dataproto.ListListenerReq) (
+func (cli *LoadBalancerClient) ListListener(kt *kit.Kit, req *core.ListReq) (
 	*dataproto.ListenerListResult, error) {
 
-	return common.Request[dataproto.ListListenerReq, dataproto.ListenerListResult](
-		cli.client, rest.POST, kt, req, "/load_balancers/listeners/list")
+	return common.Request[core.ListReq, dataproto.ListenerListResult](cli.client,
+		rest.POST, kt, req, "/load_balancers/listeners/list")
 }
 
 // ListTarget list target.
