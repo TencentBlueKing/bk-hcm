@@ -174,7 +174,7 @@ type TCloudHealthCheckInfo struct {
 // TCloudCertificateInfo 证书信息，不存储具体证书信息，只保存对应id
 type TCloudCertificateInfo struct {
 	// 认证类型，UNIDIRECTIONAL：单向认证，MUTUAL：双向认证
-	SSLMode string `json:"ssl_mode"`
+	SSLMode *string `json:"ssl_mode"`
 	// CA证书，认证RS侧用的证书，只需要公钥
 	CaCloudID *string `json:"ca_cloud_id,omitempty"`
 	// 客户端证书，客户端向CLB发起请求时认证CLB来源是否可靠的证书。可以配置两个不同的加密类型的证书，

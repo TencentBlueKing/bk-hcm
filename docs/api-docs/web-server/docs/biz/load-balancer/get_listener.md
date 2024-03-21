@@ -31,9 +31,9 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/listeners/{id}
   "code": 0,
   "message": "",
   "data": {
-    "lbl_id": "00000001",
-    "lbl_name": "listener-name",
-    "cloud_lbl_id": "listener-123",
+    "id": "00000001",
+    "name": "listener-name",
+    "cloud_id": "listener-123",
     "vendor": "tcloud",
     "account_id": "0000001",
     "bk_biz_id": -1,
@@ -90,11 +90,11 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/listeners/{id}
 
 #### data
 
-| 参数名称                  | 参数类型   | 描述                             |
-|-----------------------|--------|--------------------------------|
-| lbl_id                | int    | 监听器ID                          |
-| lbl_name              | string | 监听器名称                          |
-| cloud_lbl_id          | string | 云监听器ID                         |
+| 参数名称               | 参数类型 | 描述                             |
+|-----------------------|--------|----------------------------------|
+| id                    | int    | 监听器ID                          |
+| name                  | string | 监听器名称                          |
+| cloud_id              | string | 云监听器ID                         |
 | vendor                | string | 供应商（枚举值：tcloud）                |
 | account_id            | string | 账号ID                           |
 | bk_biz_id             | int64  | 业务ID                           |
@@ -137,9 +137,8 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/listeners/{id}
 
 ### certificate
 
-| 参数名称         | 参数类型         | 描述                                   |
-|--------------|--------------|--------------------------------------|
-| ssl_mode     | string       | 认证类型，UNIDIRECTIONAL：单向认证，MUTUAL：双向认证 |
-| cert_id      | string       | 服务端证书的ID                             |
-| cert_ca_id   | string       | 客户端证书的 ID                            |
-| ext_cert_ids | string array | 多本服务器证书场景扩展的服务器证书ID                  |
+| 参数名称          | 参数类型       | 描述                                            |
+|------------------|--------------|-------------------------------------------------|
+| ssl_mode         | string       | 认证类型，UNIDIRECTIONAL：单向认证，MUTUAL：双向认证 |
+| ca_cloud_id      | string       | 服务端证书的云ID                                  |
+| client_cloud_ids | string array | 客户端证书的云ID                                  |
