@@ -49,6 +49,7 @@ func InitService(cap *capability.Capability) {
 	h.Add("BatchUpdateClbBizInfo", http.MethodPatch, "/load_balancers/biz/batch/update", svc.BatchUpdateClbBizInfo)
 	h.Add("GetListener", http.MethodGet, "/vendors/{vendor}/listeners/{id}", svc.GetListener)
 	h.Add("ListListener", http.MethodPost, "/load_balancers/listeners/list", svc.ListListener)
+	h.Add("ListListenerExt", http.MethodPost, "/vendors/tcloud/load_balancers/listeners/list", svc.ListListenerExt)
 	h.Add("ListTCloudUrlRule", http.MethodPost, "/vendors/tcloud/load_balancers/url_rules/list", svc.ListTCloudUrlRule)
 	h.Add("ListTarget", http.MethodPost, "/load_balancers/targets/list", svc.ListTarget)
 	h.Add("ListTargetGroup", http.MethodPost, "/load_balancers/target_groups/list", svc.ListTargetGroup)

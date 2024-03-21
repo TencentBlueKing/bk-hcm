@@ -330,3 +330,6 @@ type ListenerUpdateReq[Extension corelb.ListenerExtension] struct {
 func (req *ListenerUpdateReq[T]) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// TCloudListenerUpdate ...
+type TCloudListenerUpdate = ListenerUpdateReq[corelb.TCloudListenerExtension]

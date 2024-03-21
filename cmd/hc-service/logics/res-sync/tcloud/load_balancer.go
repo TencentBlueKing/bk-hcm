@@ -37,7 +37,6 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/runtime/filter"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 
@@ -82,7 +81,28 @@ func (cli *client) LoadBalancer(kt *kit.Kit, params *SyncBaseParams, opt *SyncLB
 		return nil, err
 	}
 
-	//  TODO: 同步监听器
+	//  获取同步后的lb数据
+	params.CloudIDs = nil
+	lbList, err := cli.listLBFromDB(kt, params)
+	if err != nil {
+		logs.Errorf("fail to get lb from db after lb layer sync, before listener sync, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	if len(lbList) == 0 {
+		return new(SyncResult), nil
+	}
+
+	lblParams := &SyncListenerParams{
+		AccountID: params.AccountID,
+		Region:    params.Region,
+		LbInfos:   lbList,
+	}
+
+	if _, err = cli.Listener(kt, lblParams); err != nil {
+		logs.Errorf("fail to sync listener of lbs(ids: %v), err: %v, rid: %s", params.CloudIDs, err, kt.Rid)
+		return nil, err
+	}
 
 	return new(SyncResult), nil
 }
@@ -90,10 +110,10 @@ func (cli *client) LoadBalancer(kt *kit.Kit, params *SyncBaseParams, opt *SyncLB
 // RemoveLoadBalancerDeleteFromCloud 删除存在本地但是在云上被删除的数据
 func (cli *client) RemoveLoadBalancerDeleteFromCloud(kt *kit.Kit, accountID string, region string) error {
 	req := &core.ListReq{
-		Filter: tools.EqualWithOpExpression(filter.And, map[string]interface{}{
-			"account_id": accountID,
-			"region":     region,
-		}),
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("account_id", accountID),
+			tools.RuleEqual("region", region),
+		),
 		Page: &core.BasePage{
 			Start: 0,
 			Limit: constant.BatchOperationMaxLimit,
@@ -116,7 +136,7 @@ func (cli *client) RemoveLoadBalancerDeleteFromCloud(kt *kit.Kit, accountID stri
 		var delCloudIDs []string
 
 		params := &SyncBaseParams{AccountID: accountID, Region: region, CloudIDs: cloudIDs}
-		delCloudIDs, err = cli.listRemoveLBID(kt, params)
+		delCloudIDs, err = cli.listRemovedLBID(kt, params)
 		if err != nil {
 			return err
 		}
@@ -137,8 +157,8 @@ func (cli *client) RemoveLoadBalancerDeleteFromCloud(kt *kit.Kit, accountID stri
 	return nil
 }
 
-// listRemoveLBID check lb exists, return its id if one can not be found
-func (cli *client) listRemoveLBID(kt *kit.Kit, params *SyncBaseParams) ([]string, error) {
+// listRemovedLBID check lb exists, return its id if one can not be found
+func (cli *client) listRemovedLBID(kt *kit.Kit, params *SyncBaseParams) ([]string, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -149,7 +169,7 @@ func (cli *client) listRemoveLBID(kt *kit.Kit, params *SyncBaseParams) ([]string
 	}
 	lbMap := cvt.StringSliceToMap(params.CloudIDs)
 
-	for _, batchCloudID := range slice.Split(params.CloudIDs, CLBDescribeMax) {
+	for _, batchCloudID := range slice.Split(params.CloudIDs, constant.TCLBDescribeMax) {
 		batchParam.CloudIDs = batchCloudID
 		found, err := cli.listLBFromCloud(kt, batchParam)
 		if err != nil {
@@ -301,9 +321,12 @@ func (cli *client) listLBFromDB(kt *kit.Kit, params *SyncBaseParams) ([]corelb.T
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("account_id", params.AccountID),
 			tools.RuleEqual("region", params.Region),
-			tools.RuleIn("cloud_id", params.CloudIDs),
 		),
 		Page: core.NewDefaultBasePage(),
+	}
+	// 支持查询所有，或者指定cloud_id
+	if len(params.CloudIDs) > 0 {
+		req.Filter.Rules = append(req.Filter.Rules, tools.RuleIn("cloud_id", params.CloudIDs))
 	}
 	result, err := cli.dbCli.TCloud.LoadBalancer.ListLoadBalancer(kt, req)
 	if err != nil {
@@ -396,7 +419,7 @@ func convertTCloudExtension(cloud typeslb.TCloudClb) *corelb.TCloudClbExtension 
 	// 没有碰到的则默认是false
 	for _, flag := range cloud.AttributeFlags {
 		switch cvt.PtrToVal(flag) {
-		case DeleteProtectAttrFlag:
+		case constant.TCLBDeleteProtect:
 			ext.DeleteProtect = true
 		}
 	}
@@ -459,7 +482,7 @@ func convCloudToDBUpdate(id string,
 	// 没有碰到的则默认是false
 	for _, flag := range cloud.AttributeFlags {
 		switch cvt.PtrToVal(flag) {
-		case DeleteProtectAttrFlag:
+		case constant.TCLBDeleteProtect:
 			lb.Extension.DeleteProtect = true
 		}
 	}
@@ -575,7 +598,7 @@ func isLBExtensionChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) 
 	}
 
 	// 逐个判断每种类型
-	if _, deleteProtect := attrs[DeleteProtectAttrFlag]; deleteProtect != db.Extension.DeleteProtect {
+	if _, deleteProtect := attrs[constant.TCLBDeleteProtect]; deleteProtect != db.Extension.DeleteProtect {
 		return true
 	}
 
@@ -626,9 +649,3 @@ type SyncLBOption struct {
 func (o *SyncLBOption) Validate() error {
 	return validator.Validate.Struct(o)
 }
-
-// CLBDescribeMax 腾讯云CLB默认查询大小
-const CLBDescribeMax = 20
-
-// DeleteProtectAttrFlag 腾讯云负载均衡删除保护
-const DeleteProtectAttrFlag = "DeleteProtect"

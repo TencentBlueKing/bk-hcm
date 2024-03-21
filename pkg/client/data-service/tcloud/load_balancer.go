@@ -145,9 +145,16 @@ func (cli *LoadBalancerClient) BatchCreateTCloudListenerWithRule(kt *kit.Kit,
 }
 
 // BatchUpdateTCloudListener 批量更新腾讯云监听器
-func (cli *LoadBalancerClient) BatchUpdateTCloudListener(kt *kit.Kit, req *dataproto.TCloudListenerUpdateReq) (
-	*core.BatchCreateResult, error) {
+func (cli *LoadBalancerClient) BatchUpdateTCloudListener(kt *kit.Kit, req *dataproto.TCloudListenerUpdateReq) error {
 
-	return common.Request[dataproto.TCloudListenerUpdateReq, core.BatchCreateResult](
+	return common.RequestNoResp[dataproto.TCloudListenerUpdateReq](
 		cli.client, rest.PATCH, kt, req, "/listeners/batch/update")
+}
+
+// ListListener list listener with tcloud extension.
+func (cli *LoadBalancerClient) ListListener(kt *kit.Kit, req *core.ListReq) (
+	*dataproto.TCloudListenerListResult, error) {
+
+	return common.Request[core.ListReq, dataproto.TCloudListenerListResult](cli.client,
+		rest.POST, kt, req, "/load_balancers/listeners/list")
 }

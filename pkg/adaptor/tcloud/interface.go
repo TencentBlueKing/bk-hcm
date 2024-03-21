@@ -169,4 +169,6 @@ type TCloud interface {
 	UpdateRule(kt *kit.Kit, opt *typelb.TCloudUpdateRuleOption) error
 	UpdateDomainAttr(kt *kit.Kit, opt *typelb.TCloudUpdateDomainAttrOption) error
 	DeleteRule(kt *kit.Kit, opt *typelb.TCloudDeleteRuleOption) error
+
+	ListListener(kt *kit.Kit, opt *typelb.TCloudListListenersOption) ([]typelb.TCloudListener, error)
 }

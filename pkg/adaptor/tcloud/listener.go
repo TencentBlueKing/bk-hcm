@@ -185,7 +185,7 @@ func convCert(optCert *corelb.TCloudCertificateInfo) *clb.MultiCertInfo {
 		multiCert.CertList = append(multiCert.CertList,
 			&clb.CertInfo{CertId: optCert.CaCloudID})
 	}
-	for _, c := range optCert.ClientCloudIDs {
+	for _, c := range optCert.CertCloudIDs {
 		multiCert.CertList = append(multiCert.CertList,
 			&clb.CertInfo{CertId: converter.ValToPtr(c)})
 	}
