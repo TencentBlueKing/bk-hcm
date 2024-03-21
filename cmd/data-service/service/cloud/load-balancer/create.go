@@ -352,7 +352,6 @@ func (svc *lbSvc) BatchCreateTCloudUrlRule(cts *rest.Contexts) (any, error) {
 			Domain:             rule.Domain,
 			URL:                rule.URL,
 			Scheduler:          rule.Scheduler,
-			SniSwitch:          rule.SniSwitch,
 			SessionType:        rule.SessionType,
 			SessionExpire:      rule.SessionExpire,
 			Memo:               rule.Memo,

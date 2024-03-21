@@ -112,6 +112,8 @@ create table `load_balancer_listener`
     `port`           bigint       not null,
     `default_domain` varchar(255)          default null,
     `zones`          json,
+    `sni_switch`     bigint                default 0,
+    `certificate`    json                  default null,
     `memo`           varchar(255)          default '',
 
     `creator`        varchar(64)  not null,
@@ -143,7 +145,6 @@ create table `tcloud_lb_url_rule`
     `domain`                varchar(255)          default '',
     `url`                   varchar(255)          default '',
     `scheduler`             varchar(64)  not null,
-    `sni_switch`            bigint                default 0,
     `session_type`          varchar(64)           default '',
     `session_expire`        bigint                default 0,
     `health_check`          json                  default null,
