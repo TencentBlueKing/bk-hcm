@@ -11,6 +11,7 @@ import { useTable } from '@/hooks/useTable/useTable';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import { useLoadBalancerStore } from '@/store/loadbalancer';
+import ExpandCard from './expand-card';
 
 export default defineComponent({
   setup() {
@@ -171,56 +172,7 @@ export default defineComponent({
           <div class={'specific-security-rule-tables'}>
             {securityGroups.value.length ? (
               securityGroups.value.map(({ name, cloud_id }, idx) => (
-                <div class={'security-rule-table-container'}>
-                  <div class={'security-rule-table-header'}>
-                    <div class={'config-security-item-idx'}>{idx}</div>
-                    <span class={'config-security-item-name'}>{name}</span>
-                    <span class={'config-security-item-id'}>({cloud_id})</span>
-                  </div>
-                  <div class={'security-rule-table-panel'}>
-                    <Table
-                      stripe
-                      data={[
-                        {
-                          target: 'any',
-                          source: 'Any',
-                          portProtocol: 'abnc',
-                          policy: '允许',
-                        },
-                        {
-                          target: '1abc',
-                          source: '1ads',
-                          portProtocol: 'abc',
-                          policy: '拒绝',
-                        },
-                        {
-                          target: 'abc',
-                          source: 'abc',
-                          portProtocol: 'Tabv3',
-                          policy: '允许',
-                        },
-                      ]}
-                      columns={[
-                        {
-                          label: '目标',
-                          field: 'target',
-                        },
-                        {
-                          label: '来源',
-                          field: 'source',
-                        },
-                        {
-                          label: '端口协议',
-                          field: 'portProtocol',
-                        },
-                        {
-                          label: '策略',
-                          field: 'policy',
-                        },
-                      ]}
-                    />
-                  </div>
-                </div>
+                <ExpandCard name={name} cloudId={cloud_id} idx={idx}/>
               ))
             ) : (
               <Exception type='empty' scene='part' description='没有数据'></Exception>
