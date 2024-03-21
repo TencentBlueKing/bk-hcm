@@ -34,6 +34,60 @@ import (
 	tclb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 )
 
+// TCloudLoadBalancerType 负载均衡实例的网络类型
+type TCloudLoadBalancerType string
+
+const (
+	// OpenLoadBalancerType 公网属性
+	OpenLoadBalancerType TCloudLoadBalancerType = "OPEN"
+	// InternalLoadBalancerType 内网属性
+	InternalLoadBalancerType TCloudLoadBalancerType = "INTERNAL"
+)
+
+// TCloudLoadBalancerInstType 负载均衡实例的类型
+type TCloudLoadBalancerInstType int64
+
+const (
+	// DefaultLoadBalancerInstType 1:通用的负载均衡实例，目前只支持传入1
+	DefaultLoadBalancerInstType TCloudLoadBalancerInstType = 1
+)
+
+// TCloudDefaultISP 默认ISP
+const TCloudDefaultISP = "BGP"
+
+// TCloudSslMode 腾讯云clb SSL认证类型
+type TCloudSslMode string
+
+const (
+	// TCloudSslUniDirect 单向认证
+	TCloudSslUniDirect TCloudSslMode = "UNIDIRECTIONAL"
+	// TCloudSslMutual 双向认证
+	TCloudSslMutual TCloudSslMode = "MUTUAL"
+)
+
+// TCloudIPVersionForCreate 仅适用于公网负载均衡。IP版本，可取值：IPV4、IPV6、IPv6FullChain，不区分大小写，默认值 IPV4。
+// 说明：取值为IPV6表示为IPV6 NAT64版本；取值为IPv6FullChain，表示为IPv6版本。
+type TCloudIPVersionForCreate string
+
+const (
+	// IPV4IPVersion IPV4版本
+	IPV4IPVersion TCloudIPVersionForCreate = "IPV4"
+	// IPV6NAT64IPVersion IPV6版本
+	IPV6NAT64IPVersion TCloudIPVersionForCreate = "IPV6"
+	// IPV6FullChainIPVersion IPv6FullChain版本
+	IPV6FullChainIPVersion TCloudIPVersionForCreate = "IPv6FullChain"
+)
+
+// TCloudLoadBalancerStatus 负载均衡实例的状态
+type TCloudLoadBalancerStatus uint64
+
+const (
+	// IngStatus 负载均衡实例的状态-创建中
+	IngStatus TCloudLoadBalancerStatus = 0
+	// SuccessStatus 负载均衡实例的状态-正常运行
+	SuccessStatus TCloudLoadBalancerStatus = 1
+)
+
 // -------------------------- List Clb--------------------------
 
 // TCloudListOption defines options to list tcloud clb instances.
@@ -183,50 +237,6 @@ func (opt TCloudCreateClbOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
-// TCloudLoadBalancerType 负载均衡实例的网络类型
-type TCloudLoadBalancerType string
-
-const (
-	// OpenLoadBalancerType 公网属性
-	OpenLoadBalancerType TCloudLoadBalancerType = "OPEN"
-	// InternalLoadBalancerType 内网属性
-	InternalLoadBalancerType TCloudLoadBalancerType = "INTERNAL"
-)
-
-// TCloudLoadBalancerInstType 负载均衡实例的类型
-type TCloudLoadBalancerInstType int64
-
-const (
-	// DefaultLoadBalancerInstType 1:通用的负载均衡实例，目前只支持传入1
-	DefaultLoadBalancerInstType TCloudLoadBalancerInstType = 1
-)
-
-// TCloudDefaultISP 默认ISP
-const TCloudDefaultISP = "BGP"
-
-// TCloudIPVersionForCreate 仅适用于公网负载均衡。IP版本，可取值：IPV4、IPV6、IPv6FullChain，不区分大小写，默认值 IPV4。
-// 说明：取值为IPV6表示为IPV6 NAT64版本；取值为IPv6FullChain，表示为IPv6版本。
-type TCloudIPVersionForCreate string
-
-const (
-	// IPV4IPVersion IPV4版本
-	IPV4IPVersion TCloudIPVersionForCreate = "IPV4"
-	// IPV6NAT64IPVersion IPV6版本
-	IPV6NAT64IPVersion TCloudIPVersionForCreate = "IPV6"
-	// IPV6FullChainIPVersion IPv6FullChain版本
-	IPV6FullChainIPVersion TCloudIPVersionForCreate = "IPv6FullChain"
-)
-
-// TCloudLoadBalancerStatus 负载均衡实例的状态
-type TCloudLoadBalancerStatus uint64
-
-const (
-	// IngStatus 负载均衡实例的状态-创建中
-	IngStatus TCloudLoadBalancerStatus = 0
-	// SuccessStatus 负载均衡实例的状态-正常运行
-	SuccessStatus TCloudLoadBalancerStatus = 1
-)
-
 // TCloudDescribeResourcesOption defines options to list tcloud listeners instances.
 type TCloudDescribeResourcesOption struct {
 	Region      string   `json:"region" validate:"required"`
@@ -338,7 +348,7 @@ type TCloudCreateListenerOption struct {
 	Port int64 `json:"port" validate:"required"`
 	// HealthCheck 健康检查相关参数，此参数仅适用于TCP/UDP/TCP_SSL/QUIC监听器
 	HealthCheck *corelb.TCloudHealthCheckInfo `json:"health_check"`
-	// Certificate 证书相关信息，此参数仅适用于TCP_SSL监听器和未开启SNI特性的HTTPS监听器。此参数和MultiCertInfo不能同时传入
+	// Certificate 证书相关信息，此参数仅适用于TCP_SSL监听器和未开启SNI特性的HTTPS监听器。
 	Certificate *corelb.TCloudCertificateInfo `json:"certificate"`
 	// SessionExpireTime 会话保持时间，单位：秒。可选值：30~3600，默认 0，表示不开启。此参数仅适用于TCP/UDP监听器
 	SessionExpireTime int64 `json:"session_expire_time"`
@@ -357,9 +367,6 @@ type TCloudCreateListenerOption struct {
 	// 创建端口段监听器时必须传入此参数，用以标识结束端口。同时，入参Ports只允许传入一个成员，用以标识开始端口。
 	// EndPort 【如果您需要体验端口段功能，请通过 [工单申请](https://console.cloud.tencent.com/workorder/category)】。
 	EndPort uint64 `json:"end_port"`
-	// MultiCertInfo 证书信息，支持同时传入不同算法类型的多本服务端证书；
-	// 此参数仅适用于未开启SNI特性的HTTPS监听器。此参数和Certificate不能同时传入。
-	MultiCertInfo *corelb.MultiCertInfo `json:"multi_cert_info"`
 }
 
 // Validate tcloud listener create option.
@@ -395,9 +402,6 @@ type TCloudUpdateListenerOption struct {
 	KeepaliveEnable int64 `json:"keepalive_enable"`
 	// SessionType 会话保持类型。NORMAL表示默认会话保持类型。QUIC_CID表示根据Quic Connection ID做会话保持。QUIC_CID只支持UDP协议。
 	SessionType string `json:"session_type"`
-	// MultiCertInfo 证书信息，支持同时传入不同算法类型的多本服务端证书；
-	// 此参数仅适用于未开启SNI特性的HTTPS监听器。此参数和Certificate不能同时传入。
-	MultiCertInfo *corelb.MultiCertInfo `json:"multi_cert_info"`
 }
 
 // Validate ...
@@ -430,13 +434,13 @@ type TCloudCreateRuleOption struct {
 	// ListenerId监听器ID
 	ListenerId string `json:"listener_id" validate:"required"`
 	// Rules 新建转发规则的信息
-	Rules []*RuleInfo `json:"rules"`
+	Rules []*RuleInfo `json:"rules" validate:"required,min=1"`
 }
 
 // RuleInfo 规则基本信息
 type RuleInfo struct {
 	// Url 转发规则的路径。长度限制为：1~200。
-	Url *string `json:"url,omitempty"`
+	Url *string `json:"url,omitempty"  validate:"required"`
 	// Domain 转发规则的域名。长度限制为：1~80。Domain和Domains只需要传一个，单域名规则传Domain，多域名规则传Domains。
 	Domain *string `json:"domain,omitempty"`
 	// SessionExpireTime 会话保持时间。设置为0表示关闭会话保持，开启会话保持可取值30~86400，单位：秒。
@@ -464,8 +468,6 @@ type RuleInfo struct {
 	Quic *bool `json:"quic,omitempty"`
 	// Domains 转发规则的域名列表。每个域名的长度限制为：1~80。Domain和Domains只需要传一个，单域名规则传Domain，多域名规则传Domains。
 	Domains []*string `json:"domains,omitempty"`
-	// MultiCertInfo 证书信息，支持同时传入不同算法类型的多本服务端证书；此参数和Certificate不能同时传入。
-	MultiCertInfo *corelb.MultiCertInfo `json:"multi_cert_info,omitempty"`
 }
 
 // Validate tcloud rule create option.
@@ -531,8 +533,6 @@ type TCloudUpdateDomainAttrOption struct {
 	NewDefaultServerDomain string `json:"new_default_server_domain,omitempty"`
 	// 要修改的新域名列表。NewDomain和NewDomains只能传一个。
 	NewDomains []*string `json:"new_domains,omitempty"`
-	// 域名相关的证书信息，注意，仅对启用SNI的监听器适用；支持同时传入多本算法类型不同的服务器证书，不可和MultiCertInfo 同时传入。
-	MultiCertInfo *corelb.MultiCertInfo `json:"multi_cert_info,omitempty"`
 }
 
 // Validate tcloud domain attr update option.

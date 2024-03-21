@@ -104,21 +104,24 @@ type BaseTCloudLbUrlRule struct {
 	CloudID string `json:"cloud_id"`
 	Name    string `json:"name"`
 
-	RuleType           enumor.RuleType        `json:"rule_type"`
-	LbID               string                 `json:"lb_id"`
-	CloudLbID          string                 `json:"cloud_lb_id"`
-	LblID              string                 `json:"lbl_id"`
-	CloudLBLID         string                 `json:"cloud_lbl_id"`
-	TargetGroupID      string                 `json:"target_group_id"`
-	CloudTargetGroupID string                 `json:"cloud_target_group_id"`
-	Domain             string                 `json:"domain"`
-	URL                string                 `json:"url"`
-	Scheduler          string                 `json:"scheduler"`
-	SniSwitch          int64                  `json:"sni_switch"`
-	SessionType        string                 `json:"session_type"`
-	SessionExpire      int64                  `json:"session_expire"`
-	HealthCheck        *TCloudHealthCheckInfo `json:"health_check"`
-	Certificate        *TCloudCertificateInfo `json:"certificate"`
+	RuleType           enumor.RuleType `json:"rule_type"`
+	LbID               string          `json:"lb_id"`
+	CloudLbID          string          `json:"cloud_lb_id"`
+	LblID              string          `json:"lbl_id"`
+	CloudLBLID         string          `json:"cloud_lbl_id"`
+	TargetGroupID      string          `json:"target_group_id"`
+	CloudTargetGroupID string          `json:"cloud_target_group_id"`
+	Domain             string          `json:"domain"`
+	URL                string          `json:"url"`
+	Scheduler          string          `json:"scheduler"`
+	// 腾讯云 CLB 的七层 HTTPS 监听器支持 SNI，即支持绑定多个证书，监听规则中的不同域名可使用不同证书。
+	// 如在同一个 CLB 的HTTPS:443 监听器中，*.test.com使用证书1，将来自该域名的请求转发至一组服务器上；
+	// *.example.com使用证书2，将来自该域名的请求转发至另一组服务器上。
+	SniSwitch     int64                  `json:"sni_switch"`
+	SessionType   string                 `json:"session_type"`
+	SessionExpire int64                  `json:"session_expire"`
+	HealthCheck   *TCloudHealthCheckInfo `json:"health_check"`
+	Certificate   *TCloudCertificateInfo `json:"certificate"`
 
 	Memo           *string `json:"memo"`
 	*core.Revision `json:",inline"`
@@ -161,33 +164,14 @@ type TCloudHealthCheckInfo struct {
 	ContextType *string `json:"context_type"`
 }
 
-// TCloudCertificateInfo define certificate.
+// TCloudCertificateInfo 证书信息，不存储具体证书信息，只保存对应id
 type TCloudCertificateInfo struct {
 	// 认证类型，UNIDIRECTIONAL：单向认证，MUTUAL：双向认证
-	SSLMode *string `json:"ssl_mode,omitempty"`
-	// 服务端证书的 ID，如果不填写此项则必须上传证书，包括 CertContent，CertKey，CertName
-	CertId *string `json:"cert_id,omitempty"`
-	// 客户端证书的 ID，当监听器采用双向认证，即 SSLMode=MUTUAL 时，如果不填写此项则必须上传客户端证书，包括 CertCaContent，CertCaName
-	CertCaId *string `json:"cert_ca_id,omitempty"`
-	// 上传服务端证书的名称，如果没有 CertId，则此项必传。
-	CertName *string `json:"cert_name"`
-	// 上传服务端证书的 key，如果没有 CertId，则此项必传。
-	CertKey *string `json:"cert_key"`
-	// 上传服务端证书的内容，如果没有 CertId，则此项必传。
-	CertContent *string `json:"cert_content"`
-	// 上传客户端 CA 证书的名称，如果 SSLMode=mutual，如果没有 CertCaId，则此项必传。
-	CertCaName *string `json:"cert_ca_name"`
-	// 上传客户端证书的内容，如果 SSLMode=mutual，如果没有 CertCaId，则此项必传。
-	CertCaContent *string   `json:"cert_ca_content"`
-	ExtCertIds    []*string `json:"ext_cert_ids,omitempty"`
-}
-
-// MultiCertInfo 多证书结构体
-type MultiCertInfo struct {
-	// 认证类型，UNIDIRECTIONAL：单向认证，MUTUAL：双向认证
-	SSLMode *string `json:"ssl_mode"`
-	// 监听器或规则证书列表，单双向认证，多本服务端证书算法类型不能重复;若SSLMode为双向认证，证书列表必须包含一本ca证书。
-	CertList []*TCloudCertificateInfo `json:"cert_list"`
+	SSLMode string `json:"ssl_mode"`
+	// CA证书，认证RS侧用的证书，只需要公钥
+	CaCloudID *string `json:"ca_cloud_id,omitempty"`
+	// 客户端证书，客户端向CLB发起请求时认证CLB来源是否可靠的证书。可以配置两个不同的加密类型的证书，
+	ClientCloudIDs []string `json:"client_cloud_ids,omitempty"`
 }
 
 // BaseClbTarget define base clb target.

@@ -27,13 +27,17 @@ import (
 	"hcm/pkg/adaptor/tcloud"
 	adcore "hcm/pkg/adaptor/types/core"
 	typelb "hcm/pkg/adaptor/types/load-balancer"
+	"hcm/pkg/api/core"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	protolb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/tools/converter"
+	cvt "hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
@@ -45,6 +49,9 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 	h.Add("TCloudDescribeResources", http.MethodPost,
 		"/vendors/tcloud/load_balancers/resources/describe", svc.TCloudDescribeResources)
 	h.Add("TCloudUpdateCLB", http.MethodPatch, "/vendors/tcloud/load_balancers/{id}", svc.TCloudUpdateCLB)
+
+	h.Add("TCloudCreateUrlRule", http.MethodPost,
+		"/vendors/tcloud/listeners/{lbl_id}/rules/batch/create", svc.TCloudCreateUrlRule)
 
 	h.Load(cap.WebService)
 }
@@ -80,9 +87,9 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		BandwidthPackageID: req.BandwidthPackageID,
 		SlaType:            req.SlaType,
 		Number:             req.RequireCount,
-		ClientToken:        converter.StrNilPtr(cts.Kit.Rid),
+		ClientToken:        cvt.StrNilPtr(cts.Kit.Rid),
 	}
-	if converter.PtrToVal(req.CloudEipID) != "" {
+	if cvt.PtrToVal(req.CloudEipID) != "" {
 		createOpt.EipAddressID = req.CloudEipID
 	}
 	// 负载均衡实例的网络类型-公网属性
@@ -95,11 +102,11 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		// 设置跨可用区容灾时的可用区ID-仅适用于公网负载均衡
 		if len(req.BackupZones) > 0 && len(req.Zones) > 0 {
 			// 主备可用区，传递zones（单元素数组），以及backup_zones
-			createOpt.MasterZoneID = converter.ValToPtr(req.Zones[0])
-			createOpt.SlaveZoneID = converter.ValToPtr(req.BackupZones[0])
+			createOpt.MasterZoneID = cvt.ValToPtr(req.Zones[0])
+			createOpt.SlaveZoneID = cvt.ValToPtr(req.BackupZones[0])
 		} else if len(req.Zones) > 0 {
 			// 单可用区
-			createOpt.ZoneID = converter.ValToPtr(req.Zones[0])
+			createOpt.ZoneID = cvt.ValToPtr(req.Zones[0])
 		}
 	}
 
@@ -187,7 +194,7 @@ func (svc *clbSvc) TCloudUpdateCLB(cts *rest.Contexts) (any, error) {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	req := new(protolb.TCloudUpdateReq)
+	req := new(protolb.TCloudLBUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -248,4 +255,123 @@ func (svc *clbSvc) lbSync(kt *kit.Kit, tcloud tcloud.TCloud, accountID string, r
 		return err
 	}
 	return nil
+}
+
+// TCloudCreateUrlRule 创建url规则
+func (svc *clbSvc) TCloudCreateUrlRule(cts *rest.Contexts) (any, error) {
+
+	lblID := cts.PathParameter("lbl_id").String()
+	if len(lblID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "listener id is required")
+	}
+
+	req := new(protolb.TCloudRuleBatchCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	lb, listener, err := svc.getListenerWithLb(cts.Kit, lblID)
+	if err != nil {
+		return nil, err
+	}
+
+	tcloudAdpt, err := svc.ad.TCloud(cts.Kit, listener.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	ruleOption := typelb.TCloudCreateRuleOption{
+		Region:         lb.Region,
+		LoadBalancerId: lb.CloudID,
+		ListenerId:     lblID,
+	}
+	ruleOption.Rules = slice.Map(req.Rules, convRuleCreate)
+	creatResult, err := tcloudAdpt.CreateRule(cts.Kit, &ruleOption)
+	if err != nil {
+		logs.Errorf("create tcloud url rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	respData := &protolb.BatchCreateResult{
+		UnknownCloudIDs: creatResult.UnknownCloudIDs,
+		SuccessCloudIDs: creatResult.SuccessCloudIDs,
+		FailedCloudIDs:  creatResult.FailedCloudIDs,
+		FailedMessage:   creatResult.FailedMessage,
+	}
+
+	if len(creatResult.SuccessCloudIDs) == 0 {
+		return respData, nil
+	}
+
+	// TODO 同步对应监听器
+
+	// if err := svc.lblSync(cts.Kit, tcloudAdpt, req.AccountID, req.Region, result.SuccessCloudIDs); err != nil {
+	// 	return nil, err
+	// }
+
+	return nil, nil
+}
+
+func (svc *clbSvc) getListenerWithLb(kt *kit.Kit, lblID string) (*corelb.BaseLoadBalancer,
+	*corelb.BaseListener, error) {
+
+	// 查询监听器数据
+	lblResp, err := svc.dataCli.Global.LoadBalancer.ListListener(kt, &core.ListReq{
+		Filter: tools.EqualExpression("id", lblID),
+		Page:   core.NewDefaultBasePage(),
+		Fields: nil,
+	})
+	if err != nil {
+		logs.Errorf("fail to list tcloud listener, err: %v, id: %s, rid: %s", err, lblID, kt.Rid)
+		return nil, nil, err
+	}
+	if len(lblResp.Details) < 1 {
+		return nil, nil, errf.Newf(errf.InvalidParameter, "lbl not found")
+	}
+	listener := lblResp.Details[0]
+
+	// 查询负载均衡
+	lbResp, err := svc.dataCli.Global.LoadBalancer.ListLoadBalancer(kt, &core.ListReq{
+		Filter: tools.EqualExpression("id", listener.LbID),
+		Page:   core.NewDefaultBasePage(),
+		Fields: nil,
+	})
+	if err != nil {
+		logs.Errorf("fail to tcloud list load balancer, err: %v, id: %s, rid: %s", err, listener.LbID, kt.Rid)
+		return nil, nil, err
+	}
+	if len(lbResp.Details) < 1 {
+		return nil, nil, errf.Newf(errf.InvalidParameter, "lb not found")
+	}
+	lb := lbResp.Details[0]
+	return &lb, &listener, nil
+}
+
+func convRuleCreate(r protolb.TCloudRuleCreate) *typelb.RuleInfo {
+	cloud := &typelb.RuleInfo{
+		Url:               cvt.ValToPtr(r.Url),
+		SessionExpireTime: r.SessionExpireTime,
+		HealthCheck:       r.HealthCheck,
+		Certificate:       r.Certificates,
+		Scheduler:         r.Scheduler,
+		ForwardType:       r.ForwardType,
+		DefaultServer:     r.DefaultServer,
+		Http2:             r.Http2,
+		TargetType:        r.TargetType,
+		TrpcCallee:        r.TrpcCallee,
+		TrpcFunc:          r.TrpcFunc,
+		Quic:              r.Quic,
+	}
+	if len(r.Domains) == 1 {
+		cloud.Domain = cvt.ValToPtr(r.Domains[0])
+	}
+	if len(r.Domains) > 1 {
+		cloud.Domains = cvt.SliceToPtr(r.Domains)
+	}
+
+	return cloud
 }

@@ -162,4 +162,6 @@ type TCloud interface {
 		*tclb.SetLoadBalancerSecurityGroupsResponseParams, error)
 	DeleteLoadBalancer(kt *kit.Kit, opt *typelb.TCloudDeleteOption) error
 	UpdateLoadBalancer(kt *kit.Kit, opt *typelb.TCloudUpdateOption) (*string, error)
+
+	CreateRule(kt *kit.Kit, opt *typelb.TCloudCreateRuleOption) (*poller.BaseDoneResult, error)
 }

@@ -34,7 +34,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/json"
 )
 
@@ -217,7 +216,7 @@ func convLbListResult[T corelb.Extension](tables []tablelb.LoadBalancerTable) (
 
 // ListListener list listener.
 func (svc *lbSvc) ListListener(cts *rest.Contexts) (interface{}, error) {
-	req := new(protocloud.ListListenerReq)
+	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -226,21 +225,9 @@ func (svc *lbSvc) ListListener(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	reqFilter := &filter.Expression{
-		Op: filter.And,
-	}
-	if len(req.LbID) > 0 {
-		reqFilter.Rules = append(reqFilter.Rules,
-			filter.AtomRule{Field: "lb_id", Op: filter.Equal.Factory(), Value: req.LbID})
-	}
-	// 加上请求里过滤条件
-	if req.Filter != nil && !req.Filter.IsEmpty() {
-		reqFilter.Rules = append(reqFilter.Rules, req.Filter)
-	}
-
 	opt := &types.ListOption{
 		Fields: req.Fields,
-		Filter: reqFilter,
+		Filter: req.Filter,
 		Page:   req.Page,
 	}
 	result, err := svc.dao.LoadBalancerListener().List(cts.Kit, opt)

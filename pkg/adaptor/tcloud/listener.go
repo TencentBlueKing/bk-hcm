@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types"
 	typelb "hcm/pkg/adaptor/types/load-balancer"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -79,6 +80,8 @@ func (t *TCloudImpl) formatCreateListenerRequest(opt *typelb.TCloudCreateListene
 	req.ListenerNames = append(req.ListenerNames, converter.ValToPtr(opt.ListenerName))
 	req.Protocol = converter.ValToPtr(opt.Protocol)
 	req.Ports = append(req.Ports, converter.ValToPtr(opt.Port))
+	req.MultiCertInfo = convCert(opt.Certificate)
+
 	if len(opt.Scheduler) > 0 {
 		req.Scheduler = converter.ValToPtr(opt.Scheduler)
 	}
@@ -109,19 +112,24 @@ func (t *TCloudImpl) formatCreateListenerRequest(opt *typelb.TCloudCreateListene
 			SourceIpType:    opt.HealthCheck.SourceIpType,
 		}
 	}
-	if opt.Certificate != nil {
-		req.Certificate = &clb.CertificateInput{
-			SSLMode:       opt.Certificate.SSLMode,
-			CertId:        opt.Certificate.CertId,
-			CertCaId:      opt.Certificate.CertCaId,
-			CertName:      opt.Certificate.CertCaName,
-			CertKey:       opt.Certificate.CertKey,
-			CertContent:   opt.Certificate.CertContent,
-			CertCaName:    opt.Certificate.CertName,
-			CertCaContent: opt.Certificate.CertCaContent,
-		}
-	}
+
 	return req
+}
+
+func convCert(optCert *corelb.TCloudCertificateInfo) *clb.MultiCertInfo {
+	if optCert == nil {
+		return nil
+	}
+	multiCert := &clb.MultiCertInfo{SSLMode: (*string)(&optCert.SSLMode)}
+	if optCert.CaCloudID != nil {
+		multiCert.CertList = append(multiCert.CertList,
+			&clb.CertInfo{CertId: optCert.CaCloudID})
+	}
+	for _, c := range optCert.ClientCloudIDs {
+		multiCert.CertList = append(multiCert.CertList,
+			&clb.CertInfo{CertId: converter.ValToPtr(c)})
+	}
+	return multiCert
 }
 
 // UpdateListener 更新监听器 reference: https://cloud.tencent.com/document/api/214/30681
@@ -169,6 +177,8 @@ func (t *TCloudImpl) formatUpdateListenerRequest(opt *typelb.TCloudUpdateListene
 	req := clb.NewModifyListenerRequest()
 	req.LoadBalancerId = converter.ValToPtr(opt.LoadBalancerId)
 	req.ListenerId = converter.ValToPtr(opt.ListenerId)
+	req.MultiCertInfo = convCert(opt.Certificate)
+
 	if len(opt.ListenerName) > 0 {
 		req.ListenerName = converter.ValToPtr(opt.ListenerName)
 	}
@@ -203,18 +213,7 @@ func (t *TCloudImpl) formatUpdateListenerRequest(opt *typelb.TCloudUpdateListene
 			SourceIpType:    opt.HealthCheck.SourceIpType,
 		}
 	}
-	if opt.Certificate != nil {
-		req.Certificate = &clb.CertificateInput{
-			SSLMode:       opt.Certificate.SSLMode,
-			CertId:        opt.Certificate.CertId,
-			CertCaId:      opt.Certificate.CertCaId,
-			CertName:      opt.Certificate.CertCaName,
-			CertKey:       opt.Certificate.CertKey,
-			CertContent:   opt.Certificate.CertContent,
-			CertCaName:    opt.Certificate.CertName,
-			CertCaContent: opt.Certificate.CertCaContent,
-		}
-	}
+
 	return req
 }
 
@@ -333,18 +332,8 @@ func (t *TCloudImpl) formatCreateRuleRequest(opt *typelb.TCloudCreateRuleOption)
 				SourceIpType:    item.HealthCheck.SourceIpType,
 			}
 		}
-		if item.Certificate != nil {
-			tmpRule.Certificate = &clb.CertificateInput{
-				SSLMode:       item.Certificate.SSLMode,
-				CertId:        item.Certificate.CertId,
-				CertCaId:      item.Certificate.CertCaId,
-				CertName:      item.Certificate.CertCaName,
-				CertKey:       item.Certificate.CertKey,
-				CertContent:   item.Certificate.CertContent,
-				CertCaName:    item.Certificate.CertName,
-				CertCaContent: item.Certificate.CertCaContent,
-			}
-		}
+		tmpRule.MultiCertInfo = convCert(item.Certificate)
+
 		req.Rules = append(req.Rules, tmpRule)
 	}
 	return req

@@ -46,7 +46,7 @@ func (svc *lbSvc) UpdateBizTCloudLoadBalancer(cts *rest.Contexts) (any, error) {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	req := new(hclb.TCloudUpdateReq)
+	req := new(hclb.TCloudLBUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -55,7 +55,8 @@ func (svc *lbSvc) UpdateBizTCloudLoadBalancer(cts *rest.Contexts) (any, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.LoadBalancerCloudResType, lbID)
+	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.LoadBalancerCloudResType,
+		lbID)
 	if err != nil {
 		logs.Errorf("getLoadBalancer resource vendor failed, id: %s, err: %s, rid: %s", lbID, err, cts.Kit.Rid)
 		return nil, err
