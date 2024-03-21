@@ -169,8 +169,8 @@ func batchCreateTargetGroup[T corelb.TargetGroupExtension](cts *rest.Contexts,
 			return nil, err
 		}
 		models := make([]*tablelb.LoadBalancerTargetGroupTable, 0, len(req.TargetGroups))
-		for _, lb := range req.TargetGroups {
-			tgTable, err := convTargetGroupCreateReqToTable(cts.Kit, vendor, lb, vpcInfoMap)
+		for _, tg := range req.TargetGroups {
+			tgTable, err := convTargetGroupCreateReqToTable(cts.Kit, vendor, tg, vpcInfoMap)
 			if err != nil {
 				return nil, err
 			}
