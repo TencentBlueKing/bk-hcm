@@ -50,7 +50,7 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 		"/vendors/tcloud/load_balancers/resources/describe", svc.TCloudDescribeResources)
 	h.Add("TCloudUpdateCLB", http.MethodPatch, "/vendors/tcloud/load_balancers/{id}", svc.TCloudUpdateCLB)
 
-	h.Add("TCloudCreateUrlRule", http.MethodPatch,
+	h.Add("TCloudCreateUrlRule", http.MethodPost,
 		"/vendors/tcloud/listeners/{lbl_id}/rules/batch/create", svc.TCloudCreateUrlRule)
 
 	h.Load(cap.WebService)
@@ -341,7 +341,7 @@ func (svc *clbSvc) getListenerWithLb(kt *kit.Kit, lblID string) (*corelb.BaseLoa
 		Fields: nil,
 	})
 	if err != nil {
-		logs.Errorf("fail to tcloud list load balancer, err: %v, id: %s, rid: %s", err, lblID, kt.Rid)
+		logs.Errorf("fail to tcloud list load balancer, err: %v, id: %s, rid: %s", err, listener.LbID, kt.Rid)
 		return nil, nil, err
 	}
 	if len(lbResp.Details) < 1 {
@@ -366,10 +366,10 @@ func convRuleCreate(r protolb.TCloudRuleCreate) *typelb.RuleInfo {
 		TrpcFunc:          r.TrpcFunc,
 		Quic:              r.Quic,
 	}
-	if len(r.Domains) == 0 {
+	if len(r.Domains) == 1 {
 		cloud.Domain = cvt.ValToPtr(r.Domains[0])
 	}
-	if len(r.Domains) > 0 {
+	if len(r.Domains) > 1 {
 		cloud.Domains = cvt.SliceToPtr(r.Domains)
 	}
 
