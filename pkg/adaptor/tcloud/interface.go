@@ -162,6 +162,11 @@ type TCloud interface {
 		*tclb.SetLoadBalancerSecurityGroupsResponseParams, error)
 	DeleteLoadBalancer(kt *kit.Kit, opt *typelb.TCloudDeleteOption) error
 	UpdateLoadBalancer(kt *kit.Kit, opt *typelb.TCloudUpdateOption) (*string, error)
-
+	CreateListener(kt *kit.Kit, opt *typelb.TCloudCreateListenerOption) (*poller.BaseDoneResult, error)
+	UpdateListener(kt *kit.Kit, opt *typelb.TCloudUpdateListenerOption) error
+	DeleteListener(kt *kit.Kit, opt *typelb.TCloudDeleteListenerOption) error
 	CreateRule(kt *kit.Kit, opt *typelb.TCloudCreateRuleOption) (*poller.BaseDoneResult, error)
+	UpdateRule(kt *kit.Kit, opt *typelb.TCloudUpdateRuleOption) error
+	UpdateDomainAttr(kt *kit.Kit, opt *typelb.TCloudUpdateDomainAttrOption) error
+	DeleteRule(kt *kit.Kit, opt *typelb.TCloudDeleteRuleOption) error
 }
