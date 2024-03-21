@@ -264,6 +264,7 @@ func convTableToBaseListener(one *tablelb.LoadBalancerListenerTable) *corelb.Bas
 		DefaultDomain: one.DefaultDomain,
 		Zones:         one.Zones,
 		Memo:          one.Memo,
+		SniSwitch:     one.SniSwitch,
 		Revision: &core.Revision{
 			Creator:   one.Creator,
 			Reviser:   one.Reviser,
