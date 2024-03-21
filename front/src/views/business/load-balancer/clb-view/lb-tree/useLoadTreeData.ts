@@ -70,6 +70,7 @@ export default (treeData: Ref) => {
         domain.type = 'domain';
         domain.id = domain.domain;
         domain.name = domain.domain;
+        domain.listener_id = _item.id;
         domain.isDefault = default_domain === domain.domain;
         return domain;
       });
