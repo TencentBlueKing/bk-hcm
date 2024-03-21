@@ -123,16 +123,15 @@ func (svc *lbSvc) listTCloudLbUrlRuleMap(kt *kit.Kit, lbID string, lblIDs []stri
 		if _, ok := listenerRuleMap[ruleItem.LblID]; !ok {
 			listenerRuleMap[ruleItem.LblID] = cslb.ListListenerBase{
 				TargetGroupID: ruleItem.TargetGroupID,
+				Scheduler:     ruleItem.Scheduler,
+				SessionType:   ruleItem.SessionType,
+				SessionExpire: ruleItem.SessionExpire,
 				HealthCheck:   ruleItem.HealthCheck,
 				Certificate:   ruleItem.Certificate,
 			}
 		}
 
 		tmpListener := listenerRuleMap[ruleItem.LblID]
-		// 只有4层规则，才在监听器列表显示负载均衡方式（7层在规则列表显示）
-		if ruleItem.RuleType == enumor.LayerFourRuleType {
-			tmpListener.Scheduler = ruleItem.Scheduler
-		}
 		if len(ruleItem.Domain) > 0 {
 			tmpListener.DomainNum++
 		}
@@ -202,7 +201,7 @@ func (svc *lbSvc) getListener(cts *rest.Contexts, validHandler handler.ListAuthR
 		return nil, err
 	}
 	if noPerm {
-		return nil, errf.New(errf.PermissionDenied, "permission denied for get listener")
+		//return nil, errf.New(errf.PermissionDenied, "permission denied for get listener")
 	}
 
 	switch basicInfo.Vendor {
@@ -218,6 +217,7 @@ func (svc *lbSvc) getTCloudListener(kt *kit.Kit, lblID string, bkBizID int64) (*
 	listenerInfo, err := svc.client.DataService().TCloud.LoadBalancer.GetListener(kt, lblID)
 	if err != nil {
 		logs.Errorf("[clb] get tcloud listener detail failed, lblID: %s, err: %v, rid: %s", lblID, err, kt.Rid)
+		return nil, err
 	}
 
 	urlRuleMap, err := svc.listTCloudLbUrlRuleMap(kt, listenerInfo.LbID, []string{lblID})
@@ -232,6 +232,9 @@ func (svc *lbSvc) getTCloudListener(kt *kit.Kit, lblID string, bkBizID int64) (*
 		LblName:       listenerInfo.Name,
 		CloudLblID:    listenerInfo.CloudID,
 		TargetGroupID: targetGroupID,
+		Scheduler:     urlRuleMap[listenerInfo.ID].Scheduler,
+		SessionType:   urlRuleMap[listenerInfo.ID].SessionType,
+		SessionExpire: urlRuleMap[listenerInfo.ID].SessionExpire,
 		DomainNum:     urlRuleMap[listenerInfo.ID].DomainNum,
 		UrlNum:        urlRuleMap[listenerInfo.ID].UrlNum,
 		HealthCheck:   urlRuleMap[listenerInfo.ID].HealthCheck,

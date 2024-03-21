@@ -113,7 +113,7 @@ create table `load_balancer_listener`
     `default_domain` varchar(255)          default null,
     `zones`          json,
     `sni_switch`     bigint                default 0,
-    `certificate`    json                  default null,
+    `extension`      json                  default null,
     `memo`           varchar(255)          default '',
 
     `creator`        varchar(64)  not null,

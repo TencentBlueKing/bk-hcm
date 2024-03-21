@@ -118,6 +118,8 @@ type ListListenerBase struct {
 	corelb.BaseListener
 	TargetGroupID string                        `json:"target_group_id"`
 	Scheduler     string                        `json:"scheduler"`
+	SessionType   string                        `json:"session_type"`
+	SessionExpire int64                         `json:"session_expire"`
 	DomainNum     int64                         `json:"domain_num"`
 	UrlNum        int64                         `json:"url_num"`
 	HealthCheck   *corelb.TCloudHealthCheckInfo `json:"health_check"`
@@ -135,6 +137,9 @@ type GetListenerDetail struct {
 	TargetGroupID      string                        `json:"target_group_id"`
 	TargetGroupName    string                        `json:"target_group_name"`
 	CloudTargetGroupID string                        `json:"cloud_target_group_id"`
+	Scheduler          string                        `json:"scheduler"`
+	SessionType        string                        `json:"session_type"`
+	SessionExpire      int64                         `json:"session_expire"`
 	HealthCheck        *corelb.TCloudHealthCheckInfo `json:"health_check"`
 	Certificate        *corelb.TCloudCertificateInfo `json:"certificate"`
 	DomainNum          int64                         `json:"domain_num"`

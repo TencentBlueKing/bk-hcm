@@ -180,7 +180,7 @@ func convCert(optCert *corelb.TCloudCertificateInfo) *clb.MultiCertInfo {
 	if optCert == nil {
 		return nil
 	}
-	multiCert := &clb.MultiCertInfo{SSLMode: (*string)(&optCert.SSLMode)}
+	multiCert := &clb.MultiCertInfo{SSLMode: optCert.SSLMode}
 	if optCert.CaCloudID != nil {
 		multiCert.CertList = append(multiCert.CertList,
 			&clb.CertInfo{CertId: optCert.CaCloudID})
