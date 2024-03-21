@@ -342,7 +342,6 @@ func convTableToBaseTCloudLbURLRule(kt *kit.Kit, one *tablelb.TCloudLbUrlRuleTab
 		Domain:             one.Domain,
 		URL:                one.URL,
 		Scheduler:          one.Scheduler,
-		SniSwitch:          one.SniSwitch,
 		SessionType:        one.SessionType,
 		SessionExpire:      one.SessionExpire,
 		HealthCheck:        healthCheck,
@@ -455,6 +454,7 @@ func (svc *lbSvc) ListTargetGroup(cts *rest.Contexts) (interface{}, error) {
 	return &protocloud.TargetGroupListResult{Details: details}, nil
 }
 
+// GetTargetGroup ...
 func (svc *lbSvc) GetTargetGroup(cts *rest.Contexts) (any, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if err := vendor.Validate(); err != nil {
@@ -524,6 +524,7 @@ func convTableToBaseTargetGroup(kt *kit.Kit, one *tablelb.LoadBalancerTargetGrou
 	}, nil
 }
 
+// GetListener ...
 func (svc *lbSvc) GetListener(cts *rest.Contexts) (any, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if err := vendor.Validate(); err != nil {

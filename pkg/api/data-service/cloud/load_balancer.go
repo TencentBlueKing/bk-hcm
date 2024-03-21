@@ -38,6 +38,7 @@ type LoadBalancerBatchCreateReq[Extension corelb.Extension] struct {
 	Lbs []LbBatchCreate[Extension] `json:"lbs" validate:"required,min=1"`
 }
 
+// TCloudCLBCreateReq ...
 type TCloudCLBCreateReq = LoadBalancerBatchCreateReq[corelb.TCloudClbExtension]
 
 // LbBatchCreate define load balancer batch create.
@@ -122,6 +123,7 @@ func (req *LbExtBatchUpdateReq[T]) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
+// TCloudClbBatchUpdateReq ...
 type TCloudClbBatchUpdateReq = LbExtBatchUpdateReq[corelb.TCloudClbExtension]
 
 // ClbBizBatchUpdateReq 批量更新业务id
@@ -210,7 +212,6 @@ type TCloudUrlRuleCreate struct {
 	Domain             string                        `json:"domain"`
 	URL                string                        `json:"url"`
 	Scheduler          string                        `json:"scheduler"`
-	SniSwitch          int64                         `json:"sni_switch"`
 	SessionType        string                        `json:"session_type"`
 	SessionExpire      int64                         `json:"session_expire"`
 	HealthCheck        *corelb.TCloudHealthCheckInfo `json:"health_check" validate:"required"`

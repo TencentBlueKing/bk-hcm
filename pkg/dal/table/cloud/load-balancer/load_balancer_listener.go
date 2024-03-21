@@ -48,6 +48,8 @@ var LoadBalancerListenerColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "default_domain", NamedC: "default_domain", Type: enumor.String},
 	{Column: "zones", NamedC: "zones", Type: enumor.Json},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
+	{Column: "sni_switch", NamedC: "sni_switch", Type: enumor.Numeric},
+	{Column: "extension", NamedC: "extension", Type: enumor.Json},
 
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
@@ -71,6 +73,8 @@ type LoadBalancerListenerTable struct {
 	DefaultDomain string            `db:"default_domain" json:"default_domain"`
 	Zones         types.StringArray `db:"zones" json:"zones"`
 	Memo          *string           `db:"memo" json:"memo"`
+	SniSwitch     int64             `db:"sni_switch" json:"sni_switch"`
+	Extension     types.JsonField   `db:"extension" json:"extension"`
 
 	Creator   string     `db:"creator" validate:"lte=64" json:"creator"`
 	Reviser   string     `db:"reviser" validate:"lte=64" json:"reviser"`

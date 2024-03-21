@@ -229,6 +229,7 @@ func (svc *lbSvc) UpdateTargetGroup(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
+// BatchUpdateTCloudUrlRule ..
 func (svc *lbSvc) BatchUpdateTCloudUrlRule(cts *rest.Contexts) (any, error) {
 	req := new(dataproto.TCloudUrlRuleBatchUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -260,7 +261,6 @@ func (svc *lbSvc) BatchUpdateTCloudUrlRule(cts *rest.Contexts) (any, error) {
 				Scheduler:          rule.Scheduler,
 				SessionExpire:      rule.SessionExpire,
 				SessionType:        rule.SessionType,
-				SniSwitch:          rule.SniSwitch,
 				Memo:               rule.Memo,
 				Reviser:            cts.Kit.User,
 			}

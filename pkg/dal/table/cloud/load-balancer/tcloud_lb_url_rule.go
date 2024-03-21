@@ -48,7 +48,6 @@ var TCloudClbUrlRuleColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "domain", NamedC: "domain", Type: enumor.String},
 	{Column: "url", NamedC: "url", Type: enumor.String},
 	{Column: "scheduler", NamedC: "scheduler", Type: enumor.String},
-	{Column: "sni_switch", NamedC: "sni_switch", Type: enumor.Numeric},
 	{Column: "session_type", NamedC: "session_type", Type: enumor.String},
 	{Column: "session_expire", NamedC: "session_expire", Type: enumor.Numeric},
 	{Column: "health_check", NamedC: "health_check", Type: enumor.Json},
@@ -77,7 +76,6 @@ type TCloudLbUrlRuleTable struct {
 	Domain             string          `db:"domain" json:"domain"`
 	URL                string          `db:"url" json:"url"`
 	Scheduler          string          `db:"scheduler" json:"scheduler"`
-	SniSwitch          int64           `db:"sni_switch" json:"sni_switch"`
 	SessionType        string          `db:"session_type" json:"session_type"`
 	SessionExpire      int64           `db:"session_expire" json:"session_expire"`
 	HealthCheck        types.JsonField `db:"health_check" json:"health_check"`
