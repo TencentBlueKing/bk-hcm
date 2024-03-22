@@ -252,7 +252,6 @@ func (svc *lbSvc) BatchUpdateTCloudUrlRule(cts *rest.Contexts) (any, error) {
 	return svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
 		for _, rule := range req.UrlRules {
 			update := &tablelb.TCloudLbUrlRuleTable{
-
 				Name:               rule.Name,
 				Domain:             rule.Domain,
 				URL:                rule.URL,
@@ -282,7 +281,7 @@ func (svc *lbSvc) BatchUpdateTCloudUrlRule(cts *rest.Contexts) (any, error) {
 				update.Certificate = tabletype.JsonField(mergedCert)
 			}
 
-			if err := svc.dao.LoadBalancerTCloudUrlRule().UpdateByIDWithTx(cts.Kit, txn, rule.ID, update); err != nil {
+			if err = svc.dao.LoadBalancerTCloudUrlRule().UpdateByIDWithTx(cts.Kit, txn, rule.ID, update); err != nil {
 				logs.Errorf("update tcloud rule by id failed, err: %v, id: %s, rid: %s", err, rule.ID, cts.Kit.Rid)
 				return nil, fmt.Errorf("update rule failed, err: %v", err)
 			}
@@ -290,7 +289,6 @@ func (svc *lbSvc) BatchUpdateTCloudUrlRule(cts *rest.Contexts) (any, error) {
 
 		return nil, nil
 	})
-
 }
 
 // tcloudHealthCert 腾讯云监听器、规则健康检查和证书信息
@@ -313,4 +311,54 @@ func (svc *lbSvc) listRuleHealthAndCert(kt *kit.Kit, ruleIds []string) (map[stri
 	return converter.SliceToMap(resp.Details, func(t tablelb.TCloudLbUrlRuleTable) (string, tcloudHealthCert) {
 		return t.ID, tcloudHealthCert{Health: t.HealthCheck, Cert: t.Certificate}
 	}), nil
+}
+
+// BatchUpdateListener 批量更新监听器基本信息
+func (svc *lbSvc) BatchUpdateListener(cts *rest.Contexts) (any, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return batchUpdateListener[corelb.TCloudListenerExtension](cts)
+	default:
+		return nil, errf.New(errf.InvalidParameter, "unsupported vendor: "+string(vendor))
+	}
+}
+
+func batchUpdateListener[T corelb.ListenerExtension](cts *rest.Contexts) (any, error) {
+	req := new(dataproto.ListenerBatchUpdateReq[T])
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	return svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
+		for _, item := range req.Listeners {
+			extensionJSON, err := tabletype.NewJsonField(item.Extension)
+			if err != nil {
+				return nil, errf.NewFromErr(errf.InvalidParameter, err)
+			}
+
+			// 更新监听器
+			lblInfo := &tablelb.LoadBalancerListenerTable{
+				Name:      item.Name,
+				BkBizID:   item.BkBizID,
+				SniSwitch: item.SniSwitch,
+				Extension: extensionJSON,
+				Reviser:   cts.Kit.User,
+			}
+			if err = svc.dao.LoadBalancerListener().Update(
+				cts.Kit, tools.EqualExpression("id", item.ID), lblInfo); err != nil {
+				logs.Errorf("update listener by id failed, err: %v, id: %s, rid: %s", err, item.ID, cts.Kit.Rid)
+				return nil, fmt.Errorf("update listener by id failed, lblID: %s, serr: %v", item.ID, err)
+			}
+		}
+		return nil, nil
+	})
 }

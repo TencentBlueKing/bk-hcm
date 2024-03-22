@@ -27,6 +27,7 @@ import (
 	typelb "hcm/pkg/adaptor/types/load-balancer"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/converter"
 )
@@ -207,5 +208,72 @@ type TCloudRuleCreate struct {
 
 // Validate request.
 func (req *TCloudRuleCreate) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// --------------------------[创建监听器及规则]--------------------------
+
+// ListenerWithRuleCreateReq listener with rule create req.
+type ListenerWithRuleCreateReq struct {
+	Name          string                        `json:"name" validate:"required"`
+	BkBizID       int64                         `json:"bk_biz_id" validate:"omitempty"`
+	LbID          string                        `json:"lb_id" validate:"omitempty"`
+	Protocol      enumor.ProtocolType           `json:"protocol" validate:"required"`
+	Port          int64                         `json:"port" validate:"required"`
+	Scheduler     string                        `json:"scheduler" validate:"required"`
+	SessionType   string                        `json:"session_type" validate:"required"`
+	SessionExpire int64                         `json:"session_expire" validate:"required"`
+	TargetGroupID string                        `json:"target_group_id" validate:"required"`
+	Domain        string                        `json:"domain" validate:"omitempty"`
+	Url           string                        `json:"url" validate:"omitempty"`
+	SniSwitch     enumor.SniType                `json:"sni_switch" validate:"omitempty"`
+	Certificate   *corelb.TCloudCertificateInfo `json:"certificate" validate:"omitempty"`
+}
+
+// Validate 校验创建监听器的参数
+func (req *ListenerWithRuleCreateReq) Validate() error {
+	if req.Protocol.IsLayer7Protocol() {
+		if len(req.Domain) == 0 || len(req.Url) == 0 {
+			return errors.New("domain and url is required")
+		}
+	}
+	if req.SessionExpire > 0 && req.SessionExpire < constant.ListenerMinSessionExpire {
+		return fmt.Errorf("invalid session_expire min value: %d", constant.ListenerMinSessionExpire)
+	}
+	return validator.Validate.Struct(req)
+}
+
+// --------------------------[更新监听器]--------------------------
+
+// ListenerWithRuleUpdateReq listener update req.
+type ListenerWithRuleUpdateReq struct {
+	Name      string                          `json:"name" validate:"required"`
+	BkBizID   int64                           `json:"bk_biz_id" validate:"omitempty"`
+	SniSwitch enumor.SniType                  `json:"sni_switch" validate:"omitempty"`
+	Extension *corelb.TCloudListenerExtension `json:"extension"`
+}
+
+// Validate 校验更新监听器的参数
+func (req *ListenerWithRuleUpdateReq) Validate() error {
+	if err := req.SniSwitch.Validate(); err != nil {
+		return err
+	}
+	return validator.Validate.Struct(req)
+}
+
+// --------------------------[删除监听器及规则]--------------------------
+
+// ListenerDeleteReq define delete req.
+type ListenerDeleteReq struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	IDs       []string `json:"ids" validate:"required"`
+}
+
+// Validate request.
+func (req *ListenerDeleteReq) Validate() error {
+	if len(req.IDs) > constant.BatchListenerMaxLimit {
+		return fmt.Errorf("batch delete listener count should <= %d", constant.BatchListenerMaxLimit)
+	}
+
 	return validator.Validate.Struct(req)
 }

@@ -37,7 +37,7 @@ type BaseTargetGroup struct {
 	VpcID           string                 `json:"vpc_id"`
 	CloudVpcID      string                 `json:"cloud_vpc_id"`
 	Region          string                 `json:"region"`
-	Protocol        string                 `json:"protocol"`
+	Protocol        enumor.ProtocolType    `json:"protocol"`
 	Port            int64                  `json:"port"`
 	Weight          int64                  `json:"weight"`
 	HealthCheck     *TCloudHealthCheckInfo `json:"health_check"`

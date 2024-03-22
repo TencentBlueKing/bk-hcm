@@ -67,9 +67,16 @@ func InitService(cap *capability.Capability) {
 	h.Add("BatchCreateTCloudUrlRule",
 		http.MethodPost, "/vendors/tcloud/url_rules/batch/create", svc.BatchCreateTCloudUrlRule)
 	h.Add("BatchUpdateTCloudUrlRule",
-		http.MethodPatch, "/vendors/tcloud/url_rules/batch/update", svc.BatchDeleteTCloudUrlRule)
+		http.MethodPatch, "/vendors/tcloud/url_rules/batch/update", svc.BatchUpdateTCloudUrlRule)
 	h.Add("BatchDeleteTCloudUrlRule",
 		http.MethodDelete, "/vendors/tcloud/url_rules/batch", svc.BatchDeleteTCloudUrlRule)
+
+	// 监听器
+	h.Add("BatchCreateListener", http.MethodPost, "/vendors/{vendor}/listeners/batch/create", svc.BatchCreateListener)
+	h.Add("BatchCreateListenerWithRule", http.MethodPost, "/vendors/{vendor}/listeners/rules/batch/create",
+		svc.BatchCreateListenerWithRule)
+	h.Add("BatchUpdateListener", http.MethodPatch, "/vendors/{vendor}/listeners/batch/update", svc.BatchUpdateListener)
+	h.Add("BatchDeleteListener", http.MethodDelete, "/listeners/batch", svc.BatchDeleteListener)
 
 	h.Load(cap.WebService)
 }

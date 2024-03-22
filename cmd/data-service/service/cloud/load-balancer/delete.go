@@ -201,7 +201,7 @@ func (svc *lbSvc) BatchDeleteTCloudUrlRule(cts *rest.Contexts) (any, error) {
 	}
 	listResp, err := svc.dao.LoadBalancerTCloudUrlRule().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list tcloud lb rule  failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("list tcloud lb rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, fmt.Errorf("list tcloud lb rule failed, err: %v", err)
 	}
 
@@ -219,6 +219,55 @@ func (svc *lbSvc) BatchDeleteTCloudUrlRule(cts *rest.Contexts) (any, error) {
 	})
 	if err != nil {
 		logs.Errorf("delete rules(ids=%v) failed, err: %v, rid: %s", ruleIds, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+// BatchDeleteListener delete listener
+func (svc *lbSvc) BatchDeleteListener(cts *rest.Contexts) (any, error) {
+	req := new(dataproto.LoadBalancerBatchDeleteReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Fields: []string{"id", "vendor", "cloud_id", "bk_biz_id"},
+		Filter: req.Filter,
+		Page:   core.NewDefaultBasePage(),
+	}
+	listResp, err := svc.dao.LoadBalancerListener().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list listener failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list listener failed, err: %v", err)
+	}
+
+	if len(listResp.Details) == 0 {
+		return nil, nil
+	}
+
+	lblIds := slice.Map(listResp.Details, func(one tablelb.LoadBalancerListenerTable) string { return one.ID })
+	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
+		// 本层直接级联删除，有数据不报错
+		// 删除对应监听器规则
+		for _, lblId := range lblIds {
+			err = svc.deleteRule(cts.Kit, txn, lblId)
+			if err != nil {
+				logs.Errorf("fail to delete rule of listener(%s), err: %v, rid: %s", lblId, err, cts.Kit.Rid)
+				return nil, err
+			}
+		}
+		// 删除监听器
+		delFilter := tools.ContainersExpression("id", lblIds)
+		return nil, svc.dao.LoadBalancerListener().DeleteWithTx(cts.Kit, txn, delFilter)
+	})
+	if err != nil {
+		logs.Errorf("delete listener(ids=%v) failed, err: %v, rid: %s", lblIds, err, cts.Kit.Rid)
 		return nil, err
 	}
 

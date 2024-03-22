@@ -138,7 +138,7 @@ func (t *TCloudImpl) formatCreateListenerRequest(opt *typelb.TCloudCreateListene
 	req := clb.NewCreateListenerRequest()
 	req.LoadBalancerId = converter.ValToPtr(opt.LoadBalancerId)
 	req.ListenerNames = append(req.ListenerNames, converter.ValToPtr(opt.ListenerName))
-	req.Protocol = converter.ValToPtr(opt.Protocol)
+	req.Protocol = converter.ValToPtr(string(opt.Protocol))
 	req.Ports = append(req.Ports, converter.ValToPtr(opt.Port))
 	req.MultiCertInfo = convCert(opt.Certificate)
 
@@ -152,7 +152,7 @@ func (t *TCloudImpl) formatCreateListenerRequest(opt *typelb.TCloudCreateListene
 		req.SessionExpireTime = converter.ValToPtr(opt.SessionExpireTime)
 	}
 	if opt.SniSwitch >= 0 {
-		req.SniSwitch = converter.ValToPtr(opt.SniSwitch)
+		req.SniSwitch = converter.ValToPtr(int64(opt.SniSwitch))
 	}
 	if opt.HealthCheck != nil {
 		req.HealthCheck = &clb.HealthCheck{
@@ -250,7 +250,7 @@ func (t *TCloudImpl) formatUpdateListenerRequest(opt *typelb.TCloudUpdateListene
 		req.SessionExpireTime = converter.ValToPtr(opt.SessionExpireTime)
 	}
 	if opt.SniSwitch >= 0 {
-		req.SniSwitch = converter.ValToPtr(opt.SniSwitch)
+		req.SniSwitch = converter.ValToPtr(int64(opt.SniSwitch))
 	}
 
 	if opt.HealthCheck != nil {

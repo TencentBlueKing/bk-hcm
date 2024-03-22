@@ -26,6 +26,7 @@ import (
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/runtime/filter"
@@ -39,7 +40,7 @@ type TargetGroupCreateReq struct {
 	AccountID       string                 `json:"account_id" validate:"required"`
 	BkBizID         int64                  `json:"bk_biz_id" validate:"omitempty"`
 	Region          string                 `json:"region" validate:"required"`
-	Protocol        string                 `json:"protocol" validate:"required"`
+	Protocol        enumor.ProtocolType    `json:"protocol" validate:"required"`
 	Port            int64                  `json:"port" validate:"required"`
 	VpcID           string                 `json:"vpc_id" validate:"required"`
 	CloudVpcID      string                 `json:"cloud_vpc_id" validate:"omitempty"`
@@ -58,6 +59,7 @@ type TargetGroupBatchCreateReq[Extension corelb.TargetGroupExtension] struct {
 	TargetGroups []TargetGroupBatchCreate[Extension] `json:"target_groups" validate:"required,min=1"`
 }
 
+// TCloudTargetGroupCreateReq ...
 type TCloudTargetGroupCreateReq = TargetGroupBatchCreateReq[corelb.TCloudTargetGroupExtension]
 
 // TargetGroupBatchCreate define target group batch create.
@@ -67,7 +69,7 @@ type TargetGroupBatchCreate[Extension corelb.TargetGroupExtension] struct {
 	AccountID       string                 `json:"account_id" validate:"required"`
 	BkBizID         int64                  `json:"bk_biz_id" validate:"required,min=1"`
 	Region          string                 `json:"region" validate:"required"`
-	Protocol        string                 `json:"protocol" validate:"required"`
+	Protocol        enumor.ProtocolType    `json:"protocol" validate:"required"`
 	Port            int64                  `json:"port" validate:"required"`
 	VpcID           string                 `json:"vpc_id" validate:"required"`
 	CloudVpcID      string                 `json:"cloud_vpc_id" validate:"omitempty"`
@@ -108,7 +110,7 @@ type TargetGroupUpdateReq struct {
 	VpcID           string                 `json:"vpc_id"`
 	CloudVpcID      string                 `json:"cloud_vpc_id"`
 	Region          string                 `json:"region"`
-	Protocol        string                 `json:"protocol"`
+	Protocol        enumor.ProtocolType    `json:"protocol"`
 	Port            int64                  `json:"port"`
 	Weight          int64                  `json:"weight"`
 	HealthCheck     types.JsonField        `json:"health_check"`
@@ -133,7 +135,7 @@ type TargetGroupExtUpdateReq[T corelb.TargetGroupExtension] struct {
 	VpcID           string                 `json:"vpc_id"`
 	CloudVpcID      string                 `json:"cloud_vpc_id"`
 	Region          string                 `json:"region"`
-	Protocol        string                 `json:"protocol"`
+	Protocol        enumor.ProtocolType    `json:"protocol"`
 	Port            int64                  `json:"port"`
 	Weight          int64                  `json:"weight"`
 	HealthCheck     types.JsonField        `json:"health_check"`
@@ -204,5 +206,116 @@ type TargetGroupListenerRelCreateReq struct {
 }
 
 func (req *TargetGroupListenerRelCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// -------------------------- Create Listener --------------------------
+
+// ListenerBatchCreateReq listener batch create req.
+type ListenerBatchCreateReq struct {
+	Listeners []ListenersCreateReq `json:"listeners" validate:"required,min=1"`
+}
+
+func (req *ListenerBatchCreateReq) Validate() error {
+	for _, item := range req.Listeners {
+		if err := item.Validate(); err != nil {
+			return errf.NewFromErr(errf.InvalidParameter, err)
+		}
+	}
+	return validator.Validate.Struct(req)
+}
+
+// ListenersCreateReq listener create req.
+type ListenersCreateReq struct {
+	CloudID   string              `json:"cloud_id" validate:"required"`
+	Name      string              `json:"name" validate:"required"`
+	Vendor    enumor.Vendor       `json:"vendor" validate:"required"`
+	AccountID string              `json:"account_id" validate:"required"`
+	BkBizID   int64               `json:"bk_biz_id" validate:"omitempty"`
+	LbID      string              `json:"lb_id" validate:"required"`
+	CloudLbID string              `json:"cloud_lb_id" validate:"required"`
+	Protocol  enumor.ProtocolType `json:"protocol" validate:"required"`
+	Port      int64               `json:"port" validate:"required"`
+	Domain    string              `json:"domain" validate:"omitempty"`
+}
+
+func (req *ListenersCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// -------------------------- Create Listener && Rule --------------------------
+
+// ListenerWithRuleBatchCreateReq listener with rule batch create req.
+type ListenerWithRuleBatchCreateReq struct {
+	ListenerWithRules []ListenerWithRuleCreateReq `json:"listener_with_rules" validate:"required,min=1"`
+}
+
+func (req *ListenerWithRuleBatchCreateReq) Validate() error {
+	for _, item := range req.ListenerWithRules {
+		if err := item.Validate(); err != nil {
+			return errf.NewFromErr(errf.InvalidParameter, err)
+		}
+	}
+	return validator.Validate.Struct(req)
+}
+
+// ListenerWithRuleCreateReq listener with rule create req.
+type ListenerWithRuleCreateReq struct {
+	CloudID   string              `json:"cloud_id" validate:"required"`
+	Name      string              `json:"name" validate:"required"`
+	Vendor    enumor.Vendor       `json:"vendor" validate:"required"`
+	AccountID string              `json:"account_id" validate:"required"`
+	BkBizID   int64               `json:"bk_biz_id" validate:"omitempty"`
+	LbID      string              `json:"lb_id" validate:"required"`
+	CloudLbID string              `json:"cloud_lb_id" validate:"required"`
+	Protocol  enumor.ProtocolType `json:"protocol" validate:"required"`
+	Port      int64               `json:"port" validate:"required"`
+
+	CloudRuleID        string                        `json:"cloud_rule_id" validate:"required"`
+	Scheduler          string                        `json:"scheduler" validate:"required"`
+	RuleType           enumor.RuleType               `json:"rule_type" validate:"required"`
+	SessionType        string                        `json:"session_type" validate:"required"`
+	SessionExpire      int64                         `json:"session_expire" validate:"required"`
+	TargetGroupID      string                        `json:"target_group_id" validate:"omitempty"`
+	CloudTargetGroupID string                        `json:"cloud_target_group_id" validate:"omitempty"`
+	Domain             string                        `json:"domain" validate:"omitempty"`
+	Url                string                        `json:"url" validate:"omitempty"`
+	SniSwitch          enumor.SniType                `json:"sni_switch" validate:"omitempty"`
+	Certificate        *corelb.TCloudCertificateInfo `json:"certificate" validate:"omitempty"`
+}
+
+func (req *ListenerWithRuleCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// -------------------------- Update Listener --------------------------
+
+// ListenerBatchUpdateReq listener batch update req.
+type ListenerBatchUpdateReq[Extension corelb.ListenerExtension] struct {
+	Listeners []*ListenerUpdateReq[Extension] `json:"listeners" validate:"required,min=1"`
+}
+
+// TCloudListenerUpdateReq ...
+type TCloudListenerUpdateReq = ListenerBatchUpdateReq[corelb.TCloudListenerExtension]
+
+func (req *ListenerBatchUpdateReq[T]) Validate() error {
+	for _, item := range req.Listeners {
+		if err := item.Validate(); err != nil {
+			return errf.NewFromErr(errf.InvalidParameter, err)
+		}
+	}
+	return validator.Validate.Struct(req)
+}
+
+// ListenerUpdateReq listener update req.
+type ListenerUpdateReq[Extension corelb.ListenerExtension] struct {
+	ID        string         `json:"id" validate:"required"`
+	Name      string         `json:"name" validate:"omitempty"`
+	BkBizID   int64          `json:"bk_biz_id" validate:"omitempty"`
+	SniSwitch enumor.SniType `json:"sni_switch" validate:"omitempty"`
+	Extension *Extension     `json:"extension"`
+}
+
+func (req *ListenerUpdateReq[T]) Validate() error {
 	return validator.Validate.Struct(req)
 }

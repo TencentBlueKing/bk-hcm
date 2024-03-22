@@ -26,7 +26,7 @@ import (
 
 	cloudserver "hcm/pkg/api/cloud-server"
 	dataproto "hcm/pkg/api/data-service/cloud"
-	hclb "hcm/pkg/api/hc-service/load-balancer"
+	hclbproto "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
@@ -46,7 +46,7 @@ func (svc *lbSvc) UpdateBizTCloudLoadBalancer(cts *rest.Contexts) (any, error) {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	req := new(hclb.TCloudLBUpdateReq)
+	req := new(hclbproto.TCloudLBUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -155,6 +155,74 @@ func (svc *lbSvc) batchUpdateTCloudTargetGroup(kt *kit.Kit, body json.RawMessage
 	err := svc.client.DataService().TCloud.LoadBalancer.BatchUpdateTCloudTargetGroup(kt, req)
 	if err != nil {
 		logs.Errorf("update tcloud target group failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+// UpdateBizListener update biz listener.
+func (svc *lbSvc) UpdateBizListener(cts *rest.Contexts) (interface{}, error) {
+	return svc.updateListener(cts, handler.BizOperateAuth)
+}
+
+func (svc *lbSvc) updateListener(cts *rest.Contexts, authHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
+	id := cts.PathParameter("id").String()
+	if len(id) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	req := new(cloudserver.ResourceCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		logs.Errorf("update listener request decode failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if len(req.AccountID) == 0 {
+		return nil, errf.Newf(errf.InvalidParameter, "account_id is required")
+	}
+
+	// authorized instances
+	basicInfo := &types.CloudResourceBasicInfo{
+		AccountID: req.AccountID,
+	}
+	err := authHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Listener,
+		Action: meta.Update, BasicInfo: basicInfo})
+	if err != nil {
+		logs.Errorf("update listener auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	info, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(
+		cts.Kit, enumor.AccountCloudResType, req.AccountID)
+	if err != nil {
+		logs.Errorf("get account basic info failed, accID: %s, err: %v, rid: %s", req.AccountID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	switch info.Vendor {
+	case enumor.TCloud:
+		return svc.batchUpdateTCloudListener(cts.Kit, req.Data, id)
+	default:
+		return nil, fmt.Errorf("vendor: %s not support", info.Vendor)
+	}
+}
+
+func (svc *lbSvc) batchUpdateTCloudListener(kt *kit.Kit, body json.RawMessage, id string) (interface{}, error) {
+	req := new(hclbproto.ListenerWithRuleUpdateReq)
+	if err := json.Unmarshal(body, req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	_, err := svc.client.HCService().TCloud.Clb.UpdateListener(kt, id, req)
+	if err != nil {
+		logs.Errorf("update tcloud listener failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
 		return nil, err
 	}
 

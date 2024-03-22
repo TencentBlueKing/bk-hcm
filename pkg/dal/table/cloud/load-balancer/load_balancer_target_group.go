@@ -68,7 +68,7 @@ type LoadBalancerTargetGroupTable struct {
 	VpcID           string                 `db:"vpc_id" json:"vpc_id"`
 	CloudVpcID      string                 `db:"cloud_vpc_id" json:"cloud_vpc_id"`
 	Region          string                 `db:"region" validate:"lte=20" json:"region"`
-	Protocol        string                 `db:"protocol" json:"protocol"`
+	Protocol        enumor.ProtocolType    `db:"protocol" json:"protocol"`
 	Port            int64                  `db:"port" json:"port"`
 	Weight          int64                  `db:"weight" json:"weight"`
 	HealthCheck     types.JsonField        `db:"health_check" json:"health_check"`

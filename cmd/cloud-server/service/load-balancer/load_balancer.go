@@ -82,6 +82,10 @@ func InitService(c *capability.Capability) {
 	bizH.Add("ListBizTargetGroup", http.MethodPost, "/target_groups/list", svc.ListBizTargetGroup)
 	bizH.Add("GetBizTargetGroup", http.MethodGet, "/target_groups/{id}", svc.GetBizTargetGroup)
 
+	// 监听器
+	bizH.Add("CreateBizListener", http.MethodPost, "/load_balancers/{lb_id}/listeners/create", svc.CreateBizListener)
+	bizH.Add("UpdateBizListener", http.MethodPatch, "/load_balancers/{lb_id}/listeners/{id}", svc.UpdateBizListener)
+
 	bizH.Load(c.WebService)
 }
 

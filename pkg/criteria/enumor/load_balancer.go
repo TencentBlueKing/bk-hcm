@@ -19,6 +19,8 @@
 
 package enumor
 
+import "errors"
+
 // RuleType 负载均衡类型
 type RuleType string
 
@@ -49,3 +51,41 @@ const (
 	// SuccessBindingStatus 绑定状态-成功
 	SuccessBindingStatus BindingStatus = "success"
 )
+
+// ProtocolType 协议类型
+type ProtocolType string
+
+// 目标组类型
+const (
+	// HttpProtocol 协议类型-HTTP
+	HttpProtocol ProtocolType = "HTTP"
+	// HttpsProtocol 协议类型-HTTPS
+	HttpsProtocol ProtocolType = "HTTPS"
+)
+
+// IsLayer7Protocol 是否7层规则类型
+func (p ProtocolType) IsLayer7Protocol() bool {
+	if p == HttpProtocol || p == HttpsProtocol {
+		return true
+	}
+	return false
+}
+
+// SniType SNI类型
+type SniType int64
+
+// 目标组类型
+const (
+	// SniTypeClose SNI类型-关闭
+	SniTypeClose SniType = 0
+	// SniTypeOpen SNI类型-开启
+	SniTypeOpen SniType = 1
+)
+
+// Validate SNI类型是否合法
+func (s SniType) Validate() error {
+	if s != SniTypeClose && s != SniTypeOpen {
+		return errors.New("sni_switch is illegal")
+	}
+	return nil
+}

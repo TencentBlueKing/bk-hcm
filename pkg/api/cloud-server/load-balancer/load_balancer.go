@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 )
 
@@ -154,18 +155,18 @@ type ListLbUrlRuleResult = core.ListResultT[ListLbUrlRuleBase]
 // ListLbUrlRuleBase define list lb url rule base.
 type ListLbUrlRuleBase struct {
 	corelb.BaseTCloudLbUrlRule
-	LblName              string   `json:"lbl_name"`
-	LbName               string   `json:"lb_name"`
-	PrivateIPv4Addresses []string `json:"private_ipv4_addresses"`
-	PrivateIPv6Addresses []string `json:"private_ipv6_addresses"`
-	PublicIPv4Addresses  []string `json:"public_ipv4_addresses"`
-	PublicIPv6Addresses  []string `json:"public_ipv6_addresses"`
-	Protocol             string   `json:"protocol"`
-	Port                 int64    `json:"port"`
-	VpcID                string   `json:"vpc_id"`
-	VpcName              string   `json:"vpc_name"`
-	CloudVpcID           string   `json:"cloud_vpc_id"`
-	InstType             string   `json:"inst_type"`
+	LblName              string              `json:"lbl_name"`
+	LbName               string              `json:"lb_name"`
+	PrivateIPv4Addresses []string            `json:"private_ipv4_addresses"`
+	PrivateIPv6Addresses []string            `json:"private_ipv6_addresses"`
+	PublicIPv4Addresses  []string            `json:"public_ipv4_addresses"`
+	PublicIPv6Addresses  []string            `json:"public_ipv6_addresses"`
+	Protocol             enumor.ProtocolType `json:"protocol"`
+	Port                 int64               `json:"port"`
+	VpcID                string              `json:"vpc_id"`
+	VpcName              string              `json:"vpc_name"`
+	CloudVpcID           string              `json:"cloud_vpc_id"`
+	InstType             string              `json:"inst_type"`
 }
 
 // -------------------------- List TargetGroup --------------------------
