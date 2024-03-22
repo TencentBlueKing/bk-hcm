@@ -201,7 +201,7 @@ func (svc *lbSvc) getListener(cts *rest.Contexts, validHandler handler.ListAuthR
 		return nil, err
 	}
 	if noPerm {
-		//return nil, errf.New(errf.PermissionDenied, "permission denied for get listener")
+		return nil, errf.New(errf.PermissionDenied, "permission denied for get listener")
 	}
 
 	switch basicInfo.Vendor {
