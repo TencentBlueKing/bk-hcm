@@ -1,5 +1,5 @@
 import { Ref, defineComponent, ref } from 'vue';
-import { Button, Dropdown } from 'bkui-vue';
+import { Button, Dropdown, InfoBox, Message } from 'bkui-vue';
 import { BkRadioGroup, BkRadioButton } from 'bkui-vue/lib/radio';
 import { Plus, AngleDown } from 'bkui-vue/lib/icon';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
@@ -12,6 +12,9 @@ import AddRsDialogContent from './add-rs-dialog-content';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import RsSidesliderContent from './rs-sideslider-content';
 import './index.scss';
+import { useAccountStore, useBusinessStore } from '@/store';
+import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
+import { useLoadBalancerStore } from '@/store/loadbalancer';
 
 const { DropdownMenu, DropdownItem } = Dropdown;
 
@@ -19,19 +22,77 @@ export default defineComponent({
   name: 'AllGroupsManager',
   setup() {
     const { columns, settings } = useColumns('targetGroup');
+    const businessStore = useBusinessStore();
+    const accountStore = useAccountStore();
+    const loadBalancerStore = useLoadBalancerStore();
+    const { selections, handleSelectionChange } = useSelection();
+    const rsList = ref([]);
+    const rsSelections = ref([]);
+    const rsData = ref([]);
+    const submitData = ref([]);
+    const isEdit = ref(false);
+    const editRecord: Ref<{ id: string }> = ref(null);
     const tableColumns = [
       ...columns,
       {
         label: '操作',
         width: 120,
-        render: () => (
-          <div class='operate-groups'>
-            <span>编辑</span>
-            <span>删除</span>
+        render: ({ data }: any) => (
+          <div>
+            <Button
+              text
+              theme={'primary'}
+              onClick={() => {
+                isTargetGroupSidesliderShow.value = true;
+                isEdit.value = true;
+                editRecord.value = data;
+              }}>
+              编辑
+            </Button>
+            <span
+              v-bk-tooltips={{
+                content: '已绑定了监听器的目标组不可删除',
+                disabled: data.listener_num === 0,
+              }}>
+              <Button
+                text
+                theme={'primary'}
+                disabled={data.listener_num > 0}
+                class={'ml16'}
+                onClick={() => {
+                  handleDeleteTargetGroup(data.id, data.name);
+                }}>
+                删除
+              </Button>
+            </span>
           </div>
         ),
       },
     ];
+
+    // 删除单个目标组
+    const handleDeleteTargetGroup = (id: string, name: string) => {
+      InfoBox({
+        title: '请确认是否删除',
+        subTitle: `将删除【${name}】`,
+        headerAlign: 'center',
+        footerAlign: 'center',
+        contentAlign: 'center',
+        infoType: 'warning',
+        onConfirm: async () => {
+          await businessStore.deleteTargetGroups({
+            bk_biz_id: accountStore.bizs,
+            ids: [id],
+          });
+          getListData();
+          Message({
+            message: '删除成功',
+            theme: 'success',
+          });
+        },
+      });
+    };
+
     const searchData: ISearchItem[] = [
       {
         id: 'target_group_name',
@@ -66,63 +127,24 @@ export default defineComponent({
         name: 'RS的IP',
       },
     ];
-    const tableData = [
-      {
-        target_group_name: 'TargetGroup1',
-        clb_name: 'CLB1',
-        listener_count: 3,
-        protocol: 'HTTP',
-        port: 80,
-        vendor: 'Amazon',
-        region: 'us-west-1',
-        zone: 'us-west-1a',
-        type: 'public',
-        vpc_id: 'vpc-1234abcd',
-        health_check_port: 8080,
-        ip_type: 'ipv4',
-      },
-      {
-        target_group_name: 'TargetGroup2',
-        clb_name: 'CLB2',
-        listener_count: 5,
-        protocol: 'HTTPS',
-        port: 443,
-        vendor: 'Amazon',
-        region: 'eu-central-1',
-        zone: 'eu-central-1b',
-        type: 'internal',
-        vpc_id: 'vpc-5678efgh',
-        health_check_port: 8443,
-        ip_type: 'ipv6',
-      },
-      {
-        target_group_name: 'TargetGroup3',
-        clb_name: 'CLB3',
-        listener_count: 2,
-        protocol: 'TCP',
-        port: 22,
-        vendor: 'Amazon',
-        region: 'ap-southeast-1',
-        zone: 'ap-southeast-1c',
-        type: 'public',
-        vpc_id: 'vpc-90ab12cd',
-        health_check_port: 8000,
-        ip_type: 'ipv4',
-      }, // 尾后逗号
-    ];
-    const { CommonTable } = useTable({
+    const { CommonTable, getListData } = useTable({
       searchOptions: {
         searchData,
       },
       tableOptions: {
         columns: tableColumns,
-        reviewData: tableData,
         extra: {
           settings: settings.value,
+          onSelect: (selections: any) => {
+            handleSelectionChange(selections, () => true, false);
+          },
+          onSelectAll: (selections: any) => {
+            handleSelectionChange(selections, () => true, true);
+          },
         },
       },
       requestOption: {
-        type: '',
+        type: 'target_groups',
       },
     });
 
@@ -131,15 +153,28 @@ export default defineComponent({
     const isTargetGroupSidesliderShow = ref(false);
     const isDropdownShow = ref(false);
     const handleAddTargetGroup = () => {
+      isEdit.value = false;
       currentScene.value = 'addTargetGroup';
       isTargetGroupSidesliderShow.value = true;
       isDropdownShow.value = false;
     };
-    const handleAddTargetGroupSubmit = () => {};
+    const handleAddTargetGroupSubmit = async () => {
+      const promise = isEdit.value
+        ? businessStore.editTargetGroups(editRecord.value.id, submitData.value)
+        : businessStore.createTargetGroups(submitData.value);
+      await promise;
+      Message({
+        message: isEdit.value ? '编辑成功' : '新建成功',
+        theme: 'success',
+      });
+      isTargetGroupSidesliderShow.value = false;
+      getListData();
+    };
 
     // 添加单个RS
     const isAddRsDialogShow = ref(false);
     const handleAddRs = () => {
+      rsData.value = rsSelections.value;
       if (currentScene.value === 'addTargetGroup') {
         // todo
       } else {
@@ -166,16 +201,19 @@ export default defineComponent({
     };
     // 批量删除目标组
     const batchDeleteTargetGroupTableProps = {
-      data: tableData,
+      data: selections.value,
       columns: [
         {
           label: '目标组名称',
-          field: 'target_group_name',
+          field: 'name',
         },
         {
           label: '协议',
           field: 'protocol',
           filter: true,
+          render({ cell }: any) {
+            return cell.trim() || '--';
+          },
         },
         {
           label: '端口',
@@ -184,18 +222,31 @@ export default defineComponent({
         },
         {
           label: '关联的负载均衡',
-          field: 'clb_name',
+          field: 'lb_name',
+          render({ cell }: any) {
+            return cell.trim() || '--';
+          },
         },
         {
           label: '绑定监听器数量',
-          field: 'listener_count',
+          field: 'listener_num',
           sort: true,
           align: 'right',
         },
       ],
       searchData,
     };
-    const batchDeleteTargetGroup = () => {};
+    const batchDeleteTargetGroup = async () => {
+      await businessStore.deleteTargetGroups({
+        bk_biz_id: accountStore.bizs,
+        ids: selections.value.map(({ id }) => id),
+      });
+      Message({
+        message: '批量删除成功',
+        theme: 'success',
+      });
+      loadBalancerStore.getTargetGroupList();
+    };
     // 批量移除 RS
     const batchDeleteRs = () => {};
     // 批量添加 RS
@@ -214,7 +265,9 @@ export default defineComponent({
                 <Dropdown trigger='manual' isShow={isDropdownShow.value} placement='bottom-start'>
                   {{
                     default: () => (
-                      <Button onClick={() => (isDropdownShow.value = !isDropdownShow.value)}>
+                      <Button
+                        onClick={() => (isDropdownShow.value = !isDropdownShow.value)}
+                        disabled={!selections.value.length}>
                         批量操作 <AngleDown class='f20' />
                       </Button>
                     ),
@@ -234,18 +287,33 @@ export default defineComponent({
           }}
         </CommonTable>
         <CommonSideslider
-          title='新建目标组'
+          title={isEdit.value ? '编辑目标组' : '新建目标组'}
           width={960}
           v-model:isShow={isTargetGroupSidesliderShow.value}
           onHandleSubmit={handleAddTargetGroupSubmit}>
-          <TargetGroupSidesliderContent onShowAddRsDialog={() => (isAddRsDialogShow.value = true)} />
+          <TargetGroupSidesliderContent
+            isEdit={isEdit.value}
+            editData={editRecord.value}
+            onShowAddRsDialog={(payload) => {
+              isAddRsDialogShow.value = true;
+              rsList.value = payload;
+            }}
+            onChange={(data: any) => {
+              submitData.value = data;
+            }}
+            rsTableData={rsData.value}
+          />
         </CommonSideslider>
         <CommonDialog
           v-model:isShow={isAddRsDialogShow.value}
           title='添加 RS'
           width={640}
           onHandleConfirm={handleAddRs}>
-          <AddRsDialogContent />
+          <AddRsDialogContent
+            rsList={rsList.value}
+            onSelect={(selections: any) => (rsSelections.value = selections)}
+            rsTableData={rsData.value}
+          />
         </CommonDialog>
         <BatchOperationDialog
           v-model:isShow={isBatchDeleteTargetGroupShow.value}
@@ -257,8 +325,9 @@ export default defineComponent({
           {{
             tips: () => (
               <>
-                已选择 <span class='blue'>150</span> 个目标组，其中可删除 <span class='green'>138</span> 个, 不可删除{' '}
-                <span class='red'>12</span> 个（已绑定了监听器的目标组不可删除）。
+                已选择 <span class='blue'>{selections.value.length}</span> 个目标组，其中可删除{' '}
+                <span class='green'> {selections.value.length} </span> 个, 不可删除{' '}
+                <span class='red'> {selections.value.length} </span> 个（已绑定了监听器的目标组不可删除）。
               </>
             ),
             tab: () => (
@@ -284,7 +353,7 @@ export default defineComponent({
           v-model:isShow={isBatchAddRsShow.value}
           onHandleSubmit={handleBatchAddRsSubmit}>
           <RsSidesliderContent
-            selectedTargetGroups={tableData}
+            selectedTargetGroups={loadBalancerStore.allTargetGroupList}
             onShowAddRsDialog={() => (isAddRsDialogShow.value = true)}
           />
         </CommonSideslider>

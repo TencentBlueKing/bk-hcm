@@ -105,7 +105,7 @@ export const useBusinessStore = defineStore({
      * 批量删除目标组
      */
     deleteTargetGroups(data: { bk_biz_id: number; ids: string[] }) {
-      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/batch`, data);
+      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/batch`, { data });
     },
     /**
      * 编辑目标组基本信息
@@ -114,6 +114,29 @@ export const useBusinessStore = defineStore({
       return http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${id}`, data);
     },
     /**
+     * 目标组绑定RS列表
+     */
+    getRsList(
+      tg_id: string,
+      data: {
+        bk_biz_id: string;
+        tg_id: string;
+        filter: Object;
+        page: Object;
+      },
+    ) {
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${tg_id}/targets/list`,
+        data,
+      );
+    },
+    /**
+     * 查询全量的RS列表
+     */
+    getAllRsList(data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}cvms/list`, data);
+    },
+    /*
      * 业务下腾讯云监听器域名列表
      * @param id 监听器ID
      * @returns 域名列表
