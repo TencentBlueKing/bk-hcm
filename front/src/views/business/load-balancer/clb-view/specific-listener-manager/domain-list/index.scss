@@ -1,4 +1,6 @@
 .domain-list-page {
+  height: 100%;
+
   .set-default-operation-wrap {
     display: flex;
     align-items: center;
@@ -22,4 +24,27 @@
   font-size: 14px;
   color: #c4c6cc;
   cursor: pointer;
+}
+
+.domain-sideslider {
+  .readonly-info {
+    display: flex;
+    align-items: center;
+    height: 40px;
+
+    .label {
+      margin-right: 5px;
+      width: 80px;
+      text-align: right;
+    }
+
+    .value {
+      margin-left: 10px;
+      color: #313238;
+    }
+
+    &:last-of-type {
+      margin-bottom: 12px;
+    }
+  }
 }
