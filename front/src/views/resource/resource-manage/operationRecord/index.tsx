@@ -91,6 +91,12 @@ export default defineComponent({
       },
     });
 
+    // 资源类型 tab 选项
+    const resourceTypes = [
+      { label: 'all', text: '全部' },
+      { label: 'security_group', text: '安全组' },
+      { label: 'load_balancer', text: '负载均衡' },
+    ];
     // 当前选中的资源类型，默认为全部
     const activeResourceType = ref('all');
 
@@ -168,8 +174,9 @@ export default defineComponent({
             {{
               operation: () => (
                 <BkRadioGroup v-model={activeResourceType.value} type='capsule' class='resource-radio-group'>
-                  <BkRadioButton label='all'>全部</BkRadioButton>
-                  <BkRadioButton label='security_group'>安全组</BkRadioButton>
+                  {resourceTypes.map(({ label, text }) => (
+                    <BkRadioButton label={label}>{text}</BkRadioButton>
+                  ))}
                 </BkRadioGroup>
               ),
             }}
