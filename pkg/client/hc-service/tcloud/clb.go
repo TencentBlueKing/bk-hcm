@@ -90,6 +90,7 @@ func (c *ClbClient) UpdateListener(kt *kit.Kit, id string, req *hcproto.Listener
 func (c *ClbClient) DeleteListener(kt *kit.Kit, req *core.BatchDeleteReq) error {
 	return common.RequestNoResp[core.BatchDeleteReq](c.client, http.MethodDelete, kt, req, "/listeners/batch")
 }
+
 // BatchCreateUrlRule 批量创建规则
 func (c *ClbClient) BatchCreateUrlRule(kt *kit.Kit, lblID string, req *hcproto.TCloudRuleBatchCreateReq) (
 	*hcproto.BatchCreateResult, error) {
@@ -108,4 +109,10 @@ func (c *ClbClient) UpdateUrlRule(kt *kit.Kit, lblID, ruleID string, req *hcprot
 func (c *ClbClient) BatchDeleteUrlRule(kt *kit.Kit, lblID string, req *hcproto.TCloudBatchDeleteRuleReq) error {
 	return common.RequestNoResp[hcproto.TCloudBatchDeleteRuleReq](c.client, http.MethodDelete, kt, req,
 		"/listeners/%s/rules/batch", lblID)
+}
+
+// UpdateDomainAttr 更新域名属性
+func (c *ClbClient) UpdateDomainAttr(kt *kit.Kit, id string, req *hcproto.DomainAttrUpdateReq) error {
+	return common.RequestNoResp[hcproto.DomainAttrUpdateReq](
+		c.client, http.MethodPatch, kt, req, "/listeners/%s/domains", id)
 }

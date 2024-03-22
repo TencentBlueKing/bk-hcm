@@ -228,3 +228,57 @@ func (svc *lbSvc) batchUpdateTCloudListener(kt *kit.Kit, body json.RawMessage, i
 
 	return nil, nil
 }
+
+// UpdateBizDomainAttr update biz domain attr.
+func (svc *lbSvc) UpdateBizDomainAttr(cts *rest.Contexts) (interface{}, error) {
+	return svc.updateDomainAttr(cts, handler.BizOperateAuth)
+}
+
+func (svc *lbSvc) updateDomainAttr(cts *rest.Contexts, authHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
+	lblID := cts.PathParameter("lbl_id").String()
+	if len(lblID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "lbl_id is required")
+	}
+
+	req := new(hclbproto.DomainAttrUpdateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		logs.Errorf("update listener request decode failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if len(req.NewDomain) == 0 {
+		return nil, errf.Newf(errf.InvalidParameter, "new_domain is required")
+	}
+
+	// authorized instances
+	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.ListenerCloudResType, lblID)
+	if err != nil {
+		logs.Errorf("get listener resource vendor failed, lblID: %s, err: %s, rid: %s", lblID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	err = authHandler(cts, &handler.ValidWithAuthOption{
+		Authorizer: svc.authorizer,
+		ResType:    meta.LoadBalancer,
+		Action:     meta.Update,
+		BasicInfo:  baseInfo,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	switch baseInfo.Vendor {
+	case enumor.TCloud:
+		err = svc.client.HCService().TCloud.Clb.UpdateDomainAttr(cts.Kit, lblID, req)
+		if err != nil {
+			logs.Errorf("update tcloud listener url rule domain attr failed, lblID: %s, req: %+v, err: %v, rid: %s",
+				lblID, req, err, cts.Kit.Rid)
+			return nil, err
+		}
+		return nil, nil
+	default:
+		return nil, fmt.Errorf("vendor: %s not support", baseInfo.Vendor)
+	}
+}

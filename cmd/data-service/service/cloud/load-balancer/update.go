@@ -347,11 +347,12 @@ func batchUpdateListener[T corelb.ListenerExtension](cts *rest.Contexts) (any, e
 
 			// 更新监听器
 			lblInfo := &tablelb.LoadBalancerListenerTable{
-				Name:      item.Name,
-				BkBizID:   item.BkBizID,
-				SniSwitch: item.SniSwitch,
-				Extension: extensionJSON,
-				Reviser:   cts.Kit.User,
+				Name:          item.Name,
+				BkBizID:       item.BkBizID,
+				SniSwitch:     item.SniSwitch,
+				DefaultDomain: item.DefaultDomain,
+				Extension:     extensionJSON,
+				Reviser:       cts.Kit.User,
 			}
 			if err = svc.dao.LoadBalancerListener().Update(
 				cts.Kit, tools.EqualExpression("id", item.ID), lblInfo); err != nil {
