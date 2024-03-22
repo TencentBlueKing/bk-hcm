@@ -64,6 +64,10 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 	h.Add("UpdateTCloudListener", http.MethodPatch, "/vendors/tcloud/listeners/{id}", svc.UpdateTCloudListener)
 	h.Add("DeleteTCloudListener", http.MethodDelete, "/vendors/tcloud/listeners/batch", svc.DeleteTCloudListener)
 
+	// 域名、规则
+	h.Add("UpdateTCloudDomainAttr", http.MethodPatch, "/vendors/tcloud/listeners/{lbl_id}/domains",
+		svc.UpdateTCloudDomainAttr)
+
 	h.Load(cap.WebService)
 }
 
@@ -702,4 +706,140 @@ func (svc *clbSvc) getListenerWithRule(kt *kit.Kit, req *core.BatchDeleteReq) ([
 	}
 
 	return lblIDs, lblCloudIDs, lbList, ruleMap, nil
+}
+
+// UpdateTCloudDomainAttr 更新域名属性
+func (svc *clbSvc) UpdateTCloudDomainAttr(cts *rest.Contexts) (any, error) {
+	lblID := cts.PathParameter("lbl_id").String()
+	if len(lblID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "lbl_id is required")
+	}
+
+	req := new(protolb.DomainAttrUpdateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// 获取监听器基本信息
+	lblInfo, err := svc.dataCli.TCloud.LoadBalancer.GetListener(cts.Kit, lblID)
+	if err != nil || lblInfo == nil {
+		logs.Errorf("fail to get tcloud listener(%s), err: %v, rid: %s", lblID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	// 只有7层监听器才能更新域名
+	if !lblInfo.Protocol.IsLayer7Protocol() {
+		return nil, errf.Newf(errf.InvalidParameter, "only layer 7 listeners can be updated")
+	}
+	// 只有SNI开启的监听器，才能更新域名下的证书信息（非sni更新证书是在监听器上的，单个规则/域名没有单独的证书信息）
+	if req.Certificate != nil && lblInfo.SniSwitch == enumor.SniTypeClose {
+		return nil, errf.Newf(errf.InvalidParameter, "the certificate of the domain can not update when SNI closed")
+	}
+
+	// 获取规则列表
+	ruleOpt := &core.ListReq{
+		Filter: tools.ExpressionAnd(tools.RuleEqual("lbl_id", lblID), tools.RuleEqual("domain", req.Domain)),
+		Page:   core.NewDefaultBasePage(),
+	}
+	ruleList, err := svc.dataCli.TCloud.LoadBalancer.ListUrlRule(cts.Kit, ruleOpt)
+	if err != nil {
+		logs.Errorf("fail to list tcloud rule, lblID: %s, err: %v, rid: %s", lblID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	if len(ruleList.Details) == 0 {
+		return nil, errf.Newf(errf.RecordNotFound, "domain: %s not found", req.Domain)
+	}
+
+	// 获取负载均衡信息
+	lbInfo, err := svc.dataCli.TCloud.LoadBalancer.Get(cts.Kit, lblInfo.LbID)
+	if err != nil || lbInfo == nil {
+		logs.Errorf("fail to get tcloud load balancer(%s), err: %v, rid: %s", lblInfo.LbID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// 调用云上更新接口
+	err = svc.updateTCloudDomainAttr(cts.Kit, req, lblID, lbInfo, lblInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	// 更新DB规则信息
+	ruleReq := &dataproto.TCloudUrlRuleBatchUpdateReq{
+		UrlRules: []*dataproto.TCloudUrlRuleUpdate{},
+	}
+	for _, item := range ruleList.Details {
+		tmpRule := &dataproto.TCloudUrlRuleUpdate{ID: item.ID}
+		if len(req.NewDomain) > 0 {
+			tmpRule.Domain = req.NewDomain
+		}
+		if req.Certificate != nil {
+			tmpRule.Certificate = req.Certificate
+		}
+		ruleReq.UrlRules = append(ruleReq.UrlRules, tmpRule)
+	}
+	_, err = svc.dataCli.TCloud.LoadBalancer.BatchUpdateTCloudUrlRule(cts.Kit, ruleReq)
+	if err != nil {
+		logs.Errorf("update tcloud listener url rule domain attr failed, req: %+v, ruleReq: %+v, err: %v, rid: %s",
+			req, ruleReq, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// 更新默认域名
+	if req.DefaultServer != nil && cvt.PtrToVal(req.DefaultServer) == true {
+		lblReq := &dataproto.TCloudListenerUpdateReq{
+			Listeners: []*dataproto.ListenerUpdateReq[corelb.TCloudListenerExtension]{{
+				ID:            lblID,
+				DefaultDomain: req.NewDomain,
+			}},
+		}
+		_, err = svc.dataCli.TCloud.LoadBalancer.BatchUpdateTCloudListener(cts.Kit, lblReq)
+		if err != nil {
+			logs.Errorf("update tcloud listener base failed, req: %+v, lblID: %s, err: %v, rid: %s",
+				req, lblID, err, cts.Kit.Rid)
+			return nil, err
+		}
+	}
+
+	return nil, nil
+}
+
+func (svc *clbSvc) updateTCloudDomainAttr(kt *kit.Kit, req *protolb.DomainAttrUpdateReq, lblID string,
+	lbInfo *corelb.LoadBalancer[corelb.TCloudClbExtension], lblInfo *corelb.BaseListener) error {
+
+	client, err := svc.ad.TCloud(kt, lbInfo.AccountID)
+	if err != nil {
+		return err
+	}
+
+	// 更新云端域名属性信息
+	domainOpt := &typelb.TCloudUpdateDomainAttrOption{
+		Region:         lbInfo.Region,
+		LoadBalancerId: lbInfo.CloudID,
+		ListenerId:     lblInfo.CloudID,
+		Domain:         req.Domain,
+	}
+	if len(req.NewDomain) > 0 {
+		domainOpt.NewDomain = req.NewDomain
+	}
+	if req.Certificate != nil {
+		domainOpt.Certificate = req.Certificate
+	}
+	if req.DefaultServer != nil {
+		domainOpt.DefaultServer = req.DefaultServer
+	}
+	// 只有HTTPS域名才能开启Http2、Quic
+	if lblInfo.Protocol == enumor.HttpsProtocol {
+		domainOpt.Http2 = req.Http2
+		domainOpt.Quic = req.Quic
+	}
+	err = client.UpdateDomainAttr(kt, domainOpt)
+	if err != nil {
+		logs.Errorf("fail to call tcloud update domain attr, lblID: %s, err: %v, rid: %s", lblID, err, kt.Rid)
+		return err
+	}
+
+	return nil
 }

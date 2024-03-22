@@ -50,6 +50,7 @@ type TargetGroupCreateReq struct {
 	Memo            *string                `json:"memo"`
 }
 
+// Validate 验证目标组创建参数
 func (req *TargetGroupCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
@@ -80,6 +81,7 @@ type TargetGroupBatchCreate[Extension corelb.TargetGroupExtension] struct {
 	Extension       *Extension             `json:"extension"`
 }
 
+// Validate 验证目标组创建参数
 func (req *TargetGroupBatchCreate[T]) Validate() error {
 	return validator.Validate.Struct(req)
 }
@@ -150,6 +152,7 @@ func (req *TargetGroupExtUpdateReq[T]) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
+// TargetGroupBatchUpdateReq 目标组批量更新参数
 type TargetGroupBatchUpdateReq[T corelb.TargetGroupExtension] []*TargetGroupExtUpdateReq[T]
 
 // Validate ...
@@ -205,6 +208,7 @@ type TargetGroupListenerRelCreateReq struct {
 	CloudTargetGroupID string               `json:"cloud_target_group_id" validate:"omitempty"`
 }
 
+// Validate 验证目标组与监听器关系接口的参数
 func (req *TargetGroupListenerRelCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
@@ -216,6 +220,7 @@ type ListenerBatchCreateReq struct {
 	Listeners []ListenersCreateReq `json:"listeners" validate:"required,min=1"`
 }
 
+// Validate 验证监听器批量创建的参数
 func (req *ListenerBatchCreateReq) Validate() error {
 	for _, item := range req.Listeners {
 		if err := item.Validate(); err != nil {
@@ -239,6 +244,7 @@ type ListenersCreateReq struct {
 	Domain    string              `json:"domain" validate:"omitempty"`
 }
 
+// Validate 验证监听器创建参数
 func (req *ListenersCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
@@ -250,6 +256,7 @@ type ListenerWithRuleBatchCreateReq struct {
 	ListenerWithRules []ListenerWithRuleCreateReq `json:"listener_with_rules" validate:"required,min=1"`
 }
 
+// Validate 验证监听器跟规则批量创建的参数
 func (req *ListenerWithRuleBatchCreateReq) Validate() error {
 	for _, item := range req.ListenerWithRules {
 		if err := item.Validate(); err != nil {
@@ -284,6 +291,7 @@ type ListenerWithRuleCreateReq struct {
 	Certificate        *corelb.TCloudCertificateInfo `json:"certificate" validate:"omitempty"`
 }
 
+// Validate 验证监听器跟规则创建的参数
 func (req *ListenerWithRuleCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
@@ -298,6 +306,7 @@ type ListenerBatchUpdateReq[Extension corelb.ListenerExtension] struct {
 // TCloudListenerUpdateReq ...
 type TCloudListenerUpdateReq = ListenerBatchUpdateReq[corelb.TCloudListenerExtension]
 
+// Validate 验证监听器更新参数
 func (req *ListenerBatchUpdateReq[T]) Validate() error {
 	for _, item := range req.Listeners {
 		if err := item.Validate(); err != nil {
@@ -309,13 +318,15 @@ func (req *ListenerBatchUpdateReq[T]) Validate() error {
 
 // ListenerUpdateReq listener update req.
 type ListenerUpdateReq[Extension corelb.ListenerExtension] struct {
-	ID        string         `json:"id" validate:"required"`
-	Name      string         `json:"name" validate:"omitempty"`
-	BkBizID   int64          `json:"bk_biz_id" validate:"omitempty"`
-	SniSwitch enumor.SniType `json:"sni_switch" validate:"omitempty"`
-	Extension *Extension     `json:"extension"`
+	ID            string         `json:"id" validate:"required"`
+	Name          string         `json:"name" validate:"omitempty"`
+	BkBizID       int64          `json:"bk_biz_id" validate:"omitempty"`
+	SniSwitch     enumor.SniType `json:"sni_switch" validate:"omitempty"`
+	DefaultDomain string         `json:"default_domain" validate:"omitempty"`
+	Extension     *Extension     `json:"extension"`
 }
 
+// Validate 验证监听器更新的参数
 func (req *ListenerUpdateReq[T]) Validate() error {
 	return validator.Validate.Struct(req)
 }

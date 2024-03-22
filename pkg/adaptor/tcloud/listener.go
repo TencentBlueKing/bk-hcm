@@ -493,6 +493,7 @@ func (t *TCloudImpl) UpdateDomainAttr(kt *kit.Kit, opt *typelb.TCloudUpdateDomai
 	if len(opt.NewDefaultServerDomain) > 0 {
 		req.NewDefaultServerDomain = converter.ValToPtr(opt.NewDefaultServerDomain)
 	}
+	req.MultiCertInfo = convCert(opt.Certificate)
 	updateResp, err := client.ModifyDomainAttributesWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("update tencent cloud domain attr instance failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)

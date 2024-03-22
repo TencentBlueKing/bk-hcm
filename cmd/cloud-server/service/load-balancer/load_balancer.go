@@ -78,6 +78,7 @@ func InitService(c *capability.Capability) {
 	bizH.Add("CreateBizListener", http.MethodPost, "/load_balancers/{lb_id}/listeners/create", svc.CreateBizListener)
 	bizH.Add("UpdateBizListener", http.MethodPatch, "/listeners/{id}", svc.UpdateBizListener)
 	bizH.Add("DeleteBizListener", http.MethodDelete, "/listeners/batch", svc.DeleteBizListener)
+	bizH.Add("UpdateBizDomainAttr", http.MethodPatch, "/listeners/{lbl_id}/domains", svc.UpdateBizDomainAttr)
 
 	// 规则
 	bizH.Add("GetBizTCloudUrlRule", http.MethodGet,
