@@ -485,21 +485,23 @@ type TCloudUpdateRuleOption struct {
 	LoadBalancerId string `json:"load_balancer_id" validate:"required"`
 	// ListenerId监听器ID
 	ListenerId string `json:"listener_id" validate:"required"`
+	// LocationId 规则id
+	LocationId string `json:"location_id" validate:"required"`
 	// 转发规则的新的转发路径，如不需修改Url，则不需提供此参数。
-	Url string `json:"url,omitempty"`
+	Url *string `json:"url,omitempty"`
 	// 健康检查信息。
 	HealthCheck *corelb.TCloudHealthCheckInfo `json:"health_check"`
 	// 规则的请求转发方式，可选值：WRR、LEAST_CONN、IP_HASH
 	// 分别表示按权重轮询、最小连接数、按IP哈希， 默认为 WRR。
-	Scheduler string `json:"scheduler,omitempty"`
+	Scheduler *string `json:"scheduler,omitempty"`
 	// 会话保持时间。
-	SessionExpireTime int64 `json:"session_expire_time,omitempty"`
+	SessionExpireTime *int64 `json:"session_expire_time,omitempty"`
 	// 负载均衡实例与后端服务之间的转发协议，默认HTTP，可取值：HTTP、HTTPS、TRPC。
-	ForwardType string `json:"forward_type,omitempty"`
+	ForwardType *string `json:"forward_type,omitempty"`
 	// TRPC被调服务器路由，ForwardType为TRPC时必填。目前暂未对外开放。
-	TrpcCallee string `json:"trpc_callee,omitempty"`
+	TrpcCallee *string `json:"trpc_callee,omitempty"`
 	// TRPC调用服务接口，ForwardType为TRPC时必填。目前暂未对外开放。
-	TrpcFunc string `json:"trpc_func,omitempty"`
+	TrpcFunc *string `json:"trpc_func,omitempty"`
 }
 
 // Validate tcloud rule update option.
@@ -521,7 +523,7 @@ type TCloudUpdateDomainAttrOption struct {
 	Domain string `json:"domain,omitempty"`
 	// 要修改的新域名。NewDomain和NewDomains只能传一个。
 	NewDomain string `json:"new_domain,omitempty"`
-	// 域名相关的证书信息，注意，仅对启用SNI的监听器适用，不可和MultiCertInfo 同时传入。
+	// 域名相关的证书信息，注意，仅对启用SNI的监听器适用。
 	Certificate *corelb.TCloudCertificateInfo `json:"certificate,omitempty"`
 	// 是否开启Http2，注意，只有HTTPS域名才能开启Http2。
 	Http2 bool `json:"http2"`
@@ -547,14 +549,14 @@ type TCloudDeleteRuleOption struct {
 	Region         string   `json:"region" validate:"required"`
 	LoadBalancerId string   `json:"load_balancer_id" validate:"required"`
 	ListenerId     string   `json:"listener_id" validate:"required"`
-	CloudIDs       []string `json:"cloud_ids" validate:"required,min=1"`
+	CloudIDs       []string `json:"cloud_ids" validate:"omitempty"`
 	// Domain 要删除的转发规则的域名，如果是多域名，可以指定多域名列表中的任意一个。
-	Domain string `json:"domain,omitempty"`
+	Domain *string `json:"domain,omitempty"`
 	// Url 要删除的转发规则的转发路径。
 	Url string `json:"url,omitempty"`
 	// NewDefaultServerDomain 监听器下必须配置一个默认域名，当需要删除默认域名时，可以指定另一个域名作为新的默认域名，
 	// 如果新的默认域名是多域名，可以指定多域名列表中的任意一个。
-	NewDefaultServerDomain string `json:"new_default_server_domain,omitempty"`
+	NewDefaultServerDomain *string `json:"new_default_server_domain,omitempty"`
 }
 
 // Validate ...

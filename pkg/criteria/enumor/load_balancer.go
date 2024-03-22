@@ -26,10 +26,10 @@ type RuleType string
 
 // 负载均衡类型
 const (
-	// LayerFourRuleType 4层负载均衡
-	LayerFourRuleType RuleType = "layer_4"
-	// LayerSevenRuleType 7层负载均衡
-	LayerSevenRuleType RuleType = "layer_7"
+	// Layer4RuleType 4层负载均衡
+	Layer4RuleType RuleType = "layer_4"
+	// Layer7RuleType 7层负载均衡
+	Layer7RuleType RuleType = "layer_7"
 )
 
 // TargetGroupType 目标组类型
@@ -60,15 +60,16 @@ const (
 	// HttpProtocol 协议类型-HTTP
 	HttpProtocol ProtocolType = "HTTP"
 	// HttpsProtocol 协议类型-HTTPS
-	HttpsProtocol ProtocolType = "HTTPS"
+	HttpsProtocol  ProtocolType = "HTTPS"
+	TcpProtocol    ProtocolType = "TCP"
+	UdpProtocol    ProtocolType = "UDP"
+	TcpSslProtocol ProtocolType = "TCP_SSL"
+	QuicProtocol   ProtocolType = "QUIC"
 )
 
 // IsLayer7Protocol 是否7层规则类型
 func (p ProtocolType) IsLayer7Protocol() bool {
-	if p == HttpProtocol || p == HttpsProtocol {
-		return true
-	}
-	return false
+	return p == HttpProtocol || p == HttpsProtocol
 }
 
 // SniType SNI类型

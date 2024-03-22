@@ -40,7 +40,6 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	cvt "hcm/pkg/tools/converter"
-	"hcm/pkg/tools/slice"
 )
 
 func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
@@ -55,6 +54,10 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 
 	h.Add("TCloudCreateUrlRule", http.MethodPost,
 		"/vendors/tcloud/listeners/{lbl_id}/rules/batch/create", svc.TCloudCreateUrlRule)
+	h.Add("TCloudUpdateUrlRule", http.MethodPatch,
+		"/vendors/tcloud/listeners/{lbl_id}/rules/{rule_id}", svc.TCloudUpdateUrlRule)
+	h.Add("TCloudBatchDeleteUrlRule", http.MethodDelete,
+		"/vendors/tcloud/listeners/{lbl_id}/rules/batch", svc.TCloudBatchDeleteUrlRule)
 
 	// 监听器
 	h.Add("CreateTCloudListener", http.MethodPost, "/vendors/tcloud/listeners/create", svc.CreateTCloudListener)
@@ -265,65 +268,6 @@ func (svc *clbSvc) lbSync(kt *kit.Kit, tcloud tcloud.TCloud, accountID string, r
 	return nil
 }
 
-// TCloudCreateUrlRule 创建url规则
-func (svc *clbSvc) TCloudCreateUrlRule(cts *rest.Contexts) (any, error) {
-
-	lblID := cts.PathParameter("lbl_id").String()
-	if len(lblID) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "listener id is required")
-	}
-
-	req := new(protolb.TCloudRuleBatchCreateReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	lb, listener, err := svc.getListenerWithLb(cts.Kit, lblID)
-	if err != nil {
-		return nil, err
-	}
-
-	tcloudAdpt, err := svc.ad.TCloud(cts.Kit, listener.AccountID)
-	if err != nil {
-		return nil, err
-	}
-
-	ruleOption := typelb.TCloudCreateRuleOption{
-		Region:         lb.Region,
-		LoadBalancerId: lb.CloudID,
-		ListenerId:     lblID,
-	}
-	ruleOption.Rules = slice.Map(req.Rules, convRuleCreate)
-	creatResult, err := tcloudAdpt.CreateRule(cts.Kit, &ruleOption)
-	if err != nil {
-		logs.Errorf("create tcloud url rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	respData := &protolb.BatchCreateResult{
-		UnknownCloudIDs: creatResult.UnknownCloudIDs,
-		SuccessCloudIDs: creatResult.SuccessCloudIDs,
-		FailedCloudIDs:  creatResult.FailedCloudIDs,
-		FailedMessage:   creatResult.FailedMessage,
-	}
-
-	if len(creatResult.SuccessCloudIDs) == 0 {
-		return respData, nil
-	}
-
-	// TODO 同步对应监听器
-
-	// if err := svc.lblSync(cts.Kit, tcloudAdpt, req.AccountID, req.Region, result.SuccessCloudIDs); err != nil {
-	// 	return nil, err
-	// }
-
-	return nil, nil
-}
-
 func (svc *clbSvc) getListenerWithLb(kt *kit.Kit, lblID string) (*corelb.BaseLoadBalancer,
 	*corelb.BaseListener, error) {
 
@@ -357,31 +301,6 @@ func (svc *clbSvc) getListenerWithLb(kt *kit.Kit, lblID string) (*corelb.BaseLoa
 	}
 	lb := lbResp.Details[0]
 	return &lb, &listener, nil
-}
-
-func convRuleCreate(r protolb.TCloudRuleCreate) *typelb.RuleInfo {
-	cloud := &typelb.RuleInfo{
-		Url:               cvt.ValToPtr(r.Url),
-		SessionExpireTime: r.SessionExpireTime,
-		HealthCheck:       r.HealthCheck,
-		Certificate:       r.Certificates,
-		Scheduler:         r.Scheduler,
-		ForwardType:       r.ForwardType,
-		DefaultServer:     r.DefaultServer,
-		Http2:             r.Http2,
-		TargetType:        r.TargetType,
-		TrpcCallee:        r.TrpcCallee,
-		TrpcFunc:          r.TrpcFunc,
-		Quic:              r.Quic,
-	}
-	if len(r.Domains) == 1 {
-		cloud.Domain = cvt.ValToPtr(r.Domains[0])
-	}
-	if len(r.Domains) > 1 {
-		cloud.Domains = cvt.SliceToPtr(r.Domains)
-	}
-
-	return cloud
 }
 
 // CreateTCloudListener 创建监听器
@@ -517,9 +436,9 @@ func (svc *clbSvc) insertListenerWithRule(kt *kit.Kit, req *protolb.ListenerWith
 	lbInfo corelb.BaseLoadBalancer, cloudLblID string, cloudRuleID string, targetGroupInfo corelb.BaseTargetGroup) (
 	*core.BatchCreateResult, error) {
 
-	var ruleType = enumor.LayerFourRuleType
+	var ruleType = enumor.Layer4RuleType
 	if req.Protocol.IsLayer7Protocol() {
-		ruleType = enumor.LayerSevenRuleType
+		ruleType = enumor.Layer7RuleType
 	} else {
 		// 4层监听器对应的云端规则ID就是云监听器ID
 		cloudRuleID = cloudLblID
