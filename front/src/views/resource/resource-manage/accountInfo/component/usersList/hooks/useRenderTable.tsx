@@ -84,7 +84,7 @@ export default () => {
   // use hooks
   const { CommonTable, getListData } = useTable({
     searchOptions: {
-      searchData: [{ name: '账号 ID', id: 'id' }],
+      searchData: [{ name: '账号 ID', id: 'id' }, { name: '账号名称', id: 'name' }],
     },
     tableOptions: {
       columns: columns.value,
