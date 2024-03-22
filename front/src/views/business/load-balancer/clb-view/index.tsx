@@ -1,6 +1,7 @@
 import { defineComponent, ref } from 'vue';
 // import components
 import LbTree from './lb-tree';
+import LbBreadcrumb from '../components/lb-breadcrumb';
 import AllClbsManager from './all-clbs-manager';
 import SpecificListenerManager from './specific-listener-manager';
 import SpecificClbManager from './specific-clb-manager';
@@ -26,6 +27,9 @@ export default defineComponent({
 
     const activeType = ref<NodeType>('all');
 
+    // 面包屑白名单
+    const BREADCRUMB_WHITE_LIST = ['listener', 'domain'];
+
     return () => (
       <div class='clb-view-page'>
         <div class='left-container'>
@@ -33,13 +37,7 @@ export default defineComponent({
         </div>
         {isAdvancedSearchShow.value && <div class='advanced-search'>高级搜索</div>}
         <div class='main-container'>
-          {/* 
-            面包屑技术设计:
-              1. 这里引入面包屑组件
-              2. 当 lb-tree 触发 node-click 事件时, 如果 type 不为 'lb', 则组装面包屑内容. 使用 bus 进行通信
-                面包屑组件    bus.$on('showBreadcrumb', (...names) => { 组装面包屑内容 })
-                lb-tree组件  emit('showBreadcrumb', names)
-          */}
+          {BREADCRUMB_WHITE_LIST.includes(activeType.value) && <LbBreadcrumb />}
           {renderComponent(activeType.value)}
         </div>
       </div>

@@ -1,5 +1,9 @@
 .manager-tab-wrap {
   height: 100%;
+
+  &.has-breadcrumb {
+    height: calc(100% - 30px);
+  }
   
   // 覆盖组件默认样式
   .bk-tab-header .bk-tab-header-item {
