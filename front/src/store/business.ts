@@ -78,10 +78,7 @@ export const useBusinessStore = defineStore({
     /**
      * 批量删除目标组
      */
-    deleteTargetGroups(data: {
-      bk_biz_id: number;
-      ids: string[];
-    }) {
+    deleteTargetGroups(data: { bk_biz_id: number; ids: string[] }) {
       return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/batch`, data);
     },
     /**
@@ -89,6 +86,16 @@ export const useBusinessStore = defineStore({
      */
     editTargetGroups(id: string, data: any) {
       return http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${id}`, data);
+    },
+    /**
+     * 业务下腾讯云监听器域名列表
+     * @param id 监听器ID
+     * @returns 域名列表
+     */
+    getDomainListByListenerId(id: string) {
+      return http.post(`
+        ${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/listeners/${id}/domains/list
+      `);
     },
   },
 });

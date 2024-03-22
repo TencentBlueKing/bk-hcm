@@ -68,3 +68,15 @@ export const WHITE_LIST_REGION_PRIMARY_STAND_ZONE = [
   'ap-hongkong',
   'ap-seoul',
 ];
+
+// 会话类型映射
+export const SESSION_TYPE_MAP = {
+  NORMAL: '基于源 IP ',
+  QUIC_CID: '基于源端口',
+};
+
+// 证书认证方式映射
+export const SSL_MODE_MAP = {
+  UNIDIRECTIONAL: '单向认证',
+  MUTUAL: '双向认证',
+};
