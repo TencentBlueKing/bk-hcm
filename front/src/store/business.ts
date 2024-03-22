@@ -65,29 +65,63 @@ export const useBusinessStore = defineStore({
     },
     /**
      * 获取当前CLB绑定的安全组列表
-    */
+     */
     async listCLBSecurityGroups(clb_id: string) {
-      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/res/load_balancer/${clb_id}`);
+      return http.get(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/res/load_balancer/${clb_id}`,
+      );
     },
     /**
      * 给当前负载均衡绑定安全组
      */
-    async bindSecurityToCLB(data: {
-      bk_biz_id: number,
-      lb_id: string,
-      security_group_ids: Array<string>,
-    }) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/associate/load_balancers`,  data)
+    async bindSecurityToCLB(data: { bk_biz_id: number; lb_id: string; security_group_ids: Array<string> }) {
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/associate/load_balancers`,
+        data,
+      );
     },
     /**
      * 给当前负载均衡解绑指定的安全组
      */
-    async unbindSecurityToCLB(data: {
-      bk_biz_id: number,
-      lb_id: string,
-      security_group_id: string,
-    }) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/disassociate/load_balancers`,  data);
-    }
+    async unbindSecurityToCLB(data: { bk_biz_id: number; lb_id: string; security_group_id: string }) {
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/disassociate/load_balancers`,
+        data,
+      );
+    },
+    /*
+     * 新建目标组
+     */
+    createTargetGroups(data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/create`, data);
+    },
+    /**
+     * 获取目标组详情（基本信息和健康检查）
+     */
+    getTargetGroupDetail(id: string) {
+      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${id}`);
+    },
+    /**
+     * 批量删除目标组
+     */
+    deleteTargetGroups(data: { bk_biz_id: number; ids: string[] }) {
+      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/batch`, data);
+    },
+    /**
+     * 编辑目标组基本信息
+     */
+    editTargetGroups(id: string, data: any) {
+      return http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${id}`, data);
+    },
+    /**
+     * 业务下腾讯云监听器域名列表
+     * @param id 监听器ID
+     * @returns 域名列表
+     */
+    getDomainListByListenerId(id: string) {
+      return http.post(`
+        ${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/listeners/${id}/domains/list
+      `);
+    },
   },
 });

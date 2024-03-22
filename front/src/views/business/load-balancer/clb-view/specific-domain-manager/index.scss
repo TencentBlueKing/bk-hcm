@@ -1,6 +1,11 @@
 .url-list-container {
   padding: 16px 24px;
+  height: 100%;
   background-color: #ffffff;
+
+  &.has-breadcrumb {
+    height: calc(100% - 30px);
+  }
 }
 
 .create-url-text-item {

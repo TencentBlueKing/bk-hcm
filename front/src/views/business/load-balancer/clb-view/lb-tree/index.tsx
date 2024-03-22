@@ -2,6 +2,8 @@ import { PropType, defineComponent, onMounted, ref } from 'vue';
 // import components
 import SimpleSearchSelect from '../../components/simple-search-select';
 import { Tree } from 'bkui-vue';
+// import stores
+import { useLoadBalancerStore } from '@/store/loadbalancer';
 // import custom hooks
 import useLoadTreeData from './useLoadTreeData';
 import useRenderDropdownList from './useRenderDropdownList';
@@ -13,9 +15,8 @@ import lbIcon from '@/assets/image/loadbalancer.svg';
 import listenerIcon from '@/assets/image/listener.svg';
 import domainIcon from '@/assets/image/domain.svg';
 import './index.scss';
-import { useLoadBalancerStore } from '@/store/loadbalancer';
 
-type NodeType = 'all' | 'load_balancers' | 'listeners' | 'domains';
+type NodeType = 'all' | 'lb' | 'listener' | 'domain';
 
 export default defineComponent({
   name: 'LoadBalancerTree',
@@ -24,6 +25,8 @@ export default defineComponent({
   },
   emits: ['update:activeType'],
   setup(props, { emit }) {
+    // use stores
+    const loadBalancerStore = useLoadBalancerStore();
     // 搜索相关
     const searchValue = ref('');
     const searchDataList = [
@@ -42,11 +45,10 @@ export default defineComponent({
     const lastSelectedNode = ref(); // 记录上一次选中的tree-node, 不包括全部负载均衡
     const loadingRef = ref();
     const expandedNodeArr = ref([]);
-    // const isScrollOnePageHeight = ref(false);
 
+    // use custom hooks
     const { loadRemoteData, handleLoadDataByScroll } = useLoadTreeData(treeData);
-    const { renderDropdownActionList } = useRenderDropdownList();
-    const loadBalancerStore = useLoadBalancerStore();
+    const { showDropdownList, currentPopBoundaryNodeKey } = useRenderDropdownList();
 
     // const searchOption = computed(() => {
     //   return {
@@ -79,9 +81,9 @@ export default defineComponent({
 
     // type 与 icon 的映射关系
     const typeIconMap = {
-      load_balancers: lbIcon,
-      listeners: listenerIcon,
-      domains: domainIcon,
+      lb: lbIcon,
+      listener: listenerIcon,
+      domain: domainIcon,
     };
 
     // generator函数 - 滚动加载函数
@@ -100,7 +102,7 @@ export default defineComponent({
       }, 200);
     };
 
-    //  generator函数 - lb-tree 懒加载配置对象
+    // generator函数 - lb-tree 懒加载配置对象
     const getTreeAsyncOption = () => {
       if (searchValue.value) return null;
       return {
@@ -112,11 +114,12 @@ export default defineComponent({
       };
     };
 
-    // 渲染 lb-tree 的节点
+    // render - lb-tree 的节点
     const renderDefaultNode = (data: any, attributes: any) => {
       if (data.type === 'loading') {
         return (
           <bk-loading
+            class='tree-loading-node'
             ref={loadingRef}
             loading
             size='small'
@@ -140,28 +143,45 @@ export default defineComponent({
             ) : (
               data.name
             )}
-            {attributes.fullPath.split('-').length === 3 && (
+            {attributes.fullPath.split('-').length === 3 && data.isDefault && (
               <bk-tag class='tag' theme='warning' radius='2px'>
                 默认
               </bk-tag>
             )}
           </div>
-          <div class={`ext-info${data.isDropdownListShow ? ' show-dropdown' : ''}`}>
-            <div class='count'>{data.id}</div>
-            {renderDropdownActionList(data)}
+          <div class={`ext-info${currentPopBoundaryNodeKey.value === data.id ? ' show-dropdown' : ''}`}>
+            <div class='count'>
+              {/* eslint-disable-next-line no-nested-ternary */}
+              {data.type === 'lb' ? data.id : data.type === 'listener' ? data.domain_num : data.url_count}
+            </div>
+            <div class='more-action' onClick={(e) => showDropdownList(e, data)}>
+              <i class='hcm-icon bkhcm-icon-more-fill'></i>
+            </div>
           </div>
         </>
       );
     };
 
+    // render - prefix icon
+    const renderPrefixIcon = (node: any) => {
+      if (node.type === 'loading') {
+        return null;
+      }
+      return <img src={typeIconMap[node.type]} alt='' class='prefix-icon' />;
+    };
+
     // define handler function - 节点点击
     const handleNodeClick = (node: any) => {
+      // 更新 store 中当前选中的节点
+      loadBalancerStore.setCurrentSelectedTreeNode(node);
+      // 交互 - 高亮切换效果
       if (node.type !== 'all') {
         lastSelectedNode.value = node;
         if (node.type === 'load_balancers') loadBalancerStore.setLB(node);
       } else {
         treeRef.value.setSelect(lastSelectedNode.value, false);
       }
+      // 切换右侧组件
       emit('update:activeType', node.type);
     };
 
@@ -175,12 +195,6 @@ export default defineComponent({
       const idx = expandedNodeArr.value.findIndex((item) => item === node);
       expandedNodeArr.value.splice(idx, 1);
     };
-
-    // const handleAllCollapse = () => {
-    //   treeRef.value.setOpen(expandedNodeArr.value, false);
-    //   treeRef.value.scrollToTop();
-    //   expandedNodeArr.value = [];
-    // };
 
     onMounted(() => {
       // 组件挂载，加载 root node
@@ -196,7 +210,7 @@ export default defineComponent({
           class={[
             'all-lb-item',
             `${props.activeType === 'all' ? ' selected' : ''}`,
-            `${allLBNode.value.isDropdownListShow ? ' show-dropdown' : ''}`,
+            `${currentPopBoundaryNodeKey.value === '' ? ' show-dropdown' : ''}`,
           ]}
           onClick={() => handleNodeClick(allLBNode.value)}>
           <div class='base-info'>
@@ -205,7 +219,9 @@ export default defineComponent({
           </div>
           <div class='ext-info'>
             <div class='count'>{6654}</div>
-            {renderDropdownActionList(allLBNode.value)}
+            <div class='more-action' onClick={(e) => showDropdownList(e, allLBNode.value)}>
+              <i class='hcm-icon bkhcm-icon-more-fill'></i>
+            </div>
           </div>
         </div>
         {/* lb-tree */}
@@ -217,7 +233,7 @@ export default defineComponent({
           label='name'
           children='children'
           level-line
-          virtual-render
+          // virtual-render
           line-height={36}
           onNodeClick={handleNodeClick}
           onScroll={getTreeScrollFunc()}
@@ -226,9 +242,7 @@ export default defineComponent({
           onNodeCollapse={handleNodeCollapse}>
           {{
             default: ({ data, attributes }: any) => renderDefaultNode(data, attributes),
-            nodeType: (node: any) => {
-              return <img src={typeIconMap[node.type]} alt='' class='prefix-icon' />;
-            },
+            nodeType: (node: any) => renderPrefixIcon(node),
           }}
         </Tree>
       </div>

@@ -1,4 +1,4 @@
-import { defineComponent, ref } from 'vue';
+import { defineComponent, ref, watch } from 'vue';
 import './index.scss';
 import { useTable } from '@/hooks/useTable/useTable';
 import { Button, Form, Input, Radio, Select, Switcher, Tag } from 'bkui-vue';
@@ -6,12 +6,23 @@ import { Plus } from 'bkui-vue/lib/icon';
 import CommonSideslider from '@/components/common-sideslider';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 import { BkRadioGroup } from 'bkui-vue/lib/radio';
+// import stores
+import { useLoadBalancerStore } from '@/store/loadbalancer';
+// import custom hooks
+import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+import { useI18n } from 'vue-i18n';
 
 const { FormItem } = Form;
 
 export default defineComponent({
   setup() {
-    const { CommonTable } = useTable({
+    // use hooks
+    const { t } = useI18n();
+    // use stores
+    const loadBalancerStore = useLoadBalancerStore();
+
+    const { columns, settings } = useColumns('listener');
+    const { CommonTable, getListData } = useTable({
       searchOptions: {
         searchData: [
           {
@@ -50,93 +61,42 @@ export default defineComponent({
       },
       tableOptions: {
         columns: [
+          ...columns,
           {
-            type: 'selection',
-            width: 32,
-            minWidth: 32,
-            align: 'right',
-          },
-          {
-            label: '监听器名称',
-            field: 'listenerName',
-          },
-          {
-            label: '协议',
-            field: 'protocol',
-          },
-          {
-            label: '端口',
-            field: 'port',
-          },
-          {
-            label: '均衡方式',
-            field: 'balanceMode',
-          },
-          {
-            label: '域名数量',
-            field: 'domainCount',
-          },
-          {
-            label: 'URL数量',
-            field: 'urlCount',
-          },
-          {
-            label: '同步状态',
-            field: 'syncStatus',
-          },
-          {
-            label: '操作',
+            label: t('操作'),
             field: 'actions',
-          },
-        ],
-        reviewData: [
-          {
-            listenerName: 'Listener001',
-            protocol: 'HTTP',
-            port: 80,
-            balanceMode: 'RoundRobin',
-            domainCount: 5,
-            urlCount: 10,
-            syncStatus: 'Synchronized',
-            actions: 'Edit',
-          },
-          {
-            listenerName: 'Listener002',
-            protocol: 'HTTPS',
-            port: 443,
-            balanceMode: 'LeastConnections',
-            domainCount: 3,
-            urlCount: 5,
-            syncStatus: 'Pending',
-            actions: 'Delete',
-          },
-          {
-            listenerName: 'Listener003',
-            protocol: 'TCP',
-            port: 22,
-            balanceMode: 'IPHash',
-            domainCount: 2,
-            urlCount: 7,
-            syncStatus: 'Failed',
-            actions: 'Update',
+            render: () => (
+              <div class='operate-groups'>
+                <Button text theme='primary'>
+                  {t('编辑')}
+                </Button>
+                <Button text theme='primary'>
+                  {t('删除')}
+                </Button>
+              </div>
+            ),
           },
         ],
         extra: {
-          settings: {
-            fields: [],
-            checked: [],
-            limit: 0,
-            size: '',
-            sizeList: [],
-            showLineHeight: false,
-          },
+          settings: settings.value,
         },
       },
       requestOption: {
-        type: '',
+        type: `load_balancers/${loadBalancerStore.currentSelectedTreeNode.id}/listeners`,
       },
     });
     const isSliderShow = ref(false);
+
+    watch(
+      () => loadBalancerStore.currentSelectedTreeNode,
+      (val) => {
+        const { id, type } = val;
+        if (type !== 'lb') return;
+        // 只有当 type='lb' 时, 才去请求对应 lb 下的 listener 列表
+        getListData([], `load_balancers/${id}/listeners`);
+      },
+    );
+
     return () => (
       <div>
         <CommonTable>
@@ -145,9 +105,9 @@ export default defineComponent({
               <div class={'flex-row align-item-center'}>
                 <Button theme={'primary'} onClick={() => (isSliderShow.value = true)}>
                   <Plus class={'f20'} />
-                  新增监听器
+                  {t('新增监听器')}
                 </Button>
-                <Button>批量删除</Button>
+                <Button>{t('批量删除')}</Button>
               </div>
             ),
           }}

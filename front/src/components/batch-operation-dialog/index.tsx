@@ -2,6 +2,7 @@ import { defineComponent, PropType } from 'vue';
 import { Dialog } from 'bkui-vue';
 import { useLocalTable } from '@/hooks/useLocalTable';
 import type { IProp } from '@/hooks/useLocalTable';
+import { useI18n } from 'vue-i18n';
 import './index.scss';
 
 export default defineComponent({
@@ -33,6 +34,9 @@ export default defineComponent({
   },
   emits: ['update:isShow', 'handleConfirm'],
   setup(props, { emit, slots }) {
+    // use hooks
+    const { t } = useI18n();
+
     const triggerShow = (isShow: boolean) => {
       emit('update:isShow', isShow);
     };
@@ -63,9 +67,9 @@ export default defineComponent({
         class='batch-operation-dialog'
         width={960}
         isShow={props.isShow}
-        title={props.title}
+        title={t(props.title)}
         theme={props.theme}
-        confirmText={props.confirmText}
+        confirmText={t(props.confirmText)}
         onConfirm={handleConfirm}
         onClosed={() => triggerShow(false)}>
         {{

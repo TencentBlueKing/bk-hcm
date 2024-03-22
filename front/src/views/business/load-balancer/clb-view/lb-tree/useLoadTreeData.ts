@@ -7,15 +7,36 @@ import http from '@/http';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
+type ResourceNodeType = 'lb' | 'listener' | 'domain';
+
 /**
  * 加载 lb-tree 数据
  */
 export default (treeData: Ref) => {
   // _depth 与 type 的映射关系
-  const depthTypeMap = ['load_balancers', 'listeners', 'domains'];
+  const depthTypeMap = ['lb', 'listener', 'domain'] as ResourceNodeType[];
 
   // define data
   const rootStart = ref(0);
+
+  // 根据 type 获取请求 url
+  const getTypeUrl = (type: ResourceNodeType, id?: string) => {
+    switch (type) {
+      case 'lb':
+        return 'load_balancers';
+      case 'listener':
+        return `load_balancers/${id}/listeners`;
+      case 'domain':
+        return `vendors/tcloud/listeners/${id}/domains`;
+    }
+  };
+
+  // 获取请求 url
+  const getUrl = (_item: any, _depth: number) => {
+    const baseUrl = `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${localStorageActions.get('bizs')}/`;
+    const typeUrl = `${!_item ? getTypeUrl(depthTypeMap[_depth]) : getTypeUrl(depthTypeMap[_depth + 1], _item.id)}`;
+    return `${baseUrl}${typeUrl}/list`;
+  };
 
   /**
    * 加载数据
@@ -23,9 +44,7 @@ export default (treeData: Ref) => {
    * @param {*} _depth 需要加载数据的节点的深度，取值为：0, 1, 2
    */
   const loadRemoteData = async (_item: any, _depth: number) => {
-    const url = `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${localStorageActions.get('bizs')}/${
-      !_item ? depthTypeMap[_depth] : `${depthTypeMap[_depth]}/${_item.id}/${depthTypeMap[_depth + 1]}`
-    }/list`;
+    const url = getUrl(_item, _depth);
     const startIdx = !_item ? rootStart.value : _item.start;
     const [detailsRes, countRes] = await Promise.all(
       [false, true].map((isCount) =>
@@ -43,19 +62,30 @@ export default (treeData: Ref) => {
       ),
     );
 
-    // 组装新增的节点
-    const _incrementNodes = detailsRes.data.details.map((item: any) => {
-      // 如果是加载根节点的数据，则 type 设置为当前 type；如果是加载子节点的数据，则 type 设置为下一级 type
-      !_item ? (item.type = depthTypeMap[_depth]) : (item.type = depthTypeMap[_depth + 1]);
-      // 如果是加载根节点或非叶子节点的数据，需要给每个 item 添加 async = true 用于异步加载，以及初始化 start = 0
-      if (_depth < 1 || !_item) {
-        item.async = true;
-        item.start = 0;
-      }
-      // dropdown 是否显示的标识
-      item.isDropdownListShow = false;
-      return item;
-    });
+    // 组装新增的节点(这里需要对domain单独处理)
+    let _incrementNodes;
+    if (_item?.type === 'listener') {
+      const { default_domain, domain_list } = detailsRes.data;
+      _incrementNodes = domain_list.map((domain: any) => {
+        domain.type = 'domain';
+        domain.id = domain.domain;
+        domain.name = domain.domain;
+        domain.listener_id = _item.id;
+        domain.isDefault = default_domain === domain.domain;
+        return domain;
+      });
+    } else {
+      _incrementNodes = detailsRes.data.details.map((item: any) => {
+        // 如果是加载根节点的数据，则 type 设置为当前 type；如果是加载子节点的数据，则 type 设置为下一级 type
+        !_item ? (item.type = depthTypeMap[_depth]) : (item.type = depthTypeMap[_depth + 1]);
+        // 如果是加载根节点或非叶子节点的数据，需要给每个 item 添加 async = true 用于异步加载，以及初始化 start = 0
+        if (_depth < 1 || !_item) {
+          item.async = true;
+          item.start = 0;
+        }
+        return item;
+      });
+    }
 
     if (!_item) {
       const _treeData = [...treeData.value, ..._incrementNodes];
@@ -65,7 +95,7 @@ export default (treeData: Ref) => {
         treeData.value = _treeData;
       }
     } else {
-      _item.children = [..._item.children, ..._incrementNodes];
+      _item.children = [...(_item.children || []), ..._incrementNodes];
       if (_item.children.length < countRes.data.count) {
         _item.children.push({ type: 'loading', _parent: _item });
       }

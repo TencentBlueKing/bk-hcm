@@ -1,17 +1,48 @@
-import { defineComponent, ref } from 'vue';
-import { Button, Tag } from 'bkui-vue';
+import { defineComponent, ref, watch } from 'vue';
+// import components
+import { Button, Form, Tag } from 'bkui-vue';
 import { BkRadioGroup, BkRadioButton } from 'bkui-vue/lib/radio';
 import { Plus } from 'bkui-vue/lib/icon';
-import { useTable } from '@/hooks/useTable/useTable';
-import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+import CommonLocalTable from '@/components/CommonLocalTable';
 import CommonSideslider from '@/components/common-sideslider';
-import DomainSidesliderContent from '../domain-sideslider-content';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
+// import stores
+import { useLoadBalancerStore } from '@/store/loadbalancer';
+import { useBusinessStore } from '@/store';
+// import custom hooks
+import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+import useAddOrUpdateDomain from './useAddOrUpdateDomain';
+import { useI18n } from 'vue-i18n';
 import './index.scss';
+
+const { FormItem } = Form;
 
 export default defineComponent({
   name: 'DomainList',
   setup() {
+    // use hooks
+    const { t } = useI18n();
+    // use stores
+    const loadBalancerStore = useLoadBalancerStore();
+    const businessStore = useBusinessStore();
+
+    const isLoading = ref(false);
+    // 搜索相关
+    const searchData = [
+      {
+        name: t('域名'),
+        id: 'domain',
+      },
+      {
+        name: t('URL数量'),
+        id: 'url_count',
+      },
+      {
+        name: t('同步状态'),
+        id: 'sync_status',
+      },
+    ];
+    // 表格相关
     const { columns, settings } = useColumns('domain');
     const tableColumns = [
       {
@@ -21,7 +52,7 @@ export default defineComponent({
         align: 'right',
       },
       {
-        label: '域名',
+        label: t('域名'),
         field: 'domain',
         isDefaultShow: true,
         render: ({ data, cell }: { data: any; cell: string }) => {
@@ -30,11 +61,11 @@ export default defineComponent({
               <span class='cell-value'>{cell}</span>
               {data?.is_default ? (
                 <Tag theme='info' class='default-tag'>
-                  默认
+                  {t('默认')}
                 </Tag>
               ) : (
                 <Button text theme='primary' class='set-default-btn'>
-                  设为默认
+                  {t('设为默认')}
                 </Button>
               )}
             </div>
@@ -43,111 +74,56 @@ export default defineComponent({
       },
       ...columns,
       {
-        label: '操作',
+        label: t('操作'),
         width: 120,
-        render() {
+        render({ data }: any) {
           return (
             <div class='operate-groups'>
-              <span>编辑</span>
-              <span>删除</span>
+              <Button text theme='primary' onClick={() => handleDomainSidesliderShow(data)}>
+                {t('编辑')}
+              </Button>
+              <Button text theme='primary'>
+                {t('删除')}
+              </Button>
             </div>
           );
         },
       },
     ];
-    const searchData: any = [
-      {
-        name: '域名',
-        id: 'domain',
-      },
-      {
-        name: '协议',
-        id: 'protocol',
-      },
-      {
-        name: '端口',
-        id: 'port',
-      },
-      {
-        name: '轮询方式',
-        id: 'polling_method',
-      },
-      {
-        name: 'URL数量',
-        id: 'url_count',
-      },
-      {
-        name: '同步状态',
-        id: 'sync_status',
-      },
-    ];
-    const { CommonTable } = useTable({
-      searchOptions: { searchData },
-      tableOptions: {
-        columns: tableColumns,
-        reviewData: [
-          {
-            domain: 'example.com',
-            protocol: 'HTTP',
-            port: '80',
-            polling_method: '轮询',
-            url_count: '10',
-            sync_status: '成功',
-            is_default: false,
-          },
-          {
-            domain: 'example.org',
-            protocol: 'HTTPS',
-            port: '443',
-            polling_method: '加权轮询',
-            url_count: '15',
-            sync_status: '失败',
-            is_default: false,
-          },
-          {
-            domain: 'example.net',
-            protocol: 'FTP',
-            port: '21',
-            polling_method: '源地址哈希',
-            url_count: '5',
-            sync_status: '部分成功',
-            is_default: true,
-          },
-          {
-            domain: 'example.edu',
-            protocol: 'HTTP',
-            port: '8080',
-            polling_method: '最少连接',
-            url_count: '8',
-            sync_status: '绑定中',
-            is_default: false,
-          },
-          {
-            domain: 'example.biz',
-            protocol: 'TCP',
-            port: '22',
-            polling_method: '随机',
-            url_count: '12',
-            sync_status: '成功',
-            is_default: false,
-          },
-        ],
-        extra: {
-          settings: settings.value,
-          'row-class': ({ sync_status }: { sync_status: string }) => {
-            if (sync_status === '绑定中') {
-              return 'binding-row';
-            }
-          },
-        },
-      },
-      requestOption: {
-        type: '',
-      },
-    });
+    const domainList = ref([]); // 域名列表
 
-    const isDomainSidesliderShow = ref(false);
-    const handleSubmit = () => {};
+    // 获取域名列表
+    const getDomainList = async (id: string) => {
+      isLoading.value = true;
+      try {
+        const res = await businessStore.getDomainListByListenerId(id);
+        domainList.value = res.data.domain_list;
+      } finally {
+        isLoading.value = false;
+      }
+    };
+
+    watch(
+      () => loadBalancerStore.currentSelectedTreeNode,
+      (val) => {
+        const { id, type } = val;
+        if (type !== 'listener') return;
+        // 只有 type='listener' 时, 才去请求对应 listener 下的 domain 列表
+        getDomainList(id);
+      },
+      {
+        immediate: true,
+      },
+    );
+
+    // use custom hooks
+    const {
+      isShow: isDomainSidesliderShow,
+      action,
+      formItemOptions,
+      handleShow: handleDomainSidesliderShow,
+      handleSubmit: handleDomainSidesliderSubmit,
+    } = useAddOrUpdateDomain();
 
     // 批量删除
     const isBatchDeleteDialogShow = ref(false);
@@ -155,30 +131,30 @@ export default defineComponent({
     const tableProps = {
       columns: [
         {
-          label: '监听器名称',
+          label: t('监听器名称'),
           field: 'listenerName',
         },
         {
-          label: '监听器ID',
+          label: t('监听器ID'),
           field: 'listenerID',
         },
         {
-          label: '协议',
+          label: t('协议'),
           field: 'protocol',
           filter: true,
         },
         {
-          label: '端口',
+          label: t('端口'),
           field: 'port',
           filter: true,
         },
         {
-          label: '均衡方式',
+          label: t('均衡方式'),
           field: 'balanceMode',
           filter: true,
         },
         {
-          label: '是否绑定目标组',
+          label: t('是否绑定目标组'),
           field: 'isBoundToTargetGroup',
           filter: true,
           render: ({ cell }: { cell: boolean }) => {
@@ -186,7 +162,7 @@ export default defineComponent({
           },
         },
         {
-          label: 'RS权重为O',
+          label: t('RS权重为O'),
           field: 'rsWeight',
           sort: true,
           align: 'right',
@@ -229,31 +205,31 @@ export default defineComponent({
       ],
       searchData: [
         {
-          name: '监听器名称',
+          name: t('监听器名称'),
           id: 'listenerName',
         },
         {
-          name: '监听器ID',
+          name: t('监听器ID'),
           id: 'listenerID',
         },
         {
-          name: '协议',
+          name: t('协议'),
           id: 'protocol',
         },
         {
-          name: '端口',
+          name: t('端口'),
           id: 'port',
         },
         {
-          name: '均衡方式',
+          name: t('均衡方式'),
           id: 'balanceMode',
         },
         {
-          name: '是否绑定目标组',
+          name: t('是否绑定目标组'),
           id: 'isBoundToTargetGroup',
         },
         {
-          name: 'RS权重为O',
+          name: t('RS权重为O'),
           id: 'rsWeight',
         },
       ],
@@ -263,29 +239,68 @@ export default defineComponent({
     };
     return () => (
       <div class='domain-list-page has-selection'>
-        <CommonTable>
+        <CommonLocalTable
+          loading={isLoading.value}
+          tableOptions={{
+            rowKey: 'domain',
+            data: domainList.value,
+            columns: tableColumns,
+            extra: {
+              settings: settings.value,
+              'row-class': ({ sync_status }: { sync_status: string }) => {
+                if (sync_status === '绑定中') {
+                  return 'binding-row';
+                }
+              },
+            },
+          }}
+          searchOptions={{
+            searchData,
+          }}>
           {{
             operation: () => (
               <>
-                <Button theme='primary' onClick={() => (isDomainSidesliderShow.value = true)}>
+                <Button theme='primary' onClick={() => handleDomainSidesliderShow()} class='mr12'>
                   <Plus class='f20' />
-                  新增域名
+                  {t('新增域名')}
                 </Button>
-                <Button onClick={() => (isBatchDeleteDialogShow.value = true)}>批量删除</Button>
+                <Button onClick={() => (isBatchDeleteDialogShow.value = true)}>{t('批量删除')}</Button>
               </>
             ),
           }}
-        </CommonTable>
+        </CommonLocalTable>
+        {/* domain 操作 dialog */}
         <CommonSideslider
-          title='新建域名'
+          class='domain-sideslider'
+          title={`${action.value === 0 ? '新增' : '编辑'}域名`}
           width={640}
           v-model:isShow={isDomainSidesliderShow.value}
-          onHandleSubmit={handleSubmit}>
-          <DomainSidesliderContent />
+          onHandleSubmit={handleDomainSidesliderSubmit}>
+          <p class='readonly-info'>
+            <span class='label'>监听器名称</span>:
+            <span class='value'>{loadBalancerStore.currentSelectedTreeNode.name}</span>
+          </p>
+          <p class='readonly-info'>
+            <span class='label'>协议端口</span>:
+            <span class='value'>
+              {loadBalancerStore.currentSelectedTreeNode.protocol}:{loadBalancerStore.currentSelectedTreeNode.port}
+            </span>
+          </p>
+          <Form formType='vertical'>
+            {formItemOptions.value
+              .filter(({ hidden }) => !hidden)
+              .map(({ label, required, property, content }) => {
+                return (
+                  <FormItem label={label} required={required} key={property}>
+                    {content()}
+                  </FormItem>
+                );
+              })}
+          </Form>
         </CommonSideslider>
         <BatchOperationDialog
           v-model:isShow={isBatchDeleteDialogShow.value}
-          title='批量删除监听器'
+          title='批量删除域名'
           theme='danger'
           confirmText='删除'
           tableProps={tableProps}

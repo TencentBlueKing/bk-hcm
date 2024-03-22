@@ -1128,7 +1128,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       onlyShowOnList: true,
       align: 'right',
     },
-    getLinkField('name', '负载均衡名称'),
+    getLinkField('lb', '负载均衡名称', 'name'),
     {
       label: '负载均衡域名',
       field: 'domain',
@@ -1175,7 +1175,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: 'IP版本',
-      field: 'network_type',
+      field: 'ip_version',
       isDefaultShow: true,
     },
     {
@@ -1201,6 +1201,40 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '所属vpc',
       field: 'vpc_id',
+    },
+  ];
+
+  const listenerColumns = [
+    getLinkField('listener', '监听器名称', 'name'),
+    {
+      label: '协议',
+      field: 'protocol',
+      isDefaultShow: true,
+    },
+    {
+      label: '端口',
+      field: 'port',
+      isDefaultShow: true,
+    },
+    {
+      label: '均衡方式',
+      field: 'scheduler',
+      isDefaultShow: true,
+    },
+    {
+      label: '域名数量',
+      field: 'domain_num',
+      isDefaultShow: true,
+    },
+    {
+      label: 'URL数量',
+      field: 'url_num',
+      isDefaultShow: true,
+    },
+    {
+      label: '同步状态',
+      field: 'syncStatus',
+      isDefaultShow: true,
     },
   ];
 
@@ -1269,16 +1303,18 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const rsConfigColumns = [
     {
       label: '内网IP',
-      field: 'privateIp',
+      field: 'private_ip_address',
+      render: ({ cell }: any) => cell.join(','),
       isDefaultShow: true,
     },
     {
       label: '公网IP',
-      field: 'publicIp',
+      field: 'public_ip_address',
+      render: ({ cell }: any) => cell.join(','),
     },
     {
       label: '名称',
-      field: 'name',
+      field: 'inst_name',
       isDefaultShow: true,
     },
     {
@@ -1287,7 +1323,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: '资源类型',
-      field: 'resourceType',
+      field: 'inst_type',
     },
     {
       label: '所属网络',
@@ -1296,24 +1332,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const domainColumns = [
-    {
-      label: '协议',
-      field: 'protocol',
-      isDefaultShow: true,
-      filter: true,
-    },
-    {
-      label: '端口',
-      field: 'port',
-      isDefaultShow: true,
-      filter: true,
-    },
-    {
-      label: '轮询方式',
-      field: 'polling_method',
-      isDefaultShow: true,
-      filter: true,
-    },
     {
       label: 'URL数量',
       field: 'url_count',
@@ -1440,22 +1458,12 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: 'URL路径',
-      field: 'urlPath',
-      isDefaultShow: true,
-    },
-    {
-      label: '协议',
-      field: 'protocol',
-      isDefaultShow: true,
-    },
-    {
-      label: '端口',
-      field: 'port',
+      field: 'url',
       isDefaultShow: true,
     },
     {
       label: '轮询方式',
-      field: 'pollingMethod',
+      field: 'scheduler',
       isDefaultShow: true,
     },
   ];
@@ -1593,6 +1601,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     eips: eipColumns,
     operationRecord: operationRecordColumns,
     lb: lbColumns,
+    listener: listenerColumns,
     targetGroup: targetGroupColumns,
     rsConfig: rsConfigColumns,
     domain: domainColumns,

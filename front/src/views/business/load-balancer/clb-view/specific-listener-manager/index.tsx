@@ -10,14 +10,13 @@ export default defineComponent({
   name: 'SpecificListenerManager',
   setup() {
     const activeTab = ref('domain' as 'domain | info');
-    const protocolType = ref('UDP' as 'HTTP' | 'HTTPS' | 'TCP' | 'UDP');
     const tabList = [
       { name: 'domain', label: '域名', component: <DomainList /> },
-      { name: 'info', label: '基本信息', component: <ListenerDetail protocolType={protocolType.value} /> },
+      { name: 'info', label: '基本信息', component: <ListenerDetail /> },
     ];
 
     return () => (
-      <Tab class='manager-tab-wrap' v-model:active={activeTab.value} type='card-grid'>
+      <Tab class='manager-tab-wrap has-breadcrumb' v-model:active={activeTab.value} type='card-grid'>
         {tabList.map((tab) => (
           <TabPanel key={tab.name} name={tab.name} label={tab.label}>
             <div class='common-card-wrap'>{tab.component}</div>

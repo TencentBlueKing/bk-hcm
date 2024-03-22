@@ -1,139 +1,174 @@
-import { defineComponent } from 'vue';
+import { computed, defineComponent, reactive, watch } from 'vue';
+// import components
 import { Button, Tag } from 'bkui-vue';
-import './index.scss';
 import StatusLoading from '@/assets/image/status_loading.png';
+// import stores
+import { useLoadBalancerStore } from '@/store/loadbalancer';
+import { useResourceStore } from '@/store';
+// import hooks
+import { useI18n } from 'vue-i18n';
+// import utils
+import { timeFormatter } from '@/common/util';
+// import constants
+import { SESSION_TYPE_MAP, SSL_MODE_MAP } from '@/constants/clb';
+import './index.scss';
 
 export default defineComponent({
   name: 'ListenerDetail',
-  props: {
-    protocolType: {
-      type: String,
-      required: true,
-    },
-  },
-  setup(props) {
-    const listenerDetailInfo = [
+  setup() {
+    // use hooks
+    const { t } = useI18n();
+    // use stores
+    const loadBalancerStore = useLoadBalancerStore();
+    const resourceStore = useResourceStore();
+
+    // define data
+    const listenerDetail = reactive<any>({}); // 监听器详情
+
+    const listenerDetailInfoOption = computed(() => [
       {
-        title: '基本信息',
+        title: t('基本信息'),
         content: [
           {
-            label: '监听器名称',
-            value: '主站web服务',
+            label: t('监听器名称'),
+            value: listenerDetail.lbl_name,
           },
           {
-            label: '监听器ID',
-            value: 'lbl-ht46i65c',
+            label: t('监听器ID'),
+            value: listenerDetail.cloud_lbl_id,
           },
           {
-            label: '协议端口',
-            value: 'HTTP:80',
+            label: t('协议端口'),
+            value: `${listenerDetail.protocol}:${listenerDetail.port}`,
           },
           {
-            label: '域名数量',
-            value: '59',
-            sub_hidden: ['TCP', 'UDP'].includes(props.protocolType),
+            label: t('域名数量'),
+            value: listenerDetail.domain_num,
+            sub_hidden: ['TCP', 'UDP'].includes(listenerDetail.protocol),
           },
           {
-            label: 'URL 数量',
-            value: '5234',
-            sub_hidden: ['TCP', 'UDP'].includes(props.protocolType),
+            label: t('URL 数量'),
+            value: listenerDetail.url_num,
+            sub_hidden: ['TCP', 'UDP'].includes(listenerDetail.protocol),
           },
           {
-            label: '均衡方式',
-            value: '加权轮询',
+            label: t('均衡方式'),
+            value: listenerDetail.scheduler,
           },
           {
-            label: '目标组',
+            label: t('目标组'),
             value: () => (
               <div class='target-group-wrap'>
-                <span class='link-text-btn'>目标组134</span>
+                <span class='link-text-btn'>{listenerDetail.target_group_name}</span>
                 {true && <img class='loading-icon spin-icon' src={StatusLoading} alt='' />}
               </div>
             ),
-            sub_hidden: ['HTTP', 'HTTPS'].includes(props.protocolType),
+            sub_hidden: ['HTTP', 'HTTPS'].includes(listenerDetail.protocol),
           },
           {
-            label: '创建时间',
-            value: '2023-07-03  18:00:00',
+            label: t('创建时间'),
+            value: timeFormatter(listenerDetail.created_at),
           },
         ],
       },
       {
-        title: '证书信息',
-        hidden: ['HTTP', 'TCP', 'UDP'].includes(props.protocolType),
+        title: t('证书信息'),
+        hidden: ['HTTP', 'TCP', 'UDP'].includes(listenerDetail.protocol),
         content: [
           {
-            label: '认证方式',
-            value: '单向认证',
+            label: t('认证方式'),
+            value: SSL_MODE_MAP[listenerDetail.certificate?.ssl_mode],
           },
           {
-            label: '服务器证书',
-            value: '***证书',
+            label: t('服务器证书'),
+            value: listenerDetail.certificate?.ca_cloud_id,
           },
           {
-            label: 'CA证书',
-            value: '***证书',
+            label: t('CA证书'),
+            value: listenerDetail.certificate?.client_cloud_ids?.join(','),
           },
         ],
       },
       {
-        title: '会话保持',
-        open_state: true,
+        title: t('会话保持'),
+        open_state: listenerDetail.session_expire,
         content: [
           {
-            label: '会话时间',
-            value: '基于源 IP 30 秒',
+            label: t('会话时间'),
+            value: `${SESSION_TYPE_MAP[listenerDetail.session_type]}${listenerDetail.session_expire} 秒`,
           },
         ],
       },
       {
-        title: '健康检查',
-        // 模拟一下场景
-        open_state: ['HTTP', 'TCP', 'UDP'].includes(props.protocolType),
+        title: t('健康检查'),
+        open_state: listenerDetail.health_check?.health_switch === 1 ? 1 : 0,
         content: [
           {
-            label: '健康探测源IP',
-            value: '100.64.0.0/10网段',
+            label: t('健康探测源IP'),
+            value: listenerDetail.health_check?.source_ip_type === 0 ? '负载均衡 VIP' : '100.64.0.0/10网段',
           },
           {
-            label: '检查方式',
-            value: 'TCP',
+            label: t('检查方式'),
+            value: listenerDetail.health_check?.check_type,
           },
           {
-            label: '检查端口',
-            value: '4600',
+            label: t('检查端口'),
+            value: listenerDetail.health_check?.check_port,
           },
           {
-            label: '检查端口',
-            value: ['响应超时(2秒)', '检查间隔(5秒)', '不健康阈值(3次)', '健康阈值(3次),'],
+            label: t('检查选型'),
+            value: [
+              `响应超时(${listenerDetail.health_check?.time_out}秒)`,
+              `检查间隔(${listenerDetail.health_check?.interval_time}秒)`,
+              `不健康阈值(${listenerDetail.health_check?.un_health_num}秒)`,
+              `健康阈值(${listenerDetail.health_check?.health_num}秒)`,
+            ],
           },
         ],
       },
-    ];
+    ]);
+
+    // 获取监听器详情
+    const getListenerDetail = async (id: string) => {
+      const res = await resourceStore.detail('listeners', id);
+      Object.assign(listenerDetail, res.data);
+    };
+
+    watch(
+      () => loadBalancerStore.currentSelectedTreeNode,
+      (val) => {
+        const { id, type } = val;
+        if (type !== 'listener') return;
+        // 只有 type='listener' 时, 才请求对应 listener 的详情
+        getListenerDetail(id);
+      },
+      {
+        immediate: true,
+      },
+    );
 
     return () => (
       <div class='listener-detail-wrap'>
         <Button class='fixed-edit-btn' outline theme='primary'>
-          编辑
+          {t('编辑')}
         </Button>
-        {listenerDetailInfo.map(({ title, open_state, content, hidden }) => {
+        {listenerDetailInfoOption.value.map(({ title, open_state, content, hidden }) => {
           if (hidden) {
             return null;
           }
           return (
             <div class='listener-detail-info-wrap'>
               <div class='info-title'>
-                {title} {/*  eslint-disable-next-line no-nested-ternary */}
-                {open_state === undefined ? null : open_state ? (
+                {title}
+                {open_state === 1 && (
                   <Tag theme='success' class='status-tag'>
-                    已开启
+                    {t('已开启')}
                   </Tag>
-                ) : (
-                  <Tag class='status-tag'>未开启</Tag>
-                )}{' '}
+                )}
+                {open_state === 0 && <Tag class='status-tag'>{t('未开启')}</Tag>}
               </div>
               <div class='info-content'>
-                {open_state !== false &&
+                {open_state !== 0 &&
                   content.map(({ label, value, sub_hidden }) => {
                     if (sub_hidden) {
                       return null;
@@ -145,8 +180,7 @@ export default defineComponent({
                       if (Array.isArray(value)) {
                         valueVNode = value.map((v) => (
                           <>
-                            {' '}
-                            {v};<br />{' '}
+                            {v};<br />
                           </>
                         ));
                       } else {
