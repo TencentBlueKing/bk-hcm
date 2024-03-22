@@ -75,6 +75,7 @@ export const SESSION_TYPE_MAP = {
   QUIC_CID: '基于源端口',
 };
 
+// 证书认证方式映射
 export const SSL_MODE_MAP = {
   UNIDIRECTIONAL: '单向认证',
   MUTUAL: '双向认证',
