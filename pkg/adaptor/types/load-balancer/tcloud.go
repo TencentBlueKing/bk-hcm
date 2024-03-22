@@ -440,11 +440,11 @@ type TCloudCreateRuleOption struct {
 // RuleInfo 规则基本信息
 type RuleInfo struct {
 	// Url 转发规则的路径。长度限制为：1~200。
-	Url *string `json:"url,omitempty"  validate:"required"`
+	Url *string `json:"url,omitempty"  validate:"required,max=200"`
 	// Domain 转发规则的域名。长度限制为：1~80。Domain和Domains只需要传一个，单域名规则传Domain，多域名规则传Domains。
 	Domain *string `json:"domain,omitempty"`
 	// SessionExpireTime 会话保持时间。设置为0表示关闭会话保持，开启会话保持可取值30~86400，单位：秒。
-	SessionExpireTime *int64 `json:"session_expire_time,omitempty"`
+	SessionExpireTime *int64 `json:"session_expire_time,omitempty" validate:"omitempty,min=30,max=86400"`
 	// HealthCheck 健康检查信息。详情请参见：[健康检查](https://cloud.tencent.com/document/product/214/6097)
 	HealthCheck *corelb.TCloudHealthCheckInfo `json:"health_check,omitempty"`
 	// Certificate 证书信息；此参数和MultiCertInfo不能同时传入。
@@ -489,8 +489,7 @@ type TCloudUpdateRuleOption struct {
 	LocationId string `json:"location_id" validate:"required"`
 	// 转发规则的新的转发路径，如不需修改Url，则不需提供此参数。
 	Url *string `json:"url,omitempty"`
-	// 健康检查信息。
-	HealthCheck *corelb.TCloudHealthCheckInfo `json:"health_check"`
+
 	// 规则的请求转发方式，可选值：WRR、LEAST_CONN、IP_HASH
 	// 分别表示按权重轮询、最小连接数、按IP哈希， 默认为 WRR。
 	Scheduler *string `json:"scheduler,omitempty"`
@@ -502,6 +501,9 @@ type TCloudUpdateRuleOption struct {
 	TrpcCallee *string `json:"trpc_callee,omitempty"`
 	// TRPC调用服务接口，ForwardType为TRPC时必填。目前暂未对外开放。
 	TrpcFunc *string `json:"trpc_func,omitempty"`
+
+	// 健康检查信息。
+	HealthCheck *corelb.TCloudHealthCheckInfo `json:"health_check"`
 }
 
 // Validate tcloud rule update option.

@@ -213,20 +213,18 @@ func (req *TCloudRuleCreate) Validate() error {
 
 // TCloudRuleUpdateReq 腾讯云url规则更新
 type TCloudRuleUpdateReq struct {
-	Url               *string  `json:"url,omitempty"`
-	Domains           []string `json:"domains,omitempty"`
-	SessionExpireTime *int64   `json:"session_expire_time,omitempty"`
-	Scheduler         *string  `json:"scheduler,omitempty"`
-	ForwardType       *string  `json:"forward_type,omitempty"`
-	DefaultServer     *bool    `json:"default_server,omitempty"`
-	Http2             *bool    `json:"http2,omitempty"`
-	TargetType        *string  `json:"target_type,omitempty"`
-	Quic              *bool    `json:"quic,omitempty"`
-	TrpcFunc          *string  `json:"trpc_func,omitempty"`
-	TrpcCallee        *string  `json:"trpc_callee,omitempty"`
+	Url               *string `json:"url,omitempty"`
+	SessionExpireTime *int64  `json:"session_expire_time,omitempty"`
+	Scheduler         *string `json:"scheduler,omitempty"`
+	ForwardType       *string `json:"forward_type,omitempty"`
+	DefaultServer     *bool   `json:"default_server,omitempty"`
+	Http2             *bool   `json:"http2,omitempty"`
+	TargetType        *string `json:"target_type,omitempty"`
+	Quic              *bool   `json:"quic,omitempty"`
+	TrpcFunc          *string `json:"trpc_func,omitempty"`
+	TrpcCallee        *string `json:"trpc_callee,omitempty"`
 
-	HealthCheck  *corelb.TCloudHealthCheckInfo `json:"health_check,omitempty"`
-	Certificates *corelb.TCloudCertificateInfo `json:"certificates,omitempty"`
+	HealthCheck *corelb.TCloudHealthCheckInfo `json:"health_check,omitempty"`
 }
 
 // Validate request.
@@ -234,9 +232,10 @@ func (req *TCloudRuleUpdateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// TCloudBatchDeleteRuleReq 批量删除规则id
+// TCloudBatchDeleteRuleReq 批量删除规则,支持按id删除 或 按域名删除,id删除优先级更高
 type TCloudBatchDeleteRuleReq struct {
-	RuleIDs          []string `json:"rule_ids" `
+	// 需要删除的规则id
+	RuleIDs          []string `json:"rule_ids"`
 	Domain           *string  `json:"domain"`
 	NewDefaultDomain *string  `json:"new_default_domain"`
 }

@@ -72,6 +72,8 @@ func (rt CloudResourceType) ConvTableName() (table.Name, error) {
 		return table.LoadBalancerListenerTable, nil
 	case TargetGroupCloudResType:
 		return table.LoadBalancerTargetGroupTable, nil
+	case TCLoudUrlRuleCloudResType:
+		return table.TCloudLbUrlRuleTable, nil
 	default:
 		return "", fmt.Errorf("%s does not have a corresponding table name", rt)
 	}
@@ -100,4 +102,5 @@ const (
 	LoadBalancerCloudResType     CloudResourceType = "load_balancer"
 	ListenerCloudResType         CloudResourceType = "listener"
 	TargetGroupCloudResType      CloudResourceType = "target_group"
+	TCLoudUrlRuleCloudResType    CloudResourceType = "tcloud_url_rule"
 )

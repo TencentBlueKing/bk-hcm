@@ -93,7 +93,7 @@ func (dao ListenerDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tab
 			ResID:      one.ID,
 			CloudResID: one.CloudID,
 			ResName:    one.Name,
-			ResType:    enumor.ListenerGroupAuditResType,
+			ResType:    enumor.ListenerAuditResType,
 			Action:     enumor.Create,
 			BkBizID:    one.BkBizID,
 			Vendor:     one.Vendor,

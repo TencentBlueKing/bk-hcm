@@ -368,6 +368,7 @@ func (t *TCloudImpl) formatCreateRuleRequest(opt *typelb.TCloudCreateRuleOption)
 			Url:               item.Url,
 			SessionExpireTime: item.SessionExpireTime,
 			Scheduler:         item.Scheduler,
+			Domains:           item.Domains,
 		}
 
 		if item.HealthCheck != nil {
@@ -530,8 +531,8 @@ func (t *TCloudImpl) DeleteRule(kt *kit.Kit, opt *typelb.TCloudDeleteRuleOption)
 	}
 
 	req := clb.NewDeleteRuleRequest()
-	req.LoadBalancerId = common.StringPtr(opt.LoadBalancerId)
 	req.ListenerId = common.StringPtr(opt.ListenerId)
+	req.LoadBalancerId = common.StringPtr(opt.LoadBalancerId)
 	if len(opt.CloudIDs) > 0 {
 		req.LocationIds = common.StringPtrs(opt.CloudIDs)
 
@@ -546,7 +547,8 @@ func (t *TCloudImpl) DeleteRule(kt *kit.Kit, opt *typelb.TCloudDeleteRuleOption)
 
 	deleteResp, err := client.DeleteRuleWithContext(kt.Ctx, req)
 	if err != nil {
-		logs.Errorf("delete tcloud rule api failed, opt: %+v, err: %v, rid: %s", opt, err, kt.Rid)
+		logs.Errorf("delete tcloud rule failed, err: %v, opt: %+v, rid: %s",
+			err, opt, kt.Rid)
 		return err
 	}
 

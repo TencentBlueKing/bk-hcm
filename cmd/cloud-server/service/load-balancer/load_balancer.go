@@ -53,23 +53,15 @@ func InitService(c *capability.Capability) {
 	h.Add("TCloudDescribeResources", http.MethodPost, "/vendors/tcloud/load_balancers/resources/describe",
 		svc.TCloudDescribeResources)
 
-	h.Load(c.WebService)
-
 	bizH.Add("UpdateBizTCloudLoadBalancer", http.MethodPatch, "/vendors/tcloud/load_balancers/{id}",
 		svc.UpdateBizTCloudLoadBalancer)
 	bizH.Add("ListBizLoadBalancer", http.MethodPost, "/load_balancers/list", svc.ListBizLoadBalancer)
 	bizH.Add("GetBizLoadBalancer", http.MethodGet, "/load_balancers/{id}", svc.GetBizLoadBalancer)
 
 	bizH.Add("ListBizListener", http.MethodPost, "/load_balancers/{lb_id}/listeners/list", svc.ListBizListener)
-	bizH.Add("ListBizUrlRulesByListener", http.MethodPost,
-		"/vendors/tcloud/listeners/{lbl_id}/rules/list", svc.ListBizUrlRulesByListener)
-	bizH.Add("ListBizTCloudRuleByTG", http.MethodPost,
-		"/vendors/tcloud/target_groups/{target_group_id}/rules/list", svc.ListBizTCloudRuleByTG)
 	bizH.Add("GetBizListener", http.MethodGet, "/listeners/{id}", svc.GetBizListener)
 	bizH.Add("ListBizListenerDomains", http.MethodPost,
 		"/vendors/tcloud/listeners/{lbl_id}/domains/list", svc.ListBizListenerDomains)
-	bizH.Add("GetBizTCloudUrlRule", http.MethodGet,
-		"/vendors/tcloud/listeners/{lbl_id}/rules/{rule_id}", svc.GetBizTCloudUrlRule)
 
 	bizH.Add("ListBizTargetsByTGID", http.MethodPost,
 		"/vendors/tcloud/target_groups/{target_group_id}/targets/list", svc.ListBizTargetsByTGID)
@@ -87,6 +79,21 @@ func InitService(c *capability.Capability) {
 	bizH.Add("UpdateBizListener", http.MethodPatch, "/listeners/{id}", svc.UpdateBizListener)
 	bizH.Add("DeleteBizListener", http.MethodDelete, "/listeners/batch", svc.DeleteBizListener)
 
+	// 规则
+	bizH.Add("GetBizTCloudUrlRule", http.MethodGet,
+		"/vendors/tcloud/listeners/{lbl_id}/rules/{rule_id}", svc.GetBizTCloudUrlRule)
+	bizH.Add("ListBizUrlRulesByListener", http.MethodPost,
+		"/vendors/tcloud/listeners/{lbl_id}/rules/list", svc.ListBizUrlRulesByListener)
+	bizH.Add("ListBizTCloudRuleByTG", http.MethodPost,
+		"/vendors/tcloud/target_groups/{target_group_id}/rules/list", svc.ListBizTCloudRuleByTG)
+	bizH.Add("CreateBizTCloudUrlRule", http.MethodPost,
+		"/vendors/tcloud/listeners/{lbl_id}/rules/create", svc.CreateBizTCloudUrlRule)
+	bizH.Add("UpdateBizTCloudUrlRule", http.MethodPatch,
+		"/vendors/tcloud/listeners/{lbl_id}/rules/{rule_id}", svc.UpdateBizTCloudUrlRule)
+	bizH.Add("BatchDeleteBizTCloudUrlRule", http.MethodDelete,
+		"/vendors/tcloud/listeners/{lbl_id}/rules/batch", svc.BatchDeleteBizTCloudUrlRule)
+
+	h.Load(c.WebService)
 	bizH.Load(c.WebService)
 }
 

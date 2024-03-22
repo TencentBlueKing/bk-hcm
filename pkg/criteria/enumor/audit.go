@@ -45,8 +45,9 @@ const (
 	SslCertAuditResType           AuditResourceType = "ssl_cert"
 	LoadBalancerAuditResType      AuditResourceType = "load_balancer"
 	TargetGroupAuditResType       AuditResourceType = "target_group"
-	ListenerGroupAuditResType     AuditResourceType = "listener"
+	ListenerAuditResType          AuditResourceType = "listener"
 	UrlRuleAuditResType           AuditResourceType = "url_rule"
+	UrlRuleDomainAuditResType     AuditResourceType = "url_rule_domain"
 )
 
 // AuditResourceTypeEnums resource type map.
@@ -67,8 +68,9 @@ var AuditResourceTypeEnums = map[AuditResourceType]struct{}{
 	SslCertAuditResType:           {},
 	LoadBalancerAuditResType:      {},
 	TargetGroupAuditResType:       {},
-	ListenerGroupAuditResType:     {},
+	ListenerAuditResType:          {},
 	UrlRuleAuditResType:           {},
+	UrlRuleDomainAuditResType:     {},
 }
 
 // Exist judge enum value exist.

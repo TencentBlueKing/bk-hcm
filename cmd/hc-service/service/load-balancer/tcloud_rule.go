@@ -24,6 +24,7 @@ import (
 	typelb "hcm/pkg/adaptor/types/load-balancer"
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
+	"hcm/pkg/api/data-service/cloud"
 	protolb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -69,7 +70,7 @@ func (svc *clbSvc) TCloudCreateUrlRule(cts *rest.Contexts) (any, error) {
 	ruleOption := typelb.TCloudCreateRuleOption{
 		Region:         lb.Region,
 		LoadBalancerId: lb.CloudID,
-		ListenerId:     lblID,
+		ListenerId:     listener.CloudID,
 	}
 	ruleOption.Rules = slice.Map(req.Rules, convRuleCreate)
 	creatResult, err := tcloudAdpt.CreateRule(cts.Kit, &ruleOption)
@@ -88,14 +89,40 @@ func (svc *clbSvc) TCloudCreateUrlRule(cts *rest.Contexts) (any, error) {
 	if len(creatResult.SuccessCloudIDs) == 0 {
 		return respData, nil
 	}
+	createReq := &cloud.TCloudUrlRuleBatchCreateReq{}
 
+	for i, cloudID := range creatResult.SuccessCloudIDs {
+		createReq.UrlRules = append(createReq.UrlRules, cloud.TCloudUrlRuleCreate{
+			LbID:               lb.ID,
+			CloudLbID:          lb.CloudID,
+			LblID:              listener.ID,
+			CloudLBLID:         listener.CloudLbID,
+			CloudID:            cloudID,
+			Name:               req.Rules[i].Url,
+			RuleType:           enumor.Layer7RuleType,
+			TargetGroupID:      "",
+			CloudTargetGroupID: "",
+			Domain:             req.Rules[i].Domains[0],
+			URL:                req.Rules[i].Url,
+			Scheduler:          cvt.PtrToVal(req.Rules[i].Scheduler),
+			SessionType:        "",
+			SessionExpire:      0,
+			HealthCheck:        nil,
+			Certificate:        nil,
+			Memo:               nil,
+		})
+	}
+	_, err = svc.dataCli.TCloud.LoadBalancer.BatchCreateTCloudUrlRule(cts.Kit, createReq)
+	if err != nil {
+		return nil, err
+	}
 	// TODO 同步对应监听器
 
 	// if err := svc.lblSync(cts.Kit, tcloudAdpt, req.AccountID, req.Region, result.SuccessCloudIDs); err != nil {
 	// 	return nil, err
 	// }
 
-	return nil, nil
+	return creatResult, nil
 }
 func convRuleCreate(r protolb.TCloudRuleCreate) *typelb.RuleInfo {
 	cloud := &typelb.RuleInfo{
@@ -142,7 +169,7 @@ func (svc *clbSvc) TCloudUpdateUrlRule(cts *rest.Contexts) (any, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	lb, _, err := svc.getL7RulesWithLb(cts.Kit, lblID, []string{ruleID})
+	lb, rules, err := svc.getL7RulesWithLb(cts.Kit, lblID, []string{ruleID})
 	if err != nil {
 		return nil, err
 	}
@@ -155,8 +182,8 @@ func (svc *clbSvc) TCloudUpdateUrlRule(cts *rest.Contexts) (any, error) {
 	ruleOption := typelb.TCloudUpdateRuleOption{
 		Region:            lb.Region,
 		LoadBalancerId:    lb.CloudID,
-		ListenerId:        lblID,
-		LocationId:        ruleID,
+		ListenerId:        rules[0].CloudLBLID,
+		LocationId:        rules[0].CloudID,
 		Url:               req.Url,
 		HealthCheck:       req.HealthCheck,
 		Scheduler:         req.Scheduler,
@@ -170,6 +197,7 @@ func (svc *clbSvc) TCloudUpdateUrlRule(cts *rest.Contexts) (any, error) {
 		logs.Errorf("fail to update rule, err: %v, id: %s, rid: %s", err, ruleID, cts.Kit.Rid)
 		return nil, err
 	}
+	// TODO 同步
 	return nil, nil
 }
 
@@ -231,22 +259,41 @@ func (svc *clbSvc) TCloudBatchDeleteUrlRule(cts *rest.Contexts) (any, error) {
 
 	var lb *corelb.BaseLoadBalancer
 	var err error
+
+	ruleOption := typelb.TCloudDeleteRuleOption{
+
+		CloudIDs:               req.RuleIDs,
+		Domain:                 req.Domain,
+		NewDefaultServerDomain: req.NewDefaultDomain,
+	}
+	dbReq := &cloud.LoadBalancerBatchDeleteReq{}
 	if len(req.RuleIDs) > 0 {
 		// 指定规则id删除
-		lb, _, err = svc.getL7RulesWithLb(cts.Kit, lblID, req.RuleIDs)
+		var rules []corelb.BaseTCloudLbUrlRule
+		lb, rules, err = svc.getL7RulesWithLb(cts.Kit, lblID, req.RuleIDs)
 		if err != nil {
 			logs.Errorf("fail to get lb info for rule deletion by rule ids(%v), err: %v, rid: %s",
 				req.RuleIDs, err, cts.Kit.Rid)
 			return nil, err
 		}
+		ruleOption.ListenerId = rules[0].CloudLBLID
+		ruleOption.CloudIDs = slice.Map(rules, func(r corelb.BaseTCloudLbUrlRule) string { return r.CloudID })
+		dbReq.Filter = tools.ContainersExpression("id", req.RuleIDs)
+
 	} else {
 		// 按域名删除模式
-		lb, _, err = svc.getListenerWithLb(cts.Kit, lblID)
+		var listener *corelb.BaseListener
+		lb, listener, err = svc.getListenerWithLb(cts.Kit, lblID)
 		if err != nil {
 			logs.Errorf("fail to get lb info for rule deletion by domain(%s), err: %v, rid: %s",
 				req.Domain, err, cts.Kit.Rid)
 			return nil, err
 		}
+		ruleOption.ListenerId = listener.CloudID
+		dbReq.Filter = tools.ExpressionAnd(
+			tools.RuleEqual("domain", req.Domain),
+			tools.RuleEqual("lbl_id", lblID))
+
 	}
 
 	tcloudAdpt, err := svc.ad.TCloud(cts.Kit, lb.AccountID)
@@ -254,18 +301,13 @@ func (svc *clbSvc) TCloudBatchDeleteUrlRule(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
-	ruleOption := typelb.TCloudDeleteRuleOption{
-		Region:                 lb.Region,
-		LoadBalancerId:         lb.CloudID,
-		ListenerId:             lblID,
-		CloudIDs:               req.RuleIDs,
-		Domain:                 req.Domain,
-		NewDefaultServerDomain: req.NewDefaultDomain,
-	}
-
+	ruleOption.Region = lb.Region
+	ruleOption.LoadBalancerId = lb.CloudID
 	if err = tcloudAdpt.DeleteRule(cts.Kit, &ruleOption); err != nil {
 		logs.Errorf("fail to delete rule, err: %v, id: %s, rid: %s", err, req.RuleIDs, cts.Kit.Rid)
 		return nil, err
 	}
-	return nil, nil
+
+	// TODO 同步对应监听器
+	return svc.dataCli.TCloud.LoadBalancer.BatchDeleteTCloudUrlRule(cts.Kit, dbReq)
 }

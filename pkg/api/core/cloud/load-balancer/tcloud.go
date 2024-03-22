@@ -139,18 +139,18 @@ type TCloudHealthCheckInfo struct {
 	// 是否开启健康检查：1（开启）、0（关闭）
 	HealthSwitch *int64 `json:"health_switch,omitempty"`
 	// 健康检查的响应超时时间（仅适用于四层监听器），可选值：2~60，默认值：2，单位：秒。响应超时时间要小于检查间隔时间
-	TimeOut *int64 `json:"time_out,omitempty"`
+	TimeOut *int64 `json:"time_out,omitempty" validate:"omitempty,min=2,max=60"`
 	// 健康检查探测间隔时间，默认值：5，IPv4 CLB实例的取值范围为：2-300，IPv6 CLB 实例的取值范围为：5-300。单位：秒
 	// 说明：部分老旧 IPv4 CLB实例的取值范围为：5-300
-	IntervalTime *int64 `json:"interval_time,omitempty"`
+	IntervalTime *int64 `json:"interval_time,omitempty" validate:"omitempty,min=5,max=300"`
 	// 健康阈值，默认值：3，表示当连续探测三次健康则表示该转发正常，可选值：2~10，单位：次
-	HealthNum *int64 `json:"health_num,omitempty"`
+	HealthNum *int64 `json:"health_num,omitempty" validate:"omitempty,min=2,max=10"`
 	// 不健康阈值，默认值：3，表示当连续探测三次不健康则表示该转发异常，可选值：2~10，单位：次。
-	UnHealthNum *int64 `json:"un_health_num,omitempty"`
+	UnHealthNum *int64 `json:"un_health_num,omitempty" validate:"omitempty,min=2,max=10"`
 	// 健康检查状态码（仅适用于HTTP/HTTPS转发规则、TCP监听器的HTTP健康检查方式）。可选值：1~31，默认 31。
 	// 1 表示探测后返回值 1xx 代表健康，2 表示返回 2xx 代表健康，4 表示返回 3xx 代表健康，8 表示返回 4xx 代表健康，
 	// 16 表示返回 5xx 代表健康。若希望多种返回码都可代表健康，则将相应的值相加。
-	HttpCode *int64 `json:"http_code"`
+	HttpCode *int64 `json:"http_code" validate:"omitempty,min=1,max=31"`
 	// 自定义探测相关参数。健康检查端口，默认为后端服务的端口，除非您希望指定特定端口，否则建议留空。（仅适用于TCP/UDP监听器）
 	CheckPort *int64 `json:"check_port,omitempty"`
 	// 健康检查使用的协议。取值 TCP | HTTP | HTTPS | GRPC | PING | CUSTOM，UDP监听器支持PING/CUSTOM，

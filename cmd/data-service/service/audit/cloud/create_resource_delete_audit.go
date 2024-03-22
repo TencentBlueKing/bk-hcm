@@ -101,6 +101,10 @@ func (ad Audit) buildDeleteAuditInfo(kt *kit.Kit, resType enumor.AuditResourceTy
 		audits, err = ad.certDeleteAuditBuild(kt, deletes)
 	case enumor.TargetGroupAuditResType:
 		audits, err = ad.targetGroupDeleteAuditBuild(kt, deletes)
+	case enumor.UrlRuleAuditResType:
+		audits, err = ad.loadBalancer.UrlRuleDeleteAuditBuild(kt, parentID, deletes)
+	case enumor.UrlRuleDomainAuditResType:
+		audits, err = ad.loadBalancer.UrlRuleDeleteByDomainAuditBuild(kt, parentID, deletes)
 	case enumor.ListenerGroupAuditResType:
 		audits, err = ad.listenerDeleteAuditBuild(kt, deletes)
 

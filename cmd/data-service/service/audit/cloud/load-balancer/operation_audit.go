@@ -38,7 +38,7 @@ func (c *LoadBalancer) TargetGroupOperationAuditBuild(kt *kit.Kit, operations []
 		switch operation.Action {
 		case protoaudit.Associate, protoaudit.Disassociate:
 			switch operation.AssociatedResType {
-			case enumor.ListenerGroupAuditResType:
+			case enumor.ListenerAuditResType:
 				lblAssOperations = append(lblAssOperations, operation)
 			default:
 				return nil, fmt.Errorf("audit associated resource type: %s not support", operation.AssociatedResType)
@@ -114,7 +114,7 @@ func (c *LoadBalancer) listenerAssOperationAuditBuild(kt *kit.Kit,
 			AppCode:    kt.AppCode,
 			Detail: &tableaudit.BasicDetail{
 				Data: &tableaudit.AssociatedOperationAudit{
-					AssResType:    enumor.ListenerGroupAuditResType,
+					AssResType:    enumor.ListenerAuditResType,
 					AssResID:      lblInfo.ID,
 					AssResCloudID: lblInfo.CloudID,
 					AssResName:    lblInfo.Name,

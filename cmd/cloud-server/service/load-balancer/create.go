@@ -38,6 +38,7 @@ import (
 	"hcm/pkg/tools/hooks/handler"
 )
 
+// BatchCreateLB 批量创建负载均衡
 func (svc *lbSvc) BatchCreateLB(cts *rest.Contexts) (any, error) {
 
 	req := new(cloudserver.ResourceCreateReq)

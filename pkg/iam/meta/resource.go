@@ -89,4 +89,6 @@ const (
 	Listener ResourceType = "listener"
 	// TargetGroup defines target group hcm auth resource type
 	TargetGroup ResourceType = "target_group"
+	// UrlRuleAuditResType url规则
+	UrlRuleAuditResType ResourceType = "url_rule"
 )
