@@ -237,7 +237,7 @@ export default defineComponent({
     const handleSubmit = () => {};
 
     return () => (
-      <div class={'url-list-container has-selection'}>
+      <div class={'url-list-container has-selection has-breadcrumb'}>
         <CommonTable>
           {{
             operation: () => (
