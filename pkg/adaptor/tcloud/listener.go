@@ -296,8 +296,7 @@ func (t *TCloudImpl) DeleteListener(kt *kit.Kit, opt *typelb.TCloudDeleteListene
 	req.ListenerIds = common.StringPtrs(opt.CloudIDs)
 	deleteResp, err := client.DeleteLoadBalancerListenersWithContext(kt.Ctx, req)
 	if err != nil {
-		logs.Errorf("delete tcloud listener failed(RequestID:%s), opt: %+v, err: %v, rid: %s",
-			deleteResp.Response.RequestId, opt, err, kt.Rid)
+		logs.Errorf("delete tcloud listener api failed, opt: %+v, err: %v, rid: %s", opt, err, kt.Rid)
 		return err
 	}
 
@@ -536,6 +535,7 @@ func (t *TCloudImpl) DeleteRule(kt *kit.Kit, opt *typelb.TCloudDeleteRuleOption)
 
 	req := clb.NewDeleteRuleRequest()
 	req.LoadBalancerId = common.StringPtr(opt.LoadBalancerId)
+	req.ListenerId = common.StringPtr(opt.ListenerId)
 	req.LocationIds = common.StringPtrs(opt.CloudIDs)
 	if len(opt.Domain) > 0 {
 		req.Domain = converter.ValToPtr(opt.Domain)
@@ -548,8 +548,7 @@ func (t *TCloudImpl) DeleteRule(kt *kit.Kit, opt *typelb.TCloudDeleteRuleOption)
 	}
 	deleteResp, err := client.DeleteRuleWithContext(kt.Ctx, req)
 	if err != nil {
-		logs.Errorf("delete tcloud rule failed(RequestID:%s), opt: %+v, err: %v, rid: %s",
-			deleteResp.Response.RequestId, opt, err, kt.Rid)
+		logs.Errorf("delete tcloud rule api failed, opt: %+v, err: %v, rid: %s", opt, err, kt.Rid)
 		return err
 	}
 

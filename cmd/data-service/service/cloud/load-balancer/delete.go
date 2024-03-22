@@ -131,7 +131,7 @@ func (svc *lbSvc) deleteRule(kt *kit.Kit, txn *sqlx.Tx, listenerID string) error
 	}
 	ruleIds := slice.Map(ruleResp.Details, func(r tablelb.TCloudLbUrlRuleTable) string { return r.ID })
 
-	ruleIDFilter := tools.ContainersExpression("lbl_id", ruleIds)
+	ruleIDFilter := tools.ContainersExpression("id", ruleIds)
 	return svc.dao.LoadBalancerTCloudUrlRule().DeleteWithTx(kt, txn, ruleIDFilter)
 }
 
@@ -262,6 +262,14 @@ func (svc *lbSvc) BatchDeleteListener(cts *rest.Contexts) (any, error) {
 				return nil, err
 			}
 		}
+
+		// 删除跟目标组的绑定关系
+		err = svc.deleteTargetGroupListenerRuleRel(cts.Kit, txn, lblIds)
+		if err != nil {
+			logs.Errorf("fail to delete target rule rel of listener(%v), err: %v, rid: %s", lblIds, err, cts.Kit.Rid)
+			return nil, err
+		}
+
 		// 删除监听器
 		delFilter := tools.ContainersExpression("id", lblIds)
 		return nil, svc.dao.LoadBalancerListener().DeleteWithTx(cts.Kit, txn, delFilter)
@@ -272,4 +280,24 @@ func (svc *lbSvc) BatchDeleteListener(cts *rest.Contexts) (any, error) {
 	}
 
 	return nil, nil
+}
+
+// 删除监听器关联目标组关系数据
+func (svc *lbSvc) deleteTargetGroupListenerRuleRel(kt *kit.Kit, txn *sqlx.Tx, listenerIDs []string) error {
+	ruleRelResp, err := svc.dao.LoadBalancerTargetListenerRuleRel().List(kt, &types.ListOption{
+		Filter: tools.ContainersExpression("lbl_id", listenerIDs),
+		Page:   core.NewDefaultBasePage(),
+	})
+	if err != nil {
+		logs.Errorf("fail to list listener and target group rule of listener(%v), err: %v, rid: %s",
+			listenerIDs, err, kt.Rid)
+		return err
+	}
+	if len(ruleRelResp.Details) == 0 {
+		return nil
+	}
+
+	relIDs := slice.Map(ruleRelResp.Details, func(r tablelb.TargetListenerRuleRelTable) string { return r.ID })
+	return svc.dao.LoadBalancerTargetListenerRuleRel().DeleteWithTx(
+		kt, txn, tools.ContainersExpression("id", relIDs))
 }

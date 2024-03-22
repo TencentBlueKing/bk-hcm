@@ -84,7 +84,8 @@ func InitService(c *capability.Capability) {
 
 	// 监听器
 	bizH.Add("CreateBizListener", http.MethodPost, "/load_balancers/{lb_id}/listeners/create", svc.CreateBizListener)
-	bizH.Add("UpdateBizListener", http.MethodPatch, "/load_balancers/{lb_id}/listeners/{id}", svc.UpdateBizListener)
+	bizH.Add("UpdateBizListener", http.MethodPatch, "/listeners/{id}", svc.UpdateBizListener)
+	bizH.Add("DeleteBizListener", http.MethodDelete, "/listeners/batch", svc.DeleteBizListener)
 
 	bizH.Load(c.WebService)
 }

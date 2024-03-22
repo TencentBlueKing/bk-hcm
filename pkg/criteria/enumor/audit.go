@@ -26,6 +26,7 @@ package enumor
 // AuditResourceType audit resource type.
 type AuditResourceType string
 
+// AuditResourceType 资源审计类型
 const (
 	SubAccountAuditResType        AuditResourceType = "sub_account"
 	AccountAuditResType           AuditResourceType = "account"
@@ -135,6 +136,7 @@ func (a AuditAction) Exist() bool {
 // AuditAssignedResType audit assigned resource type.
 type AuditAssignedResType string
 
+// AuditAssignedResType 资源分配类型
 const (
 	BizAuditAssignedResType       AuditAssignedResType = "biz"
 	CloudAreaAuditAssignedResType AuditAssignedResType = "cloud_area"

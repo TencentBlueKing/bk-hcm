@@ -85,3 +85,8 @@ func (c *ClbClient) UpdateListener(kt *kit.Kit, id string, req *protolb.Listener
 	return common.Request[protolb.ListenerWithRuleUpdateReq, protolb.BatchCreateResult](
 		c.client, http.MethodPatch, kt, req, "/listeners/%s", id)
 }
+
+// DeleteListener 删除监听器
+func (c *ClbClient) DeleteListener(kt *kit.Kit, req *core.BatchDeleteReq) error {
+	return common.RequestNoResp[core.BatchDeleteReq](c.client, http.MethodDelete, kt, req, "/listeners/batch")
+}
