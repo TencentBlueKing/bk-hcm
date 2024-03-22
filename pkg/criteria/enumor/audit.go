@@ -46,6 +46,7 @@ const (
 	LoadBalancerAuditResType      AuditResourceType = "load_balancer"
 	TargetGroupAuditResType       AuditResourceType = "target_group"
 	ListenerGroupAuditResType     AuditResourceType = "listener"
+	UrlRuleAuditResType           AuditResourceType = "url_rule"
 )
 
 // AuditResourceTypeEnums resource type map.
@@ -67,6 +68,7 @@ var AuditResourceTypeEnums = map[AuditResourceType]struct{}{
 	LoadBalancerAuditResType:      {},
 	TargetGroupAuditResType:       {},
 	ListenerGroupAuditResType:     {},
+	UrlRuleAuditResType:           {},
 }
 
 // Exist judge enum value exist.

@@ -249,8 +249,8 @@ func (dao ClbDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression
 	return nil
 }
 
-// ListClbByIDs clb
-func ListClbByIDs(kt *kit.Kit, orm orm.Interface, ids []string) (map[string]tablelb.LoadBalancerTable, error) {
+// ListLbByIDs list lb for other dao
+func ListLbByIDs(kt *kit.Kit, orm orm.Interface, ids []string) (map[string]tablelb.LoadBalancerTable, error) {
 	sql := fmt.Sprintf(`SELECT %s FROM %s WHERE id IN (:ids)`, tablelb.LoadBalancerColumns.FieldsNamedExpr(nil),
 		table.LoadBalancerTable)
 
