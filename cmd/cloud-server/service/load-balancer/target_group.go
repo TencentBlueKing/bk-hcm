@@ -163,7 +163,7 @@ func (svc *lbSvc) getTargetGroup(cts *rest.Contexts, validHandler handler.ListAu
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.ListenerCloudResType, id)
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.TargetGroupCloudResType, id)
 	if err != nil {
 		logs.Errorf("get target group basic info failed, id: %s, err: %v, rid: %s", id, err, cts.Kit.Rid)
 		return nil, err
