@@ -1,8 +1,7 @@
 import { IPageQuery, QueryRuleOPEnum } from '@/typings';
 import { defineStore } from 'pinia';
-import { reactive, ref } from 'vue';
+import { reactive, ref, Ref } from 'vue';
 import { useResourceStore } from './resource';
-import { Ref, ref } from 'vue';
 
 export interface ILoadBalancer {
   id: string; // 负载均衡资源ID
@@ -22,7 +21,6 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
   // state - lb-tree - 当前选中的资源
   const currentSelectedTreeNode = ref();
   // state - 目标组id
-  const targetGroupId = ref('');
   const lb: Ref<ILoadBalancer> = ref({
     id: '',
     account_id: '',
@@ -65,5 +63,14 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
     lb.value = obj;
   };
 
-  return { targetGroupId, setTargetGroupId, lb, setLB, currentSelectedTreeNode, setCurrentSelectedTreeNode };
+  return {
+    targetGroupId,
+    setTargetGroupId,
+    lb,
+    setLB,
+    currentSelectedTreeNode,
+    setCurrentSelectedTreeNode,
+    getTargetGroupList,
+    allTargetGroupList,
+  };
 });
