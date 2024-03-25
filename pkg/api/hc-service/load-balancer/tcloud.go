@@ -297,3 +297,24 @@ func (req *ListenerWithRuleUpdateReq) Validate() error {
 	}
 	return validator.Validate.Struct(req)
 }
+
+// --------------------------[更新域名属性]--------------------------
+
+// DomainAttrUpdateReq domain attr update req.
+type DomainAttrUpdateReq struct {
+	Domain    string `json:"domain" validate:"required"`
+	NewDomain string `json:"new_domain" validate:"omitempty"`
+	// 域名相关的证书信息，注意，仅对启用SNI的监听器适用。
+	Certificate *corelb.TCloudCertificateInfo `json:"certificate" validate:"omitempty"`
+	// 是否开启Http2，注意，只有HTTPS域名才能开启Http2。
+	Http2 bool `json:"http2" validate:"omitempty"`
+	// 是否设为默认域名，注意，一个监听器下只能设置一个默认域名。
+	DefaultServer *bool `json:"default_server" validate:"omitempty"`
+	// 是否开启Quic，注意，只有HTTPS域名才能开启Quic
+	Quic bool `json:"quic" validate:"omitempty"`
+}
+
+// Validate 校验更新域名的参数
+func (req *DomainAttrUpdateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

@@ -522,7 +522,7 @@ type TCloudUpdateDomainAttrOption struct {
 	// ListenerId监听器ID
 	ListenerId string `json:"listener_id" validate:"required"`
 	// 域名（必须是已经创建的转发规则下的域名），如果是多域名，可以指定多域名列表中的任意一个。
-	Domain string `json:"domain,omitempty"`
+	Domain string `json:"domain,required"`
 	// 要修改的新域名。NewDomain和NewDomains只能传一个。
 	NewDomain string `json:"new_domain,omitempty"`
 	// 域名相关的证书信息，注意，仅对启用SNI的监听器适用。
