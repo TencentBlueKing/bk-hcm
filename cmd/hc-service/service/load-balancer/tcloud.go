@@ -683,7 +683,7 @@ func (svc *clbSvc) getListenerWithRule(kt *kit.Kit, req *core.BatchDeleteReq) ([
 	ruleReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(
 			tools.RuleIn("lbl_id", lblIDs),
-			tools.RuleEqual("rule_type", enumor.LayerSevenRuleType),
+			tools.RuleEqual("rule_type", enumor.Layer7RuleType),
 		),
 		Page: core.NewDefaultBasePage(),
 	}

@@ -55,7 +55,7 @@ func (ad Audit) listenerDeleteAuditBuild(kt *kit.Kit, deletes []protoaudit.Cloud
 			ResID:      one.ResID,
 			CloudResID: resData.CloudID,
 			ResName:    resData.Name,
-			ResType:    enumor.ListenerGroupAuditResType,
+			ResType:    enumor.ListenerAuditResType,
 			Action:     enumor.Delete,
 			BkBizID:    resData.BkBizID,
 			Vendor:     resData.Vendor,
