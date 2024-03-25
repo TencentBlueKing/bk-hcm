@@ -15,16 +15,15 @@ package iam
 
 import (
 	"context"
-	"fmt"
-	"net/http"
 
 	"hcm/pkg/cc"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/iam/client"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/esb/types"
-	"hcm/pkg/tools/uuid"
+	"hcm/pkg/tools/converter"
 )
 
 // Client is an esb client to request iam.
@@ -54,57 +53,28 @@ type iam struct {
 func (i *iam) RegisterResourceCreatorAction(ctx context.Context, inst *client.InstanceWithCreator) (
 	[]client.CreatorActionPolicy, error) {
 
-	resp := new(esbIamCreatorActionResp)
-	req := &esbInstanceWithCreatorParams{
-		CommParams:          types.GetCommParams(i.config),
-		InstanceWithCreator: inst,
-	}
-	h := http.Header{}
-	h.Set(constant.RidKey, uuid.UUID())
-
-	err := i.client.Post().
-		SubResourcef("/iam/authorization/resource_creator_action/").
-		WithContext(ctx).
-		WithHeaders(h).
-		Body(req).
-		Do().Into(resp)
+	kt := kit.New()
+	kt.Ctx = ctx
+	result, err := types.EsbCall[client.InstanceWithCreator, []client.CreatorActionPolicy](i.client, i.config,
+		rest.POST, kt,
+		inst, "/iam/authorization/resource_creator_action/")
 	if err != nil {
+		logs.Errorf("fail to register iam resource instance, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
-
-	if !resp.Result || resp.Code != 0 {
-		return nil, fmt.Errorf("register iam resource creator instance failed, code: %d, msg: %s, rid: %s", resp.Code,
-			resp.Message, resp.Rid)
-	}
-
-	return resp.Data, nil
+	return converter.PtrToVal(result), nil
 }
 
 // GetApplyPermUrl get iam apply permission url.
 func (i *iam) GetApplyPermUrl(ctx context.Context, opts *meta.IamPermission) (string, error) {
-	resp := new(esbIamGetApplyPermUrlResp)
-	req := &esbIamGetApplyPermUrlParams{
-		CommParams:    types.GetCommParams(i.config),
-		IamPermission: opts,
-	}
 
-	h := http.Header{}
-	h.Set(constant.RidKey, uuid.UUID())
-
-	err := i.client.Post().
-		SubResourcef("/iam/application/").
-		WithContext(ctx).
-		WithHeaders(h).
-		Body(req).
-		Do().Into(resp)
+	kt := kit.New()
+	kt.Ctx = ctx
+	result, err := types.EsbCall[meta.IamPermission, GetApplyPermUrlResult](i.client, i.config, rest.POST, kt, opts,
+		"/iam/application/")
 	if err != nil {
+		logs.Errorf("fail to get iam apply permission url, err: %v, rid: %s", err, kt.Rid)
 		return "", err
 	}
-
-	if !resp.Result || resp.Code != 0 {
-		return "", fmt.Errorf("get iam apply permission url failed, code: %d, msg: %s, rid: %s", resp.Code,
-			resp.Message, resp.Rid)
-	}
-
-	return resp.Data.Url, nil
+	return result.Url, nil
 }
