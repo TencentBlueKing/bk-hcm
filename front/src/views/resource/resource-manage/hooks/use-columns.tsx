@@ -41,7 +41,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     field = 'id',
     idFiled = 'id',
     onlyShowOnList = true,
-    render: (data: any) => Element | string = undefined,
+    render: (data: any) => any = undefined,
     sort = true,
   ) => {
     return {
@@ -1246,21 +1246,41 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       onlyShowOnList: true,
       align: 'right',
     },
-    getLinkField('target_group_name', '目标组名称'),
+    getLinkField('name', '目标组名称', 'name', 'name', false, (data) => (
+      <Button
+        text
+        theme='primary'
+        onClick={() => {
+          router.replace({
+            query: {
+              ...route.query,
+              tgId: data.id,
+            },
+          });
+        }}>
+        {data.name}
+      </Button>
+    )),
     {
       label: '关联的负载均衡',
-      field: 'clb_name',
+      field: 'lb_name',
       isDefaultShow: true,
+      render({ cell }: any) {
+        return cell?.trim() || '--';
+      },
     },
     {
       label: '绑定监听器数量',
-      field: 'listener_count',
+      field: 'listener_num',
       isDefaultShow: true,
       sort: true,
     },
     {
       label: '协议',
       field: 'protocol',
+      render({ cell }: any) {
+        return cell?.trim() || '--';
+      },
       isDefaultShow: true,
       filter: true,
     },
@@ -1303,14 +1323,16 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const rsConfigColumns = [
     {
       label: '内网IP',
-      field: 'private_ip_address',
-      render: ({ cell }: any) => cell.join(','),
+      render: ({ data }: any) => {
+        return [...(data.private_ipv4_addresses || []), ...(data.private_ipv6_addresses || [])].join(',');
+      },
       isDefaultShow: true,
     },
     {
       label: '公网IP',
-      field: 'public_ip_address',
-      render: ({ cell }: any) => cell.join(','),
+      render: ({ data }: any) => {
+        return [...(data.public_ipv4_addresses || []), ...(data.public_ipv6_addresses || [])].join(',');
+      },
     },
     {
       label: '名称',
