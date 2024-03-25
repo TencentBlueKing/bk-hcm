@@ -2,22 +2,39 @@ import { defineComponent, reactive, ref } from 'vue';
 import { Loading, SearchSelect, Table } from 'bkui-vue';
 import Empty from '@/components/empty';
 import './index.scss';
+import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 
 export default defineComponent({
   name: 'AddRsDialogContent',
-  setup() {
+  props: {
+    rsList: {
+      type: Array,
+      required: true,
+    },
+    rsTableData: {
+      type: Array,
+      required: true,
+    },
+  },
+  emits: ['select'],
+  setup(props, { emit }) {
     const searchValue = ref('');
     const isTableLoading = ref(false);
     const tableRef = ref(null);
+    const { selections, handleSelectionChange } = useSelection();
     const columns = [
       { type: 'selection', width: '100' },
       {
         label: '内网IP',
-        field: 'privateIp',
+        render({ data }: any) {
+          return [...data.private_ipv4_addresses, ...data.private_ipv6_addresses].join(',');
+        },
       },
       {
         label: '公网IP',
-        field: 'publicIp',
+        render({ data }: any) {
+          return [...data.public_ipv4_addresses, ...data.public_ipv6_addresses].join(',');
+        },
       },
       {
         label: '名称',
@@ -25,28 +42,8 @@ export default defineComponent({
       },
       {
         label: '资源类型',
-        field: 'resourceType',
+        field: 'machine_type',
         filter: true,
-      },
-    ];
-    const tableData = [
-      {
-        privateIp: '192.168.10.1',
-        publicIp: '52.14.72.95',
-        name: '应用服务器1',
-        resourceType: 'EC2',
-      },
-      {
-        privateIp: '192.168.10.2',
-        publicIp: '52.14.72.96',
-        name: '数据库服务器1',
-        resourceType: 'RDS',
-      },
-      {
-        privateIp: '192.168.10.3',
-        publicIp: '52.14.72.97',
-        name: '缓存服务器1',
-        resourceType: 'ElastiCache',
       },
     ];
     const searchData = [
@@ -68,16 +65,21 @@ export default defineComponent({
       },
     ];
     const selectedCount = ref(0);
-    const handleSelect = ({ checked }: { row: any; index: Number; checked: boolean; data: Array<any> }) => {
-      if (checked) {
+    const handleSelect = (selection: any) => {
+      handleSelectionChange(selection, () => true, false);
+      emit('select', selections.value);
+      if (selection.checked) {
         selectedCount.value += 1;
       } else {
         selectedCount.value -= 1;
       }
     };
-    const handleSelectAll = ({ checked, data }: { checked: boolean; data: Array<any> }) => {
-      if (checked) {
-        selectedCount.value = data.length > paginationConfig.limit ? paginationConfig.limit : data.length;
+    const handleSelectAll = (selection: any) => {
+      handleSelectionChange(selection, () => true, true);
+      emit('select', selections.value);
+      if (selection.checked) {
+        selectedCount.value =
+          selection.data.length > paginationConfig.limit ? paginationConfig.limit : selection.data.length;
       } else {
         selectedCount.value = 0;
       }
@@ -95,19 +97,20 @@ export default defineComponent({
             class='table-container'
             ref={tableRef}
             columns={columns}
-            data={tableData}
+            data={props.rsList}
             pagination={paginationConfig}
             onSelect={handleSelect}
             onSelectAll={handleSelectAll}>
             {{
-              prepend: () => (
-                <div class='table-prepend-wrap'>
-                  当前已选择 <span class='number'>{selectedCount.value}</span> 条数据,&nbsp;
-                  <span class='clear' onClick={handleClear}>
-                    清除选择
-                  </span>
-                </div>
-              ),
+              prepend: () =>
+                props.rsList.length ? (
+                  <div class='table-prepend-wrap'>
+                    当前已选择 <span class='number'>{selectedCount.value}</span> 条数据,&nbsp;
+                    <span class='clear' onClick={handleClear}>
+                      清除选择
+                    </span>
+                  </div>
+                ) : null,
               empty: () => {
                 if (isTableLoading.value) return null;
                 return <Empty />;

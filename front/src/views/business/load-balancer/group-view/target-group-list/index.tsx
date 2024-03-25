@@ -4,9 +4,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { Input, Popover, VirtualRender } from 'bkui-vue';
 // import stores
 import { useLoadBalancerStore } from '@/store/loadbalancer';
-import { useResourceStore, useAccountStore } from '@/store';
-// import types
-import { IPageQuery, QueryRuleOPEnum } from '@/typings';
+import { useAccountStore } from '@/store';
 // import static resources
 import allIcon from '@/assets/image/all-vendors.png';
 import './index.scss';
@@ -20,16 +18,10 @@ export default defineComponent({
     const route = useRoute();
     // use stores
     const loadBalancerStore = useLoadBalancerStore();
-    const resourceStore = useResourceStore();
     const accountStore = useAccountStore();
     // 搜索相关
     const searchValue = ref('');
 
-    const targetGroupListPageQuery = reactive<IPageQuery>({
-      start: 0,
-      limit: 50,
-    });
-    const targetGroupList = ref([]);
     const allTargetGroupsItem = reactive({ isDropdownListShow: false });
     // handler - 切换目标组
     const handleTypeChange = (type: 'all' | 'specific', targetGroupId: string) => {
@@ -63,8 +55,12 @@ export default defineComponent({
             ),
             content: () => (
               <div class='dropdown-action-list'>
-                <div class='dropdown-action-item'>编辑</div>
-                <div class='dropdown-action-item'>删除</div>
+                <div class='dropdown-action-item' onClick={() => {}}>
+                  编辑
+                </div>
+                <div class='dropdown-action-item' onClick={() => {}}>
+                  删除
+                </div>
               </div>
             ),
           }}
@@ -72,31 +68,8 @@ export default defineComponent({
       );
     };
 
-    const getTargetGroupList = async () => {
-      const [detailRes, countRes] = await Promise.all(
-        [false, true].map((isCount) =>
-          resourceStore.list(
-            {
-              filter: {
-                op: QueryRuleOPEnum.AND,
-                rules: [],
-              },
-              page: {
-                count: isCount,
-                start: isCount ? 0 : targetGroupListPageQuery.start,
-                limit: isCount ? 0 : targetGroupListPageQuery.limit,
-              },
-            },
-            'target_groups',
-          ),
-        ),
-      );
-      targetGroupList.value = detailRes.data.details;
-      targetGroupListPageQuery.count = countRes.data.count;
-    };
-
     onMounted(() => {
-      getTargetGroupList();
+      loadBalancerStore.getTargetGroupList();
     });
 
     watch(
@@ -130,7 +103,7 @@ export default defineComponent({
               {renderDropdownActionList(allTargetGroupsItem)}
             </div>
           </div>
-          <VirtualRender list={targetGroupList.value} height='calc(100% - 36px)' lineHeight={36}>
+          <VirtualRender list={loadBalancerStore.allTargetGroupList} height='calc(100% - 36px)' lineHeight={36}>
             {{
               default: ({ data }: any) => {
                 return data.map((item: any) => {
