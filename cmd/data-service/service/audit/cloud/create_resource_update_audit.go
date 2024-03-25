@@ -95,6 +95,8 @@ func (ad Audit) buildUpdateAuditInfo(kt *kit.Kit, resType enumor.AuditResourceTy
 		audits, err = ad.cvm.CvmUpdateAuditBuild(kt, updates)
 	case enumor.LoadBalancerAuditResType:
 		audits, err = ad.loadBalancer.LoadBalancerUpdateAuditBuild(kt, updates)
+	case enumor.UrlRuleAuditResType:
+		audits, err = ad.loadBalancer.UrlRuleUpdateAuditBuild(kt, parentID, updates)
 
 	default:
 		return nil, fmt.Errorf("cloud resource type: %s not support", resType)

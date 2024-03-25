@@ -42,8 +42,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// BatchCreateCLB 批量创建clb
-func (svc *lbSvc) BatchCreateCLB(cts *rest.Contexts) (any, error) {
+// BatchCreateLoadBalancer 批量创建负载均衡
+func (svc *lbSvc) BatchCreateLoadBalancer(cts *rest.Contexts) (any, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -51,13 +51,13 @@ func (svc *lbSvc) BatchCreateCLB(cts *rest.Contexts) (any, error) {
 
 	switch vendor {
 	case enumor.TCloud:
-		return batchCreateClb[corelb.TCloudClbExtension](cts, svc, vendor)
+		return batchCreateLoadBalancer[corelb.TCloudClbExtension](cts, svc, vendor)
 	default:
 		return nil, errf.New(errf.InvalidParameter, "unsupported vendor: "+string(vendor))
 	}
 
 }
-func batchCreateClb[T corelb.Extension](cts *rest.Contexts, svc *lbSvc, vendor enumor.Vendor) (any, error) {
+func batchCreateLoadBalancer[T corelb.Extension](cts *rest.Contexts, svc *lbSvc, vendor enumor.Vendor) (any, error) {
 	req := new(dataproto.LoadBalancerBatchCreateReq[T])
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -79,8 +79,8 @@ func batchCreateClb[T corelb.Extension](cts *rest.Contexts, svc *lbSvc, vendor e
 
 		ids, err := svc.dao.LoadBalancer().BatchCreateWithTx(cts.Kit, txn, models)
 		if err != nil {
-			logs.Errorf("[%s]fail to batch create clb, err: %v, rid:%s", vendor, err, cts.Kit.Rid)
-			return nil, fmt.Errorf("batch create clb failed, err: %v", err)
+			logs.Errorf("[%s]fail to batch create load balancer, err: %v, rid:%s", vendor, err, cts.Kit.Rid)
+			return nil, fmt.Errorf("batch create load balancer failed, err: %v", err)
 		}
 
 		return ids, nil

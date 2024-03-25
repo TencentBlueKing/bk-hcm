@@ -98,7 +98,7 @@ func (svc *lbSvc) associateTargetGroupListenerRel(cts *rest.Contexts, validHandl
 		ResType:           enumor.TargetGroupAuditResType,
 		ResID:             req.TargetGroupID,
 		Action:            protoaudit.Associate,
-		AssociatedResType: enumor.ListenerGroupAuditResType,
+		AssociatedResType: enumor.ListenerAuditResType,
 		AssociatedResID:   req.ListenerID,
 	}
 	if err = svc.audit.ResOperationAudit(cts.Kit, audit); err != nil {

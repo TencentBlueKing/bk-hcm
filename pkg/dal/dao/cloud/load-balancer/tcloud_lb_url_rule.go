@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/audit"
 	idgen "hcm/pkg/dal/dao/id-generator"
@@ -32,6 +33,7 @@ import (
 	"hcm/pkg/dal/dao/types"
 	typesclb "hcm/pkg/dal/dao/types/clb"
 	"hcm/pkg/dal/table"
+	tableaudit "hcm/pkg/dal/table/audit"
 	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
@@ -68,12 +70,13 @@ func (dao ClbTCloudUrlRuleDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model
 	if err != nil {
 		return nil, err
 	}
-
+	lbIds := make([]string, 0, len(models))
 	for index, model := range models {
 		if err = model.InsertValidate(); err != nil {
 			return nil, err
 		}
 		model.ID = ids[index]
+		lbIds = append(lbIds, model.LbID)
 	}
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, tableName,
@@ -84,6 +87,42 @@ func (dao ClbTCloudUrlRuleDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model
 		return nil, fmt.Errorf("insert %s failed, err: %v", tableName, err)
 	}
 
+	// 创建审计
+	lbMap, err := ListLbByIDs(kt, dao.Orm, lbIds)
+	if err != nil {
+		logs.Errorf("fail to list lb for audit, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	// rule create audit.
+	audits := make([]*tableaudit.AuditTable, 0, len(models))
+	for _, rule := range models {
+		lb, ok := lbMap[rule.LbID]
+		if !ok {
+			return nil, fmt.Errorf("fail to find lb(%s) of rule(%s)", rule.LbID, rule.URL)
+		}
+		audits = append(audits, &tableaudit.AuditTable{
+			ResID:      rule.ID,
+			CloudResID: rule.CloudID,
+			ResName:    rule.Name,
+			ResType:    enumor.UrlRuleAuditResType,
+			Action:     enumor.Create,
+			BkBizID:    lb.BkBizID,
+			Vendor:     enumor.TCloud,
+			AccountID:  lb.AccountID,
+			Operator:   kt.User,
+			Source:     kt.GetRequestSource(),
+			Rid:        kt.Rid,
+			AppCode:    kt.AppCode,
+			Detail: &tableaudit.BasicDetail{
+				Data: rule,
+			},
+		})
+	}
+	if err = dao.Audit.BatchCreateWithTx(kt, tx, audits); err != nil {
+		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
 	return ids, nil
 }
 

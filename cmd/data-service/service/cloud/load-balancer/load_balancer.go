@@ -41,7 +41,8 @@ func InitService(cap *capability.Capability) {
 	h.Add("GetLoadBalancer", http.MethodGet, "/vendors/{vendor}/load_balancers/{id}", svc.GetLoadBalancer)
 	h.Add("ListLoadBalancer", http.MethodPost, "/load_balancers/list", svc.ListLoadBalancer)
 	h.Add("ListLoadBalancerExt", http.MethodPost, "/vendors/{vendor}/load_balancers/list", svc.ListLoadBalancerExt)
-	h.Add("BatchCreateCLB", http.MethodPost, "/vendors/{vendor}/load_balancers/batch/create", svc.BatchCreateCLB)
+	h.Add("BatchCreateLoadBalancer", http.MethodPost, "/vendors/{vendor}/load_balancers/batch/create",
+		svc.BatchCreateLoadBalancer)
 
 	h.Add("BatchUpdateLoadBalancer",
 		http.MethodPatch, "/vendors/{vendor}/load_balancers/batch/update", svc.BatchUpdateLoadBalancer)

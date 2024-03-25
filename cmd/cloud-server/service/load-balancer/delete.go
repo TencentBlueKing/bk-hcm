@@ -123,7 +123,7 @@ func (svc *lbSvc) deleteListener(cts *rest.Contexts, validHandler handler.ValidW
 		return nil, err
 	}
 
-	if err = svc.audit.ResDeleteAudit(cts.Kit, enumor.ListenerGroupAuditResType, basicInfoReq.IDs); err != nil {
+	if err = svc.audit.ResDeleteAudit(cts.Kit, enumor.ListenerAuditResType, basicInfoReq.IDs); err != nil {
 		logs.Errorf("create operation audit listener failed, ids: %v, err: %v, rid: %s",
 			basicInfoReq.IDs, err, cts.Kit.Rid)
 		return nil, err

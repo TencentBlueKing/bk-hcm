@@ -23,7 +23,7 @@ import (
 	"net/http"
 
 	"hcm/pkg/api/core"
-	protolb "hcm/pkg/api/hc-service/load-balancer"
+	hcproto "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/client/common"
 	"hcm/pkg/kit"
@@ -51,42 +51,61 @@ func (c *ClbClient) SyncLoadBalancer(kt *kit.Kit, req *sync.TCloudSyncReq) error
 }
 
 // DescribeResources ...
-func (c *ClbClient) DescribeResources(kt *kit.Kit, req *protolb.TCloudDescribeResourcesOption) (
+func (c *ClbClient) DescribeResources(kt *kit.Kit, req *hcproto.TCloudDescribeResourcesOption) (
 	*tclb.DescribeResourcesResponseParams, error) {
 
-	return common.Request[protolb.TCloudDescribeResourcesOption, tclb.DescribeResourcesResponseParams](
+	return common.Request[hcproto.TCloudDescribeResourcesOption, tclb.DescribeResourcesResponseParams](
 		c.client, http.MethodPost, kt, req, "/load_balancers/resources/describe")
 }
 
 // BatchCreate ...
-func (c *ClbClient) BatchCreate(kt *kit.Kit, req *protolb.TCloudBatchCreateReq) (*protolb.BatchCreateResult, error) {
-	return common.Request[protolb.TCloudBatchCreateReq, protolb.BatchCreateResult](
+func (c *ClbClient) BatchCreate(kt *kit.Kit, req *hcproto.TCloudBatchCreateReq) (*hcproto.BatchCreateResult, error) {
+	return common.Request[hcproto.TCloudBatchCreateReq, hcproto.BatchCreateResult](
 		c.client, http.MethodPost, kt, req, "/load_balancers/batch/create")
 }
 
 // Update ...
-func (c *ClbClient) Update(kt *kit.Kit, id string, req *protolb.TCloudLBUpdateReq) error {
-	return common.RequestNoResp[protolb.TCloudLBUpdateReq](c.client, http.MethodPatch,
+func (c *ClbClient) Update(kt *kit.Kit, id string, req *hcproto.TCloudLBUpdateReq) error {
+	return common.RequestNoResp[hcproto.TCloudLBUpdateReq](c.client, http.MethodPatch,
 		kt, req, "/load_balancers/%s", id)
 }
 
 // CreateListener 创建监听器
-func (c *ClbClient) CreateListener(kt *kit.Kit, req *protolb.ListenerWithRuleCreateReq) (
+func (c *ClbClient) CreateListener(kt *kit.Kit, req *hcproto.ListenerWithRuleCreateReq) (
 	*core.BatchCreateResult, error) {
 
-	return common.Request[protolb.ListenerWithRuleCreateReq, core.BatchCreateResult](
+	return common.Request[hcproto.ListenerWithRuleCreateReq, core.BatchCreateResult](
 		c.client, http.MethodPost, kt, req, "/listeners/create")
 }
 
 // UpdateListener 更新监听器
-func (c *ClbClient) UpdateListener(kt *kit.Kit, id string, req *protolb.ListenerWithRuleUpdateReq) (
-	*protolb.BatchCreateResult, error) {
+func (c *ClbClient) UpdateListener(kt *kit.Kit, id string, req *hcproto.ListenerWithRuleUpdateReq) (
+	*hcproto.BatchCreateResult, error) {
 
-	return common.Request[protolb.ListenerWithRuleUpdateReq, protolb.BatchCreateResult](
+	return common.Request[hcproto.ListenerWithRuleUpdateReq, hcproto.BatchCreateResult](
 		c.client, http.MethodPatch, kt, req, "/listeners/%s", id)
 }
 
 // DeleteListener 删除监听器
 func (c *ClbClient) DeleteListener(kt *kit.Kit, req *core.BatchDeleteReq) error {
 	return common.RequestNoResp[core.BatchDeleteReq](c.client, http.MethodDelete, kt, req, "/listeners/batch")
+}
+// BatchCreateUrlRule 批量创建规则
+func (c *ClbClient) BatchCreateUrlRule(kt *kit.Kit, lblID string, req *hcproto.TCloudRuleBatchCreateReq) (
+	*hcproto.BatchCreateResult, error) {
+
+	return common.Request[hcproto.TCloudRuleBatchCreateReq, hcproto.BatchCreateResult](
+		c.client, http.MethodPost, kt, req, "/listeners/%s/rules/batch/create", lblID)
+}
+
+// UpdateUrlRule 更新规则
+func (c *ClbClient) UpdateUrlRule(kt *kit.Kit, lblID, ruleID string, req *hcproto.TCloudRuleUpdateReq) error {
+	return common.RequestNoResp[hcproto.TCloudRuleUpdateReq](c.client, http.MethodPatch, kt, req,
+		"/listeners/%s/rules/%s", lblID, ruleID)
+}
+
+// BatchDeleteUrlRule 批量删除规则
+func (c *ClbClient) BatchDeleteUrlRule(kt *kit.Kit, lblID string, req *hcproto.TCloudBatchDeleteRuleReq) error {
+	return common.RequestNoResp[hcproto.TCloudBatchDeleteRuleReq](c.client, http.MethodDelete, kt, req,
+		"/listeners/%s/rules/batch", lblID)
 }

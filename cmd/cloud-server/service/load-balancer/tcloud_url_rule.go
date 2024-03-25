@@ -6,6 +6,7 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	hcproto "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -14,6 +15,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -322,4 +324,146 @@ func (svc *lbSvc) GetBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 	}
 
 	return urlRuleList.Details[0], nil
+}
+
+// CreateBizTCloudUrlRule 业务下腾讯云url规则
+func (svc *lbSvc) CreateBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
+
+	lblID := cts.PathParameter("lbl_id").String()
+	if len(lblID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "listener id is required")
+	}
+
+	lblInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.ListenerCloudResType, lblID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 业务校验、鉴权
+	err = handler.BizOperateAuth(cts,
+		&handler.ValidWithAuthOption{
+			Authorizer: svc.authorizer,
+			ResType:    meta.UrlRuleAuditResType,
+			Action:     meta.Create,
+			BasicInfo:  lblInfo,
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	req := new(hcproto.TCloudRuleBatchCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	// 参数校验
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	return svc.client.HCService().TCloud.Clb.BatchCreateUrlRule(cts.Kit, lblID, req)
+}
+
+// UpdateBizTCloudUrlRule 更新规则
+func (svc *lbSvc) UpdateBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
+
+	lblID := cts.PathParameter("lbl_id").String()
+	if len(lblID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "listener is is required")
+	}
+
+	ruleID := cts.PathParameter("rule_id").String()
+	if len(ruleID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "rule id is required")
+	}
+
+	req := new(hcproto.TCloudRuleUpdateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	// 参数校验
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	lblInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
+		enumor.ListenerCloudResType, lblID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 业务校验、鉴权
+	err = handler.BizOperateAuth(cts,
+		&handler.ValidWithAuthOption{
+			Authorizer: svc.authorizer,
+			ResType:    meta.UrlRuleAuditResType,
+			Action:     meta.Update,
+			BasicInfo:  lblInfo,
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	// 更新审计
+	updateFields, err := converter.StructToMap(req)
+	if err != nil {
+		logs.Errorf("convert rule update request to map failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	err = svc.audit.ChildResUpdateAudit(cts.Kit, enumor.UrlRuleAuditResType, lblInfo.ID, ruleID, updateFields)
+	if err != nil {
+		logs.Errorf("create update rule audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, svc.client.HCService().TCloud.Clb.UpdateUrlRule(cts.Kit, lblID, ruleID, req)
+}
+
+// BatchDeleteBizTCloudUrlRule 批量删除规则
+func (svc *lbSvc) BatchDeleteBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
+	lblID := cts.PathParameter("lbl_id").String()
+	if len(lblID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "listener is is required")
+	}
+
+	req := new(hcproto.TCloudBatchDeleteRuleReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	// 参数校验
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	lblInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.ListenerCloudResType, lblID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 业务校验、鉴权
+	err = handler.BizOperateAuth(cts,
+		&handler.ValidWithAuthOption{
+			Authorizer: svc.authorizer,
+			ResType:    meta.UrlRuleAuditResType,
+			Action:     meta.Delete,
+			BasicInfo:  lblInfo,
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	ruleIds := req.RuleIDs
+	if len(ruleIds) == 0 {
+		// 将按域名删除
+		ruleIds = []string{converter.PtrToVal(req.Domain)}
+	}
+
+	// create delete audit.
+	err = svc.audit.ChildResDeleteAudit(cts.Kit, enumor.UrlRuleDomainAuditResType, lblID, ruleIds)
+	if err != nil {
+		logs.Errorf("create url rule delete audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, svc.client.HCService().TCloud.Clb.BatchDeleteUrlRule(cts.Kit, lblID, req)
+
 }

@@ -105,7 +105,7 @@ func (dao Dao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []cloud.Security
 		return fmt.Errorf("get security group count not right")
 	}
 
-	resMap, err := loadbalancer.ListClbByIDs(kt, dao.Orm, resIDs)
+	resMap, err := loadbalancer.ListLbByIDs(kt, dao.Orm, resIDs)
 	if err != nil {
 		logs.Errorf("list clb by ids failed, err: %v, sgIDs: %v, resIDs: %v, rid: %s", err, sgIDs, resIDs, kt.Rid)
 		return err

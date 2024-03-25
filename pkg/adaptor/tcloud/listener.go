@@ -368,6 +368,7 @@ func (t *TCloudImpl) formatCreateRuleRequest(opt *typelb.TCloudCreateRuleOption)
 			Url:               item.Url,
 			SessionExpireTime: item.SessionExpireTime,
 			Scheduler:         item.Scheduler,
+			Domains:           item.Domains,
 		}
 
 		if item.HealthCheck != nil {
@@ -414,18 +415,14 @@ func (t *TCloudImpl) UpdateRule(kt *kit.Kit, opt *typelb.TCloudUpdateRuleOption)
 	req := clb.NewModifyRuleRequest()
 	req.LoadBalancerId = converter.ValToPtr(opt.LoadBalancerId)
 	req.ListenerId = converter.ValToPtr(opt.ListenerId)
-	if len(opt.Url) > 0 {
-		req.Url = converter.ValToPtr(opt.Url)
-	}
-	if len(opt.Scheduler) > 0 {
-		req.Scheduler = converter.ValToPtr(opt.Scheduler)
-	}
-	if opt.SessionExpireTime >= 0 {
-		req.SessionExpireTime = converter.ValToPtr(opt.SessionExpireTime)
-	}
-	if len(opt.ForwardType) > 0 {
-		req.ForwardType = converter.ValToPtr(opt.ForwardType)
-	}
+	req.LocationId = converter.ValToPtr(opt.LocationId)
+	req.Url = opt.Url
+	req.Scheduler = opt.Scheduler
+	req.SessionExpireTime = opt.SessionExpireTime
+	req.ForwardType = opt.ForwardType
+	req.TrpcCallee = opt.TrpcCallee
+	req.TrpcFunc = opt.TrpcFunc
+
 	if opt.HealthCheck != nil {
 		req.HealthCheck = &clb.HealthCheck{
 			HealthSwitch:    opt.HealthCheck.HealthSwitch,
@@ -534,21 +531,24 @@ func (t *TCloudImpl) DeleteRule(kt *kit.Kit, opt *typelb.TCloudDeleteRuleOption)
 	}
 
 	req := clb.NewDeleteRuleRequest()
-	req.LoadBalancerId = common.StringPtr(opt.LoadBalancerId)
 	req.ListenerId = common.StringPtr(opt.ListenerId)
-	req.LocationIds = common.StringPtrs(opt.CloudIDs)
-	if len(opt.Domain) > 0 {
-		req.Domain = converter.ValToPtr(opt.Domain)
+	req.LoadBalancerId = common.StringPtr(opt.LoadBalancerId)
+	if len(opt.CloudIDs) > 0 {
+		req.LocationIds = common.StringPtrs(opt.CloudIDs)
+
 	}
+
+	req.Domain = opt.Domain
+	req.NewDefaultServerDomain = opt.NewDefaultServerDomain
+
 	if len(opt.Url) > 0 {
 		req.Url = converter.ValToPtr(opt.Url)
 	}
-	if len(opt.NewDefaultServerDomain) > 0 {
-		req.NewDefaultServerDomain = converter.ValToPtr(opt.NewDefaultServerDomain)
-	}
+
 	deleteResp, err := client.DeleteRuleWithContext(kt.Ctx, req)
 	if err != nil {
-		logs.Errorf("delete tcloud rule api failed, opt: %+v, err: %v, rid: %s", opt, err, kt.Rid)
+		logs.Errorf("delete tcloud rule failed, err: %v, opt: %+v, rid: %s",
+			err, opt, kt.Rid)
 		return err
 	}
 

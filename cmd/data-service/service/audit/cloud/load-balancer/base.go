@@ -20,6 +20,8 @@
 package loadbalancer
 
 import (
+	"fmt"
+
 	"hcm/pkg/api/core"
 	protoaudit "hcm/pkg/api/data-service/audit"
 	"hcm/pkg/criteria/enumor"
@@ -31,6 +33,7 @@ import (
 	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/slice"
 )
 
 // NewLoadBalancer new clb.
@@ -185,6 +188,259 @@ func (c *LoadBalancer) LoadBalancerAssignAuditBuild(kt *kit.Kit, assigns []proto
 	return audits, nil
 }
 
+// UrlRuleUpdateAuditBuild url 规则更新
+func (c *LoadBalancer) UrlRuleUpdateAuditBuild(kt *kit.Kit, lblID string,
+	updates []protoaudit.CloudResourceUpdateInfo) ([]*tableaudit.AuditTable, error) {
+
+	idListenerMap, err := ListListener(kt, c.dao, []string{lblID})
+	if err != nil {
+		return nil, err
+	}
+
+	lbl, exist := idListenerMap[lblID]
+	if !exist {
+		return nil, errf.Newf(errf.RecordNotFound, "listener: %s not found", lblID)
+	}
+
+	switch lbl.Vendor {
+	case enumor.TCloud:
+		return c.tcloudUrlRuleUpdateAuditBuild(kt, lbl, updates)
+	default:
+		return nil, fmt.Errorf("vendor: %s not support", lbl.Vendor)
+	}
+}
+
+func (c *LoadBalancer) tcloudUrlRuleUpdateAuditBuild(kt *kit.Kit, lbl tablelb.LoadBalancerListenerTable,
+	updates []protoaudit.CloudResourceUpdateInfo) ([]*tableaudit.AuditTable, error) {
+
+	ids := slice.Map(updates, func(u protoaudit.CloudResourceUpdateInfo) string { return u.ResID })
+
+	idListenerRuleMap, err := ListTCloudUrlRule(kt, c.dao, lbl.ID, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	audits := make([]*tableaudit.AuditTable, 0, len(updates))
+	for _, one := range updates {
+		rule, exist := idListenerRuleMap[one.ResID]
+		if !exist {
+			continue
+		}
+
+		audits = append(audits, &tableaudit.AuditTable{
+			ResID:      one.ResID,
+			CloudResID: lbl.CloudID,
+			ResName:    lbl.Name,
+			ResType:    enumor.ListenerAuditResType,
+			Action:     enumor.Update,
+			BkBizID:    lbl.BkBizID,
+			Vendor:     lbl.Vendor,
+			AccountID:  lbl.AccountID,
+			Operator:   kt.User,
+			Source:     kt.GetRequestSource(),
+			Rid:        kt.Rid,
+			AppCode:    kt.AppCode,
+			Detail: &tableaudit.BasicDetail{
+				Data: &tableaudit.ChildResAuditData{
+					ChildResType: enumor.UrlRuleAuditResType,
+					Action:       enumor.Update,
+					ChildRes:     rule,
+				},
+				Changed: one.UpdateFields,
+			},
+		})
+	}
+
+	return audits, nil
+
+}
+
+// UrlRuleDeleteAuditBuild 删除规则审计
+func (c *LoadBalancer) UrlRuleDeleteAuditBuild(kt *kit.Kit, lblID string,
+	deletes []protoaudit.CloudResourceDeleteInfo) ([]*tableaudit.AuditTable, error) {
+
+	idListenerMap, err := ListListener(kt, c.dao, []string{lblID})
+	if err != nil {
+		return nil, err
+	}
+
+	lbl, exist := idListenerMap[lblID]
+	if !exist {
+		return nil, errf.Newf(errf.RecordNotFound, "listener: %s not found", lblID)
+	}
+
+	switch lbl.Vendor {
+	case enumor.TCloud:
+		return c.tcloudUrlRuleDeleteAuditBuild(kt, lbl, deletes)
+	default:
+		return nil, fmt.Errorf("vendor: %s not support", lbl.Vendor)
+	}
+}
+func (c *LoadBalancer) tcloudUrlRuleDeleteAuditBuild(kt *kit.Kit, lbl tablelb.LoadBalancerListenerTable,
+	deletes []protoaudit.CloudResourceDeleteInfo) ([]*tableaudit.AuditTable, error) {
+
+	ids := slice.Map(deletes, func(u protoaudit.CloudResourceDeleteInfo) string { return u.ResID })
+
+	idRuleMap, err := ListTCloudUrlRule(kt, c.dao, lbl.ID, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	audits := make([]*tableaudit.AuditTable, 0, len(deletes))
+	for _, one := range deletes {
+		ruleInfo, exist := idRuleMap[one.ResID]
+		if !exist {
+			continue
+		}
+
+		audits = append(audits, &tableaudit.AuditTable{
+			ResID:      one.ResID,
+			CloudResID: ruleInfo.CloudID,
+			ResName:    ruleInfo.Name,
+			ResType:    enumor.UrlRuleAuditResType,
+			Action:     enumor.Delete,
+			BkBizID:    lbl.BkBizID,
+			Vendor:     lbl.Vendor,
+			AccountID:  lbl.AccountID,
+			Operator:   kt.User,
+			Source:     kt.GetRequestSource(),
+			Rid:        kt.Rid,
+			AppCode:    kt.AppCode,
+			Detail: &tableaudit.BasicDetail{
+				Data: ruleInfo,
+			},
+		})
+	}
+
+	return audits, nil
+}
+
+// ListTCloudUrlRule ...
+func ListTCloudUrlRule(kt *kit.Kit, dao dao.Set, lblID string,
+	ruleIds []string) (map[string]tablelb.TCloudLbUrlRuleTable, error) {
+
+	opt := &types.ListOption{
+		Filter: tools.ExpressionAnd(tools.RuleEqual("lbl_id", lblID), tools.RuleIn("id", ruleIds)),
+		Page:   core.NewDefaultBasePage(),
+	}
+	list, err := dao.LoadBalancerTCloudUrlRule().List(kt, opt)
+	if err != nil {
+		logs.Errorf("list tcloud url rule of  listener(id=%s) failed, err: %v, ids: %v, rid: %s",
+			lblID, err, ruleIds, kt.Rid)
+		return nil, err
+	}
+
+	result := make(map[string]tablelb.TCloudLbUrlRuleTable, len(list.Details))
+	for _, one := range list.Details {
+		result[one.ID] = one
+	}
+
+	return result, nil
+}
+
+// UrlRuleDeleteByDomainAuditBuild 按域名删除url规则
+func (c *LoadBalancer) UrlRuleDeleteByDomainAuditBuild(kt *kit.Kit, lblID string,
+	deletes []protoaudit.CloudResourceDeleteInfo) ([]*tableaudit.AuditTable, error) {
+
+	idListenerMap, err := ListListener(kt, c.dao, []string{lblID})
+	if err != nil {
+		return nil, err
+	}
+
+	lbl, exist := idListenerMap[lblID]
+	if !exist {
+		return nil, errf.Newf(errf.RecordNotFound, "listener: %s not found", lblID)
+	}
+
+	switch lbl.Vendor {
+	case enumor.TCloud:
+		return c.tcloudUrlRuleDeleteByDomainAuditBuild(kt, lbl, deletes)
+	default:
+		return nil, fmt.Errorf("vendor: %s not support", lbl.Vendor)
+	}
+}
+
+func (c *LoadBalancer) tcloudUrlRuleDeleteByDomainAuditBuild(kt *kit.Kit, lbl tablelb.LoadBalancerListenerTable,
+	deletes []protoaudit.CloudResourceDeleteInfo) ([]*tableaudit.AuditTable, error) {
+
+	domains := slice.Map(deletes, func(u protoaudit.CloudResourceDeleteInfo) string { return u.ResID })
+
+	domainRuleMap, err := ListTCloudUrlRuleByDomain(kt, c.dao, lbl.ID, domains)
+	if err != nil {
+		return nil, err
+	}
+
+	audits := make([]*tableaudit.AuditTable, 0, len(deletes))
+	for _, one := range deletes {
+		rules, exist := domainRuleMap[one.ResID]
+		if !exist {
+			continue
+		}
+		// add domain and each into audits
+		audits = append(audits, &tableaudit.AuditTable{
+			ResID:      one.ResID,
+			CloudResID: one.ResID,
+			ResName:    one.ResID,
+			ResType:    enumor.UrlRuleDomainAuditResType,
+			Action:     enumor.Delete,
+			BkBizID:    lbl.BkBizID,
+			Vendor:     lbl.Vendor,
+			AccountID:  lbl.AccountID,
+			Operator:   kt.User,
+			Source:     kt.GetRequestSource(),
+			Rid:        kt.Rid,
+			AppCode:    kt.AppCode,
+			Detail: &tableaudit.BasicDetail{
+				Data: one.ResID,
+			},
+		})
+		for _, rule := range rules {
+			audits = append(audits, &tableaudit.AuditTable{
+				ResID:      rule.ID,
+				CloudResID: rule.CloudID,
+				ResName:    rule.Name,
+				ResType:    enumor.UrlRuleAuditResType,
+				Action:     enumor.Delete,
+				BkBizID:    lbl.BkBizID,
+				Vendor:     lbl.Vendor,
+				AccountID:  lbl.AccountID,
+				Operator:   kt.User,
+				Source:     kt.GetRequestSource(),
+				Rid:        kt.Rid,
+				AppCode:    kt.AppCode,
+				Detail: &tableaudit.BasicDetail{
+					Data: rule,
+				},
+			})
+		}
+	}
+
+	return audits, nil
+}
+
+// ListTCloudUrlRuleByDomain ...
+func ListTCloudUrlRuleByDomain(kt *kit.Kit, dao dao.Set, lblID string,
+	domains []string) (map[string][]tablelb.TCloudLbUrlRuleTable, error) {
+
+	opt := &types.ListOption{
+		Filter: tools.ExpressionAnd(tools.RuleEqual("lbl_id", lblID), tools.RuleIn("domain", domains)),
+		Page:   core.NewDefaultBasePage(),
+	}
+	list, err := dao.LoadBalancerTCloudUrlRule().List(kt, opt)
+	if err != nil {
+		logs.Errorf("list tcloud url rule of listener(id=%s) failed, err: %v, domains: %v, rid: %s",
+			lblID, err, domains, kt.Rid)
+		return nil, err
+	}
+
+	result := make(map[string][]tablelb.TCloudLbUrlRuleTable, len(list.Details))
+	for _, one := range list.Details {
+		result[one.Domain] = append(result[one.Domain], one)
+	}
+
+	return result, nil
+}
+
 // ListLoadBalancer list load balancer.
 func ListLoadBalancer(kt *kit.Kit, dao dao.Set, ids []string) (map[string]tablelb.LoadBalancerTable, error) {
 	opt := &types.ListOption{
@@ -193,7 +449,7 @@ func ListLoadBalancer(kt *kit.Kit, dao dao.Set, ids []string) (map[string]tablel
 	}
 	list, err := dao.LoadBalancer().List(kt, opt)
 	if err != nil {
-		logs.Errorf("list load balancer failed, err: %v, ids: %v, rid: %f", err, ids, kt.Rid)
+		logs.Errorf("list load balancer failed, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
 		return nil, err
 	}
 
@@ -213,7 +469,7 @@ func ListTargetGroup(kt *kit.Kit, dao dao.Set, ids []string) (map[string]tablelb
 	}
 	list, err := dao.LoadBalancerTargetGroup().List(kt, opt)
 	if err != nil {
-		logs.Errorf("list target group failed, err: %v, ids: %v, rid: %f", err, ids, kt.Rid)
+		logs.Errorf("list target group failed, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
 		return nil, err
 	}
 
@@ -233,7 +489,7 @@ func ListListener(kt *kit.Kit, dao dao.Set, ids []string) (map[string]tablelb.Lo
 	}
 	list, err := dao.LoadBalancerListener().List(kt, opt)
 	if err != nil {
-		logs.Errorf("list listener failed, err: %v, ids: %v, rid: %f", err, ids, kt.Rid)
+		logs.Errorf("list listener failed, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
 		return nil, err
 	}
 
