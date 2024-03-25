@@ -297,7 +297,7 @@ func (svc *clbSvc) getListenerWithLb(kt *kit.Kit, lblID string) (*corelb.BaseLoa
 		return nil, nil, err
 	}
 	if len(lbResp.Details) < 1 {
-		return nil, nil, errf.Newf(errf.InvalidParameter, "lb not found")
+		return nil, nil, errf.Newf(errf.RecordNotFound, "lb not found")
 	}
 	lb := lbResp.Details[0]
 	return &lb, &listener, nil

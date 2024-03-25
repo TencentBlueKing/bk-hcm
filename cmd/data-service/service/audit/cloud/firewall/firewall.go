@@ -181,7 +181,7 @@ func (f *Firewall) listFirewallRule(kt *kit.Kit, ids []string) (map[string]table
 	}
 	list, err := f.dao.GcpFirewallRule().List(kt, opt)
 	if err != nil {
-		logs.Errorf("list gcp firewall rule failed, err: %v, ids: %v, rid: %f", err, ids, kt.Rid)
+		logs.Errorf("list gcp firewall rule failed, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
 		return nil, err
 	}
 

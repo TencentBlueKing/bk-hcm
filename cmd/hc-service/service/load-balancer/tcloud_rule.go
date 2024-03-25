@@ -79,16 +79,6 @@ func (svc *clbSvc) TCloudCreateUrlRule(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
-	respData := &protolb.BatchCreateResult{
-		UnknownCloudIDs: creatResult.UnknownCloudIDs,
-		SuccessCloudIDs: creatResult.SuccessCloudIDs,
-		FailedCloudIDs:  creatResult.FailedCloudIDs,
-		FailedMessage:   creatResult.FailedMessage,
-	}
-
-	if len(creatResult.SuccessCloudIDs) == 0 {
-		return respData, nil
-	}
 	createReq := &cloud.TCloudUrlRuleBatchCreateReq{}
 
 	for i, cloudID := range creatResult.SuccessCloudIDs {
@@ -96,7 +86,7 @@ func (svc *clbSvc) TCloudCreateUrlRule(cts *rest.Contexts) (any, error) {
 			LbID:               lb.ID,
 			CloudLbID:          lb.CloudID,
 			LblID:              listener.ID,
-			CloudLBLID:         listener.CloudLbID,
+			CloudLBLID:         listener.CloudID,
 			CloudID:            cloudID,
 			Name:               req.Rules[i].Url,
 			RuleType:           enumor.Layer7RuleType,
@@ -212,15 +202,14 @@ func (svc *clbSvc) getL7RulesWithLb(kt *kit.Kit, lblID string, ruleIDs []string)
 			tools.RuleEqual("lbl_id", lblID),
 			tools.RuleEqual("rule_type", enumor.Layer7RuleType),
 		),
-		Page:   core.NewDefaultBasePage(),
-		Fields: nil,
+		Page: core.NewDefaultBasePage(),
 	})
 	if err != nil {
 		logs.Errorf("fail to list tcloud url rule, err: %v, ids: %s, rid: %s", err, ruleIDs, kt.Rid)
 		return nil, nil, err
 	}
 	if len(ruleResp.Details) < 1 {
-		return nil, nil, errf.Newf(errf.InvalidParameter, "rule not found")
+		return nil, nil, errf.Newf(errf.RecordNotFound, "rule not found")
 	}
 	rule := ruleResp.Details[0]
 
@@ -235,7 +224,7 @@ func (svc *clbSvc) getL7RulesWithLb(kt *kit.Kit, lblID string, ruleIDs []string)
 		return nil, nil, err
 	}
 	if len(lbResp.Details) < 1 {
-		return nil, nil, errf.Newf(errf.InvalidParameter, "lb not found")
+		return nil, nil, errf.Newf(errf.RecordNotFound, "lb not found")
 	}
 	lb := lbResp.Details[0]
 	return &lb, ruleResp.Details, nil
@@ -260,12 +249,7 @@ func (svc *clbSvc) TCloudBatchDeleteUrlRule(cts *rest.Contexts) (any, error) {
 	var lb *corelb.BaseLoadBalancer
 	var err error
 
-	ruleOption := typelb.TCloudDeleteRuleOption{
-
-		CloudIDs:               req.RuleIDs,
-		Domain:                 req.Domain,
-		NewDefaultServerDomain: req.NewDefaultDomain,
-	}
+	ruleOption := typelb.TCloudDeleteRuleOption{}
 	dbReq := &cloud.LoadBalancerBatchDeleteReq{}
 	if len(req.RuleIDs) > 0 {
 		// 指定规则id删除
@@ -290,6 +274,8 @@ func (svc *clbSvc) TCloudBatchDeleteUrlRule(cts *rest.Contexts) (any, error) {
 			return nil, err
 		}
 		ruleOption.ListenerId = listener.CloudID
+		ruleOption.Domain = req.Domain
+		ruleOption.NewDefaultServerDomain = req.NewDefaultDomain
 		dbReq.Filter = tools.ExpressionAnd(
 			tools.RuleEqual("domain", req.Domain),
 			tools.RuleEqual("lbl_id", lblID))
@@ -304,7 +290,7 @@ func (svc *clbSvc) TCloudBatchDeleteUrlRule(cts *rest.Contexts) (any, error) {
 	ruleOption.Region = lb.Region
 	ruleOption.LoadBalancerId = lb.CloudID
 	if err = tcloudAdpt.DeleteRule(cts.Kit, &ruleOption); err != nil {
-		logs.Errorf("fail to delete rule, err: %v, id: %s, rid: %s", err, req.RuleIDs, cts.Kit.Rid)
+		logs.Errorf("fail to delete rule, err: %v, ids: %v, rid: %s", err, req.RuleIDs, cts.Kit.Rid)
 		return nil, err
 	}
 

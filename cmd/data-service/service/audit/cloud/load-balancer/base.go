@@ -325,7 +325,7 @@ func ListTCloudUrlRule(kt *kit.Kit, dao dao.Set, lblID string,
 	}
 	list, err := dao.LoadBalancerTCloudUrlRule().List(kt, opt)
 	if err != nil {
-		logs.Errorf("list tcloud url rule of  listener(id=%s) failed, err: %v, ids: %v, rid: %f",
+		logs.Errorf("list tcloud url rule of  listener(id=%s) failed, err: %v, ids: %v, rid: %s",
 			lblID, err, ruleIds, kt.Rid)
 		return nil, err
 	}
@@ -428,7 +428,7 @@ func ListTCloudUrlRuleByDomain(kt *kit.Kit, dao dao.Set, lblID string,
 	}
 	list, err := dao.LoadBalancerTCloudUrlRule().List(kt, opt)
 	if err != nil {
-		logs.Errorf("list tcloud url rule of listener(id=%s) failed, err: %v, domains: %v, rid: %f",
+		logs.Errorf("list tcloud url rule of listener(id=%s) failed, err: %v, domains: %v, rid: %s",
 			lblID, err, domains, kt.Rid)
 		return nil, err
 	}
@@ -449,7 +449,7 @@ func ListLoadBalancer(kt *kit.Kit, dao dao.Set, ids []string) (map[string]tablel
 	}
 	list, err := dao.LoadBalancer().List(kt, opt)
 	if err != nil {
-		logs.Errorf("list load balancer failed, err: %v, ids: %v, rid: %f", err, ids, kt.Rid)
+		logs.Errorf("list load balancer failed, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
 		return nil, err
 	}
 
@@ -469,7 +469,7 @@ func ListTargetGroup(kt *kit.Kit, dao dao.Set, ids []string) (map[string]tablelb
 	}
 	list, err := dao.LoadBalancerTargetGroup().List(kt, opt)
 	if err != nil {
-		logs.Errorf("list target group failed, err: %v, ids: %v, rid: %f", err, ids, kt.Rid)
+		logs.Errorf("list target group failed, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
 		return nil, err
 	}
 
@@ -489,7 +489,7 @@ func ListListener(kt *kit.Kit, dao dao.Set, ids []string) (map[string]tablelb.Lo
 	}
 	list, err := dao.LoadBalancerListener().List(kt, opt)
 	if err != nil {
-		logs.Errorf("list listener failed, err: %v, ids: %v, rid: %f", err, ids, kt.Rid)
+		logs.Errorf("list listener failed, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
 		return nil, err
 	}
 
