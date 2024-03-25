@@ -59,7 +59,7 @@ func (i *iam) RegisterResourceCreatorAction(ctx context.Context, inst *client.In
 		rest.POST, kt,
 		inst, "/iam/authorization/resource_creator_action/")
 	if err != nil {
-		logs.Errorf("fail to register iam resource instance, err: %v, rid: %s", kt.Rid)
+		logs.Errorf("fail to register iam resource instance, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 	return converter.PtrToVal(result), nil
@@ -73,7 +73,7 @@ func (i *iam) GetApplyPermUrl(ctx context.Context, opts *meta.IamPermission) (st
 	result, err := types.EsbCall[meta.IamPermission, GetApplyPermUrlResult](i.client, i.config, rest.POST, kt, opts,
 		"/iam/application/")
 	if err != nil {
-		logs.Errorf("fail to get iam apply permission url, err: %v, rid: %s", kt.Rid)
+		logs.Errorf("fail to get iam apply permission url, err: %v, rid: %s", err, kt.Rid)
 		return "", err
 	}
 	return result.Url, nil
