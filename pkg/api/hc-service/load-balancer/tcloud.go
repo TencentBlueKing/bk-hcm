@@ -260,20 +260,3 @@ func (req *ListenerWithRuleUpdateReq) Validate() error {
 	}
 	return validator.Validate.Struct(req)
 }
-
-// --------------------------[删除监听器及规则]--------------------------
-
-// ListenerDeleteReq define delete req.
-type ListenerDeleteReq struct {
-	AccountID string   `json:"account_id" validate:"required"`
-	IDs       []string `json:"ids" validate:"required"`
-}
-
-// Validate request.
-func (req *ListenerDeleteReq) Validate() error {
-	if len(req.IDs) > constant.BatchListenerMaxLimit {
-		return fmt.Errorf("batch delete listener count should <= %d", constant.BatchListenerMaxLimit)
-	}
-
-	return validator.Validate.Struct(req)
-}

@@ -101,6 +101,8 @@ func (ad Audit) buildDeleteAuditInfo(kt *kit.Kit, resType enumor.AuditResourceTy
 		audits, err = ad.certDeleteAuditBuild(kt, deletes)
 	case enumor.TargetGroupAuditResType:
 		audits, err = ad.targetGroupDeleteAuditBuild(kt, deletes)
+	case enumor.ListenerGroupAuditResType:
+		audits, err = ad.listenerDeleteAuditBuild(kt, deletes)
 
 	default:
 		return nil, fmt.Errorf("build delete audit cloud resource type: %s not support", resType)

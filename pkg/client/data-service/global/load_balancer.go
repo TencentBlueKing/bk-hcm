@@ -100,6 +100,7 @@ func (cli *LoadBalancerClient) CreateTargetGroupListenerRel(kt *kit.Kit,
 }
 
 // DeleteListener delete listener.
-func (cli *LoadBalancerClient) DeleteListener(kt *kit.Kit, req *core.ListReq) error {
-	return common.RequestNoResp[core.ListReq](cli.client, rest.DELETE, kt, req, "/listeners/batch")
+func (cli *LoadBalancerClient) DeleteListener(kt *kit.Kit, req *dataproto.LoadBalancerBatchDeleteReq) error {
+	return common.RequestNoResp[dataproto.LoadBalancerBatchDeleteReq](
+		cli.client, rest.DELETE, kt, req, "/listeners/batch")
 }

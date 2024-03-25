@@ -20,6 +20,7 @@
 package loadbalancer
 
 import (
+	"fmt"
 	"net/http"
 
 	synctcloud "hcm/cmd/hc-service/logics/res-sync/tcloud"
@@ -31,6 +32,7 @@ import (
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	protolb "hcm/pkg/api/hc-service/load-balancer"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -57,6 +59,7 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 	// 监听器
 	h.Add("CreateTCloudListener", http.MethodPost, "/vendors/tcloud/listeners/create", svc.CreateTCloudListener)
 	h.Add("UpdateTCloudListener", http.MethodPatch, "/vendors/tcloud/listeners/{id}", svc.UpdateTCloudListener)
+	h.Add("DeleteTCloudListener", http.MethodDelete, "/vendors/tcloud/listeners/batch", svc.DeleteTCloudListener)
 
 	h.Load(cap.WebService)
 }
@@ -646,4 +649,138 @@ func (svc *clbSvc) UpdateTCloudListener(cts *rest.Contexts) (any, error) {
 	}
 
 	return nil, nil
+}
+
+// DeleteTCloudListener 删除监听器信息
+func (svc *clbSvc) DeleteTCloudListener(cts *rest.Contexts) (any, error) {
+	req := new(core.BatchDeleteReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	if len(req.IDs) > constant.BatchListenerMaxLimit {
+		return nil, fmt.Errorf("batch delete listener count should <= %d", constant.BatchListenerMaxLimit)
+	}
+
+	lblIDs, lblCloudIDs, lbList, ruleMap, err := svc.getListenerWithRule(cts.Kit, req)
+	if err != nil {
+		return nil, err
+	}
+
+	lbInfo := lbList.Details[0]
+	client, err := svc.ad.TCloud(cts.Kit, lbInfo.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 批量删除云端监听器规则
+	for tmpCloudLblID, tmpCloudRuleIDs := range ruleMap {
+		ruleOpt := &typelb.TCloudDeleteRuleOption{
+			Region:         lbInfo.Region,
+			LoadBalancerId: lbInfo.CloudID,
+			ListenerId:     tmpCloudLblID,
+			CloudIDs:       tmpCloudRuleIDs,
+		}
+		err = client.DeleteRule(cts.Kit, ruleOpt)
+		if err != nil {
+			logs.Errorf("fail to call tcloud delete listener rule, lbID: %s, lblID: %s, ruleIDs: %+v, err: %v, rid: %s",
+				lbInfo.CloudID, tmpCloudLblID, tmpCloudRuleIDs, err, cts.Kit.Rid)
+			return nil, err
+		}
+	}
+
+	// 批量删除云端监听器
+	lblOpt := &typelb.TCloudDeleteListenerOption{
+		Region:         lbInfo.Region,
+		LoadBalancerId: lbInfo.CloudID,
+		CloudIDs:       lblCloudIDs,
+	}
+	err = client.DeleteListener(cts.Kit, lblOpt)
+	if err != nil {
+		logs.Errorf("fail to call tcloud delete listener, lblCloudIDs: %v, err: %v, rid: %s",
+			lblCloudIDs, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// 更新DB监听器信息
+	delLblReq := &dataproto.LoadBalancerBatchDeleteReq{
+		Filter: tools.ContainersExpression("id", lblIDs),
+	}
+	err = svc.dataCli.Global.LoadBalancer.DeleteListener(cts.Kit, delLblReq)
+	if err != nil {
+		logs.Errorf("delete tcloud listener db failed, lblIDs: %+v, err: %v, rid: %s", lblIDs, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+func (svc *clbSvc) getListenerWithRule(kt *kit.Kit, req *core.BatchDeleteReq) ([]string, []string,
+	*dataproto.LbListResult, map[string][]string, error) {
+
+	// 获取监听器列表
+	lblReq := &core.ListReq{
+		Filter: tools.ContainersExpression("id", req.IDs),
+		Page:   core.NewDefaultBasePage(),
+	}
+	lblList, err := svc.dataCli.Global.LoadBalancer.ListListener(kt, lblReq)
+	if err != nil {
+		logs.Errorf("fail to list tcloud listener, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
+		return nil, nil, nil, nil, err
+	}
+	if len(lblList.Details) == 0 {
+		return nil, nil, nil, nil, errf.Newf(errf.RecordNotFound, "listeners: %v not found", req.IDs)
+	}
+
+	lblIDs := make([]string, 0)
+	lbIDs := make([]string, 0)
+	lblCloudIDs := make([]string, 0)
+	for _, item := range lblList.Details {
+		lblIDs = append(lblIDs, item.ID)
+		lbIDs = append(lbIDs, item.LbID)
+		lblCloudIDs = append(lblCloudIDs, item.CloudID)
+	}
+
+	// 根据lbID，查询负载均衡信息
+	lbReq := &core.ListReq{
+		Filter: tools.ContainersExpression("id", lbIDs),
+		Page:   core.NewDefaultBasePage(),
+	}
+	lbList, err := svc.dataCli.Global.LoadBalancer.ListLoadBalancer(kt, lbReq)
+	if err != nil {
+		logs.Errorf("list load balancer by id failed, lbIDs: %v, err: %v, rid: %s", lbIDs, err, kt.Rid)
+		return nil, nil, nil, nil, err
+	}
+	if len(lbList.Details) != 1 {
+		return nil, nil, nil, nil, errf.Newf(errf.RecordNotFound, "load balancer: [%v] not found or "+
+			"need belong to the same load balancer", lbIDs)
+	}
+
+	// 查询监听器规则列表
+	ruleReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("lbl_id", lblIDs),
+			tools.RuleEqual("rule_type", enumor.LayerSevenRuleType),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+	lblRuleList, err := svc.dataCli.TCloud.LoadBalancer.ListUrlRule(kt, ruleReq)
+	if err != nil {
+		logs.Errorf("fail to list tcloud listeners url rule, lblIDs: %v, err: %v, rid: %s", lblIDs, err, kt.Rid)
+		return nil, nil, nil, nil, err
+	}
+
+	ruleMap := make(map[string][]string)
+	for _, ruleItem := range lblRuleList.Details {
+		if _, ok := ruleMap[ruleItem.CloudLBLID]; !ok {
+			ruleMap[ruleItem.CloudLBLID] = make([]string, 0)
+		}
+		ruleMap[ruleItem.CloudLBLID] = append(ruleMap[ruleItem.CloudLBLID], ruleItem.CloudID)
+	}
+
+	return lblIDs, lblCloudIDs, lbList, ruleMap, nil
 }

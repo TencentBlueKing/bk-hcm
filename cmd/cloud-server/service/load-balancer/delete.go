@@ -87,3 +87,55 @@ func (svc *lbSvc) deleteTargetGroup(cts *rest.Contexts, validHandler handler.Val
 
 	return nil, nil
 }
+
+// DeleteBizListener delete biz listener.
+func (svc *lbSvc) DeleteBizListener(cts *rest.Contexts) (interface{}, error) {
+	return svc.deleteListener(cts, handler.BizOperateAuth)
+}
+
+func (svc *lbSvc) deleteListener(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
+	req := new(core.BatchDeleteReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	basicInfoReq := dataproto.ListResourceBasicInfoReq{
+		ResourceType: enumor.ListenerCloudResType,
+		IDs:          req.IDs,
+		Fields:       types.CommonBasicInfoFields,
+	}
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
+	if err != nil {
+		logs.Errorf("list listener basic info failed, req: %+v, err: %v, rid: %s", basicInfoReq, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Listener,
+		Action: meta.Delete, BasicInfos: basicInfoMap})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = svc.audit.ResDeleteAudit(cts.Kit, enumor.ListenerGroupAuditResType, basicInfoReq.IDs); err != nil {
+		logs.Errorf("create operation audit listener failed, ids: %v, err: %v, rid: %s",
+			basicInfoReq.IDs, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// delete tcloud cloud listener
+	err = svc.client.HCService().TCloud.Clb.DeleteListener(cts.Kit, req)
+	if err != nil {
+		logs.Errorf("[%s] request hcservice to delete listener failed, ids: %s, err: %v, rid: %s",
+			enumor.TCloud, req.IDs, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
+}
