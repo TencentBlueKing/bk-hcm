@@ -31,7 +31,7 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
-	typesclb "hcm/pkg/dal/dao/types/clb"
+	typeslb "hcm/pkg/dal/dao/types/load-balancer"
 	"hcm/pkg/dal/table"
 	tableaudit "hcm/pkg/dal/table/audit"
 	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
@@ -43,26 +43,28 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// ClbInterface only used for clb.
-type ClbInterface interface {
+// LoadBalancerInterface only used for load balancer.
+type LoadBalancerInterface interface {
 	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerTable) ([]string, error)
 	Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.LoadBalancerTable) error
 	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.LoadBalancerTable) error
-	List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbDetails, error)
+	List(kt *kit.Kit, opt *types.ListOption) (*typeslb.ListLoadBalancerDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
 
-var _ ClbInterface = new(ClbDao)
+var _ LoadBalancerInterface = new(LoadBalancerDao)
 
-// ClbDao clb dao.
-type ClbDao struct {
+// LoadBalancerDao load balancer dao.
+type LoadBalancerDao struct {
 	Orm   orm.Interface
 	IDGen idgen.IDGenInterface
 	Audit audit.Interface
 }
 
-// BatchCreateWithTx clb.
-func (dao ClbDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerTable) ([]string, error) {
+// BatchCreateWithTx create load balancer.
+func (dao LoadBalancerDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
+	models []*tablelb.LoadBalancerTable) ([]string, error) {
+
 	tableName := table.LoadBalancerTable
 	ids, err := dao.IDGen.Batch(kt, tableName, len(models))
 	if err != nil {
@@ -84,7 +86,7 @@ func (dao ClbDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.
 		return nil, fmt.Errorf("insert %s failed, err: %v", tableName, err)
 	}
 
-	// clb create audit.
+	// load balancer create audit.
 	audits := make([]*tableaudit.AuditTable, 0, len(models))
 	for _, one := range models {
 		audits = append(audits, &tableaudit.AuditTable{
@@ -113,8 +115,8 @@ func (dao ClbDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.
 	return ids, nil
 }
 
-// Update clb.
-func (dao ClbDao) Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.LoadBalancerTable) error {
+// Update update load balancer.
+func (dao LoadBalancerDao) Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.LoadBalancerTable) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
 	}
@@ -156,8 +158,10 @@ func (dao ClbDao) Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.Lo
 	return nil
 }
 
-// UpdateByIDWithTx clb.
-func (dao ClbDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.LoadBalancerTable) error {
+// UpdateByIDWithTx udpate load balancer by id.
+func (dao LoadBalancerDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
+	model *tablelb.LoadBalancerTable) error {
+
 	if len(id) == 0 {
 		return errf.New(errf.InvalidParameter, "id is required")
 	}
@@ -184,8 +188,8 @@ func (dao ClbDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *t
 	return nil
 }
 
-// List clb.
-func (dao ClbDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbDetails, error) {
+// List list load balancer.
+func (dao LoadBalancerDao) List(kt *kit.Kit, opt *types.ListOption) (*typeslb.ListLoadBalancerDetails, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
@@ -210,7 +214,7 @@ func (dao ClbDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbDet
 			return nil, err
 		}
 
-		return &typesclb.ListClbDetails{Count: count}, nil
+		return &typeslb.ListLoadBalancerDetails{Count: count}, nil
 	}
 
 	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
@@ -226,11 +230,11 @@ func (dao ClbDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbDet
 		return nil, err
 	}
 
-	return &typesclb.ListClbDetails{Details: details}, nil
+	return &typeslb.ListLoadBalancerDetails{Details: details}, nil
 }
 
-// DeleteWithTx clb.
-func (dao ClbDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
+// DeleteWithTx delete load balancer.
+func (dao LoadBalancerDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
@@ -249,18 +253,18 @@ func (dao ClbDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression
 	return nil
 }
 
-// ListLbByIDs list lb for other dao
+// ListLbByIDs list load balancer for other dao
 func ListLbByIDs(kt *kit.Kit, orm orm.Interface, ids []string) (map[string]tablelb.LoadBalancerTable, error) {
 	sql := fmt.Sprintf(`SELECT %s FROM %s WHERE id IN (:ids)`, tablelb.LoadBalancerColumns.FieldsNamedExpr(nil),
 		table.LoadBalancerTable)
 
-	clbs := make([]tablelb.LoadBalancerTable, 0)
-	if err := orm.Do().Select(kt.Ctx, &clbs, sql, map[string]interface{}{"ids": ids}); err != nil {
+	lbs := make([]tablelb.LoadBalancerTable, 0)
+	if err := orm.Do().Select(kt.Ctx, &lbs, sql, map[string]interface{}{"ids": ids}); err != nil {
 		return nil, err
 	}
 
 	idMap := make(map[string]tablelb.LoadBalancerTable, len(ids))
-	for _, one := range clbs {
+	for _, one := range lbs {
 		idMap[one.ID] = one
 	}
 

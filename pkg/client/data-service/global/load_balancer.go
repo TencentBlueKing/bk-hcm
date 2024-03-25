@@ -21,6 +21,7 @@ package global
 
 import (
 	"hcm/pkg/api/core"
+	dataservice "hcm/pkg/api/data-service"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/client/common"
 	"hcm/pkg/kit"
@@ -103,4 +104,47 @@ func (cli *LoadBalancerClient) CreateTargetGroupListenerRel(kt *kit.Kit,
 func (cli *LoadBalancerClient) DeleteListener(kt *kit.Kit, req *dataproto.LoadBalancerBatchDeleteReq) error {
 	return common.RequestNoResp[dataproto.LoadBalancerBatchDeleteReq](
 		cli.client, rest.DELETE, kt, req, "/listeners/batch")
+}
+
+// CreateResFlowLock create res flow lock.
+func (cli *LoadBalancerClient) CreateResFlowLock(kt *kit.Kit, req *dataproto.ResFlowLockCreateReq) error {
+	return common.RequestNoResp[dataproto.ResFlowLockCreateReq](
+		cli.client, rest.POST, kt, req, "/res_flow_locks/create")
+}
+
+// DeleteResFlowLock delete res flow lock.
+func (cli *LoadBalancerClient) DeleteResFlowLock(kt *kit.Kit, req *dataproto.ResFlowLockDeleteReq) error {
+	return common.RequestNoResp[dataproto.ResFlowLockDeleteReq](
+		cli.client, rest.DELETE, kt, req, "/res_flow_locks/batch")
+}
+
+// ListResFlowLock list res flow lock.
+func (cli *LoadBalancerClient) ListResFlowLock(kt *kit.Kit, req *core.ListReq) (
+	*dataproto.ResFlowLockListResult, error) {
+
+	return common.Request[core.ListReq, dataproto.ResFlowLockListResult](
+		cli.client, rest.POST, kt, req, "/res_flow_locks/list")
+}
+
+// BatchCreateResFlowRel batch create res flow rel.
+func (cli *LoadBalancerClient) BatchCreateResFlowRel(kt *kit.Kit, req *dataproto.ResFlowRelBatchCreateReq) error {
+	return common.RequestNoResp[dataproto.ResFlowRelBatchCreateReq](
+		cli.client, rest.POST, kt, req, "/res_flow_rels/batch/create")
+}
+
+// BatchUpdateResFlowRel 批量更新腾讯云监听器
+func (cli *LoadBalancerClient) BatchUpdateResFlowRel(kt *kit.Kit, req *dataproto.ResFlowRelBatchUpdateReq) error {
+	return common.RequestNoResp[dataproto.ResFlowRelBatchUpdateReq](
+		cli.client, rest.PATCH, kt, req, "/res_flow_rels/batch/update")
+}
+
+// BatchDeleteResFlowRel batch delete res flow rel.
+func (cli *LoadBalancerClient) BatchDeleteResFlowRel(kt *kit.Kit, req *dataservice.BatchDeleteReq) error {
+	return common.RequestNoResp[dataservice.BatchDeleteReq](cli.client, rest.DELETE, kt, req, "/res_flow_rels/batch")
+}
+
+// ListResFlowRel list res flow rel.
+func (cli *LoadBalancerClient) ListResFlowRel(kt *kit.Kit, req *core.ListReq) (*dataproto.ResFlowRelListResult, error) {
+	return common.Request[core.ListReq, dataproto.ResFlowRelListResult](
+		cli.client, rest.POST, kt, req, "/res_flow_rels/list")
 }

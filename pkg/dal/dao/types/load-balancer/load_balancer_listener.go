@@ -17,12 +17,12 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package clb
+package loadbalancer
 
 import tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 
-// ListClbListenerDetails list clb listener details.
-type ListClbListenerDetails struct {
+// ListLoadBalancerListenerDetails list load balancer listener details.
+type ListLoadBalancerListenerDetails struct {
 	Count   uint64                              `json:"count,omitempty"`
 	Details []tablelb.LoadBalancerListenerTable `json:"details,omitempty"`
 }

@@ -79,6 +79,17 @@ func InitService(cap *capability.Capability) {
 	h.Add("BatchUpdateListener", http.MethodPatch, "/vendors/{vendor}/listeners/batch/update", svc.BatchUpdateListener)
 	h.Add("BatchDeleteListener", http.MethodDelete, "/listeners/batch", svc.BatchDeleteListener)
 
+	// 资源跟Flow锁定
+	h.Add("CreateResFlowLock", http.MethodPost, "/res_flow_locks/create", svc.CreateResFlowLock)
+	h.Add("DeleteResFlowLock", http.MethodDelete, "/res_flow_locks/batch", svc.DeleteResFlowLock)
+	h.Add("ListResFlowLock", http.MethodPost, "/res_flow_locks/list", svc.ListResFlowLock)
+
+	// 资源跟Flow关联关系
+	h.Add("BatchCreateResFlowRel", http.MethodPost, "/res_flow_rels/batch/create", svc.BatchCreateResFlowRel)
+	h.Add("BatchUpdateResFlowRel", http.MethodPatch, "/res_flow_rels/batch/update", svc.BatchUpdateResFlowRel)
+	h.Add("BatchDeleteResFlowRel", http.MethodDelete, "/res_flow_rels/batch", svc.BatchDeleteResFlowRel)
+	h.Add("ListResFlowRel", http.MethodPost, "/res_flow_rels/list", svc.ListResFlowRel)
+
 	h.Load(cap.WebService)
 }
 

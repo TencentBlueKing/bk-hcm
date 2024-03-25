@@ -363,3 +363,35 @@ func batchUpdateListener[T corelb.ListenerExtension](cts *rest.Contexts) (any, e
 		return nil, nil
 	})
 }
+
+// BatchUpdateResFlowRel 批量更新资源跟Flow关联关系的记录
+func (svc *lbSvc) BatchUpdateResFlowRel(cts *rest.Contexts) (any, error) {
+	req := new(dataproto.ResFlowRelBatchUpdateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	return svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
+		for _, item := range req.ResFlowRels {
+			model := &tablelb.LoadBalancerFlowRelTable{
+				ResID:   item.ResID,
+				Status:  item.Status,
+				Reviser: cts.Kit.User,
+			}
+			filter := tools.ExpressionAnd(
+				tools.RuleEqual("id", item.ID),
+				tools.RuleEqual("res_id", item.ResID),
+				tools.RuleEqual("flow_id", item.FlowID),
+			)
+			if err := svc.dao.LoadBalancerFlowRel().Update(cts.Kit, filter, model); err != nil {
+				logs.Errorf("update res flow rel failed, err: %v, id: %s, rid: %s", err, item.ID, cts.Kit.Rid)
+				return nil, fmt.Errorf("update res flow rel failed, id: %s, serr: %v", item.ID, err)
+			}
+		}
+		return nil, nil
+	})
+}

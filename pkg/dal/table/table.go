@@ -164,12 +164,12 @@ const (
 	LoadBalancerTargetTable Name = "load_balancer_target"
 	// LoadBalancerTargetGroupTable is load_balancer_target_group table's name.
 	LoadBalancerTargetGroupTable Name = "load_balancer_target_group"
-	// TargetListenerRuleRelTable is target_listener_rule_rel table's name.
-	TargetListenerRuleRelTable Name = "target_listener_rule_rel"
-	// ClbFlowRelTable is clb_flow_rel table's name.
-	ClbFlowRelTable Name = "clb_flow_rel"
-	// ClbFlowLockTable is clb_flow_lock table's name.
-	ClbFlowLockTable Name = "clb_flow_lock"
+	// TargetGroupListenerRuleRelTable is target_group_listener_rule_rel table's name.
+	TargetGroupListenerRuleRelTable Name = "target_group_listener_rule_rel"
+	// LoadBalancerFlowRelTable is load_balancer_flow_rel table's name.
+	LoadBalancerFlowRelTable Name = "load_balancer_flow_rel"
+	// LoadBalancerFlowLockTable is load_balancer_flow_lock table's name.
+	LoadBalancerFlowLockTable Name = "load_balancer_flow_lock"
 )
 
 // Validate whether the table name is valid or not.
@@ -246,15 +246,15 @@ var TableMap = map[Name]struct{}{
 
 	ArgumentTemplateTable: {},
 
-	LoadBalancerTable:            {},
-	SecurityGroupCommonRelTable:  {},
-	LoadBalancerListenerTable:    {},
-	TCloudLbUrlRuleTable:         {},
-	LoadBalancerTargetTable:      {},
-	LoadBalancerTargetGroupTable: {},
-	TargetListenerRuleRelTable:   {},
-	ClbFlowRelTable:              {},
-	ClbFlowLockTable:             {},
+	LoadBalancerTable:               {},
+	SecurityGroupCommonRelTable:     {},
+	LoadBalancerListenerTable:       {},
+	TCloudLbUrlRuleTable:            {},
+	LoadBalancerTargetTable:         {},
+	LoadBalancerTargetGroupTable:    {},
+	TargetGroupListenerRuleRelTable: {},
+	LoadBalancerFlowRelTable:        {},
+	LoadBalancerFlowLockTable:       {},
 }
 
 // Register 注册表名

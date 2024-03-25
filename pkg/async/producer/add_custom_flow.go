@@ -24,6 +24,7 @@ import (
 
 	"hcm/pkg/async/action"
 	"hcm/pkg/async/backend/model"
+	"hcm/pkg/criteria/enumor"
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -113,20 +114,28 @@ func buildCustomFlow(opt *AddCustomFlowOption) *model.Flow {
 		Memo:      opt.Memo,
 		Tasks:     make([]model.Task, 0, len(opt.Tasks)),
 	}
+	if opt.IsInitState {
+		flow.State = enumor.FlowInit
+	}
 
 	for _, one := range opt.Tasks {
 		if one.Retry == nil {
 			one.Retry = new(tableasync.Retry)
 		}
 
-		flow.Tasks = append(flow.Tasks, model.Task{
+		task := model.Task{
 			FlowName:   opt.Name,
 			ActionID:   one.ActionID,
 			ActionName: one.ActionName,
 			Params:     one.Params,
 			Retry:      one.Retry,
 			DependOn:   one.DependOn,
-		})
+		}
+		if opt.IsInitState {
+			task.State = enumor.TaskInit
+		}
+
+		flow.Tasks = append(flow.Tasks, task)
 	}
 
 	return flow

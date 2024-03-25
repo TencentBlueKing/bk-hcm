@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package loadbalancer clb异步任务记录的Package
+// Package loadbalancer load balancer异步任务记录的Package
 package loadbalancer
 
 import (
@@ -30,7 +30,7 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
-	typesclb "hcm/pkg/dal/dao/types/clb"
+	typeslb "hcm/pkg/dal/dao/types/load-balancer"
 	"hcm/pkg/dal/table"
 	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 	"hcm/pkg/dal/table/utils"
@@ -41,29 +41,29 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// ClbFlowRelInterface only used for clb flow rel.
-type ClbFlowRelInterface interface {
-	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.ClbFlowRelTable) ([]string, error)
-	Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.ClbFlowRelTable) error
-	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.ClbFlowRelTable) error
-	List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbFlowRelDetails, error)
+// LoadBalancerFlowRelInterface only used for load balancer flow rel.
+type LoadBalancerFlowRelInterface interface {
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerFlowRelTable) ([]string, error)
+	Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.LoadBalancerFlowRelTable) error
+	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.LoadBalancerFlowRelTable) error
+	List(kt *kit.Kit, opt *types.ListOption) (*typeslb.ListLoadBalancerFlowRelDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
 
-var _ ClbFlowRelInterface = new(ClbFlowRelDao)
+var _ LoadBalancerFlowRelInterface = new(LoadBalancerFlowRelDao)
 
-// ClbFlowRelDao clb flow rel dao.
-type ClbFlowRelDao struct {
+// LoadBalancerFlowRelDao load balancer flow rel dao.
+type LoadBalancerFlowRelDao struct {
 	Orm   orm.Interface
 	IDGen idgen.IDGenInterface
 	Audit audit.Interface
 }
 
-// BatchCreateWithTx clb flow rel.
-func (dao ClbFlowRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.ClbFlowRelTable) (
+// BatchCreateWithTx load balancer flow rel.
+func (dao LoadBalancerFlowRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerFlowRelTable) (
 	[]string, error) {
 
-	tableName := table.ClbFlowRelTable
+	tableName := table.LoadBalancerFlowRelTable
 	ids, err := dao.IDGen.Batch(kt, tableName, len(models))
 	if err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func (dao ClbFlowRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*t
 	}
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, tableName,
-		tablelb.ClbFlowRelColumns.ColumnExpr(), tablelb.ClbFlowRelColumns.ColonNameExpr())
+		tablelb.LoadBalancerFlowRelColumns.ColumnExpr(), tablelb.LoadBalancerFlowRelColumns.ColonNameExpr())
 
 	if err = dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", tableName, err, kt.Rid)
@@ -87,8 +87,10 @@ func (dao ClbFlowRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*t
 	return ids, nil
 }
 
-// Update clb flow rel.
-func (dao ClbFlowRelDao) Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.ClbFlowRelTable) error {
+// Update load balancer flow rel.
+func (dao LoadBalancerFlowRelDao) Update(kt *kit.Kit, expr *filter.Expression,
+	model *tablelb.LoadBalancerFlowRelTable) error {
+
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
 	}
@@ -130,9 +132,9 @@ func (dao ClbFlowRelDao) Update(kt *kit.Kit, expr *filter.Expression, model *tab
 	return nil
 }
 
-// UpdateByIDWithTx clb flow rel.
-func (dao ClbFlowRelDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
-	model *tablelb.ClbFlowRelTable) error {
+// UpdateByIDWithTx load balancer flow rel.
+func (dao LoadBalancerFlowRelDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
+	model *tablelb.LoadBalancerFlowRelTable) error {
 
 	if len(id) == 0 {
 		return errf.New(errf.InvalidParameter, "id is required")
@@ -160,13 +162,15 @@ func (dao ClbFlowRelDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
 	return nil
 }
 
-// List clb flow rel.
-func (dao ClbFlowRelDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbFlowRelDetails, error) {
+// List load balancer flow rel.
+func (dao LoadBalancerFlowRelDao) List(kt *kit.Kit, opt *types.ListOption) (
+	*typeslb.ListLoadBalancerFlowRelDetails, error) {
+
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablelb.ClbFlowRelColumns.ColumnTypes())),
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablelb.LoadBalancerFlowRelColumns.ColumnTypes())),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
@@ -178,7 +182,7 @@ func (dao ClbFlowRelDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.Lis
 
 	if opt.Page.Count {
 		// this is a count request, then do count operation only.
-		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.ClbFlowRelTable, whereExpr)
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.LoadBalancerFlowRelTable, whereExpr)
 
 		count, err := dao.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
@@ -187,7 +191,7 @@ func (dao ClbFlowRelDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.Lis
 			return nil, err
 		}
 
-		return &typesclb.ListClbFlowRelDetails{Count: count}, nil
+		return &typeslb.ListLoadBalancerFlowRelDetails{Count: count}, nil
 	}
 
 	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
@@ -195,19 +199,19 @@ func (dao ClbFlowRelDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.Lis
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablelb.ClbFlowRelColumns.FieldsNamedExpr(opt.Fields),
-		table.ClbFlowRelTable, whereExpr, pageExpr)
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablelb.LoadBalancerFlowRelColumns.FieldsNamedExpr(opt.Fields),
+		table.LoadBalancerFlowRelTable, whereExpr, pageExpr)
 
-	details := make([]tablelb.ClbFlowRelTable, 0)
+	details := make([]tablelb.LoadBalancerFlowRelTable, 0)
 	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
 
-	return &typesclb.ListClbFlowRelDetails{Details: details}, nil
+	return &typeslb.ListLoadBalancerFlowRelDetails{Details: details}, nil
 }
 
-// DeleteWithTx clb flow rel.
-func (dao ClbFlowRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
+// DeleteWithTx load balancer flow rel.
+func (dao LoadBalancerFlowRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
@@ -217,7 +221,7 @@ func (dao ClbFlowRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Exp
 		return err
 	}
 
-	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.ClbFlowRelTable, whereExpr)
+	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.LoadBalancerFlowRelTable, whereExpr)
 	if _, err = dao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
 		logs.Errorf("delete load balancer flow rel failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
 		return err

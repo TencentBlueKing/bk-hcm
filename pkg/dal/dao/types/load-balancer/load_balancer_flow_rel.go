@@ -17,12 +17,12 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package clb
+package loadbalancer
 
 import tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 
-// ListClbFlowLockDetails list clb flow lock details.
-type ListClbFlowLockDetails struct {
-	Count   uint64                     `json:"count,omitempty"`
-	Details []tablelb.ClbFlowLockTable `json:"details,omitempty"`
+// ListLoadBalancerFlowRelDetails list load balancer flow rel details.
+type ListLoadBalancerFlowRelDetails struct {
+	Count   uint64                             `json:"count,omitempty"`
+	Details []tablelb.LoadBalancerFlowRelTable `json:"details,omitempty"`
 }

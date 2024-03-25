@@ -29,11 +29,11 @@ import (
 	"hcm/pkg/dal/table/utils"
 )
 
-// ClbFlowLockColumns defines all the clb_flow_lock table's columns.
-var ClbFlowLockColumns = utils.MergeColumns(nil, ClbFlowLockColumnsDescriptor)
+// LoadBalancerFlowLockColumns defines all the load_balancer_flow_lock table's columns.
+var LoadBalancerFlowLockColumns = utils.MergeColumns(nil, LoadBalancerFlowLockColumnsDescriptor)
 
-// ClbFlowLockColumnsDescriptor is clb_flow_lock's column descriptors.
-var ClbFlowLockColumnsDescriptor = utils.ColumnDescriptors{
+// LoadBalancerFlowLockColumnsDescriptor is load_balancer_flow_lock's column descriptors.
+var LoadBalancerFlowLockColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "res_id", NamedC: "res_id", Type: enumor.String},
 	{Column: "res_type", NamedC: "res_type", Type: enumor.String},
 	{Column: "owner", NamedC: "owner", Type: enumor.String},
@@ -44,8 +44,8 @@ var ClbFlowLockColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "updated_at", NamedC: "updated_at", Type: enumor.Time},
 }
 
-// ClbFlowLockTable Clb资源锁定表
-type ClbFlowLockTable struct {
+// LoadBalancerFlowLockTable load balancer资源锁定表
+type LoadBalancerFlowLockTable struct {
 	ResID   string `db:"res_id" validate:"lte=64" json:"res_id"`
 	ResType string `db:"res_type" validate:"lte=64" json:"res_type"`
 	Owner   string `db:"owner" validate:"lte=64" json:"owner"`
@@ -56,13 +56,13 @@ type ClbFlowLockTable struct {
 	UpdatedAt types.Time `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
 }
 
-// TableName return clb_flow_lock table name.
-func (cfl ClbFlowLockTable) TableName() table.Name {
-	return table.ClbFlowLockTable
+// TableName return table name.
+func (cfl LoadBalancerFlowLockTable) TableName() table.Name {
+	return table.LoadBalancerFlowLockTable
 }
 
-// InsertValidate clb_flow_lock table when insert.
-func (cfl ClbFlowLockTable) InsertValidate() error {
+// InsertValidate validate table when insert.
+func (cfl LoadBalancerFlowLockTable) InsertValidate() error {
 	if err := validator.Validate.Struct(cfl); err != nil {
 		return err
 	}
@@ -86,8 +86,8 @@ func (cfl ClbFlowLockTable) InsertValidate() error {
 	return nil
 }
 
-// UpdateValidate clb_flow_lock table when update.
-func (cfl ClbFlowLockTable) UpdateValidate() error {
+// UpdateValidate validate table when update.
+func (cfl LoadBalancerFlowLockTable) UpdateValidate() error {
 	if err := validator.Validate.Struct(cfl); err != nil {
 		return err
 	}

@@ -98,11 +98,16 @@ var _ Backend = new(mysql)
 // CreateFlow 创建任务流
 func (db *mysql) CreateFlow(kt *kit.Kit, flow *model.Flow) (string, error) {
 
+	flowState := enumor.FlowPending
+	if flow.State == enumor.FlowInit {
+		flowState = flow.State
+	}
+
 	result, err := db.dao.Txn().AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		// 创建任务流
 		md := &tableasync.AsyncFlowTable{
 			Name:      flow.Name,
-			State:     enumor.FlowPending,
+			State:     flowState,
 			Reason:    new(tableasync.Reason),
 			ShareData: flow.ShareData,
 			Memo:      flow.Memo,
@@ -119,6 +124,11 @@ func (db *mysql) CreateFlow(kt *kit.Kit, flow *model.Flow) (string, error) {
 		tasks := flow.Tasks
 		mds := make([]tableasync.AsyncFlowTaskTable, 0, len(tasks))
 		for _, one := range tasks {
+			taskState := enumor.TaskPending
+			if one.State == enumor.TaskInit {
+				taskState = one.State
+			}
+
 			mds = append(mds, tableasync.AsyncFlowTaskTable{
 				FlowID:     flowID,
 				FlowName:   one.FlowName,
@@ -127,7 +137,7 @@ func (db *mysql) CreateFlow(kt *kit.Kit, flow *model.Flow) (string, error) {
 				Params:     one.Params,
 				Retry:      one.Retry,
 				DependOn:   dependOnToStringArray(one.DependOn),
-				State:      enumor.TaskPending,
+				State:      taskState,
 				Reason:     new(tableasync.Reason),
 				Creator:    kt.User,
 				Reviser:    kt.User,

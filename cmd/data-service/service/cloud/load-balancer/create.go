@@ -291,8 +291,8 @@ func (svc *lbSvc) CreateTargetGroupListenerRel(cts *rest.Contexts) (any, error) 
 			return nil, err
 		}
 
-		models := make([]*tablelb.TargetListenerRuleRelTable, 0)
-		models = append(models, &tablelb.TargetListenerRuleRelTable{
+		models := make([]*tablelb.TargetGroupListenerRuleRelTable, 0)
+		models = append(models, &tablelb.TargetGroupListenerRuleRelTable{
 			ListenerRuleID:   req.ListenerRuleID,
 			ListenerRuleType: req.ListenerRuleType,
 			TargetGroupID:    req.TargetGroupID,
@@ -303,7 +303,7 @@ func (svc *lbSvc) CreateTargetGroupListenerRel(cts *rest.Contexts) (any, error) 
 			Creator:          cts.Kit.User,
 			Reviser:          cts.Kit.User,
 		})
-		ids, err := svc.dao.LoadBalancerTargetListenerRuleRel().BatchCreateWithTx(cts.Kit, txn, models)
+		ids, err := svc.dao.LoadBalancerTargetGroupListenerRuleRel().BatchCreateWithTx(cts.Kit, txn, models)
 		if err != nil {
 			logs.Errorf("[%s]fail to batch create target group listener rel, err: %v, rid:%s", err, cts.Kit.Rid)
 			return nil, fmt.Errorf("batch create target group listener rel failed, err: %v", err)
@@ -554,9 +554,9 @@ func (svc *lbSvc) insertListenerWithRule(kt *kit.Kit, req *dataproto.ListenerWit
 			return nil, fmt.Errorf("batch create listener url rule failed, err: %v", err)
 		}
 
-		ruleRelModels := make([]*tablelb.TargetListenerRuleRelTable, 0, len(req.ListenerWithRules))
+		ruleRelModels := make([]*tablelb.TargetGroupListenerRuleRelTable, 0, len(req.ListenerWithRules))
 		for _, item := range req.ListenerWithRules {
-			ruleRelModels = append(ruleRelModels, &tablelb.TargetListenerRuleRelTable{
+			ruleRelModels = append(ruleRelModels, &tablelb.TargetGroupListenerRuleRelTable{
 				ListenerRuleID:   ruleIDs[0],
 				ListenerRuleType: item.RuleType,
 				TargetGroupID:    item.TargetGroupID,
@@ -567,7 +567,7 @@ func (svc *lbSvc) insertListenerWithRule(kt *kit.Kit, req *dataproto.ListenerWit
 				Reviser:          kt.User,
 			})
 		}
-		_, err = svc.dao.LoadBalancerTargetListenerRuleRel().BatchCreateWithTx(kt, txn, ruleRelModels)
+		_, err = svc.dao.LoadBalancerTargetGroupListenerRuleRel().BatchCreateWithTx(kt, txn, ruleRelModels)
 		if err != nil {
 			logs.Errorf("[%s]fail to batch create listener rule rel, err: %v, rid:%s", err, kt.Rid)
 			return nil, fmt.Errorf("batch create listener rule rel failed, err: %v", err)
@@ -585,4 +585,80 @@ func (svc *lbSvc) insertListenerWithRule(kt *kit.Kit, req *dataproto.ListenerWit
 			reflect.TypeOf(result).String())
 	}
 	return ids, nil
+}
+
+// CreateResFlowLock 创建资源跟Flow的锁定关系
+func (svc *lbSvc) CreateResFlowLock(cts *rest.Contexts) (any, error) {
+	req := new(dataproto.ResFlowLockCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
+		model := &tablelb.LoadBalancerFlowLockTable{
+			ResID:   req.ResID,
+			ResType: req.ResType,
+			Owner:   req.Owner,
+			Creator: cts.Kit.User,
+			Reviser: cts.Kit.User,
+		}
+		err := svc.dao.LoadBalancerFlowLock().CreateWithTx(cts.Kit, txn, model)
+		if err != nil {
+			logs.Errorf("[%s]fail to create load balancer flow lock, req: %+v, err: %v, rid:%s", req, err, cts.Kit.Rid)
+			return nil, fmt.Errorf("create load balancer flow lock failed, err: %v", err)
+		}
+		return nil, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+// BatchCreateResFlowRel 批量创建资源跟Flow的关系记录
+func (svc *lbSvc) BatchCreateResFlowRel(cts *rest.Contexts) (any, error) {
+	req := new(dataproto.ResFlowRelBatchCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	result, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
+		models := make([]*tablelb.LoadBalancerFlowRelTable, 0, len(req.ResFlowRels))
+		for _, item := range req.ResFlowRels {
+			models = append(models, &tablelb.LoadBalancerFlowRelTable{
+				ResID:    item.ResID,
+				FlowID:   item.FlowID,
+				TaskType: item.TaskType,
+				Status:   item.Status,
+				Creator:  cts.Kit.User,
+				Reviser:  cts.Kit.User,
+			})
+		}
+		ids, err := svc.dao.LoadBalancerFlowRel().BatchCreateWithTx(cts.Kit, txn, models)
+		if err != nil {
+			logs.Errorf("[%s]fail to batch create load balancer flow rel, err: %v, rid:%s", err, cts.Kit.Rid)
+			return nil, fmt.Errorf("batch create load balancer flow rel failed, err: %v", err)
+		}
+		return ids, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ids, ok := result.([]string)
+	if !ok {
+		return nil, fmt.Errorf("batch create load balancer flow rel but return id type is not []string, id type: %v",
+			reflect.TypeOf(result).String())
+	}
+
+	return &core.BatchCreateResult{IDs: ids}, nil
 }

@@ -251,8 +251,8 @@ create table `target_listener_rule_rel`
   default charset = utf8mb4
   collate = utf8mb4_bin comment ='目标组监听器关系表';
 
--- 8. clb异步任务记录表
-create table `clb_flow_rel`
+-- 8. load_balancer异步任务记录表
+create table `load_balancer_flow_rel`
 (
     `id`         varchar(64) not null,
     `res_id`     varchar(64) not null,
@@ -268,11 +268,11 @@ create table `clb_flow_rel`
     unique key `idx_uk_res_id_flow_id` (`res_id`, `flow_id`)
 ) engine = innodb
   default charset = utf8mb4
-  collate = utf8mb4_bin comment ='clb异步任务记录表';
+  collate = utf8mb4_bin comment ='load_balancer异步任务记录表';
 
 
--- 9. clb异步任务资源锁
-create table `clb_flow_lock`
+-- 9. load_balancer异步任务资源锁
+create table `load_balancer_flow_lock`
 (
     `res_type`   varchar(64) not null,
     `res_id`     varchar(64) not null,
@@ -285,7 +285,7 @@ create table `clb_flow_lock`
     primary key (`res_type`, `res_id`)
 ) engine = innodb
   default charset = utf8mb4
-  collate = utf8mb4_bin comment ='clb异步任务资源锁';
+  collate = utf8mb4_bin comment ='load_balancer异步任务资源锁';
 
 insert into id_generator(`resource`, `max_id`)
 values ('load_balancer', '0'),
@@ -294,8 +294,8 @@ values ('load_balancer', '0'),
        ('tcloud_lb_url_rule', '0'),
        ('load_balancer_target', '0'),
        ('load_balancer_target_group', '0'),
-       ('target_listener_rule_rel', '0'),
-       ('clb_flow_rel', '0');
+       ('target_group_listener_rule_rel', '0'),
+       ('load_balancer_flow_rel', '0');
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
 SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;

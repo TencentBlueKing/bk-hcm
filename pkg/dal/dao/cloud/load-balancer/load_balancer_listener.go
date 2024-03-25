@@ -31,7 +31,7 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
-	typesclb "hcm/pkg/dal/dao/types/clb"
+	typeslb "hcm/pkg/dal/dao/types/load-balancer"
 	"hcm/pkg/dal/table"
 	tableaudit "hcm/pkg/dal/table/audit"
 	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
@@ -43,25 +43,25 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// ListenerInterface only used for clb listener.
+// ListenerInterface only used for listener.
 type ListenerInterface interface {
 	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerListenerTable) ([]string, error)
 	Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.LoadBalancerListenerTable) error
 	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.LoadBalancerListenerTable) error
-	List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbListenerDetails, error)
+	List(kt *kit.Kit, opt *types.ListOption) (*typeslb.ListLoadBalancerListenerDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
 
 var _ ListenerInterface = new(ListenerDao)
 
-// ListenerDao clb listener dao.
+// ListenerDao listener dao.
 type ListenerDao struct {
 	Orm   orm.Interface
 	IDGen idgen.IDGenInterface
 	Audit audit.Interface
 }
 
-// BatchCreateWithTx clb listener.
+// BatchCreateWithTx listener.
 func (dao ListenerDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerListenerTable) (
 	[]string, error) {
 
@@ -115,7 +115,7 @@ func (dao ListenerDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tab
 	return ids, nil
 }
 
-// Update clb listener.
+// Update listener.
 func (dao ListenerDao) Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.LoadBalancerListenerTable) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
@@ -158,7 +158,7 @@ func (dao ListenerDao) Update(kt *kit.Kit, expr *filter.Expression, model *table
 	return nil
 }
 
-// UpdateByIDWithTx clb listener.
+// UpdateByIDWithTx listener.
 func (dao ListenerDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
 	model *tablelb.LoadBalancerListenerTable) error {
 
@@ -188,8 +188,8 @@ func (dao ListenerDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
 	return nil
 }
 
-// List clb listener.
-func (dao ListenerDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbListenerDetails, error) {
+// List listener.
+func (dao ListenerDao) List(kt *kit.Kit, opt *types.ListOption) (*typeslb.ListLoadBalancerListenerDetails, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
@@ -214,7 +214,7 @@ func (dao ListenerDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListC
 			return nil, err
 		}
 
-		return &typesclb.ListClbListenerDetails{Count: count}, nil
+		return &typeslb.ListLoadBalancerListenerDetails{Count: count}, nil
 	}
 
 	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
@@ -230,10 +230,10 @@ func (dao ListenerDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListC
 		return nil, err
 	}
 
-	return &typesclb.ListClbListenerDetails{Details: details}, nil
+	return &typeslb.ListLoadBalancerListenerDetails{Details: details}, nil
 }
 
-// DeleteWithTx clb listener.
+// DeleteWithTx listener.
 func (dao ListenerDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")

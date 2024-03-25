@@ -27,6 +27,7 @@ import (
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/runtime/filter"
 )
@@ -257,5 +258,104 @@ type TCloudUrlRuleUpdate struct {
 
 // Validate ...
 func (req *TCloudUrlRuleUpdate) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// -------------------------- Create Res Flow Lock --------------------------
+
+// ResFlowLockCreateReq res flow lock create req.
+type ResFlowLockCreateReq struct {
+	ResID   string `json:"res_id" validate:"required"`
+	ResType string `json:"res_type" validate:"required"`
+	Owner   string `json:"owner" validate:"omitempty"`
+}
+
+// Validate validate res flow lock create
+func (req *ResFlowLockCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// -------------------------- Batch Create Res Flow Rel --------------------------
+
+// ResFlowRelBatchCreateReq res flow rel batch create req.
+type ResFlowRelBatchCreateReq struct {
+	ResFlowRels []ResFlowRelCreateReq `json:"res_flow_rels" validate:"required,min=1"`
+}
+
+// Validate validate listener batch create
+func (req *ResFlowRelBatchCreateReq) Validate() error {
+	for _, item := range req.ResFlowRels {
+		if err := item.Validate(); err != nil {
+			return errf.NewFromErr(errf.InvalidParameter, err)
+		}
+	}
+	return validator.Validate.Struct(req)
+}
+
+// ResFlowRelCreateReq res flow rel create req.
+type ResFlowRelCreateReq struct {
+	ResID    string `json:"res_id" validate:"required"`
+	FlowID   string `json:"flow_id" validate:"required"`
+	TaskType string `json:"task_type" validate:"omitempty"`
+	Status   string `json:"status" validate:"omitempty"`
+}
+
+// Validate validate rel flow rel create
+func (req *ResFlowRelCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// -------------------------- Update Res Flow Rel --------------------------
+
+// ResFlowRelBatchUpdateReq res flow rel batch update req.
+type ResFlowRelBatchUpdateReq struct {
+	ResFlowRels []ResFlowRelUpdateReq `json:"res_flow_rels" validate:"required,min=1"`
+}
+
+// Validate validate res flow rel batch update
+func (req *ResFlowRelBatchUpdateReq) Validate() error {
+	for _, item := range req.ResFlowRels {
+		if err := item.Validate(); err != nil {
+			return errf.NewFromErr(errf.InvalidParameter, err)
+		}
+	}
+	return validator.Validate.Struct(req)
+}
+
+// ResFlowRelUpdateReq res flow rel update req.
+type ResFlowRelUpdateReq struct {
+	ID       string `json:"id" validate:"required"`
+	ResID    string `json:"res_id" validate:"required"`
+	FlowID   string `json:"flow_id" validate:"required"`
+	TaskType string `json:"task_type" validate:"omitempty"`
+	Status   string `json:"status" validate:"omitempty"`
+}
+
+// Validate validate res flow rel update
+func (req *ResFlowRelUpdateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// -------------------------- List Res Flow Lock --------------------------
+
+// ResFlowLockListResult define res flow lock list result.
+type ResFlowLockListResult = core.ListResultT[corelb.BaseResFlowLock]
+
+// -------------------------- List Res Flow Rel --------------------------
+
+// ResFlowRelListResult define res flow rel list result.
+type ResFlowRelListResult = core.ListResultT[corelb.BaseResFlowRel]
+
+// -------------------------- Delete Res Flow Lock --------------------------
+
+// ResFlowLockDeleteReq delete res flow lock request.
+type ResFlowLockDeleteReq struct {
+	ResID   string `json:"res_id" validate:"required"`
+	ResType string `json:"res_type" validate:"required"`
+	Owner   string `json:"owner" validate:"required"`
+}
+
+// Validate delete request.
+func (req *ResFlowLockDeleteReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
