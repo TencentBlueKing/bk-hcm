@@ -177,6 +177,7 @@ export default defineComponent({
       // 交互 - 高亮切换效果
       if (node.type !== 'all') {
         lastSelectedNode.value = node;
+        if (node.type === 'load_balancers') loadBalancerStore.setLB(node);
       } else {
         treeRef.value.setSelect(lastSelectedNode.value, false);
       }

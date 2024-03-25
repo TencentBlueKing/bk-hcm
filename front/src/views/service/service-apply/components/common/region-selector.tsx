@@ -16,6 +16,11 @@ export default defineComponent({
     type: String as PropType<string>,
     vendor: String as PropType<string>,
     accountId: String as PropType<string>,
+    isDisabled: {
+      required: false,
+      default: false,
+      type: Boolean,
+    },
   },
   emits: ['update:modelValue'],
   setup(props, { emit, attrs }) {
@@ -179,6 +184,7 @@ export default defineComponent({
         modelValue={selected.value}
         onUpdate:modelValue={(val) => (selected.value = val)}
         loading={loading.value}
+        disabled={props.isDisabled}
         {...{ attrs }}>
         {list.value.map(({ id, name }: IOption) => (
           <Option key={id} value={id} label={name}></Option>

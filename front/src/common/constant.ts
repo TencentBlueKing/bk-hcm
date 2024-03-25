@@ -528,3 +528,5 @@ export const SYNC_STAUS_MAP = {
   c: '失败',
   d: '部分成功',
 };
+
+export const TARGET_GROUP_PROTOCOLS = ['TCP', 'UDP', 'HTTP', 'HTTPS'];
