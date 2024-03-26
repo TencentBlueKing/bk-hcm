@@ -40,13 +40,14 @@ import (
 	tclb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 )
 
-// Listener 同步多个负载均衡下的规则
+// Listener 同步多个负载均衡下的监听器
 func (cli *client) Listener(kt *kit.Kit, params *SyncListenerParams) (*SyncResult, error) {
 
 	if err := validator.ValidateTool(params); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// 并发同步多个监听器
 	var syncResult *SyncResult
 	err := concurrence.BaseExec(constant.SyncConcurrencyDefaultMaxLimit, params.LbInfos,
 		func(lb corelb.TCloudLoadBalancer) error {
@@ -150,7 +151,7 @@ func (cli *client) listListenerFromDB(kt *kit.Kit, opt *SyncListenerOfSingleLBOp
 		return nil, err
 	}
 	// lb id as key
-	ruleMap := make(map[string]*corelb.BaseTCloudLbUrlRule)
+	ruleMap := make(map[string]*corelb.TCloudLbUrlRule)
 	for _, r := range ruleResp.Details {
 		ruleMap[r.LbID] = cvt.ValToPtr(r)
 	}
@@ -184,8 +185,26 @@ func (cli *client) createListener(kt *kit.Kit, syncOpt *SyncListenerOfSingleLBOp
 		return nil, nil
 	}
 	dbListeners := make([]dataproto.ListenersCreateReq, 0, len(addSlice))
+	dbRules := make([]dataproto.ListenerWithRuleCreateReq, 0)
 	for _, lbl := range addSlice {
-		dbListeners = append(dbListeners, dataproto.ListenersCreateReq{
+		if cvt.PtrToVal((*enumor.ProtocolType)(lbl.Protocol)).IsLayer7Protocol() {
+			dbListeners = append(dbListeners, dataproto.ListenersCreateReq{
+				CloudID:       lbl.GetCloudID(),
+				Name:          cvt.PtrToVal(lbl.ListenerName),
+				Vendor:        enumor.TCloud,
+				AccountID:     syncOpt.AccountID,
+				BkBizID:       syncOpt.BizID,
+				LbID:          syncOpt.LBID,
+				CloudLbID:     syncOpt.CloudLBID,
+				Protocol:      cvt.PtrToVal((*enumor.ProtocolType)(lbl.Protocol)),
+				Port:          cvt.PtrToVal(lbl.Port),
+				DefaultDomain: getDefaultDomain(lbl),
+			})
+			// for layer 7 only create listeners itself
+			continue
+		}
+		// layer 4 create with rule
+		dbRules = append(dbRules, dataproto.ListenerWithRuleCreateReq{
 			CloudID:       lbl.GetCloudID(),
 			Name:          cvt.PtrToVal(lbl.ListenerName),
 			Vendor:        enumor.TCloud,
@@ -195,18 +214,39 @@ func (cli *client) createListener(kt *kit.Kit, syncOpt *SyncListenerOfSingleLBOp
 			CloudLbID:     syncOpt.CloudLBID,
 			Protocol:      cvt.PtrToVal((*enumor.ProtocolType)(lbl.Protocol)),
 			Port:          cvt.PtrToVal(lbl.Port),
-			DefaultDomain: getDefaultDomain(lbl),
+			CloudRuleID:   lbl.GetCloudID(),
+			Scheduler:     cvt.PtrToVal(lbl.Scheduler),
+			RuleType:      enumor.Layer4RuleType,
+			SessionType:   cvt.PtrToVal(lbl.SessionType),
+			SessionExpire: cvt.PtrToVal(lbl.SessionExpireTime),
+			SniSwitch:     enumor.SniType(cvt.PtrToVal(lbl.SniSwitch)),
+			Certificate:   convCert(lbl.Certificate),
 		})
 	}
-	createResult, err := cli.dbCli.TCloud.LoadBalancer.BatchCreateTCloudListener(kt,
-		&dataproto.ListenerBatchCreateReq{Listeners: dbListeners})
-	if err != nil {
-		logs.Errorf("fail to create listener while sync, err: %v syncOpt: %+v, rid: %s",
-			err, syncOpt, kt.Rid)
-		return nil, err
+	createdIDs := make([]string, 0, len(addSlice))
+	if len(dbListeners) > 0 {
+		lblCreated, err := cli.dbCli.TCloud.LoadBalancer.BatchCreateTCloudListener(kt,
+			&dataproto.ListenerBatchCreateReq{Listeners: dbListeners})
+		if err != nil {
+			logs.Errorf("fail to create listener while sync, err: %v syncOpt: %+v, rid: %s",
+				err, syncOpt, kt.Rid)
+			return nil, err
+		}
+		createdIDs = append(createdIDs, lblCreated.IDs...)
 	}
 
-	return createResult.IDs, nil
+	if len(dbRules) > 0 {
+		ruleCreated, err := cli.dbCli.TCloud.LoadBalancer.BatchCreateTCloudListenerWithRule(kt,
+			&dataproto.ListenerWithRuleBatchCreateReq{ListenerWithRules: dbRules})
+		if err != nil {
+			logs.Errorf("fail to create listener with rule while sync, err: %v syncOpt: %+v, rid: %s",
+				err, syncOpt, kt.Rid)
+			return nil, err
+		}
+		createdIDs = append(createdIDs, ruleCreated.IDs...)
+	}
+
+	return createdIDs, nil
 }
 
 func (cli *client) updateListener(kt *kit.Kit, bizID int64, updateMap map[string]typeslb.TCloudListener) error {
@@ -230,8 +270,14 @@ func (cli *client) updateListener(kt *kit.Kit, bizID int64, updateMap map[string
 		})
 	}
 
-	return cli.dbCli.TCloud.LoadBalancer.BatchUpdateTCloudListener(kt,
+	err := cli.dbCli.TCloud.LoadBalancer.BatchUpdateTCloudListener(kt,
 		&dataproto.TCloudListenerUpdateReq{Listeners: updates})
+	if err != nil {
+		logs.Errorf("fail to update listener while sync, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	// 更新规则
+	return nil
 }
 func convCert(cloud *tclb.CertificateOutput) *corelb.TCloudCertificateInfo {
 	if cloud == nil {
@@ -279,22 +325,12 @@ func isListenerChange(cloud typeslb.TCloudListener, db common.TCloudComposedList
 }
 
 func isLayer4Changed(cloud typeslb.TCloudListener, db common.TCloudComposedListener) bool {
-	if db.Rule == nil {
-		// 四层监听器的健康检查这些信息保存在规则里，需要检查对应的规则
-		return true
-	}
-	if cvt.PtrToVal(cloud.Scheduler) != db.Rule.Scheduler {
-		return true
-	}
-	if cvt.PtrToVal(cloud.SessionType) != db.Rule.SessionType {
-		return true
-	}
+
 	if isListenerCertChange(cloud.Certificate, db.Extension.Certificate) {
 		return true
 	}
-	if isHealthCheckChange(cloud.HealthCheck, db.Rule.HealthCheck) {
-		return true
-	}
+	// 规则单独检查
+
 	return false
 }
 
@@ -416,6 +452,24 @@ func isListenerCertChange(cloud *tclb.CertificateOutput, db *corelb.TCloudCertif
 	return false
 }
 
+// 四层监听器的健康检查这些信息保存在规则里，需要检查对应的规则
+func isLayer4RuleChange(cloud typeslb.TCloudListener, db *corelb.TCloudLbUrlRule) bool {
+	if db == nil {
+		return true
+	}
+	if cvt.PtrToVal(cloud.Scheduler) != db.Scheduler {
+		return true
+	}
+	if cvt.PtrToVal(cloud.SessionType) != db.SessionType {
+		return true
+	}
+
+	if isHealthCheckChange(cloud.HealthCheck, db.HealthCheck) {
+		return true
+	}
+	return false
+}
+
 func getDefaultDomain(cloud typeslb.TCloudListener) string {
 	// 需要去规则中捞
 	for _, rule := range cloud.Rules {
@@ -440,14 +494,6 @@ type SyncListenerOfSingleLBOption struct {
 // Validate ...
 func (o *SyncListenerOfSingleLBOption) Validate() error {
 	return validator.Validate.Struct(o)
-}
-
-// 对应负载均衡的信息
-type lbInfo struct {
-	BizID int64 `json:"biz_id" validate:"required"`
-
-	LBID      string `json:"lbid" validate:"required"`
-	CloudLBID string `json:"cloud_lbid" validate:"required"`
 }
 
 // SyncListenerParams ...

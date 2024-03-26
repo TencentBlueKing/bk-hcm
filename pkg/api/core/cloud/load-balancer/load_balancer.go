@@ -112,8 +112,8 @@ type ListenerExtension interface {
 	TCloudListenerExtension
 }
 
-// BaseTCloudLbUrlRule define base tcloud lb url rule.
-type BaseTCloudLbUrlRule struct {
+// TCloudLbUrlRule define base tcloud lb url rule.
+type TCloudLbUrlRule struct {
 	ID      string `json:"id"`
 	CloudID string `json:"cloud_id"`
 	Name    string `json:"name"`

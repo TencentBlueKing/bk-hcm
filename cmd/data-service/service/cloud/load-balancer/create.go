@@ -441,7 +441,7 @@ func batchCreateListener(cts *rest.Contexts, svc *lbSvc) (any, error) {
 		}
 		ids, err := svc.dao.LoadBalancerListener().BatchCreateWithTx(cts.Kit, txn, models)
 		if err != nil {
-			logs.Errorf("[%s]fail to batch create listener, err: %v, rid:%s", err, cts.Kit.Rid)
+			logs.Errorf("fail to batch create listener, err: %v, rid:%s", err, cts.Kit.Rid)
 			return nil, fmt.Errorf("batch create listener failed, err: %v", err)
 		}
 		return ids, nil
@@ -494,94 +494,96 @@ func (svc *lbSvc) batchCreateTCloudListenerWithRule(cts *rest.Contexts) (any, er
 
 func (svc *lbSvc) insertListenerWithRule(kt *kit.Kit, req *dataproto.ListenerWithRuleBatchCreateReq) ([]string, error) {
 	result, err := svc.dao.Txn().AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
-		models := make([]*tablelb.LoadBalancerListenerTable, 0, len(req.ListenerWithRules))
-		for _, item := range req.ListenerWithRules {
-			models = append(models, &tablelb.LoadBalancerListenerTable{
-				CloudID:       item.CloudID,
-				Name:          item.Name,
-				Vendor:        item.Vendor,
-				AccountID:     item.AccountID,
-				BkBizID:       item.BkBizID,
-				LBID:          item.LbID,
-				CloudLBID:     item.CloudLbID,
-				Protocol:      item.Protocol,
-				Port:          item.Port,
-				DefaultDomain: item.Domain,
-				SniSwitch:     item.SniSwitch,
-				Creator:       kt.User,
-				Reviser:       kt.User,
-			})
-		}
-		lblIDs, err := svc.dao.LoadBalancerListener().BatchCreateWithTx(kt, txn, models)
-		if err != nil {
-			logs.Errorf("[%s]fail to batch create listener, err: %v, rid:%s", err, kt.Rid)
-			return nil, fmt.Errorf("batch create listener failed, err: %v", err)
-		}
 
-		ruleModels := make([]*tablelb.TCloudLbUrlRuleTable, 0, len(req.ListenerWithRules))
+		lblIDs := make([]string, 0, len(req.ListenerWithRules))
 		for _, item := range req.ListenerWithRules {
-			certJSON, err := json.MarshalToString(item.Certificate)
+			lblID, ruleID, err := svc.createListenerWithRule(kt, txn, item)
 			if err != nil {
-				logs.Errorf("json marshal Certificate failed, err: %v", err)
-				return nil, errf.NewFromErr(errf.InvalidParameter, err)
+				logs.Errorf("fail to create listener with rule, err: %v, rid: %s", err, kt.Rid)
+				return nil, err
 			}
-
-			ruleModels = append(ruleModels, &tablelb.TCloudLbUrlRuleTable{
-				CloudID:            item.CloudRuleID,
-				RuleType:           item.RuleType,
-				LbID:               item.LbID,
-				CloudLbID:          item.CloudLbID,
-				LblID:              lblIDs[0],
-				CloudLBLID:         item.CloudID,
-				TargetGroupID:      item.TargetGroupID,
-				CloudTargetGroupID: item.CloudTargetGroupID,
-				Domain:             item.Domain,
-				URL:                item.Url,
-				Scheduler:          item.Scheduler,
-				SessionType:        item.SessionType,
-				SessionExpire:      item.SessionExpire,
-				Certificate:        types.JsonField(certJSON),
-				Creator:            kt.User,
-				Reviser:            kt.User,
-			})
-		}
-		ruleIDs, err := svc.dao.LoadBalancerTCloudUrlRule().BatchCreateWithTx(kt, txn, ruleModels)
-		if err != nil {
-			logs.Errorf("[%s]fail to batch create listener url rule, err: %v, rid:%s", err, kt.Rid)
-			return nil, fmt.Errorf("batch create listener url rule failed, err: %v", err)
-		}
-
-		ruleRelModels := make([]*tablelb.TargetGroupListenerRuleRelTable, 0, len(req.ListenerWithRules))
-		for _, item := range req.ListenerWithRules {
-			ruleRelModels = append(ruleRelModels, &tablelb.TargetGroupListenerRuleRelTable{
-				ListenerRuleID:   ruleIDs[0],
+			lblIDs = append(lblIDs, lblID)
+			if len(item.TargetGroupID) == 0 {
+				continue
+			}
+			ruleRelModels := []*tablelb.TargetGroupListenerRuleRelTable{{
+				ListenerRuleID:   ruleID,
 				ListenerRuleType: item.RuleType,
 				TargetGroupID:    item.TargetGroupID,
 				LbID:             item.LbID,
-				LblID:            lblIDs[0],
+				LblID:            lblID,
 				BindingStatus:    enumor.SuccessBindingStatus,
 				Creator:          kt.User,
 				Reviser:          kt.User,
-			})
+			}}
+			_, err = svc.dao.LoadBalancerTargetGroupListenerRuleRel().BatchCreateWithTx(kt, txn, ruleRelModels)
+			if err != nil {
+				logs.Errorf("fail to batch create listener rule rel, err: %v, rid:%s", err, kt.Rid)
+				return nil, fmt.Errorf("batch create listener rule rel failed, err: %v", err)
+			}
 		}
-		_, err = svc.dao.LoadBalancerTargetGroupListenerRuleRel().BatchCreateWithTx(kt, txn, ruleRelModels)
-		if err != nil {
-			logs.Errorf("[%s]fail to batch create listener rule rel, err: %v, rid:%s", err, kt.Rid)
-			return nil, fmt.Errorf("batch create listener rule rel failed, err: %v", err)
-		}
-
 		return lblIDs, nil
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	ids, ok := result.([]string)
-	if !ok {
-		return nil, fmt.Errorf("batch create listener with rule but return id type is not []string, id type: %v",
-			reflect.TypeOf(result).String())
+	return result.([]string), nil
+}
+
+func (svc *lbSvc) createListenerWithRule(kt *kit.Kit, txn *sqlx.Tx, item dataproto.ListenerWithRuleCreateReq) (
+	lblID string, ruleID string, err error) {
+
+	models := []*tablelb.LoadBalancerListenerTable{{
+		CloudID:       item.CloudID,
+		Name:          item.Name,
+		Vendor:        item.Vendor,
+		AccountID:     item.AccountID,
+		BkBizID:       item.BkBizID,
+		LBID:          item.LbID,
+		CloudLBID:     item.CloudLbID,
+		Protocol:      item.Protocol,
+		Port:          item.Port,
+		DefaultDomain: item.Domain,
+		SniSwitch:     item.SniSwitch,
+		Creator:       kt.User,
+		Reviser:       kt.User,
+	}}
+	lblIDs, err := svc.dao.LoadBalancerListener().BatchCreateWithTx(kt, txn, models)
+	if err != nil {
+		logs.Errorf("fail to batch create listener, err: %v, rid:%s", err, kt.Rid)
+		return "", "", fmt.Errorf("batch create listener failed, err: %v", err)
 	}
-	return ids, nil
+	certJSON, err := json.MarshalToString(item.Certificate)
+	if err != nil {
+		logs.Errorf("json marshal Certificate failed, err: %v", err)
+		return "", "", errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	ruleModels := []*tablelb.TCloudLbUrlRuleTable{{
+		CloudID:            item.CloudRuleID,
+		RuleType:           item.RuleType,
+		LbID:               item.LbID,
+		CloudLbID:          item.CloudLbID,
+		LblID:              lblIDs[0],
+		CloudLBLID:         item.CloudID,
+		TargetGroupID:      item.TargetGroupID,
+		CloudTargetGroupID: item.CloudTargetGroupID,
+		Domain:             item.Domain,
+		URL:                item.Url,
+		Scheduler:          item.Scheduler,
+		SessionType:        item.SessionType,
+		SessionExpire:      item.SessionExpire,
+		Certificate:        types.JsonField(certJSON),
+		Creator:            kt.User,
+		Reviser:            kt.User,
+	}}
+	ruleIDs, err := svc.dao.LoadBalancerTCloudUrlRule().BatchCreateWithTx(kt, txn, ruleModels)
+	if err != nil {
+		logs.Errorf("fail to batch create listener url rule, err: %v, rid:%s", err, kt.Rid)
+		return "", "", fmt.Errorf("batch create listener url rule failed, err: %v", err)
+	}
+	return lblIDs[0], ruleIDs[0], nil
 }
 
 // CreateResFlowLock 创建资源跟Flow的锁定关系

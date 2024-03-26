@@ -186,7 +186,7 @@ type TargetListResult = core.ListResultT[corelb.BaseTarget]
 // -------------------------- List TCloud Url Rule --------------------------
 
 // TCloudURLRuleListResult define tcloud url rule list result.
-type TCloudURLRuleListResult = core.ListResultT[corelb.BaseTCloudLbUrlRule]
+type TCloudURLRuleListResult = core.ListResultT[corelb.TCloudLbUrlRule]
 
 // TCloudUrlRuleBatchCreateReq ...
 type TCloudUrlRuleBatchCreateReq struct {

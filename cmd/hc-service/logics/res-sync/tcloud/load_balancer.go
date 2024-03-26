@@ -434,7 +434,6 @@ func convCloudToDBUpdate(id string,
 	lb := protocloud.LoadBalancerExtUpdateReq[corelb.TCloudClbExtension]{
 		ID:               id,
 		Name:             cvt.PtrToVal(cloud.LoadBalancerName),
-		BkBizID:          constant.UnassignedBiz,
 		Domain:           cvt.PtrToVal(cloud.LoadBalancerDomain),
 		IPVersion:        cloud.GetIPVersion(),
 		Status:           strconv.FormatUint(cvt.PtrToVal(cloud.Status), 10),

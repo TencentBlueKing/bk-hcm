@@ -31,7 +31,7 @@ type VpcDB struct {
 // TCloudComposedListener  规则和监听器的符合结构，七层监听器可能没有Rule
 type TCloudComposedListener struct {
 	*corelb.Listener[corelb.TCloudListenerExtension]
-	Rule *corelb.BaseTCloudLbUrlRule
+	Rule *corelb.TCloudLbUrlRule
 }
 
 // GetID ...

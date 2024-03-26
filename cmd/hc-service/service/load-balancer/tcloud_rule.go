@@ -193,7 +193,7 @@ func (svc *clbSvc) TCloudUpdateUrlRule(cts *rest.Contexts) (any, error) {
 
 // getL7RuleWithLb 查询同一个监听器下的规则
 func (svc *clbSvc) getL7RulesWithLb(kt *kit.Kit, lblID string, ruleIDs []string) (*corelb.BaseLoadBalancer,
-	[]corelb.BaseTCloudLbUrlRule, error) {
+	[]corelb.TCloudLbUrlRule, error) {
 
 	// 只能查到7层规则
 	ruleResp, err := svc.dataCli.TCloud.LoadBalancer.ListUrlRule(kt, &core.ListReq{
@@ -253,7 +253,7 @@ func (svc *clbSvc) TCloudBatchDeleteUrlRule(cts *rest.Contexts) (any, error) {
 	dbReq := &cloud.LoadBalancerBatchDeleteReq{}
 	if len(req.RuleIDs) > 0 {
 		// 指定规则id删除
-		var rules []corelb.BaseTCloudLbUrlRule
+		var rules []corelb.TCloudLbUrlRule
 		lb, rules, err = svc.getL7RulesWithLb(cts.Kit, lblID, req.RuleIDs)
 		if err != nil {
 			logs.Errorf("fail to get lb info for rule deletion by rule ids(%v), err: %v, rid: %s",
@@ -261,7 +261,7 @@ func (svc *clbSvc) TCloudBatchDeleteUrlRule(cts *rest.Contexts) (any, error) {
 			return nil, err
 		}
 		ruleOption.ListenerId = rules[0].CloudLBLID
-		ruleOption.CloudIDs = slice.Map(rules, func(r corelb.BaseTCloudLbUrlRule) string { return r.CloudID })
+		ruleOption.CloudIDs = slice.Map(rules, func(r corelb.TCloudLbUrlRule) string { return r.CloudID })
 		dbReq.Filter = tools.ContainersExpression("id", req.RuleIDs)
 
 	} else {
