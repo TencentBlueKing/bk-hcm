@@ -88,7 +88,7 @@ func (svc *lbSvc) fillRuleRelatedRes(kt *kit.Kit, urlRuleList *dataproto.TCloudU
 		lbIDs = append(lbIDs, ruleItem.LbID)
 		lblIDs = append(lblIDs, ruleItem.LblID)
 		targetIDs = append(targetIDs, ruleItem.TargetGroupID)
-		resList.Details = append(resList.Details, cslb.ListLbUrlRuleBase{BaseTCloudLbUrlRule: ruleItem})
+		resList.Details = append(resList.Details, cslb.ListLbUrlRuleBase{TCloudLbUrlRule: ruleItem})
 	}
 
 	// 批量获取lb信息

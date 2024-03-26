@@ -786,7 +786,7 @@ func (svc *clbSvc) UpdateTCloudDomainAttr(cts *rest.Contexts) (any, error) {
 }
 
 func (svc *clbSvc) updateTCloudDomainAttr(kt *kit.Kit, req *protolb.DomainAttrUpdateReq,
-	lblInfo *corelb.BaseListener) ([]corelb.BaseTCloudLbUrlRule, error) {
+	lblInfo *corelb.BaseListener) ([]corelb.TCloudLbUrlRule, error) {
 
 	// 获取规则列表
 	ruleOpt := &core.ListReq{

@@ -42,7 +42,7 @@ create table `load_balancer`
     `zones`                  json         not null,
     `backup_zones`           json                  default null,
     `lb_type`                varchar(64)  not null,
-    `ip_version`             varchar(64)  not null default "",
+    `ip_version`             varchar(64)  not null default '',
 
     `vpc_id`                 varchar(255) not null,
     `cloud_vpc_id`           varchar(255) not null,
@@ -230,7 +230,7 @@ create table `load_balancer_target_group`
   collate = utf8mb4_bin comment ='负载均衡目标组';
 
 -- 7. 目标组监听器关系表
-create table `target_listener_rule_rel`
+create table `target_group_listener_rule_rel`
 (
     `id`                 varchar(64) not null,
     `listener_rule_id`   varchar(64) not null,

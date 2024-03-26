@@ -87,8 +87,8 @@ func (req *LoadBalancerBatchCreateReq[T]) Validate() error {
 // LoadBalancerExtUpdateReq ...
 type LoadBalancerExtUpdateReq[T corelb.Extension] struct {
 	ID      string `json:"id" validate:"required"`
-	Name    string `json:"name"`
-	BkBizID int64  `json:"bk_biz_id"`
+	Name    string `json:"name,omitempty"`
+	BkBizID int64  `json:"bk_biz_id,omitempty"`
 
 	IPVersion            enumor.IPAddressType `json:"ip_version"`
 	PrivateIPv4Addresses []string             `json:"private_ipv4_addresses"`
@@ -186,7 +186,7 @@ type TargetListResult = core.ListResultT[corelb.BaseTarget]
 // -------------------------- List TCloud Url Rule --------------------------
 
 // TCloudURLRuleListResult define tcloud url rule list result.
-type TCloudURLRuleListResult = core.ListResultT[corelb.BaseTCloudLbUrlRule]
+type TCloudURLRuleListResult = core.ListResultT[corelb.TCloudLbUrlRule]
 
 // TCloudUrlRuleBatchCreateReq ...
 type TCloudUrlRuleBatchCreateReq struct {

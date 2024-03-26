@@ -154,7 +154,7 @@ type ListLbUrlRuleResult = core.ListResultT[ListLbUrlRuleBase]
 
 // ListLbUrlRuleBase define list lb url rule base.
 type ListLbUrlRuleBase struct {
-	corelb.BaseTCloudLbUrlRule
+	corelb.TCloudLbUrlRule
 	LblName              string              `json:"lbl_name"`
 	LbName               string              `json:"lb_name"`
 	PrivateIPv4Addresses []string            `json:"private_ipv4_addresses"`

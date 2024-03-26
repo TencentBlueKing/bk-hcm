@@ -353,7 +353,7 @@ func (svc *lbSvc) ListTCloudUrlRule(cts *rest.Contexts) (any, error) {
 		return &protocloud.TCloudURLRuleListResult{Count: result.Count}, nil
 	}
 
-	details := make([]corelb.BaseTCloudLbUrlRule, 0, len(result.Details))
+	details := make([]corelb.TCloudLbUrlRule, 0, len(result.Details))
 	for _, one := range result.Details {
 		tmpOne, err := convTableToBaseTCloudLbURLRule(cts.Kit, &one)
 		if err != nil {
@@ -366,7 +366,7 @@ func (svc *lbSvc) ListTCloudUrlRule(cts *rest.Contexts) (any, error) {
 }
 
 func convTableToBaseTCloudLbURLRule(kt *kit.Kit, one *tablelb.TCloudLbUrlRuleTable) (
-	*corelb.BaseTCloudLbUrlRule, error) {
+	*corelb.TCloudLbUrlRule, error) {
 
 	var healthCheck *corelb.TCloudHealthCheckInfo
 	err := json.UnmarshalFromString(string(one.HealthCheck), &healthCheck)
@@ -382,7 +382,7 @@ func convTableToBaseTCloudLbURLRule(kt *kit.Kit, one *tablelb.TCloudLbUrlRuleTab
 		return nil, err
 	}
 
-	return &corelb.BaseTCloudLbUrlRule{
+	return &corelb.TCloudLbUrlRule{
 		ID:                 one.ID,
 		CloudID:            one.CloudID,
 		Name:               one.Name,
