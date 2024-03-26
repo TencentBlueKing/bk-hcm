@@ -96,7 +96,13 @@ export default defineComponent({
             <span class={'config-security-item-name'}>{props.name}</span>
             <span class={'config-security-item-id'}>({props.cloudId})</span>
             <div class={'config-security-item-btn'}>
-              <Button theme='primary' text>
+              <Button
+                theme='primary'
+                text
+                onClick={() => {
+                  const url = `/#/business/security?cloud_id=${props.cloudId}`;
+                  window.open(url, '_blank');
+                }}>
                 查看更多
               </Button>
               <span class='icon hcm-icon bkhcm-icon-jump-fill ml5'></span>

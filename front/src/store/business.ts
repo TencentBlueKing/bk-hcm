@@ -146,5 +146,20 @@ export const useBusinessStore = defineStore({
         ${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/listeners/${id}/domains/list
       `);
     },
+    /**
+     * 获取负载均衡基本信息
+     */
+    getLbDetail(id: string) {
+      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}load_balancers/${id}`);
+    },
+    /**
+     * 更新负载均衡
+     */
+    updateLbDetail(id: string, data: any) {
+      return http.patch(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/load_balancers/${id}`,
+        data,
+      );
+    },
   },
 });
