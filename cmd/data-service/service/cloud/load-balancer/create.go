@@ -206,6 +206,10 @@ func convTargetGroupCreateReqToTable[T corelb.TargetGroupExtension](kt *kit.Kit,
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
+	vpcInfo, ok := vpcInfoMap[tg.CloudVpcID]
+	if !ok {
+		return nil, errf.Newf(errf.RecordNotFound, "cloudVpcID[%s] not found", tg.CloudVpcID)
+	}
 
 	targetGroup := &tablelb.LoadBalancerTargetGroupTable{
 		Name:            tg.Name,
@@ -213,8 +217,8 @@ func convTargetGroupCreateReqToTable[T corelb.TargetGroupExtension](kt *kit.Kit,
 		AccountID:       tg.AccountID,
 		BkBizID:         tg.BkBizID,
 		TargetGroupType: tg.TargetGroupType,
-		VpcID:           tg.VpcID,
-		CloudVpcID:      tg.CloudVpcID,
+		VpcID:           vpcInfo.ID,
+		CloudVpcID:      vpcInfo.CloudID,
 		Region:          tg.Region,
 		Protocol:        tg.Protocol,
 		Port:            tg.Port,
@@ -231,36 +235,29 @@ func convTargetGroupCreateReqToTable[T corelb.TargetGroupExtension](kt *kit.Kit,
 	if tg.Weight == 0 {
 		targetGroup.Weight = -1
 	}
-	if len(tg.VpcID) > 0 && len(tg.CloudVpcID) == 0 {
-		if vpcInfo, ok := vpcInfoMap[tg.VpcID]; ok {
-			targetGroup.CloudVpcID = vpcInfo.CloudID
-		}
-	}
 	return targetGroup, nil
 }
 
 func getVpcMapByIDs[T corelb.TargetGroupExtension](kt *kit.Kit, tgList []dataproto.TargetGroupBatchCreate[T]) (
 	map[string]cloud.VpcTable, error) {
 
-	vpcIDs := make([]string, 0)
+	vpcCloudIDs := make([]string, 0)
 	for _, item := range tgList {
-		if len(item.VpcID) > 0 {
-			vpcIDs = append(vpcIDs, item.VpcID)
-		}
+		vpcCloudIDs = append(vpcCloudIDs, item.CloudVpcID)
 	}
 	vpcOpt := &typesdao.ListOption{
-		Filter: tools.ContainersExpression("id", vpcIDs),
+		Filter: tools.ContainersExpression("cloud_id", vpcCloudIDs),
 		Page:   core.NewDefaultBasePage(),
 	}
 	vpcResult, err := svc.dao.Vpc().List(kt, vpcOpt)
 	if err != nil {
-		logs.Errorf("list vpc by ids failed, vpcIDs: %v, err: %v, rid: %s", vpcIDs, err, kt.Rid)
-		return nil, fmt.Errorf("list vpc by ids failed, err: %v", err)
+		logs.Errorf("list vpc by ids failed, vpcCloudIDs: %v, err: %v, rid: %s", vpcCloudIDs, err, kt.Rid)
+		return nil, fmt.Errorf("list vpc by cloudIDs failed, err: %v", err)
 	}
 
 	idMap := make(map[string]cloud.VpcTable, len(vpcResult.Details))
 	for _, item := range vpcResult.Details {
-		idMap[item.ID] = item
+		idMap[item.CloudID] = item
 	}
 
 	return idMap, nil

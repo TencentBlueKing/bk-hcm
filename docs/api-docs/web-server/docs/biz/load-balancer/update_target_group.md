@@ -21,7 +21,7 @@ PATCH /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{id}
 | protocol         | string       | 是   | 协议             |
 | port             | int          | 是   | 端口             |
 | region           | string       | 是   | 地域             |
-| vpc_id           | string array | 是   | vpcID的数组      |
+| cloud_vpc_id     | string array | 是   | 云端vpc的ID数组   |
 | memo             | string       | 否   | 备注             |
 
 ### 调用示例
@@ -35,7 +35,7 @@ PATCH /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{id}
   "protocol": "TCP",
   "port": 22,
   "region": "ap-hk",
-  "vpc_id": ["xxxx", "xxxx"]
+  "cloud_vpc_id": ["xxxx", "xxxx"]
   "memo": ""
 }
 ```

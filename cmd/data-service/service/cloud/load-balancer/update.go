@@ -190,23 +190,18 @@ func (svc *lbSvc) UpdateTargetGroup(cts *rest.Contexts) (interface{}, error) {
 		updateData.TargetGroupType = req.TargetGroupType
 	}
 	if len(req.CloudVpcID) > 0 {
-		updateData.CloudVpcID = req.CloudVpcID
-	}
-	if len(req.VpcID) > 0 {
-		// 根据vpcID查询VPC信息，如查不到cloudVpcID则报错
-		updateData.VpcID = req.VpcID
-		vpcReq := []dataproto.TargetGroupBatchCreate[corelb.TCloudTargetGroupExtension]{{VpcID: req.VpcID}}
+		// 根据cloudVpcID查询VPC信息，如查不到vpcInfo则报错
+		vpcReq := []dataproto.TargetGroupBatchCreate[corelb.TCloudTargetGroupExtension]{{CloudVpcID: req.CloudVpcID}}
 		vpcInfoMap, err := getVpcMapByIDs(cts.Kit, vpcReq)
 		if err != nil {
 			return nil, err
 		}
-		if len(req.VpcID) > 0 {
-			vpcInfo, ok := vpcInfoMap[req.VpcID]
-			if !ok {
-				return nil, errf.Newf(errf.RecordNotFound, "vpcID[%s] not found", req.VpcID)
-			}
-			updateData.CloudVpcID = vpcInfo.CloudID
+		vpcInfo, ok := vpcInfoMap[req.CloudVpcID]
+		if !ok {
+			return nil, errf.Newf(errf.RecordNotFound, "vpcID[%s] not found", req.VpcID)
 		}
+		updateData.VpcID = vpcInfo.ID
+		updateData.CloudVpcID = vpcInfo.CloudID
 	}
 	if len(req.Region) > 0 {
 		updateData.Region = req.Region
