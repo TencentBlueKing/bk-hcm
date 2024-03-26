@@ -297,10 +297,10 @@ func (req *ResFlowRelBatchCreateReq) Validate() error {
 
 // ResFlowRelCreateReq res flow rel create req.
 type ResFlowRelCreateReq struct {
-	ResID    string `json:"res_id" validate:"required"`
-	FlowID   string `json:"flow_id" validate:"required"`
-	TaskType string `json:"task_type" validate:"omitempty"`
-	Status   string `json:"status" validate:"omitempty"`
+	ResID    string          `json:"res_id" validate:"required"`
+	FlowID   string          `json:"flow_id" validate:"required"`
+	TaskType enumor.TaskType `json:"task_type" validate:"omitempty"`
+	Status   string          `json:"status" validate:"omitempty"`
 }
 
 // Validate validate rel flow rel create
@@ -327,11 +327,11 @@ func (req *ResFlowRelBatchUpdateReq) Validate() error {
 
 // ResFlowRelUpdateReq res flow rel update req.
 type ResFlowRelUpdateReq struct {
-	ID       string `json:"id" validate:"required"`
-	ResID    string `json:"res_id" validate:"required"`
-	FlowID   string `json:"flow_id" validate:"required"`
-	TaskType string `json:"task_type" validate:"omitempty"`
-	Status   string `json:"status" validate:"omitempty"`
+	ID       string          `json:"id" validate:"required"`
+	ResID    string          `json:"res_id" validate:"required"`
+	FlowID   string          `json:"flow_id" validate:"required"`
+	TaskType enumor.TaskType `json:"task_type" validate:"omitempty"`
+	Status   string          `json:"status" validate:"omitempty"`
 }
 
 // Validate validate res flow rel update
@@ -360,5 +360,21 @@ type ResFlowLockDeleteReq struct {
 
 // Validate delete request.
 func (req *ResFlowLockDeleteReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// -------------------------- Lock Res Flow --------------------------
+
+// ResFlowLockReq res flow lock req.
+type ResFlowLockReq struct {
+	ResID    string          `json:"res_id" validate:"required"`
+	ResType  string          `json:"res_type" validate:"required"`
+	FlowID   string          `json:"flow_id" validate:"required"`
+	Status   string          `json:"status" validate:"required"`
+	TaskType enumor.TaskType `json:"task_type" validate:"omitempty"`
+}
+
+// Validate validate res flow lock
+func (req *ResFlowLockReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

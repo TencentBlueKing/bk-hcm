@@ -373,9 +373,9 @@ func (svc *lbSvc) BatchUpdateResFlowRel(cts *rest.Contexts) (any, error) {
 	return svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
 		for _, item := range req.ResFlowRels {
 			model := &tablelb.LoadBalancerFlowRelTable{
-				ResID:   item.ResID,
-				Status:  item.Status,
-				Reviser: cts.Kit.User,
+				TaskType: item.TaskType,
+				Status:   item.Status,
+				Reviser:  cts.Kit.User,
 			}
 			filter := tools.ExpressionAnd(
 				tools.RuleEqual("id", item.ID),
@@ -389,4 +389,51 @@ func (svc *lbSvc) BatchUpdateResFlowRel(cts *rest.Contexts) (any, error) {
 		}
 		return nil, nil
 	})
+}
+
+// ResFlowUnLock res flow unlock.
+func (svc *lbSvc) ResFlowUnLock(cts *rest.Contexts) (interface{}, error) {
+	req := new(dataproto.ResFlowLockReq)
+	if err := cts.DecodeInto(req); err != nil {
+		logs.Errorf("res flow unlock decode failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		logs.Errorf("res flow unlock validate failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		lockDelFilter := tools.ExpressionAnd(
+			tools.RuleEqual("res_id", req.ResID),
+			tools.RuleEqual("res_type", req.ResType),
+			tools.RuleEqual("owner", req.FlowID),
+		)
+		if err := svc.dao.LoadBalancerFlowLock().DeleteWithTx(cts.Kit, txn, lockDelFilter); err != nil {
+			logs.Errorf("delete res flow lock failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
+			return nil, err
+		}
+
+		relModel := &tablelb.LoadBalancerFlowRelTable{
+			TaskType: req.TaskType,
+			Status:   req.Status,
+			Reviser:  cts.Kit.User,
+		}
+		filter := tools.ExpressionAnd(
+			tools.RuleEqual("res_id", req.ResID),
+			tools.RuleEqual("flow_id", req.FlowID),
+		)
+		if err := svc.dao.LoadBalancerFlowRel().Update(cts.Kit, filter, relModel); err != nil {
+			logs.Errorf("update res flow rel failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
+			return nil, fmt.Errorf("update res flow rel failed, err: %v", err)
+		}
+		return nil, nil
+	})
+	if err != nil {
+		logs.Errorf("res flow unlock failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
 }

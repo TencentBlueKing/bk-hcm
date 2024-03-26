@@ -148,3 +148,13 @@ func (cli *LoadBalancerClient) ListResFlowRel(kt *kit.Kit, req *core.ListReq) (*
 	return common.Request[core.ListReq, dataproto.ResFlowRelListResult](
 		cli.client, rest.POST, kt, req, "/res_flow_rels/list")
 }
+
+// ResFlowLock res flow lock.
+func (cli *LoadBalancerClient) ResFlowLock(kt *kit.Kit, req *dataproto.ResFlowLockReq) error {
+	return common.RequestNoResp[dataproto.ResFlowLockReq](cli.client, rest.POST, kt, req, "/res_flow_locks/lock")
+}
+
+// ResFlowUnLock res flow unlock.
+func (cli *LoadBalancerClient) ResFlowUnLock(kt *kit.Kit, req *dataproto.ResFlowLockReq) error {
+	return common.RequestNoResp[dataproto.ResFlowLockReq](cli.client, rest.POST, kt, req, "/res_flow_locks/unlock")
+}

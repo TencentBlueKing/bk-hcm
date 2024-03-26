@@ -166,7 +166,7 @@ type ListLbUrlRuleBase struct {
 	VpcID                string              `json:"vpc_id"`
 	VpcName              string              `json:"vpc_name"`
 	CloudVpcID           string              `json:"cloud_vpc_id"`
-	InstType             string              `json:"inst_type"`
+	InstType             enumor.InstType     `json:"inst_type"`
 }
 
 // -------------------------- List TargetGroup --------------------------
@@ -215,6 +215,7 @@ type TargetGroupListenerRelAssociateReq struct {
 	TargetGroupID  string `json:"target_group_id" validate:"required"`
 }
 
+// Validate validate target group listener rel associate
 func (req *TargetGroupListenerRelAssociateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

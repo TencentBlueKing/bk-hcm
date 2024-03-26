@@ -48,11 +48,11 @@ var LoadBalancerFlowRelColumnsDescriptor = utils.ColumnDescriptors{
 
 // LoadBalancerFlowRelTable LoadBalancer与FlowID关系表
 type LoadBalancerFlowRelTable struct {
-	ID       string `db:"id" validate:"lte=64" json:"id"`
-	ResID    string `db:"res_id" validate:"lte=64" json:"res_id"`
-	FlowID   string `db:"flow_id" validate:"lte=64" json:"flow_id"`
-	TaskType string `db:"task_type" validate:"lte=64" json:"task_type"`
-	Status   string `db:"status" validate:"lte=64" json:"status"`
+	ID       string          `db:"id" validate:"lte=64" json:"id"`
+	ResID    string          `db:"res_id" validate:"lte=64" json:"res_id"`
+	FlowID   string          `db:"flow_id" validate:"lte=64" json:"flow_id"`
+	TaskType enumor.TaskType `db:"task_type" validate:"lte=64" json:"task_type"`
+	Status   string          `db:"status" validate:"lte=64" json:"status"`
 
 	Creator   string     `db:"creator" validate:"lte=64" json:"creator"`
 	Reviser   string     `db:"reviser" validate:"lte=64" json:"reviser"`

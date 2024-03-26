@@ -138,11 +138,11 @@ type BaseTCloudLbUrlRule struct {
 	*core.Revision `json:",inline"`
 }
 
-// BaseClbTarget define base clb target.
-type BaseClbTarget struct {
+// BaseLoadBalancerTarget define base load balancer target.
+type BaseLoadBalancerTarget struct {
 	ID                 string            `json:"id"`
 	AccountID          string            `json:"account_id"`
-	InstType           string            `json:"inst_type"`
+	InstType           enumor.InstType   `json:"inst_type"`
 	InstID             string            `json:"inst_id"`
 	CloudInstID        string            `json:"cloud_inst_id"`
 	InstName           string            `json:"inst_name"`
@@ -157,8 +157,8 @@ type BaseClbTarget struct {
 	*core.Revision     `json:",inline"`
 }
 
-// BaseClbTargetGroup define base clb target group.
-type BaseClbTargetGroup struct {
+// BaseLoadBalancerTargetGroup define base load balancer target group.
+type BaseLoadBalancerTargetGroup struct {
 	ID              string                 `json:"id"`
 	CloudID         string                 `json:"cloud_id"`
 	Name            string                 `json:"name"`
@@ -187,10 +187,10 @@ type BaseResFlowLock struct {
 
 // BaseResFlowRel define base res flow rel.
 type BaseResFlowRel struct {
-	ID             string `json:"id"`
-	ResID          string `json:"res_id"`
-	FlowID         string `json:"flow_id"`
-	TaskType       string `json:"task_type"`
-	Status         string `json:"status"`
+	ID             string          `json:"id"`
+	ResID          string          `json:"res_id"`
+	FlowID         string          `json:"flow_id"`
+	TaskType       enumor.TaskType `json:"task_type"`
+	Status         string          `json:"status"`
 	*core.Revision `json:",inline"`
 }
