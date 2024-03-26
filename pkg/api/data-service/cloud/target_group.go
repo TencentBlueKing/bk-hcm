@@ -20,6 +20,7 @@
 package cloud
 
 import (
+	"errors"
 	"fmt"
 
 	"hcm/pkg/api/core"
@@ -282,7 +283,7 @@ type ListenerWithRuleCreateReq struct {
 	Scheduler          string                        `json:"scheduler" validate:"required"`
 	RuleType           enumor.RuleType               `json:"rule_type" validate:"required"`
 	SessionType        string                        `json:"session_type" validate:"required"`
-	SessionExpire      int64                         `json:"session_expire" validate:"required"`
+	SessionExpire      int64                         `json:"session_expire" validate:"omitempty"`
 	TargetGroupID      string                        `json:"target_group_id" validate:"omitempty"`
 	CloudTargetGroupID string                        `json:"cloud_target_group_id" validate:"omitempty"`
 	Domain             string                        `json:"domain" validate:"omitempty"`
@@ -293,6 +294,9 @@ type ListenerWithRuleCreateReq struct {
 
 // Validate 验证监听器跟规则创建的参数
 func (req *ListenerWithRuleCreateReq) Validate() error {
+	if req.SessionExpire > 0 && (req.SessionExpire < 30 || req.SessionExpire > 3600) {
+		return errors.New("session_expire must be '0' or between `30` and `3600` ")
+	}
 	return validator.Validate.Struct(req)
 }
 

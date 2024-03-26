@@ -87,8 +87,8 @@ func (req *LoadBalancerBatchCreateReq[T]) Validate() error {
 // LoadBalancerExtUpdateReq ...
 type LoadBalancerExtUpdateReq[T corelb.Extension] struct {
 	ID      string `json:"id" validate:"required"`
-	Name    string `json:"name"`
-	BkBizID int64  `json:"bk_biz_id"`
+	Name    string `json:"name,omitempty"`
+	BkBizID int64  `json:"bk_biz_id,omitempty"`
 
 	IPVersion            enumor.IPAddressType `json:"ip_version"`
 	PrivateIPv4Addresses []string             `json:"private_ipv4_addresses"`

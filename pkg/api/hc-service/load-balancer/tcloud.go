@@ -259,7 +259,7 @@ type ListenerWithRuleCreateReq struct {
 	Port          int64                         `json:"port" validate:"required"`
 	Scheduler     string                        `json:"scheduler" validate:"required"`
 	SessionType   string                        `json:"session_type" validate:"required"`
-	SessionExpire int64                         `json:"session_expire" validate:"required"`
+	SessionExpire int64                         `json:"session_expire" validate:"omitempty"`
 	TargetGroupID string                        `json:"target_group_id" validate:"required"`
 	Domain        string                        `json:"domain" validate:"omitempty"`
 	Url           string                        `json:"url" validate:"omitempty"`
@@ -274,8 +274,8 @@ func (req *ListenerWithRuleCreateReq) Validate() error {
 			return errors.New("domain and url is required")
 		}
 	}
-	if req.SessionExpire > 0 && req.SessionExpire < constant.ListenerMinSessionExpire {
-		return fmt.Errorf("invalid session_expire min value: %d", constant.ListenerMinSessionExpire)
+	if req.SessionExpire > 0 && (req.SessionExpire < 30 || req.SessionExpire > 3600) {
+		return errors.New("session_expire must be '0' or between `30` and `3600`")
 	}
 	return validator.Validate.Struct(req)
 }
