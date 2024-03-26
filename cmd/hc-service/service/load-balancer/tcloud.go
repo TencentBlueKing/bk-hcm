@@ -564,7 +564,7 @@ func (svc *clbSvc) UpdateTCloudListener(cts *rest.Contexts) (any, error) {
 			},
 		},
 	}
-	_, err = svc.dataCli.TCloud.LoadBalancer.BatchUpdateTCloudListener(cts.Kit, lblReq)
+	err = svc.dataCli.TCloud.LoadBalancer.BatchUpdateTCloudListener(cts.Kit, lblReq)
 	if err != nil {
 		logs.Errorf("update tcloud listener base failed, req: %+v, lblReq: %+v, err: %v, rid: %s",
 			req, lblReq, err, cts.Kit.Rid)
@@ -774,7 +774,7 @@ func (svc *clbSvc) UpdateTCloudDomainAttr(cts *rest.Contexts) (any, error) {
 				DefaultDomain: req.NewDomain,
 			}},
 		}
-		_, err = svc.dataCli.TCloud.LoadBalancer.BatchUpdateTCloudListener(cts.Kit, lblReq)
+		err = svc.dataCli.TCloud.LoadBalancer.BatchUpdateTCloudListener(cts.Kit, lblReq)
 		if err != nil {
 			logs.Errorf("update tcloud listener base failed, req: %+v, lblID: %s, err: %v, rid: %s",
 				req, lblID, err, cts.Kit.Rid)

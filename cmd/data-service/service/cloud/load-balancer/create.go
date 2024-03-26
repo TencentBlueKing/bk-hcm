@@ -437,7 +437,7 @@ func batchCreateListener(cts *rest.Contexts, svc *lbSvc) (any, error) {
 				CloudLBID:     item.CloudLbID,
 				Protocol:      item.Protocol,
 				Port:          item.Port,
-				DefaultDomain: item.Domain,
+				DefaultDomain: item.DefaultDomain,
 				Creator:       cts.Kit.User,
 				Reviser:       cts.Kit.User,
 			})

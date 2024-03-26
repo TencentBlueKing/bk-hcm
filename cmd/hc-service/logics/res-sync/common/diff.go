@@ -55,6 +55,7 @@ import (
 	dataeip "hcm/pkg/api/data-service/cloud/eip"
 )
 
+// CloudResType 云资源类型
 type CloudResType interface {
 	GetCloudID() string
 
@@ -148,9 +149,11 @@ type CloudResType interface {
 		typeargstpl.TCloudArgsTplServiceGroup |
 
 		cert.TCloudCert |
-		typeslb.TCloudClb
+		typeslb.TCloudClb |
+		typeslb.TCloudListener
 }
 
+// DBResType 本地资源类型
 type DBResType interface {
 	GetID() string
 	GetCloudID() string
@@ -240,7 +243,8 @@ type DBResType interface {
 
 		*corecert.Cert[corecert.TCloudCertExtension] |
 
-		corelb.TCloudLoadBalancer
+		corelb.TCloudLoadBalancer |
+		TCloudComposedListener
 }
 
 // Diff 对比云和db资源，划分出新增数据，更新数据，删除数据。

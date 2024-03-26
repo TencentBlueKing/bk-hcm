@@ -168,7 +168,16 @@ type TCloudHealthCheckInfo struct {
 	SourceIpType *int64 `json:"source_ip_type,omitempty"`
 	// 自定义探测相关参数。健康检查协议CheckType的值取CUSTOM时，必填此字段，代表健康检查的输入格式，可取值：HEX或TEXT；
 	// 取值为HEX时，SendContext和RecvContext的字符只能在0123456789ABCDEF中选取且长度必须是偶数位。（仅适用于TCP/UDP监听器）
-	ContextType *string `json:"context_type"`
+	ContextType *string `json:"context_type,omitempty"`
+	// （仅适用于TCP/UDP监听器）。自定义探测相关参数。健康检查协议CheckType的值取CUSTOM时，必填此字段，
+	// 代表健康检查发送的请求内容，只允许ASCII可见字符，最大长度限制500。
+	SendContext *string `json:"send_context,omitempty"`
+	// （仅适用于TCP/UDP监听器）。 自定义探测相关参数。健康检查协议CheckType的值取CUSTOM时，必填此字段，
+	// 代表健康检查返回的结果，只允许ASCII可见字符，最大长度限制500。
+	RecvContext *string `json:"recv_context,omitempty"`
+	// GRPC健康检查状态码（仅适用于后端转发协议为GRPC的规则）。
+	// 默认值为 12，可输入值为数值、多个数值, 或者范围，例如 20 或 20,25 或 0-99
+	ExtendedCode *string `json:"extended_code,omitempty"`
 }
 
 // TCloudCertificateInfo 证书信息，不存储具体证书信息，只保存对应id
@@ -178,10 +187,10 @@ type TCloudCertificateInfo struct {
 	// CA证书，认证RS侧用的证书，只需要公钥
 	CaCloudID *string `json:"ca_cloud_id,omitempty"`
 	// 客户端证书，客户端向CLB发起请求时认证CLB来源是否可靠的证书。可以配置两个不同的加密类型的证书，
-	ClientCloudIDs []string `json:"client_cloud_ids,omitempty"`
+	CertCloudIDs []string `json:"cert_cloud_ids,omitempty"`
 }
 
 // TCloudListenerExtension 腾讯云监听器拓展
 type TCloudListenerExtension struct {
-	Certificate *TCloudCertificateInfo `json:"certificate"`
+	Certificate *TCloudCertificateInfo `json:"certificate,omitempty"`
 }

@@ -97,22 +97,22 @@ func (t *TCloudImpl) CountClb(kt *kit.Kit, region string) (int32, error) {
 	return int32(*resp.Response.TotalCount), nil
 }
 
-// ListListeners list listeners.
+// ListListener list listener .
 // reference: https://cloud.tencent.com/document/api/214/30686
-func (t *TCloudImpl) ListListeners(kt *kit.Kit, opt *typelb.TCloudListListenersOption) (
-	[]typelb.TCloudListener, int32, error) {
+func (t *TCloudImpl) ListListener(kt *kit.Kit, opt *typelb.TCloudListListenersOption) (
+	[]typelb.TCloudListener, error) {
 
 	if opt == nil {
-		return nil, 0, errf.New(errf.InvalidParameter, "list option is required")
+		return nil, errf.New(errf.InvalidParameter, "list option is required")
 	}
 
 	if err := opt.Validate(); err != nil {
-		return nil, 0, errf.NewFromErr(errf.InvalidParameter, err)
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	client, err := t.clientSet.ClbClient(opt.Region)
 	if err != nil {
-		return nil, 0, fmt.Errorf("new tcloud clb client failed, region: %s, err: %v", opt.Region, err)
+		return nil, fmt.Errorf("new tcloud clb client failed, region: %s, err: %v", opt.Region, err)
 	}
 
 	req := clb.NewDescribeListenersRequest()
@@ -133,7 +133,7 @@ func (t *TCloudImpl) ListListeners(kt *kit.Kit, opt *typelb.TCloudListListenersO
 	resp, err := client.DescribeListenersWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("list tcloud listeners failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
-		return nil, 0, err
+		return nil, err
 	}
 
 	listeners := make([]typelb.TCloudListener, 0, len(resp.Response.Listeners))
@@ -141,12 +141,7 @@ func (t *TCloudImpl) ListListeners(kt *kit.Kit, opt *typelb.TCloudListListenersO
 		listeners = append(listeners, typelb.TCloudListener{Listener: one})
 	}
 
-	totalCount := int32(0)
-	if resp != nil && resp.Response != nil && resp.Response.TotalCount != nil {
-		totalCount = int32(*resp.Response.TotalCount)
-	}
-
-	return listeners, totalCount, nil
+	return listeners, nil
 }
 
 // ListTargets 获取监听器后端绑定的机器列表信息.

@@ -174,6 +174,9 @@ func (req *LoadBalancerBatchDeleteReq) Validate() error {
 // ListenerListResult define listener list result.
 type ListenerListResult = core.ListResultT[corelb.BaseListener]
 
+// TCloudListenerListResult ...
+type TCloudListenerListResult = core.ListResultT[corelb.Listener[corelb.TCloudListenerExtension]]
+
 // -------------------------- List Target --------------------------
 
 // TargetListResult define target list result.

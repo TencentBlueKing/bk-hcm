@@ -28,3 +28,11 @@ const (
 	// ListenerMinSessionExpire 监听器最短的会话过期时间，单位秒
 	ListenerMinSessionExpire = 30
 )
+
+// 腾讯云CLB相关常量
+const (
+	// TCLBDescribeMax 腾讯云CLB默认查询大小
+	TCLBDescribeMax = 20
+	// TCLBDeleteProtect 腾讯云负载均衡删除保护
+	TCLBDeleteProtect = "DeleteProtect"
+)

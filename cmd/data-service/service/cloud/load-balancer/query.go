@@ -249,6 +249,44 @@ func (svc *lbSvc) ListListener(cts *rest.Contexts) (interface{}, error) {
 	return &protocloud.ListenerListResult{Details: details}, nil
 }
 
+// ListListenerExt list listener with extension.
+func (svc *lbSvc) ListListenerExt(cts *rest.Contexts) (any, error) {
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Fields: req.Fields,
+		Filter: req.Filter,
+		Page:   req.Page,
+	}
+	result, err := svc.dao.LoadBalancerListener().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list listener failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list listener failed, err: %v", err)
+	}
+
+	if req.Page.Count {
+		return &protocloud.ListenerListResult{Count: result.Count}, nil
+	}
+
+	details := make([]corelb.Listener[corelb.TCloudListenerExtension], 0, len(result.Details))
+	for _, one := range result.Details {
+		tmpOne, err := convTableToListener[corelb.TCloudListenerExtension](&one)
+		if err != nil {
+			logs.Errorf("fail to conv listener with extension, err: %v, rid: %s", err, cts.Kit.Rid)
+		}
+		details = append(details, *tmpOne)
+	}
+
+	return &protocloud.TCloudListenerListResult{Details: details}, nil
+}
+
 func convTableToBaseListener(one *tablelb.LoadBalancerListenerTable) *corelb.BaseListener {
 	return &corelb.BaseListener{
 		ID:            one.ID,
@@ -272,6 +310,21 @@ func convTableToBaseListener(one *tablelb.LoadBalancerListenerTable) *corelb.Bas
 			UpdatedAt: one.UpdatedAt.String(),
 		},
 	}
+}
+
+func convTableToListener[T corelb.ListenerExtension](table *tablelb.LoadBalancerListenerTable) (
+	*corelb.Listener[T], error) {
+	base := convTableToBaseListener(table)
+	extension := new(T)
+	if table.Extension != "" {
+		if err := json.UnmarshalFromString(string(table.Extension), extension); err != nil {
+			return nil, fmt.Errorf("fail unmarshal listener extension, err: %v", err)
+		}
+	}
+	return &corelb.Listener[T]{
+		BaseListener: base,
+		Extension:    extension,
+	}, nil
 }
 
 // ListTCloudUrlRule list tcloud url rule.
@@ -554,7 +607,7 @@ func (svc *lbSvc) GetListener(cts *rest.Contexts) (any, error) {
 	lblInfo := result.Details[0]
 	switch lblInfo.Vendor {
 	case enumor.TCloud:
-		return convTableToBaseListener(&lblInfo), nil
+		return convTableToListener(&lblInfo)
 	default:
 		return nil, fmt.Errorf("unsupport vendor: %s", vendor)
 	}
