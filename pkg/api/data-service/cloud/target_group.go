@@ -232,16 +232,16 @@ func (req *ListenerBatchCreateReq) Validate() error {
 
 // ListenersCreateReq listener create req.
 type ListenersCreateReq struct {
-	CloudID   string              `json:"cloud_id" validate:"required"`
-	Name      string              `json:"name" validate:"required"`
-	Vendor    enumor.Vendor       `json:"vendor" validate:"required"`
-	AccountID string              `json:"account_id" validate:"required"`
-	BkBizID   int64               `json:"bk_biz_id" validate:"omitempty"`
-	LbID      string              `json:"lb_id" validate:"required"`
-	CloudLbID string              `json:"cloud_lb_id" validate:"required"`
-	Protocol  enumor.ProtocolType `json:"protocol" validate:"required"`
-	Port      int64               `json:"port" validate:"required"`
-	Domain    string              `json:"domain" validate:"omitempty"`
+	CloudID       string              `json:"cloud_id" validate:"required"`
+	Name          string              `json:"name" validate:"required"`
+	Vendor        enumor.Vendor       `json:"vendor" validate:"required"`
+	AccountID     string              `json:"account_id" validate:"required"`
+	BkBizID       int64               `json:"bk_biz_id" validate:"omitempty"`
+	LbID          string              `json:"lb_id" validate:"required"`
+	CloudLbID     string              `json:"cloud_lb_id" validate:"required"`
+	Protocol      enumor.ProtocolType `json:"protocol" validate:"required"`
+	Port          int64               `json:"port" validate:"required"`
+	DefaultDomain string              `json:"default_domain" validate:"omitempty"`
 }
 
 // Validate 验证监听器创建参数

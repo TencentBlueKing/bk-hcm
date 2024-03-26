@@ -98,17 +98,17 @@ func (cli *client) listener(kt *kit.Kit, opt *SyncListenerOfSingleLBOption) (
 	addSlice, updateMap, delCloudIDs := common.Diff[typeslb.TCloudListener, common.TCloudComposedListener](
 		cloudListeners, dbListeners, isListenerChange)
 
-	// 删除云上已经删除的负载均衡实例
+	// 删除云上已经删除的监听器实例
 	if err = cli.deleteListener(kt, opt, delCloudIDs); err != nil {
 		return nil, err
 	}
 
-	// 创建云上新增负载均衡实例
+	// 创建云上新增监听器实例
 	_, err = cli.createListener(kt, opt, addSlice)
 	if err != nil {
 		return nil, err
 	}
-	// 更新变更负载均衡
+	// 更新变更监听器
 	if err = cli.updateListener(kt, opt.BizID, updateMap); err != nil {
 		return nil, err
 	}
@@ -171,7 +171,7 @@ func (cli *client) deleteListener(kt *kit.Kit, opt *SyncListenerOfSingleLBOption
 	err := cli.dbCli.Global.LoadBalancer.DeleteListener(kt, delReq)
 	if err != nil {
 		logs.Errorf("fail to delete listeners(ids:%v) while sync, err: %v, syncOpt: %+v, rid: %s",
-			cloudIds, opt, err, kt.Rid)
+			cloudIds, err, opt, kt.Rid)
 		return err
 	}
 	return nil
@@ -186,22 +186,23 @@ func (cli *client) createListener(kt *kit.Kit, syncOpt *SyncListenerOfSingleLBOp
 	dbListeners := make([]dataproto.ListenersCreateReq, 0, len(addSlice))
 	for _, lbl := range addSlice {
 		dbListeners = append(dbListeners, dataproto.ListenersCreateReq{
-			CloudID:   lbl.GetCloudID(),
-			Name:      cvt.PtrToVal(lbl.ListenerName),
-			Vendor:    enumor.TCloud,
-			AccountID: syncOpt.AccountID,
-			BkBizID:   syncOpt.BizID,
-			LbID:      syncOpt.LBID,
-			CloudLbID: syncOpt.CloudLBID,
-			Protocol:  cvt.PtrToVal((*enumor.ProtocolType)(lbl.Protocol)),
-			Port:      cvt.PtrToVal(lbl.Port),
+			CloudID:       lbl.GetCloudID(),
+			Name:          cvt.PtrToVal(lbl.ListenerName),
+			Vendor:        enumor.TCloud,
+			AccountID:     syncOpt.AccountID,
+			BkBizID:       syncOpt.BizID,
+			LbID:          syncOpt.LBID,
+			CloudLbID:     syncOpt.CloudLBID,
+			Protocol:      cvt.PtrToVal((*enumor.ProtocolType)(lbl.Protocol)),
+			Port:          cvt.PtrToVal(lbl.Port),
+			DefaultDomain: getDefaultDomain(lbl),
 		})
 	}
 	createResult, err := cli.dbCli.TCloud.LoadBalancer.BatchCreateTCloudListener(kt,
 		&dataproto.ListenerBatchCreateReq{Listeners: dbListeners})
 	if err != nil {
 		logs.Errorf("fail to create listener while sync, err: %v syncOpt: %+v, rid: %s",
-			syncOpt, err, kt.Rid)
+			err, syncOpt, kt.Rid)
 		return nil, err
 	}
 
@@ -218,10 +219,11 @@ func (cli *client) updateListener(kt *kit.Kit, bizID int64, updateMap map[string
 	for id, lbl := range updateMap {
 
 		updates = append(updates, &dataproto.TCloudListenerUpdate{
-			ID:        id,
-			Name:      cvt.PtrToVal(lbl.ListenerName),
-			BkBizID:   bizID,
-			SniSwitch: enumor.SniType(cvt.PtrToVal(lbl.SniSwitch)),
+			ID:            id,
+			Name:          cvt.PtrToVal(lbl.ListenerName),
+			BkBizID:       bizID,
+			SniSwitch:     enumor.SniType(cvt.PtrToVal(lbl.SniSwitch)),
+			DefaultDomain: getDefaultDomain(lbl),
 			Extension: &corelb.TCloudListenerExtension{
 				Certificate: convCert(lbl.Certificate),
 			},
@@ -259,7 +261,7 @@ func isListenerChange(cloud typeslb.TCloudListener, db common.TCloudComposedList
 	switch protocol {
 	case enumor.HttpProtocol:
 		// http 只有名称和默认域名可以变
-		if isDefaultDomainChange(cloud, db) {
+		if getDefaultDomain(cloud) != db.DefaultDomain {
 			return true
 		}
 	case enumor.HttpsProtocol:
@@ -358,7 +360,7 @@ func isHealthCheckChange(cloud *tclb.HealthCheck, db *corelb.TCloudHealthCheckIn
 }
 
 func isHttpsListenerChanged(cloud typeslb.TCloudListener, db common.TCloudComposedListener) bool {
-	if isDefaultDomainChange(cloud, db) {
+	if db.DefaultDomain != getDefaultDomain(cloud) {
 		return true
 	}
 	if cvt.PtrToVal(cloud.SniSwitch) != int64(db.SniSwitch) {
@@ -392,7 +394,7 @@ func isListenerCertChange(cloud *tclb.CertificateOutput, db *corelb.TCloudCertif
 		return true
 	}
 	// 云上没有，本地有
-	if len(cvt.PtrToVal(cloud.CertId)) == 0 && len(db.CertCloudIDs) >= 0 {
+	if len(cvt.PtrToVal(cloud.CertId)) == 0 && len(db.CertCloudIDs) > 0 {
 		return true
 	}
 
@@ -414,16 +416,14 @@ func isListenerCertChange(cloud *tclb.CertificateOutput, db *corelb.TCloudCertif
 	return false
 }
 
-func isDefaultDomainChange(cloud typeslb.TCloudListener, db common.TCloudComposedListener) bool {
-	if cloud.Rules != nil {
-		// 需要去规则中捞
-		for _, rule := range cloud.Rules {
-			if rule != nil && cvt.PtrToVal(rule.DefaultServer) && cvt.PtrToVal(rule.Domain) != db.DefaultDomain {
-				return true
-			}
+func getDefaultDomain(cloud typeslb.TCloudListener) string {
+	// 需要去规则中捞
+	for _, rule := range cloud.Rules {
+		if rule != nil && cvt.PtrToVal(rule.DefaultServer) {
+			return cvt.PtrToVal(rule.Domain)
 		}
 	}
-	return false
+	return ""
 }
 
 // SyncListenerOfSingleLBOption ...
