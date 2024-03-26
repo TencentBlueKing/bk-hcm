@@ -34,7 +34,6 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
-	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -319,7 +318,7 @@ func (g *securityGroup) TCloudSecurityGroupAssociateLoadBalancer(cts *rest.Conte
 	}
 
 	// 根据LbID查询负载均衡基本信息
-	lbInfo, sgComList, err := g.getClbInfoAndSGComRels(cts.Kit, req.LbID)
+	lbInfo, sgComList, err := g.getLoadBalancerInfoAndSGComRels(cts.Kit, req.LbID)
 	if err != nil {
 		return nil, err
 	}
@@ -361,8 +360,8 @@ func (g *securityGroup) getUpsertSGIDsParams(kt *kit.Kit, req *hclb.TCloudSetLbS
 	allSGIDs := make([]string, 0)
 	delSGIDs := make([]string, 0)
 	for _, sg := range sgComList.Details {
+		delSGIDs = append(delSGIDs, sg.SecurityGroupID)
 		if _, ok := newSGIDsMap[sg.SecurityGroupID]; ok {
-			delSGIDs = append(delSGIDs, sg.SecurityGroupID)
 			continue
 		}
 		allSGIDs = append(allSGIDs, sg.SecurityGroupID)
@@ -425,7 +424,7 @@ func (g *securityGroup) TCloudSecurityGroupDisassociateLoadBalancer(cts *rest.Co
 	}
 
 	// 根据LbID查询负载均衡基本信息
-	lbInfo, sgComList, err := g.getClbInfoAndSGComRels(cts.Kit, req.LbID)
+	lbInfo, sgComList, err := g.getLoadBalancerInfoAndSGComRels(cts.Kit, req.LbID)
 	if err != nil {
 		return nil, err
 	}
@@ -485,7 +484,7 @@ func (g *securityGroup) TCloudSecurityGroupDisassociateLoadBalancer(cts *rest.Co
 	return nil, nil
 }
 
-func (g *securityGroup) getClbInfoAndSGComRels(kt *kit.Kit, lbID string) (
+func (g *securityGroup) getLoadBalancerInfoAndSGComRels(kt *kit.Kit, lbID string) (
 	*corelb.BaseLoadBalancer, *protocloud.SGCommonRelListResult, error) {
 
 	lbReq := &core.ListReq{
@@ -508,7 +507,7 @@ func (g *securityGroup) getClbInfoAndSGComRels(kt *kit.Kit, lbID string) (
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("vendor", lbInfo.Vendor),
 			tools.RuleEqual("res_id", lbID),
-			tools.RuleEqual("res_type", meta.LoadBalancer),
+			tools.RuleEqual("res_type", enumor.LoadBalancerCloudResType),
 		),
 		Page: &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit, Sort: "priority", Order: "ASC"},
 	}
