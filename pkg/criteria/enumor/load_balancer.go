@@ -90,3 +90,29 @@ func (s SniType) Validate() error {
 	}
 	return nil
 }
+
+// TaskType 任务类型
+type TaskType string
+
+// 任务类型
+const (
+	// AddRSTaskType 任务类型-添加RS
+	AddRSTaskType = TaskType(FlowAddRS)
+	// DeleteRSTaskType 任务类型-删除RS
+	DeleteRSTaskType = TaskType(FlowDeleteRS)
+	// ModifyPortTaskType 任务类型-修改端口
+	ModifyPortTaskType = TaskType(FlowModifyPort)
+	// ModifyWeightTaskType 任务类型-修改权重
+	ModifyWeightTaskType = TaskType(FlowModifyWeight)
+)
+
+// InstType 实例类型
+type InstType string
+
+// 任务类型
+const (
+	// CvmInstType 实例类型-云服务器
+	CvmInstType InstType = "CVM"
+	// EniInstType 实例类型-弹性网卡
+	EniInstType InstType = "ENI"
+)

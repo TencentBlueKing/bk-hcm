@@ -61,7 +61,7 @@ type LoadBalancerTargetTable struct {
 	ID        string `db:"id" validate:"lte=64" json:"id"`
 	AccountID string `db:"account_id" validate:"lte=64" json:"account_id"`
 
-	InstType           string            `db:"inst_type" validate:"lte=255" json:"inst_type"`
+	InstType           enumor.InstType   `db:"inst_type" validate:"lte=255" json:"inst_type"`
 	InstID             string            `db:"inst_id" validate:"lte=255" json:"inst_id"`
 	CloudInstID        string            `db:"cloud_inst_id" validate:"lte=255" json:"cloud_inst_id"`
 	InstName           string            `db:"inst_name" validate:"lte=255" json:"inst_name"`

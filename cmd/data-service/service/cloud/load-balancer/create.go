@@ -659,3 +659,50 @@ func (svc *lbSvc) BatchCreateResFlowRel(cts *rest.Contexts) (any, error) {
 
 	return &core.BatchCreateResult{IDs: ids}, nil
 }
+
+// ResFlowLock 锁定资源跟Flow
+func (svc *lbSvc) ResFlowLock(cts *rest.Contexts) (any, error) {
+	req := new(dataproto.ResFlowLockReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
+		lockModel := &tablelb.LoadBalancerFlowLockTable{
+			ResID:   req.ResID,
+			ResType: req.ResType,
+			Owner:   req.FlowID,
+			Creator: cts.Kit.User,
+			Reviser: cts.Kit.User,
+		}
+		err := svc.dao.LoadBalancerFlowLock().CreateWithTx(cts.Kit, txn, lockModel)
+		if err != nil {
+			logs.Errorf("fail to create load balancer flow lock, req: %+v, err: %v, rid:%s", req, err, cts.Kit.Rid)
+			return nil, fmt.Errorf("create load balancer flow lock failed, err: %v", err)
+		}
+
+		relModels := []*tablelb.LoadBalancerFlowRelTable{{
+			ResID:    req.ResID,
+			FlowID:   req.FlowID,
+			TaskType: req.TaskType,
+			Status:   req.Status,
+			Creator:  cts.Kit.User,
+			Reviser:  cts.Kit.User,
+		}}
+		_, err = svc.dao.LoadBalancerFlowRel().BatchCreateWithTx(cts.Kit, txn, relModels)
+		if err != nil {
+			logs.Errorf("fail to create load balancer flow rel, err: %v, req: %+v, rid:%s", err, req, cts.Kit.Rid)
+			return nil, fmt.Errorf("create load balancer flow rel failed, err: %v", err)
+		}
+		return nil, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}

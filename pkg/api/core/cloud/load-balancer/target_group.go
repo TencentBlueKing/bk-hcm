@@ -70,7 +70,7 @@ type TargetGroupExtension interface {
 type BaseTarget struct {
 	ID                 string            `json:"id"`
 	AccountID          string            `json:"account_id"`
-	InstType           string            `json:"inst_type"`
+	InstType           enumor.InstType   `json:"inst_type"`
 	InstID             string            `json:"inst_id"`
 	CloudInstID        string            `json:"cloud_inst_id"`
 	InstName           string            `json:"inst_name"`

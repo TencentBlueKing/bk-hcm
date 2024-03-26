@@ -84,6 +84,8 @@ func InitService(cap *capability.Capability) {
 	h.Add("CreateResFlowLock", http.MethodPost, "/res_flow_locks/create", svc.CreateResFlowLock)
 	h.Add("DeleteResFlowLock", http.MethodDelete, "/res_flow_locks/batch", svc.DeleteResFlowLock)
 	h.Add("ListResFlowLock", http.MethodPost, "/res_flow_locks/list", svc.ListResFlowLock)
+	h.Add("ResFlowLock", http.MethodPost, "/res_flow_locks/lock", svc.ResFlowLock)
+	h.Add("ResFlowUnLock", http.MethodPost, "/res_flow_locks/unlock", svc.ResFlowUnLock)
 
 	// 资源跟Flow关联关系
 	h.Add("BatchCreateResFlowRel", http.MethodPost, "/res_flow_rels/batch/create", svc.BatchCreateResFlowRel)
