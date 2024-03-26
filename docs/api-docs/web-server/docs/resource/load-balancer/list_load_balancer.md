@@ -1,8 +1,8 @@
 ### 描述
 
 - 该接口提供版本：v9.9.9+。
-- 该接口所需权限：业务访问。
-- 该接口功能描述：查询clb。
+- 该接口所需权限：资源查看。
+- 该接口功能描述：查询负载均衡列表。
 
 ### URL
 
@@ -111,9 +111,9 @@ POST /api/v1/cloud/load_balancers/list
 | memo               | string | 备注                                   |
 | status             | string | 状态                                   |
 | domain             | string | 域名                                   |
-| cloud_created_time | string | clb在云上创建时间，标准格式：2006-01-02T15:04:05Z |
-| cloud_status_time  | string | clb状态变更时间，标准格式：2006-01-02T15:04:05Z  |
-| cloud_expired_time | string | clb过期时间，标准格式：2006-01-02T15:04:05Z    |
+| cloud_created_time | string | lb在云上创建时间，标准格式：2006-01-02T15:04:05Z  |
+| cloud_status_time  | string | lb状态变更时间，标准格式：2006-01-02T15:04:05Z   |
+| cloud_expired_time | string | lb过期时间，标准格式：2006-01-02T15:04:05Z     |
 | creator            | string | 创建者                                  |
 | reviser            | string | 修改者                                  |
 | created_at         | string | 创建时间，标准格式：2006-01-02T15:04:05Z       |
@@ -181,19 +181,24 @@ POST /api/v1/cloud/load_balancers/list
     "details": [
       {
         "id": "00000001",
-        "cloud_id": "clb-123",
-        "name": "clb-test",
+        "cloud_id": "lb-123",
+        "name": "lb-test",
         "vendor": "tcloud",
         "bk_biz_id": -1,
         "account_id": "0000001",
         "region": "ap-hk",
-        "main_zones":[ "ap-hk-1"],
-        "backup_zones":[ "ap-hk-2","ap-hk-3"],
+        "main_zones": [
+          "ap-hk-1"
+        ],
+        "backup_zones": [
+          "ap-hk-2",
+          "ap-hk-3"
+        ],
         "cloud_vpc_id": "vpc-123",
         "vpc_id": "00000002",
         "network_type": "ipv4",
         "domain": "",
-        "memo": "clb test",
+        "memo": "lb test",
         "status": "init",
         "private_ipv4_addresses": [
           "127.0.0.1"
@@ -266,10 +271,18 @@ POST /api/v1/cloud/load_balancers/list
 | private_ipv6_addresses | string array | 内网ipv6地址                             |
 | public_ipv4_addresses  | string array | 外网ipv4地址                             |
 | public_ipv6_addresses  | string array | 外网ipv6地址                             |
-| cloud_created_time     | string       | clb在云上创建时间，标准格式：2006-01-02T15:04:05Z |
-| cloud_status_time      | string       | clb状态变更时间，标准格式：2006-01-02T15:04:05Z  |
-| cloud_expired_time     | string       | clb过期时间，标准格式：2006-01-02T15:04:05Z    |
+| cloud_created_time     | string       | lb在云上创建时间，标准格式：2006-01-02T15:04:05Z  |
+| cloud_status_time      | string       | lb状态变更时间，标准格式：2006-01-02T15:04:05Z   |
+| cloud_expired_time     | string       | lb过期时间，标准格式：2006-01-02T15:04:05Z     |
 | creator                | string       | 创建者                                  |
 | reviser                | string       | 修改者                                  |
 | created_at             | string       | 创建时间，标准格式：2006-01-02T15:04:05Z       |
 | updated_at             | string       | 修改时间，标准格式：2006-01-02T15:04:05Z       |
+
+##### TCloud status 状态含义：
+
+| 状态值 | 含义   |
+|-----|------|
+| 0   | 创建中  |
+| 1   | 正常运行 |
+

@@ -2,7 +2,7 @@
 
 - 该接口提供版本：v9.9.9+。
 - 该接口所需权限：业务访问。
-- 该接口功能描述：业务下的负载均衡。
+- 该接口功能描述：列出业务下的负载均衡。
 
 ### URL
 
@@ -111,9 +111,9 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/list
 | memo               | string | 备注                                   |
 | status             | string | 状态                                   |
 | domain             | string | 域名                                   |
-| cloud_created_time | string | clb在云上创建时间，标准格式：2006-01-02T15:04:05Z |
-| cloud_status_time  | string | clb状态变更时间，标准格式：2006-01-02T15:04:05Z  |
-| cloud_expired_time | string | clb过期时间，标准格式：2006-01-02T15:04:05Z    |
+| cloud_created_time | string | lb在云上创建时间，标准格式：2006-01-02T15:04:05Z  |
+| cloud_status_time  | string | lb状态变更时间，标准格式：2006-01-02T15:04:05Z   |
+| cloud_expired_time | string | lb过期时间，标准格式：2006-01-02T15:04:05Z     |
 | creator            | string | 创建者                                  |
 | reviser            | string | 修改者                                  |
 | created_at         | string | 创建时间，标准格式：2006-01-02T15:04:05Z       |
@@ -181,8 +181,8 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/list
     "details": [
       {
         "id": "00000001",
-        "cloud_id": "clb-123",
-        "name": "clb-test",
+        "cloud_id": "lb-123",
+        "name": "lb-test",
         "vendor": "tcloud",
         "bk_biz_id": -1,
         "account_id": "0000001",
@@ -198,7 +198,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/list
         "vpc_id": "00000002",
         "network_type": "ipv4",
         "domain": "",
-        "memo": "clb test",
+        "memo": "lb test",
         "status": "init",
         "private_ipv4_addresses": [
           "127.0.0.1"
@@ -278,3 +278,12 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/list
 | reviser                | string       | 修改者                                   |
 | created_at             | string       | 创建时间，标准格式：2006-01-02T15:04:05Z        |
 | updated_at             | string       | 修改时间，标准格式：2006-01-02T15:04:05Z        |
+
+##### TCloud status 状态含义：
+
+| 状态值 | 含义   |
+|-----|------|
+| 0   | 创建中  |
+| 1   | 正常运行 |
+
+
