@@ -1,12 +1,7 @@
 import { IPageQuery, QueryRuleOPEnum } from '@/typings';
 import { defineStore } from 'pinia';
-import { reactive, ref, Ref } from 'vue';
+import { reactive, ref } from 'vue';
 import { useResourceStore } from './resource';
-
-export interface ILoadBalancer {
-  id: string; // 负载均衡资源ID
-  account_id: string; // 关联的账号ID
-}
 
 export const useLoadBalancerStore = defineStore('load-balancer', () => {
   const targetGroupListPageQuery = reactive<IPageQuery>({
@@ -21,10 +16,6 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
   // state - lb-tree - 当前选中的资源
   const currentSelectedTreeNode = ref();
   // state - 目标组id
-  const lb: Ref<ILoadBalancer> = ref({
-    id: '',
-    account_id: '',
-  });
 
   // action - lb-tree - 设置当前选中的资源
   const setCurrentSelectedTreeNode = (node: any) => {
@@ -59,15 +50,9 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
     targetGroupListPageQuery.count = countRes.data.count;
   };
 
-  const setLB = (obj: ILoadBalancer) => {
-    lb.value = obj;
-  };
-
   return {
     targetGroupId,
     setTargetGroupId,
-    lb,
-    setLB,
     currentSelectedTreeNode,
     setCurrentSelectedTreeNode,
     getTargetGroupList,
