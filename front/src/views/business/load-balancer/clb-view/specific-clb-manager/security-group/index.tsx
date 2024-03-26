@@ -1,6 +1,6 @@
 import { computed, defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
-import { Button, Exception, InfoBox, Message, Tag } from 'bkui-vue';
+import { Button, Exception, InfoBox, Input, Message, Tag } from 'bkui-vue';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 import SearchInput from '@/views/scheme/components/search-input';
 import CommonSideslider from '@/components/common-sideslider';
@@ -29,6 +29,7 @@ export default defineComponent({
     const accountStore = useAccountStore();
     const { selections, handleSelectionChange } = useSelection();
     const isAllExpand = ref(true);
+    const securitySearchVal = ref('');
     const selectedSecuirtyGroups = ref([]);
     const bindedSecurityGroups = ref([]);
     const securityGroups = computed(() => {
@@ -45,11 +46,37 @@ export default defineComponent({
         security_group_ids: selections.value.map(({ id }) => id),
       });
       getBindedSecurityList();
+      selectedSecuirtyGroups.value = [];
+      isSideSliderShow.value = false;
       Message({
         message: '绑定成功',
         theme: 'success',
       });
     };
+
+    // 检查并转义正则特殊字符
+    const escapeRegExp = (str: string) => {
+      return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    };
+
+    // 高亮命中关键词
+    const getHighLightNameText = (name: string, rootCls: string) => {
+      return (
+        <div
+          class={rootCls}
+          v-html={name?.replace(
+            new RegExp(securitySearchVal.value, 'g'),
+            `<span class='search-result-highlight'>${securitySearchVal.value}</span>`,
+          )}></div>
+      );
+    };
+
+    const securitySearchedList = computed(() => {
+      const val = securitySearchVal.value;
+      if (!val.trim()) return securityGroups.value;
+      const reg = new RegExp(escapeRegExp(val));
+      return securityGroups.value.filter((v) => reg.test(`${v.name} (${v.cloud_id})`));
+    });
     const tableColumns = [
       {
         type: 'selection',
@@ -80,19 +107,30 @@ export default defineComponent({
       },
     ];
 
+    const isRowSelectEnable = ({ row, isCheckAll }: any) => {
+      if (isCheckAll) return true;
+      return isCurRowSelectEnable(row);
+    };
+
+    const isCurRowSelectEnable = (row: any) => {
+      return !bindedSecurityGroups.value.map((v) => v.id).includes(row.id);
+    };
+
     const { CommonTable } = useTable({
       searchOptions: {
         searchData,
+        extra: {
+          searchSelectExtStyle: {
+            width: '100%',
+          },
+        },
       },
       tableOptions: {
         columns: tableColumns,
         extra: {
           onSelectionChange: (selections: any) => handleSelectionChange(selections, () => true),
-          onSelectAll: (selections: any) => handleSelectionChange(selections, () => true, true),
-          isRowSelectEnable: ({ row, isCheckAll }: any) => {
-            if (isCheckAll) return true;
-            return !bindedSecurityGroups.value.map((v) => v.id).includes(row.id);
-          },
+          onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
+          isRowSelectEnable,
           isSelectedFn: ({ row }: any) => {
             return selectedSecuirtyGroups.value.map((v) => v.id).includes(row.id);
           },
@@ -123,12 +161,18 @@ export default defineComponent({
     };
 
     const handleUnbind = async (security_group_id: string) => {
+      if (selectedSecuirtyGroups.value.map((v) => v.id).includes(security_group_id)) {
+        const idx = selectedSecuirtyGroups.value.findIndex((v) => v.id === security_group_id);
+        selectedSecuirtyGroups.value.splice(idx, 1);
+        return;
+      }
       await businessStore.unbindSecurityToCLB({
         bk_biz_id: accountStore.bizs,
         security_group_id,
         lb_id: loadBalancerStore.currentSelectedTreeNode.id,
       });
       getBindedSecurityList();
+      isSideSliderShow.value = false;
       Message({
         message: '解绑成功',
         theme: 'success',
@@ -272,6 +316,7 @@ export default defineComponent({
           v-model:isShow={isSideSliderShow.value}
           title='配置安全组'
           width={'640'}
+          isSubmitDisabled={!selectedSecuirtyGroups.value.length}
           onHandleSubmit={hanldeSubmit}>
           <div class={'config-security-rule-contianer'}>
             <div class={'config-security-rule-operation'}>
@@ -280,15 +325,22 @@ export default defineComponent({
                   <Plus class={'f22'}></Plus>新增绑定
                 </Button>
               </BkButtonGroup>
-              <SearchInput class={'operation-search-input'} />
+              <Input class={'search-input'} type='search' clearable v-model={securitySearchVal.value}></Input>
             </div>
-            <div>
-              {securityGroups.value.length ? (
-                securityGroups.value.map(({ name, cloud_id, id }, idx) => (
-                  <div class={'config-security-item'}>
-                    <i class={'hcm-icon bkhcm-icon-grag-fill mr16 draggable-card-header-draggable-btn'}></i>
+            <div class={'config-item-wrapper'}>
+              {securitySearchedList.value.length ? (
+                securitySearchedList.value.map(({ name, cloud_id, id }, idx) => (
+                  <div
+                    class={
+                      selectedSecuirtyGroups.value.map((v) => v.id).includes(id)
+                        ? 'config-security-item-new'
+                        : 'config-security-item'
+                    }>
+                    <i class={'hcm-icon bkhcm-icon-grag-fill mr8 draggable-card-header-draggable-btn'}></i>
                     <div class={'config-security-item-idx'}>{idx}</div>
-                    <span class={'config-security-item-name'}>{name}</span>
+                    <span class={'config-security-item-name'}>
+                      {securitySearchVal.value ? getHighLightNameText(name, '') : name}
+                    </span>
                     <span class={'config-security-item-id'}>({cloud_id})</span>
                     <div class={'config-security-item-edit-block'}>
                       <Button
@@ -296,7 +348,7 @@ export default defineComponent({
                         theme='primary'
                         class={'mr27'}
                         onClick={() => {
-                          const url = `/#/resource/resource?cloud_id=${cloud_id}&type=security`;
+                          const url = `/#/business/security?cloud_id=${cloud_id}`;
                           window.open(url, '_blank');
                         }}>
                         去编辑
@@ -334,7 +386,10 @@ export default defineComponent({
                   </div>
                 ))
               ) : (
-                <Exception type='empty' description='暂无绑定'></Exception>
+                <Exception
+                  type={securitySearchVal.value.length ? 'search-empty' : 'empty'}
+                  description={securitySearchVal.value.length ? '搜索为空' : '暂无绑定'}
+                />
               )}
             </div>
           </div>
