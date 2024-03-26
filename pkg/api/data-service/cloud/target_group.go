@@ -42,8 +42,8 @@ type TargetGroupCreateReq struct {
 	Region          string                 `json:"region" validate:"required"`
 	Protocol        enumor.ProtocolType    `json:"protocol" validate:"required"`
 	Port            int64                  `json:"port" validate:"required"`
-	VpcID           string                 `json:"vpc_id" validate:"required"`
-	CloudVpcID      string                 `json:"cloud_vpc_id" validate:"omitempty"`
+	VpcID           string                 `json:"vpc_id" validate:"omitempty"`
+	CloudVpcID      string                 `json:"cloud_vpc_id" validate:"required"`
 	TargetGroupType enumor.TargetGroupType `json:"target_group_type" validate:"omitempty"`
 	Weight          int64                  `json:"weight" validate:"omitempty"`
 	HealthCheck     types.JsonField        `json:"health_check" validate:"omitempty"`
@@ -72,8 +72,8 @@ type TargetGroupBatchCreate[Extension corelb.TargetGroupExtension] struct {
 	Region          string                 `json:"region" validate:"required"`
 	Protocol        enumor.ProtocolType    `json:"protocol" validate:"required"`
 	Port            int64                  `json:"port" validate:"required"`
-	VpcID           string                 `json:"vpc_id" validate:"required"`
-	CloudVpcID      string                 `json:"cloud_vpc_id" validate:"omitempty"`
+	VpcID           string                 `json:"vpc_id" validate:"omitempty"`
+	CloudVpcID      string                 `json:"cloud_vpc_id" validate:"required"`
 	TargetGroupType enumor.TargetGroupType `json:"target_group_type" validate:"omitempty"`
 	Weight          int64                  `json:"weight" validate:"omitempty"`
 	HealthCheck     types.JsonField        `json:"health_check" validate:"omitempty"`
