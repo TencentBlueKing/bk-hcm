@@ -29,11 +29,11 @@ import (
 	"hcm/pkg/dal/table/utils"
 )
 
-// TargetListenerRuleRelColumns defines all the target_listener_rule_rel table's columns.
-var TargetListenerRuleRelColumns = utils.MergeColumns(nil, TargetListenerRuleRelColumnsDescriptor)
+// TargetGroupListenerRuleRelColumns defines all the target_group_listener_rule_rel table's columns.
+var TargetGroupListenerRuleRelColumns = utils.MergeColumns(nil, TargetGroupListenerRuleRelColumnsDescriptor)
 
-// TargetListenerRuleRelColumnsDescriptor is target_listener_rule_rel's column descriptors.
-var TargetListenerRuleRelColumnsDescriptor = utils.ColumnDescriptors{
+// TargetGroupListenerRuleRelColumnsDescriptor is target_group_listener_rule_rel's column descriptors.
+var TargetGroupListenerRuleRelColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "listener_rule_id", NamedC: "listener_rule_id", Type: enumor.String},
 	{Column: "listener_rule_type", NamedC: "listener_rule_type", Type: enumor.String},
@@ -49,8 +49,8 @@ var TargetListenerRuleRelColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "updated_at", NamedC: "updated_at", Type: enumor.Time},
 }
 
-// TargetListenerRuleRelTable 目标组监听器关系表
-type TargetListenerRuleRelTable struct {
+// TargetGroupListenerRuleRelTable 目标组监听器关系表
+type TargetGroupListenerRuleRelTable struct {
 	ID               string               `db:"id" validate:"lte=64" json:"id"`
 	ListenerRuleID   string               `db:"listener_rule_id" validate:"lte=64" json:"listener_rule_id"`
 	ListenerRuleType enumor.RuleType      `db:"listener_rule_type" validate:"lte=64" json:"listener_rule_type"`
@@ -66,13 +66,13 @@ type TargetListenerRuleRelTable struct {
 	UpdatedAt types.Time `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
 }
 
-// TableName return target_listener_rule_rel table name.
-func (tlrr TargetListenerRuleRelTable) TableName() table.Name {
-	return table.TargetListenerRuleRelTable
+// TableName return table name.
+func (tlrr TargetGroupListenerRuleRelTable) TableName() table.Name {
+	return table.TargetGroupListenerRuleRelTable
 }
 
-// InsertValidate target_listener_rule_rel table when insert.
-func (tlrr TargetListenerRuleRelTable) InsertValidate() error {
+// InsertValidate validate table when insert.
+func (tlrr TargetGroupListenerRuleRelTable) InsertValidate() error {
 	if err := validator.Validate.Struct(tlrr); err != nil {
 		return err
 	}
@@ -96,8 +96,8 @@ func (tlrr TargetListenerRuleRelTable) InsertValidate() error {
 	return nil
 }
 
-// UpdateValidate target_listener_rule_rel table when update.
-func (tlrr TargetListenerRuleRelTable) UpdateValidate() error {
+// UpdateValidate validate table when update.
+func (tlrr TargetGroupListenerRuleRelTable) UpdateValidate() error {
 	if err := validator.Validate.Struct(tlrr); err != nil {
 		return err
 	}

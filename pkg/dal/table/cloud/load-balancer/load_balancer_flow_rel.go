@@ -29,11 +29,11 @@ import (
 	"hcm/pkg/dal/table/utils"
 )
 
-// ClbFlowRelColumns defines all the clb_flow_rel table's columns.
-var ClbFlowRelColumns = utils.MergeColumns(nil, ClbFlowRelColumnsDescriptor)
+// LoadBalancerFlowRelColumns defines all the load_balancer_flow_rel table's columns.
+var LoadBalancerFlowRelColumns = utils.MergeColumns(nil, LoadBalancerFlowRelColumnsDescriptor)
 
-// ClbFlowRelColumnsDescriptor is clb_flow_rel's column descriptors.
-var ClbFlowRelColumnsDescriptor = utils.ColumnDescriptors{
+// LoadBalancerFlowRelColumnsDescriptor is load_balancer_flow_rel's column descriptors.
+var LoadBalancerFlowRelColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "res_id", NamedC: "res_id", Type: enumor.String},
 	{Column: "flow_id", NamedC: "flow_id", Type: enumor.String},
@@ -46,8 +46,8 @@ var ClbFlowRelColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "updated_at", NamedC: "updated_at", Type: enumor.Time},
 }
 
-// ClbFlowRelTable CLB与FlowID关系表
-type ClbFlowRelTable struct {
+// LoadBalancerFlowRelTable LoadBalancer与FlowID关系表
+type LoadBalancerFlowRelTable struct {
 	ID       string `db:"id" validate:"lte=64" json:"id"`
 	ResID    string `db:"res_id" validate:"lte=64" json:"res_id"`
 	FlowID   string `db:"flow_id" validate:"lte=64" json:"flow_id"`
@@ -60,13 +60,13 @@ type ClbFlowRelTable struct {
 	UpdatedAt types.Time `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
 }
 
-// TableName return clb_flow_rel table name.
-func (cft ClbFlowRelTable) TableName() table.Name {
-	return table.ClbFlowRelTable
+// TableName return table name.
+func (cft LoadBalancerFlowRelTable) TableName() table.Name {
+	return table.LoadBalancerFlowRelTable
 }
 
-// InsertValidate clb_flow_rel table when insert.
-func (cft ClbFlowRelTable) InsertValidate() error {
+// InsertValidate validate table when insert.
+func (cft LoadBalancerFlowRelTable) InsertValidate() error {
 	if err := validator.Validate.Struct(cft); err != nil {
 		return err
 	}
@@ -90,8 +90,8 @@ func (cft ClbFlowRelTable) InsertValidate() error {
 	return nil
 }
 
-// UpdateValidate clb_flow_rel table when update.
-func (cft ClbFlowRelTable) UpdateValidate() error {
+// UpdateValidate validate table when update.
+func (cft LoadBalancerFlowRelTable) UpdateValidate() error {
 	if err := validator.Validate.Struct(cft); err != nil {
 		return err
 	}

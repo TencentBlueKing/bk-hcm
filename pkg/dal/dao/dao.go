@@ -111,14 +111,14 @@ type Set interface {
 	CloudSelectionIdc() daoselection.IdcInterface
 	ArgsTpl() argstpl.Interface
 	Cert() cert.Interface
-	LoadBalancer() loadbalancer.ClbInterface
+	LoadBalancer() loadbalancer.LoadBalancerInterface
 	LoadBalancerListener() loadbalancer.ListenerInterface
 	LoadBalancerTarget() loadbalancer.TargetInterface
 	LoadBalancerTargetGroup() loadbalancer.TargetGroupInterface
-	LoadBalancerTargetListenerRuleRel() loadbalancer.TargetListenerRuleRelInterface
-	LoadBalancerTCloudUrlRule() loadbalancer.ClbTCloudUrlRuleInterface
-	ClbFlowRel() loadbalancer.ClbFlowRelInterface
-	ClbFlowLock() loadbalancer.ClbFlowLockInterface
+	LoadBalancerTargetGroupListenerRuleRel() loadbalancer.TargetGroupListenerRuleRelInterface
+	LoadBalancerTCloudUrlRule() loadbalancer.LbTCloudUrlRuleInterface
+	LoadBalancerFlowRel() loadbalancer.LoadBalancerFlowRelInterface
+	LoadBalancerFlowLock() loadbalancer.LoadBalancerFlowLockInterface
 	SGCommonRel() sgcomrel.Interface
 
 	Txn() *Txn
@@ -547,16 +547,16 @@ func (s *set) Cert() cert.Interface {
 	}
 }
 
-// LoadBalancer return clb dao.
-func (s *set) LoadBalancer() loadbalancer.ClbInterface {
-	return &loadbalancer.ClbDao{
+// LoadBalancer return load balancer dao.
+func (s *set) LoadBalancer() loadbalancer.LoadBalancerInterface {
+	return &loadbalancer.LoadBalancerDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,
 	}
 }
 
-// LoadBalancerListener return clb listener dao.
+// LoadBalancerListener return load balancer listener dao.
 func (s *set) LoadBalancerListener() loadbalancer.ListenerInterface {
 	return &loadbalancer.ListenerDao{
 		Orm:   s.orm,
@@ -565,7 +565,7 @@ func (s *set) LoadBalancerListener() loadbalancer.ListenerInterface {
 	}
 }
 
-// LoadBalancerTarget return clb target dao.
+// LoadBalancerTarget return load balancer target dao.
 func (s *set) LoadBalancerTarget() loadbalancer.TargetInterface {
 	return &loadbalancer.TargetDao{
 		Orm:   s.orm,
@@ -574,7 +574,7 @@ func (s *set) LoadBalancerTarget() loadbalancer.TargetInterface {
 	}
 }
 
-// LoadBalancerTargetGroup return clb target group dao.
+// LoadBalancerTargetGroup return load balancer target group dao.
 func (s *set) LoadBalancerTargetGroup() loadbalancer.TargetGroupInterface {
 	return &loadbalancer.TargetGroupDao{
 		Orm:   s.orm,
@@ -583,36 +583,36 @@ func (s *set) LoadBalancerTargetGroup() loadbalancer.TargetGroupInterface {
 	}
 }
 
-// LoadBalancerTargetListenerRuleRel return clb target listener rule rel dao.
-func (s *set) LoadBalancerTargetListenerRuleRel() loadbalancer.TargetListenerRuleRelInterface {
-	return &loadbalancer.TargetListenerRuleRelDao{
+// LoadBalancerTargetGroupListenerRuleRel return load balancer target group listener rule rel dao.
+func (s *set) LoadBalancerTargetGroupListenerRuleRel() loadbalancer.TargetGroupListenerRuleRelInterface {
+	return &loadbalancer.TargetGroupListenerRuleRelDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,
 	}
 }
 
-// LoadBalancerTCloudUrlRule return clb tcloud url rule dao.
-func (s *set) LoadBalancerTCloudUrlRule() loadbalancer.ClbTCloudUrlRuleInterface {
-	return &loadbalancer.ClbTCloudUrlRuleDao{
+// LoadBalancerTCloudUrlRule return load balancer tcloud url rule dao.
+func (s *set) LoadBalancerTCloudUrlRule() loadbalancer.LbTCloudUrlRuleInterface {
+	return &loadbalancer.LbTCloudUrlRuleDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,
 	}
 }
 
-// ClbFlowRel return clb flow rel dao.
-func (s *set) ClbFlowRel() loadbalancer.ClbFlowRelInterface {
-	return &loadbalancer.ClbFlowRelDao{
+// LoadBalancerFlowRel return load balancer flow rel dao.
+func (s *set) LoadBalancerFlowRel() loadbalancer.LoadBalancerFlowRelInterface {
+	return &loadbalancer.LoadBalancerFlowRelDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,
 	}
 }
 
-// ClbFlowLock return clb flow lock dao.
-func (s *set) ClbFlowLock() loadbalancer.ClbFlowLockInterface {
-	return &loadbalancer.ClbFlowLockDao{
+// LoadBalancerFlowLock return load balancer flow lock dao.
+func (s *set) LoadBalancerFlowLock() loadbalancer.LoadBalancerFlowLockInterface {
+	return &loadbalancer.LoadBalancerFlowLockDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,

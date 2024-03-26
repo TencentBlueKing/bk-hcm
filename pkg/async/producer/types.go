@@ -37,6 +37,8 @@ type AddTemplateFlowOption struct {
 	Memo string `json:"memo" validate:"omitempty"`
 	// Tasks 任务私有化参数设置
 	Tasks []TemplateFlowTask `json:"tasks" validate:"omitempty"`
+	// IsInitState 是否初始化状态
+	IsInitState bool `json:"is_init_state" validate:"omitempty"`
 }
 
 // Validate AddTemplateFlowOption
@@ -82,6 +84,8 @@ type AddCustomFlowOption struct {
 	ShareData *tableasync.ShareData `json:"share_data" validate:"omitempty"`
 	// Tasks 任务私有化参数设置
 	Tasks []CustomFlowTask `json:"tasks" validate:"required"`
+	// IsInitState 是否初始化状态
+	IsInitState bool `json:"is_init_state" validate:"omitempty"`
 }
 
 // Validate AddCustomFlowOption
@@ -123,7 +127,7 @@ func (task *CustomFlowTask) Validate() error {
 	if err := validator.Validate.Struct(task); err != nil {
 		return err
 	}
-	
+
 	if err := task.ActionName.Validate(); err != nil {
 		return err
 	}

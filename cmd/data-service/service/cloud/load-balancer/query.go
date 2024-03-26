@@ -629,9 +629,9 @@ func (svc *lbSvc) ListTargetGroupListenerRel(cts *rest.Contexts) (interface{}, e
 		Filter: req.Filter,
 		Page:   req.Page,
 	}
-	result, err := svc.dao.LoadBalancerTargetListenerRuleRel().List(cts.Kit, opt)
+	result, err := svc.dao.LoadBalancerTargetGroupListenerRuleRel().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list target listener rule rel failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("list target group listener rule rel failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, fmt.Errorf("list target listener rule rel failed, err: %v", err)
 	}
 
@@ -648,7 +648,9 @@ func (svc *lbSvc) ListTargetGroupListenerRel(cts *rest.Contexts) (interface{}, e
 	return &protocloud.TargetListenerRuleRelListResult{Details: details}, nil
 }
 
-func convTableToBaseTargetListenerRuleRel(one *tablelb.TargetListenerRuleRelTable) *corelb.BaseTargetListenerRuleRel {
+func convTableToBaseTargetListenerRuleRel(
+	one *tablelb.TargetGroupListenerRuleRelTable) *corelb.BaseTargetListenerRuleRel {
+
 	return &corelb.BaseTargetListenerRuleRel{
 		ID:               one.ID,
 		ListenerRuleID:   one.ListenerRuleID,
@@ -665,4 +667,94 @@ func convTableToBaseTargetListenerRuleRel(one *tablelb.TargetListenerRuleRelTabl
 			UpdatedAt: one.UpdatedAt.String(),
 		},
 	}
+}
+
+// ListResFlowLock list res flow lock.
+func (svc *lbSvc) ListResFlowLock(cts *rest.Contexts) (interface{}, error) {
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Fields: req.Fields,
+		Filter: req.Filter,
+		Page:   req.Page,
+	}
+	result, err := svc.dao.LoadBalancerFlowLock().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list res flow lock failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list res flow lock failed, err: %v", err)
+	}
+
+	if req.Page.Count {
+		return &protocloud.ResFlowLockListResult{Count: result.Count}, nil
+	}
+
+	details := make([]corelb.BaseResFlowLock, 0, len(result.Details))
+	for _, one := range result.Details {
+		details = append(details, corelb.BaseResFlowLock{
+			ResID:   one.ResID,
+			ResType: one.ResType,
+			Owner:   one.Owner,
+			Revision: &core.Revision{
+				Creator:   one.Creator,
+				Reviser:   one.Reviser,
+				CreatedAt: one.CreatedAt.String(),
+				UpdatedAt: one.UpdatedAt.String(),
+			},
+		})
+	}
+
+	return &protocloud.ResFlowLockListResult{Details: details}, nil
+}
+
+// ListResFlowRel list res flow rel.
+func (svc *lbSvc) ListResFlowRel(cts *rest.Contexts) (interface{}, error) {
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Fields: req.Fields,
+		Filter: req.Filter,
+		Page:   req.Page,
+	}
+	result, err := svc.dao.LoadBalancerFlowRel().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list res flow rel failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list res flow rel failed, err: %v", err)
+	}
+
+	if req.Page.Count {
+		return &protocloud.ResFlowRelListResult{Count: result.Count}, nil
+	}
+
+	details := make([]corelb.BaseResFlowRel, 0, len(result.Details))
+	for _, one := range result.Details {
+		details = append(details, corelb.BaseResFlowRel{
+			ID:       one.ID,
+			ResID:    one.ResID,
+			FlowID:   one.FlowID,
+			TaskType: one.TaskType,
+			Status:   one.Status,
+			Revision: &core.Revision{
+				Creator:   one.Creator,
+				Reviser:   one.Reviser,
+				CreatedAt: one.CreatedAt.String(),
+				UpdatedAt: one.UpdatedAt.String(),
+			},
+		})
+	}
+
+	return &protocloud.ResFlowRelListResult{Details: details}, nil
 }

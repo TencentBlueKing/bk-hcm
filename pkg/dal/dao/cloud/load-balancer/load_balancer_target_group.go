@@ -31,7 +31,7 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
-	typesclb "hcm/pkg/dal/dao/types/clb"
+	typeslb "hcm/pkg/dal/dao/types/load-balancer"
 	"hcm/pkg/dal/table"
 	tableaudit "hcm/pkg/dal/table/audit"
 	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
@@ -43,18 +43,18 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// TargetGroupInterface only used for clb target group.
+// TargetGroupInterface only used for target group.
 type TargetGroupInterface interface {
 	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerTargetGroupTable) ([]string, error)
 	Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.LoadBalancerTargetGroupTable) error
 	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.LoadBalancerTargetGroupTable) error
-	List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbTargetGroupDetails, error)
+	List(kt *kit.Kit, opt *types.ListOption) (*typeslb.ListLbTargetGroupDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
 
 var _ TargetGroupInterface = new(TargetGroupDao)
 
-// TargetGroupDao clb target group dao.
+// TargetGroupDao target group dao.
 type TargetGroupDao struct {
 	Orm   orm.Interface
 	IDGen idgen.IDGenInterface
@@ -88,7 +88,7 @@ func (dao TargetGroupDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*
 		return nil, fmt.Errorf("insert %s failed, err: %v", tableName, err)
 	}
 
-	// clb create audit.
+	// create audit.
 	audits := make([]*tableaudit.AuditTable, 0, len(models))
 	for _, one := range models {
 		audits = append(audits, &tableaudit.AuditTable{
@@ -193,7 +193,7 @@ func (dao TargetGroupDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
 }
 
 // List lb target group.
-func (dao TargetGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbTargetGroupDetails, error) {
+func (dao TargetGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*typeslb.ListLbTargetGroupDetails, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
@@ -220,7 +220,7 @@ func (dao TargetGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.Li
 			return nil, err
 		}
 
-		return &typesclb.ListClbTargetGroupDetails{Count: count}, nil
+		return &typeslb.ListLbTargetGroupDetails{Count: count}, nil
 	}
 
 	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
@@ -236,10 +236,10 @@ func (dao TargetGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.Li
 		return nil, err
 	}
 
-	return &typesclb.ListClbTargetGroupDetails{Details: details}, nil
+	return &typeslb.ListLbTargetGroupDetails{Details: details}, nil
 }
 
-// DeleteWithTx clb target group.
+// DeleteWithTx target group.
 func (dao TargetGroupDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")

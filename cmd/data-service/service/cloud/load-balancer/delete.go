@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	dataservice "hcm/pkg/api/data-service"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
@@ -284,7 +285,7 @@ func (svc *lbSvc) BatchDeleteListener(cts *rest.Contexts) (any, error) {
 
 // 删除监听器关联目标组关系数据
 func (svc *lbSvc) deleteTargetGroupListenerRuleRel(kt *kit.Kit, txn *sqlx.Tx, listenerIDs []string) error {
-	ruleRelResp, err := svc.dao.LoadBalancerTargetListenerRuleRel().List(kt, &types.ListOption{
+	ruleRelResp, err := svc.dao.LoadBalancerTargetGroupListenerRuleRel().List(kt, &types.ListOption{
 		Filter: tools.ContainersExpression("lbl_id", listenerIDs),
 		Page:   core.NewDefaultBasePage(),
 	})
@@ -297,7 +298,87 @@ func (svc *lbSvc) deleteTargetGroupListenerRuleRel(kt *kit.Kit, txn *sqlx.Tx, li
 		return nil
 	}
 
-	relIDs := slice.Map(ruleRelResp.Details, func(r tablelb.TargetListenerRuleRelTable) string { return r.ID })
-	return svc.dao.LoadBalancerTargetListenerRuleRel().DeleteWithTx(
+	relIDs := slice.Map(ruleRelResp.Details, func(r tablelb.TargetGroupListenerRuleRelTable) string { return r.ID })
+	return svc.dao.LoadBalancerTargetGroupListenerRuleRel().DeleteWithTx(
 		kt, txn, tools.ContainersExpression("id", relIDs))
+}
+
+// BatchDeleteResFlowRel batch delete res flow rel.
+func (svc *lbSvc) BatchDeleteResFlowRel(cts *rest.Contexts) (interface{}, error) {
+	req := new(dataservice.BatchDeleteReq)
+	if err := cts.DecodeInto(req); err != nil {
+		logs.Errorf("batch delete res flow rel decode failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		logs.Errorf("batch delete res flow rel validate failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Fields: []string{"id", "res_id", "flow_id", "task_type"},
+		Filter: req.Filter,
+		Page:   core.NewDefaultBasePage(),
+	}
+	listResp, err := svc.dao.LoadBalancerFlowRel().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list res flow rel db failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list res flow rel failed, err: %v", err)
+	}
+
+	if len(listResp.Details) == 0 {
+		return nil, nil
+	}
+
+	delIDs := make([]string, len(listResp.Details))
+	for index, one := range listResp.Details {
+		delIDs[index] = one.ID
+	}
+
+	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		delFilter := tools.ContainersExpression("id", delIDs)
+		if err = svc.dao.LoadBalancerFlowRel().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	if err != nil {
+		logs.Errorf("delete res flow rel failed, delIDs: %v, err: %v, rid: %s", delIDs, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+// DeleteResFlowLock batch delete res flow lock.
+func (svc *lbSvc) DeleteResFlowLock(cts *rest.Contexts) (interface{}, error) {
+	req := new(dataproto.ResFlowLockDeleteReq)
+	if err := cts.DecodeInto(req); err != nil {
+		logs.Errorf("batch delete res flow lock decode failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		logs.Errorf("batch delete res flow lock validate failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		delFilter := tools.ExpressionAnd(
+			tools.RuleEqual("res_id", req.ResID),
+			tools.RuleEqual("res_type", req.ResType),
+			tools.RuleEqual("owner", req.Owner),
+		)
+		if err := svc.dao.LoadBalancerFlowLock().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	if err != nil {
+		logs.Errorf("delete res flow lock failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
 }

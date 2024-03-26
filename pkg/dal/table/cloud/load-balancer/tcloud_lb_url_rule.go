@@ -29,11 +29,11 @@ import (
 	"hcm/pkg/dal/table/utils"
 )
 
-// TCloudClbUrlRuleColumns defines all the tcloud_lb_url_rule table's columns.
-var TCloudClbUrlRuleColumns = utils.MergeColumns(nil, TCloudClbUrlRuleColumnsDescriptor)
+// TCloudLbUrlRuleColumns defines all the tcloud_lb_url_rule table's columns.
+var TCloudLbUrlRuleColumns = utils.MergeColumns(nil, TCloudLbUrlRuleColumnsDescriptor)
 
-// TCloudClbUrlRuleColumnsDescriptor is tcloud_lb_url_rule's column descriptors.
-var TCloudClbUrlRuleColumnsDescriptor = utils.ColumnDescriptors{
+// TCloudLbUrlRuleColumnsDescriptor is tcloud_lb_url_rule's column descriptors.
+var TCloudLbUrlRuleColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "cloud_id", NamedC: "cloud_id", Type: enumor.String},
 	{Column: "name", NamedC: "name", Type: enumor.String},

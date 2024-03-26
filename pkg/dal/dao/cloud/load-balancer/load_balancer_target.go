@@ -30,7 +30,7 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
-	typesclb "hcm/pkg/dal/dao/types/clb"
+	typeslb "hcm/pkg/dal/dao/types/load-balancer"
 	"hcm/pkg/dal/table"
 	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 	"hcm/pkg/dal/table/utils"
@@ -41,25 +41,25 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// TargetInterface only used for clb target.
+// TargetInterface only used for target.
 type TargetInterface interface {
 	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerTargetTable) ([]string, error)
 	Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.LoadBalancerTargetTable) error
 	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.LoadBalancerTargetTable) error
-	List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbTargetDetails, error)
+	List(kt *kit.Kit, opt *types.ListOption) (*typeslb.ListLoadBalancerTargetDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
 
 var _ TargetInterface = new(TargetDao)
 
-// TargetDao clb target dao.
+// TargetDao target dao.
 type TargetDao struct {
 	Orm   orm.Interface
 	IDGen idgen.IDGenInterface
 	Audit audit.Interface
 }
 
-// BatchCreateWithTx clb target.
+// BatchCreateWithTx target.
 func (dao TargetDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerTargetTable) (
 	[]string, error) {
 
@@ -87,7 +87,7 @@ func (dao TargetDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*table
 	return ids, nil
 }
 
-// Update clb target.
+// Update target.
 func (dao TargetDao) Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.LoadBalancerTargetTable) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
@@ -130,7 +130,7 @@ func (dao TargetDao) Update(kt *kit.Kit, expr *filter.Expression, model *tablelb
 	return nil
 }
 
-// UpdateByIDWithTx clb target.
+// UpdateByIDWithTx target.
 func (dao TargetDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
 	model *tablelb.LoadBalancerTargetTable) error {
 
@@ -160,8 +160,8 @@ func (dao TargetDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
 	return nil
 }
 
-// List clb target.
-func (dao TargetDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbTargetDetails, error) {
+// List target.
+func (dao TargetDao) List(kt *kit.Kit, opt *types.ListOption) (*typeslb.ListLoadBalancerTargetDetails, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
@@ -186,7 +186,7 @@ func (dao TargetDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClb
 			return nil, err
 		}
 
-		return &typesclb.ListClbTargetDetails{Count: count}, nil
+		return &typeslb.ListLoadBalancerTargetDetails{Count: count}, nil
 	}
 
 	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
@@ -202,10 +202,10 @@ func (dao TargetDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClb
 		return nil, err
 	}
 
-	return &typesclb.ListClbTargetDetails{Details: details}, nil
+	return &typeslb.ListLoadBalancerTargetDetails{Details: details}, nil
 }
 
-// DeleteWithTx clb target.
+// DeleteWithTx target.
 func (dao TargetDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")

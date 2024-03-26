@@ -25,6 +25,8 @@ import "fmt"
 type TaskState string
 
 const (
+	// TaskInit task state is init
+	TaskInit TaskState = "init"
 	// TaskPending task state is pending
 	TaskPending TaskState = "pending"
 	// TaskRunning task state is running
@@ -43,6 +45,8 @@ const (
 type FlowState string
 
 const (
+	// FlowInit flow state is init（该状态不参与调度）
+	FlowInit FlowState = "init"
 	// FlowPending flow state is pending
 	FlowPending FlowState = "pending"
 	// FlowScheduled flow state is scheduled

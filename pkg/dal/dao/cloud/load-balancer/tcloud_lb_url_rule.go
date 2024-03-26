@@ -31,7 +31,7 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
-	typesclb "hcm/pkg/dal/dao/types/clb"
+	typeslb "hcm/pkg/dal/dao/types/load-balancer"
 	"hcm/pkg/dal/table"
 	tableaudit "hcm/pkg/dal/table/audit"
 	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
@@ -43,26 +43,26 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// ClbTCloudUrlRuleInterface only used for clb tcloud url rule.
-type ClbTCloudUrlRuleInterface interface {
+// LbTCloudUrlRuleInterface only used for lb tcloud url rule.
+type LbTCloudUrlRuleInterface interface {
 	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.TCloudLbUrlRuleTable) ([]string, error)
 	Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.TCloudLbUrlRuleTable) error
 	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.TCloudLbUrlRuleTable) error
-	List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbUrlRuleDetails, error)
+	List(kt *kit.Kit, opt *types.ListOption) (*typeslb.ListLbUrlRuleDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
 
-var _ ClbTCloudUrlRuleInterface = new(ClbTCloudUrlRuleDao)
+var _ LbTCloudUrlRuleInterface = new(LbTCloudUrlRuleDao)
 
-// ClbTCloudUrlRuleDao clb tcloud url rule dao.
-type ClbTCloudUrlRuleDao struct {
+// LbTCloudUrlRuleDao lb tcloud url rule dao.
+type LbTCloudUrlRuleDao struct {
 	Orm   orm.Interface
 	IDGen idgen.IDGenInterface
 	Audit audit.Interface
 }
 
-// BatchCreateWithTx clb url rule.
-func (dao ClbTCloudUrlRuleDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.TCloudLbUrlRuleTable) (
+// BatchCreateWithTx lb url rule.
+func (dao LbTCloudUrlRuleDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.TCloudLbUrlRuleTable) (
 	[]string, error) {
 
 	tableName := table.TCloudLbUrlRuleTable
@@ -80,7 +80,7 @@ func (dao ClbTCloudUrlRuleDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model
 	}
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, tableName,
-		tablelb.TCloudClbUrlRuleColumns.ColumnExpr(), tablelb.TCloudClbUrlRuleColumns.ColonNameExpr())
+		tablelb.TCloudLbUrlRuleColumns.ColumnExpr(), tablelb.TCloudLbUrlRuleColumns.ColonNameExpr())
 
 	if err = dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", tableName, err, kt.Rid)
@@ -126,8 +126,8 @@ func (dao ClbTCloudUrlRuleDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model
 	return ids, nil
 }
 
-// Update clb url rule.
-func (dao ClbTCloudUrlRuleDao) Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.TCloudLbUrlRuleTable) error {
+// Update lb url rule.
+func (dao LbTCloudUrlRuleDao) Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.TCloudLbUrlRuleTable) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
 	}
@@ -170,7 +170,7 @@ func (dao ClbTCloudUrlRuleDao) Update(kt *kit.Kit, expr *filter.Expression, mode
 }
 
 // UpdateByIDWithTx lb url rule.
-func (dao ClbTCloudUrlRuleDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
+func (dao LbTCloudUrlRuleDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
 	model *tablelb.TCloudLbUrlRuleTable) error {
 
 	if len(id) == 0 {
@@ -200,12 +200,12 @@ func (dao ClbTCloudUrlRuleDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id str
 }
 
 // List lb url rule.
-func (dao ClbTCloudUrlRuleDao) List(kt *kit.Kit, opt *types.ListOption) (*typesclb.ListClbUrlRuleDetails, error) {
+func (dao LbTCloudUrlRuleDao) List(kt *kit.Kit, opt *types.ListOption) (*typeslb.ListLbUrlRuleDetails, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablelb.TCloudClbUrlRuleColumns.ColumnTypes())),
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablelb.TCloudLbUrlRuleColumns.ColumnTypes())),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
@@ -225,7 +225,7 @@ func (dao ClbTCloudUrlRuleDao) List(kt *kit.Kit, opt *types.ListOption) (*typesc
 			return nil, err
 		}
 
-		return &typesclb.ListClbUrlRuleDetails{Count: count}, nil
+		return &typeslb.ListLbUrlRuleDetails{Count: count}, nil
 	}
 
 	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
@@ -233,7 +233,7 @@ func (dao ClbTCloudUrlRuleDao) List(kt *kit.Kit, opt *types.ListOption) (*typesc
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablelb.TCloudClbUrlRuleColumns.FieldsNamedExpr(opt.Fields),
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablelb.TCloudLbUrlRuleColumns.FieldsNamedExpr(opt.Fields),
 		table.TCloudLbUrlRuleTable, whereExpr, pageExpr)
 
 	details := make([]tablelb.TCloudLbUrlRuleTable, 0)
@@ -241,11 +241,11 @@ func (dao ClbTCloudUrlRuleDao) List(kt *kit.Kit, opt *types.ListOption) (*typesc
 		return nil, err
 	}
 
-	return &typesclb.ListClbUrlRuleDetails{Details: details}, nil
+	return &typeslb.ListLbUrlRuleDetails{Details: details}, nil
 }
 
-// DeleteWithTx clb url rule.
-func (dao ClbTCloudUrlRuleDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
+// DeleteWithTx lb url rule.
+func (dao LbTCloudUrlRuleDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
