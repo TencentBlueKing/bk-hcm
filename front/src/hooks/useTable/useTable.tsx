@@ -15,7 +15,9 @@ export interface IProp {
   searchOptions: {
     searchData?: Array<ISearchItem>; // search-select 可选项
     disabled?: boolean; // 是否禁用 search-select
-    extra?: Object; // 其他 search-select 属性/自定义事件, 比如 placeholder, onSearch...
+    extra?: {
+      searchSelectExtStyle?: Record<string, string>; // 搜索框样式
+    }; // 其他 search-select 属性/自定义事件, 比如 placeholder, onSearch, searchSelectExtStyle...
   };
   // table 相关字段
   tableOptions: {
@@ -103,10 +105,11 @@ export const useTable = (props: IProp) => {
       return () => (
         <div class={`remote-table-container${props.searchOptions.disabled ? ' no-search' : ''}`}>
           <section class='operation-wrap'>
-            <div class='operate-btn-groups'>{slots.operation?.()}</div>
+            {slots.operation && <div class='operate-btn-groups'>{slots.operation?.()}</div>}
             {!props.searchOptions.disabled && (
               <SearchSelect
                 class='table-search-selector'
+                style={props.searchOptions?.extra?.searchSelectExtStyle}
                 v-model={searchVal.value}
                 data={props.searchOptions.searchData}
                 valueBehavior='need-key'

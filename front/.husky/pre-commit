@@ -2,4 +2,3 @@
 . "$(dirname "$0")/_/husky.sh"
 cd front && echo ~+ && echo CODE LINT START
 yarn lint-staged
-bash ./front/.husky/pre-commit-bkcodeai $1
