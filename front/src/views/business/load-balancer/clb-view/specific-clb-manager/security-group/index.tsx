@@ -188,10 +188,10 @@ export default defineComponent({
     };
 
     watch(
-      () => loadBalancerStore.currentSelectedTreeNode.id,
-      async (id) => {
-        if (!id) return;
-        getBindedSecurityList();
+      () => loadBalancerStore.currentSelectedTreeNode,
+      (val) => {
+        const { id, type } = val;
+        if (type === 'lb' && id) getBindedSecurityList();
       },
       {
         immediate: true,
