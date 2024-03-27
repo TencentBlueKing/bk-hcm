@@ -170,6 +170,11 @@ func (clb TCloudListener) GetCloudID() string {
 	return converter.PtrToVal(clb.ListenerId)
 }
 
+// GetProtocol ...
+func (clb TCloudListener) GetProtocol() enumor.ProtocolType {
+	return converter.PtrToVal((*enumor.ProtocolType)(clb.Protocol))
+}
+
 // -------------------------- List Targets--------------------------
 
 // TCloudListTargetsOption defines options to list tcloud targets instances.

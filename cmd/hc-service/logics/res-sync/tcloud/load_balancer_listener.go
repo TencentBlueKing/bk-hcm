@@ -40,14 +40,14 @@ import (
 	tclb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 )
 
-// Listener 同步多个负载均衡下的监听器
+// Listener 同步多个负载均衡下的监听器：
 func (cli *client) Listener(kt *kit.Kit, params *SyncListenerParams) (*SyncResult, error) {
 
 	if err := validator.ValidateTool(params); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// 并发同步多个监听器
+	// 并发同步多个负载均衡下的监听器
 	var syncResult *SyncResult
 	err := concurrence.BaseExec(constant.SyncConcurrencyDefaultMaxLimit, params.LbInfos,
 		func(lb corelb.TCloudLoadBalancer) error {
@@ -73,7 +73,9 @@ func (cli *client) Listener(kt *kit.Kit, params *SyncListenerParams) (*SyncResul
 	return syncResult, nil
 }
 
-// LoadBalancerListener 同步指定负载均衡均衡下的监听器
+// LoadBalancerListener 2. 同步指定负载均衡均衡下的监听器
+//
+//	2.1 同步监听器自身
 func (cli *client) listener(kt *kit.Kit, opt *SyncListenerOfSingleLBOption) (
 	*SyncResult, error) {
 
@@ -104,17 +106,22 @@ func (cli *client) listener(kt *kit.Kit, opt *SyncListenerOfSingleLBOption) (
 		return nil, err
 	}
 
-	// 创建云上新增监听器实例
+	// 创建云上新增监听器实例， 对于四层规则一起创建对应的规则
 	_, err = cli.createListener(kt, opt, addSlice)
 	if err != nil {
 		return nil, err
 	}
-	// 更新变更监听器
+	// 更新变更监听器，不更新对应四层/七层 规则
 	if err = cli.updateListener(kt, opt.BizID, updateMap); err != nil {
 		return nil, err
 	}
 
-	//  TODO: 同步七层规则和目标组
+	// 同步监听器下的四层规则
+	_, err = cli.LoadBalancerLayer4Rule(kt, opt)
+	if err != nil {
+		logs.Errorf("fail to sync listener rule for sync listener, err: %v, opt: %+v, rid: %s", err, opt, kt.Rid)
+		return nil, err
+	}
 
 	return new(SyncResult), nil
 }
@@ -187,7 +194,7 @@ func (cli *client) createListener(kt *kit.Kit, syncOpt *SyncListenerOfSingleLBOp
 	dbListeners := make([]dataproto.ListenersCreateReq, 0, len(addSlice))
 	dbRules := make([]dataproto.ListenerWithRuleCreateReq, 0)
 	for _, lbl := range addSlice {
-		if cvt.PtrToVal((*enumor.ProtocolType)(lbl.Protocol)).IsLayer7Protocol() {
+		if lbl.GetProtocol().IsLayer7Protocol() {
 			dbListeners = append(dbListeners, dataproto.ListenersCreateReq{
 				CloudID:       lbl.GetCloudID(),
 				Name:          cvt.PtrToVal(lbl.ListenerName),
@@ -196,7 +203,7 @@ func (cli *client) createListener(kt *kit.Kit, syncOpt *SyncListenerOfSingleLBOp
 				BkBizID:       syncOpt.BizID,
 				LbID:          syncOpt.LBID,
 				CloudLbID:     syncOpt.CloudLBID,
-				Protocol:      cvt.PtrToVal((*enumor.ProtocolType)(lbl.Protocol)),
+				Protocol:      lbl.GetProtocol(),
 				Port:          cvt.PtrToVal(lbl.Port),
 				DefaultDomain: getDefaultDomain(lbl),
 			})
@@ -212,7 +219,7 @@ func (cli *client) createListener(kt *kit.Kit, syncOpt *SyncListenerOfSingleLBOp
 			BkBizID:       syncOpt.BizID,
 			LbID:          syncOpt.LBID,
 			CloudLbID:     syncOpt.CloudLBID,
-			Protocol:      cvt.PtrToVal((*enumor.ProtocolType)(lbl.Protocol)),
+			Protocol:      lbl.GetProtocol(),
 			Port:          cvt.PtrToVal(lbl.Port),
 			CloudRuleID:   lbl.GetCloudID(),
 			Scheduler:     cvt.PtrToVal(lbl.Scheduler),
@@ -303,8 +310,7 @@ func isListenerChange(cloud typeslb.TCloudListener, db common.TCloudComposedList
 	if cvt.PtrToVal(cloud.ListenerName) != db.Name {
 		return true
 	}
-	protocol := enumor.ProtocolType(cvt.PtrToVal(cloud.Protocol))
-	switch protocol {
+	switch cloud.GetProtocol() {
 	case enumor.HttpProtocol:
 		// http 只有名称和默认域名可以变
 		if getDefaultDomain(cloud) != db.DefaultDomain {
@@ -316,7 +322,7 @@ func isListenerChange(cloud typeslb.TCloudListener, db common.TCloudComposedList
 		}
 	default:
 		// 	其他为4层协议
-		if isLayer4Changed(cloud, db) {
+		if isLayer4ListenerChanged(cloud, db) {
 			return true
 		}
 	}
@@ -324,7 +330,7 @@ func isListenerChange(cloud typeslb.TCloudListener, db common.TCloudComposedList
 	return false
 }
 
-func isLayer4Changed(cloud typeslb.TCloudListener, db common.TCloudComposedListener) bool {
+func isLayer4ListenerChanged(cloud typeslb.TCloudListener, db common.TCloudComposedListener) bool {
 
 	if isListenerCertChange(cloud.Certificate, db.Extension.Certificate) {
 		return true
@@ -448,24 +454,6 @@ func isListenerCertChange(cloud *tclb.CertificateOutput, db *corelb.TCloudCertif
 		if db.CertCloudIDs[i+1] != cvt.PtrToVal(cloud.ExtCertIds[i]) {
 			return true
 		}
-	}
-	return false
-}
-
-// 四层监听器的健康检查这些信息保存在规则里，需要检查对应的规则
-func isLayer4RuleChange(cloud typeslb.TCloudListener, db *corelb.TCloudLbUrlRule) bool {
-	if db == nil {
-		return true
-	}
-	if cvt.PtrToVal(cloud.Scheduler) != db.Scheduler {
-		return true
-	}
-	if cvt.PtrToVal(cloud.SessionType) != db.SessionType {
-		return true
-	}
-
-	if isHealthCheckChange(cloud.HealthCheck, db.HealthCheck) {
-		return true
 	}
 	return false
 }

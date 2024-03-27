@@ -295,5 +295,5 @@ func (svc *clbSvc) TCloudBatchDeleteUrlRule(cts *rest.Contexts) (any, error) {
 	}
 
 	// TODO 同步对应监听器
-	return svc.dataCli.TCloud.LoadBalancer.BatchDeleteTCloudUrlRule(cts.Kit, dbReq)
+	return nil, svc.dataCli.TCloud.LoadBalancer.BatchDeleteTCloudUrlRule(cts.Kit, dbReq)
 }

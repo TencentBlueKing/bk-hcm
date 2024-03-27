@@ -244,6 +244,8 @@ type DBResType interface {
 		*corecert.Cert[corecert.TCloudCertExtension] |
 
 		corelb.TCloudLoadBalancer |
+		corelb.TCloudLbUrlRule |
+		corelb.TCloudListener |
 		TCloudComposedListener
 }
 

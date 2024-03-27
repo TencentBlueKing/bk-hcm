@@ -44,6 +44,9 @@ import (
 )
 
 // LoadBalancer 同步指定负载均衡
+// 1. 同步该负载均衡自身属性
+// 2. 同步该负载均衡下的监听器
+// 3. 同步监听器下的规则
 func (cli *client) LoadBalancer(kt *kit.Kit, params *SyncBaseParams, opt *SyncLBOption) (*SyncResult, error) {
 	if err := validator.ValidateTool(params, opt); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)

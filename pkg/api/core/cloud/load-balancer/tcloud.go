@@ -194,3 +194,6 @@ type TCloudCertificateInfo struct {
 type TCloudListenerExtension struct {
 	Certificate *TCloudCertificateInfo `json:"certificate,omitempty"`
 }
+
+// TCloudListener ...
+type TCloudListener = Listener[TCloudListenerExtension]

@@ -253,7 +253,7 @@ func (svc *lbSvc) BatchUpdateTCloudUrlRule(cts *rest.Contexts) (any, error) {
 				TargetGroupID:      rule.TargetGroupID,
 				CloudTargetGroupID: rule.CloudTargetGroupID,
 				Scheduler:          rule.Scheduler,
-				SessionExpire:      rule.SessionExpire,
+				SessionExpire:      converter.PtrToVal(rule.SessionExpire),
 				SessionType:        rule.SessionType,
 				Memo:               rule.Memo,
 				Reviser:            cts.Kit.User,

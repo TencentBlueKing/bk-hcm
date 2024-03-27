@@ -113,18 +113,16 @@ func (cli *LoadBalancerClient) BatchCreateTCloudUrlRule(kt *kit.Kit, req *datapr
 }
 
 // BatchUpdateTCloudUrlRule 批量更新腾讯云Url规则
-func (cli *LoadBalancerClient) BatchUpdateTCloudUrlRule(kt *kit.Kit, req *dataproto.TCloudUrlRuleBatchUpdateReq) (
-	*core.BatchCreateResult, error) {
+func (cli *LoadBalancerClient) BatchUpdateTCloudUrlRule(kt *kit.Kit, req *dataproto.TCloudUrlRuleBatchUpdateReq) error {
 
-	return common.Request[dataproto.TCloudUrlRuleBatchUpdateReq, core.BatchCreateResult](
+	return common.RequestNoResp[dataproto.TCloudUrlRuleBatchUpdateReq](
 		cli.client, rest.PATCH, kt, req, "/url_rules/batch/update")
 }
 
 // BatchDeleteTCloudUrlRule 批量删除腾讯云Url规则
-func (cli *LoadBalancerClient) BatchDeleteTCloudUrlRule(kt *kit.Kit, req *dataproto.LoadBalancerBatchDeleteReq) (
-	*core.BatchCreateResult, error) {
+func (cli *LoadBalancerClient) BatchDeleteTCloudUrlRule(kt *kit.Kit, req *dataproto.LoadBalancerBatchDeleteReq) error {
 
-	return common.Request[dataproto.LoadBalancerBatchDeleteReq, core.BatchCreateResult](
+	return common.RequestNoResp[dataproto.LoadBalancerBatchDeleteReq](
 		cli.client, rest.DELETE, kt, req, "/url_rules/batch")
 }
 
