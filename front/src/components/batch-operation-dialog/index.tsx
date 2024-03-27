@@ -1,13 +1,14 @@
 import { defineComponent, PropType } from 'vue';
-import { Dialog } from 'bkui-vue';
-import { useLocalTable } from '@/hooks/useLocalTable';
-import type { IProp } from '@/hooks/useLocalTable';
+import { Button, Dialog } from 'bkui-vue';
+import CommonLocalTable from '../CommonLocalTable';
 import { useI18n } from 'vue-i18n';
+import type { IProp } from '@/hooks/useLocalTable';
 import './index.scss';
 
 export default defineComponent({
   name: 'BatchOperationDialog',
   props: {
+    isSubmitLoading: Boolean,
     isShow: {
       type: Boolean as PropType<boolean>,
       default: false,
@@ -42,17 +43,18 @@ export default defineComponent({
     };
     const handleConfirm = () => {
       emit('handleConfirm');
-      triggerShow(false);
     };
     // 默认渲染
     const renderDefaultSlot = () => {
-      const { CommonLocalTable } = useLocalTable(props.tableProps);
       return (
         <div class='batch-operation-dialog-content'>
           <div class='tips'>{slots.tips?.()}</div>
-          <CommonLocalTable>
+          <CommonLocalTable
+            searchOptions={{ searchData: props.tableProps.searchData }}
+            tableOptions={{ rowKey: 'id', columns: props.tableProps.columns }}
+            tableData={props.tableProps.data}>
             {{
-              tab: () => slots.tab?.(),
+              operation: () => slots.tab?.(),
             }}
           </CommonLocalTable>
         </div>
@@ -62,6 +64,7 @@ export default defineComponent({
     const renderCustomDefaultSlot = () => {
       return <div class='batch-operation-dialog-content'>自定义内容</div>;
     };
+
     return () => (
       <Dialog
         class='batch-operation-dialog'
@@ -69,11 +72,19 @@ export default defineComponent({
         isShow={props.isShow}
         title={t(props.title)}
         theme={props.theme}
-        confirmText={t(props.confirmText)}
-        onConfirm={handleConfirm}
-        onClosed={() => triggerShow(false)}>
+        confirmText={t(props.confirmText)}>
         {{
           default: props.custom ? renderCustomDefaultSlot : renderDefaultSlot,
+          footer: () => (
+            <>
+              <Button theme={props.theme} onClick={handleConfirm} loading={props.isSubmitLoading}>
+                {props.confirmText}
+              </Button>
+              <Button class='dialog-cancel' onClick={() => triggerShow(false)}>
+                取消
+              </Button>
+            </>
+          ),
         }}
       </Dialog>
     );

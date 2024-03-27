@@ -1192,7 +1192,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '可用区域',
       field: 'zones',
-      render: ({ cell }: { cell: string[] }) => cell.join(','),
+      render: ({ cell }: { cell: string[] }) => cell?.join(','),
     },
     {
       label: '状态',
@@ -1206,6 +1206,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
 
   const listenerColumns = [
     getLinkField('listener', '监听器名称', 'name'),
+    {
+      label: '监听器ID',
+      field: 'cloud_id',
+    },
     {
       label: '协议',
       field: 'protocol',
@@ -1530,7 +1534,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '域名',
       field: 'domain',
       render: ({ cell }: { cell: string[] }) => {
-        return cell.join(';');
+        return cell?.join(';');
       },
     },
     {

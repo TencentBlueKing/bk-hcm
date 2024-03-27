@@ -85,13 +85,13 @@ export default defineComponent({
           },
           {
             label: t('CA证书'),
-            value: listenerDetail.certificate?.client_cloud_ids?.join(','),
+            value: listenerDetail.certificate?.cert_cloud_ids?.join(','),
           },
         ],
       },
       {
         title: t('会话保持'),
-        open_state: listenerDetail.session_expire,
+        open_state: listenerDetail.session_expire === 0 ? 0 : 1,
         content: [
           {
             label: t('会话时间'),
