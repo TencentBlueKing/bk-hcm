@@ -1192,7 +1192,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '可用区域',
       field: 'zones',
-      render: ({ cell }: { cell: string[] }) => cell.join(','),
+      render: ({ cell }: { cell: string[] }) => cell?.join(','),
     },
     {
       label: '状态',
@@ -1530,7 +1530,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '域名',
       field: 'domain',
       render: ({ cell }: { cell: string[] }) => {
-        return cell.join(';');
+        return cell?.join(';');
       },
     },
     {
