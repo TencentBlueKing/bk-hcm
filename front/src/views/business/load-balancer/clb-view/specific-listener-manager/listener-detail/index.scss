@@ -3,9 +3,9 @@
   position: relative;
 
   .fixed-edit-btn {
-    position: fixed;
-    top: 192px;
-    right: 51px;
+    position: absolute;
+    top: 0;
+    right: 0;
     min-width: 64px;
   }
 
@@ -59,7 +59,7 @@
     .loading-icon {
       margin-left: 10px;
       width: 14px;
-      height: 14px;  
+      height: 14px;
     }
   }
 }

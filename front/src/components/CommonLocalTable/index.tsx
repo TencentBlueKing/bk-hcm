@@ -1,4 +1,4 @@
-import { PropType, computed, defineComponent, reactive, ref } from 'vue';
+import { PropType, computed, defineComponent, reactive, ref, watch } from 'vue';
 // import components
 import { Loading, SearchSelect, Table } from 'bkui-vue';
 import Empty from '@/components/empty';
@@ -35,20 +35,31 @@ export default defineComponent({
     tableOptions: {
       type: Object as PropType<{
         rowKey: string | Function;
-        data: Array<any>;
         columns: Array<Column>;
         extra?: Object;
       }>,
     },
+    // 表格数据
+    tableData: Array<any>,
   },
   setup(props, { slots }) {
     // 搜索相关
     const searchVal = ref();
     // 表格相关
+    const tableData = ref(props.tableData);
     const pagination = reactive({ count: 0, limit: 10 });
     const hasTopBar = computed(() => props.hasOperation && props.hasSearch);
 
     // todo: 本地搜索, 表格内容过滤
+
+    watch(
+      () => props.tableData,
+      (val) => {
+        // 解决异步函数 tableData 数据返回不及时的问题
+        tableData.value = val;
+      },
+      { deep: true },
+    );
 
     return () => (
       <div class={['local-table-container', hasTopBar.value && 'has-top-bar']}>
@@ -72,7 +83,7 @@ export default defineComponent({
           <Table
             class='table-container'
             row-key={props.tableOptions.rowKey}
-            data={props.tableOptions.data}
+            data={tableData.value}
             columns={props.tableOptions.columns}
             pagination={pagination}
             show-overflow-tooltip

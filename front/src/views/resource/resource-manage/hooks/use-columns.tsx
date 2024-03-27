@@ -1207,6 +1207,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const listenerColumns = [
     getLinkField('listener', '监听器名称', 'name'),
     {
+      label: '监听器ID',
+      field: 'cloud_id',
+    },
+    {
       label: '协议',
       field: 'protocol',
       isDefaultShow: true,
