@@ -59,14 +59,6 @@ PATCH /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/listeners/{lbl_id}/rules/{ru
 
 若希望多种返回码都可代表健康，则将相应的值相加。
 
-### certificate
-
-| 参数名称             | 参数类型         | 描述                                   |
-|------------------|--------------|--------------------------------------|
-| ssl_mode         | string       | 认证类型，UNIDIRECTIONAL：单向认证，MUTUAL：双向认证 |
-| ca_cloud_id      | string       | 服务端证书的云ID                            |
-| client_cloud_ids | string array | 客户端证书的云ID                            |
-
 ### 调用示例
 
 ```json

@@ -546,6 +546,9 @@ func (svc *clbSvc) UpdateTCloudListener(cts *rest.Contexts) (any, error) {
 		ListenerName:   req.Name,
 		SniSwitch:      req.SniSwitch,
 	}
+	if req.Extension != nil {
+		lblOpt.Certificate = req.Extension.Certificate
+	}
 	err = client.UpdateListener(cts.Kit, lblOpt)
 	if err != nil {
 		logs.Errorf("fail to call tcloud update listener(id:%s), err: %v, rid: %s", lblID, err, cts.Kit.Rid)
