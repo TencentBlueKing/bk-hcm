@@ -171,4 +171,8 @@ type TCloud interface {
 	DeleteRule(kt *kit.Kit, opt *typelb.TCloudDeleteRuleOption) error
 
 	ListListener(kt *kit.Kit, opt *typelb.TCloudListListenersOption) ([]typelb.TCloudListener, error)
+	RegisterTargets(kt *kit.Kit, opt *typelb.TCloudRegisterTargetsOption) ([]string, error)
+	DeRegisterTargets(kt *kit.Kit, opt *typelb.TCloudRegisterTargetsOption) ([]string, error)
+	ModifyTargetPort(kt *kit.Kit, opt *typelb.TCloudTargetPortUpdateOption) error
+	ModifyTargetWeight(kt *kit.Kit, opt *typelb.TCloudTargetWeightUpdateOption) error
 }

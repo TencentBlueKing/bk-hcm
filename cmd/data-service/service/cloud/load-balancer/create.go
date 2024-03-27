@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	typesdao "hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table/cloud"
+	tablecvm "hcm/pkg/dal/table/cloud/cvm"
 	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
@@ -168,22 +169,34 @@ func batchCreateTargetGroup[T corelb.TargetGroupExtension](cts *rest.Contexts,
 		if err != nil {
 			return nil, err
 		}
-		models := make([]*tablelb.LoadBalancerTargetGroupTable, 0, len(req.TargetGroups))
-		for _, tg := range req.TargetGroups {
-			tgTable, err := convTargetGroupCreateReqToTable(cts.Kit, vendor, tg, vpcInfoMap)
+
+		tgIDs := make([]string, 0, len(req.TargetGroups))
+		for _, tgReq := range req.TargetGroups {
+			// 创建目标组
+			tgTable, err := convTargetGroupCreateReqToTable(cts.Kit, vendor, tgReq, vpcInfoMap)
 			if err != nil {
 				return nil, err
 			}
-			models = append(models, tgTable)
+
+			models := []*tablelb.LoadBalancerTargetGroupTable{tgTable}
+			tgNewIDs, err := svc.dao.LoadBalancerTargetGroup().BatchCreateWithTx(cts.Kit, txn, models)
+			if err != nil {
+				logs.Errorf("[%s]fail to batch create target group, err: %v, rid:%s", vendor, err, cts.Kit.Rid)
+				return nil, fmt.Errorf("batch create target group failed, err: %v", err)
+			}
+			tgIDs = append(tgIDs, tgNewIDs...)
+
+			// 添加RS
+			if tgReq.RsList != nil {
+				_, err = batchCreateTargetWithGroupID(cts.Kit, svc, tgNewIDs[0], tgReq, txn)
+				if err != nil {
+					logs.Errorf("fail to batch create target, err: %v, rid:%s", vendor, err, cts.Kit.Rid)
+					return nil, fmt.Errorf("batch create target failed, err: %v", err)
+				}
+			}
 		}
 
-		ids, err := svc.dao.LoadBalancerTargetGroup().BatchCreateWithTx(cts.Kit, txn, models)
-		if err != nil {
-			logs.Errorf("[%s]fail to batch create target group, err: %v, rid:%s", vendor, err, cts.Kit.Rid)
-			return nil, fmt.Errorf("batch create target group failed, err: %v", err)
-		}
-
-		return ids, nil
+		return tgIDs, nil
 	})
 	if err != nil {
 		return nil, err
@@ -236,6 +249,58 @@ func convTargetGroupCreateReqToTable[T corelb.TargetGroupExtension](kt *kit.Kit,
 		targetGroup.Weight = -1
 	}
 	return targetGroup, nil
+}
+
+func batchCreateTargetWithGroupID[T corelb.TargetGroupExtension](kt *kit.Kit, svc *lbSvc, tgID string,
+	tgReq dataproto.TargetGroupBatchCreate[T], txn *sqlx.Tx) ([]string, error) {
+
+	rsModels := make([]*tablelb.LoadBalancerTargetTable, 0)
+	cloudCvmIDs := make([]string, 0)
+	for _, item := range tgReq.RsList {
+		if item.InstType == enumor.CvmInstType {
+			cloudCvmIDs = append(cloudCvmIDs, item.CloudInstID)
+		}
+	}
+
+	cvmMap := make(map[string]tablecvm.Table)
+	if len(cloudCvmIDs) > 0 {
+		cvmReq := &typesdao.ListOption{
+			Filter: tools.ContainersExpression("cloud_id", cloudCvmIDs),
+			Page:   core.NewDefaultBasePage(),
+		}
+		cvmList, err := svc.dao.Cvm().List(kt, cvmReq)
+		if err != nil {
+			logs.Errorf("failed to list cvm, cloudIDs: %v, err: %v, rid: %s", cloudCvmIDs, err, kt.Rid)
+			return nil, err
+		}
+
+		for _, item := range cvmList.Details {
+			cvmMap[item.CloudID] = item
+		}
+	}
+
+	for _, item := range tgReq.RsList {
+		tmpRs := &tablelb.LoadBalancerTargetTable{
+			AccountID:          tgReq.AccountID,
+			InstType:           item.InstType,
+			CloudInstID:        item.CloudInstID,
+			TargetGroupID:      tgID,
+			CloudTargetGroupID: tgID,
+			Port:               item.Port,
+			Weight:             item.Weight,
+			Creator:            kt.User,
+			Reviser:            kt.User,
+		}
+		// 实例类型-CVM
+		if item.InstType == enumor.CvmInstType {
+			tmpRs.InstID = cvmMap[item.CloudInstID].ID
+			tmpRs.InstName = cvmMap[item.CloudInstID].Name
+			tmpRs.PrivateIPAddress = cvmMap[item.CloudInstID].PrivateIPv4Addresses
+			tmpRs.PublicIPAddress = cvmMap[item.CloudInstID].PublicIPv4Addresses
+		}
+		rsModels = append(rsModels, tmpRs)
+	}
+	return svc.dao.LoadBalancerTarget().BatchCreateWithTx(kt, txn, rsModels)
 }
 
 func getVpcMapByIDs[T corelb.TargetGroupExtension](kt *kit.Kit, tgList []dataproto.TargetGroupBatchCreate[T]) (

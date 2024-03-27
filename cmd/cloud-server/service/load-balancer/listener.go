@@ -12,6 +12,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -61,22 +62,43 @@ func (svc *lbSvc) listListener(cts *rest.Contexts, authHandler handler.ListAuthR
 		return resList, nil
 	}
 
+	urlRuleMap, targetWeightMap, lblTargetGroupMap, err := svc.getUrlRuleAndTargetGroupMap(
+		cts.Kit, expr, req, lbID, resList)
+	if err != nil {
+		return nil, err
+	}
+
+	for idx, lblItem := range resList.Details {
+		tmpTargetGroupID := lblTargetGroupMap[lblItem.ID]
+		resList.Details[idx].TargetGroupID = tmpTargetGroupID
+		resList.Details[idx].Scheduler = urlRuleMap[lblItem.ID].Scheduler
+		resList.Details[idx].DomainNum = urlRuleMap[lblItem.ID].DomainNum
+		resList.Details[idx].UrlNum = urlRuleMap[lblItem.ID].UrlNum
+		if len(tmpTargetGroupID) > 0 {
+			resList.Details[idx].RsWeightNonZeroNum = targetWeightMap[tmpTargetGroupID].RsWeightNonZeroNum
+			resList.Details[idx].RsWeightZeroNum = targetWeightMap[tmpTargetGroupID].RsWeightZeroNum
+		}
+	}
+
+	return resList, nil
+}
+
+func (svc *lbSvc) getUrlRuleAndTargetGroupMap(kt *kit.Kit, expr *filter.Expression, req *core.ListReq, lbID string,
+	resList *cslb.ListListenerResult) (map[string]cslb.ListListenerBase, map[string]cslb.ListListenerBase,
+	map[string]string, error) {
+
 	listenerReq := &core.ListReq{
 		Filter: expr,
 		Page:   req.Page,
 	}
-	listenerList, err := svc.client.DataService().Global.LoadBalancer.ListListener(cts.Kit, listenerReq)
+	listenerList, err := svc.client.DataService().Global.LoadBalancer.ListListener(kt, listenerReq)
 	if err != nil {
-		logs.Errorf("list listener failed, lbID: %s, err: %v, rid: %s", lbID, err, cts.Kit.Rid)
-		return nil, err
+		logs.Errorf("list listener failed, lbID: %s, err: %v, rid: %s", lbID, err, kt.Rid)
+		return nil, nil, nil, err
 	}
-	if req.Page.Count {
+	if req.Page.Count || len(listenerList.Details) == 0 {
 		resList.Count = listenerList.Count
-		return resList, nil
-	}
-
-	if len(listenerList.Details) == 0 {
-		return resList, nil
+		return nil, nil, nil, nil
 	}
 
 	resList.Count = listenerList.Count
@@ -88,18 +110,44 @@ func (svc *lbSvc) listListener(cts *rest.Contexts, authHandler handler.ListAuthR
 		})
 	}
 
-	urlRuleMap, err := svc.listTCloudLbUrlRuleMap(cts.Kit, lbID, lblIDs)
+	urlRuleMap, err := svc.listTCloudLbUrlRuleMap(kt, lbID, lblIDs)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
-	for idx, lblItem := range resList.Details {
-		resList.Details[idx].Scheduler = urlRuleMap[lblItem.ID].Scheduler
-		resList.Details[idx].DomainNum = urlRuleMap[lblItem.ID].DomainNum
-		resList.Details[idx].UrlNum = urlRuleMap[lblItem.ID].UrlNum
+	// 根据lbID、lblID获取绑定的目标组ID列表
+	ruleRelReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("lb_id", lbID),
+			tools.RuleIn("lbl_id", lblIDs),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+	ruleRelList, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, ruleRelReq)
+	if err != nil {
+		logs.Errorf("list target group listener rule rel failed, lbID: %s, lblIDs: %v, err: %v, rid: %s",
+			lbID, lblIDs, err, kt.Rid)
+		return nil, nil, nil, err
+	}
+	// 没有对应的目标组、监听器关联关系记录
+	if len(ruleRelList.Details) == 0 {
+		return nil, nil, nil, nil
 	}
 
-	return resList, nil
+	targetGroupIDs := make([]string, 0)
+	lblTargetGroupMap := make(map[string]string, 0)
+	for _, item := range ruleRelList.Details {
+		targetGroupIDs = append(targetGroupIDs, item.TargetGroupID)
+		lblTargetGroupMap[item.LblID] = item.TargetGroupID
+	}
+
+	// TODO 后面拆成独立接口，让前端异步调用
+	targetWeightMap, err := svc.listTargetWeightNumMap(kt, targetGroupIDs)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	return urlRuleMap, targetWeightMap, lblTargetGroupMap, nil
 }
 
 func (svc *lbSvc) listTCloudLbUrlRuleMap(kt *kit.Kit, lbID string, lblIDs []string) (
@@ -119,6 +167,7 @@ func (svc *lbSvc) listTCloudLbUrlRuleMap(kt *kit.Kit, lbID string, lblIDs []stri
 	}
 
 	listenerRuleMap := make(map[string]cslb.ListListenerBase, 0)
+	domainsExist := make(map[string]struct{}, 0)
 	for _, ruleItem := range urlRuleList.Details {
 		if _, ok := listenerRuleMap[ruleItem.LblID]; !ok {
 			listenerRuleMap[ruleItem.LblID] = cslb.ListListenerBase{
@@ -132,8 +181,9 @@ func (svc *lbSvc) listTCloudLbUrlRuleMap(kt *kit.Kit, lbID string, lblIDs []stri
 		}
 
 		tmpListener := listenerRuleMap[ruleItem.LblID]
-		if len(ruleItem.Domain) > 0 {
+		if _, ok := domainsExist[ruleItem.Domain]; !ok && len(ruleItem.Domain) > 0 {
 			tmpListener.DomainNum++
+			domainsExist[ruleItem.Domain] = struct{}{}
 		}
 		if len(ruleItem.URL) > 0 {
 			tmpListener.UrlNum++
@@ -254,4 +304,26 @@ func (svc *lbSvc) getTCloudListener(kt *kit.Kit, lblID string, bkBizID int64) (*
 	}
 
 	return result, nil
+}
+
+func (svc *lbSvc) listTargetWeightNumMap(kt *kit.Kit, targetGroupIDs []string) (
+	map[string]cslb.ListListenerBase, error) {
+
+	targetList, err := svc.getTargetByTGIDs(kt, targetGroupIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	targetWeightMap := make(map[string]cslb.ListListenerBase, 0)
+	for _, item := range targetList {
+		tmpTarget := targetWeightMap[item.TargetGroupID]
+		if item.Weight == 0 {
+			tmpTarget.RsWeightZeroNum++
+		} else {
+			tmpTarget.RsWeightNonZeroNum++
+		}
+		targetWeightMap[item.TargetGroupID] = tmpTarget
+	}
+
+	return targetWeightMap, nil
 }
