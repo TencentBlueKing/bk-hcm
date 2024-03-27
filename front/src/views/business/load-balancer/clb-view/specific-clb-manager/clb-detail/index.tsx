@@ -1,33 +1,30 @@
-import { defineComponent, ref } from 'vue';
+import { defineComponent, ref, watch } from 'vue';
 import './index.scss';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import { Switcher, Tag } from 'bkui-vue';
-import {
-  HOST_RUNNING_STATUS,
-  HOST_SHUTDOWN_STATUS,
-} from '@/views/resource/resource-manage/common/table/HostOperations';
-import StatusAbnormal from '@/assets/image/Status-abnormal.png';
 import StatusNormal from '@/assets/image/Status-normal.png';
 import StatusUnknown from '@/assets/image/Status-unknown.png';
-import { CLOUD_HOST_STATUS } from '@/common/constant';
+import { useLoadBalancerStore } from '@/store/loadbalancer';
+import { useBusinessStore } from '@/store';
 
 export default defineComponent({
   setup() {
-    const detail = ref([]);
-
+    const detail: { [key: string]: any } = ref({});
+    const loadBalancerStore = useLoadBalancerStore();
+    const businessStore = useBusinessStore();
     const resourceFields = [
       {
         name: '名称',
-        value: 'test',
+        prop: 'name',
         edit: true,
       },
       {
         name: '所属网络',
-        value: 'test',
+        prop: 'vpc_id',
       },
       {
         name: 'ID',
-        value: 'test',
+        prop: 'cloud_id',
       },
       {
         name: '删除保护',
@@ -41,79 +38,91 @@ export default defineComponent({
       {
         name: '状态',
         render() {
-          const data = {
-            status: 'running',
-          };
           return (
-            <div>
-              {HOST_SHUTDOWN_STATUS.includes(data.status) ? (
-                data.status.toLowerCase() === 'stopped' ? (
-                  <img src={StatusUnknown} class={'mr6'} width={14} height={14}></img>
-                ) : (
-                  <img src={StatusAbnormal} class={'mr6'} width={14} height={14}></img>
-                )
-              ) : HOST_RUNNING_STATUS.includes(data.status) ? (
-                <img src={StatusNormal} class={'mr6'} width={14} height={14}></img>
-              ) : (
-                <img src={StatusUnknown} class={'mr6'} width={14} height={14}></img>
-              )}
-              <span>{CLOUD_HOST_STATUS[data.status] || data.status}</span>
+            <div class={'status-wrapper'}>
+              <img src={!detail.value.status ? StatusUnknown : StatusNormal} class={'mr6'} width={14} height={14}></img>
+              <span>{!detail.value.status ? '创建中' : '正常运行'}</span>
             </div>
           );
         },
       },
       {
         name: 'IP版本',
-        value: 'test',
+        prop: 'ip_type',
       },
       {
         name: '网络类型',
-        value: 'test',
+        prop: 'ip_version',
       },
       {
         name: '创建时间',
-        value: 'test',
+        prop: 'created_at',
       },
       {
         name: '地域',
-        value: 'test',
+        prop: 'region',
       },
       {
         name: '可用区域',
-        value: 'test',
+        prop: 'zones',
       },
     ];
 
     const configFields = [
       {
         name: '负载均衡域名',
-        value: 'test',
+        prop: 'domain',
       },
       {
         name: '实例计费模式',
-        value: 'test',
+        prop: '',
       },
       {
         name: '负载均衡VIP',
-        value: 'test',
+        render: () => {
+          return detail.value?.extension?.vip_isp;
+        },
       },
       {
         name: '带宽计费模式',
-        value: 'test',
+        render: () => {
+          return detail.value?.extension?.internet_charge_type;
+        },
       },
       {
         name: '规格类型',
-        value: 'test',
+        render: () => {
+          return detail.value?.extension?.sla_type;
+        },
       },
       {
         name: '带宽上限',
-        value: 'test',
+        render: () => {
+          return detail.value?.extension?.internet_max_bandwidth_out;
+        },
       },
       {
         name: '运营商',
-        value: 'test',
+        render: () => {
+          return detail.value?.extension?.vip_isp;
+        },
       },
     ];
+
+    const getDetails = async (id: string) => {
+      const res = await businessStore.getLbDetail(id);
+      detail.value = res.data;
+    };
+
+    watch(
+      () => loadBalancerStore.currentSelectedTreeNode.id,
+      (id) => {
+        if (id) getDetails(id);
+      },
+      {
+        immediate: true,
+      },
+    );
 
     return () => (
       <div class={'clb-detail-continer'}>
