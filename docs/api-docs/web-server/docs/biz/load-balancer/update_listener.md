@@ -17,19 +17,19 @@ PATCH /api/v1/cloud/bizs/{bk_biz_id}/listeners/{id}
 | name       | string | 是  | 名称   |
 | extension  | object | 否  | 拓展信息 |
 
-
 #### extension
+
 | 参数名称        | 参数类型   | 必选 | 描述                       |
 |-------------|--------|----|--------------------------|
 | certificate | object | 否  | 证书信息, 非SNI类型HTTPS监听器可以修改 |
 
 ### certificate
 
-| 参数名称             | 参数类型         | 描述                                   |
-|------------------|--------------|--------------------------------------|
-| ssl_mode         | string       | 认证类型，UNIDIRECTIONAL：单向认证，MUTUAL：双向认证 |
-| ca_cloud_id      | string       | 服务端证书的云ID                            |
-| client_cloud_ids | string array | 客户端证书的云ID                            |
+| 参数名称           | 参数类型         | 描述                                   |
+|----------------|--------------|--------------------------------------|
+| ssl_mode       | string       | 认证类型，UNIDIRECTIONAL：单向认证，MUTUAL：双向认证 |
+| ca_cloud_id    | string       | CA证书的云ID                             |
+| cert_cloud_ids | string array | 服务端证书的云ID                            |
 
 ### 调用示例
 
