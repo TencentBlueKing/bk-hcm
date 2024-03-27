@@ -378,7 +378,7 @@ func (svc *lbSvc) BatchCreateTCloudUrlRule(cts *rest.Contexts) (any, error) {
 
 		ids, err := svc.dao.LoadBalancerTCloudUrlRule().BatchCreateWithTx(cts.Kit, txn, models)
 		if err != nil {
-			logs.Errorf("[%s]fail to batch create lb rule, err: %v, rid:%s", err, cts.Kit.Rid)
+			logs.Errorf("fail to batch create lb rule, err: %v, rid:%s", err, cts.Kit.Rid)
 			return nil, fmt.Errorf("batch create lb rule failed, err: %v", err)
 		}
 		return ids, nil

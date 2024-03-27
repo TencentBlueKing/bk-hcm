@@ -570,3 +570,13 @@ type TCloudDeleteRuleOption struct {
 func (opt TCloudDeleteRuleOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
+
+// TCloudUrlRule ...
+type TCloudUrlRule struct {
+	*tclb.RuleOutput
+}
+
+// GetCloudID get cloud id
+func (rule TCloudUrlRule) GetCloudID() string {
+	return converter.PtrToVal(rule.LocationId)
+}

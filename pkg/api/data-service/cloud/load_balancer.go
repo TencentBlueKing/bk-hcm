@@ -251,7 +251,6 @@ type TCloudUrlRuleUpdate struct {
 	Domain             string                        `json:"domain"`
 	URL                string                        `json:"url"`
 	Scheduler          string                        `json:"scheduler"`
-	SniSwitch          enumor.SniType                `json:"sni_switch"`
 	SessionType        string                        `json:"session_type"`
 	SessionExpire      *int64                        `json:"session_expire"`
 	HealthCheck        *corelb.TCloudHealthCheckInfo `json:"health_check" validate:"required"`

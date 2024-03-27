@@ -150,7 +150,8 @@ type CloudResType interface {
 
 		cert.TCloudCert |
 		typeslb.TCloudClb |
-		typeslb.TCloudListener
+		typeslb.TCloudListener |
+		typeslb.TCloudUrlRule
 }
 
 // DBResType 本地资源类型
@@ -245,8 +246,7 @@ type DBResType interface {
 
 		corelb.TCloudLoadBalancer |
 		corelb.TCloudLbUrlRule |
-		corelb.TCloudListener |
-		TCloudComposedListener
+		corelb.TCloudListener
 }
 
 // Diff 对比云和db资源，划分出新增数据，更新数据，删除数据。

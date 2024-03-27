@@ -98,7 +98,7 @@ func (cli *client) listener(kt *kit.Kit, opt *SyncListenerOfSingleLBOption) (
 		return new(SyncResult), nil
 	}
 
-	addSlice, updateMap, delCloudIDs := common.Diff[typeslb.TCloudListener, common.TCloudComposedListener](
+	addSlice, updateMap, delCloudIDs := common.Diff[typeslb.TCloudListener, corelb.TCloudListener](
 		cloudListeners, dbListeners, isListenerChange)
 
 	// 删除云上已经删除的监听器实例
@@ -117,7 +117,7 @@ func (cli *client) listener(kt *kit.Kit, opt *SyncListenerOfSingleLBOption) (
 	}
 
 	// 同步监听器下的四层规则
-	_, err = cli.LoadBalancerLayer4Rule(kt, opt)
+	_, err = cli.LoadBalancerRule(kt, opt)
 	if err != nil {
 		logs.Errorf("fail to sync listener rule for sync listener, err: %v, opt: %+v, rid: %s", err, opt, kt.Rid)
 		return nil, err
@@ -137,7 +137,7 @@ func (cli *client) listListenerFromCloud(kt *kit.Kit, opt *SyncListenerOfSingleL
 }
 
 // 获取本地监听器列表
-func (cli *client) listListenerFromDB(kt *kit.Kit, opt *SyncListenerOfSingleLBOption) ([]common.TCloudComposedListener,
+func (cli *client) listListenerFromDB(kt *kit.Kit, opt *SyncListenerOfSingleLBOption) ([]corelb.TCloudListener,
 	error) {
 
 	listReq := &core.ListReq{
@@ -149,26 +149,7 @@ func (cli *client) listListenerFromDB(kt *kit.Kit, opt *SyncListenerOfSingleLBOp
 		logs.Errorf("fail to list listener of lb(%s) for sync, err: %v, rid: %s", opt.LBID, err, kt.Rid)
 		return nil, err
 	}
-	listReq.Filter = tools.ExpressionAnd(
-		tools.RuleEqual("lb_id", opt.LBID),
-		tools.RuleEqual("rule_type", enumor.Layer4RuleType))
-	ruleResp, err := cli.dbCli.TCloud.LoadBalancer.ListUrlRule(kt, listReq)
-	if err != nil {
-		logs.Errorf("fail to list rule of lb(%s) for sync, err: %v, rid: %s", opt.LBID, err, kt.Rid)
-		return nil, err
-	}
-	// lb id as key
-	ruleMap := make(map[string]*corelb.TCloudLbUrlRule)
-	for _, r := range ruleResp.Details {
-		ruleMap[r.LbID] = cvt.ValToPtr(r)
-	}
-
-	// merge to one type
-	result := make([]common.TCloudComposedListener, 0, len(lblResp.Details))
-	for _, lbl := range lblResp.Details {
-		result = append(result, common.TCloudComposedListener{Listener: cvt.ValToPtr(lbl), Rule: ruleMap[lbl.ID]})
-	}
-	return result, nil
+	return lblResp.Details, nil
 }
 
 func (cli *client) deleteListener(kt *kit.Kit, opt *SyncListenerOfSingleLBOption, cloudIds []string) error {
@@ -304,7 +285,7 @@ func convCert(cloud *tclb.CertificateOutput) *corelb.TCloudCertificateInfo {
 }
 
 // isListenerChange 四层规则有健康检查这类信息在监听器上，七层规则可能有0-n条规则，对应字段在规则同步时处理
-func isListenerChange(cloud typeslb.TCloudListener, db common.TCloudComposedListener) bool {
+func isListenerChange(cloud typeslb.TCloudListener, db corelb.TCloudListener) bool {
 
 	// 通用字段
 	if cvt.PtrToVal(cloud.ListenerName) != db.Name {
@@ -330,7 +311,7 @@ func isListenerChange(cloud typeslb.TCloudListener, db common.TCloudComposedList
 	return false
 }
 
-func isLayer4ListenerChanged(cloud typeslb.TCloudListener, db common.TCloudComposedListener) bool {
+func isLayer4ListenerChanged(cloud typeslb.TCloudListener, db corelb.TCloudListener) bool {
 
 	if isListenerCertChange(cloud.Certificate, db.Extension.Certificate) {
 		return true
@@ -401,7 +382,7 @@ func isHealthCheckChange(cloud *tclb.HealthCheck, db *corelb.TCloudHealthCheckIn
 	return false
 }
 
-func isHttpsListenerChanged(cloud typeslb.TCloudListener, db common.TCloudComposedListener) bool {
+func isHttpsListenerChanged(cloud typeslb.TCloudListener, db corelb.TCloudListener) bool {
 	if db.DefaultDomain != getDefaultDomain(cloud) {
 		return true
 	}
