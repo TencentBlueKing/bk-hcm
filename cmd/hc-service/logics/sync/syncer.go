@@ -55,7 +55,7 @@ func (sync *Syncer[BatchSyncParamType, SourceDataType, TargetDataType]) RemoveDe
 		uuidIDMapFromTarget, err := sync.Pager.NextFromTarget(kt)
 		if err != nil {
 			logs.Errorf("[%s] get next from target failed, err: %v, rid: %s", sync.Handler.Name(), err, kt.Rid)
-			return ids, err
+			return nil, err
 		}
 
 		if len(uuidIDMapFromTarget) != 0 {
@@ -64,7 +64,7 @@ func (sync *Syncer[BatchSyncParamType, SourceDataType, TargetDataType]) RemoveDe
 			sourceData, err := sync.Handler.QueryFromSource(kt, params)
 			if err != nil {
 				logs.Errorf("[%s] query from source failed, err: %v, rid: %s", sync.Handler.Name(), err, kt.Rid)
-				return ids, err
+				return nil, err
 			}
 
 			// 如果查询数据和返回数据数量不同，则证明目标源中有数据要被删除
@@ -118,7 +118,7 @@ func (sync *Syncer[BatchSyncParamType, SourceDataType, TargetDataType]) AllPages
 		uuids, err := sync.Pager.NextFromSource(kt)
 		if err != nil {
 			logs.Errorf("[%s] get next from source failed, err: %v, rid: %s", sync.Handler.Name(), err, kt.Rid)
-			return result, err
+			return nil, err
 		}
 
 		// 执行批量同步，同步这一页的资源
@@ -128,7 +128,7 @@ func (sync *Syncer[BatchSyncParamType, SourceDataType, TargetDataType]) AllPages
 			if err != nil {
 				logs.Errorf("[%s] batch sync failed, err: %v, uuids: %v, rid: %s", sync.Handler.Name(),
 					err, uuids, kt.Rid)
-				return result, err
+				return nil, err
 			}
 
 			result.DeleteIDs = append(result.DeleteIDs, batchSyncResult.DeleteIDs...)
@@ -140,7 +140,7 @@ func (sync *Syncer[BatchSyncParamType, SourceDataType, TargetDataType]) AllPages
 		hasNext, err := sync.Pager.HasNextFromSource()
 		if err != nil {
 			logs.Errorf("[%s] exec has next from source failed, err: %v, rid: %s", sync.Handler.Name(), err, kt.Rid)
-			return result, err
+			return nil, err
 		}
 
 		if !hasNext {

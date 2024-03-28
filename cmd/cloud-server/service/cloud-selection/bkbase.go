@@ -38,7 +38,6 @@ import (
 	"hcm/pkg/tools/classifier"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
-	"hcm/pkg/tools/times"
 )
 
 // ListAvailableCountry 列出支持的国家
@@ -86,7 +85,7 @@ func (svc *service) QueryUserDistribution(cts *rest.Contexts) (any, error) {
 
 	total := float64(0)
 	// list all once instead of one by one, reduce network overhead
-	groupByCountry, err := svc.listAllCountryUserDistDist(cts.Kit, times.DateAfterNow(-svc.cfg.AvgLatencySampleDays))
+	groupByCountry, err := svc.listAllCountryUserDistDist(cts.Kit, bkbase.DateBefore(svc.cfg.AvgLatencySampleDays))
 	if err != nil {
 		logs.Errorf("fail to query user distribution, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -198,8 +197,8 @@ func (svc *service) QueryServiceArea(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
-	notBefore := times.DateAfterNow(-svc.cfg.AvgLatencySampleDays)
-	allPingData, err := svc.listAllAvgProvincePingData(cts.Kit, tableName, notBefore, bizID, idcNames)
+	startDate := bkbase.DateBefore(svc.cfg.AvgLatencySampleDays)
+	allPingData, err := svc.listAllAvgProvincePingData(cts.Kit, tableName, startDate, bizID, idcNames)
 	if err != nil {
 		logs.Errorf("fail to query %s, err: %v, rid: %s",
 			svc.cfg.TableNames.LatencyPingProvinceIdc, err, cts.Kit.Rid)
@@ -359,9 +358,9 @@ func getBizIDAndIDCNames(idcList []coresel.Idc) (bizId int64, idcNames []string,
 func (svc *service) queryLatency(kt *kit.Kit, areaTopo []coresel.AreaInfo, table string, bizId int64,
 
 	idcNames []string) ([]cssel.MultiIdcTopo, error) {
-	notBefore := times.DateAfterNow(-svc.cfg.AvgLatencySampleDays)
+	startDate := bkbase.DateBefore(svc.cfg.AvgLatencySampleDays)
 	userDist := make([]cssel.MultiIdcTopo, 0, len(areaTopo))
-	pingDataMap, err := svc.listAllAvgProvincePingData(kt, table, notBefore, bizId, idcNames)
+	pingDataMap, err := svc.listAllAvgProvincePingData(kt, table, startDate, bizId, idcNames)
 	if err != nil {
 		logs.Errorf("fail to query %s data, err: %v, rid: %s", table, err, kt.Rid)
 		return nil, err
@@ -401,7 +400,7 @@ func (svc *service) queryLatency(kt *kit.Kit, areaTopo []coresel.AreaInfo, table
 
 func (svc *service) listAvailableCountry(kt *kit.Kit) ([]string, error) {
 
-	sampleDate := times.DateAfterNow(-svc.cfg.DefaultSampleOffset)
+	sampleDate := bkbase.DateBefore(svc.cfg.DefaultSampleOffset)
 
 	sql := fmt.Sprintf("SELECT DISTINCT country FROM %s WHERE thedate='%s' ORDER BY country LIMIT %d",
 		svc.cfg.TableNames.UserCountryDistribution, sampleDate, bkbase.DefaultQueryLimit)
@@ -414,9 +413,8 @@ func (svc *service) listAvailableCountry(kt *kit.Kit) ([]string, error) {
 	return slice.Map(countries, func(c coresel.CountryInfo) string { return c.Country }), nil
 }
 
-func (svc *service) listAllCountryUserDistDist(kt *kit.Kit,
-	notBeforeDate string) (map[string][]coresel.UserDistribution,
-	error) {
+func (svc *service) listAllCountryUserDistDist(kt *kit.Kit, startDate *bkbase.Date) (
+	map[string][]coresel.UserDistribution, error) {
 
 	sql := fmt.Sprintf(`
 				SELECT country,province, avg(cnt) AS count
@@ -426,7 +424,7 @@ func (svc *service) listAllCountryUserDistDist(kt *kit.Kit,
 				ORDER BY country,province
 				LIMIT %d
 				`,
-		svc.cfg.TableNames.UserProvinceDistribution, notBeforeDate, bkbase.DefaultQueryLimit)
+		svc.cfg.TableNames.UserProvinceDistribution, startDate, bkbase.DefaultQueryLimit)
 	distList, err := bkbase.QuerySql[coresel.UserDistribution](svc.bkBase, kt, sql)
 	if err != nil {
 		logs.Errorf("fail to listAllCountryUserDistDist data, err: %v, rid: %s", err, kt.Rid)
@@ -437,14 +435,13 @@ func (svc *service) listAllCountryUserDistDist(kt *kit.Kit,
 }
 
 // list all country data
-func (svc *service) listAllAvgProvincePingData(kt *kit.Kit, table string, notBeforeDate string, idcBizId int64,
-	idcNames []string) (map[string][]coresel.ProvinceToIDCLatency, error) {
+func (svc *service) listAllAvgProvincePingData(kt *kit.Kit, table string, startDate *bkbase.Date, idcBizId int64, idcNames []string) (map[string][]coresel.ProvinceToIDCLatency, error) {
 
 	fullMap := map[string][]coresel.ProvinceToIDCLatency{}
 	page := core.BasePage{Limit: svc.cfg.BkBase.QueryLimit}
 	for page.Limit > 0 {
 
-		latencyList, err := svc.listAllAvgProvincePingList(kt, table, notBeforeDate, idcBizId, idcNames, page)
+		latencyList, err := svc.listAllAvgProvincePingList(kt, table, startDate, idcBizId, idcNames, page)
 		if err != nil {
 			logs.Errorf("fail to query province idc average ping data, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -464,8 +461,8 @@ func (svc *service) listAllAvgProvincePingData(kt *kit.Kit, table string, notBef
 }
 
 // list all country data
-func (svc *service) listAllAvgProvincePingList(kt *kit.Kit, table string, notBeforeDate string, idcBizId int64,
-	idcNames []string, page core.BasePage) ([]coresel.ProvinceToIDCLatency, error) {
+func (svc *service) listAllAvgProvincePingList(kt *kit.Kit, table string, startDate *bkbase.Date,
+	idcBizId int64, idcNames []string, page core.BasePage) ([]coresel.ProvinceToIDCLatency, error) {
 
 	sql := fmt.Sprintf(`SELECT country, province, idc_name, avg(avg_ping) AS latency 
 		FROM %s
@@ -473,7 +470,7 @@ func (svc *service) listAllAvgProvincePingList(kt *kit.Kit, table string, notBef
         GROUP BY country,province,idc_name 
         ORDER BY country,province,idc_name 
         LIMIT %d OFFSET %d `,
-		table, notBeforeDate, idcBizId, strings.Join(idcNames, "','"), page.Limit, page.Start)
+		table, startDate, idcBizId, strings.Join(idcNames, "','"), page.Limit, page.Start)
 
 	return bkbase.QuerySql[coresel.ProvinceToIDCLatency](svc.bkBase, kt, sql)
 

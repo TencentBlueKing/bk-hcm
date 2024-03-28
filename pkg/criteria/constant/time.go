@@ -28,9 +28,6 @@ const (
 	DateLayout = "2006-01-02"
 	// DateTimeLayout is the date layout with '%Y-%m-%d %H:%M:%S'
 	DateTimeLayout = "2006-01-02 15:04:05"
-
-	// BKBaseDateTimeLayout date layout for bkbase
-	BKBaseDateTimeLayout = "20060102"
 )
 
 // TimeStdRegexp is a regular expression to match the TimeStdFormat

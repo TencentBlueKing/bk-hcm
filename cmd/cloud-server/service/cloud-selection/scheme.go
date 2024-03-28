@@ -26,7 +26,7 @@ import (
 	"hcm/cmd/cloud-server/plugin/recommend"
 	csselection "hcm/pkg/api/cloud-server/cloud-selection"
 	"hcm/pkg/api/core"
-	coreselection "hcm/pkg/api/core/cloud-selection"
+	coresel "hcm/pkg/api/core/cloud-selection"
 	dsselection "hcm/pkg/api/data-service/cloud-selection"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -35,9 +35,9 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/plugin"
 	"hcm/pkg/rest"
+	"hcm/pkg/thirdparty/api-gateway/bkbase"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
-	"hcm/pkg/tools/times"
 )
 
 // BatchDeleteScheme ..
@@ -261,8 +261,7 @@ func (svc *service) GenerateRecommendScheme(cts *rest.Contexts) (any, error) {
 	res := meta.ResourceAttribute{Basic: &meta.Basic{
 		Type:   meta.CloudSelectionScheme,
 		Action: meta.Create,
-	},
-	}
+	}}
 	if err := svc.authorizer.AuthorizeWithPerm(cts.Kit, res); err != nil {
 		logs.Errorf("generate scheme auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -275,9 +274,7 @@ func (svc *service) GenerateRecommendScheme(cts *rest.Contexts) (any, error) {
 		logs.Errorf("fail to list IDC, err: %v", err)
 		return nil, err
 	}
-	idcByID := converter.SliceToMap(idcResp.Details, func(idc coreselection.Idc) (string, coreselection.Idc) {
-		return idc.ID, idc
-	})
+	idcByID := converter.SliceToMap(idcResp.Details, func(idc coresel.Idc) (string, coresel.Idc) { return idc.ID, idc })
 
 	// 前端输入转算法输入
 	algIn, err := svc.buildALgIn(cts, req, idcByID)
@@ -314,11 +311,11 @@ func (svc *service) GenerateRecommendScheme(cts *rest.Contexts) (any, error) {
 }
 
 func (svc *service) buildALgIn(cts *rest.Contexts, req *csselection.GenSchemeReq,
-	idcByID map[string]coreselection.Idc) (*recommend.AlgorithmInput, error) {
+	idcByID map[string]coresel.Idc) (*recommend.AlgorithmInput, error) {
 
 	idcPriceMap := make(map[string]float64, len(idcByID))
 	usedIdcIds := make([]string, 0, len(idcByID))
-	idcByName := make(map[string]coreselection.Idc, len(idcByID))
+	idcByName := make(map[string]coresel.Idc, len(idcByID))
 	var idcBizID int64 = -1
 	for _, idc := range idcByID {
 		price, ok := svc.cfg.DefaultIdcPrice[idc.Vendor]
@@ -333,11 +330,11 @@ func (svc *service) buildALgIn(cts *rest.Contexts, req *csselection.GenSchemeReq
 	}
 
 	// 人口分布和ping数据
-	notBefore := times.DateAfterNow(-svc.cfg.AvgLatencySampleDays)
+	startDate := bkbase.DateBefore(svc.cfg.AvgLatencySampleDays)
 	userDistribution := map[string]float64{}
 	pingInfo := make(map[string]map[string]float64, len(req.UserDistributions))
 
-	allProvinceData, err := svc.listAllAvgProvincePingData(cts.Kit, svc.getRecommendDataSource(), notBefore, idcBizID,
+	allProvinceData, err := svc.listAllAvgProvincePingData(cts.Kit, svc.getRecommendDataSource(), startDate, idcBizID,
 		converter.MapKeyToStringSlice(idcByName))
 	if err != nil {
 		logs.Errorf("fail to get avg ping data, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -350,7 +347,7 @@ func (svc *service) buildALgIn(cts *rest.Contexts, req *csselection.GenSchemeReq
 			return nil, errf.Newf(errf.InvalidParameter, "wrong country: %s", area.Name)
 		}
 		for _, pd := range pingData {
-			name := area.Name + "-" + pd.Province
+			name := getCombinedKey(area.Name, pd.Province)
 			if _, exists := pingInfo[name]; !exists {
 				pingInfo[name] = make(map[string]float64, len(idcByID))
 			}
@@ -358,7 +355,7 @@ func (svc *service) buildALgIn(cts *rest.Contexts, req *csselection.GenSchemeReq
 		}
 		// 人口数据
 		for _, p := range area.Children {
-			name := area.Name + "-" + p.Name
+			name := getCombinedKey(area.Name, p.Name)
 			userDistribution[name] = p.Value
 		}
 	}
@@ -376,6 +373,11 @@ func (svc *service) buildALgIn(cts *rest.Contexts, req *csselection.GenSchemeReq
 		PickIdcList:     []string{},
 	}
 	return algIn, nil
+}
+
+// 拼接唯一key main-sub
+func getCombinedKey(main, sub string) string {
+	return main + "-" + sub
 }
 
 func (svc *service) getRecommendDataSource() string {
