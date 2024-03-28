@@ -26,6 +26,8 @@ export default defineComponent({
     const loadBalancerStore = useLoadBalancerStore();
     const businessStore = useBusinessStore();
 
+    const formInstance = ref();
+
     const isLoading = ref(false);
     // 搜索相关
     const searchData = [
@@ -123,6 +125,7 @@ export default defineComponent({
       formItemOptions,
       handleShow: handleDomainSidesliderShow,
       handleSubmit: handleDomainSidesliderSubmit,
+      formData: formModel,
     } = useAddOrUpdateDomain();
 
     // 批量删除
@@ -275,7 +278,9 @@ export default defineComponent({
           title={`${action.value === 0 ? '新增' : '编辑'}域名`}
           width={640}
           v-model:isShow={isDomainSidesliderShow.value}
-          onHandleSubmit={handleDomainSidesliderSubmit}>
+          onHandleSubmit={() => {
+            handleDomainSidesliderSubmit(formInstance);
+          }}>
           <p class='readonly-info'>
             <span class='label'>监听器名称</span>:
             <span class='value'>{loadBalancerStore.currentSelectedTreeNode.name}</span>
@@ -286,7 +291,7 @@ export default defineComponent({
               {loadBalancerStore.currentSelectedTreeNode.protocol}:{loadBalancerStore.currentSelectedTreeNode.port}
             </span>
           </p>
-          <Form formType='vertical'>
+          <Form formType='vertical' ref={formInstance} model={formModel}>
             {formItemOptions.value
               .filter(({ hidden }) => !hidden)
               .map(({ label, required, property, content }) => {
