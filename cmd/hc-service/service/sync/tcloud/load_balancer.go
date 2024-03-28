@@ -98,8 +98,8 @@ func (hd *lbHandler) Sync(kt *kit.Kit, cloudIDs []string) error {
 		Region:    hd.request.Region,
 		CloudIDs:  cloudIDs,
 	}
-	if _, err := hd.syncCli.LoadBalancer(kt, params, new(tcloud.SyncLBOption)); err != nil {
-		logs.Errorf("sync tcloud load balancer failed, err: %v, opt: %v, rid: %s", err, params, kt.Rid)
+	if _, err := hd.syncCli.LoadBalancerWithListener(kt, params, new(tcloud.SyncLBOption)); err != nil {
+		logs.Errorf("sync tcloud load balancer with rel failed, err: %v, opt: %v, rid: %s", err, params, kt.Rid)
 		return err
 	}
 
