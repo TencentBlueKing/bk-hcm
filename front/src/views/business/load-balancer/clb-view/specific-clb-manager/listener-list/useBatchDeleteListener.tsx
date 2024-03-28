@@ -1,5 +1,5 @@
-import { Ref, reactive, ref, watch } from 'vue';
-import { Button, Message } from 'bkui-vue';
+import { Ref, reactive, ref } from 'vue';
+import { Button, Message, Tag } from 'bkui-vue';
 import { Column } from 'bkui-vue/lib/table/props';
 import { useResourceStore } from '@/store';
 import { cloneDeep } from 'lodash';
@@ -15,12 +15,36 @@ export default (
 
   const isSubmitLoading = ref(false);
   const isBatchDeleteDialogShow = ref(false);
-  const radioGroupValue = ref(false);
+  const radioGroupValue = ref(true);
   const tableProps = reactive({
     columns: [
       ...columns.slice(0, 5),
-      { label: '是否绑定目标组', field: '' },
-      { label: 'RS权重为O', field: '' },
+      {
+        label: '是否绑定目标组',
+        field: 'target_group_id',
+        render: ({ cell }: { cell: string }) => {
+          if (cell)
+            return (
+              <Tag theme='success' v-bk-tooltips={{ content: cell }}>
+                已绑定
+              </Tag>
+            );
+          return <Tag>未绑定</Tag>;
+        },
+      },
+      {
+        label: 'RS权重为O',
+        field: '',
+        render: ({ data }: any) => {
+          const { rs_zero_num, rs_not_zero_num } = data;
+          return (
+            <div class='rs-weight-col'>
+              <span class={rs_zero_num ? 'exception' : 'normal'}>{rs_zero_num}</span>/
+              <span>{rs_zero_num + rs_not_zero_num}</span>
+            </div>
+          );
+        },
+      },
       {
         label: '',
         width: 50,
@@ -68,6 +92,7 @@ export default (
   // click-handler - 批量删除监听器
   const handleBatchDeleteListener = () => {
     isBatchDeleteDialogShow.value = true;
+    tableProps.data = cloneDeep(selections.value);
   };
 
   // remove-handler - 移除单个监听器
@@ -91,14 +116,6 @@ export default (
       isSubmitLoading.value = false;
     }
   };
-
-  watch(
-    selections,
-    (val) => {
-      tableProps.data = cloneDeep(val);
-    },
-    { deep: true },
-  );
 
   return {
     isSubmitLoading,

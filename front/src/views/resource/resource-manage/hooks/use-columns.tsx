@@ -24,6 +24,7 @@ import StatusLoading from '@/assets/image/status_loading.png';
 import { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../common/table/HostOperations';
 import './use-columns.scss';
 import { timeFormatter, timeFromNow } from '@/common/util';
+import { SCHEDULER_MAP } from '@/constants/clb';
 
 export default (type: string, isSimpleShow = false, vendor?: string) => {
   const router = useRouter();
@@ -1224,6 +1225,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '均衡方式',
       field: 'scheduler',
       isDefaultShow: true,
+      render: ({ cell }: { cell: string }) => SCHEDULER_MAP[cell],
     },
     {
       label: '域名数量',

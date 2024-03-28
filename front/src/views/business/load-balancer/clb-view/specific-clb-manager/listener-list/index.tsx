@@ -302,40 +302,40 @@ export default defineComponent({
               </>
             )}
             {!isEdit.value && (
-              <FormItem label={t('均衡方式')} required property='scheduler'>
-                <Select v-model={listenerFormData.scheduler}>
-                  <Option id='WRR' name={t('按权重轮询')} />
-                  <Option id='LEAST_CONN' name={t('最小连接数')} />
-                  <Option id='IP_HASH' name={t('IP Hash')} />
-                </Select>
-              </FormItem>
-            )}
-            <div class={'flex-row'}>
-              <FormItem label={t('会话保持')} required property='session_open'>
-                <Switcher theme='primary' v-model={listenerFormData.session_open} />
-              </FormItem>
-              <FormItem label={t('保持时间')} class={'ml40'} required property='session_expire'>
-                <Input
-                  v-model={listenerFormData.session_expire}
-                  disabled={!listenerFormData.session_open}
-                  placeholder={t('请输入')}
-                  type='number'
-                  min={30}
-                  suffix='秒'
-                />
-              </FormItem>
-            </div>
-            {!isEdit.value && (
-              <FormItem label={t('目标组')} required property='target_group_id'>
-                <Select
-                  v-model={listenerFormData.target_group_id}
-                  scrollLoading={isTargetGroupListLoading.value}
-                  onScroll-end={handleTargetGroupListScrollEnd}>
-                  {targetGroupList.value.map(({ id, name }) => (
-                    <Option key={id} id={id} name={name} />
-                  ))}
-                </Select>
-              </FormItem>
+              <>
+                <FormItem label={t('均衡方式')} required property='scheduler'>
+                  <Select v-model={listenerFormData.scheduler}>
+                    <Option id='WRR' name={t('按权重轮询')} />
+                    <Option id='LEAST_CONN' name={t('最小连接数')} />
+                    <Option id='IP_HASH' name={t('IP Hash')} />
+                  </Select>
+                </FormItem>
+                <div class={'flex-row'}>
+                  <FormItem label={t('会话保持')} required property='session_open'>
+                    <Switcher theme='primary' v-model={listenerFormData.session_open} />
+                  </FormItem>
+                  <FormItem label={t('保持时间')} class={'ml40'} required property='session_expire'>
+                    <Input
+                      v-model={listenerFormData.session_expire}
+                      disabled={!listenerFormData.session_open}
+                      placeholder={t('请输入')}
+                      type='number'
+                      min={30}
+                      suffix='秒'
+                    />
+                  </FormItem>
+                </div>
+                <FormItem label={t('目标组')} required property='target_group_id'>
+                  <Select
+                    v-model={listenerFormData.target_group_id}
+                    scrollLoading={isTargetGroupListLoading.value}
+                    onScroll-end={handleTargetGroupListScrollEnd}>
+                    {targetGroupList.value.map(({ id, name }) => (
+                      <Option key={id} id={id} name={name} />
+                    ))}
+                  </Select>
+                </FormItem>
+              </>
             )}
           </Form>
         </CommonSideslider>
@@ -353,7 +353,14 @@ export default defineComponent({
           {{
             tips: () => (
               <>
-                已选择 <span class='blue'>97</span> 个URL路径，其中 <span class='red'>22</span>
+                已选择<span class='blue'>{tableProps.data.length}</span>个监听器，其中
+                <span class='red'>
+                  {
+                    tableProps.data.filter(
+                      ({ rs_zero_num, rs_not_zero_num }) => rs_not_zero_num === rs_zero_num + rs_not_zero_num,
+                    ).length
+                  }
+                </span>
                 个监听器RS的权重均不为0，在删除监听器前，请确认是否有流量转发，仔细核对后，再提交删除。
               </>
             ),

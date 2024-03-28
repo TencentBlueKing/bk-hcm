@@ -10,7 +10,7 @@ import { useI18n } from 'vue-i18n';
 // import utils
 import { timeFormatter } from '@/common/util';
 // import constants
-import { SESSION_TYPE_MAP, SSL_MODE_MAP } from '@/constants/clb';
+import { SCHEDULER_MAP, SESSION_TYPE_MAP, SSL_MODE_MAP } from '@/constants/clb';
 import './index.scss';
 
 export default defineComponent({
@@ -53,7 +53,7 @@ export default defineComponent({
           },
           {
             label: t('均衡方式'),
-            value: listenerDetail.scheduler,
+            value: SCHEDULER_MAP[listenerDetail.scheduler],
           },
           {
             label: t('目标组'),
