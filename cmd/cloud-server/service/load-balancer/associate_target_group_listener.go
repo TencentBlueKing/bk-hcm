@@ -132,7 +132,7 @@ func (svc *lbSvc) tcloudTargetGroupListenerRel(kt *kit.Kit, req *cslb.TargetGrou
 		return nil, errf.Newf(errf.RecordNotFound, "target_group_id: %s not found", req.TargetGroupID)
 	}
 	// 查询目标组下，是否有RS信息
-	targetList, err := svc.getTargetByTGID(kt, req.TargetGroupID)
+	targetList, err := svc.getTargetByTGIDs(kt, []string{req.TargetGroupID})
 	if err != nil {
 		return nil, err
 	}

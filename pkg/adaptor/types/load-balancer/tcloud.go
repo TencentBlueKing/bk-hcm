@@ -580,3 +580,104 @@ type TCloudUrlRule struct {
 func (rule TCloudUrlRule) GetCloudID() string {
 	return converter.PtrToVal(rule.LocationId)
 }
+
+// -------------------------- Register Targets --------------------------
+
+// TCloudRegisterTargetsOption defines options to tcloud register targets instances.
+type TCloudRegisterTargetsOption struct {
+	// Region 地域
+	Region string `json:"region" validate:"required"`
+	// LoadBalancerId 负载均衡实例 ID
+	LoadBalancerId string `json:"load_balancer_id" validate:"required"`
+	// 绑定目标。
+	Targets []*BatchTarget `json:"targets" validate:"required"`
+}
+
+// Validate validate option.
+func (opt TCloudRegisterTargetsOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// BatchTarget 批量操作Target
+type BatchTarget struct {
+	// 监听器 ID。
+	ListenerId *string `json:"listener_id"`
+	// 后端服务的监听端口。
+	// 注意：绑定CVM（云服务器）或ENI（弹性网卡）时必传此参数
+	Port *int64 `json:"port,omitnil" `
+	// 后端服务的类型，可取：CVM（云服务器）、ENI（弹性网卡）；作为入参时，目前本参数暂不生效。
+	// 注意：此字段可能返回 null，表示取不到有效值。
+	Type *string `json:"Type,omitnil" name:"Type"`
+	// 绑定CVM时需要传入此参数，代表CVM的唯一 ID，可通过 DescribeInstances 接口返回字段中的 InstanceId 字段获取。表示绑定主网卡主IP。
+	// 注意：参数 InstanceId、EniIp 有且只能传入其中一个参数。
+	InstanceId *string `json:"instance_id,omitnil"`
+	// 绑定 IP 时需要传入此参数，支持弹性网卡的 IP 和其他内网 IP，如果是弹性网卡则必须先绑定至CVM，然后才能绑定到负载均衡实例。
+	// 注意：参数 InstanceId、EniIp 只能传入一个且必须传入一个。如果绑定双栈IPV6子机，必须传该参数。
+	EniIp *string `json:"eni_ip,omitnil"`
+	// 子机权重，范围[0, 100]。绑定时如果不存在，则默认为10。
+	Weight *int64 `json:"weight,omitnil"`
+	// 七层规则 ID。
+	LocationId *string `json:"location_id,omitnil"`
+}
+
+// -------------------------- Update Target Port --------------------------
+
+// TCloudTargetPortUpdateOption defines options to update tcloud target port instances.
+type TCloudTargetPortUpdateOption struct {
+	// Region 地域
+	Region string `json:"region" validate:"required"`
+	// LoadBalancerId 负载均衡实例 ID
+	LoadBalancerId string `json:"load_balancer_id" validate:"required"`
+	// ListenerId 负载均衡监听器ID。
+	ListenerId string `json:"listener_id" validate:"required"`
+	// Targets 要修改端口的后端服务列表。
+	Targets []*BatchTarget `json:"targets" validate:"required"`
+	// NewPort 后端服务绑定到监听器或转发规则的新端口。
+	NewPort int64 `json:"new_port" validate:"required"`
+	// LocationId 转发规则的ID，当后端服务绑定到七层转发规则时，必须提供此参数或Domain+Url两者之一。
+	LocationId *string `json:"location_id,omitnil"`
+	// Domain 目标规则的域名，提供LocationId参数时本参数不生效。
+	Domain *string `json:"domain,omitnil"`
+	// Url 目标规则的URL，提供LocationId参数时本参数不生效。
+	Url *string `json:"url,omitnil"`
+}
+
+// Validate validate option.
+func (opt TCloudTargetPortUpdateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// -------------------------- Update Target Weight --------------------------
+
+// TCloudTargetWeightUpdateOption defines options to update tcloud target weight instances.
+type TCloudTargetWeightUpdateOption struct {
+	// Region 地域
+	Region string `json:"region" validate:"required"`
+	// LoadBalancerId 负载均衡实例 ID
+	LoadBalancerId string `json:"load_balancer_id" validate:"required"`
+	// ModifyList 要批量修改权重的列表。
+	ModifyList []*TargetWeightRule `json:"modify_list" validate:"required"`
+}
+
+// Validate validate option.
+func (opt TCloudTargetWeightUpdateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// TargetWeightRule Target Weight rule
+type TargetWeightRule struct {
+	// 负载均衡监听器 ID。
+	ListenerId *string `json:"listener_id" validate:"required"`
+	// 要修改权重的后端机器列表。
+	Targets []*BatchTarget `json:"targets" validate:"required"`
+	// 转发规则的ID，七层规则时需要此参数，4层规则不需要。
+	LocationId *string `json:"locationI_id,omitnil"`
+	// 目标规则的域名，提供LocationId参数时本参数不生效。
+	Domain *string `json:"Domain,omitnil"`
+	// 目标规则的URL，提供LocationId参数时本参数不生效。
+	Url *string `json:"url,omitnil"`
+	// 后端服务修改后的转发权重，取值范围：[0，100]。
+	// 此参数的优先级低于前述[Target](https://cloud.tencent.com/document/api/214/30694#Target)中的Weight参数，
+	// 即最终的权重值以Target中的Weight参数值为准，仅当Target中的Weight参数为空时，才以RsWeightRule中的Weight参数为准。
+	Weight *int64 `json:"weight,omitnil"`
+}

@@ -510,6 +510,7 @@ func (t *TCloudImpl) UpdateLoadBalancer(kt *kit.Kit, opt *typelb.TCloudUpdateOpt
 	return resp.Response.DealName, nil
 }
 
+// CLB异步任务状态
 const (
 	CLBTaskStatusSuccess = 0
 	CLBTaskStatusFail    = 1

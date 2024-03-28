@@ -568,3 +568,203 @@ func (t *TCloudImpl) DeleteRule(kt *kit.Kit, opt *typelb.TCloudDeleteRuleOption)
 	}
 	return nil
 }
+
+// RegisterTargets 批量绑定虚拟主机或弹性网卡 reference: https://cloud.tencent.com/document/api/214/38303
+// 批量绑定的资源数量上限为500。只支持VPC网络负载均衡。
+// 返回绑定失败的监听器ID，如为空表示全部绑定成功。
+func (t *TCloudImpl) RegisterTargets(kt *kit.Kit, opt *typelb.TCloudRegisterTargetsOption) ([]string, error) {
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "register targets option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.ClbClient(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("init tencent cloud clb client failed, region: %s, err: %v", opt.Region, err)
+	}
+
+	req := clb.NewBatchRegisterTargetsRequest()
+	req.LoadBalancerId = converter.ValToPtr(opt.LoadBalancerId)
+	req.Targets = make([]*clb.BatchTarget, 0)
+	for _, item := range opt.Targets {
+		req.Targets = append(req.Targets, &clb.BatchTarget{
+			ListenerId: item.ListenerId,
+			Port:       item.Port,
+			InstanceId: item.InstanceId,
+			EniIp:      item.EniIp,
+			Weight:     item.Weight,
+			LocationId: item.LocationId,
+		})
+	}
+	regResp, err := client.BatchRegisterTargetsWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("register tencent cloud targets instance failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+		return nil, err
+	}
+
+	// 绑定失败的监听器ID，如为空表示全部绑定成功。
+	if regResp.Response != nil && regResp.Response.FailListenerIdSet != nil &&
+		len(regResp.Response.FailListenerIdSet) > 0 {
+		return converter.PtrToSlice(regResp.Response.FailListenerIdSet), nil
+	}
+
+	return nil, nil
+}
+
+// DeRegisterTargets 批量解绑四七层后端服务 reference: https://cloud.tencent.com/document/api/214/38304
+// 批量解绑四七层后端服务。批量解绑的资源数量上限为500。只支持VPC网络负载均衡。
+// 返回解绑失败的监听器ID，如为空表示全部解绑成功。
+func (t *TCloudImpl) DeRegisterTargets(kt *kit.Kit, opt *typelb.TCloudRegisterTargetsOption) ([]string, error) {
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "deregister targets option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.ClbClient(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("init tencent cloud clb client failed, region: %s, err: %v", opt.Region, err)
+	}
+
+	req := clb.NewBatchDeregisterTargetsRequest()
+	req.LoadBalancerId = converter.ValToPtr(opt.LoadBalancerId)
+	req.Targets = make([]*clb.BatchTarget, 0)
+	for _, item := range opt.Targets {
+		req.Targets = append(req.Targets, &clb.BatchTarget{
+			ListenerId: item.ListenerId,
+			Port:       item.Port,
+			InstanceId: item.InstanceId,
+			EniIp:      item.EniIp,
+			Weight:     item.Weight,
+			LocationId: item.LocationId,
+		})
+	}
+	deRegResp, err := client.BatchDeregisterTargetsWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("deregister tencent cloud targets instance failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+		return nil, err
+	}
+
+	// 解绑失败的监听器ID，如为空表示全部解绑成功。
+	if deRegResp.Response != nil && deRegResp.Response.FailListenerIdSet != nil &&
+		len(deRegResp.Response.FailListenerIdSet) > 0 {
+		return converter.PtrToSlice(deRegResp.Response.FailListenerIdSet), nil
+	}
+	return nil, nil
+}
+
+// ModifyTargetPort 修改监听器绑定的后端机器的端口 reference: https://cloud.tencent.com/document/api/214/30678
+// 接口返回成功后，需以返回的 RequestId 为入参，调用 DescribeTaskStatus 接口查询本次任务是否成功
+func (t *TCloudImpl) ModifyTargetPort(kt *kit.Kit, opt *typelb.TCloudTargetPortUpdateOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "modify target port option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.ClbClient(opt.Region)
+	if err != nil {
+		return fmt.Errorf("init tencent cloud clb client failed, region: %s, err: %v", opt.Region, err)
+	}
+
+	req := clb.NewModifyTargetPortRequest()
+	req.LoadBalancerId = converter.ValToPtr(opt.LoadBalancerId)
+	req.ListenerId = converter.ValToPtr(opt.ListenerId)
+	req.NewPort = converter.ValToPtr(opt.NewPort)
+	req.Targets = make([]*clb.Target, 0)
+	for _, item := range opt.Targets {
+		req.Targets = append(req.Targets, &clb.Target{
+			Port:       item.Port,
+			InstanceId: item.InstanceId,
+			EniIp:      item.EniIp,
+			Weight:     item.Weight,
+		})
+	}
+	updateResp, err := client.ModifyTargetPortWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("modify tencent cloud target port failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
+		return err
+	}
+	respPoller := poller.Poller[*TCloudImpl, map[string]*clb.DescribeTaskStatusResponseParams, poller.BaseDoneResult]{
+		Handler: &taskStatusDefaultPollingHandler{opt.Region},
+	}
+
+	reqID := updateResp.Response.RequestId
+	result, err := respPoller.PollUntilDone(t, kt, []*string{reqID}, types.NewLoadBalancerDefaultPollerOption())
+	if err != nil {
+		return err
+	}
+
+	if len(result.SuccessCloudIDs) == 0 {
+		return errf.Newf(errf.CloudVendorError, "no any target port being updated, TencentCloudSDK RequestId: %s",
+			converter.PtrToVal(reqID))
+	}
+
+	return nil
+}
+
+// ModifyTargetWeight 批量修改监听器绑定的后端机器的转发权重 reference: https://cloud.tencent.com/document/api/214/34309
+// 批量修改的资源数量上限为500。接口返回成功后，需以返回的 RequestId 为入参，调用 DescribeTaskStatus 接口查询本次任务是否成功
+func (t *TCloudImpl) ModifyTargetWeight(kt *kit.Kit, opt *typelb.TCloudTargetWeightUpdateOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "modify target weight option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.ClbClient(opt.Region)
+	if err != nil {
+		return fmt.Errorf("init tencent cloud clb client failed, region: %s, err: %v", opt.Region, err)
+	}
+
+	req := clb.NewBatchModifyTargetWeightRequest()
+	req.LoadBalancerId = converter.ValToPtr(opt.LoadBalancerId)
+	req.ModifyList = make([]*clb.RsWeightRule, 0)
+	for _, item := range opt.ModifyList {
+		weightRule := &clb.RsWeightRule{
+			ListenerId: item.ListenerId,
+			LocationId: item.LocationId,
+			Weight:     item.Weight,
+		}
+		for _, rsItem := range item.Targets {
+			weightRule.Targets = append(weightRule.Targets, &clb.Target{
+				Port:       rsItem.Port,
+				Type:       rsItem.Type,
+				InstanceId: rsItem.InstanceId,
+				Weight:     rsItem.Weight,
+				EniIp:      rsItem.EniIp,
+			})
+		}
+		req.ModifyList = append(req.ModifyList, weightRule)
+	}
+	updateResp, err := client.BatchModifyTargetWeightWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("modify tencent cloud target weight failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
+		return err
+	}
+	respPoller := poller.Poller[*TCloudImpl, map[string]*clb.DescribeTaskStatusResponseParams, poller.BaseDoneResult]{
+		Handler: &taskStatusDefaultPollingHandler{opt.Region},
+	}
+
+	reqID := updateResp.Response.RequestId
+	result, err := respPoller.PollUntilDone(t, kt, []*string{reqID}, types.NewLoadBalancerDefaultPollerOption())
+	if err != nil {
+		return err
+	}
+
+	if len(result.SuccessCloudIDs) == 0 {
+		return errf.Newf(errf.CloudVendorError, "no any target weight being updated, TencentCloudSDK RequestId: %s",
+			converter.PtrToVal(reqID))
+	}
+
+	return nil
+}
