@@ -762,7 +762,7 @@ func (svc *clbSvc) UpdateTCloudDomainAttr(cts *rest.Contexts) (any, error) {
 		}
 		ruleReq.UrlRules = append(ruleReq.UrlRules, tmpRule)
 	}
-	_, err = svc.dataCli.TCloud.LoadBalancer.BatchUpdateTCloudUrlRule(cts.Kit, ruleReq)
+	err = svc.dataCli.TCloud.LoadBalancer.BatchUpdateTCloudUrlRule(cts.Kit, ruleReq)
 	if err != nil {
 		logs.Errorf("update tcloud listener url rule domain attr failed, req: %+v, ruleReq: %+v, err: %v, rid: %s",
 			req, ruleReq, err, cts.Kit.Rid)

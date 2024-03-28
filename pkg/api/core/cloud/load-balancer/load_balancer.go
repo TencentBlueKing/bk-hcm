@@ -107,6 +107,16 @@ type Listener[T ListenerExtension] struct {
 	Extension     *T
 }
 
+// GetID ...
+func (lbl Listener[T]) GetID() string {
+	return lbl.BaseListener.ID
+}
+
+// GetCloudID ...
+func (lbl Listener[T]) GetCloudID() string {
+	return lbl.BaseListener.CloudID
+}
+
 // ListenerExtension 监听器拓展
 type ListenerExtension interface {
 	TCloudListenerExtension
@@ -136,6 +146,16 @@ type TCloudLbUrlRule struct {
 
 	Memo           *string `json:"memo"`
 	*core.Revision `json:",inline"`
+}
+
+// GetID ...
+func (r TCloudLbUrlRule) GetID() string {
+	return r.ID
+}
+
+// GetCloudID ...
+func (r TCloudLbUrlRule) GetCloudID() string {
+	return r.CloudID
 }
 
 // BaseLoadBalancerTarget define base load balancer target.

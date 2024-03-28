@@ -170,6 +170,11 @@ func (clb TCloudListener) GetCloudID() string {
 	return converter.PtrToVal(clb.ListenerId)
 }
 
+// GetProtocol ...
+func (clb TCloudListener) GetProtocol() enumor.ProtocolType {
+	return converter.PtrToVal((*enumor.ProtocolType)(clb.Protocol))
+}
+
 // -------------------------- List Targets--------------------------
 
 // TCloudListTargetsOption defines options to list tcloud targets instances.
@@ -564,4 +569,14 @@ type TCloudDeleteRuleOption struct {
 // Validate ...
 func (opt TCloudDeleteRuleOption) Validate() error {
 	return validator.Validate.Struct(opt)
+}
+
+// TCloudUrlRule ...
+type TCloudUrlRule struct {
+	*tclb.RuleOutput
+}
+
+// GetCloudID get cloud id
+func (rule TCloudUrlRule) GetCloudID() string {
+	return converter.PtrToVal(rule.LocationId)
 }

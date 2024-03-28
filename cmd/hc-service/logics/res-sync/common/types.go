@@ -19,27 +19,9 @@
 
 package common
 
-import corelb "hcm/pkg/api/core/cloud/load-balancer"
-
 // VpcDB ...
 type VpcDB struct {
 	VpcCloudID string
 	VpcID      string
 	BkCloudID  int64
-}
-
-// TCloudComposedListener  规则和监听器的符合结构，七层监听器可能没有Rule
-type TCloudComposedListener struct {
-	*corelb.Listener[corelb.TCloudListenerExtension]
-	Rule *corelb.TCloudLbUrlRule
-}
-
-// GetID ...
-func (l TCloudComposedListener) GetID() string {
-	return l.ID
-}
-
-// GetCloudID ...
-func (l TCloudComposedListener) GetCloudID() string {
-	return l.CloudID
 }
