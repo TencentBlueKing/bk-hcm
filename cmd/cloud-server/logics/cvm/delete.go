@@ -457,7 +457,7 @@ func (c *cvm) CheckBizHostInRecycleModule(kt *kit.Kit, bizID int64,
 		hostToCloud[hostID] = cloudID
 	}
 	//  2. 查找主机关系，获取模块信息
-	relation, err := c.esbClient.Cmdb().FindHostTopoRelation(kt.Ctx,
+	relation, err := c.esbClient.Cmdb().FindHostTopoRelation(kt,
 		&cmdb.FindHostTopoRelationParams{
 			HostIDs: hostIDs, BizID: bizID,
 			Page: cmdb.BasePage{Limit: 200, Start: 0},
@@ -474,7 +474,7 @@ func (c *cvm) CheckBizHostInRecycleModule(kt *kit.Kit, bizID int64,
 	// 3. 逐个查询主机模块信息
 	for _, rel := range relation.Data {
 		if _, ok := modRecyclable[rel.BkModuleID]; !ok {
-			module, err := c.esbClient.Cmdb().SearchModule(kt.Ctx, &cmdb.SearchModuleParams{
+			module, err := c.esbClient.Cmdb().SearchModule(kt, &cmdb.SearchModuleParams{
 				BizID:  bizID,
 				Fields: []string{"default", "bk_module_id"},
 				Condition: map[string]interface{}{
@@ -527,7 +527,7 @@ func (c *cvm) getCmdbHostId(kt *kit.Kit, bizID int64,
 		Page:               cmdb.BasePage{Limit: 500},
 		HostPropertyFilter: &cmdb.QueryFilter{Rule: &cmdb.CombinedRule{Condition: "OR", Rules: rules}},
 	}
-	hosts, err := c.esbClient.Cmdb().ListBizHost(kt.Ctx, listParams)
+	hosts, err := c.esbClient.Cmdb().ListBizHost(kt, listParams)
 	if err != nil {
 		logs.Errorf("fail to list cmdb biz host, err: %v, bizID:%v, rid: %s", err, bizID, kt.Rid)
 		return nil, err

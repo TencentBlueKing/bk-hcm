@@ -125,12 +125,12 @@ func (c *cmdbSvc) listBiz(kt *kit.Kit, filter *cmdb.QueryFilter) (interface{}, e
 		BizPropertyFilter: filter,
 		Fields:            []string{"bk_biz_id", "bk_biz_name"},
 	}
-	resp, err := c.esbClient.Cmdb().SearchBusiness(kt.Ctx, params)
+	resp, err := c.esbClient.Cmdb().SearchBusiness(kt, params)
 	if err != nil {
 		return nil, fmt.Errorf("call cmdb search business api failed, err: %v", err)
 	}
 
-	infos := resp.SearchBizResult.Info
+	infos := resp.Info
 	data := make([]map[string]interface{}, 0, len(infos))
 	for _, biz := range infos {
 		data = append(data, map[string]interface{}{
@@ -171,7 +171,7 @@ func (c *cmdbSvc) ListCloudArea(cts *rest.Contexts) (interface{}, error) {
 		params.Condition["bk_cloud_id"] = req.ID
 	}
 
-	res, err := c.esbClient.Cmdb().SearchCloudArea(cts.Kit.Ctx, params)
+	res, err := c.esbClient.Cmdb().SearchCloudArea(cts.Kit, params)
 	if err != nil {
 		return nil, fmt.Errorf("call cmdb search cloud area api failed, err: %v", err)
 	}
@@ -211,7 +211,7 @@ func (c *cmdbSvc) ListAllCloudArea(cts *rest.Contexts) (interface{}, error) {
 	for {
 		params.Page.Start = start
 
-		res, err := c.esbClient.Cmdb().SearchCloudArea(cts.Kit.Ctx, params)
+		res, err := c.esbClient.Cmdb().SearchCloudArea(cts.Kit, params)
 		if err != nil {
 			logs.Errorf("call cmdb search cloud area api failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, fmt.Errorf("call cmdb search cloud area api failed, err: %v", err)
@@ -245,7 +245,7 @@ func (c *cmdbSvc) GetBizBriefCacheTopo(cts *rest.Contexts) (interface{}, error) 
 	params := &cmdb.GetBizBriefCacheTopoParams{
 		BkBizID: bizID,
 	}
-	result, err := c.esbClient.Cmdb().GetBizBriefCacheTopo(cts.Kit.Ctx, params)
+	result, err := c.esbClient.Cmdb().GetBizBriefCacheTopo(cts.Kit, params)
 	if err != nil {
 		logs.Errorf("call cmdb get biz brief cache topo failed, err: %v, bizID: %d, rid: %s", err, bizID, cts.Kit.Rid)
 		return nil, err
