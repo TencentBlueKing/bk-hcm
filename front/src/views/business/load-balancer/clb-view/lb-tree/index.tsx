@@ -41,7 +41,7 @@ export default defineComponent({
     // lb-tree相关
     const treeData = ref([]);
     const treeRef = ref();
-    const allLBNode = ref({ type: 'all', isDropdownListShow: false });
+    const allLBNode = ref({ type: 'all', isDropdownListShow: false, id: '-1' });
     const lastSelectedNode = ref(); // 记录上一次选中的tree-node, 不包括全部负载均衡
     const loadingRef = ref();
     const expandedNodeArr = ref([]);
@@ -209,7 +209,7 @@ export default defineComponent({
           class={[
             'all-lb-item',
             `${props.activeType === 'all' ? ' selected' : ''}`,
-            `${currentPopBoundaryNodeKey.value === '' ? ' show-dropdown' : ''}`,
+            `${currentPopBoundaryNodeKey.value === '-1' ? ' show-dropdown' : ''}`,
           ]}
           onClick={() => handleNodeClick(allLBNode.value)}>
           <div class='base-info'>
