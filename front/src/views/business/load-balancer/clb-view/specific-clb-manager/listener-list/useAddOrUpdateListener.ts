@@ -92,9 +92,14 @@ export default (getListData: any) => {
     resourceStore.detail('listeners', id).then(({ data }: any) => {
       Object.assign(listenerFormData, data, {
         domain: data.default_domain,
-        session_open: listenerFormData.session_expire !== 0,
+        session_open: data.session_expire !== 0,
+        certificate: data.certificate || {
+          ssl_mode: 'UNIDIRECTIONAL',
+          ca_cloud_id: '',
+          cert_cloud_ids: [],
+        },
       });
-      isSniOpen.value = !!listenerFormData.sni_switch;
+      isSniOpen.value = !!data.sni_switch;
       isEdit.value = true;
       isSliderShow.value = true;
     });
@@ -107,7 +112,10 @@ export default (getListData: any) => {
       isAddOrUpdateListenerSubmit.value = true;
       if (isEdit.value) {
         // 编辑监听器
-        await businessStore.updateListener(listenerFormData);
+        await businessStore.updateListener({
+          ...listenerFormData,
+          extension: { certificate: listenerFormData.certificate },
+        });
       } else {
         // 新增监听器
         await businessStore.createListener(listenerFormData);

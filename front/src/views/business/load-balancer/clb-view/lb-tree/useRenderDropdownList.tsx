@@ -56,6 +56,7 @@ export default () => {
       arrow: false,
       extCls: 'lb-tree-dropdown-popover-wrap',
       allowHtml: true,
+      target: e,
       content: (
         <div class='dropdown-list'>
           {typeMenuMap[node.type].map((item) => (
@@ -69,7 +70,7 @@ export default () => {
       onHide: handlePopHide,
     });
     popInstance.value?.show();
-    popInstance.value?.update(e);
+    popInstance.value?.update(e.target);
     popInstance.value?.show();
   };
 

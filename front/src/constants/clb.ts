@@ -80,3 +80,10 @@ export const SSL_MODE_MAP = {
   UNIDIRECTIONAL: '单向认证',
   MUTUAL: '双向认证',
 };
+
+// 均衡方式映射
+export const SCHEDULER_MAP = {
+  WRR: '按权重轮询',
+  LEAST_CONN: '最小连接数',
+  IP_HASH: 'IP Hash',
+};
