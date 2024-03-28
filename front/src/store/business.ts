@@ -161,5 +161,31 @@ export const useBusinessStore = defineStore({
         data,
       );
     },
+    /**
+     * 新增监听器
+     * @param data 监听器信息
+     */
+    createListener(data: any) {
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}load_balancers/${data.lb_id}/listeners/create`,
+        data,
+      );
+    },
+    /**
+     * 更新监听器
+     * @param data 监听器信息
+     */
+    updateListener(data: any) {
+      return http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}listeners/${data.id}`, data);
+    },
+    /*
+     * 新建域名、新建url
+     */
+    createRules(listenerId: string, data: any) {
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/listeners/${listenerId}/rules/create`,
+        data,
+      );
+    },
   },
 });
