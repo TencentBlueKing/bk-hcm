@@ -43,10 +43,47 @@ import (
 	tclb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 )
 
-// LoadBalancer 同步指定负载均衡
+// LoadBalancerWithListener 同步指定负载均衡及下属监听器、规则
 // 1. 同步该负载均衡自身属性
 // 2. 同步该负载均衡下的监听器
 // 3. 同步监听器下的规则
+func (cli *client) LoadBalancerWithListener(kt *kit.Kit, params *SyncBaseParams, opt *SyncLBOption) (*SyncResult,
+	error) {
+
+	_, err := cli.LoadBalancer(kt, params, opt)
+	if err != nil {
+		logs.Errorf("fail to sync load balancer with rel, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	// 同步下属监听器
+	requiredLBCloudIds := params.CloudIDs
+	//  获取同步后的lb数据
+	params.CloudIDs = nil
+	lbList, err := cli.listLBFromDB(kt, params)
+	if err != nil {
+		logs.Errorf("fail to get lb from db after lb layer sync, before Listener sync, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	if len(lbList) == 0 {
+		return new(SyncResult), nil
+	}
+
+	lblParams := &SyncListenerOption{
+		AccountID: params.AccountID,
+		Region:    params.Region,
+		LbInfos:   lbList,
+	}
+
+	if _, err = cli.listenerByLbBatch(kt, lblParams); err != nil {
+		logs.Errorf("fail to sync Listener of lbs(ids: %v), err: %v, rid: %s", requiredLBCloudIds, err, kt.Rid)
+		return nil, err
+	}
+
+	return new(SyncResult), nil
+}
+
+// LoadBalancer 同步指定负载均衡自身属性，不同步关联资源
 func (cli *client) LoadBalancer(kt *kit.Kit, params *SyncBaseParams, opt *SyncLBOption) (*SyncResult, error) {
 	if err := validator.ValidateTool(params, opt); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -83,31 +120,6 @@ func (cli *client) LoadBalancer(kt *kit.Kit, params *SyncBaseParams, opt *SyncLB
 	if err = cli.updateLoadBalancer(kt, updateMap); err != nil {
 		return nil, err
 	}
-
-	requiredLBCloudIds := params.CloudIDs
-	//  获取同步后的lb数据
-	params.CloudIDs = nil
-	lbList, err := cli.listLBFromDB(kt, params)
-	if err != nil {
-		logs.Errorf("fail to get lb from db after lb layer sync, before listener sync, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
-
-	if len(lbList) == 0 {
-		return new(SyncResult), nil
-	}
-
-	lblParams := &SyncListenerParams{
-		AccountID: params.AccountID,
-		Region:    params.Region,
-		LbInfos:   lbList,
-	}
-
-	if _, err = cli.Listener(kt, lblParams); err != nil {
-		logs.Errorf("fail to sync listener of lbs(ids: %v), err: %v, rid: %s", requiredLBCloudIds, err, kt.Rid)
-		return nil, err
-	}
-
 	return new(SyncResult), nil
 }
 

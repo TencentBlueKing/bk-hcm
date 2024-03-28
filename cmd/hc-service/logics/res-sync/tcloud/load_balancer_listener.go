@@ -40,8 +40,8 @@ import (
 	tclb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 )
 
-// Listener 同步多个负载均衡下的监听器：
-func (cli *client) Listener(kt *kit.Kit, params *SyncListenerParams) (*SyncResult, error) {
+// listenerByLbBatch 同步多个负载均衡下的监听器：
+func (cli *client) listenerByLbBatch(kt *kit.Kit, params *SyncListenerOption) (*SyncResult, error) {
 
 	if err := validator.ValidateTool(params); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -465,14 +465,14 @@ func (o *SyncListenerOfSingleLBOption) Validate() error {
 	return validator.Validate.Struct(o)
 }
 
-// SyncListenerParams ...
-type SyncListenerParams struct {
+// SyncListenerOption ...
+type SyncListenerOption struct {
 	AccountID string                      `json:"account_id" validate:"required"`
 	Region    string                      `json:"region" validate:"required"`
 	LbInfos   []corelb.TCloudLoadBalancer `json:"lb_infos" validate:"required,min=1"`
 }
 
 // Validate ...
-func (o *SyncListenerParams) Validate() error {
+func (o *SyncListenerOption) Validate() error {
 	return validator.Validate.Struct(o)
 }
