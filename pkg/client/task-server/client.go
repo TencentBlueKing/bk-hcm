@@ -21,10 +21,13 @@ package taskserver
 
 import (
 	"fmt"
+	"net/http"
 
 	"hcm/pkg/api/core"
 	coreasync "hcm/pkg/api/core/async"
 	apits "hcm/pkg/api/task-server"
+	"hcm/pkg/async/producer"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
@@ -154,4 +157,10 @@ func (c *Client) GetTask(kt *kit.Kit, id string) (*coreasync.AsyncFlowTask, erro
 	}
 
 	return resp.Data, err
+}
+
+// UpdateCustomFlowState update custom flow state.
+func (c *Client) UpdateCustomFlowState(kt *kit.Kit, req *producer.UpdateCustomFlowStateOption) error {
+	return common.RequestNoResp[producer.UpdateCustomFlowStateOption](c.client, http.MethodPatch,
+		kt, req, "/custom_flows/state/update")
 }

@@ -6,7 +6,7 @@
 
 ### URL
 
-POST /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/rs/create
+POST /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/targets/create
 
 ### 输入参数
 
@@ -14,9 +14,9 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/rs/create
 |------------------|--------------|------|--------------------|
 | bk_biz_id        | int          | 是   | 业务ID              |
 | target_group_id  | string       | 是   | 目标组ID            |
-| rs_list          | object array | 是   | RS列表，单次最多100个 |
+| targets          | object array | 是   | RS列表，单次最多100个 |
 
-#### rs_list
+#### targets
 
 | 参数名称          | 参数类型       | 必选 | 描述                               |
 |------------------|--------------|------|-----------------------------------|
@@ -31,7 +31,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/rs/create
 
 ```json
 {
-  "rs_list": [
+  "targets": [
     {
       "inst_type": "CVM",
       "cloud_inst_id": "cvm-xxxxxx",

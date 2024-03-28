@@ -416,9 +416,8 @@ func (svc *lbSvc) ResFlowUnLock(cts *rest.Contexts) (interface{}, error) {
 		}
 
 		relModel := &tablelb.LoadBalancerFlowRelTable{
-			TaskType: req.TaskType,
-			Status:   req.Status,
-			Reviser:  cts.Kit.User,
+			Status:  req.Status,
+			Reviser: cts.Kit.User,
 		}
 		filter := tools.ExpressionAnd(
 			tools.RuleEqual("res_id", req.ResID),

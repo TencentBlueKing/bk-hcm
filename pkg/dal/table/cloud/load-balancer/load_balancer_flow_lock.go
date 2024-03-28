@@ -46,9 +46,9 @@ var LoadBalancerFlowLockColumnsDescriptor = utils.ColumnDescriptors{
 
 // LoadBalancerFlowLockTable load balancer资源锁定表
 type LoadBalancerFlowLockTable struct {
-	ResID   string `db:"res_id" validate:"lte=64" json:"res_id"`
-	ResType string `db:"res_type" validate:"lte=64" json:"res_type"`
-	Owner   string `db:"owner" validate:"lte=64" json:"owner"`
+	ResID   string                   `db:"res_id" validate:"lte=64" json:"res_id"`
+	ResType enumor.CloudResourceType `db:"res_type" validate:"lte=64" json:"res_type"`
+	Owner   string                   `db:"owner" validate:"lte=64" json:"owner"`
 
 	Creator   string     `db:"creator" validate:"lte=64" json:"creator"`
 	Reviser   string     `db:"reviser" validate:"lte=64" json:"reviser"`

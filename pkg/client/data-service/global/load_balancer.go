@@ -158,3 +158,11 @@ func (cli *LoadBalancerClient) ResFlowLock(kt *kit.Kit, req *dataproto.ResFlowLo
 func (cli *LoadBalancerClient) ResFlowUnLock(kt *kit.Kit, req *dataproto.ResFlowLockReq) error {
 	return common.RequestNoResp[dataproto.ResFlowLockReq](cli.client, rest.POST, kt, req, "/res_flow_locks/unlock")
 }
+
+// BatchCreateTCloudTarget 批量创建目标
+func (cli *LoadBalancerClient) BatchCreateTCloudTarget(kt *kit.Kit, req *dataproto.TargetBatchCreateReq) (
+	*core.BatchCreateResult, error) {
+
+	return common.Request[dataproto.TargetBatchCreateReq, core.BatchCreateResult](
+		cli.client, rest.POST, kt, req, "/targets/batch/create")
+}

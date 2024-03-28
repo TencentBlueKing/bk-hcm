@@ -64,6 +64,7 @@ func InitService(cap *capability.Capability) {
 	h.Add("GetTargetGroup", http.MethodGet, "/vendors/{vendor}/target_groups/{id}", svc.GetTargetGroup)
 	h.Add("CreateTargetGroupListenerRel", http.MethodPost, "/target_group_listener_rels/create",
 		svc.CreateTargetGroupListenerRel)
+	h.Add("BatchCreateTarget", http.MethodPost, "/targets/batch/create", svc.BatchCreateTarget)
 
 	// url规则
 	h.Add("BatchCreateTCloudUrlRule",

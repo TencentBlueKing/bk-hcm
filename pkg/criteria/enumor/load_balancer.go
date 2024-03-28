@@ -116,3 +116,18 @@ const (
 	// EniInstType 实例类型-弹性网卡
 	EniInstType InstType = "ENI"
 )
+
+// ResFlowStatus 资源跟Flow的状态类型
+type ResFlowStatus string
+
+// 资源跟Flow的状态类型
+const (
+	// ExecutingResFlowStatus 资源跟Flow的状态类型-执行中
+	ExecutingResFlowStatus ResFlowStatus = "executing"
+	// TimeoutResFlowStatus 资源跟Flow的状态类型-超时
+	TimeoutResFlowStatus ResFlowStatus = "timeout"
+	// SuccessResFlowStatus 资源跟Flow的状态类型-成功
+	SuccessResFlowStatus = ResFlowStatus(FlowSuccess)
+	// CancelResFlowStatus 资源跟Flow的状态类型-取消
+	CancelResFlowStatus = ResFlowStatus(FlowCancel)
+)

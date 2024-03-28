@@ -25,6 +25,7 @@ import (
 
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
+	"hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -218,5 +219,17 @@ type TargetGroupListenerRelAssociateReq struct {
 
 // Validate validate target group listener rel associate
 func (req *TargetGroupListenerRelAssociateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// --------------------------[批量添加RS]--------------------------
+
+// TCloudTargetBatchCreateReq tcloud target batch create req.
+type TCloudTargetBatchCreateReq struct {
+	RsList []*cloud.TargetBaseReq `json:"targets" validate:"required,min=1,max=100,dive"`
+}
+
+// Validate request.
+func (req *TCloudTargetBatchCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

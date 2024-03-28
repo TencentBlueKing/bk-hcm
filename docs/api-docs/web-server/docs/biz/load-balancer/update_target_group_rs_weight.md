@@ -15,9 +15,9 @@ PATCH /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/rs/weight
 | bk_biz_id        | int          | 是   | 业务ID              |
 | target_group_id  | string       | 是   | 目标组ID            |
 | location_id      | string       | 否   | 转发规则的ID         |
-| rs_list          | object array | 是   | RS列表，单次最多20个  |
+| targets          | object array | 是   | RS列表，单次最多20个  |
 
-#### rs_list
+#### targets
 
 | 参数名称          | 参数类型       | 必选 | 描述                   |
 |------------------|--------------|------|-----------------------|
@@ -31,7 +31,7 @@ PATCH /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/rs/weight
 ```json
 {
   "location_id": "loc-xxxx",
-  "rs_list": [
+  "targets": [
     {
       "inst_type": "CVM",
       "cloud_inst_id": "cvm-xxxxxx",

@@ -66,14 +66,19 @@ func (req *TargetGroupCreateReq) Validate() error {
 
 // TargetBaseReq 验证目标创建参数
 type TargetBaseReq struct {
-	InstType    enumor.InstType `json:"inst_type" validate:"required"`
-	CloudInstID string          `json:"cloud_inst_id" validate:"required"`
-	Port        int64           `json:"port" validate:"required"`
-	Weight      int64           `json:"weight" validate:"required"`
+	InstType      enumor.InstType `json:"inst_type" validate:"required"`
+	CloudInstID   string          `json:"cloud_inst_id" validate:"required"`
+	Port          int64           `json:"port" validate:"required"`
+	Weight        int64           `json:"weight" validate:"required"`
+	AccountID     string          `json:"account_id" validate:"omitempty"`
+	TargetGroupID string          `json:"target_group_id" validate:"omitempty"`
 }
 
-// Validate validate req
+// Validate validate req(目前仅支持CVM的实例类型)
 func (req *TargetBaseReq) Validate() error {
+	if req.InstType != enumor.CvmInstType {
+		return errf.Newf(errf.InvalidParameter, "inst_type only supports %s", enumor.CvmInstType)
+	}
 	return validator.Validate.Struct(req)
 }
 
@@ -362,3 +367,28 @@ func (req *ListenerUpdateReq[T]) Validate() error {
 
 // TCloudListenerUpdate ...
 type TCloudListenerUpdate = ListenerUpdateReq[corelb.TCloudListenerExtension]
+
+// -------------------------- Create Target --------------------------
+
+// TargetBatchCreateReq batch create target req
+type TargetBatchCreateReq struct {
+	Targets []*TargetBaseReq `json:"targets" validate:"required,min=1"`
+}
+
+// Validate 验证目标组创建参数
+func (req *TargetBatchCreateReq) Validate() error {
+	if req.Targets != nil {
+		for _, item := range req.Targets {
+			if len(item.AccountID) == 0 {
+				return errf.Newf(errf.InvalidParameter, "account_id is required")
+			}
+			if len(item.TargetGroupID) == 0 {
+				return errf.Newf(errf.InvalidParameter, "target_group_id is required")
+			}
+			if err := item.Validate(); err != nil {
+				return err
+			}
+		}
+	}
+	return validator.Validate.Struct(req)
+}

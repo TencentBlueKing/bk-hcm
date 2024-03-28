@@ -23,6 +23,7 @@ import (
 	"errors"
 
 	"hcm/pkg/async/action"
+	"hcm/pkg/async/backend"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	tableasync "hcm/pkg/dal/table/async"
@@ -133,4 +134,25 @@ func (task *CustomFlowTask) Validate() error {
 	}
 
 	return nil
+}
+
+// UpdateCustomFlowStateOption define update custom flow state option.
+type UpdateCustomFlowStateOption struct {
+	// FlowInfos 任务状态信息
+	FlowInfos []backend.UpdateFlowInfo `json:"flow_infos" validate:"required,min=1"`
+}
+
+// Validate UpdateCustomFlowStateOption
+func (opt *UpdateCustomFlowStateOption) Validate() error {
+	if len(opt.FlowInfos) == 0 {
+		return errors.New("flow_infos is required")
+	}
+
+	for _, flowInfo := range opt.FlowInfos {
+		if err := flowInfo.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return validator.Validate.Struct(opt)
 }

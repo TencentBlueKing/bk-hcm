@@ -27,6 +27,10 @@ const (
 	BatchListenerMaxLimit = 20
 	// ListenerMinSessionExpire 监听器最短的会话过期时间，单位秒
 	ListenerMinSessionExpire = 30
+	// ResFlowLockExpireDays 锁定资源与Flow的最大超时时间，默认7天
+	ResFlowLockExpireDays = 7
+	// FlowRetryMaxLimit Flow重试的最大次数
+	FlowRetryMaxLimit = 864000
 )
 
 // 腾讯云CLB相关常量

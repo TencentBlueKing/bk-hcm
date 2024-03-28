@@ -68,6 +68,10 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 	h.Add("UpdateTCloudDomainAttr", http.MethodPatch, "/vendors/tcloud/listeners/{lbl_id}/domains",
 		svc.UpdateTCloudDomainAttr)
 
+	// 批量操作RS
+	h.Add("BatchCreateTCloudTargets", http.MethodPost, "/vendors/tcloud/target_groups/{target_group_id}/targets/create",
+		svc.BatchCreateTCloudTargets)
+
 	h.Load(cap.WebService)
 }
 

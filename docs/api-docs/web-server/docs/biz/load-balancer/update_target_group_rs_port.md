@@ -6,7 +6,7 @@
 
 ### URL
 
-PATCH /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/rs/port
+PATCH /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/targets/port
 
 ### 输入参数
 
@@ -16,9 +16,9 @@ PATCH /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/rs/port
 | target_group_id  | string       | 是   | 目标组ID            |
 | new_port         | int          | 是   | 新端口              |
 | location_id      | string       | 否   | 转发规则的ID         |
-| rs_list          | object array | 是   | RS列表，单次最多20个  |
+| targets          | object array | 是   | RS列表，单次最多20个  |
 
-#### rs_list
+#### targets
 
 | 参数名称          | 参数类型       | 必选 | 描述                   |
 |------------------|--------------|------|-----------------------|
@@ -33,7 +33,7 @@ PATCH /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/rs/port
 {
   "new_port": 8081,
   "location_id": "loc-xxxx",
-  "rs_list": [
+  "targets": [
     {
       "inst_type": "CVM",
       "cloud_inst_id": "cvm-xxxxxx",
