@@ -1,21 +1,42 @@
-import { computed, reactive, ref } from 'vue';
+import { Ref, computed, reactive, ref } from 'vue';
 // import components
-import { Input, Select } from 'bkui-vue';
+import { Input, Message, Select } from 'bkui-vue';
 // import hooks
 import { useI18n } from 'vue-i18n';
+import { useBusinessStore } from '@/store';
+import { useLoadBalancerStore } from '@/store/loadbalancer';
+import { useRoute } from 'vue-router';
 
 const { Option } = Select;
+
+export const RuleModeList = [
+  {
+    id: 'WRR',
+    name: '按权重轮询',
+  },
+  {
+    id: 'LEAST_CONN',
+    name: '最小连接数',
+  },
+  {
+    id: 'IP_HASH',
+    name: 'IP Hash',
+  },
+];
 
 export default () => {
   // use hooks
   const { t } = useI18n();
+  const businessStore = useBusinessStore();
+  const loadbalancer = useLoadBalancerStore();
+  const route = useRoute();
 
   const isShow = ref(false);
   const action = ref<number>(); // 0 - add, 1 - update
   const formData = reactive({
-    domain: '',
+    domains: '',
     url: '',
-    mode: '',
+    scheduler: '',
   });
 
   // 清空表单参数
@@ -23,7 +44,7 @@ export default () => {
     Object.assign(formData, {
       domain: '',
       url: '',
-      mode: '',
+      scheduler: '',
     });
   };
 
@@ -42,14 +63,32 @@ export default () => {
     }
   };
 
-  const handleSubmit = () => {};
+  const handleSubmit = async (formInstance: Ref<any>) => {
+    await formInstance.value.validate();
+    await businessStore.createRules(loadbalancer.currentSelectedTreeNode.id, {
+      bk_biz_id: route.query.bizs,
+      lbl_id: loadbalancer.currentSelectedTreeNode.id,
+      rules: [
+        {
+          url: formData.url,
+          domains: [formData.domains],
+          scheduler: formData.scheduler,
+        },
+      ],
+    });
+    isShow.value = false;
+    Message({
+      message: '新建成功',
+      theme: 'success',
+    });
+  };
 
   const formItemOptions = computed(() => [
     {
       label: t('域名'),
-      property: 'domain',
+      property: 'domains',
       required: true,
-      content: () => <Input v-model={formData.domain} />,
+      content: () => <Input v-model={formData.domains} />,
     },
     {
       label: t('URL 路径'),
@@ -59,14 +98,15 @@ export default () => {
       content: () => <Input v-model={formData.url} />,
     },
     {
-      label: t('模式'),
-      property: 'mode',
+      label: '均衡方式',
+      property: 'scheduler',
       required: true,
       hidden: action.value === 1,
       content: () => (
-        <Select v-model={formData.mode} placeholder={t('请选择模式')}>
-          <Option id='1' name='1' />
-          <Option id='2' name='2' />
+        <Select v-model={formData.scheduler} placeholder={t('请选择模式')}>
+          {RuleModeList.map(({ id, name }) => (
+            <Option name={name} id={id} />
+          ))}
         </Select>
       ),
     },
@@ -78,5 +118,6 @@ export default () => {
     formItemOptions,
     handleShow,
     handleSubmit,
+    formData,
   };
 };
