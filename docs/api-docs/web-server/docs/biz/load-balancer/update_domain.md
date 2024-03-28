@@ -16,13 +16,29 @@ PATCH /api/v1/cloud/bizs/{bk_biz_id}/listeners/{lbl_id}/domains
 | lbl_id           | string       | 是   | 监听器ID          |
 | domain           | string       | 是   | 旧域名            |
 | new_domain       | string       | 是   | 新域名            |
+| certificate      | object       | 否   | 证书信息           |
+
+### certificate
+
+| 参数名称          | 参数类型       | 描述                                            |
+|------------------|--------------|-------------------------------------------------|
+| ssl_mode         | string       | 认证类型，UNIDIRECTIONAL：单向认证，MUTUAL：双向认证 |
+| ca_cloud_id      | string       | CA证书的云ID                                     |
+| cert_cloud_ids   | string array | 服务端证书的云ID                                  |
 
 ### 调用示例
 
 ```json
 {
   "domain": "www.old.com",
-  "new_domain": "www.new.com"
+  "new_domain": "www.new.com",
+  "certificate": {
+    "ssl_mode": "MUTUAL",
+    "ca_cloud_id": "ca-001",
+    "cert_cloud_ids": [
+      "cert-001"
+    ]
+  },
 }
 ```
 
