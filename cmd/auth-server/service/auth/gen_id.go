@@ -620,3 +620,8 @@ func genTargetGroupResource(a *meta.ResourceAttribute) (client.ActionID, []clien
 		return genIaaSResourceResource(a)
 	}
 }
+
+// genUrlRuleResource generate clb listener related iam resource.
+func genUrlRuleResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	return genIaaSResourceResource(a)
+}
