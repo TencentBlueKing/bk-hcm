@@ -59,7 +59,7 @@ func (cli *client) listenerByLbBatch(kt *kit.Kit, params *SyncListenerOption) (*
 				CloudLBID: lb.CloudID,
 			}
 			var err error
-			if syncResult, err = cli.listener(kt, syncOpt); err != nil {
+			if syncResult, err = cli.Listener(kt, syncOpt); err != nil {
 				logs.ErrorDepthf(1, "[%s] account: %s lb: %s sync listener failed, err: %v, rid: %s",
 					enumor.TCloud, params.AccountID, lb.CloudID, err, kt.Rid)
 				return err
@@ -73,10 +73,8 @@ func (cli *client) listenerByLbBatch(kt *kit.Kit, params *SyncListenerOption) (*
 	return syncResult, nil
 }
 
-// LoadBalancerListener 2. 同步指定负载均衡均衡下的监听器
-//
-//	2.1 同步监听器自身
-func (cli *client) listener(kt *kit.Kit, opt *SyncListenerOfSingleLBOption) (
+// Listener 2. 同步指定负载均衡均衡下的监听器
+func (cli *client) Listener(kt *kit.Kit, opt *SyncListenerOfSingleLBOption) (
 	*SyncResult, error) {
 
 	if err := opt.Validate(); err != nil {
@@ -116,7 +114,7 @@ func (cli *client) listener(kt *kit.Kit, opt *SyncListenerOfSingleLBOption) (
 		return nil, err
 	}
 
-	// 同步监听器下的四层规则
+	// 同步监听器下的四层/七层规则
 	_, err = cli.LoadBalancerRule(kt, opt)
 	if err != nil {
 		logs.Errorf("fail to sync listener rule for sync listener, err: %v, opt: %+v, rid: %s", err, opt, kt.Rid)

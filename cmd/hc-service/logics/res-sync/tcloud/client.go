@@ -80,6 +80,7 @@ type Interface interface {
 	RemoveLoadBalancerDeleteFromCloud(kt *kit.Kit, accountID string, region string) error
 
 	LoadBalancerWithListener(kt *kit.Kit, params *SyncBaseParams, opt *SyncLBOption) (*SyncResult, error)
+	Listener(kt *kit.Kit, opt *SyncListenerOfSingleLBOption) (*SyncResult, error)
 }
 
 var _ Interface = new(client)
