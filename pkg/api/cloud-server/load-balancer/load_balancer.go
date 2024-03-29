@@ -117,14 +117,16 @@ type ListListenerResult = core.ListResultT[ListListenerBase]
 // ListListenerBase define list listener base.
 type ListListenerBase struct {
 	corelb.BaseListener
-	TargetGroupID string                        `json:"target_group_id"`
-	Scheduler     string                        `json:"scheduler"`
-	SessionType   string                        `json:"session_type"`
-	SessionExpire int64                         `json:"session_expire"`
-	DomainNum     int64                         `json:"domain_num"`
-	UrlNum        int64                         `json:"url_num"`
-	HealthCheck   *corelb.TCloudHealthCheckInfo `json:"health_check"`
-	Certificate   *corelb.TCloudCertificateInfo `json:"certificate"`
+	TargetGroupID      string                        `json:"target_group_id"`
+	Scheduler          string                        `json:"scheduler"`
+	SessionType        string                        `json:"session_type"`
+	SessionExpire      int64                         `json:"session_expire"`
+	DomainNum          int64                         `json:"domain_num"`
+	UrlNum             int64                         `json:"url_num"`
+	HealthCheck        *corelb.TCloudHealthCheckInfo `json:"health_check"`
+	Certificate        *corelb.TCloudCertificateInfo `json:"certificate"`
+	RsWeightZeroNum    int64                         `json:"rs_weight_zero_num"`
+	RsWeightNonZeroNum int64                         `json:"rs_weight_non_zero_num"`
 }
 
 // -------------------------- Get Listener --------------------------

@@ -49,10 +49,31 @@ type TargetGroupCreateReq struct {
 	Weight          int64                  `json:"weight" validate:"omitempty"`
 	HealthCheck     types.JsonField        `json:"health_check" validate:"omitempty"`
 	Memo            *string                `json:"memo"`
+	RsList          []*TargetBaseReq       `json:"rs_list" validate:"omitempty"`
 }
 
 // Validate 验证目标组创建参数
 func (req *TargetGroupCreateReq) Validate() error {
+	if req.RsList != nil {
+		for _, item := range req.RsList {
+			if err := item.Validate(); err != nil {
+				return err
+			}
+		}
+	}
+	return validator.Validate.Struct(req)
+}
+
+// TargetBaseReq 验证目标创建参数
+type TargetBaseReq struct {
+	InstType    enumor.InstType `json:"inst_type" validate:"required"`
+	CloudInstID string          `json:"cloud_inst_id" validate:"required"`
+	Port        int64           `json:"port" validate:"required"`
+	Weight      int64           `json:"weight" validate:"required"`
+}
+
+// Validate validate req
+func (req *TargetBaseReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
@@ -80,6 +101,7 @@ type TargetGroupBatchCreate[Extension corelb.TargetGroupExtension] struct {
 	HealthCheck     types.JsonField        `json:"health_check" validate:"omitempty"`
 	Memo            *string                `json:"memo"`
 	Extension       *Extension             `json:"extension"`
+	RsList          []*TargetBaseReq       `json:"rs_list" validate:"omitempty"`
 }
 
 // Validate 验证目标组创建参数

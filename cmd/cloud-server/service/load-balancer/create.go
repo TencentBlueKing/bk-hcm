@@ -159,6 +159,7 @@ func (svc *lbSvc) batchCreateTCloudTargetGroup(kt *kit.Kit, rawReq json.RawMessa
 				Port:            req.Port,
 				CloudVpcID:      req.CloudVpcID,
 				TargetGroupType: enumor.LocalTargetGroupType,
+				RsList:          req.RsList,
 			},
 		},
 	}
