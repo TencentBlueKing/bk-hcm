@@ -36,10 +36,14 @@ var TargetGroupListenerRuleRelColumns = utils.MergeColumns(nil, TargetGroupListe
 var TargetGroupListenerRuleRelColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "listener_rule_id", NamedC: "listener_rule_id", Type: enumor.String},
+	{Column: "cloud_listener_rule_id", NamedC: "cloud_listener_rule_id", Type: enumor.String},
 	{Column: "listener_rule_type", NamedC: "listener_rule_type", Type: enumor.String},
 	{Column: "target_group_id", NamedC: "target_group_id", Type: enumor.String},
+	{Column: "cloud_target_group_id", NamedC: "cloud_target_group_id", Type: enumor.String},
 	{Column: "lb_id", NamedC: "lb_id", Type: enumor.String},
+	{Column: "cloud_lb_id", NamedC: "cloud_lb_id", Type: enumor.String},
 	{Column: "lbl_id", NamedC: "lbl_id", Type: enumor.String},
+	{Column: "cloud_lbl_id", NamedC: "cloud_lbl_id", Type: enumor.String},
 	{Column: "binding_status", NamedC: "binding_status", Type: enumor.String},
 	{Column: "detail", NamedC: "detail", Type: enumor.Json},
 
@@ -51,14 +55,21 @@ var TargetGroupListenerRuleRelColumnsDescriptor = utils.ColumnDescriptors{
 
 // TargetGroupListenerRuleRelTable 目标组监听器关系表
 type TargetGroupListenerRuleRelTable struct {
-	ID               string               `db:"id" validate:"lte=64" json:"id"`
-	ListenerRuleID   string               `db:"listener_rule_id" validate:"lte=64" json:"listener_rule_id"`
-	ListenerRuleType enumor.RuleType      `db:"listener_rule_type" validate:"lte=64" json:"listener_rule_type"`
-	TargetGroupID    string               `db:"target_group_id" validate:"lte=64" json:"target_group_id"`
-	LbID             string               `db:"lb_id" validate:"lte=64" json:"lb_id"`
-	LblID            string               `db:"lbl_id" validate:"lte=64" json:"lbl_id"`
-	BindingStatus    enumor.BindingStatus `db:"binding_status" validate:"lte=64" json:"binding_status"`
-	Detail           types.JsonField      `db:"detail" json:"detail"`
+	ID                  string `db:"id" validate:"lte=64" json:"id"`
+	ListenerRuleID      string `db:"listener_rule_id" validate:"lte=64" json:"listener_rule_id"`
+	CloudListenerRuleID string `db:"cloud_listener_rule_id" validate:"lte=64" json:"cloud_listener_rule_id"`
+
+	ListenerRuleType enumor.RuleType `db:"listener_rule_type" validate:"lte=64" json:"listener_rule_type"`
+
+	TargetGroupID      string `db:"target_group_id" validate:"lte=64" json:"target_group_id"`
+	CloudTargetGroupID string `db:"cloud_target_group_id" validate:"lte=64" json:"cloud_target_group_id"`
+	LbID               string `db:"lb_id" validate:"lte=64" json:"lb_id"`
+	CloudLbID          string `db:"cloud_lb_id" validate:"lte=64" json:"cloud_lb_id"`
+	LblID              string `db:"lbl_id" validate:"lte=64" json:"lbl_id"`
+	CloudLblID         string `db:"cloud_lbl_id" validate:"lte=64" json:"cloud_lbl_id"`
+
+	BindingStatus enumor.BindingStatus `db:"binding_status" validate:"lte=64" json:"binding_status"`
+	Detail        types.JsonField      `db:"detail" json:"detail"`
 
 	Creator   string     `db:"creator" validate:"lte=64" json:"creator"`
 	Reviser   string     `db:"reviser" validate:"lte=64" json:"reviser"`

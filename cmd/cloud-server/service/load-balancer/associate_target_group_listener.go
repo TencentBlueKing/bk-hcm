@@ -175,13 +175,16 @@ func (svc *lbSvc) tcloudTargetGroupListenerRel(kt *kit.Kit, req *cslb.TargetGrou
 	}
 
 	relReq := &dataproto.TargetGroupListenerRelCreateReq{
-		ListenerRuleID:     req.ListenerRuleID,
-		ListenerRuleType:   ruleList.Details[0].RuleType,
-		TargetGroupID:      req.TargetGroupID,
-		CloudTargetGroupID: targetGroupList[0].CloudID,
-		LbID:               lblInfo.LbID,
-		LblID:              req.ListenerID,
-		BindingStatus:      enumor.SuccessBindingStatus,
+		ListenerRuleID:      req.ListenerRuleID,
+		CloudListenerRuleID: ruleList.Details[0].CloudID,
+		ListenerRuleType:    ruleList.Details[0].RuleType,
+		TargetGroupID:       req.TargetGroupID,
+		CloudTargetGroupID:  targetGroupList[0].CloudID,
+		LbID:                lblInfo.LbID,
+		CloudLbID:           lblInfo.CloudLbID,
+		LblID:               req.ListenerID,
+		CloudLblID:          lblInfo.CloudID,
+		BindingStatus:       enumor.SuccessBindingStatus,
 	}
 	return svc.client.DataService().Global.LoadBalancer.CreateTargetGroupListenerRel(kt, relReq)
 }

@@ -76,17 +76,17 @@ create table `load_balancer`
 -- 2. 通用安全组资源关联表
 create table `security_group_common_rel`
 (
-    `id`                bigint      unsigned not null auto_increment,
-    `vendor`            varchar(16) not null,
-    `res_id`            varchar(64) not null,
-    `res_type`          varchar(64) not null,
-    `security_group_id` varchar(64) not null,
-    `priority`          int         not null,
+    `id`                bigint unsigned not null auto_increment,
+    `vendor`            varchar(16)     not null,
+    `res_id`            varchar(64)     not null,
+    `res_type`          varchar(64)     not null,
+    `security_group_id` varchar(64)     not null,
+    `priority`          int             not null,
 
-    `creator`           varchar(64) not null,
-    `reviser`           varchar(64) not null,
-    `created_at`        timestamp   not null default current_timestamp,
-    `updated_at`        timestamp   not null default current_timestamp on update current_timestamp,
+    `creator`           varchar(64)     not null,
+    `reviser`           varchar(64)     not null,
+    `created_at`        timestamp       not null default current_timestamp,
+    `updated_at`        timestamp       not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_vendor_res_type_res_id_sg_id`
         (`vendor`, `res_type`, `res_id`, `security_group_id`)
@@ -232,19 +232,23 @@ create table `load_balancer_target_group`
 -- 7. 目标组监听器关系表
 create table `target_group_listener_rule_rel`
 (
-    `id`                 varchar(64) not null,
-    `listener_rule_id`   varchar(64) not null,
-    `listener_rule_type` varchar(64) not null,
-    `target_group_id`    varchar(64) not null,
-    `lb_id`              varchar(64) not null,
-    `lbl_id`             varchar(64) not null,
-    `binding_status`     varchar(64) not null,
-    `detail`             json                 default null,
+    `id`                     varchar(64) not null,
+    `listener_rule_id`       varchar(64) not null,
+    `listener_rule_type`     varchar(64) not null,
+    `cloud_listener_rule_id` varchar(64) not null,
+    `target_group_id`        varchar(64) not null,
+    `cloud_target_group_id`  varchar(64) not null,
+    `lb_id`                  varchar(64) not null,
+    `cloud_lb_id`            varchar(64) not null,
+    `lbl_id`                 varchar(64) not null,
+    `cloud_lbl_id`           varchar(64) not null,
+    `binding_status`         varchar(64) not null,
+    `detail`                 json                 default null,
 
-    `creator`            varchar(64) not null,
-    `reviser`            varchar(64) not null,
-    `created_at`         timestamp   not null default current_timestamp,
-    `updated_at`         timestamp   not null default current_timestamp on update current_timestamp,
+    `creator`                varchar(64) not null,
+    `reviser`                varchar(64) not null,
+    `created_at`             timestamp   not null default current_timestamp,
+    `updated_at`             timestamp   not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_target_group_id_listener_rule_id_listener_rule_type` (`target_group_id`, `listener_rule_id`, `listener_rule_type`)
 ) engine = innodb
