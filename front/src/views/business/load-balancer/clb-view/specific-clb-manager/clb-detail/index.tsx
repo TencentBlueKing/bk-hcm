@@ -115,9 +115,10 @@ export default defineComponent({
     };
 
     watch(
-      () => loadBalancerStore.currentSelectedTreeNode.id,
-      (id) => {
-        if (id) getDetails(id);
+      () => loadBalancerStore.currentSelectedTreeNode,
+      (val) => {
+        const { id, type } = val;
+        if (type === 'lb' && id) getDetails(id);
       },
       {
         immediate: true,
