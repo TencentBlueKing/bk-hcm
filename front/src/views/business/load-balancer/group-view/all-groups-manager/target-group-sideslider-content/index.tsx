@@ -41,7 +41,7 @@ export default defineComponent({
       protocol: '',
       port: 80,
       region: '',
-      vpc_id: [],
+      cloud_vpc_id: [],
     });
     const curVendor = ref(VendorEnum.TCLOUD);
     const selectedBizId = computed({
@@ -116,7 +116,7 @@ export default defineComponent({
           span: 12,
           content: () => (
             <VpcSelector
-              v-model={formData.vpc_id}
+              v-model={formData.cloud_vpc_id}
               isDisabled={!formData.account_id && !formData.region}
               region={formData.region}
               vendor={curVendor.value}
@@ -138,7 +138,7 @@ export default defineComponent({
     watch(
       () => formData,
       () => {
-        emit('change', formData);
+        emit('change', { ...formData, port: +formData.port });
       },
       {
         deep: true,
@@ -185,7 +185,7 @@ export default defineComponent({
           formData.protocol = data.protocol;
           formData.port = data.port;
           formData.region = data.region;
-          formData.vpc_id = data.vpc_id;
+          formData.cloud_vpc_id = data.cloud_vpc_id;
         }
       },
       {

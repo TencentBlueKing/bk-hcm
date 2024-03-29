@@ -501,6 +501,8 @@ export const RESOURCE_TYPES_MAP = {
   zone: '可用区',
   azure_resource_group: '微软云资源组',
   argument_template: '参数模板',
+  cert: '证书',
+  load_balancer: '负载均衡',
 };
 
 export const RESOURCES_SYNC_STATUS_MAP = {

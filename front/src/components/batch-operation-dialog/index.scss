@@ -9,6 +9,7 @@
     .tips {
       margin-bottom: 12px;
       span {
+        margin: 0 4px;
         font-weight: 700;
         &.blue {
           color: #3a84ff;
@@ -25,6 +26,10 @@
   .bk-modal-footer {
     .bk-button {
       min-width: 64px;
+    }
+
+    .dialog-cancel {
+      margin-left: 8px;
     }
   }
   .bk-modal-close {

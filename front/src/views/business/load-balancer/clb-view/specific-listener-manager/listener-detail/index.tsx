@@ -10,7 +10,7 @@ import { useI18n } from 'vue-i18n';
 // import utils
 import { timeFormatter } from '@/common/util';
 // import constants
-import { SESSION_TYPE_MAP, SSL_MODE_MAP } from '@/constants/clb';
+import { SCHEDULER_MAP, SESSION_TYPE_MAP, SSL_MODE_MAP } from '@/constants/clb';
 import './index.scss';
 
 export default defineComponent({
@@ -53,7 +53,7 @@ export default defineComponent({
           },
           {
             label: t('均衡方式'),
-            value: listenerDetail.scheduler,
+            value: SCHEDULER_MAP[listenerDetail.scheduler],
           },
           {
             label: t('目标组'),
@@ -85,13 +85,13 @@ export default defineComponent({
           },
           {
             label: t('CA证书'),
-            value: listenerDetail.certificate?.client_cloud_ids?.join(','),
+            value: listenerDetail.certificate?.cert_cloud_ids?.join(','),
           },
         ],
       },
       {
         title: t('会话保持'),
-        open_state: listenerDetail.session_expire,
+        open_state: listenerDetail.session_expire === 0 ? 0 : 1,
         content: [
           {
             label: t('会话时间'),

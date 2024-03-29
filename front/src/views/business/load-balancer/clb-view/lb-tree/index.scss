@@ -18,7 +18,8 @@
   }
 
   .ext-info {
-    position: relative;
+    position: absolute;
+    right: 16px;
 
     .count {
       min-width: 24px;
@@ -62,6 +63,7 @@
   }
 
   .all-lb-item {
+    position: relative;
     padding: 0 16px;
     height: 36px;
     line-height: 36px;
@@ -92,14 +94,18 @@
     height: calc(100% - 92px) !important;
     overflow-y: auto;
 
-    .bk-node-text {
-      flex: 1;
-      display: flex;
-      justify-content: space-between;
-      padding-right: 4px;
+    .bk-node-row {
+      position: relative;
 
-      .tree-loading-node {
-        left: 50%;
+      .bk-node-text {
+        flex: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .tree-loading-node {
+          left: 50%;
+        }
       }
     }
 

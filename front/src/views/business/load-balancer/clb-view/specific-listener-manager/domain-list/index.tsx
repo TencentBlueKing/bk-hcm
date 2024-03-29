@@ -246,7 +246,6 @@ export default defineComponent({
           loading={isLoading.value}
           tableOptions={{
             rowKey: 'domain',
-            data: domainList.value,
             columns: tableColumns,
             extra: {
               settings: settings.value,
@@ -257,6 +256,7 @@ export default defineComponent({
               },
             },
           }}
+          tableData={domainList.value}
           searchOptions={{
             searchData,
           }}>

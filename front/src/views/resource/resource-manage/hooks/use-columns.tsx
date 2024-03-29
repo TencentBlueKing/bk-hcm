@@ -24,6 +24,7 @@ import StatusLoading from '@/assets/image/status_loading.png';
 import { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../common/table/HostOperations';
 import './use-columns.scss';
 import { timeFormatter, timeFromNow } from '@/common/util';
+import { SCHEDULER_MAP } from '@/constants/clb';
 
 export default (type: string, isSimpleShow = false, vendor?: string) => {
   const router = useRouter();
@@ -1192,7 +1193,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '可用区域',
       field: 'zones',
-      render: ({ cell }: { cell: string[] }) => cell.join(','),
+      render: ({ cell }: { cell: string[] }) => cell?.join(','),
     },
     {
       label: '状态',
@@ -1207,6 +1208,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const listenerColumns = [
     getLinkField('listener', '监听器名称', 'name'),
     {
+      label: '监听器ID',
+      field: 'cloud_id',
+    },
+    {
       label: '协议',
       field: 'protocol',
       isDefaultShow: true,
@@ -1220,6 +1225,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '均衡方式',
       field: 'scheduler',
       isDefaultShow: true,
+      render: ({ cell }: { cell: string }) => SCHEDULER_MAP[cell],
     },
     {
       label: '域名数量',
@@ -1530,7 +1536,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '域名',
       field: 'domain',
       render: ({ cell }: { cell: string[] }) => {
-        return cell.join(';');
+        return cell?.join(';');
       },
     },
     {
