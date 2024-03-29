@@ -116,7 +116,7 @@ type ListListenerResult = core.ListResultT[ListListenerBase]
 
 // ListListenerBase define list listener base.
 type ListListenerBase struct {
-	corelb.BaseListener
+	corelb.TCloudListener
 	TargetGroupID      string                        `json:"target_group_id"`
 	Scheduler          string                        `json:"scheduler"`
 	SessionType        string                        `json:"session_type"`
@@ -133,7 +133,7 @@ type ListListenerBase struct {
 
 // GetListenerDetail define get listener detail.
 type GetListenerDetail struct {
-	corelb.BaseListener
+	corelb.TCloudListener
 	LblID              string                        `json:"lbl_id"`
 	LblName            string                        `json:"lbl_name"`
 	CloudLblID         string                        `json:"cloud_lbl_id"`
@@ -144,7 +144,6 @@ type GetListenerDetail struct {
 	SessionType        string                        `json:"session_type"`
 	SessionExpire      int64                         `json:"session_expire"`
 	HealthCheck        *corelb.TCloudHealthCheckInfo `json:"health_check"`
-	Certificate        *corelb.TCloudCertificateInfo `json:"certificate"`
 	DomainNum          int64                         `json:"domain_num"`
 	UrlNum             int64                         `json:"url_num"`
 }

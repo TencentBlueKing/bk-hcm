@@ -178,6 +178,11 @@ type ListenerListResult = core.ListResultT[corelb.BaseListener]
 // TCloudListenerListResult ...
 type TCloudListenerListResult = core.ListResultT[corelb.Listener[corelb.TCloudListenerExtension]]
 
+// -------------------------- Get Listener --------------------------
+
+// TCloudListenerDetailResult ...
+type TCloudListenerDetailResult = corelb.Listener[corelb.TCloudListenerExtension]
+
 // -------------------------- List Target --------------------------
 
 // TargetListResult define target list result.
