@@ -110,8 +110,8 @@ export const useBusinessStore = defineStore({
     /**
      * 编辑目标组基本信息
      */
-    editTargetGroups(id: string, data: any) {
-      return http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${id}`, data);
+    editTargetGroups(data: any) {
+      return http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${data.id}`, data);
     },
     /**
      * 目标组绑定RS列表

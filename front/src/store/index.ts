@@ -10,6 +10,7 @@ export * from './resource';
 export * from './common';
 export * from './host';
 export * from './scheme';
+export * from './loadbalancer';
 
 // @ts-ignore
 if (import.meta.hot) {
