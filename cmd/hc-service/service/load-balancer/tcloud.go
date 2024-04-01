@@ -440,9 +440,13 @@ func (svc *clbSvc) insertListenerWithRule(kt *kit.Kit, req *protolb.ListenerWith
 	lbInfo corelb.BaseLoadBalancer, cloudLblID string, cloudRuleID string, targetGroupInfo corelb.BaseTargetGroup) (
 	*core.BatchCreateResult, error) {
 
+	var domain, url string
 	var ruleType = enumor.Layer4RuleType
 	if req.Protocol.IsLayer7Protocol() {
 		ruleType = enumor.Layer7RuleType
+		// 只有7层监听器才有域名、URL
+		domain = req.Domain
+		url = req.Url
 	} else {
 		// 4层监听器对应的云端规则ID就是云监听器ID
 		cloudRuleID = cloudLblID
@@ -467,8 +471,8 @@ func (svc *clbSvc) insertListenerWithRule(kt *kit.Kit, req *protolb.ListenerWith
 				SessionExpire:      req.SessionExpire,
 				TargetGroupID:      req.TargetGroupID,
 				CloudTargetGroupID: targetGroupInfo.CloudID,
-				Domain:             req.Domain,
-				Url:                req.Url,
+				Domain:             domain,
+				Url:                url,
 				SniSwitch:          req.SniSwitch,
 				Certificate:        req.Certificate,
 			},
@@ -789,7 +793,7 @@ func (svc *clbSvc) UpdateTCloudDomainAttr(cts *rest.Contexts) (any, error) {
 }
 
 func (svc *clbSvc) updateTCloudDomainAttr(kt *kit.Kit, req *protolb.DomainAttrUpdateReq,
-	lblInfo *corelb.BaseListener) ([]corelb.TCloudLbUrlRule, error) {
+	lblInfo *dataproto.TCloudListenerDetailResult) ([]corelb.TCloudLbUrlRule, error) {
 
 	// 获取规则列表
 	ruleOpt := &core.ListReq{

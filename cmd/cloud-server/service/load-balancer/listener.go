@@ -62,30 +62,44 @@ func (svc *lbSvc) listListener(cts *rest.Contexts, authHandler handler.ListAuthR
 		return resList, nil
 	}
 
-	urlRuleMap, targetWeightMap, lblTargetGroupMap, err := svc.getUrlRuleAndTargetGroupMap(
-		cts.Kit, expr, req, lbID, resList)
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(
+		cts.Kit, enumor.LoadBalancerCloudResType, lbID)
 	if err != nil {
+		logs.Errorf("fail to get load balancer basic info, lbID: %s, err: %v, rid: %s", lbID, err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	for idx, lblItem := range resList.Details {
-		tmpTargetGroupID := lblTargetGroupMap[lblItem.ID]
-		resList.Details[idx].TargetGroupID = tmpTargetGroupID
-		resList.Details[idx].Scheduler = urlRuleMap[lblItem.ID].Scheduler
-		resList.Details[idx].DomainNum = urlRuleMap[lblItem.ID].DomainNum
-		resList.Details[idx].UrlNum = urlRuleMap[lblItem.ID].UrlNum
-		if len(tmpTargetGroupID) > 0 {
-			resList.Details[idx].RsWeightNonZeroNum = targetWeightMap[tmpTargetGroupID].RsWeightNonZeroNum
-			resList.Details[idx].RsWeightZeroNum = targetWeightMap[tmpTargetGroupID].RsWeightZeroNum
+	switch basicInfo.Vendor {
+	case enumor.TCloud:
+		urlRuleMap, targetWeightMap, lblTargetGroupMap, err := svc.getTCloudUrlRuleAndTargetGroupMap(
+			cts.Kit, expr, req, lbID, resList)
+		if err != nil {
+			return nil, err
 		}
-	}
 
-	return resList, nil
+		for idx, lblItem := range resList.Details {
+			tmpTargetGroupID := lblTargetGroupMap[lblItem.ID]
+			resList.Details[idx].TargetGroupID = tmpTargetGroupID
+			resList.Details[idx].Scheduler = urlRuleMap[lblItem.ID].Scheduler
+			if lblItem.Protocol.IsLayer7Protocol() {
+				resList.Details[idx].DomainNum = urlRuleMap[lblItem.ID].DomainNum
+				resList.Details[idx].UrlNum = urlRuleMap[lblItem.ID].UrlNum
+			}
+			if len(tmpTargetGroupID) > 0 {
+				resList.Details[idx].RsWeightNonZeroNum = targetWeightMap[tmpTargetGroupID].RsWeightNonZeroNum
+				resList.Details[idx].RsWeightZeroNum = targetWeightMap[tmpTargetGroupID].RsWeightZeroNum
+			}
+		}
+
+		return resList, nil
+	default:
+		return nil, errf.Newf(errf.InvalidParameter, "lbID: %s vendor: %s not support", lbID, basicInfo.Vendor)
+	}
 }
 
-func (svc *lbSvc) getUrlRuleAndTargetGroupMap(kt *kit.Kit, expr *filter.Expression, req *core.ListReq, lbID string,
-	resList *cslb.ListListenerResult) (map[string]cslb.ListListenerBase, map[string]cslb.ListListenerBase,
-	map[string]string, error) {
+func (svc *lbSvc) getTCloudUrlRuleAndTargetGroupMap(kt *kit.Kit, expr *filter.Expression, req *core.ListReq,
+	lbID string, resList *cslb.ListListenerResult) (map[string]cslb.ListListenerBase,
+	map[string]cslb.ListListenerBase, map[string]string, error) {
 
 	listenerReq := &core.ListReq{
 		Filter: expr,
@@ -263,10 +277,10 @@ func (svc *lbSvc) getListener(cts *rest.Contexts, validHandler handler.ListAuthR
 	}
 }
 
-func (svc *lbSvc) getTCloudListener(kt *kit.Kit, lblID string, bkBizID int64) (*cslb.GetListenerDetail, error) {
+func (svc *lbSvc) getTCloudListener(kt *kit.Kit, lblID string, bkBizID int64) (*cslb.GetTCloudListenerDetail, error) {
 	listenerInfo, err := svc.client.DataService().TCloud.LoadBalancer.GetListener(kt, lblID)
 	if err != nil {
-		logs.Errorf("[clb] get tcloud listener detail failed, lblID: %s, err: %v, rid: %s", lblID, err, kt.Rid)
+		logs.Errorf("get tcloud listener detail failed, lblID: %s, err: %v, rid: %s", lblID, err, kt.Rid)
 		return nil, err
 	}
 
@@ -276,23 +290,24 @@ func (svc *lbSvc) getTCloudListener(kt *kit.Kit, lblID string, bkBizID int64) (*
 	}
 
 	targetGroupID := urlRuleMap[listenerInfo.ID].TargetGroupID
-	result := &cslb.GetListenerDetail{
-		BaseListener:  *listenerInfo,
-		LblID:         listenerInfo.ID,
-		LblName:       listenerInfo.Name,
-		CloudLblID:    listenerInfo.CloudID,
-		TargetGroupID: targetGroupID,
-		Scheduler:     urlRuleMap[listenerInfo.ID].Scheduler,
-		SessionType:   urlRuleMap[listenerInfo.ID].SessionType,
-		SessionExpire: urlRuleMap[listenerInfo.ID].SessionExpire,
-		DomainNum:     urlRuleMap[listenerInfo.ID].DomainNum,
-		UrlNum:        urlRuleMap[listenerInfo.ID].UrlNum,
-		HealthCheck:   urlRuleMap[listenerInfo.ID].HealthCheck,
-		Certificate:   urlRuleMap[listenerInfo.ID].Certificate,
+	result := &cslb.GetTCloudListenerDetail{
+		TCloudListener: *listenerInfo,
+		LblID:          listenerInfo.ID,
+		LblName:        listenerInfo.Name,
+		CloudLblID:     listenerInfo.CloudID,
+		TargetGroupID:  targetGroupID,
+		Scheduler:      urlRuleMap[listenerInfo.ID].Scheduler,
+		SessionType:    urlRuleMap[listenerInfo.ID].SessionType,
+		SessionExpire:  urlRuleMap[listenerInfo.ID].SessionExpire,
+		HealthCheck:    urlRuleMap[listenerInfo.ID].HealthCheck,
+	}
+	if listenerInfo.Protocol.IsLayer7Protocol() {
+		result.DomainNum = urlRuleMap[listenerInfo.ID].DomainNum
+		result.UrlNum = urlRuleMap[listenerInfo.ID].UrlNum
 	}
 
 	// 只有4层监听器才显示目标组信息
-	if len(listenerInfo.DefaultDomain) == 0 {
+	if !listenerInfo.Protocol.IsLayer7Protocol() {
 		targetGroupList, err := svc.getTargetGroupByID(kt, targetGroupID, bkBizID)
 		if err != nil {
 			return nil, err

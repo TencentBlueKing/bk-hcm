@@ -62,8 +62,9 @@ func (cli *LoadBalancerClient) BatchUpdate(kt *kit.Kit, req *dataproto.TCloudClb
 }
 
 // GetListener 获取监听器详情
-func (cli *LoadBalancerClient) GetListener(kt *kit.Kit, id string) (*corelb.BaseListener, error) {
-	return common.Request[common.Empty, corelb.BaseListener](cli.client, rest.GET, kt, nil, "/listeners/%s", id)
+func (cli *LoadBalancerClient) GetListener(kt *kit.Kit, id string) (*dataproto.TCloudListenerDetailResult, error) {
+	return common.Request[common.Empty, dataproto.TCloudListenerDetailResult](
+		cli.client, rest.GET, kt, nil, "/listeners/%s", id)
 }
 
 // ListLoadBalancer list tcloud load balancer

@@ -607,7 +607,12 @@ func (svc *lbSvc) GetListener(cts *rest.Contexts) (any, error) {
 	lblInfo := result.Details[0]
 	switch lblInfo.Vendor {
 	case enumor.TCloud:
-		return convTableToListener(&lblInfo)
+		newLblInfo, err := convTableToListener[corelb.TCloudListenerExtension](&lblInfo)
+		if err != nil {
+			logs.Errorf("fail to conv listener with extension, lblID: %s, err: %v, rid: %s", id, err, cts.Kit.Rid)
+			return nil, err
+		}
+		return newLblInfo, nil
 	default:
 		return nil, fmt.Errorf("unsupport vendor: %s", vendor)
 	}

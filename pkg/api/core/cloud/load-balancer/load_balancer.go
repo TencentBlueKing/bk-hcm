@@ -104,7 +104,7 @@ type BaseListener struct {
 // Listener 监听器带拓展
 type Listener[T ListenerExtension] struct {
 	*BaseListener `json:",inline"`
-	Extension     *T
+	Extension     *T `json:"extension"`
 }
 
 // GetID ...
