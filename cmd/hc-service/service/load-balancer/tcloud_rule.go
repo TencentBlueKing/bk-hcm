@@ -21,6 +21,8 @@
 package loadbalancer
 
 import (
+	synctcloud "hcm/cmd/hc-service/logics/res-sync/tcloud"
+	"hcm/pkg/adaptor/tcloud"
 	typelb "hcm/pkg/adaptor/types/load-balancer"
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
@@ -106,16 +108,18 @@ func (svc *clbSvc) TCloudCreateUrlRule(cts *rest.Contexts) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	// TODO 同步对应监听器
 
-	// if err := svc.lblSync(cts.Kit, tcloudAdpt, req.AccountID, req.Region, result.SuccessCloudIDs); err != nil {
-	// 	return nil, err
-	// }
+	if err := svc.lblSync(cts.Kit, tcloudAdpt, lb); err != nil {
+		// 调用同步的方法内会打印错误，这里只标记调用方
+		logs.Errorf("fail to sync listener for create rule, lblID: %s, rid: %s", lblID, cts.Kit.Rid)
+		return nil, err
+	}
 
 	return creatResult, nil
 }
+
 func convRuleCreate(r protolb.TCloudRuleCreate) *typelb.RuleInfo {
-	cloud := &typelb.RuleInfo{
+	ruleInfo := &typelb.RuleInfo{
 		Url:               cvt.ValToPtr(r.Url),
 		SessionExpireTime: r.SessionExpireTime,
 		HealthCheck:       r.HealthCheck,
@@ -130,13 +134,13 @@ func convRuleCreate(r protolb.TCloudRuleCreate) *typelb.RuleInfo {
 		Quic:              r.Quic,
 	}
 	if len(r.Domains) == 1 {
-		cloud.Domain = cvt.ValToPtr(r.Domains[0])
+		ruleInfo.Domain = cvt.ValToPtr(r.Domains[0])
 	}
 	if len(r.Domains) > 1 {
-		cloud.Domains = cvt.SliceToPtr(r.Domains)
+		ruleInfo.Domains = cvt.SliceToPtr(r.Domains)
 	}
 
-	return cloud
+	return ruleInfo
 }
 
 // TCloudUpdateUrlRule 修改监听器规则
@@ -187,7 +191,10 @@ func (svc *clbSvc) TCloudUpdateUrlRule(cts *rest.Contexts) (any, error) {
 		logs.Errorf("fail to update rule, err: %v, id: %s, rid: %s", err, ruleID, cts.Kit.Rid)
 		return nil, err
 	}
-	// TODO 同步
+	if err := svc.lblSync(cts.Kit, tcloudAdpt, lb); err != nil {
+		logs.Errorf("fail to sync listener for update rule(%s), rid: %s", ruleID, cts.Kit.Rid)
+		return nil, err
+	}
 	return nil, nil
 }
 
@@ -250,7 +257,7 @@ func (svc *clbSvc) TCloudBatchDeleteUrlRule(cts *rest.Contexts) (any, error) {
 	var err error
 
 	ruleOption := typelb.TCloudDeleteRuleOption{}
-	dbReq := &cloud.LoadBalancerBatchDeleteReq{}
+
 	if len(req.RuleIDs) > 0 {
 		// 指定规则id删除
 		var rules []corelb.TCloudLbUrlRule
@@ -262,7 +269,6 @@ func (svc *clbSvc) TCloudBatchDeleteUrlRule(cts *rest.Contexts) (any, error) {
 		}
 		ruleOption.ListenerId = rules[0].CloudLBLID
 		ruleOption.CloudIDs = slice.Map(rules, func(r corelb.TCloudLbUrlRule) string { return r.CloudID })
-		dbReq.Filter = tools.ContainersExpression("id", req.RuleIDs)
 
 	} else {
 		// 按域名删除模式
@@ -276,9 +282,6 @@ func (svc *clbSvc) TCloudBatchDeleteUrlRule(cts *rest.Contexts) (any, error) {
 		ruleOption.ListenerId = listener.CloudID
 		ruleOption.Domain = req.Domain
 		ruleOption.NewDefaultServerDomain = req.NewDefaultDomain
-		dbReq.Filter = tools.ExpressionAnd(
-			tools.RuleEqual("domain", req.Domain),
-			tools.RuleEqual("lbl_id", lblID))
 
 	}
 
@@ -294,6 +297,28 @@ func (svc *clbSvc) TCloudBatchDeleteUrlRule(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
-	// TODO 同步对应监听器
-	return nil, svc.dataCli.TCloud.LoadBalancer.BatchDeleteTCloudUrlRule(cts.Kit, dbReq)
+	if err := svc.lblSync(cts.Kit, tcloudAdpt, lb); err != nil {
+		// 调用同步的方法内会打印错误，这里只标记调用方
+		logs.Errorf("fail to sync listener for delete rule, req: %+v, rid: %s", req, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+func (svc *clbSvc) lblSync(kt *kit.Kit, adaptor tcloud.TCloud, lb *corelb.BaseLoadBalancer) error {
+	syncClient := synctcloud.NewClient(svc.dataCli, adaptor)
+	params := &synctcloud.SyncListenerOfSingleLBOption{
+		AccountID: lb.AccountID,
+		Region:    lb.Region,
+		BizID:     lb.BkBizID,
+		LBID:      lb.ID,
+		CloudLBID: lb.CloudID,
+	}
+	_, err := syncClient.Listener(kt, params)
+	if err != nil {
+		logs.Errorf("sync listener of lb(%s) failed, err: %v, rid: %s", lb.CloudID, err, kt.Rid)
+		return err
+	}
+	return nil
 }

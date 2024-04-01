@@ -558,26 +558,11 @@ func (svc *clbSvc) UpdateTCloudListener(cts *rest.Contexts) (any, error) {
 		logs.Errorf("fail to call tcloud update listener(id:%s), err: %v, rid: %s", lblID, err, cts.Kit.Rid)
 		return nil, err
 	}
-
-	// 更新DB监听器信息
-	lblReq := &dataproto.TCloudListenerUpdateReq{
-		Listeners: []*dataproto.ListenerUpdateReq[corelb.TCloudListenerExtension]{
-			{
-				ID:        lblID,
-				Name:      req.Name,
-				BkBizID:   req.BkBizID,
-				SniSwitch: req.SniSwitch,
-				Extension: req.Extension,
-			},
-		},
-	}
-	err = svc.dataCli.TCloud.LoadBalancer.BatchUpdateTCloudListener(cts.Kit, lblReq)
-	if err != nil {
-		logs.Errorf("update tcloud listener base failed, req: %+v, lblReq: %+v, err: %v, rid: %s",
-			req, lblReq, err, cts.Kit.Rid)
+	if err := svc.lblSync(cts.Kit, client, &lbInfo.BaseLoadBalancer); err != nil {
+		// 调用同步的方法内会打印错误，这里只标记调用方
+		logs.Errorf("fail to sync listener for update listener(%s), rid: %s", lblInfo.ID, cts.Kit.Rid)
 		return nil, err
 	}
-
 	return nil, nil
 }
 
@@ -747,53 +732,12 @@ func (svc *clbSvc) UpdateTCloudDomainAttr(cts *rest.Contexts) (any, error) {
 	}
 
 	// 调用云上更新接口
-	ruleList, err := svc.updateTCloudDomainAttr(cts.Kit, req, lblInfo)
-	if err != nil {
-		return nil, err
-	}
+	return nil, svc.updateTCloudDomainAttr(cts.Kit, req, lblInfo)
 
-	// 更新DB规则信息
-	ruleReq := &dataproto.TCloudUrlRuleBatchUpdateReq{
-		UrlRules: []*dataproto.TCloudUrlRuleUpdate{},
-	}
-	for _, item := range ruleList {
-		tmpRule := &dataproto.TCloudUrlRuleUpdate{ID: item.ID}
-		if len(req.NewDomain) > 0 {
-			tmpRule.Domain = req.NewDomain
-		}
-		if req.Certificate != nil {
-			tmpRule.Certificate = req.Certificate
-		}
-		ruleReq.UrlRules = append(ruleReq.UrlRules, tmpRule)
-	}
-	err = svc.dataCli.TCloud.LoadBalancer.BatchUpdateTCloudUrlRule(cts.Kit, ruleReq)
-	if err != nil {
-		logs.Errorf("update tcloud listener url rule domain attr failed, req: %+v, ruleReq: %+v, err: %v, rid: %s",
-			req, ruleReq, err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	// 更新默认域名
-	if req.DefaultServer != nil && cvt.PtrToVal(req.DefaultServer) == true {
-		lblReq := &dataproto.TCloudListenerUpdateReq{
-			Listeners: []*dataproto.ListenerUpdateReq[corelb.TCloudListenerExtension]{{
-				ID:            lblID,
-				DefaultDomain: req.NewDomain,
-			}},
-		}
-		err = svc.dataCli.TCloud.LoadBalancer.BatchUpdateTCloudListener(cts.Kit, lblReq)
-		if err != nil {
-			logs.Errorf("update tcloud listener base failed, req: %+v, lblID: %s, err: %v, rid: %s",
-				req, lblID, err, cts.Kit.Rid)
-			return nil, err
-		}
-	}
-
-	return nil, nil
 }
 
 func (svc *clbSvc) updateTCloudDomainAttr(kt *kit.Kit, req *protolb.DomainAttrUpdateReq,
-	lblInfo *dataproto.TCloudListenerDetailResult) ([]corelb.TCloudLbUrlRule, error) {
+	lblInfo *corelb.Listener[corelb.TCloudListenerExtension]) error {
 
 	// 获取规则列表
 	ruleOpt := &core.ListReq{
@@ -803,26 +747,26 @@ func (svc *clbSvc) updateTCloudDomainAttr(kt *kit.Kit, req *protolb.DomainAttrUp
 	ruleList, err := svc.dataCli.TCloud.LoadBalancer.ListUrlRule(kt, ruleOpt)
 	if err != nil {
 		logs.Errorf("fail to list tcloud rule, lblID: %s, err: %v, rid: %s", lblInfo.ID, err, kt.Rid)
-		return nil, err
+		return err
 	}
 
 	if len(ruleList.Details) == 0 {
-		return nil, errf.Newf(errf.RecordNotFound, "domain: %s not found", req.Domain)
+		return errf.Newf(errf.RecordNotFound, "domain: %s not found", req.Domain)
 	}
 
 	// 获取负载均衡信息
 	lbInfo, err := svc.dataCli.TCloud.LoadBalancer.Get(kt, lblInfo.LbID)
 	if err != nil {
 		logs.Errorf("fail to get tcloud load balancer(%s), err: %v, rid: %s", lblInfo.LbID, err, kt.Rid)
-		return nil, err
+		return err
 	}
 	if lbInfo == nil {
-		return nil, errf.Newf(errf.RecordNotFound, "load balancer: %s not found", lblInfo.LbID)
+		return errf.Newf(errf.RecordNotFound, "load balancer: %s not found", lblInfo.LbID)
 	}
 
 	client, err := svc.ad.TCloud(kt, lbInfo.AccountID)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// 更新云端域名属性信息
@@ -848,9 +792,14 @@ func (svc *clbSvc) updateTCloudDomainAttr(kt *kit.Kit, req *protolb.DomainAttrUp
 	}
 	err = client.UpdateDomainAttr(kt, domainOpt)
 	if err != nil {
-		logs.Errorf("fail to call tcloud update domain attr, lblID: %s, err: %v, rid: %s", lblInfo.ID, err, kt.Rid)
-		return nil, err
+		logs.Errorf("fail to call tcloud update domain attr, err: %v, lblID: %s, rid: %s", err, lblInfo.ID, kt.Rid)
+		return err
 	}
-
-	return ruleList.Details, nil
+	if err := svc.lblSync(kt, client, &lbInfo.BaseLoadBalancer); err != nil {
+		// 调用同步的方法内会打印错误，这里只标记调用方
+		logs.Errorf("fail to sync listener for update domain(%s), lblID: %s, rid: %s",
+			domainOpt.Domain, lblInfo.ID, kt.Rid)
+		return err
+	}
+	return nil
 }
