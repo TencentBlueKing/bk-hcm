@@ -1,6 +1,6 @@
 import { defineComponent, ref, watch } from 'vue';
 // import components
-import { Button, Form, Tag } from 'bkui-vue';
+import { Button, Form, Message, Tag } from 'bkui-vue';
 import { BkRadioGroup, BkRadioButton } from 'bkui-vue/lib/radio';
 import { Plus } from 'bkui-vue/lib/icon';
 import CommonLocalTable from '@/components/CommonLocalTable';
@@ -11,9 +11,10 @@ import { useLoadBalancerStore } from '@/store/loadbalancer';
 import { useBusinessStore } from '@/store';
 // import custom hooks
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
-import useAddOrUpdateDomain from './useAddOrUpdateDomain';
+import useAddOrUpdateDomain, { OpAction } from './useAddOrUpdateDomain';
 import { useI18n } from 'vue-i18n';
 import './index.scss';
+import Confirm from '@/components/confirm';
 
 const { FormItem } = Form;
 
@@ -84,7 +85,23 @@ export default defineComponent({
               <Button text theme='primary' onClick={() => handleDomainSidesliderShow(data)}>
                 {t('编辑')}
               </Button>
-              <Button text theme='primary'>
+              <Button
+                text
+                theme='primary'
+                onClick={() => {
+                  const listenerId = loadBalancerStore.currentSelectedTreeNode.id;
+                  Confirm('请确定删除域名', `将删除域名【${data.name}】`, async () => {
+                    await businessStore.deleteRules(listenerId, {
+                      lbl_id: listenerId,
+                      domain: data.domain,
+                    });
+                    Message({
+                      message: '删除成功',
+                      theme: 'success',
+                    });
+                    getDomainList(listenerId);
+                  });
+                }}>
                 {t('删除')}
               </Button>
             </div>
@@ -126,7 +143,7 @@ export default defineComponent({
       handleShow: handleDomainSidesliderShow,
       handleSubmit: handleDomainSidesliderSubmit,
       formData: formModel,
-    } = useAddOrUpdateDomain();
+    } = useAddOrUpdateDomain(() => getDomainList(loadBalancerStore.currentSelectedTreeNode.id));
 
     // 批量删除
     const isBatchDeleteDialogShow = ref(false);
@@ -275,7 +292,7 @@ export default defineComponent({
         {/* domain 操作 dialog */}
         <CommonSideslider
           class='domain-sideslider'
-          title={`${action.value === 0 ? '新增' : '编辑'}域名`}
+          title={`${action.value === OpAction.ADD ? '新增' : '编辑'}域名`}
           width={640}
           v-model:isShow={isDomainSidesliderShow.value}
           onHandleSubmit={() => {

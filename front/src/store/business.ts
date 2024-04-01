@@ -187,5 +187,41 @@ export const useBusinessStore = defineStore({
         data,
       );
     },
+    /**
+     * 更新域名
+     */
+    updateDomains(
+      listenerId: string,
+      data: {
+        bk_biz_id?: number;
+        lbl_id: string; // 监听器ID
+        domain: string; // 新域名
+        new_domain: string; // 新域名
+        certificate?: string; // 证书信息
+      },
+    ) {
+      return http.patch(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}listeners/${listenerId}/domains`,
+        data,
+      );
+    },
+    /**
+     * 删除域名、URL
+     */
+    deleteRules(
+      listenerId: string,
+      data: {
+        bk_biz_id?: number; // 业务ID
+        lbl_id: string; // 监听器id
+        rule_ids?: string[]; // URL规则ID数组
+        domain?: string; // 按域名删除, 没有指定规则id的时候必填
+        new_default_domain?: string; // 新默认域名,删除的域名是默认域名的时候需要指定
+      },
+    ) {
+      return http.delete(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/listeners/${listenerId}/rules/batch`,
+        { data },
+      );
+    },
   },
 });
