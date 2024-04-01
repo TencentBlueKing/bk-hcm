@@ -39,6 +39,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/json"
+	"hcm/pkg/tools/slice"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -164,8 +165,12 @@ func batchCreateTargetGroup[T corelb.TargetGroupExtension](cts *rest.Contexts,
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	vpcCloudIDs := slice.Map(req.TargetGroups,
+		func(g dataproto.TargetGroupBatchCreate[T]) string { return g.CloudVpcID })
+
 	result, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
-		vpcInfoMap, err := getVpcMapByIDs(cts.Kit, req.TargetGroups)
+
+		vpcInfoMap, err := getVpcMapByIDs(cts.Kit, vpcCloudIDs)
 		if err != nil {
 			return nil, err
 		}
@@ -328,20 +333,16 @@ func (svc *lbSvc) batchCreateTargetWithGroupID(kt *kit.Kit, txn *sqlx.Tx, accoun
 	return svc.dao.LoadBalancerTarget().BatchCreateWithTx(kt, txn, rsModels)
 }
 
-func getVpcMapByIDs[T corelb.TargetGroupExtension](kt *kit.Kit, tgList []dataproto.TargetGroupBatchCreate[T]) (
+func getVpcMapByIDs(kt *kit.Kit, cloudIDs []string) (
 	map[string]cloud.VpcTable, error) {
 
-	vpcCloudIDs := make([]string, 0)
-	for _, item := range tgList {
-		vpcCloudIDs = append(vpcCloudIDs, item.CloudVpcID)
-	}
 	vpcOpt := &typesdao.ListOption{
-		Filter: tools.ContainersExpression("cloud_id", vpcCloudIDs),
+		Filter: tools.ContainersExpression("cloud_id", cloudIDs),
 		Page:   core.NewDefaultBasePage(),
 	}
 	vpcResult, err := svc.dao.Vpc().List(kt, vpcOpt)
 	if err != nil {
-		logs.Errorf("list vpc by ids failed, vpcCloudIDs: %v, err: %v, rid: %s", vpcCloudIDs, err, kt.Rid)
+		logs.Errorf("list vpc by ids failed, vpcCloudIDs: %v, err: %v, rid: %s", cloudIDs, err, kt.Rid)
 		return nil, fmt.Errorf("list vpc by cloudIDs failed, err: %v", err)
 	}
 

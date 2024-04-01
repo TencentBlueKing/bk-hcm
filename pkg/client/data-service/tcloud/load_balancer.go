@@ -91,6 +91,14 @@ func (cli *LoadBalancerClient) BatchCreateTCloudTargetGroup(kt *kit.Kit, req *da
 		cli.client, rest.POST, kt, req, "/target_groups/batch/create")
 }
 
+// BatchCreateTargetGroupWithRel 批量创建目标组 以及对应的 绑定关系
+func (cli *LoadBalancerClient) BatchCreateTargetGroupWithRel(kt *kit.Kit,
+	req *dataproto.TCloudBatchCreateTgWithRelReq) (*core.BatchCreateResult, error) {
+
+	return common.Request[dataproto.TCloudBatchCreateTgWithRelReq, core.BatchCreateResult](
+		cli.client, rest.POST, kt, req, "/target_groups/with/rels/batch/create")
+}
+
 // BatchUpdateTCloudTargetGroup 批量更新腾讯云目标组
 func (cli *LoadBalancerClient) BatchUpdateTCloudTargetGroup(kt *kit.Kit, req *dataproto.TargetGroupUpdateReq) error {
 	return common.RequestNoResp[dataproto.TargetGroupUpdateReq](

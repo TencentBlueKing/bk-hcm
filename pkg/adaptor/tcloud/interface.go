@@ -175,4 +175,6 @@ type TCloud interface {
 	DeRegisterTargets(kt *kit.Kit, opt *typelb.TCloudRegisterTargetsOption) ([]string, error)
 	ModifyTargetPort(kt *kit.Kit, opt *typelb.TCloudTargetPortUpdateOption) error
 	ModifyTargetWeight(kt *kit.Kit, opt *typelb.TCloudTargetWeightUpdateOption) error
+
+	ListTargets(kt *kit.Kit, opt *typelb.TCloudListTargetsOption) ([]typelb.TCloudListenerTarget, error)
 }

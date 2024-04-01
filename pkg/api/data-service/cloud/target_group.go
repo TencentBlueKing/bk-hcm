@@ -87,6 +87,21 @@ type TargetGroupBatchCreateReq[Extension corelb.TargetGroupExtension] struct {
 	TargetGroups []TargetGroupBatchCreate[Extension] `json:"target_groups" validate:"required,min=1"`
 }
 
+// Validate target group create request.
+func (req *TargetGroupBatchCreateReq[T]) Validate() error {
+	if len(req.TargetGroups) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("target_groups count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	for _, item := range req.TargetGroups {
+		if err := item.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return validator.Validate.Struct(req)
+}
+
 // TCloudTargetGroupCreateReq ...
 type TCloudTargetGroupCreateReq = TargetGroupBatchCreateReq[corelb.TCloudTargetGroupExtension]
 
@@ -114,8 +129,13 @@ func (req *TargetGroupBatchCreate[T]) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
+// BatchCreateTgWithRelReq 创建目标组并绑定监听器/规则.
+type BatchCreateTgWithRelReq[Extension corelb.TargetGroupExtension] struct {
+	TargetGroups []CreateTargetGroupWithRel[Extension] `json:"target_groups" validate:"required,min=1"`
+}
+
 // Validate target group create request.
-func (req *TargetGroupBatchCreateReq[T]) Validate() error {
+func (req *BatchCreateTgWithRelReq[T]) Validate() error {
 	if len(req.TargetGroups) > constant.BatchOperationMaxLimit {
 		return fmt.Errorf("target_groups count should <= %d", constant.BatchOperationMaxLimit)
 	}
@@ -127,6 +147,29 @@ func (req *TargetGroupBatchCreateReq[T]) Validate() error {
 	}
 
 	return validator.Validate.Struct(req)
+}
+
+// TCloudBatchCreateTgWithRelReq ...
+type TCloudBatchCreateTgWithRelReq = BatchCreateTgWithRelReq[corelb.TCloudTargetGroupExtension]
+
+// CreateTargetGroupWithRel define target group batch create.
+type CreateTargetGroupWithRel[Extension corelb.TargetGroupExtension] struct {
+	TargetGroup TargetGroupBatchCreate[Extension] `json:"target_group" validate:"required"`
+
+	ListenerRuleID      string               `json:"listener_rule_id" validate:"required"`
+	CloudListenerRuleID string               `json:"cloud_listener_rule_id" validate:"required"`
+	ListenerRuleType    enumor.RuleType      `json:"listener_rule_type" validate:"required"`
+	LbID                string               `json:"lb_id" validate:"required"`
+	CloudLbID           string               `json:"cloud_lb_id" validate:"required"`
+	LblID               string               `json:"lbl_id" validate:"required"`
+	CloudLblID          string               `json:"cloud_lbl_id" validate:"required"`
+	BindingStatus       enumor.BindingStatus `json:"binding_status" validate:"omitempty"`
+	Detail              types.JsonField      `json:"detail" validate:"omitempty"`
+}
+
+// Validate ...
+func (r *CreateTargetGroupWithRel[Extension]) Validate() error {
+	return validator.Validate.Struct(r)
 }
 
 // -------------------------- Update Target Group --------------------------

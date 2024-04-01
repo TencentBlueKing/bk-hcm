@@ -181,7 +181,7 @@ func (clb TCloudListener) GetProtocol() enumor.ProtocolType {
 type TCloudListTargetsOption struct {
 	Region         string              `json:"region" validate:"required"`
 	LoadBalancerId string              `json:"load_balancer_id" validate:"required"`
-	CloudIDs       []string            `json:"cloud_ids" validate:"omitempty"`
+	ListenerIds    []string            `json:"cloud_ids" validate:"omitempty"`
 	Protocol       enumor.ProtocolType `json:"protocol" validate:"omitempty"`
 	Port           int64               `json:"port" validate:"omitempty"`
 }
@@ -198,6 +198,11 @@ func (opt TCloudListTargetsOption) Validate() error {
 // TCloudListenerTarget for listener target Instance
 type TCloudListenerTarget struct {
 	*tclb.ListenerBackend
+}
+
+// GetProtocol ...
+func (t *TCloudListenerTarget) GetProtocol() enumor.ProtocolType {
+	return enumor.ProtocolType(converter.PtrToVal(t.Protocol))
 }
 
 // -------------------------- Create Clb--------------------------
@@ -680,4 +685,14 @@ type TargetWeightRule struct {
 	// 此参数的优先级低于前述[Target](https://cloud.tencent.com/document/api/214/30694#Target)中的Weight参数，
 	// 即最终的权重值以Target中的Weight参数值为准，仅当Target中的Weight参数为空时，才以RsWeightRule中的Weight参数为准。
 	Weight *int64 `json:"weight,omitnil"`
+}
+
+// Backend ...
+type Backend struct {
+	*tclb.Backend
+}
+
+// GetCloudID ...
+func (b Backend) GetCloudID() string {
+	return converter.PtrToVal(b.InstanceId)
 }

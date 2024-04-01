@@ -59,6 +59,8 @@ func InitService(cap *capability.Capability) {
 
 	h.Add("BatchCreateTargetGroup", http.MethodPost, "/vendors/{vendor}/target_groups/batch/create",
 		svc.BatchCreateTargetGroup)
+	h.Add("BatchCreateTargetGroupWithRel", http.MethodPost, "/vendors/{vendor}/target_groups/with/rels/batch/create",
+		svc.BatchCreateTargetGroupWithRel)
 	h.Add("UpdateTargetGroup", http.MethodPatch, "/vendors/{vendor}/target_groups", svc.UpdateTargetGroup)
 	h.Add("BatchDeleteTargetGroup", http.MethodDelete, "/target_groups/batch", svc.BatchDeleteTargetGroup)
 	h.Add("GetTargetGroup", http.MethodGet, "/vendors/{vendor}/target_groups/{id}", svc.GetTargetGroup)

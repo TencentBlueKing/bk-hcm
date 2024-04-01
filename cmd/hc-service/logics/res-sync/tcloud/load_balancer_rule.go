@@ -138,16 +138,14 @@ func (cli *client) ListenerLayer7Rule(kt *kit.Kit, opt *SyncLayer7RuleOption, cl
 	addSlice, updateMap, delCloudIDs := common.Diff[typeslb.TCloudUrlRule, corelb.TCloudLbUrlRule](
 		cloudRules, dbRules, isLayer7RuleChange)
 
-	// 更新变更监听器，更新对应四层/七层 规则
 	if err = cli.deleteLayer7Rule(kt, delCloudIDs); err != nil {
 		return nil, err
 	}
 
-	// 更新变更监听器，更新对应四层/七层 规则
 	if err = cli.updateLayer7Rule(kt, updateMap); err != nil {
 		return nil, err
 	}
-	// 更新变更监听器，更新对应四层/七层 规则
+
 	if _, err = cli.createLayer7Rule(kt, opt, addSlice); err != nil {
 		return nil, err
 	}
