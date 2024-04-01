@@ -229,7 +229,7 @@ type TargetGroupListenerRelCreateReq struct {
 	LbID                string               `json:"lb_id" validate:"required"`
 	CloudLbID           string               `json:"cloud_lb_id" validate:"required"`
 	LblID               string               `json:"lbl_id" validate:"required"`
-	CloudLblID          string               `json:"cloud_lbl_id" validate:"omitempty"`
+	CloudLblID          string               `json:"cloud_lbl_id" validate:"required"`
 	BindingStatus       enumor.BindingStatus `json:"binding_status" validate:"omitempty"`
 	Detail              types.JsonField      `json:"detail" validate:"omitempty"`
 }

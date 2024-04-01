@@ -92,8 +92,24 @@ func (tlrr TargetGroupListenerRuleRelTable) InsertValidate() error {
 		return errors.New("target_group_id is required")
 	}
 
+	if len(tlrr.CloudTargetGroupID) == 0 {
+		return errors.New("cloud_target_group_id is required")
+	}
+
 	if len(tlrr.ListenerRuleID) == 0 {
 		return errors.New("listener_rule_id is required")
+	}
+
+	if len(tlrr.CloudListenerRuleID) == 0 {
+		return errors.New("cloud_listener_rule_id is required")
+	}
+
+	if len(tlrr.LblID) == 0 {
+		return errors.New("lbl_id is required")
+	}
+
+	if len(tlrr.CloudLblID) == 0 {
+		return errors.New("cloud_lbl_id is required")
 	}
 
 	if len(tlrr.ListenerRuleType) == 0 {
