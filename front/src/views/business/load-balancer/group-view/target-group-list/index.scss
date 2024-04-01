@@ -1,4 +1,5 @@
 .target-group-list {
+  height: 100%;
   .search-wrap {
     padding: 12px 16px;
 
@@ -100,6 +101,12 @@
 
     .group-item-wrap {
       padding: 0 16px;
+    }
+
+    // 覆盖滚动条样式
+    .bk-F-scroll-x {
+      scrollbar-width: auto;
+      scrollbar-color: auto;
     }
   }
 }

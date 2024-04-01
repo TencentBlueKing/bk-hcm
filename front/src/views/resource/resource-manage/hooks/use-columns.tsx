@@ -1342,7 +1342,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: '名称',
-      field: 'inst_name',
+      field: 'name',
       isDefaultShow: true,
     },
     {
@@ -1351,11 +1351,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: '资源类型',
-      field: 'inst_type',
+      field: 'machine_type',
     },
     {
-      label: '所属网络',
-      field: 'network',
+      label: '所属VPC',
+      field: 'cloud_vpc_ids',
+      isDefaultShow: true,
+      render: ({ cell }: { cell: string[] }) => cell?.join(','),
     },
   ];
 
