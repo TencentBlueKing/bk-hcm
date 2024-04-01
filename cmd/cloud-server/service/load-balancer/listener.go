@@ -98,14 +98,14 @@ func (svc *lbSvc) listListener(cts *rest.Contexts, authHandler handler.ListAuthR
 }
 
 func (svc *lbSvc) getTCloudUrlRuleAndTargetGroupMap(kt *kit.Kit, expr *filter.Expression, req *core.ListReq,
-	lbID string, resList *cslb.ListListenerResult) (map[string]cslb.ListListenerBase, map[string]cslb.ListListenerBase,
-	map[string]string, error) {
+	lbID string, resList *cslb.ListListenerResult) (map[string]cslb.ListListenerBase,
+	map[string]cslb.ListListenerBase, map[string]string, error) {
 
 	listenerReq := &core.ListReq{
 		Filter: expr,
 		Page:   req.Page,
 	}
-	listenerList, err := svc.client.DataService().TCloud.LoadBalancer.ListListener(kt, listenerReq)
+	listenerList, err := svc.client.DataService().Global.LoadBalancer.ListListener(kt, listenerReq)
 	if err != nil {
 		logs.Errorf("list listener failed, lbID: %s, err: %v, rid: %s", lbID, err, kt.Rid)
 		return nil, nil, nil, err
@@ -120,7 +120,7 @@ func (svc *lbSvc) getTCloudUrlRuleAndTargetGroupMap(kt *kit.Kit, expr *filter.Ex
 	for _, listenerItem := range listenerList.Details {
 		lblIDs = append(lblIDs, listenerItem.ID)
 		resList.Details = append(resList.Details, cslb.ListListenerBase{
-			TCloudListener: listenerItem,
+			BaseListener: listenerItem,
 		})
 	}
 
@@ -277,7 +277,7 @@ func (svc *lbSvc) getListener(cts *rest.Contexts, validHandler handler.ListAuthR
 	}
 }
 
-func (svc *lbSvc) getTCloudListener(kt *kit.Kit, lblID string, bkBizID int64) (*cslb.GetListenerDetail, error) {
+func (svc *lbSvc) getTCloudListener(kt *kit.Kit, lblID string, bkBizID int64) (*cslb.GetTCloudListenerDetail, error) {
 	listenerInfo, err := svc.client.DataService().TCloud.LoadBalancer.GetListener(kt, lblID)
 	if err != nil {
 		logs.Errorf("get tcloud listener detail failed, lblID: %s, err: %v, rid: %s", lblID, err, kt.Rid)
@@ -290,7 +290,7 @@ func (svc *lbSvc) getTCloudListener(kt *kit.Kit, lblID string, bkBizID int64) (*
 	}
 
 	targetGroupID := urlRuleMap[listenerInfo.ID].TargetGroupID
-	result := &cslb.GetListenerDetail{
+	result := &cslb.GetTCloudListenerDetail{
 		TCloudListener: *listenerInfo,
 		LblID:          listenerInfo.ID,
 		LblName:        listenerInfo.Name,
