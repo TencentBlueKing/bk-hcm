@@ -29,6 +29,8 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
+	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/dal/dao/types"
 	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -137,4 +139,44 @@ func createRel[T corelb.TargetGroupExtension](kt *kit.Kit, svc *lbSvc, txn *sqlx
 	}}
 
 	return svc.dao.LoadBalancerTargetGroupListenerRuleRel().BatchCreateWithTx(kt, txn, ruleRelModels)
+}
+
+// BatchDeleteTarget 批量删除本地RS
+func (svc *lbSvc) BatchDeleteTarget(cts *rest.Contexts) (any, error) {
+
+	req := new(dataproto.LoadBalancerBatchDeleteReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Fields: []string{"id", "vendor", "cloud_id"},
+		Filter: req.Filter,
+		Page:   core.NewDefaultBasePage(),
+	}
+	listResp, err := svc.dao.LoadBalancerTarget().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list target for deletion failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list listener failed, err: %v", err)
+	}
+
+	if len(listResp.Details) == 0 {
+		return nil, nil
+	}
+
+	targetIds := slice.Map(listResp.Details, func(one tablelb.LoadBalancerTargetTable) string { return one.ID })
+	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
+		delFilter := tools.ContainersExpression("id", targetIds)
+		return nil, svc.dao.LoadBalancerListener().DeleteWithTx(cts.Kit, txn, delFilter)
+	})
+	if err != nil {
+		logs.Errorf("delete target(ids=%v) failed, err: %v, rid: %s", targetIds, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
 }
