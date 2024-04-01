@@ -355,15 +355,19 @@ func (svc *lbSvc) CreateTargetGroupListenerRel(cts *rest.Contexts) (any, error) 
 
 		models := make([]*tablelb.TargetGroupListenerRuleRelTable, 0)
 		models = append(models, &tablelb.TargetGroupListenerRuleRelTable{
-			ListenerRuleID:   req.ListenerRuleID,
-			ListenerRuleType: req.ListenerRuleType,
-			TargetGroupID:    req.TargetGroupID,
-			LbID:             req.LbID,
-			LblID:            req.LblID,
-			BindingStatus:    req.BindingStatus,
-			Detail:           req.Detail,
-			Creator:          cts.Kit.User,
-			Reviser:          cts.Kit.User,
+			ListenerRuleID:      req.ListenerRuleID,
+			CloudListenerRuleID: req.CloudListenerRuleID,
+			ListenerRuleType:    req.ListenerRuleType,
+			TargetGroupID:       req.TargetGroupID,
+			CloudTargetGroupID:  req.CloudTargetGroupID,
+			LbID:                req.LbID,
+			CloudLbID:           req.CloudLbID,
+			LblID:               req.LblID,
+			CloudLblID:          req.CloudLblID,
+			BindingStatus:       req.BindingStatus,
+			Detail:              req.Detail,
+			Creator:             cts.Kit.User,
+			Reviser:             cts.Kit.User,
 		})
 		ids, err := svc.dao.LoadBalancerTargetGroupListenerRuleRel().BatchCreateWithTx(cts.Kit, txn, models)
 		if err != nil {

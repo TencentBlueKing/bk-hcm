@@ -221,14 +221,17 @@ type TargetListenerRuleRelListResult = core.ListResultT[corelb.BaseTargetListene
 
 // TargetGroupListenerRelCreateReq target group listener rel create req.
 type TargetGroupListenerRelCreateReq struct {
-	ListenerRuleID     string               `json:"listener_rule_id" validate:"required"`
-	ListenerRuleType   enumor.RuleType      `json:"listener_rule_type" validate:"required"`
-	TargetGroupID      string               `json:"target_group_id" validate:"required"`
-	LbID               string               `json:"lb_id" validate:"required"`
-	LblID              string               `json:"lbl_id" validate:"required"`
-	BindingStatus      enumor.BindingStatus `json:"binding_status" validate:"omitempty"`
-	Detail             types.JsonField      `json:"detail" validate:"omitempty"`
-	CloudTargetGroupID string               `json:"cloud_target_group_id" validate:"omitempty"`
+	ListenerRuleID      string               `json:"listener_rule_id" validate:"required"`
+	CloudListenerRuleID string               `json:"cloud_listener_rule_id" validate:"required"`
+	ListenerRuleType    enumor.RuleType      `json:"listener_rule_type" validate:"required"`
+	TargetGroupID       string               `json:"target_group_id" validate:"required"`
+	CloudTargetGroupID  string               `json:"cloud_target_group_id" validate:"required"`
+	LbID                string               `json:"lb_id" validate:"required"`
+	CloudLbID           string               `json:"cloud_lb_id" validate:"required"`
+	LblID               string               `json:"lbl_id" validate:"required"`
+	CloudLblID          string               `json:"cloud_lbl_id" validate:"required"`
+	BindingStatus       enumor.BindingStatus `json:"binding_status" validate:"omitempty"`
+	Detail              types.JsonField      `json:"detail" validate:"omitempty"`
 }
 
 // Validate 验证目标组与监听器关系接口的参数

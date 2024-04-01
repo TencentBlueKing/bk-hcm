@@ -657,14 +657,18 @@ func convTableToBaseTargetListenerRuleRel(
 	one *tablelb.TargetGroupListenerRuleRelTable) *corelb.BaseTargetListenerRuleRel {
 
 	return &corelb.BaseTargetListenerRuleRel{
-		ID:               one.ID,
-		ListenerRuleID:   one.ListenerRuleID,
-		ListenerRuleType: one.ListenerRuleType,
-		TargetGroupID:    one.TargetGroupID,
-		LbID:             one.LbID,
-		LblID:            one.LblID,
-		BindingStatus:    one.BindingStatus,
-		Detail:           one.Detail,
+		ID:                  one.ID,
+		ListenerRuleID:      one.ListenerRuleID,
+		ListenerRuleType:    one.ListenerRuleType,
+		CloudListenerRuleID: one.CloudListenerRuleID,
+		TargetGroupID:       one.TargetGroupID,
+		CloudTargetGroupID:  one.CloudTargetGroupID,
+		LbID:                one.LbID,
+		CloudLbID:           one.CloudLbID,
+		LblID:               one.LblID,
+		CloudLblID:          one.CloudLblID,
+		BindingStatus:       one.BindingStatus,
+		Detail:              one.Detail,
 		Revision: &core.Revision{
 			Creator:   one.Creator,
 			Reviser:   one.Reviser,
