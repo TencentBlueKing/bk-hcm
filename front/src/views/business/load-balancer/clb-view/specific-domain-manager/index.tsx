@@ -1,6 +1,6 @@
-import { defineComponent, ref, watch } from 'vue';
+import { defineComponent, reactive, ref, watch } from 'vue';
 // import components
-import { Button, Form, Input, Select } from 'bkui-vue';
+import { Button, Form, Input, Message, Select } from 'bkui-vue';
 import { Done, EditLine, Error, Plus, Spinner } from 'bkui-vue/lib/icon';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
@@ -18,8 +18,16 @@ import StatusSuccess from '@/assets/image/success-account.png';
 import StatusFailure from '@/assets/image/failed-account.png';
 import StatusPartialSuccess from '@/assets/image/result-waiting.png';
 import './index.scss';
+import { RuleModeList } from '../specific-listener-manager/domain-list/useAddOrUpdateDomain';
+import { useBusinessStore } from '@/store';
+import Confirm from '@/components/confirm';
+import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
+import _ from 'lodash';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import useBatchDeleteListener from '../specific-clb-manager/listener-list/useBatchDeleteListener';
 
 const { FormItem } = Form;
+const { Option } = Select;
 
 export default defineComponent({
   setup() {
@@ -27,34 +35,49 @@ export default defineComponent({
     const { t } = useI18n();
     // use stores
     const loadBalancerStore = useLoadBalancerStore();
-
-    const isBatchDeleteDialogShow = ref(false);
-    const radioGroupValue = ref(false);
+    const formInstance = ref(null);
+    const businessStore = useBusinessStore();
+    const isEdit = ref(false);
+    const { selections, handleSelectionChange, resetSelections } = useSelection();
+    const { whereAmI } = useWhereAmI();
     const isDomainSidesliderShow = ref(false);
     const { columns, generateColumnsSettings } = useColumns('url');
-    const editingID = ref('');
+    const editingID = ref('-1');
+    const formData = reactive({
+      scheduler: '',
+      certificate: '',
+      url: '',
+      rule_id: '',
+    });
     const tableColumns = [
       ...columns,
       {
         label: t('目标组'),
-        field: 'cloud_target_group_id',
+        field: 'target_group_id',
         isDefaultShow: true,
-        render: ({ cell }: any) => (
-          <div class={'flex-row align-item-center target-group-name'}>
-            {editingID.value === cell ? (
-              <div class={'flex-row align-item-center'}>
-                <Select />
-                <Done width={20} height={20} class={'submit-edition-icon'} onClick={() => (editingID.value = '')} />
-                <Error width={13} height={13} class={'submit-edition-icon'} onClick={() => (editingID.value = '')} />
-              </div>
-            ) : (
-              <span class={'flex-row align-item-center'}>
-                <span class={'target-group-name-btn'}>{cell}</span>
-                <EditLine class={'target-group-edit-icon'} onClick={() => (editingID.value = cell)} />
-              </span>
-            )}
-          </div>
-        ),
+        render: ({ cell, data }: any) => {
+          return (
+            <div class={'flex-row align-item-center target-group-name'}>
+              {editingID.value === data.id ? (
+                <div class={'flex-row align-item-center'}>
+                  <Select />
+                  <Done width={20} height={20} class={'submit-edition-icon'} onClick={() => (editingID.value = '-1')} />
+                  <Error
+                    width={13}
+                    height={13}
+                    class={'submit-edition-icon'}
+                    onClick={() => (editingID.value = '-1')}
+                  />
+                </div>
+              ) : (
+                <span class={'flex-row align-item-center'}>
+                  <span class={'target-group-name-btn'}>{cell || '--'}</span>
+                  <EditLine class={'target-group-edit-icon'} onClick={() => (editingID.value = data.id)} />
+                </span>
+              )}
+            </div>
+          );
+        },
       },
       {
         label: t('同步状态'),
@@ -99,107 +122,64 @@ export default defineComponent({
         label: t('操作'),
         field: 'actions',
         isDefaultShow: true,
-        render: () => (
+        render: ({ data }: any) => (
           <div class='operate-groups'>
-            <Button text theme='primary'>
+            <Button
+              text
+              theme='primary'
+              onClick={() => {
+                isEdit.value = true;
+                isDomainSidesliderShow.value = true;
+                formData.url = data.url;
+                formData.scheduler = data.scheduler;
+                formData.rule_id = data.id;
+              }}>
               {t('编辑')}
             </Button>
-            <Button text theme='primary'>
+            <Button text theme='primary' onClick={() => {
+              Confirm('请确定删除URL', `将删除URL【${data.url}】`, async () => {
+                await businessStore.deleteRules(loadBalancerStore.currentSelectedTreeNode.listener.id, {
+                  lbl_id: loadBalancerStore.currentSelectedTreeNode.listener.id,
+                  rule_ids: [ data.id ],
+                });
+                Message({
+                  message: '删除成功',
+                  theme: 'success',
+                });
+              });
+            }}>
               {t('删除')}
             </Button>
           </div>
         ),
       },
     ];
+
     const tableSettings = generateColumnsSettings(tableColumns);
-    const tableProps = {
-      columns: tableColumns,
-      data: [
-        {
-          urlPath: '/home',
-          protocol: 'HTTP',
-          port: 80,
-          pollingMethod: 'RoundRobin',
-          targetGroup: 'GroupA',
-          syncStatus: 'Synchronized',
-          actions: 'Edit',
-        },
-        {
-          urlPath: '/about',
-          protocol: 'HTTPS',
-          port: 443,
-          pollingMethod: 'LeastConnections',
-          targetGroup: 'GroupB',
-          syncStatus: 'Pending',
-          actions: 'Delete',
-        },
-        {
-          urlPath: '/contact',
-          protocol: 'TCP',
-          port: 22,
-          pollingMethod: 'SourceIP',
-          targetGroup: 'GroupC',
-          syncStatus: 'Failed',
-          actions: 'Update',
-        },
-      ],
-      searchData: [
-        {
-          name: 'URL路径',
-          id: 'urlPath',
-        },
-        {
-          name: '协议',
-          id: 'protocol',
-        },
-        {
-          name: '端口',
-          id: 'port',
-        },
-        {
-          name: '轮询方式',
-          id: 'pollingMethod',
-        },
-        {
-          name: '目标组',
-          id: 'targetGroup',
-        },
-        {
-          name: '同步状态',
-          id: 'syncStatus',
-        },
-        {
-          name: '操作',
-          id: 'actions',
-        },
-      ],
+    const isCurRowSelectEnable = (row: any) => {
+      if (whereAmI.value === Senarios.business) return true;
+      if (row.id) {
+        return row.bk_biz_id === -1;
+      }
     };
     const { CommonTable, getListData } = useTable({
       searchOptions: {
         searchData: [
           {
             name: 'URL路径',
-            id: 'urlPath',
-          },
-          {
-            name: '协议',
-            id: 'protocol',
-          },
-          {
-            name: '端口',
-            id: 'port',
+            id: 'url',
           },
           {
             name: '轮询方式',
-            id: 'pollingMethod',
+            id: 'scheduler',
           },
           {
             name: '目标组',
-            id: 'targetGroup',
+            id: 'target_group_id',
           },
           {
             name: '同步状态',
-            id: 'syncStatus',
+            id: 'status',
           },
           {
             name: '操作',
@@ -216,12 +196,23 @@ export default defineComponent({
               return 'binding-row';
             }
           },
+          onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
+          onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
         },
       },
       requestOption: {
         type: `vendors/tcloud/listeners/${loadBalancerStore.currentSelectedTreeNode.listener_id}/rules`,
       },
     });
+
+    const {
+      isSubmitLoading,
+      isBatchDeleteDialogShow,
+      radioGroupValue,
+      tableProps,
+      handleBatchDeleteListener,
+      handleBatchDeleteSubmit,
+    } = useBatchDeleteListener(tableColumns, selections, resetSelections, getListData);
 
     watch(
       () => loadBalancerStore.currentSelectedTreeNode,
@@ -234,7 +225,41 @@ export default defineComponent({
     );
 
     const handleBatchDelete = () => {};
-    const handleSubmit = () => {};
+    const handleSubmit = async () => {
+      await formInstance.value.validate();
+      isSubmitLoading.value = true;
+      const promise = isEdit.value
+        ? businessStore.updateUrl({
+            lbl_id: loadBalancerStore.currentSelectedTreeNode.listener.id,
+            rule_id: formData.rule_id,
+            url: formData.url,
+            scheduler: formData.scheduler,
+          })
+        : businessStore.createRules({
+            lbl_id: loadBalancerStore.currentSelectedTreeNode.listener.id,
+            rules: [
+              {
+                url: formData.url,
+                scheduler: formData.scheduler,
+                domains: [loadBalancerStore.currentSelectedTreeNode.domain],
+              },
+            ],
+          });
+      await promise;
+      Message({
+        message: isEdit.value ? '编辑成功' : '创建成功',
+        theme: 'success',
+      });
+      isDomainSidesliderShow.value = false;
+      isSubmitLoading.value = false;
+      await getListData();
+    };
+
+    const resetFormData = () => {
+      formData.url = '';
+      formData.certificate = '';
+      formData.scheduler = '';
+    };
 
     return () => (
       <div class={'url-list-container has-selection has-breadcrumb'}>
@@ -242,11 +267,17 @@ export default defineComponent({
           {{
             operation: () => (
               <div class={'flex-row align-item-center'}>
-                <Button theme={'primary'} onClick={() => (isDomainSidesliderShow.value = true)}>
+                <Button
+                  theme={'primary'}
+                  onClick={() => {
+                    isDomainSidesliderShow.value = true;
+                    isEdit.value = false;
+                    resetFormData();
+                  }}>
                   <Plus class={'f20'} />
                   {t('新增 URL 路径')}
                 </Button>
-                <Button onClick={() => (isBatchDeleteDialogShow.value = true)}>{t('批量删除')}</Button>
+                <Button onClick={() => (isBatchDeleteDialogShow.value = true)} disabled={!selections.value.length}>{t('批量删除')}</Button>
               </div>
             ),
           }}
@@ -270,34 +301,51 @@ export default defineComponent({
                 <BkRadioButton label={true}>{t('权重不为0')}</BkRadioButton>
               </BkRadioGroup>
             ),
+            operation: () => (
+              <div class={'flex-row align-item-center'}>
+                <Button theme={'primary'} onClick={() => {}}>
+                  <Plus class={'f20'} />
+                  {t('新增监听器')}
+                </Button>
+                <Button disabled={selections.value.length === 0} onClick={handleBatchDeleteListener}>
+                  {t('批量删除')}
+                </Button>
+              </div>
+            ),
           }}
         </BatchOperationDialog>
         <CommonSideslider
-          title='新建域名'
+          title={isEdit.value ? '编辑 URL 路径' : '新增 URL 路径'}
           width={640}
           v-model:isShow={isDomainSidesliderShow.value}
+          isSubmitLoading={isSubmitLoading.value}
           onHandleSubmit={handleSubmit}>
           <p class={'create-url-text-item'}>
             <span class={'create-url-text-item-label'}>{t('监听器名称')}：</span>
-            <span class={'create-url-text-item-value'}>web站点</span>
-          </p>
-          <p class={'create-url-text-item'}>
-            <span class={'create-url-text-item-label'}>{t('协议端口')}：</span>
-            <span class={'create-url-text-item-value'}>666666</span>
+            <span class={'create-url-text-item-value'}>{loadBalancerStore.currentSelectedTreeNode.listener.name}</span>
           </p>
           <p class={'create-url-text-item'}>
             <span class={'create-url-text-item-label'}>{t('域名')}：</span>
-            <span class={'create-url-text-item-value'}>aaaaaaaaaa</span>
+            <span class={'create-url-text-item-value'}>{loadBalancerStore.currentSelectedTreeNode.domain}</span>
           </p>
-          <Form formType='vertical'>
-            <FormItem label={t('URL路径')}>
-              <Input />
+          <Form formType='vertical' model={formData} ref={formInstance}>
+            <FormItem label={t('URL路径')} required property='url'>
+              <Input v-model={formData.url} />
             </FormItem>
-            <FormItem label={t('均衡方式')}>
-              <Select />
+            <FormItem label={t('均衡方式')} required property='scheduler'>
+              <Select v-model={formData.scheduler}>
+                {RuleModeList.map(({ id, name }) => (
+                  <Option name={name} id={id} />
+                ))}
+              </Select>
             </FormItem>
-            <FormItem label={t('目标组')}>
-              <Select />
+            <FormItem label={t('目标组')} required>
+              <Select
+                disabled
+                v-bk-tooltips={{
+                  content: '暂不支持 todo',
+                }}
+              />
             </FormItem>
           </Form>
         </CommonSideslider>

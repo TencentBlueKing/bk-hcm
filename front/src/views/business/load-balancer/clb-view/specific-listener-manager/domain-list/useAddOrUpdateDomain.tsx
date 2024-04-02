@@ -74,7 +74,7 @@ export default (getListData: () => void) => {
     await formInstance.value.validate();
     const promise =
       action.value === OpAction.ADD
-        ? businessStore.createRules(loadbalancer.currentSelectedTreeNode.id, {
+        ? businessStore.createRules({
             bk_biz_id: route.query.bizs,
             lbl_id: loadbalancer.currentSelectedTreeNode.id,
             rules: [

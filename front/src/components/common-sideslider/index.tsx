@@ -22,6 +22,10 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    isSubmitLoading: {
+      type: Boolean,
+      default: false,
+    },
   },
   emits: ['update:isShow', 'handleSubmit'],
   setup(props, ctx) {
@@ -47,7 +51,7 @@ export default defineComponent({
           default: () => ctx.slots.default?.(),
           footer: () => (
             <>
-              <Button theme='primary' onClick={handleSubmit} disabled={props.isSubmitDisabled}>
+              <Button theme='primary' onClick={handleSubmit} disabled={props.isSubmitDisabled} loading={props.isSubmitLoading}>
                 {t('提交')}
               </Button>
               <Button onClick={() => triggerShow(false)}>{t('取消')}</Button>

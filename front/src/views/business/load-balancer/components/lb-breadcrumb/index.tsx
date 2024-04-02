@@ -43,6 +43,10 @@ export default defineComponent({
         isLoading.value = true;
         const res = await resourceStore.detail('load_balancers', id);
         lbName.value = res.data.name;
+        loadBalancer.setCurrentSelectedTreeNode({
+          ...loadBalancer.currentSelectedTreeNode,
+          lb: res.data,
+        });
         lbExtension.value = getLBVipText(res.data);
       } finally {
         isLoading.value = false;
@@ -55,6 +59,10 @@ export default defineComponent({
         isLoading.value = true;
         const res = await resourceStore.detail('listeners', id);
         listenerName.value = res.data.name;
+        loadBalancer.setCurrentSelectedTreeNode({
+          ...loadBalancer.currentSelectedTreeNode,
+          listener: res.data,
+        });
         listenerExtension.value = `${res.data.protocol}:${res.data.port}`;
         await getLBText(res.data.lb_id);
       } finally {
