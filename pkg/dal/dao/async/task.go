@@ -62,7 +62,7 @@ type AsyncFlowTaskDao struct {
 // BatchCreate async flow task.
 func (dao *AsyncFlowTaskDao) BatchCreate(kt *kit.Kit, models []tableasync.AsyncFlowTaskTable) ([]string, error) {
 
-	ids, err := dao.IDGen.Batch(kt, table.AsyncFlowTable, len(models))
+	ids, err := dao.IDGen.Batch(kt, table.AsyncFlowTaskTable, len(models))
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +207,7 @@ func (dao *AsyncFlowTaskDao) GenIDs(kt *kit.Kit, num int) ([]string, error) {
 func (dao *AsyncFlowTaskDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
 	models []tableasync.AsyncFlowTaskTable) ([]string, error) {
 
-	ids, err := dao.IDGen.Batch(kt, table.AsyncFlowTable, len(models))
+	ids, err := dao.IDGen.Batch(kt, table.AsyncFlowTaskTable, len(models))
 	if err != nil {
 		return nil, err
 	}

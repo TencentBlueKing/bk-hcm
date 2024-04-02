@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/adaptor/types/core"
 	typelb "hcm/pkg/adaptor/types/load-balancer"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
+	"hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -316,5 +317,18 @@ type DomainAttrUpdateReq struct {
 
 // Validate 校验更新域名的参数
 func (req *DomainAttrUpdateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// --------------------------[批量添加RS]--------------------------
+
+// TCloudBatchCreateTargetReq tcloud batch add rs req.
+type TCloudBatchCreateTargetReq struct {
+	TargetGroupID string                 `json:"target_group_id" validate:"required"`
+	RsList        []*cloud.TargetBaseReq `json:"targets" validate:"required,min=1,max=100,dive"`
+}
+
+// Validate RsList最大支持100个.
+func (req *TCloudBatchCreateTargetReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

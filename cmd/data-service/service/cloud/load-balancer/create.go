@@ -188,9 +188,9 @@ func batchCreateTargetGroup[T corelb.TargetGroupExtension](cts *rest.Contexts,
 
 			// 添加RS
 			if tgReq.RsList != nil {
-				_, err = batchCreateTargetWithGroupID(cts.Kit, svc, tgNewIDs[0], tgReq, txn)
+				_, err = svc.batchCreateTargetWithGroupID(cts.Kit, txn, tgReq.AccountID, tgNewIDs[0], tgReq.RsList)
 				if err != nil {
-					logs.Errorf("fail to batch create target, err: %v, rid:%s", vendor, err, cts.Kit.Rid)
+					logs.Errorf("[%s]fail to batch create target, err: %v, rid:%s", vendor, err, cts.Kit.Rid)
 					return nil, fmt.Errorf("batch create target failed, err: %v", err)
 				}
 			}
@@ -251,17 +251,23 @@ func convTargetGroupCreateReqToTable[T corelb.TargetGroupExtension](kt *kit.Kit,
 	return targetGroup, nil
 }
 
-func batchCreateTargetWithGroupID[T corelb.TargetGroupExtension](kt *kit.Kit, svc *lbSvc, tgID string,
-	tgReq dataproto.TargetGroupBatchCreate[T], txn *sqlx.Tx) ([]string, error) {
+func (svc *lbSvc) batchCreateTargetWithGroupID(kt *kit.Kit, txn *sqlx.Tx, accountID, tgID string,
+	rsList []*dataproto.TargetBaseReq) ([]string, error) {
 
 	rsModels := make([]*tablelb.LoadBalancerTargetTable, 0)
 	cloudCvmIDs := make([]string, 0)
-	for _, item := range tgReq.RsList {
+	targetGroupIDs := make([]string, 0)
+	for _, item := range rsList {
 		if item.InstType == enumor.CvmInstType {
 			cloudCvmIDs = append(cloudCvmIDs, item.CloudInstID)
 		}
+		if len(tgID) > 0 {
+			item.TargetGroupID = tgID
+		}
+		targetGroupIDs = append(targetGroupIDs, item.TargetGroupID)
 	}
 
+	// 查询Cvm信息
 	cvmMap := make(map[string]tablecvm.Table)
 	if len(cloudCvmIDs) > 0 {
 		cvmReq := &typesdao.ListOption{
@@ -279,17 +285,36 @@ func batchCreateTargetWithGroupID[T corelb.TargetGroupExtension](kt *kit.Kit, sv
 		}
 	}
 
-	for _, item := range tgReq.RsList {
+	targetGroupMap := make(map[string]tablelb.LoadBalancerTargetGroupTable)
+	// 查询目标组基本信息
+	tgReq := &typesdao.ListOption{
+		Filter: tools.ContainersExpression("id", targetGroupIDs),
+		Page:   core.NewDefaultBasePage(),
+	}
+	targetList, err := svc.dao.LoadBalancerTargetGroup().List(kt, tgReq)
+	if err != nil {
+		logs.Errorf("failed to list cvm, cloudIDs: %v, err: %v, rid: %s", cloudCvmIDs, err, kt.Rid)
+		return nil, err
+	}
+
+	for _, item := range targetList.Details {
+		targetGroupMap[item.ID] = item
+	}
+
+	for _, item := range rsList {
 		tmpRs := &tablelb.LoadBalancerTargetTable{
-			AccountID:          tgReq.AccountID,
+			AccountID:          item.AccountID,
 			InstType:           item.InstType,
 			CloudInstID:        item.CloudInstID,
-			TargetGroupID:      tgID,
-			CloudTargetGroupID: tgID,
+			TargetGroupID:      item.TargetGroupID,
+			CloudTargetGroupID: targetGroupMap[item.TargetGroupID].CloudID,
 			Port:               item.Port,
 			Weight:             item.Weight,
 			Creator:            kt.User,
 			Reviser:            kt.User,
+		}
+		if len(accountID) > 0 {
+			tmpRs.AccountID = accountID
 		}
 		// 实例类型-CVM
 		if item.InstType == enumor.CvmInstType {
@@ -776,4 +801,36 @@ func (svc *lbSvc) ResFlowLock(cts *rest.Contexts) (any, error) {
 	}
 
 	return nil, nil
+}
+
+// BatchCreateTarget 批量创建目标
+func (svc *lbSvc) BatchCreateTarget(cts *rest.Contexts) (any, error) {
+	req := new(dataproto.TargetBatchCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	result, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
+		rsIDs, err := svc.batchCreateTargetWithGroupID(cts.Kit, txn, "", "", req.Targets)
+		if err != nil {
+			logs.Errorf("fail to batch create target, err: %v, rid:%s", err, cts.Kit.Rid)
+			return nil, fmt.Errorf("batch create target failed, err: %v", err)
+		}
+		return rsIDs, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ids, ok := result.([]string)
+	if !ok {
+		return nil, fmt.Errorf("batch create target but return id type is not []string, id type: %v",
+			reflect.TypeOf(result).String())
+	}
+
+	return &core.BatchCreateResult{IDs: ids}, nil
 }

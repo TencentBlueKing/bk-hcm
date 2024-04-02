@@ -131,12 +131,24 @@ func buildCustomFlow(opt *AddCustomFlowOption) *model.Flow {
 			Retry:      one.Retry,
 			DependOn:   one.DependOn,
 		}
-		if opt.IsInitState {
-			task.State = enumor.TaskInit
-		}
 
 		flow.Tasks = append(flow.Tasks, task)
 	}
 
 	return flow
+}
+
+// BatchUpdateCustomFlowState batch update custom flow state
+func (p *producer) BatchUpdateCustomFlowState(kt *kit.Kit, opt *UpdateCustomFlowStateOption) error {
+	if err := opt.Validate(); err != nil {
+		return err
+	}
+
+	err := p.backend.BatchUpdateFlowStateByCAS(kt, opt.FlowInfos)
+	if err != nil {
+		logs.Errorf("batch update custom flow state failed, err: %v, opt: %+v, rid: %s", err, opt, kt.Rid)
+		return err
+	}
+
+	return nil
 }

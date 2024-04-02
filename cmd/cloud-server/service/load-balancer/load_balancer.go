@@ -73,6 +73,8 @@ func InitService(c *capability.Capability) {
 	bizH.Add("DeleteBizTargetGroup", http.MethodDelete, "/target_groups/batch", svc.DeleteBizTargetGroup)
 	bizH.Add("ListBizTargetGroup", http.MethodPost, "/target_groups/list", svc.ListBizTargetGroup)
 	bizH.Add("GetBizTargetGroup", http.MethodGet, "/target_groups/{id}", svc.GetBizTargetGroup)
+	bizH.Add("BatchAddBizTargets", http.MethodPost, "/target_groups/{target_group_id}/targets/create",
+		svc.BatchAddBizTargets)
 
 	// 监听器
 	bizH.Add("CreateBizListener", http.MethodPost, "/load_balancers/{lb_id}/listeners/create", svc.CreateBizListener)

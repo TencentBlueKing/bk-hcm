@@ -24,18 +24,32 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"hcm/cmd/cloud-server/service/common"
+	actionflow "hcm/cmd/task-server/logics/action/flow"
+	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
 	cloudserver "hcm/pkg/api/cloud-server"
+	cslb "hcm/pkg/api/cloud-server/load-balancer"
+	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service/load-balancer"
+	ts "hcm/pkg/api/task-server"
+	"hcm/pkg/async/action"
+	"hcm/pkg/async/backend"
+	"hcm/pkg/async/producer"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
+	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/counter"
 	"hcm/pkg/tools/hooks/handler"
+	"hcm/pkg/tools/slice"
 )
 
 // BatchCreateLB 批量创建负载均衡
@@ -235,4 +249,197 @@ func (svc *lbSvc) batchCreateTCloudListener(kt *kit.Kit, rawReq json.RawMessage,
 	req.BkBizID = bkBizID
 	req.LbID = lbID
 	return svc.client.HCService().TCloud.Clb.CreateListener(kt, req)
+}
+
+// BatchAddBizTargets create add biz targets.
+func (svc *lbSvc) BatchAddBizTargets(cts *rest.Contexts) (any, error) {
+	_, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	return svc.batchAddBizTarget(cts, handler.BizOperateAuth)
+}
+
+func (svc *lbSvc) batchAddBizTarget(cts *rest.Contexts, authHandler handler.ValidWithAuthHandler) (any, error) {
+	tgID := cts.PathParameter("target_group_id").String()
+	if len(tgID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "target_group_id is required")
+	}
+
+	req := new(cloudserver.ResourceCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		logs.Errorf("batch add rs request decode failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(
+		cts.Kit, enumor.TargetGroupCloudResType, tgID)
+	if err != nil {
+		logs.Errorf("get target group resource info failed, id: %s, err: %s, rid: %s", tgID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// authorized instances
+	err = authHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.TargetGroup,
+		Action: meta.Update, BasicInfo: baseInfo})
+	if err != nil {
+		logs.Errorf("batch add rs auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	switch baseInfo.Vendor {
+	case enumor.TCloud:
+		return svc.buildAddTCloudRsTasks(cts.Kit, req.Data, tgID, baseInfo.AccountID)
+	default:
+		return nil, fmt.Errorf("vendor: %s not support", baseInfo.Vendor)
+	}
+}
+
+func (svc *lbSvc) buildAddTCloudRsTasks(kt *kit.Kit, body json.RawMessage, tgID, accountID string) (
+	interface{}, error) {
+
+	req := new(cslb.TCloudTargetBatchCreateReq)
+	if err := json.Unmarshal(body, req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// 预检测
+	err := svc.checkResFlowRel(kt, tgID, enumor.TargetGroupCloudResType)
+	if err != nil {
+		return nil, err
+	}
+
+	// 创建Flow跟Task的初始化数据
+	tasks := make([]ts.CustomFlowTask, 0)
+	elems := slice.Split(req.RsList, constant.BatchAddRSCloudMaxLimit)
+	getActionID := counter.NewNumStringCounter(1, 10)
+	for _, parts := range elems {
+		tasks = append(tasks, ts.CustomFlowTask{
+			ActionID:   action.ActIDType(getActionID()),
+			ActionName: enumor.ActionAddRS,
+			Params: &actionlb.AddRsOption{
+				Vendor:                     enumor.TCloud,
+				TCloudBatchCreateTargetReq: *common.ConvTCloudAddRsReq(parts, tgID, accountID),
+			},
+			Retry: &tableasync.Retry{
+				Enable: true,
+				Policy: &tableasync.RetryPolicy{
+					Count:        constant.FlowRetryMaxLimit,
+					SleepRangeMS: [2]uint{100, 200},
+				},
+			},
+		})
+	}
+	addReq := &ts.AddCustomFlowReq{
+		Name:        enumor.FlowAddRS,
+		Tasks:       tasks,
+		IsInitState: true,
+	}
+	result, err := svc.client.TaskServer().CreateCustomFlow(kt, addReq)
+	if err != nil {
+		logs.Errorf("call taskserver to batch add rs custom flow failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	// 锁定资源跟Flow的状态
+	flowID := result.ID
+	err = svc.lockResFlowStatus(kt, tgID, flowID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 从Flow，负责监听主Flow的状态
+	flowWatchReq := &ts.AddTemplateFlowReq{
+		Name: enumor.FlowWatch,
+		Tasks: []ts.TemplateFlowTask{{
+			ActionID: "1",
+			Params: &actionflow.FlowWatchOption{
+				FlowID:  flowID,
+				ResID:   tgID,
+				ResType: enumor.TargetGroupCloudResType,
+			},
+		}},
+	}
+	_, err = svc.client.TaskServer().CreateTemplateFlow(kt, flowWatchReq)
+	if err != nil {
+		logs.Errorf("call taskserver to create res flow status watch task failed, err: %v, flowID: %s, rid: %s",
+			err, flowID, kt.Rid)
+		return nil, err
+	}
+
+	return &core.FlowStateResult{FlowID: flowID}, nil
+}
+
+func (svc *lbSvc) lockResFlowStatus(kt *kit.Kit, tgID string, flowID string) error {
+	// 锁定资源跟Flow的状态
+	opt := &dataproto.ResFlowLockReq{
+		ResID:    tgID,
+		ResType:  enumor.TargetGroupCloudResType,
+		FlowID:   flowID,
+		Status:   enumor.ExecutingResFlowStatus,
+		TaskType: enumor.AddRSTaskType,
+	}
+	err := svc.client.DataService().Global.LoadBalancer.ResFlowLock(kt, opt)
+	if err != nil {
+		logs.Errorf("call dataservice to lock res and flow failed, err: %v, opt: %+v, rid: %s", err, opt, kt.Rid)
+		return err
+	}
+
+	// 更新Flow状态为pending
+	flowStateReq := &producer.UpdateCustomFlowStateOption{
+		FlowInfos: []backend.UpdateFlowInfo{{
+			ID:     flowID,
+			Source: enumor.FlowInit,
+			Target: enumor.FlowPending,
+		}},
+	}
+	err = svc.client.TaskServer().UpdateCustomFlowState(kt, flowStateReq)
+	if err != nil {
+		logs.Errorf("call taskserver to update flow state failed, err: %v, flowID: %s, rid: %s", err, flowID, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+func (svc *lbSvc) checkResFlowRel(kt *kit.Kit, resID string, resType enumor.CloudResourceType) error {
+	// 预检测-当前资源是否有锁定中的数据
+	lockReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("res_id", resID),
+			tools.RuleEqual("res_type", resType),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+	lockRet, err := svc.client.DataService().Global.LoadBalancer.ListResFlowLock(kt, lockReq)
+	if err != nil {
+		logs.Errorf("list res flow lock failed, err: %v, resID: %s, resType: %s, rid: %s", err, resID, resType, kt.Rid)
+		return err
+	}
+	if len(lockRet.Details) > 0 {
+		return errf.Newf(errf.TooManyRequest, "resID: %s is processing", resID)
+	}
+
+	// 预检测-当前资源是否有未终态的状态
+	flowRelReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("res_id", resID),
+			tools.RuleEqual("status", enumor.ExecutingResFlowStatus),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+	flowRelRet, err := svc.client.DataService().Global.LoadBalancer.ListResFlowRel(kt, flowRelReq)
+	if err != nil {
+		logs.Errorf("list res flow rel failed, err: %v, resID: %s, resType: %s, rid: %s", err, resID, resType, kt.Rid)
+		return err
+	}
+	if len(flowRelRet.Details) > 0 {
+		return errf.Newf(errf.TooManyRequest, "%s of resID: %s is processing", resType, resID)
+	}
+
+	return nil
 }

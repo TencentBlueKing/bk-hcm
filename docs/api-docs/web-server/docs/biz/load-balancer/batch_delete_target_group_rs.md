@@ -14,13 +14,13 @@ DELETE /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/rs/batch
 |------------------|--------------|------|-----------------------|
 | bk_biz_id        | int          | 是   | 业务ID                 |
 | target_group_id  | string       | 是   | 目标组ID                |
-| rs_ids           | string array | 是   | RS的ID列表，单次最多100个 |
+| target_ids       | string array | 是   | RS的ID列表，单次最多100个 |
 
 ### 调用示例
 
 ```json
 {
-  "rs_ids": [
+  "target_ids": [
     "00000001",
     "00000002"
   ]

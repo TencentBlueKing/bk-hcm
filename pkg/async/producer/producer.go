@@ -33,6 +33,7 @@ import (
 type Producer interface {
 	AddTemplateFlow(kt *kit.Kit, opt *AddTemplateFlowOption) (id string, err error)
 	AddCustomFlow(kt *kit.Kit, opt *AddCustomFlowOption) (id string, err error)
+	BatchUpdateCustomFlowState(kt *kit.Kit, opt *UpdateCustomFlowStateOption) error
 }
 
 var _ Producer = new(producer)

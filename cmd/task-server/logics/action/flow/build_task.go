@@ -17,22 +17,32 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package constant
+package actionflow
 
-// Note:
-// This scope is used to define all the constant keys which is used inside and outside
-// the HCM system.
-const (
-	// BatchOperationMaxLimit 批量操作最大上限，包括批量创建、批量更新、批量删除。
-	BatchOperationMaxLimit = 100
-
-	// CloudResourceSyncMaxLimit 单次云资源同步最大数量限制。
-	CloudResourceSyncMaxLimit = 100
-	// SyncConcurrencyDefaultMaxLimit 同步并发最大限制
-	SyncConcurrencyDefaultMaxLimit = 10
-
-	// BatchCreateCvmFromCloudMaxLimit 批量创建主机从公有云上的最大限制数量
-	BatchCreateCvmFromCloudMaxLimit = 100
-	// BatchAddRSCloudMaxLimit 公有云上批量添加RS的最大限制数量
-	BatchAddRSCloudMaxLimit = 100
+import (
+	"hcm/pkg/async/action"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
+	tableasync "hcm/pkg/dal/table/async"
 )
+
+// FlowWatchTpl define flow watch template.
+var FlowWatchTpl = action.FlowTemplate{
+	Name: enumor.FlowWatch,
+	ShareData: &tableasync.ShareData{
+		Dict: map[string]string{},
+	},
+	Tasks: []action.TaskTemplate{
+		{
+			ActionID:   "1",
+			ActionName: enumor.ActionFlowWatch,
+			Retry: &tableasync.Retry{
+				Enable: true,
+				Policy: &tableasync.RetryPolicy{
+					Count:        constant.FlowRetryMaxLimit,
+					SleepRangeMS: [2]uint{100, 200},
+				},
+			},
+		},
+	},
+}

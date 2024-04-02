@@ -89,7 +89,7 @@ func NewService(sd serviced.ServiceDiscover, shutdownWaitTimeSec int) (*Service,
 		return nil, err
 	}
 
-	logicsaction.Init(apiClientSet)
+	logicsaction.Init(apiClientSet, dao)
 	async, err := createAndStartAsync(sd, dao, shutdownWaitTimeSec)
 	if err != nil {
 		return nil, err

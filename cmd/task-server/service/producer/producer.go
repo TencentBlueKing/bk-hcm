@@ -41,6 +41,7 @@ func Init(cap *capability.Capability) {
 
 	h.Add("CreateTemplateFlow", "POST", "/template_flows/create", svc.CreateTemplateFlow)
 	h.Add("CreateCustomFlow", "POST", "/custom_flows/create", svc.CreateCustomFlow)
+	h.Add("UpdateCustomFlowState", "PATCH", "/custom_flows/state/update", svc.UpdateCustomFlowState)
 
 	h.Load(cap.WebService)
 }
@@ -98,4 +99,25 @@ func (p service) CreateCustomFlow(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return &core.CreateResult{ID: id}, nil
+}
+
+// UpdateCustomFlowState update custom flow state
+func (p service) UpdateCustomFlowState(cts *rest.Contexts) (interface{}, error) {
+	opt := new(producer.UpdateCustomFlowStateOption)
+	if err := cts.DecodeInto(opt); err != nil {
+		return nil, err
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// 批量更新flow状态
+	err := p.pro.BatchUpdateCustomFlowState(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("batch update custom flow state failed, err: %v, opt: %+v, rid: %s", err, opt, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
 }

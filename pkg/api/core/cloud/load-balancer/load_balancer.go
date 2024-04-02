@@ -199,18 +199,18 @@ type BaseLoadBalancerTargetGroup struct {
 
 // BaseResFlowLock define base res flow lock.
 type BaseResFlowLock struct {
-	ResID          string `json:"res_id"`
-	ResType        string `json:"res_type"`
-	Owner          string `json:"owner"`
+	ResID          string                   `json:"res_id"`
+	ResType        enumor.CloudResourceType `json:"res_type"`
+	Owner          string                   `json:"owner"`
 	*core.Revision `json:",inline"`
 }
 
 // BaseResFlowRel define base res flow rel.
 type BaseResFlowRel struct {
-	ID             string          `json:"id"`
-	ResID          string          `json:"res_id"`
-	FlowID         string          `json:"flow_id"`
-	TaskType       enumor.TaskType `json:"task_type"`
-	Status         string          `json:"status"`
+	ID             string               `json:"id"`
+	ResID          string               `json:"res_id"`
+	FlowID         string               `json:"flow_id"`
+	TaskType       enumor.TaskType      `json:"task_type"`
+	Status         enumor.ResFlowStatus `json:"status"`
 	*core.Revision `json:",inline"`
 }

@@ -116,3 +116,11 @@ func (c *ClbClient) UpdateDomainAttr(kt *kit.Kit, id string, req *hcproto.Domain
 	return common.RequestNoResp[hcproto.DomainAttrUpdateReq](
 		c.client, http.MethodPatch, kt, req, "/listeners/%s/domains", id)
 }
+
+// BatchAddRs 批量添加RS
+func (c *ClbClient) BatchAddRs(kt *kit.Kit, targetGroupID string, req *hcproto.TCloudBatchCreateTargetReq) (
+	*hcproto.BatchCreateResult, error) {
+
+	return common.Request[hcproto.TCloudBatchCreateTargetReq, hcproto.BatchCreateResult](
+		c.client, http.MethodPost, kt, req, "/target_groups/%s/targets/create", targetGroupID)
+}

@@ -24,15 +24,19 @@ import (
 	actioncvm "hcm/cmd/task-server/logics/action/cvm"
 	actioneip "hcm/cmd/task-server/logics/action/eip"
 	actionfirewall "hcm/cmd/task-server/logics/action/firewall"
+	"hcm/cmd/task-server/logics/action/flow"
+	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
 	actionsg "hcm/cmd/task-server/logics/action/security-group"
 	actionsubnet "hcm/cmd/task-server/logics/action/subnet"
 	"hcm/pkg/async/action"
 	"hcm/pkg/client"
+	"hcm/pkg/dal/dao"
 )
 
 // Init init action.
-func Init(cli *client.ClientSet) {
+func Init(cli *client.ClientSet, dao dao.Set) {
 	actcli.SetClientSet(cli)
+	actcli.SetDaoSet(dao)
 
 	register()
 }
@@ -51,5 +55,9 @@ func register() {
 	action.RegisterAction(actionsg.DeleteSgAction{})
 	action.RegisterAction(actionsg.CreateHuaweiSGRuleAction{})
 	action.RegisterAction(actioneip.DeleteEIPAction{})
+
+	action.RegisterAction(actionlb.AddRsAction{})
+	action.RegisterAction(actionflow.FlowWatchAction{})
+	action.RegisterTpl(actionflow.FlowWatchTpl)
 
 }
