@@ -172,3 +172,9 @@ func (cli *LoadBalancerClient) BatchCreateTCloudTarget(kt *kit.Kit, req *datapro
 	return common.Request[dataproto.TargetBatchCreateReq, core.BatchCreateResult](
 		cli.client, rest.POST, kt, req, "/targets/batch/create")
 }
+
+// BatchUpdateTarget 批量更新rs
+func (cli *LoadBalancerClient) BatchUpdateTarget(kt *kit.Kit, req *dataproto.TargetBatchUpdateReq) error {
+	return common.RequestNoResp[dataproto.TargetBatchUpdateReq](cli.client, rest.PATCH, kt, req,
+		"/load_balancers/targets/batch/update")
+}

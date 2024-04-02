@@ -102,7 +102,7 @@ func batchCreateTargetGroupWithRel[T corelb.TargetGroupExtension](cts *rest.Cont
 					return nil, fmt.Errorf("batch create target failed, err: %v", err)
 				}
 			}
-
+			// 创建绑定关系
 			if _, err := createRel(cts.Kit, svc, txn, tgReq, tgID); err != nil {
 				logs.Errorf("fail to batch create listener rule rel for create tg, err: %v, rid:%s",
 					err, cts.Kit.Rid)
@@ -171,7 +171,7 @@ func (svc *lbSvc) BatchDeleteTarget(cts *rest.Contexts) (any, error) {
 	targetIds := slice.Map(listResp.Details, func(one tablelb.LoadBalancerTargetTable) string { return one.ID })
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
 		delFilter := tools.ContainersExpression("id", targetIds)
-		return nil, svc.dao.LoadBalancerListener().DeleteWithTx(cts.Kit, txn, delFilter)
+		return nil, svc.dao.LoadBalancerTarget().DeleteWithTx(cts.Kit, txn, delFilter)
 	})
 	if err != nil {
 		logs.Errorf("delete target(ids=%v) failed, err: %v, rid: %s", targetIds, err, cts.Kit.Rid)
@@ -179,4 +179,37 @@ func (svc *lbSvc) BatchDeleteTarget(cts *rest.Contexts) (any, error) {
 	}
 
 	return nil, nil
+}
+
+// BatchUpdateTarget 批量更新RS
+func (svc *lbSvc) BatchUpdateTarget(cts *rest.Contexts) (any, error) {
+	req := new(dataproto.TargetBatchUpdateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	return svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
+		for _, target := range req.Targets {
+			update := &tablelb.LoadBalancerTargetTable{
+				InstName:         target.InstName,
+				Port:             target.Port,
+				Weight:           target.Weight,
+				PrivateIPAddress: target.PrivateIPAddress,
+				PublicIPAddress:  target.PublicIPAddress,
+				Memo:             target.Memo,
+				Reviser:          cts.Kit.User,
+			}
+
+			if err := svc.dao.LoadBalancerTarget().UpdateByIDWithTx(cts.Kit, txn, target.ID, update); err != nil {
+				logs.Errorf("update tcloud target by id failed, err: %v, id: %s, rid: %s", err, target.ID, cts.Kit.Rid)
+				return nil, fmt.Errorf("update target failed, err: %v", err)
+			}
+		}
+
+		return nil, nil
+	})
 }

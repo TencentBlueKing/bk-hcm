@@ -327,6 +327,7 @@ func (svc *lbSvc) batchCreateTargetWithGroupID(kt *kit.Kit, txn *sqlx.Tx, accoun
 			tmpRs.InstName = cvmMap[item.CloudInstID].Name
 			tmpRs.PrivateIPAddress = cvmMap[item.CloudInstID].PrivateIPv4Addresses
 			tmpRs.PublicIPAddress = cvmMap[item.CloudInstID].PublicIPv4Addresses
+			tmpRs.Zone = cvmMap[item.CloudInstID].Zone
 		}
 		rsModels = append(rsModels, tmpRs)
 	}

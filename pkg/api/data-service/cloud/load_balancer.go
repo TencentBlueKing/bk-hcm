@@ -235,7 +235,7 @@ func (req *TCloudUrlRuleCreate) Validate() error {
 
 // TCloudUrlRuleBatchUpdateReq 批量更新url规则
 type TCloudUrlRuleBatchUpdateReq struct {
-	UrlRules []*TCloudUrlRuleUpdate `json:"url_rules" validate:"required,min=1"`
+	UrlRules []*TCloudUrlRuleUpdate `json:"url_rules" validate:"required,min=1,dive"`
 }
 
 // Validate ...
@@ -251,16 +251,16 @@ type TCloudUrlRuleUpdate struct {
 	ID string `json:"id" validate:"required,lte=255"`
 
 	Name               string                        `json:"name" validate:"lte=255"`
-	TargetGroupID      string                        `json:"target_group_id" validate:"lte=255"`
-	CloudTargetGroupID string                        `json:"cloud_target_group_id" validate:"lte=255"`
+	TargetGroupID      string                        `json:"target_group_id" validate:"omitempty,lte=255"`
+	CloudTargetGroupID string                        `json:"cloud_target_group_id" validate:"omitempty,lte=255"`
 	Domain             string                        `json:"domain"`
 	URL                string                        `json:"url"`
 	Scheduler          string                        `json:"scheduler"`
 	SessionType        string                        `json:"session_type"`
 	SessionExpire      *int64                        `json:"session_expire"`
-	HealthCheck        *corelb.TCloudHealthCheckInfo `json:"health_check" validate:"required"`
-	Certificate        *corelb.TCloudCertificateInfo `json:"certificate" validate:"required"`
-	Memo               *string                       `json:"memo" validate:"lte=255"`
+	HealthCheck        *corelb.TCloudHealthCheckInfo `json:"health_check" validate:"omitempty"`
+	Certificate        *corelb.TCloudCertificateInfo `json:"certificate" validate:"omitempty"`
+	Memo               *string                       `json:"memo" validate:"omitempty,lte=255"`
 }
 
 // Validate ...

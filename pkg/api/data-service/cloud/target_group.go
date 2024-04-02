@@ -69,7 +69,7 @@ type TargetBaseReq struct {
 	InstType      enumor.InstType `json:"inst_type" validate:"required"`
 	CloudInstID   string          `json:"cloud_inst_id" validate:"required"`
 	Port          int64           `json:"port" validate:"required"`
-	Weight        int64           `json:"weight" validate:"required"`
+	Weight        *int64           `json:"weight" validate:"required"`
 	AccountID     string          `json:"account_id" validate:"omitempty"`
 	TargetGroupID string          `json:"target_group_id" validate:"omitempty"`
 }
@@ -433,5 +433,37 @@ func (req *TargetBatchCreateReq) Validate() error {
 			}
 		}
 	}
+	return validator.Validate.Struct(req)
+}
+
+// -------------------------- update target --------------------------
+
+// TargetBatchUpdateReq 批量更新RS
+type TargetBatchUpdateReq struct {
+	Targets []*TargetUpdate `json:"targets" validate:"required,min=1,dive"`
+}
+
+// Validate ...
+func (r *TargetBatchUpdateReq) Validate() error {
+	if len(r.Targets) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("targets length count should <= %d", constant.BatchOperationMaxLimit)
+	}
+	return validator.Validate.Struct(r)
+}
+
+// TargetUpdate target update.
+type TargetUpdate struct {
+	ID string `json:"id" validate:"required,lte=255"`
+
+	InstName         string            `json:"inst_name"`
+	Port             int64             `json:"port"`
+	Weight           *int64            `json:"weight"`
+	PrivateIPAddress types.StringArray `json:"private_ip_address"`
+	PublicIPAddress  types.StringArray `json:"public_ip_address"`
+	Memo             *string           `json:"memo" validate:"lte=255"`
+}
+
+// Validate ...
+func (req *TargetUpdate) Validate() error {
 	return validator.Validate.Struct(req)
 }
