@@ -23,7 +23,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/rs/create
 | inst_type        | string       | 是   | 实例类型(CVM:云服务器)               |
 | cloud_inst_id    | string       | 是   | 云实例ID                           |
 | port             | int          | 是   | 端口                               |
-| weight           | string       | 是   | 权重                               |
+| weight           | int          | 是   | 权重,取值范围：[0, 100]              |
 
 ### 调用示例
 

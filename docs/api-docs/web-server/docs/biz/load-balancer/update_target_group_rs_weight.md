@@ -10,12 +10,12 @@ PATCH /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/rs/weight
 
 ### 输入参数
 
-| 参数名称          | 参数类型       | 必选 | 描述                |
-|------------------|--------------|------|--------------------|
-| bk_biz_id        | int          | 是   | 业务ID              |
-| target_group_id  | string       | 是   | 目标组ID            |
-| location_id      | string       | 否   | 转发规则的ID         |
-| rs_list          | object array | 是   | RS列表，单次最多20个  |
+| 参数名称          | 参数类型       | 必选 | 描述                    |
+|------------------|--------------|------|------------------------|
+| bk_biz_id        | int          | 是   | 业务ID                  |
+| target_group_id  | string       | 是   | 目标组ID                |
+| new_weight       | int          | 是   | 新权重,取值范围：[0, 100] |
+| rs_list          | object array | 是   | RS列表，单次最多100个     |
 
 #### rs_list
 
@@ -24,13 +24,13 @@ PATCH /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/rs/weight
 | inst_type        | string       | 是   | 实例类型(CVM:云服务器)   |
 | cloud_inst_id    | string       | 是   | 云实例ID               |
 | port             | int          | 是   | 端口                   |
-| weight           | string       | 是   | 权重                   |
+| weight           | int          | 是   | 权重,取值范围：[0, 100]  |
 
 ### 调用示例
 
 ```json
 {
-  "location_id": "loc-xxxx",
+  "new_weight": 10,
   "rs_list": [
     {
       "inst_type": "CVM",
