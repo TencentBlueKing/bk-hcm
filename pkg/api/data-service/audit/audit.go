@@ -23,6 +23,7 @@ package audit
 import (
 	"fmt"
 
+	coreasync "hcm/pkg/api/core/async"
 	"hcm/pkg/api/core/audit"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -146,6 +147,7 @@ func (o *OperationAction) ConvAuditAction() (enumor.AuditAction, error) {
 	}
 }
 
+// OperationAction 操作动作
 const (
 	Start    OperationAction = "start"
 	Stop     OperationAction = "stop"
@@ -210,6 +212,7 @@ func (r *RecycleAction) ConvAuditAction() (enumor.AuditAction, error) {
 	}
 }
 
+// RecycleAction 回收动作
 const (
 	Recycle RecycleAction = "recycle"
 	Recover RecycleAction = "recover"
@@ -235,4 +238,12 @@ type ListResult struct {
 type GetResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          *audit.Audit `json:"data"`
+}
+
+// -------------------------- Get Audit Async Task --------------------------
+
+// GetAsyncTaskResp defines get audit async task response.
+type GetAsyncTaskResp struct {
+	Flow  *coreasync.AsyncFlow      `json:"flow"`
+	Tasks []coreasync.AsyncFlowTask `json:"tasks"`
 }
