@@ -458,9 +458,9 @@ type TargetUpdate struct {
 	InstName         string            `json:"inst_name"`
 	Port             int64             `json:"port"`
 	Weight           *int64            `json:"weight"`
-	PrivateIPAddress types.StringArray `json:"private_ip_address"`
-	PublicIPAddress  types.StringArray `json:"public_ip_address"`
-	Memo             *string           `json:"memo" validate:"lte=255"`
+	PrivateIPAddress types.StringArray `json:"private_ip_address" validate:"omitempty,dive,ip"`
+	PublicIPAddress  types.StringArray `json:"public_ip_address" validate:"omitempty,dive,ip"`
+	Memo             *string           `json:"memo" validate:"omitempty,lte=255"`
 }
 
 // Validate ...

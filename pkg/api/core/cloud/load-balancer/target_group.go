@@ -20,6 +20,8 @@
 package loadbalancer
 
 import (
+	"fmt"
+
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/table/types"
@@ -92,7 +94,7 @@ func (rs BaseTarget) GetID() string {
 
 // GetCloudID ...
 func (rs BaseTarget) GetCloudID() string {
-	return rs.CloudInstID
+	return fmt.Sprintf("%s-%d", rs.CloudInstID, rs.Port)
 }
 
 // BaseTargetListenerRuleRel define base target listener rule rel.

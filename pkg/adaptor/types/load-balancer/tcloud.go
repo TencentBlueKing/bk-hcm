@@ -692,7 +692,7 @@ type Backend struct {
 	*tclb.Backend
 }
 
-// GetCloudID ...
+// GetCloudID 一个机器可以被反复绑定，只要端口不一样即可
 func (b Backend) GetCloudID() string {
-	return converter.PtrToVal(b.InstanceId)
+	return fmt.Sprintf("%s-%d", converter.PtrToVal(b.InstanceId), converter.PtrToVal(b.Port))
 }

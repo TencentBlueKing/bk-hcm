@@ -261,7 +261,6 @@ func (svc *lbSvc) batchCreateTargetWithGroupID(kt *kit.Kit, txn *sqlx.Tx, accoun
 
 	rsModels := make([]*tablelb.LoadBalancerTargetTable, 0)
 	cloudCvmIDs := make([]string, 0)
-	targetGroupIDs := make([]string, 0)
 	for _, item := range rsList {
 		if item.InstType == enumor.CvmInstType {
 			cloudCvmIDs = append(cloudCvmIDs, item.CloudInstID)
@@ -269,7 +268,6 @@ func (svc *lbSvc) batchCreateTargetWithGroupID(kt *kit.Kit, txn *sqlx.Tx, accoun
 		if len(tgID) > 0 {
 			item.TargetGroupID = tgID
 		}
-		targetGroupIDs = append(targetGroupIDs, item.TargetGroupID)
 	}
 
 	// 查询Cvm信息
@@ -290,29 +288,14 @@ func (svc *lbSvc) batchCreateTargetWithGroupID(kt *kit.Kit, txn *sqlx.Tx, accoun
 		}
 	}
 
-	targetGroupMap := make(map[string]tablelb.LoadBalancerTargetGroupTable)
-	// 查询目标组基本信息
-	tgReq := &typesdao.ListOption{
-		Filter: tools.ContainersExpression("id", targetGroupIDs),
-		Page:   core.NewDefaultBasePage(),
-	}
-	targetList, err := svc.dao.LoadBalancerTargetGroup().List(kt, tgReq)
-	if err != nil {
-		logs.Errorf("failed to list cvm, cloudIDs: %v, err: %v, rid: %s", cloudCvmIDs, err, kt.Rid)
-		return nil, err
-	}
-
-	for _, item := range targetList.Details {
-		targetGroupMap[item.ID] = item
-	}
-
 	for _, item := range rsList {
 		tmpRs := &tablelb.LoadBalancerTargetTable{
-			AccountID:          item.AccountID,
-			InstType:           item.InstType,
-			CloudInstID:        item.CloudInstID,
-			TargetGroupID:      item.TargetGroupID,
-			CloudTargetGroupID: targetGroupMap[item.TargetGroupID].CloudID,
+			AccountID:     item.AccountID,
+			InstType:      item.InstType,
+			CloudInstID:   item.CloudInstID,
+			TargetGroupID: item.TargetGroupID,
+			// for local target group its cloud id is same as local id
+			CloudTargetGroupID: item.TargetGroupID,
 			Port:               item.Port,
 			Weight:             item.Weight,
 			Creator:            kt.User,
@@ -329,6 +312,7 @@ func (svc *lbSvc) batchCreateTargetWithGroupID(kt *kit.Kit, txn *sqlx.Tx, accoun
 			tmpRs.PublicIPAddress = cvmMap[item.CloudInstID].PublicIPv4Addresses
 			tmpRs.Zone = cvmMap[item.CloudInstID].Zone
 		}
+
 		rsModels = append(rsModels, tmpRs)
 	}
 	return svc.dao.LoadBalancerTarget().BatchCreateWithTx(kt, txn, rsModels)

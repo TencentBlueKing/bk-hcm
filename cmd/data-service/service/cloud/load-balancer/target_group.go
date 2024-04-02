@@ -95,10 +95,9 @@ func batchCreateTargetGroupWithRel[T corelb.TargetGroupExtension](cts *rest.Cont
 			tgID := createTGIDs[0]
 			// 添加RS
 			if tgReq.TargetGroup.RsList != nil {
-				_, err = batchCreateTargetWithGroupID(cts.Kit, svc, tgID, tgReq.TargetGroup, txn)
+				_, err = svc.batchCreateTargetWithGroupID(cts.Kit, txn, "", tgID, tgReq.TargetGroup.RsList)
 				if err != nil {
-					logs.Errorf("fail to batch create target for create tg, err: %v, rid:%s",
-						vendor, err, cts.Kit.Rid)
+					logs.Errorf("fail to batch create target for create tg, err: %v, rid:%s", err, cts.Kit.Rid)
 					return nil, fmt.Errorf("batch create target failed, err: %v", err)
 				}
 			}
@@ -154,7 +153,7 @@ func (svc *lbSvc) BatchDeleteTarget(cts *rest.Contexts) (any, error) {
 	}
 
 	opt := &types.ListOption{
-		Fields: []string{"id", "vendor", "cloud_id"},
+		Fields: []string{"id", "vendor", "cloud_inst_id"},
 		Filter: req.Filter,
 		Page:   core.NewDefaultBasePage(),
 	}

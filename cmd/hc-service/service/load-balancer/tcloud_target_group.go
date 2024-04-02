@@ -121,7 +121,7 @@ func (svc *clbSvc) batchRegisterTargetCloud(kt *kit.Kit, req *protolb.TCloudBatc
 				ListenerId: cvt.ValToPtr(ruleItem.CloudLBLID),
 				InstanceId: cvt.ValToPtr(rsItem.CloudInstID),
 				Port:       cvt.ValToPtr(rsItem.Port),
-				Weight:     cvt.ValToPtr(rsItem.Weight),
+				Weight:     rsItem.Weight,
 			}
 			if ruleItem.RuleType == enumor.Layer7RuleType {
 				tmpRs.LocationId = cvt.ValToPtr(ruleItem.CloudID)
