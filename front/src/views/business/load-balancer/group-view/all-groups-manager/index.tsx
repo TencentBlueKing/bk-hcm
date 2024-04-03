@@ -1,17 +1,18 @@
-import { Ref, defineComponent, onMounted, onUnmounted, ref } from 'vue';
+import { computed, defineComponent, ref } from 'vue';
 // import components
 import { Button, Dropdown } from 'bkui-vue';
 import { BkRadioGroup, BkRadioButton } from 'bkui-vue/lib/radio';
 import { Plus, AngleDown } from 'bkui-vue/lib/icon';
-import AddOrUpdateTGSideslider from './AddOrUpdateTGSideslider';
+import AddOrUpdateTGSideslider from '../components/AddOrUpdateTGSideslider';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
-import AddRsDialog from './AddRsDialog';
+import AddRsDialog from '../components/AddRsDialog';
 import BatchAddRsSideslider from './BatchAddRsSideslider';
 // import stores
 import { useLoadBalancerStore } from '@/store';
 // import custom hooks
 import useRenderTRList from './useRenderTGList';
 import useBatchDeleteTR from './useBatchDeleteTR';
+import { useI18n } from 'vue-i18n';
 // import utils
 import bus from '@/common/bus';
 import './index.scss';
@@ -21,6 +22,8 @@ const { DropdownMenu, DropdownItem } = Dropdown;
 export default defineComponent({
   name: 'AllGroupsManager',
   setup() {
+    // use hooks
+    const { t } = useI18n();
     // use stores
     const loadBalancerStore = useLoadBalancerStore();
 
@@ -36,37 +39,39 @@ export default defineComponent({
       batchDeleteTargetGroup,
     } = useBatchDeleteTR(searchData, selections, getListData);
 
-    // todo: 批量操作等联调时再继续refactor
-    const isBatchDeleteRsShow = ref(false);
-    const isBatchAddRsShow = ref(false);
-    const batchOperationList = [
-      { scene: 'batchDeleteTargetGroup', isShow: isBatchDeleteTargetGroupShow, label: '批量删除目标组' },
-      { scene: 'batchDeleteRs', isShow: isBatchDeleteRsShow, label: '批量移除 RS' },
-      { scene: 'batchAddRs', isShow: null, label: '批量添加 RS' },
-    ];
-    // batch operation item 的点击事件处理函数
-    const handleBatchOperationItemClick = (scene: string, isShow: Ref<boolean>) => {
-      loadBalancerStore.setCurrentScene(scene);
-      if (scene !== 'batchAddRs') {
-        isShow.value = true;
-      } else {
-        // todo: 这里可能需要将 selections 中的每个目标组对应的 account_id 提取出来, 请求对应的 cvms 数据(目前是报错状态, 后续处理)
-        bus.$emit('showAddRsDialog');
-      }
+    // computed-property - 判断是否属于同一个账号
+    const isSelectionsBelongSameAccount = computed(() => {
+      if (selections.value.length < 2) return true;
+      const firstAccountId = selections.value[0].account_id;
+      return selections.value.every((item) => item.account_id === firstAccountId);
+    });
+
+    // click-handler - 批量删除目标组
+    const handleBatchDeleteTG = () => {
+      loadBalancerStore.setCurrentScene('BatchDelete');
+      isBatchDeleteTargetGroupShow.value = true;
     };
+    // click-handler - 批量删除RS
+    const handleBatchDeleteRs = () => {
+      loadBalancerStore.setCurrentScene('BatchDeleteRs');
+    };
+    // click-handler - 批量添加RS
+    const handleBatchAddRs = () => {
+      loadBalancerStore.setCurrentScene('BatchAddRs');
+      // 同一账号下的多个目标组支持批量添加rs
+      const { account_id } = selections.value[0];
+      bus.$emit('showAddRsDialog', account_id);
+      bus.$emit('setTargetGroups', selections.value);
+    };
+    const batchOperationList = [
+      { label: t('批量删除目标组'), clickHandler: handleBatchDeleteTG, disabled: false },
+      { label: t('批量移除 RS'), clickHandler: handleBatchDeleteRs, disabled: !isSelectionsBelongSameAccount.value },
+      { label: t('批量添加 RS'), clickHandler: handleBatchAddRs, disabled: !isSelectionsBelongSameAccount.value },
+    ];
 
-    // 批量移除 RS
+    // todo: 批量移除 RS
+    const isBatchDeleteRsShow = ref(false);
     const batchDeleteRs = () => {};
-
-    onMounted(() => {
-      bus.$on('showBatchAddRsDialog', () => {
-        isBatchAddRsShow.value = true;
-      });
-    });
-
-    onUnmounted(() => {
-      bus.$off('showBatchAddRsDialog');
-    });
 
     return () => (
       <div class='common-card-wrap has-selection'>
@@ -77,20 +82,22 @@ export default defineComponent({
               <>
                 <Button theme='primary' onClick={() => bus.$emit('addTargetGroup')}>
                   <Plus class='f20' />
-                  新建
+                  {t('新建')}
                 </Button>
                 <Dropdown trigger='click' placement='bottom-start'>
                   {{
                     default: () => (
                       <Button disabled={!selections.value.length}>
-                        批量操作 <AngleDown class='f20' />
+                        {t('批量操作')} <AngleDown class='f20' />
                       </Button>
                     ),
                     content: () => (
                       <DropdownMenu>
-                        {batchOperationList.map(({ scene, isShow, label }) => (
-                          <DropdownItem onClick={() => handleBatchOperationItemClick(scene, isShow)}>
-                            {label}
+                        {batchOperationList.map(({ label, clickHandler, disabled }) => (
+                          <DropdownItem>
+                            <Button text onClick={clickHandler} disabled={disabled}>
+                              {label}
+                            </Button>
                           </DropdownItem>
                         ))}
                       </DropdownMenu>
@@ -101,7 +108,7 @@ export default defineComponent({
             ),
           }}
         </CommonTable>
-        {/* 新增/编辑目标组 - SideSlider */}
+        {/* 新增/编辑目标组 */}
         <AddOrUpdateTGSideslider getListData={getListData} />
         {/* 添加RS */}
         <AddRsDialog />
@@ -130,7 +137,7 @@ export default defineComponent({
             ),
           }}
         </BatchOperationDialog>
-        {/* 批量删除RS */}
+        {/* todo: 批量删除RS */}
         <BatchOperationDialog
           v-model:isShow={isBatchDeleteRsShow.value}
           title='批量移除RS'

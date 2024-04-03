@@ -1,4 +1,4 @@
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, Ref } from 'vue';
 // import components
 import { Input, Select } from 'bkui-vue';
 import AccountSelector from '@/components/account-selector/index.vue';
@@ -6,22 +6,18 @@ import RegionSelector from '@/views/service/service-apply/components/common/regi
 import VpcSelector from '@/components/vpc-selector/index.vue';
 import RsConfigTable from '../RsConfigTable';
 // import stores
-import { useAccountStore, useBusinessStore } from '@/store';
+import { useAccountStore, useLoadBalancerStore } from '@/store';
 // import types and constants
-import { QueryRuleOPEnum } from '@/typings';
 import { TARGET_GROUP_PROTOCOLS, VendorEnum } from '@/common/constant';
-// import utils
-import bus from '@/common/bus';
 
 const { Option } = Select;
 
-export default (formData: any) => {
+export default (formData: any, updateCount: Ref<number>) => {
   // use stores
   const accountStore = useAccountStore();
-  const businessStore = useBusinessStore();
+  const loadBalancerStore = useLoadBalancerStore();
 
   const curVendor = ref(VendorEnum.TCLOUD);
-  const rsTableList = ref([]);
 
   const selectedBizId = computed({
     get() {
@@ -31,6 +27,8 @@ export default (formData: any) => {
       formData.bk_biz_id = val;
     },
   });
+
+  const disabledEdit = computed(() => updateCount.value === 2 && loadBalancerStore.currentScene !== 'edit');
 
   const formItemOptions = computed(() => [
     {
@@ -43,7 +41,8 @@ export default (formData: any) => {
           v-model={formData.account_id}
           bizId={selectedBizId.value}
           type='resource'
-          onChange={(account: { vendor: VendorEnum }) => (curVendor.value = account.vendor)}
+          onChange={(account: { vendor: VendorEnum }) => (curVendor.value = account?.vendor)}
+          disabled={disabledEdit.value}
         />
       ),
     },
@@ -53,7 +52,7 @@ export default (formData: any) => {
         required: true,
         property: 'name',
         span: 12,
-        content: () => <Input v-model={formData.name} />,
+        content: () => <Input v-model={formData.name} disabled={disabledEdit.value} />,
       },
       {
         label: '协议端口',
@@ -61,13 +60,13 @@ export default (formData: any) => {
         span: 12,
         content: () => (
           <div class='flex-row'>
-            <Select v-model={formData.protocol}>
+            <Select v-model={formData.protocol} disabled={disabledEdit.value}>
               {TARGET_GROUP_PROTOCOLS.map((protocol) => (
                 <Option name={protocol} id={protocol} />
               ))}
             </Select>
             &nbsp;&nbsp;:&nbsp;&nbsp;
-            <Input v-model={formData.port} />
+            <Input v-model={formData.port} disabled={disabledEdit.value} />
           </div>
         ),
       },
@@ -80,7 +79,7 @@ export default (formData: any) => {
         span: 12,
         content: () => (
           <RegionSelector
-            isDisabled={!formData.account_id}
+            isDisabled={!formData.account_id || disabledEdit.value}
             v-model={formData.region}
             accountId={formData.account_id}
             vendor={curVendor.value}
@@ -96,7 +95,7 @@ export default (formData: any) => {
         content: () => (
           <VpcSelector
             v-model={formData.cloud_vpc_id}
-            isDisabled={!formData.account_id && !formData.region}
+            isDisabled={(!formData.account_id && !formData.region) || disabledEdit.value}
             region={formData.region}
             vendor={curVendor.value}
           />
@@ -108,41 +107,21 @@ export default (formData: any) => {
       required: true,
       property: 'rs_list',
       span: 24,
-      content: () => (
-        <RsConfigTable
-          rsList={formData.rs_list}
-          onShowAddRsDialog={() => bus.$emit('showAddRsDialog', rsTableList.value)}
-        />
-      ),
+      content: () => <RsConfigTable v-model:rsList={formData.rs_list} accountId={formData.account_id} />,
     },
   ]);
 
-  // 获取 rs 列表
-  const getAllRsList = async (accountId: string) => {
-    if (!accountId) return;
-    const res = await businessStore.getAllRsList({
-      filter: {
-        op: QueryRuleOPEnum.AND,
-        rules: [
-          {
-            field: 'account_id',
-            op: QueryRuleOPEnum.EQ,
-            value: accountId,
-          },
-        ],
-      },
-      page: {
-        start: 0,
-        limit: 500,
-      },
-    });
-    rsTableList.value = res.data.details;
-  };
-
   watch(
     () => formData.account_id,
-    (id) => {
-      getAllRsList(id);
+    (v) => {
+      !v && (formData.region = '');
+    },
+  );
+
+  watch(
+    () => formData.region,
+    (v) => {
+      !v && (formData.cloud_vpc_id = '');
     },
   );
 

@@ -187,5 +187,38 @@ export const useBusinessStore = defineStore({
         data,
       );
     },
+    /**
+     * 业务下给指定目标组批量添加RS
+     * @param target_group_id 目标组id
+     * @param data rs列表
+     */
+    addRsToTargetGroup(target_group_id: string, data: any) {
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${target_group_id}/targets/create`,
+        data,
+      );
+    },
+    /**
+     * 业务下批量修改RS端口
+     * @param target_group_id 目标组id
+     * @param data { 新端口, 转发规则的id, rs列表 }
+     */
+    batchUpdateRsPort(target_group_id: string, data: any) {
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${target_group_id}/targets/port`,
+        data,
+      );
+    },
+    /**
+     * 业务下批量修改RS权重
+     * @param target_group_id 目标组id
+     * @param data { 转发规则的id, rs列表 }
+     */
+    batchUpdateRsWeight(target_group_id: string, data: any) {
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${target_group_id}/rs/weight`,
+        data,
+      );
+    },
   },
 });

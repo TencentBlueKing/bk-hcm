@@ -7,8 +7,6 @@
     .left-wrap {
       display: flex;
       align-items: center;
-      color: #3a84ff;
-      cursor: pointer;
 
       .hcm-icon {
         margin-right: 5px;
@@ -31,15 +29,14 @@
     &:hover {
       color: #3a84ff;
     }
+
+    &.disabled {
+      cursor: not-allowed;
+    }
   }
 
   .bkhcm-icon-minus-circle-shape {
     font-size: 14px;
     color: #c4c6cc;
-    cursor: pointer;
-
-    &:hover {
-      color: #3a84ff;
-    }
   }
 }

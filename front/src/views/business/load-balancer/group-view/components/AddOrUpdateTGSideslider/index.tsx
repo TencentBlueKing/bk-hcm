@@ -1,0 +1,208 @@
+import { defineComponent, onMounted, onUnmounted, ref, PropType, reactive, watch } from 'vue';
+// import components
+import { Form, Message } from 'bkui-vue';
+import CommonSideslider from '@/components/common-sideslider';
+// import stores
+import { useAccountStore, useBusinessStore, useLoadBalancerStore } from '@/store';
+// import custom hooks
+import useAddOrUpdateTGForm from './useAddOrUpdateTGForm';
+import useChangeScene from './useChangeScene';
+// import utils
+import bus from '@/common/bus';
+
+const { FormItem } = Form;
+
+export default defineComponent({
+  name: 'AddOrUpdateTGSideslider',
+  props: {
+    getListData: Function as PropType<(...args: any) => any>,
+  },
+  setup(props) {
+    // use stores
+    const accountStore = useAccountStore();
+    const businessStore = useBusinessStore();
+    const loadBalancerStore = useLoadBalancerStore();
+
+    const isShow = ref(false);
+    const isSubmitDisabled = ref(false);
+
+    // 表单相关
+    const getDefaultFormData = () => ({
+      id: '',
+      bk_biz_id: accountStore.bizs,
+      account_id: '',
+      name: '',
+      protocol: '',
+      port: 80,
+      region: '',
+      cloud_vpc_id: '',
+      rs_list: [] as any[],
+    });
+    const clearFormData = () => {
+      Object.assign(formData, getDefaultFormData());
+    };
+    const formData = reactive(getDefaultFormData());
+    const { updateCount } = useChangeScene(isShow, formData);
+    const { formItemOptions } = useAddOrUpdateTGForm(formData, updateCount);
+
+    // click-handler - 新建目标组
+    const handleAddTargetGroup = () => {
+      clearFormData();
+      loadBalancerStore.setCurrentScene('add');
+      loadBalancerStore.setSelectedRsList([]);
+      isShow.value = true;
+    };
+
+    // click-handler - 编辑目标组
+    const handleEditTargetGroup = (data: any) => {
+      clearFormData();
+      Object.assign(formData, data);
+      // 初始化场景值
+      loadBalancerStore.setCurrentScene(null);
+      isShow.value = true;
+    };
+
+    // 处理参数 - add
+    const resolveFormDataForAdd = () => ({
+      bk_biz_id: formData.bk_biz_id,
+      account_id: formData.account_id,
+      name: formData.name,
+      protocol: formData.protocol,
+      port: +formData.port,
+      region: formData.region,
+      cloud_vpc_id: formData.cloud_vpc_id,
+      rs_list:
+        formData.rs_list.length > 0
+          ? formData.rs_list.map(({ cloud_id, port, weight }) => ({
+              inst_type: 'CVM',
+              cloud_inst_id: cloud_id,
+              port,
+              weight,
+            }))
+          : undefined,
+    });
+    // 处理参数 - edit
+    const resolveFormDataForEdit = () => ({
+      id: formData.id,
+      bk_biz_id: formData.bk_biz_id,
+      account_id: formData.account_id,
+      name: formData.name,
+      protocol: formData.protocol,
+      port: +formData.port,
+      region: formData.region,
+      cloud_vpc_id: formData.cloud_vpc_id,
+    });
+    // 处理参数 - 添加rs
+    const resolveFormDataForAddRs = () => ({
+      targets: formData.rs_list.map(({ cloud_id, port, weight }) => ({
+        inst_type: 'CVM',
+        cloud_inst_id: cloud_id,
+        port,
+        weight,
+      })),
+    });
+    // todo: 批量修改端口/权重等接口
+    // 处理参数 - 批量修改端口
+    // const resolveFormDataForBatchUpdatePort = () => ({});
+    // 处理参数 - 批量修改权重
+    // const resolveFormDataForBatchUpdateWeight = () => ({});
+
+    // submit - [新增/编辑目标组] 或 [批量添加rs] 或 [批量修改端口] 或 [批量修改权重]
+    const handleAddOrUpdateTargetGroupSubmit = async () => {
+      let promise;
+      let message;
+      switch (loadBalancerStore.currentScene) {
+        case 'add':
+          promise = businessStore.createTargetGroups(resolveFormDataForAdd());
+          message = '新建成功';
+          break;
+        case 'edit':
+          promise = businessStore.editTargetGroups(resolveFormDataForEdit());
+          message = '编辑成功';
+        case 'AddRs':
+          promise = businessStore.addRsToTargetGroup(formData.id, resolveFormDataForAddRs());
+          message = 'RS添加成功';
+          break;
+        case 'port':
+          // promise = businessStore.batchUpdateRsPort(formData.id, resolveFormDataForBatchUpdatePort());
+          message = '批量修改端口成功';
+          break;
+        case 'weight':
+          // promise = businessStore.batchUpdateRsWeight(formData.id, resolveFormDataForBatchUpdateWeight());
+          message = '批量修改权重成功';
+          break;
+      }
+      try {
+        isSubmitDisabled.value = true;
+        await promise;
+        Message({ message, theme: 'success' });
+        isShow.value = false;
+        props.getListData();
+      } finally {
+        isSubmitDisabled.value = false;
+      }
+    };
+
+    // 更新选中的rs列表
+    watch(
+      () => loadBalancerStore.selectedRsList,
+      (val) => {
+        formData.rs_list = [
+          ...formData.rs_list,
+          ...val.reduce((prev, curr) => {
+            if (!formData.rs_list.find((item) => item.inst_id === curr.id || item.id === curr.id)) {
+              prev.push(curr);
+            }
+            return prev;
+          }, []),
+        ];
+      },
+      {
+        deep: true,
+      },
+    );
+
+    onMounted(() => {
+      bus.$on('addTargetGroup', handleAddTargetGroup);
+      bus.$on('editTargetGroup', handleEditTargetGroup);
+    });
+
+    onUnmounted(() => {
+      bus.$off('addTargetGroup');
+      bus.$off('editTargetGroup');
+    });
+
+    return () => (
+      <CommonSideslider
+        title={loadBalancerStore.currentScene === 'edit' ? '编辑目标组' : '新建目标组'}
+        width={960}
+        v-model:isShow={isShow.value}
+        isSubmitDisabled={isSubmitDisabled.value}
+        onHandleSubmit={handleAddOrUpdateTargetGroupSubmit}>
+        <bk-container margin={0}>
+          <Form formType='vertical' model={formData}>
+            {formItemOptions.value.map((item) => (
+              <bk-row>
+                {Array.isArray(item) ? (
+                  item.map((subItem) => (
+                    <bk-col span={subItem.span}>
+                      <FormItem label={subItem.label} property={subItem.property} required={subItem.required}>
+                        {subItem.content()}
+                      </FormItem>
+                    </bk-col>
+                  ))
+                ) : (
+                  <bk-col span={item.span}>
+                    <FormItem label={item.label} property={item.property} required={item.required}>
+                      {item.content()}
+                    </FormItem>
+                  </bk-col>
+                )}
+              </bk-row>
+            ))}
+          </Form>
+        </bk-container>
+      </CommonSideslider>
+    );
+  },
+});
