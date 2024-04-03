@@ -9,6 +9,11 @@ import { useRoute } from 'vue-router';
 
 const { Option } = Select;
 
+export enum OpAction {
+  ADD,
+  UPDATE,
+}
+
 export const RuleModeList = [
   {
     id: 'WRR',
@@ -24,17 +29,18 @@ export const RuleModeList = [
   },
 ];
 
-export default () => {
+export default (getListData: () => void) => {
   // use hooks
   const { t } = useI18n();
   const businessStore = useBusinessStore();
   const loadbalancer = useLoadBalancerStore();
   const route = useRoute();
+  const oldDomain = ref('');
 
   const isShow = ref(false);
   const action = ref<number>(); // 0 - add, 1 - update
   const formData = reactive({
-    domains: '',
+    domain: '',
     url: '',
     scheduler: '',
   });
@@ -56,31 +62,41 @@ export default () => {
     isShow.value = true;
     clearParams();
     if (data) {
-      action.value = 1;
+      action.value = OpAction.UPDATE;
       Object.assign(formData, data);
+      oldDomain.value = data.domain;
     } else {
-      action.value = 0;
+      action.value = OpAction.ADD;
     }
   };
 
   const handleSubmit = async (formInstance: Ref<any>) => {
     await formInstance.value.validate();
-    await businessStore.createRules(loadbalancer.currentSelectedTreeNode.id, {
-      bk_biz_id: route.query.bizs,
-      lbl_id: loadbalancer.currentSelectedTreeNode.id,
-      rules: [
-        {
-          url: formData.url,
-          domains: [formData.domains],
-          scheduler: formData.scheduler,
-        },
-      ],
-    });
+    const promise =
+      action.value === OpAction.ADD
+        ? businessStore.createRules({
+            bk_biz_id: route.query.bizs,
+            lbl_id: loadbalancer.currentSelectedTreeNode.id,
+            rules: [
+              {
+                url: formData.url,
+                domains: [formData.domain],
+                scheduler: formData.scheduler,
+              },
+            ],
+          })
+        : businessStore.updateDomains(loadbalancer.currentSelectedTreeNode.id, {
+            lbl_id: loadbalancer.currentSelectedTreeNode.id,
+            domain: oldDomain.value,
+            new_domain: formData.domain,
+          });
+    await promise;
     isShow.value = false;
     Message({
-      message: '新建成功',
+      message: action.value === OpAction.ADD ? '新建成功' : '编辑成功',
       theme: 'success',
     });
+    getListData();
   };
 
   const formItemOptions = computed(() => [
@@ -88,20 +104,20 @@ export default () => {
       label: t('域名'),
       property: 'domains',
       required: true,
-      content: () => <Input v-model={formData.domains} />,
+      content: () => <Input v-model={formData.domain} />,
     },
     {
       label: t('URL 路径'),
       property: 'url',
       required: true,
-      hidden: action.value === 1,
+      hidden: action.value === OpAction.UPDATE,
       content: () => <Input v-model={formData.url} />,
     },
     {
       label: '均衡方式',
       property: 'scheduler',
       required: true,
-      hidden: action.value === 1,
+      hidden: action.value === OpAction.UPDATE,
       content: () => (
         <Select v-model={formData.scheduler} placeholder={t('请选择模式')}>
           {RuleModeList.map(({ id, name }) => (

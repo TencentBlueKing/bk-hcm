@@ -181,9 +181,67 @@ export const useBusinessStore = defineStore({
     /*
      * 新建域名、新建url
      */
-    createRules(listenerId: string, data: any) {
+    createRules(data: {
+      bk_biz_id?: number; // 业务ID
+      lbl_id: string; // 监听器id
+      rules: Record<string, any>; // 待创建规则
+    }) {
       return http.post(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/listeners/${listenerId}/rules/create`,
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/listeners/${data.lbl_id}/rules/create`,
+        data,
+      );
+    },
+    /**
+     * 更新域名
+     */
+    updateDomains(
+      listenerId: string,
+      data: {
+        bk_biz_id?: number;
+        lbl_id: string; // 监听器ID
+        domain: string; // 新域名
+        new_domain: string; // 新域名
+        certificate?: string; // 证书信息
+      },
+    ) {
+      return http.patch(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}listeners/${listenerId}/domains`,
+        data,
+      );
+    },
+    /**
+     * 删除域名、URL
+     */
+    deleteRules(
+      listenerId: string,
+      data: {
+        bk_biz_id?: number; // 业务ID
+        lbl_id: string; // 监听器id
+        rule_ids?: string[]; // URL规则ID数组
+        domain?: string; // 按域名删除, 没有指定规则id的时候必填
+        new_default_domain?: string; // 新默认域名,删除的域名是默认域名的时候需要指定
+      },
+    ) {
+      return http.delete(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/listeners/${listenerId}/rules/batch`,
+        { data },
+      );
+    },
+    /**
+     * 更新URL规则
+     */
+    updateUrl(data: {
+      bk_biz_id?: number; // 业务ID
+      lbl_id: string; // 监听器id
+      rule_id: string; // URL规则ID数组
+      url: string; // 监听的url
+      scheduler: string; // 均衡方式
+      certificate?: Record<string, any>; // 证书信息，当协议为HTTPS时必传
+    }) {
+      return http.patch(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/listeners/${data.lbl_id}/rules/${
+          data.rule_id
+        }`,
         data,
       );
     },

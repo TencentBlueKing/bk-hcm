@@ -1396,7 +1396,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       isDefaultShow: true,
       filter: true,
       render: ({ cell }: { cell: string }) => {
-        let icon;
+        let icon = StatusSuccess;
         switch (cell) {
           case '绑定中':
             icon = StatusLoading;

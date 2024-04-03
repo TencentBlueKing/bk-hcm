@@ -1,8 +1,13 @@
 import { IPageQuery, QueryRuleOPEnum } from '@/typings';
 import { defineStore } from 'pinia';
-import { reactive, ref } from 'vue';
+import { Ref, reactive, ref } from 'vue';
 import { useResourceStore } from './resource';
 
+export interface ITreeNode {
+  [key: string]: any;
+  lb: Record<string, any>;  // 当前域名节点所属的负载均衡信息，非域名节点时不生效
+  listener: Record<string, any>; // 当前域名节点所属的监听器信息，非域名节点时不生效
+}
 // 目标组视角 - 操作场景
 export type TGOperationScene =
   | 'add' // 新建目标组
@@ -24,8 +29,8 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
   };
 
   // state - lb-tree - 当前选中的资源
-  const currentSelectedTreeNode = ref();
-  const setCurrentSelectedTreeNode = (node: any) => {
+  const currentSelectedTreeNode: Ref<ITreeNode> = ref({} as ITreeNode);
+  const setCurrentSelectedTreeNode = (node: ITreeNode) => {
     // 其中, node 可能为 lb, listener, domain 节点
     currentSelectedTreeNode.value = node;
   };
