@@ -69,7 +69,7 @@ type TargetBaseReq struct {
 	InstType      enumor.InstType `json:"inst_type" validate:"required"`
 	CloudInstID   string          `json:"cloud_inst_id" validate:"required"`
 	Port          int64           `json:"port" validate:"required"`
-	Weight        *int64           `json:"weight" validate:"required"`
+	Weight        *int64          `json:"weight" validate:"required"`
 	AccountID     string          `json:"account_id" validate:"omitempty"`
 	TargetGroupID string          `json:"target_group_id" validate:"omitempty"`
 }
@@ -84,19 +84,13 @@ func (req *TargetBaseReq) Validate() error {
 
 // TargetGroupBatchCreateReq target group create req.
 type TargetGroupBatchCreateReq[Extension corelb.TargetGroupExtension] struct {
-	TargetGroups []TargetGroupBatchCreate[Extension] `json:"target_groups" validate:"required,min=1"`
+	TargetGroups []TargetGroupBatchCreate[Extension] `json:"target_groups" validate:"required,min=1,dive"`
 }
 
 // Validate target group create request.
 func (req *TargetGroupBatchCreateReq[T]) Validate() error {
 	if len(req.TargetGroups) > constant.BatchOperationMaxLimit {
 		return fmt.Errorf("target_groups count should <= %d", constant.BatchOperationMaxLimit)
-	}
-
-	for _, item := range req.TargetGroups {
-		if err := item.Validate(); err != nil {
-			return err
-		}
 	}
 
 	return validator.Validate.Struct(req)

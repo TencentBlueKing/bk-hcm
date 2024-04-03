@@ -178,7 +178,7 @@ func (svc *lbSvc) BatchDeleteTargetGroup(cts *rest.Contexts) (interface{}, error
 		rsDelFilter := tools.ContainersExpression("target_group_id", delIDs)
 		// 删除关联RS
 		if err = svc.dao.LoadBalancerTarget().DeleteWithTx(cts.Kit, txn, rsDelFilter); err != nil {
-			logs.Errorf("fail to delete target group, err: %v, rid: %s", err, cts.Kit.Rid)
+			logs.Errorf("fail to delete target, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
 		return nil, nil

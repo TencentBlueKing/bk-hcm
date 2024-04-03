@@ -102,7 +102,7 @@ func batchCreateTargetGroupWithRel[T corelb.TargetGroupExtension](cts *rest.Cont
 				}
 			}
 			// 创建绑定关系
-			if _, err := createRel(cts.Kit, svc, txn, tgReq, tgID); err != nil {
+			if _, err := createRel(cts.Kit, svc, txn, tgReq, tgID, vendor); err != nil {
 				logs.Errorf("fail to batch create listener rule rel for create tg, err: %v, rid:%s",
 					err, cts.Kit.Rid)
 				return nil, fmt.Errorf("batch create listener rule rel failed, err: %v", err)
@@ -118,7 +118,7 @@ func batchCreateTargetGroupWithRel[T corelb.TargetGroupExtension](cts *rest.Cont
 }
 
 func createRel[T corelb.TargetGroupExtension](kt *kit.Kit, svc *lbSvc, txn *sqlx.Tx,
-	tgReq dataproto.CreateTargetGroupWithRel[T], tgID string) (any, error) {
+	tgReq dataproto.CreateTargetGroupWithRel[T], tgID string, vendor enumor.Vendor) ([]string, error) {
 
 	// 创建关系
 	ruleRelModels := []*tablelb.TargetGroupListenerRuleRelTable{{
@@ -136,8 +136,27 @@ func createRel[T corelb.TargetGroupExtension](kt *kit.Kit, svc *lbSvc, txn *sqlx
 		Creator:             kt.User,
 		Reviser:             kt.User,
 	}}
+	switch vendor {
+	case enumor.TCloud:
+		// 更新规则表
+		rule := &tablelb.TCloudLbUrlRuleTable{
+			TargetGroupID:      tgID,
+			CloudTargetGroupID: tgID,
+			Reviser:            kt.User,
+		}
+		err := svc.dao.LoadBalancerTCloudUrlRule().UpdateByIDWithTx(kt, txn, tgReq.ListenerRuleID, rule)
+		if err != nil {
+			logs.Errorf("fail to update rule while creating target group with rel, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+	}
 
-	return svc.dao.LoadBalancerTargetGroupListenerRuleRel().BatchCreateWithTx(kt, txn, ruleRelModels)
+	tx, err := svc.dao.LoadBalancerTargetGroupListenerRuleRel().BatchCreateWithTx(kt, txn, ruleRelModels)
+	if err != nil {
+		logs.Errorf("fail to create tg rel while creating target group with rel, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	return tx, err
 }
 
 // BatchDeleteTarget 批量删除本地RS
@@ -160,7 +179,7 @@ func (svc *lbSvc) BatchDeleteTarget(cts *rest.Contexts) (any, error) {
 	listResp, err := svc.dao.LoadBalancerTarget().List(cts.Kit, opt)
 	if err != nil {
 		logs.Errorf("list target for deletion failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list listener failed, err: %v", err)
+		return nil, fmt.Errorf("list target failed, err: %v", err)
 	}
 
 	if len(listResp.Details) == 0 {

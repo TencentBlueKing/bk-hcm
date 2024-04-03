@@ -185,12 +185,12 @@ func (cli *client) createLocalTargetGroupL7(kt *kit.Kit, opt *SyncListenerOfSing
 	ruleResp, err := cli.dbCli.TCloud.LoadBalancer.ListUrlRule(kt, listReq)
 	if err != nil {
 		logs.Errorf("fail to list rule of l7 listener, err: %v, rule id: %s, lbl_cloud_id: %s, rid: %s",
-			cloudRule.LocationId, listener.ListenerId, kt.Rid)
+			err, cloudRule.LocationId, listener.ListenerId, kt.Rid)
 		return err
 	}
 	if len(ruleResp.Details) == 0 {
-		logs.Errorf("rule of listener can not be found by id(%s), lbl_cloud_id: %s, rid: %s ",
-			cloudRule.LocationId, listener.ListenerId, kt.Rid)
+		logs.Errorf("rule of listener can not be found by id(%s),err: %v, lbl_cloud_id: %s, rid: %s ",
+			err, cloudRule.LocationId, listener.ListenerId, kt.Rid)
 		return fmt.Errorf("rule of listener can not be found by id(%+v)", cloudRule.LocationId)
 	}
 	dbRule := ruleResp.Details[0]
@@ -331,7 +331,7 @@ func (cli *client) listListenerWithRule(kt *kit.Kit, listenerCloudID string) (
 	ruleResp, err := cli.dbCli.TCloud.LoadBalancer.ListUrlRule(kt, listReq)
 	if err != nil {
 		logs.Errorf("fail to list rule of l4 listener, err: %v, lbl_id: %s, lbl_cloud_id: %s, rid: %s",
-			lbl.ID, lbl.CloudID, kt.Rid)
+			err, lbl.ID, lbl.CloudID, kt.Rid)
 		return nil, nil, err
 	}
 	if len(ruleResp.Details) == 0 {
@@ -389,8 +389,6 @@ func (cli *client) createRs(kt *kit.Kit, accountID, tgId string, addSlice []type
 	if len(addSlice) == 0 {
 		return nil, nil
 	}
-	// TODO 添加rs
-	fmt.Printf("添加目标组中的rs: %+v \n", addSlice)
 
 	var targets []*dataproto.TargetBaseReq
 	for _, backend := range addSlice {
