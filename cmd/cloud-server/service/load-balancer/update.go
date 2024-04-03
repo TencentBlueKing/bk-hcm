@@ -248,10 +248,6 @@ func (svc *lbSvc) updateDomainAttr(cts *rest.Contexts, authHandler handler.Valid
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	if len(req.NewDomain) == 0 {
-		return nil, errf.Newf(errf.InvalidParameter, "new_domain is required")
-	}
-
 	// authorized instances
 	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.ListenerCloudResType, lblID)
 	if err != nil {

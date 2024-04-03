@@ -233,19 +233,24 @@ func (req *TCloudRuleUpdateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// TCloudBatchDeleteRuleReq 批量删除规则,支持按id删除 或 按域名删除,id删除优先级更高
-type TCloudBatchDeleteRuleReq struct {
-	// 需要删除的规则id
-	RuleIDs          []string `json:"rule_ids"`
-	Domain           *string  `json:"domain"`
+// TCloudRuleDeleteByIDReq 批量按ID删除规则
+type TCloudRuleDeleteByIDReq struct {
+	RuleIDs []string `json:"rule_ids" validate:"required,min=1"`
+}
+
+// Validate ...
+func (r TCloudRuleDeleteByIDReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// TCloudRuleDeleteByDomainReq 批量按域名删除规则
+type TCloudRuleDeleteByDomainReq struct {
+	Domains          []string `json:"domains" validate:"required,min=1"`
 	NewDefaultDomain *string  `json:"new_default_domain"`
 }
 
 // Validate ...
-func (r TCloudBatchDeleteRuleReq) Validate() error {
-	if len(r.RuleIDs) == 0 && len(converter.PtrToVal(r.Domain)) == 0 {
-		return errors.New("both rule_ids and domain are empty")
-	}
+func (r TCloudRuleDeleteByDomainReq) Validate() error {
 	return validator.Validate.Struct(r)
 }
 

@@ -106,9 +106,18 @@ func (c *ClbClient) UpdateUrlRule(kt *kit.Kit, lblID, ruleID string, req *hcprot
 }
 
 // BatchDeleteUrlRule 批量删除规则
-func (c *ClbClient) BatchDeleteUrlRule(kt *kit.Kit, lblID string, req *hcproto.TCloudBatchDeleteRuleReq) error {
-	return common.RequestNoResp[hcproto.TCloudBatchDeleteRuleReq](c.client, http.MethodDelete, kt, req,
-		"/listeners/%s/rules/batch", lblID)
+func (c *ClbClient) BatchDeleteUrlRule(kt *kit.Kit, lblID string, req *hcproto.TCloudRuleDeleteByIDReq) error {
+
+	return common.RequestNoResp[hcproto.TCloudRuleDeleteByIDReq](c.client,
+		http.MethodDelete, kt, req, "/listeners/%s/rules/batch", lblID)
+}
+
+// BatchDeleteUrlRuleByDomain 批量删除规则
+func (c *ClbClient) BatchDeleteUrlRuleByDomain(kt *kit.Kit, lblID string,
+	req *hcproto.TCloudRuleDeleteByDomainReq) error {
+
+	return common.RequestNoResp[hcproto.TCloudRuleDeleteByDomainReq](c.client,
+		http.MethodDelete, kt, req, "/listeners/%s/rules/by/domain/batch", lblID)
 }
 
 // UpdateDomainAttr 更新域名属性
