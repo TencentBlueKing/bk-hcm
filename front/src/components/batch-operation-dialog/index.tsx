@@ -72,6 +72,8 @@ export default defineComponent({
         isShow={props.isShow}
         title={t(props.title)}
         theme={props.theme}
+        quickClose={false}
+        onClosed={() => triggerShow(false)}
         confirmText={t(props.confirmText)}>
         {{
           default: props.custom ? renderCustomDefaultSlot : renderDefaultSlot,

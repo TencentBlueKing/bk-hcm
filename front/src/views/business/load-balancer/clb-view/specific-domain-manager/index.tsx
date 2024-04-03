@@ -2,7 +2,6 @@ import { defineComponent, reactive, ref, watch } from 'vue';
 // import components
 import { Button, Form, Input, Message, Select } from 'bkui-vue';
 import { Done, EditLine, Error, Plus, Spinner } from 'bkui-vue/lib/icon';
-import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import CommonSideslider from '@/components/common-sideslider';
 // use stores
@@ -138,14 +137,7 @@ export default defineComponent({
             </Button>
             <Button text theme='primary' onClick={() => {
               Confirm('请确定删除URL', `将删除URL【${data.url}】`, async () => {
-                await businessStore.deleteRules(loadBalancerStore.currentSelectedTreeNode.listener.id, {
-                  lbl_id: loadBalancerStore.currentSelectedTreeNode.listener.id,
-                  rule_ids: [ data.id ],
-                });
-                Message({
-                  message: '删除成功',
-                  theme: 'success',
-                });
+                await deleteRulesBatch([data.id])
               });
             }}>
               {t('删除')}
@@ -154,6 +146,19 @@ export default defineComponent({
         ),
       },
     ];
+
+    const deleteRulesBatch = async (ids:string[]) => {
+      await businessStore.deleteRules(loadBalancerStore.currentSelectedTreeNode.listener.id, {
+        lbl_id: loadBalancerStore.currentSelectedTreeNode.listener.id,
+        rule_ids: ids,
+      });
+      Message({
+        message: '删除成功',
+        theme: 'success',
+      });
+      await getListData();
+      isBatchDeleteDialogShow.value = false;
+    }
 
     const tableSettings = generateColumnsSettings(tableColumns);
     const isCurRowSelectEnable = (row: any) => {
@@ -208,10 +213,8 @@ export default defineComponent({
     const {
       isSubmitLoading,
       isBatchDeleteDialogShow,
-      radioGroupValue,
       tableProps,
       handleBatchDeleteListener,
-      handleBatchDeleteSubmit,
     } = useBatchDeleteListener(tableColumns, selections, resetSelections, getListData);
 
     watch(
@@ -223,8 +226,6 @@ export default defineComponent({
         getListData([], `vendors/tcloud/listeners/${listener_id}/rules`);
       },
     );
-
-    const handleBatchDelete = () => {};
     const handleSubmit = async () => {
       await formInstance.value.validate();
       isSubmitLoading.value = true;
@@ -277,7 +278,7 @@ export default defineComponent({
                   <Plus class={'f20'} />
                   {t('新增 URL 路径')}
                 </Button>
-                <Button onClick={() => (isBatchDeleteDialogShow.value = true)} disabled={!selections.value.length}>{t('批量删除')}</Button>
+                <Button onClick={handleBatchDeleteListener} disabled={!selections.value.length}>{t('批量删除')}</Button>
               </div>
             ),
           }}
@@ -288,30 +289,14 @@ export default defineComponent({
           theme='danger'
           confirmText='删除'
           tableProps={tableProps}
-          onHandleConfirm={handleBatchDelete}>
+          isSubmitLoading={isSubmitLoading.value}
+          onHandleConfirm={() => deleteRulesBatch(tableProps.data.map(({id}) => id))}>
           {{
             tips: () => (
               <>
-                已选择 <span class='blue'>97</span> 个URL路径，其中 <span class='red'>22</span>
+                已选择 <span class='blue'> {selections.value.length} </span> 个URL路径
               </>
-            ),
-            tab: () => (
-              <BkRadioGroup v-model={radioGroupValue.value}>
-                <BkRadioButton label={false}>{t('权重为0')}</BkRadioButton>
-                <BkRadioButton label={true}>{t('权重不为0')}</BkRadioButton>
-              </BkRadioGroup>
-            ),
-            operation: () => (
-              <div class={'flex-row align-item-center'}>
-                <Button theme={'primary'} onClick={() => {}}>
-                  <Plus class={'f20'} />
-                  {t('新增监听器')}
-                </Button>
-                <Button disabled={selections.value.length === 0} onClick={handleBatchDeleteListener}>
-                  {t('批量删除')}
-                </Button>
-              </div>
-            ),
+            )
           }}
         </BatchOperationDialog>
         <CommonSideslider
