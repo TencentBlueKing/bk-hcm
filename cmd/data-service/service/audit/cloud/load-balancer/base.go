@@ -374,7 +374,8 @@ func (c *LoadBalancer) tcloudUrlRuleDeleteByDomainAuditBuild(kt *kit.Kit, lbl ta
 	for _, one := range deletes {
 		rules, exist := domainRuleMap[one.ResID]
 		if !exist {
-			continue
+			// 找不到与域名，返回错误
+			return nil, fmt.Errorf("fail to find rule while delete url by domain: %s", one.ResID)
 		}
 		// add domain and each into audits
 		audits = append(audits, &tableaudit.AuditTable{

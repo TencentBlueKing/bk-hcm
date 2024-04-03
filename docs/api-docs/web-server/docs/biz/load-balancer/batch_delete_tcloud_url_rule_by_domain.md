@@ -2,11 +2,11 @@
 
 - 该接口提供版本：v9.9.9+。
 - 该接口所需权限：负载均衡操作。
-- 该接口功能描述：业务下删除腾讯云URL规则
+- 该接口功能描述：业务下按域名删除腾讯云URL规则
 
 ### URL
 
-DELETE /api/v1/cloud/vendors/tcloud/listeners/{lbl_id}/rules/batch
+DELETE /api/v1/cloud/vendors/tcloud/listeners/{lbl_id}/rules/by/domains/batch
 
 ### 输入参数
 
@@ -14,16 +14,16 @@ DELETE /api/v1/cloud/vendors/tcloud/listeners/{lbl_id}/rules/batch
 |--------------------|--------------|----|-------------------------|
 | bk_biz_id          | int          | 是  | 业务ID                    |
 | lbl_id             | string       | 是  | 监听器id                   |
-| rule_ids           | string array | 否  | URL规则ID数组               |
-
+| domains            | string array | 否  | 按域名删除数组                 |
+| new_default_domain | string       | 否  | 新默认域名,删除的域名是默认域名的时候需要指定 |
 
 ### 调用示例
 
 ```json
 {
-  "rule_ids": [
-    "00000001",
-    "00000002"
+  "domains": [
+    "qweqwe.com",
+    "kkkk.com"
   ]
 }
 ```

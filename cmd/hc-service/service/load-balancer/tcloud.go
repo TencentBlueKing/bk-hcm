@@ -58,6 +58,8 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 		"/vendors/tcloud/listeners/{lbl_id}/rules/{rule_id}", svc.TCloudUpdateUrlRule)
 	h.Add("TCloudBatchDeleteUrlRule", http.MethodDelete,
 		"/vendors/tcloud/listeners/{lbl_id}/rules/batch", svc.TCloudBatchDeleteUrlRule)
+	h.Add("TCloudBatchDeleteUrlRuleByDomain", http.MethodDelete,
+		"/vendors/tcloud/listeners/{lbl_id}/rules/by/domain/batch", svc.TCloudBatchDeleteUrlRuleByDomain)
 
 	// 监听器
 	h.Add("CreateTCloudListener", http.MethodPost, "/vendors/tcloud/listeners/create", svc.CreateTCloudListener)

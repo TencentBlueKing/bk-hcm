@@ -95,6 +95,8 @@ func InitService(c *capability.Capability) {
 		"/vendors/tcloud/listeners/{lbl_id}/rules/{rule_id}", svc.UpdateBizTCloudUrlRule)
 	bizH.Add("BatchDeleteBizTCloudUrlRule", http.MethodDelete,
 		"/vendors/tcloud/listeners/{lbl_id}/rules/batch", svc.BatchDeleteBizTCloudUrlRule)
+	bizH.Add("BatchDeleteBizTCloudUrlRuleByDomain", http.MethodDelete,
+		"/vendors/tcloud/listeners/{lbl_id}/rules/by/domains/batch", svc.BatchDeleteBizTCloudUrlRuleByDomain)
 
 	h.Load(c.WebService)
 	bizH.Load(c.WebService)

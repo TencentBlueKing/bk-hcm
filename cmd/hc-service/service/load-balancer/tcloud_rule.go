@@ -244,7 +244,7 @@ func (svc *clbSvc) TCloudBatchDeleteUrlRule(cts *rest.Contexts) (any, error) {
 		return nil, errf.New(errf.InvalidParameter, "listener id is required")
 	}
 
-	req := new(protolb.TCloudBatchDeleteRuleReq)
+	req := new(protolb.TCloudRuleDeleteByIDReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -253,48 +253,78 @@ func (svc *clbSvc) TCloudBatchDeleteUrlRule(cts *rest.Contexts) (any, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	var lb *corelb.BaseLoadBalancer
-	var err error
-
-	ruleOption := typelb.TCloudDeleteRuleOption{}
-
-	if len(req.RuleIDs) > 0 {
-		// 指定规则id删除
-		var rules []corelb.TCloudLbUrlRule
-		lb, rules, err = svc.getL7RulesWithLb(cts.Kit, lblID, req.RuleIDs)
-		if err != nil {
-			logs.Errorf("fail to get lb info for rule deletion by rule ids(%v), err: %v, rid: %s",
-				req.RuleIDs, err, cts.Kit.Rid)
-			return nil, err
-		}
-		ruleOption.ListenerId = rules[0].CloudLBLID
-		ruleOption.CloudIDs = slice.Map(rules, func(r corelb.TCloudLbUrlRule) string { return r.CloudID })
-
-	} else {
-		// 按域名删除模式
-		var listener *corelb.BaseListener
-		lb, listener, err = svc.getListenerWithLb(cts.Kit, lblID)
-		if err != nil {
-			logs.Errorf("fail to get lb info for rule deletion by domain(%s), err: %v, rid: %s",
-				req.Domain, err, cts.Kit.Rid)
-			return nil, err
-		}
-		ruleOption.ListenerId = listener.CloudID
-		ruleOption.Domain = req.Domain
-		ruleOption.NewDefaultServerDomain = req.NewDefaultDomain
-
+	// 指定规则id删除
+	lb, rules, err := svc.getL7RulesWithLb(cts.Kit, lblID, req.RuleIDs)
+	if err != nil {
+		logs.Errorf("fail to get lb info for rule deletion by rule ids(%v), err: %v, rid: %s",
+			req.RuleIDs, err, cts.Kit.Rid)
+		return nil, err
+	}
+	ruleOption := typelb.TCloudDeleteRuleOption{
+		Region:         lb.Region,
+		LoadBalancerId: lb.CloudID,
+		ListenerId:     rules[0].CloudLBLID,
+		CloudIDs:       slice.Map(rules, func(r corelb.TCloudLbUrlRule) string { return r.CloudID }),
 	}
 
 	tcloudAdpt, err := svc.ad.TCloud(cts.Kit, lb.AccountID)
 	if err != nil {
 		return nil, err
 	}
-
-	ruleOption.Region = lb.Region
-	ruleOption.LoadBalancerId = lb.CloudID
 	if err = tcloudAdpt.DeleteRule(cts.Kit, &ruleOption); err != nil {
 		logs.Errorf("fail to delete rule, err: %v, ids: %v, rid: %s", err, req.RuleIDs, cts.Kit.Rid)
 		return nil, err
+	}
+
+	if err := svc.lblSync(cts.Kit, tcloudAdpt, lb); err != nil {
+		// 调用同步的方法内会打印错误，这里只标记调用方
+		logs.Errorf("fail to sync listener for delete rule, req: %+v, rid: %s", req, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+// TCloudBatchDeleteUrlRuleByDomain 按域名批量删除规则
+func (svc *clbSvc) TCloudBatchDeleteUrlRuleByDomain(cts *rest.Contexts) (any, error) {
+	lblID := cts.PathParameter("lbl_id").String()
+	if len(lblID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "listener id is required")
+	}
+
+	req := new(protolb.TCloudRuleDeleteByDomainReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	lb, listener, err := svc.getListenerWithLb(cts.Kit, lblID)
+	if err != nil {
+		logs.Errorf("fail to get lb info for rule deletion by domains, err: %v, domain: %v, rid: %s",
+			err, req.Domains, cts.Kit.Rid)
+		return nil, err
+	}
+	ruleOption := typelb.TCloudDeleteRuleOption{
+		Region:                 lb.Region,
+		LoadBalancerId:         lb.CloudID,
+		ListenerId:             listener.CloudID,
+		NewDefaultServerDomain: req.NewDefaultDomain,
+	}
+	tcloudAdpt, err := svc.ad.TCloud(cts.Kit, lb.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 遍历删除每个域名
+	for _, domain := range req.Domains {
+		ruleOption.Domain = cvt.ValToPtr(domain)
+		if err = tcloudAdpt.DeleteRule(cts.Kit, &ruleOption); err != nil {
+			logs.Errorf("fail to delete rule, err: %v, ids: %v, rid: %s", err, domain, cts.Kit.Rid)
+			return nil, err
+		}
 	}
 
 	if err := svc.lblSync(cts.Kit, tcloudAdpt, lb); err != nil {
