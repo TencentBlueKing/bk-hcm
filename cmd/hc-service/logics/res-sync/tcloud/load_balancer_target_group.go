@@ -282,7 +282,8 @@ func (cli *client) createLocalTargetGroupL4(kt *kit.Kit, opt *SyncListenerOfSing
 			Memo:            cvt.ValToPtr("auto created for listener " + cvt.PtrToVal(listener.ListenerId)),
 			RsList:          slice.Map(listener.Targets, convTarget),
 		},
-		ListenerRuleID:      lbl.ID,
+		// 需要用4层对应的规则id
+		ListenerRuleID:      rule.ID,
 		CloudListenerRuleID: lbl.CloudID,
 		ListenerRuleType:    enumor.Layer4RuleType,
 		LbID:                lbl.LbID,
