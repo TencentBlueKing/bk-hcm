@@ -1,7 +1,15 @@
 import { Ref, reactive, ref, watch } from 'vue';
+// import hooks
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
+// import stores
+import { useBusinessStore } from '@/store';
+// import types
+import { QueryRuleOPEnum } from '@/typings';
 
 export default (rsSelections: Ref<any[]>) => {
+  // use stores
+  const businessStore = useBusinessStore();
+
   // 搜索相关
   const searchData = [
     {
@@ -50,7 +58,15 @@ export default (rsSelections: Ref<any[]>) => {
       filter: true,
     },
   ];
-  const pagination = reactive({ small: true, align: 'left', limit: 10, limitList: [10, 20, 50, 100] });
+  const rsTableList = ref([]);
+  const pagination = reactive({
+    small: true,
+    align: 'left',
+    start: 0,
+    limit: 10,
+    count: 0,
+    limitList: [10, 20, 50, 100],
+  });
 
   const selectedCount = ref(0);
   const { selections, handleSelectionChange, resetSelections } = useSelection();
@@ -77,6 +93,42 @@ export default (rsSelections: Ref<any[]>) => {
     selectedCount.value = 0;
   };
 
+  // 获取 rs 列表
+  const getRSTableList = async (accountId: string) => {
+    if (!accountId) {
+      rsTableList.value = [];
+      return;
+    }
+    try {
+      isTableLoading.value = true;
+      const [detailRes, countRes] = await Promise.all(
+        [false, true].map((isCount) =>
+          businessStore.getAllRsList({
+            filter: {
+              op: QueryRuleOPEnum.AND,
+              rules: [
+                {
+                  field: 'account_id',
+                  op: QueryRuleOPEnum.EQ,
+                  value: accountId,
+                },
+              ],
+            },
+            page: {
+              count: isCount,
+              start: isCount ? 0 : pagination.start,
+              limit: isCount ? 0 : pagination.limit,
+            },
+          }),
+        ),
+      );
+      rsTableList.value = detailRes.data.details;
+      pagination.count = countRes.data.count;
+    } finally {
+      isTableLoading.value = false;
+    }
+  };
+
   watch(
     selections,
     (val) => {
@@ -93,10 +145,12 @@ export default (rsSelections: Ref<any[]>) => {
     isTableLoading,
     tableRef,
     columns,
+    rsTableList,
     pagination,
     selectedCount,
     handleSelect,
     handleSelectAll,
     handleClear,
+    getRSTableList,
   };
 };

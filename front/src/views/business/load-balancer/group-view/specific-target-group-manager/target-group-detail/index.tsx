@@ -1,7 +1,7 @@
 import { computed, defineComponent } from 'vue';
 // import components
 import { Button } from 'bkui-vue';
-import RsConfigTable from '../../all-groups-manager/RsConfigTable';
+import RsConfigTable from '../../components/RsConfigTable';
 import './index.scss';
 
 export default defineComponent({

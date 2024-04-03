@@ -64,7 +64,7 @@ export default () => {
       width: 120,
       render: ({ data }: any) => (
         <div>
-          <Button text theme={'primary'} onClick={() => handleEditTargetGroup(data)}>
+          <Button text theme={'primary'} onClick={() => handleEditTargetGroup(data.id)}>
             编辑
           </Button>
           <span
@@ -111,8 +111,10 @@ export default () => {
   });
 
   // 编辑单个目标组
-  const handleEditTargetGroup = (data: any) => {
-    bus.$emit('editTargetGroup', data);
+  const handleEditTargetGroup = async (id: string) => {
+    // 获取对应目标组的详情
+    const { data } = await businessStore.getTargetGroupDetail(id);
+    bus.$emit('editTargetGroup', { ...data, rs_list: data.target_list });
   };
 
   // 删除单个目标组

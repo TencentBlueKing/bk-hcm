@@ -1,4 +1,4 @@
-import { defineComponent, onMounted, onUnmounted, ref } from 'vue';
+import { defineComponent, nextTick, onMounted, onUnmounted, ref } from 'vue';
 // import components
 import { Loading, SearchSelect, Table } from 'bkui-vue';
 import CommonDialog from '@/components/common-dialog';
@@ -18,24 +18,36 @@ export default defineComponent({
     const loadBalancerStore = useLoadBalancerStore();
 
     const isShow = ref(false);
-    const rsTableList = ref([]);
     const rsSelections = ref([]);
+    const accountId = ref('');
 
-    const handleShow = (data: any) => {
+    const handleShow = (account_id: string) => {
       isShow.value = true;
-      rsTableList.value = data;
+      nextTick(handleClear);
+      accountId.value = account_id;
+      getRSTableList(accountId.value);
     };
 
     // confirm-handler
     const handleAddRs = () => {
+      // 将选中的rs列表添加到store中
+      loadBalancerStore.setSelectedRsList(
+        rsSelections.value.map((item) => ({
+          ...item,
+          port: 0,
+          weight: 0,
+          isNew: true,
+        })),
+      );
       // 根据不同的场景, 判断是否要显示批量添加rs的sideslider
-      if (loadBalancerStore.currentScene === 'batchAddRs') {
-        // todo
-        bus.$emit('showBatchAddRsDialog');
-      } else {
-        // todo
+      if (loadBalancerStore.currentScene === 'BatchAddRs') {
+        bus.$emit('showBatchAddRsSideslider', accountId.value);
       }
-      // bus.$emit('updateSelectedRsList', rsSelections.value);
+      // 更新目标组 - 场景标识
+      if (!loadBalancerStore.currentScene) {
+        loadBalancerStore.setUpdateCount(2);
+        loadBalancerStore.setCurrentScene('AddRs');
+      }
     };
 
     const {
@@ -44,11 +56,13 @@ export default defineComponent({
       isTableLoading,
       tableRef,
       columns,
+      rsTableList,
       pagination,
       selectedCount,
       handleSelect,
       handleSelectAll,
       handleClear,
+      getRSTableList,
     } = useAddRsTable(rsSelections);
 
     onMounted(() => {
@@ -70,6 +84,7 @@ export default defineComponent({
               columns={columns}
               data={rsTableList.value}
               pagination={pagination}
+              remotePagination
               onSelect={handleSelect}
               onSelectAll={handleSelectAll}>
               {{
