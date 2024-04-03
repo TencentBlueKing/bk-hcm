@@ -73,6 +73,8 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 	// 批量操作RS
 	h.Add("BatchCreateTCloudTargets", http.MethodPost, "/vendors/tcloud/target_groups/{target_group_id}/targets/create",
 		svc.BatchCreateTCloudTargets)
+	h.Add("BatchRemoveTCloudTargets", http.MethodDelete,
+		"/vendors/tcloud/target_groups/{target_group_id}/targets/batch", svc.BatchRemoveTCloudTargets)
 
 	h.Load(cap.WebService)
 }

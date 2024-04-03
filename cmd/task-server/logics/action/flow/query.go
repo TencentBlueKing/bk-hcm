@@ -20,6 +20,7 @@
 package actionflow
 
 import (
+	"fmt"
 	"time"
 
 	actcli "hcm/cmd/task-server/logics/action/cli"
@@ -42,11 +43,12 @@ var _ action.ParameterAction = new(FlowWatchAction)
 // FlowWatchAction define flow watch.
 type FlowWatchAction struct{}
 
-// FlowWatchOption define add rs option.
+// FlowWatchOption define flow watch option.
 type FlowWatchOption struct {
-	FlowID  string                   `json:"flow_id" validate:"required"`
-	ResID   string                   `json:"res_id" validate:"required"`
-	ResType enumor.CloudResourceType `json:"res_type" validate:"required"`
+	FlowID   string                   `json:"flow_id" validate:"required"`
+	ResID    string                   `json:"res_id" validate:"required"`
+	ResType  enumor.CloudResourceType `json:"res_type" validate:"required"`
+	TaskType enumor.TaskType          `json:"task_type" validate:"required"`
 }
 
 // Validate FlowWatchOption.
@@ -64,38 +66,51 @@ func (act FlowWatchAction) Name() enumor.ActionName {
 	return enumor.ActionFlowWatch
 }
 
-// Run add rs.
+// Run flow watch.
 func (act FlowWatchAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
 	opt, ok := params.(*FlowWatchOption)
 	if !ok {
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
 
-	req := &types.ListOption{
-		Filter: tools.EqualExpression("id", opt.FlowID),
-		Page:   core.NewDefaultBasePage(),
-	}
-	flowList, err := actcli.GetDaoSet().AsyncFlow().List(kt.Kit(), req)
-	if err != nil {
-		logs.Errorf("list query flow failed, err: %v, flowID: %s, rid: %s", err, opt.FlowID, kt.Kit().Rid)
-		return nil, err
-	}
+	end := time.Now().Add(5 * time.Minute)
+	for {
+		if time.Now().After(end) {
+			return nil, fmt.Errorf("wait timeout, async task: %s is running", opt.FlowID)
+		}
 
-	if len(flowList.Details) == 0 {
-		logs.Infof("list query flow not found, flowID: %s, rid: %s", opt.FlowID, kt.Kit().Rid)
-		return nil, nil
-	}
+		req := &types.ListOption{
+			Filter: tools.EqualExpression("id", opt.FlowID),
+			Page:   core.NewDefaultBasePage(),
+		}
+		flowList, err := actcli.GetDaoSet().AsyncFlow().List(kt.Kit(), req)
+		if err != nil {
+			logs.Errorf("list query flow failed, err: %v, flowID: %s, rid: %s", err, opt.FlowID, kt.Kit().Rid)
+			return nil, err
+		}
 
-	err = act.processResFlow(kt, opt, flowList.Details[0])
-	if err != nil {
-		return nil, err
+		if len(flowList.Details) == 0 {
+			logs.Infof("list query flow not found, flowID: %s, rid: %s", opt.FlowID, kt.Kit().Rid)
+			return nil, nil
+		}
+
+		isSkip, err := act.processResFlow(kt, opt, flowList.Details[0])
+		if err != nil {
+			return nil, err
+		}
+		// 任务已终态，无需继续处理
+		if isSkip {
+			break
+		}
+		time.Sleep(500 * time.Millisecond)
 	}
 
 	return nil, nil
 }
 
+// processResFlow 检查Flow是否终态状态、解锁资源跟Flow的状态
 func (act FlowWatchAction) processResFlow(kt run.ExecuteKit, opt *FlowWatchOption,
-	flowInfo tableasync.AsyncFlowTable) error {
+	flowInfo tableasync.AsyncFlowTable) (bool, error) {
 
 	switch flowInfo.State {
 	case enumor.FlowSuccess, enumor.FlowCancel:
@@ -113,7 +128,7 @@ func (act FlowWatchAction) processResFlow(kt run.ExecuteKit, opt *FlowWatchOptio
 			FlowID:  opt.FlowID,
 			Status:  resStatus,
 		}
-		return actcli.GetDataService().Global.LoadBalancer.ResFlowUnLock(kt.Kit(), unlockReq)
+		return true, actcli.GetDataService().Global.LoadBalancer.ResFlowUnLock(kt.Kit(), unlockReq)
 	case enumor.FlowFailed:
 		// 当Flow失败时，检查资源锁定是否超时
 		lockReq := &types.ListOption{
@@ -127,15 +142,15 @@ func (act FlowWatchAction) processResFlow(kt run.ExecuteKit, opt *FlowWatchOptio
 		resFlowLockList, err := actcli.GetDaoSet().LoadBalancerFlowLock().List(kt.Kit(), lockReq)
 		if err != nil {
 			logs.Errorf("list query flow failed, err: %v, flowID: %s, rid: %s", err, opt.FlowID, kt.Kit().Rid)
-			return err
+			return false, err
 		}
 		if len(resFlowLockList.Details) == 0 {
-			return nil
+			return true, nil
 		}
 
 		createTime, err := time.Parse(constant.TimeStdFormat, string(resFlowLockList.Details[0].CreatedAt))
 		if err != nil {
-			return err
+			return false, err
 		}
 
 		nowTime := time.Now()
@@ -146,13 +161,13 @@ func (act FlowWatchAction) processResFlow(kt run.ExecuteKit, opt *FlowWatchOptio
 				FlowID:  opt.FlowID,
 				Status:  enumor.TimeoutResFlowStatus,
 			}
-			return actcli.GetDataService().Global.LoadBalancer.ResFlowUnLock(kt.Kit(), timeoutReq)
+			return true, actcli.GetDataService().Global.LoadBalancer.ResFlowUnLock(kt.Kit(), timeoutReq)
 		}
 	default:
-		return errf.Newf(errf.RecordNotUpdate, "flow: %s is processing, state: %s", flowInfo.ID, flowInfo.State)
+		return false, nil
 	}
 
-	return nil
+	return true, nil
 }
 
 // Rollback Flow查询状态失败时的回滚Action，此处不需要回滚处理

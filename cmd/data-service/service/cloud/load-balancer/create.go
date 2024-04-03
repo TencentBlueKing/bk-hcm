@@ -31,6 +31,7 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	typesdao "hcm/pkg/dal/dao/types"
+	tableaudit "hcm/pkg/dal/table/audit"
 	"hcm/pkg/dal/table/cloud"
 	tablecvm "hcm/pkg/dal/table/cloud/cvm"
 	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
@@ -780,6 +781,16 @@ func (svc *lbSvc) ResFlowLock(cts *rest.Contexts) (any, error) {
 			logs.Errorf("fail to create load balancer flow rel, err: %v, req: %+v, rid:%s", err, req, cts.Kit.Rid)
 			return nil, fmt.Errorf("create load balancer flow rel failed, err: %v", err)
 		}
+
+		// 创建目标组的操作记录
+		if req.ResType == enumor.TargetGroupCloudResType {
+			err = svc.createTargetGroupOfResFlowAudit(cts.Kit, req, txn)
+			if err != nil {
+				logs.Errorf("fail to create res flow audits, err: %v, req: %+v, rid:%s", err, req, cts.Kit.Rid)
+				return nil, fmt.Errorf("create res flow audits failed, err: %v", err)
+			}
+		}
+
 		return nil, nil
 	})
 	if err != nil {
@@ -787,6 +798,54 @@ func (svc *lbSvc) ResFlowLock(cts *rest.Contexts) (any, error) {
 	}
 
 	return nil, nil
+}
+
+func (svc *lbSvc) createTargetGroupOfResFlowAudit(kt *kit.Kit, req *dataproto.ResFlowLockReq, txn *sqlx.Tx) error {
+	resReq := &typesdao.ListOption{
+		Filter: tools.EqualExpression("id", req.ResID),
+		Page:   core.NewDefaultBasePage(),
+	}
+	resList, err := svc.dao.LoadBalancerTargetGroup().List(kt, resReq)
+	if err != nil {
+		return err
+	}
+	if len(resList.Details) == 0 {
+		return errf.Newf(errf.RecordNotFound, "resID: %s, resType: %s, is not found", req.ResID, req.ResType)
+	}
+
+	resInfo := resList.Details[0]
+	var auditData = struct {
+		TargetGroup tablelb.LoadBalancerTargetGroupTable `json:"target_group"`
+		ResFlow     *dataproto.ResFlowLockReq            `json:"res_flow"`
+	}{
+		TargetGroup: resInfo,
+		ResFlow:     req,
+	}
+
+	audits := make([]*tableaudit.AuditTable, 0)
+	audits = append(audits, &tableaudit.AuditTable{
+		ResID:      resInfo.ID,
+		CloudResID: resInfo.CloudID,
+		ResName:    resInfo.Name,
+		ResType:    enumor.AuditResourceType(req.ResType),
+		Action:     enumor.Update,
+		BkBizID:    resInfo.BkBizID,
+		Vendor:     resInfo.Vendor,
+		AccountID:  resInfo.AccountID,
+		Operator:   kt.User,
+		Source:     kt.GetRequestSource(),
+		Rid:        kt.Rid,
+		AppCode:    kt.AppCode,
+		Detail: &tableaudit.BasicDetail{
+			Data: auditData,
+		},
+	})
+	if err = svc.dao.Audit().BatchCreateWithTx(kt, txn, audits); err != nil {
+		logs.Errorf("batch create %s audit failed, err: %v, req: %+v, rid: %s", req.ResType, err, req, kt.Rid)
+		return err
+	}
+
+	return nil
 }
 
 // BatchCreateTarget 批量创建目标

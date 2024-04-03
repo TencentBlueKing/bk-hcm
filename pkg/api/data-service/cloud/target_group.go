@@ -64,14 +64,22 @@ func (req *TargetGroupCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// TargetBaseReq 验证目标创建参数
+// TargetBaseReq Target基本参数
 type TargetBaseReq struct {
-	InstType      enumor.InstType `json:"inst_type" validate:"required"`
-	CloudInstID   string          `json:"cloud_inst_id" validate:"required"`
-	Port          int64           `json:"port" validate:"required"`
-	Weight        *int64          `json:"weight" validate:"required"`
-	AccountID     string          `json:"account_id" validate:"omitempty"`
-	TargetGroupID string          `json:"target_group_id" validate:"omitempty"`
+	ID               string          `json:"id" validate:"omitempty"`
+	InstType         enumor.InstType `json:"inst_type" validate:"required"`
+	CloudInstID      string          `json:"cloud_inst_id" validate:"required"`
+	Port             int64           `json:"port" validate:"required"`
+	Weight           *int64          `json:"weight" validate:"required"`
+	AccountID        string          `json:"account_id" validate:"omitempty"`
+	TargetGroupID    string          `json:"target_group_id" validate:"omitempty"`
+	InstName         string          `json:"inst_name" validate:"omitempty"`
+	PrivateIPAddress []string        `json:"private_ip_address" validate:"omitempty"`
+	PublicIPAddress  []string        `json:"public_ip_address" validate:"omitempty"`
+	CloudVpcIDs      []string        `json:"cloud_vpc_ids" validate:"omitempty"`
+	Zone             string          `json:"zone" validate:"omitempty"`
+	NewPort          *int64          `json:"new_port" validate:"omitempty"`
+	NewWeight        *int64          `json:"new_weight" validate:"omitempty"`
 }
 
 // Validate validate req(目前仅支持CVM的实例类型)

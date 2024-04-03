@@ -59,5 +59,6 @@ func register() {
 	action.RegisterAction(actionlb.AddRsAction{})
 	action.RegisterAction(actionflow.FlowWatchAction{})
 	action.RegisterTpl(actionflow.FlowWatchTpl)
+	action.RegisterAction(actionlb.RemoveRsAction{})
 
 }

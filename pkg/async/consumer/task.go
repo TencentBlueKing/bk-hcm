@@ -297,13 +297,13 @@ func (task *Task) UpdateTask(state enumor.TaskState, reason string, result inter
 		md.Result = field
 	}
 
-	rty := retry.NewRetryPolicy(defRetryCount, defRetryRangeMS)
+	rty := retry.NewRetryPolicy(DefRetryCount, DefRetryRangeMS)
 	err := rty.BaseExec(task.ExecuteKit.Kit(), func() error {
 		return task.Patch(task.ExecuteKit.Kit(), md)
 	})
 	if err != nil {
 		logs.Errorf("task update state failed, err: %v, retryCount: %d, id: %s, state: %s, reason: %s, rid: %s",
-			err, defRetryCount, task.ID, state, reason, task.ExecuteKit.Kit().Rid)
+			err, DefRetryCount, task.ID, state, reason, task.ExecuteKit.Kit().Rid)
 		return err
 	}
 

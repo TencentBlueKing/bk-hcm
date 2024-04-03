@@ -481,7 +481,7 @@ func isRsChange(cloud typeslb.Backend, db corelb.BaseTarget) bool {
 		return true
 	}
 
-	if cvt.PtrToVal(cloud.Weight) != db.Weight {
+	if cvt.PtrToVal(cloud.Weight) != cvt.PtrToVal(db.Weight) {
 		return true
 	}
 	if cvt.PtrToVal(cloud.InstanceName) != db.InstName {

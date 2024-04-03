@@ -24,12 +24,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"hcm/cmd/cloud-server/service/common"
 	actionflow "hcm/cmd/task-server/logics/action/flow"
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
 	cloudserver "hcm/pkg/api/cloud-server"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
+	corecvm "hcm/pkg/api/core/cloud/cvm"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service/load-balancer"
@@ -253,14 +253,16 @@ func (svc *lbSvc) batchCreateTCloudListener(kt *kit.Kit, rawReq json.RawMessage,
 
 // BatchAddBizTargets create add biz targets.
 func (svc *lbSvc) BatchAddBizTargets(cts *rest.Contexts) (any, error) {
-	_, err := cts.PathParameter("bk_biz_id").Int64()
+	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
 	if err != nil {
 		return nil, err
 	}
-	return svc.batchAddBizTarget(cts, handler.BizOperateAuth)
+	return svc.batchAddBizTarget(cts, handler.BizOperateAuth, bkBizID)
 }
 
-func (svc *lbSvc) batchAddBizTarget(cts *rest.Contexts, authHandler handler.ValidWithAuthHandler) (any, error) {
+func (svc *lbSvc) batchAddBizTarget(cts *rest.Contexts, authHandler handler.ValidWithAuthHandler,
+	bkBizID int64) (any, error) {
+
 	tgID := cts.PathParameter("target_group_id").String()
 	if len(tgID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "target_group_id is required")
@@ -289,13 +291,13 @@ func (svc *lbSvc) batchAddBizTarget(cts *rest.Contexts, authHandler handler.Vali
 
 	switch baseInfo.Vendor {
 	case enumor.TCloud:
-		return svc.buildAddTCloudRsTasks(cts.Kit, req.Data, tgID, baseInfo.AccountID)
+		return svc.buildAddTCloudRsTasks(cts.Kit, req.Data, tgID, baseInfo.AccountID, bkBizID)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", baseInfo.Vendor)
 	}
 }
 
-func (svc *lbSvc) buildAddTCloudRsTasks(kt *kit.Kit, body json.RawMessage, tgID, accountID string) (
+func (svc *lbSvc) buildAddTCloudRsTasks(kt *kit.Kit, body json.RawMessage, tgID, accountID string, bkBizID int64) (
 	interface{}, error) {
 
 	req := new(cslb.TCloudTargetBatchCreateReq)
@@ -308,7 +310,7 @@ func (svc *lbSvc) buildAddTCloudRsTasks(kt *kit.Kit, body json.RawMessage, tgID,
 	}
 
 	// 预检测
-	err := svc.checkResFlowRel(kt, tgID, enumor.TargetGroupCloudResType)
+	err := svc.checkResFlowRel(kt, tgID, enumor.TargetGroupCloudResType, bkBizID)
 	if err != nil {
 		return nil, err
 	}
@@ -318,12 +320,18 @@ func (svc *lbSvc) buildAddTCloudRsTasks(kt *kit.Kit, body json.RawMessage, tgID,
 	elems := slice.Split(req.RsList, constant.BatchAddRSCloudMaxLimit)
 	getActionID := counter.NewNumStringCounter(1, 10)
 	for _, parts := range elems {
+		addRsParams, err := svc.convTCloudOperateRsReq(kt, parts, tgID, accountID)
+		if err != nil {
+			logs.Errorf("add rs build tcloud request failed, err: %v, tgID: %s, parts: %+v rid: %s",
+				err, tgID, parts, kt.Rid)
+			return nil, err
+		}
 		tasks = append(tasks, ts.CustomFlowTask{
 			ActionID:   action.ActIDType(getActionID()),
 			ActionName: enumor.ActionAddRS,
-			Params: &actionlb.AddRsOption{
-				Vendor:                     enumor.TCloud,
-				TCloudBatchCreateTargetReq: *common.ConvTCloudAddRsReq(parts, tgID, accountID),
+			Params: &actionlb.OperateRsOption{
+				Vendor:                      enumor.TCloud,
+				TCloudBatchOperateTargetReq: *addRsParams,
 			},
 			Retry: &tableasync.Retry{
 				Enable: true,
@@ -347,7 +355,7 @@ func (svc *lbSvc) buildAddTCloudRsTasks(kt *kit.Kit, body json.RawMessage, tgID,
 
 	// 锁定资源跟Flow的状态
 	flowID := result.ID
-	err = svc.lockResFlowStatus(kt, tgID, flowID)
+	err = svc.lockResFlowStatus(kt, tgID, enumor.TargetGroupCloudResType, flowID, enumor.AddRSTaskType)
 	if err != nil {
 		return nil, err
 	}
@@ -358,9 +366,10 @@ func (svc *lbSvc) buildAddTCloudRsTasks(kt *kit.Kit, body json.RawMessage, tgID,
 		Tasks: []ts.TemplateFlowTask{{
 			ActionID: "1",
 			Params: &actionflow.FlowWatchOption{
-				FlowID:  flowID,
-				ResID:   tgID,
-				ResType: enumor.TargetGroupCloudResType,
+				FlowID:   flowID,
+				ResID:    tgID,
+				ResType:  enumor.TargetGroupCloudResType,
+				TaskType: enumor.AddRSTaskType,
 			},
 		}},
 	}
@@ -374,14 +383,71 @@ func (svc *lbSvc) buildAddTCloudRsTasks(kt *kit.Kit, body json.RawMessage, tgID,
 	return &core.FlowStateResult{FlowID: flowID}, nil
 }
 
-func (svc *lbSvc) lockResFlowStatus(kt *kit.Kit, tgID string, flowID string) error {
+// convTCloudOperateRsReq conv tcloud operate rs req.
+func (svc *lbSvc) convTCloudOperateRsReq(kt *kit.Kit, targets []*dataproto.TargetBaseReq, targetGroupID,
+	accountID string) (*hcproto.TCloudBatchOperateTargetReq, error) {
+
+	instMap, err := svc.getInstWithTargetMap(kt, targets)
+	if err != nil {
+		return nil, err
+	}
+
+	rsReq := &hcproto.TCloudBatchOperateTargetReq{TargetGroupID: targetGroupID}
+	for _, item := range targets {
+		item.TargetGroupID = targetGroupID
+		item.AccountID = accountID
+		item.InstType = item.InstType
+		item.InstName = instMap[item.CloudInstID].Name
+		item.PrivateIPAddress = instMap[item.CloudInstID].PrivateIPv4Addresses
+		item.PublicIPAddress = instMap[item.CloudInstID].PublicIPv4Addresses
+		item.CloudVpcIDs = instMap[item.CloudInstID].CloudVpcIDs
+		item.Zone = instMap[item.CloudInstID].Zone
+		rsReq.RsList = append(rsReq.RsList, item)
+	}
+	return rsReq, nil
+}
+
+func (svc *lbSvc) getInstWithTargetMap(kt *kit.Kit, targets []*dataproto.TargetBaseReq) (
+	map[string]corecvm.BaseCvm, error) {
+
+	cloudCvmIDs := make([]string, 0)
+	for _, item := range targets {
+		if item.InstType == enumor.CvmInstType {
+			cloudCvmIDs = append(cloudCvmIDs, item.CloudInstID)
+		}
+	}
+
+	// 查询Cvm信息
+	cvmMap := make(map[string]corecvm.BaseCvm)
+	if len(cloudCvmIDs) > 0 {
+		cvmReq := &core.ListReq{
+			Filter: tools.ContainersExpression("cloud_id", cloudCvmIDs),
+			Page:   core.NewDefaultBasePage(),
+		}
+		cvmList, err := svc.client.DataService().Global.Cvm.ListCvm(kt, cvmReq)
+		if err != nil {
+			logs.Errorf("failed to list cvm by cloudIDs, cloudIDs: %v, err: %v, rid: %s", cloudCvmIDs, err, kt.Rid)
+			return nil, err
+		}
+
+		for _, item := range cvmList.Details {
+			cvmMap[item.CloudID] = item
+		}
+	}
+
+	return cvmMap, nil
+}
+
+func (svc *lbSvc) lockResFlowStatus(kt *kit.Kit, resID string, resType enumor.CloudResourceType, flowID string,
+	taskType enumor.TaskType) error {
+
 	// 锁定资源跟Flow的状态
 	opt := &dataproto.ResFlowLockReq{
-		ResID:    tgID,
-		ResType:  enumor.TargetGroupCloudResType,
+		ResID:    resID,
+		ResType:  resType,
 		FlowID:   flowID,
 		Status:   enumor.ExecutingResFlowStatus,
-		TaskType: enumor.AddRSTaskType,
+		TaskType: taskType,
 	}
 	err := svc.client.DataService().Global.LoadBalancer.ResFlowLock(kt, opt)
 	if err != nil {
@@ -406,7 +472,19 @@ func (svc *lbSvc) lockResFlowStatus(kt *kit.Kit, tgID string, flowID string) err
 	return nil
 }
 
-func (svc *lbSvc) checkResFlowRel(kt *kit.Kit, resID string, resType enumor.CloudResourceType) error {
+func (svc *lbSvc) checkResFlowRel(kt *kit.Kit, resID string, resType enumor.CloudResourceType, bkBizID int64) error {
+	// 检查目标组是否存在
+	if resType == enumor.TargetGroupCloudResType {
+		targetGroupList, err := svc.getTargetGroupByID(kt, resID, bkBizID)
+		if err != nil {
+			logs.Errorf("list target group by id failed, tgID: %s, err: %v, rid: %s", resID, err, kt.Rid)
+			return err
+		}
+		if len(targetGroupList) == 0 {
+			return errf.Newf(errf.RecordNotFound, "target group: %s not found", resID)
+		}
+	}
+
 	// 预检测-当前资源是否有锁定中的数据
 	lockReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(

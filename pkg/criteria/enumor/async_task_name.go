@@ -38,7 +38,7 @@ func (v ActionName) Validate() error {
 
 	case VirRoot:
 	case ActionCreateFactoryTest, ActionProduceTest, ActionAssembleTest, ActionSleep:
-	case ActionAddRS, ActionDeleteRS, ActionModifyPort, ActionModifyWeight, ActionFlowWatch:
+	case ActionAddRS, ActionRemoveRS, ActionModifyPort, ActionModifyWeight, ActionFlowWatch:
 	default:
 		return fmt.Errorf("unsupported action name type: %s", v)
 	}
@@ -102,7 +102,7 @@ const (
 // 负载均衡相关Action
 const (
 	ActionAddRS        ActionName = "add_rs"
-	ActionDeleteRS     ActionName = "delete_rs"
+	ActionRemoveRS     ActionName = "remove_rs"
 	ActionModifyPort   ActionName = "modify_port"
 	ActionModifyWeight ActionName = "modify_weight"
 )

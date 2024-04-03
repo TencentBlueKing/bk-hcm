@@ -23,11 +23,13 @@ package producer
 import (
 	"hcm/cmd/task-server/service/capability"
 	"hcm/pkg/api/core"
+	"hcm/pkg/async/consumer"
 	"hcm/pkg/async/producer"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/retry"
 )
 
 // Init initial the async service
@@ -112,10 +114,12 @@ func (p service) UpdateCustomFlowState(cts *rest.Contexts) (interface{}, error) 
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// 批量更新flow状态
-	err := p.pro.BatchUpdateCustomFlowState(cts.Kit, opt)
+	rty := retry.NewRetryPolicy(consumer.DefRetryCount, consumer.DefRetryRangeMS)
+	err := rty.BaseExec(cts.Kit, func() error {
+		return p.pro.BatchUpdateCustomFlowState(cts.Kit, opt)
+	})
 	if err != nil {
-		logs.Errorf("batch update custom flow state failed, err: %v, opt: %+v, rid: %s", err, opt, cts.Kit.Rid)
+		logs.Errorf("taskserver batch update flow state failed, err: %v, opt: %+v, rid: %s", err, opt, cts.Kit.Rid)
 		return nil, err
 	}
 
