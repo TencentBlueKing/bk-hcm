@@ -368,7 +368,7 @@ func (svc *lbSvc) UpdateBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 
 	lblID := cts.PathParameter("lbl_id").String()
 	if len(lblID) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "listener is is required")
+		return nil, errf.New(errf.InvalidParameter, "listener is required")
 	}
 
 	ruleID := cts.PathParameter("rule_id").String()
@@ -422,7 +422,7 @@ func (svc *lbSvc) UpdateBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 func (svc *lbSvc) BatchDeleteBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 	lblID := cts.PathParameter("lbl_id").String()
 	if len(lblID) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "listener is is required")
+		return nil, errf.New(errf.InvalidParameter, "listener is required")
 	}
 
 	req := new(hcproto.TCloudRuleDeleteByIDReq)
@@ -464,7 +464,7 @@ func (svc *lbSvc) BatchDeleteBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 func (svc *lbSvc) BatchDeleteBizTCloudUrlRuleByDomain(cts *rest.Contexts) (any, error) {
 	lblID := cts.PathParameter("lbl_id").String()
 	if len(lblID) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "listener is is required")
+		return nil, errf.New(errf.InvalidParameter, "listener is required")
 	}
 
 	req := new(hcproto.TCloudRuleDeleteByDomainReq)

@@ -14,7 +14,7 @@ DELETE /api/v1/cloud/vendors/tcloud/listeners/{lbl_id}/rules/by/domains/batch
 |--------------------|--------------|----|-------------------------|
 | bk_biz_id          | int          | 是  | 业务ID                    |
 | lbl_id             | string       | 是  | 监听器id                   |
-| domains            | string array | 否  | 按域名删除数组                 |
+| domains            | string array | 是  | 按域名删除数组                 |
 | new_default_domain | string       | 否  | 新默认域名,删除的域名是默认域名的时候需要指定 |
 
 ### 调用示例
