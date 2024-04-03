@@ -1,7 +1,8 @@
 import { computed, defineComponent } from 'vue';
+// import components
 import { Button } from 'bkui-vue';
+import RsConfigTable from '../../components/RsConfigTable';
 import './index.scss';
-import RsConfigTable from '../../all-groups-manager/rs-config-table';
 
 export default defineComponent({
   name: 'TargetGroupDetail',

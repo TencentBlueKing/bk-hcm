@@ -1329,33 +1329,57 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const rsConfigColumns = [
     {
       label: '内网IP',
-      render: ({ data }: any) => {
-        return [...(data.private_ipv4_addresses || []), ...(data.private_ipv6_addresses || [])].join(',');
-      },
+      field: 'private_ip_address',
       isDefaultShow: true,
+      render: ({ data }: any) => {
+        return [
+          ...(data.private_ipv4_addresses || []),
+          ...(data.private_ipv6_addresses || []),
+          // 更新目标组detail中的rs字段
+          ...(data.private_ip_address || []),
+        ].join(',');
+      },
     },
     {
       label: '公网IP',
+      field: 'public_ip_address',
       render: ({ data }: any) => {
-        return [...(data.public_ipv4_addresses || []), ...(data.public_ipv6_addresses || [])].join(',');
+        return [
+          ...(data.public_ipv4_addresses || []),
+          ...(data.public_ipv6_addresses || []),
+          // 更新目标组detail中的rs字段
+          ...(data.public_ip_address || []),
+        ].join(',');
       },
     },
     {
       label: '名称',
-      field: 'inst_name',
+      field: 'name',
       isDefaultShow: true,
+      render: ({ data }: any) => {
+        return data.name || data.inst_name;
+      },
     },
     {
       label: '地域',
       field: 'region',
+      render: ({ data }: any) => {
+        if (data.region) return data.region;
+        const idx = data.zone.lastIndexOf('-1');
+        return data.zone.slice(0, idx - 1);
+      },
     },
     {
       label: '资源类型',
       field: 'inst_type',
+      render: ({ data }: any) => {
+        return data.machine_type || data.inst_type;
+      },
     },
     {
-      label: '所属网络',
-      field: 'network',
+      label: '所属VPC',
+      field: 'cloud_vpc_ids',
+      render: ({ cell }: { cell: string[] }) => cell?.join(','),
     },
   ];
 
