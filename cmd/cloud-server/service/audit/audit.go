@@ -30,11 +30,13 @@ import (
 	"hcm/pkg/api/data-service/audit"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -49,10 +51,13 @@ func InitService(c *capability.Capability) {
 
 	h.Add("GetAudit", http.MethodGet, "/audits/{id}", svc.GetAudit)
 	h.Add("ListAudit", http.MethodPost, "/audits/list", svc.ListAudit)
+	h.Add("ListAuditAsyncTask", http.MethodPost, "/audits/{id}/async_task/list", svc.ListAuditAsyncTask)
 
 	// biz audit apis
 	h.Add("GetBizAudit", http.MethodGet, "/bizs/{bk_biz_id}/audits/{id}", svc.GetBizAudit)
 	h.Add("ListBizAudit", http.MethodPost, "/bizs/{bk_biz_id}/audits/list", svc.ListBizAudit)
+	h.Add("ListBizAuditAsyncTask", http.MethodPost, "/bizs/{bk_biz_id}/audits/{id}/async_task/list",
+		svc.ListBizAuditAsyncTask)
 
 	h.Load(c.WebService)
 }
@@ -132,4 +137,88 @@ func (svc svc) listAudit(cts *rest.Contexts, authHandler handler.ListAuthResHand
 		Page:   req.Page,
 	}
 	return svc.client.DataService().Global.Audit.ListAudit(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+}
+
+// ListAuditAsyncTask list audit async task.
+func (svc svc) ListAuditAsyncTask(cts *rest.Contexts) (interface{}, error) {
+	return svc.listAuditAsyncTask(cts, handler.ListResourceAuthRes)
+}
+
+// ListBizAuditAsyncTask list biz audit async task.
+func (svc svc) ListBizAuditAsyncTask(cts *rest.Contexts) (interface{}, error) {
+	return svc.listAuditAsyncTask(cts, handler.ListBizAuthRes)
+}
+
+func (svc svc) listAuditAsyncTask(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (
+	interface{}, error) {
+
+	id, err := cts.PathParameter("id").Uint64()
+	if err != nil {
+		return nil, err
+	}
+
+	req := new(proto.AuditAsyncTaskListReq)
+	if err = cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err = req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	idFilter := &filter.Expression{
+		Op:    filter.And,
+		Rules: []filter.RuleFactory{&filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: id}},
+	}
+	// authorize
+	_, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+		ResType: meta.Audit, Action: meta.Find, Filter: idFilter})
+	if err != nil {
+		return nil, err
+	}
+
+	result := &audit.GetAsyncTaskResp{}
+	if noPermFlag {
+		return result, nil
+	}
+
+	// 获取操作记录详情
+	auditInfo, err := svc.client.DataService().Global.Audit.GetAudit(cts.Kit.Ctx, cts.Kit.Header(), id)
+	if err != nil {
+		logs.Errorf("get audit by id failed, id: %d, err: %v, rid: %s", id, err, cts.Kit.Rid)
+		return nil, err
+	}
+	if auditInfo == nil {
+		return nil, errf.Newf(errf.RecordNotFound, "audit: %s not found", id)
+	}
+
+	// 获取异步任务-Flow详情
+	flow, err := svc.client.TaskServer().GetFlow(cts.Kit, req.FlowID)
+	if err != nil {
+		logs.Errorf("get flow by id failed, flowID: %s, err: %v, rid: %s", req.FlowID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	result.Flow = flow
+
+	// 获取异步任务-子任务列表
+	taskReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("flow_id", req.FlowID),
+			tools.RuleEqual("action_id", req.ActionID),
+		),
+		Page: &core.BasePage{
+			Count: false,
+			Start: 0,
+			Limit: core.DefaultMaxPageLimit,
+			Sort:  "action_id",
+			Order: core.Ascending,
+		},
+	}
+	taskList, err := svc.client.TaskServer().ListTask(cts.Kit, taskReq)
+	if err != nil {
+		logs.Errorf("get flow by id failed, flowID: %s, err: %v, rid: %s", req.FlowID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	result.Tasks = taskList.Details
+
+	return result, nil
 }
