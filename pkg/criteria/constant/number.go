@@ -35,4 +35,6 @@ const (
 	BatchCreateCvmFromCloudMaxLimit = 100
 	// BatchAddRSCloudMaxLimit 公有云上批量添加RS的最大限制数量
 	BatchAddRSCloudMaxLimit = 100
+	// BatchRemoveRSCloudMaxLimit 公有云上批量移除RS的最大限制数量
+	BatchRemoveRSCloudMaxLimit = 100
 )

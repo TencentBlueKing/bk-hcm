@@ -43,7 +43,7 @@ func (svc *clbSvc) BatchCreateTCloudTargets(cts *rest.Contexts) (any, error) {
 		return nil, errf.New(errf.InvalidParameter, "target_group_id is required")
 	}
 
-	req := new(protolb.TCloudBatchCreateTargetReq)
+	req := new(protolb.TCloudBatchOperateTargetReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -99,7 +99,7 @@ func (svc *clbSvc) BatchCreateTCloudTargets(cts *rest.Contexts) (any, error) {
 	return svc.batchRegisterTargetCloud(cts.Kit, req, accountID, tgID, tgList[0].Region, urlRuleList)
 }
 
-func (svc *clbSvc) batchRegisterTargetCloud(kt *kit.Kit, req *protolb.TCloudBatchCreateTargetReq,
+func (svc *clbSvc) batchRegisterTargetCloud(kt *kit.Kit, req *protolb.TCloudBatchOperateTargetReq,
 	accountID, tgID, region string, urlRuleList *dataproto.TCloudURLRuleListResult) (
 	*protolb.BatchCreateResult, error) {
 
@@ -147,7 +147,7 @@ func (svc *clbSvc) batchRegisterTargetCloud(kt *kit.Kit, req *protolb.TCloudBatc
 	return &protolb.BatchCreateResult{SuccessCloudIDs: rsIDs.IDs}, nil
 }
 
-func (svc *clbSvc) batchCreateTargetDb(kt *kit.Kit, req *protolb.TCloudBatchCreateTargetReq,
+func (svc *clbSvc) batchCreateTargetDb(kt *kit.Kit, req *protolb.TCloudBatchOperateTargetReq,
 	accountID, tgID string) (*core.BatchCreateResult, error) {
 
 	// 检查RS是否已绑定该目标组
@@ -186,4 +186,151 @@ func (svc *clbSvc) batchCreateTargetDb(kt *kit.Kit, req *protolb.TCloudBatchCrea
 		})
 	}
 	return svc.dataCli.Global.LoadBalancer.BatchCreateTCloudTarget(kt, rsReq)
+}
+
+// BatchRemoveTCloudTargets 批量移除RS
+func (svc *clbSvc) BatchRemoveTCloudTargets(cts *rest.Contexts) (any, error) {
+	tgID := cts.PathParameter("target_group_id").String()
+	if len(tgID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "target_group_id is required")
+	}
+
+	req := new(protolb.TCloudBatchOperateTargetReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	tgList, err := svc.getTargetGroupByID(cts.Kit, tgID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(tgList) == 0 {
+		return nil, errf.Newf(errf.RecordNotFound, "target group: %s not found", tgID)
+	}
+
+	// 根据目标组ID，获取目标组绑定的监听器、规则列表
+	ruleRelReq := &core.ListReq{
+		Filter: tools.EqualExpression("target_group_id", tgID),
+		Page:   core.NewDefaultBasePage(),
+	}
+	ruleRelList, err := svc.dataCli.Global.LoadBalancer.ListTargetGroupListenerRel(cts.Kit, ruleRelReq)
+	if err != nil {
+		logs.Errorf("list tcloud listener url rule failed, tgID: %s, err: %v, rid: %s", tgID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	accountID := tgList[0].AccountID
+	// 该目标组尚未绑定监听器及规则，不需要云端操作
+	if len(ruleRelList.Details) == 0 {
+		err = svc.batchDeleteTargetDb(cts.Kit, req, accountID, tgID)
+		if err != nil {
+			return nil, err
+		}
+		return &protolb.BatchCreateResult{}, nil
+	}
+
+	// 查询Url规则列表
+	ruleIDs := slice.Map(ruleRelList.Details, func(one corelb.BaseTargetListenerRuleRel) string {
+		return one.ListenerRuleID
+	})
+	urlRuleReq := &core.ListReq{
+		Filter: tools.ContainersExpression("id", ruleIDs),
+		Page:   core.NewDefaultBasePage(),
+	}
+	urlRuleList, err := svc.dataCli.TCloud.LoadBalancer.ListUrlRule(cts.Kit, urlRuleReq)
+	if err != nil {
+		logs.Errorf("list tcloud listener url rule failed, tgID: %s, err: %v, rid: %s", tgID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// 调用云端批量解绑四七层后端服务接口
+	return nil, svc.batchUnRegisterTargetCloud(cts.Kit, req, accountID, tgID, tgList[0].Region, urlRuleList)
+}
+
+func (svc *clbSvc) batchUnRegisterTargetCloud(kt *kit.Kit, req *protolb.TCloudBatchOperateTargetReq,
+	accountID, tgID, region string, urlRuleList *dataproto.TCloudURLRuleListResult) error {
+
+	tcloudAdpt, err := svc.ad.TCloud(kt, accountID)
+	if err != nil {
+		return err
+	}
+
+	cloudLBExists := make(map[string]struct{}, 0)
+	rsOpt := &typelb.TCloudRegisterTargetsOption{
+		Region: region,
+	}
+	for _, ruleItem := range urlRuleList.Details {
+		if _, ok := cloudLBExists[ruleItem.CloudLbID]; !ok {
+			rsOpt.LoadBalancerId = ruleItem.CloudLbID
+		}
+		for _, rsItem := range req.RsList {
+			tmpRs := &typelb.BatchTarget{
+				ListenerId: cvt.ValToPtr(ruleItem.CloudLBLID),
+				InstanceId: cvt.ValToPtr(rsItem.CloudInstID),
+				Port:       cvt.ValToPtr(rsItem.Port),
+			}
+			if ruleItem.RuleType == enumor.Layer7RuleType {
+				tmpRs.LocationId = cvt.ValToPtr(ruleItem.CloudID)
+			}
+			rsOpt.Targets = append(rsOpt.Targets, tmpRs)
+		}
+		failIDs, err := tcloudAdpt.DeRegisterTargets(kt, rsOpt)
+		if err != nil {
+			logs.Errorf("unregister tcloud target api failed, err: %v, rsOpt: %+v, rid: %s", err, rsOpt, kt.Rid)
+			return err
+		}
+		if len(failIDs) > 0 {
+			logs.Errorf("unregister tcloud target api partially failed, failLblIDs: %v, req: %+v, rsOpt: %+v, rid: %s",
+				failIDs, req, rsOpt, kt.Rid)
+			return errf.Newf(errf.PartialFailed, "unregister tcloud target failed, failListenerIDs: %v", failIDs)
+		}
+	}
+
+	err = svc.batchDeleteTargetDb(kt, req, accountID, tgID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (svc *clbSvc) batchDeleteTargetDb(kt *kit.Kit, req *protolb.TCloudBatchOperateTargetReq,
+	accountID, tgID string) error {
+
+	// 检查RS是否已绑定该目标组
+	rsID := make([]string, 0)
+	for _, item := range req.RsList {
+		tgReq := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleEqual("account_id", accountID),
+				tools.RuleEqual("target_group_id", tgID),
+				tools.RuleEqual("cloud_inst_id", item.CloudInstID),
+				tools.RuleEqual("port", item.Port),
+			),
+			Page: core.NewDefaultBasePage(),
+		}
+		tmpRsList, err := svc.dataCli.Global.LoadBalancer.ListTarget(kt, tgReq)
+		if err != nil {
+			return err
+		}
+		if len(tmpRsList.Details) > 0 {
+			rsID = append(rsID, tmpRsList.Details[0].ID)
+		}
+	}
+	if len(rsID) == 0 {
+		return nil
+	}
+
+	delReq := &dataproto.LoadBalancerBatchDeleteReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("id", rsID),
+			tools.RuleEqual("account_id", accountID),
+			tools.RuleEqual("target_group_id", tgID),
+		),
+	}
+	return svc.dataCli.Global.LoadBalancer.BatchDeleteTarget(kt, delReq)
 }

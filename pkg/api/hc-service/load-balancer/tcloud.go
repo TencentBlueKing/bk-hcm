@@ -325,15 +325,15 @@ func (req *DomainAttrUpdateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// --------------------------[批量添加RS]--------------------------
+// --------------------------[批量操作RS]--------------------------
 
-// TCloudBatchCreateTargetReq tcloud batch add rs req.
-type TCloudBatchCreateTargetReq struct {
+// TCloudBatchOperateTargetReq tcloud batch operate rs req.
+type TCloudBatchOperateTargetReq struct {
 	TargetGroupID string                 `json:"target_group_id" validate:"required"`
 	RsList        []*cloud.TargetBaseReq `json:"targets" validate:"required,min=1,max=100,dive"`
 }
 
 // Validate RsList最大支持100个.
-func (req *TCloudBatchCreateTargetReq) Validate() error {
+func (req *TCloudBatchOperateTargetReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

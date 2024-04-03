@@ -34,7 +34,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 )
 
@@ -457,7 +456,7 @@ func convTableToBaseTarget(one *tablelb.LoadBalancerTargetTable) *corelb.BaseTar
 		TargetGroupID:      one.TargetGroupID,
 		CloudTargetGroupID: one.CloudTargetGroupID,
 		Port:               one.Port,
-		Weight:             cvt.PtrToVal(one.Weight),
+		Weight:             one.Weight,
 		PrivateIPAddress:   one.PrivateIPAddress,
 		PublicIPAddress:    one.PublicIPAddress,
 		Zone:               one.Zone,

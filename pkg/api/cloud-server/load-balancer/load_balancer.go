@@ -233,3 +233,15 @@ type TCloudTargetBatchCreateReq struct {
 func (req *TCloudTargetBatchCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// --------------------------[批量移除RS]--------------------------
+
+// TCloudTargetBatchRemoveReq tcloud target batch remove req.
+type TCloudTargetBatchRemoveReq struct {
+	TargetIDs []string `json:"target_ids" validate:"required,min=1,max=100"`
+}
+
+// Validate request.
+func (req *TCloudTargetBatchRemoveReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

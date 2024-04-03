@@ -35,8 +35,10 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// SaveAddRsCloudIDKey 批量添加RS成功的监听器ID列表
-const SaveAddRsCloudIDKey = "batch_add_rs_cloud_ids"
+// SaveRsCloudIDKey 批量操作RS成功的监听器ID列表
+const SaveRsCloudIDKey = "batch_rs_cloud_ids"
+
+// --------------------------[批量添加RS]-----------------------------
 
 var _ action.Action = new(AddRsAction)
 var _ action.ParameterAction = new(AddRsAction)
@@ -44,23 +46,23 @@ var _ action.ParameterAction = new(AddRsAction)
 // AddRsAction define add rs action.
 type AddRsAction struct{}
 
-// AddRsOption define add rs option.
-type AddRsOption struct {
-	Vendor                          enumor.Vendor `json:"vendor" validate:"required"`
-	hclb.TCloudBatchCreateTargetReq `json:",inline"`
+// OperateRsOption define operate rs option.
+type OperateRsOption struct {
+	Vendor                           enumor.Vendor `json:"vendor" validate:"required"`
+	hclb.TCloudBatchOperateTargetReq `json:",inline"`
 }
 
-// MarshalJSON AddRsOption.
-func (opt AddRsOption) MarshalJSON() ([]byte, error) {
+// MarshalJSON marshal json.
+func (opt OperateRsOption) MarshalJSON() ([]byte, error) {
 	var req interface{}
 	switch opt.Vendor {
 	case enumor.TCloud:
 		req = struct {
-			Vendor                          enumor.Vendor `json:"vendor" validate:"required"`
-			hclb.TCloudBatchCreateTargetReq `json:",inline"`
+			Vendor                           enumor.Vendor `json:"vendor" validate:"required"`
+			hclb.TCloudBatchOperateTargetReq `json:",inline"`
 		}{
-			Vendor:                     opt.Vendor,
-			TCloudBatchCreateTargetReq: opt.TCloudBatchCreateTargetReq,
+			Vendor:                      opt.Vendor,
+			TCloudBatchOperateTargetReq: opt.TCloudBatchOperateTargetReq,
 		}
 
 	default:
@@ -70,13 +72,13 @@ func (opt AddRsOption) MarshalJSON() ([]byte, error) {
 	return json.Marshal(req)
 }
 
-// UnmarshalJSON AddRsOption.
-func (opt *AddRsOption) UnmarshalJSON(raw []byte) (err error) {
+// UnmarshalJSON unmarshal json.
+func (opt *OperateRsOption) UnmarshalJSON(raw []byte) (err error) {
 	opt.Vendor = enumor.Vendor(gjson.GetBytes(raw, "vendor").String())
 
 	switch opt.Vendor {
 	case enumor.TCloud:
-		err = json.Unmarshal(raw, &opt.TCloudBatchCreateTargetReq)
+		err = json.Unmarshal(raw, &opt.TCloudBatchOperateTargetReq)
 	default:
 		return fmt.Errorf("vendor: %s not support", opt.Vendor)
 	}
@@ -84,8 +86,8 @@ func (opt *AddRsOption) UnmarshalJSON(raw []byte) (err error) {
 	return err
 }
 
-// Validate AddRsOption.
-func (opt AddRsOption) Validate() error {
+// Validate validate option.
+func (opt OperateRsOption) Validate() error {
 	if err := opt.Vendor.Validate(); err != nil {
 		return err
 	}
@@ -93,7 +95,7 @@ func (opt AddRsOption) Validate() error {
 	var req validator.Interface
 	switch opt.Vendor {
 	case enumor.TCloud:
-		req = &opt.TCloudBatchCreateTargetReq
+		req = &opt.TCloudBatchOperateTargetReq
 	default:
 		return fmt.Errorf("vendor: %s not support", opt.Vendor)
 	}
@@ -107,7 +109,7 @@ func (opt AddRsOption) Validate() error {
 
 // ParameterNew return request params.
 func (act AddRsAction) ParameterNew() (params interface{}) {
-	return new(AddRsOption)
+	return new(OperateRsOption)
 }
 
 // Name return action name
@@ -117,7 +119,7 @@ func (act AddRsAction) Name() enumor.ActionName {
 
 // Run add rs.
 func (act AddRsAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
-	opt, ok := params.(*AddRsOption)
+	opt, ok := params.(*OperateRsOption)
 	if !ok {
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
@@ -127,7 +129,7 @@ func (act AddRsAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, 
 	switch opt.Vendor {
 	case enumor.TCloud:
 		result, err = actcli.GetHCService().TCloud.Clb.BatchAddRs(
-			kt.Kit(), opt.TargetGroupID, &opt.TCloudBatchCreateTargetReq)
+			kt.Kit(), opt.TargetGroupID, &opt.TCloudBatchOperateTargetReq)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", opt.Vendor)
 	}
@@ -141,7 +143,7 @@ func (act AddRsAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, 
 			result.FailedCloudIDs)
 	}
 
-	if err = kt.ShareData().AppendIDs(kt.Kit(), SaveAddRsCloudIDKey, result.SuccessCloudIDs...); err != nil {
+	if err = kt.ShareData().AppendIDs(kt.Kit(), SaveRsCloudIDKey, result.SuccessCloudIDs...); err != nil {
 		logs.Errorf("share data appendIDs failed, err: %v, rid: %s", err, kt.Kit().Rid)
 		return result, err
 	}
@@ -152,5 +154,53 @@ func (act AddRsAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, 
 // Rollback 批量添加RS失败时的回滚Action，此处不需要回滚处理
 func (act AddRsAction) Rollback(kt run.ExecuteKit, params interface{}) error {
 	logs.Infof(" ----------- AddRsAction Rollback -----------, params: %s, rid: %s", params, kt.Kit().Rid)
+	return nil
+}
+
+// --------------------------[批量移除RS]-----------------------------
+
+var _ action.Action = new(RemoveRsAction)
+var _ action.ParameterAction = new(RemoveRsAction)
+
+// RemoveRsAction define remove rs action.
+type RemoveRsAction struct{}
+
+// ParameterNew return request params.
+func (act RemoveRsAction) ParameterNew() (params interface{}) {
+	return new(OperateRsOption)
+}
+
+// Name return action name
+func (act RemoveRsAction) Name() enumor.ActionName {
+	return enumor.ActionRemoveRS
+}
+
+// Run remove rs.
+func (act RemoveRsAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
+	opt, ok := params.(*OperateRsOption)
+	if !ok {
+		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
+	}
+
+	var result *hclb.BatchCreateResult
+	var err error
+	switch opt.Vendor {
+	case enumor.TCloud:
+		_, err = actcli.GetHCService().TCloud.Clb.BatchRemoveRs(
+			kt.Kit(), opt.TargetGroupID, &opt.TCloudBatchOperateTargetReq)
+	default:
+		return nil, fmt.Errorf("vendor: %s not support", opt.Vendor)
+	}
+	if err != nil {
+		logs.Errorf("batch remove rs failed, err: %v, rid: %s", err, kt.Kit().Rid)
+		return result, err
+	}
+
+	return result, nil
+}
+
+// Rollback 批量移除RS失败时的回滚Action，此处不需要回滚处理
+func (act RemoveRsAction) Rollback(kt run.ExecuteKit, params interface{}) error {
+	logs.Infof(" ----------- RemoveRsAction Rollback -----------, params: %s, rid: %s", params, kt.Kit().Rid)
 	return nil
 }

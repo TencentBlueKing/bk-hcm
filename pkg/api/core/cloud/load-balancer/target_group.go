@@ -79,7 +79,7 @@ type BaseTarget struct {
 	TargetGroupID      string          `json:"target_group_id"`
 	CloudTargetGroupID string          `json:"cloud_target_group_id"`
 	Port               int64           `json:"port"`
-	Weight             int64           `json:"weight"`
+	Weight             *int64          `json:"weight"`
 	PrivateIPAddress   []string        `json:"private_ip_address"`
 	PublicIPAddress    []string        `json:"public_ip_address"`
 	Zone               string          `json:"zone"`

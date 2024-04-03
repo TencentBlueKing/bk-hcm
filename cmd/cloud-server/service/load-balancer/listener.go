@@ -13,6 +13,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -332,7 +333,7 @@ func (svc *lbSvc) listTargetWeightNumMap(kt *kit.Kit, targetGroupIDs []string) (
 	targetWeightMap := make(map[string]cslb.ListListenerBase, 0)
 	for _, item := range targetList {
 		tmpTarget := targetWeightMap[item.TargetGroupID]
-		if item.Weight == 0 {
+		if cvt.PtrToVal(item.Weight) == 0 {
 			tmpTarget.RsWeightZeroNum++
 		} else {
 			tmpTarget.RsWeightNonZeroNum++

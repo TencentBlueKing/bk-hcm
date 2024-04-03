@@ -33,7 +33,7 @@ func (v FlowName) Validate() error {
 	case FlowNormalTest, FlowSleepTest:
 	case FlowDeleteSecurityGroup, FlowCreateHuaweiSGRule:
 	case FlowDeleteEIP:
-	case FlowAddRS, FlowDeleteRS, FlowModifyPort, FlowModifyWeight, FlowWatch:
+	case FlowAddRS, FlowRemoveRS, FlowModifyPort, FlowModifyWeight, FlowWatch:
 
 	default:
 		return fmt.Errorf("unsupported tpl: %s", v)
@@ -90,7 +90,7 @@ const (
 // 负载均衡相关Flow
 const (
 	FlowAddRS        FlowName = "add_rs"
-	FlowDeleteRS     FlowName = "delete_rs"
+	FlowRemoveRS     FlowName = "remove_rs"
 	FlowModifyPort   FlowName = "modify_port"
 	FlowModifyWeight FlowName = "modify_weight"
 )

@@ -98,8 +98,8 @@ type TaskType string
 const (
 	// AddRSTaskType 任务类型-添加RS
 	AddRSTaskType = TaskType(FlowAddRS)
-	// DeleteRSTaskType 任务类型-删除RS
-	DeleteRSTaskType = TaskType(FlowDeleteRS)
+	// RemoveRSTaskType 任务类型-移除RS
+	RemoveRSTaskType = TaskType(FlowRemoveRS)
 	// ModifyPortTaskType 任务类型-修改端口
 	ModifyPortTaskType = TaskType(FlowModifyPort)
 	// ModifyWeightTaskType 任务类型-修改权重

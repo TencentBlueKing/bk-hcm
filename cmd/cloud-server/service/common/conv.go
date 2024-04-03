@@ -26,10 +26,8 @@ import (
 	cscvm "hcm/pkg/api/cloud-server/cvm"
 	cloudserver "hcm/pkg/api/cloud-server/disk"
 	csvpc "hcm/pkg/api/cloud-server/vpc"
-	"hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service/cvm"
 	hcprotodisk "hcm/pkg/api/hc-service/disk"
-	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/api/hc-service/subnet"
 	hcprotovpc "hcm/pkg/api/hc-service/vpc"
 	"hcm/pkg/criteria/enumor"
@@ -504,17 +502,4 @@ func ConvTCloudVpcCreateReq(req *csvpc.TCloudVpcCreateReq) *hcprotovpc.VpcCreate
 			},
 		},
 	}
-}
-
-// ConvTCloudAddRsReq conv tcloud add rs req.
-func ConvTCloudAddRsReq(targets []*cloud.TargetBaseReq, targetGroupID,
-	accountID string) *hclb.TCloudBatchCreateTargetReq {
-
-	rsReq := &hclb.TCloudBatchCreateTargetReq{TargetGroupID: targetGroupID}
-	for _, item := range targets {
-		item.TargetGroupID = targetGroupID
-		item.AccountID = accountID
-		rsReq.RsList = append(rsReq.RsList, item)
-	}
-	return rsReq
 }

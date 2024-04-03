@@ -27,8 +27,6 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/targets/crea
 
 ### 调用示例
 
-#### tcloud
-
 ```json
 {
   "targets": [
