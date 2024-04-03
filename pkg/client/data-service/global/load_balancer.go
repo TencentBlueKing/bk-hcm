@@ -73,7 +73,7 @@ func (cli *LoadBalancerClient) ListTargetGroup(kt *kit.Kit, req *core.ListReq) (
 		cli.client, rest.POST, kt, req, "/load_balancers/target_groups/list")
 }
 
-// BatchDelete 批量删除
+// BatchDelete 批量删除负载均衡
 func (cli *LoadBalancerClient) BatchDelete(kt *kit.Kit, req *dataproto.LoadBalancerBatchDeleteReq) error {
 	return common.RequestNoResp[dataproto.LoadBalancerBatchDeleteReq](cli.client, rest.DELETE,
 		kt, req, "/load_balancers/batch")
@@ -90,6 +90,12 @@ func (cli *LoadBalancerClient) ListTargetGroupListenerRel(kt *kit.Kit, req *core
 // DeleteTargetGroup delete target group.
 func (cli *LoadBalancerClient) DeleteTargetGroup(kt *kit.Kit, req *core.ListReq) error {
 	return common.RequestNoResp[core.ListReq](cli.client, rest.DELETE, kt, req, "/target_groups/batch")
+}
+
+// BatchDeleteTarget 批量删除RS
+func (cli *LoadBalancerClient) BatchDeleteTarget(kt *kit.Kit, req *dataproto.LoadBalancerBatchDeleteReq) error {
+	return common.RequestNoResp[dataproto.LoadBalancerBatchDeleteReq](cli.client, rest.DELETE,
+		kt, req, "/load_balancers/targets/batch")
 }
 
 // CreateTargetGroupListenerRel create target group listener rel.
@@ -165,4 +171,10 @@ func (cli *LoadBalancerClient) BatchCreateTCloudTarget(kt *kit.Kit, req *datapro
 
 	return common.Request[dataproto.TargetBatchCreateReq, core.BatchCreateResult](
 		cli.client, rest.POST, kt, req, "/targets/batch/create")
+}
+
+// BatchUpdateTarget 批量更新rs
+func (cli *LoadBalancerClient) BatchUpdateTarget(kt *kit.Kit, req *dataproto.TargetBatchUpdateReq) error {
+	return common.RequestNoResp[dataproto.TargetBatchUpdateReq](cli.client, rest.PATCH, kt, req,
+		"/load_balancers/targets/batch/update")
 }

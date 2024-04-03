@@ -142,7 +142,7 @@ func (dao TargetDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
 		return err
 	}
 
-	opts := utils.NewFieldOptions().AddBlankedFields("memo").AddIgnoredFields(types.DefaultIgnoredFields...)
+	opts := utils.NewFieldOptions().AddBlankedFields("memo", "weight").AddIgnoredFields(types.DefaultIgnoredFields...)
 	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(model, opts)
 	if err != nil {
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)

@@ -56,9 +56,13 @@ func InitService(cap *capability.Capability) {
 	h.Add("BatchDeleteLoadBalancer", http.MethodDelete, "/load_balancers/batch", svc.BatchDeleteLoadBalancer)
 	h.Add("ListTargetGroupListenerRel", http.MethodPost, "/target_group_listener_rels/list",
 		svc.ListTargetGroupListenerRel)
+	h.Add("BatchDeleteTarget", http.MethodDelete, "/load_balancers/targets/batch", svc.BatchDeleteTarget)
+	h.Add("BatchUpdateTarget", http.MethodPatch, "/load_balancers/targets/batch/update", svc.BatchUpdateTarget)
 
 	h.Add("BatchCreateTargetGroup", http.MethodPost, "/vendors/{vendor}/target_groups/batch/create",
 		svc.BatchCreateTargetGroup)
+	h.Add("BatchCreateTargetGroupWithRel", http.MethodPost, "/vendors/{vendor}/target_groups/with/rels/batch/create",
+		svc.BatchCreateTargetGroupWithRel)
 	h.Add("UpdateTargetGroup", http.MethodPatch, "/vendors/{vendor}/target_groups", svc.UpdateTargetGroup)
 	h.Add("BatchDeleteTargetGroup", http.MethodDelete, "/target_groups/batch", svc.BatchDeleteTargetGroup)
 	h.Add("GetTargetGroup", http.MethodGet, "/vendors/{vendor}/target_groups/{id}", svc.GetTargetGroup)

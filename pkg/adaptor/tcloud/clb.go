@@ -144,53 +144,6 @@ func (t *TCloudImpl) ListListener(kt *kit.Kit, opt *typelb.TCloudListListenersOp
 	return listeners, nil
 }
 
-// ListTargets 获取监听器后端绑定的机器列表信息.
-// reference: https://cloud.tencent.com/document/api/214/30686
-func (t *TCloudImpl) ListTargets(kt *kit.Kit, opt *typelb.TCloudListTargetsOption) (
-	[]typelb.TCloudListenerTarget, error) {
-
-	if opt == nil {
-		return nil, errf.New(errf.InvalidParameter, "list option is required")
-	}
-
-	if err := opt.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	client, err := t.clientSet.ClbClient(opt.Region)
-	if err != nil {
-		return nil, fmt.Errorf("new tcloud targets client failed, region: %s, err: %v", opt.Region, err)
-	}
-
-	req := clb.NewDescribeTargetsRequest()
-	req.LoadBalancerId = common.StringPtr(opt.LoadBalancerId)
-
-	if len(opt.CloudIDs) != 0 {
-		req.ListenerIds = common.StringPtrs(opt.CloudIDs)
-	}
-
-	if len(opt.Protocol) != 0 {
-		req.Protocol = common.StringPtr(string(opt.Protocol))
-	}
-
-	if opt.Port > 0 {
-		req.Port = common.Int64Ptr(opt.Port)
-	}
-
-	resp, err := client.DescribeTargetsWithContext(kt.Ctx, req)
-	if err != nil {
-		logs.Errorf("list tcloud listener targets failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
-		return nil, err
-	}
-
-	listeners := make([]typelb.TCloudListenerTarget, 0, len(resp.Response.Listeners))
-	for _, one := range resp.Response.Listeners {
-		listeners = append(listeners, typelb.TCloudListenerTarget{ListenerBackend: one})
-	}
-
-	return listeners, nil
-}
-
 // CreateLoadBalancer reference: https://cloud.tencent.com/document/api/214/30692
 // 如果创建成功返回对应clb id, 需要检查对应的`SuccessCloudIDs`参数。
 func (t *TCloudImpl) CreateLoadBalancer(kt *kit.Kit, opt *typelb.TCloudCreateClbOption) (
@@ -351,7 +304,8 @@ func (t *TCloudImpl) formatCreateClbRequest(opt *typelb.TCloudCreateClbOption) *
 	return req
 }
 
-var _ poller.PollingHandler[*TCloudImpl, map[string]*clb.DescribeTaskStatusResponseParams, poller.BaseDoneResult] = new(createClbPollingHandler)
+var _ poller.PollingHandler[*TCloudImpl,
+	map[string]*clb.DescribeTaskStatusResponseParams, poller.BaseDoneResult] = new(createClbPollingHandler)
 
 type createClbPollingHandler struct {
 	region string

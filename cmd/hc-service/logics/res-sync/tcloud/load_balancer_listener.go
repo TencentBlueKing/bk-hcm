@@ -120,6 +120,18 @@ func (cli *client) Listener(kt *kit.Kit, opt *SyncListenerOfSingleLBOption) (
 		logs.Errorf("fail to sync listener rule for sync listener, err: %v, opt: %+v, rid: %s", err, opt, kt.Rid)
 		return nil, err
 	}
+	targetParam := &SyncBaseParams{
+		AccountID: opt.AccountID,
+		Region:    opt.Region,
+		CloudIDs:  nil,
+	}
+
+	// 同步相关目标组
+	err = cli.ListenerTargets(kt, targetParam, opt)
+	if err != nil {
+		logs.Errorf("fail to sync listener targets for sync listener, err: %v, opt: %+v, rid: %s", err, opt, kt.Rid)
+		return nil, err
+	}
 
 	return new(SyncResult), nil
 }

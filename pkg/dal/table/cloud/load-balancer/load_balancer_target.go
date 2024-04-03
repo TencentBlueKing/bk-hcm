@@ -68,7 +68,7 @@ type LoadBalancerTargetTable struct {
 	TargetGroupID      string            `db:"target_group_id" validate:"lte=255" json:"target_group_id"`
 	CloudTargetGroupID string            `db:"cloud_target_group_id" validate:"lte=255" json:"cloud_target_group_id"`
 	Port               int64             `db:"port" json:"port"`
-	Weight             int64             `db:"weight" json:"weight"`
+	Weight             *int64            `db:"weight" json:"weight"`
 	PrivateIPAddress   types.StringArray `db:"private_ip_address" json:"private_ip_address"`
 	PublicIPAddress    types.StringArray `db:"public_ip_address" json:"public_ip_address"`
 	Zone               string            `db:"zone" json:"zone"`

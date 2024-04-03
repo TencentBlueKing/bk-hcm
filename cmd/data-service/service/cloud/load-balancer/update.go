@@ -191,8 +191,7 @@ func (svc *lbSvc) UpdateTargetGroup(cts *rest.Contexts) (interface{}, error) {
 	}
 	if len(req.CloudVpcID) > 0 {
 		// 根据cloudVpcID查询VPC信息，如查不到vpcInfo则报错
-		vpcReq := []dataproto.TargetGroupBatchCreate[corelb.TCloudTargetGroupExtension]{{CloudVpcID: req.CloudVpcID}}
-		vpcInfoMap, err := getVpcMapByIDs(cts.Kit, vpcReq)
+		vpcInfoMap, err := getVpcMapByIDs(cts.Kit, []string{req.CloudVpcID})
 		if err != nil {
 			return nil, err
 		}

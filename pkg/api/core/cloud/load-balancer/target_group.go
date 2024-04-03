@@ -20,6 +20,8 @@
 package loadbalancer
 
 import (
+	"fmt"
+
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/table/types"
@@ -52,13 +54,13 @@ type TargetGroup[Ext TargetGroupExtension] struct {
 }
 
 // GetID ...
-func (cert TargetGroup[T]) GetID() string {
-	return cert.BaseTargetGroup.ID
+func (tg TargetGroup[T]) GetID() string {
+	return tg.BaseTargetGroup.ID
 }
 
 // GetCloudID ...
-func (cert TargetGroup[T]) GetCloudID() string {
-	return cert.BaseTargetGroup.CloudID
+func (tg TargetGroup[T]) GetCloudID() string {
+	return tg.BaseTargetGroup.CloudID
 }
 
 // TargetGroupExtension extension.
@@ -68,21 +70,31 @@ type TargetGroupExtension interface {
 
 // BaseTarget define base target.
 type BaseTarget struct {
-	ID                 string            `json:"id"`
-	AccountID          string            `json:"account_id"`
-	InstType           enumor.InstType   `json:"inst_type"`
-	InstID             string            `json:"inst_id"`
-	CloudInstID        string            `json:"cloud_inst_id"`
-	InstName           string            `json:"inst_name"`
-	TargetGroupID      string            `json:"target_group_id"`
-	CloudTargetGroupID string            `json:"cloud_target_group_id"`
-	Port               int64             `json:"port"`
-	Weight             int64             `json:"weight"`
-	PrivateIPAddress   types.StringArray `json:"private_ip_address"`
-	PublicIPAddress    types.StringArray `json:"public_ip_address"`
-	Zone               string            `json:"zone"`
-	Memo               *string           `json:"memo"`
+	ID                 string          `json:"id"`
+	AccountID          string          `json:"account_id"`
+	InstType           enumor.InstType `json:"inst_type"`
+	InstID             string          `json:"inst_id"`
+	CloudInstID        string          `json:"cloud_inst_id"`
+	InstName           string          `json:"inst_name"`
+	TargetGroupID      string          `json:"target_group_id"`
+	CloudTargetGroupID string          `json:"cloud_target_group_id"`
+	Port               int64           `json:"port"`
+	Weight             int64           `json:"weight"`
+	PrivateIPAddress   []string        `json:"private_ip_address"`
+	PublicIPAddress    []string        `json:"public_ip_address"`
+	Zone               string          `json:"zone"`
+	Memo               *string         `json:"memo"`
 	*core.Revision     `json:",inline"`
+}
+
+// GetID ...
+func (rs BaseTarget) GetID() string {
+	return rs.ID
+}
+
+// GetCloudID ...
+func (rs BaseTarget) GetCloudID() string {
+	return fmt.Sprintf("%s-%d", rs.CloudInstID, rs.Port)
 }
 
 // BaseTargetListenerRuleRel define base target listener rule rel.
