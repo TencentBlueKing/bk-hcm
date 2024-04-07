@@ -46,7 +46,9 @@ export default defineComponent({
       <Tab class='manager-tab-wrap' v-model:active={activeTab.value} type='card-grid'>
         {tabList.map((tab) => (
           <TabPanel key={tab.name} name={tab.name} label={tab.label}>
-            <div class='common-card-wrap'>{<tab.component detail={tgDetail.value} />}</div>
+            <div class='common-card-wrap'>
+              {<tab.component detail={tgDetail.value} getTargetGroupDetail={getTargetGroupDetail} />}
+            </div>
           </TabPanel>
         ))}
       </Tab>

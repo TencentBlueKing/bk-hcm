@@ -109,7 +109,7 @@ export default defineComponent({
           }}
         </CommonTable>
         {/* 新增/编辑目标组 */}
-        <AddOrUpdateTGSideslider getListData={getListData} />
+        <AddOrUpdateTGSideslider origin='list' getListData={getListData} />
         {/* 添加RS */}
         <AddRsDialog />
         {/* 批量删除目标组 */}
