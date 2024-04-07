@@ -155,9 +155,18 @@ export const useBusinessStore = defineStore({
     /**
      * 更新负载均衡
      */
-    updateLbDetail(id: string, data: any) {
+    updateLbDetail(data: {
+      bk_biz_id?: string;
+      id: string; // 负载均衡ID
+      name?: string; // 名字
+      internet_charge_type?: string; // 计费模式
+      internet_max_bandwidth_out?: string; // 最大出带宽
+      delete_protect?: boolean; // 删除
+      load_balancer_pass_to_target?: boolean; // Target是否放通来自CLB的流量
+      memo?: string; // 备注
+    }) {
       return http.patch(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/load_balancers/${id}`,
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/load_balancers/${data.id}`,
         data,
       );
     },
@@ -187,7 +196,9 @@ export const useBusinessStore = defineStore({
       rules: Record<string, any>; // 待创建规则
     }) {
       return http.post(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/listeners/${data.lbl_id}/rules/create`,
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/listeners/${
+          data.lbl_id
+        }/rules/create`,
         data,
       );
     },

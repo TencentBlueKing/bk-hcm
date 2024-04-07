@@ -532,3 +532,30 @@ export const SYNC_STAUS_MAP = {
 };
 
 export const TARGET_GROUP_PROTOCOLS = ['TCP', 'UDP', 'HTTP', 'HTTPS'];
+
+export const LB_TYPE_MAP = {
+  OPEN: '公网',
+  INTERNAL: '内网',
+};
+
+export const CHARGE_TYPE = {
+  PREPAID: '包年包月',
+  POSTPAID_BY_HOUR: '按量计费',
+};
+
+export const LB_ISP = {
+  CMCC: '中国移动',
+  CUCC: '中国联通',
+  CTCC: '中国电信',
+  BGP: 'BGP',
+};
+
+export const CLB_SPECS = {
+  'clb.c2.medium': '标准型规格',
+  'clb.c3.small': '高阶型1规格',
+  'clb.c3.medium': '高阶型2规格',
+  'clb.c4.small': '超强型1规格',
+  'clb.c4.medium': '超强型2规格',
+  'clb.c4.large': '超强型3规格',
+  'clb.c4.xlarge': '超强型4规格',
+};
