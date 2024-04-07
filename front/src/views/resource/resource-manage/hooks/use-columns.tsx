@@ -1379,6 +1379,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '所属VPC',
       field: 'cloud_vpc_ids',
+      isDefaultShow: true,
       render: ({ cell }: { cell: string[] }) => cell?.join(','),
     },
   ];

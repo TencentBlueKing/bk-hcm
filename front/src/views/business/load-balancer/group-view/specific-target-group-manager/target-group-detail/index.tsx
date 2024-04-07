@@ -1,7 +1,12 @@
-import { computed, defineComponent } from 'vue';
+import { PropType, computed, defineComponent } from 'vue';
 // import components
 import { Button } from 'bkui-vue';
 import RsConfigTable from '../../components/RsConfigTable';
+import AddOrUpdateTGSideslider from '../../components/AddOrUpdateTGSideslider';
+import AddRsDialog from '../../components/AddRsDialog';
+// import utils
+import bus from '@/common/bus';
+import { timeFormatter } from '@/common/util';
 import './index.scss';
 
 export default defineComponent({
@@ -10,6 +15,9 @@ export default defineComponent({
     detail: {
       required: true,
       type: Object,
+    },
+    getTargetGroupDetail: {
+      type: Function as PropType<(...args: any) => any>,
     },
   },
   setup(props) {
@@ -39,18 +47,24 @@ export default defineComponent({
           },
           {
             label: '创建时间',
-            value: props.detail.created_at,
+            value: timeFormatter(props.detail.created_at),
           },
         ],
       },
       {
         title: 'RS 信息',
-        content: <RsConfigTable noOperation details={props.detail.target_list} />,
+        content: <RsConfigTable onlyShow rsList={props.detail.target_list} />,
       },
     ]);
+
+    // click-handler - 编辑目标组
+    const handleEditTargetGroup = () => {
+      bus.$emit('editTargetGroup', { ...props.detail, rs_list: props.detail.target_list });
+    };
+
     return () => (
       <div class='target-group-detail-page'>
-        <Button class='fixed-operate-btn' outline theme='primary'>
+        <Button class='fixed-operate-btn' outline theme='primary' onClick={handleEditTargetGroup}>
           编辑
         </Button>
         <div class='detail-info-container'>
@@ -69,6 +83,8 @@ export default defineComponent({
             </div>
           ))}
         </div>
+        <AddOrUpdateTGSideslider origin='info' getTargetGroupDetail={props.getTargetGroupDetail} />
+        <AddRsDialog />
       </div>
     );
   },

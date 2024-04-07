@@ -16,9 +16,9 @@ export default defineComponent({
   props: {
     rsList: Array<any>,
     accountId: String,
-    noOperation: Boolean,
     noSearch: Boolean,
     noDisabled: Boolean, // 禁用所有disabled
+    onlyShow: Boolean, // 只用于显示(基本信息页面使用)
   },
   emits: ['update:rsList'],
   setup(props, { emit }) {
@@ -83,48 +83,65 @@ export default defineComponent({
     const rsTableColumns = [
       ...columns,
       {
-        label: () => (
-          <>
-            <span>端口</span>
-            <BatchUpdatePopConfirm
-              title='端口'
-              onUpdateValue={(v) => handleBatchUpdate(v, 'port')}
-              disabled={!props.noDisabled && !isInitialState.value && !isBatchUpdatePort.value && !isAddRs.value}
-            />
-          </>
-        ),
+        label: () => {
+          if (props.onlyShow) return '端口';
+          return (
+            <>
+              <span>端口</span>
+              <BatchUpdatePopConfirm
+                title='端口'
+                onUpdateValue={(v) => handleBatchUpdate(v, 'port')}
+                disabled={!props.noDisabled && !isInitialState.value && !isBatchUpdatePort.value && !isAddRs.value}
+              />
+            </>
+          );
+        },
         field: 'port',
         isDefaultShow: true,
-        render: ({ cell, data }: { cell: number; data: any }) => (
-          <Input
-            modelValue={cell}
-            onUpdate:modelValue={handleUpdate(data.id, 'port')}
-            disabled={!props.noDisabled && !(isAdd.value || isBatchUpdatePort.value || (isAddRs.value && data.isNew))}
-          />
-        ),
+        render: ({ cell, data }: { cell: number; data: any }) => {
+          if (props.onlyShow) return cell;
+          return (
+            <Input
+              modelValue={cell}
+              onUpdate:modelValue={handleUpdate(data.id, 'port')}
+              disabled={!props.noDisabled && !(isAdd.value || isBatchUpdatePort.value || (isAddRs.value && data.isNew))}
+            />
+          );
+        },
       },
       {
-        label: () => (
-          <>
-            <span>权重</span>
-            <BatchUpdatePopConfirm
-              title='权重'
-              onUpdateValue={(v) => handleBatchUpdate(v, 'weight')}
-              disabled={!props.noDisabled && !isInitialState.value && !isBatchUpdateWeight.value && !isAddRs.value}
-            />
-          </>
-        ),
+        label: () => {
+          if (props.onlyShow) return '权重';
+          return (
+            <>
+              <span>权重</span>
+              <BatchUpdatePopConfirm
+                title='权重'
+                onUpdateValue={(v) => handleBatchUpdate(v, 'weight')}
+                disabled={!props.noDisabled && !isInitialState.value && !isBatchUpdateWeight.value && !isAddRs.value}
+              />
+            </>
+          );
+        },
         field: 'weight',
         isDefaultShow: true,
-        render: ({ cell, data }: { cell: number; data: any }) => (
-          <Input
-            modelValue={cell}
-            onUpdate:modelValue={handleUpdate(data.id, 'weight')}
-            disabled={!props.noDisabled && !(isAdd.value || isBatchUpdateWeight.value || (isAddRs.value && data.isNew))}
-          />
-        ),
+        render: ({ cell, data }: { cell: number; data: any }) => {
+          if (props.onlyShow) return cell;
+          return (
+            <Input
+              modelValue={cell}
+              onUpdate:modelValue={handleUpdate(data.id, 'weight')}
+              disabled={
+                !props.noDisabled && !(isAdd.value || isBatchUpdateWeight.value || (isAddRs.value && data.isNew))
+              }
+            />
+          );
+        },
       },
-      {
+    ];
+    // 如果组件仅用于显示, 则不需要操作列
+    if (!props.onlyShow)
+      rsTableColumns.push({
         label: '',
         width: 80,
         render: ({ data }: any) => (
@@ -132,8 +149,7 @@ export default defineComponent({
             <i class='hcm-icon bkhcm-icon-minus-circle-shape'></i>
           </Button>
         ),
-      },
-    ];
+      });
     // 补充 port 和 weight 的 settings 配置
     settings.value.checked.push('port', 'weight');
     settings.value.fields.push({ label: '端口', field: 'port' }, { label: '权重', field: 'weight' });
@@ -145,8 +161,8 @@ export default defineComponent({
 
     return () => (
       <div class='rs-config-table'>
-        <div class={`rs-config-operation-wrap${props.noOperation ? ' jc-right' : ''}`}>
-          {props.noOperation ? null : (
+        <div class={`rs-config-operation-wrap${props.onlyShow ? ' jc-right' : ''}`}>
+          {props.onlyShow ? null : (
             <Button
               class='left-wrap'
               text
