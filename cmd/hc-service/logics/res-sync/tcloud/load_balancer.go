@@ -413,6 +413,7 @@ func convertTCloudExtension(cloud typeslb.TCloudClb) *corelb.TCloudClbExtension 
 		Snat:                     cvt.PtrToVal(cloud.Snat),
 		SnatPro:                  cvt.PtrToVal(cloud.SnatPro),
 		MixIpTarget:              cvt.PtrToVal(cloud.MixIpTarget),
+		ChargeType:               cvt.PtrToVal(cloud.ChargeType),
 		// 该接口无法获取下列字段
 		BandwidthPackageId: nil,
 	}
@@ -460,6 +461,7 @@ func convCloudToDBUpdate(id string,
 			SlaType:                  cvt.PtrToVal(cloud.SlaType),
 			VipIsp:                   cvt.PtrToVal(cloud.VipIsp),
 			LoadBalancerPassToTarget: cvt.PtrToVal(cloud.LoadBalancerPassToTarget),
+			ChargeType:               cvt.PtrToVal(cloud.ChargeType),
 
 			IPv6Mode: cvt.PtrToVal(cloud.IPv6Mode),
 			Snat:     cvt.PtrToVal(cloud.Snat),
@@ -600,7 +602,9 @@ func isLBExtensionChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) 
 	if db.Extension.SnatPro != cvt.PtrToVal(cloud.SnatPro) {
 		return true
 	}
-
+	if db.Extension.ChargeType != cvt.PtrToVal(cloud.ChargeType) {
+		return true
+	}
 	// SnatIP列表对比
 	if isSnatIPChange(cloud, db) {
 		return true

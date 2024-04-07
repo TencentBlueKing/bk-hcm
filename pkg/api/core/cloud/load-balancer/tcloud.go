@@ -41,7 +41,10 @@ type TCloudClbExtension struct {
 		若需要创建共享型实例，则无需填写此参数。
 	*/
 	SlaType string `json:"sla_type,omitempty"`
-
+	/*
+		ChargeType 负载均衡实例的计费类型，PREPAID：包年包月，POSTPAID_BY_HOUR：按量计费
+	*/
+	ChargeType string `json:"charge_type"`
 	/*
 		VipIsp 仅适用于公网负载均衡。
 		目前仅广州、上海、南京、济南、杭州、福州、北京、石家庄、武汉、长沙、成都、重庆地域支持静态单线 IP 线路类型，
