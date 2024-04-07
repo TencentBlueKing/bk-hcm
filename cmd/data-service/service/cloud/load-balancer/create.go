@@ -414,7 +414,7 @@ func (svc *lbSvc) BatchCreateTCloudUrlRule(cts *rest.Contexts) (any, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	models := make([]*tablelb.TCloudLbUrlRuleTable, 0, len(req.UrlRules))
+	ruleModels := make([]*tablelb.TCloudLbUrlRuleTable, 0, len(req.UrlRules))
 	for _, rule := range req.UrlRules {
 
 		ruleModel := &tablelb.TCloudLbUrlRuleTable{
@@ -451,17 +451,47 @@ func (svc *lbSvc) BatchCreateTCloudUrlRule(cts *rest.Contexts) (any, error) {
 			return nil, err
 		}
 		ruleModel.Certificate = types.JsonField(certJson)
-		models = append(models, ruleModel)
+		ruleModels = append(ruleModels, ruleModel)
 	}
 
 	// 创建
 	result, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
 
-		ids, err := svc.dao.LoadBalancerTCloudUrlRule().BatchCreateWithTx(cts.Kit, txn, models)
+		ids, err := svc.dao.LoadBalancerTCloudUrlRule().BatchCreateWithTx(cts.Kit, txn, ruleModels)
 		if err != nil {
 			logs.Errorf("fail to batch create lb rule, err: %v, rid:%s", err, cts.Kit.Rid)
 			return nil, fmt.Errorf("batch create lb rule failed, err: %v", err)
 		}
+		// 根据id 创建关联关系
+		relModels := make([]*tablelb.TargetGroupListenerRuleRelTable, 0, len(req.UrlRules))
+		for i, rule := range req.UrlRules {
+			// 跳过没有设置目标组id的规则
+			if len(rule.TargetGroupID) == 0 {
+				continue
+			}
+
+			relModels = append(relModels, &tablelb.TargetGroupListenerRuleRelTable{
+				ListenerRuleID:      ids[i],
+				CloudListenerRuleID: rule.CloudID,
+				ListenerRuleType:    enumor.Layer7RuleType,
+				TargetGroupID:       rule.TargetGroupID,
+				CloudTargetGroupID:  rule.CloudTargetGroupID,
+				LbID:                rule.LbID,
+				CloudLbID:           rule.CloudLbID,
+				LblID:               rule.LblID,
+				CloudLblID:          rule.CloudLBLID,
+				BindingStatus:       enumor.SuccessBindingStatus,
+				Detail:              "{}",
+				Creator:             cts.Kit.User,
+				Reviser:             cts.Kit.User,
+			})
+		}
+		_, err = svc.dao.LoadBalancerTargetGroupListenerRuleRel().BatchCreateWithTx(cts.Kit, txn, relModels)
+		if err != nil {
+			logs.Errorf("fail to create rule rel, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+
 		return ids, nil
 	})
 	if err != nil {

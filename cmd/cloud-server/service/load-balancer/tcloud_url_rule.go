@@ -1,10 +1,13 @@
 package loadbalancer
 
 import (
+	"fmt"
+
 	lblogic "hcm/cmd/cloud-server/logics/load-balancer"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/enumor"
@@ -17,6 +20,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
+	"hcm/pkg/tools/slice"
 )
 
 // ListTCloudRuleByTG ...
@@ -337,6 +341,11 @@ func (svc *lbSvc) GetBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 // CreateBizTCloudUrlRule 业务下新建腾讯云url规则
 func (svc *lbSvc) CreateBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 
+	bizID := cts.PathParameter("bk_biz_id").String()
+	if len(bizID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "bk_biz_id id is required")
+	}
+
 	lblID := cts.PathParameter("lbl_id").String()
 	if len(lblID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "listener id is required")
@@ -359,7 +368,7 @@ func (svc *lbSvc) CreateBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
-	req := new(hcproto.TCloudRuleBatchCreateReq)
+	req := new(cslb.TCloudRuleBatchCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -368,7 +377,81 @@ func (svc *lbSvc) CreateBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	return svc.client.HCService().TCloud.Clb.BatchCreateUrlRule(cts.Kit, lblID, req)
+	// 取出目标组id并去重
+	tgIds := slice.Unique(slice.Map(req.Rules, func(r cslb.TCloudRuleCreate) string { return r.TargetGroupID }))
+
+	if len(tgIds) != len(req.Rules) {
+		return nil, errf.New(errf.InvalidParameter, "each target group can only be bound with one rule")
+	}
+
+	tgMap, err := svc.targetGroupListAndBindCheck(cts.Kit, bizID, tgIds)
+	if err != nil {
+		return nil, err
+	}
+
+	hcReq := &hcproto.TCloudRuleBatchCreateReq{Rules: make([]hcproto.TCloudRuleCreate, 0, len(req.Rules))}
+	for _, rule := range req.Rules {
+		hcReq.Rules = append(hcReq.Rules, hcproto.TCloudRuleCreate{
+			Url:                rule.Url,
+			TargetGroupID:      rule.TargetGroupID,
+			CloudTargetGroupID: tgMap[rule.TargetGroupID].CloudID,
+			Domains:            rule.Domains,
+			SessionExpireTime:  rule.SessionExpireTime,
+			Scheduler:          rule.Scheduler,
+			ForwardType:        rule.ForwardType,
+			DefaultServer:      rule.DefaultServer,
+			Http2:              rule.Http2,
+			TargetType:         rule.TargetType,
+			Quic:               rule.Quic,
+			TrpcFunc:           rule.TrpcFunc,
+			TrpcCallee:         rule.TrpcCallee,
+			HealthCheck:        tgMap[rule.TargetGroupID].HealthCheck,
+			Certificates:       rule.Certificates,
+			Memo:               rule.Memo,
+		})
+	}
+
+	return svc.client.HCService().TCloud.Clb.BatchCreateUrlRule(cts.Kit, lblID, hcReq)
+}
+
+func (svc *lbSvc) targetGroupListAndBindCheck(kt *kit.Kit, bizID string, tgIds []string) (
+	map[string]*corelb.BaseTargetGroup, error) {
+
+	// 检查目标组存在
+	tgResp, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroup(kt, &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("bk_biz_id", bizID),
+			tools.RuleIn("id", tgIds),
+		),
+		Page: core.NewDefaultBasePage(),
+	})
+	if err != nil {
+		logs.Errorf("fail to query target group info, err: %v, tg ids: %v, rid: %s", err, tgIds, kt.Rid)
+		return nil, err
+	}
+	// 防止重复绑定
+	if len(tgResp.Details) != len(tgIds) {
+		logs.Errorf("some target group can not be found, rid: %s", kt.Rid)
+		return nil, errf.New(errf.RecordNotFound, "some target group can not be found")
+	}
+	tgMap := make(map[string]*corelb.BaseTargetGroup, len(tgResp.Details))
+	for i, detail := range tgResp.Details {
+		tgMap[detail.ID] = &tgResp.Details[i]
+	}
+	// 检查对应的目标组是否被绑定
+	relResp, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, &core.ListReq{
+		Filter: tools.ContainersExpression("target_group_id", tgIds),
+		Page:   core.NewDefaultBasePage(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(relResp.Details) > 0 {
+		rel := relResp.Details[0]
+		return nil, fmt.Errorf("target group(%s) already been bound to rule or listener(%s), rid: %s",
+			rel.TargetGroupID, rel.CloudListenerRuleID)
+	}
+	return tgMap, nil
 }
 
 // UpdateBizTCloudUrlRule 更新规则

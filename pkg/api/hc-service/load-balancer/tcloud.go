@@ -191,7 +191,11 @@ func (req *TCloudRuleBatchCreateReq) Validate() error {
 
 // TCloudRuleCreate 腾讯云url规则创建
 type TCloudRuleCreate struct {
-	Url               string   `json:"url,omitempty" validate:"required"`
+	Url string `json:"url,omitempty" validate:"required"`
+
+	TargetGroupID      string `json:"target_group_id" validate:"omitempty"`
+	CloudTargetGroupID string `json:"cloud_target_group_id" validate:"omitempty"`
+
 	Domains           []string `json:"domains,omitempty"`
 	SessionExpireTime *int64   `json:"session_expire_time,omitempty"`
 	Scheduler         *string  `json:"scheduler,omitempty"`
@@ -205,6 +209,8 @@ type TCloudRuleCreate struct {
 
 	HealthCheck  *corelb.TCloudHealthCheckInfo `json:"health_check,omitempty"`
 	Certificates *corelb.TCloudCertificateInfo `json:"certificates,omitempty"`
+
+	Memo *string `json:"memo,omitempty"`
 }
 
 // Validate request.

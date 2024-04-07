@@ -92,16 +92,15 @@ func (svc *clbSvc) TCloudCreateUrlRule(cts *rest.Contexts) (any, error) {
 			CloudID:            cloudID,
 			Name:               req.Rules[i].Url,
 			RuleType:           enumor.Layer7RuleType,
-			TargetGroupID:      "",
-			CloudTargetGroupID: "",
+			TargetGroupID:      req.Rules[i].TargetGroupID,
+			CloudTargetGroupID: req.Rules[i].TargetGroupID,
 			Domain:             req.Rules[i].Domains[0],
 			URL:                req.Rules[i].Url,
 			Scheduler:          cvt.PtrToVal(req.Rules[i].Scheduler),
-			SessionType:        "",
-			SessionExpire:      0,
-			HealthCheck:        nil,
-			Certificate:        nil,
-			Memo:               nil,
+			SessionExpire:      cvt.PtrToVal(req.Rules[i].SessionExpireTime),
+			HealthCheck:        req.Rules[i].HealthCheck,
+			Certificate:        req.Rules[i].Certificates,
+			Memo:               req.Rules[i].Memo,
 		})
 	}
 	_, err = svc.dataCli.TCloud.LoadBalancer.BatchCreateTCloudUrlRule(cts.Kit, createReq)
