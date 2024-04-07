@@ -307,6 +307,9 @@ func (svc *clbSvc) TCloudBatchDeleteUrlRuleByDomain(cts *rest.Contexts) (any, er
 			err, req.Domains, cts.Kit.Rid)
 		return nil, err
 	}
+	if !listener.Protocol.IsLayer7Protocol() {
+		return nil, errf.Newf(errf.InvalidParameter, "unsupported listner protocol type: %s", listener.Protocol)
+	}
 	ruleOption := typelb.TCloudDeleteRuleOption{
 		Region:                 lb.Region,
 		LoadBalancerId:         lb.CloudID,
