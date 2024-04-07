@@ -1,4 +1,4 @@
-import { computed, defineComponent, reactive, ref, watch } from 'vue';
+import { PropType, computed, defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
 import { Button, Exception, InfoBox, Input, Message, Tag } from 'bkui-vue';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
@@ -6,7 +6,7 @@ import SearchInput from '@/views/scheme/components/search-input';
 import CommonSideslider from '@/components/common-sideslider';
 import CommonDialog from '@/components/common-dialog';
 import { useAccountStore, useBusinessStore } from '@/store';
-import { Plus } from 'bkui-vue/lib/icon';
+import { Plus, Success } from 'bkui-vue/lib/icon';
 import { useTable } from '@/hooks/useTable/useTable';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
@@ -14,6 +14,7 @@ import { useLoadBalancerStore } from '@/store/loadbalancer';
 import ExpandCard from './expand-card';
 import { QueryRuleOPEnum } from '@/typings';
 import { VendorEnum } from '@/common/constant';
+import { IDetail } from '@/hooks/useRouteLinkBtn';
 
 export const SecuirtyRuleDirection = {
   in: 'ingress',
@@ -21,8 +22,13 @@ export const SecuirtyRuleDirection = {
 };
 
 export default defineComponent({
-  setup() {
-    const rsCheckRes = ref('a');
+  props: {
+    detail: Object as PropType<IDetail>,
+    getDetails: Function,
+    updateLb: Function,
+  },
+  setup(props) {
+    const rsCheckRes = ref(false);
     const securityRuleType = ref(SecuirtyRuleDirection.in);
     const isSideSliderShow = ref(false);
     const businessStore = useBusinessStore();
@@ -198,24 +204,51 @@ export default defineComponent({
       },
     );
 
+    watch(
+      () => props.detail?.extension?.load_balancer_pass_to_target,
+      (isPass) => {
+        rsCheckRes.value = !!isPass;
+      },
+    );
+
     return () => (
       <div>
         <div class={'rs-check-selector-container'}>
           <div
-            class={`${rsCheckRes.value === 'a' ? 'rs-check-selector-active' : 'rs-check-selector'}`}
+            class={`${rsCheckRes.value ? 'rs-check-selector-active' : 'rs-check-selector'}`}
             onClick={() => {
-              rsCheckRes.value = 'a';
+              rsCheckRes.value = true;
+              props.updateLb({
+                load_balancer_pass_to_target: true,
+              });
             }}>
             <Tag theme='warning'>2 次检测</Tag>
             <span>依次经过负载均衡和RS的安全组 2 次检测</span>
+            <Success
+              width={14}
+              height={14}
+              fill='#3A84FF'
+              style={{ visibility: !rsCheckRes.value ? 'hidden' : 'visible' }}
+              class={'rs-check-icon'}
+            />
           </div>
           <div
-            class={`${rsCheckRes.value === 'b' ? 'rs-check-selector-active' : 'rs-check-selector'}`}
+            class={`${!rsCheckRes.value ? 'rs-check-selector-active' : 'rs-check-selector'}`}
             onClick={() => {
-              rsCheckRes.value = 'b';
+              rsCheckRes.value = false;
+              props.updateLb({
+                load_balancer_pass_to_target: false,
+              });
             }}>
             <Tag theme='warning'>1 次检测</Tag>
             <span>只经过负载均衡的安全组 1 次检测，忽略后端RS的安全组检测</span>
+            <Success
+              width={14}
+              height={14}
+              fill='#3A84FF'
+              style={{ visibility: rsCheckRes.value ? 'hidden' : 'visible' }}
+              class={'rs-check-icon'}
+            />
           </div>
         </div>
         <div class={'security-rule-container'}>

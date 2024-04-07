@@ -1,17 +1,26 @@
-import { defineComponent, ref, watch } from 'vue';
+import { PropType, defineComponent, ref, watch } from 'vue';
 import './index.scss';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import { Switcher, Tag } from 'bkui-vue';
 import StatusNormal from '@/assets/image/Status-normal.png';
 import StatusUnknown from '@/assets/image/Status-unknown.png';
-import { useLoadBalancerStore } from '@/store/loadbalancer';
-import { useBusinessStore } from '@/store';
+import { useLoadBalancerStore } from '@/store';
+import { timeFormatter } from '@/common/util';
+import { useRouteLinkBtn, TypeEnum, IDetail } from '@/hooks/useRouteLinkBtn';
+
+import { CHARGE_TYPE, CLB_SPECS, LB_ISP, LB_TYPE_MAP } from '@/common/constant';
+import { useRegionsStore } from '@/store/useRegionsStore';
 
 export default defineComponent({
-  setup() {
-    const detail: { [key: string]: any } = ref({});
+  props: {
+    detail: Object as PropType<IDetail>,
+    getDetails: Function,
+    updateLb: Function,
+  },
+  setup(props) {
     const loadBalancerStore = useLoadBalancerStore();
-    const businessStore = useBusinessStore();
+    const regionStore = useRegionsStore();
+    const isProtected = ref(false);
     const resourceFields = [
       {
         name: '名称',
@@ -20,7 +29,14 @@ export default defineComponent({
       },
       {
         name: '所属网络',
-        prop: 'vpc_id',
+        prop: 'cloud_vpc_id',
+        render() {
+          return useRouteLinkBtn(props.detail, {
+            id: 'vpc_id',
+            name: 'cloud_vpc_id',
+            type: TypeEnum.VPC,
+          });
+        },
       },
       {
         name: 'ID',
@@ -30,8 +46,17 @@ export default defineComponent({
         name: '删除保护',
         render: () => (
           <div>
-            <Switcher class={'mr5'} />
-            <Tag>未开启</Tag>
+            <Switcher
+              class={'mr5'}
+              modelValue={isProtected.value}
+              onChange={(val) => {
+                isProtected.value = val;
+                props.updateLb({
+                  delete_protect: val,
+                });
+              }}
+            />
+            <Tag theme={isProtected.value ? 'success' : 'info'}> {isProtected.value ? '已开启' : '未开启'} </Tag>
           </div>
         ),
       },
@@ -40,31 +65,51 @@ export default defineComponent({
         render() {
           return (
             <div class={'status-wrapper'}>
-              <img src={!detail.value.status ? StatusUnknown : StatusNormal} class={'mr6'} width={14} height={14}></img>
-              <span>{!detail.value.status ? '创建中' : '正常运行'}</span>
+              <img src={!props.detail.status ? StatusUnknown : StatusNormal} class={'mr6'} width={14} height={14}></img>
+              <span>{!props.detail.status ? '创建中' : '正常运行'}</span>
             </div>
           );
         },
       },
       {
         name: 'IP版本',
-        prop: 'ip_type',
+        prop: 'ip_version',
       },
       {
         name: '网络类型',
-        prop: 'ip_version',
+        prop: 'lb_type',
+        render() {
+          return LB_TYPE_MAP[props.detail.lb_type];
+        },
       },
       {
         name: '创建时间',
         prop: 'created_at',
+        render() {
+          return timeFormatter(props.detail.created_at);
+        },
       },
       {
         name: '地域',
         prop: 'region',
+        render() {
+          return regionStore.getRegionName(props.detail.vendor, props.detail.region);
+        },
       },
       {
         name: '可用区域',
         prop: 'zones',
+        render() {
+          const mains = props.detail.zones;
+          const backups = props.detail.backup_zones;
+          const mainsStr = mains
+            ?.map((zone: string) => `${regionStore.getRegionName(props.detail.vendor, zone)}(主)`)
+            .join(',');
+          const backupsStr = backups
+            ?.map((zone: string) => `${regionStore.getRegionName(props.detail.vendor, zone)}(备)`)
+            .join(',');
+          return `${mainsStr}${backupsStr?.length ? `,${backupsStr}` : ''}`;
+        },
       },
     ];
 
@@ -75,53 +120,49 @@ export default defineComponent({
       },
       {
         name: '实例计费模式',
-        prop: '',
+        render() {
+          return CHARGE_TYPE[props.detail?.extension?.charge_type] || '--';
+        },
       },
       {
         name: '负载均衡VIP',
         render: () => {
-          return detail.value?.extension?.vip_isp;
+          return props.detail?.public_ipv4_addresses?.concat(props.detail?.public_ipv6_addresses) || '--';
         },
       },
       {
         name: '带宽计费模式',
         render: () => {
-          return detail.value?.extension?.internet_charge_type;
+          return props.detail?.extension?.internet_charge_type || '--';
         },
       },
       {
         name: '规格类型',
         render: () => {
-          return detail.value?.extension?.sla_type;
+          return CLB_SPECS[props.detail?.extension?.sla_type] || '--';
         },
       },
       {
         name: '带宽上限',
         render: () => {
-          return detail.value?.extension?.internet_max_bandwidth_out;
+          return props.detail?.extension?.internet_max_bandwidth_out || '--';
         },
       },
       {
         name: '运营商',
         render: () => {
-          return detail.value?.extension?.vip_isp;
+          return LB_ISP[props.detail?.extension?.vip_isp] || '--';
         },
       },
     ];
 
-    const getDetails = async (id: string) => {
-      const res = await businessStore.getLbDetail(id);
-      detail.value = res.data;
-    };
-
     watch(
-      () => loadBalancerStore.currentSelectedTreeNode,
-      (val) => {
-        const { id, type } = val;
-        if (type === 'lb' && id) getDetails(id);
+      () => props.detail.extension,
+      (extension) => {
+        isProtected.value = extension.delete_protect || false;
       },
       {
-        immediate: true,
+        deep: true,
       },
     );
 
@@ -129,11 +170,19 @@ export default defineComponent({
       <div class={'clb-detail-continer'}>
         <div>
           <p class={'clb-detail-info-title'}>资源信息</p>
-          <DetailInfo fields={resourceFields} detail={detail.value} class={'ml60'} />
+          <DetailInfo
+            fields={resourceFields}
+            detail={props.detail}
+            class={'ml60'}
+            onChange={async (payload) => {
+              await props.updateLb(payload);
+              await props.getDetails(loadBalancerStore.currentSelectedTreeNode.id);
+            }}
+          />
         </div>
         <div>
           <p class={'clb-detail-info-title'}>配置信息</p>
-          <DetailInfo fields={configFields} detail={detail.value} class={'ml60'} />
+          <DetailInfo fields={configFields} detail={props.detail} class={'ml60'} />
         </div>
       </div>
     );
