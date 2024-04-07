@@ -15,9 +15,7 @@ const { FormItem } = Form;
 export default defineComponent({
   name: 'AddOrUpdateTGSideslider',
   props: {
-    origin: String as PropType<'list' | 'info'>,
     getListData: Function as PropType<(...args: any) => any>,
-    getTargetGroupDetail: Function as PropType<(...args: any) => any>,
   },
   setup(props) {
     // use stores
@@ -121,7 +119,6 @@ export default defineComponent({
         case 'edit':
           promise = businessStore.editTargetGroups(resolveFormDataForEdit());
           message = '编辑成功';
-          break;
         case 'AddRs':
           promise = businessStore.addRsToTargetGroup(formData.id, resolveFormDataForAddRs());
           message = 'RS添加成功';
@@ -140,13 +137,7 @@ export default defineComponent({
         await promise;
         Message({ message, theme: 'success' });
         isShow.value = false;
-
-        // 如果组件用于list页面, 则重新请求list接口; 如果组件用于info页面, 则重新请求detail接口
-        if (props.origin === 'list') {
-          props.getListData();
-        } else {
-          props.getTargetGroupDetail(formData.id);
-        }
+        props.getListData();
       } finally {
         isSubmitDisabled.value = false;
       }

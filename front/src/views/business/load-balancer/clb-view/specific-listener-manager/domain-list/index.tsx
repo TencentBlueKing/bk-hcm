@@ -125,10 +125,9 @@ export default defineComponent({
     watch(
       () => loadBalancerStore.currentSelectedTreeNode,
       (val) => {
-        const { id, type, protocol } = val;
+        const { id, type } = val;
         if (type !== 'listener') return;
-        // 只有 type='listener', 并且不为7层时, 才去请求对应 listener 下的 domain 列表
-        if (['TCP', 'UDP'].includes(protocol)) return;
+        // 只有 type='listener' 时, 才去请求对应 listener 下的 domain 列表
         getDomainList(id);
       },
       {

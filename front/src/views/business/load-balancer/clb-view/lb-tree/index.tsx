@@ -107,8 +107,6 @@ export default defineComponent({
       if (searchValue.value) return null;
       return {
         callback: (_item: any, _callback: Function, _schema: any) => {
-          // 如果是4层监听器, 无需加载其下级资源
-          if (_item.type === 'listener' && ['TCP', 'UDP'].includes(_item.protocol)) return;
           // 异步加载当前点击节点的 children node
           loadRemoteData(_item, _schema.fullPath.split('-').length - 1);
         },

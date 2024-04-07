@@ -1,10 +1,10 @@
 import { defineComponent, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 // import components
-import { Message, Tag } from 'bkui-vue';
+import { Tag } from 'bkui-vue';
 import CommonSideslider from '@/components/common-sideslider';
 import RsConfigTable from '../../components/RsConfigTable';
 // import stores
-import { useLoadBalancerStore, useBusinessStore } from '@/store';
+import { useAccountStore, useLoadBalancerStore } from '@/store';
 // import utils
 import bus from '@/common/bus';
 import './index.scss';
@@ -14,14 +14,15 @@ export default defineComponent({
   setup() {
     // use stores
     const loadBalancerStore = useLoadBalancerStore();
-    const businessStore = useBusinessStore();
+    const accountStore = useAccountStore();
 
     const isShow = ref(false);
-    const isSubmitDisabled = ref(false);
     const accountId = ref(''); // 当前选中目标组同属的账号id
     const selectedTargetGroups = ref([]); // 当前选中目标组的信息
 
     const getDefaultFormData = () => ({
+      bk_biz_id: accountStore.bizs,
+      target_group_id: '',
       targets: [] as any[],
     });
     const clearFormData = () => {
@@ -33,34 +34,8 @@ export default defineComponent({
       isShow.value = true;
       accountId.value = account_id;
     };
-
-    // 处理参数
-    const resolveFormData = () => ({
-      targets: formData.targets.map(({ cloud_id, port, weight }) => ({
-        inst_type: 'CVM',
-        cloud_inst_id: cloud_id,
-        port,
-        weight,
-      })),
-    });
     // submit-handler
-    const handleSubmit = async () => {
-      const data = resolveFormData();
-      // 遍历当前选中的目标组, 为每个目标组添加rs
-      try {
-        isSubmitDisabled.value = true;
-        const requestList = selectedTargetGroups.value.map(({ id }) => businessStore.addRsToTargetGroup(id, data));
-        const results = await Promise.allSettled(requestList);
-        results.forEach(({ status }, index) => {
-          if (status === 'fulfilled') {
-            Message({ theme: 'success', message: `目标组【${selectedTargetGroups.value[index].name}】批量添加rs成功` });
-          }
-        });
-        isShow.value = false;
-      } finally {
-        isSubmitDisabled.value = false;
-      }
-    };
+    const handleSubmit = () => {};
 
     watch(isShow, (val) => {
       if (!val) clearFormData();
@@ -69,16 +44,7 @@ export default defineComponent({
     watch(
       () => loadBalancerStore.selectedRsList,
       (val) => {
-        formData.targets = [
-          ...formData.targets,
-          ...val.reduce((prev, curr) => {
-            // 已添加过的rs ip, 不允许重复添加
-            if (!formData.targets.find((item) => item.inst_id === curr.id || item.id === curr.id)) {
-              prev.push(curr);
-            }
-            return prev;
-          }, []),
-        ];
+        formData.targets = val;
       },
       {
         deep: true,
@@ -96,12 +62,7 @@ export default defineComponent({
     });
 
     return () => (
-      <CommonSideslider
-        title='批量添加 RS'
-        width={960}
-        v-model:isShow={isShow.value}
-        onHandleSubmit={handleSubmit}
-        isSubmitDisabled={isSubmitDisabled.value}>
+      <CommonSideslider title='批量添加 RS' width={960} v-model:isShow={isShow.value} onHandleSubmit={handleSubmit}>
         <div class='rs-sideslider-content'>
           <div class='selected-target-groups'>
             <span class='label'>已选择目标组</span>

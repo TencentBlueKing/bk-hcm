@@ -32,9 +32,6 @@ export default (isShow: Ref<boolean>, formData: any) => {
       // 变更操作场景为 edit
       updateCount.value === 2 && loadBalancerStore.setCurrentScene('edit');
     },
-    {
-      deep: true,
-    },
   );
 
   return {
