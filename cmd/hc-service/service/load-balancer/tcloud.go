@@ -75,6 +75,8 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 		svc.BatchCreateTCloudTargets)
 	h.Add("BatchRemoveTCloudTargets", http.MethodDelete,
 		"/vendors/tcloud/target_groups/{target_group_id}/targets/batch", svc.BatchRemoveTCloudTargets)
+	h.Add("BatchModifyTCloudTargetsPort", http.MethodPatch,
+		"/vendors/tcloud/target_groups/{target_group_id}/targets/port", svc.BatchModifyTCloudTargetsPort)
 
 	h.Load(cap.WebService)
 }

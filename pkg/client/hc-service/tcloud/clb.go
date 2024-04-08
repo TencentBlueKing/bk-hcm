@@ -134,10 +134,18 @@ func (c *ClbClient) BatchAddRs(kt *kit.Kit, targetGroupID string, req *hcproto.T
 		c.client, http.MethodPost, kt, req, "/target_groups/%s/targets/create", targetGroupID)
 }
 
-// BatchRemoveRs 批量移除RS
-func (c *ClbClient) BatchRemoveRs(kt *kit.Kit, targetGroupID string, req *hcproto.TCloudBatchOperateTargetReq) (
+// BatchRemoveTarget 批量移除RS
+func (c *ClbClient) BatchRemoveTarget(kt *kit.Kit, targetGroupID string, req *hcproto.TCloudBatchOperateTargetReq) (
 	*hcproto.BatchCreateResult, error) {
 
 	return common.Request[hcproto.TCloudBatchOperateTargetReq, hcproto.BatchCreateResult](
 		c.client, http.MethodDelete, kt, req, "/target_groups/%s/targets/batch", targetGroupID)
+}
+
+// BatchModifyTargetPort 批量修改RS端口
+func (c *ClbClient) BatchModifyTargetPort(kt *kit.Kit, targetGroupID string,
+	req *hcproto.TCloudBatchOperateTargetReq) error {
+
+	return common.RequestNoResp[hcproto.TCloudBatchOperateTargetReq](
+		c.client, http.MethodPatch, kt, req, "/target_groups/%s/targets/port", targetGroupID)
 }

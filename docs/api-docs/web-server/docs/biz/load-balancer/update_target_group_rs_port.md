@@ -10,35 +10,19 @@ PATCH /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/targets/por
 
 ### 输入参数
 
-| 参数名称          | 参数类型       | 必选 | 描述                |
-|------------------|--------------|------|--------------------|
-| bk_biz_id        | int          | 是   | 业务ID              |
-| target_group_id  | string       | 是   | 目标组ID            |
-| new_port         | int          | 是   | 新端口              |
-| targets          | object array | 是   | RS列表，单次最多100个 |
-
-#### targets
-
-| 参数名称          | 参数类型       | 必选 | 描述                   |
-|------------------|--------------|------|-----------------------|
-| inst_type        | string       | 是   | 实例类型(CVM:云服务器)   |
-| cloud_inst_id    | string       | 是   | 云实例ID               |
-| port             | int          | 是   | 端口                   |
-| weight           | int          | 是   | 权重,取值范围：[0, 100] |
+| 参数名称          | 参数类型       | 必选 | 描述                    |
+|------------------|--------------|------|------------------------|
+| bk_biz_id        | int          | 是   | 业务ID                  |
+| target_group_id  | string       | 是   | 目标组ID                 |
+| target_ids       | string array | 是   | 目标ID数组，单次最多20个  |
+| new_port         | int          | 是   | 新端口                   |
 
 ### 调用示例
 
 ```json
 {
-  "new_port": 8081,
-  "targets": [
-    {
-      "inst_type": "CVM",
-      "cloud_inst_id": "cvm-xxxxxx",
-      "port": 8000,
-      "weight": 10
-    }
-  ]
+  "target_ids": ["00000001"],
+  "new_port": 8081
 }
 ```
 

@@ -181,6 +181,7 @@ create table `load_balancer_target`
     `weight`                bigint       not null,
     `private_ip_address`    json         not null,
     `public_ip_address`     json         not null,
+    `cloud_vpc_ids`         json                  default null,
     `zone`                  varchar(255) not null default '',
     `memo`                  varchar(255)          default '',
 

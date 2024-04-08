@@ -56,9 +56,10 @@ func register() {
 	action.RegisterAction(actionsg.CreateHuaweiSGRuleAction{})
 	action.RegisterAction(actioneip.DeleteEIPAction{})
 
-	action.RegisterAction(actionlb.AddRsAction{})
+	action.RegisterAction(actionlb.AddTargetToGroupAction{})
 	action.RegisterAction(actionflow.FlowWatchAction{})
 	action.RegisterTpl(actionflow.FlowWatchTpl)
-	action.RegisterAction(actionlb.RemoveRsAction{})
+	action.RegisterAction(actionlb.RemoveTargetAction{})
+	action.RegisterAction(actionlb.ModifyTargetPortAction{})
 
 }
