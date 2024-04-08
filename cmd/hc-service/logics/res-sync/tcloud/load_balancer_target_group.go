@@ -68,6 +68,9 @@ func (cli *client) ListenerTargets(kt *kit.Kit, param *SyncBaseParams, opt *Sync
 				// 只要本地没有目标组就跳过RS同步
 				continue
 			}
+			if rel.BindingStatus == enumor.BindingBindingStatus {
+				continue
+			}
 			tgId := rel.TargetGroupID
 			if _, exists := processedTargetGroup[tgId]; exists {
 				continue
@@ -90,6 +93,9 @@ func (cli *client) ListenerTargets(kt *kit.Kit, param *SyncBaseParams, opt *Sync
 					return err
 				}
 				// 跳过比较
+				continue
+			}
+			if rel.BindingStatus == enumor.BindingBindingStatus {
 				continue
 			}
 			tgId := rel.TargetGroupID

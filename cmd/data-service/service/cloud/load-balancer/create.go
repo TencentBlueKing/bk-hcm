@@ -401,7 +401,7 @@ func (svc *lbSvc) CreateTargetGroupListenerRel(cts *rest.Contexts) (any, error) 
 	return &core.BatchCreateResult{IDs: ids}, nil
 }
 
-// BatchCreateTCloudUrlRule 批量创建腾讯云url规则 纯规则条目创建，不校验监听器
+// BatchCreateTCloudUrlRule 批量创建腾讯云url规则 纯规则条目创建，不校验监听器，无关联关系
 func (svc *lbSvc) BatchCreateTCloudUrlRule(cts *rest.Contexts) (any, error) {
 	req := new(dataproto.TCloudUrlRuleBatchCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -416,45 +416,14 @@ func (svc *lbSvc) BatchCreateTCloudUrlRule(cts *rest.Contexts) (any, error) {
 
 	ruleModels := make([]*tablelb.TCloudLbUrlRuleTable, 0, len(req.UrlRules))
 	for _, rule := range req.UrlRules {
-
-		ruleModel := &tablelb.TCloudLbUrlRuleTable{
-			CloudID:            rule.CloudID,
-			Name:               rule.Name,
-			RuleType:           rule.RuleType,
-			LbID:               rule.LbID,
-			CloudLbID:          rule.CloudLbID,
-			LblID:              rule.LblID,
-			CloudLBLID:         rule.CloudLBLID,
-			TargetGroupID:      rule.TargetGroupID,
-			CloudTargetGroupID: rule.CloudTargetGroupID,
-			Domain:             rule.Domain,
-			URL:                rule.URL,
-			Scheduler:          rule.Scheduler,
-			SessionType:        rule.SessionType,
-			SessionExpire:      rule.SessionExpire,
-			Memo:               rule.Memo,
-
-			Creator: cts.Kit.User,
-			Reviser: cts.Kit.User,
-		}
-		healthCheckJson, err := json.MarshalToString(rule.HealthCheck)
+		ruleModel, err := svc.convRule(cts.Kit, rule)
 		if err != nil {
-			logs.Errorf("fail to marshal health check into json, err: %v, healthcheck: %+v, rid: %s",
-				err, rule.HealthCheck, cts.Kit.Rid)
 			return nil, err
 		}
-		ruleModel.HealthCheck = types.JsonField(healthCheckJson)
-		certJson, err := json.MarshalToString(rule.Certificate)
-		if err != nil {
-			logs.Errorf("fail to marshal certificate into json, err: %v, certificate: %+v, rid: %s",
-				err, rule.Certificate, cts.Kit.Rid)
-			return nil, err
-		}
-		ruleModel.Certificate = types.JsonField(certJson)
 		ruleModels = append(ruleModels, ruleModel)
 	}
 
-	// 创建
+	// 创建规则和关联关系
 	result, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
 
 		ids, err := svc.dao.LoadBalancerTCloudUrlRule().BatchCreateWithTx(cts.Kit, txn, ruleModels)
@@ -469,29 +438,17 @@ func (svc *lbSvc) BatchCreateTCloudUrlRule(cts *rest.Contexts) (any, error) {
 			if len(rule.TargetGroupID) == 0 {
 				continue
 			}
-
-			relModels = append(relModels, &tablelb.TargetGroupListenerRuleRelTable{
-				ListenerRuleID:      ids[i],
-				CloudListenerRuleID: rule.CloudID,
-				ListenerRuleType:    enumor.Layer7RuleType,
-				TargetGroupID:       rule.TargetGroupID,
-				CloudTargetGroupID:  rule.CloudTargetGroupID,
-				LbID:                rule.LbID,
-				CloudLbID:           rule.CloudLbID,
-				LblID:               rule.LblID,
-				CloudLblID:          rule.CloudLBLID,
-				BindingStatus:       enumor.SuccessBindingStatus,
-				Detail:              "{}",
-				Creator:             cts.Kit.User,
-				Reviser:             cts.Kit.User,
-			})
+			// 默认设置为绑定中状态，防止同步时本地目标组rs被清掉
+			relModels = append(relModels, svc.convRuleRel(cts.Kit, ids[i], rule, enumor.BindingBindingStatus))
+		}
+		if len(relModels) == 0 {
+			return ids, nil
 		}
 		_, err = svc.dao.LoadBalancerTargetGroupListenerRuleRel().BatchCreateWithTx(cts.Kit, txn, relModels)
 		if err != nil {
 			logs.Errorf("fail to create rule rel, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
-
 		return ids, nil
 	})
 	if err != nil {
@@ -505,6 +462,66 @@ func (svc *lbSvc) BatchCreateTCloudUrlRule(cts *rest.Contexts) (any, error) {
 	}
 
 	return &core.BatchCreateResult{IDs: ids}, nil
+}
+
+func (svc *lbSvc) convRuleRel(kt *kit.Kit, listenerRuleID string, rule dataproto.TCloudUrlRuleCreate,
+	bindingStatus enumor.BindingStatus) *tablelb.TargetGroupListenerRuleRelTable {
+
+	return &tablelb.TargetGroupListenerRuleRelTable{
+		ListenerRuleID:      listenerRuleID,
+		CloudListenerRuleID: rule.CloudID,
+		ListenerRuleType:    enumor.Layer7RuleType,
+		TargetGroupID:       rule.TargetGroupID,
+		CloudTargetGroupID:  rule.CloudTargetGroupID,
+		LbID:                rule.LbID,
+		CloudLbID:           rule.CloudLbID,
+		LblID:               rule.LblID,
+		CloudLblID:          rule.CloudLBLID,
+		BindingStatus:       bindingStatus,
+		Detail:              "{}",
+		Creator:             kt.User,
+		Reviser:             kt.User,
+	}
+}
+
+func (svc *lbSvc) convRule(kt *kit.Kit, rule dataproto.TCloudUrlRuleCreate) (
+	*tablelb.TCloudLbUrlRuleTable, error) {
+
+	ruleModel := &tablelb.TCloudLbUrlRuleTable{
+		CloudID:            rule.CloudID,
+		Name:               rule.Name,
+		RuleType:           rule.RuleType,
+		LbID:               rule.LbID,
+		CloudLbID:          rule.CloudLbID,
+		LblID:              rule.LblID,
+		CloudLBLID:         rule.CloudLBLID,
+		TargetGroupID:      rule.TargetGroupID,
+		CloudTargetGroupID: rule.CloudTargetGroupID,
+		Domain:             rule.Domain,
+		URL:                rule.URL,
+		Scheduler:          rule.Scheduler,
+		SessionType:        rule.SessionType,
+		SessionExpire:      rule.SessionExpire,
+		Memo:               rule.Memo,
+
+		Creator: kt.User,
+		Reviser: kt.User,
+	}
+	healthCheckJson, err := json.MarshalToString(rule.HealthCheck)
+	if err != nil {
+		logs.Errorf("fail to marshal health check into json, err: %v, healthcheck: %+v, rid: %s",
+			err, rule.HealthCheck, kt.Rid)
+		return nil, err
+	}
+	ruleModel.HealthCheck = types.JsonField(healthCheckJson)
+	certJson, err := json.MarshalToString(rule.Certificate)
+	if err != nil {
+		logs.Errorf("fail to marshal certificate into json, err: %v, certificate: %+v, rid: %s",
+			err, rule.Certificate, kt.Rid)
+		return nil, err
+	}
+	ruleModel.Certificate = types.JsonField(certJson)
+	return ruleModel, nil
 }
 
 // BatchCreateListener 批量创建监听器

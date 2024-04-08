@@ -24,8 +24,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	actionflow "hcm/cmd/task-server/logics/action/flow"
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
+	"hcm/cmd/task-server/logics/flow"
 	cloudserver "hcm/pkg/api/cloud-server"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
@@ -365,7 +365,7 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksPort(kt *kit.Kit, body json.RawMes
 		}
 		tasks = append(tasks, ts.CustomFlowTask{
 			ActionID:   action.ActIDType(getActionID()),
-			ActionName: enumor.ActionModifyPort,
+			ActionName: enumor.ActionTargetGroupModifyPort,
 			Params: &actionlb.OperateRsOption{
 				Vendor:                      enumor.TCloud,
 				TCloudBatchOperateTargetReq: *rsPortParams,
@@ -379,7 +379,7 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksPort(kt *kit.Kit, body json.RawMes
 			},
 		})
 	}
-	removeReq := &ts.AddCustomFlowReq{Name: enumor.FlowModifyPort, Tasks: tasks, IsInitState: true}
+	removeReq := &ts.AddCustomFlowReq{Name: enumor.FlowTargetGroupModifyPort, Tasks: tasks, IsInitState: true}
 	result, err := svc.client.TaskServer().CreateCustomFlow(kt, removeReq)
 	if err != nil {
 		logs.Errorf("call taskserver to batch modify target port custom flow failed, err: %v, rid: %s", err, kt.Rid)

@@ -96,10 +96,10 @@ func (svc *clbSvc) BatchCreateTCloudTargets(cts *rest.Contexts) (any, error) {
 	}
 
 	// 调用云端批量绑定虚拟主机接口
-	return svc.batchRegisterTargetCloud(cts.Kit, req, accountID, tgID, tgList[0].Region, urlRuleList)
+	return svc.batchAddTargetsToGroup(cts.Kit, req, accountID, tgID, tgList[0].Region, urlRuleList)
 }
 
-func (svc *clbSvc) batchRegisterTargetCloud(kt *kit.Kit, req *protolb.TCloudBatchOperateTargetReq,
+func (svc *clbSvc) batchAddTargetsToGroup(kt *kit.Kit, req *protolb.TCloudBatchOperateTargetReq,
 	accountID, tgID, region string, urlRuleList *dataproto.TCloudURLRuleListResult) (
 	*protolb.BatchCreateResult, error) {
 

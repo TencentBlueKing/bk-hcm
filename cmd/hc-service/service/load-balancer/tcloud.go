@@ -80,6 +80,8 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 	h.Add("BatchModifyTCloudTargetsWeight", http.MethodPatch,
 		"/vendors/tcloud/target_groups/{target_group_id}/targets/weight", svc.BatchModifyTCloudTargetsWeight)
 
+	h.Add("RegisterTargetToListenerRule", http.MethodPost,
+		"/vendors/tcloud/load_balancers/{lb_id}/targets/create", svc.RegisterTargetToListenerRule)
 	h.Load(cap.WebService)
 }
 

@@ -112,3 +112,14 @@ type RetryPolicy struct {
 func (rp RetryPolicy) Validate() error {
 	return validator.Validate.Struct(rp)
 }
+
+// NewRetryWithPolicy return retry with policy
+func NewRetryWithPolicy(count, sleepMsMin, sleepMsMax uint) *Retry {
+	return &Retry{
+		Enable: true,
+		Policy: &RetryPolicy{
+			Count:        count,
+			SleepRangeMS: [2]uint{sleepMsMin, sleepMsMax},
+		},
+	}
+}

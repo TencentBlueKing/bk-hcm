@@ -50,6 +50,8 @@ type BindingStatus string
 const (
 	// SuccessBindingStatus 绑定状态-成功
 	SuccessBindingStatus BindingStatus = "success"
+	// BindingBindingStatus 绑定中
+	BindingBindingStatus BindingStatus = "binding"
 )
 
 // ProtocolType 协议类型
@@ -97,13 +99,13 @@ type TaskType string
 // 任务类型
 const (
 	// AddRSTaskType 任务类型-添加RS
-	AddRSTaskType = TaskType(FlowAddRS)
+	AddRSTaskType = TaskType(FlowTargetGroupAddRS)
 	// RemoveRSTaskType 任务类型-移除RS
-	RemoveRSTaskType = TaskType(FlowRemoveRS)
+	RemoveRSTaskType = TaskType(FlowTargetGroupRemoveRS)
 	// ModifyPortTaskType 任务类型-修改端口
-	ModifyPortTaskType = TaskType(FlowModifyPort)
+	ModifyPortTaskType = TaskType(FlowTargetGroupModifyPort)
 	// ModifyWeightTaskType 任务类型-修改权重
-	ModifyWeightTaskType = TaskType(FlowModifyWeight)
+	ModifyWeightTaskType = TaskType(FlowTargetGroupModifyWeight)
 )
 
 // InstType 实例类型

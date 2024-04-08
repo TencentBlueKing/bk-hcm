@@ -38,7 +38,8 @@ func (v ActionName) Validate() error {
 
 	case VirRoot:
 	case ActionCreateFactoryTest, ActionProduceTest, ActionAssembleTest, ActionSleep:
-	case ActionAddRS, ActionRemoveRS, ActionModifyPort, ActionModifyWeight, ActionFlowWatch:
+	case ActionTargetGroupAddRS, ActionTargetGroupRemoveRS, ActionTargetGroupModifyPort, ActionTargetGroupModifyWeight, ActionFlowWatch:
+	case ActionListenerRuleAddTarget:
 	default:
 		return fmt.Errorf("unsupported action name type: %s", v)
 	}
@@ -101,8 +102,11 @@ const (
 
 // 负载均衡相关Action
 const (
-	ActionAddRS        ActionName = "add_rs"
-	ActionRemoveRS     ActionName = "remove_rs"
-	ActionModifyPort   ActionName = "modify_port"
-	ActionModifyWeight ActionName = "modify_weight"
+	ActionTargetGroupAddRS        ActionName = "tg_add_rs"
+	ActionTargetGroupRemoveRS     ActionName = "tg_remove_rs"
+	ActionTargetGroupModifyPort   ActionName = "tg_modify_port"
+	ActionTargetGroupModifyWeight ActionName = "tg_modify_weight"
+
+	// ActionListenerRuleAddTarget 直接将RS绑定到 监听器/规则 上
+	ActionListenerRuleAddTarget ActionName = "listener_rule_add_target"
 )

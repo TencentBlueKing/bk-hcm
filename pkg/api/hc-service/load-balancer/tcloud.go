@@ -343,3 +343,28 @@ type TCloudBatchOperateTargetReq struct {
 func (req *TCloudBatchOperateTargetReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// BatchRegisterTCloudTargetReq 批量注册云上RS
+type BatchRegisterTCloudTargetReq struct {
+	CloudListenerID string            `json:"cloud_listener_id,omitempty"  validate:"required"`
+	CloudRuleID     string            `json:"cloud_rule_id,omitempty"  validate:"required"`
+	Targets         []*RegisterTarget `json:"targets,omitempty"  validate:"required,min=1,dive"`
+}
+
+// Validate ...
+func (r BatchRegisterTCloudTargetReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// RegisterTarget ...
+type RegisterTarget struct {
+	CloudInstID string `json:"cloud_inst_id,omitempty" validate:"required"`
+	InstType    string `json:"inst_type,omitempty" validate:"required"`
+	Port        int64  `json:"port" validate:"required"`
+	Weight      int64  `json:"weight" validate:"required"`
+}
+
+// Validate ...
+func (r RegisterTarget) Validate() error {
+	return validator.Validate.Struct(r)
+}
