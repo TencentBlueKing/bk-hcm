@@ -1,8 +1,7 @@
-import { PropType, computed, defineComponent, reactive, ref, watch } from 'vue';
+import { PropType, TransitionGroup, computed, defineComponent, reactive, ref, watch, watchEffect } from 'vue';
 import './index.scss';
 import { Button, Exception, InfoBox, Input, Message, Tag } from 'bkui-vue';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
-import SearchInput from '@/views/scheme/components/search-input';
 import CommonSideslider from '@/components/common-sideslider';
 import CommonDialog from '@/components/common-dialog';
 import { useAccountStore, useBusinessStore } from '@/store';
@@ -15,6 +14,8 @@ import ExpandCard from './expand-card';
 import { QueryRuleOPEnum } from '@/typings';
 import { VendorEnum } from '@/common/constant';
 import { IDetail } from '@/hooks/useRouteLinkBtn';
+import { VueDraggable } from 'vue-draggable-plus';
+import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 
 export const SecuirtyRuleDirection = {
   in: 'ingress',
@@ -36,6 +37,7 @@ export default defineComponent({
     const { selections, handleSelectionChange } = useSelection();
     const isAllExpand = ref(true);
     const securitySearchVal = ref('');
+    const searchVal = ref('');
     const selectedSecuirtyGroups = ref([]);
     const bindedSecurityGroups = ref([]);
     const securityGroups = computed(() => {
@@ -45,6 +47,7 @@ export default defineComponent({
     const isDialogShow = ref(false);
     const bindedSet = reactive(new Set());
     const loadBalancerStore = useLoadBalancerStore();
+    const el = ref();
     const hanldeSubmit = async () => {
       await businessStore.bindSecurityToCLB({
         bk_biz_id: accountStore.bizs,
@@ -77,12 +80,25 @@ export default defineComponent({
       );
     };
 
-    const securitySearchedList = computed(() => {
-      const val = securitySearchVal.value;
-      if (!val.trim()) return securityGroups.value;
+    const securityRulesSearchedResults = computed(() => {
+      const val = searchVal.value;
+      if (!val.trim()) return bindedSecurityGroups.value;
       const reg = new RegExp(escapeRegExp(val));
-      return securityGroups.value.filter((v) => reg.test(`${v.name} (${v.cloud_id})`));
+      return bindedSecurityGroups.value.filter((v) => reg.test(`${v.name} (${v.cloud_id})`));
     });
+
+    const securitySearchedList = ref([]);
+
+    watchEffect(() => {
+      const val = securitySearchVal.value;
+      if (!val.trim()) {
+        securitySearchedList.value = securityGroups.value;
+        return;
+      }
+      const reg = new RegExp(escapeRegExp(val));
+      securitySearchedList.value = securityGroups.value.filter((v) => reg.test(`${v.name} (${v.cloud_id})`));
+    });
+
     const tableColumns = [
       {
         type: 'selection',
@@ -217,6 +233,7 @@ export default defineComponent({
           <div
             class={`${rsCheckRes.value ? 'rs-check-selector-active' : 'rs-check-selector'}`}
             onClick={() => {
+              if (rsCheckRes.value) return;
               rsCheckRes.value = true;
               props.updateLb({
                 load_balancer_pass_to_target: true,
@@ -235,6 +252,7 @@ export default defineComponent({
           <div
             class={`${!rsCheckRes.value ? 'rs-check-selector-active' : 'rs-check-selector'}`}
             onClick={() => {
+              if (!rsCheckRes.value) return;
               rsCheckRes.value = false;
               props.updateLb({
                 load_balancer_pass_to_target: false,
@@ -308,32 +326,20 @@ export default defineComponent({
               </Button>
             )}
             <div class={'security-rule-container-searcher'}>
-              <BkButtonGroup class={'mr12'}>
-                <Button
-                  selected={securityRuleType.value === SecuirtyRuleDirection.in}
-                  onClick={() => {
-                    securityRuleType.value = SecuirtyRuleDirection.in;
-                  }}>
-                  出站规则
-                </Button>
-                <Button
-                  selected={securityRuleType.value === SecuirtyRuleDirection.out}
-                  onClick={() => {
-                    securityRuleType.value = SecuirtyRuleDirection.out;
-                  }}>
-                  入站规则
-                </Button>
-              </BkButtonGroup>
-              <SearchInput placeholder='请输入' />
+              <BkRadioGroup v-model={securityRuleType.value} class={'mr12'}>
+                <BkRadioButton label={SecuirtyRuleDirection.in}>入站规则</BkRadioButton>
+                <BkRadioButton label={SecuirtyRuleDirection.out}>出站规则</BkRadioButton>
+              </BkRadioGroup>
+              <Input class={'search-input'} type='search' clearable v-model={searchVal.value}></Input>
             </div>
           </div>
           <div class={'specific-security-rule-tables'}>
-            {bindedSecurityGroups.value.length ? (
-              bindedSecurityGroups.value.map(({ name, cloud_id, id }, idx) => (
+            {securityRulesSearchedResults.value.length ? (
+              securityRulesSearchedResults.value.map(({ name, cloud_id, id }, idx) => (
                 <ExpandCard
                   name={name}
                   cloudId={cloud_id}
-                  idx={idx}
+                  idx={idx + 1}
                   isAllExpand={isAllExpand.value}
                   vendor={loadBalancerStore.currentSelectedTreeNode.vendor}
                   direction={securityRuleType.value}
@@ -360,71 +366,74 @@ export default defineComponent({
               </BkButtonGroup>
               <Input class={'search-input'} type='search' clearable v-model={securitySearchVal.value}></Input>
             </div>
-            <div class={'config-item-wrapper'}>
+            {/* @ts-ignore */}
+            <VueDraggable ref={el} v-model={securitySearchedList.value} animation={200} class={'config-item-wrapper'}>
               {securitySearchedList.value.length ? (
-                securitySearchedList.value.map(({ name, cloud_id, id }, idx) => (
-                  <div
-                    class={
-                      selectedSecuirtyGroups.value.map((v) => v.id).includes(id)
-                        ? 'config-security-item-new'
-                        : 'config-security-item'
-                    }>
-                    <i class={'hcm-icon bkhcm-icon-grag-fill mr8 draggable-card-header-draggable-btn'}></i>
-                    <div class={'config-security-item-idx'}>{idx}</div>
-                    <span class={'config-security-item-name'}>
-                      {securitySearchVal.value ? getHighLightNameText(name, '') : name}
-                    </span>
-                    <span class={'config-security-item-id'}>({cloud_id})</span>
-                    <div class={'config-security-item-edit-block'}>
-                      <Button
-                        text
-                        theme='primary'
-                        class={'mr27'}
-                        onClick={() => {
-                          const url = `/#/business/security?cloud_id=${cloud_id}`;
-                          window.open(url, '_blank');
-                        }}>
-                        去编辑
-                        <span class='icon hcm-icon bkhcm-icon-jump-fill ml5'></span>
-                      </Button>
-                      <Button
-                        class={'mr24'}
-                        text
-                        theme='danger'
-                        onClick={() => {
-                          InfoBox({
-                            infoType: 'warning',
-                            title: '是否确定解绑当前安全组',
-                            onConfirm() {
-                              handleUnbind(id);
-                            },
-                          });
-                        }}>
-                        <svg
-                          viewBox='0 0 1024 1024'
-                          width={11.45}
-                          height={11.45}
-                          class={'mr4'}
-                          fill='#EA3636'
-                          version='1.1'
-                          xmlns='http://www.w3.org/2000/svg'>
-                          <path
-                            fill-rule='evenodd'
-                            d='M286.2275905828571 466.8617596342857L346.4517251657142 527.0656921599999 195.92332068571426 677.5959793371429 346.4297720685714 828.1262665142856 496.9801303771428 677.5959793371429 557.1823111314285 737.7989134628571 376.5528159085714 918.4526189714285C368.56767780571425 926.4409673142857 357.73563904 930.9290422857142 346.44074861714284 930.9290422857142 335.1458581942857 930.9290422857142 324.3138194285714 926.4409673142857 316.3286813257143 918.4526189714285L105.57614218971428 707.6974460342857C88.95576212479999 691.0712107885714 88.95576212479999 664.1207471542857 105.57614218971428 647.4945119085714L286.2275905828571 466.8617596342857ZM271.2404106971428 210.97583908571426L813.0869855085714 752.8720991085713 752.8848040228571 813.0750332342856 211.0162761142857 271.17877321142856 271.2404106971428 210.97583908571426ZM392.31718473142854 571.8582944914285L452.17451739428566 631.7174696228572 362.39992393142853 721.47449344 302.5654023314285 661.6361472 392.31718473142854 571.8582944914285ZM707.7107156114284 105.57629805714285L918.463253942857 316.3314731885714C935.0843026285713 332.9578225371429 935.0843026285713 359.9090556342857 918.463253942857 376.53540498285713L737.8138024228571 557.1891126857142 677.6106232685714 496.9642247314285 828.1390299428571 346.4548937142857 677.6106232685714 195.90265270857142 527.0812203885713 346.4349359542857 466.85708580571423 286.23100342857146 647.5085348571429 105.57729594514285C664.1345616457143 88.95571016411428 691.0846888228571 88.95571016411428 707.7107156114284 105.57629805714285ZM661.6181525942857 302.5654023314285L721.47449344 362.4037493028571 631.7008925257143 452.18160128 571.8653791085713 392.32242614857137 661.6181525942857 302.5654023314285Z'
-                          />
-                        </svg>
-                        解绑
-                      </Button>
+                <TransitionGroup type='transition' name='fade'>
+                  {securitySearchedList.value.map(({ name, cloud_id, id }, idx) => (
+                    <div
+                      class={
+                        selectedSecuirtyGroups.value.map((v) => v.id).includes(id)
+                          ? 'config-security-item-new'
+                          : 'config-security-item'
+                      }>
+                      <i class={'hcm-icon bkhcm-icon-grag-fill mr8 draggable-card-header-draggable-btn'}></i>
+                      <div class={'config-security-item-idx'}>{idx + 1}</div>
+                      <span class={'config-security-item-name'}>
+                        {securitySearchVal.value ? getHighLightNameText(name, '') : name}
+                      </span>
+                      <span class={'config-security-item-id'}>({cloud_id})</span>
+                      <div class={'config-security-item-edit-block'}>
+                        <Button
+                          text
+                          theme='primary'
+                          class={'mr27'}
+                          onClick={() => {
+                            const url = `/#/business/security?cloud_id=${cloud_id}`;
+                            window.open(url, '_blank');
+                          }}>
+                          去编辑
+                          <span class='icon hcm-icon bkhcm-icon-jump-fill ml5'></span>
+                        </Button>
+                        <Button
+                          class={'mr24'}
+                          text
+                          theme='danger'
+                          onClick={() => {
+                            InfoBox({
+                              infoType: 'warning',
+                              title: '是否确定解绑当前安全组',
+                              onConfirm() {
+                                handleUnbind(id);
+                              },
+                            });
+                          }}>
+                          <svg
+                            viewBox='0 0 1024 1024'
+                            width={11.45}
+                            height={11.45}
+                            class={'mr4'}
+                            fill='#EA3636'
+                            version='1.1'
+                            xmlns='http://www.w3.org/2000/svg'>
+                            <path
+                              fill-rule='evenodd'
+                              d='M286.2275905828571 466.8617596342857L346.4517251657142 527.0656921599999 195.92332068571426 677.5959793371429 346.4297720685714 828.1262665142856 496.9801303771428 677.5959793371429 557.1823111314285 737.7989134628571 376.5528159085714 918.4526189714285C368.56767780571425 926.4409673142857 357.73563904 930.9290422857142 346.44074861714284 930.9290422857142 335.1458581942857 930.9290422857142 324.3138194285714 926.4409673142857 316.3286813257143 918.4526189714285L105.57614218971428 707.6974460342857C88.95576212479999 691.0712107885714 88.95576212479999 664.1207471542857 105.57614218971428 647.4945119085714L286.2275905828571 466.8617596342857ZM271.2404106971428 210.97583908571426L813.0869855085714 752.8720991085713 752.8848040228571 813.0750332342856 211.0162761142857 271.17877321142856 271.2404106971428 210.97583908571426ZM392.31718473142854 571.8582944914285L452.17451739428566 631.7174696228572 362.39992393142853 721.47449344 302.5654023314285 661.6361472 392.31718473142854 571.8582944914285ZM707.7107156114284 105.57629805714285L918.463253942857 316.3314731885714C935.0843026285713 332.9578225371429 935.0843026285713 359.9090556342857 918.463253942857 376.53540498285713L737.8138024228571 557.1891126857142 677.6106232685714 496.9642247314285 828.1390299428571 346.4548937142857 677.6106232685714 195.90265270857142 527.0812203885713 346.4349359542857 466.85708580571423 286.23100342857146 647.5085348571429 105.57729594514285C664.1345616457143 88.95571016411428 691.0846888228571 88.95571016411428 707.7107156114284 105.57629805714285ZM661.6181525942857 302.5654023314285L721.47449344 362.4037493028571 631.7008925257143 452.18160128 571.8653791085713 392.32242614857137 661.6181525942857 302.5654023314285Z'
+                            />
+                          </svg>
+                          解绑
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ))}
+                </TransitionGroup>
               ) : (
                 <Exception
                   type={securitySearchVal.value.length ? 'search-empty' : 'empty'}
                   description={securitySearchVal.value.length ? '搜索为空' : '暂无绑定'}
                 />
               )}
-            </div>
+            </VueDraggable>
           </div>
         </CommonSideslider>
         <CommonDialog v-model:isShow={isDialogShow.value} title={'绑定安全组'} width={640} onHandleConfirm={handleBind}>

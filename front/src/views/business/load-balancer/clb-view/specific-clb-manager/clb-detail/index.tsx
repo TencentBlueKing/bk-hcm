@@ -47,6 +47,7 @@ export default defineComponent({
         render: () => (
           <div>
             <Switcher
+              theme='primary'
               class={'mr5'}
               modelValue={isProtected.value}
               onChange={(val) => {
@@ -56,7 +57,7 @@ export default defineComponent({
                 });
               }}
             />
-            <Tag theme={isProtected.value ? 'success' : 'info'}> {isProtected.value ? '已开启' : '未开启'} </Tag>
+            <Tag theme={isProtected.value ? 'success' : ''}> {isProtected.value ? '已开启' : '未开启'} </Tag>
           </div>
         ),
       },
@@ -173,7 +174,6 @@ export default defineComponent({
           <DetailInfo
             fields={resourceFields}
             detail={props.detail}
-            class={'ml60'}
             onChange={async (payload) => {
               await props.updateLb(payload);
               await props.getDetails(loadBalancerStore.currentSelectedTreeNode.id);
@@ -182,7 +182,7 @@ export default defineComponent({
         </div>
         <div>
           <p class={'clb-detail-info-title'}>配置信息</p>
-          <DetailInfo fields={configFields} detail={props.detail} class={'ml60'} />
+          <DetailInfo fields={configFields} detail={props.detail} />
         </div>
       </div>
     );
