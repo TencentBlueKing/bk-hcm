@@ -220,7 +220,9 @@ func (svc *lbSvc) ListBizUrlRulesByListener(cts *rest.Contexts) (any, error) {
 	}
 
 	// 查询规则列表
-	return svc.listRuleWithCondition(cts.Kit, req, tools.RuleEqual("lbl_id", lblID))
+	return svc.listRuleWithCondition(cts.Kit, req,
+		tools.RuleEqual("lbl_id", lblID),
+		tools.RuleEqual("rule_type", enumor.Layer7RuleType))
 }
 
 // ListBizListenerDomains 指定监听器下的域名列表
@@ -231,7 +233,9 @@ func (svc *lbSvc) ListBizListenerDomains(cts *rest.Contexts) (any, error) {
 	}
 
 	req := new(core.ListReq)
-	req.Filter = tools.EqualExpression("lbl_id", lblID)
+	req.Filter = tools.ExpressionAnd(
+		tools.RuleEqual("lbl_id", lblID),
+		tools.RuleEqual("rule_type", enumor.Layer7RuleType))
 	req.Page = core.NewDefaultBasePage()
 
 	lbl, err := svc.client.DataService().TCloud.LoadBalancer.GetListener(cts.Kit, lblID)
@@ -252,6 +256,9 @@ func (svc *lbSvc) ListBizListenerDomains(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
+	if !lbl.Protocol.IsLayer7Protocol() {
+		return nil, errf.Newf(errf.InvalidParameter, "unsupported listner protocol type: %s", lbl.Protocol)
+	}
 	// 查询规则列表
 	ruleList, err := svc.listRuleWithCondition(cts.Kit, req)
 	if err != nil {
@@ -309,6 +316,7 @@ func (svc *lbSvc) GetBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("id", ruleID),
 			tools.RuleEqual("lbl_id", lblID),
+			tools.RuleEqual("rule_type", enumor.Layer7RuleType),
 		),
 		Page: core.NewDefaultBasePage(),
 	}
@@ -326,7 +334,7 @@ func (svc *lbSvc) GetBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 	return urlRuleList.Details[0], nil
 }
 
-// CreateBizTCloudUrlRule 业务下腾讯云url规则
+// CreateBizTCloudUrlRule 业务下新建腾讯云url规则
 func (svc *lbSvc) CreateBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 
 	lblID := cts.PathParameter("lbl_id").String()

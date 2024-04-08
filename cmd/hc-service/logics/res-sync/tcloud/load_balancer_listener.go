@@ -336,56 +336,56 @@ func isHealthCheckChange(cloud *tclb.HealthCheck, db *corelb.TCloudHealthCheckIn
 		// 云上和本地都为空 则是未变化，否则需要更新本地
 		return !(cloud == nil && db == nil)
 	}
-	if assert.IsPtrInt64Equal(cloud.HealthSwitch, db.HealthSwitch) {
+	if !assert.IsPtrInt64Equal(cloud.HealthSwitch, db.HealthSwitch) {
 		return true
 	}
-	if assert.IsPtrInt64Equal(cloud.TimeOut, db.TimeOut) {
+	if !assert.IsPtrInt64Equal(cloud.TimeOut, db.TimeOut) {
 		return true
 	}
-	if assert.IsPtrInt64Equal(cloud.IntervalTime, db.IntervalTime) {
+	if !assert.IsPtrInt64Equal(cloud.IntervalTime, db.IntervalTime) {
 		return true
 	}
-	if assert.IsPtrInt64Equal(cloud.HealthNum, db.HealthNum) {
+	if !assert.IsPtrInt64Equal(cloud.HealthNum, db.HealthNum) {
 		return true
 	}
-	if assert.IsPtrInt64Equal(cloud.UnHealthNum, db.UnHealthNum) {
+	if !assert.IsPtrInt64Equal(cloud.UnHealthNum, db.UnHealthNum) {
 		return true
 	}
-	if assert.IsPtrInt64Equal(cloud.HttpCode, db.HttpCode) {
+	if !assert.IsPtrInt64Equal(cloud.HttpCode, db.HttpCode) {
 		return true
 	}
-	if assert.IsPtrStringEqual(cloud.HttpCheckPath, db.HttpCheckPath) {
+	if !assert.IsPtrStringEqual(cloud.HttpCheckPath, db.HttpCheckPath) {
 		return true
 	}
-	if assert.IsPtrStringEqual(cloud.HttpCheckDomain, db.HttpCheckDomain) {
+	if !assert.IsPtrStringEqual(cloud.HttpCheckDomain, db.HttpCheckDomain) {
 		return true
 	}
-	if assert.IsPtrStringEqual(cloud.HttpCheckMethod, db.HttpCheckMethod) {
+	if !assert.IsPtrStringEqual(cloud.HttpCheckMethod, db.HttpCheckMethod) {
 		return true
 	}
-	if assert.IsPtrInt64Equal(cloud.CheckPort, db.CheckPort) {
+	if !assert.IsPtrInt64Equal(cloud.CheckPort, db.CheckPort) {
 		return true
 	}
-	if assert.IsPtrStringEqual(cloud.ContextType, db.ContextType) {
+	if !assert.IsPtrStringEqual(cloud.ContextType, db.ContextType) {
 		return true
 	}
-	if assert.IsPtrStringEqual(cloud.SendContext, db.SendContext) {
+	if !assert.IsPtrStringEqual(cloud.SendContext, db.SendContext) {
 		return true
 	}
-	if assert.IsPtrStringEqual(cloud.RecvContext, db.RecvContext) {
+	if !assert.IsPtrStringEqual(cloud.RecvContext, db.RecvContext) {
 		return true
 	}
-	if assert.IsPtrStringEqual(cloud.CheckType, db.CheckType) {
+	if !assert.IsPtrStringEqual(cloud.CheckType, db.CheckType) {
 		return true
 	}
-	if assert.IsPtrStringEqual(cloud.HttpVersion, db.HttpVersion) {
+	if !assert.IsPtrStringEqual(cloud.HttpVersion, db.HttpVersion) {
 		return true
 	}
 
-	if assert.IsPtrInt64Equal(cloud.SourceIpType, db.SourceIpType) {
+	if !assert.IsPtrInt64Equal(cloud.SourceIpType, db.SourceIpType) {
 		return true
 	}
-	if assert.IsPtrStringEqual(cloud.ExtendedCode, db.ExtendedCode) {
+	if !assert.IsPtrStringEqual(cloud.ExtendedCode, db.ExtendedCode) {
 		return true
 	}
 

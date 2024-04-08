@@ -37,6 +37,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/assert"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 
@@ -406,20 +407,21 @@ func convCloudToDBCreate(cloud typeslb.TCloudClb, accountID string, region strin
 
 func convertTCloudExtension(cloud typeslb.TCloudClb) *corelb.TCloudClbExtension {
 	ext := &corelb.TCloudClbExtension{
-		SlaType:                  cvt.PtrToVal(cloud.SlaType),
-		VipIsp:                   cvt.PtrToVal(cloud.VipIsp),
-		LoadBalancerPassToTarget: cvt.PtrToVal(cloud.LoadBalancerPassToTarget),
-		IPv6Mode:                 cvt.PtrToVal(cloud.IPv6Mode),
-		Snat:                     cvt.PtrToVal(cloud.Snat),
-		SnatPro:                  cvt.PtrToVal(cloud.SnatPro),
-		MixIpTarget:              cvt.PtrToVal(cloud.MixIpTarget),
+		SlaType:                  cloud.SlaType,
+		VipIsp:                   cloud.VipIsp,
+		LoadBalancerPassToTarget: cloud.LoadBalancerPassToTarget,
+		IPv6Mode:                 cloud.IPv6Mode,
+		Snat:                     cloud.Snat,
+		SnatPro:                  cloud.SnatPro,
+		MixIpTarget:              cloud.MixIpTarget,
+		ChargeType:               cloud.ChargeType,
 		// 该接口无法获取下列字段
 		BandwidthPackageId: nil,
 	}
 	if cloud.NetworkAttributes != nil {
-		ext.InternetMaxBandwidthOut = cvt.PtrToVal(cloud.NetworkAttributes.InternetMaxBandwidthOut)
-		ext.InternetChargeType = cvt.PtrToVal(cloud.NetworkAttributes.InternetChargeType)
-		ext.BandwidthpkgSubType = cvt.PtrToVal(cloud.NetworkAttributes.BandwidthpkgSubType)
+		ext.InternetMaxBandwidthOut = cloud.NetworkAttributes.InternetMaxBandwidthOut
+		ext.InternetChargeType = cloud.NetworkAttributes.InternetChargeType
+		ext.BandwidthpkgSubType = cloud.NetworkAttributes.BandwidthpkgSubType
 	}
 	if cloud.SnatIps != nil {
 		ipList := make([]corelb.SnatIp, 0, len(cloud.SnatIps))
@@ -432,13 +434,13 @@ func convertTCloudExtension(cloud typeslb.TCloudClb) *corelb.TCloudClbExtension 
 		ext.SnatIps = ipList
 	}
 
+	flagMap := make(map[string]bool)
 	// 没有碰到的则默认是false
 	for _, flag := range cloud.AttributeFlags {
-		switch cvt.PtrToVal(flag) {
-		case constant.TCLBDeleteProtect:
-			ext.DeleteProtect = true
-		}
+		flagMap[cvt.PtrToVal(flag)] = true
 	}
+	// 逐个赋值flag
+	ext.DeleteProtect = cvt.ValToPtr(flagMap[constant.TCLBDeleteProtect])
 
 	return ext
 }
@@ -457,19 +459,20 @@ func convCloudToDBUpdate(id string,
 		CloudExpiredTime: cvt.PtrToVal(cloud.ExpireTime),
 
 		Extension: &corelb.TCloudClbExtension{
-			SlaType:                  cvt.PtrToVal(cloud.SlaType),
-			VipIsp:                   cvt.PtrToVal(cloud.VipIsp),
-			LoadBalancerPassToTarget: cvt.PtrToVal(cloud.LoadBalancerPassToTarget),
+			SlaType:                  cloud.SlaType,
+			VipIsp:                   cloud.VipIsp,
+			LoadBalancerPassToTarget: cloud.LoadBalancerPassToTarget,
+			ChargeType:               cloud.ChargeType,
 
-			IPv6Mode: cvt.PtrToVal(cloud.IPv6Mode),
-			Snat:     cvt.PtrToVal(cloud.Snat),
-			SnatPro:  cvt.PtrToVal(cloud.SnatPro),
+			IPv6Mode: cloud.IPv6Mode,
+			Snat:     cloud.Snat,
+			SnatPro:  cloud.SnatPro,
 		},
 	}
 	if cloud.NetworkAttributes != nil {
-		lb.Extension.InternetMaxBandwidthOut = cvt.PtrToVal(cloud.NetworkAttributes.InternetMaxBandwidthOut)
-		lb.Extension.InternetChargeType = cvt.PtrToVal(cloud.NetworkAttributes.InternetChargeType)
-		lb.Extension.BandwidthpkgSubType = cvt.PtrToVal(cloud.NetworkAttributes.BandwidthpkgSubType)
+		lb.Extension.InternetMaxBandwidthOut = cloud.NetworkAttributes.InternetMaxBandwidthOut
+		lb.Extension.InternetChargeType = cloud.NetworkAttributes.InternetChargeType
+		lb.Extension.BandwidthpkgSubType = cloud.NetworkAttributes.BandwidthpkgSubType
 	}
 	if cloud.SnatIps != nil {
 		ipList := make([]corelb.SnatIp, 0, len(cloud.SnatIps))
@@ -493,17 +496,18 @@ func convCloudToDBUpdate(id string,
 	if ipv6 := cvt.PtrToVal(cloud.AddressIPv6); len(ipv6) > 0 {
 		lb.PublicIPv6Addresses = []string{ipv6}
 	}
+
 	// AttributeFlags
+	flagMap := make(map[string]bool)
 	// 没有碰到的则默认是false
 	for _, flag := range cloud.AttributeFlags {
-		switch cvt.PtrToVal(flag) {
-		case constant.TCLBDeleteProtect:
-			lb.Extension.DeleteProtect = true
-		}
+		flagMap[cvt.PtrToVal(flag)] = true
 	}
+	// 逐个赋值flag
+	lb.Extension.DeleteProtect = cvt.ValToPtr(flagMap[constant.TCLBDeleteProtect])
 
 	if cloud.Egress != nil {
-		lb.Extension.Egress = cvt.PtrToVal(cloud.Egress)
+		lb.Extension.Egress = cloud.Egress
 	}
 	return &lb
 }
@@ -554,7 +558,9 @@ func isLBChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) bool {
 			return true
 		}
 	}
-	if ipv6 := cvt.PtrToVal(cloud.AddressIPv6); len(db.PublicIPv6Addresses) == 0 || db.PublicIPv6Addresses[0] != ipv6 {
+	ipv6 := cvt.PtrToVal(cloud.AddressIPv6)
+	if len(db.PublicIPv6Addresses) == 0 && len(ipv6) != 0 ||
+		len(db.PublicIPv6Addresses) > 0 && db.PublicIPv6Addresses[0] != ipv6 {
 		return true
 	}
 
@@ -567,53 +573,56 @@ func isLBExtensionChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) 
 	}
 
 	if cloud.NetworkAttributes != nil {
-		if db.Extension.InternetMaxBandwidthOut != cvt.PtrToVal(cloud.NetworkAttributes.InternetMaxBandwidthOut) {
+		if !assert.IsPtrInt64Equal(db.Extension.InternetMaxBandwidthOut,
+			cloud.NetworkAttributes.InternetMaxBandwidthOut) {
 			return true
 		}
-		if db.Extension.InternetChargeType != cvt.PtrToVal(cloud.NetworkAttributes.InternetChargeType) {
+		if !assert.IsPtrStringEqual(db.Extension.InternetChargeType, cloud.NetworkAttributes.InternetChargeType) {
 			return true
 		}
-		if db.Extension.BandwidthpkgSubType != cvt.PtrToVal(cloud.NetworkAttributes.BandwidthpkgSubType) {
+		if !assert.IsPtrStringEqual(db.Extension.BandwidthpkgSubType, cloud.NetworkAttributes.BandwidthpkgSubType) {
 			return true
 		}
 	}
 
-	if db.Extension.SlaType != cvt.PtrToVal(cloud.SlaType) {
+	if !assert.IsPtrStringEqual(db.Extension.SlaType, cloud.SlaType) {
 		return true
 	}
-	if db.Extension.VipIsp != cvt.PtrToVal(cloud.VipIsp) {
-		return true
-	}
-
-	if db.Extension.LoadBalancerPassToTarget != cvt.PtrToVal(cloud.LoadBalancerPassToTarget) {
-		return true
-	}
-	if db.Extension.IPv6Mode != cvt.PtrToVal(cloud.IPv6Mode) {
-		return true
-	}
-	if db.Extension.Egress != cvt.PtrToVal(cloud.Egress) {
-		return true
-	}
-	if db.Extension.Snat != cvt.PtrToVal(cloud.Snat) {
-		return true
-	}
-	if db.Extension.SnatPro != cvt.PtrToVal(cloud.SnatPro) {
+	if !assert.IsPtrStringEqual(db.Extension.VipIsp, cloud.VipIsp) {
 		return true
 	}
 
+	if !assert.IsPtrBoolEqual(db.Extension.LoadBalancerPassToTarget, cloud.LoadBalancerPassToTarget) {
+		return true
+	}
+	if !assert.IsPtrStringEqual(db.Extension.IPv6Mode, cloud.IPv6Mode) {
+		return true
+	}
+	if !assert.IsPtrStringEqual(db.Extension.Egress, cloud.Egress) {
+		return true
+	}
+	if !assert.IsPtrBoolEqual(db.Extension.Snat, cloud.Snat) {
+		return true
+	}
+	if !assert.IsPtrBoolEqual(db.Extension.SnatPro, cloud.SnatPro) {
+		return true
+	}
+	if !assert.IsPtrStringEqual(db.Extension.ChargeType, cloud.ChargeType) {
+		return true
+	}
 	// SnatIP列表对比
 	if isSnatIPChange(cloud, db) {
 		return true
 	}
 
 	// 云上AttributeFlags 转map
-	attrs := make(map[string]struct{}, len(cloud.AttributeFlags))
+	attrs := make(map[string]bool, len(cloud.AttributeFlags))
 	for _, flag := range cloud.AttributeFlags {
-		attrs[cvt.PtrToVal(flag)] = struct{}{}
+		attrs[cvt.PtrToVal(flag)] = true
 	}
 
 	// 逐个判断每种类型
-	if _, deleteProtect := attrs[constant.TCLBDeleteProtect]; deleteProtect != db.Extension.DeleteProtect {
+	if attrs[constant.TCLBDeleteProtect] != cvt.PtrToVal(db.Extension.DeleteProtect) {
 		return true
 	}
 

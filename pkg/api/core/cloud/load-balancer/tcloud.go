@@ -40,22 +40,25 @@ type TCloudClbExtension struct {
 		clb.c4.xlarge：超强型4规格
 		若需要创建共享型实例，则无需填写此参数。
 	*/
-	SlaType string `json:"sla_type,omitempty"`
-
+	SlaType *string `json:"sla_type,omitempty"`
+	/*
+		ChargeType 负载均衡实例的计费类型，PREPAID：包年包月，POSTPAID_BY_HOUR：按量计费
+	*/
+	ChargeType *string `json:"charge_type,omitempty"`
 	/*
 		VipIsp 仅适用于公网负载均衡。
 		目前仅广州、上海、南京、济南、杭州、福州、北京、石家庄、武汉、长沙、成都、重庆地域支持静态单线 IP 线路类型，
 		可选择中国移动（CMCC）、中国联通（CUCC）或中国电信（CTCC）的运营商类型，网络计费模式只能使用按带宽包计费(BANDWIDTH_PACKAGE)。
 		如果不指定本参数，则默认使用BGP。可通过 DescribeResources 接口查询一个地域所支持的Isp。
 	*/
-	VipIsp string `json:"vip_isp,omitempty"`
+	VipIsp *string `json:"vip_isp,omitempty"`
 
 	/*
 		LoadBalancerPassToTarget Target是否放通来自CLB的流量。
 		开启放通（true）：只验证CLB上的安全组；
 		不开启放通（false）：需同时验证CLB和后端实例上的安全组。
 	*/
-	LoadBalancerPassToTarget bool `json:"load_balancer_pass_to_target,omitempty"`
+	LoadBalancerPassToTarget *bool `json:"load_balancer_pass_to_target,omitempty"`
 
 	/*
 		InternetMaxBandwidthOut 最大出带宽，单位Mbps，仅对公网属性的共享型、性能容量型和独占型 CLB 实例、以及内网属性的性能容量型 CLB 实例生效。
@@ -65,7 +68,8 @@ type TCloudClbExtension struct {
 		注意：此字段可能返回 null，表示取不到有效值。
 		示例值：1
 	*/
-	InternetMaxBandwidthOut int64 `json:"internet_max_bandwidth_out,omitempty"`
+	InternetMaxBandwidthOut *int64 `json:"internet_max_bandwidth_out,omitempty"`
+
 	/*
 		InternetChargeType
 		TRAFFIC_POSTPAID_BY_HOUR 按流量按小时后计费 ;
@@ -74,12 +78,12 @@ type TCloudClbExtension struct {
 		注意：此字段可能返回 null，表示取不到有效值。
 		示例值：BANDWIDTH_POSTPAID_BY_HOUR
 	*/
-	InternetChargeType string `json:"internet_charge_type,omitempty"`
+	InternetChargeType *string `json:"internet_charge_type,omitempty"`
 	/*
 		BandwidthpkgSubType 带宽包的类型，如SINGLEISP（单线）、BGP（多线）。
 		注意：此字段可能返回 null，表示取不到有效值。
 	*/
-	BandwidthpkgSubType string `json:"bandwidthpkg_sub_type,omitempty"`
+	BandwidthpkgSubType *string `json:"bandwidthpkg_sub_type,omitempty"`
 
 	/*
 		BandwidthPackageId 带宽包ID，
@@ -90,31 +94,31 @@ type TCloudClbExtension struct {
 	BandwidthPackageId *string `json:"bandwidth_package_id,omitempty"`
 
 	// IP地址版本为ipv6时此字段有意义， IPv6Nat64 | IPv6FullChain
-	IPv6Mode string `json:"ipv6_mode,omitempty"`
+	IPv6Mode *string `json:"ipv6_mode,omitempty"`
 
 	// 在 2016 年 12 月份之前的传统型内网负载均衡都是开启了 snat 的。
-	Snat bool `json:"snat,omitempty" `
+	Snat *bool `json:"snat,omitempty" `
 
 	// 是否开启SnatPro。
-	SnatPro bool `json:"snat_pro,omitempty"`
+	SnatPro *bool `json:"snat_pro,omitempty"`
 
 	// 开启SnatPro负载均衡后，SnatIp列表。
 	SnatIps []SnatIp `json:"snat_ips,omitempty"`
 
 	// 删除保护
-	DeleteProtect bool `json:"delete_protect,omitempty"`
+	DeleteProtect *bool `json:"delete_protect,omitempty"`
 
 	// 网络出口
-	Egress string `json:"egress,omitempty"`
+	Egress *string `json:"egress,omitempty"`
 
 	// 双栈混绑 开启IPv6FullChain负载均衡7层监听器支持混绑IPv4/IPv6目标功能。
-	MixIpTarget bool `json:"mix_ip_target,omitempty"`
+	MixIpTarget *bool `json:"mix_ip_target,omitempty"`
 }
 
 // SnatIp ...
 type SnatIp struct {
 	// 私有网络子网的唯一性id，如subnet-12345678
-	SubnetId *string `json:"subnet_id" `
+	SubnetId *string `json:"subnet_id"`
 
 	// IP地址，如192.168.0.1
 	Ip *string `json:"ip"`
