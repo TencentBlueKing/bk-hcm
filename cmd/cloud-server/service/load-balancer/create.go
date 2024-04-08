@@ -353,13 +353,7 @@ func (svc *lbSvc) buildAddTCloudTargetTasks(kt *kit.Kit, body json.RawMessage, t
 		return nil, err
 	}
 
-	// 锁定资源跟Flow的状态
 	flowID := result.ID
-	err = svc.lockResFlowStatus(kt, tgID, enumor.TargetGroupCloudResType, flowID, enumor.AddRSTaskType)
-	if err != nil {
-		return nil, err
-	}
-
 	// 从Flow，负责监听主Flow的状态
 	flowWatchReq := &ts.AddTemplateFlowReq{
 		Name: enumor.FlowWatch,
@@ -377,6 +371,12 @@ func (svc *lbSvc) buildAddTCloudTargetTasks(kt *kit.Kit, body json.RawMessage, t
 	if err != nil {
 		logs.Errorf("call taskserver to create res flow status watch task failed, err: %v, flowID: %s, rid: %s",
 			err, flowID, kt.Rid)
+		return nil, err
+	}
+
+	// 锁定资源跟Flow的状态
+	err = svc.lockResFlowStatus(kt, tgID, enumor.TargetGroupCloudResType, flowID, enumor.AddRSTaskType)
+	if err != nil {
 		return nil, err
 	}
 

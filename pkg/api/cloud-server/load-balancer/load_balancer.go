@@ -258,3 +258,16 @@ type TCloudBatchModifyTargetPortReq struct {
 func (req *TCloudBatchModifyTargetPortReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// --------------------------[批量修改RS权重]--------------------------
+
+// TCloudBatchModifyTargetWeightReq tcloud batch modify target weight req.
+type TCloudBatchModifyTargetWeightReq struct {
+	TargetIDs []string `json:"target_ids" validate:"required,min=1,max=100"`
+	NewWeight int64    `json:"new_weight" validate:"required,min=0,max=100"`
+}
+
+// Validate request.
+func (req *TCloudBatchModifyTargetWeightReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
