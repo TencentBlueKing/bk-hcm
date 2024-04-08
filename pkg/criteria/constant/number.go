@@ -37,4 +37,6 @@ const (
 	BatchAddRSCloudMaxLimit = 100
 	// BatchRemoveRSCloudMaxLimit 公有云上批量移除RS的最大限制数量
 	BatchRemoveRSCloudMaxLimit = 100
+	// BatchModifyTargetPortCloudMaxLimit 公有云上批量修改RS端口的最大限制数量
+	BatchModifyTargetPortCloudMaxLimit = 20
 )

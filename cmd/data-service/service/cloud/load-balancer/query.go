@@ -459,6 +459,7 @@ func convTableToBaseTarget(one *tablelb.LoadBalancerTargetTable) *corelb.BaseTar
 		Weight:             one.Weight,
 		PrivateIPAddress:   one.PrivateIPAddress,
 		PublicIPAddress:    one.PublicIPAddress,
+		CloudVpcIDs:        one.CloudVpcIDs,
 		Zone:               one.Zone,
 		Memo:               one.Memo,
 		Revision: &core.Revision{

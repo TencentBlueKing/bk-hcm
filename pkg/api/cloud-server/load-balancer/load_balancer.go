@@ -245,3 +245,16 @@ type TCloudTargetBatchRemoveReq struct {
 func (req *TCloudTargetBatchRemoveReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// --------------------------[批量修改RS端口]--------------------------
+
+// TCloudBatchModifyTargetPortReq tcloud batch modify target port req.
+type TCloudBatchModifyTargetPortReq struct {
+	TargetIDs []string `json:"target_ids" validate:"required,min=1,max=20"`
+	NewPort   int64    `json:"new_port" validate:"required,min=1,max=65535"`
+}
+
+// Validate request.
+func (req *TCloudBatchModifyTargetPortReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

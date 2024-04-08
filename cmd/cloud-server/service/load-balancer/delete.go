@@ -43,6 +43,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/counter"
 	"hcm/pkg/tools/hooks/handler"
 	"hcm/pkg/tools/slice"
@@ -224,7 +225,7 @@ func (svc *lbSvc) buildRemoveTCloudTargetTasks(kt *kit.Kit, body json.RawMessage
 	elems := slice.Split(req.TargetIDs, constant.BatchRemoveRSCloudMaxLimit)
 	getActionID := counter.NewNumStringCounter(1, 10)
 	for _, parts := range elems {
-		removeRsParams, err := svc.convTCloudRemoveRsReq(kt, parts, tgID, accountID)
+		removeRsParams, err := svc.convTCloudOperateTargetReq(kt, parts, tgID, accountID, nil, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -281,9 +282,9 @@ func (svc *lbSvc) buildRemoveTCloudTargetTasks(kt *kit.Kit, body json.RawMessage
 	return &core.FlowStateResult{FlowID: flowID}, nil
 }
 
-// convTCloudRemoveRsReq conv tcloud remove rs req.
-func (svc *lbSvc) convTCloudRemoveRsReq(kt *kit.Kit, targets []string, targetGroupID,
-	accountID string) (*hcproto.TCloudBatchOperateTargetReq, error) {
+// convTCloudOperateTargetReq conv tcloud operate target req.
+func (svc *lbSvc) convTCloudOperateTargetReq(kt *kit.Kit, targets []string, targetGroupID,
+	accountID string, newPort, newWeight *int64) (*hcproto.TCloudBatchOperateTargetReq, error) {
 
 	targetReq := &core.ListReq{
 		Filter: tools.ContainersExpression("id", targets),
@@ -298,8 +299,18 @@ func (svc *lbSvc) convTCloudRemoveRsReq(kt *kit.Kit, targets []string, targetGro
 		return nil, errf.Newf(errf.RecordNotFound, "target_ids: %v is not found", targets)
 	}
 
+	instExistsMap := make(map[string]struct{}, 0)
 	rsReq := &hcproto.TCloudBatchOperateTargetReq{TargetGroupID: targetGroupID}
 	for _, item := range targetList.Details {
+		// 批量修改端口时，需要校验重复的实例ID的问题，否则云端接口也会报错
+		if cvt.PtrToVal(newPort) > 0 {
+			if _, ok := instExistsMap[item.CloudInstID]; ok {
+				return nil, errf.Newf(errf.RecordDuplicated, "duplicate modify same inst(%s) to new_port: %d",
+					item.CloudInstID, cvt.PtrToVal(newPort))
+			}
+			instExistsMap[item.CloudInstID] = struct{}{}
+		}
+
 		rsReq.RsList = append(rsReq.RsList, &dataproto.TargetBaseReq{
 			ID:               item.ID,
 			InstType:         item.InstType,
@@ -311,7 +322,10 @@ func (svc *lbSvc) convTCloudRemoveRsReq(kt *kit.Kit, targets []string, targetGro
 			InstName:         item.InstName,
 			PrivateIPAddress: item.PrivateIPAddress,
 			PublicIPAddress:  item.PublicIPAddress,
+			CloudVpcIDs:      item.CloudVpcIDs,
 			Zone:             item.Zone,
+			NewPort:          newPort,
+			NewWeight:        newWeight,
 		})
 	}
 	return rsReq, nil

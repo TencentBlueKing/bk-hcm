@@ -47,6 +47,7 @@ var LoadBalancerTargetColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "weight", NamedC: "weight", Type: enumor.Numeric},
 	{Column: "private_ip_address", NamedC: "private_ip_address", Type: enumor.Json},
 	{Column: "public_ip_address", NamedC: "public_ip_address", Type: enumor.Json},
+	{Column: "cloud_vpc_ids", NamedC: "cloud_vpc_ids", Type: enumor.Json},
 	{Column: "zone", NamedC: "zone", Type: enumor.String},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
 
@@ -71,6 +72,7 @@ type LoadBalancerTargetTable struct {
 	Weight             *int64            `db:"weight" json:"weight"`
 	PrivateIPAddress   types.StringArray `db:"private_ip_address" json:"private_ip_address"`
 	PublicIPAddress    types.StringArray `db:"public_ip_address" json:"public_ip_address"`
+	CloudVpcIDs        types.StringArray `db:"cloud_vpc_ids" json:"cloud_vpc_ids"`
 	Zone               string            `db:"zone" json:"zone"`
 	Memo               *string           `db:"memo" json:"memo"`
 

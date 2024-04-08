@@ -82,6 +82,7 @@ type BaseTarget struct {
 	Weight             *int64          `json:"weight"`
 	PrivateIPAddress   []string        `json:"private_ip_address"`
 	PublicIPAddress    []string        `json:"public_ip_address"`
+	CloudVpcIDs        []string        `json:"cloud_vpc_ids"`
 	Zone               string          `json:"zone"`
 	Memo               *string         `json:"memo"`
 	*core.Revision     `json:",inline"`

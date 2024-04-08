@@ -291,13 +291,13 @@ func (svc *lbSvc) batchAddBizTarget(cts *rest.Contexts, authHandler handler.Vali
 
 	switch baseInfo.Vendor {
 	case enumor.TCloud:
-		return svc.buildAddTCloudRsTasks(cts.Kit, req.Data, tgID, baseInfo.AccountID, bkBizID)
+		return svc.buildAddTCloudTargetTasks(cts.Kit, req.Data, tgID, baseInfo.AccountID, bkBizID)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", baseInfo.Vendor)
 	}
 }
 
-func (svc *lbSvc) buildAddTCloudRsTasks(kt *kit.Kit, body json.RawMessage, tgID, accountID string, bkBizID int64) (
+func (svc *lbSvc) buildAddTCloudTargetTasks(kt *kit.Kit, body json.RawMessage, tgID, accountID string, bkBizID int64) (
 	interface{}, error) {
 
 	req := new(cslb.TCloudTargetBatchCreateReq)
@@ -320,7 +320,7 @@ func (svc *lbSvc) buildAddTCloudRsTasks(kt *kit.Kit, body json.RawMessage, tgID,
 	elems := slice.Split(req.RsList, constant.BatchAddRSCloudMaxLimit)
 	getActionID := counter.NewNumStringCounter(1, 10)
 	for _, parts := range elems {
-		addRsParams, err := svc.convTCloudOperateRsReq(kt, parts, tgID, accountID)
+		addRsParams, err := svc.convTCloudAddTargetReq(kt, parts, tgID, accountID)
 		if err != nil {
 			logs.Errorf("add rs build tcloud request failed, err: %v, tgID: %s, parts: %+v rid: %s",
 				err, tgID, parts, kt.Rid)
@@ -383,8 +383,8 @@ func (svc *lbSvc) buildAddTCloudRsTasks(kt *kit.Kit, body json.RawMessage, tgID,
 	return &core.FlowStateResult{FlowID: flowID}, nil
 }
 
-// convTCloudOperateRsReq conv tcloud operate rs req.
-func (svc *lbSvc) convTCloudOperateRsReq(kt *kit.Kit, targets []*dataproto.TargetBaseReq, targetGroupID,
+// convTCloudAddTargetReq conv tcloud add target req.
+func (svc *lbSvc) convTCloudAddTargetReq(kt *kit.Kit, targets []*dataproto.TargetBaseReq, targetGroupID,
 	accountID string) (*hcproto.TCloudBatchOperateTargetReq, error) {
 
 	instMap, err := svc.getInstWithTargetMap(kt, targets)

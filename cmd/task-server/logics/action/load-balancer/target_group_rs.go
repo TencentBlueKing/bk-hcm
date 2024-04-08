@@ -40,11 +40,11 @@ const SaveRsCloudIDKey = "batch_rs_cloud_ids"
 
 // --------------------------[批量添加RS]-----------------------------
 
-var _ action.Action = new(AddRsAction)
-var _ action.ParameterAction = new(AddRsAction)
+var _ action.Action = new(AddTargetToGroupAction)
+var _ action.ParameterAction = new(AddTargetToGroupAction)
 
-// AddRsAction define add rs action.
-type AddRsAction struct{}
+// AddTargetToGroupAction define add rs action.
+type AddTargetToGroupAction struct{}
 
 // OperateRsOption define operate rs option.
 type OperateRsOption struct {
@@ -108,17 +108,17 @@ func (opt OperateRsOption) Validate() error {
 }
 
 // ParameterNew return request params.
-func (act AddRsAction) ParameterNew() (params interface{}) {
+func (act AddTargetToGroupAction) ParameterNew() (params interface{}) {
 	return new(OperateRsOption)
 }
 
 // Name return action name
-func (act AddRsAction) Name() enumor.ActionName {
+func (act AddTargetToGroupAction) Name() enumor.ActionName {
 	return enumor.ActionAddRS
 }
 
-// Run add rs.
-func (act AddRsAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
+// Run add target.
+func (act AddTargetToGroupAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
 	opt, ok := params.(*OperateRsOption)
 	if !ok {
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
@@ -152,31 +152,31 @@ func (act AddRsAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, 
 }
 
 // Rollback 批量添加RS失败时的回滚Action，此处不需要回滚处理
-func (act AddRsAction) Rollback(kt run.ExecuteKit, params interface{}) error {
-	logs.Infof(" ----------- AddRsAction Rollback -----------, params: %s, rid: %s", params, kt.Kit().Rid)
+func (act AddTargetToGroupAction) Rollback(kt run.ExecuteKit, params interface{}) error {
+	logs.Infof(" ----------- AddTargetToGroupAction Rollback -----------, params: %s, rid: %s", params, kt.Kit().Rid)
 	return nil
 }
 
 // --------------------------[批量移除RS]-----------------------------
 
-var _ action.Action = new(RemoveRsAction)
-var _ action.ParameterAction = new(RemoveRsAction)
+var _ action.Action = new(RemoveTargetAction)
+var _ action.ParameterAction = new(RemoveTargetAction)
 
-// RemoveRsAction define remove rs action.
-type RemoveRsAction struct{}
+// RemoveTargetAction define remove rs action.
+type RemoveTargetAction struct{}
 
 // ParameterNew return request params.
-func (act RemoveRsAction) ParameterNew() (params interface{}) {
+func (act RemoveTargetAction) ParameterNew() (params interface{}) {
 	return new(OperateRsOption)
 }
 
 // Name return action name
-func (act RemoveRsAction) Name() enumor.ActionName {
+func (act RemoveTargetAction) Name() enumor.ActionName {
 	return enumor.ActionRemoveRS
 }
 
 // Run remove rs.
-func (act RemoveRsAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
+func (act RemoveTargetAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
 	opt, ok := params.(*OperateRsOption)
 	if !ok {
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
@@ -186,7 +186,7 @@ func (act RemoveRsAction) Run(kt run.ExecuteKit, params interface{}) (interface{
 	var err error
 	switch opt.Vendor {
 	case enumor.TCloud:
-		_, err = actcli.GetHCService().TCloud.Clb.BatchRemoveRs(
+		_, err = actcli.GetHCService().TCloud.Clb.BatchRemoveTarget(
 			kt.Kit(), opt.TargetGroupID, &opt.TCloudBatchOperateTargetReq)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", opt.Vendor)
@@ -200,7 +200,55 @@ func (act RemoveRsAction) Run(kt run.ExecuteKit, params interface{}) (interface{
 }
 
 // Rollback 批量移除RS失败时的回滚Action，此处不需要回滚处理
-func (act RemoveRsAction) Rollback(kt run.ExecuteKit, params interface{}) error {
-	logs.Infof(" ----------- RemoveRsAction Rollback -----------, params: %s, rid: %s", params, kt.Kit().Rid)
+func (act RemoveTargetAction) Rollback(kt run.ExecuteKit, params interface{}) error {
+	logs.Infof(" ----------- RemoveTargetAction Rollback -----------, params: %s, rid: %s", params, kt.Kit().Rid)
+	return nil
+}
+
+// --------------------------[批量修改RS端口]-----------------------------
+
+var _ action.Action = new(ModifyTargetPortAction)
+var _ action.ParameterAction = new(ModifyTargetPortAction)
+
+// ModifyTargetPortAction define modify rs port action.
+type ModifyTargetPortAction struct{}
+
+// ParameterNew return request params.
+func (act ModifyTargetPortAction) ParameterNew() (params interface{}) {
+	return new(OperateRsOption)
+}
+
+// Name return action name
+func (act ModifyTargetPortAction) Name() enumor.ActionName {
+	return enumor.ActionModifyPort
+}
+
+// Run modify target port.
+func (act ModifyTargetPortAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
+	opt, ok := params.(*OperateRsOption)
+	if !ok {
+		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
+	}
+
+	var result *hclb.BatchCreateResult
+	var err error
+	switch opt.Vendor {
+	case enumor.TCloud:
+		err = actcli.GetHCService().TCloud.Clb.BatchModifyTargetPort(
+			kt.Kit(), opt.TargetGroupID, &opt.TCloudBatchOperateTargetReq)
+	default:
+		return nil, fmt.Errorf("vendor: %s not support", opt.Vendor)
+	}
+	if err != nil {
+		logs.Errorf("batch modify target port failed, err: %v, rid: %s", err, kt.Kit().Rid)
+		return result, err
+	}
+
+	return result, nil
+}
+
+// Rollback 批量修改RS端口失败时的回滚Action，此处不需要回滚处理
+func (act ModifyTargetPortAction) Rollback(kt run.ExecuteKit, params interface{}) error {
+	logs.Infof(" ----------- ModifyTargetPortAction Rollback -----------, params: %s, rid: %s", params, kt.Kit().Rid)
 	return nil
 }
