@@ -6,6 +6,7 @@ import ClbDetail from './clb-detail';
 import { Message, Tab } from 'bkui-vue';
 import { BkTabPanel } from 'bkui-vue/lib/tab';
 import { useBusinessStore, useLoadBalancerStore } from '@/store';
+import { debounce } from 'lodash';
 export enum TypeEnum {
   listener = 'listener',
   detail = 'detail',
@@ -51,7 +52,7 @@ export default defineComponent({
       },
     );
 
-    const updateLb = async (payload: Record<string, any>) => {
+    const updateLb = debounce(async (payload: Record<string, any>) => {
       await businessStore.updateLbDetail({
         id: detail.value.id,
         ...payload,
@@ -60,7 +61,7 @@ export default defineComponent({
         message: '更新成功',
         theme: 'success',
       });
-    };
+    }, 1000);
     return () => (
       <Tab v-model:active={activeTab.value} type={'card-grid'}>
         {tabList.map((tab) => (
