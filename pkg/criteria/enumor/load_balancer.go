@@ -52,6 +52,10 @@ const (
 	SuccessBindingStatus BindingStatus = "success"
 	// BindingBindingStatus 绑定中
 	BindingBindingStatus BindingStatus = "binding"
+	// FailedBindingStatus 绑定失败
+	FailedBindingStatus BindingStatus = "failed"
+	// PartialFailedBindingStatus 部分失败
+	PartialFailedBindingStatus BindingStatus = "partial_failed"
 )
 
 // ProtocolType 协议类型

@@ -89,8 +89,8 @@ func InitService(cap *capability.Capability) {
 		"/target_group_listener_rels/create", svc.CreateTargetGroupListenerRel)
 	h.Add("ListTargetGroupListenerRel", http.MethodPost,
 		"/target_group_listener_rels/list", svc.ListTargetGroupListenerRel)
-	h.Add("BatchUpdateTGRuleRelStatus", http.MethodPatch,
-		"/target_group_listener_rels/{rel_id}/update", svc.BatchUpdateTGRuleRelStatus)
+	h.Add("BatchUpdateListenerRuleRelStatusByTGID", http.MethodPatch,
+		"/target_group_listener_rels/target_groups/{tg_id}/update", svc.BatchUpdateListenerRuleRelStatusByTGID)
 
 	// 资源跟Flow锁定
 	h.Add("CreateResFlowLock", http.MethodPost, "/res_flow_locks/create", svc.CreateResFlowLock)
