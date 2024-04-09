@@ -494,7 +494,7 @@ func (svc *lbSvc) createApplyTGFlow(kt *kit.Kit, tgID string, lblInfo *corelb.Ba
 			ActionID: "1",
 			Params: &actionflow.FlowWatchOption{
 				FlowID:   flowID,
-				ResID:    tgID,
+				ResID:    lblInfo.LbID,
 				ResType:  enumor.LoadBalancerCloudResType,
 				TaskType: enumor.ApplyTargetGroupType,
 			},
