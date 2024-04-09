@@ -291,7 +291,6 @@ func (svc *lbSvc) batchCreateTargetWithGroupID(kt *kit.Kit, txn *sqlx.Tx, accoun
 
 	for _, item := range rsList {
 		tmpRs := &tablelb.LoadBalancerTargetTable{
-			AccountID:     item.AccountID,
 			InstType:      item.InstType,
 			CloudInstID:   item.CloudInstID,
 			TargetGroupID: item.TargetGroupID,
@@ -312,6 +311,8 @@ func (svc *lbSvc) batchCreateTargetWithGroupID(kt *kit.Kit, txn *sqlx.Tx, accoun
 			tmpRs.PrivateIPAddress = cvmMap[item.CloudInstID].PrivateIPv4Addresses
 			tmpRs.PublicIPAddress = cvmMap[item.CloudInstID].PublicIPv4Addresses
 			tmpRs.Zone = cvmMap[item.CloudInstID].Zone
+			tmpRs.AccountID = cvmMap[item.CloudInstID].AccountID
+			tmpRs.CloudVpcIDs = cvmMap[item.CloudInstID].CloudVpcIDs
 		}
 
 		rsModels = append(rsModels, tmpRs)

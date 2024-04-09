@@ -266,7 +266,7 @@ func (r TCloudRuleDeleteByDomainReq) Validate() error {
 type ListenerWithRuleCreateReq struct {
 	Name          string                        `json:"name" validate:"required"`
 	BkBizID       int64                         `json:"bk_biz_id" validate:"omitempty"`
-	LbID          string                        `json:"lb_id" validate:"omitempty"`
+	LbID          string                        `json:"lb_id" validate:"required"`
 	Protocol      enumor.ProtocolType           `json:"protocol" validate:"required"`
 	Port          int64                         `json:"port" validate:"required"`
 	Scheduler     string                        `json:"scheduler" validate:"required"`
@@ -366,5 +366,20 @@ type RegisterTarget struct {
 
 // Validate ...
 func (r RegisterTarget) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// TCloudBatchDeleteLoadbalancerReq ...
+type TCloudBatchDeleteLoadbalancerReq struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	IDs       []string `json:"ids" validate:"required,min=1"`
+}
+
+// Validate ...
+func (r *TCloudBatchDeleteLoadbalancerReq) Validate() error {
+	if len(r.IDs) > constant.BatchListenerMaxLimit {
+		return errors.New("batch delete limit is 20")
+	}
 	return validator.Validate.Struct(r)
 }
