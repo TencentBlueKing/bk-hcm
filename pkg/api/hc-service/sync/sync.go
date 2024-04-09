@@ -204,3 +204,16 @@ type AzureImageReq struct {
 func (req *AzureImageReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// TCloudListenerSyncReq 监听器同步
+type TCloudListenerSyncReq struct {
+	AccountID           string   `json:"account_id" validate:"required"`
+	Region              string   `json:"region" validate:"required"`
+	LoadBalancerCloudID string   `json:"lb_cloud_id" validate:"required"`
+	ListenerCloudIds    []string `json:"lbl_cloud_ids" validate:"omitempty"`
+}
+
+// Validate ...
+func (req *TCloudListenerSyncReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

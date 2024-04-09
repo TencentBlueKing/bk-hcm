@@ -24,8 +24,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	actionflow "hcm/cmd/task-server/logics/action/flow"
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
+	"hcm/cmd/task-server/logics/flow"
 	cloudserver "hcm/pkg/api/cloud-server"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
@@ -328,7 +328,7 @@ func (svc *lbSvc) buildAddTCloudTargetTasks(kt *kit.Kit, body json.RawMessage, t
 		}
 		tasks = append(tasks, ts.CustomFlowTask{
 			ActionID:   action.ActIDType(getActionID()),
-			ActionName: enumor.ActionAddRS,
+			ActionName: enumor.ActionTargetGroupAddRS,
 			Params: &actionlb.OperateRsOption{
 				Vendor:                      enumor.TCloud,
 				TCloudBatchOperateTargetReq: *addRsParams,
@@ -343,7 +343,7 @@ func (svc *lbSvc) buildAddTCloudTargetTasks(kt *kit.Kit, body json.RawMessage, t
 		})
 	}
 	addReq := &ts.AddCustomFlowReq{
-		Name:        enumor.FlowAddRS,
+		Name:        enumor.FlowTargetGroupAddRS,
 		Tasks:       tasks,
 		IsInitState: true,
 	}

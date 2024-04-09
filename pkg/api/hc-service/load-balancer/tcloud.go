@@ -191,7 +191,11 @@ func (req *TCloudRuleBatchCreateReq) Validate() error {
 
 // TCloudRuleCreate 腾讯云url规则创建
 type TCloudRuleCreate struct {
-	Url               string   `json:"url,omitempty" validate:"required"`
+	Url string `json:"url,omitempty" validate:"required"`
+
+	TargetGroupID      string `json:"target_group_id" validate:"omitempty"`
+	CloudTargetGroupID string `json:"cloud_target_group_id" validate:"omitempty"`
+
 	Domains           []string `json:"domains,omitempty"`
 	SessionExpireTime *int64   `json:"session_expire_time,omitempty"`
 	Scheduler         *string  `json:"scheduler,omitempty"`
@@ -205,6 +209,8 @@ type TCloudRuleCreate struct {
 
 	HealthCheck  *corelb.TCloudHealthCheckInfo `json:"health_check,omitempty"`
 	Certificates *corelb.TCloudCertificateInfo `json:"certificates,omitempty"`
+
+	Memo *string `json:"memo,omitempty"`
 }
 
 // Validate request.
@@ -336,4 +342,29 @@ type TCloudBatchOperateTargetReq struct {
 // Validate RsList最大支持100个.
 func (req *TCloudBatchOperateTargetReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// BatchRegisterTCloudTargetReq 批量注册云上RS
+type BatchRegisterTCloudTargetReq struct {
+	CloudListenerID string            `json:"cloud_listener_id,omitempty"  validate:"required"`
+	CloudRuleID     string            `json:"cloud_rule_id,omitempty"  validate:"required"`
+	Targets         []*RegisterTarget `json:"targets,omitempty"  validate:"required,min=1,dive"`
+}
+
+// Validate ...
+func (r BatchRegisterTCloudTargetReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// RegisterTarget ...
+type RegisterTarget struct {
+	CloudInstID string `json:"cloud_inst_id,omitempty" validate:"required"`
+	InstType    string `json:"inst_type,omitempty" validate:"required"`
+	Port        int64  `json:"port" validate:"required"`
+	Weight      int64  `json:"weight" validate:"required"`
+}
+
+// Validate ...
+func (r RegisterTarget) Validate() error {
+	return validator.Validate.Struct(r)
 }

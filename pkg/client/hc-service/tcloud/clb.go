@@ -157,3 +157,11 @@ func (c *ClbClient) BatchModifyTargetWeight(kt *kit.Kit, targetGroupID string,
 	return common.RequestNoResp[hcproto.TCloudBatchOperateTargetReq](
 		c.client, http.MethodPatch, kt, req, "/target_groups/%s/targets/weight", targetGroupID)
 }
+
+// BatchRegisterTargetToListenerRule 注册rs到监听器、规则上
+func (c *ClbClient) BatchRegisterTargetToListenerRule(kt *kit.Kit, lbID string,
+	req *hcproto.BatchRegisterTCloudTargetReq) error {
+
+	return common.RequestNoResp[hcproto.BatchRegisterTCloudTargetReq](
+		c.client, http.MethodPost, kt, req, "/load_balancers/%s/targets/create", lbID)
+}

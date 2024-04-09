@@ -38,7 +38,7 @@ import (
 // SaveRsCloudIDKey 批量操作RS成功的监听器ID列表
 const SaveRsCloudIDKey = "batch_rs_cloud_ids"
 
-// --------------------------[批量添加RS]-----------------------------
+// --------------------------[批量添加RS到目标组]-----------------------------
 
 var _ action.Action = new(AddTargetToGroupAction)
 var _ action.ParameterAction = new(AddTargetToGroupAction)
@@ -114,7 +114,7 @@ func (act AddTargetToGroupAction) ParameterNew() (params interface{}) {
 
 // Name return action name
 func (act AddTargetToGroupAction) Name() enumor.ActionName {
-	return enumor.ActionAddRS
+	return enumor.ActionTargetGroupAddRS
 }
 
 // Run add target.
@@ -172,7 +172,7 @@ func (act RemoveTargetAction) ParameterNew() (params interface{}) {
 
 // Name return action name
 func (act RemoveTargetAction) Name() enumor.ActionName {
-	return enumor.ActionRemoveRS
+	return enumor.ActionTargetGroupRemoveRS
 }
 
 // Run remove rs.
@@ -220,7 +220,7 @@ func (act ModifyTargetPortAction) ParameterNew() (params interface{}) {
 
 // Name return action name
 func (act ModifyTargetPortAction) Name() enumor.ActionName {
-	return enumor.ActionModifyPort
+	return enumor.ActionTargetGroupModifyPort
 }
 
 // Run modify target port.
@@ -268,7 +268,7 @@ func (act ModifyTargetWeightAction) ParameterNew() (params interface{}) {
 
 // Name return action name
 func (act ModifyTargetWeightAction) Name() enumor.ActionName {
-	return enumor.ActionModifyWeight
+	return enumor.ActionTargetGroupModifyWeight
 }
 
 // Run modify target port.

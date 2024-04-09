@@ -24,10 +24,10 @@ import (
 	actioncvm "hcm/cmd/task-server/logics/action/cvm"
 	actioneip "hcm/cmd/task-server/logics/action/eip"
 	actionfirewall "hcm/cmd/task-server/logics/action/firewall"
-	"hcm/cmd/task-server/logics/action/flow"
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
 	actionsg "hcm/cmd/task-server/logics/action/security-group"
 	actionsubnet "hcm/cmd/task-server/logics/action/subnet"
+	"hcm/cmd/task-server/logics/flow"
 	"hcm/pkg/async/action"
 	"hcm/pkg/client"
 	"hcm/pkg/dal/dao"
@@ -62,5 +62,7 @@ func register() {
 	action.RegisterAction(actionlb.RemoveTargetAction{})
 	action.RegisterAction(actionlb.ModifyTargetPortAction{})
 	action.RegisterAction(actionlb.ModifyTargetWeightAction{})
+
+	action.RegisterAction(actionlb.ListenerRuleAddTargetAction{})
 
 }

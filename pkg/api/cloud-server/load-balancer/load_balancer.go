@@ -246,6 +246,43 @@ func (req *TCloudTargetBatchRemoveReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
+// TCloudRuleBatchCreateReq tcloud lb url rule batch create req.
+type TCloudRuleBatchCreateReq struct {
+	Rules []TCloudRuleCreate `json:"rules" validate:"min=1,dive"`
+}
+
+// Validate request.
+func (req *TCloudRuleBatchCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// TCloudRuleCreate 腾讯云url规则创建
+type TCloudRuleCreate struct {
+	Url string `json:"url,omitempty" validate:"required"`
+
+	TargetGroupID string `json:"target_group_id" validate:"required"`
+
+	Domains           []string `json:"domains,omitempty"`
+	SessionExpireTime *int64   `json:"session_expire_time,omitempty"`
+	Scheduler         *string  `json:"scheduler,omitempty"`
+	ForwardType       *string  `json:"forward_type,omitempty"`
+	DefaultServer     *bool    `json:"default_server,omitempty"`
+	Http2             *bool    `json:"http2,omitempty"`
+	TargetType        *string  `json:"target_type,omitempty"`
+	Quic              *bool    `json:"quic,omitempty"`
+	TrpcFunc          *string  `json:"trpc_func,omitempty"`
+	TrpcCallee        *string  `json:"trpc_callee,omitempty"`
+
+	Certificates *corelb.TCloudCertificateInfo `json:"certificates,omitempty"`
+
+	Memo *string `json:"memo,omitempty"`
+}
+
+// Validate request.
+func (req *TCloudRuleCreate) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
 // --------------------------[批量修改RS端口]--------------------------
 
 // TCloudBatchModifyTargetPortReq tcloud batch modify target port req.

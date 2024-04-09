@@ -24,8 +24,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	actionflow "hcm/cmd/task-server/logics/action/flow"
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
+	"hcm/cmd/task-server/logics/flow"
 	cloudserver "hcm/pkg/api/cloud-server"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
@@ -231,7 +231,7 @@ func (svc *lbSvc) buildRemoveTCloudTargetTasks(kt *kit.Kit, body json.RawMessage
 		}
 		tasks = append(tasks, ts.CustomFlowTask{
 			ActionID:   action.ActIDType(getActionID()),
-			ActionName: enumor.ActionRemoveRS,
+			ActionName: enumor.ActionTargetGroupRemoveRS,
 			Params: &actionlb.OperateRsOption{
 				Vendor:                      enumor.TCloud,
 				TCloudBatchOperateTargetReq: *removeRsParams,
@@ -245,7 +245,7 @@ func (svc *lbSvc) buildRemoveTCloudTargetTasks(kt *kit.Kit, body json.RawMessage
 			},
 		})
 	}
-	removeReq := &ts.AddCustomFlowReq{Name: enumor.FlowRemoveRS, Tasks: tasks, IsInitState: true}
+	removeReq := &ts.AddCustomFlowReq{Name: enumor.FlowTargetGroupRemoveRS, Tasks: tasks, IsInitState: true}
 	result, err := svc.client.TaskServer().CreateCustomFlow(kt, removeReq)
 	if err != nil {
 		logs.Errorf("call taskserver to batch remove rs custom flow failed, err: %v, rid: %s", err, kt.Rid)

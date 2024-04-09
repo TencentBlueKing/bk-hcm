@@ -382,3 +382,14 @@ type ResFlowLockReq struct {
 func (req *ResFlowLockReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// TCloudRuleBatchCreateResult ...
+type TCloudRuleBatchCreateResult struct {
+	Details []TCloudRuleCreateResult `json:"details"`
+}
+
+// TCloudRuleCreateResult ...
+type TCloudRuleCreateResult struct {
+	RuleID string `json:"rule_id"`
+	RelID  string `json:"rel_id"`
+}

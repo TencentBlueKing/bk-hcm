@@ -38,37 +38,26 @@ func InitService(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 
+	// 负载均衡
 	h.Add("GetLoadBalancer", http.MethodGet, "/vendors/{vendor}/load_balancers/{id}", svc.GetLoadBalancer)
 	h.Add("ListLoadBalancer", http.MethodPost, "/load_balancers/list", svc.ListLoadBalancer)
 	h.Add("ListLoadBalancerExt", http.MethodPost, "/vendors/{vendor}/load_balancers/list", svc.ListLoadBalancerExt)
 	h.Add("BatchCreateLoadBalancer", http.MethodPost, "/vendors/{vendor}/load_balancers/batch/create",
 		svc.BatchCreateLoadBalancer)
-
 	h.Add("BatchUpdateLoadBalancer",
 		http.MethodPatch, "/vendors/{vendor}/load_balancers/batch/update", svc.BatchUpdateLoadBalancer)
 	h.Add("BatchUpdateClbBizInfo", http.MethodPatch, "/load_balancers/biz/batch/update", svc.BatchUpdateClbBizInfo)
+	h.Add("BatchDeleteLoadBalancer", http.MethodDelete, "/load_balancers/batch", svc.BatchDeleteLoadBalancer)
+
+	// 监听器
 	h.Add("GetListener", http.MethodGet, "/vendors/{vendor}/listeners/{id}", svc.GetListener)
 	h.Add("ListListener", http.MethodPost, "/load_balancers/listeners/list", svc.ListListener)
 	h.Add("ListListenerExt", http.MethodPost, "/vendors/tcloud/load_balancers/listeners/list", svc.ListListenerExt)
-	h.Add("ListTCloudUrlRule", http.MethodPost, "/vendors/tcloud/load_balancers/url_rules/list", svc.ListTCloudUrlRule)
-	h.Add("ListTarget", http.MethodPost, "/load_balancers/targets/list", svc.ListTarget)
-	h.Add("ListTargetGroup", http.MethodPost, "/load_balancers/target_groups/list", svc.ListTargetGroup)
-	h.Add("BatchDeleteLoadBalancer", http.MethodDelete, "/load_balancers/batch", svc.BatchDeleteLoadBalancer)
-	h.Add("ListTargetGroupListenerRel", http.MethodPost, "/target_group_listener_rels/list",
-		svc.ListTargetGroupListenerRel)
-	h.Add("BatchDeleteTarget", http.MethodDelete, "/load_balancers/targets/batch", svc.BatchDeleteTarget)
-	h.Add("BatchUpdateTarget", http.MethodPatch, "/load_balancers/targets/batch/update", svc.BatchUpdateTarget)
-
-	h.Add("BatchCreateTargetGroup", http.MethodPost, "/vendors/{vendor}/target_groups/batch/create",
-		svc.BatchCreateTargetGroup)
-	h.Add("BatchCreateTargetGroupWithRel", http.MethodPost, "/vendors/{vendor}/target_groups/with/rels/batch/create",
-		svc.BatchCreateTargetGroupWithRel)
-	h.Add("UpdateTargetGroup", http.MethodPatch, "/vendors/{vendor}/target_groups", svc.UpdateTargetGroup)
-	h.Add("BatchDeleteTargetGroup", http.MethodDelete, "/target_groups/batch", svc.BatchDeleteTargetGroup)
-	h.Add("GetTargetGroup", http.MethodGet, "/vendors/{vendor}/target_groups/{id}", svc.GetTargetGroup)
-	h.Add("CreateTargetGroupListenerRel", http.MethodPost, "/target_group_listener_rels/create",
-		svc.CreateTargetGroupListenerRel)
-	h.Add("BatchCreateTarget", http.MethodPost, "/targets/batch/create", svc.BatchCreateTarget)
+	h.Add("BatchCreateListener", http.MethodPost, "/vendors/{vendor}/listeners/batch/create", svc.BatchCreateListener)
+	h.Add("BatchCreateListenerWithRule", http.MethodPost, "/vendors/{vendor}/listeners/rules/batch/create",
+		svc.BatchCreateListenerWithRule)
+	h.Add("BatchUpdateListener", http.MethodPatch, "/vendors/{vendor}/listeners/batch/update", svc.BatchUpdateListener)
+	h.Add("BatchDeleteListener", http.MethodDelete, "/listeners/batch", svc.BatchDeleteListener)
 
 	// url规则
 	h.Add("BatchCreateTCloudUrlRule",
@@ -77,13 +66,31 @@ func InitService(cap *capability.Capability) {
 		http.MethodPatch, "/vendors/tcloud/url_rules/batch/update", svc.BatchUpdateTCloudUrlRule)
 	h.Add("BatchDeleteTCloudUrlRule",
 		http.MethodDelete, "/vendors/tcloud/url_rules/batch", svc.BatchDeleteTCloudUrlRule)
+	h.Add("ListTCloudUrlRule", http.MethodPost, "/vendors/tcloud/load_balancers/url_rules/list", svc.ListTCloudUrlRule)
 
-	// 监听器
-	h.Add("BatchCreateListener", http.MethodPost, "/vendors/{vendor}/listeners/batch/create", svc.BatchCreateListener)
-	h.Add("BatchCreateListenerWithRule", http.MethodPost, "/vendors/{vendor}/listeners/rules/batch/create",
-		svc.BatchCreateListenerWithRule)
-	h.Add("BatchUpdateListener", http.MethodPatch, "/vendors/{vendor}/listeners/batch/update", svc.BatchUpdateListener)
-	h.Add("BatchDeleteListener", http.MethodDelete, "/listeners/batch", svc.BatchDeleteListener)
+	// 目标组
+	h.Add("BatchCreateTargetGroup", http.MethodPost,
+		"/vendors/{vendor}/target_groups/batch/create", svc.BatchCreateTargetGroup)
+	h.Add("BatchCreateTargetGroupWithRel", http.MethodPost,
+		"/vendors/{vendor}/target_groups/with/rels/batch/create", svc.BatchCreateTargetGroupWithRel)
+	h.Add("GetTargetGroup", http.MethodGet, "/vendors/{vendor}/target_groups/{id}", svc.GetTargetGroup)
+	h.Add("ListTargetGroup", http.MethodPost, "/load_balancers/target_groups/list", svc.ListTargetGroup)
+	h.Add("UpdateTargetGroup", http.MethodPatch, "/vendors/{vendor}/target_groups", svc.UpdateTargetGroup)
+	h.Add("BatchDeleteTargetGroup", http.MethodDelete, "/target_groups/batch", svc.BatchDeleteTargetGroup)
+
+	// RS
+	h.Add("BatchDeleteTarget", http.MethodDelete, "/load_balancers/targets/batch", svc.BatchDeleteTarget)
+	h.Add("BatchUpdateTarget", http.MethodPatch, "/load_balancers/targets/batch/update", svc.BatchUpdateTarget)
+	h.Add("ListTarget", http.MethodPost, "/load_balancers/targets/list", svc.ListTarget)
+	h.Add("BatchCreateTarget", http.MethodPost, "/targets/batch/create", svc.BatchCreateTarget)
+
+	// 目标组 规则关联关系
+	h.Add("CreateTargetGroupListenerRel", http.MethodPost,
+		"/target_group_listener_rels/create", svc.CreateTargetGroupListenerRel)
+	h.Add("ListTargetGroupListenerRel", http.MethodPost,
+		"/target_group_listener_rels/list", svc.ListTargetGroupListenerRel)
+	h.Add("BatchUpdateListenerRuleRelStatusByTGID", http.MethodPatch,
+		"/target_group_listener_rels/target_groups/{tg_id}/update", svc.BatchUpdateListenerRuleRelStatusByTGID)
 
 	// 资源跟Flow锁定
 	h.Add("CreateResFlowLock", http.MethodPost, "/res_flow_locks/create", svc.CreateResFlowLock)

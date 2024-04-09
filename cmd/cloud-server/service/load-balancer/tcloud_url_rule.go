@@ -1,21 +1,33 @@
 package loadbalancer
 
 import (
+	"errors"
+	"fmt"
+
 	lblogic "hcm/cmd/cloud-server/logics/load-balancer"
+	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
+	actionflow "hcm/cmd/task-server/logics/flow"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service/load-balancer"
+	apits "hcm/pkg/api/task-server"
+	"hcm/pkg/async/action"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/dal/dao/types"
+	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/counter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -334,32 +346,24 @@ func (svc *lbSvc) GetBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 	return urlRuleList.Details[0], nil
 }
 
-// CreateBizTCloudUrlRule 业务下新建腾讯云url规则
+// CreateBizTCloudUrlRule 业务下新建腾讯云url规则 TODO: 改成一次只创建一个规则
 func (svc *lbSvc) CreateBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
+
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	if bizID < 0 {
+		return nil, errf.New(errf.InvalidParameter, "bk_biz_id id is required")
+	}
 
 	lblID := cts.PathParameter("lbl_id").String()
 	if len(lblID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "listener id is required")
 	}
 
-	lblInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.ListenerCloudResType, lblID)
-	if err != nil {
-		return nil, err
-	}
-
-	// 业务校验、鉴权
-	err = handler.BizOperateAuth(cts,
-		&handler.ValidWithAuthOption{
-			Authorizer: svc.authorizer,
-			ResType:    meta.UrlRuleAuditResType,
-			Action:     meta.Create,
-			BasicInfo:  lblInfo,
-		})
-	if err != nil {
-		return nil, err
-	}
-
-	req := new(hcproto.TCloudRuleBatchCreateReq)
+	// 限制一次只能创建一条规则
+	req := new(cslb.TCloudRuleCreate)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -368,7 +372,237 @@ func (svc *lbSvc) CreateBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	return svc.client.HCService().TCloud.Clb.BatchCreateUrlRule(cts.Kit, lblID, req)
+	lblInfo, lblBasicInfo, err := svc.getTCloudListenerByID(cts, bizID, lblID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 业务校验、鉴权
+	valOpt := &handler.ValidWithAuthOption{
+		Authorizer: svc.authorizer,
+		ResType:    meta.UrlRuleAuditResType,
+		Action:     meta.Create,
+		BasicInfo:  lblBasicInfo,
+	}
+	if err = handler.BizOperateAuth(cts, valOpt); err != nil {
+		return nil, err
+	}
+
+	tg, err := svc.targetGroupBindCheck(cts.Kit, bizID, req.TargetGroupID)
+	if err != nil {
+		return nil, err
+	}
+
+	hcReq := &hcproto.TCloudRuleBatchCreateReq{Rules: []hcproto.TCloudRuleCreate{convRuleCreate(req, tg)}}
+	createResp, err := svc.client.HCService().TCloud.Clb.BatchCreateUrlRule(cts.Kit, lblID, hcReq)
+	if err != nil {
+		logs.Errorf("fail to create tcloud url rule, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if len(createResp.SuccessCloudIDs) == 0 {
+		logs.Errorf("no rule have been created, lblID: %s, req: %+v, rid: %s", lblID, hcReq, cts.Kit.Rid)
+		return nil, errors.New("create failed, reason: unknown")
+	}
+	err = svc.applyTargetToRule(cts.Kit, tg.ID, createResp.SuccessCloudIDs[0], lblInfo)
+	if err != nil {
+		logs.Errorf("fail to create target register flow, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return createResp, nil
+}
+
+// 构建异步任务将目标组中的RS绑定到对应规则上
+func (svc *lbSvc) applyTargetToRule(kt *kit.Kit, tgID, ruleCloudID string, lblInfo *corelb.BaseListener) error {
+
+	// 查找目标组中的rs
+	listRsReq := &core.ListReq{
+		Filter: tools.EqualExpression("target_group_id", tgID),
+		Page: &core.BasePage{
+			Count: false,
+			Start: 0,
+			Limit: constant.BatchAddRSCloudMaxLimit,
+		},
+	}
+	// Build Task
+	tasks := make([]apits.CustomFlowTask, 0)
+	getNextID := counter.NewNumStringCounter(1, 10)
+	// 按目标组数量拆分任务批次
+	for {
+		rsResp, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, listRsReq)
+		if err != nil {
+			logs.Errorf("fail to list target, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+		if len(rsResp.Details) == 0 {
+			break
+		}
+
+		rsReq := &hcproto.BatchRegisterTCloudTargetReq{
+			CloudListenerID: lblInfo.CloudID,
+			CloudRuleID:     ruleCloudID,
+			Targets:         make([]*hcproto.RegisterTarget, 0, len(rsResp.Details)),
+		}
+		for _, target := range rsResp.Details {
+			rsReq.Targets = append(rsReq.Targets, &hcproto.RegisterTarget{
+				CloudInstID: target.CloudInstID,
+				InstType:    string(target.InstType),
+				Port:        target.Port,
+				Weight:      converter.PtrToVal(target.Weight),
+			})
+		}
+		tasks = append(tasks, apits.CustomFlowTask{
+			ActionID:   action.ActIDType(getNextID()),
+			ActionName: enumor.ActionListenerRuleAddTarget,
+			Params: actionlb.ListenerRuleAddTargetOption{
+				LoadBalancerID:               lblInfo.LbID,
+				BatchRegisterTCloudTargetReq: rsReq,
+			},
+			DependOn: nil,
+			Retry:    tableasync.NewRetryWithPolicy(constant.FlowRetryMaxLimit, 100, 500),
+		})
+
+		if len(rsResp.Details) < constant.BatchAddRSCloudMaxLimit {
+			break
+		}
+		listRsReq.Page.Start += constant.BatchAddRSCloudMaxLimit
+	}
+
+	if len(tasks) == 0 {
+		return nil
+	}
+	return svc.createApplyTGFlow(kt, tgID, lblInfo, tasks)
+}
+
+func (svc *lbSvc) createApplyTGFlow(kt *kit.Kit, tgID string, lblInfo *corelb.BaseListener,
+	tasks []apits.CustomFlowTask) error {
+
+	mainFlowResult, err := svc.client.TaskServer().CreateCustomFlow(kt, &apits.AddCustomFlowReq{
+		Name:        enumor.FlowApplyTargetGroupToListenerRule,
+		IsInitState: true,
+		Tasks:       tasks,
+	})
+	if err != nil {
+		logs.Errorf("fail to create target register flow, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	flowID := mainFlowResult.ID
+	// 创建从任务并加锁
+	flowWatchReq := &apits.AddTemplateFlowReq{
+		Name: enumor.FlowWatch,
+		Tasks: []apits.TemplateFlowTask{{
+			ActionID: "1",
+			Params: &actionflow.FlowWatchOption{
+				FlowID:   flowID,
+				ResID:    tgID,
+				ResType:  enumor.LoadBalancerCloudResType,
+				TaskType: enumor.ApplyTargetGroupType,
+			},
+		}},
+	}
+	_, err = svc.client.TaskServer().CreateTemplateFlow(kt, flowWatchReq)
+	if err != nil {
+		logs.Errorf("call task server to create res flow status watch flow failed, err: %v, flowID: %s, rid: %s",
+			err, flowID, kt.Rid)
+		return err
+	}
+
+	// 锁定负载均衡跟Flow的状态
+	err = svc.lockResFlowStatus(kt, lblInfo.LbID, enumor.LoadBalancerCloudResType, flowID, enumor.ApplyTargetGroupType)
+	if err != nil {
+		logs.Errorf("fail to lock load balancer(%s) for flow(%s), err: %v, rid: %s",
+			lblInfo.LbID, flowID, err, kt.Rid)
+		return err
+	}
+	return nil
+}
+
+func (svc *lbSvc) getTCloudListenerByID(cts *rest.Contexts, bizID int64, lblID string) (*corelb.BaseListener,
+	*types.CloudResourceBasicInfo, error) {
+
+	lblResp, err := svc.client.DataService().Global.LoadBalancer.ListListener(cts.Kit,
+		&core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleEqual("id", lblID),
+				tools.RuleEqual("vendor", enumor.TCloud),
+				tools.RuleEqual("bk_biz_id", bizID)),
+			Page: core.NewDefaultBasePage(),
+		})
+	if err != nil {
+		logs.Errorf("fail to list listener(%s), err: %v, rid: %s", lblID, err, cts.Kit.Rid)
+		return nil, nil, err
+	}
+	if len(lblResp.Details) == 0 {
+		return nil, nil, errf.New(errf.RecordNotFound, "listener not found, id: "+lblID)
+	}
+	lblInfo := &lblResp.Details[0]
+	basicInfo := &types.CloudResourceBasicInfo{
+		ResType:   enumor.ListenerCloudResType,
+		ID:        lblID,
+		Vendor:    enumor.TCloud,
+		AccountID: lblInfo.AccountID,
+		BkBizID:   lblInfo.BkBizID,
+	}
+
+	return lblInfo, basicInfo, nil
+}
+
+func convRuleCreate(rule *cslb.TCloudRuleCreate, tg *corelb.BaseTargetGroup) hcproto.TCloudRuleCreate {
+	return hcproto.TCloudRuleCreate{
+		Url:                rule.Url,
+		TargetGroupID:      rule.TargetGroupID,
+		CloudTargetGroupID: tg.CloudID,
+		Domains:            rule.Domains,
+		SessionExpireTime:  rule.SessionExpireTime,
+		Scheduler:          rule.Scheduler,
+		ForwardType:        rule.ForwardType,
+		DefaultServer:      rule.DefaultServer,
+		Http2:              rule.Http2,
+		TargetType:         rule.TargetType,
+		Quic:               rule.Quic,
+		TrpcFunc:           rule.TrpcFunc,
+		TrpcCallee:         rule.TrpcCallee,
+		HealthCheck:        tg.HealthCheck,
+		Certificates:       rule.Certificates,
+		Memo:               rule.Memo,
+	}
+}
+
+// 目标组绑定检查，检查成功返回目标组id为索引的map
+func (svc *lbSvc) targetGroupBindCheck(kt *kit.Kit, bizID int64, tgId string) (*corelb.BaseTargetGroup, error) {
+
+	// 检查目标组是否存在
+	tgResp, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroup(kt, &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("bk_biz_id", bizID),
+			tools.RuleEqual("id", tgId),
+		),
+		Page: core.NewDefaultBasePage(),
+	})
+	if err != nil {
+		logs.Errorf("fail to query target group(id:%s) info, err: %v, rid: %s", tgId, err, kt.Rid)
+		return nil, err
+	}
+
+	if len(tgResp.Details) == 0 {
+		logs.Errorf("target group can not be found, id: %s, rid: %s", tgId, kt.Rid)
+		return nil, errf.Newf(errf.RecordNotFound, "target group(%s) can not be found", tgId)
+	}
+	tg := &tgResp.Details[0]
+	// 检查对应的目标组是否被绑定
+	relResp, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, &core.ListReq{
+		Filter: tools.EqualExpression("target_group_id", tgId),
+		Page:   core.NewDefaultBasePage(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(relResp.Details) > 0 {
+		rel := relResp.Details[0]
+		return nil, fmt.Errorf("target group(%s) already been bound to rule or listener(%s)",
+			rel.TargetGroupID, rel.CloudListenerRuleID)
+	}
+	return tg, nil
 }
 
 // UpdateBizTCloudUrlRule 更新规则

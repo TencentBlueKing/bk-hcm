@@ -435,3 +435,33 @@ func (svc *lbSvc) ResFlowUnLock(cts *rest.Contexts) (interface{}, error) {
 
 	return nil, nil
 }
+
+// BatchUpdateListenerRuleRelStatusByTGID 根据目标组id 批量修改目标组和规则、监听器关系的状态
+func (svc *lbSvc) BatchUpdateListenerRuleRelStatusByTGID(cts *rest.Contexts) (any, error) {
+	tgID := cts.PathParameter("tg_id").String()
+
+	req := new(dataproto.TGListenerRelStatusUpdateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	model := &tablelb.TargetGroupListenerRuleRelTable{
+		BindingStatus: req.BindingStatus,
+		Detail:        req.Detail,
+		Reviser:       cts.Kit.User,
+	}
+	tgFilter := tools.EqualExpression("target_group_id", tgID)
+	return svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
+
+		err := svc.dao.LoadBalancerTargetGroupListenerRuleRel().Update(cts.Kit, tgFilter, model)
+		if err != nil {
+			logs.Errorf("fail to update listener rule rel status by target group(%s), err: %v, rid:%s",
+				tgID, err, cts.Kit.Rid)
+			return nil, fmt.Errorf("update target group listener rel by target group(%s) failed, err: %v", tgID, err)
+		}
+		return nil, nil
+	})
+}

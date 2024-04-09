@@ -178,3 +178,11 @@ func (cli *LoadBalancerClient) BatchUpdateTarget(kt *kit.Kit, req *dataproto.Tar
 	return common.RequestNoResp[dataproto.TargetBatchUpdateReq](cli.client, rest.PATCH, kt, req,
 		"/load_balancers/targets/batch/update")
 }
+
+// BatchUpdateListenerRuleRelStatusByTGID 按目标组id 批量更新目标组、监听器规则关联关系的状态
+func (cli *LoadBalancerClient) BatchUpdateListenerRuleRelStatusByTGID(kt *kit.Kit, tgID string,
+	req *dataproto.TGListenerRelStatusUpdateReq) error {
+
+	return common.RequestNoResp[dataproto.TGListenerRelStatusUpdateReq](cli.client, rest.PATCH, kt, req,
+		"/target_group_listener_rels/target_groups/%s/update", tgID)
+}
