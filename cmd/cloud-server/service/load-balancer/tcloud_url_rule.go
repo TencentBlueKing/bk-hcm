@@ -372,7 +372,7 @@ func (svc *lbSvc) CreateBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	lblInfo, lblBasicInfo, err := svc.getListenerByID(cts, bizID, lblID)
+	lblInfo, lblBasicInfo, err := svc.getTCloudListenerByID(cts, bizID, lblID)
 	if err != nil {
 		return nil, err
 	}
@@ -517,7 +517,7 @@ func (svc *lbSvc) createApplyTGFlow(kt *kit.Kit, tgID string, lblInfo *corelb.Ba
 	return nil
 }
 
-func (svc *lbSvc) getListenerByID(cts *rest.Contexts, bizID int64, lblID string) (*corelb.BaseListener,
+func (svc *lbSvc) getTCloudListenerByID(cts *rest.Contexts, bizID int64, lblID string) (*corelb.BaseListener,
 	*types.CloudResourceBasicInfo, error) {
 
 	lblResp, err := svc.client.DataService().Global.LoadBalancer.ListListener(cts.Kit,
