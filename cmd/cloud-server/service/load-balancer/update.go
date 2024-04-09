@@ -492,7 +492,7 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksWeight(kt *kit.Kit, body json.RawM
 		}
 		tasks = append(tasks, ts.CustomFlowTask{
 			ActionID:   action.ActIDType(getActionID()),
-			ActionName: enumor.ActionModifyWeight,
+			ActionName: enumor.ActionTargetGroupModifyWeight,
 			Params: &actionlb.OperateRsOption{
 				Vendor:                      enumor.TCloud,
 				TCloudBatchOperateTargetReq: *rsWeightParams,
@@ -506,7 +506,7 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksWeight(kt *kit.Kit, body json.RawM
 			},
 		})
 	}
-	rsWeightReq := &ts.AddCustomFlowReq{Name: enumor.FlowModifyWeight, Tasks: tasks, IsInitState: true}
+	rsWeightReq := &ts.AddCustomFlowReq{Name: enumor.FlowTargetGroupModifyWeight, Tasks: tasks, IsInitState: true}
 	result, err := svc.client.TaskServer().CreateCustomFlow(kt, rsWeightReq)
 	if err != nil {
 		logs.Errorf("call taskserver to batch modify target weight custom flow failed, err: %v, rid: %s", err, kt.Rid)

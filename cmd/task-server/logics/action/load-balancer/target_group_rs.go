@@ -268,7 +268,7 @@ func (act ModifyTargetWeightAction) ParameterNew() (params interface{}) {
 
 // Name return action name
 func (act ModifyTargetWeightAction) Name() enumor.ActionName {
-	return enumor.ActionModifyWeight
+	return enumor.ActionTargetGroupModifyWeight
 }
 
 // Run modify target port.

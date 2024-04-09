@@ -106,6 +106,8 @@ const (
 	ModifyPortTaskType = TaskType(FlowTargetGroupModifyPort)
 	// ModifyWeightTaskType 任务类型-修改权重
 	ModifyWeightTaskType = TaskType(FlowTargetGroupModifyWeight)
+	// ApplyTargetGroupType 任务类型应用目标组到监听器/规则上
+	ApplyTargetGroupType = TaskType(FlowApplyTargetGroupToListenerRule)
 )
 
 // InstType 实例类型

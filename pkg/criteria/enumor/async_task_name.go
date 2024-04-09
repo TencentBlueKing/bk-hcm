@@ -38,7 +38,8 @@ func (v ActionName) Validate() error {
 
 	case VirRoot:
 	case ActionCreateFactoryTest, ActionProduceTest, ActionAssembleTest, ActionSleep:
-	case ActionTargetGroupAddRS, ActionTargetGroupRemoveRS, ActionTargetGroupModifyPort, ActionTargetGroupModifyWeight, ActionFlowWatch:
+	case ActionTargetGroupAddRS, ActionTargetGroupRemoveRS, ActionTargetGroupModifyPort, ActionTargetGroupModifyWeight:
+	case ActionFlowWatch:
 	case ActionListenerRuleAddTarget:
 	default:
 		return fmt.Errorf("unsupported action name type: %s", v)

@@ -46,7 +46,7 @@ import (
 var _ action.Action = new(FlowWatchAction)
 var _ action.ParameterAction = new(FlowWatchAction)
 
-// FlowWatchAction define flow watch.
+// FlowWatchAction 作为从flow 监听住flow 状态，在其进入终止状态的时候，对其进行解锁
 type FlowWatchAction struct{}
 
 // FlowWatchOption define flow watch option.

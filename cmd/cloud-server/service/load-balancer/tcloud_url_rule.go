@@ -6,13 +6,14 @@ import (
 
 	lblogic "hcm/cmd/cloud-server/logics/load-balancer"
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
+	actionflow "hcm/cmd/task-server/logics/flow"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service/load-balancer"
-	taskserver "hcm/pkg/api/task-server"
+	apits "hcm/pkg/api/task-server"
 	"hcm/pkg/async/action"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -402,15 +403,7 @@ func (svc *lbSvc) CreateBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 		logs.Errorf("no rule have been created, lblID: %s, req: %+v, rid: %s", lblID, hcReq, cts.Kit.Rid)
 		return nil, errors.New("create failed, reason: unknown")
 	}
-	tasks := svc.buildApplyTargetTasks(cts.Kit, tg.ID, createResp.SuccessCloudIDs[0], lblInfo)
-	if len(tasks) == 0 {
-		return createResp, nil
-	}
-	_, err = svc.client.TaskServer().CreateCustomFlow(cts.Kit, &taskserver.AddCustomFlowReq{
-		Name:        enumor.FlowApplyTargetGroupToListenerRule,
-		IsInitState: false,
-		Tasks:       tasks,
-	})
+	err = svc.applyTargetToRule(cts.Kit, tg.ID, createResp.SuccessCloudIDs[0], lblInfo)
 	if err != nil {
 		logs.Errorf("fail to create target register flow, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -418,10 +411,10 @@ func (svc *lbSvc) CreateBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 	return createResp, nil
 }
 
-func (svc *lbSvc) buildApplyTargetTasks(kt *kit.Kit, tgID, ruleCloudID string,
-	lblInfo *corelb.BaseListener) []taskserver.CustomFlowTask {
+// 构建异步任务将目标组中的RS绑定到对应规则上
+func (svc *lbSvc) applyTargetToRule(kt *kit.Kit, tgID, ruleCloudID string, lblInfo *corelb.BaseListener) error {
 
-	// 绑定rs
+	// 查找目标组中的rs
 	listRsReq := &core.ListReq{
 		Filter: tools.EqualExpression("target_group_id", tgID),
 		Page: &core.BasePage{
@@ -431,14 +424,14 @@ func (svc *lbSvc) buildApplyTargetTasks(kt *kit.Kit, tgID, ruleCloudID string,
 		},
 	}
 	// Build Task
-	tasks := make([]taskserver.CustomFlowTask, 0)
-	cnt := counter.NewNumStringCounter(0, 10)
-	// 拆分任务
+	tasks := make([]apits.CustomFlowTask, 0)
+	getNextID := counter.NewNumStringCounter(1, 10)
+	// 按目标组数量拆分任务批次
 	for {
 		rsResp, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, listRsReq)
 		if err != nil {
 			logs.Errorf("fail to list target, err: %v, rid: %s", err, kt.Rid)
-			return nil
+			return err
 		}
 		if len(rsResp.Details) == 0 {
 			break
@@ -457,9 +450,8 @@ func (svc *lbSvc) buildApplyTargetTasks(kt *kit.Kit, tgID, ruleCloudID string,
 				Weight:      converter.PtrToVal(target.Weight),
 			})
 		}
-		// 操作
-		tasks = append(tasks, taskserver.CustomFlowTask{
-			ActionID:   action.ActIDType(cnt()),
+		tasks = append(tasks, apits.CustomFlowTask{
+			ActionID:   action.ActIDType(getNextID()),
 			ActionName: enumor.ActionListenerRuleAddTarget,
 			Params: actionlb.ListenerRuleAddTargetOption{
 				LoadBalancerID:               lblInfo.LbID,
@@ -475,7 +467,54 @@ func (svc *lbSvc) buildApplyTargetTasks(kt *kit.Kit, tgID, ruleCloudID string,
 		listRsReq.Page.Start += constant.BatchAddRSCloudMaxLimit
 	}
 
-	return tasks
+	if len(tasks) == 0 {
+		return nil
+	}
+	return svc.createApplyTGFlow(kt, tgID, lblInfo, tasks)
+}
+
+func (svc *lbSvc) createApplyTGFlow(kt *kit.Kit, tgID string, lblInfo *corelb.BaseListener,
+	tasks []apits.CustomFlowTask) error {
+
+	mainFlowResult, err := svc.client.TaskServer().CreateCustomFlow(kt, &apits.AddCustomFlowReq{
+		Name:        enumor.FlowApplyTargetGroupToListenerRule,
+		IsInitState: true,
+		Tasks:       tasks,
+	})
+	if err != nil {
+		logs.Errorf("fail to create target register flow, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	flowID := mainFlowResult.ID
+	// 创建从任务并加锁
+	flowWatchReq := &apits.AddTemplateFlowReq{
+		Name: enumor.FlowWatch,
+		Tasks: []apits.TemplateFlowTask{{
+			ActionID: "1",
+			Params: &actionflow.FlowWatchOption{
+				FlowID:   flowID,
+				ResID:    tgID,
+				ResType:  enumor.LoadBalancerCloudResType,
+				TaskType: enumor.ApplyTargetGroupType,
+			},
+		}},
+	}
+	_, err = svc.client.TaskServer().CreateTemplateFlow(kt, flowWatchReq)
+	if err != nil {
+		logs.Errorf("call task server to create res flow status watch flow failed, err: %v, flowID: %s, rid: %s",
+			err, flowID, kt.Rid)
+		return err
+	}
+
+	// 锁定负载均衡跟Flow的状态
+	err = svc.lockResFlowStatus(kt, lblInfo.LbID, enumor.LoadBalancerCloudResType, flowID, enumor.ApplyTargetGroupType)
+	if err != nil {
+		logs.Errorf("fail to lock load balancer(%s) for flow(%s), err: %v, rid: %s",
+			lblInfo.LbID, flowID, err, kt.Rid)
+		return err
+	}
+	return nil
 }
 
 func (svc *lbSvc) getListenerByID(cts *rest.Contexts, bizID int64, lblID string) (*corelb.BaseListener,

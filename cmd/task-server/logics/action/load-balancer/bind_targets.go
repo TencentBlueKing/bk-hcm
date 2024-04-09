@@ -70,6 +70,10 @@ func (act ListenerRuleAddTargetAction) Run(kt run.ExecuteKit, params any) (any, 
 
 	err := actcli.GetHCService().TCloud.Clb.BatchRegisterTargetToListenerRule(
 		kt.Kit(), opt.LoadBalancerID, opt.BatchRegisterTCloudTargetReq)
+	if err != nil {
+		logs.Errorf("fail to create register target to listener rule, err: %v, rid: %s", err, kt.Kit().Rid)
+		return nil, err
+	}
 
 	return nil, err
 }
