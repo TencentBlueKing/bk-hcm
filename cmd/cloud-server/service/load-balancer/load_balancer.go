@@ -64,7 +64,7 @@ func InitService(c *capability.Capability) {
 		"/vendors/tcloud/listeners/{lbl_id}/domains/list", svc.ListBizListenerDomains)
 
 	bizH.Add("ListBizTargetsByTGID", http.MethodPost,
-		"/vendors/tcloud/target_groups/{target_group_id}/targets/list", svc.ListBizTargetsByTGID)
+		"/target_groups/{target_group_id}/targets/list", svc.ListBizTargetsByTGID)
 	bizH.Add("AssociateBizTargetGroupListenerRel", http.MethodPost, "/listeners/associate/target_group",
 		svc.AssociateBizTargetGroupListenerRel)
 
