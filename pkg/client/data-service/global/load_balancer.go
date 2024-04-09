@@ -178,3 +178,11 @@ func (cli *LoadBalancerClient) BatchUpdateTarget(kt *kit.Kit, req *dataproto.Tar
 	return common.RequestNoResp[dataproto.TargetBatchUpdateReq](cli.client, rest.PATCH, kt, req,
 		"/load_balancers/targets/batch/update")
 }
+
+// BatchUpdateTGRuleRelStatus ...
+func (cli *LoadBalancerClient) BatchUpdateTGRuleRelStatus(kt *kit.Kit, relID string,
+	req *dataproto.TGListenerRelStatusUpdateReq) error {
+
+	return common.RequestNoResp[dataproto.TGListenerRelStatusUpdateReq](cli.client, rest.PATCH, kt, req,
+		"/target_group_listener_rels/%s/update", relID)
+}

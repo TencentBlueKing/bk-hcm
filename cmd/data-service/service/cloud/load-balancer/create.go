@@ -401,7 +401,7 @@ func (svc *lbSvc) CreateTargetGroupListenerRel(cts *rest.Contexts) (any, error) 
 	return &core.BatchCreateResult{IDs: ids}, nil
 }
 
-// BatchCreateTCloudUrlRule 批量创建腾讯云url规则 纯规则条目创建，不校验监听器，无关联关系
+// BatchCreateTCloudUrlRule 批量创建腾讯云url规则 纯规则条目创建，不校验监听器， 有目标组则一起创建关联关系
 func (svc *lbSvc) BatchCreateTCloudUrlRule(cts *rest.Contexts) (any, error) {
 	req := new(dataproto.TCloudUrlRuleBatchCreateReq)
 	if err := cts.DecodeInto(req); err != nil {

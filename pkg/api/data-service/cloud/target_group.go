@@ -289,6 +289,17 @@ func (req *TargetGroupListenerRelCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
+// TGListenerRelStatusUpdateReq 状态 详情更新
+type TGListenerRelStatusUpdateReq struct {
+	BindingStatus enumor.BindingStatus `json:"binding_status" validate:"omitempty"`
+	Detail        types.JsonField      `json:"detail" validate:"omitempty"`
+}
+
+// Validate ...
+func (req *TGListenerRelStatusUpdateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
 // -------------------------- Create Listener --------------------------
 
 // ListenerBatchCreateReq listener batch create req.
