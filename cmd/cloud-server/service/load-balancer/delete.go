@@ -22,8 +22,10 @@ package loadbalancer
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
+	"hcm/cmd/cloud-server/logics/async"
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
 	"hcm/cmd/task-server/logics/flow"
 	cloudserver "hcm/pkg/api/cloud-server"
@@ -329,4 +331,111 @@ func (svc *lbSvc) convTCloudOperateTargetReq(kt *kit.Kit, targets []string, targ
 		})
 	}
 	return rsReq, nil
+}
+
+// BatchDeleteLoadBalancer 批量删除负载均衡
+func (svc *lbSvc) BatchDeleteLoadBalancer(cts *rest.Contexts) (any, error) {
+	return svc.batchDeleteLoadBalancer(cts, handler.ResOperateAuth)
+}
+
+// BatchDeleteBizLoadBalancer 业务下批量删除负载均衡
+func (svc *lbSvc) BatchDeleteBizLoadBalancer(cts *rest.Contexts) (any, error) {
+	return svc.batchDeleteLoadBalancer(cts, handler.BizOperateAuth)
+}
+
+// batchDeleteLoadBalancer 批量删除负载均衡
+func (svc *lbSvc) batchDeleteLoadBalancer(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (any, error) {
+
+	req := new(core.BatchDeleteReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	// 参数校验
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	infoReq := dataproto.ListResourceBasicInfoReq{
+		ResourceType: enumor.LoadBalancerCloudResType,
+		IDs:          req.IDs,
+		Fields:       append(types.CommonBasicInfoFields, "region"),
+	}
+	lbInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, infoReq)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, info := range lbInfoMap {
+		if info.Vendor != enumor.TCloud {
+			return nil, errors.New("only supports tcloud")
+		}
+	}
+
+	// 业务校验、鉴权
+	err = validHandler(cts, &handler.ValidWithAuthOption{
+		Authorizer: svc.authorizer,
+		ResType:    meta.LoadBalancer,
+		Action:     meta.Delete,
+		BasicInfos: lbInfoMap,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// 按规则删除审计
+	err = svc.audit.ResDeleteAudit(cts.Kit, enumor.LoadBalancerAuditResType, req.IDs)
+	if err != nil {
+		logs.Errorf("create url rule delete audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// 按账号+地域分列表
+	tasks := buildTCloudLBDeletionTasks(lbInfoMap)
+	flowReq := &ts.AddCustomFlowReq{
+		Name:        enumor.FlowDeleteLoadBalancer,
+		ShareData:   nil,
+		Tasks:       tasks,
+		IsInitState: false,
+	}
+	flowResp, err := svc.client.TaskServer().CreateCustomFlow(cts.Kit, flowReq)
+	if err != nil {
+		return nil, err
+	}
+	return nil, async.WaitTaskToEnd(cts.Kit, svc.client.TaskServer(), flowResp.ID)
+}
+
+func buildTCloudLBDeletionTasks(infoMap map[string]types.CloudResourceBasicInfo) (tasks []ts.CustomFlowTask) {
+
+	tcloudReqMap := make(map[string]*hcproto.TCloudBatchDeleteLoadbalancerReq, len(infoMap))
+	// TODO: 后期支持多vendor
+	for id, info := range infoMap {
+		key := genAccountRegionKey(info)
+		if tcloudReqMap[key] == nil {
+			tcloudReqMap[key] = &hcproto.TCloudBatchDeleteLoadbalancerReq{
+				AccountID: info.AccountID,
+				Region:    info.Region,
+				IDs:       []string{},
+			}
+
+		}
+		req := tcloudReqMap[key]
+		req.IDs = append(req.IDs, id)
+	}
+	getNextID := counter.NewNumStringCounter(1, 10)
+	for _, req := range tcloudReqMap {
+		tasks = append(tasks, ts.CustomFlowTask{
+			ActionID:   action.ActIDType(getNextID()),
+			ActionName: enumor.ActionDeleteLoadBalancer,
+			Params: actionlb.DeleteLoadBalancerOption{
+				Vendor:                           enumor.TCloud,
+				TCloudBatchDeleteLoadbalancerReq: cvt.PtrToVal(req),
+			},
+			Retry: tableasync.NewRetryWithPolicy(3, 1000, 5000),
+		})
+
+	}
+	return tasks
+}
+
+func genAccountRegionKey(info types.CloudResourceBasicInfo) string {
+	return info.AccountID + "_" + info.Region
 }

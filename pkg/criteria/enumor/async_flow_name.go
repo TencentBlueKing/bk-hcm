@@ -36,6 +36,7 @@ func (v FlowName) Validate() error {
 	case FlowTargetGroupAddRS, FlowTargetGroupRemoveRS, FlowTargetGroupModifyPort, FlowTargetGroupModifyWeight:
 	case FlowWatch:
 	case FlowApplyTargetGroupToListenerRule:
+	case FlowDeleteLoadBalancer:
 	default:
 		return fmt.Errorf("unsupported tpl: %s", v)
 	}
@@ -95,5 +96,7 @@ const (
 	FlowTargetGroupModifyPort   FlowName = "tg_modify_port"
 	FlowTargetGroupModifyWeight FlowName = "tg_modify_weight"
 
-	FlowApplyTargetGroupToListenerRule = "apply_tg_listener_rule"
+	FlowApplyTargetGroupToListenerRule FlowName = "apply_tg_listener_rule"
+
+	FlowDeleteLoadBalancer FlowName = "delete_load_balancer"
 )
