@@ -252,3 +252,51 @@ func (act ModifyTargetPortAction) Rollback(kt run.ExecuteKit, params interface{}
 	logs.Infof(" ----------- ModifyTargetPortAction Rollback -----------, params: %s, rid: %s", params, kt.Kit().Rid)
 	return nil
 }
+
+// --------------------------[批量修改RS权重]-----------------------------
+
+var _ action.Action = new(ModifyTargetWeightAction)
+var _ action.ParameterAction = new(ModifyTargetWeightAction)
+
+// ModifyTargetWeightAction define modify target weight action.
+type ModifyTargetWeightAction struct{}
+
+// ParameterNew return request params.
+func (act ModifyTargetWeightAction) ParameterNew() (params interface{}) {
+	return new(OperateRsOption)
+}
+
+// Name return action name
+func (act ModifyTargetWeightAction) Name() enumor.ActionName {
+	return enumor.ActionModifyWeight
+}
+
+// Run modify target port.
+func (act ModifyTargetWeightAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
+	opt, ok := params.(*OperateRsOption)
+	if !ok {
+		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
+	}
+
+	var result *hclb.BatchCreateResult
+	var err error
+	switch opt.Vendor {
+	case enumor.TCloud:
+		err = actcli.GetHCService().TCloud.Clb.BatchModifyTargetWeight(
+			kt.Kit(), opt.TargetGroupID, &opt.TCloudBatchOperateTargetReq)
+	default:
+		return nil, fmt.Errorf("vendor: %s not support", opt.Vendor)
+	}
+	if err != nil {
+		logs.Errorf("batch modify target weight failed, err: %v, rid: %s", err, kt.Kit().Rid)
+		return result, err
+	}
+
+	return result, nil
+}
+
+// Rollback 批量修改RS权重失败时的回滚Action，此处不需要回滚处理
+func (act ModifyTargetWeightAction) Rollback(kt run.ExecuteKit, params interface{}) error {
+	logs.Infof(" ----------- ModifyTargetWeightAction Rollback -----------, params: %s, rid: %s", params, kt.Kit().Rid)
+	return nil
+}

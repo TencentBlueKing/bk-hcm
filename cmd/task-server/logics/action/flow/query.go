@@ -31,10 +31,16 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
+	typesasync "hcm/pkg/dal/dao/types/async"
 	tableasync "hcm/pkg/dal/table/async"
+	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+
+	"github.com/jmoiron/sqlx"
 )
 
 var _ action.Action = new(FlowWatchAction)
@@ -131,24 +137,15 @@ func (act FlowWatchAction) processResFlow(kt run.ExecuteKit, opt *FlowWatchOptio
 		return true, actcli.GetDataService().Global.LoadBalancer.ResFlowUnLock(kt.Kit(), unlockReq)
 	case enumor.FlowFailed:
 		// 当Flow失败时，检查资源锁定是否超时
-		lockReq := &types.ListOption{
-			Filter: tools.ExpressionAnd(
-				tools.RuleEqual("res_id", opt.ResID),
-				tools.RuleEqual("res_type", opt.ResType),
-				tools.RuleEqual("owner", opt.FlowID),
-			),
-			Page: core.NewDefaultBasePage(),
-		}
-		resFlowLockList, err := actcli.GetDaoSet().LoadBalancerFlowLock().List(kt.Kit(), lockReq)
+		resFlowLockList, err := act.queryResFlowLock(kt, opt)
 		if err != nil {
-			logs.Errorf("list query flow failed, err: %v, flowID: %s, rid: %s", err, opt.FlowID, kt.Kit().Rid)
 			return false, err
 		}
-		if len(resFlowLockList.Details) == 0 {
+		if len(resFlowLockList) == 0 {
 			return true, nil
 		}
 
-		createTime, err := time.Parse(constant.TimeStdFormat, string(resFlowLockList.Details[0].CreatedAt))
+		createTime, err := time.Parse(constant.TimeStdFormat, string(resFlowLockList[0].CreatedAt))
 		if err != nil {
 			return false, err
 		}
@@ -163,11 +160,68 @@ func (act FlowWatchAction) processResFlow(kt run.ExecuteKit, opt *FlowWatchOptio
 			}
 			return true, actcli.GetDataService().Global.LoadBalancer.ResFlowUnLock(kt.Kit(), timeoutReq)
 		}
+	case enumor.FlowInit:
+		// 需要检查资源是否已锁定
+		resFlowLockList, err := act.queryResFlowLock(kt, opt)
+		if err != nil {
+			return false, err
+		}
+		if len(resFlowLockList) == 0 {
+			return true, nil
+		}
+
+		// 如已锁定资源，则需要更新Flow状态为Pending
+		err = act.updateFlowStateByCAS(kt.Kit(), opt.FlowID, enumor.FlowInit, enumor.FlowPending)
+		if err != nil {
+			logs.Errorf("call taskserver to update flow state failed, err: %v, flowID: %s", err, opt.FlowID)
+			return false, err
+		}
+		return false, nil
 	default:
 		return false, nil
 	}
 
 	return true, nil
+}
+
+func (act FlowWatchAction) queryResFlowLock(kt run.ExecuteKit, opt *FlowWatchOption) (
+	[]tablelb.LoadBalancerFlowLockTable, error) {
+
+	// 当Flow失败时，检查资源锁定是否超时
+	lockReq := &types.ListOption{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("res_id", opt.ResID),
+			tools.RuleEqual("res_type", opt.ResType),
+			tools.RuleEqual("owner", opt.FlowID),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+	resFlowLockList, err := actcli.GetDaoSet().LoadBalancerFlowLock().List(kt.Kit(), lockReq)
+	if err != nil {
+		logs.Errorf("list query flow lock failed, err: %v, flowID: %s, rid: %s", err, opt.FlowID, kt.Kit().Rid)
+		return nil, err
+	}
+	return resFlowLockList.Details, nil
+}
+
+func (act FlowWatchAction) updateFlowStateByCAS(kt *kit.Kit, flowID string, source, target enumor.FlowState) error {
+	_, err := actcli.GetDaoSet().Txn().AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		info := &typesasync.UpdateFlowInfo{
+			ID:     flowID,
+			Source: source,
+			Target: target,
+		}
+		if err := actcli.GetDaoSet().AsyncFlow().UpdateStateByCAS(kt, txn, info); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	if err != nil {
+		logs.Errorf("call taskserver to update flow watch pending state failed, err: %v, flowID: %s, "+
+			"source: %s, target: %s, rid: %s", err, flowID, source, target, kt.Rid)
+		return err
+	}
+	return nil
 }
 
 // Rollback Flow查询状态失败时的回滚Action，此处不需要回滚处理

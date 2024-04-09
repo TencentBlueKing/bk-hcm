@@ -79,6 +79,8 @@ func InitService(c *capability.Capability) {
 		svc.BatchRemoveBizTargets)
 	bizH.Add("BatchModifyBizTargetPort", http.MethodPatch, "/target_groups/{target_group_id}/targets/port",
 		svc.BatchModifyBizTargetsPort)
+	bizH.Add("BatchModifyBizTargetsWeight", http.MethodPatch, "/target_groups/{target_group_id}/targets/weight",
+		svc.BatchModifyBizTargetsWeight)
 
 	// 监听器
 	bizH.Add("CreateBizListener", http.MethodPost, "/load_balancers/{lb_id}/listeners/create", svc.CreateBizListener)

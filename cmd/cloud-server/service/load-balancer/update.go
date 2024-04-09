@@ -386,13 +386,7 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksPort(kt *kit.Kit, body json.RawMes
 		return nil, err
 	}
 
-	// 锁定资源跟Flow的状态
 	flowID := result.ID
-	err = svc.lockResFlowStatus(kt, tgID, enumor.TargetGroupCloudResType, flowID, enumor.ModifyPortTaskType)
-	if err != nil {
-		return nil, err
-	}
-
 	// 从Flow，负责监听主Flow的状态
 	flowWatchReq := &ts.AddTemplateFlowReq{
 		Name: enumor.FlowWatch,
@@ -410,6 +404,139 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksPort(kt *kit.Kit, body json.RawMes
 	if err != nil {
 		logs.Errorf("call taskserver to create res flow status watch task failed, err: %v, flowID: %s, rid: %s",
 			err, flowID, kt.Rid)
+		return nil, err
+	}
+
+	// 锁定资源跟Flow的状态
+	err = svc.lockResFlowStatus(kt, tgID, enumor.TargetGroupCloudResType, flowID, enumor.ModifyPortTaskType)
+	if err != nil {
+		return nil, err
+	}
+
+	return &core.FlowStateResult{FlowID: flowID}, nil
+}
+
+// BatchModifyBizTargetsWeight batch modify biz targets weight.
+func (svc *lbSvc) BatchModifyBizTargetsWeight(cts *rest.Contexts) (any, error) {
+	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	return svc.batchModifyTargetWeight(cts, handler.BizOperateAuth, bkBizID)
+}
+
+func (svc *lbSvc) batchModifyTargetWeight(cts *rest.Contexts,
+	authHandler handler.ValidWithAuthHandler, bkBizID int64) (any, error) {
+
+	tgID := cts.PathParameter("target_group_id").String()
+	if len(tgID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "target_group_id is required")
+	}
+
+	req := new(cloudserver.ResourceCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		logs.Errorf("batch modify target weight request decode failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(
+		cts.Kit, enumor.TargetGroupCloudResType, tgID)
+	if err != nil {
+		logs.Errorf("get target group resource info failed, id: %s, err: %s, rid: %s", tgID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// authorized instances
+	err = authHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.TargetGroup,
+		Action: meta.Update, BasicInfo: baseInfo})
+	if err != nil {
+		logs.Errorf("batch modify target weight auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	switch baseInfo.Vendor {
+	case enumor.TCloud:
+		return svc.buildModifyTCloudTargetTasksWeight(cts.Kit, req.Data, tgID, baseInfo.AccountID, bkBizID)
+	default:
+		return nil, fmt.Errorf("vendor: %s not support", baseInfo.Vendor)
+	}
+}
+
+func (svc *lbSvc) buildModifyTCloudTargetTasksWeight(kt *kit.Kit, body json.RawMessage, tgID, accountID string,
+	bkBizID int64) (interface{}, error) {
+
+	req := new(cslb.TCloudBatchModifyTargetWeightReq)
+	if err := json.Unmarshal(body, req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// 预检测
+	err := svc.checkResFlowRel(kt, tgID, enumor.TargetGroupCloudResType, bkBizID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 创建Flow跟Task的初始化数据
+	tasks := make([]ts.CustomFlowTask, 0)
+	elems := slice.Split(req.TargetIDs, constant.BatchModifyTargetWeightCloudMaxLimit)
+	getActionID := counter.NewNumStringCounter(1, 10)
+	for _, parts := range elems {
+		rsWeightParams, err := svc.convTCloudOperateTargetReq(kt, parts, tgID, accountID,
+			nil, converter.ValToPtr(req.NewWeight))
+		if err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, ts.CustomFlowTask{
+			ActionID:   action.ActIDType(getActionID()),
+			ActionName: enumor.ActionModifyWeight,
+			Params: &actionlb.OperateRsOption{
+				Vendor:                      enumor.TCloud,
+				TCloudBatchOperateTargetReq: *rsWeightParams,
+			},
+			Retry: &tableasync.Retry{
+				Enable: true,
+				Policy: &tableasync.RetryPolicy{
+					Count:        constant.FlowRetryMaxLimit,
+					SleepRangeMS: [2]uint{100, 200},
+				},
+			},
+		})
+	}
+	rsWeightReq := &ts.AddCustomFlowReq{Name: enumor.FlowModifyWeight, Tasks: tasks, IsInitState: true}
+	result, err := svc.client.TaskServer().CreateCustomFlow(kt, rsWeightReq)
+	if err != nil {
+		logs.Errorf("call taskserver to batch modify target weight custom flow failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	flowID := result.ID
+	// 从Flow，负责监听主Flow的状态
+	flowWatchReq := &ts.AddTemplateFlowReq{
+		Name: enumor.FlowWatch,
+		Tasks: []ts.TemplateFlowTask{{
+			ActionID: "1",
+			Params: &actionflow.FlowWatchOption{
+				FlowID:   flowID,
+				ResID:    tgID,
+				ResType:  enumor.TargetGroupCloudResType,
+				TaskType: enumor.ModifyWeightTaskType,
+			},
+		}},
+	}
+	_, err = svc.client.TaskServer().CreateTemplateFlow(kt, flowWatchReq)
+	if err != nil {
+		logs.Errorf("call taskserver to create res flow status watch task failed, err: %v, flowID: %s, rid: %s",
+			err, flowID, kt.Rid)
+		return nil, err
+	}
+
+	// 锁定资源跟Flow的状态
+	err = svc.lockResFlowStatus(kt, tgID, enumor.TargetGroupCloudResType, flowID, enumor.ModifyWeightTaskType)
+	if err != nil {
 		return nil, err
 	}
 

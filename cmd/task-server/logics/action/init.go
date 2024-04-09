@@ -61,5 +61,6 @@ func register() {
 	action.RegisterTpl(actionflow.FlowWatchTpl)
 	action.RegisterAction(actionlb.RemoveTargetAction{})
 	action.RegisterAction(actionlb.ModifyTargetPortAction{})
+	action.RegisterAction(actionlb.ModifyTargetWeightAction{})
 
 }

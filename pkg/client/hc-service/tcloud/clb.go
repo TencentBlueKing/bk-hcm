@@ -149,3 +149,11 @@ func (c *ClbClient) BatchModifyTargetPort(kt *kit.Kit, targetGroupID string,
 	return common.RequestNoResp[hcproto.TCloudBatchOperateTargetReq](
 		c.client, http.MethodPatch, kt, req, "/target_groups/%s/targets/port", targetGroupID)
 }
+
+// BatchModifyTargetWeight 批量修改RS权重
+func (c *ClbClient) BatchModifyTargetWeight(kt *kit.Kit, targetGroupID string,
+	req *hcproto.TCloudBatchOperateTargetReq) error {
+
+	return common.RequestNoResp[hcproto.TCloudBatchOperateTargetReq](
+		c.client, http.MethodPatch, kt, req, "/target_groups/%s/targets/weight", targetGroupID)
+}
