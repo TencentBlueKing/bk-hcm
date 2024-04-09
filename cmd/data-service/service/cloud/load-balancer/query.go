@@ -695,7 +695,7 @@ func (svc *lbSvc) ListResFlowLock(cts *rest.Contexts) (interface{}, error) {
 		Filter: req.Filter,
 		Page:   req.Page,
 	}
-	result, err := svc.dao.LoadBalancerFlowLock().List(cts.Kit, opt)
+	result, err := svc.dao.ResourceFlowLock().List(cts.Kit, opt)
 	if err != nil {
 		logs.Errorf("list res flow lock failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, fmt.Errorf("list res flow lock failed, err: %v", err)
@@ -739,7 +739,7 @@ func (svc *lbSvc) ListResFlowRel(cts *rest.Contexts) (interface{}, error) {
 		Filter: req.Filter,
 		Page:   req.Page,
 	}
-	result, err := svc.dao.LoadBalancerFlowRel().List(cts.Kit, opt)
+	result, err := svc.dao.ResourceFlowRel().List(cts.Kit, opt)
 	if err != nil {
 		logs.Errorf("list res flow rel failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, fmt.Errorf("list res flow rel failed, err: %v", err)

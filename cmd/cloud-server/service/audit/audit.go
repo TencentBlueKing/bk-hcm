@@ -51,11 +51,14 @@ func InitService(c *capability.Capability) {
 
 	h.Add("GetAudit", http.MethodGet, "/audits/{id}", svc.GetAudit)
 	h.Add("ListAudit", http.MethodPost, "/audits/list", svc.ListAudit)
+	h.Add("ListAuditAsyncFlow", http.MethodPost, "/audits/{id}/async_flow/list", svc.ListAuditAsyncFlow)
 	h.Add("ListAuditAsyncTask", http.MethodPost, "/audits/{id}/async_task/list", svc.ListAuditAsyncTask)
 
 	// biz audit apis
 	h.Add("GetBizAudit", http.MethodGet, "/bizs/{bk_biz_id}/audits/{id}", svc.GetBizAudit)
 	h.Add("ListBizAudit", http.MethodPost, "/bizs/{bk_biz_id}/audits/list", svc.ListBizAudit)
+	h.Add("ListBizAuditAsyncFlow", http.MethodPost, "/bizs/{bk_biz_id}/audits/{id}/async_flow/list",
+		svc.ListBizAuditAsyncFlow)
 	h.Add("ListBizAuditAsyncTask", http.MethodPost, "/bizs/{bk_biz_id}/audits/{id}/async_task/list",
 		svc.ListBizAuditAsyncTask)
 
@@ -139,12 +142,94 @@ func (svc svc) listAudit(cts *rest.Contexts, authHandler handler.ListAuthResHand
 	return svc.client.DataService().Global.Audit.ListAudit(cts.Kit.Ctx, cts.Kit.Header(), listReq)
 }
 
-// ListAuditAsyncTask list audit async task.
+// ListAuditAsyncFlow 查询资源下异步任务的操作记录详情.
+func (svc svc) ListAuditAsyncFlow(cts *rest.Contexts) (interface{}, error) {
+	return svc.listAuditAsyncFlow(cts, handler.ListResourceAuthRes)
+}
+
+// ListBizAuditAsyncFlow 查询业务下异步任务的操作记录详情.
+func (svc svc) ListBizAuditAsyncFlow(cts *rest.Contexts) (interface{}, error) {
+	return svc.listAuditAsyncFlow(cts, handler.ListBizAuthRes)
+}
+
+func (svc svc) listAuditAsyncFlow(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (
+	interface{}, error) {
+
+	id, err := cts.PathParameter("id").Uint64()
+	if err != nil {
+		return nil, err
+	}
+
+	req := new(proto.AuditAsyncFlowListReq)
+	if err = cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err = req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	idFilter := &filter.Expression{
+		Op:    filter.And,
+		Rules: []filter.RuleFactory{&filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: id}},
+	}
+	// authorize
+	_, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+		ResType: meta.Audit, Action: meta.Find, Filter: idFilter})
+	if err != nil {
+		return nil, err
+	}
+
+	result := &audit.GetAsyncTaskResp{}
+	if noPermFlag {
+		return result, nil
+	}
+
+	// 获取操作记录详情
+	auditInfo, err := svc.client.DataService().Global.Audit.GetAudit(cts.Kit.Ctx, cts.Kit.Header(), id)
+	if err != nil {
+		logs.Errorf("get audit by id failed, err: %v, id: %d, req: %+v, rid: %s", err, id, req, cts.Kit.Rid)
+		return nil, err
+	}
+	if auditInfo == nil {
+		return nil, errf.Newf(errf.RecordNotFound, "audit: %s not found", id)
+	}
+
+	// 获取异步任务-Flow详情
+	flow, err := svc.client.TaskServer().GetFlow(cts.Kit, req.FlowID)
+	if err != nil {
+		logs.Errorf("get flow by id failed, err: %v, id: %d, flowID: %s, rid: %s", err, id, req.FlowID, cts.Kit.Rid)
+		return nil, err
+	}
+	result.Flow = flow
+
+	// 获取异步任务-子任务列表
+	taskReq := &core.ListReq{
+		Fields: []string{"id", "flow_id", "action_id", "action_name", "state", "reason", "created_at", "updated_at"},
+		Filter: tools.EqualExpression("flow_id", req.FlowID),
+		Page: &core.BasePage{
+			Count: false,
+			Start: 0,
+			Limit: core.DefaultMaxPageLimit,
+			Sort:  "action_id",
+			Order: core.Ascending,
+		},
+	}
+	taskList, err := svc.client.TaskServer().ListTask(cts.Kit, taskReq)
+	if err != nil {
+		logs.Errorf("get flow by id failed, flowID: %s, err: %v, rid: %s", req.FlowID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	result.Tasks = taskList.Details
+
+	return result, nil
+}
+
+// ListAuditAsyncTask 查询资源下异步任务的操作记录指定子任务的详情.
 func (svc svc) ListAuditAsyncTask(cts *rest.Contexts) (interface{}, error) {
 	return svc.listAuditAsyncTask(cts, handler.ListResourceAuthRes)
 }
 
-// ListBizAuditAsyncTask list biz audit async task.
+// ListBizAuditAsyncTask 查询业务下异步任务的操作记录指定子任务的详情.
 func (svc svc) ListBizAuditAsyncTask(cts *rest.Contexts) (interface{}, error) {
 	return svc.listAuditAsyncTask(cts, handler.ListBizAuthRes)
 }
@@ -205,17 +290,11 @@ func (svc svc) listAuditAsyncTask(cts *rest.Contexts, authHandler handler.ListAu
 			tools.RuleEqual("flow_id", req.FlowID),
 			tools.RuleEqual("action_id", req.ActionID),
 		),
-		Page: &core.BasePage{
-			Count: false,
-			Start: 0,
-			Limit: core.DefaultMaxPageLimit,
-			Sort:  "action_id",
-			Order: core.Ascending,
-		},
+		Page: core.NewDefaultBasePage(),
 	}
 	taskList, err := svc.client.TaskServer().ListTask(cts.Kit, taskReq)
 	if err != nil {
-		logs.Errorf("get flow by id failed, flowID: %s, err: %v, rid: %s", req.FlowID, err, cts.Kit.Rid)
+		logs.Errorf("get flow by id failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
 		return nil, err
 	}
 	result.Tasks = taskList.Details

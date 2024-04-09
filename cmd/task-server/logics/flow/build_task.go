@@ -26,16 +26,16 @@ import (
 	tableasync "hcm/pkg/dal/table/async"
 )
 
-// FlowWatchTpl define flow watch template.
-var FlowWatchTpl = action.FlowTemplate{
-	Name: enumor.FlowWatch,
+// FlowLoadBalancerOperateWatchTpl define flow load balancer operate watch template.
+var FlowLoadBalancerOperateWatchTpl = action.FlowTemplate{
+	Name: enumor.FlowLoadBalancerOperateWatch,
 	ShareData: &tableasync.ShareData{
 		Dict: map[string]string{},
 	},
 	Tasks: []action.TaskTemplate{
 		{
 			ActionID:   "1",
-			ActionName: enumor.ActionFlowWatch,
+			ActionName: enumor.ActionLoadBalancerOperateWatch,
 			Retry: &tableasync.Retry{
 				Enable: true,
 				Policy: &tableasync.RetryPolicy{

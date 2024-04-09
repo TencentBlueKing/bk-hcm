@@ -256,11 +256,12 @@ create table `target_group_listener_rule_rel`
   default charset = utf8mb4
   collate = utf8mb4_bin comment ='目标组监听器关系表';
 
--- 8. load_balancer异步任务记录表
-create table `load_balancer_flow_rel`
+-- 8. 资源与异步任务关系表
+create table `resource_flow_rel`
 (
     `id`         varchar(64) not null,
     `res_id`     varchar(64) not null,
+    `res_type`   varchar(64) not null,
     `flow_id`    varchar(64) not null,
     `task_type`  varchar(64) not null,
     `status`     varchar(64) not null,
@@ -270,14 +271,14 @@ create table `load_balancer_flow_rel`
     `created_at` timestamp   not null default current_timestamp,
     `updated_at` timestamp   not null default current_timestamp on update current_timestamp,
     primary key (`id`),
-    unique key `idx_uk_res_id_flow_id` (`res_id`, `flow_id`)
+    unique key `idx_uk_res_id_flow_id` (`res_id`, `res_type`, `flow_id`)
 ) engine = innodb
   default charset = utf8mb4
-  collate = utf8mb4_bin comment ='load_balancer异步任务记录表';
+  collate = utf8mb4_bin comment ='资源与异步任务的关系表';
 
 
--- 9. load_balancer异步任务资源锁
-create table `load_balancer_flow_lock`
+-- 9. 资源与异步任务锁定的表
+create table `resource_flow_lock`
 (
     `res_type`   varchar(64) not null,
     `res_id`     varchar(64) not null,
@@ -290,7 +291,7 @@ create table `load_balancer_flow_lock`
     primary key (`res_type`, `res_id`)
 ) engine = innodb
   default charset = utf8mb4
-  collate = utf8mb4_bin comment ='load_balancer异步任务资源锁';
+  collate = utf8mb4_bin comment ='资源与异步任务锁定的表';
 
 insert into id_generator(`resource`, `max_id`)
 values ('load_balancer', '0'),
@@ -300,7 +301,7 @@ values ('load_balancer', '0'),
        ('load_balancer_target', '0'),
        ('load_balancer_target_group', '0'),
        ('target_group_listener_rule_rel', '0'),
-       ('load_balancer_flow_rel', '0');
+       ('resource_flow_rel', '0');
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
 SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;

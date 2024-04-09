@@ -45,6 +45,7 @@ import (
 	networkinterface "hcm/pkg/dal/dao/cloud/network-interface"
 	nicvmrel "hcm/pkg/dal/dao/cloud/network-interface-cvm-rel"
 	"hcm/pkg/dal/dao/cloud/region"
+	"hcm/pkg/dal/dao/cloud/resource-flow"
 	resourcegroup "hcm/pkg/dal/dao/cloud/resource-group"
 	routetable "hcm/pkg/dal/dao/cloud/route-table"
 	securitygroup "hcm/pkg/dal/dao/cloud/security-group"
@@ -117,8 +118,8 @@ type Set interface {
 	LoadBalancerTargetGroup() loadbalancer.TargetGroupInterface
 	LoadBalancerTargetGroupListenerRuleRel() loadbalancer.TargetGroupListenerRuleRelInterface
 	LoadBalancerTCloudUrlRule() loadbalancer.LbTCloudUrlRuleInterface
-	LoadBalancerFlowRel() loadbalancer.LoadBalancerFlowRelInterface
-	LoadBalancerFlowLock() loadbalancer.LoadBalancerFlowLockInterface
+	ResourceFlowRel() resflow.ResourceFlowRelInterface
+	ResourceFlowLock() resflow.ResourceFlowLockInterface
 	SGCommonRel() sgcomrel.Interface
 
 	Txn() *Txn
@@ -601,18 +602,18 @@ func (s *set) LoadBalancerTCloudUrlRule() loadbalancer.LbTCloudUrlRuleInterface 
 	}
 }
 
-// LoadBalancerFlowRel return load balancer flow rel dao.
-func (s *set) LoadBalancerFlowRel() loadbalancer.LoadBalancerFlowRelInterface {
-	return &loadbalancer.LoadBalancerFlowRelDao{
+// ResourceFlowRel return resource flow rel dao.
+func (s *set) ResourceFlowRel() resflow.ResourceFlowRelInterface {
+	return &resflow.ResourceFlowRelDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,
 	}
 }
 
-// LoadBalancerFlowLock return load balancer flow lock dao.
-func (s *set) LoadBalancerFlowLock() loadbalancer.LoadBalancerFlowLockInterface {
-	return &loadbalancer.LoadBalancerFlowLockDao{
+// ResourceFlowLock return resource flow lock dao.
+func (s *set) ResourceFlowLock() resflow.ResourceFlowLockInterface {
+	return &resflow.ResourceFlowLockDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,

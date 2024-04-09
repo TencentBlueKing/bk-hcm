@@ -57,8 +57,8 @@ func register() {
 	action.RegisterAction(actioneip.DeleteEIPAction{})
 
 	action.RegisterAction(actionlb.AddTargetToGroupAction{})
-	action.RegisterAction(actionflow.FlowWatchAction{})
-	action.RegisterTpl(actionflow.FlowWatchTpl)
+	action.RegisterAction(actionflow.LoadBalancerOperateWatchAction{})
+	action.RegisterTpl(actionflow.FlowLoadBalancerOperateWatchTpl)
 	action.RegisterAction(actionlb.RemoveTargetAction{})
 	action.RegisterAction(actionlb.ModifyTargetPortAction{})
 	action.RegisterAction(actionlb.ModifyTargetWeightAction{})

@@ -21,7 +21,7 @@ PATCH /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/targets/wei
 
 ```json
 {
-  "targets": ["00000001"],
+  "target_ids": ["00000001"],
   "new_weight": 10
 }
 ```

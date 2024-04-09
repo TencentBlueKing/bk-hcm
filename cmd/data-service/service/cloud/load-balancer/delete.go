@@ -328,7 +328,7 @@ func (svc *lbSvc) BatchDeleteResFlowRel(cts *rest.Contexts) (interface{}, error)
 		Filter: req.Filter,
 		Page:   core.NewDefaultBasePage(),
 	}
-	listResp, err := svc.dao.LoadBalancerFlowRel().List(cts.Kit, opt)
+	listResp, err := svc.dao.ResourceFlowRel().List(cts.Kit, opt)
 	if err != nil {
 		logs.Errorf("list res flow rel db failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, fmt.Errorf("list res flow rel failed, err: %v", err)
@@ -345,7 +345,7 @@ func (svc *lbSvc) BatchDeleteResFlowRel(cts *rest.Contexts) (interface{}, error)
 
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		delFilter := tools.ContainersExpression("id", delIDs)
-		if err = svc.dao.LoadBalancerFlowRel().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
+		if err = svc.dao.ResourceFlowRel().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
 			return nil, err
 		}
 		return nil, nil
@@ -377,7 +377,7 @@ func (svc *lbSvc) DeleteResFlowLock(cts *rest.Contexts) (interface{}, error) {
 			tools.RuleEqual("res_type", req.ResType),
 			tools.RuleEqual("owner", req.Owner),
 		)
-		if err := svc.dao.LoadBalancerFlowLock().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
+		if err := svc.dao.ResourceFlowLock().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
 			return nil, err
 		}
 		return nil, nil

@@ -36,6 +36,7 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/iam/meta"
@@ -329,13 +330,13 @@ func (svc *lbSvc) batchModifyTargetPort(cts *rest.Contexts,
 
 	switch baseInfo.Vendor {
 	case enumor.TCloud:
-		return svc.buildModifyTCloudTargetTasksPort(cts.Kit, req.Data, tgID, baseInfo.AccountID, bkBizID)
+		return svc.buildModifyTCloudTargetPort(cts.Kit, req.Data, tgID, baseInfo.AccountID, bkBizID)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", baseInfo.Vendor)
 	}
 }
 
-func (svc *lbSvc) buildModifyTCloudTargetTasksPort(kt *kit.Kit, body json.RawMessage, tgID, accountID string,
+func (svc *lbSvc) buildModifyTCloudTargetPort(kt *kit.Kit, body json.RawMessage, tgID, accountID string,
 	bkBizID int64) (interface{}, error) {
 
 	req := new(cslb.TCloudBatchModifyTargetPortReq)
@@ -347,8 +348,73 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksPort(kt *kit.Kit, body json.RawMes
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// 根据目标组ID，获取目标组绑定的监听器、规则列表
+	ruleRelReq := &core.ListReq{
+		Filter: tools.EqualExpression("target_group_id", tgID),
+		Page:   core.NewDefaultBasePage(),
+	}
+	ruleRelList, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, ruleRelReq)
+	if err != nil {
+		logs.Errorf("list tcloud listener url rule failed, tgID: %s, err: %v, rid: %s", tgID, err, kt.Rid)
+		return nil, err
+	}
+
+	// 该目标组尚未绑定监听器及规则，不需要云端操作
+	if len(ruleRelList.Details) == 0 {
+		err = svc.batchUpdateTargetPortDb(kt, req, tgID, accountID)
+		if err != nil {
+			return nil, err
+		}
+		return &core.FlowStateResult{State: enumor.FlowSuccess}, nil
+	}
+
+	return svc.buildModifyTCloudTargetTasksPort(kt, req, ruleRelList.Details[0].LbID, tgID, accountID, bkBizID)
+}
+
+func (svc *lbSvc) batchUpdateTargetPortDb(kt *kit.Kit, req *cslb.TCloudBatchModifyTargetPortReq,
+	accountID, tgID string) error {
+
+	rsPortParams, err := svc.convTCloudOperateTargetReq(kt, req.TargetIDs, tgID, accountID,
+		converter.ValToPtr(req.NewPort), nil)
+	if err != nil {
+		return err
+	}
+
+	// 检查RS是否已绑定该目标组
+	updateReq := &dataproto.TargetBatchUpdateReq{Targets: []*dataproto.TargetUpdate{}}
+	for _, item := range rsPortParams.RsList {
+		tgReq := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleEqual("account_id", accountID),
+				tools.RuleEqual("target_group_id", tgID),
+				tools.RuleEqual("cloud_inst_id", item.CloudInstID),
+				tools.RuleEqual("port", item.Port),
+			),
+			Page: core.NewDefaultBasePage(),
+		}
+		tmpRsList, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, tgReq)
+		if err != nil {
+			return err
+		}
+		if len(tmpRsList.Details) > 0 {
+			updateReq.Targets = append(updateReq.Targets, &dataproto.TargetUpdate{
+				ID:   tmpRsList.Details[0].ID,
+				Port: converter.PtrToVal(item.NewPort),
+			})
+		}
+	}
+	if len(updateReq.Targets) == 0 {
+		return nil
+	}
+
+	return svc.client.DataService().Global.LoadBalancer.BatchUpdateTarget(kt, updateReq)
+}
+
+func (svc *lbSvc) buildModifyTCloudTargetTasksPort(kt *kit.Kit, req *cslb.TCloudBatchModifyTargetPortReq, lbID, tgID,
+	accountID string, bkBizID int64) (interface{}, error) {
+
 	// 预检测
-	err := svc.checkResFlowRel(kt, tgID, enumor.TargetGroupCloudResType, bkBizID)
+	err := svc.checkResFlowRel(kt, lbID, tgID, enumor.LoadBalancerCloudResType, enumor.TargetGroupCloudResType, bkBizID)
 	if err != nil {
 		return nil, err
 	}
@@ -389,14 +455,16 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksPort(kt *kit.Kit, body json.RawMes
 	flowID := result.ID
 	// 从Flow，负责监听主Flow的状态
 	flowWatchReq := &ts.AddTemplateFlowReq{
-		Name: enumor.FlowWatch,
+		Name: enumor.FlowLoadBalancerOperateWatch,
 		Tasks: []ts.TemplateFlowTask{{
 			ActionID: "1",
-			Params: &actionflow.FlowWatchOption{
-				FlowID:   flowID,
-				ResID:    tgID,
-				ResType:  enumor.TargetGroupCloudResType,
-				TaskType: enumor.ModifyPortTaskType,
+			Params: &actionflow.LoadBalancerOperateWatchOption{
+				FlowID:     flowID,
+				ResID:      lbID,
+				ResType:    enumor.LoadBalancerCloudResType,
+				SubResID:   tgID,
+				SubResType: enumor.TargetGroupCloudResType,
+				TaskType:   enumor.ModifyPortTaskType,
 			},
 		}},
 	}
@@ -408,7 +476,7 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksPort(kt *kit.Kit, body json.RawMes
 	}
 
 	// 锁定资源跟Flow的状态
-	err = svc.lockResFlowStatus(kt, tgID, enumor.TargetGroupCloudResType, flowID, enumor.ModifyPortTaskType)
+	err = svc.lockResFlowStatus(kt, lbID, enumor.LoadBalancerCloudResType, flowID, enumor.ModifyPortTaskType)
 	if err != nil {
 		return nil, err
 	}
@@ -456,13 +524,13 @@ func (svc *lbSvc) batchModifyTargetWeight(cts *rest.Contexts,
 
 	switch baseInfo.Vendor {
 	case enumor.TCloud:
-		return svc.buildModifyTCloudTargetTasksWeight(cts.Kit, req.Data, tgID, baseInfo.AccountID, bkBizID)
+		return svc.buildModifyTCloudTargetWeight(cts.Kit, req.Data, tgID, baseInfo.AccountID, bkBizID)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", baseInfo.Vendor)
 	}
 }
 
-func (svc *lbSvc) buildModifyTCloudTargetTasksWeight(kt *kit.Kit, body json.RawMessage, tgID, accountID string,
+func (svc *lbSvc) buildModifyTCloudTargetWeight(kt *kit.Kit, body json.RawMessage, tgID, accountID string,
 	bkBizID int64) (interface{}, error) {
 
 	req := new(cslb.TCloudBatchModifyTargetWeightReq)
@@ -474,8 +542,73 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksWeight(kt *kit.Kit, body json.RawM
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// 根据目标组ID，获取目标组绑定的监听器、规则列表
+	ruleRelReq := &core.ListReq{
+		Filter: tools.EqualExpression("target_group_id", tgID),
+		Page:   core.NewDefaultBasePage(),
+	}
+	ruleRelList, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, ruleRelReq)
+	if err != nil {
+		logs.Errorf("list tcloud listener url rule failed, tgID: %s, err: %v, rid: %s", tgID, err, kt.Rid)
+		return nil, err
+	}
+
+	// 该目标组尚未绑定监听器及规则，不需要云端操作
+	if len(ruleRelList.Details) == 0 {
+		err = svc.batchUpdateTargetWeightDb(kt, req, tgID, accountID)
+		if err != nil {
+			return nil, err
+		}
+		return &core.FlowStateResult{State: enumor.FlowSuccess}, nil
+	}
+
+	return svc.buildModifyTCloudTargetTasksWeight(kt, req, ruleRelList.Details[0].ID, tgID, accountID, bkBizID)
+}
+
+func (svc *lbSvc) batchUpdateTargetWeightDb(kt *kit.Kit, req *cslb.TCloudBatchModifyTargetWeightReq,
+	accountID, tgID string) error {
+
+	rsPortParams, err := svc.convTCloudOperateTargetReq(kt, req.TargetIDs, tgID, accountID,
+		nil, converter.ValToPtr(req.NewWeight))
+	if err != nil {
+		return err
+	}
+
+	// 检查RS是否已绑定该目标组
+	updateReq := &dataproto.TargetBatchUpdateReq{Targets: []*dataproto.TargetUpdate{}}
+	for _, item := range rsPortParams.RsList {
+		tgReq := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleEqual("account_id", accountID),
+				tools.RuleEqual("target_group_id", tgID),
+				tools.RuleEqual("cloud_inst_id", item.CloudInstID),
+				tools.RuleEqual("port", item.Port),
+			),
+			Page: core.NewDefaultBasePage(),
+		}
+		tmpRsList, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, tgReq)
+		if err != nil {
+			return err
+		}
+		if len(tmpRsList.Details) > 0 {
+			updateReq.Targets = append(updateReq.Targets, &dataproto.TargetUpdate{
+				ID:     tmpRsList.Details[0].ID,
+				Weight: item.Weight,
+			})
+		}
+	}
+	if len(updateReq.Targets) == 0 {
+		return nil
+	}
+
+	return svc.client.DataService().Global.LoadBalancer.BatchUpdateTarget(kt, updateReq)
+}
+
+func (svc *lbSvc) buildModifyTCloudTargetTasksWeight(kt *kit.Kit, req *cslb.TCloudBatchModifyTargetWeightReq,
+	lbID, tgID, accountID string, bkBizID int64) (interface{}, error) {
+
 	// 预检测
-	err := svc.checkResFlowRel(kt, tgID, enumor.TargetGroupCloudResType, bkBizID)
+	err := svc.checkResFlowRel(kt, lbID, tgID, enumor.LoadBalancerCloudResType, enumor.TargetGroupCloudResType, bkBizID)
 	if err != nil {
 		return nil, err
 	}
@@ -516,14 +649,16 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksWeight(kt *kit.Kit, body json.RawM
 	flowID := result.ID
 	// 从Flow，负责监听主Flow的状态
 	flowWatchReq := &ts.AddTemplateFlowReq{
-		Name: enumor.FlowWatch,
+		Name: enumor.FlowLoadBalancerOperateWatch,
 		Tasks: []ts.TemplateFlowTask{{
 			ActionID: "1",
-			Params: &actionflow.FlowWatchOption{
-				FlowID:   flowID,
-				ResID:    tgID,
-				ResType:  enumor.TargetGroupCloudResType,
-				TaskType: enumor.ModifyWeightTaskType,
+			Params: &actionflow.LoadBalancerOperateWatchOption{
+				FlowID:     flowID,
+				ResID:      lbID,
+				ResType:    enumor.LoadBalancerCloudResType,
+				SubResID:   tgID,
+				SubResType: enumor.TargetGroupCloudResType,
+				TaskType:   enumor.ModifyWeightTaskType,
 			},
 		}},
 	}
@@ -535,7 +670,7 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksWeight(kt *kit.Kit, body json.RawM
 	}
 
 	// 锁定资源跟Flow的状态
-	err = svc.lockResFlowStatus(kt, tgID, enumor.TargetGroupCloudResType, flowID, enumor.ModifyWeightTaskType)
+	err = svc.lockResFlowStatus(kt, lbID, enumor.LoadBalancerCloudResType, flowID, enumor.ModifyWeightTaskType)
 	if err != nil {
 		return nil, err
 	}

@@ -43,38 +43,45 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-var _ action.Action = new(FlowWatchAction)
-var _ action.ParameterAction = new(FlowWatchAction)
+var _ action.Action = new(LoadBalancerOperateWatchAction)
+var _ action.ParameterAction = new(LoadBalancerOperateWatchAction)
 
-// FlowWatchAction 作为从flow 监听住flow 状态，在其进入终止状态的时候，对其进行解锁
-type FlowWatchAction struct{}
+// LoadBalancerOperateWatchAction define load balancer operate watch.
+type LoadBalancerOperateWatchAction struct{}
 
-// FlowWatchOption define flow watch option.
-type FlowWatchOption struct {
-	FlowID   string                   `json:"flow_id" validate:"required"`
-	ResID    string                   `json:"res_id" validate:"required"`
-	ResType  enumor.CloudResourceType `json:"res_type" validate:"required"`
-	TaskType enumor.TaskType          `json:"task_type" validate:"required"`
+// LoadBalancerOperateWatchOption define load balancer operate watch option.
+type LoadBalancerOperateWatchOption struct {
+	FlowID string `json:"flow_id" validate:"required"`
+	// 资源ID，比如负载均衡ID
+	ResID string `json:"res_id" validate:"required"`
+	// 资源类型
+	ResType enumor.CloudResourceType `json:"res_type" validate:"required"`
+	// 子资源ID，比如目标组ID
+	SubResID string `json:"sub_res_id" validate:"required"`
+	// 子资源类型
+	SubResType enumor.CloudResourceType `json:"sub_res_type" validate:"required"`
+	// 任务类型
+	TaskType enumor.TaskType `json:"task_type" validate:"required"`
 }
 
-// Validate FlowWatchOption.
-func (opt FlowWatchOption) Validate() error {
+// Validate LoadBalancerOperateWatchOption.
+func (opt LoadBalancerOperateWatchOption) Validate() error {
 	return opt.Validate()
 }
 
 // ParameterNew return request params.
-func (act FlowWatchAction) ParameterNew() (params interface{}) {
-	return new(FlowWatchOption)
+func (act LoadBalancerOperateWatchAction) ParameterNew() (params interface{}) {
+	return new(LoadBalancerOperateWatchOption)
 }
 
 // Name return action name
-func (act FlowWatchAction) Name() enumor.ActionName {
-	return enumor.ActionFlowWatch
+func (act LoadBalancerOperateWatchAction) Name() enumor.ActionName {
+	return enumor.ActionLoadBalancerOperateWatch
 }
 
 // Run flow watch.
-func (act FlowWatchAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
-	opt, ok := params.(*FlowWatchOption)
+func (act LoadBalancerOperateWatchAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
+	opt, ok := params.(*LoadBalancerOperateWatchOption)
 	if !ok {
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
@@ -115,7 +122,7 @@ func (act FlowWatchAction) Run(kt run.ExecuteKit, params interface{}) (interface
 }
 
 // processResFlow 检查Flow是否终态状态、解锁资源跟Flow的状态
-func (act FlowWatchAction) processResFlow(kt run.ExecuteKit, opt *FlowWatchOption,
+func (act LoadBalancerOperateWatchAction) processResFlow(kt run.ExecuteKit, opt *LoadBalancerOperateWatchOption,
 	flowInfo tableasync.AsyncFlowTable) (bool, error) {
 
 	switch flowInfo.State {
@@ -184,8 +191,8 @@ func (act FlowWatchAction) processResFlow(kt run.ExecuteKit, opt *FlowWatchOptio
 	return true, nil
 }
 
-func (act FlowWatchAction) queryResFlowLock(kt run.ExecuteKit, opt *FlowWatchOption) (
-	[]tablelb.LoadBalancerFlowLockTable, error) {
+func (act LoadBalancerOperateWatchAction) queryResFlowLock(kt run.ExecuteKit, opt *LoadBalancerOperateWatchOption) (
+	[]tablelb.ResourceFlowLockTable, error) {
 
 	// 当Flow失败时，检查资源锁定是否超时
 	lockReq := &types.ListOption{
@@ -196,7 +203,7 @@ func (act FlowWatchAction) queryResFlowLock(kt run.ExecuteKit, opt *FlowWatchOpt
 		),
 		Page: core.NewDefaultBasePage(),
 	}
-	resFlowLockList, err := actcli.GetDaoSet().LoadBalancerFlowLock().List(kt.Kit(), lockReq)
+	resFlowLockList, err := actcli.GetDaoSet().ResourceFlowLock().List(kt.Kit(), lockReq)
 	if err != nil {
 		logs.Errorf("list query flow lock failed, err: %v, flowID: %s, rid: %s", err, opt.FlowID, kt.Kit().Rid)
 		return nil, err
@@ -204,7 +211,9 @@ func (act FlowWatchAction) queryResFlowLock(kt run.ExecuteKit, opt *FlowWatchOpt
 	return resFlowLockList.Details, nil
 }
 
-func (act FlowWatchAction) updateFlowStateByCAS(kt *kit.Kit, flowID string, source, target enumor.FlowState) error {
+func (act LoadBalancerOperateWatchAction) updateFlowStateByCAS(kt *kit.Kit, flowID string,
+	source, target enumor.FlowState) error {
+
 	_, err := actcli.GetDaoSet().Txn().AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		info := &typesasync.UpdateFlowInfo{
 			ID:     flowID,
@@ -225,7 +234,8 @@ func (act FlowWatchAction) updateFlowStateByCAS(kt *kit.Kit, flowID string, sour
 }
 
 // Rollback Flow查询状态失败时的回滚Action，此处不需要回滚处理
-func (act FlowWatchAction) Rollback(kt run.ExecuteKit, params interface{}) error {
-	logs.Infof(" ----------- FlowWatchAction Rollback -----------, params: %s, rid: %s", params, kt.Kit().Rid)
+func (act LoadBalancerOperateWatchAction) Rollback(kt run.ExecuteKit, params interface{}) error {
+	logs.Infof(" ----------- LoadBalancerOperateWatchAction Rollback -----------, params: %s, rid: %s",
+		params, kt.Kit().Rid)
 	return nil
 }

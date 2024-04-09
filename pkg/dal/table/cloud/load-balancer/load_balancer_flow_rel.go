@@ -29,13 +29,14 @@ import (
 	"hcm/pkg/dal/table/utils"
 )
 
-// LoadBalancerFlowRelColumns defines all the load_balancer_flow_rel table's columns.
-var LoadBalancerFlowRelColumns = utils.MergeColumns(nil, LoadBalancerFlowRelColumnsDescriptor)
+// ResourceFlowRelColumns defines all the resource_flow_rel table's columns.
+var ResourceFlowRelColumns = utils.MergeColumns(nil, ResourceFlowRelColumnsDescriptor)
 
-// LoadBalancerFlowRelColumnsDescriptor is load_balancer_flow_rel's column descriptors.
-var LoadBalancerFlowRelColumnsDescriptor = utils.ColumnDescriptors{
+// ResourceFlowRelColumnsDescriptor is resource_flow_rel's column descriptors.
+var ResourceFlowRelColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "res_id", NamedC: "res_id", Type: enumor.String},
+	{Column: "res_type", NamedC: "res_type", Type: enumor.String},
 	{Column: "flow_id", NamedC: "flow_id", Type: enumor.String},
 	{Column: "task_type", NamedC: "task_type", Type: enumor.String},
 	{Column: "status", NamedC: "status", Type: enumor.String},
@@ -46,13 +47,14 @@ var LoadBalancerFlowRelColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "updated_at", NamedC: "updated_at", Type: enumor.Time},
 }
 
-// LoadBalancerFlowRelTable LoadBalancer与FlowID关系表
-type LoadBalancerFlowRelTable struct {
-	ID       string               `db:"id" validate:"lte=64" json:"id"`
-	ResID    string               `db:"res_id" validate:"lte=64" json:"res_id"`
-	FlowID   string               `db:"flow_id" validate:"lte=64" json:"flow_id"`
-	TaskType enumor.TaskType      `db:"task_type" validate:"lte=64" json:"task_type"`
-	Status   enumor.ResFlowStatus `db:"status" validate:"lte=64" json:"status"`
+// ResourceFlowRelTable 资源与FlowID关系表
+type ResourceFlowRelTable struct {
+	ID       string                   `db:"id" validate:"lte=64" json:"id"`
+	ResID    string                   `db:"res_id" validate:"lte=64" json:"res_id"`
+	ResType  enumor.CloudResourceType `db:"res_type" validate:"lte=64" json:"res_type"`
+	FlowID   string                   `db:"flow_id" validate:"lte=64" json:"flow_id"`
+	TaskType enumor.TaskType          `db:"task_type" validate:"lte=64" json:"task_type"`
+	Status   enumor.ResFlowStatus     `db:"status" validate:"lte=64" json:"status"`
 
 	Creator   string     `db:"creator" validate:"lte=64" json:"creator"`
 	Reviser   string     `db:"reviser" validate:"lte=64" json:"reviser"`
@@ -61,18 +63,22 @@ type LoadBalancerFlowRelTable struct {
 }
 
 // TableName return table name.
-func (cft LoadBalancerFlowRelTable) TableName() table.Name {
-	return table.LoadBalancerFlowRelTable
+func (cft ResourceFlowRelTable) TableName() table.Name {
+	return table.ResourceFlowRelTable
 }
 
 // InsertValidate validate table when insert.
-func (cft LoadBalancerFlowRelTable) InsertValidate() error {
+func (cft ResourceFlowRelTable) InsertValidate() error {
 	if err := validator.Validate.Struct(cft); err != nil {
 		return err
 	}
 
 	if len(cft.ResID) == 0 {
 		return errors.New("res_id is required")
+	}
+
+	if len(cft.ResType) == 0 {
+		return errors.New("res_type is required")
 	}
 
 	if len(cft.FlowID) == 0 {
@@ -91,7 +97,7 @@ func (cft LoadBalancerFlowRelTable) InsertValidate() error {
 }
 
 // UpdateValidate validate table when update.
-func (cft LoadBalancerFlowRelTable) UpdateValidate() error {
+func (cft ResourceFlowRelTable) UpdateValidate() error {
 	if err := validator.Validate.Struct(cft); err != nil {
 		return err
 	}

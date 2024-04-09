@@ -17,8 +17,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package loadbalancer load balancer异步任务记录的Package
-package loadbalancer
+// Package resflow 资源与异步任务锁的Package
+package resflow
 
 import (
 	"fmt"
@@ -41,55 +41,48 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// LoadBalancerFlowRelInterface only used for load balancer flow rel.
-type LoadBalancerFlowRelInterface interface {
-	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerFlowRelTable) ([]string, error)
-	Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.LoadBalancerFlowRelTable) error
-	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.LoadBalancerFlowRelTable) error
-	List(kt *kit.Kit, opt *types.ListOption) (*typeslb.ListLoadBalancerFlowRelDetails, error)
+// ResourceFlowLockInterface only used for resource flow lock.
+type ResourceFlowLockInterface interface {
+	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *tablelb.ResourceFlowLockTable) error
+	Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.ResourceFlowLockTable) error
+	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, resID, resType, owner string,
+		model *tablelb.ResourceFlowLockTable) error
+	List(kt *kit.Kit, opt *types.ListOption) (*typeslb.ListResourceFlowLockDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
 
-var _ LoadBalancerFlowRelInterface = new(LoadBalancerFlowRelDao)
+var _ ResourceFlowLockInterface = new(ResourceFlowLockDao)
 
-// LoadBalancerFlowRelDao load balancer flow rel dao.
-type LoadBalancerFlowRelDao struct {
+// ResourceFlowLockDao load balancer flow lock dao.
+type ResourceFlowLockDao struct {
 	Orm   orm.Interface
 	IDGen idgen.IDGenInterface
 	Audit audit.Interface
 }
 
-// BatchCreateWithTx load balancer flow rel.
-func (dao LoadBalancerFlowRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerFlowRelTable) (
-	[]string, error) {
+// CreateWithTx resource flow lock.
+func (dao ResourceFlowLockDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
+	model *tablelb.ResourceFlowLockTable) error {
 
-	tableName := table.LoadBalancerFlowRelTable
-	ids, err := dao.IDGen.Batch(kt, tableName, len(models))
-	if err != nil {
-		return nil, err
+	if err := model.InsertValidate(); err != nil {
+		return err
 	}
 
-	for index, model := range models {
-		if err = model.InsertValidate(); err != nil {
-			return nil, err
-		}
-		model.ID = ids[index]
-	}
-
+	tableName := table.ResourceFlowLockTable
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, tableName,
-		tablelb.LoadBalancerFlowRelColumns.ColumnExpr(), tablelb.LoadBalancerFlowRelColumns.ColonNameExpr())
+		tablelb.ResourceFlowLockColumns.ColumnExpr(), tablelb.ResourceFlowLockColumns.ColonNameExpr())
 
-	if err = dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
+	if err := dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, model); err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", tableName, err, kt.Rid)
-		return nil, fmt.Errorf("insert %s failed, err: %v", tableName, err)
+		return fmt.Errorf("insert %s failed, err: %v", tableName, err)
 	}
 
-	return ids, nil
+	return nil
 }
 
-// Update load balancer flow rel.
-func (dao LoadBalancerFlowRelDao) Update(kt *kit.Kit, expr *filter.Expression,
-	model *tablelb.LoadBalancerFlowRelTable) error {
+// Update resource flow lock.
+func (dao ResourceFlowLockDao) Update(kt *kit.Kit, expr *filter.Expression,
+	model *tablelb.ResourceFlowLockTable) error {
 
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
@@ -115,12 +108,12 @@ func (dao LoadBalancerFlowRelDao) Update(kt *kit.Kit, expr *filter.Expression,
 	_, err = dao.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		effect, err := dao.Orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
-			logs.Errorf("update load balancer flow rel failed, err: %v, filter: %s, rid: %v", err, expr, kt.Rid)
+			logs.Errorf("update load balancer flow lock failed, err: %v, filter: %s, rid: %v", err, expr, kt.Rid)
 			return nil, err
 		}
 
 		if effect == 0 {
-			logs.Infof("update load balancer flow rel, but record not found, sql: %s, rid: %v", sql, kt.Rid)
+			logs.Infof("update load balancer flow lock, but record not found, sql: %s, rid: %v", sql, kt.Rid)
 		}
 
 		return nil, nil
@@ -132,12 +125,20 @@ func (dao LoadBalancerFlowRelDao) Update(kt *kit.Kit, expr *filter.Expression,
 	return nil
 }
 
-// UpdateByIDWithTx load balancer flow rel.
-func (dao LoadBalancerFlowRelDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
-	model *tablelb.LoadBalancerFlowRelTable) error {
+// UpdateByIDWithTx resource flow lock.
+func (dao ResourceFlowLockDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, resID, resType, owner string,
+	model *tablelb.ResourceFlowLockTable) error {
 
-	if len(id) == 0 {
-		return errf.New(errf.InvalidParameter, "id is required")
+	if len(resID) == 0 {
+		return errf.New(errf.InvalidParameter, "res_id is required")
+	}
+
+	if len(resType) == 0 {
+		return errf.New(errf.InvalidParameter, "res_type is required")
+	}
+
+	if len(owner) == 0 {
+		return errf.New(errf.InvalidParameter, "owner is required")
 	}
 
 	if err := model.UpdateValidate(); err != nil {
@@ -150,27 +151,31 @@ func (dao LoadBalancerFlowRelDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id 
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
 	}
 
-	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, model.TableName(), setExpr)
+	sql := fmt.Sprintf(`UPDATE %s %s WHERE res_id = :res_id AND res_type = :res_type AND owner = :owner`,
+		model.TableName(), setExpr)
 
-	toUpdate["id"] = id
+	toUpdate["res_id"] = resID
+	toUpdate["res_type"] = resType
+	toUpdate["owner"] = owner
 	_, err = dao.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
-		logs.Errorf("update load balancer flow rel failed, id: %s, err: %v, rid: %v", id, err, kt.Rid)
+		logs.Errorf("update load balancer flow lock failed, resID: %s, resType: %s, owner: %s, err: %v, rid: %v",
+			resID, resType, owner, err, kt.Rid)
 		return err
 	}
 
 	return nil
 }
 
-// List load balancer flow rel.
-func (dao LoadBalancerFlowRelDao) List(kt *kit.Kit, opt *types.ListOption) (
-	*typeslb.ListLoadBalancerFlowRelDetails, error) {
+// List resource flow lock.
+func (dao ResourceFlowLockDao) List(kt *kit.Kit, opt *types.ListOption) (
+	*typeslb.ListResourceFlowLockDetails, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablelb.LoadBalancerFlowRelColumns.ColumnTypes())),
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablelb.ResourceFlowLockColumns.ColumnTypes())),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
@@ -182,36 +187,37 @@ func (dao LoadBalancerFlowRelDao) List(kt *kit.Kit, opt *types.ListOption) (
 
 	if opt.Page.Count {
 		// this is a count request, then do count operation only.
-		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.LoadBalancerFlowRelTable, whereExpr)
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.ResourceFlowLockTable, whereExpr)
 
 		count, err := dao.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
-			logs.Errorf("count load balancer flow rel failed, err: %v, filter: %s, rid: %s",
+			logs.Errorf("count load balancer flow lock failed, err: %v, filter: %s, rid: %s",
 				err, opt.Filter, kt.Rid)
 			return nil, err
 		}
 
-		return &typeslb.ListLoadBalancerFlowRelDetails{Count: count}, nil
+		return &typeslb.ListResourceFlowLockDetails{Count: count}, nil
 	}
 
-	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
+	pageExpr, err := types.PageSQLExpr(opt.Page, &types.PageSQLOption{
+		Sort: types.SortOption{Sort: "res_id", IfNotPresent: true}})
 	if err != nil {
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablelb.LoadBalancerFlowRelColumns.FieldsNamedExpr(opt.Fields),
-		table.LoadBalancerFlowRelTable, whereExpr, pageExpr)
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablelb.ResourceFlowLockColumns.FieldsNamedExpr(opt.Fields),
+		table.ResourceFlowLockTable, whereExpr, pageExpr)
 
-	details := make([]tablelb.LoadBalancerFlowRelTable, 0)
+	details := make([]tablelb.ResourceFlowLockTable, 0)
 	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
 
-	return &typeslb.ListLoadBalancerFlowRelDetails{Details: details}, nil
+	return &typeslb.ListResourceFlowLockDetails{Details: details}, nil
 }
 
-// DeleteWithTx load balancer flow rel.
-func (dao LoadBalancerFlowRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
+// DeleteWithTx resource flow lock.
+func (dao ResourceFlowLockDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
@@ -221,9 +227,9 @@ func (dao LoadBalancerFlowRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *f
 		return err
 	}
 
-	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.LoadBalancerFlowRelTable, whereExpr)
+	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.ResourceFlowLockTable, whereExpr)
 	if _, err = dao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
-		logs.Errorf("delete load balancer flow rel failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
+		logs.Errorf("delete load balancer flow lock failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
 		return err
 	}
 

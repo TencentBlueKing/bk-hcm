@@ -2,11 +2,11 @@
 
 - 该接口提供版本：v9.9.9+。
 - 该接口所需权限：业务访问。
-- 该接口功能描述：查询异步任务的操作记录指定子任务的详情。
+- 该接口功能描述：查询异步任务的操作记录详情。
 
 ### URL
 
-POST /api/v1/cloud/bizs/{bk_biz_id}/audits/{id}/async_task/list
+POST /api/v1/cloud/bizs/{bk_biz_id}/audits/{id}/async_flow/list
 
 ### 输入参数
 
@@ -15,14 +15,12 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/audits/{id}/async_task/list
 | bk_biz_id | int    | 是   | 业务ID          |
 | id        | int    | 是   | 操作记录ID       |
 | flow_id   | string | 是   | 任务ID          |
-| action_id | string | 是   | 子任务ID        |
 
 ### 调用示例
 
 ```json
 {
-    "flow_id": "00000001",
-    "action_id": 1
+    "flow_id": "00000001"
 }
 ```
 
@@ -48,13 +46,8 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/audits/{id}/async_task/list
       "tasks": [
         {
           "id": "00000004",
-          "flow_id": "00000001",
-          "flow_name": "add_rs",
+          "action_id": "00000001",
           "action_name": "add_rs",
-          "params": {
-            "vendor": "tcloud",
-            "targets": []
-          },
           "state": "failed",
           "reason": {
               "message": "some tasks failed to be executed"
@@ -94,11 +87,9 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/audits/{id}/async_task/list
 
 | 参数名称         | 参数类型 | 描述                                                 |
 |----------------|---------|------------------------------------------------------|
-| id             | string  | 子任务ID                                              |
+| id             | string  | 子任务自增ID                                           |
+| action_id      | string  | 子任务ID                                              |
 | action_name    | string  | 子任务名称                                             |
-| flow_id        | string  | 任务ID                                                |
-| flow_name      | string  | 任务名称                                               |
-| params         | json    | 子任务参数                                             |
 | state          | string  | 子任务状态                                             |
 | reason         | json    | 子任务失败原因                                          |
 | creator        | string  | 子任务创建者                                           |
@@ -118,30 +109,3 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/audits/{id}/async_task/list
 | 参数名称   | 参数类型 | 描述         |
 |----------|---------|--------------|
 | message  | string  | 子任务失败原因 |
-
-
-#### data.tasks[n].params（针对负载均衡操作的参数）
-
-| 参数名称 | 参数类型         | 描述   |
-|---------|----------------|-------|
-| vendor  | string         | 云厂商 |
-| targets | object array   | RS列表 |
-
-
-#### data.tasks[n].params[n].targets（针对负载均衡操作的参数）
-
-| 参数名称              | 参数类型       | 描述                      |
-|----------------------|--------------|--------------------------|
-| account_id           | string       | 账号ID                    |
-| inst_type            | string       | 实例类型                   |
-| inst_name            | string       | 实例名称                   |
-| cloud_inst_id        | string       | 云实例ID                   |
-| port                 | int          | 端口                       |
-| weight               | int          | 权重                       |
-| new_port             | int          | 新端口，仅限批量修改端口时有值 |
-| new_weight           | int          | 新权重，仅限批量修改权重时有值 |
-| target_group_id      | string       | 目标组ID                   |
-| private_ip_addresses | string array | 内网IP地址                  |
-| public_ip_addresses  | string array | 外网IP地址                  |
-| cloud_vpc_ids        | string array | 云端VpcID                  |
-| zone                 | string       | 可用区                     |

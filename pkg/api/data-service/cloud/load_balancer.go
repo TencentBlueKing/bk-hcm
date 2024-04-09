@@ -301,10 +301,11 @@ func (req *ResFlowRelBatchCreateReq) Validate() error {
 
 // ResFlowRelCreateReq res flow rel create req.
 type ResFlowRelCreateReq struct {
-	ResID    string               `json:"res_id" validate:"required"`
-	FlowID   string               `json:"flow_id" validate:"required"`
-	TaskType enumor.TaskType      `json:"task_type" validate:"omitempty"`
-	Status   enumor.ResFlowStatus `json:"status" validate:"omitempty"`
+	ResID    string                   `json:"res_id" validate:"required"`
+	ResType  enumor.CloudResourceType `json:"res_type" validate:"required"`
+	FlowID   string                   `json:"flow_id" validate:"required"`
+	TaskType enumor.TaskType          `json:"task_type" validate:"omitempty"`
+	Status   enumor.ResFlowStatus     `json:"status" validate:"omitempty"`
 }
 
 // Validate validate rel flow rel create
@@ -331,11 +332,12 @@ func (req *ResFlowRelBatchUpdateReq) Validate() error {
 
 // ResFlowRelUpdateReq res flow rel update req.
 type ResFlowRelUpdateReq struct {
-	ID       string               `json:"id" validate:"required"`
-	ResID    string               `json:"res_id" validate:"required"`
-	FlowID   string               `json:"flow_id" validate:"required"`
-	TaskType enumor.TaskType      `json:"task_type" validate:"omitempty"`
-	Status   enumor.ResFlowStatus `json:"status" validate:"omitempty"`
+	ID       string                   `json:"id" validate:"required"`
+	ResID    string                   `json:"res_id" validate:"required"`
+	ResType  enumor.CloudResourceType `json:"res_type" validate:"required"`
+	FlowID   string                   `json:"flow_id" validate:"required"`
+	TaskType enumor.TaskType          `json:"task_type" validate:"omitempty"`
+	Status   enumor.ResFlowStatus     `json:"status" validate:"omitempty"`
 }
 
 // Validate validate res flow rel update
