@@ -291,13 +291,13 @@ func (svc *lbSvc) batchAddBizTarget(cts *rest.Contexts, authHandler handler.Vali
 
 	switch baseInfo.Vendor {
 	case enumor.TCloud:
-		return svc.buildAddTCloudTargetTasks(cts.Kit, req.Data, tgID, baseInfo.AccountID, bkBizID)
+		return svc.buildAddTCloudTarget(cts.Kit, req.Data, tgID, baseInfo.AccountID, bkBizID)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", baseInfo.Vendor)
 	}
 }
 
-func (svc *lbSvc) buildAddTCloudTargetTasks(kt *kit.Kit, body json.RawMessage, tgID, accountID string, bkBizID int64) (
+func (svc *lbSvc) buildAddTCloudTarget(kt *kit.Kit, body json.RawMessage, tgID, accountID string, bkBizID int64) (
 	interface{}, error) {
 
 	req := new(cslb.TCloudTargetBatchCreateReq)
@@ -309,8 +309,88 @@ func (svc *lbSvc) buildAddTCloudTargetTasks(kt *kit.Kit, body json.RawMessage, t
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// 根据目标组ID，获取目标组绑定的监听器、规则列表
+	ruleRelReq := &core.ListReq{
+		Filter: tools.EqualExpression("target_group_id", tgID),
+		Page:   core.NewDefaultBasePage(),
+	}
+	ruleRelList, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, ruleRelReq)
+	if err != nil {
+		logs.Errorf("list tcloud listener url rule failed, tgID: %s, err: %v, rid: %s", tgID, err, kt.Rid)
+		return nil, err
+	}
+
+	// 检查传入的Target是否已存在
+	err = svc.checkAddTarget(kt, req, tgID, accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 该目标组尚未绑定监听器及规则，不需要云端操作
+	if len(ruleRelList.Details) == 0 {
+		rsIDs, err := svc.batchCreateTargetDb(kt, req, tgID, accountID)
+		if err != nil {
+			return nil, err
+		}
+		return &core.FlowStateResult{FlowID: rsIDs.IDs[0], State: enumor.FlowSuccess}, nil
+	}
+
+	return svc.buildAddTCloudTargetTasks(kt, req, ruleRelList.Details[0].LbID, tgID, accountID, bkBizID)
+}
+
+func (svc *lbSvc) checkAddTarget(kt *kit.Kit, req *cslb.TCloudTargetBatchCreateReq,
+	tgID, accountID string) error {
+
+	for _, item := range req.RsList {
+		tgReq := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleEqual("account_id", accountID),
+				tools.RuleEqual("target_group_id", tgID),
+				tools.RuleEqual("cloud_inst_id", item.CloudInstID),
+				tools.RuleEqual("port", item.Port),
+			),
+			Page: core.NewDefaultBasePage(),
+		}
+		rsList, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, tgReq)
+		if err != nil {
+			return err
+		}
+		if len(rsList.Details) > 0 {
+			logs.Errorf("check add target has exist, tgID: %s, item: %+v, rid: %s", tgID, item, kt.Rid)
+			return errf.Newf(errf.RecordDuplicated, "cloudInstID: %s, port: %d has exist", item.CloudInstID, item.Port)
+		}
+	}
+	return nil
+}
+
+func (svc *lbSvc) batchCreateTargetDb(kt *kit.Kit, req *cslb.TCloudTargetBatchCreateReq,
+	tgID, accountID string) (*core.BatchCreateResult, error) {
+
+	addRsParams, err := svc.convTCloudAddTargetReq(kt, req.RsList, tgID, accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 检查RS是否已绑定该目标组
+	rsReq := &dataproto.TargetBatchCreateReq{}
+	for _, item := range addRsParams.RsList {
+		rsReq.Targets = append(rsReq.Targets, &dataproto.TargetBaseReq{
+			AccountID:     accountID,
+			TargetGroupID: tgID,
+			InstType:      item.InstType,
+			CloudInstID:   item.CloudInstID,
+			Port:          item.Port,
+			Weight:        item.Weight,
+		})
+	}
+	return svc.client.DataService().Global.LoadBalancer.BatchCreateTCloudTarget(kt, rsReq)
+}
+
+func (svc *lbSvc) buildAddTCloudTargetTasks(kt *kit.Kit, req *cslb.TCloudTargetBatchCreateReq, lbID, tgID,
+	accountID string, bkBizID int64) (*core.FlowStateResult, error) {
+
 	// 预检测
-	err := svc.checkResFlowRel(kt, tgID, enumor.TargetGroupCloudResType, bkBizID)
+	err := svc.checkResFlowRel(kt, lbID, tgID, enumor.LoadBalancerCloudResType, enumor.TargetGroupCloudResType, bkBizID)
 	if err != nil {
 		return nil, err
 	}
@@ -356,14 +436,16 @@ func (svc *lbSvc) buildAddTCloudTargetTasks(kt *kit.Kit, body json.RawMessage, t
 	flowID := result.ID
 	// 从Flow，负责监听主Flow的状态
 	flowWatchReq := &ts.AddTemplateFlowReq{
-		Name: enumor.FlowWatch,
+		Name: enumor.FlowLoadBalancerOperateWatch,
 		Tasks: []ts.TemplateFlowTask{{
 			ActionID: "1",
-			Params: &actionflow.FlowWatchOption{
-				FlowID:   flowID,
-				ResID:    tgID,
-				ResType:  enumor.TargetGroupCloudResType,
-				TaskType: enumor.AddRSTaskType,
+			Params: &actionflow.LoadBalancerOperateWatchOption{
+				FlowID:     flowID,
+				ResID:      lbID,
+				ResType:    enumor.LoadBalancerCloudResType,
+				SubResID:   tgID,
+				SubResType: enumor.TargetGroupCloudResType,
+				TaskType:   enumor.AddRSTaskType,
 			},
 		}},
 	}
@@ -375,7 +457,7 @@ func (svc *lbSvc) buildAddTCloudTargetTasks(kt *kit.Kit, body json.RawMessage, t
 	}
 
 	// 锁定资源跟Flow的状态
-	err = svc.lockResFlowStatus(kt, tgID, enumor.TargetGroupCloudResType, flowID, enumor.AddRSTaskType)
+	err = svc.lockResFlowStatus(kt, lbID, enumor.LoadBalancerCloudResType, flowID, enumor.AddRSTaskType)
 	if err != nil {
 		return nil, err
 	}
@@ -472,16 +554,18 @@ func (svc *lbSvc) lockResFlowStatus(kt *kit.Kit, resID string, resType enumor.Cl
 	return nil
 }
 
-func (svc *lbSvc) checkResFlowRel(kt *kit.Kit, resID string, resType enumor.CloudResourceType, bkBizID int64) error {
+func (svc *lbSvc) checkResFlowRel(kt *kit.Kit, resID, subResID string, resType, subResType enumor.CloudResourceType,
+	bkBizID int64) error {
+
 	// 检查目标组是否存在
-	if resType == enumor.TargetGroupCloudResType {
-		targetGroupList, err := svc.getTargetGroupByID(kt, resID, bkBizID)
+	if subResType == enumor.TargetGroupCloudResType {
+		targetGroupList, err := svc.getTargetGroupByID(kt, subResID, bkBizID)
 		if err != nil {
-			logs.Errorf("list target group by id failed, tgID: %s, err: %v, rid: %s", resID, err, kt.Rid)
+			logs.Errorf("list target group by id failed, tgID: %s, err: %v, rid: %s", subResID, err, kt.Rid)
 			return err
 		}
 		if len(targetGroupList) == 0 {
-			return errf.Newf(errf.RecordNotFound, "target group: %s not found", resID)
+			return errf.Newf(errf.RecordNotFound, "target group: %s not found", subResID)
 		}
 	}
 
@@ -495,17 +579,18 @@ func (svc *lbSvc) checkResFlowRel(kt *kit.Kit, resID string, resType enumor.Clou
 	}
 	lockRet, err := svc.client.DataService().Global.LoadBalancer.ListResFlowLock(kt, lockReq)
 	if err != nil {
-		logs.Errorf("list res flow lock failed, err: %v, resID: %s, resType: %s, rid: %s", err, resID, resType, kt.Rid)
+		logs.Errorf("list res flow lock failed, err: %v, resID: %s, resType: %s, rid: %s", err, subResID, resType, kt.Rid)
 		return err
 	}
 	if len(lockRet.Details) > 0 {
-		return errf.Newf(errf.TooManyRequest, "resID: %s is processing", resID)
+		return errf.Newf(errf.TooManyRequest, "resID: %s is processing", subResID)
 	}
 
 	// 预检测-当前资源是否有未终态的状态
 	flowRelReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("res_id", resID),
+			tools.RuleEqual("res_type", resType),
 			tools.RuleEqual("status", enumor.ExecutingResFlowStatus),
 		),
 		Page: core.NewDefaultBasePage(),

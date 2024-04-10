@@ -371,7 +371,7 @@ func (svc *lbSvc) BatchUpdateResFlowRel(cts *rest.Contexts) (any, error) {
 
 	return svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
 		for _, item := range req.ResFlowRels {
-			model := &tablelb.LoadBalancerFlowRelTable{
+			model := &tablelb.ResourceFlowRelTable{
 				TaskType: item.TaskType,
 				Status:   item.Status,
 				Reviser:  cts.Kit.User,
@@ -379,9 +379,10 @@ func (svc *lbSvc) BatchUpdateResFlowRel(cts *rest.Contexts) (any, error) {
 			filter := tools.ExpressionAnd(
 				tools.RuleEqual("id", item.ID),
 				tools.RuleEqual("res_id", item.ResID),
+				tools.RuleEqual("res_type", item.ResType),
 				tools.RuleEqual("flow_id", item.FlowID),
 			)
-			if err := svc.dao.LoadBalancerFlowRel().Update(cts.Kit, filter, model); err != nil {
+			if err := svc.dao.ResourceFlowRel().Update(cts.Kit, filter, model); err != nil {
 				logs.Errorf("update res flow rel failed, err: %v, id: %s, rid: %s", err, item.ID, cts.Kit.Rid)
 				return nil, fmt.Errorf("update res flow rel failed, id: %s, serr: %v", item.ID, err)
 			}
@@ -409,20 +410,21 @@ func (svc *lbSvc) ResFlowUnLock(cts *rest.Contexts) (interface{}, error) {
 			tools.RuleEqual("res_type", req.ResType),
 			tools.RuleEqual("owner", req.FlowID),
 		)
-		if err := svc.dao.LoadBalancerFlowLock().DeleteWithTx(cts.Kit, txn, lockDelFilter); err != nil {
+		if err := svc.dao.ResourceFlowLock().DeleteWithTx(cts.Kit, txn, lockDelFilter); err != nil {
 			logs.Errorf("delete res flow lock failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
 			return nil, err
 		}
 
-		relModel := &tablelb.LoadBalancerFlowRelTable{
+		relModel := &tablelb.ResourceFlowRelTable{
 			Status:  req.Status,
 			Reviser: cts.Kit.User,
 		}
 		filter := tools.ExpressionAnd(
 			tools.RuleEqual("res_id", req.ResID),
+			tools.RuleEqual("res_type", req.ResType),
 			tools.RuleEqual("flow_id", req.FlowID),
 		)
-		if err := svc.dao.LoadBalancerFlowRel().Update(cts.Kit, filter, relModel); err != nil {
+		if err := svc.dao.ResourceFlowRel().Update(cts.Kit, filter, relModel); err != nil {
 			logs.Errorf("update res flow rel failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
 			return nil, fmt.Errorf("update res flow rel failed, err: %v", err)
 		}

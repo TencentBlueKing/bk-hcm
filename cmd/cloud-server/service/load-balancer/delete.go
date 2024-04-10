@@ -198,13 +198,13 @@ func (svc *lbSvc) batchRemoveBizTarget(cts *rest.Contexts, authHandler handler.V
 
 	switch baseInfo.Vendor {
 	case enumor.TCloud:
-		return svc.buildRemoveTCloudTargetTasks(cts.Kit, req.Data, tgID, baseInfo.AccountID, bkBizID)
+		return svc.buildRemoveTCloudTarget(cts.Kit, req.Data, tgID, baseInfo.AccountID, bkBizID)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", baseInfo.Vendor)
 	}
 }
 
-func (svc *lbSvc) buildRemoveTCloudTargetTasks(kt *kit.Kit, body json.RawMessage, tgID, accountID string,
+func (svc *lbSvc) buildRemoveTCloudTarget(kt *kit.Kit, body json.RawMessage, tgID, accountID string,
 	bkBizID int64) (interface{}, error) {
 
 	req := new(cslb.TCloudTargetBatchRemoveReq)
@@ -216,8 +216,76 @@ func (svc *lbSvc) buildRemoveTCloudTargetTasks(kt *kit.Kit, body json.RawMessage
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// 根据目标组ID，获取目标组绑定的监听器、规则列表
+	ruleRelReq := &core.ListReq{
+		Filter: tools.EqualExpression("target_group_id", tgID),
+		Page:   core.NewDefaultBasePage(),
+	}
+	ruleRelList, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, ruleRelReq)
+	if err != nil {
+		logs.Errorf("list tcloud listener url rule failed, tgID: %s, err: %v, rid: %s", tgID, err, kt.Rid)
+		return nil, err
+	}
+
+	// 该目标组尚未绑定监听器及规则，不需要云端操作
+	if len(ruleRelList.Details) == 0 {
+		err := svc.batchDeleteTargetDb(kt, req, accountID, tgID)
+		if err != nil {
+			return nil, err
+		}
+		return &core.FlowStateResult{State: enumor.FlowSuccess}, nil
+	}
+
+	return svc.buildRemoveTCloudTargetTasks(kt, req, ruleRelList.Details[0].LbID, tgID, accountID, bkBizID)
+}
+
+func (svc *lbSvc) batchDeleteTargetDb(kt *kit.Kit, req *cslb.TCloudTargetBatchRemoveReq,
+	accountID, tgID string) error {
+
+	removeRsParams, err := svc.convTCloudOperateTargetReq(kt, req.TargetIDs, tgID, accountID, nil, nil)
+	if err != nil {
+		return err
+	}
+
+	// 检查RS是否已绑定该目标组
+	rsID := make([]string, 0)
+	for _, item := range removeRsParams.RsList {
+		tgReq := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleEqual("account_id", accountID),
+				tools.RuleEqual("target_group_id", tgID),
+				tools.RuleEqual("cloud_inst_id", item.CloudInstID),
+				tools.RuleEqual("port", item.Port),
+			),
+			Page: core.NewDefaultBasePage(),
+		}
+		tmpRsList, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, tgReq)
+		if err != nil {
+			return err
+		}
+		if len(tmpRsList.Details) > 0 {
+			rsID = append(rsID, tmpRsList.Details[0].ID)
+		}
+	}
+	if len(rsID) == 0 {
+		return nil
+	}
+
+	delReq := &dataproto.LoadBalancerBatchDeleteReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("id", rsID),
+			tools.RuleEqual("account_id", accountID),
+			tools.RuleEqual("target_group_id", tgID),
+		),
+	}
+	return svc.client.DataService().Global.LoadBalancer.BatchDeleteTarget(kt, delReq)
+}
+
+func (svc *lbSvc) buildRemoveTCloudTargetTasks(kt *kit.Kit, req *cslb.TCloudTargetBatchRemoveReq, lbID, tgID,
+	accountID string, bkBizID int64) (*core.FlowStateResult, error) {
+
 	// 预检测
-	err := svc.checkResFlowRel(kt, tgID, enumor.TargetGroupCloudResType, bkBizID)
+	err := svc.checkResFlowRel(kt, lbID, tgID, enumor.LoadBalancerCloudResType, enumor.TargetGroupCloudResType, bkBizID)
 	if err != nil {
 		return nil, err
 	}
@@ -257,14 +325,16 @@ func (svc *lbSvc) buildRemoveTCloudTargetTasks(kt *kit.Kit, body json.RawMessage
 	flowID := result.ID
 	// 从Flow，负责监听主Flow的状态
 	flowWatchReq := &ts.AddTemplateFlowReq{
-		Name: enumor.FlowWatch,
+		Name: enumor.FlowLoadBalancerOperateWatch,
 		Tasks: []ts.TemplateFlowTask{{
 			ActionID: "1",
-			Params: &actionflow.FlowWatchOption{
-				FlowID:   flowID,
-				ResID:    tgID,
-				ResType:  enumor.TargetGroupCloudResType,
-				TaskType: enumor.RemoveRSTaskType,
+			Params: &actionflow.LoadBalancerOperateWatchOption{
+				FlowID:     flowID,
+				ResID:      lbID,
+				ResType:    enumor.LoadBalancerCloudResType,
+				SubResID:   tgID,
+				SubResType: enumor.TargetGroupCloudResType,
+				TaskType:   enumor.RemoveRSTaskType,
 			},
 		}},
 	}
@@ -276,7 +346,7 @@ func (svc *lbSvc) buildRemoveTCloudTargetTasks(kt *kit.Kit, body json.RawMessage
 	}
 
 	// 锁定资源跟Flow的状态
-	err = svc.lockResFlowStatus(kt, tgID, enumor.TargetGroupCloudResType, flowID, enumor.RemoveRSTaskType)
+	err = svc.lockResFlowStatus(kt, lbID, enumor.LoadBalancerCloudResType, flowID, enumor.RemoveRSTaskType)
 	if err != nil {
 		return nil, err
 	}

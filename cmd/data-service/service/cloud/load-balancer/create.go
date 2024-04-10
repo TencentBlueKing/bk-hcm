@@ -727,14 +727,14 @@ func (svc *lbSvc) CreateResFlowLock(cts *rest.Contexts) (any, error) {
 	}
 
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
-		model := &tablelb.LoadBalancerFlowLockTable{
+		model := &tablelb.ResourceFlowLockTable{
 			ResID:   req.ResID,
 			ResType: req.ResType,
 			Owner:   req.Owner,
 			Creator: cts.Kit.User,
 			Reviser: cts.Kit.User,
 		}
-		err := svc.dao.LoadBalancerFlowLock().CreateWithTx(cts.Kit, txn, model)
+		err := svc.dao.ResourceFlowLock().CreateWithTx(cts.Kit, txn, model)
 		if err != nil {
 			logs.Errorf("[%s]fail to create load balancer flow lock, req: %+v, err: %v, rid:%s", req, err, cts.Kit.Rid)
 			return nil, fmt.Errorf("create load balancer flow lock failed, err: %v", err)
@@ -760,10 +760,11 @@ func (svc *lbSvc) BatchCreateResFlowRel(cts *rest.Contexts) (any, error) {
 	}
 
 	result, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
-		models := make([]*tablelb.LoadBalancerFlowRelTable, 0, len(req.ResFlowRels))
+		models := make([]*tablelb.ResourceFlowRelTable, 0, len(req.ResFlowRels))
 		for _, item := range req.ResFlowRels {
-			models = append(models, &tablelb.LoadBalancerFlowRelTable{
+			models = append(models, &tablelb.ResourceFlowRelTable{
 				ResID:    item.ResID,
+				ResType:  item.ResType,
 				FlowID:   item.FlowID,
 				TaskType: item.TaskType,
 				Status:   item.Status,
@@ -771,7 +772,7 @@ func (svc *lbSvc) BatchCreateResFlowRel(cts *rest.Contexts) (any, error) {
 				Reviser:  cts.Kit.User,
 			})
 		}
-		ids, err := svc.dao.LoadBalancerFlowRel().BatchCreateWithTx(cts.Kit, txn, models)
+		ids, err := svc.dao.ResourceFlowRel().BatchCreateWithTx(cts.Kit, txn, models)
 		if err != nil {
 			logs.Errorf("[%s]fail to batch create load balancer flow rel, err: %v, rid:%s", err, cts.Kit.Rid)
 			return nil, fmt.Errorf("batch create load balancer flow rel failed, err: %v", err)
@@ -803,28 +804,29 @@ func (svc *lbSvc) ResFlowLock(cts *rest.Contexts) (any, error) {
 	}
 
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
-		lockModel := &tablelb.LoadBalancerFlowLockTable{
+		lockModel := &tablelb.ResourceFlowLockTable{
 			ResID:   req.ResID,
 			ResType: req.ResType,
 			Owner:   req.FlowID,
 			Creator: cts.Kit.User,
 			Reviser: cts.Kit.User,
 		}
-		err := svc.dao.LoadBalancerFlowLock().CreateWithTx(cts.Kit, txn, lockModel)
+		err := svc.dao.ResourceFlowLock().CreateWithTx(cts.Kit, txn, lockModel)
 		if err != nil {
 			logs.Errorf("fail to create load balancer flow lock, req: %+v, err: %v, rid:%s", req, err, cts.Kit.Rid)
 			return nil, fmt.Errorf("create load balancer flow lock failed, err: %v", err)
 		}
 
-		relModels := []*tablelb.LoadBalancerFlowRelTable{{
+		relModels := []*tablelb.ResourceFlowRelTable{{
 			ResID:    req.ResID,
+			ResType:  req.ResType,
 			FlowID:   req.FlowID,
 			TaskType: req.TaskType,
 			Status:   req.Status,
 			Creator:  cts.Kit.User,
 			Reviser:  cts.Kit.User,
 		}}
-		_, err = svc.dao.LoadBalancerFlowRel().BatchCreateWithTx(cts.Kit, txn, relModels)
+		_, err = svc.dao.ResourceFlowRel().BatchCreateWithTx(cts.Kit, txn, relModels)
 		if err != nil {
 			logs.Errorf("fail to create load balancer flow rel, err: %v, req: %+v, rid:%s", err, req, cts.Kit.Rid)
 			return nil, fmt.Errorf("create load balancer flow rel failed, err: %v", err)

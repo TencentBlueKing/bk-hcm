@@ -166,10 +166,10 @@ const (
 	LoadBalancerTargetGroupTable Name = "load_balancer_target_group"
 	// TargetGroupListenerRuleRelTable is target_group_listener_rule_rel table's name.
 	TargetGroupListenerRuleRelTable Name = "target_group_listener_rule_rel"
-	// LoadBalancerFlowRelTable is load_balancer_flow_rel table's name.
-	LoadBalancerFlowRelTable Name = "load_balancer_flow_rel"
-	// LoadBalancerFlowLockTable is load_balancer_flow_lock table's name.
-	LoadBalancerFlowLockTable Name = "load_balancer_flow_lock"
+	// ResourceFlowRelTable is resource_flow_rel table's name.
+	ResourceFlowRelTable Name = "resource_flow_rel"
+	// ResourceFlowLockTable is resource_flow_lock table's name.
+	ResourceFlowLockTable Name = "resource_flow_lock"
 )
 
 // Validate whether the table name is valid or not.
@@ -253,8 +253,8 @@ var TableMap = map[Name]struct{}{
 	LoadBalancerTargetTable:         {},
 	LoadBalancerTargetGroupTable:    {},
 	TargetGroupListenerRuleRelTable: {},
-	LoadBalancerFlowRelTable:        {},
-	LoadBalancerFlowLockTable:       {},
+	ResourceFlowRelTable:            {},
+	ResourceFlowLockTable:           {},
 }
 
 // Register 注册表名

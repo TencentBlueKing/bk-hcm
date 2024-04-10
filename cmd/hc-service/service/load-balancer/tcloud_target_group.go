@@ -71,14 +71,9 @@ func (svc *clbSvc) BatchCreateTCloudTargets(cts *rest.Contexts) (any, error) {
 		logs.Errorf("list tcloud listener url rule failed, tgID: %s, err: %v, rid: %s", tgID, err, cts.Kit.Rid)
 		return nil, err
 	}
-	accountID := tgList[0].AccountID
 	// 该目标组尚未绑定监听器及规则，不需要云端操作
 	if len(ruleRelList.Details) == 0 {
-		rsIDs, err := svc.batchCreateTargetDb(cts.Kit, req, accountID, tgID)
-		if err != nil {
-			return nil, err
-		}
-		return &protolb.BatchCreateResult{SuccessCloudIDs: rsIDs.IDs}, nil
+		return &protolb.BatchCreateResult{}, nil
 	}
 
 	// 查询Url规则列表
@@ -96,21 +91,21 @@ func (svc *clbSvc) BatchCreateTCloudTargets(cts *rest.Contexts) (any, error) {
 	}
 
 	// 调用云端批量绑定虚拟主机接口
-	return svc.batchAddTargetsToGroup(cts.Kit, req, accountID, tgID, tgList[0].Region, urlRuleList)
+	return svc.batchAddTargetsToGroup(cts.Kit, req, tgList[0], urlRuleList)
 }
 
 func (svc *clbSvc) batchAddTargetsToGroup(kt *kit.Kit, req *protolb.TCloudBatchOperateTargetReq,
-	accountID, tgID, region string, urlRuleList *dataproto.TCloudURLRuleListResult) (
+	tgInfo corelb.BaseTargetGroup, urlRuleList *dataproto.TCloudURLRuleListResult) (
 	*protolb.BatchCreateResult, error) {
 
-	tcloudAdpt, err := svc.ad.TCloud(kt, accountID)
+	tcloudAdpt, err := svc.ad.TCloud(kt, tgInfo.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	cloudLBExists := make(map[string]struct{}, 0)
 	rsOpt := &typelb.TCloudRegisterTargetsOption{
-		Region: region,
+		Region: tgInfo.Region,
 	}
 	for _, ruleItem := range urlRuleList.Details {
 		if _, ok := cloudLBExists[ruleItem.CloudLbID]; !ok {
@@ -141,7 +136,7 @@ func (svc *clbSvc) batchAddTargetsToGroup(kt *kit.Kit, req *protolb.TCloudBatchO
 		}
 	}
 
-	rsIDs, err := svc.batchCreateTargetDb(kt, req, accountID, tgID)
+	rsIDs, err := svc.batchCreateTargetDb(kt, req, tgInfo.AccountID, tgInfo.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -225,13 +220,8 @@ func (svc *clbSvc) BatchRemoveTCloudTargets(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
-	accountID := tgList[0].AccountID
 	// 该目标组尚未绑定监听器及规则，不需要云端操作
 	if len(ruleRelList.Details) == 0 {
-		err = svc.batchDeleteTargetDb(cts.Kit, req, accountID, tgID)
-		if err != nil {
-			return nil, err
-		}
 		return &protolb.BatchCreateResult{}, nil
 	}
 
@@ -250,20 +240,20 @@ func (svc *clbSvc) BatchRemoveTCloudTargets(cts *rest.Contexts) (any, error) {
 	}
 
 	// 调用云端批量解绑四七层后端服务接口
-	return nil, svc.batchUnRegisterTargetCloud(cts.Kit, req, accountID, tgID, tgList[0].Region, urlRuleList)
+	return nil, svc.batchUnRegisterTargetCloud(cts.Kit, req, tgList[0], urlRuleList)
 }
 
 func (svc *clbSvc) batchUnRegisterTargetCloud(kt *kit.Kit, req *protolb.TCloudBatchOperateTargetReq,
-	accountID, tgID, region string, urlRuleList *dataproto.TCloudURLRuleListResult) error {
+	tgInfo corelb.BaseTargetGroup, urlRuleList *dataproto.TCloudURLRuleListResult) error {
 
-	tcloudAdpt, err := svc.ad.TCloud(kt, accountID)
+	tcloudAdpt, err := svc.ad.TCloud(kt, tgInfo.AccountID)
 	if err != nil {
 		return err
 	}
 
 	cloudLBExists := make(map[string]struct{}, 0)
 	rsOpt := &typelb.TCloudRegisterTargetsOption{
-		Region: region,
+		Region: tgInfo.Region,
 	}
 	for _, ruleItem := range urlRuleList.Details {
 		if _, ok := cloudLBExists[ruleItem.CloudLbID]; !ok {
@@ -293,7 +283,7 @@ func (svc *clbSvc) batchUnRegisterTargetCloud(kt *kit.Kit, req *protolb.TCloudBa
 		}
 	}
 
-	err = svc.batchDeleteTargetDb(kt, req, accountID, tgID)
+	err = svc.batchDeleteTargetDb(kt, req, tgInfo.AccountID, tgInfo.ID)
 	if err != nil {
 		return err
 	}
@@ -373,13 +363,8 @@ func (svc *clbSvc) BatchModifyTCloudTargetsPort(cts *rest.Contexts) (any, error)
 		return nil, err
 	}
 
-	accountID := tgList[0].AccountID
 	// 该目标组尚未绑定监听器及规则，不需要云端操作
 	if len(ruleRelList.Details) == 0 {
-		err = svc.batchUpdateTargetPortWeightDb(cts.Kit, req, accountID, tgID)
-		if err != nil {
-			return nil, err
-		}
 		return &protolb.BatchCreateResult{}, nil
 	}
 
@@ -398,19 +383,19 @@ func (svc *clbSvc) BatchModifyTCloudTargetsPort(cts *rest.Contexts) (any, error)
 	}
 
 	// 调用云端批量解绑四七层后端服务接口
-	return nil, svc.batchModifyTargetPortCloud(cts.Kit, req, accountID, tgID, tgList[0].Region, urlRuleList)
+	return nil, svc.batchModifyTargetPortCloud(cts.Kit, req, tgList[0], urlRuleList)
 }
 
 func (svc *clbSvc) batchModifyTargetPortCloud(kt *kit.Kit, req *protolb.TCloudBatchOperateTargetReq,
-	accountID, tgID, region string, urlRuleList *dataproto.TCloudURLRuleListResult) error {
+	tgInfo corelb.BaseTargetGroup, urlRuleList *dataproto.TCloudURLRuleListResult) error {
 
-	tcloudAdpt, err := svc.ad.TCloud(kt, accountID)
+	tcloudAdpt, err := svc.ad.TCloud(kt, tgInfo.AccountID)
 	if err != nil {
 		return err
 	}
 
 	rsOpt := &typelb.TCloudTargetPortUpdateOption{
-		Region: region,
+		Region: tgInfo.Region,
 	}
 	for _, ruleItem := range urlRuleList.Details {
 		rsOpt.LoadBalancerId = ruleItem.CloudLbID
@@ -434,7 +419,7 @@ func (svc *clbSvc) batchModifyTargetPortCloud(kt *kit.Kit, req *protolb.TCloudBa
 		}
 	}
 
-	err = svc.batchUpdateTargetPortWeightDb(kt, req, accountID, tgID)
+	err = svc.batchUpdateTargetPortWeightDb(kt, req, tgInfo.AccountID, tgInfo.ID)
 	if err != nil {
 		return err
 	}
@@ -511,13 +496,8 @@ func (svc *clbSvc) BatchModifyTCloudTargetsWeight(cts *rest.Contexts) (any, erro
 		return nil, err
 	}
 
-	accountID := tgList[0].AccountID
 	// 该目标组尚未绑定监听器及规则，不需要云端操作
 	if len(ruleRelList.Details) == 0 {
-		err = svc.batchUpdateTargetPortWeightDb(cts.Kit, req, accountID, tgID)
-		if err != nil {
-			return nil, err
-		}
 		return &protolb.BatchCreateResult{}, nil
 	}
 
@@ -536,19 +516,19 @@ func (svc *clbSvc) BatchModifyTCloudTargetsWeight(cts *rest.Contexts) (any, erro
 	}
 
 	// 批量修改监听器绑定的后端机器的转发权重
-	return nil, svc.batchModifyTargetWeightCloud(cts.Kit, req, accountID, tgID, tgList[0].Region, urlRuleList)
+	return nil, svc.batchModifyTargetWeightCloud(cts.Kit, req, tgList[0], urlRuleList)
 }
 
 func (svc *clbSvc) batchModifyTargetWeightCloud(kt *kit.Kit, req *protolb.TCloudBatchOperateTargetReq,
-	accountID, tgID, region string, urlRuleList *dataproto.TCloudURLRuleListResult) error {
+	tgInfo corelb.BaseTargetGroup, urlRuleList *dataproto.TCloudURLRuleListResult) error {
 
-	tcloudAdpt, err := svc.ad.TCloud(kt, accountID)
+	tcloudAdpt, err := svc.ad.TCloud(kt, tgInfo.AccountID)
 	if err != nil {
 		return err
 	}
 
 	rsOpt := &typelb.TCloudTargetWeightUpdateOption{
-		Region: region,
+		Region: tgInfo.Region,
 	}
 	for _, ruleItem := range urlRuleList.Details {
 		rsOpt.LoadBalancerId = ruleItem.CloudLbID
@@ -574,7 +554,7 @@ func (svc *clbSvc) batchModifyTargetWeightCloud(kt *kit.Kit, req *protolb.TCloud
 		}
 	}
 
-	err = svc.batchUpdateTargetPortWeightDb(kt, req, accountID, tgID)
+	err = svc.batchUpdateTargetPortWeightDb(kt, req, tgInfo.AccountID, tgInfo.ID)
 	if err != nil {
 		return err
 	}

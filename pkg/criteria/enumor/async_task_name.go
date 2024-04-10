@@ -39,7 +39,7 @@ func (v ActionName) Validate() error {
 	case VirRoot:
 	case ActionCreateFactoryTest, ActionProduceTest, ActionAssembleTest, ActionSleep:
 	case ActionTargetGroupAddRS, ActionTargetGroupRemoveRS, ActionTargetGroupModifyPort, ActionTargetGroupModifyWeight:
-	case ActionFlowWatch:
+	case ActionLoadBalancerOperateWatch:
 	case ActionListenerRuleAddTarget:
 	case ActionDeleteLoadBalancer:
 	default:
@@ -99,7 +99,7 @@ const (
 
 // Flow相关Action
 const (
-	ActionFlowWatch ActionName = "flow_watch"
+	ActionLoadBalancerOperateWatch ActionName = "load_balancer_operate_watch"
 )
 
 // 负载均衡相关Action

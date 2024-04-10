@@ -21,8 +21,8 @@ package loadbalancer
 
 import tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 
-// ListLoadBalancerFlowLockDetails list load balancer flow lock details.
-type ListLoadBalancerFlowLockDetails struct {
-	Count   uint64                              `json:"count,omitempty"`
-	Details []tablelb.LoadBalancerFlowLockTable `json:"details,omitempty"`
+// ListResourceFlowLockDetails list resource flow lock details.
+type ListResourceFlowLockDetails struct {
+	Count   uint64                          `json:"count,omitempty"`
+	Details []tablelb.ResourceFlowLockTable `json:"details,omitempty"`
 }

@@ -29,11 +29,11 @@ import (
 	"hcm/pkg/dal/table/utils"
 )
 
-// LoadBalancerFlowLockColumns defines all the load_balancer_flow_lock table's columns.
-var LoadBalancerFlowLockColumns = utils.MergeColumns(nil, LoadBalancerFlowLockColumnsDescriptor)
+// ResourceFlowLockColumns defines all the resource_flow_lock table's columns.
+var ResourceFlowLockColumns = utils.MergeColumns(nil, ResourceFlowLockColumnsDescriptor)
 
-// LoadBalancerFlowLockColumnsDescriptor is load_balancer_flow_lock's column descriptors.
-var LoadBalancerFlowLockColumnsDescriptor = utils.ColumnDescriptors{
+// ResourceFlowLockColumnsDescriptor is resource_flow_lock column descriptors.
+var ResourceFlowLockColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "res_id", NamedC: "res_id", Type: enumor.String},
 	{Column: "res_type", NamedC: "res_type", Type: enumor.String},
 	{Column: "owner", NamedC: "owner", Type: enumor.String},
@@ -44,8 +44,8 @@ var LoadBalancerFlowLockColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "updated_at", NamedC: "updated_at", Type: enumor.Time},
 }
 
-// LoadBalancerFlowLockTable load balancer资源锁定表
-type LoadBalancerFlowLockTable struct {
+// ResourceFlowLockTable 资源与Flow的锁定表
+type ResourceFlowLockTable struct {
 	ResID   string                   `db:"res_id" validate:"lte=64" json:"res_id"`
 	ResType enumor.CloudResourceType `db:"res_type" validate:"lte=64" json:"res_type"`
 	Owner   string                   `db:"owner" validate:"lte=64" json:"owner"`
@@ -57,12 +57,12 @@ type LoadBalancerFlowLockTable struct {
 }
 
 // TableName return table name.
-func (cfl LoadBalancerFlowLockTable) TableName() table.Name {
-	return table.LoadBalancerFlowLockTable
+func (cfl ResourceFlowLockTable) TableName() table.Name {
+	return table.ResourceFlowLockTable
 }
 
 // InsertValidate validate table when insert.
-func (cfl LoadBalancerFlowLockTable) InsertValidate() error {
+func (cfl ResourceFlowLockTable) InsertValidate() error {
 	if err := validator.Validate.Struct(cfl); err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (cfl LoadBalancerFlowLockTable) InsertValidate() error {
 }
 
 // UpdateValidate validate table when update.
-func (cfl LoadBalancerFlowLockTable) UpdateValidate() error {
+func (cfl ResourceFlowLockTable) UpdateValidate() error {
 	if err := validator.Validate.Struct(cfl); err != nil {
 		return err
 	}

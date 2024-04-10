@@ -34,7 +34,7 @@ func (v FlowName) Validate() error {
 	case FlowDeleteSecurityGroup, FlowCreateHuaweiSGRule:
 	case FlowDeleteEIP:
 	case FlowTargetGroupAddRS, FlowTargetGroupRemoveRS, FlowTargetGroupModifyPort, FlowTargetGroupModifyWeight:
-	case FlowWatch:
+	case FlowLoadBalancerOperateWatch:
 	case FlowApplyTargetGroupToListenerRule:
 	case FlowDeleteLoadBalancer:
 	default:
@@ -85,8 +85,8 @@ const (
 
 // Flow 相关Flow
 const (
-	// FlowWatch flow查询
-	FlowWatch FlowName = "flow_watch"
+	// FlowLoadBalancerOperateWatch 负载均衡操作查询
+	FlowLoadBalancerOperateWatch FlowName = "load_balancer_operate_watch"
 )
 
 // 负载均衡相关Flow
