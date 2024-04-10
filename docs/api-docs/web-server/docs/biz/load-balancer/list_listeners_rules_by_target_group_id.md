@@ -6,7 +6,7 @@
 
 ### URL
 
-POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/target_groups/{target_group_id}/url_rules/list
+POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/target_groups/{target_group_id}/rules/list
 
 ### 输入参数
 

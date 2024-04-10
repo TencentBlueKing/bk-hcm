@@ -196,6 +196,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/{lb_id}/listeners/list
         "url_num": 100,
         "rs_weight_zero_num": 2,
         "rs_weight_non_zero_num": 8,
+        "binding_status": "binding",
         "memo": "cvm test",
         "creator": "Jim",
         "reviser": "Jim",
@@ -251,11 +252,12 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/{lb_id}/listeners/list
 | default_domain         | string       | 默认域名                           |
 | zones                  | string array | 可用区数组                          |
 | target_group_id        | string       | 目标组ID                           |
-| scheduler              | string array | 负载均衡方式数组                       |
+| scheduler              | string array | 负载均衡方式数组                     |
 | domain_num             | int          | 域名数量                           |
 | url_num                | int          | URL数量                          |
 | rs_weight_zero_num     | int          | 权重为0的RS数量                   |
 | rs_weight_non_zero_num | int          | 权重不为0的RS数量                 |
+| binding_status         | string       | 绑定状态(success:成功 failed:失败 binding:绑定中 partial_failed:部分失败) |
 | memo                   | string       | 备注                             |
 | creator                | string       | 创建者                            |
 | reviser                | string       | 修改者                            |
