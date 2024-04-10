@@ -128,6 +128,7 @@ type ListListenerBase struct {
 	Certificate        *corelb.TCloudCertificateInfo `json:"certificate"`
 	RsWeightZeroNum    int64                         `json:"rs_weight_zero_num"`
 	RsWeightNonZeroNum int64                         `json:"rs_weight_non_zero_num"`
+	BindingStatus      enumor.BindingStatus          `json:"binding_status"`
 }
 
 // -------------------------- Get Listener --------------------------

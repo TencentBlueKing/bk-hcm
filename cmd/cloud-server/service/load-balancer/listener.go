@@ -79,7 +79,7 @@ func (svc *lbSvc) listListener(cts *rest.Contexts, authHandler handler.ListAuthR
 		}
 
 		for idx, lblItem := range resList.Details {
-			tmpTargetGroupID := lblTargetGroupMap[lblItem.ID]
+			tmpTargetGroupID := lblTargetGroupMap[lblItem.ID].TargetGroupID
 			resList.Details[idx].TargetGroupID = tmpTargetGroupID
 			resList.Details[idx].Scheduler = urlRuleMap[lblItem.ID].Scheduler
 			if lblItem.Protocol.IsLayer7Protocol() {
@@ -90,6 +90,7 @@ func (svc *lbSvc) listListener(cts *rest.Contexts, authHandler handler.ListAuthR
 				resList.Details[idx].RsWeightNonZeroNum = targetWeightMap[tmpTargetGroupID].RsWeightNonZeroNum
 				resList.Details[idx].RsWeightZeroNum = targetWeightMap[tmpTargetGroupID].RsWeightZeroNum
 			}
+			resList.Details[idx].BindingStatus = lblTargetGroupMap[lblItem.ID].BindingStatus
 		}
 
 		return resList, nil
@@ -100,7 +101,7 @@ func (svc *lbSvc) listListener(cts *rest.Contexts, authHandler handler.ListAuthR
 
 func (svc *lbSvc) getTCloudUrlRuleAndTargetGroupMap(kt *kit.Kit, expr *filter.Expression, req *core.ListReq,
 	lbID string, resList *cslb.ListListenerResult) (map[string]cslb.ListListenerBase,
-	map[string]cslb.ListListenerBase, map[string]string, error) {
+	map[string]cslb.ListListenerBase, map[string]cslb.ListListenerBase, error) {
 
 	listenerReq := &core.ListReq{
 		Filter: expr,
@@ -150,10 +151,13 @@ func (svc *lbSvc) getTCloudUrlRuleAndTargetGroupMap(kt *kit.Kit, expr *filter.Ex
 	}
 
 	targetGroupIDs := make([]string, 0)
-	lblTargetGroupMap := make(map[string]string, 0)
+	lblTargetGroupMap := make(map[string]cslb.ListListenerBase, 0)
 	for _, item := range ruleRelList.Details {
 		targetGroupIDs = append(targetGroupIDs, item.TargetGroupID)
-		lblTargetGroupMap[item.LblID] = item.TargetGroupID
+		lblTargetGroupMap[item.LblID] = cslb.ListListenerBase{
+			TargetGroupID: item.TargetGroupID,
+			BindingStatus: item.BindingStatus,
+		}
 	}
 
 	// TODO 后面拆成独立接口，让前端异步调用

@@ -636,14 +636,18 @@ func (svc *lbSvc) insertListenerWithRule(kt *kit.Kit, req *dataproto.ListenerWit
 				continue
 			}
 			ruleRelModels := []*tablelb.TargetGroupListenerRuleRelTable{{
-				ListenerRuleID:   ruleID,
-				ListenerRuleType: item.RuleType,
-				TargetGroupID:    item.TargetGroupID,
-				LbID:             item.LbID,
-				LblID:            lblID,
-				BindingStatus:    enumor.SuccessBindingStatus,
-				Creator:          kt.User,
-				Reviser:          kt.User,
+				ListenerRuleID:      ruleID,
+				CloudListenerRuleID: item.CloudRuleID,
+				ListenerRuleType:    item.RuleType,
+				TargetGroupID:       item.TargetGroupID,
+				CloudTargetGroupID:  item.CloudTargetGroupID,
+				LbID:                item.LbID,
+				CloudLbID:           item.CloudLbID,
+				LblID:               lblID,
+				CloudLblID:          item.CloudID,
+				BindingStatus:       enumor.BindingBindingStatus,
+				Creator:             kt.User,
+				Reviser:             kt.User,
 			}}
 			_, err = svc.dao.LoadBalancerTargetGroupListenerRuleRel().BatchCreateWithTx(kt, txn, ruleRelModels)
 			if err != nil {
