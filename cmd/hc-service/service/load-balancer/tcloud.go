@@ -74,7 +74,7 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 	h.Add("UpdateTCloudDomainAttr", http.MethodPatch, "/vendors/tcloud/listeners/{lbl_id}/domains",
 		svc.UpdateTCloudDomainAttr)
 
-	// 批量操作RS
+	// 目标组
 	h.Add("BatchCreateTCloudTargets", http.MethodPost, "/vendors/tcloud/target_groups/{target_group_id}/targets/create",
 		svc.BatchCreateTCloudTargets)
 	h.Add("BatchRemoveTCloudTargets", http.MethodDelete,
@@ -83,6 +83,8 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 		"/vendors/tcloud/target_groups/{target_group_id}/targets/port", svc.BatchModifyTCloudTargetsPort)
 	h.Add("BatchModifyTCloudTargetsWeight", http.MethodPatch,
 		"/vendors/tcloud/target_groups/{target_group_id}/targets/weight", svc.BatchModifyTCloudTargetsWeight)
+	h.Add("ListTCloudTargetsHealth", http.MethodPost, "/vendors/tcloud/load_balancers/targets/health",
+		svc.ListTCloudTargetsHealth)
 
 	h.Add("RegisterTargetToListenerRule", http.MethodPost,
 		"/vendors/tcloud/load_balancers/{lb_id}/targets/create", svc.RegisterTargetToListenerRule)

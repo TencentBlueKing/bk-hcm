@@ -696,3 +696,21 @@ type Backend struct {
 func (b Backend) GetCloudID() string {
 	return fmt.Sprintf("%s-%d", converter.PtrToVal(b.InstanceId), converter.PtrToVal(b.Port))
 }
+
+// -------------------------- List Target Health --------------------------
+
+// TCloudListTargetHealthOption defines options to list tcloud target health instances.
+type TCloudListTargetHealthOption struct {
+	Region          string   `json:"region" validate:"required"`
+	LoadBalancerIDs []string `json:"load_balancer_ids" validate:"required"`
+}
+
+// Validate tcloud target health list option.
+func (opt TCloudListTargetHealthOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// TCloudTargetHealth for target health Instance
+type TCloudTargetHealth struct {
+	*tclb.LoadBalancerHealth
+}

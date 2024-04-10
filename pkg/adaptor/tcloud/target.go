@@ -78,3 +78,38 @@ func (t *TCloudImpl) ListTargets(kt *kit.Kit, opt *typelb.TCloudListTargetsOptio
 
 	return listeners, nil
 }
+
+// ListTargetHealth 获取负载均衡后端服务的健康检查状态
+// reference: https://cloud.tencent.com/document/api/214/34898
+func (t *TCloudImpl) ListTargetHealth(kt *kit.Kit, opt *typelb.TCloudListTargetHealthOption) (
+	[]typelb.TCloudTargetHealth, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "list option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.ClbClient(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("new tcloud targets client failed, region: %s, err: %v", opt.Region, err)
+	}
+
+	req := clb.NewDescribeTargetHealthRequest()
+	req.LoadBalancerIds = common.StringPtrs(opt.LoadBalancerIDs)
+
+	resp, err := client.DescribeTargetHealthWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("list tcloud listener targets health failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
+		return nil, err
+	}
+
+	healths := make([]typelb.TCloudTargetHealth, 0, len(resp.Response.LoadBalancers))
+	for _, one := range resp.Response.LoadBalancers {
+		healths = append(healths, typelb.TCloudTargetHealth{LoadBalancerHealth: one})
+	}
+
+	return healths, nil
+}

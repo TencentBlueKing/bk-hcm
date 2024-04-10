@@ -180,3 +180,11 @@ func (c *ClbClient) UpdateListenerHealthCheck(kt *kit.Kit, lblID string,
 	return common.RequestNoResp[hcproto.HealthCheckUpdateReq](c.client, http.MethodPatch, kt, req,
 		"/vendors/tcloud/listeners/{lbl_id}/health_check", lblID)
 }
+
+// ListTargetHealth 查询目标组所在负载均衡的端口健康数据
+func (c *ClbClient) ListTargetHealth(kt *kit.Kit, req *hcproto.TCloudTargetHealthReq) (
+	*hcproto.TCloudTargetHealthResp, error) {
+
+	return common.Request[hcproto.TCloudTargetHealthReq, hcproto.TCloudTargetHealthResp](
+		c.client, http.MethodPost, kt, req, "/load_balancers/targets/health")
+}

@@ -122,6 +122,7 @@ func (c *clientSet) ClbClient(region string) (*clb.Client, error) {
 	return client, nil
 }
 
+// CertClient tcloud cert client
 func (c *clientSet) CertClient() (*ssl.Client, error) {
 	client, err := ssl.NewClient(c.credential, "", c.profile)
 	if err != nil {
