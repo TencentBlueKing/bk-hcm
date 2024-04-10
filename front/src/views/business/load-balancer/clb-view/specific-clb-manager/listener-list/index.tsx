@@ -335,8 +335,8 @@ export default defineComponent({
                     v-model={listenerFormData.target_group_id}
                     scrollLoading={isTargetGroupListLoading.value}
                     onScroll-end={handleTargetGroupListScrollEnd}>
-                    {targetGroupList.value.map(({ id, name }) => (
-                      <Option key={id} id={id} name={name} />
+                    {targetGroupList.value.map(({ id, name, listener_num }) => (
+                      <Option key={id} id={id} name={name} disabled={listener_num > 0} />
                     ))}
                   </Select>
                 </FormItem>

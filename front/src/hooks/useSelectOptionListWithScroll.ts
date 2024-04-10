@@ -14,7 +14,12 @@ export default (
   rules: any,
   // 是否立即执行
   immediate = true,
-): [isLoading: Ref<boolean>, optionList: Ref<any[]>, handleOptionListScrollEnd: (...args: any) => any] => {
+): [
+  isLoading: Ref<boolean>,
+  optionList: Ref<any[]>,
+  getOptionList: (...args: any) => any,
+  handleOptionListScrollEnd: (...args: any) => any,
+] => {
   // use stores
   const resourceStore = useResourceStore();
 
@@ -73,5 +78,5 @@ export default (
   // init
   immediate && getOptionList();
 
-  return [isLoading, optionList, handleOptionListScrollEnd];
+  return [isLoading, optionList, getOptionList, handleOptionListScrollEnd];
 };

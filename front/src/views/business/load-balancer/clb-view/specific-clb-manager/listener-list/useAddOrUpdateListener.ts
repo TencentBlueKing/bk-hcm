@@ -75,8 +75,16 @@ export default (getListData: any) => {
     });
   };
 
+  // 获取select-option列表
+  const getOptionList = () => {
+    getTargetGroupList();
+    getSVRCertList();
+    getCACertList();
+  };
+
   // 新增监听器
   const handleAddListener = () => {
+    getOptionList();
     isEdit.value = false;
     isSliderShow.value = true;
     clearFormData();
@@ -87,6 +95,7 @@ export default (getListData: any) => {
 
   // 编辑监听器
   const handleEditListener = (id: string) => {
+    getOptionList();
     clearFormData();
     // 获取监听器详情, 回填
     resourceStore.detail('listeners', id).then(({ data }: any) => {
@@ -129,46 +138,56 @@ export default (getListData: any) => {
   };
 
   // 目标组 options
-  const [isTargetGroupListLoading, targetGroupList, handleTargetGroupListScrollEnd] = useSelectOptionList(
-    'target_groups',
+  const [isTargetGroupListLoading, targetGroupList, getTargetGroupList, handleTargetGroupListScrollEnd] =
+    useSelectOptionList(
+      'target_groups',
+      [
+        {
+          field: 'account_id',
+          op: QueryRuleOPEnum.EQ,
+          value: loadBalancerStore.currentSelectedTreeNode.account_id,
+        },
+        {
+          field: 'cloud_vpc_id',
+          op: QueryRuleOPEnum.EQ,
+          value: loadBalancerStore.currentSelectedTreeNode.cloud_vpc_id,
+        },
+        {
+          field: 'region',
+          op: QueryRuleOPEnum.EQ,
+          value: loadBalancerStore.currentSelectedTreeNode.region,
+        },
+      ],
+      false,
+    );
+
+  // 服务器证书 options
+  const [isSVRCertListLoading, SVRCertList, getSVRCertList, handleSVRCertListScrollEnd] = useSelectOptionList(
+    'certs',
     [
+      { field: 'cert_type', op: QueryRuleOPEnum.EQ, value: 'SVR' },
       {
         field: 'account_id',
         op: QueryRuleOPEnum.EQ,
         value: loadBalancerStore.currentSelectedTreeNode.account_id,
       },
-      {
-        field: 'cloud_vpc_id',
-        op: QueryRuleOPEnum.EQ,
-        value: loadBalancerStore.currentSelectedTreeNode.cloud_vpc_id,
-      },
-      {
-        field: 'region',
-        op: QueryRuleOPEnum.EQ,
-        value: loadBalancerStore.currentSelectedTreeNode.region,
-      },
     ],
+    false,
   );
 
-  // 服务器证书 options
-  const [isSVRCertListLoading, SVRCertList, handleSVRCertListScrollEnd] = useSelectOptionList('certs', [
-    { field: 'cert_type', op: QueryRuleOPEnum.EQ, value: 'SVR' },
-    {
-      field: 'account_id',
-      op: QueryRuleOPEnum.EQ,
-      value: loadBalancerStore.currentSelectedTreeNode.account_id,
-    },
-  ]);
-
   // 客户端证书 options
-  const [isCACertListLoading, CACertList, handleCACertListScrollEnd] = useSelectOptionList('certs', [
-    { field: 'cert_type', op: QueryRuleOPEnum.EQ, value: 'CA' },
-    {
-      field: 'account_id',
-      op: QueryRuleOPEnum.EQ,
-      value: loadBalancerStore.currentSelectedTreeNode.account_id,
-    },
-  ]);
+  const [isCACertListLoading, CACertList, getCACertList, handleCACertListScrollEnd] = useSelectOptionList(
+    'certs',
+    [
+      { field: 'cert_type', op: QueryRuleOPEnum.EQ, value: 'CA' },
+      {
+        field: 'account_id',
+        op: QueryRuleOPEnum.EQ,
+        value: loadBalancerStore.currentSelectedTreeNode.account_id,
+      },
+    ],
+    false,
+  );
 
   watch(
     () => listenerFormData.session_open,
