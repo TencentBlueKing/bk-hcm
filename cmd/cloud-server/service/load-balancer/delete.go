@@ -363,11 +363,15 @@ func (svc *lbSvc) batchDeleteLoadBalancer(cts *rest.Contexts, validHandler handl
 	if err != nil {
 		return nil, err
 	}
-
-	for _, info := range lbInfoMap {
+	for _, lbID := range req.IDs {
+		info, exist := lbInfoMap[lbID]
+		if !exist {
+			return nil, fmt.Errorf("load balancer(%s) not found", lbID)
+		}
 		if info.Vendor != enumor.TCloud {
 			return nil, errors.New("only supports tcloud")
 		}
+
 	}
 
 	// 业务校验、鉴权
@@ -381,10 +385,13 @@ func (svc *lbSvc) batchDeleteLoadBalancer(cts *rest.Contexts, validHandler handl
 		return nil, err
 	}
 
+	if err = svc.loadBalancerDeleteCheck(cts.Kit, req.IDs); err != nil {
+		return nil, err
+	}
 	// 按规则删除审计
 	err = svc.audit.ResDeleteAudit(cts.Kit, enumor.LoadBalancerAuditResType, req.IDs)
 	if err != nil {
-		logs.Errorf("create url rule delete audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("create load balancer delete audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -401,6 +408,27 @@ func (svc *lbSvc) batchDeleteLoadBalancer(cts *rest.Contexts, validHandler handl
 		return nil, err
 	}
 	return nil, async.WaitTaskToEnd(cts.Kit, svc.client.TaskServer(), flowResp.ID)
+}
+
+// 负载均衡删除检查
+func (svc *lbSvc) loadBalancerDeleteCheck(kt *kit.Kit, lbIDs []string) error {
+	// 检查是否存在监听器
+	lblListReq := &core.ListReq{
+		Filter: tools.ContainersExpression("lb_id", lbIDs),
+		Page:   &core.BasePage{Count: false, Start: 0, Limit: 1},
+	}
+	listenerResp, err := svc.client.DataService().Global.LoadBalancer.ListListener(kt, lblListReq)
+	if err != nil {
+		logs.Errorf("fail to query listener for delete load balancers, err: %v, lb ids: %v, rid: %s",
+			err, lbIDs, kt.Rid)
+		return nil
+	}
+	if len(listenerResp.Details) != 0 {
+		lbl := listenerResp.Details[0]
+		return fmt.Errorf("load balancer(%s) with listener(%s:%s) can not be deleted",
+			lbl.CloudLbID, lbl.CloudID, lbl.Name)
+	}
+	return nil
 }
 
 func buildTCloudLBDeletionTasks(infoMap map[string]types.CloudResourceBasicInfo) (tasks []ts.CustomFlowTask) {
