@@ -66,6 +66,20 @@ export function timeFromNow(val: string, unit: QUnitType | OpUnitType = 'minute'
   return dayjs().diff(val, unit);
 }
 
+/**
+ * 为表格设置new标识(配合useTable使用)
+ * @returns 'row-class': ({ created_at }: { created_at: string }) => string
+ */
+export function getTableRowClassOption() {
+  return {
+    'row-class': ({ created_at }: { created_at: string }) => {
+      if (timeFromNow(created_at) <= 5) {
+        return 'table-new-row';
+      }
+    },
+  };
+}
+
 export function classes(dynamicCls: object, constCls = ''): string {
   return Object.entries(dynamicCls)
     .filter((entry) => entry[1])

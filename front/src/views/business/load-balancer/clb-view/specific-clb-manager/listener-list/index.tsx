@@ -5,6 +5,7 @@ import BkRadio, { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import { Plus } from 'bkui-vue/lib/icon';
 import CommonSideslider from '@/components/common-sideslider';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
+import Confirm from '@/components/confirm';
 // import stores
 import { useLoadBalancerStore } from '@/store/loadbalancer';
 import { useResourceStore } from '@/store';
@@ -16,10 +17,11 @@ import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import useAddOrUpdateListener from './useAddOrUpdateListener';
 import useBatchDeleteListener from './useBatchDeleteListener';
+// import utils
+import { getTableRowClassOption } from '@/common/util';
 // import types
 import { DoublePlainObject } from '@/typings';
 import './index.scss';
-import Confirm from '@/components/confirm';
 
 const { FormItem } = Form;
 const { Option } = Select;
@@ -111,10 +113,13 @@ export default defineComponent({
           isRowSelectEnable,
           onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
           onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
+          // new标识
+          ...getTableRowClassOption(),
         },
       },
       requestOption: {
         type: `load_balancers/${loadBalancerStore.currentSelectedTreeNode.id}/listeners`,
+        sortOption: { sort: 'created_at', order: 'DESC' },
       },
     });
     watch(
