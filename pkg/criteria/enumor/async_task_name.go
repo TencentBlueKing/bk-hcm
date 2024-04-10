@@ -41,6 +41,7 @@ func (v ActionName) Validate() error {
 	case ActionTargetGroupAddRS, ActionTargetGroupRemoveRS, ActionTargetGroupModifyPort, ActionTargetGroupModifyWeight:
 	case ActionFlowWatch:
 	case ActionListenerRuleAddTarget:
+	case ActionDeleteLoadBalancer:
 	default:
 		return fmt.Errorf("unsupported action name type: %s", v)
 	}
@@ -110,4 +111,6 @@ const (
 
 	// ActionListenerRuleAddTarget 直接将RS绑定到 监听器/规则 上
 	ActionListenerRuleAddTarget ActionName = "listener_rule_add_target"
+
+	ActionDeleteLoadBalancer = "delete_load_balancer"
 )

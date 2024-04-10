@@ -112,7 +112,7 @@ type TargetGroupBatchCreate[Extension corelb.TargetGroupExtension] struct {
 	Name            string                 `json:"name" validate:"required"`
 	Vendor          enumor.Vendor          `json:"vendor" validate:"required"`
 	AccountID       string                 `json:"account_id" validate:"required"`
-	BkBizID         int64                  `json:"bk_biz_id" validate:"required,min=1"`
+	BkBizID         int64                  `json:"bk_biz_id" validate:"required"`
 	Region          string                 `json:"region" validate:"required"`
 	Protocol        enumor.ProtocolType    `json:"protocol" validate:"required"`
 	Port            int64                  `json:"port" validate:"required"`

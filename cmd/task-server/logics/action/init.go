@@ -64,5 +64,5 @@ func register() {
 	action.RegisterAction(actionlb.ModifyTargetWeightAction{})
 
 	action.RegisterAction(actionlb.ListenerRuleAddTargetAction{})
-
+	action.RegisterAction(actionlb.DeleteLoadBalancerAction{})
 }

@@ -51,6 +51,8 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 	h.Add("TCloudDescribeResources", http.MethodPost,
 		"/vendors/tcloud/load_balancers/resources/describe", svc.TCloudDescribeResources)
 	h.Add("TCloudUpdateCLB", http.MethodPatch, "/vendors/tcloud/load_balancers/{id}", svc.TCloudUpdateCLB)
+	h.Add("BatchDeleteTCloudLoadBalancer", http.MethodDelete,
+		"/vendors/tcloud/load_balancers/batch", svc.BatchDeleteTCloudLoadBalancer)
 
 	h.Add("TCloudCreateUrlRule", http.MethodPost,
 		"/vendors/tcloud/listeners/{lbl_id}/rules/batch/create", svc.TCloudCreateUrlRule)
@@ -816,4 +818,59 @@ func (svc *clbSvc) updateTCloudDomainAttr(kt *kit.Kit, req *protolb.DomainAttrUp
 		return err
 	}
 	return nil
+}
+
+// BatchDeleteTCloudLoadBalancer ...
+func (svc *clbSvc) BatchDeleteTCloudLoadBalancer(cts *rest.Contexts) (any, error) {
+	req := new(protolb.TCloudBatchDeleteLoadbalancerReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	listReq := &core.ListReq{
+		Fields: []string{"cloud_id"},
+		Filter: tools.ContainersExpression("id", req.IDs),
+		Page:   core.NewDefaultBasePage(),
+	}
+	listResp, err := svc.dataCli.Global.LoadBalancer.ListLoadBalancer(cts.Kit, listReq)
+	if err != nil {
+		logs.Errorf("request data service list tcloud loadBalancer failed, err: %v, ids: %v, rid: %s",
+			err, req.IDs, cts.Kit.Rid)
+		return nil, err
+	}
+
+	delCloudIDs := make([]string, 0, len(listResp.Details))
+	for _, one := range listResp.Details {
+		delCloudIDs = append(delCloudIDs, one.CloudID)
+	}
+
+	client, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &typelb.TCloudDeleteOption{
+		Region:   req.Region,
+		CloudIDs: delCloudIDs,
+	}
+	if err = client.DeleteLoadBalancer(cts.Kit, opt); err != nil {
+		logs.Errorf("request adaptor to delete tcloud loadBalancer failed, err: %v, opt: %v, rid: %s", err, opt,
+			cts.Kit.Rid)
+		return nil, err
+	}
+
+	delReq := &dataproto.LoadBalancerBatchDeleteReq{
+		Filter: tools.ContainersExpression("id", req.IDs),
+	}
+	if err = svc.dataCli.Global.LoadBalancer.BatchDeleteLoadBalancer(cts.Kit, delReq); err != nil {
+		logs.Errorf("request data service delete tcloud loadBalancer failed, err: %v, ids: %v, rid: %s", err, req.IDs,
+			cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
 }

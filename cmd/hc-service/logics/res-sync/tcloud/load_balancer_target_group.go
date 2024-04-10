@@ -220,7 +220,7 @@ func (cli *client) createLocalTargetGroupL7(kt *kit.Kit, opt *SyncListenerOfSing
 			Weight:          0,
 			HealthCheck:     types.JsonField(healthcheck),
 			Memo:            cvt.ValToPtr("auto created for rule " + cvt.PtrToVal(cloudRule.LocationId)),
-			RsList:          slice.Map(cloudRule.Targets, convTarget),
+			RsList:          slice.Map(cloudRule.Targets, convTarget(opt.AccountID)),
 		},
 		ListenerRuleID:      dbRule.ID,
 		CloudListenerRuleID: dbRule.CloudID,
@@ -243,12 +243,15 @@ func (cli *client) createLocalTargetGroupL7(kt *kit.Kit, opt *SyncListenerOfSing
 	return nil
 }
 
-func convTarget(cloudTarget *tclb.Backend) *dataproto.TargetBaseReq {
-	return &dataproto.TargetBaseReq{
-		InstType:    cvt.PtrToVal((*enumor.InstType)(cloudTarget.Type)),
-		CloudInstID: cvt.PtrToVal(cloudTarget.InstanceId),
-		Port:        cvt.PtrToVal(cloudTarget.Port),
-		Weight:      cloudTarget.Weight,
+func convTarget(accountID string) func(cloudTarget *tclb.Backend) *dataproto.TargetBaseReq {
+	return func(cloudTarget *tclb.Backend) *dataproto.TargetBaseReq {
+		return &dataproto.TargetBaseReq{
+			InstType:    cvt.PtrToVal((*enumor.InstType)(cloudTarget.Type)),
+			CloudInstID: cvt.PtrToVal(cloudTarget.InstanceId),
+			Port:        cvt.PtrToVal(cloudTarget.Port),
+			Weight:      cloudTarget.Weight,
+			AccountID:   accountID,
+		}
 	}
 }
 
@@ -286,7 +289,7 @@ func (cli *client) createLocalTargetGroupL4(kt *kit.Kit, opt *SyncListenerOfSing
 			Weight:          0,
 			HealthCheck:     types.JsonField(healthcheck),
 			Memo:            cvt.ValToPtr("auto created for listener " + cvt.PtrToVal(listener.ListenerId)),
-			RsList:          slice.Map(listener.Targets, convTarget),
+			RsList:          slice.Map(listener.Targets, convTarget(opt.AccountID)),
 		},
 		// 需要用4层对应的规则id
 		ListenerRuleID:      rule.ID,

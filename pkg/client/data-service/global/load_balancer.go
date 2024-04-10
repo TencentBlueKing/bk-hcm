@@ -186,3 +186,10 @@ func (cli *LoadBalancerClient) BatchUpdateListenerRuleRelStatusByTGID(kt *kit.Ki
 	return common.RequestNoResp[dataproto.TGListenerRelStatusUpdateReq](cli.client, rest.PATCH, kt, req,
 		"/target_group_listener_rels/target_groups/%s/update", tgID)
 }
+
+// BatchDeleteLoadBalancer 批量删除负载均衡
+func (cli *LoadBalancerClient) BatchDeleteLoadBalancer(kt *kit.Kit, req *dataproto.LoadBalancerBatchDeleteReq) error {
+
+	return common.RequestNoResp[dataproto.LoadBalancerBatchDeleteReq](cli.client, rest.DELETE, kt, req,
+		"/load_balancers/batch")
+}
