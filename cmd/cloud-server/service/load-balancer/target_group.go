@@ -12,6 +12,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -210,23 +211,22 @@ func (svc *lbSvc) getTCloudTargetGroup(kt *kit.Kit, tgID string) (*cslb.GetTarge
 	return result, nil
 }
 
-func (svc *lbSvc) getTargetGroupByID(kt *kit.Kit, targetGroupID string, bkBizID int64) (
-	[]corelb.BaseTargetGroup, error) {
+// 查询目标组，查不到时返回nil
+func (svc *lbSvc) getTargetGroupByID(kt *kit.Kit, targetGroupID string) (*corelb.BaseTargetGroup, error) {
 
 	tgReq := &core.ListReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("id", targetGroupID),
-			tools.RuleEqual("bk_biz_id", bkBizID),
-		),
-		Page: core.NewDefaultBasePage(),
+		Filter: tools.EqualExpression("id", targetGroupID),
+		Page:   core.NewDefaultBasePage(),
 	}
 	targetGroupInfo, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroup(kt, tgReq)
 	if err != nil {
 		logs.Errorf("list target group failed, tgID: %s, err: %v, rid: %s", targetGroupID, err, kt.Rid)
 		return nil, err
 	}
-
-	return targetGroupInfo.Details, nil
+	if len(targetGroupInfo.Details) == 0 {
+		return nil, nil
+	}
+	return cvt.ValToPtr(targetGroupInfo.Details[0]), nil
 }
 
 func (svc *lbSvc) getTargetByTGIDs(kt *kit.Kit, targetGroupIDs []string) ([]corelb.BaseTarget, error) {

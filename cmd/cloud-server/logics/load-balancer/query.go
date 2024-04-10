@@ -56,18 +56,15 @@ func ListLoadBalancerMap(kt *kit.Kit, cli *dataservice.Client, lbIDs []string) (
 }
 
 // GetListenerByID 根据监听器ID、业务ID获取监听器信息
-func GetListenerByID(kt *kit.Kit, cli *dataservice.Client, lblID string, bkBizID int64) (corelb.BaseListener, error) {
+func GetListenerByID(kt *kit.Kit, cli *dataservice.Client, lblID string) (corelb.BaseListener, error) {
 	listenerInfo := corelb.BaseListener{}
 	lblReq := &core.ListReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("id", lblID),
-			tools.RuleEqual("bk_biz_id", bkBizID),
-		),
-		Page: core.NewDefaultBasePage(),
+		Filter: tools.EqualExpression("id", lblID),
+		Page:   core.NewDefaultBasePage(),
 	}
 	lblList, err := cli.Global.LoadBalancer.ListListener(kt, lblReq)
 	if err != nil {
-		logs.Errorf("list listener by id failed, lblID: %s, bkBizID: %s, err: %v, rid: %s", lblID, bkBizID, err, kt.Rid)
+		logs.Errorf("list listener by id failed, lblID: %s, err: %v, rid: %s", lblID, err, kt.Rid)
 		return listenerInfo, err
 	}
 	if len(lblList.Details) == 0 {

@@ -313,13 +313,13 @@ func (svc *lbSvc) getTCloudListener(kt *kit.Kit, lblID string, bkBizID int64) (*
 
 	// 只有4层监听器才显示目标组信息
 	if !listenerInfo.Protocol.IsLayer7Protocol() {
-		targetGroupList, err := svc.getTargetGroupByID(kt, targetGroupID, bkBizID)
+		tg, err := svc.getTargetGroupByID(kt, targetGroupID)
 		if err != nil {
 			return nil, err
 		}
-		if len(targetGroupList) > 0 {
-			result.TargetGroupName = targetGroupList[0].Name
-			result.CloudTargetGroupID = targetGroupList[0].CloudID
+		if tg != nil {
+			result.TargetGroupName = tg.Name
+			result.CloudTargetGroupID = tg.CloudID
 		}
 	}
 
