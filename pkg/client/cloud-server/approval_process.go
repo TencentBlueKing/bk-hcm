@@ -38,11 +38,11 @@ func NewApprovalProcessClient(client rest.ClientInterface) *ApprovalProcessClien
 }
 
 // GetApprovalProcessServiceID ...
-func (cli *ApprovalProcessClient) GetApprovalProcessServiceID(kt *kit.Kit) (int64, error) {
+func (cli *ApprovalProcessClient) GetApprovalProcessServiceID(kt *kit.Kit) ([]int64, error) {
 
 	resp := &struct {
 		rest.BaseResp `json:",inline"`
-		Data          int64 `json:"data"`
+		Data          []int64 `json:"data"`
 	}{}
 
 	err := cli.client.Get().
@@ -52,11 +52,11 @@ func (cli *ApprovalProcessClient) GetApprovalProcessServiceID(kt *kit.Kit) (int6
 		Do().
 		Into(resp)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	if resp.Code != errf.OK {
-		return 0, errf.New(resp.Code, resp.Message)
+		return nil, errf.New(resp.Code, resp.Message)
 	}
 
 	return resp.Data, nil

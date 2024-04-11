@@ -20,7 +20,6 @@
 package approvalprocess
 
 import (
-	"fmt"
 	"net/http"
 
 	"hcm/cmd/cloud-server/service/capability"
@@ -53,7 +52,7 @@ type service struct {
 	authorizer auth.Authorizer
 }
 
-// GetApprovalProcessServiceID 获取hcm itsm单据流程所在的服务目录ID，如果出现多个服务目录的单据流程会报错。
+// GetApprovalProcessServiceID 获取hcm itsm单据流程所在的服务目录ID列表
 func (svc *service) GetApprovalProcessServiceID(cts *rest.Contexts) (interface{}, error) {
 
 	req := &dataproto.ApprovalProcessListReq{
@@ -70,13 +69,14 @@ func (svc *service) GetApprovalProcessServiceID(cts *rest.Contexts) (interface{}
 		return nil, err
 	}
 
-	var serviceID int64
+	serviceIdMap := make(map[int64]struct{})
+	serviceIds := make([]int64, 0)
 	for _, one := range result.Details {
-		if serviceID != 0 && one.ServiceID != serviceID {
-			return nil, fmt.Errorf("itsm service dir has many, serviceID: %d, %d", serviceID, one.ServiceID)
+		if _, exists := serviceIdMap[one.ServiceID]; !exists {
+			serviceIdMap[one.ServiceID] = struct{}{}
+			serviceIds = append(serviceIds, one.ServiceID)
 		}
-		serviceID = one.ServiceID
 	}
 
-	return serviceID, nil
+	return serviceIds, nil
 }
