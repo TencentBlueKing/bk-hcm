@@ -559,7 +559,7 @@ func (svc *lbSvc) checkResFlowRel(kt *kit.Kit, resID, subResID string,
 			logs.Errorf("list target group by id failed, tgID: %s, err: %v, rid: %s", subResID, err, kt.Rid)
 			return err
 		}
-		if tg != nil {
+		if tg == nil {
 			return errf.Newf(errf.RecordNotFound, "target group: %s not found", subResID)
 		}
 	}
@@ -574,7 +574,7 @@ func (svc *lbSvc) checkResFlowRel(kt *kit.Kit, resID, subResID string,
 	}
 	lockRet, err := svc.client.DataService().Global.LoadBalancer.ListResFlowLock(kt, lockReq)
 	if err != nil {
-		logs.Errorf("list res flow lock failed, err: %v, resID: %s, resType: %s, rid: %s", err, subResID, resType,
+		logs.Errorf("list res flow lock failed, err: %v, resID: %s, resType: %s, rid: %s", err, resID, resType,
 			kt.Rid)
 		return err
 	}

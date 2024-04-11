@@ -187,7 +187,7 @@ type TargetGroupUpdateReq struct {
 	Region          string                 `json:"region"`
 	Protocol        enumor.ProtocolType    `json:"protocol"`
 	Port            int64                  `json:"port"`
-	Weight          int64                  `json:"weight"`
+	Weight          *int64                 `json:"weight,omitempty"`
 	HealthCheck     types.JsonField        `json:"health_check"`
 }
 

@@ -315,13 +315,13 @@ func (req *TCloudBatchModifyTargetWeightReq) Validate() error {
 // TargetGroupUpdateReq ...
 type TargetGroupUpdateReq struct {
 	IDs        []string            `json:"ids" validate:"omitempty"`
-	Name       string              `json:"name"`
-	VpcID      string              `json:"vpc_id"`
-	CloudVpcID string              `json:"cloud_vpc_id"`
-	Region     string              `json:"region"`
-	Protocol   enumor.ProtocolType `json:"protocol"`
-	Port       int64               `json:"port"`
-	Weight     int64               `json:"weight"`
+	Name       string              `json:"name,omitempty"`
+	VpcID      string              `json:"vpc_id,omitempty"`
+	CloudVpcID string              `json:"cloud_vpc_id,omitempty"`
+	Region     string              `json:"region,omitempty"`
+	Protocol   enumor.ProtocolType `json:"protocol,omitempty"`
+	Port       int64               `json:"port,omitempty"`
+	Weight     *int64              `json:"weight,omitempty"`
 }
 
 // Validate ...

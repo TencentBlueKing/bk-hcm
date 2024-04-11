@@ -104,58 +104,43 @@ func (svc *lbSvc) UpdateBizTCloudLoadBalancer(cts *rest.Contexts) (any, error) {
 }
 
 // UpdateBizTargetGroup update biz target group.
-func (svc *lbSvc) UpdateBizTargetGroup(cts *rest.Contexts) (interface{}, error) {
+func (svc *lbSvc) UpdateBizTargetGroup(cts *rest.Contexts) (any, error) {
 	return svc.updateTargetGroup(cts, handler.BizOperateAuth)
 }
 
-func (svc *lbSvc) updateTargetGroup(cts *rest.Contexts, authHandler handler.ValidWithAuthHandler) (
-	interface{}, error) {
+func (svc *lbSvc) updateTargetGroup(cts *rest.Contexts, authHandler handler.ValidWithAuthHandler) (any, error) {
 
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	req := new(cloudserver.ResourceCreateReq)
-	if err := cts.DecodeInto(req); err != nil {
-		logs.Errorf("update target group request decode failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	if len(req.AccountID) == 0 {
-		return nil, errf.Newf(errf.InvalidParameter, "account_id is required")
-	}
-
-	// authorized instances
-	basicInfo := &types.CloudResourceBasicInfo{
-		AccountID: req.AccountID,
-	}
-	err := authHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.TargetGroup,
-		Action: meta.Update, BasicInfo: basicInfo})
+	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.TargetGroupCloudResType, id)
 	if err != nil {
-		logs.Errorf("update target group auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	err = authHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer,
+		ResType:   meta.TargetGroup,
+		Action:    meta.Update,
+		BasicInfo: baseInfo,
+	})
+	if err != nil {
+		logs.Errorf("update target group basic info auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	info, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(
-		cts.Kit, enumor.AccountCloudResType, req.AccountID)
-	if err != nil {
-		logs.Errorf("get account basic info failed, accID: %s, err: %v, rid: %s", req.AccountID, err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	switch info.Vendor {
+	switch baseInfo.Vendor {
 	case enumor.TCloud:
-		return svc.batchUpdateTCloudTargetGroup(cts.Kit, req.Data, id)
+		return svc.batchUpdateTCloudTargetGroup(cts, id)
 	default:
-		return nil, fmt.Errorf("vendor: %s not support", info.Vendor)
+		return nil, fmt.Errorf("vendor: %s not support", baseInfo.Vendor)
 	}
 }
 
 // 更新目标组基本信息
-func (svc *lbSvc) batchUpdateTCloudTargetGroup(kt *kit.Kit, body json.RawMessage, id string) (interface{}, error) {
+func (svc *lbSvc) batchUpdateTCloudTargetGroup(cts *rest.Contexts, id string) (interface{}, error) {
 	req := new(cslb.TargetGroupUpdateReq)
-	if err := json.Unmarshal(body, req); err != nil {
+	if err := cts.DecodeInto(cts); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
@@ -173,9 +158,9 @@ func (svc *lbSvc) batchUpdateTCloudTargetGroup(kt *kit.Kit, body json.RawMessage
 		Port:       req.Port,
 		Weight:     req.Weight,
 	}
-	err := svc.client.DataService().TCloud.LoadBalancer.BatchUpdateTCloudTargetGroup(kt, dbReq)
+	err := svc.client.DataService().TCloud.LoadBalancer.BatchUpdateTCloudTargetGroup(cts.Kit, dbReq)
 	if err != nil {
-		logs.Errorf("update tcloud target group failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
+		logs.Errorf("update tcloud target group failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
 		return nil, err
 	}
 

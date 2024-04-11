@@ -70,7 +70,7 @@ type LoadBalancerTargetGroupTable struct {
 	Region          string                 `db:"region" validate:"lte=20" json:"region"`
 	Protocol        enumor.ProtocolType    `db:"protocol" json:"protocol"`
 	Port            int64                  `db:"port" json:"port"`
-	Weight          int64                  `db:"weight" json:"weight"`
+	Weight          *int64                 `db:"weight" json:"weight"`
 	HealthCheck     types.JsonField        `db:"health_check" json:"health_check"`
 	Extension       types.JsonField        `db:"extension" json:"extension"`
 	Memo            *string                `db:"memo" json:"memo"`

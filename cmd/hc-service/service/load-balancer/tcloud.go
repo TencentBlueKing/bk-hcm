@@ -607,9 +607,9 @@ func (svc *clbSvc) UpdateTCloudListenerHealthCheck(cts *rest.Contexts) (any, err
 		return nil, err
 	}
 
-	// 只有HTTPS支持开启SNI开关
+	// 改接口只支持修改四层监听器健康检查
 	if lblInfo.Protocol.IsLayer7Protocol() {
-		return nil, errf.Newf(errf.InvalidParameter, "only layer 7 listener support update health check")
+		return nil, errf.Newf(errf.InvalidParameter, "only layer 4 listener support update health check")
 	}
 
 	lbInfo, err := svc.dataCli.TCloud.LoadBalancer.Get(cts.Kit, lblInfo.LbID)
