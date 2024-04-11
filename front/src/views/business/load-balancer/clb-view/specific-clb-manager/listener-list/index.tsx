@@ -312,7 +312,9 @@ export default defineComponent({
                   <Select v-model={listenerFormData.scheduler}>
                     <Option id='WRR' name={t('按权重轮询')} />
                     <Option id='LEAST_CONN' name={t('最小连接数')} />
-                    <Option id='IP_HASH' name={t('IP Hash')} />
+                    {['HTTP', 'HTTPS'].includes(listenerFormData.protocol) && (
+                      <Option id='IP_HASH' name={t('IP Hash')} />
+                    )}
                   </Select>
                 </FormItem>
                 <div class={'flex-row'}>
