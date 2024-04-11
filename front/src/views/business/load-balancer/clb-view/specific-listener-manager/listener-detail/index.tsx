@@ -10,7 +10,7 @@ import { useI18n } from 'vue-i18n';
 // import utils
 import { timeFormatter } from '@/common/util';
 // import constants
-import { SCHEDULER_MAP, SESSION_TYPE_MAP, SSL_MODE_MAP } from '@/constants/clb';
+import { SCHEDULER_MAP, SESSION_TYPE_MAP, SSL_MODE_MAP, TRANSPORT_LAYER_LIST } from '@/constants/clb';
 import './index.scss';
 
 export default defineComponent({
@@ -44,12 +44,12 @@ export default defineComponent({
           {
             label: t('域名数量'),
             value: listenerDetail.domain_num,
-            sub_hidden: ['TCP', 'UDP'].includes(listenerDetail.protocol),
+            sub_hidden: TRANSPORT_LAYER_LIST.includes(listenerDetail.protocol),
           },
           {
             label: t('URL 数量'),
             value: listenerDetail.url_num,
-            sub_hidden: ['TCP', 'UDP'].includes(listenerDetail.protocol),
+            sub_hidden: TRANSPORT_LAYER_LIST.includes(listenerDetail.protocol),
           },
           {
             label: t('均衡方式'),

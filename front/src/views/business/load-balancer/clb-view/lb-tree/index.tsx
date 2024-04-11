@@ -14,6 +14,8 @@ import allLBIcon from '@/assets/image/all-lb.svg';
 import lbIcon from '@/assets/image/loadbalancer.svg';
 import listenerIcon from '@/assets/image/listener.svg';
 import domainIcon from '@/assets/image/domain.svg';
+// import constants
+import { TRANSPORT_LAYER_LIST } from '@/constants';
 import './index.scss';
 
 type NodeType = 'all' | 'lb' | 'listener' | 'domain';
@@ -108,7 +110,7 @@ export default defineComponent({
       return {
         callback: (_item: any, _callback: Function, _schema: any) => {
           // 如果是4层监听器, 无需加载其下级资源
-          if (_item.type === 'listener' && ['TCP', 'UDP'].includes(_item.protocol)) return;
+          if (_item.type === 'listener' && TRANSPORT_LAYER_LIST.includes(_item.protocol)) return;
           // 异步加载当前点击节点的 children node
           loadRemoteData(_item, _schema.fullPath.split('-').length - 1);
         },

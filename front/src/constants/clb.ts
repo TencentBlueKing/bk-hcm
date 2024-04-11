@@ -87,3 +87,8 @@ export const SCHEDULER_MAP = {
   LEAST_CONN: '最小连接数',
   IP_HASH: 'IP Hash',
 };
+
+// 传输层协议, 如 TCP, UDP
+export const TRANSPORT_LAYER_LIST = ['TCP', 'UDP'];
+// 应用层协议, 如 HTTP, HTTPS
+export const APPLICATION_LAYER_LIST = ['HTTP', 'HTTPS'];

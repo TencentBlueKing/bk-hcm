@@ -3,7 +3,7 @@
 import i18n from '@/language/i18n';
 import { CloudType, SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
 import { useAccountStore } from '@/store';
-import { Button, Tag } from 'bkui-vue';
+import { Button } from 'bkui-vue';
 import type { Settings } from 'bkui-vue/lib/table/props';
 import { h, ref } from 'vue';
 import type { Ref } from 'vue';
@@ -23,7 +23,7 @@ import StatusLoading from '@/assets/image/status_loading.png';
 
 import { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../common/table/HostOperations';
 import './use-columns.scss';
-import { timeFormatter, timeFromNow } from '@/common/util';
+import { timeFormatter } from '@/common/util';
 import { SCHEDULER_MAP } from '@/constants/clb';
 
 export default (type: string, isSimpleShow = false, vendor?: string) => {
@@ -85,11 +85,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
               }}>
               {render ? render(data) : data[field] || '--'}
             </Button>
-            {timeFromNow(data.created_at) < 5 && (
-              <Tag theme='success' radius='4px' extCls='new-resource-tag'>
-                new
-              </Tag>
-            )}
           </>
         );
       },

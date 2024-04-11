@@ -5,6 +5,7 @@ import BkRadio, { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import { Plus } from 'bkui-vue/lib/icon';
 import CommonSideslider from '@/components/common-sideslider';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
+import Confirm from '@/components/confirm';
 // import stores
 import { useLoadBalancerStore } from '@/store/loadbalancer';
 import { useResourceStore } from '@/store';
@@ -16,10 +17,13 @@ import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import useAddOrUpdateListener from './useAddOrUpdateListener';
 import useBatchDeleteListener from './useBatchDeleteListener';
+// import utils
+import { getTableRowClassOption } from '@/common/util';
 // import types
 import { DoublePlainObject } from '@/typings';
+// import constants
+import { APPLICATION_LAYER_LIST } from '@/constants';
 import './index.scss';
-import Confirm from '@/components/confirm';
 
 const { FormItem } = Form;
 const { Option } = Select;
@@ -111,10 +115,13 @@ export default defineComponent({
           isRowSelectEnable,
           onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
           onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
+          // new标识
+          ...getTableRowClassOption(),
         },
       },
       requestOption: {
         type: `load_balancers/${loadBalancerStore.currentSelectedTreeNode.id}/listeners`,
+        sortOption: { sort: 'created_at', order: 'DESC' },
       },
     });
     watch(
@@ -216,7 +223,13 @@ export default defineComponent({
               </BkRadioGroup>
             </FormItem>
             <FormItem label={t('监听端口')} required property='port'>
-              <Input v-model={listenerFormData.port} type='number' placeholder={t('请输入')} disabled={isEdit.value} />
+              <Input
+                v-model={listenerFormData.port}
+                type='number'
+                placeholder={t('请输入')}
+                disabled={isEdit.value}
+                class='no-number-control'
+              />
             </FormItem>
             {listenerFormData.protocol === 'HTTPS' && (
               <>
@@ -248,9 +261,10 @@ export default defineComponent({
                 </div>
                 {listenerFormData.sni_switch === 0 && (
                   <>
-                    <FormItem label={t('服务器证书')} required property='certificate.ca_cloud_id'>
+                    <FormItem label={t('服务器证书')} required property='certificate.cert_cloud_ids'>
                       <Select
-                        v-model={listenerFormData.certificate.ca_cloud_id}
+                        v-model={listenerFormData.certificate.cert_cloud_ids}
+                        multiple
                         scrollLoading={isSVRCertListLoading.value}
                         onScroll-end={handleSVRCertListScrollEnd}>
                         {SVRCertList.value
@@ -267,31 +281,32 @@ export default defineComponent({
                           ))}
                       </Select>
                     </FormItem>
-                    <FormItem label={t('CA证书')} required property='certificate.cert_cloud_ids'>
-                      <Select
-                        v-model={listenerFormData.certificate.cert_cloud_ids}
-                        multiple
-                        scrollLoading={isCACertListLoading.value}
-                        onScroll-end={handleCACertListScrollEnd}>
-                        {CACertList.value
-                          .sort((a, b) => a.cert_status - b.cert_status)
-                          .map(({ cloud_id, name, cert_status }) => (
-                            <Option key={cloud_id} id={cloud_id} name={name} disabled={cert_status === '3'}>
-                              {name}
-                              {cert_status === '3' && (
-                                <Tag theme='danger' style={{ marginLeft: '12px' }}>
-                                  已过期
-                                </Tag>
-                              )}
-                            </Option>
-                          ))}
-                      </Select>
-                    </FormItem>
+                    {listenerFormData.certificate.ssl_mode === 'MUTUAL' && (
+                      <FormItem label={t('CA证书')} required property='certificate.ca_cloud_id'>
+                        <Select
+                          v-model={listenerFormData.certificate.ca_cloud_id}
+                          scrollLoading={isCACertListLoading.value}
+                          onScroll-end={handleCACertListScrollEnd}>
+                          {CACertList.value
+                            .sort((a, b) => a.cert_status - b.cert_status)
+                            .map(({ cloud_id, name, cert_status }) => (
+                              <Option key={cloud_id} id={cloud_id} name={name} disabled={cert_status === '3'}>
+                                {name}
+                                {cert_status === '3' && (
+                                  <Tag theme='danger' style={{ marginLeft: '12px' }}>
+                                    已过期
+                                  </Tag>
+                                )}
+                              </Option>
+                            ))}
+                        </Select>
+                      </FormItem>
+                    )}
                   </>
                 )}
               </>
             )}
-            {['HTTP', 'HTTPS'].includes(listenerFormData.protocol) && !isEdit.value && (
+            {APPLICATION_LAYER_LIST.includes(listenerFormData.protocol) && !isEdit.value && (
               <>
                 <FormItem label={t('默认域名')} required property='domain'>
                   <Input v-model={listenerFormData.domain} placeholder={t('请输入')} />
@@ -307,31 +322,40 @@ export default defineComponent({
                   <Select v-model={listenerFormData.scheduler}>
                     <Option id='WRR' name={t('按权重轮询')} />
                     <Option id='LEAST_CONN' name={t('最小连接数')} />
-                    <Option id='IP_HASH' name={t('IP Hash')} />
+                    {APPLICATION_LAYER_LIST.includes(listenerFormData.protocol) && (
+                      <Option id='IP_HASH' name={t('IP Hash')} />
+                    )}
                   </Select>
                 </FormItem>
-                <div class={'flex-row'}>
-                  <FormItem label={t('会话保持')} required property='session_open'>
-                    <Switcher theme='primary' v-model={listenerFormData.session_open} />
-                  </FormItem>
-                  <FormItem label={t('保持时间')} class={'ml40'} required property='session_expire'>
-                    <Input
-                      v-model={listenerFormData.session_expire}
-                      disabled={!listenerFormData.session_open}
-                      placeholder={t('请输入')}
-                      type='number'
-                      min={30}
-                      suffix='秒'
-                    />
-                  </FormItem>
-                </div>
+                {
+                  // 七层协议无会话保持
+                  !APPLICATION_LAYER_LIST.includes(listenerFormData.protocol) &&
+                    // 均衡方式为加权最小连接数，不支持配置会话保持
+                    listenerFormData.scheduler !== 'LEAST_CONN' && (
+                      <div class={'flex-row'}>
+                        <FormItem label={t('会话保持')} required property='session_open'>
+                          <Switcher theme='primary' v-model={listenerFormData.session_open} />
+                        </FormItem>
+                        <FormItem label={t('保持时间')} class={'ml40'} required property='session_expire'>
+                          <Input
+                            v-model={listenerFormData.session_expire}
+                            disabled={!listenerFormData.session_open}
+                            placeholder={t('请输入')}
+                            type='number'
+                            min={30}
+                            suffix='秒'
+                          />
+                        </FormItem>
+                      </div>
+                    )
+                }
                 <FormItem label={t('目标组')} required property='target_group_id'>
                   <Select
                     v-model={listenerFormData.target_group_id}
                     scrollLoading={isTargetGroupListLoading.value}
                     onScroll-end={handleTargetGroupListScrollEnd}>
-                    {targetGroupList.value.map(({ id, name }) => (
-                      <Option key={id} id={id} name={name} />
+                    {targetGroupList.value.map(({ id, name, listener_num }) => (
+                      <Option key={id} id={id} name={name} disabled={listener_num > 0} />
                     ))}
                   </Select>
                 </FormItem>

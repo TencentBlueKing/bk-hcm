@@ -1,4 +1,4 @@
-import { reactive, ref, watch, nextTick } from 'vue';
+import { reactive, ref, nextTick } from 'vue';
 // import components
 import { Message } from 'bkui-vue';
 // import stores
@@ -6,6 +6,7 @@ import { useBusinessStore, useResourceStore } from '@/store';
 import { useLoadBalancerStore } from '@/store/loadbalancer';
 // import custom hooks
 import useSelectOptionList from '@/hooks/useSelectOptionListWithScroll';
+import useResolveListenerFormData from './useResolveListenerFormData';
 // import types
 import { QueryRuleOPEnum } from '@/typings';
 
@@ -30,16 +31,17 @@ export default (getListData: any) => {
       },
     ],
   };
-  const listenerFormData = reactive({
+
+  const getDefaultFormData = () => ({
     account_id: loadBalancerStore.currentSelectedTreeNode.account_id,
     lb_id: loadBalancerStore.currentSelectedTreeNode.id,
     name: '',
     protocol: 'TCP',
-    port: undefined,
+    port: '',
     scheduler: '',
-    session_open: true,
+    session_open: false,
     session_type: 'NORMAL',
-    session_expire: 30,
+    session_expire: 0,
     target_group_id: '',
     domain: '',
     url: '/',
@@ -47,36 +49,31 @@ export default (getListData: any) => {
     certificate: {
       ssl_mode: 'UNIDIRECTIONAL',
       ca_cloud_id: '',
-      cert_cloud_ids: [],
+      cert_cloud_ids: [] as any[],
     },
   });
+  const listenerFormData = reactive(getDefaultFormData());
 
   // 清空表单数据
   const clearFormData = () => {
-    Object.assign(listenerFormData, {
-      account_id: loadBalancerStore.currentSelectedTreeNode.account_id,
-      lb_id: loadBalancerStore.currentSelectedTreeNode.id,
-      name: '',
-      protocol: 'TCP',
-      port: undefined,
-      scheduler: '',
-      session_open: true,
-      session_type: 'NORMAL',
-      session_expire: 30,
-      target_group_id: '',
-      domain: '',
-      url: '/',
-      sni_switch: 0,
-      certificate: {
-        ssl_mode: 'UNIDIRECTIONAL',
-        ca_cloud_id: '',
-        cert_cloud_ids: [],
-      },
-    });
+    Object.assign(listenerFormData, getDefaultFormData());
+  };
+
+  // 初始化select-option列表
+  const initOptionState = () => {
+    // init state
+    initTargetGroupOptionState();
+    initSVRCertOptionState();
+    initCACertOptionState();
+    // get list
+    getTargetGroupList();
+    getSVRCertList();
+    getCACertList();
   };
 
   // 新增监听器
   const handleAddListener = () => {
+    initOptionState();
     isEdit.value = false;
     isSliderShow.value = true;
     clearFormData();
@@ -87,6 +84,7 @@ export default (getListData: any) => {
 
   // 编辑监听器
   const handleEditListener = (id: string) => {
+    initOptionState();
     clearFormData();
     // 获取监听器详情, 回填
     resourceStore.detail('listeners', id).then(({ data }: any) => {
@@ -129,7 +127,13 @@ export default (getListData: any) => {
   };
 
   // 目标组 options
-  const [isTargetGroupListLoading, targetGroupList, handleTargetGroupListScrollEnd] = useSelectOptionList(
+  const [
+    isTargetGroupListLoading,
+    targetGroupList,
+    initTargetGroupOptionState,
+    getTargetGroupList,
+    handleTargetGroupListScrollEnd,
+  ] = useSelectOptionList(
     'target_groups',
     [
       {
@@ -148,35 +152,41 @@ export default (getListData: any) => {
         value: loadBalancerStore.currentSelectedTreeNode.region,
       },
     ],
+    false,
   );
 
   // 服务器证书 options
-  const [isSVRCertListLoading, SVRCertList, handleSVRCertListScrollEnd] = useSelectOptionList('certs', [
-    { field: 'cert_type', op: QueryRuleOPEnum.EQ, value: 'SVR' },
-    {
-      field: 'account_id',
-      op: QueryRuleOPEnum.EQ,
-      value: loadBalancerStore.currentSelectedTreeNode.account_id,
-    },
-  ]);
+  const [isSVRCertListLoading, SVRCertList, initSVRCertOptionState, getSVRCertList, handleSVRCertListScrollEnd] =
+    useSelectOptionList(
+      'certs',
+      [
+        { field: 'cert_type', op: QueryRuleOPEnum.EQ, value: 'SVR' },
+        {
+          field: 'account_id',
+          op: QueryRuleOPEnum.EQ,
+          value: loadBalancerStore.currentSelectedTreeNode.account_id,
+        },
+      ],
+      false,
+    );
 
   // 客户端证书 options
-  const [isCACertListLoading, CACertList, handleCACertListScrollEnd] = useSelectOptionList('certs', [
-    { field: 'cert_type', op: QueryRuleOPEnum.EQ, value: 'CA' },
-    {
-      field: 'account_id',
-      op: QueryRuleOPEnum.EQ,
-      value: loadBalancerStore.currentSelectedTreeNode.account_id,
-    },
-  ]);
+  const [isCACertListLoading, CACertList, initCACertOptionState, getCACertList, handleCACertListScrollEnd] =
+    useSelectOptionList(
+      'certs',
+      [
+        { field: 'cert_type', op: QueryRuleOPEnum.EQ, value: 'CA' },
+        {
+          field: 'account_id',
+          op: QueryRuleOPEnum.EQ,
+          value: loadBalancerStore.currentSelectedTreeNode.account_id,
+        },
+      ],
+      false,
+    );
 
-  watch(
-    () => listenerFormData.session_open,
-    (val) => {
-      // session_expire传0即为关闭会话保持
-      val ? (listenerFormData.session_expire = 30) : (listenerFormData.session_expire = 0);
-    },
-  );
+  // 参数处理
+  useResolveListenerFormData(listenerFormData);
 
   return {
     isSliderShow,

@@ -14,7 +14,13 @@ export default (
   rules: any,
   // 是否立即执行
   immediate = true,
-): [isLoading: Ref<boolean>, optionList: Ref<any[]>, handleOptionListScrollEnd: (...args: any) => any] => {
+): [
+  isLoading: Ref<boolean>,
+  optionList: Ref<any[]>,
+  initState: (...args: any) => any,
+  getOptionList: (...args: any) => any,
+  handleOptionListScrollEnd: (...args: any) => any,
+] => {
   // use stores
   const resourceStore = useResourceStore();
 
@@ -27,7 +33,21 @@ export default (
   const isLoading = ref(false);
   const optionList = ref([]);
 
-  // get option list
+  /**
+   * 初始化状态: optionList, pagination
+   */
+  const initState = () => {
+    optionList.value = [];
+    Object.assign(pagination, {
+      start: 0,
+      limit: 10,
+      hasNext: true,
+    });
+  };
+
+  /**
+   * 请求option list
+   */
   const getOptionList = async () => {
     isLoading.value = true;
     try {
@@ -64,14 +84,16 @@ export default (
     }
   };
 
-  // handler - scroll end
+  /**
+   * 滚动触底加载更多
+   */
   const handleOptionListScrollEnd = () => {
     if (!pagination.hasNext) return;
     getOptionList();
   };
 
-  // init
+  // 立即执行
   immediate && getOptionList();
 
-  return [isLoading, optionList, handleOptionListScrollEnd];
+  return [isLoading, optionList, initState, getOptionList, handleOptionListScrollEnd];
 };
