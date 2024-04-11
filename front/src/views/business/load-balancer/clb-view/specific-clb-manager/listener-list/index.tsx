@@ -21,6 +21,8 @@ import useBatchDeleteListener from './useBatchDeleteListener';
 import { getTableRowClassOption } from '@/common/util';
 // import types
 import { DoublePlainObject } from '@/typings';
+// import constants
+import { APPLICATION_LAYER_LIST } from '@/constants';
 import './index.scss';
 
 const { FormItem } = Form;
@@ -221,7 +223,13 @@ export default defineComponent({
               </BkRadioGroup>
             </FormItem>
             <FormItem label={t('监听端口')} required property='port'>
-              <Input v-model={listenerFormData.port} type='number' placeholder={t('请输入')} disabled={isEdit.value} />
+              <Input
+                v-model={listenerFormData.port}
+                type='number'
+                placeholder={t('请输入')}
+                disabled={isEdit.value}
+                class='no-number-control'
+              />
             </FormItem>
             {listenerFormData.protocol === 'HTTPS' && (
               <>
@@ -298,7 +306,7 @@ export default defineComponent({
                 )}
               </>
             )}
-            {['HTTP', 'HTTPS'].includes(listenerFormData.protocol) && !isEdit.value && (
+            {APPLICATION_LAYER_LIST.includes(listenerFormData.protocol) && !isEdit.value && (
               <>
                 <FormItem label={t('默认域名')} required property='domain'>
                   <Input v-model={listenerFormData.domain} placeholder={t('请输入')} />
@@ -314,26 +322,33 @@ export default defineComponent({
                   <Select v-model={listenerFormData.scheduler}>
                     <Option id='WRR' name={t('按权重轮询')} />
                     <Option id='LEAST_CONN' name={t('最小连接数')} />
-                    {['HTTP', 'HTTPS'].includes(listenerFormData.protocol) && (
+                    {APPLICATION_LAYER_LIST.includes(listenerFormData.protocol) && (
                       <Option id='IP_HASH' name={t('IP Hash')} />
                     )}
                   </Select>
                 </FormItem>
-                <div class={'flex-row'}>
-                  <FormItem label={t('会话保持')} required property='session_open'>
-                    <Switcher theme='primary' v-model={listenerFormData.session_open} />
-                  </FormItem>
-                  <FormItem label={t('保持时间')} class={'ml40'} required property='session_expire'>
-                    <Input
-                      v-model={listenerFormData.session_expire}
-                      disabled={!listenerFormData.session_open}
-                      placeholder={t('请输入')}
-                      type='number'
-                      min={30}
-                      suffix='秒'
-                    />
-                  </FormItem>
-                </div>
+                {
+                  // 七层协议无会话保持
+                  !APPLICATION_LAYER_LIST.includes(listenerFormData.protocol) &&
+                    // 均衡方式为加权最小连接数，不支持配置会话保持
+                    listenerFormData.scheduler !== 'LEAST_CONN' && (
+                      <div class={'flex-row'}>
+                        <FormItem label={t('会话保持')} required property='session_open'>
+                          <Switcher theme='primary' v-model={listenerFormData.session_open} />
+                        </FormItem>
+                        <FormItem label={t('保持时间')} class={'ml40'} required property='session_expire'>
+                          <Input
+                            v-model={listenerFormData.session_expire}
+                            disabled={!listenerFormData.session_open}
+                            placeholder={t('请输入')}
+                            type='number'
+                            min={30}
+                            suffix='秒'
+                          />
+                        </FormItem>
+                      </div>
+                    )
+                }
                 <FormItem label={t('目标组')} required property='target_group_id'>
                   <Select
                     v-model={listenerFormData.target_group_id}

@@ -6,6 +6,7 @@ import { Plus } from 'bkui-vue/lib/icon';
 import CommonLocalTable from '@/components/CommonLocalTable';
 import CommonSideslider from '@/components/common-sideslider';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
+import Confirm from '@/components/confirm';
 // import stores
 import { useLoadBalancerStore } from '@/store/loadbalancer';
 import { useBusinessStore } from '@/store';
@@ -13,8 +14,9 @@ import { useBusinessStore } from '@/store';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useAddOrUpdateDomain, { OpAction } from './useAddOrUpdateDomain';
 import { useI18n } from 'vue-i18n';
+// import constants
+import { TRANSPORT_LAYER_LIST } from '@/constants';
 import './index.scss';
-import Confirm from '@/components/confirm';
 
 const { FormItem } = Form;
 
@@ -128,7 +130,7 @@ export default defineComponent({
         const { id, type, protocol } = val;
         if (type !== 'listener') return;
         // 只有 type='listener', 并且不为7层时, 才去请求对应 listener 下的 domain 列表
-        if (['TCP', 'UDP'].includes(protocol)) return;
+        if (TRANSPORT_LAYER_LIST.includes(protocol)) return;
         getDomainList(id);
       },
       {

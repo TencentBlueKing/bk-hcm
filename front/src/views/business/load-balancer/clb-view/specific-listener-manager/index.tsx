@@ -5,6 +5,8 @@ import DomainList from './domain-list';
 import ListenerDetail from './listener-detail';
 // import stores
 import { useLoadBalancerStore } from '@/store';
+// import constants
+import { TRANSPORT_LAYER_LIST } from '@/constants';
 import './index.scss';
 
 const { TabPanel } = Tab;
@@ -24,7 +26,7 @@ export default defineComponent({
         const { type } = loadBalancerStore.currentSelectedTreeNode;
         if (type !== 'listener') return;
         const { protocol } = loadBalancerStore.currentSelectedTreeNode;
-        if (['TCP', 'UDP'].includes(protocol)) {
+        if (TRANSPORT_LAYER_LIST.includes(protocol)) {
           // 4层监听器没有下级资源，直接显示基本信息
           activeTab.value = 'info';
           tabList.value = [{ name: 'info', label: '基本信息', component: <ListenerDetail /> }];

@@ -1,6 +1,23 @@
 import { watch } from 'vue';
+import { APPLICATION_LAYER_LIST } from '@/constants';
 
 export default (listenerFormData: any) => {
+  watch(
+    () => listenerFormData.protocol,
+    (val) => {
+      // 七层监听器不支持会话保持
+      APPLICATION_LAYER_LIST.includes(val) && (listenerFormData.session_open = false);
+    },
+  );
+
+  watch(
+    () => listenerFormData.scheduler,
+    (val) => {
+      // 如果均衡方式为加权最小连接数, 不支持配置会话保持
+      val === 'LEAST_CONN' && (listenerFormData.session_open = false);
+    },
+  );
+
   watch(
     () => listenerFormData.session_open,
     (val) => {

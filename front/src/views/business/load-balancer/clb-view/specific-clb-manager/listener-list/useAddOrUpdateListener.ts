@@ -31,16 +31,17 @@ export default (getListData: any) => {
       },
     ],
   };
-  const listenerFormData = reactive({
+
+  const getDefaultFormData = () => ({
     account_id: loadBalancerStore.currentSelectedTreeNode.account_id,
     lb_id: loadBalancerStore.currentSelectedTreeNode.id,
     name: '',
     protocol: 'TCP',
-    port: undefined,
+    port: '',
     scheduler: '',
-    session_open: true,
+    session_open: false,
     session_type: 'NORMAL',
-    session_expire: 30,
+    session_expire: 0,
     target_group_id: '',
     domain: '',
     url: '/',
@@ -48,32 +49,14 @@ export default (getListData: any) => {
     certificate: {
       ssl_mode: 'UNIDIRECTIONAL',
       ca_cloud_id: '',
-      cert_cloud_ids: [],
+      cert_cloud_ids: [] as any[],
     },
   });
+  const listenerFormData = reactive(getDefaultFormData());
 
   // 清空表单数据
   const clearFormData = () => {
-    Object.assign(listenerFormData, {
-      account_id: loadBalancerStore.currentSelectedTreeNode.account_id,
-      lb_id: loadBalancerStore.currentSelectedTreeNode.id,
-      name: '',
-      protocol: 'TCP',
-      port: undefined,
-      scheduler: '',
-      session_open: true,
-      session_type: 'NORMAL',
-      session_expire: 30,
-      target_group_id: '',
-      domain: '',
-      url: '/',
-      sni_switch: 0,
-      certificate: {
-        ssl_mode: 'UNIDIRECTIONAL',
-        ca_cloud_id: '',
-        cert_cloud_ids: [],
-      },
-    });
+    Object.assign(listenerFormData, getDefaultFormData());
   };
 
   // 初始化select-option列表
