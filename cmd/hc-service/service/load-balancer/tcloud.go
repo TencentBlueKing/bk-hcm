@@ -382,12 +382,12 @@ func (svc *clbSvc) CreateTCloudListener(cts *rest.Contexts) (interface{}, error)
 	}
 
 	// 插入新的监听器、规则信息到DB
-	ids, err := svc.insertListenerWithRule(cts.Kit, req, lbInfo, cloudLblID, cloudRuleID, targetGroupInfo)
+	_, err = svc.insertListenerWithRule(cts.Kit, req, lbInfo, cloudLblID, cloudRuleID, targetGroupInfo)
 	if err != nil {
 		return nil, err
 	}
 
-	return ids, nil
+	return &protolb.ListenerWithRuleCreateResult{CloudLblID: cloudLblID, CloudRuleID: cloudRuleID}, nil
 }
 
 func (svc *clbSvc) createListenerWithRule(kt *kit.Kit, req *protolb.ListenerWithRuleCreateReq,

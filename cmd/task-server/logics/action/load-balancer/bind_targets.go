@@ -42,7 +42,7 @@ type ListenerRuleAddTargetAction struct{}
 // ListenerRuleAddTargetOption ...
 type ListenerRuleAddTargetOption struct {
 	LoadBalancerID                     string `json:"lb_id" validate:"required"`
-	*hclb.BatchRegisterTCloudTargetReq `json:"-,inline"`
+	*hclb.BatchRegisterTCloudTargetReq `json:",inline"`
 }
 
 // Validate validate option.

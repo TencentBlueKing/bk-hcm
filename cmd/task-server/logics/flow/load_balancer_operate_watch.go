@@ -134,6 +134,11 @@ func (act LoadBalancerOperateWatchAction) processResFlow(kt run.ExecuteKit, opt 
 		if flowInfo.State == enumor.FlowCancel {
 			resStatus = enumor.CancelResFlowStatus
 		}
+
+		if err := act.updateTargetGroupListenerRuleRelBindStatus(kt.Kit(), opt, flowInfo.State); err != nil {
+			return false, err
+		}
+
 		// 解锁资源
 		unlockReq := &dataproto.ResFlowLockReq{
 			ResID:   opt.ResID,
@@ -152,6 +157,11 @@ func (act LoadBalancerOperateWatchAction) processResFlow(kt run.ExecuteKit, opt 
 			return true, nil
 		}
 
+		// 更新目标组与监听器的绑定状态
+		if err = act.updateTargetGroupListenerRuleRelBindStatus(kt.Kit(), opt, flowInfo.State); err != nil {
+			return false, err
+		}
+
 		createTime, err := time.Parse(constant.TimeStdFormat, string(resFlowLockList[0].CreatedAt))
 		if err != nil {
 			return false, err
@@ -167,6 +177,7 @@ func (act LoadBalancerOperateWatchAction) processResFlow(kt run.ExecuteKit, opt 
 			}
 			return true, actcli.GetDataService().Global.LoadBalancer.ResFlowUnLock(kt.Kit(), timeoutReq)
 		}
+		return false, nil
 	case enumor.FlowInit:
 		// 需要检查资源是否已锁定
 		resFlowLockList, err := act.queryResFlowLock(kt, opt)
@@ -187,8 +198,6 @@ func (act LoadBalancerOperateWatchAction) processResFlow(kt run.ExecuteKit, opt 
 	default:
 		return false, nil
 	}
-
-	return true, nil
 }
 
 func (act LoadBalancerOperateWatchAction) queryResFlowLock(kt run.ExecuteKit, opt *LoadBalancerOperateWatchOption) (
@@ -231,6 +240,28 @@ func (act LoadBalancerOperateWatchAction) updateFlowStateByCAS(kt *kit.Kit, flow
 		return err
 	}
 	return nil
+}
+
+// updateTargetGroupListenerRuleRelBindStatus 更新目标组与监听器的绑定状态
+func (act LoadBalancerOperateWatchAction) updateTargetGroupListenerRuleRelBindStatus(kt *kit.Kit,
+	opt *LoadBalancerOperateWatchOption, flowState enumor.FlowState) error {
+
+	if opt == nil || opt.TaskType != enumor.ApplyTargetGroupType || opt.SubResType != enumor.TargetGroupCloudResType {
+		return nil
+	}
+
+	var bindStatus enumor.BindingStatus
+	switch flowState {
+	case enumor.FlowSuccess:
+		bindStatus = enumor.SuccessBindingStatus
+	case enumor.FlowCancel, enumor.FlowFailed:
+		bindStatus = enumor.FailedBindingStatus
+	default:
+		return nil
+	}
+
+	return actcli.GetDataService().Global.LoadBalancer.BatchUpdateListenerRuleRelStatusByTGID(kt, opt.SubResID,
+		&dataproto.TGListenerRelStatusUpdateReq{BindingStatus: bindStatus})
 }
 
 // Rollback Flow查询状态失败时的回滚Action，此处不需要回滚处理

@@ -305,6 +305,7 @@ func (svc *lbSvc) getTCloudListener(kt *kit.Kit, lblID string, bkBizID int64) (*
 		SessionType:    urlRuleMap[listenerInfo.ID].SessionType,
 		SessionExpire:  urlRuleMap[listenerInfo.ID].SessionExpire,
 		HealthCheck:    urlRuleMap[listenerInfo.ID].HealthCheck,
+		Certificate:    urlRuleMap[listenerInfo.ID].Certificate,
 	}
 	if listenerInfo.Protocol.IsLayer7Protocol() {
 		result.DomainNum = urlRuleMap[listenerInfo.ID].DomainNum

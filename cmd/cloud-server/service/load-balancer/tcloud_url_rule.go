@@ -426,6 +426,13 @@ func (svc *lbSvc) applyTargetToRule(kt *kit.Kit, tgID, ruleCloudID string, lblIn
 	// Build Task
 	tasks := make([]apits.CustomFlowTask, 0)
 	getNextID := counter.NewNumStringCounter(1, 10)
+	// 判断规则类型
+	var ruleType enumor.RuleType
+	if lblInfo.Protocol.IsLayer7Protocol() {
+		ruleType = enumor.Layer7RuleType
+	} else {
+		ruleType = enumor.Layer4RuleType
+	}
 	// 按目标组数量拆分任务批次
 	for {
 		rsResp, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, listRsReq)
@@ -440,6 +447,7 @@ func (svc *lbSvc) applyTargetToRule(kt *kit.Kit, tgID, ruleCloudID string, lblIn
 		rsReq := &hcproto.BatchRegisterTCloudTargetReq{
 			CloudListenerID: lblInfo.CloudID,
 			CloudRuleID:     ruleCloudID,
+			RuleType:        ruleType,
 			Targets:         make([]*hcproto.RegisterTarget, 0, len(rsResp.Details)),
 		}
 		for _, target := range rsResp.Details {
