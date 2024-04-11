@@ -253,9 +253,10 @@ export default defineComponent({
                 </div>
                 {listenerFormData.sni_switch === 0 && (
                   <>
-                    <FormItem label={t('服务器证书')} required property='certificate.ca_cloud_id'>
+                    <FormItem label={t('服务器证书')} required property='certificate.cert_cloud_ids'>
                       <Select
-                        v-model={listenerFormData.certificate.ca_cloud_id}
+                        v-model={listenerFormData.certificate.cert_cloud_ids}
+                        multiple
                         scrollLoading={isSVRCertListLoading.value}
                         onScroll-end={handleSVRCertListScrollEnd}>
                         {SVRCertList.value
@@ -272,26 +273,27 @@ export default defineComponent({
                           ))}
                       </Select>
                     </FormItem>
-                    <FormItem label={t('CA证书')} required property='certificate.cert_cloud_ids'>
-                      <Select
-                        v-model={listenerFormData.certificate.cert_cloud_ids}
-                        multiple
-                        scrollLoading={isCACertListLoading.value}
-                        onScroll-end={handleCACertListScrollEnd}>
-                        {CACertList.value
-                          .sort((a, b) => a.cert_status - b.cert_status)
-                          .map(({ cloud_id, name, cert_status }) => (
-                            <Option key={cloud_id} id={cloud_id} name={name} disabled={cert_status === '3'}>
-                              {name}
-                              {cert_status === '3' && (
-                                <Tag theme='danger' style={{ marginLeft: '12px' }}>
-                                  已过期
-                                </Tag>
-                              )}
-                            </Option>
-                          ))}
-                      </Select>
-                    </FormItem>
+                    {listenerFormData.certificate.ssl_mode === 'MUTUAL' && (
+                      <FormItem label={t('CA证书')} required property='certificate.ca_cloud_id'>
+                        <Select
+                          v-model={listenerFormData.certificate.ca_cloud_id}
+                          scrollLoading={isCACertListLoading.value}
+                          onScroll-end={handleCACertListScrollEnd}>
+                          {CACertList.value
+                            .sort((a, b) => a.cert_status - b.cert_status)
+                            .map(({ cloud_id, name, cert_status }) => (
+                              <Option key={cloud_id} id={cloud_id} name={name} disabled={cert_status === '3'}>
+                                {name}
+                                {cert_status === '3' && (
+                                  <Tag theme='danger' style={{ marginLeft: '12px' }}>
+                                    已过期
+                                  </Tag>
+                                )}
+                              </Option>
+                            ))}
+                        </Select>
+                      </FormItem>
+                    )}
                   </>
                 )}
               </>
