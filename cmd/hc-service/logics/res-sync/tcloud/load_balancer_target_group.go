@@ -53,7 +53,6 @@ func (cli *client) ListenerTargets(kt *kit.Kit, param *SyncBaseParams, opt *Sync
 		return err
 	}
 	processedTargetGroup := make(map[string]struct{})
-	// TODO: 一个目标组只处理一次
 	// 遍历云上的监听器、规则
 	for _, listener := range cloudListenerTargets {
 		if !listener.GetProtocol().IsLayer7Protocol() {
@@ -73,6 +72,7 @@ func (cli *client) ListenerTargets(kt *kit.Kit, param *SyncBaseParams, opt *Sync
 			}
 			tgId := rel.TargetGroupID
 			if _, exists := processedTargetGroup[tgId]; exists {
+				// 一个目标组只处理一次
 				continue
 			}
 			processedTargetGroup[tgId] = struct{}{}
@@ -100,6 +100,7 @@ func (cli *client) ListenerTargets(kt *kit.Kit, param *SyncBaseParams, opt *Sync
 			}
 			tgId := rel.TargetGroupID
 			if _, exists := processedTargetGroup[tgId]; exists {
+				// 一个目标组只处理一次
 				continue
 			}
 			processedTargetGroup[tgId] = struct{}{}

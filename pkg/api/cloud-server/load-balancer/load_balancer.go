@@ -309,3 +309,22 @@ type TCloudBatchModifyTargetWeightReq struct {
 func (req *TCloudBatchModifyTargetWeightReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// -------------------------- Update Target Group --------------------------
+
+// TargetGroupUpdateReq ...
+type TargetGroupUpdateReq struct {
+	IDs        []string            `json:"ids" validate:"omitempty"`
+	Name       string              `json:"name,omitempty"`
+	VpcID      string              `json:"vpc_id,omitempty"`
+	CloudVpcID string              `json:"cloud_vpc_id,omitempty"`
+	Region     string              `json:"region,omitempty"`
+	Protocol   enumor.ProtocolType `json:"protocol,omitempty"`
+	Port       int64               `json:"port,omitempty"`
+	Weight     *int64              `json:"weight,omitempty"`
+}
+
+// Validate ...
+func (req *TargetGroupUpdateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

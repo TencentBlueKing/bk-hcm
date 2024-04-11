@@ -39,6 +39,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	tableasync "hcm/pkg/dal/table/async"
+	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -103,57 +104,43 @@ func (svc *lbSvc) UpdateBizTCloudLoadBalancer(cts *rest.Contexts) (any, error) {
 }
 
 // UpdateBizTargetGroup update biz target group.
-func (svc *lbSvc) UpdateBizTargetGroup(cts *rest.Contexts) (interface{}, error) {
+func (svc *lbSvc) UpdateBizTargetGroup(cts *rest.Contexts) (any, error) {
 	return svc.updateTargetGroup(cts, handler.BizOperateAuth)
 }
 
-func (svc *lbSvc) updateTargetGroup(cts *rest.Contexts, authHandler handler.ValidWithAuthHandler) (
-	interface{}, error) {
+func (svc *lbSvc) updateTargetGroup(cts *rest.Contexts, authHandler handler.ValidWithAuthHandler) (any, error) {
 
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	req := new(cloudserver.ResourceCreateReq)
-	if err := cts.DecodeInto(req); err != nil {
-		logs.Errorf("update target group request decode failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	if len(req.AccountID) == 0 {
-		return nil, errf.Newf(errf.InvalidParameter, "account_id is required")
-	}
-
-	// authorized instances
-	basicInfo := &types.CloudResourceBasicInfo{
-		AccountID: req.AccountID,
-	}
-	err := authHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.TargetGroup,
-		Action: meta.Update, BasicInfo: basicInfo})
+	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.TargetGroupCloudResType, id)
 	if err != nil {
-		logs.Errorf("update target group auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	err = authHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer,
+		ResType:   meta.TargetGroup,
+		Action:    meta.Update,
+		BasicInfo: baseInfo,
+	})
+	if err != nil {
+		logs.Errorf("update target group basic info auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	info, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(
-		cts.Kit, enumor.AccountCloudResType, req.AccountID)
-	if err != nil {
-		logs.Errorf("get account basic info failed, accID: %s, err: %v, rid: %s", req.AccountID, err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	switch info.Vendor {
+	switch baseInfo.Vendor {
 	case enumor.TCloud:
-		return svc.batchUpdateTCloudTargetGroup(cts.Kit, req.Data, id)
+		return svc.batchUpdateTCloudTargetGroup(cts, id)
 	default:
-		return nil, fmt.Errorf("vendor: %s not support", info.Vendor)
+		return nil, fmt.Errorf("vendor: %s not support", baseInfo.Vendor)
 	}
 }
 
-func (svc *lbSvc) batchUpdateTCloudTargetGroup(kt *kit.Kit, body json.RawMessage, id string) (interface{}, error) {
-	req := new(dataproto.TargetGroupUpdateReq)
-	if err := json.Unmarshal(body, req); err != nil {
+// 更新目标组基本信息
+func (svc *lbSvc) batchUpdateTCloudTargetGroup(cts *rest.Contexts, id string) (interface{}, error) {
+	req := new(cslb.TargetGroupUpdateReq)
+	if err := cts.DecodeInto(cts); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
@@ -161,15 +148,134 @@ func (svc *lbSvc) batchUpdateTCloudTargetGroup(kt *kit.Kit, body json.RawMessage
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// TODO 目前只是更新目标组基本信息，后面如果健康检查需要修改对应监听器
-	req.IDs = append(req.IDs, id)
-	err := svc.client.DataService().TCloud.LoadBalancer.BatchUpdateTCloudTargetGroup(kt, req)
+	dbReq := &dataproto.TargetGroupUpdateReq{
+		IDs:        append(req.IDs, id),
+		Name:       req.Name,
+		VpcID:      req.VpcID,
+		CloudVpcID: req.CloudVpcID,
+		Region:     req.Region,
+		Protocol:   req.Protocol,
+		Port:       req.Port,
+		Weight:     req.Weight,
+	}
+	err := svc.client.DataService().TCloud.LoadBalancer.BatchUpdateTCloudTargetGroup(cts.Kit, dbReq)
 	if err != nil {
-		logs.Errorf("update tcloud target group failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
+		logs.Errorf("update tcloud target group failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	return nil, nil
+}
+
+// UpdateBizTargetGroupHealth update biz target group health check
+func (svc *lbSvc) UpdateBizTargetGroupHealth(cts *rest.Contexts) (any, error) {
+	return svc.updateTargetGroupHealth(cts, handler.BizOperateAuth)
+}
+
+func (svc *lbSvc) updateTargetGroupHealth(cts *rest.Contexts, authHandler handler.ValidWithAuthHandler) (
+	any, error) {
+
+	tgID := cts.PathParameter("id").String()
+	if len(tgID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "target group id is required")
+	}
+
+	baseInfo, err := svc.client.DataService().Global.Cloud.
+		GetResBasicInfo(cts.Kit, enumor.TargetGroupCloudResType, tgID)
+	if err != nil {
+		return nil, err
+	}
+	err = authHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer,
+		ResType:   meta.TargetGroup,
+		Action:    meta.Update,
+		BasicInfo: baseInfo,
+	})
+	if err != nil {
+		logs.Errorf("update target group health check auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	switch baseInfo.Vendor {
+	case enumor.TCloud:
+		return svc.updateTCloudTargetGroupHealthCheck(cts, tgID)
+	default:
+		return nil, fmt.Errorf("vendor: %s not support", baseInfo.Vendor)
+	}
+}
+
+func (svc *lbSvc) updateTCloudTargetGroupHealthCheck(cts *rest.Contexts, tgID string) (any, error) {
+
+	req := new(hclbproto.HealthCheckUpdateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// 更新云上监听器
+	if err := svc.updateRelatedListenerHealthCheck(cts.Kit, tgID, req); err != nil {
+		return nil, err
+	}
+
+	bytes, err := json.Marshal(req.HealthCheck)
+	if err != nil {
+		return nil, err
+	}
+	// 3. 更新db
+	dbReq := &dataproto.TargetGroupUpdateReq{
+		IDs:         []string{tgID},
+		HealthCheck: tabletype.JsonField(bytes),
+	}
+
+	err = svc.client.DataService().TCloud.LoadBalancer.BatchUpdateTCloudTargetGroup(cts.Kit, dbReq)
+	if err != nil {
+		logs.Errorf("update db tcloud target group failed, err: %v,  req: %+v, rid: %s", dbReq, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+func (svc *lbSvc) updateRelatedListenerHealthCheck(kt *kit.Kit, tgID string,
+	healthReq *hclbproto.HealthCheckUpdateReq) error {
+	// 1. 获取目标组关联监听器
+	relListReq := &core.ListReq{
+		Filter: tools.EqualExpression("target_group_id", tgID),
+		Page:   core.NewDefaultBasePage(),
+	}
+	relResp, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, relListReq)
+	if err != nil {
+		return err
+	}
+	if len(relResp.Details) == 0 {
+		// 无关联关系 直接返回
+		return nil
+	}
+
+	// 本地目标组只有一个关联的规则或者监听器
+	rel := relResp.Details[0]
+	// 2. 更新云上监听器/规则
+	switch rel.ListenerRuleType {
+	case enumor.Layer7RuleType:
+		// 仅更新规则的健康检查字段
+		req := &hclbproto.TCloudRuleUpdateReq{HealthCheck: healthReq.HealthCheck}
+		err := svc.client.HCService().TCloud.Clb.UpdateUrlRule(kt, rel.LblID, rel.ListenerRuleID, req)
+		if err != nil {
+			logs.Errorf("fail to update health check of rule, err: %v, listener id: %s, rule id: %s, rid: %s",
+				err, rel.LblID, rel.ListenerRuleID, kt.Rid)
+			return err
+		}
+	case enumor.Layer4RuleType:
+		err := svc.client.HCService().TCloud.Clb.UpdateListenerHealthCheck(kt, rel.LblID, healthReq)
+		if err != nil {
+			logs.Errorf("fail to update health check of listener, err: %v, listener id: %s,  rid: %s",
+				err, rel.LblID, kt.Rid)
+			return err
+		}
+	}
+	return nil
 }
 
 // UpdateBizListener update biz listener.
@@ -292,15 +398,11 @@ func (svc *lbSvc) updateDomainAttr(cts *rest.Contexts, authHandler handler.Valid
 
 // BatchModifyBizTargetsPort batch modify biz targets port.
 func (svc *lbSvc) BatchModifyBizTargetsPort(cts *rest.Contexts) (any, error) {
-	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
-	if err != nil {
-		return nil, err
-	}
-	return svc.batchModifyTargetPort(cts, handler.BizOperateAuth, bkBizID)
+	return svc.batchModifyTargetPort(cts, handler.BizOperateAuth)
 }
 
 func (svc *lbSvc) batchModifyTargetPort(cts *rest.Contexts,
-	authHandler handler.ValidWithAuthHandler, bkBizID int64) (any, error) {
+	authHandler handler.ValidWithAuthHandler) (any, error) {
 
 	tgID := cts.PathParameter("target_group_id").String()
 	if len(tgID) == 0 {
@@ -330,14 +432,14 @@ func (svc *lbSvc) batchModifyTargetPort(cts *rest.Contexts,
 
 	switch baseInfo.Vendor {
 	case enumor.TCloud:
-		return svc.buildModifyTCloudTargetPort(cts.Kit, req.Data, tgID, baseInfo.AccountID, bkBizID)
+		return svc.buildModifyTCloudTargetPort(cts.Kit, req.Data, tgID, baseInfo.AccountID)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", baseInfo.Vendor)
 	}
 }
 
-func (svc *lbSvc) buildModifyTCloudTargetPort(kt *kit.Kit, body json.RawMessage, tgID, accountID string,
-	bkBizID int64) (interface{}, error) {
+func (svc *lbSvc) buildModifyTCloudTargetPort(kt *kit.Kit, body json.RawMessage,
+	tgID, accountID string) (interface{}, error) {
 
 	req := new(cslb.TCloudBatchModifyTargetPortReq)
 	if err := json.Unmarshal(body, req); err != nil {
@@ -368,7 +470,7 @@ func (svc *lbSvc) buildModifyTCloudTargetPort(kt *kit.Kit, body json.RawMessage,
 		return &core.FlowStateResult{State: enumor.FlowSuccess}, nil
 	}
 
-	return svc.buildModifyTCloudTargetTasksPort(kt, req, ruleRelList.Details[0].LbID, tgID, accountID, bkBizID)
+	return svc.buildModifyTCloudTargetTasksPort(kt, req, ruleRelList.Details[0].LbID, tgID, accountID)
 }
 
 func (svc *lbSvc) batchUpdateTargetPortDb(kt *kit.Kit, req *cslb.TCloudBatchModifyTargetPortReq,
@@ -411,10 +513,10 @@ func (svc *lbSvc) batchUpdateTargetPortDb(kt *kit.Kit, req *cslb.TCloudBatchModi
 }
 
 func (svc *lbSvc) buildModifyTCloudTargetTasksPort(kt *kit.Kit, req *cslb.TCloudBatchModifyTargetPortReq, lbID, tgID,
-	accountID string, bkBizID int64) (interface{}, error) {
+	accountID string) (interface{}, error) {
 
 	// 预检测
-	err := svc.checkResFlowRel(kt, lbID, tgID, enumor.LoadBalancerCloudResType, enumor.TargetGroupCloudResType, bkBizID)
+	err := svc.checkResFlowRel(kt, lbID, tgID, enumor.LoadBalancerCloudResType, enumor.TargetGroupCloudResType)
 	if err != nil {
 		return nil, err
 	}
@@ -524,14 +626,14 @@ func (svc *lbSvc) batchModifyTargetWeight(cts *rest.Contexts,
 
 	switch baseInfo.Vendor {
 	case enumor.TCloud:
-		return svc.buildModifyTCloudTargetWeight(cts.Kit, req.Data, tgID, baseInfo.AccountID, bkBizID)
+		return svc.buildModifyTCloudTargetWeight(cts.Kit, req.Data, tgID, baseInfo.AccountID)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", baseInfo.Vendor)
 	}
 }
 
-func (svc *lbSvc) buildModifyTCloudTargetWeight(kt *kit.Kit, body json.RawMessage, tgID, accountID string,
-	bkBizID int64) (interface{}, error) {
+func (svc *lbSvc) buildModifyTCloudTargetWeight(kt *kit.Kit, body json.RawMessage,
+	tgID, accountID string) (interface{}, error) {
 
 	req := new(cslb.TCloudBatchModifyTargetWeightReq)
 	if err := json.Unmarshal(body, req); err != nil {
@@ -562,7 +664,7 @@ func (svc *lbSvc) buildModifyTCloudTargetWeight(kt *kit.Kit, body json.RawMessag
 		return &core.FlowStateResult{State: enumor.FlowSuccess}, nil
 	}
 
-	return svc.buildModifyTCloudTargetTasksWeight(kt, req, ruleRelList.Details[0].ID, tgID, accountID, bkBizID)
+	return svc.buildModifyTCloudTargetTasksWeight(kt, req, ruleRelList.Details[0].ID, tgID, accountID)
 }
 
 func (svc *lbSvc) batchUpdateTargetWeightDb(kt *kit.Kit, req *cslb.TCloudBatchModifyTargetWeightReq,
@@ -605,10 +707,10 @@ func (svc *lbSvc) batchUpdateTargetWeightDb(kt *kit.Kit, req *cslb.TCloudBatchMo
 }
 
 func (svc *lbSvc) buildModifyTCloudTargetTasksWeight(kt *kit.Kit, req *cslb.TCloudBatchModifyTargetWeightReq,
-	lbID, tgID, accountID string, bkBizID int64) (interface{}, error) {
+	lbID, tgID, accountID string) (interface{}, error) {
 
 	// 预检测
-	err := svc.checkResFlowRel(kt, lbID, tgID, enumor.LoadBalancerCloudResType, enumor.TargetGroupCloudResType, bkBizID)
+	err := svc.checkResFlowRel(kt, lbID, tgID, enumor.LoadBalancerCloudResType, enumor.TargetGroupCloudResType)
 	if err != nil {
 		return nil, err
 	}

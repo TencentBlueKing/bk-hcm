@@ -25,7 +25,6 @@ import (
 	"hcm/pkg/api/core"
 	protoaudit "hcm/pkg/api/data-service/audit"
 	dataproto "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -39,20 +38,16 @@ import (
 
 // AssociateTargetGroupListenerRel associate target group listener rel.
 func (svc *lbSvc) AssociateTargetGroupListenerRel(cts *rest.Contexts) (interface{}, error) {
-	return svc.associateTargetGroupListenerRel(cts, handler.ResOperateAuth, constant.UnassignedBiz)
+	return svc.associateTargetGroupListenerRel(cts, handler.ResOperateAuth)
 }
 
 // AssociateBizTargetGroupListenerRel associate biz target group listener rel.
 func (svc *lbSvc) AssociateBizTargetGroupListenerRel(cts *rest.Contexts) (interface{}, error) {
-	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
-	if err != nil {
-		return nil, err
-	}
-	return svc.associateTargetGroupListenerRel(cts, handler.BizOperateAuth, bkBizID)
+	return svc.associateTargetGroupListenerRel(cts, handler.BizOperateAuth)
 }
 
-func (svc *lbSvc) associateTargetGroupListenerRel(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler,
-	bkBizID int64) (interface{}, error) {
+func (svc *lbSvc) associateTargetGroupListenerRel(cts *rest.Contexts,
+	validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 
 	req := new(cslb.TargetGroupListenerRelAssociateReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -63,7 +58,7 @@ func (svc *lbSvc) associateTargetGroupListenerRel(cts *rest.Contexts, validHandl
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// 鉴权和校验资源分配状态和回收状态
+	// 鉴权和校验资源分配状态
 	basicReq := &dataproto.BatchListResourceBasicInfoReq{
 		Items: []dataproto.ListResourceBasicInfoReq{
 			{ResourceType: enumor.TargetGroupCloudResType, IDs: []string{req.TargetGroupID},
@@ -109,26 +104,26 @@ func (svc *lbSvc) associateTargetGroupListenerRel(cts *rest.Contexts, validHandl
 
 	switch vendor {
 	case enumor.TCloud:
-		return svc.tcloudTargetGroupListenerRel(cts.Kit, req, bkBizID)
+		return svc.tcloudTargetGroupListenerRel(cts.Kit, req)
 	default:
 		return nil, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
 	}
 }
 
-func (svc *lbSvc) tcloudTargetGroupListenerRel(kt *kit.Kit, req *cslb.TargetGroupListenerRelAssociateReq,
-	bkBizID int64) (interface{}, error) {
+func (svc *lbSvc) tcloudTargetGroupListenerRel(kt *kit.Kit, req *cslb.TargetGroupListenerRelAssociateReq) (
+	interface{}, error) {
 
-	lblInfo, err := lblogic.GetListenerByID(kt, svc.client.DataService(), req.ListenerID, bkBizID)
+	lblInfo, err := lblogic.GetListenerByID(kt, svc.client.DataService(), req.ListenerID)
 	if err != nil {
 		return nil, err
 	}
 
 	// 查询目标组基本信息
-	targetGroupList, err := svc.getTargetGroupByID(kt, req.TargetGroupID, bkBizID)
+	tg, err := svc.getTargetGroupByID(kt, req.TargetGroupID)
 	if err != nil {
 		return nil, err
 	}
-	if len(targetGroupList) == 0 {
+	if tg == nil {
 		return nil, errf.Newf(errf.RecordNotFound, "target_group_id: %s not found", req.TargetGroupID)
 	}
 	// 查询目标组下，是否有RS信息
@@ -179,7 +174,7 @@ func (svc *lbSvc) tcloudTargetGroupListenerRel(kt *kit.Kit, req *cslb.TargetGrou
 		CloudListenerRuleID: ruleList.Details[0].CloudID,
 		ListenerRuleType:    ruleList.Details[0].RuleType,
 		TargetGroupID:       req.TargetGroupID,
-		CloudTargetGroupID:  targetGroupList[0].CloudID,
+		CloudTargetGroupID:  tg.CloudID,
 		LbID:                lblInfo.LbID,
 		CloudLbID:           lblInfo.CloudLbID,
 		LblID:               req.ListenerID,

@@ -172,3 +172,11 @@ func (c *ClbClient) BatchDeleteLoadBalancer(kt *kit.Kit, req *hcproto.TCloudBatc
 	return common.RequestNoResp[hcproto.TCloudBatchDeleteLoadbalancerReq](
 		c.client, http.MethodDelete, kt, req, "/load_balancers/batch")
 }
+
+// UpdateListenerHealthCheck 更新健康检查
+func (c *ClbClient) UpdateListenerHealthCheck(kt *kit.Kit, lblID string,
+	req *hcproto.HealthCheckUpdateReq) error {
+
+	return common.RequestNoResp[hcproto.HealthCheckUpdateReq](c.client, http.MethodPatch, kt, req,
+		"/vendors/tcloud/listeners/{lbl_id}/health_check", lblID)
+}

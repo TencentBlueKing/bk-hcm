@@ -34,6 +34,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 )
 
@@ -567,7 +568,7 @@ func convTableToBaseTargetGroup(kt *kit.Kit, one *tablelb.LoadBalancerTargetGrou
 		Protocol:        one.Protocol,
 		Region:          one.Region,
 		Port:            one.Port,
-		Weight:          one.Weight,
+		Weight:          cvt.PtrToVal(one.Weight),
 		HealthCheck:     healthCheck,
 		Memo:            one.Memo,
 		Revision: &core.Revision{

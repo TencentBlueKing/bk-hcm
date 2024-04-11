@@ -66,6 +66,8 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 	// 监听器
 	h.Add("CreateTCloudListener", http.MethodPost, "/vendors/tcloud/listeners/create", svc.CreateTCloudListener)
 	h.Add("UpdateTCloudListener", http.MethodPatch, "/vendors/tcloud/listeners/{id}", svc.UpdateTCloudListener)
+	h.Add("UpdateTCloudListenerHealthCheck", http.MethodPatch,
+		"/vendors/tcloud/listeners/{lbl_id}/health_check", svc.UpdateTCloudListenerHealthCheck)
 	h.Add("DeleteTCloudListener", http.MethodDelete, "/vendors/tcloud/listeners/batch", svc.DeleteTCloudListener)
 
 	// 域名、规则
@@ -568,6 +570,66 @@ func (svc *clbSvc) UpdateTCloudListener(cts *rest.Contexts) (any, error) {
 	}
 	if req.Extension != nil {
 		lblOpt.Certificate = req.Extension.Certificate
+	}
+	err = client.UpdateListener(cts.Kit, lblOpt)
+	if err != nil {
+		logs.Errorf("fail to call tcloud update listener(id:%s), err: %v, rid: %s", lblID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	if err := svc.lblSync(cts.Kit, client, &lbInfo.BaseLoadBalancer); err != nil {
+		// 调用同步的方法内会打印错误，这里只标记调用方
+		logs.Errorf("fail to sync listener for update listener(%s), rid: %s", lblInfo.ID, cts.Kit.Rid)
+		return nil, err
+	}
+	return nil, nil
+}
+
+// UpdateTCloudListenerHealthCheck 更新监听器信健康检查信息
+func (svc *clbSvc) UpdateTCloudListenerHealthCheck(cts *rest.Contexts) (any, error) {
+	lblID := cts.PathParameter("id").String()
+	if len(lblID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	req := new(protolb.HealthCheckUpdateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// 获取监听器基本信息
+	lblInfo, err := svc.dataCli.TCloud.LoadBalancer.GetListener(cts.Kit, lblID)
+	if err != nil {
+		logs.Errorf("fail to get tcloud listener(%s), err: %v, rid: %s", lblID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// 改接口只支持修改四层监听器健康检查
+	if lblInfo.Protocol.IsLayer7Protocol() {
+		return nil, errf.Newf(errf.InvalidParameter, "only layer 4 listener support update health check")
+	}
+
+	lbInfo, err := svc.dataCli.TCloud.LoadBalancer.Get(cts.Kit, lblInfo.LbID)
+	if err != nil {
+		logs.Errorf("fail to get tcloud load balancer(%s), err: %v, rid: %s", lblInfo.LbID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// 调用云上更新接口
+	client, err := svc.ad.TCloud(cts.Kit, lblInfo.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 更新云端监听器信息
+	lblOpt := &typelb.TCloudUpdateListenerOption{
+		Region:         lbInfo.Region,
+		LoadBalancerId: lblInfo.CloudLbID,
+		ListenerId:     lblInfo.CloudID,
+		HealthCheck:    req.HealthCheck,
 	}
 	err = client.UpdateListener(cts.Kit, lblOpt)
 	if err != nil {

@@ -183,12 +183,8 @@ func (svc *lbSvc) UpdateTargetGroup(cts *rest.Contexts) (interface{}, error) {
 		Reviser: cts.Kit.User,
 	}
 
-	if len(req.Name) > 0 {
-		updateData.Name = req.Name
-	}
-	if len(req.TargetGroupType) > 0 {
-		updateData.TargetGroupType = req.TargetGroupType
-	}
+	updateData.Name = req.Name
+	updateData.TargetGroupType = req.TargetGroupType
 	if len(req.CloudVpcID) > 0 {
 		// 根据cloudVpcID查询VPC信息，如查不到vpcInfo则报错
 		vpcInfoMap, err := getVpcMapByIDs(cts.Kit, []string{req.CloudVpcID})
@@ -202,18 +198,11 @@ func (svc *lbSvc) UpdateTargetGroup(cts *rest.Contexts) (interface{}, error) {
 		updateData.VpcID = vpcInfo.ID
 		updateData.CloudVpcID = vpcInfo.CloudID
 	}
-	if len(req.Region) > 0 {
-		updateData.Region = req.Region
-	}
-	if len(req.Protocol) > 0 {
-		updateData.Protocol = req.Protocol
-	}
-	if req.Port >= 0 {
-		updateData.Port = req.Port
-	}
-	if len(req.HealthCheck) > 0 {
-		updateData.HealthCheck = req.HealthCheck
-	}
+	updateData.Region = req.Region
+	updateData.Protocol = req.Protocol
+	updateData.Port = req.Port
+	updateData.HealthCheck = req.HealthCheck
+	updateData.Weight = req.Weight
 
 	if err := svc.dao.LoadBalancerTargetGroup().Update(
 		cts.Kit, tools.ContainersExpression("id", req.IDs), updateData); err != nil {

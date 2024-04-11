@@ -39,6 +39,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 	"hcm/pkg/tools/slice"
 
@@ -241,7 +242,7 @@ func convTargetGroupCreateReqToTable[T corelb.TargetGroupExtension](kt *kit.Kit,
 		Region:          tg.Region,
 		Protocol:        tg.Protocol,
 		Port:            tg.Port,
-		Weight:          tg.Weight,
+		Weight:          cvt.ValToPtr(tg.Weight),
 		HealthCheck:     tg.HealthCheck,
 		Memo:            tg.Memo,
 		Extension:       extensionJSON,
@@ -252,7 +253,7 @@ func convTargetGroupCreateReqToTable[T corelb.TargetGroupExtension](kt *kit.Kit,
 		targetGroup.TargetGroupType = enumor.LocalTargetGroupType
 	}
 	if tg.Weight == 0 {
-		targetGroup.Weight = -1
+		targetGroup.Weight = cvt.ValToPtr(int64(-1))
 	}
 	return targetGroup, nil
 }

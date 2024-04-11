@@ -72,6 +72,8 @@ func InitService(c *capability.Capability) {
 
 	bizH.Add("CreateBizTargetGroup", http.MethodPost, "/target_groups/create", svc.CreateBizTargetGroup)
 	bizH.Add("UpdateBizTargetGroup", http.MethodPatch, "/target_groups/{id}", svc.UpdateBizTargetGroup)
+	bizH.Add("UpdateBizTargetGroupHealth", http.MethodPatch,
+		"/target_groups/{id}/health_check", svc.UpdateBizTargetGroupHealth)
 	bizH.Add("DeleteBizTargetGroup", http.MethodDelete, "/target_groups/batch", svc.DeleteBizTargetGroup)
 	bizH.Add("ListBizTargetGroup", http.MethodPost, "/target_groups/list", svc.ListBizTargetGroup)
 	bizH.Add("GetBizTargetGroup", http.MethodGet, "/target_groups/{id}", svc.GetBizTargetGroup)

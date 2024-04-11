@@ -383,3 +383,14 @@ func (r *TCloudBatchDeleteLoadbalancerReq) Validate() error {
 	}
 	return validator.Validate.Struct(r)
 }
+
+// HealthCheckUpdateReq 健康检查更新接口
+type HealthCheckUpdateReq struct {
+	HealthCheck *corelb.TCloudHealthCheckInfo `json:"health_check" validate:"required"`
+}
+
+// Validate HealthCheckUpdateReq
+func (h *HealthCheckUpdateReq) Validate() error {
+
+	return validator.Validate.Struct(h)
+}

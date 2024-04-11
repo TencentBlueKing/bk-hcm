@@ -198,14 +198,14 @@ func (svc *lbSvc) batchRemoveBizTarget(cts *rest.Contexts, authHandler handler.V
 
 	switch baseInfo.Vendor {
 	case enumor.TCloud:
-		return svc.buildRemoveTCloudTarget(cts.Kit, req.Data, tgID, baseInfo.AccountID, bkBizID)
+		return svc.buildRemoveTCloudTarget(cts.Kit, req.Data, tgID, baseInfo.AccountID)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", baseInfo.Vendor)
 	}
 }
 
-func (svc *lbSvc) buildRemoveTCloudTarget(kt *kit.Kit, body json.RawMessage, tgID, accountID string,
-	bkBizID int64) (interface{}, error) {
+func (svc *lbSvc) buildRemoveTCloudTarget(kt *kit.Kit, body json.RawMessage, tgID, accountID string) (interface{},
+	error) {
 
 	req := new(cslb.TCloudTargetBatchRemoveReq)
 	if err := json.Unmarshal(body, req); err != nil {
@@ -236,7 +236,7 @@ func (svc *lbSvc) buildRemoveTCloudTarget(kt *kit.Kit, body json.RawMessage, tgI
 		return &core.FlowStateResult{State: enumor.FlowSuccess}, nil
 	}
 
-	return svc.buildRemoveTCloudTargetTasks(kt, req, ruleRelList.Details[0].LbID, tgID, accountID, bkBizID)
+	return svc.buildRemoveTCloudTargetTasks(kt, req, ruleRelList.Details[0].LbID, tgID, accountID)
 }
 
 func (svc *lbSvc) batchDeleteTargetDb(kt *kit.Kit, req *cslb.TCloudTargetBatchRemoveReq,
@@ -282,10 +282,10 @@ func (svc *lbSvc) batchDeleteTargetDb(kt *kit.Kit, req *cslb.TCloudTargetBatchRe
 }
 
 func (svc *lbSvc) buildRemoveTCloudTargetTasks(kt *kit.Kit, req *cslb.TCloudTargetBatchRemoveReq, lbID, tgID,
-	accountID string, bkBizID int64) (*core.FlowStateResult, error) {
+	accountID string) (*core.FlowStateResult, error) {
 
 	// 预检测
-	err := svc.checkResFlowRel(kt, lbID, tgID, enumor.LoadBalancerCloudResType, enumor.TargetGroupCloudResType, bkBizID)
+	err := svc.checkResFlowRel(kt, lbID, tgID, enumor.LoadBalancerCloudResType, enumor.TargetGroupCloudResType)
 	if err != nil {
 		return nil, err
 	}
