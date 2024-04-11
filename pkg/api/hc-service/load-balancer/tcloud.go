@@ -292,6 +292,12 @@ func (req *ListenerWithRuleCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
+// ListenerWithRuleCreateResult ...
+type ListenerWithRuleCreateResult struct {
+	CloudLblID  string `json:"cloud_lbl_id"`
+	CloudRuleID string `json:"cloud_rule_id"`
+}
+
 // --------------------------[更新监听器]--------------------------
 
 // ListenerWithRuleUpdateReq listener update req.
@@ -346,9 +352,10 @@ func (req *TCloudBatchOperateTargetReq) Validate() error {
 
 // BatchRegisterTCloudTargetReq 批量注册云上RS
 type BatchRegisterTCloudTargetReq struct {
-	CloudListenerID string            `json:"cloud_listener_id,omitempty"  validate:"required"`
-	CloudRuleID     string            `json:"cloud_rule_id,omitempty"  validate:"required"`
-	Targets         []*RegisterTarget `json:"targets,omitempty"  validate:"required,min=1,dive"`
+	CloudListenerID string            `json:"cloud_listener_id"  validate:"required"`
+	CloudRuleID     string            `json:"cloud_rule_id"  validate:"omitempty"`
+	RuleType        enumor.RuleType   `json:"rule_type" validate:"required"`
+	Targets         []*RegisterTarget `json:"targets"  validate:"required,min=1,dive"`
 }
 
 // Validate ...

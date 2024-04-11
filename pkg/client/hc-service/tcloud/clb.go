@@ -72,9 +72,9 @@ func (c *ClbClient) Update(kt *kit.Kit, id string, req *hcproto.TCloudLBUpdateRe
 
 // CreateListener 创建监听器
 func (c *ClbClient) CreateListener(kt *kit.Kit, req *hcproto.ListenerWithRuleCreateReq) (
-	*core.BatchCreateResult, error) {
+	*hcproto.ListenerWithRuleCreateResult, error) {
 
-	return common.Request[hcproto.ListenerWithRuleCreateReq, core.BatchCreateResult](
+	return common.Request[hcproto.ListenerWithRuleCreateReq, hcproto.ListenerWithRuleCreateResult](
 		c.client, http.MethodPost, kt, req, "/listeners/create")
 }
 

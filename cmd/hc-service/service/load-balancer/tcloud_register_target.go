@@ -26,6 +26,7 @@ import (
 	typeslb "hcm/pkg/adaptor/types/load-balancer"
 	"hcm/pkg/api/core"
 	protolb "hcm/pkg/api/hc-service/load-balancer"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
@@ -73,14 +74,18 @@ func (svc *clbSvc) RegisterTargetToListenerRule(cts *rest.Contexts) (any, error)
 		Targets:        make([]*typeslb.BatchTarget, 0, len(req.Targets)),
 	}
 	for _, target := range req.Targets {
-		opt.Targets = append(opt.Targets, &typeslb.BatchTarget{
+		tmpRs := &typeslb.BatchTarget{
 			ListenerId: cvt.ValToPtr(req.CloudListenerID),
 			Port:       cvt.ValToPtr(target.Port),
 			Type:       cvt.ValToPtr(target.InstType),
 			InstanceId: cvt.ValToPtr(target.CloudInstID),
 			Weight:     cvt.ValToPtr(target.Weight),
-			LocationId: cvt.ValToPtr(req.CloudRuleID),
-		})
+		}
+		// 只有七层规则才需要传该参数
+		if req.RuleType == enumor.Layer7RuleType {
+			tmpRs.LocationId = cvt.ValToPtr(req.CloudRuleID)
+		}
+		opt.Targets = append(opt.Targets, tmpRs)
 	}
 	failLblIds, err := adpt.RegisterTargets(cts.Kit, opt)
 	if err != nil {

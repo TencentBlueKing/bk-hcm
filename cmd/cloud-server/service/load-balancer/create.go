@@ -22,6 +22,7 @@ package loadbalancer
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
@@ -248,7 +249,26 @@ func (svc *lbSvc) batchCreateTCloudListener(kt *kit.Kit, rawReq json.RawMessage,
 
 	req.BkBizID = bkBizID
 	req.LbID = lbID
-	return svc.client.HCService().TCloud.Clb.CreateListener(kt, req)
+	createResp, err := svc.client.HCService().TCloud.Clb.CreateListener(kt, req)
+	if err != nil {
+		logs.Errorf("fail to create tcloud url rule, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	if len(createResp.CloudLblID) == 0 {
+		logs.Errorf("no listener have been created, lbID: %s, req: %+v, rid: %s", lbID, req, kt.Rid)
+		return nil, errors.New("create listener failed")
+	}
+
+	// 构建异步任务将目标组中的RS绑定到对应规则上
+	lblInfo := &corelb.BaseListener{CloudID: createResp.CloudLblID, Protocol: req.Protocol, LbID: req.LbID}
+	err = svc.applyTargetToRule(kt, req.TargetGroupID, createResp.CloudRuleID, lblInfo)
+	if err != nil {
+		logs.Errorf("fail to bind listener and target group register flow, err: %v, req: %+v, createResp: %+v, rid: %s",
+			err, req, createResp, kt.Rid)
+		return nil, err
+	}
+	return &core.BatchCreateResult{IDs: []string{createResp.CloudLblID}}, nil
 }
 
 // BatchAddBizTargets create add biz targets.

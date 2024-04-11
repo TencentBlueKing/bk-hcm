@@ -146,6 +146,7 @@ type GetTCloudListenerDetail struct {
 	SessionType        string                        `json:"session_type"`
 	SessionExpire      int64                         `json:"session_expire"`
 	HealthCheck        *corelb.TCloudHealthCheckInfo `json:"health_check"`
+	Certificate        *corelb.TCloudCertificateInfo `json:"certificate"`
 	DomainNum          int64                         `json:"domain_num"`
 	UrlNum             int64                         `json:"url_num"`
 }
