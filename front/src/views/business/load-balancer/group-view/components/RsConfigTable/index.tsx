@@ -52,33 +52,49 @@ export default defineComponent({
 
     // 修改所有row的port/weight
     const handleBatchUpdate = (v: number, key: 'port' | 'weight') => {
-      // 批量修改操作
       if (loadBalancerStore.updateCount === 1 && !loadBalancerStore.currentScene) {
         loadBalancerStore.setUpdateCount(2);
         loadBalancerStore.setCurrentScene(key);
-        emit(
-          'update:rsList',
-          props.rsList.map((item) => {
-            item[key] = v;
-            return item;
-          }),
-        );
       }
-      // 新增rs可支持批量修改新增的rs
-      else {
-        emit(
-          'update:rsList',
-          props.rsList.map((item) => {
-            if (item.isNew) {
+
+      switch (loadBalancerStore.currentScene) {
+        // 新增rs只支持批量修改新增的rs
+        case 'AddRs':
+          emit(
+            'update:rsList',
+            props.rsList.map((item) => {
+              if (item.isNew) {
+                item[key] = v;
+              }
+              return item;
+            }),
+          );
+          break;
+        case 'add':
+        case 'port':
+        case 'weight':
+        case 'BatchAddRs':
+          emit(
+            'update:rsList',
+            props.rsList.map((item) => {
               item[key] = v;
-            }
-            return item;
-          }),
-        );
+              return item;
+            }),
+          );
+          break;
+        default:
+          break;
       }
     };
 
-    const handleDeleteRs = () => {};
+    // delete-handler
+    const handleDeleteRs = (id: string) => {
+      emit(
+        'update:rsList',
+        // 本期暂时以id来判断rs是否可以被添加, 后续可能会变更为ip+port
+        props.rsList.filter((item) => item.id !== id),
+      );
+    };
 
     const rsTableColumns = [
       ...columns,
@@ -90,6 +106,8 @@ export default defineComponent({
               <span>端口</span>
               <BatchUpdatePopConfirm
                 title='端口'
+                min={1}
+                max={65535}
                 onUpdateValue={(v) => handleBatchUpdate(v, 'port')}
                 disabled={!props.noDisabled && !isInitialState.value && !isBatchUpdatePort.value && !isAddRs.value}
               />
@@ -104,7 +122,7 @@ export default defineComponent({
             <Input
               modelValue={cell}
               onUpdate:modelValue={handleUpdate(data.id, 'port')}
-              disabled={!props.noDisabled && !(isAdd.value || isBatchUpdatePort.value || (isAddRs.value && data.isNew))}
+              disabled={!props.noDisabled && !(isAdd.value || (isAddRs.value && data.isNew))}
             />
           );
         },
@@ -117,6 +135,8 @@ export default defineComponent({
               <span>权重</span>
               <BatchUpdatePopConfirm
                 title='权重'
+                min={0}
+                max={100}
                 onUpdateValue={(v) => handleBatchUpdate(v, 'weight')}
                 disabled={!props.noDisabled && !isInitialState.value && !isBatchUpdateWeight.value && !isAddRs.value}
               />
@@ -131,9 +151,7 @@ export default defineComponent({
             <Input
               modelValue={cell}
               onUpdate:modelValue={handleUpdate(data.id, 'weight')}
-              disabled={
-                !props.noDisabled && !(isAdd.value || isBatchUpdateWeight.value || (isAddRs.value && data.isNew))
-              }
+              disabled={!props.noDisabled && !(isAdd.value || (isAddRs.value && data.isNew))}
             />
           );
         },
@@ -145,7 +163,7 @@ export default defineComponent({
         label: '',
         width: 80,
         render: ({ data }: any) => (
-          <Button text onClick={handleDeleteRs} disabled={!props.noDisabled && !data.isNew}>
+          <Button text onClick={() => handleDeleteRs(data)} disabled={!props.noDisabled && !data.isNew}>
             <i class='hcm-icon bkhcm-icon-minus-circle-shape'></i>
           </Button>
         ),
