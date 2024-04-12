@@ -249,12 +249,11 @@ func (db *mysql) BatchCreateTask(kt *kit.Kit, tasks []model.Task) ([]string, err
 func (db *mysql) UpdateTask(kt *kit.Kit, task *model.Task) error {
 
 	md := &tableasync.AsyncFlowTaskTable{
-		Retry:    task.Retry,
-		DependOn: dependOnToStringArray(task.DependOn),
-		State:    task.State,
-		Result:   task.Result,
-		Reason:   task.Reason,
-		Reviser:  kt.User,
+		Retry:   task.Retry,
+		State:   task.State,
+		Result:  task.Result,
+		Reason:  task.Reason,
+		Reviser: kt.User,
 	}
 
 	return db.dao.AsyncFlowTask().UpdateByID(kt, task.ID, md)

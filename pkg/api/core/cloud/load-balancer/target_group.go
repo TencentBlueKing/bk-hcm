@@ -115,3 +115,9 @@ type BaseTargetListenerRuleRel struct {
 	Detail         types.JsonField      `json:"detail"`
 	*core.Revision `json:",inline"`
 }
+
+// TargetOperateResult is a standard target operate result.
+type TargetOperateResult struct {
+	FlowIDs   []string `json:"flow_ids"`
+	TargetIDs []string `json:"target_ids"`
+}

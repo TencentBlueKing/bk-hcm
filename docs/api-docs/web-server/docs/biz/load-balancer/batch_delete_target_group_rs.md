@@ -6,13 +6,20 @@
 
 ### URL
 
-DELETE /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/targets/batch
+DELETE /api/v1/cloud/bizs/{bk_biz_id}/target_groups/targets/batch
 
 ### 输入参数
 
 | 参数名称          | 参数类型       | 必选 | 描述                   |
 |------------------|--------------|------|-----------------------|
 | bk_biz_id        | int          | 是   | 业务ID                 |
+| account_id       | string       | 是   | 账号ID                 |
+| target_groups    | object array | 是   | 目标组列表，单次最多10个  |
+
+#### target_groups
+
+| 参数名称          | 参数类型       | 必选 | 描述                   |
+|------------------|--------------|------|-----------------------|
 | target_group_id  | string       | 是   | 目标组ID                |
 | target_ids       | string array | 是   | 目标ID数组，单次最多100个 |
 
@@ -20,7 +27,13 @@ DELETE /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/targets/ba
 
 ```json
 {
-  "target_ids": ["00000001"]
+  "account_id": "00000001",
+  "target_groups": [
+    {
+      "target_group_id": "0000000g",
+      "target_ids": ["00000001"]
+    }
+  ]
 }
 ```
 

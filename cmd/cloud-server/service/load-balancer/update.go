@@ -463,8 +463,7 @@ func (svc *lbSvc) buildModifyTCloudTargetPort(kt *kit.Kit, body json.RawMessage,
 
 	// 该目标组尚未绑定监听器及规则，不需要云端操作
 	if len(ruleRelList.Details) == 0 {
-		err = svc.batchUpdateTargetPortDb(kt, req, tgID, accountID)
-		if err != nil {
+		if err = svc.batchUpdateTargetPortDb(kt, req); err != nil {
 			return nil, err
 		}
 		return &core.FlowStateResult{State: enumor.FlowSuccess}, nil
@@ -473,40 +472,32 @@ func (svc *lbSvc) buildModifyTCloudTargetPort(kt *kit.Kit, body json.RawMessage,
 	return svc.buildModifyTCloudTargetTasksPort(kt, req, ruleRelList.Details[0].LbID, tgID, accountID)
 }
 
-func (svc *lbSvc) batchUpdateTargetPortDb(kt *kit.Kit, req *cslb.TCloudBatchModifyTargetPortReq,
-	accountID, tgID string) error {
-
-	rsPortParams, err := svc.convTCloudOperateTargetReq(kt, req.TargetIDs, tgID, accountID,
-		converter.ValToPtr(req.NewPort), nil)
+func (svc *lbSvc) batchUpdateTargetPortDb(kt *kit.Kit, req *cslb.TCloudBatchModifyTargetPortReq) error {
+	tgReq := &core.ListReq{
+		Filter: tools.ContainersExpression("id", req.TargetIDs),
+		Page:   core.NewDefaultBasePage(),
+	}
+	rsList, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, tgReq)
 	if err != nil {
 		return err
 	}
-
-	// 检查RS是否已绑定该目标组
-	updateReq := &dataproto.TargetBatchUpdateReq{Targets: []*dataproto.TargetUpdate{}}
-	for _, item := range rsPortParams.RsList {
-		tgReq := &core.ListReq{
-			Filter: tools.ExpressionAnd(
-				tools.RuleEqual("account_id", accountID),
-				tools.RuleEqual("target_group_id", tgID),
-				tools.RuleEqual("cloud_inst_id", item.CloudInstID),
-				tools.RuleEqual("port", item.Port),
-			),
-			Page: core.NewDefaultBasePage(),
-		}
-		tmpRsList, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, tgReq)
-		if err != nil {
-			return err
-		}
-		if len(tmpRsList.Details) > 0 {
-			updateReq.Targets = append(updateReq.Targets, &dataproto.TargetUpdate{
-				ID:   tmpRsList.Details[0].ID,
-				Port: converter.PtrToVal(item.NewPort),
-			})
-		}
+	if len(rsList.Details) == 0 {
+		return errf.Newf(errf.RecordNotFound, "target_ids: %v is not found", req.TargetIDs)
 	}
-	if len(updateReq.Targets) == 0 {
-		return nil
+
+	instExistsMap := make(map[string]struct{}, 0)
+	updateReq := &dataproto.TargetBatchUpdateReq{Targets: []*dataproto.TargetUpdate{}}
+	for _, item := range rsList.Details {
+		// 批量修改端口时，需要校验重复的实例ID的问题，否则云端接口也会报错
+		if _, ok := instExistsMap[item.CloudInstID]; ok {
+			return errf.Newf(errf.RecordDuplicated, "duplicate modify same inst(%s) to new_port", item.CloudInstID)
+		}
+
+		instExistsMap[item.CloudInstID] = struct{}{}
+		updateReq.Targets = append(updateReq.Targets, &dataproto.TargetUpdate{
+			ID:   item.ID,
+			Port: req.NewPort,
+		})
 	}
 
 	return svc.client.DataService().Global.LoadBalancer.BatchUpdateTarget(kt, updateReq)
@@ -516,7 +507,7 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksPort(kt *kit.Kit, req *cslb.TCloud
 	accountID string) (interface{}, error) {
 
 	// 预检测
-	err := svc.checkResFlowRel(kt, lbID, tgID, enumor.LoadBalancerCloudResType, enumor.TargetGroupCloudResType)
+	err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
 	if err != nil {
 		return nil, err
 	}
@@ -525,14 +516,16 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksPort(kt *kit.Kit, req *cslb.TCloud
 	tasks := make([]ts.CustomFlowTask, 0)
 	elems := slice.Split(req.TargetIDs, constant.BatchModifyTargetPortCloudMaxLimit)
 	getActionID := counter.NewNumStringCounter(1, 10)
+	var lastActionID action.ActIDType
 	for _, parts := range elems {
 		rsPortParams, err := svc.convTCloudOperateTargetReq(kt, parts, tgID, accountID,
 			converter.ValToPtr(req.NewPort), nil)
 		if err != nil {
 			return nil, err
 		}
-		tasks = append(tasks, ts.CustomFlowTask{
-			ActionID:   action.ActIDType(getActionID()),
+		actionID := action.ActIDType(getActionID())
+		tmpTask := ts.CustomFlowTask{
+			ActionID:   actionID,
 			ActionName: enumor.ActionTargetGroupModifyPort,
 			Params: &actionlb.OperateRsOption{
 				Vendor:                      enumor.TCloud,
@@ -545,7 +538,12 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksPort(kt *kit.Kit, req *cslb.TCloud
 					SleepRangeMS: [2]uint{100, 200},
 				},
 			},
-		})
+		}
+		if len(lastActionID) > 0 {
+			tmpTask.DependOn = []action.ActIDType{lastActionID}
+		}
+		tasks = append(tasks, tmpTask)
+		lastActionID = actionID
 	}
 	removeReq := &ts.AddCustomFlowReq{Name: enumor.FlowTargetGroupModifyPort, Tasks: tasks, IsInitState: true}
 	result, err := svc.client.TaskServer().CreateCustomFlow(kt, removeReq)
@@ -564,7 +562,7 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksPort(kt *kit.Kit, req *cslb.TCloud
 				FlowID:     flowID,
 				ResID:      lbID,
 				ResType:    enumor.LoadBalancerCloudResType,
-				SubResID:   tgID,
+				SubResIDs:  []string{tgID},
 				SubResType: enumor.TargetGroupCloudResType,
 				TaskType:   enumor.ModifyPortTaskType,
 			},
@@ -588,16 +586,10 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksPort(kt *kit.Kit, req *cslb.TCloud
 
 // BatchModifyBizTargetsWeight batch modify biz targets weight.
 func (svc *lbSvc) BatchModifyBizTargetsWeight(cts *rest.Contexts) (any, error) {
-	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
-	if err != nil {
-		return nil, err
-	}
-	return svc.batchModifyTargetWeight(cts, handler.BizOperateAuth, bkBizID)
+	return svc.batchModifyTargetWeight(cts, handler.BizOperateAuth)
 }
 
-func (svc *lbSvc) batchModifyTargetWeight(cts *rest.Contexts,
-	authHandler handler.ValidWithAuthHandler, bkBizID int64) (any, error) {
-
+func (svc *lbSvc) batchModifyTargetWeight(cts *rest.Contexts, authHandler handler.ValidWithAuthHandler) (any, error) {
 	tgID := cts.PathParameter("target_group_id").String()
 	if len(tgID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "target_group_id is required")
@@ -657,50 +649,42 @@ func (svc *lbSvc) buildModifyTCloudTargetWeight(kt *kit.Kit, body json.RawMessag
 
 	// 该目标组尚未绑定监听器及规则，不需要云端操作
 	if len(ruleRelList.Details) == 0 {
-		err = svc.batchUpdateTargetWeightDb(kt, req, tgID, accountID)
+		err = svc.batchUpdateTargetWeightDb(kt, req)
 		if err != nil {
 			return nil, err
 		}
 		return &core.FlowStateResult{State: enumor.FlowSuccess}, nil
 	}
 
-	return svc.buildModifyTCloudTargetTasksWeight(kt, req, ruleRelList.Details[0].ID, tgID, accountID)
+	return svc.buildModifyTCloudTargetTasksWeight(kt, req, ruleRelList.Details[0].LbID, tgID, accountID)
 }
 
-func (svc *lbSvc) batchUpdateTargetWeightDb(kt *kit.Kit, req *cslb.TCloudBatchModifyTargetWeightReq,
-	accountID, tgID string) error {
-
-	rsPortParams, err := svc.convTCloudOperateTargetReq(kt, req.TargetIDs, tgID, accountID,
-		nil, converter.ValToPtr(req.NewWeight))
+func (svc *lbSvc) batchUpdateTargetWeightDb(kt *kit.Kit, req *cslb.TCloudBatchModifyTargetWeightReq) error {
+	tgReq := &core.ListReq{
+		Filter: tools.ContainersExpression("id", req.TargetIDs),
+		Page:   core.NewDefaultBasePage(),
+	}
+	rsList, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, tgReq)
 	if err != nil {
 		return err
 	}
-
-	// 检查RS是否已绑定该目标组
-	updateReq := &dataproto.TargetBatchUpdateReq{Targets: []*dataproto.TargetUpdate{}}
-	for _, item := range rsPortParams.RsList {
-		tgReq := &core.ListReq{
-			Filter: tools.ExpressionAnd(
-				tools.RuleEqual("account_id", accountID),
-				tools.RuleEqual("target_group_id", tgID),
-				tools.RuleEqual("cloud_inst_id", item.CloudInstID),
-				tools.RuleEqual("port", item.Port),
-			),
-			Page: core.NewDefaultBasePage(),
-		}
-		tmpRsList, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, tgReq)
-		if err != nil {
-			return err
-		}
-		if len(tmpRsList.Details) > 0 {
-			updateReq.Targets = append(updateReq.Targets, &dataproto.TargetUpdate{
-				ID:     tmpRsList.Details[0].ID,
-				Weight: item.Weight,
-			})
-		}
+	if len(rsList.Details) == 0 {
+		return errf.Newf(errf.RecordNotFound, "target_ids: %v is not found", req.TargetIDs)
 	}
-	if len(updateReq.Targets) == 0 {
-		return nil
+
+	instExistsMap := make(map[string]struct{}, 0)
+	updateReq := &dataproto.TargetBatchUpdateReq{Targets: []*dataproto.TargetUpdate{}}
+	for _, item := range rsList.Details {
+		// 批量修改端口时，需要校验重复的实例ID的问题，否则云端接口也会报错
+		if _, ok := instExistsMap[item.CloudInstID]; ok {
+			return errf.Newf(errf.RecordDuplicated, "duplicate modify same inst(%s) to new_port", item.CloudInstID)
+		}
+
+		instExistsMap[item.CloudInstID] = struct{}{}
+		updateReq.Targets = append(updateReq.Targets, &dataproto.TargetUpdate{
+			ID:     item.ID,
+			Weight: converter.ValToPtr(req.NewWeight),
+		})
 	}
 
 	return svc.client.DataService().Global.LoadBalancer.BatchUpdateTarget(kt, updateReq)
@@ -710,7 +694,7 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksWeight(kt *kit.Kit, req *cslb.TClo
 	lbID, tgID, accountID string) (interface{}, error) {
 
 	// 预检测
-	err := svc.checkResFlowRel(kt, lbID, tgID, enumor.LoadBalancerCloudResType, enumor.TargetGroupCloudResType)
+	err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
 	if err != nil {
 		return nil, err
 	}
@@ -719,14 +703,16 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksWeight(kt *kit.Kit, req *cslb.TClo
 	tasks := make([]ts.CustomFlowTask, 0)
 	elems := slice.Split(req.TargetIDs, constant.BatchModifyTargetWeightCloudMaxLimit)
 	getActionID := counter.NewNumStringCounter(1, 10)
+	var lastActionID action.ActIDType
 	for _, parts := range elems {
 		rsWeightParams, err := svc.convTCloudOperateTargetReq(kt, parts, tgID, accountID,
 			nil, converter.ValToPtr(req.NewWeight))
 		if err != nil {
 			return nil, err
 		}
-		tasks = append(tasks, ts.CustomFlowTask{
-			ActionID:   action.ActIDType(getActionID()),
+		actionID := action.ActIDType(getActionID())
+		tmpTask := ts.CustomFlowTask{
+			ActionID:   actionID,
 			ActionName: enumor.ActionTargetGroupModifyWeight,
 			Params: &actionlb.OperateRsOption{
 				Vendor:                      enumor.TCloud,
@@ -739,7 +725,12 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksWeight(kt *kit.Kit, req *cslb.TClo
 					SleepRangeMS: [2]uint{100, 200},
 				},
 			},
-		})
+		}
+		if len(lastActionID) > 0 {
+			tmpTask.DependOn = []action.ActIDType{lastActionID}
+		}
+		tasks = append(tasks, tmpTask)
+		lastActionID = actionID
 	}
 	rsWeightReq := &ts.AddCustomFlowReq{Name: enumor.FlowTargetGroupModifyWeight, Tasks: tasks, IsInitState: true}
 	result, err := svc.client.TaskServer().CreateCustomFlow(kt, rsWeightReq)
@@ -758,7 +749,7 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksWeight(kt *kit.Kit, req *cslb.TClo
 				FlowID:     flowID,
 				ResID:      lbID,
 				ResType:    enumor.LoadBalancerCloudResType,
-				SubResID:   tgID,
+				SubResIDs:  []string{tgID},
 				SubResType: enumor.TargetGroupCloudResType,
 				TaskType:   enumor.ModifyWeightTaskType,
 			},

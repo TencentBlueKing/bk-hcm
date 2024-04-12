@@ -687,6 +687,9 @@ func (t *TCloudImpl) ModifyTargetPort(kt *kit.Kit, opt *typelb.TCloudTargetPortU
 			Weight:     item.Weight,
 		})
 	}
+	if len(converter.PtrToVal(opt.LocationId)) > 0 {
+		req.LocationId = opt.LocationId
+	}
 	updateResp, err := client.ModifyTargetPortWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("modify tencent cloud target port failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
@@ -732,8 +735,10 @@ func (t *TCloudImpl) ModifyTargetWeight(kt *kit.Kit, opt *typelb.TCloudTargetWei
 	for _, item := range opt.ModifyList {
 		weightRule := &clb.RsWeightRule{
 			ListenerId: item.ListenerId,
-			LocationId: item.LocationId,
 			Weight:     item.Weight,
+		}
+		if len(converter.PtrToVal(item.LocationId)) > 0 {
+			weightRule.LocationId = item.LocationId
 		}
 		for _, rsItem := range item.Targets {
 			weightRule.Targets = append(weightRule.Targets, &clb.Target{

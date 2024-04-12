@@ -56,8 +56,8 @@ type LoadBalancerOperateWatchOption struct {
 	ResID string `json:"res_id" validate:"required"`
 	// 资源类型
 	ResType enumor.CloudResourceType `json:"res_type" validate:"required"`
-	// 子资源ID，比如目标组ID
-	SubResID string `json:"sub_res_id" validate:"required"`
+	// 子资源ID数组，比如目标组ID
+	SubResIDs []string `json:"sub_res_ids" validate:"required"`
 	// 子资源类型
 	SubResType enumor.CloudResourceType `json:"sub_res_type" validate:"required"`
 	// 任务类型
@@ -260,8 +260,13 @@ func (act LoadBalancerOperateWatchAction) updateTargetGroupListenerRuleRelBindSt
 		return nil
 	}
 
-	return actcli.GetDataService().Global.LoadBalancer.BatchUpdateListenerRuleRelStatusByTGID(kt, opt.SubResID,
-		&dataproto.TGListenerRelStatusUpdateReq{BindingStatus: bindStatus})
+	for _, targetGroupID := range opt.SubResIDs {
+		if err := actcli.GetDataService().Global.LoadBalancer.BatchUpdateListenerRuleRelStatusByTGID(kt, targetGroupID,
+			&dataproto.TGListenerRelStatusUpdateReq{BindingStatus: bindStatus}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Rollback Flow查询状态失败时的回滚Action，此处不需要回滚处理

@@ -50,12 +50,12 @@ func InitService(c *capability.Capability) {
 	h.Add("BatchCreateLB", http.MethodPost, "/load_balancers/create", svc.BatchCreateLB)
 	h.Add("AssignLbToBiz", http.MethodPost, "/load_balancers/assign/bizs", svc.AssignLbToBiz)
 	h.Add("GetLoadBalancer", http.MethodGet, "/load_balancers/{id}", svc.GetLoadBalancer)
-	h.Add("TCloudDescribeResources", http.MethodPost, "/vendors/tcloud/load_balancers/resources/describe",
-		svc.TCloudDescribeResources)
+	h.Add("TCloudDescribeResources", http.MethodPost,
+		"/vendors/tcloud/load_balancers/resources/describe", svc.TCloudDescribeResources)
 	h.Add("BatchDeleteLoadBalancer", http.MethodDelete, "/load_balancers/batch", svc.BatchDeleteLoadBalancer)
 
-	bizH.Add("UpdateBizTCloudLoadBalancer", http.MethodPatch, "/vendors/tcloud/load_balancers/{id}",
-		svc.UpdateBizTCloudLoadBalancer)
+	bizH.Add("UpdateBizTCloudLoadBalancer", http.MethodPatch,
+		"/vendors/tcloud/load_balancers/{id}", svc.UpdateBizTCloudLoadBalancer)
 	bizH.Add("ListBizLoadBalancer", http.MethodPost, "/load_balancers/list", svc.ListBizLoadBalancer)
 	bizH.Add("GetBizLoadBalancer", http.MethodGet, "/load_balancers/{id}", svc.GetBizLoadBalancer)
 	bizH.Add("BatchDeleteBizLoadBalancer", http.MethodDelete, "/load_balancers/batch", svc.BatchDeleteBizLoadBalancer)
@@ -67,8 +67,8 @@ func InitService(c *capability.Capability) {
 
 	bizH.Add("ListBizTargetsByTGID", http.MethodPost,
 		"/target_groups/{target_group_id}/targets/list", svc.ListBizTargetsByTGID)
-	bizH.Add("AssociateBizTargetGroupListenerRel", http.MethodPost, "/listeners/associate/target_group",
-		svc.AssociateBizTargetGroupListenerRel)
+	bizH.Add("AssociateBizTargetGroupListenerRel", http.MethodPost,
+		"/listeners/associate/target_group", svc.AssociateBizTargetGroupListenerRel)
 
 	bizH.Add("CreateBizTargetGroup", http.MethodPost, "/target_groups/create", svc.CreateBizTargetGroup)
 	bizH.Add("UpdateBizTargetGroup", http.MethodPatch, "/target_groups/{id}", svc.UpdateBizTargetGroup)
@@ -77,16 +77,14 @@ func InitService(c *capability.Capability) {
 	bizH.Add("DeleteBizTargetGroup", http.MethodDelete, "/target_groups/batch", svc.DeleteBizTargetGroup)
 	bizH.Add("ListBizTargetGroup", http.MethodPost, "/target_groups/list", svc.ListBizTargetGroup)
 	bizH.Add("GetBizTargetGroup", http.MethodGet, "/target_groups/{id}", svc.GetBizTargetGroup)
-	bizH.Add("BatchAddBizTargets", http.MethodPost, "/target_groups/{target_group_id}/targets/create",
-		svc.BatchAddBizTargets)
-	bizH.Add("BatchRemoveBizTargets", http.MethodDelete, "/target_groups/{target_group_id}/targets/batch",
-		svc.BatchRemoveBizTargets)
-	bizH.Add("BatchModifyBizTargetPort", http.MethodPatch, "/target_groups/{target_group_id}/targets/port",
-		svc.BatchModifyBizTargetsPort)
-	bizH.Add("BatchModifyBizTargetsWeight", http.MethodPatch, "/target_groups/{target_group_id}/targets/weight",
-		svc.BatchModifyBizTargetsWeight)
-	bizH.Add("ListBizTargetsHealthByTGID", http.MethodPost, "/target_groups/{target_group_id}/targets/health",
-		svc.ListBizTargetsHealthByTGID)
+	bizH.Add("BatchAddBizTargets", http.MethodPost, "/target_groups/targets/create", svc.BatchAddBizTargets)
+	bizH.Add("BatchRemoveBizTargets", http.MethodDelete, "/target_groups/targets/batch", svc.BatchRemoveBizTargets)
+	bizH.Add("BatchModifyBizTargetPort",
+		http.MethodPatch, "/target_groups/{target_group_id}/targets/port", svc.BatchModifyBizTargetsPort)
+	bizH.Add("BatchModifyBizTargetsWeight", http.MethodPatch,
+		"/target_groups/{target_group_id}/targets/weight", svc.BatchModifyBizTargetsWeight)
+	bizH.Add("ListBizTargetsHealthByTGID", http.MethodPost,
+		"/target_groups/{target_group_id}/targets/health", svc.ListBizTargetsHealthByTGID)
 
 	// 监听器
 	bizH.Add("CreateBizListener", http.MethodPost, "/load_balancers/{lb_id}/listeners/create", svc.CreateBizListener)

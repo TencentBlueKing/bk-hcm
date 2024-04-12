@@ -51,15 +51,15 @@ func InitService(c *capability.Capability) {
 
 	h.Add("GetAudit", http.MethodGet, "/audits/{id}", svc.GetAudit)
 	h.Add("ListAudit", http.MethodPost, "/audits/list", svc.ListAudit)
-	h.Add("ListAuditAsyncFlow", http.MethodPost, "/audits/{id}/async_flow/list", svc.ListAuditAsyncFlow)
-	h.Add("ListAuditAsyncTask", http.MethodPost, "/audits/{id}/async_task/list", svc.ListAuditAsyncTask)
+	h.Add("ListAuditAsyncFlow", http.MethodPost, "/audits/async_flow/list", svc.ListAuditAsyncFlow)
+	h.Add("ListAuditAsyncTask", http.MethodPost, "/audits/async_task/list", svc.ListAuditAsyncTask)
 
 	// biz audit apis
 	h.Add("GetBizAudit", http.MethodGet, "/bizs/{bk_biz_id}/audits/{id}", svc.GetBizAudit)
 	h.Add("ListBizAudit", http.MethodPost, "/bizs/{bk_biz_id}/audits/list", svc.ListBizAudit)
-	h.Add("ListBizAuditAsyncFlow", http.MethodPost, "/bizs/{bk_biz_id}/audits/{id}/async_flow/list",
+	h.Add("ListBizAuditAsyncFlow", http.MethodPost, "/bizs/{bk_biz_id}/audits/async_flow/list",
 		svc.ListBizAuditAsyncFlow)
-	h.Add("ListBizAuditAsyncTask", http.MethodPost, "/bizs/{bk_biz_id}/audits/{id}/async_task/list",
+	h.Add("ListBizAuditAsyncTask", http.MethodPost, "/bizs/{bk_biz_id}/audits/async_task/list",
 		svc.ListBizAuditAsyncTask)
 
 	h.Load(c.WebService)
@@ -155,22 +155,17 @@ func (svc svc) ListBizAuditAsyncFlow(cts *rest.Contexts) (interface{}, error) {
 func (svc svc) listAuditAsyncFlow(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (
 	interface{}, error) {
 
-	id, err := cts.PathParameter("id").Uint64()
-	if err != nil {
-		return nil, err
-	}
-
 	req := new(proto.AuditAsyncFlowListReq)
-	if err = cts.DecodeInto(req); err != nil {
+	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
-	if err = req.Validate(); err != nil {
+	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	idFilter := &filter.Expression{
 		Op:    filter.And,
-		Rules: []filter.RuleFactory{&filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: id}},
+		Rules: []filter.RuleFactory{&filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: req.AuditID}},
 	}
 	// authorize
 	_, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
@@ -185,19 +180,20 @@ func (svc svc) listAuditAsyncFlow(cts *rest.Contexts, authHandler handler.ListAu
 	}
 
 	// 获取操作记录详情
-	auditInfo, err := svc.client.DataService().Global.Audit.GetAudit(cts.Kit.Ctx, cts.Kit.Header(), id)
+	auditInfo, err := svc.client.DataService().Global.Audit.GetAudit(cts.Kit.Ctx, cts.Kit.Header(), req.AuditID)
 	if err != nil {
-		logs.Errorf("get audit by id failed, err: %v, id: %d, req: %+v, rid: %s", err, id, req, cts.Kit.Rid)
+		logs.Errorf("get audit by id failed, err: %v, id: %d, req: %+v, rid: %s", err, req.AuditID, req, cts.Kit.Rid)
 		return nil, err
 	}
 	if auditInfo == nil {
-		return nil, errf.Newf(errf.RecordNotFound, "audit: %s not found", id)
+		return nil, errf.Newf(errf.RecordNotFound, "audit: %s not found", req.AuditID)
 	}
 
 	// 获取异步任务-Flow详情
 	flow, err := svc.client.TaskServer().GetFlow(cts.Kit, req.FlowID)
 	if err != nil {
-		logs.Errorf("get flow by id failed, err: %v, id: %d, flowID: %s, rid: %s", err, id, req.FlowID, cts.Kit.Rid)
+		logs.Errorf("get flow by id failed, err: %v, auditID: %d, flowID: %s, rid: %s",
+			err, req.AuditID, req.FlowID, cts.Kit.Rid)
 		return nil, err
 	}
 	result.Flow = flow
@@ -237,22 +233,17 @@ func (svc svc) ListBizAuditAsyncTask(cts *rest.Contexts) (interface{}, error) {
 func (svc svc) listAuditAsyncTask(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (
 	interface{}, error) {
 
-	id, err := cts.PathParameter("id").Uint64()
-	if err != nil {
-		return nil, err
-	}
-
 	req := new(proto.AuditAsyncTaskListReq)
-	if err = cts.DecodeInto(req); err != nil {
+	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
-	if err = req.Validate(); err != nil {
+	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	idFilter := &filter.Expression{
 		Op:    filter.And,
-		Rules: []filter.RuleFactory{&filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: id}},
+		Rules: []filter.RuleFactory{&filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: req.AuditID}},
 	}
 	// authorize
 	_, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
@@ -267,13 +258,13 @@ func (svc svc) listAuditAsyncTask(cts *rest.Contexts, authHandler handler.ListAu
 	}
 
 	// 获取操作记录详情
-	auditInfo, err := svc.client.DataService().Global.Audit.GetAudit(cts.Kit.Ctx, cts.Kit.Header(), id)
+	auditInfo, err := svc.client.DataService().Global.Audit.GetAudit(cts.Kit.Ctx, cts.Kit.Header(), req.AuditID)
 	if err != nil {
-		logs.Errorf("get audit by id failed, id: %d, err: %v, rid: %s", id, err, cts.Kit.Rid)
+		logs.Errorf("get audit by id failed, id: %d, err: %v, rid: %s", req.AuditID, err, cts.Kit.Rid)
 		return nil, err
 	}
 	if auditInfo == nil {
-		return nil, errf.Newf(errf.RecordNotFound, "audit: %s not found", id)
+		return nil, errf.Newf(errf.RecordNotFound, "audit: %s not found", req.AuditID)
 	}
 
 	// 获取异步任务-Flow详情

@@ -504,7 +504,7 @@ func (svc *lbSvc) createApplyTGFlow(kt *kit.Kit, tgID string, lblInfo *corelb.Ba
 				FlowID:     flowID,
 				ResID:      lblInfo.LbID,
 				ResType:    enumor.LoadBalancerCloudResType,
-				SubResID:   tgID,
+				SubResIDs:  []string{tgID},
 				SubResType: enumor.TargetGroupCloudResType,
 				TaskType:   enumor.ApplyTargetGroupType,
 			},

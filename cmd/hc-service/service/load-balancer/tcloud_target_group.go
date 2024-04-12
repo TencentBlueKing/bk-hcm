@@ -400,16 +400,15 @@ func (svc *clbSvc) batchModifyTargetPortCloud(kt *kit.Kit, req *protolb.TCloudBa
 	for _, ruleItem := range urlRuleList.Details {
 		rsOpt.LoadBalancerId = ruleItem.CloudLbID
 		rsOpt.ListenerId = ruleItem.CloudLBLID
+		if ruleItem.RuleType == enumor.Layer7RuleType {
+			rsOpt.LocationId = cvt.ValToPtr(ruleItem.CloudID)
+		}
 		for _, rsItem := range req.RsList {
-			tmpRs := &typelb.BatchTarget{
+			rsOpt.Targets = append(rsOpt.Targets, &typelb.BatchTarget{
 				Type:       cvt.ValToPtr(string(rsItem.InstType)),
 				InstanceId: cvt.ValToPtr(rsItem.CloudInstID),
 				Port:       cvt.ValToPtr(rsItem.Port),
-			}
-			if ruleItem.RuleType == enumor.Layer7RuleType {
-				tmpRs.LocationId = cvt.ValToPtr(ruleItem.CloudID)
-			}
-			rsOpt.Targets = append(rsOpt.Targets, tmpRs)
+			})
 		}
 		rsOpt.NewPort = cvt.PtrToVal(req.RsList[0].NewPort)
 		err = tcloudAdpt.ModifyTargetPort(kt, rsOpt)
@@ -419,27 +418,20 @@ func (svc *clbSvc) batchModifyTargetPortCloud(kt *kit.Kit, req *protolb.TCloudBa
 		}
 	}
 
-	err = svc.batchUpdateTargetPortWeightDb(kt, req, tgInfo.AccountID, tgInfo.ID)
+	err = svc.batchUpdateTargetPortWeightDb(kt, req)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (svc *clbSvc) batchUpdateTargetPortWeightDb(kt *kit.Kit, req *protolb.TCloudBatchOperateTargetReq,
-	accountID, tgID string) error {
-
+func (svc *clbSvc) batchUpdateTargetPortWeightDb(kt *kit.Kit, req *protolb.TCloudBatchOperateTargetReq) error {
 	// 检查RS是否已绑定该目标组
-	updateReq := &dataproto.TargetBatchUpdateReq{Targets: []*dataproto.TargetUpdate{}}
+	updateReq := &dataproto.TargetBatchUpdateReq{}
 	for _, item := range req.RsList {
 		tgReq := &core.ListReq{
-			Filter: tools.ExpressionAnd(
-				tools.RuleEqual("account_id", accountID),
-				tools.RuleEqual("target_group_id", tgID),
-				tools.RuleEqual("cloud_inst_id", item.CloudInstID),
-				tools.RuleEqual("port", item.Port),
-			),
-			Page: core.NewDefaultBasePage(),
+			Filter: tools.EqualExpression("id", item.ID),
+			Page:   core.NewDefaultBasePage(),
 		}
 		tmpRsList, err := svc.dataCli.Global.LoadBalancer.ListTarget(kt, tgReq)
 		if err != nil {
@@ -447,7 +439,7 @@ func (svc *clbSvc) batchUpdateTargetPortWeightDb(kt *kit.Kit, req *protolb.TClou
 		}
 		if len(tmpRsList.Details) > 0 {
 			updateReq.Targets = append(updateReq.Targets, &dataproto.TargetUpdate{
-				ID:     tmpRsList.Details[0].ID,
+				ID:     item.ID,
 				Port:   cvt.PtrToVal(item.NewPort),
 				Weight: item.NewWeight,
 			})
@@ -554,7 +546,7 @@ func (svc *clbSvc) batchModifyTargetWeightCloud(kt *kit.Kit, req *protolb.TCloud
 		}
 	}
 
-	err = svc.batchUpdateTargetPortWeightDb(kt, req, tgInfo.AccountID, tgInfo.ID)
+	err = svc.batchUpdateTargetPortWeightDb(kt, req)
 	if err != nil {
 		return err
 	}

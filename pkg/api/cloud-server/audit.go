@@ -42,7 +42,8 @@ func (req *AuditListReq) Validate() error {
 
 // AuditAsyncFlowListReq define audit async flow list req.
 type AuditAsyncFlowListReq struct {
-	FlowID string `json:"flow_id" validate:"required"`
+	AuditID uint64 `json:"audit_id" validate:"required"`
+	FlowID  string `json:"flow_id" validate:"required"`
 }
 
 // Validate validate audit async task list req.
@@ -54,6 +55,7 @@ func (req *AuditAsyncFlowListReq) Validate() error {
 
 // AuditAsyncTaskListReq define audit async task list req.
 type AuditAsyncTaskListReq struct {
+	AuditID  uint64 `json:"audit_id" validate:"required"`
 	FlowID   string `json:"flow_id" validate:"required"`
 	ActionID string `json:"action_id" validate:"required"`
 }
