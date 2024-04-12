@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	cvt "hcm/pkg/tools/converter"
 )
 
 // NewDispatcher new dispatcher.
@@ -114,7 +115,7 @@ func (d *Dispatcher) Do(kt *kit.Kit) error {
 			ID:     one.ID,
 			Source: enumor.FlowPending,
 			Target: enumor.FlowScheduled,
-			Worker: nodes[index%len(nodes)], // 任务分发算法，后续看是否优化
+			Worker: cvt.ValToPtr(nodes[index%len(nodes)]), // 任务分发算法，后续看是否优化
 		})
 	}
 

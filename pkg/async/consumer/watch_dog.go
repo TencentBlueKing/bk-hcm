@@ -181,7 +181,7 @@ func (wd *watchDog) handleExpiredTasks(kt *kit.Kit) error {
 		}
 	}
 
-	logs.Infof("handleExpiredTasks success, count: %d, ids: %v, rid: %s", len(ids), ids, kt.Rid)
+	logs.V(5).Infof("handleExpiredTasks success, count: %d, ids: %v, rid: %s", len(ids), ids, kt.Rid)
 
 	return nil
 }
@@ -238,6 +238,10 @@ func (wd *watchDog) queryNotExistNodesFlowByState(kt *kit.Kit, state enumor.Flow
 	if err != nil {
 		logs.Errorf("query alive nodes failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
+	}
+	if len(nodes) == 0 {
+		//  can not get node list sometimes, skip
+		return nil, nil
 	}
 
 	input := &backend.ListInput{
@@ -394,11 +398,12 @@ func (wd *watchDog) handleRunningTasks(kt *kit.Kit, flow model.Flow, ids []strin
 			}
 		}
 
-		task.InitDep(run.NewExecuteContext(task.Kit, flow.ShareData), func(kt *kit.Kit, task *model.Task) error {
+		taskExecKit := run.NewExecuteContext(task.Kit, flow.ShareData)
+		task.InitDep(taskExecKit, func(taskKit *kit.Kit, task *model.Task) error {
 			return wd.bd.UpdateTask(kt, task)
 		}, &Flow{Flow: flow})
 
-		// 如果任务可以重试，将任务回滚
+		// 如果任务可以重试，更新任务状态为RollBack ，等待回滚
 		if err = task.Rollback(); err != nil {
 			logs.Errorf("rollback not exist node task failed, err: %v, rid: %s", err, kt.Rid)
 
@@ -430,8 +435,9 @@ func (wd *watchDog) checkIsExpireTask(kt *kit.Kit, task model.Task) bool {
 	if err == nil {
 		expireTime := updateDate.Add(time.Duration(retryMillSec) * time.Millisecond)
 		if expireTime.UnixNano() > time.Now().UnixMicro() {
-			logs.Infof("check task is not expired, taskID: %s, flowID: %s, updateAt: %s, expireTime: %s, "+
-				"rid: %s", task.ID, task.FlowID, task.UpdatedAt, expireTime.Format(constant.DateTimeLayout), kt.Rid)
+			logs.V(5).Infof(
+				"check task is not expired, taskID: %s, flowID: %s, updateAt: %s, expireTime: %s, rid: %s",
+				task.ID, task.FlowID, task.UpdatedAt, expireTime.Format(constant.DateTimeLayout), kt.Rid)
 			return false
 		}
 	}

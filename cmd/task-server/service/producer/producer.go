@@ -23,13 +23,11 @@ package producer
 import (
 	"hcm/cmd/task-server/service/capability"
 	"hcm/pkg/api/core"
-	"hcm/pkg/async/consumer"
 	"hcm/pkg/async/producer"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/tools/retry"
 )
 
 // Init initial the async service
@@ -43,7 +41,6 @@ func Init(cap *capability.Capability) {
 
 	h.Add("CreateTemplateFlow", "POST", "/template_flows/create", svc.CreateTemplateFlow)
 	h.Add("CreateCustomFlow", "POST", "/custom_flows/create", svc.CreateCustomFlow)
-	h.Add("UpdateCustomFlowState", "PATCH", "/custom_flows/state/update", svc.UpdateCustomFlowState)
 
 	h.Load(cap.WebService)
 }
@@ -101,27 +98,4 @@ func (p service) CreateCustomFlow(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return &core.CreateResult{ID: id}, nil
-}
-
-// UpdateCustomFlowState update custom flow state
-func (p service) UpdateCustomFlowState(cts *rest.Contexts) (interface{}, error) {
-	opt := new(producer.UpdateCustomFlowStateOption)
-	if err := cts.DecodeInto(opt); err != nil {
-		return nil, err
-	}
-
-	if err := opt.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	rty := retry.NewRetryPolicy(consumer.DefRetryCount, consumer.DefRetryRangeMS)
-	err := rty.BaseExec(cts.Kit, func() error {
-		return p.pro.BatchUpdateCustomFlowState(cts.Kit, opt)
-	})
-	if err != nil {
-		logs.Errorf("taskserver batch update flow state failed, err: %v, opt: %+v, rid: %s", err, opt, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
 }
