@@ -1299,26 +1299,36 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '地域',
       field: 'region',
     },
-    {
-      label: '可用区域',
-      field: 'zone',
-    },
-    {
-      label: '资源类型',
-      field: 'type',
-    },
+    // {
+    //   label: '可用区域',
+    //   field: 'zone',
+    // },
+    // {
+    //   label: '资源类型',
+    //   field: 'inst_type',
+    // },
     {
       label: '所属VPC',
-      field: 'vpc_id',
+      field: 'cloud_vpc_id',
     },
     {
       label: '健康检查端口',
-      field: 'health_check_port',
+      field: 'health_check',
+      render: ({ cell }: any) => {
+        const { health_num, un_health_num } = cell;
+        if (!health_num || !un_health_num) return '--';
+        return (
+          <div class='port-status-col'>
+            <span class={un_health_num ? 'un-health' : 'health'}>{un_health_num}</span>/
+            <span>{health_num + un_health_num}</span>
+          </div>
+        );
+      },
     },
-    {
-      label: 'IP地址类型',
-      field: 'ip_type',
-    },
+    // {
+    //   label: 'IP地址类型',
+    //   field: 'ip_type',
+    // },
   ];
 
   const rsConfigColumns = [
@@ -1432,7 +1442,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: '关联的负载均衡',
-      field: '',
+      field: 'lb_name',
       isDefaultShow: true,
       width: 300,
       render: ({ data }: any) => {
@@ -1463,11 +1473,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       isDefaultShow: true,
     },
     {
-      label: '资源类型',
-      field: 'inst_type',
-      isDefaultShow: true,
-    },
-    {
       label: '协议',
       field: 'protocol',
       isDefaultShow: true,
@@ -1485,11 +1490,12 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       isDefaultShow: true,
       sort: true,
       render: ({ cell }: any) => {
-        const { un_health_num, health_num } = cell;
-        const total = un_health_num + health_num;
+        const { health_num, un_health_num } = cell;
+        if (!health_num || !un_health_num) return '--';
         return (
           <div class='port-status-col'>
-            <span class={un_health_num ? 'un-health' : 'health'}>{un_health_num}</span>/<span>{total}</span>
+            <span class={un_health_num ? 'un-health' : 'health'}>{un_health_num}</span>/
+            <span>{health_num + un_health_num}</span>
           </div>
         );
       },

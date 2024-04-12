@@ -27,6 +27,7 @@ export default defineComponent({
 
     const isShow = ref(false);
     const isSubmitDisabled = ref(false);
+    const isEdit = ref(false);
 
     // 表单相关
     const getDefaultFormData = () => ({
@@ -52,6 +53,7 @@ export default defineComponent({
       clearFormData();
       loadBalancerStore.setCurrentScene('add');
       isShow.value = true;
+      isEdit.value = false;
     };
 
     // click-handler - 编辑目标组
@@ -61,6 +63,7 @@ export default defineComponent({
       // 初始化场景值
       loadBalancerStore.setCurrentScene(null);
       isShow.value = true;
+      isEdit.value = true;
     };
 
     // 处理参数 - add
@@ -178,7 +181,7 @@ export default defineComponent({
 
     return () => (
       <CommonSideslider
-        title={loadBalancerStore.currentScene === 'edit' ? '编辑目标组' : '新建目标组'}
+        title={isEdit.value ? '编辑目标组' : '新建目标组'}
         width={960}
         v-model:isShow={isShow.value}
         isSubmitDisabled={isSubmitDisabled.value}

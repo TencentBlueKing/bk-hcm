@@ -38,16 +38,20 @@
     text-align: center;
   }
 
-  .un-health {
+  .un-health,
+  .health {
+    margin-right: 3px;
     height: 16px;
-    background-color: #ffeeee;
     font-size: 10px;
+  }
+
+  .un-health {
+    background-color: #ffeeee;
     color: #ea3536;
   }
+
   .health {
-    height: 16px;
     background-color: #e4faf0;
-    font-size: 10px;
     color: #14a568;
   }
 }
