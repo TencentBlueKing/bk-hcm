@@ -1,4 +1,4 @@
-import { defineComponent, reactive, ref, watch } from 'vue';
+import { defineComponent, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 // import components
 import { Button, Form, Input, Message, Select } from 'bkui-vue';
 import { Done, EditLine, Error, Plus, Spinner } from 'bkui-vue/lib/icon';
@@ -21,9 +21,9 @@ import { RuleModeList } from '../specific-listener-manager/domain-list/useAddOrU
 import { useBusinessStore } from '@/store';
 import Confirm from '@/components/confirm';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
-import _ from 'lodash';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import useBatchDeleteListener from '../specific-clb-manager/listener-list/useBatchDeleteListener';
+import bus from '@/common/bus';
 
 const { FormItem } = Form;
 const { Option } = Select;
@@ -135,11 +135,14 @@ export default defineComponent({
               }}>
               {t('编辑')}
             </Button>
-            <Button text theme='primary' onClick={() => {
-              Confirm('请确定删除URL', `将删除URL【${data.url}】`, async () => {
-                await deleteRulesBatch([data.id])
-              });
-            }}>
+            <Button
+              text
+              theme='primary'
+              onClick={() => {
+                Confirm('请确定删除URL', `将删除URL【${data.url}】`, async () => {
+                  await deleteRulesBatch([data.id]);
+                });
+              }}>
               {t('删除')}
             </Button>
           </div>
@@ -147,7 +150,7 @@ export default defineComponent({
       },
     ];
 
-    const deleteRulesBatch = async (ids:string[]) => {
+    const deleteRulesBatch = async (ids: string[]) => {
       await businessStore.deleteRules(loadBalancerStore.currentSelectedTreeNode.listener.id, {
         lbl_id: loadBalancerStore.currentSelectedTreeNode.listener.id,
         rule_ids: ids,
@@ -158,7 +161,7 @@ export default defineComponent({
       });
       await getListData();
       isBatchDeleteDialogShow.value = false;
-    }
+    };
 
     const tableSettings = generateColumnsSettings(tableColumns);
     const isCurRowSelectEnable = (row: any) => {
@@ -210,12 +213,12 @@ export default defineComponent({
       },
     });
 
-    const {
-      isSubmitLoading,
-      isBatchDeleteDialogShow,
-      tableProps,
-      handleBatchDeleteListener,
-    } = useBatchDeleteListener(tableColumns, selections, resetSelections, getListData);
+    const { isSubmitLoading, isBatchDeleteDialogShow, tableProps, handleBatchDeleteListener } = useBatchDeleteListener(
+      tableColumns,
+      selections,
+      resetSelections,
+      getListData,
+    );
 
     watch(
       () => loadBalancerStore.currentSelectedTreeNode,
@@ -262,23 +265,34 @@ export default defineComponent({
       formData.scheduler = '';
     };
 
+    // click-handler - 新增url路径
+    const handleAddUrlSidesliderShow = () => {
+      isDomainSidesliderShow.value = true;
+      isEdit.value = false;
+      resetFormData();
+    };
+
+    onMounted(() => {
+      bus.$on('showAddUrlSideslider', handleAddUrlSidesliderShow);
+    });
+
+    onUnmounted(() => {
+      bus.$off('showAddUrlSideslider');
+    });
+
     return () => (
       <div class={'url-list-container has-selection has-breadcrumb'}>
         <CommonTable>
           {{
             operation: () => (
               <div class={'flex-row align-item-center'}>
-                <Button
-                  theme={'primary'}
-                  onClick={() => {
-                    isDomainSidesliderShow.value = true;
-                    isEdit.value = false;
-                    resetFormData();
-                  }}>
+                <Button theme={'primary'} onClick={handleAddUrlSidesliderShow}>
                   <Plus class={'f20'} />
                   {t('新增 URL 路径')}
                 </Button>
-                <Button onClick={handleBatchDeleteListener} disabled={!selections.value.length}>{t('批量删除')}</Button>
+                <Button onClick={handleBatchDeleteListener} disabled={!selections.value.length}>
+                  {t('批量删除')}
+                </Button>
               </div>
             ),
           }}
@@ -290,13 +304,13 @@ export default defineComponent({
           confirmText='删除'
           tableProps={tableProps}
           isSubmitLoading={isSubmitLoading.value}
-          onHandleConfirm={() => deleteRulesBatch(tableProps.data.map(({id}) => id))}>
+          onHandleConfirm={() => deleteRulesBatch(tableProps.data.map(({ id }) => id))}>
           {{
             tips: () => (
               <>
                 已选择 <span class='blue'> {selections.value.length} </span> 个URL路径
               </>
-            )
+            ),
           }}
         </BatchOperationDialog>
         <CommonSideslider

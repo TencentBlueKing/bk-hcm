@@ -1,14 +1,17 @@
 import { PropType, defineComponent, onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 // import components
 import SimpleSearchSelect from '../../components/simple-search-select';
-import { Tree } from 'bkui-vue';
+import { Message, Tree } from 'bkui-vue';
+import Confirm from '@/components/confirm';
 // import stores
-import { useLoadBalancerStore } from '@/store/loadbalancer';
+import { useBusinessStore, useLoadBalancerStore, useResourceStore } from '@/store';
 // import custom hooks
 import useLoadTreeData from './useLoadTreeData';
-import useRenderDropdownList from './useRenderDropdownList';
+import useMoreActionDropdown from '@/hooks/useMoreActionDropdown';
 // import utils
 import { throttle } from 'lodash';
+import bus from '@/common/bus';
 // import static resources
 import allLBIcon from '@/assets/image/all-lb.svg';
 import lbIcon from '@/assets/image/loadbalancer.svg';
@@ -27,8 +30,13 @@ export default defineComponent({
   },
   emits: ['update:activeType'],
   setup(props, { emit }) {
+    // use hooks
+    const router = useRouter();
     // use stores
     const loadBalancerStore = useLoadBalancerStore();
+    const resourceStore = useResourceStore();
+    const businessStore = useBusinessStore();
+
     // 搜索相关
     const searchValue = ref('');
     const searchDataList = [
@@ -50,7 +58,58 @@ export default defineComponent({
 
     // use custom hooks
     const { loadRemoteData, handleLoadDataByScroll } = useLoadTreeData(treeData);
-    const { showDropdownList, currentPopBoundaryNodeKey } = useRenderDropdownList();
+
+    // 删除监听器
+    const handleDeleteListener = () => {
+      const { id, name } = loadBalancerStore.currentSelectedTreeNode;
+      Confirm('请确定删除监听器', `将删除监听器【${name}】`, () => {
+        resourceStore.deleteBatch('listeners', { ids: [id] }).then(() => {
+          Message({ theme: 'success', message: '删除成功' });
+          // todo: 重新请求对应lb下的listener列表
+        });
+      });
+    };
+
+    // 删除域名
+    const handleDeleteDomain = () => {
+      const { listener_id, domain } = loadBalancerStore.currentSelectedTreeNode;
+      Confirm('请确定删除域名', `将删除域名【${domain}】`, async () => {
+        // todo: 这里的接口需要再联调
+        await businessStore.deleteRules(listener_id, { lbl_id: listener_id, domain });
+        Message({
+          message: '删除成功',
+          theme: 'success',
+        });
+        // todo: 重新请求对应listener下的domain列表
+      });
+    };
+
+    // type 与 dropdown menu 的映射关系
+    const typeMenuMap = {
+      all: [
+        {
+          label: '购买负载均衡',
+          handler: () => router.push({ path: '/business/service/service-apply/clb' }),
+        },
+      ],
+      lb: [
+        { label: '新增监听器', handler: () => bus.$emit('showAddListenerSideslider') },
+        { label: '查看详情', handler: () => bus.$emit('changeSpecificClbActiveTab', 'detail') },
+        { label: '删除', handler: () => {} }, // todo: 等批量删除CLB接口联调完后进行完善
+      ],
+      listener: [
+        { label: '新增域名', handler: () => bus.$emit('showAddDomainSideslider') },
+        { label: '查看详情', handler: () => bus.$emit('changeSpecificListenerActiveTab', 'detail') },
+        { label: '编辑', handler: () => {} }, // todo: 待产品确定编辑位置
+        { label: '删除', handler: handleDeleteListener },
+      ],
+      domain: [
+        { label: '新增 URL 路径', handler: () => bus.$emit('showAddUrlSideslider') },
+        { label: '编辑', handler: () => {} }, // todo: 待产品确定编辑位置
+        { label: '删除', handler: handleDeleteDomain },
+      ],
+    };
+    const { showDropdownList, currentPopBoundaryNodeKey } = useMoreActionDropdown(typeMenuMap);
 
     // const searchOption = computed(() => {
     //   return {

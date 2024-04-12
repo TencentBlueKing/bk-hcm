@@ -1,4 +1,4 @@
-import { defineComponent, ref, watch } from 'vue';
+import { defineComponent, onMounted, onUnmounted, ref, watch } from 'vue';
 // import components
 import { Button, Form, Message, Tag } from 'bkui-vue';
 import { BkRadioGroup, BkRadioButton } from 'bkui-vue/lib/radio';
@@ -14,6 +14,8 @@ import { useBusinessStore } from '@/store';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useAddOrUpdateDomain, { OpAction } from './useAddOrUpdateDomain';
 import { useI18n } from 'vue-i18n';
+// import utils
+import bus from '@/common/bus';
 // import constants
 import { TRANSPORT_LAYER_LIST } from '@/constants';
 import './index.scss';
@@ -92,7 +94,7 @@ export default defineComponent({
                 theme='primary'
                 onClick={() => {
                   const listenerId = loadBalancerStore.currentSelectedTreeNode.id;
-                  Confirm('请确定删除域名', `将删除域名【${data.name}】`, async () => {
+                  Confirm('请确定删除域名', `将删除域名【${data.domain}】`, async () => {
                     await businessStore.deleteRules(listenerId, {
                       lbl_id: listenerId,
                       domain: data.domain,
@@ -260,6 +262,15 @@ export default defineComponent({
     const handleBatchDelete = () => {
       // batch delete handler
     };
+
+    onMounted(() => {
+      bus.$on('showAddDomainSideslider', handleDomainSidesliderShow);
+    });
+
+    onUnmounted(() => {
+      bus.$off('showAddDomainSideslider');
+    });
+
     return () => (
       <div class='domain-list-page has-selection'>
         <CommonLocalTable
@@ -283,7 +294,7 @@ export default defineComponent({
           {{
             operation: () => (
               <>
-                <Button theme='primary' onClick={() => handleDomainSidesliderShow()} class='mr12'>
+                <Button theme='primary' onClick={handleDomainSidesliderShow} class='mr12'>
                   <Plus class='f20' />
                   {t('新增域名')}
                 </Button>
