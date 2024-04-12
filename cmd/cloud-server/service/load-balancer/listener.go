@@ -4,7 +4,7 @@ import (
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
-	"hcm/pkg/criteria/constant"
+	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -239,19 +239,15 @@ func (svc *lbSvc) listListenerMap(kt *kit.Kit, lblIDs []string) (map[string]core
 
 // GetListener get clb listener.
 func (svc *lbSvc) GetListener(cts *rest.Contexts) (interface{}, error) {
-	return svc.getListener(cts, handler.ListResourceAuthRes, constant.UnassignedBiz)
+	return svc.getListener(cts, handler.ListResourceAuthRes)
 }
 
 // GetBizListener get biz clb listener.
 func (svc *lbSvc) GetBizListener(cts *rest.Contexts) (interface{}, error) {
-	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
-	if err != nil {
-		return nil, err
-	}
-	return svc.getListener(cts, handler.ListBizAuthRes, bkBizID)
+	return svc.getListener(cts, handler.ListBizAuthRes)
 }
 
-func (svc *lbSvc) getListener(cts *rest.Contexts, validHandler handler.ListAuthResHandler, bkBizID int64) (any, error) {
+func (svc *lbSvc) getListener(cts *rest.Contexts, validHandler handler.ListAuthResHandler) (any, error) {
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
@@ -275,14 +271,14 @@ func (svc *lbSvc) getListener(cts *rest.Contexts, validHandler handler.ListAuthR
 
 	switch basicInfo.Vendor {
 	case enumor.TCloud:
-		return svc.getTCloudListener(cts.Kit, id, bkBizID)
+		return svc.getTCloudListener(cts.Kit, id)
 
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "id: %s vendor: %s not support", id, basicInfo.Vendor)
 	}
 }
 
-func (svc *lbSvc) getTCloudListener(kt *kit.Kit, lblID string, bkBizID int64) (*cslb.GetTCloudListenerDetail, error) {
+func (svc *lbSvc) getTCloudListener(kt *kit.Kit, lblID string) (*cslb.GetTCloudListenerDetail, error) {
 	listenerInfo, err := svc.client.DataService().TCloud.LoadBalancer.GetListener(kt, lblID)
 	if err != nil {
 		logs.Errorf("get tcloud listener detail failed, lblID: %s, err: %v, rid: %s", lblID, err, kt.Rid)
@@ -347,4 +343,69 @@ func (svc *lbSvc) listTargetWeightNumMap(kt *kit.Kit, targetGroupIDs []string) (
 	}
 
 	return targetWeightMap, nil
+}
+
+// ListListenerCountByLbIDs list listener count by lbIDs.
+func (svc *lbSvc) ListListenerCountByLbIDs(cts *rest.Contexts) (interface{}, error) {
+	return svc.listListenerCountByLbIDs(cts, handler.ListResourceAuthRes)
+}
+
+// ListBizListenerCountByLbIDs list biz listener count by lbIDs.
+func (svc *lbSvc) ListBizListenerCountByLbIDs(cts *rest.Contexts) (interface{}, error) {
+	return svc.listListenerCountByLbIDs(cts, handler.ListBizAuthRes)
+}
+
+func (svc *lbSvc) listListenerCountByLbIDs(cts *rest.Contexts,
+	authHandler handler.ListAuthResHandler) (interface{}, error) {
+
+	req := new(dataproto.ListListenerCountByLbIDsReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	filterLb, err := tools.And(tools.RuleIn("lb_id", req.LbIDs))
+	if err != nil {
+		logs.Errorf("fail to merge load balancer id into request filter, err: %v, req: %+v, rid: %s",
+			err, req, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// list authorized instances
+	_, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+		ResType: meta.LoadBalancer, Action: meta.Find, Filter: filterLb})
+	if err != nil {
+		logs.Errorf("list listener by lbIDs auth failed, lbIDs: %v, noPermFlag: %v, err: %v, rid: %s",
+			req.LbIDs, noPermFlag, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	resList := &dataproto.ListListenerCountResp{Details: make([]*dataproto.ListListenerCountResult, 0)}
+	if noPermFlag {
+		logs.Errorf("list listener no perm auth, lbIDs: %v, noPermFlag: %v, rid: %s",
+			req.LbIDs, noPermFlag, cts.Kit.Rid)
+		return resList, nil
+	}
+
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(
+		cts.Kit, enumor.LoadBalancerCloudResType, req.LbIDs[0])
+	if err != nil {
+		logs.Errorf("fail to get load balancer basic info, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	switch basicInfo.Vendor {
+	case enumor.TCloud:
+		resList, err = svc.client.DataService().Global.LoadBalancer.CountLoadBalancerListener(cts.Kit, req)
+		if err != nil {
+			logs.Errorf("tcloud count load balancer listener failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
+			return nil, err
+		}
+		return resList, nil
+	default:
+		return nil, errf.Newf(errf.InvalidParameter, "lbIDs: %v vendor: %s not support", req.LbIDs, basicInfo.Vendor)
+	}
 }

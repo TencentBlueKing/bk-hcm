@@ -64,6 +64,8 @@ func InitService(c *capability.Capability) {
 	bizH.Add("GetBizListener", http.MethodGet, "/listeners/{id}", svc.GetBizListener)
 	bizH.Add("ListBizListenerDomains", http.MethodPost,
 		"/vendors/tcloud/listeners/{lbl_id}/domains/list", svc.ListBizListenerDomains)
+	bizH.Add("ListListenerCountByLbIDs", http.MethodPost, "/load_balancers/listeners/count",
+		svc.ListListenerCountByLbIDs)
 
 	bizH.Add("ListBizTargetsByTGID", http.MethodPost,
 		"/target_groups/{target_group_id}/targets/list", svc.ListBizTargetsByTGID)

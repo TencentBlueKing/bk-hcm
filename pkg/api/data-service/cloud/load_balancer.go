@@ -178,6 +178,29 @@ type ListenerListResult = core.ListResultT[corelb.BaseListener]
 // TCloudListenerListResult ...
 type TCloudListenerListResult = core.ListResultT[corelb.Listener[corelb.TCloudListenerExtension]]
 
+// -------------------------- List Count Listener By LbIDs --------------------------
+
+// ListListenerCountByLbIDsReq define list listener count by lbIDs req.
+type ListListenerCountByLbIDsReq struct {
+	LbIDs []string `json:"lb_ids" validate:"required,min=1,max=100,dive"`
+}
+
+// Validate request.
+func (req *ListListenerCountByLbIDsReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// ListListenerCountResp define list listener count resp.
+type ListListenerCountResp struct {
+	Details []*ListListenerCountResult `json:"details"`
+}
+
+// ListListenerCountResult define list listener count result.
+type ListListenerCountResult struct {
+	LbID string `json:"lb_id" db:"lb_id"`
+	Num  int64  `json:"num" db:"num"`
+}
+
 // -------------------------- Get Listener --------------------------
 
 // TCloudListenerDetailResult ...

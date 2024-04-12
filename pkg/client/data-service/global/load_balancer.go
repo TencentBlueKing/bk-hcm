@@ -193,3 +193,11 @@ func (cli *LoadBalancerClient) BatchDeleteLoadBalancer(kt *kit.Kit, req *datapro
 	return common.RequestNoResp[dataproto.LoadBalancerBatchDeleteReq](cli.client, rest.DELETE, kt, req,
 		"/load_balancers/batch")
 }
+
+// CountLoadBalancerListener count load balancer listener.
+func (cli *LoadBalancerClient) CountLoadBalancerListener(kt *kit.Kit, req *dataproto.ListListenerCountByLbIDsReq) (
+	*dataproto.ListListenerCountResp, error) {
+
+	return common.Request[dataproto.ListListenerCountByLbIDsReq, dataproto.ListListenerCountResp](cli.client,
+		rest.POST, kt, req, "/load_balancers/listeners/count")
+}

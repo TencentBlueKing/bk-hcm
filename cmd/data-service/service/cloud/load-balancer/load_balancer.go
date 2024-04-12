@@ -58,6 +58,7 @@ func InitService(cap *capability.Capability) {
 		svc.BatchCreateListenerWithRule)
 	h.Add("BatchUpdateListener", http.MethodPatch, "/vendors/{vendor}/listeners/batch/update", svc.BatchUpdateListener)
 	h.Add("BatchDeleteListener", http.MethodDelete, "/listeners/batch", svc.BatchDeleteListener)
+	h.Add("CountListenerByLbIDs", http.MethodPost, "/load_balancers/listeners/count", svc.CountListenerByLbIDs)
 
 	// url规则
 	h.Add("BatchCreateTCloudUrlRule",
