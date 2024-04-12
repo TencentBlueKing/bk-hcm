@@ -85,6 +85,8 @@ func InitService(c *capability.Capability) {
 		svc.BatchModifyBizTargetsPort)
 	bizH.Add("BatchModifyBizTargetsWeight", http.MethodPatch, "/target_groups/{target_group_id}/targets/weight",
 		svc.BatchModifyBizTargetsWeight)
+	bizH.Add("ListBizTargetsHealthByTGID", http.MethodPost, "/target_groups/{target_group_id}/targets/health",
+		svc.ListBizTargetsHealthByTGID)
 
 	// 监听器
 	bizH.Add("CreateBizListener", http.MethodPost, "/load_balancers/{lb_id}/listeners/create", svc.CreateBizListener)

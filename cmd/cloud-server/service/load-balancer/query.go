@@ -23,13 +23,17 @@ package loadbalancer
 import (
 	proto "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
+	hcproto "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/hooks/handler"
+	"hcm/pkg/tools/slice"
 )
 
 // ListLoadBalancer list load balancer.
@@ -169,4 +173,104 @@ func (svc *lbSvc) listTargetsByTGID(cts *rest.Contexts, validHandler handler.Val
 		Page:   req.Page,
 	}
 	return svc.client.DataService().Global.LoadBalancer.ListTarget(cts.Kit, listReq)
+}
+
+// ListTargetsHealthByTGID 查询业务下指定目标组绑定的负载均衡下的RS端口健康信息
+func (svc *lbSvc) ListTargetsHealthByTGID(cts *rest.Contexts) (interface{}, error) {
+	return svc.listTargetsHealthByTGID(cts, handler.BizOperateAuth)
+}
+
+// ListBizTargetsHealthByTGID 查询资源下指定目标组负载均衡下的RS端口健康信息
+func (svc *lbSvc) ListBizTargetsHealthByTGID(cts *rest.Contexts) (interface{}, error) {
+	return svc.listTargetsHealthByTGID(cts, handler.ResOperateAuth)
+}
+
+// listTargetsHealthByTGID 目标组绑定的负载均衡下的RS端口健康信息
+func (svc *lbSvc) listTargetsHealthByTGID(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
+	tgID := cts.PathParameter("target_group_id").String()
+	if len(tgID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "target_group_id is required")
+	}
+
+	req := new(hcproto.TCloudTargetHealthReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
+		enumor.TargetGroupCloudResType, tgID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 业务校验、鉴权
+	err = validHandler(cts, &handler.ValidWithAuthOption{
+		Authorizer: svc.authorizer,
+		ResType:    meta.TargetGroup,
+		Action:     meta.Find,
+		BasicInfo:  basicInfo,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	switch basicInfo.Vendor {
+	case enumor.TCloud:
+		tgInfo, newCloudLbIDs, err := svc.checkBindGetTargetGroupInfo(cts.Kit, tgID, req.CloudLbIDs)
+		if err != nil {
+			return nil, err
+		}
+
+		req.AccountID = tgInfo.AccountID
+		req.Region = tgInfo.Region
+		req.CloudLbIDs = newCloudLbIDs
+		return svc.client.HCService().TCloud.Clb.ListTargetHealth(cts.Kit, req)
+	default:
+		return nil, errf.Newf(errf.Unknown, "id: %s vendor: %s not support", tgID, basicInfo.Vendor)
+	}
+}
+
+// checkBindGetTargetGroupInfo 检查目标组是否存在、是否已绑定其他监听器
+func (svc *lbSvc) checkBindGetTargetGroupInfo(kt *kit.Kit, tgID string, cloudLbIDs []string) (
+	*corelb.BaseTargetGroup, []string, error) {
+
+	// 查询目标组的基本信息
+	tgInfo, err := svc.getTargetGroupByID(kt, tgID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if tgInfo == nil {
+		return nil, nil, errf.Newf(errf.RecordNotFound, "target group: %s is not found", tgID)
+	}
+
+	// 查询该目标组绑定的负载均衡、监听器数据
+	ruleRelReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("target_group_id", tgID),
+			tools.RuleIn("cloud_lb_id", cloudLbIDs),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+	ruleRelList, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, ruleRelReq)
+	if err != nil {
+		logs.Errorf("list tcloud listener url rule failed, tgID: %s, err: %v, rid: %s", tgID, err, kt.Rid)
+		return nil, nil, err
+	}
+
+	if len(ruleRelList.Details) == 0 {
+		return nil, nil, errf.Newf(errf.RecordNotUpdate, "target group: %s has not bound listener", tgID)
+	}
+
+	// 以当前目标组绑定的负载均衡ID为准
+	newCloudLbIDs := slice.Map(ruleRelList.Details, func(one corelb.BaseTargetListenerRuleRel) string {
+		return one.CloudLbID
+	})
+	return tgInfo, newCloudLbIDs, nil
 }

@@ -177,4 +177,5 @@ type TCloud interface {
 	ModifyTargetWeight(kt *kit.Kit, opt *typelb.TCloudTargetWeightUpdateOption) error
 
 	ListTargets(kt *kit.Kit, opt *typelb.TCloudListTargetsOption) ([]typelb.TCloudListenerTarget, error)
+	ListTargetHealth(kt *kit.Kit, opt *typelb.TCloudListTargetHealthOption) ([]typelb.TCloudTargetHealth, error)
 }

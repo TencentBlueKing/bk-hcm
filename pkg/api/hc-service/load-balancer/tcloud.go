@@ -401,3 +401,43 @@ func (h *HealthCheckUpdateReq) Validate() error {
 
 	return validator.Validate.Struct(h)
 }
+
+// --------------------------[批量查询RS健康]--------------------------
+
+// TCloudTargetHealthReq tcloud target health req.
+type TCloudTargetHealthReq struct {
+	AccountID  string   `json:"account_id" validate:"omitempty"`
+	Region     string   `json:"region" validate:"omitempty"`
+	CloudLbIDs []string `json:"cloud_lb_ids" validate:"required,min=1,max=20,dive"`
+}
+
+// Validate 最大支持20个.
+func (req *TCloudTargetHealthReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// TCloudTargetHealthResp ...
+type TCloudTargetHealthResp struct {
+	Details []TCloudTargetHealthResult `json:"details"`
+}
+
+// TCloudTargetHealthResult ...
+type TCloudTargetHealthResult struct {
+	CloudLbID string                         `json:"cloud_lb_id"`
+	Listeners []*TCloudTargetHealthLblResult `json:"listeners"`
+}
+
+// TCloudTargetHealthLblResult ...
+type TCloudTargetHealthLblResult struct {
+	CloudLblID   string                          `json:"cloud_lbl_id"`
+	Protocol     enumor.ProtocolType             `json:"protocol"`
+	ListenerName string                          `json:"listener_name"`
+	HealthCheck  *corelb.TCloudHealthCheckInfo   `json:"health_check"`
+	Rules        []*TCloudTargetHealthRuleResult `json:"rules"`
+}
+
+// TCloudTargetHealthRuleResult ...
+type TCloudTargetHealthRuleResult struct {
+	CloudRuleID string                        `json:"cloud_rule_id"`
+	HealthCheck *corelb.TCloudHealthCheckInfo `json:"health_check"`
+}

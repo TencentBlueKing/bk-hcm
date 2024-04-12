@@ -560,3 +560,79 @@ func (svc *clbSvc) batchModifyTargetWeightCloud(kt *kit.Kit, req *protolb.TCloud
 	}
 	return nil
 }
+
+// ListTCloudTargetsHealth 查询目标组所在负载均衡的端口健康数据
+func (svc *clbSvc) ListTCloudTargetsHealth(cts *rest.Contexts) (any, error) {
+	req := new(protolb.TCloudTargetHealthReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	if len(req.AccountID) == 0 {
+		return nil, errf.Newf(errf.InvalidParameter, "account_id is required")
+	}
+	if len(req.Region) == 0 {
+		return nil, errf.Newf(errf.InvalidParameter, "region is required")
+	}
+
+	tcloudAdpt, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &typelb.TCloudListTargetHealthOption{
+		Region:          req.Region,
+		LoadBalancerIDs: req.CloudLbIDs,
+	}
+	healthList, err := tcloudAdpt.ListTargetHealth(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list tcloud target health api failed, err: %v, cloudLbIDs: %v, rid: %s",
+			err, req.CloudLbIDs, cts.Kit.Rid)
+		return nil, err
+	}
+
+	healths := &protolb.TCloudTargetHealthResp{}
+	for _, item := range healthList {
+		tmpHealthInfo := protolb.TCloudTargetHealthResult{CloudLbID: cvt.PtrToVal(item.LoadBalancerId)}
+		for _, lblItem := range item.Listeners {
+			tmpListener := &protolb.TCloudTargetHealthLblResult{
+				CloudLblID:   cvt.PtrToVal(lblItem.ListenerId),
+				Protocol:     enumor.ProtocolType(cvt.PtrToVal(lblItem.Protocol)),
+				ListenerName: cvt.PtrToVal(lblItem.ListenerName),
+			}
+			for _, ruleItem := range lblItem.Rules {
+				var healthNum, unHealthNum int64
+				for _, targetItem := range ruleItem.Targets {
+					// 当前健康状态，true：健康，false：不健康（包括尚未开始探测、探测中、状态异常等几种状态）。
+					if cvt.PtrToVal(targetItem.HealthStatus) {
+						healthNum++
+					} else {
+						unHealthNum++
+					}
+				}
+
+				if !tmpListener.Protocol.IsLayer7Protocol() {
+					tmpListener.HealthCheck = &corelb.TCloudHealthCheckInfo{
+						HealthNum:   cvt.ValToPtr(healthNum),
+						UnHealthNum: cvt.ValToPtr(unHealthNum),
+					}
+					break
+				} else {
+					tmpListener.Rules = append(tmpListener.Rules, &protolb.TCloudTargetHealthRuleResult{
+						CloudRuleID: cvt.PtrToVal(ruleItem.LocationId),
+						HealthCheck: &corelb.TCloudHealthCheckInfo{
+							HealthNum:   cvt.ValToPtr(healthNum),
+							UnHealthNum: cvt.ValToPtr(unHealthNum),
+						},
+					})
+				}
+			}
+			tmpHealthInfo.Listeners = append(tmpHealthInfo.Listeners, tmpListener)
+		}
+		healths.Details = append(healths.Details, tmpHealthInfo)
+	}
+
+	return healths, nil
+}
