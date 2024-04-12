@@ -270,10 +270,10 @@ export const useBusinessStore = defineStore({
     /**
      * 业务下批量修改RS端口
      * @param target_group_id 目标组id
-     * @param data { 新端口, 转发规则的id, rs列表 }
+     * @param data { target_ids, new_port }
      */
     batchUpdateRsPort(target_group_id: string, data: any) {
-      return http.post(
+      return http.patch(
         `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${target_group_id}/targets/port`,
         data,
       );
@@ -281,11 +281,11 @@ export const useBusinessStore = defineStore({
     /**
      * 业务下批量修改RS权重
      * @param target_group_id 目标组id
-     * @param data { 转发规则的id, rs列表 }
+     * @param data { target_ids, new_weight }
      */
     batchUpdateRsWeight(target_group_id: string, data: any) {
-      return http.post(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${target_group_id}/rs/weight`,
+      return http.patch(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${target_group_id}/targets/weight`,
         data,
       );
     },

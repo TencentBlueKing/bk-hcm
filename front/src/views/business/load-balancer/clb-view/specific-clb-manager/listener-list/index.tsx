@@ -1,4 +1,4 @@
-import { defineComponent, watch } from 'vue';
+import { defineComponent, onMounted, onUnmounted, watch } from 'vue';
 // import components
 import { Button, Form, Input, Message, Select, Switcher, Tag } from 'bkui-vue';
 import BkRadio, { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
@@ -19,6 +19,7 @@ import useAddOrUpdateListener from './useAddOrUpdateListener';
 import useBatchDeleteListener from './useBatchDeleteListener';
 // import utils
 import { getTableRowClassOption } from '@/common/util';
+import bus from '@/common/bus';
 // import types
 import { DoublePlainObject } from '@/typings';
 // import constants
@@ -177,6 +178,16 @@ export default defineComponent({
       handleBatchDeleteListener,
       handleBatchDeleteSubmit,
     } = useBatchDeleteListener(columns, selections, resetSelections, getListData);
+
+    onMounted(() => {
+      bus.$on('showAddListenerSideslider', handleAddListener);
+      bus.$on('showEditListenerSideslider', handleEditListener);
+    });
+
+    onUnmounted(() => {
+      bus.$off('showAddListenerSideslider');
+      bus.$off('showEditListenerSideslider');
+    });
 
     return () => (
       <div>

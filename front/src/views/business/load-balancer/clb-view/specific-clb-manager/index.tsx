@@ -1,4 +1,4 @@
-import { defineComponent, ref, watch } from 'vue';
+import { defineComponent, onMounted, onUnmounted, ref, watch } from 'vue';
 import './index.scss';
 import ListenerList from './listener-list';
 import SecurityGroup from './security-group';
@@ -7,6 +7,7 @@ import { Message, Tab } from 'bkui-vue';
 import { BkTabPanel } from 'bkui-vue/lib/tab';
 import { useBusinessStore, useLoadBalancerStore } from '@/store';
 import { debounce } from 'lodash';
+import bus from '@/common/bus';
 export enum TypeEnum {
   listener = 'listener',
   detail = 'detail',
@@ -62,6 +63,15 @@ export default defineComponent({
         theme: 'success',
       });
     }, 1000);
+
+    onMounted(() => {
+      bus.$on('changeSpecificClbActiveTab', (v: any) => (activeTab.value = v));
+    });
+
+    onUnmounted(() => {
+      bus.$off('changeSpecificClbActiveTab');
+    });
+
     return () => (
       <Tab v-model:active={activeTab.value} type={'card-grid'}>
         {tabList.map((tab) => (

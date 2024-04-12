@@ -5,7 +5,7 @@ import { useResourceStore } from './resource';
 
 export interface ITreeNode {
   [key: string]: any;
-  lb: Record<string, any>;  // 当前域名节点所属的负载均衡信息，非域名节点时不生效
+  lb: Record<string, any>; // 当前域名节点所属的负载均衡信息，非域名节点时不生效
   listener: Record<string, any>; // 当前域名节点所属的监听器信息，非域名节点时不生效
 }
 // 目标组视角 - 操作场景
@@ -29,6 +29,7 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
   };
 
   // state - lb-tree - 当前选中的资源
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   const currentSelectedTreeNode: Ref<ITreeNode> = ref({} as ITreeNode);
   const setCurrentSelectedTreeNode = (node: ITreeNode) => {
     // 其中, node 可能为 lb, listener, domain 节点
@@ -74,12 +75,6 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
     targetGroupListPageQuery.count = countRes.data.count;
   };
 
-  // state - 「新建/编辑目标组」以及「批量添加rs」用于展示已选中的rs
-  const selectedRsList = ref([]);
-  const setSelectedRsList = (v: any[]) => {
-    selectedRsList.value = v;
-  };
-
   return {
     targetGroupId,
     setTargetGroupId,
@@ -91,7 +86,5 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
     setUpdateCount,
     currentScene,
     setCurrentScene,
-    selectedRsList,
-    setSelectedRsList,
   };
 });

@@ -4,7 +4,7 @@ import { Message, Tag } from 'bkui-vue';
 import CommonSideslider from '@/components/common-sideslider';
 import RsConfigTable from '../../components/RsConfigTable';
 // import stores
-import { useLoadBalancerStore, useBusinessStore } from '@/store';
+import { useBusinessStore } from '@/store';
 // import utils
 import bus from '@/common/bus';
 import './index.scss';
@@ -13,7 +13,6 @@ export default defineComponent({
   name: 'BatchAddRsSideslider',
   setup() {
     // use stores
-    const loadBalancerStore = useLoadBalancerStore();
     const businessStore = useBusinessStore();
 
     const isShow = ref(false);
@@ -29,9 +28,21 @@ export default defineComponent({
     };
     const formData = reactive(getDefaultFormData());
 
-    const handleShow = (account_id: string) => {
+    const handleShow = ({ account_id, selectedRsList }: { account_id: string; selectedRsList: any[] }) => {
       isShow.value = true;
+      // 更新account_id
       accountId.value = account_id;
+      // 更新 targets
+      formData.targets = [
+        ...formData.targets,
+        ...selectedRsList.reduce((prev, curr) => {
+          // 已添加过的rs ip, 不允许重复添加
+          if (!formData.targets.find((item) => item.inst_id === curr.id || item.id === curr.id)) {
+            prev.push(curr);
+          }
+          return prev;
+        }, []),
+      ];
     };
 
     // 处理参数
@@ -66,25 +77,6 @@ export default defineComponent({
       if (!val) clearFormData();
     });
 
-    watch(
-      () => loadBalancerStore.selectedRsList,
-      (val) => {
-        formData.targets = [
-          ...formData.targets,
-          ...val.reduce((prev, curr) => {
-            // 已添加过的rs ip, 不允许重复添加
-            if (!formData.targets.find((item) => item.inst_id === curr.id || item.id === curr.id)) {
-              prev.push(curr);
-            }
-            return prev;
-          }, []),
-        ];
-      },
-      {
-        deep: true,
-      },
-    );
-
     onMounted(() => {
       bus.$on('showBatchAddRsSideslider', handleShow);
       bus.$on('setTargetGroups', (list: any[]) => (selectedTargetGroups.value = list));
@@ -105,7 +97,7 @@ export default defineComponent({
         <div class='rs-sideslider-content'>
           <div class='selected-target-groups'>
             <span class='label'>已选择目标组</span>
-            <div>
+            <div class='tags'>
               {selectedTargetGroups.value.map(({ id, name }) => (
                 <Tag key={id}>{name}</Tag>
               ))}

@@ -1,4 +1,4 @@
-import { defineComponent, onMounted, onUnmounted, ref, PropType, reactive, watch } from 'vue';
+import { defineComponent, onMounted, onUnmounted, ref, PropType, reactive } from 'vue';
 // import components
 import { Form, Message } from 'bkui-vue';
 import CommonSideslider from '@/components/common-sideslider';
@@ -27,6 +27,7 @@ export default defineComponent({
 
     const isShow = ref(false);
     const isSubmitDisabled = ref(false);
+    const isEdit = ref(false);
 
     // 表单相关
     const getDefaultFormData = () => ({
@@ -51,8 +52,8 @@ export default defineComponent({
     const handleAddTargetGroup = () => {
       clearFormData();
       loadBalancerStore.setCurrentScene('add');
-      loadBalancerStore.setSelectedRsList([]);
       isShow.value = true;
+      isEdit.value = false;
     };
 
     // click-handler - 编辑目标组
@@ -62,6 +63,7 @@ export default defineComponent({
       // 初始化场景值
       loadBalancerStore.setCurrentScene(null);
       isShow.value = true;
+      isEdit.value = true;
     };
 
     // 处理参数 - add
@@ -103,11 +105,11 @@ export default defineComponent({
         weight,
       })),
     });
-    // todo: 批量修改端口/权重等接口
-    // 处理参数 - 批量修改端口
-    // const resolveFormDataForBatchUpdatePort = () => ({});
-    // 处理参数 - 批量修改权重
-    // const resolveFormDataForBatchUpdateWeight = () => ({});
+    // 处理参数 - 批量修改端口/权重
+    const resolveFormDataForBatchUpdate = (type: 'port' | 'weight') => ({
+      target_ids: formData.rs_list.map(({ id }) => id),
+      [`new_${type}`]: formData.rs_list[0][type],
+    });
 
     // submit - [新增/编辑目标组] 或 [批量添加rs] 或 [批量修改端口] 或 [批量修改权重]
     const handleAddOrUpdateTargetGroupSubmit = async () => {
@@ -127,11 +129,11 @@ export default defineComponent({
           message = 'RS添加成功';
           break;
         case 'port':
-          // promise = businessStore.batchUpdateRsPort(formData.id, resolveFormDataForBatchUpdatePort());
+          promise = businessStore.batchUpdateRsPort(formData.id, resolveFormDataForBatchUpdate('port'));
           message = '批量修改端口成功';
           break;
         case 'weight':
-          // promise = businessStore.batchUpdateRsWeight(formData.id, resolveFormDataForBatchUpdateWeight());
+          promise = businessStore.batchUpdateRsWeight(formData.id, resolveFormDataForBatchUpdate('weight'));
           message = '批量修改权重成功';
           break;
       }
@@ -152,38 +154,34 @@ export default defineComponent({
       }
     };
 
-    // 更新选中的rs列表
-    watch(
-      () => loadBalancerStore.selectedRsList,
-      (val) => {
-        formData.rs_list = [
-          ...formData.rs_list,
-          ...val.reduce((prev, curr) => {
-            if (!formData.rs_list.find((item) => item.inst_id === curr.id || item.id === curr.id)) {
-              prev.push(curr);
-            }
-            return prev;
-          }, []),
-        ];
-      },
-      {
-        deep: true,
-      },
-    );
+    // 更新rsConfigTable中显示的rsList
+    const handleUpdateSelectedRsList = (selectedRsList: any[]) => {
+      formData.rs_list = [
+        ...formData.rs_list,
+        ...selectedRsList.reduce((prev, curr) => {
+          if (!formData.rs_list.find((item) => item.inst_id === curr.id || item.id === curr.id)) {
+            prev.push(curr);
+          }
+          return prev;
+        }, []),
+      ];
+    };
 
     onMounted(() => {
       bus.$on('addTargetGroup', handleAddTargetGroup);
       bus.$on('editTargetGroup', handleEditTargetGroup);
+      bus.$on('updateSelectedRsList', handleUpdateSelectedRsList);
     });
 
     onUnmounted(() => {
       bus.$off('addTargetGroup');
       bus.$off('editTargetGroup');
+      bus.$off('updateSelectedRsList');
     });
 
     return () => (
       <CommonSideslider
-        title={loadBalancerStore.currentScene === 'edit' ? '编辑目标组' : '新建目标组'}
+        title={isEdit.value ? '编辑目标组' : '新建目标组'}
         width={960}
         v-model:isShow={isShow.value}
         isSubmitDisabled={isSubmitDisabled.value}

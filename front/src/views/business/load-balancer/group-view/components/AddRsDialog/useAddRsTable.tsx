@@ -35,7 +35,7 @@ export default (rsSelections: Ref<any[]>) => {
   const tableRef = ref(null);
   const isTableLoading = ref(false);
   const columns = [
-    { type: 'selection', width: '100' },
+    { type: 'selection', width: 32, minWidth: 32, align: 'right' },
     {
       label: '内网IP',
       render({ data }: any) {

@@ -30,23 +30,31 @@ export default defineComponent({
 
     // confirm-handler
     const handleAddRs = () => {
-      // 将选中的rs列表添加到store中
-      loadBalancerStore.setSelectedRsList(
-        rsSelections.value.map((item) => ({
-          ...item,
-          port: 0,
-          weight: 0,
-          isNew: true,
-        })),
-      );
-      // 根据不同的场景, 判断是否要显示批量添加rs的sideslider
-      if (loadBalancerStore.currentScene === 'BatchAddRs') {
-        bus.$emit('showBatchAddRsSideslider', accountId.value);
-      }
+      // 初始化选中的rs列表
+      const selectedRsList = rsSelections.value.map((item) => ({
+        ...item,
+        port: 0,
+        weight: 0,
+        isNew: true,
+      }));
+
       // 更新目标组 - 场景标识
       if (!loadBalancerStore.currentScene) {
         loadBalancerStore.setUpdateCount(2);
         loadBalancerStore.setCurrentScene('AddRs');
+      }
+
+      switch (loadBalancerStore.currentScene) {
+        case 'add':
+        case 'edit':
+        case 'AddRs':
+          bus.$emit('updateSelectedRsList', selectedRsList);
+          break;
+        case 'BatchAddRs':
+          // 显示批量添加rs的sideslider
+          bus.$emit('showBatchAddRsSideslider', { account_id: accountId.value, selectedRsList });
+        default:
+          break;
       }
     };
 
@@ -77,7 +85,7 @@ export default defineComponent({
       <CommonDialog v-model:isShow={isShow.value} title='添加 RS' width={640} onHandleConfirm={handleAddRs}>
         <div class='add-rs-dialog-content'>
           <SearchSelect class='mb16' v-model={searchValue.value} data={searchData} />
-          <Loading loading={isTableLoading.value} class='loading-table-container'>
+          <Loading loading={isTableLoading.value} class='loading-table-container has-selection'>
             <Table
               class='table-container'
               ref={tableRef}
