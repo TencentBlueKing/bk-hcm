@@ -1,6 +1,6 @@
-import { computed, defineComponent, ref } from 'vue';
+import { computed, defineComponent, reactive } from 'vue';
 // import components
-import { Button, Dropdown } from 'bkui-vue';
+import { Button, Checkbox, Dropdown, Loading, SearchSelect, Table } from 'bkui-vue';
 import { BkRadioGroup, BkRadioButton } from 'bkui-vue/lib/radio';
 import { Plus, AngleDown } from 'bkui-vue/lib/icon';
 import AddOrUpdateTGSideslider from '../components/AddOrUpdateTGSideslider';
@@ -12,6 +12,7 @@ import { useLoadBalancerStore } from '@/store';
 // import custom hooks
 import useRenderTRList from './useRenderTGList';
 import useBatchDeleteTR from './useBatchDeleteTR';
+import useBatchDeleteRs from './useBatchDeleteRs';
 import { useI18n } from 'vue-i18n';
 // import utils
 import bus from '@/common/bus';
@@ -39,11 +40,27 @@ export default defineComponent({
       batchDeleteTargetGroup,
     } = useBatchDeleteTR(searchData, selections, getListData);
 
-    // computed-property - 判断是否属于同一个账号
-    const isSelectionsBelongSameAccount = computed(() => {
-      if (selections.value.length < 2) return true;
-      const firstAccountId = selections.value[0].account_id;
-      return selections.value.every((item) => item.account_id === firstAccountId);
+    // 批量移除RS
+    const {
+      isBatchDeleteRsShow,
+      isBatchDeleteRsSubmitLoading,
+      isBatchDeleteRsTableLoading,
+      batchDeleteRsTableColumn,
+      batchDeleteRsTableData,
+      initMap,
+      getRsListOfTargetGroups,
+      handleChangeChecked,
+      batchDeleteRsSearchData,
+      batchDeleteRs,
+    } = useBatchDeleteRs();
+
+    // computed-property - 判断是否属于同一个账号&负载均衡(lb_id为空时, 不算做一种)
+    const isSelectionsBelongSameAccountAndLB = computed(() => {
+      // 过滤掉lb_id为空的目标组
+      const tmpSelections = selections.value.filter(({ lb_id }) => !lb_id);
+      if (tmpSelections.length < 2) return true;
+      const { account_id: firstAccountId, lb_id: firstLBId } = tmpSelections[0];
+      return tmpSelections.every((item) => item.lb_id === firstLBId && item.account_id === firstAccountId);
     });
 
     // click-handler - 批量删除目标组
@@ -54,6 +71,14 @@ export default defineComponent({
     // click-handler - 批量删除RS
     const handleBatchDeleteRs = () => {
       loadBalancerStore.setCurrentScene('BatchDeleteRs');
+      // init
+      initMap(
+        selections.value.map(({ id }) => id),
+        selections.value[0].account_id,
+      );
+      // 请求选中目标组的rs列表
+      getRsListOfTargetGroups(selections.value);
+      isBatchDeleteRsShow.value = true;
     };
     // click-handler - 批量添加RS
     const handleBatchAddRs = () => {
@@ -63,15 +88,21 @@ export default defineComponent({
       bus.$emit('showAddRsDialog', account_id);
       bus.$emit('setTargetGroups', selections.value);
     };
-    const batchOperationList = [
-      { label: t('批量删除目标组'), clickHandler: handleBatchDeleteTG, disabled: false },
-      { label: t('批量移除 RS'), clickHandler: handleBatchDeleteRs, disabled: !isSelectionsBelongSameAccount.value },
-      { label: t('批量添加 RS'), clickHandler: handleBatchAddRs, disabled: !isSelectionsBelongSameAccount.value },
-    ];
-
-    // todo: 批量移除 RS
-    const isBatchDeleteRsShow = ref(false);
-    const batchDeleteRs = () => {};
+    const batchOperationList = reactive([
+      { label: t('批量删除目标组'), clickHandler: handleBatchDeleteTG, enabled: true },
+      {
+        label: t('批量移除 RS'),
+        clickHandler: handleBatchDeleteRs,
+        enabled: isSelectionsBelongSameAccountAndLB,
+        tips: t('传入的目标组不同属于一个负载均衡/账号, 不可进行批量移除RS操作'),
+      },
+      {
+        label: t('批量添加 RS'),
+        clickHandler: handleBatchAddRs,
+        enabled: isSelectionsBelongSameAccountAndLB,
+        tips: t('传入的目标组不同属于一个负载均衡/账号, 不可进行批量添加RS操作'),
+      },
+    ]);
 
     return () => (
       <div class='common-card-wrap has-selection'>
@@ -93,9 +124,13 @@ export default defineComponent({
                     ),
                     content: () => (
                       <DropdownMenu>
-                        {batchOperationList.map(({ label, clickHandler, disabled }) => (
+                        {batchOperationList.map(({ label, clickHandler, enabled, tips }) => (
                           <DropdownItem>
-                            <Button text onClick={clickHandler} disabled={disabled}>
+                            <Button
+                              text
+                              onClick={clickHandler}
+                              disabled={!enabled}
+                              v-bk-tooltips={{ content: tips, disabled: enabled }}>
                               {label}
                             </Button>
                           </DropdownItem>
@@ -137,15 +172,59 @@ export default defineComponent({
             ),
           }}
         </BatchOperationDialog>
-        {/* todo: 批量删除RS */}
+        {/* 批量删除RS */}
         <BatchOperationDialog
+          class='batch-delete-rs-dialog'
+          isSubmitLoading={isBatchDeleteRsSubmitLoading.value}
           v-model:isShow={isBatchDeleteRsShow.value}
           title='批量移除RS'
           theme='danger'
           confirmText='移除 RS'
           custom
           onHandleConfirm={batchDeleteRs}>
-          {{}}
+          <div class='top-area'>
+            <div class='tips'>
+              已选择<span class='blue'>{selections.value.length}</span>
+              个目标组，可选择当前目标组内需要删除的IP进行移除。
+            </div>
+            <SearchSelect class='w400' data={batchDeleteRsSearchData} />
+          </div>
+          <Loading loading={isBatchDeleteRsTableLoading.value} class='has-selection'>
+            <Table data={batchDeleteRsTableData.value} columns={batchDeleteRsTableColumn} rowHeight={32} border='none'>
+              {{
+                expandContent: (row: any) => (
+                  <span class='i-expand-content'>
+                    <span class='main'>{row.tgName}</span>
+                    <span class='extension'>（共有 {row.ipCount} 个 IP）</span>
+                  </span>
+                ),
+                expandRow: (row: any) => {
+                  return row.ipList.map((item: any) => {
+                    return (
+                      <div class='i-expand-row'>
+                        {Object.getOwnPropertyNames(item).map((key) => {
+                          if (key === 'id') return null;
+                          return (
+                            <div class='i-expand-cell'>
+                              {key === 'isChecked' && (
+                                <Checkbox
+                                  modelValue={item[key]}
+                                  onUpdate:modelValue={(isChecked) => handleChangeChecked(row.tgId, item, isChecked)}
+                                />
+                              )}
+                              <span class='i-cell-content'>
+                                {Array.isArray(item[key]) ? item[key].join(',') : item[key]}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  });
+                },
+              }}
+            </Table>
+          </Loading>
         </BatchOperationDialog>
         {/* 批量添加RS */}
         <BatchAddRsSideslider />

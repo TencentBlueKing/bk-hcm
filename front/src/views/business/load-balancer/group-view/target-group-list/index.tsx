@@ -110,7 +110,6 @@ export default defineComponent({
                     <div
                       key={item.id}
                       class={`group-item-wrap${route.query.tgId === item.id ? ' selected' : ''}`}
-                      // todo: 改 item.id 为目标组的 id 即可
                       onClick={() => handleTypeChange('specific', item.id)}>
                       <div class='base-info'>
                         <img src={allIcon} alt='' class='prefix-icon' />

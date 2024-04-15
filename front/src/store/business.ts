@@ -116,15 +116,7 @@ export const useBusinessStore = defineStore({
     /**
      * 目标组绑定RS列表
      */
-    getRsList(
-      tg_id: string,
-      data: {
-        bk_biz_id: string;
-        tg_id: string;
-        filter: Object;
-        page: Object;
-      },
-    ) {
+    getRsList(tg_id: string, data: { filter: Object; page: Object }) {
       return http.post(
         `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${tg_id}/targets/list`,
         data,
@@ -288,6 +280,18 @@ export const useBusinessStore = defineStore({
         `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${target_group_id}/targets/weight`,
         data,
       );
+    },
+    /**
+     * 业务下给指定目标组移除RS
+     * @param data
+     */
+    batchDeleteTargets(data: {
+      account_id: string;
+      target_groups: { target_group_id: string; target_ids: string[] }[];
+    }) {
+      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/targets/batch`, {
+        data,
+      });
     },
   },
 });
