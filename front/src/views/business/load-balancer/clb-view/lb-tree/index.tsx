@@ -51,7 +51,7 @@ export default defineComponent({
     // lb-tree相关
     const treeData = ref([]);
     const treeRef = ref();
-    const allLBNode = ref({ type: 'all', isDropdownListShow: false, id: '-1' });
+    const allLBNode = { type: 'all', isDropdownListShow: false, id: '-1' };
     const lastSelectedNode = ref(); // 记录上一次选中的tree-node, 不包括全部负载均衡
     const loadingRef = ref();
     const expandedNodeArr = ref([]);
@@ -60,8 +60,8 @@ export default defineComponent({
     const { loadRemoteData, handleLoadDataByScroll } = useLoadTreeData(treeData);
 
     // 删除监听器
-    const handleDeleteListener = () => {
-      const { id, name } = loadBalancerStore.currentSelectedTreeNode;
+    const handleDeleteListener = (node: any) => {
+      const { id, name } = node;
       Confirm('请确定删除监听器', `将删除监听器【${name}】`, () => {
         resourceStore.deleteBatch('listeners', { ids: [id] }).then(() => {
           Message({ theme: 'success', message: '删除成功' });
@@ -71,8 +71,8 @@ export default defineComponent({
     };
 
     // 删除域名
-    const handleDeleteDomain = () => {
-      const { listener_id, domain } = loadBalancerStore.currentSelectedTreeNode;
+    const handleDeleteDomain = (node: any) => {
+      const { listener_id, domain } = node;
       Confirm('请确定删除域名', `将删除域名【${domain}】`, async () => {
         // todo: 这里的接口需要再联调
         await businessStore.deleteRules(listener_id, { lbl_id: listener_id, domain });
@@ -274,14 +274,14 @@ export default defineComponent({
             `${props.activeType === 'all' ? ' selected' : ''}`,
             `${currentPopBoundaryNodeKey.value === '-1' ? ' show-dropdown' : ''}`,
           ]}
-          onClick={() => handleNodeClick(allLBNode.value)}>
+          onClick={() => handleNodeClick(allLBNode)}>
           <div class='base-info'>
             <img src={allLBIcon} alt='' class='prefix-icon' />
             <span class='text'>全部负载均衡</span>
           </div>
           <div class='ext-info'>
             <div class='count'>{6654}</div>
-            <div class='more-action' onClick={(e) => showDropdownList(e, allLBNode.value)}>
+            <div class='more-action' onClick={(e) => showDropdownList(e, allLBNode)}>
               <i class='hcm-icon bkhcm-icon-more-fill'></i>
             </div>
           </div>

@@ -94,3 +94,21 @@
 .f20 {
   font-size: 20px;
 }
+
+// 负载均衡需求下的通用样式
+.more-action-dropdown-menu {
+  padding: 0 !important;
+  .dropdown-list {
+    padding: 4px 0;
+    .dropdown-item {
+      min-width: 58px;
+      padding: 0 12px;
+      line-height: 32px;
+      cursor: pointer;
+
+      &:hover {
+        background-color: #f5f7fa;
+      }
+    }
+  }
+}

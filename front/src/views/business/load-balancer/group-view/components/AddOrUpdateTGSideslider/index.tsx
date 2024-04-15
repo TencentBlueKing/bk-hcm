@@ -145,7 +145,10 @@ export default defineComponent({
 
         // 如果组件用于list页面, 则重新请求list接口; 如果组件用于info页面, 则重新请求detail接口
         if (props.origin === 'list') {
+          // 表格目标组list
           props.getListData();
+          // 左侧目标组list
+          loadBalancerStore.getTargetGroupList();
         } else {
           props.getTargetGroupDetail(formData.id);
         }

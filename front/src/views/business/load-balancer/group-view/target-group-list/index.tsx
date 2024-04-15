@@ -1,12 +1,16 @@
-import { defineComponent, onMounted, reactive, ref, watch } from 'vue';
+import { defineComponent, onMounted, ref, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 // import components
-import { Input, Popover, VirtualRender } from 'bkui-vue';
+import { Input, Message, VirtualRender } from 'bkui-vue';
+import Confirm from '@/components/confirm';
 // import stores
-import { useLoadBalancerStore } from '@/store/loadbalancer';
-import { useAccountStore } from '@/store';
+import { useLoadBalancerStore, useAccountStore, useBusinessStore } from '@/store';
+// import hooks
+import useMoreActionDropdown from '@/hooks/useMoreActionDropdown';
+// import utils
+import bus from '@/common/bus';
 // import static resources
-import allIcon from '@/assets/image/all-vendors.png';
+import allIcon from '@/assets/image/all-lb.svg';
 import './index.scss';
 
 export default defineComponent({
@@ -19,10 +23,12 @@ export default defineComponent({
     // use stores
     const loadBalancerStore = useLoadBalancerStore();
     const accountStore = useAccountStore();
+    const businessStore = useBusinessStore();
+
     // 搜索相关
     const searchValue = ref('');
 
-    const allTargetGroupsItem = reactive({ isDropdownListShow: false });
+    const allTargetGroupsItem = { type: 'all', isDropdownListShow: false }; // 全部目标组item
     // handler - 切换目标组
     const handleTypeChange = (type: 'all' | 'specific', targetGroupId: string) => {
       if (targetGroupId === route.query.tgId) return;
@@ -35,38 +41,29 @@ export default defineComponent({
       });
     };
 
-    const renderDropdownActionList = (item: any) => {
-      return (
-        <Popover
-          trigger='click'
-          theme='light'
-          renderType='shown'
-          placement='bottom-start'
-          arrow={false}
-          extCls='more-action-dropdown-menu'
-          onAfterHidden={({ isShow }) => (item.isDropdownListShow = isShow)}>
-          {{
-            default: () => (
-              <div
-                class={`more-action${item.isDropdownListShow ? ' click' : ''}`}
-                onClick={() => (item.isDropdownListShow = !item.isDropdownListShow)}>
-                <i class='hcm-icon bkhcm-icon-more-fill'></i>
-              </div>
-            ),
-            content: () => (
-              <div class='dropdown-action-list'>
-                <div class='dropdown-action-item' onClick={() => {}}>
-                  编辑
-                </div>
-                <div class='dropdown-action-item' onClick={() => {}}>
-                  删除
-                </div>
-              </div>
-            ),
-          }}
-        </Popover>
-      );
+    // 删除目标组
+    const handleDeleteTargetGroup = (node: any) => {
+      const { id, name } = node;
+      Confirm('请确定删除目标组', `将删除目标组【${name}】`, () => {
+        businessStore.deleteTargetGroups({ bk_biz_id: accountStore.bizs, ids: [id] }).then(() => {
+          Message({ message: '删除成功', theme: 'success' });
+          // 重新拉取目标组list
+          loadBalancerStore.getTargetGroupList();
+          // 跳转至全部目标组下
+          handleTypeChange('all', '');
+        });
+      });
     };
+
+    // more-action
+    const typeMenuMap = {
+      all: [{ label: '新增目标组', handler: () => bus.$emit('addTargetGroup') }],
+      specific: [
+        { label: '编辑', handler: () => {} }, // todo: 等产品确认编辑位置
+        { label: '删除', handler: handleDeleteTargetGroup },
+      ],
+    };
+    const { showDropdownList, currentPopBoundaryNodeKey } = useMoreActionDropdown(typeMenuMap);
 
     onMounted(() => {
       loadBalancerStore.getTargetGroupList();
@@ -94,13 +91,15 @@ export default defineComponent({
           <div
             class={`all-groups-wrap${!route.query.tgId ? ' selected' : ''}`}
             onClick={() => handleTypeChange('all', '')}>
-            <div class='left-wrap'>
+            <div class='base-info'>
               <img src={allIcon} alt='' class='prefix-icon' />
-              <span>全部目标组</span>
+              <span class='text'>全部目标组</span>
             </div>
-            <div class='right-wrap'>
+            <div class='ext-info'>
               <div class='count'>{6654}</div>
-              {renderDropdownActionList(allTargetGroupsItem)}
+              <div class='more-action' onClick={(e) => showDropdownList(e, allTargetGroupsItem)}>
+                <i class='hcm-icon bkhcm-icon-more-fill'></i>
+              </div>
             </div>
           </div>
           <VirtualRender list={loadBalancerStore.allTargetGroupList} height='calc(100% - 36px)' lineHeight={36}>
@@ -113,13 +112,15 @@ export default defineComponent({
                       class={`group-item-wrap${route.query.tgId === item.id ? ' selected' : ''}`}
                       // todo: 改 item.id 为目标组的 id 即可
                       onClick={() => handleTypeChange('specific', item.id)}>
-                      <div class='left-wrap'>
+                      <div class='base-info'>
                         <img src={allIcon} alt='' class='prefix-icon' />
-                        <span>{item.name}</span>
+                        <span class='text'>{item.name}</span>
                       </div>
-                      <div class='right-wrap'>
+                      <div class={`ext-info${currentPopBoundaryNodeKey.value === item.id ? ' show-dropdown' : ''}`}>
                         <div class='count'>{item.count}</div>
-                        {renderDropdownActionList(item)}
+                        <div class='more-action' onClick={(e) => showDropdownList(e, { type: 'specific', ...item })}>
+                          <i class='hcm-icon bkhcm-icon-more-fill'></i>
+                        </div>
                       </div>
                     </div>
                   );
