@@ -152,3 +152,14 @@ func (p *producer) BatchUpdateCustomFlowState(kt *kit.Kit, opt *UpdateCustomFlow
 
 	return nil
 }
+
+// RetryFlowTask retry task of flow
+func (p *producer) RetryFlowTask(kt *kit.Kit, flowID, taskID string) error {
+
+	err := p.backend.RetryTask(kt, flowID, taskID)
+	if err != nil {
+		logs.Errorf("retry task(%s) of flow(%s) failed, err: %v, rid: %s", taskID, flowID, err, kt.Rid)
+		return err
+	}
+	return nil
+}

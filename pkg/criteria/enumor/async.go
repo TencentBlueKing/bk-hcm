@@ -34,7 +34,7 @@ const (
 	// TaskRollback task state is rollback.
 	TaskRollback TaskState = "rollback"
 	// TaskCancel task state is cancel.
-	TaskCancel TaskState = "cancel"
+	TaskCancel TaskState = "canceled"
 	// TaskSuccess task state is success
 	TaskSuccess TaskState = "success"
 	// TaskFailed task state is failed
@@ -54,7 +54,7 @@ const (
 	// FlowRunning flow state is running
 	FlowRunning FlowState = "running"
 	// FlowCancel flow state is cancel
-	FlowCancel FlowState = "cancel"
+	FlowCancel FlowState = "canceled"
 	// FlowSuccess flow state is success
 	FlowSuccess FlowState = "success"
 	// FlowFailed flow state is failed

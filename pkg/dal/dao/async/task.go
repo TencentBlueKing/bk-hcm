@@ -45,7 +45,7 @@ type AsyncFlowTask interface {
 	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []tableasync.AsyncFlowTaskTable) ([]string, error)
 	Update(kt *kit.Kit, expr *filter.Expression, model *tableasync.AsyncFlowTaskTable) error
 	UpdateByID(kt *kit.Kit, id string, model *tableasync.AsyncFlowTaskTable) error
-	UpdateStateByCAS(kt *kit.Kit, info *typesasync.UpdateTaskInfo) error
+	UpdateStateByCAS(kt *kit.Kit, tx *sqlx.Tx, info *typesasync.UpdateTaskInfo) error
 	List(kt *kit.Kit, opt *types.ListOption) (*typesasync.ListAsyncFlowTasks, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 	GenIDs(kt *kit.Kit, num int) ([]string, error)
@@ -131,7 +131,7 @@ func (dao *AsyncFlowTaskDao) Update(kt *kit.Kit, expr *filter.Expression, model 
 }
 
 // UpdateStateByCAS update async flow task state by cas.
-func (dao *AsyncFlowTaskDao) UpdateStateByCAS(kt *kit.Kit, info *typesasync.UpdateTaskInfo) error {
+func (dao *AsyncFlowTaskDao) UpdateStateByCAS(kt *kit.Kit, tx *sqlx.Tx, info *typesasync.UpdateTaskInfo) error {
 
 	if err := info.Validate(); err != nil {
 		return err
@@ -150,7 +150,7 @@ func (dao *AsyncFlowTaskDao) UpdateStateByCAS(kt *kit.Kit, info *typesasync.Upda
 		"source": info.Source,
 		"reason": info.Reason,
 	}
-	effect, err := dao.Orm.Do().Update(kt.Ctx, sql, values)
+	effect, err := dao.Orm.Txn(tx).Update(kt.Ctx, sql, values)
 	if err != nil {
 		logs.Errorf("update async flow task failed, err: %v, id: %s, sql: %s, rid: %v", err, info.ID, sql, kt.Rid)
 		return err
