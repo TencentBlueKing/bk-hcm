@@ -769,3 +769,17 @@ func (svc *lbSvc) ListResFlowRel(cts *rest.Contexts) (interface{}, error) {
 
 	return &protocloud.ResFlowRelListResult{Details: details}, nil
 }
+
+// CountListenerByLbIDs count listener by lbIDs.
+func (svc *lbSvc) CountListenerByLbIDs(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocloud.ListListenerCountByLbIDsReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	return svc.dao.LoadBalancerListener().CountListenerByLbIDs(cts.Kit, req.LbIDs)
+}

@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/audit"
@@ -50,6 +51,7 @@ type ListenerInterface interface {
 	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.LoadBalancerListenerTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*typeslb.ListLoadBalancerListenerDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
+	CountListenerByLbIDs(kt *kit.Kit, lbIDs []string) (*dataproto.ListListenerCountResp, error)
 }
 
 var _ ListenerInterface = new(ListenerDao)
@@ -251,4 +253,22 @@ func (dao ListenerDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expre
 	}
 
 	return nil
+}
+
+// CountListenerByLbIDs count listener.
+func (dao ListenerDao) CountListenerByLbIDs(kt *kit.Kit, lbIDs []string) (*dataproto.ListListenerCountResp, error) {
+	if len(lbIDs) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "lb_ids is required")
+	}
+
+	sql := fmt.Sprintf(`SELECT lb_id,COUNT(id) AS num FROM %s WHERE lb_id IN(:lb_ids) GROUP BY lb_id`,
+		table.LoadBalancerListenerTable)
+
+	details := make([]*dataproto.ListListenerCountResult, 0)
+	if err := dao.Orm.Do().Select(kt.Ctx, &details, sql, map[string]interface{}{"lb_ids": lbIDs}); err != nil {
+		logs.Errorf("count listener by lbIDs db failed, err: %+v, sql: %s, lbIDs: %v, rid: %s", err, sql, lbIDs, kt.Rid)
+		return nil, err
+	}
+
+	return &dataproto.ListListenerCountResp{Details: details}, nil
 }
