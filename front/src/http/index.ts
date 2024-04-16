@@ -212,16 +212,17 @@ function handleReject(error: any, config: any) {
       nextError.message = data.message;
       Message({ theme: 'error', message: nextError.message });
     }
-    // bk_ticket失效后的登录弹框
-    if (error.code == 2000000 && error.message == 'bk_ticket cookie don\'t exists') {
-      InvalidLogin();
-    }
+
     // messageError(nextError.message)
     console.error(nextError.message);
     return Promise.reject(nextError);
   }
   if (error.code !== 0 && error.code !== 2000009) Message({ theme: 'error', message: error.message });
   console.error(error.message);
+  // bk_ticket失效后的登录弹框
+  if (error.code == 2000000 && error.message == 'bk_ticket cookie don\'t exists') {
+    InvalidLogin();
+  }
   return Promise.reject(error);
 }
 
