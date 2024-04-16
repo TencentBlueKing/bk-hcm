@@ -19,13 +19,14 @@ export default defineComponent({
 
     const isShow = ref(false);
     const rsSelections = ref([]);
-    const accountId = ref('');
+    let account_id = '';
 
-    const handleShow = (account_id: string) => {
+    const handleShow = ({ accountId, vpcId }: { accountId: string; vpcId: string }) => {
       isShow.value = true;
       nextTick(handleClear);
-      accountId.value = account_id;
-      getRSTableList(accountId.value);
+      account_id = accountId;
+      // 根据account_id, vpc_id查询cvm列表
+      getRSTableList(accountId, vpcId);
     };
 
     // confirm-handler
@@ -52,7 +53,7 @@ export default defineComponent({
           break;
         case 'BatchAddRs':
           // 显示批量添加rs的sideslider
-          bus.$emit('showBatchAddRsSideslider', { account_id: accountId.value, selectedRsList });
+          bus.$emit('showBatchAddRsSideslider', { accountId: account_id, selectedRsList });
         default:
           break;
       }

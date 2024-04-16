@@ -63,6 +63,13 @@ export default defineComponent({
       return tmpSelections.every((item) => item.lb_id === firstLBId && item.account_id === firstAccountId);
     });
 
+    // computed-property - 判断是否同属于一个vpc
+    const isSelectionsBelongSameVpc = computed(() => {
+      if (selections.value.length < 2) return true;
+      const firstVpcId = selections.value[0].vpc_id;
+      return selections.value.every((item) => item.vpc_id === firstVpcId);
+    });
+
     // click-handler - 批量删除目标组
     const handleBatchDeleteTG = () => {
       loadBalancerStore.setCurrentScene('BatchDelete');
@@ -84,8 +91,10 @@ export default defineComponent({
     const handleBatchAddRs = () => {
       loadBalancerStore.setCurrentScene('BatchAddRs');
       // 同一账号下的多个目标组支持批量添加rs
-      const { account_id } = selections.value[0];
-      bus.$emit('showAddRsDialog', account_id);
+      const { account_id: accountId, vpc_id: vpcId } = selections.value[0];
+      // 显示添加rs弹框
+      bus.$emit('showAddRsDialog', { accountId, vpcId });
+      // 将选中的目标组数据传递给BatchAddRsSideslider组件
       bus.$emit('setTargetGroups', selections.value);
     };
     const batchOperationList = reactive([
@@ -99,8 +108,10 @@ export default defineComponent({
       {
         label: t('批量添加 RS'),
         clickHandler: handleBatchAddRs,
-        enabled: isSelectionsBelongSameAccountAndLB,
-        tips: t('传入的目标组不同属于一个负载均衡/账号, 不可进行批量添加RS操作'),
+        enabled: isSelectionsBelongSameAccountAndLB.value && isSelectionsBelongSameVpc.value,
+        tips: isSelectionsBelongSameVpc.value
+          ? t('传入的目标组不同属于一个负载均衡/账号, 不可进行批量添加RS操作')
+          : t('传入的目标组不同属于一个VPC, 不可进行批量添加RS操作'),
       },
     ]);
 

@@ -1,4 +1,4 @@
-import { computed, defineComponent, ref } from 'vue';
+import { computed, defineComponent, ref, watch } from 'vue';
 // import components
 import { SearchSelect, Loading, Table, Input, Button } from 'bkui-vue';
 import Empty from '@/components/empty';
@@ -16,6 +16,7 @@ export default defineComponent({
   props: {
     rsList: Array<any>,
     accountId: String,
+    vpcId: String,
     noSearch: Boolean,
     noDisabled: Boolean, // 禁用所有disabled
     onlyShow: Boolean, // 只用于显示(基本信息页面使用)
@@ -24,6 +25,7 @@ export default defineComponent({
   setup(props, { emit }) {
     // use stores
     const loadBalancerStore = useLoadBalancerStore();
+    const vpc_id = ref('');
 
     // rs配置表单项
     const isTableLoading = ref(false);
@@ -91,7 +93,8 @@ export default defineComponent({
     const handleDeleteRs = (id: string) => {
       emit(
         'update:rsList',
-        // 本期暂时以id来判断rs是否可以被添加, 后续可能会变更为ip+port
+        // 本期暂时以id来区分rs, 后续可能会变更为ip+port
+        // 如果变更为ip+port, 则后端在cvm/list以及target_groups/detail接口中提供rs的「ip类型」字段或「统一的ip地址」字段, 前端处理起来会方便一点
         props.rsList.filter((item) => item.id !== id),
       );
     };
@@ -174,8 +177,18 @@ export default defineComponent({
 
     // click-handler - 添加rs
     const handleAddRs = () => {
-      bus.$emit('showAddRsDialog', props.accountId);
+      bus.$emit('showAddRsDialog', { accountId: props.accountId, vpcId: vpc_id.value });
     };
+
+    watch(
+      () => props.vpcId,
+      (val) => {
+        vpc_id.value = val;
+      },
+      {
+        immediate: true,
+      },
+    );
 
     return () => (
       <div class='rs-config-table'>

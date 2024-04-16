@@ -250,12 +250,17 @@ export const useBusinessStore = defineStore({
     },
     /**
      * 业务下给指定目标组批量添加RS
-     * @param target_group_id 目标组id
      * @param data rs列表
      */
-    addRsToTargetGroup(target_group_id: string, data: any) {
+    batchAddTargets(data: {
+      account_id: string;
+      target_groups: {
+        target_group_id: string;
+        targets: { inst_type: string; cloud_inst_id: string; port: number; weight: number }[];
+      }[];
+    }) {
       return http.post(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${target_group_id}/targets/create`,
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/targets/create`,
         data,
       );
     },

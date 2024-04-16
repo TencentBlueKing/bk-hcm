@@ -5,7 +5,7 @@ import { Message } from 'bkui-vue';
 import { useBusinessStore, useResourceStore } from '@/store';
 import { useLoadBalancerStore } from '@/store/loadbalancer';
 // import custom hooks
-import useSelectOptionList from '@/hooks/useSelectOptionListWithScroll';
+import useSelectOptionListWithScroll from '@/hooks/useSelectOptionListWithScroll';
 import useResolveListenerFormData from './useResolveListenerFormData';
 // import types
 import { QueryRuleOPEnum } from '@/typings';
@@ -133,7 +133,7 @@ export default (getListData: any) => {
     initTargetGroupOptionState,
     getTargetGroupList,
     handleTargetGroupListScrollEnd,
-  ] = useSelectOptionList(
+  ] = useSelectOptionListWithScroll(
     'target_groups',
     [
       {
@@ -157,7 +157,7 @@ export default (getListData: any) => {
 
   // 服务器证书 options
   const [isSVRCertListLoading, SVRCertList, initSVRCertOptionState, getSVRCertList, handleSVRCertListScrollEnd] =
-    useSelectOptionList(
+    useSelectOptionListWithScroll(
       'certs',
       [
         { field: 'cert_type', op: QueryRuleOPEnum.EQ, value: 'SVR' },
@@ -172,7 +172,7 @@ export default (getListData: any) => {
 
   // 客户端证书 options
   const [isCACertListLoading, CACertList, initCACertOptionState, getCACertList, handleCACertListScrollEnd] =
-    useSelectOptionList(
+    useSelectOptionListWithScroll(
       'certs',
       [
         { field: 'cert_type', op: QueryRuleOPEnum.EQ, value: 'CA' },
