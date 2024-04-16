@@ -8,7 +8,7 @@ import cookie from 'cookie';
 import { Message } from 'bkui-vue';
 // import { uuid } from 'vue-uuid';
 import { v4 as uuidv4 } from 'uuid';
-
+import { showLoginModal } from '@blueking/login-modal';
 import bus from '@/common/bus';
 import CachedPromise from './cached-promise';
 import RequestQueue from './request-queue';
@@ -212,6 +212,10 @@ function handleReject(error: any, config: any) {
       nextError.message = data.message;
       Message({ theme: 'error', message: nextError.message });
     }
+    // bk_ticket失效后的登录弹框
+    if (error.code == 2000000 && error.message == 'bk_ticket cookie don\'t exists') {
+      InvalidLogin();
+    }
     // messageError(nextError.message)
     console.error(nextError.message);
     return Promise.reject(nextError);
@@ -280,4 +284,18 @@ export function injectCSRFTokenToHeaders() {
     console.warn('Can not find csrftoken in document.cookie');
   }
   return CSRFToken;
+}
+/**
+ * // bk_ticket失效后的登录弹框
+ *
+ */
+export function InvalidLogin() {
+  const successUrl = `${window.location.origin}/static/login_success.html`;
+  const loginBaseUrl = window.PROJECT_CONFIG.BK_LOGIN_URL || '';
+  if (!loginBaseUrl) {
+    console.error('Login URL not configured!');
+    return;
+  }
+  const loginUrl = `${loginBaseUrl}/plain?c_url=${encodeURIComponent(successUrl)}`;
+  showLoginModal({ loginUrl });
 }
