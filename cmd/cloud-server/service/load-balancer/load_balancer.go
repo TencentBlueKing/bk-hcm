@@ -51,6 +51,10 @@ func InitService(c *capability.Capability) {
 	h.Add("TCloudDescribeResources", http.MethodPost,
 		"/vendors/tcloud/load_balancers/resources/describe", svc.TCloudDescribeResources)
 	h.Add("BatchDeleteLoadBalancer", http.MethodDelete, "/load_balancers/batch", svc.BatchDeleteLoadBalancer)
+	h.Add("GetLoadBalancerLockStatus", http.MethodGet,
+		"/load_balancers/{id}/lock/status", svc.GetLoadBalancerLockStatus)
+	bizH.Add("GetBizLoadBalancerLockStatus", http.MethodGet,
+		"/load_balancers/{id}/lock/status", svc.GetBizLoadBalancerLockStatus)
 
 	bizH := rest.NewHandler()
 	bizH.Path("/bizs/{bk_biz_id}")

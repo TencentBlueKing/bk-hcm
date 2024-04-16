@@ -22,6 +22,7 @@ package loadbalancer
 
 import (
 	proto "hcm/pkg/api/cloud-server"
+	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	hcproto "hcm/pkg/api/hc-service/load-balancer"
@@ -273,4 +274,51 @@ func (svc *lbSvc) checkBindGetTargetGroupInfo(kt *kit.Kit, tgID string, cloudLbI
 		return one.CloudLbID
 	})
 	return tgInfo, newCloudLbIDs, nil
+}
+
+// GetLoadBalancerLockStatus get load balancer status.
+func (svc *lbSvc) GetLoadBalancerLockStatus(cts *rest.Contexts) (interface{}, error) {
+	return svc.getLoadBalancerLockStatus(cts, handler.ListResourceAuthRes)
+}
+
+// GetBizLoadBalancerLockStatus get biz load balancer status.
+func (svc *lbSvc) GetBizLoadBalancerLockStatus(cts *rest.Contexts) (interface{}, error) {
+	return svc.getLoadBalancerLockStatus(cts, handler.ListBizAuthRes)
+}
+
+func (svc *lbSvc) getLoadBalancerLockStatus(cts *rest.Contexts, validHandler handler.ListAuthResHandler) (any, error) {
+	id := cts.PathParameter("id").String()
+	if len(id) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(
+		cts.Kit, enumor.LoadBalancerCloudResType, id)
+	if err != nil {
+		logs.Errorf("fail to get load balancer basic info, err: %v, id: %s, rid: %s", err, id, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// validate biz and authorize
+	_, noPerm, err := validHandler(cts,
+		&handler.ListAuthResOption{Authorizer: svc.authorizer, ResType: meta.LoadBalancer, Action: meta.Find})
+	if err != nil {
+		return nil, err
+	}
+	if noPerm {
+		return nil, errf.New(errf.PermissionDenied, "permission denied for get load balancer")
+	}
+
+	switch basicInfo.Vendor {
+	case enumor.TCloud:
+		// 预检测-是否有执行中的负载均衡
+		err = svc.checkResFlowRel(cts.Kit, id, enumor.LoadBalancerCloudResType)
+		if err != nil {
+			logs.Errorf("load balancer %s is executing flow, err: %v, rid: %s", id, err, cts.Kit.Rid)
+			return &cslb.ResourceFlowStatusResp{Status: enumor.ExecutingResFlowStatus}, nil
+		}
+		return &cslb.ResourceFlowStatusResp{Status: enumor.SuccessResFlowStatus}, nil
+	default:
+		return nil, errf.Newf(errf.Unknown, "id: %s vendor: %s not support", id, basicInfo.Vendor)
+	}
 }

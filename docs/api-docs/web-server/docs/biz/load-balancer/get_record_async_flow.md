@@ -39,6 +39,9 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/audits/async_flow/list
         "reason": {
             "message": "some tasks failed to be executed"
         },
+        "share_data": {
+            "lb_id": "00000001"
+        },
         "creator": "Jim",
         "reviser": "Jim",
         "created_at": "2023-02-12T14:47:39Z",
@@ -79,6 +82,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/audits/async_flow/list
 | name           | string  | 任务名称                                            |
 | state          | string  | 任务状态                                            |
 | reason         | json    | 任务失败原因                                         |
+| share_data     | json    | 任务共享数据                                         |
 | creator        | string  | 任务创建者                                           |
 | reviser        | string  | 任务最后一次修改的修改者                                |
 | created_at     | string  | 任务创建时间，标准格式：2006-01-02T15:04:05Z            |
@@ -98,12 +102,17 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/audits/async_flow/list
 | created_at     | string  | 子任务创建时间，标准格式：2006-01-02T15:04:05Z            |
 | updated_at     | string  | 子任务最后一次修改时间，标准格式：2006-01-02T15:04:05Z     |
 
-
 #### data.flow.reason
 
 | 参数名称   | 参数类型 | 描述    |
 |----------|---------|---------|
 | message  | string  | 任务失败原因 |
+
+#### data.flow.share_data
+
+| 参数名称   | 参数类型 | 描述      |
+|----------|---------|-----------|
+| lb_id    | string  | 负载均衡ID |
 
 #### data.tasks[n].reason
 
