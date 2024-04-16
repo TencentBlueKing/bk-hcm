@@ -17,7 +17,8 @@ export default defineComponent({
 
     const isShow = ref(false);
     const isSubmitDisabled = ref(false);
-    const accountId = ref(''); // 当前选中目标组同属的账号id
+    const account_id = ref(''); // 当前选中目标组同属的账号id
+    const vpc_id = ref(''); // 当前选中目标组同属的vpc_id
     const selectedTargetGroups = ref([]); // 当前选中目标组的信息
 
     const getDefaultFormData = () => ({
@@ -28,10 +29,20 @@ export default defineComponent({
     };
     const formData = reactive(getDefaultFormData());
 
-    const handleShow = ({ account_id, selectedRsList }: { account_id: string; selectedRsList: any[] }) => {
+    const handleShow = ({
+      accountId,
+      vpcId,
+      selectedRsList,
+    }: {
+      accountId: string;
+      vpcId: string;
+      selectedRsList: any[];
+    }) => {
       isShow.value = true;
       // 更新account_id
-      accountId.value = account_id;
+      account_id.value = accountId;
+      // 更新vpc_id
+      vpc_id.value = vpcId;
       // 更新 targets
       formData.targets = [
         ...formData.targets,
@@ -46,27 +57,26 @@ export default defineComponent({
     };
 
     // 处理参数
-    const resolveFormData = () => ({
-      targets: formData.targets.map(({ cloud_id, port, weight }) => ({
-        inst_type: 'CVM',
-        cloud_inst_id: cloud_id,
-        port,
-        weight,
-      })),
-    });
+    const resolveFormData = () => {
+      return {
+        account_id: account_id.value,
+        target_groups: selectedTargetGroups.value.map((item) => ({
+          target_group_id: item.id,
+          targets: formData.targets.map(({ cloud_id, port, weight }) => ({
+            inst_type: 'CVM',
+            cloud_inst_id: cloud_id,
+            port,
+            weight,
+          })),
+        })),
+      };
+    };
     // submit-handler
     const handleSubmit = async () => {
-      const data = resolveFormData();
-      // 遍历当前选中的目标组, 为每个目标组添加rs
       try {
         isSubmitDisabled.value = true;
-        const requestList = selectedTargetGroups.value.map(({ id }) => businessStore.addRsToTargetGroup(id, data));
-        const results = await Promise.allSettled(requestList);
-        results.forEach(({ status }, index) => {
-          if (status === 'fulfilled') {
-            Message({ theme: 'success', message: `目标组【${selectedTargetGroups.value[index].name}】批量添加rs成功` });
-          }
-        });
+        await businessStore.batchAddTargets(resolveFormData());
+        Message({ theme: 'success', message: `批量添加rs成功` });
         isShow.value = false;
       } finally {
         isSubmitDisabled.value = false;
@@ -103,7 +113,12 @@ export default defineComponent({
               ))}
             </div>
           </div>
-          <RsConfigTable v-model:rsList={formData.targets} accountId={accountId.value} noDisabled={true} />
+          <RsConfigTable
+            v-model:rsList={formData.targets}
+            accountId={account_id.value}
+            vpcId={vpc_id.value}
+            noDisabled={true}
+          />
         </div>
       </CommonSideslider>
     );

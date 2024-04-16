@@ -1486,12 +1486,12 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: '异常端口数',
-      field: 'health_check',
+      field: 'healthCheck',
       isDefaultShow: true,
       sort: true,
       render: ({ cell }: any) => {
+        if (!cell) return '--';
         const { health_num, un_health_num } = cell;
-        if (!health_num || !un_health_num) return '--';
         return (
           <div class='port-status-col'>
             <span class={un_health_num ? 'un-health' : 'health'}>{un_health_num}</span>/

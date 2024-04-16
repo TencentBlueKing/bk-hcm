@@ -94,7 +94,7 @@ export default (rsSelections: Ref<any[]>) => {
   };
 
   // 获取 rs 列表
-  const getRSTableList = async (accountId: string) => {
+  const getRSTableList = async (accountId: string, vpcId: string) => {
     if (!accountId) {
       rsTableList.value = [];
       return;
@@ -111,6 +111,11 @@ export default (rsSelections: Ref<any[]>) => {
                   field: 'account_id',
                   op: QueryRuleOPEnum.EQ,
                   value: accountId,
+                },
+                {
+                  field: 'vpc_ids',
+                  op: QueryRuleOPEnum.JSON_CONTAINS,
+                  value: vpcId,
                 },
               ],
             },

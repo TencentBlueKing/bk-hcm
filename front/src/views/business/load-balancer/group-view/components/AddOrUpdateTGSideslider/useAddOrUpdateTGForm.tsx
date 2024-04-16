@@ -3,7 +3,7 @@ import { ref, computed, watch, Ref } from 'vue';
 import { Input, Select } from 'bkui-vue';
 import AccountSelector from '@/components/account-selector/index.vue';
 import RegionSelector from '@/views/service/service-apply/components/common/region-selector';
-import VpcSelector from '@/components/vpc-selector/index.vue';
+import RegionVpcSelector from '@/views/service/service-apply/components/common/region-vpc-selector';
 import RsConfigTable from '../RsConfigTable';
 // import stores
 import { useAccountStore, useLoadBalancerStore } from '@/store';
@@ -18,6 +18,7 @@ export default (formData: any, updateCount: Ref<number>) => {
   const loadBalancerStore = useLoadBalancerStore();
 
   const curVendor = ref(VendorEnum.TCLOUD);
+  const curVpcId = ref('');
 
   const selectedBizId = computed({
     get() {
@@ -29,6 +30,12 @@ export default (formData: any, updateCount: Ref<number>) => {
   });
 
   const disabledEdit = computed(() => updateCount.value === 2 && loadBalancerStore.currentScene !== 'edit');
+  // 只有新增目标组的时候可以修改账号
+  const canUpdateAccount = computed(() => loadBalancerStore.currentScene === 'add');
+  // 只有新增目标组或目标组没有绑定rs时, 才可以修改地域和vpc
+  const canUpdateRegionOrVpc = computed(
+    () => loadBalancerStore.currentScene === 'add' || formData.rs_list.filter((item: any) => !item.isNew).length === 0,
+  );
 
   const formItemOptions = computed(() => [
     {
@@ -42,7 +49,7 @@ export default (formData: any, updateCount: Ref<number>) => {
           bizId={selectedBizId.value}
           type='resource'
           onChange={(account: { vendor: VendorEnum }) => (curVendor.value = account?.vendor)}
-          disabled={disabledEdit.value}
+          disabled={disabledEdit.value || !canUpdateAccount.value}
         />
       ),
     },
@@ -79,7 +86,7 @@ export default (formData: any, updateCount: Ref<number>) => {
         span: 12,
         content: () => (
           <RegionSelector
-            isDisabled={!formData.account_id || disabledEdit.value}
+            isDisabled={!formData.account_id || disabledEdit.value || !canUpdateRegionOrVpc.value}
             v-model={formData.region}
             accountId={formData.account_id}
             vendor={curVendor.value}
@@ -93,11 +100,12 @@ export default (formData: any, updateCount: Ref<number>) => {
         property: 'cloud_vpc_id',
         span: 12,
         content: () => (
-          <VpcSelector
+          <RegionVpcSelector
             v-model={formData.cloud_vpc_id}
-            isDisabled={(!formData.account_id && !formData.region) || disabledEdit.value}
+            accountId={formData.account_id}
             region={formData.region}
-            vendor={curVendor.value}
+            isDisabled={(!formData.account_id && !formData.region) || disabledEdit.value || !canUpdateRegionOrVpc.value}
+            onChange={(vpcDetail: any) => (curVpcId.value = vpcDetail?.id || '')}
           />
         ),
       },
@@ -107,7 +115,9 @@ export default (formData: any, updateCount: Ref<number>) => {
       required: true,
       property: 'rs_list',
       span: 24,
-      content: () => <RsConfigTable v-model:rsList={formData.rs_list} accountId={formData.account_id} />,
+      content: () => (
+        <RsConfigTable v-model:rsList={formData.rs_list} accountId={formData.account_id} vpcId={curVpcId.value} />
+      ),
     },
   ]);
 
@@ -120,8 +130,9 @@ export default (formData: any, updateCount: Ref<number>) => {
 
   watch(
     () => formData.region,
-    (v) => {
-      !v && (formData.cloud_vpc_id = '');
+    () => {
+      // region改变时, 过滤掉新增的rs, 保留原有的rs
+      formData.rs_list = formData.rs_list.filter((item: any) => !item.isNew);
     },
   );
 
