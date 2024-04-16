@@ -24,6 +24,7 @@ import (
 	"reflect"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/api/core/audit"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
@@ -869,10 +870,8 @@ func (svc *lbSvc) createTargetGroupOfResFlowAudit(kt *kit.Kit, req *dataproto.Re
 	}
 
 	resInfo := resList.Details[0]
-	var auditData = struct {
-		TargetGroup tablelb.LoadBalancerTargetGroupTable `json:"target_group"`
-		ResFlow     *dataproto.ResFlowLockReq            `json:"res_flow"`
-	}{
+
+	var auditData = audit.TargetGroupAsyncAuditDetail{
 		TargetGroup: resInfo,
 		ResFlow:     req,
 	}

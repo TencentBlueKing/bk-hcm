@@ -28,10 +28,8 @@ import (
 
 // FlowLoadBalancerOperateWatchTpl define flow load balancer operate watch template.
 var FlowLoadBalancerOperateWatchTpl = action.FlowTemplate{
-	Name: enumor.FlowLoadBalancerOperateWatch,
-	ShareData: &tableasync.ShareData{
-		Dict: map[string]string{},
-	},
+	Name:      enumor.FlowLoadBalancerOperateWatch,
+	ShareData: tableasync.NewShareData(nil),
 	Tasks: []action.TaskTemplate{
 		{
 			ActionID:   "1",

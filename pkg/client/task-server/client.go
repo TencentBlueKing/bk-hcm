@@ -164,3 +164,22 @@ func (c *Client) UpdateCustomFlowState(kt *kit.Kit, req *producer.UpdateCustomFl
 	return common.RequestNoResp[producer.UpdateCustomFlowStateOption](c.client, http.MethodPatch,
 		kt, req, "/custom_flows/state/update")
 }
+
+// CancelFlow 终止任务
+func (c *Client) CancelFlow(kt *kit.Kit, flowID string) error {
+	return common.RequestNoResp[common.Empty](c.client, rest.POST, kt, nil,
+		"/flows/%s/cancel", flowID)
+}
+
+// CloneFlow clone 任务 返回创建的新flow id
+func (c *Client) CloneFlow(kt *kit.Kit, flowID string) (*core.CreateResult, error) {
+	return common.Request[common.Empty, core.CreateResult](c.client, rest.POST, kt, nil,
+		"/flows/%s/clone", flowID)
+
+}
+
+// RetryTask 重试任务
+func (c *Client) RetryTask(kt *kit.Kit, flowID string, taskID string) error {
+	return common.RequestNoResp[common.Empty](c.client, rest.POST, kt, nil,
+		"/flows/%s/tasks/%s/retry", flowID, taskID)
+}
