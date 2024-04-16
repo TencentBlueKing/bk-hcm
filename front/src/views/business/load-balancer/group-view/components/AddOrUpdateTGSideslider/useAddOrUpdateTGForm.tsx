@@ -30,6 +30,12 @@ export default (formData: any, updateCount: Ref<number>) => {
   });
 
   const disabledEdit = computed(() => updateCount.value === 2 && loadBalancerStore.currentScene !== 'edit');
+  // 只有新增目标组的时候可以修改账号
+  const canUpdateAccount = computed(() => loadBalancerStore.currentScene === 'add');
+  // 只有新增目标组或目标组没有绑定rs时, 才可以修改地域和vpc
+  const canUpdateRegionOrVpc = computed(
+    () => loadBalancerStore.currentScene === 'add' || formData.rs_list.filter((item: any) => !item.isNew).length === 0,
+  );
 
   const formItemOptions = computed(() => [
     {
@@ -43,7 +49,7 @@ export default (formData: any, updateCount: Ref<number>) => {
           bizId={selectedBizId.value}
           type='resource'
           onChange={(account: { vendor: VendorEnum }) => (curVendor.value = account?.vendor)}
-          disabled={disabledEdit.value}
+          disabled={disabledEdit.value || !canUpdateAccount.value}
         />
       ),
     },
@@ -80,7 +86,7 @@ export default (formData: any, updateCount: Ref<number>) => {
         span: 12,
         content: () => (
           <RegionSelector
-            isDisabled={!formData.account_id || disabledEdit.value}
+            isDisabled={!formData.account_id || disabledEdit.value || !canUpdateRegionOrVpc.value}
             v-model={formData.region}
             accountId={formData.account_id}
             vendor={curVendor.value}
@@ -98,7 +104,7 @@ export default (formData: any, updateCount: Ref<number>) => {
             v-model={formData.cloud_vpc_id}
             accountId={formData.account_id}
             region={formData.region}
-            isDisabled={(!formData.account_id && !formData.region) || disabledEdit.value}
+            isDisabled={(!formData.account_id && !formData.region) || disabledEdit.value || !canUpdateRegionOrVpc.value}
             onChange={(vpcDetail: any) => (curVpcId.value = vpcDetail?.id || '')}
           />
         ),
@@ -124,8 +130,9 @@ export default (formData: any, updateCount: Ref<number>) => {
 
   watch(
     () => formData.region,
-    (v) => {
-      !v && (formData.cloud_vpc_id = '');
+    () => {
+      // region改变时, 过滤掉新增的rs, 保留原有的rs
+      formData.rs_list = formData.rs_list.filter((item: any) => !item.isNew);
     },
   );
 
