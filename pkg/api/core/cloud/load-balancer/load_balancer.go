@@ -207,10 +207,11 @@ type BaseResFlowLock struct {
 
 // BaseResFlowRel define base res flow rel.
 type BaseResFlowRel struct {
-	ID             string               `json:"id"`
-	ResID          string               `json:"res_id"`
-	FlowID         string               `json:"flow_id"`
-	TaskType       enumor.TaskType      `json:"task_type"`
-	Status         enumor.ResFlowStatus `json:"status"`
+	ID             string                   `json:"id"`
+	ResID          string                   `json:"res_id"`
+	ResType        enumor.CloudResourceType `json:"res_type" `
+	FlowID         string                   `json:"flow_id"`
+	TaskType       enumor.TaskType          `json:"task_type"`
+	Status         enumor.ResFlowStatus     `json:"status"`
 	*core.Revision `json:",inline"`
 }

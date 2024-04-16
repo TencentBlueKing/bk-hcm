@@ -6,14 +6,14 @@
 
 ### URL
 
-POST /api/v1/cloud/bizs/{bk_biz_id}/audit/{audit_id}/async_tasks/clone
+POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/{lb_id}/async_tasks/clone
 
 ### 输入参数
 
 | 参数名称      | 参数类型   | 必选 | 描述      |
 |-----------|--------|----|---------|
 | bk_biz_id | int64  | 是  | 业务ID    |
-| audit_id  | string | 是  | 操作记录id  |
+| lb_id     | string | 是  | 负载均衡id  |
 | flow_id   | string | 是  | flow id |
 
 ### 调用示例

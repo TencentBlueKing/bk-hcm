@@ -798,7 +798,7 @@ func (svc *lbSvc) BatchCreateResFlowRel(cts *rest.Contexts) (any, error) {
 	return &core.BatchCreateResult{IDs: ids}, nil
 }
 
-// ResFlowLock 锁定资源跟Flow
+// ResFlowLock 锁定资源跟Flow 1. 锁表 2. 创建关联记录
 func (svc *lbSvc) ResFlowLock(cts *rest.Contexts) (any, error) {
 	req := new(dataproto.ResFlowLockReq)
 	if err := cts.DecodeInto(req); err != nil {

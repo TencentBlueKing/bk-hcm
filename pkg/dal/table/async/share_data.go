@@ -46,9 +46,9 @@ func NewShareData(initData map[string]string) *ShareData {
 }
 
 type data struct {
-	Data map[string]string `json:"data"`
+	Data map[string]string `json:"data,omitempty"`
 	// save init data
-	InitData map[string]string `json:"init_data"`
+	InitData map[string]string `json:"init_data,omitempty"`
 }
 
 // ShareData can read/write within all tasks and will persist it
@@ -64,7 +64,10 @@ type ShareData struct {
 func (d *ShareData) Scan(raw interface{}) error {
 	err := types.Scan(raw, &d.data)
 	if err == nil && d.data == nil {
-		d.Data = make(map[string]string)
+		d.data = &data{
+			Data:     make(map[string]string),
+			InitData: make(map[string]string),
+		}
 	}
 	return err
 }
