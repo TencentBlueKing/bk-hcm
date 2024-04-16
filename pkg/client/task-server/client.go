@@ -172,8 +172,8 @@ func (c *Client) CancelFlow(kt *kit.Kit, flowID string) error {
 }
 
 // CloneFlow clone 任务 返回创建的新flow id
-func (c *Client) CloneFlow(kt *kit.Kit, flowID string) (*core.CreateResult, error) {
-	return common.Request[common.Empty, core.CreateResult](c.client, rest.POST, kt, nil,
+func (c *Client) CloneFlow(kt *kit.Kit, flowID string, req *producer.CloneFlowOption) (*core.CreateResult, error) {
+	return common.Request[producer.CloneFlowOption, core.CreateResult](c.client, rest.POST, kt, req,
 		"/flows/%s/clone", flowID)
 
 }

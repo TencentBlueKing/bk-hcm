@@ -24,9 +24,12 @@ import (
 	"errors"
 	"time"
 
+	actionflow "hcm/cmd/task-server/logics/flow"
 	"hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
+	ts "hcm/pkg/api/task-server"
+	"hcm/pkg/async/producer"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -160,14 +163,46 @@ func (svc *lbSvc) cloneFlow(cts *rest.Contexts, operateAuth handler.ValidWithAut
 		return nil, errf.Newf(errf.InvalidParameter, "given flow status incorrect: %s", rel.Status)
 	}
 
-	// TODO 重新创建 从flow
-	result, err := svc.client.TaskServer().CloneFlow(cts.Kit, req.FlowID)
+	cloneReq := &producer.CloneFlowOption{
+		Memo:        "cloned for " + req.FlowID,
+		IsInitState: true,
+	}
+	flowRet, err := svc.client.TaskServer().CloneFlow(cts.Kit, req.FlowID, cloneReq)
 	if err != nil {
 		logs.Errorf("fail to call task server to clone flow(%s), err: %s, rid: %s", req.FlowID, err, cts.Kit.Rid)
 		return nil, err
 	}
+	// 从Flow，负责监听主Flow的状态
+	flowWatchReq := &ts.AddTemplateFlowReq{
+		Name: enumor.FlowLoadBalancerOperateWatch,
+		Tasks: []ts.TemplateFlowTask{{
+			ActionID: "1",
+			Params: &actionflow.LoadBalancerOperateWatchOption{
+				FlowID:     flowRet.ID,
+				ResID:      lbInfo.ID,
+				ResType:    enumor.LoadBalancerCloudResType,
+				SubResIDs:  []string{lbInfo.ID},
+				SubResType: enumor.LoadBalancerCloudResType,
+				TaskType:   rel.TaskType,
+			},
+		}},
+	}
 
-	return result, nil
+	_, err = svc.client.TaskServer().CreateTemplateFlow(cts.Kit, flowWatchReq)
+	if err != nil {
+		logs.Errorf("call task server to create res flow status watch task failed, err: %v, flowID: %s, rid: %s",
+			err, req.FlowID, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// 锁定资源跟Flow的状态
+	err = svc.lockResFlowStatus(cts.Kit, lbInfo.ID, enumor.LoadBalancerCloudResType, req.FlowID,
+		rel.TaskType)
+	if err != nil {
+		return nil, err
+	}
+
+	return flowRet, nil
 }
 
 // GetResultAfterTerminate 获取结束后的result
