@@ -228,7 +228,7 @@ func (req *TargetGroupListenerRelAssociateReq) Validate() error {
 
 // TCloudTargetBatchCreateReq tcloud target batch create req.
 type TCloudTargetBatchCreateReq struct {
-	RsList []*cloud.TargetBaseReq `json:"targets" validate:"required,min=1,max=100,dive"`
+	TargetGroups []*TCloudBatchAddTargetReq `json:"target_groups" validate:"required,min=1,max=10,dive"`
 }
 
 // Validate request.
@@ -236,16 +236,28 @@ func (req *TCloudTargetBatchCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
+// TCloudBatchAddTargetReq tcloud target batch operate req.
+type TCloudBatchAddTargetReq struct {
+	TargetGroupID string                 `json:"target_group_id" validate:"required"`
+	Targets       []*cloud.TargetBaseReq `json:"targets" validate:"required,min=1,max=100,dive"`
+}
+
 // --------------------------[批量移除RS]--------------------------
 
 // TCloudTargetBatchRemoveReq tcloud target batch remove req.
 type TCloudTargetBatchRemoveReq struct {
-	TargetIDs []string `json:"target_ids" validate:"required,min=1,max=100"`
+	TargetGroups []*TCloudRemoveTargetReq `json:"target_groups" validate:"required,min=1,max=10,dive"`
 }
 
 // Validate request.
 func (req *TCloudTargetBatchRemoveReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// TCloudRemoveTargetReq tcloud remove target req.
+type TCloudRemoveTargetReq struct {
+	TargetGroupID string   `json:"target_group_id" validate:"required"`
+	TargetIDs     []string `json:"target_ids" validate:"required,min=1,max=100,dive"`
 }
 
 // TCloudRuleBatchCreateReq tcloud lb url rule batch create req.

@@ -277,44 +277,39 @@ func (svc *lbSvc) BatchAddBizTargets(cts *rest.Contexts) (any, error) {
 }
 
 func (svc *lbSvc) batchAddBizTarget(cts *rest.Contexts, authHandler handler.ValidWithAuthHandler) (any, error) {
-
-	tgID := cts.PathParameter("target_group_id").String()
-	if len(tgID) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "target_group_id is required")
-	}
-
 	req := new(cloudserver.ResourceCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
-		logs.Errorf("batch add rs request decode failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("batch add target request decode failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(
-		cts.Kit, enumor.TargetGroupCloudResType, tgID)
-	if err != nil {
-		logs.Errorf("get target group resource info failed, id: %s, err: %s, rid: %s", tgID, err, cts.Kit.Rid)
-		return nil, err
-	}
-
 	// authorized instances
-	err = authHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.TargetGroup,
-		Action: meta.Update, BasicInfo: baseInfo})
+	basicInfo := &types.CloudResourceBasicInfo{
+		AccountID: req.AccountID,
+	}
+	err := authHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.TargetGroup,
+		Action: meta.Update, BasicInfo: basicInfo})
 	if err != nil {
-		logs.Errorf("batch add rs auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("batch add target auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	switch baseInfo.Vendor {
+	accountInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(
+		cts.Kit, enumor.AccountCloudResType, req.AccountID)
+	if err != nil {
+		logs.Errorf("get account basic info failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	switch accountInfo.Vendor {
 	case enumor.TCloud:
-		return svc.buildAddTCloudTarget(cts.Kit, req.Data, tgID, baseInfo.AccountID)
+		return svc.buildAddTCloudTarget(cts.Kit, req.Data, accountInfo.AccountID)
 	default:
-		return nil, fmt.Errorf("vendor: %s not support", baseInfo.Vendor)
+		return nil, fmt.Errorf("vendor: %s not support", accountInfo.Vendor)
 	}
 }
 
-func (svc *lbSvc) buildAddTCloudTarget(kt *kit.Kit, body json.RawMessage, tgID, accountID string) (
-	interface{}, error) {
-
+func (svc *lbSvc) buildAddTCloudTarget(kt *kit.Kit, body json.RawMessage, accountID string) (interface{}, error) {
 	req := new(cslb.TCloudTargetBatchCreateReq)
 	if err := json.Unmarshal(body, req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -324,45 +319,73 @@ func (svc *lbSvc) buildAddTCloudTarget(kt *kit.Kit, body json.RawMessage, tgID, 
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// 根据目标组ID，获取目标组绑定的监听器、规则列表
-	ruleRelReq := &core.ListReq{
-		Filter: tools.EqualExpression("target_group_id", tgID),
-		Page:   core.NewDefaultBasePage(),
-	}
-	ruleRelList, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, ruleRelReq)
-	if err != nil {
-		logs.Errorf("list tcloud listener url rule failed, tgID: %s, err: %v, rid: %s", tgID, err, kt.Rid)
-		return nil, err
-	}
-
 	// 检查传入的Target是否已存在
-	err = svc.checkAddTarget(kt, req, tgID, accountID)
-	if err != nil {
+	if err := svc.checkAddTarget(kt, req, accountID); err != nil {
 		return nil, err
 	}
 
-	// 该目标组尚未绑定监听器及规则，不需要云端操作
-	if len(ruleRelList.Details) == 0 {
-		rsIDs, err := svc.batchCreateTargetDb(kt, req, tgID, accountID)
-		if err != nil {
-			return nil, err
+	targetIDs := make([]string, 0)
+	lbIDs := make([]string, 0)
+	targetGroupRsListMap := make(map[string][]*dataproto.TargetBaseReq, 0)
+	targetGroupRuleRelMap := make(map[string][]corelb.BaseTargetListenerRuleRel, 0)
+	for _, item := range req.TargetGroups {
+		if _, ok := targetGroupRuleRelMap[item.TargetGroupID]; !ok {
+			// 根据目标组ID，获取目标组绑定的监听器、规则列表
+			ruleRelReq := &core.ListReq{
+				Filter: tools.EqualExpression("target_group_id", item.TargetGroupID),
+				Page:   core.NewDefaultBasePage(),
+			}
+			ruleRelList, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, ruleRelReq)
+			if err != nil {
+				logs.Errorf("list tcloud listener url rule failed, tgItem: %+v, err: %v, rid: %s", item, err, kt.Rid)
+				return nil, err
+			}
+			targetGroupRuleRelMap[item.TargetGroupID] = ruleRelList.Details
 		}
-		return &core.FlowStateResult{FlowID: rsIDs.IDs[0], State: enumor.FlowSuccess}, nil
+
+		// 该目标组尚未绑定监听器及规则，不需要云端操作
+		ruleRelList := targetGroupRuleRelMap[item.TargetGroupID]
+		if len(ruleRelList) == 0 {
+			rsIDs, err := svc.batchCreateTargetDb(kt, item.Targets, item.TargetGroupID, accountID)
+			if err != nil {
+				return nil, err
+			}
+			targetIDs = append(targetIDs, rsIDs.IDs...)
+		} else {
+			lbIDs = slice.Unique(slice.Map(ruleRelList, func(rel corelb.BaseTargetListenerRuleRel) string {
+				return rel.LbID
+			}))
+			targetGroupRsListMap[item.TargetGroupID] = append(targetGroupRsListMap[item.TargetGroupID], item.Targets...)
+		}
 	}
 
-	return svc.buildAddTCloudTargetTasks(kt, req, ruleRelList.Details[0].LbID, tgID, accountID)
+	// 都是未绑定监听器的目标组，不需要云端操作
+	if len(targetGroupRsListMap) == 0 {
+		return &corelb.TargetOperateResult{TargetIDs: targetIDs}, nil
+	}
+
+	// 目标组需要属于同一个负载均衡
+	if len(lbIDs) > 1 {
+		return nil, errf.New(errf.InvalidParameter, "target group need belong to the same load balancer")
+	}
+
+	return svc.buildAddTCloudTargetTasks(kt, accountID, lbIDs[0], targetGroupRsListMap)
 }
 
-func (svc *lbSvc) checkAddTarget(kt *kit.Kit, req *cslb.TCloudTargetBatchCreateReq,
-	tgID, accountID string) error {
-
-	for _, item := range req.RsList {
+func (svc *lbSvc) checkAddTarget(kt *kit.Kit, req *cslb.TCloudTargetBatchCreateReq, accountID string) error {
+	for _, tgItem := range req.TargetGroups {
+		cloudInstIDs := make([]string, 0)
+		ports := make([]int64, 0)
+		for _, item := range tgItem.Targets {
+			cloudInstIDs = append(cloudInstIDs, item.CloudInstID)
+			ports = append(ports, item.Port)
+		}
 		tgReq := &core.ListReq{
 			Filter: tools.ExpressionAnd(
 				tools.RuleEqual("account_id", accountID),
-				tools.RuleEqual("target_group_id", tgID),
-				tools.RuleEqual("cloud_inst_id", item.CloudInstID),
-				tools.RuleEqual("port", item.Port),
+				tools.RuleEqual("target_group_id", tgItem.TargetGroupID),
+				tools.RuleIn("cloud_inst_id", cloudInstIDs),
+				tools.RuleIn("port", ports),
 			),
 			Page: core.NewDefaultBasePage(),
 		}
@@ -371,17 +394,22 @@ func (svc *lbSvc) checkAddTarget(kt *kit.Kit, req *cslb.TCloudTargetBatchCreateR
 			return err
 		}
 		if len(rsList.Details) > 0 {
-			logs.Errorf("check add target has exist, tgID: %s, item: %+v, rid: %s", tgID, item, kt.Rid)
-			return errf.Newf(errf.RecordDuplicated, "cloudInstID: %s, port: %d has exist", item.CloudInstID, item.Port)
+			logs.Errorf("check add target has exist, targetGroupID: %s, targetItem: %+v, rid: %s",
+				tgItem.TargetGroupID, tgItem, kt.Rid)
+			tmpCloudInstIds := slice.Unique(slice.Map(rsList.Details, func(target corelb.BaseTarget) string {
+				return target.CloudInstID
+			}))
+			return errf.Newf(errf.RecordDuplicated, "targetGroupID: %s, cloudInstIDs: %v has exist",
+				tgItem.TargetGroupID, tmpCloudInstIds)
 		}
 	}
 	return nil
 }
 
-func (svc *lbSvc) batchCreateTargetDb(kt *kit.Kit, req *cslb.TCloudTargetBatchCreateReq,
-	tgID, accountID string) (*core.BatchCreateResult, error) {
+func (svc *lbSvc) batchCreateTargetDb(kt *kit.Kit, targets []*dataproto.TargetBaseReq, tgID, accountID string) (
+	*core.BatchCreateResult, error) {
 
-	addRsParams, err := svc.convTCloudAddTargetReq(kt, req.RsList, tgID, accountID)
+	addRsParams, err := svc.convTCloudAddTargetReq(kt, targets, tgID, accountID)
 	if err != nil {
 		return nil, err
 	}
@@ -391,7 +419,7 @@ func (svc *lbSvc) batchCreateTargetDb(kt *kit.Kit, req *cslb.TCloudTargetBatchCr
 	for _, item := range addRsParams.RsList {
 		rsReq.Targets = append(rsReq.Targets, &dataproto.TargetBaseReq{
 			AccountID:     accountID,
-			TargetGroupID: tgID,
+			TargetGroupID: item.TargetGroupID,
 			InstType:      item.InstType,
 			CloudInstID:   item.CloudInstID,
 			Port:          item.Port,
@@ -401,41 +429,69 @@ func (svc *lbSvc) batchCreateTargetDb(kt *kit.Kit, req *cslb.TCloudTargetBatchCr
 	return svc.client.DataService().Global.LoadBalancer.BatchCreateTCloudTarget(kt, rsReq)
 }
 
-func (svc *lbSvc) buildAddTCloudTargetTasks(kt *kit.Kit, req *cslb.TCloudTargetBatchCreateReq, lbID, tgID,
-	accountID string) (*core.FlowStateResult, error) {
+func (svc *lbSvc) buildAddTCloudTargetTasks(kt *kit.Kit, accountID, lbID string,
+	tgMap map[string][]*dataproto.TargetBaseReq) (*core.FlowStateResult, error) {
 
 	// 预检测
-	err := svc.checkResFlowRel(kt, lbID, tgID, enumor.LoadBalancerCloudResType, enumor.TargetGroupCloudResType)
+	err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
 	if err != nil {
 		return nil, err
 	}
 
 	// 创建Flow跟Task的初始化数据
+	flowID, err := svc.initFlowAddTargetByLbID(kt, accountID, lbID, tgMap)
+	if err != nil {
+		return nil, err
+	}
+
+	// 锁定资源跟Flow的状态
+	err = svc.lockResFlowStatus(kt, lbID, enumor.LoadBalancerCloudResType, flowID, enumor.AddRSTaskType)
+	if err != nil {
+		return nil, err
+	}
+
+	return &core.FlowStateResult{FlowID: flowID}, nil
+}
+
+func (svc *lbSvc) initFlowAddTargetByLbID(kt *kit.Kit, accountID, lbID string,
+	tgMap map[string][]*dataproto.TargetBaseReq) (string, error) {
+
 	tasks := make([]ts.CustomFlowTask, 0)
-	elems := slice.Split(req.RsList, constant.BatchAddRSCloudMaxLimit)
 	getActionID := counter.NewNumStringCounter(1, 10)
-	for _, parts := range elems {
-		addRsParams, err := svc.convTCloudAddTargetReq(kt, parts, tgID, accountID)
-		if err != nil {
-			logs.Errorf("add rs build tcloud request failed, err: %v, tgID: %s, parts: %+v rid: %s",
-				err, tgID, parts, kt.Rid)
-			return nil, err
-		}
-		tasks = append(tasks, ts.CustomFlowTask{
-			ActionID:   action.ActIDType(getActionID()),
-			ActionName: enumor.ActionTargetGroupAddRS,
-			Params: &actionlb.OperateRsOption{
-				Vendor:                      enumor.TCloud,
-				TCloudBatchOperateTargetReq: *addRsParams,
-			},
-			Retry: &tableasync.Retry{
-				Enable: true,
-				Policy: &tableasync.RetryPolicy{
-					Count:        constant.FlowRetryMaxLimit,
-					SleepRangeMS: [2]uint{100, 200},
+	var tgIDs []string
+	var lastActionID action.ActIDType
+	for tgID, rsList := range tgMap {
+		tgIDs = append(tgIDs, tgID)
+		elems := slice.Split(rsList, constant.BatchAddRSCloudMaxLimit)
+		for _, parts := range elems {
+			addRsParams, err := svc.convTCloudAddTargetReq(kt, parts, tgID, accountID)
+			if err != nil {
+				logs.Errorf("add target build tcloud request failed, err: %v, tgID: %s, parts: %+v rid: %s",
+					err, tgID, parts, kt.Rid)
+				return "", err
+			}
+			actionID := action.ActIDType(getActionID())
+			tmpTask := ts.CustomFlowTask{
+				ActionID:   actionID,
+				ActionName: enumor.ActionTargetGroupAddRS,
+				Params: &actionlb.OperateRsOption{
+					Vendor:                      enumor.TCloud,
+					TCloudBatchOperateTargetReq: *addRsParams,
 				},
-			},
-		})
+				Retry: &tableasync.Retry{
+					Enable: true,
+					Policy: &tableasync.RetryPolicy{
+						Count:        constant.FlowRetryMaxLimit,
+						SleepRangeMS: [2]uint{100, 200},
+					},
+				},
+			}
+			if len(lastActionID) > 0 {
+				tmpTask.DependOn = []action.ActIDType{lastActionID}
+			}
+			tasks = append(tasks, tmpTask)
+			lastActionID = actionID
+		}
 	}
 	addReq := &ts.AddCustomFlowReq{
 		Name:        enumor.FlowTargetGroupAddRS,
@@ -445,7 +501,7 @@ func (svc *lbSvc) buildAddTCloudTargetTasks(kt *kit.Kit, req *cslb.TCloudTargetB
 	result, err := svc.client.TaskServer().CreateCustomFlow(kt, addReq)
 	if err != nil {
 		logs.Errorf("call taskserver to batch add rs custom flow failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
+		return "", err
 	}
 
 	flowID := result.ID
@@ -458,7 +514,7 @@ func (svc *lbSvc) buildAddTCloudTargetTasks(kt *kit.Kit, req *cslb.TCloudTargetB
 				FlowID:     flowID,
 				ResID:      lbID,
 				ResType:    enumor.LoadBalancerCloudResType,
-				SubResID:   tgID,
+				SubResIDs:  tgIDs,
 				SubResType: enumor.TargetGroupCloudResType,
 				TaskType:   enumor.AddRSTaskType,
 			},
@@ -468,16 +524,10 @@ func (svc *lbSvc) buildAddTCloudTargetTasks(kt *kit.Kit, req *cslb.TCloudTargetB
 	if err != nil {
 		logs.Errorf("call taskserver to create res flow status watch task failed, err: %v, flowID: %s, rid: %s",
 			err, flowID, kt.Rid)
-		return nil, err
+		return "", err
 	}
 
-	// 锁定资源跟Flow的状态
-	err = svc.lockResFlowStatus(kt, lbID, enumor.LoadBalancerCloudResType, flowID, enumor.AddRSTaskType)
-	if err != nil {
-		return nil, err
-	}
-
-	return &core.FlowStateResult{FlowID: flowID}, nil
+	return flowID, nil
 }
 
 // convTCloudAddTargetReq conv tcloud add target req.
@@ -569,21 +619,7 @@ func (svc *lbSvc) lockResFlowStatus(kt *kit.Kit, resID string, resType enumor.Cl
 	return nil
 }
 
-func (svc *lbSvc) checkResFlowRel(kt *kit.Kit, resID, subResID string,
-	resType, subResType enumor.CloudResourceType) error {
-
-	// 检查目标组是否存在
-	if subResType == enumor.TargetGroupCloudResType {
-		tg, err := svc.getTargetGroupByID(kt, subResID)
-		if err != nil {
-			logs.Errorf("list target group by id failed, tgID: %s, err: %v, rid: %s", subResID, err, kt.Rid)
-			return err
-		}
-		if tg == nil {
-			return errf.Newf(errf.RecordNotFound, "target group: %s not found", subResID)
-		}
-	}
-
+func (svc *lbSvc) checkResFlowRel(kt *kit.Kit, resID string, resType enumor.CloudResourceType) error {
 	// 预检测-当前资源是否有锁定中的数据
 	lockReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(
@@ -599,7 +635,7 @@ func (svc *lbSvc) checkResFlowRel(kt *kit.Kit, resID, subResID string,
 		return err
 	}
 	if len(lockRet.Details) > 0 {
-		return errf.Newf(errf.TooManyRequest, "resID: %s is processing", subResID)
+		return errf.Newf(errf.TooManyRequest, "resID: %s is processing", resID)
 	}
 
 	// 预检测-当前资源是否有未终态的状态

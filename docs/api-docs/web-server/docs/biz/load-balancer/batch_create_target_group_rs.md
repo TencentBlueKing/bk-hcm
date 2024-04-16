@@ -6,15 +6,22 @@
 
 ### URL
 
-POST /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/targets/create
+POST /api/v1/cloud/bizs/{bk_biz_id}/target_groups/targets/create
 
 ### 输入参数
 
-| 参数名称          | 参数类型       | 必选 | 描述                |
-|------------------|--------------|------|--------------------|
-| bk_biz_id        | int          | 是   | 业务ID              |
-| target_group_id  | string       | 是   | 目标组ID            |
-| targets          | object array | 是   | RS列表，单次最多100个 |
+| 参数名称          | 参数类型       | 必选 | 描述                   |
+|------------------|--------------|------|-----------------------|
+| bk_biz_id        | int          | 是   | 业务ID                 |
+| account_id       | string       | 是   | 账号ID                 |
+| target_groups    | object array | 是   | 目标组列表，单次最多10个  |
+
+#### target_groups
+
+| 参数名称          | 参数类型       | 必选 | 描述                   |
+|------------------|--------------|------|-----------------------|
+| target_group_id  | string       | 是   | 目标组ID                |
+| targets          | object array | 是   | RS实例列表，单次最多100个 |
 
 #### targets
 
@@ -29,12 +36,18 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/targets/crea
 
 ```json
 {
-  "targets": [
+  "account_id": "00000001",
+  "target_groups": [
     {
-      "inst_type": "CVM",
-      "cloud_inst_id": "cvm-xxxxxx",
-      "port": 8000,
-      "weight": 10
+      "target_group_id": "0000000g",
+        "targets": [
+          {
+            "inst_type": "CVM",
+            "cloud_inst_id": "cvm-xxxxxx",
+            "port": 8000,
+            "weight": 10
+          }
+        ]
     }
   ]
 }

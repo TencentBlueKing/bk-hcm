@@ -6,20 +6,21 @@
 
 ### URL
 
-POST /api/v1/cloud/bizs/{bk_biz_id}/audits/{id}/async_flow/list
+POST /api/v1/cloud/bizs/{bk_biz_id}/audits/async_flow/list
 
 ### 输入参数
 
 | 参数名称   | 参数类型 | 必选 | 描述            |
 |-----------|--------|------|----------------|
 | bk_biz_id | int    | 是   | 业务ID          |
-| id        | int    | 是   | 操作记录ID       |
+| audit_id  | int    | 是   | 操作记录ID       |
 | flow_id   | string | 是   | 任务ID          |
 
 ### 调用示例
 
 ```json
 {
+    "audit_id": 1001,
     "flow_id": "00000001"
 }
 ```
