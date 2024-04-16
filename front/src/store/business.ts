@@ -298,5 +298,16 @@ export const useBusinessStore = defineStore({
         data,
       });
     },
+    /**
+     * 查询指定的目标组绑定的负载均衡下的端口健康信息
+     * @param target_group_id 目标组id
+     * @param data { cloud_lb_ids: 云负载均衡ID数组 }
+     */
+    asyncGetTargetsHealth(target_group_id: string, data: { cloud_lb_ids: string[] }) {
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${target_group_id}/targets/health`,
+        data,
+      );
+    },
   },
 });
