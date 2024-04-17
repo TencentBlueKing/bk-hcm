@@ -331,7 +331,8 @@ func isLayer4ListenerChanged(cloud typeslb.TCloudListener, db corelb.TCloudListe
 	return false
 }
 
-func isHealthCheckChange(cloud *tclb.HealthCheck, db *corelb.TCloudHealthCheckInfo) bool {
+// 七层规则不支持设置检查端口
+func isHealthCheckChange(cloud *tclb.HealthCheck, db *corelb.TCloudHealthCheckInfo, isL7 bool) bool {
 	if cloud == nil || db == nil {
 		// 云上和本地都为空 则是未变化，否则需要更新本地
 		return !(cloud == nil && db == nil)
@@ -363,7 +364,8 @@ func isHealthCheckChange(cloud *tclb.HealthCheck, db *corelb.TCloudHealthCheckIn
 	if !assert.IsPtrStringEqual(cloud.HttpCheckMethod, db.HttpCheckMethod) {
 		return true
 	}
-	if !assert.IsPtrInt64Equal(cloud.CheckPort, db.CheckPort) {
+	// 七层规则不支持设置检查端口, 这里不比较该数据
+	if isL7 && !assert.IsPtrInt64Equal(cloud.CheckPort, db.CheckPort) {
 		return true
 	}
 	if !assert.IsPtrStringEqual(cloud.ContextType, db.ContextType) {
