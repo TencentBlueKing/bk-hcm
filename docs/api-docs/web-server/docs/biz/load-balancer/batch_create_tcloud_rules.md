@@ -10,16 +10,10 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/listeners/{lbl_id}/rules/crea
 
 ### 输入参数
 
-| 参数名称      | 参数类型         | 必选 | 描述    |
-|-----------|--------------|----|-------|
-| bk_biz_id | int64        | 是  | 业务ID  |
-| lbl_id    | string       | 是  | 监听器id |
-| rules     | object array | 是  | 待创建规则 |
-
-#### rules[n]
-
 | 参数名称                | 参数类型         | 必选 | 描述                |
 |---------------------|--------------|----|-------------------|
+| bk_biz_id           | int64        | 是  | 业务ID              |
+| lbl_id              | string       | 是  | 监听器id             |
 | url                 | string       | 是  | 监听的url            |
 | target_group_id     | string       | 是  | 目标组id             |
 | domains             | string array | 否  | 域名                |
