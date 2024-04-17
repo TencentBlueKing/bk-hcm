@@ -1,12 +1,10 @@
-import { defineComponent, reactive, ref, watch } from 'vue';
+import { defineComponent, ref, watch } from 'vue';
 // import components
 import { Select } from 'bkui-vue';
-// import stores
-import { useResourceStore } from '@/store';
 // import types
-import { IPageQuery, QueryRuleOPEnum } from '@/typings';
-// import utils
-import { throttle } from 'lodash';
+import { QueryRuleOPEnum } from '@/typings';
+// import hooks
+import useSelectOptionListWithScroll from '@/hooks/useSelectOptionListWithScroll';
 import './index.scss';
 
 const { Option } = Select;
@@ -17,88 +15,52 @@ export default defineComponent({
     modelValue: String, // 选中的vpc cloud_id
     accountId: String, // 云账号id
     region: String, // 云地域
+    isDisabled: {
+      type: Boolean,
+      default: false,
+    },
   },
   emits: ['update:modelValue', 'change'],
   setup(props, { emit }) {
-    // use stores
-    const resourceStore = useResourceStore();
-    // define data
-    const loading = ref(false);
     const selectedValue = ref('');
-    const vpcListPage = reactive<IPageQuery>({
-      start: 0,
-      limit: 7,
-    });
-    const hasMoreData = ref(true);
-    const vpcList = ref([]);
 
-    // 获取vpc列表
-    const getVpcList = async (region: string) => {
-      loading.value = true;
-      try {
-        const [listRes, countRes] = await Promise.all(
-          [false, true].map((isCount) =>
-            resourceStore.list(
-              {
-                page: {
-                  count: isCount,
-                  start: isCount ? 0 : vpcListPage.start,
-                  limit: isCount ? 0 : vpcListPage.limit,
-                  sort: isCount ? null : 'created_at',
-                  order: isCount ? null : 'DESC',
-                },
-                filter: {
-                  op: QueryRuleOPEnum.AND,
-                  rules: [
-                    { op: QueryRuleOPEnum.EQ, field: 'account_id', value: props.accountId },
-                    { op: QueryRuleOPEnum.EQ, field: 'region', value: region },
-                  ],
-                },
-              },
-              'vpcs',
-            ),
-          ),
-        );
-        vpcList.value = [...vpcList.value, ...listRes.data.details];
-        if (vpcList.value.length < countRes.data.count) {
-          hasMoreData.value = true;
-        } else {
-          hasMoreData.value = false;
-        }
-      } finally {
-        loading.value = false;
-      }
-    };
+    const [isLoading, optionList, initState, getOptionList, handleOptionListScrollEnd] = useSelectOptionListWithScroll(
+      'vpcs',
+      [],
+      false,
+    );
 
     // 清空选项
     const handleClear = () => {
       selectedValue.value = '';
     };
 
-    // 滚动加载
-    const handleScrollEnd = throttle(() => {
-      if (hasMoreData.value) {
-        vpcListPage.start += vpcListPage.limit;
-        getVpcList(props.region);
-      }
-    }, 500);
-
     watch(
       () => props.region,
-      (val) => {
+      async (val) => {
+        if (!val) return;
+        // 初始化状态
         selectedValue.value = '';
-        if (!val) {
-          vpcList.value = [];
-          return;
-        }
+        initState();
         // 当云地域变更时, 获取新的vpc列表
-        getVpcList(val);
+        await getOptionList([
+          { op: QueryRuleOPEnum.EQ, field: 'account_id', value: props.accountId },
+          { op: QueryRuleOPEnum.EQ, field: 'region', value: val },
+        ]);
+
+        // 如果为edit, 需要回填
+        if (props.modelValue) selectedValue.value = props.modelValue;
+      },
+      {
+        immediate: true,
       },
     );
 
     watch(selectedValue, (val) => {
-      const vpcDetail = vpcList.value.find((vpc) => vpc.cloud_id === val);
+      // 更新父组件中的数据cloud_vpc_id
       emit('update:modelValue', val);
+      // 将选中的vpc信息回传给父组件
+      const vpcDetail = optionList.value.find((vpc) => vpc.cloud_id === val);
       emit('change', vpcDetail);
     });
 
@@ -106,10 +68,11 @@ export default defineComponent({
       <div class='region-vpc-selector'>
         <Select
           v-model={selectedValue.value}
-          scrollLoading={loading.value}
+          scrollLoading={isLoading.value}
           onClear={handleClear}
-          onScroll-end={handleScrollEnd}>
-          {vpcList.value.map(({ id, name, cloud_id }) => (
+          onScroll-end={handleOptionListScrollEnd}
+          disabled={props.isDisabled}>
+          {optionList.value.map(({ id, name, cloud_id }) => (
             <Option key={id} id={cloud_id} name={`${cloud_id} ${name}`} />
           ))}
         </Select>

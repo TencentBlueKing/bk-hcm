@@ -40,6 +40,7 @@ export interface IProp {
       }; // Tab 切换时选用项(如选中全部时, 删除对应的 rule)
     }; // 筛选参数
     extension?: Record<string, any>; // 请求需要的额外荷载数据
+    callback?: (...args: any) => any; // 可以根据当前请求结果异步更新 dataList
   };
   // 资源下筛选业务功能相关的 prop
   bizFilter?: FilterType;
@@ -99,6 +100,12 @@ export const useTable = (props: IProp) => {
       ),
     );
     dataList.value = detailsRes?.data?.details;
+    // 如果需要, 可以根据当前结果异步更新 dataList
+    if (props.requestOption.callback && typeof props.requestOption.callback === 'function') {
+      props.requestOption.callback(detailsRes?.data?.details).then((newDataList: any[]) => {
+        dataList.value = newDataList;
+      });
+    }
     pagination.count = countRes?.data?.count;
     isLoading.value = false;
   };

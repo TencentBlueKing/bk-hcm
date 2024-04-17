@@ -98,12 +98,18 @@ export default defineComponent({
     });
     // 处理参数 - 添加rs
     const resolveFormDataForAddRs = () => ({
-      targets: formData.rs_list.map(({ cloud_id, port, weight }) => ({
-        inst_type: 'CVM',
-        cloud_inst_id: cloud_id,
-        port,
-        weight,
-      })),
+      account_id: formData.account_id,
+      target_groups: [
+        {
+          target_group_id: formData.id,
+          targets: formData.rs_list.map(({ cloud_id, port, weight }) => ({
+            inst_type: 'CVM',
+            cloud_inst_id: cloud_id,
+            port,
+            weight,
+          })),
+        },
+      ],
     });
     // 处理参数 - 批量修改端口/权重
     const resolveFormDataForBatchUpdate = (type: 'port' | 'weight') => ({
@@ -125,7 +131,7 @@ export default defineComponent({
           message = '编辑成功';
           break;
         case 'AddRs':
-          promise = businessStore.addRsToTargetGroup(formData.id, resolveFormDataForAddRs());
+          promise = businessStore.batchAddTargets(resolveFormDataForAddRs());
           message = 'RS添加成功';
           break;
         case 'port':
@@ -145,7 +151,10 @@ export default defineComponent({
 
         // 如果组件用于list页面, 则重新请求list接口; 如果组件用于info页面, 则重新请求detail接口
         if (props.origin === 'list') {
+          // 表格目标组list
           props.getListData();
+          // 左侧目标组list
+          loadBalancerStore.getTargetGroupList();
         } else {
           props.getTargetGroupDetail(formData.id);
         }

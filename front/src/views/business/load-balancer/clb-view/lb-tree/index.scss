@@ -126,19 +126,3 @@
     }
   }
 }
-
-.lb-tree-dropdown-popover-wrap {
-  padding: 0 !important;
-  .dropdown-list {
-    padding: 4px 0;
-    .dropdown-item {
-      padding: 0 12px;
-      line-height: 32px;
-      cursor: pointer;
-
-      &:hover {
-        background-color: #f5f7fa;
-      }
-    }
-  }
-}

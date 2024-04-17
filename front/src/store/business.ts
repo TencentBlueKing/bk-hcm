@@ -118,15 +118,7 @@ export const useBusinessStore = defineStore({
     /**
      * 目标组绑定RS列表
      */
-    getRsList(
-      tg_id: string,
-      data: {
-        bk_biz_id: string;
-        tg_id: string;
-        filter: Object;
-        page: Object;
-      },
-    ) {
+    getRsList(tg_id: string, data: { filter: Object; page: Object }) {
       return http.post(
         `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${tg_id}/targets/list`,
         data,
@@ -279,12 +271,17 @@ export const useBusinessStore = defineStore({
     },
     /**
      * 业务下给指定目标组批量添加RS
-     * @param target_group_id 目标组id
      * @param data rs列表
      */
-    addRsToTargetGroup(target_group_id: string, data: any) {
+    batchAddTargets(data: {
+      account_id: string;
+      target_groups: {
+        target_group_id: string;
+        targets: { inst_type: string; cloud_inst_id: string; port: number; weight: number }[];
+      }[];
+    }) {
       return http.post(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${target_group_id}/targets/create`,
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/targets/create`,
         data,
       );
     },
@@ -363,6 +360,29 @@ export const useBusinessStore = defineStore({
      */
     getTargetGroupList(data: any) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/list`, data);
+    },
+    /*
+     * 业务下给指定目标组移除RS
+     * @param data
+     */
+    batchDeleteTargets(data: {
+      account_id: string;
+      target_groups: { target_group_id: string; target_ids: string[] }[];
+    }) {
+      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/targets/batch`, {
+        data,
+      });
+    },
+    /**
+     * 查询指定的目标组绑定的负载均衡下的端口健康信息
+     * @param target_group_id 目标组id
+     * @param data { cloud_lb_ids: 云负载均衡ID数组 }
+     */
+    asyncGetTargetsHealth(target_group_id: string, data: { cloud_lb_ids: string[] }) {
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${target_group_id}/targets/health`,
+        data,
+      );
     },
   },
 });

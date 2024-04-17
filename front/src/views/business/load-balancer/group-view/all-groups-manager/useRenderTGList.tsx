@@ -10,6 +10,7 @@ import { useTable } from '@/hooks/useTable/useTable';
 // import types
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 // import utils
+import { getTableRowClassOption } from '@/common/util';
 import bus from '@/common/bus';
 
 /**
@@ -102,6 +103,7 @@ export default () => {
         onSelectAll: (selections: any) => {
           handleSelectionChange(selections, () => true, true);
         },
+        ...getTableRowClassOption(),
       },
     },
     requestOption: {

@@ -27,13 +27,13 @@ export default (typeMenuMap: any) => {
       renderType: 'shown',
       placement: 'bottom-start',
       arrow: false,
-      extCls: 'lb-tree-dropdown-popover-wrap',
+      extCls: 'more-action-dropdown-menu',
       allowHtml: true,
       target: e,
       content: (
         <div class='dropdown-list'>
           {typeMenuMap[node.type].map((item: any) => (
-            <div class='dropdown-item' onClick={item.handler}>
+            <div class='dropdown-item' onClick={() => item.handler(node)}>
               {item.label}
             </div>
           ))}

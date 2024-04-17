@@ -2,7 +2,7 @@ import { Ref, reactive, ref } from 'vue';
 // import stores
 import { useResourceStore } from '@/store';
 // import types
-import { QueryRuleOPEnum } from '@/typings';
+import { QueryRuleOPEnum, RulesItem } from '@/typings';
 
 /**
  * Select Option List - 支持滚动加载
@@ -48,7 +48,7 @@ export default (
   /**
    * 请求option list
    */
-  const getOptionList = async () => {
+  const getOptionList = async (customRules: RulesItem[] = []) => {
     isLoading.value = true;
     try {
       const [detailRes, countRes] = await Promise.all(
@@ -57,7 +57,7 @@ export default (
             {
               filter: {
                 op: QueryRuleOPEnum.AND,
-                rules,
+                rules: [...rules, ...customRules],
               },
               page: {
                 count: isCount,
