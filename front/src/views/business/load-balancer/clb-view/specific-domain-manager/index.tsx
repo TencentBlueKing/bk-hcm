@@ -1,7 +1,7 @@
 import { defineComponent, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 // import components
 import { Button, Form, Input, Message, Select } from 'bkui-vue';
-import { Done, EditLine, Error, Plus, Spinner } from 'bkui-vue/lib/icon';
+import { Done, EditLine, Error, Plus } from 'bkui-vue/lib/icon';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import CommonSideslider from '@/components/common-sideslider';
 // use stores
@@ -11,11 +11,10 @@ import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import { useI18n } from 'vue-i18n';
 // import constants
-import { SYNC_STAUS_MAP } from '@/common/constant';
+import { CLB_BINDING_STATUS } from '@/common/constant';
 // import static resources
 import StatusSuccess from '@/assets/image/success-account.png';
-import StatusFailure from '@/assets/image/failed-account.png';
-import StatusPartialSuccess from '@/assets/image/result-waiting.png';
+import StatusLoading from '@/assets/image/status_loading.png';
 import './index.scss';
 import { RuleModeList } from '../specific-listener-manager/domain-list/useAddOrUpdateDomain';
 import { useBusinessStore } from '@/store';
@@ -47,7 +46,9 @@ export default defineComponent({
       certificate: '',
       url: '',
       rule_id: '',
+      target_group_id: '',
     });
+    const targetList = ref([]);
     const tableColumns = [
       ...columns,
       {
@@ -59,7 +60,11 @@ export default defineComponent({
             <div class={'flex-row align-item-center target-group-name'}>
               {editingID.value === data.id ? (
                 <div class={'flex-row align-item-center'}>
-                  <Select />
+                  <Select>
+                    {targetList.value.map(({ id, name }) => (
+                      <Option name={name} id={id} key={id}></Option>
+                    ))}
+                  </Select>
                   <Done width={20} height={20} class={'submit-edition-icon'} onClick={() => (editingID.value = '-1')} />
                   <Error
                     width={13}
@@ -80,40 +85,25 @@ export default defineComponent({
       },
       {
         label: t('同步状态'),
-        field: 'syncStatus',
+        field: 'binding_status',
         isDefaultShow: true,
-        render: ({ cell }: any) => {
-          let icon = StatusFailure;
+        render: ({ cell }: { cell: string }) => {
+          let icon = StatusSuccess;
           switch (cell) {
-            case 'b': {
+            case 'binding':
+              icon = StatusLoading;
+              break;
+            case 'success':
               icon = StatusSuccess;
               break;
-            }
-            case 'c': {
-              icon = StatusFailure;
-              break;
-            }
-            case 'd': {
-              icon = StatusPartialSuccess;
-              break;
-            }
           }
-          return (
-            <div class={'url-status-container'}>
-              {cell === 'a' ? (
-                <Spinner fill='#3A84FF' width={13} height={13} class={'mr6'} />
-              ) : (
-                <img src={icon} class='mr6' width={13} height={13} />
-              )}
-              <span
-                class={`${cell === 'd' ? 'url-sync-partial-success-status' : ''}`}
-                v-bk-tooltips={{
-                  content: '成功 89 个，失败 105 个',
-                  disabled: cell !== 'd',
-                }}>
-                {SYNC_STAUS_MAP[cell]}
-              </span>
+          return cell ? (
+            <div class='status-column-cell'>
+              <img class={`status-icon${cell === 'binding' ? ' spin-icon' : ''}`} src={icon} alt='' />
+              <span>{CLB_BINDING_STATUS[cell]}</span>
             </div>
+          ) : (
+            '--'
           );
         },
       },
@@ -187,7 +177,7 @@ export default defineComponent({
           },
           {
             name: '同步状态',
-            id: 'status',
+            id: 'binding_status',
           },
           {
             name: '操作',
@@ -238,25 +228,26 @@ export default defineComponent({
             rule_id: formData.rule_id,
             url: formData.url,
             scheduler: formData.scheduler,
+            target_group_id: formData.target_group_id,
           })
         : businessStore.createRules({
             lbl_id: loadBalancerStore.currentSelectedTreeNode.listener.id,
-            rules: [
-              {
-                url: formData.url,
-                scheduler: formData.scheduler,
-                domains: [loadBalancerStore.currentSelectedTreeNode.domain],
-              },
-            ],
+            url: formData.url,
+            scheduler: formData.scheduler,
+            domains: [loadBalancerStore.currentSelectedTreeNode.domain],
+            target_group_id: formData.target_group_id,
           });
-      await promise;
-      Message({
-        message: isEdit.value ? '编辑成功' : '创建成功',
-        theme: 'success',
-      });
-      isDomainSidesliderShow.value = false;
-      isSubmitLoading.value = false;
-      await getListData();
+      try {
+        await promise;
+        Message({
+          message: isEdit.value ? '编辑成功' : '创建成功',
+          theme: 'success',
+        });
+        isDomainSidesliderShow.value = false;
+        await getListData();
+      } finally {
+        isSubmitLoading.value = false;
+      }
     };
 
     const resetFormData = () => {
@@ -274,11 +265,23 @@ export default defineComponent({
 
     onMounted(() => {
       bus.$on('showAddUrlSideslider', handleAddUrlSidesliderShow);
+      getTargetGroupsList();
     });
 
     onUnmounted(() => {
       bus.$off('showAddUrlSideslider');
     });
+
+    const getTargetGroupsList = async () => {
+      const res = await businessStore.getResourceGroupList({
+        filter: { op: 'and', rules: [] },
+        page: {
+          start: 0 * 100,
+          limit: 500,
+        },
+      });
+      targetList.value = res.data.details;
+    };
 
     return () => (
       <div class={'url-list-container has-selection has-breadcrumb'}>
@@ -339,12 +342,11 @@ export default defineComponent({
               </Select>
             </FormItem>
             <FormItem label={t('目标组')} required>
-              <Select
-                disabled
-                v-bk-tooltips={{
-                  content: '暂不支持 todo',
-                }}
-              />
+              <Select v-model={formData.target_group_id}>
+                {targetList.value.map(({ id, name }) => (
+                  <Option name={name} id={id} key={id}></Option>
+                ))}
+              </Select>
             </FormItem>
           </Form>
         </CommonSideslider>

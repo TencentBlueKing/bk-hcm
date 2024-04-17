@@ -351,7 +351,28 @@ const businesseMenus: RouteRecordRaw[] = [
       {
         path: '/business/record',
         name: '操作记录',
-        component: () => import('@/views/resource/resource-manage/operationRecord/index'),
+        children: [
+          {
+            path: '',
+            name: 'operationRecords',
+            component: () => import('@/views/resource/resource-manage/operationRecord/index'),
+            meta: {
+              activeKey: 'record',
+              isShowBreadcrumb: true,
+              icon: 'hcm-icon bkhcm-icon-operation-record',
+            },
+          },
+          {
+            path: 'detail',
+            name: 'operationRecordsDetail',
+            component: () => import('@/views/resource/resource-manage/operationRecord/RecordDetail/index'),
+            meta: {
+              activeKey: 'recordDetail',
+              isShowBreadcrumb: true,
+              icon: 'hcm-icon bkhcm-icon-cert',
+            },
+          },
+        ],
         meta: {
           activeKey: 'record',
           isShowBreadcrumb: true,

@@ -3,6 +3,7 @@ import { Container, Button, Switcher, Form, Tag, Input } from 'bkui-vue';
 import { BkRadio, BkRadioGroup } from 'bkui-vue/lib/radio';
 import './index.scss';
 import CommonSideslider from '@/components/common-sideslider';
+import { useBusinessStore, useLoadBalancerStore } from '@/store';
 
 const { Row, Col } = Container;
 const { FormItem } = Form;
@@ -14,9 +15,13 @@ export default defineComponent({
       required: true,
       type: Object,
     },
+    getTargetGroupDetail: Function,
   },
   setup(props) {
     const isOpen = ref(false);
+    const loadbalancerStore = useLoadBalancerStore();
+    const businessStore = useBusinessStore();
+    const isSubmitLoading = ref(false);
     const healthDetailInfo = computed(() => [
       {
         label: '是否启用',
@@ -24,11 +29,11 @@ export default defineComponent({
       },
       {
         label: '健康探测源IP',
-        value: props.detail.health_check?.http_check_domain || '-',
+        value: props.detail.health_check?.health_switch || '-',
       },
       {
         label: '检查方式',
-        value: props.detail.health_check?.http_check_method || '-',
+        value: props.detail.health_check?.check_type || '-',
       },
       {
         label: '检查端口',
@@ -46,22 +51,39 @@ export default defineComponent({
     ]);
     const isHealthCheckupConfigShow = ref(false);
     const formData = reactive({
-      sourceIp: '1',
-      healthCheckType: 'TCP',
-      port: '',
-      responseTimeout: '',
-      healthCheckInterval: '',
-      unhealthyThreshold: '',
-      healthyThreshold: '',
+      health_switch: 1,
+      check_type: 'TCP',
+      check_port: '',
+      time_out: '',
+      interval_time: '',
+      un_health_num: '',
+      health_num: '',
     });
+    function resetFormData() {
+      for (const key in formData) {
+        if (Object.hasOwnProperty.call(formData, key)) {
+          switch (key) {
+            case 'health_switch':
+              formData[key] = 1;
+              break;
+            case 'check_type':
+              formData[key] = 'TCP';
+              break;
+            default:
+              formData[key] = '';
+              break;
+          }
+        }
+      }
+    }
     const formItemOptions = computed(() => [
       {
         label: '探测来源IP',
-        property: 'sourceIp',
+        property: 'health_switch',
         required: true,
         content: () => (
-          <BkRadioGroup v-model={formData.sourceIp} class='radio-groups'>
-            <BkRadio label='1'>
+          <BkRadioGroup v-model={formData.health_switch} class='radio-groups'>
+            <BkRadio label={1}>
               <div class='radio-item-wrap'>
                 <div class='item-label'>
                   云专用探测 IP 段
@@ -76,7 +98,7 @@ export default defineComponent({
                 </div>
               </div>
             </BkRadio>
-            <BkRadio label='2'>
+            <BkRadio label={2}>
               <div class='radio-item-wrap'>
                 <div class='item-label'>负载均衡 VIP</div>
                 <div class='item-desc'>需同时在后端服务器安全组和iptables放通VIP地址</div>
@@ -87,52 +109,52 @@ export default defineComponent({
       },
       {
         label: '检查方式',
-        property: 'healthCheckType',
+        property: 'check_type',
         required: true,
         content: () => (
-          <BkRadioGroup v-model={formData.healthCheckType}>
+          <BkRadioGroup v-model={formData.check_type}>
             <BkRadio label='TCP'>TCP</BkRadio>
             <BkRadio label='HTTP'>HTTP</BkRadio>
-            <BkRadio label='custom'>自定义</BkRadio>
+            <BkRadio label='CUSTOM'>自定义</BkRadio>
           </BkRadioGroup>
         ),
       },
       {
         label: '检查端口',
-        property: 'port',
+        property: 'check_port',
         required: true,
-        content: () => <Input v-model={formData.port} />,
+        content: () => <Input v-model={formData.check_port} />,
       },
       [
         {
           label: '响应超时',
-          property: 'responseTimeout',
+          property: 'time_out',
           required: true,
           span: 12,
-          content: () => <Input v-model={formData.responseTimeout} placeholder='0' type='number' suffix='秒' />,
+          content: () => <Input v-model={formData.time_out} placeholder='0' type='number' suffix='秒' />,
         },
         {
           label: '检查间隔',
-          property: 'healthCheckInterval',
+          property: 'interval_time',
           required: true,
           span: 12,
-          content: () => <Input v-model={formData.healthCheckInterval} placeholder='0' type='number' suffix='秒' />,
+          content: () => <Input v-model={formData.interval_time} placeholder='0' type='number' suffix='秒' />,
         },
       ],
       [
         {
           label: '不健康阈值',
-          property: 'unhealthyThreshold',
+          property: 'un_health_num',
           required: true,
           span: 12,
-          content: () => <Input v-model={formData.unhealthyThreshold} placeholder='0' type='number' suffix='秒' />,
+          content: () => <Input v-model={formData.un_health_num} placeholder='0' type='number' suffix='秒' />,
         },
         {
           label: '健康阈值',
-          property: 'healthyThreshold',
+          property: 'health_num',
           required: true,
           span: 12,
-          content: () => <Input v-model={formData.healthyThreshold} placeholder='0' type='number' suffix='秒' />,
+          content: () => <Input v-model={formData.health_num} placeholder='0' type='number' suffix='秒' />,
         },
       ],
     ]);
@@ -148,12 +170,35 @@ export default defineComponent({
       },
     );
 
+    const handleSubmit = async () => {
+      isSubmitLoading.value = true;
+      try {
+        await businessStore.updateHealthCheck({
+          id: loadbalancerStore.targetGroupId,
+          health_check: {
+            ...formData,
+            check_port: +formData.check_port,
+            time_out: +formData.time_out,
+            interval_time: +formData.interval_time,
+            un_health_num: +formData.un_health_num,
+            health_num: +formData.health_num,
+          },
+        });
+        isHealthCheckupConfigShow.value = false;
+        resetFormData();
+        props.getTargetGroupDetail?.(loadbalancerStore.targetGroupId);
+      } finally {
+        isSubmitLoading.value = false;
+      }
+    };
+
     return () => (
       <div class='health-checkup-page'>
         <Button
           class='fixed-operate-btn'
           outline
           theme='primary'
+          disabled={!isOpen.value}
           onClick={() => (isHealthCheckupConfigShow.value = true)}>
           配置
         </Button>
@@ -191,6 +236,8 @@ export default defineComponent({
           class='health-checkup-config-sideslider'
           v-model:isShow={isHealthCheckupConfigShow.value}
           title='健康检查配置'
+          onHandleSubmit={handleSubmit}
+          isSubmitLoading={isSubmitLoading.value}
           width='640'>
           <Form formType='vertical'>
             <Container margin={0}>

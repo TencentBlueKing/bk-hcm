@@ -8,7 +8,7 @@ import type { Settings } from 'bkui-vue/lib/table/props';
 import { h, ref } from 'vue';
 import type { Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { CLOUD_HOST_STATUS, VendorEnum } from '@/common/constant';
+import { CLB_BINDING_STATUS, CLOUD_HOST_STATUS, VendorEnum } from '@/common/constant';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -1234,8 +1234,27 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: '同步状态',
-      field: 'syncStatus',
+      field: 'binding_status',
       isDefaultShow: true,
+      render: ({ cell }: { cell: string }) => {
+        let icon = StatusSuccess;
+        switch (cell) {
+          case 'binding':
+            icon = StatusLoading;
+            break;
+          case 'success':
+            icon = StatusSuccess;
+            break;
+        }
+        return cell ? (
+          <div class='status-column-cell'>
+            <img class={`status-icon${cell === 'binding' ? ' spin-icon' : ''}`} src={icon} alt='' />
+            <span>{CLB_BINDING_STATUS[cell]}</span>
+          </div>
+        ) : (
+          '--'
+        );
+      },
     },
   ];
 
@@ -1404,31 +1423,20 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render: ({ cell }: { cell: string }) => {
         let icon = StatusSuccess;
         switch (cell) {
-          case '绑定中':
+          case 'binding':
             icon = StatusLoading;
             break;
-          case '成功':
+          case 'success':
             icon = StatusSuccess;
             break;
-          case '失败':
-            icon = StatusFailure;
-            break;
-          case '部分成功':
-            icon = StatusPartialSuccess;
-            break;
         }
-        return (
+        return cell ? (
           <div class='status-column-cell'>
-            <img class={`status-icon${cell === '绑定中' ? ' spin-icon' : ''}`} src={icon} alt='' />
-            <span
-              class={cell === '部分成功' ? 'partial-success-status-text' : ''}
-              v-bk-tooltips={{
-                content: '成功 89 个，失败 105 个',
-                disabled: cell !== '部分成功',
-              }}>
-              {cell}
-            </span>
+            <img class={`status-icon${cell === 'binding' ? ' spin-icon' : ''}`} src={icon} alt='' />
+            <span>{CLB_BINDING_STATUS[cell]}</span>
           </div>
+        ) : (
+          '--'
         );
       },
     },
