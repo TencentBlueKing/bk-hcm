@@ -383,7 +383,8 @@ func (req *AsyncTaskRetryReq) Validate() error {
 
 // TerminatedAsyncFlowResultReq get terminated async flow result req.
 type TerminatedAsyncFlowResultReq struct {
-	FlowID string `json:"flow_id" validate:"required"`
+	FlowID  string   `json:"flow_id" validate:"required"`
+	TaskIDs []string `json:"task_ids" validate:"dive,required"`
 }
 
 // Validate ...
@@ -394,4 +395,22 @@ func (req *TerminatedAsyncFlowResultReq) Validate() error {
 // ResourceFlowStatusResp define resource flow status response.
 type ResourceFlowStatusResp struct {
 	Status enumor.ResFlowStatus `json:"status"`
+}
+
+// --------------------------  Get Async Flow Result After Terminate --------------------------
+
+// TerminatedAsyncFlowResult  terminated async flow result .
+type TerminatedAsyncFlowResult struct {
+	TaskID        string               `json:"task_id,omitempty"`
+	TargetGroupID string               `json:"target_group_id,omitempty"`
+	Targets       []TCloudResultTarget `json:"target_list,omitempty"`
+}
+
+// TCloudResultTarget ...
+type TCloudResultTarget struct {
+	InstType    enumor.InstType `json:"inst_type"`
+	CloudInstID string          `json:"cloud_inst_id"`
+	InstName    string          `json:"inst_name"`
+	Port        int64           `json:"port"`
+	Weight      *int64          `json:"weight"`
 }

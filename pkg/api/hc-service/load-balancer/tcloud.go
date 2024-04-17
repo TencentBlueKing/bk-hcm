@@ -443,3 +443,18 @@ type TCloudTargetHealthRuleResult struct {
 	CloudRuleID string                        `json:"cloud_rule_id"`
 	HealthCheck *corelb.TCloudHealthCheckInfo `json:"health_check"`
 }
+
+// QueryTCloudListenerTargets ...
+type QueryTCloudListenerTargets struct {
+	AccountID           string              `json:"account_id" validate:"required"`
+	Region              string              `json:"region" validate:"required"`
+	LoadBalancerCloudId string              `json:"load_balancer_cloud_id" validate:"required"`
+	ListenerCloudIDs    []string            `json:"listener_cloud_ids" validate:"omitempty"`
+	Protocol            enumor.ProtocolType `json:"protocol" validate:"omitempty"`
+	Port                int64               `json:"port" validate:"omitempty"`
+}
+
+// Validate ...
+func (t *QueryTCloudListenerTargets) Validate() error {
+	return validator.Validate.Struct(t)
+}

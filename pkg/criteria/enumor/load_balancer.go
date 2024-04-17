@@ -139,3 +139,8 @@ const (
 	// CancelResFlowStatus 资源跟Flow的状态类型-取消
 	CancelResFlowStatus = ResFlowStatus(FlowCancel)
 )
+
+// IsEnd 是否为终态
+func (r ResFlowStatus) IsEnd() bool {
+	return r == CancelResFlowStatus || r == TimeoutResFlowStatus || r == SuccessResFlowStatus
+}
