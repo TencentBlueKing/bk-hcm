@@ -60,15 +60,19 @@ export default (getListData: any) => {
   };
 
   // 初始化select-option列表
-  const initOptionState = () => {
+  const initOptionState = (protocol?: string, isSniOpen?: boolean) => {
     // init state
     initTargetGroupOptionState();
     initSVRCertOptionState();
     initCACertOptionState();
     // get list
-    getTargetGroupList();
-    getSVRCertList();
-    getCACertList();
+    if (!isEdit.value || (protocol === 'HTTPS' && !isSniOpen)) {
+      getSVRCertList();
+      getCACertList();
+    }
+    if (!isEdit.value) {
+      getTargetGroupList();
+    }
   };
 
   // 新增监听器
@@ -84,7 +88,6 @@ export default (getListData: any) => {
 
   // 编辑监听器
   const handleEditListener = (id: string) => {
-    initOptionState();
     clearFormData();
     // 获取监听器详情, 回填
     resourceStore.detail('listeners', id).then(({ data }: any) => {
@@ -99,6 +102,7 @@ export default (getListData: any) => {
       });
       isSniOpen.value = !!data.sni_switch;
       isEdit.value = true;
+      initOptionState(data.protocol, isSniOpen.value);
       isSliderShow.value = true;
     });
   };

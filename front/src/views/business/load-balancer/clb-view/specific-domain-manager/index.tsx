@@ -22,6 +22,7 @@ import Confirm from '@/components/confirm';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import useBatchDeleteListener from '../specific-clb-manager/listener-list/useBatchDeleteListener';
+import { getTableRowClassOption } from '@/common/util';
 import bus from '@/common/bus';
 
 const { FormItem } = Form;
@@ -189,17 +190,14 @@ export default defineComponent({
         columns: tableColumns,
         extra: {
           settings: tableSettings.value,
-          'row-class': ({ syncStatus }: { syncStatus: string }) => {
-            if (syncStatus === 'a') {
-              return 'binding-row';
-            }
-          },
           onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
           onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
+          ...getTableRowClassOption(),
         },
       },
       requestOption: {
         type: `vendors/tcloud/listeners/${loadBalancerStore.currentSelectedTreeNode.listener_id}/rules`,
+        sortOption: { sort: 'created_at', order: 'DESC' },
       },
     });
 

@@ -1133,7 +1133,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: '负载均衡VIP',
-      field: '',
+      field: 'vip',
       isDefaultShow: true,
       render: ({ data }: any) => {
         const { private_ipv4_addresses, private_ipv6_addresses, public_ipv4_addresses, public_ipv6_addresses } = data;
@@ -1150,7 +1150,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: '监听器数量',
-      field: 'listener_count',
+      field: 'listenerNum',
       isDefaultShow: true,
     },
     {
