@@ -384,5 +384,15 @@ export const useBusinessStore = defineStore({
         data,
       );
     },
+    /**
+     * 查询指定的负载均衡下的监听器数量
+     * @param data { lb_ids: 负载均衡ID数组 }
+     */
+    asyncGetListenerCount(data: { lb_ids: string[] }) {
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}load_balancers/listeners/count`,
+        data,
+      );
+    },
   },
 });

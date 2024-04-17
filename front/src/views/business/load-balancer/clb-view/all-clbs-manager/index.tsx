@@ -11,6 +11,10 @@ import { useTable } from '@/hooks/useTable/useTable';
 import { useI18n } from 'vue-i18n';
 import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
 import useBatchDeleteLB from './useBatchDeleteLB';
+// import utils
+import { getTableRowClassOption } from '@/common/util';
+import { asyncGetListenerCount } from '@/utils';
+// import types
 import { DoublePlainObject } from '@/typings';
 import './index.scss';
 
@@ -53,10 +57,15 @@ export default defineComponent({
           isRowSelectEnable,
           onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
           onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
+          ...getTableRowClassOption(),
         },
       },
       requestOption: {
         type: 'load_balancers',
+        sortOption: { sort: 'created_at', order: 'DESC' },
+        callback(dataList: any[]) {
+          return asyncGetListenerCount(dataList);
+        },
       },
     });
 
@@ -125,20 +134,11 @@ export default defineComponent({
             tips: () => (
               <>
                 已选择<span class='blue'>{tableProps.data.length}</span>个负载均衡，其中
-                <span class='red'>
-                  {
-                    // todo: 需要后端提供批量查询监听器数量的接口
-                    '--'
-                    // tableProps.data.filter(
-                    //   ({ rs_zero_num, rs_not_zero_num }) => rs_not_zero_num === rs_zero_num + rs_not_zero_num,
-                    // ).length
-                  }
-                </span>
+                <span class='red'>{tableProps.data.filter(({ listenerNum }) => listenerNum > 0).length}</span>
                 个存在监听器不可删除。
               </>
             ),
             tab: () => (
-              // todo：需要监听radioGroupValue的变化，过滤tableProps中的data值
               <BkRadioGroup v-model={radioGroupValue.value}>
                 <BkRadioButton label={false}>{t('可删除')}</BkRadioButton>
                 <BkRadioButton label={true}>{t('不可删除')}</BkRadioButton>

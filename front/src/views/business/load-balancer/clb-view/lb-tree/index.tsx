@@ -215,7 +215,7 @@ export default defineComponent({
           <div class={`ext-info${currentPopBoundaryNodeKey.value === data.id ? ' show-dropdown' : ''}`}>
             <div class='count'>
               {/* eslint-disable-next-line no-nested-ternary */}
-              {data.type === 'lb' ? data.id : data.type === 'listener' ? data.domain_num : data.url_count}
+              {data.type === 'lb' ? data.listenerNum : data.type === 'listener' ? data.domain_num : data.url_count}
             </div>
             <div class='more-action' onClick={(e) => showDropdownList(e, data)}>
               <i class='hcm-icon bkhcm-icon-more-fill'></i>
