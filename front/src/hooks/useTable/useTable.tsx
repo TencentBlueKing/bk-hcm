@@ -39,6 +39,7 @@ export interface IProp {
         flagValue: string; // 当 rule.value = flagValue 时, 删除该 rule
       }; // Tab 切换时选用项(如选中全部时, 删除对应的 rule)
     }; // 筛选参数
+    extension?: Record<string, any>; // 请求需要的额外荷载数据
   };
   // 资源下筛选业务功能相关的 prop
   bizFilter?: FilterType;
@@ -91,6 +92,7 @@ export const useTable = (props: IProp) => {
               op: filter.op,
               rules: [...filter.rules, ...customRules],
             },
+            ...props.requestOption.extension,
           },
           type ? type : props.requestOption.type,
         ),

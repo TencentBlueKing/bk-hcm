@@ -84,7 +84,7 @@ export default (
       },
       {
         name: '同步状态',
-        id: 'syncStatus',
+        id: 'binding_status',
       },
     ],
   });

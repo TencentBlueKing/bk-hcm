@@ -559,3 +559,8 @@ export const CLB_SPECS = {
   'clb.c4.large': '超强型3规格',
   'clb.c4.xlarge': '超强型4规格',
 };
+
+export const CLB_BINDING_STATUS = {
+  binding: '绑定中',
+  success: '已绑定',
+};

@@ -2,13 +2,15 @@ import http from '@/http';
 import { defineStore } from 'pinia';
 
 import { useAccountStore } from '@/store';
+import { useRoute } from 'vue-router';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 // 获取
 const getBusinessApiPath = () => {
   const store = useAccountStore();
+  const route = useRoute();
   if (location.href.includes('business')) {
-    return `bizs/${store.bizs}/`;
+    return `bizs/${route?.query?.bizs || store.bizs}/`;
   }
   return '';
 };
@@ -193,7 +195,8 @@ export const useBusinessStore = defineStore({
     createRules(data: {
       bk_biz_id?: number; // 业务ID
       lbl_id: string; // 监听器id
-      rules: Record<string, any>; // 待创建规则
+      // rules: Record<string, any>; // 待创建规则
+      target_group_id?: string;
     }) {
       return http.post(
         `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/listeners/${
@@ -213,6 +216,7 @@ export const useBusinessStore = defineStore({
         domain: string; // 新域名
         new_domain: string; // 新域名
         certificate?: string; // 证书信息
+        default_server?: boolean; // 是否设为默认域名
       },
     ) {
       return http.patch(
@@ -239,6 +243,22 @@ export const useBusinessStore = defineStore({
       );
     },
     /**
+     * 批量删除域名
+     */
+    batchDeleteDomains(data: {
+      bk_biz_id?: number; // 业务ID
+      lbl_id: string; // 监听器id
+      domains: string[]; // 要删除的域名
+      new_default_domain?: string; // 新默认域名,删除的域名是默认域名的时候需要指定
+    }) {
+      return http.delete(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/listeners/${
+          data.lbl_id
+        }/rules/by/domains/batch`,
+        { data },
+      );
+    },
+    /**
      * 更新URL规则
      */
     updateUrl(data: {
@@ -248,6 +268,7 @@ export const useBusinessStore = defineStore({
       url: string; // 监听的url
       scheduler: string; // 均衡方式
       certificate?: Record<string, any>; // 证书信息，当协议为HTTPS时必传
+      target_group_id?: string;
     }) {
       return http.patch(
         `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/listeners/${data.lbl_id}/rules/${
@@ -288,6 +309,60 @@ export const useBusinessStore = defineStore({
         `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${target_group_id}/targets/weight`,
         data,
       );
+    },
+    /**
+     * 查询操作记录异步记录指定批次的子任务列表
+     * @param data
+     * @returns
+     */
+    getAsyncTaskList(data: {
+      audit_id: string; // 操作记录ID
+      flow_id: string; // 任务ID
+      action_id: string; // 子任务ID
+    }) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}audits/async_task/list`, data);
+    },
+    /**
+     * 查询操作记录异步任务进度流
+     */
+    getAsyncFlowList(data: {
+      audit_id: number; // 操作记录ID
+      flow_id: string; // 任务ID
+    }) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}audits/async_flow/list`, data);
+    },
+    /**
+     * 更新目标组健康检查
+     */
+    updateHealthCheck(data: {
+      id: string; // 目标组ID
+      health_check: {
+        health_switch: 0 | 1; // 是否开启健康检查：1（开启）、0（关闭）
+        time_out: number; // 健康检查的响应超时时间，可选值：2~60，单位：秒
+        interval_time: number; // 健康检查探测间隔时间
+        health_num: number; // 健康阈值
+        un_health_num: number; // 不健康阈值
+        check_port: number; // 自定义探测相关参数。健康检查端口，默认为后端服务的端口
+        check_type: 'TCP' | 'HTTP' | 'HTTPS' | 'GRPC' | 'PING' | 'CUSTOM'; // 健康检查使用的协议
+        http_code: string; // http状态码，用于健康检查
+        http_version: string; // HTTP版本
+        http_check_path?: string; // 健康检查路径（仅适用于HTTP/HTTPS转发规则、TCP监听器的HTTP健康检查方式）
+        http_check_domain?: string; // 健康检查域名
+        http_check_method?: 'HEAD' | 'GET'; // 健康检查方法（仅适用于HTTP/HTTPS转发规则、TCP监听器的HTTP健康检查方式），默认值：HEAD，可选值HEAD或GET
+        source_ip_type: 0 | 1; // 健康检查源IP类型：0（使用LB的VIP作为源IP），1（使用100.64网段IP作为源IP）
+        context_type: 'HEX' | 'TEXT'; // 健康检查的输入格式
+      };
+    }) {
+      return http.patch(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${data.id}/health_check`,
+        data,
+      );
+    },
+    /**
+     * 获取目标组列表
+     */
+    getTargetGroupList(data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/list`, data);
     },
   },
 });

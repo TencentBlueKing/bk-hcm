@@ -1,8 +1,7 @@
 import { defineComponent, onMounted, onUnmounted, ref, watch } from 'vue';
 // import components
 import { Button, Form, Message, Tag } from 'bkui-vue';
-import { BkRadioGroup, BkRadioButton } from 'bkui-vue/lib/radio';
-import { Plus } from 'bkui-vue/lib/icon';
+import { Plus, Spinner } from 'bkui-vue/lib/icon';
 import CommonLocalTable from '@/components/CommonLocalTable';
 import CommonSideslider from '@/components/common-sideslider';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
@@ -19,6 +18,7 @@ import bus from '@/common/bus';
 // import constants
 import { TRANSPORT_LAYER_LIST } from '@/constants';
 import './index.scss';
+import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 
 const { FormItem } = Form;
 
@@ -27,9 +27,13 @@ export default defineComponent({
   setup() {
     // use hooks
     const { t } = useI18n();
+    const isBatchDeleteLoading = ref(false);
     // use stores
     const loadBalancerStore = useLoadBalancerStore();
     const businessStore = useBusinessStore();
+    const defaultDomain = ref('');
+    const isCheckDomainLoading = ref(false);
+    const { selections, handleSelectionChange } = useSelection();
 
     const formInstance = ref();
 
@@ -66,13 +70,39 @@ export default defineComponent({
           return (
             <div class='set-default-operation-wrap'>
               <span class='cell-value'>{cell}</span>
-              {data?.is_default ? (
+              {data.domain === defaultDomain.value ? (
                 <Tag theme='info' class='default-tag'>
                   {t('默认')}
                 </Tag>
               ) : (
-                <Button text theme='primary' class='set-default-btn'>
-                  {t('设为默认')}
+                <Button
+                  text
+                  theme='primary'
+                  class='set-default-btn'
+                  onClick={async () => {
+                    isCheckDomainLoading.value = true;
+                    try {
+                      await businessStore.updateDomains(loadBalancerStore.currentSelectedTreeNode.id, {
+                        ...data,
+                        default_server: true,
+                      });
+                      Message({
+                        message: '设置成功',
+                        theme: 'success',
+                      });
+                      defaultDomain.value = data.domain;
+                    } finally {
+                      isCheckDomainLoading.value = false;
+                    }
+                  }}>
+                  {isCheckDomainLoading.value ? (
+                    <span>
+                      <Spinner fill='#3A84FF' width={16} height={16} />
+                      &nbsp;设置中...
+                    </span>
+                  ) : (
+                    t('设为默认')
+                  )}
                 </Button>
               )}
             </div>
@@ -120,6 +150,7 @@ export default defineComponent({
       isLoading.value = true;
       try {
         const res = await businessStore.getDomainListByListenerId(id);
+        defaultDomain.value = res.data.default_domain;
         domainList.value = res.data.domain_list;
       } finally {
         isLoading.value = false;
@@ -152,115 +183,33 @@ export default defineComponent({
 
     // 批量删除
     const isBatchDeleteDialogShow = ref(false);
-    const radioGroupValue = ref(false);
     const tableProps = {
       columns: [
         {
-          label: t('监听器名称'),
-          field: 'listenerName',
+          label: t('域名'),
+          field: 'domain',
         },
-        {
-          label: t('监听器ID'),
-          field: 'listenerID',
-        },
-        {
-          label: t('协议'),
-          field: 'protocol',
-          filter: true,
-        },
-        {
-          label: t('端口'),
-          field: 'port',
-          filter: true,
-        },
-        {
-          label: t('均衡方式'),
-          field: 'balanceMode',
-          filter: true,
-        },
-        {
-          label: t('是否绑定目标组'),
-          field: 'isBoundToTargetGroup',
-          filter: true,
-          render: ({ cell }: { cell: boolean }) => {
-            return cell ? <Tag theme='success'>已绑定</Tag> : <Tag>未绑定</Tag>;
-          },
-        },
-        {
-          label: t('RS权重为O'),
-          field: 'rsWeight',
-          sort: true,
-          align: 'right',
-        },
-        {
-          label: '',
-          width: 80,
-          align: 'right',
-          render: () => <i class='hcm-icon bkhcm-icon-minus-circle-shape batch-delete-listener-icon'></i>,
-        },
+        ...columns,
       ],
-      data: [
-        {
-          listenerName: '监听器A',
-          listenerID: 'ABC123',
-          protocol: 'HTTP',
-          port: 80,
-          balanceMode: '轮询',
-          isBoundToTargetGroup: true,
-          rsWeight: 1,
-        },
-        {
-          listenerName: '监听器B',
-          listenerID: 'DEF456',
-          protocol: 'HTTPS',
-          port: 443,
-          balanceMode: '最小连接数',
-          isBoundToTargetGroup: false,
-          rsWeight: 5,
-        },
-        {
-          listenerName: '监听器C',
-          listenerID: 'GHI789',
-          protocol: 'TCP',
-          port: 21,
-          balanceMode: '源IP',
-          isBoundToTargetGroup: true,
-          rsWeight: 10,
-        },
-      ],
-      searchData: [
-        {
-          name: t('监听器名称'),
-          id: 'listenerName',
-        },
-        {
-          name: t('监听器ID'),
-          id: 'listenerID',
-        },
-        {
-          name: t('协议'),
-          id: 'protocol',
-        },
-        {
-          name: t('端口'),
-          id: 'port',
-        },
-        {
-          name: t('均衡方式'),
-          id: 'balanceMode',
-        },
-        {
-          name: t('是否绑定目标组'),
-          id: 'isBoundToTargetGroup',
-        },
-        {
-          name: t('RS权重为O'),
-          id: 'rsWeight',
-        },
-      ],
+      data: selections.value,
+      searchData,
     };
-    const handleBatchDelete = () => {
-      // batch delete handler
+    const handleBatchDelete = async () => {
+      isBatchDeleteLoading.value = true;
+      try {
+        await businessStore.batchDeleteDomains({
+          lbl_id: loadBalancerStore.currentSelectedTreeNode.id,
+          domains: selections.value.map(({ domain }) => domain),
+        });
+        Message({
+          message: '删除成功',
+          theme: 'success',
+        });
+        isBatchDeleteDialogShow.value = false;
+        getDomainList(loadBalancerStore.currentSelectedTreeNode.id);
+      } finally {
+        isBatchDeleteLoading.value = false;
+      }
     };
 
     onMounted(() => {
@@ -285,6 +234,8 @@ export default defineComponent({
                   return 'binding-row';
                 }
               },
+              onSelectionChange: (selections: any) => handleSelectionChange(selections, () => true),
+              onSelectAll: (selections: any) => handleSelectionChange(selections, () => true, true),
             },
           }}
           tableData={domainList.value}
@@ -298,7 +249,9 @@ export default defineComponent({
                   <Plus class='f20' />
                   {t('新增域名')}
                 </Button>
-                <Button onClick={() => (isBatchDeleteDialogShow.value = true)}>{t('批量删除')}</Button>
+                <Button onClick={() => (isBatchDeleteDialogShow.value = true)} disabled={!selections.value.length}>
+                  {t('批量删除')}
+                </Button>
               </>
             ),
           }}
@@ -335,27 +288,13 @@ export default defineComponent({
           </Form>
         </CommonSideslider>
         <BatchOperationDialog
+          isSubmitLoading={isBatchDeleteLoading.value}
           v-model:isShow={isBatchDeleteDialogShow.value}
           title='批量删除域名'
           theme='danger'
           confirmText='删除'
           tableProps={tableProps}
-          onHandleConfirm={handleBatchDelete}>
-          {{
-            tips: () => (
-              <>
-                已选择 <span class='blue'>97</span> 个监听器，其中 <span class='red'>22</span>{' '}
-                个监听器RS的权重均不为0，在删除监听器前，请确认是否有流量转发，仔细核对后，再提交删除。
-              </>
-            ),
-            tab: () => (
-              <BkRadioGroup v-model={radioGroupValue.value}>
-                <BkRadioButton label={false}>权重为0</BkRadioButton>
-                <BkRadioButton label={true}>权重不为0</BkRadioButton>
-              </BkRadioGroup>
-            ),
-          }}
-        </BatchOperationDialog>
+          onHandleConfirm={handleBatchDelete}></BatchOperationDialog>
       </div>
     );
   },

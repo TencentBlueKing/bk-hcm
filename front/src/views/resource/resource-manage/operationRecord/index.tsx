@@ -106,12 +106,16 @@ export default defineComponent({
     const isRecordDetailShow = ref(false);
     const currentDetailInfo = ref(null);
     const showOperationDetail = (detail: any) => {
-      if (['load_balancer', 'url_rule', 'listener', 'url_rule_domain', 'target_group'].includes(detail.res_type)) {
+      if (
+        ['load_balancer', 'url_rule', 'listener', 'url_rule_domain', 'target_group'].includes(detail.res_type) &&
+        detail?.res_flow?.flow_id
+      ) {
         router.push({
           path: '/business/record/detail',
           query: {
             id: detail.id,
             name: detail.res_name,
+            flow: detail.res_flow.flow_id,
           },
         });
         return;

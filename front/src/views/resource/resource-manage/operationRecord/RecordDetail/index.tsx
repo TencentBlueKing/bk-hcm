@@ -1,14 +1,17 @@
-import { defineComponent } from 'vue';
+import { defineComponent, ref, watch } from 'vue';
 import './index.scss';
 import DetailHeader from '../../common/header/detail-header';
 import { useRoute } from 'vue-router';
-import { Close, Spinner, Success } from 'bkui-vue/lib/icon';
+import { Success } from 'bkui-vue/lib/icon';
 import { Button, TimeLine } from 'bkui-vue';
 import { useTable } from '@/hooks/useTable/useTable';
+import { useBusinessStore } from '@/store';
 
 export default defineComponent({
   setup() {
     const route = useRoute();
+    const businessStore = useBusinessStore();
+    const tasks = ref([]);
     const { CommonTable } = useTable({
       searchOptions: {
         searchData: [
@@ -78,6 +81,25 @@ export default defineComponent({
         type: 'audits/async_task',
       },
     });
+
+    const getFlow = async (auditId: string, flowId: string) => {
+      const res = await businessStore.getAsyncFlowList({
+        audit_id: +auditId,
+        flow_id: flowId,
+      });
+      tasks.value = res.data.tasks;
+    };
+
+    watch(
+      () => [route.query.id, route.query.flow],
+      ([id, flow]) => {
+        getFlow(id as string, flow as string);
+      },
+      {
+        immediate: true,
+      },
+    );
+
     return () => (
       <div class={'record-detail-container'}>
         <DetailHeader>
@@ -96,30 +118,7 @@ export default defineComponent({
         <div class={'main-wrapper'}>
           <div class={'main-side-card'}>
             <p class={'main-side-card-title'}>执行步骤</p>
-            <TimeLine
-              class={'main-side-card-timeline'}
-              list={[
-                {
-                  tag: '单据提交',
-                  content: '<span style="font-size: 12px;color: #979BA5;">2019-12-15 11:00</span>',
-                  icon: <Success fill='#2DCB56' width={10.5} height={10.5} />,
-                  theme: 'success',
-                },
-                {
-                  tag: '<span style="color: #EA3636">第一批任务</span>',
-                  content: '<span style="font-size: 12px;color: #979BA5;">2019-12-15 11:00<br/>0 / 100</span>',
-                  icon: <Close fill='#EA3636' width={10.5} height={10.5} />,
-                  theme: 'danger',
-                },
-                {
-                  tag: '<span style="font-weight: 700;font-size: 16px;color: #313238;">第三批任务</span>',
-                  content: '<span style="font-size: 12px;">2020-12-15 11:00</span>',
-                  icon: <Spinner fill='#3A84FF' width={16} height={16} />,
-                },
-                {
-                  tag: '<span>执行结束</span>',
-                },
-              ]}></TimeLine>
+            <TimeLine class={'main-side-card-timeline'} list={[]}></TimeLine>
           </div>
           <div class={'mian-list-card'}>
             <CommonTable />
