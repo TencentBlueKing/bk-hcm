@@ -2,13 +2,40 @@ import { timeFormatter } from '@/common/util';
 import { Ref, VNode, ref, watchEffect } from 'vue';
 import { Close, Spinner, Success } from 'bkui-vue/lib/icon';
 
-export type IProps = Array<{
-  id: string; // 任务ID
-  name: string; // 任务名称
-  state: NodeState; // 任务状态
-  reviser: string; // 修改者
-  updated_at: string; // 更新时间
-}>;
+export type IProps = {
+  flow: Ref<Flow>;
+  tasks: Ref<Task[]>;
+};
+
+export interface Flow {
+  id?: string; // 任务ID
+  name?: string; // 任务名称
+  state?: string; // 任务状态
+  reason?: any; // 任务失败原因
+  creator?: string; // 任务创建者
+  reviser?: string; // 任务最后一次修改的修改者
+  created_at?: string; // 任务创建时间，标准格式：2006-01-02T15:04:05Z
+  updated_at?: string; // 任务最后一次修改时间，标准格式：2006-01-02T15:04:05Z
+}
+
+export interface Task {
+  id?: string; // 子任务自增ID
+  action_id?: string; // 子任务ID
+  action_name?: string; // 子任务名称
+  state?: string; // 子任务状态
+  reason?: any; // 子任务失败原因
+  creator?: string; // 子任务创建者
+  reviser?: string; // 子任务最后一次修改的修改者
+  created_at?: string; // 子任务创建时间，标准格式：2006-01-02T15:04:05Z
+  updated_at?: string; // 子任务最后一次修改时间，标准格式：2006-01-02T15:04:05Z
+}
+
+export interface IFlowInfo {
+  name?: string; // 异步任务名称
+  num?: number; // 执行批次
+  actions?: string[]; // 所有执行批次的ID
+  successNum?: number; // 成功的批次
+}
 
 export interface ITimelineNode {
   tag?: string;
@@ -29,7 +56,7 @@ export enum TaskState {
   pending = 'pending', // 等待中
   running = 'running', // 执行中
   rollback = 'rollback', // 回滚
-  cancel = 'cancel', // 取消
+  cancel = 'canceled', // 取消
   success = 'success', // 成功
   failed = 'failed', // 失败
 }
@@ -38,13 +65,14 @@ export enum NodeState {
   pending = 'pending', // 等待中
   scheduled = 'scheduled', // 待调度
   running = 'running', // 执行中
-  cancel = 'cancel', // 取消
+  cancel = 'canceled', // 取消
   failed = 'failed', // 失败
   success = 'success', // 成功
 }
 
 export const useFlowNode = (props: IProps) => {
   const nodes: Ref<ITimelineNode[]> = ref([]);
+  const flowInfo: Ref<IFlowInfo> = ref({});
 
   const getContent = (updated_at: string) => {
     return `<span style="font-size: 12px;color: #979BA5;">${timeFormatter(updated_at)}</span>`;
@@ -70,26 +98,35 @@ export const useFlowNode = (props: IProps) => {
   };
 
   watchEffect(() => {
-    if (!props.length) return;
+    if (!props.tasks.value.length) return;
     nodes.value = [
       {
         tag: '单据提交',
-        content: '<span style="font-size: 12px;color: #979BA5;">2019-12-15 11:00</span>',
+        content: getContent(props.flow.value.created_at),
         icon: <Success fill='#2DCB56' width={10.5} height={10.5} />,
         theme: 'success',
       },
-      ...props.map(({ name, state, updated_at }) => ({
-        tag: FlowNodeNameMap[name] || '--',
+      ...props.tasks.value.map(({ state, updated_at }, idx) => ({
+        tag: `第 ${idx + 1} 批任务` || '--',
         content: getContent(updated_at),
         icon: renderIcon(state),
       })),
       {
         tag: '<span>执行结束</span>',
+        icon: renderIcon(props.flow.value.state),
       },
     ];
+
+    flowInfo.value = {
+      name: FlowNodeNameMap[props.flow.value.name],
+      num: props.tasks.value.length,
+      actions: props.tasks.value.map(({ action_id }) => action_id),
+      successNum: props.tasks.value.filter(({ state }) => state === 'success').length,
+    };
   });
 
   return {
     nodes,
+    flowInfo,
   };
 };

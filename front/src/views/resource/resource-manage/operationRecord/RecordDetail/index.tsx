@@ -3,45 +3,46 @@ import './index.scss';
 import DetailHeader from '../../common/header/detail-header';
 import { useRoute } from 'vue-router';
 import { Success } from 'bkui-vue/lib/icon';
-import { Button, TimeLine } from 'bkui-vue';
+import { Button, Select, TimeLine } from 'bkui-vue';
 import { useTable } from '@/hooks/useTable/useTable';
 import { useBusinessStore } from '@/store';
+import { useFlowNode } from './useFlowNode';
+const { Option } = Select;
 
 export default defineComponent({
   setup() {
     const route = useRoute();
     const businessStore = useBusinessStore();
     const tasks = ref([]);
+    const flow = ref({});
+    const isEnd = ref(false);
+    const { nodes, flowInfo } = useFlowNode({
+      flow,
+      tasks,
+    });
+    const actionId = ref('1');
     const { CommonTable } = useTable({
       searchOptions: {
         searchData: [
           {
             name: '内网IP',
-            id: 'intranetIp',
+            id: 'private_ip_addresses',
           },
           {
             name: '公网IP',
-            id: 'internetIp',
+            id: 'public_ip_addresses',
           },
           {
             name: '主机名称',
-            id: 'hostName',
-          },
-          {
-            name: '地域',
-            id: 'region',
+            id: 'inst_name',
           },
           {
             name: '可用区',
-            id: 'availabilityZone',
+            id: 'zone',
           },
           {
             name: '机型',
-            id: 'machineType',
-          },
-          {
-            name: '操作系统',
-            id: 'operatingSystem',
+            id: 'inst_type',
           },
         ],
       },
@@ -49,36 +50,40 @@ export default defineComponent({
         columns: [
           {
             label: '内网IP',
-            field: 'intranetIp',
+            field: 'private_ip_addresses',
+            render({ data }: any) {
+              return <div>{data.private_ip_address}</div>;
+            },
           },
           {
             label: '公网IP',
-            field: 'internetIp',
+            field: 'public_ip_addresses',
+            render({ data }: any) {
+              return <div>{data.public_ip_address}</div>;
+            },
           },
           {
             label: '主机名称',
-            field: 'hostName',
-          },
-          {
-            label: '地域',
-            field: 'region',
+            field: 'inst_name',
           },
           {
             label: '可用区',
-            field: 'availabilityZone',
+            field: 'zone',
           },
           {
             label: '机型',
-            field: 'machineType',
-          },
-          {
-            label: '操作系统',
-            field: 'operatingSystem',
+            field: 'inst_type',
           },
         ],
       },
       requestOption: {
         type: 'audits/async_task',
+        extension: {
+          flow_id: route.query.flow,
+          audit_id: +route.query.id,
+          action_id: actionId.value || flowInfo.value.actions?.[0] || '1',
+        },
+        dataPath: 'data.tasks[0].params.targets',
       },
     });
 
@@ -87,6 +92,7 @@ export default defineComponent({
         audit_id: +auditId,
         flow_id: flowId,
       });
+      flow.value = res.data.flow;
       tasks.value = res.data.tasks;
     };
 
@@ -104,24 +110,48 @@ export default defineComponent({
       <div class={'record-detail-container'}>
         <DetailHeader>
           <span class={'header-title'}>操作记录详情</span>
-          <span class={'header-content'}>&nbsp;- {route.query.name}</span>
+          <span class={'header-content'}>&nbsp;- {flowInfo.value.name}</span>
         </DetailHeader>
         <div class={'record-detail-info-card'}>
-          <Success width={21} height={21} fill='#FFB848' />
-          <span class={'info-card-prefix'}>部分执行成功</span>
-          <span class={'info-card-num'}>80 / 100</span>
-          <span class={'info-card-content'}>
-            执行分为 <span class={'info-card-highlight-num'}> 4 </span> 个批次，可在每个批次查看具体状态
+          <Success
+            width={21}
+            height={21}
+            fill={flowInfo.value.successNum === flowInfo.value.num ? '#2DCB56' : '#FFB848'}
+          />
+          <span class={'info-card-prefix'}>
+            {flowInfo.value.successNum === flowInfo.value.num ? '全部执行成功' : '部分执行成功'}
           </span>
-          <Button class={'info-card-btn'}>终止任务</Button>
+          <span class={'info-card-num'}>
+            {flowInfo.value.successNum} / {flowInfo.value.num}
+          </span>
+          <span class={'info-card-content'}>
+            执行分为 <span class={'info-card-highlight-num'}> {flowInfo.value.num} </span>{' '}
+            个批次，可在每个批次查看具体状态
+          </span>
+          <Button
+            class={'info-card-btn'}
+            onClick={() => (isEnd.value = !isEnd.value)}
+            theme={isEnd.value ? 'primary' : null}>
+            {isEnd.value ? '重新执行' : '终止任务'}
+          </Button>
         </div>
         <div class={'main-wrapper'}>
           <div class={'main-side-card'}>
             <p class={'main-side-card-title'}>执行步骤</p>
-            <TimeLine class={'main-side-card-timeline'} list={[]}></TimeLine>
+            <TimeLine class={'main-side-card-timeline'} list={nodes.value}></TimeLine>
           </div>
           <div class={'mian-list-card'}>
-            <CommonTable />
+            <CommonTable>
+              {{
+                operation: () => (
+                  <Select v-model={actionId.value} clearable={false}>
+                    {flowInfo.value.actions?.map((id) => (
+                      <Option name={`第${id}批`} id={id} key={id}></Option>
+                    ))}
+                  </Select>
+                ),
+              }}
+            </CommonTable>
           </div>
         </div>
       </div>
