@@ -36,6 +36,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/hooks/handler"
@@ -82,7 +83,7 @@ func (svc *lbSvc) terminateFlow(cts *rest.Contexts,
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	rel, err := svc.getLoadBalancerFlowRel(cts, lbInfo.ID, req.FlowID)
+	rel, err := svc.getLoadBalancerFlowRel(cts.Kit, lbInfo.ID, req.FlowID)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +119,7 @@ func (svc *lbSvc) retryTask(cts *rest.Contexts,
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 	// 对应的rel表 是否已经取消或失败
-	rel, err := svc.getLoadBalancerFlowRel(cts, lbInfo.ID, req.FlowID)
+	rel, err := svc.getLoadBalancerFlowRel(cts.Kit, lbInfo.ID, req.FlowID)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +153,7 @@ func (svc *lbSvc) cloneFlow(cts *rest.Contexts, operateAuth handler.ValidWithAut
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	rel, err := svc.getLoadBalancerFlowRel(cts, lbInfo.ID, req.FlowID)
+	rel, err := svc.getLoadBalancerFlowRel(cts.Kit, lbInfo.ID, req.FlowID)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +240,7 @@ func (svc *lbSvc) getAndCheckLBPerm(cts *rest.Contexts,
 	return lbInfo, err
 }
 
-func (svc *lbSvc) getLoadBalancerFlowRel(cts *rest.Contexts, lbID, flowID string) (*corelb.BaseResFlowRel, error) {
+func (svc *lbSvc) getLoadBalancerFlowRel(kt *kit.Kit, lbID, flowID string) (*corelb.BaseResFlowRel, error) {
 	aWeekAgo := time.Now().Add(-time.Hour * 24 * constant.ResFlowLockExpireDays)
 	// 检查任务是否 已终止
 	relListReq := &core.ListReq{
@@ -251,7 +252,7 @@ func (svc *lbSvc) getLoadBalancerFlowRel(cts *rest.Contexts, lbID, flowID string
 		),
 		Page: core.NewDefaultBasePage(),
 	}
-	relResp, err := svc.client.DataService().Global.LoadBalancer.ListResFlowRel(cts.Kit, relListReq)
+	relResp, err := svc.client.DataService().Global.LoadBalancer.ListResFlowRel(kt, relListReq)
 	if err != nil {
 		return nil, err
 	}
