@@ -256,7 +256,7 @@ func (svc *lbSvc) BatchUpdateTCloudUrlRule(cts *rest.Contexts) (any, error) {
 				update.HealthCheck = tabletype.JsonField(mergedHealth)
 				// 	如果有对应的目标组关联同时更新对应的目标组健康检查
 				if err := svc.updateTGHealth(cts.Kit, txn, rule.TargetGroupID, update.HealthCheck); err != nil {
-					logs.Errorf("fail to update health check of relater target group, err:%s, rid: %s",
+					logs.Errorf("fail to update health check of relater target group, err:%v, rid: %s",
 						err, cts.Kit.Rid)
 					return nil, err
 				}
