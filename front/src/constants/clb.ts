@@ -1,3 +1,18 @@
+// 负载均衡-路由组件名称
+export enum LBRouteName {
+  'all' = 'all-lbs-manager',
+  'lb' = 'specific-lb-manager',
+  'listener' = 'specific-listener-manager',
+  'domain' = 'specific-domain-manager',
+}
+// 负载均衡-路由组件名称映射
+export const LB_ROUTE_NAME_MAP = {
+  all: 'all-lbs-manager',
+  lb: 'specific-lb-manager',
+  listener: 'specific-listener-manager',
+  domain: 'specific-domain-manager',
+};
+
 // 网络类型
 export const LOAD_BALANCER_TYPE = [
   {

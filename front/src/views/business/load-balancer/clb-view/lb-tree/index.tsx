@@ -1,5 +1,5 @@
-import { PropType, defineComponent, onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { defineComponent, onMounted, ref } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 // import components
 import SimpleSearchSelect from '../../components/simple-search-select';
 import { Message, Tree } from 'bkui-vue';
@@ -18,20 +18,15 @@ import lbIcon from '@/assets/image/loadbalancer.svg';
 import listenerIcon from '@/assets/image/listener.svg';
 import domainIcon from '@/assets/image/domain.svg';
 // import constants
-import { TRANSPORT_LAYER_LIST } from '@/constants';
+import { LB_ROUTE_NAME_MAP, TRANSPORT_LAYER_LIST } from '@/constants';
 import './index.scss';
-
-type NodeType = 'all' | 'lb' | 'listener' | 'domain';
 
 export default defineComponent({
   name: 'LoadBalancerTree',
-  props: {
-    activeType: String as PropType<NodeType>,
-  },
-  emits: ['update:activeType'],
-  setup(props, { emit }) {
+  setup() {
     // use hooks
     const router = useRouter();
+    const route = useRoute();
     // use stores
     const loadBalancerStore = useLoadBalancerStore();
     const resourceStore = useResourceStore();
@@ -243,8 +238,12 @@ export default defineComponent({
       } else {
         treeRef.value.setSelect(lastSelectedNode.value, false);
       }
-      // 切换右侧组件
-      emit('update:activeType', node.type);
+      // 切换四级路由组件, lb和listener默认跳转至list页面
+      router.push({
+        name: LB_ROUTE_NAME_MAP[node.type],
+        params: { id: node.id },
+        query: { ...route.query, type: ['lb', 'listener'].includes(node.type) ? 'list' : undefined },
+      });
     };
 
     // define handler function - 节点展开
@@ -271,7 +270,7 @@ export default defineComponent({
         <div
           class={[
             'all-lb-item',
-            `${props.activeType === 'all' ? ' selected' : ''}`,
+            `${route.meta.type === 'all' ? ' selected' : ''}`,
             `${currentPopBoundaryNodeKey.value === '-1' ? ' show-dropdown' : ''}`,
           ]}
           onClick={() => handleNodeClick(allLBNode)}>
