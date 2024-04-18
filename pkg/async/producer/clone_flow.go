@@ -52,7 +52,7 @@ func (p *producer) CloneFlow(kt *kit.Kit, flowId string, opt *CloneFlowOption) (
 	listInput.Filter = tools.EqualExpression("flow_id", flowId)
 	oldTaskList, err := p.backend.ListTask(kt, listInput)
 	if err != nil {
-		logs.Errorf("fail to list flow for clone, err: %s, flow id: %s, rid: %s", err, flowId, kt.Rid)
+		logs.Errorf("fail to list task for clone, err: %s, flow id: %s, rid: %s", err, flowId, kt.Rid)
 		return "", err
 	}
 	newFlow := clone(kt, oldFlow, oldTaskList, opt)
