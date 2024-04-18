@@ -25,7 +25,6 @@ import (
 	"hcm/cmd/task-server/service/capability"
 	"hcm/pkg/async/consumer"
 	"hcm/pkg/async/producer"
-	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -35,7 +34,6 @@ import (
 // Init initial the async service
 func Init(cap *capability.Capability) {
 	svc := &service{
-		cs:  cap.ApiClient,
 		pro: cap.Async.GetProducer(),
 		csm: cap.Async.GetConsumer(),
 	}
@@ -45,13 +43,11 @@ func Init(cap *capability.Capability) {
 	h.Add("UpdateCustomFlowState", "PATCH", "/custom_flows/state/update", svc.UpdateCustomFlowState)
 	h.Add("RetryFlowTask", "PATCH", "/flows/{flow_id}/tasks/{task_id}/retry", svc.RetryFlowTask)
 	h.Add("CancelFlow", "POST", "/flows/{flow_id}/cancel", svc.CancelFlow)
-	h.Add("CloneFlow", "POST", "/flows/{flow_id}/clone", svc.CloneFlow)
 
 	h.Load(cap.WebService)
 }
 
 type service struct {
-	cs  *client.ClientSet
 	pro producer.Producer
 	csm consumer.Consumer
 }
@@ -109,17 +105,6 @@ func (p service) CancelFlow(cts *rest.Contexts) (any, error) {
 		logs.Errorf("task server terminate flow(%s) failed, err: %v, opt: %+v, rid: %s", flowId, err, cts.Kit.Rid)
 		return nil, err
 	}
-
-	return nil, nil
-}
-
-// CloneFlow 按原参数重新发起一次任务
-func (p service) CloneFlow(cts *rest.Contexts) (any, error) {
-	flowId := cts.PathParameter("flow_id").String()
-	if len(flowId) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "flow_id is required")
-	}
-	// TODO
 
 	return nil, nil
 }

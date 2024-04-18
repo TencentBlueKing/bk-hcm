@@ -341,3 +341,52 @@ type TargetGroupUpdateReq struct {
 func (req *TargetGroupUpdateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// --------------------------  Terminate Async Flow --------------------------
+
+// AsyncFlowTerminateReq terminate async flow req.
+type AsyncFlowTerminateReq struct {
+	FlowID string `json:"flow_id" validate:"required"`
+}
+
+// Validate ...
+func (req *AsyncFlowTerminateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// --------------------------  Clone Async Flow --------------------------
+
+// AsyncFlowCloneReq terminate async flow req.
+type AsyncFlowCloneReq struct {
+	FlowID string `json:"flow_id" validate:"required"`
+}
+
+// Validate ...
+func (req *AsyncFlowCloneReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// --------------------------  Retry Async Flow Task --------------------------
+
+// AsyncTaskRetryReq retry async flow task req.
+type AsyncTaskRetryReq struct {
+	FlowID string `json:"flow_id" validate:"required"`
+	TaskID string `json:"task_id" validate:"required"`
+}
+
+// Validate ...
+func (req *AsyncTaskRetryReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// --------------------------  Get Async Flow Result After Terminate --------------------------
+
+// TerminatedAsyncFlowResultReq get terminated async flow result req.
+type TerminatedAsyncFlowResultReq struct {
+	FlowID string `json:"flow_id" validate:"required"`
+}
+
+// Validate ...
+func (req *TerminatedAsyncFlowResultReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

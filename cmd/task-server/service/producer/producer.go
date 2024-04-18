@@ -41,6 +41,7 @@ func Init(cap *capability.Capability) {
 
 	h.Add("CreateTemplateFlow", "POST", "/template_flows/create", svc.CreateTemplateFlow)
 	h.Add("CreateCustomFlow", "POST", "/custom_flows/create", svc.CreateCustomFlow)
+	h.Add("CloneFlow", "POST", "/flows/{flow_id}/clone", svc.CloneFlow)
 
 	h.Load(cap.WebService)
 }
@@ -94,6 +95,32 @@ func (p service) CreateCustomFlow(cts *rest.Contexts) (interface{}, error) {
 	id, err := p.pro.AddCustomFlow(cts.Kit, opt)
 	if err != nil {
 		logs.Errorf("add custom flow failed, err: %v, opt: %+v, rid: %s", err, opt, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return &core.CreateResult{ID: id}, nil
+}
+
+// CloneFlow 按原参数重新发起一次任务
+func (p service) CloneFlow(cts *rest.Contexts) (any, error) {
+	flowId := cts.PathParameter("flow_id").String()
+	if len(flowId) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "flow_id is required")
+	}
+
+	opt := new(producer.CloneFlowOption)
+	if err := cts.DecodeInto(opt); err != nil {
+		return nil, err
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// 复制一份flow 和task
+	id, err := p.pro.CloneFlow(cts.Kit, flowId, opt)
+	if err != nil {
+		logs.Errorf("fail to clone flow(%s), err: %v, rid: %s", flowId, err, cts.Kit.Rid)
 		return nil, err
 	}
 

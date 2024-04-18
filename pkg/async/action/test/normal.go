@@ -34,11 +34,9 @@ import (
 // define test template.
 var NormalTpl = action.FlowTemplate{
 	Name: enumor.FlowNormalTest,
-	ShareData: &tableasync.ShareData{
-		Dict: map[string]string{
-			"name": "test",
-		},
-	},
+	ShareData: tableasync.NewShareData(map[string]string{
+		"name": "test",
+	}),
 	Tasks: []action.TaskTemplate{
 		{
 			ActionID:   "1",

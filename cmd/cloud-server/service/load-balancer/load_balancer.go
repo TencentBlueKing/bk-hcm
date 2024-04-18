@@ -43,8 +43,6 @@ func InitService(c *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	bizH := rest.NewHandler()
-	bizH.Path("/bizs/{bk_biz_id}")
 	// clb apis in biz
 	h.Add("ListLoadBalancer", http.MethodPost, "/load_balancers/list", svc.ListLoadBalancer)
 	h.Add("BatchCreateLB", http.MethodPost, "/load_balancers/create", svc.BatchCreateLB)
@@ -54,64 +52,78 @@ func InitService(c *capability.Capability) {
 		"/vendors/tcloud/load_balancers/resources/describe", svc.TCloudDescribeResources)
 	h.Add("BatchDeleteLoadBalancer", http.MethodDelete, "/load_balancers/batch", svc.BatchDeleteLoadBalancer)
 
-	bizH.Add("UpdateBizTCloudLoadBalancer", http.MethodPatch,
-		"/vendors/tcloud/load_balancers/{id}", svc.UpdateBizTCloudLoadBalancer)
-	bizH.Add("ListBizLoadBalancer", http.MethodPost, "/load_balancers/list", svc.ListBizLoadBalancer)
-	bizH.Add("GetBizLoadBalancer", http.MethodGet, "/load_balancers/{id}", svc.GetBizLoadBalancer)
-	bizH.Add("BatchDeleteBizLoadBalancer", http.MethodDelete, "/load_balancers/batch", svc.BatchDeleteBizLoadBalancer)
-
-	bizH.Add("ListBizListener", http.MethodPost, "/load_balancers/{lb_id}/listeners/list", svc.ListBizListener)
-	bizH.Add("GetBizListener", http.MethodGet, "/listeners/{id}", svc.GetBizListener)
-	bizH.Add("ListBizListenerDomains", http.MethodPost,
-		"/vendors/tcloud/listeners/{lbl_id}/domains/list", svc.ListBizListenerDomains)
-	bizH.Add("ListListenerCountByLbIDs", http.MethodPost, "/load_balancers/listeners/count",
-		svc.ListListenerCountByLbIDs)
-
-	bizH.Add("ListBizTargetsByTGID", http.MethodPost,
-		"/target_groups/{target_group_id}/targets/list", svc.ListBizTargetsByTGID)
-	bizH.Add("AssociateBizTargetGroupListenerRel", http.MethodPost,
-		"/listeners/associate/target_group", svc.AssociateBizTargetGroupListenerRel)
-
-	bizH.Add("CreateBizTargetGroup", http.MethodPost, "/target_groups/create", svc.CreateBizTargetGroup)
-	bizH.Add("UpdateBizTargetGroup", http.MethodPatch, "/target_groups/{id}", svc.UpdateBizTargetGroup)
-	bizH.Add("UpdateBizTargetGroupHealth", http.MethodPatch,
-		"/target_groups/{id}/health_check", svc.UpdateBizTargetGroupHealth)
-	bizH.Add("DeleteBizTargetGroup", http.MethodDelete, "/target_groups/batch", svc.DeleteBizTargetGroup)
-	bizH.Add("ListBizTargetGroup", http.MethodPost, "/target_groups/list", svc.ListBizTargetGroup)
-	bizH.Add("GetBizTargetGroup", http.MethodGet, "/target_groups/{id}", svc.GetBizTargetGroup)
-	bizH.Add("BatchAddBizTargets", http.MethodPost, "/target_groups/targets/create", svc.BatchAddBizTargets)
-	bizH.Add("BatchRemoveBizTargets", http.MethodDelete, "/target_groups/targets/batch", svc.BatchRemoveBizTargets)
-	bizH.Add("BatchModifyBizTargetPort",
-		http.MethodPatch, "/target_groups/{target_group_id}/targets/port", svc.BatchModifyBizTargetsPort)
-	bizH.Add("BatchModifyBizTargetsWeight", http.MethodPatch,
-		"/target_groups/{target_group_id}/targets/weight", svc.BatchModifyBizTargetsWeight)
-	bizH.Add("ListBizTargetsHealthByTGID", http.MethodPost,
-		"/target_groups/{target_group_id}/targets/health", svc.ListBizTargetsHealthByTGID)
-
-	// 监听器
-	bizH.Add("CreateBizListener", http.MethodPost, "/load_balancers/{lb_id}/listeners/create", svc.CreateBizListener)
-	bizH.Add("UpdateBizListener", http.MethodPatch, "/listeners/{id}", svc.UpdateBizListener)
-	bizH.Add("DeleteBizListener", http.MethodDelete, "/listeners/batch", svc.DeleteBizListener)
-	bizH.Add("UpdateBizDomainAttr", http.MethodPatch, "/listeners/{lbl_id}/domains", svc.UpdateBizDomainAttr)
-
-	// 规则
-	bizH.Add("GetBizTCloudUrlRule", http.MethodGet,
-		"/vendors/tcloud/listeners/{lbl_id}/rules/{rule_id}", svc.GetBizTCloudUrlRule)
-	bizH.Add("ListBizUrlRulesByListener", http.MethodPost,
-		"/vendors/tcloud/listeners/{lbl_id}/rules/list", svc.ListBizUrlRulesByListener)
-	bizH.Add("ListBizTCloudRuleByTG", http.MethodPost,
-		"/vendors/tcloud/target_groups/{target_group_id}/rules/list", svc.ListBizTCloudRuleByTG)
-	bizH.Add("CreateBizTCloudUrlRule", http.MethodPost,
-		"/vendors/tcloud/listeners/{lbl_id}/rules/create", svc.CreateBizTCloudUrlRule)
-	bizH.Add("UpdateBizTCloudUrlRule", http.MethodPatch,
-		"/vendors/tcloud/listeners/{lbl_id}/rules/{rule_id}", svc.UpdateBizTCloudUrlRule)
-	bizH.Add("BatchDeleteBizTCloudUrlRule", http.MethodDelete,
-		"/vendors/tcloud/listeners/{lbl_id}/rules/batch", svc.BatchDeleteBizTCloudUrlRule)
-	bizH.Add("BatchDeleteBizTCloudUrlRuleByDomain", http.MethodDelete,
-		"/vendors/tcloud/listeners/{lbl_id}/rules/by/domains/batch", svc.BatchDeleteBizTCloudUrlRuleByDomain)
+	bizH := rest.NewHandler()
+	bizH.Path("/bizs/{bk_biz_id}")
+	bizService(bizH, svc)
 
 	h.Load(c.WebService)
 	bizH.Load(c.WebService)
+}
+
+func bizService(h *rest.Handler, svc *lbSvc) {
+	h.Add("UpdateBizTCloudLoadBalancer", http.MethodPatch,
+		"/vendors/tcloud/load_balancers/{id}", svc.UpdateBizTCloudLoadBalancer)
+	h.Add("ListBizLoadBalancer", http.MethodPost, "/load_balancers/list", svc.ListBizLoadBalancer)
+	h.Add("GetBizLoadBalancer", http.MethodGet, "/load_balancers/{id}", svc.GetBizLoadBalancer)
+	h.Add("BatchDeleteBizLoadBalancer", http.MethodDelete, "/load_balancers/batch", svc.BatchDeleteBizLoadBalancer)
+
+	h.Add("ListBizListener", http.MethodPost, "/load_balancers/{lb_id}/listeners/list", svc.ListBizListener)
+	h.Add("GetBizListener", http.MethodGet, "/listeners/{id}", svc.GetBizListener)
+	h.Add("ListBizListenerDomains", http.MethodPost,
+		"/vendors/tcloud/listeners/{lbl_id}/domains/list", svc.ListBizListenerDomains)
+	h.Add("ListListenerCountByLbIDs", http.MethodPost, "/load_balancers/listeners/count",
+		svc.ListListenerCountByLbIDs)
+
+	h.Add("ListBizTargetsByTGID", http.MethodPost,
+		"/target_groups/{target_group_id}/targets/list", svc.ListBizTargetsByTGID)
+	h.Add("AssociateBizTargetGroupListenerRel", http.MethodPost,
+		"/listeners/associate/target_group", svc.AssociateBizTargetGroupListenerRel)
+
+	h.Add("CreateBizTargetGroup", http.MethodPost, "/target_groups/create", svc.CreateBizTargetGroup)
+	h.Add("UpdateBizTargetGroup", http.MethodPatch, "/target_groups/{id}", svc.UpdateBizTargetGroup)
+	h.Add("UpdateBizTargetGroupHealth", http.MethodPatch,
+		"/target_groups/{id}/health_check", svc.UpdateBizTargetGroupHealth)
+	h.Add("DeleteBizTargetGroup", http.MethodDelete, "/target_groups/batch", svc.DeleteBizTargetGroup)
+	h.Add("ListBizTargetGroup", http.MethodPost, "/target_groups/list", svc.ListBizTargetGroup)
+	h.Add("GetBizTargetGroup", http.MethodGet, "/target_groups/{id}", svc.GetBizTargetGroup)
+	// 与异步任务相关的操作
+	h.Add("BatchAddBizTargets", http.MethodPost, "/target_groups/targets/create", svc.BatchAddBizTargets)
+	h.Add("BatchRemoveBizTargets", http.MethodDelete, "/target_groups/targets/batch", svc.BatchRemoveBizTargets)
+	h.Add("BatchModifyBizTargetPort",
+		http.MethodPatch, "/target_groups/{target_group_id}/targets/port", svc.BatchModifyBizTargetsPort)
+	h.Add("BatchModifyBizTargetsWeight", http.MethodPatch,
+		"/target_groups/{target_group_id}/targets/weight", svc.BatchModifyBizTargetsWeight)
+
+	h.Add("CancelFlow", http.MethodPost, "/load_balancers/{lb_id}/async_flows/terminate", svc.BizTerminateFlow)
+	h.Add("RetryTask", http.MethodPost, "/load_balancers/{lb_id}/async_tasks/retry", svc.BizRetryTask)
+	h.Add("CloneFlow", http.MethodPost, "/load_balancers/{lb_id}/async_flows/clone", svc.BizCloneFlow)
+	h.Add("GetResultAfterTerminate", http.MethodPost,
+		"/load_balancers/{lb_id}/async_flows/result_after_terminate", svc.BizGetResultAfterTerminate)
+
+	h.Add("ListBizTargetsHealthByTGID", http.MethodPost,
+		"/target_groups/{target_group_id}/targets/health", svc.ListBizTargetsHealthByTGID)
+
+	// 监听器
+	h.Add("CreateBizListener", http.MethodPost, "/load_balancers/{lb_id}/listeners/create", svc.CreateBizListener)
+	h.Add("UpdateBizListener", http.MethodPatch, "/listeners/{id}", svc.UpdateBizListener)
+	h.Add("DeleteBizListener", http.MethodDelete, "/listeners/batch", svc.DeleteBizListener)
+	h.Add("UpdateBizDomainAttr", http.MethodPatch, "/listeners/{lbl_id}/domains", svc.UpdateBizDomainAttr)
+
+	// 规则
+	h.Add("GetBizTCloudUrlRule", http.MethodGet,
+		"/vendors/tcloud/listeners/{lbl_id}/rules/{rule_id}", svc.GetBizTCloudUrlRule)
+	h.Add("ListBizUrlRulesByListener", http.MethodPost,
+		"/vendors/tcloud/listeners/{lbl_id}/rules/list", svc.ListBizUrlRulesByListener)
+	h.Add("ListBizTCloudRuleByTG", http.MethodPost,
+		"/vendors/tcloud/target_groups/{target_group_id}/rules/list", svc.ListBizTCloudRuleByTG)
+	h.Add("CreateBizTCloudUrlRule", http.MethodPost,
+		"/vendors/tcloud/listeners/{lbl_id}/rules/create", svc.CreateBizTCloudUrlRule)
+	h.Add("UpdateBizTCloudUrlRule", http.MethodPatch,
+		"/vendors/tcloud/listeners/{lbl_id}/rules/{rule_id}", svc.UpdateBizTCloudUrlRule)
+	h.Add("BatchDeleteBizTCloudUrlRule", http.MethodDelete,
+		"/vendors/tcloud/listeners/{lbl_id}/rules/batch", svc.BatchDeleteBizTCloudUrlRule)
+	h.Add("BatchDeleteBizTCloudUrlRuleByDomain", http.MethodDelete,
+		"/vendors/tcloud/listeners/{lbl_id}/rules/by/domains/batch", svc.BatchDeleteBizTCloudUrlRuleByDomain)
 }
 
 type lbSvc struct {

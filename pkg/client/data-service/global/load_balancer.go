@@ -138,7 +138,7 @@ func (cli *LoadBalancerClient) BatchCreateResFlowRel(kt *kit.Kit, req *dataproto
 		cli.client, rest.POST, kt, req, "/res_flow_rels/batch/create")
 }
 
-// BatchUpdateResFlowRel 批量更新腾讯云监听器
+// BatchUpdateResFlowRel 批量更新资源与异步任务关系
 func (cli *LoadBalancerClient) BatchUpdateResFlowRel(kt *kit.Kit, req *dataproto.ResFlowRelBatchUpdateReq) error {
 	return common.RequestNoResp[dataproto.ResFlowRelBatchUpdateReq](
 		cli.client, rest.PATCH, kt, req, "/res_flow_rels/batch/update")

@@ -86,7 +86,7 @@ func (svc svc) getAudit(cts *rest.Contexts, validHandler handler.ValidWithAuthHa
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	audit, err := svc.client.DataService().Global.Audit.GetAudit(cts.Kit.Ctx, cts.Kit.Header(), id)
+	rawAudit, err := svc.client.DataService().Global.Audit.GetAuditRaw(cts.Kit, id)
 	if err != nil {
 		logs.Errorf("get audit failed, err: %v, id: %s, rid: %s", err, id, cts.Kit.Rid)
 		return nil, err
@@ -95,12 +95,12 @@ func (svc svc) getAudit(cts *rest.Contexts, validHandler handler.ValidWithAuthHa
 	// validate biz and authorize
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Audit,
 		Action:    meta.Find,
-		BasicInfo: &types.CloudResourceBasicInfo{BkBizID: audit.BkBizID, AccountID: audit.AccountID}})
+		BasicInfo: &types.CloudResourceBasicInfo{BkBizID: rawAudit.BkBizID, AccountID: rawAudit.AccountID}})
 	if err != nil {
 		return nil, err
 	}
 
-	return audit, nil
+	return rawAudit, nil
 }
 
 // ListAudit list audit.
@@ -186,7 +186,7 @@ func (svc svc) listAuditAsyncFlow(cts *rest.Contexts, authHandler handler.ListAu
 		return nil, err
 	}
 	if auditInfo == nil {
-		return nil, errf.Newf(errf.RecordNotFound, "audit: %s not found", req.AuditID)
+		return nil, errf.Newf(errf.RecordNotFound, "audit: %d not found", req.AuditID)
 	}
 
 	// 获取异步任务-Flow详情
@@ -264,7 +264,7 @@ func (svc svc) listAuditAsyncTask(cts *rest.Contexts, authHandler handler.ListAu
 		return nil, err
 	}
 	if auditInfo == nil {
-		return nil, errf.Newf(errf.RecordNotFound, "audit: %s not found", req.AuditID)
+		return nil, errf.Newf(errf.RecordNotFound, "audit: %d not found", req.AuditID)
 	}
 
 	// 获取异步任务-Flow详情

@@ -156,3 +156,18 @@ func (opt *UpdateCustomFlowStateOption) Validate() error {
 
 	return validator.Validate.Struct(opt)
 }
+
+// CloneFlowOption ...
+type CloneFlowOption struct {
+
+	// Memo 备注
+	Memo string `json:"memo" validate:"omitempty"`
+	// IsInitState 是否初始化状态
+	IsInitState bool `json:"is_init_state" validate:"omitempty"`
+}
+
+// Validate AddTemplateFlowOption
+func (opt *CloneFlowOption) Validate() error {
+
+	return validator.Validate.Struct(opt)
+}
