@@ -52,7 +52,20 @@ func (cli *client) ListenerTargets(kt *kit.Kit, param *SyncBaseParams, opt *Sync
 		logs.Errorf("fail to list related res while syncing targets, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
-	processedTargetGroup := make(map[string]struct{})
+	// 一个目标组只处理一次
+	isTGHandled := genExists[string]()
+	compareWrapper := func(rel *corelb.BaseTargetListenerRuleRel, cloudTargets []*tclb.Backend) error {
+		if rel.BindingStatus == enumor.BindingBindingStatus {
+			return nil
+		}
+		tgId := rel.TargetGroupID
+		if isTGHandled(tgId) {
+			return nil
+		}
+
+		// 存在则比较
+		return cli.compareTargetsChange(kt, opt.AccountID, tgId, cloudTargets, tgRsMap[tgId])
+	}
 	// 遍历云上的监听器、规则
 	for _, listener := range cloudListenerTargets {
 		if !listener.GetProtocol().IsLayer7Protocol() {
@@ -67,17 +80,7 @@ func (cli *client) ListenerTargets(kt *kit.Kit, param *SyncBaseParams, opt *Sync
 				// 只要本地没有目标组就跳过RS同步
 				continue
 			}
-			if rel.BindingStatus == enumor.BindingBindingStatus {
-				continue
-			}
-			tgId := rel.TargetGroupID
-			if _, exists := processedTargetGroup[tgId]; exists {
-				// 一个目标组只处理一次
-				continue
-			}
-			processedTargetGroup[tgId] = struct{}{}
-			// 存在则比较
-			if err := cli.compareTargetsChange(kt, opt.AccountID, tgId, listener.Targets, tgRsMap[tgId]); err != nil {
+			if err := compareWrapper(rel, listener.Targets); err != nil {
 				logs.Errorf("fail to compare L4 listener rs change, err: %v, rid:%s", err, kt.Rid)
 				return err
 			}
@@ -95,17 +98,8 @@ func (cli *client) ListenerTargets(kt *kit.Kit, param *SyncBaseParams, opt *Sync
 				// 跳过比较
 				continue
 			}
-			if rel.BindingStatus == enumor.BindingBindingStatus {
-				continue
-			}
-			tgId := rel.TargetGroupID
-			if _, exists := processedTargetGroup[tgId]; exists {
-				// 一个目标组只处理一次
-				continue
-			}
-			processedTargetGroup[tgId] = struct{}{}
 			// 存在则比较
-			if err := cli.compareTargetsChange(kt, opt.AccountID, tgId, rule.Targets, tgRsMap[tgId]); err != nil {
+			if err := compareWrapper(rel, rule.Targets); err != nil {
 				logs.Errorf("fail to compare L7 rule rs change, err: %v, rid:%s", err, kt.Rid)
 				return err
 			}
@@ -558,4 +552,16 @@ func diff[CloudType common.CloudResType, DBType common.DBResType](dataFromCloud 
 	}
 
 	return newAddData, updateMap, delLocalIDs
+}
+
+func genExists[T comparable]() (exists func(T) bool) {
+	existsMap := make(map[T]struct{})
+	exists = func(k T) bool {
+		if _, exist := existsMap[k]; exist {
+			return exist
+		}
+		existsMap[k] = struct{}{}
+		return false
+	}
+	return exists
 }
