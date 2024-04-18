@@ -315,7 +315,7 @@ func (req *TCloudBatchModifyTargetPortReq) Validate() error {
 // TCloudBatchModifyTargetWeightReq tcloud batch modify target weight req.
 type TCloudBatchModifyTargetWeightReq struct {
 	TargetIDs []string `json:"target_ids" validate:"required,min=1,max=100"`
-	NewWeight int64    `json:"new_weight" validate:"required,min=0,max=100"`
+	NewWeight *int64   `json:"new_weight" validate:"required,min=0,max=100"`
 }
 
 // Validate request.
@@ -389,4 +389,9 @@ type TerminatedAsyncFlowResultReq struct {
 // Validate ...
 func (req *TerminatedAsyncFlowResultReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// ResourceFlowStatusResp define resource flow status response.
+type ResourceFlowStatusResp struct {
+	Status enumor.ResFlowStatus `json:"status"`
 }

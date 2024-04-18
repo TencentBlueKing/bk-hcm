@@ -36,6 +36,7 @@ import (
 	approvalprocess "hcm/cmd/cloud-server/service/approval_process"
 	argstpl "hcm/cmd/cloud-server/service/argument-template"
 	"hcm/cmd/cloud-server/service/assign"
+	asynctask "hcm/cmd/cloud-server/service/async-task"
 	"hcm/cmd/cloud-server/service/audit"
 	"hcm/cmd/cloud-server/service/bill"
 	"hcm/cmd/cloud-server/service/capability"
@@ -303,6 +304,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	argstpl.InitArgsTplService(c)
 	cert.InitCertService(c)
 	loadbalancer.InitService(c)
+	asynctask.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

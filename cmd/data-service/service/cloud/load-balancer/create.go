@@ -625,7 +625,6 @@ func (svc *lbSvc) batchCreateTCloudListenerWithRule(cts *rest.Contexts) (any, er
 
 func (svc *lbSvc) insertListenerWithRule(kt *kit.Kit, req *dataproto.ListenerWithRuleBatchCreateReq) ([]string, error) {
 	result, err := svc.dao.Txn().AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
-
 		lblIDs := make([]string, 0, len(req.ListenerWithRules))
 		for _, item := range req.ListenerWithRules {
 			lblID, ruleID, err := svc.createListenerWithRule(kt, txn, item)
@@ -637,6 +636,22 @@ func (svc *lbSvc) insertListenerWithRule(kt *kit.Kit, req *dataproto.ListenerWit
 			if len(item.TargetGroupID) == 0 {
 				continue
 			}
+			// 目标组如果没有RS，则直接绑定成功
+			rsReq := &typesdao.ListOption{
+				Filter: tools.EqualExpression("target_group_id", item.TargetGroupID),
+				Page:   core.NewDefaultBasePage(),
+			}
+			targetResp, err := svc.dao.LoadBalancerTarget().List(kt, rsReq)
+			if err != nil {
+				logs.Errorf("fail to list target by target group id, err: %v, tgID: %s, rid: %s",
+					err, item.TargetGroupID, kt.Rid)
+				return nil, err
+			}
+			bindStatus := enumor.BindingBindingStatus
+			if len(targetResp.Details) == 0 {
+				bindStatus = enumor.SuccessBindingStatus
+			}
+
 			ruleRelModels := []*tablelb.TargetGroupListenerRuleRelTable{{
 				ListenerRuleID:      ruleID,
 				CloudListenerRuleID: item.CloudRuleID,
@@ -647,7 +662,7 @@ func (svc *lbSvc) insertListenerWithRule(kt *kit.Kit, req *dataproto.ListenerWit
 				CloudLbID:           item.CloudLbID,
 				LblID:               lblID,
 				CloudLblID:          item.CloudID,
-				BindingStatus:       enumor.BindingBindingStatus,
+				BindingStatus:       bindStatus,
 				Creator:             kt.User,
 				Reviser:             kt.User,
 			}}

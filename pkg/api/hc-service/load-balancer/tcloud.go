@@ -342,6 +342,7 @@ func (req *DomainAttrUpdateReq) Validate() error {
 // TCloudBatchOperateTargetReq tcloud batch operate rs req.
 type TCloudBatchOperateTargetReq struct {
 	TargetGroupID string                 `json:"target_group_id" validate:"required"`
+	LbID          string                 `json:"lb_id" validate:"required"`
 	RsList        []*cloud.TargetBaseReq `json:"targets" validate:"required,min=1,max=100,dive"`
 }
 
@@ -354,6 +355,7 @@ func (req *TCloudBatchOperateTargetReq) Validate() error {
 type BatchRegisterTCloudTargetReq struct {
 	CloudListenerID string            `json:"cloud_listener_id"  validate:"required"`
 	CloudRuleID     string            `json:"cloud_rule_id"  validate:"omitempty"`
+	TargetGroupID   string            `json:"target_group_id"  validate:"omitempty"`
 	RuleType        enumor.RuleType   `json:"rule_type" validate:"required"`
 	Targets         []*RegisterTarget `json:"targets"  validate:"required,min=1,dive"`
 }
