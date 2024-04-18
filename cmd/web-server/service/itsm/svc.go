@@ -61,28 +61,32 @@ func (svc *service) ListMyApprovalTicket(cts *rest.Contexts) (interface{}, error
 		return nil, err
 	}
 
-	serviceID, err := svc.client.CloudServer().ApprovalProcess.GetApprovalProcessServiceID(cts.Kit)
+	serviceIDs, err := svc.client.CloudServer().ApprovalProcess.GetApprovalProcessServiceID(cts.Kit)
 	if err != nil {
 		logs.Errorf("call cloud-server to get approval process service id failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	getReq := &itsm2.GetTicketsByUserReq{
-		ServiceID: serviceID,
-		User:      cts.Kit.User,
-		ViewType:  itsm2.MyApproval,
-		Page:      (int64(req.Page.Start) / int64(req.Page.Limit)) + 1,
-		PageSize:  int64(req.Page.Limit),
-	}
-	resp, err := svc.itsmCli.GetTicketsByUser(cts.Kit, getReq)
-	if err != nil {
-		logs.Errorf("request itsm get tickets by user failed, err: %v, req: %v, rid: %s", err, getReq, cts.Kit.Rid)
-		return nil, err
-	}
-
 	result := &webserver.ListMyApprovalTicketResp{
-		Count:   resp.Count,
-		Details: resp.Items,
+		// 总数量
+		Count:   0,
+		Details: nil,
+	}
+	for _, serviceID := range serviceIDs {
+		getReq := &itsm2.GetTicketsByUserReq{
+			ServiceID: serviceID,
+			User:      cts.Kit.User,
+			ViewType:  itsm2.MyApproval,
+			Page:      (int64(req.Page.Start) / int64(req.Page.Limit)) + 1,
+			PageSize:  int64(req.Page.Limit),
+		}
+		resp, err := svc.itsmCli.GetTicketsByUser(cts.Kit, getReq)
+		if err != nil {
+			logs.Errorf("request itsm get tickets by user failed, err: %v, req: %v, rid: %s", err, getReq, cts.Kit.Rid)
+			return nil, err
+		}
+		result.Details = append(result.Details, resp.Items...)
+		result.Count += resp.Count
 	}
 
 	return result, nil
