@@ -330,7 +330,7 @@ func isLayer4RuleChange(cloud typeslb.TCloudListener, db corelb.TCloudLbUrlRule)
 		return true
 	}
 
-	if isHealthCheckChange(cloud.HealthCheck, db.HealthCheck) {
+	if isHealthCheckChange(cloud.HealthCheck, db.HealthCheck, false) {
 		return true
 	}
 	if isListenerCertChange(cloud.Certificate, db.Certificate) {
@@ -354,7 +354,7 @@ func isLayer7RuleChange(cloud typeslb.TCloudUrlRule, db corelb.TCloudLbUrlRule) 
 		return true
 	}
 
-	if isHealthCheckChange(cloud.HealthCheck, db.HealthCheck) {
+	if isHealthCheckChange(cloud.HealthCheck, db.HealthCheck, true) {
 		return true
 	}
 	if isListenerCertChange(cloud.Certificate, db.Certificate) {

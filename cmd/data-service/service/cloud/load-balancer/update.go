@@ -254,6 +254,13 @@ func (svc *lbSvc) BatchUpdateTCloudUrlRule(cts *rest.Contexts) (any, error) {
 					return nil, fmt.Errorf("json UpdateMerge rule health check failed, err: %v", err)
 				}
 				update.HealthCheck = tabletype.JsonField(mergedHealth)
+				// 	如果有对应的目标组关联同时更新对应的目标组健康检查
+				if err := svc.updateTGHealth(cts.Kit, txn, rule.TargetGroupID, update.HealthCheck); err != nil {
+					logs.Errorf("fail to update health check of relater target group, err:%v, rid: %s",
+						err, cts.Kit.Rid)
+					return nil, err
+				}
+
 			}
 			if rule.Certificate != nil {
 				hc := healthCertMap[rule.ID]
@@ -272,6 +279,18 @@ func (svc *lbSvc) BatchUpdateTCloudUrlRule(cts *rest.Contexts) (any, error) {
 
 		return nil, nil
 	})
+}
+
+// 更新目标组健康检查
+func (svc *lbSvc) updateTGHealth(kt *kit.Kit, txn *sqlx.Tx, tgID string, health tabletype.JsonField) error {
+	if len(tgID) == 0 {
+		return nil
+	}
+	tgUpdate := &tablelb.LoadBalancerTargetGroupTable{
+		HealthCheck: health,
+		Reviser:     kt.User,
+	}
+	return svc.dao.LoadBalancerTargetGroup().UpdateByIDWithTx(kt, txn, tgID, tgUpdate)
 }
 
 // tcloudHealthCert 腾讯云监听器、规则健康检查和证书信息
