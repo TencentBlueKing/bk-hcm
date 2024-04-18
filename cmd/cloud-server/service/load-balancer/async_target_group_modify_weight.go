@@ -211,14 +211,12 @@ func (svc *lbSvc) initFlowTargetWeight(kt *kit.Kit, req *cslb.TCloudBatchModifyT
 		lastActionID = actionID
 	}
 	rsWeightReq := &ts.AddCustomFlowReq{
-		Name:        enumor.FlowTargetGroupModifyWeight,
-		ShareData:   tableasync.NewShareData(),
+		Name: enumor.FlowTargetGroupModifyWeight,
+		ShareData: tableasync.NewShareData(map[string]string{
+			"lb_id": lbID,
+		}),
 		Tasks:       tasks,
 		IsInitState: true,
-	}
-	err := rsWeightReq.ShareData.Set(kt, "lb_id", lbID)
-	if err != nil {
-		return "", err
 	}
 	result, err := svc.client.TaskServer().CreateCustomFlow(kt, rsWeightReq)
 	if err != nil {

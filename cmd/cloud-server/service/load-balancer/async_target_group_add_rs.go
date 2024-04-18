@@ -275,14 +275,12 @@ func (svc *lbSvc) initFlowAddTargetByLbID(kt *kit.Kit, accountID, lbID string,
 		}
 	}
 	addReq := &ts.AddCustomFlowReq{
-		Name:        enumor.FlowTargetGroupAddRS,
-		ShareData:   tableasync.NewShareData(),
+		Name: enumor.FlowTargetGroupAddRS,
+		ShareData: tableasync.NewShareData(map[string]string{
+			"lb_id": lbID,
+		}),
 		Tasks:       tasks,
 		IsInitState: true,
-	}
-	err := addReq.ShareData.Set(kt, "lb_id", lbID)
-	if err != nil {
-		return "", err
 	}
 	result, err := svc.client.TaskServer().CreateCustomFlow(kt, addReq)
 	if err != nil {

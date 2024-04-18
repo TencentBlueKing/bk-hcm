@@ -241,14 +241,12 @@ func (svc *lbSvc) initFlowRemoveTargetByLbID(kt *kit.Kit, accountID string, lbID
 		}
 	}
 	removeReq := &ts.AddCustomFlowReq{
-		Name:        enumor.FlowTargetGroupRemoveRS,
-		ShareData:   tableasync.NewShareData(),
+		Name: enumor.FlowTargetGroupRemoveRS,
+		ShareData: tableasync.NewShareData(map[string]string{
+			"lb_id": lbID,
+		}),
 		Tasks:       tasks,
 		IsInitState: true,
-	}
-	err := removeReq.ShareData.Set(kt, "lb_id", lbID)
-	if err != nil {
-		return "", err
 	}
 	result, err := svc.client.TaskServer().CreateCustomFlow(kt, removeReq)
 	if err != nil {

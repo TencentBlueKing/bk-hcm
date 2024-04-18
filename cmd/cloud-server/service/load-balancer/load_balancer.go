@@ -33,7 +33,7 @@ import (
 	"hcm/pkg/rest"
 )
 
-// InitService initialize the clb service.
+// InitService initialize the load balancer service.
 func InitService(c *capability.Capability) {
 	svc := &lbSvc{
 		client:     c.ApiClient,
@@ -53,8 +53,6 @@ func InitService(c *capability.Capability) {
 	h.Add("BatchDeleteLoadBalancer", http.MethodDelete, "/load_balancers/batch", svc.BatchDeleteLoadBalancer)
 	h.Add("GetLoadBalancerLockStatus", http.MethodGet,
 		"/load_balancers/{id}/lock/status", svc.GetLoadBalancerLockStatus)
-	bizH.Add("GetBizLoadBalancerLockStatus", http.MethodGet,
-		"/load_balancers/{id}/lock/status", svc.GetBizLoadBalancerLockStatus)
 
 	bizH := rest.NewHandler()
 	bizH.Path("/bizs/{bk_biz_id}")
@@ -77,6 +75,8 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 		"/vendors/tcloud/listeners/{lbl_id}/domains/list", svc.ListBizListenerDomains)
 	h.Add("ListListenerCountByLbIDs", http.MethodPost, "/load_balancers/listeners/count",
 		svc.ListListenerCountByLbIDs)
+	h.Add("GetBizLoadBalancerLockStatus", http.MethodGet,
+		"/load_balancers/{id}/lock/status", svc.GetBizLoadBalancerLockStatus)
 
 	h.Add("ListBizTargetsByTGID", http.MethodPost,
 		"/target_groups/{target_group_id}/targets/list", svc.ListBizTargetsByTGID)

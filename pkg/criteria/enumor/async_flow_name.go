@@ -26,6 +26,11 @@ type FlowName string
 
 // Validate FlowName.
 func (v FlowName) Validate() error {
+	// 校验负载均衡的FlowName
+	if err := v.ValidateLoadBalancer(); err != nil {
+		return err
+	}
+
 	switch v {
 	case FlowStartCvm, FlowStopCvm, FlowRebootCvm, FlowDeleteCvm, FlowCreateCvm:
 	case FlowDeleteFirewallRule:
@@ -33,14 +38,30 @@ func (v FlowName) Validate() error {
 	case FlowNormalTest, FlowSleepTest:
 	case FlowDeleteSecurityGroup, FlowCreateHuaweiSGRule:
 	case FlowDeleteEIP:
-	case FlowTargetGroupAddRS, FlowTargetGroupRemoveRS, FlowTargetGroupModifyPort, FlowTargetGroupModifyWeight:
-	case FlowLoadBalancerOperateWatch:
-	case FlowApplyTargetGroupToListenerRule:
-	case FlowDeleteLoadBalancer:
 	default:
-		return fmt.Errorf("unsupported tpl: %s", v)
+		return fmt.Errorf("unsupported flow name: %s", v)
 	}
 
+	return nil
+}
+
+// 负载均衡相关的FlowName
+var loadBalancerFlowNameMap = map[FlowName]struct{}{
+	FlowTargetGroupAddRS:               {},
+	FlowTargetGroupRemoveRS:            {},
+	FlowTargetGroupModifyPort:          {},
+	FlowTargetGroupModifyWeight:        {},
+	FlowLoadBalancerOperateWatch:       {},
+	FlowApplyTargetGroupToListenerRule: {},
+	FlowDeleteLoadBalancer:             {},
+}
+
+// ValidateLoadBalancer validate load balancer FlowName.
+func (v FlowName) ValidateLoadBalancer() error {
+	_, exist := loadBalancerFlowNameMap[v]
+	if !exist {
+		return fmt.Errorf("%s does not have a corresponding flow name", v)
+	}
 	return nil
 }
 

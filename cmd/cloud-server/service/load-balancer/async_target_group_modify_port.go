@@ -214,14 +214,12 @@ func (svc *lbSvc) initFlowTargetPort(kt *kit.Kit, req *cslb.TCloudBatchModifyTar
 		lastActionID = actionID
 	}
 	portReq := &ts.AddCustomFlowReq{
-		Name:        enumor.FlowTargetGroupModifyPort,
-		ShareData:   tableasync.NewShareData(),
+		Name: enumor.FlowTargetGroupModifyPort,
+		ShareData: tableasync.NewShareData(map[string]string{
+			"lb_id": lbID,
+		}),
 		Tasks:       tasks,
 		IsInitState: true,
-	}
-	err := portReq.ShareData.Set(kt, "lb_id", lbID)
-	if err != nil {
-		return "", err
 	}
 	result, err := svc.client.TaskServer().CreateCustomFlow(kt, portReq)
 	if err != nil {
