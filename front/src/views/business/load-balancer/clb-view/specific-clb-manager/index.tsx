@@ -63,9 +63,7 @@ export default defineComponent({
     watch(
       () => props.id,
       async (id) => {
-        const { type } = props;
         id && (await getDetails(id));
-        type && handleActiveTabChange(type);
       },
       { immediate: true },
     );

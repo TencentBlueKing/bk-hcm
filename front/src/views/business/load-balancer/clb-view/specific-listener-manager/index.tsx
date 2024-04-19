@@ -39,10 +39,6 @@ export default defineComponent({
       }
     });
 
-    watchEffect(() => {
-      handleActiveTabChange(props.type);
-    });
-
     onMounted(() => {
       // 切换至指定tab
       bus.$on('changeSpecificListenerActiveTab', handleActiveTabChange);

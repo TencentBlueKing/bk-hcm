@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref, watchEffect } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 
 /**
@@ -16,6 +16,12 @@ export default (initialValue: string) => {
     // 路由切换
     router.push({ query: { ...route.query, type: v } });
   };
+
+  // 监听route.query.type的变化, tab状态保持
+  // 监听route.query.type的变化, tab状态保持
+  watchEffect(() => {
+    handleActiveTabChange(route.query.type as string);
+  });
 
   return {
     activeTab,
