@@ -56,7 +56,7 @@ func (t *TCloudImpl) CreateListener(kt *kit.Kit, opt *typelb.TCloudCreateListene
 	req := t.formatCreateListenerRequest(opt)
 	createResp, err := client.CreateListenerWithContext(kt.Ctx, req)
 	if err != nil {
-		logs.Errorf("create tencent cloud listener instance failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
+		logs.Errorf("create tencent cloud listener instance failed, err: %v, opt: %+v, rid: %s", err, opt, kt.Rid)
 		return nil, err
 	}
 	respPoller := poller.Poller[*TCloudImpl, map[string]*clb.DescribeTaskStatusResponseParams, poller.BaseDoneResult]{
@@ -181,7 +181,7 @@ func convCert(optCert *corelb.TCloudCertificateInfo) *clb.MultiCertInfo {
 		return nil
 	}
 	multiCert := &clb.MultiCertInfo{SSLMode: optCert.SSLMode}
-	if optCert.CaCloudID != nil {
+	if converter.PtrToVal(optCert.CaCloudID) != "" {
 		multiCert.CertList = append(multiCert.CertList,
 			&clb.CertInfo{CertId: optCert.CaCloudID})
 	}

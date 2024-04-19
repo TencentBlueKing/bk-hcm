@@ -26,22 +26,41 @@ type FlowName string
 
 // Validate FlowName.
 func (v FlowName) Validate() error {
-	// 校验负载均衡的FlowName
-	if err := v.ValidateLoadBalancer(); err != nil {
-		return err
+	// 	校验默认的FlowName
+	if err := v.ValidateDefault(); err == nil {
+		return nil
 	}
 
-	switch v {
-	case FlowStartCvm, FlowStopCvm, FlowRebootCvm, FlowDeleteCvm, FlowCreateCvm:
-	case FlowDeleteFirewallRule:
-	case FlowDeleteSubnet:
-	case FlowNormalTest, FlowSleepTest:
-	case FlowDeleteSecurityGroup, FlowCreateHuaweiSGRule:
-	case FlowDeleteEIP:
-	default:
+	// 校验负载均衡的FlowName
+	if err := v.ValidateLoadBalancer(); err == nil {
+		return nil
+	}
+
+	return fmt.Errorf("unsupported flow name: %s", v)
+}
+
+// 默认的FlowName
+var defaultFlowNameMap = map[FlowName]struct{}{
+	FlowStartCvm:            {},
+	FlowStopCvm:             {},
+	FlowRebootCvm:           {},
+	FlowDeleteCvm:           {},
+	FlowCreateCvm:           {},
+	FlowDeleteFirewallRule:  {},
+	FlowDeleteSubnet:        {},
+	FlowNormalTest:          {},
+	FlowSleepTest:           {},
+	FlowDeleteSecurityGroup: {},
+	FlowCreateHuaweiSGRule:  {},
+	FlowDeleteEIP:           {},
+}
+
+// ValidateDefault validate default FlowName.
+func (v FlowName) ValidateDefault() error {
+	_, exist := defaultFlowNameMap[v]
+	if !exist {
 		return fmt.Errorf("unsupported flow name: %s", v)
 	}
-
 	return nil
 }
 
