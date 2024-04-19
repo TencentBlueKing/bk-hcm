@@ -70,7 +70,7 @@ module.exports = {
           },
           {
             from: 'static/*.html', // 只匹配 static 目录下的 HTML 文件
-            to: 'static/[name][ext]', // 保持原文件名
+            to: '[name][ext]', // 保持原文件名
           },
         ],
       })
