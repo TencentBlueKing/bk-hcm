@@ -10,6 +10,7 @@ import { useAccountStore, useResourceStore } from '@/store';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useWhereAmI } from '../useWhereAmI';
 import { getDifferenceSet } from '@/common/util';
+import { get as lodash_get } from 'lodash-es';
 export interface IProp {
   // search-select 相关字段
   searchOptions: {
@@ -41,6 +42,7 @@ export interface IProp {
     }; // 筛选参数
     extension?: Record<string, any>; // 请求需要的额外荷载数据
     callback?: (...args: any) => any; // 可以根据当前请求结果异步更新 dataList
+    dataPath?: string; // 列表数据的路径，如 data.details
   };
   // 资源下筛选业务功能相关的 prop
   bizFilter?: FilterType;
@@ -99,7 +101,9 @@ export const useTable = (props: IProp) => {
         ),
       ),
     );
-    dataList.value = detailsRes?.data?.details;
+    dataList.value = props.requestOption.dataPath
+      ? lodash_get(detailsRes, props.requestOption.dataPath)
+      : detailsRes?.data?.details;
     // 如果需要, 可以根据当前结果异步更新 dataList
     if (props.requestOption.callback && typeof props.requestOption.callback === 'function') {
       props.requestOption.callback(detailsRes?.data?.details).then((newDataList: any[]) => {
