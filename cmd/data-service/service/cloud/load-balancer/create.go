@@ -293,6 +293,7 @@ func (svc *lbSvc) batchCreateTargetWithGroupID(kt *kit.Kit, txn *sqlx.Tx, accoun
 
 	for _, item := range rsList {
 		tmpRs := &tablelb.LoadBalancerTargetTable{
+			AccountID:     accountID,
 			InstType:      item.InstType,
 			CloudInstID:   item.CloudInstID,
 			TargetGroupID: item.TargetGroupID,
@@ -300,11 +301,9 @@ func (svc *lbSvc) batchCreateTargetWithGroupID(kt *kit.Kit, txn *sqlx.Tx, accoun
 			CloudTargetGroupID: item.TargetGroupID,
 			Port:               item.Port,
 			Weight:             item.Weight,
+			Memo:               nil,
 			Creator:            kt.User,
 			Reviser:            kt.User,
-		}
-		if len(accountID) > 0 {
-			tmpRs.AccountID = accountID
 		}
 		// 实例类型-CVM
 		if item.InstType == enumor.CvmInstType {
