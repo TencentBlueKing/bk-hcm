@@ -1,9 +1,8 @@
-import { computed, defineComponent, reactive, watch } from 'vue';
+import { computed, defineComponent, reactive, watchEffect } from 'vue';
 // import components
 import { Button, Tag } from 'bkui-vue';
 import StatusLoading from '@/assets/image/status_loading.png';
 // import stores
-import { useLoadBalancerStore } from '@/store/loadbalancer';
 import { useResourceStore } from '@/store';
 // import hooks
 import { useI18n } from 'vue-i18n';
@@ -15,11 +14,11 @@ import './index.scss';
 
 export default defineComponent({
   name: 'ListenerDetail',
-  setup() {
+  props: { id: String, type: String },
+  setup(props) {
     // use hooks
     const { t } = useI18n();
     // use stores
-    const loadBalancerStore = useLoadBalancerStore();
     const resourceStore = useResourceStore();
 
     // define data
@@ -134,18 +133,11 @@ export default defineComponent({
       Object.assign(listenerDetail, res.data);
     };
 
-    watch(
-      () => loadBalancerStore.currentSelectedTreeNode,
-      (val) => {
-        const { id, type } = val;
-        if (type !== 'listener') return;
-        // 只有 type='listener' 时, 才请求对应 listener 的详情
-        getListenerDetail(id);
-      },
-      {
-        immediate: true,
-      },
-    );
+    watchEffect(() => {
+      // 当id或type变更时, 重新请求数据
+      const { id, type } = props;
+      id && type === 'detail' && getListenerDetail(id);
+    });
 
     return () => (
       <div class='listener-detail-wrap'>

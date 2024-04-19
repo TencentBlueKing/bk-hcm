@@ -7,8 +7,7 @@ import CommonSideslider from '@/components/common-sideslider';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import Confirm from '@/components/confirm';
 // import stores
-import { useLoadBalancerStore } from '@/store/loadbalancer';
-import { useBusinessStore } from '@/store';
+import { useBusinessStore, useResourceStore, useLoadBalancerStore } from '@/store';
 // import custom hooks
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useAddOrUpdateDomain, { OpAction } from './useAddOrUpdateDomain';
@@ -16,7 +15,7 @@ import { useI18n } from 'vue-i18n';
 // import utils
 import bus from '@/common/bus';
 // import constants
-import { TRANSPORT_LAYER_LIST } from '@/constants';
+import { APPLICATION_LAYER_LIST } from '@/constants';
 import './index.scss';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 
@@ -24,13 +23,15 @@ const { FormItem } = Form;
 
 export default defineComponent({
   name: 'DomainList',
-  setup() {
+  props: { id: String, type: String, protocol: String },
+  setup(props) {
     // use hooks
     const { t } = useI18n();
     const isBatchDeleteLoading = ref(false);
     // use stores
     const loadBalancerStore = useLoadBalancerStore();
     const businessStore = useBusinessStore();
+    const resourceStore = useResourceStore();
     const defaultDomain = ref('');
     const isCheckDomainLoading = ref(false);
     const { selections, handleSelectionChange } = useSelection();
@@ -157,18 +158,24 @@ export default defineComponent({
       }
     };
 
+    // 获取监听器详情
+    const getListenerDetail = async (id: string) => {
+      const { data } = await resourceStore.detail('listeners', id);
+      loadBalancerStore.setCurrentSelectedTreeNode(data);
+    };
+
     watch(
-      () => loadBalancerStore.currentSelectedTreeNode,
-      (val) => {
-        const { id, type, protocol } = val;
-        if (type !== 'listener') return;
-        // 只有 type='listener', 并且不为7层时, 才去请求对应 listener 下的 domain 列表
-        if (TRANSPORT_LAYER_LIST.includes(protocol)) return;
-        getDomainList(id);
+      [() => props.id, () => props.type],
+      ([id, type]) => {
+        // 当id或type变更时, 重新请求数据
+        const { protocol } = props;
+        if (id && type === 'list') {
+          // 刷新或第一次访问页面时, 请求监听器详情
+          !loadBalancerStore.currentSelectedTreeNode?.id && getListenerDetail(id);
+          APPLICATION_LAYER_LIST.includes(protocol) && getDomainList(id);
+        }
       },
-      {
-        immediate: true,
-      },
+      { immediate: true },
     );
 
     // use custom hooks
@@ -179,7 +186,7 @@ export default defineComponent({
       handleShow: handleDomainSidesliderShow,
       handleSubmit: handleDomainSidesliderSubmit,
       formData: formModel,
-    } = useAddOrUpdateDomain(() => getDomainList(loadBalancerStore.currentSelectedTreeNode.id));
+    } = useAddOrUpdateDomain(() => getDomainList(props.id));
 
     // 批量删除
     const isBatchDeleteDialogShow = ref(false);

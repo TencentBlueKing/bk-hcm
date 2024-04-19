@@ -326,6 +326,9 @@ const businesseMenus: RouteRecordRaw[] = [
                 path: '',
                 name: LBRouteName.all,
                 component: () => import('@/views/business/load-balancer/clb-view/all-clbs-manager/index'),
+                props(route) {
+                  return route.query;
+                },
                 meta: {
                   type: 'all',
                 },
@@ -334,6 +337,9 @@ const businesseMenus: RouteRecordRaw[] = [
                 path: 'lb/:id',
                 name: LBRouteName.lb,
                 component: () => import('@/views/business/load-balancer/clb-view/specific-clb-manager/index'),
+                props(route) {
+                  return { ...route.params, ...route.query };
+                },
                 meta: {
                   type: 'lb',
                 },
@@ -342,14 +348,20 @@ const businesseMenus: RouteRecordRaw[] = [
                 path: 'listener/:id',
                 name: LBRouteName.listener,
                 component: () => import('@/views/business/load-balancer/clb-view/specific-listener-manager/index'),
+                props(route) {
+                  return { ...route.params, ...route.query };
+                },
                 meta: {
                   type: 'listener',
                 },
               },
               {
-                path: 'domain/:id',
+                path: 'domain/:domain',
                 name: LBRouteName.domain,
                 component: () => import('@/views/business/load-balancer/clb-view/specific-domain-manager/index'),
+                props(route) {
+                  return { ...route.params, ...route.query };
+                },
                 meta: {
                   type: 'domain',
                 },

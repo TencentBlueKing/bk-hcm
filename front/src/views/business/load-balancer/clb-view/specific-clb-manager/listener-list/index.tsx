@@ -7,7 +7,6 @@ import CommonSideslider from '@/components/common-sideslider';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import Confirm from '@/components/confirm';
 // import stores
-import { useLoadBalancerStore } from '@/store/loadbalancer';
 import { useResourceStore } from '@/store';
 // import custom hooks
 import { useTable } from '@/hooks/useTable/useTable';
@@ -30,7 +29,8 @@ const { FormItem } = Form;
 const { Option } = Select;
 
 export default defineComponent({
-  setup() {
+  props: { id: String },
+  setup(props) {
     // use hooks
     const { t } = useI18n();
     const { whereAmI } = useWhereAmI();
@@ -48,7 +48,6 @@ export default defineComponent({
     };
 
     // use stores
-    const loadBalancerStore = useLoadBalancerStore();
     const resourceStore = useResourceStore();
 
     // listener - table
@@ -121,17 +120,15 @@ export default defineComponent({
         },
       },
       requestOption: {
-        type: `load_balancers/${loadBalancerStore.currentSelectedTreeNode.id}/listeners`,
+        type: `load_balancers/${props.id}/listeners`,
         sortOption: { sort: 'created_at', order: 'DESC' },
       },
     });
+
     watch(
-      () => loadBalancerStore.currentSelectedTreeNode,
-      (val) => {
-        const { id, type } = val;
-        if (type !== 'lb') return;
-        // 只有当 type='lb' 时, 才去请求对应 lb 下的 listener 列表
-        getListData([], `load_balancers/${id}/listeners`);
+      () => props.id,
+      (id) => {
+        id && getListData([], `load_balancers/${id}/listeners`);
       },
     );
 

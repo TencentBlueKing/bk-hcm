@@ -183,6 +183,17 @@ export default defineComponent({
       },
     );
 
+    watch(
+      () => route.query.bizs,
+      (val) => {
+        // 如果是业务下, 则将全局业务id存入store, 防止刷新和第一次访问页面时丢失全局业务id
+        whereAmI.value === Senarios.business && accountStore.updateBizsId(Number(val as string));
+      },
+      {
+        immediate: true,
+      },
+    );
+
     /**
      * 在这里获取项目公共数据并缓存
      */
