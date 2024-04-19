@@ -1,5 +1,5 @@
-import { PropType, defineComponent, onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { defineComponent, onMounted, ref } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 // import components
 import SimpleSearchSelect from '../../components/simple-search-select';
 import { Message, Tree } from 'bkui-vue';
@@ -18,20 +18,15 @@ import lbIcon from '@/assets/image/loadbalancer.svg';
 import listenerIcon from '@/assets/image/listener.svg';
 import domainIcon from '@/assets/image/domain.svg';
 // import constants
-import { TRANSPORT_LAYER_LIST } from '@/constants';
+import { LB_ROUTE_NAME_MAP, TRANSPORT_LAYER_LIST } from '@/constants';
 import './index.scss';
-
-type NodeType = 'all' | 'lb' | 'listener' | 'domain';
 
 export default defineComponent({
   name: 'LoadBalancerTree',
-  props: {
-    activeType: String as PropType<NodeType>,
-  },
-  emits: ['update:activeType'],
-  setup(props, { emit }) {
+  setup() {
     // use hooks
     const router = useRouter();
+    const route = useRoute();
     // use stores
     const loadBalancerStore = useLoadBalancerStore();
     const resourceStore = useResourceStore();
@@ -233,18 +228,52 @@ export default defineComponent({
       return <img src={typeIconMap[node.type]} alt='' class='prefix-icon' />;
     };
 
+    // util-路由切换
+    const pushState = (node: any) => {
+      // util-计算tab类型
+      const getTabType = (nodeType: string, protocol: string | undefined) => {
+        // 节点类型为lb, listener时, 需要设置query参数(type)
+        if (['lb', 'listener'].includes(nodeType)) {
+          // 记录当前url上的query参数(type)
+          const tabType = route.query.type;
+          const lastNodeType = lastSelectedNode.value?.type;
+          // 1. tabType无值或者当前点击节点的类型与上一次不一样, 则赋初始值
+          if (!tabType || lastNodeType !== nodeType) return 'list';
+          // 2. 如果当前节点类型为listener, 且为四层协议, 则直接显示详情
+          if (nodeType === 'listener' && TRANSPORT_LAYER_LIST.includes(protocol)) return 'detail';
+          // 3. 如果当前点击节点的类型与上一次一样, 则返回上一次的tab类型
+          if (lastNodeType === nodeType) return tabType;
+        }
+        // 其他情况, 不需要设置tab类型
+        return undefined;
+      };
+      router.push({
+        name: LB_ROUTE_NAME_MAP[node.type],
+        params: { [`${node.type === 'domain' ? 'domain' : 'id'}`]: node.id },
+        query: {
+          ...route.query,
+          // 设置tab类型标识(node.protocol只有listener有值)
+          type: getTabType(node.type, node.protocol),
+          // 如果节点类型为listener, 则设置protocol标识
+          protocol: node.type === 'listener' ? node.protocol : undefined,
+          // 如果节点类型为domain, 则设置listener_id
+          listener_id: node.type === 'domain' ? node.listener_id : undefined,
+        },
+      });
+    };
+
     // define handler function - 节点点击
     const handleNodeClick = (node: any) => {
       // 更新 store 中当前选中的节点
       loadBalancerStore.setCurrentSelectedTreeNode(node);
+      // 切换四级路由组件
+      pushState(node);
       // 交互 - 高亮切换效果
       if (node.type !== 'all') {
         lastSelectedNode.value = node;
       } else {
         treeRef.value.setSelect(lastSelectedNode.value, false);
       }
-      // 切换右侧组件
-      emit('update:activeType', node.type);
     };
 
     // define handler function - 节点展开
@@ -271,7 +300,7 @@ export default defineComponent({
         <div
           class={[
             'all-lb-item',
-            `${props.activeType === 'all' ? ' selected' : ''}`,
+            `${route.meta.type === 'all' ? ' selected' : ''}`,
             `${currentPopBoundaryNodeKey.value === '-1' ? ' show-dropdown' : ''}`,
           ]}
           onClick={() => handleNodeClick(allLBNode)}>

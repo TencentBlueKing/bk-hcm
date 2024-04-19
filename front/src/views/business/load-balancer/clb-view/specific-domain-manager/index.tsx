@@ -5,7 +5,7 @@ import { Done, EditLine, Error, Plus } from 'bkui-vue/lib/icon';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import CommonSideslider from '@/components/common-sideslider';
 // use stores
-import { useLoadBalancerStore } from '@/store/loadbalancer';
+import { useLoadBalancerStore, useBusinessStore, useResourceStore } from '@/store';
 // import custom hooks
 import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
@@ -17,7 +17,6 @@ import StatusSuccess from '@/assets/image/success-account.png';
 import StatusLoading from '@/assets/image/status_loading.png';
 import './index.scss';
 import { RuleModeList } from '../specific-listener-manager/domain-list/useAddOrUpdateDomain';
-import { useBusinessStore } from '@/store';
 import Confirm from '@/components/confirm';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
@@ -29,13 +28,16 @@ const { FormItem } = Form;
 const { Option } = Select;
 
 export default defineComponent({
-  setup() {
+  // eslint-disable-next-line vue/prop-name-casing
+  props: { domain: String, listener_id: String },
+  setup(props) {
     // use hooks
     const { t } = useI18n();
     // use stores
     const loadBalancerStore = useLoadBalancerStore();
     const formInstance = ref(null);
     const businessStore = useBusinessStore();
+    const resourceStore = useResourceStore();
     const isEdit = ref(false);
     const { selections, handleSelectionChange, resetSelections } = useSelection();
     const { whereAmI } = useWhereAmI();
@@ -142,10 +144,7 @@ export default defineComponent({
     ];
 
     const deleteRulesBatch = async (ids: string[]) => {
-      await businessStore.deleteRules(loadBalancerStore.currentSelectedTreeNode.listener.id, {
-        lbl_id: loadBalancerStore.currentSelectedTreeNode.listener.id,
-        rule_ids: ids,
-      });
+      await businessStore.deleteRules(props.listener_id, { lbl_id: props.listener_id, rule_ids: ids });
       Message({
         message: '删除成功',
         theme: 'success',
@@ -196,7 +195,7 @@ export default defineComponent({
         },
       },
       requestOption: {
-        type: `vendors/tcloud/listeners/${loadBalancerStore.currentSelectedTreeNode.listener_id}/rules`,
+        type: `vendors/tcloud/listeners/${props.listener_id}/rules`,
         sortOption: { sort: 'created_at', order: 'DESC' },
       },
     });
@@ -209,30 +208,28 @@ export default defineComponent({
     );
 
     watch(
-      () => loadBalancerStore.currentSelectedTreeNode,
-      (val) => {
-        const { listener_id, type } = val;
-        if (type !== 'domain') return;
-        // 只有 type='domain' 时, 才去请求对应 listener+domain 下的 url 列表
-        getListData([], `vendors/tcloud/listeners/${listener_id}/rules`);
+      () => props.listener_id,
+      (id) => {
+        id && getListData([], `vendors/tcloud/listeners/${id}/rules`);
       },
     );
+
     const handleSubmit = async () => {
       await formInstance.value.validate();
       isSubmitLoading.value = true;
       const promise = isEdit.value
         ? businessStore.updateUrl({
-            lbl_id: loadBalancerStore.currentSelectedTreeNode.listener.id,
+            lbl_id: props.listener_id,
             rule_id: formData.rule_id,
             url: formData.url,
             scheduler: formData.scheduler,
             target_group_id: formData.target_group_id,
           })
         : businessStore.createRules({
-            lbl_id: loadBalancerStore.currentSelectedTreeNode.listener.id,
+            lbl_id: props.listener_id,
             url: formData.url,
             scheduler: formData.scheduler,
-            domains: [loadBalancerStore.currentSelectedTreeNode.domain],
+            domains: [props.domain],
             target_group_id: formData.target_group_id,
           });
       try {
@@ -261,9 +258,16 @@ export default defineComponent({
       resetFormData();
     };
 
+    // 获取监听器详情
+    const getListenerDetail = async (id: string) => {
+      const { data } = await resourceStore.detail('listeners', id);
+      loadBalancerStore.setCurrentSelectedTreeNode(data);
+    };
+
     onMounted(() => {
       bus.$on('showAddUrlSideslider', handleAddUrlSidesliderShow);
       getTargetGroupsList();
+      !loadBalancerStore.currentSelectedTreeNode?.id && getListenerDetail(props.listener_id);
     });
 
     onUnmounted(() => {
@@ -322,11 +326,11 @@ export default defineComponent({
           onHandleSubmit={handleSubmit}>
           <p class={'create-url-text-item'}>
             <span class={'create-url-text-item-label'}>{t('监听器名称')}：</span>
-            <span class={'create-url-text-item-value'}>{loadBalancerStore.currentSelectedTreeNode.listener.name}</span>
+            <span class={'create-url-text-item-value'}>{loadBalancerStore.currentSelectedTreeNode.name}</span>
           </p>
           <p class={'create-url-text-item'}>
             <span class={'create-url-text-item-label'}>{t('域名')}：</span>
-            <span class={'create-url-text-item-value'}>{loadBalancerStore.currentSelectedTreeNode.domain}</span>
+            <span class={'create-url-text-item-value'}>{props.domain}</span>
           </p>
           <Form formType='vertical' model={formData} ref={formInstance}>
             <FormItem label={t('URL路径')} required property='url'>

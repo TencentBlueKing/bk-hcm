@@ -4,7 +4,6 @@ import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info
 import { Switcher, Tag } from 'bkui-vue';
 import StatusNormal from '@/assets/image/Status-normal.png';
 import StatusUnknown from '@/assets/image/Status-unknown.png';
-import { useLoadBalancerStore } from '@/store';
 import { timeFormatter } from '@/common/util';
 import { useRouteLinkBtn, TypeEnum, IDetail } from '@/hooks/useRouteLinkBtn';
 
@@ -16,9 +15,9 @@ export default defineComponent({
     detail: Object as PropType<IDetail>,
     getDetails: Function,
     updateLb: Function,
+    id: String,
   },
   setup(props) {
-    const loadBalancerStore = useLoadBalancerStore();
     const regionStore = useRegionsStore();
     const isProtected = ref(false);
     const resourceFields = [
@@ -176,7 +175,7 @@ export default defineComponent({
             detail={props.detail}
             onChange={async (payload) => {
               await props.updateLb(payload);
-              await props.getDetails(loadBalancerStore.currentSelectedTreeNode.id);
+              await props.getDetails(props.id);
             }}
           />
         </div>

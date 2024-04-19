@@ -1,10 +1,10 @@
-import { defineComponent, onMounted, onUnmounted, ref, watch } from 'vue';
+import { defineComponent, onMounted, onUnmounted, ref, watchEffect } from 'vue';
 // import components
 import { Tab } from 'bkui-vue';
 import DomainList from './domain-list';
 import ListenerDetail from './listener-detail';
-// import stores
-import { useLoadBalancerStore } from '@/store';
+// import hooks
+import useActiveTab from '@/hooks/useActiveTab';
 // import constants
 import { TRANSPORT_LAYER_LIST } from '@/constants';
 // import utils
@@ -13,37 +13,35 @@ import './index.scss';
 
 const { TabPanel } = Tab;
 
+enum TabTypeEnum {
+  list = 'list',
+  detail = 'detail',
+}
+
 export default defineComponent({
   name: 'SpecificListenerManager',
-  setup() {
-    // use stores
-    const loadBalancerStore = useLoadBalancerStore();
-
-    const activeTab = ref('domain');
+  props: { id: String, type: String, protocol: String },
+  setup(props) {
+    const { activeTab, handleActiveTabChange } = useActiveTab(props.type);
     const tabList = ref([]);
 
-    watch(
-      () => loadBalancerStore.currentSelectedTreeNode.id,
-      () => {
-        const { type } = loadBalancerStore.currentSelectedTreeNode;
-        if (type !== 'listener') return;
-        const { protocol } = loadBalancerStore.currentSelectedTreeNode;
-        if (TRANSPORT_LAYER_LIST.includes(protocol)) {
-          // 4层监听器没有下级资源，直接显示基本信息
-          activeTab.value = 'detail';
-          tabList.value = [{ name: 'detail', label: '基本信息', component: <ListenerDetail /> }];
-        } else {
-          tabList.value = [
-            { name: 'domain', label: '域名', component: <DomainList /> },
-            { name: 'detail', label: '基本信息', component: <ListenerDetail /> },
-          ];
-        }
-      },
-      { immediate: true },
-    );
+    watchEffect(() => {
+      const { protocol } = props;
+      const isTransportLayer = TRANSPORT_LAYER_LIST.includes(protocol);
+      if (isTransportLayer) {
+        // 4层监听器没有下级资源，不显示域名信息
+        tabList.value = [{ name: TabTypeEnum.detail, label: '基本信息', component: ListenerDetail }];
+      } else {
+        tabList.value = [
+          { name: TabTypeEnum.list, label: '域名', component: DomainList },
+          { name: TabTypeEnum.detail, label: '基本信息', component: ListenerDetail },
+        ];
+      }
+    });
 
     onMounted(() => {
-      bus.$on('changeSpecificListenerActiveTab', (v: any) => (activeTab.value = v));
+      // 切换至指定tab
+      bus.$on('changeSpecificListenerActiveTab', handleActiveTabChange);
     });
 
     onUnmounted(() => {
@@ -51,10 +49,16 @@ export default defineComponent({
     });
 
     return () => (
-      <Tab class='manager-tab-wrap has-breadcrumb' v-model:active={activeTab.value} type='card-grid'>
+      <Tab
+        class='manager-tab-wrap has-breadcrumb'
+        v-model:active={activeTab.value}
+        type='card-grid'
+        onChange={handleActiveTabChange}>
         {tabList.value.map((tab) => (
           <TabPanel key={tab.name} name={tab.name} label={tab.label}>
-            <div class='common-card-wrap'>{tab.component}</div>
+            <div class='common-card-wrap'>
+              <tab.component {...props} />
+            </div>
           </TabPanel>
         ))}
       </Tab>

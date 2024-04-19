@@ -1,4 +1,4 @@
-import { defineComponent, onMounted, ref, watch } from 'vue';
+import { defineComponent, onMounted, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 // import components
 import { Input, Message, VirtualRender } from 'bkui-vue';
@@ -68,19 +68,6 @@ export default defineComponent({
     onMounted(() => {
       loadBalancerStore.getTargetGroupList();
     });
-
-    watch(
-      () => route.query,
-      (val) => {
-        const { bizs } = val;
-        if (!bizs) return;
-        // 如果url中有bizs, 则存入store中
-        accountStore.updateBizsId(Number(bizs));
-      },
-      {
-        immediate: true,
-      },
-    );
 
     return () => (
       <div class='target-group-list'>

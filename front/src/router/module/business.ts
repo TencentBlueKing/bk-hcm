@@ -1,4 +1,5 @@
 // import { CogShape } from 'bkui-vue/lib/icon';
+import { LBRouteName } from '@/constants';
 import type { RouteRecordRaw } from 'vue-router';
 
 const businesseMenus: RouteRecordRaw[] = [
@@ -320,6 +321,52 @@ const businesseMenus: RouteRecordRaw[] = [
             path: 'clb-view',
             name: 'loadbalancer-view',
             component: () => import('@/views/business/load-balancer/clb-view/index'),
+            children: [
+              {
+                path: '',
+                name: LBRouteName.all,
+                component: () => import('@/views/business/load-balancer/clb-view/all-clbs-manager/index'),
+                props(route) {
+                  return route.query;
+                },
+                meta: {
+                  type: 'all',
+                },
+              },
+              {
+                path: 'lb/:id',
+                name: LBRouteName.lb,
+                component: () => import('@/views/business/load-balancer/clb-view/specific-clb-manager/index'),
+                props(route) {
+                  return { ...route.params, ...route.query };
+                },
+                meta: {
+                  type: 'lb',
+                },
+              },
+              {
+                path: 'listener/:id',
+                name: LBRouteName.listener,
+                component: () => import('@/views/business/load-balancer/clb-view/specific-listener-manager/index'),
+                props(route) {
+                  return { ...route.params, ...route.query };
+                },
+                meta: {
+                  type: 'listener',
+                },
+              },
+              {
+                path: 'domain/:domain',
+                name: LBRouteName.domain,
+                component: () => import('@/views/business/load-balancer/clb-view/specific-domain-manager/index'),
+                props(route) {
+                  return { ...route.params, ...route.query };
+                },
+                meta: {
+                  type: 'domain',
+                },
+              },
+            ],
           },
           {
             path: 'group-view',

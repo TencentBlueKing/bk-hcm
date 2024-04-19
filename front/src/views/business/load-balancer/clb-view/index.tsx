@@ -1,44 +1,33 @@
-import { defineComponent, ref } from 'vue';
+import { computed, defineComponent, ref } from 'vue';
+import { RouterView, useRoute } from 'vue-router';
 // import components
 import LbTree from './lb-tree';
 import LbBreadcrumb from '../components/lb-breadcrumb';
-import AllClbsManager from './all-clbs-manager';
-import SpecificListenerManager from './specific-listener-manager';
-import SpecificClbManager from './specific-clb-manager';
-import SpecificDomainManager from './specific-domain-manager';
 import './index.scss';
-
-type NodeType = 'all' | 'lb' | 'listener' | 'domain';
 
 export default defineComponent({
   name: 'LoadBalancerView',
   setup() {
+    const route = useRoute();
+
     const isAdvancedSearchShow = ref(false);
-
-    const componentMap = {
-      all: <AllClbsManager />,
-      lb: <SpecificClbManager />,
-      listener: <SpecificListenerManager />,
-      domain: <SpecificDomainManager />,
-    };
-    const renderComponent = (type: NodeType) => {
-      return componentMap[type];
-    };
-
-    const activeType = ref<NodeType>('all');
 
     // 面包屑白名单
     const BREADCRUMB_WHITE_LIST = ['listener', 'domain'];
+    const isBreadcrumbShow = computed(() => {
+      return BREADCRUMB_WHITE_LIST.includes(route.meta.type as string);
+    });
 
     return () => (
       <div class='clb-view-page'>
         <div class='left-container'>
-          <LbTree v-model:activeType={activeType.value} />
+          <LbTree />
         </div>
         {isAdvancedSearchShow.value && <div class='advanced-search'>高级搜索</div>}
         <div class='main-container'>
-          {BREADCRUMB_WHITE_LIST.includes(activeType.value) && <LbBreadcrumb />}
-          {renderComponent(activeType.value)}
+          {isBreadcrumbShow.value && <LbBreadcrumb />}
+          {/* 四级路由 */}
+          <RouterView />
         </div>
       </div>
     );
