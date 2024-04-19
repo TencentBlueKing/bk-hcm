@@ -95,12 +95,12 @@ export default defineComponent({
       listener: [
         { label: '新增域名', handler: () => bus.$emit('showAddDomainSideslider') },
         { label: '查看详情', handler: () => bus.$emit('changeSpecificListenerActiveTab', 'detail') },
-        { label: '编辑', handler: () => {} }, // todo: 待产品确定编辑位置
+        { label: '编辑', handler: ({ id }: any) => bus.$emit('showEditListenerSideslider', id) },
         { label: '删除', handler: handleDeleteListener },
       ],
       domain: [
         { label: '新增 URL 路径', handler: () => bus.$emit('showAddUrlSideslider') },
-        { label: '编辑', handler: () => {} }, // todo: 待产品确定编辑位置
+        { label: '编辑', handler: (node: any) => bus.$emit('showAddDomainSideslider', node) },
         { label: '删除', handler: handleDeleteDomain },
       ],
     };
@@ -264,6 +264,7 @@ export default defineComponent({
 
     // define handler function - 节点点击
     const handleNodeClick = (node: any) => {
+      if (loadBalancerStore.currentSelectedTreeNode?.id === node.id) return;
       // 更新 store 中当前选中的节点
       loadBalancerStore.setCurrentSelectedTreeNode(node);
       // 切换四级路由组件

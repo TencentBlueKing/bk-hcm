@@ -3,6 +3,7 @@ import { defineComponent, onMounted, onUnmounted, ref, watchEffect } from 'vue';
 import { Tab } from 'bkui-vue';
 import DomainList from './domain-list';
 import ListenerDetail from './listener-detail';
+import AddOrUpdateListenerSideslider from '../components/AddOrUpdateListenerSideslider';
 // import hooks
 import useActiveTab from '@/hooks/useActiveTab';
 // import constants
@@ -49,19 +50,23 @@ export default defineComponent({
     });
 
     return () => (
-      <Tab
-        class='manager-tab-wrap has-breadcrumb'
-        v-model:active={activeTab.value}
-        type='card-grid'
-        onChange={handleActiveTabChange}>
-        {tabList.value.map((tab) => (
-          <TabPanel key={tab.name} name={tab.name} label={tab.label}>
-            <div class='common-card-wrap'>
-              <tab.component {...props} />
-            </div>
-          </TabPanel>
-        ))}
-      </Tab>
+      <>
+        <Tab
+          class='manager-tab-wrap has-breadcrumb'
+          v-model:active={activeTab.value}
+          type='card-grid'
+          onChange={handleActiveTabChange}>
+          {tabList.value.map((tab) => (
+            <TabPanel key={tab.name} name={tab.name} label={tab.label}>
+              <div class='common-card-wrap'>
+                <tab.component {...props} />
+              </div>
+            </TabPanel>
+          ))}
+        </Tab>
+        {/* 编辑监听器 */}
+        <AddOrUpdateListenerSideslider />
+      </>
     );
   },
 });

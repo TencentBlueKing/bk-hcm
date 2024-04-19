@@ -4,6 +4,7 @@ import { Button, Form, Input, Message, Select } from 'bkui-vue';
 import { Done, EditLine, Error, Plus } from 'bkui-vue/lib/icon';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import CommonSideslider from '@/components/common-sideslider';
+import AddOrUpdateDomainSideslider from '../components/AddOrUpdateDomainSideslider';
 // use stores
 import { useLoadBalancerStore, useBusinessStore, useResourceStore } from '@/store';
 // import custom hooks
@@ -16,7 +17,7 @@ import { CLB_BINDING_STATUS } from '@/common/constant';
 import StatusSuccess from '@/assets/image/success-account.png';
 import StatusLoading from '@/assets/image/status_loading.png';
 import './index.scss';
-import { RuleModeList } from '../specific-listener-manager/domain-list/useAddOrUpdateDomain';
+import { RuleModeList } from '../components/AddOrUpdateDomainSideslider/useAddOrUpdateDomain';
 import Confirm from '@/components/confirm';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
@@ -325,8 +326,12 @@ export default defineComponent({
           isSubmitLoading={isSubmitLoading.value}
           onHandleSubmit={handleSubmit}>
           <p class={'create-url-text-item'}>
+            <span class={'create-url-text-item-label'}>{t('负载均衡名称')}：</span>
+            <span class={'create-url-text-item-value'}>{loadBalancerStore.currentSelectedTreeNode.lb.name}</span>
+          </p>
+          <p class={'create-url-text-item'}>
             <span class={'create-url-text-item-label'}>{t('监听器名称')}：</span>
-            <span class={'create-url-text-item-value'}>{loadBalancerStore.currentSelectedTreeNode.name}</span>
+            <span class={'create-url-text-item-value'}>{loadBalancerStore.currentSelectedTreeNode.listener.name}</span>
           </p>
           <p class={'create-url-text-item'}>
             <span class={'create-url-text-item-label'}>{t('域名')}：</span>
@@ -352,6 +357,8 @@ export default defineComponent({
             </FormItem>
           </Form>
         </CommonSideslider>
+        {/* 编辑域名 */}
+        <AddOrUpdateDomainSideslider originPage='domain' />
       </div>
     );
   },

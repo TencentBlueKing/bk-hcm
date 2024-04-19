@@ -6,6 +6,8 @@ import { useI18n } from 'vue-i18n';
 import { useBusinessStore } from '@/store';
 import { useLoadBalancerStore } from '@/store/loadbalancer';
 import { useRoute } from 'vue-router';
+// import types
+import { IOriginPage } from '@/typings';
 
 const { Option } = Select;
 
@@ -29,7 +31,7 @@ export const RuleModeList = [
   },
 ];
 
-export default (getListData: () => void) => {
+export default (getListData: () => void, originPage: IOriginPage) => {
   // use hooks
   const { t } = useI18n();
   const businessStore = useBusinessStore();
@@ -72,11 +74,15 @@ export default (getListData: () => void) => {
 
   const handleSubmit = async (formInstance: Ref<any>) => {
     await formInstance.value.validate();
+    const lbl_id =
+      originPage === 'listener'
+        ? loadbalancer.currentSelectedTreeNode.id
+        : loadbalancer.currentSelectedTreeNode.listener_id;
     const promise =
       action.value === OpAction.ADD
         ? businessStore.createRules({
             bk_biz_id: route.query.bizs,
-            lbl_id: loadbalancer.currentSelectedTreeNode.id,
+            lbl_id,
             rules: [
               {
                 url: formData.url,
@@ -85,8 +91,8 @@ export default (getListData: () => void) => {
               },
             ],
           })
-        : businessStore.updateDomains(loadbalancer.currentSelectedTreeNode.id, {
-            lbl_id: loadbalancer.currentSelectedTreeNode.id,
+        : businessStore.updateDomains(lbl_id, {
+            lbl_id,
             domain: oldDomain.value,
             new_domain: formData.domain,
           });
