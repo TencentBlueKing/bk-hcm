@@ -22,6 +22,7 @@ package tcloud
 import (
 	"net/http"
 
+	typelb "hcm/pkg/adaptor/types/load-balancer"
 	"hcm/pkg/api/core"
 	hcproto "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/api/hc-service/sync"
@@ -187,4 +188,12 @@ func (c *ClbClient) ListTargetHealth(kt *kit.Kit, req *hcproto.TCloudTargetHealt
 
 	return common.Request[hcproto.TCloudTargetHealthReq, hcproto.TCloudTargetHealthResp](
 		c.client, http.MethodPost, kt, req, "/load_balancers/targets/health")
+}
+
+// QueryListenerTargetsByCloudIDs 查询监听器下的rs
+func (c *ClbClient) QueryListenerTargetsByCloudIDs(kt *kit.Kit, req *hcproto.QueryTCloudListenerTargets) (*[]typelb.
+	TCloudListenerTarget, error) {
+
+	return common.Request[hcproto.QueryTCloudListenerTargets, []typelb.TCloudListenerTarget](
+		c.client, http.MethodPost, kt, req, "/targets/query_by_cloud_ids")
 }

@@ -71,15 +71,15 @@ type TargetBaseReq struct {
 	CloudInstID      string          `json:"cloud_inst_id" validate:"required"`
 	Port             int64           `json:"port" validate:"required"`
 	Weight           *int64          `json:"weight" validate:"required"`
-	AccountID        string          `json:"account_id" validate:"omitempty"`
-	TargetGroupID    string          `json:"target_group_id" validate:"omitempty"`
-	InstName         string          `json:"inst_name" validate:"omitempty"`
-	PrivateIPAddress []string        `json:"private_ip_address" validate:"omitempty"`
-	PublicIPAddress  []string        `json:"public_ip_address" validate:"omitempty"`
-	CloudVpcIDs      []string        `json:"cloud_vpc_ids" validate:"omitempty"`
-	Zone             string          `json:"zone" validate:"omitempty"`
-	NewPort          *int64          `json:"new_port" validate:"omitempty"`
-	NewWeight        *int64          `json:"new_weight" validate:"omitempty"`
+	AccountID        string          `json:"account_id,omitempty" validate:"omitempty"`
+	TargetGroupID    string          `json:"target_group_id,omitempty" validate:"omitempty"`
+	InstName         string          `json:"inst_name,omitempty" validate:"omitempty"`
+	PrivateIPAddress []string        `json:"private_ip_address,omitempty" validate:"omitempty"`
+	PublicIPAddress  []string        `json:"public_ip_address,omitempty" validate:"omitempty"`
+	CloudVpcIDs      []string        `json:"cloud_vpc_ids,omitempty" validate:"omitempty"`
+	Zone             string          `json:"zone,omitempty" validate:"omitempty"`
+	NewPort          *int64          `json:"new_port,omitempty" validate:"omitempty"`
+	NewWeight        *int64          `json:"new_weight,omitempty" validate:"omitempty"`
 }
 
 // Validate validate req(目前仅支持CVM的实例类型)

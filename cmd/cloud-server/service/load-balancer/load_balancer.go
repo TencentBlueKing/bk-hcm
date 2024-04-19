@@ -78,6 +78,7 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 	h.Add("GetBizLoadBalancerLockStatus", http.MethodGet,
 		"/load_balancers/{id}/lock/status", svc.GetBizLoadBalancerLockStatus)
 
+	// 目标组
 	h.Add("ListBizTargetsByTGID", http.MethodPost,
 		"/target_groups/{target_group_id}/targets/list", svc.ListBizTargetsByTGID)
 	h.Add("AssociateBizTargetGroupListenerRel", http.MethodPost,

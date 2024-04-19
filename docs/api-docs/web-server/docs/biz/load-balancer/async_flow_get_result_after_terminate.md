@@ -32,8 +32,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/{lb_id}/async_tasks/result
   "message": "ok",
   "data": [
     {
-      "action_id": "0000001",
-      "status": "success",
+      "task_id": "0000001",
       "target_group_id": "xxxxx",
       "target_list": [
         {
@@ -61,7 +60,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/{lb_id}/async_tasks/result
 
 | 参数名称            | 参数类型         | 描述                |
 |-----------------|--------------|-------------------|
-| action_id       | string       | action_id         |
+| task_id         | string       | task id           |
 | status          | string       | 结果 succeed/failed |
 | target_group_id | string       | 目标组ID             |
 | target_list     | target array | 目标详情              |
