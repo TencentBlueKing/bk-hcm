@@ -1,8 +1,9 @@
 import { ref } from 'vue';
 import { $bkPopover } from 'bkui-vue';
+import { TRANSPORT_LAYER_LIST } from '@/constants';
 
 /**
- * lb-tree dropdown list render hooks
+ * more-action dropdown list render hooks
  */
 export default (typeMenuMap: any) => {
   const popInstance = ref();
@@ -32,11 +33,14 @@ export default (typeMenuMap: any) => {
       target: e,
       content: (
         <div class='dropdown-list'>
-          {typeMenuMap[node.type].map((item: any) => (
-            <div class='dropdown-item' onClick={() => item.handler(node)}>
-              {item.label}
-            </div>
-          ))}
+          {typeMenuMap[node.type].map((item: any, index: number) => {
+            if (node.type === 'listener' && TRANSPORT_LAYER_LIST.includes(node.protocol) && index === 0) return null;
+            return (
+              <div class='dropdown-item' onClick={() => item.handler(node)}>
+                {item.label}
+              </div>
+            );
+          })}
         </div>
       ),
       onShow: () => handlePopShow(node),

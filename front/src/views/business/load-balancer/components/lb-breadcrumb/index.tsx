@@ -1,18 +1,16 @@
 import { defineComponent, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
 // import stores
 import { useLoadBalancerStore } from '@/store/loadbalancer';
-import { useResourceStore } from '@/store';
 import './index.scss';
-import { Loading } from 'bkui-vue';
 
 export default defineComponent({
   name: 'LoadBalancerBreadcrumb',
   setup() {
+    const route = useRoute();
     // use stores
     const loadBalancer = useLoadBalancerStore();
-    const resourceStore = useResourceStore();
 
-    const isLoading = ref(false);
     const lbName = ref(''); // 负载均衡器名称
     const lbExtension = ref(''); // 负载均衡器 vip 信息
     const listenerName = ref(''); // 监听器名称
@@ -37,52 +35,30 @@ export default defineComponent({
       return '--';
     };
 
-    // 获取当前 listener 所归属的 lb 信息
-    const getLBText = async (id: string) => {
-      try {
-        isLoading.value = true;
-        const res = await resourceStore.detail('load_balancers', id);
-        lbName.value = res.data.name;
-        loadBalancer.setCurrentSelectedTreeNode({
-          ...loadBalancer.currentSelectedTreeNode,
-          lb: res.data,
-        });
-        lbExtension.value = getLBVipText(res.data);
-      } finally {
-        isLoading.value = false;
-      }
+    // 设置当前 listener 所归属的 lb 信息
+    const getLBText = (lb: any) => {
+      lbName.value = lb.name;
+      lbExtension.value = getLBVipText(lb);
     };
 
-    // 获取当前 domain 所归属的 listener 信息, 以及对应的 listener 所归属的 lb 信息
-    const getFullText = async (id: string) => {
-      try {
-        isLoading.value = true;
-        const res = await resourceStore.detail('listeners', id);
-        listenerName.value = res.data.name;
-        loadBalancer.setCurrentSelectedTreeNode({
-          ...loadBalancer.currentSelectedTreeNode,
-          listener: res.data,
-        });
-        listenerExtension.value = `${res.data.protocol}:${res.data.port}`;
-        await getLBText(res.data.lb_id);
-      } finally {
-        isLoading.value = false;
-      }
+    // 设置当前 domain 所归属的 listener 信息, 以及对应的 listener 所归属的 lb 信息
+    const getFullText = (listener: any) => {
+      listenerName.value = listener.name;
+      listenerExtension.value = `${listener.protocol}:${listener.port}`;
+      getLBText(listener.lb);
     };
 
     watch(
-      () => loadBalancer.currentSelectedTreeNode.id,
-      () => {
+      () => route.name,
+      (routeName) => {
         clearText();
-        switch (loadBalancer.currentSelectedTreeNode.type) {
-          case 'listener':
-            listenerName.value = loadBalancer.currentSelectedTreeNode.name;
-            listenerExtension.value = `${loadBalancer.currentSelectedTreeNode.protocol}:${loadBalancer.currentSelectedTreeNode.port}`;
-            getLBText(loadBalancer.currentSelectedTreeNode.lb_id);
+        switch (routeName) {
+          case 'specific-listener-manager':
+            getFullText(loadBalancer.currentSelectedTreeNode);
             break;
-          case 'domain':
-            domain.value = loadBalancer.currentSelectedTreeNode.domain;
-            getFullText(loadBalancer.currentSelectedTreeNode.listener_id);
+          case 'specific-domain-manager':
+            domain.value = route.params.id as string;
+            getFullText(loadBalancer.currentSelectedTreeNode);
             break;
         }
       },
@@ -92,7 +68,7 @@ export default defineComponent({
     );
 
     return () => (
-      <Loading loading={isLoading.value} opacity={1} color='#f5f7fb' class='lb-breadcrumb'>
+      <div class='lb-breadcrumb'>
         <div class='text'>
           <span class='name'>
             <bk-overflow-title type='tips'>{lbName.value}</bk-overflow-title>
@@ -106,7 +82,7 @@ export default defineComponent({
           <span class='extension'>{`(${listenerExtension.value})`}</span>
         </div>
         {domain.value && <div class='text'>{domain.value}</div>}
-      </Loading>
+      </div>
     );
   },
 });

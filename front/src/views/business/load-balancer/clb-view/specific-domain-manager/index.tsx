@@ -4,8 +4,9 @@ import { Button, Form, Input, Message, Select } from 'bkui-vue';
 import { Done, EditLine, Error, Plus } from 'bkui-vue/lib/icon';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import CommonSideslider from '@/components/common-sideslider';
+import AddOrUpdateDomainSideslider from '../components/AddOrUpdateDomainSideslider';
 // use stores
-import { useLoadBalancerStore, useBusinessStore, useResourceStore } from '@/store';
+import { useLoadBalancerStore, useBusinessStore } from '@/store';
 // import custom hooks
 import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
@@ -16,7 +17,7 @@ import { CLB_BINDING_STATUS } from '@/common/constant';
 import StatusSuccess from '@/assets/image/success-account.png';
 import StatusLoading from '@/assets/image/status_loading.png';
 import './index.scss';
-import { RuleModeList } from '../specific-listener-manager/domain-list/useAddOrUpdateDomain';
+import { RuleModeList } from '../components/AddOrUpdateDomainSideslider/useAddOrUpdateDomain';
 import Confirm from '@/components/confirm';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
@@ -28,8 +29,19 @@ const { FormItem } = Form;
 const { Option } = Select;
 
 export default defineComponent({
+  // 导航完成前, 预加载域名所对应监听器以及负载均衡的详情数据, 并存入store中
+  async beforeRouteEnter(to, _, next) {
+    const businessStore = useBusinessStore();
+    const loadBalancerStore = useLoadBalancerStore();
+    // 监听器详情
+    const { data: listenerDetail } = await businessStore.detail('listeners', to.query.listener_id as string);
+    // 负载均衡详情
+    const { data: lbDetail } = await businessStore.detail('load_balancers', listenerDetail.lb_id);
+    loadBalancerStore.setCurrentSelectedTreeNode({ ...listenerDetail, lb: lbDetail });
+    next();
+  },
   // eslint-disable-next-line vue/prop-name-casing
-  props: { domain: String, listener_id: String },
+  props: { id: String, listener_id: String },
   setup(props) {
     // use hooks
     const { t } = useI18n();
@@ -37,7 +49,6 @@ export default defineComponent({
     const loadBalancerStore = useLoadBalancerStore();
     const formInstance = ref(null);
     const businessStore = useBusinessStore();
-    const resourceStore = useResourceStore();
     const isEdit = ref(false);
     const { selections, handleSelectionChange, resetSelections } = useSelection();
     const { whereAmI } = useWhereAmI();
@@ -229,7 +240,7 @@ export default defineComponent({
             lbl_id: props.listener_id,
             url: formData.url,
             scheduler: formData.scheduler,
-            domains: [props.domain],
+            domains: [props.id],
             target_group_id: formData.target_group_id,
           });
       try {
@@ -258,16 +269,9 @@ export default defineComponent({
       resetFormData();
     };
 
-    // 获取监听器详情
-    const getListenerDetail = async (id: string) => {
-      const { data } = await resourceStore.detail('listeners', id);
-      loadBalancerStore.setCurrentSelectedTreeNode(data);
-    };
-
     onMounted(() => {
       bus.$on('showAddUrlSideslider', handleAddUrlSidesliderShow);
       getTargetGroupsList();
-      !loadBalancerStore.currentSelectedTreeNode?.id && getListenerDetail(props.listener_id);
     });
 
     onUnmounted(() => {
@@ -325,12 +329,16 @@ export default defineComponent({
           isSubmitLoading={isSubmitLoading.value}
           onHandleSubmit={handleSubmit}>
           <p class={'create-url-text-item'}>
+            <span class={'create-url-text-item-label'}>{t('负载均衡名称')}：</span>
+            <span class={'create-url-text-item-value'}>{loadBalancerStore.currentSelectedTreeNode.lb.name}</span>
+          </p>
+          <p class={'create-url-text-item'}>
             <span class={'create-url-text-item-label'}>{t('监听器名称')}：</span>
             <span class={'create-url-text-item-value'}>{loadBalancerStore.currentSelectedTreeNode.name}</span>
           </p>
           <p class={'create-url-text-item'}>
             <span class={'create-url-text-item-label'}>{t('域名')}：</span>
-            <span class={'create-url-text-item-value'}>{props.domain}</span>
+            <span class={'create-url-text-item-value'}>{props.id}</span>
           </p>
           <Form formType='vertical' model={formData} ref={formInstance}>
             <FormItem label={t('URL路径')} required property='url'>
@@ -352,6 +360,8 @@ export default defineComponent({
             </FormItem>
           </Form>
         </CommonSideslider>
+        {/* 编辑域名 */}
+        <AddOrUpdateDomainSideslider originPage='domain' />
       </div>
     );
   },

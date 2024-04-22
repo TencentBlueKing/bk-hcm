@@ -10,7 +10,7 @@ import useResolveListenerFormData from './useResolveListenerFormData';
 // import types
 import { QueryRuleOPEnum } from '@/typings';
 
-export default (getListData: any) => {
+export default (getListData: (...args: any) => any) => {
   // use stores
   const businessStore = useBusinessStore();
   const resourceStore = useResourceStore();
@@ -94,7 +94,7 @@ export default (getListData: any) => {
       Object.assign(listenerFormData, data, {
         domain: data.default_domain,
         session_open: data.session_expire !== 0,
-        certificate: data.certificate || {
+        certificate: data.extension.certificate || {
           ssl_mode: 'UNIDIRECTIONAL',
           ca_cloud_id: '',
           cert_cloud_ids: [],
@@ -124,7 +124,7 @@ export default (getListData: any) => {
       }
       Message({ theme: 'success', message: isEdit.value ? '更新成功' : '新增成功' });
       isSliderShow.value = false;
-      getListData();
+      typeof getListData === 'function' && getListData();
     } finally {
       isAddOrUpdateListenerSubmit.value = false;
     }

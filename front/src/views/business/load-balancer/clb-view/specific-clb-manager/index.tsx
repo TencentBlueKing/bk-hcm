@@ -1,12 +1,11 @@
 import { defineComponent, onMounted, onUnmounted, ref, watch } from 'vue';
 // import components
 import { Message, Tab } from 'bkui-vue';
-import { BkTabPanel } from 'bkui-vue/lib/tab';
 import ListenerList from './listener-list';
 import ClbDetail from './clb-detail';
 import SecurityGroup from './security-group';
 // import stores
-import { useBusinessStore } from '@/store';
+import { useBusinessStore, useLoadBalancerStore } from '@/store';
 // import hooks and utils
 import useActiveTab from '@/hooks/useActiveTab';
 import { debounce } from 'lodash';
@@ -19,11 +18,22 @@ export enum TypeEnum {
   security = 'security',
 }
 
+const { TabPanel } = Tab;
+
 export default defineComponent({
+  // 路由导航完成前, 预加载负载均衡详情数据, 并存入store中
+  async beforeRouteEnter(to, _, next) {
+    const businessStore = useBusinessStore();
+    const loadBalancerStore = useLoadBalancerStore();
+    const { data } = await businessStore.getLbDetail(to.params.id as string);
+    loadBalancerStore.setCurrentSelectedTreeNode(data);
+    next();
+  },
   props: { id: String, type: String },
   setup(props) {
     // use stores
     const businessStore = useBusinessStore();
+    const loadBalancerStore = useLoadBalancerStore();
 
     const { activeTab, handleActiveTabChange } = useActiveTab(TypeEnum.list);
     const tabList = [
@@ -44,7 +54,7 @@ export default defineComponent({
       },
     ];
 
-    const detail: { [key: string]: any } = ref({});
+    const detail: { [key: string]: any } = ref(loadBalancerStore.currentSelectedTreeNode);
     const getDetails = async (id: string) => {
       const res = await businessStore.getLbDetail(id);
       detail.value = res.data;
@@ -65,7 +75,6 @@ export default defineComponent({
       async (id) => {
         id && (await getDetails(id));
       },
-      { immediate: true },
     );
 
     onMounted(() => {
@@ -77,13 +86,17 @@ export default defineComponent({
     });
 
     return () => (
-      <Tab v-model:active={activeTab.value} type={'card-grid'} onChange={handleActiveTabChange}>
+      <Tab
+        v-model:active={activeTab.value}
+        type={'card-grid'}
+        onChange={handleActiveTabChange}
+        class='manager-tab-wrap'>
         {tabList.map((tab) => (
-          <BkTabPanel key={tab.name} name={tab.name} label={tab.label} class={'clb-list-tab-content-container'}>
-            <div>
+          <TabPanel key={tab.name} name={tab.name} label={tab.label} class={'clb-list-tab-content-container'}>
+            <div class='common-card-wrap'>
               <tab.component detail={detail.value} getDetails={getDetails} updateLb={updateLb} {...props} />
             </div>
-          </BkTabPanel>
+          </TabPanel>
         ))}
       </Tab>
     );

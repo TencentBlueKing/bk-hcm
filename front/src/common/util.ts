@@ -231,3 +231,31 @@ export const localStorageActions = {
     localStorage.clear();
   },
 };
+
+/**
+ * 获取指定的 URL 查询参数值
+ * @param {string} param 要获取的查询参数名
+ * @param {string} url 可选，指定的 URL，默认为当前浏览器地址
+ * @returns {string | null} 查询参数值，如果不存在则返回 null
+ */
+export const getQueryStringParams = (param: string, url = window.location.href) => {
+  let queryParams;
+
+  if (url.includes('#')) {
+    // 如果 URL 包含 #，假定是 hash 路由，需要从 hash 中解析查询参数
+    const hash = url.split('#')[1]; // 获取 hash 部分
+    if (hash.includes('?')) {
+      const search = hash.split('?')[1]; // 从 hash 中分离查询字符串
+      queryParams = new URLSearchParams(search);
+    } else {
+      // 如果 hash 中没有查询字符串，提前返回 null
+      return null;
+    }
+  } else {
+    // 如果是常规路由，直接从 URL 对象解析查询字符串
+    const urlObj = new URL(url);
+    queryParams = new URLSearchParams(urlObj.search);
+  }
+
+  return queryParams.get(param);
+};

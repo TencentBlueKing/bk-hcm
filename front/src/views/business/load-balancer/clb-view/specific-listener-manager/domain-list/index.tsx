@@ -1,25 +1,22 @@
-import { defineComponent, onMounted, onUnmounted, ref, watch } from 'vue';
+import { defineComponent, ref, watch } from 'vue';
 // import components
-import { Button, Form, Message, Tag } from 'bkui-vue';
+import { Button, Message, Tag } from 'bkui-vue';
 import { Plus, Spinner } from 'bkui-vue/lib/icon';
 import CommonLocalTable from '@/components/CommonLocalTable';
-import CommonSideslider from '@/components/common-sideslider';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import Confirm from '@/components/confirm';
 // import stores
 import { useBusinessStore, useResourceStore, useLoadBalancerStore } from '@/store';
 // import custom hooks
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
-import useAddOrUpdateDomain, { OpAction } from './useAddOrUpdateDomain';
+import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import { useI18n } from 'vue-i18n';
+import AddOrUpdateDomainSideslider from '../../components/AddOrUpdateDomainSideslider';
 // import utils
 import bus from '@/common/bus';
 // import constants
 import { APPLICATION_LAYER_LIST } from '@/constants';
 import './index.scss';
-import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
-
-const { FormItem } = Form;
 
 export default defineComponent({
   name: 'DomainList',
@@ -35,8 +32,6 @@ export default defineComponent({
     const defaultDomain = ref('');
     const isCheckDomainLoading = ref(false);
     const { selections, handleSelectionChange } = useSelection();
-
-    const formInstance = ref();
 
     const isLoading = ref(false);
     // 搜索相关
@@ -117,7 +112,7 @@ export default defineComponent({
         render({ data }: any) {
           return (
             <div class='operate-groups'>
-              <Button text theme='primary' onClick={() => handleDomainSidesliderShow(data)}>
+              <Button text theme='primary' onClick={() => bus.$emit('showAddDomainSideslider', data)}>
                 {t('编辑')}
               </Button>
               <Button
@@ -178,16 +173,6 @@ export default defineComponent({
       { immediate: true },
     );
 
-    // use custom hooks
-    const {
-      isShow: isDomainSidesliderShow,
-      action,
-      formItemOptions,
-      handleShow: handleDomainSidesliderShow,
-      handleSubmit: handleDomainSidesliderSubmit,
-      formData: formModel,
-    } = useAddOrUpdateDomain(() => getDomainList(props.id));
-
     // 批量删除
     const isBatchDeleteDialogShow = ref(false);
     const tableProps = {
@@ -219,14 +204,6 @@ export default defineComponent({
       }
     };
 
-    onMounted(() => {
-      bus.$on('showAddDomainSideslider', handleDomainSidesliderShow);
-    });
-
-    onUnmounted(() => {
-      bus.$off('showAddDomainSideslider');
-    });
-
     return () => (
       <div class='domain-list-page has-selection'>
         <CommonLocalTable
@@ -252,7 +229,7 @@ export default defineComponent({
           {{
             operation: () => (
               <>
-                <Button theme='primary' onClick={handleDomainSidesliderShow} class='mr12'>
+                <Button theme='primary' onClick={() => bus.$emit('showAddDomainSideslider')} class='mr12'>
                   <Plus class='f20' />
                   {t('新增域名')}
                 </Button>
@@ -264,36 +241,10 @@ export default defineComponent({
           }}
         </CommonLocalTable>
         {/* domain 操作 dialog */}
-        <CommonSideslider
-          class='domain-sideslider'
-          title={`${action.value === OpAction.ADD ? '新增' : '编辑'}域名`}
-          width={640}
-          v-model:isShow={isDomainSidesliderShow.value}
-          onHandleSubmit={() => {
-            handleDomainSidesliderSubmit(formInstance);
-          }}>
-          <p class='readonly-info'>
-            <span class='label'>监听器名称</span>:
-            <span class='value'>{loadBalancerStore.currentSelectedTreeNode.name}</span>
-          </p>
-          <p class='readonly-info'>
-            <span class='label'>协议端口</span>:
-            <span class='value'>
-              {loadBalancerStore.currentSelectedTreeNode.protocol}:{loadBalancerStore.currentSelectedTreeNode.port}
-            </span>
-          </p>
-          <Form formType='vertical' ref={formInstance} model={formModel}>
-            {formItemOptions.value
-              .filter(({ hidden }) => !hidden)
-              .map(({ label, required, property, content }) => {
-                return (
-                  <FormItem label={label} required={required} key={property}>
-                    {content()}
-                  </FormItem>
-                );
-              })}
-          </Form>
-        </CommonSideslider>
+        <AddOrUpdateDomainSideslider
+          originPage='listener'
+          getListData={() => getDomainList(loadBalancerStore.currentSelectedTreeNode.id)}
+        />
         <BatchOperationDialog
           isSubmitLoading={isBatchDeleteLoading.value}
           v-model:isShow={isBatchDeleteDialogShow.value}

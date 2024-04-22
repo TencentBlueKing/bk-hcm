@@ -356,7 +356,7 @@ const businesseMenus: RouteRecordRaw[] = [
                 },
               },
               {
-                path: 'domain/:domain',
+                path: 'domain/:id',
                 name: LBRouteName.domain,
                 component: () => import('@/views/business/load-balancer/clb-view/specific-domain-manager/index'),
                 props(route) {

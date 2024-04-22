@@ -18,7 +18,6 @@ export default (initialValue: string) => {
   };
 
   // 监听route.query.type的变化, tab状态保持
-  // 监听route.query.type的变化, tab状态保持
   watchEffect(() => {
     handleActiveTabChange(route.query.type as string);
   });

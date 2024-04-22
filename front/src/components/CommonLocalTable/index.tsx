@@ -89,7 +89,10 @@ export default defineComponent({
             show-overflow-tooltip
             {...(props.tableOptions.extra || {})}>
             {{
-              empty: () => <Empty />,
+              empty: () => {
+                if (props.loading) return null;
+                return <Empty />;
+              },
             }}
           </Table>
         </Loading>
