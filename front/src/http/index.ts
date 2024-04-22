@@ -171,7 +171,7 @@ async function getPromise(method: HttpMethodType, url: string, data: object | nu
   */
 function handleResponse(params: { config: any; response: any; resolve: any; reject: any }) {
   // 关闭节流阀
-  isActive = false;
+  isLoginValid = false;
   params.resolve(params.response, params.config);
 
   // if (!response.data && config.globalError) {
@@ -182,7 +182,7 @@ function handleResponse(params: { config: any; response: any; resolve: any; reje
   http.queue.delete(params.config.requestId);
 }
 // token失效时多个接口的错误信息通过isActive节流阀只显示一个
-let isActive = false;
+let isLoginValid = false;
 /**
   * 处理 http 请求失败结果
   *
@@ -193,7 +193,7 @@ let isActive = false;
   */
 function handleReject(error: any, config: any) {
   // 判断节流阀是否开启，开启则不执行后面的接口错误提示框
-  if (isActive) {
+  if (isLoginValid) {
     return;
   }
   if (axios.isCancel(error)) {
@@ -230,7 +230,7 @@ function handleReject(error: any, config: any) {
   // bk_ticket失效后的登录弹框
   if (error.code == 2000000 && error.message == 'bk_ticket cookie don\'t exists') {
     // 打开节流阀
-    isActive = true;
+    isLoginValid = true;
     InvalidLogin();
   }
   return Promise.reject(error);
