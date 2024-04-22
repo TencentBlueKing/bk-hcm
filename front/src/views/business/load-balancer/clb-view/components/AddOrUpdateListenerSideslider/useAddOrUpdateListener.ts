@@ -137,6 +137,8 @@ export default (getListData: (...args: any) => any) => {
     initTargetGroupOptionState,
     getTargetGroupList,
     handleTargetGroupListScrollEnd,
+    isTargetGroupListFlashLoading,
+    handleTargetGroupListRefreshOptionList,
   ] = useSelectOptionListWithScroll(
     'target_groups',
     [
@@ -206,6 +208,8 @@ export default (getListData: (...args: any) => any) => {
     isTargetGroupListLoading,
     targetGroupList,
     handleTargetGroupListScrollEnd,
+    isTargetGroupListFlashLoading,
+    handleTargetGroupListRefreshOptionList,
     isSVRCertListLoading,
     SVRCertList,
     handleSVRCertListScrollEnd,

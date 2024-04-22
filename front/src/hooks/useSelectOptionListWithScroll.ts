@@ -20,6 +20,8 @@ export default (
   initState: (...args: any) => any,
   getOptionList: (...args: any) => any,
   handleOptionListScrollEnd: (...args: any) => any,
+  isFlashLoading: Ref<boolean>,
+  handleRefreshOptionList: (...args: any) => any,
 ] => {
   // use stores
   const resourceStore = useResourceStore();
@@ -27,11 +29,12 @@ export default (
   // define data
   const pagination = reactive({
     start: 0,
-    limit: 10,
+    limit: 20,
     hasNext: true,
   });
   const isLoading = ref(false);
   const optionList = ref([]);
+  const isFlashLoading = ref(false); // 刷新操作loading
 
   /**
    * 初始化状态: optionList, pagination
@@ -40,7 +43,7 @@ export default (
     optionList.value = [];
     Object.assign(pagination, {
       start: 0,
-      limit: 10,
+      limit: 20,
       hasNext: true,
     });
   };
@@ -92,8 +95,29 @@ export default (
     getOptionList();
   };
 
+  /**
+   * 刷新options list
+   */
+  const handleRefreshOptionList = async () => {
+    initState();
+    try {
+      isFlashLoading.value = true;
+      await getOptionList();
+    } finally {
+      isFlashLoading.value = false;
+    }
+  };
+
   // 立即执行
   immediate && getOptionList();
 
-  return [isLoading, optionList, initState, getOptionList, handleOptionListScrollEnd];
+  return [
+    isLoading,
+    optionList,
+    initState,
+    getOptionList,
+    handleOptionListScrollEnd,
+    isFlashLoading,
+    handleRefreshOptionList,
+  ];
 };

@@ -1,10 +1,11 @@
 import { PropType, defineComponent, onMounted, onUnmounted } from 'vue';
 // import components
-import { Form, Input, Select, Switcher, Tag } from 'bkui-vue';
+import { Divider, Form, Input, Select, Switcher, Tag } from 'bkui-vue';
 import BkRadio, { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
+import { Plus, RightTurnLine, Spinner } from 'bkui-vue/lib/icon';
 import CommonSideslider from '@/components/common-sideslider';
 // import stores
-import { useLoadBalancerStore } from '@/store';
+import { useLoadBalancerStore, useAccountStore } from '@/store';
 // import hooks
 import { useI18n } from 'vue-i18n';
 import useAddOrUpdateListener from './useAddOrUpdateListener';
@@ -27,6 +28,7 @@ export default defineComponent({
   },
   setup(props) {
     const loadBalancerStore = useLoadBalancerStore();
+    const accountStore = useAccountStore();
     const protocolButtonList = ['TCP', 'UDP', 'HTTP', 'HTTPS'];
     // use hooks
     const { t } = useI18n();
@@ -46,6 +48,8 @@ export default defineComponent({
       isTargetGroupListLoading,
       targetGroupList,
       handleTargetGroupListScrollEnd,
+      isTargetGroupListFlashLoading,
+      handleTargetGroupListRefreshOptionList,
       isSVRCertListLoading,
       SVRCertList,
       handleSVRCertListScrollEnd,
@@ -53,6 +57,12 @@ export default defineComponent({
       CACertList,
       handleCACertListScrollEnd,
     } = useAddOrUpdateListener(props.getListData);
+
+    // click-handler - 新增目标组
+    const handleAddTargetGroup = () => {
+      const url = `/#/business/loadbalancer/group-view?bizs=${accountStore.bizs}`;
+      window.open(url, '_blank');
+    };
 
     onMounted(() => {
       bus.$on('showAddListenerSideslider', handleAddListener);
@@ -227,13 +237,40 @@ export default defineComponent({
                   )
               }
               <FormItem label={t('目标组')} required property='target_group_id'>
+                {/* tag: 这里暂时不抽离成公共组件, 等后续相关场景多了再抽离, 此处先写行内样式, 方便抽离时设置css样式 */}
                 <Select
                   v-model={listenerFormData.target_group_id}
                   scrollLoading={isTargetGroupListLoading.value}
                   onScroll-end={handleTargetGroupListScrollEnd}>
-                  {targetGroupList.value.map(({ id, name, listener_num }) => (
-                    <Option key={id} id={id} name={name} disabled={listener_num > 0} />
-                  ))}
+                  {{
+                    default: () =>
+                      targetGroupList.value.map(({ id, name, listener_num }) => (
+                        <Option key={id} id={id} name={name} disabled={listener_num > 0} />
+                      )),
+                    extension: () => (
+                      <div style='width: 100%; color: #63656E; padding: 0 12px;'>
+                        <div style='display: flex; align-items: center;justify-content: center;'>
+                          <span
+                            style='display: flex; align-items: center;cursor: pointer;'
+                            onClick={handleAddTargetGroup}>
+                            <Plus style='font-size: 20px;' />
+                            新增
+                          </span>
+                          <span style='display: flex; align-items: center;position: absolute; right: 12px;'>
+                            <Divider direction='vertical' type='solid' />
+                            {isTargetGroupListFlashLoading.value ? (
+                              <Spinner style='font-size: 14px;color: #3A84FF;' />
+                            ) : (
+                              <RightTurnLine
+                                style='font-size: 14px;cursor: pointer;'
+                                onClick={handleTargetGroupListRefreshOptionList}
+                              />
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    ),
+                  }}
                 </Select>
               </FormItem>
             </>
