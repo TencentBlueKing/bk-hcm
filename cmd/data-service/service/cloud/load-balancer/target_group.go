@@ -94,7 +94,7 @@ func batchCreateTargetGroupWithRel[T corelb.TargetGroupExtension](cts *rest.Cont
 			tgIDs = append(tgIDs, createTGIDs...)
 			tgID := createTGIDs[0]
 			// 添加RS
-			if tgReq.TargetGroup.RsList != nil {
+			if len(tgReq.TargetGroup.RsList) != 0 {
 				_, err = svc.batchCreateTargetWithGroupID(cts.Kit, txn, "", tgID, tgReq.TargetGroup.RsList)
 				if err != nil {
 					logs.Errorf("fail to batch create target for create tg, err: %v, rid:%s", err, cts.Kit.Rid)

@@ -72,7 +72,7 @@ func (cli *client) ListenerTargets(kt *kit.Kit, param *SyncBaseParams, opt *Sync
 			// ---- for layer 4 对比监听器变化 ----
 			rel, exists := relMap[cvt.PtrToVal(listener.ListenerId)]
 			if !exists {
-				// 云上监听器、规则中有RS，但是没有对应目标组，则在同步时自动创建目标组，并将RS加入目标组。
+				// 云上监听器、但是没有对应目标组，则在同步时自动创建目标组，并将RS加入目标组。
 				if err := cli.createLocalTargetGroupL4(kt, opt, lb, listener); err != nil {
 					logs.Errorf("fail to create local target group for layer 4 listener, rid: %s", kt.Rid)
 					return err
@@ -167,13 +167,9 @@ func (cli *client) compareTargetsChange(kt *kit.Kit, accountID, tgID string, clo
 	return nil
 }
 
+// 为rs创建目标组不跳过没有rs的规则
 func (cli *client) createLocalTargetGroupL7(kt *kit.Kit, opt *SyncListenerOfSingleLBOption,
 	lb *corelb.TCloudLoadBalancer, listener typeslb.TCloudListenerTarget, cloudRule *tclb.RuleTargets) error {
-
-	// 跳过没有RS的规则
-	if len(cloudRule.Targets) == 0 {
-		return nil
-	}
 
 	// 获取数据库中的规则
 	listReq := &core.ListReq{
@@ -250,14 +246,10 @@ func convTarget(accountID string) func(cloudTarget *tclb.Backend) *dataproto.Tar
 	}
 }
 
-// 创建本地目标组以及关系，会跳过没有rs的监听器
+// 创建本地目标组以及关系，不会跳过没有rs的监听器
 func (cli *client) createLocalTargetGroupL4(kt *kit.Kit, opt *SyncListenerOfSingleLBOption,
 	lb *corelb.TCloudLoadBalancer, listener typeslb.TCloudListenerTarget) error {
 
-	// 跳过没有rs的监听器
-	if len(listener.Targets) == 0 {
-		return nil
-	}
 	lbl, rule, err := cli.listListenerWithRule(kt, cvt.PtrToVal(listener.ListenerId))
 	if err != nil {
 		logs.Errorf("fail to list listener with rule, err: %v, rid:%s", err, kt.Rid)
