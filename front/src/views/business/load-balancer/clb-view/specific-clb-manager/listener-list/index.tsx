@@ -147,7 +147,7 @@ export default defineComponent({
     } = useBatchDeleteListener(columns, selections, resetSelections, getListData);
 
     return () => (
-      <div>
+      <div class='listener-list-page'>
         {/* 监听器list */}
         <CommonTable class='has-selection'>
           {{
@@ -166,7 +166,7 @@ export default defineComponent({
         </CommonTable>
 
         {/* 新增/编辑监听器 */}
-        <AddOrUpdateListenerSideslider getListData={getListData} />
+        <AddOrUpdateListenerSideslider originPage='lb' getListData={getListData} />
 
         {/* 批量删除监听器 */}
         <BatchOperationDialog

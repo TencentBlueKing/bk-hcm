@@ -27,6 +27,7 @@ export default defineComponent({
     detail: Object as PropType<IDetail>,
     getDetails: Function,
     updateLb: Function,
+    id: String,
   },
   setup(props) {
     const rsCheckRes = ref(false);
@@ -210,10 +211,10 @@ export default defineComponent({
     };
 
     watch(
-      () => loadBalancerStore.currentSelectedTreeNode,
-      (val) => {
-        const { id, type } = val;
-        if (type === 'lb' && id) getBindedSecurityList();
+      () => props.id,
+      () => {
+        // 获取已绑定的安全组列表
+        getBindedSecurityList();
       },
       {
         immediate: true,

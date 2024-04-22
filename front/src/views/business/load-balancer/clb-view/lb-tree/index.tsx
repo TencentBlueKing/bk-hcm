@@ -5,7 +5,7 @@ import SimpleSearchSelect from '../../components/simple-search-select';
 import { Message, Tree } from 'bkui-vue';
 import Confirm from '@/components/confirm';
 // import stores
-import { useBusinessStore, useLoadBalancerStore, useResourceStore } from '@/store';
+import { useBusinessStore, useResourceStore } from '@/store';
 // import custom hooks
 import useLoadTreeData from './useLoadTreeData';
 import useMoreActionDropdown from '@/hooks/useMoreActionDropdown';
@@ -28,7 +28,6 @@ export default defineComponent({
     const router = useRouter();
     const route = useRoute();
     // use stores
-    const loadBalancerStore = useLoadBalancerStore();
     const resourceStore = useResourceStore();
     const businessStore = useBusinessStore();
 
@@ -249,7 +248,7 @@ export default defineComponent({
       };
       router.push({
         name: LB_ROUTE_NAME_MAP[node.type],
-        params: { [`${node.type === 'domain' ? 'domain' : 'id'}`]: node.id },
+        params: { id: node.id },
         query: {
           ...route.query,
           // 设置tab类型标识(node.protocol只有listener有值)
@@ -264,9 +263,8 @@ export default defineComponent({
 
     // define handler function - 节点点击
     const handleNodeClick = (node: any) => {
-      if (loadBalancerStore.currentSelectedTreeNode?.id === node.id) return;
-      // 更新 store 中当前选中的节点
-      loadBalancerStore.setCurrentSelectedTreeNode(node);
+      // 防止重复点击
+      if (route.params.id === node.id) return;
       // 切换四级路由组件
       pushState(node);
       // 交互 - 高亮切换效果

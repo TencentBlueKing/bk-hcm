@@ -4,6 +4,8 @@ import { Tab } from 'bkui-vue';
 import DomainList from './domain-list';
 import ListenerDetail from './listener-detail';
 import AddOrUpdateListenerSideslider from '../components/AddOrUpdateListenerSideslider';
+// import stores
+import { useBusinessStore, useLoadBalancerStore } from '@/store';
 // import hooks
 import useActiveTab from '@/hooks/useActiveTab';
 // import constants
@@ -21,6 +23,17 @@ enum TabTypeEnum {
 
 export default defineComponent({
   name: 'SpecificListenerManager',
+  // 导航完成前, 预加载监听器详情以及对应负载均衡详情数据, 并存入store中
+  async beforeRouteEnter(to, _, next) {
+    const businessStore = useBusinessStore();
+    const loadBalancerStore = useLoadBalancerStore();
+    // 监听器详情
+    const { data: listenerDetail } = await businessStore.detail('listeners', to.params.id as string);
+    // 负载均衡详情
+    const { data: lbDetail } = await businessStore.detail('load_balancers', listenerDetail.lb_id);
+    loadBalancerStore.setCurrentSelectedTreeNode({ ...listenerDetail, lb: lbDetail });
+    next();
+  },
   props: { id: String, type: String, protocol: String },
   setup(props) {
     const { activeTab, handleActiveTabChange } = useActiveTab(props.type);
@@ -65,7 +78,7 @@ export default defineComponent({
           ))}
         </Tab>
         {/* 编辑监听器 */}
-        <AddOrUpdateListenerSideslider />
+        <AddOrUpdateListenerSideslider originPage='listener' />
       </>
     );
   },

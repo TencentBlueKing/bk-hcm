@@ -12,6 +12,7 @@ import useAddOrUpdateListener from './useAddOrUpdateListener';
 import bus from '@/common/bus';
 // import constants
 import { APPLICATION_LAYER_LIST } from '@/constants';
+import type { IOriginPage } from '@/typings';
 import './index.scss';
 
 const { FormItem } = Form;
@@ -20,6 +21,8 @@ const { Option } = Select;
 export default defineComponent({
   name: 'AddOrUpdateListenerSideslider',
   props: {
+    // 标识组件在哪个页面中使用, lb=具体的负载均衡, listener=具体的监听器
+    originPage: String as PropType<IOriginPage>,
     getListData: Function as PropType<(...args: any) => any>,
   },
   setup(props) {
@@ -73,7 +76,7 @@ export default defineComponent({
           <FormItem label={t('负载均衡名称')}>
             <Input
               modelValue={
-                loadBalancerStore.currentSelectedTreeNode.type === 'lb'
+                props.originPage === 'lb'
                   ? loadBalancerStore.currentSelectedTreeNode.name
                   : loadBalancerStore.currentSelectedTreeNode.lb.name
               }

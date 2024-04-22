@@ -60,18 +60,12 @@ export default defineComponent({
         </p>
         <p class='readonly-info'>
           <span class='label'>监听器名称</span>:
-          <span class='value'>
-            {props.originPage === 'listener'
-              ? loadBalancerStore.currentSelectedTreeNode.name
-              : loadBalancerStore.currentSelectedTreeNode.listener.lbl_name}
-          </span>
+          <span class='value'>{loadBalancerStore.currentSelectedTreeNode.name}</span>
         </p>
         <p class='readonly-info'>
           <span class='label'>协议端口</span>:
           <span class='value'>
-            {props.originPage === 'listener'
-              ? `${loadBalancerStore.currentSelectedTreeNode.protocol}:${loadBalancerStore.currentSelectedTreeNode.port}`
-              : `${loadBalancerStore.currentSelectedTreeNode.listener.protocol}:${loadBalancerStore.currentSelectedTreeNode.listener.port}`}
+            {`${loadBalancerStore.currentSelectedTreeNode.protocol}:${loadBalancerStore.currentSelectedTreeNode.port}`}
           </span>
         </p>
         <Form formType='vertical' ref={formInstance} model={formModel}>
