@@ -1,6 +1,9 @@
 import { timeFormatter } from '@/common/util';
-import { Ref, VNode, ref, watchEffect } from 'vue';
-import { Close, Spinner, Success } from 'bkui-vue/lib/icon';
+import { Ref, VNode, h, ref, watchEffect } from 'vue';
+import { Close, RightTurnLine, Spinner, Success } from 'bkui-vue/lib/icon';
+import { Button, Message } from 'bkui-vue';
+import './index.scss';
+import { useBusinessStore } from '@/store';
 
 export type IProps = {
   flow: Ref<Flow>;
@@ -38,10 +41,11 @@ export interface IFlowInfo {
 }
 
 export interface ITimelineNode {
-  tag?: string;
-  content?: string;
+  tag?: string | VNode;
+  content?: string | VNode;
   icon?: string | VNode | boolean;
   theme?: '' | 'success' | 'danger';
+  nodeType: string;
 }
 
 export const FlowNodeNameMap = {
@@ -73,9 +77,39 @@ export enum NodeState {
 export const useFlowNode = (props: IProps) => {
   const nodes: Ref<ITimelineNode[]> = ref([]);
   const flowInfo: Ref<IFlowInfo> = ref({});
+  const isRetryLoading = ref(false);
+  const businessStore = useBusinessStore();
 
-  const getContent = (updated_at: string) => {
-    return `<span style="font-size: 12px;color: #979BA5;">${timeFormatter(updated_at)}</span>`;
+  const getContent = (updated_at: string, state: NodeState, taskID?: string) => {
+    return (
+      <span class={'use-flow-node-content'}>
+        {timeFormatter(updated_at)}
+        {[NodeState.cancel, NodeState.failed].includes(state) ? (
+          <Button class={'ml6'} text onClick={() => handleRetry(taskID)} theme='primary'>
+            <RightTurnLine width={12} height={12} fill='#3A84FF' />
+            重试
+          </Button>
+        ) : null}
+      </span>
+    );
+  };
+
+  const renderTag = (state: NodeState, name: string, reason: string) => {
+    let tag = <span>{name}</span>;
+    if ([NodeState.cancel, NodeState.failed].includes(state)) {
+      tag = (
+        <span class={'use-flow-node-error-tag'}>
+          {name}{' '}
+          <i
+            class={'icon hcm-icon bkhcm-icon-alert ml4'}
+            v-bk-tooltips={{
+              content: reason,
+            }}
+          />
+        </span>
+      );
+    }
+    return tag;
   };
 
   const renderIcon = (state: string) => {
@@ -102,18 +136,21 @@ export const useFlowNode = (props: IProps) => {
     nodes.value = [
       {
         tag: '单据提交',
-        content: getContent(props.flow.value.created_at),
+        content: getContent(props.flow.value.created_at, NodeState.success),
         icon: <Success fill='#2DCB56' width={10.5} height={10.5} />,
         theme: 'success',
+        nodeType: 'vnode',
       },
-      ...props.tasks.value.map(({ state, updated_at }, idx) => ({
-        tag: `第 ${idx + 1} 批任务` || '--',
-        content: getContent(updated_at),
+      ...props.tasks.value.map(({ state, updated_at, reason, id }, idx) => ({
+        tag: renderTag(state as NodeState, `第 ${idx + 1} 批任务`, reason),
+        content: getContent(updated_at, state as NodeState, id),
         icon: renderIcon(state),
+        nodeType: 'vnode',
       })),
       {
-        tag: '<span>执行结束</span>',
+        tag: <span>执行结束</span>,
         icon: renderIcon(props.flow.value.state),
+        nodeType: 'vnode',
       },
     ];
 
@@ -124,6 +161,20 @@ export const useFlowNode = (props: IProps) => {
       successNum: props.tasks.value.filter(({ state }) => state === 'success').length,
     };
   });
+
+  const handleRetry = async (taskID: string) => {
+    isRetryLoading.value = true;
+    await businessStore.retryAsyncTask({
+      lb_id: props.flow.value.id,
+      flow_id: props.flow.value.id,
+      task_id: taskID,
+    });
+    isRetryLoading.value = false;
+    Message({
+      content: '触发重试成功',
+      theme: 'success',
+    });
+  };
 
   return {
     nodes,

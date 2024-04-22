@@ -394,5 +394,60 @@ export const useBusinessStore = defineStore({
         data,
       );
     },
+    /**
+     * 重试异步任务
+     */
+    retryAsyncTask(data: {
+      bk_biz_id?: number; // 业务ID
+      lb_id: string; // 负载均衡ID
+      flow_id: string; // Flow ID
+      task_id: string; // 待重新执行的Task ID
+    }) {
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}load_balancers/${data.lb_id}/async_tasks/retry`,
+        data,
+      );
+    },
+    /**
+     * 终止指定异步任务操作
+     */
+    endTask(data: {
+      bk_biz_id?: number; // 业务ID
+      lb_id: string; // 负载均衡ID
+      flow_id: string; // Flow ID
+    }) {
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}load_balancers/${
+          data.lb_id
+        }/async_flows/terminate`,
+        data,
+      );
+    },
+    /**
+     * 获取任务终止后rs的状态，仅支持任务终止后五分钟内
+     */
+    getFlowResults(data: {
+      bk_biz_id?: number; // 业务ID
+      lb_id?: string; // 负载均衡ID
+      flow_id: string; // Flow ID
+    }) {
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}load_balancers/${data.lb_id}/async_tasks/result`,
+        data,
+      );
+    },
+    /**
+     * 复制flow参数重新执行
+     */
+    excuteTask(data: {
+      bk_biz_id?: number; // 业务ID
+      lb_id: string; // 负载均衡ID
+      flow_id: string; // Flow ID
+    }) {
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}load_balancers/${data.lb_id}/async_tasks/clone`,
+        data,
+      );
+    },
   },
 });
