@@ -419,7 +419,8 @@ func (svc *clbSvc) createListenerWithRule(kt *kit.Kit, req *protolb.ListenerWith
 	}
 	result, err := tcloudAdpt.CreateListener(kt, lblOpt)
 	if err != nil {
-		logs.Errorf("create tcloud listener api failed, lblOpt: %+v, err: %v, rid: %s", lblOpt, err, kt.Rid)
+		logs.Errorf("create tcloud listener api failed, err: %v, lblOpt: %+v, cert: %+v, rid: %s",
+			err, lblOpt, cvt.PtrToVal(lblOpt.Certificate), kt.Rid)
 		return "", "", err
 	}
 	cloudLblID := result.SuccessCloudIDs[0]
@@ -450,7 +451,8 @@ func (svc *clbSvc) createListenerWithRule(kt *kit.Kit, req *protolb.ListenerWith
 		ruleOpt.Rules = append(ruleOpt.Rules, oneRule)
 		ruleResult, err := tcloudAdpt.CreateRule(kt, ruleOpt)
 		if err != nil {
-			logs.Errorf("create tcloud listener rule api failed, ruleOpt: %+v, err: %v, rid: %s", ruleOpt, err, kt.Rid)
+			logs.Errorf("create tcloud listener rule api failed, err: %v, ruleOpt: %+v, cert: %+v, rid: %s",
+				err, ruleOpt, cvt.PtrToVal(req.Certificate), kt.Rid)
 			return "", "", err
 		}
 		cloudRuleID = ruleResult.SuccessCloudIDs[0]

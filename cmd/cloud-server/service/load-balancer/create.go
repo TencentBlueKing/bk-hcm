@@ -37,6 +37,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -243,7 +244,8 @@ func (svc *lbSvc) batchCreateTCloudListener(kt *kit.Kit, rawReq json.RawMessage,
 	req.LbID = lbID
 	createResp, err := svc.client.HCService().TCloud.Clb.CreateListener(kt, req)
 	if err != nil {
-		logs.Errorf("fail to create tcloud url rule, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("fail to create tcloud url rule, err: %v, req: %+v, cert: %+v, rid: %s",
+			err, req, cvt.PtrToVal(req.Certificate), kt.Rid)
 		return nil, err
 	}
 
