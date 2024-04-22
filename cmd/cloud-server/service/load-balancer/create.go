@@ -25,11 +25,14 @@ import (
 	"errors"
 	"fmt"
 
+	"hcm/cmd/cloud-server/service/common"
 	cloudserver "hcm/pkg/api/cloud-server"
+	"hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service/load-balancer"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
@@ -43,6 +46,19 @@ import (
 
 // BatchCreateLB 批量创建负载均衡
 func (svc *lbSvc) BatchCreateLB(cts *rest.Contexts) (any, error) {
+	return svc.batchCreateLB(cts, handler.ResOperateAuth, constant.UnassignedBiz)
+}
+
+// BizBatchCreateLB 业务下直接创建 负载均衡，TODO: 用申请流程替换
+func (svc *lbSvc) BizBatchCreateLB(cts *rest.Contexts) (any, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	return svc.batchCreateLB(cts, handler.BizOperateAuth, bizID)
+}
+func (svc *lbSvc) batchCreateLB(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler, bkBizID int64) (
+	any, error) {
 
 	req := new(cloudserver.ResourceCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -51,14 +67,15 @@ func (svc *lbSvc) BatchCreateLB(cts *rest.Contexts) (any, error) {
 	}
 
 	// 权限校验
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{
-		Type:       meta.LoadBalancer,
+	err := validHandler(cts, &handler.ValidWithAuthOption{
+		Authorizer: svc.authorizer,
+		ResType:    meta.LoadBalancer,
 		Action:     meta.Create,
-		ResourceID: req.AccountID,
-	}}
-	if err := svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
-		logs.Errorf("create load balancer auth failed, err: %v, account id: %s, rid: %s",
-			err, req.AccountID, cts.Kit.Rid)
+		BasicInfo:  common.GetCloudResourceBasicInfo(req.AccountID, bkBizID),
+	})
+	if err != nil {
+		logs.Errorf("create load balancer auth failed, err: %v, account id: %s, bk_biz_id: %d, rid: %s",
+			err, req.AccountID, bkBizID, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -71,14 +88,14 @@ func (svc *lbSvc) BatchCreateLB(cts *rest.Contexts) (any, error) {
 
 	switch accountInfo.Vendor {
 	case enumor.TCloud:
-		return svc.batchCreateTCloudLB(cts.Kit, req.Data)
+		return svc.batchCreateTCloudLB(cts.Kit, req.Data, bkBizID)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", accountInfo.Vendor)
 	}
 }
 
-func (svc *lbSvc) batchCreateTCloudLB(kt *kit.Kit, rawReq json.RawMessage) (any, error) {
-	req := new(hcproto.TCloudBatchCreateReq)
+func (svc *lbSvc) batchCreateTCloudLB(kt *kit.Kit, rawReq json.RawMessage, bkBizID int64) (any, error) {
+	req := new(cslb.TCloudBatchCreateReq)
 	if err := json.Unmarshal(rawReq, req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -86,8 +103,29 @@ func (svc *lbSvc) batchCreateTCloudLB(kt *kit.Kit, rawReq json.RawMessage) (any,
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-
-	return svc.client.HCService().TCloud.Clb.BatchCreate(kt, req)
+	hcReq := &hcproto.TCloudBatchCreateReq{
+		BkBizID:                 bkBizID,
+		AccountID:               req.AccountID,
+		Region:                  req.Region,
+		Name:                    req.Name,
+		LoadBalancerType:        req.LoadBalancerType,
+		AddressIPVersion:        req.AddressIPVersion,
+		Zones:                   req.Zones,
+		BackupZones:             req.BackupZones,
+		CloudVpcID:              req.CloudVpcID,
+		CloudSubnetID:           req.CloudSubnetID,
+		Vip:                     req.Vip,
+		CloudEipID:              req.CloudEipID,
+		VipIsp:                  req.VipIsp,
+		InternetChargeType:      req.InternetChargeType,
+		InternetMaxBandwidthOut: req.InternetMaxBandwidthOut,
+		BandwidthPackageID:      req.BandwidthPackageID,
+		SlaType:                 req.SlaType,
+		AutoRenew:               req.AutoRenew,
+		RequireCount:            req.RequireCount,
+		Memo:                    req.Memo,
+	}
+	return svc.client.HCService().TCloud.Clb.BatchCreate(kt, hcReq)
 }
 
 // CreateBizTargetGroup create biz target group.

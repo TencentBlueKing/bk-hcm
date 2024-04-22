@@ -35,27 +35,30 @@ import (
 
 // TCloudBatchCreateReq tcloud batch create req.
 type TCloudBatchCreateReq struct {
-	AccountID        string                        `json:"account_id" validate:"required"`
-	Region           string                        `json:"region" validate:"required"`
-	LoadBalancerType typelb.TCloudLoadBalancerType `json:"load_balancer_type" validate:"required"`
-	Name             *string                       `json:"name" validate:"required,max=60"`
+	AccountID string  `json:"account_id" validate:"required"`
+	Region    string  `json:"region" validate:"required"`
+	BkBizID   int64   `json:"bk_biz_id" validate:"required"`
+	Name      *string `json:"name" validate:"required,max=60"`
+
+	LoadBalancerType typelb.TCloudLoadBalancerType    `json:"load_balancer_type" validate:"required"`
+	AddressIPVersion *typelb.TCloudIPVersionForCreate `json:"address_ip_version" validate:"required"`
+
 	// 公网	单可用区		传递zones（单元素数组）
 	// 公网	主备可用区	传递zones（单元素数组），以及backup_zones
-	Zones                   []string                         `json:"zones" validate:"omitempty"`
-	BackupZones             []string                         `json:"backup_zones" validate:"omitempty"`
-	AddressIPVersion        *typelb.TCloudIPVersionForCreate `json:"address_ip_version" validate:"required"`
-	CloudVpcID              *string                          `json:"cloud_vpc_id" validate:"required"`
-	CloudSubnetID           *string                          `json:"cloud_subnet_id" validate:"omitempty"`
-	Vip                     *string                          `json:"vip" validate:"omitempty"`
-	CloudEipID              *string                          `json:"cloud_eip_id" validate:"omitempty"`
-	VipIsp                  *string                          `json:"vip_isp" validate:"omitempty"`
-	InternetChargeType      *string                          `json:"internet_charge_type" validate:"omitempty"`
-	InternetMaxBandwidthOut *int64                           `json:"internet_max_bandwidth_out" validate:"omitempty"`
-	BandwidthPackageID      *string                          `json:"bandwidth_package_id" validate:"omitempty"`
-	SlaType                 *string                          `json:"sla_type" validate:"omitempty"`
-	AutoRenew               *bool                            `json:"auto_renew" validate:"omitempty"`
-	RequireCount            *uint64                          `json:"require_count" validate:"omitempty"`
-	Memo                    string                           `json:"memo" validate:"omitempty"`
+	Zones                   []string `json:"zones" validate:"omitempty"`
+	BackupZones             []string `json:"backup_zones" validate:"omitempty"`
+	CloudVpcID              *string  `json:"cloud_vpc_id" validate:"required"`
+	CloudSubnetID           *string  `json:"cloud_subnet_id" validate:"omitempty"`
+	Vip                     *string  `json:"vip" validate:"omitempty"`
+	CloudEipID              *string  `json:"cloud_eip_id" validate:"omitempty"`
+	VipIsp                  *string  `json:"vip_isp" validate:"omitempty"`
+	InternetChargeType      *string  `json:"internet_charge_type" validate:"omitempty"`
+	InternetMaxBandwidthOut *int64   `json:"internet_max_bandwidth_out" validate:"omitempty"`
+	BandwidthPackageID      *string  `json:"bandwidth_package_id" validate:"omitempty"`
+	SlaType                 *string  `json:"sla_type" validate:"omitempty"`
+	AutoRenew               *bool    `json:"auto_renew" validate:"omitempty"`
+	RequireCount            *uint64  `json:"require_count" validate:"omitempty"`
+	Memo                    string   `json:"memo" validate:"omitempty"`
 }
 
 // Validate request.

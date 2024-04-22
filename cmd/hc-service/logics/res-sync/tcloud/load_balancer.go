@@ -118,7 +118,7 @@ func (cli *client) LoadBalancer(kt *kit.Kit, params *SyncBaseParams, opt *SyncLB
 		return nil, err
 	}
 	// 更新变更负载均衡
-	if err = cli.updateLoadBalancer(kt, updateMap); err != nil {
+	if err = cli.updateLoadBalancer(kt, params.AccountID, params.Region, updateMap); err != nil {
 		return nil, err
 	}
 	return new(SyncResult), nil
@@ -255,15 +255,30 @@ func (cli *client) getLoadBalancerRelatedRes(kt *kit.Kit, accountID string, regi
 }
 
 // updateLoadBalancer call data service to update lb
-func (cli *client) updateLoadBalancer(kt *kit.Kit, updateMap map[string]typeslb.TCloudClb) error {
+func (cli *client) updateLoadBalancer(kt *kit.Kit, accountID string, region string,
+	updateMap map[string]typeslb.TCloudClb) error {
 
 	if len(updateMap) == 0 {
 		return nil
 	}
+	var cloudSubnetIDs, cloudVpcIds []string
+	for _, clb := range updateMap {
+		cloudVpcIds = append(cloudVpcIds, cvt.PtrToVal(clb.VpcId))
+		cloudSubnetIDs = append(cloudSubnetIDs, cvt.PtrToVal(clb.SubnetId))
+	}
+
+	vpcMap, subnetMap, err := cli.getLoadBalancerRelatedRes(kt, accountID, region, cloudVpcIds, cloudSubnetIDs)
+	if err != nil {
+		logs.Errorf("fail to get load balancer related res for update db, err: %v, account: %s, "+
+			"vpcIds: %v, cloud subnet ids: %v, rid: %s", err, accountID, cloudVpcIds, cloudSubnetIDs, kt.Rid)
+		return err
+	}
 
 	var updateReq protocloud.TCloudClbBatchUpdateReq
-	updateReq.Lbs = cvt.MapToSlice(updateMap, convCloudToDBUpdate)
 
+	for id, clb := range updateMap {
+		updateReq.Lbs = append(updateReq.Lbs, convCloudToDBUpdate(id, clb, vpcMap, subnetMap))
+	}
 	if err := cli.dbCli.TCloud.LoadBalancer.BatchUpdate(kt, &updateReq); err != nil {
 		logs.Errorf("[%s] call data service to update tcloud load balancer failed, err: %v, rid: %s",
 			enumor.TCloud, err, kt.Rid)
@@ -359,7 +374,7 @@ func convCloudToDBCreate(cloud typeslb.TCloudClb, accountID string, region strin
 	subnetMap map[string]string) protocloud.LbBatchCreate[corelb.TCloudClbExtension] {
 
 	cloudVpcID := cvt.PtrToVal(cloud.VpcId)
-	subnetID := cvt.PtrToVal(cloud.SubnetId)
+	cloudSubnetID := cvt.PtrToVal(cloud.SubnetId)
 	lb := protocloud.LbBatchCreate[corelb.TCloudClbExtension]{
 		CloudID:          cloud.GetCloudID(),
 		Name:             cvt.PtrToVal(cloud.LoadBalancerName),
@@ -371,8 +386,8 @@ func convCloudToDBCreate(cloud typeslb.TCloudClb, accountID string, region strin
 		Region:           region,
 		VpcID:            vpcMap[cloudVpcID].VpcID,
 		CloudVpcID:       cloudVpcID,
-		SubnetID:         subnetMap[subnetID],
-		CloudSubnetID:    subnetID,
+		SubnetID:         subnetMap[cloudSubnetID],
+		CloudSubnetID:    cloudSubnetID,
 		Domain:           cvt.PtrToVal(cloud.LoadBalancerDomain),
 		Status:           strconv.FormatUint(cvt.PtrToVal(cloud.Status), 10),
 		CloudCreatedTime: cvt.PtrToVal(cloud.CreateTime),
@@ -445,9 +460,11 @@ func convertTCloudExtension(cloud typeslb.TCloudClb) *corelb.TCloudClbExtension 
 	return ext
 }
 
-func convCloudToDBUpdate(id string,
-	cloud typeslb.TCloudClb) *protocloud.LoadBalancerExtUpdateReq[corelb.TCloudClbExtension] {
+func convCloudToDBUpdate(id string, cloud typeslb.TCloudClb, vpcMap map[string]*common.VpcDB,
+	subnetMap map[string]string) *protocloud.LoadBalancerExtUpdateReq[corelb.TCloudClbExtension] {
 
+	cloudVpcID := cvt.PtrToVal(cloud.VpcId)
+	cloudSubnetID := cvt.PtrToVal(cloud.SubnetId)
 	lb := protocloud.LoadBalancerExtUpdateReq[corelb.TCloudClbExtension]{
 		ID:               id,
 		Name:             cvt.PtrToVal(cloud.LoadBalancerName),
@@ -457,7 +474,10 @@ func convCloudToDBUpdate(id string,
 		CloudCreatedTime: cvt.PtrToVal(cloud.CreateTime),
 		CloudStatusTime:  cvt.PtrToVal(cloud.StatusTime),
 		CloudExpiredTime: cvt.PtrToVal(cloud.ExpireTime),
-
+		VpcID:            vpcMap[cloudVpcID].VpcID,
+		CloudVpcID:       cloudVpcID,
+		SubnetID:         subnetMap[cloudSubnetID],
+		CloudSubnetID:    cloudSubnetID,
 		Extension: &corelb.TCloudClbExtension{
 			SlaType:                  cloud.SlaType,
 			VipIsp:                   cloud.VipIsp,
@@ -534,6 +554,12 @@ func isLBChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) bool {
 		return true
 	}
 	if db.CloudExpiredTime != cvt.PtrToVal(cloud.ExpireTime) {
+		return true
+	}
+	if db.CloudVpcID != cvt.PtrToVal(cloud.VpcId) {
+		return true
+	}
+	if db.CloudSubnetID != cvt.PtrToVal(cloud.SubnetId) {
 		return true
 	}
 
