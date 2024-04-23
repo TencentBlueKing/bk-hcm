@@ -30,7 +30,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/tools/converter"
+	cvt "hcm/pkg/tools/converter"
 
 	clb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
@@ -87,7 +87,7 @@ func (t *TCloudImpl) CountClb(kt *kit.Kit, region string) (int32, error) {
 	}
 
 	req := clb.NewDescribeLoadBalancersRequest()
-	req.Limit = converter.ValToPtr(int64(1))
+	req.Limit = cvt.ValToPtr(int64(1))
 	resp, err := client.DescribeLoadBalancersWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("count tcloud clb failed, region:%s, req: %+v, err: %v, rid: %s", region, req, err, kt.Rid)
@@ -189,7 +189,7 @@ func (t *TCloudImpl) CreateLoadBalancer(kt *kit.Kit, opt *typelb.TCloudCreateClb
 	}
 	if len(result.SuccessCloudIDs) == 0 {
 		return nil, errf.Newf(errf.CloudVendorError,
-			"no any lb being created, TencentCloudSDK RequestId: %s", converter.PtrToVal(reqID))
+			"no any lb being created, TencentCloudSDK RequestId: %s", cvt.PtrToVal(reqID))
 	}
 	return result, nil
 }
@@ -249,7 +249,10 @@ func (t *TCloudImpl) formatCreateClbRequest(opt *typelb.TCloudCreateClbOption) *
 	// 负载均衡实例的网络类型。OPEN：公网属性， INTERNAL：内网属性。
 	req.LoadBalancerType = common.StringPtr(string(opt.LoadBalancerType))
 	// 仅适用于公网负载均衡, IP版本
-	req.AddressIPVersion = (*string)(opt.AddressIPVersion)
+	if opt.AddressIPVersion == "" {
+		opt.AddressIPVersion = typelb.IPV4IPVersion
+	}
+	req.AddressIPVersion = (*string)(cvt.ValToPtr(opt.AddressIPVersion))
 	// 负载均衡后端目标设备所属的网络
 	req.VpcId = opt.VpcID
 	// 负载均衡实例的类型。1：通用的负载均衡实例，目前只支持传入1。
@@ -280,7 +283,7 @@ func (t *TCloudImpl) formatCreateClbRequest(opt *typelb.TCloudCreateClbOption) *
 	req.SnatIps = opt.SnatIps
 
 	// 使用默认ISP时传递空即可
-	ispVal := converter.PtrToVal(opt.VipIsp)
+	ispVal := cvt.PtrToVal(opt.VipIsp)
 	if ispVal != "" && ispVal != typelb.TCloudDefaultISP {
 		req.VipIsp = opt.VipIsp
 	}
@@ -325,14 +328,14 @@ func (h *createClbPollingHandler) Done(clbStatusMap map[string]*clb.DescribeTask
 		if status.Status == nil {
 			return false, nil
 		}
-		switch converter.PtrToVal(status.Status) {
+		switch cvt.PtrToVal(status.Status) {
 		case CLBTaskStatusRunning:
 			// 还有任务在运行则是没有成功
 			return false, nil
 		case CLBTaskStatusFail:
-			result.FailedCloudIDs = converter.PtrToSlice(status.LoadBalancerIds)
+			result.FailedCloudIDs = cvt.PtrToSlice(status.LoadBalancerIds)
 		case CLBTaskStatusSuccess:
-			result.SuccessCloudIDs = converter.PtrToSlice(status.LoadBalancerIds)
+			result.SuccessCloudIDs = cvt.PtrToSlice(status.LoadBalancerIds)
 		}
 	}
 	return true, result
@@ -346,7 +349,7 @@ func (h *createClbPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, requestI
 	result := make(map[string]*clb.DescribeTaskStatusResponseParams)
 	// 查询对应异步任务状态
 	for _, reqID := range requestIDs {
-		taskOpt.TaskId = converter.PtrToVal(reqID)
+		taskOpt.TaskId = cvt.PtrToVal(reqID)
 		if taskOpt.TaskId == "" {
 			return nil, errors.New("empty request ID")
 		}
@@ -440,7 +443,7 @@ func (t *TCloudImpl) UpdateLoadBalancer(kt *kit.Kit, opt *typelb.TCloudUpdateOpt
 
 	req := clb.NewModifyLoadBalancerAttributesRequest()
 
-	req.LoadBalancerId = converter.ValToPtr(opt.LoadBalancerId)
+	req.LoadBalancerId = cvt.ValToPtr(opt.LoadBalancerId)
 	req.LoadBalancerPassToTarget = opt.LoadBalancerPassToTarget
 	req.LoadBalancerName = opt.LoadBalancerName
 	req.TargetRegionInfo = opt.TargetRegionInfo
@@ -492,10 +495,10 @@ func (t *TCloudImpl) CLBDescribeTaskStatus(kt *kit.Kit, opt *typelb.TCloudDescri
 	}
 	req := clb.NewDescribeTaskStatusRequest()
 	if opt.TaskId != "" {
-		req.TaskId = converter.ValToPtr(opt.TaskId)
+		req.TaskId = cvt.ValToPtr(opt.TaskId)
 	}
 	if opt.DealName != "" {
-		req.DealName = converter.ValToPtr(opt.DealName)
+		req.DealName = cvt.ValToPtr(opt.DealName)
 	}
 
 	resp, err := client.DescribeTaskStatusWithContext(kt.Ctx, req)
@@ -504,4 +507,76 @@ func (t *TCloudImpl) CLBDescribeTaskStatus(kt *kit.Kit, opt *typelb.TCloudDescri
 		return nil, err
 	}
 	return resp.Response, nil
+}
+
+// InquiryPriceLoadBalancer 创建负载均衡实例询价 https://cloud.tencent.com/document/product/214/98697
+func (t *TCloudImpl) InquiryPriceLoadBalancer(kt *kit.Kit, opt *typelb.TCloudCreateClbOption) (*typelb.TCloudLBPrice,
+	error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "inquiry price create load balancer option can not be nil")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.ClbClient(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("init tencent cloud clb client failed, region: %s, err: %v", opt.Region, err)
+	}
+	req := clb.NewInquiryPriceCreateLoadBalancerRequest()
+	req.LoadBalancerType = cvt.ValToPtr(string(opt.LoadBalancerType))
+	// 留空默认按量付费
+	if opt.LoadBalancerChargeType == "" {
+		opt.LoadBalancerChargeType = typelb.Postpaid
+	}
+	req.LoadBalancerChargeType = cvt.ValToPtr(string(opt.LoadBalancerChargeType))
+	req.GoodsNum = opt.Number
+	req.ZoneId = opt.ZoneID
+	req.SlaType = opt.SlaType
+	if opt.AddressIPVersion == "" {
+		opt.AddressIPVersion = typelb.IPV4IPVersion
+	}
+	req.AddressIPVersion = (*string)(cvt.ValToPtr(opt.AddressIPVersion))
+	req.VipIsp = opt.VipIsp
+
+	if opt.InternetChargeType != nil || opt.InternetMaxBandwidthOut != nil {
+		req.InternetAccessible = &clb.InternetAccessible{
+			InternetChargeType:      opt.InternetChargeType,
+			InternetMaxBandwidthOut: opt.InternetMaxBandwidthOut,
+			BandwidthpkgSubType:     opt.BandwidthpkgSubType,
+		}
+	}
+
+	resp, err := client.InquiryPriceCreateLoadBalancerWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("tencent cloud describe task status failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
+		return nil, err
+	}
+
+	if resp.Response == nil || resp.Response.Price == nil {
+		return nil, nil
+	}
+	price := &typelb.TCloudLBPrice{
+		InstancePrice:  convItemPrice(resp.Response.Price.InstancePrice),
+		BandwidthPrice: convItemPrice(resp.Response.Price.BandwidthPrice),
+		LcuPrice:       convItemPrice(resp.Response.Price.LcuPrice),
+	}
+
+	return price, nil
+}
+
+func convItemPrice(p *clb.ItemPrice) *typelb.ItemPrice {
+	if p == nil {
+		return nil
+	}
+	return &typelb.ItemPrice{
+		UnitPrice:         p.UnitPrice,
+		ChargeUnit:        p.ChargeUnit,
+		OriginalPrice:     p.OriginalPrice,
+		DiscountPrice:     p.DiscountPrice,
+		UnitPriceDiscount: p.UnitPriceDiscount,
+		Discount:          p.Discount,
+	}
 }

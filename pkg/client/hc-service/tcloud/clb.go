@@ -191,9 +191,15 @@ func (c *ClbClient) ListTargetHealth(kt *kit.Kit, req *hcproto.TCloudTargetHealt
 }
 
 // QueryListenerTargetsByCloudIDs 查询监听器下的rs
-func (c *ClbClient) QueryListenerTargetsByCloudIDs(kt *kit.Kit, req *hcproto.QueryTCloudListenerTargets) (*[]typelb.
-	TCloudListenerTarget, error) {
+func (c *ClbClient) QueryListenerTargetsByCloudIDs(kt *kit.Kit, req *hcproto.QueryTCloudListenerTargets) (
+	*[]typelb.TCloudListenerTarget, error) {
 
 	return common.Request[hcproto.QueryTCloudListenerTargets, []typelb.TCloudListenerTarget](
 		c.client, http.MethodPost, kt, req, "/targets/query_by_cloud_ids")
+}
+
+// InquiryPrice 负载均衡购买询价
+func (c *ClbClient) InquiryPrice(kt *kit.Kit, req *hcproto.TCloudBatchCreateReq) (*typelb.TCloudLBPrice, error) {
+	return common.Request[hcproto.TCloudBatchCreateReq, typelb.TCloudLBPrice](
+		c.client, http.MethodPost, kt, req, "/load_balancers/prices/inquiry")
 }

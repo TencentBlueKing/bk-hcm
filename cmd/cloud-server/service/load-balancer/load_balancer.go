@@ -46,6 +46,7 @@ func InitService(c *capability.Capability) {
 	// clb apis in res
 	h.Add("ListLoadBalancer", http.MethodPost, "/load_balancers/list", svc.ListLoadBalancer)
 	h.Add("BatchCreateLB", http.MethodPost, "/load_balancers/create", svc.BatchCreateLB)
+	h.Add("InquiryPriceLoadBalancer", http.MethodPost, "/load_balancers/prices/inquiry", svc.InquiryPriceLoadBalancer)
 	h.Add("AssignLbToBiz", http.MethodPost, "/load_balancers/assign/bizs", svc.AssignLbToBiz)
 	h.Add("GetLoadBalancer", http.MethodGet, "/load_balancers/{id}", svc.GetLoadBalancer)
 	h.Add("TCloudDescribeResources", http.MethodPost,

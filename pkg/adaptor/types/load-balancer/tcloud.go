@@ -101,6 +101,16 @@ const (
 	SuccessStatus TCloudLoadBalancerStatus = 1
 )
 
+// TCloudLoadBalancerChargeType 实例计费类型。
+type TCloudLoadBalancerChargeType string
+
+const (
+	// Prepaid 预付费，即包年包月
+	Prepaid TCloudLoadBalancerChargeType = "PREPAID"
+	// Postpaid 按量计费
+	Postpaid TCloudLoadBalancerChargeType = "POSTPAID"
+)
+
 // -------------------------- List Clb--------------------------
 
 // TCloudListOption defines options to list tcloud clb instances.
@@ -229,8 +239,8 @@ type TCloudCreateClbOption struct {
 	VpcID                    *string                    `json:"vpc_id" validate:"omitempty"`
 	SubnetID                 *string                    `json:"subnet_id" validate:"omitempty"`
 	ProjectID                *int64                     `json:"project_id" validate:"omitempty"`
-	AddressIPVersion         *TCloudIPVersionForCreate  `json:"address_ip_version" validate:"omitempty"`
-	Number                   *uint64                    `json:"number" validate:"omitempty"`
+	AddressIPVersion         TCloudIPVersionForCreate   `json:"address_ip_version" validate:"omitempty"`
+	Number                   *uint64                    `json:"number" validate:"omitempty,min=1"`
 	MasterZoneID             *string                    `json:"master_zone_id" validate:"omitempty"`
 	ZoneID                   *string                    `json:"zone_id" validate:"omitempty"`
 	VipIsp                   *string                    `json:"vip_isp" validate:"omitempty"`
@@ -253,6 +263,9 @@ type TCloudCreateClbOption struct {
 	InternetChargeType      *string `json:"internet_charge_type"`
 	InternetMaxBandwidthOut *int64  `json:"internet_max_bandwidth_out" `
 	BandwidthpkgSubType     *string `json:"bandwidthpkg_sub_type" validate:"omitempty"`
+
+	// 不填默认按量付费
+	LoadBalancerChargeType TCloudLoadBalancerChargeType `json:"load_balancer_charge_type"`
 }
 
 // Validate tcloud clb create option.
@@ -625,7 +638,7 @@ type BatchTarget struct {
 	Port *int64 `json:"port,omitnil" `
 	// 后端服务的类型，可取：CVM（云服务器）、ENI（弹性网卡）；作为入参时，目前本参数暂不生效。
 	// 注意：此字段可能返回 null，表示取不到有效值。
-	Type *string `json:"Type,omitnil" name:"Type"`
+	Type *string `json:"Type,omitnil"`
 	// 绑定CVM时需要传入此参数，代表CVM的唯一 ID，可通过 DescribeInstances 接口返回字段中的 InstanceId 字段获取。表示绑定主网卡主IP。
 	// 注意：参数 InstanceId、EniIp 有且只能传入其中一个参数。
 	InstanceId *string `json:"instance_id,omitnil"`
@@ -726,4 +739,48 @@ func (opt TCloudListTargetHealthOption) Validate() error {
 // TCloudTargetHealth for target health Instance
 type TCloudTargetHealth struct {
 	*tclb.LoadBalancerHealth
+}
+
+// ItemPrice Price for tcloud load balancer
+type ItemPrice struct {
+	// 后付费单价，单位：元。
+	// 注意：此字段可能返回 null，表示取不到有效值。
+	UnitPrice *float64 `json:"unit_price,omitnil"`
+
+	// 后续计价单元，可取值范围：
+	// HOUR：表示计价单元是按每小时来计算。当前涉及该计价单元的场景有：实例按小时后付费（POSTPAID_BY_HOUR）、带宽按小时后付费（BANDWIDTH_POSTPAID_BY_HOUR）；
+	// GB：表示计价单元是按每GB来计算。当前涉及该计价单元的场景有：流量按小时后付费（TRAFFIC_POSTPAID_BY_HOUR）。
+	// 注意：此字段可能返回 null，表示取不到有效值。
+	ChargeUnit *string `json:"charge_unit,omitnil"`
+
+	// 预支费用的原价，单位：元。
+	// 注意：此字段可能返回 null，表示取不到有效值。
+	OriginalPrice *float64 `json:"original_price,omitnil"`
+
+	// 预支费用的折扣价，单位：元。
+	// 注意：此字段可能返回 null，表示取不到有效值。
+	DiscountPrice *float64 `json:"discount_price,omitnil"`
+
+	// 后付费的折扣单价，单位:元
+	// 注意：此字段可能返回 null，表示取不到有效值。
+	UnitPriceDiscount *float64 `json:"unit_price_discount,omitnil"`
+
+	// 折扣，如20.0代表2折。
+	// 注意：此字段可能返回 null，表示取不到有效值。
+	Discount *float64 `json:"discount,omitnil"`
+}
+
+// TCloudLBPrice tcloud load balancer price info
+type TCloudLBPrice struct {
+	// 描述了实例价格。
+	// 注意：此字段可能返回 null，表示取不到有效值。
+	InstancePrice *ItemPrice `json:"instance_price,omitnil"`
+
+	// 描述了网络价格。
+	// 注意：此字段可能返回 null，表示取不到有效值。
+	BandwidthPrice *ItemPrice `json:"bandwidth_price,omitnil"`
+
+	// 描述了lcu价格。
+	// 注意：此字段可能返回 null，表示取不到有效值。
+	LcuPrice *ItemPrice `json:"lcu_price,omitnil"`
 }
