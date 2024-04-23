@@ -3,11 +3,12 @@ import './index.scss';
 import DetailHeader from '../../common/header/detail-header';
 import { useRoute } from 'vue-router';
 import { Success } from 'bkui-vue/lib/icon';
-import { Button, Select, TimeLine } from 'bkui-vue';
+import { Button, Select, Tab, TimeLine } from 'bkui-vue';
 import { useTable } from '@/hooks/useTable/useTable';
 import { useBusinessStore } from '@/store';
 import { useFlowNode } from './useFlowNode';
 const { Option } = Select;
+const { TabPanel } = Tab;
 
 export default defineComponent({
   setup() {
@@ -20,7 +21,9 @@ export default defineComponent({
       flow,
       tasks,
     });
+    const activeTab = ref('result');
     const actionId = ref('1');
+    const isRetryLoading = ref(false);
     const { CommonTable } = useTable({
       searchOptions: {
         searchData: [
@@ -106,6 +109,30 @@ export default defineComponent({
       },
     );
 
+    const handleRetryTask = async () => {
+      isRetryLoading.value = true;
+      try {
+        await businessStore.excuteTask({
+          lb_id: flow.value.id,
+          flow_id: flow.value.id,
+        });
+      } finally {
+        isRetryLoading.value = false;
+      }
+    };
+
+    const handleEndTask = async () => {
+      isRetryLoading.value = true;
+      try {
+        await businessStore.endTask({
+          lb_id: flow.value.id,
+          flow_id: flow.value.id,
+        });
+      } finally {
+        isRetryLoading.value = false;
+      }
+    };
+
     return () => (
       <div class={'record-detail-container'}>
         <DetailHeader>
@@ -129,8 +156,13 @@ export default defineComponent({
             个批次，可在每个批次查看具体状态
           </span>
           <Button
+            loading={isRetryLoading.value}
             class={'info-card-btn'}
-            onClick={() => (isEnd.value = !isEnd.value)}
+            onClick={() => {
+              isEnd.value = !isEnd.value;
+              if (isEnd.value) handleRetryTask();
+              else handleEndTask();
+            }}
             theme={isEnd.value ? 'primary' : null}>
             {isEnd.value ? '重新执行' : '终止任务'}
           </Button>
@@ -140,19 +172,21 @@ export default defineComponent({
             <p class={'main-side-card-title'}>执行步骤</p>
             <TimeLine class={'main-side-card-timeline'} list={nodes.value}></TimeLine>
           </div>
-          <div class={'mian-list-card'}>
-            <CommonTable>
-              {{
-                operation: () => (
-                  <Select v-model={actionId.value} clearable={false}>
-                    {flowInfo.value.actions?.map((id) => (
-                      <Option name={`第${id}批`} id={id} key={id}></Option>
-                    ))}
-                  </Select>
-                ),
-              }}
-            </CommonTable>
-          </div>
+          <Tab type='card-grid' class={'mian-list-card'} v-model:active={activeTab.value}>
+            <TabPanel name={'result'} label={'执行结果'}>
+              <CommonTable>
+                {{
+                  operation: () => (
+                    <Select v-model={actionId.value} clearable={false}>
+                      {flowInfo.value.actions?.map((id) => (
+                        <Option name={`第${id}批`} id={id} key={id}></Option>
+                      ))}
+                    </Select>
+                  ),
+                }}
+              </CommonTable>
+            </TabPanel>
+          </Tab>
         </div>
       </div>
     );
