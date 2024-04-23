@@ -69,6 +69,19 @@ const (
 // 说明：取值为IPV6表示为IPV6 NAT64版本；取值为IPv6FullChain，表示为IPv6版本。
 type TCloudIPVersionForCreate string
 
+// Convert 转换为中的含义 `enumor.IPAddressType`
+func (c TCloudIPVersionForCreate) Convert() enumor.IPAddressType {
+	switch c {
+	case IPV4IPVersion:
+		return enumor.Ipv4
+	case IPV6NAT64IPVersion:
+		return enumor.Ipv6Nat64
+	case IPV6FullChainIPVersion:
+		return enumor.Ipv6
+	}
+	return enumor.IPAddressType("UNKNOWN_" + string(c))
+}
+
 const (
 	// IPV4IPVersion IPV4版本
 	IPV4IPVersion TCloudIPVersionForCreate = "IPV4"

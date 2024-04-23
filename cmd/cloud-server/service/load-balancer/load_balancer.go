@@ -43,7 +43,7 @@ func InitService(c *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	// clb apis in biz
+	// clb apis in res
 	h.Add("ListLoadBalancer", http.MethodPost, "/load_balancers/list", svc.ListLoadBalancer)
 	h.Add("BatchCreateLB", http.MethodPost, "/load_balancers/create", svc.BatchCreateLB)
 	h.Add("AssignLbToBiz", http.MethodPost, "/load_balancers/assign/bizs", svc.AssignLbToBiz)
@@ -63,6 +63,7 @@ func InitService(c *capability.Capability) {
 }
 
 func bizService(h *rest.Handler, svc *lbSvc) {
+	h.Add("BizBatchCreateLB", http.MethodPost, "/load_balancers/create", svc.BizBatchCreateLB)
 	h.Add("UpdateBizTCloudLoadBalancer", http.MethodPatch,
 		"/vendors/tcloud/load_balancers/{id}", svc.UpdateBizTCloudLoadBalancer)
 	h.Add("ListBizLoadBalancer", http.MethodPost, "/load_balancers/list", svc.ListBizLoadBalancer)

@@ -81,11 +81,14 @@ func batchUpdateLoadBalancer[T corelb.Extension](cts *rest.Contexts, svc *lbSvc)
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
 		for _, lb := range req.Lbs {
 			update := &tablelb.LoadBalancerTable{
-				Name:    lb.Name,
-				BkBizID: lb.BkBizID,
-				Domain:  lb.Domain,
-				Status:  lb.Status,
-
+				Name:                 lb.Name,
+				BkBizID:              lb.BkBizID,
+				Domain:               lb.Domain,
+				Status:               lb.Status,
+				VpcID:                lb.VpcID,
+				CloudVpcID:           lb.CloudVpcID,
+				SubnetID:             lb.SubnetID,
+				CloudSubnetID:        lb.CloudSubnetID,
 				IPVersion:            string(lb.IPVersion),
 				PrivateIPv4Addresses: lb.PrivateIPv4Addresses,
 				PrivateIPv6Addresses: lb.PrivateIPv6Addresses,
