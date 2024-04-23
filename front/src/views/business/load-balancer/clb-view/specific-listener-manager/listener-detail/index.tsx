@@ -3,7 +3,7 @@ import { computed, defineComponent, reactive, watchEffect } from 'vue';
 import { Button, Tag } from 'bkui-vue';
 import StatusLoading from '@/assets/image/status_loading.png';
 // import stores
-import { useResourceStore } from '@/store';
+import { useResourceStore, useAccountStore } from '@/store';
 // import hooks
 import { useI18n } from 'vue-i18n';
 // import utils
@@ -20,6 +20,7 @@ export default defineComponent({
     const { t } = useI18n();
     // use stores
     const resourceStore = useResourceStore();
+    const accountStore = useAccountStore();
 
     // define data
     const listenerDetail = reactive<any>({}); // 监听器详情
@@ -58,8 +59,25 @@ export default defineComponent({
             label: t('目标组'),
             value: () => (
               <div class='target-group-wrap'>
-                <span class='link-text-btn'>{listenerDetail.target_group_name}</span>
-                {true && <img class='loading-icon spin-icon' src={StatusLoading} alt='' />}
+                {/* 根据有无 target_group_id 来判断监听器是否绑定目标组 */}
+                {listenerDetail.target_group_id ? (
+                  <>
+                    <span
+                      class='link-text-btn'
+                      onClick={() => {
+                        window.open(
+                          `/#/business/loadbalancer/group-view/${listenerDetail.target_group_id}?bizs=${accountStore.bizs}&type=detail`,
+                          '_blank',
+                          'noopener,noreferrer',
+                        );
+                      }}>
+                      {listenerDetail.target_group_name}
+                    </span>
+                    <img class='loading-icon spin-icon' src={StatusLoading} alt='' />
+                  </>
+                ) : (
+                  '--'
+                )}
               </div>
             ),
             sub_hidden: ['HTTP', 'HTTPS'].includes(listenerDetail.protocol),

@@ -35,6 +35,7 @@ export default defineComponent({
       require_count: 1,
       name: '',
       vendor: null,
+      account_type: 'STANDARD',
     });
 
     // use custom hooks

@@ -63,7 +63,7 @@ export default (treeData: Ref) => {
       ),
     );
     // 如果是加载负载均衡节点, 则还需要请求对应负载均衡下的监听器数量接口
-    if (!_item) {
+    if (!_item && detailsRes.data.details > 0) {
       detailsRes.data.details = await asyncGetListenerCount(detailsRes.data.details);
     }
 

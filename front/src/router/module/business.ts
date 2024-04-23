@@ -324,7 +324,7 @@ const businesseMenus: RouteRecordRaw[] = [
             children: [
               {
                 path: '',
-                name: LBRouteName.all,
+                name: LBRouteName.allLbs,
                 component: () => import('@/views/business/load-balancer/clb-view/all-clbs-manager/index'),
                 props(route) {
                   return route.query;
@@ -372,6 +372,25 @@ const businesseMenus: RouteRecordRaw[] = [
             path: 'group-view',
             name: 'target-group-view',
             component: () => import('@/views/business/load-balancer/group-view/index'),
+            children: [
+              {
+                path: '',
+                name: LBRouteName.allTgs,
+                component: () => import('@/views/business/load-balancer/group-view/all-groups-manager/index'),
+                props(route) {
+                  return route.query;
+                },
+              },
+              {
+                path: ':id',
+                name: LBRouteName.tg,
+                component: () =>
+                  import('@/views/business/load-balancer/group-view/specific-target-group-manager/index'),
+                props(route) {
+                  return { ...route.params, ...route.query };
+                },
+              },
+            ],
           },
         ],
         meta: {

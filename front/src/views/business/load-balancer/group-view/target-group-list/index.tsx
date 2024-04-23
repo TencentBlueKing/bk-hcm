@@ -1,4 +1,4 @@
-import { defineComponent, onMounted, ref } from 'vue';
+import { defineComponent, onMounted, ref, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 // import components
 import { Input, Message, VirtualRender } from 'bkui-vue';
@@ -8,15 +8,17 @@ import { useLoadBalancerStore, useAccountStore, useBusinessStore } from '@/store
 // import hooks
 import useMoreActionDropdown from '@/hooks/useMoreActionDropdown';
 // import utils
+import { throttle } from 'lodash';
 import bus from '@/common/bus';
+// import constants
+import { LBRouteName } from '@/constants';
 // import static resources
 import allIcon from '@/assets/image/all-lb.svg';
 import './index.scss';
 
 export default defineComponent({
   name: 'TargetGroupList',
-  emits: ['changeActiveType'],
-  setup(_, { emit }) {
+  setup() {
     // use hooks
     const router = useRouter();
     const route = useRoute();
@@ -28,16 +30,20 @@ export default defineComponent({
     // 搜索相关
     const searchValue = ref('');
 
+    const activeTargetGroupId = ref(''); // 当前选中的目标组id
     const allTargetGroupsItem = { type: 'all', isDropdownListShow: false }; // 全部目标组item
     // handler - 切换目标组
-    const handleTypeChange = (type: 'all' | 'specific', targetGroupId: string) => {
-      if (targetGroupId === route.query.tgId) return;
-      emit('changeActiveType', type);
+    const handleTypeChange = (targetGroupId: string) => {
+      // 如果两个目标组id相同，则不做切换
+      if (targetGroupId === activeTargetGroupId.value) return;
+      // 设置当前选中的目标组id
+      activeTargetGroupId.value = targetGroupId;
       loadBalancerStore.setTargetGroupId(targetGroupId);
-      // 将 target-group-id 放入路由中
+      // 导航
       router.push({
-        path: route.path,
-        query: { ...route.query, tgId: targetGroupId || undefined },
+        name: targetGroupId ? LBRouteName.tg : LBRouteName.allTgs,
+        query: { ...route.query, type: targetGroupId ? route.query.type : undefined },
+        params: { id: targetGroupId || undefined },
       });
     };
 
@@ -50,7 +56,7 @@ export default defineComponent({
           // 重新拉取目标组list
           loadBalancerStore.getTargetGroupList();
           // 跳转至全部目标组下
-          handleTypeChange('all', '');
+          handleTypeChange('');
         });
       });
     };
@@ -65,9 +71,27 @@ export default defineComponent({
     };
     const { showDropdownList, currentPopBoundaryNodeKey } = useMoreActionDropdown(typeMenuMap);
 
+    // 滚动触底加载下一页的目标组数据
+    const scrollEndHandler = throttle((endIndex: number) => {
+      if (endIndex === loadBalancerStore.allTargetGroupList.length) {
+        // 如果 endIndex 等于总数，说明已经到底了，需要拉取更多数据
+        loadBalancerStore.getNextTargetGroupList();
+      }
+    }, 300);
+
     onMounted(() => {
       loadBalancerStore.getTargetGroupList();
     });
+
+    watch(
+      () => route.params.id,
+      (val) => {
+        // 高亮状态保持
+        if (!val) activeTargetGroupId.value = '';
+        else activeTargetGroupId.value = val as string;
+      },
+      { immediate: true },
+    );
 
     return () => (
       <div class='target-group-list'>
@@ -76,8 +100,8 @@ export default defineComponent({
         </div>
         <div class='group-list-wrap'>
           <div
-            class={`all-groups-wrap${!route.query.tgId ? ' selected' : ''}`}
-            onClick={() => handleTypeChange('all', '')}>
+            class={`all-groups-wrap${!activeTargetGroupId.value ? ' selected' : ''}`}
+            onClick={() => handleTypeChange('')}>
             <div class='base-info'>
               <img src={allIcon} alt='' class='prefix-icon' />
               <span class='text'>全部目标组</span>
@@ -89,15 +113,19 @@ export default defineComponent({
               </div>
             </div>
           </div>
-          <VirtualRender list={loadBalancerStore.allTargetGroupList} height='calc(100% - 36px)' lineHeight={36}>
+          <VirtualRender
+            list={loadBalancerStore.allTargetGroupList}
+            height='calc(100% - 36px)'
+            lineHeight={36}
+            onContentScroll={([, pagination]) => scrollEndHandler(pagination.endIndex)}>
             {{
               default: ({ data }: any) => {
                 return data.map((item: any) => {
                   return (
                     <div
                       key={item.id}
-                      class={`group-item-wrap${route.query.tgId === item.id ? ' selected' : ''}`}
-                      onClick={() => handleTypeChange('specific', item.id)}>
+                      class={`group-item-wrap${activeTargetGroupId.value === item.id ? ' selected' : ''}`}
+                      onClick={() => handleTypeChange(item.id)}>
                       <div class='base-info'>
                         <img src={allIcon} alt='' class='prefix-icon' />
                         <span class='text'>{item.name}</span>

@@ -1,4 +1,5 @@
 import { defineComponent, ref, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 // import components
 import { Button, Message, Tag } from 'bkui-vue';
 import { Plus, Spinner } from 'bkui-vue/lib/icon';
@@ -15,7 +16,7 @@ import AddOrUpdateDomainSideslider from '../../components/AddOrUpdateDomainSides
 // import utils
 import bus from '@/common/bus';
 // import constants
-import { APPLICATION_LAYER_LIST } from '@/constants';
+import { APPLICATION_LAYER_LIST, LBRouteName } from '@/constants';
 import './index.scss';
 
 export default defineComponent({
@@ -23,6 +24,8 @@ export default defineComponent({
   props: { id: String, type: String, protocol: String },
   setup(props) {
     // use hooks
+    const router = useRouter();
+    const route = useRoute();
     const { t } = useI18n();
     const isBatchDeleteLoading = ref(false);
     // use stores
@@ -65,7 +68,17 @@ export default defineComponent({
         render: ({ data, cell }: { data: any; cell: string }) => {
           return (
             <div class='set-default-operation-wrap'>
-              <span class='cell-value'>{cell}</span>
+              <span
+                class='cell-value'
+                onClick={() => {
+                  router.push({
+                    name: LBRouteName.domain,
+                    params: { id: cell },
+                    query: { ...route.query, listener_id: route.params.id, type: undefined, protocol: undefined },
+                  });
+                }}>
+                {cell}
+              </span>
               {data.domain === defaultDomain.value ? (
                 <Tag theme='info' class='default-tag'>
                   {t('默认')}

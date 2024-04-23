@@ -4,25 +4,32 @@ import { Tab } from 'bkui-vue';
 import ListenerList from './listener-list';
 import TargetGroupDetail from './target-group-detail';
 import HealthCheckupPage from './health-checkup';
+// import stores
+import { useBusinessStore, useLoadBalancerStore } from '@/store';
+// import hooks
+import useActiveTab from '@/hooks/useActiveTab';
 import './index.scss';
-import { useBusinessStore } from '@/store';
-import { useRoute } from 'vue-router';
 
 const { TabPanel } = Tab;
 
-type TabType = 'listener' | 'info' | 'health';
+enum TabType {
+  list = 'list',
+  detail = 'detail',
+  health = 'health',
+}
 
 export default defineComponent({
   name: 'SpecificTargetGroupManager',
-  setup() {
+  props: { id: String },
+  setup(props) {
     const businessStore = useBusinessStore();
-    const route = useRoute();
+    const loadBalancerStore = useLoadBalancerStore();
     const tgDetail = ref({});
-    const activeTab = ref<TabType>('listener');
+    const { activeTab, handleActiveTabChange } = useActiveTab(TabType.list);
     const tabList = [
-      { name: 'listener', label: '绑定的监听器', component: ListenerList },
-      { name: 'info', label: '基本信息', component: TargetGroupDetail },
-      { name: 'health', label: '健康检查', component: HealthCheckupPage },
+      { name: TabType.list, label: '绑定的监听器', component: ListenerList },
+      { name: TabType.detail, label: '基本信息', component: TargetGroupDetail },
+      { name: TabType.health, label: '健康检查', component: HealthCheckupPage },
     ];
 
     const getTargetGroupDetail = async (id: string) => {
@@ -31,11 +38,12 @@ export default defineComponent({
     };
 
     watch(
-      () => route.query.tgId,
+      () => props.id,
       (id) => {
-        if (id) {
-          getTargetGroupDetail(id as string);
-        }
+        if (!id) return;
+        // 目标组id状态保持
+        loadBalancerStore.setTargetGroupId(id);
+        getTargetGroupDetail(id);
       },
       {
         immediate: true,
@@ -43,15 +51,21 @@ export default defineComponent({
     );
 
     return () => (
-      <Tab class='manager-tab-wrap' v-model:active={activeTab.value} type='card-grid'>
-        {tabList.map((tab) => (
-          <TabPanel key={tab.name} name={tab.name} label={tab.label}>
-            <div class='common-card-wrap'>
-              {<tab.component detail={tgDetail.value} getTargetGroupDetail={getTargetGroupDetail} />}
-            </div>
-          </TabPanel>
-        ))}
-      </Tab>
+      <div class='specific-target-group-manager'>
+        <Tab
+          class='manager-tab-wrap'
+          v-model:active={activeTab.value}
+          type='card-grid'
+          onChange={handleActiveTabChange}>
+          {tabList.map((tab) => (
+            <TabPanel key={tab.name} name={tab.name} label={tab.label}>
+              <div class='common-card-wrap'>
+                {<tab.component detail={tgDetail.value} getTargetGroupDetail={getTargetGroupDetail} />}
+              </div>
+            </TabPanel>
+          ))}
+        </Tab>
+      </div>
     );
   },
 });

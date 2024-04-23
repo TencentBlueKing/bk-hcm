@@ -1,4 +1,4 @@
-import { IPageQuery, QueryRuleOPEnum } from '@/typings';
+import { QueryRuleOPEnum } from '@/typings';
 import { defineStore } from 'pinia';
 import { Ref, reactive, ref } from 'vue';
 import { useResourceStore } from './resource';
@@ -48,11 +48,13 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
 
   // state - 目标组左侧列表
   const allTargetGroupList = ref([]);
-  const targetGroupListPageQuery = reactive<IPageQuery>({
+  const targetGroupListPageQuery = reactive({
     start: 0,
     limit: 50,
+    count: 0,
   });
   const getTargetGroupList = async () => {
+    // 获取数据
     const [detailRes, countRes] = await Promise.all(
       [false, true].map((isCount) =>
         resourceStore.list(
@@ -71,8 +73,33 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
         ),
       ),
     );
-    allTargetGroupList.value = detailRes.data.details;
+    allTargetGroupList.value = [...allTargetGroupList.value, ...detailRes.data.details];
     targetGroupListPageQuery.count = countRes.data.count;
+  };
+  // 目标组list滚动触底, 获取下一页数据
+  const getNextTargetGroupList = async () => {
+    // 判断是否有下一页数据
+    if (allTargetGroupList.value.length >= targetGroupListPageQuery.count) return;
+    // 累加 start
+    targetGroupListPageQuery.start += targetGroupListPageQuery.limit;
+    // 获取数据
+    await getTargetGroupList();
+  };
+
+  /**
+   * 刷新目标组列表
+   */
+  const refreshTargetGroupList = async () => {
+    // 重置分页参数
+    Object.assign(targetGroupListPageQuery, {
+      start: 0,
+      limit: 50,
+      count: 0,
+    });
+    // 重置数据
+    allTargetGroupList.value = [];
+    // 获取数据
+    await getTargetGroupList();
   };
 
   return {
@@ -81,6 +108,8 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
     currentSelectedTreeNode,
     setCurrentSelectedTreeNode,
     getTargetGroupList,
+    getNextTargetGroupList,
+    refreshTargetGroupList,
     allTargetGroupList,
     updateCount,
     setUpdateCount,
