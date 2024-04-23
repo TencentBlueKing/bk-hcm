@@ -1,5 +1,5 @@
 import { defineComponent } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 // import components
 import { Button } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
@@ -23,6 +23,7 @@ export default defineComponent({
   setup() {
     // use hooks
     const router = useRouter();
+    const route = useRoute();
     const { t } = useI18n();
     const { whereAmI } = useWhereAmI();
     const { selections, handleSelectionChange, resetSelections } = useSelection();
@@ -72,6 +73,7 @@ export default defineComponent({
     const handleApply = () => {
       router.push({
         path: '/business/service/service-apply/clb',
+        query: { ...route.query },
       });
     };
 

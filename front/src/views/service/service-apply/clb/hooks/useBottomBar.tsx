@@ -1,10 +1,12 @@
 import { computed, defineComponent, ref } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 // import components
 import { Button, Message, Popover, Table } from 'bkui-vue';
 // import stores
 import { useResourceStore } from '@/store';
 // import types
 import { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
+import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
 // import utils
 import { useI18n } from 'vue-i18n';
 
@@ -13,6 +15,9 @@ const { Column } = Table;
 // apply-clb, 底栏
 export default (formModel: ApplyClbModel, formRef: any) => {
   // use hooks
+  const router = useRouter();
+  const route = useRoute();
+  const { whereAmI } = useWhereAmI();
   const { t } = useI18n();
   // use stores
   const resourceStore = useResourceStore();
@@ -70,9 +75,21 @@ export default (formModel: ApplyClbModel, formRef: any) => {
       applyLoading.value = true;
       await resourceStore.create('load_balancers', handleParams());
       Message({ theme: 'success', message: '购买成功' });
+      goBack();
     } finally {
       applyLoading.value = false;
     }
+  };
+
+  // 返回上一级, 并且不保留历史记录
+  const goBack = () => {
+    router.replace({
+      path:
+        whereAmI.value === Senarios.business
+          ? `/business/loadbalancer/clb-view?bizs=${route.query.bizs}`
+          : '/resource/resource?type=clb',
+      query: { ...route.query },
+    });
   };
 
   // define component
@@ -110,7 +127,9 @@ export default (formModel: ApplyClbModel, formRef: any) => {
             <Button theme='primary' onClick={handleApplyClb} loading={applyLoading.value}>
               {t('立即购买')}
             </Button>
-            <Button loading={applyLoading.value}>{t('取消')}</Button>
+            <Button loading={applyLoading.value} onClick={goBack}>
+              {t('取消')}
+            </Button>
           </div>
         </div>
       );
