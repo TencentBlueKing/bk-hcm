@@ -12,6 +12,8 @@ const businessStore = useBusinessStore();
  * @returns 负载均衡列表(带有listenerNum字段)
  */
 const asyncGetListenerCount = async (lbList: any) => {
+  // 如果lbList长度为0, 则无需请求监听器数量
+  if (lbList.length === 0) return;
   // 负载均衡ids
   const lb_ids = lbList.map(({ id }: { id: string }) => id);
   // 查询负载均衡对应的监听器数量
