@@ -7,7 +7,7 @@ import { Button } from 'bkui-vue';
 import type { Settings } from 'bkui-vue/lib/table/props';
 import { h, ref } from 'vue';
 import type { Ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
 import { CLB_BINDING_STATUS, CLOUD_HOST_STATUS, VendorEnum } from '@/common/constant';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
@@ -23,8 +23,20 @@ import StatusLoading from '@/assets/image/status_loading.png';
 
 import { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../common/table/HostOperations';
 import './use-columns.scss';
+import { defaults } from 'lodash';
 import { timeFormatter } from '@/common/util';
-import { SCHEDULER_MAP } from '@/constants/clb';
+import { LBRouteName, SCHEDULER_MAP } from '@/constants/clb';
+
+interface LinkFieldOptions {
+  type: string; // 资源类型
+  label?: string; // 显示文本
+  field?: string; // 字段
+  idFiled?: string; // id字段
+  onlyShowOnList?: boolean; // 只在列表中显示
+  onLinkInBusiness?: boolean; // 只在业务下可链接
+  render?: (data: any) => any; // 自定义渲染内容
+  sort?: boolean; // 是否支持排序
+}
 
 export default (type: string, isSimpleShow = false, vendor?: string) => {
   const router = useRouter();
@@ -36,15 +48,20 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const businessMapStore = useBusinessMapStore();
   const cloudAreaStore = useCloudAreaStore();
 
-  const getLinkField = (
-    type: string,
-    label = 'ID',
-    field = 'id',
-    idFiled = 'id',
-    onlyShowOnList = true,
-    render: (data: any) => any = undefined,
-    sort = true,
-  ) => {
+  const getLinkField = (options: LinkFieldOptions) => {
+    // 设置options的默认值
+    defaults(options, {
+      label: 'ID',
+      field: 'id',
+      idFiled: 'id',
+      onlyShowOnList: true,
+      onLinkInBusiness: false,
+      render: undefined,
+      sort: true,
+    });
+
+    const { type, label, field, idFiled, onlyShowOnList, onLinkInBusiness, render, sort } = options;
+
     return {
       label,
       field,
@@ -54,40 +71,54 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       isDefaultShow: true,
       render({ data }: { cell: string; data: any }) {
         if (data[idFiled] < 0 || !data[idFiled]) return '--';
+        // 如果设置了onLinkInBusiness=true, 则只在业务下可以链接至指定路由
+        if (onLinkInBusiness && whereAmI.value !== Senarios.business) return data[field] || '--';
         return (
-          <>
-            <Button
-              text
-              theme='primary'
-              onClick={() => {
-                const routeInfo: any = {
-                  query: {
-                    ...route.query,
-                    id: data[idFiled],
-                    type: data.vendor,
+          <Button
+            text
+            theme='primary'
+            onClick={() => {
+              const routeInfo: any = {
+                query: {
+                  ...route.query,
+                  id: data[idFiled],
+                  type: data.vendor,
+                },
+              };
+              // 业务下
+              if (route.path.includes('business')) {
+                routeInfo.query.bizs = accountStore.bizs;
+                Object.assign(routeInfo, {
+                  name: `${type}BusinessDetail`,
+                });
+              } else {
+                Object.assign(routeInfo, {
+                  name: 'resourceDetail',
+                  params: {
+                    type,
                   },
-                };
-                // 业务下
-                if (route.path.includes('business')) {
-                  routeInfo.query.bizs = accountStore.bizs;
-                  Object.assign(routeInfo, {
-                    name: `${type}BusinessDetail`,
-                  });
-                } else {
-                  Object.assign(routeInfo, {
-                    name: 'resourceDetail',
-                    params: {
-                      type,
-                    },
-                  });
-                }
-                router.push(routeInfo);
-              }}>
-              {render ? render(data) : data[field] || '--'}
-            </Button>
-          </>
+                });
+              }
+              router.push(routeInfo);
+            }}>
+            {render ? render(data) : data[field] || '--'}
+          </Button>
         );
       },
+    };
+  };
+
+  /**
+   * 自定义 render field 的 push 导航
+   * @param e 事件对象
+   * @param to 目标路由信息
+   */
+  const renderFieldPushState = (to: RouteLocationRaw) => {
+    return (e: Event) => {
+      // 阻止事件冒泡
+      e.stopPropagation();
+      // 导航
+      router.push(to);
     };
   };
 
@@ -99,7 +130,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       onlyShowOnList: true,
       align: 'right',
     },
-    getLinkField('vpc', 'VPC ID', 'cloud_id'),
+    getLinkField({ type: 'vpc', label: 'VPC ID', field: 'cloud_id' }),
     // {
     //   label: '资源 ID',
     //   field: 'cloud_id',
@@ -191,7 +222,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       onlyShowOnList: true,
       align: 'right',
     },
-    getLinkField('subnet', '子网 ID', 'cloud_id', 'id', false),
+    getLinkField({ type: 'subnet', label: '子网 ID', field: 'cloud_id', idFiled: 'id', onlyShowOnList: false }),
     // {
     //   label: '资源 ID',
     //   field: 'cloud_id',
@@ -235,7 +266,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         return h('span', [cell || '--']);
       },
     },
-    getLinkField('vpc', '所属 VPC', 'cloud_vpc_id', 'vpc_id', false),
+    getLinkField({ type: 'vpc', label: '所属 VPC', field: 'cloud_vpc_id', idFiled: 'vpc_id', onlyShowOnList: false }),
     {
       label: 'IPv4 CIDR',
       field: 'ipv4_cidr',
@@ -305,7 +336,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       onlyShowOnList: true,
       align: 'right',
     },
-    getLinkField('subnet'),
+    getLinkField({ type: 'subnet' }),
     {
       label: '资源 ID',
       field: 'account_id',
@@ -341,7 +372,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       onlyShowOnList: true,
       align: 'right',
     },
-    getLinkField('subnet'),
+    getLinkField({ type: 'subnet' }),
     {
       label: '资源 ID',
       field: 'account_id',
@@ -386,7 +417,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       onlyShowOnList: true,
       align: 'right',
     },
-    getLinkField('drive', '云硬盘ID', 'cloud_id'),
+    getLinkField({ type: 'drive', label: '云硬盘ID', field: 'cloud_id' }),
     // {
     //   label: '资源 ID',
     //   field: 'cloud_id',
@@ -460,7 +491,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         return h('span', [cell || '--']);
       },
     },
-    getLinkField('host', '挂载的主机', 'instance_id', 'instance_id'),
+    getLinkField({ type: 'host', label: '挂载的主机', field: 'instance_id', idFiled: 'instance_id' }),
     {
       label: '是否分配',
       field: 'bk_biz_id',
@@ -494,7 +525,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const imageColumns = [
-    getLinkField('image', '镜像ID', 'cloud_id', 'id'),
+    getLinkField({ type: 'image', label: '镜像ID', field: 'cloud_id', idFiled: 'id' }),
     // {
     //   label: '资源 ID',
     //   field: 'cloud_id',
@@ -554,7 +585,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const networkInterfaceColumns = [
-    getLinkField('network-interface', '接口 ID', 'cloud_id', 'id'),
+    getLinkField({ type: 'network-interface', label: '接口 ID', field: 'cloud_id', idFiled: 'id' }),
     {
       label: '接口名称',
       field: 'name',
@@ -652,7 +683,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const routeColumns = [
-    getLinkField('route', '路由表ID', 'cloud_id', 'id'),
+    getLinkField({ type: 'route', label: '路由表ID', field: 'cloud_id', idFiled: 'id' }),
     // {
     //   label: '资源 ID',
     //   field: 'cloud_id',
@@ -681,7 +712,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       isDefaultShow: true,
       render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell),
     },
-    getLinkField('vpc', '所属网络(VPC)', 'vpc_id', 'vpc_id'),
+    getLinkField({ type: 'vpc', label: '所属网络(VPC)', field: 'vpc_id', idFiled: 'vpc_id' }),
     // {
     //   label: '关联子网',
     //   field: '',
@@ -729,15 +760,15 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       isDefaultShow: false,
       onlyShowOnList: true,
     },
-    getLinkField(
-      'host',
-      '内网IP',
-      'private_ipv4_addresses',
-      'id',
-      false,
-      (data) => [...data.private_ipv4_addresses, ...data.private_ipv6_addresses].join(','),
-      false,
-    ),
+    getLinkField({
+      type: 'host',
+      label: '内网IP',
+      field: 'private_ipv4_addresses',
+      idFiled: 'id',
+      onlyShowOnList: false,
+      render: (data) => [...data.private_ipv4_addresses, ...data.private_ipv6_addresses].join(','),
+      sort: false,
+    }),
     {
       label: '公网IP',
       field: 'vendor',
@@ -941,7 +972,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       onlyShowOnList: true,
       align: 'right',
     },
-    getLinkField('eips', 'IP资源ID', 'cloud_id', 'id'),
+    getLinkField({ type: 'eips', label: 'IP资源ID', field: 'cloud_id', idFiled: 'id' }),
     // {
     //   label: '资源 ID',
     //   field: 'cloud_id',
@@ -988,7 +1019,15 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     //     return h('span', [cell || '--']);
     //   },
     // },
-    getLinkField('host', '绑定的资源实例', 'cvm_id', 'cvm_id', false, (data) => data.host, false),
+    getLinkField({
+      type: 'host',
+      label: '绑定的资源实例',
+      field: 'cvm_id',
+      idFiled: 'cvm_id',
+      onlyShowOnList: false,
+      render: (data) => data.host,
+      sort: false,
+    }),
     {
       label: '绑定的资源类型',
       field: 'instance_type',
@@ -1124,7 +1163,24 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       onlyShowOnList: true,
       align: 'right',
     },
-    getLinkField('lb', '负载均衡名称', 'name'),
+    getLinkField({
+      type: 'lb',
+      label: '负载均衡名称',
+      field: 'name',
+      onLinkInBusiness: true,
+      render: ({ id, name }) => (
+        <Button
+          text
+          theme='primary'
+          onClick={renderFieldPushState({
+            name: LBRouteName.lb,
+            params: { id },
+            query: { ...route.query, type: 'detail' },
+          })}>
+          {name || '--'}
+        </Button>
+      ),
+    }),
     {
       label: '负载均衡域名',
       field: 'domain',
@@ -1201,7 +1257,23 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const listenerColumns = [
-    getLinkField('listener', '监听器名称', 'name'),
+    getLinkField({
+      type: 'listener',
+      label: '监听器名称',
+      field: 'name',
+      render: ({ id, name, protocol }) => (
+        <Button
+          text
+          theme='primary'
+          onClick={renderFieldPushState({
+            name: LBRouteName.listener,
+            params: { id },
+            query: { ...route.query, type: 'detail', protocol },
+          })}>
+          {name || '--'}
+        </Button>
+      ),
+    }),
     {
       label: '监听器ID',
       field: 'cloud_id',
@@ -1266,21 +1338,25 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       onlyShowOnList: true,
       align: 'right',
     },
-    getLinkField('name', '目标组名称', 'name', 'name', false, (data) => (
-      <Button
-        text
-        theme='primary'
-        onClick={() => {
-          router.replace({
-            query: {
-              ...route.query,
-              tgId: data.id,
-            },
-          });
-        }}>
-        {data.name}
-      </Button>
-    )),
+    getLinkField({
+      type: 'name',
+      label: '目标组名称',
+      field: 'name',
+      idFiled: 'name',
+      onlyShowOnList: false,
+      render: ({ id, name }) => (
+        <Button
+          text
+          theme='primary'
+          onClick={renderFieldPushState({
+            name: LBRouteName.tg,
+            params: { id },
+            query: { ...route.query, type: 'detail' },
+          })}>
+          {name}
+        </Button>
+      ),
+    }),
     {
       label: '关联的负载均衡',
       field: 'lb_name',

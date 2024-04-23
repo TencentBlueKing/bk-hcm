@@ -85,6 +85,7 @@ export default defineComponent({
     watch(
       () => loadBalancerStore.targetGroupId,
       (val) => {
+        if (!val) return;
         getListData([], `vendors/tcloud/target_groups/${val}/rules`);
       },
     );
