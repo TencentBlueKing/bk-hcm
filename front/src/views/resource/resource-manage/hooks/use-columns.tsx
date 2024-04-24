@@ -1240,6 +1240,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '地域',
       field: 'region',
+      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell) || '--',
     },
     {
       label: '可用区域',
@@ -1389,10 +1390,14 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '云厂商',
       field: 'vendor',
+      render({ cell }: { cell: string }) {
+        return h('span', [CloudType[cell] || '--']);
+      },
     },
     {
       label: '地域',
       field: 'region',
+      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell) || '--',
     },
     // {
     //   label: '可用区域',
@@ -1464,9 +1469,9 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '地域',
       field: 'region',
       render: ({ data }: any) => {
-        if (data.region) return data.region;
-        const idx = data.zone.lastIndexOf('-1');
-        return data.zone.slice(0, idx - 1);
+        if (data.region) return getRegionName(VendorEnum.TCLOUD, data.region);
+        const idx = data.zone.lastIndexOf('-');
+        return getRegionName(VendorEnum.TCLOUD, data.zone.slice(0, idx));
       },
     },
     {
@@ -1618,8 +1623,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '云厂商',
       field: 'vendor',
-      render: ({ cell }: { cell: string }) => {
-        return CloudType[cell];
+      render({ cell }: { cell: string }) {
+        return h('span', [CloudType[cell] || '--']);
       },
     },
     {

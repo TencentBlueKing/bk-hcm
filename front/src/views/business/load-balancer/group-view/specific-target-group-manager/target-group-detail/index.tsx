@@ -1,12 +1,17 @@
 import { PropType, computed, defineComponent } from 'vue';
 // import components
-import { Button } from 'bkui-vue';
+import { Button, Link } from 'bkui-vue';
+import { Share } from 'bkui-vue/lib/icon';
 import RsConfigTable from '../../components/RsConfigTable';
 import AddOrUpdateTGSideslider from '../../components/AddOrUpdateTGSideslider';
 import AddRsDialog from '../../components/AddRsDialog';
+// import stores
+import { useRegionsStore } from '@/store/useRegionsStore';
 // import utils
 import bus from '@/common/bus';
 import { timeFormatter } from '@/common/util';
+// import constants
+import { VendorEnum } from '@/common/constant';
 import './index.scss';
 
 export default defineComponent({
@@ -21,6 +26,9 @@ export default defineComponent({
     },
   },
   setup(props) {
+    // use stores
+    const { getRegionName } = useRegionsStore();
+
     const targetGroupDetail = computed(() => [
       {
         title: '基本信息',
@@ -31,7 +39,7 @@ export default defineComponent({
           },
           {
             label: '地域',
-            value: props.detail.region,
+            value: getRegionName(VendorEnum.TCLOUD, props.detail.region),
           },
           {
             label: '目标组名称',
@@ -39,7 +47,17 @@ export default defineComponent({
           },
           {
             label: '所属vpc',
-            value: props.detail.cloud_vpc_id,
+            value: (
+              <Link
+                theme='primary'
+                href={`/#/resource/detail/vpc?type=tcloud&id=${props.detail.vpc_id}`}
+                target='_blank'>
+                <div class='flex-row align-items-center'>
+                  {props.detail.cloud_vpc_id}
+                  <Share class='ml5' />
+                </div>
+              </Link>
+            ),
           },
           {
             label: '协议端口',
