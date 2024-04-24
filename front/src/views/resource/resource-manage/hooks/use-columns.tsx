@@ -110,7 +110,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
 
   /**
    * 自定义 render field 的 push 导航
-   * @param e 事件对象
    * @param to 目标路由信息
    */
   const renderFieldPushState = (to: RouteLocationRaw) => {
@@ -1524,11 +1523,27 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const targetGroupListenerColumns = [
-    {
+    getLinkField({
+      type: 'targetGroup',
       label: '绑定的监听器',
       field: 'lbl_name',
-      isDefaultShow: true,
-    },
+      render: ({ lbl_id, lbl_name, protocol }: any) => (
+        <Button
+          text
+          theme='primary'
+          onClick={renderFieldPushState({
+            name: LBRouteName.listener,
+            params: { id: lbl_id },
+            query: {
+              ...route.query,
+              type: 'detail',
+              protocol,
+            },
+          })}>
+          {lbl_name}
+        </Button>
+      ),
+    }),
     {
       label: '关联的负载均衡',
       field: 'lb_name',
