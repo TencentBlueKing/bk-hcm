@@ -41,6 +41,7 @@ export default defineComponent({
     const searchVal = ref('');
     const selectedSecuirtyGroups = ref([]);
     const bindedSecurityGroups = ref([]);
+    const isUpdating = ref(false);
     const securityGroups = computed(() => {
       const groups = [].concat(selectedSecuirtyGroups.value).concat(bindedSecurityGroups.value);
       return groups;
@@ -232,13 +233,22 @@ export default defineComponent({
       <div>
         <div class={'rs-check-selector-container'}>
           <div
-            class={`${rsCheckRes.value ? 'rs-check-selector-active' : 'rs-check-selector'}`}
-            onClick={() => {
-              if (rsCheckRes.value) return;
+            class={`${rsCheckRes.value ? 'rs-check-selector-active' : 'rs-check-selector'} ${
+              isUpdating.value ? 'disabled-button' : ''
+            }`}
+            onClick={async () => {
+              if (rsCheckRes.value || isUpdating.value) return;
               rsCheckRes.value = true;
-              props.updateLb({
-                load_balancer_pass_to_target: true,
-              });
+              isUpdating.value = true;
+              try {
+                await props.updateLb({
+                  load_balancer_pass_to_target: true,
+                });
+              } catch (_e) {
+                rsCheckRes.value = false;
+              } finally {
+                isUpdating.value = false;
+              }
             }}>
             <Tag theme='warning'>2 次检测</Tag>
             <span>依次经过负载均衡和RS的安全组 2 次检测</span>
@@ -251,13 +261,22 @@ export default defineComponent({
             />
           </div>
           <div
-            class={`${!rsCheckRes.value ? 'rs-check-selector-active' : 'rs-check-selector'}`}
-            onClick={() => {
-              if (!rsCheckRes.value) return;
+            class={`${!rsCheckRes.value ? 'rs-check-selector-active' : 'rs-check-selector'}  ${
+              isUpdating.value ? 'disabled-button' : ''
+            }`}
+            onClick={async () => {
+              if (!rsCheckRes.value || isUpdating.value) return;
               rsCheckRes.value = false;
-              props.updateLb({
-                load_balancer_pass_to_target: false,
-              });
+              isUpdating.value = true;
+              try {
+                await props.updateLb({
+                  load_balancer_pass_to_target: false,
+                });
+              } catch (_e) {
+                rsCheckRes.value = true;
+              } finally {
+                isUpdating.value = false;
+              }
             }}>
             <Tag theme='warning'>1 次检测</Tag>
             <span>只经过负载均衡的安全组 1 次检测，忽略后端RS的安全组检测</span>

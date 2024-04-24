@@ -8,7 +8,6 @@ import SecurityGroup from './security-group';
 import { useBusinessStore, useLoadBalancerStore } from '@/store';
 // import hooks and utils
 import useActiveTab from '@/hooks/useActiveTab';
-import { debounce } from 'lodash';
 import bus from '@/common/bus';
 import './index.scss';
 
@@ -59,7 +58,7 @@ export default defineComponent({
       const res = await businessStore.getLbDetail(id);
       detail.value = res.data;
     };
-    const updateLb = debounce(async (payload: Record<string, any>) => {
+    const updateLb = async (payload: Record<string, any>) => {
       await businessStore.updateLbDetail({
         id: detail.value.id,
         ...payload,
@@ -68,7 +67,7 @@ export default defineComponent({
         message: '更新成功',
         theme: 'success',
       });
-    }, 1000);
+    };
 
     watch(
       () => props.id,

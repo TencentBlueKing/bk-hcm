@@ -13,6 +13,9 @@
     padding: 0 16px;
     cursor: pointer;
     border: 1px solid #ffffff00;
+    .disabled-button {
+      cursor: not-allowed;
+    }
   }
 
   .rs-check-selector-active {

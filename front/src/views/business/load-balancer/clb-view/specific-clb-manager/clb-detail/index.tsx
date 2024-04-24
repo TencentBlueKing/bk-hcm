@@ -20,6 +20,7 @@ export default defineComponent({
   setup(props) {
     const regionStore = useRegionsStore();
     const isProtected = ref(false);
+    const isLoading = ref(false);
     const resourceFields = [
       {
         name: '名称',
@@ -49,11 +50,19 @@ export default defineComponent({
               theme='primary'
               class={'mr5'}
               modelValue={isProtected.value}
-              onChange={(val) => {
+              disabled={isLoading.value}
+              onChange={async (val) => {
+                isLoading.value = true;
                 isProtected.value = val;
-                props.updateLb({
-                  delete_protect: val,
-                });
+                try {
+                  await props.updateLb({
+                    delete_protect: val,
+                  });
+                } catch (_e) {
+                  isProtected.value = !val;
+                } finally {
+                  isLoading.value = false;
+                }
               }}
             />
             <Tag theme={isProtected.value ? 'success' : ''}> {isProtected.value ? '已开启' : '未开启'} </Tag>
