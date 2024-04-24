@@ -7,7 +7,8 @@ import { useBusinessStore } from '@/store';
 import { useLoadBalancerStore } from '@/store/loadbalancer';
 import { useRoute } from 'vue-router';
 // import types
-import { IOriginPage } from '@/typings';
+import { IOriginPage, QueryRuleOPEnum } from '@/typings';
+import useSelectOptionListWithScroll from '@/hooks/useSelectOptionListWithScroll';
 
 const { Option } = Select;
 
@@ -45,6 +46,7 @@ export default (getListData: () => void, originPage: IOriginPage) => {
     domain: '',
     url: '',
     scheduler: '',
+    target_group_id: '',
   });
 
   // 清空表单参数
@@ -72,6 +74,28 @@ export default (getListData: () => void, originPage: IOriginPage) => {
     }
   };
 
+  const [isTargetGroupListLoading, targetGroupList, handleTargetGroupListScrollEnd] = useSelectOptionListWithScroll(
+    'target_groups',
+    [
+      {
+        field: 'account_id',
+        op: QueryRuleOPEnum.EQ,
+        value: loadbalancer.currentSelectedTreeNode.lb.account_id,
+      },
+      {
+        field: 'cloud_vpc_id',
+        op: QueryRuleOPEnum.EQ,
+        value: loadbalancer.currentSelectedTreeNode.lb.cloud_vpc_id,
+      },
+      {
+        field: 'region',
+        op: QueryRuleOPEnum.EQ,
+        value: loadbalancer.currentSelectedTreeNode.lb.region,
+      },
+    ],
+    true,
+  );
+
   const handleSubmit = async (formInstance: Ref<any>) => {
     await formInstance.value.validate();
     const lbl_id =
@@ -82,14 +106,11 @@ export default (getListData: () => void, originPage: IOriginPage) => {
       action.value === OpAction.ADD
         ? businessStore.createRules({
             bk_biz_id: route.query.bizs,
+            target_group_id: formData.target_group_id,
             lbl_id,
-            rules: [
-              {
-                url: formData.url,
-                domains: [formData.domain],
-                scheduler: formData.scheduler,
-              },
-            ],
+            url: formData.url,
+            domains: [formData.domain],
+            scheduler: formData.scheduler,
           })
         : businessStore.updateDomains(lbl_id, {
             lbl_id,
@@ -128,6 +149,22 @@ export default (getListData: () => void, originPage: IOriginPage) => {
         <Select v-model={formData.scheduler} placeholder={t('请选择模式')}>
           {RuleModeList.map(({ id, name }) => (
             <Option name={name} id={id} />
+          ))}
+        </Select>
+      ),
+    },
+    {
+      label: '目标组',
+      property: 'target_group_id',
+      required: true,
+      hidden: action.value === OpAction.UPDATE,
+      content: () => (
+        <Select
+          v-model={formData.target_group_id}
+          scrollLoading={isTargetGroupListLoading.value}
+          onScroll-end={handleTargetGroupListScrollEnd}>
+          {targetGroupList.value.map(({ id, name, listener_num }) => (
+            <Option key={id} id={id} name={name} disabled={listener_num > 0} />
           ))}
         </Select>
       ),
