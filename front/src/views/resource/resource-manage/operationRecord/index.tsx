@@ -116,6 +116,7 @@ export default defineComponent({
             id: detail.id,
             name: detail.res_name,
             flow: detail.res_flow.flow_id,
+            res_id: detail.res_id,
           },
         });
         return;

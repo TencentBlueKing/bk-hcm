@@ -113,9 +113,10 @@ export default defineComponent({
       isRetryLoading.value = true;
       try {
         await businessStore.excuteTask({
-          lb_id: flow.value.id,
+          lb_id: route.query.res_id as string,
           flow_id: flow.value.id,
         });
+        getFlow(route.query.id as string, route.query.flow as string);
       } finally {
         isRetryLoading.value = false;
       }
@@ -125,9 +126,10 @@ export default defineComponent({
       isRetryLoading.value = true;
       try {
         await businessStore.endTask({
-          lb_id: flow.value.id,
+          lb_id: route.query.res_id as string,
           flow_id: flow.value.id,
         });
+        getFlow(route.query.id as string, route.query.flow as string);
       } finally {
         isRetryLoading.value = false;
       }
