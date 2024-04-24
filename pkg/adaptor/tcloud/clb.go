@@ -580,3 +580,44 @@ func convItemPrice(p *clb.ItemPrice) *typelb.ItemPrice {
 		Discount:          p.Discount,
 	}
 }
+
+// ListLoadBalancerQuota 查询用户当前地域下的各项配额.
+// reference: https://cloud.tencent.com/document/api/214/47704
+func (t *TCloudImpl) ListLoadBalancerQuota(kt *kit.Kit, opt *typelb.ListTCloudLoadBalancerQuotaOption) (
+	[]typelb.TCloudLoadBalancerQuota, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "load balancer quota option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	client, err := t.clientSet.ClbClient(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("init tencent cloud clb client failed, err: %v", err)
+	}
+
+	req := clb.NewDescribeQuotaRequest()
+	resp, err := client.DescribeQuotaWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("list tcloud load balancer quota failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	if resp.Response == nil || len(resp.Response.QuotaSet) == 0 {
+		return nil, nil
+	}
+
+	result := make([]typelb.TCloudLoadBalancerQuota, 0, len(resp.Response.QuotaSet))
+	for _, item := range resp.Response.QuotaSet {
+		result = append(result, typelb.TCloudLoadBalancerQuota{
+			QuotaId:      cvt.PtrToVal(item.QuotaId),
+			QuotaCurrent: item.QuotaCurrent,
+			QuotaLimit:   cvt.PtrToVal(item.QuotaLimit),
+		})
+	}
+
+	return result, nil
+}

@@ -784,3 +784,32 @@ type TCloudLBPrice struct {
 	// 注意：此字段可能返回 null，表示取不到有效值。
 	LcuPrice *ItemPrice `json:"lcu_price,omitnil"`
 }
+
+// -------------------------- List Load Balancer Quota --------------------------
+
+// ListTCloudLoadBalancerQuotaOption ...
+type ListTCloudLoadBalancerQuotaOption struct {
+	Region string `json:"region" validate:"required"`
+}
+
+// Validate ...
+func (opt *ListTCloudLoadBalancerQuotaOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// TCloudLoadBalancerQuota ...
+type TCloudLoadBalancerQuota struct {
+	// 配额名称，取值范围：
+	// TOTAL_OPEN_CLB_QUOTA：用户当前地域下的公网CLB配额
+	// TOTAL_INTERNAL_CLB_QUOTA：用户当前地域下的内网CLB配额
+	// TOTAL_LISTENER_QUOTA：一个CLB下的监听器配额
+	// TOTAL_LISTENER_RULE_QUOTA：一个监听器下的转发规则配额
+	// TOTAL_TARGET_BIND_QUOTA：一条转发规则下可绑定设备的配额
+	// TOTAL_SNAP_IP_QUOTA： 一个CLB实例下跨地域2.0的SNAT IP配额
+	// TOTAL_ISP_CLB_QUOTA：用户当前地域下的三网CLB配额
+	QuotaId string `json:"quota_id,omitnil"`
+	// 当前使用数量，为 null 时表示无意义。
+	QuotaCurrent *int64 `json:"quota_current,omitnil"`
+	// 配额数量。
+	QuotaLimit int64 `json:"quota_limit,omitnil"`
+}

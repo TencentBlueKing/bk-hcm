@@ -461,3 +461,14 @@ type QueryTCloudListenerTargets struct {
 func (t *QueryTCloudListenerTargets) Validate() error {
 	return validator.Validate.Struct(t)
 }
+
+// TCloudListLoadBalancerQuotaReq tcloud list load balancer quota req.
+type TCloudListLoadBalancerQuotaReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+	Region    string `json:"region" validate:"required"`
+}
+
+// Validate request.
+func (req *TCloudListLoadBalancerQuotaReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
