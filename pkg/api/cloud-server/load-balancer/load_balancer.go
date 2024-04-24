@@ -423,8 +423,8 @@ type TCloudBatchCreateReq struct {
 	Region    string  `json:"region" validate:"required"`
 	Name      *string `json:"name" validate:"required,max=60"`
 
-	LoadBalancerType loadbalancer.TCloudLoadBalancerType    `json:"load_balancer_type" validate:"required"`
-	AddressIPVersion *loadbalancer.TCloudIPVersionForCreate `json:"address_ip_version" validate:"required"`
+	LoadBalancerType loadbalancer.TCloudLoadBalancerType   `json:"load_balancer_type" validate:"required"`
+	AddressIPVersion loadbalancer.TCloudIPVersionForCreate `json:"address_ip_version" validate:"required"`
 
 	// 公网	单可用区		传递zones（单元素数组）
 	// 公网	主备可用区	传递zones（单元素数组），以及backup_zones

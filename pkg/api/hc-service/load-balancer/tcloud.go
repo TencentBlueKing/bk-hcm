@@ -40,8 +40,8 @@ type TCloudBatchCreateReq struct {
 	BkBizID   int64   `json:"bk_biz_id" validate:"required"`
 	Name      *string `json:"name" validate:"required,max=60"`
 
-	LoadBalancerType typelb.TCloudLoadBalancerType    `json:"load_balancer_type" validate:"required"`
-	AddressIPVersion *typelb.TCloudIPVersionForCreate `json:"address_ip_version" validate:"required"`
+	LoadBalancerType typelb.TCloudLoadBalancerType   `json:"load_balancer_type" validate:"required"`
+	AddressIPVersion typelb.TCloudIPVersionForCreate `json:"address_ip_version" validate:"required"`
 
 	// 公网	单可用区		传递zones（单元素数组）
 	// 公网	主备可用区	传递zones（单元素数组），以及backup_zones

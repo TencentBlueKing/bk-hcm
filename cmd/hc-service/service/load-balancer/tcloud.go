@@ -47,6 +47,8 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 
 	h.Add("BatchCreateTCloudClb", http.MethodPost,
 		"/vendors/tcloud/load_balancers/batch/create", svc.BatchCreateTCloudClb)
+	h.Add("InquiryPriceTCloudLB", http.MethodPost,
+		"/vendors/tcloud/load_balancers/prices/inquiry", svc.InquiryPriceTCloudLB)
 	h.Add("ListTCloudClb", http.MethodPost, "/vendors/tcloud/load_balancers/list", svc.ListTCloudClb)
 	h.Add("TCloudDescribeResources", http.MethodPost,
 		"/vendors/tcloud/load_balancers/resources/describe", svc.TCloudDescribeResources)
@@ -129,6 +131,9 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 	}
 	if cvt.PtrToVal(req.CloudEipID) != "" {
 		createOpt.EipAddressID = req.CloudEipID
+	}
+	if req.AddressIPVersion == "" {
+		req.AddressIPVersion = typelb.IPV4IPVersion
 	}
 	// 负载均衡实例的网络类型-公网属性
 	if req.LoadBalancerType == typelb.OpenLoadBalancerType {
@@ -971,4 +976,67 @@ func (svc *clbSvc) BatchDeleteTCloudLoadBalancer(cts *rest.Contexts) (any, error
 	}
 
 	return nil, nil
+}
+
+// InquiryPriceTCloudLB inquiry price tcloud clb.
+func (svc *clbSvc) InquiryPriceTCloudLB(cts *rest.Contexts) (any, error) {
+	req := new(protolb.TCloudBatchCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	tcloud, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+	if req.AddressIPVersion == "" {
+		req.AddressIPVersion = typelb.IPV4IPVersion
+	}
+	createOpt := &typelb.TCloudCreateClbOption{
+		Region:           req.Region,
+		LoadBalancerType: req.LoadBalancerType,
+		LoadBalancerName: req.Name,
+		VpcID:            req.CloudVpcID,
+		SubnetID:         req.CloudSubnetID,
+		Vip:              req.Vip,
+		VipIsp:           req.VipIsp,
+		AddressIPVersion: req.AddressIPVersion,
+
+		InternetChargeType:      req.InternetChargeType,
+		InternetMaxBandwidthOut: req.InternetMaxBandwidthOut,
+
+		BandwidthPackageID: req.BandwidthPackageID,
+		SlaType:            req.SlaType,
+		Number:             req.RequireCount,
+		ClientToken:        cvt.StrNilPtr(cts.Kit.Rid),
+	}
+	if cvt.PtrToVal(req.CloudEipID) != "" {
+		createOpt.EipAddressID = req.CloudEipID
+	}
+	// 负载均衡实例的网络类型-公网属性
+	if req.LoadBalancerType == typelb.OpenLoadBalancerType {
+		// 静态单线IP 线路类型-仅适用于公网负载均衡, 如果不指定本参数，则默认使用BGP
+		createOpt.VipIsp = req.VipIsp
+
+		// 设置跨可用区容灾时的可用区ID-仅适用于公网负载均衡
+		if len(req.BackupZones) > 0 && len(req.Zones) > 0 {
+			// 主备可用区，传递zones（单元素数组），以及backup_zones
+			createOpt.MasterZoneID = cvt.ValToPtr(req.Zones[0])
+			createOpt.SlaveZoneID = cvt.ValToPtr(req.BackupZones[0])
+		} else if len(req.Zones) > 0 {
+			// 单可用区
+			createOpt.ZoneID = cvt.ValToPtr(req.Zones[0])
+		}
+	}
+	result, err := tcloud.InquiryPriceLoadBalancer(cts.Kit, createOpt)
+	if err != nil {
+		logs.Errorf("inquiry load balancer price failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return result, nil
 }
