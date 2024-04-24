@@ -37,7 +37,7 @@ export default defineComponent({
       const selectedRsList = rsSelections.value.map((item) => ({
         ...item,
         port: 0,
-        weight: 0,
+        weight: 10,
         isNew: true,
       }));
 

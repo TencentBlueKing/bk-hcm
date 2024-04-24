@@ -110,7 +110,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
 
   /**
    * 自定义 render field 的 push 导航
-   * @param e 事件对象
    * @param to 目标路由信息
    */
   const renderFieldPushState = (to: RouteLocationRaw) => {
@@ -1240,6 +1239,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '地域',
       field: 'region',
+      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell) || '--',
     },
     {
       label: '可用区域',
@@ -1389,10 +1389,14 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '云厂商',
       field: 'vendor',
+      render({ cell }: { cell: string }) {
+        return h('span', [CloudType[cell] || '--']);
+      },
     },
     {
       label: '地域',
       field: 'region',
+      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell) || '--',
     },
     // {
     //   label: '可用区域',
@@ -1464,9 +1468,9 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '地域',
       field: 'region',
       render: ({ data }: any) => {
-        if (data.region) return data.region;
-        const idx = data.zone.lastIndexOf('-1');
-        return data.zone.slice(0, idx - 1);
+        if (data.region) return getRegionName(VendorEnum.TCLOUD, data.region);
+        const idx = data.zone.lastIndexOf('-');
+        return getRegionName(VendorEnum.TCLOUD, data.zone.slice(0, idx));
       },
     },
     {
@@ -1519,11 +1523,27 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const targetGroupListenerColumns = [
-    {
+    getLinkField({
+      type: 'targetGroup',
       label: '绑定的监听器',
       field: 'lbl_name',
-      isDefaultShow: true,
-    },
+      render: ({ lbl_id, lbl_name, protocol }: any) => (
+        <Button
+          text
+          theme='primary'
+          onClick={renderFieldPushState({
+            name: LBRouteName.listener,
+            params: { id: lbl_id },
+            query: {
+              ...route.query,
+              type: 'detail',
+              protocol,
+            },
+          })}>
+          {lbl_name}
+        </Button>
+      ),
+    }),
     {
       label: '关联的负载均衡',
       field: 'lb_name',
@@ -1618,8 +1638,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '云厂商',
       field: 'vendor',
-      render: ({ cell }: { cell: string }) => {
-        return CloudType[cell];
+      render({ cell }: { cell: string }) {
+        return h('span', [CloudType[cell] || '--']);
       },
     },
     {

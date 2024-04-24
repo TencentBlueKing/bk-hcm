@@ -5,7 +5,7 @@ import SimpleSearchSelect from '../../components/simple-search-select';
 import { Message, Tree } from 'bkui-vue';
 import Confirm from '@/components/confirm';
 // import stores
-import { useBusinessStore, useResourceStore } from '@/store';
+import { useBusinessStore } from '@/store';
 // import custom hooks
 import useLoadTreeData from './useLoadTreeData';
 import useMoreActionDropdown from '@/hooks/useMoreActionDropdown';
@@ -18,7 +18,7 @@ import lbIcon from '@/assets/image/loadbalancer.svg';
 import listenerIcon from '@/assets/image/listener.svg';
 import domainIcon from '@/assets/image/domain.svg';
 // import constants
-import { LB_ROUTE_NAME_MAP, TRANSPORT_LAYER_LIST } from '@/constants';
+import { LBRouteName, LB_ROUTE_NAME_MAP, TRANSPORT_LAYER_LIST } from '@/constants';
 import './index.scss';
 
 export default defineComponent({
@@ -28,7 +28,6 @@ export default defineComponent({
     const router = useRouter();
     const route = useRoute();
     // use stores
-    const resourceStore = useResourceStore();
     const businessStore = useBusinessStore();
 
     // 搜索相关
@@ -51,15 +50,32 @@ export default defineComponent({
     const expandedNodeArr = ref([]);
 
     // use custom hooks
-    const { loadRemoteData, handleLoadDataByScroll } = useLoadTreeData(treeData);
+    const { loadRemoteData, handleLoadDataByScroll, reset } = useLoadTreeData(treeData);
+
+    // 删除负载均衡
+    const handleDeleteLB = (node: any) => {
+      const { id, name } = node;
+      Confirm('请确定删除负载均衡', `将删除负载均衡【${name}】`, () => {
+        businessStore.deleteBatch('load_balancers', { ids: [id] }).then(() => {
+          Message({ theme: 'success', message: '删除成功' });
+          // 本期暂时先重新拉取lb列表
+          reset();
+          // 导航至全部负载均衡
+          router.push({ name: LBRouteName.allLbs, query: { bizs: route.query.bizs } });
+        });
+      });
+    };
 
     // 删除监听器
     const handleDeleteListener = (node: any) => {
       const { id, name } = node;
       Confirm('请确定删除监听器', `将删除监听器【${name}】`, () => {
-        resourceStore.deleteBatch('listeners', { ids: [id] }).then(() => {
+        businessStore.deleteBatch('listeners', { ids: [id] }).then(() => {
           Message({ theme: 'success', message: '删除成功' });
-          // todo: 重新请求对应lb下的listener列表
+          // 本期暂时先重新拉取lb列表
+          reset();
+          // 导航至全部负载均衡
+          router.push({ name: LBRouteName.allLbs, query: { bizs: route.query.bizs } });
         });
       });
     };
@@ -68,13 +84,12 @@ export default defineComponent({
     const handleDeleteDomain = (node: any) => {
       const { listener_id, domain } = node;
       Confirm('请确定删除域名', `将删除域名【${domain}】`, async () => {
-        // todo: 这里的接口需要再联调
-        await businessStore.deleteRules(listener_id, { lbl_id: listener_id, domain });
-        Message({
-          message: '删除成功',
-          theme: 'success',
-        });
-        // todo: 重新请求对应listener下的domain列表
+        await businessStore.batchDeleteDomains({ lbl_id: listener_id, domains: [domain] });
+        Message({ theme: 'success', message: '删除成功' });
+        // 本期暂时先重新拉取lb列表
+        reset();
+        // 导航至全部负载均衡
+        router.push({ name: LBRouteName.allLbs, query: { bizs: route.query.bizs } });
       });
     };
 
@@ -89,7 +104,7 @@ export default defineComponent({
       lb: [
         { label: '新增监听器', handler: () => bus.$emit('showAddListenerSideslider') },
         { label: '查看详情', handler: () => bus.$emit('changeSpecificClbActiveTab', 'detail') },
-        { label: '删除', handler: () => {} }, // todo: 等批量删除CLB接口联调完后进行完善
+        { label: '删除', handler: handleDeleteLB },
       ],
       listener: [
         { label: '新增域名', handler: () => bus.$emit('showAddDomainSideslider') },
