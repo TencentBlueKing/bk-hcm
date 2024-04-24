@@ -62,9 +62,8 @@ func (az *Azure) ListAccount(kt *kit.Kit) ([]account.AzureAccount, error) {
 
 	resp, err := graphClient.Users().Get(kt.Ctx, nil)
 	if err != nil {
-		extracted := extractGraphError(err)
-		logs.Errorf("list users failed, err: %v, rid: %s", extracted, kt.Rid)
-		return nil, extracted
+		logs.Errorf("list users failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, fmt.Errorf("list account failed, err: %v", err)
 	}
 
 	users := resp.GetValue()
@@ -126,9 +125,8 @@ func (az *Azure) GetAccountInfoBySecret(kt *kit.Kit) (*cloud.AzureInfoBySecret, 
 	// 2. 获取应用信息 https://learn.microsoft.com/en-us/graph/api/application-list
 	resp, err := graphClient.Applications().Get(kt.Ctx, nil)
 	if err != nil {
-		extracted := extractGraphError(err)
-		logs.Errorf("fail to get azure applications, err: %v, rid: %s", extracted, kt.Rid)
-		return nil, extracted
+		logs.Errorf("fail to get azure applications, err: %v, rid: %s", err, kt.Rid)
+		return nil, fmt.Errorf("get application failed, err: %v", err)
 	}
 
 	for _, one := range resp.GetValue() {
