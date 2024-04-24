@@ -41,6 +41,7 @@ type Client struct {
 	ArgsTpl       *ArgsTplClient
 	Cert          *CertClient
 	Clb           *ClbClient
+	BandPkg       *BandwidthPackageClient
 }
 
 // NewClient create a new tcloud api client.
@@ -62,5 +63,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		ArgsTpl:       NewArgsTplClient(client),
 		Cert:          NewCertClient(client),
 		Clb:           NewClbClient(client),
+		BandPkg:       NewBandPkgClient(client),
 	}
 }

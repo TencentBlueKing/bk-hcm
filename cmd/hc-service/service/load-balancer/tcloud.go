@@ -223,13 +223,13 @@ func (svc *clbSvc) ListTCloudClb(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
+	if req.Page.Limit > adcore.TCloudQueryLimit {
+		req.Page.Limit = adcore.TCloudQueryLimit
+	}
 	opt := &typelb.TCloudListOption{
 		Region:   req.Region,
 		CloudIDs: req.CloudIDs,
-		Page: &adcore.TCloudPage{
-			Offset: 0,
-			Limit:  adcore.TCloudQueryLimit,
-		},
+		Page:     req.Page,
 	}
 	result, err := tcloudAdpt.ListLoadBalancer(cts.Kit, opt)
 	if err != nil {
