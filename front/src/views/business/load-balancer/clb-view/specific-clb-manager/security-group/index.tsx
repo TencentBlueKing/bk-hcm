@@ -112,7 +112,7 @@ export default defineComponent({
       },
       {
         label: 'ID',
-        field: 'id',
+        field: 'cloud_id',
       },
       {
         label: '备注',
@@ -125,7 +125,7 @@ export default defineComponent({
         name: '安全组名称',
       },
       {
-        id: 'id',
+        id: 'cloud_id',
         name: 'ID',
       },
     ];
