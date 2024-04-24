@@ -25,7 +25,7 @@ export default defineComponent({
     const healthDetailInfo = computed(() => [
       {
         label: '是否启用',
-        value: () => <Switcher v-model={isOpen.value} theme='primary' />,
+        value: () => (isOpen.value ? '已启用' : '未启用'),
       },
       {
         label: '健康探测源IP',
@@ -51,7 +51,7 @@ export default defineComponent({
     ]);
     const isHealthCheckupConfigShow = ref(false);
     const formData = reactive({
-      health_switch: 1,
+      health_switch: false,
       check_type: 'TCP',
       check_port: '',
       time_out: '',
@@ -64,7 +64,7 @@ export default defineComponent({
         if (Object.hasOwnProperty.call(formData, key)) {
           switch (key) {
             case 'health_switch':
-              formData[key] = 1;
+              formData[key] = false;
               break;
             case 'check_type':
               formData[key] = 'TCP';
@@ -77,6 +77,10 @@ export default defineComponent({
       }
     }
     const formItemOptions = computed(() => [
+      {
+        label: '是否启用',
+        content: () => <Switcher v-model={formData.health_switch} theme='primary' />,
+      },
       {
         label: '探测来源IP',
         property: 'health_switch',
@@ -198,7 +202,6 @@ export default defineComponent({
           class='fixed-operate-btn'
           outline
           theme='primary'
-          disabled={!isOpen.value}
           onClick={() => (isHealthCheckupConfigShow.value = true)}>
           配置
         </Button>
@@ -246,7 +249,7 @@ export default defineComponent({
                   {Array.isArray(item) ? (
                     item.map(({ label, property, required, span, content }) => (
                       <Col span={span}>
-                        <FormItem label={label} property={property} required={required}>
+                        <FormItem label={label} property={property} required={required} labelPosition='top'>
                           {content()}
                         </FormItem>
                       </Col>
