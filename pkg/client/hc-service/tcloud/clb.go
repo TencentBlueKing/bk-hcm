@@ -179,7 +179,7 @@ func (c *ClbClient) UpdateListenerHealthCheck(kt *kit.Kit, lblID string,
 	req *hcproto.HealthCheckUpdateReq) error {
 
 	return common.RequestNoResp[hcproto.HealthCheckUpdateReq](c.client, http.MethodPatch, kt, req,
-		"/vendors/tcloud/listeners/{lbl_id}/health_check", lblID)
+		"/listeners/%s/health_check", lblID)
 }
 
 // ListTargetHealth 查询目标组所在负载均衡的端口健康数据
