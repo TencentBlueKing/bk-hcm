@@ -29,6 +29,14 @@ export const useBusinessStore = defineStore({
       return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/${id}`);
     },
     /**
+     * common-批量删除资源
+     * @param type 资源类型
+     * @param data 资源ids
+     */
+    deleteBatch(type: string, data: { ids: string[] }) {
+      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/batch`, { data });
+    },
+    /**
      * @description: 新增安全组
      * @param {any} data
      * @return {*}
