@@ -24,9 +24,7 @@ import (
 	"fmt"
 
 	cloudserver "hcm/pkg/api/cloud-server"
-	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	hcproto "hcm/pkg/api/hc-service/load-balancer"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
@@ -66,39 +64,15 @@ func (svc *lbSvc) InquiryPriceLoadBalancer(cts *rest.Contexts) (any, error) {
 }
 
 func (svc *lbSvc) inquiryPriceTCloudLoadBalancer(kt *kit.Kit, body json.RawMessage) (any, error) {
-	req := new(cslb.TCloudBatchCreateReq)
+	req := new(hcproto.TCloudLoadBalancerCreateReq)
 	if err := json.Unmarshal(body, req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	if err := req.Validate(); err != nil {
+	if err := req.Validate(false); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-
-	hcReq := &hcproto.TCloudBatchCreateReq{
-		BkBizID:                 constant.UnassignedBiz,
-		AccountID:               req.AccountID,
-		Region:                  req.Region,
-		Name:                    req.Name,
-		LoadBalancerType:        req.LoadBalancerType,
-		AddressIPVersion:        req.AddressIPVersion,
-		Zones:                   req.Zones,
-		BackupZones:             req.BackupZones,
-		CloudVpcID:              req.CloudVpcID,
-		CloudSubnetID:           req.CloudSubnetID,
-		Vip:                     req.Vip,
-		CloudEipID:              req.CloudEipID,
-		VipIsp:                  req.VipIsp,
-		InternetChargeType:      req.InternetChargeType,
-		InternetMaxBandwidthOut: req.InternetMaxBandwidthOut,
-		BandwidthPackageID:      req.BandwidthPackageID,
-		SlaType:                 req.SlaType,
-		AutoRenew:               req.AutoRenew,
-		RequireCount:            req.RequireCount,
-		Memo:                    req.Memo,
-	}
-
-	result, err := svc.client.HCService().TCloud.Clb.InquiryPrice(kt, hcReq)
+	result, err := svc.client.HCService().TCloud.Clb.InquiryPrice(kt, req)
 	if err != nil {
 		logs.Errorf("inquiry price tcloud load balancer failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err

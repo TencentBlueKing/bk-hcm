@@ -34,6 +34,7 @@ import (
 	gcpdiskhandler "hcm/cmd/cloud-server/service/application/handlers/disk/gcp"
 	huaweidiskhandler "hcm/cmd/cloud-server/service/application/handlers/disk/huawei"
 	tclouddiskhandler "hcm/cmd/cloud-server/service/application/handlers/disk/tcloud"
+	lbtcloud "hcm/cmd/cloud-server/service/application/handlers/load_balancer/tcloud"
 	awsvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/aws"
 	azurevpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/azure"
 	gcpvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/gcp"
@@ -44,6 +45,7 @@ import (
 	csdisk "hcm/pkg/api/cloud-server/disk"
 	csvpc "hcm/pkg/api/cloud-server/vpc"
 	dataproto "hcm/pkg/api/data-service"
+	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
@@ -363,6 +365,37 @@ func (a *applicationSvc) CreateForCreateDisk(cts *rest.Contexts) (interface{}, e
 			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 		}
 		handler := azurediskhandler.NewApplicationOfCreateAzureDisk(opt, req)
+		return a.create(cts, commReq, handler)
+	}
+
+	return nil, nil
+}
+
+// CreateForCreateLB 创建负载均衡申请单
+func (a *applicationSvc) CreateForCreateLB(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	commReq, err := decodeCommonReqAndValidate(cts)
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	if err := a.checkApplyResPermission(cts, meta.LoadBalancer); err != nil {
+		return nil, err
+	}
+
+	opt := a.getHandlerOption(cts)
+
+	switch vendor {
+	case enumor.TCloud:
+		req, err := parseReqFromRequestBody[hclb.TCloudLoadBalancerCreateReq](cts)
+		if err != nil {
+			return nil, err
+		}
+		handler := lbtcloud.NewApplicationOfCreateTCloudLB(opt, req)
 		return a.create(cts, commReq, handler)
 	}
 

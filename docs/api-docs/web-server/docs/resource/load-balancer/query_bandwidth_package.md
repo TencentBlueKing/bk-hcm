@@ -19,7 +19,7 @@ POST /api/v1/cloud/bandwidth_packages/query
 | page            | Page         | 是  | 分页信息                                  |
 | pkg_cloud_ids   | string array | 否  | 带宽包云id 过滤                             |
 | pkg_names       | string array | 否  | 带宽包名称过滤                               |
-| network_type    | string array | 否  | 带宽包网络类型过滤                             |
+| network_types   | string array | 否  | 带宽包网络类型过滤                             |
 | charge_types    | string array | 否  | 带宽包的计费类型过滤                            |
 | resource_types  | string array | 否  | 按带宽包资源类型过滤, 支持`Address`和`LoadBalance` |
 | resource_ids    | string array | 否  | 按带宽包资源ID过滤                            |
@@ -32,7 +32,7 @@ POST /api/v1/cloud/bandwidth_packages/query
 | offset | uint | 否  | 查询带宽包偏移量，默认为0。          |
 | limit  | uint | 是  | 查询带宽包返回数量，默认为20，最大值为100 |
 
-#### network_type 带宽包的计费类型取值范围：
+#### network_type 带宽包的网络类型取值范围：
 
 - `BGP`  普通BGP共享带宽包
 - `HIGH_QUALITY_BGP`  精品BGP共享带宽包

@@ -290,7 +290,7 @@ func (t *TCloudImpl) formatCreateClbRequest(opt *typelb.TCloudCreateClbOption) *
 
 	if opt.InternetChargeType != nil || opt.InternetMaxBandwidthOut != nil {
 		req.InternetAccessible = &clb.InternetAccessible{
-			InternetChargeType:      opt.InternetChargeType,
+			InternetChargeType:      (*string)(opt.InternetChargeType),
 			InternetMaxBandwidthOut: opt.InternetMaxBandwidthOut,
 			BandwidthpkgSubType:     opt.BandwidthpkgSubType,
 		}
@@ -542,7 +542,7 @@ func (t *TCloudImpl) InquiryPriceLoadBalancer(kt *kit.Kit, opt *typelb.TCloudCre
 
 	if opt.InternetChargeType != nil || opt.InternetMaxBandwidthOut != nil {
 		req.InternetAccessible = &clb.InternetAccessible{
-			InternetChargeType:      opt.InternetChargeType,
+			InternetChargeType:      (*string)(opt.InternetChargeType),
 			InternetMaxBandwidthOut: opt.InternetMaxBandwidthOut,
 			BandwidthpkgSubType:     opt.BandwidthpkgSubType,
 		}
