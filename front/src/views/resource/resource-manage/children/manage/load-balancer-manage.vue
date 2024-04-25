@@ -51,6 +51,7 @@ import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
 import useColumns from '../../hooks/use-columns';
 import { useI18n } from 'vue-i18n';
+import { asyncGetListenerCount } from '@/utils';
 
 const props = defineProps({
   filter: {
@@ -67,9 +68,14 @@ const props = defineProps({
 const { t } = useI18n();
 const { whereAmI } = useWhereAmI();
 const { searchData, searchValue, filter } = useFilter(props);
+
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, triggerApi } = useQueryList(
   { filter: filter.value },
   'load_balancers',
+  null,
+  'list',
+  {},
+  asyncGetListenerCount,
 );
 const { selections, handleSelectionChange, resetSelections } = useSelection();
 const { columns, settings } = useColumns('lb');

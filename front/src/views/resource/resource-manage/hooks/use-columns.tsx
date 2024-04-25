@@ -25,7 +25,7 @@ import { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../common/table/HostO
 import './use-columns.scss';
 import { defaults } from 'lodash';
 import { timeFormatter } from '@/common/util';
-import { LBRouteName, SCHEDULER_MAP } from '@/constants/clb';
+import { LBRouteName, LB_NETWORK_TYPE_MAP, SCHEDULER_MAP } from '@/constants/clb';
 
 interface LinkFieldOptions {
   type: string; // 资源类型
@@ -1202,25 +1202,27 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '网络类型',
       field: 'lb_type',
       isDefaultShow: true,
+      render: ({ cell }: { cell: string }) => LB_NETWORK_TYPE_MAP[cell],
     },
     {
       label: '监听器数量',
       field: 'listenerNum',
       isDefaultShow: true,
+      render: ({ cell }: { cell: number }) => cell || '0',
     },
     {
       label: '分配状态',
-      field: 'is_distibute',
+      field: 'bk_biz_id',
       isDefaultShow: true,
       isOnlyShowInResource: true,
-      render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => (
+      render: ({ cell }: { cell: number }) => (
         <bk-tag
           v-bk-tooltips={{
             content: businessMapStore.businessMap.get(cell),
             disabled: !cell || cell === -1,
           }}
-          theme={data.bk_biz_id === -1 ? false : 'success'}>
-          {data.bk_biz_id === -1 ? '未分配' : '已分配'}
+          theme={cell === -1 ? false : 'success'}>
+          {cell === -1 ? '未分配' : '已分配'}
         </bk-tag>
       ),
     },

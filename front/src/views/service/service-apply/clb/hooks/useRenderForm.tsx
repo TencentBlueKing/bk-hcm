@@ -3,10 +3,9 @@ import { computed, defineComponent, ref, watch } from 'vue';
 import { Button, Form, Input, Select, Slider } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
-import { Plus } from 'bkui-vue/lib/icon';
+import { EditLine, Plus } from 'bkui-vue/lib/icon';
 import ZoneSelector from '@/components/zone-selector/index.vue';
 import PrimaryStandZoneSelector from '../../components/common/primary-stand-zone-selector';
-import VpcSelector from '../../components/common/vpc-selector';
 import RegionVpcSelector from '../../components/common/region-vpc-selector';
 import SubnetSelector from '../../components/common/subnet-selector';
 import InputNumber from '@/components/input-number';
@@ -16,7 +15,7 @@ import CommonCard from '@/components/CommonCard';
 import { type ISubnetItem } from '../../cvm/children/SubnetPreviewDialog';
 import type { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
 // import constants
-import { ResourceTypeEnum } from '@/common/constant';
+import { CLB_SPECS, LB_ISP, ResourceTypeEnum } from '@/common/constant';
 import { LOAD_BALANCER_TYPE, ADDRESS_IP_VERSION, ZONE_TYPE, INTERNET_CHARGE_TYPE } from '@/constants/clb';
 // import utils
 import bus from '@/common/bus';
@@ -24,6 +23,7 @@ import { useI18n } from 'vue-i18n';
 import { reqAccountNetworkType } from '@/api/load_balancers/apply-clb';
 // import custom hooks
 import useFilterResource from './useFilterResource';
+import { CLB_QUOTA_NAME } from '@/typings';
 
 const { Option } = Select;
 const { FormItem } = Form;
@@ -62,7 +62,22 @@ export default (formModel: ApplyClbModel) => {
   };
 
   // use custom hooks
-  const { ispList } = useFilterResource(formModel);
+  const { ispList, isResourceListLoading, quotas } = useFilterResource(formModel);
+
+  // 当前地域下负载均衡的配额
+  const currentLbQuota = computed(() => {
+    const quotaName =
+      formModel.load_balancer_type === 'OPEN'
+        ? CLB_QUOTA_NAME.TOTAL_OPEN_CLB_QUOTA
+        : CLB_QUOTA_NAME.TOTAL_INTERNAL_CLB_QUOTA;
+    return quotas.value.find(({ quota_id }) => quotaName === quota_id);
+  });
+  // 购买数量的最大值
+  const requireCountMax = computed(() => currentLbQuota.value?.quota_limit - currentLbQuota.value?.quota_current || 1);
+  // 配额余量
+  const quotaRemaining = computed(() =>
+    currentLbQuota.value?.quota_limit ? requireCountMax.value - formModel.require_count : 0,
+  );
 
   // form item options
   const formItemOptions = computed(() => [
@@ -121,14 +136,18 @@ export default (formModel: ApplyClbModel) => {
             content: () => (
               <BkRadioGroup v-model={formModel.zoneType}>
                 {ZONE_TYPE.map(({ label, value, isDisabled }) => {
-                  const disabled = typeof isDisabled === 'function' ? isDisabled(formModel.region) : false;
+                  const disabled =
+                    typeof isDisabled === 'function' ? isDisabled(formModel.region, formModel.account_type) : false;
                   return (
                     <BkRadioButton
                       label={value}
                       class='w120'
                       disabled={disabled}
                       v-bk-tooltips={{
-                        content: t('当前地域不支持主备可用区'),
+                        content:
+                          formModel.account_type === 'LEGACY'
+                            ? t('仅标准型账号支持主备可用区')
+                            : t('仅广州、上海、南京、北京、中国香港、首尔地域的 IPv4 版本的 CLB 支持主备可用区'),
                         disabled: !disabled,
                       }}>
                       {t(label)}
@@ -153,6 +172,7 @@ export default (formModel: ApplyClbModel) => {
                     region={formModel.region}
                     onChange={handleZoneChange}
                     delayed={true}
+                    isLoading={isResourceListLoading.value}
                   />
                 );
               } else {
@@ -176,27 +196,13 @@ export default (formModel: ApplyClbModel) => {
           property: 'cloud_vpc_id',
           content: () => (
             <div class='component-with-preview'>
-              {isIntranet.value ? (
-                <VpcSelector
-                  class='base'
-                  v-model={formModel.cloud_vpc_id}
-                  bizId={formModel.bk_biz_id}
-                  accountId={formModel.account_id}
-                  vendor={formModel.vendor}
-                  region={formModel.region}
-                  zone={formModel.zones}
-                  onChange={handleVpcChange}
-                />
-              ) : (
-                <RegionVpcSelector
-                  class='base'
-                  v-model={formModel.cloud_vpc_id}
-                  accountId={formModel.account_id}
-                  region={formModel.region}
-                  onChange={handleVpcChange}
-                />
-              )}
-
+              <RegionVpcSelector
+                class='base'
+                v-model={formModel.cloud_vpc_id}
+                accountId={formModel.account_id}
+                region={formModel.region}
+                onChange={handleVpcChange}
+              />
               <Button
                 class='preview-btn'
                 text
@@ -246,20 +252,32 @@ export default (formModel: ApplyClbModel) => {
           property: 'sla_type',
           hidden: isIntranet.value,
           content: () => (
-            <BkButtonGroup>
-              <Button
-                selected={formModel.sla_type === 'shared'}
-                onClick={() => (formModel.sla_type = 'shared')}
-                class='w120'>
-                {t('共享型')}
-              </Button>
-              <Button
-                selected={formModel.sla_type !== 'shared'}
-                onClick={() => bus.$emit('showSelectClbSpecTypeDialog')}
-                class='w120'>
-                {t('性能容量型')}
-              </Button>
-            </BkButtonGroup>
+            <>
+              <BkButtonGroup>
+                <Button
+                  selected={formModel.sla_type === 'shared'}
+                  onClick={() => (formModel.sla_type = 'shared')}
+                  class='w120'>
+                  {t('共享型')}
+                </Button>
+                <Button
+                  selected={formModel.sla_type !== 'shared'}
+                  onClick={() => bus.$emit('showSelectClbSpecTypeDialog')}
+                  disabled={!formModel.vip_isp}
+                  v-bk-tooltips={{ content: '请选择运营商类型', disabled: !!formModel.vip_isp }}
+                  class='w120'>
+                  {t('性能容量型')}
+                </Button>
+              </BkButtonGroup>
+              {formModel.sla_type !== 'shared' && (
+                <div class='flex-row align-items-center'>
+                  <span class='text-desc'>规格为:</span>
+                  <Button text theme='primary' class='ml10' onClick={() => bus.$emit('showSelectClbSpecTypeDialog')}>
+                    {CLB_SPECS[formModel.sla_type]} <EditLine class='ml5 text-link' />
+                  </Button>
+                </div>
+              )}
+            </>
           ),
         },
         {
@@ -269,10 +287,10 @@ export default (formModel: ApplyClbModel) => {
           hidden: isIntranet.value,
           description: '运营商类型选择范围由主可用区, 备可用区, IP版本决定',
           content: () => (
-            <Select v-model={formModel.vip_isp}>
+            <Select v-model={formModel.vip_isp} loading={isResourceListLoading.value}>
               {ispList.value?.map((item) => (
-                <Option key={item} id={item}>
-                  {item}
+                <Option key={item} id={item} name={LB_ISP[item]}>
+                  {LB_ISP[item]}
                 </Option>
               ))}
             </Select>
@@ -353,9 +371,12 @@ export default (formModel: ApplyClbModel) => {
             property: 'require_count',
             content: () => (
               <>
-                <InputNumber v-model={formModel.require_count} min={1} />
+                <InputNumber v-model={formModel.require_count} min={1} max={requireCountMax.value} />
                 <div class='quota-info'>
-                  {t('所在地域配额为')} <span class='quota-number'>{130}</span> / 500
+                  {t('所在地域配额为')}
+                  <span class='quota-number ml5'>{quotaRemaining.value}</span>
+                  <span class='ml5 mr5'>/</span>
+                  {currentLbQuota.value?.quota_limit || 0}
                 </div>
               </>
             ),

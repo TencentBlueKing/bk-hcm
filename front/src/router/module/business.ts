@@ -391,6 +391,9 @@ const businesseMenus: RouteRecordRaw[] = [
                 },
               },
             ],
+            meta: {
+              applyRes: 'targetGroup',
+            },
           },
         ],
         meta: {
@@ -515,6 +518,7 @@ const businesseMenus: RouteRecordRaw[] = [
           activeKey: 'businessClb',
           breadcrumb: ['资源管理', '负载均衡'],
           notMenu: true,
+          applyRes: 'lb',
         },
       },
     ],

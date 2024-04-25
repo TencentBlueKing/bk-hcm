@@ -548,9 +548,11 @@ export const LB_ISP = {
   CUCC: '中国联通',
   CTCC: '中国电信',
   BGP: 'BGP',
+  INTERNAL: '内网流量',
 };
 
 export const CLB_SPECS = {
+  'clb.c1.small': '简约型',
   'clb.c2.medium': '标准型规格',
   'clb.c3.small': '高阶型1规格',
   'clb.c3.medium': '高阶型2规格',

@@ -1,3 +1,5 @@
+import { NetworkAccountType } from '@/api/load_balancers/apply-clb/types';
+
 // 负载均衡-路由组件名称
 export enum LBRouteName {
   allLbs = 'all-lbs-manager',
@@ -51,7 +53,8 @@ export const ZONE_TYPE = [
   {
     label: '主备可用区',
     value: 'primaryStand',
-    isDisabled: (region: string) => !WHITE_LIST_REGION_PRIMARY_STAND_ZONE.includes(region),
+    isDisabled: (region: string, accountType: NetworkAccountType) =>
+      !WHITE_LIST_REGION_PRIMARY_STAND_ZONE.includes(region) || accountType !== 'STANDARD',
   },
 ];
 // 网络计费模式
@@ -109,3 +112,9 @@ export const SCHEDULER_MAP = {
 export const TRANSPORT_LAYER_LIST = ['TCP', 'UDP'];
 // 应用层协议, 如 HTTP, HTTPS
 export const APPLICATION_LAYER_LIST = ['HTTP', 'HTTPS'];
+
+// 负载均衡网络类型映射
+export const LB_NETWORK_TYPE_MAP = {
+  OPEN: '公网',
+  INTERNAL: '内网',
+};

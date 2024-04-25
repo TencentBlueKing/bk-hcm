@@ -122,6 +122,7 @@ const resourceMenus: RouteRecordRaw[] = [
           activeKey: 'resourceResource',
           breadcrumb: [t('云管'), t('资源'), '新建负载均衡'],
           notMenu: true,
+          applyRes: 'lb',
         },
       },
       {

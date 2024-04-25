@@ -20,7 +20,14 @@ type PropsType = {
   filter?: FilterType;
 };
 
-export default (props: PropsType, type: string, apiMethod?: Function, apiName = 'list', args: any = {}) => {
+export default (
+  props: PropsType,
+  type: string,
+  apiMethod?: Function,
+  apiName = 'list',
+  args: any = {},
+  extraResolveData?: (...args: any) => Promise<any>, // 对表格数据做额外的处理
+) => {
   // 接口
   const resourceStore = useResourceStore();
 
@@ -121,6 +128,8 @@ export default (props: PropsType, type: string, apiMethod?: Function, apiName = 
             ...item?.extension?.attachment,
           };
         });
+        // 如果传入了 extraResolveData 方法，则执行该方法, 对 datas 做额外的处理
+        typeof extraResolveData === 'function' && extraResolveData(datas.value).then((res) => (datas.value = res));
         pagination.value.count = countResult?.data?.count || 0;
       })
       .finally(() => {

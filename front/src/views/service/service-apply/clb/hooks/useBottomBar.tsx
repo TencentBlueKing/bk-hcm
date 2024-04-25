@@ -1,4 +1,4 @@
-import { computed, defineComponent, ref } from 'vue';
+import { computed, defineComponent, onMounted, onUnmounted, ref, shallowRef } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 // import components
 import { Button, Message, Popover, Table } from 'bkui-vue';
@@ -7,8 +7,10 @@ import { useResourceStore } from '@/store';
 // import types
 import { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
 import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
+import { LbPrice } from '@/typings';
 // import utils
 import { useI18n } from 'vue-i18n';
+import bus from '@/common/bus';
 
 const { Column } = Table;
 
@@ -23,18 +25,30 @@ export default (formModel: ApplyClbModel, formRef: any) => {
   const resourceStore = useResourceStore();
   // define data
   const applyLoading = ref(false);
-  const priceTableData = [
+  const prices = shallowRef<LbPrice>();
+  // 价格表格数据
+  const priceTableData = computed(() => [
     {
       billingItem: '实例费用',
       billingMode: '包年包月',
-      price: '114.00 元',
+      price: prices.value.instance_price?.unit_price_discount
+        ? `${prices.value.instance_price?.unit_price_discount} 元`
+        : '--',
     },
     {
       billingItem: '网络费用',
       billingMode: '包月',
-      price: '12.02 元',
+      price: prices.value.bandwidth_price?.unit_price_discount
+        ? `${prices.value.bandwidth_price?.unit_price_discount} 元`
+        : '--',
     },
-  ];
+  ]);
+  // 总价格
+  const totalPrice = computed(() => {
+    const instancePrice = prices.value?.instance_price?.unit_price_discount || 0;
+    const bandwidthPrice = prices.value?.bandwidth_price?.unit_price_discount || 0;
+    return (instancePrice + bandwidthPrice).toFixed(2);
+  });
 
   const isOpen = computed(() => formModel.load_balancer_type === 'OPEN');
   const isIpv4 = computed(() => formModel.address_ip_version === 'IPV4');
@@ -97,19 +111,20 @@ export default (formModel: ApplyClbModel, formRef: any) => {
     setup() {
       return () => (
         <div class='apply-clb-bottom-bar'>
-          <div class='info-wrap'>
+          {/* 本期先不显示ip费用 */}
+          {/* <div class='info-wrap'>
             <span class='label'>{t('IP资源费用')}</span>:
             <span class='value'>
               <span class='number'>0.01</span>
               <span class='unit'>{t('元/小时')}</span>
             </span>
-          </div>
+          </div> */}
           <div class='info-wrap'>
             <Popover theme='light' trigger='click' width={362} placement='top' offset={12}>
               {{
                 default: () => <span class='label has-tips'>{t('配置费用')}</span>,
                 content: () => (
-                  <Table data={priceTableData}>
+                  <Table data={priceTableData.value}>
                     <Column field='billingItem' label={t('计费项')}></Column>
                     <Column field='billingMode' label={t('计费模式')}></Column>
                     <Column field='price' label={t('价格')} align='right'></Column>
@@ -119,8 +134,9 @@ export default (formModel: ApplyClbModel, formRef: any) => {
             </Popover>
             :
             <span class='value'>
-              <span class='unit'>￥</span>
-              <span class='number'>126.02</span>
+              <span class='number'>{totalPrice.value}</span>
+              {/* 本期只支持按量计费, 按照按量计费的模式进行单位显示 */}
+              <span class='unit'>{t('元/小时')}</span>
             </span>
           </div>
           <div class='operation-btn-wrap'>
@@ -134,6 +150,14 @@ export default (formModel: ApplyClbModel, formRef: any) => {
         </div>
       );
     },
+  });
+
+  onMounted(() => {
+    bus.$on('changeLbPrice', (v: LbPrice) => (prices.value = v));
+  });
+
+  onUnmounted(() => {
+    bus.$off('changeLbPrice');
   });
 
   return {
