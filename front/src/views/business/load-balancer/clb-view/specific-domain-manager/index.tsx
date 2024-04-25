@@ -244,9 +244,19 @@ export default defineComponent({
     );
 
     watch(
-      () => props.listener_id,
-      (id) => {
-        id && getListData([], `vendors/tcloud/listeners/${id}/rules`);
+      () => [props.listener_id, props.id],
+      ([id, domain]) => {
+        id &&
+          getListData(
+            [
+              {
+                field: 'domain',
+                op: QueryRuleOPEnum.EQ,
+                value: domain,
+              },
+            ],
+            `vendors/tcloud/listeners/${id}/rules`,
+          );
       },
     );
 
