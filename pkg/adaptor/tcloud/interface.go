@@ -180,4 +180,6 @@ type TCloud interface {
 	ListTargetHealth(kt *kit.Kit, opt *typelb.TCloudListTargetHealthOption) ([]typelb.TCloudTargetHealth, error)
 
 	InquiryPriceLoadBalancer(kt *kit.Kit, opt *typelb.TCloudCreateClbOption) (*typelb.TCloudLBPrice, error)
+	ListLoadBalancerQuota(kt *kit.Kit, opt *typelb.ListTCloudLoadBalancerQuotaOption) (
+		[]typelb.TCloudLoadBalancerQuota, error)
 }

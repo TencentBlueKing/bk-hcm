@@ -52,8 +52,10 @@ func InitService(c *capability.Capability) {
 	h.Add("TCloudDescribeResources", http.MethodPost,
 		"/vendors/tcloud/load_balancers/resources/describe", svc.TCloudDescribeResources)
 	h.Add("BatchDeleteLoadBalancer", http.MethodDelete, "/load_balancers/batch", svc.BatchDeleteLoadBalancer)
+	h.Add("ListListenerCountByLbIDs", http.MethodPost, "/load_balancers/listeners/count", svc.ListListenerCountByLbIDs)
 	h.Add("GetLoadBalancerLockStatus", http.MethodGet,
 		"/load_balancers/{id}/lock/status", svc.GetLoadBalancerLockStatus)
+	h.Add("ListResLoadBalancerQuotas", http.MethodPost, "/load_balancers/quotas", svc.ListResLoadBalancerQuotas)
 
 	bizH := rest.NewHandler()
 	bizH.Path("/bizs/{bk_biz_id}")
@@ -75,10 +77,11 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 	h.Add("GetBizListener", http.MethodGet, "/listeners/{id}", svc.GetBizListener)
 	h.Add("ListBizListenerDomains", http.MethodPost,
 		"/vendors/tcloud/listeners/{lbl_id}/domains/list", svc.ListBizListenerDomains)
-	h.Add("ListListenerCountByLbIDs", http.MethodPost, "/load_balancers/listeners/count",
-		svc.ListListenerCountByLbIDs)
+	h.Add("ListBizListenerCountByLbIDs", http.MethodPost, "/load_balancers/listeners/count",
+		svc.ListBizListenerCountByLbIDs)
 	h.Add("GetBizLoadBalancerLockStatus", http.MethodGet,
 		"/load_balancers/{id}/lock/status", svc.GetBizLoadBalancerLockStatus)
+	h.Add("ListBizLoadBalancerQuotas", http.MethodPost, "/load_balancers/quotas", svc.ListBizLoadBalancerQuotas)
 
 	// 目标组
 	h.Add("ListBizTargetsByTGID", http.MethodPost,

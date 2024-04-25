@@ -203,3 +203,11 @@ func (c *ClbClient) InquiryPrice(kt *kit.Kit, req *hcproto.TCloudBatchCreateReq)
 	return common.Request[hcproto.TCloudBatchCreateReq, typelb.TCloudLBPrice](
 		c.client, http.MethodPost, kt, req, "/load_balancers/prices/inquiry")
 }
+
+// ListQuota 负载均衡配额列表
+func (c *ClbClient) ListQuota(kt *kit.Kit, req *hcproto.TCloudListLoadBalancerQuotaReq) (
+	*[]typelb.TCloudLoadBalancerQuota, error) {
+
+	return common.Request[hcproto.TCloudListLoadBalancerQuotaReq, []typelb.TCloudLoadBalancerQuota](
+		c.client, http.MethodPost, kt, req, "/load_balancers/quota")
+}

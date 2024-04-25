@@ -55,6 +55,7 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 	h.Add("TCloudUpdateCLB", http.MethodPatch, "/vendors/tcloud/load_balancers/{id}", svc.TCloudUpdateCLB)
 	h.Add("BatchDeleteTCloudLoadBalancer", http.MethodDelete,
 		"/vendors/tcloud/load_balancers/batch", svc.BatchDeleteTCloudLoadBalancer)
+	h.Add("ListQuotaTCloudLB", http.MethodPost, "/vendors/tcloud/load_balancers/quota", svc.ListTCloudLBQuota)
 
 	h.Add("TCloudCreateUrlRule", http.MethodPost,
 		"/vendors/tcloud/listeners/{lbl_id}/rules/batch/create", svc.TCloudCreateUrlRule)
@@ -1035,6 +1036,33 @@ func (svc *clbSvc) InquiryPriceTCloudLB(cts *rest.Contexts) (any, error) {
 	result, err := tcloud.InquiryPriceLoadBalancer(cts.Kit, createOpt)
 	if err != nil {
 		logs.Errorf("inquiry load balancer price failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// ListTCloudLBQuota list tcloud clb quota.
+func (svc *clbSvc) ListTCloudLBQuota(cts *rest.Contexts) (any, error) {
+	req := new(protolb.TCloudListLoadBalancerQuotaReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	tcloud, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := tcloud.ListLoadBalancerQuota(cts.Kit, &typelb.ListTCloudLoadBalancerQuotaOption{
+		Region: req.Region,
+	})
+	if err != nil {
+		logs.Errorf("list tcloud load balancer quota failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
