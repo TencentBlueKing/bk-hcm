@@ -30,7 +30,11 @@ export default defineComponent({
       },
       {
         label: '健康探测源IP',
-        value: props.detail.health_check?.health_switch || '-',
+        value: () => {
+          if (props.detail.health_check?.source_ip_type === 1) return '云专用探测 IP 段';
+          if (props.detail.health_check?.source_ip_type === 0) return '负载均衡 VIP';
+          return '-';
+        },
       },
       {
         label: '检查方式',
@@ -51,46 +55,31 @@ export default defineComponent({
       },
     ]);
     const isHealthCheckupConfigShow = ref(false);
-    const formData = reactive({
-      health_switch: false,
-      check_type: 'TCP',
-      check_port: '',
-      time_out: '',
-      interval_time: '',
-      un_health_num: '',
-      health_num: '',
-      http_check_domain: '', // 域名
-      http_check_path: '', // 路径
-      http_check_method: 'HEAD', // 请求方式
-      http_code: [], // 状态码检测
-      http_version: 'HTTP/1.0', // 版本
-      context_type: 'TEXT', // 输入格式
-      send_context: '', // 检查请求
-      recv_context: '', // 检查返回结果
-      source_ip_type: 1, // 0（使用LB的VIP作为源IP），1（使用100.64网段IP作为源IP）
-    });
+    const getDefaultFormData = () => {
+      return {
+        health_switch: false,
+        check_type: props.detail.protocol === 'UDP' ? 'PING' : 'TCP',
+        check_port: '',
+        time_out: 2,
+        interval_time: 5,
+        un_health_num: 2,
+        health_num: 2,
+        http_check_domain: '', // 域名
+        http_check_path: '/', // 路径
+        http_check_method: 'HEAD', // 请求方式
+        http_code: [1, 2, 4, 8, 16], // 状态码检测
+        http_version: 'HTTP/1.0', // 版本
+        context_type: 'TEXT', // 输入格式
+        send_context: '', // 检查请求
+        recv_context: '', // 检查返回结果
+        source_ip_type: 1, // 0（使用LB的VIP作为源IP），1（使用100.64网段IP作为源IP）
+      };
+    };
+    const formData = reactive(getDefaultFormData());
     function resetFormData() {
+      const defaultData = getDefaultFormData();
       for (const key in formData) {
-        if (Object.hasOwnProperty.call(formData, key)) {
-          switch (key) {
-            case 'health_switch':
-              formData[key] = false;
-              break;
-            case 'check_type':
-              formData[key] = 'TCP';
-              break;
-            case 'http_check_method':
-              formData[key] = 'HEAD';
-              break;
-            case 'http_version':
-              formData[key] = 'HTTP/1.0';
-            case 'context_type':
-              formData[key] = 'TEXT';
-            default:
-              formData[key] = '';
-              break;
-          }
-        }
+        formData[key] = defaultData[key];
       }
     }
     const formItemOptions = computed(() => [
@@ -102,7 +91,6 @@ export default defineComponent({
       {
         label: '探测来源IP',
         property: 'source_ip_type',
-        required: true,
         content: () => (
           <BkRadioGroup v-model={formData.source_ip_type} class='radio-groups'>
             <BkRadio label={1}>
@@ -133,7 +121,6 @@ export default defineComponent({
       {
         label: '检查方式',
         property: 'check_type',
-        required: true,
         content: () => (
           <BkRadioGroup v-model={formData.check_type}>
             {!['UDP'].includes(props.detail.protocol) && (
@@ -151,7 +138,6 @@ export default defineComponent({
       {
         label: '检查端口',
         property: 'check_port',
-        required: true,
         content: () => <Input v-model={formData.check_port} />,
         isRender: ['TCP', 'UDP'].includes(props.detail.protocol) && !['PING'].includes(formData.check_type),
       },
@@ -159,7 +145,6 @@ export default defineComponent({
         {
           label: '检查域名',
           property: 'http_check_domain',
-          required: true,
           span: 12,
           content: () => <Input v-model={formData.http_check_domain} />,
           isRender: ['HTTP'].includes(formData.check_type),
@@ -167,7 +152,6 @@ export default defineComponent({
         {
           label: '检查路径',
           property: 'http_check_path',
-          required: true,
           span: 12,
           content: () => <Input v-model={formData.http_check_path} />,
           isRender: ['HTTP'].includes(formData.check_type),
@@ -177,7 +161,6 @@ export default defineComponent({
         {
           label: 'HTTP请求方式',
           property: 'http_check_domain',
-          required: true,
           span: 12,
           content: () => (
             <Select v-model={formData.http_check_method} clearable={false}>
@@ -191,7 +174,6 @@ export default defineComponent({
         {
           label: 'HTTP状态码检测',
           property: 'http_code',
-          required: true,
           span: 12,
           content: () => (
             <Select v-model={formData.http_code} clearable={false} multiple multiple-mode='tag'>
@@ -227,7 +209,6 @@ export default defineComponent({
       {
         label: 'HTTP版本',
         property: 'http_version',
-        required: true,
         span: 12,
         content: () => (
           <Select v-model={formData.http_version} clearable={false}>
@@ -250,7 +231,6 @@ export default defineComponent({
       {
         label: '输入格式',
         property: 'time_out',
-        required: true,
         span: 12,
         content: () => (
           <Select v-model={formData.context_type} clearable={false}>
@@ -273,7 +253,6 @@ export default defineComponent({
       {
         label: '检查请求',
         property: 'send_context',
-        required: true,
         span: 12,
         content: () => <Input v-model={formData.send_context} type={'textarea'} rows={3} />,
         isRender: ['CUSTOM'].includes(formData.check_type),
@@ -281,7 +260,6 @@ export default defineComponent({
       {
         label: '检查返回结果',
         property: 'recv_context',
-        required: true,
         span: 12,
         content: () => <Input v-model={formData.recv_context} type={'textarea'} rows={3} />,
         isRender: ['CUSTOM'].includes(formData.check_type),
@@ -290,7 +268,6 @@ export default defineComponent({
         {
           label: '响应超时',
           property: 'time_out',
-          required: true,
           span: 12,
           content: () => <Input v-model={formData.time_out} placeholder='0' type='number' suffix='秒' />,
           isRender: true,
@@ -298,9 +275,8 @@ export default defineComponent({
         {
           label: '检查间隔',
           property: 'interval_time',
-          required: true,
           span: 12,
-          content: () => <Input v-model={formData.interval_time} placeholder='0' type='number' suffix='秒' />,
+          content: () => <Input v-model={formData.interval_time} placeholder='0' type='number' min={5} suffix='秒' />,
           isRender: true,
         },
       ],
@@ -308,17 +284,15 @@ export default defineComponent({
         {
           label: '不健康阈值',
           property: 'un_health_num',
-          required: true,
           span: 12,
-          content: () => <Input v-model={formData.un_health_num} placeholder='0' type='number' suffix='秒' />,
+          content: () => <Input v-model={formData.un_health_num} placeholder='0' type='number' min={2} suffix='秒' />,
           isRender: true,
         },
         {
           label: '健康阈值',
           property: 'health_num',
-          required: true,
           span: 12,
-          content: () => <Input v-model={formData.health_num} placeholder='0' type='number' suffix='秒' />,
+          content: () => <Input v-model={formData.health_num} placeholder='0' type='number' min={2} suffix='秒' />,
           isRender: true,
         },
       ],
@@ -346,25 +320,15 @@ export default defineComponent({
           'health_num',
         ];
 
-        for (const key of keys) {
-          formData[key] = detail.health_check?.[key];
-        }
-        isSubmitLoading.value = false;
-      },
-    );
+        resetFormData();
 
-    watch(
-      () => formData,
-      (formData) => {
-        if (formData.health_switch) {
-          isOpen.value = true;
-        } else {
-          isOpen.value = false;
+        for (const key of keys) {
+          formData[key] = detail.health_check?.[key] || formData[key];
         }
-      },
-      {
-        immediate: true,
-        deep: true,
+
+        formData.health_switch = isOpen.value;
+
+        isSubmitLoading.value = false;
       },
     );
 
@@ -373,16 +337,20 @@ export default defineComponent({
       try {
         await businessStore.updateHealthCheck({
           id: loadbalancerStore.targetGroupId,
-          health_check: {
-            ...formData,
-            health_switch: formData.health_switch ? 1 : 0,
-            check_port: +formData.check_port,
-            time_out: +formData.time_out,
-            interval_time: +formData.interval_time,
-            un_health_num: +formData.un_health_num,
-            health_num: +formData.health_num,
-            http_code: formData.http_code?.length ? formData.http_code.reduce((acc, cur) => acc + cur, 0) : undefined,
-          },
+          health_check: !formData.health_switch
+            ? { health_switch: formData.health_switch ? 1 : 0 }
+            : {
+                ...formData,
+                health_switch: formData.health_switch ? 1 : 0,
+                check_port: +formData.check_port,
+                time_out: +formData.time_out,
+                interval_time: +formData.interval_time,
+                un_health_num: +formData.un_health_num,
+                health_num: +formData.health_num,
+                http_code: formData.http_code?.length
+                  ? formData.http_code.reduce((acc, cur) => acc + cur, 0)
+                  : undefined,
+              },
         });
         isHealthCheckupConfigShow.value = false;
         resetFormData();
@@ -425,7 +393,7 @@ export default defineComponent({
             return (
               <div class='info-item'>
                 <span class='info-item-label'>{label}</span>
-                {typeof value === 'function' ? null : ':'}
+                {':'}
                 <span class={`info-item-value${Array.isArray(value) ? ' multiline' : ''}`}>{valueVNode}</span>
               </div>
             );
@@ -437,6 +405,9 @@ export default defineComponent({
           title='健康检查配置'
           onHandleSubmit={handleSubmit}
           isSubmitLoading={isSubmitLoading.value}
+          onUpdate:isShow={(isShow) => {
+            if (!isShow) resetFormData();
+          }}
           width='640'>
           <Form formType='vertical'>
             <Container margin={0}>
