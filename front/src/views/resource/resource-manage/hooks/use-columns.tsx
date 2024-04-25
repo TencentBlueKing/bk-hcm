@@ -1208,6 +1208,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '监听器数量',
       field: 'listenerNum',
       isDefaultShow: true,
+      render: ({ cell }: { cell: number }) => cell || '0',
     },
     {
       label: '分配状态',

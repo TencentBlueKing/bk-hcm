@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 
 import { useAccountStore } from '@/store';
 import { getQueryStringParams } from '@/common/util';
+import { ClbQuotasResp, LbPriceInquiryResp } from '@/typings';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 // 获取
@@ -465,6 +466,20 @@ export const useBusinessStore = defineStore({
         `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}load_balancers/${data.lb_id}/async_tasks/clone`,
         data,
       );
+    },
+    /**
+     * 获取腾讯云账号负载均衡的配额
+     * @param data { account_id: 云账号ID region: 地域 }
+     */
+    getClbQuotas(data: { account_id: string; region: string }): Promise<ClbQuotasResp> {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}load_balancers/quotas`, data);
+    },
+    /**
+     * 查询负载均衡价格
+     * @param data 负载均衡参数
+     */
+    lbPricesInquiry(data: any): Promise<LbPriceInquiryResp> {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/load_balancers/prices/inquiry`, data);
     },
   },
 });

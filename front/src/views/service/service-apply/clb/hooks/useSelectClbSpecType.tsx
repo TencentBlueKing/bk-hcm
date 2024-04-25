@@ -9,6 +9,7 @@ import type { SpecAvailability, ApplyClbModel } from '@/api/load_balancers/apply
 import { useI18n } from 'vue-i18n';
 import bus from '@/common/bus';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
+import { CLB_SPECS } from '@/common/constant';
 
 // apply-clb, 性能容量型弹窗
 export default (formModel: ApplyClbModel) => {
@@ -23,7 +24,11 @@ export default (formModel: ApplyClbModel) => {
       label: t('规格类型'),
       field: 'SpecType',
       render: ({ data }: any) => {
-        return <Radio v-model={selectedClbSpecType.value} label={data.SpecType} />;
+        return (
+          <Radio v-model={selectedClbSpecType.value} label={data.SpecType}>
+            <span class='font-small'>{CLB_SPECS[data.SpecType]}</span>
+          </Radio>
+        );
       },
     },
     {

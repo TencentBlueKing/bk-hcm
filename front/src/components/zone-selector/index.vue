@@ -19,6 +19,11 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  // 是否加载中
+  isLoading: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -134,7 +139,7 @@ defineExpose({
 </script>
 
 <template>
-  <bk-select v-model="selectedValue" filterable @scroll-end="getZonesData" :loading="loading">
+  <bk-select v-model="selectedValue" filterable @scroll-end="getZonesData" :loading="loading || isLoading">
     <bk-option v-for="(item, index) in zonesList" :key="index" :value="item.name" :label="item.name_cn || item.name" />
   </bk-select>
 </template>
