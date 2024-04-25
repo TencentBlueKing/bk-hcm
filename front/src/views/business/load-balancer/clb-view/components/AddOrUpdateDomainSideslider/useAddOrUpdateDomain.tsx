@@ -74,7 +74,7 @@ export default (getListData: () => void, originPage: IOriginPage) => {
     }
   };
 
-  const [isTargetGroupListLoading, targetGroupList, handleTargetGroupListScrollEnd] = useSelectOptionListWithScroll(
+  const { isScrollLoading, optionList, handleOptionListScrollEnd } = useSelectOptionListWithScroll(
     'target_groups',
     [
       {
@@ -161,9 +161,9 @@ export default (getListData: () => void, originPage: IOriginPage) => {
       content: () => (
         <Select
           v-model={formData.target_group_id}
-          scrollLoading={isTargetGroupListLoading.value}
-          onScroll-end={handleTargetGroupListScrollEnd}>
-          {targetGroupList.value.map(({ id, name, listener_num }) => (
+          scrollLoading={isScrollLoading.value}
+          onScroll-end={handleOptionListScrollEnd}>
+          {optionList.value.map(({ id, name, listener_num }) => (
             <Option key={id} id={id} name={name} disabled={listener_num > 0} />
           ))}
         </Select>

@@ -221,28 +221,27 @@ export default defineComponent({
       getListData,
     );
 
-    const [isTargetGroupListLoading, targetGroupList, getTargetGroupList, handleTargetGroupListScrollEnd] =
-      useSelectOptionListWithScroll(
-        'target_groups',
-        [
-          {
-            field: 'account_id',
-            op: QueryRuleOPEnum.EQ,
-            value: loadBalancerStore.currentSelectedTreeNode.lb.account_id,
-          },
-          {
-            field: 'cloud_vpc_id',
-            op: QueryRuleOPEnum.EQ,
-            value: loadBalancerStore.currentSelectedTreeNode.lb.cloud_vpc_id,
-          },
-          {
-            field: 'region',
-            op: QueryRuleOPEnum.EQ,
-            value: loadBalancerStore.currentSelectedTreeNode.lb.region,
-          },
-        ],
-        false,
-      );
+    const { isScrollLoading, optionList, getOptionList, handleOptionListScrollEnd } = useSelectOptionListWithScroll(
+      'target_groups',
+      [
+        {
+          field: 'account_id',
+          op: QueryRuleOPEnum.EQ,
+          value: loadBalancerStore.currentSelectedTreeNode.lb.account_id,
+        },
+        {
+          field: 'cloud_vpc_id',
+          op: QueryRuleOPEnum.EQ,
+          value: loadBalancerStore.currentSelectedTreeNode.lb.cloud_vpc_id,
+        },
+        {
+          field: 'region',
+          op: QueryRuleOPEnum.EQ,
+          value: loadBalancerStore.currentSelectedTreeNode.lb.region,
+        },
+      ],
+      false,
+    );
 
     watch(
       () => props.listener_id,
@@ -297,7 +296,7 @@ export default defineComponent({
 
     onMounted(() => {
       bus.$on('showAddUrlSideslider', handleAddUrlSidesliderShow);
-      getTargetGroupList();
+      getOptionList();
     });
 
     onUnmounted(() => {
@@ -370,9 +369,9 @@ export default defineComponent({
               <FormItem label={t('目标组')} required>
                 <Select
                   v-model={formData.target_group_id}
-                  scrollLoading={isTargetGroupListLoading.value}
-                  onScroll-end={handleTargetGroupListScrollEnd}>
-                  {targetGroupList.value.map(({ id, name, listener_num }) => (
+                  scrollLoading={isScrollLoading.value}
+                  onScroll-end={handleOptionListScrollEnd}>
+                  {optionList.value.map(({ id, name, listener_num }) => (
                     <Option key={id} id={id} name={name} disabled={listener_num > 0} />
                   ))}
                 </Select>

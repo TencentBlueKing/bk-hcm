@@ -131,15 +131,15 @@ export default (getListData: (...args: any) => any) => {
   };
 
   // 目标组 options
-  const [
-    isTargetGroupListLoading,
-    targetGroupList,
-    initTargetGroupOptionState,
-    getTargetGroupList,
-    handleTargetGroupListScrollEnd,
-    isTargetGroupListFlashLoading,
-    handleTargetGroupListRefreshOptionList,
-  ] = useSelectOptionListWithScroll(
+  const {
+    isScrollLoading: isTargetGroupListLoading,
+    optionList: targetGroupList,
+    initState: initTargetGroupOptionState,
+    getOptionList: getTargetGroupList,
+    handleOptionListScrollEnd: handleTargetGroupListScrollEnd,
+    isFlashLoading: isTargetGroupListFlashLoading,
+    handleRefreshOptionList: handleTargetGroupListRefreshOptionList,
+  } = useSelectOptionListWithScroll(
     'target_groups',
     [
       {
@@ -162,34 +162,44 @@ export default (getListData: (...args: any) => any) => {
   );
 
   // 服务器证书 options
-  const [isSVRCertListLoading, SVRCertList, initSVRCertOptionState, getSVRCertList, handleSVRCertListScrollEnd] =
-    useSelectOptionListWithScroll(
-      'certs',
-      [
-        { field: 'cert_type', op: QueryRuleOPEnum.EQ, value: 'SVR' },
-        {
-          field: 'account_id',
-          op: QueryRuleOPEnum.EQ,
-          value: loadBalancerStore.currentSelectedTreeNode.account_id,
-        },
-      ],
-      false,
-    );
+  const {
+    isScrollLoading: isSVRCertListLoading,
+    optionList: SVRCertList,
+    initState: initSVRCertOptionState,
+    getOptionList: getSVRCertList,
+    handleOptionListScrollEnd: handleSVRCertListScrollEnd,
+  } = useSelectOptionListWithScroll(
+    'certs',
+    [
+      { field: 'cert_type', op: QueryRuleOPEnum.EQ, value: 'SVR' },
+      {
+        field: 'account_id',
+        op: QueryRuleOPEnum.EQ,
+        value: loadBalancerStore.currentSelectedTreeNode.account_id,
+      },
+    ],
+    false,
+  );
 
   // 客户端证书 options
-  const [isCACertListLoading, CACertList, initCACertOptionState, getCACertList, handleCACertListScrollEnd] =
-    useSelectOptionListWithScroll(
-      'certs',
-      [
-        { field: 'cert_type', op: QueryRuleOPEnum.EQ, value: 'CA' },
-        {
-          field: 'account_id',
-          op: QueryRuleOPEnum.EQ,
-          value: loadBalancerStore.currentSelectedTreeNode.account_id,
-        },
-      ],
-      false,
-    );
+  const {
+    isScrollLoading: isCACertListLoading,
+    optionList: CACertList,
+    initState: initCACertOptionState,
+    getOptionList: getCACertList,
+    handleOptionListScrollEnd: handleCACertListScrollEnd,
+  } = useSelectOptionListWithScroll(
+    'certs',
+    [
+      { field: 'cert_type', op: QueryRuleOPEnum.EQ, value: 'CA' },
+      {
+        field: 'account_id',
+        op: QueryRuleOPEnum.EQ,
+        value: loadBalancerStore.currentSelectedTreeNode.account_id,
+      },
+    ],
+    false,
+  );
 
   // 参数处理
   useResolveListenerFormData(listenerFormData);
