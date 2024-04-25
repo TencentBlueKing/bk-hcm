@@ -1415,10 +1415,11 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'health_check',
       render: ({ cell }: any) => {
         const { health_num, un_health_num } = cell;
+        const total = health_num + un_health_num;
         if (!health_num || !un_health_num) return '--';
         return (
           <div class='port-status-col'>
-            <span class={un_health_num ? 'un-health' : 'health'}>{un_health_num}</span>/
+            <span class={un_health_num ? 'un-health' : total ? 'special-health' : 'health'}>{un_health_num}</span>/
             <span>{health_num + un_health_num}</span>
           </div>
         );
