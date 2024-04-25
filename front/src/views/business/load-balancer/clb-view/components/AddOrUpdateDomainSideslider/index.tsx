@@ -34,9 +34,18 @@ export default defineComponent({
     } = useAddOrUpdateDomain(() => {
       typeof props.getListData === 'function' && props.getListData();
     }, props.originPage);
-
+    // <CommonSideslider>使用的loading
+    const sideIsLoading = ref(false);
     const formInstance = ref();
-
+    // CommonSideslider编辑点击提交触发
+    const handleDomainSidesliderSubmit = async () => {
+      sideIsLoading.value = true;
+      try {
+        await handleSubmit(formInstance);
+      } finally {
+        sideIsLoading.value = false;
+      }
+    };
     onMounted(() => {
       bus.$on('showAddDomainSideslider', handleShow);
     });
@@ -48,11 +57,12 @@ export default defineComponent({
     return () => (
       <CommonSideslider
         class='domain-sideslider'
+        loading={sideIsLoading.value}
         title={`${action.value === OpAction.ADD ? '新增' : '编辑'}域名`}
         width={640}
         v-model:isShow={isShow.value}
         onHandleSubmit={() => {
-          handleSubmit(formInstance);
+          handleDomainSidesliderSubmit();
         }}>
         <p class='readonly-info'>
           <span class='label'>负载均衡名称</span>:
