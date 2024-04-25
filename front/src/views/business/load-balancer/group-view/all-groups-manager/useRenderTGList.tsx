@@ -57,6 +57,10 @@ export default () => {
       id: 'rs_ip',
       name: 'RS的IP',
     },
+    {
+      id: 'cloud_vpc_id',
+      name: '所属VPC',
+    },
   ];
   const tableColumns = [
     ...columns,
