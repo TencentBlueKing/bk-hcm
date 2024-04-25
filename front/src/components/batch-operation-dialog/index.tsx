@@ -32,6 +32,10 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    list: {
+      type: Array,
+      default: [],
+    },
   },
   emits: ['update:isShow', 'handleConfirm'],
   setup(props, { emit, slots }) {
@@ -52,7 +56,7 @@ export default defineComponent({
           <CommonLocalTable
             searchOptions={{ searchData: props.tableProps.searchData }}
             tableOptions={{ rowKey: 'id', columns: props.tableProps.columns }}
-            tableData={props.tableProps.data}>
+            tableData={props.list}>
             {{
               operation: () => slots.tab?.(),
             }}
