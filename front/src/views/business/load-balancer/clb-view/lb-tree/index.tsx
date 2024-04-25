@@ -323,7 +323,7 @@ export default defineComponent({
             <span class='text'>全部负载均衡</span>
           </div>
           <div class='ext-info'>
-            <div class='count'>{6654}</div>
+            <div class='count'>{treeData.value.length}</div>
             <div class='more-action' onClick={(e) => showDropdownList(e, allLBNode)}>
               <i class='hcm-icon bkhcm-icon-more-fill'></i>
             </div>
