@@ -34,6 +34,7 @@ export default defineComponent({
 
     const getTargetGroupDetail = async (id: string) => {
       const res = await businessStore.getTargetGroupDetail(id);
+      // todo: 这里要改回来
       tgDetail.value = res.data;
     };
 

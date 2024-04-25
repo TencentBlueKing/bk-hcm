@@ -1,4 +1,4 @@
-import { Ref, reactive, ref } from 'vue';
+import { reactive, ref } from 'vue';
 // import stores
 import { useResourceStore } from '@/store';
 // import types
@@ -14,15 +14,7 @@ export default (
   rules: any,
   // 是否立即执行
   immediate = true,
-): [
-  isLoading: Ref<boolean>,
-  optionList: Ref<any[]>,
-  initState: (...args: any) => any,
-  getOptionList: (...args: any) => any,
-  handleOptionListScrollEnd: (...args: any) => any,
-  isFlashLoading: Ref<boolean>,
-  handleRefreshOptionList: (...args: any) => any,
-] => {
+) => {
   // use stores
   const resourceStore = useResourceStore();
 
@@ -32,9 +24,9 @@ export default (
     limit: 20,
     hasNext: true,
   });
-  const isLoading = ref(false);
-  const optionList = ref([]);
+  const isScrollLoading = ref(false); // 滚动加载loading
   const isFlashLoading = ref(false); // 刷新操作loading
+  const optionList = ref([]);
 
   /**
    * 初始化状态: optionList, pagination
@@ -52,7 +44,7 @@ export default (
    * 请求option list
    */
   const getOptionList = async (customRules: RulesItem[] = []) => {
-    isLoading.value = true;
+    isScrollLoading.value = true;
     try {
       const [detailRes, countRes] = await Promise.all(
         [false, true].map((isCount) =>
@@ -83,7 +75,7 @@ export default (
         pagination.start += pagination.limit;
       }
     } finally {
-      isLoading.value = false;
+      isScrollLoading.value = false;
     }
   };
 
@@ -111,13 +103,13 @@ export default (
   // 立即执行
   immediate && getOptionList();
 
-  return [
-    isLoading,
+  return {
+    isScrollLoading,
     optionList,
     initState,
     getOptionList,
     handleOptionListScrollEnd,
     isFlashLoading,
     handleRefreshOptionList,
-  ];
+  };
 };

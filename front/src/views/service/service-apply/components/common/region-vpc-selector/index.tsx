@@ -24,11 +24,8 @@ export default defineComponent({
   setup(props, { emit }) {
     const selectedValue = ref('');
 
-    const [isLoading, optionList, initState, getOptionList, handleOptionListScrollEnd] = useSelectOptionListWithScroll(
-      'vpcs',
-      [],
-      false,
-    );
+    const { isScrollLoading, optionList, initState, getOptionList, handleOptionListScrollEnd } =
+      useSelectOptionListWithScroll('vpcs', [], false);
 
     // 清空选项
     const handleClear = () => {
@@ -68,7 +65,7 @@ export default defineComponent({
       <div class='region-vpc-selector'>
         <Select
           v-model={selectedValue.value}
-          scrollLoading={isLoading.value}
+          scrollLoading={isScrollLoading.value}
           onClear={handleClear}
           onScroll-end={handleOptionListScrollEnd}
           disabled={props.isDisabled}>

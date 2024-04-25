@@ -4,6 +4,7 @@ import { Close, RightTurnLine, Spinner, Success } from 'bkui-vue/lib/icon';
 import { Button, Message } from 'bkui-vue';
 import './index.scss';
 import { useBusinessStore } from '@/store';
+import { useRoute } from 'vue-router';
 
 export type IProps = {
   flow: Ref<Flow>;
@@ -79,6 +80,7 @@ export const useFlowNode = (props: IProps) => {
   const flowInfo: Ref<IFlowInfo> = ref({});
   const isRetryLoading = ref(false);
   const businessStore = useBusinessStore();
+  const route = useRoute();
 
   const getContent = (updated_at: string, state: NodeState, taskID?: string) => {
     return (
@@ -165,7 +167,7 @@ export const useFlowNode = (props: IProps) => {
   const handleRetry = async (taskID: string) => {
     isRetryLoading.value = true;
     await businessStore.retryAsyncTask({
-      lb_id: props.flow.value.id,
+      lb_id: route.query.res_id,
       flow_id: props.flow.value.id,
       task_id: taskID,
     });
