@@ -627,7 +627,7 @@ func (svc *clbSvc) UpdateTCloudListener(cts *rest.Contexts) (any, error) {
 
 // UpdateTCloudListenerHealthCheck 更新监听器信健康检查信息
 func (svc *clbSvc) UpdateTCloudListenerHealthCheck(cts *rest.Contexts) (any, error) {
-	lblID := cts.PathParameter("id").String()
+	lblID := cts.PathParameter("lbl_id").String()
 	if len(lblID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}

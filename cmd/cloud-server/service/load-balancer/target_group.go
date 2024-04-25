@@ -53,6 +53,7 @@ func (svc *lbSvc) listTargetGroup(cts *rest.Contexts, authHandler handler.ListAu
 	tgReq := &core.ListReq{
 		Filter: expr,
 		Page:   req.Page,
+		Fields: req.Fields,
 	}
 	targetGroupList, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroup(cts.Kit, tgReq)
 	if err != nil {

@@ -549,10 +549,13 @@ func convTableToBaseTargetGroup(kt *kit.Kit, one *tablelb.LoadBalancerTargetGrou
 	*corelb.BaseTargetGroup, error) {
 
 	var healthCheck *corelb.TCloudHealthCheckInfo
-	err := json.UnmarshalFromString(string(one.HealthCheck), &healthCheck)
-	if err != nil {
-		logs.Errorf("unmarshal healthCheck failed, one: %+v, err: %v, rid: %s", one, err, kt.Rid)
-		return nil, err
+	// 支持不返回该字段
+	if len(one.HealthCheck) != 0 {
+		err := json.UnmarshalFromString(string(one.HealthCheck), &healthCheck)
+		if err != nil {
+			logs.Errorf("unmarshal healthCheck failed, one: %+v, err: %v, rid: %s", one, err, kt.Rid)
+			return nil, err
+		}
 	}
 
 	return &corelb.BaseTargetGroup{

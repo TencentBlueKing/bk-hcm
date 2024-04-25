@@ -126,7 +126,7 @@ func EsbCall[IT any, OT any](cli rest.ClientInterface, cfg *cc.Esb,
 	}
 
 	if !resp.Result || resp.Code != 0 {
-		logs.Errorf("esb returns error, err: %v, url: %s, code: %d, msg: %s, rid: %s, rid: %s",
+		logs.Errorf("esb returns error, err: %v, url: %s, code: %d, msg: %s, rid: %s",
 			err, url, resp.Code, resp.Message, kt.Rid)
 		return nil, fmt.Errorf("esb api returns err, code: %d, msg: %s, rid: %s", resp.Code, resp.Message, resp.Rid)
 	}
