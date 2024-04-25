@@ -26,6 +26,8 @@ export interface IProp {
     reviewData?: Array<Record<string, any>>; // 用于预览效果的数据
     extra?: Object; // 其他 table 属性/自定义事件, 比如 settings, onSelectionChange...
   };
+  // 模糊查询开关true开启，false关闭
+  fuzzySwitch: boolean;
   // 请求相关字段
   requestOption: {
     type: string; // 资源类型
@@ -217,7 +219,12 @@ export const useTable = (props: IProp) => {
       const searchRules = Array.isArray(searchVal)
         ? searchVal.map((val: any) => {
             const field = val?.id;
-            const op = val?.id === 'domain' ? QueryRuleOPEnum.JSON_CONTAINS : QueryRuleOPEnum.EQ;
+            const op =
+              val?.id === 'domain'
+                ? QueryRuleOPEnum.JSON_CONTAINS
+                : props?.fuzzySwitch
+                ? QueryRuleOPEnum.CIS
+                : QueryRuleOPEnum.EQ;
             const value =
               field === 'bk_biz_id'
                 ? businessMapStore.businessNameToIDMap.get(val?.values?.[0]?.id) || Number(val?.values?.[0]?.id)
