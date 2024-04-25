@@ -32,7 +32,6 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/slice"
 )
 
@@ -43,7 +42,7 @@ func Assign(kt *kit.Kit, cli *dataservice.Client, ids []string, bizID uint64, is
 		return fmt.Errorf("ids is required")
 	}
 
-	if err := ValidateBeforeAssign(kt, cli, ids, isBind); err != nil {
+	if err := ValidateBeforeAssign(kt, cli, int64(bizID), ids, isBind); err != nil {
 		return err
 	}
 
@@ -68,16 +67,14 @@ func Assign(kt *kit.Kit, cli *dataservice.Client, ids []string, bizID uint64, is
 }
 
 // ValidateBeforeAssign 分配前置校验
-func ValidateBeforeAssign(kt *kit.Kit, cli *dataservice.Client, ids []string, isBind bool) error {
+func ValidateBeforeAssign(kt *kit.Kit, cli *dataservice.Client, targetBizId int64, eipIds []string, isBind bool) error {
 	// 判断是否已经分配
+	// 允许已经在目标业务下
 	listReq := &core.ListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: ids},
-				&filter.AtomRule{Field: "bk_biz_id", Op: filter.NotEqual.Factory(), Value: constant.UnassignedBiz},
-			},
-		},
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("id", eipIds),
+			tools.RuleNotIn("bk_biz_id", []int64{constant.UnassignedBiz, targetBizId}),
+		),
 		Page: core.NewDefaultBasePage(),
 	}
 	listResp, err := cli.Global.ListEip(kt, listReq)
@@ -93,7 +90,7 @@ func ValidateBeforeAssign(kt *kit.Kit, cli *dataservice.Client, ids []string, is
 
 	// 判断是否关联资源
 	listRelReq := &core.ListReq{
-		Filter: tools.ContainersExpression("eip_id", ids),
+		Filter: tools.ContainersExpression("eip_id", eipIds),
 		Page:   core.NewDefaultBasePage(),
 	}
 	listRelResp, err := cli.Global.ListEipCvmRel(kt, listRelReq)
@@ -115,8 +112,8 @@ func ValidateBeforeAssign(kt *kit.Kit, cli *dataservice.Client, ids []string, is
 			eipBindMap[one.EipID] = true
 		}
 
-		if len(ids) != len(eipBindMap) {
-			unBindIDs := slice.Filter(ids, func(id string) bool {
+		if len(eipIds) != len(eipBindMap) {
+			unBindIDs := slice.Filter(eipIds, func(id string) bool {
 				return !eipBindMap[id]
 			})
 			return fmt.Errorf("eip(ids=%v) not bind cvm", unBindIDs)
