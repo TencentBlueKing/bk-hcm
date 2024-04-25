@@ -1,12 +1,12 @@
 import { defineComponent, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 // import components
-import { Button, Form, Input, Message, Select } from 'bkui-vue';
+import { Button, Form, Input, Link, Message, Select } from 'bkui-vue';
 import { Done, Error, Plus } from 'bkui-vue/lib/icon';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import CommonSideslider from '@/components/common-sideslider';
 import AddOrUpdateDomainSideslider from '../components/AddOrUpdateDomainSideslider';
 // use stores
-import { useLoadBalancerStore, useBusinessStore } from '@/store';
+import { useLoadBalancerStore, useBusinessStore, useAccountStore } from '@/store';
 // import custom hooks
 import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
@@ -51,6 +51,7 @@ export default defineComponent({
     const loadBalancerStore = useLoadBalancerStore();
     const formInstance = ref(null);
     const businessStore = useBusinessStore();
+    const accountStore = useAccountStore();
     const isEdit = ref(false);
     const { selections, handleSelectionChange, resetSelections } = useSelection();
     const { whereAmI } = useWhereAmI();
@@ -91,7 +92,13 @@ export default defineComponent({
                 </div>
               ) : (
                 <span class={'flex-row align-item-center'}>
-                  <span class={'target-group-name-btn'}>{cell || '--'}</span>
+                  <Link
+                    class='target-group-name-btn'
+                    theme='primary'
+                    href={`/#/business/loadbalancer/group-view/${cell}?bizs=${accountStore.bizs}&type=list`}>
+                    {cell || '--'}
+                  </Link>
+                  {/* <span class={'target-group-name-btn'}></span> */}
                   {/* 第一期不支持更新绑定的目标组 */}
                   {/* <EditLine class={'target-group-edit-icon'} onClick={() => (editingID.value = data.id)} /> */}
                 </span>
