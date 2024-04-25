@@ -109,3 +109,9 @@ export const SCHEDULER_MAP = {
 export const TRANSPORT_LAYER_LIST = ['TCP', 'UDP'];
 // 应用层协议, 如 HTTP, HTTPS
 export const APPLICATION_LAYER_LIST = ['HTTP', 'HTTPS'];
+
+// 负载均衡网络类型映射
+export const LB_NETWORK_TYPE_MAP = {
+  OPEN: '公网',
+  INTERNAL: '内网',
+};
