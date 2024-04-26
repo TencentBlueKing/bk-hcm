@@ -49,7 +49,7 @@ export default defineComponent({
                   class='no-number-control'
                   min={props.min}
                   max={props.max}
-                  placeholder={`请输入 ${props.min}-${props.max} 之间的数字`}
+                  placeholder={`${props.min}-${props.max}`}
                 />
               ) : (
                 <Input v-model={inputValue.value} />

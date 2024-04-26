@@ -73,7 +73,7 @@ export default (formData: any, updateCount: Ref<number>) => {
               ))}
             </Select>
             &nbsp;&nbsp;:&nbsp;&nbsp;
-            <Input v-model={formData.port} disabled={disabledEdit.value} />
+            <Input v-model={formData.port} disabled={disabledEdit.value} type='number' class='no-number-control' />
           </div>
         ),
       },
@@ -116,7 +116,12 @@ export default (formData: any, updateCount: Ref<number>) => {
       property: 'rs_list',
       span: 24,
       content: () => (
-        <RsConfigTable v-model:rsList={formData.rs_list} accountId={formData.account_id} vpcId={curVpcId.value} />
+        <RsConfigTable
+          v-model:rsList={formData.rs_list}
+          accountId={formData.account_id}
+          vpcId={curVpcId.value}
+          port={formData.port}
+        />
       ),
     },
   ]);

@@ -17,6 +17,7 @@ export default defineComponent({
     rsList: Array<any>,
     accountId: String,
     vpcId: String,
+    port: Number,
     noSearch: Boolean,
     noDisabled: Boolean, // 禁用所有disabled
     onlyShow: Boolean, // 只用于显示(基本信息页面使用)
@@ -39,12 +40,12 @@ export default defineComponent({
 
     // 修改单条row的port/weight
     const handleUpdate = (id: string, key: string) => {
-      return (val: string) => {
+      return (val: number) => {
         emit(
           'update:rsList',
           props.rsList.map((item) => {
             if (item.id === id) {
-              item[key] = +val;
+              item[key] = val;
             }
             return item;
           }),
@@ -124,8 +125,13 @@ export default defineComponent({
           return (
             <Input
               modelValue={cell}
-              onUpdate:modelValue={handleUpdate(data.id, 'port')}
+              onChange={handleUpdate(data.id, 'port')}
               disabled={!props.noDisabled && !(isAdd.value || (isAddRs.value && data.isNew))}
+              type='number'
+              min={1}
+              max={65535}
+              class='no-number-control'
+              placeholder='1-65535'
             />
           );
         },
@@ -153,8 +159,13 @@ export default defineComponent({
           return (
             <Input
               modelValue={cell}
-              onUpdate:modelValue={handleUpdate(data.id, 'weight')}
+              onChange={handleUpdate(data.id, 'weight')}
               disabled={!props.noDisabled && !(isAdd.value || (isAddRs.value && data.isNew))}
+              type='number'
+              min={0}
+              max={100}
+              class='no-number-control'
+              placeholder='0-100'
             />
           );
         },
@@ -166,7 +177,7 @@ export default defineComponent({
         label: '',
         width: 80,
         render: ({ data }: any) => (
-          <Button text onClick={() => handleDeleteRs(data)} disabled={!props.noDisabled && !data.isNew}>
+          <Button text onClick={() => handleDeleteRs(data.id)} disabled={!props.noDisabled && !data.isNew}>
             <i class='hcm-icon bkhcm-icon-minus-circle-shape'></i>
           </Button>
         ),
@@ -177,7 +188,7 @@ export default defineComponent({
 
     // click-handler - 添加rs
     const handleAddRs = () => {
-      bus.$emit('showAddRsDialog', { accountId: props.accountId, vpcId: vpc_id.value });
+      bus.$emit('showAddRsDialog', { accountId: props.accountId, vpcId: vpc_id.value, port: props.port });
     };
 
     watch(
