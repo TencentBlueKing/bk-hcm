@@ -51,7 +51,12 @@ export default defineComponent({
           default: () => ctx.slots.default?.(),
           footer: () => (
             <>
-              <Button theme='primary' onClick={handleSubmit} disabled={props.isSubmitDisabled} loading={props.isSubmitLoading}>
+              <Button
+                theme='primary'
+                onClick={handleSubmit}
+                disabled={props.isSubmitDisabled}
+                loading={props.isSubmitLoading}
+                loading-mode='spin'>
                 {t('提交')}
               </Button>
               <Button onClick={() => triggerShow(false)}>{t('取消')}</Button>
