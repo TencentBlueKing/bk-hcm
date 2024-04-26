@@ -57,7 +57,7 @@ export default defineComponent({
     return () => (
       <CommonSideslider
         class='domain-sideslider'
-        loading={sideIsLoading.value}
+        isSubmitLoading={sideIsLoading.value}
         title={`${action.value === OpAction.ADD ? '新增' : '编辑'}域名`}
         width={640}
         v-model:isShow={isShow.value}

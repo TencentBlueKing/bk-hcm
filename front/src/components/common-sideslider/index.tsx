@@ -22,7 +22,7 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
-    loading: {
+    isSubmitLoading: {
       type: Boolean,
       default: false,
     },
@@ -55,7 +55,7 @@ export default defineComponent({
                 theme='primary'
                 onClick={handleSubmit}
                 disabled={props.isSubmitDisabled}
-                loading={props.loading}
+                loading={props.isSubmitLoading}
                 loading-mode='spin'>
                 {t('提交')}
               </Button>
