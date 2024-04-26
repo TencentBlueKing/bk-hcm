@@ -38,7 +38,7 @@ export default defineComponent({
       },
       {
         label: '检查端口',
-        value: props.detail.health_check?.check_port || '-',
+        value: props.detail.health_check?.check_port || '检测端口为后端RS端口',
       },
       {
         label: '检查选型',
