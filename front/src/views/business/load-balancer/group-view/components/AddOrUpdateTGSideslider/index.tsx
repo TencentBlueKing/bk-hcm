@@ -193,7 +193,7 @@ export default defineComponent({
         title={isEdit.value ? '编辑目标组' : '新建目标组'}
         width={960}
         v-model:isShow={isShow.value}
-        isSubmitDisabled={isSubmitDisabled.value}
+        isSubmitLoading={isSubmitDisabled.value}
         onHandleSubmit={handleAddOrUpdateTargetGroupSubmit}>
         <bk-container margin={0}>
           <Form formType='vertical' model={formData}>

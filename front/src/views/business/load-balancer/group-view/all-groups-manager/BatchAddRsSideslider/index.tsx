@@ -103,7 +103,7 @@ export default defineComponent({
         width={960}
         v-model:isShow={isShow.value}
         onHandleSubmit={handleSubmit}
-        isSubmitDisabled={isSubmitDisabled.value}>
+        isSubmitLoading={isSubmitDisabled.value}>
         <div class='rs-sideslider-content'>
           <div class='selected-target-groups'>
             <span class='label'>已选择目标组</span>
