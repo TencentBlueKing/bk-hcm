@@ -1,4 +1,4 @@
-import { defineComponent, watch } from 'vue';
+import { defineComponent, ref, watch } from 'vue';
 // import components
 import { Button, Message } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
@@ -135,6 +135,7 @@ export default defineComponent({
         });
       });
     };
+    const filterCondition = ref();
 
     // 批量删除监听器
     const {
@@ -144,7 +145,19 @@ export default defineComponent({
       tableProps,
       handleBatchDeleteListener,
       handleBatchDeleteSubmit,
-    } = useBatchDeleteListener(columns, selections, resetSelections, getListData);
+      computedListenersList,
+    } = useBatchDeleteListener(columns, selections, resetSelections, getListData, filterCondition);
+
+    watch(
+      () => radioGroupValue.value,
+      (isRsNumZero) => {
+        if (isRsNumZero) filterCondition.value = ({ rs_weight_non_zero_num }: any) => rs_weight_non_zero_num === 0;
+        else filterCondition.value = ({ rs_weight_non_zero_num }: any) => rs_weight_non_zero_num > 0;
+      },
+      {
+        immediate: true,
+      },
+    );
 
     return () => (
       <div class='listener-list-page'>
@@ -177,25 +190,22 @@ export default defineComponent({
           confirmText='删除'
           isSubmitLoading={isSubmitLoading.value}
           tableProps={tableProps}
+          list={computedListenersList.value}
           onHandleConfirm={handleBatchDeleteSubmit}>
           {{
             tips: () => (
               <>
                 已选择<span class='blue'>{tableProps.data.length}</span>个监听器，其中
                 <span class='red'>
-                  {
-                    tableProps.data.filter(
-                      ({ rs_zero_num, rs_not_zero_num }) => rs_not_zero_num === rs_zero_num + rs_not_zero_num,
-                    ).length
-                  }
+                  {tableProps.data.filter(({ rs_weight_non_zero_num }) => rs_weight_non_zero_num > 0).length}
                 </span>
                 个监听器RS的权重均不为0，在删除监听器前，请确认是否有流量转发，仔细核对后，再提交删除。
               </>
             ),
             tab: () => (
               <BkRadioGroup v-model={radioGroupValue.value}>
-                <BkRadioButton label={false}>{t('权重为0')}</BkRadioButton>
-                <BkRadioButton label={true}>{t('权重不为0')}</BkRadioButton>
+                <BkRadioButton label={true}>{t('权重为0')}</BkRadioButton>
+                <BkRadioButton label={false}>{t('权重不为0')}</BkRadioButton>
               </BkRadioGroup>
             ),
           }}

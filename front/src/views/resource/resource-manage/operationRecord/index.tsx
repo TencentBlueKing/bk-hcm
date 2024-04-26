@@ -61,10 +61,6 @@ export default defineComponent({
         id: 'account_id',
       },
       {
-        name: '任务状态',
-        id: 'task_status',
-      },
-      {
         name: '操作人',
         id: 'operator',
       },
@@ -182,7 +178,15 @@ export default defineComponent({
       },
     ]);
 
-    watch(activeResourceType, (val) => (searchRule.value = val));
+    watch(activeResourceType, (val) => {
+      if (['load_balancer'].includes(val)) {
+        searchRule.value = ['load_balancer', 'target_group'];
+        searchRule.op = QueryRuleOPEnum.IN;
+      } else {
+        searchRule.value = val;
+        searchRule.op = QueryRuleOPEnum.EQ;
+      }
+    });
 
     return () => (
       <div class={`operation-record-module${isResourcePage ? ' resource-apply' : ''}`}>

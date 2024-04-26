@@ -17,8 +17,6 @@ import StatusAbnormal from '@/assets/image/Status-abnormal.png';
 import StatusNormal from '@/assets/image/Status-normal.png';
 import StatusUnknown from '@/assets/image/Status-unknown.png';
 import StatusSuccess from '@/assets/image/success-account.png';
-import StatusFailure from '@/assets/image/failed-account.png';
-import StatusPartialSuccess from '@/assets/image/result-waiting.png';
 import StatusLoading from '@/assets/image/status_loading.png';
 
 import { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../common/table/HostOperations';
@@ -1119,33 +1117,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '云账号',
       field: 'account_id',
-    },
-    {
-      label: '任务状态',
-      field: 'task_status',
-      isDefaultShow: true,
-      filter: true,
-      render: ({ cell }: { cell: string }) => {
-        if (!cell) return '--';
-        let icon;
-        switch (cell) {
-          case 'success':
-            icon = StatusSuccess;
-            break;
-          case 'fail':
-            icon = StatusFailure;
-            break;
-          case 'partial_success':
-            icon = StatusPartialSuccess;
-            break;
-        }
-        return (
-          <div class='status-column-cell'>
-            <img class='status-icon' src={icon} alt='' />
-            <span>{cell === 'success' ? '成功' : cell === 'fail' ? '失败' : '部分成功'}</span>
-          </div>
-        );
-      },
     },
     {
       label: '操作人',

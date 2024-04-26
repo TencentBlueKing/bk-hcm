@@ -1,4 +1,4 @@
-import { Ref, reactive, ref } from 'vue';
+import { Ref, computed, reactive, ref } from 'vue';
 import { Button, Message, Tag } from 'bkui-vue';
 import { Column } from 'bkui-vue/lib/table/props';
 import { useResourceStore } from '@/store';
@@ -9,13 +9,14 @@ export default (
   selections: Ref<any[]>,
   resetSelections: (...args: any) => any,
   getListData: (...args: any) => any,
+  filterCondition = ref((_val: any) => true),
 ) => {
   // use stores
   const resourceStore = useResourceStore();
 
   const isSubmitLoading = ref(false);
   const isBatchDeleteDialogShow = ref(false);
-  const radioGroupValue = ref(true);
+  const radioGroupValue = ref(false);
   const tableProps = reactive({
     columns: [
       ...columns.slice(0, 5),
@@ -33,14 +34,14 @@ export default (
         },
       },
       {
-        label: 'RS权重为O',
+        label: 'RS权重为0',
         field: '',
         render: ({ data }: any) => {
-          const { rs_zero_num, rs_not_zero_num } = data;
+          const { rs_weight_zero_num, rs_weight_non_zero_num } = data;
           return (
             <div class='rs-weight-col'>
-              <span class={rs_zero_num ? 'exception' : 'normal'}>{rs_zero_num}</span>/
-              <span>{rs_zero_num + rs_not_zero_num}</span>
+              <span class={rs_weight_zero_num ? 'exception' : 'normal'}>{rs_weight_zero_num}</span>/
+              <span>{rs_weight_zero_num + rs_weight_non_zero_num}</span>
             </div>
           );
         },
@@ -89,6 +90,10 @@ export default (
     ],
   });
 
+  const computedListenersList = computed(() => {
+    return tableProps.data.filter(filterCondition.value);
+  });
+
   // click-handler - 批量删除监听器
   const handleBatchDeleteListener = () => {
     isBatchDeleteDialogShow.value = true;
@@ -124,5 +129,6 @@ export default (
     tableProps,
     handleBatchDeleteListener,
     handleBatchDeleteSubmit,
+    computedListenersList,
   };
 };

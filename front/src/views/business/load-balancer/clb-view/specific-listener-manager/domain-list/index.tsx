@@ -35,6 +35,7 @@ export default defineComponent({
     const defaultDomain = ref('');
     const isCheckDomainLoading = ref(false);
     const { selections, handleSelectionChange } = useSelection();
+    const settingDomain = ref('');
 
     const isLoading = ref(false);
     // 搜索相关
@@ -87,9 +88,10 @@ export default defineComponent({
                 <Button
                   text
                   theme='primary'
-                  class='set-default-btn'
+                  class={isCheckDomainLoading.value ? 'setting-btn' : 'set-default-btn'}
                   onClick={async () => {
                     isCheckDomainLoading.value = true;
+                    settingDomain.value = data.domain;
                     try {
                       await businessStore.updateDomains(loadBalancerStore.currentSelectedTreeNode.id, {
                         ...data,
@@ -102,16 +104,17 @@ export default defineComponent({
                       defaultDomain.value = data.domain;
                     } finally {
                       isCheckDomainLoading.value = false;
+                      settingDomain.value = '';
                     }
                   }}>
-                  {isCheckDomainLoading.value ? (
-                    <span>
-                      <Spinner fill='#3A84FF' width={16} height={16} />
-                      &nbsp;设置中...
-                    </span>
-                  ) : (
-                    t('设为默认')
-                  )}
+                  {isCheckDomainLoading.value
+                    ? settingDomain.value === data.domain && (
+                        <span>
+                          <Spinner fill='#3A84FF' width={12} height={12} />
+                          &nbsp;设置中...
+                        </span>
+                      )
+                    : t('设为默认')}
                 </Button>
               )}
             </div>
@@ -131,6 +134,11 @@ export default defineComponent({
               <Button
                 text
                 theme='primary'
+                disabled={data.domain === defaultDomain.value}
+                v-bk-tooltips={{
+                  content: '默认域名不允许删除',
+                  disabled: !(data.domain === defaultDomain.value),
+                }}
                 onClick={() => {
                   const listenerId = loadBalancerStore.currentSelectedTreeNode.id;
                   Confirm('请确定删除域名', `将删除域名【${data.domain}】`, async () => {
