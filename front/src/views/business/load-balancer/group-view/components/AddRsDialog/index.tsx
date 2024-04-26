@@ -21,12 +21,15 @@ export default defineComponent({
     const rsSelections = ref([]);
     let account_id = '';
     let vpc_id = '';
+    let tgPort = 0;
 
-    const handleShow = ({ accountId, vpcId }: { accountId: string; vpcId: string }) => {
+    const handleShow = ({ accountId, vpcId, port }: { accountId: string; vpcId: string; port: number }) => {
       isShow.value = true;
       nextTick(handleClear);
       account_id = accountId;
       vpc_id = vpcId;
+      tgPort = port;
+
       // 根据account_id, vpc_id查询cvm列表
       getRSTableList(accountId, vpcId);
     };
@@ -36,7 +39,7 @@ export default defineComponent({
       // 初始化选中的rs列表
       const selectedRsList = rsSelections.value.map((item) => ({
         ...item,
-        port: 0,
+        port: tgPort || '',
         weight: 10,
         isNew: true,
       }));

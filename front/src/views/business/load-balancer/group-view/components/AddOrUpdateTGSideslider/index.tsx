@@ -36,7 +36,7 @@ export default defineComponent({
       account_id: '',
       name: '',
       protocol: '',
-      port: 80,
+      port: '',
       region: '',
       cloud_vpc_id: '',
       rs_list: [] as any[],
