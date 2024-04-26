@@ -142,14 +142,8 @@ export default defineComponent({
                 onClick={() => {
                   const listenerId = loadBalancerStore.currentSelectedTreeNode.id;
                   Confirm('请确定删除域名', `将删除域名【${data.domain}】`, async () => {
-                    await businessStore.deleteRules(listenerId, {
-                      lbl_id: listenerId,
-                      domain: data.domain,
-                    });
-                    Message({
-                      message: '删除成功',
-                      theme: 'success',
-                    });
+                    await businessStore.batchDeleteDomains({ lbl_id: listenerId, domains: [data.domain] });
+                    Message({ message: '删除成功', theme: 'success' });
                     getDomainList(listenerId);
                   });
                 }}>
@@ -214,10 +208,7 @@ export default defineComponent({
           lbl_id: loadBalancerStore.currentSelectedTreeNode.id,
           domains: selections.value.map(({ domain }) => domain),
         });
-        Message({
-          message: '删除成功',
-          theme: 'success',
-        });
+        Message({ message: '删除成功', theme: 'success' });
         isBatchDeleteDialogShow.value = false;
         getDomainList(loadBalancerStore.currentSelectedTreeNode.id);
       } finally {
