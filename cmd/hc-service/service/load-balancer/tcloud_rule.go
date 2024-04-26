@@ -86,7 +86,9 @@ func (svc *clbSvc) TCloudCreateUrlRule(cts *rest.Contexts) (any, error) {
 	for i, cloudID := range creatResult.SuccessCloudIDs {
 
 		// 7层不支持设置健康检查端口
-		req.Rules[i].HealthCheck.CheckPort = nil
+		if req.Rules[i].HealthCheck != nil {
+			req.Rules[i].HealthCheck.CheckPort = nil
+		}
 		createReq.UrlRules = append(createReq.UrlRules, cloud.TCloudUrlRuleCreate{
 			LbID:               lb.ID,
 			CloudLbID:          lb.CloudID,
@@ -174,8 +176,11 @@ func (svc *clbSvc) TCloudUpdateUrlRule(cts *rest.Contexts) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	// 7层不支持设置健康检查端口
-	req.HealthCheck.CheckPort = nil
+	if req.HealthCheck != nil {
+		// 7层不支持设置健康检查端口
+		req.HealthCheck.CheckPort = nil
+	}
+
 	ruleOption := typelb.TCloudUpdateRuleOption{
 		Region:            lb.Region,
 		LoadBalancerId:    lb.CloudID,
