@@ -1,12 +1,14 @@
 import { defineComponent, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 // import stores
 import { useLoadBalancerStore } from '@/store/loadbalancer';
 import './index.scss';
+import { LBRouteName } from '@/constants';
 
 export default defineComponent({
   name: 'LoadBalancerBreadcrumb',
   setup() {
+    const router = useRouter();
     const route = useRoute();
     // use stores
     const loadBalancer = useLoadBalancerStore();
@@ -48,16 +50,34 @@ export default defineComponent({
       getLBText(listener.lb);
     };
 
+    // 跳转至上级页面
+    const goListPage = (to: LBRouteName) => {
+      return () => {
+        // loadBalancer.currentSelectedTreeNode 为监听器详情信息
+        const { lb_id, lbl_id, protocol, bk_biz_id } = loadBalancer.currentSelectedTreeNode;
+        switch (to) {
+          case LBRouteName.lb:
+            router.push({ name: LBRouteName.lb, params: { id: lb_id }, query: { bizs: bk_biz_id } });
+            break;
+          case LBRouteName.listener:
+            router.push({ name: LBRouteName.listener, params: { id: lbl_id }, query: { bizs: bk_biz_id, protocol } });
+            break;
+          default:
+            break;
+        }
+      };
+    };
+
     watch(
-      () => route.name,
-      (routeName) => {
+      [() => route.name, () => route.params.id],
+      ([routeName, id]) => {
         clearText();
         switch (routeName) {
           case 'specific-listener-manager':
             getFullText(loadBalancer.currentSelectedTreeNode);
             break;
           case 'specific-domain-manager':
-            domain.value = route.params.id as string;
+            domain.value = id as string;
             getFullText(loadBalancer.currentSelectedTreeNode);
             break;
         }
@@ -69,13 +89,13 @@ export default defineComponent({
 
     return () => (
       <div class='lb-breadcrumb'>
-        <div class='text'>
+        <div class='text' onClick={goListPage(LBRouteName.lb)}>
           <span class='name'>
             <bk-overflow-title type='tips'>{lbName.value}</bk-overflow-title>
           </span>
           <span class='extension'>{`(${lbExtension.value})`}</span>
         </div>
-        <div class='text'>
+        <div class='text' onClick={domain.value ? goListPage(LBRouteName.listener) : null}>
           <span class='name'>
             <bk-overflow-title type='tips'>{listenerName.value}</bk-overflow-title>
           </span>
