@@ -120,6 +120,9 @@ export default defineComponent({
       public_key: '' as string, // 证书信息
       private_key: '' as string, // 私钥信息
     });
+    const formRules = {
+      name: [{ message: '不能超过200个字且不能为空', validator: (value: string) => value.trim().length <= 200 }],
+    };
 
     // 上传证书错误提示
     const uploadPublicKeyErrorText = ref('');
@@ -316,7 +319,7 @@ export default defineComponent({
           width='640'
           onHandleSubmit={handleCreateCert}
           class='cert-upload-sideslider'>
-          <Form ref={formRef} formType='vertical' model={formModel}>
+          <Form ref={formRef} formType='vertical' rules={formRules} model={formModel}>
             {formItemOptions.value.map(({ label, property, required, content, hidden }) => {
               if (hidden) return null;
               return (
