@@ -220,6 +220,9 @@ export default defineComponent({
       requestOption: {
         type: `vendors/tcloud/listeners/${props.listener_id}/rules`,
         sortOption: { sort: 'created_at', order: 'DESC' },
+        filterOption: {
+          rules: [{ field: 'domain', op: QueryRuleOPEnum.EQ, value: props.id }],
+        },
         async callback(dataList: any) {
           if (dataList.length === 0) return;
           const tgIds = dataList.map(({ target_group_id }: { target_group_id: string }) => target_group_id);
