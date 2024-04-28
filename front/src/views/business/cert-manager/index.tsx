@@ -14,6 +14,7 @@ import CommonSideslider from '@/components/common-sideslider';
 import AccountSelector from '@/components/account-selector/index.vue';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 import Confirm from '@/components/confirm';
+import { getTableRowClassOption } from '@/common/util';
 
 const { FormItem } = Form;
 
@@ -97,6 +98,7 @@ export default defineComponent({
           isRowSelectEnable,
           onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
           onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
+          ...getTableRowClassOption(),
         },
       },
       requestOption: {

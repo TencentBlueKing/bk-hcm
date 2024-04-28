@@ -1638,7 +1638,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '域名',
       field: 'domain',
       render: ({ cell }: { cell: string[] }) => {
-        return cell?.join(';');
+        return cell?.join(';') || '--';
       },
     },
     {
