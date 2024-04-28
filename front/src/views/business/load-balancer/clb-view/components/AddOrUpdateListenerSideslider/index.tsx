@@ -56,7 +56,7 @@ export default defineComponent({
       isCACertListLoading,
       CACertList,
       handleCACertListScrollEnd,
-    } = useAddOrUpdateListener(props.getListData);
+    } = useAddOrUpdateListener(props.getListData, props.originPage);
 
     // click-handler - 新增目标组
     const handleAddTargetGroup = () => {

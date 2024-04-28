@@ -60,21 +60,22 @@ export default defineComponent({
     };
 
     watch(
-      [() => route.name, () => route.params.id],
-      ([routeName, id]) => {
+      [() => route.name, () => loadBalancer.currentSelectedTreeNode],
+      ([routeName]) => {
         clearText();
         switch (routeName) {
           case 'specific-listener-manager':
             getFullText(loadBalancer.currentSelectedTreeNode);
             break;
           case 'specific-domain-manager':
-            domain.value = id as string;
+            domain.value = route.params.id as string;
             getFullText(loadBalancer.currentSelectedTreeNode);
             break;
         }
       },
       {
         immediate: true,
+        deep: true,
       },
     );
 
