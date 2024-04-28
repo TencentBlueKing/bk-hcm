@@ -88,6 +88,11 @@ export default defineComponent({
       }
     };
 
+    const handleKeyUpEnter = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter') return;
+      handleBlur(props.fromKey);
+    };
+
     const computedDefaultUserlist = computed(() => {
       let res = props.modelValue;
       if (props.fromType === 'member') {
@@ -110,6 +115,7 @@ export default defineComponent({
               modelValue={props.modelValue}
               onChange={handleChange}
               onBlur={() => handleBlur(props.fromKey)}
+              onKeyup={(_, e) => handleKeyUpEnter(e)}
             />
           );
         case 'member':

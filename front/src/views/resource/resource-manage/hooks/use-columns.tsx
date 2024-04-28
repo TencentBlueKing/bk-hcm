@@ -24,6 +24,7 @@ import './use-columns.scss';
 import { defaults } from 'lodash';
 import { timeFormatter } from '@/common/util';
 import { LBRouteName, LB_NETWORK_TYPE_MAP, SCHEDULER_MAP } from '@/constants/clb';
+import { getLbVip } from '@/utils';
 
 interface LinkFieldOptions {
   type: string; // 资源类型
@@ -1162,11 +1163,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'vip',
       isDefaultShow: true,
       render: ({ data }: any) => {
-        const { private_ipv4_addresses, private_ipv6_addresses, public_ipv4_addresses, public_ipv6_addresses } = data;
-        if (public_ipv4_addresses.length > 0) return public_ipv4_addresses.join(',');
-        if (public_ipv6_addresses.length > 0) return public_ipv6_addresses.join(',');
-        if (private_ipv4_addresses.length > 0) return private_ipv4_addresses.join(',');
-        if (private_ipv6_addresses.length > 0) return private_ipv6_addresses.join(',');
+        return getLbVip(data);
       },
     },
     {

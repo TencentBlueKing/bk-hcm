@@ -49,9 +49,14 @@
           color: #3A84FF;
           display: flex;
           align-items: center;
+          font-size: 12px;
         }
 
       }
 
       .security-rule-table-panel {}
+
+      .exception-wrap-item .bk-exception-img {
+        width: 200px;
+      }
     }
