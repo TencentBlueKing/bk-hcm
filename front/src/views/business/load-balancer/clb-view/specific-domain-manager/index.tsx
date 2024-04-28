@@ -69,7 +69,7 @@ export default defineComponent({
       ...columns,
       {
         label: t('目标组'),
-        field: 'target_group_id',
+        field: 'target_group_name',
         isDefaultShow: true,
         render: ({ cell, data }: any) => {
           return (
@@ -211,6 +211,36 @@ export default defineComponent({
       requestOption: {
         type: `vendors/tcloud/listeners/${props.listener_id}/rules`,
         sortOption: { sort: 'created_at', order: 'DESC' },
+        async callback(dataList: any) {
+          if (dataList.length === 0) return;
+          const tgIds = dataList.map(({ target_group_id }: { target_group_id: string }) => target_group_id);
+          const resList = await businessStore.getTargetGroupList({
+            page: {
+              count: false,
+              start: 0,
+              limit: 500,
+            },
+            filter: {
+              op: QueryRuleOPEnum.AND,
+              rules: [
+                {
+                  field: 'id',
+                  op: QueryRuleOPEnum.IN,
+                  value: tgIds.map((id: string) => id),
+                },
+              ],
+            },
+            fields: ['id', 'name'],
+          });
+          const listenerCountMap = {};
+          resList.data.details.forEach(({ id, name }: { id: string; name: string }) => {
+            listenerCountMap[id] = name;
+          });
+          return dataList.map((data: any) => {
+            const { target_group_id } = data;
+            return { ...data, target_group_name: listenerCountMap[target_group_id] };
+          });
+        },
       },
     });
 
