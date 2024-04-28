@@ -128,7 +128,7 @@ export default defineComponent({
         <BatchOperationDialog
           class='batch-delete-lb-dialog'
           v-model:isShow={isBatchDeleteDialogShow.value}
-          title={t('批量删除监听器')}
+          title={t('批量删除负载均衡')}
           theme='danger'
           confirmText='删除'
           isSubmitLoading={isSubmitLoading.value}
