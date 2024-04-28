@@ -81,11 +81,13 @@ export default defineComponent({
     const {
       isBatchDeleteDialogShow,
       isSubmitLoading,
+      isSubmitDisabled,
       radioGroupValue,
       tableProps,
       handleRemoveSelection,
       handleClickBatchDelete,
       handleBatchDeleteSubmit,
+      computedListenersList,
     } = useBatchDeleteLB(
       [
         ...columns.slice(1, 7),
@@ -115,7 +117,7 @@ export default defineComponent({
                 <Button class='mw64' theme='primary' onClick={handleApply}>
                   购买
                 </Button>
-                <Button class='mw88' onClick={handleClickBatchDelete}>
+                <Button class='mw88' onClick={handleClickBatchDelete} disabled={selections.value.length === 0}>
                   批量删除
                 </Button>
               </>
@@ -130,7 +132,9 @@ export default defineComponent({
           theme='danger'
           confirmText='删除'
           isSubmitLoading={isSubmitLoading.value}
+          isSubmitDisabled={isSubmitDisabled.value}
           tableProps={tableProps}
+          list={computedListenersList.value}
           onHandleConfirm={handleBatchDeleteSubmit}>
           {{
             tips: () => (
@@ -142,8 +146,8 @@ export default defineComponent({
             ),
             tab: () => (
               <BkRadioGroup v-model={radioGroupValue.value}>
-                <BkRadioButton label={false}>{t('可删除')}</BkRadioButton>
-                <BkRadioButton label={true}>{t('不可删除')}</BkRadioButton>
+                <BkRadioButton label={true}>{t('可删除')}</BkRadioButton>
+                <BkRadioButton label={false}>{t('不可删除')}</BkRadioButton>
               </BkRadioGroup>
             ),
           }}

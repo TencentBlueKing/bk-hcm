@@ -1597,6 +1597,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '轮询方式',
       field: 'scheduler',
       isDefaultShow: true,
+      render: ({ cell }: { cell: string }) => SCHEDULER_MAP[cell] || '--',
     },
   ];
 

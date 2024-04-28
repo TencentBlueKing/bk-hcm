@@ -38,6 +38,7 @@ export default defineComponent({
       canDeleteTargetGroup,
       batchDeleteTargetGroupTableProps,
       batchDeleteTargetGroup,
+      computedListenersList,
     } = useBatchDeleteTR(searchData, selections, getListData);
 
     // 批量移除RS
@@ -166,13 +167,16 @@ export default defineComponent({
           theme='danger'
           confirmText='删除'
           tableProps={batchDeleteTargetGroupTableProps}
+          list={computedListenersList.value}
           onHandleConfirm={batchDeleteTargetGroup}>
           {{
             tips: () => (
               <>
                 已选择 <span class='blue'>{selections.value.length}</span> 个目标组，其中可删除
-                <span class='green'> {selections.value.length} </span> 个, 不可删除
-                <span class='red'> {selections.value.length} </span> 个（已绑定了监听器的目标组不可删除）。
+                <span class='green'>{selections.value.filter(({ listener_num }) => listener_num === 0).length}</span>
+                个, 不可删除
+                <span class='red'>{selections.value.filter(({ listener_num }) => listener_num > 0).length}</span>
+                个（已绑定了监听器的目标组不可删除）。
               </>
             ),
             tab: () => (

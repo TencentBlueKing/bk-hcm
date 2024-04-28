@@ -1,4 +1,4 @@
-import { defineComponent, onMounted, ref } from 'vue';
+import { defineComponent, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 // import components
 import SimpleSearchSelect from '../../components/simple-search-select';
@@ -304,6 +304,15 @@ export default defineComponent({
     onMounted(() => {
       // 组件挂载，加载 root node
       loadRemoteData(null, 0);
+    });
+
+    onMounted(() => {
+      // 重新加载lb-tree数据
+      bus.$on('resetLbTree', reset);
+    });
+
+    onUnmounted(() => {
+      bus.$off('resetLbTree');
     });
 
     return () => (

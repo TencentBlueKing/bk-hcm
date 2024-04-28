@@ -220,6 +220,7 @@ export const useTable = (props: IProp) => {
         ? searchVal.map((val: any) => {
             const field = val?.id;
             const op =
+              // eslint-disable-next-line no-nested-ternary
               val?.id === 'domain'
                 ? QueryRuleOPEnum.JSON_CONTAINS
                 : props?.fuzzySwitch

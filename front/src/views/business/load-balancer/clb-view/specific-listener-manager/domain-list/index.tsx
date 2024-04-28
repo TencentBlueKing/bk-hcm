@@ -264,7 +264,18 @@ export default defineComponent({
           theme='danger'
           confirmText='删除'
           tableProps={tableProps}
-          onHandleConfirm={handleBatchDelete}></BatchOperationDialog>
+          list={selections.value}
+          onHandleConfirm={handleBatchDelete}>
+          {{
+            tips: () => (
+              <>
+                已选择<span class='blue'>{selections.value.length}</span>个域名，其中
+                <span class='red'>{selections.value.filter(({ url_count }) => url_count > 0).length}</span>
+                个域名下存在URL路径。可以直接删除，域名和URL将一起删除。
+              </>
+            ),
+          }}
+        </BatchOperationDialog>
       </div>
     );
   },

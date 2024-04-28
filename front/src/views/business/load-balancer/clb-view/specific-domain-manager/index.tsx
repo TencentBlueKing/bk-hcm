@@ -165,13 +165,15 @@ export default defineComponent({
     ];
 
     const deleteRulesBatch = async (ids: string[]) => {
-      await businessStore.deleteRules(props.listener_id, { lbl_id: props.listener_id, rule_ids: ids });
-      Message({
-        message: '删除成功',
-        theme: 'success',
-      });
-      await getListData();
-      isBatchDeleteDialogShow.value = false;
+      isSubmitLoading.value = true;
+      try {
+        await businessStore.deleteRules(props.listener_id, { lbl_id: props.listener_id, rule_ids: ids });
+        isBatchDeleteDialogShow.value = false;
+        Message({ message: '删除成功', theme: 'success' });
+        await getListData();
+      } finally {
+        isSubmitLoading.value = false;
+      }
     };
 
     const tableSettings = generateColumnsSettings(tableColumns);
@@ -256,6 +258,7 @@ export default defineComponent({
       selections,
       resetSelections,
       getListData,
+      true,
     );
 
     const { isScrollLoading, optionList, getOptionList, handleOptionListScrollEnd } = useSelectOptionListWithScroll(
@@ -373,12 +376,13 @@ export default defineComponent({
           theme='danger'
           confirmText='删除'
           tableProps={tableProps}
+          list={selections.value}
           isSubmitLoading={isSubmitLoading.value}
           onHandleConfirm={() => deleteRulesBatch(tableProps.data.map(({ id }) => id))}>
           {{
             tips: () => (
               <>
-                已选择 <span class='blue'> {selections.value.length} </span> 个URL路径
+                已选择<span class='blue'>{selections.value.length}</span>个URL路径，可以直接删除。
               </>
             ),
           }}

@@ -1,4 +1,4 @@
-import { Ref, ref } from 'vue';
+import { Ref, computed, ref } from 'vue';
 // import stores
 import { useAccountStore, useBusinessStore, useLoadBalancerStore } from '@/store';
 // import types
@@ -51,18 +51,21 @@ export default (searchData: ISearchItem[], selections: Ref<any[]>, getListData: 
     searchData,
   };
 
+  const computedListenersList = computed(() => {
+    if (canDeleteTargetGroup.value) return selections.value.filter(({ listener_num }) => listener_num === 0);
+    return selections.value.filter(({ listener_num }) => listener_num > 0);
+  });
+
   // submit-handler
   const batchDeleteTargetGroup = async () => {
     try {
       isSubmitLoading.value = true;
       await businessStore.deleteTargetGroups({
         bk_biz_id: accountStore.bizs,
-        ids: selections.value.map(({ id }) => id),
+        // 只删除无绑定监听器的目标组
+        ids: selections.value.filter(({ listener_num }) => listener_num === 0).map(({ id }) => id),
       });
-      Message({
-        message: '批量删除成功',
-        theme: 'success',
-      });
+      Message({ message: '批量删除成功', theme: 'success' });
       isBatchDeleteTargetGroupShow.value = false;
       loadBalancerStore.getTargetGroupList();
       getListData();
@@ -77,5 +80,6 @@ export default (searchData: ISearchItem[], selections: Ref<any[]>, getListData: 
     canDeleteTargetGroup,
     batchDeleteTargetGroupTableProps,
     batchDeleteTargetGroup,
+    computedListenersList,
   };
 };
