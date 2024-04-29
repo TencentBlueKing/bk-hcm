@@ -262,7 +262,7 @@ func (svc *lbSvc) initFlowAddTargetByLbID(kt *kit.Kit, accountID, lbID string,
 				Retry: &tableasync.Retry{
 					Enable: true,
 					Policy: &tableasync.RetryPolicy{
-						Count:        constant.FlowRetryMaxLimit,
+						Count:        3,
 						SleepRangeMS: [2]uint{100, 200},
 					},
 				},

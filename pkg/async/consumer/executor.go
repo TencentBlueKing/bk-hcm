@@ -39,6 +39,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/retry"
+	"hcm/pkg/tools/times"
 )
 
 // Executor （执行器）: 准备任务执行所需要的超时控制，共享数据等工具，并执行任务。
@@ -273,7 +274,8 @@ func (exec *executor) runTaskOnce(task *Task, act action.Action) (needRetry bool
 				// 被取消不需要重试
 				return false, result, err
 			}
-			return true, result, fmt.Errorf("run failed, err: %v", err)
+			return true, result, fmt.Errorf("run failed, err: %v, time: %s",
+				err, times.ConvStdTimeNow())
 		}
 
 		// 如果执行成功，返回 result 属于成功结果，设置成功状态时，同时设置成功结果。如果执行失败，

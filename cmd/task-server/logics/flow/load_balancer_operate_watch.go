@@ -89,7 +89,7 @@ func (act LoadBalancerOperateWatchAction) Run(kt run.ExecuteKit, params interfac
 	end := time.Now().Add(5 * time.Minute)
 	for {
 		if time.Now().After(end) {
-			return nil, fmt.Errorf("wait timeout, async task: %s is running", opt.FlowID)
+			return nil, fmt.Errorf("wait timeout, async task flow: %s is running", opt.FlowID)
 		}
 
 		req := &types.ListOption{
