@@ -34,7 +34,7 @@ export default defineComponent({
     const resourceStore = useResourceStore();
     const defaultDomain = ref('');
     const isCheckDomainLoading = ref(false);
-    const { selections, handleSelectionChange } = useSelection();
+    const { selections, handleSelectionChange, resetSelections } = useSelection();
     const settingDomain = ref('');
 
     const isLoading = ref(false);
@@ -177,6 +177,8 @@ export default defineComponent({
     watch(
       [() => props.id, () => props.type],
       ([id, type]) => {
+        // 清空选中项
+        resetSelections();
         // 当id或type变更时, 重新请求数据
         const { protocol } = props;
         if (id && type === 'list') {

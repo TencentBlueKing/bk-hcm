@@ -122,6 +122,8 @@ export default defineComponent({
     watch(
       () => props.id,
       (id) => {
+        // 清空选中项
+        resetSelections();
         id && getListData([], `load_balancers/${id}/listeners`);
       },
     );

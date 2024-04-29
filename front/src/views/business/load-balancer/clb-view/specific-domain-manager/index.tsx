@@ -289,6 +289,8 @@ export default defineComponent({
     watch(
       () => [props.listener_id, props.id],
       ([id, domain]) => {
+        // 清空选中项, 避免切换域名后, 选中项不变
+        resetSelections();
         id &&
           getListData(
             [

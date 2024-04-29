@@ -63,6 +63,8 @@ export const useTable = (props: IProp) => {
     limit: 10,
     count: 100,
   });
+  const sort = ref(props.requestOption.sortOption ? props.requestOption.sortOption.sort : 'created_at');
+  const order = ref(props.requestOption.sortOption ? props.requestOption.sortOption.order : 'DESC');
   const filter = reactive({
     op: QueryRuleOPEnum.AND,
     rules: [],
@@ -74,6 +76,17 @@ export const useTable = (props: IProp) => {
   };
   const handlePageValueChange = (v: number) => {
     pagination.start = (v - 1) * pagination.limit;
+    getListData();
+  };
+  const handleSort = ({ column, type }: any) => {
+    pagination.start = 0;
+    sort.value = column.field;
+    order.value = type === 'asc' ? 'ASC' : 'DESC';
+    // 如果type为null，则默认排序
+    if (type === 'null') {
+      sort.value = props.requestOption.sortOption ? props.requestOption.sortOption.sort : 'created_at';
+      order.value = props.requestOption.sortOption ? props.requestOption.sortOption.order : 'DESC';
+    }
     getListData();
   };
   const getListData = async (customRules: Array<RulesItem> = [], type?: string) => {
@@ -90,7 +103,8 @@ export const useTable = (props: IProp) => {
             page: {
               limit: isCount ? 0 : pagination.limit,
               start: isCount ? 0 : pagination.start,
-              ...(isCount ? {} : props.requestOption.sortOption || {}),
+              sort: isCount ? undefined : sort.value,
+              order: isCount ? undefined : order.value,
               count: isCount,
             },
             filter: {
@@ -143,7 +157,7 @@ export const useTable = (props: IProp) => {
               {...(props.tableOptions.extra || {})}
               onPageLimitChange={handlePageLimitChange}
               onPageValueChange={handlePageValueChange}
-              onColumnSort={() => {}}
+              onColumnSort={handleSort}
               onColumnFilter={() => {}}>
               {{
                 empty: () => {
