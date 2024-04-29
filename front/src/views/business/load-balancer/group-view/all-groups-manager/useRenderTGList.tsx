@@ -132,11 +132,14 @@ export default () => {
           ids: [id],
         })
         .then(() => {
-          getListData();
           Message({
             message: '删除成功',
             theme: 'success',
           });
+          // 刷新表格数据
+          getListData();
+          // 刷新左侧目标组列表
+          bus.$emit('refreshTargetGroupList');
         });
     });
   };

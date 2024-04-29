@@ -1,7 +1,6 @@
 import { Ref, computed, ref } from 'vue';
-// import stores
-import { useAccountStore, useBusinessStore, useLoadBalancerStore } from '@/store';
-// import types
+import { useAccountStore, useBusinessStore } from '@/store';
+import bus from '@/common/bus';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { Message } from 'bkui-vue';
 
@@ -9,7 +8,6 @@ export default (searchData: ISearchItem[], selections: Ref<any[]>, getListData: 
   // use stores
   const accountStore = useAccountStore();
   const businessStore = useBusinessStore();
-  const loadBalancerStore = useLoadBalancerStore();
 
   const isSubmitLoading = ref(false);
   const isBatchDeleteTargetGroupShow = ref(false);
@@ -56,6 +54,11 @@ export default (searchData: ISearchItem[], selections: Ref<any[]>, getListData: 
     return selections.value.filter(({ listener_num }) => listener_num > 0);
   });
 
+  // 如果没有可删除的负载均衡, 则禁用删除按钮
+  const isSubmitDisabled = computed(
+    () => selections.value.filter(({ listener_num }) => listener_num === 0).length === 0,
+  );
+
   // submit-handler
   const batchDeleteTargetGroup = async () => {
     try {
@@ -67,7 +70,8 @@ export default (searchData: ISearchItem[], selections: Ref<any[]>, getListData: 
       });
       Message({ message: '批量删除成功', theme: 'success' });
       isBatchDeleteTargetGroupShow.value = false;
-      loadBalancerStore.getTargetGroupList();
+      // 刷新左侧目标组列表
+      bus.$emit('refreshTargetGroupList');
       getListData();
     } finally {
       isSubmitLoading.value = false;
@@ -81,5 +85,6 @@ export default (searchData: ISearchItem[], selections: Ref<any[]>, getListData: 
     batchDeleteTargetGroupTableProps,
     batchDeleteTargetGroup,
     computedListenersList,
+    isSubmitDisabled,
   };
 };

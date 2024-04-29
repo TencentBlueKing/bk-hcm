@@ -39,6 +39,7 @@ export default defineComponent({
       batchDeleteTargetGroupTableProps,
       batchDeleteTargetGroup,
       computedListenersList,
+      isSubmitDisabled,
     } = useBatchDeleteTR(searchData, selections, getListData);
 
     // 批量移除RS
@@ -163,6 +164,7 @@ export default defineComponent({
         <BatchOperationDialog
           v-model:isShow={isBatchDeleteTargetGroupShow.value}
           isSubmitLoading={isSubmitLoading.value}
+          isSubmitDisabled={isSubmitDisabled.value}
           title='批量删除目标组'
           theme='danger'
           confirmText='删除'

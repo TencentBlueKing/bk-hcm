@@ -153,8 +153,8 @@ export default defineComponent({
         if (props.origin === 'list') {
           // 表格目标组list
           props.getListData();
-          // 左侧目标组list
-          loadBalancerStore.getTargetGroupList();
+          // 刷新左侧目标组list
+          bus.$emit('refreshTargetGroupList');
         } else {
           props.getTargetGroupDetail(formData.id);
         }

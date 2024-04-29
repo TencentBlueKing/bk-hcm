@@ -21,6 +21,15 @@ export const useBusinessStore = defineStore({
   state: () => ({}),
   actions: {
     /**
+     * @description: 获取资源列表 - 业务下
+     * @param {any} data
+     * @param {string} type
+     * @return {*}
+     */
+    list(data: any, type: string) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/list`, data);
+    },
+    /**
      * 根据id获取对应资源详情信息
      * @param type 资源类型
      * @param id 资源id

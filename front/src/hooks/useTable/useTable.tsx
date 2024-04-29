@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 import { QueryRuleOPEnum, RulesItem } from '@/typings/common';
 import { FilterType } from '@/typings';
 import { Loading, SearchSelect, Table } from 'bkui-vue';
@@ -150,6 +151,7 @@ export const useTable = (props: IProp) => {
             <Table
               class='table-container'
               data={dataList.value}
+              rowKey='id'
               columns={props.tableOptions.columns}
               pagination={pagination}
               remotePagination
@@ -234,7 +236,6 @@ export const useTable = (props: IProp) => {
         ? searchVal.map((val: any) => {
             const field = val?.id;
             const op =
-              // eslint-disable-next-line no-nested-ternary
               val?.id === 'domain'
                 ? QueryRuleOPEnum.JSON_CONTAINS
                 : val?.id === 'name'
