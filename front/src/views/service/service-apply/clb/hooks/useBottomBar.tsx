@@ -66,7 +66,7 @@ export default (formModel: ApplyClbModel, formRef: any) => {
       sla_type: isOpen.value ? (formModel.sla_type === 'shared' ? '' : formModel.sla_type) : undefined,
       // 只有公网下的标准账号可以配置
       internet_charge_type: hasInternetChargeTypeConfig.value ? formModel.internet_charge_type : undefined,
-      internet_max_bandwidth_out: hasInternetChargeTypeConfig.value ? formModel.internet_charge_type : undefined,
+      internet_max_bandwidth_out: hasInternetChargeTypeConfig.value ? formModel.internet_max_bandwidth_out : undefined,
       // 只有公网下ipv4以及内网下可以配置
       zones: hasZonesConfig.value ? [formModel.zones] : undefined,
       // 只有公网下ipv4可以配置

@@ -172,7 +172,7 @@ export const useBusinessStore = defineStore({
       id: string; // 负载均衡ID
       name?: string; // 名字
       internet_charge_type?: string; // 计费模式
-      internet_max_bandwidth_out?: string; // 最大出带宽
+      internet_max_bandwidth_out?: number; // 最大出带宽
       delete_protect?: boolean; // 删除
       load_balancer_pass_to_target?: boolean; // Target是否放通来自CLB的流量
       memo?: string; // 备注
