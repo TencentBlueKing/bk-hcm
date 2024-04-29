@@ -45,7 +45,7 @@ import (
 )
 
 // LoadBalancerWithListener 同步指定负载均衡及下属监听器、规则
-// 1. 同步该负载均衡自身属性
+// 1. 同步该负载均衡自身属性，同步关联安全组信息
 // 2. 同步该负载均衡下的监听器
 // 3. 同步监听器下的规则
 func (cli *client) LoadBalancerWithListener(kt *kit.Kit, params *SyncBaseParams, opt *SyncLBOption) (*SyncResult,
@@ -58,11 +58,18 @@ func (cli *client) LoadBalancerWithListener(kt *kit.Kit, params *SyncBaseParams,
 	}
 	// 同步下属监听器
 	requiredLBCloudIds := params.CloudIDs
-	//  获取同步后的lb数据
+	// 获取同步后的lb数据
 	params.CloudIDs = nil
 	lbList, err := cli.listLBFromDB(kt, params)
 	if err != nil {
 		logs.Errorf("fail to get lb from db after lb layer sync, before Listener sync, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	// 同步对应安全组关联关系
+	err = cli.lbSgRel(kt, params, lbList)
+	if err != nil {
+		logs.Errorf("fail to sync load balancer sg rel, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 

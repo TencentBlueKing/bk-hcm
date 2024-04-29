@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
@@ -77,6 +78,17 @@ func (svc *lbSvc) BatchDeleteLoadBalancer(cts *rest.Contexts) (any, error) {
 				return nil, err
 			}
 		}
+		// 删除安全组关联关系
+		sgRelFilter := tools.ExpressionAnd(
+			tools.RuleIn("res_id", lbIds),
+			tools.RuleEqual("res_type", enumor.LoadBalancerCloudResType),
+		)
+		err := svc.dao.SGCommonRel().DeleteWithTx(cts.Kit, txn, sgRelFilter)
+		if err != nil {
+			logs.Errorf("delete lb sg rel failed , err: %v, lb_ids: %v, rid: %s", err, lbIds, cts.Kit.Rid)
+			return nil, err
+		}
+
 		// 删除负载均衡
 		delFilter := tools.ContainersExpression("id", lbIds)
 		return nil, svc.dao.LoadBalancer().DeleteWithTx(cts.Kit, txn, delFilter)
