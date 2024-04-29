@@ -118,3 +118,15 @@ export const LB_NETWORK_TYPE_MAP = {
   OPEN: '公网',
   INTERNAL: '内网',
 };
+
+// 负载均衡规格映射 - 反向映射
+export const CLB_SPECS_REVERSE_MAP = {
+  简约型: 'clb.c1.small',
+  标准型规格: 'clb.c2.medium',
+  高阶型1规格: 'clb.c3.small',
+  高阶型2规格: 'clb.c3.medium',
+  超强型1规格: 'clb.c4.small',
+  超强型2规格: 'clb.c4.medium',
+  超强型3规格: 'clb.c4.large',
+  超强型4规格: 'clb.c4.xlarge',
+};
