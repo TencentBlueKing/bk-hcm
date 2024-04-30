@@ -7,6 +7,7 @@ import BatchUpdatePopConfirm from '@/components/batch-update-popconfirm';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 // import stores
 import { useLoadBalancerStore } from '@/store';
+import { useRegionsStore } from '@/store/useRegionsStore';
 // import utils
 import bus from '@/common/bus';
 import './index.scss';
@@ -26,6 +27,7 @@ export default defineComponent({
   setup(props, { emit }) {
     // use stores
     const loadBalancerStore = useLoadBalancerStore();
+    const regionsStore = useRegionsStore();
     const vpc_id = ref('');
 
     // rs配置表单项
@@ -201,6 +203,98 @@ export default defineComponent({
       },
     );
 
+    const searchData = computed(() => {
+      const tmpArr = [
+        {
+          id: 'private_ip_address',
+          name: '内网IP',
+        },
+        {
+          id: 'public_ip_address',
+          name: '公网IP',
+        },
+        {
+          id: 'inst_name',
+          name: '名称',
+        },
+        {
+          id: 'region',
+          name: '地域',
+        },
+        {
+          id: 'inst_type',
+          name: '资源类型',
+        },
+        {
+          id: 'cloud_vpc_ids',
+          name: '所属VPC',
+        },
+        {
+          id: 'port',
+          name: '端口',
+        },
+        {
+          id: 'weight',
+          name: '权重',
+        },
+      ];
+      if (!props.onlyShow)
+        tmpArr.splice(
+          0,
+          2,
+          { id: 'private_ipv4_addresses', name: '内网IP' },
+          { id: 'public_ipv4_addresses', name: '公网IP' },
+        );
+      return tmpArr;
+    });
+    const searchValue = ref();
+    /**
+     * @returns 过滤条件
+     */
+    const getFilterConditions = () => {
+      const filterConditions = {};
+      searchValue.value?.forEach((rule: any) => {
+        let ruleValue;
+        switch (rule.id) {
+          case 'region':
+            ruleValue = regionsStore.getRegionNameEN(rule.values[0].id);
+            break;
+          default:
+            ruleValue = rule.values[0].id;
+            break;
+        }
+        if (filterConditions[rule.id]) {
+          // 如果 filterConditions[rule.id] 已经存在，则合并为一个数组
+          filterConditions[rule.id] = [...filterConditions[rule.id], ruleValue];
+        } else {
+          filterConditions[rule.id] = [ruleValue];
+        }
+      });
+      return filterConditions;
+    };
+
+    // 监听 searchValue 的变化，根据过滤条件过滤得到 实际用于渲染的数据
+    const renderTableData = computed(() => {
+      const filterConditions = getFilterConditions();
+      return props.rsList?.filter((item) =>
+        Object.keys(filterConditions).every((key) => {
+          switch (key) {
+            case 'private_ip_address':
+            case 'private_ipv4_addresses':
+            case 'public_ip_address':
+            case 'public_ipv4_addresses':
+            case 'cloud_vpc_ids':
+              return filterConditions[key].includes(item[key][0]);
+            case 'port':
+            case 'weight':
+              return filterConditions[key].includes(`${item[key]}`);
+            default:
+              return filterConditions[key].includes(item[key]);
+          }
+        }),
+      );
+    });
+
     return () => (
       <div class='rs-config-table'>
         <div class={`rs-config-operation-wrap${props.onlyShow ? ' jc-right' : ''}`}>
@@ -217,12 +311,12 @@ export default defineComponent({
           )}
           {props.noSearch ? null : (
             <div class='search-wrap'>
-              <SearchSelect />
+              <SearchSelect class='table-search-select' v-model={searchValue.value} data={searchData.value} />
             </div>
           )}
         </div>
         <Loading loading={isTableLoading.value}>
-          <Table data={props.rsList} columns={rsTableColumns} settings={settings.value} showOverflowTooltip>
+          <Table data={renderTableData.value} columns={rsTableColumns} settings={settings.value} showOverflowTooltip>
             {{
               empty: () => {
                 if (isTableLoading.value) return null;

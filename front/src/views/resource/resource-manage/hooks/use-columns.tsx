@@ -1454,12 +1454,14 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '公网IP',
       field: 'public_ip_address',
       render: ({ data }: any) => {
-        return [
-          ...(data.public_ipv4_addresses || []),
-          ...(data.public_ipv6_addresses || []),
-          // 更新目标组detail中的rs字段
-          ...(data.public_ip_address || []),
-        ].join(',');
+        return (
+          [
+            ...(data.public_ipv4_addresses || []),
+            ...(data.public_ipv6_addresses || []),
+            // 更新目标组detail中的rs字段
+            ...(data.public_ip_address || []),
+          ].join(',') || '--'
+        );
       },
     },
     {
@@ -1473,11 +1475,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '地域',
       field: 'region',
-      render: ({ data }: any) => {
-        if (data.region) return getRegionName(VendorEnum.TCLOUD, data.region);
-        const idx = data.zone.lastIndexOf('-');
-        return getRegionName(VendorEnum.TCLOUD, data.zone.slice(0, idx));
-      },
+      render: ({ cell }: { cell: string }) => getRegionName(VendorEnum.TCLOUD, cell) || '--',
     },
     {
       label: '资源类型',
