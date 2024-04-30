@@ -58,6 +58,8 @@ export default (
                 count: isCount,
                 start: isCount ? 0 : pagination.start,
                 limit: isCount ? 0 : pagination.limit,
+                sort: isCount ? undefined : 'created_at',
+                order: isCount ? undefined : 'DESC',
               },
             },
             type,

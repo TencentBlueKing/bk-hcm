@@ -1547,24 +1547,30 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '关联的URL',
       field: 'url',
       isDefaultShow: true,
+      render: ({ cell }: { cell: string }) => cell || '--',
     },
     {
       label: '协议',
       field: 'protocol',
       isDefaultShow: true,
-      filter: true,
+      filter: {
+        list: [
+          { value: 'TCP', text: 'TCP' },
+          { value: 'UDP', text: 'UDP' },
+          { value: 'HTTP', text: 'HTTP' },
+          { value: 'HTTPS', text: 'HTTPS' },
+        ],
+      },
     },
     {
       label: '端口',
       field: 'port',
       isDefaultShow: true,
-      filter: true,
     },
     {
       label: '异常端口数',
       field: 'healthCheck',
       isDefaultShow: true,
-      sort: true,
       render: ({ cell }: any) => {
         if (!cell) return '--';
         const { health_num, un_health_num } = cell;
@@ -1629,7 +1635,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
             value: 'CA',
           },
         ],
-        checked: [],
       },
       render: ({ cell }: { cell: string }) => {
         return cell === 'SVR' ? '服务器证书' : '客户端CA证书';
