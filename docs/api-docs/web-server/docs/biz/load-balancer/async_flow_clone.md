@@ -6,7 +6,7 @@
 
 ### URL
 
-POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/{lb_id}/async_tasks/clone
+POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/{lb_id}/async_flows/clone
 
 ### 输入参数
 
