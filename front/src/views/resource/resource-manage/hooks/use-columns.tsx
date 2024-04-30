@@ -1628,16 +1628,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         list: [
           {
             text: '服务器证书',
-            value: 'SVR',
+            value: '服务器证书',
           },
           {
             text: '客户端CA证书',
-            value: 'CA',
+            value: '客户端CA证书',
           },
         ],
-      },
-      render: ({ cell }: { cell: string }) => {
-        return cell === 'SVR' ? '服务器证书' : '客户端CA证书';
       },
     },
     {
@@ -1666,41 +1663,28 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         list: [
           {
             text: '正常',
-            value: '1',
+            value: '正常',
           },
           {
             text: '已过期',
-            value: '3',
+            value: '已过期',
           },
         ],
-        checked: [],
       },
-      render: ({ data, cell }: { data: any; cell: string }) => {
+      render: ({ cell }: { cell: string }) => {
         let icon;
-        const getStatusText = (vendor: VendorEnum, cert_status: string) => {
-          switch (vendor) {
-            case VendorEnum.TCLOUD:
-              switch (cert_status) {
-                case '1':
-                  return '正常';
-                case '3':
-                  return '已过期';
-              }
-              break;
-          }
-        };
         switch (cell) {
-          case '1':
+          case '正常':
             icon = StatusNormal;
             break;
-          case '3':
+          case '已过期':
             icon = StatusAbnormal;
             break;
         }
         return (
           <div class='status-column-cell'>
             <img class='status-icon' src={icon} alt='' />
-            <span>{getStatusText(data.vendor, cell)}</span>
+            <span>{cell}</span>
           </div>
         );
       },

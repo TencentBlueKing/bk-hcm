@@ -107,6 +107,15 @@ export default defineComponent({
           sort: 'cloud_created_time',
           order: 'DESC',
         },
+        async callback(dataList: any[]) {
+          if (dataList.length === 0) return;
+          return dataList.map((item: any) => {
+            // 与表头筛选配合
+            item.cert_type = item.cert_type === 'SVR' ? '服务器证书' : '客户端CA证书';
+            item.cert_status = item.cert_status === '1' ? '正常' : '已过期';
+            return item;
+          });
+        },
       },
       bizFilter: props.filter,
     });
