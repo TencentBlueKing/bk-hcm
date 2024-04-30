@@ -97,7 +97,7 @@ func (svc *sgComRelSvc) BatchUpsert(cts *rest.Contexts) (interface{}, error) {
 			return nil, fmt.Errorf("list security group common rels failed, err: %v", err)
 		}
 
-		if len(listResp.Details) == 0 {
+		if len(listResp.Details) == 0 && len(req.Rels) == 0 {
 			return nil, nil
 		}
 
