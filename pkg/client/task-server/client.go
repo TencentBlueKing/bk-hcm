@@ -180,6 +180,6 @@ func (c *Client) CloneFlow(kt *kit.Kit, flowID string, req *producer.CloneFlowOp
 
 // RetryTask 重试任务
 func (c *Client) RetryTask(kt *kit.Kit, flowID string, taskID string) error {
-	return common.RequestNoResp[common.Empty](c.client, rest.POST, kt, nil,
+	return common.RequestNoResp[common.Empty](c.client, rest.PATCH, kt, nil,
 		"/flows/%s/tasks/%s/retry", flowID, taskID)
 }

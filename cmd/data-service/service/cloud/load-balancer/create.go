@@ -853,7 +853,7 @@ func (svc *lbSvc) ResFlowLock(cts *rest.Contexts) (any, error) {
 		}
 
 		// 创建目标组的操作记录
-		if req.ResType == enumor.TargetGroupCloudResType {
+		if req.ResType == enumor.LoadBalancerCloudResType {
 			err = svc.createTargetGroupOfResFlowAudit(cts.Kit, req, txn)
 			if err != nil {
 				logs.Errorf("fail to create res flow audits, err: %v, req: %+v, rid:%s", err, req, cts.Kit.Rid)
@@ -875,7 +875,7 @@ func (svc *lbSvc) createTargetGroupOfResFlowAudit(kt *kit.Kit, req *dataproto.Re
 		Filter: tools.EqualExpression("id", req.ResID),
 		Page:   core.NewDefaultBasePage(),
 	}
-	resList, err := svc.dao.LoadBalancerTargetGroup().List(kt, resReq)
+	resList, err := svc.dao.LoadBalancer().List(kt, resReq)
 	if err != nil {
 		return err
 	}
@@ -886,8 +886,8 @@ func (svc *lbSvc) createTargetGroupOfResFlowAudit(kt *kit.Kit, req *dataproto.Re
 	resInfo := resList.Details[0]
 
 	var auditData = audit.TargetGroupAsyncAuditDetail{
-		TargetGroup: resInfo,
-		ResFlow:     req,
+		LoadBalancer: resInfo,
+		ResFlow:      req,
 	}
 
 	audits := make([]*tableaudit.AuditTable, 0)

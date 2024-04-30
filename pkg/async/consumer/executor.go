@@ -214,7 +214,7 @@ func (exec *executor) workerDo(task *Task) (err error) {
 
 	if task.State == enumor.TaskRollback && task.Reason.RollbackCount >= task.Retry.Policy.Count {
 		// 超过指定重试次数，置为失败
-		runErr = errors.New("too many retries")
+		runErr = errors.Join(errors.New("too many retries"), errors.New(task.Reason.Message))
 		return
 	}
 	// 减去已经执行的count
