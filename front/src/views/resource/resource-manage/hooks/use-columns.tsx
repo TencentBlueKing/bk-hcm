@@ -8,7 +8,7 @@ import type { Settings } from 'bkui-vue/lib/table/props';
 import { h, ref } from 'vue';
 import type { Ref } from 'vue';
 import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
-import { CLB_BINDING_STATUS, CLOUD_HOST_STATUS, VendorEnum } from '@/common/constant';
+import { CLB_BINDING_STATUS, CLOUD_HOST_STATUS, VendorEnum, VendorMap } from '@/common/constant';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -1339,7 +1339,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '绑定监听器数量',
       field: 'listener_num',
       isDefaultShow: true,
-      sort: true,
     },
     {
       label: '协议',
@@ -1348,13 +1347,21 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         return cell?.trim() || '--';
       },
       isDefaultShow: true,
-      filter: true,
+      sort: true,
+      filter: {
+        list: [
+          { value: 'TCP', text: 'TCP' },
+          { value: 'UDP', text: 'UDP' },
+          { value: 'HTTP', text: 'HTTP' },
+          { value: 'HTTPS', text: 'HTTPS' },
+        ],
+      },
     },
     {
       label: '端口',
       field: 'port',
       isDefaultShow: true,
-      filter: true,
+      sort: true,
     },
     {
       label: '云厂商',
@@ -1362,23 +1369,21 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render({ cell }: { cell: string }) {
         return h('span', [CloudType[cell] || '--']);
       },
+      sort: true,
+      filter: {
+        list: [{ value: VendorEnum.TCLOUD, text: VendorMap[VendorEnum.TCLOUD] }],
+      },
     },
     {
       label: '地域',
       field: 'region',
       render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell) || '--',
+      sort: true,
     },
-    // {
-    //   label: '可用区域',
-    //   field: 'zone',
-    // },
-    // {
-    //   label: '资源类型',
-    //   field: 'inst_type',
-    // },
     {
       label: '所属VPC',
       field: 'cloud_vpc_id',
+      sort: true,
     },
     {
       label: '健康检查端口',
@@ -1395,10 +1400,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         );
       },
     },
-    // {
-    //   label: 'IP地址类型',
-    //   field: 'ip_type',
-    // },
   ];
 
   const rsConfigColumns = [

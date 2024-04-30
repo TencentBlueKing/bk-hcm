@@ -29,33 +29,25 @@ export default () => {
       id: 'name',
       name: '目标组名称',
     },
-    {
-      id: 'clb_id',
-      name: 'CLB ID',
-    },
-    {
-      id: 'listener_id',
-      name: '监听器ID',
-    },
-    {
-      id: 'vip_address',
-      name: 'VIP地址',
-    },
-    {
-      id: 'vip_domain',
-      name: 'VIP域名',
-    },
-    {
-      id: 'port',
-      name: '端口',
-    },
+    // {
+    //   id: 'lb_name',
+    //   name: '关联的负载均衡',
+    // },
     {
       id: 'protocol',
       name: '协议',
     },
+    // {
+    //   id: 'port',
+    //   name: '端口',
+    // },
     {
-      id: 'rs_ip',
-      name: 'RS的IP',
+      id: 'vendor',
+      name: '云厂商',
+    },
+    {
+      id: 'region',
+      name: '地域',
     },
     {
       id: 'cloud_vpc_id',

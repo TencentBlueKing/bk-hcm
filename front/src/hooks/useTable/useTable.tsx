@@ -9,9 +9,11 @@ import './index.scss';
 import Empty from '@/components/empty';
 import { useAccountStore, useResourceStore } from '@/store';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
+import { useRegionsStore } from '@/store/useRegionsStore';
 import { useWhereAmI } from '../useWhereAmI';
 import { getDifferenceSet } from '@/common/util';
 import { get as lodash_get } from 'lodash-es';
+import { VendorReverseMap } from '@/common/constant';
 export interface IProp {
   // search-select 相关字段
   searchOptions: {
@@ -53,6 +55,7 @@ export interface IProp {
 
 export const useTable = (props: IProp) => {
   const { isBusinessPage } = useWhereAmI();
+  const regionsStore = useRegionsStore();
   const resourceStore = useResourceStore();
   const accountStore = useAccountStore();
   const businessMapStore = useBusinessMapStore();
@@ -175,6 +178,22 @@ export const useTable = (props: IProp) => {
   });
 
   /**
+   * 处理搜索条件, 有需要映射的字段需要转换
+   * @param rule 待添加的搜索条件
+   */
+  const resolveRule = (rule: RulesItem) => {
+    const { field, op, value } = rule;
+    switch (field) {
+      case 'vendor':
+        return { field, op, value: VendorReverseMap[value as string] };
+      case 'region':
+        return { field, op, value: regionsStore.getRegionNameEN(value as string) };
+      default:
+        return { field, op, value };
+    }
+  };
+
+  /**
    * 构建请求筛选条件
    * @param options 配置对象
    */
@@ -187,15 +206,16 @@ export const useTable = (props: IProp) => {
     const filterMap = new Map();
     // 先添加新的规则
     rules.forEach((rule) => {
-      const tmpRule = filterMap.get(rule.field);
+      const newRule = resolveRule(rule);
+      const tmpRule = filterMap.get(newRule.field);
       if (tmpRule) {
         if (Array.isArray(tmpRule.rules)) {
-          filterMap.set(rule.field, { op: QueryRuleOPEnum.OR, rules: [...tmpRule.rules, rule] });
+          filterMap.set(newRule.field, { op: QueryRuleOPEnum.OR, rules: [...tmpRule.rules, newRule] });
         } else {
-          filterMap.set(rule.field, { op: QueryRuleOPEnum.OR, rules: [tmpRule, rule] });
+          filterMap.set(newRule.field, { op: QueryRuleOPEnum.OR, rules: [tmpRule, newRule] });
         }
       } else {
-        filterMap.set(rule.field, JSON.parse(JSON.stringify(rule)));
+        filterMap.set(newRule.field, JSON.parse(JSON.stringify(newRule)));
       }
     });
     // 后添加 filter 的规则
