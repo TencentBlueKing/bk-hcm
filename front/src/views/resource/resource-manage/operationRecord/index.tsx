@@ -9,10 +9,12 @@ import { useWhereAmI } from '@/hooks/useWhereAmI';
 import useColumns from '../hooks/use-columns';
 import { timeFormatter } from '@/common/util';
 import { useRouter } from 'vue-router';
+import { useAccountStore } from '@/store';
 
 export default defineComponent({
   setup() {
     const businessMapStore = useBusinessMapStore();
+    const accountStore = useAccountStore();
     const { isResourcePage } = useWhereAmI();
     const router = useRouter();
 
@@ -101,24 +103,25 @@ export default defineComponent({
     // 操作详情
     const isRecordDetailShow = ref(false);
     const currentDetailInfo = ref(null);
-    const showOperationDetail = (detail: any) => {
+    const showOperationDetail = (listItem: any) => {
       if (
-        ['load_balancer', 'url_rule', 'listener', 'url_rule_domain', 'target_group'].includes(detail.res_type) &&
-        detail?.res_flow?.flow_id
+        ['load_balancer', 'url_rule', 'listener', 'url_rule_domain', 'target_group'].includes(listItem.res_type) &&
+        listItem?.detail?.data?.res_flow?.flow_id
       ) {
         router.push({
           path: '/business/record/detail',
           query: {
-            id: detail.id,
-            name: detail.res_name,
-            flow: detail.res_flow.flow_id,
-            res_id: detail.res_id,
+            id: listItem.id,
+            name: listItem.res_name,
+            flow: listItem.detail.data.res_flow.flow_id,
+            res_id: listItem.res_id,
+            bizs: accountStore.bizs,
           },
         });
         return;
       }
       isRecordDetailShow.value = true;
-      currentDetailInfo.value = detail;
+      currentDetailInfo.value = listItem;
     };
     const detailInfoItemOptions = computed(() => [
       {
