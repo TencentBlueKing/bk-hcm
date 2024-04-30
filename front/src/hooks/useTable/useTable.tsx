@@ -14,6 +14,7 @@ import { useWhereAmI } from '../useWhereAmI';
 import { getDifferenceSet } from '@/common/util';
 import { get as lodash_get } from 'lodash-es';
 import { VendorReverseMap } from '@/common/constant';
+import { LB_NETWORK_TYPE_REVERSE_MAP, LISTENER_BINDING_STATUS_REVERSE_MAP, SCHEDULER_REVERSE_MAP } from '@/constants';
 export interface IProp {
   // search-select 相关字段
   searchOptions: {
@@ -188,6 +189,12 @@ export const useTable = (props: IProp) => {
         return { field, op, value: VendorReverseMap[value as string] };
       case 'region':
         return { field, op, value: regionsStore.getRegionNameEN(value as string) };
+      case 'lb_type':
+        return { field, op, value: LB_NETWORK_TYPE_REVERSE_MAP[value as string] };
+      case 'scheduler':
+        return { field, op, value: SCHEDULER_REVERSE_MAP[value as string] };
+      case 'binding_status':
+        return { field, op, value: LISTENER_BINDING_STATUS_REVERSE_MAP[value as string] };
       default:
         return { field, op, value };
     }
@@ -242,6 +249,24 @@ export const useTable = (props: IProp) => {
     filter.rules = [...filterMap.values()];
   };
 
+  /**
+   * 处理字段的搜索模式
+   */
+  const resolveSearchFieldOp = (val: any) => {
+    let op;
+    const { id, name } = val;
+    if (!id || !name) return;
+    // 如果是domain或者zones(数组类型), 则使用JSON_CONTAINS
+    if ((val?.id === 'domain' && val?.name !== '负载均衡域名') || val?.id === 'zones')
+      op = QueryRuleOPEnum.JSON_CONTAINS;
+    // 如果是名称或指定了模糊搜索, 则模糊搜索
+    else if (val?.id === 'name' || props?.fuzzySwitch || (val?.id === 'domain' && val?.name === '负载均衡域名'))
+      op = QueryRuleOPEnum.CIS;
+    // 否则, 精确搜索
+    else op = QueryRuleOPEnum.EQ;
+    return op;
+  };
+
   watch(
     [() => searchVal.value, () => accountStore.bizs],
     ([searchVal, bizs], [oldSearchVal]) => {
@@ -255,14 +280,7 @@ export const useTable = (props: IProp) => {
       const searchRules = Array.isArray(searchVal)
         ? searchVal.map((val: any) => {
             const field = val?.id;
-            const op =
-              val?.id === 'domain'
-                ? QueryRuleOPEnum.JSON_CONTAINS
-                : val?.id === 'name'
-                ? QueryRuleOPEnum.CIS
-                : props?.fuzzySwitch
-                ? QueryRuleOPEnum.CIS
-                : QueryRuleOPEnum.EQ;
+            const op = resolveSearchFieldOp(val);
             const value =
               field === 'bk_biz_id'
                 ? businessMapStore.businessNameToIDMap.get(val?.values?.[0]?.id) || Number(val?.values?.[0]?.id)

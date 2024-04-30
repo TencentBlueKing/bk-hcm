@@ -15,6 +15,7 @@ import useBatchDeleteLB from './useBatchDeleteLB';
 import { getTableRowClassOption } from '@/common/util';
 import { asyncGetListenerCount } from '@/utils';
 // import types
+import { CLB_STATUS_MAP, LB_NETWORK_TYPE_MAP } from '@/constants';
 import { DoublePlainObject } from '@/typings';
 import './index.scss';
 
@@ -42,7 +43,48 @@ export default defineComponent({
     const { columns, settings } = useColumns('lb');
     const { CommonTable, getListData } = useTable({
       searchOptions: {
-        searchData: [],
+        searchData: [
+          {
+            id: 'name',
+            name: '负载均衡名称',
+          },
+          {
+            id: 'domain',
+            name: '负载均衡域名',
+          },
+          // {
+          //   id: 'public_ipv4_addresses',
+          //   name: '负载均衡VIP',
+          // },
+          {
+            id: 'lb_type',
+            name: '网络类型',
+          },
+          // {
+          //   id: 'listener_num',
+          //   name: '监听器数量',
+          // },
+          {
+            id: 'ip_version',
+            name: 'IP版本',
+          },
+          {
+            id: 'vendor',
+            name: '云厂商',
+          },
+          {
+            id: 'region',
+            name: '地域',
+          },
+          {
+            id: 'zones',
+            name: '可用区域',
+          },
+          {
+            id: 'cloud_vpc_id',
+            name: '所属VPC',
+          },
+        ],
       },
       tableOptions: {
         columns: [
@@ -65,7 +107,13 @@ export default defineComponent({
         type: 'load_balancers',
         sortOption: { sort: 'created_at', order: 'DESC' },
         callback(dataList: any[]) {
-          return asyncGetListenerCount(dataList);
+          return asyncGetListenerCount(
+            dataList.map((item) => {
+              item.lb_type = LB_NETWORK_TYPE_MAP[item.lb_type];
+              item.status = CLB_STATUS_MAP[item.status];
+              return item;
+            }),
+          );
         },
       },
     });

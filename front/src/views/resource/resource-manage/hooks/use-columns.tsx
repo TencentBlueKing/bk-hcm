@@ -1170,7 +1170,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '网络类型',
       field: 'lb_type',
       isDefaultShow: true,
-      render: ({ cell }: { cell: string }) => LB_NETWORK_TYPE_MAP[cell],
+      sort: true,
+      filter: {
+        list: [
+          { text: LB_NETWORK_TYPE_MAP.OPEN, value: LB_NETWORK_TYPE_MAP.OPEN },
+          { text: LB_NETWORK_TYPE_MAP.INTERNAL, value: LB_NETWORK_TYPE_MAP.INTERNAL },
+        ],
+      },
     },
     {
       label: '监听器数量',
@@ -1198,6 +1204,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: 'IP版本',
       field: 'ip_version',
       isDefaultShow: true,
+      sort: true,
     },
     {
       label: '云厂商',
@@ -1205,24 +1212,48 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render({ cell }: { cell: string }) {
         return h('span', [CloudType[cell] || '--']);
       },
+      sort: true,
     },
     {
       label: '地域',
       field: 'region',
       render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell) || '--',
+      sort: true,
     },
     {
       label: '可用区域',
       field: 'zones',
       render: ({ cell }: { cell: string[] }) => cell?.join(','),
+      sort: true,
     },
     {
       label: '状态',
       field: 'status',
+      sort: true,
+      render: ({ cell }: { cell: string }) => {
+        let icon = StatusSuccess;
+        switch (cell) {
+          case '创建中':
+            icon = StatusLoading;
+            break;
+          case '正常运行':
+            icon = StatusSuccess;
+            break;
+        }
+        return cell ? (
+          <div class='status-column-cell'>
+            <img class={`status-icon${cell === 'binding' ? ' spin-icon' : ''}`} src={icon} alt='' />
+            <span>{cell}</span>
+          </div>
+        ) : (
+          '--'
+        );
+      },
     },
     {
       label: '所属vpc',
-      field: 'vpc_id',
+      field: 'cloud_vpc_id',
+      sort: true,
     },
   ];
 
@@ -1262,17 +1293,19 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '均衡方式',
       field: 'scheduler',
       isDefaultShow: true,
-      render: ({ cell }: { cell: string }) => SCHEDULER_MAP[cell],
+      render: ({ cell }: { cell: string }) => SCHEDULER_MAP[cell] || '--',
     },
     {
       label: '域名数量',
       field: 'domain_num',
       isDefaultShow: true,
+      sort: true,
     },
     {
       label: 'URL数量',
       field: 'url_num',
       isDefaultShow: true,
+      sort: true,
     },
     {
       label: '同步状态',
@@ -1297,6 +1330,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           '--'
         );
       },
+      sort: true,
     },
   ];
 
@@ -1596,12 +1630,14 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: 'URL路径',
       field: 'url',
       isDefaultShow: true,
+      sort: true,
     },
     {
       label: '轮询方式',
       field: 'scheduler',
       isDefaultShow: true,
       render: ({ cell }: { cell: string }) => SCHEDULER_MAP[cell] || '--',
+      sort: true,
     },
   ];
 

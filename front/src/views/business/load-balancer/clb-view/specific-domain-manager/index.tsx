@@ -194,18 +194,14 @@ export default defineComponent({
             name: '轮询方式',
             id: 'scheduler',
           },
-          {
-            name: '目标组',
-            id: 'target_group_id',
-          },
-          {
-            name: '同步状态',
-            id: 'binding_status',
-          },
-          {
-            name: '操作',
-            id: 'actions',
-          },
+          // {
+          //   name: '目标组',
+          //   id: 'target_group_id',
+          // },
+          // {
+          //   name: '同步状态',
+          //   id: 'binding_status',
+          // },
         ],
       },
       tableOptions: {
