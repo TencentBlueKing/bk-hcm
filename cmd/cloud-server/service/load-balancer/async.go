@@ -93,8 +93,8 @@ func (svc *lbSvc) terminateFlow(cts *rest.Contexts,
 	if err != nil {
 		return nil, err
 	}
-	// 需要对应flow没有被逻辑终止
 
+	// 需要对应flow没有被逻辑终止
 	if rel.Status != enumor.ExecutingResFlowStatus {
 		return nil, errf.Newf(errf.InvalidParameter, "given flow status incorrect: %s", rel.Status)
 	}
@@ -403,7 +403,7 @@ func (svc *lbSvc) getLoadBalancerFlowRel(kt *kit.Kit, lbID, flowID string) (*cor
 			tools.RuleEqual("res_id", lbID),
 			tools.RuleEqual("res_type", enumor.LoadBalancerCloudResType),
 			tools.RuleEqual("flow_id", flowID),
-			tools.RuleGreaterThan("create_at", aWeekAgo.Format(constant.DateTimeLayout)),
+			tools.RuleGreaterThan("created_at", aWeekAgo.Format(constant.TimeStdFormat)),
 		),
 		Page: core.NewDefaultBasePage(),
 	}

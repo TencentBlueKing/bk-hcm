@@ -473,7 +473,7 @@ func (svc *lbSvc) applyTargetToRule(kt *kit.Kit, tgID, ruleCloudID string, lblIn
 				BatchRegisterTCloudTargetReq: rsReq,
 			},
 			DependOn: nil,
-			Retry:    tableasync.NewRetryWithPolicy(constant.FlowRetryMaxLimit, 100, 500),
+			Retry:    tableasync.NewRetryWithPolicy(10, 100, 500),
 		})
 
 		if len(rsResp.Details) < constant.BatchAddRSCloudMaxLimit {

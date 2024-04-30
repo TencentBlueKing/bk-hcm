@@ -114,14 +114,14 @@ func (svc *lbSvc) getLbAndLblMapByTgIDs(kt *kit.Kit, targetGroupIDs []string) (m
 	tgLbMap := make(map[string]string, len(tgListenerRelList))
 	tgLblMap := make(map[string]int64)
 	existLbl := make(map[string]struct{}, 0)
-	for _, item := range tgListenerRelList {
-		lbIDs = append(lbIDs, item.LbID)
-		tgLbMap[item.TargetGroupID] = item.LbID
-		if _, ok := existLbl[item.TargetGroupID+item.LblID]; ok {
+	for _, rel := range tgListenerRelList {
+		lbIDs = append(lbIDs, rel.LbID)
+		tgLbMap[rel.TargetGroupID] = rel.LbID
+		if _, ok := existLbl[rel.TargetGroupID+rel.LblID]; ok {
 			continue
 		}
-		existLbl[item.TargetGroupID+item.LblID] = struct{}{}
-		tgLblMap[item.TargetGroupID]++
+		existLbl[rel.TargetGroupID+rel.LblID] = struct{}{}
+		tgLblMap[rel.TargetGroupID]++
 	}
 
 	// 根据负载均衡ID数组，批量查询负载均衡基本信息

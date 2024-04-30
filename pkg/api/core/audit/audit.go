@@ -75,6 +75,6 @@ type RawAudit struct {
 
 // TargetGroupAsyncAuditDetail 目标组异步任务操作详情
 type TargetGroupAsyncAuditDetail struct {
-	TargetGroup tablelb.LoadBalancerTargetGroupTable `json:"target_group"`
-	ResFlow     *cloud.ResFlowLockReq                `json:"res_flow"`
+	LoadBalancer tablelb.LoadBalancerTable `json:"load_balancer"`
+	ResFlow      *cloud.ResFlowLockReq     `json:"res_flow"`
 }
