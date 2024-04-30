@@ -31,7 +31,11 @@ export default defineComponent({
 
     // 获取目标组列表
     const rules = ref([]);
-    const { list, getList, handleScrollEnd, reset, refresh } = useList('target_groups', () => rules.value, true);
+    const { list, pagination, getList, handleScrollEnd, reset, refresh } = useList(
+      'target_groups',
+      () => rules.value,
+      true,
+    );
 
     // handler - 切换目标组
     const handleTypeChange = (targetGroupId: string) => {
@@ -128,7 +132,7 @@ export default defineComponent({
               <span class='text'>全部目标组</span>
             </div>
             <div class='ext-info'>
-              <div class='count'>{6654}</div>
+              <div class='count'>{pagination.count}</div>
               <div class='more-action' onClick={(e) => showDropdownList(e, allTargetGroupsItem)}>
                 <i class='hcm-icon bkhcm-icon-more-fill'></i>
               </div>

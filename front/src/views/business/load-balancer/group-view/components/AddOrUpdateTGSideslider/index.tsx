@@ -102,12 +102,15 @@ export default defineComponent({
       target_groups: [
         {
           target_group_id: formData.id,
-          targets: formData.rs_list.map(({ cloud_id, port, weight }) => ({
-            inst_type: 'CVM',
-            cloud_inst_id: cloud_id,
-            port,
-            weight,
-          })),
+          targets: formData.rs_list
+            // 只提交新增的rs
+            .filter(({ isNew }) => isNew)
+            .map(({ cloud_id, port, weight }) => ({
+              inst_type: 'CVM',
+              cloud_inst_id: cloud_id,
+              port,
+              weight,
+            })),
         },
       ],
     });
@@ -153,11 +156,11 @@ export default defineComponent({
         if (props.origin === 'list') {
           // 表格目标组list
           props.getListData();
-          // 刷新左侧目标组list
-          bus.$emit('refreshTargetGroupList');
         } else {
           props.getTargetGroupDetail(formData.id);
         }
+        // 刷新左侧目标组list
+        bus.$emit('refreshTargetGroupList');
       } finally {
         isSubmitDisabled.value = false;
       }
