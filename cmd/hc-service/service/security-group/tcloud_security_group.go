@@ -431,12 +431,11 @@ func (g *securityGroup) TCloudSecurityGroupDisassociateLoadBalancer(cts *rest.Co
 
 	allSGIDs := make([]string, 0)
 	existSG := false
-	for _, sg := range sgComList.Details {
-		if sg.SecurityGroupID == req.SecurityGroupID {
+	for _, rel := range sgComList.Details {
+		if rel.SecurityGroupID == req.SecurityGroupID {
 			existSG = true
-			continue
 		}
-		allSGIDs = append(allSGIDs, sg.SecurityGroupID)
+		allSGIDs = append(allSGIDs, rel.SecurityGroupID)
 	}
 	if !existSG {
 		return nil, errf.Newf(errf.RecordNotFound, "not found sg id: %s", req.SecurityGroupID)

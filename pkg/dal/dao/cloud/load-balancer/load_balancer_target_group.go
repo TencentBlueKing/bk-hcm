@@ -198,8 +198,13 @@ func (dao TargetGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*typeslb.Lis
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
 
+	columnTypes := tablelb.LoadBalancerTargetGroupColumns.ColumnTypes()
+	columnTypes["health_check.health_switch"] = enumor.Numeric
+	columnTypes["health_check.check_port"] = enumor.Numeric
+	columnTypes["health_check.check_type"] = enumor.String
+	columnTypes["health_check.http_check_path"] = enumor.String
 	if err := opt.Validate(filter.NewExprOption(
-		filter.RuleFields(tablelb.LoadBalancerTargetGroupColumns.ColumnTypes())),
+		filter.RuleFields(columnTypes)),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}

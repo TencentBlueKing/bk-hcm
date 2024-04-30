@@ -544,7 +544,7 @@ func genCertResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resou
 
 	switch a.Basic.Action {
 	case meta.Find, meta.Assign:
-		return genCloudResResource(a)
+		return genIaaSResourceResource(a)
 	case meta.Create:
 		return sys.BizCertResCreate, []client.Resource{res}, nil
 	case meta.Update:
