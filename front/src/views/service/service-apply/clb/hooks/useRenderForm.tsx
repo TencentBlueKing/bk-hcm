@@ -130,7 +130,6 @@ export default (formModel: ApplyClbModel) => {
         [
           {
             label: '可用区类型',
-            required: true,
             property: 'zoneType',
             hidden: isIntranet.value || formModel.address_ip_version !== 'IPV4',
             content: () => (
@@ -159,7 +158,6 @@ export default (formModel: ApplyClbModel) => {
           },
           {
             label: '可用区',
-            required: true,
             property: 'zones',
             hidden: !isIntranet.value && formModel.address_ip_version !== 'IPV4',
             content: () => {
@@ -366,9 +364,10 @@ export default (formModel: ApplyClbModel) => {
             <div class='slider-wrap'>
               <Slider
                 v-model={formModel.internet_max_bandwidth_out}
+                minValue={1}
                 maxValue={5120}
                 customContent={{
-                  0: { label: '0' },
+                  1: { label: '1' },
                   256: { label: '256' },
                   512: { label: '512' },
                   1024: { label: '1024' },
