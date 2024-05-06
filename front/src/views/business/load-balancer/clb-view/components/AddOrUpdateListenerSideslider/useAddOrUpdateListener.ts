@@ -1,4 +1,4 @@
-import { reactive, ref, nextTick } from 'vue';
+import { reactive, ref, nextTick, computed } from 'vue';
 // import components
 import { Message } from 'bkui-vue';
 // import stores
@@ -109,6 +109,8 @@ export default (getListData: (...args: any) => any, originPage: IOriginPage) => 
     });
   };
 
+  const computedProtocol = computed(() => listenerFormData.protocol);
+
   // submit handler
   const handleAddOrUpdateListener = async () => {
     try {
@@ -163,6 +165,7 @@ export default (getListData: (...args: any) => any, originPage: IOriginPage) => 
       },
     ],
     false,
+    computedProtocol,
   );
 
   // 服务器证书 options
