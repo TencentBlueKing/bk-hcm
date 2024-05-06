@@ -162,7 +162,7 @@ export default defineComponent({
             class={'info-card-btn'}
             onClick={() => {
               isEnd.value = !isEnd.value;
-              if (isEnd.value) handleRetryTask();
+              if (!isEnd.value) handleRetryTask();
               else handleEndTask();
             }}
             theme={isEnd.value ? 'primary' : null}>

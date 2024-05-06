@@ -472,7 +472,7 @@ export const useBusinessStore = defineStore({
       flow_id: string; // Flow ID
     }) {
       return http.post(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}load_balancers/${data.lb_id}/async_tasks/clone`,
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}load_balancers/${data.lb_id}/async_flows/clone`,
         data,
       );
     },

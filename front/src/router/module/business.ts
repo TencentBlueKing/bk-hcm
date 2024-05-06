@@ -436,7 +436,7 @@ const businesseMenus: RouteRecordRaw[] = [
             name: 'operationRecordsDetail',
             component: () => import('@/views/resource/resource-manage/operationRecord/RecordDetail/index'),
             meta: {
-              activeKey: 'recordDetail',
+              activeKey: 'record',
               isShowBreadcrumb: true,
               icon: 'hcm-icon bkhcm-icon-cert',
             },
