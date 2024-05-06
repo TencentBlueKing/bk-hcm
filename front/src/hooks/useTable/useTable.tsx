@@ -27,7 +27,7 @@ export interface IProp {
     extra?: Object; // 其他 table 属性/自定义事件, 比如 settings, onSelectionChange...
   };
   // 模糊查询开关true开启，false关闭
-  fuzzySwitch: boolean;
+  fuzzySwitch?: boolean;
   // 请求相关字段
   requestOption: {
     type: string; // 资源类型
