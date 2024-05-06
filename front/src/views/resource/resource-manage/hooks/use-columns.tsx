@@ -25,6 +25,7 @@ import { defaults } from 'lodash';
 import { timeFormatter } from '@/common/util';
 import { LBRouteName, LB_NETWORK_TYPE_MAP, SCHEDULER_MAP } from '@/constants/clb';
 import { getLbVip } from '@/utils';
+import dayjs from 'dayjs';
 
 interface LinkFieldOptions {
   type: string; // 资源类型
@@ -1682,13 +1683,21 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '上传时间',
       field: 'cloud_created_time',
       sort: true,
-      render: ({ cell }: { cell: string }) => timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => {
+        // 由于云上返回的是(UTC+8)时间, 所以先转零时区
+        const utcTime = dayjs(cell).subtract(8, 'hour');
+        return timeFormatter(utcTime);
+      },
     },
     {
       label: '过期时间',
       field: 'cloud_expired_time',
       sort: true,
-      render: ({ cell }: { cell: string }) => timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => {
+        // 由于云上返回的是(UTC+8)时间, 所以先转零时区
+        const utcTime = dayjs(cell).subtract(8, 'hour');
+        return timeFormatter(utcTime);
+      },
     },
     {
       label: '证书状态',
