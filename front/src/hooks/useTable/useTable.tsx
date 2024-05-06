@@ -223,6 +223,8 @@ export const useTable = (props: IProp) => {
               // eslint-disable-next-line no-nested-ternary
               val?.id === 'domain'
                 ? QueryRuleOPEnum.JSON_CONTAINS
+                : val?.id === 'name'
+                ? QueryRuleOPEnum.CIS
                 : props?.fuzzySwitch
                 ? QueryRuleOPEnum.CIS
                 : QueryRuleOPEnum.EQ;
