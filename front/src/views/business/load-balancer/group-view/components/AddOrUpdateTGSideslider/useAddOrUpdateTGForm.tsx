@@ -143,5 +143,6 @@ export default (formData: any, updateCount: Ref<number>) => {
 
   return {
     formItemOptions,
+    canUpdateRegionOrVpc,
   };
 };

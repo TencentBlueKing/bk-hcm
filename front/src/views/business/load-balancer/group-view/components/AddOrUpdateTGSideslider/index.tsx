@@ -46,7 +46,7 @@ export default defineComponent({
     };
     const formData = reactive(getDefaultFormData());
     const { updateCount } = useChangeScene(isShow, formData);
-    const { formItemOptions } = useAddOrUpdateTGForm(formData, updateCount);
+    const { formItemOptions, canUpdateRegionOrVpc } = useAddOrUpdateTGForm(formData, updateCount);
 
     // click-handler - 新建目标组
     const handleAddTargetGroup = () => {
@@ -93,8 +93,8 @@ export default defineComponent({
       name: formData.name,
       protocol: formData.protocol,
       port: +formData.port,
-      region: formData.region,
-      cloud_vpc_id: formData.cloud_vpc_id,
+      region: canUpdateRegionOrVpc.value ? formData.region : undefined,
+      cloud_vpc_id: canUpdateRegionOrVpc.value ? formData.cloud_vpc_id : undefined,
     });
     // 处理参数 - 添加rs
     const resolveFormDataForAddRs = () => ({
