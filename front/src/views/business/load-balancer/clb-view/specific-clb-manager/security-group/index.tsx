@@ -152,12 +152,12 @@ export default defineComponent({
       tableOptions: {
         columns: tableColumns,
         extra: {
-          onSelectionChange: (selections: any) => handleSelectionChange(selections, () => true),
+          onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
           onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
           isRowSelectEnable,
-          isSelectedFn: ({ row }: any) => {
-            return selectedSecuirtyGroups.value.map((v) => v.id).includes(row.id);
-          },
+          // isSelectedFn: ({ row }: any) => {
+          //   return selectedSecuirtyGroups.value.map((v) => v.id).includes(row.id);
+          // },
         },
       },
       requestOption: {
@@ -206,7 +206,7 @@ export default defineComponent({
     };
 
     const getBindedSecurityList = async () => {
-      const res = await businessStore.listCLBSecurityGroups(loadBalancerStore.currentSelectedTreeNode.id);
+      const res = await businessStore.listCLBSecurityGroups(props.id);
       bindedSecurityGroups.value = res.data;
       for (const item of res.data) {
         bindedSet.add(item.id);
