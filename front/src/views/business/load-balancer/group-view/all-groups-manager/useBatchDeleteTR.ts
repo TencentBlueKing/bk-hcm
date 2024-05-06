@@ -1,7 +1,6 @@
-import { Ref, ref } from 'vue';
-// import stores
-import { useAccountStore, useBusinessStore, useLoadBalancerStore } from '@/store';
-// import types
+import { Ref, computed, ref } from 'vue';
+import { useAccountStore, useBusinessStore } from '@/store';
+import bus from '@/common/bus';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { Message } from 'bkui-vue';
 
@@ -9,7 +8,6 @@ export default (searchData: ISearchItem[], selections: Ref<any[]>, getListData: 
   // use stores
   const accountStore = useAccountStore();
   const businessStore = useBusinessStore();
-  const loadBalancerStore = useLoadBalancerStore();
 
   const isSubmitLoading = ref(false);
   const isBatchDeleteTargetGroupShow = ref(false);
@@ -51,20 +49,29 @@ export default (searchData: ISearchItem[], selections: Ref<any[]>, getListData: 
     searchData,
   };
 
+  const computedListenersList = computed(() => {
+    if (canDeleteTargetGroup.value) return selections.value.filter(({ listener_num }) => listener_num === 0);
+    return selections.value.filter(({ listener_num }) => listener_num > 0);
+  });
+
+  // 如果没有可删除的负载均衡, 则禁用删除按钮
+  const isSubmitDisabled = computed(
+    () => selections.value.filter(({ listener_num }) => listener_num === 0).length === 0,
+  );
+
   // submit-handler
   const batchDeleteTargetGroup = async () => {
     try {
       isSubmitLoading.value = true;
       await businessStore.deleteTargetGroups({
         bk_biz_id: accountStore.bizs,
-        ids: selections.value.map(({ id }) => id),
+        // 只删除无绑定监听器的目标组
+        ids: selections.value.filter(({ listener_num }) => listener_num === 0).map(({ id }) => id),
       });
-      Message({
-        message: '批量删除成功',
-        theme: 'success',
-      });
+      Message({ message: '批量删除成功', theme: 'success' });
       isBatchDeleteTargetGroupShow.value = false;
-      loadBalancerStore.getTargetGroupList();
+      // 刷新左侧目标组列表
+      bus.$emit('refreshTargetGroupList');
       getListData();
     } finally {
       isSubmitLoading.value = false;
@@ -77,5 +84,7 @@ export default (searchData: ISearchItem[], selections: Ref<any[]>, getListData: 
     canDeleteTargetGroup,
     batchDeleteTargetGroupTableProps,
     batchDeleteTargetGroup,
+    computedListenersList,
+    isSubmitDisabled,
   };
 };

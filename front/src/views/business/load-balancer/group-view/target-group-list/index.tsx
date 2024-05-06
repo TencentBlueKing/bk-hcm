@@ -1,18 +1,14 @@
-import { defineComponent, onMounted, ref, watch } from 'vue';
+import { defineComponent, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-// import components
 import { Input, Message, VirtualRender } from 'bkui-vue';
 import Confirm from '@/components/confirm';
-// import stores
 import { useLoadBalancerStore, useAccountStore, useBusinessStore } from '@/store';
-// import hooks
 import useMoreActionDropdown from '@/hooks/useMoreActionDropdown';
-// import utils
-import { throttle } from 'lodash';
+import useList from '@/hooks/useList';
+import { debounce, throttle } from 'lodash';
 import bus from '@/common/bus';
-// import constants
 import { LBRouteName } from '@/constants';
-// import static resources
+import { QueryRuleOPEnum } from '@/typings';
 import allIcon from '@/assets/image/all-lb.svg';
 import './index.scss';
 
@@ -32,6 +28,15 @@ export default defineComponent({
 
     const activeTargetGroupId = ref(''); // 当前选中的目标组id
     const allTargetGroupsItem = { type: 'all', isDropdownListShow: false }; // 全部目标组item
+
+    // 获取目标组列表
+    const rules = ref([]);
+    const { list, pagination, getList, handleScrollEnd, reset, refresh } = useList(
+      'target_groups',
+      () => rules.value,
+      true,
+    );
+
     // handler - 切换目标组
     const handleTypeChange = (targetGroupId: string) => {
       // 如果两个目标组id相同，则不做切换
@@ -54,7 +59,7 @@ export default defineComponent({
         businessStore.deleteTargetGroups({ bk_biz_id: accountStore.bizs, ids: [id] }).then(() => {
           Message({ message: '删除成功', theme: 'success' });
           // 重新拉取目标组list
-          loadBalancerStore.getTargetGroupList();
+          refresh();
           // 跳转至全部目标组下
           handleTypeChange('');
         });
@@ -73,15 +78,11 @@ export default defineComponent({
 
     // 滚动触底加载下一页的目标组数据
     const scrollEndHandler = throttle((endIndex: number) => {
-      if (endIndex === loadBalancerStore.allTargetGroupList.length) {
+      if (endIndex === list.value.length) {
         // 如果 endIndex 等于总数，说明已经到底了，需要拉取更多数据
-        loadBalancerStore.getNextTargetGroupList();
+        handleScrollEnd();
       }
     }, 300);
-
-    onMounted(() => {
-      loadBalancerStore.getTargetGroupList();
-    });
 
     watch(
       () => route.params.id,
@@ -92,6 +93,30 @@ export default defineComponent({
       },
       { immediate: true },
     );
+
+    watch(
+      searchValue,
+      debounce((val) => {
+        // 清空搜索结果
+        reset();
+        // 设置搜索条件
+        if (val) {
+          rules.value = [{ field: 'name', op: QueryRuleOPEnum.CIS, value: val }];
+        } else {
+          rules.value = [];
+        }
+        // 拉取搜索结果
+        getList();
+      }, 300),
+    );
+
+    onMounted(() => {
+      bus.$on('refreshTargetGroupList', refresh);
+    });
+
+    onUnmounted(() => {
+      bus.$off('refreshTargetGroupList');
+    });
 
     return () => (
       <div class='target-group-list'>
@@ -107,14 +132,14 @@ export default defineComponent({
               <span class='text'>全部目标组</span>
             </div>
             <div class='ext-info'>
-              <div class='count'>{6654}</div>
+              <div class='count'>{pagination.count}</div>
               <div class='more-action' onClick={(e) => showDropdownList(e, allTargetGroupsItem)}>
                 <i class='hcm-icon bkhcm-icon-more-fill'></i>
               </div>
             </div>
           </div>
           <VirtualRender
-            list={loadBalancerStore.allTargetGroupList}
+            list={list.value}
             height='calc(100% - 36px)'
             lineHeight={36}
             onContentScroll={([, pagination]) => scrollEndHandler(pagination.endIndex)}>

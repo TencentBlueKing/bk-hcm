@@ -177,7 +177,7 @@ export default defineComponent({
 
     return () => (
       <div class={'clb-detail-continer'}>
-        <div>
+        <div class='mb32'>
           <p class={'clb-detail-info-title'}>资源信息</p>
           <DetailInfo
             fields={resourceFields}

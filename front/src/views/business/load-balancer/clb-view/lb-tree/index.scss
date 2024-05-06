@@ -15,11 +15,17 @@
   .base-info {
     display: flex;
     align-items: center;
+
+    .tag {
+      height: 16px;
+      padding: 4px;
+      font-size: 10px;
+    }
   }
 
   .ext-info {
-    position: absolute;
-    right: 16px;
+    position: relative;
+    margin-right: 5px;
 
     .count {
       min-width: 24px;
@@ -63,8 +69,7 @@
   }
 
   .all-lb-item {
-    position: relative;
-    padding: 0 16px;
+    padding: 0 3px 0 16px;
     height: 36px;
     line-height: 36px;
     display: flex;
@@ -95,8 +100,6 @@
     overflow-y: auto;
 
     .bk-node-row {
-      position: relative;
-
       .bk-node-text {
         flex: 1;
         display: flex;

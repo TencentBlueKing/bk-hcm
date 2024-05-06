@@ -21,6 +21,15 @@ export const useBusinessStore = defineStore({
   state: () => ({}),
   actions: {
     /**
+     * @description: 获取资源列表 - 业务下
+     * @param {any} data
+     * @param {string} type
+     * @return {*}
+     */
+    list(data: any, type: string) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/list`, data);
+    },
+    /**
      * 根据id获取对应资源详情信息
      * @param type 资源类型
      * @param id 资源id
@@ -172,7 +181,7 @@ export const useBusinessStore = defineStore({
       id: string; // 负载均衡ID
       name?: string; // 名字
       internet_charge_type?: string; // 计费模式
-      internet_max_bandwidth_out?: string; // 最大出带宽
+      internet_max_bandwidth_out?: number; // 最大出带宽
       delete_protect?: boolean; // 删除
       load_balancer_pass_to_target?: boolean; // Target是否放通来自CLB的流量
       memo?: string; // 备注
@@ -463,7 +472,7 @@ export const useBusinessStore = defineStore({
       flow_id: string; // Flow ID
     }) {
       return http.post(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}load_balancers/${data.lb_id}/async_tasks/clone`,
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}load_balancers/${data.lb_id}/async_flows/clone`,
         data,
       );
     },

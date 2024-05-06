@@ -7,10 +7,12 @@ import { useLoadBalancerStore } from '@/store/loadbalancer';
 // import custom hooks
 import useSelectOptionListWithScroll from '@/hooks/useSelectOptionListWithScroll';
 import useResolveListenerFormData from './useResolveListenerFormData';
+// import utils
+import bus from '@/common/bus';
 // import types
-import { QueryRuleOPEnum } from '@/typings';
+import { IOriginPage, QueryRuleOPEnum } from '@/typings';
 
-export default (getListData: (...args: any) => any) => {
+export default (getListData: (...args: any) => any, originPage: IOriginPage) => {
   // use stores
   const businessStore = useBusinessStore();
   const resourceStore = useResourceStore();
@@ -125,6 +127,8 @@ export default (getListData: (...args: any) => any) => {
       Message({ theme: 'success', message: isEdit.value ? '更新成功' : '新增成功' });
       isSliderShow.value = false;
       typeof getListData === 'function' && getListData();
+      // 如果是在监听器页面更新监听器详情, 则更新成功后刷新监听器详情
+      originPage === 'listener' && bus.$emit('refreshListenerDetail');
     } finally {
       isAddOrUpdateListenerSubmit.value = false;
     }

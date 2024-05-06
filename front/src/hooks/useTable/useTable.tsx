@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 import { QueryRuleOPEnum, RulesItem } from '@/typings/common';
 import { FilterType } from '@/typings';
 import { Loading, SearchSelect, Table } from 'bkui-vue';
@@ -8,9 +9,12 @@ import './index.scss';
 import Empty from '@/components/empty';
 import { useAccountStore, useResourceStore } from '@/store';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
+import { useRegionsStore } from '@/store/useRegionsStore';
 import { useWhereAmI } from '../useWhereAmI';
 import { getDifferenceSet } from '@/common/util';
 import { get as lodash_get } from 'lodash-es';
+import { VendorReverseMap } from '@/common/constant';
+import { LB_NETWORK_TYPE_REVERSE_MAP, LISTENER_BINDING_STATUS_REVERSE_MAP, SCHEDULER_REVERSE_MAP } from '@/constants';
 export interface IProp {
   // search-select 相关字段
   searchOptions: {
@@ -27,7 +31,7 @@ export interface IProp {
     extra?: Object; // 其他 table 属性/自定义事件, 比如 settings, onSelectionChange...
   };
   // 模糊查询开关true开启，false关闭
-  fuzzySwitch: boolean;
+  fuzzySwitch?: boolean;
   // 请求相关字段
   requestOption: {
     type: string; // 资源类型
@@ -52,6 +56,7 @@ export interface IProp {
 
 export const useTable = (props: IProp) => {
   const { isBusinessPage } = useWhereAmI();
+  const regionsStore = useRegionsStore();
   const resourceStore = useResourceStore();
   const accountStore = useAccountStore();
   const businessMapStore = useBusinessMapStore();
@@ -63,6 +68,8 @@ export const useTable = (props: IProp) => {
     limit: 10,
     count: 100,
   });
+  const sort = ref(props.requestOption.sortOption ? props.requestOption.sortOption.sort : 'created_at');
+  const order = ref(props.requestOption.sortOption ? props.requestOption.sortOption.order : 'DESC');
   const filter = reactive({
     op: QueryRuleOPEnum.AND,
     rules: [],
@@ -74,6 +81,17 @@ export const useTable = (props: IProp) => {
   };
   const handlePageValueChange = (v: number) => {
     pagination.start = (v - 1) * pagination.limit;
+    getListData();
+  };
+  const handleSort = ({ column, type }: any) => {
+    pagination.start = 0;
+    sort.value = column.field;
+    order.value = type === 'asc' ? 'ASC' : 'DESC';
+    // 如果type为null，则默认排序
+    if (type === 'null') {
+      sort.value = props.requestOption.sortOption ? props.requestOption.sortOption.sort : 'created_at';
+      order.value = props.requestOption.sortOption ? props.requestOption.sortOption.order : 'DESC';
+    }
     getListData();
   };
   const getListData = async (customRules: Array<RulesItem> = [], type?: string) => {
@@ -90,7 +108,8 @@ export const useTable = (props: IProp) => {
             page: {
               limit: isCount ? 0 : pagination.limit,
               start: isCount ? 0 : pagination.start,
-              ...(isCount ? {} : props.requestOption.sortOption || {}),
+              sort: isCount ? undefined : sort.value,
+              order: isCount ? undefined : order.value,
               count: isCount,
             },
             filter: {
@@ -136,6 +155,7 @@ export const useTable = (props: IProp) => {
             <Table
               class='table-container'
               data={dataList.value}
+              rowKey='id'
               columns={props.tableOptions.columns}
               pagination={pagination}
               remotePagination
@@ -143,7 +163,7 @@ export const useTable = (props: IProp) => {
               {...(props.tableOptions.extra || {})}
               onPageLimitChange={handlePageLimitChange}
               onPageValueChange={handlePageValueChange}
-              onColumnSort={() => {}}
+              onColumnSort={handleSort}
               onColumnFilter={() => {}}>
               {{
                 empty: () => {
@@ -159,6 +179,28 @@ export const useTable = (props: IProp) => {
   });
 
   /**
+   * 处理搜索条件, 有需要映射的字段需要转换
+   * @param rule 待添加的搜索条件
+   */
+  const resolveRule = (rule: RulesItem) => {
+    const { field, op, value } = rule;
+    switch (field) {
+      case 'vendor':
+        return { field, op, value: VendorReverseMap[value as string] };
+      case 'region':
+        return { field, op, value: regionsStore.getRegionNameEN(value as string) };
+      case 'lb_type':
+        return { field, op, value: LB_NETWORK_TYPE_REVERSE_MAP[value as string] };
+      case 'scheduler':
+        return { field, op, value: SCHEDULER_REVERSE_MAP[value as string] };
+      case 'binding_status':
+        return { field, op, value: LISTENER_BINDING_STATUS_REVERSE_MAP[value as string] };
+      default:
+        return { field, op, value };
+    }
+  };
+
+  /**
    * 构建请求筛选条件
    * @param options 配置对象
    */
@@ -171,15 +213,16 @@ export const useTable = (props: IProp) => {
     const filterMap = new Map();
     // 先添加新的规则
     rules.forEach((rule) => {
-      const tmpRule = filterMap.get(rule.field);
+      const newRule = resolveRule(rule);
+      const tmpRule = filterMap.get(newRule.field);
       if (tmpRule) {
         if (Array.isArray(tmpRule.rules)) {
-          filterMap.set(rule.field, { op: QueryRuleOPEnum.OR, rules: [...tmpRule.rules, rule] });
+          filterMap.set(newRule.field, { op: QueryRuleOPEnum.OR, rules: [...tmpRule.rules, newRule] });
         } else {
-          filterMap.set(rule.field, { op: QueryRuleOPEnum.OR, rules: [tmpRule, rule] });
+          filterMap.set(newRule.field, { op: QueryRuleOPEnum.OR, rules: [tmpRule, newRule] });
         }
       } else {
-        filterMap.set(rule.field, JSON.parse(JSON.stringify(rule)));
+        filterMap.set(newRule.field, JSON.parse(JSON.stringify(newRule)));
       }
     });
     // 后添加 filter 的规则
@@ -206,6 +249,24 @@ export const useTable = (props: IProp) => {
     filter.rules = [...filterMap.values()];
   };
 
+  /**
+   * 处理字段的搜索模式
+   */
+  const resolveSearchFieldOp = (val: any) => {
+    let op;
+    const { id, name } = val;
+    if (!id || !name) return;
+    // 如果是domain或者zones(数组类型), 则使用JSON_CONTAINS
+    if ((val?.id === 'domain' && val?.name !== '负载均衡域名') || val?.id === 'zones')
+      op = QueryRuleOPEnum.JSON_CONTAINS;
+    // 如果是名称或指定了模糊搜索, 则模糊搜索
+    else if (val?.id === 'name' || props?.fuzzySwitch || (val?.id === 'domain' && val?.name === '负载均衡域名'))
+      op = QueryRuleOPEnum.CIS;
+    // 否则, 精确搜索
+    else op = QueryRuleOPEnum.EQ;
+    return op;
+  };
+
   watch(
     [() => searchVal.value, () => accountStore.bizs],
     ([searchVal, bizs], [oldSearchVal]) => {
@@ -219,12 +280,7 @@ export const useTable = (props: IProp) => {
       const searchRules = Array.isArray(searchVal)
         ? searchVal.map((val: any) => {
             const field = val?.id;
-            const op =
-              val?.id === 'domain'
-                ? QueryRuleOPEnum.JSON_CONTAINS
-                : props?.fuzzySwitch
-                ? QueryRuleOPEnum.CIS
-                : QueryRuleOPEnum.EQ;
+            const op = resolveSearchFieldOp(val);
             const value =
               field === 'bk_biz_id'
                 ? businessMapStore.businessNameToIDMap.get(val?.values?.[0]?.id) || Number(val?.values?.[0]?.id)

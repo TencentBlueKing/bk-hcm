@@ -17,10 +17,10 @@ import { IDetail } from '@/hooks/useRouteLinkBtn';
 import { VueDraggable } from 'vue-draggable-plus';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 
-export const SecuirtyRuleDirection = {
-  in: 'ingress',
-  out: 'egress',
-};
+export enum SecurityRuleDirection {
+  in = 'ingress',
+  out = 'egress',
+}
 
 export default defineComponent({
   props: {
@@ -31,7 +31,7 @@ export default defineComponent({
   },
   setup(props) {
     const rsCheckRes = ref(false);
-    const securityRuleType = ref(SecuirtyRuleDirection.in);
+    const securityRuleType = ref(SecurityRuleDirection.in);
     const isSideSliderShow = ref(false);
     const businessStore = useBusinessStore();
     const accountStore = useAccountStore();
@@ -152,12 +152,12 @@ export default defineComponent({
       tableOptions: {
         columns: tableColumns,
         extra: {
-          onSelectionChange: (selections: any) => handleSelectionChange(selections, () => true),
+          onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
           onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
           isRowSelectEnable,
-          isSelectedFn: ({ row }: any) => {
-            return selectedSecuirtyGroups.value.map((v) => v.id).includes(row.id);
-          },
+          // isSelectedFn: ({ row }: any) => {
+          //   return selectedSecuirtyGroups.value.map((v) => v.id).includes(row.id);
+          // },
         },
       },
       requestOption: {
@@ -206,7 +206,7 @@ export default defineComponent({
     };
 
     const getBindedSecurityList = async () => {
-      const res = await businessStore.listCLBSecurityGroups(loadBalancerStore.currentSelectedTreeNode.id);
+      const res = await businessStore.listCLBSecurityGroups(props.id);
       bindedSecurityGroups.value = res.data;
       for (const item of res.data) {
         bindedSet.add(item.id);
@@ -349,8 +349,8 @@ export default defineComponent({
             )}
             <div class={'security-rule-container-searcher'}>
               <BkRadioGroup v-model={securityRuleType.value} class={'mr12'}>
-                <BkRadioButton label={SecuirtyRuleDirection.in}>入站规则</BkRadioButton>
-                <BkRadioButton label={SecuirtyRuleDirection.out}>出站规则</BkRadioButton>
+                <BkRadioButton label={SecurityRuleDirection.in}>入站规则</BkRadioButton>
+                <BkRadioButton label={SecurityRuleDirection.out}>出站规则</BkRadioButton>
               </BkRadioGroup>
               <Input class={'search-input'} type='search' clearable v-model={searchVal.value}></Input>
             </div>

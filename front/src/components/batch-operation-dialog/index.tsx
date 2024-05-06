@@ -9,6 +9,7 @@ export default defineComponent({
   name: 'BatchOperationDialog',
   props: {
     isSubmitLoading: Boolean,
+    isSubmitDisabled: Boolean,
     isShow: {
       type: Boolean as PropType<boolean>,
       default: false,
@@ -81,7 +82,11 @@ export default defineComponent({
           default: props.custom ? renderCustomDefaultSlot : renderDefaultSlot,
           footer: () => (
             <>
-              <Button theme={props.theme} onClick={handleConfirm} loading={props.isSubmitLoading}>
+              <Button
+                theme={props.theme}
+                onClick={handleConfirm}
+                loading={props.isSubmitLoading}
+                disabled={props.isSubmitDisabled}>
                 {props.confirmText}
               </Button>
               <Button class='dialog-cancel' onClick={() => triggerShow(false)}>

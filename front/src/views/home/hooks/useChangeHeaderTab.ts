@@ -11,11 +11,12 @@ import { useAccountStore } from '@/store';
 // import hooks
 import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
 import { localStorageActions } from '@/common/util';
-
+// 点击跳转header-tab时清除一下pinia
+import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 // home页切换header-tab相关业务逻辑
 export default (businessId: Ref<number>, businessList: Ref<any[]>) => {
   const accountStore = useAccountStore();
-
+  const resourceAccountStore = useResourceAccountStore();
   // use hooks
   const { whereAmI } = useWhereAmI();
   const route = useRoute();
@@ -32,6 +33,7 @@ export default (businessId: Ref<number>, businessList: Ref<any[]>) => {
     if (id === 'business') {
       bizs = localStorageActions.get('bizs');
     }
+    resourceAccountStore.setResourceAccount({});
     router.push({ path, query: { bizs } });
   };
 

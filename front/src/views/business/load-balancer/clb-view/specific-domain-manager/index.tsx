@@ -70,7 +70,7 @@ export default defineComponent({
       ...columns,
       {
         label: t('目标组'),
-        field: 'target_group_id',
+        field: 'target_group_name',
         isDefaultShow: true,
         render: ({ cell, data }: any) => {
           return (
@@ -95,7 +95,7 @@ export default defineComponent({
                   <Link
                     class='target-group-name-btn'
                     theme='primary'
-                    href={`/#/business/loadbalancer/group-view/${cell}?bizs=${accountStore.bizs}&type=list`}>
+                    href={`/#/business/loadbalancer/group-view/${data.target_group_id}?bizs=${accountStore.bizs}&type=list`}>
                     {cell || '--'}
                   </Link>
                   {/* <span class={'target-group-name-btn'}></span> */}
@@ -165,13 +165,15 @@ export default defineComponent({
     ];
 
     const deleteRulesBatch = async (ids: string[]) => {
-      await businessStore.deleteRules(props.listener_id, { lbl_id: props.listener_id, rule_ids: ids });
-      Message({
-        message: '删除成功',
-        theme: 'success',
-      });
-      await getListData();
-      isBatchDeleteDialogShow.value = false;
+      isSubmitLoading.value = true;
+      try {
+        await businessStore.deleteRules(props.listener_id, { lbl_id: props.listener_id, rule_ids: ids });
+        isBatchDeleteDialogShow.value = false;
+        Message({ message: '删除成功', theme: 'success' });
+        await getListData();
+      } finally {
+        isSubmitLoading.value = false;
+      }
     };
 
     const tableSettings = generateColumnsSettings(tableColumns);
@@ -192,18 +194,14 @@ export default defineComponent({
             name: '轮询方式',
             id: 'scheduler',
           },
-          {
-            name: '目标组',
-            id: 'target_group_id',
-          },
-          {
-            name: '同步状态',
-            id: 'binding_status',
-          },
-          {
-            name: '操作',
-            id: 'actions',
-          },
+          // {
+          //   name: '目标组',
+          //   id: 'target_group_id',
+          // },
+          // {
+          //   name: '同步状态',
+          //   id: 'binding_status',
+          // },
         ],
       },
       tableOptions: {
@@ -218,6 +216,39 @@ export default defineComponent({
       requestOption: {
         type: `vendors/tcloud/listeners/${props.listener_id}/rules`,
         sortOption: { sort: 'created_at', order: 'DESC' },
+        filterOption: {
+          rules: [{ field: 'domain', op: QueryRuleOPEnum.EQ, value: props.id }],
+        },
+        async callback(dataList: any) {
+          if (dataList.length === 0) return;
+          const tgIds = dataList.map(({ target_group_id }: { target_group_id: string }) => target_group_id);
+          const resList = await businessStore.getTargetGroupList({
+            page: {
+              count: false,
+              start: 0,
+              limit: 500,
+            },
+            filter: {
+              op: QueryRuleOPEnum.AND,
+              rules: [
+                {
+                  field: 'id',
+                  op: QueryRuleOPEnum.IN,
+                  value: tgIds.map((id: string) => id),
+                },
+              ],
+            },
+            fields: ['id', 'name'],
+          });
+          const listenerCountMap = {};
+          resList.data.details.forEach(({ id, name }: { id: string; name: string }) => {
+            listenerCountMap[id] = name;
+          });
+          return dataList.map((data: any) => {
+            const { target_group_id } = data;
+            return { ...data, target_group_name: listenerCountMap[target_group_id] };
+          });
+        },
       },
     });
 
@@ -226,6 +257,7 @@ export default defineComponent({
       selections,
       resetSelections,
       getListData,
+      true,
     );
 
     const { isScrollLoading, optionList, getOptionList, handleOptionListScrollEnd } = useSelectOptionListWithScroll(
@@ -253,6 +285,8 @@ export default defineComponent({
     watch(
       () => [props.listener_id, props.id],
       ([id, domain]) => {
+        // 清空选中项, 避免切换域名后, 选中项不变
+        resetSelections();
         id &&
           getListData(
             [
@@ -343,12 +377,13 @@ export default defineComponent({
           theme='danger'
           confirmText='删除'
           tableProps={tableProps}
+          list={selections.value}
           isSubmitLoading={isSubmitLoading.value}
           onHandleConfirm={() => deleteRulesBatch(tableProps.data.map(({ id }) => id))}>
           {{
             tips: () => (
               <>
-                已选择 <span class='blue'> {selections.value.length} </span> 个URL路径
+                已选择<span class='blue'>{selections.value.length}</span>个URL路径，可以直接删除。
               </>
             ),
           }}

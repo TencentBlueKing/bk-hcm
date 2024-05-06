@@ -8,7 +8,7 @@ import type { Settings } from 'bkui-vue/lib/table/props';
 import { h, ref } from 'vue';
 import type { Ref } from 'vue';
 import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
-import { CLB_BINDING_STATUS, CLOUD_HOST_STATUS, VendorEnum } from '@/common/constant';
+import { CLB_BINDING_STATUS, CLOUD_HOST_STATUS, VendorEnum, VendorMap } from '@/common/constant';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -24,6 +24,7 @@ import './use-columns.scss';
 import { defaults } from 'lodash';
 import { timeFormatter } from '@/common/util';
 import { LBRouteName, LB_NETWORK_TYPE_MAP, SCHEDULER_MAP } from '@/constants/clb';
+import { getLbVip } from '@/utils';
 
 interface LinkFieldOptions {
   type: string; // 资源类型
@@ -1162,18 +1163,20 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'vip',
       isDefaultShow: true,
       render: ({ data }: any) => {
-        const { private_ipv4_addresses, private_ipv6_addresses, public_ipv4_addresses, public_ipv6_addresses } = data;
-        if (public_ipv4_addresses.length > 0) return public_ipv4_addresses.join(',');
-        if (public_ipv6_addresses.length > 0) return public_ipv6_addresses.join(',');
-        if (private_ipv4_addresses.length > 0) return private_ipv4_addresses.join(',');
-        if (private_ipv6_addresses.length > 0) return private_ipv6_addresses.join(',');
+        return getLbVip(data);
       },
     },
     {
       label: '网络类型',
       field: 'lb_type',
       isDefaultShow: true,
-      render: ({ cell }: { cell: string }) => LB_NETWORK_TYPE_MAP[cell],
+      sort: true,
+      filter: {
+        list: [
+          { text: LB_NETWORK_TYPE_MAP.OPEN, value: LB_NETWORK_TYPE_MAP.OPEN },
+          { text: LB_NETWORK_TYPE_MAP.INTERNAL, value: LB_NETWORK_TYPE_MAP.INTERNAL },
+        ],
+      },
     },
     {
       label: '监听器数量',
@@ -1201,6 +1204,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: 'IP版本',
       field: 'ip_version',
       isDefaultShow: true,
+      sort: true,
     },
     {
       label: '云厂商',
@@ -1208,24 +1212,48 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render({ cell }: { cell: string }) {
         return h('span', [CloudType[cell] || '--']);
       },
+      sort: true,
     },
     {
       label: '地域',
       field: 'region',
       render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell) || '--',
+      sort: true,
     },
     {
       label: '可用区域',
       field: 'zones',
       render: ({ cell }: { cell: string[] }) => cell?.join(','),
+      sort: true,
     },
     {
       label: '状态',
       field: 'status',
+      sort: true,
+      render: ({ cell }: { cell: string }) => {
+        let icon = StatusSuccess;
+        switch (cell) {
+          case '创建中':
+            icon = StatusLoading;
+            break;
+          case '正常运行':
+            icon = StatusSuccess;
+            break;
+        }
+        return cell ? (
+          <div class='status-column-cell'>
+            <img class={`status-icon${cell === 'binding' ? ' spin-icon' : ''}`} src={icon} alt='' />
+            <span>{cell}</span>
+          </div>
+        ) : (
+          '--'
+        );
+      },
     },
     {
       label: '所属vpc',
-      field: 'vpc_id',
+      field: 'cloud_vpc_id',
+      sort: true,
     },
   ];
 
@@ -1265,17 +1293,19 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '均衡方式',
       field: 'scheduler',
       isDefaultShow: true,
-      render: ({ cell }: { cell: string }) => SCHEDULER_MAP[cell],
+      render: ({ cell }: { cell: string }) => SCHEDULER_MAP[cell] || '--',
     },
     {
       label: '域名数量',
       field: 'domain_num',
       isDefaultShow: true,
+      sort: true,
     },
     {
       label: 'URL数量',
       field: 'url_num',
       isDefaultShow: true,
+      sort: true,
     },
     {
       label: '同步状态',
@@ -1300,6 +1330,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           '--'
         );
       },
+      sort: true,
     },
   ];
 
@@ -1342,7 +1373,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '绑定监听器数量',
       field: 'listener_num',
       isDefaultShow: true,
-      sort: true,
     },
     {
       label: '协议',
@@ -1351,13 +1381,21 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         return cell?.trim() || '--';
       },
       isDefaultShow: true,
-      filter: true,
+      sort: true,
+      filter: {
+        list: [
+          { value: 'TCP', text: 'TCP' },
+          { value: 'UDP', text: 'UDP' },
+          { value: 'HTTP', text: 'HTTP' },
+          { value: 'HTTPS', text: 'HTTPS' },
+        ],
+      },
     },
     {
       label: '端口',
       field: 'port',
       isDefaultShow: true,
-      filter: true,
+      sort: true,
     },
     {
       label: '云厂商',
@@ -1365,23 +1403,21 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render({ cell }: { cell: string }) {
         return h('span', [CloudType[cell] || '--']);
       },
+      sort: true,
+      filter: {
+        list: [{ value: VendorEnum.TCLOUD, text: VendorMap[VendorEnum.TCLOUD] }],
+      },
     },
     {
       label: '地域',
       field: 'region',
       render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell) || '--',
+      sort: true,
     },
-    // {
-    //   label: '可用区域',
-    //   field: 'zone',
-    // },
-    // {
-    //   label: '资源类型',
-    //   field: 'inst_type',
-    // },
     {
       label: '所属VPC',
       field: 'cloud_vpc_id',
+      sort: true,
     },
     {
       label: '健康检查端口',
@@ -1398,10 +1434,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         );
       },
     },
-    // {
-    //   label: 'IP地址类型',
-    //   field: 'ip_type',
-    // },
   ];
 
   const rsConfigColumns = [
@@ -1422,12 +1454,14 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '公网IP',
       field: 'public_ip_address',
       render: ({ data }: any) => {
-        return [
-          ...(data.public_ipv4_addresses || []),
-          ...(data.public_ipv6_addresses || []),
-          // 更新目标组detail中的rs字段
-          ...(data.public_ip_address || []),
-        ].join(',');
+        return (
+          [
+            ...(data.public_ipv4_addresses || []),
+            ...(data.public_ipv6_addresses || []),
+            // 更新目标组detail中的rs字段
+            ...(data.public_ip_address || []),
+          ].join(',') || '--'
+        );
       },
     },
     {
@@ -1441,11 +1475,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '地域',
       field: 'region',
-      render: ({ data }: any) => {
-        if (data.region) return getRegionName(VendorEnum.TCLOUD, data.region);
-        const idx = data.zone.lastIndexOf('-');
-        return getRegionName(VendorEnum.TCLOUD, data.zone.slice(0, idx));
-      },
+      render: ({ cell }: { cell: string }) => getRegionName(VendorEnum.TCLOUD, cell) || '--',
     },
     {
       label: '资源类型',
@@ -1549,24 +1579,30 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '关联的URL',
       field: 'url',
       isDefaultShow: true,
+      render: ({ cell }: { cell: string }) => cell || '--',
     },
     {
       label: '协议',
       field: 'protocol',
       isDefaultShow: true,
-      filter: true,
+      filter: {
+        list: [
+          { value: 'TCP', text: 'TCP' },
+          { value: 'UDP', text: 'UDP' },
+          { value: 'HTTP', text: 'HTTP' },
+          { value: 'HTTPS', text: 'HTTPS' },
+        ],
+      },
     },
     {
       label: '端口',
       field: 'port',
       isDefaultShow: true,
-      filter: true,
     },
     {
       label: '异常端口数',
       field: 'healthCheck',
       isDefaultShow: true,
-      sort: true,
       render: ({ cell }: any) => {
         if (!cell) return '--';
         const { health_num, un_health_num } = cell;
@@ -1592,11 +1628,14 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: 'URL路径',
       field: 'url',
       isDefaultShow: true,
+      sort: true,
     },
     {
       label: '轮询方式',
       field: 'scheduler',
       isDefaultShow: true,
+      render: ({ cell }: { cell: string }) => SCHEDULER_MAP[cell] || '--',
+      sort: true,
     },
   ];
 
@@ -1623,24 +1662,20 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         list: [
           {
             text: '服务器证书',
-            value: 'SVR',
+            value: '服务器证书',
           },
           {
             text: '客户端CA证书',
-            value: 'CA',
+            value: '客户端CA证书',
           },
         ],
-        checked: [],
-      },
-      render: ({ cell }: { cell: string }) => {
-        return cell === 'SVR' ? '服务器证书' : '客户端CA证书';
       },
     },
     {
       label: '域名',
       field: 'domain',
       render: ({ cell }: { cell: string[] }) => {
-        return cell?.join(';');
+        return cell?.join(';') || '--';
       },
     },
     {
@@ -1662,41 +1697,28 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         list: [
           {
             text: '正常',
-            value: '1',
+            value: '正常',
           },
           {
             text: '已过期',
-            value: '3',
+            value: '已过期',
           },
         ],
-        checked: [],
       },
-      render: ({ data, cell }: { data: any; cell: string }) => {
+      render: ({ cell }: { cell: string }) => {
         let icon;
-        const getStatusText = (vendor: VendorEnum, cert_status: string) => {
-          switch (vendor) {
-            case VendorEnum.TCLOUD:
-              switch (cert_status) {
-                case '1':
-                  return '正常';
-                case '3':
-                  return '已过期';
-              }
-              break;
-          }
-        };
         switch (cell) {
-          case '1':
+          case '正常':
             icon = StatusNormal;
             break;
-          case '3':
+          case '已过期':
             icon = StatusAbnormal;
             break;
         }
         return (
           <div class='status-column-cell'>
             <img class='status-icon' src={icon} alt='' />
-            <span>{getStatusText(data.vendor, cell)}</span>
+            <span>{cell}</span>
           </div>
         );
       },

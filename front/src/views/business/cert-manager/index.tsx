@@ -14,6 +14,7 @@ import CommonSideslider from '@/components/common-sideslider';
 import AccountSelector from '@/components/account-selector/index.vue';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 import Confirm from '@/components/confirm';
+import { getTableRowClassOption } from '@/common/util';
 
 const { FormItem } = Form;
 
@@ -97,6 +98,7 @@ export default defineComponent({
           isRowSelectEnable,
           onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
           onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
+          ...getTableRowClassOption(),
         },
       },
       requestOption: {
@@ -104,6 +106,15 @@ export default defineComponent({
         sortOption: {
           sort: 'cloud_created_time',
           order: 'DESC',
+        },
+        async callback(dataList: any[]) {
+          if (dataList.length === 0) return;
+          return dataList.map((item: any) => {
+            // 与表头筛选配合
+            item.cert_type = item.cert_type === 'SVR' ? '服务器证书' : '客户端CA证书';
+            item.cert_status = item.cert_status === '1' ? '正常' : '已过期';
+            return item;
+          });
         },
       },
       bizFilter: props.filter,
@@ -118,6 +129,9 @@ export default defineComponent({
       public_key: '' as string, // 证书信息
       private_key: '' as string, // 私钥信息
     });
+    const formRules = {
+      name: [{ message: '不能超过200个字且不能为空', validator: (value: string) => value.trim().length <= 200 }],
+    };
 
     // 上传证书错误提示
     const uploadPublicKeyErrorText = ref('');
@@ -314,7 +328,7 @@ export default defineComponent({
           width='640'
           onHandleSubmit={handleCreateCert}
           class='cert-upload-sideslider'>
-          <Form ref={formRef} formType='vertical' model={formModel}>
+          <Form ref={formRef} formType='vertical' rules={formRules} model={formModel}>
             {formItemOptions.value.map(({ label, property, required, content, hidden }) => {
               if (hidden) return null;
               return (

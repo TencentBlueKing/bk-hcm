@@ -4,9 +4,10 @@ import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 // import stores
 import { useBusinessStore } from '@/store';
 // import types
-import { QueryRuleOPEnum } from '@/typings';
+import { QueryRuleOPEnum, RulesItem } from '@/typings';
+import { getDifferenceSet } from '@/common/util';
 
-export default (rsSelections: Ref<any[]>) => {
+export default (rsSelections: Ref<any[]>, callback: () => { vpc_id: string; account_id: string }) => {
   // use stores
   const businessStore = useBusinessStore();
 
@@ -14,11 +15,11 @@ export default (rsSelections: Ref<any[]>) => {
   const searchData = [
     {
       name: '内网IP',
-      id: 'privateIp',
+      id: 'private_ipv4_addresses',
     },
     {
       name: '公网IP',
-      id: 'publicIp',
+      id: 'public_ipv4_addresses',
     },
     {
       name: '名称',
@@ -26,10 +27,10 @@ export default (rsSelections: Ref<any[]>) => {
     },
     {
       name: '资源类型',
-      id: 'resourceType',
+      id: 'machine_type',
     },
   ];
-  const searchValue = ref('');
+  const searchVal = ref('');
 
   // 表格相关
   const tableRef = ref(null);
@@ -93,6 +94,11 @@ export default (rsSelections: Ref<any[]>) => {
     selectedCount.value = 0;
   };
 
+  const filter = reactive({
+    op: QueryRuleOPEnum.AND,
+    rules: [],
+  });
+
   // 获取 rs 列表
   const getRSTableList = async (accountId: string, vpcId: string) => {
     if (!accountId) {
@@ -117,6 +123,7 @@ export default (rsSelections: Ref<any[]>) => {
                   op: QueryRuleOPEnum.JSON_CONTAINS,
                   value: vpcId,
                 },
+                ...filter.rules,
               ],
             },
             page: {
@@ -144,9 +151,99 @@ export default (rsSelections: Ref<any[]>) => {
     },
   );
 
+  /**
+   * 构建请求筛选条件
+   * @param options 配置对象
+   */
+  const buildFilter = (options: {
+    rules: Array<RulesItem>; // 规则列表
+    differenceFields?: string[]; // search-select 移除条件时的搜索字段差集(只用于 search-select 组件)
+  }) => {
+    const { rules, differenceFields } = options;
+    const filterMap = new Map();
+    // 先添加新的规则
+    rules.forEach((rule) => {
+      const tmpRule = filterMap.get(rule.field);
+      if (tmpRule) {
+        if (Array.isArray(tmpRule.rules)) {
+          filterMap.set(rule.field, { op: QueryRuleOPEnum.OR, rules: [...tmpRule.rules, rule] });
+        } else {
+          filterMap.set(rule.field, { op: QueryRuleOPEnum.OR, rules: [tmpRule, rule] });
+        }
+      } else {
+        filterMap.set(rule.field, JSON.parse(JSON.stringify(rule)));
+      }
+    });
+    // 后添加 filter 的规则
+    filter.rules.forEach((rule) => {
+      if (!filterMap.get(rule.field) && !rule.rules) {
+        filterMap.set(rule.field, rule);
+      }
+    });
+    // 如果配置了 differenceFields, 则移除 differenceFields 中对应的规则
+    if (differenceFields) {
+      differenceFields.forEach((field) => {
+        if (filterMap.has(field)) {
+          filterMap.delete(field);
+        }
+      });
+    }
+    // 整合后的规则重新赋值给 filter.rules
+    filter.rules = [...filterMap.values()];
+  };
+
+  /**
+   * 处理字段的搜索模式
+   */
+  const resolveSearchFieldOp = (val: any) => {
+    let op;
+    const { id } = val;
+    if (!id) return;
+    // 如果是domain或者zones(数组类型), 则使用JSON_CONTAINS
+    if (val?.id === 'private_ipv4_addresses' || val?.id === 'public_ipv4_addresses') op = QueryRuleOPEnum.JSON_CONTAINS;
+    // 如果是名称或指定了模糊搜索, 则模糊搜索
+    else if (val?.id === 'name') op = QueryRuleOPEnum.CIS;
+    // 否则, 精确搜索
+    else op = QueryRuleOPEnum.EQ;
+    return op;
+  };
+
+  watch(
+    () => searchVal.value,
+    (searchVal, oldSearchVal) => {
+      // 记录上一次 search-select 的规则名
+      const oldSearchFieldList: string[] =
+        (Array.isArray(oldSearchVal) && oldSearchVal.reduce((prev: any, item: any) => [...prev, item.id], [])) || [];
+      // 记录此次 search-select 规则名
+      const searchFieldList: string[] = [];
+      // 构建当前 search-select 规则
+      const searchRules = Array.isArray(searchVal)
+        ? searchVal.map((val: any) => {
+            const field = val?.id;
+            const op = resolveSearchFieldOp(val);
+            const value = val?.values?.[0]?.id;
+            searchFieldList.push(field);
+            return { field, op, value };
+          })
+        : [];
+      // 如果 search-select 的条件减少, 则移除差集中的规则
+      if (oldSearchFieldList.length > searchFieldList.length) {
+        buildFilter({ rules: searchRules, differenceFields: getDifferenceSet(oldSearchFieldList, searchFieldList) });
+      } else {
+        buildFilter({ rules: searchRules });
+      }
+      // 页码重置
+      pagination.start = 0;
+      getRSTableList(callback().account_id, callback().vpc_id);
+    },
+    {
+      immediate: true,
+    },
+  );
+
   return {
     searchData,
-    searchValue,
+    searchVal,
     isTableLoading,
     tableRef,
     columns,

@@ -130,7 +130,6 @@ export default (formModel: ApplyClbModel) => {
         [
           {
             label: '可用区类型',
-            required: true,
             property: 'zoneType',
             hidden: isIntranet.value || formModel.address_ip_version !== 'IPV4',
             content: () => (
@@ -159,7 +158,6 @@ export default (formModel: ApplyClbModel) => {
           },
           {
             label: '可用区',
-            required: true,
             property: 'zones',
             hidden: !isIntranet.value && formModel.address_ip_version !== 'IPV4',
             content: () => {
@@ -300,12 +298,29 @@ export default (formModel: ApplyClbModel) => {
           label: '弹性公网 IP',
           // 弹性IP，仅内网可绑定。公网类型无法指定IP。绑定弹性IP后，内网CLB当做公网CLB使用
           hidden: !isIntranet.value,
-          content: () => (
-            <Button onClick={() => bus.$emit('showBindEipDialog')} theme={formModel.cloud_eip_id ? 'primary' : null}>
-              <Plus class='f24' />
-              {t('绑定弹性 IP')}
-            </Button>
-          ),
+          content: () => {
+            if (formModel.cloud_eip_id) {
+              return (
+                <div style=''>
+                  <div class={'image-selector-selected-block-container'}>
+                    <div class={'selected-block mr8'}>{formModel.cloud_eip_id} </div>
+                    <EditLine
+                      fill='#3A84FF'
+                      width={13.5}
+                      height={13.5}
+                      onClick={() => bus.$emit('showBindEipDialog')}
+                    />
+                  </div>
+                </div>
+              );
+            }
+            return (
+              <Button theme='primary' onClick={() => bus.$emit('showBindEipDialog')}>
+                <Plus class='f24' />
+                {t('绑定弹性 IP')}
+              </Button>
+            );
+          },
         },
       ],
     },
@@ -349,9 +364,10 @@ export default (formModel: ApplyClbModel) => {
             <div class='slider-wrap'>
               <Slider
                 v-model={formModel.internet_max_bandwidth_out}
+                minValue={1}
                 maxValue={5120}
                 customContent={{
-                  0: { label: '0' },
+                  1: { label: '1' },
                   256: { label: '256' },
                   512: { label: '512' },
                   1024: { label: '1024' },

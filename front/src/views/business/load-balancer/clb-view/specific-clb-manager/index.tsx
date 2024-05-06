@@ -57,6 +57,8 @@ export default defineComponent({
     const getDetails = async (id: string) => {
       const res = await businessStore.getLbDetail(id);
       detail.value = res.data;
+      // 更新一下store
+      loadBalancerStore.setCurrentSelectedTreeNode(detail.value);
     };
     const updateLb = async (payload: Record<string, any>) => {
       await businessStore.updateLbDetail({

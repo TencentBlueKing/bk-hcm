@@ -6,6 +6,7 @@ import { AngleDown, AngleUp } from 'bkui-vue/lib/icon';
 import http from '@/http';
 import { VendorEnum } from '@/common/constant';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+import { SecurityRuleDirection } from '..';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -32,7 +33,7 @@ export default defineComponent({
       required: true,
     },
     direction: {
-      type: String as PropType<SecuirtyRuleDirection>,
+      type: String as PropType<SecurityRuleDirection>,
       required: true,
     },
     vendor: {
@@ -69,6 +70,7 @@ export default defineComponent({
         },
       );
       tableData.value = res.data.details;
+      if (!tableData.value) isExpand.value = false;
     };
 
     watch(

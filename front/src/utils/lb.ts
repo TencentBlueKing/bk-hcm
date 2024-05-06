@@ -30,4 +30,18 @@ const asyncGetListenerCount = async (lbList: any) => {
   });
 };
 
-export { asyncGetListenerCount };
+/**
+ * 获取负载均衡的ip地址
+ * @param lb 负载均衡
+ * @returns 负载均衡的ip地址
+ */
+const getLbVip = (lb: any) => {
+  const { private_ipv4_addresses, private_ipv6_addresses, public_ipv4_addresses, public_ipv6_addresses } = lb;
+  if (public_ipv4_addresses.length > 0) return public_ipv4_addresses.join(',');
+  if (public_ipv6_addresses.length > 0) return public_ipv6_addresses.join(',');
+  if (private_ipv4_addresses.length > 0) return private_ipv4_addresses.join(',');
+  if (private_ipv6_addresses.length > 0) return private_ipv6_addresses.join(',');
+  return '--';
+};
+
+export { asyncGetListenerCount, getLbVip };

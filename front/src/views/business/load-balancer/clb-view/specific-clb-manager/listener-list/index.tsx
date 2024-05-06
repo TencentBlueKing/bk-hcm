@@ -1,4 +1,4 @@
-import { defineComponent, ref, watch } from 'vue';
+import { defineComponent, watch } from 'vue';
 // import components
 import { Button, Message } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
@@ -122,6 +122,8 @@ export default defineComponent({
     watch(
       () => props.id,
       (id) => {
+        // 清空选中项
+        resetSelections();
         id && getListData([], `load_balancers/${id}/listeners`);
       },
     );
@@ -135,29 +137,18 @@ export default defineComponent({
         });
       });
     };
-    const filterCondition = ref();
 
     // 批量删除监听器
     const {
       isSubmitLoading,
+      isSubmitDisabled,
       isBatchDeleteDialogShow,
       radioGroupValue,
       tableProps,
       handleBatchDeleteListener,
       handleBatchDeleteSubmit,
       computedListenersList,
-    } = useBatchDeleteListener(columns, selections, resetSelections, getListData, filterCondition);
-
-    watch(
-      () => radioGroupValue.value,
-      (isRsNumZero) => {
-        if (isRsNumZero) filterCondition.value = ({ rs_weight_non_zero_num }: any) => rs_weight_non_zero_num === 0;
-        else filterCondition.value = ({ rs_weight_non_zero_num }: any) => rs_weight_non_zero_num > 0;
-      },
-      {
-        immediate: true,
-      },
-    );
+    } = useBatchDeleteListener(columns, selections, resetSelections, getListData);
 
     return () => (
       <div class='listener-list-page'>
@@ -189,6 +180,7 @@ export default defineComponent({
           theme='danger'
           confirmText='删除'
           isSubmitLoading={isSubmitLoading.value}
+          isSubmitDisabled={isSubmitDisabled.value}
           tableProps={tableProps}
           list={computedListenersList.value}
           onHandleConfirm={handleBatchDeleteSubmit}>

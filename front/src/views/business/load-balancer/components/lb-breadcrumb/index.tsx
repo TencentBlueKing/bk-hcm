@@ -2,8 +2,9 @@ import { defineComponent, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 // import stores
 import { useLoadBalancerStore } from '@/store/loadbalancer';
-import './index.scss';
+import { getLbVip } from '@/utils';
 import { LBRouteName } from '@/constants';
+import './index.scss';
 
 export default defineComponent({
   name: 'LoadBalancerBreadcrumb',
@@ -27,20 +28,10 @@ export default defineComponent({
       domain.value = '';
     };
 
-    // 获取 lb 的 vip 信息
-    const getLBVipText = (data: any) => {
-      const { private_ipv4_addresses, private_ipv6_addresses, public_ipv4_addresses, public_ipv6_addresses } = data;
-      if (public_ipv4_addresses.length > 0) return public_ipv4_addresses.join(',');
-      if (public_ipv6_addresses.length > 0) return public_ipv6_addresses.join(',');
-      if (private_ipv4_addresses.length > 0) return private_ipv4_addresses.join(',');
-      if (private_ipv6_addresses.length > 0) return private_ipv6_addresses.join(',');
-      return '--';
-    };
-
     // 设置当前 listener 所归属的 lb 信息
     const getLBText = (lb: any) => {
       lbName.value = lb.name;
-      lbExtension.value = getLBVipText(lb);
+      lbExtension.value = getLbVip(lb);
     };
 
     // 设置当前 domain 所归属的 listener 信息, 以及对应的 listener 所归属的 lb 信息
@@ -69,21 +60,22 @@ export default defineComponent({
     };
 
     watch(
-      [() => route.name, () => route.params.id],
-      ([routeName, id]) => {
+      [() => route.name, () => loadBalancer.currentSelectedTreeNode],
+      ([routeName]) => {
         clearText();
         switch (routeName) {
           case 'specific-listener-manager':
             getFullText(loadBalancer.currentSelectedTreeNode);
             break;
           case 'specific-domain-manager':
-            domain.value = id as string;
+            domain.value = route.params.id as string;
             getFullText(loadBalancer.currentSelectedTreeNode);
             break;
         }
       },
       {
         immediate: true,
+        deep: true,
       },
     );
 

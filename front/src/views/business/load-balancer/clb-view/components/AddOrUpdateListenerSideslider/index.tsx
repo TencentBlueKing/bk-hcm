@@ -56,7 +56,7 @@ export default defineComponent({
       isCACertListLoading,
       CACertList,
       handleCACertListScrollEnd,
-    } = useAddOrUpdateListener(props.getListData);
+    } = useAddOrUpdateListener(props.getListData, props.originPage);
 
     // click-handler - 新增目标组
     const handleAddTargetGroup = () => {
@@ -81,7 +81,7 @@ export default defineComponent({
         title={isEdit.value ? '编辑监听器' : '新增监听器'}
         width={640}
         onHandleSubmit={handleAddOrUpdateListener}
-        isSubmitDisabled={isAddOrUpdateListenerSubmit.value}>
+        isSubmitLoading={isAddOrUpdateListenerSubmit.value}>
         <Form ref={formRef} formType='vertical' model={listenerFormData} rules={rules}>
           <FormItem label={t('负载均衡名称')}>
             <Input

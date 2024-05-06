@@ -1,8 +1,9 @@
-import { defineComponent, onMounted, ref } from 'vue';
+import { computed, defineComponent, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 // import components
+import { PlayShape } from 'bkui-vue/lib/icon';
+import { Message, OverflowTitle, Tree } from 'bkui-vue';
 import SimpleSearchSelect from '../../components/simple-search-select';
-import { Message, Tree } from 'bkui-vue';
 import Confirm from '@/components/confirm';
 // import stores
 import { useBusinessStore } from '@/store';
@@ -12,6 +13,7 @@ import useMoreActionDropdown from '@/hooks/useMoreActionDropdown';
 // import utils
 import { throttle } from 'lodash';
 import bus from '@/common/bus';
+import { getLbVip } from '@/utils';
 // import static resources
 import allLBIcon from '@/assets/image/all-lb.svg';
 import lbIcon from '@/assets/image/loadbalancer.svg';
@@ -33,11 +35,11 @@ export default defineComponent({
     // 搜索相关
     const searchValue = ref('');
     const searchDataList = [
-      { id: 'clb_name', name: '负载均衡名称' },
-      { id: 'clb_vip', name: '负载均衡VIP' },
+      { id: 'lb_name', name: '负载均衡名称' },
+      // { id: 'clb_vip', name: '负载均衡VIP' },
       { id: 'listener_name', name: '监听器名称' },
-      { id: 'protocol', name: '协议' },
-      { id: 'port', name: '端口' },
+      // { id: 'protocol', name: '协议' },
+      // { id: 'port', name: '端口' },
       { id: 'domain', name: '域名' },
     ];
 
@@ -120,24 +122,31 @@ export default defineComponent({
     };
     const { showDropdownList, currentPopBoundaryNodeKey } = useMoreActionDropdown(typeMenuMap);
 
-    // const searchOption = computed(() => {
-    //   return {
-    //     value: searchValue.value,
-    //     match: (searchValue: string, itemText: string, item: any) => {
-    //       // todo: 需要补充搜索关键词的映射，如 key=clb_name，则需要匹配 type=clb 且 name=searchValue 的项
-    //       const v = searchValue.split(':')[1];
-    //       let result = false;
-    //       if (item.type === 'clb') {
-    //         result = new RegExp(v, 'g').test(itemText);
-    //         if (result) {
-    //           searchResultCount.value = searchResultCount.value + 1;
-    //         }
-    //       }
-    //       return result;
-    //     },
-    //     showChildNodes: false,
-    //   };
-    // });
+    const searchOption = computed(() => {
+      return {
+        value: searchValue.value,
+        match: (searchValue: string, itemText: string, item: any) => {
+          const k = searchValue.split(':')[0];
+          const v = searchValue.split(':')[1];
+          let result = false;
+          switch (k) {
+            case 'lb_name':
+              item.type === 'lb' && (result = new RegExp(v, 'g').test(itemText));
+              break;
+            case 'listener_name':
+              item.type === 'listener' && (result = new RegExp(v, 'g').test(itemText));
+              break;
+            case 'domain':
+              item.type === 'domain' && (result = new RegExp(`${v}`, 'g').test(itemText));
+              break;
+            default:
+              break;
+          }
+          return result;
+        },
+        showChildNodes: false,
+      };
+    });
 
     // Intersection Observer 监听器
     const observer = new IntersectionObserver((entries) => {
@@ -203,28 +212,39 @@ export default defineComponent({
           </bk-loading>
         );
       }
+      const { type, id, name, protocol, port, isDefault, listenerNum, domain_num, url_count } = data;
+      const extension =
+        // eslint-disable-next-line no-nested-ternary
+        type === 'lb' ? ` (${getLbVip(data)})` : type === 'listener' ? `(${protocol}:${port})` : '';
       return (
         <>
-          <div class='base-info'>
+          <OverflowTitle
+            type='tips'
+            class='base-info'
+            // eslint-disable-next-line no-nested-ternary
+            style={{ maxWidth: type === 'lb' ? '200px' : type === 'listener' ? '180px' : '160px' }}>
             {searchValue.value ? (
               <span
-                v-html={data.name?.replace(
+                v-html={name?.replace(
                   new RegExp(searchValue.value.split(':')[1], 'g'),
                   `<font color='#3A84FF'>${searchValue.value.split(':')[1]}</font>`,
                 )}></span>
             ) : (
-              data.name
+              <>
+                <span class='name'>{name}</span>
+                <span class='extension'>{extension}</span>
+              </>
             )}
-            {attributes.fullPath.split('-').length === 3 && data.isDefault && (
-              <bk-tag class='tag' theme='warning' radius='2px'>
+            {attributes.fullPath.split('-').length === 3 && isDefault && (
+              <bk-tag class='tag ml5' theme='warning'>
                 默认
               </bk-tag>
             )}
-          </div>
-          <div class={`ext-info${currentPopBoundaryNodeKey.value === data.id ? ' show-dropdown' : ''}`}>
+          </OverflowTitle>
+          <div class={`ext-info${currentPopBoundaryNodeKey.value === id ? ' show-dropdown' : ''}`}>
             <div class='count'>
               {/* eslint-disable-next-line no-nested-ternary */}
-              {data.type === 'lb' ? data.listenerNum : data.type === 'listener' ? data.domain_num : data.url_count}
+              {type === 'lb' ? listenerNum || 0 : type === 'listener' ? domain_num : url_count}
             </div>
             <div class='more-action' onClick={(e) => showDropdownList(e, data)}>
               <i class='hcm-icon bkhcm-icon-more-fill'></i>
@@ -306,6 +326,15 @@ export default defineComponent({
       loadRemoteData(null, 0);
     });
 
+    onMounted(() => {
+      // 重新加载lb-tree数据
+      bus.$on('resetLbTree', reset);
+    });
+
+    onUnmounted(() => {
+      bus.$off('resetLbTree');
+    });
+
     return () => (
       <div class='load-balancer-tree'>
         {/* 搜索 */}
@@ -339,15 +368,33 @@ export default defineComponent({
           children='children'
           level-line
           // virtual-render
+          indent={18}
           line-height={36}
           onNodeClick={handleNodeClick}
           onScroll={getTreeScrollFunc()}
           async={getTreeAsyncOption()}
           onNodeExpand={handleNodeExpand}
-          onNodeCollapse={handleNodeCollapse}>
+          onNodeCollapse={handleNodeCollapse}
+          search={searchOption.value}>
           {{
             default: ({ data, attributes }: any) => renderDefaultNode(data, attributes),
             nodeType: (node: any) => renderPrefixIcon(node),
+            nodeAction: (node: any) => {
+              const { type, listenerNum, domain_num } = node;
+              let isVisible = true;
+              if ((type === 'lb' && !listenerNum) || (type === 'listener' && domain_num === 0) || type === 'domain') {
+                isVisible = false;
+              }
+              return (
+                <PlayShape
+                  style={{
+                    width: '10px',
+                    color: !isVisible ? 'transparent' : '#979ba5',
+                    transform: `${node.__attr__.isOpen ? 'rotate(90deg)' : 'rotate(0)'}`,
+                  }}
+                />
+              );
+            },
           }}
         </Tree>
       </div>

@@ -35,6 +35,10 @@ export default defineComponent({
     const getTargetGroupDetail = async (id: string) => {
       const res = await businessStore.getTargetGroupDetail(id);
       // todo: 这里要改回来
+      res.data.target_list = res.data.target_list.map((item: any) => {
+        item.region = item.zone.slice(0, item.zone.lastIndexOf('-'));
+        return item;
+      });
       tgDetail.value = res.data;
     };
 

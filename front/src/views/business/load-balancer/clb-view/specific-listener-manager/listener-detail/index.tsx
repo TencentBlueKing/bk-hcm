@@ -1,16 +1,18 @@
-import { computed, defineComponent, reactive, watchEffect } from 'vue';
+import { computed, defineComponent, onMounted, onUnmounted, reactive, ref, watchEffect } from 'vue';
 // import components
 import { Button, Tag } from 'bkui-vue';
 import StatusLoading from '@/assets/image/status_loading.png';
 // import stores
-import { useResourceStore, useAccountStore } from '@/store';
+import { useAccountStore, useLoadBalancerStore, useBusinessStore } from '@/store';
 // import hooks
 import { useI18n } from 'vue-i18n';
 // import utils
 import { timeFormatter } from '@/common/util';
+import bus from '@/common/bus';
 // import constants
 import { SCHEDULER_MAP, SESSION_TYPE_MAP, SSL_MODE_MAP, TRANSPORT_LAYER_LIST } from '@/constants/clb';
 import './index.scss';
+import { QueryRuleOPEnum } from '@/typings';
 
 export default defineComponent({
   name: 'ListenerDetail',
@@ -19,11 +21,13 @@ export default defineComponent({
     // use hooks
     const { t } = useI18n();
     // use stores
-    const resourceStore = useResourceStore();
+    const businessStore = useBusinessStore();
     const accountStore = useAccountStore();
+    const loadBalancerStore = useLoadBalancerStore();
 
     // define data
     const listenerDetail = reactive<any>({}); // 监听器详情
+    const isTargetGroupBinding = ref(false);
 
     const listenerDetailInfoOption = computed(() => [
       {
@@ -73,7 +77,7 @@ export default defineComponent({
                       }}>
                       {listenerDetail.target_group_name}
                     </span>
-                    <img class='loading-icon spin-icon' src={StatusLoading} alt='' />
+                    {isTargetGroupBinding.value && <img class='loading-icon spin-icon' src={StatusLoading} alt='' />}
                   </>
                 ) : (
                   '--'
@@ -147,8 +151,22 @@ export default defineComponent({
 
     // 获取监听器详情
     const getListenerDetail = async (id: string) => {
-      const res = await resourceStore.detail('listeners', id);
-      Object.assign(listenerDetail, res.data);
+      // 监听器详情
+      const { data: listener_detail } = await businessStore.detail('listeners', id);
+      // todo: 这里暂时使用list接口, 后续直接用detail接口中的字段来控制是否为loading状态
+      const listRes = await businessStore.list(
+        {
+          filter: { op: QueryRuleOPEnum.AND, rules: [{ field: 'id', op: QueryRuleOPEnum.EQ, value: id }] },
+          page: { count: false, start: 0, limit: 1 },
+        },
+        `load_balancers/${listener_detail.lb_id}/listeners`,
+      );
+      isTargetGroupBinding.value = listRes.data.details[0].binding_status === 'binding';
+      // 负载均衡详情
+      const { data: lbDetail } = await businessStore.detail('load_balancers', listener_detail.lb_id);
+      Object.assign(listenerDetail, { ...listener_detail, lb: lbDetail });
+      // 更新store
+      loadBalancerStore.setCurrentSelectedTreeNode(listenerDetail);
     };
 
     watchEffect(() => {
@@ -157,9 +175,23 @@ export default defineComponent({
       id && type === 'detail' && getListenerDetail(id);
     });
 
+    onMounted(() => {
+      bus.$on('refreshListenerDetail', () => {
+        getListenerDetail(props.id);
+      });
+    });
+
+    onUnmounted(() => {
+      bus.$off('refreshListenerDetail');
+    });
+
     return () => (
       <div class='listener-detail-wrap'>
-        <Button class='fixed-edit-btn' outline theme='primary'>
+        <Button
+          class='fixed-edit-btn'
+          outline
+          theme='primary'
+          onClick={() => bus.$emit('showEditListenerSideslider', props.id)}>
           {t('编辑')}
         </Button>
         {listenerDetailInfoOption.value.map(({ title, open_state, content, hidden }) => {

@@ -34,7 +34,7 @@ export default defineComponent({
     const resourceStore = useResourceStore();
     const defaultDomain = ref('');
     const isCheckDomainLoading = ref(false);
-    const { selections, handleSelectionChange } = useSelection();
+    const { selections, handleSelectionChange, resetSelections } = useSelection();
     const settingDomain = ref('');
 
     const isLoading = ref(false);
@@ -142,14 +142,8 @@ export default defineComponent({
                 onClick={() => {
                   const listenerId = loadBalancerStore.currentSelectedTreeNode.id;
                   Confirm('请确定删除域名', `将删除域名【${data.domain}】`, async () => {
-                    await businessStore.deleteRules(listenerId, {
-                      lbl_id: listenerId,
-                      domain: data.domain,
-                    });
-                    Message({
-                      message: '删除成功',
-                      theme: 'success',
-                    });
+                    await businessStore.batchDeleteDomains({ lbl_id: listenerId, domains: [data.domain] });
+                    Message({ message: '删除成功', theme: 'success' });
                     getDomainList(listenerId);
                   });
                 }}>
@@ -183,6 +177,8 @@ export default defineComponent({
     watch(
       [() => props.id, () => props.type],
       ([id, type]) => {
+        // 清空选中项
+        resetSelections();
         // 当id或type变更时, 重新请求数据
         const { protocol } = props;
         if (id && type === 'list') {
@@ -214,10 +210,7 @@ export default defineComponent({
           lbl_id: loadBalancerStore.currentSelectedTreeNode.id,
           domains: selections.value.map(({ domain }) => domain),
         });
-        Message({
-          message: '删除成功',
-          theme: 'success',
-        });
+        Message({ message: '删除成功', theme: 'success' });
         isBatchDeleteDialogShow.value = false;
         getDomainList(loadBalancerStore.currentSelectedTreeNode.id);
       } finally {
@@ -273,7 +266,18 @@ export default defineComponent({
           theme='danger'
           confirmText='删除'
           tableProps={tableProps}
-          onHandleConfirm={handleBatchDelete}></BatchOperationDialog>
+          list={selections.value}
+          onHandleConfirm={handleBatchDelete}>
+          {{
+            tips: () => (
+              <>
+                已选择<span class='blue'>{selections.value.length}</span>个域名，其中
+                <span class='red'>{selections.value.filter(({ url_count }) => url_count > 0).length}</span>
+                个域名下存在URL路径。可以直接删除，域名和URL将一起删除。
+              </>
+            ),
+          }}
+        </BatchOperationDialog>
       </div>
     );
   },

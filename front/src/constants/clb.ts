@@ -107,6 +107,12 @@ export const SCHEDULER_MAP = {
   LEAST_CONN: '最小连接数',
   IP_HASH: 'IP Hash',
 };
+// 均衡方式映射 - 反向映射
+export const SCHEDULER_REVERSE_MAP = {
+  按权重轮询: 'WRR',
+  最小连接数: 'LEAST_CONN',
+  IP_HASH: 'IP_HASH',
+};
 
 // 传输层协议, 如 TCP, UDP
 export const TRANSPORT_LAYER_LIST = ['TCP', 'UDP'];
@@ -117,4 +123,34 @@ export const APPLICATION_LAYER_LIST = ['HTTP', 'HTTPS'];
 export const LB_NETWORK_TYPE_MAP = {
   OPEN: '公网',
   INTERNAL: '内网',
+};
+
+// 负载均衡网络类型映射 - 反向映射
+export const LB_NETWORK_TYPE_REVERSE_MAP = {
+  公网: 'OPEN',
+  内网: 'INTERNAL',
+};
+
+// 腾讯云负载均衡状态映射
+export const CLB_STATUS_MAP = {
+  '1': '正常运行',
+  '0': '创建中',
+};
+
+// 负载均衡规格映射 - 反向映射
+export const CLB_SPECS_REVERSE_MAP = {
+  简约型: 'clb.c1.small',
+  标准型规格: 'clb.c2.medium',
+  高阶型1规格: 'clb.c3.small',
+  高阶型2规格: 'clb.c3.medium',
+  超强型1规格: 'clb.c4.small',
+  超强型2规格: 'clb.c4.medium',
+  超强型3规格: 'clb.c4.large',
+  超强型4规格: 'clb.c4.xlarge',
+};
+
+// 监听器同步状态映射 - 反向映射
+export const LISTENER_BINDING_STATUS_REVERSE_MAP = {
+  绑定中: 'binding',
+  已绑定: 'success',
 };

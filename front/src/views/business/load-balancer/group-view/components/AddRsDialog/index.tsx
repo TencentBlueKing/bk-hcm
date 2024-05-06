@@ -66,7 +66,7 @@ export default defineComponent({
 
     const {
       searchData,
-      searchValue,
+      searchVal,
       isTableLoading,
       tableRef,
       columns,
@@ -77,7 +77,10 @@ export default defineComponent({
       handleSelectAll,
       handleClear,
       getRSTableList,
-    } = useAddRsTable(rsSelections);
+    } = useAddRsTable(rsSelections, () => ({
+      vpc_id,
+      account_id,
+    }));
 
     onMounted(() => {
       bus.$on('showAddRsDialog', handleShow);
@@ -90,7 +93,7 @@ export default defineComponent({
     return () => (
       <CommonDialog v-model:isShow={isShow.value} title='添加 RS' width={640} onHandleConfirm={handleAddRs}>
         <div class='add-rs-dialog-content'>
-          <SearchSelect class='mb16' v-model={searchValue.value} data={searchData} />
+          <SearchSelect class='mb16' v-model={searchVal.value} data={searchData} />
           <Loading loading={isTableLoading.value} class='loading-table-container has-selection'>
             <Table
               class='table-container'

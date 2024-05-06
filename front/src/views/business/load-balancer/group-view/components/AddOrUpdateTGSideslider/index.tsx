@@ -46,7 +46,7 @@ export default defineComponent({
     };
     const formData = reactive(getDefaultFormData());
     const { updateCount } = useChangeScene(isShow, formData);
-    const { formItemOptions } = useAddOrUpdateTGForm(formData, updateCount);
+    const { formItemOptions, canUpdateRegionOrVpc } = useAddOrUpdateTGForm(formData, updateCount);
 
     // click-handler - 新建目标组
     const handleAddTargetGroup = () => {
@@ -93,8 +93,8 @@ export default defineComponent({
       name: formData.name,
       protocol: formData.protocol,
       port: +formData.port,
-      region: formData.region,
-      cloud_vpc_id: formData.cloud_vpc_id,
+      region: canUpdateRegionOrVpc.value ? formData.region : undefined,
+      cloud_vpc_id: canUpdateRegionOrVpc.value ? formData.cloud_vpc_id : undefined,
     });
     // 处理参数 - 添加rs
     const resolveFormDataForAddRs = () => ({
@@ -102,12 +102,15 @@ export default defineComponent({
       target_groups: [
         {
           target_group_id: formData.id,
-          targets: formData.rs_list.map(({ cloud_id, port, weight }) => ({
-            inst_type: 'CVM',
-            cloud_inst_id: cloud_id,
-            port,
-            weight,
-          })),
+          targets: formData.rs_list
+            // 只提交新增的rs
+            .filter(({ isNew }) => isNew)
+            .map(({ cloud_id, port, weight }) => ({
+              inst_type: 'CVM',
+              cloud_inst_id: cloud_id,
+              port,
+              weight,
+            })),
         },
       ],
     });
@@ -153,11 +156,11 @@ export default defineComponent({
         if (props.origin === 'list') {
           // 表格目标组list
           props.getListData();
-          // 左侧目标组list
-          loadBalancerStore.getTargetGroupList();
         } else {
           props.getTargetGroupDetail(formData.id);
         }
+        // 刷新左侧目标组list
+        bus.$emit('refreshTargetGroupList');
       } finally {
         isSubmitDisabled.value = false;
       }
@@ -193,7 +196,7 @@ export default defineComponent({
         title={isEdit.value ? '编辑目标组' : '新建目标组'}
         width={960}
         v-model:isShow={isShow.value}
-        isSubmitDisabled={isSubmitDisabled.value}
+        isSubmitLoading={isSubmitDisabled.value}
         onHandleSubmit={handleAddOrUpdateTargetGroupSubmit}>
         <bk-container margin={0}>
           <Form formType='vertical' model={formData}>

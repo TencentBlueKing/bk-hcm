@@ -524,6 +524,14 @@ export const VendorMap = {
   [VendorEnum.TCLOUD]: '腾讯云',
 };
 
+export const VendorReverseMap = {
+  亚马逊云: VendorEnum.AWS,
+  微软云: VendorEnum.AZURE,
+  谷歌云: VendorEnum.GCP,
+  华为云: VendorEnum.HUAWEI,
+  腾讯云: VendorEnum.TCLOUD,
+};
+
 export const SYNC_STAUS_MAP = {
   a: '绑定中',
   b: '成功',

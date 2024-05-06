@@ -112,7 +112,6 @@ export default (formData: any, updateCount: Ref<number>) => {
     ],
     {
       label: 'RS 配置',
-      required: true,
       property: 'rs_list',
       span: 24,
       content: () => (
@@ -143,5 +142,6 @@ export default (formData: any, updateCount: Ref<number>) => {
 
   return {
     formItemOptions,
+    canUpdateRegionOrVpc,
   };
 };
