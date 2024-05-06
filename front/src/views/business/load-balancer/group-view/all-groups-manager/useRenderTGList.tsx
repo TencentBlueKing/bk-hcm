@@ -26,7 +26,7 @@ export default () => {
 
   const searchData: ISearchItem[] = [
     {
-      id: 'target_group_name',
+      id: 'name',
       name: '目标组名称',
     },
     {
