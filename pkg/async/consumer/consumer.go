@@ -22,7 +22,6 @@ package consumer
 
 import (
 	"errors"
-	"fmt"
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
@@ -177,11 +176,6 @@ func (csm *consumer) CancelFlow(kt *kit.Kit, flowId string) error {
 		return errors.New("flow not found " + flowId)
 	}
 	flow := flowList[0]
-	if cvt.PtrToVal(flow.Worker) != csm.leader.CurrNode() {
-		logs.Errorf("unable to cancel flow(%v) which do not belongs to current node, flow node: %s, current node: %s",
-			flowId, cvt.PtrToVal(flow.Worker), csm.leader.CurrNode())
-		return fmt.Errorf("unable to cancel flow(%v) which do not belongs to current node", flowId)
-	}
 
 	if flow.State == enumor.FlowCancel {
 		return errors.New("flow has already been canceled")
