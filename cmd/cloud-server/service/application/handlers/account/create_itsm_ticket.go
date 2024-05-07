@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"strings"
 
-	"hcm/cmd/cloud-server/service/application/handlers"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 )
@@ -35,7 +34,7 @@ type formItem struct {
 
 // RenderItsmTitle 渲染ITSM单据标题
 func (a *ApplicationOfAddAccount) RenderItsmTitle() (string, error) {
-	return fmt.Sprintf("申请新增[%s]账号(%s)", handlers.VendorNameMap[a.Vendor()], a.req.Name), nil
+	return fmt.Sprintf("申请新增[%s]账号(%s)", a.Vendor().GetNameZh(), a.req.Name), nil
 }
 
 // RenderItsmForm 渲染ITSM表单
@@ -46,7 +45,7 @@ func (a *ApplicationOfAddAccount) RenderItsmForm() (string, error) {
 	formItems := []formItem{
 		{Label: "账号类型", Value: enumor.AccountTypeNameMap[req.Type]},
 		{Label: "名称", Value: req.Name},
-		{Label: "云厂商", Value: handlers.VendorNameMap[req.Vendor]},
+		{Label: "云厂商", Value: req.Vendor.GetNameZh()},
 		{Label: "站点类型", Value: enumor.AccountSiteTypeNameMap[req.Site]},
 	}
 

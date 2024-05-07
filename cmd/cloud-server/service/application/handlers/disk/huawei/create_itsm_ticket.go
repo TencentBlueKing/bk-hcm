@@ -23,8 +23,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-
-	"hcm/cmd/cloud-server/service/application/handlers"
 )
 
 type formItem struct {
@@ -38,7 +36,7 @@ func (a *ApplicationOfCreateHuaWeiDisk) RenderItsmTitle() (string, error) {
 	if a.req.DiskName != nil && *a.req.DiskName != "" {
 		name = *a.req.DiskName
 	}
-	return fmt.Sprintf("申请新增[%s]云盘(%s)", handlers.VendorNameMap[a.Vendor()], name), nil
+	return fmt.Sprintf("申请新增[%s]云盘(%s)", a.Vendor().GetNameZh(), name), nil
 }
 
 // RenderItsmForm 渲染ITSM表单
@@ -61,7 +59,7 @@ func (a *ApplicationOfCreateHuaWeiDisk) RenderItsmForm() (string, error) {
 	formItems = append(formItems, formItem{Label: "云账号", Value: accountInfo.Name})
 
 	// 云厂商
-	formItems = append(formItems, formItem{Label: "云厂商", Value: handlers.VendorNameMap[a.Vendor()]})
+	formItems = append(formItems, formItem{Label: "云厂商", Value: a.Vendor().GetNameZh()})
 
 	// 云地域
 	regionInfo, err := a.GetHuaWeiRegion(req.Region)

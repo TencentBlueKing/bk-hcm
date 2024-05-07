@@ -34,14 +34,6 @@ import (
 	"github.com/TencentBlueKing/gopkg/conv"
 )
 
-var VendorSecretKeyFieldMap = map[enumor.Vendor]string{
-	enumor.TCloud: "cloud_secret_key",
-	enumor.Aws:    "cloud_secret_key",
-	enumor.HuaWei: "cloud_secret_key",
-	enumor.Gcp:    "cloud_service_secret_key",
-	enumor.Azure:  "cloud_client_secret_key",
-}
-
 func canListAccountExtension(appCode string) error {
 	// TODO: 校验App来源, 这里只校验了非Web来请求，需要改造从配置文件读取，允许访问该接口的AppCode白名单（目前暂时可以借助APIGateway的应用认证白名单）
 	if appCode == "hcm-web-server" {
@@ -109,7 +101,7 @@ func (a *accountSvc) ListWithExtension(cts *rest.Contexts) (interface{}, error) 
 	// 去除SecretKey
 	if resp.Details != nil {
 		for _, detail := range resp.Details {
-			secretKeyField := VendorSecretKeyFieldMap[detail.Vendor]
+			secretKeyField := detail.Vendor.GetSecretField()
 			// 存在SecretKey则删除
 			// Note: 资源账号、安全审计账号必然存在，登录账号大部分时候是不存在的
 			if _, ok := detail.Extension[secretKeyField]; ok {
@@ -166,7 +158,7 @@ func (a *accountSvc) ListSecretKey(cts *rest.Contexts) (interface{}, error) {
 	secretKeyData := make([]proto.SecretKeyData, 0, len(resp.Details))
 	for _, detail := range resp.Details {
 		// 根据vendor获取SecretKey
-		secretKeyField := VendorSecretKeyFieldMap[detail.Vendor]
+		secretKeyField := detail.Vendor.GetSecretField()
 		secretKeyData = append(secretKeyData, proto.SecretKeyData{
 			ID:        detail.ID,
 			SecretKey: conv.ToString(detail.Extension[secretKeyField]),
