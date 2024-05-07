@@ -111,6 +111,7 @@ export default defineComponent({
             <>
               <span>端口</span>
               <BatchUpdatePopConfirm
+                disabledTip='目标组基本信息，RS变更，RS权重修改，RS端口修改不支持同时变更'
                 title='端口'
                 min={1}
                 max={65535}
@@ -146,6 +147,7 @@ export default defineComponent({
               <span>权重</span>
               <BatchUpdatePopConfirm
                 title='权重'
+                disabledTip='目标组基本信息，RS变更，RS权重修改，RS端口修改不支持同时变更'
                 min={0}
                 max={100}
                 onUpdateValue={(v) => handleBatchUpdate(v, 'weight')}
@@ -304,6 +306,10 @@ export default defineComponent({
               text
               theme='primary'
               onClick={handleAddRs}
+              v-bk-tooltips={{
+                content: '目标组基本信息，RS变更，RS权重修改，RS端口修改不支持同时变更',
+                disabled: isInitialState.value || isAddRs.value,
+              }}
               disabled={!isInitialState.value && !isAddRs.value}>
               <i class='hcm-icon bkhcm-icon-plus-circle-shape'></i>
               <span>添加 RS</span>

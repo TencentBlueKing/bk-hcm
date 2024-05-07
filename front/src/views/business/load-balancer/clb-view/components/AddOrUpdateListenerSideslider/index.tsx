@@ -13,7 +13,7 @@ import useAddOrUpdateListener from './useAddOrUpdateListener';
 import bus from '@/common/bus';
 // import constants
 import { APPLICATION_LAYER_LIST } from '@/constants';
-import type { IOriginPage } from '@/typings';
+import { IOriginPage } from '@/typings';
 import './index.scss';
 
 const { FormItem } = Form;

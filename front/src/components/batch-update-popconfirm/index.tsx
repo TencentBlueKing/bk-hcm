@@ -21,6 +21,7 @@ export default defineComponent({
     // 当valueType='number'时, 可以设置min,max
     min: Number,
     max: Number,
+    disabledTip: String,
   },
   emits: ['updateValue'],
   setup(props, { emit }) {
@@ -38,7 +39,14 @@ export default defineComponent({
         onConfirm={handleConfirm}
         disabled={props.disabled}>
         {{
-          default: () => <i class={`hcm-icon bkhcm-icon-batch-edit${props.disabled ? ' disabled' : ''}`}></i>,
+          default: () => (
+            <i
+              class={`hcm-icon bkhcm-icon-batch-edit${props.disabled ? ' disabled' : ''}`}
+              v-bk-tooltips={{
+                content: props.disabledTip,
+                disabled: !props.disabled,
+              }}></i>
+          ),
           content: () => (
             <div class='batch-update-popconfirm-content'>
               <div class='title'>批量修改{props.title}</div>

@@ -186,15 +186,15 @@ export const useTable = (props: IProp) => {
     const { field, op, value } = rule;
     switch (field) {
       case 'vendor':
-        return { field, op, value: VendorReverseMap[value as string] };
+        return { field, op, value: VendorReverseMap[value as string] || value };
       case 'region':
-        return { field, op, value: regionsStore.getRegionNameEN(value as string) };
+        return { field, op, value: regionsStore.getRegionNameEN(value as string) || value };
       case 'lb_type':
-        return { field, op, value: LB_NETWORK_TYPE_REVERSE_MAP[value as string] };
+        return { field, op, value: LB_NETWORK_TYPE_REVERSE_MAP[value as string] || value };
       case 'scheduler':
-        return { field, op, value: SCHEDULER_REVERSE_MAP[value as string] };
+        return { field, op, value: SCHEDULER_REVERSE_MAP[value as string] || value };
       case 'binding_status':
-        return { field, op, value: LISTENER_BINDING_STATUS_REVERSE_MAP[value as string] };
+        return { field, op, value: LISTENER_BINDING_STATUS_REVERSE_MAP[value as string] || value };
       default:
         return { field, op, value };
     }

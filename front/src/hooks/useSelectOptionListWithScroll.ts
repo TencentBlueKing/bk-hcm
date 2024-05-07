@@ -1,4 +1,4 @@
-import { reactive, ref } from 'vue';
+import { Ref, reactive, ref, watch } from 'vue';
 // import stores
 import { useResourceStore } from '@/store';
 // import types
@@ -14,6 +14,7 @@ export default (
   rules: any,
   // 是否立即执行
   immediate = true,
+  protocol: Ref<string> = ref('TCP'),
 ) => {
   // use stores
   const resourceStore = useResourceStore();
@@ -52,7 +53,19 @@ export default (
             {
               filter: {
                 op: QueryRuleOPEnum.AND,
-                rules: [...rules, ...customRules],
+                rules: [
+                  ...rules,
+                  ...customRules,
+                  ...(['target_groups'].includes(type)
+                    ? [
+                        {
+                          field: 'protocol',
+                          op: QueryRuleOPEnum.EQ,
+                          value: protocol.value,
+                        },
+                      ]
+                    : []),
+                ],
               },
               page: {
                 count: isCount,
@@ -69,7 +82,7 @@ export default (
 
       // 将新获取的option添加至list中
       optionList.value = [...optionList.value, ...detailRes.data.details];
-      if (optionList.value.length === countRes.data.count) {
+      if (optionList.value.length >= countRes.data.count) {
         // option列表加载完毕
         pagination.hasNext = false;
       } else {
@@ -80,6 +93,14 @@ export default (
       isScrollLoading.value = false;
     }
   };
+
+  watch(
+    () => protocol.value,
+    () => {
+      initState();
+      getOptionList();
+    },
+  );
 
   /**
    * 滚动触底加载更多
