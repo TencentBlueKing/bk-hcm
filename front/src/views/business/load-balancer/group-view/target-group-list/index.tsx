@@ -5,11 +5,12 @@ import Confirm from '@/components/confirm';
 import { useLoadBalancerStore, useAccountStore, useBusinessStore } from '@/store';
 import useMoreActionDropdown from '@/hooks/useMoreActionDropdown';
 import useList from '@/hooks/useList';
-import { debounce, throttle } from 'lodash';
+import { throttle } from 'lodash';
 import bus from '@/common/bus';
 import { LBRouteName } from '@/constants';
 import { QueryRuleOPEnum } from '@/typings';
 import allIcon from '@/assets/image/all-lb.svg';
+import mubiaoIcon from '@/assets/image/mubiao.svg';
 import './index.scss';
 
 export default defineComponent({
@@ -84,6 +85,19 @@ export default defineComponent({
       }
     }, 300);
 
+    const handleSearch = (val: string) => {
+      // 清空搜索结果
+      reset();
+      // 设置搜索条件
+      if (val) {
+        rules.value = [{ field: 'name', op: QueryRuleOPEnum.CIS, value: val }];
+      } else {
+        rules.value = [];
+      }
+      // 拉取搜索结果
+      getList();
+    };
+
     watch(
       () => route.params.id,
       (val) => {
@@ -94,34 +108,23 @@ export default defineComponent({
       { immediate: true },
     );
 
-    watch(
-      searchValue,
-      debounce((val) => {
-        // 清空搜索结果
-        reset();
-        // 设置搜索条件
-        if (val) {
-          rules.value = [{ field: 'name', op: QueryRuleOPEnum.CIS, value: val }];
-        } else {
-          rules.value = [];
-        }
-        // 拉取搜索结果
-        getList();
-      }, 300),
-    );
-
     onMounted(() => {
       bus.$on('refreshTargetGroupList', refresh);
+      bus.$on('changeTargetGroupName', (name: string) => {
+        searchValue.value = name;
+        handleSearch(name);
+      });
     });
 
     onUnmounted(() => {
       bus.$off('refreshTargetGroupList');
+      bus.$off('changeTargetGroupName');
     });
 
     return () => (
       <div class='target-group-list'>
         <div class='search-wrap'>
-          <Input v-model={searchValue.value} type='search' clearable placeholder='搜索目标组' />
+          <Input v-model={searchValue.value} type='search' clearable placeholder='搜索目标组' onChange={handleSearch} />
         </div>
         <div class='group-list-wrap'>
           <div
@@ -152,7 +155,7 @@ export default defineComponent({
                       class={`group-item-wrap${activeTargetGroupId.value === item.id ? ' selected' : ''}`}
                       onClick={() => handleTypeChange(item.id)}>
                       <div class='base-info'>
-                        <img src={allIcon} alt='' class='prefix-icon' />
+                        <img src={mubiaoIcon} alt='' class='prefix-icon' />
                         <span class='text'>{item.name}</span>
                       </div>
                       <div class={`ext-info${currentPopBoundaryNodeKey.value === item.id ? ' show-dropdown' : ''}`}>

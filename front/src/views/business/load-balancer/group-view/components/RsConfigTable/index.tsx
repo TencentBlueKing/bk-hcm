@@ -10,6 +10,7 @@ import { useLoadBalancerStore } from '@/store';
 import { useRegionsStore } from '@/store/useRegionsStore';
 // import utils
 import bus from '@/common/bus';
+import { getLocalFilterConditions } from '@/utils';
 import './index.scss';
 
 export default defineComponent({
@@ -250,34 +251,18 @@ export default defineComponent({
       return tmpArr;
     });
     const searchValue = ref();
-    /**
-     * @returns 过滤条件
-     */
-    const getFilterConditions = () => {
-      const filterConditions = {};
-      searchValue.value?.forEach((rule: any) => {
-        let ruleValue;
-        switch (rule.id) {
-          case 'region':
-            ruleValue = regionsStore.getRegionNameEN(rule.values[0].id);
-            break;
-          default:
-            ruleValue = rule.values[0].id;
-            break;
-        }
-        if (filterConditions[rule.id]) {
-          // 如果 filterConditions[rule.id] 已经存在，则合并为一个数组
-          filterConditions[rule.id] = [...filterConditions[rule.id], ruleValue];
-        } else {
-          filterConditions[rule.id] = [ruleValue];
-        }
-      });
-      return filterConditions;
-    };
 
     // 监听 searchValue 的变化，根据过滤条件过滤得到 实际用于渲染的数据
     const renderTableData = computed(() => {
-      const filterConditions = getFilterConditions();
+      const filterConditions = getLocalFilterConditions(searchValue.value, (rule) => {
+        switch (rule.id) {
+          case 'region':
+            return regionsStore.getRegionNameEN(rule.values[0].id);
+          default:
+            return rule.values[0].id;
+        }
+      });
+
       return props.rsList?.filter((item) =>
         Object.keys(filterConditions).every((key) => {
           switch (key) {

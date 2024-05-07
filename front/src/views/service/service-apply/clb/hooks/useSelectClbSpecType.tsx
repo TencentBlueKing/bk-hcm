@@ -2,7 +2,7 @@ import { defineComponent, onMounted, onUnmounted, ref, watch } from 'vue';
 // import components
 import { Radio } from 'bkui-vue';
 import CommonDialog from '@/components/common-dialog';
-import LocalTable from '../../components/common/LocalTable';
+import CommonLocalTable from '@/components/CommonLocalTable';
 // import types
 import type { SpecAvailability, ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
 // import utils
@@ -59,14 +59,16 @@ export default (formModel: ApplyClbModel) => {
           title='选择实例规格'
           width={'60vw'}
           onHandleConfirm={handleSelectClbSpecType}>
-          <LocalTable
-            tableData={tableData.value}
-            tableColumns={columns}
-            searchOption={{
-              filterable: true,
-              data: searchData,
+          <CommonLocalTable
+            searchOptions={{ searchData }}
+            tableOptions={{
+              rowKey: 'SpecType',
+              columns,
+              extra: {
+                onRowClick: (_: any, row: any) => handleRowClick(row),
+              },
             }}
-            onRowClick={(_: any, row: any) => handleRowClick(row)}
+            tableData={tableData.value}
           />
         </CommonDialog>
       );

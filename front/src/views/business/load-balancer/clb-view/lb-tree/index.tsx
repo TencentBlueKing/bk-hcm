@@ -1,4 +1,4 @@
-import { computed, defineComponent, onMounted, onUnmounted, ref } from 'vue';
+import { computed, defineComponent, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 // import components
 import { PlayShape } from 'bkui-vue/lib/icon';
@@ -6,7 +6,7 @@ import { Message, OverflowTitle, Tree } from 'bkui-vue';
 import SimpleSearchSelect from '../../components/simple-search-select';
 import Confirm from '@/components/confirm';
 // import stores
-import { useBusinessStore } from '@/store';
+import { useBusinessStore, useLoadBalancerStore } from '@/store';
 // import custom hooks
 import useLoadTreeData from './useLoadTreeData';
 import useMoreActionDropdown from '@/hooks/useMoreActionDropdown';
@@ -31,15 +31,16 @@ export default defineComponent({
     const route = useRoute();
     // use stores
     const businessStore = useBusinessStore();
+    const loadBalancerStore = useLoadBalancerStore();
 
     // 搜索相关
     const searchValue = ref('');
     const searchDataList = [
       { id: 'lb_name', name: '负载均衡名称' },
-      // { id: 'clb_vip', name: '负载均衡VIP' },
+      { id: 'lb_vip', name: '负载均衡VIP' },
       { id: 'listener_name', name: '监听器名称' },
-      // { id: 'protocol', name: '协议' },
-      // { id: 'port', name: '端口' },
+      { id: 'protocol', name: '协议' },
+      { id: 'port', name: '端口' },
       { id: 'domain', name: '域名' },
     ];
 
@@ -126,18 +127,26 @@ export default defineComponent({
       return {
         value: searchValue.value,
         match: (searchValue: string, itemText: string, item: any) => {
-          const k = searchValue.split(':')[0];
-          const v = searchValue.split(':')[1];
+          const [searchK, searchV] = searchValue.split('：');
           let result = false;
-          switch (k) {
+          switch (searchK) {
             case 'lb_name':
-              item.type === 'lb' && (result = new RegExp(v, 'g').test(itemText));
+              item.type === 'lb' && (result = new RegExp(searchV, 'g').test(itemText));
+              break;
+            case 'lb_vip':
+              item.type === 'lb' && (result = new RegExp(searchV, 'g').test(getLbVip(item)));
               break;
             case 'listener_name':
-              item.type === 'listener' && (result = new RegExp(v, 'g').test(itemText));
+              item.type === 'listener' && (result = new RegExp(searchV, 'g').test(itemText));
+              break;
+            case 'protocol':
+              item.type === 'listener' && (result = new RegExp(searchV, 'g').test(item.protocol));
+              break;
+            case 'port':
+              item.type === 'listener' && (result = new RegExp(searchV, 'g').test(item.port));
               break;
             case 'domain':
-              item.type === 'domain' && (result = new RegExp(`${v}`, 'g').test(itemText));
+              item.type === 'domain' && (result = new RegExp(`${searchV}`, 'g').test(itemText));
               break;
             default:
               break;
@@ -147,6 +156,20 @@ export default defineComponent({
         showChildNodes: false,
       };
     });
+    watch(
+      () => loadBalancerStore.lbTreeSearchTarget,
+      (val) => {
+        if (val) {
+          const { searchK, searchV } = val;
+          searchValue.value = `${searchK}：${searchV}`;
+        } else {
+          searchValue.value = '';
+        }
+      },
+      {
+        immediate: true,
+      },
+    );
 
     // Intersection Observer 监听器
     const observer = new IntersectionObserver((entries) => {
@@ -193,73 +216,6 @@ export default defineComponent({
         },
         cache: true,
       };
-    };
-
-    // render - lb-tree 的节点
-    const renderDefaultNode = (data: any, attributes: any) => {
-      if (data.type === 'loading') {
-        return (
-          <bk-loading
-            class='tree-loading-node'
-            ref={loadingRef}
-            loading
-            size='small'
-            onLoadDataByScroll={() => {
-              // 因为在标签上使用 data-xxx 会丢失引用，但我需要 data._parent 的引用（因为加载数据时会直接操作该对象），所以这里借用了闭包的特性。
-              handleLoadDataByScroll(data, attributes);
-            }}>
-            <div style={{ height: '36px' }}></div>
-          </bk-loading>
-        );
-      }
-      const { type, id, name, protocol, port, isDefault, listenerNum, domain_num, url_count } = data;
-      const extension =
-        // eslint-disable-next-line no-nested-ternary
-        type === 'lb' ? ` (${getLbVip(data)})` : type === 'listener' ? `(${protocol}:${port})` : '';
-      return (
-        <>
-          <OverflowTitle
-            type='tips'
-            class='base-info'
-            // eslint-disable-next-line no-nested-ternary
-            style={{ maxWidth: type === 'lb' ? '200px' : type === 'listener' ? '180px' : '160px' }}>
-            {searchValue.value ? (
-              <span
-                v-html={name?.replace(
-                  new RegExp(searchValue.value.split(':')[1], 'g'),
-                  `<font color='#3A84FF'>${searchValue.value.split(':')[1]}</font>`,
-                )}></span>
-            ) : (
-              <>
-                <span class='name'>{name}</span>
-                <span class='extension'>{extension}</span>
-              </>
-            )}
-            {attributes.fullPath.split('-').length === 3 && isDefault && (
-              <bk-tag class='tag ml5' theme='warning'>
-                默认
-              </bk-tag>
-            )}
-          </OverflowTitle>
-          <div class={`ext-info${currentPopBoundaryNodeKey.value === id ? ' show-dropdown' : ''}`}>
-            <div class='count'>
-              {/* eslint-disable-next-line no-nested-ternary */}
-              {type === 'lb' ? listenerNum || 0 : type === 'listener' ? domain_num : url_count}
-            </div>
-            <div class='more-action' onClick={(e) => showDropdownList(e, data)}>
-              <i class='hcm-icon bkhcm-icon-more-fill'></i>
-            </div>
-          </div>
-        </>
-      );
-    };
-
-    // render - prefix icon
-    const renderPrefixIcon = (node: any) => {
-      if (node.type === 'loading') {
-        return null;
-      }
-      return <img src={typeIconMap[node.type]} alt='' class='prefix-icon' />;
     };
 
     // util-路由切换
@@ -368,7 +324,7 @@ export default defineComponent({
           children='children'
           level-line
           // virtual-render
-          indent={18}
+          indent={16}
           line-height={36}
           onNodeClick={handleNodeClick}
           onScroll={getTreeScrollFunc()}
@@ -377,8 +333,73 @@ export default defineComponent({
           onNodeCollapse={handleNodeCollapse}
           search={searchOption.value}>
           {{
-            default: ({ data, attributes }: any) => renderDefaultNode(data, attributes),
-            nodeType: (node: any) => renderPrefixIcon(node),
+            default: ({ data, attributes }: any) => {
+              if (data.type === 'loading') {
+                return (
+                  <bk-loading
+                    class='tree-loading-node'
+                    ref={loadingRef}
+                    loading
+                    size='small'
+                    onLoadDataByScroll={() => {
+                      // 因为在标签上使用 data-xxx 会丢失引用，但我需要 data._parent 的引用（因为加载数据时会直接操作该对象），所以这里借用了闭包的特性。
+                      handleLoadDataByScroll(data, attributes);
+                    }}>
+                    <div style={{ height: '36px' }}></div>
+                  </bk-loading>
+                );
+              }
+              const { type, id, name, protocol, port, isDefault, listenerNum, domain_num, url_count } = data;
+              const extension =
+                // eslint-disable-next-line no-nested-ternary
+                type === 'lb' ? ` (${getLbVip(data)})` : type === 'listener' ? `(${protocol}:${port})` : '';
+              return (
+                <>
+                  <OverflowTitle
+                    type='tips'
+                    class='base-info'
+                    // eslint-disable-next-line no-nested-ternary
+                    style={{ maxWidth: type === 'lb' ? '200px' : type === 'listener' ? '180px' : '160px' }}>
+                    {searchValue.value ? (
+                      <span
+                        v-html={
+                          ['lb_name', 'listener_name', 'domain'].includes(loadBalancerStore.lbTreeSearchTarget.searchK)
+                            ? `${name?.replace(
+                                new RegExp(loadBalancerStore.lbTreeSearchTarget.searchV, 'g'),
+                                `<font color='#3A84FF'>${loadBalancerStore.lbTreeSearchTarget.searchV}</font>`,
+                              )} ${extension}`
+                            : `${name} ${extension?.replace(
+                                new RegExp(loadBalancerStore.lbTreeSearchTarget.searchV, 'g'),
+                                `<font color='#3A84FF'>${loadBalancerStore.lbTreeSearchTarget.searchV}</font>`,
+                              )}`
+                        }></span>
+                    ) : (
+                      `${name} ${extension}`
+                    )}
+                    {attributes.fullPath.split('-').length === 3 && isDefault && (
+                      <bk-tag class='tag ml5' theme='warning'>
+                        默认
+                      </bk-tag>
+                    )}
+                  </OverflowTitle>
+                  <div class={`ext-info${currentPopBoundaryNodeKey.value === id ? ' show-dropdown' : ''}`}>
+                    <div class='count'>
+                      {/* eslint-disable-next-line no-nested-ternary */}
+                      {type === 'lb' ? listenerNum || 0 : type === 'listener' ? domain_num : url_count}
+                    </div>
+                    <div class='more-action' onClick={(e) => showDropdownList(e, data)}>
+                      <i class='hcm-icon bkhcm-icon-more-fill'></i>
+                    </div>
+                  </div>
+                </>
+              );
+            },
+            nodeType: (node: any) => {
+              if (node.type === 'loading') {
+                return null;
+              }
+              return <img src={typeIconMap[node.type]} alt='' class='prefix-icon' />;
+            },
             nodeAction: (node: any) => {
               const { type, listenerNum, domain_num } = node;
               let isVisible = true;

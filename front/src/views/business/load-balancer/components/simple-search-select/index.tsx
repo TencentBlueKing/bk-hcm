@@ -1,4 +1,4 @@
-import { defineComponent, ref } from 'vue';
+import { defineComponent, ref, watch } from 'vue';
 import { Popover, Input } from 'bkui-vue';
 import './index.scss';
 
@@ -10,29 +10,45 @@ export default defineComponent({
   },
   emits: ['update:modelValue'],
   setup(props, ctx) {
-    const isShow = ref(false);
     const searchVal = ref('');
     const searchRef = ref();
+    const popoverRef = ref();
+
     const handleSearchDataClick = (e: MouseEvent) => {
       searchVal.value = `${e.target.dataset.name}：`;
-      isShow.value = false;
+      popoverRef.value.hide();
       searchRef.value.focus();
     };
-    const handleClick = () => {
-      isShow.value = true;
-    };
+
     const handleEnter = (v: string) => {
       const [searchName, searchVal] = v.split('：');
       const target = props.dataList.find((item) => item.name === searchName);
       ctx.emit('update:modelValue', `${target.id}:${searchVal}`);
     };
+
     const handleClear = () => {
       ctx.emit('update:modelValue', '');
-      isShow.value = true;
     };
+
+    watch(
+      () => props.modelValue,
+      (val) => {
+        if (val) {
+          const [searchK, searchV] = val.split('：');
+          const searchName = props.dataList.find((item) => item.id === searchK).name;
+          searchVal.value = `${searchName}：${searchV}`;
+        } else {
+          searchVal.value = '';
+        }
+      },
+      {
+        immediate: true,
+      },
+    );
+
     return () => (
       <div class='simple-search-select'>
-        <Popover trigger='click' isShow={isShow.value} theme='light' disableTeleport={true} arrow={false}>
+        <Popover trigger='click' theme='light' disableTeleport={true} arrow={false} ref={popoverRef}>
           {{
             default: () => (
               <Input
@@ -40,7 +56,6 @@ export default defineComponent({
                 type='search'
                 clearable
                 v-model={searchVal.value}
-                onClick={handleClick}
                 onEnter={handleEnter}
                 onClear={handleClear}
               />

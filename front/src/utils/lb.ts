@@ -44,4 +44,28 @@ const getLbVip = (lb: any) => {
   return '--';
 };
 
-export { asyncGetListenerCount, getLbVip };
+/**
+ * 获取search-select组合后的过滤条件, 可用于本地表格数据的过滤
+ * @param searchVal search-select 的值
+ * @param resolveRuleValue 用于处理规则值的函数(比如中英文映射...)
+ * @returns 过滤条件
+ */
+const getLocalFilterConditions = (searchVal: any[], resolveRuleValue: (rule: any) => void) => {
+  if (!searchVal || searchVal.length === 0) return {};
+  const filterConditions = {};
+  searchVal.forEach((rule: any) => {
+    // 获取规则值
+    const ruleValue = resolveRuleValue(rule);
+
+    // 组装过滤条件
+    if (filterConditions[rule.id]) {
+      // 如果 filterConditions[rule.id] 已经存在，则合并为一个数组
+      filterConditions[rule.id] = [...filterConditions[rule.id], ruleValue];
+    } else {
+      filterConditions[rule.id] = [ruleValue];
+    }
+  });
+  return filterConditions;
+};
+
+export { asyncGetListenerCount, getLbVip, getLocalFilterConditions };
