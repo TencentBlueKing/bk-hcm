@@ -490,5 +490,11 @@ export const useBusinessStore = defineStore({
     lbPricesInquiry(data: any): Promise<LbPriceInquiryResp> {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/load_balancers/prices/inquiry`, data);
     },
+    /**
+     * 查询负载均衡状态锁定详情
+     */
+    getLBLockStatus(id: string) {
+      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}load_balancers/${id}/lock/status`);
+    },
   },
 });

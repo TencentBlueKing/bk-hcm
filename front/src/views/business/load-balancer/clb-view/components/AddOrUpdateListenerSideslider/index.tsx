@@ -1,6 +1,6 @@
 import { PropType, defineComponent, onMounted, onUnmounted } from 'vue';
 // import components
-import { Divider, Form, Input, Select, Switcher, Tag } from 'bkui-vue';
+import { Alert, Divider, Form, Input, Select, Switcher, Tag } from 'bkui-vue';
 import BkRadio, { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import { Plus, RightTurnLine, Spinner } from 'bkui-vue/lib/icon';
 import CommonSideslider from '@/components/common-sideslider';
@@ -56,6 +56,7 @@ export default defineComponent({
       isCACertListLoading,
       CACertList,
       handleCACertListScrollEnd,
+      isLbLocked,
     } = useAddOrUpdateListener(props.getListData, props.originPage);
 
     // click-handler - 新增目标组
@@ -82,6 +83,10 @@ export default defineComponent({
         width={640}
         onHandleSubmit={handleAddOrUpdateListener}
         isSubmitLoading={isAddOrUpdateListenerSubmit.value}>
+        {isLbLocked.value ? (
+          <Alert theme='danger' title='当前负载均衡正在变更中，不允许新增监控器。' class={'mb12'} />
+        ) : null}
+
         <Form ref={formRef} formType='vertical' model={listenerFormData} rules={rules}>
           <FormItem label={t('负载均衡名称')}>
             <Input

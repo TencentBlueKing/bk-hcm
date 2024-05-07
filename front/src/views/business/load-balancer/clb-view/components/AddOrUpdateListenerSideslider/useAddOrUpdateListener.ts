@@ -22,6 +22,7 @@ export default (getListData: (...args: any) => any, originPage: IOriginPage) => 
   const isAddOrUpdateListenerSubmit = ref(false);
   const isEdit = ref(false); // 标识当前是否为「编辑」操作
   const isSniOpen = ref(false); // 用于「编辑」操作. 记录SNI是否开启, 如果开启, 编辑的时候不可关闭
+  const isLbLocked = ref(false); // 当前负载均衡是否被锁定
   // 表单相关
   const formRef = ref();
   const rules = {
@@ -111,11 +112,24 @@ export default (getListData: (...args: any) => any, originPage: IOriginPage) => 
 
   const computedProtocol = computed(() => listenerFormData.protocol);
 
+  // 查询负载均衡是否处于锁定状态
+  const checkLbIsLocked = async () => {
+    const res = await businessStore.getLBLockStatus(loadBalancerStore.currentSelectedTreeNode.id);
+    const status = res?.data?.status;
+    if (status !== 'success') {
+      isLbLocked.value = true;
+      return Promise.reject();
+    }
+    isLbLocked.value = false;
+    return res;
+  };
+
   // submit handler
   const handleAddOrUpdateListener = async () => {
     try {
       await formRef.value.validate();
       isAddOrUpdateListenerSubmit.value = true;
+      await checkLbIsLocked();
       if (isEdit.value) {
         // 编辑监听器
         await businessStore.updateListener({
@@ -233,5 +247,6 @@ export default (getListData: (...args: any) => any, originPage: IOriginPage) => 
     isCACertListLoading,
     CACertList,
     handleCACertListScrollEnd,
+    isLbLocked,
   };
 };
