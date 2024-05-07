@@ -42,6 +42,7 @@ export default defineComponent({
       sideIsLoading.value = true;
       try {
         await handleSubmit(formInstance);
+        bus.$emit('resetLbTree');
       } finally {
         sideIsLoading.value = false;
       }

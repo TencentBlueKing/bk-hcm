@@ -1,7 +1,7 @@
 import { defineComponent } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 // import components
-import { Button } from 'bkui-vue';
+import { Button, Message } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 // import hooks
@@ -11,6 +11,7 @@ import { useTable } from '@/hooks/useTable/useTable';
 import { useI18n } from 'vue-i18n';
 import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
 import useBatchDeleteLB from './useBatchDeleteLB';
+import { useResourceStore } from '@/store';
 // import utils
 import { getTableRowClassOption } from '@/common/util';
 import { asyncGetListenerCount } from '@/utils';
@@ -18,7 +19,7 @@ import { asyncGetListenerCount } from '@/utils';
 import { CLB_STATUS_MAP, LB_NETWORK_TYPE_MAP } from '@/constants';
 import { DoublePlainObject } from '@/typings';
 import './index.scss';
-
+import Confirm from '@/components/confirm';
 export default defineComponent({
   name: 'AllClbsManager',
   setup() {
@@ -39,7 +40,22 @@ export default defineComponent({
         return row.bk_biz_id === -1;
       }
     };
-
+    const resourceStore = useResourceStore();
+    const handleDelete = (data: any) => {
+      Confirm('请确定删除负载均衡', `将删除负载均衡【${data.name}】`, async () => {
+        await resourceStore
+          .deleteBatch('load_balancers', {
+            ids: [data.id],
+          })
+          .then(() => {
+            Message({
+              message: '删除成功',
+              theme: 'success',
+            });
+            getListData();
+          });
+      });
+    };
     const { columns, settings } = useColumns('lb');
     const { CommonTable, getListData } = useTable({
       searchOptions: {
@@ -92,7 +108,11 @@ export default defineComponent({
           {
             label: '操作',
             width: 120,
-            render: () => <span class='operate-text-btn'>删除</span>,
+            render: ({ data }: { data: any }) => (
+              <span class='operate-text-btn' onClick={() => handleDelete(data)}>
+                删除
+              </span>
+            ),
           },
         ],
         extra: {
