@@ -155,6 +155,7 @@ export default defineComponent({
               onClick={() => {
                 Confirm('请确定删除URL', `将删除URL【${data.url}】`, async () => {
                   await deleteRulesBatch([data.id]);
+                  bus.$emit('resetLbTree');
                 });
               }}>
               {t('删除')}
@@ -327,6 +328,7 @@ export default defineComponent({
         });
         isDomainSidesliderShow.value = false;
         await getListData();
+        bus.$emit('resetLbTree');
       } finally {
         isSubmitLoading.value = false;
       }
