@@ -42,6 +42,12 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
     currentScene.value = v;
   };
 
+  // state - lb-tree的搜索条件
+  const lbTreeSearchTarget = ref();
+  const setLbTreeSearchTarget = (v: any) => {
+    lbTreeSearchTarget.value = v;
+  };
+
   return {
     targetGroupId,
     setTargetGroupId,
@@ -51,5 +57,7 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
     setUpdateCount,
     currentScene,
     setCurrentScene,
+    lbTreeSearchTarget,
+    setLbTreeSearchTarget,
   };
 });

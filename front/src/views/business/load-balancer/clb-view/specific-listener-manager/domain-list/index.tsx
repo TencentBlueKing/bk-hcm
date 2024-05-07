@@ -77,6 +77,7 @@ export default defineComponent({
                     params: { id: cell },
                     query: { ...route.query, listener_id: route.params.id, type: undefined, protocol: undefined },
                   });
+                  loadBalancerStore.setLbTreeSearchTarget({ ...data, searchK: 'domain', searchV: cell });
                 }}>
                 {cell}
               </span>

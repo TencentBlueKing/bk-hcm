@@ -30,6 +30,7 @@ export default defineComponent({
 
     // 设置当前 listener 所归属的 lb 信息
     const getLBText = (lb: any) => {
+      if (!lb) return;
       lbName.value = lb.name;
       lbExtension.value = getLbVip(lb);
     };

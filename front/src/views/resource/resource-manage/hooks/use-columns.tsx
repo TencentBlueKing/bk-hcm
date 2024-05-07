@@ -2,7 +2,7 @@
 // table 字段相关信息
 import i18n from '@/language/i18n';
 import { CloudType, SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
-import { useAccountStore } from '@/store';
+import { useAccountStore, useLoadBalancerStore } from '@/store';
 import { Button } from 'bkui-vue';
 import type { Settings } from 'bkui-vue/lib/table/props';
 import { h, ref } from 'vue';
@@ -25,6 +25,8 @@ import { defaults } from 'lodash';
 import { timeFormatter } from '@/common/util';
 import { LBRouteName, LB_NETWORK_TYPE_MAP, SCHEDULER_MAP } from '@/constants/clb';
 import { getLbVip } from '@/utils';
+import dayjs from 'dayjs';
+import bus from '@/common/bus';
 
 interface LinkFieldOptions {
   type: string; // 资源类型
@@ -41,6 +43,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const router = useRouter();
   const route = useRoute();
   const accountStore = useAccountStore();
+  const loadBalancerStore = useLoadBalancerStore();
   const { t } = i18n.global;
   const { getRegionName } = useRegionsStore();
   const { whereAmI } = useWhereAmI();
@@ -111,12 +114,14 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
    * 自定义 render field 的 push 导航
    * @param to 目标路由信息
    */
-  const renderFieldPushState = (to: RouteLocationRaw) => {
+  const renderFieldPushState = (to: RouteLocationRaw, cb?: (...args: any) => any) => {
     return (e: Event) => {
       // 阻止事件冒泡
       e.stopPropagation();
       // 导航
       router.push(to);
+      // 执行回调
+      typeof cb === 'function' && cb();
     };
   };
 
@@ -1139,16 +1144,21 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '负载均衡名称',
       field: 'name',
       onLinkInBusiness: true,
-      render: ({ id, name }) => (
+      render: (data) => (
         <Button
           text
           theme='primary'
-          onClick={renderFieldPushState({
-            name: LBRouteName.lb,
-            params: { id },
-            query: { ...route.query, type: 'detail' },
-          })}>
-          {name || '--'}
+          onClick={renderFieldPushState(
+            {
+              name: LBRouteName.lb,
+              params: { id: data.id },
+              query: { ...route.query, type: 'detail' },
+            },
+            () => {
+              loadBalancerStore.setLbTreeSearchTarget({ ...data, searchK: 'lb_name', searchV: data.name });
+            },
+          )}>
+          {data.name || '--'}
         </Button>
       ),
     }),
@@ -1262,16 +1272,21 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       type: 'listener',
       label: '监听器名称',
       field: 'name',
-      render: ({ id, name, protocol }) => (
+      render: (data) => (
         <Button
           text
           theme='primary'
-          onClick={renderFieldPushState({
-            name: LBRouteName.listener,
-            params: { id },
-            query: { ...route.query, type: 'detail', protocol },
-          })}>
-          {name || '--'}
+          onClick={renderFieldPushState(
+            {
+              name: LBRouteName.listener,
+              params: { id: data.id },
+              query: { ...route.query, type: 'detail', protocol: data.protocol },
+            },
+            () => {
+              loadBalancerStore.setLbTreeSearchTarget({ ...data, searchK: 'listener_name', searchV: data.name });
+            },
+          )}>
+          {data.name || '--'}
         </Button>
       ),
     }),
@@ -1352,11 +1367,16 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         <Button
           text
           theme='primary'
-          onClick={renderFieldPushState({
-            name: LBRouteName.tg,
-            params: { id },
-            query: { ...route.query, type: 'detail' },
-          })}>
+          onClick={renderFieldPushState(
+            {
+              name: LBRouteName.tg,
+              params: { id },
+              query: { ...route.query, type: 'detail' },
+            },
+            () => {
+              bus.$emit('changeTargetGroupName', name);
+            },
+          )}>
           {name}
         </Button>
       ),
@@ -1682,13 +1702,21 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '上传时间',
       field: 'cloud_created_time',
       sort: true,
-      render: ({ cell }: { cell: string }) => timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => {
+        // 由于云上返回的是(UTC+8)时间, 所以先转零时区
+        const utcTime = dayjs(cell).subtract(8, 'hour');
+        return timeFormatter(utcTime);
+      },
     },
     {
       label: '过期时间',
       field: 'cloud_expired_time',
       sort: true,
-      render: ({ cell }: { cell: string }) => timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => {
+        // 由于云上返回的是(UTC+8)时间, 所以先转零时区
+        const utcTime = dayjs(cell).subtract(8, 'hour');
+        return timeFormatter(utcTime);
+      },
     },
     {
       label: '证书状态',
