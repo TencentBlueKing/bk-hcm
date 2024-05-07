@@ -2,7 +2,6 @@ import { PropType, defineComponent, onMounted, onUnmounted, ref } from 'vue';
 // import components
 import { Form } from 'bkui-vue';
 import CommonSideslider from '@/components/common-sideslider';
-import useLoadTreeData from '../../lb-tree/useLoadTreeData';
 // import stores
 import { useLoadBalancerStore } from '@/store';
 // import hooks
@@ -38,21 +37,18 @@ export default defineComponent({
     // <CommonSideslider>使用的loading
     const sideIsLoading = ref(false);
     const formInstance = ref();
-    const treeData = ref([]);
-    const { reset } = useLoadTreeData(treeData);
     // CommonSideslider编辑点击提交触发
     const handleDomainSidesliderSubmit = async () => {
       sideIsLoading.value = true;
       try {
         await handleSubmit(formInstance);
+        bus.$emit('resetLbTree');
       } finally {
-        reset();
         sideIsLoading.value = false;
       }
     };
     onMounted(() => {
       bus.$on('showAddDomainSideslider', handleShow);
-      bus.$on('resetLbTree', reset);
     });
 
     onUnmounted(() => {

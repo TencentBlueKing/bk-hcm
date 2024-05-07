@@ -144,6 +144,7 @@ export default defineComponent({
                   Confirm('请确定删除域名', `将删除域名【${data.domain}】`, async () => {
                     await businessStore.batchDeleteDomains({ lbl_id: listenerId, domains: [data.domain] });
                     Message({ message: '删除成功', theme: 'success' });
+                    bus.$emit('resetLbTree');
                     getDomainList(listenerId);
                   });
                 }}>
