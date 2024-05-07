@@ -11,7 +11,7 @@ const getBusinessApiPath = () => {
   const store = useAccountStore();
   const bizs = getQueryStringParams('bizs');
   if (location.href.includes('business')) {
-    return `bizs/${bizs || store.bizs}/`;
+    return `bizs/${store.bizs || bizs}/`;
   }
   return '';
 };

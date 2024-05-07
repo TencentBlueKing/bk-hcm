@@ -131,7 +131,12 @@ export const useTable = (props: IProp) => {
         dataList.value = newDataList;
       });
     }
-    pagination.count = countRes?.data?.count;
+    if (countRes?.data?.count) {
+      pagination.count = countRes?.data?.count;
+    } else {
+      pagination.count = countRes?.data?.tasks[0]?.params?.targets.length;
+    }
+
     isLoading.value = false;
   };
   const CommonTable = defineComponent({
