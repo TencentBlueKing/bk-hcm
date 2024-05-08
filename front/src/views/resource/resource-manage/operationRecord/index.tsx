@@ -118,7 +118,7 @@ export default defineComponent({
         listItem?.detail?.data?.res_flow?.flow_id
       ) {
         router.push({
-          path: '/business/record/detail',
+          path: `/${isResourcePage ? 'resource' : 'business'}/record/detail`,
           query: {
             id: listItem.id,
             name: listItem.res_name,

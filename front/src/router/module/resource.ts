@@ -73,6 +73,16 @@ const resourceMenus: RouteRecordRaw[] = [
         },
       },
       {
+        path: '/resource/record/detail',
+        name: 'resourceDetail',
+        component: () => import('@/views/resource/resource-manage/operationRecord/RecordDetail/index'),
+        meta: {
+          activeKey: 'resourceResource',
+          breadcrumb: [t('云管'), t('资源'), '详情'],
+          notMenu: true,
+        },
+      },
+      {
         path: '/resource/service-apply/cvm',
         name: 'resourceApplyCvm',
         component: () => import('@/views/service/service-apply/cvm'),
