@@ -94,6 +94,18 @@ func (opt TCloudAssociateCvmOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
+// TCloudBatchAssociateCvmOption define security group bind cvm option.
+type TCloudBatchAssociateCvmOption struct {
+	Region               string   `json:"region" validate:"required"`
+	CloudSecurityGroupID string   `json:"cloud_security_group_id" validate:"required"`
+	CloudCvmIDs          []string `json:"cloud_cvm_ids" validate:"required"`
+}
+
+// Validate security group cvm bind option.
+func (opt TCloudBatchAssociateCvmOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
 // -------------------------- Delete --------------------------
 
 // TCloudDeleteOption tcloud security group delete option.

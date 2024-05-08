@@ -302,3 +302,33 @@ type InquiryPriceResult struct {
 	DiscountPrice float64 `json:"discount_price"`
 	OriginalPrice float64 `json:"original_price"`
 }
+
+// ListCvmWithCountOption returns count
+type ListCvmWithCountOption struct {
+	Region   string   `json:"region" validate:"required"`
+	CloudIDs []string `json:"cloud_ids" validate:"omitempty"`
+	// 基于安全组id过滤
+	SGIDs []string         `json:"security_groups_ids" validate:"omitempty"`
+	Page  *core.TCloudPage `json:"page" validate:"omitempty"`
+}
+
+// Validate tcloud cvm list option.
+func (opt ListCvmWithCountOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return nil
+	}
+
+	if opt.Page != nil {
+		if err := opt.Page.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// CvmWithCountResp ...
+type CvmWithCountResp struct {
+	TotalCount int64
+	Cvms       []TCloudCvm
+}
