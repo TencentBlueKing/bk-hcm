@@ -18,7 +18,7 @@ import { LB_NETWORK_TYPE_REVERSE_MAP, LISTENER_BINDING_STATUS_REVERSE_MAP, SCHED
 export interface IProp {
   // search-select 相关字段
   searchOptions: {
-    searchData?: Array<ISearchItem>; // search-select 可选项
+    searchData?: Array<ISearchItem> | (() => Array<ISearchItem>); // search-select 可选项
     disabled?: boolean; // 是否禁用 search-select
     extra?: {
       searchSelectExtStyle?: Record<string, string>; // 搜索框样式
@@ -150,7 +150,11 @@ export const useTable = (props: IProp) => {
                 class='table-search-selector'
                 style={props.searchOptions?.extra?.searchSelectExtStyle}
                 v-model={searchVal.value}
-                data={props.searchOptions.searchData}
+                data={
+                  typeof props.searchOptions.searchData === 'function'
+                    ? props.searchOptions.searchData()
+                    : props.searchOptions.searchData
+                }
                 valueBehavior='need-key'
                 {...(props.searchOptions.extra || {})}
               />
@@ -267,6 +271,8 @@ export const useTable = (props: IProp) => {
     // 如果是名称或指定了模糊搜索, 则模糊搜索
     else if (val?.id === 'name' || props?.fuzzySwitch || (val?.id === 'domain' && val?.name === '负载均衡域名'))
       op = QueryRuleOPEnum.CIS;
+    // 如果是任务类型, 则JSON_EQ搜索
+    else if (val?.id === 'detail.data.res_flow.flow_id') op = QueryRuleOPEnum.JSON_NEQ;
     // 否则, 精确搜索
     else op = QueryRuleOPEnum.EQ;
     return op;

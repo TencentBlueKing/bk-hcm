@@ -37,40 +37,58 @@ export default defineComponent({
         ),
       },
     ];
-    const searchData = [
-      {
-        name: '资源类型',
-        id: 'res_type',
-      },
-      {
-        name: '资源名称',
-        id: 'res_name',
-      },
-      {
-        name: '操作方式',
-        id: 'action',
-      },
-      {
-        name: '操作来源',
-        id: 'source',
-      },
-      {
-        name: '所属业务',
-        id: 'bk_biz_id',
-      },
-      {
-        name: '云账号',
-        id: 'account_id',
-      },
-      {
-        name: '操作人',
-        id: 'operator',
-      },
-    ];
-    !isResourcePage && searchData.splice(4, 1);
+    // 当前选中的资源类型，默认为全部
+    const activeResourceType = ref('all');
+    const searchData = computed(() => {
+      const data = [
+        {
+          name: '资源类型',
+          id: 'res_type',
+        },
+        {
+          name: '资源名称',
+          id: 'res_name',
+        },
+        {
+          name: '操作方式',
+          id: 'action',
+        },
+        {
+          name: '操作来源',
+          id: 'source',
+        },
+        {
+          name: '所属业务',
+          id: 'bk_biz_id',
+        },
+        {
+          name: '云账号',
+          id: 'account_id',
+        },
+        {
+          name: '操作人',
+          id: 'operator',
+        },
+      ];
+      if (activeResourceType.value === 'load_balancer') {
+        data.push({
+          name: '任务类型',
+          id: 'detail.data.res_flow.flow_id',
+          children: [
+            {
+              name: '异步任务',
+              id: '',
+            },
+          ],
+        });
+      }
+      !isResourcePage && data.splice(4, 1);
+      return data;
+    });
+
     const { CommonTable } = useTable({
       searchOptions: {
-        searchData,
+        searchData: () => searchData.value,
         extra: {
           placeholder: '请输入',
         },
@@ -97,8 +115,6 @@ export default defineComponent({
       { label: 'security_group', text: '安全组' },
       { label: 'load_balancer', text: '负载均衡' },
     ];
-    // 当前选中的资源类型，默认为全部
-    const activeResourceType = ref('all');
 
     // 操作详情
     const isRecordDetailShow = ref(false);
@@ -183,7 +199,7 @@ export default defineComponent({
 
     watch(activeResourceType, (val) => {
       if (['load_balancer'].includes(val)) {
-        searchRule.value = ['load_balancer', 'target_group'];
+        searchRule.value = ['load_balancer', 'url_rule', 'listener', 'url_rule_domain', 'target_group'];
         searchRule.op = QueryRuleOPEnum.IN;
       } else {
         searchRule.value = val;
