@@ -1155,7 +1155,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
               query: { ...route.query, type: 'detail' },
             },
             () => {
-              loadBalancerStore.setLbTreeSearchTarget({ ...data, searchK: 'lb_name', searchV: data.name });
+              loadBalancerStore.setLbTreeSearchTarget({ ...data, searchK: 'lb_name', searchV: data.name, type: 'lb' });
             },
           )}>
           {data.name || '--'}
@@ -1283,7 +1283,12 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
               query: { ...route.query, type: 'detail', protocol: data.protocol },
             },
             () => {
-              loadBalancerStore.setLbTreeSearchTarget({ ...data, searchK: 'listener_name', searchV: data.name });
+              loadBalancerStore.setLbTreeSearchTarget({
+                ...data,
+                searchK: 'listener_name',
+                searchV: data.name,
+                type: 'listener',
+              });
             },
           )}>
           {data.name || '--'}

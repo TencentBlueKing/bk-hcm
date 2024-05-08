@@ -42,7 +42,7 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
     currentScene.value = v;
   };
 
-  // state - lb-tree的搜索条件
+  // state - lb-tree的搜索条件, 用于链接跳转
   const lbTreeSearchTarget = ref();
   const setLbTreeSearchTarget = (v: any) => {
     lbTreeSearchTarget.value = v;

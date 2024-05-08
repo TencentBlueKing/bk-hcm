@@ -170,12 +170,14 @@ export default (getListData: (...args: any) => any, originPage: IOriginPage) => 
       {
         field: 'cloud_vpc_id',
         op: QueryRuleOPEnum.EQ,
-        value: loadBalancerStore.currentSelectedTreeNode.cloud_vpc_id,
+        value:
+          loadBalancerStore.currentSelectedTreeNode.cloud_vpc_id ||
+          loadBalancerStore.currentSelectedTreeNode.lb.cloud_vpc_id,
       },
       {
         field: 'region',
         op: QueryRuleOPEnum.EQ,
-        value: loadBalancerStore.currentSelectedTreeNode.region,
+        value: loadBalancerStore.currentSelectedTreeNode.region || loadBalancerStore.currentSelectedTreeNode.lb.region,
       },
     ],
     false,
