@@ -252,7 +252,8 @@ create table `target_group_listener_rule_rel`
     `created_at`             timestamp   not null default current_timestamp,
     `updated_at`             timestamp   not null default current_timestamp on update current_timestamp,
     primary key (`id`),
-    unique key `idx_uk_target_group_id_listener_rule_id_listener_rule_type` (`target_group_id`, `listener_rule_id`, `listener_rule_type`)
+    unique key `idx_uk_target_group_id_listener_rule_id_listener_rule_type` (`target_group_id`, `listener_rule_id`, `listener_rule_type`),
+    key `idx_lbid_binding_status_rule_type`(`lb_id`, `binding_status`, `listener_rule_type`)
 ) engine = innodb
   default charset = utf8mb4
   collate = utf8mb4_bin comment ='目标组监听器关系表';

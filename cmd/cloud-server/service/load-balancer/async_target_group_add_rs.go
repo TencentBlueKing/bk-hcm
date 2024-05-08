@@ -175,8 +175,6 @@ func (svc *lbSvc) checkAddTarget(kt *kit.Kit, req *cslb.TCloudTargetBatchCreateR
 			return err
 		}
 		if len(rsList.Details) > 0 {
-			logs.Errorf("check add target has exist, targetGroupID: %s, targetItem: %+v, rid: %s",
-				tgItem.TargetGroupID, tgItem, kt.Rid)
 			tmpCloudInstIds := slice.Unique(slice.Map(rsList.Details, func(target corelb.BaseTarget) string {
 				return target.CloudInstID
 			}))
@@ -418,7 +416,7 @@ func (svc *lbSvc) checkResFlowRel(kt *kit.Kit, resID string, resType enumor.Clou
 		return err
 	}
 	if len(lockRet.Details) > 0 {
-		return errf.Newf(errf.TooManyRequest, "resID: %s is processing", resID)
+		return errf.Newf(errf.LoadBalancerTaskExecuting, "resID: %s is processing", resID)
 	}
 
 	// 预检测-当前资源是否有未终态的状态
@@ -436,7 +434,7 @@ func (svc *lbSvc) checkResFlowRel(kt *kit.Kit, resID string, resType enumor.Clou
 		return err
 	}
 	if len(flowRelRet.Details) > 0 {
-		return errf.Newf(errf.TooManyRequest, "%s of resID: %s is processing", resType, resID)
+		return errf.Newf(errf.LoadBalancerTaskExecuting, "%s of resID: %s is processing", resType, resID)
 	}
 
 	return nil

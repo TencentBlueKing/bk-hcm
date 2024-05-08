@@ -542,17 +542,31 @@ func genCertResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resou
 		res.ID = a.ResourceID
 	}
 
+	bizRes := client.Resource{
+		System: sys.SystemIDCMDB,
+		Type:   sys.Biz,
+		ID:     strconv.FormatInt(a.BizID, 10),
+	}
+
 	switch a.Basic.Action {
 	case meta.Find, meta.Assign:
 		return genIaaSResourceResource(a)
 	case meta.Create:
-		return sys.BizCertResCreate, []client.Resource{res}, nil
+		if a.BizID > 0 {
+			return sys.BizCertResCreate, []client.Resource{bizRes}, nil
+		}
+		return sys.CertResCreate, []client.Resource{res}, nil
 	case meta.Update:
 		// update resource is related to hcm account resource
+		if a.BizID > 0 {
+			return sys.BizIaaSResOperate, []client.Resource{bizRes}, nil
+		}
 		return sys.IaaSResOperate, []client.Resource{res}, nil
 	case meta.Delete:
-		return sys.BizCertResDelete, []client.Resource{res}, nil
-
+		if a.BizID > 0 {
+			return sys.BizCertResDelete, []client.Resource{bizRes}, nil
+		}
+		return sys.CertResDelete, []client.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
