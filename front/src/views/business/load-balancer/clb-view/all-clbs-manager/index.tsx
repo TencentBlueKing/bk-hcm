@@ -126,7 +126,7 @@ export default defineComponent({
       requestOption: {
         type: 'load_balancers',
         sortOption: { sort: 'created_at', order: 'DESC' },
-        callback(dataList: any[]) {
+        resolveDataListCb(dataList: any[]) {
           return asyncGetListenerCount(
             dataList.map((item) => {
               item.lb_type = LB_NETWORK_TYPE_MAP[item.lb_type];

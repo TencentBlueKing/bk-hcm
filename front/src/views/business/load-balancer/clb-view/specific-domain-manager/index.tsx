@@ -220,7 +220,7 @@ export default defineComponent({
         filterOption: {
           rules: [{ field: 'domain', op: QueryRuleOPEnum.EQ, value: props.id }],
         },
-        async callback(dataList: any) {
+        async resolveDataListCb(dataList: any) {
           if (dataList.length === 0) return;
           const tgIds = dataList.map(({ target_group_id }: { target_group_id: string }) => target_group_id);
           const resList = await businessStore.getTargetGroupList({

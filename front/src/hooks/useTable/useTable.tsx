@@ -4,85 +4,93 @@ import { FilterType } from '@/typings';
 import { Loading, SearchSelect, Table } from 'bkui-vue';
 import type { Column } from 'bkui-vue/lib/table/props';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
-import { defineComponent, reactive, ref, watch } from 'vue';
+import { computed, defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
 import Empty from '@/components/empty';
-import { useAccountStore, useResourceStore } from '@/store';
+import { useAccountStore, useResourceStore, useBusinessStore } from '@/store';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useRegionsStore } from '@/store/useRegionsStore';
-import { useWhereAmI } from '../useWhereAmI';
+import { useWhereAmI, Senarios } from '../useWhereAmI';
 import { getDifferenceSet } from '@/common/util';
 import { get as lodash_get } from 'lodash-es';
 import { VendorReverseMap } from '@/common/constant';
 import { LB_NETWORK_TYPE_REVERSE_MAP, LISTENER_BINDING_STATUS_REVERSE_MAP, SCHEDULER_REVERSE_MAP } from '@/constants';
+import usePagination from '../usePagination';
+
 export interface IProp {
-  // search-select 相关字段
+  // search-select 配置项
   searchOptions: {
-    searchData?: Array<ISearchItem>; // search-select 可选项
-    disabled?: boolean; // 是否禁用 search-select
+    // search-select 可选项
+    searchData?: Array<ISearchItem> | (() => Array<ISearchItem>);
+    // 是否禁用 search-select
+    disabled?: boolean;
+    // 其他 search-select 属性/自定义事件, 比如 placeholder, onSearch, searchSelectExtStyle...
     extra?: {
       searchSelectExtStyle?: Record<string, string>; // 搜索框样式
-    }; // 其他 search-select 属性/自定义事件, 比如 placeholder, onSearch, searchSelectExtStyle...
+    };
   };
-  // table 相关字段
+  // table 配置项
   tableOptions: {
-    columns: Array<Column>; // 表格字段
-    reviewData?: Array<Record<string, any>>; // 用于预览效果的数据
-    extra?: Object; // 其他 table 属性/自定义事件, 比如 settings, onSelectionChange...
+    // 表格字段
+    columns: Array<Column> | (() => Array<Column>);
+    // 用于预览效果的数据
+    reviewData?: Array<Record<string, any>>;
+    // 其他 table 属性/自定义事件, 比如 settings, onSelectionChange...
+    extra?: Object;
   };
-  // 模糊查询开关true开启，false关闭
-  fuzzySwitch?: boolean;
   // 请求相关字段
   requestOption: {
-    type: string; // 资源类型
+    // 资源类型
+    type: string;
+    // 排序参数
     sortOption?: {
       sort: string; // 需要排序的字段
       order: 'ASC' | 'DESC'; // 排序方式
-    }; // 排序参数
+    };
+    // 筛选参数
     filterOption?: {
-      rules: Array<RulesItem>; // 规则
+      // 规则
+      rules: Array<RulesItem>;
+      // Tab 切换时选用项(如选中全部时, 删除对应的 rule)
       deleteOption?: {
         field: string;
         flagValue: string; // 当 rule.value = flagValue 时, 删除该 rule
-      }; // Tab 切换时选用项(如选中全部时, 删除对应的 rule)
-    }; // 筛选参数
-    extension?: Record<string, any>; // 请求需要的额外荷载数据
-    callback?: (...args: any) => any; // 可以根据当前请求结果异步更新 dataList
-    dataPath?: string; // 列表数据的路径，如 data.details
+      };
+      // 模糊查询开关true开启，false关闭
+      fuzzySwitch?: boolean;
+    };
+    // 请求需要的额外荷载数据
+    extension?: Record<string, any>;
+    // 钩子 - 可以根据当前请求结果异步更新 dataList
+    resolveDataListCb?: (...args: any) => Promise<any>;
+    // 钩子 - 可以根据当前请求结果异步更新 pagination.count
+    resolvePaginationCountCb?: (...args: any) => Promise<any>;
+    // 列表数据的路径，如 data.details
+    dataPath?: string;
   };
   // 资源下筛选业务功能相关的 prop
   bizFilter?: FilterType;
 }
 
 export const useTable = (props: IProp) => {
-  const { isBusinessPage } = useWhereAmI();
+  const { whereAmI } = useWhereAmI();
+
   const regionsStore = useRegionsStore();
   const resourceStore = useResourceStore();
+  const businessStore = useBusinessStore();
   const accountStore = useAccountStore();
   const businessMapStore = useBusinessMapStore();
+
   const searchVal = ref('');
   const dataList = ref([]);
   const isLoading = ref(false);
-  const pagination = reactive({
-    start: 0,
-    limit: 10,
-    count: 100,
-  });
   const sort = ref(props.requestOption.sortOption ? props.requestOption.sortOption.sort : 'created_at');
   const order = ref(props.requestOption.sortOption ? props.requestOption.sortOption.order : 'DESC');
-  const filter = reactive({
-    op: QueryRuleOPEnum.AND,
-    rules: [],
-  });
-  const handlePageLimitChange = (v: number) => {
-    pagination.limit = v;
-    pagination.start = 0;
-    getListData();
-  };
-  const handlePageValueChange = (v: number) => {
-    pagination.start = (v - 1) * pagination.limit;
-    getListData();
-  };
+  const filter = reactive({ op: QueryRuleOPEnum.AND, rules: [] });
+
+  const { pagination, handlePageLimitChange, handlePageValueChange } = usePagination(() => getListData());
+
+  // 钩子 - 表头排序时
   const handleSort = ({ column, type }: any) => {
     pagination.start = 0;
     sort.value = column.field;
@@ -94,6 +102,12 @@ export const useTable = (props: IProp) => {
     }
     getListData();
   };
+
+  /**
+   * 请求表格数据
+   * @param customRules 自定义规则
+   * @param type 资源类型
+   */
   const getListData = async (customRules: Array<RulesItem> = [], type?: string) => {
     // 预览
     if (props.tableOptions.reviewData) {
@@ -101,9 +115,13 @@ export const useTable = (props: IProp) => {
       return;
     }
     isLoading.value = true;
+
+    // 判断是业务下, 还是资源下
+    const api = whereAmI.value === Senarios.business ? businessStore.list : resourceStore.list;
+    // 请求数据
     const [detailsRes, countRes] = await Promise.all(
       [false, true].map((isCount) =>
-        resourceStore.list(
+        api(
           {
             page: {
               limit: isCount ? 0 : pagination.limit,
@@ -112,35 +130,47 @@ export const useTable = (props: IProp) => {
               order: isCount ? undefined : order.value,
               count: isCount,
             },
-            filter: {
-              op: filter.op,
-              rules: [...filter.rules, ...customRules],
-            },
+            filter: { op: filter.op, rules: [...filter.rules, ...customRules] },
             ...props.requestOption.extension,
           },
           type ? type : props.requestOption.type,
         ),
       ),
     );
+    // 更新数据
     dataList.value = props.requestOption.dataPath
       ? lodash_get(detailsRes, props.requestOption.dataPath)
       : detailsRes?.data?.details;
-    // 如果需要, 可以根据当前结果异步更新 dataList
-    if (props.requestOption.callback && typeof props.requestOption.callback === 'function') {
-      props.requestOption.callback(detailsRes?.data?.details).then((newDataList: any[]) => {
+
+    // 异步处理 dataList
+    if (typeof props.requestOption.resolveDataListCb === 'function') {
+      props.requestOption.resolveDataListCb(dataList.value).then((newDataList: any[]) => {
         dataList.value = newDataList;
       });
     }
-    if (countRes?.data?.count) {
-      pagination.count = countRes?.data?.count;
+
+    // 处理 pagination.count
+    if (typeof props.requestOption.resolvePaginationCountCb === 'function') {
+      props.requestOption.resolvePaginationCountCb(countRes?.data).then((newCount: number) => {
+        pagination.count = newCount;
+      });
     } else {
-      pagination.count = countRes?.data?.tasks[0]?.params?.targets.length;
+      pagination.count = countRes?.data?.count || 0;
     }
 
     isLoading.value = false;
   };
+
   const CommonTable = defineComponent({
     setup(_props, { slots }) {
+      const searchData = computed(() => {
+        return (
+          (typeof props.searchOptions.searchData === 'function'
+            ? props.searchOptions.searchData()
+            : props.searchOptions.searchData) || []
+        );
+      });
+
       return () => (
         <div class={`remote-table-container${props.searchOptions.disabled ? ' no-search' : ''}`}>
           <section class='operation-wrap'>
@@ -150,7 +180,7 @@ export const useTable = (props: IProp) => {
                 class='table-search-selector'
                 style={props.searchOptions?.extra?.searchSelectExtStyle}
                 v-model={searchVal.value}
-                data={props.searchOptions.searchData}
+                data={searchData.value}
                 valueBehavior='need-key'
                 {...(props.searchOptions.extra || {})}
               />
@@ -262,20 +292,32 @@ export const useTable = (props: IProp) => {
     const { id, name } = val;
     if (!id || !name) return;
     // 如果是domain或者zones(数组类型), 则使用JSON_CONTAINS
-    if ((val?.id === 'domain' && val?.name !== '负载均衡域名') || val?.id === 'zones')
+    if ((val?.id === 'domain' && val?.name !== '负载均衡域名') || val?.id === 'zones') {
       op = QueryRuleOPEnum.JSON_CONTAINS;
+    }
     // 如果是名称或指定了模糊搜索, 则模糊搜索
-    else if (val?.id === 'name' || props?.fuzzySwitch || (val?.id === 'domain' && val?.name === '负载均衡域名'))
+    else if (
+      props?.requestOption?.filterOption?.fuzzySwitch ||
+      val?.id === 'name' ||
+      (val?.id === 'domain' && val?.name === '负载均衡域名')
+    ) {
       op = QueryRuleOPEnum.CIS;
+    }
+    // 如果是任务类型, 则使用 json_neq
+    else if (val?.id === 'detail.data.res_flow.flow_id') {
+      op = QueryRuleOPEnum.JSON_NEQ;
+    }
     // 否则, 精确搜索
-    else op = QueryRuleOPEnum.EQ;
+    else {
+      op = QueryRuleOPEnum.EQ;
+    }
     return op;
   };
 
   watch(
     [() => searchVal.value, () => accountStore.bizs],
     ([searchVal, bizs], [oldSearchVal]) => {
-      if (isBusinessPage && !bizs) return;
+      if (whereAmI.value === Senarios.business && !bizs) return;
       // 记录上一次 search-select 的规则名
       const oldSearchFieldList: string[] =
         (Array.isArray(oldSearchVal) && oldSearchVal.reduce((prev: any, item: any) => [...prev, item.id], [])) || [];
