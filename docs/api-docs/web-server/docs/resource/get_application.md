@@ -10,11 +10,12 @@ GET /api/v1/cloud/applications/{application_id}
 
 ### 输入参数
 
-| 参数名称            | 参数类型   | 必选 | 描述   |
-|-----------------|--------|----|------|
-| application_id  | string | 是  | 申请ID |
+| 参数名称           | 参数类型   | 必选 | 描述   |
+|----------------|--------|----|------|
+| application_id | string | 是  | 申请ID |
 
 ### 调用示例
+
 ```json
 ```
 
@@ -64,18 +65,19 @@ GET /api/v1/cloud/applications/{application_id}
 
 #### data.details[n]
 
-| 参数名称            | 参数类型    | 描述                                                                                           |
-|-----------------|---------|----------------------------------------------------------------------------------------------|
-| id              | string  | 申请ID                                                                                         |
-| sn              | string  | 序列号                                                                                          |
-| type            | string  | 申请类型（枚举值：add_account、create_cvm、create_vpc、create_disk）                                      |
-| status          | string  | 申请状态（枚举值：pending、pass、rejected、cancelled、delivering、completed、deliver_partial、deliver_error） |
-| applicant       | string  | 申请人                                                                                          |
-| content         | string  | 申请内容                                                                                         |
-| delivery_detail | string  | 交付详情                                                                                         |
-| memo            | string  | 备注                                                                                           |
-| creator         | string  | 创建者                                                                                          |
-| reviser         | string  | 更新者                                                                                          |
-| created_at      | string  | 创建时间，标准格式：2006-01-02T15:04:05Z                                                               |
-| updated_at      | string  | 更新时间，标准格式：2006-01-02T15:04:05Z                                                               |
-| ticket_url      | string  | 门票地址                                                                                         |
+| 参数名称            | 参数类型   | 描述                                                                                           |
+|-----------------|--------|----------------------------------------------------------------------------------------------|
+| id              | string | 申请ID                                                                                         |
+| source          | string | 来源（枚举值：itsm,bpaas)                                                                           |
+| sn              | string | 序列号                                                                                          |
+| type            | string | 申请类型（枚举值：add_account、create_cvm、create_vpc、create_disk）                                      |
+| status          | string | 申请状态（枚举值：pending、pass、rejected、cancelled、delivering、completed、deliver_partial、deliver_error） |
+| applicant       | string | 申请人                                                                                          |
+| content         | string | 申请内容                                                                                         |
+| delivery_detail | string | 交付详情                                                                                         |
+| memo            | string | 备注                                                                                           |
+| creator         | string | 创建者                                                                                          |
+| reviser         | string | 更新者                                                                                          |
+| created_at      | string | 创建时间，标准格式：2006-01-02T15:04:05Z                                                               |
+| updated_at      | string | 更新时间，标准格式：2006-01-02T15:04:05Z                                                               |
+| ticket_url      | string | 门票地址                                                                                         |

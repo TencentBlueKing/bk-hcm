@@ -1,7 +1,7 @@
 /*
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
- * Copyright (C) 2022 THL A29 Limited,
+ * Copyright (C) 2024 THL A29 Limited,
  * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,25 +17,24 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package application
+/*
+    SQLVER=9999,HCMVER=v9.9.9
 
-import (
-	"hcm/pkg/api/core"
-	"hcm/pkg/criteria/enumor"
-)
+    Notes: 添加申请单来源字段
+*/
 
-// ApplicationGetResp ...
-type ApplicationGetResp struct {
-	ID             string                   `json:"id"`
-	Source         enumor.ApplicationSource `json:"source"`
-	SN             string                   `json:"sn"`
-	Type           enumor.ApplicationType   `json:"type"`
-	Status         enumor.ApplicationStatus `json:"status"`
-	Applicant      string                   `json:"applicant"`
-	Content        string                   `json:"content"`
-	DeliveryDetail string                   `json:"delivery_detail"`
-	Memo           *string                  `json:"memo"`
-	core.Revision  `json:",inline"`
 
-	TicketUrl string `json:"ticket_url"`
-}
+START TRANSACTION;
+
+
+-- 添加申请单来源字段
+alter table application
+    add column source varchar(64) default 'itsm' after `id`;
+
+update application set source ='itsm' where source='';
+
+alter table application drop key idx_uk_sn;
+alter table application
+    add constraint idx_uk_source_sn unique (source, sn);
+
+COMMIT
