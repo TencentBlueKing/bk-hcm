@@ -106,7 +106,7 @@ export default (formModel: ApplyClbModel) => {
             label: '网络类型',
             required: true,
             property: 'load_balancer_type',
-            description: '如需绑定弹性公网IP, 请切换到内网网络类型',
+            description: '公网：面向公网使用的负载均衡。\n内网：面向内网使用的负载均衡。',
             content: () => (
               <BkRadioGroup v-model={formModel.load_balancer_type}>
                 {LOAD_BALANCER_TYPE.map(({ label, value }) => (
@@ -121,6 +121,7 @@ export default (formModel: ApplyClbModel) => {
             label: 'IP版本',
             required: true,
             property: 'address_ip_version',
+            description: '支持IPv4, IPv6, 以及IPv6 NAT64（负载均衡通过IPv6地址，将用户请求转发给后端IPv4地址的服务器）',
             hidden: isIntranet.value,
             content: () => (
               <BkRadioGroup v-model={formModel.address_ip_version}>
@@ -147,6 +148,8 @@ export default (formModel: ApplyClbModel) => {
           {
             label: '可用区类型',
             property: 'zoneType',
+            description:
+              '单可用区：仅支持一个可用区。\n主备可用区：主可用区是当前承载流量的可用区。备可用区默认不承载流量，主可用区不可用时才使用备可用区。',
             hidden: isIntranet.value || formModel.address_ip_version !== 'IPV4',
             content: () => (
               <BkRadioGroup v-model={formModel.zoneType}>
@@ -264,6 +267,8 @@ export default (formModel: ApplyClbModel) => {
           label: '负载均衡规格类型',
           required: true,
           property: 'sla_type',
+          description:
+            '共享型实例：按照规格提供性能保障，单实例最大支持并发连接数5万、每秒新建连接数5000、每秒查询数（QPS）5000。\n性能容量型实例：按照规格提供性能保障，单实例最大可支持并发连接数1000万、每秒新建连接数100万、每秒查询数（QPS）30万。',
           hidden: isIntranet.value,
           content: () => (
             <>
@@ -299,7 +304,6 @@ export default (formModel: ApplyClbModel) => {
           required: true,
           property: 'vip_isp',
           hidden: isIntranet.value,
-          description: '运营商类型选择范围由主可用区, 备可用区, IP版本决定',
           content: () => (
             <Select v-model={formModel.vip_isp} loading={isResourceListLoading.value}>
               {ispList.value?.map((item) => (
@@ -446,7 +450,7 @@ export default (formModel: ApplyClbModel) => {
           label: '实例名称',
           required: true,
           property: 'name',
-          description: '1个实例，以填写的名称命名。多个则以填写的名称为前缀，由系统自动补充随机的后缀。',
+          description: '单个实例：以填写的名称命名。\n多个实例：以填写的名称为前缀，由系统自动补充随机的后缀。',
           content: () => <Input class='w500' v-model={formModel.name}></Input>,
         },
         {
