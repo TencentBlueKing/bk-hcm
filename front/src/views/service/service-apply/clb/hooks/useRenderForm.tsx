@@ -129,6 +129,39 @@ export default (formModel: ApplyClbModel) => {
         ],
         [
           {
+            label: '可用区',
+            property: 'zones',
+            hidden: !isIntranet.value && formModel.address_ip_version !== 'IPV4',
+            content: () => {
+              let zoneSelectorVNode = null;
+              if (isIntranet.value || formModel.zoneType === 'single') {
+                zoneSelectorVNode = (
+                  <ZoneSelector
+                    class='w240'
+                    v-model={formModel.zones}
+                    vendor={formModel.vendor}
+                    region={formModel.region}
+                    onChange={handleZoneChange}
+                    delayed={true}
+                    isLoading={isResourceListLoading.value}
+                  />
+                );
+              } else {
+                zoneSelectorVNode = (
+                  <PrimaryStandZoneSelector
+                    class='w240'
+                    v-model:zones={formModel.zones}
+                    v-model:backupZones={formModel.backup_zones}
+                    vendor={formModel.vendor}
+                    region={formModel.region}
+                    onResetVipIsp={() => (formModel.vip_isp = '')}
+                  />
+                );
+              }
+              return zoneSelectorVNode;
+            },
+          },
+          {
             label: '可用区类型',
             property: 'zoneType',
             hidden: isIntranet.value || formModel.address_ip_version !== 'IPV4',
@@ -155,37 +188,6 @@ export default (formModel: ApplyClbModel) => {
                 })}
               </BkRadioGroup>
             ),
-          },
-          {
-            label: '可用区',
-            property: 'zones',
-            hidden: !isIntranet.value && formModel.address_ip_version !== 'IPV4',
-            content: () => {
-              let zoneSelectorVNode = null;
-              if (isIntranet.value || formModel.zoneType === 'single') {
-                zoneSelectorVNode = (
-                  <ZoneSelector
-                    v-model={formModel.zones}
-                    vendor={formModel.vendor}
-                    region={formModel.region}
-                    onChange={handleZoneChange}
-                    delayed={true}
-                    isLoading={isResourceListLoading.value}
-                  />
-                );
-              } else {
-                zoneSelectorVNode = (
-                  <PrimaryStandZoneSelector
-                    v-model:zones={formModel.zones}
-                    v-model:backupZones={formModel.backup_zones}
-                    vendor={formModel.vendor}
-                    region={formModel.region}
-                    onResetVipIsp={() => (formModel.vip_isp = '')}
-                  />
-                );
-              }
-              return zoneSelectorVNode;
-            },
           },
         ],
         {
