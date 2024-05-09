@@ -40,6 +40,13 @@ export default (getListData: (...args: any) => any, originPage: IOriginPage) => 
         trigger: 'change',
       },
     ],
+    'certificate.cert_cloud_ids': [
+      {
+        validator: (value: string[]) => value.length <= 2,
+        message: '最多选择 2 个证书',
+        trigger: 'change',
+      },
+    ],
   };
 
   const getDefaultFormData = () => ({
