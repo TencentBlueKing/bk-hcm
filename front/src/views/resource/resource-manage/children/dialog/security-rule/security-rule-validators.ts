@@ -64,8 +64,8 @@ export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) =
           if (['ipv6_cidr', 'ipv4_cidr'].includes(val)) {
             const ipType = validateIpCidr(data[val]);
             if (ipType === IpType.invalid) return false;
-            if (ipType === IpType.ipv4 && val !== 'ipv4_cidr') return false;
-            if (ipType === IpType.ipv6 && val !== 'ipv6_cidr') return false;
+            if ([IpType.ipv4, IpType.ipv4_cidr].includes(ipType) && val !== 'ipv4_cidr') return false;
+            if ([IpType.ipv6, IpType.ipv6_cidr].includes(ipType) && val !== 'ipv6_cidr') return false;
           }
           return true;
         },
@@ -75,7 +75,7 @@ export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) =
         message: '填写对应合法的 IP CIDR (必须带子网掩码), 注意区分 IPV4 与 IPV6',
         validator: (val: string) => {
           if (vendor === VendorEnum.AWS) {
-            return validateIpCidr(data[val]) === IpType.cidr;
+            return [IpType.cidr, IpType.ipv4_cidr, IpType.ipv6_cidr].includes(validateIpCidr(data[val]));
           }
           return true;
         },
@@ -180,7 +180,10 @@ export const validateIpCidr = (ip: string): IpType => {
     return IpType.invalid;
   }
   try {
-    parseCIDR(ip);
+    const [host, _mask] = parseCIDR(ip);
+    const host_type = host.kind();
+    if (host_type === IpType.ipv4) return IpType.ipv4_cidr;
+    if (host_type === IpType.ipv6) return IpType.ipv6_cidr;
   } catch (err) {
     return IpType.invalid;
   }
@@ -192,4 +195,6 @@ export enum IpType {
   ipv4 = 'ipv4',
   ipv6 = 'ipv6',
   cidr = 'cidr',
+  ipv4_cidr = 'ipv4_cidr',
+  ipv6_cidr = 'ipv6_cidr',
 }
