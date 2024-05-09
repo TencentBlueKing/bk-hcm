@@ -48,7 +48,7 @@ func EqualWithOpExpression(op filter.LogicOperator, fields map[string]interface{
 }
 
 // ContainersExpression 生成资源字段包含的过滤条件，即fieldName in (1,2,3)
-func ContainersExpression(fieldName string, values interface{}) *filter.Expression {
+func ContainersExpression[T any](fieldName string, values []T) *filter.Expression {
 	return &filter.Expression{
 		Op: filter.And,
 		Rules: []filter.RuleFactory{

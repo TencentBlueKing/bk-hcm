@@ -147,9 +147,9 @@ func (svc *lbSvc) listClbExt(kt *kit.Kit, ids []string) (map[string]tabletype.Js
 
 }
 
-// BatchUpdateClbBizInfo 批量更新业务信息
-func (svc *lbSvc) BatchUpdateClbBizInfo(cts *rest.Contexts) (any, error) {
-	req := new(dataproto.ClbBizBatchUpdateReq)
+// BatchUpdateLbBizInfo 批量更新业务信息
+func (svc *lbSvc) BatchUpdateLbBizInfo(cts *rest.Contexts) (any, error) {
+	req := new(dataproto.BizBatchUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -159,11 +159,49 @@ func (svc *lbSvc) BatchUpdateClbBizInfo(cts *rest.Contexts) (any, error) {
 	}
 
 	updateFilter := tools.ContainersExpression("id", req.IDs)
-	updateFiled := &tablelb.LoadBalancerTable{
+	updateField := &tablelb.LoadBalancerTable{
 		BkBizID: req.BkBizID,
 		Reviser: cts.Kit.User,
 	}
-	return nil, svc.dao.LoadBalancer().Update(cts.Kit, updateFilter, updateFiled)
+	return nil, svc.dao.LoadBalancer().Update(cts.Kit, updateFilter, updateField)
+}
+
+// BatchUpdateTargetGroupBizInfo 批量更新目标组业务信息
+func (svc *lbSvc) BatchUpdateTargetGroupBizInfo(cts *rest.Contexts) (any, error) {
+	req := new(dataproto.BizBatchUpdateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	updateFilter := tools.ContainersExpression("id", req.IDs)
+	updateField := &tablelb.LoadBalancerTargetGroupTable{
+		BkBizID: req.BkBizID,
+		Reviser: cts.Kit.User,
+	}
+	return nil, svc.dao.LoadBalancerTargetGroup().Update(cts.Kit, updateFilter, updateField)
+}
+
+// BatchUpdateListenerBizInfo 批量更新监听器业务信息
+func (svc *lbSvc) BatchUpdateListenerBizInfo(cts *rest.Contexts) (any, error) {
+	req := new(dataproto.BizBatchUpdateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	updateFilter := tools.ContainersExpression("id", req.IDs)
+	updateField := &tablelb.LoadBalancerListenerTable{
+		BkBizID: req.BkBizID,
+		Reviser: cts.Kit.User,
+	}
+	return nil, svc.dao.LoadBalancerListener().Update(cts.Kit, updateFilter, updateField)
 }
 
 // UpdateTargetGroup batch update argument template

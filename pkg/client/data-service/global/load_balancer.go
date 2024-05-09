@@ -45,11 +45,22 @@ func (cli *LoadBalancerClient) ListLoadBalancer(kt *kit.Kit, req *core.ListReq) 
 	return common.Request[core.ListReq, dataproto.LbListResult](cli.client, rest.POST, kt, req, "/load_balancers/list")
 }
 
-// BatchUpdateClbBizInfo update biz
-func (cli *LoadBalancerClient) BatchUpdateClbBizInfo(kt *kit.Kit, req *dataproto.ClbBizBatchUpdateReq) error {
-	return common.RequestNoResp[dataproto.ClbBizBatchUpdateReq](cli.client, rest.PATCH,
-		kt, req, "/load_balancers/biz/batch/update")
+// BatchUpdateLbBizInfo update biz
+func (cli *LoadBalancerClient) BatchUpdateLbBizInfo(kt *kit.Kit, req *dataproto.BizBatchUpdateReq) error {
+	return common.RequestNoResp[dataproto.BizBatchUpdateReq](cli.client, rest.PATCH,
+		kt, req, "/load_balancers/bizs/batch/update")
+}
 
+// BatchUpdateListenerBizInfo update listener biz
+func (cli *LoadBalancerClient) BatchUpdateListenerBizInfo(kt *kit.Kit, req *dataproto.BizBatchUpdateReq) error {
+	return common.RequestNoResp[dataproto.BizBatchUpdateReq](cli.client, rest.PATCH,
+		kt, req, "/load_balancers/listeners/bizs/batch/update")
+}
+
+// BatchUpdateTargetGroupBizInfo update target group biz
+func (cli *LoadBalancerClient) BatchUpdateTargetGroupBizInfo(kt *kit.Kit, req *dataproto.BizBatchUpdateReq) error {
+	return common.RequestNoResp[dataproto.BizBatchUpdateReq](cli.client, rest.PATCH,
+		kt, req, "/load_balancers/target_groups/bizs/batch/update")
 }
 
 // ListListener list listener.
