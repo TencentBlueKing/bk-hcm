@@ -127,6 +127,30 @@ export default (formModel: ApplyClbModel) => {
             ),
           },
         ],
+        {
+          label: 'VPC',
+          required: true,
+          property: 'cloud_vpc_id',
+          content: () => (
+            <div class='component-with-preview'>
+              <RegionVpcSelector
+                class='base'
+                v-model={formModel.cloud_vpc_id}
+                accountId={formModel.account_id}
+                region={formModel.region}
+                onChange={handleVpcChange}
+              />
+              <Button
+                class='preview-btn'
+                text
+                theme='primary'
+                disabled={!formModel.cloud_vpc_id}
+                onClick={() => (isVpcPreviewDialogShow.value = true)}>
+                {t('预览')}
+              </Button>
+            </div>
+          ),
+        },
         [
           {
             label: '可用区',
@@ -190,30 +214,7 @@ export default (formModel: ApplyClbModel) => {
             ),
           },
         ],
-        {
-          label: 'VPC',
-          required: true,
-          property: 'cloud_vpc_id',
-          content: () => (
-            <div class='component-with-preview'>
-              <RegionVpcSelector
-                class='base'
-                v-model={formModel.cloud_vpc_id}
-                accountId={formModel.account_id}
-                region={formModel.region}
-                onChange={handleVpcChange}
-              />
-              <Button
-                class='preview-btn'
-                text
-                theme='primary'
-                disabled={!formModel.cloud_vpc_id}
-                onClick={() => (isVpcPreviewDialogShow.value = true)}>
-                {t('预览')}
-              </Button>
-            </div>
-          ),
-        },
+
         {
           label: '子网',
           required: true,
