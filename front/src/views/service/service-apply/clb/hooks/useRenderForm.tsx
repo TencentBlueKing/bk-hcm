@@ -351,7 +351,15 @@ export default (formModel: ApplyClbModel) => {
           content: () => (
             <BkRadioGroup v-model={formModel.internet_charge_type}>
               {INTERNET_CHARGE_TYPE.map(({ label, value }) => (
-                <BkRadioButton key={value} label={value} class='w88' disabled={!value}>
+                <BkRadioButton
+                  key={value}
+                  label={value}
+                  class='w88'
+                  disabled={!value}
+                  v-bk-tooltips={{
+                    content: '云平台当前API接口暂不支持包月参数',
+                    disabled: value,
+                  }}>
                   {t(label)}
                 </BkRadioButton>
               ))}
