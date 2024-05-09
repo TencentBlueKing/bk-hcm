@@ -247,6 +247,22 @@ export default (formModel: ApplyClbModel) => {
           ),
         },
         {
+          label: '运营商类型',
+          required: true,
+          property: 'vip_isp',
+          hidden: isIntranet.value,
+          description: '运营商类型选择范围由主可用区, 备可用区, IP版本决定',
+          content: () => (
+            <Select v-model={formModel.vip_isp} loading={isResourceListLoading.value}>
+              {ispList.value?.map((item) => (
+                <Option key={item} id={item} name={LB_ISP[item]}>
+                  {LB_ISP[item]}
+                </Option>
+              ))}
+            </Select>
+          ),
+        },
+        {
           label: '负载均衡规格类型',
           required: true,
           property: 'sla_type',
@@ -280,22 +296,7 @@ export default (formModel: ApplyClbModel) => {
             </>
           ),
         },
-        {
-          label: '运营商类型',
-          required: true,
-          property: 'vip_isp',
-          hidden: isIntranet.value,
-          description: '运营商类型选择范围由主可用区, 备可用区, IP版本决定',
-          content: () => (
-            <Select v-model={formModel.vip_isp} loading={isResourceListLoading.value}>
-              {ispList.value?.map((item) => (
-                <Option key={item} id={item} name={LB_ISP[item]}>
-                  {LB_ISP[item]}
-                </Option>
-              ))}
-            </Select>
-          ),
-        },
+
         {
           label: '弹性公网 IP',
           // 弹性IP，仅内网可绑定。公网类型无法指定IP。绑定弹性IP后，内网CLB当做公网CLB使用
