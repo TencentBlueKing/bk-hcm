@@ -123,45 +123,92 @@ export default defineComponent({
     };
     const { showDropdownList, currentPopBoundaryNodeKey } = useMoreActionDropdown(typeMenuMap);
 
+    const searchK = ref('');
+    const searchV = ref('');
+    const selectedNode = ref(null);
     const searchOption = computed(() => {
       return {
         value: searchValue.value,
         match: (searchValue: string, itemText: string, item: any) => {
-          const [searchK, searchV] = searchValue.split('：');
+          [searchK.value, searchV.value] = searchValue.split('：');
           let result = false;
-          switch (searchK) {
+          switch (searchK.value) {
             case 'lb_name':
-              item.type === 'lb' && (result = new RegExp(searchV, 'g').test(itemText));
+              item.type === 'lb' && (result = new RegExp(searchV.value, 'g').test(itemText));
               break;
             case 'lb_vip':
-              item.type === 'lb' && (result = new RegExp(searchV, 'g').test(getLbVip(item)));
+              item.type === 'lb' && (result = new RegExp(searchV.value, 'g').test(getLbVip(item)));
               break;
             case 'listener_name':
-              item.type === 'listener' && (result = new RegExp(searchV, 'g').test(itemText));
+              item.type === 'listener' && (result = new RegExp(searchV.value, 'g').test(itemText));
               break;
             case 'protocol':
-              item.type === 'listener' && (result = new RegExp(searchV, 'g').test(item.protocol));
+              item.type === 'listener' && (result = new RegExp(searchV.value, 'g').test(item.protocol));
               break;
             case 'port':
-              item.type === 'listener' && (result = new RegExp(searchV, 'g').test(item.port));
+              item.type === 'listener' && (result = new RegExp(searchV.value, 'g').test(item.port));
               break;
             case 'domain':
-              item.type === 'domain' && (result = new RegExp(`${searchV}`, 'g').test(itemText));
+              item.type === 'domain' && (result = new RegExp(`${searchV.value}`, 'g').test(itemText));
               break;
             default:
               break;
           }
           return result;
         },
-        showChildNodes: false,
+        showChildNodes: true,
       };
     });
+
     watch(
       () => loadBalancerStore.lbTreeSearchTarget,
-      (val) => {
-        if (val) {
-          const { searchK, searchV } = val;
+      async (val) => {
+        // 用搜索结果替换treeData, data为组装后的treeData, targetNode为要选中的节点
+        const updateTreeData = (data: any, targetNode: any, searchK: string, searchV: string) => {
+          treeData.value = [data];
+          selectedNode.value = targetNode;
           searchValue.value = `${searchK}：${searchV}`;
+        };
+
+        if (val) {
+          const { searchK, searchV, type } = val;
+          // 如果点击的是负载均衡, 则直接将搜索结果作为treeData
+          if (type === 'lb') {
+            const lbNode = { ...loadBalancerStore.lbTreeSearchTarget, type: 'lb', async: true };
+            updateTreeData(lbNode, lbNode, searchK, searchV);
+          }
+          // 如果点击的是监听器, 则需要先构建监听器的负载均衡节点, 再将监听器节点作为 children 添加到负载均衡节点
+          else if (type === 'listener') {
+            const lbRes = await businessStore.detail('load_balancers', loadBalancerStore.lbTreeSearchTarget.lb_id);
+            const listenerNode = { ...loadBalancerStore.lbTreeSearchTarget, async: true };
+            updateTreeData(
+              { ...lbRes.data, type: 'lb', listenerNum: 1, async: true, children: [listenerNode] },
+              listenerNode,
+              searchK,
+              searchV,
+            );
+          }
+          // 如果点击的是域名, 则需要先构建域名的负载均衡以及监听器节点, 再将监听器节点作为 children 添加上去
+          else {
+            const { domain, lbl_id } = loadBalancerStore.lbTreeSearchTarget;
+            const listenerRes = await businessStore.detail('listeners', lbl_id);
+            const lbRes = await businessStore.detail('load_balancers', listenerRes.data.lb_id);
+            const domainNode = { ...loadBalancerStore.lbTreeSearchTarget, id: domain, name: domain };
+            updateTreeData(
+              [
+                {
+                  ...lbRes.data,
+                  type: 'lb',
+                  listenerNum: 1,
+                  async: true,
+                  children: [{ ...listenerRes.data, type: 'listener', async: true, children: [domainNode] }],
+                },
+              ],
+              domainNode,
+              searchK,
+              searchV,
+            );
+          }
         } else {
           searchValue.value = '';
         }
@@ -294,7 +341,14 @@ export default defineComponent({
     return () => (
       <div class='load-balancer-tree'>
         {/* 搜索 */}
-        <SimpleSearchSelect v-model={searchValue.value} dataList={searchDataList} />
+        <SimpleSearchSelect
+          v-model={searchValue.value}
+          dataList={searchDataList}
+          clearHandler={() => {
+            loadBalancerStore.setLbTreeSearchTarget(null);
+            reset();
+          }}
+        />
         {/* 全部负载均衡 */}
         <div
           class={[
@@ -331,7 +385,8 @@ export default defineComponent({
           async={getTreeAsyncOption()}
           onNodeExpand={handleNodeExpand}
           onNodeCollapse={handleNodeCollapse}
-          search={searchOption.value}>
+          search={searchOption.value}
+          selected={selectedNode.value}>
           {{
             default: ({ data, attributes }: any) => {
               if (data.type === 'loading') {
@@ -363,14 +418,14 @@ export default defineComponent({
                     {searchValue.value ? (
                       <span
                         v-html={
-                          ['lb_name', 'listener_name', 'domain'].includes(loadBalancerStore.lbTreeSearchTarget.searchK)
+                          ['lb_name', 'listener_name', 'domain'].includes(searchK.value)
                             ? `${name?.replace(
-                                new RegExp(loadBalancerStore.lbTreeSearchTarget.searchV, 'g'),
-                                `<font color='#3A84FF'>${loadBalancerStore.lbTreeSearchTarget.searchV}</font>`,
+                                new RegExp(searchV.value, 'g'),
+                                `<font color='#3A84FF'>${searchV.value}</font>`,
                               )} ${extension}`
                             : `${name} ${extension?.replace(
-                                new RegExp(loadBalancerStore.lbTreeSearchTarget.searchV, 'g'),
-                                `<font color='#3A84FF'>${loadBalancerStore.lbTreeSearchTarget.searchV}</font>`,
+                                new RegExp(searchV.value, 'g'),
+                                `<font color='#3A84FF'>${searchV.value}</font>`,
                               )}`
                         }></span>
                     ) : (

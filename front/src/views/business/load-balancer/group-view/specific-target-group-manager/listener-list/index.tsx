@@ -76,7 +76,7 @@ export default defineComponent({
       },
       requestOption: {
         type: `vendors/tcloud/target_groups/${loadBalancerStore.targetGroupId}/rules`,
-        callback(dataList: any[]) {
+        resolveDataListCb(dataList: any[]) {
           return asyncGetTargetsHealth(dataList);
         },
       },

@@ -107,7 +107,7 @@ export default defineComponent({
           sort: 'cloud_created_time',
           order: 'DESC',
         },
-        async callback(dataList: any[]) {
+        async resolveDataListCb(dataList: any[]) {
           if (dataList.length === 0) return;
           return dataList.map((item: any) => {
             // 与表头筛选配合

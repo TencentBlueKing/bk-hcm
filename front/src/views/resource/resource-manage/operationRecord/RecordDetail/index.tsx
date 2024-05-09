@@ -7,12 +7,14 @@ import { Button, Select, Tab, TimeLine } from 'bkui-vue';
 import { useTable } from '@/hooks/useTable/useTable';
 import { useBusinessStore } from '@/store';
 import { useFlowNode } from './useFlowNode';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 const { Option } = Select;
 const { TabPanel } = Tab;
 
 export default defineComponent({
   setup() {
     const route = useRoute();
+    const { isResourcePage } = useWhereAmI();
     const businessStore = useBusinessStore();
     const tasks = ref([]);
     const flow = ref({});
@@ -87,6 +89,9 @@ export default defineComponent({
           action_id: actionId.value || flowInfo.value.actions?.[0] || '1',
         },
         dataPath: 'data.tasks[0].params.targets',
+        async resolvePaginationCountCb(countData: any) {
+          return countData.tasks?.[0].params.targets.length;
+        },
       },
     });
 
@@ -141,7 +146,7 @@ export default defineComponent({
           <span class={'header-title'}>操作记录详情</span>
           <span class={'header-content'}>&nbsp;- {flowInfo.value.name}</span>
         </DetailHeader>
-        <div class={'record-detail-info-card'}>
+        <div class={'record-detail-info-card'} style={isResourcePage ? { margin: '52px 0 0' } : null}>
           <Success
             width={21}
             height={21}
@@ -169,7 +174,9 @@ export default defineComponent({
             {isEnd.value ? '重新执行' : '终止任务'}
           </Button>
         </div>
-        <div class={'main-wrapper'}>
+        <div
+          class={'main-wrapper'}
+          style={isResourcePage ? { margin: '16px 0 0', height: 'calc(100% - 120px)' } : null}>
           <div class={'main-side-card'}>
             <p class={'main-side-card-title'}>执行步骤</p>
             <TimeLine class={'main-side-card-timeline'} list={nodes.value}></TimeLine>

@@ -1,4 +1,4 @@
-import { defineComponent, ref, watch } from 'vue';
+import { PropType, defineComponent, ref, watch } from 'vue';
 import { Popover, Input } from 'bkui-vue';
 import './index.scss';
 
@@ -7,6 +7,7 @@ export default defineComponent({
   props: {
     modelValue: String,
     dataList: Array<{ id: string; name: string }>,
+    clearHandler: Function as PropType<(...args: any) => any>,
   },
   emits: ['update:modelValue'],
   setup(props, ctx) {
@@ -23,11 +24,12 @@ export default defineComponent({
     const handleEnter = (v: string) => {
       const [searchName, searchVal] = v.split('：');
       const target = props.dataList.find((item) => item.name === searchName);
-      ctx.emit('update:modelValue', `${target.id}:${searchVal}`);
+      ctx.emit('update:modelValue', `${target.id}：${searchVal}`);
     };
 
     const handleClear = () => {
       ctx.emit('update:modelValue', '');
+      typeof props.clearHandler === 'function' && props.clearHandler();
     };
 
     watch(

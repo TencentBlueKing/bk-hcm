@@ -175,10 +175,10 @@ export default defineComponent({
               value: loadBalancerStore.currentSelectedTreeNode.region,
             },
           ],
+          // 属性里传入一个配置，选择是不是要模糊查询
+          fuzzySwitch: true,
         },
       },
-      // 属性里传入一个配置，选择是不是要模糊查询
-      fuzzySwitch: true,
     });
 
     const handleBind = async () => {
