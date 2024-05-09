@@ -155,8 +155,9 @@ func (t *TCloudImpl) DeleteCert(kt *kit.Kit, opt *typecert.TCloudDeleteOption) e
 
 	req := ssl.NewDeleteCertificateRequest()
 	req.CertificateId = common.StringPtr(opt.CloudID)
-
-	_, err = client.DeleteCertificateWithContext(kt.Ctx, req)
+	// 检查证书资源，如果不设置可能导致有关联资源的证书被删除
+	req.IsCheckResource = converter.ValToPtr(true)
+	resp, err := client.DeleteCertificateWithContext(kt.Ctx, req)
 	if err != nil {
 		// 兼容证书不存在
 		var tErr *terr.TencentCloudSDKError
@@ -168,12 +169,29 @@ func (t *TCloudImpl) DeleteCert(kt *kit.Kit, opt *typecert.TCloudDeleteOption) e
 		logs.Errorf("delete cert instance failed, opt: %+v, err: %v, rid: %s", opt, err, kt.Rid)
 		return err
 	}
-
+	if resp.Response == nil || resp.Response.TaskId == nil {
+		logs.Errorf("delete cert instance failed, err: %v, opt: %+v, resp:%+v, rid: %s", err, opt, resp, kt.Rid)
+		return errors.New("delete failed response or task id is nil")
+	}
+	taskID := resp.Response.TaskId
+	handler := &deleteCertPollingHandler{}
+	respPoller := poller.Poller[*ssl.Client, []*ssl.DeleteTaskResult, poller.BaseDoneResult]{Handler: handler}
+	delResult, err := respPoller.PollUntilDone(client, kt, []*string{taskID}, types.NewBatchCreateCertPollerOption())
+	if err != nil {
+		logs.Errorf("poll tcloud cert delete result failed, err: %v, resp: %+v, rid: %s", err, resp.Response, kt.Rid)
+		return err
+	}
+	if len(delResult.FailedCloudIDs) != 0 {
+		logs.Errorf("failed to delete cert, failed id: %v, err: %s, rid: %s",
+			delResult.FailedCloudIDs, delResult.FailedMessage, kt.Rid)
+		return fmt.Errorf("failed to delete cert, reason: %s", delResult.FailedMessage)
+	}
 	return nil
 }
 
 type createCertPollingHandler struct{}
 
+// Done ...
 func (h *createCertPollingHandler) Done(certs []typecert.TCloudCert) (bool, *poller.BaseDoneResult) {
 	result := &poller.BaseDoneResult{
 		SuccessCloudIDs: make([]string, 0),
@@ -202,6 +220,7 @@ func (h *createCertPollingHandler) Done(certs []typecert.TCloudCert) (bool, *pol
 	return flag, result
 }
 
+// Poll ...
 func (h *createCertPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs []*string) (
 	[]typecert.TCloudCert, error) {
 
@@ -230,3 +249,62 @@ func (h *createCertPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudID
 }
 
 var _ poller.PollingHandler[*TCloudImpl, []typecert.TCloudCert, poller.BaseDoneResult] = new(createCertPollingHandler)
+
+type deleteCertPollingHandler struct{}
+
+// Poll ...
+func (h *deleteCertPollingHandler) Poll(client *ssl.Client, kt *kit.Kit, taskIds []*string) (
+	[]*ssl.DeleteTaskResult, error) {
+
+	cloudIDSplit := slice.Split(taskIds, core.TCloudQueryLimit)
+	results := make([]*ssl.DeleteTaskResult, 0, len(taskIds))
+	for _, partIDs := range cloudIDSplit {
+		for _, taskID := range partIDs {
+			taskReq := ssl.NewDescribeDeleteCertificatesTaskResultRequest()
+			taskReq.TaskIds = []*string{taskID}
+			resp, err := client.DescribeDeleteCertificatesTaskResultWithContext(kt.Ctx, taskReq)
+			if err != nil {
+				logs.Errorf("fail to query cert delete result, err: %v, rid: %s", err, kt.Rid)
+				return nil, err
+			}
+			results = append(results, resp.Response.DeleteTaskResult...)
+		}
+	}
+
+	if len(results) != len(taskIds) {
+		return nil, fmt.Errorf("query cert delete result: %d not equal return count: %d", len(taskIds), len(results))
+	}
+
+	return results, nil
+}
+
+// Done ...
+func (h *deleteCertPollingHandler) Done(results []*ssl.DeleteTaskResult) (bool, *poller.BaseDoneResult) {
+	result := &poller.BaseDoneResult{
+		SuccessCloudIDs: make([]string, 0),
+		FailedCloudIDs:  make([]string, 0),
+		UnknownCloudIDs: make([]string, 0),
+	}
+	ok := true
+	for _, ret := range results {
+		// 进行中
+		if converter.PtrToVal(ret.Status) == 0 {
+			ok = false
+			result.UnknownCloudIDs = append(result.UnknownCloudIDs, *ret.CertId)
+			continue
+		}
+
+		// 不是已成功的状态
+		if converter.PtrToVal(ret.Status) != 1 {
+			result.FailedCloudIDs = append(result.FailedCloudIDs, *ret.CertId)
+			result.FailedMessage = converter.PtrToVal(ret.Error)
+			continue
+		}
+
+		result.SuccessCloudIDs = append(result.SuccessCloudIDs, *ret.CertId)
+	}
+
+	return ok, result
+}
+
+var _ poller.PollingHandler[*ssl.Client, []*ssl.DeleteTaskResult, poller.BaseDoneResult] = new(deleteCertPollingHandler)
