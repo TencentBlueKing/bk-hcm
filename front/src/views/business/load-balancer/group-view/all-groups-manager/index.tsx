@@ -95,7 +95,7 @@ export default defineComponent({
       // 同一账号下的多个目标组支持批量添加rs
       const { account_id: accountId, vpc_id: vpcId } = selections.value[0];
       // 显示添加rs弹框
-      bus.$emit('showAddRsDialog', { accountId, vpcId });
+      bus.$emit('showAddRsDialog', { accountId, vpcId, rsList: [] });
       // 将选中的目标组数据传递给BatchAddRsSideslider组件
       bus.$emit('setTargetGroups', selections.value);
     };
