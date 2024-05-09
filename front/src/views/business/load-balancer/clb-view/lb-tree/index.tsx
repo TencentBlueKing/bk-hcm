@@ -13,7 +13,7 @@ import useMoreActionDropdown from '@/hooks/useMoreActionDropdown';
 // import utils
 import { throttle } from 'lodash';
 import bus from '@/common/bus';
-import { getLbVip } from '@/utils';
+import { getInstVip } from '@/utils';
 // import static resources
 import allLBIcon from '@/assets/image/all-lb.svg';
 import lbIcon from '@/assets/image/loadbalancer.svg';
@@ -137,7 +137,7 @@ export default defineComponent({
               item.type === 'lb' && (result = new RegExp(searchV.value, 'g').test(itemText));
               break;
             case 'lb_vip':
-              item.type === 'lb' && (result = new RegExp(searchV.value, 'g').test(getLbVip(item)));
+              item.type === 'lb' && (result = new RegExp(searchV.value, 'g').test(getInstVip(item)));
               break;
             case 'listener_name':
               item.type === 'listener' && (result = new RegExp(searchV.value, 'g').test(itemText));
@@ -407,7 +407,7 @@ export default defineComponent({
               const { type, id, name, protocol, port, isDefault, listenerNum, domain_num, url_count } = data;
               const extension =
                 // eslint-disable-next-line no-nested-ternary
-                type === 'lb' ? ` (${getLbVip(data)})` : type === 'listener' ? `(${protocol}:${port})` : '';
+                type === 'lb' ? ` (${getInstVip(data)})` : type === 'listener' ? `(${protocol}:${port})` : '';
               return (
                 <>
                   <OverflowTitle

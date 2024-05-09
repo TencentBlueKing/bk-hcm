@@ -6,8 +6,13 @@ import { useBusinessStore } from '@/store';
 // import types
 import { QueryRuleOPEnum, RulesItem } from '@/typings';
 import { getDifferenceSet } from '@/common/util';
+import { getInstVip } from '@/utils';
 
-export default (rsSelections: Ref<any[]>, callback: () => { vpc_id: string; account_id: string }) => {
+export default (
+  rsSelections: Ref<any[]>,
+  getTableRsList: () => any[],
+  callback: () => { vpc_id: string; account_id: string },
+) => {
   // use stores
   const businessStore = useBusinessStore();
 
@@ -81,9 +86,9 @@ export default (rsSelections: Ref<any[]>, callback: () => { vpc_id: string; acco
     }
   };
   const handleSelectAll = (selection: any) => {
-    handleSelectionChange(selection, () => true, true);
+    handleSelectionChange(selection, (row) => !getTableRsList().some((rs) => getInstVip(rs) === getInstVip(row)), true);
     if (selection.checked) {
-      selectedCount.value = selection.data.length > pagination.limit ? pagination.limit : selection.data.length;
+      selectedCount.value = selections.value.length;
     } else {
       selectedCount.value = 0;
     }

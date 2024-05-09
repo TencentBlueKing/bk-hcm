@@ -29,7 +29,21 @@ export default (getListData: (...args: any) => any, originPage: IOriginPage) => 
     name: [
       {
         validator: (value: string) => /^[\u4e00-\u9fa5A-Za-z0-9\-._:]{1,60}$/.test(value),
-        message: '姓名格式不符合要求, 请重新输入!',
+        message: '不能超过60个字符，只能使用中文、英文、数字、下划线、分隔符“-”、小数点、冒号',
+        trigger: 'change',
+      },
+    ],
+    domain: [
+      {
+        validator: (value: string) => /^(?:(?:[a-zA-Z0-9]+-?)+(?:\.[a-zA-Z0-9-]+)+)$/.test(value),
+        message: '域名不符合规范',
+        trigger: 'change',
+      },
+    ],
+    'certificate.cert_cloud_ids': [
+      {
+        validator: (value: string[]) => value.length <= 2,
+        message: '最多选择 2 个证书',
         trigger: 'change',
       },
     ],

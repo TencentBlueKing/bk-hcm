@@ -185,13 +185,21 @@ export default defineComponent({
 
     watch(
       () => route.query.bizs,
-      (val) => {
-        // 如果是业务下, 则将全局业务id存入store, 防止刷新和第一次访问页面时丢失全局业务id
-        whereAmI.value === Senarios.business && accountStore.updateBizsId(Number(val as string));
+      async (val) => {
+        // 业务下, 设置全局业务id
+        if (whereAmI.value === Senarios.business) {
+          let bizs = val || localStorageActions.get('bizs');
+          // url 和 localStorage 中都没有业务id
+          if (!bizs) {
+            // 请求业务列表, 取第一个业务id作为默认业务id
+            const { data } = await accountStore.getBizList();
+            bizs = data[0].id;
+          }
+          // 切换业务选择器的业务
+          handleChange({ id: Number(bizs) });
+        }
       },
-      {
-        immediate: true,
-      },
+      { immediate: true },
     );
 
     /**

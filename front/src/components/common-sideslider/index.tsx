@@ -48,7 +48,7 @@ export default defineComponent({
         title={t(props.title)}
         onClosed={() => triggerShow(false)}>
         {{
-          default: () => ctx.slots.default?.(),
+          default: () => <div class='common-sideslider-content'>{ctx.slots.default?.()}</div>,
           footer: () => (
             <>
               <Button
