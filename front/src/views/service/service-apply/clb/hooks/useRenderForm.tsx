@@ -24,6 +24,8 @@ import { reqAccountNetworkType } from '@/api/load_balancers/apply-clb';
 // import custom hooks
 import useFilterResource from './useFilterResource';
 import { CLB_QUOTA_NAME } from '@/typings';
+import { useBusinessStore, useResourceStore } from '@/store';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 const { Option } = Select;
 const { FormItem } = Form;
@@ -32,6 +34,9 @@ const { FormItem } = Form;
 export default (formModel: ApplyClbModel) => {
   // use hooks
   const { t } = useI18n();
+  const { isBusinessPage } = useWhereAmI();
+  const resourceStore = useResourceStore();
+  const businessStore = useBusinessStore();
 
   // define data
   const vpcId = ref('');
@@ -49,8 +54,10 @@ export default (formModel: ApplyClbModel) => {
     formModel.cloud_vpc_id = '';
     formModel.cloud_subnet_id = undefined;
   };
-  const handleVpcChange = (vpc: any) => {
-    vpcData.value = vpc;
+  const handleVpcChange = async (vpc: any) => {
+    // 获取 vpc 详情用于预览
+    const detailApi = isBusinessPage ? businessStore.detail : resourceStore.detail;
+    detailApi('vpcs', vpc.id).then(({ data }: any) => (vpcData.value = data));
     if (!vpc) return;
     if (vpcId.value !== vpc.id) {
       vpcId.value = vpc.id;
@@ -214,7 +221,7 @@ export default (formModel: ApplyClbModel) => {
                 class='preview-btn'
                 text
                 theme='primary'
-                disabled={!formModel.cloud_vpc_id}
+                disabled={!vpcData.value?.id}
                 onClick={() => (isVpcPreviewDialogShow.value = true)}>
                 {t('预览')}
               </Button>
