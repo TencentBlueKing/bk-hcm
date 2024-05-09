@@ -79,6 +79,15 @@ export default (formModel: ApplyClbModel) => {
     currentLbQuota.value?.quota_limit ? requireCountMax.value - formModel.require_count : 0,
   );
 
+  const rules = {
+    name: [
+      {
+        validator: (value: string) => /^[a-zA-Z0-9]([-a-zA-Z0-9]{58})[a-zA-Z0-9]$/.test(value),
+        message: '60个字符，字母、数字、“-”，且必须以字母、数字开头和结尾。',
+        trigger: 'change',
+      },
+    ],
+  };
   // form item options
   const formItemOptions = computed(() => [
     {
@@ -430,6 +439,7 @@ export default (formModel: ApplyClbModel) => {
           label: '实例名称',
           required: true,
           property: 'name',
+          description: '1个实例，以填写的名称命名。多个则以填写的名称为前缀，由系统自动补充随机的后缀。',
           content: () => <Input class='w500' v-model={formModel.name}></Input>,
         },
         {
@@ -447,7 +457,7 @@ export default (formModel: ApplyClbModel) => {
   const ApplyClbForm = defineComponent({
     setup() {
       return () => (
-        <Form class='apply-clb-form-container' formType='vertical' model={formModel} ref={formRef}>
+        <Form class='apply-clb-form-container' formType='vertical' model={formModel} ref={formRef} rules={rules}>
           <ConditionOptions
             type={ResourceTypeEnum.CLB}
             v-model:bizId={formModel.bk_biz_id}
