@@ -116,7 +116,7 @@ export default (formModel: ApplyClbModel) => {
                       class='w120'
                       disabled={disabled}
                       v-bk-tooltips={{
-                        content: t('当前地域不支持IPV6 NAT64'),
+                        content: t('当前地域不支持IPv6 NAT64'),
                         disabled: !disabled,
                       }}>
                       {t(label)}
