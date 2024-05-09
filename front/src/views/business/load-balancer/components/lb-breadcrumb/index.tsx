@@ -2,7 +2,7 @@ import { defineComponent, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 // import stores
 import { useLoadBalancerStore } from '@/store/loadbalancer';
-import { getLbVip } from '@/utils';
+import { getInstVip } from '@/utils';
 import { LBRouteName } from '@/constants';
 import './index.scss';
 
@@ -32,7 +32,7 @@ export default defineComponent({
     const getLBText = (lb: any) => {
       if (!lb) return;
       lbName.value = lb.name;
-      lbExtension.value = getLbVip(lb);
+      lbExtension.value = getInstVip(lb);
     };
 
     // 设置当前 domain 所归属的 listener 信息, 以及对应的 listener 所归属的 lb 信息
