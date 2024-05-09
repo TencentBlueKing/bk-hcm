@@ -161,7 +161,7 @@ export const isPortAvailable = (val: string | number) => {
   }
   if (/-/g.test(port)) {
     const nums = port.split(/-/);
-    return !nums.some((num) => +num < 0 || +num > 65535);
+    return !nums.some((num) => +num < 0 || +num > 65535) && nums[0] < nums[1];
   }
   return +port >= 0 && +port <= 65535;
 };
