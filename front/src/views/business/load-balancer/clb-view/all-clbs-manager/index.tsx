@@ -108,11 +108,21 @@ export default defineComponent({
           {
             label: '操作',
             width: 120,
-            render: ({ data }: { data: any }) => (
-              <span class='operate-text-btn' onClick={() => handleDelete(data)}>
-                删除
-              </span>
-            ),
+            render: ({ data }: { data: any }) => {
+              return (
+                <Button
+                  text
+                  theme='primary'
+                  disabled={data.listenerNum > 0}
+                  v-bk-tooltips={{
+                    content: '默认域名不允许删除',
+                    disabled: !(data.listenerNum > 0),
+                  }}
+                  onClick={() => handleDelete(data)}>
+                  删除
+                </Button>
+              );
+            },
           },
         ],
         extra: {
