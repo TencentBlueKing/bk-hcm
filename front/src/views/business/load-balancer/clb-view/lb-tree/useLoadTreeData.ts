@@ -1,8 +1,6 @@
 import { Ref, ref } from 'vue';
-// import types
+import { useAccountStore } from '@/store';
 import { QueryRuleOPEnum } from '@/typings';
-// import utils
-import { localStorageActions } from '@/common/util';
 import { asyncGetListenerCount } from '@/utils';
 import http from '@/http';
 
@@ -14,6 +12,7 @@ type ResourceNodeType = 'lb' | 'listener' | 'domain';
  * 加载 lb-tree 数据
  */
 export default (treeData: Ref) => {
+  const accountStore = useAccountStore();
   // _depth 与 type 的映射关系
   const depthTypeMap = ['lb', 'listener', 'domain'] as ResourceNodeType[];
 
@@ -34,7 +33,7 @@ export default (treeData: Ref) => {
 
   // 获取请求 url
   const getUrl = (_item: any, _depth: number) => {
-    const baseUrl = `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${localStorageActions.get('bizs')}/`;
+    const baseUrl = `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${accountStore.bizs}/`;
     const typeUrl = `${!_item ? getTypeUrl(depthTypeMap[_depth]) : getTypeUrl(depthTypeMap[_depth + 1], _item.id)}`;
     return `${baseUrl}${typeUrl}/list`;
   };
@@ -45,6 +44,7 @@ export default (treeData: Ref) => {
    * @param {*} _depth 需要加载数据的节点的深度，取值为：0, 1, 2
    */
   const loadRemoteData = async (_item: any, _depth: number) => {
+    if (!accountStore.bizs) return;
     const url = getUrl(_item, _depth);
     const startIdx = !_item ? rootStart.value : _item.start;
     const [detailsRes, countRes] = await Promise.all(

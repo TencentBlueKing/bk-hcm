@@ -24,6 +24,8 @@ import { reqAccountNetworkType } from '@/api/load_balancers/apply-clb';
 // import custom hooks
 import useFilterResource from './useFilterResource';
 import { CLB_QUOTA_NAME } from '@/typings';
+import { useBusinessStore, useResourceStore } from '@/store';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 const { Option } = Select;
 const { FormItem } = Form;
@@ -32,6 +34,9 @@ const { FormItem } = Form;
 export default (formModel: ApplyClbModel) => {
   // use hooks
   const { t } = useI18n();
+  const { isBusinessPage } = useWhereAmI();
+  const resourceStore = useResourceStore();
+  const businessStore = useBusinessStore();
 
   // define data
   const vpcId = ref('');
@@ -49,8 +54,10 @@ export default (formModel: ApplyClbModel) => {
     formModel.cloud_vpc_id = '';
     formModel.cloud_subnet_id = undefined;
   };
-  const handleVpcChange = (vpc: any) => {
-    vpcData.value = vpc;
+  const handleVpcChange = async (vpc: any) => {
+    // 获取 vpc 详情用于预览
+    const detailApi = isBusinessPage ? businessStore.detail : resourceStore.detail;
+    detailApi('vpcs', vpc.id).then(({ data }: any) => (vpcData.value = data));
     if (!vpc) return;
     if (vpcId.value !== vpc.id) {
       vpcId.value = vpc.id;
@@ -79,6 +86,15 @@ export default (formModel: ApplyClbModel) => {
     currentLbQuota.value?.quota_limit ? requireCountMax.value - formModel.require_count : 0,
   );
 
+  const rules = {
+    name: [
+      {
+        validator: (value: string) => /^[a-zA-Z0-9]([-a-zA-Z0-9]{58})[a-zA-Z0-9]$/.test(value),
+        message: '60个字符，字母、数字、“-”，且必须以字母、数字开头和结尾。',
+        trigger: 'change',
+      },
+    ],
+  };
   // form item options
   const formItemOptions = computed(() => [
     {
@@ -90,7 +106,7 @@ export default (formModel: ApplyClbModel) => {
             label: '网络类型',
             required: true,
             property: 'load_balancer_type',
-            description: '如需绑定弹性公网IP, 请切换到内网网络类型',
+            description: '公网：面向公网使用的负载均衡。\n内网：面向内网使用的负载均衡。',
             content: () => (
               <BkRadioGroup v-model={formModel.load_balancer_type}>
                 {LOAD_BALANCER_TYPE.map(({ label, value }) => (
@@ -105,6 +121,7 @@ export default (formModel: ApplyClbModel) => {
             label: 'IP版本',
             required: true,
             property: 'address_ip_version',
+            description: '支持IPv4, IPv6, 以及IPv6 NAT64（负载均衡通过IPv6地址，将用户请求转发给后端IPv4地址的服务器）',
             hidden: isIntranet.value,
             content: () => (
               <BkRadioGroup v-model={formModel.address_ip_version}>
@@ -144,7 +161,7 @@ export default (formModel: ApplyClbModel) => {
                 class='preview-btn'
                 text
                 theme='primary'
-                disabled={!formModel.cloud_vpc_id}
+                disabled={!vpcData.value?.id}
                 onClick={() => (isVpcPreviewDialogShow.value = true)}>
                 {t('预览')}
               </Button>
@@ -188,6 +205,8 @@ export default (formModel: ApplyClbModel) => {
           {
             label: '可用区类型',
             property: 'zoneType',
+            description:
+              '单可用区：仅支持一个可用区。\n主备可用区：主可用区是当前承载流量的可用区。备可用区默认不承载流量，主可用区不可用时才使用备可用区。',
             hidden: isIntranet.value || formModel.address_ip_version !== 'IPV4',
             content: () => (
               <BkRadioGroup v-model={formModel.zoneType}>
@@ -214,7 +233,6 @@ export default (formModel: ApplyClbModel) => {
             ),
           },
         ],
-
         {
           label: '子网',
           required: true,
@@ -267,6 +285,8 @@ export default (formModel: ApplyClbModel) => {
           label: '负载均衡规格类型',
           required: true,
           property: 'sla_type',
+          description:
+            '共享型实例：按照规格提供性能保障，单实例最大支持并发连接数5万、每秒新建连接数5000、每秒查询数（QPS）5000。\n性能容量型实例：按照规格提供性能保障，单实例最大可支持并发连接数1000万、每秒新建连接数100万、每秒查询数（QPS）30万。',
           hidden: isIntranet.value,
           content: () => (
             <>
@@ -297,7 +317,6 @@ export default (formModel: ApplyClbModel) => {
             </>
           ),
         },
-
         {
           label: '弹性公网 IP',
           // 弹性IP，仅内网可绑定。公网类型无法指定IP。绑定弹性IP后，内网CLB当做公网CLB使用
@@ -442,6 +461,7 @@ export default (formModel: ApplyClbModel) => {
           label: '实例名称',
           required: true,
           property: 'name',
+          description: '单个实例：以填写的名称命名。\n多个实例：以填写的名称为前缀，由系统自动补充随机的后缀。',
           content: () => <Input class='w500' v-model={formModel.name}></Input>,
         },
         {
@@ -459,7 +479,7 @@ export default (formModel: ApplyClbModel) => {
   const ApplyClbForm = defineComponent({
     setup() {
       return () => (
-        <Form class='apply-clb-form-container' formType='vertical' model={formModel} ref={formRef}>
+        <Form class='apply-clb-form-container' formType='vertical' model={formModel} ref={formRef} rules={rules}>
           <ConditionOptions
             type={ResourceTypeEnum.CLB}
             v-model:bizId={formModel.bk_biz_id}

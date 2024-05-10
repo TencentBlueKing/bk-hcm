@@ -9,6 +9,7 @@ import { useLoadBalancerStore } from '@/store';
 import useAddRsTable from './useAddRsTable';
 // import utils
 import bus from '@/common/bus';
+import { getInstVip } from '@/utils';
 import './index.scss';
 
 export default defineComponent({
@@ -22,13 +23,25 @@ export default defineComponent({
     let account_id = '';
     let vpc_id = '';
     let tgPort = 0;
+    let tableRsList = [] as any[];
 
-    const handleShow = ({ accountId, vpcId, port }: { accountId: string; vpcId: string; port: number }) => {
+    const handleShow = ({
+      accountId,
+      vpcId,
+      port,
+      rsList,
+    }: {
+      accountId: string;
+      vpcId: string;
+      port: number;
+      rsList: any[];
+    }) => {
       isShow.value = true;
       nextTick(handleClear);
       account_id = accountId;
       vpc_id = vpcId;
       tgPort = port;
+      tableRsList = rsList;
 
       // 根据account_id, vpc_id查询cvm列表
       getRSTableList(accountId, vpcId);
@@ -77,10 +90,14 @@ export default defineComponent({
       handleSelectAll,
       handleClear,
       getRSTableList,
-    } = useAddRsTable(rsSelections, () => ({
-      vpc_id,
-      account_id,
-    }));
+    } = useAddRsTable(
+      rsSelections,
+      () => tableRsList,
+      () => ({
+        vpc_id,
+        account_id,
+      }),
+    );
 
     onMounted(() => {
       bus.$on('showAddRsDialog', handleShow);
@@ -103,7 +120,10 @@ export default defineComponent({
               pagination={pagination}
               remotePagination
               onSelect={handleSelect}
-              onSelectAll={handleSelectAll}>
+              onSelectAll={handleSelectAll}
+              isRowSelectEnable={({ row }: any) => {
+                return !tableRsList.some((rs) => getInstVip(rs) === getInstVip(row));
+              }}>
               {{
                 prepend: () =>
                   rsTableList.value.length ? (

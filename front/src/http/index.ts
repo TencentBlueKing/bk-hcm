@@ -228,8 +228,23 @@ function handleReject(error: any, config: any) {
     // messageError(nextError.message)
     return Promise.reject(nextError);
   }
-  if (error.code !== 0 && error.code !== 2000009) Message({ theme: 'error', message: error.message });
+  handleCustomErrorCode(error);
   return Promise.reject(error);
+}
+
+/**
+ * 处理自定义错误码
+ * @param error 异常
+ */
+function handleCustomErrorCode(error: any) {
+  switch (error.code) {
+    case 2000009:
+      Message({ theme: 'error', message: error.message });
+      break;
+    case 2000014:
+      Message({ message: '当前负载均衡正在变更中，云平台限制新的任务同时变更。', theme: 'error' });
+      break;
+  }
 }
 
 /**

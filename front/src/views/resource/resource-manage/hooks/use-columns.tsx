@@ -24,7 +24,7 @@ import './use-columns.scss';
 import { defaults } from 'lodash';
 import { timeFormatter } from '@/common/util';
 import { LBRouteName, LB_NETWORK_TYPE_MAP, SCHEDULER_MAP } from '@/constants/clb';
-import { getLbVip } from '@/utils';
+import { getInstVip } from '@/utils';
 import dayjs from 'dayjs';
 import bus from '@/common/bus';
 
@@ -1173,7 +1173,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'vip',
       isDefaultShow: true,
       render: ({ data }: any) => {
-        return getLbVip(data);
+        return getInstVip(data);
       },
     },
     {
