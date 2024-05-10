@@ -126,7 +126,7 @@ export default defineComponent({
               }}>
               {{
                 prepend: () =>
-                  rsTableList.value.length ? (
+                  rsTableList.value.length && selectedCount.value ? (
                     <div class='table-prepend-wrap'>
                       当前已选择 <span class='number'>{selectedCount.value}</span> 条数据,&nbsp;
                       <span class='clear' onClick={handleClear}>
