@@ -66,6 +66,12 @@ export default defineComponent({
               }}
             />
             <Tag theme={isProtected.value ? 'success' : ''}> {isProtected.value ? '已开启' : '未开启'} </Tag>
+            <i
+              class='hcm-icon bkhcm-icon-info-line ml10'
+              v-bk-tooltips={{
+                content: '开启删除保护后，在云控制台或调用 API 均无法删除该实例',
+                placement: 'top-end',
+              }}></i>
           </div>
         ),
       },
