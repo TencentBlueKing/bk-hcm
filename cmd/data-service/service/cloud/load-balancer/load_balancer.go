@@ -46,7 +46,7 @@ func InitService(cap *capability.Capability) {
 		svc.BatchCreateLoadBalancer)
 	h.Add("BatchUpdateLoadBalancer",
 		http.MethodPatch, "/vendors/{vendor}/load_balancers/batch/update", svc.BatchUpdateLoadBalancer)
-	h.Add("BatchUpdateClbBizInfo", http.MethodPatch, "/load_balancers/biz/batch/update", svc.BatchUpdateClbBizInfo)
+	h.Add("BatchUpdateLbBizInfo", http.MethodPatch, "/load_balancers/bizs/batch/update", svc.BatchUpdateLbBizInfo)
 	h.Add("BatchDeleteLoadBalancer", http.MethodDelete, "/load_balancers/batch", svc.BatchDeleteLoadBalancer)
 
 	// 监听器
@@ -59,6 +59,8 @@ func InitService(cap *capability.Capability) {
 	h.Add("BatchUpdateListener", http.MethodPatch, "/vendors/{vendor}/listeners/batch/update", svc.BatchUpdateListener)
 	h.Add("BatchDeleteListener", http.MethodDelete, "/listeners/batch", svc.BatchDeleteListener)
 	h.Add("CountListenerByLbIDs", http.MethodPost, "/load_balancers/listeners/count", svc.CountListenerByLbIDs)
+	h.Add("BatchUpdateListenerBizInfo", http.MethodPatch,
+		"/load_balancers/listeners/bizs/batch/update", svc.BatchUpdateListenerBizInfo)
 
 	// url规则
 	h.Add("BatchCreateTCloudUrlRule",
@@ -78,7 +80,8 @@ func InitService(cap *capability.Capability) {
 	h.Add("ListTargetGroup", http.MethodPost, "/load_balancers/target_groups/list", svc.ListTargetGroup)
 	h.Add("UpdateTargetGroup", http.MethodPatch, "/vendors/{vendor}/target_groups", svc.UpdateTargetGroup)
 	h.Add("BatchDeleteTargetGroup", http.MethodDelete, "/target_groups/batch", svc.BatchDeleteTargetGroup)
-
+	h.Add("BatchUpdateListenerBizInfo", http.MethodPatch,
+		"/load_balancers/target_groups/bizs/batch/update", svc.BatchUpdateTargetGroupBizInfo)
 	// RS
 	h.Add("BatchDeleteTarget", http.MethodDelete, "/load_balancers/targets/batch", svc.BatchDeleteTarget)
 	h.Add("BatchUpdateTarget", http.MethodPatch, "/load_balancers/targets/batch/update", svc.BatchUpdateTarget)

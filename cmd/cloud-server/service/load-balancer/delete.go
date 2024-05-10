@@ -231,6 +231,23 @@ func (svc *lbSvc) batchDeleteLoadBalancer(cts *rest.Contexts, validHandler handl
 
 // 负载均衡删除检查
 func (svc *lbSvc) loadBalancerDeleteCheck(kt *kit.Kit, lbIDs []string) error {
+	// 检查是否启用删除检查
+	lbReq := &core.ListReq{
+		Filter: tools.ContainersExpression("id", lbIDs),
+		Page:   core.NewDefaultBasePage(),
+	}
+	lbResp, err := svc.client.DataService().TCloud.LoadBalancer.ListLoadBalancer(kt, lbReq)
+	if err != nil {
+		logs.Errorf("fail to query load balancer for delete load balancers, err: %v, lb ids: %v, rid: %s",
+			err, lbIDs, kt.Rid)
+		return nil
+	}
+	for _, lb := range lbResp.Details {
+		if cvt.PtrToVal(lb.Extension.DeleteProtect) {
+			return fmt.Errorf("%s(%s) is protected for delection", lb.Name, lb.CloudID)
+		}
+	}
+
 	// 检查是否存在监听器
 	lblListReq := &core.ListReq{
 		Filter: tools.ContainersExpression("lb_id", lbIDs),

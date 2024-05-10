@@ -186,7 +186,9 @@ func (cli *client) getCloudLbSgBinding(kt *kit.Kit, params *SyncBaseParams, lbIn
 		allSgCloudIDs = append(allSgCloudIDs, cloudSlice...)
 		return cloudIDLbMap[lb.GetCloudID()], cloudSlice
 	})
-
+	if len(allSgCloudIDs) == 0 {
+		return make(map[string]string), make(map[string][]string), nil
+	}
 	// 2. 获取本地id 映射
 	sgReq := &protocloud.SecurityGroupListReq{
 		Field:  []string{"id", "cloud_id"},

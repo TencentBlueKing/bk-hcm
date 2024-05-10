@@ -34,26 +34,27 @@ import (
 	"hcm/pkg/logs"
 )
 
-// Assign 分配负载均衡及关联资源到业务下
-func Assign(kt *kit.Kit, cli *dataservice.Client, ids []string, bizID int64) error {
+// AssignTCloud 分配负载均衡及关联资源到业务下
+// 目前在负载均衡和监听器下有业务字段，监听器不能独立分配业务，分配时需要将监听器和对应的目标组分配到业务下
+func AssignTCloud(kt *kit.Kit, cli *dataservice.Client, ids []string, bizID int64) error {
 
 	if len(ids) == 0 {
 		return fmt.Errorf("ids is required")
 	}
 
 	// 校验负载均衡信息
-	if err := ValidateBeforeAssign(kt, cli, ids); err != nil {
+	if err := ValidateBeforeAssign(kt, cli, ids, bizID); err != nil {
 		return err
 	}
 
 	// 获取负载均衡关联资源
-	lblIds, ruleIds, err := GetClbRelResIDs(kt, cli, ids)
+	lblIds, tgIDs, err := GetLoadBalancerRelateResIDs(kt, cli, ids)
 	if err != nil {
 		return err
 	}
 
 	// 校验负载均衡关联资源信息
-	if err := ValidateClbRelResBeforeAssign(kt, cli, lblIds, ruleIds); err != nil {
+	if err := ValidateLoadBalancerRelatedBeforeAssign(kt, cli, lblIds, tgIDs); err != nil {
 		return err
 	}
 
@@ -65,44 +66,22 @@ func Assign(kt *kit.Kit, cli *dataservice.Client, ids []string, bizID int64) err
 	}
 
 	// 分配负载均衡关联资源
-	if err := AssignClbRelRes(kt, cli, lblIds, ruleIds, bizID); err != nil {
+	if err := AssignLoadBalancerRelated(kt, cli, lblIds, tgIDs, bizID); err != nil {
 		return err
 	}
 
 	// 分配负载均衡
-	update := &dataproto.ClbBizBatchUpdateReq{IDs: ids, BkBizID: bizID}
-	if err := cli.Global.LoadBalancer.BatchUpdateClbBizInfo(kt, update); err != nil {
-		logs.Errorf("BatchUpdateClbBizInfo failed, err: %v, req: %v, rid: %s", err, update, kt.Rid)
+	update := &dataproto.BizBatchUpdateReq{IDs: ids, BkBizID: bizID}
+	if err := cli.Global.LoadBalancer.BatchUpdateLbBizInfo(kt, update); err != nil {
+		logs.Errorf("BatchUpdateLbBizInfo failed, err: %v, req: %+v, rid: %s", err, update, kt.Rid)
 		return err
 	}
-
-	return nil
-}
-
-// AssignClbRelRes 分配负载均衡关联的监听器和规则
-func AssignClbRelRes(kt *kit.Kit, cli *dataservice.Client, lblIds []string, ruleIds []string, bizID int64) error {
-
-	// TODO 分配关联监听器和规则
-
-	return nil
-}
-
-// GetClbRelResIDs 获取clb关联资源列表，包括监听器和7层规则
-func GetClbRelResIDs(kt *kit.Kit, cli *dataservice.Client, ids []string) (
-	lblIds []string, ruleIds []string, err error) {
-	//TODO 补充关联监听器和规则的获取
-	return nil, nil, nil
-}
-
-// ValidateClbRelResBeforeAssign 校验clb关联资源在分配前
-func ValidateClbRelResBeforeAssign(kt *kit.Kit, cli *dataservice.Client, lblIds []string, ruleIds []string) error {
-	//TODO 补充监听器和规则的分配校验
 
 	return nil
 }
 
 // ValidateBeforeAssign 分配负载均衡前校验
-func ValidateBeforeAssign(kt *kit.Kit, cli *dataservice.Client, ids []string) error {
+func ValidateBeforeAssign(kt *kit.Kit, cli *dataservice.Client, ids []string, bizID int64) error {
 	listReq := &core.ListReq{
 		Fields: []string{"id", "bk_biz_id"},
 		Filter: tools.ContainersExpression("id", ids),
@@ -117,14 +96,74 @@ func ValidateBeforeAssign(kt *kit.Kit, cli *dataservice.Client, ids []string) er
 	// 判断是否已经分配到业务下
 	assignedIDs := make([]string, 0)
 	for _, one := range result.Details {
-		if one.BkBizID != constant.UnassignedBiz {
+		if one.BkBizID != constant.UnassignedBiz && one.BkBizID != bizID {
 			assignedIDs = append(assignedIDs, one.ID)
 		}
 	}
 
 	// 存在已经分配到业务下的clb实例，报错
 	if len(assignedIDs) != 0 {
-		return fmt.Errorf("clb(ids=%v) already assigned", assignedIDs)
+		return fmt.Errorf("load balancer(ids=%v) already assigned", assignedIDs)
+	}
+
+	return nil
+}
+
+// GetLoadBalancerRelateResIDs 获取clb关联资源列表，包括监听器和目标组
+func GetLoadBalancerRelateResIDs(kt *kit.Kit, cli *dataservice.Client, lbIds []string) (
+	lblIds []string, tgIDs []string, err error) {
+	lbReq := &core.ListReq{
+		Filter: tools.ContainersExpression("lb_id", lbIds),
+		Page:   core.NewDefaultBasePage(),
+	}
+	lblResp, err := cli.Global.LoadBalancer.ListListener(kt, lbReq)
+	if err != nil {
+		logs.Errorf("fail to list listener for lb(ids=%v), err: %v, rid: %s", lbIds, err, kt.Rid)
+		return nil, nil, err
+	}
+	for _, lbl := range lblResp.Details {
+		lblIds = append(lblIds, lbl.ID)
+	}
+
+	tgRelResp, err := cli.Global.LoadBalancer.ListTargetGroupListenerRel(kt, lbReq)
+	if err != nil {
+		logs.Errorf("fail to list load balancer(ids=%v) related target group relation, err: %v, rid: %s",
+			lbIds, err, kt.Rid)
+		return nil, nil, err
+	}
+	for _, rel := range tgRelResp.Details {
+		tgIDs = append(tgIDs, rel.TargetGroupID)
+	}
+
+	return lblIds, tgIDs, nil
+}
+
+// ValidateLoadBalancerRelatedBeforeAssign 在分配前校验lb关联资源信息
+func ValidateLoadBalancerRelatedBeforeAssign(kt *kit.Kit, cli *dataservice.Client, lblIds []string,
+	tgIds []string) error {
+
+	// 目前都是以负载均衡粒度分配到业务，因此暂不做关联资源分配校验
+	return nil
+}
+
+// AssignLoadBalancerRelated 分配负载均衡关联的监听器和规则
+func AssignLoadBalancerRelated(kt *kit.Kit, cli *dataservice.Client, lblIds []string, tgIds []string,
+	bizID int64) error {
+
+	if len(lblIds) != 0 {
+		// 分配关联规则、关联目标组
+		updateLbl := &dataproto.BizBatchUpdateReq{IDs: lblIds, BkBizID: bizID}
+		if err := cli.Global.LoadBalancer.BatchUpdateListenerBizInfo(kt, updateLbl); err != nil {
+			logs.Errorf("batch update listener biz info failed, err: %v, req: %+v, rid: %s", err, updateLbl, kt.Rid)
+			return err
+		}
+	}
+	if len(tgIds) != 0 {
+		updateTg := &dataproto.BizBatchUpdateReq{IDs: tgIds, BkBizID: bizID}
+		if err := cli.Global.LoadBalancer.BatchUpdateTargetGroupBizInfo(kt, updateTg); err != nil {
+			logs.Errorf("batch update target group biz info failed, err: %v, req: %+v, rid: %s", err, updateTg, kt.Rid)
+			return err
+		}
 	}
 
 	return nil

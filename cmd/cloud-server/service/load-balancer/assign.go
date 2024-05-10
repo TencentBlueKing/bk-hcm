@@ -70,5 +70,5 @@ func (svc *lbSvc) AssignLbToBiz(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
-	return nil, lblogic.Assign(cts.Kit, svc.client.DataService(), req.LbIDs, req.BkBizID)
+	return nil, lblogic.AssignTCloud(cts.Kit, svc.client.DataService(), req.LbIDs, req.BkBizID)
 }

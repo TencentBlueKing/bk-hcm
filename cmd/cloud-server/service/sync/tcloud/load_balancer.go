@@ -47,8 +47,8 @@ func SyncLoadBalancer(kt *kit.Kit, cliSet *client.ClientSet, accountID string, r
 	}
 
 	defer func() {
-		logs.V(3).Infof("tcloud account[%s] sync load balancer end, cost: %v, rid: %s", accountID, time.Since(start),
-			kt.Rid)
+		logs.V(3).Infof("tcloud account[%s] sync load balancer end, cost: %v, rid: %s",
+			accountID, time.Since(start), kt.Rid)
 	}()
 
 	for _, region := range regions {

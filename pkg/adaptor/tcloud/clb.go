@@ -415,10 +415,9 @@ func (t *TCloudImpl) DeleteLoadBalancer(kt *kit.Kit, opt *typelb.TCloudDeleteOpt
 
 	req.LoadBalancerIds = common.StringPtrs(opt.CloudIDs)
 
-	resp, err := client.DeleteLoadBalancerWithContext(kt.Ctx, req)
+	_, err = client.DeleteLoadBalancerWithContext(kt.Ctx, req)
 	if err != nil {
-		logs.Errorf("delete tcloud clb failed(RequestID:%s ), opt: %+v, err: %v, rid: %s",
-			resp.Response.RequestId, opt, err, kt.Rid)
+		logs.Errorf("delete tcloud clb failed, opt: %+v, err: %v, rid: %s", opt, err, kt.Rid)
 		return err
 	}
 

@@ -133,14 +133,14 @@ func (req *LbExtBatchUpdateReq[T]) Validate() error {
 // TCloudClbBatchUpdateReq ...
 type TCloudClbBatchUpdateReq = LbExtBatchUpdateReq[corelb.TCloudClbExtension]
 
-// ClbBizBatchUpdateReq 批量更新业务id
-type ClbBizBatchUpdateReq struct {
+// BizBatchUpdateReq 批量更新业务id
+type BizBatchUpdateReq struct {
 	IDs     []string `json:"ids" validate:"required"`
 	BkBizID int64    `json:"bk_biz_id" validate:"required"`
 }
 
 // Validate ...
-func (req *ClbBizBatchUpdateReq) Validate() error {
+func (req *BizBatchUpdateReq) Validate() error {
 
 	if len(req.IDs) == 0 {
 		return errors.New("ids required")
