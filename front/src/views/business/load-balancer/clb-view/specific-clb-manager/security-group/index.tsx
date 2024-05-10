@@ -155,9 +155,9 @@ export default defineComponent({
           onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
           onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
           isRowSelectEnable,
-          // isSelectedFn: ({ row }: any) => {
-          //   return selectedSecuirtyGroups.value.map((v) => v.id).includes(row.id);
-          // },
+          isSelectedFn: ({ row }: any) => {
+            return selectedSecuirtyGroups.value.map((v) => v.id).includes(row.id);
+          },
         },
       },
       requestOption: {
