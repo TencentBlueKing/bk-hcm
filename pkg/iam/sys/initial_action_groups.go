@@ -161,7 +161,14 @@ func genResourceAccessActionGroups() client.ActionGroup {
 					{ID: CLBResOperate},
 					{ID: CLBResDelete},
 				},
-			},*/
+			},*/{
+				Name:   "证书管理",
+				NameEn: "Cert Resource Management",
+				Actions: []client.ActionWithID{
+					{ID: CertResCreate},
+					{ID: CertResDelete},
+				},
+			},
 			{
 				Name:   "回收站",
 				NameEn: "Recycle Bin",

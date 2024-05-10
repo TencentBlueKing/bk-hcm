@@ -177,7 +177,7 @@ func genCLBResManActions() []client.ResourceAction {
 }
 */
 
-// genCertResManActions 证书管理的Actions
+// genCertResManActions 业务-证书管理的Actions
 func genCertResManActions() []client.ResourceAction {
 	return []client.ResourceAction{
 		{
@@ -274,10 +274,10 @@ func genResourceAccessActions() []client.ResourceAction {
 		RelatedActions:       nil,
 		Version:              1,
 	}}
-
 	actions = append(actions, genIaaSResAccessActions()...)
 	// TODO 开启clb和编排相关功能后放开注释
 	// actions = append(actions, genCLBResAccessActions()...)
+	actions = append(actions, genCertResAccessActions()...)
 	actions = append(actions, []client.ResourceAction{{
 		ID:                   RecycleBinAccess,
 		Name:                 ActionIDNameMap[RecycleBinAccess],
@@ -430,6 +430,29 @@ func genCLBResAccessActions() []client.ResourceAction {
 	}
 }
 */
+
+// genCertResAccessActions 资源-证书管理的Actions
+func genCertResAccessActions() []client.ResourceAction {
+	return []client.ResourceAction{
+		{
+			ID:                   CertResCreate,
+			Name:                 ActionIDNameMap[CertResCreate],
+			NameEn:               "Create Cert",
+			Type:                 Create,
+			RelatedResourceTypes: accountResource,
+			RelatedActions:       []client.ActionID{ResourceFind},
+			Version:              1,
+		}, {
+			ID:                   CertResDelete,
+			Name:                 ActionIDNameMap[CertResDelete],
+			NameEn:               "Delete Cert",
+			Type:                 Delete,
+			RelatedResourceTypes: accountResource,
+			RelatedActions:       []client.ActionID{ResourceFind},
+			Version:              1,
+		},
+	}
+}
 
 func genPlatformManageActions() []client.ResourceAction {
 	return []client.ResourceAction{{

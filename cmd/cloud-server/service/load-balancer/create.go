@@ -35,6 +35,7 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
@@ -278,6 +279,12 @@ func (svc *lbSvc) batchCreateTCloudListener(kt *kit.Kit, rawReq json.RawMessage,
 		return nil, err
 	}
 
+	// 预检测-检查四层监听器，绑定的目标组里面的RS，是否已绑定其他监听器
+	err = svc.checkLayerFourGlobalUniqueTarget(kt, req)
+	if err != nil {
+		return nil, err
+	}
+
 	req.BkBizID = bkBizID
 	req.LbID = lbID
 	createResp, err := svc.client.HCService().TCloud.Clb.CreateListener(kt, req)
@@ -301,4 +308,110 @@ func (svc *lbSvc) batchCreateTCloudListener(kt *kit.Kit, rawReq json.RawMessage,
 		return nil, err
 	}
 	return &core.BatchCreateResult{IDs: []string{createResp.CloudLblID}}, nil
+}
+
+// checkLayerFourGlobalUniqueTarget 检查四层监听器，绑定的目标组里面的RS，是否已绑定其他监听器
+func (svc *lbSvc) checkLayerFourGlobalUniqueTarget(kt *kit.Kit, req *hcproto.ListenerWithRuleCreateReq) error {
+	if req.Protocol.IsLayer7Protocol() {
+		return nil
+	}
+
+	// 检查要绑定的目标组中是否有rs
+	listRsReq := &core.ListReq{
+		Filter: tools.EqualExpression("target_group_id", req.TargetGroupID),
+		Page:   core.NewDefaultBasePage(),
+	}
+	rsResp, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, listRsReq)
+	if err != nil {
+		logs.Errorf("fail to list target by target group id, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+		return err
+	}
+	if len(rsResp.Details) == 0 {
+		return nil
+	}
+
+	// 查找该负载均衡下的4层监听器，绑定的所有目标组ID
+	targetGroupIDs, err := svc.getBindTargetGroupIDsByLbID(kt, req)
+	if err != nil {
+		return err
+	}
+	if len(targetGroupIDs) == 0 {
+		return nil
+	}
+
+	// 查找关联表中所有目标组的rs
+	listRelRsReq := &core.ListReq{
+		Filter: tools.ContainersExpression("target_group_id", targetGroupIDs),
+		Page:   core.NewDefaultBasePage(),
+	}
+	relRsResp, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, listRelRsReq)
+	if err != nil {
+		logs.Errorf("fail to list target by target group ids, err: %v, tgIDs: %v, rid: %s", err, targetGroupIDs, kt.Rid)
+		return err
+	}
+
+	existRsMap := make(map[string]struct{})
+	for _, tgItem := range relRsResp.Details {
+		uniqueKey := fmt.Sprintf("%s:%d", tgItem.CloudInstID, tgItem.Port)
+		if _, exist := existRsMap[uniqueKey]; exist {
+			return errf.Newf(errf.RecordDuplicated, "(vip+protocol+rsip+rsport) should be globally unique for fourth "+
+				"layer listeners, targetGroupID: %s, CloudInstID: %s, PrivateIPAddress: %v, Port: %d has bind listener",
+				req.TargetGroupID, tgItem.CloudInstID, tgItem.PrivateIPAddress, tgItem.Port)
+		}
+		existRsMap[uniqueKey] = struct{}{}
+	}
+
+	return nil
+}
+
+// getBindTargetGroupIDsByLbID 查找该负载均衡下的4层监听器，绑定的所有目标组ID
+func (svc *lbSvc) getBindTargetGroupIDsByLbID(kt *kit.Kit, req *hcproto.ListenerWithRuleCreateReq) ([]string, error) {
+	listTGReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("lb_id", req.LbID),
+			tools.RuleEqual("binding_status", enumor.SuccessBindingStatus),
+			tools.RuleEqual("listener_rule_type", enumor.Layer4RuleType),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+	tgResp, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, listTGReq)
+	if err != nil {
+		logs.Errorf("fail to list listener rule rel by lbid, err: %v, lbID: %s, rid: %s", err, req.LbID, kt.Rid)
+		return nil, err
+	}
+	if len(tgResp.Details) == 0 {
+		return nil, nil
+	}
+
+	lblIDs := make([]string, len(tgResp.Details))
+	lblTGMap := make(map[string][]string)
+	for _, item := range tgResp.Details {
+		lblIDs = append(lblIDs, item.LblID)
+		lblTGMap[item.LblID] = append(lblTGMap[item.LblID], item.TargetGroupID)
+	}
+	// 查找对应Protocol的监听器列表
+	lblReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(tools.RuleIn("id", lblIDs), tools.RuleEqual("protocol", req.Protocol)),
+		Page:   core.NewDefaultBasePage(),
+	}
+	lblResp, err := svc.client.DataService().Global.LoadBalancer.ListListener(kt, lblReq)
+	if err != nil {
+		logs.Errorf("fail to list listener by lblids, err: %v, lblIDs: %v, rid: %s", err, lblIDs, kt.Rid)
+		return nil, err
+	}
+	if len(lblResp.Details) == 0 {
+		return nil, nil
+	}
+	targetGroupIDs := make([]string, 0)
+	for _, item := range lblResp.Details {
+		tmpTGIDs, ok := lblTGMap[item.ID]
+		if !ok {
+			continue
+		}
+		targetGroupIDs = append(targetGroupIDs, tmpTGIDs...)
+	}
+	// 加入即将关联的目标组
+	targetGroupIDs = append(targetGroupIDs, req.TargetGroupID)
+
+	return targetGroupIDs, nil
 }

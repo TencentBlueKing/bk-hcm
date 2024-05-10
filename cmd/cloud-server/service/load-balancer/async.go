@@ -98,7 +98,7 @@ func (svc *lbSvc) terminateFlow(cts *rest.Contexts,
 	if rel.Status != enumor.ExecutingResFlowStatus {
 		return nil, errf.Newf(errf.InvalidParameter, "given flow status incorrect: %s", rel.Status)
 	}
-	// 从-flow 检查到任务结束会自动解锁
+	// 从flow 检查到任务结束会自动解锁
 	err = svc.client.TaskServer().CancelFlow(cts.Kit, req.FlowID)
 	if err != nil {
 		logs.Errorf("fail to call task server to terminate flow(%s), err: %s, rid: %s", req.FlowID, err, cts.Kit.Rid)
