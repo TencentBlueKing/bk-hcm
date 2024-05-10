@@ -33,7 +33,6 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
-	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -221,17 +220,13 @@ func (svc *lbSvc) updateTCloudTargetGroupHealthCheck(cts *rest.Contexts, tgID st
 		return nil, err
 	}
 
-	bytes, err := json.Marshal(req.HealthCheck)
-	if err != nil {
-		return nil, err
-	}
 	// 3. 更新db
 	dbReq := &dataproto.TargetGroupUpdateReq{
 		IDs:         []string{tgID},
-		HealthCheck: tabletype.JsonField(bytes),
+		HealthCheck: req.HealthCheck,
 	}
 
-	err = svc.client.DataService().TCloud.LoadBalancer.BatchUpdateTCloudTargetGroup(cts.Kit, dbReq)
+	err := svc.client.DataService().TCloud.LoadBalancer.BatchUpdateTCloudTargetGroup(cts.Kit, dbReq)
 	if err != nil {
 		logs.Errorf("update db tcloud target group failed, err: %v,  req: %+v, rid: %s", dbReq, err, cts.Kit.Rid)
 		return nil, err

@@ -178,17 +178,17 @@ func (r *CreateTargetGroupWithRel[Extension]) Validate() error {
 
 // TargetGroupUpdateReq ...
 type TargetGroupUpdateReq struct {
-	IDs             []string               `json:"ids" validate:"omitempty"`
-	BkBizID         int64                  `json:"bk_biz_id"`
-	Name            string                 `json:"name"`
-	TargetGroupType enumor.TargetGroupType `json:"target_group_type"`
-	VpcID           string                 `json:"vpc_id"`
-	CloudVpcID      string                 `json:"cloud_vpc_id"`
-	Region          string                 `json:"region"`
-	Protocol        enumor.ProtocolType    `json:"protocol"`
-	Port            int64                  `json:"port"`
-	Weight          *int64                 `json:"weight,omitempty"`
-	HealthCheck     types.JsonField        `json:"health_check"`
+	IDs             []string                      `json:"ids" validate:"omitempty"`
+	BkBizID         int64                         `json:"bk_biz_id"`
+	Name            string                        `json:"name"`
+	TargetGroupType enumor.TargetGroupType        `json:"target_group_type"`
+	VpcID           string                        `json:"vpc_id"`
+	CloudVpcID      string                        `json:"cloud_vpc_id"`
+	Region          string                        `json:"region"`
+	Protocol        enumor.ProtocolType           `json:"protocol"`
+	Port            int64                         `json:"port"`
+	Weight          *int64                        `json:"weight,omitempty"`
+	HealthCheck     *corelb.TCloudHealthCheckInfo `json:"health_check"`
 }
 
 // Validate ...

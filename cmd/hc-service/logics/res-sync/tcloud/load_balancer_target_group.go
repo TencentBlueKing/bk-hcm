@@ -43,13 +43,95 @@ import (
 	tclb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 )
 
+// LocalTargetGroup 同步本地目标组
+func (cli *client) LocalTargetGroup(kt *kit.Kit, param *SyncBaseParams, opt *SyncListenerOfSingleLBOption,
+	cloudListeners []typeslb.TCloudListener) error {
+	// 目前主要是同步健康检查
+	healthMap := make(map[string]*tclb.HealthCheck, len(cloudListeners))
+	cloudIDs := make([]string, 0, len(cloudListeners))
+	// 收集云端健康检查
+	for _, listener := range cloudListeners {
+		if !listener.GetProtocol().IsLayer7Protocol() {
+			// 四层监听器，直接获取健康检查
+			healthMap[listener.GetCloudID()] = listener.HealthCheck
+			cloudIDs = append(cloudIDs, listener.GetCloudID())
+			continue
+		}
+		for _, rule := range listener.Rules {
+			healthMap[cvt.PtrToVal(rule.LocationId)] = rule.HealthCheck
+			cloudIDs = append(cloudIDs, cvt.PtrToVal(rule.LocationId))
+		}
+	}
+	tgCloudHealthMap, tgList, err := cli.getTargetGruop(kt, opt.LBID, cloudIDs, healthMap)
+	if err != nil {
+		return err
+	}
+	for _, tg := range tgList {
+
+		if !isHealthCheckChange(tgCloudHealthMap[tg.CloudID], tg.HealthCheck, false) {
+			continue
+		}
+
+		// 更新 健康检查
+		updateReq := &dataproto.TargetGroupUpdateReq{
+			IDs:         []string{tg.ID},
+			HealthCheck: convHealthCheck(tgCloudHealthMap[tg.CloudID]),
+		}
+		err = cli.dbCli.TCloud.LoadBalancer.BatchUpdateTCloudTargetGroup(kt, updateReq)
+		if err != nil {
+			logs.Errorf("fail to update target group health check during sync, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
+	}
+	return nil
+}
+
+func (cli *client) getTargetGruop(kt *kit.Kit, lbId string, cloudIDs []string,
+	healthMap map[string]*tclb.HealthCheck) (map[string]*tclb.HealthCheck, []corelb.BaseTargetGroup, error) {
+
+	// 查找本地 目标组
+	relReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("lb_id", lbId),
+			tools.RuleIn("cloud_listener_rule_id", cloudIDs)),
+		Page: core.NewDefaultBasePage(),
+	}
+	relResp, err := cli.dbCli.Global.LoadBalancer.ListTargetGroupListenerRel(kt, relReq)
+	if err != nil {
+		logs.Errorf("fail to get target group rel for sync, err: %v, rid: %s", err, kt.Rid)
+		return nil, nil, err
+	}
+	if len(relResp.Details) == 0 {
+		return nil, nil, nil
+	}
+
+	tgIds := make([]string, 0, len(relResp.Details))
+	tgCloudHealthMap := make(map[string]*tclb.HealthCheck, len(relResp.Details))
+	for _, rel := range relResp.Details {
+		tgIds = append(tgIds, rel.TargetGroupID)
+		tgCloudHealthMap[rel.TargetGroupID] = healthMap[rel.CloudListenerRuleID]
+	}
+	// 查找目标组
+	tgReq := &core.ListReq{
+		Filter: tools.ContainersExpression("id", tgIds),
+		Page:   core.NewDefaultBasePage(),
+	}
+	tgResp, err := cli.dbCli.Global.LoadBalancer.ListTargetGroup(kt, tgReq)
+	if err != nil {
+		logs.Errorf("fail to get target group for sync, err: %v, rid: %s", err, kt.Rid)
+		return nil, nil, err
+	}
+	return tgCloudHealthMap, tgResp.Details, nil
+}
+
 // ListenerTargets 监听器下的target，用来更新目标组.
 // SyncBaseParams 中的CloudID作为监听器id筛选，不传的话就是同步当前LB下的全部监听器
 func (cli *client) ListenerTargets(kt *kit.Kit, param *SyncBaseParams, opt *SyncListenerOfSingleLBOption) error {
 
 	cloudListenerTargets, relMap, tgRsMap, lb, err := cli.listTargetRelated(kt, param, opt)
 	if err != nil {
-		logs.Errorf("fail to list related res while syncing targets, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("fail to list related res during targets syncing, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 	// 一个目标组只处理一次
