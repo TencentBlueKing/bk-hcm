@@ -1163,7 +1163,9 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       ),
     }),
     {
-      label: '负载均衡域名',
+      label: () => (
+        <span v-bk-tooltips={{ content: '用户通过该域名访问负载均衡流量', placement: 'top' }}>负载均衡域名</span>
+      ),
       field: 'domain',
       isDefaultShow: true,
       render: ({ cell }: { cell: string }) => cell || '--',
