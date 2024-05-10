@@ -12,7 +12,7 @@ export default defineComponent({
     const route = useRoute();
 
     // 面包屑白名单
-    const BREADCRUMB_WHITE_LIST = ['listener', 'domain'];
+    const BREADCRUMB_WHITE_LIST = ['lb', 'listener', 'domain'];
     const isBreadcrumbShow = computed(() => {
       return BREADCRUMB_WHITE_LIST.includes(route.meta.type as string);
     });
