@@ -163,9 +163,19 @@ export default (formModel: ApplyClbModel) => {
                       disabled={disabled}
                       v-bk-tooltips={{
                         content:
-                          formModel.account_type === 'LEGACY'
-                            ? t('仅标准型账号支持主备可用区')
-                            : t('仅广州、上海、南京、北京、中国香港、首尔地域的 IPv4 版本的 CLB 支持主备可用区'),
+                          formModel.account_type === 'LEGACY' ? (
+                            <span>
+                              {t('仅标准型账号支持主备可用区')}账号类型说明，参考
+                              <a
+                                href='https://cloud.tencent.com/document/product/1199/49090#judge'
+                                target='_blank'
+                                style={{ color: '#3A84FF' }}>
+                                https://cloud.tencent.com/document/product/1199/49090#judge
+                              </a>
+                            </span>
+                          ) : (
+                            t('仅广州、上海、南京、北京、中国香港、首尔地域的 IPv4 版本的 CLB 支持主备可用区')
+                          ),
                         disabled: !disabled,
                       }}>
                       {t(label)}
