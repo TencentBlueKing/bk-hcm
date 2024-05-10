@@ -37,7 +37,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/tools/converter"
 )
 
 // CreateTCloudSecurityGroup create tcloud security group.
@@ -356,19 +355,9 @@ func (g *securityGroup) TCloudSecurityGroupAssociateLoadBalancer(cts *rest.Conte
 func (g *securityGroup) getUpsertSGIDsParams(kt *kit.Kit, req *hclb.TCloudSetLbSecurityGroupReq,
 	sgComList *protocloud.SGCommonRelListResult) ([]string, *protocloud.SGCommonRelBatchUpsertReq, error) {
 
-	newSGIDsMap := converter.StringSliceToMap(req.SecurityGroupIDs)
-	allSGIDs := make([]string, 0)
 	delSGIDs := make([]string, 0)
 	for _, sg := range sgComList.Details {
 		delSGIDs = append(delSGIDs, sg.SecurityGroupID)
-		if _, ok := newSGIDsMap[sg.SecurityGroupID]; ok {
-			continue
-		}
-		allSGIDs = append(allSGIDs, sg.SecurityGroupID)
-	}
-
-	for _, newSGID := range req.SecurityGroupIDs {
-		allSGIDs = append(allSGIDs, newSGID)
 	}
 
 	sgComReq := &protocloud.SGCommonRelBatchUpsertReq{
@@ -380,7 +369,7 @@ func (g *securityGroup) getUpsertSGIDsParams(kt *kit.Kit, req *hclb.TCloudSetLbS
 	}
 
 	tmpPriority := int64(0)
-	for _, newSGID := range allSGIDs {
+	for _, newSGID := range req.SecurityGroupIDs {
 		tmpPriority++
 		sgComReq.Rels = append(sgComReq.Rels, protocloud.SGCommonRelCreate{
 			SecurityGroupID: newSGID,
@@ -391,14 +380,14 @@ func (g *securityGroup) getUpsertSGIDsParams(kt *kit.Kit, req *hclb.TCloudSetLbS
 		})
 	}
 
-	sgMap, err := g.getSecurityGroupMap(kt, allSGIDs)
+	sgMap, err := g.getSecurityGroupMap(kt, req.SecurityGroupIDs)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// 安全组的云端ID数组
 	sgCloudIDs := make([]string, 0)
-	for _, sgID := range allSGIDs {
+	for _, sgID := range req.SecurityGroupIDs {
 		sg, ok := sgMap[sgID]
 		if !ok {
 			continue

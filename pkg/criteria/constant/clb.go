@@ -22,7 +22,7 @@ package constant
 // 负载均衡相关的常量
 const (
 	// LoadBalancerBindSecurityGroupMaxLimit 一个负载均衡实例最多可绑定安全组的最大数量限制
-	LoadBalancerBindSecurityGroupMaxLimit = 50
+	LoadBalancerBindSecurityGroupMaxLimit = 5
 	// BatchListenerMaxLimit 单次操作监听器的最大数量
 	BatchListenerMaxLimit = 20
 	// ListenerMinSessionExpire 监听器最短的会话过期时间，单位秒
