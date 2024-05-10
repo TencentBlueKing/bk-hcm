@@ -5,7 +5,7 @@ import './index.scss';
 import { VendorEnum } from '@/common/constant';
 import { DoublePlainObject, FilterType } from '@/typings';
 import { useTable } from '@/hooks/useTable/useTable';
-import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
 import { useAccountStore, useResourceStore } from '@/store';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
@@ -15,6 +15,8 @@ import AccountSelector from '@/components/account-selector/index.vue';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 import Confirm from '@/components/confirm';
 import { getTableRowClassOption } from '@/common/util';
+import PermissionDialog from '@/components/permission-dialog';
+import { useVerify } from '@/hooks';
 
 const { FormItem } = Form;
 
@@ -24,7 +26,7 @@ export default defineComponent({
     filter: Object as PropType<FilterType>,
   },
   setup(props) {
-    const { isResourcePage, isBusinessPage } = useWhereAmI();
+    const { isResourcePage, isBusinessPage, whereAmI } = useWhereAmI();
     const accountStore = useAccountStore();
     const resourceStore = useResourceStore();
     const resourceAccountStore = useResourceAccountStore();
@@ -52,13 +54,27 @@ export default defineComponent({
           render: ({ data }: { data: any }) => (
             <Button
               text
+              class={`${!hasDeleteCertPermission.value ? 'hcm-no-permision-text-btn' : ''}`}
               theme='primary'
-              onClick={() => handleDeleteCert(data)}
-              disabled={isResourcePage && data.bk_biz_id !== -1}
-              v-bk-tooltips={{
-                content: '该证书已分配业务, 仅可在业务下操作',
-                disabled: isBusinessPage || data.bk_biz_id === -1,
-              }}>
+              onClick={() => {
+                if (!hasDeleteCertPermission.value) {
+                  handleAuth(`${isBusinessPage ? 'biz_' : ''}cert_resource_delete`);
+                } else {
+                  handleDeleteCert(data);
+                }
+              }}
+              disabled={hasDeleteCertPermission.value && isResourcePage && data.bk_biz_id !== -1}
+              v-bk-tooltips={
+                hasDeleteCertPermission.value && isResourcePage && data.bk_biz_id !== -1
+                  ? {
+                      content: '该证书已分配业务, 仅可在业务下操作',
+                      disabled: !(hasDeleteCertPermission.value && isResourcePage && data.bk_biz_id !== -1),
+                    }
+                  : {
+                      content: '无权限进行此操作',
+                      disabled: hasDeleteCertPermission.value,
+                    }
+              }>
               删除
             </Button>
           ),
@@ -120,6 +136,7 @@ export default defineComponent({
       bizFilter: props.filter,
     });
     const isCertUploadSidesliderShow = ref(false);
+    const isLoading = ref(false);
     const formRef = ref();
     const formModel = reactive({
       account_id: '' as string, // 账户ID
@@ -280,14 +297,19 @@ export default defineComponent({
     // 证书上传
     const handleCreateCert = async () => {
       await formRef.value.validate();
-      await resourceStore.create('certs', {
-        ...formModel,
-        public_key: btoa(formModel.public_key),
-        private_key: btoa(formModel.private_key),
-      });
-      Message({ theme: 'success', message: '证书上传成功' });
-      isCertUploadSidesliderShow.value = false;
-      await getListData();
+      isLoading.value = true;
+      try {
+        await resourceStore.create('certs', {
+          ...formModel,
+          public_key: btoa(formModel.public_key),
+          private_key: btoa(formModel.private_key),
+        });
+        Message({ theme: 'success', message: '证书上传成功' });
+        isCertUploadSidesliderShow.value = false;
+        await getListData();
+      } finally {
+        isLoading.value = false;
+      }
     };
     // 删除指定证书
     const handleDeleteCert = async (cert: any) => {
@@ -299,6 +321,29 @@ export default defineComponent({
       });
     };
 
+    // 权限 hooks
+    const {
+      showPermissionDialog,
+      handlePermissionConfirm,
+      handlePermissionDialog,
+      handleAuth,
+      permissionParams,
+      authVerifyData,
+    } = useVerify();
+
+    const hasCreateCertPermission = computed(() => {
+      if (whereAmI.value === Senarios.business) {
+        return authVerifyData.value?.permissionAction?.biz_cert_resource_create;
+      }
+      return authVerifyData.value?.permissionAction?.cert_resource_create;
+    });
+    const hasDeleteCertPermission = computed(() => {
+      if (whereAmI.value === Senarios.business) {
+        return authVerifyData.value?.permissionAction?.biz_cert_resource_delete;
+      }
+      return authVerifyData.value?.permissionAction?.cert_resource_delete;
+    });
+
     return () => (
       <div class={`cert-manager-page${isResourcePage ? ' has-selection' : ''}`}>
         <div class='common-card-wrap'>
@@ -306,7 +351,16 @@ export default defineComponent({
             {{
               operation: () => (
                 <>
-                  <Button class='mw88' theme='primary' onClick={showCreateCertSideslider}>
+                  <Button
+                    class={`mw88 ${hasCreateCertPermission.value ? '' : 'hcm-no-permision-btn'}`}
+                    theme={hasCreateCertPermission.value ? 'primary' : null}
+                    onClick={() => {
+                      if (!hasCreateCertPermission.value) {
+                        handleAuth(`${isBusinessPage ? 'biz_' : ''}cert_resource_create`);
+                      } else {
+                        showCreateCertSideslider();
+                      }
+                    }}>
                     上传证书
                   </Button>
                   <BatchDistribution
@@ -327,6 +381,7 @@ export default defineComponent({
           title='证书上传'
           width='640'
           onHandleSubmit={handleCreateCert}
+          isSubmitLoading={isLoading.value}
           class='cert-upload-sideslider'>
           <Form ref={formRef} formType='vertical' rules={formRules} model={formModel}>
             {formItemOptions.value.map(({ label, property, required, content, hidden }) => {
@@ -339,6 +394,13 @@ export default defineComponent({
             })}
           </Form>
         </CommonSideslider>
+        {/* 申请权限 */}
+        <PermissionDialog
+          v-model:isShow={showPermissionDialog.value}
+          params={permissionParams.value}
+          onCancel={handlePermissionDialog}
+          onConfirm={handlePermissionConfirm}
+        />
       </div>
     );
   },
