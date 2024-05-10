@@ -52,7 +52,9 @@
         }
       }
     }
-
+    .detail-info-wrap:first-child {
+      margin-bottom: 32px;
+    }
     &:not(:last-child) {
       margin-bottom: 32px;
     }
