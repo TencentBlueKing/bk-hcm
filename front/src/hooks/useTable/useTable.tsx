@@ -306,6 +306,8 @@ export const useTable = (props: IProp) => {
     // 如果是任务类型, 则使用 json_neq
     else if (val?.id === 'detail.data.res_flow.flow_id') {
       op = QueryRuleOPEnum.JSON_NEQ;
+    } else if (val?.id === 'health_check.health_switch') {
+      op = QueryRuleOPEnum.JSON_EQ;
     }
     // 否则, 精确搜索
     else {
