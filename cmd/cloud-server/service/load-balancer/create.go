@@ -37,6 +37,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
+	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -178,7 +179,7 @@ func (svc *lbSvc) createBizTargetGroup(cts *rest.Contexts, authHandler handler.V
 }
 
 func (svc *lbSvc) batchCreateTCloudTargetGroup(kt *kit.Kit, rawReq json.RawMessage, bkBizID int64) (any, error) {
-	req := new(dataproto.TargetGroupCreateReq)
+	req := new(cslb.TargetGroupCreateReq)
 	if err := json.Unmarshal(rawReq, req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -188,6 +189,13 @@ func (svc *lbSvc) batchCreateTCloudTargetGroup(kt *kit.Kit, rawReq json.RawMessa
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	if cvt.PtrToVal(req.HealthCheck.HealthSwitch) == 0 {
+		req.HealthCheck.HealthSwitch = cvt.ValToPtr(int64(0))
+	}
+	healthJson, err := json.Marshal(req.HealthCheck)
+	if err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
 	opt := &dataproto.TCloudTargetGroupCreateReq{
 		TargetGroups: []dataproto.TargetGroupBatchCreate[corelb.TCloudTargetGroupExtension]{
 			{
@@ -198,8 +206,13 @@ func (svc *lbSvc) batchCreateTCloudTargetGroup(kt *kit.Kit, rawReq json.RawMessa
 				Region:          req.Region,
 				Protocol:        req.Protocol,
 				Port:            req.Port,
+				VpcID:           "",
 				CloudVpcID:      req.CloudVpcID,
 				TargetGroupType: enumor.LocalTargetGroupType,
+				Weight:          0,
+				HealthCheck:     tabletype.JsonField(healthJson),
+				Memo:            nil,
+				Extension:       nil,
 				RsList:          req.RsList,
 			},
 		},

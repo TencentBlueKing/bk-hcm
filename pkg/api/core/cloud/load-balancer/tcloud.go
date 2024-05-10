@@ -141,7 +141,7 @@ type TCloudTargetGroupExtension struct {
 // TCloudHealthCheckInfo define health check.
 type TCloudHealthCheckInfo struct {
 	// 是否开启健康检查：1（开启）、0（关闭）
-	HealthSwitch *int64 `json:"health_switch,omitempty"`
+	HealthSwitch *int64 `json:"health_switch"`
 	// 健康检查的响应超时时间（仅适用于四层监听器），可选值：2~60，默认值：2，单位：秒。响应超时时间要小于检查间隔时间
 	TimeOut *int64 `json:"time_out,omitempty" validate:"omitempty,min=2,max=60"`
 	// 健康检查探测间隔时间，默认值：5，IPv4 CLB实例的取值范围为：2-300，IPv6 CLB 实例的取值范围为：5-300。单位：秒

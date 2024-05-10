@@ -462,3 +462,25 @@ func (req *TCloudBatchCreateReq) Validate() error {
 
 	return validator.Validate.Struct(req)
 }
+
+// TargetGroupCreateReq define target group create.
+type TargetGroupCreateReq struct {
+	Name            string                       `json:"name" validate:"required"`
+	AccountID       string                       `json:"account_id" validate:"required"`
+	BkBizID         int64                        `json:"bk_biz_id" validate:"omitempty"`
+	Region          string                       `json:"region" validate:"required"`
+	Protocol        enumor.ProtocolType          `json:"protocol" validate:"required"`
+	Port            int64                        `json:"port" validate:"required"`
+	VpcID           string                       `json:"vpc_id" validate:"omitempty"`
+	CloudVpcID      string                       `json:"cloud_vpc_id" validate:"required"`
+	TargetGroupType enumor.TargetGroupType       `json:"target_group_type" validate:"omitempty"`
+	Weight          int64                        `json:"weight" validate:"omitempty"`
+	HealthCheck     corelb.TCloudHealthCheckInfo `json:"health_check" validate:"omitempty"`
+	Memo            *string                      `json:"memo"`
+	RsList          []*cloud.TargetBaseReq       `json:"rs_list" validate:"omitempty,dive,required"`
+}
+
+// Validate 验证目标组创建参数
+func (req *TargetGroupCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
