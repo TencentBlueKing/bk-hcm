@@ -89,7 +89,7 @@ export default (formModel: ApplyClbModel) => {
   const rules = {
     name: [
       {
-        validator: (value: string) => /^[a-zA-Z0-9]([-a-zA-Z0-9]{58})[a-zA-Z0-9]$/.test(value),
+        validator: (value: string) => /^[a-zA-Z0-9]([-a-zA-Z0-9]{0,58})[a-zA-Z0-9]$/.test(value),
         message: '60个字符，字母、数字、“-”，且必须以字母、数字开头和结尾。',
         trigger: 'change',
       },

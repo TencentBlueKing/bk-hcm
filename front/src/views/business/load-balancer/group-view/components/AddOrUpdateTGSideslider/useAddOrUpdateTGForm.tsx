@@ -12,7 +12,7 @@ import { TARGET_GROUP_PROTOCOLS, VendorEnum } from '@/common/constant';
 
 const { Option } = Select;
 
-export default (formData: any, updateCount: Ref<number>) => {
+export default (formData: any, updateCount: Ref<number>, isEdit: Ref<boolean>) => {
   // use stores
   const accountStore = useAccountStore();
   const loadBalancerStore = useLoadBalancerStore();
@@ -73,7 +73,12 @@ export default (formData: any, updateCount: Ref<number>) => {
               ))}
             </Select>
             &nbsp;&nbsp;:&nbsp;&nbsp;
-            <Input v-model={formData.port} disabled={disabledEdit.value} type='number' class='no-number-control' />
+            <Input
+              v-model={formData.port}
+              disabled={isEdit.value || disabledEdit.value}
+              type='number'
+              class='no-number-control'
+            />
           </div>
         ),
       },
