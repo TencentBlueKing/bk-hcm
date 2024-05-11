@@ -214,7 +214,7 @@ func (task *Task) buildTaskUpdateModel(kt *kit.Kit, state enumor.TaskState, reas
 		Reason: &tableasync.Reason{
 			Message:       task.Reason.Message,
 			RollbackCount: task.Reason.RollbackCount,
-			PreState:      task.State,
+			PreState:      string(task.State),
 		},
 	}
 	if reason != "" {
