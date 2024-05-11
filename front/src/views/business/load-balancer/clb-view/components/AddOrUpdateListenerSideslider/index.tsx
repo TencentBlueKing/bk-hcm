@@ -252,7 +252,11 @@ export default defineComponent({
                   // 均衡方式为加权最小连接数，不支持配置会话保持
                   listenerFormData.scheduler !== 'LEAST_CONN' && (
                     <div class={'flex-row'}>
-                      <FormItem label={t('会话保持')} required property='session_open'>
+                      <FormItem
+                        label={t('会话保持')}
+                        required
+                        property='session_open'
+                        description='会话保持可使得来自同一 IP 的请求被转发到同一台后端服务器上。参考官方文档https://cloud.tencent.com/document/product/214/6154'>
                         <Switcher theme='primary' v-model={listenerFormData.session_open} />
                       </FormItem>
                       <FormItem label={t('保持时间')} class={'ml40'} required property='session_expire'>
