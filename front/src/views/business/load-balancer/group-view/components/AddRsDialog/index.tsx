@@ -9,7 +9,6 @@ import { useLoadBalancerStore } from '@/store';
 import useAddRsTable from './useAddRsTable';
 // import utils
 import bus from '@/common/bus';
-import { getInstVip } from '@/utils';
 import './index.scss';
 
 export default defineComponent({
@@ -121,9 +120,9 @@ export default defineComponent({
               remotePagination
               onSelect={handleSelect}
               onSelectAll={handleSelectAll}
-              isRowSelectEnable={({ row }: any) => {
-                return !tableRsList.some((rs) => getInstVip(rs) === getInstVip(row));
-              }}>
+              isRowSelectEnable={({ row }: any) =>
+                !tableRsList.some((rs) => rs.id === row.id || rs.inst_id === row.id)
+              }>
               {{
                 prepend: () =>
                   rsTableList.value.length ? (
