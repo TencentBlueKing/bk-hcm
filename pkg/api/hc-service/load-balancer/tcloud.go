@@ -129,7 +129,7 @@ func (opt TCloudDescribeResourcesOption) Validate() error {
 // TCloudSetLbSecurityGroupReq defines options to set tcloud lb security-group request.
 type TCloudSetLbSecurityGroupReq struct {
 	LbID             string   `json:"lb_id" validate:"required"`
-	SecurityGroupIDs []string `json:"security_group_ids" validate:"required,max=50"`
+	SecurityGroupIDs []string `json:"security_group_ids" validate:"required,min=1,max=5"`
 }
 
 // Validate tcloud lb security-group option.
@@ -139,7 +139,8 @@ func (opt TCloudSetLbSecurityGroupReq) Validate() error {
 	}
 
 	if len(opt.SecurityGroupIDs) > constant.LoadBalancerBindSecurityGroupMaxLimit {
-		return fmt.Errorf("invalid security_group_ids max value: %d", constant.LoadBalancerBindSecurityGroupMaxLimit)
+		return fmt.Errorf("load balancer only allows binding to %d security groups by default",
+			constant.LoadBalancerBindSecurityGroupMaxLimit)
 	}
 
 	return validator.Validate.Struct(opt)
