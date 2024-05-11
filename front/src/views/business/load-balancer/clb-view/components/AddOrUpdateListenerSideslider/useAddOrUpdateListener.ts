@@ -61,6 +61,7 @@ export default (getListData: (...args: any) => any, originPage: IOriginPage) => 
     session_type: 'NORMAL',
     session_expire: 0,
     target_group_id: '',
+    target_group_name: '',
     domain: '',
     url: '/',
     sni_switch: 0,

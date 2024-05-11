@@ -132,7 +132,6 @@ export default defineComponent({
               {t('不能超过60个字符，只能使用中文、英文、数字、下划线、分隔符“-”、小数点、冒号')}
             </div>
           </FormItem>
-
           <FormItem label={t('监听协议')} required property='protocol'>
             <BkRadioGroup v-model={listenerFormData.protocol} type='card' disabled={isEdit.value}>
               {protocolButtonList.map((protocol) => (
@@ -305,6 +304,32 @@ export default defineComponent({
                     ),
                   }}
                 </Select>
+              </FormItem>
+            </>
+          )}
+          {isEdit.value && (
+            <>
+              <FormItem label={t('目标组')} required property='target_group_id'>
+                <div class='target-group-wrap'>
+                  {/* 根据有无 target_group_id 来判断监听器是否绑定目标组 */}
+                  {listenerFormData.target_group_id ? (
+                    <>
+                      <span
+                        class='link-text-btn'
+                        onClick={() => {
+                          window.open(
+                            `/#/business/loadbalancer/group-view/${listenerFormData.target_group_id}?bizs=${accountStore.bizs}&type=detail`,
+                            '_blank',
+                            'noopener,noreferrer',
+                          );
+                        }}>
+                        {listenerFormData.target_group_name}
+                      </span>
+                    </>
+                  ) : (
+                    '--'
+                  )}
+                </div>
               </FormItem>
             </>
           )}
