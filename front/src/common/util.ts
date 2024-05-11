@@ -70,13 +70,11 @@ export function timeFromNow(val: string, unit: QUnitType | OpUnitType = 'minute'
  * 为表格设置new标识(配合useTable使用)
  * @returns 'row-class': ({ created_at }: { created_at: string }) => string
  */
-export function getTableRowClassOption() {
-  return {
-    'row-class': ({ created_at }: { created_at: string }) => {
-      if (timeFromNow(created_at) <= 5) {
-        return 'table-new-row';
-      }
-    },
+export function getTableNewRowClass() {
+  return ({ created_at }: { created_at: string }) => {
+    if (timeFromNow(created_at) <= 5) {
+      return 'table-new-row';
+    }
   };
 }
 

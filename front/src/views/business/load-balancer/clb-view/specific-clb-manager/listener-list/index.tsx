@@ -16,7 +16,7 @@ import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import useBatchDeleteListener from './useBatchDeleteListener';
 import AddOrUpdateListenerSideslider from '../../components/AddOrUpdateListenerSideslider';
 // import utils
-import { getTableRowClassOption } from '@/common/util';
+import { getTableNewRowClass } from '@/common/util';
 import bus from '@/common/bus';
 // import types
 import { DoublePlainObject } from '@/typings';
@@ -110,7 +110,7 @@ export default defineComponent({
           onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
           onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
           // new标识
-          ...getTableRowClassOption(),
+          rowClass: getTableNewRowClass(),
         },
       },
       requestOption: {
