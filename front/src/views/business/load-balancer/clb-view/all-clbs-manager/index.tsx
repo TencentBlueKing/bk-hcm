@@ -115,7 +115,7 @@ export default defineComponent({
                   theme='primary'
                   disabled={data.listenerNum > 0}
                   v-bk-tooltips={{
-                    content: '默认域名不允许删除',
+                    content: '该负载均衡已绑定监听器, 不可删除',
                     disabled: !(data.listenerNum > 0),
                   }}
                   onClick={() => handleDelete(data)}>
