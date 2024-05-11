@@ -182,7 +182,7 @@ func (svc *lbSvc) buildRemoveTCloudTargetTasks(kt *kit.Kit, accountID, lbID stri
 	*core.FlowStateResult, error) {
 
 	// 预检测
-	err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
+	_, err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
 	if err != nil {
 		return nil, err
 	}

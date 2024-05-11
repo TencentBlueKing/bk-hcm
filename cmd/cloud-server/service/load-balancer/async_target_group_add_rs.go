@@ -212,7 +212,7 @@ func (svc *lbSvc) buildAddTCloudTargetTasks(kt *kit.Kit, accountID, lbID string,
 	tgMap map[string][]*dataproto.TargetBaseReq) (*core.FlowStateResult, error) {
 
 	// 预检测
-	err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
+	_, err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
 	if err != nil {
 		return nil, err
 	}
@@ -400,7 +400,9 @@ func (svc *lbSvc) lockResFlowStatus(kt *kit.Kit, resID string, resType enumor.Cl
 	return nil
 }
 
-func (svc *lbSvc) checkResFlowRel(kt *kit.Kit, resID string, resType enumor.CloudResourceType) error {
+func (svc *lbSvc) checkResFlowRel(kt *kit.Kit, resID string, resType enumor.CloudResourceType) (
+	*corelb.BaseResFlowLock, error) {
+
 	// 预检测-当前资源是否有锁定中的数据
 	lockReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(
@@ -413,10 +415,10 @@ func (svc *lbSvc) checkResFlowRel(kt *kit.Kit, resID string, resType enumor.Clou
 	if err != nil {
 		logs.Errorf("list res flow lock failed, err: %v, resID: %s, resType: %s, rid: %s", err, resID, resType,
 			kt.Rid)
-		return err
+		return nil, err
 	}
 	if len(lockRet.Details) > 0 {
-		return errf.Newf(errf.LoadBalancerTaskExecuting, "resID: %s is processing", resID)
+		return &lockRet.Details[0], errf.Newf(errf.LoadBalancerTaskExecuting, "resID: %s is processing", resID)
 	}
 
 	// 预检测-当前资源是否有未终态的状态
@@ -431,11 +433,16 @@ func (svc *lbSvc) checkResFlowRel(kt *kit.Kit, resID string, resType enumor.Clou
 	flowRelRet, err := svc.client.DataService().Global.LoadBalancer.ListResFlowRel(kt, flowRelReq)
 	if err != nil {
 		logs.Errorf("list res flow rel failed, err: %v, resID: %s, resType: %s, rid: %s", err, resID, resType, kt.Rid)
-		return err
+		return nil, err
 	}
 	if len(flowRelRet.Details) > 0 {
-		return errf.Newf(errf.LoadBalancerTaskExecuting, "%s of resID: %s is processing", resType, resID)
+		return &corelb.BaseResFlowLock{
+				ResID:   resID,
+				ResType: resType,
+				Owner:   flowRelRet.Details[0].FlowID,
+			},
+			errf.Newf(errf.LoadBalancerTaskExecuting, "%s of resID: %s is processing", resType, resID)
 	}
 
-	return nil
+	return nil, nil
 }

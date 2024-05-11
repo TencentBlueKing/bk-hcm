@@ -287,7 +287,7 @@ func (svc *lbSvc) batchCreateTCloudListener(kt *kit.Kit, rawReq json.RawMessage,
 	}
 
 	// 预检测-是否有执行中的负载均衡
-	err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
+	_, err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
 	if err != nil {
 		return nil, err
 	}

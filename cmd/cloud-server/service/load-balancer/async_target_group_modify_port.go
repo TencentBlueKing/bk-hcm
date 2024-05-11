@@ -158,7 +158,7 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksPort(kt *kit.Kit, req *cslb.TCloud
 	accountID string) (interface{}, error) {
 
 	// 预检测
-	err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
+	_, err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
 	if err != nil {
 		return nil, err
 	}

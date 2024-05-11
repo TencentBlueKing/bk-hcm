@@ -394,7 +394,7 @@ func (svc *lbSvc) CreateBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 	}
 
 	// 预检测-是否有执行中的负载均衡
-	err = svc.checkResFlowRel(cts.Kit, lblInfo.LbID, enumor.LoadBalancerCloudResType)
+	_, err = svc.checkResFlowRel(cts.Kit, lblInfo.LbID, enumor.LoadBalancerCloudResType)
 	if err != nil {
 		return nil, err
 	}

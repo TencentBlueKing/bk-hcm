@@ -396,7 +396,10 @@ func (req *TerminatedAsyncFlowResultReq) Validate() error {
 
 // ResourceFlowStatusResp define resource flow status response.
 type ResourceFlowStatusResp struct {
-	Status enumor.ResFlowStatus `json:"status"`
+	ResID   string                   `json:"res_id,omitempty"`
+	ResType enumor.CloudResourceType `json:"res_type,omitempty"`
+	FlowID  string                   `json:"flow_id,omitempty"`
+	Status  enumor.ResFlowStatus     `json:"status"`
 }
 
 // --------------------------  Get Async Flow Result After Terminate --------------------------

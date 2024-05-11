@@ -24,6 +24,9 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/{id}/lock/status
   "code": 0,
   "message": "",
   "data": {
+    "res_id": "00000001",
+    "res_type": "xxxxxx",
+    "flow_id": "xxxxxx",
     "status": "executing"
   }
 }
@@ -39,6 +42,9 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/{id}/lock/status
 
 #### data
 
-| 参数名称  | 参数类型  | 描述                                   |
-|---------|----------|----------------------------------------|
-| status  | string   | 锁定状态(锁定中:executing 未锁定:success) |
+| 参数名称  | 参数类型  | 描述                                     |
+|----------|----------|-----------------------------------------|
+| res_id   | string   | 当前锁定的资源ID                          |
+| res_type | string   | 当前锁定的资源类型(load_balancer:负载均衡)  |
+| flow_id  | string   | 当前锁定的任务ID                          |
+| status   | string   | 锁定状态(锁定中:executing 未锁定:success)  |
