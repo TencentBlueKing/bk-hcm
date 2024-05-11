@@ -49,6 +49,7 @@ const cancel = async () => {
   emit('cancel');
 };
 const submit = async () => {
+  await Promise.all([formSelectRef.value[0](), formRef.value.validate()]);
   const params: any = { ...formData.value, ...formFilter.value };
   if (type.value === 'aws') {
     params.extension = {
