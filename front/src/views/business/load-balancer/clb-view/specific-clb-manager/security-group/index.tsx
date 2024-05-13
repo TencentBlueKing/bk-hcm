@@ -1,11 +1,11 @@
 import { PropType, TransitionGroup, computed, defineComponent, reactive, ref, watch, watchEffect } from 'vue';
 import './index.scss';
-import { Alert, Button, Exception, Input, Message, Tag } from 'bkui-vue';
+import { Alert, Button, Dialog, Exception, Input, Message, Tag } from 'bkui-vue';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 import CommonSideslider from '@/components/common-sideslider';
 import CommonDialog from '@/components/common-dialog';
 import { useAccountStore, useBusinessStore } from '@/store';
-import { Plus, Success } from 'bkui-vue/lib/icon';
+import { EditLine, Plus, Success } from 'bkui-vue/lib/icon';
 import { useTable } from '@/hooks/useTable/useTable';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
@@ -44,6 +44,8 @@ export default defineComponent({
     const bindedSecurityGroups = ref([]);
     const isUpdating = ref(false);
     const isSubmitLoading = ref(false);
+    const isConfigDialogShow = ref(false);
+    const tmpRsCheckRes = ref(rsCheckRes.value);
     // const securityGroups = computed(() => {
     //   const groups = [].concat(selectedSecuirtyGroups.value).concat(bindedSecurityGroups.value);
     //   return groups;
@@ -224,72 +226,45 @@ export default defineComponent({
     );
 
     watch(
-      () => props.detail?.extension?.load_balancer_pass_to_target,
-      (isPass) => {
-        rsCheckRes.value = !!isPass;
+      () => props.detail.extension,
+      () => {
+        rsCheckRes.value = !!props.detail?.extension?.load_balancer_pass_to_target;
+        tmpRsCheckRes.value = rsCheckRes.value;
+      },
+      {
+        deep: true,
       },
     );
 
     return () => (
       <div>
-        <div class={'rs-check-selector-container'}>
-          <div
-            class={`${rsCheckRes.value ? 'rs-check-selector-active' : 'rs-check-selector'} ${
-              isUpdating.value ? 'disabled-button' : ''
-            }`}
-            onClick={async () => {
-              if (rsCheckRes.value || isUpdating.value) return;
-              rsCheckRes.value = true;
-              isUpdating.value = true;
-              try {
-                await props.updateLb({
-                  load_balancer_pass_to_target: true,
-                });
-              } catch (_e) {
-                rsCheckRes.value = false;
-              } finally {
-                isUpdating.value = false;
-              }
-            }}>
-            <Tag theme='warning'>2 次检测</Tag>
-            <span>依次经过负载均衡和RS的安全组 2 次检测</span>
-            <Success
-              width={14}
-              height={14}
-              fill='#3A84FF'
-              style={{ visibility: !rsCheckRes.value ? 'hidden' : 'visible' }}
-              class={'rs-check-icon'}
-            />
-          </div>
-          <div
-            class={`${!rsCheckRes.value ? 'rs-check-selector-active' : 'rs-check-selector'}  ${
-              isUpdating.value ? 'disabled-button' : ''
-            }`}
-            onClick={async () => {
-              if (!rsCheckRes.value || isUpdating.value) return;
-              rsCheckRes.value = false;
-              isUpdating.value = true;
-              try {
-                await props.updateLb({
-                  load_balancer_pass_to_target: false,
-                });
-              } catch (_e) {
-                rsCheckRes.value = true;
-              } finally {
-                isUpdating.value = false;
-              }
-            }}>
-            <Tag theme='warning'>1 次检测</Tag>
-            <span>只经过负载均衡的安全组 1 次检测，忽略后端RS的安全组检测</span>
-            <Success
-              width={14}
-              height={14}
-              fill='#3A84FF'
-              style={{ visibility: rsCheckRes.value ? 'hidden' : 'visible' }}
-              class={'rs-check-icon'}
-            />
-          </div>
+        <div class={'config-res-wrapper mb24'}>
+          {rsCheckRes.value ? (
+            <div>
+              <Tag theme='warning' class={'mr16'}>
+                2 次检测
+              </Tag>
+              <span>依次经过负载均衡和RS的安全组 2 次检测</span>
+            </div>
+          ) : (
+            <div>
+              <Tag theme='warning' class={'mr16'}>
+                1 次检测
+              </Tag>
+              <span>只经过负载均衡的安全组 1 次检测，忽略后端RS的安全组检测</span>
+            </div>
+          )}
+          <EditLine
+            onClick={() => (isConfigDialogShow.value = true)}
+            class={'ml12 edit-icon'}
+            fill='#3A84FF'
+            width={12}
+            height={12}
+          />
         </div>
+
+        <div class={'line'}></div>
+
         <div class={'security-rule-container'}>
           <p>
             <span class={'security-rule-container-title'}>绑定安全组</span>
@@ -431,6 +406,76 @@ export default defineComponent({
         <CommonDialog v-model:isShow={isDialogShow.value} title={'绑定安全组'} width={640} onHandleConfirm={handleBind}>
           <CommonTable />
         </CommonDialog>
+        <Dialog
+          title='检测配置'
+          isShow={isConfigDialogShow.value}
+          width={720}
+          onClosed={() => (isConfigDialogShow.value = false)}>
+          {{
+            default: () => (
+              <div class={'rs-check-selector-container'}>
+                <div
+                  class={`${tmpRsCheckRes.value ? 'rs-check-selector-active' : 'rs-check-selector'} ${
+                    isUpdating.value ? 'disabled-button' : ''
+                  }`}
+                  onClick={async () => {
+                    if (tmpRsCheckRes.value || isUpdating.value) return;
+                    tmpRsCheckRes.value = true;
+                  }}>
+                  <Tag theme='warning'>2 次检测</Tag>
+                  <span>依次经过负载均衡和RS的安全组 2 次检测</span>
+                  <Success
+                    width={14}
+                    height={14}
+                    fill='#3A84FF'
+                    style={{ visibility: !tmpRsCheckRes.value ? 'hidden' : 'visible' }}
+                    class={'rs-check-icon'}
+                  />
+                </div>
+                <div
+                  class={`${!tmpRsCheckRes.value ? 'rs-check-selector-active' : 'rs-check-selector'}  ${
+                    isUpdating.value ? 'disabled-button' : ''
+                  }`}
+                  onClick={() => {
+                    if (!tmpRsCheckRes.value || isUpdating.value) return;
+                    tmpRsCheckRes.value = false;
+                  }}>
+                  <Tag theme='warning'>1 次检测</Tag>
+                  <span>只经过负载均衡的安全组 1 次检测，忽略后端RS的安全组检测</span>
+                  <Success
+                    width={14}
+                    height={14}
+                    fill='#3A84FF'
+                    style={{ visibility: tmpRsCheckRes.value ? 'hidden' : 'visible' }}
+                    class={'rs-check-icon'}
+                  />
+                </div>
+              </div>
+            ),
+            footer: () => (
+              <div>
+                <Button
+                  loading={isUpdating.value}
+                  theme='primary'
+                  class={'mr8'}
+                  onClick={async () => {
+                    isUpdating.value = true;
+                    try {
+                      await props.updateLb({
+                        load_balancer_pass_to_target: tmpRsCheckRes.value,
+                      });
+                      isConfigDialogShow.value = false;
+                    } finally {
+                      isUpdating.value = false;
+                    }
+                  }}>
+                  确认
+                </Button>
+                <Button onClick={() => (isConfigDialogShow.value = false)}>取消</Button>
+              </div>
+            ),
+          }}
+        </Dialog>
       </div>
     );
   },
