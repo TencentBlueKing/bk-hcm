@@ -156,7 +156,7 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksWeight(kt *kit.Kit, req *cslb.TClo
 	lbID, tgID, accountID string) (interface{}, error) {
 
 	// 预检测
-	err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
+	_, err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
 	if err != nil {
 		return nil, err
 	}

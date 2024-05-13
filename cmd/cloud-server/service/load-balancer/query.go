@@ -384,11 +384,18 @@ func (svc *lbSvc) getLoadBalancerLockStatus(cts *rest.Contexts, validHandler han
 	switch basicInfo.Vendor {
 	case enumor.TCloud:
 		// 预检测-是否有执行中的负载均衡
-		err = svc.checkResFlowRel(cts.Kit, id, enumor.LoadBalancerCloudResType)
+		flowRelResp, err := svc.checkResFlowRel(cts.Kit, id, enumor.LoadBalancerCloudResType)
 		if err != nil {
 			logs.Errorf("load balancer %s is executing flow, err: %v, rid: %s", id, err, cts.Kit.Rid)
-			return &cslb.ResourceFlowStatusResp{Status: enumor.ExecutingResFlowStatus}, nil
+			flowStatus := &cslb.ResourceFlowStatusResp{Status: enumor.ExecutingResFlowStatus}
+			if flowRelResp != nil {
+				flowStatus.ResID = flowRelResp.ResID
+				flowStatus.ResType = flowRelResp.ResType
+				flowStatus.FlowID = flowRelResp.Owner
+			}
+			return flowStatus, nil
 		}
+
 		return &cslb.ResourceFlowStatusResp{Status: enumor.SuccessResFlowStatus}, nil
 	default:
 		return nil, errf.Newf(errf.Unknown, "id: %s vendor: %s not support", id, basicInfo.Vendor)
