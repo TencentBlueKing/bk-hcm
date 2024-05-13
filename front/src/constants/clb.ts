@@ -31,15 +31,15 @@ export const LOAD_BALANCER_TYPE = [
 // IP版本
 export const ADDRESS_IP_VERSION = [
   {
-    label: 'IPV4',
+    label: 'IPv4',
     value: 'IPV4',
   },
   {
-    label: 'IPV6',
+    label: 'IPv6',
     value: 'IPv6FullChain',
   },
   {
-    label: 'IPV6 NAT64',
+    label: 'IPv6 NAT64',
     value: 'IPV6',
     isDisabled: (region: string) => !WHITE_LIST_REGION_IPV6_NAT64.includes(region),
   },

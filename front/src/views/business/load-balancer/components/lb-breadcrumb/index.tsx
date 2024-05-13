@@ -12,89 +12,75 @@ export default defineComponent({
     const router = useRouter();
     const route = useRoute();
     // use stores
-    const loadBalancer = useLoadBalancerStore();
+    const loadBalancerStore = useLoadBalancerStore();
 
-    const lbName = ref(''); // 负载均衡器名称
-    const lbExtension = ref(''); // 负载均衡器 vip 信息
-    const listenerName = ref(''); // 监听器名称
-    const listenerExtension = ref(''); // 监听器协议端口
-    const domain = ref(''); // 域名
+    // 面包屑信息
+    const breadcrumbs = ref([]);
 
-    // 清空文本
-    const clearText = () => {
-      lbName.value = '';
-      lbExtension.value = '';
-      listenerName.value = '';
-      domain.value = '';
-    };
+    // 设置面包屑信息
+    const setBreadcrumbs = (routeName: LBRouteName) => {
+      // 1. 清空之前的状态
+      breadcrumbs.value = [];
 
-    // 设置当前 listener 所归属的 lb 信息
-    const getLBText = (lb: any) => {
-      if (!lb) return;
-      lbName.value = lb.name;
-      lbExtension.value = getInstVip(lb);
-    };
+      // 2. 根据路由名称, 设置面包屑信息
+      const currentNode = loadBalancerStore.currentSelectedTreeNode;
+      const { name, lb, lb_id, lbl_id, protocol, port } = currentNode;
 
-    // 设置当前 domain 所归属的 listener 信息, 以及对应的 listener 所归属的 lb 信息
-    const getFullText = (listener: any) => {
-      listenerName.value = listener.name;
-      listenerExtension.value = `${listener.protocol}:${listener.port}`;
-      getLBText(listener.lb);
-    };
+      switch (routeName) {
+        // 具体的负载均衡
+        case LBRouteName.lb:
+          breadcrumbs.value.push({ name, extension: getInstVip(currentNode) });
+          break;
+        // 具体的监听器
+        case LBRouteName.listener:
+          breadcrumbs.value.push(
+            { name: lb.name, extension: getInstVip(lb), linkHandler: getLinkHandler(LBRouteName.lb, lb_id) },
+            { name, extension: `${protocol}:${port}` },
+          );
+          break;
+        // 具体的域名
+        case LBRouteName.domain:
+          breadcrumbs.value.push(
+            { name: lb.name, extension: getInstVip(lb), linkHandler: getLinkHandler(LBRouteName.lb, lb_id) },
+            {
+              name,
+              extension: `${protocol}:${port}`,
+              linkHandler: getLinkHandler(LBRouteName.listener, lbl_id, { protocol }),
+            },
+            { name: route.params.id },
+          );
+          break;
+      }
 
-    // 跳转至上级页面
-    const goListPage = (to: LBRouteName) => {
-      return () => {
-        // loadBalancer.currentSelectedTreeNode 为监听器详情信息
-        const { lb_id, lbl_id, protocol, bk_biz_id } = loadBalancer.currentSelectedTreeNode;
-        switch (to) {
-          case LBRouteName.lb:
-            router.push({ name: LBRouteName.lb, params: { id: lb_id }, query: { bizs: bk_biz_id } });
-            break;
-          case LBRouteName.listener:
-            router.push({ name: LBRouteName.listener, params: { id: lbl_id }, query: { bizs: bk_biz_id, protocol } });
-            break;
-          default:
-            break;
-        }
-      };
+      // 获取链接跳转函数
+      function getLinkHandler(routeName: LBRouteName, id: string, extQueryParam = {}) {
+        return () => {
+          router.push({ name: routeName, params: { id }, query: { ...route.query, ...extQueryParam } });
+        };
+      }
     };
 
     watch(
-      [() => route.name, () => loadBalancer.currentSelectedTreeNode],
-      ([routeName]) => {
-        clearText();
-        switch (routeName) {
-          case 'specific-listener-manager':
-            getFullText(loadBalancer.currentSelectedTreeNode);
-            break;
-          case 'specific-domain-manager':
-            domain.value = route.params.id as string;
-            getFullText(loadBalancer.currentSelectedTreeNode);
-            break;
-        }
+      () => route.params.id,
+      (val) => {
+        if (!val) return;
+        setBreadcrumbs(route.name as LBRouteName);
       },
       {
         immediate: true,
-        deep: true,
       },
     );
 
     return () => (
       <div class='lb-breadcrumb'>
-        <div class='text' onClick={goListPage(LBRouteName.lb)}>
-          <span class='name'>
-            <bk-overflow-title type='tips'>{lbName.value}</bk-overflow-title>
-          </span>
-          <span class='extension'>{`(${lbExtension.value})`}</span>
-        </div>
-        <div class='text' onClick={domain.value ? goListPage(LBRouteName.listener) : null}>
-          <span class='name'>
-            <bk-overflow-title type='tips'>{listenerName.value}</bk-overflow-title>
-          </span>
-          <span class='extension'>{`(${listenerExtension.value})`}</span>
-        </div>
-        {domain.value && <div class='text'>{domain.value}</div>}
+        {breadcrumbs.value.map(({ name, extension, linkHandler }) => (
+          <div class='text' onClick={linkHandler || (() => {})}>
+            <span class='name'>
+              <bk-overflow-title type='tips'>{name}</bk-overflow-title>
+            </span>
+            {extension && <span class='extension'>{`(${extension})`}</span>}
+          </div>
+        ))}
       </div>
     );
   },

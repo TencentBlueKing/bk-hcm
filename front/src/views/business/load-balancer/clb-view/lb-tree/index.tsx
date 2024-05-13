@@ -2,7 +2,7 @@ import { computed, defineComponent, onMounted, onUnmounted, ref, watch } from 'v
 import { useRouter, useRoute } from 'vue-router';
 // import components
 import { PlayShape } from 'bkui-vue/lib/icon';
-import { Message, OverflowTitle, Tree } from 'bkui-vue';
+import { Loading, Message, OverflowTitle, Tree } from 'bkui-vue';
 import SimpleSearchSelect from '../../components/simple-search-select';
 import Confirm from '@/components/confirm';
 // import stores
@@ -53,7 +53,7 @@ export default defineComponent({
     const expandedNodeArr = ref([]);
 
     // use custom hooks
-    const { loadRemoteData, handleLoadDataByScroll, reset } = useLoadTreeData(treeData);
+    const { loadRemoteData, handleLoadDataByScroll, reset, isLoading } = useLoadTreeData(treeData);
 
     // 删除负载均衡
     const handleDeleteLB = (node: any) => {
@@ -106,12 +106,10 @@ export default defineComponent({
       ],
       lb: [
         { label: '新增监听器', handler: () => bus.$emit('showAddListenerSideslider') },
-        { label: '查看详情', handler: () => bus.$emit('changeSpecificClbActiveTab', 'detail') },
         { label: '删除', handler: handleDeleteLB },
       ],
       listener: [
         { label: '新增域名', handler: () => bus.$emit('showAddDomainSideslider') },
-        { label: '查看详情', handler: () => bus.$emit('changeSpecificListenerActiveTab', 'detail') },
         { label: '编辑', handler: ({ id }: any) => bus.$emit('showEditListenerSideslider', id) },
         { label: '删除', handler: handleDeleteListener },
       ],
@@ -126,7 +124,12 @@ export default defineComponent({
     const searchK = ref('');
     const searchV = ref('');
     const selectedNode = ref(null);
+    const searchResultCount = ref(0);
     const searchOption = computed(() => {
+      // searchOption 重新计算时, 先恢复初始状态
+      searchResultCount.value = 0;
+      isLoading.value = true;
+
       return {
         value: searchValue.value,
         match: (searchValue: string, itemText: string, item: any) => {
@@ -154,6 +157,9 @@ export default defineComponent({
             default:
               break;
           }
+          result && (searchResultCount.value += 1);
+          // 关闭 loading
+          isLoading.value = false;
           return result;
         },
         showChildNodes: true,
@@ -237,7 +243,6 @@ export default defineComponent({
 
     // generator函数 - 滚动加载函数
     const getTreeScrollFunc = () => {
-      if (searchValue.value) return null;
       return throttle(() => {
         loadingRef.value && observer.observe(loadingRef.value.$el);
 
@@ -253,7 +258,6 @@ export default defineComponent({
 
     // generator函数 - lb-tree 懒加载配置对象
     const getTreeAsyncOption = () => {
-      if (searchValue.value) return null;
       return {
         callback: (_item: any, _callback: Function, _schema: any) => {
           // 如果是4层监听器, 无需加载其下级资源
@@ -349,130 +353,149 @@ export default defineComponent({
             reset();
           }}
         />
-        {/* 全部负载均衡 */}
-        <div
-          class={[
-            'all-lb-item',
-            `${route.meta.type === 'all' ? ' selected' : ''}`,
-            `${currentPopBoundaryNodeKey.value === '-1' ? ' show-dropdown' : ''}`,
-          ]}
-          onClick={() => handleNodeClick(allLBNode)}>
-          <div class='base-info'>
-            <img src={allLBIcon} alt='' class='prefix-icon' />
-            <span class='text'>全部负载均衡</span>
-          </div>
-          <div class='ext-info'>
-            <div class='count'>{treeData.value.length}</div>
-            <div class='more-action' onClick={(e) => showDropdownList(e, allLBNode)}>
-              <i class='hcm-icon bkhcm-icon-more-fill'></i>
-            </div>
-          </div>
-        </div>
-        {/* lb-tree */}
-        <Tree
-          class='lb-tree'
-          node-key='id'
-          ref={treeRef}
-          data={treeData.value}
-          label='name'
-          children='children'
-          level-line
-          // virtual-render
-          indent={16}
-          line-height={36}
-          onNodeClick={handleNodeClick}
-          onScroll={getTreeScrollFunc()}
-          async={getTreeAsyncOption()}
-          onNodeExpand={handleNodeExpand}
-          onNodeCollapse={handleNodeCollapse}
-          search={searchOption.value}
-          selected={selectedNode.value}>
-          {{
-            default: ({ data, attributes }: any) => {
-              if (data.type === 'loading') {
-                return (
-                  <bk-loading
-                    class='tree-loading-node'
-                    ref={loadingRef}
-                    loading
-                    size='small'
-                    onLoadDataByScroll={() => {
-                      // 因为在标签上使用 data-xxx 会丢失引用，但我需要 data._parent 的引用（因为加载数据时会直接操作该对象），所以这里借用了闭包的特性。
-                      handleLoadDataByScroll(data, attributes);
-                    }}>
-                    <div style={{ height: '36px' }}></div>
-                  </bk-loading>
-                );
+        <Loading class='lb-tree-container' loading={isLoading.value} opacity={1}>
+          {/* 全部负载均衡 / 搜索结果 */}
+          {(function () {
+            if (searchValue.value) {
+              if (searchResultCount.value) {
+                return <div class='search-result-wrap'>共 {searchResultCount.value} 条搜索结果</div>;
               }
-              const { type, id, name, protocol, port, isDefault, listenerNum, domain_num, url_count } = data;
-              const extension =
-                // eslint-disable-next-line no-nested-ternary
-                type === 'lb' ? ` (${getInstVip(data)})` : type === 'listener' ? `(${protocol}:${port})` : '';
+            } else {
               return (
-                <>
-                  <OverflowTitle
-                    type='tips'
-                    class='base-info'
-                    // eslint-disable-next-line no-nested-ternary
-                    style={{ maxWidth: type === 'lb' ? '200px' : type === 'listener' ? '180px' : '160px' }}>
-                    {searchValue.value ? (
-                      <span
-                        v-html={
-                          ['lb_name', 'listener_name', 'domain'].includes(searchK.value)
-                            ? `${name?.replace(
-                                new RegExp(searchV.value, 'g'),
-                                `<font color='#3A84FF'>${searchV.value}</font>`,
-                              )} ${extension}`
-                            : `${name} ${extension?.replace(
-                                new RegExp(searchV.value, 'g'),
-                                `<font color='#3A84FF'>${searchV.value}</font>`,
-                              )}`
-                        }></span>
-                    ) : (
-                      `${name} ${extension}`
-                    )}
-                    {attributes.fullPath.split('-').length === 3 && isDefault && (
-                      <bk-tag class='tag ml5' theme='warning'>
-                        默认
-                      </bk-tag>
-                    )}
-                  </OverflowTitle>
-                  <div class={`ext-info${currentPopBoundaryNodeKey.value === id ? ' show-dropdown' : ''}`}>
-                    <div class='count'>
-                      {/* eslint-disable-next-line no-nested-ternary */}
-                      {type === 'lb' ? listenerNum || 0 : type === 'listener' ? domain_num : url_count}
-                    </div>
-                    <div class='more-action' onClick={(e) => showDropdownList(e, data)}>
+                <div
+                  class={[
+                    'all-lb-item',
+                    `${route.meta.type === 'all' ? ' selected' : ''}`,
+                    `${currentPopBoundaryNodeKey.value === '-1' ? ' show-dropdown' : ''}`,
+                  ]}
+                  onClick={() => handleNodeClick(allLBNode)}>
+                  <div class='base-info'>
+                    <img src={allLBIcon} alt='' class='prefix-icon' />
+                    <span class='text'>全部负载均衡</span>
+                  </div>
+                  <div class='ext-info'>
+                    <div class='count'>{treeData.value.length}</div>
+                    <div class='more-action' onClick={(e) => showDropdownList(e, allLBNode)}>
                       <i class='hcm-icon bkhcm-icon-more-fill'></i>
                     </div>
                   </div>
-                </>
+                </div>
               );
-            },
-            nodeType: (node: any) => {
-              if (node.type === 'loading') {
-                return null;
-              }
-              return <img src={typeIconMap[node.type]} alt='' class='prefix-icon' />;
-            },
-            nodeAction: (node: any) => {
-              const { type, listenerNum, domain_num } = node;
-              let isVisible = true;
-              if ((type === 'lb' && !listenerNum) || (type === 'listener' && domain_num === 0) || type === 'domain') {
-                isVisible = false;
-              }
-              return (
-                <PlayShape
-                  style={{
-                    width: '10px',
-                    color: !isVisible ? 'transparent' : '#979ba5',
-                    transform: `${node.__attr__.isOpen ? 'rotate(90deg)' : 'rotate(0)'}`,
-                  }}
-                />
-              );
-            },
-          }}
-        </Tree>
+            }
+          })()}
+          {/* lb-tree */}
+          <Tree
+            class='lb-tree'
+            node-key='id'
+            ref={treeRef}
+            data={treeData.value}
+            label='name'
+            children='children'
+            level-line
+            // virtual-render
+            indent={16}
+            line-height={36}
+            onNodeClick={handleNodeClick}
+            onScroll={getTreeScrollFunc()}
+            async={getTreeAsyncOption()}
+            onNodeExpand={handleNodeExpand}
+            onNodeCollapse={handleNodeCollapse}
+            search={searchOption.value}
+            selected={selectedNode.value}>
+            {{
+              default: ({ data, attributes }: any) => {
+                if (data.type === 'loading') {
+                  return (
+                    <bk-loading
+                      class='tree-loading-node'
+                      ref={loadingRef}
+                      loading
+                      size='small'
+                      onLoadDataByScroll={() => {
+                        // 因为在标签上使用 data-xxx 会丢失引用，但我需要 data._parent 的引用（因为加载数据时会直接操作该对象），所以这里借用了闭包的特性。
+                        handleLoadDataByScroll(data, attributes);
+                      }}>
+                      <div style={{ height: '36px' }}></div>
+                    </bk-loading>
+                  );
+                }
+                const { type, id, name, protocol, port, isDefault, listenerNum, domain_num, url_count } = data;
+                const extension =
+                  // eslint-disable-next-line no-nested-ternary
+                  type === 'lb' ? ` (${getInstVip(data)})` : type === 'listener' ? `(${protocol}:${port})` : '';
+                return (
+                  <>
+                    <OverflowTitle type='tips' class='base-info'>
+                      {searchValue.value ? (
+                        <span
+                          v-html={
+                            ['lb_name', 'listener_name', 'domain'].includes(searchK.value)
+                              ? `${name?.replace(
+                                  new RegExp(searchV.value, 'g'),
+                                  `<font color='#3A84FF'>${searchV.value}</font>`,
+                                )} ${extension}`
+                              : `${name} ${extension?.replace(
+                                  new RegExp(searchV.value, 'g'),
+                                  `<font color='#3A84FF'>${searchV.value}</font>`,
+                                )}`
+                          }></span>
+                      ) : (
+                        `${name} ${extension}`
+                      )}
+                      {attributes.fullPath.split('-').length === 3 && isDefault && (
+                        <bk-tag class='tag ml5' theme='warning'>
+                          默认
+                        </bk-tag>
+                      )}
+                    </OverflowTitle>
+                    <div class={`ext-info${currentPopBoundaryNodeKey.value === id ? ' show-dropdown' : ''}`}>
+                      <div class='count'>
+                        {(function () {
+                          switch (type) {
+                            case 'lb':
+                              return listenerNum || 0;
+                            case 'listener':
+                              if (TRANSPORT_LAYER_LIST.includes(protocol)) return null;
+                              return domain_num || 0;
+                            case 'domain':
+                              return url_count || 0;
+                            default:
+                              break;
+                          }
+                        })()}
+                      </div>
+                      <div class='more-action' onClick={(e) => showDropdownList(e, data)}>
+                        <i class='hcm-icon bkhcm-icon-more-fill'></i>
+                      </div>
+                    </div>
+                  </>
+                );
+              },
+              nodeType: (node: any) => {
+                if (node.type === 'loading') {
+                  return null;
+                }
+                return <img src={typeIconMap[node.type]} alt='' class='prefix-icon' />;
+              },
+              nodeAction: (node: any) => {
+                const { type, listenerNum, domain_num } = node;
+                let isVisible = true;
+                if ((type === 'lb' && !listenerNum) || (type === 'listener' && domain_num === 0) || type === 'domain') {
+                  isVisible = false;
+                }
+                return (
+                  <PlayShape
+                    style={{
+                      width: '10px',
+                      color: !isVisible ? 'transparent' : '#979ba5',
+                      transform: `${node.__attr__.isOpen ? 'rotate(90deg)' : 'rotate(0)'}`,
+                    }}
+                  />
+                );
+              },
+            }}
+          </Tree>
+        </Loading>
       </div>
     );
   },

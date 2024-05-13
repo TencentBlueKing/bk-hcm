@@ -18,6 +18,7 @@ export default (treeData: Ref) => {
 
   // define data
   const rootStart = ref(0);
+  const isLoading = ref(false);
 
   // 根据 type 获取请求 url
   const getTypeUrl = (type: ResourceNodeType, id?: string) => {
@@ -47,63 +48,69 @@ export default (treeData: Ref) => {
     if (!accountStore.bizs) return;
     const url = getUrl(_item, _depth);
     const startIdx = !_item ? rootStart.value : _item.start;
-    const [detailsRes, countRes] = await Promise.all(
-      [false, true].map((isCount) =>
-        http.post(url, {
-          filter: {
-            op: QueryRuleOPEnum.AND,
-            rules: [],
-          },
-          page: {
-            count: isCount,
-            start: isCount ? 0 : startIdx,
-            limit: isCount ? 0 : 50,
-          },
-        }),
-      ),
-    );
-    // 如果是加载负载均衡节点, 则还需要请求对应负载均衡下的监听器数量接口
-    if (!_item && detailsRes.data.details.length > 0) {
-      detailsRes.data.details = await asyncGetListenerCount(detailsRes.data.details);
-    }
+    // 只有加载根节点时才需要显示 loading 效果
+    !_item && (isLoading.value = true);
+    try {
+      const [detailsRes, countRes] = await Promise.all(
+        [false, true].map((isCount) =>
+          http.post(url, {
+            filter: {
+              op: QueryRuleOPEnum.AND,
+              rules: [],
+            },
+            page: {
+              count: isCount,
+              start: isCount ? 0 : startIdx,
+              limit: isCount ? 0 : 50,
+            },
+          }),
+        ),
+      );
+      // 如果是加载负载均衡节点, 则还需要请求对应负载均衡下的监听器数量接口
+      if (!_item && detailsRes.data.details.length > 0) {
+        detailsRes.data.details = await asyncGetListenerCount(detailsRes.data.details);
+      }
 
-    // 组装新增的节点(这里需要对domain单独处理)
-    let _incrementNodes;
-    if (_item?.type === 'listener') {
-      const { default_domain, domain_list } = detailsRes.data;
-      _incrementNodes = domain_list.map((domain: any) => {
-        domain.type = 'domain';
-        domain.id = domain.domain;
-        domain.name = domain.domain;
-        domain.listener_id = _item.id;
-        domain.isDefault = default_domain === domain.domain;
-        return domain;
-      });
-    } else {
-      _incrementNodes = detailsRes.data.details.map((item: any) => {
-        // 如果是加载根节点的数据，则 type 设置为当前 type；如果是加载子节点的数据，则 type 设置为下一级 type
-        !_item ? (item.type = depthTypeMap[_depth]) : (item.type = depthTypeMap[_depth + 1]);
-        // 如果是加载根节点或非叶子节点的数据，需要给每个 item 添加 async = true 用于异步加载，以及初始化 start = 0
-        if (_depth < 1 || !_item) {
-          item.async = true;
-          item.start = 0;
-        }
-        return item;
-      });
-    }
-
-    if (!_item) {
-      const _treeData = [...treeData.value, ..._incrementNodes];
-      if (_treeData.length < countRes.data.count) {
-        treeData.value = [..._treeData, { type: 'loading' }];
+      // 组装新增的节点(这里需要对domain单独处理)
+      let _incrementNodes;
+      if (_item?.type === 'listener') {
+        const { default_domain, domain_list } = detailsRes.data;
+        _incrementNodes = domain_list.map((domain: any) => {
+          domain.type = 'domain';
+          domain.id = domain.domain;
+          domain.name = domain.domain;
+          domain.listener_id = _item.id;
+          domain.isDefault = default_domain === domain.domain;
+          return domain;
+        });
       } else {
-        treeData.value = _treeData;
+        _incrementNodes = detailsRes.data.details.map((item: any) => {
+          // 如果是加载根节点的数据，则 type 设置为当前 type；如果是加载子节点的数据，则 type 设置为下一级 type
+          !_item ? (item.type = depthTypeMap[_depth]) : (item.type = depthTypeMap[_depth + 1]);
+          // 如果是加载根节点或非叶子节点的数据，需要给每个 item 添加 async = true 用于异步加载，以及初始化 start = 0
+          if (_depth < 1 || !_item) {
+            item.async = true;
+            item.start = 0;
+          }
+          return item;
+        });
       }
-    } else {
-      _item.children = [...(_item.children || []), ..._incrementNodes];
-      if (_item.children.length < countRes.data.count) {
-        _item.children.push({ type: 'loading', _parent: _item });
+
+      if (!_item) {
+        const _treeData = [...treeData.value, ..._incrementNodes];
+        if (_treeData.length < countRes.data.count) {
+          treeData.value = [..._treeData, { type: 'loading' }];
+        } else {
+          treeData.value = _treeData;
+        }
+      } else {
+        _item.children = [...(_item.children || []), ..._incrementNodes];
+        if (_item.children.length < countRes.data.count) {
+          _item.children.push({ type: 'loading', _parent: _item });
+        }
       }
+    } finally {
+      isLoading.value = false;
     }
   };
 
@@ -141,5 +148,6 @@ export default (treeData: Ref) => {
     loadRemoteData,
     handleLoadDataByScroll,
     reset,
+    isLoading,
   };
 };

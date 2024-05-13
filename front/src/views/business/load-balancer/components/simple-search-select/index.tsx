@@ -29,6 +29,7 @@ export default defineComponent({
 
     const handleClear = () => {
       ctx.emit('update:modelValue', '');
+      popoverRef.value.hide();
       typeof props.clearHandler === 'function' && props.clearHandler();
     };
 

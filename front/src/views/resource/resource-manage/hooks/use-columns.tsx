@@ -1163,7 +1163,9 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       ),
     }),
     {
-      label: '负载均衡域名',
+      label: () => (
+        <span v-bk-tooltips={{ content: '用户通过该域名访问负载均衡流量', placement: 'top' }}>负载均衡域名</span>
+      ),
       field: 'domain',
       isDefaultShow: true,
       render: ({ cell }: { cell: string }) => cell || '--',
@@ -1421,6 +1423,20 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'port',
       isDefaultShow: true,
       sort: true,
+    },
+    {
+      label: '健康检查',
+      field: 'health_check.health_switch',
+      isDefaultShow: true,
+      filter: {
+        list: [
+          { value: 1, text: '已开启' },
+          { value: 0, text: '未开启' },
+        ],
+      },
+      render({ cell }: { cell: Number }) {
+        return cell ? '已开启' : '未开启';
+      },
     },
     {
       label: '云厂商',

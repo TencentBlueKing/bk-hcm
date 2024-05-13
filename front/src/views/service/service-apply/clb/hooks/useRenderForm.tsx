@@ -133,7 +133,7 @@ export default (formModel: ApplyClbModel) => {
                       class='w120'
                       disabled={disabled}
                       v-bk-tooltips={{
-                        content: t('当前地域不支持IPV6 NAT64'),
+                        content: t('当前地域不支持IPv6 NAT64'),
                         disabled: !disabled,
                       }}>
                       {t(label)}
@@ -144,6 +144,30 @@ export default (formModel: ApplyClbModel) => {
             ),
           },
         ],
+        {
+          label: 'VPC',
+          required: true,
+          property: 'cloud_vpc_id',
+          content: () => (
+            <div class='component-with-preview'>
+              <RegionVpcSelector
+                class='base'
+                v-model={formModel.cloud_vpc_id}
+                accountId={formModel.account_id}
+                region={formModel.region}
+                onChange={handleVpcChange}
+              />
+              <Button
+                class='preview-btn'
+                text
+                theme='primary'
+                disabled={!vpcData.value?.id}
+                onClick={() => (isVpcPreviewDialogShow.value = true)}>
+                {t('预览')}
+              </Button>
+            </div>
+          ),
+        },
         [
           {
             label: '可用区类型',
@@ -194,6 +218,7 @@ export default (formModel: ApplyClbModel) => {
               if (isIntranet.value || formModel.zoneType === 'single') {
                 zoneSelectorVNode = (
                   <ZoneSelector
+                    class='w240'
                     v-model={formModel.zones}
                     vendor={formModel.vendor}
                     region={formModel.region}
@@ -205,6 +230,7 @@ export default (formModel: ApplyClbModel) => {
               } else {
                 zoneSelectorVNode = (
                   <PrimaryStandZoneSelector
+                    class='w240'
                     v-model:zones={formModel.zones}
                     v-model:backupZones={formModel.backup_zones}
                     vendor={formModel.vendor}
@@ -216,31 +242,37 @@ export default (formModel: ApplyClbModel) => {
               return zoneSelectorVNode;
             },
           },
+          {
+            label: '可用区类型',
+            property: 'zoneType',
+            description:
+              '单可用区：仅支持一个可用区。\n主备可用区：主可用区是当前承载流量的可用区。备可用区默认不承载流量，主可用区不可用时才使用备可用区。',
+            hidden: isIntranet.value || formModel.address_ip_version !== 'IPV4',
+            content: () => (
+              <BkRadioGroup v-model={formModel.zoneType}>
+                {ZONE_TYPE.map(({ label, value, isDisabled }) => {
+                  const disabled =
+                    typeof isDisabled === 'function' ? isDisabled(formModel.region, formModel.account_type) : false;
+                  return (
+                    <BkRadioButton
+                      label={value}
+                      class='w120'
+                      disabled={disabled}
+                      v-bk-tooltips={{
+                        content:
+                          formModel.account_type === 'LEGACY'
+                            ? t('仅标准型账号支持主备可用区')
+                            : t('仅广州、上海、南京、北京、中国香港、首尔地域的 IPv4 版本的 CLB 支持主备可用区'),
+                        disabled: !disabled,
+                      }}>
+                      {t(label)}
+                    </BkRadioButton>
+                  );
+                })}
+              </BkRadioGroup>
+            ),
+          },
         ],
-        {
-          label: 'VPC',
-          required: true,
-          property: 'cloud_vpc_id',
-          content: () => (
-            <div class='component-with-preview'>
-              <RegionVpcSelector
-                class='base'
-                v-model={formModel.cloud_vpc_id}
-                accountId={formModel.account_id}
-                region={formModel.region}
-                onChange={handleVpcChange}
-              />
-              <Button
-                class='preview-btn'
-                text
-                theme='primary'
-                disabled={!vpcData.value?.id}
-                onClick={() => (isVpcPreviewDialogShow.value = true)}>
-                {t('预览')}
-              </Button>
-            </div>
-          ),
-        },
         {
           label: '子网',
           required: true,
@@ -278,6 +310,7 @@ export default (formModel: ApplyClbModel) => {
           required: true,
           property: 'vip_isp',
           hidden: isIntranet.value,
+          description: '运营商类型选择范围由主可用区, 备可用区, IP版本决定',
           content: () => (
             <Select v-model={formModel.vip_isp} loading={isResourceListLoading.value}>
               {ispList.value?.map((item) => (
@@ -378,7 +411,15 @@ export default (formModel: ApplyClbModel) => {
           content: () => (
             <BkRadioGroup v-model={formModel.internet_charge_type}>
               {INTERNET_CHARGE_TYPE.map(({ label, value }) => (
-                <BkRadioButton key={value} label={value} class='w88' disabled={!value}>
+                <BkRadioButton
+                  key={value}
+                  label={value}
+                  class='w88'
+                  disabled={!value}
+                  v-bk-tooltips={{
+                    content: '云平台当前API接口暂不支持包月参数',
+                    disabled: value,
+                  }}>
                   {t(label)}
                 </BkRadioButton>
               ))}
