@@ -8,6 +8,7 @@ import Confirm from '@/components/confirm';
 // import stores
 import { useBusinessStore, useLoadBalancerStore } from '@/store';
 // import custom hooks
+import { useI18n } from 'vue-i18n';
 import useLoadTreeData from './useLoadTreeData';
 import useMoreActionDropdown from '@/hooks/useMoreActionDropdown';
 // import utils
@@ -27,6 +28,7 @@ export default defineComponent({
   name: 'LoadBalancerTree',
   setup() {
     // use hooks
+    const { t } = useI18n();
     const router = useRouter();
     const route = useRoute();
     // use stores
@@ -106,7 +108,19 @@ export default defineComponent({
       ],
       lb: [
         { label: '新增监听器', handler: () => bus.$emit('showAddListenerSideslider') },
-        { label: '删除', handler: handleDeleteLB },
+        {
+          label: '删除',
+          handler: handleDeleteLB,
+          isDisabled: (item: any) => item.listenerNum > 0 || item.delete_protect,
+          tooltips: (item: any) => {
+            if (item.listenerNum > 0) {
+              return { content: t('该负载均衡已绑定监听器, 不可删除'), disabled: !(item.listenerNum > 0) };
+            }
+            if (item.delete_protect) {
+              return { content: t('该负载均衡已开启删除保护, 不可删除'), disabled: !item.delete_protect };
+            }
+          },
+        },
       ],
       listener: [
         { label: '新增域名', handler: () => bus.$emit('showAddDomainSideslider') },

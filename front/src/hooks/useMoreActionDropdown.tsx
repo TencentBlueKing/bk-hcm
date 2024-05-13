@@ -35,8 +35,13 @@ export default (typeMenuMap: any) => {
         <div class='dropdown-list'>
           {typeMenuMap[node.type].map((item: any, index: number) => {
             if (node.type === 'listener' && TRANSPORT_LAYER_LIST.includes(node.protocol) && index === 0) return null;
+            const disabled = typeof item.isDisabled === 'function' ? item.isDisabled(node) : false;
+            const tooltips = typeof item.tooltips === 'function' ? item.tooltips(node) : null;
             return (
-              <div class='dropdown-item' onClick={() => item.handler(node)}>
+              <div
+                class={`dropdown-item ${disabled ? 'disabled' : null}`}
+                onClick={() => !disabled && item.handler(node)}
+                v-bk-tooltips={tooltips}>
                 {item.label}
               </div>
             );
