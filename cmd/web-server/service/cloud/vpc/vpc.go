@@ -382,7 +382,10 @@ func (svc *service) getVpcSubnetCount(kt *kit.Kit, vpcID, zone string, bizID int
 		logs.Errorf("list vpc failed, err: %v, rid: %svc", err, kt.Rid)
 		return 0, 0, err
 	}
-
+	// 没有指定zone的时候，当前zone下的子网为0
+	if len(zone) == 0 {
+		return vpcResult.Count, 0, nil
+	}
 	req = &core.ListReq{
 		Filter: &filter.Expression{
 			Op: filter.And,

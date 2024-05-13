@@ -33,7 +33,9 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
+	"hcm/pkg/tools/json"
 	"hcm/pkg/tools/slice"
 )
 
@@ -77,6 +79,76 @@ func (svc *lbSvc) listLoadBalancer(cts *rest.Contexts, authHandler handler.ListA
 		Page:   req.Page,
 	}
 	return svc.client.DataService().Global.LoadBalancer.ListLoadBalancer(cts.Kit, listReq)
+}
+
+// ListLoadBalancerWithDeleteProtect list load balancer with delete protect
+func (svc *lbSvc) ListLoadBalancerWithDeleteProtect(cts *rest.Contexts) (any, error) {
+	return svc.listLoadBalancerWithDeleteProtect(cts, handler.ListResourceAuthRes)
+}
+
+// ListBizLoadBalancerWithDeleteProtect list biz load balancer with delete protect
+func (svc *lbSvc) ListBizLoadBalancerWithDeleteProtect(cts *rest.Contexts) (any, error) {
+	return svc.listLoadBalancerWithDeleteProtect(cts, handler.ListBizAuthRes)
+}
+
+// list load balancer with delete protect
+func (svc *lbSvc) listLoadBalancerWithDeleteProtect(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (
+	any, error) {
+
+	req := new(proto.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// list authorized instances
+	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{
+		Authorizer: svc.authorizer,
+		ResType:    meta.LoadBalancer,
+		Action:     meta.Find,
+		Filter:     req.Filter,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if noPermFlag {
+		return &core.ListResult{Count: 0, Details: make([]any, 0)}, nil
+	}
+
+	listReq := &core.ListReq{
+		Filter: expr,
+		Page:   req.Page,
+	}
+	dataResp, err := svc.client.DataService().Global.LoadBalancer.ListLoadBalancerRaw(cts.Kit, listReq)
+	if err != nil {
+		logs.Errorf("fail to list load balancer with extension for delete protection, err: %v, rid: %s", err,
+			cts.Kit.Rid)
+		return nil, err
+	}
+	lbResult := core.ListResultT[*corelb.LoadBalancerWithDeleteProtect]{
+		Count: dataResp.Count,
+	}
+	for _, detail := range dataResp.Details {
+		lb := &corelb.LoadBalancerWithDeleteProtect{BaseLoadBalancer: detail.BaseLoadBalancer}
+
+		// 目前仅支持tcloud 的删除保护
+		if detail.Vendor == enumor.TCloud {
+			extension := corelb.TCloudClbExtension{}
+			err := json.Unmarshal(detail.Extension, &extension)
+			if err != nil {
+				logs.Errorf("fail parse lb extension for delete protection, err: %v, rid: %s", err, cts.Kit.Rid)
+				return nil, err
+			}
+			lb.DeleteProtect = cvt.PtrToVal(extension.DeleteProtect)
+		}
+		lbResult.Details = append(lbResult.Details, lb)
+
+	}
+	return lbResult, nil
 }
 
 // GetLoadBalancer getLoadBalancer clb.

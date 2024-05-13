@@ -20,6 +20,7 @@
 package loadbalancer
 
 import (
+	rawjson "encoding/json"
 	"fmt"
 
 	"hcm/pkg/api/core"
@@ -71,6 +72,44 @@ func (svc *lbSvc) ListLoadBalancer(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return &protocloud.LbListResult{Details: details}, nil
+}
+
+// ListLoadBalancerRaw ...
+func (svc *lbSvc) ListLoadBalancerRaw(cts *rest.Contexts) (any, error) {
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Fields: req.Fields,
+		Filter: req.Filter,
+		Page:   req.Page,
+	}
+	result, err := svc.dao.LoadBalancer().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list lb failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list lb failed, err: %v", err)
+	}
+
+	if req.Page.Count {
+		return &protocloud.LbRawListResult{Count: result.Count}, nil
+	}
+
+	details := make([]corelb.LoadBalancerRaw, 0, len(result.Details))
+	for _, one := range result.Details {
+		tmpOne := convTableToBaseLB(&one)
+		details = append(details, corelb.LoadBalancerRaw{
+			BaseLoadBalancer: *tmpOne,
+			Extension:        rawjson.RawMessage(one.Extension),
+		})
+	}
+
+	return &protocloud.LbRawListResult{Details: details}, nil
 }
 
 func convTableToBaseLB(one *tablelb.LoadBalancerTable) *corelb.BaseLoadBalancer {

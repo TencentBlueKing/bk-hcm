@@ -212,3 +212,9 @@ func (cli *LoadBalancerClient) CountLoadBalancerListener(kt *kit.Kit, req *datap
 	return common.Request[dataproto.ListListenerCountByLbIDsReq, dataproto.ListListenerCountResp](cli.client,
 		rest.POST, kt, req, "/load_balancers/listeners/count")
 }
+
+// ListLoadBalancerRaw ...
+func (cli *LoadBalancerClient) ListLoadBalancerRaw(kt *kit.Kit, req *core.ListReq) (*dataproto.LbRawListResult, error) {
+	return common.Request[core.ListReq, dataproto.LbRawListResult](cli.client,
+		rest.POST, kt, req, "/load_balancers/list_with_extension")
+}

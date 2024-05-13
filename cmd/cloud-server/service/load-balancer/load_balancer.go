@@ -45,6 +45,8 @@ func InitService(c *capability.Capability) {
 
 	// clb apis in res
 	h.Add("ListLoadBalancer", http.MethodPost, "/load_balancers/list", svc.ListLoadBalancer)
+	h.Add("ListLoadBalancerWithDeleteProtection", http.MethodPost,
+		"/load_balancers/with/delete_protection/list", svc.ListLoadBalancerWithDeleteProtect)
 	h.Add("BatchCreateLB", http.MethodPost, "/load_balancers/create", svc.BatchCreateLB)
 	h.Add("InquiryPriceLoadBalancer", http.MethodPost, "/load_balancers/prices/inquiry", svc.InquiryPriceLoadBalancer)
 	h.Add("AssignLbToBiz", http.MethodPost, "/load_balancers/assign/bizs", svc.AssignLbToBiz)
@@ -70,6 +72,8 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 	h.Add("UpdateBizTCloudLoadBalancer", http.MethodPatch,
 		"/vendors/tcloud/load_balancers/{id}", svc.UpdateBizTCloudLoadBalancer)
 	h.Add("ListBizLoadBalancer", http.MethodPost, "/load_balancers/list", svc.ListBizLoadBalancer)
+	h.Add("ListLoadBalancerWithDeleteProtection", http.MethodPost,
+		"/load_balancers/with/delete_protection/list", svc.ListBizLoadBalancerWithDeleteProtect)
 	h.Add("GetBizLoadBalancer", http.MethodGet, "/load_balancers/{id}", svc.GetBizLoadBalancer)
 	h.Add("BatchDeleteBizLoadBalancer", http.MethodDelete, "/load_balancers/batch", svc.BatchDeleteBizLoadBalancer)
 

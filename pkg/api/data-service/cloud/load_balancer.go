@@ -41,6 +41,8 @@ type LoadBalancerBatchCreateReq[Extension corelb.Extension] struct {
 
 // TCloudCLBCreateReq ...
 type TCloudCLBCreateReq = LoadBalancerBatchCreateReq[corelb.TCloudClbExtension]
+
+// TCloudCLBCreate ...
 type TCloudCLBCreate = LbBatchCreate[corelb.TCloudClbExtension]
 
 // LbBatchCreate define load balancer batch create.
@@ -163,6 +165,11 @@ type LbExtListResult[T corelb.Extension] struct {
 	Count   uint64                   `json:"count,omitempty"`
 	Details []corelb.LoadBalancer[T] `json:"details,omitempty"`
 }
+
+// -------------------------- ListRaw --------------------------
+
+// LbRawListResult define lb with extension list result.
+type LbRawListResult = core.ListResultT[corelb.LoadBalancerRaw]
 
 // -------------------------- Delete --------------------------
 

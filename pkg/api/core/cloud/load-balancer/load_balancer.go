@@ -20,6 +20,8 @@
 package loadbalancer
 
 import (
+	"encoding/json"
+
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/table/types"
@@ -61,6 +63,18 @@ type BaseLoadBalancer struct {
 type LoadBalancer[Ext Extension] struct {
 	BaseLoadBalancer `json:",inline"`
 	Extension        *Ext `json:"extension"`
+}
+
+// LoadBalancerRaw define clb.
+type LoadBalancerRaw struct {
+	BaseLoadBalancer `json:",inline"`
+	Extension        json.RawMessage `json:"extension"`
+}
+
+// LoadBalancerWithDeleteProtect define clb with load balancer delete protect
+type LoadBalancerWithDeleteProtect struct {
+	BaseLoadBalancer `json:",inline"`
+	DeleteProtect    bool `json:"delete_protect"`
 }
 
 // GetID ...
