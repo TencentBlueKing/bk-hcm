@@ -36,12 +36,8 @@ import (
 )
 
 // LoadBalancerRule 规则同步
-func (cli *client) LoadBalancerRule(kt *kit.Kit, opt *SyncListenerOfSingleLBOption) (any, error) {
-	cloudListeners, err := cli.listListenerFromCloud(kt, opt)
-	if err != nil {
-		logs.Errorf("fail to list listener for sync, err: %v, opt:%+v, rid: %s", err, opt, kt.Rid)
-		return nil, err
-	}
+func (cli *client) loadBalancerRule(kt *kit.Kit, opt *SyncListenerOfSingleLBOption,
+	cloudListeners []typeslb.TCloudListener) (any, error) {
 
 	var l4Listeners, l7Listeners []typeslb.TCloudListener
 	for _, listener := range cloudListeners {
@@ -51,7 +47,7 @@ func (cli *client) LoadBalancerRule(kt *kit.Kit, opt *SyncListenerOfSingleLBOpti
 		}
 		l4Listeners = append(l4Listeners, listener)
 	}
-	_, err = cli.LoadBalancerLayer4Rule(kt, opt.LBID, l4Listeners)
+	_, err := cli.LoadBalancerLayer4Rule(kt, opt.LBID, l4Listeners)
 	if err != nil {
 		return nil, err
 	}
@@ -297,8 +293,10 @@ func convHealthCheck(cloud *tclb.HealthCheck) *corelb.TCloudHealthCheckInfo {
 	if cloud == nil {
 		return nil
 	}
+
 	db := &corelb.TCloudHealthCheckInfo{
-		HealthSwitch:    cloud.HealthSwitch,
+		// 确保0值时不会存储为nil
+		HealthSwitch:    cvt.ValToPtr(cvt.PtrToVal(cloud.HealthSwitch)),
 		TimeOut:         cloud.TimeOut,
 		IntervalTime:    cloud.IntervalTime,
 		HealthNum:       cloud.HealthNum,

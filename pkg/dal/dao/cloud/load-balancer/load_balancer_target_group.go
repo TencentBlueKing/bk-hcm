@@ -21,6 +21,7 @@
 package loadbalancer
 
 import (
+	"errors"
 	"fmt"
 
 	"hcm/pkg/api/core"
@@ -47,6 +48,7 @@ import (
 type TargetGroupInterface interface {
 	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablelb.LoadBalancerTargetGroupTable) ([]string, error)
 	Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.LoadBalancerTargetGroupTable) error
+	UpdateBatch(kt *kit.Kit, models []*tablelb.LoadBalancerTargetGroupTable) error
 	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.LoadBalancerTargetGroupTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*typeslb.ListLbTargetGroupDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
@@ -153,6 +155,56 @@ func (dao TargetGroupDao) Update(kt *kit.Kit, expr *filter.Expression,
 			logs.Infof("update load balancer target group, but record not found, sql: %s, rid: %v", sql, kt.Rid)
 		}
 
+		return nil, nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UpdateBatch lb target group.
+func (dao TargetGroupDao) UpdateBatch(kt *kit.Kit, models []*tablelb.LoadBalancerTargetGroupTable) error {
+	for _, model := range models {
+		if len(model.ID) == 0 {
+			return errors.New("id is require for tg batch update")
+		}
+		if err := model.UpdateValidate(); err != nil {
+			return err
+		}
+	}
+	_, err := dao.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+
+		for _, model := range models {
+
+			expr := tools.EqualExpression("id", model.ID)
+			whereExpr, whereValue, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+			if err != nil {
+				return nil, err
+			}
+
+			opts := utils.NewFieldOptions().AddBlankedFields("memo",
+				"weight").AddIgnoredFields(types.DefaultIgnoredFields...)
+			setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(model, opts)
+			if err != nil {
+				return nil, fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
+			}
+
+			sql := fmt.Sprintf(`UPDATE %s %s %s`, model.TableName(), setExpr, whereExpr)
+
+			effect, err := dao.Orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+			if err != nil {
+				logs.Errorf("batch update load balancer target group failed, err: %v, filter: %s, rid: %v",
+					err, expr, kt.Rid)
+				return nil, err
+			}
+
+			if effect == 0 {
+				logs.Infof("batch update load balancer target group, but record not found, sql: %s, rid: %v",
+					sql, kt.Rid)
+			}
+		}
 		return nil, nil
 	})
 	if err != nil {

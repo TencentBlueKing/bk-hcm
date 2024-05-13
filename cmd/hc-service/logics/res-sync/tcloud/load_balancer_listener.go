@@ -115,7 +115,7 @@ func (cli *client) Listener(kt *kit.Kit, opt *SyncListenerOfSingleLBOption) (
 	}
 
 	// 同步监听器下的四层/七层规则
-	_, err = cli.LoadBalancerRule(kt, opt)
+	_, err = cli.loadBalancerRule(kt, opt, cloudListeners)
 	if err != nil {
 		logs.Errorf("fail to sync listener rule for sync listener, err: %v, opt: %+v, rid: %s", err, opt, kt.Rid)
 		return nil, err
@@ -126,10 +126,17 @@ func (cli *client) Listener(kt *kit.Kit, opt *SyncListenerOfSingleLBOption) (
 		CloudIDs:  nil,
 	}
 
-	// 同步相关目标组
+	// 同步相关目标组中的rs
 	err = cli.ListenerTargets(kt, targetParam, opt)
 	if err != nil {
 		logs.Errorf("fail to sync listener targets for sync listener, err: %v, opt: %+v, rid: %s", err, opt, kt.Rid)
+		return nil, err
+	}
+
+	// 同步本地目标组
+	err = cli.LocalTargetGroup(kt, targetParam, opt, cloudListeners)
+	if err != nil {
+		logs.Errorf("fail to sync target group for listener, err: %v, opt: %+v, rid: %s", err, opt, kt.Rid)
 		return nil, err
 	}
 

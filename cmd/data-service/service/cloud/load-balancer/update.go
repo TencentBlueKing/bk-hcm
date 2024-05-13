@@ -21,6 +21,7 @@
 package loadbalancer
 
 import (
+	"errors"
 	"fmt"
 
 	"hcm/pkg/api/core"
@@ -219,34 +220,55 @@ func (svc *lbSvc) UpdateTargetGroup(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.Newf(errf.InvalidParameter, "ids is empty")
 	}
 
-	updateData := &tablelb.LoadBalancerTargetGroupTable{
-		BkBizID: req.BkBizID,
-		Reviser: cts.Kit.User,
+	tgReq := &types.ListOption{
+		Filter: tools.ContainersExpression("id", req.IDs),
+		Page:   &core.BasePage{Limit: 1},
 	}
-
-	updateData.Name = req.Name
-	updateData.TargetGroupType = req.TargetGroupType
-	if len(req.CloudVpcID) > 0 {
-		// 根据cloudVpcID查询VPC信息，如查不到vpcInfo则报错
-		vpcInfoMap, err := getVpcMapByIDs(cts.Kit, []string{req.CloudVpcID})
-		if err != nil {
-			return nil, err
-		}
-		vpcInfo, ok := vpcInfoMap[req.CloudVpcID]
-		if !ok {
-			return nil, errf.Newf(errf.RecordNotFound, "vpcID[%s] not found", req.VpcID)
-		}
-		updateData.VpcID = vpcInfo.ID
-		updateData.CloudVpcID = vpcInfo.CloudID
+	tgList, err := svc.dao.LoadBalancerTargetGroup().List(cts.Kit, tgReq)
+	if err != nil {
+		return nil, err
 	}
-	updateData.Region = req.Region
-	updateData.Protocol = req.Protocol
-	updateData.Port = req.Port
-	updateData.HealthCheck = req.HealthCheck
-	updateData.Weight = req.Weight
+	if len(tgList.Details) != len(req.IDs) {
+		return nil, errors.New("not all target groups can be found")
+	}
+	updateDataList := make([]*tablelb.LoadBalancerTargetGroupTable, 0, len(req.IDs))
+	for _, oldTg := range tgList.Details {
 
-	if err := svc.dao.LoadBalancerTargetGroup().Update(
-		cts.Kit, tools.ContainersExpression("id", req.IDs), updateData); err != nil {
+		updateData := &tablelb.LoadBalancerTargetGroupTable{
+			ID:              oldTg.ID,
+			Name:            req.Name,
+			BkBizID:         req.BkBizID,
+			TargetGroupType: req.TargetGroupType,
+			Region:          req.Region,
+			Protocol:        req.Protocol,
+			Port:            req.Port,
+			Weight:          req.Weight,
+			Reviser:         cts.Kit.User,
+		}
+
+		if len(req.CloudVpcID) > 0 {
+			// 根据cloudVpcID查询VPC信息，如查不到vpcInfo则报错
+			vpcInfoMap, err := getVpcMapByIDs(cts.Kit, []string{req.CloudVpcID})
+			if err != nil {
+				return nil, err
+			}
+			vpcInfo, ok := vpcInfoMap[req.CloudVpcID]
+			if !ok {
+				return nil, errf.Newf(errf.RecordNotFound, "vpcID[%s] not found", req.VpcID)
+			}
+			updateData.VpcID = vpcInfo.ID
+			updateData.CloudVpcID = vpcInfo.CloudID
+		}
+		if req.HealthCheck != nil {
+			mergedHealth, err := json.UpdateMerge(req.HealthCheck, string(oldTg.HealthCheck))
+			if err != nil {
+				return nil, fmt.Errorf("json UpdateMerge rule health check failed, err: %v", err)
+			}
+			updateData.HealthCheck = tabletype.JsonField(mergedHealth)
+		}
+		updateDataList = append(updateDataList, updateData)
+	}
+	if err := svc.dao.LoadBalancerTargetGroup().UpdateBatch(cts.Kit, updateDataList); err != nil {
 		return nil, err
 	}
 
@@ -295,12 +317,6 @@ func (svc *lbSvc) BatchUpdateTCloudUrlRule(cts *rest.Contexts) (any, error) {
 					return nil, fmt.Errorf("json UpdateMerge rule health check failed, err: %v", err)
 				}
 				update.HealthCheck = tabletype.JsonField(mergedHealth)
-				// 	如果有对应的目标组关联同时更新对应的目标组健康检查
-				if err := svc.updateTGHealth(cts.Kit, txn, rule.TargetGroupID, update.HealthCheck); err != nil {
-					logs.Errorf("fail to update health check of relater target group, err:%v, rid: %s",
-						err, cts.Kit.Rid)
-					return nil, err
-				}
 
 			}
 			if rule.Certificate != nil {
