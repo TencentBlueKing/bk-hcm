@@ -72,6 +72,13 @@ export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) =
       },
       {
         trigger: 'blur',
+        message: '填写格式不正确。所有IPv4地址：0.0.0.0/0，所有IPv6地址：0::0/0或::/0',
+        validator: (val: string) => {
+          return !['0.0.0.0', '0::0', '::'].includes(data[val]);
+        },
+      },
+      {
+        trigger: 'blur',
         message: '填写对应合法的 IP CIDR (必须带子网掩码), 注意区分 IPV4 与 IPV6',
         validator: (val: string) => {
           if (vendor === VendorEnum.AWS) {
