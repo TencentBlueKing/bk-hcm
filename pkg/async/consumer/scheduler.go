@@ -359,7 +359,8 @@ func updateFlowStateAndReason(kt *kit.Kit, bd backend.Backend, flowID string, so
 	}
 	if len(reason) != 0 {
 		info.Reason = &tableasync.Reason{
-			Message: reason,
+			PreState: string(source),
+			Message:  reason,
 		}
 	}
 
@@ -382,7 +383,8 @@ func updateFlowToCancel(kt *kit.Kit, bd backend.Backend, flowId, oldWorkerID str
 		Source: source,
 		Target: enumor.FlowCancel,
 		Reason: &tableasync.Reason{
-			Message: "canceled from " + oldWorkerID,
+			Message:  "canceled from " + oldWorkerID,
+			PreState: string(source),
 		},
 		Worker: cvt.ValToPtr(""),
 	}

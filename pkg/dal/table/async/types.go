@@ -22,14 +22,13 @@ package tableasync
 import (
 	"database/sql/driver"
 
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/table/types"
 )
 
 // Reason define async flow reason
 type Reason struct {
-	Message  string           `json:"message,omitempty"`
-	PreState enumor.TaskState `json:"pre_state,omitempty"`
+	Message  string `json:"message,omitempty"`
+	PreState string `json:"pre_state,omitempty"`
 	// 改为rollback的次数
 	RollbackCount uint `json:"rollback_count,omitempty"`
 }

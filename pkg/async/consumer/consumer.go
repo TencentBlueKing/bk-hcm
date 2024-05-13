@@ -183,9 +183,6 @@ func (csm *consumer) CancelFlow(kt *kit.Kit, flowId string) error {
 	if flow.State == enumor.FlowSuccess {
 		return errors.New("flow has already succeeded")
 	}
-	if flow.State == enumor.FlowFailed {
-		return errors.New("flow has already failed")
-	}
 
 	// 取消flow 需要执行该flow的worker执行，调用该方法的时候，对应flow 不一定在当前worker上，因此这里先
 	// 更改flow状态为canceled，后续步骤由对应worker上的`canceledFlowWatcher`函数继续执行

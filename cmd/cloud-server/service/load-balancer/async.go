@@ -349,7 +349,7 @@ func (svc *lbSvc) getTaskParams(kt *kit.Kit, flowID string, taskIds []string) (t
 			continue
 		}
 		// 由pending 取消转过来的状态,不查询
-		if detail.State == enumor.TaskCancel && detail.Reason.PreState == enumor.TaskPending {
+		if detail.State == enumor.TaskCancel && enumor.TaskState(detail.Reason.PreState) == enumor.TaskPending {
 			continue
 		}
 		taskParam := &hclb.TCloudBatchOperateTargetReq{}
