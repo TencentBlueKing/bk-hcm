@@ -53,6 +53,14 @@ export default () => {
       id: 'cloud_vpc_id',
       name: '所属VPC',
     },
+    {
+      id: 'health_check.health_switch',
+      name: '健康检查',
+      children: [
+        { name: '已开启', id: 1 },
+        { name: '未开启', id: 0 },
+      ],
+    },
   ];
   const tableColumns = [
     ...columns,
@@ -105,6 +113,14 @@ export default () => {
     requestOption: {
       type: 'target_groups',
       sortOption: { sort: 'created_at', order: 'DESC' },
+      async resolveDataListCb(dataList: any) {
+        if (dataList.length === 0) return;
+        return dataList.map((data: any) => {
+          const { health_check } = data;
+          health_check.health_switch = health_check.health_switch || 0;
+          return { ...data, health_check };
+        });
+      },
     },
   });
 

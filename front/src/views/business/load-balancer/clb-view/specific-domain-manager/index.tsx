@@ -95,7 +95,7 @@ export default defineComponent({
                   <Link
                     class='target-group-name-btn'
                     theme='primary'
-                    href={`/#/business/loadbalancer/group-view/${data.target_group_id}?bizs=${accountStore.bizs}&type=list`}>
+                    href={`/#/business/loadbalancer/group-view/${data.target_group_id}?bizs=${accountStore.bizs}&type=detail`}>
                     {cell || '--'}
                   </Link>
                   {/* <span class={'target-group-name-btn'}></span> */}
