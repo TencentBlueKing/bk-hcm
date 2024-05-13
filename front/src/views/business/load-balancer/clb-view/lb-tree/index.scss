@@ -15,6 +15,8 @@
   .base-info {
     display: flex;
     align-items: center;
+    flex: 1;
+    max-width: calc(100% - 30px);
 
     .tag {
       height: 16px;
@@ -95,38 +97,50 @@
     }
   }
 
-  .lb-tree {
-    height: calc(100% - 92px) !important;
-    overflow-y: auto;
+  .lb-tree-container {
+    height: calc(100% - 92px);
 
-    .bk-node-row {
-      padding: 0 3px 0 16px;
-      .bk-node-text {
-        flex: 1;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+    .lb-tree {
+      overflow-x: hidden;
+      overflow-y: auto;
 
-        .tree-loading-node {
-          left: 50%;
+      .bk-node-row {
+        padding: 0 3px 0 16px;
+        .bk-node-text {
+          max-width: calc(100% - 28px);
+          flex: 1;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+
+          .tree-loading-node {
+            left: 50%;
+          }
         }
+      }
+
+      .bk-node-row:hover {
+        background-color: #f0f1f5;
+
+        .ext-info {
+          .count {
+            opacity: 0;
+          }
+          .more-action {
+            opacity: 1;
+          }
+        }
+      }
+      .bk-node-row.is-selected {
+        background-color: #e1ecff;
       }
     }
 
-    .bk-node-row:hover {
-      background-color: #f0f1f5;
-
-      .ext-info {
-        .count {
-          opacity: 0;
-        }
-        .more-action {
-          opacity: 1;
-        }
-      }
-    }
-    .bk-node-row.is-selected {
-      background-color: #e1ecff;
+    .search-result-wrap {
+      margin-bottom: 12px;
+      padding: 0 16px;
+      font-size: 12px;
+      color: #979ba5;
     }
   }
 }

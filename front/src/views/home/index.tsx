@@ -129,6 +129,7 @@ export default defineComponent({
         router.push({
           path: route.path,
           query: {
+            ...route.query,
             bizs: businessId.value,
           },
         });

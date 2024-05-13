@@ -1,33 +1,23 @@
 .clb-view-page {
   height: 100%;
-  display: flex;
 
   .left-container {
-    width: 300px;
     height: 100%;
     box-shadow: 1px 0 0 0 #dcdee5;
   }
 
-  .advanced-search {
-    height: 100%;
-    width: 300px;
-    background-color: #acf;
-  }
-
   .main-container {
-    width: calc(100% - 600px);
-    flex: 1;
     height: 100%;
     padding: 24px;
     background-color: #f5f7fb;
 
     .manager-tab-wrap {
       height: 100%;
-    
+
       &.has-breadcrumb {
         height: calc(100% - 30px);
       }
-      
+
       // 覆盖组件默认样式
       .bk-tab-header .bk-tab-header-item {
         padding: 0 24px;
@@ -39,4 +29,3 @@
     }
   }
 }
-
