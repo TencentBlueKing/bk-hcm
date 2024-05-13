@@ -188,9 +188,9 @@ export default defineComponent({
                       onScroll-end={handleSVRCertListScrollEnd}>
                       {SVRCertList.value
                         .sort((a, b) => a.cert_status - b.cert_status)
-                        .map(({ cloud_id, name, cert_status }) => (
+                        .map(({ cloud_id, name, cert_status, domain }) => (
                           <Option key={cloud_id} id={cloud_id} name={name} disabled={cert_status === '3'}>
-                            {name}
+                            {name}&nbsp;(主域名 : {domain ? domain[0] : '--'}, 备用域名：{domain ? domain[1] : '--'})
                             {cert_status === '3' && (
                               <Tag theme='danger' style={{ marginLeft: '12px' }}>
                                 已过期
