@@ -1,0 +1,86 @@
+.config-security-item,
+.config-security-item-new {
+  height: 40px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 9px 8px;
+  cursor: pointer;
+
+  .draggable-card-header-draggable-btn {
+    color: #c4c6cc;
+  }
+
+  .config-security-item-idx {
+    margin-right: 11px;
+    min-width: 21.76px;
+    min-height: 16px;
+    background: #ffffff;
+    border-radius: 2px;
+    text-align: center;
+    color: #979ba5;
+  }
+
+  .config-security-item-name {
+    font-size: 14px;
+    color: #313238;
+    line-height: 22px;
+  }
+
+  .config-security-item-id {
+    margin-left: 8px;
+    font-size: 12px;
+    color: #979ba5;
+    letter-spacing: 0;
+    line-height: 20px;
+  }
+
+  .config-security-item-edit-block {
+    visibility: hidden;
+  }
+}
+
+.config-security-item {
+  background: #f5f7fa;
+
+  &:hover {
+    background-color: #eaebf0;
+
+    .config-security-item-edit-block {
+      visibility: visible;
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+
+      .mr27 {
+        margin-right: 27px;
+      }
+    }
+  }
+}
+
+.config-security-item-new {
+  background-color: #f2fff4;
+
+  &:hover {
+    background-color: #e7f9ec;
+
+    .config-security-item-edit-block {
+      visibility: visible;
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+
+      .mr27 {
+        margin-right: 27px;
+      }
+    }
+  }
+}
+
+.search-result-highlight {
+  color: #3a84ff;
+}
