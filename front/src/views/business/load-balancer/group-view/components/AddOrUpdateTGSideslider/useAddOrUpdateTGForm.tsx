@@ -36,7 +36,67 @@ export default (formData: any, updateCount: Ref<number>, isEdit: Ref<boolean>) =
   const canUpdateRegionOrVpc = computed(
     () => loadBalancerStore.currentScene === 'add' || formData.rs_list.filter((item: any) => !item.isNew).length === 0,
   );
-
+  // 表单相关
+  const formRef = ref();
+  const rules = {
+    account_id: [
+      {
+        required: true,
+        message: '云账户不能为空',
+        trigger: 'change',
+      },
+    ],
+    name: [
+      {
+        required: true,
+        message: '目标组名称不能为空',
+        trigger: 'blur',
+      },
+    ],
+    region: [
+      {
+        required: true,
+        message: '地域不能为空',
+        trigger: 'change',
+      },
+    ],
+    cloud_vpc_id: [
+      {
+        required: true,
+        message: 'VPC不能为空',
+        trigger: 'change',
+      },
+    ],
+    protocol_port: [
+      {
+        required: true,
+        trigger: 'change',
+        message: '协议或端口不能为空',
+        validator: () => {
+          const { protocol, port } = formData;
+          if (!protocol) {
+            return false;
+          }
+          if (!port && port !== 0) {
+            return false;
+          }
+          return true;
+        },
+      },
+      {
+        required: true,
+        trigger: 'blur',
+        message: '端口范围 1-65535 ',
+        validator: () => {
+          const { port } = formData;
+          if (Number.isInteger(port) && port >= 1 && port <= 65535) {
+            return true;
+          }
+          return false;
+        },
+      },
+    ],
+  };
   const formItemOptions = computed(() => [
     {
       label: '云账号',
@@ -64,6 +124,7 @@ export default (formData: any, updateCount: Ref<number>, isEdit: Ref<boolean>) =
       {
         label: '协议端口',
         required: true,
+        property: 'protocol_port',
         span: 12,
         content: () => (
           <div class='flex-row'>
@@ -146,6 +207,8 @@ export default (formData: any, updateCount: Ref<number>, isEdit: Ref<boolean>) =
   );
 
   return {
+    rules,
+    formRef,
     formItemOptions,
     canUpdateRegionOrVpc,
   };
