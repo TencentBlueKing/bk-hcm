@@ -405,8 +405,11 @@ export default (formModel: ApplyClbModel) => {
                   5120: { label: '5120' },
                 }}
                 showInput
-              />
-              <div class='slider-unit-suffix'>Mbps</div>
+                labelClick>
+                {{
+                  end: () => <div class='slider-unit-suffix'>Mbps</div>,
+                }}
+              </Slider>
             </div>
           ),
         },
