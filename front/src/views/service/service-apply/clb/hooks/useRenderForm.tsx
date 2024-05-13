@@ -274,6 +274,21 @@ export default (formModel: ApplyClbModel) => {
           ),
         },
         {
+          label: '运营商类型',
+          required: true,
+          property: 'vip_isp',
+          hidden: isIntranet.value,
+          content: () => (
+            <Select v-model={formModel.vip_isp} loading={isResourceListLoading.value}>
+              {ispList.value?.map((item) => (
+                <Option key={item} id={item} name={LB_ISP[item]}>
+                  {LB_ISP[item]}
+                </Option>
+              ))}
+            </Select>
+          ),
+        },
+        {
           label: '负载均衡规格类型',
           required: true,
           property: 'sla_type',
@@ -307,21 +322,6 @@ export default (formModel: ApplyClbModel) => {
                 </div>
               )}
             </>
-          ),
-        },
-        {
-          label: '运营商类型',
-          required: true,
-          property: 'vip_isp',
-          hidden: isIntranet.value,
-          content: () => (
-            <Select v-model={formModel.vip_isp} loading={isResourceListLoading.value}>
-              {ispList.value?.map((item) => (
-                <Option key={item} id={item} name={LB_ISP[item]}>
-                  {LB_ISP[item]}
-                </Option>
-              ))}
-            </Select>
           ),
         },
         {
