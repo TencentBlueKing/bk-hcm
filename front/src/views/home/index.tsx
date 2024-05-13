@@ -122,6 +122,7 @@ export default defineComponent({
         router.push({
           path: route.path.split('/detail')[0],
           query: {
+            ...route.query,
             bizs: businessId.value,
           },
         });

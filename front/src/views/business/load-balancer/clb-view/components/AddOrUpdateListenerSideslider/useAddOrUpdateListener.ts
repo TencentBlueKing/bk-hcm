@@ -23,6 +23,7 @@ export default (getListData: (...args: any) => any, originPage: IOriginPage) => 
   const isEdit = ref(false); // 标识当前是否为「编辑」操作
   const isSniOpen = ref(false); // 用于「编辑」操作. 记录SNI是否开启, 如果开启, 编辑的时候不可关闭
   const isLbLocked = ref(false); // 当前负载均衡是否被锁定
+  const lockedLbInfo = ref(null);
   // 表单相关
   const formRef = ref();
   const rules = {
@@ -132,9 +133,11 @@ export default (getListData: (...args: any) => any, originPage: IOriginPage) => 
     const status = res?.data?.status;
     if (status !== 'success') {
       isLbLocked.value = true;
+      lockedLbInfo.value = res.data;
       return Promise.reject();
     }
     isLbLocked.value = false;
+    lockedLbInfo.value = null;
     return res;
   };
 
@@ -264,5 +267,6 @@ export default (getListData: (...args: any) => any, originPage: IOriginPage) => 
     CACertList,
     handleCACertListScrollEnd,
     isLbLocked,
+    lockedLbInfo,
   };
 };
