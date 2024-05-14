@@ -69,6 +69,8 @@ type TCloud interface {
 	CountSecurityGroup(kt *kit.Kit, region string) (int32, error)
 	SecurityGroupCvmAssociate(kt *kit.Kit, opt *securitygroup.TCloudAssociateCvmOption) error
 	SecurityGroupCvmDisassociate(kt *kit.Kit, opt *securitygroup.TCloudAssociateCvmOption) error
+	SecurityGroupCvmBatchAssociate(kt *kit.Kit, opt *securitygroup.TCloudBatchAssociateCvmOption) error
+	SecurityGroupCvmBatchDisassociate(kt *kit.Kit, opt *securitygroup.TCloudBatchAssociateCvmOption) error
 	ListAccount(kt *kit.Kit) ([]account.TCloudAccount, error)
 	CountAccount(kt *kit.Kit) (int32, error)
 	GetAccountZoneQuota(kt *kit.Kit, opt *account.GetTCloudAccountZoneQuotaOption) (
@@ -112,6 +114,7 @@ type TCloud interface {
 	ListVpc(kt *kit.Kit, opt *core.TCloudListOption) (*types.TCloudVpcListResult, error)
 	CountVpc(kt *kit.Kit, region string) (int32, error)
 	ListCvm(kt *kit.Kit, opt *cvm.TCloudListOption) ([]cvm.TCloudCvm, error)
+	ListCvmWithCount(kt *kit.Kit, opt *cvm.ListCvmWithCountOption) (*cvm.CvmWithCountResp, error)
 	CountCvm(kt *kit.Kit, region string) (int32, error)
 	DeleteCvm(kt *kit.Kit, opt *cvm.TCloudDeleteOption) error
 	StartCvm(kt *kit.Kit, opt *cvm.TCloudStartOption) error

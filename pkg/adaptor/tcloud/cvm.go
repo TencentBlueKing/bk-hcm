@@ -50,7 +50,7 @@ func (t *TCloudImpl) ListCvm(kt *kit.Kit, opt *typecvm.TCloudListOption) ([]type
 
 	client, err := t.clientSet.CvmClient(opt.Region)
 	if err != nil {
-		return nil, fmt.Errorf("new tcloud vpc client failed, err: %v", err)
+		return nil, fmt.Errorf("new tcloud cvm client failed, err: %v", err)
 	}
 
 	req := cvm.NewDescribeInstancesRequest()
@@ -76,6 +76,58 @@ func (t *TCloudImpl) ListCvm(kt *kit.Kit, opt *typecvm.TCloudListOption) ([]type
 	}
 
 	return cvms, nil
+}
+
+// ListCvmWithCount list cvm with security group id filter  and total count
+// reference: https://cloud.tencent.com/document/api/213/15728
+func (t *TCloudImpl) ListCvmWithCount(kt *kit.Kit, opt *typecvm.ListCvmWithCountOption) (
+	*typecvm.CvmWithCountResp, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "list option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.CvmClient(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("new tcloud cvm client failed, err: %v", err)
+	}
+
+	req := cvm.NewDescribeInstancesRequest()
+	if len(opt.CloudIDs) != 0 || len(opt.SGIDs) != 0 {
+		req.InstanceIds = common.StringPtrs(opt.CloudIDs)
+		if len(opt.SGIDs) != 0 {
+			req.Filters = []*cvm.Filter{{
+				Name:   common.StringPtr("security-group-id"),
+				Values: common.StringPtrs(opt.SGIDs),
+			}}
+		}
+		req.Limit = common.Int64Ptr(int64(core.TCloudQueryLimit))
+	}
+
+	if opt.Page != nil {
+		req.Offset = common.Int64Ptr(int64(opt.Page.Offset))
+		req.Limit = common.Int64Ptr(int64(opt.Page.Limit))
+	}
+
+	resp, err := client.DescribeInstancesWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("list tcloud instance failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	cvms := make([]typecvm.TCloudCvm, 0, len(resp.Response.InstanceSet))
+	for _, one := range resp.Response.InstanceSet {
+		cvms = append(cvms, typecvm.TCloudCvm{one})
+	}
+
+	return &typecvm.CvmWithCountResp{
+		TotalCount: converter.PtrToVal(resp.Response.TotalCount),
+		Cvms:       cvms,
+	}, nil
 }
 
 // CountCvm count cvm in given region

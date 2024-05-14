@@ -49,6 +49,7 @@ import (
 	"hcm/cmd/data-service/service/cloud/region"
 	resourcegroup "hcm/cmd/data-service/service/cloud/resource-group"
 	routetable "hcm/cmd/data-service/service/cloud/route-table"
+	"hcm/cmd/data-service/service/cloud/security-group"
 	sgcvmrel "hcm/cmd/data-service/service/cloud/security-group-cvm-rel"
 	subaccount "hcm/cmd/data-service/service/cloud/sub-account"
 	sync "hcm/cmd/data-service/service/cloud/sync"
@@ -186,8 +187,8 @@ func (s *Service) apiSet() *restful.Container {
 
 	account.InitService(capability)
 	accountbizrel.InitService(capability)
-	cloud.InitSecurityGroupService(capability)
-	cloud.InitGcpFirewallRuleService(capability)
+	securitygroup.InitSecurityGroupService(capability)
+	securitygroup.InitGcpFirewallRuleService(capability)
 	cloud.InitVpcService(capability)
 	cloud.InitSubnetService(capability)
 	cloud.InitCloudService(capability)

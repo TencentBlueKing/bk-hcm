@@ -144,6 +144,7 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 		cts.Kit.Header(),
 		&dataproto.ApplicationCreateReq{
 			SN:             sn,
+			Source:         enumor.ApplicationSourceITSM,
 			Type:           applicationType,
 			Status:         enumor.Pending,
 			Applicant:      cts.Kit.User,

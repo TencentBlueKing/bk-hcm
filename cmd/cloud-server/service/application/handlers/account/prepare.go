@@ -22,7 +22,6 @@ package account
 import (
 	"fmt"
 
-	accountsvc "hcm/cmd/cloud-server/service/account"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 
 	"github.com/TencentBlueKing/gopkg/conv"
@@ -31,7 +30,7 @@ import (
 // PrepareReq 预处理请求参数，比如敏感数据加密，Note: 实际应该在DB层面去加密，但是DB层面加密又涉及到Dao需要理解各个云要加密的字段
 func (a *ApplicationOfAddAccount) PrepareReq() error {
 	// 密钥加密
-	secretKeyField := accountsvc.VendorSecretKeyFieldMap[a.req.Vendor]
+	secretKeyField := a.req.Vendor.GetSecretField()
 	a.req.Extension[secretKeyField] = a.Cipher.EncryptToBase64(conv.ToString(a.req.Extension[secretKeyField]))
 
 	return nil
@@ -45,7 +44,7 @@ func (a *ApplicationOfAddAccount) GenerateApplicationContent() interface{} {
 // PrepareReqFromContent 预处理请求参数，对于申请内容来着DB，其实入库前是加密了的
 func (a *ApplicationOfAddAccount) PrepareReqFromContent() error {
 	// 解密密钥
-	secretKeyField := accountsvc.VendorSecretKeyFieldMap[a.req.Vendor]
+	secretKeyField := a.req.Vendor.GetSecretField()
 	secretKey, err := a.Cipher.DecryptFromBase64(a.req.Extension[secretKeyField])
 	if err != nil {
 		return fmt.Errorf("decrypt secret key failed, err: %w", err)

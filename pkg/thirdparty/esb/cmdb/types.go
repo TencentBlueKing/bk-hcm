@@ -41,6 +41,7 @@ type SearchBizParams struct {
 	BizPropertyFilter *QueryFilter `json:"biz_property_filter,omitempty"`
 }
 
+// BizIDField cmdb 业务字段
 const BizIDField = "bk_biz_id"
 
 // QueryFilter is cmdb common query filter.
@@ -58,9 +59,12 @@ type CombinedRule struct {
 	Condition Condition `json:"condition"`
 	Rules     []Rule    `json:"rules"`
 }
+
+// Condition cmdb condition
 type Condition string
 
 const (
+	// ConditionAnd and
 	ConditionAnd = Condition("AND")
 )
 
@@ -82,11 +86,15 @@ type AtomRule struct {
 	Operator Operator    `json:"operator"`
 	Value    interface{} `json:"value"`
 }
+
+// Operator cmdb operator
 type Operator string
 
 var (
+	// OperatorEqual ...
 	OperatorEqual = Operator("equal")
-	OperatorIn    = Operator("in")
+	// OperatorIn ...
+	OperatorIn = Operator("in")
 )
 
 // GetDeep get query rule depth.
@@ -235,14 +243,32 @@ type Host struct {
 	BkCloudInstID     string          `json:"bk_cloud_inst_id"`
 	BkCloudHostStatus CloudHostStatus `json:"bk_cloud_host_status"`
 	BkCloudID         int64           `json:"bk_cloud_id"`
-	BkHostInnerIP     string          `json:"bk_host_innerip"`
-	BkHostOuterIP     string          `json:"bk_host_outerip"`
-	BkHostInnerIPv6   string          `json:"bk_host_innerip_v6"`
-	BkHostOuterIPv6   string          `json:"bk_host_outerip_v6"`
-	Operator          string          `json:"operator"`
-	BkBakOperator     string          `json:"bk_bak_operator"`
-	BkHostName        string          `json:"bk_host_name"`
-	BkComment         *string         `json:"bk_comment,omitempty"`
+	// 云上地域，如 "ap-guangzhou"
+	BkCloudRegion   string  `json:"bk_cloud_region"`
+	BkHostInnerIP   string  `json:"bk_host_innerip"`
+	BkHostOuterIP   string  `json:"bk_host_outerip"`
+	BkHostInnerIPv6 string  `json:"bk_host_innerip_v6"`
+	BkHostOuterIPv6 string  `json:"bk_host_outerip_v6"`
+	Operator        string  `json:"operator"`
+	BkBakOperator   string  `json:"bk_bak_operator"`
+	BkHostName      string  `json:"bk_host_name"`
+	BkComment       *string `json:"bk_comment,omitempty"`
+}
+
+// HostFields cmdb common fields
+var HostFields = []string{
+	"bk_cloud_inst_id",
+	"bk_host_id",
+	"bk_asset_id",
+	// 云地域
+	"bk_cloud_region",
+	// 云厂商
+	"bk_cloud_vendor",
+	"bk_host_innerip",
+	"bk_host_outerip",
+	"bk_host_innerip_v6",
+	"bk_host_outerip_v6",
+	"bk_cloud_host_status",
 }
 
 type esbFindHostTopoRelationParams struct {
@@ -319,10 +345,15 @@ type ModuleInfo struct {
 type CloudVendor string
 
 const (
-	AwsCloudVendor    CloudVendor = "1"
+	// AwsCloudVendor cmdb aws vendor
+	AwsCloudVendor CloudVendor = "1"
+	// TCloudCloudVendor cmdb cloud vendor
 	TCloudCloudVendor CloudVendor = "2"
-	GcpCloudVendor    CloudVendor = "3"
-	AzureCloudVendor  CloudVendor = "4"
+	// GcpCloudVendor cmdb gcp vendor
+	GcpCloudVendor CloudVendor = "3"
+	// AzureCloudVendor cmdb azure vendor
+	AzureCloudVendor CloudVendor = "4"
+	// HuaWeiCloudVendor cmdb huawei vendor
 	HuaWeiCloudVendor CloudVendor = "15"
 )
 
@@ -335,15 +366,30 @@ var HcmCmdbVendorMap = map[enumor.Vendor]CloudVendor{
 	enumor.HuaWei: HuaWeiCloudVendor,
 }
 
+// CmdbHcmVendorMap cmdb vendor to hcm vendor
+var CmdbHcmVendorMap = map[CloudVendor]enumor.Vendor{
+	AwsCloudVendor:    enumor.Aws,
+	TCloudCloudVendor: enumor.TCloud,
+	GcpCloudVendor:    enumor.Gcp,
+	AzureCloudVendor:  enumor.Azure,
+	HuaWeiCloudVendor: enumor.HuaWei,
+}
+
 // CloudHostStatus defines cmdb cloud host status type.
 type CloudHostStatus string
 
 const (
-	UnknownCloudHostStatus    CloudHostStatus = "1"
-	StartingCloudHostStatus   CloudHostStatus = "2"
-	RunningCloudHostStatus    CloudHostStatus = "3"
-	StoppingCloudHostStatus   CloudHostStatus = "4"
-	StoppedCloudHostStatus    CloudHostStatus = "5"
+	// UnknownCloudHostStatus ...
+	UnknownCloudHostStatus CloudHostStatus = "1"
+	// StartingCloudHostStatus ...
+	StartingCloudHostStatus CloudHostStatus = "2"
+	// RunningCloudHostStatus ...
+	RunningCloudHostStatus CloudHostStatus = "3"
+	// StoppingCloudHostStatus ...
+	StoppingCloudHostStatus CloudHostStatus = "4"
+	// StoppedCloudHostStatus ...
+	StoppedCloudHostStatus CloudHostStatus = "5"
+	// TerminatedCloudHostStatus ...
 	TerminatedCloudHostStatus CloudHostStatus = "6"
 )
 

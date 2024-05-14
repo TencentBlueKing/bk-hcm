@@ -22,8 +22,6 @@ package huawei
 import (
 	"fmt"
 	"strings"
-
-	"hcm/cmd/cloud-server/service/application/handlers"
 )
 
 type formItem struct {
@@ -33,7 +31,7 @@ type formItem struct {
 
 // RenderItsmTitle 渲染ITSM单据标题
 func (a *ApplicationOfCreateHuaWeiVpc) RenderItsmTitle() (string, error) {
-	return fmt.Sprintf("申请新增[%s]VPC[%s]", handlers.VendorNameMap[a.Vendor()], a.req.Name), nil
+	return fmt.Sprintf("申请新增[%s]VPC[%s]", a.Vendor().GetNameZh(), a.req.Name), nil
 }
 
 // RenderItsmForm 渲染ITSM表单
@@ -95,7 +93,7 @@ func (a *ApplicationOfCreateHuaWeiVpc) renderBaseInfo() ([]formItem, error) {
 	formItems = append(formItems, formItem{Label: "云账号", Value: accountInfo.Name})
 
 	// 云厂商
-	formItems = append(formItems, formItem{Label: "云厂商", Value: handlers.VendorNameMap[a.Vendor()]})
+	formItems = append(formItems, formItem{Label: "云厂商", Value: a.Vendor().GetNameZh()})
 
 	// 云地域
 	regionInfo, err := a.GetHuaWeiRegion(req.Region)
@@ -142,7 +140,8 @@ func (a *ApplicationOfCreateHuaWeiVpc) renderSubnet() ([]formItem, error) {
 
 	// 是否开启IPv6
 	ipv6EnableNameMap := map[bool]string{true: "是", false: "否"}
-	formItems = append(formItems, formItem{Label: "子网IPv6网段是否开启", Value: ipv6EnableNameMap[*req.Subnet.IPv6Enable]})
+	formItems = append(formItems,
+		formItem{Label: "子网IPv6网段是否开启", Value: ipv6EnableNameMap[*req.Subnet.IPv6Enable]})
 
 	return formItems, nil
 }
