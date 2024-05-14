@@ -1182,7 +1182,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '网络类型',
       field: 'lb_type',
       isDefaultShow: true,
-      render: ({ cell }: { cell: string }) => LB_NETWORK_TYPE_MAP[cell] || '',
       sort: true,
       filter: {
         list: [

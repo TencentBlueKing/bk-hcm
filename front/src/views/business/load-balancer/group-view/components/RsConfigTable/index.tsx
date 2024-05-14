@@ -17,6 +17,7 @@ export default defineComponent({
   name: 'RsConfigTable',
   props: {
     rsList: Array<any>,
+    deletedRsList: Array<any>,
     accountId: String,
     vpcId: String,
     port: Number,
@@ -24,7 +25,7 @@ export default defineComponent({
     noDisabled: Boolean, // 禁用所有disabled
     onlyShow: Boolean, // 只用于显示(基本信息页面使用)
   },
-  emits: ['update:rsList'],
+  emits: ['update:rsList', 'update:deletedRsList'],
   setup(props, { emit }) {
     // use stores
     const loadBalancerStore = useLoadBalancerStore();
@@ -94,7 +95,14 @@ export default defineComponent({
     };
 
     // delete-handler
-    const handleDeleteRs = (id: string) => {
+    const handleDeleteRs = (data: any) => {
+      const { id, isNew } = data;
+      // 如果待移除的rs不是新增的, 而是目标组已经绑定的, 则记录操作场景, 并记录待删除的rs
+      if (!isNew) {
+        loadBalancerStore.setCurrentScene('BatchDeleteRs');
+        loadBalancerStore.setUpdateCount(2);
+        emit('update:deletedRsList', [...props.deletedRsList, data]);
+      }
       emit(
         'update:rsList',
         // 本期暂时以id来区分rs, 后续可能会变更为ip+port
@@ -112,7 +120,7 @@ export default defineComponent({
             <>
               <span>端口</span>
               <BatchUpdatePopConfirm
-                disabledTip='目标组基本信息，RS变更，RS权重修改，RS端口修改不支持同时变更'
+                disabledTip='目标组基本信息修改，添加，RS权重批量修改，RS端口批量修改，RS批量移除等操作暂不支持同时执行'
                 title='端口'
                 min={1}
                 max={65535}
@@ -148,7 +156,7 @@ export default defineComponent({
               <span>权重</span>
               <BatchUpdatePopConfirm
                 title='权重'
-                disabledTip='目标组基本信息，RS变更，RS权重修改，RS端口修改不支持同时变更'
+                disabledTip='目标组基本信息修改，添加，RS权重批量修改，RS端口批量修改，RS批量移除等操作暂不支持同时执行'
                 min={0}
                 max={100}
                 onUpdateValue={(v) => handleBatchUpdate(v, 'weight')}
@@ -182,7 +190,7 @@ export default defineComponent({
         label: '',
         width: 80,
         render: ({ data }: any) => (
-          <Button text onClick={() => handleDeleteRs(data.id)} disabled={!props.noDisabled && !data.isNew}>
+          <Button text onClick={() => handleDeleteRs(data)}>
             <i class='hcm-icon bkhcm-icon-minus-circle-shape'></i>
           </Button>
         ),

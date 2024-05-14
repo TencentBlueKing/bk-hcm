@@ -10,6 +10,7 @@ import useChangeScene from './useChangeScene';
 // import utils
 import bus from '@/common/bus';
 import { goAsyncTaskDetail } from '@/utils';
+import { TG_OPERATION_SCENE_MAP } from '@/constants';
 
 const { FormItem } = Form;
 
@@ -31,7 +32,7 @@ export default defineComponent({
     const isEdit = ref(false);
     const lastAsyncTaskInfo = reactive({ tgId: '', flowId: '', state: '' });
     const isSubmitDisabled = computed(() => {
-      return !['add', 'edit', 'AddRs', 'port', 'weight'].includes(loadBalancerStore.currentScene);
+      return !['add', 'edit', 'AddRs', 'port', 'weight', 'BatchDeleteRs'].includes(loadBalancerStore.currentScene);
     });
     let timer: any;
 
@@ -52,7 +53,7 @@ export default defineComponent({
     };
     const formData = reactive(getDefaultFormData());
     const { updateCount } = useChangeScene(isShow, formData);
-    const { formItemOptions, canUpdateRegionOrVpc, formRef, rules } = useAddOrUpdateTGForm(
+    const { formItemOptions, canUpdateRegionOrVpc, formRef, rules, deletedRsList } = useAddOrUpdateTGForm(
       formData,
       updateCount,
       isEdit,
@@ -72,11 +73,12 @@ export default defineComponent({
     // click-handler - 编辑目标组
     const handleEditTargetGroup = (data: any) => {
       clearInterval(timer);
+      // 初始化场景值
       loadBalancerStore.setUpdateCount(0);
+      loadBalancerStore.setCurrentScene(null);
+      // 初始化表单
       clearFormData();
       Object.assign(formData, data);
-      // 初始化场景值
-      loadBalancerStore.setCurrentScene(null);
       isShow.value = true;
       isEdit.value = true;
       // 判断是否有异步任务在执行
@@ -142,6 +144,11 @@ export default defineComponent({
       target_ids: formData.rs_list.map(({ id }) => id),
       [`new_${type}`]: formData.rs_list[0][type],
     });
+    // 处理参数 - 批量移除rs
+    const resolveFormDataForBatchDeleteRs = () => ({
+      account_id: formData.account_id,
+      target_groups: [{ target_group_id: formData.id, target_ids: deletedRsList.value.map((item) => item.id) }],
+    });
 
     // check-status - 查询异步任务执行状态
     const reqAsyncTaskStatus = (tgId: string, flowId: string) => {
@@ -189,17 +196,24 @@ export default defineComponent({
           promise = businessStore.batchUpdateRsWeight(formData.id, resolveFormDataForBatchUpdate('weight'));
           message = '批量修改权重异步任务已提交';
           break;
+        case 'BatchDeleteRs':
+          promise = businessStore.batchDeleteTargets(resolveFormDataForBatchDeleteRs());
+          message = '批量移除RS异步任务已提交';
+          break;
       }
       try {
         isSubmitLoading.value = true;
         const { data } = await promise;
         Message({ message, theme: 'success' });
         // 异步任务非结束状态, 记录异步任务flow_id以及当前操作目标组id
-        if (data?.state !== 'success' && data?.flow_id) {
+        if (data?.flow_id) {
           Object.assign(lastAsyncTaskInfo, { tgId: formData.id, flowId: data.flow_id, state: 'pending' });
           // 重置状态
           handleEditTargetGroup({ ...formData });
         }
+        // 初始化场景值
+        loadBalancerStore.setUpdateCount(0);
+        // 关闭侧栏
         isShow.value = false;
         // 如果组件用于list页面, 则重新请求list接口; 如果组件用于info页面, 则重新请求detail接口
         if (props.origin === 'list') {
@@ -252,6 +266,7 @@ export default defineComponent({
         onHandleSubmit={handleAddOrUpdateTargetGroupSubmit}>
         <bk-container margin={0}>
           <Form formType='vertical' model={formData} ref={formRef} rules={rules}>
+            {/* 异步任务提示 */}
             {(function () {
               const { state } = lastAsyncTaskInfo;
               if (state === 'success' || !state) return;
@@ -276,6 +291,12 @@ export default defineComponent({
                 </Alert>
               );
             })()}
+            {/* 操作类型提示 */}
+            {loadBalancerStore.updateCount === 2 && loadBalancerStore.currentScene && (
+              <Alert theme='info' class='mb24'>
+                当前操作为；{TG_OPERATION_SCENE_MAP[loadBalancerStore.currentScene]}
+              </Alert>
+            )}
             {formItemOptions.value.map((item) => (
               <bk-row>
                 {Array.isArray(item) ? (

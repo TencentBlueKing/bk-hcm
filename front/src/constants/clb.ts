@@ -154,3 +154,15 @@ export const LISTENER_BINDING_STATUS_REVERSE_MAP = {
   绑定中: 'binding',
   已绑定: 'success',
 };
+
+// 编辑目标组操作场景映射
+export const TG_OPERATION_SCENE_MAP = {
+  add: '新增目标组',
+  edit: '编辑目标组基本信息',
+  BatchDelete: '批量删除目标组',
+  AddRs: '添加RS',
+  BatchAddRs: '批量添加RS',
+  BatchDeleteRs: '批量删除RS',
+  port: '批量修改端口',
+  weight: '批量修改权重',
+};
