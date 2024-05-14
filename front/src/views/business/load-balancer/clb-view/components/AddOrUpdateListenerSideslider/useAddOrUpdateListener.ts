@@ -152,11 +152,15 @@ export default (getListData: (...args: any) => any, originPage: IOriginPage) => 
         // 编辑监听器
         await businessStore.updateListener({
           ...listenerFormData,
-          extension: { certificate: listenerFormData.certificate },
+          certificate: !listenerFormData.sni_switch ? listenerFormData.certificate : undefined,
+          extension: !listenerFormData.sni_switch ? { certificate: listenerFormData.certificate } : undefined,
         });
       } else {
         // 新增监听器
-        await businessStore.createListener(listenerFormData);
+        await businessStore.createListener({
+          ...listenerFormData,
+          certificate: !listenerFormData.sni_switch ? listenerFormData.certificate : undefined,
+        });
       }
       Message({ theme: 'success', message: isEdit.value ? '更新成功' : '新增成功' });
       isSliderShow.value = false;

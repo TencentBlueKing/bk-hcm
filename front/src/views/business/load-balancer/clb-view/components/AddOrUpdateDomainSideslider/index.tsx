@@ -1,4 +1,4 @@
-import { PropType, defineComponent, onMounted, onUnmounted, ref } from 'vue';
+import { PropType, computed, defineComponent, onMounted, onUnmounted, ref } from 'vue';
 // import components
 import { Form } from 'bkui-vue';
 import CommonSideslider from '@/components/common-sideslider';
@@ -23,6 +23,11 @@ export default defineComponent({
   setup(props) {
     // use stores
     const loadBalancerStore = useLoadBalancerStore();
+    const isSniOnHTTPS = computed(
+      () =>
+        loadBalancerStore.currentSelectedTreeNode.sni_switch === 1 &&
+        loadBalancerStore.currentSelectedTreeNode.protocol === 'HTTPS',
+    );
     // use custom hooks
     const {
       isShow,
@@ -31,9 +36,13 @@ export default defineComponent({
       handleShow,
       handleSubmit,
       formData: formModel,
-    } = useAddOrUpdateDomain(() => {
-      typeof props.getListData === 'function' && props.getListData();
-    }, props.originPage);
+    } = useAddOrUpdateDomain(
+      () => {
+        typeof props.getListData === 'function' && props.getListData();
+      },
+      props.originPage,
+      isSniOnHTTPS.value,
+    );
     // <CommonSideslider>使用的loading
     const sideIsLoading = ref(false);
     const formInstance = ref();
@@ -78,6 +87,10 @@ export default defineComponent({
           <span class='value'>
             {`${loadBalancerStore.currentSelectedTreeNode.protocol}:${loadBalancerStore.currentSelectedTreeNode.port}`}
           </span>
+        </p>
+        <p class='readonly-info'>
+          <span class='label'>SNI</span>:
+          <span class='value'>{`${!!loadBalancerStore.currentSelectedTreeNode.sni_switch ? '已开启' : '未开启'}`}</span>
         </p>
         <Form formType='vertical' ref={formInstance} model={formModel}>
           {formItemOptions.value
