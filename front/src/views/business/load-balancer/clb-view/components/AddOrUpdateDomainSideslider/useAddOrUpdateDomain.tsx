@@ -1,6 +1,6 @@
 import { Ref, computed, reactive, ref } from 'vue';
 // import components
-import { Input, Message, Select } from 'bkui-vue';
+import { Input, Message, Select, Tag } from 'bkui-vue';
 // import hooks
 import { useI18n } from 'vue-i18n';
 import { useBusinessStore } from '@/store';
@@ -9,6 +9,8 @@ import { useRoute } from 'vue-router';
 // import types
 import { IOriginPage, QueryRuleOPEnum } from '@/typings';
 import useSelectOptionListWithScroll from '@/hooks/useSelectOptionListWithScroll';
+import BkRadio, { BkRadioGroup } from 'bkui-vue/lib/radio';
+import CertSelector from '@/components/cert-selector';
 
 const { Option } = Select;
 
@@ -32,7 +34,7 @@ export const RuleModeList = [
   },
 ];
 
-export default (getListData: () => void, originPage: IOriginPage) => {
+export default (getListData: () => void, originPage: IOriginPage, isHttpsAndSniOn: boolean) => {
   // use hooks
   const { t } = useI18n();
   const businessStore = useBusinessStore();
@@ -47,8 +49,12 @@ export default (getListData: () => void, originPage: IOriginPage) => {
     url: '',
     scheduler: '',
     target_group_id: '',
+    certificate: {
+      cert_cloud_ids: [],
+      ca_cloud_id: '',
+      ssl_mode: 'UNIDIRECTIONAL',
+    },
   });
-
   // 清空表单参数
   const clearParams = () => {
     Object.assign(formData, {
@@ -111,11 +117,13 @@ export default (getListData: () => void, originPage: IOriginPage) => {
             url: formData.url,
             domains: [formData.domain],
             scheduler: formData.scheduler,
+            certificate: isHttpsAndSniOn ? formData.certificate : undefined,
           })
         : businessStore.updateDomains(lbl_id, {
             lbl_id,
             domain: oldDomain.value,
             new_domain: formData.domain,
+            certificate: isHttpsAndSniOn ? formData.certificate : undefined,
           });
     await promise;
     isShow.value = false;
@@ -167,6 +175,48 @@ export default (getListData: () => void, originPage: IOriginPage) => {
             <Option key={id} id={id} name={name} disabled={listener_num > 0} />
           ))}
         </Select>
+      ),
+    },
+    {
+      label: 'SSL解析方式',
+      required: true,
+      hidden: !isHttpsAndSniOn,
+      content: () => (
+        <BkRadioGroup v-model={formData.certificate.ssl_mode}>
+          <BkRadio label='UNIDIRECTIONAL'>
+            {t('单向认证')}
+            <Tag theme='info' class='recommend-tag ml4'>
+              {t('推荐')}
+            </Tag>
+          </BkRadio>
+          <BkRadio label='MUTUAL' class='ml24 ml4'>
+            {t('双向认证')}
+          </BkRadio>
+        </BkRadioGroup>
+      ),
+    },
+    {
+      label: '服务器证书',
+      required: true,
+      hidden: !isHttpsAndSniOn,
+      content: () => (
+        <CertSelector
+          accountId={loadbalancer.currentSelectedTreeNode.account_id}
+          type='SVR'
+          v-model={formData.certificate.cert_cloud_ids}
+        />
+      ),
+    },
+    {
+      label: 'CA证书',
+      required: true,
+      hidden: formData.certificate.ssl_mode === 'UNIDIRECTIONAL' && !isHttpsAndSniOn,
+      content: () => (
+        <CertSelector
+          accountId={loadbalancer.currentSelectedTreeNode.account_id}
+          type='CA'
+          v-model={formData.certificate.ca_cloud_id}
+        />
       ),
     },
   ]);
