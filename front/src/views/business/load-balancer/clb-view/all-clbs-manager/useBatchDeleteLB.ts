@@ -14,7 +14,7 @@ export default (
   const resourceStore = useResourceStore();
   const isBatchDeleteDialogShow = ref(false);
   const isSubmitLoading = ref(false);
-  const radioGroupValue = ref(false);
+  const radioGroupValue = ref(true);
 
   const tableProps = reactive({
     columns,

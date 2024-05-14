@@ -65,6 +65,7 @@ export default defineComponent({
         id: detail.value.id,
         ...payload,
       });
+      await getDetails(detail.value.id);
       Message({
         message: '更新成功',
         theme: 'success',

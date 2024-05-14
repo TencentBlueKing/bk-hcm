@@ -170,6 +170,46 @@ export default (formModel: ApplyClbModel) => {
         },
         [
           {
+            label: '可用区类型',
+            property: 'zoneType',
+            description:
+              '单可用区：仅支持一个可用区。\n主备可用区：主可用区是当前承载流量的可用区。备可用区默认不承载流量，主可用区不可用时才使用备可用区。',
+            hidden: isIntranet.value || formModel.address_ip_version !== 'IPV4',
+            content: () => (
+              <BkRadioGroup v-model={formModel.zoneType}>
+                {ZONE_TYPE.map(({ label, value, isDisabled }) => {
+                  const disabled =
+                    typeof isDisabled === 'function' ? isDisabled(formModel.region, formModel.account_type) : false;
+                  return (
+                    <BkRadioButton
+                      label={value}
+                      class='w120'
+                      disabled={disabled}
+                      v-bk-tooltips={{
+                        content:
+                          formModel.account_type === 'LEGACY' ? (
+                            <span>
+                              {t('仅标准型账号支持主备可用区')}账号类型说明，参考
+                              <a
+                                href='https://cloud.tencent.com/document/product/1199/49090#judge'
+                                target='_blank'
+                                style={{ color: '#3A84FF' }}>
+                                https://cloud.tencent.com/document/product/1199/49090#judge
+                              </a>
+                            </span>
+                          ) : (
+                            t('仅广州、上海、南京、北京、中国香港、首尔地域的 IPv4 版本的 CLB 支持主备可用区')
+                          ),
+                        disabled: !disabled,
+                      }}>
+                      {t(label)}
+                    </BkRadioButton>
+                  );
+                })}
+              </BkRadioGroup>
+            ),
+          },
+          {
             label: '可用区',
             property: 'zones',
             hidden: !isIntranet.value && formModel.address_ip_version !== 'IPV4',

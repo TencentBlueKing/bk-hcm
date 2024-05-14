@@ -6,13 +6,14 @@
     height: 40px;
     background: #f5f7fa;
     border-radius: 2px;
-    width: 640px;
+    width: 100%;
     margin-bottom: 12px;
     display: flex;
     align-items: center;
     padding: 0 16px;
     cursor: pointer;
     border: 1px solid #ffffff00;
+
     .disabled-button {
       cursor: not-allowed;
     }
@@ -23,18 +24,32 @@
     border: 1px solid #a3c5fd;
     border-radius: 2px;
   }
+
+}
+
+.line {
+  width: 100%;
+  height: 1px;
+  background-color: #EAEBF0;
+  margin: 0 auto;
+  margin-bottom: 25px;
 }
 
 .security-rule-container {
   .specific-security-rule-tables {
-    -ms-overflow-style: none;  /* IE 和 Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;
+    /* IE 和 Edge */
+    scrollbar-width: none;
+    /* Firefox */
     margin-top: 16px;
     overflow-y: auto;
+
     &::-webkit-scrollbar {
-      display: none;  /* Chrome、Safari 和 Opera */
+      display: none;
+      /* Chrome、Safari 和 Opera */
     }
   }
+
   .security-rule-container-title {
     font-weight: 700;
     font-size: 14px;
@@ -73,12 +88,14 @@
       border-radius: 2px;
       border-width: 1px;
     }
+
     .f22 {
       font-size: 22px;
     }
   }
 
   .config-item-wrapper {
+
     .config-security-item,
     .config-security-item-new {
       height: 40px;
@@ -122,8 +139,10 @@
       }
     }
   }
+
   .config-security-item {
     background: #f5f7fa;
+
     &:hover {
       background-color: #eaebf0;
 
@@ -140,10 +159,13 @@
       }
     }
   }
+
   .config-security-item-new {
     background-color: #f2fff4;
+
     &:hover {
       background-color: #e7f9ec;
+
       .config-security-item-edit-block {
         visibility: visible;
         margin-left: auto;
@@ -158,6 +180,17 @@
     }
   }
 }
+
 .search-result-highlight {
   color: #3a84ff;
+}
+
+.config-res-wrapper {
+  display: flex;
+  align-items: center;
+  color: #63656E;
+
+  .edit-icon {
+    cursor: pointer;
+  }
 }
