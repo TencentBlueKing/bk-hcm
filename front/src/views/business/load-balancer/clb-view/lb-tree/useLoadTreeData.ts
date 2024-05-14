@@ -24,7 +24,7 @@ export default (treeData: Ref) => {
   const getTypeUrl = (type: ResourceNodeType, id?: string) => {
     switch (type) {
       case 'lb':
-        return 'load_balancers';
+        return 'load_balancers/with/delete_protection';
       case 'listener':
         return `load_balancers/${id}/listeners`;
       case 'domain':

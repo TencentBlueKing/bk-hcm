@@ -46,7 +46,7 @@ export default defineComponent({
     };
     const formData = reactive(getDefaultFormData());
     const { updateCount } = useChangeScene(isShow, formData);
-    const { formItemOptions, canUpdateRegionOrVpc } = useAddOrUpdateTGForm(formData, updateCount);
+    const { formItemOptions, canUpdateRegionOrVpc } = useAddOrUpdateTGForm(formData, updateCount, isEdit);
 
     // click-handler - 新建目标组
     const handleAddTargetGroup = () => {

@@ -6,7 +6,6 @@ import { useBusinessStore } from '@/store';
 // import types
 import { QueryRuleOPEnum, RulesItem } from '@/typings';
 import { getDifferenceSet } from '@/common/util';
-import { getInstVip } from '@/utils';
 
 export default (
   rsSelections: Ref<any[]>,
@@ -86,7 +85,11 @@ export default (
     }
   };
   const handleSelectAll = (selection: any) => {
-    handleSelectionChange(selection, (row) => !getTableRsList().some((rs) => getInstVip(rs) === getInstVip(row)), true);
+    handleSelectionChange(
+      selection,
+      (row) => !getTableRsList().some((rs) => rs.id === row.id || rs.inst_id === row.id),
+      true,
+    );
     if (selection.checked) {
       selectedCount.value = selections.value.length;
     } else {

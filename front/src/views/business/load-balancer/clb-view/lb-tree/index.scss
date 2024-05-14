@@ -98,11 +98,10 @@
   }
 
   .lb-tree-container {
-    height: calc(100% - 92px);
+    height: calc(100% - 56px);
 
     .lb-tree {
-      overflow-x: hidden;
-      overflow-y: auto;
+      height: calc(100% - 36px) !important;
 
       .bk-node-row {
         padding: 0 3px 0 16px;

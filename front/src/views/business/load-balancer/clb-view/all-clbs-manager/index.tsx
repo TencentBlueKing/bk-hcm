@@ -113,11 +113,12 @@ export default defineComponent({
                 <Button
                   text
                   theme='primary'
-                  disabled={data.listenerNum > 0}
-                  v-bk-tooltips={{
-                    content: '默认域名不允许删除',
-                    disabled: !(data.listenerNum > 0),
-                  }}
+                  disabled={data.listenerNum > 0 || data.delete_protect}
+                  v-bk-tooltips={
+                    data.listenerNum > 0
+                      ? { content: '该负载均衡已绑定监听器, 不可删除', disabled: !(data.listenerNum > 0) }
+                      : { content: t('该负载均衡已开启删除保护, 不可删除'), disabled: !data.delete_protect }
+                  }
                   onClick={() => handleDelete(data)}>
                   删除
                 </Button>
@@ -134,7 +135,7 @@ export default defineComponent({
         },
       },
       requestOption: {
-        type: 'load_balancers',
+        type: 'load_balancers/with/delete_protection',
         sortOption: { sort: 'created_at', order: 'DESC' },
         resolveDataListCb(dataList: any[]) {
           return asyncGetListenerCount(
@@ -219,7 +220,9 @@ export default defineComponent({
               <>
                 已选择<span class='blue'>{tableProps.data.length}</span>个负载均衡，其中
                 <span class='red'>{tableProps.data.filter(({ listenerNum }) => listenerNum > 0).length}</span>
-                个存在监听器不可删除。
+                个存在监听器、
+                <span class='red'>{tableProps.data.filter(({ delete_protect }) => delete_protect).length}</span>
+                个负载均衡开启了删除保护，不可删除。
               </>
             ),
             tab: () => (

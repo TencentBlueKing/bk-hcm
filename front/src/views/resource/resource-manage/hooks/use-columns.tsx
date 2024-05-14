@@ -1182,6 +1182,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '网络类型',
       field: 'lb_type',
       isDefaultShow: true,
+      render: ({ cell }: { cell: string }) => LB_NETWORK_TYPE_MAP[cell] || '',
       sort: true,
       filter: {
         list: [
@@ -1211,6 +1212,18 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           {cell === -1 ? '未分配' : '已分配'}
         </bk-tag>
       ),
+    },
+    {
+      label: '删除保护',
+      field: 'delete_protect',
+      isDefaultShow: true,
+      render: ({ cell }: { cell: boolean }) => (cell ? <bk-tag theme='success'>开启</bk-tag> : <bk-tag>关闭</bk-tag>),
+      filter: {
+        list: [
+          { text: '开启', value: true },
+          { text: '关闭', value: false },
+        ],
+      },
     },
     {
       label: 'IP版本',

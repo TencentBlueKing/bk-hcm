@@ -11,6 +11,7 @@ import SubnetSelector from '../../components/common/subnet-selector';
 import InputNumber from '@/components/input-number';
 import ConditionOptions from '../../components/common/condition-options.vue';
 import CommonCard from '@/components/CommonCard';
+import VpcReviewPopover from '../../components/common/VpcReviewPopover';
 // import types
 import { type ISubnetItem } from '../../cvm/children/SubnetPreviewDialog';
 import type { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
@@ -55,14 +56,19 @@ export default (formModel: ApplyClbModel) => {
     formModel.cloud_subnet_id = undefined;
   };
   const handleVpcChange = async (vpc: any) => {
-    // 获取 vpc 详情用于预览
-    const detailApi = isBusinessPage ? businessStore.detail : resourceStore.detail;
-    detailApi('vpcs', vpc.id).then(({ data }: any) => (vpcData.value = data));
-    if (!vpc) return;
-    if (vpcId.value !== vpc.id) {
-      vpcId.value = vpc.id;
-      formModel.cloud_subnet_id = undefined;
+    if (vpc) {
+      // 获取 vpc 详情用于预览
+      const detailApi = isBusinessPage ? businessStore.detail : resourceStore.detail;
+      detailApi('vpcs', vpc.id).then(({ data }: any) => (vpcData.value = data));
+      if (vpcId.value !== vpc.id) {
+        vpcId.value = vpc.id;
+        formModel.cloud_subnet_id = undefined;
+      }
+    } else {
+      vpcData.value = null;
     }
+
+    if (!vpc) return;
   };
   const handleSubnetDataChange = (data: ISubnetItem) => {
     subnetData.value = data;
@@ -89,7 +95,7 @@ export default (formModel: ApplyClbModel) => {
   const rules = {
     name: [
       {
-        validator: (value: string) => /^[a-zA-Z0-9]([-a-zA-Z0-9]{58})[a-zA-Z0-9]$/.test(value),
+        validator: (value: string) => /^[a-zA-Z0-9]([-a-zA-Z0-9]{0,58})[a-zA-Z0-9]$/.test(value),
         message: '60个字符，字母、数字、“-”，且必须以字母、数字开头和结尾。',
         trigger: 'change',
       },
@@ -157,14 +163,7 @@ export default (formModel: ApplyClbModel) => {
                 region={formModel.region}
                 onChange={handleVpcChange}
               />
-              <Button
-                class='preview-btn'
-                text
-                theme='primary'
-                disabled={!vpcData.value?.id}
-                onClick={() => (isVpcPreviewDialogShow.value = true)}>
-                {t('预览')}
-              </Button>
+              <VpcReviewPopover data={vpcData.value} />
             </div>
           ),
         },
@@ -446,8 +445,11 @@ export default (formModel: ApplyClbModel) => {
                   5120: { label: '5120' },
                 }}
                 showInput
-              />
-              <div class='slider-unit-suffix'>Mbps</div>
+                labelClick>
+                {{
+                  end: () => <div class='slider-unit-suffix'>Mbps</div>,
+                }}
+              </Slider>
             </div>
           ),
         },
