@@ -129,7 +129,8 @@ export default (getListData: (...args: any) => any, originPage: IOriginPage) => 
 
   // 查询负载均衡是否处于锁定状态
   const checkLbIsLocked = async () => {
-    const res = await businessStore.getLBLockStatus(loadBalancerStore.currentSelectedTreeNode.id);
+    const lbId = loadBalancerStore.currentSelectedTreeNode.lb?.id || loadBalancerStore.currentSelectedTreeNode.id;
+    const res = await businessStore.getLBLockStatus(lbId);
     const status = res?.data?.status;
     if (status !== 'success') {
       isLbLocked.value = true;
