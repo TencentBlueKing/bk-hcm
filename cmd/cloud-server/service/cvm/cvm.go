@@ -79,6 +79,8 @@ func InitCvmService(c *capability.Capability) {
 	h.Add("BatchDeleteBizRecycledCvm", http.MethodDelete, "/bizs/{bk_biz_id}/recycled/cvms/batch",
 		svc.BatchDeleteBizRecycledCvm)
 
+	initCvmServiceHooks(svc, h)
+
 	h.Load(c.WebService)
 }
 
