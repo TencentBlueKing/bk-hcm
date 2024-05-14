@@ -24,12 +24,8 @@ import (
 	"sync"
 	"time"
 
-	"hcm/cmd/cloud-server/service/sync/aws"
-	"hcm/cmd/cloud-server/service/sync/azure"
+	"hcm/cmd/cloud-server/logics/account"
 	"hcm/cmd/cloud-server/service/sync/detail"
-	"hcm/cmd/cloud-server/service/sync/gcp"
-	"hcm/cmd/cloud-server/service/sync/huawei"
-	"hcm/cmd/cloud-server/service/sync/tcloud"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
@@ -58,14 +54,14 @@ func CloudResourceSync(intervalMin time.Duration, sd serviced.ServiceDiscover, c
 		logs.Infof("cloud resource all sync start, time: %v", start)
 
 		waitGroup := new(sync.WaitGroup)
+		syncers := account.GetAvailableVendorSyncers()
 
-		vendors := []enumor.Vendor{enumor.TCloud, enumor.Aws, enumor.HuaWei, enumor.Azure, enumor.Gcp}
-		waitGroup.Add(len(vendors))
-		for _, vendor := range vendors {
-			go func(vendor enumor.Vendor) {
+		waitGroup.Add(len(syncers))
+		for _, vendorSyncer := range syncers {
+			go func(vendor account.VendorSyncer) {
 				allAccountSync(core.NewBackendKit(), cliSet, vendor)
 				waitGroup.Done()
-			}(vendor)
+			}(vendorSyncer)
 		}
 
 		waitGroup.Wait()
@@ -75,18 +71,18 @@ func CloudResourceSync(intervalMin time.Duration, sd serviced.ServiceDiscover, c
 }
 
 // allAccountSync all account sync.
-func allAccountSync(kt *kit.Kit, cliSet *client.ClientSet, vendor enumor.Vendor) {
+func allAccountSync(kt *kit.Kit, cliSet *client.ClientSet, syncer account.VendorSyncer) {
 
 	startTime := time.Now()
-	logs.Infof("%s start sync all cloud resource, time: %v, rid: %s", vendor, startTime, kt.Rid)
+	logs.Infof("%s start sync all cloud resource, time: %v, rid: %s", syncer.Vendor(), startTime, kt.Rid)
 
 	defer func() {
-		logs.Infof("%s sync all cloud resource end, cost: %v, rid: %s", vendor, time.Since(startTime), kt.Rid)
+		logs.Infof("%s sync all cloud resource end, cost: %v, rid: %s", syncer.Vendor(), time.Since(startTime), kt.Rid)
 	}()
 
 	listReq := &protocloud.AccountListReq{
 		Filter: &filter.Expression{Op: filter.And, Rules: []filter.RuleFactory{
-			&filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: vendor},
+			&filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: syncer.Vendor()},
 			&filter.AtomRule{Field: "type", Op: filter.Equal.Factory(), Value: enumor.ResourceAccount}}},
 		Page: &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
 	}
@@ -100,49 +96,24 @@ func allAccountSync(kt *kit.Kit, cliSet *client.ClientSet, vendor enumor.Vendor)
 			break
 		}
 
-		for _, one := range accounts {
-			resName := enumor.CloudResourceType("")
+		for _, acc := range accounts {
 			sd := &detail.SyncDetail{
 				Kt:        kt,
 				DataCli:   cliSet.DataService(),
-				AccountID: one.ID,
-				Vendor:    string(one.Vendor),
+				AccountID: acc.ID,
+				Vendor:    string(acc.Vendor),
 			}
-
-			switch one.Vendor {
-			case enumor.TCloud:
-				opt := &tcloud.SyncAllResourceOption{AccountID: one.ID, SyncPublicResource: syncPublicResource}
-				resName, err = tcloud.SyncAllResource(kt, cliSet, opt)
-
-			case enumor.Aws:
-				opt := &aws.SyncAllResourceOption{AccountID: one.ID, SyncPublicResource: syncPublicResource}
-				resName, err = aws.SyncAllResource(kt, cliSet, opt)
-
-			case enumor.HuaWei:
-				opt := &huawei.SyncAllResourceOption{AccountID: one.ID, SyncPublicResource: syncPublicResource}
-				resName, err = huawei.SyncAllResource(kt, cliSet, opt)
-
-			case enumor.Azure:
-				opt := &azure.SyncAllResourceOption{AccountID: one.ID, SyncPublicResource: syncPublicResource}
-				resName, err = azure.SyncAllResource(kt, cliSet, opt)
-
-			case enumor.Gcp:
-				opt := &gcp.SyncAllResourceOption{AccountID: one.ID, SyncPublicResource: syncPublicResource}
-				resName, err = gcp.SyncAllResource(kt, cliSet, opt)
-
-			default:
-				logs.Errorf("unknown %s vendor type", one.Vendor)
-				continue
-			}
+			resName, err := syncer.SyncAllResource(kt, cliSet, acc.ID, syncPublicResource)
 			if err != nil {
 				if resName != "" {
 					if err := sd.ResSyncStatusFailed(resName, err); err != nil {
-						logs.Errorf("%s sync %s res detail failed, err: %v, accountID: %s, rid: %s", vendor,
-							resName, err, one.ID, kt.Rid)
+						logs.Errorf("%s sync %s res detail failed, err: %v, accountID: %s, rid: %s",
+							syncer.Vendor(), resName, err, acc.ID, kt.Rid)
 						return
 					}
 				}
-				logs.Errorf("sync %s all resource failed, err: %v, accountID: %s, rid: %s", vendor, err, one.ID, kt.Rid)
+				logs.Errorf("sync %s all resource failed, err: %v, accountID: %s, rid: %s",
+					syncer.Vendor(), err, acc.ID, kt.Rid)
 				// 跳过当前账号
 				continue
 			}
