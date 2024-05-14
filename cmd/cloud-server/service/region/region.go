@@ -26,7 +26,6 @@ import (
 	"hcm/cmd/cloud-server/service/capability"
 	protoregion "hcm/pkg/api/cloud-server/region"
 	"hcm/pkg/api/core"
-	dataregion "hcm/pkg/api/data-service/cloud/region"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -75,43 +74,21 @@ func (svc *RegionSvc) ListRegion(cts *rest.Contexts) (interface{}, error) {
 		Start: req.Page.Start,
 		Limit: req.Page.Limit,
 	}
-
+	listReq := &core.ListReq{
+		Filter: req.Filter,
+		Page:   reqPage,
+	}
 	switch vendor {
 	case enumor.TCloud:
-		listReq := &dataregion.TCloudRegionListReq{
-			Filter: req.Filter,
-			Page:   reqPage,
-		}
 		return svc.client.DataService().TCloud.Region.ListRegion(cts.Kit.Ctx, cts.Kit.Header(), listReq)
-
 	case enumor.Aws:
-		listReq := &dataregion.AwsRegionListReq{
-			Filter: req.Filter,
-			Page:   reqPage,
-		}
 		return svc.client.DataService().Aws.Region.ListRegion(cts.Kit.Ctx, cts.Kit.Header(), listReq)
-
 	case enumor.HuaWei:
-		listReq := &dataregion.HuaWeiRegionListReq{
-			Filter: req.Filter,
-			Page:   reqPage,
-		}
 		return svc.client.DataService().HuaWei.Region.ListRegion(cts.Kit.Ctx, cts.Kit.Header(), listReq)
-
 	case enumor.Azure:
-		listReq := &dataregion.AzureRegionListReq{
-			Filter: req.Filter,
-			Page:   reqPage,
-		}
 		return svc.client.DataService().Azure.Region.ListRegion(cts.Kit.Ctx, cts.Kit.Header(), listReq)
-
 	case enumor.Gcp:
-		listReq := &dataregion.GcpRegionListReq{
-			Filter: req.Filter,
-			Page:   reqPage,
-		}
 		return svc.client.DataService().Gcp.Region.ListRegion(cts.Kit.Ctx, cts.Kit.Header(), listReq)
-
 	default:
 		return nil, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
 	}

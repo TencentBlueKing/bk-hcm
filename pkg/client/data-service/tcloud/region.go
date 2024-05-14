@@ -138,7 +138,7 @@ func (v *RegionClient) BatchDelete(ctx context.Context, h http.Header, req *data
 }
 
 // ListRegion get tcloud region list.
-func (v *RegionClient) ListRegion(ctx context.Context, h http.Header, req *protoregion.TCloudRegionListReq) (
+func (v *RegionClient) ListRegion(ctx context.Context, h http.Header, req *core.ListReq) (
 	*protoregion.TCloudRegionListResult, error) {
 
 	resp := new(protoregion.TCloudRegionListResp)

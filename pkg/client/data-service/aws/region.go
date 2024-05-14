@@ -137,7 +137,7 @@ func (v *RegionClient) BatchDelete(ctx context.Context, h http.Header, req *data
 }
 
 // ListRegion get aws region list.
-func (v *RegionClient) ListRegion(ctx context.Context, h http.Header, req *protoregion.AwsRegionListReq) (
+func (v *RegionClient) ListRegion(ctx context.Context, h http.Header, req *core.ListReq) (
 	*protoregion.AwsRegionListResult, error) {
 
 	resp := new(protoregion.AwsRegionListResp)

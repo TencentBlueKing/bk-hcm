@@ -124,7 +124,7 @@ func (cli *client) listRegionFromDB(kt *kit.Kit, params *SyncBaseParams) (
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	req := &dataregion.GcpRegionListReq{
+	req := &core.ListReq{
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
@@ -258,7 +258,7 @@ func (cli *client) deleteRegion(kt *kit.Kit, accountID string, delCloudIDs []str
 }
 
 func (cli *client) RemoveRegionDeleteFromCloud(kt *kit.Kit, accountID string) error {
-	req := &dataregion.GcpRegionListReq{
+	req := &core.ListReq{
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{

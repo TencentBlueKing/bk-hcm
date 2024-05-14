@@ -90,6 +90,7 @@ func (opt syncSGRuleOption) Validate() error {
 }
 
 func (cli *client) securityGroupRule(kt *kit.Kit, opt *syncSGRuleOption) (*SyncResult, error) {
+
 	sg, err := cli.dbCli.TCloud.SecurityGroup.GetSecurityGroup(kt.Ctx, kt.Header(), opt.SGID)
 	if err != nil {
 		logs.Errorf("[%s] request dataservice get TCloud security group failed, err: %v, rid: %s", enumor.TCloud,
@@ -145,6 +146,7 @@ func (cli *client) securityGroupRule(kt *kit.Kit, opt *syncSGRuleOption) (*SyncR
 		rule := convTCloudRule(policy, &sg.BaseSecurityGroup, version, enumor.Egress, argsTplMap)
 		createRules = append(createRules, *rule)
 	}
+
 	for _, policy := range ingressRuleMaps {
 		rule := convTCloudRule(policy, &sg.BaseSecurityGroup, version, enumor.Ingress, argsTplMap)
 		createRules = append(createRules, *rule)
@@ -155,6 +157,7 @@ func (cli *client) securityGroupRule(kt *kit.Kit, opt *syncSGRuleOption) (*SyncR
 			return nil, err
 		}
 	}
+
 	if len(updateRules) != 0 {
 		if err = cli.updateSGRule(kt, sg.ID, updateRules); err != nil {
 			return nil, err
@@ -168,6 +171,7 @@ func (cli *client) securityGroupRule(kt *kit.Kit, opt *syncSGRuleOption) (*SyncR
 			return nil, err
 		}
 	}
+
 	return syncResult, nil
 }
 

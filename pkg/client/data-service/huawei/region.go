@@ -43,7 +43,7 @@ func NewRegionClient(client rest.ClientInterface) *RegionClient {
 
 // ListRegion list region.
 func (cli *RegionClient) ListRegion(ctx context.Context, h http.Header,
-	request *protoregion.HuaWeiRegionListReq) (*protoregion.HuaWeiRegionListResult, error) {
+	request *core.ListReq) (*protoregion.HuaWeiRegionListResult, error) {
 
 	resp := new(protoregion.HuaWeiRegionListResp)
 

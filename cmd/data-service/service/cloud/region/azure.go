@@ -139,7 +139,7 @@ func (svc *regionSvc) BatchDeleteAzureRegion(cts *rest.Contexts) (interface{}, e
 // ListAzureRegion list azure region with filter
 func (svc *regionSvc) ListAzureRegion(cts *rest.Contexts) (interface{}, error) {
 
-	req := new(protoregion.AzureRegionListReq)
+	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -150,6 +150,7 @@ func (svc *regionSvc) ListAzureRegion(cts *rest.Contexts) (interface{}, error) {
 
 	opt := &types.ListOption{
 		Filter: req.Filter,
+		Fields: req.Fields,
 		Page:   req.Page,
 	}
 	result, err := svc.dao.AzureRegion().List(cts.Kit, opt)
