@@ -13,7 +13,7 @@ import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
 import useBatchDeleteLB from './useBatchDeleteLB';
 import { useResourceStore } from '@/store';
 // import utils
-import { getTableRowClassOption } from '@/common/util';
+import { getTableNewRowClass } from '@/common/util';
 import { asyncGetListenerCount } from '@/utils';
 // import types
 import { CLB_STATUS_MAP, LB_NETWORK_TYPE_MAP } from '@/constants';
@@ -131,7 +131,7 @@ export default defineComponent({
           isRowSelectEnable,
           onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
           onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
-          ...getTableRowClassOption(),
+          rowClass: getTableNewRowClass(),
         },
       },
       requestOption: {

@@ -50,11 +50,6 @@ export default (formModel: ApplyClbModel) => {
   const isIntranet = computed(() => formModel.load_balancer_type === 'INTERNAL');
 
   // define handler function
-  const handleZoneChange = () => {
-    vpcId.value = '';
-    formModel.cloud_vpc_id = '';
-    formModel.cloud_subnet_id = undefined;
-  };
   const handleVpcChange = async (vpc: any) => {
     if (vpc) {
       // 获取 vpc 详情用于预览
@@ -221,7 +216,6 @@ export default (formModel: ApplyClbModel) => {
                     v-model={formModel.zones}
                     vendor={formModel.vendor}
                     region={formModel.region}
-                    onChange={handleZoneChange}
                     delayed={true}
                     isLoading={isResourceListLoading.value}
                   />

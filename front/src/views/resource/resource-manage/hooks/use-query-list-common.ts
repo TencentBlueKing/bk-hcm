@@ -2,10 +2,9 @@
  * 分页相关状态和事件
  */
 import type { FilterType } from '@/typings/resource';
-
-import { useResourceStore } from '@/store/resource';
+import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
+import { useBusinessStore, useResourceStore } from '@/store';
 import { Ref, ref, watch } from 'vue';
-
 type SortType = {
   column: {
     field: string;
@@ -19,7 +18,8 @@ type PropsType = {
 export default (props: PropsType, url: Ref<string>, extraConfig?: any) => {
   // 接口
   const resourceStore = useResourceStore();
-
+  const businessStore = useBusinessStore();
+  const { whereAmI } = useWhereAmI();
   // 查询列表相关状态
   const isLoading = ref(false);
   const datas = ref([]);
@@ -33,10 +33,10 @@ export default (props: PropsType, url: Ref<string>, extraConfig?: any) => {
 
   // 更新数据
   const triggerApi = () => {
+    const method = whereAmI.value === Senarios.business ? businessStore.getCommonList : resourceStore.getCommonList;
     isLoading.value = true;
-
     Promise.all([
-      resourceStore.getCommonList(
+      method(
         {
           page: {
             count: false,
@@ -49,7 +49,7 @@ export default (props: PropsType, url: Ref<string>, extraConfig?: any) => {
         },
         url.value,
       ),
-      resourceStore.getCommonList(
+      method(
         {
           page: {
             count: true,

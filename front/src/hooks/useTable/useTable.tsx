@@ -144,7 +144,7 @@ export const useTable = (props: IProp) => {
 
     // 异步处理 dataList
     if (typeof props.requestOption.resolveDataListCb === 'function') {
-      props.requestOption.resolveDataListCb(dataList.value).then((newDataList: any[]) => {
+      props.requestOption.resolveDataListCb(dataList.value, getListData).then((newDataList: any[]) => {
         dataList.value = newDataList;
       });
     }

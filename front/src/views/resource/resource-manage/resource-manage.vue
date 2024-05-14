@@ -749,4 +749,7 @@ onMounted(() => {
 .mw88 {
   min-width: 88px;
 }
+.table-new-row td {
+  background-color: #f2fff4 !important;
+}
 </style>

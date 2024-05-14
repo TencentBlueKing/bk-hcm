@@ -120,7 +120,7 @@ export default (formModel: ApplyClbModel, formRef: any) => {
             </span>
           </div> */}
           <div class='info-wrap'>
-            <Popover theme='light' trigger='click' width={362} placement='top' offset={12}>
+            <Popover theme='light' width={362} placement='top' offset={12}>
               {{
                 default: () => <span class='label has-tips'>{t('配置费用')}</span>,
                 content: () => (

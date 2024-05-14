@@ -46,7 +46,11 @@ export default defineComponent({
     };
     const formData = reactive(getDefaultFormData());
     const { updateCount } = useChangeScene(isShow, formData);
-    const { formItemOptions, canUpdateRegionOrVpc } = useAddOrUpdateTGForm(formData, updateCount, isEdit);
+    const { formItemOptions, canUpdateRegionOrVpc, formRef, rules } = useAddOrUpdateTGForm(
+      formData,
+      updateCount,
+      isEdit,
+    );
 
     // click-handler - 新建目标组
     const handleAddTargetGroup = () => {
@@ -122,6 +126,7 @@ export default defineComponent({
 
     // submit - [新增/编辑目标组] 或 [批量添加rs] 或 [批量修改端口] 或 [批量修改权重]
     const handleAddOrUpdateTargetGroupSubmit = async () => {
+      await formRef.value.validate();
       let promise;
       let message;
       switch (loadBalancerStore.currentScene) {
@@ -199,7 +204,7 @@ export default defineComponent({
         isSubmitLoading={isSubmitDisabled.value}
         onHandleSubmit={handleAddOrUpdateTargetGroupSubmit}>
         <bk-container margin={0}>
-          <Form formType='vertical' model={formData}>
+          <Form formType='vertical' model={formData} ref={formRef} rules={rules}>
             {formItemOptions.value.map((item) => (
               <bk-row>
                 {Array.isArray(item) ? (

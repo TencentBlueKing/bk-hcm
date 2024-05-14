@@ -22,7 +22,7 @@ import Confirm from '@/components/confirm';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import useBatchDeleteListener from '../specific-clb-manager/listener-list/useBatchDeleteListener';
-import { getTableRowClassOption } from '@/common/util';
+import { getTableNewRowClass } from '@/common/util';
 import bus from '@/common/bus';
 import { QueryRuleOPEnum } from '@/typings';
 import useSelectOptionListWithScroll from '@/hooks/useSelectOptionListWithScroll';
@@ -211,7 +211,7 @@ export default defineComponent({
           settings: tableSettings.value,
           onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
           onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
-          ...getTableRowClassOption(),
+          rowClass: getTableNewRowClass(),
         },
       },
       requestOption: {

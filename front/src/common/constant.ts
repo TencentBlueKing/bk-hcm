@@ -573,4 +573,5 @@ export const CLB_SPECS = {
 export const CLB_BINDING_STATUS = {
   binding: '绑定中',
   success: '已绑定',
+  failed: '未绑定',
 };

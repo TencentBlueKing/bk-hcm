@@ -29,6 +29,9 @@ export const useBusinessStore = defineStore({
     list(data: any, type: string) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/list`, data);
     },
+    getCommonList(data: any, url: string) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${url}`, data);
+    },
     /**
      * 根据id获取对应资源详情信息
      * @param type 资源类型

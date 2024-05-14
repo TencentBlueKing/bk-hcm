@@ -16,7 +16,7 @@ import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import useBatchDeleteListener from './useBatchDeleteListener';
 import AddOrUpdateListenerSideslider from '../../components/AddOrUpdateListenerSideslider';
 // import utils
-import { getTableRowClassOption } from '@/common/util';
+import { getTableNewRowClass } from '@/common/util';
 import bus from '@/common/bus';
 // import types
 import { DoublePlainObject } from '@/typings';
@@ -29,7 +29,7 @@ export default defineComponent({
     const { t } = useI18n();
     const { whereAmI } = useWhereAmI();
     const { selections, handleSelectionChange, resetSelections } = useSelection();
-
+    let timer: string | number | NodeJS.Timeout;
     const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
       if (isCheckAll) return true;
       return isCurRowSelectEnable(row);
@@ -110,12 +110,23 @@ export default defineComponent({
           onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
           onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
           // new标识
-          ...getTableRowClassOption(),
+          rowClass: getTableNewRowClass(),
         },
       },
       requestOption: {
         type: `load_balancers/${props.id}/listeners`,
         sortOption: { sort: 'created_at', order: 'DESC' },
+        async resolveDataListCb(dataList: any[], getListData) {
+          if (dataList.length === 0) return;
+          const ids = dataList.filter((item) => item.binding_status === 'binding').map((item) => item.id);
+          if (ids.length) {
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+              getListData();
+            }, 5000);
+          }
+          return dataList;
+        },
       },
     });
 

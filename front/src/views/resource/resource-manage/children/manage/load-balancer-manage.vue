@@ -30,6 +30,7 @@
       :settings="settings"
       :pagination="pagination"
       remote-pagination
+      :row-class="getTableNewRowClass()"
       show-overflow-tooltip
       :is-row-select-enable="isRowSelectEnable"
       @page-limit-change="handlePageSizeChange"
@@ -106,8 +107,8 @@ import useColumns from '../../hooks/use-columns';
 import useBatchDeleteLB from '@/views/business/load-balancer/clb-view/all-clbs-manager/useBatchDeleteLB';
 import { useI18n } from 'vue-i18n';
 import { asyncGetListenerCount } from '@/utils';
+import { getTableNewRowClass } from '@/common/util';
 import { useResourceStore } from '@/store';
-
 const props = defineProps({
   filter: {
     type: Object as PropType<FilterType>,
