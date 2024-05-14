@@ -3,7 +3,7 @@ import { defineStore } from 'pinia';
 
 import { useAccountStore } from '@/store';
 import { getQueryStringParams } from '@/common/util';
-import { ClbQuotasResp, LbPriceInquiryResp } from '@/typings';
+import { AsyncTaskDetailResp, ClbQuotasResp, LbPriceInquiryResp } from '@/typings';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 // 获取
@@ -498,6 +498,13 @@ export const useBusinessStore = defineStore({
      */
     getLBLockStatus(id: string) {
       return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}load_balancers/${id}/lock/status`);
+    },
+    /**
+     * 查询异步任务详情
+     * @param flowId 异步任务id
+     */
+    getAsyncTaskDetail(flowId: string): Promise<AsyncTaskDetailResp> {
+      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/async_task/flows/${flowId}`);
     },
   },
 });

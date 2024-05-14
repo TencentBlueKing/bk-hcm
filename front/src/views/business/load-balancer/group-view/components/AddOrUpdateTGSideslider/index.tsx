@@ -1,6 +1,6 @@
-import { defineComponent, onMounted, onUnmounted, ref, PropType, reactive } from 'vue';
+import { defineComponent, onMounted, onUnmounted, ref, PropType, reactive, computed, nextTick } from 'vue';
 // import components
-import { Form, Message } from 'bkui-vue';
+import { Alert, Button, Form, Message } from 'bkui-vue';
 import CommonSideslider from '@/components/common-sideslider';
 // import stores
 import { useAccountStore, useBusinessStore, useLoadBalancerStore } from '@/store';
@@ -9,6 +9,7 @@ import useAddOrUpdateTGForm from './useAddOrUpdateTGForm';
 import useChangeScene from './useChangeScene';
 // import utils
 import bus from '@/common/bus';
+import { goAsyncTaskDetail } from '@/utils';
 
 const { FormItem } = Form;
 
@@ -26,8 +27,13 @@ export default defineComponent({
     const loadBalancerStore = useLoadBalancerStore();
 
     const isShow = ref(false);
-    const isSubmitDisabled = ref(false);
+    const isSubmitLoading = ref(false);
     const isEdit = ref(false);
+    const lastAsyncTaskInfo = reactive({ tgId: '', flowId: '', state: '' });
+    const isSubmitDisabled = computed(() => {
+      return !['add', 'edit', 'AddRs', 'port', 'weight'].includes(loadBalancerStore.currentScene);
+    });
+    let timer: any;
 
     // 表单相关
     const getDefaultFormData = () => ({
@@ -58,16 +64,29 @@ export default defineComponent({
       loadBalancerStore.setCurrentScene('add');
       isShow.value = true;
       isEdit.value = false;
+      nextTick(() => {
+        formRef.value.clearValidate();
+      });
     };
 
     // click-handler - 编辑目标组
     const handleEditTargetGroup = (data: any) => {
+      clearInterval(timer);
+      loadBalancerStore.setUpdateCount(0);
       clearFormData();
       Object.assign(formData, data);
       // 初始化场景值
       loadBalancerStore.setCurrentScene(null);
       isShow.value = true;
       isEdit.value = true;
+      // 判断是否有异步任务在执行
+      if (lastAsyncTaskInfo.tgId === data.id) {
+        // 轮询查询异步任务状态
+        loadBalancerStore.setUpdateCount(2);
+        timer = setInterval(() => {
+          reqAsyncTaskStatus(lastAsyncTaskInfo.tgId, lastAsyncTaskInfo.flowId);
+        }, 2000);
+      }
     };
 
     // 处理参数 - add
@@ -124,6 +143,26 @@ export default defineComponent({
       [`new_${type}`]: formData.rs_list[0][type],
     });
 
+    // check-status - 查询异步任务执行状态
+    const reqAsyncTaskStatus = (tgId: string, flowId: string) => {
+      businessStore.getAsyncTaskDetail(flowId).then(({ data: { state } }) => {
+        if (state === 'success') {
+          // 如果异步任务状态为 success, 则重新拉取 detail 详情
+          Object.assign(lastAsyncTaskInfo, { tgId: '', flowId: '', state });
+          businessStore.getTargetGroupDetail(tgId).then((tgDetailRes: any) => {
+            handleEditTargetGroup({ ...tgDetailRes.data, rs_list: tgDetailRes.data.target_list });
+          });
+        } else if (['canceled', 'failed'].includes(state)) {
+          // 如果异步任务为非 success 的结束状态, 停止轮询, 并给用户错误提示
+          clearInterval(timer);
+          Object.assign(lastAsyncTaskInfo, { tgId, flowId, state });
+        } else {
+          // 如果异步任务状态为非结束状态, 则记录异步任务id, 当用户下一次点击该目标组详情时, 再查询一次异步任务状态
+          Object.assign(lastAsyncTaskInfo, { tgId, flowId, state });
+        }
+      });
+    };
+
     // submit - [新增/编辑目标组] 或 [批量添加rs] 或 [批量修改端口] 或 [批量修改权重]
     const handleAddOrUpdateTargetGroupSubmit = async () => {
       await formRef.value.validate();
@@ -140,23 +179,28 @@ export default defineComponent({
           break;
         case 'AddRs':
           promise = businessStore.batchAddTargets(resolveFormDataForAddRs());
-          message = 'RS添加成功';
+          message = 'RS添加异步任务已提交';
           break;
         case 'port':
           promise = businessStore.batchUpdateRsPort(formData.id, resolveFormDataForBatchUpdate('port'));
-          message = '批量修改端口成功';
+          message = '批量修改端口异步任务已提交';
           break;
         case 'weight':
           promise = businessStore.batchUpdateRsWeight(formData.id, resolveFormDataForBatchUpdate('weight'));
-          message = '批量修改权重成功';
+          message = '批量修改权重异步任务已提交';
           break;
       }
       try {
-        isSubmitDisabled.value = true;
-        await promise;
+        isSubmitLoading.value = true;
+        const { data } = await promise;
         Message({ message, theme: 'success' });
+        // 异步任务非结束状态, 记录异步任务flow_id以及当前操作目标组id
+        if (data?.state !== 'success' && data?.flow_id) {
+          Object.assign(lastAsyncTaskInfo, { tgId: formData.id, flowId: data.flow_id, state: 'pending' });
+          // 重置状态
+          handleEditTargetGroup({ ...formData });
+        }
         isShow.value = false;
-
         // 如果组件用于list页面, 则重新请求list接口; 如果组件用于info页面, 则重新请求detail接口
         if (props.origin === 'list') {
           // 表格目标组list
@@ -167,7 +211,7 @@ export default defineComponent({
         // 刷新左侧目标组list
         bus.$emit('refreshTargetGroupList');
       } finally {
-        isSubmitDisabled.value = false;
+        isSubmitLoading.value = false;
       }
     };
 
@@ -194,6 +238,8 @@ export default defineComponent({
       bus.$off('addTargetGroup');
       bus.$off('editTargetGroup');
       bus.$off('updateSelectedRsList');
+      // 清除定时器
+      clearInterval(timer);
     });
 
     return () => (
@@ -201,10 +247,35 @@ export default defineComponent({
         title={isEdit.value ? '编辑目标组' : '新建目标组'}
         width={960}
         v-model:isShow={isShow.value}
-        isSubmitLoading={isSubmitDisabled.value}
+        isSubmitLoading={isSubmitLoading.value}
+        isSubmitDisabled={isSubmitDisabled.value}
         onHandleSubmit={handleAddOrUpdateTargetGroupSubmit}>
         <bk-container margin={0}>
           <Form formType='vertical' model={formData} ref={formRef} rules={rules}>
+            {(function () {
+              const { state } = lastAsyncTaskInfo;
+              if (state === 'success' || !state) return;
+              if (['canceled', 'failed'].includes(state)) {
+                return (
+                  <Alert theme='danger' class='mb24'>
+                    当前目标组有异步任务存在异常，
+                    <Button text theme='primary' onClick={() => goAsyncTaskDetail(lastAsyncTaskInfo.flowId)}>
+                      查看任务
+                    </Button>
+                    。
+                  </Alert>
+                );
+              }
+              return (
+                <Alert theme='info' class='mb24'>
+                  当前目标组有异步任务正在进行中，
+                  <Button text theme='primary' onClick={() => goAsyncTaskDetail(lastAsyncTaskInfo.flowId)}>
+                    查看任务
+                  </Button>
+                  。
+                </Alert>
+              );
+            })()}
             {formItemOptions.value.map((item) => (
               <bk-row>
                 {Array.isArray(item) ? (
