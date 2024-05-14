@@ -269,7 +269,7 @@ func (svc *lbSvc) ListBizListenerDomains(cts *rest.Contexts) (any, error) {
 	}
 
 	if !lbl.Protocol.IsLayer7Protocol() {
-		return nil, errf.Newf(errf.InvalidParameter, "unsupported listner protocol type: %s", lbl.Protocol)
+		return nil, errf.Newf(errf.InvalidParameter, "unsupported listener protocol type: %s", lbl.Protocol)
 	}
 	// 查询规则列表
 	ruleList, err := svc.listRuleWithCondition(cts.Kit, req)
@@ -375,6 +375,11 @@ func (svc *lbSvc) CreateBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 	lblInfo, lblBasicInfo, err := svc.getTCloudListenerByID(cts, bizID, lblID)
 	if err != nil {
 		return nil, err
+	}
+
+	// if SNI Switch is off, certificates can only be set in listener not its rule
+	if lblInfo.SniSwitch == enumor.SniTypeClose && req.Certificate != nil {
+		return nil, errf.New(errf.InvalidParameter, "can not set certificate on rule of sni_switch off listener")
 	}
 
 	// 业务校验、鉴权
@@ -584,7 +589,7 @@ func convRuleCreate(rule *cslb.TCloudRuleCreate, tg *corelb.BaseTargetGroup) hcp
 		TrpcFunc:           rule.TrpcFunc,
 		TrpcCallee:         rule.TrpcCallee,
 		HealthCheck:        tg.HealthCheck,
-		Certificates:       rule.Certificates,
+		Certificates:       rule.Certificate,
 		Memo:               rule.Memo,
 	}
 }

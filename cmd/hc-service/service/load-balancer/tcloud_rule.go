@@ -74,7 +74,9 @@ func (svc *clbSvc) TCloudCreateUrlRule(cts *rest.Contexts) (any, error) {
 		LoadBalancerId: lb.CloudID,
 		ListenerId:     listener.CloudID,
 	}
-	ruleOption.Rules = slice.Map(req.Rules, convRuleCreate)
+	for _, item := range req.Rules {
+		ruleOption.Rules = append(ruleOption.Rules, convRuleCreate(item, listener.Protocol))
+	}
 	creatResult, err := tcloudAdpt.CreateRule(cts.Kit, &ruleOption)
 	if err != nil {
 		logs.Errorf("create tcloud url rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -122,7 +124,7 @@ func (svc *clbSvc) TCloudCreateUrlRule(cts *rest.Contexts) (any, error) {
 	return creatResult, nil
 }
 
-func convRuleCreate(r protolb.TCloudRuleCreate) *typelb.RuleInfo {
+func convRuleCreate(r protolb.TCloudRuleCreate, protocol enumor.ProtocolType) *typelb.RuleInfo {
 	ruleInfo := &typelb.RuleInfo{
 		Url:               cvt.ValToPtr(r.Url),
 		SessionExpireTime: r.SessionExpireTime,
@@ -136,6 +138,10 @@ func convRuleCreate(r protolb.TCloudRuleCreate) *typelb.RuleInfo {
 		TrpcCallee:        r.TrpcCallee,
 		TrpcFunc:          r.TrpcFunc,
 		Quic:              r.Quic,
+	}
+	// 7层不支持设置健康检查端口
+	if protocol.IsLayer7Protocol() && r.HealthCheck.CheckPort != nil {
+		ruleInfo.HealthCheck.CheckPort = nil
 	}
 	if len(r.Domains) == 1 {
 		ruleInfo.Domain = cvt.ValToPtr(r.Domains[0])
