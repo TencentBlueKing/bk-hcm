@@ -498,13 +498,19 @@ export default (formModel: ApplyClbModel) => {
           required: true,
           property: 'name',
           description: '单个实例：以填写的名称命名。\n多个实例：以填写的名称为前缀，由系统自动补充随机的后缀。',
-          content: () => <Input class='w500' v-model={formModel.name}></Input>,
+          content: () => <Input class='w500' v-model={formModel.name} placeholder='请输入实例名称'></Input>,
         },
         {
           label: '申请单备注',
           property: 'memo',
           content: () => (
-            <Input type='textarea' v-model={formModel.memo} rows={3} maxlength={255} resize={false}></Input>
+            <Input
+              type='textarea'
+              v-model={formModel.memo}
+              rows={3}
+              maxlength={255}
+              resize={false}
+              placeholder='请输入申请单备注'></Input>
           ),
         },
       ],

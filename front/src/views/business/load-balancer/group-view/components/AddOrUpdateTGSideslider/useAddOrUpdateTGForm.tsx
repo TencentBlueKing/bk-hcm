@@ -19,6 +19,7 @@ export default (formData: any, updateCount: Ref<number>, isEdit: Ref<boolean>) =
 
   const curVendor = ref(VendorEnum.TCLOUD);
   const curVpcId = ref('');
+  const deletedRsList = ref([]);
 
   const selectedBizId = computed({
     get() {
@@ -183,6 +184,7 @@ export default (formData: any, updateCount: Ref<number>, isEdit: Ref<boolean>) =
       content: () => (
         <RsConfigTable
           v-model:rsList={formData.rs_list}
+          v-model:deletedRsList={deletedRsList.value}
           accountId={formData.account_id}
           vpcId={curVpcId.value}
           port={formData.port}
@@ -211,5 +213,6 @@ export default (formData: any, updateCount: Ref<number>, isEdit: Ref<boolean>) =
     formRef,
     formItemOptions,
     canUpdateRegionOrVpc,
+    deletedRsList,
   };
 };

@@ -5,12 +5,13 @@ import BkRadio, { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import { Plus, RightTurnLine, Spinner } from 'bkui-vue/lib/icon';
 import CommonSideslider from '@/components/common-sideslider';
 // import stores
-import { useLoadBalancerStore, useAccountStore, useBusinessStore } from '@/store';
+import { useLoadBalancerStore, useAccountStore } from '@/store';
 // import hooks
 import { useI18n } from 'vue-i18n';
 import useAddOrUpdateListener from './useAddOrUpdateListener';
 // import utils
 import bus from '@/common/bus';
+import { goAsyncTaskDetail } from '@/utils';
 // import constants
 import { APPLICATION_LAYER_LIST } from '@/constants';
 import { IOriginPage } from '@/typings';
@@ -28,7 +29,6 @@ export default defineComponent({
   },
   setup(props) {
     const loadBalancerStore = useLoadBalancerStore();
-    const businessStore = useBusinessStore();
     const accountStore = useAccountStore();
     const protocolButtonList = ['TCP', 'UDP', 'HTTP', 'HTTPS'];
     // use hooks
@@ -77,27 +77,6 @@ export default defineComponent({
       bus.$off('showEditListenerSideslider');
     });
 
-    // 当负载均衡被锁定时, 可以链接至异步任务详情页面
-    const goAsyncTaskDetail = async () => {
-      // 1. 点击后, 先查询到 audit_id
-      const { data } = await businessStore.list(
-        {
-          page: { limit: 1, start: 0, count: false },
-          filter: {
-            op: 'and',
-            rules: [{ field: 'detail.data.res_flow.flow_id', op: 'json_eq', value: lockedLbInfo.value.flow_id }],
-          },
-        },
-        'audits',
-      );
-      const { id, res_name: name, res_id, bk_biz_id, detail } = data.details[0];
-      // 2. 新开页面查看异步任务详情
-      window.open(
-        `/#/business/record/detail?id=${id}&name=${name}&res_id=${res_id}&bizs=${bk_biz_id}&flow=${detail.data.res_flow.flow_id}`,
-        '_blank',
-      );
-    };
-
     return () => (
       <CommonSideslider
         class='listener-sideslider-container'
@@ -109,7 +88,7 @@ export default defineComponent({
         {isLbLocked.value ? (
           <Alert theme='danger' class={'mb24'}>
             当前负载均衡正在变更中，不允许新增监听器，
-            <Button text theme='primary' onClick={goAsyncTaskDetail}>
+            <Button text theme='primary' onClick={() => goAsyncTaskDetail(lockedLbInfo.value.flow_id)}>
               查看当前任务
             </Button>
             。

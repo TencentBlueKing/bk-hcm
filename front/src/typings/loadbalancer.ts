@@ -61,3 +61,18 @@ interface LbPriceItem {
 
 // response - 负载均衡价格信息
 export type LbPriceInquiryResp = IQueryResData<LbPrice>;
+
+// 异步任务Flow详情
+export interface AsyncTaskDetail {
+  id: string;
+  name: string;
+  state: string;
+  reason: string;
+  creator: string;
+  reviser: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// response - 异步任务Flow详情
+export type AsyncTaskDetailResp = IQueryResData<AsyncTaskDetail>;
