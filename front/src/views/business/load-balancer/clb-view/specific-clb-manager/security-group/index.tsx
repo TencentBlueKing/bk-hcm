@@ -17,6 +17,7 @@ import { IDetail } from '@/hooks/useRouteLinkBtn';
 import { VueDraggable } from 'vue-draggable-plus';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import DraggableItem from './draggable-item';
+import { cloneDeep } from 'lodash';
 
 export enum SecurityRuleDirection {
   in = 'ingress',
@@ -36,7 +37,7 @@ export default defineComponent({
     const isSideSliderShow = ref(false);
     const businessStore = useBusinessStore();
     const accountStore = useAccountStore();
-    const { selections, handleSelectionChange } = useSelection();
+    const { selections, handleSelectionChange, resetSelections } = useSelection();
     const isAllExpand = ref(true);
     const securitySearchVal = ref('');
     const searchVal = ref('');
@@ -46,10 +47,6 @@ export default defineComponent({
     const isSubmitLoading = ref(false);
     const isConfigDialogShow = ref(false);
     const tmpRsCheckRes = ref(rsCheckRes.value);
-    // const securityGroups = computed(() => {
-    //   const groups = [].concat(selectedSecuirtyGroups.value).concat(bindedSecurityGroups.value);
-    //   return groups;
-    // });
     const securityGroups = ref([]);
     const isDialogShow = ref(false);
     const bindedSet = reactive(new Set());
@@ -135,7 +132,7 @@ export default defineComponent({
     };
 
     const isCurRowSelectEnable = (row: any) => {
-      return !bindedSecurityGroups.value.map((v) => v.id).includes(row.id);
+      return !bindedSecurityGroups.value.map((v) => v.id).includes(row.id) && !selectedSecuirtyGroupsSet.value.has(row.id);
     };
 
     const { CommonTable } = useTable({
@@ -181,6 +178,7 @@ export default defineComponent({
 
     const handleBind = async () => {
       for (const item of selections.value) {
+        if (selectedSecuirtyGroupsSet.value.has(item.id)) continue;
         selectedSecuirtyGroupsSet.value.add(item.id);
         securityGroups.value.unshift(item);
       }
@@ -189,6 +187,7 @@ export default defineComponent({
     const handleUnbind = async (security_group_id: string) => {
       if (selectedSecuirtyGroupsSet.value.has(security_group_id)) {
         const idx = securityGroups.value.findIndex((v) => v.id === security_group_id);
+        selectedSecuirtyGroupsSet.value.delete(security_group_id);
         securityGroups.value.splice(idx, 1);
         return;
       }
@@ -207,7 +206,7 @@ export default defineComponent({
 
     const getBindedSecurityList = async () => {
       const res = await businessStore.listCLBSecurityGroups(props.id);
-      bindedSecurityGroups.value = res.data;
+      bindedSecurityGroups.value = cloneDeep(res.data);
       securityGroups.value = res.data;
       for (const item of res.data) {
         bindedSet.add(item.id);
@@ -352,6 +351,11 @@ export default defineComponent({
           title='配置安全组'
           width={'640'}
           isSubmitLoading={isSubmitLoading.value}
+          onUpdate:isShow={() => {
+            resetSelections();
+            selectedSecuirtyGroupsSet.value = new Set();
+            securityGroups.value = cloneDeep(bindedSecurityGroups.value);
+          }}
           onHandleSubmit={hanldeSubmit}>
           {securityGroups.value.length > 5 ? (
             <Alert
