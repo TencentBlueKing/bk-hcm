@@ -92,7 +92,7 @@ export default defineComponent({
       handleValidate,
       isValidateDiasbled,
       extensionPayload,
-    } = useSecretExtension(projectModel);
+    } = useSecretExtension({ ...projectModel, isValidate: true });
 
     const secretModel = reactive<SecretModel>({
       ...initSecretModel,
@@ -509,7 +509,10 @@ export default defineComponent({
         await accountStore.updateTestAccount({
           // 测试连接密钥信息
           id: projectModel.id,
-          extension,
+          extension: {
+            ...extension,
+            clound_sub_accout_id: undefined,
+          },
         });
         await accountStore.updateAccount({
           // 更新密钥信息

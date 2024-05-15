@@ -22,6 +22,7 @@ export interface IExtension {
   output2: Record<string, IExtensionItem>, // 不需要显眼的输出
   validatedStatus: ValidateStatus,        // 是否校验通过
   validateFailedReason?: string;          // 不通过的理由
+  isValidate?: boolean;
 }
 export const useSecretExtension = (props: IProp) => {
   // 腾讯云
