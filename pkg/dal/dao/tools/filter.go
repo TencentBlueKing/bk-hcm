@@ -122,6 +122,11 @@ func RuleGreaterThan(fieldName string, values any) *filter.AtomRule {
 	return &filter.AtomRule{Field: fieldName, Op: filter.GreaterThan.Factory(), Value: values}
 }
 
+// RuleJSONContains 生成资源字段等于查询的AtomRule，即fieldName json_contains values
+func RuleJSONContains(fieldName string, values any) *filter.AtomRule {
+	return &filter.AtomRule{Field: fieldName, Op: filter.JSONContains.Factory(), Value: values}
+}
+
 // ExpressionAnd expression with op and
 func ExpressionAnd(rules ...*filter.AtomRule) *filter.Expression {
 	// for type transformation

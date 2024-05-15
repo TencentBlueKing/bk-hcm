@@ -487,3 +487,58 @@ type TargetGroupCreateReq struct {
 func (req *TargetGroupCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// --------------------------[标准运维-批量添加RS]--------------------------
+
+// TCloudSopsTargetBatchCreateReq tcloud sops target batch create req.
+type TCloudSopsTargetBatchCreateReq struct {
+	RuleQueryList []TargetGroupRuleQueryItem `json:"rule_query_list" validate:"required,min=1"`
+	RsIP          []string                   `json:"rs_ip" validate:"required,min=1"`
+	RsPort        []string                   `json:"rs_port" validate:"required,min=1"`
+	RsWeight      int64                      `json:"rs_weight" validate:"required"`
+	RsType        enumor.InstType            `json:"rs_type" validate:"required"`
+}
+
+// TargetGroupRuleQueryItem 目标组规则查询结构体
+type TargetGroupRuleQueryItem struct {
+	Region   string              `json:"region" jsonschema:"title=地域"`
+	Vip      string              `json:"vip" jsonschema:"title=VIP"`
+	VPort    string              `json:"vport" jsonschema:"title=VPORT"`
+	RsIP     string              `json:"rs_ip" jsonschema:"title=RS IP"`
+	Protocol enumor.ProtocolType `json:"protocol" jsonschema:"title=协议"`
+	Domain   string              `json:"domain" jsonschema:"title=域名"`
+}
+
+// Validate request.
+func (req *TCloudSopsTargetBatchCreateReq) Validate() error {
+	if len(req.RsIP) != len(req.RsPort) {
+		return fmt.Errorf("rs_ip and rs_port should be equal")
+	}
+
+	return validator.Validate.Struct(req)
+}
+
+// --------------------------[标准运维-批量移除RS]--------------------------
+
+// TCloudSopsTargetBatchRemoveReq tcloud sops target batch remove req.
+type TCloudSopsTargetBatchRemoveReq struct {
+	RuleQueryList []TargetGroupRuleQueryItem `json:"rule_query_list" validate:"required,min=1"`
+}
+
+// Validate request.
+func (req *TCloudSopsTargetBatchRemoveReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// --------------------------[标准运维-批量修改权重]--------------------------
+
+// TCloudSopsTargetBatchModifyWeightReq tcloud sops target batch modify weight req.
+type TCloudSopsTargetBatchModifyWeightReq struct {
+	RuleQueryList []TargetGroupRuleQueryItem `json:"rule_query_list" validate:"required,min=1"`
+	RsWeight      int64                      `json:"rs_weight" validate:"required"`
+}
+
+// Validate request.
+func (req *TCloudSopsTargetBatchModifyWeightReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
