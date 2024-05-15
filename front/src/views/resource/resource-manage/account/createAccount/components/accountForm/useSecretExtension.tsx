@@ -5,6 +5,7 @@ const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export interface IProp {
   vendor: VendorEnum;
+  isValidate?: boolean;
 }
 export interface IExtensionItem {
   label: string;
@@ -22,7 +23,6 @@ export interface IExtension {
   output2: Record<string, IExtensionItem>; // 不需要显眼的输出
   validatedStatus: ValidateStatus; // 是否校验通过
   validateFailedReason?: string; // 不通过的理由
-  isValidate?: boolean;
 }
 export const useSecretExtension = (props: IProp) => {
   // 腾讯云
@@ -258,7 +258,7 @@ export const useSecretExtension = (props: IProp) => {
     try {
       const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${props.vendor}/accounts/secret`, {
         ...payload,
-        disable_check: curExtension.value.isValidate || false,
+        disable_check: props.isValidate || false,
       });
       if (res.data) {
         Object.entries(res.data).forEach(([key, val]) => {
