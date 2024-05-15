@@ -138,7 +138,7 @@ func (svc *regionSvc) BatchDeleteHuaWeiRegion(cts *rest.Contexts) (interface{}, 
 
 // ListHuaWeiRegion list huawei region with filter
 func (svc *regionSvc) ListHuaWeiRegion(cts *rest.Contexts) (interface{}, error) {
-	req := new(protoregion.HuaWeiRegionListReq)
+	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -147,6 +147,7 @@ func (svc *regionSvc) ListHuaWeiRegion(cts *rest.Contexts) (interface{}, error) 
 	}
 
 	opt := &types.ListOption{
+		Fields: req.Fields,
 		Filter: req.Filter,
 		Page:   req.Page,
 	}

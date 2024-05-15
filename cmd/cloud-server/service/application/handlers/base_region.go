@@ -22,8 +22,8 @@ package handlers
 import (
 	"fmt"
 
+	"hcm/pkg/api/core"
 	corecloudregion "hcm/pkg/api/core/cloud/region"
-	dataprotoregion "hcm/pkg/api/data-service/cloud/region"
 	"hcm/pkg/runtime/filter"
 )
 
@@ -39,7 +39,7 @@ func (a *BaseApplicationHandler) GetTCloudRegion(region string) (*corecloudregio
 	resp, err := a.Client.DataService().TCloud.Region.ListRegion(
 		a.Cts.Kit.Ctx,
 		a.Cts.Kit.Header(),
-		&dataprotoregion.TCloudRegionListReq{
+		&core.ListReq{
 			Filter: reqFilter,
 			Page:   a.getPageOfOneLimit(),
 		},
@@ -66,7 +66,7 @@ func (a *BaseApplicationHandler) GetAwsRegion(region string) (*corecloudregion.A
 	resp, err := a.Client.DataService().Aws.Region.ListRegion(
 		a.Cts.Kit.Ctx,
 		a.Cts.Kit.Header(),
-		&dataprotoregion.AwsRegionListReq{
+		&core.ListReq{
 			Filter: reqFilter,
 			Page:   a.getPageOfOneLimit(),
 		},
@@ -93,7 +93,7 @@ func (a *BaseApplicationHandler) GetHuaWeiRegion(region string) (*corecloudregio
 	resp, err := a.Client.DataService().HuaWei.Region.ListRegion(
 		a.Cts.Kit.Ctx,
 		a.Cts.Kit.Header(),
-		&dataprotoregion.HuaWeiRegionListReq{
+		&core.ListReq{
 			Filter: reqFilter,
 			Page:   a.getPageOfOneLimit(),
 		},
@@ -120,7 +120,7 @@ func (a *BaseApplicationHandler) GetGcpRegion(region string) (*corecloudregion.G
 	resp, err := a.Client.DataService().Gcp.Region.ListRegion(
 		a.Cts.Kit.Ctx,
 		a.Cts.Kit.Header(),
-		&dataprotoregion.GcpRegionListReq{
+		&core.ListReq{
 			Filter: reqFilter,
 			Page:   a.getPageOfOneLimit(),
 		},
@@ -147,7 +147,7 @@ func (a *BaseApplicationHandler) GetAzureRegion(region string) (*corecloudregion
 	resp, err := a.Client.DataService().Azure.Region.ListRegion(
 		a.Cts.Kit.Ctx,
 		a.Cts.Kit.Header(),
-		&dataprotoregion.AzureRegionListReq{
+		&core.ListReq{
 			Filter: reqFilter,
 			Page:   a.getPageOfOneLimit(),
 		},

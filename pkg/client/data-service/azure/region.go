@@ -43,7 +43,7 @@ func NewRegionClient(client rest.ClientInterface) *RegionClient {
 
 // ListRegion list region.
 func (cli *RegionClient) ListRegion(ctx context.Context, h http.Header,
-	request *protoregion.AzureRegionListReq) (*protoregion.AzureRegionListResult, error) {
+	request *core.ListReq) (*protoregion.AzureRegionListResult, error) {
 
 	resp := new(protoregion.AzureRegionListResp)
 

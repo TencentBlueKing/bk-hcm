@@ -73,6 +73,8 @@ func InitAccountService(cap *capability.Capability) {
 	h.Add("ListTCloudAuthPolicies", http.MethodPost, "/vendors/tcloud/accounts/auth_policies/list",
 		svc.ListTCloudAuthPolicies)
 
+	initAccountServiceHooks(svc, h)
+
 	h.Load(cap.WebService)
 }
 

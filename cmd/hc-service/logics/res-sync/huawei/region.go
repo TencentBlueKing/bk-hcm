@@ -241,7 +241,7 @@ func (cli *client) listRegionFromDB(kt *kit.Kit, opt *SyncRegionOption) (
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	req := &dataregion.HuaWeiRegionListReq{
+	req := &core.ListReq{
 		Filter: tools.AllExpression(),
 		Page:   core.NewDefaultBasePage(),
 	}
