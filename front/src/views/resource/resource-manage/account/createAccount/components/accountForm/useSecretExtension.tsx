@@ -7,21 +7,21 @@ export interface IProp {
   vendor: VendorEnum;
 }
 export interface IExtensionItem {
-  label: string,
-  value: string,
-  placeholder?: string,
+  label: string;
+  value: string;
+  placeholder?: string;
 }
 export enum ValidateStatus {
   YES,
   NO,
   UNKOWN,
-};
+}
 export interface IExtension {
-  input: Record<string, IExtensionItem>,    // 输入
-  output1: Record<string, IExtensionItem>, // 需要显眼的输出
-  output2: Record<string, IExtensionItem>, // 不需要显眼的输出
-  validatedStatus: ValidateStatus,        // 是否校验通过
-  validateFailedReason?: string;          // 不通过的理由
+  input: Record<string, IExtensionItem>; // 输入
+  output1: Record<string, IExtensionItem>; // 需要显眼的输出
+  output2: Record<string, IExtensionItem>; // 不需要显眼的输出
+  validatedStatus: ValidateStatus; // 是否校验通过
+  validateFailedReason?: string; // 不通过的理由
   isValidate?: boolean;
 }
 export const useSecretExtension = (props: IProp) => {
@@ -226,7 +226,7 @@ export const useSecretExtension = (props: IProp) => {
           curExtension.value = azureExtension;
           break;
         }
-      };
+      }
     },
     {
       immediate: true,
@@ -236,8 +236,10 @@ export const useSecretExtension = (props: IProp) => {
   watch(
     () => curExtension.value,
     () => {
-      isValidateDiasbled.value = Object.entries(curExtension.value.input).
-        reduce((prev, [_key, { value }]) => prev || !value, false);
+      isValidateDiasbled.value = Object.entries(curExtension.value.input).reduce(
+        (prev, [_key, { value }]) => prev || !value,
+        false,
+      );
       extensionPayload.value = Object.entries(curExtension.value.input).reduce((prev, [key, { value }]) => {
         prev[key] = value;
         return prev;
@@ -254,7 +256,10 @@ export const useSecretExtension = (props: IProp) => {
     // props.changeExtension(payload);
     if (callback) callback?.(payload);
     try {
-      const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${props.vendor}/accounts/secret`, payload);
+      const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${props.vendor}/accounts/secret`, {
+        ...payload,
+        disable_check: curExtension.value.isValidate || false,
+      });
       if (res.data) {
         Object.entries(res.data).forEach(([key, val]) => {
           if (curExtension.value.output1[key]) curExtension.value.output1[key].value = val as string;
