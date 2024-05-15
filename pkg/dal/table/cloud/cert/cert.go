@@ -43,6 +43,7 @@ var SslCertTableColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "domain", NamedC: "domain", Type: enumor.Json},
 	{Column: "cert_type", NamedC: "cert_type", Type: enumor.String},
 	{Column: "cert_status", NamedC: "cert_status", Type: enumor.String},
+	{Column: "encrypt_algorithm", NamedC: "encrypt_algorithm", Type: enumor.String},
 	{Column: "cloud_created_time", NamedC: "cloud_created_time", Type: enumor.String},
 	{Column: "cloud_expired_time", NamedC: "cloud_expired_time", Type: enumor.String},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
@@ -72,6 +73,8 @@ type SslCertTable struct {
 	CertType enumor.CertType `db:"cert_type" json:"cert_type"`
 	// CertStatus 证书状态
 	CertStatus string `db:"cert_status" json:"cert_status"`
+	// EncryptAlgorithm 证书算法
+	EncryptAlgorithm string `db:"encrypt_algorithm" json:"encrypt_algorithm"`
 	// CloudCreatedTime 证书上传时间
 	CloudCreatedTime string `db:"cloud_created_time" json:"cloud_created_time"`
 	// CloudExpiredTime 证书过期时间
