@@ -26,7 +26,6 @@ import { timeFormatter } from '@/common/util';
 import { LBRouteName, LB_NETWORK_TYPE_MAP, SCHEDULER_MAP } from '@/constants/clb';
 import { getInstVip } from '@/utils';
 import dayjs from 'dayjs';
-import bus from '@/common/bus';
 
 interface LinkFieldOptions {
   type: string; // 资源类型
@@ -1393,7 +1392,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
               query: { ...route.query, type: 'detail' },
             },
             () => {
-              bus.$emit('changeTargetGroupName', name);
+              loadBalancerStore.setTgSearchTarget(name);
             },
           )}>
           {name}

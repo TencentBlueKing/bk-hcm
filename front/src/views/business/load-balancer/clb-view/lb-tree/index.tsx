@@ -354,6 +354,7 @@ export default defineComponent({
 
     onUnmounted(() => {
       bus.$off('resetLbTree');
+      loadBalancerStore.setLbTreeSearchTarget(null);
     });
 
     return () => (

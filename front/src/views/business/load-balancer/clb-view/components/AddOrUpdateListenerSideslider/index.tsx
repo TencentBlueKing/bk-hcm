@@ -141,66 +141,64 @@ export default defineComponent({
                     falseValue={0}
                   />
                 </FormItem>
-                {listenerFormData.sni_switch === 0 && (
-                  <FormItem label={t('SSL解析方式')} required property='certificate.ssl_mode'>
-                    <BkRadioGroup v-model={listenerFormData.certificate.ssl_mode}>
-                      <BkRadio label='UNIDIRECTIONAL'>
-                        {t('单向认证')}
-                        <Tag theme='info' class='recommend-tag'>
-                          {t('推荐')}
-                        </Tag>
-                      </BkRadio>
-                      <BkRadio label='MUTUAL' class='ml24'>
-                        {t('双向认证')}
-                      </BkRadio>
-                    </BkRadioGroup>
-                  </FormItem>
-                )}
+                <FormItem label={t('SSL解析方式')} required property='certificate.ssl_mode'>
+                  <BkRadioGroup v-model={listenerFormData.certificate.ssl_mode}>
+                    <BkRadio label='UNIDIRECTIONAL'>
+                      {t('单向认证')}
+                      <Tag theme='info' class='recommend-tag'>
+                        {t('推荐')}
+                      </Tag>
+                    </BkRadio>
+                    <BkRadio label='MUTUAL' class='ml24'>
+                      {t('双向认证')}
+                    </BkRadio>
+                  </BkRadioGroup>
+                </FormItem>
               </div>
-              {listenerFormData.sni_switch === 0 && (
-                <>
-                  <FormItem label={t('服务器证书')} required property='certificate.cert_cloud_ids'>
-                    <Select
-                      v-model={listenerFormData.certificate.cert_cloud_ids}
-                      multiple
-                      scrollLoading={isSVRCertListLoading.value}
-                      onScroll-end={handleSVRCertListScrollEnd}>
-                      {SVRCertList.value
-                        .sort((a, b) => a.cert_status - b.cert_status)
-                        .map(({ cloud_id, name, cert_status, domain }) => (
-                          <Option key={cloud_id} id={cloud_id} name={name} disabled={cert_status === '3'}>
-                            {name}&nbsp;(主域名 : {domain ? domain[0] : '--'}, 备用域名：{domain ? domain[1] : '--'})
-                            {cert_status === '3' && (
-                              <Tag theme='danger' style={{ marginLeft: '12px' }}>
-                                已过期
-                              </Tag>
-                            )}
-                          </Option>
-                        ))}
-                    </Select>
-                  </FormItem>
-                  {listenerFormData.certificate.ssl_mode === 'MUTUAL' && (
-                    <FormItem label={t('CA证书')} required property='certificate.ca_cloud_id'>
-                      <Select
-                        v-model={listenerFormData.certificate.ca_cloud_id}
-                        scrollLoading={isCACertListLoading.value}
-                        onScroll-end={handleCACertListScrollEnd}>
-                        {CACertList.value
-                          .sort((a, b) => a.cert_status - b.cert_status)
-                          .map(({ cloud_id, name, cert_status }) => (
-                            <Option key={cloud_id} id={cloud_id} name={name} disabled={cert_status === '3'}>
-                              {name}
-                              {cert_status === '3' && (
-                                <Tag theme='danger' style={{ marginLeft: '12px' }}>
-                                  已过期
-                                </Tag>
-                              )}
-                            </Option>
-                          ))}
-                      </Select>
-                    </FormItem>
-                  )}
-                </>
+              <FormItem label={t('服务器证书')} required property='certificate.cert_cloud_ids'>
+                <Select
+                  v-model={listenerFormData.certificate.cert_cloud_ids}
+                  multiple
+                  scrollLoading={isSVRCertListLoading.value}
+                  onScroll-end={handleSVRCertListScrollEnd}>
+                  {SVRCertList.value
+                    .sort((a, b) => a.cert_status - b.cert_status)
+                    .map(({ cloud_id, name, cert_status, domain, encrypt_algorithm }) => (
+                      <Option key={cloud_id} id={cloud_id} name={name} disabled={cert_status === '3'}>
+                        {name}&nbsp;(主域名 : {domain ? domain[0] : '--'}, 备用域名：{domain ? domain[1] : '--'})
+                        {cert_status === '3' ? (
+                          <Tag theme='danger' style={{ marginLeft: '12px' }}>
+                            已过期
+                          </Tag>
+                        ) : (
+                          <Tag theme='info' style={{ marginLeft: '12px' }}>
+                            {encrypt_algorithm}
+                          </Tag>
+                        )}
+                      </Option>
+                    ))}
+                </Select>
+              </FormItem>
+              {listenerFormData.certificate.ssl_mode === 'MUTUAL' && (
+                <FormItem label={t('CA证书')} required property='certificate.ca_cloud_id'>
+                  <Select
+                    v-model={listenerFormData.certificate.ca_cloud_id}
+                    scrollLoading={isCACertListLoading.value}
+                    onScroll-end={handleCACertListScrollEnd}>
+                    {CACertList.value
+                      .sort((a, b) => a.cert_status - b.cert_status)
+                      .map(({ cloud_id, name, cert_status }) => (
+                        <Option key={cloud_id} id={cloud_id} name={name} disabled={cert_status === '3'}>
+                          {name}
+                          {cert_status === '3' && (
+                            <Tag theme='danger' style={{ marginLeft: '12px' }}>
+                              已过期
+                            </Tag>
+                          )}
+                        </Option>
+                      ))}
+                  </Select>
+                </FormItem>
               )}
             </>
           )}
@@ -291,30 +289,20 @@ export default defineComponent({
             </>
           )}
           {isEdit.value && (
-            <>
-              <FormItem label={t('目标组')} required property='target_group_id'>
-                <div class='target-group-wrap'>
-                  {/* 根据有无 target_group_id 来判断监听器是否绑定目标组 */}
-                  {listenerFormData.target_group_id ? (
-                    <>
-                      <span
-                        class='link-text-btn'
-                        onClick={() => {
-                          window.open(
-                            `/#/business/loadbalancer/group-view/${listenerFormData.target_group_id}?bizs=${accountStore.bizs}&type=detail`,
-                            '_blank',
-                            'noopener,noreferrer',
-                          );
-                        }}>
-                        {listenerFormData.target_group_name}
-                      </span>
-                    </>
-                  ) : (
-                    '--'
-                  )}
-                </div>
-              </FormItem>
-            </>
+            <div class='binded-target-group-show-container'>
+              <span class='label'>{t('已绑定的目标组')}</span>:{' '}
+              <span
+                class='ml10 link-text-btn'
+                onClick={() => {
+                  window.open(
+                    `/#/business/loadbalancer/group-view/${listenerFormData.target_group_id}?bizs=${accountStore.bizs}&type=detail`,
+                    '_blank',
+                    'noopener,noreferrer',
+                  );
+                }}>
+                {listenerFormData.target_group_name || '未命名'}
+              </span>
+            </div>
           )}
         </Form>
       </CommonSideslider>

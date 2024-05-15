@@ -95,7 +95,8 @@ export default defineComponent({
                   <Link
                     class='target-group-name-btn'
                     theme='primary'
-                    href={`/#/business/loadbalancer/group-view/${data.target_group_id}?bizs=${accountStore.bizs}&type=detail`}>
+                    href={`/#/business/loadbalancer/group-view/${data.target_group_id}?bizs=${accountStore.bizs}&type=detail`}
+                    onClick={() => loadBalancerStore.setTgSearchTarget(cell)}>
                     {cell || '--'}
                   </Link>
                   {/* <span class={'target-group-name-btn'}></span> */}
@@ -398,7 +399,7 @@ export default defineComponent({
           onHandleSubmit={handleSubmit}>
           <p class={'create-url-text-item'}>
             <span class={'create-url-text-item-label'}>{t('负载均衡名称')}：</span>
-            <span class={'create-url-text-item-value'}>{loadBalancerStore.currentSelectedTreeNode.lb.name}</span>
+            <span class={'create-url-text-item-value'}>{loadBalancerStore.currentSelectedTreeNode.lb?.name}</span>
           </p>
           <p class={'create-url-text-item'}>
             <span class={'create-url-text-item-label'}>{t('监听器名称')}：</span>

@@ -25,6 +25,7 @@
     height: calc(100% - 56px);
 
     .prefix-icon {
+      float: left;
       width: 20px;
       height: 20px;
       margin-right: 8px;
@@ -33,11 +34,11 @@
     .base-info {
       display: flex;
       align-items: center;
+      width: calc(100% - 30px);
     }
 
     .ext-info {
-      position: absolute;
-      right: 16px;
+      position: relative;
 
       .count {
         min-width: 24px;
@@ -82,10 +83,9 @@
 
     .all-groups-wrap,
     .group-item-wrap {
-      position: relative;
       padding: 0 16px;
+      width: 100%;
       height: 36px;
-      line-height: 36px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -109,18 +109,7 @@
     }
 
     .all-groups-wrap {
-      padding: 0 20px 0 16px;
       box-shadow: 0 -1px 0 0 #eaebf0, 0 1px 0 0 #eaebf0;
-    }
-
-    .group-item-wrap {
-      padding: 0 16px;
-    }
-
-    // 覆盖滚动条样式
-    .bk-F-scroll-x {
-      scrollbar-width: auto;
-      scrollbar-color: auto;
     }
   }
 }
