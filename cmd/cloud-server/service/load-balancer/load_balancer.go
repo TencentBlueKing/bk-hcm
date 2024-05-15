@@ -138,6 +138,14 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 		"/vendors/tcloud/listeners/{lbl_id}/rules/batch", svc.BatchDeleteBizTCloudUrlRule)
 	h.Add("BatchDeleteBizTCloudUrlRuleByDomain", http.MethodDelete,
 		"/vendors/tcloud/listeners/{lbl_id}/rules/by/domains/batch", svc.BatchDeleteBizTCloudUrlRuleByDomain)
+
+	// 标准运维
+	h.Add("BatchBizAddTargetGroupRS", http.MethodPost,
+		"/sops/target_groups/targets/create", svc.BatchBizAddTargetGroupRS)
+	h.Add("BatchBizRemoveTargetGroupRS", http.MethodDelete,
+		"/sops/target_groups/targets/batch", svc.BatchBizRemoveTargetGroupRS)
+	h.Add("BatchBizModifyWeightTargetGroup", http.MethodPatch,
+		"/sops/target_groups/targets/weight", svc.BatchBizModifyWeightTargetGroup)
 }
 
 type lbSvc struct {
