@@ -517,7 +517,10 @@ export default defineComponent({
         await accountStore.updateAccount({
           // 更新密钥信息
           id: projectModel.id,
-          extension,
+          extension: {
+            ...extension,
+            cloud_sub_account_id: secretModel.subAccountId,
+          },
         });
         Message({
           message: t('更新密钥信息成功'),
