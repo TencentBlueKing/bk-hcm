@@ -1332,13 +1332,11 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '域名数量',
       field: 'domain_num',
       isDefaultShow: true,
-      sort: true,
     },
     {
       label: 'URL数量',
       field: 'url_num',
       isDefaultShow: true,
-      sort: true,
     },
     {
       label: '同步状态',
@@ -1363,7 +1361,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           '--'
         );
       },
-      sort: true,
     },
   ];
 
@@ -1446,7 +1443,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         ],
       },
       render({ cell }: { cell: Number }) {
-        return cell ? '已开启' : '未开启';
+        return cell ? <bk-tag theme='success'>已开启</bk-tag> : <bk-tag>未开启</bk-tag>;
       },
     },
     {
@@ -1555,7 +1552,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '同步状态',
       field: 'sync_status',
       isDefaultShow: true,
-      filter: true,
       render: ({ cell }: { cell: string }) => {
         let icon = StatusSuccess;
         switch (cell) {
