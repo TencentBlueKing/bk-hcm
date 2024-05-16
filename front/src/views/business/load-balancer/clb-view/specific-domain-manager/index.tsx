@@ -95,7 +95,8 @@ export default defineComponent({
                   <Link
                     class='target-group-name-btn'
                     theme='primary'
-                    href={`/#/business/loadbalancer/group-view/${data.target_group_id}?bizs=${accountStore.bizs}&type=detail`}>
+                    href={`/#/business/loadbalancer/group-view/${data.target_group_id}?bizs=${accountStore.bizs}&type=detail`}
+                    onClick={() => loadBalancerStore.setTgSearchTarget(cell)}>
                     {cell || '--'}
                   </Link>
                   {/* <span class={'target-group-name-btn'}></span> */}
@@ -224,20 +225,10 @@ export default defineComponent({
           if (dataList.length === 0) return;
           const tgIds = dataList.map(({ target_group_id }: { target_group_id: string }) => target_group_id);
           const resList = await businessStore.getTargetGroupList({
-            page: {
-              count: false,
-              start: 0,
-              limit: 500,
-            },
+            page: { count: false, start: 0, limit: 500 },
             filter: {
               op: QueryRuleOPEnum.AND,
-              rules: [
-                {
-                  field: 'id',
-                  op: QueryRuleOPEnum.IN,
-                  value: tgIds.map((id: string) => id),
-                },
-              ],
+              rules: [{ field: 'id', op: QueryRuleOPEnum.IN, value: tgIds.map((id: string) => id) }],
             },
             fields: ['id', 'name'],
           });
@@ -398,7 +389,7 @@ export default defineComponent({
           onHandleSubmit={handleSubmit}>
           <p class={'create-url-text-item'}>
             <span class={'create-url-text-item-label'}>{t('负载均衡名称')}：</span>
-            <span class={'create-url-text-item-value'}>{loadBalancerStore.currentSelectedTreeNode.lb.name}</span>
+            <span class={'create-url-text-item-value'}>{loadBalancerStore.currentSelectedTreeNode.lb?.name}</span>
           </p>
           <p class={'create-url-text-item'}>
             <span class={'create-url-text-item-label'}>{t('监听器名称')}：</span>

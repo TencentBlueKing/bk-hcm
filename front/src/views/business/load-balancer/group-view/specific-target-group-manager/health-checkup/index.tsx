@@ -50,7 +50,7 @@ export default defineComponent({
           `响应超时(${props.detail.health_check?.time_out}秒)`,
           `检查间隔(${props.detail.health_check?.interval_time}秒)`,
           `不健康阈值(${props.detail.health_check?.un_health_num}次)`,
-          `健康阈值(${props.detail.health_check?.health_num}次),`,
+          `健康阈值(${props.detail.health_check?.health_num}次)`,
         ],
       },
     ]);

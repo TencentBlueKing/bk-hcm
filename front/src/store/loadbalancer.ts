@@ -48,6 +48,12 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
     lbTreeSearchTarget.value = v;
   };
 
+  // state - 目标组视角下的搜索条件, 用于链接跳转
+  const tgSearchTarget = ref();
+  const setTgSearchTarget = (v: any) => {
+    tgSearchTarget.value = v;
+  };
+
   return {
     targetGroupId,
     setTargetGroupId,
@@ -59,5 +65,7 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
     setCurrentScene,
     lbTreeSearchTarget,
     setLbTreeSearchTarget,
+    tgSearchTarget,
+    setTgSearchTarget,
   };
 });

@@ -86,7 +86,11 @@ export const useTable = (props: IProp) => {
   const isLoading = ref(false);
   const sort = ref(props.requestOption.sortOption ? props.requestOption.sortOption.sort : 'created_at');
   const order = ref(props.requestOption.sortOption ? props.requestOption.sortOption.order : 'DESC');
-  const filter = reactive({ op: QueryRuleOPEnum.AND, rules: [] });
+  const getInitialRules = () => {
+    const { filterOption } = props.requestOption;
+    return filterOption && !filterOption.deleteOption ? filterOption.rules : [];
+  };
+  const filter = reactive({ op: QueryRuleOPEnum.AND, rules: getInitialRules() });
 
   const { pagination, handlePageLimitChange, handlePageValueChange } = usePagination(() => getListData());
 
@@ -109,6 +113,7 @@ export const useTable = (props: IProp) => {
    * @param type 资源类型
    */
   const getListData = async (customRules: Array<RulesItem> = [], type?: string) => {
+    buildFilter({ rules: customRules });
     // 预览
     if (props.tableOptions.reviewData) {
       dataList.value = props.tableOptions.reviewData;
@@ -130,7 +135,7 @@ export const useTable = (props: IProp) => {
               order: isCount ? undefined : order.value,
               count: isCount,
             },
-            filter: { op: filter.op, rules: [...filter.rules, ...customRules] },
+            filter: { op: filter.op, rules: filter.rules },
             ...props.requestOption.extension,
           },
           type ? type : props.requestOption.type,
@@ -346,9 +351,7 @@ export const useTable = (props: IProp) => {
       }
       // 页码重置
       pagination.start = 0;
-      // 如果有初始筛选条件, 则加入初始筛选条件
-      const { rules, deleteOption } = props.requestOption.filterOption || {};
-      getListData(deleteOption ? [] : rules);
+      getListData();
     },
     {
       immediate: true,

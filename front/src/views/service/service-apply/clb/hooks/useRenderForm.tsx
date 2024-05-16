@@ -162,110 +162,76 @@ export default (formModel: ApplyClbModel) => {
             </div>
           ),
         },
-        [
-          {
-            label: '可用区类型',
-            property: 'zoneType',
-            description:
-              '单可用区：仅支持一个可用区。\n主备可用区：主可用区是当前承载流量的可用区。备可用区默认不承载流量，主可用区不可用时才使用备可用区。',
-            hidden: isIntranet.value || formModel.address_ip_version !== 'IPV4',
-            content: () => (
-              <BkRadioGroup v-model={formModel.zoneType}>
-                {ZONE_TYPE.map(({ label, value, isDisabled }) => {
-                  const disabled =
-                    typeof isDisabled === 'function' ? isDisabled(formModel.region, formModel.account_type) : false;
-                  return (
-                    <BkRadioButton
-                      label={value}
-                      class='w120'
-                      disabled={disabled}
-                      v-bk-tooltips={{
-                        content:
-                          formModel.account_type === 'LEGACY' ? (
-                            <span>
-                              {t('仅标准型账号支持主备可用区')}账号类型说明，参考
-                              <a
-                                href='https://cloud.tencent.com/document/product/1199/49090#judge'
-                                target='_blank'
-                                style={{ color: '#3A84FF' }}>
-                                https://cloud.tencent.com/document/product/1199/49090#judge
-                              </a>
-                            </span>
-                          ) : (
-                            t('仅广州、上海、南京、北京、中国香港、首尔地域的 IPv4 版本的 CLB 支持主备可用区')
-                          ),
-                        disabled: !disabled,
-                      }}>
-                      {t(label)}
-                    </BkRadioButton>
-                  );
-                })}
-              </BkRadioGroup>
-            ),
-          },
-          {
-            label: '可用区',
-            property: 'zones',
-            hidden: !isIntranet.value && formModel.address_ip_version !== 'IPV4',
-            content: () => {
-              let zoneSelectorVNode = null;
-              if (isIntranet.value || formModel.zoneType === 'single') {
-                zoneSelectorVNode = (
-                  <ZoneSelector
-                    class='w240'
-                    v-model={formModel.zones}
-                    vendor={formModel.vendor}
-                    region={formModel.region}
-                    delayed={true}
-                    isLoading={isResourceListLoading.value}
-                  />
+        {
+          label: '可用区类型',
+          property: 'zoneType',
+          description:
+            '单可用区：仅支持一个可用区。\n主备可用区：主可用区是当前承载流量的可用区。备可用区默认不承载流量，主可用区不可用时才使用备可用区。',
+          hidden: isIntranet.value || formModel.address_ip_version !== 'IPV4',
+          content: () => (
+            <BkRadioGroup v-model={formModel.zoneType}>
+              {ZONE_TYPE.map(({ label, value, isDisabled }) => {
+                const disabled =
+                  typeof isDisabled === 'function' ? isDisabled(formModel.region, formModel.account_type) : false;
+                return (
+                  <BkRadioButton
+                    label={value}
+                    class='w120'
+                    disabled={disabled}
+                    v-bk-tooltips={{
+                      content:
+                        formModel.account_type === 'LEGACY' ? (
+                          <span>
+                            {t('仅标准型账号支持主备可用区')}账号类型说明，参考{' '}
+                            <a
+                              href='https://cloud.tencent.com/document/product/1199/49090#judge'
+                              target='_blank'
+                              style={{ color: '#3A84FF' }}>
+                              https://cloud.tencent.com/document/product/1199/49090#judge
+                            </a>
+                          </span>
+                        ) : (
+                          t('仅广州、上海、南京、北京、中国香港、首尔地域的 IPv4 版本的 CLB 支持主备可用区')
+                        ),
+                      disabled: !disabled,
+                    }}>
+                    {t(label)}
+                  </BkRadioButton>
                 );
-              } else {
-                zoneSelectorVNode = (
-                  <PrimaryStandZoneSelector
-                    class='w240'
-                    v-model:zones={formModel.zones}
-                    v-model:backupZones={formModel.backup_zones}
-                    vendor={formModel.vendor}
-                    region={formModel.region}
-                    onResetVipIsp={() => (formModel.vip_isp = '')}
-                  />
-                );
-              }
-              return zoneSelectorVNode;
-            },
+              })}
+            </BkRadioGroup>
+          ),
+        },
+        {
+          label: '可用区',
+          property: 'zones',
+          hidden: !isIntranet.value && formModel.address_ip_version !== 'IPV4',
+          content: () => {
+            let zoneSelectorVNode = null;
+            if (isIntranet.value || formModel.zoneType === 'single') {
+              zoneSelectorVNode = (
+                <ZoneSelector
+                  v-model={formModel.zones}
+                  vendor={formModel.vendor}
+                  region={formModel.region}
+                  delayed={true}
+                  isLoading={isResourceListLoading.value}
+                />
+              );
+            } else {
+              zoneSelectorVNode = (
+                <PrimaryStandZoneSelector
+                  v-model:zones={formModel.zones}
+                  v-model:backupZones={formModel.backup_zones}
+                  vendor={formModel.vendor}
+                  region={formModel.region}
+                  onResetVipIsp={() => (formModel.vip_isp = '')}
+                />
+              );
+            }
+            return zoneSelectorVNode;
           },
-          {
-            label: '可用区类型',
-            property: 'zoneType',
-            description:
-              '单可用区：仅支持一个可用区。\n主备可用区：主可用区是当前承载流量的可用区。备可用区默认不承载流量，主可用区不可用时才使用备可用区。',
-            hidden: isIntranet.value || formModel.address_ip_version !== 'IPV4',
-            content: () => (
-              <BkRadioGroup v-model={formModel.zoneType}>
-                {ZONE_TYPE.map(({ label, value, isDisabled }) => {
-                  const disabled =
-                    typeof isDisabled === 'function' ? isDisabled(formModel.region, formModel.account_type) : false;
-                  return (
-                    <BkRadioButton
-                      label={value}
-                      class='w120'
-                      disabled={disabled}
-                      v-bk-tooltips={{
-                        content:
-                          formModel.account_type === 'LEGACY'
-                            ? t('仅标准型账号支持主备可用区')
-                            : t('仅广州、上海、南京、北京、中国香港、首尔地域的 IPv4 版本的 CLB 支持主备可用区'),
-                        disabled: !disabled,
-                      }}>
-                      {t(label)}
-                    </BkRadioButton>
-                  );
-                })}
-              </BkRadioGroup>
-            ),
-          },
-        ],
+        },
         {
           label: '子网',
           required: true,
@@ -332,7 +298,7 @@ export default (formModel: ApplyClbModel) => {
                 </Button>
                 <Button
                   selected={formModel.sla_type !== 'shared'}
-                  onClick={() => bus.$emit('showSelectClbSpecTypeDialog')}
+                  onClick={() => bus.$emit('showLbSpecTypeSelectDialog')}
                   disabled={!formModel.vip_isp}
                   v-bk-tooltips={{ content: '请选择运营商类型', disabled: !!formModel.vip_isp }}
                   class='w120'>
@@ -342,7 +308,7 @@ export default (formModel: ApplyClbModel) => {
               {formModel.sla_type !== 'shared' && (
                 <div class='flex-row align-items-center'>
                   <span class='text-desc'>规格为:</span>
-                  <Button text theme='primary' class='ml10' onClick={() => bus.$emit('showSelectClbSpecTypeDialog')}>
+                  <Button text theme='primary' class='ml10' onClick={() => bus.$emit('showLbSpecTypeSelectDialog')}>
                     {CLB_SPECS[formModel.sla_type]} <EditLine class='ml5 text-link' />
                   </Button>
                 </div>
