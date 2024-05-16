@@ -511,7 +511,7 @@ export default defineComponent({
           id: projectModel.id,
           extension: {
             ...extension,
-            clound_sub_account_id: undefined,
+            cloud_sub_account_id: secretModel.subAccountId,
           },
         });
         await accountStore.updateAccount({
