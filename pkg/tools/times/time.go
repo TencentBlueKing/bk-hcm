@@ -45,7 +45,5 @@ func ParseToStdTime(layout, t string) (string, error) {
 	return tm.In(time.Local).Format(constant.TimeStdFormat), nil
 }
 
-// DateAfterNow time.Now().Add(time.Hour * 24 * nDays).Format("20060102")
-func DateAfterNow(nDays int) string {
-	return time.Now().Add((time.Hour * 24) * time.Duration(nDays)).Format(constant.BKBaseDateTimeLayout)
-}
+// Day 24 hours
+const Day = time.Hour * 24
