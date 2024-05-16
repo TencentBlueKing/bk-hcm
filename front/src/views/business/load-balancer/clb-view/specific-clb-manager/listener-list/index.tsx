@@ -1,4 +1,4 @@
-import { defineComponent, watch } from 'vue';
+import { defineComponent, watch, onUnmounted } from 'vue';
 // import components
 import { Button, Message } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
@@ -135,7 +135,9 @@ export default defineComponent({
         },
       },
     });
-
+    onUnmounted(() => {
+      timer && clearTimeout(timer);
+    });
     watch(
       () => props.id,
       (id) => {
@@ -166,7 +168,6 @@ export default defineComponent({
       handleBatchDeleteSubmit,
       computedListenersList,
     } = useBatchDeleteListener(columns, selections, resetSelections, getListData);
-
     return () => (
       <div class='listener-list-page'>
         {/* 监听器list */}
