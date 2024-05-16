@@ -26,6 +26,7 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    handleClose: Function,
   },
   emits: ['update:isShow', 'handleSubmit'],
   setup(props, ctx) {
@@ -46,7 +47,10 @@ export default defineComponent({
         width={props.width}
         isShow={props.isShow}
         title={t(props.title)}
-        onClosed={() => triggerShow(false)}>
+        onClosed={() => {
+          triggerShow(false);
+          props.handleClose?.();
+        }}>
         {{
           default: () => <div class='common-sideslider-content'>{ctx.slots.default?.()}</div>,
           footer: () => (

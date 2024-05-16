@@ -63,6 +63,7 @@ export default defineComponent({
         getBindedSecurityList();
         selectedSecuirtyGroupsSet.value = new Set();
         isSideSliderShow.value = false;
+        resetSelections();
         Message({
           message: '绑定成功',
           theme: 'success',
@@ -132,7 +133,9 @@ export default defineComponent({
     };
 
     const isCurRowSelectEnable = (row: any) => {
-      return !bindedSecurityGroups.value.map((v) => v.id).includes(row.id) && !selectedSecuirtyGroupsSet.value.has(row.id);
+      return (
+        !bindedSecurityGroups.value.map((v) => v.id).includes(row.id) && !selectedSecuirtyGroupsSet.value.has(row.id)
+      );
     };
 
     const { CommonTable } = useTable({
@@ -351,6 +354,7 @@ export default defineComponent({
           title='配置安全组'
           width={'640'}
           isSubmitLoading={isSubmitLoading.value}
+          handleClose={resetSelections}
           onUpdate:isShow={() => {
             resetSelections();
             selectedSecuirtyGroupsSet.value = new Set();
