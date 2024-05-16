@@ -228,8 +228,7 @@ function handleReject(error: any, config: any) {
   if (error.code !== 0 && error.code !== 2000009) Message({ theme: 'error', message: error.message });
   console.error(error.message);
   // bk_ticket失效后的登录弹框
-  if (error.code == 2000000 && error.message == 'bk_ticket cookie don\'t exists') {
-    // 打开节流阀
+  if (error.code === 2000000 && (error.message === 'bk_ticket cookie don\'t exists' || error.message === 'bk_token cookie don\'t exists')) {    // 打开节流阀
     isLoginValid = true;
     InvalidLogin();
   }
