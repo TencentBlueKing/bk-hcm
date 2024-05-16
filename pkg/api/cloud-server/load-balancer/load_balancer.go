@@ -289,7 +289,7 @@ type TCloudRuleCreate struct {
 	TrpcFunc          *string  `json:"trpc_func,omitempty"`
 	TrpcCallee        *string  `json:"trpc_callee,omitempty"`
 
-	Certificates *corelb.TCloudCertificateInfo `json:"certificates,omitempty"`
+	Certificate *corelb.TCloudCertificateInfo `json:"certificate,omitempty"`
 
 	Memo *string `json:"memo,omitempty"`
 }

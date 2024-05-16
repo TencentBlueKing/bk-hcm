@@ -35,6 +35,7 @@ type BaseCert struct {
 	AccountID        string          `json:"account_id"`
 	Domain           []*string       `json:"domain"`
 	CertType         enumor.CertType `json:"cert_type"`
+	EncryptAlgorithm string          `json:"encrypt_algorithm"`
 	CloudCreatedTime string          `json:"cloud_created_time"`
 	CloudExpiredTime string          `json:"cloud_expired_time"`
 	/*

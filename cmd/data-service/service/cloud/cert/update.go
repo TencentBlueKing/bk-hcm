@@ -59,6 +59,10 @@ func (svc *certSvc) BatchUpdateCert(cts *rest.Contexts) (interface{}, error) {
 		updateData.CertType = req.CertType
 	}
 
+	if len(req.EncryptAlgorithm) > 0 {
+		updateData.EncryptAlgorithm = req.EncryptAlgorithm
+	}
+
 	if len(req.CertStatus) > 0 {
 		updateData.CertStatus = req.CertStatus
 	}
@@ -107,6 +111,7 @@ func batchUpdateCertExt[T corecert.Extension](cts *rest.Contexts, svc *certSvc) 
 				Domain:           item.Domain,
 				CertType:         item.CertType,
 				CertStatus:       item.CertStatus,
+				EncryptAlgorithm: item.EncryptAlgorithm,
 				CloudExpiredTime: item.CloudExpiredTime,
 				Reviser:          cts.Kit.User,
 			}

@@ -305,6 +305,10 @@ values ('load_balancer', '0'),
        ('target_group_listener_rule_rel', '0'),
        ('resource_flow_rel', '0');
 
+-- 2. ssl_cert表新增证书算法字段
+alter table ssl_cert
+    add column encrypt_algorithm varchar(64) not null default '' after `cert_status`;
+
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
 SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
 

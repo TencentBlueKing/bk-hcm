@@ -74,6 +74,7 @@ func batchCreateCert[T corecert.Extension](cts *rest.Contexts, svc *certSvc, ven
 				Domain:           one.Domain,
 				CertType:         one.CertType,
 				CertStatus:       one.CertStatus,
+				EncryptAlgorithm: one.EncryptAlgorithm,
 				CloudCreatedTime: one.CloudCreatedTime,
 				CloudExpiredTime: one.CloudExpiredTime,
 				Memo:             one.Memo,

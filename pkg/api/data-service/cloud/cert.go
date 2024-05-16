@@ -49,6 +49,7 @@ type CertBatchCreate[Extension corecert.Extension] struct {
 	Domain           types.JsonField `json:"domain"`
 	CertType         enumor.CertType `json:"cert_type"`
 	CertStatus       string          `json:"cert_status"`
+	EncryptAlgorithm string          `json:"encrypt_algorithm"`
 	CloudCreatedTime string          `json:"cloud_created_time"`
 	CloudExpiredTime string          `json:"cloud_expired_time"`
 	Memo             *string         `json:"memo"`
@@ -76,6 +77,7 @@ type CertExtUpdateReq[T corecert.Extension] struct {
 	Domain           types.JsonField `json:"domain"`
 	CertType         enumor.CertType `json:"cert_type"`
 	CertStatus       string          `json:"cert_status"`
+	EncryptAlgorithm string          `json:"encrypt_algorithm"`
 	CloudCreatedTime string          `json:"cloud_created_time"`
 	CloudExpiredTime string          `json:"cloud_expired_time"`
 	Memo             *string         `json:"memo"`
@@ -111,6 +113,7 @@ type CertBatchUpdateExprReq struct {
 	Domain           types.JsonField `json:"domain"`
 	CertType         enumor.CertType `json:"cert_type"`
 	CertStatus       string          `json:"cert_status"`
+	EncryptAlgorithm string          `json:"encrypt_algorithm"`
 	CloudCreatedTime string          `json:"cloud_created_time"`
 	CloudExpiredTime string          `json:"cloud_expired_time"`
 }

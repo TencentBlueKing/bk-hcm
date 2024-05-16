@@ -452,6 +452,20 @@ func (svc *clbSvc) createListenerWithRule(kt *kit.Kit, req *protolb.ListenerWith
 		SessionType:       cvt.ValToPtr(req.SessionType),
 		Certificate:       req.Certificate,
 	}
+	// 7层监听器，不管SNI开启还是关闭，都需要传入证书参数
+	// 7层监听器并且SNI开启时，创建监听器接口，不需要证书
+	if req.Protocol.IsLayer7Protocol() {
+		if req.Certificate == nil {
+			return "", "", errf.New(errf.InvalidParameter, "certificate is required when layer 7 listener")
+		}
+		if cvt.PtrToVal(req.Certificate.CaCloudID) == "" && len(req.Certificate.CertCloudIDs) == 0 {
+			return "", "", errf.New(errf.InvalidParameter,
+				"certificate.ca_cloud_id and certificate.cert_cloud_ids is required")
+		}
+		if req.SniSwitch == enumor.SniTypeOpen {
+			lblOpt.Certificate = nil
+		}
+	}
 	result, err := tcloudAdpt.CreateListener(kt, lblOpt)
 	if err != nil {
 		logs.Errorf("create tcloud listener api failed, err: %v, lblOpt: %+v, cert: %+v, rid: %s",

@@ -94,6 +94,7 @@ func convTableToBaseCert(one *tablecert.SslCertTable) (*corecert.BaseCert, error
 		Domain:           converter.PtrToVal(domain),
 		CertType:         one.CertType,
 		CertStatus:       one.CertStatus,
+		EncryptAlgorithm: one.EncryptAlgorithm,
 		CloudCreatedTime: one.CloudCreatedTime,
 		CloudExpiredTime: one.CloudExpiredTime,
 		Memo:             one.Memo,
