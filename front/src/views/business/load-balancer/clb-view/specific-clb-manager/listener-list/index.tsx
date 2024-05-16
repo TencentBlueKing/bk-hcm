@@ -30,6 +30,7 @@ export default defineComponent({
     const { whereAmI } = useWhereAmI();
     const { selections, handleSelectionChange, resetSelections } = useSelection();
     let timer: string | number | NodeJS.Timeout;
+    let counter = 0; // 初始化计数器
     const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
       if (isCheckAll) return true;
       return isCurRowSelectEnable(row);
@@ -120,10 +121,15 @@ export default defineComponent({
           if (dataList.length === 0) return;
           const ids = dataList.filter((item) => item.binding_status === 'binding').map((item) => item.id);
           if (ids.length) {
-            clearTimeout(timer);
             timer = setTimeout(() => {
-              getListData();
-            }, 5000);
+              counter = counter + 1;
+              if (counter < 10) {
+                getListData();
+              } else {
+                counter = 0;
+                clearTimeout(timer);
+              }
+            }, 30000);
           }
           return dataList;
         },
