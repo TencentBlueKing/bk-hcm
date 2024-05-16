@@ -2,20 +2,20 @@ import { reactive, ref, nextTick, computed } from 'vue';
 // import components
 import { Message } from 'bkui-vue';
 // import stores
-import { useBusinessStore, useResourceStore } from '@/store';
+import { useBusinessStore } from '@/store';
 import { useLoadBalancerStore } from '@/store/loadbalancer';
 // import custom hooks
 import useSelectOptionListWithScroll from '@/hooks/useSelectOptionListWithScroll';
 import useResolveListenerFormData from './useResolveListenerFormData';
 // import utils
 import bus from '@/common/bus';
+import { cloneDeep } from 'lodash';
 // import types
 import { IOriginPage, QueryRuleOPEnum } from '@/typings';
 
 export default (getListData: (...args: any) => any, originPage: IOriginPage) => {
   // use stores
   const businessStore = useBusinessStore();
-  const resourceStore = useResourceStore();
   const loadBalancerStore = useLoadBalancerStore();
 
   const isSliderShow = ref(false);
@@ -34,6 +34,13 @@ export default (getListData: (...args: any) => any, originPage: IOriginPage) => 
         trigger: 'change',
       },
     ],
+    port: [
+      {
+        validator: (value: number) => value >= 1 && value <= 65535,
+        message: '端口号不符合规范',
+        trigger: 'change',
+      },
+    ],
     domain: [
       {
         validator: (value: string) => /^(?:(?:[a-zA-Z0-9]+-?)+(?:\.[a-zA-Z0-9-]+)+)$/.test(value),
@@ -41,10 +48,26 @@ export default (getListData: (...args: any) => any, originPage: IOriginPage) => 
         trigger: 'change',
       },
     ],
+    url: [
+      {
+        validator: (value: string) => /^\/[\w\-/]*$/.test(value),
+        message: 'URL路径不符合规范',
+        trigger: 'change',
+      },
+    ],
     'certificate.cert_cloud_ids': [
       {
         validator: (value: string[]) => value.length <= 2,
         message: '最多选择 2 个证书',
+        trigger: 'change',
+      },
+      {
+        validator: (value: string[]) => {
+          // 判断证书类型是否重复
+          const [cert1, cert2] = SVRCertList.value.filter((cert) => value.includes(cert.cloud_id));
+          return cert1?.encrypt_algorithm !== cert2?.encrypt_algorithm;
+        },
+        message: '不能选择加密算法相同的证书',
         trigger: 'change',
       },
     ],
@@ -79,25 +102,22 @@ export default (getListData: (...args: any) => any, originPage: IOriginPage) => 
   };
 
   // 初始化select-option列表
-  const initOptionState = (protocol?: string, isSniOpen?: boolean) => {
+  const initOptionState = () => {
     // init state
     initTargetGroupOptionState();
     initSVRCertOptionState();
     initCACertOptionState();
-    // get list
-    if (!isEdit.value || (protocol === 'HTTPS' && !isSniOpen)) {
-      getSVRCertList();
-      getCACertList();
-    }
-    if (!isEdit.value) {
-      getTargetGroupList();
-    }
   };
 
   // 新增监听器
   const handleAddListener = () => {
+    // 初始化
     initOptionState();
+    getSVRCertList();
+    getCACertList();
+    getTargetGroupList();
     isEdit.value = false;
+    isSniOpen.value = false;
     isSliderShow.value = true;
     clearFormData();
     nextTick(() => {
@@ -106,24 +126,25 @@ export default (getListData: (...args: any) => any, originPage: IOriginPage) => 
   };
 
   // 编辑监听器
-  const handleEditListener = (id: string) => {
+  const handleEditListener = async (id: string) => {
+    // 初始化
+    isEdit.value = true;
     clearFormData();
+    initOptionState();
     // 获取监听器详情, 回填
-    resourceStore.detail('listeners', id).then(({ data }: any) => {
-      Object.assign(listenerFormData, data, {
-        domain: data.default_domain,
-        session_open: data.session_expire !== 0,
-        certificate: data.extension.certificate || {
-          ssl_mode: 'UNIDIRECTIONAL',
-          ca_cloud_id: '',
-          cert_cloud_ids: [],
-        },
-      });
-      isSniOpen.value = !!data.sni_switch;
-      isEdit.value = true;
-      initOptionState(data.protocol, isSniOpen.value);
-      isSliderShow.value = true;
-    });
+    const { data } = await businessStore.detail('listeners', id);
+    const certificate = cloneDeep(data.certificate);
+    Object.assign(listenerFormData, { ...data, domain: data.default_domain, session_open: data.session_expire !== 0 });
+
+    // get list
+    if (!isEdit.value || data.protocol === 'HTTPS') {
+      await getSVRCertList();
+      await getCACertList();
+      Object.assign(listenerFormData.certificate, certificate);
+    }
+
+    isSniOpen.value = !!data.sni_switch;
+    isSliderShow.value = true;
   };
 
   const computedProtocol = computed(() => listenerFormData.protocol);
@@ -153,15 +174,11 @@ export default (getListData: (...args: any) => any, originPage: IOriginPage) => 
         // 编辑监听器
         await businessStore.updateListener({
           ...listenerFormData,
-          certificate: !listenerFormData.sni_switch ? listenerFormData.certificate : undefined,
-          extension: !listenerFormData.sni_switch ? { certificate: listenerFormData.certificate } : undefined,
+          extension: { certificate: listenerFormData.certificate },
         });
       } else {
         // 新增监听器
-        await businessStore.createListener({
-          ...listenerFormData,
-          certificate: !listenerFormData.sni_switch ? listenerFormData.certificate : undefined,
-        });
+        await businessStore.createListener(listenerFormData);
       }
       Message({ theme: 'success', message: isEdit.value ? '更新成功' : '新增成功' });
       isSliderShow.value = false;

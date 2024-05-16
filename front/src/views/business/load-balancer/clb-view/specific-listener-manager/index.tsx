@@ -1,4 +1,4 @@
-import { defineComponent, onMounted, onUnmounted, ref, watchEffect } from 'vue';
+import { defineComponent, onMounted, onUnmounted, ref, watch, watchEffect } from 'vue';
 // import components
 import { Tab } from 'bkui-vue';
 import DomainList from './domain-list';
@@ -36,6 +36,9 @@ export default defineComponent({
   },
   props: { id: String, type: String, protocol: String },
   setup(props) {
+    const businessStore = useBusinessStore();
+    const loadBalancerStore = useLoadBalancerStore();
+
     const { activeTab, handleActiveTabChange } = useActiveTab(props.type);
     const tabList = ref([]);
 
@@ -61,6 +64,21 @@ export default defineComponent({
     onUnmounted(() => {
       bus.$off('changeSpecificListenerActiveTab');
     });
+
+    const getListenerDetail = async (id: String) => {
+      // 监听器详情
+      const { data: listenerDetail } = await businessStore.detail('listeners', id as string);
+      // 负载均衡详情
+      const { data: lbDetail } = await businessStore.detail('load_balancers', listenerDetail.lb_id);
+      loadBalancerStore.setCurrentSelectedTreeNode({ ...listenerDetail, lb: lbDetail });
+    };
+
+    watch(
+      () => props.id,
+      (id) => {
+        id && getListenerDetail(id);
+      },
+    );
 
     return () => (
       <>

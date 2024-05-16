@@ -1,6 +1,6 @@
 import { PropType, computed, defineComponent, onMounted, onUnmounted, ref } from 'vue';
 // import components
-import { Form } from 'bkui-vue';
+import { Form, Tag } from 'bkui-vue';
 import CommonSideslider from '@/components/common-sideslider';
 // import stores
 import { useLoadBalancerStore } from '@/store';
@@ -56,6 +56,17 @@ export default defineComponent({
         sideIsLoading.value = false;
       }
     };
+
+    const rules = {
+      url: [
+        {
+          validator: (value: string) => /^\/[\w\-/]*$/.test(value),
+          message: 'URL路径不符合规范',
+          trigger: 'change',
+        },
+      ],
+    };
+
     onMounted(() => {
       bus.$on('showAddDomainSideslider', handleShow);
     });
@@ -90,9 +101,15 @@ export default defineComponent({
         </p>
         <p class='readonly-info'>
           <span class='label'>SNI</span>:
-          <span class='value'>{`${!!loadBalancerStore.currentSelectedTreeNode.sni_switch ? '已开启' : '未开启'}`}</span>
+          <span class='value'>
+            {!!loadBalancerStore.currentSelectedTreeNode.sni_switch ? (
+              <Tag theme='success'>已开启</Tag>
+            ) : (
+              <Tag>未开启</Tag>
+            )}
+          </span>
         </p>
-        <Form formType='vertical' ref={formInstance} model={formModel}>
+        <Form formType='vertical' ref={formInstance} model={formModel} rules={rules}>
           {formItemOptions.value
             .filter(({ hidden }) => !hidden)
             .map(({ label, required, property, content }) => {

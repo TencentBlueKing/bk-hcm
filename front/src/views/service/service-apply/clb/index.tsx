@@ -3,9 +3,9 @@ import { defineComponent, reactive } from 'vue';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import SubnetPreviewDialog from '../cvm/children/SubnetPreviewDialog';
 import VpcPreviewDialog from '../cvm/children/VpcPreviewDialog';
+import LbSpecTypeSelectDialog from '@/views/business/load-balancer/components/LbSpecTypeDialog';
 // import custom hooks
 import useBindEip from './hooks/useBindEip';
-import useSelectClbSpecType from './hooks/useSelectClbSpecType';
 import useRenderForm from './hooks/useRenderForm';
 import useBottomBar from './hooks/useBottomBar';
 import useHandleParams from './hooks/useHandleParams';
@@ -42,7 +42,6 @@ export default defineComponent({
     const { vpcData, isVpcPreviewDialogShow, subnetData, isSubnetPreviewDialogShow, ApplyClbForm, formRef } =
       useRenderForm(formModel);
     const { BindEipDialog } = useBindEip(formModel);
-    const { SelectClbSpecTypeDialog } = useSelectClbSpecType(formModel);
     const { ApplyClbBottomBar } = useBottomBar(formModel, formRef);
     useHandleParams(formModel, formRef);
 
@@ -70,7 +69,8 @@ export default defineComponent({
           handleClose={() => (isSubnetPreviewDialogShow.value = false)}
         />
         <BindEipDialog />
-        <SelectClbSpecTypeDialog />
+        {/* 负载均衡规格类型选择弹框 */}
+        <LbSpecTypeSelectDialog v-model={formModel.sla_type} />
       </div>
     );
   },

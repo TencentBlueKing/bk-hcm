@@ -1,6 +1,6 @@
 import { defineComponent, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { Input, Message, VirtualRender } from 'bkui-vue';
+import { Input, Message, OverflowTitle, VirtualRender } from 'bkui-vue';
 import Confirm from '@/components/confirm';
 import { useLoadBalancerStore, useAccountStore, useBusinessStore } from '@/store';
 import useMoreActionDropdown from '@/hooks/useMoreActionDropdown';
@@ -35,7 +35,7 @@ export default defineComponent({
     const { list, pagination, getList, handleScrollEnd, reset, refresh } = useList(
       'target_groups',
       () => rules.value,
-      true,
+      !loadBalancerStore.tgSearchTarget,
     );
 
     // handler - 切换目标组
@@ -70,10 +70,7 @@ export default defineComponent({
     // more-action
     const typeMenuMap = {
       all: [{ label: '新增目标组', handler: () => bus.$emit('addTargetGroup') }],
-      specific: [
-        { label: '编辑', handler: () => {} }, // todo: 等产品确认编辑位置
-        { label: '删除', handler: handleDeleteTargetGroup },
-      ],
+      specific: [{ label: '删除', handler: handleDeleteTargetGroup }],
     };
     const { showDropdownList, currentPopBoundaryNodeKey } = useMoreActionDropdown(typeMenuMap);
 
@@ -108,23 +105,38 @@ export default defineComponent({
       { immediate: true },
     );
 
+    watch(
+      () => loadBalancerStore.tgSearchTarget,
+      (val) => {
+        if (!val) return;
+        searchValue.value = val;
+        handleSearch(val);
+      },
+      {
+        immediate: true,
+      },
+    );
+
     onMounted(() => {
       bus.$on('refreshTargetGroupList', refresh);
-      bus.$on('changeTargetGroupName', (name: string) => {
-        searchValue.value = name;
-        handleSearch(name);
-      });
     });
 
     onUnmounted(() => {
       bus.$off('refreshTargetGroupList');
-      bus.$off('changeTargetGroupName');
+      loadBalancerStore.setTgSearchTarget('');
     });
 
     return () => (
       <div class='target-group-list'>
         <div class='search-wrap'>
-          <Input v-model={searchValue.value} type='search' clearable placeholder='搜索目标组' onChange={handleSearch} />
+          <Input
+            v-model={searchValue.value}
+            type='search'
+            clearable
+            placeholder='搜索目标组'
+            onChange={handleSearch}
+            onClear={() => loadBalancerStore.setTgSearchTarget('')}
+          />
         </div>
         <div class='group-list-wrap'>
           <div
@@ -154,10 +166,10 @@ export default defineComponent({
                       key={item.id}
                       class={`group-item-wrap${activeTargetGroupId.value === item.id ? ' selected' : ''}`}
                       onClick={() => handleTypeChange(item.id)}>
-                      <div class='base-info'>
+                      <OverflowTitle type='tips' class='base-info'>
                         <img src={mubiaoIcon} alt='' class='prefix-icon' />
                         <span class='text'>{item.name}</span>
-                      </div>
+                      </OverflowTitle>
                       <div class={`ext-info${currentPopBoundaryNodeKey.value === item.id ? ' show-dropdown' : ''}`}>
                         <div class='count'>{item.count}</div>
                         <div class='more-action' onClick={(e) => showDropdownList(e, { type: 'specific', ...item })}>
