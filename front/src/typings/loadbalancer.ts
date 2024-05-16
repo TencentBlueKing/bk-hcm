@@ -76,3 +76,15 @@ export interface AsyncTaskDetail {
 
 // response - 异步任务Flow详情
 export type AsyncTaskDetailResp = IQueryResData<AsyncTaskDetail>;
+
+// CLB 规格类型
+export type CLBSpecType =
+  | 'shared'
+  | 'clb.c1.small'
+  | 'clb.c2.medium'
+  | 'clb.c3.small'
+  | 'clb.c3.medium'
+  | 'clb.c4.small'
+  | 'clb.c4.medium'
+  | 'clb.c4.large'
+  | 'clb.c4.xlarge';

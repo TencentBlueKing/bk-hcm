@@ -149,6 +149,58 @@ export const CLB_SPECS_REVERSE_MAP = {
   超强型4规格: 'clb.c4.xlarge',
 };
 
+// 腾讯云CLB规格列表映射
+export const CLB_SPEC_TYPE_COLUMNS_MAP = {
+  'clb.c1.small': {
+    connectionsPerMinute: '100,000',
+    newConnectionsPerSecond: '10,000',
+    queriesPerSecond: '10,000',
+    bandwidthLimit: '1Gbps',
+  },
+  'clb.c2.medium': {
+    connectionsPerMinute: '100,000',
+    newConnectionsPerSecond: '10,000',
+    queriesPerSecond: '10,000',
+    bandwidthLimit: '2Gbps',
+  },
+  'clb.c3.small': {
+    connectionsPerMinute: '200,000',
+    newConnectionsPerSecond: '20,000',
+    queriesPerSecond: '20,000',
+    bandwidthLimit: '4Gbps',
+  },
+  'clb.c3.medium': {
+    connectionsPerMinute: '500,000',
+    newConnectionsPerSecond: '50,000',
+    queriesPerSecond: '30,000',
+    bandwidthLimit: '6Gbps',
+  },
+  'clb.c4.small': {
+    connectionsPerMinute: '1,000,000',
+    newConnectionsPerSecond: '100,000',
+    queriesPerSecond: '50,000',
+    bandwidthLimit: '10Gbps',
+  },
+  'clb.c4.medium': {
+    connectionsPerMinute: '2,000,000',
+    newConnectionsPerSecond: '200,000',
+    queriesPerSecond: '100,000',
+    bandwidthLimit: '20Gbps',
+  },
+  'clb.c4.large': {
+    connectionsPerMinute: '5,000,000',
+    newConnectionsPerSecond: '500,000',
+    queriesPerSecond: '200,000',
+    bandwidthLimit: '40Gbps',
+  },
+  'clb.c4.xlarge': {
+    connectionsPerMinute: '10,000,000',
+    newConnectionsPerSecond: '1,000,000',
+    queriesPerSecond: '300,000',
+    bandwidthLimit: '60Gbps',
+  },
+};
+
 // 监听器同步状态映射 - 反向映射
 export const LISTENER_BINDING_STATUS_REVERSE_MAP = {
   绑定中: 'binding',

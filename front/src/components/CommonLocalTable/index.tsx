@@ -49,7 +49,7 @@ export default defineComponent({
     const searchValue = ref();
     // 表格相关
     const tableData = ref(props.tableData);
-    const pagination = reactive({ count: 0, limit: 10 });
+    const pagination = reactive({ limit: 10, count: props.tableData.length });
     const hasTopBar = computed(() => props.hasOperation && props.hasSearch);
 
     // 监听 searchValue 的变化，根据过滤条件过滤得到 实际用于渲染的数据
@@ -63,9 +63,12 @@ export default defineComponent({
             return rule.values[0].id;
         }
       });
-      return props.tableData.filter((item) =>
+      const resultData = props.tableData.filter((item) =>
         Object.keys(filterConditions).every((key) => filterConditions[key].includes(`${item[key]}`)),
       );
+      // 更新分页器
+      pagination.count = resultData.length;
+      return resultData;
     });
 
     watch(
