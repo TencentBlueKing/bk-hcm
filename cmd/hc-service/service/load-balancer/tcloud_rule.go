@@ -86,29 +86,7 @@ func (svc *clbSvc) TCloudCreateUrlRule(cts *rest.Contexts) (any, error) {
 	createReq := &cloud.TCloudUrlRuleBatchCreateReq{}
 
 	for i, cloudID := range creatResult.SuccessCloudIDs {
-
-		// 7层不支持设置健康检查端口
-		if req.Rules[i].HealthCheck != nil {
-			req.Rules[i].HealthCheck.CheckPort = nil
-		}
-		createReq.UrlRules = append(createReq.UrlRules, cloud.TCloudUrlRuleCreate{
-			LbID:               lb.ID,
-			CloudLbID:          lb.CloudID,
-			LblID:              listener.ID,
-			CloudLBLID:         listener.CloudID,
-			CloudID:            cloudID,
-			Name:               req.Rules[i].Url,
-			RuleType:           enumor.Layer7RuleType,
-			TargetGroupID:      req.Rules[i].TargetGroupID,
-			CloudTargetGroupID: req.Rules[i].TargetGroupID,
-			Domain:             req.Rules[i].Domains[0],
-			URL:                req.Rules[i].Url,
-			Scheduler:          cvt.PtrToVal(req.Rules[i].Scheduler),
-			SessionExpire:      cvt.PtrToVal(req.Rules[i].SessionExpireTime),
-			HealthCheck:        req.Rules[i].HealthCheck,
-			Certificate:        req.Rules[i].Certificates,
-			Memo:               req.Rules[i].Memo,
-		})
+		createReq.UrlRules = append(createReq.UrlRules, convURLRuleCreateReq(&req.Rules[i], lb, listener, cloudID))
 	}
 	_, err = svc.dataCli.TCloud.LoadBalancer.BatchCreateTCloudUrlRule(cts.Kit, createReq)
 	if err != nil {
@@ -122,6 +100,33 @@ func (svc *clbSvc) TCloudCreateUrlRule(cts *rest.Contexts) (any, error) {
 	}
 
 	return creatResult, nil
+}
+
+func convURLRuleCreateReq(createReq *protolb.TCloudRuleCreate, lb *corelb.BaseLoadBalancer,
+	listener *corelb.BaseListener, cloudID string) cloud.TCloudUrlRuleCreate {
+	// 7层不支持设置健康检查端口
+	if createReq.HealthCheck != nil {
+		createReq.HealthCheck.CheckPort = nil
+	}
+
+	return cloud.TCloudUrlRuleCreate{
+		LbID:               lb.ID,
+		CloudLbID:          lb.CloudID,
+		LblID:              listener.ID,
+		CloudLBLID:         listener.CloudID,
+		CloudID:            cloudID,
+		Name:               createReq.Url,
+		RuleType:           enumor.Layer7RuleType,
+		TargetGroupID:      createReq.TargetGroupID,
+		CloudTargetGroupID: createReq.TargetGroupID,
+		Domain:             createReq.Domains[0],
+		URL:                createReq.Url,
+		Scheduler:          cvt.PtrToVal(createReq.Scheduler),
+		SessionExpire:      cvt.PtrToVal(createReq.SessionExpireTime),
+		HealthCheck:        createReq.HealthCheck,
+		Certificate:        createReq.Certificates,
+		Memo:               createReq.Memo,
+	}
 }
 
 func convRuleCreate(r protolb.TCloudRuleCreate, protocol enumor.ProtocolType) *typelb.RuleInfo {
