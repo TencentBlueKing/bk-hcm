@@ -1,16 +1,16 @@
-import { Ref, computed, reactive, ref } from 'vue';
+import { Ref, computed, nextTick, reactive, ref, watch } from 'vue';
 // import components
 import { Input, Message, Select, Tag } from 'bkui-vue';
+import BkRadio, { BkRadioGroup } from 'bkui-vue/lib/radio';
+import TargetGroupSelector from '../TargetGroupSelector';
+import CertSelector from '../CertSelector';
 // import hooks
 import { useI18n } from 'vue-i18n';
 import { useBusinessStore } from '@/store';
 import { useLoadBalancerStore } from '@/store/loadbalancer';
 import { useRoute } from 'vue-router';
 // import types
-import { IOriginPage, QueryRuleOPEnum } from '@/typings';
-import useSelectOptionListWithScroll from '@/hooks/useSelectOptionListWithScroll';
-import BkRadio, { BkRadioGroup } from 'bkui-vue/lib/radio';
-import CertSelector from '@/components/cert-selector';
+import { IOriginPage } from '@/typings';
 
 const { Option } = Select;
 
@@ -34,13 +34,14 @@ export const RuleModeList = [
   },
 ];
 
-export default (getListData: () => void, originPage: IOriginPage, isHttpsAndSniOn: boolean) => {
+export default (getListData: () => void, originPage: IOriginPage, isHttpsAndSniOn: Ref<boolean>) => {
   // use hooks
   const { t } = useI18n();
   const businessStore = useBusinessStore();
   const loadbalancer = useLoadBalancerStore();
   const route = useRoute();
   const oldDomain = ref('');
+  const targetGroupSelectorRef = ref();
 
   const isShow = ref(false);
   const action = ref<number>(); // 0 - add, 1 - update
@@ -80,28 +81,6 @@ export default (getListData: () => void, originPage: IOriginPage, isHttpsAndSniO
     }
   };
 
-  const { isScrollLoading, optionList, handleOptionListScrollEnd } = useSelectOptionListWithScroll(
-    'target_groups',
-    [
-      {
-        field: 'account_id',
-        op: QueryRuleOPEnum.EQ,
-        value: loadbalancer.currentSelectedTreeNode.lb.account_id,
-      },
-      {
-        field: 'cloud_vpc_id',
-        op: QueryRuleOPEnum.EQ,
-        value: loadbalancer.currentSelectedTreeNode.lb.cloud_vpc_id,
-      },
-      {
-        field: 'region',
-        op: QueryRuleOPEnum.EQ,
-        value: loadbalancer.currentSelectedTreeNode.lb.region,
-      },
-    ],
-    true,
-  );
-
   const handleSubmit = async (formInstance: Ref<any>) => {
     await formInstance.value.validate();
     const lbl_id =
@@ -117,13 +96,13 @@ export default (getListData: () => void, originPage: IOriginPage, isHttpsAndSniO
             url: formData.url,
             domains: [formData.domain],
             scheduler: formData.scheduler,
-            certificate: isHttpsAndSniOn ? formData.certificate : undefined,
+            certificate: isHttpsAndSniOn.value ? formData.certificate : undefined,
           })
         : businessStore.updateDomains(lbl_id, {
             lbl_id,
             domain: oldDomain.value,
             new_domain: formData.domain,
-            certificate: isHttpsAndSniOn ? formData.certificate : undefined,
+            certificate: isHttpsAndSniOn.value ? formData.certificate : undefined,
           });
     await promise;
     isShow.value = false;
@@ -167,20 +146,20 @@ export default (getListData: () => void, originPage: IOriginPage, isHttpsAndSniO
       required: true,
       hidden: action.value === OpAction.UPDATE,
       content: () => (
-        <Select
+        <TargetGroupSelector
+          ref={targetGroupSelectorRef}
           v-model={formData.target_group_id}
-          scrollLoading={isScrollLoading.value}
-          onScroll-end={handleOptionListScrollEnd}>
-          {optionList.value.map(({ id, name, listener_num }) => (
-            <Option key={id} id={id} name={name} disabled={listener_num > 0} />
-          ))}
-        </Select>
+          accountId={loadbalancer.currentSelectedTreeNode.account_id}
+          cloudVpcId={loadbalancer.currentSelectedTreeNode.lb.cloud_vpc_id}
+          region={loadbalancer.currentSelectedTreeNode.lb.region}
+          protocol={loadbalancer.currentSelectedTreeNode.protocol}
+        />
       ),
     },
     {
       label: 'SSL解析方式',
       required: true,
-      hidden: !isHttpsAndSniOn,
+      hidden: !isHttpsAndSniOn.value,
       content: () => (
         <BkRadioGroup v-model={formData.certificate.ssl_mode}>
           <BkRadio label='UNIDIRECTIONAL'>
@@ -198,28 +177,36 @@ export default (getListData: () => void, originPage: IOriginPage, isHttpsAndSniO
     {
       label: '服务器证书',
       required: true,
-      hidden: !isHttpsAndSniOn,
+      hidden: !isHttpsAndSniOn.value,
       content: () => (
         <CertSelector
-          accountId={loadbalancer.currentSelectedTreeNode.account_id}
-          type='SVR'
           v-model={formData.certificate.cert_cloud_ids}
+          type='SVR'
+          accountId={loadbalancer.currentSelectedTreeNode.account_id}
         />
       ),
     },
     {
       label: 'CA证书',
       required: true,
-      hidden: formData.certificate.ssl_mode === 'UNIDIRECTIONAL' && !isHttpsAndSniOn,
+      hidden: formData.certificate.ssl_mode === 'UNIDIRECTIONAL' && !isHttpsAndSniOn.value,
       content: () => (
         <CertSelector
-          accountId={loadbalancer.currentSelectedTreeNode.account_id}
-          type='CA'
           v-model={formData.certificate.ca_cloud_id}
+          type='CA'
+          accountId={loadbalancer.currentSelectedTreeNode.account_id}
         />
       ),
     },
   ]);
+
+  // 当侧边栏显示时, 刷新目标组select-option-list
+  watch(isShow, (val) => {
+    if (!val || action.value === 1) return;
+    nextTick(() => {
+      targetGroupSelectorRef.value.handleRefresh();
+    });
+  });
 
   return {
     isShow,

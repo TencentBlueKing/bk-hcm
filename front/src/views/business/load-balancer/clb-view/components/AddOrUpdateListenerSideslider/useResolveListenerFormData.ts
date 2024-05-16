@@ -29,6 +29,7 @@ export default (listenerFormData: any) => {
   watch(
     () => listenerFormData.certificate.ssl_mode,
     (val) => {
+      if (!listenerFormData.certificate) return;
       // 如果需要客户端也提供证书, 则需要SSL认证类型为双向认证
       val !== 'MUTUAL' && (listenerFormData.certificate.ca_cloud_id = '');
     },

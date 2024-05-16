@@ -1,9 +1,10 @@
-import { PropType, defineComponent, onMounted, onUnmounted } from 'vue';
+import { PropType, computed, defineComponent, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 // import components
-import { Alert, Button, Divider, Form, Input, Select, Switcher, Tag } from 'bkui-vue';
+import { Alert, Button, Form, Input, Select, Switcher, Tag } from 'bkui-vue';
 import BkRadio, { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
-import { Plus, RightTurnLine, Spinner } from 'bkui-vue/lib/icon';
 import CommonSideslider from '@/components/common-sideslider';
+import TargetGroupSelector from '../TargetGroupSelector';
+import CertSelector from '../CertSelector';
 // import stores
 import { useLoadBalancerStore, useAccountStore } from '@/store';
 // import hooks
@@ -34,6 +35,10 @@ export default defineComponent({
     // use hooks
     const { t } = useI18n();
 
+    const computedProtocol = computed(() => listenerFormData.protocol);
+    const targetGroupSelectorRef = ref();
+    const svrCertSelectorRef = ref();
+
     // 「新增/编辑」监听器
     const {
       isSliderShow,
@@ -41,31 +46,70 @@ export default defineComponent({
       isAddOrUpdateListenerSubmit,
       isSniOpen,
       formRef,
-      rules,
       listenerFormData,
       handleAddListener,
       handleEditListener,
       handleAddOrUpdateListener,
-      isTargetGroupListLoading,
-      targetGroupList,
-      handleTargetGroupListScrollEnd,
-      isTargetGroupListFlashLoading,
-      handleTargetGroupListRefreshOptionList,
-      isSVRCertListLoading,
-      SVRCertList,
-      handleSVRCertListScrollEnd,
-      isCACertListLoading,
-      CACertList,
-      handleCACertListScrollEnd,
       isLbLocked,
       lockedLbInfo,
     } = useAddOrUpdateListener(props.getListData, props.originPage);
 
-    // click-handler - 新增目标组
-    const handleAddTargetGroup = () => {
-      const url = `/#/business/loadbalancer/group-view?bizs=${accountStore.bizs}`;
-      window.open(url, '_blank');
+    const rules = {
+      name: [
+        {
+          validator: (value: string) => /^[\u4e00-\u9fa5A-Za-z0-9\-._:]{1,60}$/.test(value),
+          message: '不能超过60个字符，只能使用中文、英文、数字、下划线、分隔符“-”、小数点、冒号',
+          trigger: 'change',
+        },
+      ],
+      port: [
+        {
+          validator: (value: number) => value >= 1 && value <= 65535,
+          message: '端口号不符合规范',
+          trigger: 'change',
+        },
+      ],
+      domain: [
+        {
+          validator: (value: string) => /^(?:(?:[a-zA-Z0-9]+-?)+(?:\.[a-zA-Z0-9-]+)+)$/.test(value),
+          message: '域名不符合规范',
+          trigger: 'change',
+        },
+      ],
+      url: [
+        {
+          validator: (value: string) => /^\/[\w\-/]*$/.test(value),
+          message: 'URL路径不符合规范',
+          trigger: 'change',
+        },
+      ],
+      'certificate.cert_cloud_ids': [
+        {
+          validator: (value: string[]) => value.length <= 2,
+          message: '最多选择 2 个证书',
+          trigger: 'change',
+        },
+        {
+          validator: (value: string[]) => {
+            // 判断证书类型是否重复
+            const [cert1, cert2] = svrCertSelectorRef.value.dataList.filter((cert: any) =>
+              value.includes(cert.cloud_id),
+            );
+            return cert1?.encrypt_algorithm !== cert2?.encrypt_algorithm;
+          },
+          message: '不能选择加密算法相同的证书',
+          trigger: 'change',
+        },
+      ],
     };
+
+    // 当侧边栏显示或协议变更时, 刷新目标组select-option-list
+    watch([isSliderShow, () => listenerFormData.protocol], ([isSliderShow]) => {
+      if (!isSliderShow || isEdit.value) return;
+      nextTick(() => {
+        targetGroupSelectorRef.value.handleRefresh();
+      });
+    });
 
     onMounted(() => {
       bus.$on('showAddListenerSideslider', handleAddListener);
@@ -156,48 +200,20 @@ export default defineComponent({
                 </FormItem>
               </div>
               <FormItem label={t('服务器证书')} required property='certificate.cert_cloud_ids'>
-                <Select
+                <CertSelector
+                  ref={svrCertSelectorRef}
                   v-model={listenerFormData.certificate.cert_cloud_ids}
-                  multiple
-                  scrollLoading={isSVRCertListLoading.value}
-                  onScroll-end={handleSVRCertListScrollEnd}>
-                  {SVRCertList.value
-                    .sort((a, b) => a.cert_status - b.cert_status)
-                    .map(({ cloud_id, name, cert_status, domain, encrypt_algorithm }) => (
-                      <Option key={cloud_id} id={cloud_id} name={name} disabled={cert_status === '3'}>
-                        {name}&nbsp;(主域名 : {domain ? domain[0] : '--'}, 备用域名：{domain ? domain[1] : '--'})
-                        {cert_status === '3' ? (
-                          <Tag theme='danger' style={{ marginLeft: '12px' }}>
-                            已过期
-                          </Tag>
-                        ) : (
-                          <Tag theme='info' style={{ marginLeft: '12px' }}>
-                            {encrypt_algorithm}
-                          </Tag>
-                        )}
-                      </Option>
-                    ))}
-                </Select>
+                  type='SVR'
+                  accountId={listenerFormData.account_id}
+                />
               </FormItem>
               {listenerFormData.certificate.ssl_mode === 'MUTUAL' && (
                 <FormItem label={t('CA证书')} required property='certificate.ca_cloud_id'>
-                  <Select
+                  <CertSelector
                     v-model={listenerFormData.certificate.ca_cloud_id}
-                    scrollLoading={isCACertListLoading.value}
-                    onScroll-end={handleCACertListScrollEnd}>
-                    {CACertList.value
-                      .sort((a, b) => a.cert_status - b.cert_status)
-                      .map(({ cloud_id, name, cert_status }) => (
-                        <Option key={cloud_id} id={cloud_id} name={name} disabled={cert_status === '3'}>
-                          {name}
-                          {cert_status === '3' && (
-                            <Tag theme='danger' style={{ marginLeft: '12px' }}>
-                              已过期
-                            </Tag>
-                          )}
-                        </Option>
-                      ))}
-                  </Select>
+                    type='CA'
+                    accountId={listenerFormData.account_id}
+                  />
                 </FormItem>
               )}
             </>
@@ -250,41 +266,22 @@ export default defineComponent({
                   )
               }
               <FormItem label={t('目标组')} required property='target_group_id'>
-                {/* tag: 这里暂时不抽离成公共组件, 等后续相关场景多了再抽离, 此处先写行内样式, 方便抽离时设置css样式 */}
-                <Select
+                <TargetGroupSelector
+                  ref={targetGroupSelectorRef}
                   v-model={listenerFormData.target_group_id}
-                  scrollLoading={isTargetGroupListLoading.value}
-                  onScroll-end={handleTargetGroupListScrollEnd}>
-                  {{
-                    default: () =>
-                      targetGroupList.value.map(({ id, name, listener_num }) => (
-                        <Option key={id} id={id} name={name} disabled={listener_num > 0} />
-                      )),
-                    extension: () => (
-                      <div style='width: 100%; color: #63656E; padding: 0 12px;'>
-                        <div style='display: flex; align-items: center;justify-content: center;'>
-                          <span
-                            style='display: flex; align-items: center;cursor: pointer;'
-                            onClick={handleAddTargetGroup}>
-                            <Plus style='font-size: 20px;' />
-                            新增
-                          </span>
-                          <span style='display: flex; align-items: center;position: absolute; right: 12px;'>
-                            <Divider direction='vertical' type='solid' />
-                            {isTargetGroupListFlashLoading.value ? (
-                              <Spinner style='font-size: 14px;color: #3A84FF;' />
-                            ) : (
-                              <RightTurnLine
-                                style='font-size: 14px;cursor: pointer;'
-                                onClick={handleTargetGroupListRefreshOptionList}
-                              />
-                            )}
-                          </span>
-                        </div>
-                      </div>
-                    ),
-                  }}
-                </Select>
+                  accountId={listenerFormData.account_id}
+                  cloudVpcId={
+                    props.originPage === 'lb'
+                      ? loadBalancerStore.currentSelectedTreeNode.cloud_vpc_id
+                      : loadBalancerStore.currentSelectedTreeNode.lb.cloud_vpc_id
+                  }
+                  region={
+                    props.originPage === 'lb'
+                      ? loadBalancerStore.currentSelectedTreeNode.region
+                      : loadBalancerStore.currentSelectedTreeNode.lb.region
+                  }
+                  protocol={computedProtocol.value}
+                />
               </FormItem>
             </>
           )}

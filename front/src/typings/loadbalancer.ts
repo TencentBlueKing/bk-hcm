@@ -88,3 +88,6 @@ export type CLBSpecType =
   | 'clb.c4.medium'
   | 'clb.c4.large'
   | 'clb.c4.xlarge';
+
+// 协议类型
+export type Protocol = 'TCP' | 'UDP' | 'HTTP' | 'HTTPS';
