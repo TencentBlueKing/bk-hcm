@@ -74,7 +74,7 @@ const resourceMenus: RouteRecordRaw[] = [
       },
       {
         path: '/resource/record/detail',
-        name: 'resourceDetail',
+        name: 'resourceRecordDetail',
         component: () => import('@/views/resource/resource-manage/operationRecord/RecordDetail/index'),
         meta: {
           activeKey: 'resourceResource',
