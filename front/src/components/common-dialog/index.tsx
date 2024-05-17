@@ -34,6 +34,7 @@ export default defineComponent({
         {{
           default: () => slots.default?.(),
           tools: () => slots.tools?.(),
+          footer: slots.footer ? () => slots.footer?.() : undefined,
         }}
       </Dialog>
     );

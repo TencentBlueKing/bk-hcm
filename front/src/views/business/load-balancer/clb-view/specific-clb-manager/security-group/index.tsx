@@ -150,12 +150,16 @@ export default defineComponent({
       tableOptions: {
         columns: tableColumns,
         extra: {
+          // onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
+          // onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
+          // isRowSelectEnable,
+          // isSelectedFn: ({ row }: any) => {
+          //   return selectedSecuirtyGroupsSet.value.has(row.id);
+          // },
+          isRowSelectEnable,
           onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
           onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
-          isRowSelectEnable,
-          isSelectedFn: ({ row }: any) => {
-            return selectedSecuirtyGroupsSet.value.has(row.id);
-          },
+          selectionKey: 'cloud_id',
         },
       },
       requestOption: {
@@ -412,7 +416,28 @@ export default defineComponent({
           </div>
         </CommonSideslider>
         <CommonDialog v-model:isShow={isDialogShow.value} title={'绑定安全组'} width={640} onHandleConfirm={handleBind}>
-          <CommonTable />
+          {{
+            default: () => <CommonTable />,
+            footer: () => (
+              <div>
+                <Button
+                  theme='primary'
+                  class={'mr6'}
+                  disabled={securityGroups.value.length + selections.value.length > 5}
+                  v-bk-tooltips={{
+                    content: '一个负载均衡默认只允许绑定5个安全组，如果特殊需求，请联系腾讯云助手调整',
+                    disabled: !(securityGroups.value.length + selections.value.length > 5),
+                  }}
+                  onClick={() => {
+                    handleBind();
+                    isDialogShow.value = false;
+                  }}>
+                  确定
+                </Button>
+                <Button onClick={() => (isDialogShow.value = false)}>取消</Button>
+              </div>
+            ),
+          }}
         </CommonDialog>
         <Dialog
           title='检测配置'
