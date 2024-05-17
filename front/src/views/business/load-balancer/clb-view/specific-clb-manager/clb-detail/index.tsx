@@ -9,6 +9,7 @@ import { useRouteLinkBtn, TypeEnum, IDetail } from '@/hooks/useRouteLinkBtn';
 
 import { CHARGE_TYPE, CLB_SPECS, LB_ISP, LB_TYPE_MAP } from '@/common/constant';
 import { useRegionsStore } from '@/store/useRegionsStore';
+import { IP_VERSION_MAP } from '@/constants';
 
 export default defineComponent({
   props: {
@@ -89,6 +90,9 @@ export default defineComponent({
       {
         name: 'IP版本',
         prop: 'ip_version',
+        render() {
+          return IP_VERSION_MAP[props.detail.ip_version];
+        },
       },
       {
         name: '网络类型',
