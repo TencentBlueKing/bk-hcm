@@ -27,7 +27,8 @@ export default (formModel: ApplyClbModel) => {
           formModel.cloud_vpc_id &&
           formModel.cloud_subnet_id &&
           formModel.require_count !== 0 &&
-          formModel.name,
+          formModel.name &&
+          /^[a-zA-Z0-9]([-a-zA-Z0-9]{0,58})[a-zA-Z0-9]$/.test(formModel.name),
       );
     }
     // 公网下, 如果账号类型为传统类型, 则 account_id, region, address_ip_version, zones, cloud_vpc_id, vip_isp, sla_type, require_count, name 不为空时才询价一次
@@ -41,7 +42,8 @@ export default (formModel: ApplyClbModel) => {
           formModel.vip_isp &&
           formModel.sla_type &&
           formModel.require_count !== 0 &&
-          formModel.name,
+          formModel.name &&
+          /^[a-zA-Z0-9]([-a-zA-Z0-9]{0,58})[a-zA-Z0-9]$/.test(formModel.name),
       );
     }
     // 公网下, 如果账号类型为标准类型, 则 account_id, region, address_ip_version, zones, cloud_vpc_id, vip_isp, sla_type, internet_charge_type, internet_max_bandwidth_out, require_count, name 不为空时才询价一次
@@ -56,7 +58,8 @@ export default (formModel: ApplyClbModel) => {
         formModel.internet_charge_type &&
         formModel.internet_max_bandwidth_out &&
         formModel.require_count !== 0 &&
-        formModel.name,
+        formModel.name &&
+        /^[a-zA-Z0-9]([-a-zA-Z0-9]{0,58})[a-zA-Z0-9]$/.test(formModel.name),
     );
   }); // 是否询价
   const prices = shallowRef<LbPrice>(); // 价格信息

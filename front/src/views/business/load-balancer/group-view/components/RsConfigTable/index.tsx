@@ -1,6 +1,6 @@
 import { computed, defineComponent, ref, watch } from 'vue';
 // import components
-import { SearchSelect, Loading, Table, Input, Button } from 'bkui-vue';
+import { SearchSelect, Loading, Table, Input, Button, Form } from 'bkui-vue';
 import Empty from '@/components/empty';
 import BatchUpdatePopConfirm from '@/components/batch-update-popconfirm';
 // import hooks
@@ -12,6 +12,8 @@ import { useRegionsStore } from '@/store/useRegionsStore';
 import bus from '@/common/bus';
 import { getLocalFilterConditions } from '@/utils';
 import './index.scss';
+
+const { FormItem } = Form;
 
 export default defineComponent({
   name: 'RsConfigTable',
@@ -132,19 +134,24 @@ export default defineComponent({
         },
         field: 'port',
         isDefaultShow: true,
-        render: ({ cell, data }: { cell: number; data: any }) => {
+        render: ({ cell, data, index }: { cell: number; data: any; index: number }) => {
           if (props.onlyShow) return cell;
           return (
-            <Input
-              modelValue={cell}
-              onChange={handleUpdate(data.id, 'port')}
-              disabled={!props.noDisabled && !(isAdd.value || (isAddRs.value && data.isNew))}
-              type='number'
-              min={1}
-              max={65535}
-              class='no-number-control'
-              placeholder='1-65535'
-            />
+            <FormItem
+              property={`rs_list.${index}.port`}
+              errorDisplayType='tooltips'
+              required
+              rules={[
+                { validator: (v: number) => v >= 1 && v <= 65535, message: '端口范围为1-65535', trigger: 'change' },
+              ]}>
+              <Input
+                modelValue={cell}
+                onChange={handleUpdate(data.id, 'port')}
+                disabled={!props.noDisabled && !(isAdd.value || (isAddRs.value && data.isNew))}
+                type='number'
+                class='no-number-control'
+              />
+            </FormItem>
           );
         },
       },
@@ -167,19 +174,22 @@ export default defineComponent({
         },
         field: 'weight',
         isDefaultShow: true,
-        render: ({ cell, data }: { cell: number; data: any }) => {
+        render: ({ cell, data, index }: { cell: number; data: any; index: number }) => {
           if (props.onlyShow) return cell;
           return (
-            <Input
-              modelValue={cell}
-              onChange={handleUpdate(data.id, 'weight')}
-              disabled={!props.noDisabled && !(isAdd.value || (isAddRs.value && data.isNew))}
-              type='number'
-              min={0}
-              max={100}
-              class='no-number-control'
-              placeholder='0-100'
-            />
+            <FormItem
+              property={`rs_list.${index}.weight`}
+              errorDisplayType='tooltips'
+              required
+              rules={[{ validator: (v: number) => v >= 0 && v <= 100, message: '权重范围为0-100', trigger: 'change' }]}>
+              <Input
+                modelValue={cell}
+                onChange={handleUpdate(data.id, 'weight')}
+                disabled={!props.noDisabled && !(isAdd.value || (isAddRs.value && data.isNew))}
+                type='number'
+                class='no-number-control'
+              />
+            </FormItem>
           );
         },
       },

@@ -218,3 +218,11 @@ export const TG_OPERATION_SCENE_MAP = {
   port: '批量修改端口',
   weight: '批量修改权重',
 };
+
+// IP版本映射 - 前端展示使用
+export const IP_VERSION_MAP = {
+  ipv4: 'IPv4',
+  ipv6: 'IPv6',
+  ipv6_nat64: 'IPv6_NAT',
+  ipv6_dual_stack: 'IPv6双栈',
+};

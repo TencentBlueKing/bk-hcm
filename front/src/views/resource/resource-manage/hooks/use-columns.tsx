@@ -23,7 +23,7 @@ import { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../common/table/HostO
 import './use-columns.scss';
 import { defaults } from 'lodash';
 import { timeFormatter } from '@/common/util';
-import { LBRouteName, LB_NETWORK_TYPE_MAP, SCHEDULER_MAP } from '@/constants/clb';
+import { IP_VERSION_MAP, LBRouteName, LB_NETWORK_TYPE_MAP, SCHEDULER_MAP } from '@/constants/clb';
 import { getInstVip } from '@/utils';
 import dayjs from 'dayjs';
 
@@ -1227,6 +1227,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: 'IP版本',
       field: 'ip_version',
       isDefaultShow: true,
+      render: ({ cell }: { cell: string }) => IP_VERSION_MAP[cell],
       sort: true,
     },
     {
