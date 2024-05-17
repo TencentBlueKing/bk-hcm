@@ -511,7 +511,7 @@ export default defineComponent({
           id: projectModel.id,
           extension: {
             ...extension,
-            cloud_sub_account_id: secretModel.subAccountId,
+            cloud_sub_account_id: curExtension.value.output1.cloud_sub_account_id.value,
           },
         });
         await accountStore.updateAccount({
@@ -519,7 +519,7 @@ export default defineComponent({
           id: projectModel.id,
           extension: {
             ...extension,
-            cloud_sub_account_id: secretModel.subAccountId,
+            cloud_sub_account_id: curExtension.value.output1.cloud_sub_account_id.value,
           },
         });
         Message({
