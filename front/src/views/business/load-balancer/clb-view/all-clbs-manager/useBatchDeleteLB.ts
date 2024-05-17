@@ -36,8 +36,14 @@ export default (
 
   // click-handler
   const handleClickBatchDelete = () => {
-    isBatchDeleteDialogShow.value = true;
     tableProps.data = cloneDeep(selections.value);
+    radioGroupValue.value = true;
+    if (
+      tableProps.data.filter(({ listenerNum, delete_protect }: any) => listenerNum > 0 || delete_protect).length > 0
+    ) {
+      radioGroupValue.value = false;
+    }
+    isBatchDeleteDialogShow.value = true;
   };
 
   // remove-handler - 移除单个监听器
