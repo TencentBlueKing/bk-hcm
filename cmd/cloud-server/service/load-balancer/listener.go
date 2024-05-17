@@ -1,6 +1,8 @@
 package loadbalancer
 
 import (
+	"fmt"
+
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
@@ -200,10 +202,8 @@ func (svc *lbSvc) listTCloudLbUrlRuleMap(kt *kit.Kit, lbID string, lblIDs []stri
 		}
 
 		tmpListener := listenerRuleMap[ruleItem.LblID]
-		if _, ok := domainsExist[ruleItem.Domain]; !ok && len(ruleItem.Domain) > 0 {
-			tmpListener.DomainNum++
-			domainsExist[ruleItem.Domain] = struct{}{}
-		}
+		// 计算监听器下的域名数量
+		calcDomainNumByListener(&tmpListener, ruleItem, domainsExist)
 		if len(ruleItem.URL) > 0 {
 			tmpListener.UrlNum++
 		}
@@ -212,6 +212,18 @@ func (svc *lbSvc) listTCloudLbUrlRuleMap(kt *kit.Kit, lbID string, lblIDs []stri
 	}
 
 	return listenerRuleMap, nil
+}
+
+// 计算监听器下的域名数量
+func calcDomainNumByListener(tmpListener *cslb.ListListenerBase, ruleItem corelb.TCloudLbUrlRule,
+	domainsExist map[string]struct{}) {
+
+	domainUnique := fmt.Sprintf("%s-%s", ruleItem.LblID, ruleItem.Domain)
+	if _, ok := domainsExist[domainUnique]; !ok && len(ruleItem.Domain) > 0 {
+		tmpListener.DomainNum++
+		domainsExist[domainUnique] = struct{}{}
+	}
+	return
 }
 
 func (svc *lbSvc) listListenerMap(kt *kit.Kit, lblIDs []string) (map[string]corelb.BaseListener, error) {
@@ -301,11 +313,15 @@ func (svc *lbSvc) getTCloudListener(kt *kit.Kit, lblID string) (*cslb.GetTCloudL
 		SessionType:    urlRuleMap[listenerInfo.ID].SessionType,
 		SessionExpire:  urlRuleMap[listenerInfo.ID].SessionExpire,
 		HealthCheck:    urlRuleMap[listenerInfo.ID].HealthCheck,
-		Certificate:    urlRuleMap[listenerInfo.ID].Certificate,
 	}
 	if listenerInfo.Protocol.IsLayer7Protocol() {
 		result.DomainNum = urlRuleMap[listenerInfo.ID].DomainNum
 		result.UrlNum = urlRuleMap[listenerInfo.ID].UrlNum
+		// 只有SNI开启时，证书才会出现在域名上面，才需要返回Certificate字段
+		if listenerInfo.SniSwitch == enumor.SniTypeOpen {
+			result.Certificate = urlRuleMap[listenerInfo.ID].Certificate
+			result.Extension.Certificate = nil
+		}
 	}
 
 	// 只有4层监听器才显示目标组信息
