@@ -1,4 +1,4 @@
-import { PropType, computed, defineComponent, onMounted, ref, watch } from 'vue';
+import { PropType, computed, defineComponent, ref, watch } from 'vue';
 import { Select, Tag } from 'bkui-vue';
 import { useSingleList } from '@/hooks/useSingleList';
 import { QueryRuleOPEnum } from '@/typings';
@@ -27,6 +27,7 @@ export default defineComponent({
         { field: 'cert_type', op: QueryRuleOPEnum.EQ, value: props.type },
         { field: 'account_id', op: QueryRuleOPEnum.EQ, value: props.accountId },
       ],
+      immediate: true,
     });
 
     // select-handler - 选择证书后更新 props.modelValue
@@ -34,10 +35,6 @@ export default defineComponent({
 
     // 对外暴露刷新列表的方法
     expose({ dataList, handleRefresh });
-
-    onMounted(() => {
-      handleRefresh();
-    });
 
     return () => (
       <Select
