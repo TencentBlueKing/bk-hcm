@@ -236,7 +236,7 @@ export const useBusinessStore = defineStore({
         bk_biz_id?: number;
         lbl_id: string; // 监听器ID
         domain: string; // 新域名
-        new_domain: string; // 新域名
+        new_domain?: string; // 新域名
         certificate?: Object; // 证书信息
         default_server?: boolean; // 是否设为默认域名
       },

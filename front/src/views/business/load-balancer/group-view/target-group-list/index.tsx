@@ -4,7 +4,7 @@ import { Input, Message, OverflowTitle, VirtualRender } from 'bkui-vue';
 import Confirm from '@/components/confirm';
 import { useLoadBalancerStore, useAccountStore, useBusinessStore } from '@/store';
 import useMoreActionDropdown from '@/hooks/useMoreActionDropdown';
-import useList from '@/hooks/useList';
+import { useSingleList } from '@/hooks/useSingleList';
 import { throttle } from 'lodash';
 import bus from '@/common/bus';
 import { LBRouteName } from '@/constants';
@@ -32,11 +32,10 @@ export default defineComponent({
 
     // 获取目标组列表
     const rules = ref([]);
-    const { list, pagination, getList, handleScrollEnd, reset, refresh } = useList(
-      'target_groups',
-      () => rules.value,
-      !loadBalancerStore.tgSearchTarget,
-    );
+    const { dataList, pagination, handleScrollEnd, handleRefresh } = useSingleList('target_groups', {
+      rules: () => rules.value,
+      immediate: !loadBalancerStore.tgSearchTarget,
+    });
 
     // handler - 切换目标组
     const handleTypeChange = (targetGroupId: string) => {
@@ -60,7 +59,7 @@ export default defineComponent({
         businessStore.deleteTargetGroups({ bk_biz_id: accountStore.bizs, ids: [id] }).then(() => {
           Message({ message: '删除成功', theme: 'success' });
           // 重新拉取目标组list
-          refresh();
+          handleRefresh();
           // 跳转至全部目标组下
           handleTypeChange('');
         });
@@ -76,15 +75,13 @@ export default defineComponent({
 
     // 滚动触底加载下一页的目标组数据
     const scrollEndHandler = throttle((endIndex: number) => {
-      if (endIndex === list.value.length) {
+      if (endIndex === dataList.value.length) {
         // 如果 endIndex 等于总数，说明已经到底了，需要拉取更多数据
         handleScrollEnd();
       }
     }, 300);
 
     const handleSearch = (val: string) => {
-      // 清空搜索结果
-      reset();
       // 设置搜索条件
       if (val) {
         rules.value = [{ field: 'name', op: QueryRuleOPEnum.CIS, value: val }];
@@ -92,7 +89,7 @@ export default defineComponent({
         rules.value = [];
       }
       // 拉取搜索结果
-      getList();
+      handleRefresh();
     };
 
     watch(
@@ -118,7 +115,7 @@ export default defineComponent({
     );
 
     onMounted(() => {
-      bus.$on('refreshTargetGroupList', refresh);
+      bus.$on('refreshTargetGroupList', handleRefresh);
     });
 
     onUnmounted(() => {
@@ -154,7 +151,7 @@ export default defineComponent({
             </div>
           </div>
           <VirtualRender
-            list={list.value}
+            list={dataList.value}
             height='calc(100% - 36px)'
             lineHeight={36}
             onContentScroll={([, pagination]) => scrollEndHandler(pagination.endIndex)}>

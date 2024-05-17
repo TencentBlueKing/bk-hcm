@@ -1,4 +1,4 @@
-import { defineComponent, ref, watch } from 'vue';
+import { defineComponent } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 // import stores
 import { useLoadBalancerStore } from '@/store/loadbalancer';
@@ -14,73 +14,59 @@ export default defineComponent({
     // use stores
     const loadBalancerStore = useLoadBalancerStore();
 
-    // 面包屑信息
-    const breadcrumbs = ref([]);
+    // 获取链接跳转函数
+    function getLinkHandler(routeName: LBRouteName, id: string, extQueryParam = {}) {
+      return () => {
+        router.push({ name: routeName, params: { id }, query: { ...route.query, ...extQueryParam } });
+      };
+    }
 
-    // 设置面包屑信息
-    const setBreadcrumbs = (routeName: LBRouteName) => {
-      // 1. 清空之前的状态
-      breadcrumbs.value = [];
-
-      // 2. 根据路由名称, 设置面包屑信息
-      const currentNode = loadBalancerStore.currentSelectedTreeNode;
-      const { name, lb, lb_id, lbl_id, protocol, port } = currentNode;
-
-      switch (routeName) {
-        // 具体的负载均衡
-        case LBRouteName.lb:
-          breadcrumbs.value.push({ name, extension: getInstVip(currentNode) });
-          break;
-        // 具体的监听器
-        case LBRouteName.listener:
-          breadcrumbs.value.push(
-            { name: lb.name, extension: getInstVip(lb), linkHandler: getLinkHandler(LBRouteName.lb, lb_id) },
-            { name, extension: `${protocol}:${port}` },
-          );
-          break;
-        // 具体的域名
-        case LBRouteName.domain:
-          breadcrumbs.value.push(
-            { name: lb.name, extension: getInstVip(lb), linkHandler: getLinkHandler(LBRouteName.lb, lb_id) },
-            {
-              name,
-              extension: `${protocol}:${port}`,
-              linkHandler: getLinkHandler(LBRouteName.listener, lbl_id, { protocol }),
-            },
-            { name: route.params.id },
-          );
-          break;
-      }
-
-      // 获取链接跳转函数
-      function getLinkHandler(routeName: LBRouteName, id: string, extQueryParam = {}) {
-        return () => {
-          router.push({ name: routeName, params: { id }, query: { ...route.query, ...extQueryParam } });
-        };
-      }
+    // click-handler - 跳转至具体的负载均衡
+    const handleClickLb = () => {
+      return route.name !== LBRouteName.lb
+        ? getLinkHandler(LBRouteName.lb, loadBalancerStore.currentSelectedTreeNode.lb_id)
+        : null;
     };
 
-    watch(
-      () => route.params.id,
-      (val) => {
-        if (!val) return;
-        setBreadcrumbs(route.name as LBRouteName);
-      },
-      {
-        immediate: true,
-      },
-    );
+    // click-handler - 跳转至具体的监听器
+    const handleClickListener = () => {
+      return route.name === LBRouteName.domain
+        ? getLinkHandler(LBRouteName.listener, loadBalancerStore.currentSelectedTreeNode.lbl_id, {
+            protocol: loadBalancerStore.currentSelectedTreeNode.protocol,
+          })
+        : null;
+    };
 
     return () => (
       <div class='lb-breadcrumb'>
-        {breadcrumbs.value.map(({ name, extension, linkHandler }) => (
-          <div class='text' onClick={linkHandler || (() => {})}>
+        {/* 负载均衡 */}
+        <div class='text' onClick={handleClickLb()}>
+          <span class='name'>
+            <bk-overflow-title type='tips'>
+              {route.name === LBRouteName.lb
+                ? loadBalancerStore.currentSelectedTreeNode.name
+                : loadBalancerStore.currentSelectedTreeNode.lb?.name}
+            </bk-overflow-title>
+          </span>
+          <span class='extension'>{`(${getInstVip(loadBalancerStore.currentSelectedTreeNode)})`}</span>
+        </div>
+        {/* 监听器 */}
+        {route.name !== LBRouteName.lb && (
+          <div class='text' onClick={handleClickListener()}>
             <span class='name'>
-              <bk-overflow-title type='tips'>{name}</bk-overflow-title>
+              <bk-overflow-title type='tips'>{loadBalancerStore.currentSelectedTreeNode.name}</bk-overflow-title>
             </span>
-            {extension && <span class='extension'>{`(${extension})`}</span>}
+            <span class='extension'>{`(${loadBalancerStore.currentSelectedTreeNode.protocol}:${loadBalancerStore.currentSelectedTreeNode.port})`}</span>
           </div>
-        ))}
+        )}
+        {/* 域名 */}
+        {route.name === LBRouteName.domain && (
+          <div class='text'>
+            <span class='name'>
+              <bk-overflow-title type='tips'>{route.params.id}</bk-overflow-title>
+            </span>
+          </div>
+        )}
       </div>
     );
   },

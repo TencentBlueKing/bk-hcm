@@ -1,10 +1,11 @@
-import { defineComponent, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import { defineComponent, onMounted, onUnmounted, reactive, ref, watch, nextTick } from 'vue';
 // import components
 import { Button, Form, Input, Link, Message, Select } from 'bkui-vue';
 import { Done, Error, Plus } from 'bkui-vue/lib/icon';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import CommonSideslider from '@/components/common-sideslider';
 import AddOrUpdateDomainSideslider from '../components/AddOrUpdateDomainSideslider';
+import TargetGroupSelector from '../components/TargetGroupSelector';
 // use stores
 import { useLoadBalancerStore, useBusinessStore, useAccountStore } from '@/store';
 // import custom hooks
@@ -25,7 +26,6 @@ import useBatchDeleteListener from '../specific-clb-manager/listener-list/useBat
 import { getTableNewRowClass } from '@/common/util';
 import bus from '@/common/bus';
 import { QueryRuleOPEnum } from '@/typings';
-import useSelectOptionListWithScroll from '@/hooks/useSelectOptionListWithScroll';
 
 const { FormItem } = Form;
 const { Option } = Select;
@@ -252,28 +252,6 @@ export default defineComponent({
       true,
     );
 
-    const { isScrollLoading, optionList, getOptionList, handleOptionListScrollEnd } = useSelectOptionListWithScroll(
-      'target_groups',
-      [
-        {
-          field: 'account_id',
-          op: QueryRuleOPEnum.EQ,
-          value: loadBalancerStore.currentSelectedTreeNode.lb.account_id,
-        },
-        {
-          field: 'cloud_vpc_id',
-          op: QueryRuleOPEnum.EQ,
-          value: loadBalancerStore.currentSelectedTreeNode.lb.cloud_vpc_id,
-        },
-        {
-          field: 'region',
-          op: QueryRuleOPEnum.EQ,
-          value: loadBalancerStore.currentSelectedTreeNode.lb.region,
-        },
-      ],
-      false,
-    );
-
     watch(
       () => [props.listener_id, props.id],
       ([id, domain]) => {
@@ -338,9 +316,17 @@ export default defineComponent({
       resetFormData();
     };
 
+    const targetGroupSelectorRef = ref();
+    // 当侧边栏显示时, 刷新目标组select-option-list
+    watch(isDomainSidesliderShow, (val) => {
+      if (!val) return;
+      nextTick(() => {
+        targetGroupSelectorRef.value.handleRefresh();
+      });
+    });
+
     onMounted(() => {
       bus.$on('showAddUrlSideslider', handleAddUrlSidesliderShow);
-      getOptionList();
     });
 
     onUnmounted(() => {
@@ -412,14 +398,14 @@ export default defineComponent({
             </FormItem>
             {!isEdit.value && (
               <FormItem label={t('目标组')} required>
-                <Select
+                <TargetGroupSelector
+                  ref={targetGroupSelectorRef}
                   v-model={formData.target_group_id}
-                  scrollLoading={isScrollLoading.value}
-                  onScroll-end={handleOptionListScrollEnd}>
-                  {optionList.value.map(({ id, name, listener_num }) => (
-                    <Option key={id} id={id} name={name} disabled={listener_num > 0} />
-                  ))}
-                </Select>
+                  accountId={loadBalancerStore.currentSelectedTreeNode.account_id}
+                  cloudVpcId={loadBalancerStore.currentSelectedTreeNode.lb.cloud_vpc_id}
+                  region={loadBalancerStore.currentSelectedTreeNode.lb.region}
+                  protocol={loadBalancerStore.currentSelectedTreeNode.protocol}
+                />
               </FormItem>
             )}
           </Form>

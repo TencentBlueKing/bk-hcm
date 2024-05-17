@@ -41,7 +41,7 @@ export default defineComponent({
         typeof props.getListData === 'function' && props.getListData();
       },
       props.originPage,
-      isSniOnHTTPS.value,
+      isSniOnHTTPS,
     );
     // <CommonSideslider>使用的loading
     const sideIsLoading = ref(false);
@@ -87,7 +87,7 @@ export default defineComponent({
         }}>
         <p class='readonly-info'>
           <span class='label'>负载均衡名称</span>:
-          <span class='value'>{loadBalancerStore.currentSelectedTreeNode.lb.name}</span>
+          <span class='value'>{loadBalancerStore.currentSelectedTreeNode.lb?.name}</span>
         </p>
         <p class='readonly-info'>
           <span class='label'>监听器名称</span>:
