@@ -1,4 +1,4 @@
-import { defineComponent, ref, watch } from 'vue';
+import { defineComponent, watch } from 'vue';
 // import components
 import { Select } from 'bkui-vue';
 // import types
@@ -19,35 +19,32 @@ export default defineComponent({
   },
   emits: ['update:modelValue', 'change'],
   setup(props, { emit }) {
-    const selectedValue = ref('');
-
     const { dataList, isDataLoad, handleScrollEnd, handleRefresh } = useSingleList('vpcs', {
       rules: () => [
         { op: QueryRuleOPEnum.EQ, field: 'account_id', value: props.accountId },
         { op: QueryRuleOPEnum.EQ, field: 'region', value: props.region },
       ],
+      immediate: true,
     });
 
-    // 清空选项
+    const handleChange = (v: string) => {
+      const vpcDetail = dataList.value.find((vpc) => vpc.cloud_id === v);
+      emit('change', vpcDetail);
+      emit('update:modelValue', v);
+    };
+
     const handleClear = () => {
-      selectedValue.value = '';
+      emit('update:modelValue', '');
     };
 
     // 当地域变更时, 刷新列表
     watch(() => props.region, handleRefresh);
 
-    watch(selectedValue, (val) => {
-      // 更新父组件中的数据cloud_vpc_id
-      emit('update:modelValue', val);
-      // 将选中的vpc信息回传给父组件
-      const vpcDetail = dataList.value.find((vpc) => vpc.cloud_id === val);
-      emit('change', vpcDetail);
-    });
-
     return () => (
       <div class='region-vpc-selector'>
         <Select
-          v-model={selectedValue.value}
+          modelValue={props.modelValue}
+          onChange={handleChange}
           onClear={handleClear}
           onScroll-end={handleScrollEnd}
           loading={isDataLoad.value}

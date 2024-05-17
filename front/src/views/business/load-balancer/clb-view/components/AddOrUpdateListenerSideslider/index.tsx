@@ -287,18 +287,22 @@ export default defineComponent({
           )}
           {isEdit.value && (
             <div class='binded-target-group-show-container'>
-              <span class='label'>{t('已绑定的目标组')}</span>:{' '}
-              <span
-                class='ml10 link-text-btn'
-                onClick={() => {
-                  window.open(
-                    `/#/business/loadbalancer/group-view/${listenerFormData.target_group_id}?bizs=${accountStore.bizs}&type=detail`,
-                    '_blank',
-                    'noopener,noreferrer',
-                  );
-                }}>
-                {listenerFormData.target_group_name || '未命名'}
-              </span>
+              <span class='label'>{t('已绑定的目标组')}</span>:
+              {listenerFormData.target_group_id ? (
+                <span
+                  class='ml10 link-text-btn'
+                  onClick={() => {
+                    window.open(
+                      `/#/business/loadbalancer/group-view/${listenerFormData.target_group_id}?bizs=${accountStore.bizs}&type=detail`,
+                      '_blank',
+                      'noopener,noreferrer',
+                    );
+                  }}>
+                  {listenerFormData.target_group_name || '未命名'}
+                </span>
+              ) : (
+                <span class='ml10'>--</span>
+              )}
             </div>
           )}
         </Form>

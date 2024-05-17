@@ -205,6 +205,8 @@ export default (formData: any, updateCount: Ref<number>, isEdit: Ref<boolean>) =
     () => {
       // region改变时, 过滤掉新增的rs, 保留原有的rs
       formData.rs_list = formData.rs_list.filter((item: any) => !item.isNew);
+      // 重置cloud_vpc_id
+      formData.cloud_vpc_id = '';
     },
   );
 
