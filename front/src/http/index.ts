@@ -307,6 +307,6 @@ export function InvalidLogin() {
     console.error('Login URL not configured!');
     return;
   }
-  const loginUrl = `${loginBaseUrl}/plain?c_url=${encodeURIComponent(successUrl)}`;
+  const loginUrl = `${loginBaseUrl}/plain/?c_url=${encodeURIComponent(successUrl)}`;
   showLoginModal({ loginUrl });
 }
