@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
+	"hcm/pkg/dal/table/cloud"
 	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
@@ -56,7 +57,7 @@ func (svc *lbSvc) BatchUpdateLoadBalancer(cts *rest.Contexts) (any, error) {
 		return batchUpdateLoadBalancer[corelb.TCloudClbExtension](cts, svc)
 
 	default:
-		return nil, fmt.Errorf("unsupport  vendor %s", vendor)
+		return nil, fmt.Errorf("unsupport vendor %s", vendor)
 	}
 
 }
@@ -205,7 +206,7 @@ func (svc *lbSvc) BatchUpdateListenerBizInfo(cts *rest.Contexts) (any, error) {
 	return nil, svc.dao.LoadBalancerListener().Update(cts.Kit, updateFilter, updateField)
 }
 
-// UpdateTargetGroup batch update argument template
+// UpdateTargetGroup update target group TODO: 干掉该接口
 func (svc *lbSvc) UpdateTargetGroup(cts *rest.Contexts) (interface{}, error) {
 	req := new(dataproto.TargetGroupUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -263,6 +264,98 @@ func (svc *lbSvc) UpdateTargetGroup(cts *rest.Contexts) (interface{}, error) {
 			mergedHealth, err := json.UpdateMerge(req.HealthCheck, string(oldTg.HealthCheck))
 			if err != nil {
 				return nil, fmt.Errorf("json UpdateMerge rule health check failed, err: %v", err)
+			}
+			updateData.HealthCheck = tabletype.JsonField(mergedHealth)
+		}
+		updateDataList = append(updateDataList, updateData)
+	}
+	if err := svc.dao.LoadBalancerTargetGroup().UpdateBatch(cts.Kit, updateDataList); err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+// BatchUpdateTargetGroup batch update target group
+func (svc *lbSvc) BatchUpdateTargetGroup(cts *rest.Contexts) (any, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return batchUpdateTargetGroup[corelb.TCloudTargetGroupExtension](cts, svc)
+
+	default:
+		return nil, fmt.Errorf("unsupport vendor %s", vendor)
+	}
+}
+func batchUpdateTargetGroup[T corelb.TargetGroupExtension](cts *rest.Contexts, svc *lbSvc) (any, error) {
+
+	req := new(dataproto.TargetGroupBatchUpdateReq[T])
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	updateMap := make(map[string]*dataproto.TargetGroupExtUpdateReq[T], len(req.TargetGroups))
+	cloudVpcIDs := make([]string, 0, len(req.TargetGroups))
+	for _, group := range req.TargetGroups {
+		updateMap[group.ID] = group
+		if len(group.CloudVpcID) > 0 {
+			cloudVpcIDs = append(cloudVpcIDs, group.CloudVpcID)
+		}
+	}
+
+	ids := converter.MapKeyToSlice(updateMap)
+	tgReq := &types.ListOption{
+		Filter: tools.ContainersExpression("id", ids),
+		Page:   &core.BasePage{Limit: uint(len(ids))},
+	}
+	tgList, err := svc.dao.LoadBalancerTargetGroup().List(cts.Kit, tgReq)
+	if err != nil {
+		return nil, err
+	}
+	if len(tgList.Details) != len(ids) {
+		return nil, errors.New("not all target groups can be found")
+	}
+
+	var vpcInfoMap = map[string]cloud.VpcTable{}
+	vpcInfoMap, err = getVpcMapByIDs(cts.Kit, cloudVpcIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	updateDataList := make([]*tablelb.LoadBalancerTargetGroupTable, 0, len(ids))
+	for _, oldTg := range tgList.Details {
+		newTg := updateMap[oldTg.ID]
+		updateData := &tablelb.LoadBalancerTargetGroupTable{
+			ID:       oldTg.ID,
+			Name:     newTg.Name,
+			BkBizID:  newTg.BkBizID,
+			Region:   newTg.Region,
+			Protocol: newTg.Protocol,
+			Port:     newTg.Port,
+			Weight:   newTg.Weight,
+			Reviser:  cts.Kit.User,
+		}
+
+		if len(newTg.CloudVpcID) > 0 {
+			// 根据cloudVpcID查询VPC信息，如查不到vpcInfo则报错
+			vpcInfo, ok := vpcInfoMap[newTg.CloudVpcID]
+			if !ok {
+				return nil, errf.Newf(errf.RecordNotFound, "vpcID[%s] not found", newTg.VpcID)
+			}
+			updateData.VpcID = vpcInfo.ID
+			updateData.CloudVpcID = vpcInfo.CloudID
+		}
+		if newTg.HealthCheck != nil {
+			mergedHealth, err := json.UpdateMerge(newTg.HealthCheck, string(oldTg.HealthCheck))
+			if err != nil {
+				return nil, fmt.Errorf("json UpdateMerge target group health check failed, err: %v", err)
 			}
 			updateData.HealthCheck = tabletype.JsonField(mergedHealth)
 		}

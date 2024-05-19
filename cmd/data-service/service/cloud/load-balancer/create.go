@@ -233,6 +233,7 @@ func convTargetGroupCreateReqToTable[T corelb.TargetGroupExtension](kt *kit.Kit,
 	}
 
 	targetGroup := &tablelb.LoadBalancerTargetGroupTable{
+		CloudID:         tg.CloudID,
 		Name:            tg.Name,
 		Vendor:          vendor,
 		AccountID:       tg.AccountID,
@@ -293,17 +294,21 @@ func (svc *lbSvc) batchCreateTargetWithGroupID(kt *kit.Kit, txn *sqlx.Tx, accoun
 
 	for _, item := range rsList {
 		tmpRs := &tablelb.LoadBalancerTargetTable{
-			AccountID:     accountID,
-			InstType:      item.InstType,
-			CloudInstID:   item.CloudInstID,
-			TargetGroupID: item.TargetGroupID,
-			// for local target group its cloud id is same as local id
-			CloudTargetGroupID: item.TargetGroupID,
+			AccountID:          accountID,
+			InstType:           item.InstType,
+			CloudInstID:        item.CloudInstID,
+			TargetGroupID:      item.TargetGroupID,
+			CloudTargetGroupID: item.CloudTargetGroupID,
 			Port:               item.Port,
 			Weight:             item.Weight,
 			Memo:               nil,
 			Creator:            kt.User,
 			Reviser:            kt.User,
+		}
+		// for local target group its cloud id is same as local id
+		if len(item.CloudTargetGroupID) == 0 {
+			tmpRs.CloudTargetGroupID = item.TargetGroupID
+
 		}
 		// 实例类型-CVM
 		if item.InstType == enumor.CvmInstType {

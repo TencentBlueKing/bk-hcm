@@ -57,12 +57,13 @@ func (cli *client) LocalTargetGroup(kt *kit.Kit, param *SyncBaseParams, opt *Syn
 			cloudIDs = append(cloudIDs, listener.GetCloudID())
 			continue
 		}
+		// 7层监听器，遍历下面的规则
 		for _, rule := range listener.Rules {
 			healthMap[cvt.PtrToVal(rule.LocationId)] = rule.HealthCheck
 			cloudIDs = append(cloudIDs, cvt.PtrToVal(rule.LocationId))
 		}
 	}
-	tgCloudHealthMap, tgList, err := cli.getTargetGruop(kt, opt.LBID, cloudIDs, healthMap)
+	tgCloudHealthMap, tgList, err := cli.getTargetGroup(kt, opt.LBID, cloudIDs, healthMap)
 	if err != nil {
 		return err
 	}
@@ -72,12 +73,12 @@ func (cli *client) LocalTargetGroup(kt *kit.Kit, param *SyncBaseParams, opt *Syn
 			continue
 		}
 
-		// 更新 健康检查
+		// 更新健康检查
 		updateReq := &dataproto.TargetGroupUpdateReq{
 			IDs:         []string{tg.ID},
 			HealthCheck: convHealthCheck(tgCloudHealthMap[tg.CloudID]),
 		}
-		err = cli.dbCli.TCloud.LoadBalancer.BatchUpdateTCloudTargetGroup(kt, updateReq)
+		err = cli.dbCli.TCloud.LoadBalancer.UpdateTargetGroup(kt, updateReq)
 		if err != nil {
 			logs.Errorf("fail to update target group health check during sync, err: %v, rid: %s", err, kt.Rid)
 			return err
@@ -87,7 +88,7 @@ func (cli *client) LocalTargetGroup(kt *kit.Kit, param *SyncBaseParams, opt *Syn
 	return nil
 }
 
-func (cli *client) getTargetGruop(kt *kit.Kit, lbId string, cloudIDs []string,
+func (cli *client) getTargetGroup(kt *kit.Kit, lbId string, cloudIDs []string,
 	healthMap map[string]*tclb.HealthCheck) (map[string]*tclb.HealthCheck, []corelb.BaseTargetGroup, error) {
 
 	// 查找本地 目标组
@@ -144,21 +145,18 @@ func (cli *client) ListenerTargets(kt *kit.Kit, param *SyncBaseParams, opt *Sync
 		if isTGHandled(tgId) {
 			return nil
 		}
-
 		// 存在则比较
 		return cli.compareTargetsChange(kt, opt.AccountID, tgId, cloudTargets, tgRsMap[tgId])
 	}
-	// 遍历云上的监听器、规则
+	var layer4AddList = make([]typeslb.TCloudListenerTarget, 0)
+	var layer7AddList = make(map[string][]*tclb.RuleTargets)
+	var layer7ListenerMap = make(map[string]typeslb.TCloudListenerTarget)
 	for _, listener := range cloudListenerTargets {
 		if !listener.GetProtocol().IsLayer7Protocol() {
-			// ---- for layer 4 对比监听器变化 ----
+			// layer 4 listener
 			rel, exists := relMap[cvt.PtrToVal(listener.ListenerId)]
 			if !exists {
-				// 云上监听器、但是没有对应目标组，则在同步时自动创建目标组，并将RS加入目标组。
-				if err := cli.createLocalTargetGroupL4(kt, opt, lb, listener); err != nil {
-					logs.Errorf("fail to create local target group for layer 4 listener, rid: %s", kt.Rid)
-					return err
-				}
+				layer4AddList = append(layer4AddList, listener)
 				// 只要本地没有目标组就跳过RS同步
 				continue
 			}
@@ -168,21 +166,37 @@ func (cli *client) ListenerTargets(kt *kit.Kit, param *SyncBaseParams, opt *Sync
 			}
 			continue
 		}
-		// ---- for layer 7 对比规则变化 ----
+		layer7ListenerMap[cvt.PtrToVal(listener.ListenerId)] = listener
+		// layer 7 规则
 		for _, rule := range listener.Rules {
 			rel, exists := relMap[cvt.PtrToVal(rule.LocationId)]
 			if !exists {
-				// 没有对应目标组关系，则在同步时自动创建目标组，并将RS加入目标组。
-				if err := cli.createLocalTargetGroupL7(kt, opt, lb, listener, rule); err != nil {
-					logs.Errorf("fail to create local target group for layer 7 rule, rid: %s", kt.Rid)
-					return err
-				}
+				// 加入 7层待创建列表
+				layer7AddList[cvt.PtrToVal(listener.ListenerId)] = append(
+					layer7AddList[cvt.PtrToVal(listener.ListenerId)], rule)
 				// 跳过比较
 				continue
 			}
 			// 存在则比较
 			if err := compareWrapper(rel, rule.Targets); err != nil {
 				logs.Errorf("fail to compare L7 rule rs change, err: %v, rid:%s", err, kt.Rid)
+				return err
+			}
+		}
+	}
+	// 添加4层监听器
+	// 云上监听器、但是没有对应目标组，则在同步时自动创建目标组，并将RS加入目标组。
+	for _, listener := range layer4AddList {
+		if err := cli.createLocalTargetGroupL4(kt, opt, lb, listener); err != nil {
+			logs.Errorf("fail to create local target group for layer 4 listener, rid: %s", kt.Rid)
+			return err
+		}
+	}
+	// 添加7层规则
+	for lblId, rules := range layer7AddList {
+		for _, rule := range rules {
+			if err := cli.createLocalTargetGroupL7(kt, opt, lb, layer7ListenerMap[lblId], rule); err != nil {
+				logs.Errorf("fail to create local target group for layer 7 rule, rid: %s", kt.Rid)
 				return err
 			}
 		}

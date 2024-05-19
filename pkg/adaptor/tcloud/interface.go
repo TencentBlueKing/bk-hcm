@@ -185,4 +185,7 @@ type TCloud interface {
 	InquiryPriceLoadBalancer(kt *kit.Kit, opt *typelb.TCloudCreateClbOption) (*typelb.TCloudLBPrice, error)
 	ListLoadBalancerQuota(kt *kit.Kit, opt *typelb.ListTCloudLoadBalancerQuotaOption) (
 		[]typelb.TCloudLoadBalancerQuota, error)
+	ListTargetGroup(kt *kit.Kit, opt *typelb.ListTargetGroupOption) ([]typelb.TargetGroup, error)
+	ListTargetGroupInstance(kt *kit.Kit, opt *typelb.ListTargetGroupInstanceOption) (
+		[]typelb.TargetGroupBackend, error)
 }

@@ -1,7 +1,7 @@
 /*
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
- * Copyright (C) 2022 THL A29 Limited,
+ * Copyright (C) 2024 THL A29 Limited,
  * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,13 +33,13 @@ import (
 	"hcm/pkg/tools/converter"
 )
 
-// SyncLoadBalancer 同步负载均衡接口
-func (svc *service) SyncLoadBalancer(cts *rest.Contexts) (any, error) {
-	return nil, handler.ResourceSync(cts, &lbHandler{cli: svc.syncCli})
+// SyncTargetGroup ...
+func (svc *service) SyncTargetGroup(cts *rest.Contexts) (any, error) {
+	return nil, handler.ResourceSync(cts, &tgHandler{cli: svc.syncCli})
 }
 
-// lbHandler lb sync handler.
-type lbHandler struct {
+// tgHandler target group sync handler.
+type tgHandler struct {
 	cli ressync.Interface
 
 	request *sync.TCloudSyncReq
@@ -47,10 +47,10 @@ type lbHandler struct {
 	offset  uint64
 }
 
-var _ handler.Handler = new(lbHandler)
+var _ handler.Handler = new(tgHandler)
 
 // Prepare ...
-func (hd *lbHandler) Prepare(cts *rest.Contexts) error {
+func (hd *tgHandler) Prepare(cts *rest.Contexts) error {
 	request, syncCli, err := defaultPrepare(cts, hd.cli)
 	if err != nil {
 		return err
@@ -63,8 +63,8 @@ func (hd *lbHandler) Prepare(cts *rest.Contexts) error {
 }
 
 // Next ...
-func (hd *lbHandler) Next(kt *kit.Kit) ([]string, error) {
-	listOpt := &typeclb.TCloudListOption{
+func (hd *tgHandler) Next(kt *kit.Kit) ([]string, error) {
+	listOpt := &typeclb.ListTargetGroupOption{
 		Region: hd.request.Region,
 		Page: &typecore.TCloudPage{
 			Offset: hd.offset,
@@ -72,19 +72,19 @@ func (hd *lbHandler) Next(kt *kit.Kit) ([]string, error) {
 		},
 	}
 
-	lbResult, err := hd.syncCli.CloudCli().ListLoadBalancer(kt, listOpt)
+	tgResult, err := hd.syncCli.CloudCli().ListTargetGroup(kt, listOpt)
 	if err != nil {
-		logs.Errorf("request adaptor list tcloud load balancer failed, err: %v, opt: %v, rid: %s", err, listOpt, kt.Rid)
+		logs.Errorf("request adaptor list tcloud target group failed, err: %v, opt: %v, rid: %s", err, listOpt, kt.Rid)
 		return nil, err
 	}
 
-	if len(lbResult) == 0 {
+	if len(tgResult) == 0 {
 		return nil, nil
 	}
 
-	cloudIDs := make([]string, 0, len(lbResult))
-	for _, one := range lbResult {
-		cloudIDs = append(cloudIDs, converter.PtrToVal(one.LoadBalancerId))
+	cloudIDs := make([]string, 0, len(tgResult))
+	for _, one := range tgResult {
+		cloudIDs = append(cloudIDs, converter.PtrToVal(one.TargetGroupId))
 	}
 
 	hd.offset += typecore.TCloudQueryLimit
@@ -92,14 +92,14 @@ func (hd *lbHandler) Next(kt *kit.Kit) ([]string, error) {
 }
 
 // Sync ...
-func (hd *lbHandler) Sync(kt *kit.Kit, cloudIDs []string) error {
+func (hd *tgHandler) Sync(kt *kit.Kit, cloudIDs []string) error {
 	params := &tcloud.SyncBaseParams{
 		AccountID: hd.request.AccountID,
 		Region:    hd.request.Region,
 		CloudIDs:  cloudIDs,
 	}
-	if _, err := hd.syncCli.LoadBalancerWithListener(kt, params, new(tcloud.SyncLBOption)); err != nil {
-		logs.Errorf("sync tcloud load balancer with rel failed, err: %v, opt: %v, rid: %s", err, params, kt.Rid)
+	if _, err := hd.syncCli.CloudTargetGroup(kt, params, new(tcloud.SyncLBOption)); err != nil {
+		logs.Errorf("sync tcloud target group failed, err: %v, opt: %v, rid: %s", err, params, kt.Rid)
 		return err
 	}
 
@@ -107,9 +107,9 @@ func (hd *lbHandler) Sync(kt *kit.Kit, cloudIDs []string) error {
 }
 
 // RemoveDeleteFromCloud ...
-func (hd *lbHandler) RemoveDeleteFromCloud(kt *kit.Kit) error {
-	if err := hd.syncCli.RemoveLoadBalancerDeleteFromCloud(kt, hd.request.AccountID, hd.request.Region); err != nil {
-		logs.Errorf("remove load balancer delete from cloud failed, err: %v, accountID: %s, region: %s, rid: %s", err,
+func (hd *tgHandler) RemoveDeleteFromCloud(kt *kit.Kit) error {
+	if err := hd.syncCli.RemoveTargetGroupDeleteFromCloud(kt, hd.request.AccountID, hd.request.Region); err != nil {
+		logs.Errorf("remove target group delete from cloud failed, err: %v, accountID: %s, region: %s, rid: %s", err,
 			hd.request.AccountID, hd.request.Region, kt.Rid)
 		return err
 	}
@@ -117,7 +117,7 @@ func (hd *lbHandler) RemoveDeleteFromCloud(kt *kit.Kit) error {
 	return nil
 }
 
-// Name load_balancer
-func (hd *lbHandler) Name() enumor.CloudResourceType {
-	return enumor.LoadBalancerCloudResType
+// Name target_group
+func (hd *tgHandler) Name() enumor.CloudResourceType {
+	return enumor.TargetGroupCloudResType
 }
