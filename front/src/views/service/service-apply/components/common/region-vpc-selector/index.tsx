@@ -1,10 +1,8 @@
 import { defineComponent, watch } from 'vue';
-// import components
 import { Select } from 'bkui-vue';
-// import types
 import { QueryRuleOPEnum } from '@/typings';
-// import hooks
 import { useSingleList } from '@/hooks/useSingleList';
+import { getBusinessApiPath } from '@/utils';
 import './index.scss';
 
 const { Option } = Select;
@@ -19,7 +17,8 @@ export default defineComponent({
   },
   emits: ['update:modelValue', 'change'],
   setup(props, { emit }) {
-    const { dataList, isDataLoad, handleScrollEnd, handleRefresh } = useSingleList('vpcs', {
+    const { dataList, isDataLoad, handleScrollEnd, handleRefresh } = useSingleList({
+      url: `/api/v1/cloud/${getBusinessApiPath()}/vpcs/list`,
       rules: () => [
         { op: QueryRuleOPEnum.EQ, field: 'account_id', value: props.accountId },
         { op: QueryRuleOPEnum.EQ, field: 'region', value: props.region },

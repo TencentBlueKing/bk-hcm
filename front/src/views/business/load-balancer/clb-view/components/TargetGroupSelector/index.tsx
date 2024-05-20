@@ -3,6 +3,7 @@ import { Divider, Select } from 'bkui-vue';
 import { Plus, RightTurnLine, Spinner } from 'bkui-vue/lib/icon';
 import { useAccountStore } from '@/store';
 import { useSingleList } from '@/hooks/useSingleList';
+import { getBusinessApiPath } from '@/utils';
 import { Protocol, QueryRuleOPEnum } from '@/typings';
 
 const { Option } = Select;
@@ -29,7 +30,8 @@ export default defineComponent({
     const accountStore = useAccountStore();
 
     const targetGroupId = ref(props.modelValue);
-    const { dataList, isDataLoad, isDataRefresh, handleScrollEnd, handleRefresh } = useSingleList('target_groups', {
+    const { dataList, isDataLoad, isDataRefresh, handleScrollEnd, handleRefresh } = useSingleList({
+      url: `/api/v1/cloud/${getBusinessApiPath()}/target_groups/list`,
       rules: () => [
         { field: 'account_id', op: QueryRuleOPEnum.EQ, value: props.accountId },
         { field: 'cloud_vpc_id', op: QueryRuleOPEnum.EQ, value: props.cloudVpcId },

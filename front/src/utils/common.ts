@@ -1,3 +1,15 @@
+import { useAccountStore } from '@/store';
+import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
+
+/**
+ * @returns 业务下需要拼接的 API 路径
+ */
+const getBusinessApiPath = () => {
+  const { bizs } = useAccountStore();
+  const { whereAmI } = useWhereAmI();
+  return whereAmI.value === Senarios.business ? `bizs/${bizs}` : '';
+};
+
 /**
  * 获取实例的ip地址
  * @param inst 实例
@@ -26,4 +38,4 @@ const getInstVip = (inst: any) => {
   return '--';
 };
 
-export { getInstVip };
+export { getBusinessApiPath, getInstVip };
