@@ -1,7 +1,7 @@
 /*
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
- * Copyright (C) 2022 THL A29 Limited,
+ * Copyright (C) 2024 THL A29 Limited,
  * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,11 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package handlers
+package securitygroup
 
-import (
-	"hcm/pkg/criteria/enumor"
-)
+import "hcm/cmd/data-service/service/capability"
 
-var (
-	VendorNameMap = map[enumor.Vendor]string{
-		enumor.TCloud: "腾讯云",
-		enumor.Aws:    "亚马逊云",
-		enumor.HuaWei: "华为云",
-		enumor.Gcp:    "谷歌云",
-		enumor.Azure:  "微软云",
-	}
-)
+// sg service init hook  placeholder
+func initSGServiceHook(cap *capability.Capability) {
+
+}

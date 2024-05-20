@@ -218,12 +218,10 @@ func (a AccountDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListAccount
 	}
 
 	columnTypes := cloud.AccountColumns.ColumnTypes()
-	// 主账号校验字段
-	columnTypes["extension.cloud_main_account_id"] = enumor.String
-	columnTypes["extension.cloud_account_id"] = enumor.String
-	columnTypes["extension.cloud_sub_account_id"] = enumor.String
-	columnTypes["extension.cloud_project_id"] = enumor.String
-	columnTypes["extension.cloud_subscription_id"] = enumor.String
+	// 增加主账号校验字段
+	for _, field := range enumor.GetMainAccountIDFields() {
+		columnTypes["extension."+field] = enumor.String
+	}
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err

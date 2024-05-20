@@ -82,15 +82,6 @@ const (
 )
 
 var (
-	// VendorMainAccountIDFieldMap 不同云厂商对应的主账号属性名
-	// 若修改主账号标识，需要在Account DAO的List接口处同步修改、添加主账号标识字段
-	VendorMainAccountIDFieldMap = map[Vendor]string{
-		TCloud: "cloud_main_account_id",
-		Aws:    "cloud_account_id",
-		HuaWei: "cloud_sub_account_id",
-		Gcp:    "cloud_project_id",
-		Azure:  "cloud_subscription_id",
-	}
 
 	// AccountTypeNameMap 账号类型和对应中文名
 	AccountTypeNameMap = map[AccountType]string{

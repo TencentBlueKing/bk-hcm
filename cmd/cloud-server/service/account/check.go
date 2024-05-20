@@ -517,7 +517,7 @@ func CheckDuplicateMainAccount(cts *rest.Contexts, client *client.ClientSet, ven
 
 	// TODO: 后续需要解决并发问题
 	// 后台查询是否主账号重复
-	mainAccountIDFieldName := enumor.VendorMainAccountIDFieldMap[vendor]
+	mainAccountIDFieldName := vendor.GetMainAccountIDField()
 
 	result, err := client.DataService().Global.Account.List(
 		cts.Kit.Ctx,

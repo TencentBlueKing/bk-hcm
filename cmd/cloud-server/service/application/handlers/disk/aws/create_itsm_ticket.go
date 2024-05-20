@@ -23,8 +23,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-
-	"hcm/cmd/cloud-server/service/application/handlers"
 )
 
 type formItem struct {
@@ -34,7 +32,7 @@ type formItem struct {
 
 // RenderItsmTitle 渲染ITSM单据标题
 func (a *ApplicationOfCreateAwsDisk) RenderItsmTitle() (string, error) {
-	return fmt.Sprintf("申请新增[%s]云盘", handlers.VendorNameMap[a.Vendor()]), nil
+	return fmt.Sprintf("申请新增[%s]云盘", a.Vendor().GetNameZh()), nil
 }
 
 // RenderItsmForm 渲染ITSM表单
@@ -57,7 +55,7 @@ func (a *ApplicationOfCreateAwsDisk) RenderItsmForm() (string, error) {
 	formItems = append(formItems, formItem{Label: "云账号", Value: accountInfo.Name})
 
 	// 云厂商
-	formItems = append(formItems, formItem{Label: "云厂商", Value: handlers.VendorNameMap[a.Vendor()]})
+	formItems = append(formItems, formItem{Label: "云厂商", Value: a.Vendor().GetNameZh()})
 
 	// 云地域
 	regionInfo, err := a.GetAwsRegion(req.Region)

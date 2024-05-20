@@ -93,6 +93,8 @@ func InitSecurityGroupService(cap *capability.Capability) {
 	h.Add("DeleteAzureSGRule", "DELETE", "/vendors/azure/security_groups/{security_group_id}/rules/{id}",
 		sg.DeleteAzureSGRule)
 
+	initSecurityGroupServiceHooks(sg, h)
+
 	h.Load(cap.WebService)
 }
 

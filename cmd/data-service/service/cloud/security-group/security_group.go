@@ -1,7 +1,7 @@
 /*
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
- * Copyright (C) 2022 THL A29 Limited,
+ * Copyright (C) 2024 THL A29 Limited,
  * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloud
+package securitygroup
 
 import (
 	"fmt"
@@ -51,6 +51,8 @@ func InitSecurityGroupService(cap *capability.Capability) {
 	initHuaWeiSGRuleService(cap)
 	initAzureSGRuleService(cap)
 	initAwsSGRuleService(cap)
+
+	initSGServiceHook(cap)
 }
 
 // initSecurityGroupService initial the security group service

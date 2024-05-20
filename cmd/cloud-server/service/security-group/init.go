@@ -99,6 +99,8 @@ func InitSecurityGroupService(c *capability.Capability) {
 	h.Add("DeleteBizSGRule", http.MethodDelete,
 		"/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.DeleteBizSGRule)
 
+	initSecurityGroupServiceHooks(svc, h)
+
 	h.Load(c.WebService)
 }
 

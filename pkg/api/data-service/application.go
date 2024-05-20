@@ -29,6 +29,7 @@ import (
 
 // ApplicationCreateReq ...
 type ApplicationCreateReq struct {
+	Source         enumor.ApplicationSource `json:"source" validate:"required"`
 	SN             string                   `json:"sn" validate:"required"`
 	Type           enumor.ApplicationType   `json:"type" validate:"required"`
 	Status         enumor.ApplicationStatus `json:"status" validate:"required"`
@@ -57,6 +58,7 @@ func (req *ApplicationUpdateReq) Validate() error {
 // ApplicationResp ...
 type ApplicationResp struct {
 	ID             string                   `json:"id"`
+	Source         enumor.ApplicationSource `json:"source"`
 	SN             string                   `json:"sn"`
 	Type           enumor.ApplicationType   `json:"type"`
 	Status         enumor.ApplicationStatus `json:"status"`

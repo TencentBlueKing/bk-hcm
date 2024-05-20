@@ -22,6 +22,7 @@ package account
 import (
 	"fmt"
 
+	"hcm/pkg/api/cloud-server/account"
 	"hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/cc"
@@ -148,7 +149,7 @@ func (a *accountSvc) GetAccountBySecret(cts *rest.Contexts) (interface{}, error)
 }
 
 func (a *accountSvc) getAndCheckTCloudAccountInfo(cts *rest.Contexts) (*cloud.TCloudInfoBySecret, error) {
-	req := new(cloud.TCloudSecret)
+	req := new(account.TCloudAccountInfoBySecretReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -156,10 +157,13 @@ func (a *accountSvc) getAndCheckTCloudAccountInfo(cts *rest.Contexts) (*cloud.TC
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	info, err := a.client.HCService().TCloud.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req)
+	info, err := a.client.HCService().TCloud.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req.TCloudSecret)
 	if err != nil {
 		logs.Errorf("fail to get account info, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
+	}
+	if req.DisableCheck {
+		return info, nil
 	}
 	if err = CheckDuplicateMainAccount(cts, a.client, enumor.TCloud, enumor.ResourceAccount,
 		info.CloudMainAccountID); err != nil {
@@ -170,7 +174,7 @@ func (a *accountSvc) getAndCheckTCloudAccountInfo(cts *rest.Contexts) (*cloud.TC
 }
 
 func (a *accountSvc) getAndCheckAwsAccountInfo(cts *rest.Contexts) (*cloud.AwsInfoBySecret, error) {
-	req := new(cloud.AwsSecret)
+	req := new(account.AwsAccountInfoBySecretReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -178,10 +182,13 @@ func (a *accountSvc) getAndCheckAwsAccountInfo(cts *rest.Contexts) (*cloud.AwsIn
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	info, err := a.client.HCService().Aws.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req)
+	info, err := a.client.HCService().Aws.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req.AwsSecret)
 	if err != nil {
 		logs.Errorf("fail to get account info, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
+	}
+	if req.DisableCheck {
+		return info, nil
 	}
 	if err = CheckDuplicateMainAccount(cts, a.client, enumor.Aws, enumor.ResourceAccount,
 		info.CloudAccountID); err != nil {
@@ -192,7 +199,7 @@ func (a *accountSvc) getAndCheckAwsAccountInfo(cts *rest.Contexts) (*cloud.AwsIn
 }
 
 func (a *accountSvc) getAndCheckAzureAccountInfo(cts *rest.Contexts) (*cloud.AzureInfoBySecret, error) {
-	req := new(cloud.AzureSecret)
+	req := new(account.AzureAccountInfoBySecretReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -200,10 +207,13 @@ func (a *accountSvc) getAndCheckAzureAccountInfo(cts *rest.Contexts) (*cloud.Azu
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	info, err := a.client.HCService().Azure.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req)
+	info, err := a.client.HCService().Azure.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req.AzureSecret)
 	if err != nil {
 		logs.Errorf("fail to get account info, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
+	}
+	if req.DisableCheck {
+		return info, nil
 	}
 	if err = CheckDuplicateMainAccount(cts, a.client, enumor.Azure, enumor.ResourceAccount,
 		info.CloudSubscriptionID); err != nil {
@@ -214,7 +224,7 @@ func (a *accountSvc) getAndCheckAzureAccountInfo(cts *rest.Contexts) (*cloud.Azu
 }
 
 func (a *accountSvc) getAndCheckGcpAccountInfo(cts *rest.Contexts) (*cloud.GcpInfoBySecret, error) {
-	req := new(cloud.GcpSecret)
+	req := new(account.GcpAccountInfoBySecretReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -222,10 +232,13 @@ func (a *accountSvc) getAndCheckGcpAccountInfo(cts *rest.Contexts) (*cloud.GcpIn
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	info, err := a.client.HCService().Gcp.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req)
+	info, err := a.client.HCService().Gcp.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req.GcpSecret)
 	if err != nil {
 		logs.Errorf("fail to get account info, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
+	}
+	if req.DisableCheck {
+		return info, nil
 	}
 	if err = CheckDuplicateMainAccount(cts, a.client, enumor.Gcp, enumor.ResourceAccount,
 		info.CloudProjectID); err != nil {
@@ -236,7 +249,7 @@ func (a *accountSvc) getAndCheckGcpAccountInfo(cts *rest.Contexts) (*cloud.GcpIn
 }
 
 func (a *accountSvc) getAndCheckHuaWeiAccountInfo(cts *rest.Contexts) (*cloud.HuaWeiInfoBySecret, error) {
-	req := new(cloud.HuaWeiSecret)
+	req := new(account.HuaWeiAccountInfoBySecretReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -244,10 +257,13 @@ func (a *accountSvc) getAndCheckHuaWeiAccountInfo(cts *rest.Contexts) (*cloud.Hu
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	info, err := a.client.HCService().HuaWei.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req)
+	info, err := a.client.HCService().HuaWei.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req.HuaWeiSecret)
 	if err != nil {
 		logs.Errorf("fail to get account info, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
+	}
+	if req.DisableCheck {
+		return info, nil
 	}
 	if err = CheckDuplicateMainAccount(cts, a.client, enumor.HuaWei, enumor.ResourceAccount,
 		info.CloudSubAccountID); err != nil {

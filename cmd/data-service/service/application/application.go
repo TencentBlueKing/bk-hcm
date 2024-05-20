@@ -72,6 +72,7 @@ func (svc *applicationSvc) Create(cts *rest.Contexts) (interface{}, error) {
 
 	application := &tableapplication.ApplicationTable{
 		SN:             req.SN,
+		Source:         string(req.Source),
 		Type:           string(req.Type),
 		Status:         string(req.Status),
 		Applicant:      cts.Kit.User,
@@ -135,6 +136,7 @@ func (svc *applicationSvc) convertToApplicationResp(
 ) *proto.ApplicationResp {
 	return &proto.ApplicationResp{
 		ID:             application.ID,
+		Source:         enumor.ApplicationSource(application.Source),
 		SN:             application.SN,
 		Type:           enumor.ApplicationType(application.Type),
 		Status:         enumor.ApplicationStatus(application.Status),

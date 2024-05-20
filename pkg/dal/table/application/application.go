@@ -36,6 +36,7 @@ var ApplicationColumns = utils.MergeColumns(nil, ApplicationColumnDescriptor)
 // ApplicationColumnDescriptor is Application's column descriptors.
 var ApplicationColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
+	{Column: "source", NamedC: "source", Type: enumor.String},
 	{Column: "sn", NamedC: "sn", Type: enumor.String},
 	{Column: "type", NamedC: "type", Type: enumor.String},
 	{Column: "status", NamedC: "status", Type: enumor.String},
@@ -55,6 +56,8 @@ var ApplicationColumnDescriptor = utils.ColumnDescriptors{
 type ApplicationTable struct {
 	// ID 申请ID
 	ID string `db:"id" json:"id" validate:"max=64"`
+	// Source 单据来源
+	Source string `db:"source" json:"source" validate:"max=64"`
 	// SN 单据号
 	SN string `db:"sn" json:"sn" validate:"max=64"`
 	// Type 申请类型（新增账号、新增CVM等）

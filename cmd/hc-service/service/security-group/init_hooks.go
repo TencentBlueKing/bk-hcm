@@ -1,7 +1,7 @@
 /*
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
- * Copyright (C) 2022 THL A29 Limited,
+ * Copyright (C) 2024 THL A29 Limited,
  * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,25 +17,10 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package application
+package securitygroup
 
-import (
-	"hcm/pkg/api/core"
-	"hcm/pkg/criteria/enumor"
-)
+import "hcm/pkg/rest"
 
-// ApplicationGetResp ...
-type ApplicationGetResp struct {
-	ID             string                   `json:"id"`
-	Source         enumor.ApplicationSource `json:"source"`
-	SN             string                   `json:"sn"`
-	Type           enumor.ApplicationType   `json:"type"`
-	Status         enumor.ApplicationStatus `json:"status"`
-	Applicant      string                   `json:"applicant"`
-	Content        string                   `json:"content"`
-	DeliveryDetail string                   `json:"delivery_detail"`
-	Memo           *string                  `json:"memo"`
-	core.Revision  `json:",inline"`
+func initSecurityGroupServiceHooks(svc *securityGroup, h *rest.Handler) {
 
-	TicketUrl string `json:"ticket_url"`
 }

@@ -21,6 +21,7 @@ package account
 
 import (
 	"hcm/pkg/api/core/cloud"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
 )
 
@@ -41,4 +42,59 @@ type IassResItem struct {
 type BySecretResp[T cloud.AccountInfoBySecret] struct {
 	rest.BaseResp `json:",inline"`
 	Data          *T `json:"data"`
+}
+
+// TCloudAccountInfoBySecretReq ...
+type TCloudAccountInfoBySecretReq struct {
+	DisableCheck        bool `json:"disable_check" validate:"omitempty"`
+	*cloud.TCloudSecret `json:",inline" validate:"required"`
+}
+
+// Validate ...
+func (req *TCloudAccountInfoBySecretReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AwsAccountInfoBySecretReq ...
+type AwsAccountInfoBySecretReq struct {
+	DisableCheck     bool `json:"disable_check" validate:"omitempty"`
+	*cloud.AwsSecret `json:",inline" validate:"required"`
+}
+
+// Validate ...
+func (req *AwsAccountInfoBySecretReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// HuaWeiAccountInfoBySecretReq ...
+type HuaWeiAccountInfoBySecretReq struct {
+	DisableCheck        bool `json:"disable_check" validate:"omitempty"`
+	*cloud.HuaWeiSecret `json:",inline" validate:"required"`
+}
+
+// Validate ...
+func (req *HuaWeiAccountInfoBySecretReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AzureAccountInfoBySecretReq ...
+type AzureAccountInfoBySecretReq struct {
+	DisableCheck       bool `json:"disable_check" validate:"omitempty"`
+	*cloud.AzureSecret `json:",inline" validate:"required"`
+}
+
+// Validate ...
+func (req *AzureAccountInfoBySecretReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// GcpAccountInfoBySecretReq ...
+type GcpAccountInfoBySecretReq struct {
+	DisableCheck     bool `json:"disable_check" validate:"omitempty"`
+	*cloud.GcpSecret `json:",inline" validate:"required"`
+}
+
+// Validate ...
+func (req *GcpAccountInfoBySecretReq) Validate() error {
+	return validator.Validate.Struct(req)
 }

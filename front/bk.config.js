@@ -57,10 +57,22 @@ module.exports = {
     )
     webpackConfig.plugins.push(
       new CopyWebpackPlugin({
-        patterns: [{
+        patterns: [
+          {
             from: resolve('static/image'),
             to: resolve('dist'),
-        }]
+            globOptions: {
+              ignore: [
+                // 忽略所有 HTML 文件，如果有的话
+                '**/*.html',
+              ],
+            },
+          },
+          {
+            from: 'static/*.html', // 只匹配 static 目录下的 HTML 文件
+            to: '[name][ext]', // 保持原文件名
+          },
+        ],
       })
     )
     

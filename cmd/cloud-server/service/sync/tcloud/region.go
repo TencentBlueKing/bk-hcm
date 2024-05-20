@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"hcm/pkg/api/core"
-	protoregion "hcm/pkg/api/data-service/cloud/region"
 	protohcregion "hcm/pkg/api/hc-service/region"
 	dataservice "hcm/pkg/client/data-service"
 	hcservice "hcm/pkg/client/hc-service"
@@ -59,7 +58,7 @@ func SyncRegion(kt *kit.Kit, hcCli *hcservice.Client, accountID string) error {
 
 // ListRegion ...
 func ListRegion(kt *kit.Kit, dataCli *dataservice.Client) ([]string, error) {
-	listReq := &protoregion.TCloudRegionListReq{
+	listReq := &core.ListReq{
 		Filter: tools.AllExpression(),
 		Page:   core.NewDefaultBasePage(),
 	}

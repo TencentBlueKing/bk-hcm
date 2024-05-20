@@ -137,7 +137,7 @@ func (v *RegionClient) BatchDelete(ctx context.Context, h http.Header, req *data
 }
 
 // ListRegion get gcp region list.
-func (v *RegionClient) ListRegion(ctx context.Context, h http.Header, req *protoregion.GcpRegionListReq) (
+func (v *RegionClient) ListRegion(ctx context.Context, h http.Header, req *core.ListReq) (
 	*protoregion.GcpRegionListResult, error) {
 
 	resp := new(protoregion.GcpRegionListResp)

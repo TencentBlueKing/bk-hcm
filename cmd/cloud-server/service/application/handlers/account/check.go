@@ -65,7 +65,7 @@ func (a *ApplicationOfAddAccount) CheckReq() error {
 	}
 
 	// 检查资源账号的主账号是否重复
-	mainAccountIDFieldName := enumor.VendorMainAccountIDFieldMap[a.req.Vendor]
+	mainAccountIDFieldName := a.req.Vendor.GetMainAccountIDField()
 	mainAccountIDFieldValue := a.req.Extension[mainAccountIDFieldName]
 	err = accountsvc.CheckDuplicateMainAccount(a.Cts, a.Client, a.req.Vendor, a.req.Type, mainAccountIDFieldValue)
 	if err != nil {

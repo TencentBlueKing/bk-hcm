@@ -258,3 +258,69 @@ func (t *TCloudImpl) SecurityGroupCvmDisassociate(kt *kit.Kit, opt *securitygrou
 
 	return nil
 }
+
+// SecurityGroupCvmBatchAssociate  batch associate cvm.
+// reference: https://cloud.tencent.com/document/api/213/31282
+func (t *TCloudImpl) SecurityGroupCvmBatchAssociate(kt *kit.Kit,
+	opt *securitygroup.TCloudBatchAssociateCvmOption) error {
+
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "bind option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.CvmClient(opt.Region)
+	if err != nil {
+		return fmt.Errorf("new tcloud cvm client failed, err: %v", err)
+	}
+
+	req := cvm.NewAssociateSecurityGroupsRequest()
+	// 安全组id 接口只支持传一个
+	req.SecurityGroupIds = []*string{
+		common.StringPtr(opt.CloudSecurityGroupID),
+	}
+	req.InstanceIds = common.StringPtrs(opt.CloudCvmIDs)
+
+	_, err = client.AssociateSecurityGroupsWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("associate tcloud security group and cvm failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// SecurityGroupCvmBatchDisassociate batch disassociate cvm.
+// reference: https://cloud.tencent.com/document/api/213/31281
+func (t *TCloudImpl) SecurityGroupCvmBatchDisassociate(kt *kit.Kit,
+	opt *securitygroup.TCloudBatchAssociateCvmOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "bind option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.CvmClient(opt.Region)
+	if err != nil {
+		return fmt.Errorf("new tcloud cvm client failed, err: %v", err)
+	}
+
+	req := cvm.NewDisassociateSecurityGroupsRequest()
+	req.SecurityGroupIds = []*string{
+		common.StringPtr(opt.CloudSecurityGroupID),
+	}
+	req.InstanceIds = common.StringPtrs(opt.CloudCvmIDs)
+
+	_, err = client.DisassociateSecurityGroupsWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("disassociate tcloud security group and cvm failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
+}

@@ -224,7 +224,7 @@ func (cli *client) listRegionFromDB(kt *kit.Kit, opt *SyncRegionOption) (
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	req := &dataregion.TCloudRegionListReq{
+	req := &core.ListReq{
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{

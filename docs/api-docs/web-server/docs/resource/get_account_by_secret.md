@@ -2,7 +2,7 @@
 
 - 该接口提供版本：v1.2.1+
 - 该接口所需权限：账号录入。
-- 该接口功能描述：通过秘钥获取账号信息。
+- 该接口功能描述：通过秘钥获取账号信息。 禁用主账号重复检查需要版本v1.4.4+
 
 ### URL
 
@@ -18,38 +18,43 @@ POST /api/v1/cloud/vendors/{vendor}/accounts/secret
 
 #### TCloud
 
-| 参数名称             | 参数类型   | 必选 | 描述    |
-|------------------|--------|----|-------|
-| cloud_secret_id  | string | 是  | 云加密ID |
-| cloud_secret_key | string | 是  | 云密钥   |
+| 参数名称             | 参数类型   | 必选 | 描述        |
+|------------------|--------|----|-----------|
+| cloud_secret_id  | string | 是  | 云加密ID     |
+| cloud_secret_key | string | 是  | 云密钥       |
+| disable_check    | bool   | 否  | 禁用主账号重复检查 |
 
 #### AWS
 
-| 参数名称             | 参数类型   | 必选 | 描述    |
-|------------------|--------|----|-------|
-| cloud_secret_id  | string | 是  | 云加密ID |
-| cloud_secret_key | string | 是  | 云密钥   |
+| 参数名称             | 参数类型   | 必选 | 描述        |
+|------------------|--------|----|-----------|
+| cloud_secret_id  | string | 是  | 云加密ID     |
+| cloud_secret_key | string | 是  | 云密钥       |
+| disable_check    | bool   | 否  | 禁用主账号重复检查 |
 
 #### Azure
 
-| 参数名称                    | 参数类型   | 必选 | 描述     |
-|-------------------------|--------|----|--------|
-| cloud_tenant_id         | string | 是  | 云租户ID  |
-| cloud_application_id    | string | 是  | 云应用ID  |
-| cloud_client_secret_key | string | 是  | 云客户端密钥 |
+| 参数名称                    | 参数类型   | 必选 | 描述        |
+|-------------------------|--------|----|-----------|
+| cloud_tenant_id         | string | 是  | 云租户ID     |
+| cloud_application_id    | string | 是  | 云应用ID     |
+| cloud_client_secret_key | string | 是  | 云客户端密钥    |
+| disable_check           | bool   | 否  | 禁用主账号重复检查 |
 
 #### GCP
 
-| 参数名称                     | 参数类型   | 必选 | 描述    |
-|--------------------------|--------|----|-------|
-| cloud_service_secret_key | string | 是  | 云服务密钥 |
+| 参数名称                     | 参数类型   | 必选 | 描述        |
+|--------------------------|--------|----|-----------|
+| cloud_service_secret_key | string | 是  | 云服务密钥     |
+| disable_check            | bool   | 否  | 禁用主账号重复检查 |
 
 #### Huawei
 
-| 参数名称             | 参数类型   | 必选 | 描述    |
-|------------------|--------|----|-------|
-| cloud_secret_id  | string | 是  | 云加密ID |
-| cloud_secret_key | string | 是  | 云密钥   |
+| 参数名称             | 参数类型   | 必选 | 描述        |
+|------------------|--------|----|-----------|
+| cloud_secret_id  | string | 是  | 云加密ID     |
+| cloud_secret_key | string | 是  | 云密钥       |
+| disable_check    | bool   | 否  | 禁用主账号重复检查 |
 
 ### 调用示例
 
@@ -57,6 +62,7 @@ POST /api/v1/cloud/vendors/{vendor}/accounts/secret
 
 ```json
 {
+  "disable_check": true,
   "cloud_secret_id": "xxxx",
   "cloud_secret_key": "xxxx"
 }

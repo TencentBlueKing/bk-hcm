@@ -22,8 +22,6 @@ package azure
 import (
 	"fmt"
 	"strings"
-
-	"hcm/cmd/cloud-server/service/application/handlers"
 )
 
 type formItem struct {
@@ -33,7 +31,7 @@ type formItem struct {
 
 // RenderItsmTitle 渲染ITSM单据标题
 func (a *ApplicationOfCreateAzureVpc) RenderItsmTitle() (string, error) {
-	return fmt.Sprintf("申请新增[%s]VPC[%s]", handlers.VendorNameMap[a.Vendor()], a.req.Name), nil
+	return fmt.Sprintf("申请新增[%s]VPC[%s]", a.Vendor().GetNameZh(), a.req.Name), nil
 }
 
 // RenderItsmForm 渲染ITSM表单
@@ -95,7 +93,7 @@ func (a *ApplicationOfCreateAzureVpc) renderBaseInfo() ([]formItem, error) {
 	formItems = append(formItems, formItem{Label: "云账号", Value: accountInfo.Name})
 
 	// 云厂商
-	formItems = append(formItems, formItem{Label: "云厂商", Value: handlers.VendorNameMap[a.Vendor()]})
+	formItems = append(formItems, formItem{Label: "云厂商", Value: a.Vendor().GetNameZh()})
 
 	// 资源组
 	formItems = append(formItems, formItem{Label: "资源组", Value: req.ResourceGroupName})

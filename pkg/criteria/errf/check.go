@@ -29,6 +29,15 @@ import (
 
 const mysqlDuplicatedNumber = 1062
 
+// GetTypedError 尝试转换为指定类型的错误
+func GetTypedError[T error](err error) *T {
+	var terr T
+	if errors.As(err, &terr) {
+		return &terr
+	}
+	return nil
+}
+
 // GetMySQLDuplicated return mysql.MySQLError if error is a mysql duplicated error
 func GetMySQLDuplicated(err error) (merr *mysql.MySQLError) {
 	if errors.As(err, &merr) && merr.Number == mysqlDuplicatedNumber {
