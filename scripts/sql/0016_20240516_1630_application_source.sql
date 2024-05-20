@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0016,HCMVER=v1.4.4
 
     Notes: 添加申请单来源字段
 */
