@@ -28,10 +28,6 @@
       display: flex;
       align-items: center;
 
-      .base {
-        flex: 1;
-      }
-
       .preview-btn {
         position: absolute;
         left: calc(100% + 16px);

@@ -3,7 +3,7 @@ import { ref, computed, watch, Ref } from 'vue';
 import { Input, Select } from 'bkui-vue';
 import AccountSelector from '@/components/account-selector/index.vue';
 import RegionSelector from '@/views/service/service-apply/components/common/region-selector';
-import RegionVpcSelector from '@/views/service/service-apply/components/common/region-vpc-selector';
+import RegionVpcSelector from '@/views/service/service-apply/components/common/RegionVpcSelector';
 import RsConfigTable from '../RsConfigTable';
 // import stores
 import { useAccountStore, useLoadBalancerStore } from '@/store';
@@ -39,6 +39,7 @@ export default (formData: any, updateCount: Ref<number>, isEdit: Ref<boolean>) =
   );
   // 表单相关
   const formRef = ref();
+  const regionVpcSelectorRef = ref();
   const rules = {
     account_id: [
       {
@@ -168,6 +169,7 @@ export default (formData: any, updateCount: Ref<number>, isEdit: Ref<boolean>) =
         span: 12,
         content: () => (
           <RegionVpcSelector
+            ref={regionVpcSelectorRef}
             v-model={formData.cloud_vpc_id}
             accountId={formData.account_id}
             region={formData.region}
@@ -216,5 +218,6 @@ export default (formData: any, updateCount: Ref<number>, isEdit: Ref<boolean>) =
     formItemOptions,
     canUpdateRegionOrVpc,
     deletedRsList,
+    regionVpcSelectorRef,
   };
 };
