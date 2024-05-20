@@ -97,12 +97,11 @@ export function useSingleList(
     Object.assign(pagination, getDefaultPagination());
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     handleReset();
     isDataRefresh.value = true;
-    loadDataList().finally(() => {
-      isDataRefresh.value = false;
-    });
+    await loadDataList();
+    isDataRefresh.value = false;
   };
 
   // 立即执行

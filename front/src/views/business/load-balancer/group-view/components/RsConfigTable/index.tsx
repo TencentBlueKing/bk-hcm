@@ -213,7 +213,7 @@ export default defineComponent({
     const handleAddRs = () => {
       bus.$emit('showAddRsDialog', {
         accountId: props.accountId,
-        vpcId: vpc_id.value,
+        vpcIds: [vpc_id.value],
         port: props.port,
         rsList: props.rsList,
       });

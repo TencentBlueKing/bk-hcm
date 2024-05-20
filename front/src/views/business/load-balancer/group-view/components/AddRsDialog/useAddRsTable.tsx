@@ -10,7 +10,7 @@ import { getDifferenceSet } from '@/common/util';
 export default (
   rsSelections: Ref<any[]>,
   getTableRsList: () => any[],
-  callback: () => { vpc_id: string; account_id: string },
+  callback: () => { vpc_ids: string[]; account_id: string },
 ) => {
   // use stores
   const businessStore = useBusinessStore();
@@ -108,7 +108,7 @@ export default (
   });
 
   // 获取 rs 列表
-  const getRSTableList = async (accountId: string, vpcId: string) => {
+  const getRSTableList = async (accountId: string, vpcIds: string[]) => {
     if (!accountId) {
       rsTableList.value = [];
       return;
@@ -128,8 +128,8 @@ export default (
                 },
                 {
                   field: 'vpc_ids',
-                  op: QueryRuleOPEnum.JSON_CONTAINS,
-                  value: vpcId,
+                  op: QueryRuleOPEnum.JSON_OVERLAPS,
+                  value: vpcIds,
                 },
                 ...filter.rules,
               ],
@@ -242,7 +242,7 @@ export default (
       }
       // 页码重置
       pagination.start = 0;
-      getRSTableList(callback().account_id, callback().vpc_id);
+      getRSTableList(callback().account_id, callback().vpc_ids);
     },
     {
       immediate: true,
