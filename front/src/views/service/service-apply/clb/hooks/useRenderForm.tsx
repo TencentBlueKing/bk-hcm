@@ -5,7 +5,7 @@ import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 import { EditLine, Plus } from 'bkui-vue/lib/icon';
 import ZoneSelector from '@/components/zone-selector/index.vue';
-import PrimaryStandZoneSelector from '../../components/common/primary-stand-zone-selector';
+import PrimaryStandZoneSelector from '../../components/common/PrimaryStandZoneSelector';
 import RegionVpcSelector from '../../components/common/region-vpc-selector';
 import SubnetSelector from '../../components/common/subnet-selector';
 import InputNumber from '@/components/input-number';
@@ -163,74 +163,75 @@ export default (formModel: ApplyClbModel) => {
           ),
         },
         {
-          label: '可用区类型',
-          property: 'zoneType',
+          label: '可用区',
           description:
             '单可用区：仅支持一个可用区。\n主备可用区：主可用区是当前承载流量的可用区。备可用区默认不承载流量，主可用区不可用时才使用备可用区。',
-          hidden: isIntranet.value || formModel.address_ip_version !== 'IPV4',
-          content: () => (
-            <BkRadioGroup v-model={formModel.zoneType}>
-              {ZONE_TYPE.map(({ label, value, isDisabled }) => {
-                const disabled =
-                  typeof isDisabled === 'function' ? isDisabled(formModel.region, formModel.account_type) : false;
-                return (
-                  <BkRadioButton
-                    label={value}
-                    class='w120'
-                    disabled={disabled}
-                    v-bk-tooltips={{
-                      content:
-                        formModel.account_type === 'LEGACY' ? (
-                          <span>
-                            {t('仅标准型账号支持主备可用区')}账号类型说明，参考{' '}
-                            <a
-                              href='https://cloud.tencent.com/document/product/1199/49090#judge'
-                              target='_blank'
-                              style={{ color: '#3A84FF' }}>
-                              https://cloud.tencent.com/document/product/1199/49090#judge
-                            </a>
-                          </span>
-                        ) : (
-                          t('仅广州、上海、南京、北京、中国香港、首尔地域的 IPv4 版本的 CLB 支持主备可用区')
-                        ),
-                      disabled: !disabled,
-                    }}>
-                    {t(label)}
-                  </BkRadioButton>
-                );
-              })}
-            </BkRadioGroup>
-          ),
-        },
-        {
-          label: '可用区',
-          property: 'zones',
           hidden: !isIntranet.value && formModel.address_ip_version !== 'IPV4',
-          content: () => {
-            let zoneSelectorVNode = null;
-            if (isIntranet.value || formModel.zoneType === 'single') {
-              zoneSelectorVNode = (
-                <ZoneSelector
-                  v-model={formModel.zones}
-                  vendor={formModel.vendor}
-                  region={formModel.region}
-                  delayed={true}
-                  isLoading={isResourceListLoading.value}
-                />
-              );
-            } else {
-              zoneSelectorVNode = (
-                <PrimaryStandZoneSelector
-                  v-model:zones={formModel.zones}
-                  v-model:backupZones={formModel.backup_zones}
-                  vendor={formModel.vendor}
-                  region={formModel.region}
-                  onResetVipIsp={() => (formModel.vip_isp = '')}
-                />
-              );
-            }
-            return zoneSelectorVNode;
-          },
+          content: () => (
+            <div class='flex-row'>
+              {!isIntranet.value && (
+                <Select v-model={formModel.zoneType} clearable={false} filterable={false}>
+                  {ZONE_TYPE.map(({ label, value, isDisabled }) => {
+                    const disabled =
+                      typeof isDisabled === 'function' ? isDisabled(formModel.region, formModel.account_type) : false;
+                    return (
+                      <Option
+                        id={value}
+                        name={label}
+                        disabled={disabled}
+                        v-bk-tooltips={{
+                          boundary: 'parent',
+                          placement: 'right',
+                          content:
+                            formModel.account_type === 'LEGACY' ? (
+                              <span>
+                                {t('仅标准型账号支持主备可用区')}账号类型说明，参考{' '}
+                                <a
+                                  href='https://cloud.tencent.com/document/product/1199/49090#judge'
+                                  target='_blank'
+                                  style={{ color: '#3A84FF' }}>
+                                  https://cloud.tencent.com/document/product/1199/49090#judge
+                                </a>
+                              </span>
+                            ) : (
+                              t('仅广州、上海、南京、北京、中国香港、首尔地域的 IPv4 版本的 CLB 支持主备可用区')
+                            ),
+                          disabled: !disabled,
+                        }}>
+                        {t(label)}
+                      </Option>
+                    );
+                  })}
+                </Select>
+              )}
+              {(function () {
+                let zoneSelectorVNode = null;
+                if (isIntranet.value || formModel.zoneType === 'single') {
+                  zoneSelectorVNode = (
+                    <ZoneSelector
+                      class='flex-1'
+                      v-model={formModel.zones}
+                      vendor={formModel.vendor}
+                      region={formModel.region}
+                      delayed={true}
+                      isLoading={isResourceListLoading.value}
+                    />
+                  );
+                } else {
+                  zoneSelectorVNode = (
+                    <PrimaryStandZoneSelector
+                      class='flex-1'
+                      v-model:zones={formModel.zones}
+                      v-model:backupZones={formModel.backup_zones}
+                      vendor={formModel.vendor}
+                      region={formModel.region}
+                    />
+                  );
+                }
+                return zoneSelectorVNode;
+              })()}
+            </div>
+          ),
         },
         {
           label: '子网',

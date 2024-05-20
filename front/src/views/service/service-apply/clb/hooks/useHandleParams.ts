@@ -69,7 +69,7 @@ export default (formModel: ApplyClbModel, formRef: any) => {
   watch(
     () => formModel.zoneType,
     () => {
-      resetParams(['zones', 'backup_zones', 'cloud_vpc_id']);
+      resetParams(['zones', 'backup_zones']);
       handleClearValidate();
     },
   );
