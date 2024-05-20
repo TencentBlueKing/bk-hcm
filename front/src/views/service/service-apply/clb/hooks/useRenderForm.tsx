@@ -6,7 +6,7 @@ import { BkButtonGroup } from 'bkui-vue/lib/button';
 import { EditLine, Plus } from 'bkui-vue/lib/icon';
 import ZoneSelector from '@/components/zone-selector/index.vue';
 import PrimaryStandZoneSelector from '../../components/common/PrimaryStandZoneSelector';
-import RegionVpcSelector from '../../components/common/region-vpc-selector';
+import RegionVpcSelector from '../../components/common/RegionVpcSelector';
 import SubnetSelector from '../../components/common/subnet-selector';
 import InputNumber from '@/components/input-number';
 import ConditionOptions from '../../components/common/condition-options.vue';
@@ -152,9 +152,10 @@ export default (formModel: ApplyClbModel) => {
           content: () => (
             <div class='component-with-preview'>
               <RegionVpcSelector
-                class='base'
+                class='flex-1'
                 v-model={formModel.cloud_vpc_id}
                 accountId={formModel.account_id}
+                vendor={formModel.vendor}
                 region={formModel.region}
                 onChange={handleVpcChange}
               />
@@ -241,7 +242,7 @@ export default (formModel: ApplyClbModel) => {
           content: () => (
             <div class='component-with-preview'>
               <SubnetSelector
-                class='base'
+                class='flex-1'
                 v-model={formModel.cloud_subnet_id}
                 bizId={formModel.bk_biz_id}
                 vpcId={vpcId.value}

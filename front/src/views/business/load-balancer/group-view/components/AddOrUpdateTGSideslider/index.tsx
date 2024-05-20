@@ -53,11 +53,8 @@ export default defineComponent({
     };
     const formData = reactive(getDefaultFormData());
     const { updateCount } = useChangeScene(isShow, formData);
-    const { formItemOptions, canUpdateRegionOrVpc, formRef, rules, deletedRsList } = useAddOrUpdateTGForm(
-      formData,
-      updateCount,
-      isEdit,
-    );
+    const { formItemOptions, canUpdateRegionOrVpc, formRef, rules, deletedRsList, regionVpcSelectorRef } =
+      useAddOrUpdateTGForm(formData, updateCount, isEdit);
 
     // click-handler - 新建目标组
     const handleAddTargetGroup = () => {
@@ -65,13 +62,15 @@ export default defineComponent({
       loadBalancerStore.setCurrentScene('add');
       isShow.value = true;
       isEdit.value = false;
-      nextTick(() => {
+      nextTick(async () => {
+        // 侧边栏显示后, 刷新 vpc 列表, 支持编辑的时候默认选中 vpc
+        await regionVpcSelectorRef.value.handleRefresh();
         formRef.value.clearValidate();
       });
     };
 
     // click-handler - 编辑目标组
-    const handleEditTargetGroup = (data: any) => {
+    const handleEditTargetGroup = async (data: any) => {
       clearInterval(timer);
       // 初始化场景值
       loadBalancerStore.setUpdateCount(0);
@@ -89,6 +88,10 @@ export default defineComponent({
           reqAsyncTaskStatus(lastAsyncTaskInfo.tgId, lastAsyncTaskInfo.flowId);
         }, 2000);
       }
+      nextTick(() => {
+        // 侧边栏显示后, 刷新 vpc 列表, 支持编辑的时候默认选中 vpc
+        regionVpcSelectorRef.value.handleRefresh();
+      });
     };
 
     // 处理参数 - add
