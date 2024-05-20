@@ -20,30 +20,30 @@ export default defineComponent({
     const isShow = ref(false);
     const rsSelections = ref([]);
     let account_id = '';
-    let vpc_id = '';
+    let vpc_ids = [] as string[];
     let tgPort = 0;
     let tableRsList = [] as any[];
 
     const handleShow = ({
       accountId,
-      vpcId,
+      vpcIds,
       port,
       rsList,
     }: {
       accountId: string;
-      vpcId: string;
+      vpcIds: string[];
       port: number;
       rsList: any[];
     }) => {
       isShow.value = true;
       nextTick(handleClear);
       account_id = accountId;
-      vpc_id = vpcId;
+      vpc_ids = vpcIds;
       tgPort = port;
       tableRsList = rsList;
 
-      // 根据account_id, vpc_id查询cvm列表
-      getRSTableList(accountId, vpcId);
+      // 根据account_id, vpc_ids查询cvm列表
+      getRSTableList(accountId, vpc_ids);
     };
 
     // confirm-handler
@@ -70,7 +70,7 @@ export default defineComponent({
           break;
         case 'BatchAddRs':
           // 显示批量添加rs的sideslider
-          bus.$emit('showBatchAddRsSideslider', { accountId: account_id, vpcId: vpc_id, selectedRsList });
+          bus.$emit('showBatchAddRsSideslider', { accountId: account_id, vpcId: vpc_ids, selectedRsList });
         default:
           break;
       }
@@ -93,7 +93,7 @@ export default defineComponent({
       rsSelections,
       () => tableRsList,
       () => ({
-        vpc_id,
+        vpc_ids,
         account_id,
       }),
     );

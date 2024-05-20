@@ -1,4 +1,4 @@
-import { computed, defineComponent, reactive } from 'vue';
+import { computed, defineComponent } from 'vue';
 // import components
 import { Button, Checkbox, Dropdown, Loading, SearchSelect, Table } from 'bkui-vue';
 import { BkRadioGroup, BkRadioButton } from 'bkui-vue/lib/radio';
@@ -58,11 +58,12 @@ export default defineComponent({
 
     // computed-property - 判断是否属于同一个账号&负载均衡(lb_id为空时, 不算做一种)
     const isSelectionsBelongSameAccountAndLB = computed(() => {
-      // 过滤掉lb_id为空的目标组
-      const tmpSelections = selections.value.filter(({ lb_id }) => !lb_id);
-      if (tmpSelections.length < 2) return true;
-      const { account_id: firstAccountId, lb_id: firstLBId } = tmpSelections[0];
-      return tmpSelections.every((item) => item.lb_id === firstLBId && item.account_id === firstAccountId);
+      if (selections.value.length < 2) return true;
+      const firstAccountId = selections.value[0].account_id;
+      const firstLBId = selections.value.find((item) => item.lb_id).lb_id;
+      return selections.value.every((item) => {
+        return (item.lb_id === firstLBId || item.lb_id === '') && item.account_id === firstAccountId;
+      });
     });
 
     // computed-property - 判断是否同属于一个vpc
@@ -93,29 +94,13 @@ export default defineComponent({
     const handleBatchAddRs = () => {
       loadBalancerStore.setCurrentScene('BatchAddRs');
       // 同一账号下的多个目标组支持批量添加rs
-      const { account_id: accountId, vpc_id: vpcId } = selections.value[0];
+      const { account_id: accountId } = selections.value[0];
+      const vpcIds = [...new Set(selections.value.map((item) => item.vpc_id))];
       // 显示添加rs弹框
-      bus.$emit('showAddRsDialog', { accountId, vpcId, rsList: [] });
+      bus.$emit('showAddRsDialog', { accountId, vpcIds, rsList: [] });
       // 将选中的目标组数据传递给BatchAddRsSideslider组件
       bus.$emit('setTargetGroups', selections.value);
     };
-    const batchOperationList = reactive([
-      { label: t('批量删除目标组'), clickHandler: handleBatchDeleteTG, enabled: true },
-      {
-        label: t('批量移除 RS'),
-        clickHandler: handleBatchDeleteRs,
-        enabled: isSelectionsBelongSameAccountAndLB,
-        tips: t('传入的目标组不同属于一个负载均衡/账号, 不可进行批量移除RS操作'),
-      },
-      {
-        label: t('批量添加 RS'),
-        clickHandler: handleBatchAddRs,
-        enabled: isSelectionsBelongSameAccountAndLB.value && isSelectionsBelongSameVpc.value,
-        tips: isSelectionsBelongSameVpc.value
-          ? t('传入的目标组不同属于一个负载均衡/账号, 不可进行批量添加RS操作')
-          : t('传入的目标组不同属于一个VPC, 不可进行批量添加RS操作'),
-      },
-    ]);
 
     return () => (
       <div class='common-card-wrap has-selection'>
@@ -137,17 +122,42 @@ export default defineComponent({
                     ),
                     content: () => (
                       <DropdownMenu>
-                        {batchOperationList.map(({ label, clickHandler, enabled, tips }) => (
-                          <DropdownItem>
-                            <Button
-                              text
-                              onClick={clickHandler}
-                              disabled={!enabled}
-                              v-bk-tooltips={{ content: tips, disabled: enabled }}>
-                              {label}
-                            </Button>
-                          </DropdownItem>
-                        ))}
+                        <DropdownItem>
+                          <Button text onClick={handleBatchDeleteTG}>
+                            {t('批量移除目标组')}
+                          </Button>
+                        </DropdownItem>
+                        <DropdownItem>
+                          <Button
+                            text
+                            onClick={handleBatchDeleteRs}
+                            disabled={!isSelectionsBelongSameAccountAndLB.value}
+                            v-bk-tooltips={{
+                              content: '传入的目标组不同属于一个负载均衡/账号, 不可进行批量移除RS操作',
+                              disabled: isSelectionsBelongSameAccountAndLB.value,
+                            }}>
+                            {t('批量移除 RS')}
+                          </Button>
+                        </DropdownItem>
+                        <DropdownItem>
+                          <Button
+                            text
+                            onClick={handleBatchAddRs}
+                            disabled={!isSelectionsBelongSameAccountAndLB.value || !isSelectionsBelongSameVpc.value}
+                            v-bk-tooltips={
+                              !isSelectionsBelongSameAccountAndLB.value
+                                ? {
+                                    content: '传入的目标组不同属于一个负载均衡/账号, 不可进行批量添加RS操作',
+                                    disabled: isSelectionsBelongSameAccountAndLB.value,
+                                  }
+                                : {
+                                    content: '传入的目标组不同属于一个VPC, 不可进行批量添加RS操作',
+                                    disabled: isSelectionsBelongSameVpc.value,
+                                  }
+                            }>
+                            {t('批量添加 RS')}
+                          </Button>
+                        </DropdownItem>
                       </DropdownMenu>
                     ),
                   }}

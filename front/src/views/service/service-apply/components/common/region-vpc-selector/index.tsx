@@ -24,7 +24,6 @@ export default defineComponent({
         { op: QueryRuleOPEnum.EQ, field: 'account_id', value: props.accountId },
         { op: QueryRuleOPEnum.EQ, field: 'region', value: props.region },
       ],
-      immediate: true,
     });
 
     const handleChange = (v: string) => {
@@ -37,8 +36,19 @@ export default defineComponent({
       emit('update:modelValue', '');
     };
 
-    // 当地域变更时, 刷新列表
-    watch(() => props.region, handleRefresh);
+    watch(
+      [() => props.modelValue, () => props.region],
+      async ([vpcId, region]) => {
+        if (!region) return;
+        await handleRefresh();
+        if (vpcId) {
+          handleChange(vpcId);
+        }
+      },
+      {
+        immediate: true,
+      },
+    );
 
     return () => (
       <div class='region-vpc-selector'>
