@@ -122,10 +122,10 @@ export default defineComponent({
           const mains = props.detail.zones;
           const backups = props.detail.backup_zones;
           const mainsStr = mains
-            ?.map((zone: string) => `${regionStore.getRegionName(props.detail.vendor, zone)}(主)`)
+            ?.map((zone: string) => `${regionStore.getZoneName(zone, props.detail.vendor)}-(主)`)
             .join(',');
           const backupsStr = backups
-            ?.map((zone: string) => `${regionStore.getRegionName(props.detail.vendor, zone)}(备)`)
+            ?.map((zone: string) => `${regionStore.getZoneName(zone, props.detail.vendor)}-(备)`)
             .join(',');
           return `${mainsStr}${backupsStr?.length ? `,${backupsStr}` : ''}`;
         },
