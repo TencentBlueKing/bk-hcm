@@ -150,6 +150,16 @@ export default (formModel: ApplyClbModel) => {
   );
 
   watch(
+    ispList,
+    () => {
+      formModel.vip_isp = ispList.value.length ? 'BGP' : '';
+      formModel.slaType = '0';
+      formModel.sla_type = 'shared';
+    },
+    { deep: true },
+  );
+
+  watch(
     () => formModel.vip_isp,
     () => {
       const { zones, address_ip_version, vip_isp, region } = formModel;

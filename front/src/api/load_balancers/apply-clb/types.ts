@@ -127,9 +127,9 @@ export interface ApplyClbModel {
   require_count: number;
   // 备注
   memo?: string;
-  // 可用区类型, 仅前端使用
-  zoneType: 'single' | 'primaryStand';
-  // 云厂商, 前端组件使用
+  // 可用区类型, 0: 单可用区 2: 主备可用区（仅前端使用）
+  zoneType: '0' | '1';
+  // 云厂商（仅前端使用）
   vendor: VendorEnum;
   // 用户网络类型
   account_type: NetworkAccountType;
