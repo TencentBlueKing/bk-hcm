@@ -19,6 +19,10 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    isLoading: {
+      type: Boolean,
+      default: false,
+    },
     fromKey: {
       type: String,
       default: '',
@@ -50,7 +54,6 @@ export default defineComponent({
     const handleEdit = () => {
       // @ts-ignore
       renderEdit.value = true;
-      console.log('props.modelValue', props.modelValue);
       nextTick(() => {
         // @ts-ignore
         inputRef.value?.focus();
@@ -61,7 +64,6 @@ export default defineComponent({
     watch(
       () => props.isEdit,
       () => {
-        console.log('props.isEdit', props.isEdit);
         renderEdit.value = props.isEdit;
       },
     );
@@ -86,6 +88,11 @@ export default defineComponent({
       }
     };
 
+    const handleKeyUpEnter = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter') return;
+      handleBlur(props.fromKey);
+    };
+
     const computedDefaultUserlist = computed(() => {
       let res = props.modelValue;
       if (props.fromType === 'member') {
@@ -108,6 +115,7 @@ export default defineComponent({
               modelValue={props.modelValue}
               onChange={handleChange}
               onBlur={() => handleBlur(props.fromKey)}
+              onKeyup={(_, e) => handleKeyUpEnter(e)}
             />
           );
         case 'member':

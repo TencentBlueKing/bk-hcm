@@ -2,13 +2,13 @@
 // table 字段相关信息
 import i18n from '@/language/i18n';
 import { CloudType, SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
-import { useAccountStore } from '@/store';
-import { Button, Tag } from 'bkui-vue';
+import { useAccountStore, useLoadBalancerStore } from '@/store';
+import { Button } from 'bkui-vue';
 import type { Settings } from 'bkui-vue/lib/table/props';
 import { h, ref } from 'vue';
 import type { Ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { CLOUD_HOST_STATUS, VendorEnum } from '@/common/constant';
+import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
+import { CLB_BINDING_STATUS, CLOUD_HOST_STATUS, VendorEnum, VendorMap } from '@/common/constant';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -17,33 +17,52 @@ import StatusAbnormal from '@/assets/image/Status-abnormal.png';
 import StatusNormal from '@/assets/image/Status-normal.png';
 import StatusUnknown from '@/assets/image/Status-unknown.png';
 import StatusSuccess from '@/assets/image/success-account.png';
-import StatusFailure from '@/assets/image/failed-account.png';
-import StatusPartialSuccess from '@/assets/image/result-waiting.png';
 import StatusLoading from '@/assets/image/status_loading.png';
 
 import { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../common/table/HostOperations';
 import './use-columns.scss';
-import { timeFormatter, timeFromNow } from '@/common/util';
+import { defaults } from 'lodash';
+import { timeFormatter } from '@/common/util';
+import { IP_VERSION_MAP, LBRouteName, LB_NETWORK_TYPE_MAP, SCHEDULER_MAP } from '@/constants/clb';
+import { getInstVip } from '@/utils';
+import dayjs from 'dayjs';
+
+interface LinkFieldOptions {
+  type: string; // 资源类型
+  label?: string; // 显示文本
+  field?: string; // 字段
+  idFiled?: string; // id字段
+  onlyShowOnList?: boolean; // 只在列表中显示
+  onLinkInBusiness?: boolean; // 只在业务下可链接
+  render?: (data: any) => any; // 自定义渲染内容
+  sort?: boolean; // 是否支持排序
+}
 
 export default (type: string, isSimpleShow = false, vendor?: string) => {
   const router = useRouter();
   const route = useRoute();
   const accountStore = useAccountStore();
+  const loadBalancerStore = useLoadBalancerStore();
   const { t } = i18n.global;
   const { getRegionName } = useRegionsStore();
   const { whereAmI } = useWhereAmI();
   const businessMapStore = useBusinessMapStore();
   const cloudAreaStore = useCloudAreaStore();
 
-  const getLinkField = (
-    type: string,
-    label = 'ID',
-    field = 'id',
-    idFiled = 'id',
-    onlyShowOnList = true,
-    render: (data: any) => Element | string = undefined,
-    sort = true,
-  ) => {
+  const getLinkField = (options: LinkFieldOptions) => {
+    // 设置options的默认值
+    defaults(options, {
+      label: 'ID',
+      field: 'id',
+      idFiled: 'id',
+      onlyShowOnList: true,
+      onLinkInBusiness: false,
+      render: undefined,
+      sort: true,
+    });
+
+    const { type, label, field, idFiled, onlyShowOnList, onLinkInBusiness, render, sort } = options;
+
     return {
       label,
       field,
@@ -53,45 +72,55 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       isDefaultShow: true,
       render({ data }: { cell: string; data: any }) {
         if (data[idFiled] < 0 || !data[idFiled]) return '--';
+        // 如果设置了onLinkInBusiness=true, 则只在业务下可以链接至指定路由
+        if (onLinkInBusiness && whereAmI.value !== Senarios.business) return data[field] || '--';
         return (
-          <>
-            <Button
-              text
-              theme='primary'
-              onClick={() => {
-                const routeInfo: any = {
-                  query: {
-                    ...route.query,
-                    id: data[idFiled],
-                    type: data.vendor,
+          <Button
+            text
+            theme='primary'
+            onClick={() => {
+              const routeInfo: any = {
+                query: {
+                  ...route.query,
+                  id: data[idFiled],
+                  type: data.vendor,
+                },
+              };
+              // 业务下
+              if (route.path.includes('business')) {
+                routeInfo.query.bizs = accountStore.bizs;
+                Object.assign(routeInfo, {
+                  name: `${type}BusinessDetail`,
+                });
+              } else {
+                Object.assign(routeInfo, {
+                  name: 'resourceDetail',
+                  params: {
+                    type,
                   },
-                };
-                // 业务下
-                if (route.path.includes('business')) {
-                  routeInfo.query.bizs = accountStore.bizs;
-                  Object.assign(routeInfo, {
-                    name: `${type}BusinessDetail`,
-                  });
-                } else {
-                  Object.assign(routeInfo, {
-                    name: 'resourceDetail',
-                    params: {
-                      type,
-                    },
-                  });
-                }
-                router.push(routeInfo);
-              }}>
-              {render ? render(data) : data[field] || '--'}
-            </Button>
-            {timeFromNow(data.created_at) < 5 && (
-              <Tag theme='success' radius='4px' extCls='new-resource-tag'>
-                new
-              </Tag>
-            )}
-          </>
+                });
+              }
+              router.push(routeInfo);
+            }}>
+            {render ? render(data) : data[field] || '--'}
+          </Button>
         );
       },
+    };
+  };
+
+  /**
+   * 自定义 render field 的 push 导航
+   * @param to 目标路由信息
+   */
+  const renderFieldPushState = (to: RouteLocationRaw, cb?: (...args: any) => any) => {
+    return (e: Event) => {
+      // 阻止事件冒泡
+      e.stopPropagation();
+      // 导航
+      router.push(to);
+      // 执行回调
+      typeof cb === 'function' && cb();
     };
   };
 
@@ -103,7 +132,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       onlyShowOnList: true,
       align: 'right',
     },
-    getLinkField('vpc', 'VPC ID', 'cloud_id'),
+    getLinkField({ type: 'vpc', label: 'VPC ID', field: 'cloud_id' }),
     // {
     //   label: '资源 ID',
     //   field: 'cloud_id',
@@ -195,7 +224,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       onlyShowOnList: true,
       align: 'right',
     },
-    getLinkField('subnet', '子网 ID', 'cloud_id', 'id', false),
+    getLinkField({ type: 'subnet', label: '子网 ID', field: 'cloud_id', idFiled: 'id', onlyShowOnList: false }),
     // {
     //   label: '资源 ID',
     //   field: 'cloud_id',
@@ -239,7 +268,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         return h('span', [cell || '--']);
       },
     },
-    getLinkField('vpc', '所属 VPC', 'cloud_vpc_id', 'vpc_id', false),
+    getLinkField({ type: 'vpc', label: '所属 VPC', field: 'cloud_vpc_id', idFiled: 'vpc_id', onlyShowOnList: false }),
     {
       label: 'IPv4 CIDR',
       field: 'ipv4_cidr',
@@ -309,7 +338,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       onlyShowOnList: true,
       align: 'right',
     },
-    getLinkField('subnet'),
+    getLinkField({ type: 'subnet' }),
     {
       label: '资源 ID',
       field: 'account_id',
@@ -345,7 +374,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       onlyShowOnList: true,
       align: 'right',
     },
-    getLinkField('subnet'),
+    getLinkField({ type: 'subnet' }),
     {
       label: '资源 ID',
       field: 'account_id',
@@ -390,7 +419,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       onlyShowOnList: true,
       align: 'right',
     },
-    getLinkField('drive', '云硬盘ID', 'cloud_id'),
+    getLinkField({ type: 'drive', label: '云硬盘ID', field: 'cloud_id' }),
     // {
     //   label: '资源 ID',
     //   field: 'cloud_id',
@@ -464,7 +493,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         return h('span', [cell || '--']);
       },
     },
-    getLinkField('host', '挂载的主机', 'instance_id', 'instance_id'),
+    getLinkField({ type: 'host', label: '挂载的主机', field: 'instance_id', idFiled: 'instance_id' }),
     {
       label: '是否分配',
       field: 'bk_biz_id',
@@ -498,7 +527,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const imageColumns = [
-    getLinkField('image', '镜像ID', 'cloud_id', 'id'),
+    getLinkField({ type: 'image', label: '镜像ID', field: 'cloud_id', idFiled: 'id' }),
     // {
     //   label: '资源 ID',
     //   field: 'cloud_id',
@@ -558,7 +587,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const networkInterfaceColumns = [
-    getLinkField('network-interface', '接口 ID', 'cloud_id', 'id'),
+    getLinkField({ type: 'network-interface', label: '接口 ID', field: 'cloud_id', idFiled: 'id' }),
     {
       label: '接口名称',
       field: 'name',
@@ -656,7 +685,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const routeColumns = [
-    getLinkField('route', '路由表ID', 'cloud_id', 'id'),
+    getLinkField({ type: 'route', label: '路由表ID', field: 'cloud_id', idFiled: 'id' }),
     // {
     //   label: '资源 ID',
     //   field: 'cloud_id',
@@ -685,7 +714,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       isDefaultShow: true,
       render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell),
     },
-    getLinkField('vpc', '所属网络(VPC)', 'vpc_id', 'vpc_id'),
+    getLinkField({ type: 'vpc', label: '所属网络(VPC)', field: 'vpc_id', idFiled: 'vpc_id' }),
     // {
     //   label: '关联子网',
     //   field: '',
@@ -733,15 +762,15 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       isDefaultShow: false,
       onlyShowOnList: true,
     },
-    getLinkField(
-      'host',
-      '内网IP',
-      'private_ipv4_addresses',
-      'id',
-      false,
-      (data) => [...data.private_ipv4_addresses, ...data.private_ipv6_addresses].join(','),
-      false,
-    ),
+    getLinkField({
+      type: 'host',
+      label: '内网IP',
+      field: 'private_ipv4_addresses',
+      idFiled: 'id',
+      onlyShowOnList: false,
+      render: (data) => [...data.private_ipv4_addresses, ...data.private_ipv6_addresses].join(','),
+      sort: false,
+    }),
     {
       label: '公网IP',
       field: 'vendor',
@@ -945,7 +974,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       onlyShowOnList: true,
       align: 'right',
     },
-    getLinkField('eips', 'IP资源ID', 'cloud_id', 'id'),
+    getLinkField({ type: 'eips', label: 'IP资源ID', field: 'cloud_id', idFiled: 'id' }),
     // {
     //   label: '资源 ID',
     //   field: 'cloud_id',
@@ -992,7 +1021,15 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     //     return h('span', [cell || '--']);
     //   },
     // },
-    getLinkField('host', '绑定的资源实例', 'cvm_id', 'cvm_id', false, (data) => data.host, false),
+    getLinkField({
+      type: 'host',
+      label: '绑定的资源实例',
+      field: 'cvm_id',
+      idFiled: 'cvm_id',
+      onlyShowOnList: false,
+      render: (data) => data.host,
+      sort: false,
+    }),
     {
       label: '绑定的资源类型',
       field: 'instance_type',
@@ -1087,40 +1124,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'account_id',
     },
     {
-      label: '任务状态',
-      field: 'task_status',
-      isDefaultShow: true,
-      filter: true,
-      render: ({ cell }: { cell: string }) => {
-        if (!cell) return '--';
-        let icon;
-        switch (cell) {
-          case 'success':
-            icon = StatusSuccess;
-            break;
-          case 'fail':
-            icon = StatusFailure;
-            break;
-          case 'partial_success':
-            icon = StatusPartialSuccess;
-            break;
-        }
-        return (
-          <div class='status-column-cell'>
-            <img class='status-icon' src={icon} alt='' />
-            <span>{cell === 'success' ? '成功' : cell === 'fail' ? '失败' : '部分成功'}</span>
-          </div>
-        );
-      },
-    },
-    {
       label: '操作人',
       field: 'operator',
       isDefaultShow: true,
     },
   ];
 
-  const clbsColumns = [
+  const lbColumns = [
     {
       type: 'selection',
       width: 32,
@@ -1128,60 +1138,230 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       onlyShowOnList: true,
       align: 'right',
     },
-    getLinkField('clbs', '负载均衡名称'),
+    getLinkField({
+      type: 'lb',
+      label: '负载均衡名称',
+      field: 'name',
+      onLinkInBusiness: true,
+      render: (data) => (
+        <Button
+          text
+          theme='primary'
+          onClick={renderFieldPushState(
+            {
+              name: LBRouteName.lb,
+              params: { id: data.id },
+              query: { ...route.query, type: 'detail' },
+            },
+            () => {
+              loadBalancerStore.setLbTreeSearchTarget({ ...data, searchK: 'lb_name', searchV: data.name, type: 'lb' });
+            },
+          )}>
+          {data.name || '--'}
+        </Button>
+      ),
+    }),
     {
-      label: '负载均衡域名',
-      field: 'clb_domain',
+      label: () => (
+        <span v-bk-tooltips={{ content: '用户通过该域名访问负载均衡流量', placement: 'top' }}>负载均衡域名</span>
+      ),
+      field: 'domain',
       isDefaultShow: true,
+      render: ({ cell }: { cell: string }) => cell || '--',
     },
     {
       label: '负载均衡VIP',
-      field: 'clb_vip',
+      field: 'vip',
       isDefaultShow: true,
+      render: ({ data }: any) => {
+        return getInstVip(data);
+      },
     },
     {
       label: '网络类型',
-      field: 'net_type',
+      field: 'lb_type',
       isDefaultShow: true,
+      sort: true,
+      filter: {
+        list: [
+          { text: LB_NETWORK_TYPE_MAP.OPEN, value: LB_NETWORK_TYPE_MAP.OPEN },
+          { text: LB_NETWORK_TYPE_MAP.INTERNAL, value: LB_NETWORK_TYPE_MAP.INTERNAL },
+        ],
+      },
     },
     {
       label: '监听器数量',
-      field: 'listener_count',
+      field: 'listenerNum',
       isDefaultShow: true,
+      render: ({ cell }: { cell: number }) => cell || '0',
     },
     {
       label: '分配状态',
-      field: 'is_distibute',
+      field: 'bk_biz_id',
       isDefaultShow: true,
+      isOnlyShowInResource: true,
+      render: ({ cell }: { cell: number }) => (
+        <bk-tag
+          v-bk-tooltips={{
+            content: businessMapStore.businessMap.get(cell),
+            disabled: !cell || cell === -1,
+          }}
+          theme={cell === -1 ? false : 'success'}>
+          {cell === -1 ? '未分配' : '已分配'}
+        </bk-tag>
+      ),
+    },
+    {
+      label: '删除保护',
+      field: 'delete_protect',
+      isDefaultShow: true,
+      render: ({ cell }: { cell: boolean }) => (cell ? <bk-tag theme='success'>开启</bk-tag> : <bk-tag>关闭</bk-tag>),
+      filter: {
+        list: [
+          { text: '开启', value: true },
+          { text: '关闭', value: false },
+        ],
+      },
     },
     {
       label: 'IP版本',
       field: 'ip_version',
       isDefaultShow: true,
+      render: ({ cell }: { cell: string }) => IP_VERSION_MAP[cell],
+      sort: true,
     },
     {
       label: '云厂商',
       field: 'vendor',
+      render({ cell }: { cell: string }) {
+        return h('span', [CloudType[cell] || '--']);
+      },
+      sort: true,
     },
     {
       label: '地域',
       field: 'region',
+      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell) || '--',
+      sort: true,
     },
     {
       label: '可用区域',
-      field: 'zone',
-    },
-    {
-      label: '类型',
-      field: 'type',
+      field: 'zones',
+      render: ({ cell }: { cell: string[] }) => cell?.join(','),
+      sort: true,
     },
     {
       label: '状态',
       field: 'status',
+      sort: true,
+      render: ({ cell }: { cell: string }) => {
+        let icon = StatusSuccess;
+        switch (cell) {
+          case '创建中':
+            icon = StatusLoading;
+            break;
+          case '正常运行':
+            icon = StatusSuccess;
+            break;
+        }
+        return cell ? (
+          <div class='status-column-cell'>
+            <img class={`status-icon${cell === 'binding' ? ' spin-icon' : ''}`} src={icon} alt='' />
+            <span>{cell}</span>
+          </div>
+        ) : (
+          '--'
+        );
+      },
     },
     {
-      label: '所属网络',
-      field: 'vpc_id',
+      label: '所属vpc',
+      field: 'cloud_vpc_id',
+      sort: true,
+    },
+  ];
+
+  const listenerColumns = [
+    getLinkField({
+      type: 'listener',
+      label: '监听器名称',
+      field: 'name',
+      render: (data) => (
+        <Button
+          text
+          theme='primary'
+          onClick={renderFieldPushState(
+            {
+              name: LBRouteName.listener,
+              params: { id: data.id },
+              query: { ...route.query, type: 'detail', protocol: data.protocol },
+            },
+            () => {
+              loadBalancerStore.setLbTreeSearchTarget({
+                ...data,
+                searchK: 'listener_name',
+                searchV: data.name,
+                type: 'listener',
+              });
+            },
+          )}>
+          {data.name || '--'}
+        </Button>
+      ),
+    }),
+    {
+      label: '监听器ID',
+      field: 'cloud_id',
+    },
+    {
+      label: '协议',
+      field: 'protocol',
+      isDefaultShow: true,
+    },
+    {
+      label: '端口',
+      field: 'port',
+      isDefaultShow: true,
+    },
+    {
+      label: '均衡方式',
+      field: 'scheduler',
+      isDefaultShow: true,
+      render: ({ cell }: { cell: string }) => SCHEDULER_MAP[cell] || '--',
+    },
+    {
+      label: '域名数量',
+      field: 'domain_num',
+      isDefaultShow: true,
+    },
+    {
+      label: 'URL数量',
+      field: 'url_num',
+      isDefaultShow: true,
+    },
+    {
+      label: '同步状态',
+      field: 'binding_status',
+      isDefaultShow: true,
+      render: ({ cell }: { cell: string }) => {
+        let icon = StatusSuccess;
+        switch (cell) {
+          case 'binding':
+            icon = StatusLoading;
+            break;
+          case 'success':
+            icon = StatusSuccess;
+            break;
+        }
+        return cell ? (
+          <div class='status-column-cell'>
+            <img class={`status-icon${cell === 'binding' ? ' spin-icon' : ''}`} src={icon} alt='' />
+            <span>{CLB_BINDING_STATUS[cell]}</span>
+          </div>
+        ) : (
+          '--'
+        );
+      },
     },
   ];
 
@@ -1193,108 +1373,176 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       onlyShowOnList: true,
       align: 'right',
     },
-    getLinkField('target_group_name', '目标组名称'),
+    getLinkField({
+      type: 'name',
+      label: '目标组名称',
+      field: 'name',
+      idFiled: 'name',
+      onlyShowOnList: false,
+      render: ({ id, name }) => (
+        <Button
+          text
+          theme='primary'
+          onClick={renderFieldPushState(
+            {
+              name: LBRouteName.tg,
+              params: { id },
+              query: { ...route.query, type: 'detail' },
+            },
+            () => {
+              loadBalancerStore.setTgSearchTarget(name);
+            },
+          )}>
+          {name}
+        </Button>
+      ),
+    }),
     {
       label: '关联的负载均衡',
-      field: 'clb_name',
+      field: 'lb_name',
       isDefaultShow: true,
+      render({ cell }: any) {
+        return cell?.trim() || '--';
+      },
     },
     {
       label: '绑定监听器数量',
-      field: 'listener_count',
+      field: 'listener_num',
       isDefaultShow: true,
-      sort: true,
     },
     {
       label: '协议',
       field: 'protocol',
+      render({ cell }: any) {
+        return cell?.trim() || '--';
+      },
       isDefaultShow: true,
-      filter: true,
+      sort: true,
+      filter: {
+        list: [
+          { value: 'TCP', text: 'TCP' },
+          { value: 'UDP', text: 'UDP' },
+          { value: 'HTTP', text: 'HTTP' },
+          { value: 'HTTPS', text: 'HTTPS' },
+        ],
+      },
     },
     {
       label: '端口',
       field: 'port',
       isDefaultShow: true,
-      filter: true,
+      sort: true,
+    },
+    {
+      label: '健康检查',
+      field: 'health_check.health_switch',
+      isDefaultShow: true,
+      filter: {
+        list: [
+          { value: 1, text: '已开启' },
+          { value: 0, text: '未开启' },
+        ],
+      },
+      render({ cell }: { cell: Number }) {
+        return cell ? <bk-tag theme='success'>已开启</bk-tag> : <bk-tag>未开启</bk-tag>;
+      },
     },
     {
       label: '云厂商',
       field: 'vendor',
+      render({ cell }: { cell: string }) {
+        return h('span', [CloudType[cell] || '--']);
+      },
+      sort: true,
+      filter: {
+        list: [{ value: VendorEnum.TCLOUD, text: VendorMap[VendorEnum.TCLOUD] }],
+      },
     },
     {
       label: '地域',
       field: 'region',
-    },
-    {
-      label: '可用区域',
-      field: 'zone',
-    },
-    {
-      label: '资源类型',
-      field: 'type',
+      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell) || '--',
+      sort: true,
     },
     {
       label: '所属VPC',
-      field: 'vpc_id',
+      field: 'cloud_vpc_id',
+      sort: true,
     },
     {
       label: '健康检查端口',
-      field: 'health_check_port',
-    },
-    {
-      label: 'IP地址类型',
-      field: 'ip_type',
+      field: 'health_check',
+      render: ({ cell }: any) => {
+        const { health_num, un_health_num } = cell;
+        const total = health_num + un_health_num;
+        if (!health_num || !un_health_num) return '--';
+        return (
+          <div class='port-status-col'>
+            <span class={un_health_num ? 'un-health' : total ? 'health' : 'special-health'}>{un_health_num}</span>/
+            <span>{health_num + un_health_num}</span>
+          </div>
+        );
+      },
     },
   ];
 
   const rsConfigColumns = [
     {
       label: '内网IP',
-      field: 'privateIp',
+      field: 'private_ip_address',
       isDefaultShow: true,
+      render: ({ data }: any) => {
+        return [
+          ...(data.private_ipv4_addresses || []),
+          ...(data.private_ipv6_addresses || []),
+          // 更新目标组detail中的rs字段
+          ...(data.private_ip_address || []),
+        ].join(',');
+      },
     },
     {
       label: '公网IP',
-      field: 'publicIp',
+      field: 'public_ip_address',
+      render: ({ data }: any) => {
+        return (
+          [
+            ...(data.public_ipv4_addresses || []),
+            ...(data.public_ipv6_addresses || []),
+            // 更新目标组detail中的rs字段
+            ...(data.public_ip_address || []),
+          ].join(',') || '--'
+        );
+      },
     },
     {
       label: '名称',
       field: 'name',
       isDefaultShow: true,
+      render: ({ data }: any) => {
+        return data.name || data.inst_name;
+      },
     },
     {
       label: '地域',
       field: 'region',
+      render: ({ cell }: { cell: string }) => getRegionName(VendorEnum.TCLOUD, cell) || '--',
     },
     {
       label: '资源类型',
-      field: 'resourceType',
+      field: 'inst_type',
+      render: ({ data }: any) => {
+        return data.machine_type || data.inst_type;
+      },
     },
     {
-      label: '所属网络',
-      field: 'network',
+      label: '所属VPC',
+      field: 'cloud_vpc_ids',
+      isDefaultShow: true,
+      render: ({ cell }: { cell: string[] }) => cell?.join(','),
     },
   ];
 
   const domainColumns = [
-    {
-      label: '协议',
-      field: 'protocol',
-      isDefaultShow: true,
-      filter: true,
-    },
-    {
-      label: '端口',
-      field: 'port',
-      isDefaultShow: true,
-      filter: true,
-    },
-    {
-      label: '轮询方式',
-      field: 'polling_method',
-      isDefaultShow: true,
-      filter: true,
-    },
     {
       label: 'URL数量',
       field: 'url_count',
@@ -1305,99 +1553,115 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '同步状态',
       field: 'sync_status',
       isDefaultShow: true,
-      filter: true,
       render: ({ cell }: { cell: string }) => {
-        let icon;
+        let icon = StatusSuccess;
         switch (cell) {
-          case '绑定中':
+          case 'binding':
             icon = StatusLoading;
             break;
-          case '成功':
+          case 'success':
             icon = StatusSuccess;
             break;
-          case '失败':
-            icon = StatusFailure;
-            break;
-          case '部分成功':
-            icon = StatusPartialSuccess;
-            break;
         }
-        return (
+        return cell ? (
           <div class='status-column-cell'>
-            <img class={`status-icon${cell === '绑定中' ? ' spin-icon' : ''}`} src={icon} alt='' />
-            <span
-              class={cell === '部分成功' ? 'partial-success-status-text' : ''}
-              v-bk-tooltips={{
-                content: '成功 89 个，失败 105 个',
-                disabled: cell !== '部分成功',
-              }}>
-              {cell}
-            </span>
+            <img class={`status-icon${cell === 'binding' ? ' spin-icon' : ''}`} src={icon} alt='' />
+            <span>{CLB_BINDING_STATUS[cell]}</span>
           </div>
+        ) : (
+          '--'
         );
       },
     },
   ];
 
   const targetGroupListenerColumns = [
-    {
+    getLinkField({
+      type: 'targetGroup',
       label: '绑定的监听器',
-      field: 'listener',
-      isDefaultShow: true,
-    },
+      field: 'lbl_name',
+      render: ({ lbl_id, lbl_name, protocol }: any) => (
+        <Button
+          text
+          theme='primary'
+          onClick={renderFieldPushState({
+            name: LBRouteName.listener,
+            params: { id: lbl_id },
+            query: {
+              ...route.query,
+              type: 'detail',
+              protocol,
+            },
+          })}>
+          {lbl_name}
+        </Button>
+      ),
+    }),
     {
       label: '关联的负载均衡',
-      field: 'loadBalancer',
+      field: 'lb_name',
       isDefaultShow: true,
+      width: 300,
+      render: ({ data }: any) => {
+        const {
+          lb_name,
+          private_ipv4_addresses,
+          private_ipv6_addresses,
+          public_ipv4_addresses,
+          public_ipv6_addresses,
+        } = data;
+        if (public_ipv4_addresses.length > 0) {
+          return `${lb_name}（${public_ipv4_addresses.join(',')}）`;
+        }
+        if (public_ipv6_addresses.length > 0) {
+          return `${lb_name}（${public_ipv6_addresses.join(',')}）`;
+        }
+        if (private_ipv4_addresses.length > 0) {
+          return `${lb_name}（${private_ipv4_addresses.join(',')}）`;
+        }
+        if (private_ipv6_addresses.length > 0) {
+          return `${lb_name}（${private_ipv6_addresses.join(',')}）`;
+        }
+      },
     },
     {
       label: '关联的URL',
       field: 'url',
       isDefaultShow: true,
-    },
-    {
-      label: '资源类型',
-      field: 'resourceType',
-      isDefaultShow: true,
+      render: ({ cell }: { cell: string }) => cell || '--',
     },
     {
       label: '协议',
       field: 'protocol',
       isDefaultShow: true,
-      filter: true,
+      filter: {
+        list: [
+          { value: 'TCP', text: 'TCP' },
+          { value: 'UDP', text: 'UDP' },
+          { value: 'HTTP', text: 'HTTP' },
+          { value: 'HTTPS', text: 'HTTPS' },
+        ],
+      },
     },
     {
       label: '端口',
       field: 'port',
       isDefaultShow: true,
-      filter: true,
     },
     {
       label: '异常端口数',
-      field: 'abnormalPortCount',
+      field: 'healthCheck',
       isDefaultShow: true,
-      sort: true,
-    },
-    {
-      label: '所在VPC',
-      field: 'vpc',
-      isDefaultShow: true,
-    },
-    {
-      label: '云厂商',
-      field: 'cloudProvider',
-    },
-    {
-      label: '地域',
-      field: 'region',
-    },
-    {
-      label: '可用区域',
-      field: 'availabilityZone',
-    },
-    {
-      label: 'IP地址类型',
-      field: 'ipAddressType',
+      render: ({ cell }: any) => {
+        if (!cell) return '--';
+        const { health_num, un_health_num } = cell;
+        return (
+          <div class='port-status-col'>
+            <span class={un_health_num ? 'un-health' : 'health'}>{un_health_num}</span>/
+            <span>{health_num + un_health_num}</span>
+          </div>
+        );
+      },
     },
   ];
 
@@ -1411,23 +1675,16 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: 'URL路径',
-      field: 'urlPath',
+      field: 'url',
       isDefaultShow: true,
-    },
-    {
-      label: '协议',
-      field: 'protocol',
-      isDefaultShow: true,
-    },
-    {
-      label: '端口',
-      field: 'port',
-      isDefaultShow: true,
+      sort: true,
     },
     {
       label: '轮询方式',
-      field: 'pollingMethod',
+      field: 'scheduler',
       isDefaultShow: true,
+      render: ({ cell }: { cell: string }) => SCHEDULER_MAP[cell] || '--',
+      sort: true,
     },
   ];
 
@@ -1443,8 +1700,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '云厂商',
       field: 'vendor',
-      render: ({ cell }: { cell: string }) => {
-        return CloudType[cell];
+      render({ cell }: { cell: string }) {
+        return h('span', [CloudType[cell] || '--']);
       },
     },
     {
@@ -1454,37 +1711,41 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         list: [
           {
             text: '服务器证书',
-            value: 'SVR',
+            value: '服务器证书',
           },
           {
             text: '客户端CA证书',
-            value: 'CA',
+            value: '客户端CA证书',
           },
         ],
-        checked: [],
-      },
-      render: ({ cell }: { cell: string }) => {
-        return cell === 'SVR' ? '服务器证书' : '客户端CA证书';
       },
     },
     {
       label: '域名',
       field: 'domain',
       render: ({ cell }: { cell: string[] }) => {
-        return cell.join(';');
+        return cell?.join(';') || '--';
       },
     },
     {
       label: '上传时间',
       field: 'cloud_created_time',
       sort: true,
-      render: ({ cell }: { cell: string }) => timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => {
+        // 由于云上返回的是(UTC+8)时间, 所以先转零时区
+        const utcTime = dayjs(cell).subtract(8, 'hour');
+        return timeFormatter(utcTime);
+      },
     },
     {
       label: '过期时间',
       field: 'cloud_expired_time',
       sort: true,
-      render: ({ cell }: { cell: string }) => timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => {
+        // 由于云上返回的是(UTC+8)时间, 所以先转零时区
+        const utcTime = dayjs(cell).subtract(8, 'hour');
+        return timeFormatter(utcTime);
+      },
     },
     {
       label: '证书状态',
@@ -1493,41 +1754,28 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         list: [
           {
             text: '正常',
-            value: '1',
+            value: '正常',
           },
           {
             text: '已过期',
-            value: '3',
+            value: '已过期',
           },
         ],
-        checked: [],
       },
-      render: ({ data, cell }: { data: any; cell: string }) => {
+      render: ({ cell }: { cell: string }) => {
         let icon;
-        const getStatusText = (vendor: VendorEnum, cert_status: string) => {
-          switch (vendor) {
-            case VendorEnum.TCLOUD:
-              switch (cert_status) {
-                case '1':
-                  return '正常';
-                case '3':
-                  return '已过期';
-              }
-              break;
-          }
-        };
         switch (cell) {
-          case '1':
+          case '正常':
             icon = StatusNormal;
             break;
-          case '3':
+          case '已过期':
             icon = StatusAbnormal;
             break;
         }
         return (
           <div class='status-column-cell'>
             <img class='status-icon' src={icon} alt='' />
-            <span>{getStatusText(data.vendor, cell)}</span>
+            <span>{cell}</span>
           </div>
         );
       },
@@ -1563,7 +1811,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     securityCommon: securityCommonColumns,
     eips: eipColumns,
     operationRecord: operationRecordColumns,
-    clbs: clbsColumns,
+    lb: lbColumns,
+    listener: listenerColumns,
     targetGroup: targetGroupColumns,
     rsConfig: rsConfigColumns,
     domain: domainColumns,

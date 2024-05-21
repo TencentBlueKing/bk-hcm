@@ -50,23 +50,23 @@
   .module-page-container {
     height: calc(100% - 52px);
   }
+}
 
-  .has-selection {
-    .bk-table .bk-table-head .bk-checkbox {
+.has-selection {
+  .bk-table .bk-table-head .bk-checkbox {
+    vertical-align: middle;
+  }
+  .bk-table .bk-table-head tr th:nth-of-type(2) .cell {
+    padding-left: 8px;
+  }
+  .bk-table .bk-table-body .cell.selection {
+    text-align: right;
+    .bk-checkbox {
       vertical-align: middle;
     }
-    .bk-table .bk-table-head tr th:nth-of-type(2) .cell{
-      padding-left: 8px;
-    }
-    .bk-table .bk-table-body .cell.selection {
-      text-align: right;
-      .bk-checkbox {
-        vertical-align: middle;
-      }
-    }
-    .bk-table .bk-table-body tr td:nth-of-type(2) .cell {
-      padding-left: 8px;
-    }
+  }
+  .bk-table .bk-table-body tr td:nth-of-type(2) .cell {
+    padding-left: 8px;
   }
 }
 
@@ -79,21 +79,42 @@
 }
 
 .operate-groups {
-  span {
-    color: #3a84ff;
-    cursor: pointer;
-
+  .bk-button {
     &:not(:last-child) {
-      margin-right: 16px;
+      margin-right: 10px;
     }
   }
 }
 
-.operate-text-btn, .link-text-btn {
+.operate-text-btn,
+.link-text-btn {
   color: #3a84ff;
   cursor: pointer;
 }
 
 .f20 {
   font-size: 20px;
+}
+
+// 负载均衡需求下的通用样式
+.more-action-dropdown-menu {
+  padding: 0 !important;
+  .dropdown-list {
+    padding: 4px 0;
+    .dropdown-item {
+      min-width: 58px;
+      padding: 0 12px;
+      line-height: 32px;
+      cursor: pointer;
+
+      &:hover {
+        background-color: #f5f7fa;
+      }
+
+      &.disabled {
+        color: #dcdee5;
+        cursor: not-allowed;
+      }
+    }
+  }
 }

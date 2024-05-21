@@ -73,7 +73,11 @@ const getAccoutList = async (bizs?: number) => {
     accountList.value.push(...(res?.data?.details || []));
   }
   // cert filter, if support other clouds, remove this line
-  if ((isResourcePage && route.query.type === 'certs') || (isBusinessPage && route.path.includes('cert'))) {
+  if (
+    (isResourcePage && route.query.type === 'certs') ||
+    (isBusinessPage && route.path.includes('cert')) ||
+    ['lb', 'targetGroup'].includes(route.meta.applyRes as string)
+  ) {
     accountList.value = accountList.value.filter((item) => item.vendor === 'tcloud');
   }
   loading.value = false;

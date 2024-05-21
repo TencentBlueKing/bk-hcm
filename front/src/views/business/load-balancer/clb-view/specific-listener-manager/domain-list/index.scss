@@ -1,4 +1,6 @@
 .domain-list-page {
+  height: 100%;
+
   .set-default-operation-wrap {
     display: flex;
     align-items: center;
@@ -10,6 +12,9 @@
     }
     .set-default-btn {
       display: none;
+    }
+    .setting-btn {
+      display: block;
     }
   }
 

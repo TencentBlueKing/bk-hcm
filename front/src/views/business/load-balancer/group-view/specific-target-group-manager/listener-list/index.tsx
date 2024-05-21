@@ -1,126 +1,95 @@
-import { defineComponent } from 'vue';
+import { defineComponent, watch } from 'vue';
+// import hooks
 import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+// import stores
+import { useBusinessStore, useLoadBalancerStore } from '@/store';
+import { APPLICATION_LAYER_LIST } from '@/constants';
 import './index.scss';
 
 export default defineComponent({
   name: 'ListenerList',
   setup() {
+    // use stores
+    const loadBalancerStore = useLoadBalancerStore();
+    const businessStore = useBusinessStore();
     const { columns, settings } = useColumns('targetGroupListener');
-    const tableData = [
-      {
-        listener: 'HTTP Listener A',
-        loadBalancer: 'Load Balancer 1',
-        url: 'http://example.com',
-        resourceType: 'VM',
-        protocol: 'HTTP',
-        port: '80',
-        abnormalPortCount: '2',
-        vpc: 'VPC-1',
-        cloudProvider: 'AWS',
-        region: 'us-east-1',
-        availabilityZone: 'us-east-1a',
-        ipAddressType: 'Public',
-      },
-      {
-        listener: 'HTTPS Listener B',
-        loadBalancer: 'Load Balancer 2',
-        url: 'https://example.com',
-        resourceType: 'Container',
-        protocol: 'HTTPS',
-        port: '443',
-        abnormalPortCount: '0',
-        vpc: 'VPC-2',
-        cloudProvider: 'Azure',
-        region: 'west-europe',
-        availabilityZone: 'eu-west-3c',
-        ipAddressType: 'Private',
-      },
-      {
-        listener: 'TCP Listener C',
-        loadBalancer: 'Load Balancer 3',
-        url: 'tcp://example.org',
-        resourceType: 'Bare-metal',
-        protocol: 'TCP',
-        port: '22',
-        abnormalPortCount: '5',
-        vpc: 'VPC-3',
-        cloudProvider: 'GCP',
-        region: 'asia-northeast1',
-        availabilityZone: 'asia-northeast1-a',
-        ipAddressType: 'Elastic',
-      },
-    ];
-    const searchData = [
-      {
-        name: '绑定的监听器',
-        id: 'listener',
-      },
-      {
-        name: '关联的负载均衡',
-        id: 'loadBalancer',
-      },
-      {
-        name: '关联的URL',
-        id: 'url',
-      },
-      {
-        name: '资源类型',
-        id: 'resourceType',
-      },
-      {
-        name: '协议',
-        id: 'protocol',
-      },
-      {
-        name: '端口',
-        id: 'port',
-      },
-      {
-        name: '异常端口数',
-        id: 'abnormalPortCount',
-      },
-      {
-        name: '所在VPC',
-        id: 'vpc',
-      },
-      {
-        name: '云厂商',
-        id: 'cloudProvider',
-      },
-      {
-        name: '地域',
-        id: 'region',
-      },
-      {
-        name: '可用区域',
-        id: 'availabilityZone',
-      },
-      {
-        name: '资源类型',
-        id: 'resourceType',
-      },
-      {
-        name: 'IP地址类型',
-        id: 'ipAddressType',
-      },
-    ];
+    // const searchData = [
+    //   {
+    //     name: '关联的URL',
+    //     id: 'url',
+    //   },
+    // ];
 
-    const { CommonTable } = useTable({
+    /**
+     * 异步请求端口健康信息
+     */
+    const asyncGetTargetsHealth = async (dataList: any) => {
+      const cloud_lb_ids = dataList.map(({ cloud_lb_id }: any) => cloud_lb_id);
+      if (cloud_lb_ids.length === 0) return;
+      // 查询指定的目标组绑定的负载均衡下的端口健康信息
+      const res = await businessStore.asyncGetTargetsHealth(loadBalancerStore.targetGroupId, {
+        cloud_lb_ids,
+      });
+      /*
+        构建映射关系:
+        1. protocol 如果为 "HTTP"/"HTTPS" 用 cloud_lb_id+cloud_rule_id 作为 key, cloud_rule_id 同级的 health_check 作为 value
+        2. protocol 为其他值, 用 cloud_lb_id+cloud_lbl_id 作为key, cloud_lbl_id 同级的 health_check 作为 value
+      */
+      const healthCheckMap = {};
+      res.data.details.forEach(({ cloud_lb_id, listeners }: any) => {
+        listeners.forEach((listener: any) => {
+          const { protocol, cloud_lbl_id, health_check } = listener;
+          if (APPLICATION_LAYER_LIST.includes(protocol)) {
+            // 七层
+            const { rules } = listener;
+            // 如果rules为null, 则表明监听器没有绑定rs, 没有端口数据
+            rules?.forEach(({ cloud_rule_id, health_check }: any) => {
+              healthCheckMap[`${cloud_lb_id}|${cloud_rule_id}`] = health_check;
+            });
+          } else {
+            // 四层
+            healthCheckMap[`${cloud_lb_id}|${cloud_lbl_id}`] = health_check;
+          }
+        });
+      });
+      // 根据映射关系进行匹配, 将 healthCheck 添加到 dataList 中并返回
+      return dataList.map((data: any) => {
+        const { cloud_lb_id, cloud_id } = data;
+        const healthCheck = healthCheckMap[`${cloud_lb_id}|${cloud_id}`];
+        if (healthCheck) {
+          return { ...data, healthCheck };
+        }
+        return { ...data, healthCheck: null };
+      });
+    };
+
+    const { CommonTable, getListData } = useTable({
       searchOptions: {
-        searchData,
+        disabled: true,
       },
       tableOptions: {
         columns,
-        reviewData: tableData,
         extra: {
           settings: settings.value,
         },
       },
       requestOption: {
-        type: '',
+        type: `vendors/tcloud/target_groups/${loadBalancerStore.targetGroupId}/rules`,
+        resolveDataListCb(dataList: any[]) {
+          return asyncGetTargetsHealth(dataList);
+        },
       },
     });
+
+    watch(
+      () => loadBalancerStore.targetGroupId,
+      (val) => {
+        if (!val) return;
+        getListData([], `vendors/tcloud/target_groups/${val}/rules`);
+      },
+    );
+
     return () => (
       <div class='listener-list-page'>
         <CommonTable></CommonTable>

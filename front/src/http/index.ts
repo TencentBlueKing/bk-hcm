@@ -204,7 +204,15 @@ function handleReject(error: any, config: any) {
   if (axios.isCancel(error)) {
     return Promise.reject(error);
   }
-
+  if (error.code === 2000000 && error.message.includes('do not support create IPv6 full chain loadbalancer')) {
+    Message({
+      theme: 'error',
+      message: '当前账号不支持购买IPv6，请联系云厂商开通, 参考文档https://cloud.tencent.com/document/product/214/39612',
+    });
+    return Promise.reject(
+      '当前账号不支持购买IPv6，请联系云厂商开通, 参考文档https://cloud.tencent.com/document/product/214/39612',
+    );
+  }
   http.queue.delete(config.requestId);
   if (config.globalError && error.response) {
     const { status, data } = error.response;
@@ -227,19 +235,24 @@ function handleReject(error: any, config: any) {
     }
 
     // messageError(nextError.message)
-    console.error(nextError.message);
     return Promise.reject(nextError);
   }
-  if (error.code !== 0 && error.code !== 2000009) Message({ theme: 'error', message: error.message });
-  console.error(error.message);
-  // bk_ticket失效后的登录弹框
-  if (error.code === 2000000 && (error.message === 'bk_ticket cookie don\'t exists' || error.message === 'bk_token cookie don\'t exists')) {    // 打开节流阀
-    isLoginValid = true;
-    InvalidLogin();
-  }
+  handleCustomErrorCode(error);
   return Promise.reject(error);
 }
 
+/**
+ * 处理自定义错误码
+ * @param error 异常
+ */
+function handleCustomErrorCode(error: any) {
+  switch (error.code) {
+    case 2000014:
+      Message({ message: '当前负载均衡正在变更中，云平台限制新的任务同时变更。', theme: 'error' });
+      return;
+  }
+  if (error.code !== 0 && error.code !== 2000009) Message({ theme: 'error', message: error.message });
+}
 
 /**
  * 初始化本系统 http 请求的各项配置

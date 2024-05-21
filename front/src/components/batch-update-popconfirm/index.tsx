@@ -9,6 +9,19 @@ export default defineComponent({
       type: String as PropType<string>,
       required: true,
     },
+    disabled: {
+      type: Boolean,
+      default: false,
+    },
+    // 值类型: string/number
+    valueType: {
+      type: String as PropType<'string' | 'number'>,
+      default: 'number',
+    },
+    // 当valueType='number'时, 可以设置min,max
+    min: Number,
+    max: Number,
+    disabledTip: String,
   },
   emits: ['updateValue'],
   setup(props, { emit }) {
@@ -21,15 +34,34 @@ export default defineComponent({
       <PopConfirm
         width={280}
         trigger='click'
-        placement='right'
+        placement='bottom-start'
         extCls='batch-update-popconfirm'
-        onConfirm={handleConfirm}>
+        onConfirm={handleConfirm}
+        disabled={props.disabled}>
         {{
-          default: () => <i class='hcm-icon bkhcm-icon-batch-edit'></i>,
+          default: () => (
+            <i
+              class={`hcm-icon bkhcm-icon-batch-edit${props.disabled ? ' disabled' : ''}`}
+              v-bk-tooltips={{
+                content: props.disabledTip,
+                disabled: !props.disabled,
+              }}></i>
+          ),
           content: () => (
             <div class='batch-update-popconfirm-content'>
               <div class='title'>批量修改{props.title}</div>
-              <Input v-model={inputValue.value}></Input>
+              {props.valueType === 'number' ? (
+                <Input
+                  v-model={inputValue.value}
+                  type='number'
+                  class='no-number-control'
+                  min={props.min}
+                  max={props.max}
+                  placeholder={`${props.min}-${props.max}`}
+                />
+              ) : (
+                <Input v-model={inputValue.value} />
+              )}
             </div>
           ),
         }}

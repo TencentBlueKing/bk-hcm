@@ -11,7 +11,8 @@ export const useWhereAmI = (): {
 } => {
   const route = useRoute();
   const senario = computed(() => {
-    if (/^\/resource\/.+$/.test(route.path)) return Senarios.resource;
+    if (!route) return;
+    if (/^\/resource\/.+$/.test(route?.path)) return Senarios.resource;
     if (/^\/business\/.+$/.test(route.path)) return Senarios.business;
     if (/^\/service\/.+$/.test(route.path)) return Senarios.service;
     if (/^\/workbench\/.+$/.test(route.path)) return Senarios.workbench;

@@ -153,7 +153,7 @@ const componentMap = {
   routing: RoutingManage,
   image: ImageManage,
   'network-interface': NetworkInterfaceManage,
-  clbs: LoadBalancerManage,
+  clb: LoadBalancerManage,
   certs: CertManager,
 };
 
@@ -228,6 +228,12 @@ const handleAdd = () => {
     case 'subnet':
       router.push({
         path: '/resource/service-apply/subnet',
+        query: route.query,
+      });
+      break;
+    case 'clb':
+      router.push({
+        path: '/resource/service-apply/clb',
         query: route.query,
       });
       break;
@@ -502,7 +508,7 @@ onMounted(() => {
               @edit="handleEdit"
               v-model:isFormDataChanged="isFormDataChanged"
             >
-              <span v-if="['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clbs'].includes(activeTab)">
+              <span v-if="['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clb'].includes(activeTab)">
                 <bk-button
                   theme="primary"
                   class="new-button"
@@ -517,7 +523,7 @@ onMounted(() => {
                     }
                   "
                 >
-                  {{ ['host', 'clbs'].includes(activeTab) ? '购买' : '新建' }}
+                  {{ ['host', 'clb'].includes(activeTab) ? '购买' : '新建' }}
                 </bk-button>
               </span>
             </component>
@@ -546,7 +552,7 @@ onMounted(() => {
           >
             <span
               v-if="
-                ['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clbs'].includes(
+                ['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clb'].includes(
                   activeTab,
                 )
               "
@@ -563,7 +569,7 @@ onMounted(() => {
                   }
                 }"
               >
-                {{ ['host', 'clbs'].includes(activeTab) ? '购买' : '新建' }}
+                {{ ['host', 'clb'].includes(activeTab) ? '购买' : '新建' }}
               </bk-button>
             </span>
           </component>
@@ -742,5 +748,8 @@ onMounted(() => {
 }
 .mw88 {
   min-width: 88px;
+}
+.table-new-row td {
+  background-color: #f2fff4 !important;
 }
 </style>

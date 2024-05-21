@@ -5,7 +5,7 @@ import './index.scss';
 import { VendorEnum } from '@/common/constant';
 import { DoublePlainObject, FilterType } from '@/typings';
 import { useTable } from '@/hooks/useTable/useTable';
-import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
 import { useAccountStore, useResourceStore } from '@/store';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
@@ -14,16 +14,17 @@ import CommonSideslider from '@/components/common-sideslider';
 import AccountSelector from '@/components/account-selector/index.vue';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 import Confirm from '@/components/confirm';
-
+import { getTableNewRowClass } from '@/common/util';
+import PermissionDialog from '@/components/permission-dialog';
+import { useVerify } from '@/hooks';
 const { FormItem } = Form;
-
 export default defineComponent({
   name: 'CertManager',
   props: {
     filter: Object as PropType<FilterType>,
   },
   setup(props) {
-    const { isResourcePage, isBusinessPage } = useWhereAmI();
+    const { isResourcePage, isBusinessPage, whereAmI } = useWhereAmI();
     const accountStore = useAccountStore();
     const resourceStore = useResourceStore();
     const resourceAccountStore = useResourceAccountStore();
@@ -51,13 +52,27 @@ export default defineComponent({
           render: ({ data }: { data: any }) => (
             <Button
               text
+              class={`${!hasDeleteCertPermission.value ? 'hcm-no-permision-text-btn' : ''}`}
               theme='primary'
-              onClick={() => handleDeleteCert(data)}
-              disabled={isResourcePage && data.bk_biz_id !== -1}
-              v-bk-tooltips={{
-                content: '该证书已分配业务, 仅可在业务下操作',
-                disabled: isBusinessPage || data.bk_biz_id === -1,
-              }}>
+              onClick={() => {
+                if (!hasDeleteCertPermission.value) {
+                  handleAuth(`${isBusinessPage ? 'biz_' : ''}cert_resource_delete`);
+                } else {
+                  handleDeleteCert(data);
+                }
+              }}
+              disabled={hasDeleteCertPermission.value && isResourcePage && data.bk_biz_id !== -1}
+              v-bk-tooltips={
+                hasDeleteCertPermission.value && isResourcePage && data.bk_biz_id !== -1
+                  ? {
+                      content: '该证书已分配业务, 仅可在业务下操作',
+                      disabled: !(hasDeleteCertPermission.value && isResourcePage && data.bk_biz_id !== -1),
+                    }
+                  : {
+                      content: '无权限进行此操作',
+                      disabled: hasDeleteCertPermission.value,
+                    }
+              }>
               删除
             </Button>
           ),
@@ -97,6 +112,7 @@ export default defineComponent({
           isRowSelectEnable,
           onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
           onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
+          rowClass: getTableNewRowClass(),
         },
       },
       requestOption: {
@@ -105,10 +121,20 @@ export default defineComponent({
           sort: 'cloud_created_time',
           order: 'DESC',
         },
+        async resolveDataListCb(dataList: any[]) {
+          if (dataList.length === 0) return;
+          return dataList.map((item: any) => {
+            // 与表头筛选配合
+            item.cert_type = item.cert_type === 'SVR' ? '服务器证书' : '客户端CA证书';
+            item.cert_status = item.cert_status === '1' ? '正常' : '已过期';
+            return item;
+          });
+        },
       },
       bizFilter: props.filter,
     });
     const isCertUploadSidesliderShow = ref(false);
+    const isLoading = ref(false);
     const formRef = ref();
     const formModel = reactive({
       account_id: '' as string, // 账户ID
@@ -118,6 +144,9 @@ export default defineComponent({
       public_key: '' as string, // 证书信息
       private_key: '' as string, // 私钥信息
     });
+    const formRules = {
+      name: [{ message: '不能超过200个字且不能为空', validator: (value: string) => value.trim().length <= 200 }],
+    };
 
     // 上传证书错误提示
     const uploadPublicKeyErrorText = ref('');
@@ -266,14 +295,19 @@ export default defineComponent({
     // 证书上传
     const handleCreateCert = async () => {
       await formRef.value.validate();
-      await resourceStore.create('certs', {
-        ...formModel,
-        public_key: btoa(formModel.public_key),
-        private_key: btoa(formModel.private_key),
-      });
-      Message({ theme: 'success', message: '证书上传成功' });
-      isCertUploadSidesliderShow.value = false;
-      await getListData();
+      isLoading.value = true;
+      try {
+        await resourceStore.create('certs', {
+          ...formModel,
+          public_key: btoa(formModel.public_key),
+          private_key: btoa(formModel.private_key),
+        });
+        Message({ theme: 'success', message: '证书上传成功' });
+        isCertUploadSidesliderShow.value = false;
+        await getListData();
+      } finally {
+        isLoading.value = false;
+      }
     };
     // 删除指定证书
     const handleDeleteCert = async (cert: any) => {
@@ -285,6 +319,29 @@ export default defineComponent({
       });
     };
 
+    // 权限 hooks
+    const {
+      showPermissionDialog,
+      handlePermissionConfirm,
+      handlePermissionDialog,
+      handleAuth,
+      permissionParams,
+      authVerifyData,
+    } = useVerify();
+
+    const hasCreateCertPermission = computed(() => {
+      if (whereAmI.value === Senarios.business) {
+        return authVerifyData.value?.permissionAction?.biz_cert_resource_create;
+      }
+      return authVerifyData.value?.permissionAction?.cert_resource_create;
+    });
+    const hasDeleteCertPermission = computed(() => {
+      if (whereAmI.value === Senarios.business) {
+        return authVerifyData.value?.permissionAction?.biz_cert_resource_delete;
+      }
+      return authVerifyData.value?.permissionAction?.cert_resource_delete;
+    });
+
     return () => (
       <div class={`cert-manager-page${isResourcePage ? ' has-selection' : ''}`}>
         <div class='common-card-wrap'>
@@ -292,7 +349,16 @@ export default defineComponent({
             {{
               operation: () => (
                 <>
-                  <Button class='mw88' theme='primary' onClick={showCreateCertSideslider}>
+                  <Button
+                    class={`mw88 ${hasCreateCertPermission.value ? '' : 'hcm-no-permision-btn'}`}
+                    theme={hasCreateCertPermission.value ? 'primary' : null}
+                    onClick={() => {
+                      if (!hasCreateCertPermission.value) {
+                        handleAuth(`${isBusinessPage ? 'biz_' : ''}cert_resource_create`);
+                      } else {
+                        showCreateCertSideslider();
+                      }
+                    }}>
                     上传证书
                   </Button>
                   <BatchDistribution
@@ -313,8 +379,9 @@ export default defineComponent({
           title='证书上传'
           width='640'
           onHandleSubmit={handleCreateCert}
+          isSubmitLoading={isLoading.value}
           class='cert-upload-sideslider'>
-          <Form ref={formRef} formType='vertical' model={formModel}>
+          <Form ref={formRef} formType='vertical' rules={formRules} model={formModel}>
             {formItemOptions.value.map(({ label, property, required, content, hidden }) => {
               if (hidden) return null;
               return (
@@ -325,6 +392,13 @@ export default defineComponent({
             })}
           </Form>
         </CommonSideslider>
+        {/* 申请权限 */}
+        <PermissionDialog
+          v-model:isShow={showPermissionDialog.value}
+          params={permissionParams.value}
+          onCancel={handlePermissionDialog}
+          onConfirm={handlePermissionConfirm}
+        />
       </div>
     );
   },

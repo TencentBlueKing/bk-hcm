@@ -16,6 +16,8 @@ export enum QueryRuleOPEnum {
   CS = 'cs',
   CIS = 'cis',
   JSON_EQ = 'json_eq',
+  JSON_NEQ = 'json_neq',
+  JSON_OVERLAPS = 'json_overlaps',
   OR = 'or',
   AND = 'and',
   JSON_CONTAINS = 'json_contains',

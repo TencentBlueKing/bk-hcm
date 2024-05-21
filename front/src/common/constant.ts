@@ -54,7 +54,7 @@ export const RESOURCE_TYPES = [
   },
   {
     name: '负载均衡',
-    type: 'clbs',
+    type: 'clb',
   },
   {
     name: '证书管理',
@@ -501,6 +501,8 @@ export const RESOURCE_TYPES_MAP = {
   zone: '可用区',
   azure_resource_group: '微软云资源组',
   argument_template: '参数模板',
+  cert: '证书',
+  load_balancer: '负载均衡',
 };
 
 export const RESOURCES_SYNC_STATUS_MAP = {
@@ -522,9 +524,54 @@ export const VendorMap = {
   [VendorEnum.TCLOUD]: '腾讯云',
 };
 
+export const VendorReverseMap = {
+  亚马逊云: VendorEnum.AWS,
+  微软云: VendorEnum.AZURE,
+  谷歌云: VendorEnum.GCP,
+  华为云: VendorEnum.HUAWEI,
+  腾讯云: VendorEnum.TCLOUD,
+};
+
 export const SYNC_STAUS_MAP = {
   a: '绑定中',
   b: '成功',
   c: '失败',
   d: '部分成功',
+};
+
+export const TARGET_GROUP_PROTOCOLS = ['TCP', 'UDP', 'HTTP', 'HTTPS'];
+
+export const LB_TYPE_MAP = {
+  OPEN: '公网',
+  INTERNAL: '内网',
+};
+
+export const CHARGE_TYPE = {
+  PREPAID: '包年包月',
+  POSTPAID_BY_HOUR: '按量计费',
+};
+
+export const LB_ISP = {
+  CMCC: '中国移动',
+  CUCC: '中国联通',
+  CTCC: '中国电信',
+  BGP: 'BGP',
+  INTERNAL: '内网流量',
+};
+
+export const CLB_SPECS = {
+  'clb.c1.small': '简约型',
+  'clb.c2.medium': '标准型规格',
+  'clb.c3.small': '高阶型1规格',
+  'clb.c3.medium': '高阶型2规格',
+  'clb.c4.small': '超强型1规格',
+  'clb.c4.medium': '超强型2规格',
+  'clb.c4.large': '超强型3规格',
+  'clb.c4.xlarge': '超强型4规格',
+};
+
+export const CLB_BINDING_STATUS = {
+  binding: '绑定中',
+  success: '已绑定',
+  failed: '未绑定',
 };

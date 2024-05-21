@@ -16,7 +16,7 @@ export enum DResourceType {
   subnets = 'subnets',
   vpcs = 'vpcs',
   templates = 'argument_templates',
-  clbs = 'clbs',
+  load_balancers = 'load_balancers',
   certs = 'certs',
 }
 
@@ -61,8 +61,8 @@ export const DResourceTypeMap = {
     key: 'template_ids',
     name: '参数模板',
   },
-  [DResourceType.clbs]: {
-    key: 'clb_ids',
+  [DResourceType.load_balancers]: {
+    key: 'lb_ids',
     name: '负载均衡',
   },
   [DResourceType.certs]: {

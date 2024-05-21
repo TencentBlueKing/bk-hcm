@@ -56,6 +56,12 @@ export const useCommonStore = defineStore({
 
       { type: 'recycle_bin', action: 'find', id: 'recycle_bin_find', path: '/resource/recyclebin' }, // 回收站查看权限
       { type: 'recycle_bin', action: 'recycle', id: 'recycle_bin_manage' }, // 回收站管理
+
+      // 证书权限
+      { type: 'cert', action: 'create', id: 'cert_resource_create' }, // 资源 证书上传
+      { type: 'cert', action: 'create', id: 'biz_cert_resource_create', bk_biz_id: 0 }, // 业务 证书上传
+      { type: 'cert', action: 'delete', id: 'cert_resource_delete' }, // 资源 证书删除
+      { type: 'cert', action: 'delete', id: 'biz_cert_resource_delete', bk_biz_id: 0 }, // 业务 证书删除
     ],
   }),
   actions: {

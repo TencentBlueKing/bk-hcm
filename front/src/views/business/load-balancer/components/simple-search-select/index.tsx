@@ -1,43 +1,57 @@
-import { defineComponent, ref } from 'vue';
+import { PropType, defineComponent, ref, watch } from 'vue';
 import { Popover, Input } from 'bkui-vue';
 import './index.scss';
 
 export default defineComponent({
   name: 'SimpleSearchSelect',
   props: {
-    searchValue: {
-      type: String,
-      required: true,
-    },
-    dataList: {
-      type: Array<{ id: string; name: string }>,
-    },
+    modelValue: String,
+    dataList: Array<{ id: string; name: string }>,
+    clearHandler: Function as PropType<(...args: any) => any>,
   },
-  emits: ['update:searchValue'],
+  emits: ['update:modelValue'],
   setup(props, ctx) {
-    const isShow = ref(false);
     const searchVal = ref('');
     const searchRef = ref();
+    const popoverRef = ref();
+
     const handleSearchDataClick = (e: MouseEvent) => {
       searchVal.value = `${e.target.dataset.name}：`;
-      isShow.value = false;
+      popoverRef.value.hide();
       searchRef.value.focus();
     };
-    const handleClick = () => {
-      isShow.value = true;
-    };
+
     const handleEnter = (v: string) => {
       const [searchName, searchVal] = v.split('：');
       const target = props.dataList.find((item) => item.name === searchName);
-      ctx.emit('update:searchValue', `${target.id}:${searchVal}`);
+      ctx.emit('update:modelValue', `${target.id}：${searchVal}`);
     };
+
     const handleClear = () => {
-      ctx.emit('update:searchValue', '');
-      isShow.value = true;
+      ctx.emit('update:modelValue', '');
+      popoverRef.value.hide();
+      typeof props.clearHandler === 'function' && props.clearHandler();
     };
+
+    watch(
+      () => props.modelValue,
+      (val) => {
+        if (val) {
+          const [searchK, searchV] = val.split('：');
+          const searchName = props.dataList.find((item) => item.id === searchK).name;
+          searchVal.value = `${searchName}：${searchV}`;
+        } else {
+          searchVal.value = '';
+        }
+      },
+      {
+        immediate: true,
+      },
+    );
+
     return () => (
       <div class='simple-search-select'>
-        <Popover trigger='click' isShow={isShow.value} theme='light' disableTeleport={true} arrow={false}>
+        <Popover trigger='click' theme='light' disableTeleport={true} arrow={false} ref={popoverRef}>
           {{
             default: () => (
               <Input
@@ -45,7 +59,6 @@ export default defineComponent({
                 type='search'
                 clearable
                 v-model={searchVal.value}
-                onClick={handleClick}
                 onEnter={handleEnter}
                 onClear={handleClear}
               />

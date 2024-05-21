@@ -1,17 +1,59 @@
-import { defineComponent, ref } from 'vue';
-import { Button, Tag } from 'bkui-vue';
-import { BkRadioGroup, BkRadioButton } from 'bkui-vue/lib/radio';
-import { Plus } from 'bkui-vue/lib/icon';
-import { useTable } from '@/hooks/useTable/useTable';
-import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
-import CommonSideslider from '@/components/common-sideslider';
-import DomainSidesliderContent from '../domain-sideslider-content';
+import { defineComponent, ref, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+// import components
+import { Button, Message, Tag } from 'bkui-vue';
+import { Plus, Spinner } from 'bkui-vue/lib/icon';
+import CommonLocalTable from '@/components/CommonLocalTable';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
+import Confirm from '@/components/confirm';
+// import stores
+import { useBusinessStore, useResourceStore, useLoadBalancerStore } from '@/store';
+// import custom hooks
+import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
+import { useI18n } from 'vue-i18n';
+import AddOrUpdateDomainSideslider from '../../components/AddOrUpdateDomainSideslider';
+// import utils
+import bus from '@/common/bus';
+// import constants
+import { APPLICATION_LAYER_LIST, LBRouteName } from '@/constants';
 import './index.scss';
 
 export default defineComponent({
   name: 'DomainList',
-  setup() {
+  props: { id: String, type: String, protocol: String },
+  setup(props) {
+    // use hooks
+    const router = useRouter();
+    const route = useRoute();
+    const { t } = useI18n();
+    const isBatchDeleteLoading = ref(false);
+    // use stores
+    const loadBalancerStore = useLoadBalancerStore();
+    const businessStore = useBusinessStore();
+    const resourceStore = useResourceStore();
+    const defaultDomain = ref('');
+    const isCheckDomainLoading = ref(false);
+    const { selections, handleSelectionChange, resetSelections } = useSelection();
+    const settingDomain = ref('');
+
+    const isLoading = ref(false);
+    // 搜索相关
+    const searchData = [
+      {
+        name: t('域名'),
+        id: 'domain',
+      },
+      {
+        name: t('URL数量'),
+        id: 'url_count',
+      },
+      {
+        name: t('同步状态'),
+        id: 'sync_status',
+      },
+    ];
+    // 表格相关
     const { columns, settings } = useColumns('domain');
     const tableColumns = [
       {
@@ -21,20 +63,65 @@ export default defineComponent({
         align: 'right',
       },
       {
-        label: '域名',
+        label: t('域名'),
         field: 'domain',
         isDefaultShow: true,
         render: ({ data, cell }: { data: any; cell: string }) => {
           return (
             <div class='set-default-operation-wrap'>
-              <span class='cell-value'>{cell}</span>
-              {data?.is_default ? (
+              <span
+                class='cell-value'
+                onClick={() => {
+                  router.push({
+                    name: LBRouteName.domain,
+                    params: { id: cell },
+                    query: { ...route.query, listener_id: route.params.id, type: undefined, protocol: undefined },
+                  });
+                  loadBalancerStore.setLbTreeSearchTarget({
+                    ...data,
+                    searchK: 'domain',
+                    searchV: cell,
+                    type: 'domain',
+                    lbl_id: route.params.id,
+                  });
+                }}>
+                {cell}
+              </span>
+              {data.domain === defaultDomain.value ? (
                 <Tag theme='info' class='default-tag'>
-                  默认
+                  {t('默认')}
                 </Tag>
               ) : (
-                <Button text theme='primary' class='set-default-btn'>
-                  设为默认
+                <Button
+                  text
+                  theme='primary'
+                  class={isCheckDomainLoading.value ? 'setting-btn' : 'set-default-btn'}
+                  onClick={async () => {
+                    isCheckDomainLoading.value = true;
+                    settingDomain.value = data.domain;
+                    try {
+                      await businessStore.updateDomains(loadBalancerStore.currentSelectedTreeNode.id, {
+                        ...data,
+                        default_server: true,
+                      });
+                      Message({
+                        message: '设置成功',
+                        theme: 'success',
+                      });
+                      defaultDomain.value = data.domain;
+                    } finally {
+                      isCheckDomainLoading.value = false;
+                      settingDomain.value = '';
+                    }
+                  }}>
+                  {isCheckDomainLoading.value
+                    ? settingDomain.value === data.domain && (
+                        <span>
+                          <Spinner fill='#3A84FF' width={12} height={12} />
+                          &nbsp;设置中...
+                        </span>
+                      )
+                    : t('设为默认')}
                 </Button>
               )}
             </div>
@@ -43,265 +130,159 @@ export default defineComponent({
       },
       ...columns,
       {
-        label: '操作',
+        label: t('操作'),
         width: 120,
-        render() {
+        render({ data }: any) {
           return (
             <div class='operate-groups'>
-              <span>编辑</span>
-              <span>删除</span>
+              <Button text theme='primary' onClick={() => bus.$emit('showAddDomainSideslider', data)}>
+                {t('编辑')}
+              </Button>
+              <Button
+                text
+                theme='primary'
+                disabled={data.domain === defaultDomain.value}
+                v-bk-tooltips={{
+                  content: '默认域名不允许删除',
+                  disabled: !(data.domain === defaultDomain.value),
+                }}
+                onClick={() => {
+                  const listenerId = loadBalancerStore.currentSelectedTreeNode.id;
+                  Confirm('请确定删除域名', `将删除域名【${data.domain}】`, async () => {
+                    await businessStore.batchDeleteDomains({ lbl_id: listenerId, domains: [data.domain] });
+                    Message({ message: '删除成功', theme: 'success' });
+                    bus.$emit('resetLbTree');
+                    getDomainList(listenerId);
+                  });
+                }}>
+                {t('删除')}
+              </Button>
             </div>
           );
         },
       },
     ];
-    const searchData: any = [
-      {
-        name: '域名',
-        id: 'domain',
-      },
-      {
-        name: '协议',
-        id: 'protocol',
-      },
-      {
-        name: '端口',
-        id: 'port',
-      },
-      {
-        name: '轮询方式',
-        id: 'polling_method',
-      },
-      {
-        name: 'URL数量',
-        id: 'url_count',
-      },
-      {
-        name: '同步状态',
-        id: 'sync_status',
-      },
-    ];
-    const { CommonTable } = useTable({
-      searchOptions: { searchData },
-      tableOptions: {
-        columns: tableColumns,
-        reviewData: [
-          {
-            domain: 'example.com',
-            protocol: 'HTTP',
-            port: '80',
-            polling_method: '轮询',
-            url_count: '10',
-            sync_status: '成功',
-            is_default: false,
-          },
-          {
-            domain: 'example.org',
-            protocol: 'HTTPS',
-            port: '443',
-            polling_method: '加权轮询',
-            url_count: '15',
-            sync_status: '失败',
-            is_default: false,
-          },
-          {
-            domain: 'example.net',
-            protocol: 'FTP',
-            port: '21',
-            polling_method: '源地址哈希',
-            url_count: '5',
-            sync_status: '部分成功',
-            is_default: true,
-          },
-          {
-            domain: 'example.edu',
-            protocol: 'HTTP',
-            port: '8080',
-            polling_method: '最少连接',
-            url_count: '8',
-            sync_status: '绑定中',
-            is_default: false,
-          },
-          {
-            domain: 'example.biz',
-            protocol: 'TCP',
-            port: '22',
-            polling_method: '随机',
-            url_count: '12',
-            sync_status: '成功',
-            is_default: false,
-          },
-        ],
-        extra: {
-          settings: settings.value,
-          'row-class': ({ sync_status }: { sync_status: string }) => {
-            if (sync_status === '绑定中') {
-              return 'binding-row';
-            }
-          },
-        },
-      },
-      requestOption: {
-        type: '',
-      },
-    });
+    const domainList = ref([]); // 域名列表
 
-    const isDomainSidesliderShow = ref(false);
-    const handleSubmit = () => {};
+    // 获取域名列表
+    const getDomainList = async (id: string) => {
+      isLoading.value = true;
+      try {
+        const res = await businessStore.getDomainListByListenerId(id);
+        defaultDomain.value = res.data.default_domain;
+        domainList.value = res.data.domain_list;
+      } finally {
+        isLoading.value = false;
+      }
+    };
+
+    // 获取监听器详情
+    const getListenerDetail = async (id: string) => {
+      const { data } = await resourceStore.detail('listeners', id);
+      loadBalancerStore.setCurrentSelectedTreeNode(data);
+    };
+
+    watch(
+      [() => props.id, () => props.type],
+      ([id, type]) => {
+        // 清空选中项
+        resetSelections();
+        // 当id或type变更时, 重新请求数据
+        const { protocol } = props;
+        if (id && type === 'list') {
+          // 刷新或第一次访问页面时, 请求监听器详情
+          !loadBalancerStore.currentSelectedTreeNode?.id && getListenerDetail(id);
+          APPLICATION_LAYER_LIST.includes(protocol) && getDomainList(id);
+        }
+      },
+      { immediate: true },
+    );
 
     // 批量删除
     const isBatchDeleteDialogShow = ref(false);
-    const radioGroupValue = ref(false);
     const tableProps = {
       columns: [
         {
-          label: '监听器名称',
-          field: 'listenerName',
+          label: t('域名'),
+          field: 'domain',
         },
-        {
-          label: '监听器ID',
-          field: 'listenerID',
-        },
-        {
-          label: '协议',
-          field: 'protocol',
-          filter: true,
-        },
-        {
-          label: '端口',
-          field: 'port',
-          filter: true,
-        },
-        {
-          label: '均衡方式',
-          field: 'balanceMode',
-          filter: true,
-        },
-        {
-          label: '是否绑定目标组',
-          field: 'isBoundToTargetGroup',
-          filter: true,
-          render: ({ cell }: { cell: boolean }) => {
-            return cell ? <Tag theme='success'>已绑定</Tag> : <Tag>未绑定</Tag>;
-          },
-        },
-        {
-          label: 'RS权重为O',
-          field: 'rsWeight',
-          sort: true,
-          align: 'right',
-        },
-        {
-          label: '',
-          width: 80,
-          align: 'right',
-          render: () => <i class='hcm-icon bkhcm-icon-minus-circle-shape batch-delete-listener-icon'></i>,
-        },
+        ...columns,
       ],
-      data: [
-        {
-          listenerName: '监听器A',
-          listenerID: 'ABC123',
-          protocol: 'HTTP',
-          port: 80,
-          balanceMode: '轮询',
-          isBoundToTargetGroup: true,
-          rsWeight: 1,
-        },
-        {
-          listenerName: '监听器B',
-          listenerID: 'DEF456',
-          protocol: 'HTTPS',
-          port: 443,
-          balanceMode: '最小连接数',
-          isBoundToTargetGroup: false,
-          rsWeight: 5,
-        },
-        {
-          listenerName: '监听器C',
-          listenerID: 'GHI789',
-          protocol: 'TCP',
-          port: 21,
-          balanceMode: '源IP',
-          isBoundToTargetGroup: true,
-          rsWeight: 10,
-        },
-      ],
-      searchData: [
-        {
-          name: '监听器名称',
-          id: 'listenerName',
-        },
-        {
-          name: '监听器ID',
-          id: 'listenerID',
-        },
-        {
-          name: '协议',
-          id: 'protocol',
-        },
-        {
-          name: '端口',
-          id: 'port',
-        },
-        {
-          name: '均衡方式',
-          id: 'balanceMode',
-        },
-        {
-          name: '是否绑定目标组',
-          id: 'isBoundToTargetGroup',
-        },
-        {
-          name: 'RS权重为O',
-          id: 'rsWeight',
-        },
-      ],
+      data: selections.value,
+      searchData,
     };
-    const handleBatchDelete = () => {
-      // batch delete handler
+    const handleBatchDelete = async () => {
+      isBatchDeleteLoading.value = true;
+      try {
+        await businessStore.batchDeleteDomains({
+          lbl_id: loadBalancerStore.currentSelectedTreeNode.id,
+          domains: selections.value.map(({ domain }) => domain),
+        });
+        Message({ message: '删除成功', theme: 'success' });
+        isBatchDeleteDialogShow.value = false;
+        getDomainList(loadBalancerStore.currentSelectedTreeNode.id);
+      } finally {
+        isBatchDeleteLoading.value = false;
+      }
     };
+
     return () => (
       <div class='domain-list-page has-selection'>
-        <CommonTable>
+        <CommonLocalTable
+          loading={isLoading.value}
+          tableOptions={{
+            rowKey: 'domain',
+            columns: tableColumns,
+            extra: {
+              settings: settings.value,
+              'row-class': ({ sync_status }: { sync_status: string }) => {
+                if (sync_status === '绑定中') {
+                  return 'binding-row';
+                }
+              },
+              onSelectionChange: (selections: any) => handleSelectionChange(selections, () => true),
+              onSelectAll: (selections: any) => handleSelectionChange(selections, () => true, true),
+            },
+          }}
+          tableData={domainList.value}
+          searchOptions={{
+            searchData,
+          }}>
           {{
             operation: () => (
               <>
-                <Button theme='primary' onClick={() => (isDomainSidesliderShow.value = true)}>
+                <Button theme='primary' onClick={() => bus.$emit('showAddDomainSideslider')} class='mr12'>
                   <Plus class='f20' />
-                  新增域名
+                  {t('新增域名')}
                 </Button>
-                <Button onClick={() => (isBatchDeleteDialogShow.value = true)}>批量删除</Button>
+                <Button onClick={() => (isBatchDeleteDialogShow.value = true)} disabled={!selections.value.length}>
+                  {t('批量删除')}
+                </Button>
               </>
             ),
           }}
-        </CommonTable>
-        <CommonSideslider
-          title='新建域名'
-          width={640}
-          v-model:isShow={isDomainSidesliderShow.value}
-          onHandleSubmit={handleSubmit}>
-          <DomainSidesliderContent />
-        </CommonSideslider>
+        </CommonLocalTable>
+        {/* domain 操作 dialog */}
+        <AddOrUpdateDomainSideslider
+          originPage='listener'
+          getListData={() => getDomainList(loadBalancerStore.currentSelectedTreeNode.id)}
+        />
         <BatchOperationDialog
+          isSubmitLoading={isBatchDeleteLoading.value}
           v-model:isShow={isBatchDeleteDialogShow.value}
-          title='批量删除监听器'
+          title='批量删除域名'
           theme='danger'
           confirmText='删除'
           tableProps={tableProps}
+          list={selections.value}
           onHandleConfirm={handleBatchDelete}>
           {{
             tips: () => (
               <>
-                已选择 <span class='blue'>97</span> 个监听器，其中 <span class='red'>22</span>{' '}
-                个监听器RS的权重均不为0，在删除监听器前，请确认是否有流量转发，仔细核对后，再提交删除。
+                已选择<span class='blue'>{selections.value.length}</span>个域名，其中
+                <span class='red'>{selections.value.filter(({ url_count }) => url_count > 0).length}</span>
+                个域名下存在URL路径。可以直接删除，域名和URL将一起删除。
               </>
-            ),
-            tab: () => (
-              <BkRadioGroup v-model={radioGroupValue.value}>
-                <BkRadioButton label={false}>权重为0</BkRadioButton>
-                <BkRadioButton label={true}>权重不为0</BkRadioButton>
-              </BkRadioGroup>
             ),
           }}
         </BatchOperationDialog>

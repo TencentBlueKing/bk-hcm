@@ -1,0 +1,46 @@
+.rs-config-table {
+  .rs-config-operation-wrap {
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+
+    .left-wrap {
+      display: flex;
+      align-items: center;
+
+      .hcm-icon {
+        margin-right: 5px;
+      }
+    }
+
+    .search-wrap {
+      width: 300px;
+    }
+
+    &.jc-right {
+      justify-content: flex-end;
+    }
+  }
+
+  .bkhcm-icon-batch-edit {
+    font-size: 14px;
+    margin-left: 8px;
+
+    &:hover {
+      color: #3a84ff;
+    }
+
+    &.disabled {
+      cursor: not-allowed;
+    }
+  }
+
+  .bkhcm-icon-minus-circle-shape {
+    font-size: 14px;
+    color: #c4c6cc;
+  }
+
+  .bk-form-item {
+    margin-bottom: 0;
+  }
+}

@@ -1,4 +1,5 @@
 // import { CogShape } from 'bkui-vue/lib/icon';
+import { LBRouteName } from '@/constants';
 import type { RouteRecordRaw } from 'vue-router';
 
 const businesseMenus: RouteRecordRaw[] = [
@@ -320,15 +321,83 @@ const businesseMenus: RouteRecordRaw[] = [
             path: 'clb-view',
             name: 'loadbalancer-view',
             component: () => import('@/views/business/load-balancer/clb-view/index'),
+            children: [
+              {
+                path: '',
+                name: LBRouteName.allLbs,
+                component: () => import('@/views/business/load-balancer/clb-view/all-clbs-manager/index'),
+                props(route) {
+                  return route.query;
+                },
+                meta: {
+                  type: 'all',
+                },
+              },
+              {
+                path: 'lb/:id',
+                name: LBRouteName.lb,
+                component: () => import('@/views/business/load-balancer/clb-view/specific-clb-manager/index'),
+                props(route) {
+                  return { ...route.params, ...route.query };
+                },
+                meta: {
+                  type: 'lb',
+                },
+              },
+              {
+                path: 'listener/:id',
+                name: LBRouteName.listener,
+                component: () => import('@/views/business/load-balancer/clb-view/specific-listener-manager/index'),
+                props(route) {
+                  return { ...route.params, ...route.query };
+                },
+                meta: {
+                  type: 'listener',
+                },
+              },
+              {
+                path: 'domain/:id',
+                name: LBRouteName.domain,
+                component: () => import('@/views/business/load-balancer/clb-view/specific-domain-manager/index'),
+                props(route) {
+                  return { ...route.params, ...route.query };
+                },
+                meta: {
+                  type: 'domain',
+                },
+              },
+            ],
           },
           {
             path: 'group-view',
             name: 'target-group-view',
             component: () => import('@/views/business/load-balancer/group-view/index'),
+            children: [
+              {
+                path: '',
+                name: LBRouteName.allTgs,
+                component: () => import('@/views/business/load-balancer/group-view/all-groups-manager/index'),
+                props(route) {
+                  return route.query;
+                },
+              },
+              {
+                path: ':id',
+                name: LBRouteName.tg,
+                component: () =>
+                  import('@/views/business/load-balancer/group-view/specific-target-group-manager/index'),
+                props(route) {
+                  return { ...route.params, ...route.query };
+                },
+              },
+            ],
+            meta: {
+              applyRes: 'targetGroup',
+            },
           },
         ],
         meta: {
-          activeKey: 'businessLoadBalancer',
+          activeKey: 'businessClb',
           icon: 'hcm-icon bkhcm-icon-loadbalancer',
         },
       },
@@ -351,7 +420,28 @@ const businesseMenus: RouteRecordRaw[] = [
       {
         path: '/business/record',
         name: '操作记录',
-        component: () => import('@/views/resource/resource-manage/operationRecord/index'),
+        children: [
+          {
+            path: '',
+            name: 'operationRecords',
+            component: () => import('@/views/resource/resource-manage/operationRecord/index'),
+            meta: {
+              activeKey: 'record',
+              isShowBreadcrumb: true,
+              icon: 'hcm-icon bkhcm-icon-operation-record',
+            },
+          },
+          {
+            path: 'detail',
+            name: 'operationRecordsDetail',
+            component: () => import('@/views/resource/resource-manage/operationRecord/RecordDetail/index'),
+            meta: {
+              activeKey: 'record',
+              isShowBreadcrumb: true,
+              icon: 'hcm-icon bkhcm-icon-cert',
+            },
+          },
+        ],
         meta: {
           activeKey: 'record',
           isShowBreadcrumb: true,
@@ -421,13 +511,14 @@ const businesseMenus: RouteRecordRaw[] = [
       },
       {
         path: '/business/service/service-apply/clb',
-        name: 'applyLoadBalancer',
+        name: 'applyClb',
         component: () => import('@/views/service/service-apply/clb'),
         meta: {
           backRouter: -1,
-          activeKey: 'businessLoadBalancer',
+          activeKey: 'businessClb',
           breadcrumb: ['资源管理', '负载均衡'],
           notMenu: true,
+          applyRes: 'lb',
         },
       },
     ],
