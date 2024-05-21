@@ -17,7 +17,7 @@ import { type ISubnetItem } from '../../cvm/children/SubnetPreviewDialog';
 import type { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
 // import constants
 import { CLB_SPECS, LB_ISP, ResourceTypeEnum } from '@/common/constant';
-import { LOAD_BALANCER_TYPE, ADDRESS_IP_VERSION, ZONE_TYPE, INTERNET_CHARGE_TYPE } from '@/constants/clb';
+import { LOAD_BALANCER_TYPE, ADDRESS_IP_VERSION, ZONE_TYPE, INTERNET_CHARGE_TYPE, ISP_TYPES } from '@/constants/clb';
 // import utils
 import bus from '@/common/bus';
 import { useI18n } from 'vue-i18n';
@@ -207,7 +207,7 @@ export default (formModel: ApplyClbModel) => {
               )}
               {(function () {
                 let zoneSelectorVNode = null;
-                if (isIntranet.value || formModel.zoneType === 'single') {
+                if (isIntranet.value || formModel.zoneType === '0') {
                   zoneSelectorVNode = (
                     <ZoneSelector
                       class='flex-1'
@@ -271,16 +271,27 @@ export default (formModel: ApplyClbModel) => {
           required: true,
           property: 'vip_isp',
           hidden: isIntranet.value,
-          description: '运营商类型选择范围由主可用区, 备可用区, IP版本决定',
-          content: () => (
-            <Select v-model={formModel.vip_isp} loading={isResourceListLoading.value}>
-              {ispList.value?.map((item) => (
-                <Option key={item} id={item} name={LB_ISP[item]}>
-                  {LB_ISP[item]}
-                </Option>
-              ))}
-            </Select>
-          ),
+          content: () => {
+            return (
+              <BkRadioGroup v-model={formModel.vip_isp}>
+                {ISP_TYPES.map((item) => (
+                  <BkRadioButton
+                    key={item}
+                    label={item}
+                    class='w110'
+                    disabled={!ispList.value?.includes(item)}
+                    v-bk-tooltips={(function () {
+                      if (!formModel.zones) {
+                        return { content: '请选择可用区', disabled: formModel.zones };
+                      }
+                      return { content: '当前地域不支持', disabled: ispList.value?.includes(item) };
+                    })()}>
+                    {LB_ISP[item]}
+                  </BkRadioButton>
+                ))}
+              </BkRadioGroup>
+            );
+          },
         },
         {
           label: '负载均衡规格类型',

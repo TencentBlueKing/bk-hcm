@@ -48,11 +48,11 @@ export const ADDRESS_IP_VERSION = [
 export const ZONE_TYPE = [
   {
     label: '单可用区',
-    value: 'single',
+    value: '0',
   },
   {
     label: '主备可用区',
-    value: 'primaryStand',
+    value: '1',
     isDisabled: (region: string, accountType: NetworkAccountType) =>
       !WHITE_LIST_REGION_PRIMARY_STAND_ZONE.includes(region) || accountType !== 'STANDARD',
   },
@@ -226,3 +226,6 @@ export const IP_VERSION_MAP = {
   ipv6_nat64: 'IPv6_NAT',
   ipv6_dual_stack: 'IPv6双栈',
 };
+
+// 运营商类型
+export const ISP_TYPES = ['BGP', 'CTCC', 'CUCC', 'CMCC'];
