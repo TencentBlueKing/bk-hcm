@@ -73,6 +73,16 @@ const resourceMenus: RouteRecordRaw[] = [
         },
       },
       {
+        path: '/resource/record/detail',
+        name: 'resourceRecordDetail',
+        component: () => import('@/views/resource/resource-manage/operationRecord/RecordDetail/index'),
+        meta: {
+          activeKey: 'resourceResource',
+          breadcrumb: [t('云管'), t('资源'), '详情'],
+          notMenu: true,
+        },
+      },
+      {
         path: '/resource/service-apply/cvm',
         name: 'resourceApplyCvm',
         component: () => import('@/views/service/service-apply/cvm'),
@@ -109,8 +119,20 @@ const resourceMenus: RouteRecordRaw[] = [
         meta: {
           backRouter: -1,
           activeKey: 'resourceResource',
-          breadcrumb: [t('云管'), t('资源'),  '新建子网'],
+          breadcrumb: [t('云管'), t('资源'), '新建子网'],
           notMenu: true,
+        },
+      },
+      {
+        path: '/resource/service-apply/clb',
+        name: 'resourceApplyClb',
+        component: () => import('@/views/service/service-apply/clb'),
+        meta: {
+          backRouter: -1,
+          activeKey: 'resourceResource',
+          breadcrumb: [t('云管'), t('资源'), '新建负载均衡'],
+          notMenu: true,
+          applyRes: 'lb',
         },
       },
       {

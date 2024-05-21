@@ -83,6 +83,9 @@ func InitAccountService(c *capability.Capability) {
 	h.Add("ListTCloudAuthPolicies", http.MethodPost, "/vendors/tcloud/accounts/auth_policies/list",
 		svc.ListTCloudAuthPolicies)
 
+	h.Add("GetTCloudNetworkAccountType", http.MethodGet, "/vendors/tcloud/accounts/{account_id}/network_type",
+		svc.GetTCloudNetworkAccountType)
+
 	h.Load(c.WebService)
 }
 

@@ -4,9 +4,8 @@ import { useRouter, useRoute, RouterView } from 'vue-router';
 import './index.scss';
 
 export default defineComponent({
-  name: 'resource-selection',
+  name: 'ResourceSelection',
   setup() {
-
     const route = useRoute();
     const router = useRouter();
 
@@ -19,33 +18,31 @@ export default defineComponent({
       if (name === 'scheme-recommendation') {
         return route.name === name;
       }
-      return ['scheme-list', 'scheme-detail'].includes(route.name as string)
-    }
+      return ['scheme-list', 'scheme-detail'].includes(route.name as string);
+    };
 
     const handleTabChange = (routeName: string) => {
       router.push({ name: routeName });
     };
 
     return () => (
-      <div class="resource-selection-module">
-        <header class="module-header">
-          <section class="tab-list">
-            {
-              TAB_LIST.map(({ routeName, label, icon }) => {
-                return (
-                  <div
-                    class={`tab-item${ isActived(routeName) ? ' actived' : '' }`}
-                    key={routeName}
-                    onClick={() => handleTabChange(routeName)}>
-                    <i class={`hcm-icon ${icon}`}></i>
-                    {label}
-                  </div>
-                )
-              })
-            }
+      <div class='resource-selection-module'>
+        <header class='module-header'>
+          <section class='tab-list'>
+            {TAB_LIST.map(({ routeName, label, icon }) => {
+              return (
+                <div
+                  class={`tab-item${isActived(routeName) ? ' actived' : ''}`}
+                  key={routeName}
+                  onClick={() => handleTabChange(routeName)}>
+                  <i class={`hcm-icon ${icon}`}></i>
+                  {label}
+                </div>
+              );
+            })}
           </section>
         </header>
-        <section class="module-page-container">
+        <section class='module-page-container'>
           <RouterView />
         </section>
       </div>

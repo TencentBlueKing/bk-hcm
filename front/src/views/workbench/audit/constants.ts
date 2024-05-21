@@ -14,7 +14,7 @@ export enum AuditActionEnum {
   BIND = 'bind',
   RECPVER = 'recover',
   DELIVER = 'deliver',
-  EDIT = 'edit'
+  EDIT = 'edit',
 }
 
 export enum AuditActionNameEnum {
@@ -33,12 +33,12 @@ export enum AuditActionNameEnum {
   RECYCLE = '回收',
   BIND = '绑定',
   RECPVER = '绑定',
-  DELIVER = '交付'
+  DELIVER = '交付',
 }
 
 export enum AuditSourceEnum {
   API_CALL = 'api_call',
-  BACKGROUND_SYNC = 'background_sync'
+  BACKGROUND_SYNC = 'background_sync',
 }
 
 export const AUDIT_SOURCE_MAP = {

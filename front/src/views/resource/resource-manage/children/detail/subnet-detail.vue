@@ -7,26 +7,12 @@ import DetailInfo from '../../common/info/detail-info';
 import SubnetRoute from '../../children/components/subnet/subnet-route.vue';
 import bus from '@/common/bus';
 
-import {
-  ref,
-  inject,
-  computed,
-  onBeforeMount,
-} from 'vue';
-import {
-  useRoute,
-} from 'vue-router';
-import {
-  InfoBox,
-  Message,
-} from 'bkui-vue';
-import {
-  useI18n,
-} from 'vue-i18n';
+import { ref, inject, computed, onBeforeMount } from 'vue';
+import { useRoute } from 'vue-router';
+import { InfoBox, Message } from 'bkui-vue';
+import { useI18n } from 'vue-i18n';
 import useDetail from '../../hooks/use-detail';
-import {
-  useResourceStore,
-} from '@/store/resource';
+import { useResourceStore } from '@/store/resource';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
@@ -108,14 +94,13 @@ const settingFields = ref<any[]>([
   },
 ]);
 
-const {
-  t,
-} = useI18n();
+const { t } = useI18n();
 
 const authVerifyData: any = inject('authVerifyData');
 const isResourcePage: any = inject('isResourcePage');
 
-const actionName = computed(() => {   // 资源下没有业务ID
+const actionName = computed(() => {
+  // 资源下没有业务ID
   return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
 });
 
@@ -133,16 +118,11 @@ const showAuthDialog = (authActionName: string) => {
 
 const { getRegionName } = useRegionsStore();
 
-const {
-  loading,
-  detail,
-} = useDetail(
-  'subnets',
-  route.query.id as string,
-  (detail: any) => {
-    switch (detail.vendor) {
-      case 'tcloud':
-        settingFields.value.push(...[
+const { loading, detail } = useDetail('subnets', route.query.id as string, (detail: any) => {
+  switch (detail.vendor) {
+    case 'tcloud':
+      settingFields.value.push(
+        ...[
           {
             name: '是否默认子网',
             prop: 'is_default',
@@ -163,10 +143,12 @@ const {
             name: '关联ACL',
             prop: 'network_acl_id',
           },
-        ]);
-        break;
-      case 'aws':
-        settingFields.value.push(...[
+        ],
+      );
+      break;
+    case 'aws':
+      settingFields.value.push(
+        ...[
           {
             name: '状态',
             prop: 'state',
@@ -205,10 +187,12 @@ const {
             name: '主机名称类型',
             prop: 'hostname_type',
           },
-        ]);
-        break;
-      case 'azure':
-        settingFields.value.push(...[
+        ],
+      );
+      break;
+    case 'azure':
+      settingFields.value.push(
+        ...[
           {
             name: 'NAT网关',
             prop: 'nat_gateway',
@@ -217,10 +201,12 @@ const {
             name: '网络安全组',
             prop: 'network_security_group',
           },
-        ]);
-        break;
-      case 'gcp':
-        settingFields.value.push(...[
+        ],
+      );
+      break;
+    case 'gcp':
+      settingFields.value.push(
+        ...[
           {
             name: '地域',
             prop: 'region',
@@ -252,11 +238,13 @@ const {
               return val ? '启用' : '关闭';
             },
           },
-        ]);
-        hostTabs.value.pop();
-        break;
-      case 'huawei':
-        settingFields.value.push(...[
+        ],
+      );
+      hostTabs.value.pop();
+      break;
+    case 'huawei':
+      settingFields.value.push(
+        ...[
           {
             name: '状态',
             prop: 'status',
@@ -285,39 +273,36 @@ const {
             name: 'NTP服务器地址',
             prop: 'ntp_addresses',
           },
-        ]);
-        break;
-    }
-  },
-);
+        ],
+      );
+      break;
+  }
+});
 
 const handleDeleteSubnet = (data: any) => {
   const subnetIds = [data.id];
   const getRelateNum = (type: string, field = 'subnet_id', op = 'in') => {
-    return resourceStore
-      .list(
-        {
-          page: {
-            count: true,
-          },
-          filter: {
-            op: 'and',
-            rules: [{
+    return resourceStore.list(
+      {
+        page: {
+          count: true,
+        },
+        filter: {
+          op: 'and',
+          rules: [
+            {
               field,
               op,
               value: subnetIds,
-            }],
-          },
+            },
+          ],
         },
-        type,
-      );
+      },
+      type,
+    );
   };
-  Promise
-    .all([
-      getRelateNum('cvms', 'subnet_ids', 'json_overlaps'),
-      getRelateNum('network_interfaces'),
-    ])
-    .then(([cvmsResult, networkResult]: any) => {
+  Promise.all([getRelateNum('cvms', 'subnet_ids', 'json_overlaps'), getRelateNum('network_interfaces')]).then(
+    ([cvmsResult, networkResult]: any) => {
       if (cvmsResult?.data?.count || networkResult?.data?.count) {
         const getMessage = (result: any, name: string) => {
           if (result?.data?.count) {
@@ -327,7 +312,10 @@ const handleDeleteSubnet = (data: any) => {
         };
         Message({
           theme: 'error',
-          message: `该子网（name：${data.name}，id：${data.id}）关联${getMessage(cvmsResult, 'CVM')}${getMessage(networkResult, '网络接口')}不能删除`,
+          message: `该子网（name：${data.name}，id：${data.id}）关联${getMessage(cvmsResult, 'CVM')}${getMessage(
+            networkResult,
+            '网络接口',
+          )}不能删除`,
         });
       } else {
         InfoBox({
@@ -340,12 +328,9 @@ const handleDeleteSubnet = (data: any) => {
           extCls: 'delete-resource-infobox',
           onConfirm() {
             resourceStore
-              .deleteBatch(
-                'subnets',
-                {
-                  ids: [data.id],
-                },
-              )
+              .deleteBatch('subnets', {
+                ids: [data.id],
+              })
               .then(() => {
                 Message({
                   theme: 'success',
@@ -356,23 +341,20 @@ const handleDeleteSubnet = (data: any) => {
           },
         });
       }
-    });
+    },
+  );
 };
 
 onBeforeMount(() => {
   if (route.query.type === 'gcp') return;
-  resourceStore
-    .countSubnetIps(route.query.id as string)
-    .then((res: any) => {
-      detail.value.ipv4_nums = res?.data?.available_ip_count || 0;
-    });
+  resourceStore.countSubnetIps(route.query.id as string).then((res: any) => {
+    detail.value.ipv4_nums = res?.data?.available_ip_count || 0;
+  });
 });
 </script>
 
 <template>
-  <bk-loading
-    :loading="loading"
-  >
+  <bk-loading :loading="loading">
     <detail-header>
       子网：ID（{{ detail.id }}）
       <template #right>
@@ -380,9 +362,10 @@ onBeforeMount(() => {
           v-if="isResourcePage"
           v-bk-tooltips="{
             content: '该子网已分配到业务，仅可在业务下操作',
-            disabled: !isBindBusiness || !authVerifyData?.permissionAction[actionName]
+            disabled: !isBindBusiness || !authVerifyData?.permissionAction[actionName],
           }"
-          @click="showAuthDialog(actionName)">
+          @click="showAuthDialog(actionName)"
+        >
           <bk-button
             class="w100 ml10"
             theme="primary"
@@ -395,12 +378,15 @@ onBeforeMount(() => {
         <div
           v-else
           @click="showAuthDialog(actionName)"
-          v-bk-tooltips="{ content: '该子网正在使用中，不能删除', disabled: !authVerifyData?.permissionAction[actionName] }">
+          v-bk-tooltips="{
+            content: '该子网正在使用中，不能删除',
+            disabled: !authVerifyData?.permissionAction[actionName],
+          }"
+        >
           <bk-button
             class="w100 ml10"
             theme="primary"
-            :disabled="authVerifyData?.
-              permissionAction[actionName]"
+            :disabled="authVerifyData?.permissionAction[actionName]"
             @click="handleDeleteSubnet(detail)"
           >
             {{ t('删除') }}
@@ -410,23 +396,13 @@ onBeforeMount(() => {
     </detail-header>
 
     <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
-      <detail-tab
-        :tabs="hostTabs"
-      >
+      <detail-tab :tabs="hostTabs">
         <template #default="type">
-          <detail-info
-            v-if="type === 'detail'"
-            :fields="settingFields"
-            :detail="detail"
-          />
-          <subnet-route
-            v-if="type === 'network'"
-            :detail="detail"
-          />
+          <detail-info v-if="type === 'detail'" :fields="settingFields" :detail="detail" />
+          <subnet-route v-if="type === 'network'" :detail="detail" />
         </template>
       </detail-tab>
     </div>
-
   </bk-loading>
 </template>
 

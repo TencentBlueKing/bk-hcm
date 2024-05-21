@@ -33,7 +33,6 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/slice"
 )
 
@@ -44,7 +43,7 @@ func Assign(kt *kit.Kit, cli *dataservice.Client, ids []string, bizID uint64, is
 		return fmt.Errorf("ids is required")
 	}
 
-	if err := ValidateBeforeAssign(kt, cli, ids, isBind); err != nil {
+	if err := ValidateBeforeAssign(kt, cli, int64(bizID), ids, isBind); err != nil {
 		return err
 	}
 
@@ -69,16 +68,15 @@ func Assign(kt *kit.Kit, cli *dataservice.Client, ids []string, bizID uint64, is
 }
 
 // ValidateBeforeAssign 分配前置校验
-func ValidateBeforeAssign(kt *kit.Kit, cli *dataservice.Client, ids []string, isBind bool) error {
+func ValidateBeforeAssign(kt *kit.Kit, cli *dataservice.Client,
+	targetBizId int64, diskIds []string, isBind bool) error {
+
 	// 判断是否已经分配
 	listReq := &core.ListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: ids},
-				&filter.AtomRule{Field: "bk_biz_id", Op: filter.NotEqual.Factory(), Value: constant.UnassignedBiz},
-			},
-		},
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("id", diskIds),
+			tools.RuleNotIn("bk_biz_id", []int64{constant.UnassignedBiz, targetBizId}),
+		),
 		Page: core.NewDefaultBasePage(),
 	}
 	listResp, err := cli.Global.ListDisk(kt, listReq)
@@ -94,7 +92,7 @@ func ValidateBeforeAssign(kt *kit.Kit, cli *dataservice.Client, ids []string, is
 
 	// 判断是否关联资源
 	listRelReq := &core.ListReq{
-		Filter: tools.ContainersExpression("disk_id", ids),
+		Filter: tools.ContainersExpression("disk_id", diskIds),
 		Page:   core.NewDefaultBasePage(),
 	}
 	listRelResp, err := cli.Global.ListDiskCvmRel(kt, listRelReq)
@@ -116,8 +114,8 @@ func ValidateBeforeAssign(kt *kit.Kit, cli *dataservice.Client, ids []string, is
 			diskBindMap[one.DiskID] = true
 		}
 
-		if len(ids) != len(diskBindMap) {
-			unBindIDs := slice.Filter(ids, func(id string) bool {
+		if len(diskIds) != len(diskBindMap) {
+			unBindIDs := slice.Filter(diskIds, func(id string) bool {
 				return !diskBindMap[id]
 			})
 			return fmt.Errorf("disk(ids=%v) not bind cvm", unBindIDs)

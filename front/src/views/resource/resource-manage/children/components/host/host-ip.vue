@@ -1,19 +1,7 @@
 <script lang="ts" setup>
-import {
-  ref,
-  h,
-  watch,
-  inject,
-  computed, withDirectives,
-} from 'vue';
-import {
-  bkTooltips,
-  Button,
-  Message,
-} from 'bkui-vue';
-import {
-  useResourceStore,
-} from '@/store/resource';
+import { ref, h, watch, inject, computed, withDirectives } from 'vue';
+import { bkTooltips, Button, Message } from 'bkui-vue';
+import { useResourceStore } from '@/store/resource';
 import useQueryList from '../../../hooks/use-query-list';
 import bus from '@/common/bus';
 
@@ -30,11 +18,10 @@ const resourceStore = useResourceStore();
 const isResourcePage: any = inject('isResourcePage');
 const authVerifyData: any = inject('authVerifyData');
 
-
-const actionName = computed(() => {   // 资源下没有业务ID
+const actionName = computed(() => {
+  // 资源下没有业务ID
   return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
 });
-
 
 // 权限弹窗 bus通知最外层弹出
 const showAuthDialog = (authActionName: string) => {
@@ -113,23 +100,23 @@ const columns = ref([
             },
           },
           [
-            withDirectives(h(
-              Button,
-              {
-                text: true,
-                theme: 'primary',
-                disabled: !authVerifyData.value?.permissionAction[actionName.value]
-                      || (isResourcePage.value && props.data?.bk_biz_id !== -1),
-                onClick() {
-                  handleToggleShowUnbind(data);
+            withDirectives(
+              h(
+                Button,
+                {
+                  text: true,
+                  theme: 'primary',
+                  disabled:
+                    !authVerifyData.value?.permissionAction[actionName.value] ||
+                    (isResourcePage.value && props.data?.bk_biz_id !== -1),
+                  onClick() {
+                    handleToggleShowUnbind(data);
+                  },
                 },
-              },
-              [
-                '解绑',
-              ],
-            ), [
-              [bkTooltips, generateTooltipsOptions()],
-            ]),
+                ['解绑'],
+              ),
+              [[bkTooltips, generateTooltipsOptions()]],
+            ),
           ],
         ),
       ];
@@ -142,13 +129,9 @@ const {
   datas,
   isLoading,
   triggerApi: triggerCvmEipApi,
-} = useQueryList(
-  {},
-  'eip',
-  () => {
-    return Promise.all([resourceStore.getEipListByCvmId(props.data.vendor, props.data.id)]);
-  },
-);
+} = useQueryList({}, 'eip', () => {
+  return Promise.all([resourceStore.getEipListByCvmId(props.data.vendor, props.data.id)]);
+});
 
 const rules = [
   {
@@ -197,11 +180,7 @@ const {
 );
 
 const updateList = () => {
-  return Promise.all([
-    triggerCvmEipApi(),
-    triggerEipApi(),
-    needNetwork.value ? getNetWorkList() : Promise.resolve(),
-  ]);
+  return Promise.all([triggerCvmEipApi(), triggerEipApi(), needNetwork.value ? getNetWorkList() : Promise.resolve()]);
 };
 
 const handleToggleShowChangeIP = () => {
@@ -215,11 +194,9 @@ const handleConfirmChangeIP = () => {
 const handleToggleShowUnbind = (data?: any) => {
   unbindData.value = data;
   if (!showUnbind.value) {
-    resourceStore
-      .detail('eips', unbindData.value.id)
-      .then(({ data }: any) => {
-        unbindData.value.instance_id = data.instance_id;
-      });
+    resourceStore.detail('eips', unbindData.value.id).then(({ data }: any) => {
+      unbindData.value.instance_id = data.instance_id;
+    });
     showUnbind.value = true;
   } else {
     showUnbind.value = false;
@@ -285,25 +262,22 @@ const handleConfirmBind = () => {
 };
 
 const getNetWorkList = async () => {
-  resourceStore
-    .getNetworkList(
-      props.data.vendor,
-      props.data.id,
-    )
-    .then((res: any) => {
-      networklist.value = res.data;
-    });
+  resourceStore.getNetworkList(props.data.vendor, props.data.id).then((res: any) => {
+    networklist.value = res.data;
+  });
 };
 
 const generateTooltipsOptions = () => {
-  if (!authVerifyData.value?.permissionAction?.[actionName.value]) return {
-    content: '当前用户无权限操作该按钮',
-    disabled: authVerifyData.value?.permissionAction?.[actionName.value],
-  };
-  if (isResourcePage.value && props.data?.bk_biz_id !== -1) return {
-    content: '该主机已分配到业务，仅可在业务下操作',
-    disabled: props.data.bk_biz_id === -1,
-  };
+  if (!authVerifyData.value?.permissionAction?.[actionName.value])
+    return {
+      content: '当前用户无权限操作该按钮',
+      disabled: authVerifyData.value?.permissionAction?.[actionName.value],
+    };
+  if (isResourcePage.value && props.data?.bk_biz_id !== -1)
+    return {
+      content: '该主机已分配到业务，仅可在业务下操作',
+      disabled: props.data.bk_biz_id === -1,
+    };
 
   return {
     disabled: true,
@@ -314,16 +288,20 @@ watch(
   () => props.data,
   () => {
     if (props.data.vendor === 'tcloud') {
-      columns.value.splice(4, 0, ...[
-        {
-          label: '计费模式',
-          field: 'internet_charge_type',
-        },
-        {
-          label: '带宽上限',
-          field: 'bandwidth',
-        },
-      ]);
+      columns.value.splice(
+        4,
+        0,
+        ...[
+          {
+            label: '计费模式',
+            field: 'internet_charge_type',
+          },
+          {
+            label: '带宽上限',
+            field: 'bandwidth',
+          },
+        ],
+      );
     }
     needNetwork.value = !['tcloud', 'aws'].includes(props.data.vendor);
     if (needNetwork.value) {
@@ -338,9 +316,7 @@ watch(
 </script>
 
 <template>
-  <bk-loading
-    :loading="isLoading"
-  >
+  <bk-loading :loading="isLoading">
     <span @click="showAuthDialog(actionName)">
       <bk-button
         class="btn"
@@ -351,13 +327,7 @@ watch(
         绑定
       </bk-button>
     </span>
-    <bk-table
-      class="mt16"
-      row-hover="auto"
-      :columns="columns"
-      :data="datas"
-      show-overflow-tooltip
-    />
+    <bk-table class="mt16" row-hover="auto" :columns="columns" :data="datas" show-overflow-tooltip />
   </bk-loading>
   <!-- <bk-dialog
     :is-show="showAdjustNetwork"
@@ -432,16 +402,13 @@ watch(
     width="620"
     theme="primary"
     quick-close
-    :title="`主机（${ data.id }）绑定弹性IP`"
+    :title="`主机（${data.id}）绑定弹性IP`"
     :is-show="showBind"
     @closed="handleToggleShowBind(false)"
   >
     <template v-if="needNetwork">
       <span class="bind-title">选择网络接口</span>
-      <bk-select
-        v-model="bindData.network_interface_id"
-        class="mb20"
-      >
+      <bk-select v-model="bindData.network_interface_id" class="mb20">
         <bk-option
           v-for="(item, index) in networklist"
           :key="index"
@@ -465,10 +432,7 @@ watch(
       @page-value-change="handlePageChange"
       @column-sort="handleSort"
     >
-      <bk-table-column
-        label="ID"
-        prop="public_ip"
-      >
+      <bk-table-column label="ID" prop="public_ip">
         <!-- eslint-disable-next-line vue/no-template-shadow -->
         <template #default="{ data }">
           <bk-radio
@@ -479,14 +443,8 @@ watch(
           ></bk-radio>
         </template>
       </bk-table-column>
-      <bk-table-column
-        label="名称"
-        prop="name"
-      />
-      <bk-table-column
-        label="弹性公网IP"
-        prop="public_ip"
-      />
+      <bk-table-column label="名称" prop="name" />
+      <bk-table-column label="弹性公网IP" prop="public_ip" />
     </bk-table>
     <template #footer>
       <section class="bk-dialog-footer">
@@ -498,23 +456,23 @@ watch(
 </template>
 
 <style lang="scss" scoped>
-  .btn {
-    min-width: 88px;
-  }
-  .adjust-title {
+.btn {
+  min-width: 88px;
+}
+.adjust-title {
+  display: inline-block;
+  margin-bottom: 20px;
+}
+.adjust-info {
+  margin-bottom: 20px;
+  .adjust-name {
     display: inline-block;
-    margin-bottom: 20px;
+    width: 120px;
+    color: #979ba5;
   }
-  .adjust-info {
-    margin-bottom: 20px;
-    .adjust-name {
-      display: inline-block;
-      width: 120px;
-      color: #979BA5;
-    }
-  }
-  .bind-title {
-    display: inline-block;
-    margin: 10px 0;
-  }
+}
+.bind-title {
+  display: inline-block;
+  margin: 10px 0;
+}
 </style>

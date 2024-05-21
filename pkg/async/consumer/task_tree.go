@@ -28,6 +28,7 @@ import (
 )
 
 const (
+	// VirtualTaskRootID ...
 	VirtualTaskRootID = "virtual_root"
 )
 
@@ -93,9 +94,9 @@ func (t *TaskNode) CanBeExecuted() bool {
 	return true
 }
 
-// Executable check can executable
+// Executable check can executable: no parent or all parents CanExecuteChild(state == TaskSuccess )
 func (t *TaskNode) Executable() bool {
-	if t.State != enumor.TaskPending {
+	if t.State != enumor.TaskPending && t.State != enumor.TaskRollback {
 		return false
 	}
 
@@ -114,9 +115,12 @@ func (t *TaskNode) Executable() bool {
 
 // ComputeState compute state
 func (t *TaskNode) ComputeState() (state enumor.FlowState) {
-	walkNode(t, func(node *TaskNode) bool {
+	walkNode(t, func(node *TaskNode) (proceed bool) {
 		switch node.State {
 		// 如果Task存在失败节点，无法继续遍历当前节点子节点。
+		case enumor.TaskCancel:
+			state = enumor.FlowCancel
+			return false
 		case enumor.TaskFailed:
 			state = enumor.FlowFailed
 			return false
@@ -124,6 +128,7 @@ func (t *TaskNode) ComputeState() (state enumor.FlowState) {
 		case enumor.TaskSuccess:
 			state = enumor.FlowSuccess
 			return true
+
 		// 如果当前节点处于其他运行中间状态，无法继续遍历当前节点子节点。
 		default:
 			state = enumor.FlowRunning
@@ -158,13 +163,13 @@ func (t *TaskNode) GetExecStateTasks() (ids []string) {
 	return
 }
 
-// GetNextTaskNodes get next task nodes
-func (t *TaskNode) GetNextTaskNodes(completedOrRetryTask *Task) (executable []string) {
-	walkNode(t, func(node *TaskNode) bool {
+// GetNextExecutableTaskNodes get next executable task nodes
+func (t *TaskNode) GetNextExecutableTaskNodes(completedOrRetryTask *Task) (executable []string) {
+	walkNode(t, func(node *TaskNode) (proceed bool) {
 		if node.TaskID == completedOrRetryTask.ID {
 			node.State = completedOrRetryTask.State
-
-			if node.State == enumor.TaskPending {
+			// running 和 rollback 都要放回去执行
+			if node.State == enumor.TaskRunning || node.State == enumor.TaskRollback {
 				executable = append(executable, node.TaskID)
 				return false
 			}
@@ -292,13 +297,13 @@ func buildTaskNodeMap(tasks []*Task) (map[action.ActIDType]*TaskNode, error) {
 	return m, nil
 }
 
-func walkNode(root *TaskNode, walkFunc func(node *TaskNode) bool) {
+func walkNode(root *TaskNode, walkFunc func(node *TaskNode) (proceed bool)) {
 	dfsWalk(root, walkFunc)
 }
 
 // dfsWalk 从某个节点进行深度优先遍历并依次遍历它的子节点
 // Note: walkFunc
-func dfsWalk(root *TaskNode, walkFunc func(node *TaskNode) (isGoing bool)) (stop bool) {
+func dfsWalk(root *TaskNode, walkFunc func(node *TaskNode) (proceed bool)) (stop bool) {
 	if root.TaskID != VirtualTaskRootID {
 		if !walkFunc(root) {
 			return false

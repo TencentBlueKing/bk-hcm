@@ -1,15 +1,13 @@
 <script lang="ts" setup>
-import { computed, ref, watchEffect, defineExpose, PropType, watch } from 'vue';
-import {
-  useAccountStore,
-} from '@/store';
+import { computed, ref, watchEffect, defineExpose, PropType } from 'vue';
+import { useAccountStore } from '@/store';
 
-const props = defineProps(({
+const props = defineProps({
   modelValue: Number as PropType<number>,
-  authed: Boolean  as PropType<boolean>,
+  authed: Boolean as PropType<boolean>,
   autoSelect: Boolean as PropType<boolean>,
   isAudit: Boolean as PropType<boolean>,
-}));
+});
 const emit = defineEmits(['update:modelValue']);
 
 const accountStore = useAccountStore();
@@ -51,16 +49,7 @@ defineExpose({
 </script>
 
 <template>
-  <bk-select
-    v-model="selectedValue"
-    filterable
-    :loading="loading"
-  >
-    <bk-option
-      v-for="(item, index) in businessList"
-      :key="index"
-      :value="item.id"
-      :label="item.name"
-    />
+  <bk-select v-model="selectedValue" filterable :loading="loading">
+    <bk-option v-for="(item, index) in businessList" :key="index" :value="item.id" :label="item.name" />
   </bk-select>
 </template>

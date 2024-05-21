@@ -38,14 +38,17 @@ export default defineComponent({
     const formRef = ref<InstanceType<typeof Form>>();
     const pending = ref(false);
 
-    watch(() => props.show, (val) => {
-      if (val) {
-        const { id, name, bk_biz_id } = props.schemeData;
-        localVal.value = { id, name, bk_biz_id };
-        pending.value = false;
-        getBizList();
-      }
-    });
+    watch(
+      () => props.show,
+      (val) => {
+        if (val) {
+          const { id, name, bk_biz_id } = props.schemeData;
+          localVal.value = { id, name, bk_biz_id };
+          pending.value = false;
+          getBizList();
+        }
+      },
+    );
 
     const getBizList = async () => {
       bizLoading.value = true;
@@ -73,16 +76,20 @@ export default defineComponent({
         isLoading={pending.value}
         onConfirm={handleConfirm}
         onClosed={handleClose}>
-        <bk-form ref={formRef} form-type="vertical" model={localVal.value} rules={{
-          name: [
-            {
-              trigger: 'change',
-              message: '方案名称不能为空',
-              validator: (val: string) => val.trim().length,
-            },
-          ],
-        }}>
-          <bk-form-item label="方案名称" property="name" required={true}>
+        <bk-form
+          ref={formRef}
+          form-type='vertical'
+          model={localVal.value}
+          rules={{
+            name: [
+              {
+                trigger: 'change',
+                message: '方案名称不能为空',
+                validator: (val: string) => val.trim().length,
+              },
+            ],
+          }}>
+          <bk-form-item label='方案名称' property='name' required={true}>
             <bk-input v-model={localVal.value.name} />
           </bk-form-item>
           {/* <bk-form-item label="项目标签">

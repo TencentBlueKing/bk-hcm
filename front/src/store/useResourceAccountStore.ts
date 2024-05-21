@@ -30,7 +30,7 @@ export type IAccount = {
     cloud_subscription_name?: string;
     cloud_sub_account_id?: string;
     cloud_sub_account_name?: string;
-  }
+  };
 };
 
 export const useResourceAccountStore = defineStore('useResourceAccountStore', () => {

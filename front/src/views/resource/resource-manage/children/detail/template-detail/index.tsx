@@ -67,7 +67,6 @@ export default defineComponent({
     watch(
       () => details.value,
       (detail) => {
-        console.log(111, detail);
         if (!detail) return;
         if ([TemplateType.IP, TemplateType.PORT].includes(detail.type)) {
           singleTableData.value = detail.templates;
@@ -137,26 +136,18 @@ export default defineComponent({
           {[TemplateType.IP, TemplateType.PORT].includes(details.value.type) ? (
             <Table columns={ipColumns} data={singleTableData.value} />
           ) : null}
-          {
-            [TemplateType.IP_GROUP, TemplateType.PORT_GROUP].includes(details.value.type) ? (
-              <div>
-                {
-                  multipleTableData.value.map(({
-                    name,
-                    cloud_id,
-                    templates,
-                  }) => (
-                    <div>
-                      <p class={'subtitle'}>
-                        {name} ({cloud_id})
-                      </p>
-                      <Table columns={ipColumns} data={templates} />
-                    </div>
-                  ))
-                }
-              </div>
-            ) : null
-          }
+          {[TemplateType.IP_GROUP, TemplateType.PORT_GROUP].includes(details.value.type) ? (
+            <div>
+              {multipleTableData.value.map(({ name, cloud_id, templates }) => (
+                <div>
+                  <p class={'subtitle'}>
+                    {name} ({cloud_id})
+                  </p>
+                  <Table columns={ipColumns} data={templates} />
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
     );

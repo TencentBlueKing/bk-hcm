@@ -1,14 +1,7 @@
-import {
-  defineComponent,
-  ref,
-} from 'vue';
+import { defineComponent, ref } from 'vue';
 
-import {
-  useI18n,
-} from 'vue-i18n';
-import {
-  useResourceStore,
-} from '@/store/resource';
+import { useI18n } from 'vue-i18n';
+import { useResourceStore } from '@/store/resource';
 
 import StepDialog from '@/components/step-dialog/step-dialog';
 
@@ -29,9 +22,7 @@ export default defineComponent({
   emits: ['update:isShow'],
 
   setup(_, { emit }) {
-    const {
-      t,
-    } = useI18n();
+    const { t } = useI18n();
 
     const resourceStore = useResourceStore();
 
@@ -119,33 +110,37 @@ export default defineComponent({
   render() {
     const steps = [
       {
-        component: () => <>
+        component: () => (
+          <>
             <bk-table
-              class="mb20"
-              row-hover="auto"
+              class='mb20'
+              row-hover='auto'
               columns={this.columns}
               data={this.tableData}
               show-overflow-tooltip
             />
-            <h3 class="g-resource-tips">
-              { this.t('安全组被实例关联或者被其他安全组规则关联时不能直接删除，请删除关联关系后再进行删除') }：
-              <bk-button text theme="primary">{ this.t('查看关联实例') }</bk-button><br />
+            <h3 class='g-resource-tips'>
+              {this.t('安全组被实例关联或者被其他安全组规则关联时不能直接删除，请删除关联关系后再进行删除')}：
+              <bk-button text theme='primary'>
+                {this.t('查看关联实例')}
+              </bk-button>
+              <br />
             </h3>
-          </>,
+          </>
+        ),
         isConfirmLoading: this.isDeleting,
       },
     ];
 
-    return <>
+    return (
+      <>
         <step-dialog
           title={this.t('删除 安全组')}
           isShow={this.isShow}
           steps={steps}
           onConfirm={this.handleConfirm}
-          onCancel={this.handleClose}
-        >
-        </step-dialog>
-      </>;
+          onCancel={this.handleClose}></step-dialog>
+      </>
+    );
   },
 });
-

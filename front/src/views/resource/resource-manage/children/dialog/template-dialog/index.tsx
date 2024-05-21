@@ -99,7 +99,7 @@ export default defineComponent({
 
     const handleSubmit = async () => {
       await basicForm.value.validate();
-      await Promise.all(formInstances.map(formInstance => formInstance.value?.validate()));
+      await Promise.all(formInstances.map((formInstance) => formInstance.value?.validate()));
       isLoading.value = true;
       let data = {
         ...formData.value,
@@ -135,7 +135,6 @@ export default defineComponent({
             group_templates: portGroupData.value,
             templates: undefined,
           };
-          debugger;
           break;
         }
       }
@@ -192,19 +191,13 @@ export default defineComponent({
 
         if (type === TemplateType.IP_GROUP) {
           params.filter.rules[1].value = 'address';
-          const res = await resourceStore.getCommonList(
-            params,
-            'argument_templates/list',
-          );
+          const res = await resourceStore.getCommonList(params, 'argument_templates/list');
           ipGroupData.value = [];
           ipGroupList.value = res.data.details;
         }
         if (type === TemplateType.PORT_GROUP) {
           params.filter.rules[1].value = 'service';
-          const res = await resourceStore.getCommonList(
-            params,
-            'argument_templates/list',
-          );
+          const res = await resourceStore.getCommonList(params, 'argument_templates/list');
           portGroupData.value = [];
           portGroupList.value = res.data.details;
         }
@@ -235,7 +228,7 @@ export default defineComponent({
                 description: '',
               },
             ];
-            formInstances = ipTableData.value.map(_v => ref(null));
+            formInstances = ipTableData.value.map((_v) => ref(null));
             break;
           }
           case TemplateType.IP_GROUP: {
@@ -249,7 +242,7 @@ export default defineComponent({
                 description: '',
               },
             ];
-            formInstances = ipTableData.value.map(_v => ref(null));
+            formInstances = ipTableData.value.map((_v) => ref(null));
             break;
           }
           case TemplateType.PORT_GROUP: {
@@ -313,7 +306,7 @@ export default defineComponent({
                         const arr = val.trim().split(':');
                         if (arr.length !== 2) return false;
                         const [protocal, port] = arr;
-                        const protocols = TCLOUD_SECURITY_RULE_PROTOCALS.map(item => item.name);
+                        const protocols = TCLOUD_SECURITY_RULE_PROTOCALS.map((item) => item.name);
                         if (!protocols.includes(protocal)) return false;
                         if (!isPortAvailable(port)) return false;
                         return true;
@@ -322,31 +315,16 @@ export default defineComponent({
                   },
                 ],
               }}>
-              {
-                formData.value.type === TemplateType.IP ? (
-                  <FormItem
-                    property='address'
-                    label={`${idx > 0 ? '' : 'IP地址'}`}
-                    required>
-                    <Input
-                      placeholder={'输入IP地址'}
-                      v-model={list[idx].address}
-                    />
-                  </FormItem>
-                ) : (
-                  <FormItem
-                    property='address'
-                    label={`${idx > 0 ? '' : '协议端口'}`}>
-                    <Input
-                      placeholder={'协议:端口'}
-                      v-model={list[idx].address}
-                    />
-                  </FormItem>
-                )
-              }
-              <FormItem
-                label={`${idx > 0 ? '' : '备注'}`}
-                property='description'>
+              {formData.value.type === TemplateType.IP ? (
+                <FormItem property='address' label={`${idx > 0 ? '' : 'IP地址'}`} required>
+                  <Input placeholder={'输入IP地址'} v-model={list[idx].address} />
+                </FormItem>
+              ) : (
+                <FormItem property='address' label={`${idx > 0 ? '' : '协议端口'}`}>
+                  <Input placeholder={'协议:端口'} v-model={list[idx].address} />
+                </FormItem>
+              )}
+              <FormItem label={`${idx > 0 ? '' : '备注'}`} property='description'>
                 <Input placeholder='备注信息' v-model={list[idx].description} />
               </FormItem>
               <FormItem label={`${idx > 0 ? '' : '操作'}`}>
@@ -384,27 +362,27 @@ export default defineComponent({
       const isResource = whereAmI.value === Senarios.resource;
       const payload = isResource
         ? {
-          page: {
-            count: false,
-            limit: 100,
-            start: 0,
-          },
-          filter: {
-            op: 'and',
-            rules: [
-              {
-                field: 'vendor',
-                op: 'eq',
-                value: VendorEnum.TCLOUD,
-              },
-            ],
-          },
-        }
+            page: {
+              count: false,
+              limit: 100,
+              start: 0,
+            },
+            filter: {
+              op: 'and',
+              rules: [
+                {
+                  field: 'vendor',
+                  op: 'eq',
+                  value: VendorEnum.TCLOUD,
+                },
+              ],
+            },
+          }
         : {
-          params: {
-            account_type: 'resource',
-          },
-        };
+            params: {
+              account_type: 'resource',
+            },
+          };
       const res = await accountStore.getAccountList(payload, accountStore.bizs);
       if (resourceAccountStore.resourceAccount?.id) {
         accountList.value = res.data?.details.filter(({ id }) => id === resourceAccountStore.resourceAccount?.id);
@@ -433,18 +411,14 @@ export default defineComponent({
               onChange={(account_id) => {
                 const idx = accountList.value.findIndex(({ id }) => id === account_id);
                 formData.value.vendor = accountList.value[idx].vendor;
-              }}
-            >
-              {accountList.value.map(item => (
+              }}>
+              {accountList.value.map((item) => (
                 <Option key={item.id} id={item.id} name={item.name}></Option>
               ))}
             </Select>
           </FormItem>
           <FormItem label='参数模板名称' property='name' required>
-            <Input
-              placeholder='输入参数模板名称'
-              v-model={formData.value.name}
-            />
+            <Input placeholder='输入参数模板名称' v-model={formData.value.name} />
           </FormItem>
           <FormItem label='参数模板类型' property='type' required>
             <BkButtonGroup>
@@ -481,11 +455,8 @@ export default defineComponent({
           {[TemplateType.IP_GROUP].includes(formData.value.type) ? (
             <FormItem label='IP地址'>
               <Select v-model={ipGroupData.value} multiple multipleMode='tag'>
-                {ipGroupList.value.map(v => (
-                  <Option
-                    key={v.cloud_id}
-                    id={v.cloud_id}
-                    name={`${v.cloud_id} (${v.name})`}></Option>
+                {ipGroupList.value.map((v) => (
+                  <Option key={v.cloud_id} id={v.cloud_id} name={`${v.cloud_id} (${v.name})`}></Option>
                 ))}
               </Select>
             </FormItem>
@@ -493,11 +464,8 @@ export default defineComponent({
           {[TemplateType.PORT_GROUP].includes(formData.value.type) ? (
             <FormItem label='IP地址'>
               <Select v-model={portGroupData.value} multiple multipleMode='tag'>
-                {portGroupList.value.map(v => (
-                  <Option
-                    key={v.cloud_id}
-                    id={v.cloud_id}
-                    name={`${v.cloud_id} (${v.name})`}></Option>
+                {portGroupList.value.map((v) => (
+                  <Option key={v.cloud_id} id={v.cloud_id} name={`${v.cloud_id} (${v.name})`}></Option>
                 ))}
               </Select>
             </FormItem>

@@ -193,7 +193,7 @@ func ListCvm(kt *kit.Kit, dao dao.Set, ids []string) (map[string]tablecvm.Table,
 	}
 	list, err := dao.Cvm().List(kt, opt)
 	if err != nil {
-		logs.Errorf("list c failed, err: %v, ids: %v, rid: %f", err, ids, kt.Rid)
+		logs.Errorf("list cvm failed, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
 		return nil, err
 	}
 

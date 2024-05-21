@@ -38,17 +38,20 @@ import (
 	accountbizrel "hcm/cmd/data-service/service/cloud/account-biz-rel"
 	argstpl "hcm/cmd/data-service/service/cloud/argument-template"
 	"hcm/cmd/data-service/service/cloud/bill"
+	"hcm/cmd/data-service/service/cloud/cert"
 	"hcm/cmd/data-service/service/cloud/cvm"
 	"hcm/cmd/data-service/service/cloud/disk"
 	diskcvmrel "hcm/cmd/data-service/service/cloud/disk-cvm-rel"
 	"hcm/cmd/data-service/service/cloud/eip"
 	eipcvmrel "hcm/cmd/data-service/service/cloud/eip-cvm-rel"
 	"hcm/cmd/data-service/service/cloud/image"
+	"hcm/cmd/data-service/service/cloud/load-balancer"
 	networkinterface "hcm/cmd/data-service/service/cloud/network-interface"
 	networkcvmrel "hcm/cmd/data-service/service/cloud/network-interface-cvm-rel"
 	"hcm/cmd/data-service/service/cloud/region"
 	resourcegroup "hcm/cmd/data-service/service/cloud/resource-group"
 	routetable "hcm/cmd/data-service/service/cloud/route-table"
+	sgcomrel "hcm/cmd/data-service/service/cloud/security-group-common-rel"
 	"hcm/cmd/data-service/service/cloud/security-group"
 	sgcvmrel "hcm/cmd/data-service/service/cloud/security-group-cvm-rel"
 	subaccount "hcm/cmd/data-service/service/cloud/sub-account"
@@ -216,6 +219,9 @@ func (s *Service) apiSet() *restful.Container {
 	user.InitService(capability)
 	cloudselection.InitService(capability)
 	argstpl.InitService(capability)
+	cert.InitService(capability)
+	loadbalancer.InitService(capability)
+	sgcomrel.InitService(capability)
 
 	return restful.NewContainer().Add(capability.WebService)
 }

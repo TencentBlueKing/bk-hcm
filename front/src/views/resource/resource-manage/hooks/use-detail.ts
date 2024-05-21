@@ -1,11 +1,6 @@
-import {
-  onBeforeMount,
-  ref,
-} from 'vue';
+import { onBeforeMount, ref } from 'vue';
 
-import {
-  useResourceStore,
-} from '@/store/resource';
+import { useResourceStore } from '@/store/resource';
 import { CloudType } from '@/typings';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 

@@ -1,18 +1,9 @@
 <template>
   <div class="template-wrap service-wrap">
     <Tab v-model:active="activeTab" type="card">
-      <TabPanel
-        v-for="item in panels"
-        :key="item.name"
-        :name="item.name"
-        :label="item.label"
-      >
+      <TabPanel v-for="item in panels" :key="item.name" :name="item.name" :label="item.label">
         <div :style="{ maxHeight: `${cardHeight}px`, overflowY: 'auto', paddingBottom: '50px' }">
-          <component
-            v-if="item.name === activeTab"
-            :key="item.name"
-            :is="activeTab"
-          />
+          <component v-if="item.name === activeTab" :key="item.name" :is="activeTab" />
         </div>
       </TabPanel>
     </Tab>

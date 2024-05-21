@@ -8,9 +8,7 @@ import HuaweiInfo from './components/huawei-info.vue';
 // import AzureNetwork from './components/azure-network.vue';
 // import GcpNetwork from './components/gcp-network.vue';
 
-import {
-  PropType,
-} from 'vue';
+import { PropType } from 'vue';
 
 // import {
 //   useRoute,
@@ -37,14 +35,13 @@ const componentMap = {
 
 // const renderComponent = componentMap[route.params.type as string];
 const renderComponent = componentMap[props.type];
-
 </script>
 
 <template>
   <component :is="renderComponent" :data="props.data"></component>
 </template>
 <style lang="scss" scoped>
-.f-right{
+.f-right {
   float: right;
 }
 </style>

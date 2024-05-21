@@ -1,8 +1,8 @@
 export interface Verify {
-  action: string
-  resource_type: string
-  bk_biz_id?: number
-  resource_id?: number
+  action: string;
+  resource_type: string;
+  bk_biz_id?: number;
+  resource_id?: number;
 }
 export enum QueryRuleOPEnum {
   EQ = 'eq',
@@ -16,14 +16,16 @@ export enum QueryRuleOPEnum {
   CS = 'cs',
   CIS = 'cis',
   JSON_EQ = 'json_eq',
+  JSON_NEQ = 'json_neq',
+  JSON_OVERLAPS = 'json_overlaps',
   OR = 'or',
   AND = 'and',
-  JSON_CONTAINS = 'json_contains'
+  JSON_CONTAINS = 'json_contains',
 }
 
 export type QueryFilterType = {
   op: 'and' | 'or';
-  rules: Array<RulesItem>
+  rules: Array<RulesItem>;
 };
 
 export type RulesItem = {
@@ -34,8 +36,8 @@ export type RulesItem = {
 
 export interface IOption {
   id: string;
-  name: string
-};
+  name: string;
+}
 
 // 列表接口分页参数
 export interface IPageQuery {
@@ -52,7 +54,7 @@ interface IBaseResData {
 }
 
 // list 接口响应
-export interface IListResData<T> extends IBaseResData{
+export interface IListResData<T> extends IBaseResData {
   data: { details: T; count: number };
 }
 

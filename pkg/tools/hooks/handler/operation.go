@@ -28,7 +28,7 @@ import (
 	"hcm/pkg/rest"
 )
 
-// BizOperateAuth 业务下校验操作合法性
+// BizOperateAuth 业务下校验操作合法性, 校验传入的basicInfo是否在url中的业务下
 func BizOperateAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 	bizID, err := cts.PathParameter("bk_biz_id").Int64()
 	if err != nil {

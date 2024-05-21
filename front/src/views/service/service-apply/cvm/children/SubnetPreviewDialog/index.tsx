@@ -13,7 +13,7 @@ export interface ISubnetItem {
   used_ip_count: number; // IP数---已使用
   total_ip_count: number; // IP数---总共
   available_ip_count: number; // IP数---剩余
-};
+}
 
 export default defineComponent({
   props: {
@@ -40,28 +40,20 @@ export default defineComponent({
         onClosed={props.handleClose}>
         <Form labelWidth={108} label-position='right'>
           <FormItem label='资源ID：'>
-            <span class={'subnet-dialog-highlight-font'}>
-              {props.data.cloud_id}
-            </span>
+            <span class={'subnet-dialog-highlight-font'}>{props.data.cloud_id}</span>
           </FormItem>
           <FormItem label='名称：'>
-            <span class={'subnet-dialog-highlight-font'}>
-              {props.data.name}
-            </span>
+            <span class={'subnet-dialog-highlight-font'}>{props.data.name}</span>
           </FormItem>
           <FormItem label='可用区：'>
-            <span class={'subnet-dialog-highlight-font'}>
-              {props.data.region}
-            </span>
+            <span class={'subnet-dialog-highlight-font'}>{props.data.region}</span>
           </FormItem>
           <FormItem label='所属VPC：'>
-            <span class={'subnet-dialog-highlight-font'}>
-              {props.data.vpc_id}
-            </span>
+            <span class={'subnet-dialog-highlight-font'}>{props.data.vpc_id}</span>
           </FormItem>
           <FormItem label='IPv4 CIDR：'>
             <span class={'subnet-dialog-highlight-font'}>
-              {props.data?.ipv4_cidr?.map(str => (
+              {props.data?.ipv4_cidr?.map((str) => (
                 <>
                   <span>{str}</span>
                   <br />
@@ -79,4 +71,3 @@ export default defineComponent({
     );
   },
 });
-

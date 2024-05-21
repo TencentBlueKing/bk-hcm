@@ -1,0 +1,74 @@
+.batch-delete-rs-dialog {
+  .top-area {
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+
+    .tips {
+      align-self: flex-end;
+      color: #313238;
+
+      .blue {
+        margin: 0 4px;
+        color: #3a84ff;
+      }
+    }
+  }
+
+  .bk-table {
+    // 表头
+    thead {
+      tr > th .expand {
+        padding: 0;
+        justify-content: flex-end;
+      }
+    }
+    &.bordered-row .bk-table-head,
+    .bk-table-body {
+      border-bottom: none;
+    }
+    // 展开/收起 row
+    .i-expand-content {
+      margin-left: 9px;
+
+      .main {
+        color: #313238;
+      }
+
+      .extension {
+        color: #979ba5;
+      }
+    }
+
+    .expand-cell {
+      background-color: #f0f1f5;
+      justify-content: flex-start !important;
+    }
+
+    .i-expand-row {
+      display: flex;
+
+      .i-expand-cell {
+        padding: 0 16px;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        height: 42px;
+        border-top: 1px solid #dcdee5;
+
+        .i-cell-content {
+          font-size: 12px;
+        }
+
+        &:first-of-type {
+          width: 32px;
+          flex: 0;
+        }
+
+        &:nth-of-type(2) {
+          padding: 0 24px 0 8px;
+        }
+      }
+    }
+  }
+}

@@ -33,7 +33,7 @@ export default defineComponent({
   setup() {
     const { cond, isEmptyCond } = useCondtion(ResourceTypeEnum.VPC);
     const { isResourcePage } = useWhereAmI();
-    const { formData, formRef, handleFormSubmit, submitting } =      useVpcFormData(cond);
+    const { formData, formRef, handleFormSubmit, submitting } = useVpcFormData(cond);
     // const __ = useVpcOptions(cond, formData);
     const { t } = useI18n();
     const router = useRouter();
@@ -93,19 +93,11 @@ export default defineComponent({
             property: 'name',
             maxlength: 60,
             description: nameRegMsg,
-            content: () => (
-              <Input
-                placeholder='填写VPC网络的名称'
-                v-model={formData.name}></Input>
-            ),
+            content: () => <Input placeholder='填写VPC网络的名称' v-model={formData.name}></Input>,
           },
           {
             label: 'IP来源类型',
-            display: [
-              VendorEnum.TCLOUD,
-              VendorEnum.AZURE,
-              VendorEnum.HUAWEI,
-            ].includes(cond.vendor),
+            display: [VendorEnum.TCLOUD, VendorEnum.AZURE, VendorEnum.HUAWEI].includes(cond.vendor),
             required: true,
             property: 'ip_source_type',
             content: () => (
@@ -126,15 +118,9 @@ export default defineComponent({
                 <div class='flex-row align-items-center'>
                   <ComposeFormItem class='mr5'>
                     <div class='flex-row'>
-                      <Select
-                        class='w110'
-                        clearable={false}
-                        v-model={formData.ipv4_cidr[0]}>
-                        {CIDRLIST.map(item => (
-                          <Option
-                            key={item.id}
-                            value={item.id}
-                            label={item.name}>
+                      <Select class='w110' clearable={false} v-model={formData.ipv4_cidr[0]}>
+                        {CIDRLIST.map((item) => (
+                          <Option key={item.id} value={item.id} label={item.name}>
                             {item.name}
                           </Option>
                         ))}
@@ -143,30 +129,16 @@ export default defineComponent({
                       <Input
                         type='number'
                         disabled={ipv4CidrFir.value === '192'}
-                        placeholder={`${CIDRDATARANGE[ipv4CidrFir.value].min}-${
-                          CIDRDATARANGE[ipv4CidrFir.value].max
-                        }`}
+                        placeholder={`${CIDRDATARANGE[ipv4CidrFir.value].min}-${CIDRDATARANGE[ipv4CidrFir.value].max}`}
                         min={CIDRDATARANGE[ipv4CidrFir.value].min}
                         max={CIDRDATARANGE[ipv4CidrFir.value].max}
                         v-model={formData.ipv4_cidr[1]}
                         class='w110'
                       />
                       <div>.</div>
-                      <Input
-                        type='number'
-                        min={0}
-                        max={255}
-                        v-model={formData.ipv4_cidr[2]}
-                        class='w110'
-                      />
+                      <Input type='number' min={0} max={255} v-model={formData.ipv4_cidr[2]} class='w110' />
                       <div>.</div>
-                      <Input
-                        min={0}
-                        max={255}
-                        type='number'
-                        v-model={formData.ipv4_cidr[3]}
-                        class='w110'
-                      />
+                      <Input min={0} max={255} type='number' v-model={formData.ipv4_cidr[3]} class='w110' />
                       <div>/</div>
                       <Input
                         type='number'
@@ -188,9 +160,7 @@ export default defineComponent({
                   </ComposeFormItem>
                   <Info
                     v-BkTooltips={{
-                      content: networkTips.value
-                        ? networkTips.value
-                        : '请先选择云厂商',
+                      content: networkTips.value ? networkTips.value : '请先选择云厂商',
                     }}></Info>
                 </div>
               </>
@@ -198,7 +168,8 @@ export default defineComponent({
           },
           {
             label: '管控区域',
-            description: '管控区是蓝鲸可以管控的Agent网络区域，以实现跨网管理。\n一个VPC，对应一个管控区。如VPC未绑定管控区，请到资源接入-VPC-绑定管控区操作。',
+            description:
+              '管控区是蓝鲸可以管控的Agent网络区域，以实现跨网管理。\n一个VPC，对应一个管控区。如VPC未绑定管控区，请到资源接入-VPC-绑定管控区操作。',
             required: true,
             property: 'bk_cloud_id',
             content: () => <CloudAreaSelector v-model={formData.bk_cloud_id} />,
@@ -283,12 +254,7 @@ export default defineComponent({
             property: 'subnet.name',
             maxlength: 60,
             description: nameRegMsg,
-            content: () => (
-              <Input
-                placeholder='填写子网的名称'
-                v-model={formData.subnet.name}
-              />
-            ),
+            content: () => <Input placeholder='填写子网的名称' v-model={formData.subnet.name} />,
           },
           {
             label: 'IPv4 CIDR',
@@ -299,15 +265,9 @@ export default defineComponent({
                   <ComposeFormItem class='mr5'>
                     <div class='flex-row'>
                       {cond.vendor === VendorEnum.GCP ? (
-                        <Select
-                          class='w110'
-                          clearable={false}
-                          v-model={formData.subnet.ipv4_cidr[0]}>
-                          {CIDRLIST.map(item => (
-                            <Option
-                              key={item.id}
-                              value={item.id}
-                              label={item.name}>
+                        <Select class='w110' clearable={false} v-model={formData.subnet.ipv4_cidr[0]}>
+                          {CIDRLIST.map((item) => (
+                            <Option key={item.id} value={item.id} label={item.name}>
                               {item.name}
                             </Option>
                           ))}
@@ -372,24 +332,13 @@ export default defineComponent({
             display: [VendorEnum.TCLOUD].includes(cond.vendor),
             required: true,
             property: 'subnet.zone',
-            description:
-              '同一私有网络下可以有不同可用区的子网，同一私有网络下不同可用区的子网默认可以内网互通',
-            content: () => (
-              <ZoneSelector
-                v-model={formData.subnet.zone}
-                vendor={cond.vendor}
-                region={cond.region}
-              />
-            ),
+            description: '同一私有网络下可以有不同可用区的子网，同一私有网络下不同可用区的子网默认可以内网互通',
+            content: () => <ZoneSelector v-model={formData.subnet.zone} vendor={cond.vendor} region={cond.region} />,
           },
           {
             label: '子网IPv6网段',
             display: cond.vendor === VendorEnum.HUAWEI,
-            content: () => (
-              <Checkbox v-model={formData.subnet.ipv6_enable}>
-                开启IPv6
-              </Checkbox>
-            ),
+            content: () => <Checkbox v-model={formData.subnet.ipv6_enable}>开启IPv6</Checkbox>,
           },
           {
             label: '关联路由表',
@@ -420,9 +369,7 @@ export default defineComponent({
             label: '防火墙规则',
             display: cond.vendor === VendorEnum.GCP,
             content: () => (
-              <span>
-                默认防火墙规则是可以出，不允许进入。如需绑定防火墙规则，请在创建VPC后，进入VPC管理页面绑定。
-              </span>
+              <span>默认防火墙规则是可以出，不允许进入。如需绑定防火墙规则，请在创建VPC后，进入VPC管理页面绑定。</span>
             ),
           },
         ],
@@ -449,9 +396,7 @@ export default defineComponent({
           trigger: 'change',
           message: 'IPv4 CIDR 不能为空',
           validator: () => {
-            return (
-              !!formData.ipv4_cidr[4]
-            );
+            return !!formData.ipv4_cidr[4];
           },
         },
       ],
@@ -460,9 +405,7 @@ export default defineComponent({
           trigger: 'change',
           message: 'IPv4 CIDR 前缀长度不能为空',
           validator: () => {
-            return (
-              !!formData.subnet.ipv4_cidr[4]
-            );
+            return !!formData.subnet.ipv4_cidr[4];
           },
         },
         {
@@ -470,9 +413,7 @@ export default defineComponent({
           message: '子网IPv4 CIDR不合法，或不在VPC的CIDR范围中',
           validator: () => {
             if (cond.vendor !== VendorEnum.GCP) {
-              return (
-                !formData.ipv4_cidr[4] || +formData.subnet.ipv4_cidr[4] >= +formData.ipv4_cidr[4]
-              );
+              return !formData.ipv4_cidr[4] || +formData.subnet.ipv4_cidr[4] >= +formData.ipv4_cidr[4];
             }
             switch (+formData.subnet.ipv4_cidr[0]) {
               case 10:
@@ -530,13 +471,8 @@ export default defineComponent({
         <DetailHeader>
           <p class={'purchase-vpc-header-title'}>购买VPC</p>
         </DetailHeader>
-        <div class="create-form-container" style={isResourcePage && { padding: 0 }}>
-          <Form
-            model={formData}
-            rules={formRules}
-            ref={formRef}
-            onSubmit={handleFormSubmit}
-            formType='vertical'>
+        <div class='create-form-container' style={isResourcePage && { padding: 0 }}>
+          <Form model={formData} rules={formRules} ref={formRef} onSubmit={handleFormSubmit} formType='vertical'>
             <ConditionOptions
               type={ResourceTypeEnum.VPC}
               v-model:bizId={cond.bizId}
@@ -551,43 +487,28 @@ export default defineComponent({
                 <CommonCard title={() => title} class={'mb16'}>
                   {children
                     .filter(({ display }) => display !== false)
-                    .map(({
-                      label,
-                      description,
-                      tips,
-                      required,
-                      property,
-                      content,
-                    }) => (
-                        <FormItem
-                          label={label}
-                          required={required}
-                          property={property}
-                          description={description}>
-                          {Array.isArray(content) ? (
-                            <div class='flex-row'>
-                              {content
-                                .filter(sub => sub.display !== false)
-                                .map(sub => (
-                                  <FormItem
-                                    label={sub.label}
-                                    required={sub.required}
-                                    property={sub.property}
-                                    description={sub?.description}>
-                                    {sub.content()}
-                                    {sub.tips && (
-                                      <div class='form-item-tips'>
-                                        {sub.tips()}
-                                      </div>
-                                    )}
-                                  </FormItem>
-                                ))}
-                            </div>
-                          ) : (
-                            content()
-                          )}
-                          {tips && <div class='form-item-tips'>{tips()}</div>}
-                        </FormItem>
+                    .map(({ label, description, tips, required, property, content }) => (
+                      <FormItem label={label} required={required} property={property} description={description}>
+                        {Array.isArray(content) ? (
+                          <div class='flex-row'>
+                            {content
+                              .filter((sub) => sub.display !== false)
+                              .map((sub) => (
+                                <FormItem
+                                  label={sub.label}
+                                  required={sub.required}
+                                  property={sub.property}
+                                  description={sub?.description}>
+                                  {sub.content()}
+                                  {sub.tips && <div class='form-item-tips'>{sub.tips()}</div>}
+                                </FormItem>
+                              ))}
+                          </div>
+                        ) : (
+                          content()
+                        )}
+                        {tips && <div class='form-item-tips'>{tips()}</div>}
+                      </FormItem>
                     ))}
                 </CommonCard>
               ))}

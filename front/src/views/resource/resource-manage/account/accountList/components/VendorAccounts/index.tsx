@@ -13,15 +13,15 @@ export default defineComponent({
     accounts: {
       required: true,
       type: Array as PropType<
-      Array<{
-        vendor: VendorEnum;
-        count: number;
-        name: string;
-        icon: any;
-        accounts: any[];
-        isExpand: boolean;
-        hasNext: boolean;
-      }>
+        Array<{
+          vendor: VendorEnum;
+          count: number;
+          name: string;
+          icon: any;
+          accounts: any[];
+          isExpand: boolean;
+          hasNext: boolean;
+        }>
       >,
     },
     searchVal: String,
@@ -105,7 +105,9 @@ export default defineComponent({
 
     return () => (
       <div class={'vendor-account-list'}>
-        {props.accounts.map(({ vendor, count, name, icon, accounts, isExpand, hasNext }) => count > 0 && (
+        {props.accounts.map(
+          ({ vendor, count, name, icon, accounts, isExpand, hasNext }) =>
+            count > 0 && (
               <div class='vendor-wrap'>
                 <div
                   class={`vendor-item-wrap${isExpand ? ' sticky' : ''}${
@@ -133,14 +135,20 @@ export default defineComponent({
                       />
                       {props.searchVal ? getHighLightNameText(name, 'account-text') : name}
                     </div>
-                  ))
-                }
-                {
-                  hasNext && <bk-loading ref={(ref: any) => loadingRef.value.push(ref)} data-vendor={vendor} size="small" loading><div style="width: 100%; height: 36px" /></bk-loading>
-                }
+                  ))}
+                  {hasNext && (
+                    <bk-loading
+                      ref={(ref: any) => loadingRef.value.push(ref)}
+                      data-vendor={vendor}
+                      size='small'
+                      loading>
+                      <div style='width: 100%; height: 36px' />
+                    </bk-loading>
+                  )}
+                </div>
               </div>
-            </div>
-        ))}
+            ),
+        )}
       </div>
     );
   },

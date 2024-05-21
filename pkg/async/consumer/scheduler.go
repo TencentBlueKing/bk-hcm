@@ -26,6 +26,7 @@ import (
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/async/backend"
+	"hcm/pkg/async/backend/model"
 	"hcm/pkg/async/compctrl"
 	"hcm/pkg/async/consumer/leader"
 	"hcm/pkg/criteria/constant"
@@ -34,15 +35,15 @@ import (
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/runtime/filter"
+	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/retry"
 	"hcm/pkg/tools/slice"
 )
 
 /*
 Scheduler （调度器）: TODO: 换为 捕获器、消费器，添加假死任务销毁逻辑
-	1. 获取分配给当前节点的处于Scheduled状态的任务流，构建任务流树，将待执行任务推送到执行器执行。
-	2. 分析执行器执行完的任务，判断任务流树状态，如果任务流处理完，更新状态，否则将子节点推送到执行器执行。
+ 1. 获取分配给当前节点的处于Scheduled状态的任务流，构建任务流树，将待执行任务推送到执行器执行。
+ 2. 分析执行器执行完的任务，判断任务流树状态，如果任务流处理完，更新状态，否则将子节点推送到执行器执行。
 */
 type Scheduler interface {
 	compctrl.Closer
@@ -52,6 +53,8 @@ type Scheduler interface {
 
 	// EntryTask 分析执行完的任务，并解析出当前任务的子任务去执行。
 	EntryTask(task *Task)
+	// DeleteFlowTaskTree 清空任务树，阻止继续调度
+	DeleteFlowTaskTree(flowID string)
 }
 
 // scheduler 定义任务流调度器
@@ -91,8 +94,9 @@ func (sch *scheduler) Start() {
 	logs.Infof("scheduler start, worker number: %d, interval: %v", sch.workerNumber, sch.watchIntervalSec)
 
 	// 定期获取等待执行的任务流
-	sch.workerWg.Add(1)
-	go sch.startWatcher(sch.watchScheduledFlow)
+	sch.workerWg.Add(2)
+	go sch.scheduledFlowWatcher()
+	go sch.canceledFlowWatcher()
 
 	// 启动workerNumber个协程进行任务流解析
 	for i := 0; i < int(sch.workerNumber); i++ {
@@ -101,18 +105,19 @@ func (sch *scheduler) Start() {
 	}
 }
 
-// startWatcher 定期执行do函数体
-func (sch *scheduler) startWatcher(do func(kt *kit.Kit) error) {
+// flowWatcher 定期查询调度到该节点的flow
+func (sch *scheduler) scheduledFlowWatcher() {
 	for {
 		select {
 		case <-sch.closeCh:
 			break
 		default:
 		}
-
+		// Kit: Kit initiate, 每次执行创建新kit
 		kt := NewKit()
-		if err := do(kt); err != nil {
-			logs.Errorf("%s: scheduler watcher do failed, err: %v, rid: %s", constant.AsyncTaskWarnSign, err, kt.Rid)
+		if err := sch.runScheduledFlow(kt); err != nil {
+			logs.Errorf("%s: scheduler watch scheduled flow  failed, err: %v, rid: %s",
+				constant.AsyncTaskWarnSign, err, kt.Rid)
 		}
 
 		time.Sleep(sch.watchIntervalSec)
@@ -122,28 +127,16 @@ func (sch *scheduler) startWatcher(do func(kt *kit.Kit) error) {
 }
 
 // queryCurrNodeFlow 查询主节点分配给当前节点处于 Scheduled 状态的任务流。
-func (sch *scheduler) queryCurrNodeFlow(kt *kit.Kit, limit int32) ([]*Flow, error) {
+func (sch *scheduler) queryCurrNodeFlow(kt *kit.Kit, state enumor.FlowState, limit int32) (
+	[]model.Flow, error) {
 
 	if limit > int32(core.DefaultMaxPageLimit) {
 		return nil, fmt.Errorf("limit should <= %d", core.DefaultMaxPageLimit)
 	}
-
 	input := &backend.ListInput{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{
-					Field: "state",
-					Op:    filter.Equal.Factory(),
-					Value: enumor.FlowScheduled,
-				},
-				&filter.AtomRule{
-					Field: "worker",
-					Op:    filter.Equal.Factory(),
-					Value: sch.leader.CurrNode(),
-				},
-			},
-		},
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("state", state),
+			tools.RuleEqual("worker", sch.leader.CurrNode())),
 		Page: &core.BasePage{
 			Start: 0,
 			Limit: uint(limit),
@@ -154,16 +147,58 @@ func (sch *scheduler) queryCurrNodeFlow(kt *kit.Kit, limit int32) ([]*Flow, erro
 		logs.Errorf("list flows failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
+	return result, nil
+}
 
-	flows := make([]*Flow, 0)
-	for _, one := range result {
-		flows = append(flows, &Flow{
-			Flow: one,
-			Kit:  kt.NewSubKit(),
-		})
+// canceledFlowWatcher 查询当前节点上被取消的flow并执行task取消操作
+func (sch *scheduler) canceledFlowWatcher() {
+	for {
+		select {
+		case <-sch.closeCh:
+			break
+		default:
+		}
+		// Kit: Kit initiate, 每次执行创建新kit
+		kt := NewKit()
+		if err := sch.handleCanceledFlow(kt); err != nil {
+			logs.Errorf("%s: scheduler watch canceled failed, err: %v, rid: %s",
+				constant.AsyncTaskWarnSign, err, kt.Rid)
+		}
+
+		time.Sleep(sch.watchIntervalSec)
 	}
 
-	return flows, nil
+	sch.workerWg.Done()
+}
+
+func (sch *scheduler) handleCanceledFlow(kt *kit.Kit) error {
+
+	dbFlows, err := sch.queryCurrNodeFlow(kt, enumor.FlowCancel, listScheduledFlowLimit)
+	if err != nil {
+		logs.Errorf("fail to list canceled flow, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	if len(dbFlows) == 0 {
+		return nil
+	}
+	for _, flow := range dbFlows {
+		logs.Infof("canceling flow: %s", flow.ID)
+		// 清空任务树，阻止继续调度
+		sch.DeleteFlowTaskTree(flow.ID)
+		err = updateFlowToCancel(kt, sch.backend, flow.ID, cvt.PtrToVal(flow.Worker), enumor.FlowCancel)
+		if err != nil {
+			logs.Errorf("fail to update flow clear worker id, err: %v, flow id: %s rid: %s",
+				err, flow.ID, kt.Rid)
+			// keep canceling other flow
+			continue
+		}
+
+		if err := sch.executor.CancelFlow(kt, flow.ID); err != nil {
+			logs.Errorf("fail to handle flow canceling, err: %v, flow id: %s, rid: %s", err, flow.ID, kt.Rid)
+			// keep canceling other flow
+		}
+	}
+	return nil
 }
 
 // listTaskByFlowID 查询当前FlowID全部的任务节点
@@ -188,7 +223,8 @@ func listTaskByFlowID(kt *kit.Kit, bd backend.Backend, flowID string) ([]*Task, 
 		for _, one := range result {
 			tasks = append(tasks, &Task{
 				Task: one,
-				Kit:  kt.NewSubKit(),
+				// Note: second sub kit, flow -> task
+				Kit: kt.NewSubKit(),
 			})
 		}
 
@@ -296,7 +332,7 @@ func (sch *scheduler) parseFlowAndPushTask(kt *kit.Kit, flow *Flow) error {
 		taskIDMap[one.ID] = one
 	}
 
-	// 可执行任务推送到执行器
+	// 所有可执行任务推送到执行器
 	flow.State = enumor.FlowRunning
 	for _, taskID := range executableTaskNodes {
 		sch.executor.Push(flow, taskIDMap[taskID])
@@ -323,11 +359,12 @@ func updateFlowStateAndReason(kt *kit.Kit, bd backend.Backend, flowID string, so
 	}
 	if len(reason) != 0 {
 		info.Reason = &tableasync.Reason{
-			Message: reason,
+			PreState: string(source),
+			Message:  reason,
 		}
 	}
 
-	rty := retry.NewRetryPolicy(defRetryCount, defRetryRangeMS)
+	rty := retry.NewRetryPolicy(DefRetryCount, DefRetryRangeMS)
 	err := rty.BaseExec(kt, func() error {
 		return bd.BatchUpdateFlowStateByCAS(kt, []backend.UpdateFlowInfo{info})
 	})
@@ -338,15 +375,46 @@ func updateFlowStateAndReason(kt *kit.Kit, bd backend.Backend, flowID string, so
 	return nil
 }
 
-// watchScheduledFlow 查询主节点分配给当前节点的
-func (sch *scheduler) watchScheduledFlow(kt *kit.Kit) error {
+// updateFlowToCancel 状态改为取消，清空 worker字段,
+func updateFlowToCancel(kt *kit.Kit, bd backend.Backend, flowId, oldWorkerID string, source enumor.FlowState) error {
+
+	info := backend.UpdateFlowInfo{
+		ID:     flowId,
+		Source: source,
+		Target: enumor.FlowCancel,
+		Reason: &tableasync.Reason{
+			Message:  "canceled from " + oldWorkerID,
+			PreState: string(source),
+		},
+		Worker: cvt.ValToPtr(""),
+	}
+
+	rty := retry.NewRetryPolicy(DefRetryCount, DefRetryRangeMS)
+	err := rty.BaseExec(kt, func() error {
+		return bd.BatchUpdateFlowStateByCAS(kt, []backend.UpdateFlowInfo{info})
+	})
+	if err != nil {
+		logs.Errorf("fail to update flow state to cancel, err: %v, flow id: %s, rid: %s", err, flowId, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// watchScheduledFlow 查询主节点分配给当前节点的的flow，并执行
+func (sch *scheduler) runScheduledFlow(kt *kit.Kit) error {
 
 	// 从DB中获取一条待执行的任务流并更新状态为执行中
-	flows, err := sch.queryCurrNodeFlow(kt, listScheduledFlowLimit)
+	dbFlows, err := sch.queryCurrNodeFlow(kt, enumor.FlowScheduled, listScheduledFlowLimit)
 	if err != nil {
 		logs.Errorf("")
 		return err
 	}
+
+	flows := slice.Map(dbFlows, func(one model.Flow) *Flow {
+		// Note: first sub kit, scheduler.watcher -> flow
+		return &Flow{Flow: one, Kit: kt.NewSubKit()}
+	})
 
 	if len(flows) == 0 {
 		logs.V(3).Infof("current node: %s not found scheduled flow to handleRunningFlow, rid: %s",
@@ -383,6 +451,10 @@ func (sch *scheduler) goWorker() {
 
 // 任务流解析函数体，根据任务获取下次可执行的任务集合
 func (sch *scheduler) executeNext(kt *kit.Kit, task *Task) error {
+	if task.State == enumor.TaskCancel {
+		// skip canceled task
+		return nil
+	}
 	tree, ok := sch.getTaskTree(task.FlowID)
 	if !ok {
 		logs.Errorf("execute next get task tree failed, flowID: %s, rid: %s", task.FlowID, kt.Rid)
@@ -390,34 +462,35 @@ func (sch *scheduler) executeNext(kt *kit.Kit, task *Task) error {
 	}
 
 	// 获取下次执行的任务
-	ids := tree.Root.GetNextTaskNodes(task)
-	if len(ids) == 0 {
+	executableIds := tree.Root.GetNextExecutableTaskNodes(task)
+	if len(executableIds) == 0 {
+		// 没有可执行的节点了，计算整棵树的执行状态，更新flow结果
 		state := tree.Root.ComputeState()
-
-		if state == enumor.FlowSuccess {
+		switch state {
+		case enumor.FlowSuccess:
 			if err := updateFlowState(kt, sch.backend, task.FlowID, enumor.FlowRunning, state); err != nil {
-				logs.Errorf("update flow state to %s failed, err: %v, rid: %s", state, err, kt.Rid)
+				logs.Errorf("update flow state to `%s` failed, err: %v, rid: %s", state, err, kt.Rid)
 				return err
 			}
 
-			sch.taskTrees.Delete(task.FlowID)
-		}
-
-		if state == enumor.FlowFailed {
+			sch.DeleteFlowTaskTree(task.FlowID)
+		case enumor.FlowFailed:
 			if err := updateFlowStateAndReason(kt, sch.backend, task.FlowID, enumor.FlowRunning, state,
 				ErrSomeTaskExecFailed); err != nil {
 
-				logs.Errorf("update flow state to %s failed, err: %v, rid: %s", state, err, kt.Rid)
+				logs.Errorf("update flow state to `%s` failed, err: %v, rid: %s", state, err, kt.Rid)
 				return err
 			}
 
-			sch.taskTrees.Delete(task.FlowID)
+			sch.DeleteFlowTaskTree(task.FlowID)
+		case enumor.FlowCancel:
+			// task cancel 一般是由flow状态触发，因此这里不处理
 		}
 
 		return nil
 	}
 
-	return sch.pushTasks(kt, tree.Flow, ids)
+	return sch.pushTasks(kt, tree.Flow, executableIds)
 }
 
 func (sch *scheduler) pushTasks(kt *kit.Kit, flow *Flow, ids []string) error {
@@ -470,4 +543,10 @@ func (sch *scheduler) Close() {
 
 	logs.Infof("scheduler receive close cmd, start to close")
 
+}
+
+// DeleteFlowTaskTree 清空任务树，阻止继续调度
+func (sch *scheduler) DeleteFlowTaskTree(flowID string) {
+
+	sch.taskTrees.Delete(flowID)
 }

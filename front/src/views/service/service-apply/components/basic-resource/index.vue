@@ -3,21 +3,13 @@
     <section class="card-group">
       <h2 class="group-title">资源申请</h2>
       <div class="group-content">
-        <ResourceCard
-          :list="appList"
-          :auth-verify-data="authVerifyData"
-          @handle-auth-click="handleClick"
-        />
+        <ResourceCard :list="appList" :auth-verify-data="authVerifyData" @handle-auth-click="handleClick" />
       </div>
     </section>
     <section class="card-group">
       <h2 class="group-title">账号录入</h2>
       <div class="group-content">
-        <ResourceCard
-          :list="accountList"
-          :auth-verify-data="authVerifyData"
-          @handle-auth-click="handleClick"
-        />
+        <ResourceCard :list="accountList" :auth-verify-data="authVerifyData" @handle-auth-click="handleClick" />
       </div>
     </section>
     <permission-dialog
@@ -57,12 +49,14 @@ export default defineComponent({
         routeName: 'applyDisk',
       },
     ];
-    const accountList = ref([{
-      name: '云账号录入',
-      id: 1,
-      btnText: '立即录入',
-      routeName: 'applyAccount',
-    }]);
+    const accountList = ref([
+      {
+        name: '云账号录入',
+        id: 1,
+        btnText: '立即录入',
+        routeName: 'applyAccount',
+      },
+    ]);
 
     const handleClick = (value: string) => {
       console.log('1111', value);
@@ -100,8 +94,8 @@ export default defineComponent({
   .group-title {
     font-size: 16px;
     font-weight: normal;
-    padding: .5em 0;
-    border-bottom: 1px solid rgba(0, 0, 0, .15);
+    padding: 0.5em 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.15);
   }
   .group-content {
     padding: 12px;

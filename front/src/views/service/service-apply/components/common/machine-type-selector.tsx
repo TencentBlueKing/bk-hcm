@@ -56,56 +56,65 @@ export default defineComponent({
       memory: '',
     });
 
-    const columns = ref([{
-      label: '类型',
-      field: 'type_name',
-      render: ({ cell, data }: any) => {
-        return (<div class={'flex-row'}>
-        <Radio
-          v-model={checkedInstance.instanceType}
-          checked={checkedInstance.instanceType === data.instance_type}
-          label={data.instance_type}
-          // onChange={() => handleChangeCheckedInstance(data)}
-        >
-          {  props.vendor === VendorEnum.TCLOUD ? cell : data.instance_type }
-        </Radio>
-      </div>);
+    const columns = ref([
+      {
+        label: '类型',
+        field: 'type_name',
+        render: ({ cell, data }: any) => {
+          return (
+            <div class={'flex-row'}>
+              <Radio
+                v-model={checkedInstance.instanceType}
+                checked={checkedInstance.instanceType === data.instance_type}
+                label={data.instance_type}
+                // onChange={() => handleChangeCheckedInstance(data)}
+              >
+                {props.vendor === VendorEnum.TCLOUD ? cell : data.instance_type}
+              </Radio>
+            </div>
+          );
+        },
       },
-    },
-    {
-      label: '规格',
-      field: 'instance_type',
-    },
-    {
-      label: 'CPU',
-      field: 'cpu',
-      render: ({ cell }: {cell: string}) => `${cell}核`,
-    },
-    {
-      label: '内存',
-      field: 'memory',
-      render: ({ cell }: {cell: string}) => `${Math.floor(+cell / 1024)}GB`,
-    },
-    {
-      label: '处理器型号',
-      field: 'cpu_type',
-    },
-    {
-      label: '内网带宽',
-      field: 'instance_bandwidth',
-      render: ({ data }: {data: any}) => `${props.vendor === VendorEnum.TCLOUD ? `${data.instance_bandwidth}Gbps` : data.network_performance}`,
-    },
-    {
-      label: '网络收发包',
-      field: 'instance_pps',
-      render: ({ cell }: {cell: string}) => `${cell}万PPS`,
-    },
-    {
-      label: '参考费用',
-      field: 'price',
-      fixed: 'right',
-      render: ({ data }: any) => <span class={'instance-price'}>{`${data?.Price?.DiscountPrice || data?.Price?.DiscountPriceOneYear}元/月`}</span>,
-    }]);
+      {
+        label: '规格',
+        field: 'instance_type',
+      },
+      {
+        label: 'CPU',
+        field: 'cpu',
+        render: ({ cell }: { cell: string }) => `${cell}核`,
+      },
+      {
+        label: '内存',
+        field: 'memory',
+        render: ({ cell }: { cell: string }) => `${Math.floor(+cell / 1024)}GB`,
+      },
+      {
+        label: '处理器型号',
+        field: 'cpu_type',
+      },
+      {
+        label: '内网带宽',
+        field: 'instance_bandwidth',
+        render: ({ data }: { data: any }) =>
+          `${props.vendor === VendorEnum.TCLOUD ? `${data.instance_bandwidth}Gbps` : data.network_performance}`,
+      },
+      {
+        label: '网络收发包',
+        field: 'instance_pps',
+        render: ({ cell }: { cell: string }) => `${cell}万PPS`,
+      },
+      {
+        label: '参考费用',
+        field: 'price',
+        fixed: 'right',
+        render: ({ data }: any) => (
+          <span class={'instance-price'}>{`${
+            data?.Price?.DiscountPrice || data?.Price?.DiscountPriceOneYear
+          }元/月`}</span>
+        ),
+      },
+    ]);
 
     const selected = computed({
       get() {
@@ -116,49 +125,56 @@ export default defineComponent({
       },
     });
 
-    watch([
-      () => props.vendor,
-      () => props.accountId,
-      () => props.region,
-      () => props.zone,
-      () => props.instanceChargeType,
-    ], async ([vendor, accountId, region, zone, instanceChargeType], [,,,oldZone]) => {
-      if (!vendor || !accountId || !region || (vendor !== VendorEnum.AZURE && !zone)
-      || (vendor === VendorEnum.TCLOUD && !instanceChargeType)) {
-        list.value = [];
-        return;
-      }
+    watch(
+      [() => props.vendor, () => props.accountId, () => props.region, () => props.zone, () => props.instanceChargeType],
+      async ([vendor, accountId, region, zone, instanceChargeType], [, , , oldZone]) => {
+        if (
+          !vendor ||
+          !accountId ||
+          !region ||
+          (vendor !== VendorEnum.AZURE && !zone) ||
+          (vendor === VendorEnum.TCLOUD && !instanceChargeType)
+        ) {
+          list.value = [];
+          return;
+        }
 
-      // AZURE时与zone无关，只需要满足其它条件时请求一次
-      if (vendor === VendorEnum.AZURE && zone !== oldZone) {
-        return;
-      }
+        // AZURE时与zone无关，只需要满足其它条件时请求一次
+        if (vendor === VendorEnum.AZURE && zone !== oldZone) {
+          return;
+        }
 
-      loading.value = true;
-      const result = await http.post(
-        isResourcePage
-          ? `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/instance_types/list`
-          : `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${props.bizId}/instance_types/list`
-        , {
-          account_id: accountId,
-          vendor,
-          region,
-          zone,
-          instance_charge_type: instanceChargeType,
-        },
-      );
-      list.value = result.data?.instance_types || [];
-      instanceFamilyTypesList.value = props.vendor === VendorEnum.TCLOUD
-        ? result.data?.instance_family_type_names
-        : result.data?.instance_families;
+        loading.value = true;
+        const result = await http.post(
+          isResourcePage
+            ? `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/instance_types/list`
+            : `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${props.bizId}/instance_types/list`,
+          {
+            account_id: accountId,
+            vendor,
+            region,
+            zone,
+            instance_charge_type: instanceChargeType,
+          },
+        );
+        list.value = result.data?.instance_types || [];
+        instanceFamilyTypesList.value =
+          props.vendor === VendorEnum.TCLOUD ? result.data?.instance_family_type_names : result.data?.instance_families;
 
-      loading.value = false;
-    });
+        loading.value = false;
+      },
+    );
 
     const computedColumns = computed(() => {
       return columns.value
-        .filter(({ field }) => !['cpu_type', 'instance_pps', 'price'].includes(field) || props.vendor === VendorEnum.TCLOUD)
-        .filter(({ field }) => !['instance_bandwidth'].includes(field) || [VendorEnum.TCLOUD, VendorEnum.AWS].includes(props.vendor as VendorEnum));
+        .filter(
+          ({ field }) => !['cpu_type', 'instance_pps', 'price'].includes(field) || props.vendor === VendorEnum.TCLOUD,
+        )
+        .filter(
+          ({ field }) =>
+            !['instance_bandwidth'].includes(field) ||
+            [VendorEnum.TCLOUD, VendorEnum.AWS].includes(props.vendor as VendorEnum),
+        );
     });
 
     watchEffect(() => {
@@ -181,13 +197,13 @@ export default defineComponent({
       for (const { id, values } of searchVal.value) {
         let val = values?.[0]?.id;
         if (id === 'memory' && !isNaN(values?.[0]?.id)) val = +val * 1024;
-        resList.value = resList.value.filter(item => item[id] === +val);
+        resList.value = resList.value.filter((item) => item[id] === +val);
       }
     });
 
     watch(
       () => props.vendor,
-      () => selectedFamilyType.value = '',
+      () => (selectedFamilyType.value = ''),
     );
 
     watch(
@@ -208,7 +224,7 @@ export default defineComponent({
 
     const handleChange = () => {
       selected.value = checkedInstance.instanceType;
-      const data = list.value.find(item => item.instance_type === checkedInstance.instanceType);
+      const data = list.value.find((item) => item.instance_type === checkedInstance.instanceType);
       emit('change', data);
       isDialogShow.value = false;
     };
@@ -225,9 +241,10 @@ export default defineComponent({
     };
 
     const bkTooltipsOptions = computed(() => {
-      if (checkedInstance.instanceType) return {
-        content: `${checkedInstance.instanceType} (${checkedInstance.typeName}, ${checkedInstance.cpu}${checkedInstance.memory})`,
-      };
+      if (checkedInstance.instanceType)
+        return {
+          content: `${checkedInstance.instanceType} (${checkedInstance.typeName}, ${checkedInstance.cpu}${checkedInstance.memory})`,
+        };
       return {
         content: '--',
       };
@@ -258,15 +275,13 @@ export default defineComponent({
       // </Select>
       <div>
         <div class={'selected-block-container'}>
-          {
-            selected.value ? (
-              <div class={'selected-block mr8'} v-BkTooltips={bkTooltipsOptions.value}>
-                { `${checkedInstance.instanceType} (${checkedInstance.typeName}, ${checkedInstance.cpu}${checkedInstance.memory})` }
-              </div>
-            ) : null
-          }
           {selected.value ? (
-            <EditLine fill='#3A84FF' width={13.5} height={13.5} onClick={() => (isDialogShow.value = true)}/>
+            <div class={'selected-block mr8'} v-BkTooltips={bkTooltipsOptions.value}>
+              {`${checkedInstance.instanceType} (${checkedInstance.typeName}, ${checkedInstance.cpu}${checkedInstance.memory})`}
+            </div>
+          ) : null}
+          {selected.value ? (
+            <EditLine fill='#3A84FF' width={13.5} height={13.5} onClick={() => (isDialogShow.value = true)} />
           ) : (
             <Button onClick={() => (isDialogShow.value = true)} disabled={computedDisabled.value}>
               <Plus class='f20' />
@@ -282,22 +297,20 @@ export default defineComponent({
           quick-close={false}
           width={'60vw'}
           height={'80vh'}>
-            {{
-              default: () => (
+          {{
+            default: () => (
               <>
-                <Form
-                  class='selected-block-dialog-form'
-                  labelWidth={100}
-                  labelPosition='right'>
+                <Form class='selected-block-dialog-form' labelWidth={100} labelPosition='right'>
                   <FormItem label='机型族'>
                     <BkButtonGroup>
-                      <Button selected={selectedFamilyType.value === ''}
-                              onClick={() => {
-                                selectedFamilyType.value = '';
-                              }}>
+                      <Button
+                        selected={selectedFamilyType.value === ''}
+                        onClick={() => {
+                          selectedFamilyType.value = '';
+                        }}>
                         全部
                       </Button>
-                      {instanceFamilyTypesList.value.map(name => (
+                      {instanceFamilyTypesList.value.map((name) => (
                         <Button
                           selected={selectedFamilyType.value === name}
                           onClick={() => {
@@ -336,11 +349,15 @@ export default defineComponent({
                   />
                 </Loading>
               </>
-              ),
-              footer: () => (
-                <div>
-                  <Button theme='primary' class={'mr6'} disabled={!checkedInstance.instanceType} onClick={handleChange}> 确认 </Button>
-                  <Button onClick={() => {
+            ),
+            footer: () => (
+              <div>
+                <Button theme='primary' class={'mr6'} disabled={!checkedInstance.instanceType} onClick={handleChange}>
+                  {' '}
+                  确认{' '}
+                </Button>
+                <Button
+                  onClick={() => {
                     isDialogShow.value = false;
                     if (!selected.value) {
                       Object.assign(checkedInstance, {
@@ -350,10 +367,13 @@ export default defineComponent({
                         memory: '',
                       });
                     }
-                  }}> 取消 </Button>
-                </div>
-              ),
-            }}
+                  }}>
+                  {' '}
+                  取消{' '}
+                </Button>
+              </div>
+            ),
+          }}
         </Dialog>
       </div>
     );

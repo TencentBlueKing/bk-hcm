@@ -1,4 +1,4 @@
-import { PropType, computed, defineComponent, ref, watch, watchEffect } from 'vue';
+import { computed, defineComponent, ref, watch, watchEffect } from 'vue';
 import { Select, Tag } from 'bkui-vue';
 import './index.scss';
 import { useBusinessStore } from '@/store';
@@ -10,41 +10,39 @@ const { Option } = Select;
 export default defineComponent({
   name: 'PrimaryStandZoneSelector',
   props: {
-    modelValue: Array as PropType<string[]>,
-    vendor: String as PropType<string>,
-    region: String as PropType<string>,
+    zones: String,
+    backupZones: String,
+    vendor: String,
+    region: String,
   },
-  emits: ['update:modelValue'],
+  emits: ['update:zones', 'update:backupZones', 'resetVipIsp'],
   setup(props, ctx) {
     const businessStore = useBusinessStore();
 
     const primaryZone = ref('');
-    const standZone = ref('');
+    const backupZones = ref('');
     const selectedValue = computed(() => {
-      return [primaryZone.value, standZone.value];
+      return [primaryZone.value, backupZones.value];
     });
     const handleSelect = (value: string) => {
-      if (primaryZone.value && !standZone.value) {
-        standZone.value = value;
+      if (primaryZone.value && !backupZones.value) {
+        backupZones.value = value;
       } else {
         primaryZone.value = value;
       }
-      ctx.emit('update:modelValue', selectedValue.value);
     };
     const handleDeSelect = (value: string) => {
       if (primaryZone.value === value) {
         primaryZone.value = '';
       } else {
-        standZone.value = '';
+        backupZones.value = '';
       }
-      ctx.emit('update:modelValue', selectedValue.value);
     };
     const handleExchange = (e: MouseEvent) => {
       e.stopPropagation();
       const temp = primaryZone.value;
-      primaryZone.value = standZone.value;
-      standZone.value = temp;
-      ctx.emit('update:modelValue', selectedValue.value);
+      primaryZone.value = backupZones.value;
+      backupZones.value = temp;
     };
 
     const zonesList = ref([]);
@@ -77,9 +75,24 @@ export default defineComponent({
       zonesList.value = [];
     };
 
-    watchEffect(void (async () => {
-      getZonesData();
-    })());
+    const handleClearPrimaryZone = () => {
+      primaryZone.value = '';
+    };
+    const handleClearBackupZone = () => {
+      backupZones.value = '';
+    };
+
+    watchEffect(() => {
+      ctx.emit('update:zones', primaryZone.value);
+      ctx.emit('update:backupZones', backupZones.value);
+      ctx.emit('resetVipIsp');
+    });
+
+    watchEffect(
+      void (async () => {
+        getZonesData();
+      })(),
+    );
 
     watch(
       () => props.vendor,
@@ -131,7 +144,7 @@ export default defineComponent({
                       主可用区
                     </Tag>
                   )}
-                  {standZone.value === item.name && (
+                  {backupZones.value === item.name && (
                     <Tag class='ml12' theme='warning'>
                       备可用区
                     </Tag>
@@ -142,9 +155,13 @@ export default defineComponent({
           },
           tag: () => (
             <div class='selected-tag-value-container'>
-              <Tag closable>主&nbsp;&nbsp;:&nbsp;&nbsp;{primaryZone.value || '请选择'}</Tag>
+              <Tag closable onClose={handleClearPrimaryZone}>
+                主&nbsp;&nbsp;:&nbsp;&nbsp;{primaryZone.value || '请选择'}
+              </Tag>
               <i class='hcm-icon bkhcm-icon-exchange-line' onClick={handleExchange}></i>
-              <Tag closable>备&nbsp;&nbsp;:&nbsp;&nbsp;{standZone.value || '请选择'}</Tag>
+              <Tag closable onClose={handleClearBackupZone}>
+                备&nbsp;&nbsp;:&nbsp;&nbsp;{backupZones.value || '请选择'}
+              </Tag>
             </div>
           ),
         }}

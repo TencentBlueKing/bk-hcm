@@ -32,7 +32,8 @@ import (
 )
 
 // SyncArgsTpl ...
-func SyncArgsTpl(kt *kit.Kit, cliSet *client.ClientSet, accountID string, sd *detail.SyncDetail) error {
+func SyncArgsTpl(kt *kit.Kit, cliSet *client.ClientSet, accountID string,
+	regions []string, sd *detail.SyncDetail) error {
 
 	// 重新设置rid方便定位
 	kt = kt.NewSubKit()

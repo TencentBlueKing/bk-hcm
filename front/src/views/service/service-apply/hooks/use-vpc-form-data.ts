@@ -125,7 +125,7 @@ export default (cond: Cond) => {
       'firewall_enable',
       'routing_mode',
     ];
-    keys.forEach(key => resetFormItemData(key));
+    keys.forEach((key) => resetFormItemData(key));
   };
 
   const resetFormItemData = (key: string) => {

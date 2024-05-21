@@ -4,11 +4,11 @@ import { computed, reactive } from 'vue';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 
 export type Cond = {
-  bizId: number,
-  cloudAccountId: string,
-  vendor: Lowercase<keyof typeof VendorEnum> | string,
-  region: string,
-  resourceGroup?: string
+  bizId: number;
+  cloudAccountId: string;
+  vendor: Lowercase<keyof typeof VendorEnum> | string;
+  region: string;
+  resourceGroup?: string;
 };
 
 export default (type: string) => {

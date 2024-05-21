@@ -42,9 +42,9 @@ import (
 
 /*
 WatchDog （看门狗）:
-	1. 处理超时任务
-	2. 处理处于Scheduled状态，但执行节点已经挂掉的任务流
-	3. 处理处于Running状态，但执行节点正在Shutdown或者已经挂掉的任务流
+ 1. 处理超时任务
+ 2. 处理处于Scheduled状态，但执行节点已经挂掉的任务流
+ 3. 处理处于Running状态，但执行节点正在Shutdown或者已经挂掉的任务流
 */
 type WatchDog interface {
 	compctrl.Closer
@@ -155,6 +155,12 @@ func (wd *watchDog) handleExpiredTasks(kt *kit.Kit) error {
 
 	ids := make([]string, 0, len(tasks))
 	for _, one := range tasks {
+		// 检查任务的重试策略，是否已超时
+		isExpired := wd.checkIsExpireTask(kt, one)
+		if !isExpired {
+			continue
+		}
+
 		ids = append(ids, one.ID)
 		if err = wd.updateTimeoutTask(kt, one.ID); err != nil {
 			return err
@@ -175,7 +181,7 @@ func (wd *watchDog) handleExpiredTasks(kt *kit.Kit) error {
 		}
 	}
 
-	logs.Infof("handleExpiredTasks success, count: %d, ids: %v, rid: %s", len(ids), ids, kt.Rid)
+	logs.V(5).Infof("handleExpiredTasks success, count: %d, ids: %v, rid: %s", len(ids), ids, kt.Rid)
 
 	return nil
 }
@@ -232,6 +238,10 @@ func (wd *watchDog) queryNotExistNodesFlowByState(kt *kit.Kit, state enumor.Flow
 	if err != nil {
 		logs.Errorf("query alive nodes failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
+	}
+	if len(nodes) == 0 {
+		//  can not get node list sometimes, skip
+		return nil, nil
 	}
 
 	input := &backend.ListInput{
@@ -363,8 +373,10 @@ func (wd *watchDog) handleRunningTasks(kt *kit.Kit, flow model.Flow, ids []strin
 	}
 
 	for _, task := range tasks {
-		// 如果任务已经超时，更新为失败状态，失败原因超时
-		if task.UpdatedAt < times.ConvStdTimeFormat(times.ConvStdTimeNow().Add(-wd.taskTimeoutSec)) {
+		// 检查任务的重试策略，是否已超时
+		isExpired := wd.checkIsExpireTask(kt, task.Task)
+		if isExpired {
+			// 如果任务已经超时，更新为失败状态，失败原因超时
 			if err = wd.updateTimeoutTask(kt, task.ID); err != nil {
 				return err
 			}
@@ -386,11 +398,12 @@ func (wd *watchDog) handleRunningTasks(kt *kit.Kit, flow model.Flow, ids []strin
 			}
 		}
 
-		task.InitDep(run.NewExecuteContext(task.Kit, flow.ShareData), func(kt *kit.Kit, task *model.Task) error {
+		taskExecKit := run.NewExecuteContext(task.Kit, flow.ShareData)
+		task.InitDep(taskExecKit, func(taskKit *kit.Kit, task *model.Task) error {
 			return wd.bd.UpdateTask(kt, task)
 		}, &Flow{Flow: flow})
 
-		// 如果任务可以重试，将任务回滚
+		// 如果任务可以重试，更新任务状态为RollBack ，等待回滚
 		if err = task.Rollback(); err != nil {
 			logs.Errorf("rollback not exist node task failed, err: %v, rid: %s", err, kt.Rid)
 
@@ -408,4 +421,26 @@ func (wd *watchDog) handleRunningTasks(kt *kit.Kit, flow model.Flow, ids []strin
 		}
 	}
 	return nil
+}
+
+// checkIsExpireTask 检查任务是否超时
+func (wd *watchDog) checkIsExpireTask(kt *kit.Kit, task model.Task) bool {
+	if task.Retry == nil || !task.Retry.IsEnable() || task.Retry.Policy == nil {
+		return task.UpdatedAt < times.ConvStdTimeFormat(times.ConvStdTimeNow().Add(-wd.taskTimeoutSec))
+	}
+
+	// 检查任务的重试策略，是否已超时
+	retryMillSec := task.Retry.Policy.Count * task.Retry.Policy.SleepRangeMS[0]
+	updateDate, err := time.Parse(constant.TimeStdFormat, task.UpdatedAt)
+	if err == nil {
+		expireTime := updateDate.Add(time.Duration(retryMillSec) * time.Millisecond)
+		if expireTime.UnixNano() > time.Now().UnixMicro() {
+			logs.V(5).Infof(
+				"check task is not expired, taskID: %s, flowID: %s, updateAt: %s, expireTime: %s, rid: %s",
+				task.ID, task.FlowID, task.UpdatedAt, expireTime.Format(constant.DateTimeLayout), kt.Rid)
+			return false
+		}
+	}
+
+	return true
 }

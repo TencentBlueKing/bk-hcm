@@ -2,11 +2,11 @@ import { QueryRuleOPEnum } from './common';
 
 // define
 export type PlainObject = {
-  [k: string]: string | boolean | number
+  [k: string]: string | boolean | number;
 };
 
 export type DoublePlainObject = {
-  [k: string]: PlainObject
+  [k: string]: PlainObject;
 };
 
 export type FilterType = {
@@ -15,7 +15,7 @@ export type FilterType = {
     field: string;
     op: QueryRuleOPEnum;
     value: string | number | string[] | any;
-  }[]
+  }[];
 };
 
 export enum GcpTypeEnum {
@@ -54,5 +54,5 @@ export enum HostCloudEnum {
   REBOOTING = '重启中',
   SHUTDOWN = '停止待销毁',
   TERMINATING = '销毁中',
-  running = '运行中'
+  running = '运行中',
 }

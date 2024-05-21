@@ -1,9 +1,7 @@
 /**
  * 开机相关事件和状态
  */
-import {
-  ref,
-} from 'vue';
+import { ref } from 'vue';
 
 import HostBootUp from '../children/dialog/boot-up/host-boot-up';
 

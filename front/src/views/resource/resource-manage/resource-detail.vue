@@ -13,18 +13,11 @@ import TemplateDetail from './children/detail/template-detail';
 import { useVerify } from '@/hooks';
 import bus from '@/common/bus';
 
-import {
-  provide,
-  computed,
-} from 'vue';
+import { provide, computed } from 'vue';
 
-import {
-  useRoute,
-} from 'vue-router';
+import { useRoute } from 'vue-router';
 
-import {
-  useAccountStore,
-} from '@/store';
+import { useAccountStore } from '@/store';
 
 const route = useRoute();
 const accountStore = useAccountStore();
@@ -57,14 +50,16 @@ const renderComponent = computed(() => {
   return componentMap[route.params.type as string];
 });
 
-const isResourcePage = computed(() => {   // 资源下没有业务ID
+const isResourcePage = computed(() => {
+  // 资源下没有业务ID
   return !accountStore.bizs;
 });
 
-provide('authVerifyData', authVerifyData);    // 将数据传入孙组件
+provide('authVerifyData', authVerifyData); // 将数据传入孙组件
 provide('isResourcePage', isResourcePage);
 
-bus.$on('auth', (authActionName: string) => {   // bus监听
+bus.$on('auth', (authActionName: string) => {
+  // bus监听
   handleAuth(authActionName);
 });
 </script>
@@ -82,7 +77,8 @@ bus.$on('auth', (authActionName: string) => {   // bus监听
 </template>
 
 <style lang="scss">
-.delete-resource-infobox, .recycle-resource-infobox {
+.delete-resource-infobox,
+.recycle-resource-infobox {
   .bk-info-sub-title {
     word-break: break-all;
   }

@@ -23,7 +23,7 @@ const filter = ref<any>({
 
 const useBusiness = useBusinessStore();
 const props = defineProps<{
-  isFormDataChanged: boolean
+  isFormDataChanged: boolean;
 }>();
 const emit = defineEmits(['cancel', 'success', 'update:isFormDataChanged']);
 const handleFormFilter = (value: BusinessFormFilter) => {
@@ -49,14 +49,9 @@ const cancel = async () => {
   emit('cancel');
 };
 const submit = async () => {
-  const validate = await Promise.all([
-    formSelectRef.value[0](),
-    formRef.value.validate(),
-  ]);
-  console.log(validate);
+  await Promise.all([formSelectRef.value[0](), formRef.value.validate()]);
   const params: any = { ...formData.value, ...formFilter.value };
   if (type.value === 'aws') {
-    console.log('cloudVpcId.value', cloudVpcId.value, params.extension);
     params.extension = {
       cloud_vpc_id: cloudVpcId.value,
     };
@@ -76,7 +71,6 @@ const submit = async () => {
     });
     emit('success');
   } catch (error) {
-    console.log(error);
   } finally {
     submitLoading.value = false;
   }
@@ -104,32 +98,23 @@ watch(
   },
 );
 
-watch(() => formData, () => {
-  !props.isFormDataChanged && emit('update:isFormDataChanged', true);
-}, { deep: true });
+watch(
+  () => formData,
+  () => {
+    !props.isFormDataChanged && emit('update:isFormDataChanged', true);
+  },
+  { deep: true },
+);
 
 const { datas, isLoading } = useQueryList(filter.value, 'vpcs'); // 只查aws的vpcs
 </script>
 
 <template>
   <div class="business-dialog-warp">
-    <form-select
-      @change="handleFormFilter"
-      type="security"
-      ref="formSelectRef"
-    ></form-select>
+    <form-select @change="handleFormFilter" type="security" ref="formSelectRef"></form-select>
     <bk-form class="form-subnet" label-width="150" :model="formData" :rules="rules" ref="formRef">
-      <bk-form-item
-        :label="t('名称')"
-        class="item-warp"
-        required
-        property="name"
-      >
-        <bk-input
-          class="item-warp-component"
-          v-model="formData.name"
-          :placeholder="t('请输入子网名称')"
-        />
+      <bk-form-item :label="t('名称')" class="item-warp" required property="name">
+        <bk-input class="item-warp-component" v-model="formData.name" :placeholder="t('请输入安全组名称')" />
       </bk-form-item>
 
       <bk-form-item :label="t('备注')" class="item-warp">
@@ -142,13 +127,7 @@ const { datas, isLoading } = useQueryList(filter.value, 'vpcs'); // 只查aws的
         />
       </bk-form-item>
 
-      <bk-form-item
-        v-if="type === 'aws'"
-        :label="t('所属的vpc')"
-        :loading="isLoading"
-        class="item-warp"
-        required
-      >
+      <bk-form-item v-if="type === 'aws'" :label="t('所属的vpc')" :loading="isLoading" class="item-warp" required>
         <bk-select class="item-warp-component" v-model="cloudVpcId">
           <bk-option
             v-for="(item, index) in datas"
@@ -158,12 +137,7 @@ const { datas, isLoading } = useQueryList(filter.value, 'vpcs'); // 只查aws的
           />
         </bk-select>
       </bk-form-item>
-      <bk-form-item
-        v-if="type === 'azure'"
-        label="资源组"
-        property="resource_group_name"
-        required
-      >
+      <bk-form-item v-if="type === 'azure'" label="资源组" property="resource_group_name" required>
         <resource-group
           :vendor="formFilter.vendor"
           :region="formFilter.region"
@@ -171,12 +145,7 @@ const { datas, isLoading } = useQueryList(filter.value, 'vpcs'); // 只查aws的
         />
       </bk-form-item>
       <bk-form-item label-width="150" class="item-warp">
-        <bk-button
-          class="item-warp-button"
-          theme="primary"
-          @click="submit"
-          :loading="submitLoading"
-        >
+        <bk-button class="item-warp-button" theme="primary" @click="submit" :loading="submitLoading">
           {{ t('提交创建') }}
         </bk-button>
         <bk-button class="ml10 item-warp-button" @click="cancel">

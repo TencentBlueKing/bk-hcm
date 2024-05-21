@@ -1,13 +1,6 @@
 <script lang="ts" setup>
-import {
-  defineProps,
-  ref,
-  watch,
-} from 'vue';
-import {
-  useRoute,
-  useRouter,
-} from 'vue-router';
+import { defineProps, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import DetailList from '../../../common/info/detail-info';
 import DetailTab from '../../../common/tab/detail-tab';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -33,22 +26,16 @@ const txtBtn = (id: string, type: string) => {
   };
   // 业务下
   if (route.path.includes('business')) {
-    Object.assign(
-      routeInfo,
-      {
-        name: `${type}BusinessDetail`,
-      },
-    );
+    Object.assign(routeInfo, {
+      name: `${type}BusinessDetail`,
+    });
   } else {
-    Object.assign(
-      routeInfo,
-      {
-        name: 'resourceDetail',
-        params: {
-          type,
-        },
+    Object.assign(routeInfo, {
+      name: 'resourceDetail',
+      params: {
+        type,
       },
-    );
+    });
   }
   router.push(routeInfo);
 };
@@ -265,22 +252,26 @@ watch(
             prop: 'type',
           },
         ];
-        bindInfo.value.splice(1, 1, ...[
-          {
-            name: '绑定资源实例',
-            prop: 'cvm_id',
-            txtBtn(id: string) {
-              return txtBtn(id, 'host');
+        bindInfo.value.splice(
+          1,
+          1,
+          ...[
+            {
+              name: '绑定资源实例',
+              prop: 'cvm_id',
+              txtBtn(id: string) {
+                return txtBtn(id, 'host');
+              },
             },
-          },
-          {
-            name: '已绑定网卡',
-            prop: 'instance_id',
-            txtBtn(id: string) {
-              return txtBtn(id, 'network-interface');
+            {
+              name: '已绑定网卡',
+              prop: 'instance_id',
+              txtBtn(id: string) {
+                return txtBtn(id, 'network-interface');
+              },
             },
-          },
-        ]);
+          ],
+        );
         break;
     }
   },
@@ -288,60 +279,37 @@ watch(
 </script>
 
 <template>
-  <detail-tab
-    :tabs="baseTabs"
-    class="auto-tab"
-  >
+  <detail-tab :tabs="baseTabs" class="auto-tab">
     <template #default>
-      <detail-list
-        :fields="baseInfo"
-        :detail="detail"
-      ></detail-list>
+      <detail-list :fields="baseInfo" :detail="detail"></detail-list>
     </template>
   </detail-tab>
 
-  <detail-tab
-    :tabs="bindTabs"
-    class="auto-tab"
-  >
+  <detail-tab :tabs="bindTabs" class="auto-tab">
     <template #default>
-      <detail-list
-        :fields="bindInfo"
-        :detail="detail"
-      ></detail-list>
+      <detail-list :fields="bindInfo" :detail="detail"></detail-list>
     </template>
   </detail-tab>
 
-  <detail-tab
-    :tabs="otherTabs"
-    class="auto-tab"
-  >
+  <detail-tab :tabs="otherTabs" class="auto-tab">
     <template #default>
-      <detail-list
-        :fields="otherInfo"
-        :detail="detail"
-      ></detail-list>
+      <detail-list :fields="otherInfo" :detail="detail"></detail-list>
     </template>
   </detail-tab>
 
-  <detail-tab
-    v-if="detail.vendor === 'huawei'"
-    :tabs="huaweiTabs"
-    class="auto-tab"
-  >
+  <detail-tab v-if="detail.vendor === 'huawei'" :tabs="huaweiTabs" class="auto-tab">
     <template #default>
-      <detail-list
-        :fields="bandInfo"
-        :detail="detail"
-      ></detail-list>
+      <detail-list :fields="bandInfo" :detail="detail"></detail-list>
     </template>
   </detail-tab>
 </template>
 
 <style lang="scss" scoped>
-  .auto-tab {
-    .bk-tab-content, .detail-info-main, .bk-tab-panel {
-      height: auto !important;
-    }
+.auto-tab {
+  .bk-tab-content,
+  .detail-info-main,
+  .bk-tab-panel {
+    height: auto !important;
   }
+}
 </style>

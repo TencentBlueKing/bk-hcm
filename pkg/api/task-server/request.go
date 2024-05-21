@@ -34,6 +34,8 @@ type AddTemplateFlowReq struct {
 	Memo string `json:"memo" validate:"omitempty"`
 	// Tasks 任务私有化参数设置
 	Tasks []TemplateFlowTask `json:"tasks" validate:"required, min=1"`
+	// IsInitState 是否初始化状态
+	IsInitState bool `json:"is_init_state" validate:"omitempty"`
 }
 
 // Validate AddTemplateFlowReq
@@ -75,6 +77,8 @@ type AddCustomFlowReq struct {
 	ShareData *tableasync.ShareData `json:"share_data" validate:"omitempty"`
 	// Tasks 任务私有化参数设置
 	Tasks []CustomFlowTask `json:"tasks" validate:"omitempty"`
+	// IsInitState 是否初始化状态
+	IsInitState bool `json:"is_init_state" validate:"omitempty"`
 }
 
 // Validate AddCustomFlowReq

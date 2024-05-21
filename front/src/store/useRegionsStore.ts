@@ -7,7 +7,8 @@ import {
   CLOUD_AREA_REGION_AWS,
   CLOUD_AREA_REGION_GCP_EN,
   CLOUD_AREA_REGION_AWS_EN,
-  VendorEnum } from '@/common/constant';
+  VendorEnum,
+} from '@/common/constant';
 import { swapMapKeysAndValuesToObj } from '@/common/util';
 
 export const useRegionsStore = defineStore('useRegions', () => {
@@ -49,17 +50,24 @@ export const useRegionsStore = defineStore('useRegions', () => {
 
   const getRegionName = (vendor: VendorEnum, id: string) => {
     if (!isChinese) return id;
+    let regionName;
     switch (vendor) {
       case VendorEnum.AWS:
-        return CLOUD_AREA_REGION_AWS[id] || id;
+        regionName = CLOUD_AREA_REGION_AWS[id] || id;
+        break;
       case VendorEnum.GCP:
-        return CLOUD_AREA_REGION_GCP[id] || id;
+        regionName = CLOUD_AREA_REGION_GCP[id] || id;
+        break;
       case VendorEnum.HUAWEI:
-        return huawei.value.get(id) || id;
+        regionName = huawei.value.get(id) || id;
+        break;
       case VendorEnum.TCLOUD:
-        return tcloud.value.get(id) || id;
+        regionName = tcloud.value.get(id) || id;
+        break;
+      default:
+        regionName = id;
     }
-    return id;
+    return regionName || '--';
   };
 
   const getRegionNameEN = (id: string) => {
@@ -69,11 +77,11 @@ export const useRegionsStore = defineStore('useRegions', () => {
     if (CLOUD_AREA_REGION_TCLOUD_EN[id]) {
       vendor.value = VendorEnum.TCLOUD;
       return CLOUD_AREA_REGION_TCLOUD_EN[id];
-    };
+    }
     if (CLOUD_AREA_REGION_HUAWEI_EN[id]) {
       vendor.value = VendorEnum.HUAWEI;
       return CLOUD_AREA_REGION_HUAWEI_EN[id];
-    };
+    }
     if (CLOUD_AREA_REGION_AWS_EN[id]) {
       vendor.value = VendorEnum.AWS;
       return CLOUD_AREA_REGION_AWS_EN[id];

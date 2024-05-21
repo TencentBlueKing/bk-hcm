@@ -142,7 +142,6 @@ const handleSuccess = () => {
 
 const handleSecrityType = (val: string) => {
   securityType.value = val;
-  console.log(' securityType.value', securityType.value);
 };
 
 // 新增修改防火墙规则
@@ -199,7 +198,8 @@ const {
     :class="[
       route.path === '/business/host' ? 'is-host-page' : '',
       route.path === '/business/recyclebin' ? 'is-recycle-page' : '',
-    ]">
+    ]"
+  >
     <bk-loading class="common-card-wrap" :loading="!accountStore.bizs">
       <component
         v-if="accountStore.bizs"
@@ -220,19 +220,21 @@ const {
             theme="primary"
             class="mw64 mr10"
             :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.biz_iaas_resource_create }"
-            @click="() => {
-              if (authVerifyData?.permissionAction?.biz_iaas_resource_create) {
-                handleAdd();
-              } else {
-                handleAuth('biz_iaas_resource_create')
+            @click="
+              () => {
+                if (authVerifyData?.permissionAction?.biz_iaas_resource_create) {
+                  handleAdd();
+                } else {
+                  handleAuth('biz_iaas_resource_create');
+                }
               }
-            }"
+            "
           >
             {{
               renderComponent === DriveManage ||
-                renderComponent === HostManage ||
-                renderComponent === SubnetManage ||
-                renderComponent === VpcManage
+              renderComponent === HostManage ||
+              renderComponent === SubnetManage ||
+              renderComponent === VpcManage
                 ? '申请'
                 : '新增'
             }}
@@ -285,11 +287,13 @@ const {
       :is-show="isTemplateDialogShow"
       :is-edit="isTemplateDialogEdit"
       :payload="templateDialogPayload"
-      :handle-close="() => isTemplateDialogShow = false"
-      :handle-success="() => {
-        isTemplateDialogShow = false;
-        handleSuccess();
-      }"
+      :handle-close="() => (isTemplateDialogShow = false)"
+      :handle-success="
+        () => {
+          isTemplateDialogShow = false;
+          handleSuccess();
+        }
+      "
     />
   </div>
 </template>
@@ -334,7 +338,7 @@ const {
     .bk-table-head .bk-checkbox {
       vertical-align: middle;
     }
-    .bk-table-head tr th:nth-of-type(2) .cell{
+    .bk-table-head tr th:nth-of-type(2) .cell {
       padding-left: 8px;
     }
     .bk-table-body .cell.selection {

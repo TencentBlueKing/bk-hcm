@@ -130,17 +130,14 @@ watch(
     <div class="cond-item" v-show="false">
       <div class="mb8">业务</div>
       <div class="cond-content">
-        <business-selector
-          v-model="selectedBizId"
-          :authed="true"
-          :auto-select="true"
-        ></business-selector>
+        <business-selector v-model="selectedBizId" :authed="true" :auto-select="true"></business-selector>
       </div>
     </div>
     <FormItem
       label="云账号"
       required
-      :property="ResourceTypeEnum.SUBNET === type ? 'account_id' : 'cloudAccountId'">
+      :property="[ResourceTypeEnum.SUBNET, ResourceTypeEnum.CLB].includes(type) ? 'account_id' : 'cloudAccountId'"
+    >
       <account-selector
         v-model="selectedCloudAccountId"
         :disabled="!!resourceAccountStore?.resourceAccount?.id"
@@ -156,23 +153,16 @@ watch(
         v-model="selectedVendorName"
         :disabled="!!resourceAccountStore?.resourceAccount?.id"
       >
-        <bk-option
-          v-for="(item, index) in vendorList"
-          :key="index"
-          :value="item.id"
-          :label="item.name"
-        />
+        <bk-option v-for="(item, index) in vendorList" :key="index" :value="item.id" :label="item.name" />
       </bk-select>
     </FormItem>
     <FormItem
       label="资源组"
       required
       :property="type === ResourceTypeEnum.SUBNET ? 'resource_group' : 'resourceGroup'"
-      v-if="selectedVendor === VendorEnum.AZURE">
-      <resource-group-selector
-        :account-id="selectedCloudAccountId"
-        v-model="selectedResourceGroup"
-      />
+      v-if="selectedVendor === VendorEnum.AZURE"
+    >
+      <resource-group-selector :account-id="selectedCloudAccountId" v-model="selectedResourceGroup" />
     </FormItem>
     <FormItem label="云地域" required property="region">
       <region-selector

@@ -51,74 +51,73 @@ const fields = ref([
 ]);
 switch (props?.detail.vendor) {
   case 'azure':
-    fields.value.push(...[
-      {
-        name: '内网IPv4地址',
-        prop: 'private_ipv4',
-        render(cell: string[]) {
-          return cell.length ? cell.join(',') : '--';
+    fields.value.push(
+      ...[
+        {
+          name: '内网IPv4地址',
+          prop: 'private_ipv4',
+          render(cell: string[]) {
+            return cell.length ? cell.join(',') : '--';
+          },
         },
-      },
-      {
-        name: '公网IPv4地址',
-        prop: 'public_ipv4',
-        render(cell: string[]) {
-          return cell.length ? cell.join(',') : '--';
+        {
+          name: '公网IPv4地址',
+          prop: 'public_ipv4',
+          render(cell: string[]) {
+            return cell.length ? cell.join(',') : '--';
+          },
         },
-      },
-      {
-        name: '专用IP地址(IPv6)',
-        prop: 'private_ipv6',
-        render(cell: string[]) {
-          return cell.length ? cell.join(',') : '--';
+        {
+          name: '专用IP地址(IPv6)',
+          prop: 'private_ipv6',
+          render(cell: string[]) {
+            return cell.length ? cell.join(',') : '--';
+          },
         },
-      },
-      {
-        name: '公用IP地址(IPv6)',
-        prop: 'public_ipv6',
-        render(cell: string[]) {
-          return cell.length ? cell.join(',') : '--';
+        {
+          name: '公用IP地址(IPv6)',
+          prop: 'public_ipv6',
+          render(cell: string[]) {
+            return cell.length ? cell.join(',') : '--';
+          },
         },
-      },
-      {
-        name: '更快的网络连接',
-        prop: 'enable_accelerated_networking',
-        render(val: boolean) {
-          return val ? '是' : '否';
+        {
+          name: '更快的网络连接',
+          prop: 'enable_accelerated_networking',
+          render(val: boolean) {
+            return val ? '是' : '否';
+          },
         },
-      },
-      {
-        name: '已关联到主机ID',
-        prop: 'instance_id',
-        render(cell: string) {
-          return cell || '--';
+        {
+          name: '已关联到主机ID',
+          prop: 'instance_id',
+          render(cell: string) {
+            return cell || '--';
+          },
         },
-      },
-      {
-        name: '已关联到安全组ID',
-        prop: 'cloud_security_group_id',
-        render(cell: string) {
-          return cell || '--';
+        {
+          name: '已关联到安全组ID',
+          prop: 'cloud_security_group_id',
+          render(cell: string) {
+            return cell || '--';
+          },
         },
-      },
-      {
-        name: '虚拟网络/子网',
-        prop: 'virtualNetworkSubnetId',
-      },
-      {
-        name: 'MAC地址',
-        prop: 'mac_address',
-      },
-    ]);
+        {
+          name: '虚拟网络/子网',
+          prop: 'virtualNetworkSubnetId',
+        },
+        {
+          name: 'MAC地址',
+          prop: 'mac_address',
+        },
+      ],
+    );
     break;
 }
 </script>
 
 <template>
   <div class="field-list">
-    <detail-info
-      :detail="detail"
-      :fields="fields"
-    />
+    <detail-info :detail="detail" :fields="fields" />
   </div>
 </template>

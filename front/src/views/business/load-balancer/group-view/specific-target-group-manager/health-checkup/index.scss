@@ -1,0 +1,55 @@
+.health-checkup-page {
+  height: 100%;
+}
+
+.health-checkup-config-sideslider {
+  .radio-groups {
+    width: 100%;
+    flex-wrap: wrap;
+    overflow: hidden;
+
+    .bk-radio {
+      width: 100%;
+      padding: 8px 16px;
+      border: 1px solid transparent;
+      border-radius: 2px;
+      background-color: #f5f7fa;
+
+      .bk-radio-input {
+        align-self: flex-start;
+        margin-top: 3px;
+        flex-shrink: 0;
+      }
+
+      & ~ .bk-radio {
+        margin: 8px 0 0;
+      }
+
+      &.is-checked {
+        border-color: #a3c5fd;
+        background-color: #f0f5ff;
+      }
+    }
+
+    .radio-item-wrap {
+      .item-label {
+        margin-bottom: 2px;
+        display: flex;
+        align-items: center;
+        height: 22px;
+        font-size: 14px;
+        color: #313238;
+      }
+      .item-desc {
+        font-size: 12px;
+        color: #979ba5;
+        line-height: 20px;
+        white-space: wrap;
+      }
+    }
+  }
+
+  .ml12 {
+    margin-left: 12px;
+  }
+}

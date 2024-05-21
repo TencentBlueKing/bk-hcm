@@ -5,8 +5,11 @@
     .bk-modal-header {
     }
 
-    .bk-modal-content {
-      padding: 28px 40px;
+    .bk-modal-content .bk-sideslider-content {
+      .common-sideslider-content {
+        padding: 28px 40px 48px;
+        overflow: auto;
+      }
     }
 
     .bk-modal-footer .bk-sideslider-footer {

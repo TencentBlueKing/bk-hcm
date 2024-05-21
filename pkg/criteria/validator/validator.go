@@ -22,6 +22,8 @@ package validator
 
 import (
 	"errors"
+	"reflect"
+	"strings"
 
 	gvalidator "github.com/go-playground/validator/v10"
 )
@@ -50,4 +52,15 @@ func ValidateTool(opts ...Interface) error {
 	}
 
 	return nil
+}
+
+func init() {
+	// 返回json tag 名称
+	Validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
+		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
+		if name == "-" {
+			return ""
+		}
+		return name
+	})
 }

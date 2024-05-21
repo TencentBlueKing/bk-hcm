@@ -85,9 +85,7 @@ defineExpose([validate]);
       >
         包年包月
       </bk-radio> -->
-      <bk-radio v-model="formData.internet_charge_type" label="postPaid">
-        按量计费
-      </bk-radio>
+      <bk-radio v-model="formData.internet_charge_type" label="postPaid">按量计费</bk-radio>
     </bk-form-item>
     <bk-form-item
       label="线路类型"
@@ -96,20 +94,9 @@ defineExpose([validate]);
       <bk-radio v-model="formData.eip_type" label="5_bgp">全动态BGP</bk-radio>
       <bk-radio v-model="formData.eip_type" label="5_sbgp">优选BGP</bk-radio>
     </bk-form-item>
-    <bk-form-item
-      v-if="formData.internet_charge_type === 'postPaid'"
-      label="带宽计费模式"
-      required
-    >
-      <bk-radio
-        v-model="formData.bandwidth_option.charge_mode"
-        label="bandwidth"
-      >
-        按带宽计费
-      </bk-radio>
-      <bk-radio v-model="formData.bandwidth_option.charge_mode" label="traffic">
-        按流量计费
-      </bk-radio>
+    <bk-form-item v-if="formData.internet_charge_type === 'postPaid'" label="带宽计费模式" required>
+      <bk-radio v-model="formData.bandwidth_option.charge_mode" label="bandwidth">按带宽计费</bk-radio>
+      <bk-radio v-model="formData.bandwidth_option.charge_mode" label="traffic">按流量计费</bk-radio>
     </bk-form-item>
     <bk-form-item label="带宽名称" property="bandwidth_option.name" required>
       <bk-input v-model="formData.bandwidth_option.name" />
@@ -118,8 +105,7 @@ defineExpose([validate]);
       label="带宽大小"
       property="bandwidth_option.size"
       :description="
-        formData.internet_charge_type === 'postPaid' &&
-          formData.bandwidth_option.charge_mode === 'traffic'
+        formData.internet_charge_type === 'postPaid' && formData.bandwidth_option.charge_mode === 'traffic'
           ? '值的范围是1-300Mbit/s'
           : '值的范围是1-500Mbit/s'
       "
@@ -131,8 +117,11 @@ defineExpose([validate]);
           placeholder="请输入带宽大小"
           type="number"
           :min="1"
-          :max="formData.internet_charge_type === 'postPaid' && formData.bandwidth_option.charge_mode === 'traffic'
-            ? 300 : 500"
+          :max="
+            formData.internet_charge_type === 'postPaid' && formData.bandwidth_option.charge_mode === 'traffic'
+              ? 300
+              : 500
+          "
           class="mr10"
         />
         Mbit/s
@@ -140,34 +129,20 @@ defineExpose([validate]);
     </bk-form-item>
     <bk-form-item
       v-if="formData.internet_charge_type === 'prePaid'"
-      :description="
-        formData.eip_type === '5_bgp'
-          ? '取值范围（月：1-9，年：1）'
-          : '取值范围（月：1-9，年：1-3）'
-      "
+      :description="formData.eip_type === '5_bgp' ? '取值范围（月：1-9，年：1）' : '取值范围（月：1-9，年：1-3）'"
       label="购买时长"
       property="internet_charge_prepaid.period_num"
       required
     >
       <bk-compose-form-item>
-        <bk-input
-          v-model="internet_charge_prepaid.period_num"
-          placeholder="请输入时间"
-          type="number"
-        />
-        <bk-select
-          v-model="internet_charge_prepaid.period_type"
-          :clearable="false"
-        >
+        <bk-input v-model="internet_charge_prepaid.period_num" placeholder="请输入时间" type="number" />
+        <bk-select v-model="internet_charge_prepaid.period_type" :clearable="false">
           <bk-option value="month" label="月" />
           <bk-option value="year" label="年" />
         </bk-select>
       </bk-compose-form-item>
     </bk-form-item>
-    <bk-form-item
-      v-if="formData.internet_charge_type === 'prePaid'"
-      label="自动续费"
-    >
+    <bk-form-item v-if="formData.internet_charge_type === 'prePaid'" label="自动续费">
       <bk-checkbox
         v-model="internet_charge_prepaid.is_auto_renew"
         :true-label="true"

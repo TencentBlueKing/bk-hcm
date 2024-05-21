@@ -52,6 +52,8 @@ func InitService(cap *capability.Capability) {
 	h.Add("SyncImage", "POST", "/images/sync", v.SyncImage)
 	h.Add("SyncSubAccount", "POST", "/sub_accounts/sync", v.SyncSubAccount)
 	h.Add("SyncArgsTpl", "POST", "/argument_templates/sync", v.SyncArgsTpl)
+	h.Add("SyncCert", "POST", "/certs/sync", v.SyncCert)
+	h.Add("SyncLoadBalancer", "POST", "/load_balancers/sync", v.SyncLoadBalancer)
 
 	h.Load(cap.WebService)
 }

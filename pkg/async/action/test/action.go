@@ -21,6 +21,7 @@ package test
 
 import (
 	"errors"
+	"math/rand"
 	"time"
 
 	"hcm/pkg/async/action"
@@ -29,7 +30,6 @@ import (
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/json"
-	"hcm/pkg/tools/rand"
 	"hcm/pkg/tools/times"
 )
 
@@ -125,7 +125,8 @@ func (s Sleep) Rollback(kt run.ExecuteKit, params interface{}) error {
 
 // SleepParams define Sleep params.
 type SleepParams struct {
-	SleepSec int `json:"sleep_sec"`
+	ID       string `json:"id"`
+	SleepSec int    `json:"sleep_sec"`
 }
 
 // ParameterNew ...
@@ -139,13 +140,35 @@ func (s Sleep) Name() enumor.ActionName {
 }
 
 // Run ...
-func (s Sleep) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
+func (s Sleep) Run(kt run.ExecuteKit, params interface{}) (ret any, err error) {
 	p := params.(*SleepParams)
-	index := rand.RandomRange([2]int{0, 1000})
-	logs.Infof(" ----------- %d Sleep %ds start -----------, time: %v, rid: %s", index, p.SleepSec,
+	logs.Infof("[Sleep-%s] %ds start  , time: %v, rid: %s", p.ID, p.SleepSec,
 		times.ConvStdTimeNow(), kt.Kit().Rid)
-	time.Sleep(time.Duration(p.SleepSec) * time.Second)
-	logs.Infof(" ----------- %d Sleep %ds end -----------, time: %v, rid: %s", index, p.SleepSec,
-		times.ConvStdTimeNow(), kt.Kit().Rid)
-	return nil, nil
+	// failed randomly, quick failed
+	shouldFailed := false
+	if rand.Float64() > 0.5 {
+		shouldFailed = true
+		p.SleepSec /= 10
+		logs.Infof("[Sleep-%s]: ready to fail ", p.ID)
+	}
+
+	timer := time.NewTimer(time.Duration(p.SleepSec) * time.Second)
+	defer timer.Stop()
+	select {
+	case <-kt.Kit().Ctx.Done():
+		err = kt.Kit().Ctx.Err()
+		if err != nil {
+			logs.Infof("[Sleep-%s] got ERROR, err: %v, rid: %s", p.ID, p.SleepSec,
+				err, kt.Kit().Rid)
+		}
+
+	case <-timer.C:
+		logs.Infof("[Sleep-%s] %ds normal  end, time: %v, rid: %s", p.ID, p.SleepSec,
+			times.ConvStdTimeNow(), kt.Kit().Rid)
+	}
+
+	if shouldFailed {
+		err = errors.New("planned failed")
+	}
+	return nil, err
 }

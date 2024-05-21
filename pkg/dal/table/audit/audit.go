@@ -107,6 +107,12 @@ type BasicDetail struct {
 	Changed interface{} `json:"changed,omitempty"`
 }
 
+// BasicDetailRaw audit's basic details with RawMessage for later decode
+type BasicDetailRaw struct {
+	Data    json.RawMessage `json:"data,omitempty"`
+	Changed json.RawMessage `json:"changed,omitempty"`
+}
+
 // Scan is used to decode raw message which is read from db into a structured
 // ScopeSelector instance.
 func (detail *BasicDetail) Scan(raw interface{}) error {

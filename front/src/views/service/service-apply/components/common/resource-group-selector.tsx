@@ -62,15 +62,12 @@ export default defineComponent({
         clearable={false}
         filterable={true}
         modelValue={selected.value}
-        onUpdate:modelValue={val => selected.value = val}
+        onUpdate:modelValue={(val) => (selected.value = val)}
         loading={loading.value}
-        {...{ attrs }}
-      >
-        {
-          list.value.map(({ id, name }: IOption) => (
-            <Option key={id} value={name} label={name}></Option>
-          ))
-        }
+        {...{ attrs }}>
+        {list.value.map(({ id, name }: IOption) => (
+          <Option key={id} value={name} label={name}></Option>
+        ))}
       </Select>
     );
   },

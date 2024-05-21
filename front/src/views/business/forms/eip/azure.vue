@@ -65,7 +65,7 @@ const getIPAddressName = (val: string) => {
 watch(
   () => formData,
   () => {
-    formData.value.allocation_method =      formData.value.sku_name === 'Basic' ? 'Dynamic' : 'Static';
+    formData.value.allocation_method = formData.value.sku_name === 'Basic' ? 'Dynamic' : 'Static';
     if (formData.value.ip_version === 'IPV6') {
       formData.value.idle_timeout_in_minutes = 4;
     }
@@ -83,11 +83,7 @@ defineExpose([validate]);
 <template>
   <bk-form label-width="150" ref="formRef" :model="formData" :rules="rules">
     <bk-form-item label="资源组" property="resource_group_name" required>
-      <resource-group
-        :vendor="vendor"
-        :region="region"
-        v-model="formData.resource_group_name"
-      />
+      <resource-group :vendor="vendor" :region="region" v-model="formData.resource_group_name" />
     </bk-form-item>
     <bk-form-item label="名称" property="eip_name" required>
       <bk-input v-model="formData.eip_name" placeholder="请输入名称" />
@@ -116,25 +112,10 @@ defineExpose([validate]);
     <bk-form-item label="IP地址分配">
       {{ getIPAddressName(formData.allocation_method) }}
     </bk-form-item>
-    <bk-form-item
-      v-if="formData.sku_name === 'Standard'"
-      label="可用性区域"
-      property="zone"
-      required
-    >
-      <zone-selector
-        :vendor="vendor"
-        :region="region"
-        v-model="formData.zone"
-      />
+    <bk-form-item v-if="formData.sku_name === 'Standard'" label="可用性区域" property="zone" required>
+      <zone-selector :vendor="vendor" :region="region" v-model="formData.zone" />
     </bk-form-item>
-    <bk-form-item
-      label="空闲超时(分钟)"
-      property="idle_timeout_in_minutes"
-      required
-      min="4"
-      max="30"
-    >
+    <bk-form-item label="空闲超时(分钟)" property="idle_timeout_in_minutes" required min="4" max="30">
       <bk-input
         v-if="formData.ip_version === 'ipv4'"
         v-model="formData.idle_timeout_in_minutes"

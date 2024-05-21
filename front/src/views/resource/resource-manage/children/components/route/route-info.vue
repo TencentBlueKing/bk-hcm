@@ -125,227 +125,247 @@ watch(
   () => {
     switch (props.detail.vendor) {
       case 'tcloud':
-        fileds.value.push(...[
-          vpcField,
-          {
-            name: '地域',
-            prop: 'region',
-            render: () => getRegionName(props.detail.vendor, props.detail.region),
-          },
-          {
-            name: '路由表类型',
-            value: '默认路由表',
-          },
-          {
-            name: '备注',
-            prop: 'memo',
-          },
-          {
-            name: '创建时间',
-            prop: 'created_at',
-            render: () => timeFormatter(props.detail.created_at),
-          },
-        ]);
-        columns.value.push(...[
-          {
-            label: '目的地址',
-            field: 'destination_cidr_block',
-          },
-          {
-            label: '下一跳类型',
-            field: 'gateway_type',
-          },
-          {
-            label: '下一跳地址',
-            field: 'cloud_gateway_id',
-          },
-          {
-            label: '状态',
-            field: 'enabled',
-            render({ cell }: { cell: string }) {
-              return cell ? '启用' : '禁用';
+        fileds.value.push(
+          ...[
+            vpcField,
+            {
+              name: '地域',
+              prop: 'region',
+              render: () => getRegionName(props.detail.vendor, props.detail.region),
             },
-          },
-          {
-            label: '备注',
-            field: 'memo',
-            render({ cell }: { cell: string }) {
-              return cell || '--';
+            {
+              name: '路由表类型',
+              value: '默认路由表',
             },
-          },
-        ]);
+            {
+              name: '备注',
+              prop: 'memo',
+            },
+            {
+              name: '创建时间',
+              prop: 'created_at',
+              render: () => timeFormatter(props.detail.created_at),
+            },
+          ],
+        );
+        columns.value.push(
+          ...[
+            {
+              label: '目的地址',
+              field: 'destination_cidr_block',
+            },
+            {
+              label: '下一跳类型',
+              field: 'gateway_type',
+            },
+            {
+              label: '下一跳地址',
+              field: 'cloud_gateway_id',
+            },
+            {
+              label: '状态',
+              field: 'enabled',
+              render({ cell }: { cell: string }) {
+                return cell ? '启用' : '禁用';
+              },
+            },
+            {
+              label: '备注',
+              field: 'memo',
+              render({ cell }: { cell: string }) {
+                return cell || '--';
+              },
+            },
+          ],
+        );
         break;
       case 'azure':
-        fileds.value.push(...[
-          {
-            name: '资源组',
-            value: 'resource_group',
-          },
-          {
-            name: '地域ID',
-            prop: 'region',
-            render: () => getRegionName(props.detail.vendor, props.detail.region),
-          },
-          {
-            name: '备注',
-            prop: 'memo',
-          },
-          {
-            name: '创建时间',
-            prop: 'created_at',
-            render: () => timeFormatter(props.detail.created_at),
-          },
-        ]);
-        columns.value.push(...[
-          {
-            label: '名称',
-            field: 'name',
-          },
-          {
-            label: '目的地址',
-            field: 'address_prefix',
-          },
-          {
-            label: '下一跳类型',
-            field: 'next_hop_type',
-          },
-          {
-            label: '下一跳地址',
-            field: 'next_hop_ip_address',
-          },
-        ]);
+        fileds.value.push(
+          ...[
+            {
+              name: '资源组',
+              value: 'resource_group',
+            },
+            {
+              name: '地域ID',
+              prop: 'region',
+              render: () => getRegionName(props.detail.vendor, props.detail.region),
+            },
+            {
+              name: '备注',
+              prop: 'memo',
+            },
+            {
+              name: '创建时间',
+              prop: 'created_at',
+              render: () => timeFormatter(props.detail.created_at),
+            },
+          ],
+        );
+        columns.value.push(
+          ...[
+            {
+              label: '名称',
+              field: 'name',
+            },
+            {
+              label: '目的地址',
+              field: 'address_prefix',
+            },
+            {
+              label: '下一跳类型',
+              field: 'next_hop_type',
+            },
+            {
+              label: '下一跳地址',
+              field: 'next_hop_ip_address',
+            },
+          ],
+        );
         break;
       case 'aws':
-        fileds.value.push(...[
-          vpcField,
-          {
-            name: '地域ID',
-            prop: 'region',
-            render: () => getRegionName(props.detail.vendor, props.detail.region),
-          },
-          {
-            name: '路由表类型',
-            value: '主路由表',
-          },
-          {
-            name: '备注',
-            prop: 'memo',
-          },
-          {
-            name: '创建时间',
-            prop: 'created_at',
-            render: () => timeFormatter(props.detail.created_at),
-          },
-        ]);
-        columns.value.push(...[
-          {
-            label: '目的地址',
-            field: 'destination_cidr_block',
-          },
-          {
-            label: '下一跳地址',
-            field: 'cloud_carrier_gateway_id',
-          },
-          {
-            label: '状态',
-            field: 'state',
-            render({ cell }: { cell: string }) {
-              return cell === 'active' ? '可用' : '路由的目标不可用';
+        fileds.value.push(
+          ...[
+            vpcField,
+            {
+              name: '地域ID',
+              prop: 'region',
+              render: () => getRegionName(props.detail.vendor, props.detail.region),
             },
-          },
-          {
-            label: '已传播',
-            field: 'propagated',
-            render({ cell }: { cell: string }) {
-              return cell ? '是' : '否';
+            {
+              name: '路由表类型',
+              value: '主路由表',
             },
-          },
-          {
-            label: '备注',
-            field: 'memo',
-          },
-        ]);
+            {
+              name: '备注',
+              prop: 'memo',
+            },
+            {
+              name: '创建时间',
+              prop: 'created_at',
+              render: () => timeFormatter(props.detail.created_at),
+            },
+          ],
+        );
+        columns.value.push(
+          ...[
+            {
+              label: '目的地址',
+              field: 'destination_cidr_block',
+            },
+            {
+              label: '下一跳地址',
+              field: 'cloud_carrier_gateway_id',
+            },
+            {
+              label: '状态',
+              field: 'state',
+              render({ cell }: { cell: string }) {
+                return cell === 'active' ? '可用' : '路由的目标不可用';
+              },
+            },
+            {
+              label: '已传播',
+              field: 'propagated',
+              render({ cell }: { cell: string }) {
+                return cell ? '是' : '否';
+              },
+            },
+            {
+              label: '备注',
+              field: 'memo',
+            },
+          ],
+        );
         break;
       case 'gcp':
-        fileds.value.push(...[
-          vpcField,
-          {
-            name: '创建时间',
-            prop: 'created_at',
-            render: () => timeFormatter(props.detail.created_at),
-          },
-        ]);
-        columns.value.push(...[
-          {
-            label: '名称',
-            field: 'name',
-          },
-          {
-            label: '目的地址',
-            field: 'dest_range',
-          },
-          {
-            label: '下一跳地址',
-            field: 'next_hop_gateway',
-          },
-          {
-            label: '优先级',
-            field: 'priority',
-          },
-          {
-            label: '实例标记',
-            field: 'tags',
-          },
-          {
-            label: '备注',
-            field: 'memo',
-          },
-        ]);
+        fileds.value.push(
+          ...[
+            vpcField,
+            {
+              name: '创建时间',
+              prop: 'created_at',
+              render: () => timeFormatter(props.detail.created_at),
+            },
+          ],
+        );
+        columns.value.push(
+          ...[
+            {
+              label: '名称',
+              field: 'name',
+            },
+            {
+              label: '目的地址',
+              field: 'dest_range',
+            },
+            {
+              label: '下一跳地址',
+              field: 'next_hop_gateway',
+            },
+            {
+              label: '优先级',
+              field: 'priority',
+            },
+            {
+              label: '实例标记',
+              field: 'tags',
+            },
+            {
+              label: '备注',
+              field: 'memo',
+            },
+          ],
+        );
         break;
       case 'huawei':
-        fileds.value.push(...[
-          vpcField,
-          {
-            name: '地域ID',
-            prop: 'region',
-            render: () => getRegionName(props.detail.vendor, props.detail.region),
-          },
-          {
-            name: '路由表类型',
-            value: '默认路由表',
-          },
-          {
-            name: '备注',
-            prop: 'memo',
-          },
-          {
-            name: '创建时间',
-            prop: 'created_at',
-            render: () => timeFormatter(props.detail.created_at),
-          },
-        ]);
-        columns.value.push(...[
-          {
-            label: '目的地址',
-            field: 'destination',
-          },
-          {
-            label: '下一跳类型',
-            field: '',
-          },
-          {
-            label: '下一跳地址',
-            field: 'nexthop',
-          },
-          {
-            label: '类型',
-            field: 'type',
-          },
-          {
-            label: '备注',
-            field: 'memo',
-          },
-        ]);
+        fileds.value.push(
+          ...[
+            vpcField,
+            {
+              name: '地域ID',
+              prop: 'region',
+              render: () => getRegionName(props.detail.vendor, props.detail.region),
+            },
+            {
+              name: '路由表类型',
+              value: '默认路由表',
+            },
+            {
+              name: '备注',
+              prop: 'memo',
+            },
+            {
+              name: '创建时间',
+              prop: 'created_at',
+              render: () => timeFormatter(props.detail.created_at),
+            },
+          ],
+        );
+        columns.value.push(
+          ...[
+            {
+              label: '目的地址',
+              field: 'destination',
+            },
+            {
+              label: '下一跳类型',
+              field: '',
+            },
+            {
+              label: '下一跳地址',
+              field: 'nexthop',
+            },
+            {
+              label: '类型',
+              field: 'type',
+            },
+            {
+              label: '备注',
+              field: 'memo',
+            },
+          ],
+        );
         break;
     }
     handleGetData();

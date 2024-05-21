@@ -28,11 +28,13 @@ import (
 	"hcm/pkg/api/core/cloud"
 	hsaccount "hcm/pkg/api/hc-service/account"
 	"hcm/pkg/api/hc-service/sync"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 
 	cam "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
+	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
 
 // AccountClient is hc service account api client.
@@ -193,4 +195,13 @@ func (a *AccountClient) GetResCountBySecret(kt *kit.Kit, request *cloud.TCloudSe
 	}
 
 	return resp.Data, nil
+}
+
+// GetNetworkAccountType ...
+func (a *AccountClient) GetNetworkAccountType(kt *kit.Kit, accountID string) (
+	*vpc.DescribeNetworkAccountTypeResponseParams, error) {
+
+	return common.Request[common.Empty, vpc.DescribeNetworkAccountTypeResponseParams](
+		a.client, http.MethodGet, kt, nil, "accounts/%s/network_type", accountID)
+
 }
