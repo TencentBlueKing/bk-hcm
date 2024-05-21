@@ -1,5 +1,5 @@
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0017,HCMVER=v1.5.0
 
     Notes:
     1. 添加证书托管表
@@ -18,6 +18,7 @@ create table if not exists `ssl_cert`
     `domain`              json         not null,
     `cert_type`           varchar(16)  not null,
     `cert_status`         varchar(64)  not null,
+    `encrypt_algorithm`   varchar(64) not null default '',
     `cloud_created_time`  timestamp    not null default current_timestamp,
     `cloud_expired_time`  timestamp    not null default current_timestamp,
     `memo`                varchar(255)          default '',
@@ -35,6 +36,6 @@ insert into id_generator(`resource`, `max_id`)
 values ('ssl_cert', '0');
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.5.0' as `hcm_ver`, '0017' as `sql_ver`;
 
 COMMIT
