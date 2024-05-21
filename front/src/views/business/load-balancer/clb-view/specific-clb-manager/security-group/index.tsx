@@ -138,7 +138,7 @@ export default defineComponent({
       );
     };
 
-    const { CommonTable } = useTable({
+    const { CommonTable, getListData } = useTable({
       searchOptions: {
         searchData,
         extra: {
@@ -239,6 +239,14 @@ export default defineComponent({
       },
       {
         deep: true,
+      },
+    );
+
+    watch(
+      () => isDialogShow.value,
+      () => {
+        getListData();
+        resetSelections();
       },
     );
 
