@@ -1,9 +1,7 @@
 /**
  * 修改密码相关事件和状态
  */
-import {
-  ref,
-} from 'vue';
+import { ref } from 'vue';
 
 import HostPassword from '../children/dialog/password/host-password';
 

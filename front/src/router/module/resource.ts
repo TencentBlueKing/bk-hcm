@@ -109,7 +109,7 @@ const resourceMenus: RouteRecordRaw[] = [
         meta: {
           backRouter: -1,
           activeKey: 'resourceResource',
-          breadcrumb: [t('云管'), t('资源'),  '新建子网'],
+          breadcrumb: [t('云管'), t('资源'), '新建子网'],
           notMenu: true,
         },
       },

@@ -25,3 +25,10 @@ type VpcDB struct {
 	VpcID      string
 	BkCloudID  int64
 }
+
+// OrderedRel 有序关系，用于比较类似于多个安全组但是有序的情况
+type OrderedRel struct {
+	CloudResID string `json:"cloud_res_id"`
+	ResID      string `json:"res_id"`
+	Priority   int64  `json:"priority"`
+}

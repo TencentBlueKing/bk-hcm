@@ -11,10 +11,7 @@ import useSelection from '../../hooks/use-selection';
 import useColumns from '../../hooks/use-columns';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import { VendorEnum } from '@/common/constant';
-import {
-  BatchDistribution,
-  DResourceType,
-} from '@/views/resource/resource-manage/children/dialog/batch-distribution';
+import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 import { useVerify } from '@/hooks';
 
 const props = defineProps({
@@ -85,43 +82,40 @@ const isDisabledRecycle = (vendor: VendorEnum, status: string) => {
   return res;
 };
 
-const unableRecycled = (data: {
-  instance_id: string;
-  vendor: VendorEnum;
-  status: string;
-  bk_biz_id: number;
-}) => {
+const unableRecycled = (data: { instance_id: string; vendor: VendorEnum; status: string; bk_biz_id: number }) => {
   return (
     !props.authVerifyData?.permissionAction[
-      props.isResourcePage
-        ? 'iaas_resource_operate'
-        : 'biz_iaas_resource_operate'
-    ]
-    || data.instance_id
-    || (props.isResourcePage && data.bk_biz_id !== -1)
-    || isDisabledRecycle(data?.vendor, data?.status)
+      props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate'
+    ] ||
+    data.instance_id ||
+    (props.isResourcePage && data.bk_biz_id !== -1) ||
+    isDisabledRecycle(data?.vendor, data?.status)
   );
 };
 
 const generateTooltipsOptions = (data: any) => {
   const action_name = props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
 
-  if (!props.authVerifyData?.permissionAction[action_name]) return {
-    content: '当前用户无权限操作该按钮',
-    disabled: props.authVerifyData?.permissionAction[action_name],
-  };
-  if (props.isResourcePage && data?.bk_biz_id !== -1) return {
-    content: '该硬盘已分配到业务，仅可在业务下操作',
-    disabled: data.bk_biz_id === -1,
-  };
-  if (data?.instance_id) return {
-    content: '该硬盘已绑定主机，不可单独回收',
-    disabled: !data.instance_id,
-  };
-  if (isDisabledRecycle(data?.vendor, data?.status)) return {
-    content: '该硬盘处于不可回收状态下',
-    disabled: !isDisabledRecycle(data.vendor, data.status),
-  };
+  if (!props.authVerifyData?.permissionAction[action_name])
+    return {
+      content: '当前用户无权限操作该按钮',
+      disabled: props.authVerifyData?.permissionAction[action_name],
+    };
+  if (props.isResourcePage && data?.bk_biz_id !== -1)
+    return {
+      content: '该硬盘已分配到业务，仅可在业务下操作',
+      disabled: data.bk_biz_id === -1,
+    };
+  if (data?.instance_id)
+    return {
+      content: '该硬盘已绑定主机，不可单独回收',
+      disabled: !data.instance_id,
+    };
+  if (isDisabledRecycle(data?.vendor, data?.status))
+    return {
+      content: '该硬盘处于不可回收状态下',
+      disabled: !isDisabledRecycle(data.vendor, data.status),
+    };
   return {
     disabled: true,
   };
@@ -132,76 +126,67 @@ const renderColumns = [
   {
     label: '操作',
     render({ data }: any) {
-      return h(h(
-        'span',
-        {
-          onClick() {
-            emit(
-              'auth',
-              props.isResourcePage
-                ? 'iaas_resource_operate'
-                : 'biz_iaas_resource_operate',
-            );
-          },
-        },
-        [
-          withDirectives(h(
-            Button,
-            {
-              text: true,
-              theme: 'primary',
-              disabled: unableRecycled(data),
-              onClick() {
-                InfoBox({
-                  title: '请确认是否回收',
-                  subTitle: `将回收【${data.cloud_id}${data.name ? ` - ${data.name}` : ''}】`,
-                  // @ts-ignore
-                  theme: 'danger',
-                  headerAlign: 'center',
-                  footerAlign: 'center',
-                  contentAlign: 'center',
-                  extCls: 'recycle-resource-infobox',
-                  onConfirm() {
-                    resourceStore
-                      .recycled('disks', {
-                        infos: [{ id: data.id }],
-                      })
-                      .then(() => {
-                        Message({
-                          theme: 'success',
-                          message: '回收成功',
-                        });
-                        triggerApi();
-                      });
-                  },
-                });
-              },
+      return h(
+        h(
+          'span',
+          {
+            onClick() {
+              emit('auth', props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate');
             },
-            [t('回收')],
-          ), [
-            [bkTooltips, generateTooltipsOptions(data)],
-          ]),
-        ],
-      ));
+          },
+          [
+            withDirectives(
+              h(
+                Button,
+                {
+                  text: true,
+                  theme: 'primary',
+                  disabled: unableRecycled(data),
+                  onClick() {
+                    InfoBox({
+                      title: '请确认是否回收',
+                      subTitle: `将回收【${data.cloud_id}${data.name ? ` - ${data.name}` : ''}】`,
+                      // @ts-ignore
+                      theme: 'danger',
+                      headerAlign: 'center',
+                      footerAlign: 'center',
+                      contentAlign: 'center',
+                      extCls: 'recycle-resource-infobox',
+                      onConfirm() {
+                        resourceStore
+                          .recycled('disks', {
+                            infos: [{ id: data.id }],
+                          })
+                          .then(() => {
+                            Message({
+                              theme: 'success',
+                              message: '回收成功',
+                            });
+                            triggerApi();
+                          });
+                      },
+                    });
+                  },
+                },
+                [t('回收')],
+              ),
+              [[bkTooltips, generateTooltipsOptions(data)]],
+            ),
+          ],
+        ),
+      );
     },
   },
 ];
 
 const { selections, handleSelectionChange, resetSelections } = useSelection();
 
-const {
-  datas,
-  pagination,
-  isLoading,
-  handlePageChange,
-  handlePageSizeChange,
-  handleSort,
-  triggerApi,
-} = useQueryList({ filter: filter.value }, 'disks');
+const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, triggerApi } = useQueryList(
+  { filter: filter.value },
+  'disks',
+);
 
-const {
-  handleAuth,
-} = useVerify();
+const { handleAuth } = useVerify();
 
 const { handleShowDelete, DeleteDialog } = useDelete(
   simpleColumns,
@@ -233,9 +218,7 @@ const isCurRowSelectEnable = (row: any) => {
   <bk-loading :loading="isLoading">
     <section
       class="flex-row align-items-center"
-      :class="
-        isResourcePage ? 'justify-content-end' : 'justify-content-between'
-      "
+      :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'"
     >
       <slot></slot>
       <BatchDistribution
@@ -257,14 +240,11 @@ const isCurRowSelectEnable = (row: any) => {
             if (authVerifyData?.permissionAction?.biz_iaas_resource_delete) {
               handleShowDelete(
                 selections
-                  .filter(
-                    (selection) =>
-                      !isDisabledRecycle(selection?.vendor, selection?.status),
-                  )
+                  .filter((selection) => !isDisabledRecycle(selection?.vendor, selection?.status))
                   .map((selection) => selection.id),
-              )
+              );
             } else {
-              handleAuth('biz_iaas_resource_delete')
+              handleAuth('biz_iaas_resource_delete');
             }
           }
         "
@@ -272,13 +252,7 @@ const isCurRowSelectEnable = (row: any) => {
         {{ t('批量回收') }}
       </bk-button>
       <div class="flex-row align-items-center justify-content-arround mlauto">
-        <bk-search-select
-          class="w500"
-          clearable
-          :conditions="[]"
-          :data="selectSearchData"
-          v-model="searchValue"
-        />
+        <bk-search-select class="w500" clearable :conditions="[]" :data="selectSearchData" v-model="searchValue" />
         <slot name="recycleHistory"></slot>
       </div>
     </section>
@@ -308,7 +282,6 @@ const isCurRowSelectEnable = (row: any) => {
 <style lang="scss" scoped>
 .w100 {
   width: 100px;
-
 }
 .w60 {
   width: 60px;

@@ -9,6 +9,8 @@ import IpManage from './children/manage/ip-manage.vue';
 import RoutingManage from './children/manage/routing-manage.vue';
 import ImageManage from './children/manage/image-manage.vue';
 import NetworkInterfaceManage from './children/manage/network-interface-manage.vue';
+import LoadBalancerManage from './children/manage/load-balancer-manage.vue';
+import CertManager from '@/views/business/cert-manager';
 // import AccountSelector from '@/components/account-selector/index.vue';
 import { DISTRIBUTE_STATUS_LIST } from '@/constants';
 import { useDistributionStore } from '@/store/distribution';
@@ -151,6 +153,8 @@ const componentMap = {
   routing: RoutingManage,
   image: ImageManage,
   'network-interface': NetworkInterfaceManage,
+  clbs: LoadBalancerManage,
+  certs: CertManager,
 };
 
 // 标签相关数据
@@ -354,11 +358,11 @@ watch(
   },
 );
 
-const handleTemplateEdit = (payload: any) => {
-  isTemplateDialogShow.value = true;
-  isTemplateDialogEdit.value = true;
-  templateDialogPayload.value = payload;
-};
+// const handleTemplateEdit = (payload: any) => {
+//   isTemplateDialogShow.value = true;
+//   isTemplateDialogEdit.value = true;
+//   templateDialogPayload.value = payload;
+// };
 
 const getResourceAccountList = async () => {
   try {
@@ -420,7 +424,7 @@ onMounted(() => {
       <div class="card-layout">
         <p class="resource-title">
           <span class="main-account-name">
-            {{ resourceAccountStore?.resourceAccount?.name || "全部账号" }}
+            {{ resourceAccountStore?.resourceAccount?.name || '全部账号' }}
           </span>
           <template v-if="resourceAccountStore?.resourceAccount?.id">
             <div class="extension">
@@ -439,17 +443,8 @@ onMounted(() => {
             </div>
           </template>
         </p>
-        <BkTab
-          class="resource-tab-wrap ml15"
-          type="unborder-card"
-          v-model:active="activeResourceTab"
-        >
-          <BkTabPanel
-            v-for="item of RESOURCE_TABS"
-            :label="item.label"
-            :key="item.key"
-            :name="item.key"
-          />
+        <BkTab class="resource-tab-wrap ml15" type="unborder-card" v-model:active="activeResourceTab">
+          <BkTabPanel v-for="item of RESOURCE_TABS" :label="item.label" :key="item.key" :name="item.key" />
         </BkTab>
       </div>
     </div>
@@ -465,11 +460,7 @@ onMounted(() => {
           {{ resourceAccountStore?.resourceAccount?.sync_failed_reason }}
         </template>
       </bk-alert>
-      <bk-tab
-        v-model:active="activeTab"
-        type="card-grid"
-        class="resource-main g-scroller"
-      >
+      <bk-tab v-model:active="activeTab" type="card-grid" class="resource-main g-scroller">
         <template #setting>
           <div style="margin: 0 10px">
             <bk-select v-model="status" :clearable="false" class="w80">
@@ -482,7 +473,57 @@ onMounted(() => {
             </bk-select>
           </div>
         </template>
-        <bk-tab-panel
+        <!-- Only Tencent Cloud offers certificate hosting -->
+        <template v-for="item in tabs" :key="item.name">
+          <bk-tab-panel
+            :name="item.name"
+            :label="item.type"
+            v-if="
+              item.name !== 'certs' ||
+              (item.name === 'certs' &&
+                ((!resourceAccountStore.currentVendor && !resourceAccountStore.currentAccountVendor) ||
+                  [resourceAccountStore.currentVendor, resourceAccountStore.currentAccountVendor].includes(
+                    VendorEnum.TCLOUD,
+                  )))
+            "
+          >
+            <component
+              v-if="item.name === activeTab"
+              :is="item.component"
+              :filter="filter"
+              :where-am-i="activeTab"
+              :is-resource-page="isResourcePage"
+              :auth-verify-data="authVerifyData"
+              @auth="(val: string) => {
+                handleAuth(val)
+              }"
+              @tabchange="handleTabChange"
+              ref="componentRef"
+              @edit="handleEdit"
+              v-model:isFormDataChanged="isFormDataChanged"
+            >
+              <span v-if="['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clbs'].includes(activeTab)">
+                <bk-button
+                  theme="primary"
+                  class="new-button"
+                  :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.iaas_resource_create }"
+                  @click="
+                    () => {
+                      if (!authVerifyData?.permissionAction?.iaas_resource_create) {
+                        handleAuth('iaas_resource_create');
+                      } else {
+                        handleAdd();
+                      }
+                    }
+                  "
+                >
+                  {{ ['host', 'clbs'].includes(activeTab) ? '购买' : '新建' }}
+                </bk-button>
+              </span>
+            </component>
+          </bk-tab-panel>
+        </template>
+        <!-- <bk-tab-panel
           v-for="item in tabs"
           :key="item.name"
           :name="item.name"
@@ -505,7 +546,7 @@ onMounted(() => {
           >
             <span
               v-if="
-                ['host', 'vpc', 'drive', 'security', 'subnet', 'ip'].includes(
+                ['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clbs'].includes(
                   activeTab,
                 )
               "
@@ -522,11 +563,11 @@ onMounted(() => {
                   }
                 }"
               >
-                {{ ['host'].includes(activeTab) ? '购买' : '新建' }}
+                {{ ['host', 'clbs'].includes(activeTab) ? '购买' : '新建' }}
               </bk-button>
             </span>
           </component>
-        </bk-tab-panel>
+        </bk-tab-panel> -->
       </bk-tab>
 
       <bk-sideslider
@@ -568,16 +609,19 @@ onMounted(() => {
         :is-show="isTemplateDialogShow"
         :is-edit="isTemplateDialogEdit"
         :payload="templateDialogPayload"
-        :handle-close="() => {
-          isTemplateDialogShow = false;
-        }"
-        :handle-success="() => {
-          isTemplateDialogShow = false;
-          handleSuccess();
-        }"
+        :handle-close="
+          () => {
+            isTemplateDialogShow = false;
+          }
+        "
+        :handle-success="
+          () => {
+            isTemplateDialogShow = false;
+            handleSuccess();
+          }
+        "
       />
     </div>
-
 
     <RouterView v-else></RouterView>
   </div>
@@ -624,7 +668,7 @@ onMounted(() => {
     .bk-table-head .bk-checkbox {
       vertical-align: middle;
     }
-    .bk-table-head tr th:nth-of-type(2) .cell{
+    .bk-table-head tr th:nth-of-type(2) .cell {
       padding-left: 8px;
     }
     .bk-table-body .cell.selection {
@@ -667,9 +711,9 @@ onMounted(() => {
 
   .extension {
     font-size: 14px;
-    color: #63656E;
+    color: #63656e;
 
-    &>span {
+    & > span {
       margin-left: 20px;
 
       .info-text {
@@ -687,7 +731,8 @@ onMounted(() => {
 </style>
 
 <style lang="scss">
-.delete-resource-infobox, .recycle-resource-infobox {
+.delete-resource-infobox,
+.recycle-resource-infobox {
   .bk-info-sub-title {
     word-break: break-all;
   }

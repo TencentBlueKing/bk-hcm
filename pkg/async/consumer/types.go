@@ -31,10 +31,10 @@ func NewKit() *kit.Kit {
 }
 
 var (
-	// defRetryCount 任务执行失败默认重试次数
-	defRetryCount = uint(3)
-	// defRetryRangeMS 任务执行失败默认重试周期
-	defRetryRangeMS = [2]uint{1000, 15000}
+	// DefRetryCount 任务执行失败默认重试次数
+	DefRetryCount = uint(3)
+	// DefRetryRangeMS 任务执行失败默认重试周期
+	DefRetryRangeMS = [2]uint{1000, 15000}
 )
 
 const (

@@ -1,0 +1,72 @@
+.cert-manager-page {
+  height: 100%;
+  padding: 24px;
+  overflow: hidden;
+  box-sizing: border-box;
+
+  .common-card-wrap {
+    width: 100%;
+    height: 100%;
+    padding: 16px 24px;
+    background-color: #fff;
+    box-sizing: border-box;
+
+    .operation-wrap .operate-btn-groups .bk-button {
+      margin-right: 0;
+    }
+  }
+
+  &.has-selection {
+    padding: 0;
+    .common-card-wrap {
+      padding: 0;
+    }
+    .bk-table .bk-table-head .bk-checkbox {
+      vertical-align: middle;
+    }
+    .bk-table .bk-table-head tr th:nth-of-type(2) .cell {
+      padding-left: 8px;
+    }
+    .bk-table .bk-table-body .cell.selection {
+      text-align: right;
+      .bk-checkbox {
+        vertical-align: middle;
+      }
+    }
+    .bk-table .bk-table-body tr td:nth-of-type(2) .cell {
+      padding-left: 8px;
+    }
+  }
+}
+
+.cert-upload-sideslider {
+  .bk-upload--button {
+    .bk-button {
+      width: 100px;
+    }
+    .bk-upload__tip {
+      margin-left: 12px;
+      color: #979ba5 !important;
+    }
+  }
+}
+
+.operate-text-btn, .link-text-btn {
+  color: #3a84ff;
+  cursor: pointer;
+} 
+
+.upload-textarea-wrap {
+  min-width: 100%;
+  max-width: 100%;
+  textarea {
+    height: 100%;
+  }
+}
+
+.upload-error-text {
+  margin-bottom: 8px;
+  font-size: 12px;
+  line-height: 1;
+  color: #ea3636;
+}

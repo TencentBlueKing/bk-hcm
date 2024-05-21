@@ -81,4 +81,14 @@ const (
 	CloudSelectionDataSource ResourceType = "cloud_selection_data_source"
 	// ArgumentTemplate 参数模版
 	ArgumentTemplate ResourceType = "argument_template"
+	// Cert defines cert hcm auth resource type
+	Cert ResourceType = "cert"
+	// LoadBalancer defines clb hcm auth resource type
+	LoadBalancer ResourceType = "load_balancer"
+	// Listener defines listener hcm auth resource type
+	Listener ResourceType = "listener"
+	// TargetGroup defines target group hcm auth resource type
+	TargetGroup ResourceType = "target_group"
+	// UrlRuleAuditResType url规则
+	UrlRuleAuditResType ResourceType = "url_rule"
 )

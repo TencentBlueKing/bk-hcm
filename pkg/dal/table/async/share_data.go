@@ -28,59 +28,85 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/json"
+	"hcm/pkg/tools/maps"
 )
 
 // NewShareData new share data.
-func NewShareData() *ShareData {
+func NewShareData(initData map[string]string) *ShareData {
+	if initData == nil {
+		initData = make(map[string]string)
+	}
 	return &ShareData{
-		Dict:  make(map[string]string),
+		data: &data{
+			InitData: maps.Clone(initData),
+			Data:     maps.Clone(initData),
+		},
 		mutex: sync.Mutex{},
 	}
+}
+
+type data struct {
+	Data map[string]string `json:"data,omitempty"`
+	// save init data
+	InitData map[string]string `json:"init_data,omitempty"`
 }
 
 // ShareData can read/write within all tasks and will persist it
 // if you want a high performance just within same task, you can use
 // ExecuteContext's Context
 type ShareData struct {
-	Dict map[string]string
-	Save func(kt *kit.Kit, data *ShareData) error
-
+	*data
+	Save  func(kt *kit.Kit, data *ShareData) error
 	mutex sync.Mutex
 }
 
 // Scan is used to decode raw message which is read from db into ShareData.
 func (d *ShareData) Scan(raw interface{}) error {
-	d.Dict = make(map[string]string)
-	return types.Scan(raw, d.Dict)
+	err := types.Scan(raw, &d.data)
+	if err == nil && d.data == nil {
+		d.data = &data{
+			Data:     make(map[string]string),
+			InitData: make(map[string]string),
+		}
+	}
+	return err
 }
 
 // Value encode the ShareData to a json raw, so that it can be stored to db with json raw.
 func (d ShareData) Value() (driver.Value, error) {
-	return types.Value(d.Dict)
+	return types.Value(d.data)
 }
 
 // MarshalJSON used by json
 func (d *ShareData) MarshalJSON() ([]byte, error) {
-	return json.Marshal(d.Dict)
+	return json.Marshal(d.data)
 }
 
 // UnmarshalJSON used by json
 func (d *ShareData) UnmarshalJSON(data []byte) error {
-	if d.Dict == nil {
-		d.Dict = make(map[string]string)
+	return json.Unmarshal(data, &d.data)
+}
+
+// GetInitData return its init data
+func (d *ShareData) GetInitData() map[string]string {
+	if d == nil {
+		return nil
 	}
-	return json.Unmarshal(data, &d.Dict)
+	if d.data == nil {
+		return nil
+	}
+	return d.InitData
 }
 
 // Get value from share data, it is thread-safe.
 func (d *ShareData) Get(key string) (string, bool) {
-	if d.Dict == nil {
+	if d.Data == nil {
 		return "", false
 	}
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
-	v, ok := d.Dict[key]
+	v, ok := d.Data[key]
 	return v, ok
 }
 
@@ -89,10 +115,10 @@ func (d *ShareData) Set(kt *kit.Kit, key string, val string) error {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
-	d.Dict[key] = val
+	d.Data[key] = val
 	if d.Save != nil {
 		if err := d.Save(kt, d); err != nil {
-			delete(d.Dict, key)
+			delete(d.Data, key)
 			logs.ErrorDepthf(1, "share data set key: %s, val: %s failed, err: %v, rid: %s", key, val, err, kt.Rid)
 			return err
 		}
@@ -111,17 +137,17 @@ func (d *ShareData) AppendIDs(kt *kit.Kit, key string, ids ...string) error {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
-	val, exist := d.Dict[key]
+	val, exist := d.Data[key]
 	var str string
 	if !exist {
 		str = strings.Join(ids, ",")
 	} else {
 		str = val + "," + strings.Join(ids, ",")
 	}
-	d.Dict[key] = str
+	d.Data[key] = str
 	if d.Save != nil {
 		if err := d.Save(kt, d); err != nil {
-			delete(d.Dict, key)
+			delete(d.Data, key)
 			logs.ErrorDepthf(1, "share data appendIDs: %s, ids: %v failed, err: %v, rid: %s", key, ids, err, kt.Rid)
 			return err
 		}

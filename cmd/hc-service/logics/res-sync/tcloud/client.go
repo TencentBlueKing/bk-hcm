@@ -72,6 +72,15 @@ type Interface interface {
 	RemoveArgsTplServiceDeleteFromCloud(kt *kit.Kit, accountID string, region string) error
 	ArgsTplServiceGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncArgsTplOption) (*SyncResult, error)
 	RemoveArgsTplServiceGroupDeleteFromCloud(kt *kit.Kit, accountID string, region string) error
+
+	Cert(kt *kit.Kit, params *SyncBaseParams, opt *SyncCertOption) (*SyncResult, error)
+	RemoveCertDeleteFromCloud(kt *kit.Kit, accountID string, region string) error
+
+	LoadBalancer(kt *kit.Kit, params *SyncBaseParams, opt *SyncLBOption) (*SyncResult, error)
+	RemoveLoadBalancerDeleteFromCloud(kt *kit.Kit, accountID string, region string) error
+
+	LoadBalancerWithListener(kt *kit.Kit, params *SyncBaseParams, opt *SyncLBOption) (*SyncResult, error)
+	Listener(kt *kit.Kit, opt *SyncListenerOfSingleLBOption) (*SyncResult, error)
 }
 
 var _ Interface = new(client)

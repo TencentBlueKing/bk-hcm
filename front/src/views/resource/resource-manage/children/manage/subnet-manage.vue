@@ -8,10 +8,7 @@ import useColumns from '../../hooks/use-columns';
 import useQueryList from '../../hooks/use-query-list';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import useSelection from '../../hooks/use-selection';
-import {
-  BatchDistribution,
-  DResourceType,
-} from '@/views/resource/resource-manage/children/dialog/batch-distribution';
+import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 
 const props = defineProps({
   filter: {
@@ -46,15 +43,10 @@ const isCurRowSelectEnable = (row: any) => {
   }
 };
 
-const {
-  datas,
-  pagination,
-  isLoading,
-  handlePageChange,
-  handlePageSizeChange,
-  handleSort,
-  triggerApi,
-} = useQueryList({ filter: filter.value }, 'subnets');
+const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, triggerApi } = useQueryList(
+  { filter: filter.value },
+  'subnets',
+);
 
 const hostSearchData = computed(() => {
   return [
@@ -236,9 +228,7 @@ defineExpose({ fetchComponentsData });
   <bk-loading :loading="isLoading">
     <section
       class="flex-row align-items-center"
-      :class="
-        isResourcePage ? 'justify-content-end' : 'justify-content-between'
-      "
+      :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'"
     >
       <slot></slot>
       <BatchDistribution

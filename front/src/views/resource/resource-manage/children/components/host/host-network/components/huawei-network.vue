@@ -5,15 +5,9 @@ import type {
   FilterType,
 } from '@/typings/resource';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
-import {
-  ref,
-  reactive,
-  PropType,
-} from 'vue';
+import { ref, reactive, PropType } from 'vue';
 
-import {
-  useResourceStore,
-} from '@/store/resource';
+import { useResourceStore } from '@/store/resource';
 
 const props = defineProps({
   filter: {
@@ -32,7 +26,6 @@ const showPublic = ref(false);
 const showVpc = ref(false);
 const showGroup = ref(false);
 const showPrivate = ref(false);
-
 
 const isLoading = ref(false);
 const tableData = ref([]);
@@ -145,8 +138,6 @@ const getNetWorkList = async () => {
 };
 
 getNetWorkList();
-
-
 </script>
 
 <template>
@@ -208,47 +199,28 @@ getNetWorkList();
     title="添加网卡"
     theme="primary"
     quick-close
-    @closed="() => {
-      handleToggleShow('network')
-    }"
+    @closed="
+      () => {
+        handleToggleShow('network');
+      }
+    "
     @confirm="handleConfirmBind"
   >
-    <bk-form
-      class="mt20"
-      label-width="100">
-      <bk-form-item
-        :label="t('云服务器')"
-      >
-        <span>
-          新加坡
-        </span>
+    <bk-form class="mt20" label-width="100">
+      <bk-form-item :label="t('云服务器')">
+        <span>新加坡</span>
       </bk-form-item>
-      <bk-form-item
-        :label="t('虚拟私有云')"
-      >
-        <span>
-          新加坡
-        </span>
+      <bk-form-item :label="t('虚拟私有云')">
+        <span>新加坡</span>
       </bk-form-item>
-      <bk-form-item
-        :label="t('安全组')"
-      >
-        <bk-select v-model="fromData.name">
-        </bk-select>
+      <bk-form-item :label="t('安全组')">
+        <bk-select v-model="fromData.name"></bk-select>
       </bk-form-item>
-      <bk-form-item
-        :label="t('子网')"
-      >
-        <bk-select v-model="fromData.name">
-        </bk-select>
+      <bk-form-item :label="t('子网')">
+        <bk-select v-model="fromData.name"></bk-select>
       </bk-form-item>
-      <bk-form-item
-        :label="t('私有IP地址')"
-      >
-        <bk-input
-          v-model="fromData.name"
-          :placeholder="t('请输入私有IP地址')"
-        />
+      <bk-form-item :label="t('私有IP地址')">
+        <bk-input v-model="fromData.name" :placeholder="t('请输入私有IP地址')" />
       </bk-form-item>
     </bk-form>
   </bk-dialog>
@@ -258,31 +230,27 @@ getNetWorkList();
     title="绑定虚拟IP"
     theme="primary"
     quick-close
-    @closed="() => {
-      handleToggleShow('virtual')
-    }">
-    <bk-table
-      class="mt20"
-      dark-header
-      :data="[{ ip: 'testetstt' }]"
-      :outer-border="false"
-      show-overflow-tooltip
-    >
-      <bk-table-column
-        label="内网IP"
-      >
+    @closed="
+      () => {
+        handleToggleShow('virtual');
+      }
+    "
+  >
+    <bk-table class="mt20" dark-header :data="[{ ip: 'testetstt' }]" :outer-border="false" show-overflow-tooltip>
+      <bk-table-column label="内网IP">
         <div class="cell-flex">
           <bk-radio
-            label="" @click="() => {
-              handleRadio(data)
-            }" />
+            label=""
+            @click="
+              () => {
+                handleRadio(data);
+              }
+            "
+          />
           <span class="pl10">{{ data.ip }}</span>
         </div>
       </bk-table-column>
-      <bk-table-column
-        label="已绑定的EIP"
-        prop="ip"
-      />
+      <bk-table-column label="已绑定的EIP" prop="ip" />
     </bk-table>
   </bk-dialog>
   <bk-dialog
@@ -291,46 +259,27 @@ getNetWorkList();
     title="修改私有IP"
     theme="primary"
     quick-close
-    @closed="() => {
-      handleToggleShow('private')
-    }">
-    <bk-form
-      class="mt20"
-      label-width="100">
-      <bk-form-item
-        :label="t('云服务器')"
-      >
-        <span>
-          新加坡
-        </span>
+    @closed="
+      () => {
+        handleToggleShow('private');
+      }
+    "
+  >
+    <bk-form class="mt20" label-width="100">
+      <bk-form-item :label="t('云服务器')">
+        <span>新加坡</span>
       </bk-form-item>
-      <bk-form-item
-        :label="t('虚拟私有云')"
-      >
-        <span>
-          新加坡
-        </span>
+      <bk-form-item :label="t('虚拟私有云')">
+        <span>新加坡</span>
       </bk-form-item>
-      <bk-form-item
-        :label="t('当前私有IP地址')"
-      >
-        <span>
-          新加坡
-        </span>
+      <bk-form-item :label="t('当前私有IP地址')">
+        <span>新加坡</span>
       </bk-form-item>
-      <bk-form-item
-        :label="t('子网')"
-      >
-        <bk-select v-model="fromData.name">
-        </bk-select>
+      <bk-form-item :label="t('子网')">
+        <bk-select v-model="fromData.name"></bk-select>
       </bk-form-item>
-      <bk-form-item
-        :label="t('私有IP地址')"
-      >
-        <bk-input
-          v-model="fromData.name"
-          :placeholder="t('请输入私有IP地址')"
-        />
+      <bk-form-item :label="t('私有IP地址')">
+        <bk-input v-model="fromData.name" :placeholder="t('请输入私有IP地址')" />
       </bk-form-item>
     </bk-form>
   </bk-dialog>
@@ -340,42 +289,27 @@ getNetWorkList();
     title="更换VPC"
     theme="primary"
     quick-close
-    @closed="() => {
-      handleToggleShow('vpc')
-    }">
-    <bk-form
-      class="mt20"
-      label-width="100">
-      <bk-form-item
-        :label="t('云服务器')"
-      >
-        <span>
-          新加坡一区
-        </span>
+    @closed="
+      () => {
+        handleToggleShow('vpc');
+      }
+    "
+  >
+    <bk-form class="mt20" label-width="100">
+      <bk-form-item :label="t('云服务器')">
+        <span>新加坡一区</span>
       </bk-form-item>
-      <bk-form-item
-        :label="t('虚拟私有云')"
-      >
-        <bk-select v-model="fromData.name">
-        </bk-select>
+      <bk-form-item :label="t('虚拟私有云')">
+        <bk-select v-model="fromData.name"></bk-select>
       </bk-form-item>
-      <bk-form-item
-        :label="t('子网')"
-      >
-        <bk-select v-model="fromData.name">
-        </bk-select>
+      <bk-form-item :label="t('子网')">
+        <bk-select v-model="fromData.name"></bk-select>
       </bk-form-item>
-      <bk-form-item
-        :label="t('私有IP地址')"
-      >
-        <bk-select v-model="fromData.name">
-        </bk-select>
+      <bk-form-item :label="t('私有IP地址')">
+        <bk-select v-model="fromData.name"></bk-select>
       </bk-form-item>
-      <bk-form-item
-        :label="t('安全组')"
-      >
-        <bk-select v-model="fromData.name">
-        </bk-select>
+      <bk-form-item :label="t('安全组')">
+        <bk-select v-model="fromData.name"></bk-select>
       </bk-form-item>
     </bk-form>
   </bk-dialog>
@@ -385,54 +319,39 @@ getNetWorkList();
     title="更换安全组"
     theme="primary"
     quick-close
-    @closed="() => {
-      handleToggleShow('securityGroup')
-    }"
+    @closed="
+      () => {
+        handleToggleShow('securityGroup');
+      }
+    "
     @confirm="handleConfirmBind"
   >
-    <bk-form
-      class="mt20"
-      label-width="100"
-      label-position="left">
-      <bk-form-item
-        :label="t('云服务器名称')"
-      >
-        <span>
-          新加坡
-        </span>
+    <bk-form class="mt20" label-width="100" label-position="left">
+      <bk-form-item :label="t('云服务器名称')">
+        <span>新加坡</span>
       </bk-form-item>
-      <bk-form-item
-        :label="t('网卡')"
-      >
-        <bk-select v-model="fromData.name">
-        </bk-select>
+      <bk-form-item :label="t('网卡')">
+        <bk-select v-model="fromData.name"></bk-select>
       </bk-form-item>
     </bk-form>
-    <bk-table
-      class="mt20"
-      dark-header
-      :data="[{ ip: 'testetstt' }]"
-      :outer-border="false"
-      show-overflow-tooltip
-    >
-      <bk-table-column
-        label="安全组名称"
-      >
+    <bk-table class="mt20" dark-header :data="[{ ip: 'testetstt' }]" :outer-border="false" show-overflow-tooltip>
+      <bk-table-column label="安全组名称">
         <!-- eslint-disable vue/no-template-shadow -->
-        <template #default="{ data } ">
+        <template #default="{ data }">
           <div class="cell-flex">
             <bk-radio
-              label="" @click="() => {
-                handleRadio(data)
-              }" />
+              label=""
+              @click="
+                () => {
+                  handleRadio(data);
+                }
+              "
+            />
             <span class="pl10">{{ data.ip }}</span>
           </div>
         </template>
       </bk-table-column>
-      <bk-table-column
-        label="描述"
-        prop="ip"
-      />
+      <bk-table-column label="描述" prop="ip" />
     </bk-table>
   </bk-dialog>
   <bk-dialog
@@ -441,108 +360,88 @@ getNetWorkList();
     title="绑定弹性公网IP"
     theme="primary"
     quick-close
-    @closed="() => {
-      handleToggleShow('public')
-    }"
+    @closed="
+      () => {
+        handleToggleShow('public');
+      }
+    "
     @confirm="handleConfirmBind"
   >
-    <bk-form
-      class="mt20"
-      label-position="left">
-      <bk-form-item
-        label-width="100"
-        :label="t('弹性公网IP')"
-      >
-        <span>
-          新加坡
-        </span>
+    <bk-form class="mt20" label-position="left">
+      <bk-form-item label-width="100" :label="t('弹性公网IP')">
+        <span>新加坡</span>
       </bk-form-item>
-      <bk-form-item
-        :label="t('选择实例')"
-        label-width="100"
-      >
-        <bk-radio-group
-          v-model="fromData.name"
-        >
+      <bk-form-item :label="t('选择实例')" label-width="100">
+        <bk-radio-group v-model="fromData.name">
           <bk-radio label="云服务器" />
           <bk-radio label="裸金属" />
           <bk-radio label="虚拟IP地址" />
         </bk-radio-group>
       </bk-form-item>
       <bk-form-item label-width="0">
-        <bk-table
-          class="mt20"
-          dark-header
-          :data="[{ ip: 'testetstt' }]"
-          :outer-border="false"
-          show-overflow-tooltip
-        >
-          <bk-table-column
-            label="安全组名称"
-          >
+        <bk-table class="mt20" dark-header :data="[{ ip: 'testetstt' }]" :outer-border="false" show-overflow-tooltip>
+          <bk-table-column label="安全组名称">
             <!-- eslint-disable vue/no-template-shadow -->
-            <template #default="{ data } ">
+            <template #default="{ data }">
               <div class="cell-flex">
                 <bk-radio
-                  label="" @click="() => {
-                    handleRadio(data)
-                  }" />
+                  label=""
+                  @click="
+                    () => {
+                      handleRadio(data);
+                    }
+                  "
+                />
                 <span class="pl10">{{ data.ip }}</span>
               </div>
             </template>
           </bk-table-column>
-          <bk-table-column
-            label="描述"
-            prop="ip"
-          />
+          <bk-table-column label="描述" prop="ip" />
         </bk-table>
       </bk-form-item>
-      <bk-form-item
-        :label="t('网卡')"
-        label-width="100"
-      >
-        <bk-select v-model="fromData.name">
-        </bk-select>
+      <bk-form-item :label="t('网卡')" label-width="100">
+        <bk-select v-model="fromData.name"></bk-select>
       </bk-form-item>
     </bk-form>
   </bk-dialog>
 </template>
 
 <style lang="scss" scoped>
-  .info-title {
-    font-size: 14px;
-    margin-bottom: 8px;
-  }
-  .sub-title{
-    font-size: 12px;
-  }
-  .cell-flex{
+.info-title {
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+.sub-title {
+  font-size: 12px;
+}
+.cell-flex {
+  display: flex;
+  align-items: center;
+}
+.table-warp {
+  padding: 20px;
+  border: 1px dashed rgb(225, 221, 221);
+  .table-flex {
     display: flex;
+    justify-content: space-between;
     align-items: center;
   }
-  .table-warp{
-    padding: 20px;
-    border: 1px dashed rgb(225, 221, 221);
-    .table-flex{
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+}
+.flex {
+  display: flex;
+  align-items: center;
+}
+.form-warp {
+  border-top: 1px solid rgb(225, 221, 221);
+  .item-warp {
+    margin-right: 40px;
   }
-  .flex{
-    display: flex;
-    align-items: center;
-  }
-  .form-warp{
-    border-top: 1px solid rgb(225, 221, 221);
-    .item-warp{
-      margin-right: 40px;
-    }
-  }
+}
 
-  :deep(.detail-tab-main) .bk-tab-content {
-    height: calc(100vh - 300px) !important;
-  }
+:deep(.detail-tab-main) .bk-tab-content {
+  height: calc(100vh - 300px) !important;
+}
 
-  .info-warp{}
+.info-warp {
+}
 </style>

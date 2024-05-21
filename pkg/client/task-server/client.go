@@ -21,10 +21,13 @@ package taskserver
 
 import (
 	"fmt"
+	"net/http"
 
 	"hcm/pkg/api/core"
 	coreasync "hcm/pkg/api/core/async"
 	apits "hcm/pkg/api/task-server"
+	"hcm/pkg/async/producer"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
@@ -154,4 +157,29 @@ func (c *Client) GetTask(kt *kit.Kit, id string) (*coreasync.AsyncFlowTask, erro
 	}
 
 	return resp.Data, err
+}
+
+// UpdateCustomFlowState update custom flow state.
+func (c *Client) UpdateCustomFlowState(kt *kit.Kit, req *producer.UpdateCustomFlowStateOption) error {
+	return common.RequestNoResp[producer.UpdateCustomFlowStateOption](c.client, http.MethodPatch,
+		kt, req, "/custom_flows/state/update")
+}
+
+// CancelFlow 终止任务
+func (c *Client) CancelFlow(kt *kit.Kit, flowID string) error {
+	return common.RequestNoResp[common.Empty](c.client, rest.POST, kt, nil,
+		"/flows/%s/cancel", flowID)
+}
+
+// CloneFlow clone 任务 返回创建的新flow id
+func (c *Client) CloneFlow(kt *kit.Kit, flowID string, req *producer.CloneFlowOption) (*core.CreateResult, error) {
+	return common.Request[producer.CloneFlowOption, core.CreateResult](c.client, rest.POST, kt, req,
+		"/flows/%s/clone", flowID)
+
+}
+
+// RetryTask 重试任务
+func (c *Client) RetryTask(kt *kit.Kit, flowID string, taskID string) error {
+	return common.RequestNoResp[common.Empty](c.client, rest.PATCH, kt, nil,
+		"/flows/%s/tasks/%s/retry", flowID, taskID)
 }

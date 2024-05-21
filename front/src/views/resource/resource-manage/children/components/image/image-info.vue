@@ -43,39 +43,38 @@ const fields = ref([
   },
 ]);
 
-const {
-  loading,
-  detail,
-} = useDetail('images', props.id, (detail: any) => {
-  switch (detail.vendor) {
-    case 'tcloud':
-      fields.value.push(...[
-        {
-          name: '地域',
-          prop: 'region',
-        },
-        {
-          name: '镜像来源',
-          prop: 'image_source',
-        },
-        {
-          name: '镜像大小',
-          prop: 'image_size',
-        },
-      ]);
-      break;
-    // 其它类型的待补充
-  }
-}, props.vendor);
+const { loading, detail } = useDetail(
+  'images',
+  props.id,
+  (detail: any) => {
+    switch (detail.vendor) {
+      case 'tcloud':
+        fields.value.push(
+          ...[
+            {
+              name: '地域',
+              prop: 'region',
+            },
+            {
+              name: '镜像来源',
+              prop: 'image_source',
+            },
+            {
+              name: '镜像大小',
+              prop: 'image_size',
+            },
+          ],
+        );
+        break;
+      // 其它类型的待补充
+    }
+  },
+  props.vendor,
+);
 </script>
 
 <template>
-  <bk-loading
-    :loading="loading"
-  >
-    <detail-info
-      :detail="detail"
-      :fields="fields"
-    />
+  <bk-loading :loading="loading">
+    <detail-info :detail="detail" :fields="fields" />
   </bk-loading>
 </template>

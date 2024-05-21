@@ -1,3 +1,4 @@
+<!-- eslint-disable @typescript-eslint/prefer-optional-chain -->
 <script lang="ts" setup>
 // @ts-nocheck
 import DetailHeader from '../../common/header/detail-header';
@@ -10,18 +11,12 @@ import GcpAdd from '@/views/resource/resource-manage/children/add/gcp-add';
 import { GcpTypeEnum, CloudType } from '@/typings';
 // import bus from '@/common/bus';
 
-import {
-  useRoute,
-} from 'vue-router';
+import { useRoute } from 'vue-router';
 
-import {
-  useResourceStore,
-} from '@/store/resource';
+import { useResourceStore } from '@/store/resource';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 
-import {
-  useI18n,
-} from 'vue-i18n';
+import { useI18n } from 'vue-i18n';
 
 import { ref, watch } from 'vue';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
@@ -32,9 +27,7 @@ const resourceStore = useResourceStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
 const { whereAmI } = useWhereAmI();
 
-const {
-  t,
-} = useI18n();
+const { t } = useI18n();
 
 const hostTabs = [
   {
@@ -55,13 +48,7 @@ const gcpLoading = ref(true);
 //   return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
 // });
 
-const {
-  loading,
-  detail,
-} = useDetail(
-  'vendors/gcp/firewalls/rules',
-  id,
-);
+const { loading, detail } = useDetail('vendors/gcp/firewalls/rules', id);
 
 const fetchDetail = async () => {
   gcpLoading.value = true;
@@ -77,8 +64,6 @@ const fetchDetail = async () => {
     };
     gcpDetail.value = { ...detail.value };
     handleDetailData();
-  } catch (error) {
-    console.log(error);
   } finally {
     gcpLoading.value = false;
   }
@@ -94,7 +79,6 @@ watch(
     }
   },
 );
-
 
 const gcpFields = [
   {
@@ -177,7 +161,6 @@ const gcpFields = [
   },
 ];
 const handleDetailData = () => {
-  console.log('detail', detail.value.account_id);
   detail.target_service_accounts = detail.value.target_service_accounts || [];
   detail.destination_ranges = detail.value.destination_ranges || [];
   detail.target_tags = detail.value.target_tags || [];
@@ -190,23 +173,27 @@ const handleDetailData = () => {
   gcpDetail.value.operate = detail.value?.allowed?.length ? t('允许') : t('拒绝');
   gcpDetail.value.disabled = detail.value?.disabled ? t('已停用') : t('已启用');
   gcpDetail.value.vendor = t('谷歌云');
-  // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
-  gcpDetail.value.allowed = detail.value.allowed && detail.value.allowed.reduce((p, e) => {
-    p.push(`${[e.protocol]}: ${e.port ? e.port.join(',') : '--'}`);
-    return p;
-  }, []);
-  // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
-  gcpDetail.value.denied = detail.value.denied && detail.value.denied.reduce((p, e) => {
-    p.push(`${[e.protocol]}: ${e.port ? e.port.join(',') : '--'}`);
-    return p;
-  }, []);
+  gcpDetail.value.allowed =
+    detail.value.allowed &&
+    detail.value.allowed.reduce((p, e) => {
+      p.push(`${[e.protocol]}: ${e.port ? e.port.join(',') : '--'}`);
+      return p;
+    }, []);
+  gcpDetail.value.denied =
+    detail.value.denied &&
+    detail.value.denied.reduce((p, e) => {
+      p.push(`${[e.protocol]}: ${e.port ? e.port.join(',') : '--'}`);
+      return p;
+    }, []);
   gcpDetail.value.ports = gcpDetail.value.operate === t('允许') ? gcpDetail.value.allowed : gcpDetail.value.denied;
-  console.log('gcpDetail.value.ports', gcpDetail.value.ports);
   // eslint-disable-next-line max-len
-  gcpDetail.value.target = [...detail?.destination_ranges, ...detail?.target_service_accounts, ...detail?.target_tags].length
-    ? [...detail?.destination_ranges, ...detail?.target_service_accounts, ...detail?.target_tags] : '--';
+  gcpDetail.value.target = [...detail?.destination_ranges, ...detail?.target_service_accounts, ...detail?.target_tags]
+    .length
+    ? [...detail?.destination_ranges, ...detail?.target_service_accounts, ...detail?.target_tags]
+    : '--';
   gcpDetail.value.source = [...detail?.source_ranges, ...detail?.source_service_accounts, ...detail?.source_tags].length
-    ? [...detail?.source_ranges, ...detail?.source_service_accounts, ...detail?.source_tags] : '--';
+    ? [...detail?.source_ranges, ...detail?.source_service_accounts, ...detail?.source_tags]
+    : '--';
 };
 
 // const tabs = [
@@ -228,20 +215,12 @@ const isLoading = ref(false);
 //   isLoading.value = false;
 // };
 
-
 // 新增修改防火墙规则
 const submit = async (data: any) => {
   const fetchType = data?.id ? 'vendors/gcp/firewalls/rules' : 'vendors/gcp/firewalls/rules/create';
-  const {
-    loading,
-    addData,
-    updateData,
-  } = useAdd(
-    fetchType,
-    data,
-    data?.id,
-  );
-  if (isAdd.value) {   // 新增
+  const { loading, addData, updateData } = useAdd(fetchType, data, data?.id);
+  if (isAdd.value) {
+    // 新增
     addData();
   } else {
     await updateData();
@@ -299,8 +278,14 @@ const submit = async (data: any) => {
 >
   <gcp-relate></gcp-relate>
 </detail-tab> -->
-  <gcp-add v-model:is-show="isShowGcpAdd" :gcp-title="gcpTitle" :is-add="isAdd" :loading="isLoading" :detail="detail"
-           @submit="submit"></gcp-add>
+  <gcp-add
+    v-model:is-show="isShowGcpAdd"
+    :gcp-title="gcpTitle"
+    :is-add="isAdd"
+    :loading="isLoading"
+    :detail="detail"
+    @submit="submit"
+  ></gcp-add>
 </template>
 
 <style lang="scss" scoped>

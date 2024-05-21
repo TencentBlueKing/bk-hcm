@@ -55,6 +55,8 @@ type Client struct {
 
 	CloudSelection *CloudSelectionClient
 	ArgsTpl        *ArgsTplClient
+	LoadBalancer   *LoadBalancerClient
+	SGCommonRel    *SGCommonRelClient
 }
 
 type restClient struct {
@@ -93,5 +95,7 @@ func NewClient(client rest.ClientInterface) *Client {
 
 		CloudSelection: NewCloudCloudSelectionClient(client),
 		ArgsTpl:        NewCloudArgumentTemplateClient(client),
+		LoadBalancer:   NewLoadBalancerClient(client),
+		SGCommonRel:    NewCloudSGCommonRelClient(client),
 	}
 }

@@ -58,7 +58,7 @@ export default defineComponent({
         field: 'vendor',
         label: '云厂商',
         width: 100,
-        render: ({ cell }: {cell: VendorEnum}) => {
+        render: ({ cell }: { cell: VendorEnum }) => {
           return VendorMap[cell];
         },
       },
@@ -74,67 +74,62 @@ export default defineComponent({
         render: ({ cell, data }: any) => {
           return data.service_area_arr?.length ? (
             <p class={'flex-row align-items-center service-areas-paragraph'}>
-              <PopConfirm
-                trigger='click'
-                width={454}
-              >
+              <PopConfirm trigger='click' width={454}>
                 {{
                   content: () => (
                     <div class={'service-areas-table-container'}>
-                        <div class={'service-areas-table-header'}>
-                          <p class={'service-areas-table-header-title'}>
-                            服务质量排名
-                          </p>
-                        </div>
-                        <div class={'service-areas-table'}>
-                          <Table
-                            data={data.service_area_arr}
-                            show-overflow-tooltip
-                            maxHeight={500}
-                            columns={[
-                              {
-                                field: 'country_name_province_name',
-                                label: '地区',
-                                align: 'left',
-                                render: ({ data }) => <p class={'index-number-box-container'}>
+                      <div class={'service-areas-table-header'}>
+                        <p class={'service-areas-table-header-title'}>服务质量排名</p>
+                      </div>
+                      <div class={'service-areas-table'}>
+                        <Table
+                          data={data.service_area_arr}
+                          show-overflow-tooltip
+                          maxHeight={500}
+                          columns={[
+                            {
+                              field: 'country_name_province_name',
+                              label: '地区',
+                              align: 'left',
+                              render: ({ data }) => (
+                                <p class={'index-number-box-container'}>
                                   <div class={`index-number-box bg-color-${data.idx < 3 ? data.idx + 1 : 4}`}>
                                     {`${data.idx + 1} `}
                                   </div>
                                   {`${data.country_name},${data.province_name}`}
-                                </p>,
-                              },
-                              {
-                                field: 'network_latency',
-                                label: '网络延迟',
-                                width: 150,
-                                render: ({ cell }: {cell: number}) => `${Math.floor(cell)} ms`,
-                                sort: true,
-                              },
-                            ]}
-                          >
-                          </Table>
-                        </div>
+                                </p>
+                              ),
+                            },
+                            {
+                              field: 'network_latency',
+                              label: '网络延迟',
+                              width: 150,
+                              render: ({ cell }: { cell: number }) => `${Math.floor(cell)} ms`,
+                              sort: true,
+                            },
+                          ]}></Table>
                       </div>
+                    </div>
                   ),
                   default: () => (
-                    <a
-                      class={'scheme-service-areas-icon-box mr4'}
-                    >
+                    <a class={'scheme-service-areas-icon-box mr4'}>
                       <i class={'icon hcm-icon bkhcm-icon-paiming scheme-service-areas-icon'}></i>
                     </a>
                   ),
                 }}
               </PopConfirm>
-              <span v-bk-tooltips={{ content: cell, placement: 'top-start' }} >{cell}</span>
+              <span v-bk-tooltips={{ content: cell, placement: 'top-start' }}>{cell}</span>
             </p>
-          ) : '--';
+          ) : (
+            '--'
+          );
         },
       },
       {
         field: 'ping',
         label: '平均延迟',
         align: 'right',
-        render: ({ cell }: {cell: number}) => {
+        render: ({ cell }: { cell: number }) => {
           return `${Math.floor(cell)} ms`;
         },
         width: 100,
@@ -143,17 +138,22 @@ export default defineComponent({
         field: 'price',
         align: 'right',
         label: 'IDC 单位成本',
-        render: ({ cell }: {cell: number}) => `${cell}`,
+        render: ({ cell }: { cell: number }) => `${cell}`,
         width: 200,
       },
     ];
     const tableData = ref([]);
     const isLoading = ref(false);
     const isExpanded = ref(false);
-    const idcServiceAreasMap = ref<Map<string, {
-      service_areas: Array<IServiceArea>;
-      avg_latency: number;
-    }>>(new Map());
+    const idcServiceAreasMap = ref<
+      Map<
+        string,
+        {
+          service_areas: Array<IServiceArea>;
+          avg_latency: number;
+        }
+      >
+    >(new Map());
     const schemeVendors = ref([]);
     const isViewDetailBtnLoading = ref(false);
 
@@ -178,7 +178,7 @@ export default defineComponent({
     watch(
       () => schemeStore.selectedSchemeIdx,
       (idx) => {
-        if ((+idx) === props.idx) getSchemeDetails();
+        if (+idx === props.idx) getSchemeDetails();
       },
     );
 
@@ -206,17 +206,14 @@ export default defineComponent({
         props.resultIdcIds,
         schemeStore.userDistribution,
       );
-      const [listIdcRes, queryIdcServiceAreaRes] = await Promise.all([
-        listIdcPromise,
-        queryIdcServiceAreaPromise,
-      ]);
+      const [listIdcRes, queryIdcServiceAreaRes] = await Promise.all([listIdcPromise, queryIdcServiceAreaPromise]);
       queryIdcServiceAreaRes.data.forEach((v) => {
         idcServiceAreasMap.value.set(v.idc_id, {
           service_areas: v.service_areas,
           avg_latency: v.avg_latency,
         });
       });
-      tableData.value = listIdcRes.data.map(v => ({
+      tableData.value = listIdcRes.data.map((v) => ({
         name: v.name,
         vendor: v.vendor,
         region: v.region,
@@ -228,17 +225,22 @@ export default defineComponent({
         }, ''),
         ping: idcServiceAreasMap.value.get(v.id)?.avg_latency,
         id: v.id,
-        service_area_arr: idcServiceAreasMap.value.get(v.id)?.service_areas?.sort((a, b) => {
-          return Math.floor(a.network_latency) - Math.floor(b.network_latency);
-        }).map((v, idx) => ({
-          ...v,
-          idx,
-        })),
+        service_area_arr: idcServiceAreasMap.value
+          .get(v.id)
+          ?.service_areas?.sort((a, b) => {
+            return Math.floor(a.network_latency) - Math.floor(b.network_latency);
+          })
+          .map((v, idx) => ({
+            ...v,
+            idx,
+          })),
       }));
-      schemeVendors.value = Array.from(listIdcRes.data.reduce((acc, cur) => {
-        acc.add(cur.vendor);
-        return acc;
-      }, new Set()));
+      schemeVendors.value = Array.from(
+        listIdcRes.data.reduce((acc, cur) => {
+          acc.add(cur.vendor);
+          return acc;
+        }, new Set()),
+      );
       schemeStore.setSchemeData({
         deployment_architecture: [],
         vendors: schemeVendors.value,
@@ -247,7 +249,7 @@ export default defineComponent({
         cost_score: props.costScore,
         name: schemeStore.recommendationSchemes[props.idx].name,
         id: `${props.idx}`,
-        idcList: tableData.value.map(item => ({
+        idcList: tableData.value.map((item) => ({
           id: item.id,
           name: item.name,
           vendor: item.vendor,
@@ -296,19 +298,13 @@ export default defineComponent({
           )}
 
           <p class={'scheme-preview-table-card-header-title'}>{schemeStore.recommendationSchemes[props.idx].name}</p>
-          <Tag
-            theme='success'
-            radius='11px'
-            class={'scheme-preview-table-card-header-tag'}>
+          <Tag theme='success' radius='11px' class={'scheme-preview-table-card-header-tag'}>
             分布式部署
           </Tag>
-          {
-            renderVendorIcons(schemeStore.recommendationSchemes[props.idx].vendors)
-          }
+          {renderVendorIcons(schemeStore.recommendationSchemes[props.idx].vendors)}
           <div class={'scheme-preview-table-card-header-score'}>
             <div class={'scheme-preview-table-card-header-score-item'}>
-              综合评分：{' '}
-              <span class={'score-value'}>{props.compositeScore}</span>
+              综合评分： <span class={'score-value'}>{props.compositeScore}</span>
             </div>
             <div class={'scheme-preview-table-card-header-score-item'}>
               网络评分： <span class={'score-value'}>{props.netScore}</span>
@@ -317,9 +313,11 @@ export default defineComponent({
               成本评分： <span class={'score-value'}>{props.costScore}</span>
             </div>
           </div>
-          <div class={'scheme-preview-table-card-header-operation'} onClick={e => e.stopPropagation()}>
-            <Button class={'mr8'} onClick={handleViewDetail} loading={isViewDetailBtnLoading.value}>查看详情</Button>
-            <SaveSchemeButton idx={props.idx}/>
+          <div class={'scheme-preview-table-card-header-operation'} onClick={(e) => e.stopPropagation()}>
+            <Button class={'mr8'} onClick={handleViewDetail} loading={isViewDetailBtnLoading.value}>
+              查看详情
+            </Button>
+            <SaveSchemeButton idx={props.idx} />
           </div>
         </div>
         <div
@@ -337,7 +335,6 @@ export default defineComponent({
             </Table>
           </Loading>
         </div>
-
       </div>
     );
   },

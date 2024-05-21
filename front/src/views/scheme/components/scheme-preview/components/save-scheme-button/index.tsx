@@ -49,13 +49,15 @@ export default defineComponent({
         theme: 'success',
         message: '保存成功',
       });
-      schemeStore.setRecommendationSchemes(schemeStore.recommendationSchemes.map((scheme, idx) => {
-        if (idx === props.idx) {
-          scheme.name = formData.name;
-          scheme.isSaved = true;
-        }
-        return scheme;
-      }));
+      schemeStore.setRecommendationSchemes(
+        schemeStore.recommendationSchemes.map((scheme, idx) => {
+          if (idx === props.idx) {
+            scheme.name = formData.name;
+            scheme.isSaved = true;
+          }
+          return scheme;
+        }),
+      );
       schemeStore.setSchemeData({
         ...schemeStore.schemeData,
         name: formData.name,
@@ -65,22 +67,24 @@ export default defineComponent({
 
     watch(
       () => schemeStore.selectedSchemeIdx,
-      idx => formData.name = schemeStore.recommendationSchemes[idx].name,
+      (idx) => (formData.name = schemeStore.recommendationSchemes[idx].name),
     );
 
     const checkNameIsDuplicate = async () => {
       const filterQuery: QueryFilterType = {
         op: QueryRuleOPEnum.AND,
-        rules: [{
-          field: 'name',
-          op: QueryRuleOPEnum.EQ,
-          value: formData.name,
-        },
-        {
-          field: 'bk_biz_id',
-          op: QueryRuleOPEnum.EQ,
-          value: formData.bk_biz_id,
-        }],
+        rules: [
+          {
+            field: 'name',
+            op: QueryRuleOPEnum.EQ,
+            value: formData.name,
+          },
+          {
+            field: 'bk_biz_id',
+            op: QueryRuleOPEnum.EQ,
+            value: formData.bk_biz_id,
+          },
+        ],
       };
       const pageQuery = {
         start: 0,
@@ -104,29 +108,30 @@ export default defineComponent({
           isShow={isDialogShow.value}
           onClosed={() => (isDialogShow.value = false)}
           onConfirm={handleConfirm}>
-          <Form formType='vertical' model={formData} ref={formInstance} rules={{
-            name: [
-              {
-                trigger: 'change',
-                message: '方案名称不能为空',
-                validator: (val: string) => val.trim().length,
-              },
-            ],
-          }}>
+          <Form
+            formType='vertical'
+            model={formData}
+            ref={formInstance}
+            rules={{
+              name: [
+                {
+                  trigger: 'change',
+                  message: '方案名称不能为空',
+                  validator: (val: string) => val.trim().length,
+                },
+              ],
+            }}>
             <FormItem label='方案名称' required property='name'>
-              <Input v-model={formData.name} maxlength={28} onInput={debounce(checkNameIsDuplicate, 300)}/>
-              {
-                isNameDuplicate.value
-                  ? (
-                    <span style={{
-                      color: '#ea3636',
-                      fontSize: '12px',
-                    }}>
-                      方案名称与已存在的方案名重复
-                    </span>
-                  )
-                  : null
-              }
+              <Input v-model={formData.name} maxlength={28} onInput={debounce(checkNameIsDuplicate, 300)} />
+              {isNameDuplicate.value ? (
+                <span
+                  style={{
+                    color: '#ea3636',
+                    fontSize: '12px',
+                  }}>
+                  方案名称与已存在的方案名重复
+                </span>
+              ) : null}
             </FormItem>
             {/* <FormItem label='标签' property='bk_biz_id'>
               <AppSelect

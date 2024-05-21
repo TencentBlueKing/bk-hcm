@@ -23,9 +23,7 @@ import { CLOUD_HOST_STATUS } from '@/common/constant';
 const { DropdownMenu, DropdownItem } = Dropdown;
 
 // use hook
-const {
-  t,
-} = useI18n();
+const { t } = useI18n();
 
 const props = defineProps({
   filter: {
@@ -44,27 +42,14 @@ const cloudAreaPage = ref(0);
 const cloudAreas = ref([]);
 const { whereAmI, isResourcePage, isBusinessPage } = useWhereAmI();
 
-const {
-  searchData,
-  searchValue,
-  filter,
-} = useFilter(props);
+const { searchData, searchValue, filter } = useFilter(props);
 
-const {
-  datas,
-  pagination,
-  isLoading,
-  handlePageChange,
-  handlePageSizeChange,
-  handleSort,
-  triggerApi,
-} = useQueryList({ filter: filter.value }, 'cvms');
+const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, triggerApi } = useQueryList(
+  { filter: filter.value },
+  'cvms',
+);
 
-const {
-  selections,
-  handleSelectionChange,
-  resetSelections,
-} = useSelection();
+const { selections, handleSelectionChange, resetSelections } = useSelection();
 
 const currentOperateCvm = ref(null);
 const { columns, generateColumnsSettings } = useColumns('cvms');
@@ -80,25 +65,32 @@ const hostSearchData = computed(() => {
       id: 'cloud_id',
     },
     ...searchData.value,
-    ...[{
-      name: '管控区域',
-      id: 'bk_cloud_id',
-    }, {
-      name: '操作系统',
-      id: 'os_name',
-    }, {
-      name: '云地域',
-      id: 'region',
-    }, {
-      name: '公网IP',
-      id: 'public_ipv4_addresses',
-    }, {
-      name: '内网IP',
-      id: 'private_ipv4_addresses',
-    }, {
-      name: '所属VPC',
-      id: 'cloud_vpc_ids',
-    }],
+    ...[
+      {
+        name: '管控区域',
+        id: 'bk_cloud_id',
+      },
+      {
+        name: '操作系统',
+        id: 'os_name',
+      },
+      {
+        name: '云地域',
+        id: 'region',
+      },
+      {
+        name: '公网IP',
+        id: 'public_ipv4_addresses',
+      },
+      {
+        name: '内网IP',
+        id: 'private_ipv4_addresses',
+      },
+      {
+        name: '所属VPC',
+        id: 'cloud_vpc_ids',
+      },
+    ],
   ];
 });
 
@@ -160,8 +152,8 @@ const tableColumns = [
               },
               // TODO: 权限
               disabled:
-                (isResourcePage && data.bk_biz_id !== -1)
-                || (isBusinessPage && cvmInfo.value.stop.status.includes(data.status)),
+                (isResourcePage && data.bk_biz_id !== -1) ||
+                (isBusinessPage && cvmInfo.value.stop.status.includes(data.status)),
             },
             isResourcePage ? '分配' : '回收',
           ),
@@ -181,46 +173,48 @@ const tableColumns = [
               disabled: isResourcePage && data.bk_biz_id !== -1,
             },
             {
-              default: () => h(
-                'div',
-                {
-                  class: [
-                    `more-action${currentOperateRowIndex.value === index ? ' current-operate-row' : ''}`,
-                    isResourcePage && data.bk_biz_id !== -1 ? 'disabled' : '',
-                  ],
-                },
-                h('i', { class: 'hcm-icon bkhcm-icon-more-fill' }),
-              ),
-              content: () => h(
-                DropdownMenu,
-                null,
-                operationDropdownList
-                  .filter(action => !action.hidden)
-                  .map(({ label, type }) => {
-                    return withDirectives(
-                      h(
-                        DropdownItem,
-                        {
-                          key: type,
-                          onClick: () => handleCvmOperate(label, type, data),
-                          extCls: `more-action-item${
-                            cvmInfo.value[type].status.includes(data.status) ? ' disabled' : ''
-                          }`,
-                        },
-                        label,
-                      ),
-                      [
-                        [
-                          bkTooltips,
+              default: () =>
+                h(
+                  'div',
+                  {
+                    class: [
+                      `more-action${currentOperateRowIndex.value === index ? ' current-operate-row' : ''}`,
+                      isResourcePage && data.bk_biz_id !== -1 ? 'disabled' : '',
+                    ],
+                  },
+                  h('i', { class: 'hcm-icon bkhcm-icon-more-fill' }),
+                ),
+              content: () =>
+                h(
+                  DropdownMenu,
+                  null,
+                  operationDropdownList
+                    .filter((action) => !action.hidden)
+                    .map(({ label, type }) => {
+                      return withDirectives(
+                        h(
+                          DropdownItem,
                           {
-                            content: `当前主机处于 ${CLOUD_HOST_STATUS[data.status]} 状态`,
-                            disabled: !cvmInfo.value[type].status.includes(data.status),
+                            key: type,
+                            onClick: () => handleCvmOperate(label, type, data),
+                            extCls: `more-action-item${
+                              cvmInfo.value[type].status.includes(data.status) ? ' disabled' : ''
+                            }`,
                           },
+                          label,
+                        ),
+                        [
+                          [
+                            bkTooltips,
+                            {
+                              content: `当前主机处于 ${CLOUD_HOST_STATUS[data.status]} 状态`,
+                              disabled: !cvmInfo.value[type].status.includes(data.status),
+                            },
+                          ],
                         ],
-                      ],
-                    );
-                  }),
-              ),
+                      );
+                    }),
+                ),
             },
           ),
           [[bkTooltips, { content: '该主机仅可在业务下操作', disabled: !(isResourcePage && data.bk_biz_id !== -1) }]],
@@ -322,7 +316,7 @@ const getCloudAreas = () => {
     })
     .then((res: any) => {
       cloudAreaPage.value += 1;
-      cloudAreas.value.push(...res?.data?.info || []);
+      cloudAreas.value.push(...(res?.data?.info || []));
     })
     .finally(() => {
       isLoadingCloudAreas.value = false;
@@ -350,41 +344,37 @@ const handleSingleDistributionConfirm = async () => {
 };
 
 getCloudAreas();
-
 </script>
 
 <template>
-  <bk-loading
-    :loading="isLoading"
-  >
+  <bk-loading :loading="isLoading">
     <section
       class="flex-row align-items-center"
-      :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
+      :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'"
+    >
       <slot></slot>
       <BatchDistribution
         :selections="selections"
         :type="DResourceType.cvms"
-        :get-data="() => {
-          triggerApi();
-          resetSelections();
-        }"
+        :get-data="
+          () => {
+            triggerApi();
+            resetSelections();
+          }
+        "
       />
-      <HostOperations :selections="selections" :on-finished="(type: 'confirm' | 'cancel' = 'confirm') => {
+      <HostOperations
+        :selections="selections"
+        :on-finished="(type: 'confirm' | 'cancel' = 'confirm') => {
         if(type === 'confirm') triggerApi();
         resetSelections();
-      }"></HostOperations>
+      }"
+      ></HostOperations>
 
       <div class="flex-row align-items-center justify-content-arround search-selector-container">
-        <bk-search-select
-          class="w500"
-          clearable
-          :conditions="[]"
-          :data="hostSearchData"
-          v-model="searchValue"
-        />
+        <bk-search-select class="w500" clearable :conditions="[]" :data="hostSearchData" v-model="searchValue" />
         <slot name="recycleHistory"></slot>
       </div>
-
     </section>
 
     <bk-table
@@ -418,7 +408,6 @@ getCloudAreas();
       <p class="mb6">请选择所需分配的目标业务</p>
       <business-selector v-model="selectedBizId" :authed="true" class="mb32" :auto-select="true"></business-selector>
     </bk-dialog>
-
   </bk-loading>
 </template>
 
@@ -435,7 +424,7 @@ getCloudAreas();
 .mb32 {
   margin-bottom: 32px;
 }
-.distribution-cls{
+.distribution-cls {
   display: flex;
   align-items: center;
 }

@@ -61,16 +61,15 @@ export default defineComponent({
 
     return () => (
       <div>
-        <div class="apply-select">
-          <div class="title">{state.title}</div>
-          <Dropdown ext-cls="drop-container" trigger="click" onShow={ handleShow } onHide={ handleHide }>
+        <div class='apply-select'>
+          <div class='title'>{state.title}</div>
+          <Dropdown ext-cls='drop-container' trigger='click' onShow={handleShow} onHide={handleHide}>
             {{
               default: () => (
-                <span class="cursor-pointer flex-row align-items-center ">
-                  {
-                  state.dataDisplay.length
-                  && state.dataDisplay
-                    .find((item: Record<string, number | string>) => item.value === state.selectValue)?.label}
+                <span class='cursor-pointer flex-row align-items-center '>
+                  {state.dataDisplay.length &&
+                    state.dataDisplay.find((item: Record<string, number | string>) => item.value === state.selectValue)
+                      ?.label}
                   <i
                     class={[
                       'icon',
@@ -84,9 +83,7 @@ export default defineComponent({
                 <DropdownMenu>
                   <div>
                     {state.dataDisplay.map((item: Record<string, number | string>) => (
-                      <DropdownItem onClick={() => handleSelect(item)}>{
-                        t(item.label)}
-                      </DropdownItem>
+                      <DropdownItem onClick={() => handleSelect(item)}>{t(item.label)}</DropdownItem>
                     ))}
                   </div>
                 </DropdownMenu>

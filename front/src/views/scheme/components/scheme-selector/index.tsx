@@ -1,4 +1,4 @@
-import { defineComponent, PropType, reactive, ref  } from 'vue';
+import { defineComponent, PropType, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { ArrowsLeft, AngleUpFill, EditLine } from 'bkui-vue/lib/icon';
 import { Popover } from 'bkui-vue';
@@ -55,14 +55,14 @@ export default defineComponent({
       if (scheme.id !== props.schemeData.id) {
         if (typeof props.selectFn === 'function') {
           props.selectFn(scheme);
-          setTimeout(() => isSelectorOpen.value = false, 800);
+          setTimeout(() => (isSelectorOpen.value = false), 800);
         } else {
           router.push({ name: 'scheme-detail', query: { sid: scheme.id } });
         }
       }
     };
 
-    const saveSchemeFn = (data: { name: string; bk_biz_id: number; }) => {
+    const saveSchemeFn = (data: { name: string; bk_biz_id: number }) => {
       editedSchemeData = data;
       return schemeStore.updateCloudSelectionScheme(props.schemeData.id, data);
     };
@@ -74,13 +74,13 @@ export default defineComponent({
 
     return () => (
       <>
-        <div class="scheme-selector">
-          <ArrowsLeft class="back-icon" onClick={handleBack} />
+        <div class='scheme-selector'>
+          <ArrowsLeft class='back-icon' onClick={handleBack} />
           <Popover
-            extCls="resource-selection-scheme-list-popover"
-            theme="light"
-            placement="bottom-start"
-            trigger="click"
+            extCls='resource-selection-scheme-list-popover'
+            theme='light'
+            placement='bottom-start'
+            trigger='click'
             arrow={false}
             isShow={isSelectorOpen.value}
             onAfterShow={() => {
@@ -92,59 +92,61 @@ export default defineComponent({
             {{
               default: () => (
                 <div class={['selector-trigger', isSelectorOpen.value ? 'opened' : '']}>
-                  <div class="scheme-name">{props.schemeData.name}</div>
-                  <AngleUpFill class="arrow-icon" />
+                  <div class='scheme-name'>{props.schemeData.name}</div>
+                  <AngleUpFill class='arrow-icon' />
                 </div>
               ),
               content: () => (
-                <div class="scheme-list">
-                  {
-                    props.schemeListLoading
-                      ?                      <bk-loading loading={true}/>
-                      :                      props.schemeList.map((scheme) => {
-                        return (
-                          <div
-                            class={['scheme-item', scheme.id === props.schemeData.id ? 'actived' : '']}
-                            onClick={() => {
-                              handleSelect(scheme);
-                            }}>
-                            <div class="scheme-name-area">
-                              <div class="name-text">{scheme.name}</div>
-                              <div class="tag-list">
-                                {
-                                  Array.isArray(scheme.deployment_architecture)
-                                    ? scheme.deployment_architecture?.map((item) => {
-                                      return (<div class="tag-item deploy-type-tag" key={item}>{ DEPLOYMENT_ARCHITECTURE_MAP[item] }</div>);
-                                    })
-                                    : (
-                                      <div class="tag-item deploy-type-tag">{ DEPLOYMENT_ARCHITECTURE_MAP[scheme.deployment_architecture] }</div>
-                                    )
-                                }
-                                {
-                                  scheme.vendors?.map((item) => {
-                                    return (<CloudServiceTag class="tag-item" key={item} type={item} showIcon={true} />);
-                                  })
-                                }
-                              </div>
-                            </div>
-                            <div class="score-area">
-                              <div class="score-item">
-                                <span class="label">综合评分：</span>
-                                <span class="value">{scheme.composite_score}</span>
-                              </div>
-                              <div class="score-item">
-                                <span class="label">网络评分：</span>
-                                <span class="value">{scheme.net_score}</span>
-                              </div>
-                              <div class="score-item">
-                                <span class="label">成本评分：</span>
-                                <span class="value">{scheme.cost_score}</span>
-                              </div>
+                <div class='scheme-list'>
+                  {props.schemeListLoading ? (
+                    <bk-loading loading={true} />
+                  ) : (
+                    props.schemeList.map((scheme) => {
+                      return (
+                        <div
+                          class={['scheme-item', scheme.id === props.schemeData.id ? 'actived' : '']}
+                          onClick={() => {
+                            handleSelect(scheme);
+                          }}>
+                          <div class='scheme-name-area'>
+                            <div class='name-text'>{scheme.name}</div>
+                            <div class='tag-list'>
+                              {Array.isArray(scheme.deployment_architecture) ? (
+                                scheme.deployment_architecture?.map((item) => {
+                                  return (
+                                    <div class='tag-item deploy-type-tag' key={item}>
+                                      {DEPLOYMENT_ARCHITECTURE_MAP[item]}
+                                    </div>
+                                  );
+                                })
+                              ) : (
+                                <div class='tag-item deploy-type-tag'>
+                                  {DEPLOYMENT_ARCHITECTURE_MAP[scheme.deployment_architecture]}
+                                </div>
+                              )}
+                              {scheme.vendors?.map((item) => {
+                                return <CloudServiceTag class='tag-item' key={item} type={item} showIcon={true} />;
+                              })}
                             </div>
                           </div>
-                        );
-                      })
-                  }
+                          <div class='score-area'>
+                            <div class='score-item'>
+                              <span class='label'>综合评分：</span>
+                              <span class='value'>{scheme.composite_score}</span>
+                            </div>
+                            <div class='score-item'>
+                              <span class='label'>网络评分：</span>
+                              <span class='value'>{scheme.net_score}</span>
+                            </div>
+                            <div class='score-item'>
+                              <span class='label'>成本评分：</span>
+                              <span class='value'>{scheme.cost_score}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               ),
             }}
@@ -152,9 +154,7 @@ export default defineComponent({
           {props.showEditIcon ? (
             <div
               class={`edit-btn ${
-                authVerifyData.value.permissionAction.cloud_selection_edit
-                  ? ''
-                  : 'hcm-no-permision-text-btn'
+                authVerifyData.value.permissionAction.cloud_selection_edit ? '' : 'hcm-no-permision-text-btn'
               }`}
               onClick={() => {
                 if (authVerifyData.value.permissionAction.cloud_selection_edit) isEditDialogOpen.value = true;
@@ -167,10 +167,11 @@ export default defineComponent({
         </div>
         <SchemeEditDialog
           v-model:show={isEditDialogOpen.value}
-          title="编辑方案"
+          title='编辑方案'
           schemeData={props.schemeData}
           confirmFn={saveSchemeFn}
-          onConfirm={handleConfirm} />
+          onConfirm={handleConfirm}
+        />
         <PermissionDialog
           isShow={showPermissionDialog.value}
           onConfirm={handlePermissionConfirm}

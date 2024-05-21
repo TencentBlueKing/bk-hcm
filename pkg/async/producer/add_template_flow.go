@@ -24,6 +24,7 @@ import (
 
 	"hcm/pkg/async/action"
 	"hcm/pkg/async/backend/model"
+	"hcm/pkg/criteria/enumor"
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
@@ -64,6 +65,9 @@ func buildFlow(tpl action.FlowTemplate, opt *AddTemplateFlowOption) *model.Flow 
 		Memo:      opt.Memo,
 		Tasks:     make([]model.Task, 0, len(tpl.Tasks)),
 	}
+	if opt.IsInitState {
+		flow.State = enumor.FlowInit
+	}
 
 	m := make(map[action.ActIDType]types.JsonField, len(opt.Tasks))
 	for _, one := range opt.Tasks {
@@ -75,14 +79,19 @@ func buildFlow(tpl action.FlowTemplate, opt *AddTemplateFlowOption) *model.Flow 
 			one.Retry = new(tableasync.Retry)
 		}
 
-		flow.Tasks = append(flow.Tasks, model.Task{
+		task := model.Task{
 			FlowName:   tpl.Name,
 			ActionID:   one.ActionID,
 			ActionName: one.ActionName,
 			Params:     m[one.ActionID],
 			Retry:      one.Retry,
 			DependOn:   one.DependOn,
-		})
+		}
+		if opt.IsInitState {
+			task.State = enumor.TaskInit
+		}
+
+		flow.Tasks = append(flow.Tasks, task)
 	}
 
 	return flow

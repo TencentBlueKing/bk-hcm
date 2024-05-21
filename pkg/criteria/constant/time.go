@@ -24,11 +24,10 @@ import "regexp"
 const (
 	// TimeStdFormat is the system's standard time format to store or to query.
 	TimeStdFormat = "2006-01-02T15:04:05Z07:00"
-	// DateLayout is the date layout with '%Y-%m-%d
+	// DateLayout is the date layout with '%Y-%m-%d'
 	DateLayout = "2006-01-02"
-
-	// BKBaseDateTimeLayout date layout for bkbase
-	BKBaseDateTimeLayout = "20060102"
+	// DateTimeLayout is the date layout with '%Y-%m-%d %H:%M:%S'
+	DateTimeLayout = "2006-01-02 15:04:05"
 )
 
 // TimeStdRegexp is a regular expression to match the TimeStdFormat

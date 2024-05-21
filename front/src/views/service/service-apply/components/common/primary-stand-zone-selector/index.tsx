@@ -77,9 +77,11 @@ export default defineComponent({
       zonesList.value = [];
     };
 
-    watchEffect(void (async () => {
-      getZonesData();
-    })());
+    watchEffect(
+      void (async () => {
+        getZonesData();
+      })(),
+    );
 
     watch(
       () => props.vendor,

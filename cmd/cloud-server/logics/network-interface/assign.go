@@ -33,7 +33,6 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/slice"
 )
 
@@ -44,7 +43,7 @@ func Assign(kt *kit.Kit, cli *dataservice.Client, ids []string, bizID int64, isB
 		return fmt.Errorf("ids is required")
 	}
 
-	if err := ValidateBeforeAssign(kt, cli, ids, isBind); err != nil {
+	if err := ValidateBeforeAssign(kt, cli, bizID, ids, isBind); err != nil {
 		return err
 	}
 
@@ -69,16 +68,13 @@ func Assign(kt *kit.Kit, cli *dataservice.Client, ids []string, bizID int64, isB
 }
 
 // ValidateBeforeAssign 分配前置校验
-func ValidateBeforeAssign(kt *kit.Kit, cli *dataservice.Client, ids []string, isBind bool) error {
+func ValidateBeforeAssign(kt *kit.Kit, cli *dataservice.Client, targetBizId int64, ids []string, isBind bool) error {
 	// 判断是否已经分配
 	listReq := &core.ListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: ids},
-				&filter.AtomRule{Field: "bk_biz_id", Op: filter.NotEqual.Factory(), Value: constant.UnassignedBiz},
-			},
-		},
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("id", ids),
+			tools.RuleNotIn("bk_biz_id", []int64{constant.UnassignedBiz, targetBizId}),
+		),
 		Page: core.NewDefaultBasePage(),
 	}
 	listResp, err := cli.Global.NetworkInterface.List(kt, listReq)

@@ -1,14 +1,9 @@
 /* eslint-disable no-nested-ternary */
 // table 字段相关信息
 import i18n from '@/language/i18n';
-import {
-  CloudType,
-  SecurityRuleEnum,
-  HuaweiSecurityRuleEnum,
-  AzureSecurityRuleEnum,
-} from '@/typings';
+import { CloudType, SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
 import { useAccountStore } from '@/store';
-import { Button } from 'bkui-vue';
+import { Button, Tag } from 'bkui-vue';
 import type { Settings } from 'bkui-vue/lib/table/props';
 import { h, ref } from 'vue';
 import type { Ref } from 'vue';
@@ -24,13 +19,11 @@ import StatusUnknown from '@/assets/image/Status-unknown.png';
 import StatusSuccess from '@/assets/image/success-account.png';
 import StatusFailure from '@/assets/image/failed-account.png';
 import StatusPartialSuccess from '@/assets/image/result-waiting.png';
+import StatusLoading from '@/assets/image/status_loading.png';
 
-import {
-  HOST_RUNNING_STATUS,
-  HOST_SHUTDOWN_STATUS,
-} from '../common/table/HostOperations';
+import { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../common/table/HostOperations';
 import './use-columns.scss';
-import { timeFormatter } from '@/common/util';
+import { timeFormatter, timeFromNow } from '@/common/util';
 
 export default (type: string, isSimpleShow = false, vendor?: string) => {
   const router = useRouter();
@@ -61,35 +54,42 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render({ data }: { cell: string; data: any }) {
         if (data[idFiled] < 0 || !data[idFiled]) return '--';
         return (
-          <Button
-            text
-            theme='primary'
-            onClick={() => {
-              const routeInfo: any = {
-                query: {
-                  ...route.query,
-                  id: data[idFiled],
-                  type: data.vendor,
-                },
-              };
-              // 业务下
-              if (route.path.includes('business')) {
-                routeInfo.query.bizs = accountStore.bizs;
-                Object.assign(routeInfo, {
-                  name: `${type}BusinessDetail`,
-                });
-              } else {
-                Object.assign(routeInfo, {
-                  name: 'resourceDetail',
-                  params: {
-                    type,
+          <>
+            <Button
+              text
+              theme='primary'
+              onClick={() => {
+                const routeInfo: any = {
+                  query: {
+                    ...route.query,
+                    id: data[idFiled],
+                    type: data.vendor,
                   },
-                });
-              }
-              router.push(routeInfo);
-            }}>
-            {render ? render(data) : data[field] || '--'}
-          </Button>
+                };
+                // 业务下
+                if (route.path.includes('business')) {
+                  routeInfo.query.bizs = accountStore.bizs;
+                  Object.assign(routeInfo, {
+                    name: `${type}BusinessDetail`,
+                  });
+                } else {
+                  Object.assign(routeInfo, {
+                    name: 'resourceDetail',
+                    params: {
+                      type,
+                    },
+                  });
+                }
+                router.push(routeInfo);
+              }}>
+              {render ? render(data) : data[field] || '--'}
+            </Button>
+            {timeFromNow(data.created_at) < 5 && (
+              <Tag theme='success' radius='4px' extCls='new-resource-tag'>
+                new
+              </Tag>
+            )}
+          </>
         );
       },
     };
@@ -144,13 +144,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       sort: true,
       isOnlyShowInResource: true,
       isDefaultShow: true,
-      render: ({
-        data,
-        cell,
-      }: {
-        data: { bk_biz_id: number };
-        cell: number;
-      }) => (
+      render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => (
         <bk-tag
           v-bk-tooltips={{
             content: businessMapStore.businessMap.get(cell),
@@ -183,13 +177,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
   ];
 
@@ -275,13 +269,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       sort: true,
       isOnlyShowInResource: true,
       isDefaultShow: true,
-      render: ({
-        data,
-        cell,
-      }: {
-        data: { bk_biz_id: number };
-        cell: number;
-      }) => (
+      render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => (
         <bk-tag
           v-bk-tooltips={{
             content: businessMapStore.businessMap.get(cell),
@@ -303,13 +291,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
   ];
 
@@ -483,13 +471,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       sort: true,
       isOnlyShowInResource: true,
       isDefaultShow: true,
-      render: ({
-        data,
-        cell,
-      }: {
-        data: { bk_biz_id: number };
-        cell: number;
-      }) => (
+      render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => (
         <bk-tag
           v-bk-tooltips={{
             content: businessMapStore.businessMap.get(cell),
@@ -505,13 +487,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
   ];
 
@@ -565,13 +547,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
   ];
 
@@ -639,13 +621,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'private_ipv4_or_ipv6',
       isDefaultShow: true,
       render({ data }: any) {
-        return [
-          h('span', {}, [
-            data?.private_ipv4.join(',')
-              || data?.private_ipv6.join(',')
-              || '--',
-          ]),
-        ];
+        return [h('span', {}, [data?.private_ipv4.join(',') || data?.private_ipv6.join(',') || '--'])];
       },
     },
     {
@@ -655,11 +631,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       // sort: true,
       isDefaultShow: true,
       render({ data }: any) {
-        return [
-          h('span', {}, [
-            data?.public_ipv4.join(',') || data?.public_ipv6.join(',') || '--',
-          ]),
-        ];
+        return [h('span', {}, [data?.public_ipv4.join(',') || data?.public_ipv6.join(',') || '--'])];
       },
     },
     {
@@ -673,13 +645,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
   ];
 
@@ -730,13 +702,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
   ];
 
@@ -767,7 +739,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       'private_ipv4_addresses',
       'id',
       false,
-      data => [...data.private_ipv4_addresses, ...data.private_ipv6_addresses].join(','),
+      (data) => [...data.private_ipv4_addresses, ...data.private_ipv6_addresses].join(','),
       false,
     ),
     {
@@ -805,6 +777,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '主机名称',
       field: 'name',
+      sort: true,
       isDefaultShow: true,
     },
     {
@@ -838,13 +811,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       sort: true,
       isOnlyShowInResource: true,
       isDefaultShow: true,
-      render: ({
-        data,
-        cell,
-      }: {
-        data: { bk_biz_id: number };
-        cell: number;
-      }) => (
+      render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => (
         <bk-tag
           v-bk-tooltips={{
             content: businessMapStore.businessMap.get(cell),
@@ -891,13 +858,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
   ];
 
@@ -907,26 +874,22 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'resource',
       render({ data }: any) {
         return h('span', {}, [
-          data.cloud_address_group_id
-            || data.cloud_address_id
-            || data.cloud_service_group_id
-            || data.cloud_service_id
-            || data.cloud_target_security_group_id
-            || data.ipv4_cidr
-            || data.ipv6_cidr
-            || data.cloud_remote_group_id
-            || data.remote_ip_prefix
-            || (data.source_address_prefix === '*'
-              ? t('任何')
-              : data.source_address_prefix)
-            || data.source_address_prefixes
-            || data.cloud_source_security_group_ids
-            || (data.destination_address_prefix === '*'
-              ? t('任何')
-              : data.destination_address_prefix)
-            || data.destination_address_prefixes
-            || data.cloud_destination_security_group_ids
-            || '--',
+          data.cloud_address_group_id ||
+            data.cloud_address_id ||
+            data.cloud_service_group_id ||
+            data.cloud_service_id ||
+            data.cloud_target_security_group_id ||
+            data.ipv4_cidr ||
+            data.ipv6_cidr ||
+            data.cloud_remote_group_id ||
+            data.remote_ip_prefix ||
+            (data.source_address_prefix === '*' ? t('任何') : data.source_address_prefix) ||
+            data.source_address_prefixes ||
+            data.cloud_source_security_group_ids ||
+            (data.destination_address_prefix === '*' ? t('任何') : data.destination_address_prefix) ||
+            data.destination_address_prefixes ||
+            data.cloud_destination_security_group_ids ||
+            '--',
         ]);
       },
     },
@@ -938,14 +901,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           vendor === 'aws' && data.protocol === '-1' && data.to_port === -1
             ? t('全部')
             : vendor === 'huawei' && !data.protocol && !data.port
-              ? t('全部')
-              : vendor === 'azure'
-              && data.protocol === '*'
-              && data.destination_port_range === '*'
-                ? t('全部')
-                : `${data.protocol}:${
-                  data.port || data.to_port || data.destination_port_range || '--'
-                }`,
+            ? t('全部')
+            : vendor === 'azure' && data.protocol === '*' && data.destination_port_range === '*'
+            ? t('全部')
+            : `${data.protocol}:${data.port || data.to_port || data.destination_port_range || '--'}`,
         ]);
       },
     },
@@ -957,10 +916,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           vendor === 'huawei'
             ? HuaweiSecurityRuleEnum[data.action]
             : vendor === 'azure'
-              ? AzureSecurityRuleEnum[data.access]
-              : vendor === 'aws'
-                ? t('允许')
-                : SecurityRuleEnum[data.action] || '--',
+            ? AzureSecurityRuleEnum[data.access]
+            : vendor === 'aws'
+            ? t('允许')
+            : SecurityRuleEnum[data.action] || '--',
         ]);
       },
     },
@@ -974,7 +933,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: t('修改时间'),
       field: 'updated_at',
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
   ];
 
@@ -1033,7 +992,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     //     return h('span', [cell || '--']);
     //   },
     // },
-    getLinkField('host', '绑定的资源实例', 'cvm_id', 'cvm_id', false, data => data.host, false),
+    getLinkField('host', '绑定的资源实例', 'cvm_id', 'cvm_id', false, (data) => data.host, false),
     {
       label: '绑定的资源类型',
       field: 'instance_type',
@@ -1048,13 +1007,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       sort: true,
       isOnlyShowInResource: true,
       isDefaultShow: true,
-      render: ({
-        data,
-        cell,
-      }: {
-        data: { bk_biz_id: number };
-        cell: number;
-      }) => (
+      render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => (
         <bk-tag
           v-bk-tooltips={{
             content: businessMapStore.businessMap.get(cell),
@@ -1076,13 +1029,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
     {
       label: '更新时间',
       field: 'updated_at',
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
   ];
 
@@ -1092,7 +1045,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'created_at',
       isDefaultShow: true,
       sort: true,
-      render: ({ cell }: { cell: string }) =>  timeFormatter(cell),
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
     },
     {
       label: '资源类型',
@@ -1167,6 +1120,436 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
   ];
 
+  const clbsColumns = [
+    {
+      type: 'selection',
+      width: 32,
+      minWidth: 32,
+      onlyShowOnList: true,
+      align: 'right',
+    },
+    getLinkField('clbs', '负载均衡名称'),
+    {
+      label: '负载均衡域名',
+      field: 'clb_domain',
+      isDefaultShow: true,
+    },
+    {
+      label: '负载均衡VIP',
+      field: 'clb_vip',
+      isDefaultShow: true,
+    },
+    {
+      label: '网络类型',
+      field: 'net_type',
+      isDefaultShow: true,
+    },
+    {
+      label: '监听器数量',
+      field: 'listener_count',
+      isDefaultShow: true,
+    },
+    {
+      label: '分配状态',
+      field: 'is_distibute',
+      isDefaultShow: true,
+    },
+    {
+      label: 'IP版本',
+      field: 'ip_version',
+      isDefaultShow: true,
+    },
+    {
+      label: '云厂商',
+      field: 'vendor',
+    },
+    {
+      label: '地域',
+      field: 'region',
+    },
+    {
+      label: '可用区域',
+      field: 'zone',
+    },
+    {
+      label: '类型',
+      field: 'type',
+    },
+    {
+      label: '状态',
+      field: 'status',
+    },
+    {
+      label: '所属网络',
+      field: 'vpc_id',
+    },
+  ];
+
+  const targetGroupColumns = [
+    {
+      type: 'selection',
+      width: 32,
+      minWidth: 32,
+      onlyShowOnList: true,
+      align: 'right',
+    },
+    getLinkField('target_group_name', '目标组名称'),
+    {
+      label: '关联的负载均衡',
+      field: 'clb_name',
+      isDefaultShow: true,
+    },
+    {
+      label: '绑定监听器数量',
+      field: 'listener_count',
+      isDefaultShow: true,
+      sort: true,
+    },
+    {
+      label: '协议',
+      field: 'protocol',
+      isDefaultShow: true,
+      filter: true,
+    },
+    {
+      label: '端口',
+      field: 'port',
+      isDefaultShow: true,
+      filter: true,
+    },
+    {
+      label: '云厂商',
+      field: 'vendor',
+    },
+    {
+      label: '地域',
+      field: 'region',
+    },
+    {
+      label: '可用区域',
+      field: 'zone',
+    },
+    {
+      label: '资源类型',
+      field: 'type',
+    },
+    {
+      label: '所属VPC',
+      field: 'vpc_id',
+    },
+    {
+      label: '健康检查端口',
+      field: 'health_check_port',
+    },
+    {
+      label: 'IP地址类型',
+      field: 'ip_type',
+    },
+  ];
+
+  const rsConfigColumns = [
+    {
+      label: '内网IP',
+      field: 'privateIp',
+      isDefaultShow: true,
+    },
+    {
+      label: '公网IP',
+      field: 'publicIp',
+    },
+    {
+      label: '名称',
+      field: 'name',
+      isDefaultShow: true,
+    },
+    {
+      label: '地域',
+      field: 'region',
+    },
+    {
+      label: '资源类型',
+      field: 'resourceType',
+    },
+    {
+      label: '所属网络',
+      field: 'network',
+    },
+  ];
+
+  const domainColumns = [
+    {
+      label: '协议',
+      field: 'protocol',
+      isDefaultShow: true,
+      filter: true,
+    },
+    {
+      label: '端口',
+      field: 'port',
+      isDefaultShow: true,
+      filter: true,
+    },
+    {
+      label: '轮询方式',
+      field: 'polling_method',
+      isDefaultShow: true,
+      filter: true,
+    },
+    {
+      label: 'URL数量',
+      field: 'url_count',
+      isDefaultShow: true,
+      sort: true,
+    },
+    {
+      label: '同步状态',
+      field: 'sync_status',
+      isDefaultShow: true,
+      filter: true,
+      render: ({ cell }: { cell: string }) => {
+        let icon;
+        switch (cell) {
+          case '绑定中':
+            icon = StatusLoading;
+            break;
+          case '成功':
+            icon = StatusSuccess;
+            break;
+          case '失败':
+            icon = StatusFailure;
+            break;
+          case '部分成功':
+            icon = StatusPartialSuccess;
+            break;
+        }
+        return (
+          <div class='status-column-cell'>
+            <img class={`status-icon${cell === '绑定中' ? ' spin-icon' : ''}`} src={icon} alt='' />
+            <span
+              class={cell === '部分成功' ? 'partial-success-status-text' : ''}
+              v-bk-tooltips={{
+                content: '成功 89 个，失败 105 个',
+                disabled: cell !== '部分成功',
+              }}>
+              {cell}
+            </span>
+          </div>
+        );
+      },
+    },
+  ];
+
+  const targetGroupListenerColumns = [
+    {
+      label: '绑定的监听器',
+      field: 'listener',
+      isDefaultShow: true,
+    },
+    {
+      label: '关联的负载均衡',
+      field: 'loadBalancer',
+      isDefaultShow: true,
+    },
+    {
+      label: '关联的URL',
+      field: 'url',
+      isDefaultShow: true,
+    },
+    {
+      label: '资源类型',
+      field: 'resourceType',
+      isDefaultShow: true,
+    },
+    {
+      label: '协议',
+      field: 'protocol',
+      isDefaultShow: true,
+      filter: true,
+    },
+    {
+      label: '端口',
+      field: 'port',
+      isDefaultShow: true,
+      filter: true,
+    },
+    {
+      label: '异常端口数',
+      field: 'abnormalPortCount',
+      isDefaultShow: true,
+      sort: true,
+    },
+    {
+      label: '所在VPC',
+      field: 'vpc',
+      isDefaultShow: true,
+    },
+    {
+      label: '云厂商',
+      field: 'cloudProvider',
+    },
+    {
+      label: '地域',
+      field: 'region',
+    },
+    {
+      label: '可用区域',
+      field: 'availabilityZone',
+    },
+    {
+      label: 'IP地址类型',
+      field: 'ipAddressType',
+    },
+  ];
+
+  const urlColumns = [
+    {
+      type: 'selection',
+      width: 32,
+      minWidth: 32,
+      onlyShowOnList: true,
+      align: 'right',
+    },
+    {
+      label: 'URL路径',
+      field: 'urlPath',
+      isDefaultShow: true,
+    },
+    {
+      label: '协议',
+      field: 'protocol',
+      isDefaultShow: true,
+    },
+    {
+      label: '端口',
+      field: 'port',
+      isDefaultShow: true,
+    },
+    {
+      label: '轮询方式',
+      field: 'pollingMethod',
+      isDefaultShow: true,
+    },
+  ];
+
+  const certColumns = [
+    {
+      label: '证书名称',
+      field: 'name',
+    },
+    {
+      label: '资源ID',
+      field: 'cloud_id',
+    },
+    {
+      label: '云厂商',
+      field: 'vendor',
+      render: ({ cell }: { cell: string }) => {
+        return CloudType[cell];
+      },
+    },
+    {
+      label: '证书类型',
+      field: 'cert_type',
+      filter: {
+        list: [
+          {
+            text: '服务器证书',
+            value: 'SVR',
+          },
+          {
+            text: '客户端CA证书',
+            value: 'CA',
+          },
+        ],
+        checked: [],
+      },
+      render: ({ cell }: { cell: string }) => {
+        return cell === 'SVR' ? '服务器证书' : '客户端CA证书';
+      },
+    },
+    {
+      label: '域名',
+      field: 'domain',
+      render: ({ cell }: { cell: string[] }) => {
+        return cell.join(';');
+      },
+    },
+    {
+      label: '上传时间',
+      field: 'cloud_created_time',
+      sort: true,
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
+    },
+    {
+      label: '过期时间',
+      field: 'cloud_expired_time',
+      sort: true,
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
+    },
+    {
+      label: '证书状态',
+      field: 'cert_status',
+      filter: {
+        list: [
+          {
+            text: '正常',
+            value: '1',
+          },
+          {
+            text: '已过期',
+            value: '3',
+          },
+        ],
+        checked: [],
+      },
+      render: ({ data, cell }: { data: any; cell: string }) => {
+        let icon;
+        const getStatusText = (vendor: VendorEnum, cert_status: string) => {
+          switch (vendor) {
+            case VendorEnum.TCLOUD:
+              switch (cert_status) {
+                case '1':
+                  return '正常';
+                case '3':
+                  return '已过期';
+              }
+              break;
+          }
+        };
+        switch (cell) {
+          case '1':
+            icon = StatusNormal;
+            break;
+          case '3':
+            icon = StatusAbnormal;
+            break;
+        }
+        return (
+          <div class='status-column-cell'>
+            <img class='status-icon' src={icon} alt='' />
+            <span>{getStatusText(data.vendor, cell)}</span>
+          </div>
+        );
+      },
+    },
+    {
+      label: '分配状态',
+      field: 'bk_biz_id',
+      isOnlyShowInResource: true,
+      isDefaultShow: true,
+      render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => (
+        <bk-tag
+          v-bk-tooltips={{
+            content: businessMapStore.businessMap.get(cell),
+            disabled: !cell || cell === -1,
+          }}
+          theme={data.bk_biz_id === -1 ? false : 'success'}>
+          {data.bk_biz_id === -1 ? '未分配' : '已分配'}
+        </bk-tag>
+      ),
+    },
+  ];
+
   const columnsMap = {
     vpc: vpcColumns,
     subnet: subnetColumns,
@@ -1180,6 +1563,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     securityCommon: securityCommonColumns,
     eips: eipColumns,
     operationRecord: operationRecordColumns,
+    clbs: clbsColumns,
+    targetGroup: targetGroupColumns,
+    rsConfig: rsConfigColumns,
+    domain: domainColumns,
+    url: urlColumns,
+    targetGroupListener: targetGroupListenerColumns,
+    cert: certColumns,
   };
 
   let columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);
@@ -1200,13 +1590,11 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       }
     }
     if (whereAmI.value !== Senarios.resource) {
-      fields = fields.filter(field => !field.isOnlyShowInResource);
+      fields = fields.filter((field) => !field.isOnlyShowInResource);
     }
     const settings: Ref<Settings> = ref({
       fields,
-      checked: fields
-        .filter(field => field.isDefaultShow)
-        .map(field => field.field),
+      checked: fields.filter((field) => field.isDefaultShow).map((field) => field.field),
     });
 
     return settings;

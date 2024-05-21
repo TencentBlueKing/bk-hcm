@@ -58,8 +58,15 @@ func genResManagementActionGroups() []client.ActionGroup {
 						{ID: BizCLBResOperate},
 						{ID: BizCLBResDelete},
 					},
+				},*/{
+					Name:   "证书管理",
+					NameEn: "Biz Cert Resource Management",
+					Actions: []client.ActionWithID{
+						{ID: BizCertResCreate},
+						{ID: BizCertResDelete},
+					},
 				},
-				{
+				/*{
 					Name:   "资源编排",
 					NameEn: "Biz Arrange Resource Management",
 					Actions: []client.ActionWithID{
@@ -154,7 +161,14 @@ func genResourceAccessActionGroups() client.ActionGroup {
 					{ID: CLBResOperate},
 					{ID: CLBResDelete},
 				},
-			},*/
+			},*/{
+				Name:   "证书管理",
+				NameEn: "Cert Resource Management",
+				Actions: []client.ActionWithID{
+					{ID: CertResCreate},
+					{ID: CertResDelete},
+				},
+			},
 			{
 				Name:   "回收站",
 				NameEn: "Recycle Bin",

@@ -44,21 +44,10 @@ export default defineComponent({
     });
 
     watch(
-      [
-        () => props.bizId,
-        () => props.accountId,
-        () => props.vendor,
-        () => props.region,
-        () => props.zone,
-      ],
+      [() => props.bizId, () => props.accountId, () => props.vendor, () => props.region, () => props.zone],
       async ([bizId, accountId, vendor, region, zone]) => {
         console.log(accountId, region, zone, bizId);
-        if (
-          !accountId
-          || !region
-          || !zone
-          || (whereAmI.value === Senarios.business && !bizId)
-        ) {
+        if (!accountId || !region || !zone || (whereAmI.value === Senarios.business && !bizId)) {
           list.value = [];
           return;
         }
@@ -71,12 +60,12 @@ export default defineComponent({
     );
 
     const handleChange = (val: string) => {
-      const data = list.value.find(item => item.cloud_id === val);
+      const data = list.value.find((item) => item.cloud_id === val);
       emit('change', data);
     };
 
     const refreshList = async (
-      bizId: string|number = props.bizId,
+      bizId: string | number = props.bizId,
       accountId: string = props.accountId,
       vendor: VendorEnum = props.vendor,
       region: string = props.region,
@@ -143,46 +132,52 @@ export default defineComponent({
         <Select
           filterable={true}
           modelValue={selected.value}
-          onUpdate:modelValue={val => (selected.value = val)}
+          onUpdate:modelValue={(val) => (selected.value = val)}
           onChange={handleChange}
           loading={loading.value}
-          {...{ attrs }}
-        >
+          {...{ attrs }}>
           {list.value.map(({ cloud_id, name, current_zone_subnet_count, subnet_count, extension }) => {
-            return <Option
+            return (
+              <Option
                 key={cloud_id}
                 value={cloud_id}
                 // eslint-disable-next-line max-len
                 disabled={
                   !(
-                    props.isSubnet
+                    props.isSubnet ||
                     // eslint-disable-next-line max-len
-                    || ([VendorEnum.AZURE, VendorEnum.GCP, VendorEnum.HUAWEI].includes(props.vendor) && subnet_count > 0)
-                    || current_zone_subnet_count > 0
+                    ([VendorEnum.AZURE, VendorEnum.GCP, VendorEnum.HUAWEI].includes(props.vendor) &&
+                      subnet_count > 0) ||
+                    current_zone_subnet_count > 0
                   )
                 }
                 label={`${cloud_id} ${name} ${
                   extension?.cidr ? extension?.cidr[0]?.cidr : ''
                 } 该VPC共${subnet_count}个子网
-                  ${props.vendor === VendorEnum.TCLOUD || props.vendor === VendorEnum.AWS
-                  ? `${`该可用区有${current_zone_subnet_count}个子网 ${current_zone_subnet_count === 0 ? '不可用' : '可用'}`}`
-                  : ''
-                  }`}></Option>;
+                  ${
+                    props.vendor === VendorEnum.TCLOUD || props.vendor === VendorEnum.AWS
+                      ? `${`该可用区有${current_zone_subnet_count}个子网 ${
+                          current_zone_subnet_count === 0 ? '不可用' : '可用'
+                        }`}`
+                      : ''
+                  }`}></Option>
+            );
           })}
         </Select>
-        {
-          props.region && props.zone && !list.value.length ? (
-            <span class={'vpc-selector-list-tip'}>
-              该地域无可用的VPC网络，可切换地域，或点击
-              <Button theme='primary' text onClick={() => {
-                const url = whereAmI.value === Senarios.business
-                  ? '/#/business/vpc'
-                  : '/#/resource/resource?type=vpc';
+        {props.region && props.zone && !list.value.length ? (
+          <span class={'vpc-selector-list-tip'}>
+            该地域无可用的VPC网络，可切换地域，或点击
+            <Button
+              theme='primary'
+              text
+              onClick={() => {
+                const url = whereAmI.value === Senarios.business ? '/#/business/vpc' : '/#/resource/resource?type=vpc';
                 window.open(url, '_blank');
-              }}>新建</Button>
-            </span>
-          ) : null
-        }
+              }}>
+              新建
+            </Button>
+          </span>
+        ) : null}
       </div>
     );
   },

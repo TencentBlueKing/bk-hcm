@@ -25,7 +25,7 @@ export const useDepartmentStore = defineStore({
 
       const headTag = document.getElementsByTagName('head')[0];
       // @ts-ignore
-      window[params.callback] = ({ data, result }: { data: Staff[], result: boolean }) => {
+      window[params.callback] = ({ data, result }: { data: Staff[]; result: boolean }) => {
         if (result) {
           if (field === 'level') {
             data.forEach((item: any) => {
@@ -76,4 +76,3 @@ export const useDepartmentStore = defineStore({
     },
   },
 });
-

@@ -11,6 +11,7 @@ export enum ResourceTypeEnum {
   VPC = 'vpc',
   DISK = 'disk',
   SUBNET = 'subnet',
+  CLB = 'clb',
 }
 
 // 资源类型
@@ -50,6 +51,14 @@ export const RESOURCE_TYPES = [
   {
     name: '镜像',
     type: 'image',
+  },
+  {
+    name: '负载均衡',
+    type: 'clbs',
+  },
+  {
+    name: '证书管理',
+    type: 'certs',
   },
 ];
 
@@ -153,7 +162,6 @@ export const AUDIT_RESOURCE_TYPES = [
   },
 ];
 
-
 export const FILTER_DATA = [
   //   移除 ID 搜索条件
   // {
@@ -199,19 +207,19 @@ export const CIDRLIST = [
   },
 ];
 
-export const CIDRDATARANGE  = {
+export const CIDRDATARANGE = {
   10: { min: 0, max: 255 },
   172: { min: 16, max: 31 },
   192: { min: 168, max: 168 },
 };
 
-export const TCLOUDCIDRMASKRANGE  = {
+export const TCLOUDCIDRMASKRANGE = {
   10: { min: 12, max: 28 },
   172: { min: 12, max: 28 },
   192: { min: 16, max: 28 },
 };
 
-export const CIDRMASKRANGE  = {
+export const CIDRMASKRANGE = {
   10: { min: 8, max: 28 },
   172: { min: 12, max: 28 },
   192: { min: 16, max: 28 },
@@ -460,8 +468,7 @@ export const RESOURCE_TABS = [
   },
 ];
 
-
-export const RESOURCE_DETAIL_TABS =  [
+export const RESOURCE_DETAIL_TABS = [
   {
     key: '/resource/resource/account/detail',
     label: '基本信息',
@@ -505,7 +512,7 @@ export const RESOURCES_SYNC_STATUS_MAP = {
 export enum SECURITY_GROUP_RULE_TYPE {
   INGRESS = 'ingress',
   EGRESS = 'egress',
-};
+}
 
 export const VendorMap = {
   [VendorEnum.AWS]: '亚马逊云',

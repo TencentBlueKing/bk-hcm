@@ -66,16 +66,16 @@ func (cli *client) ArgsTplAddress(kt *kit.Kit, params *SyncBaseParams, opt *Sync
 	if err != nil {
 		return nil, err
 	}
-	logs.Infof("[%s] hcservice argument template address listFromCloud success, params: %+v, cloud_count: %d, rid: %s",
-		enumor.TCloud, params, len(fromCloud), kt.Rid)
+	// logs.Infof("[%s] hcservice argument template address listFromCloud success, params: %+v, cloud_count: %d, rid: %s",
+	// 	enumor.TCloud, params, len(fromCloud), kt.Rid)
 
 	fromDB, err := cli.listFromDB(kt, params, enumor.AddressType)
 	if err != nil {
 		return nil, err
 	}
 
-	logs.Infof("[%s] hcservice sync argument template address listFromDB success, db_count: %d, rid: %s",
-		enumor.TCloud, len(fromDB), kt.Rid)
+	// logs.Infof("[%s] hcservice sync argument template address listFromDB success, db_count: %d, rid: %s",
+	// 	enumor.TCloud, len(fromDB), kt.Rid)
 
 	if len(fromCloud) == 0 && len(fromDB) == 0 {
 		return new(SyncResult), nil

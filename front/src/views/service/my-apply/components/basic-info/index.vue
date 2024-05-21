@@ -1,9 +1,5 @@
 <template>
-  <div
-    :class="[
-      'iam-apply-basic-info-wrapper'
-    ]"
-  >
+  <div :class="['iam-apply-basic-info-wrapper']">
     <div class="title">{{ $t('基本信息') }}</div>
     <div class="item">
       <label class="label">{{ t('单号') }}：</label>
@@ -49,20 +45,20 @@ export default defineComponent({
     },
   },
   setup() {
-    const  { t } = useI18n();
+    const { t } = useI18n();
     const curLanguageIsCn = computed(() => {
       return true;
     });
     const getApplyTypeDisplay = (payload: string) => {
       const formatApplyType = {
         account_apply: () => {
-          return t('账号申请') ;
+          return t('账号申请');
         },
         service_apply: () => {
-          return t('服务申请') ;
+          return t('服务申请');
         },
       };
-      const result = formatApplyType[payload] ?  formatApplyType[payload]() : '-';
+      const result = formatApplyType[payload] ? formatApplyType[payload]() : '-';
       return result;
     };
     return {
@@ -77,5 +73,5 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-@import './index.scss'
+@import './index.scss';
 </style>

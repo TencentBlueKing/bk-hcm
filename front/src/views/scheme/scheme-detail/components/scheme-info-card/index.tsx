@@ -28,15 +28,11 @@ export default defineComponent({
     const getValue = (id: string) => {
       switch (id) {
         case 'user_distribution':
-          return props.schemeDetail.user_distribution
-            .map(item => item.name)
-            .join(', ');
+          return props.schemeDetail.user_distribution.map((item) => item.name).join(', ');
         case 'network':
           return `网络延迟 < ${props.schemeDetail.cover_ping}ms`;
         case 'deployment_architecture':
-          return props.schemeDetail.deployment_architecture
-            .map(item => DEPLOYMENT_ARCHITECTURE_MAP[item])
-            .join(', ');
+          return props.schemeDetail.deployment_architecture.map((item) => DEPLOYMENT_ARCHITECTURE_MAP[item]).join(', ');
         default:
           return props.schemeDetail[id];
       }
@@ -66,9 +62,11 @@ export default defineComponent({
                           getValue(item.id)
                         )}
 
-                        {
-                          item.id === 'network' ? <Info v-bk-tooltips={{ content: '用户到 IDC 的网络质量容忍' }} class={'ml6'}/> : ''
-                        }
+                        {item.id === 'network' ? (
+                          <Info v-bk-tooltips={{ content: '用户到 IDC 的网络质量容忍' }} class={'ml6'} />
+                        ) : (
+                          ''
+                        )}
                       </span>
                     </div>
                   );

@@ -180,8 +180,8 @@ export default defineComponent({
       nextTick(() => {
         formRef.value?.clearValidate(); // 切换清除表单检验
       });
-      const startIndex = formList.findIndex(e => e.property === 'vendor');
-      const endIndex = formList.findIndex(e => e.property === 'managers');
+      const startIndex = formList.findIndex((e) => e.property === 'vendor');
+      const endIndex = formList.findIndex((e) => e.property === 'managers');
       let insertFormData: any = [];
       switch (val) {
         case 'huawei':
@@ -191,7 +191,7 @@ export default defineComponent({
               property: 'site',
               component: () => (
                 <Group v-model={projectModel.site}>
-                  {SITE_TYPE.map(e => (
+                  {SITE_TYPE.map((e) => (
                     <Radio disabled={e.value === 'china'} label={e.value}>
                       {t(e.label)}
                     </Radio>
@@ -272,7 +272,7 @@ export default defineComponent({
               property: 'site',
               component: () => (
                 <Group v-model={projectModel.site}>
-                  {SITE_TYPE.map(e => (
+                  {SITE_TYPE.map((e) => (
                     <Radio label={e.value}>{t(e.label)}</Radio>
                   ))}
                 </Group>
@@ -322,7 +322,7 @@ export default defineComponent({
               property: 'site',
               component: () => (
                 <Group v-model={projectModel.site}>
-                  {SITE_TYPE.map(e => (
+                  {SITE_TYPE.map((e) => (
                     <Radio disabled={e.value === 'china'} label={e.value}>
                       {t(e.label)}
                     </Radio>
@@ -392,7 +392,7 @@ export default defineComponent({
               property: 'site',
               component: () => (
                 <Group v-model={projectModel.site}>
-                  {SITE_TYPE.map(e => (
+                  {SITE_TYPE.map((e) => (
                     <Radio disabled={e.value === 'china'} label={e.value}>
                       {t(e.label)}
                     </Radio>
@@ -471,7 +471,7 @@ export default defineComponent({
               property: 'site',
               component: () => (
                 <Group v-model={projectModel.site}>
-                  {SITE_TYPE.map(e => (
+                  {SITE_TYPE.map((e) => (
                     <Radio label={e.value}>{t(e.label)}</Radio>
                   ))}
                 </Group>
@@ -613,7 +613,7 @@ export default defineComponent({
         required: false,
         component: () => (
           <Group v-model={projectModel.type}>
-            {ACCOUNT_TYPE.map(e => (
+            {ACCOUNT_TYPE.map((e) => (
               <Radio label={e.value}>{t(e.label)}</Radio>
             ))}
           </Group>
@@ -645,7 +645,7 @@ export default defineComponent({
         property: 'vendor',
         component: () => (
           <RadioGroup v-model={projectModel.vendor}>
-            {cloudType.map(item => (
+            {cloudType.map((item) => (
               <RadioButton onChange={changeCloud} label={item.id}>
                 {item.name}
               </RadioButton>
@@ -716,9 +716,8 @@ export default defineComponent({
             multipleMode='tag'
             placeholder={t('请选择使用业务')}
             class='w450'
-            v-model={projectModel.bizIds}
-          >
-            {businessList.list.map(item => (
+            v-model={projectModel.bizIds}>
+            {businessList.list.map((item) => (
               <Option key={item.id} value={item.id} label={item.name}>
                 {item.name}
               </Option>
@@ -756,7 +755,7 @@ export default defineComponent({
     return () => (
       <div class='form-container flex-row justify-content-between'>
         <Form class='form-warp' model={projectModel} labelWidth={140} rules={formRules} ref={formRef}>
-          {formList.map(item => (
+          {formList.map((item) => (
             <>
               {item.formName && <div class='mt10 mb10'>{item.formName}</div>}
               <div
@@ -765,16 +764,14 @@ export default defineComponent({
                   'no-border-top': !item.formName,
                   'no-border-bottom': item.noBorBottom || (item.property === 'vendor' && isChangeVendor.value),
                   'no-border': item.type === 'button',
-                }}
-              >
+                }}>
                 <FormItem
                   class='account-form-item'
                   label={item.label}
                   required={item.required}
                   property={item.property}
                   description={item.description}
-                  rules={item.rules}
-                >
+                  rules={item.rules}>
                   {item.component ? item.component() : item.content()}
                 </FormItem>
               </div>

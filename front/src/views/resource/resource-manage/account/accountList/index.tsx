@@ -16,14 +16,8 @@ export default defineComponent({
     const isCreateAccountDialogShow = ref(false);
     const route = useRoute();
     const router = useRouter();
-    const {
-      handleExpand,
-      checkIsExpand,
-      getAllVendorsAccountsList,
-      getVendorAccountList,
-      accountsMatrix,
-      isLoading,
-    } = useAllVendorsAccounts();
+    const { handleExpand, checkIsExpand, getAllVendorsAccountsList, getVendorAccountList, accountsMatrix, isLoading } =
+      useAllVendorsAccounts();
     const { setAccountId } = useResourceAccount();
     const resourceAccountStore = useResourceAccountStore();
     const { currentVendor, currentAccountVendor } = storeToRefs(resourceAccountStore);
@@ -37,8 +31,7 @@ export default defineComponent({
         },
       });
     };
-    const handleSubmit = () => {
-    };
+    const handleSubmit = () => {};
     const computedAllVendorsAccount = computed(() => accountsMatrix.reduce((acc, { count }) => acc + count, 0));
 
     // 初始化账号列表/搜索账号
@@ -143,11 +136,7 @@ export default defineComponent({
             />
           )}
         </Loading>
-        <CreateAccount
-          isShow={isCreateAccountDialogShow.value}
-          onCancel={handleCancel}
-          onSubmit={handleSubmit}
-        />
+        <CreateAccount isShow={isCreateAccountDialogShow.value} onCancel={handleCancel} onSubmit={handleSubmit} />
       </div>
     );
   },

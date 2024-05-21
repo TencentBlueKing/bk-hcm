@@ -41,19 +41,21 @@ export default defineComponent({
       <Select
         filterable={true}
         modelValue={selected.value}
-        onUpdate:modelValue={val => selected.value = val}
-        loading={loading.value}
-        >
-          {
-            list.value.map(({ id, name }) => (
-              <Option key={id} value={id} label={name}></Option>
-            ))
-          }
-          <div style={{ display: 'flex', padding: '8px 12px' }}>
+        onUpdate:modelValue={(val) => (selected.value = val)}
+        loading={loading.value}>
+        {list.value.map(({ id, name }) => (
+          <Option key={id} value={id} label={name}></Option>
+        ))}
+        <div style={{ display: 'flex', padding: '8px 12px' }}>
           {{
-            extension: () => <Button text theme='primary'><PlusIcon />新增</Button>,
+            extension: () => (
+              <Button text theme='primary'>
+                <PlusIcon />
+                新增
+              </Button>
+            ),
           }}
-          </div>
+        </div>
       </Select>
     );
   },

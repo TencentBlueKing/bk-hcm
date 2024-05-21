@@ -23,6 +23,7 @@ import (
 	"errors"
 
 	"hcm/pkg/async/action"
+	"hcm/pkg/async/backend"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	tableasync "hcm/pkg/dal/table/async"
@@ -37,6 +38,8 @@ type AddTemplateFlowOption struct {
 	Memo string `json:"memo" validate:"omitempty"`
 	// Tasks 任务私有化参数设置
 	Tasks []TemplateFlowTask `json:"tasks" validate:"omitempty"`
+	// IsInitState 是否初始化状态
+	IsInitState bool `json:"is_init_state" validate:"omitempty"`
 }
 
 // Validate AddTemplateFlowOption
@@ -82,6 +85,8 @@ type AddCustomFlowOption struct {
 	ShareData *tableasync.ShareData `json:"share_data" validate:"omitempty"`
 	// Tasks 任务私有化参数设置
 	Tasks []CustomFlowTask `json:"tasks" validate:"required"`
+	// IsInitState 是否初始化状态
+	IsInitState bool `json:"is_init_state" validate:"omitempty"`
 }
 
 // Validate AddCustomFlowOption
@@ -123,10 +128,46 @@ func (task *CustomFlowTask) Validate() error {
 	if err := validator.Validate.Struct(task); err != nil {
 		return err
 	}
-	
+
 	if err := task.ActionName.Validate(); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// UpdateCustomFlowStateOption define update custom flow state option.
+type UpdateCustomFlowStateOption struct {
+	// FlowInfos 任务状态信息
+	FlowInfos []backend.UpdateFlowInfo `json:"flow_infos" validate:"required,min=1"`
+}
+
+// Validate UpdateCustomFlowStateOption
+func (opt *UpdateCustomFlowStateOption) Validate() error {
+	if len(opt.FlowInfos) == 0 {
+		return errors.New("flow_infos is required")
+	}
+
+	for _, flowInfo := range opt.FlowInfos {
+		if err := flowInfo.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return validator.Validate.Struct(opt)
+}
+
+// CloneFlowOption ...
+type CloneFlowOption struct {
+
+	// Memo 备注
+	Memo string `json:"memo" validate:"omitempty"`
+	// IsInitState 是否初始化状态
+	IsInitState bool `json:"is_init_state" validate:"omitempty"`
+}
+
+// Validate AddTemplateFlowOption
+func (opt *CloneFlowOption) Validate() error {
+
+	return validator.Validate.Struct(opt)
 }

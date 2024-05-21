@@ -310,6 +310,38 @@ const businesseMenus: RouteRecordRaw[] = [
           notMenu: true,
         },
       },
+      {
+        path: '/business/loadbalancer',
+        name: '负载均衡',
+        component: () => import('@/views/business/load-balancer/index'),
+        redirect: '/business/loadbalancer/clb-view',
+        children: [
+          {
+            path: 'clb-view',
+            name: 'loadbalancer-view',
+            component: () => import('@/views/business/load-balancer/clb-view/index'),
+          },
+          {
+            path: 'group-view',
+            name: 'target-group-view',
+            component: () => import('@/views/business/load-balancer/group-view/index'),
+          },
+        ],
+        meta: {
+          activeKey: 'businessLoadBalancer',
+          icon: 'hcm-icon bkhcm-icon-loadbalancer',
+        },
+      },
+      {
+        path: '/business/cert',
+        name: '证书托管',
+        component: () => import('@/views/business/cert-manager/index'),
+        meta: {
+          activeKey: 'businessCert',
+          isShowBreadcrumb: true,
+          icon: 'hcm-icon bkhcm-icon-cert',
+        },
+      },
     ],
   },
   {
@@ -384,6 +416,17 @@ const businesseMenus: RouteRecordRaw[] = [
           backRouter: -1,
           activeKey: 'businessSubnet',
           breadcrumb: ['资源管理', '子网'],
+          notMenu: true,
+        },
+      },
+      {
+        path: '/business/service/service-apply/clb',
+        name: 'applyLoadBalancer',
+        component: () => import('@/views/service/service-apply/clb'),
+        meta: {
+          backRouter: -1,
+          activeKey: 'businessLoadBalancer',
+          breadcrumb: ['资源管理', '负载均衡'],
           notMenu: true,
         },
       },

@@ -40,7 +40,7 @@ type BaseDoneResult struct {
 // PollingHandler polling handler.
 type PollingHandler[T any, R any, Result any] interface {
 	// Done 根据 poll 获取的实例数据，判断是否符合预期，如果有实例状态无法判断，返回false
-	Done(pollResult R) (bool, *Result)
+	Done(pollResult R) (ok bool, ret *Result)
 	// Poll 通过实例ids查询实例结果，如果查询不到报错
 	Poll(client T, kt *kit.Kit, ids []*string) (R, error)
 }

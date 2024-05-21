@@ -23,7 +23,7 @@ export default defineComponent({
       {
         label: '资源名称',
         field: 'type',
-        render: ({ cell }: {cell: string}) => RESOURCE_TYPES_MAP[cell],
+        render: ({ cell }: { cell: string }) => RESOURCE_TYPES_MAP[cell],
       },
       {
         label: '插件类型',
@@ -51,7 +51,10 @@ export default defineComponent({
     ];
     onMounted(async () => {
       isLoading.value = true;
-      const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${props.vendor}/accounts/res_counts/by_secrets`, props.secretIds);
+      const res = await http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${props.vendor}/accounts/res_counts/by_secrets`,
+        props.secretIds,
+      );
       tableData.value = res.data.items;
       isLoading.value = false;
     });
@@ -62,9 +65,7 @@ export default defineComponent({
             data={tableData.value}
             columns={columns}
             border={['row', 'outer']}
-            emptyText={isLoading.value && ''}
-          >
-          </Table>
+            emptyText={isLoading.value && ''}></Table>
         </Loading>
       </div>
     );

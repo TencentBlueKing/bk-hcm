@@ -1,6 +1,6 @@
 <script setup lang="ts">
-const props = defineProps<{
-  title: string
+defineProps<{
+  title: string;
 }>();
 </script>
 <template>
@@ -18,7 +18,7 @@ const props = defineProps<{
     font-size: 14px;
     font-weight: normal;
     padding: 8px;
-    border-bottom: 1px solid rgba(0, 0, 0, .15);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.15);
   }
 
   .group-content {

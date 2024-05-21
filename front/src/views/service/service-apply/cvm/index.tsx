@@ -10,9 +10,7 @@ import VpcSelector from '../components/common/vpc-selector';
 import SubnetSelector from '../components/common/subnet-selector';
 import SecurityGroupSelector from '../components/common/security-group-selector';
 import CloudAreaName from '../components/common/cloud-area-name';
-import {
-  Plus as PlusIcon,
-} from 'bkui-vue/lib/icon';
+import { Plus as PlusIcon } from 'bkui-vue/lib/icon';
 import GcpDataDiskFormDialog from './children/gcp-data-disk-form-dialog';
 import './index.scss';
 import { useI18n } from 'vue-i18n';
@@ -22,10 +20,7 @@ import type { IDiskOption } from '../hooks/use-cvm-form-data';
 import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
 import useCvmOptions from '../hooks/use-cvm-options';
 import useCondtion from '../hooks/use-condtion';
-import useCvmFormData, {
-  getDataDiskDefaults,
-  getGcpDataDiskDefaults,
-} from '../hooks/use-cvm-form-data';
+import useCvmFormData, { getDataDiskDefaults, getGcpDataDiskDefaults } from '../hooks/use-cvm-form-data';
 // import { useHostStore } from '@/store/host';
 
 import { useAccountStore } from '@/store';
@@ -33,9 +28,7 @@ import CommonCard from '@/components/CommonCard';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import { useRouter } from 'vue-router';
 import VpcPreviewDialog from './children/VpcPreviewDialog';
-import SubnetPreviewDialog, {
-  ISubnetItem,
-} from './children/SubnetPreviewDialog';
+import SubnetPreviewDialog, { ISubnetItem } from './children/SubnetPreviewDialog';
 import http from '@/http';
 import { debounce } from 'lodash';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
@@ -62,7 +55,7 @@ export default defineComponent({
       opSystemType,
       changeOpSystemType,
     } = useCvmFormData(cond);
-    const { sysDiskTypes, dataDiskTypes, billingModes, purchaseDurationUnits } =      useCvmOptions(cond, formData);
+    const { sysDiskTypes, dataDiskTypes, billingModes, purchaseDurationUnits } = useCvmOptions(cond, formData);
     const { t } = useI18n();
     const router = useRouter();
     const isSubmitBtnLoading = ref(false);
@@ -224,14 +217,9 @@ export default defineComponent({
         },
         [VendorEnum.AWS]: {
           validator: (value: number) => {
-            return (
-              value >= awsMinMap[item.disk_type]
-              && value <= awsMaxMap[item.disk_type]
-            );
+            return value >= awsMinMap[item.disk_type] && value <= awsMaxMap[item.disk_type];
           },
-          message: `${awsMinMap[item.disk_type]}-${
-            awsMaxMap[item.disk_type]
-          }GB`,
+          message: `${awsMinMap[item.disk_type]}-${awsMaxMap[item.disk_type]}GB`,
           trigger: 'change',
         },
       };
@@ -311,58 +299,61 @@ export default defineComponent({
                 </div>
               ))}*/}
               {formData.data_disk.map((item: IDiskOption, index: number) => (
-                  <div class='flex-row'>
-                    <FormItem
-                        property={`data_disk[${index}].disk_type`}
-                        rules={[]}>
-                      <Select
-                          v-model={item.disk_type}
-                          style={{ width: '200px' }}
-                          clearable={false}>
-                        {dataDiskTypes.value.map(({ id, name }: IOption) => (
-                            <Option key={id} value={id} label={name}></Option>
-                        ))}
-                      </Select>
-                    </FormItem>
-                    <FormItem
-                        property={`data_disk[${index}].disk_size_gb`}
-                        rules={[dataDiskSizeRules(item)]}
-                        description={dataDiskSizeRules(item).message}>
-                      <Input
-                          type='number'
-                          style={{ width: '160px' }}
-                          v-model={item.disk_size_gb}
-                          min={1}
-                          suffix='GB'
-                          prefix='大小'></Input>
-                    </FormItem>
-                    <FormItem
-                        property={`data_disk[${index}].disk_count`}
-                        min={dataDiskCountRules.value.min}
-                        max={dataDiskCountRules.value.max}>
-                      <Input
-                          style={{ width: '90px' }}
-                          type='number'
-                          v-model={item.disk_count}
-                          min={dataDiskCountRules.value.min}></Input>
-                    </FormItem>
-                    <div class='btns'>
-                      <Button class={'btn'} onClick={handleCreateGcpDataDisk}>
-                        <svg width={14} height={14} viewBox="0 0 24 24" version="1.1"
-                             xmlns="http://www.w3.org/2000/svg"
-                             style="fill: #c4c6cc">
-                          <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-4.5v4.5c0 0.414-0.336 0.75-0.75 0.75s-0.75-0.336-0.75-0.75v-4.5h-4.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h4.5v-4.5c0-0.414 0.336-0.75 0.75-0.75s0.75 0.336 0.75 0.75v4.5h4.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z"></path>
-                        </svg>
-                      </Button>
-                      <Button class={'btn'} onClick={() => handleRemoveDataDisk(index)}>
-                        <svg width={14} height={14} viewBox="0 0 24 24" version="1.1"
-                             xmlns="http://www.w3.org/2000/svg"
-                             style="fill: #c4c6cc">
-                          <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-10.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h10.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z"></path>
-                        </svg>
-                      </Button>
-                    </div>
+                <div class='flex-row'>
+                  <FormItem property={`data_disk[${index}].disk_type`} rules={[]}>
+                    <Select v-model={item.disk_type} style={{ width: '200px' }} clearable={false}>
+                      {dataDiskTypes.value.map(({ id, name }: IOption) => (
+                        <Option key={id} value={id} label={name}></Option>
+                      ))}
+                    </Select>
+                  </FormItem>
+                  <FormItem
+                    property={`data_disk[${index}].disk_size_gb`}
+                    rules={[dataDiskSizeRules(item)]}
+                    description={dataDiskSizeRules(item).message}>
+                    <Input
+                      type='number'
+                      style={{ width: '160px' }}
+                      v-model={item.disk_size_gb}
+                      min={1}
+                      suffix='GB'
+                      prefix='大小'></Input>
+                  </FormItem>
+                  <FormItem
+                    property={`data_disk[${index}].disk_count`}
+                    min={dataDiskCountRules.value.min}
+                    max={dataDiskCountRules.value.max}>
+                    <Input
+                      style={{ width: '90px' }}
+                      type='number'
+                      v-model={item.disk_count}
+                      min={dataDiskCountRules.value.min}></Input>
+                  </FormItem>
+                  <div class='btns'>
+                    <Button class={'btn'} onClick={handleCreateGcpDataDisk}>
+                      <svg
+                        width={14}
+                        height={14}
+                        viewBox='0 0 24 24'
+                        version='1.1'
+                        xmlns='http://www.w3.org/2000/svg'
+                        style='fill: #c4c6cc'>
+                        <path d='M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-4.5v4.5c0 0.414-0.336 0.75-0.75 0.75s-0.75-0.336-0.75-0.75v-4.5h-4.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h4.5v-4.5c0-0.414 0.336-0.75 0.75-0.75s0.75 0.336 0.75 0.75v4.5h4.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z'></path>
+                      </svg>
+                    </Button>
+                    <Button class={'btn'} onClick={() => handleRemoveDataDisk(index)}>
+                      <svg
+                        width={14}
+                        height={14}
+                        viewBox='0 0 24 24'
+                        version='1.1'
+                        xmlns='http://www.w3.org/2000/svg'
+                        style='fill: #c4c6cc'>
+                        <path d='M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-10.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h10.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z'></path>
+                      </svg>
+                    </Button>
                   </div>
+                </div>
               ))}
               {!formData.data_disk.length && (
                 <Button onClick={handleCreateGcpDataDisk}>
@@ -392,10 +383,7 @@ export default defineComponent({
       () => formData.cloud_vpc_id,
       (val) => {
         !val && (cloudId.value = null);
-        console.log(
-          'subnetSelectorRef.value',
-          subnetSelectorRef.value.subnetList,
-        );
+        console.log('subnetSelectorRef.value', subnetSelectorRef.value.subnetList);
         subnetLength.value = subnetSelectorRef.value.subnetList?.length || 0;
       },
     );
@@ -411,32 +399,31 @@ export default defineComponent({
       () => formData,
       debounce(async () => {
         const saveData = getSaveData();
+        if (![VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum)) return;
         if (
-          ![VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum)
-        ) return;
-        if (
-          !saveData.account_id
-          || !saveData.region
-          || !saveData.zone
-          || !saveData.name
-          || !saveData.instance_type
-          || !saveData.cloud_image_id
-          || !saveData.cloud_vpc_id
-          || !saveData.cloud_subnet_id
-          || !saveData.cloud_security_group_ids
-          || !saveData.system_disk?.disk_type
-          || !saveData.password
-          || !saveData.confirmed_password
-        ) return;
+          !saveData.account_id ||
+          !saveData.region ||
+          !saveData.zone ||
+          !saveData.name ||
+          !saveData.instance_type ||
+          !saveData.cloud_image_id ||
+          !saveData.cloud_vpc_id ||
+          !saveData.cloud_subnet_id ||
+          !saveData.cloud_security_group_ids ||
+          !saveData.system_disk?.disk_type ||
+          !saveData.password ||
+          !saveData.confirmed_password
+        )
+          return;
         await formRef.value.validate();
         isSubmitBtnLoading.value = true;
-        const res = await http.post(
-          `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/cvms/prices/inquiry`,
-          {
-            ...saveData,
-            instance_type: cond.vendor !== VendorEnum.HUAWEI ? saveData.instance_type : `${saveData.instance_type}.${opSystemType.value}`,
-          },
-        );
+        const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/cvms/prices/inquiry`, {
+          ...saveData,
+          instance_type:
+            cond.vendor !== VendorEnum.HUAWEI
+              ? saveData.instance_type
+              : `${saveData.instance_type}.${opSystemType.value}`,
+        });
         cost.value = res.data?.discount_price || '0';
         isSubmitBtnLoading.value = false;
       }, 300),
@@ -448,7 +435,7 @@ export default defineComponent({
 
     watch(
       () => [cond, formData.zone, formData.instance_charge_type],
-      async ([,newZone], [,oldZone]) => {
+      async ([, newZone], [, oldZone]) => {
         const isBusiness = whereAmI.value === Senarios.business;
         const isTcloud = cond.vendor === VendorEnum.TCLOUD;
         if (isBusiness && !cond.bizId) return;
@@ -456,9 +443,7 @@ export default defineComponent({
         if (isTcloud && !formData.zone.length) return;
         // 避免多发一次无效请求（因为监听了formData.zone的变化）
         if (newZone === oldZone) return;
-        if (
-          ![VendorEnum.HUAWEI, VendorEnum.GCP, VendorEnum.TCLOUD].includes(cond.vendor as VendorEnum)
-        ) return;
+        if (![VendorEnum.HUAWEI, VendorEnum.GCP, VendorEnum.TCLOUD].includes(cond.vendor as VendorEnum)) return;
         let url = isBusiness
           ? `/api/v1/cloud/bizs/${cond.bizId}/vendors/${cond.vendor}/accounts/${cond.cloudAccountId}/regions/quotas`
           : `/api/v1/cloud/vendors/${cond.vendor}/accounts/${cond.cloudAccountId}/regions/quotas`;
@@ -482,9 +467,8 @@ export default defineComponent({
           case VendorEnum.TCLOUD: {
             let dataSource = res.data.spot_paid_quota;
             if (['PREPAID'].includes(formData.instance_charge_type)) dataSource = res.data.pre_paid_quota;
-            if (
-              ['POSTPAID_BY_HOUR', 'postPaid'].includes(formData.instance_charge_type)
-            ) dataSource = res.data.post_paid_quota_set;
+            if (['POSTPAID_BY_HOUR', 'postPaid'].includes(formData.instance_charge_type))
+              dataSource = res.data.post_paid_quota_set;
             limitNum.value = dataSource.total_quota;
             usageNum.value = dataSource.used_quota;
             break;
@@ -613,7 +597,8 @@ export default defineComponent({
           // },
           {
             label: '管控区域',
-            description: '管控区是蓝鲸可以管控的Agent网络区域，以实现跨网管理。\n一个VPC，对应一个管控区。如VPC未绑定管控区，请到资源接入-VPC-绑定管控区操作。',
+            description:
+              '管控区是蓝鲸可以管控的Agent网络区域，以实现跨网管理。\n一个VPC，对应一个管控区。如VPC未绑定管控区，请到资源接入-VPC-绑定管控区操作。',
             display: whereAmI.value === Senarios.business,
             content: () => (
               <>
@@ -650,7 +635,7 @@ export default defineComponent({
                   multiple={cond.vendor !== VendorEnum.AZURE}
                   vendor={cond.vendor}
                   vpcId={vpcId.value}
-                  onSelectedChange={val => (formData.cloud_security_group_ids = val)}
+                  onSelectedChange={(val) => (formData.cloud_security_group_ids = val)}
                 />
                 {/* {
                   isResourcePage
@@ -743,10 +728,7 @@ export default defineComponent({
                 property: 'system_disk.disk_type',
                 required: true,
                 content: () => (
-                  <Select
-                    v-model={formData.system_disk.disk_type}
-                    style={{ width: '200px' }}
-                    clearable={false}>
+                  <Select v-model={formData.system_disk.disk_type} style={{ width: '200px' }} clearable={false}>
                     {sysDiskTypes.value.map(({ id, name }: IOption) => (
                       <Option key={id} value={id} label={name}></Option>
                     ))}
@@ -771,21 +753,17 @@ export default defineComponent({
           },
           {
             label: '数据盘',
-            tips: () => (cond.vendor === VendorEnum.TCLOUD
-              ? '增强型SSD云硬盘仅在部分可用区开放售卖，后续将逐步增加售卖可用区'
-              : ''),
+            tips: () =>
+              cond.vendor === VendorEnum.TCLOUD
+                ? '增强型SSD云硬盘仅在部分可用区开放售卖，后续将逐步增加售卖可用区'
+                : '',
             property: 'data_disk',
             content: () => (
               <div class='form-content-list data-disk-wrap'>
                 {formData.data_disk.map((item: IDiskOption, index: number) => (
                   <div class='flex-row'>
-                    <FormItem
-                      property={`data_disk[${index}].disk_type`}
-                      rules={[]}>
-                      <Select
-                        v-model={item.disk_type}
-                        style={{ width: '200px' }}
-                        clearable={false}>
+                    <FormItem property={`data_disk[${index}].disk_type`} rules={[]}>
+                      <Select v-model={item.disk_type} style={{ width: '200px' }} clearable={false}>
                         {dataDiskTypes.value.map(({ id, name }: IOption) => (
                           <Option key={id} value={id} label={name}></Option>
                         ))}
@@ -815,17 +793,25 @@ export default defineComponent({
                     </FormItem>
                     <div class='btns'>
                       <Button class={'btn'} onClick={handleCreateDataDisk}>
-                        <svg width={14} height={14} viewBox="0 0 24 24" version="1.1"
-                             xmlns="http://www.w3.org/2000/svg"
-                             style="fill: #c4c6cc">
-                          <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-4.5v4.5c0 0.414-0.336 0.75-0.75 0.75s-0.75-0.336-0.75-0.75v-4.5h-4.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h4.5v-4.5c0-0.414 0.336-0.75 0.75-0.75s0.75 0.336 0.75 0.75v4.5h4.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z"></path>
+                        <svg
+                          width={14}
+                          height={14}
+                          viewBox='0 0 24 24'
+                          version='1.1'
+                          xmlns='http://www.w3.org/2000/svg'
+                          style='fill: #c4c6cc'>
+                          <path d='M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-4.5v4.5c0 0.414-0.336 0.75-0.75 0.75s-0.75-0.336-0.75-0.75v-4.5h-4.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h4.5v-4.5c0-0.414 0.336-0.75 0.75-0.75s0.75 0.336 0.75 0.75v4.5h4.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z'></path>
                         </svg>
                       </Button>
                       <Button class={'btn'} onClick={() => handleRemoveDataDisk(index)}>
-                        <svg width={14} height={14} viewBox="0 0 24 24" version="1.1"
-                             xmlns="http://www.w3.org/2000/svg"
-                             style="fill: #c4c6cc">
-                          <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-10.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h10.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z"></path>
+                        <svg
+                          width={14}
+                          height={14}
+                          viewBox='0 0 24 24'
+                          version='1.1'
+                          xmlns='http://www.w3.org/2000/svg'
+                          style='fill: #c4c6cc'>
+                          <path d='M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-10.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h10.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z'></path>
                         </svg>
                       </Button>
                       {/* <Button
@@ -848,10 +834,10 @@ export default defineComponent({
                   </div>
                 ))}
                 {!formData.data_disk.length && (
-                    <Button onClick={handleCreateDataDisk}>
-                      <PlusIcon />
-                    </Button>)
-                }
+                  <Button onClick={handleCreateDataDisk}>
+                    <PlusIcon />
+                  </Button>
+                )}
                 {
                   // (formData.data_disks.length > 0 && cond.vendor === VendorEnum.HUAWEI)
                   // && <Checkbox v-model={formData.is_quickly_initialize_data_disk}>快速初始化数据盘</Checkbox>
@@ -868,11 +854,7 @@ export default defineComponent({
               {
                 property: 'username',
                 display: cond.vendor === VendorEnum.AZURE,
-                content: () => (
-                  <Input
-                    placeholder='登录用户'
-                    v-model={formData.username}></Input>
-                ),
+                content: () => <Input placeholder='登录用户' v-model={formData.username}></Input>,
               },
               {
                 property: 'password',
@@ -905,13 +887,8 @@ export default defineComponent({
               '60个字符，字母、数字、“-”，且必须以字母、数字开头和结尾。\n\r 实例名称是在云上的记录名称，并不是操作系统上的主机名，以方便使用名称来搜索主机。\n\r 如申请的是1台主机，则按填写的名称命名。如申请的是多台，则填写名称是前缀，申请单会自动补充随机的后缀。',
             content: () => (
               <div>
-                <Input
-                  placeholder='填写实例名称，主机数量大于1时支持批量命名'
-                  v-model={formData.name}
-                />
-                <div class={'instance-name-tips'}>
-                  {'当申请数量 > 1时，该名称为前缀，申请单会自动补充随机后缀'}
-                </div>
+                <Input placeholder='填写实例名称，主机数量大于1时支持批量命名' v-model={formData.name} />
+                <div class={'instance-name-tips'}>{'当申请数量 > 1时，该名称为前缀，申请单会自动补充随机后缀'}</div>
               </div>
             ),
           },
@@ -1157,12 +1134,7 @@ export default defineComponent({
         <div
           class='create-form-container cvm-wrap'
           style={whereAmI.value === Senarios.resource && { padding: 0, marginBottom: '80px' }}>
-          <Form
-            model={formData}
-            rules={formRules}
-            ref={formRef}
-            onSubmit={handleFormSubmit}
-            formType='vertical'>
+          <Form model={formData} rules={formRules} ref={formRef} onSubmit={handleFormSubmit} formType='vertical'>
             <ConditionOptions
               type={ResourceTypeEnum.CVM}
               v-model:bizId={cond.bizId}
@@ -1182,15 +1154,16 @@ export default defineComponent({
                     />
                   </FormItem>
                 ),
-                appendix: () => ([VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum) ? (
-                  <FormItem label='计费模式' required property='instance_charge_type'>
-                    <RadioGroup v-model={formData.instance_charge_type}>
-                      {billingModes.value.map(item => (
-                        <RadioButton label={item.id}>{item.name}</RadioButton>
-                      ))}
-                    </RadioGroup>
-                  </FormItem>
-                ) : null),
+                appendix: () =>
+                  [VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum) ? (
+                    <FormItem label='计费模式' required property='instance_charge_type'>
+                      <RadioGroup v-model={formData.instance_charge_type}>
+                        {billingModes.value.map((item) => (
+                          <RadioButton label={item.id}>{item.name}</RadioButton>
+                        ))}
+                      </RadioGroup>
+                    </FormItem>
+                  ) : null,
               }}
             </ConditionOptions>
             {formConfig.value
@@ -1199,50 +1172,36 @@ export default defineComponent({
                 <CommonCard title={() => title} class={'mb16'}>
                   {children
                     .filter(({ display }) => display !== false)
-                    .map(({
-                      label,
-                      description,
-                      tips,
-                      rules,
-                      required,
-                      property,
-                      content,
-                    }) => (
-                        <FormItem
-                          label={label}
-                          required={required}
-                          property={property}
-                          rules={rules}
-                          description={description}
-                          class={label === '子网' && 'purchase-cvm-form-item-subnet-wrap'}
-                          >
-                          {Array.isArray(content) ? (
-                            <div class='flex-row'>
-                              {content
-                                .filter(sub => sub.display !== false)
-                                .map(sub => (
-                                  <FormItem
-                                    label={sub.label}
-                                    required={sub.required}
-                                    property={sub.property}
-                                    rules={sub.rules}
-                                    description={sub?.description}
-                                    class='sub-form-item-wrap'
-                                  >
-                                    {sub.content()}
-                                    {sub.tips && (
-                                      <div class='form-item-tips'>
-                                        {sub.tips()}
-                                      </div>
-                                    )}
-                                  </FormItem>
-                                ))}
-                            </div>
-                          ) : (
-                            content()
-                          )}
-                          {tips && <div class='form-item-tips'>{tips()}</div>}
-                        </FormItem>
+                    .map(({ label, description, tips, rules, required, property, content }) => (
+                      <FormItem
+                        label={label}
+                        required={required}
+                        property={property}
+                        rules={rules}
+                        description={description}
+                        class={label === '子网' && 'purchase-cvm-form-item-subnet-wrap'}>
+                        {Array.isArray(content) ? (
+                          <div class='flex-row'>
+                            {content
+                              .filter((sub) => sub.display !== false)
+                              .map((sub) => (
+                                <FormItem
+                                  label={sub.label}
+                                  required={sub.required}
+                                  property={sub.property}
+                                  rules={sub.rules}
+                                  description={sub?.description}
+                                  class='sub-form-item-wrap'>
+                                  {sub.content()}
+                                  {sub.tips && <div class='form-item-tips'>{sub.tips()}</div>}
+                                </FormItem>
+                              ))}
+                          </div>
+                        ) : (
+                          content()
+                        )}
+                        {tips && <div class='form-item-tips'>{tips()}</div>}
+                      </FormItem>
                     ))}
                 </CommonCard>
               ))}
@@ -1269,10 +1228,7 @@ export default defineComponent({
             <div class='purchase-cvm-bottom-bar-form-item-wrap'>
               <FormItem
                 label='数量'
-                class={
-                  'purchase-cvm-bottom-bar-form-count '
-                  + `${limitNum.value !== -1 ? 'mb-12' : ''}`
-                }>
+                class={'purchase-cvm-bottom-bar-form-count ' + `${limitNum.value !== -1 ? 'mb-12' : ''}`}>
                 <Input
                   style={{ width: '150px' }}
                   type='number'
@@ -1285,19 +1241,16 @@ export default defineComponent({
               {['PREPAID', 'prePaid'].includes(formData.instance_charge_type) ? (
                 <FormItem label='时长'>
                   <div class={'purchase-cvm-time'}>
-                    <Input
-                      style={{ width: '160px' }}
-                      type='number'
-                      v-model={formData.purchase_duration.count}></Input>
-                    <Select
-                      style={{ width: '50px' }}
-                      v-model={formData.purchase_duration.unit}
-                      clearable={false}>
+                    <Input style={{ width: '160px' }} type='number' v-model={formData.purchase_duration.count}></Input>
+                    <Select style={{ width: '50px' }} v-model={formData.purchase_duration.unit} clearable={false}>
                       {purchaseDurationUnits.map(({ id, name }: IOption) => (
                         <Option key={id} value={id} label={name}></Option>
                       ))}
                     </Select>
-                    <Checkbox class='purchase-cvm-time-checkbox' v-model={formData.auto_renew}> 自动续费 </Checkbox>
+                    <Checkbox class='purchase-cvm-time-checkbox' v-model={formData.auto_renew}>
+                      {' '}
+                      自动续费{' '}
+                    </Checkbox>
                   </div>
                 </FormItem>
               ) : null}
@@ -1305,17 +1258,15 @@ export default defineComponent({
             {/* eslint-disable max-len */}
 
             <div class='purchase-cvm-bottom-bar-form-count-wrap'>
-              {[VendorEnum.TCLOUD, VendorEnum.HUAWEI, VendorEnum.GCP].includes(cond.vendor as VendorEnum) && limitNum.value !== -1 ? (
+              {[VendorEnum.TCLOUD, VendorEnum.HUAWEI, VendorEnum.GCP].includes(cond.vendor as VendorEnum) &&
+              limitNum.value !== -1 ? (
                 <p class={'purchase-cvm-bottom-bar-form-count-tip'}>
                   所在{VendorEnum.TCLOUD === cond.vendor ? '可用区' : '地域'}
                   配额为{' '}
                   {
                     <>
-                      <span
-                        class={'purchase-cvm-bottom-bar-form-count-tip-num'}>
-                        {limitNum.value
-                          - usageNum.value
-                          - formData.required_count}
+                      <span class={'purchase-cvm-bottom-bar-form-count-tip-num'}>
+                        {limitNum.value - usageNum.value - formData.required_count}
                       </span>{' '}
                       / {limitNum.value}
                     </>
@@ -1325,15 +1276,12 @@ export default defineComponent({
             </div>
           </Form>
           <div class={'purchase-cvm-bottom-bar-info'}>
-            {
-              (cond.vendor === VendorEnum.TCLOUD || cond.vendor === VendorEnum.HUAWEI)
-                && (
-                  <div class={'purchase-cvm-cost-wrap'}>
-                    <div>费用：</div>
-                    <div class={'purchase-cvm-cost'}>{cost.value}</div>
-                  </div>
-                )
-            }
+            {(cond.vendor === VendorEnum.TCLOUD || cond.vendor === VendorEnum.HUAWEI) && (
+              <div class={'purchase-cvm-cost-wrap'}>
+                <div>费用：</div>
+                <div class={'purchase-cvm-cost'}>{cost.value}</div>
+              </div>
+            )}
             <Button
               theme='primary'
               loading={submitting.value || isSubmitBtnLoading.value}

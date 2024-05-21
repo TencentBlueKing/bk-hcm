@@ -2,10 +2,20 @@
 import http from '@/http';
 import { defineStore } from 'pinia';
 import { QueryFilterType, IPageQuery, IQueryResData } from '@/typings/common';
-import { IAreaInfo, IBizTypeResData, ICountriesListResData, IGenerateSchemesResData, IUserDistributionResData, IGenerateSchemesReqParams, IRecommendSchemeList, IIdcServiceAreaRel, IIdcInfo, ISchemeSelectorItem } from '@/typings/scheme';
+import {
+  IAreaInfo,
+  IBizTypeResData,
+  ICountriesListResData,
+  IGenerateSchemesResData,
+  IUserDistributionResData,
+  IGenerateSchemesReqParams,
+  IRecommendSchemeList,
+  IIdcServiceAreaRel,
+  IIdcInfo,
+  ISchemeSelectorItem,
+} from '@/typings/scheme';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
-
 
 // 资源选型模块相关状态管理和接口定义
 export const useSchemeStore = defineStore({
@@ -54,7 +64,9 @@ export const useSchemeStore = defineStore({
       this.schemeData = data;
     },
     sortSchemes(choice: string, isDes = true) {
-      this.recommendationSchemes = this.recommendationSchemes.sort((a, b) => (b[choice] - a[choice]) * (isDes ? 1 : -1));
+      this.recommendationSchemes = this.recommendationSchemes.sort(
+        (a, b) => (b[choice] - a[choice]) * (isDes ? 1 : -1),
+      );
     },
     /**
      * 获取资源选型方案列表
@@ -86,9 +98,9 @@ export const useSchemeStore = defineStore({
      * @param id 方案id
      * @param data 方案数据
      */
-    updateCloudSelectionScheme(id: string, data: { name: string; bk_biz_id?: number; }) {
+    updateCloudSelectionScheme(id: string, data: { name: string; bk_biz_id?: number }) {
       const { name, bk_biz_id } = data;
-      const params: { name: string; bk_biz_id?: number; } = { name };
+      const params: { name: string; bk_biz_id?: number } = { name };
       if (bk_biz_id) {
         params.bk_biz_id = bk_biz_id;
       }
@@ -102,17 +114,20 @@ export const useSchemeStore = defineStore({
       return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/collections/cloud_selection_scheme/list`);
     },
     /** 添加收藏
-    * @param id 方案id
-    * @returns
-    */
+     * @param id 方案id
+     * @returns
+     */
     createCollection(id: string) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/collections/create`, { res_type: 'cloud_selection_scheme', res_id: id });
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/collections/create`, {
+        res_type: 'cloud_selection_scheme',
+        res_id: id,
+      });
     },
     /**
-      * 取消收藏
-      * @param id 收藏id
-      * @returns
-      */
+     * 取消收藏
+     * @param id 收藏id
+     * @returns
+     */
     deleteCollection(id: number) {
       return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/collections/${id}`);
     },
@@ -131,7 +146,10 @@ export const useSchemeStore = defineStore({
      * @param ids idc列表
      */
     queryBizLatency(topo: IAreaInfo[], ids: string[]) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/latency/biz/query`, { area_topo: topo, idc_ids: ids });
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/latency/biz/query`, {
+        area_topo: topo,
+        idc_ids: ids,
+      });
     },
     /**
      * 查询ping延迟数据
@@ -139,7 +157,10 @@ export const useSchemeStore = defineStore({
      * @param ids idc列表
      */
     queryPingLatency(topo: IAreaInfo[], ids: string[]) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/latency/ping/query`, { area_topo: topo, idc_ids: ids });
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/latency/ping/query`, {
+        area_topo: topo,
+        idc_ids: ids,
+      });
     },
     /**
      * 获取云选型数据支持的国家列表
@@ -179,7 +200,11 @@ export const useSchemeStore = defineStore({
      * @param area_topo 国家城市拓扑
      * @returns 服务区
      */
-    queryIdcServiceArea(datasource: string, idc_ids: Array<string>, area_topo: Array<IAreaInfo>): IQueryResData<Array<IIdcServiceAreaRel>> {
+    queryIdcServiceArea(
+      datasource: string,
+      idc_ids: Array<string>,
+      area_topo: Array<IAreaInfo>,
+    ): IQueryResData<Array<IIdcServiceAreaRel>> {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/selections/idcs/service_areas/${datasource}/query`, {
         idc_ids,
         area_topo,

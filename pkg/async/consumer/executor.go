@@ -21,16 +21,25 @@ package consumer
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"sync"
 
+	"hcm/pkg/api/core"
+	"hcm/pkg/async/action"
 	"hcm/pkg/async/action/run"
 	"hcm/pkg/async/backend"
 	"hcm/pkg/async/backend/model"
 	"hcm/pkg/async/compctrl"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/retry"
+	"hcm/pkg/tools/times"
 )
 
 // Executor （执行器）: 准备任务执行所需要的超时控制，共享数据等工具，并执行任务。
@@ -46,12 +55,15 @@ type Executor interface {
 	Push(flow *Flow, task *Task)
 	// CancelTasks 关闭指定task_id的任务。
 	CancelTasks(taskIDs []string) error
+	CancelFlow(kt *kit.Kit, flowID string) error
 }
 
 var _ Executor = new(executor)
 
 // executor 定义任务执行器
 type executor struct {
+	kt *kit.Kit
+
 	workerNumber       uint
 	taskExecTimeoutSec uint
 
@@ -73,8 +85,9 @@ func (exec *executor) SetGetSchedulerFunc(f func() Scheduler) {
 }
 
 // NewExecutor 实例化任务执行器
-func NewExecutor(bd backend.Backend, opt *ExecutorOption) Executor {
+func NewExecutor(kt *kit.Kit, bd backend.Backend, opt *ExecutorOption) Executor {
 	return &executor{
+		kt:                 kt,
 		backend:            bd,
 		workerWg:           sync.WaitGroup{},
 		initWg:             sync.WaitGroup{},
@@ -128,8 +141,8 @@ func (exec *executor) initWorkerTask(flow *Flow, task *Task) {
 	}
 
 	// 设置task执行所需要的 kit，更新Task函数，所属流
-	task.InitDep(run.NewExecuteContext(task.Kit, flow.ShareData), func(kt *kit.Kit, task *model.Task) error {
-		return exec.backend.UpdateTask(kt, task)
+	task.InitDep(run.NewExecuteContext(task.Kit, flow.ShareData), func(taskKit *kit.Kit, task *model.Task) error {
+		return exec.backend.UpdateTask(exec.kt, task)
 	}, flow)
 
 	// cancel存储到cancelMap中
@@ -156,18 +169,123 @@ func (exec *executor) workerDo(task *Task) (err error) {
 
 	// cancelMap清理执行成功/失败的任务
 	defer exec.cancelMap.Delete(task.ID)
+	// 无论任务成功还是失败，都需要交给scheduler分析任务流的状态
+	// 执行完的任务回写到scheduler用于获取待执行的任务
+	defer exec.GetSchedulerFunc().EntryTask(task)
+	var runErr error
+	var failedRet any
 
 	// 执行任务
-	if err = task.Run(); err != nil {
-		logs.Errorf("task run failed, err: %v, task: %+v, rid: %s", err, task, task.Kit.Rid)
-
-		// 无论任务成功还是失败，都需要交给调度器分析任务流的状态
+	act, exist := action.GetAction(task.ActionName)
+	if !exist {
+		return fmt.Errorf("action: %s not found", task.ActionName)
 	}
 
-	// 执行完的任务回写到调度器用于获取待执行的任务
-	exec.GetSchedulerFunc().EntryTask(task)
+	if err := task.ValidateBeforeExec(act); err != nil {
+		return err
+	}
 
-	return err
+	defer func() {
+		if runErr == nil {
+			return
+		}
+		err = runErr
+		logs.Errorf("task run failed, err: %v, task: %+v, result: %+v, rid: %s",
+			runErr, task, failedRet, exec.kt.Rid)
+		if errf.IsContextCanceled(runErr) {
+			task.State = enumor.TaskCancel
+			return
+		}
+		nextState := enumor.TaskFailed
+		if patchErr := exec.UpdateTask(task, nextState, runErr.Error(), failedRet); patchErr != nil {
+			logs.Errorf("task set %s state failed after run failed, err: %v, patchErr: %v, exeRid: %s, "+
+				"taskRid: %s", nextState, runErr, patchErr, exec.kt.Rid, task.Kit.Rid)
+			err = fmt.Errorf("task set %s state failed, after run failed, err: %v, patchErr: %v",
+				nextState, runErr, patchErr)
+			return
+		}
+		return
+	}()
+
+	if !task.Retry.IsEnable() {
+		_, failedRet, runErr = exec.runTaskOnce(task, act)
+		return
+	}
+
+	if task.State == enumor.TaskRollback && task.Reason.RollbackCount >= task.Retry.Policy.Count {
+		// 超过指定重试次数，置为失败
+		runErr = fmt.Errorf("too many retries: %w", errors.New(task.Reason.Message))
+		return
+	}
+	// 减去已经执行的count
+	task.Retry.Policy.Count -= task.Reason.RollbackCount
+	failedRet, runErr = task.Retry.Run(func() (stop bool, failRet any, err error) {
+		needRetry, failRet, err := exec.runTaskOnce(task, act)
+		if err == nil {
+			return false, nil, nil
+		}
+
+		if !needRetry {
+			return true, failRet, err
+		}
+		// 允许重试，将Task状态由 running -> rollback，进行回滚
+		if patchErr := exec.UpdateTask(task, enumor.TaskRollback, err.Error(), failRet); patchErr != nil {
+			e := fmt.Errorf("task set rollback state failed, after runAction failed, err: %v, patchErr: %v",
+				err, patchErr)
+			return false, failRet, e
+		}
+
+		return false, nil, nil
+	})
+
+	return nil
+}
+
+// runTaskOnce 只有执行Action运行逻辑失败才会允许重试，更改状态失败不进行重试。
+// 如果执行成功直接写入状态和结果，失败时才将状态和结果返回到上层
+func (exec *executor) runTaskOnce(task *Task, act action.Action) (needRetry bool, failedResult any, err error) {
+	params, err := task.prepareParams(act)
+	if err != nil {
+		return false, nil, err
+	}
+	if task.State == enumor.TaskRollback {
+		rollbackAct, ok := act.(action.RollbackAction)
+		if !ok {
+			return false, nil, fmt.Errorf("action: %s not has RollbackAction", act.Name())
+		}
+
+		if err = rollbackAct.Rollback(task.ExecuteKit, params); err != nil {
+			return true, nil, fmt.Errorf("rollback failed, err: %v", err)
+		}
+
+		if err = exec.UpdateTaskState(task, enumor.TaskPending); err != nil {
+			return false, nil, err
+		}
+	}
+
+	if task.State == enumor.TaskPending {
+		if err = exec.UpdateTaskState(task, enumor.TaskRunning); err != nil {
+			return false, nil, err
+		}
+
+		result, err := act.Run(task.ExecuteKit, params)
+		if err != nil {
+			if errf.IsContextCanceled(err) {
+				// 被取消不需要重试
+				return false, result, err
+			}
+			return true, result, fmt.Errorf("run failed, err: %v, time: %s",
+				err, times.ConvStdTimeNow())
+		}
+
+		// 如果执行成功，返回 result 属于成功结果，设置成功状态时，同时设置成功结果。如果执行失败，
+		// 结果属于失败结果，交与上层更新失败或回滚等操作，更新失败结果。
+		if err = exec.UpdateTaskStateResult(task, enumor.TaskSuccess, result); err != nil {
+			return false, result, err
+		}
+	}
+
+	return false, nil, nil
 }
 
 // Push 任务写入到initQueue
@@ -206,6 +324,42 @@ func (exec *executor) CancelTasks(taskIDs []string) error {
 	return nil
 }
 
+// CancelFlow 取消指定id flow
+func (exec *executor) CancelFlow(kt *kit.Kit, flowId string) error {
+
+	taskList, err := exec.backend.ListTask(kt, &backend.ListInput{
+		Filter: tools.EqualExpression("flow_id", flowId),
+		Page:   core.NewDefaultBasePage(),
+	})
+	if err != nil {
+		return err
+	}
+	cancelIDs := make([]string, 0)
+	for _, task := range taskList {
+		switch task.State {
+
+		case enumor.TaskPending, enumor.TaskInit, enumor.TaskRollback, enumor.TaskFailed, enumor.TaskRunning:
+			// 	更新数据库状态
+			err := exec.UpdateTask(&Task{Task: task}, enumor.TaskCancel, string(task.State), nil)
+			logs.Errorf("fail to update task(%s) state for cancel, err: %v, rid: %s", task.ID, err, kt.Rid)
+			cancelIDs = append(cancelIDs, task.ID)
+		case enumor.TaskSuccess, enumor.TaskCancel:
+			// 	跳过
+		}
+	}
+	if len(cancelIDs) == 0 {
+		return nil
+	}
+	// cancel 后在executor 中写回task canceled状态
+	if err := exec.CancelTasks(cancelIDs); err != nil {
+		logs.Errorf("fail to cancel task, err: %v, flow id: %s, task ids %v, rid: %s",
+			err, flowId, cancelIDs, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
 // Close 执行器关闭函数
 func (exec *executor) Close() {
 
@@ -221,4 +375,36 @@ func (exec *executor) Close() {
 
 	logs.Infof("executor close success")
 
+}
+
+// UpdateTaskState update task state.
+func (exec *executor) UpdateTaskState(task *Task, state enumor.TaskState) error {
+	return exec.UpdateTask(task, state, "", nil)
+}
+
+// UpdateTaskStateResult update task state and result.
+func (exec *executor) UpdateTaskStateResult(task *Task, state enumor.TaskState, result interface{}) error {
+	return exec.UpdateTask(task, state, "", result)
+}
+
+// UpdateTask update task, record state of cancel state
+func (exec *executor) UpdateTask(task *Task, state enumor.TaskState, reason string, result interface{}) error {
+	md, err := task.buildTaskUpdateModel(exec.kt, state, reason, result)
+	if err != nil {
+		return err
+	}
+
+	rty := retry.NewRetryPolicy(DefRetryCount, DefRetryRangeMS)
+	err = rty.BaseExec(exec.kt, func() error {
+		return exec.backend.UpdateTask(exec.kt, md)
+	})
+	if err != nil {
+		logs.Errorf("task update state failed, err: %v, retryCount: %d, id: %s, state: %s, reason: %s, rid: %s",
+			err, DefRetryCount, task.ID, state, reason, exec.kt.Rid)
+		return err
+	}
+
+	task.State = state
+
+	return nil
 }

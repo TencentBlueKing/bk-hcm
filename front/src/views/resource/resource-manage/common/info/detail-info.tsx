@@ -1,7 +1,4 @@
-import {
-  defineComponent,
-  PropType,
-} from 'vue';
+import { defineComponent, PropType } from 'vue';
 
 import InfoList from '../info-list/info-list';
 
@@ -50,12 +47,7 @@ export default defineComponent({
     },
   },
 
-
   render() {
-    return <info-list
-      class="detail-info-main g-scroller"
-      fields={ this.renderFields }
-      onChange={this.handleChange}
-    />;
+    return <info-list class='detail-info-main g-scroller' fields={this.renderFields} onChange={this.handleChange} />;
   },
 });

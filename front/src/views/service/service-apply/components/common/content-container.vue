@@ -67,7 +67,6 @@
       display: flex;
       align-items: center;
       .btn {
-
         & + .btn {
           margin-left: 12px;
         }

@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
@@ -107,8 +108,9 @@ func (d Dao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListAuditDetails, 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
-
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(audit.AuditColumns.ColumnTypes())),
+	columnTypes := audit.AuditColumns.ColumnTypes()
+	columnTypes["detail.data.res_flow.flow_id"] = enumor.String
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}

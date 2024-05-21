@@ -51,20 +51,10 @@ export default defineComponent({
           />
           <div class='tag-list'>
             {props.schemeData.deployment_architecture.map((item: string) => {
-              return (
-                <div class='deploy-type'>
-                  {DEPLOYMENT_ARCHITECTURE_MAP[item]}
-                </div>
-              );
+              return <div class='deploy-type'>{DEPLOYMENT_ARCHITECTURE_MAP[item]}</div>;
             })}
             {props.schemeData.vendors.map((item: string) => {
-              return (
-                <CloudServiceTag
-                  class='cloud-service-type'
-                  type={item}
-                  showIcon={true}
-                />
-              );
+              return <CloudServiceTag class='cloud-service-type' type={item} showIcon={true} />;
             })}
           </div>
           <div class='score-nums'>

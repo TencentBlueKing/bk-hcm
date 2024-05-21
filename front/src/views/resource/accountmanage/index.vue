@@ -10,15 +10,17 @@
       </div>
       <div class="flex-row input-warp justify-content-between align-items-center">
         <bk-checkbox v-model="isAccurate" class="pr20">
-          {{t('精确')}}
+          {{ t('精确') }}
         </bk-checkbox>
-        <bk-search-select class="bg-white w280" :conditions="[]" v-model="searchValue" :data="searchData">
-        </bk-search-select>
+        <bk-search-select
+          class="bg-white w280"
+          :conditions="[]"
+          v-model="searchValue"
+          :data="searchData"
+        ></bk-search-select>
       </div>
     </div>
-    <bk-loading
-      :loading="loading"
-    >
+    <bk-loading :loading="loading">
       <bk-table
         class="table-layout"
         :data="tableData"
@@ -26,7 +28,7 @@
         :pagination="{
           count: pageCount,
           limit: memoPageSize,
-          current: memoPageIndex
+          current: memoPageIndex,
         }"
         show-overflow-tooltip
         @page-value-change="handlePageValueChange"
@@ -34,85 +36,50 @@
         row-hover="auto"
         row-key="id"
       >
-        <bk-table-column
-          label="ID"
-          width="120"
-          prop="id"
-          sort
-        />
-        <bk-table-column
-          :label="t('名称')"
-          prop="name"
-          sort
-        >
+        <bk-table-column label="ID" width="120" prop="id" sort />
+        <bk-table-column :label="t('名称')" prop="name" sort>
           <template #default="props">
-            <bk-button
-              text theme="primary"
-              @click="handleJump('accountDetail', props?.row.id, true)">{{props?.row.name}}</bk-button>
+            <bk-button text theme="primary" @click="handleJump('accountDetail', props?.row.id, true)">
+              {{ props?.row.name }}
+            </bk-button>
           </template>
         </bk-table-column>
 
-        <bk-table-column
-          label="账号类型"
-          prop="type"
-          sort
-        >
+        <bk-table-column label="账号类型" prop="type" sort>
           <template #default="props">
-            {{AccountType[props?.row.type]}}
+            {{ AccountType[props?.row.type] }}
           </template>
         </bk-table-column>
 
-        <bk-table-column
-          :label="t('云厂商')"
-          prop="vendor"
-          sort
-        >
+        <bk-table-column :label="t('云厂商')" prop="vendor" sort>
           <template #default="props">
-            {{CloudType[props?.row?.vendor]}}
+            {{ CloudType[props?.row?.vendor] }}
           </template>
         </bk-table-column>
 
-        <bk-table-column
-          label="站点类型"
-          prop="site"
-          sort
-        >
+        <bk-table-column label="站点类型" prop="site" sort>
           <template #default="props">
-            {{SITE_TYPE_MAP[props?.row.site]}}
+            {{ SITE_TYPE_MAP[props?.row.site] }}
           </template>
         </bk-table-column>
-        <bk-table-column
-          label="所属业务"
-          prop="bk_biz_ids"
-          sort
-        >
+        <bk-table-column label="所属业务" prop="bk_biz_ids" sort>
           <template #default="props">
             {{
-              props?.row?.bk_biz_ids?.join(',')?.split(',')?.map((v: string) => getNameFromBusinessMap(+v))?.join(',')
+              props?.row?.bk_biz_ids
+                ?.join(',')
+                ?.split(',')
+                ?.map((v: string) => getNameFromBusinessMap(+v))
+                ?.join(',')
             }}
           </template>
         </bk-table-column>
-        <bk-table-column
-          :label="t('负责人')"
-          prop="managers"
-          sort
-        >
+        <bk-table-column :label="t('负责人')" prop="managers" sort>
           <template #default="props">
-            {{props?.row.managers?.join(',')}}
+            {{ props?.row.managers?.join(',') }}
           </template>
         </bk-table-column>
-        <bk-table-column
-          label="创建人"
-          prop="creator"
-          sort
-        >
-        </bk-table-column>
-        <bk-table-column
-          label="修改人"
-          prop="reviser"
-          sort
-        >
-        </bk-table-column>
+        <bk-table-column label="创建人" prop="creator" sort></bk-table-column>
+        <bk-table-column label="修改人" prop="reviser" sort></bk-table-column>
         <!-- <bk-table-column
           :label="t('余额')"
           prop="price"
@@ -121,64 +88,52 @@
             {{data?.price || '--'}}{{data?.price_unit}}
           </template>
         </bk-table-column> -->
-        <bk-table-column
-          :label="t('创建时间')"
-          prop="created_at"
-          sort
-        >
+        <bk-table-column :label="t('创建时间')" prop="created_at" sort>
           <template #default="props">
-            {{timeFormatter(props?.row.created_at)}}
+            {{ timeFormatter(props?.row.created_at) }}
           </template>
         </bk-table-column>
-        <bk-table-column
-          label="修改时间"
-          prop="updated_at"
-          sort
-        >
+        <bk-table-column label="修改时间" prop="updated_at" sort>
           <template #default="props">
-            {{timeFormatter(props?.row.updated_at)}}
+            {{ timeFormatter(props?.row.updated_at) }}
           </template>
         </bk-table-column>
-        <bk-table-column
-          :label="t('备注')"
-          prop="memo"
-        />
-        <bk-table-column
-          :label="t('操作')"
-        >
+        <bk-table-column :label="t('备注')" prop="memo" />
+        <bk-table-column :label="t('操作')">
           <template #default="props">
             <div class="operate-button">
               <div @click="handleAuth('account_edit')">
                 <bk-button
-                  text theme="primary" @click="handleJump('accountDetail', props?.row.id)"
-                  :disabled="!authVerifyData.permissionAction.account_edit">
-                  {{t('编辑')}}
+                  text
+                  theme="primary"
+                  @click="handleJump('accountDetail', props?.row.id)"
+                  :disabled="!authVerifyData.permissionAction.account_edit"
+                >
+                  {{ t('编辑') }}
                 </bk-button>
               </div>
               <bk-button class="ml15" text theme="primary" @click="handleOperate(props?.row.id, 'del')">
-                {{t('删除')}}
+                {{ t('删除') }}
               </bk-button>
               <bk-button
-                text theme="primary" @click="handleOperate(props?.row.id, 'sync')"
-                v-if="props?.row?.type === 'resource'">
-                {{t('同步')}}
+                text
+                theme="primary"
+                @click="handleOperate(props?.row.id, 'sync')"
+                v-if="props?.row?.type === 'resource'"
+              >
+                {{ t('同步') }}
               </bk-button>
             </div>
           </template>
         </bk-table-column>
       </bk-table>
-      <bk-dialog
-        :is-show="showDeleteBox"
-        :title="deleteBoxTitle"
-        :theme="'primary'"
-        :dialog-type="'show'"
-      >
+      <bk-dialog :is-show="showDeleteBox" :title="deleteBoxTitle" :theme="'primary'" :dialog-type="'show'">
         <div v-if="type === 'del'">
-          {{t('删除之后无法恢复账户信息')}}
+          {{ t('删除之后无法恢复账户信息') }}
         </div>
         <div v-else>
-          <div v-if="btnLoading">{{t('同步中...')}}</div>
-          <div v-else>{{t('同步该账号下的资源，点击确定后，立即触发同步任务')}}</div>
+          <div v-if="btnLoading">{{ t('同步中...') }}</div>
+          <div v-else>{{ t('同步该账号下的资源，点击确定后，立即触发同步任务') }}</div>
         </div>
 
         <div class="flex-row btn-warp">
@@ -187,11 +142,10 @@
             theme="primary"
             :loading="btnLoading"
             @click="handleDialogConfirm(type)"
-          >确认</bk-button>
-          <bk-button
-            class="mr10 dialog-button"
-            @click="handleDialogCancel"
-          >取消</bk-button>
+          >
+            确认
+          </bk-button>
+          <bk-button class="mr10 dialog-button" @click="handleDialogCancel">取消</bk-button>
         </div>
       </bk-dialog>
     </bk-loading>
@@ -226,15 +180,9 @@ export default defineComponent({
     const router = useRouter();
     const accountStore = useAccountStore();
     const { getNameFromBusinessMap, businessMap } = useBusinessMapStore();
-    const {
-      setMemoPageSize,
-      setMemoPageIndex,
-      memoPageIndex,
-      memoPageSize,
-      memoPageStart,
-    } = useMemoPagination();
+    const { setMemoPageSize, setMemoPageIndex, memoPageIndex, memoPageSize, memoPageStart } = useMemoPagination();
     const state = reactive({
-      isAccurate: false,    // 是否精确
+      isAccurate: false, // 是否精确
       searchValue: [],
       searchData: [
         {
@@ -397,9 +345,11 @@ export default defineComponent({
     const handleDialogConfirm = async (diaType: string) => {
       state.btnLoading = true;
       try {
-        if (diaType === 'del') {    // 删除
+        if (diaType === 'del') {
+          // 删除
           await accountStore.accountDelete(state.dataId);
-        } else if (diaType === 'sync') {    // 同步
+        } else if (diaType === 'sync') {
+          // 同步
           await accountStore.accountSync(state.dataId);
         }
         Message({
@@ -493,55 +443,54 @@ export default defineComponent({
 });
 </script>
 <style lang="scss">
-.operate-button{
+.operate-button {
   display: flex;
 }
-.btn-warp{
+.btn-warp {
   margin-top: 30px;
   justify-content: end;
 }
-  .sync-dialog-warp{
-    height: 150px;
-    .t-icon{
-      height: 42px;
-      width: 110px;
-    }
-    .logo-icon{
-        height: 42px;
-        width: 42px;
-    }
-    .arrow-icon{
-      position: relative;
-      flex: 1;
-      overflow: hidden;
-      height: 13px;
-      line-height: 13px;
-      .content{
-        width: 130px;
-        position: absolute;
-        left: 200px;
-        animation: 3s move infinite linear;
-      }
+.sync-dialog-warp {
+  height: 150px;
+  .t-icon {
+    height: 42px;
+    width: 110px;
+  }
+  .logo-icon {
+    height: 42px;
+    width: 42px;
+  }
+  .arrow-icon {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+    height: 13px;
+    line-height: 13px;
+    .content {
+      width: 130px;
+      position: absolute;
+      left: 200px;
+      animation: 3s move infinite linear;
     }
   }
+}
 @-webkit-keyframes move {
   from {
-		left: 0%;
-	}
+    left: 0%;
+  }
 
-	to {
-		left: 100%;
-	}
+  to {
+    left: 100%;
+  }
 }
 
 @keyframes move {
-	from {
-		left: 0%;
-	}
+  from {
+    left: 0%;
+  }
 
-	to {
-		left: 100%;
-	}
+  to {
+    left: 100%;
+  }
 }
 </style>
-

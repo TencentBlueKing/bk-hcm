@@ -34,18 +34,22 @@ import (
 	daoselection "hcm/pkg/dal/dao/cloud-selection"
 	argstpl "hcm/pkg/dal/dao/cloud/argument-template"
 	"hcm/pkg/dal/dao/cloud/bill"
+	"hcm/pkg/dal/dao/cloud/cert"
 	"hcm/pkg/dal/dao/cloud/cvm"
 	"hcm/pkg/dal/dao/cloud/disk"
 	diskcvmrel "hcm/pkg/dal/dao/cloud/disk-cvm-rel"
 	"hcm/pkg/dal/dao/cloud/eip"
 	eipcvmrel "hcm/pkg/dal/dao/cloud/eip-cvm-rel"
 	cimage "hcm/pkg/dal/dao/cloud/image"
+	"hcm/pkg/dal/dao/cloud/load-balancer"
 	networkinterface "hcm/pkg/dal/dao/cloud/network-interface"
 	nicvmrel "hcm/pkg/dal/dao/cloud/network-interface-cvm-rel"
 	"hcm/pkg/dal/dao/cloud/region"
+	"hcm/pkg/dal/dao/cloud/resource-flow"
 	resourcegroup "hcm/pkg/dal/dao/cloud/resource-group"
 	routetable "hcm/pkg/dal/dao/cloud/route-table"
 	securitygroup "hcm/pkg/dal/dao/cloud/security-group"
+	sgcomrel "hcm/pkg/dal/dao/cloud/security-group-common-rel"
 	sgcvmrel "hcm/pkg/dal/dao/cloud/security-group-cvm-rel"
 	daosubaccount "hcm/pkg/dal/dao/cloud/sub-account"
 	daosync "hcm/pkg/dal/dao/cloud/sync"
@@ -107,6 +111,16 @@ type Set interface {
 	CloudSelectionBizType() daoselection.BizTypeInterface
 	CloudSelectionIdc() daoselection.IdcInterface
 	ArgsTpl() argstpl.Interface
+	Cert() cert.Interface
+	LoadBalancer() loadbalancer.LoadBalancerInterface
+	LoadBalancerListener() loadbalancer.ListenerInterface
+	LoadBalancerTarget() loadbalancer.TargetInterface
+	LoadBalancerTargetGroup() loadbalancer.TargetGroupInterface
+	LoadBalancerTargetGroupListenerRuleRel() loadbalancer.TargetGroupListenerRuleRelInterface
+	LoadBalancerTCloudUrlRule() loadbalancer.LbTCloudUrlRuleInterface
+	ResourceFlowRel() resflow.ResourceFlowRelInterface
+	ResourceFlowLock() resflow.ResourceFlowLockInterface
+	SGCommonRel() sgcomrel.Interface
 
 	Txn() *Txn
 }
@@ -522,5 +536,93 @@ func (s *set) ArgsTpl() argstpl.Interface {
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,
+	}
+}
+
+// Cert return cert dao.
+func (s *set) Cert() cert.Interface {
+	return &cert.Dao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// LoadBalancer return load balancer dao.
+func (s *set) LoadBalancer() loadbalancer.LoadBalancerInterface {
+	return &loadbalancer.LoadBalancerDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// LoadBalancerListener return load balancer listener dao.
+func (s *set) LoadBalancerListener() loadbalancer.ListenerInterface {
+	return &loadbalancer.ListenerDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// LoadBalancerTarget return load balancer target dao.
+func (s *set) LoadBalancerTarget() loadbalancer.TargetInterface {
+	return &loadbalancer.TargetDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// LoadBalancerTargetGroup return load balancer target group dao.
+func (s *set) LoadBalancerTargetGroup() loadbalancer.TargetGroupInterface {
+	return &loadbalancer.TargetGroupDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// LoadBalancerTargetGroupListenerRuleRel return load balancer target group listener rule rel dao.
+func (s *set) LoadBalancerTargetGroupListenerRuleRel() loadbalancer.TargetGroupListenerRuleRelInterface {
+	return &loadbalancer.TargetGroupListenerRuleRelDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// LoadBalancerTCloudUrlRule return load balancer tcloud url rule dao.
+func (s *set) LoadBalancerTCloudUrlRule() loadbalancer.LbTCloudUrlRuleInterface {
+	return &loadbalancer.LbTCloudUrlRuleDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// ResourceFlowRel return resource flow rel dao.
+func (s *set) ResourceFlowRel() resflow.ResourceFlowRelInterface {
+	return &resflow.ResourceFlowRelDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// ResourceFlowLock return resource flow lock dao.
+func (s *set) ResourceFlowLock() resflow.ResourceFlowLockInterface {
+	return &resflow.ResourceFlowLockDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// SGCommonRel return security group common rel dao.
+func (s *set) SGCommonRel() sgcomrel.Interface {
+	return &sgcomrel.Dao{
+		Orm: s.orm,
 	}
 }

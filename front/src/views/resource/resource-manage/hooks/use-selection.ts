@@ -10,7 +10,7 @@ type SelectionType = {
   checked: boolean;
   data: any[];
   isAll: boolean;
-  row: any
+  row: any;
 };
 
 export default () => {
@@ -43,7 +43,7 @@ export default () => {
     // 全选
     if (isAll && selection.checked) {
       selections.value = JSON.parse(JSON.stringify(selection.data));
-      selections.value = selections.value.filter(row => isCurRowSelectEnable(row));
+      selections.value = selections.value.filter((row) => isCurRowSelectEnable(row));
       console.log(66666, selections.value);
     }
     // 取消全选
@@ -56,7 +56,7 @@ export default () => {
     }
     // 取消选择某一个
     if (!isAll && !selection.checked) {
-      const index = selections.value.findIndex(item => item === selection.row);
+      const index = selections.value.findIndex((item) => item === selection.row);
       selections.value.splice(index, 1);
     }
   };

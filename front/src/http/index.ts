@@ -30,38 +30,41 @@ const axiosInstance: AxiosInstance = axios.create({
 });
 
 /**
-  * request interceptor
-  */
-axiosInstance.interceptors.request.use((config: any) => {
-  // const urlObj = new UrlParse(config.url);
-  // const query = queryString.parse(urlObj.query as any);
-  // if (query[AJAX_MOCK_PARAM]) {
-  //   // 直接根路径没有 pathname，例如 http://localhost:LOCAL_DEV_PORT/?mock-file=index&invoke=btn1&btn=btn1
-  //   // axios get 请求不会请求到 devserver，因此在 pathname 不存在或者为 / 时，加上一个 /mock 的 pathname
-  //   if (!urlObj.pathname) {
-  //     config.url = `${LOCAL_DEV_URL}:${LOCAL_DEV_PORT}/mock/${urlObj.query}`;
-  //   } else if (urlObj.pathname === '/') {
-  //     config.url = `${LOCAL_DEV_URL}:${LOCAL_DEV_PORT}/mock/${urlObj.query}`;
-  //   } else if (LOCAL_DEV_URL && LOCAL_DEV_PORT) {
-  //     config.url = `${LOCAL_DEV_URL}:${LOCAL_DEV_PORT}${urlObj.pathname}${urlObj.query}`;
-  //   } else if (LOCAL_DEV_URL) {
-  //     config.url = `${LOCAL_DEV_URL}${urlObj.pathname}${urlObj.query}`;
-  //   }
-  // }
-  // 设置uuid
-  const uuid = uuidv4();
-  axiosInstance.defaults.headers['X-Bkapi-Request-Id'] = uuid;
-  // 在发起请求前，注入CSRFToken，解决跨域
-  injectCSRFTokenToHeaders();
-  return config;
-}, error => Promise.reject(error));
+ * request interceptor
+ */
+axiosInstance.interceptors.request.use(
+  (config: any) => {
+    // const urlObj = new UrlParse(config.url);
+    // const query = queryString.parse(urlObj.query as any);
+    // if (query[AJAX_MOCK_PARAM]) {
+    //   // 直接根路径没有 pathname，例如 http://localhost:LOCAL_DEV_PORT/?mock-file=index&invoke=btn1&btn=btn1
+    //   // axios get 请求不会请求到 devserver，因此在 pathname 不存在或者为 / 时，加上一个 /mock 的 pathname
+    //   if (!urlObj.pathname) {
+    //     config.url = `${LOCAL_DEV_URL}:${LOCAL_DEV_PORT}/mock/${urlObj.query}`;
+    //   } else if (urlObj.pathname === '/') {
+    //     config.url = `${LOCAL_DEV_URL}:${LOCAL_DEV_PORT}/mock/${urlObj.query}`;
+    //   } else if (LOCAL_DEV_URL && LOCAL_DEV_PORT) {
+    //     config.url = `${LOCAL_DEV_URL}:${LOCAL_DEV_PORT}${urlObj.pathname}${urlObj.query}`;
+    //   } else if (LOCAL_DEV_URL) {
+    //     config.url = `${LOCAL_DEV_URL}${urlObj.pathname}${urlObj.query}`;
+    //   }
+    // }
+    // 设置uuid
+    const uuid = uuidv4();
+    axiosInstance.defaults.headers['X-Bkapi-Request-Id'] = uuid;
+    // 在发起请求前，注入CSRFToken，解决跨域
+    injectCSRFTokenToHeaders();
+    return config;
+  },
+  (error) => Promise.reject(error),
+);
 
 /**
-  * response interceptor
-  */
+ * response interceptor
+ */
 axiosInstance.interceptors.response.use(
-  response => response.data,
-  error => Promise.reject(error),
+  (response) => response.data,
+  (error) => Promise.reject(error),
 );
 
 const http: HttpApi = {
@@ -88,12 +91,12 @@ allMethods.forEach((method) => {
 });
 
 /**
-  * 获取 http 不同请求方式对应的函数
-  *
-  * @param {string} http method 与 axios 实例中的 method 保持一致
-  *
-  * @return {Function} 实际调用的请求函数
-  */
+ * 获取 http 不同请求方式对应的函数
+ *
+ * @param {string} http method 与 axios 实例中的 method 保持一致
+ *
+ * @return {Function} 实际调用的请求函数
+ */
 function getRequest(method: HttpMethodType) {
   if (methodsWithData.includes(method)) {
     return (url: string, data: object, config: object) => getPromise(method, url, data, config);
@@ -102,15 +105,15 @@ function getRequest(method: HttpMethodType) {
 }
 
 /**
-  * 实际发起 http 请求的函数，根据配置调用缓存的 promise 或者发起新的请求
-  *
-  * @param {method} http method 与 axios 实例中的 method 保持一致
-  * @param {string} 请求地址
-  * @param {Object} 需要传递的数据, 仅 post/put/patch 三种请求方式可用
-  * @param {Object} 用户配置，包含 axios 的配置与本系统自定义配置
-  *
-  * @return {Promise} 本次http请求的Promise
-  */
+ * 实际发起 http 请求的函数，根据配置调用缓存的 promise 或者发起新的请求
+ *
+ * @param {method} http method 与 axios 实例中的 method 保持一致
+ * @param {string} 请求地址
+ * @param {Object} 需要传递的数据, 仅 post/put/patch 三种请求方式可用
+ * @param {Object} 用户配置，包含 axios 的配置与本系统自定义配置
+ *
+ * @return {Promise} 本次http请求的Promise
+ */
 async function getPromise(method: HttpMethodType, url: string, data: object | null, userConfig = {}) {
   const config = initConfig(method, url, userConfig);
   let promise;
@@ -130,8 +133,9 @@ async function getPromise(method: HttpMethodType, url: string, data: object | nu
   // eslint-disable-next-line no-async-promise-executor, @typescript-eslint/no-misused-promises
   promise = new Promise(async (resolve, reject) => {
     const axiosRequest = methodsWithData.includes(method)
-    // @ts-ignore
-      ? axiosInstance[method](url, data, config) : axiosInstance[method](url, config);
+      ? // @ts-ignore
+        axiosInstance[method](url, data, config)
+      : axiosInstance[method](url, config);
 
     try {
       const response = await axiosRequest;
@@ -146,11 +150,12 @@ async function getPromise(method: HttpMethodType, url: string, data: object | nu
       Object.assign(config, error.config);
       reject(error);
     }
-  }).catch((error) => {
-    return handleReject(error, config);
   })
+    .catch((error) => {
+      return handleReject(error, config);
+    })
     .finally(() => {
-    // console.log('finally', config)
+      // console.log('finally', config)
     });
 
   // 添加请求队列
@@ -162,13 +167,13 @@ async function getPromise(method: HttpMethodType, url: string, data: object | nu
 }
 
 /**
-  * 处理 http 请求成功结果
-  *
-  * @param {Object} 请求配置
-  * @param {Object} cgi 原始返回数据
-  * @param {Function} promise 完成函数
-  * @param {Function} promise 拒绝函数
-  */
+ * 处理 http 请求成功结果
+ *
+ * @param {Object} 请求配置
+ * @param {Object} cgi 原始返回数据
+ * @param {Function} promise 完成函数
+ * @param {Function} promise 拒绝函数
+ */
 function handleResponse(params: { config: any; response: any; resolve: any; reject: any }) {
   // 关闭节流阀
   isLoginValid = false;
@@ -184,13 +189,13 @@ function handleResponse(params: { config: any; response: any; resolve: any; reje
 // token失效时多个接口的错误信息通过isActive节流阀只显示一个
 let isLoginValid = false;
 /**
-  * 处理 http 请求失败结果
-  *
-  * @param {Object} Error 对象
-  * @param {config} 请求配置
-  *
-  * @return {Promise} promise 对象
-  */
+ * 处理 http 请求失败结果
+ *
+ * @param {Object} Error 对象
+ * @param {config} 请求配置
+ *
+ * @return {Promise} promise 对象
+ */
 function handleReject(error: any, config: any) {
   // 判断节流阀是否开启，开启则不执行后面的接口错误提示框
   if (isLoginValid) {
@@ -213,7 +218,7 @@ function handleReject(error: any, config: any) {
     } else if (status === 404) {
       nextError.message = '不存在';
       Message({ theme: 'error', message: nextError.message });
-    }  else if (status === 500) {
+    } else if (status === 500) {
       nextError.message = '系统出现异常';
       Message({ theme: 'error', message: nextError.message });
     } else if (data?.message && error.code !== 0 && error.code !== 2000009) {
@@ -237,14 +242,14 @@ function handleReject(error: any, config: any) {
 
 
 /**
-  * 初始化本系统 http 请求的各项配置
-  *
-  * @param {string} http method 与 axios 实例中的 method 保持一致
-  * @param {string} 请求地址, 结合 method 生成 requestId
-  * @param {Object} 用户配置，包含 axios 的配置与本系统自定义配置
-  *
-  * @return {Promise} 本次 http 请求的 Promise
-  */
+ * 初始化本系统 http 请求的各项配置
+ *
+ * @param {string} http method 与 axios 实例中的 method 保持一致
+ * @param {string} 请求地址, 结合 method 生成 requestId
+ * @param {Object} 用户配置，包含 axios 的配置与本系统自定义配置
+ *
+ * @return {Promise} 本次 http 请求的 Promise
+ */
 function initConfig(method: string, url: string, userConfig: object) {
   const defaultConfig = {
     ...getCancelToken(),
@@ -267,10 +272,10 @@ function initConfig(method: string, url: string, userConfig: object) {
 }
 
 /**
-  * 生成 http 请求的 cancelToken，用于取消尚未完成的请求
-  *
-  * @return {Object} {cancelToken: axios 实例使用的 cancelToken, cancelExcutor: 取消http请求的可执行函数}
-  */
+ * 生成 http 请求的 cancelToken，用于取消尚未完成的请求
+ *
+ * @return {Object} {cancelToken: axios 实例使用的 cancelToken, cancelExcutor: 取消http请求的可执行函数}
+ */
 function getCancelToken() {
   let cancelExcutor;
   const cancelToken = new axios.CancelToken((excutor) => {
@@ -285,8 +290,8 @@ function getCancelToken() {
 export default http;
 
 /**
-  * 向 http header 注入 CSRFToken，CSRFToken key 值与后端一起协商制定
-  */
+ * 向 http header 注入 CSRFToken，CSRFToken key 值与后端一起协商制定
+ */
 export function injectCSRFTokenToHeaders() {
   const CSRFToken = cookie.parse(document.cookie)[`${window.PROJECT_CONFIG.BKPAAS_APP_ID}_csrftoken`];
   if (CSRFToken !== undefined) {

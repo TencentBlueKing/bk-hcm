@@ -110,6 +110,11 @@ func genResManagementActions() []client.ResourceAction {
 	}}
 	// TODO 开启clb和编排相关功能后放开注释
 	// actions = append(actions, genCLBResManActions()...)
+
+	// 证书管理的Actions
+	actions = append(actions, genCertResManActions()...)
+
+	// 资源编排的Actions
 	// actions = append(actions, genArrangeResManActions()...)
 	actions = append(actions, []client.ResourceAction{{
 		ID:                   BizRecycleBinOperate,
@@ -171,6 +176,29 @@ func genCLBResManActions() []client.ResourceAction {
 	}
 }
 */
+
+// genCertResManActions 业务-证书管理的Actions
+func genCertResManActions() []client.ResourceAction {
+	return []client.ResourceAction{
+		{
+			ID:                   BizCertResCreate,
+			Name:                 ActionIDNameMap[BizCertResCreate],
+			NameEn:               "Create Biz Cert",
+			Type:                 Create,
+			RelatedResourceTypes: bizResource,
+			RelatedActions:       []client.ActionID{BizAccess},
+			Version:              1,
+		}, {
+			ID:                   BizCertResDelete,
+			Name:                 ActionIDNameMap[BizCertResDelete],
+			NameEn:               "Delete Biz Cert",
+			Type:                 Delete,
+			RelatedResourceTypes: bizResource,
+			RelatedActions:       []client.ActionID{BizAccess},
+			Version:              1,
+		},
+	}
+}
 
 /*
 func genArrangeResManActions() []client.ResourceAction {
@@ -246,10 +274,10 @@ func genResourceAccessActions() []client.ResourceAction {
 		RelatedActions:       nil,
 		Version:              1,
 	}}
-
 	actions = append(actions, genIaaSResAccessActions()...)
 	// TODO 开启clb和编排相关功能后放开注释
 	// actions = append(actions, genCLBResAccessActions()...)
+	actions = append(actions, genCertResAccessActions()...)
 	actions = append(actions, []client.ResourceAction{{
 		ID:                   RecycleBinAccess,
 		Name:                 ActionIDNameMap[RecycleBinAccess],
@@ -402,6 +430,29 @@ func genCLBResAccessActions() []client.ResourceAction {
 	}
 }
 */
+
+// genCertResAccessActions 资源-证书管理的Actions
+func genCertResAccessActions() []client.ResourceAction {
+	return []client.ResourceAction{
+		{
+			ID:                   CertResCreate,
+			Name:                 ActionIDNameMap[CertResCreate],
+			NameEn:               "Create Cert",
+			Type:                 Create,
+			RelatedResourceTypes: accountResource,
+			RelatedActions:       []client.ActionID{ResourceFind},
+			Version:              1,
+		}, {
+			ID:                   CertResDelete,
+			Name:                 ActionIDNameMap[CertResDelete],
+			NameEn:               "Delete Cert",
+			Type:                 Delete,
+			RelatedResourceTypes: accountResource,
+			RelatedActions:       []client.ActionID{ResourceFind},
+			Version:              1,
+		},
+	}
+}
 
 func genPlatformManageActions() []client.ResourceAction {
 	return []client.ResourceAction{{

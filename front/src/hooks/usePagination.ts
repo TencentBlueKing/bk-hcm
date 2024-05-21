@@ -15,9 +15,11 @@ export function usePagination(limit = DEFAULT_LIMIT) {
     return (val: number) => {
       Object.assign(pagination, {
         [key]: val,
-        ...(key === 'limit' ? {
-          current: 1,
-        } : {}),
+        ...(key === 'limit'
+          ? {
+              current: 1,
+            }
+          : {}),
       });
     };
   }

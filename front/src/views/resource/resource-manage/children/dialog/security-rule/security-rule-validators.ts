@@ -2,10 +2,7 @@ import { parse, parseCIDR, IPv4, isValid } from 'ipaddr.js';
 import { SecurityRule } from './add-rule';
 import { VendorEnum } from '@/common/constant';
 
-export const securityRuleValidators = (
-  data: SecurityRule,
-  vendor: VendorEnum,
-) => {
+export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) => {
   return {
     protocalAndPort: [
       {
@@ -18,8 +15,7 @@ export const securityRuleValidators = (
       },
       {
         trigger: 'blur',
-        message:
-          '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
+        message: '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
         validator: () => {
           if (['cloud_service_id', 'cloud_service_group_id'].includes(data.protocol)) return true;
           return vendor === VendorEnum.HUAWEI || isPortAvailable(data.port);
@@ -76,8 +72,7 @@ export const securityRuleValidators = (
       },
       {
         trigger: 'blur',
-        message:
-          '填写对应合法的 IP CIDR (必须带子网掩码), 注意区分 IPV4 与 IPV6',
+        message: '填写对应合法的 IP CIDR (必须带子网掩码), 注意区分 IPV4 与 IPV6',
         validator: (val: string) => {
           if (vendor === VendorEnum.AWS) {
             return validateIpCidr(data[val]) === IpType.cidr;
@@ -125,8 +120,7 @@ export const securityRuleValidators = (
       },
       {
         trigger: 'blur',
-        message:
-          '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
+        message: '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
         validator: (val: string | number) => {
           return data.protocol === '*' || isPortAvailable(val);
         },
@@ -135,8 +129,7 @@ export const securityRuleValidators = (
     source_port_range: [
       {
         trigger: 'blur',
-        message:
-          '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
+        message: '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
         validator: isPortAvailable,
       },
     ],
@@ -164,11 +157,11 @@ export const isPortAvailable = (val: string | number) => {
   if (/^ALL$/.test(port) || +port === 0) return true;
   if (/,/g.test(port)) {
     const nums = port.split(/,/);
-    return !nums.some(num => +num < 0 || +num > 65535);
+    return !nums.some((num) => +num < 0 || +num > 65535);
   }
   if (/-/g.test(port)) {
     const nums = port.split(/-/);
-    return !nums.some(num => +num < 0 || +num > 65535);
+    return !nums.some((num) => +num < 0 || +num > 65535);
   }
   return +port >= 0 && +port <= 65535;
 };

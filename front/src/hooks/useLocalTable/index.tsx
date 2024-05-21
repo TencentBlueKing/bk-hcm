@@ -8,7 +8,7 @@ export interface IProp {
   data: Array<any>;
   columns: Array<Column>;
   searchData: Array<ISearchItem>;
-};
+}
 
 export const useLocalTable = (props: IProp) => {
   const CommonLocalTable = defineComponent({
@@ -24,18 +24,10 @@ export const useLocalTable = (props: IProp) => {
         <>
           <section class='operation-wrap'>
             {slots.tab?.()}
-            <SearchSelect
-              class='common-search-selector w400'
-              v-model={searchVal.value}
-              data={props.searchData}
-            />
+            <SearchSelect class='common-search-selector w400' v-model={searchVal.value} data={props.searchData} />
           </section>
           <Loading loading={isLoading.value}>
-          <Table
-              data={props.data}
-              columns={props.columns}
-              pagination={pagination}
-            />
+            <Table data={props.data} columns={props.columns} pagination={pagination} />
           </Loading>
         </>
       );

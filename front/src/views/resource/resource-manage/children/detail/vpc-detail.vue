@@ -9,27 +9,12 @@ import VPCRoute from '../components/vpc/vpc-route.vue';
 import VPCSubnet from '../components/vpc/vpc-subnet.vue';
 import bus from '@/common/bus';
 
-import {
-  ref,
-  inject,
-  computed,
-  watch,
-} from 'vue';
-import {
-  InfoBox,
-  Message,
-} from 'bkui-vue';
-import {
-  useRoute,
-  useRouter,
-} from 'vue-router';
-import {
-  useI18n,
-} from 'vue-i18n';
+import { ref, inject, computed, watch } from 'vue';
+import { InfoBox, Message } from 'bkui-vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import useDetail from '../../hooks/use-detail';
-import {
-  useResourceStore,
-} from '@/store/resource';
+import { useResourceStore } from '@/store/resource';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { VendorEnum } from '@/common/constant';
@@ -120,32 +105,26 @@ const VPCTabs = ref([
 const authVerifyData: any = inject('authVerifyData');
 const isResourcePage: any = inject('isResourcePage');
 
-const actionName = computed(() => {   // 资源下没有业务ID
+const actionName = computed(() => {
+  // 资源下没有业务ID
   return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
 });
 
 const resourceStore = useResourceStore();
 const route = useRoute();
 const router = useRouter();
-const {
-  t,
-} = useI18n();
+const { t } = useI18n();
 
 // 权限弹窗 bus通知最外层弹出
 const showAuthDialog = (authActionName: string) => {
   bus.$emit('auth', authActionName);
 };
 
-const {
-  loading,
-  detail,
-} = useDetail(
-  'vpcs',
-  route.query.id as string,
-  (detail: any) => {
-    switch (detail.vendor) {
-      case 'tcloud':
-        VPCFields.value.push(...[
+const { loading, detail } = useDetail('vpcs', route.query.id as string, (detail: any) => {
+  switch (detail.vendor) {
+    case 'tcloud':
+      VPCFields.value.push(
+        ...[
           {
             name: '默认私有网络',
             prop: 'is_default',
@@ -156,7 +135,8 @@ const {
           {
             name: 'DNS服务器',
             prop: 'dns_server_set',
-            tipsContent: '腾讯云默认DNS为：183.60.83.19，183.60.82.98，如果不使用腾讯云默认DNS，将无法使用内部服务，如windows激活、NTP、YUM等',
+            tipsContent:
+              '腾讯云默认DNS为：183.60.83.19，183.60.82.98，如果不使用腾讯云默认DNS，将无法使用内部服务，如windows激活、NTP、YUM等',
           },
           {
             name: '本地域名',
@@ -175,10 +155,12 @@ const {
             prop: 'region',
             render: (val: string) => getRegionName(VendorEnum.TCLOUD, val),
           },
-        ]);
-        break;
-      case 'aws':
-        VPCFields.value.push(...[
+        ],
+      );
+      break;
+    case 'aws':
+      VPCFields.value.push(
+        ...[
           {
             name: '状态',
             prop: 'state',
@@ -213,10 +195,12 @@ const {
             prop: 'region',
             render: (val: string) => getRegionName(VendorEnum.AWS, val),
           },
-        ]);
-        break;
-      case 'azure':
-        VPCFields.value.push(...[
+        ],
+      );
+      break;
+    case 'azure':
+      VPCFields.value.push(
+        ...[
           {
             name: '资源组',
             prop: 'resource_group_name',
@@ -233,11 +217,13 @@ const {
               return val.length > 0 ? val : 'Azure提供的DNS服务';
             },
           },
-        ]);
-        VPCTabs.value.pop();
-        break;
-      case 'gcp':
-        VPCFields.value.push(...[
+        ],
+      );
+      VPCTabs.value.pop();
+      break;
+    case 'gcp':
+      VPCFields.value.push(
+        ...[
           {
             name: '是否默认创建子网',
             prop: 'auto_create_subnetworks',
@@ -265,11 +251,13 @@ const {
             prop: 'region',
             render: (val: string) => getRegionName(VendorEnum.GCP, val),
           },
-        ]);
-        VPCTabs.value.shift();
-        break;
-      case 'huawei':
-        VPCFields.value.push(...[
+        ],
+      );
+      VPCTabs.value.shift();
+      break;
+    case 'huawei':
+      VPCFields.value.push(
+        ...[
           {
             name: '状态',
             prop: 'status',
@@ -279,24 +267,32 @@ const {
             prop: 'region',
             render: (val: string) => getRegionName(VendorEnum.HUAWEI, val),
           },
-        ]);
-        break;
-    }
-  },
-);
+        ],
+      );
+      break;
+  }
+});
 
 const vpcRelateSubnetCount = ref(0);
-watch(() => detail.value.id, (val) => {
-  resourceStore.list({
-    page: { count: true },
-    filter: {
-      op: 'and',
-      rules: [{ field: 'vpc_id', op: 'in', value: [val] }],
-    },
-  }, 'subnets').then((res: any) => {
-    vpcRelateSubnetCount.value = res.data.count;
-  });
-});
+watch(
+  () => detail.value.id,
+  (val) => {
+    resourceStore
+      .list(
+        {
+          page: { count: true },
+          filter: {
+            op: 'and',
+            rules: [{ field: 'vpc_id', op: 'in', value: [val] }],
+          },
+        },
+        'subnets',
+      )
+      .then((res: any) => {
+        vpcRelateSubnetCount.value = res.data.count;
+      });
+  },
+);
 
 // VPC删除只需要判断 vpc 下是否有子网
 const disabledOption = computed(() => {
@@ -309,20 +305,23 @@ const disabledOption = computed(() => {
 });
 const bkTooltipsOptions = computed(() => {
   // 无权限
-  if (!authVerifyData.value?.permissionAction?.[actionName.value]) return {
-    content: '当前用户无权限操作该按钮',
-    disabled: authVerifyData.value.permissionAction[actionName.value],
-  };
+  if (!authVerifyData.value?.permissionAction?.[actionName.value])
+    return {
+      content: '当前用户无权限操作该按钮',
+      disabled: authVerifyData.value.permissionAction[actionName.value],
+    };
   // 资源下，是否分配业务
-  if (isResourcePage.value && detail.value?.bk_biz_id !== -1) return {
-    content: '该VPC已分配到业务，仅可在业务下操作',
-    disabled: detail.value.bk_biz_id === -1,
-  };
+  if (isResourcePage.value && detail.value?.bk_biz_id !== -1)
+    return {
+      content: '该VPC已分配到业务，仅可在业务下操作',
+      disabled: detail.value.bk_biz_id === -1,
+    };
   // 业务/资源下，vpc下是否有关联子网
-  if (vpcRelateSubnetCount.value > 0) return {
-    content: `该vpc关联了 ${vpcRelateSubnetCount.value} 个子网，不可直接删除`,
-    disabled: !(vpcRelateSubnetCount.value > 0),
-  };
+  if (vpcRelateSubnetCount.value > 0)
+    return {
+      content: `该vpc关联了 ${vpcRelateSubnetCount.value} 个子网，不可直接删除`,
+      disabled: !(vpcRelateSubnetCount.value > 0),
+    };
 
   return null;
 });
@@ -380,18 +379,13 @@ const handleDeleteVpc = (data: any) => {
     contentAlign: 'center',
     extCls: 'delete-resource-infobox',
     onConfirm() {
-      resourceStore
-        .delete(
-          'vpcs',
-          data.id,
-        )
-        .then(() => {
-          Message({
-            theme: 'success',
-            message: '删除成功',
-          });
-          router.back();
+      resourceStore.delete('vpcs', data.id).then(() => {
+        Message({
+          theme: 'success',
+          message: '删除成功',
         });
+        router.back();
+      });
     },
   });
   //   }
@@ -405,8 +399,13 @@ const handleDeleteVpc = (data: any) => {
       VPC：（{{ detail.id }}）
       <template #right>
         <div @click="showAuthDialog(actionName)">
-          <bk-button class="w100 ml10" theme="primary" @click="handleDeleteVpc(detail)"
-                     :disabled="disabledOption" v-bk-tooltips="bkTooltipsOptions || { disabled: true }">
+          <bk-button
+            class="w100 ml10"
+            theme="primary"
+            @click="handleDeleteVpc(detail)"
+            :disabled="disabledOption"
+            v-bk-tooltips="bkTooltipsOptions || { disabled: true }"
+          >
             {{ t('删除') }}
           </bk-button>
         </div>

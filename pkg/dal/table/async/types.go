@@ -27,7 +27,10 @@ import (
 
 // Reason define async flow reason
 type Reason struct {
-	Message string `json:"message"`
+	Message  string `json:"message,omitempty"`
+	PreState string `json:"pre_state,omitempty"`
+	// 改为rollback的次数
+	RollbackCount uint `json:"rollback_count,omitempty"`
 }
 
 // Scan is used to decode raw message which is read from db into Reason.

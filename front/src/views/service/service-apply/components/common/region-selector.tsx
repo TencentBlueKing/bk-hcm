@@ -33,7 +33,8 @@ export default defineComponent({
     });
 
     watch(
-      [() => props.vendor], async ([vendor]) => {
+      [() => props.vendor],
+      async ([vendor]) => {
         if (!vendor) {
           list.value = [];
           return;
@@ -107,11 +108,11 @@ export default defineComponent({
                 op: QueryRuleOPEnum.EQ,
                 value: 'opt-in-not-required',
               },
-            // {
-            //   field: 'account_id',
-            //   op: QueryRuleOPEnum.EQ,
-            //   value: props.accountId,
-            // },
+              // {
+              //   field: 'account_id',
+              //   op: QueryRuleOPEnum.EQ,
+              //   value: props.accountId,
+              // },
             ];
             break;
           }
@@ -158,11 +159,10 @@ export default defineComponent({
         };
 
         const details = result?.data?.details ?? [];
-        list.value = details
-          .map((item: any) => ({
-            id: item[dataIdKey],
-            name: getName(item[dataIdKey], item[dataNameKey]) || item[dataIdKey],
-          }));
+        list.value = details.map((item: any) => ({
+          id: item[dataIdKey],
+          name: getName(item[dataIdKey], item[dataNameKey]) || item[dataIdKey],
+        }));
         hostStore.regionList = details;
 
         loading.value = false;
@@ -177,15 +177,12 @@ export default defineComponent({
         clearable={false}
         filterable={true}
         modelValue={selected.value}
-        onUpdate:modelValue={val => selected.value = val}
+        onUpdate:modelValue={(val) => (selected.value = val)}
         loading={loading.value}
-        {...{ attrs }}
-      >
-        {
-          list.value.map(({ id, name }: IOption) => (
-            <Option key={id} value={id} label={name}></Option>
-          ))
-        }
+        {...{ attrs }}>
+        {list.value.map(({ id, name }: IOption) => (
+          <Option key={id} value={id} label={name}></Option>
+        ))}
       </Select>
     );
   },
