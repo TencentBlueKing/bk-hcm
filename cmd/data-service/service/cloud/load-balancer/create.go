@@ -535,14 +535,14 @@ func (svc *lbSvc) BatchCreateListener(cts *rest.Contexts) (any, error) {
 
 	switch vendor {
 	case enumor.TCloud:
-		return batchCreateListener(cts, svc)
+		return batchCreateListener[corelb.TCloudListenerExtension](cts, svc)
 	default:
 		return nil, errf.New(errf.InvalidParameter, "unsupported vendor: "+string(vendor))
 	}
 }
 
-func batchCreateListener(cts *rest.Contexts, svc *lbSvc) (any, error) {
-	req := new(dataproto.ListenerBatchCreateReq)
+func batchCreateListener[T corelb.ListenerExtension](cts *rest.Contexts, svc *lbSvc) (any, error) {
+	req := new(dataproto.ListenerBatchCreateReq[T])
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -554,6 +554,12 @@ func batchCreateListener(cts *rest.Contexts, svc *lbSvc) (any, error) {
 	result, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
 		models := make([]*tablelb.LoadBalancerListenerTable, 0, len(req.Listeners))
 		for _, item := range req.Listeners {
+			ext, err := json.MarshalToString(item.Extension)
+			if err != nil {
+				logs.Errorf("fail to marshal listener extension to json, err: %v, extension: %+v, rid: %s",
+					err, ext, cts.Kit.Rid)
+				return nil, err
+			}
 			models = append(models, &tablelb.LoadBalancerListenerTable{
 				CloudID:       item.CloudID,
 				Name:          item.Name,
@@ -565,6 +571,7 @@ func batchCreateListener(cts *rest.Contexts, svc *lbSvc) (any, error) {
 				Protocol:      item.Protocol,
 				Port:          item.Port,
 				DefaultDomain: item.DefaultDomain,
+				Extension:     types.JsonField(ext),
 				Creator:       cts.Kit.User,
 				Reviser:       cts.Kit.User,
 			})

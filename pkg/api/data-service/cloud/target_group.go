@@ -302,23 +302,21 @@ func (req *TGListenerRelStatusUpdateReq) Validate() error {
 
 // -------------------------- Create Listener --------------------------
 
+// TCloudListenerBatchCreateReq ...
+type TCloudListenerBatchCreateReq = ListenerBatchCreateReq[corelb.TCloudListenerExtension]
+
 // ListenerBatchCreateReq listener batch create req.
-type ListenerBatchCreateReq struct {
-	Listeners []ListenersCreateReq `json:"listeners" validate:"required,min=1"`
+type ListenerBatchCreateReq[T corelb.ListenerExtension] struct {
+	Listeners []ListenersCreateReq[T] `json:"listeners" validate:"required,min=1,dive,required"`
 }
 
 // Validate 验证监听器批量创建的参数
-func (req *ListenerBatchCreateReq) Validate() error {
-	for _, item := range req.Listeners {
-		if err := item.Validate(); err != nil {
-			return errf.NewFromErr(errf.InvalidParameter, err)
-		}
-	}
+func (req *ListenerBatchCreateReq[T]) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
 // ListenersCreateReq listener create req.
-type ListenersCreateReq struct {
+type ListenersCreateReq[Extension corelb.ListenerExtension] struct {
 	CloudID       string              `json:"cloud_id" validate:"required"`
 	Name          string              `json:"name" validate:"required"`
 	Vendor        enumor.Vendor       `json:"vendor" validate:"required"`
@@ -329,10 +327,11 @@ type ListenersCreateReq struct {
 	Protocol      enumor.ProtocolType `json:"protocol" validate:"required"`
 	Port          int64               `json:"port" validate:"required"`
 	DefaultDomain string              `json:"default_domain" validate:"omitempty"`
+	Extension     *Extension          `json:"extension"`
 }
 
 // Validate 验证监听器创建参数
-func (req *ListenersCreateReq) Validate() error {
+func (req *ListenersCreateReq[T]) Validate() error {
 	return validator.Validate.Struct(req)
 }
 

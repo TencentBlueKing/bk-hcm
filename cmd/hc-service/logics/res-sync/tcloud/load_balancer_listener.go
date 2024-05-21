@@ -189,11 +189,11 @@ func (cli *client) createListener(kt *kit.Kit, syncOpt *SyncListenerOfSingleLBOp
 	if len(addSlice) == 0 {
 		return nil, nil
 	}
-	dbListeners := make([]dataproto.ListenersCreateReq, 0, len(addSlice))
+	dbListeners := make([]dataproto.ListenersCreateReq[corelb.TCloudListenerExtension], 0, len(addSlice))
 	dbRules := make([]dataproto.ListenerWithRuleCreateReq, 0)
 	for _, lbl := range addSlice {
 		if lbl.GetProtocol().IsLayer7Protocol() {
-			dbListeners = append(dbListeners, dataproto.ListenersCreateReq{
+			dbListeners = append(dbListeners, dataproto.ListenersCreateReq[corelb.TCloudListenerExtension]{
 				CloudID:       lbl.GetCloudID(),
 				Name:          cvt.PtrToVal(lbl.ListenerName),
 				Vendor:        enumor.TCloud,
@@ -204,7 +204,10 @@ func (cli *client) createListener(kt *kit.Kit, syncOpt *SyncListenerOfSingleLBOp
 				Protocol:      lbl.GetProtocol(),
 				Port:          cvt.PtrToVal(lbl.Port),
 				DefaultDomain: getDefaultDomain(lbl),
-			})
+				Extension: &corelb.TCloudListenerExtension{
+					Certificate: convCert(lbl.Certificate),
+					EndPort:     lbl.EndPort,
+				}})
 			// for layer 7 only create listeners itself
 			continue
 		}
@@ -231,7 +234,7 @@ func (cli *client) createListener(kt *kit.Kit, syncOpt *SyncListenerOfSingleLBOp
 	createdIDs := make([]string, 0, len(addSlice))
 	if len(dbListeners) > 0 {
 		lblCreated, err := cli.dbCli.TCloud.LoadBalancer.BatchCreateTCloudListener(kt,
-			&dataproto.ListenerBatchCreateReq{Listeners: dbListeners})
+			&dataproto.TCloudListenerBatchCreateReq{Listeners: dbListeners})
 		if err != nil {
 			logs.Errorf("fail to create listener while sync, err: %v syncOpt: %+v, rid: %s",
 				err, syncOpt, kt.Rid)
@@ -271,6 +274,7 @@ func (cli *client) updateListener(kt *kit.Kit, bizID int64, updateMap map[string
 			DefaultDomain: getDefaultDomain(lbl),
 			Extension: &corelb.TCloudListenerExtension{
 				Certificate: convCert(lbl.Certificate),
+				EndPort:     lbl.EndPort,
 			},
 		})
 	}
@@ -306,6 +310,9 @@ func isListenerChange(cloud typeslb.TCloudListener, db corelb.TCloudListener) bo
 
 	// 通用字段
 	if cvt.PtrToVal(cloud.ListenerName) != db.Name {
+		return true
+	}
+	if cvt.PtrToVal(cloud.EndPort) != cvt.PtrToVal(db.Extension.EndPort) {
 		return true
 	}
 	switch cloud.GetProtocol() {
