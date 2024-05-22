@@ -2,7 +2,6 @@ import { defineComponent, reactive } from 'vue';
 // import components
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import SubnetPreviewDialog from '../cvm/children/SubnetPreviewDialog';
-import VpcPreviewDialog from '../cvm/children/VpcPreviewDialog';
 import LbSpecTypeSelectDialog from '@/views/business/load-balancer/components/LbSpecTypeDialog';
 // import custom hooks
 import useBindEip from './hooks/useBindEip';
@@ -38,11 +37,11 @@ export default defineComponent({
       name: '',
       vendor: null,
       account_type: 'STANDARD',
+      slaType: '0',
     });
 
     // use custom hooks
-    const { vpcData, isVpcPreviewDialogShow, subnetData, isSubnetPreviewDialogShow, ApplyClbForm, formRef } =
-      useRenderForm(formModel);
+    const { subnetData, isSubnetPreviewDialogShow, ApplyClbForm, formRef } = useRenderForm(formModel);
     const { BindEipDialog } = useBindEip(formModel);
     const { ApplyClbBottomBar } = useBottomBar(formModel, formRef);
     useHandleParams(formModel, formRef);
@@ -60,11 +59,6 @@ export default defineComponent({
         {/* bottom */}
         <ApplyClbBottomBar />
 
-        <VpcPreviewDialog
-          isShow={isVpcPreviewDialogShow.value}
-          data={vpcData.value}
-          handleClose={() => (isVpcPreviewDialogShow.value = false)}
-        />
         <SubnetPreviewDialog
           isShow={isSubnetPreviewDialogShow.value}
           data={subnetData.value}

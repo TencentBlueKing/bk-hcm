@@ -163,8 +163,8 @@ export default (formModel: ApplyClbModel) => {
     () => formModel.vip_isp,
     () => {
       const { zones, address_ip_version, vip_isp, region } = formModel;
+      specAvailabilitySet.value = [];
       if (!vip_isp) {
-        specAvailabilitySet.value = [];
         formModel.sla_type = 'shared';
         return;
       }
@@ -177,16 +177,25 @@ export default (formModel: ApplyClbModel) => {
     },
   );
 
-  watch(specAvailabilitySet, (val) => {
-    if (val) {
-      bus.$emit(
-        'updateSpecAvailabilitySet',
-        val.filter(({ SpecType }) => SpecType !== 'shared'),
-      );
-    } else {
-      Message({ theme: 'warning', message: '当前地域下无可用规格, 请切换地域' });
-    }
-  });
+  watch(
+    specAvailabilitySet,
+    (val) => {
+      // 重置 sla_type
+      formModel.slaType = '0';
+      formModel.sla_type = 'shared';
+      if (val) {
+        bus.$emit(
+          'updateSpecAvailabilitySet',
+          val.filter(({ SpecType }) => SpecType !== 'shared'),
+        );
+      } else {
+        Message({ theme: 'warning', message: '当前地域下无可用规格, 请切换地域' });
+      }
+    },
+    {
+      deep: true,
+    },
+  );
 
   watch(
     formModel,
