@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0016,HCMVER=v1.4.4
 
     Notes: 添加申请单来源字段
 */
@@ -36,5 +36,8 @@ update application set source ='itsm' where source='';
 alter table application drop key idx_uk_sn;
 alter table application
     add constraint idx_uk_source_sn unique (source, sn);
+
+CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
+SELECT 'v1.4.4' as `hcm_ver`, '0016' as `sql_ver`;
 
 COMMIT
