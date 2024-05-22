@@ -2,7 +2,6 @@ import { computed, defineComponent, ref, watch } from 'vue';
 // import components
 import { Button, Form, Input, Select, Slider } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
-import { BkButtonGroup } from 'bkui-vue/lib/button';
 import { EditLine, Plus } from 'bkui-vue/lib/icon';
 import ZoneSelector from '@/components/zone-selector/index.vue';
 import PrimaryStandZoneSelector from '../../components/common/PrimaryStandZoneSelector';
@@ -12,6 +11,7 @@ import InputNumber from '@/components/input-number';
 import ConditionOptions from '../../components/common/condition-options.vue';
 import CommonCard from '@/components/CommonCard';
 import VpcReviewPopover from '../../components/common/VpcReviewPopover';
+import SelectedItemPreviewComp from '@/components/SelectedItemPreviewComp';
 // import types
 import { type ISubnetItem } from '../../cvm/children/SubnetPreviewDialog';
 import type { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
@@ -96,6 +96,12 @@ export default (formModel: ApplyClbModel) => {
       },
     ],
   };
+
+  // change-handle - 更新 sla_type
+  const handleSlaTypeChange = (v: '0' | '1') => {
+    if (v === '0') formModel.sla_type = 'shared';
+  };
+
   // form item options
   const formItemOptions = computed(() => [
     {
@@ -111,7 +117,7 @@ export default (formModel: ApplyClbModel) => {
             content: () => (
               <BkRadioGroup v-model={formModel.load_balancer_type}>
                 {LOAD_BALANCER_TYPE.map(({ label, value }) => (
-                  <BkRadioButton label={value} class='w120'>
+                  <BkRadioButton label={value} class='w110'>
                     {t(label)}
                   </BkRadioButton>
                 ))}
@@ -131,7 +137,7 @@ export default (formModel: ApplyClbModel) => {
                   return (
                     <BkRadioButton
                       label={value}
-                      class='w120'
+                      class='w110'
                       disabled={disabled}
                       v-bk-tooltips={{
                         content: t('当前地域不支持IPv6 NAT64'),
@@ -171,7 +177,7 @@ export default (formModel: ApplyClbModel) => {
           content: () => (
             <div class='flex-row'>
               {!isIntranet.value && (
-                <Select v-model={formModel.zoneType} clearable={false} filterable={false}>
+                <Select v-model={formModel.zoneType} clearable={false} filterable={false} class='w220'>
                   {ZONE_TYPE.map(({ label, value, isDisabled }) => {
                     const disabled =
                       typeof isDisabled === 'function' ? isDisabled(formModel.region, formModel.account_type) : false;
@@ -293,42 +299,57 @@ export default (formModel: ApplyClbModel) => {
             );
           },
         },
-        {
-          label: '负载均衡规格类型',
-          required: true,
-          property: 'sla_type',
-          description:
-            '共享型实例：按照规格提供性能保障，单实例最大支持并发连接数5万、每秒新建连接数5000、每秒查询数（QPS）5000。\n性能容量型实例：按照规格提供性能保障，单实例最大可支持并发连接数1000万、每秒新建连接数100万、每秒查询数（QPS）30万。',
-          hidden: isIntranet.value,
-          content: () => (
-            <>
-              <BkButtonGroup>
+        [
+          {
+            label: '负载均衡规格类型',
+            required: true,
+            property: 'slaType',
+            description:
+              '共享型实例：按照规格提供性能保障，单实例最大支持并发连接数5万、每秒新建连接数5000、每秒查询数（QPS）5000。\n性能容量型实例：按照规格提供性能保障，单实例最大可支持并发连接数1000万、每秒新建连接数100万、每秒查询数（QPS）30万。',
+            hidden: isIntranet.value,
+            content: () => (
+              <Select
+                v-model={formModel.slaType}
+                filterable={false}
+                clearable={false}
+                class='w220'
+                onChange={handleSlaTypeChange}>
+                <Option id='0' name={t('共享型')} />
+                <Option
+                  id='1'
+                  name={t('性能容量型')}
+                  disabled={!formModel.vip_isp}
+                  v-bk-tooltips={{ content: '请选择运营商类型', disabled: !!formModel.vip_isp, boundary: 'parent' }}
+                />
+              </Select>
+            ),
+          },
+          {
+            label: '实例规格',
+            required: true,
+            property: 'sla_type',
+            hidden: formModel.slaType !== '1',
+            content: () => {
+              if (formModel.sla_type !== 'shared') {
+                return (
+                  <SelectedItemPreviewComp
+                    content={CLB_SPECS[formModel.sla_type]}
+                    onClick={() => bus.$emit('showLbSpecTypeSelectDialog')}
+                  />
+                );
+              }
+              return (
                 <Button
-                  selected={formModel.sla_type === 'shared'}
-                  onClick={() => (formModel.sla_type = 'shared')}
-                  class='w120'>
-                  {t('共享型')}
-                </Button>
-                <Button
-                  selected={formModel.sla_type !== 'shared'}
                   onClick={() => bus.$emit('showLbSpecTypeSelectDialog')}
                   disabled={!formModel.vip_isp}
-                  v-bk-tooltips={{ content: '请选择运营商类型', disabled: !!formModel.vip_isp }}
-                  class='w120'>
-                  {t('性能容量型')}
+                  v-bk-tooltips={{ content: '请选择运营商类型', disabled: !!formModel.vip_isp }}>
+                  <Plus class='f24' />
+                  {t('选择实例规格')}
                 </Button>
-              </BkButtonGroup>
-              {formModel.sla_type !== 'shared' && (
-                <div class='flex-row align-items-center'>
-                  <span class='text-desc'>规格为:</span>
-                  <Button text theme='primary' class='ml10' onClick={() => bus.$emit('showLbSpecTypeSelectDialog')}>
-                    {CLB_SPECS[formModel.sla_type]} <EditLine class='ml5 text-link' />
-                  </Button>
-                </div>
-              )}
-            </>
-          ),
-        },
+              );
+            },
+          },
+        ],
         {
           label: '弹性公网 IP',
           // 弹性IP，仅内网可绑定。公网类型无法指定IP。绑定弹性IP后，内网CLB当做公网CLB使用
