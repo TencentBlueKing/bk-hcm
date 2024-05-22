@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/api/core/cloud/cvm"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
@@ -163,6 +164,18 @@ type ListCvmsBySecurityGroupResult struct {
 type ListCvmsBySecurityGroupResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          *ListCvmsBySecurityGroupResult `json:"data"`
+}
+
+// ListLoadBalancersBySecurityGroupResult define list load balancer by security group result.
+type ListLoadBalancersBySecurityGroupResult struct {
+	Count   uint64                     `json:"count"`
+	Details []*corelb.BaseLoadBalancer `json:"details"`
+}
+
+// ListLoadBalancersBySecurityGroupResp define list load balancer by security group resp.
+type ListLoadBalancersBySecurityGroupResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *ListLoadBalancersBySecurityGroupResult `json:"data"`
 }
 
 // -------------------------- Delete --------------------------

@@ -41,8 +41,32 @@ type SecurityGroupClient struct {
 	client rest.ClientInterface
 }
 
+// ListLoadBalancersBySecurityGroup list load balancers by security group.
+func (cli *SecurityGroupClient) ListLoadBalancersBySecurityGroup(ctx context.Context,
+	h http.Header, id string, req *core.ListReq) (*protocloud.ListLoadBalancersBySecurityGroupResult, error) {
+	resp := new(protocloud.ListLoadBalancersBySecurityGroupResp)
+
+	err := cli.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/security_group/%s/load_balancer/list", id).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
 // ListCvmsBySecurityGroup list cvm by security group.
-func (cli *SecurityGroupClient) ListCvmsBySecurityGroup(ctx context.Context, h http.Header, id string, req *core.ListReq) (*protocloud.ListCvmsBySecurityGroupResult, error) {
+func (cli *SecurityGroupClient) ListCvmsBySecurityGroup(ctx context.Context, h http.Header,
+	id string, req *core.ListReq) (*protocloud.ListCvmsBySecurityGroupResult, error) {
 	resp := new(protocloud.ListCvmsBySecurityGroupResp)
 
 	err := cli.client.Post().

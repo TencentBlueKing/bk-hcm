@@ -20,6 +20,7 @@
 package securitygroup
 
 import (
+	proto "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -29,6 +30,46 @@ import (
 	"hcm/pkg/tools/hooks/handler"
 )
 
+// ListLoadBalancersBySecurityGroup lists load balancers by security group
+func (svc *securityGroupSvc) ListLoadBalancersBySecurityGroup(cts *rest.Contexts) (interface{}, error) {
+	id := cts.PathParameter("id").String()
+	if len(id) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	req := new(proto.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	_, noPerm, err := handler.ListResourceAuthRes(
+		cts,
+		&handler.ListAuthResOption{
+			Authorizer: svc.authorizer,
+			ResType:    meta.LoadBalancer,
+			Action:     meta.Find,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if noPerm {
+		return &core.ListResult{Count: 0, Details: make([]interface{}, 0)}, nil
+	}
+
+	return svc.client.DataService().Global.SecurityGroup.ListLoadBalancersBySecurityGroup(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		id,
+		&core.ListReq{
+			Page:   req.Page,
+			Filter: req.Filter,
+		})
+
+}
+
 // ListCvmsBySecurityGroup lists cvms by security group
 func (svc *securityGroupSvc) ListCvmsBySecurityGroup(cts *rest.Contexts) (interface{}, error) {
 	id := cts.PathParameter("id").String()
@@ -36,7 +77,7 @@ func (svc *securityGroupSvc) ListCvmsBySecurityGroup(cts *rest.Contexts) (interf
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	req := new(core.ListReq)
+	req := new(proto.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -69,5 +110,8 @@ func (svc *securityGroupSvc) ListCvmsBySecurityGroup(cts *rest.Contexts) (interf
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		id,
-		req)
+		&core.ListReq{
+			Page:   req.Page,
+			Filter: req.Filter,
+		})
 }

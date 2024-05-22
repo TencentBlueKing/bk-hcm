@@ -25,9 +25,12 @@ import (
 	"reflect"
 
 	"hcm/cmd/data-service/service/capability"
+	"hcm/cmd/data-service/service/cloud/cvm"
+	loadbalancer "hcm/cmd/data-service/service/cloud/load-balancer"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -40,6 +43,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/json"
 
 	"github.com/jmoiron/sqlx"
@@ -76,12 +80,79 @@ func initSecurityGroupService(cap *capability.Capability) {
 
 	// related resource
 	h.Add("ListCvmsBySecurityGroup", http.MethodPost, "/security_group/{id}/cvm/list", svc.ListCvmsBySecurityGroup)
+	h.Add("ListLoadBalancersBySecurityGroup", http.MethodPost, "/security_group/{id}/load_balancer/list",
+		svc.ListLoadBalancersBySecurityGroup)
 
 	h.Load(cap.WebService)
 }
 
 type securityGroupSvc struct {
 	dao dao.Set
+}
+
+// ListLoadBalancersBySecurityGroup list load balancer by security group.
+func (svc *securityGroupSvc) ListLoadBalancersBySecurityGroup(cts *rest.Contexts) (interface{}, error) {
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	id := cts.PathParameter("id").String()
+
+	// 后续如果有新接入的资源类型，需要把这段逻辑进行抽象
+	list, err := svc.dao.SGCommonRel().List(cts.Kit, &types.ListOption{
+		Fields: []string{"res_id"},
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				filter.AtomRule{Field: "security_group_id", Op: filter.Equal.Factory(), Value: id},
+				filter.AtomRule{Field: "res_type", Op: filter.Equal.Factory(), Value: enumor.LoadBalancerCloudResType},
+			},
+		},
+		Page: req.Page,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if req.Page.Count {
+		return &protocloud.ListLoadBalancersBySecurityGroupResult{
+			Count: list.Count,
+		}, nil
+	}
+	if len(list.Details) == 0 {
+		return &protocloud.ListLoadBalancersBySecurityGroupResult{
+			Details: nil,
+		}, nil
+	}
+
+	lbIDs := make([]string, 0, len(list.Details))
+	for _, one := range list.Details {
+		lbIDs = append(lbIDs, one.ResID)
+	}
+
+	result, err := svc.dao.LoadBalancer().ListInIDs(
+		cts.Kit,
+		&types.ListOption{
+			Filter: req.Filter,
+			Page:   req.Page,
+		},
+		lbIDs,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	details := make([]*corelb.BaseLoadBalancer, 0, len(result.Details))
+	for _, one := range result.Details {
+		details = append(details, loadbalancer.ConvTableToBaseLB(&one))
+	}
+
+	return &protocloud.ListLoadBalancersBySecurityGroupResult{
+		Details: details,
+	}, nil
 }
 
 // ListCvmsBySecurityGroup list cvm by security group.
@@ -132,41 +203,7 @@ func (svc *securityGroupSvc) ListCvmsBySecurityGroup(cts *rest.Contexts) (interf
 
 	details := make([]*corecvm.BaseCvm, 0, len(cvmList.Details))
 	for _, one := range cvmList.Details {
-		details = append(details, &corecvm.BaseCvm{
-			ID:                   one.ID,
-			CloudID:              one.CloudID,
-			Name:                 one.Name,
-			Vendor:               one.Vendor,
-			BkBizID:              one.BkBizID,
-			BkCloudID:            one.BkCloudID,
-			AccountID:            one.AccountID,
-			Region:               one.Region,
-			Zone:                 one.Zone,
-			CloudVpcIDs:          one.CloudVpcIDs,
-			VpcIDs:               one.VpcIDs,
-			CloudSubnetIDs:       one.CloudSubnetIDs,
-			SubnetIDs:            one.SubnetIDs,
-			CloudImageID:         one.CloudImageID,
-			ImageID:              one.ImageID,
-			OsName:               one.OsName,
-			Memo:                 one.Memo,
-			Status:               one.Status,
-			RecycleStatus:        one.RecycleStatus,
-			PrivateIPv4Addresses: one.PrivateIPv4Addresses,
-			PrivateIPv6Addresses: one.PrivateIPv6Addresses,
-			PublicIPv4Addresses:  one.PublicIPv4Addresses,
-			PublicIPv6Addresses:  one.PublicIPv6Addresses,
-			MachineType:          one.MachineType,
-			CloudCreatedTime:     one.CloudCreatedTime,
-			CloudLaunchedTime:    one.CloudLaunchedTime,
-			CloudExpiredTime:     one.CloudExpiredTime,
-			Revision: &core.Revision{
-				Creator:   one.Creator,
-				Reviser:   one.Reviser,
-				CreatedAt: one.CreatedAt.String(),
-				UpdatedAt: one.UpdatedAt.String(),
-			},
-		})
+		details = append(details, cvm.ConvTableToBaseCvm(&one))
 	}
 
 	return &protocloud.ListCvmsBySecurityGroupResult{
