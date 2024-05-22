@@ -25,6 +25,7 @@ import (
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
+	"hcm/pkg/api/core/cloud/cvm"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
@@ -150,6 +151,18 @@ type SecurityGroupExtListResult[T cloud.SecurityGroupExtension] struct {
 type SecurityGroupExtListResp[T cloud.SecurityGroupExtension] struct {
 	rest.BaseResp `json:",inline"`
 	Data          *SecurityGroupExtListResult[T] `json:"data"`
+}
+
+// ListCvmsBySecurityGroupResult define Cvms list by security group result.
+type ListCvmsBySecurityGroupResult struct {
+	Count   uint64         `json:"count"`
+	Details []*cvm.BaseCvm `json:"details"`
+}
+
+// ListCvmsBySecurityGroupResp define Cvms list by security group resp.
+type ListCvmsBySecurityGroupResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *ListCvmsBySecurityGroupResult `json:"data"`
 }
 
 // -------------------------- Delete --------------------------

@@ -27,6 +27,7 @@ import (
 	"hcm/cmd/data-service/service/capability"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
+	corecvm "hcm/pkg/api/core/cloud/cvm"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -73,11 +74,104 @@ func initSecurityGroupService(cap *capability.Capability) {
 	h.Add("BatchUpdateSecurityGroupCommonInfo", http.MethodPatch, "/security_groups/common/info/batch/update",
 		svc.BatchUpdateSecurityGroupCommonInfo)
 
+	// related resource
+	h.Add("ListCvmsBySecurityGroup", http.MethodPost, "/security_group/{id}/cvm/list", svc.ListCvmsBySecurityGroup)
+
 	h.Load(cap.WebService)
 }
 
 type securityGroupSvc struct {
 	dao dao.Set
+}
+
+// ListCvmsBySecurityGroup list cvm by security group.
+func (svc *securityGroupSvc) ListCvmsBySecurityGroup(cts *rest.Contexts) (interface{}, error) {
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	id := cts.PathParameter("id").String()
+
+	list, err := svc.dao.SGCvmRel().List(cts.Kit, &types.ListOption{
+		Fields: []string{"cvm_id"},
+		Filter: tools.EqualExpression("security_group_id", id),
+		Page:   req.Page,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if req.Page.Count {
+		return &protocloud.ListCvmsBySecurityGroupResult{
+			Count: list.Count,
+		}, nil
+	}
+
+	if len(list.Details) == 0 {
+		return &protocloud.ListCvmsBySecurityGroupResult{
+			Details: make([]*corecvm.BaseCvm, 0),
+		}, nil
+	}
+
+	cvmIDs := make([]string, 0, len(list.Details))
+	for _, one := range list.Details {
+		cvmIDs = append(cvmIDs, one.CvmID)
+	}
+
+	opt := &types.ListOption{
+		Filter: req.Filter,
+		Page:   req.Page,
+	}
+	cvmList, err := svc.dao.Cvm().ListInIDs(cts.Kit, opt, cvmIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	details := make([]*corecvm.BaseCvm, 0, len(cvmList.Details))
+	for _, one := range cvmList.Details {
+		details = append(details, &corecvm.BaseCvm{
+			ID:                   one.ID,
+			CloudID:              one.CloudID,
+			Name:                 one.Name,
+			Vendor:               one.Vendor,
+			BkBizID:              one.BkBizID,
+			BkCloudID:            one.BkCloudID,
+			AccountID:            one.AccountID,
+			Region:               one.Region,
+			Zone:                 one.Zone,
+			CloudVpcIDs:          one.CloudVpcIDs,
+			VpcIDs:               one.VpcIDs,
+			CloudSubnetIDs:       one.CloudSubnetIDs,
+			SubnetIDs:            one.SubnetIDs,
+			CloudImageID:         one.CloudImageID,
+			ImageID:              one.ImageID,
+			OsName:               one.OsName,
+			Memo:                 one.Memo,
+			Status:               one.Status,
+			RecycleStatus:        one.RecycleStatus,
+			PrivateIPv4Addresses: one.PrivateIPv4Addresses,
+			PrivateIPv6Addresses: one.PrivateIPv6Addresses,
+			PublicIPv4Addresses:  one.PublicIPv4Addresses,
+			PublicIPv6Addresses:  one.PublicIPv6Addresses,
+			MachineType:          one.MachineType,
+			CloudCreatedTime:     one.CloudCreatedTime,
+			CloudLaunchedTime:    one.CloudLaunchedTime,
+			CloudExpiredTime:     one.CloudExpiredTime,
+			Revision: &core.Revision{
+				Creator:   one.Creator,
+				Reviser:   one.Reviser,
+				CreatedAt: one.CreatedAt.String(),
+				UpdatedAt: one.UpdatedAt.String(),
+			},
+		})
+	}
+
+	return &protocloud.ListCvmsBySecurityGroupResult{
+		Details: details,
+	}, nil
 }
 
 // BatchCreateSecurityGroup create security group.

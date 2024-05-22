@@ -50,6 +50,7 @@ type Interface interface {
 	List(kt *kit.Kit, opt *types.ListOption) (*types.ListCvmDetails, error)
 	ListWithTx(kt *kit.Kit, tx *sqlx.Tx, opt *types.ListOption) (*types.ListCvmDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
+	ListInIDs(kt *kit.Kit, opt *types.ListOption, ids []string) (*types.ListCvmDetails, error)
 }
 
 var _ Interface = new(Dao)
@@ -187,6 +188,28 @@ func (dao Dao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tabl
 
 // List cvm.
 func (dao Dao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListCvmDetails, error) {
+	return dao.list(kt, opt, tools.DefaultSqlWhereOption)
+}
+
+// ListInIDs list cvm by id.
+func (dao Dao) ListInIDs(kt *kit.Kit, opt *types.ListOption, ids []string) (*types.ListCvmDetails, error) {
+	whereOpt := &filter.SQLWhereOption{
+		Priority: filter.Priority{"id"},
+		CrownedOption: &filter.CrownedOption{
+			CrownedOp: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "id",
+					Op:    filter.In.Factory(),
+					Value: ids,
+				},
+			},
+		},
+	}
+	return dao.list(kt, opt, whereOpt)
+}
+
+func (dao Dao) list(kt *kit.Kit, opt *types.ListOption, sqlOpt *filter.SQLWhereOption) (*types.ListCvmDetails, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
@@ -199,7 +222,10 @@ func (dao Dao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListCvmDetails, 
 		return nil, err
 	}
 
-	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if sqlOpt == nil {
+		sqlOpt = tools.DefaultSqlWhereOption
+	}
+	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(sqlOpt)
 	if err != nil {
 		return nil, err
 	}
