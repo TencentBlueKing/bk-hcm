@@ -102,6 +102,7 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 		enumor.LoadBalancerCloudResType:  SyncLoadBalancer,
 		enumor.RouteTableCloudResType:    SyncRouteTable,
 		enumor.SubAccountCloudResType:    SyncSubAccount,
+		enumor.TargetGroupCloudResType:   SyncTargetGroup,
 	}
 
 	for _, resType := range getSyncOrder() {
@@ -123,6 +124,7 @@ func getSyncOrder() []enumor.CloudResourceType {
 		enumor.SecurityGroupCloudResType,
 		enumor.CvmCloudResType,
 		enumor.CertCloudResType,
+		enumor.TargetGroupCloudResType,
 		enumor.LoadBalancerCloudResType,
 		enumor.RouteTableCloudResType,
 		enumor.SubAccountCloudResType,

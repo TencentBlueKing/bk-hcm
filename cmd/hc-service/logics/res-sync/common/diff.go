@@ -152,7 +152,9 @@ type CloudResType interface {
 		typeslb.TCloudClb |
 		typeslb.TCloudListener |
 		typeslb.TCloudUrlRule |
-		typeslb.Backend
+		typeslb.Backend |
+		typeslb.TargetGroupBackend |
+		typeslb.TargetGroup
 }
 
 // DBResType 本地资源类型
@@ -248,7 +250,8 @@ type DBResType interface {
 		corelb.TCloudLoadBalancer |
 		corelb.TCloudLbUrlRule |
 		corelb.TCloudListener |
-		corelb.BaseTarget
+		corelb.BaseTarget |
+		corelb.TargetGroup[corelb.TCloudTargetGroupExtension]
 }
 
 // Diff 对比云和db资源，划分出新增数据，更新数据，删除数据。

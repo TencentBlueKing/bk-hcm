@@ -66,20 +66,21 @@ func (req *TargetGroupCreateReq) Validate() error {
 
 // TargetBaseReq Target基本参数
 type TargetBaseReq struct {
-	ID               string          `json:"id" validate:"omitempty"`
-	InstType         enumor.InstType `json:"inst_type" validate:"required"`
-	CloudInstID      string          `json:"cloud_inst_id" validate:"required"`
-	Port             int64           `json:"port" validate:"required"`
-	Weight           *int64          `json:"weight" validate:"required"`
-	AccountID        string          `json:"account_id,omitempty" validate:"omitempty"`
-	TargetGroupID    string          `json:"target_group_id,omitempty" validate:"omitempty"`
-	InstName         string          `json:"inst_name,omitempty" validate:"omitempty"`
-	PrivateIPAddress []string        `json:"private_ip_address,omitempty" validate:"omitempty"`
-	PublicIPAddress  []string        `json:"public_ip_address,omitempty" validate:"omitempty"`
-	CloudVpcIDs      []string        `json:"cloud_vpc_ids,omitempty" validate:"omitempty"`
-	Zone             string          `json:"zone,omitempty" validate:"omitempty"`
-	NewPort          *int64          `json:"new_port,omitempty" validate:"omitempty"`
-	NewWeight        *int64          `json:"new_weight,omitempty" validate:"omitempty"`
+	ID                 string          `json:"id" validate:"omitempty"`
+	InstType           enumor.InstType `json:"inst_type" validate:"required"`
+	CloudInstID        string          `json:"cloud_inst_id" validate:"required"`
+	TargetGroupID      string          `json:"target_group_id,omitempty" validate:"omitempty"`
+	CloudTargetGroupID string          `json:"cloud_target_group_id,omitempty" validate:"omitempty"`
+	Port               int64           `json:"port" validate:"required"`
+	Weight             *int64          `json:"weight" validate:"required"`
+	AccountID          string          `json:"account_id,omitempty" validate:"omitempty"`
+	InstName           string          `json:"inst_name,omitempty" validate:"omitempty"`
+	PrivateIPAddress   []string        `json:"private_ip_address,omitempty" validate:"omitempty"`
+	PublicIPAddress    []string        `json:"public_ip_address,omitempty" validate:"omitempty"`
+	CloudVpcIDs        []string        `json:"cloud_vpc_ids,omitempty" validate:"omitempty"`
+	Zone               string          `json:"zone,omitempty" validate:"omitempty"`
+	NewPort            *int64          `json:"new_port,omitempty" validate:"omitempty"`
+	NewWeight          *int64          `json:"new_weight,omitempty" validate:"omitempty"`
 }
 
 // Validate validate req(目前仅支持CVM的实例类型)
@@ -109,13 +110,14 @@ type TCloudTargetGroupCreateReq = TargetGroupBatchCreateReq[corelb.TCloudTargetG
 
 // TargetGroupBatchCreate define target group batch create.
 type TargetGroupBatchCreate[Extension corelb.TargetGroupExtension] struct {
+	CloudID         string                 `json:"cloud_id" validate:"omitempty"`
 	Name            string                 `json:"name" validate:"required"`
 	Vendor          enumor.Vendor          `json:"vendor" validate:"required"`
 	AccountID       string                 `json:"account_id" validate:"required"`
 	BkBizID         int64                  `json:"bk_biz_id" validate:"required"`
 	Region          string                 `json:"region" validate:"required"`
 	Protocol        enumor.ProtocolType    `json:"protocol" validate:"required"`
-	Port            int64                  `json:"port" validate:"required"`
+	Port            int64                  `json:"port" validate:"omitempty"`
 	VpcID           string                 `json:"vpc_id" validate:"omitempty"`
 	CloudVpcID      string                 `json:"cloud_vpc_id" validate:"required"`
 	TargetGroupType enumor.TargetGroupType `json:"target_group_type" validate:"omitempty"`
@@ -200,24 +202,20 @@ func (req *TargetGroupUpdateReq) Validate() error {
 
 // TargetGroupExtUpdateReq ...
 type TargetGroupExtUpdateReq[T corelb.TargetGroupExtension] struct {
-	ID        string `json:"id" validate:"required"`
-	Name      string `json:"name"`
-	Vendor    string `json:"vendor"`
-	AccountID string `json:"account_id"`
-	BkBizID   int64  `json:"bk_biz_id"`
+	ID      string `json:"id" validate:"required"`
+	Name    string `json:"name"`
+	BkBizID int64  `json:"bk_biz_id"`
 
-	TargetGroupType enumor.TargetGroupType `json:"target_group_type"`
-	VpcID           string                 `json:"vpc_id"`
-	CloudVpcID      string                 `json:"cloud_vpc_id"`
-	Region          string                 `json:"region"`
-	Protocol        enumor.ProtocolType    `json:"protocol"`
-	Port            int64                  `json:"port"`
-	Weight          int64                  `json:"weight"`
-	HealthCheck     types.JsonField        `json:"health_check"`
+	VpcID       string                        `json:"vpc_id"`
+	CloudVpcID  string                        `json:"cloud_vpc_id"`
+	Region      string                        `json:"region"`
+	Protocol    enumor.ProtocolType           `json:"protocol"`
+	Port        int64                         `json:"port"`
+	Weight      *int64                        `json:"weight,omitempty"`
+	HealthCheck *corelb.TCloudHealthCheckInfo `json:"health_check"`
 
-	Memo           *string `json:"memo"`
-	*core.Revision `json:",inline"`
-	Extension      *T `json:"extension"`
+	Memo      *string `json:"memo"`
+	Extension *T      `json:"extension,omitempty"`
 }
 
 // Validate ...
@@ -226,18 +224,17 @@ func (req *TargetGroupExtUpdateReq[T]) Validate() error {
 }
 
 // TargetGroupBatchUpdateReq 目标组批量更新参数
-type TargetGroupBatchUpdateReq[T corelb.TargetGroupExtension] []*TargetGroupExtUpdateReq[T]
+type TargetGroupBatchUpdateReq[T corelb.TargetGroupExtension] struct {
+	TargetGroups []*TargetGroupExtUpdateReq[T] `json:"target_groups" validate:"required,min=1,dive,required"`
+}
 
 // Validate ...
 func (req *TargetGroupBatchUpdateReq[T]) Validate() error {
-	for _, r := range *req {
-		if err := r.Validate(); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return validator.Validate.Struct(req)
 }
+
+// TCloudTargetGroupBatchUpdateReq ...
+type TCloudTargetGroupBatchUpdateReq = TargetGroupBatchUpdateReq[corelb.TCloudTargetGroupExtension]
 
 // -------------------------- List Target Group --------------------------
 

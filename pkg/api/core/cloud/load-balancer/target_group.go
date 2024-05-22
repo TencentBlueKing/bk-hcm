@@ -68,6 +68,9 @@ type TargetGroupExtension interface {
 	TCloudTargetGroupExtension
 }
 
+// TCloudTargetGroup tcloud target group
+type TCloudTargetGroup = TargetGroup[TCloudTargetGroupExtension]
+
 // BaseTarget define base target.
 type BaseTarget struct {
 	ID                 string          `json:"id"`

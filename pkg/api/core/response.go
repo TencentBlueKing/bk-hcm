@@ -51,3 +51,10 @@ type BaseResp[T any] struct {
 	rest.BaseResp `json:",inline"`
 	Data          T `json:"data"`
 }
+
+// ListResultWithTotal generic list result with total count
+type ListResultWithTotal[T any] struct {
+	// total count not affected by page
+	TotalCount uint64 `json:"total_count"`
+	Details    []T    `json:"details"`
+}

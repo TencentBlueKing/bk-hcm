@@ -210,4 +210,10 @@ func (c *ClbClient) ListQuota(kt *kit.Kit, req *hcproto.TCloudListLoadBalancerQu
 
 	return common.Request[hcproto.TCloudListLoadBalancerQuotaReq, []typelb.TCloudLoadBalancerQuota](
 		c.client, http.MethodPost, kt, req, "/load_balancers/quota")
+
+}
+
+// SyncTargetGroup ...
+func (c *ClbClient) SyncTargetGroup(kt *kit.Kit, req *sync.TCloudSyncReq) error {
+	return common.RequestNoResp[sync.TCloudSyncReq](c.client, http.MethodPost, kt, req, "/target_groups/sync")
 }

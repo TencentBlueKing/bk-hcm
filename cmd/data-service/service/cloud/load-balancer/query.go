@@ -539,14 +539,59 @@ func (svc *lbSvc) ListTargetGroup(cts *rest.Contexts) (interface{}, error) {
 
 	details := make([]corelb.BaseTargetGroup, 0, len(result.Details))
 	for _, one := range result.Details {
-		tmpOne, err := convTableToBaseTargetGroup(cts.Kit, &one)
+		tmpOne, err := convTableToBaseTargetGroup(&one)
 		if err != nil {
+			logs.Errorf("fail convert db model to base target group, err: %v, rid: %s", err, cts.Kit.Rid)
 			continue
 		}
 		details = append(details, *tmpOne)
 	}
 
 	return &protocloud.TargetGroupListResult{Details: details}, nil
+}
+
+// ListTargetGroupExt list with vendor extension
+func (svc *lbSvc) ListTargetGroupExt(cts *rest.Contexts) (any, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	vendorFilter, err := tools.And(req.Filter, tools.RuleEqual("vendor", vendor))
+	if err != nil {
+		return nil, err
+	}
+	opt := &types.ListOption{
+		Fields: req.Fields,
+		Filter: vendorFilter,
+		Page:   req.Page,
+	}
+
+	result, err := svc.dao.LoadBalancerTargetGroup().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list target group extension failed, req: %v, err: %v, rid: %s", req, err, cts.Kit.Rid)
+		return nil, fmt.Errorf("failed to list target group, err: %v", err)
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+
+		details, err := convTableToTargetGroup(result.Details)
+		if err != nil {
+			return nil, err
+		}
+		return core.ListResultT[*corelb.TargetGroup[corelb.TCloudTargetGroupExtension]]{Details: details}, nil
+	default:
+		return nil, fmt.Errorf("unsupport vendor: %s", vendor)
+	}
 }
 
 // GetTargetGroup ...
@@ -578,22 +623,45 @@ func (svc *lbSvc) GetTargetGroup(cts *rest.Contexts) (any, error) {
 	tgInfo := result.Details[0]
 	switch tgInfo.Vendor {
 	case enumor.TCloud:
-		return convTableToBaseTargetGroup(cts.Kit, &tgInfo)
+		list, err := convTableToTargetGroup(result.Details)
+		if err != nil {
+			return nil, err
+		}
+		return list[0], nil
 	default:
 		return nil, fmt.Errorf("unsupport vendor: %s", vendor)
 	}
+
+}
+func convTableToTargetGroup[T corelb.TargetGroupExtension](models []tablelb.LoadBalancerTargetGroupTable) (
+	[]*corelb.TargetGroup[T], error) {
+
+	result := make([]*corelb.TargetGroup[T], 0, len(models))
+	for _, model := range models {
+		baseGroup, err := convTableToBaseTargetGroup(cvt.ValToPtr(model))
+		if err != nil {
+			logs.Errorf("fail to convert base target group to json, err: %v", err)
+			return nil, err
+		}
+		var ext T
+
+		if err := json.UnmarshalFromString(string(model.Extension), &ext); err != nil {
+			return nil, fmt.Errorf("fail to unmarshal target group extension, err: %v", err)
+		}
+		result = append(result, &corelb.TargetGroup[T]{BaseTargetGroup: *baseGroup, Extension: &ext})
+
+	}
+	return result, nil
 }
 
-func convTableToBaseTargetGroup(kt *kit.Kit, one *tablelb.LoadBalancerTargetGroupTable) (
-	*corelb.BaseTargetGroup, error) {
+func convTableToBaseTargetGroup(one *tablelb.LoadBalancerTargetGroupTable) (*corelb.BaseTargetGroup, error) {
 
 	var healthCheck *corelb.TCloudHealthCheckInfo
 	// 支持不返回该字段
 	if len(one.HealthCheck) != 0 {
 		err := json.UnmarshalFromString(string(one.HealthCheck), &healthCheck)
 		if err != nil {
-			logs.Errorf("unmarshal healthCheck failed, one: %+v, err: %v, rid: %s", one, err, kt.Rid)
-			return nil, err
+			return nil, fmt.Errorf("unmarshal healthCheck failed: %w", err)
 		}
 	}
 

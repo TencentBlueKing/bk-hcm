@@ -813,3 +813,49 @@ type TCloudLoadBalancerQuota struct {
 	// 配额数量。
 	QuotaLimit int64 `json:"quota_limit,omitnil"`
 }
+
+// ListTargetGroupOption ...
+type ListTargetGroupOption struct {
+	Region         string           `json:"region" validate:"required"`
+	TargetGroupIds []string         `json:"target_group_ids" validate:"omitempty,dive,required"`
+	Page           *core.TCloudPage `json:"page" validate:"omitempty"`
+}
+
+// Validate ...
+func (opt *ListTargetGroupOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// TargetGroup ...
+type TargetGroup struct {
+	*tclb.TargetGroupInfo
+}
+
+// GetCloudID ...
+func (g TargetGroup) GetCloudID() string {
+	return converter.PtrToVal(g.TargetGroupId)
+}
+
+// ListTargetGroupInstanceOption ...
+type ListTargetGroupInstanceOption struct {
+	Region         string           `json:"region" validate:"required"`
+	TargetGroupIds []string         `json:"target_group_ids" validate:"omitempty,dive,required"`
+	BindIPs        []string         `json:"bind_ips" validate:"omitempty,dive,required"`
+	InstanceIds    []string         `json:"instance_ids" validate:"omitempty,dive,required"`
+	Page           *core.TCloudPage `json:"page" validate:"omitempty"`
+}
+
+// Validate ...
+func (opt *ListTargetGroupInstanceOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// TargetGroupBackend ...
+type TargetGroupBackend struct {
+	*tclb.TargetGroupBackend
+}
+
+// GetCloudID ...
+func (rs TargetGroupBackend) GetCloudID() string {
+	return fmt.Sprintf("%s-%d", converter.PtrToVal(rs.InstanceId), converter.PtrToVal(rs.Port))
+}

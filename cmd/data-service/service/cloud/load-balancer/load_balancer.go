@@ -32,12 +32,8 @@ var svc *lbSvc
 
 // InitService initial the clb service
 func InitService(cap *capability.Capability) {
-	svc = &lbSvc{
-		dao: cap.Dao,
-	}
-
+	svc = &lbSvc{dao: cap.Dao}
 	h := rest.NewHandler()
-
 	// 负载均衡
 	h.Add("GetLoadBalancer", http.MethodGet, "/vendors/{vendor}/load_balancers/{id}", svc.GetLoadBalancer)
 	h.Add("ListLoadBalancer", http.MethodPost, "/load_balancers/list", svc.ListLoadBalancer)
@@ -55,8 +51,8 @@ func InitService(cap *capability.Capability) {
 	h.Add("ListListener", http.MethodPost, "/load_balancers/listeners/list", svc.ListListener)
 	h.Add("ListListenerExt", http.MethodPost, "/vendors/tcloud/load_balancers/listeners/list", svc.ListListenerExt)
 	h.Add("BatchCreateListener", http.MethodPost, "/vendors/{vendor}/listeners/batch/create", svc.BatchCreateListener)
-	h.Add("BatchCreateListenerWithRule", http.MethodPost, "/vendors/{vendor}/listeners/rules/batch/create",
-		svc.BatchCreateListenerWithRule)
+	h.Add("BatchCreateListenerWithRule", http.MethodPost,
+		"/vendors/{vendor}/listeners/rules/batch/create", svc.BatchCreateListenerWithRule)
 	h.Add("BatchUpdateListener", http.MethodPatch, "/vendors/{vendor}/listeners/batch/update", svc.BatchUpdateListener)
 	h.Add("BatchDeleteListener", http.MethodDelete, "/listeners/batch", svc.BatchDeleteListener)
 	h.Add("CountListenerByLbIDs", http.MethodPost, "/load_balancers/listeners/count", svc.CountListenerByLbIDs)
@@ -79,7 +75,11 @@ func InitService(cap *capability.Capability) {
 		"/vendors/{vendor}/target_groups/with/rels/batch/create", svc.BatchCreateTargetGroupWithRel)
 	h.Add("GetTargetGroup", http.MethodGet, "/vendors/{vendor}/target_groups/{id}", svc.GetTargetGroup)
 	h.Add("ListTargetGroup", http.MethodPost, "/load_balancers/target_groups/list", svc.ListTargetGroup)
+	h.Add("ListTargetGroup", http.MethodPost,
+		"/vendors/{vendor}/load_balancers/target_groups/list", svc.ListTargetGroupExt)
 	h.Add("UpdateTargetGroup", http.MethodPatch, "/vendors/{vendor}/target_groups", svc.UpdateTargetGroup)
+	h.Add("BatchUpdateTargetGroup", http.MethodPatch,
+		"/vendors/{vendor}/target_groups/batch", svc.BatchUpdateTargetGroup)
 	h.Add("BatchDeleteTargetGroup", http.MethodDelete, "/target_groups/batch", svc.BatchDeleteTargetGroup)
 	h.Add("BatchUpdateListenerBizInfo", http.MethodPatch,
 		"/load_balancers/target_groups/bizs/batch/update", svc.BatchUpdateTargetGroupBizInfo)

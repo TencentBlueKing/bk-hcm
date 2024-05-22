@@ -137,6 +137,7 @@ func (svc *lbSvc) batchUpdateTCloudTargetGroup(cts *rest.Contexts, id string) (i
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
+	// TODO 检查是因为什么原因需要传递 多个安全组id，不需要的话去掉，改成单个
 	req.IDs = append(req.IDs, id)
 
 	// 检查目标组是否已绑定RS，如已绑定则不能更新region、vpc
@@ -159,7 +160,7 @@ func (svc *lbSvc) batchUpdateTCloudTargetGroup(cts *rest.Contexts, id string) (i
 		Port:       req.Port,
 		Weight:     req.Weight,
 	}
-	err = svc.client.DataService().TCloud.LoadBalancer.BatchUpdateTCloudTargetGroup(cts.Kit, dbReq)
+	err = svc.client.DataService().TCloud.LoadBalancer.UpdateTargetGroup(cts.Kit, dbReq)
 	if err != nil {
 		logs.Errorf("update tcloud target group failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
 		return nil, err
@@ -226,7 +227,7 @@ func (svc *lbSvc) updateTCloudTargetGroupHealthCheck(cts *rest.Contexts, tgID st
 		HealthCheck: req.HealthCheck,
 	}
 
-	err := svc.client.DataService().TCloud.LoadBalancer.BatchUpdateTCloudTargetGroup(cts.Kit, dbReq)
+	err := svc.client.DataService().TCloud.LoadBalancer.UpdateTargetGroup(cts.Kit, dbReq)
 	if err != nil {
 		logs.Errorf("update db tcloud target group failed, err: %v,  req: %+v, rid: %s", dbReq, err, cts.Kit.Rid)
 		return nil, err

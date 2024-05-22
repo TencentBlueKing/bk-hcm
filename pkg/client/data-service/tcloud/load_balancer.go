@@ -99,10 +99,18 @@ func (cli *LoadBalancerClient) BatchCreateTargetGroupWithRel(kt *kit.Kit,
 		cli.client, rest.POST, kt, req, "/target_groups/with/rels/batch/create")
 }
 
-// BatchUpdateTCloudTargetGroup 批量更新腾讯云目标组
-func (cli *LoadBalancerClient) BatchUpdateTCloudTargetGroup(kt *kit.Kit, req *dataproto.TargetGroupUpdateReq) error {
+// UpdateTargetGroup 更新腾讯云目标组
+func (cli *LoadBalancerClient) UpdateTargetGroup(kt *kit.Kit, req *dataproto.TargetGroupUpdateReq) error {
 	return common.RequestNoResp[dataproto.TargetGroupUpdateReq](
 		cli.client, rest.PATCH, kt, req, "/target_groups")
+}
+
+// BatchUpdateTargetGroup ...
+func (cli *LoadBalancerClient) BatchUpdateTargetGroup(kt *kit.Kit,
+	req *dataproto.TCloudTargetGroupBatchUpdateReq) error {
+
+	return common.RequestNoResp[dataproto.TCloudTargetGroupBatchUpdateReq](
+		cli.client, rest.PATCH, kt, req, "/target_groups/batch")
 }
 
 // GetTargetGroup 获取目标组详情
@@ -164,4 +172,12 @@ func (cli *LoadBalancerClient) ListListener(kt *kit.Kit, req *core.ListReq) (
 
 	return common.Request[core.ListReq, dataproto.TCloudListenerListResult](cli.client,
 		rest.POST, kt, req, "/load_balancers/listeners/list")
+}
+
+// ListTargetGroup list target group.
+func (cli *LoadBalancerClient) ListTargetGroup(kt *kit.Kit, req *core.ListReq) (
+	*dataproto.TargetGroupExtListResult[corelb.TCloudTargetGroupExtension], error) {
+
+	return common.Request[core.ListReq, dataproto.TargetGroupExtListResult[corelb.TCloudTargetGroupExtension]](
+		cli.client, rest.POST, kt, req, "/load_balancers/target_groups/list")
 }
