@@ -41,6 +41,28 @@ type SecurityGroupClient struct {
 	client rest.ClientInterface
 }
 
+// ListCvmsBySecurityGroup list cvm by security group.
+func (cli *SecurityGroupClient) ListCvmsBySecurityGroup(ctx context.Context, h http.Header, id string, req *core.ListReq) (*protocloud.ListCvmsBySecurityGroupResult, error) {
+	resp := new(protocloud.ListCvmsBySecurityGroupResp)
+
+	err := cli.client.Post().
+		WithContext(ctx).
+		SubResourcef("/security_group/%s/cvm/list", id).
+		Body(req).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
 // ListSecurityGroup security group.
 func (cli *SecurityGroupClient) ListSecurityGroup(ctx context.Context, h http.Header, request *protocloud.
 	SecurityGroupListReq) (*protocloud.SecurityGroupListResult, error) {
