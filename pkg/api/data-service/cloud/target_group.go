@@ -84,9 +84,12 @@ type TargetBaseReq struct {
 
 // Validate validate req(目前仅支持CVM的实例类型)
 func (req *TargetBaseReq) Validate() error {
-	if req.InstType != enumor.CvmInstType {
-		return errf.Newf(errf.InvalidParameter, "inst_type only supports %s", enumor.CvmInstType)
+	switch req.InstType {
+	case enumor.CvmInstType, enumor.CcnInstType:
+	default:
+		return errf.Newf(errf.InvalidParameter, "inst_type not supportted %s", req.InstType)
 	}
+
 	return validator.Validate.Struct(req)
 }
 

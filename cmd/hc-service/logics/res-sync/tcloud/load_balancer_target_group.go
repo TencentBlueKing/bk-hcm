@@ -471,14 +471,19 @@ func (cli *client) createRs(kt *kit.Kit, accountID, tgId string, addSlice []type
 
 	var targets []*dataproto.TargetBaseReq
 	for _, backend := range addSlice {
-		targets = append(targets, &dataproto.TargetBaseReq{
+		target := &dataproto.TargetBaseReq{
 			InstType:      cvt.PtrToVal((*enumor.InstType)(backend.Type)),
 			CloudInstID:   cvt.PtrToVal(backend.InstanceId),
 			Port:          cvt.PtrToVal(backend.Port),
 			Weight:        backend.Weight,
 			AccountID:     accountID,
 			TargetGroupID: tgId,
-		})
+		}
+		if enumor.InstType(cvt.PtrToVal(backend.Type)) == enumor.CcnInstType {
+			target.CloudInstID = backend.GetCloudID()
+		}
+		targets = append(targets, target)
+
 	}
 
 	created, err := cli.dbCli.Global.LoadBalancer.BatchCreateTCloudTarget(kt,

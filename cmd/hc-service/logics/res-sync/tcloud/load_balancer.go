@@ -284,7 +284,7 @@ func (cli *client) updateLoadBalancer(kt *kit.Kit, accountID string, region stri
 	var updateReq protocloud.TCloudClbBatchUpdateReq
 
 	for id, clb := range updateMap {
-		updateReq.Lbs = append(updateReq.Lbs, convCloudToDBUpdate(id, clb, vpcMap, subnetMap))
+		updateReq.Lbs = append(updateReq.Lbs, convCloudToDBUpdate(id, clb, vpcMap, subnetMap, region))
 	}
 	if err := cli.dbCli.TCloud.LoadBalancer.BatchUpdate(kt, &updateReq); err != nil {
 		logs.Errorf("[%s] call data service to update tcloud load balancer failed, err: %v, rid: %s",
@@ -422,12 +422,12 @@ func convCloudToDBCreate(cloud typeslb.TCloudClb, accountID string, region strin
 		lb.Zones = []string{cvt.PtrToVal(cloud.MasterZone.Zone)}
 	}
 
-	lb.Extension = convertTCloudExtension(cloud)
+	lb.Extension = convertTCloudExtension(cloud, region)
 
 	return lb
 }
 
-func convertTCloudExtension(cloud typeslb.TCloudClb) *corelb.TCloudClbExtension {
+func convertTCloudExtension(cloud typeslb.TCloudClb, region string) *corelb.TCloudClbExtension {
 	ext := &corelb.TCloudClbExtension{
 		SlaType:                  cloud.SlaType,
 		VipIsp:                   cloud.VipIsp,
@@ -464,11 +464,18 @@ func convertTCloudExtension(cloud typeslb.TCloudClb) *corelb.TCloudClbExtension 
 	// 逐个赋值flag
 	ext.DeleteProtect = cvt.ValToPtr(flagMap[constant.TCLBDeleteProtect])
 
+	// 跨域1.0 信息
+	if cvt.PtrToVal(cloud.TargetRegionInfo.Region) != region ||
+		!assert.IsPtrStringEqual(cloud.TargetRegionInfo.VpcId, cloud.VpcId) {
+		ext.TargetRegion = cloud.TargetRegionInfo.Region
+		ext.TargetCloudVpcID = cloud.TargetRegionInfo.VpcId
+	}
+
 	return ext
 }
 
 func convCloudToDBUpdate(id string, cloud typeslb.TCloudClb, vpcMap map[string]*common.VpcDB,
-	subnetMap map[string]string) *protocloud.LoadBalancerExtUpdateReq[corelb.TCloudClbExtension] {
+	subnetMap map[string]string, region string) *protocloud.LoadBalancerExtUpdateReq[corelb.TCloudClbExtension] {
 
 	cloudVpcID := cvt.PtrToVal(cloud.VpcId)
 	cloudSubnetID := cvt.PtrToVal(cloud.SubnetId)
@@ -535,6 +542,13 @@ func convCloudToDBUpdate(id string, cloud typeslb.TCloudClb, vpcMap map[string]*
 
 	if cloud.Egress != nil {
 		lb.Extension.Egress = cloud.Egress
+	}
+
+	// 跨域1.0 信息
+	if cvt.PtrToVal(cloud.TargetRegionInfo.Region) != region ||
+		!assert.IsPtrStringEqual(cloud.TargetRegionInfo.VpcId, cloud.VpcId) {
+		lb.Extension.TargetRegion = cloud.TargetRegionInfo.Region
+		lb.Extension.TargetCloudVpcID = cloud.TargetRegionInfo.VpcId
 	}
 	return &lb
 }
@@ -656,6 +670,14 @@ func isLBExtensionChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) 
 
 	// 逐个判断每种类型
 	if attrs[constant.TCLBDeleteProtect] != cvt.PtrToVal(db.Extension.DeleteProtect) {
+		return true
+	}
+
+	// 跨域1.0 信息
+	if !assert.IsPtrStringEqual(db.Extension.TargetRegion, cloud.TargetRegionInfo.Region) {
+		return true
+	}
+	if !assert.IsPtrStringEqual(db.Extension.TargetCloudVpcID, cloud.TargetRegionInfo.VpcId) {
 		return true
 	}
 

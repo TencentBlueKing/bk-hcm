@@ -113,6 +113,11 @@ type TCloudClbExtension struct {
 
 	// 双栈混绑 开启IPv6FullChain负载均衡7层监听器支持混绑IPv4/IPv6目标功能。
 	MixIpTarget *bool `json:"mix_ip_target,omitempty"`
+
+	// 跨域1.0 region 非空
+	TargetRegion *string `json:"target_region,omitempty"`
+	// 跨域1.0 为0表示基础网络
+	TargetCloudVpcID *string `json:"target_vpc,omitempty"`
 }
 
 // SnatIp ...
