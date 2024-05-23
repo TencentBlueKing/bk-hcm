@@ -1,6 +1,7 @@
 import { computed, reactive, ref, shallowRef, watch } from 'vue';
 import { Message } from 'bkui-vue';
 import { useBusinessStore } from '@/store';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 import bus from '@/common/bus';
 // import types
 import { ApplyClbModel, SpecAvailability } from '@/api/load_balancers/apply-clb/types';
@@ -10,6 +11,7 @@ import { debounce } from 'lodash';
 
 // 当云地域变更时, 获取用户在当前地域支持可用区列表和资源列表
 export default (formModel: ApplyClbModel) => {
+  const { isBusinessPage } = useWhereAmI();
   const businessStore = useBusinessStore();
   // define data
   const isResourceListLoading = ref(false); // 是否正在获取资源列表
@@ -17,6 +19,7 @@ export default (formModel: ApplyClbModel) => {
   const ispList = ref([]); // 运营商类型
   const specAvailabilitySet = ref<Array<SpecAvailability>>([]); // 负载均衡规格类型
   const quotas = ref<ClbQuota[]>([]); // 配额
+  const isInquiryPricesLoading = ref(false); // 是否正在询价
   const isInquiryPrices = computed(() => {
     // 内网下, account_id, region, zones, cloud_vpc_id, cloud_subnet_id, require_count, name 不为空时才询价一次
     if (formModel.load_balancer_type === 'INTERNAL') {
@@ -110,12 +113,15 @@ export default (formModel: ApplyClbModel) => {
    * 询价
    */
   const inquiryPrices = async () => {
+    isInquiryPricesLoading.value = true;
     const { data } = await businessStore.lbPricesInquiry({
       ...formModel,
+      bk_biz_id: isBusinessPage ? formModel.bk_biz_id : undefined,
       zones: [formModel.zones],
       backup_zones: formModel.backup_zones ? [formModel.backup_zones] : undefined,
     });
     prices.value = data;
+    isInquiryPricesLoading.value = false;
   };
 
   watch(
@@ -219,5 +225,6 @@ export default (formModel: ApplyClbModel) => {
     ispList,
     isResourceListLoading,
     quotas,
+    isInquiryPricesLoading,
   };
 };
