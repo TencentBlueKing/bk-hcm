@@ -92,6 +92,11 @@ const (
 	// BizCLBResDelete biz clb resource delete action id to register iam.
 	// BizCLBResDelete client.ActionID = "biz_clb_resource_delete"
 
+	// BizCertResCreate biz cert resource create action id to register iam.
+	BizCertResCreate client.ActionID = "biz_cert_resource_create"
+	// BizCertResDelete biz cert resource delete action id to register iam.
+	BizCertResDelete client.ActionID = "biz_cert_resource_delete"
+
 	// BizArrangeResCreate biz arrange resource create action id to register iam.
 	// BizArrangeResCreate client.ActionID = "biz_arrange_resource_create"
 	// BizArrangeResOperate biz arrange resource operate action id to register iam.
@@ -136,6 +141,11 @@ const (
 	// CLBResDelete clb resource delete action id to register iam.
 	// CLBResDelete client.ActionID = "clb_resource_delete"
 
+	// CertResCreate cert resource create action id to register iam.
+	CertResCreate client.ActionID = "cert_resource_create"
+	// CertResDelete cert resource delete action id to register iam.
+	CertResDelete client.ActionID = "cert_resource_delete"
+
 	// RecycleBinAccess recycle bin find action id to register iam.
 	RecycleBinAccess client.ActionID = "recycle_bin_access"
 	// RecycleBinOperate recycle bin operate action id to register iam.
@@ -176,6 +186,8 @@ var ActionIDNameMap = map[client.ActionID]string{
 	// BizCLBResCreate:        "业务-负载均衡创建",
 	// BizCLBResOperate:       "业务-负载均衡操作",
 	// BizCLBResDelete:        "负载均衡删除",
+	BizCertResCreate: "业务-证书创建",
+	BizCertResDelete: "业务-证书删除",
 	// BizArrangeResCreate:    "业务-资源编排创建",
 	// BizArrangeResOperate:   "业务-资源编排操作",
 	// BizArrangeResDelete:    "业务-资源编排删除",
@@ -196,6 +208,8 @@ var ActionIDNameMap = map[client.ActionID]string{
 	// CLBResCreate:        "负载均衡创建",
 	// CLBResOperate:       "负载均衡操作",
 	// CLBResDelete:        "负载均衡删除",
+	CertResCreate:       "资源-证书创建",
+	CertResDelete:       "资源-证书删除",
 	RecycleBinAccess:    "资源-回收站查看",
 	RecycleBinOperate:   "资源-回收站操作",
 	RecycleBinConfig:    "资源-回收站配置",

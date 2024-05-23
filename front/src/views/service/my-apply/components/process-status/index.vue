@@ -1,7 +1,5 @@
 <template>
-  <div
-    class="process-status-wrapper"
-  >
+  <div class="process-status-wrapper">
     <div class="title">{{ $t('申请状态') }}</div>
     <div class="item">
       <label class="label">{{ t('步骤') }}：</label>
@@ -12,9 +10,9 @@
     <div class="item mt10">
       <label class="label">{{ t('状态') }}：</label>
       <div class="content">{{ statusItem[data.status]?.desc || '' }}</div>
-      <div
-        class="error-text ml10"
-        v-if="data.status === 'deliver_error'">{{ JSON.parse(data.delivery_detail).error.message }}</div>
+      <div class="error-text ml10" v-if="data.status === 'deliver_error'">
+        {{ JSON.parse(data.delivery_detail).error.message }}
+      </div>
     </div>
   </div>
 </template>
@@ -36,7 +34,7 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const  { t } = useI18n();
+    const { t } = useI18n();
     const curLanguageIsCn = computed(() => {
       return true;
     });
@@ -81,13 +79,13 @@ export default defineComponent({
     const getApplyTypeDisplay = (payload: string) => {
       const formatApplyType = {
         account_apply: () => {
-          return t('账号申请') ;
+          return t('账号申请');
         },
         service_apply: () => {
-          return t('服务申请') ;
+          return t('服务申请');
         },
       };
-      const result = formatApplyType[payload] ?  formatApplyType[payload]() : '-';
+      const result = formatApplyType[payload] ? formatApplyType[payload]() : '-';
       return result;
     };
     return {
@@ -101,5 +99,5 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-@import './index.scss'
+@import './index.scss';
 </style>

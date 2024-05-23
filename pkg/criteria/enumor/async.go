@@ -25,6 +25,8 @@ import "fmt"
 type TaskState string
 
 const (
+	// TaskInit task state is init
+	TaskInit TaskState = "init"
 	// TaskPending task state is pending
 	TaskPending TaskState = "pending"
 	// TaskRunning task state is running
@@ -32,7 +34,7 @@ const (
 	// TaskRollback task state is rollback.
 	TaskRollback TaskState = "rollback"
 	// TaskCancel task state is cancel.
-	TaskCancel TaskState = "cancel"
+	TaskCancel TaskState = "canceled"
 	// TaskSuccess task state is success
 	TaskSuccess TaskState = "success"
 	// TaskFailed task state is failed
@@ -43,6 +45,8 @@ const (
 type FlowState string
 
 const (
+	// FlowInit flow state is init（该状态不参与调度）
+	FlowInit FlowState = "init"
 	// FlowPending flow state is pending
 	FlowPending FlowState = "pending"
 	// FlowScheduled flow state is scheduled
@@ -50,7 +54,7 @@ const (
 	// FlowRunning flow state is running
 	FlowRunning FlowState = "running"
 	// FlowCancel flow state is cancel
-	FlowCancel FlowState = "cancel"
+	FlowCancel FlowState = "canceled"
 	// FlowSuccess flow state is success
 	FlowSuccess FlowState = "success"
 	// FlowFailed flow state is failed

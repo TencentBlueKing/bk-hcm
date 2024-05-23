@@ -27,12 +27,14 @@ import (
 	"hcm/pkg/adaptor/types/account"
 	typeargstpl "hcm/pkg/adaptor/types/argument-template"
 	typesBill "hcm/pkg/adaptor/types/bill"
+	"hcm/pkg/adaptor/types/cert"
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/adaptor/types/eip"
 	"hcm/pkg/adaptor/types/image"
 	"hcm/pkg/adaptor/types/instance-type"
+	typelb "hcm/pkg/adaptor/types/load-balancer"
 	"hcm/pkg/adaptor/types/region"
 	"hcm/pkg/adaptor/types/route-table"
 	"hcm/pkg/adaptor/types/security-group"
@@ -44,6 +46,7 @@ import (
 
 	billing "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/billing/v20180709"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
+	tclb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
 
@@ -150,4 +153,36 @@ type TCloud interface {
 	DeleteArgsTplServiceGroup(kt *kit.Kit, opt *typeargstpl.TCloudDeleteOption) error
 	UpdateArgsTplServiceGroup(kt *kit.Kit, opt *typeargstpl.TCloudUpdateServiceGroupOption) (
 		*poller.BaseDoneResult, error)
+	CreateLoadBalancer(kt *kit.Kit, opt *typelb.TCloudCreateClbOption) (*poller.BaseDoneResult, error)
+	ListLoadBalancer(kt *kit.Kit, opt *typelb.TCloudListOption) ([]typelb.TCloudClb, error)
+	DescribeResources(kt *kit.Kit, opt *typelb.TCloudDescribeResourcesOption) (
+		*tclb.DescribeResourcesResponseParams, error)
+	DescribeNetworkAccountType(kt *kit.Kit) (*v20170312.DescribeNetworkAccountTypeResponseParams, error)
+	CreateCert(kt *kit.Kit, opt *cert.TCloudCreateOption) (*poller.BaseDoneResult, error)
+	DeleteCert(kt *kit.Kit, opt *cert.TCloudDeleteOption) error
+	ListCert(kt *kit.Kit, opt *cert.TCloudListOption) ([]cert.TCloudCert, error)
+	SetLoadBalancerSecurityGroups(kt *kit.Kit, opt *typelb.TCloudSetClbSecurityGroupOption) (
+		*tclb.SetLoadBalancerSecurityGroupsResponseParams, error)
+	DeleteLoadBalancer(kt *kit.Kit, opt *typelb.TCloudDeleteOption) error
+	UpdateLoadBalancer(kt *kit.Kit, opt *typelb.TCloudUpdateOption) (*string, error)
+	CreateListener(kt *kit.Kit, opt *typelb.TCloudCreateListenerOption) (*poller.BaseDoneResult, error)
+	UpdateListener(kt *kit.Kit, opt *typelb.TCloudUpdateListenerOption) error
+	DeleteListener(kt *kit.Kit, opt *typelb.TCloudDeleteListenerOption) error
+	CreateRule(kt *kit.Kit, opt *typelb.TCloudCreateRuleOption) (*poller.BaseDoneResult, error)
+	UpdateRule(kt *kit.Kit, opt *typelb.TCloudUpdateRuleOption) error
+	UpdateDomainAttr(kt *kit.Kit, opt *typelb.TCloudUpdateDomainAttrOption) error
+	DeleteRule(kt *kit.Kit, opt *typelb.TCloudDeleteRuleOption) error
+
+	ListListener(kt *kit.Kit, opt *typelb.TCloudListListenersOption) ([]typelb.TCloudListener, error)
+	RegisterTargets(kt *kit.Kit, opt *typelb.TCloudRegisterTargetsOption) ([]string, error)
+	DeRegisterTargets(kt *kit.Kit, opt *typelb.TCloudRegisterTargetsOption) ([]string, error)
+	ModifyTargetPort(kt *kit.Kit, opt *typelb.TCloudTargetPortUpdateOption) error
+	ModifyTargetWeight(kt *kit.Kit, opt *typelb.TCloudTargetWeightUpdateOption) error
+
+	ListTargets(kt *kit.Kit, opt *typelb.TCloudListTargetsOption) ([]typelb.TCloudListenerTarget, error)
+	ListTargetHealth(kt *kit.Kit, opt *typelb.TCloudListTargetHealthOption) ([]typelb.TCloudTargetHealth, error)
+
+	InquiryPriceLoadBalancer(kt *kit.Kit, opt *typelb.TCloudCreateClbOption) (*typelb.TCloudLBPrice, error)
+	ListLoadBalancerQuota(kt *kit.Kit, opt *typelb.ListTCloudLoadBalancerQuotaOption) (
+		[]typelb.TCloudLoadBalancerQuota, error)
 }

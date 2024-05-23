@@ -104,7 +104,7 @@ export default (cond: Cond) => {
       'purchase_duration',
       'auto_renew',
     ];
-    keys.forEach(key => resetFormItemData(key));
+    keys.forEach((key) => resetFormItemData(key));
   };
 
   const resetFormItemData = (key: string) => {
@@ -133,18 +133,24 @@ export default (cond: Cond) => {
     };
 
     if (cond.vendor === VendorEnum.TCLOUD) {
-      saveData.disk_charge_prepaid = saveFormData.disk_charge_type === 'PREPAID' ? {
-        period: purchase_duration.count * (purchase_duration.unit === 'y' ? 12 : 1),
-        renew_flag: auto_renew ? 'NOTIFY_AND_AUTO_RENEW' : 'NOTIFY_AND_MANUAL_RENEW',
-      } : undefined;
+      saveData.disk_charge_prepaid =
+        saveFormData.disk_charge_type === 'PREPAID'
+          ? {
+              period: purchase_duration.count * (purchase_duration.unit === 'y' ? 12 : 1),
+              renew_flag: auto_renew ? 'NOTIFY_AND_AUTO_RENEW' : 'NOTIFY_AND_MANUAL_RENEW',
+            }
+          : undefined;
     }
 
     if (cond.vendor === VendorEnum.HUAWEI) {
-      saveData.disk_charge_prepaid = saveFormData.disk_charge_type === 'prePaid' ? {
-        period_num: purchase_duration.count,
-        period_type: purchase_duration.unit === 'y' ? 'year' : 'month',
-        is_auto_renew: auto_renew ? 'ture' : 'false',
-      } : undefined;
+      saveData.disk_charge_prepaid =
+        saveFormData.disk_charge_type === 'prePaid'
+          ? {
+              period_num: purchase_duration.count,
+              period_type: purchase_duration.unit === 'y' ? 'year' : 'month',
+              is_auto_renew: auto_renew ? 'ture' : 'false',
+            }
+          : undefined;
     }
 
     if (cond.vendor === VendorEnum.AZURE) {

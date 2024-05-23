@@ -60,6 +60,7 @@ const (
 // ContentType http request content type
 type ContentType string
 
+// ContentType http request content type
 const (
 	FormDataContent ContentType = "application/x-www-form-urlencoded"
 	JsonContent     ContentType = "application/json"
@@ -386,23 +387,10 @@ func (r *Request) doWithHost(client client.HTTPClient, host string, retries int,
 	}
 
 	url := host + r.WrapURL().String()
-	req, err := http.NewRequest(string(r.verb), url, bytes.NewReader(r.body))
+	req, err := r.getRequest(url, contentType)
 	if err != nil {
 		return &Result{Err: err, Rid: rid}, true
 	}
-
-	if r.ctx != nil {
-		req.WithContext(r.ctx)
-	}
-
-	req.Header = cloneHeader(r.headers)
-	if len(req.Header) == 0 {
-		req.Header = make(http.Header)
-	}
-
-	req.Header.Del("Accept-Encoding")
-	req.Header.Set("Content-Type", string(contentType))
-	req.Header.Set("Accept", "application/json")
 
 	if retries > 0 {
 		r.tryThrottle(url)
@@ -467,6 +455,27 @@ func (r *Request) doWithHost(client client.HTTPClient, host string, retries int,
 		Status:     resp.Status,
 		Header:     resp.Header,
 	}, true
+}
+
+func (r *Request) getRequest(url string, contentType ContentType) (*http.Request, error) {
+	req, err := http.NewRequest(string(r.verb), url, bytes.NewReader(r.body))
+	if err != nil {
+		return nil, err
+	}
+
+	if r.ctx != nil {
+		req.WithContext(r.ctx)
+	}
+
+	req.Header = cloneHeader(r.headers)
+	if len(req.Header) == 0 {
+		req.Header = make(http.Header)
+	}
+
+	req.Header.Del("Accept-Encoding")
+	req.Header.Set("Content-Type", string(contentType))
+	req.Header.Set("Accept", "application/json")
+	return req, nil
 }
 
 // isConnectionReset Returns if the given err is "connection reset by peer" error.

@@ -30,7 +30,7 @@ const scheme: RouteRecordRaw[] = [
         meta: {
           notMenu: true,
         },
-      }
+      },
     ],
   },
 ];

@@ -19,6 +19,10 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    isLoading: {
+      type: Boolean,
+      default: false,
+    },
     fromKey: {
       type: String,
       default: '',
@@ -50,7 +54,6 @@ export default defineComponent({
     const handleEdit = () => {
       // @ts-ignore
       renderEdit.value = true;
-      console.log('props.modelValue', props.modelValue);
       nextTick(() => {
         // @ts-ignore
         inputRef.value?.focus();
@@ -58,11 +61,9 @@ export default defineComponent({
       });
     };
 
-
     watch(
       () => props.isEdit,
       () => {
-        console.log('props.isEdit', props.isEdit);
         renderEdit.value = props.isEdit;
       },
     );
@@ -87,6 +88,11 @@ export default defineComponent({
       }
     };
 
+    const handleKeyUpEnter = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter') return;
+      handleBlur(props.fromKey);
+    };
+
     const computedDefaultUserlist = computed(() => {
       let res = props.modelValue;
       if (props.fromType === 'member') {
@@ -101,36 +107,70 @@ export default defineComponent({
     const renderComponentsContent = (type: string) => {
       switch (type) {
         case 'input':
-          return <Input ref={inputRef} class="w320" placeholder={props.fromPlaceholder} modelValue={props.modelValue}
-          onChange={handleChange} onBlur={() => handleBlur(props.fromKey)} />;
+          return (
+            <Input
+              ref={inputRef}
+              class='w320'
+              placeholder={props.fromPlaceholder}
+              modelValue={props.modelValue}
+              onChange={handleChange}
+              onBlur={() => handleBlur(props.fromKey)}
+              onKeyup={(_, e) => handleKeyUpEnter(e)}
+            />
+          );
         case 'member':
-          return <MemberSelect class="w320" v-model={props.modelValue} defaultUserlist={computedDefaultUserlist.value}
-          onChange={handleChange} onBlur={() => handleBlur(props.fromKey)}/>;
+          return (
+            <MemberSelect
+              class='w320'
+              v-model={props.modelValue}
+              defaultUserlist={computedDefaultUserlist.value}
+              onChange={handleChange}
+              onBlur={() => handleBlur(props.fromKey)}
+            />
+          );
         case 'department':
-          return <OrganizationSelect class="w320" v-model={props.modelValue}
-          onChange={handleOrganChange}/>;
+          return <OrganizationSelect class='w320' v-model={props.modelValue} onChange={handleOrganChange} />;
         case 'textarea':
-          return <Input ref={inputRef} class="w320" placeholder={props.fromPlaceholder} type="textarea" modelValue={props.modelValue}
-          onChange={handleChange} onBlur={() => handleBlur(props.fromKey)} />;
+          return (
+            <Input
+              ref={inputRef}
+              class='w320'
+              placeholder={props.fromPlaceholder}
+              type='textarea'
+              modelValue={props.modelValue}
+              onChange={handleChange}
+              onBlur={() => handleBlur(props.fromKey)}
+            />
+          );
         case 'select':
-          return <Select ref={selectRef} class="w320" modelValue={props.modelValue}
-          filterable multiple-mode="tag"
-          placeholder={props.fromPlaceholder}
-          onChange={handleChange} onBlur={() => handleBlur(props.fromKey)}>
-            {props.selectData.map((item: any) => (
-              <Option
-                key={item.id}
-                value={item.id}
-                label={item.name}
-              >
-                {item.name}
-              </Option>
-            ))
-          }
-          </Select>;
+          return (
+            <Select
+              ref={selectRef}
+              class='w320'
+              modelValue={props.modelValue}
+              filterable
+              multiple-mode='tag'
+              placeholder={props.fromPlaceholder}
+              onChange={handleChange}
+              onBlur={() => handleBlur(props.fromKey)}>
+              {props.selectData.map((item: any) => (
+                <Option key={item.id} value={item.id} label={item.name}>
+                  {item.name}
+                </Option>
+              ))}
+            </Select>
+          );
         default:
-          return <Input ref={inputRef} class="w320" placeholder={t('请输入')} modelValue={props.modelValue}
-          onChange={handleChange} onBlur={() => handleBlur(props.fromKey)} />;
+          return (
+            <Input
+              ref={inputRef}
+              class='w320'
+              placeholder={t('请输入')}
+              modelValue={props.modelValue}
+              onChange={handleChange}
+              onBlur={() => handleBlur(props.fromKey)}
+            />
+          );
       }
     };
 
@@ -139,9 +179,7 @@ export default defineComponent({
         case 'input':
           return <span>{props.modelValue}</span>;
         case 'member':
-          return props.modelValue.length
-            ? <span>{props.modelValue.join(',')}</span>
-            : '暂无';
+          return props.modelValue.length ? <span>{props.modelValue.join(',')}</span> : '暂无';
         case 'select':
           // eslint-disable-next-line no-case-declarations
           let selectModelValue;
@@ -154,25 +192,30 @@ export default defineComponent({
             selectModelValue = selectModelValue.map((e: any) => e.name);
           }
           // eslint-disable-next-line no-nested-ternary
-          return selectModelValue.length
-            ? <span>{selectModelValue.join(',')}</span>
-            : props.modelValue.join(',') === '-1' ? '未分配' : '暂无';
+          return selectModelValue.length ? (
+            <span>{selectModelValue.join(',')}</span>
+          ) : props.modelValue.join(',') === '-1' ? (
+            '未分配'
+          ) : (
+            '暂无'
+          );
         default:
           return <span>{props.modelValue}</span>;
       }
     };
     return () => (
-        <div class="flex-row align-items-center render-detail-edit-wrap">
-            {renderEdit.value ? (
-              renderComponentsContent(props.fromType)
-            ) : renderTextContent(props.fromType)}
-            {renderEdit.value || props.hideEdit
-              ? ''
-              : <i onClick={handleEdit} class={'icon hcm-icon bkhcm-icon-bianji account-edit-icon'} style={{ marginLeft: '10px', color: '#979BA5' }} />
-            }
-        </div>
+      <div class='flex-row align-items-center render-detail-edit-wrap'>
+        {renderEdit.value ? renderComponentsContent(props.fromType) : renderTextContent(props.fromType)}
+        {renderEdit.value || props.hideEdit ? (
+          ''
+        ) : (
+          <i
+            onClick={handleEdit}
+            class={'icon hcm-icon bkhcm-icon-bianji account-edit-icon'}
+            style={{ marginLeft: '10px', color: '#979BA5' }}
+          />
+        )}
+      </div>
     );
   },
-
-
 });

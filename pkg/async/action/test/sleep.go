@@ -26,18 +26,16 @@ import (
 )
 
 /*
-	SleepTpl: 睡眠任务流模版
-          |--> sleep |
-   sleep -|          | --> sleep
-          |--> sleep |
+		SleepTpl: 睡眠任务流模版
+	          |--> sleep |
+	   sleep -|          | --> sleep
+	          |--> sleep |
 */
 var SleepTpl = action.FlowTemplate{
 	Name: enumor.FlowSleepTest,
-	ShareData: &tableasync.ShareData{
-		Dict: map[string]string{
-			"name": "test",
-		},
-	},
+	ShareData: tableasync.NewShareData(map[string]string{
+		"name": "test",
+	}),
 	Tasks: []action.TaskTemplate{
 		{
 			ActionID:   "1",
@@ -47,6 +45,10 @@ var SleepTpl = action.FlowTemplate{
 			},
 			Retry: &tableasync.Retry{
 				Enable: true,
+				Policy: &tableasync.RetryPolicy{
+					Count:        1,
+					SleepRangeMS: [2]uint{100, 200},
+				},
 			},
 			DependOn: nil,
 		},
@@ -57,7 +59,7 @@ var SleepTpl = action.FlowTemplate{
 				Type: SleepParams{},
 			},
 			Retry: &tableasync.Retry{
-				Enable: true,
+				Enable: false,
 			},
 			DependOn: []action.ActIDType{"1"},
 		},
@@ -69,6 +71,10 @@ var SleepTpl = action.FlowTemplate{
 			},
 			Retry: &tableasync.Retry{
 				Enable: true,
+				Policy: &tableasync.RetryPolicy{
+					Count:        1,
+					SleepRangeMS: [2]uint{100, 200},
+				},
 			},
 			DependOn: []action.ActIDType{"1"},
 		},
@@ -80,6 +86,10 @@ var SleepTpl = action.FlowTemplate{
 			},
 			Retry: &tableasync.Retry{
 				Enable: true,
+				Policy: &tableasync.RetryPolicy{
+					Count:        1,
+					SleepRangeMS: [2]uint{100, 200},
+				},
 			},
 			DependOn: []action.ActIDType{"2", "3"},
 		},

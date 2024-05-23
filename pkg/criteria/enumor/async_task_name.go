@@ -38,6 +38,10 @@ func (v ActionName) Validate() error {
 
 	case VirRoot:
 	case ActionCreateFactoryTest, ActionProduceTest, ActionAssembleTest, ActionSleep:
+	case ActionTargetGroupAddRS, ActionTargetGroupRemoveRS, ActionTargetGroupModifyPort, ActionTargetGroupModifyWeight:
+	case ActionLoadBalancerOperateWatch:
+	case ActionListenerRuleAddTarget:
+	case ActionDeleteLoadBalancer:
 	default:
 		return fmt.Errorf("unsupported action name type: %s", v)
 	}
@@ -91,4 +95,22 @@ const (
 const (
 	// ActionDeleteEIP ...
 	ActionDeleteEIP ActionName = "delete_eip"
+)
+
+// Flow相关Action
+const (
+	ActionLoadBalancerOperateWatch ActionName = "load_balancer_operate_watch"
+)
+
+// 负载均衡相关Action
+const (
+	ActionTargetGroupAddRS        ActionName = "tg_add_rs"
+	ActionTargetGroupRemoveRS     ActionName = "tg_remove_rs"
+	ActionTargetGroupModifyPort   ActionName = "tg_modify_port"
+	ActionTargetGroupModifyWeight ActionName = "tg_modify_weight"
+
+	// ActionListenerRuleAddTarget 直接将RS绑定到 监听器/规则 上
+	ActionListenerRuleAddTarget ActionName = "listener_rule_add_target"
+
+	ActionDeleteLoadBalancer = "delete_load_balancer"
 )

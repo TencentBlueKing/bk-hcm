@@ -19,7 +19,6 @@ import { useVerify } from '@/hooks';
 
 const { t } = i18n.global;
 
-
 const routes: RouteRecordRaw[] = [
   ...common,
   ...workbench,
@@ -56,9 +55,16 @@ const router = createRouter({
 
 // 进入目标页面
 // eslint-disable-next-line max-len
-const toCurrentPage = (authVerifyData: any, currentFindAuthData: any, next: NavigationGuardNext, to?: RouteLocationNormalized) => {
-  if (currentFindAuthData) {   // 当前页面需要鉴权
-    if (authVerifyData && !authVerifyData?.permissionAction[currentFindAuthData.id]) { // 当前页面没有权限
+const toCurrentPage = (
+  authVerifyData: any,
+  currentFindAuthData: any,
+  next: NavigationGuardNext,
+  to?: RouteLocationNormalized,
+) => {
+  if (currentFindAuthData) {
+    // 当前页面需要鉴权
+    if (authVerifyData && !authVerifyData?.permissionAction[currentFindAuthData.id]) {
+      // 当前页面没有权限
       next({
         name: '403',
         params: {
@@ -73,7 +79,8 @@ const toCurrentPage = (authVerifyData: any, currentFindAuthData: any, next: Navi
       next();
     }
   } else {
-    if (to && to.name === '403' && authVerifyData && authVerifyData?.permissionAction?.account_find) {      // 无权限用户切换到有权限用户时需要判断
+    if (to && to.name === '403' && authVerifyData && authVerifyData?.permissionAction?.account_find) {
+      // 无权限用户切换到有权限用户时需要判断
       next({
         path: '/resource/account',
       });
@@ -83,19 +90,18 @@ const toCurrentPage = (authVerifyData: any, currentFindAuthData: any, next: Navi
   }
 };
 
-
 router.beforeEach((to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
   const commonStore = useCommonStore();
-  const { pageAuthData, authVerifyData } = commonStore;      // 所有需要检验的查看权限数据
+  const { pageAuthData, authVerifyData } = commonStore; // 所有需要检验的查看权限数据
   const currentFindAuthData = pageAuthData.find((e: any) => e.path === to.path || e?.path?.includes(to.path));
 
   // if (to.path === '/service/my-approval') {
   //   window.open(`${BK_ITSM_URL}/#/workbench/ticket/approval`);
   //   window.location.reload();
   // }
-  console.log(666, from.path, to.path);
-  if (from.path === '/') { // 刷新或者首次进入请求权限接口
-    const { getAuthVerifyData } = useVerify();    // 权限中心权限
+  if (from.path === '/') {
+    // 刷新或者首次进入请求权限接口
+    const { getAuthVerifyData } = useVerify(); // 权限中心权限
     getAuthVerifyData(pageAuthData).then(() => {
       const { authVerifyData } = commonStore;
       toCurrentPage(authVerifyData, currentFindAuthData, next, to);
@@ -106,6 +112,5 @@ router.beforeEach((to: RouteLocationNormalized, from: RouteLocationNormalized, n
     toCurrentPage(authVerifyData, currentFindAuthData, next);
   }
 });
-
 
 export default router;

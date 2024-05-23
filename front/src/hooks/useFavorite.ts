@@ -33,9 +33,13 @@ export const getFavoriteList = async (bk_biz_id: number): Promise<Array<number>>
 };
 
 export const addFavorite = async (bk_biz_id: number) => {
-  return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${bk_biz_id}/collections/bizs/create`, { bk_biz_id });
+  return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${bk_biz_id}/collections/bizs/create`, {
+    bk_biz_id,
+  });
 };
 
 export const removeFavorite = async (bk_biz_id: number) => {
-  return await http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${bk_biz_id}/collections/bizs`, { data: { bk_biz_id } });
+  return await http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${bk_biz_id}/collections/bizs`, {
+    data: { bk_biz_id },
+  });
 };

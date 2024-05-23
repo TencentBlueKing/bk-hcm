@@ -47,11 +47,7 @@ export default defineComponent({
         label: '操作',
         render: ({ data }: { data: any }) => (
           <>
-            <bk-button
-              text
-              theme='primary'
-              class='mr5'
-              onClick={() => handleApprove(data)}>
+            <bk-button text theme='primary' class='mr5' onClick={() => handleApprove(data)}>
               通过
             </bk-button>
             <bk-button text theme='primary' onClick={() => handleRefuse(data)}>
@@ -113,7 +109,6 @@ export default defineComponent({
       pagination.value.start = 0;
       getList();
     };
-
 
     const getList = async () => {
       isLoading.value = true;
@@ -180,7 +175,7 @@ export default defineComponent({
               )}
             </bk-form-item>
             <bk-form-item label={'备注'}>
-                <bk-input type='textarea' v-model={memo.value}></bk-input>
+              <bk-input type='textarea' v-model={memo.value}></bk-input>
             </bk-form-item>
           </bk-form>
         </bk-dialog>

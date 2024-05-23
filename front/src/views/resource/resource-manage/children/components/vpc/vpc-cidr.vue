@@ -1,8 +1,5 @@
 <script lang="ts" setup>
-import {
-  watch,
-  ref,
-} from 'vue';
+import { watch, ref } from 'vue';
 
 const props = defineProps({
   detail: {
@@ -75,10 +72,5 @@ watch(
 </script>
 
 <template>
-  <bk-table
-    row-hover="auto"
-    :columns="columns"
-    :data="props.detail.cidr"
-    show-overflow-tooltip
-  />
+  <bk-table row-hover="auto" :columns="columns" :data="props.detail.cidr" show-overflow-tooltip />
 </template>

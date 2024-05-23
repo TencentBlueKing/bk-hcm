@@ -25,9 +25,11 @@ import (
 	billing "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/billing/v20180709"
 	cam "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
 	cbs "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs/v20170312"
+	clb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
+	ssl "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/ssl/v20191205"
 	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
 
@@ -43,6 +45,8 @@ type ClientSet interface {
 	CbsClient(region string) (*cbs.Client, error)
 	VpcClient(region string) (*vpc.Client, error)
 	BillClient() (*billing.Client, error)
+	ClbClient(region string) (*clb.Client, error)
+	CertClient() (*ssl.Client, error)
 }
 
 // clientSet to get tcloud sdk client set
@@ -101,6 +105,26 @@ func (c *clientSet) VpcClient(region string) (*vpc.Client, error) {
 // BillClient tcloud sdk bill client
 func (c *clientSet) BillClient() (*billing.Client, error) {
 	client, err := billing.NewClient(c.credential, "", c.profile)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+// ClbClient tcloud clb client
+func (c *clientSet) ClbClient(region string) (*clb.Client, error) {
+	client, err := clb.NewClient(c.credential, region, c.profile)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+// CertClient tcloud cert client
+func (c *clientSet) CertClient() (*ssl.Client, error) {
+	client, err := ssl.NewClient(c.credential, "", c.profile)
 	if err != nil {
 		return nil, err
 	}

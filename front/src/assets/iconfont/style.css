@@ -263,3 +263,12 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .bkhcm-icon-automatic-typesetting:before {
 	content: "\e146";
 }
+.bkhcm-icon-alert:before {
+	content: "\e159";
+}
+.bkhcm-icon-jiebang:before {
+	content: "\e156";
+}
+.bkhcm-icon-mubiao:before {
+	content: "\e158";
+}

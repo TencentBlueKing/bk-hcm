@@ -10,8 +10,9 @@ export function useProjectList(all = false) {
   const projectStore = useProjectStore();
   const projects = computed(() => (all ? projectStore.devopsProjects : projectStore.metricProjects));
   const currentProjectId = computed(() => route.params.projectId as string);
-  const currentProject = computed(() => projects.value.list
-    .find(project => project.project_id === currentProjectId.value));
+  const currentProject = computed(() =>
+    projects.value.list.find((project) => project.project_id === currentProjectId.value),
+  );
 
   onBeforeMount(async () => {
     if (!projects.value.fetched) {
@@ -33,7 +34,6 @@ export function useProjectList(all = false) {
   function getAdminByDeptId(dept_id: string) {
     return projectStore.orgAdminMap[dept_id]?.username ?? 'unknow';
   }
-
 
   return {
     projects,

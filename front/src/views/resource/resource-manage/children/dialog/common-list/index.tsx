@@ -1,20 +1,18 @@
+import { defineComponent, ref, watch } from 'vue';
+import { Table, Input, Select, Button } from 'bkui-vue'; // TagInput
 import {
-  defineComponent,
-  ref,
-  watch,
-} from 'vue';
-import { Table, Input, Select, Button  } from 'bkui-vue'; // TagInput
-import { ACTION_STATUS, GCP_PROTOCOL_LIST, IP_TYPE_LIST, HUAWEI_ACTION_STATUS, HUAWEI_TYPE_LIST, AZURE_PROTOCOL_LIST } from '@/constants';
+  ACTION_STATUS,
+  GCP_PROTOCOL_LIST,
+  IP_TYPE_LIST,
+  HUAWEI_ACTION_STATUS,
+  HUAWEI_TYPE_LIST,
+  AZURE_PROTOCOL_LIST,
+} from '@/constants';
 import Confirm from '@/components/confirm';
-import {
-  useI18n,
-} from 'vue-i18n';
+import { useI18n } from 'vue-i18n';
 import StepDialog from '@/components/step-dialog/step-dialog';
-import {
-  useResourceStore,
-} from '@/store/resource';
+import { useResourceStore } from '@/store/resource';
 const { Option } = Select;
-
 
 export default defineComponent({
   components: {
@@ -42,15 +40,14 @@ export default defineComponent({
   emits: ['update:isShow', 'submit'],
 
   setup(props, { emit }) {
-    const {
-      t,
-    } = useI18n();
+    const { t } = useI18n();
 
     const resourceStore = useResourceStore();
 
     // const cloudTargetSecurityGroup = ;
 
-    const securityGroupSource = ref([   // 华为源
+    const securityGroupSource = ref([
+      // 华为源
       {
         id: 'remote_ip_prefix',
         name: t('IP地址'),
@@ -61,7 +58,8 @@ export default defineComponent({
       },
     ]);
 
-    const azureSecurityGroupSource = ref([    // 微软云源
+    const azureSecurityGroupSource = ref([
+      // 微软云源
       {
         id: 'source_address_prefix',
         name: t('IP地址'),
@@ -76,7 +74,8 @@ export default defineComponent({
       },
     ]);
 
-    const azureSecurityGroupTarget = ref([    // 微软云目标
+    const azureSecurityGroupTarget = ref([
+      // 微软云目标
       {
         id: 'destination_address_prefix',
         name: t('IP地址'),
@@ -120,191 +119,211 @@ export default defineComponent({
       // }
       // return <Input v-model={ data.ipv4_cidr }></Input>;
       if (data[key]) {
-        return <Input v-model={ data[key] }></Input>;
+        return <Input v-model={data[key]}></Input>;
       }
-      return <Input v-model={ data.ipv4_cidr }></Input>;
+      return <Input v-model={data.ipv4_cidr}></Input>;
     };
 
     const renderTargetAddressSlot = (data: any, key: string) => {
       if (data[key]) {
-        return <Input v-model={ data[key] }></Input>;
+        return <Input v-model={data[key]}></Input>;
       }
-      return <Input v-model={ data.destination_address_prefix }></Input>;
+      return <Input v-model={data.destination_address_prefix}></Input>;
     };
     const columnsData = [
-      { label: t('优先级'),
+      {
+        label: t('优先级'),
         field: 'priority',
-        render: ({ data }: any) => <Input class="mt25" type='number' v-model={ data.priority }></Input>,
+        render: ({ data }: any) => <Input class='mt25' type='number' v-model={data.priority}></Input>,
       },
-      { label: t('策略'),
+      {
+        label: t('策略'),
         field: 'action',
         render: ({ data }: any) => {
           return (
-              <Select class="mt25" v-model={data.action}>
-                  {(props.vendor === 'huawei' ? HUAWEI_ACTION_STATUS : ACTION_STATUS).map((ele: any) => (
-                  <Option value={ele.id} label={ele.name} key={ele.id} />
-                  ))}
+            <Select class='mt25' v-model={data.action}>
+              {(props.vendor === 'huawei' ? HUAWEI_ACTION_STATUS : ACTION_STATUS).map((ele: any) => (
+                <Option value={ele.id} label={ele.name} key={ele.id} />
+              ))}
             </Select>
           );
         },
       },
-      { label: t('协议端口'),
+      {
+        label: t('协议端口'),
         field: 'port',
         render: ({ data }: any) => {
           return (
-                  <>
-                  <Select v-model={data.protocol}>
-                      {GCP_PROTOCOL_LIST.map(ele => (
-                      <Option value={ele.id} label={ele.name} key={ele.id} />
-                      ))}
-                  </Select>
-                  <Input v-model={ data.port }></Input>
-                  </>
+            <>
+              <Select v-model={data.protocol}>
+                {GCP_PROTOCOL_LIST.map((ele) => (
+                  <Option value={ele.id} label={ele.name} key={ele.id} />
+                ))}
+              </Select>
+              <Input v-model={data.port}></Input>
+            </>
           );
         },
       },
-      { label: t('类型'),
+      {
+        label: t('类型'),
         field: 'ethertype',
         render: ({ data }: any) => {
           return (
-                  <>
-                  <Select v-model={data.ethertype}>
-                      {HUAWEI_TYPE_LIST.map(ele => (
-                      <Option value={ele.id} label={ele.name} key={ele.id} />
-                      ))}
-                  </Select>
-                  </>
+            <>
+              <Select v-model={data.ethertype}>
+                {HUAWEI_TYPE_LIST.map((ele) => (
+                  <Option value={ele.id} label={ele.name} key={ele.id} />
+                ))}
+              </Select>
+            </>
           );
         },
       },
-      { label: t('源地址'),
+      {
+        label: t('源地址'),
         field: 'id',
         render: ({ data }: any) => {
           return (
-                    <>
-                    <Select v-model={data.sourceAddress}>
-                        {securityGroupSource.value.map(ele => (
-                        <Option value={ele.id} label={ele.name} key={ele.id} />
-                        ))}
-                    </Select>
-                    {
-                     renderSourceAddressSlot(data, data.sourceAddress)
-                    }
-                    </>
+            <>
+              <Select v-model={data.sourceAddress}>
+                {securityGroupSource.value.map((ele) => (
+                  <Option value={ele.id} label={ele.name} key={ele.id} />
+                ))}
+              </Select>
+              {renderSourceAddressSlot(data, data.sourceAddress)}
+            </>
           );
         },
       },
-      { label: t('描述'),
-        field: 'memo',
-        render: ({ data }: any) => <Input class="mt25" v-model={ data.memo }></Input>,
-      },
-      { label: t('操作'),
+      { label: t('描述'), field: 'memo', render: ({ data }: any) => <Input class='mt25' v-model={data.memo}></Input> },
+      {
+        label: t('操作'),
         field: 'operate',
         render: ({ data, row }: any) => {
           return (
-                  <div class="mt20">
-                  <Button text theme="primary" onClick={() => {
-                    hanlerCopy(data);
-                  }}>{t('复制')}</Button>
-                  <Button text theme="primary" class="ml20" onClick={() => {
-                    handlerDelete(data, row);
-                  }}>{t('删除')}</Button>
-                  </div>
+            <div class='mt20'>
+              <Button
+                text
+                theme='primary'
+                onClick={() => {
+                  hanlerCopy(data);
+                }}>
+                {t('复制')}
+              </Button>
+              <Button
+                text
+                theme='primary'
+                class='ml20'
+                onClick={() => {
+                  handlerDelete(data, row);
+                }}>
+                {t('删除')}
+              </Button>
+            </div>
           );
         },
       },
     ];
 
     const azureColumnsData = [
-      { label: t('名称'),
-        field: 'name',
-        render: ({ data }: any) => <Input class="mt25" v-model={ data.name }></Input>,
-      },
-      { label: t('优先级'),
+      { label: t('名称'), field: 'name', render: ({ data }: any) => <Input class='mt25' v-model={data.name}></Input> },
+      {
+        label: t('优先级'),
         field: 'priority',
-        render: ({ data }: any) => <Input class="mt25" type='number' v-model={ data.priority }></Input>,
+        render: ({ data }: any) => <Input class='mt25' type='number' v-model={data.priority}></Input>,
       },
-      { label: t('策略'),
+      {
+        label: t('策略'),
         field: 'access',
         render: ({ data }: any) => {
           return (
-              <Select class="mt25" v-model={data.access}>
-                  {HUAWEI_ACTION_STATUS.map((ele: any) => (
-                  <Option value={ele.id} label={ele.name} key={ele.id} />
-                  ))}
+            <Select class='mt25' v-model={data.access}>
+              {HUAWEI_ACTION_STATUS.map((ele: any) => (
+                <Option value={ele.id} label={ele.name} key={ele.id} />
+              ))}
             </Select>
           );
         },
       },
-      { label: t('源'),
+      {
+        label: t('源'),
         field: 'source',
         render: ({ data }: any) => {
           return (
-                    <>
-                    <Select v-model={data.sourceAddress}>
-                        {azureSecurityGroupSource.value.map(ele => (
-                        <Option value={ele.id} label={ele.name} key={ele.id} />
-                        ))}
-                    </Select>
-                    {
-                     renderSourceAddressSlot(data, data.sourceAddress)
-                    }
-                    </>
+            <>
+              <Select v-model={data.sourceAddress}>
+                {azureSecurityGroupSource.value.map((ele) => (
+                  <Option value={ele.id} label={ele.name} key={ele.id} />
+                ))}
+              </Select>
+              {renderSourceAddressSlot(data, data.sourceAddress)}
+            </>
           );
         },
       },
-      { label: t('源端口范围'),
+      {
+        label: t('源端口范围'),
         field: 'source_port_range',
-        render: ({ data }: any) => <Input class="mt25" v-model={ data.source_port_range }></Input>,
+        render: ({ data }: any) => <Input class='mt25' v-model={data.source_port_range}></Input>,
       },
-      { label: t('目标'),
+      {
+        label: t('目标'),
         field: 'target',
         render: ({ data }: any) => {
           return (
-                    <>
-                    <Select v-model={data.targetAddress}>
-                        {azureSecurityGroupTarget.value.map(ele => (
-                        <Option value={ele.id} label={ele.name} key={ele.id} />
-                        ))}
-                    </Select>
-                    {
-                     renderTargetAddressSlot(data, data.targetAddress)
-                    }
-                    </>
+            <>
+              <Select v-model={data.targetAddress}>
+                {azureSecurityGroupTarget.value.map((ele) => (
+                  <Option value={ele.id} label={ele.name} key={ele.id} />
+                ))}
+              </Select>
+              {renderTargetAddressSlot(data, data.targetAddress)}
+            </>
           );
         },
       },
-      { label: t('目标协议端口'),
+      {
+        label: t('目标协议端口'),
         field: 'destination_port_range',
         render: ({ data }: any) => {
           return (
-                  <>
-                  <Select v-model={data.protocol}>
-                      {AZURE_PROTOCOL_LIST.map(ele => (
-                      <Option value={ele.id} label={ele.name} key={ele.id} />
-                      ))}
-                  </Select>
-                  <Input v-model={ data.destination_port_range }></Input>
-                  </>
+            <>
+              <Select v-model={data.protocol}>
+                {AZURE_PROTOCOL_LIST.map((ele) => (
+                  <Option value={ele.id} label={ele.name} key={ele.id} />
+                ))}
+              </Select>
+              <Input v-model={data.destination_port_range}></Input>
+            </>
           );
         },
       },
-      { label: t('描述'),
-        field: 'memo',
-        render: ({ data }: any) => <Input class="mt25" v-model={ data.memo }></Input>,
-      },
-      { label: t('操作'),
+      { label: t('描述'), field: 'memo', render: ({ data }: any) => <Input class='mt25' v-model={data.memo}></Input> },
+      {
+        label: t('操作'),
         field: 'operate',
         render: ({ data, row }: any) => {
           return (
-                  <div class="mt20">
-                  <Button text theme="primary" onClick={() => {
-                    hanlerCopy(data);
-                  }}>{t('复制')}</Button>
-                  <Button text theme="primary" class="ml20" onClick={() => {
-                    handlerDelete(data, row);
-                  }}>{t('删除')}</Button>
-                  </div>
+            <div class='mt20'>
+              <Button
+                text
+                theme='primary'
+                onClick={() => {
+                  hanlerCopy(data);
+                }}>
+                {t('复制')}
+              </Button>
+              <Button
+                text
+                theme='primary'
+                class='ml20'
+                onClick={() => {
+                  handlerDelete(data, row);
+                }}>
+                {t('删除')}
+              </Button>
+            </div>
           );
         },
       },
@@ -313,18 +332,20 @@ export default defineComponent({
     const columns = ref<any>(columnsData);
     const steps = [
       {
-        component: () => <>
-              <Table
-                class="mt20"
-                row-hover="auto"
-                columns={columns.value}
-                data={tableData.value}
-              />
-              {securityRuleId.value ? '' : <Button text theme="primary" class="ml20 mt20" onClick={handlerAdd}>{t('新增一条规则')}</Button>}
-            </>,
+        component: () => (
+          <>
+            <Table class='mt20' row-hover='auto' columns={columns.value} data={tableData.value} />
+            {securityRuleId.value ? (
+              ''
+            ) : (
+              <Button text theme='primary' class='ml20 mt20' onClick={handlerAdd}>
+                {t('新增一条规则')}
+              </Button>
+            )}
+          </>
+        ),
       },
     ];
-
 
     // watch(
     //   () => props.vendor,
@@ -349,26 +370,36 @@ export default defineComponent({
           tableData.value = [{}];
           return;
         }
-        columns.value = columnsData;  // 初始化表表格列
-        if (props.vendor === 'tcloud' || props.vendor === 'aws') {    // 腾讯云、aws不需要优先级和类型
+        columns.value = columnsData; // 初始化表表格列
+        if (props.vendor === 'tcloud' || props.vendor === 'aws') {
+          // 腾讯云、aws不需要优先级和类型
           columns.value = columns.value.filter((e: any) => {
             return e.field !== 'priority' && e.field !== 'ethertype';
           });
-          securityGroupSource.value = [...IP_TYPE_LIST, ...[{ // 腾讯云、aws源地址特殊处理
-            id: 'cloud_target_security_group_id',
-            name: t('安全组'),
-          }]];
+          securityGroupSource.value = [
+            ...IP_TYPE_LIST,
+            ...[
+              {
+                // 腾讯云、aws源地址特殊处理
+                id: 'cloud_target_security_group_id',
+                name: t('安全组'),
+              },
+            ],
+          ];
         } else if (props.vendor === 'azure') {
           columns.value = azureColumnsData;
         }
 
         // @ts-ignore
         securityRuleId.value = resourceStore.securityRuleDetail?.id;
-        if (securityRuleId.value) { // 如果是编辑 则需要将详细数据展示成列表数据
-          const sourceAddressData = securityGroupSource.value
-            .filter((e: any) => resourceStore.securityRuleDetail[e.id]);
+        if (securityRuleId.value) {
+          // 如果是编辑 则需要将详细数据展示成列表数据
+          const sourceAddressData = securityGroupSource.value.filter(
+            (e: any) => resourceStore.securityRuleDetail[e.id],
+          );
           tableData.value = [{ ...resourceStore.securityRuleDetail, ...{ sourceAddress: sourceAddressData[0].id } }];
-          columns.value = columns.value.filter((e: any) => {    // 编辑不能进行复制和删除操作
+          columns.value = columns.value.filter((e: any) => {
+            // 编辑不能进行复制和删除操作
             return e.field !== 'operate';
           });
         }
@@ -403,14 +434,14 @@ export default defineComponent({
       };
       if (props.vendor === 'huawei') {
         // params = {
-
         // };
       }
       // @ts-ignore
-      if (securityRuleId.value) {  // 更新
+      if (securityRuleId.value) {
+        // 更新
         emit('submit', params);
       } else {
-        emit('submit', tableData.value);  // 新增
+        emit('submit', tableData.value); // 新增
       }
     };
 
@@ -441,19 +472,17 @@ export default defineComponent({
   },
 
   render() {
-    return <>
-          <step-dialog
+    return (
+      <>
+        <step-dialog
           dialogWidth={this.dialogWidth}
-            title={this.title}
-            loading={this.loading}
-            isShow={this.isShow}
-            steps={this.steps}
-            onConfirm={this.handleConfirm}
-            onCancel={this.handleClose}
-          >
-          </step-dialog>
-        </>;
+          title={this.title}
+          loading={this.loading}
+          isShow={this.isShow}
+          steps={this.steps}
+          onConfirm={this.handleConfirm}
+          onCancel={this.handleClose}></step-dialog>
+      </>
+    );
   },
 });
-
-

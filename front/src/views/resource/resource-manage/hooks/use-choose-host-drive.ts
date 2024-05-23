@@ -1,9 +1,7 @@
 /**
  * 挂载云硬盘相关事件和状态
  */
-import {
-  ref,
-} from 'vue';
+import { ref } from 'vue';
 
 import MountedDrive from '../children/dialog/choose-host-drive/mounted-drive';
 

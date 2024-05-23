@@ -1,31 +1,30 @@
 import { reactive } from 'vue';
 
-const DEFAULT_LIMIT = 20;
+export default function usePagination(cb: any) {
+  const pagination = reactive({ start: 0, limit: 10, count: 0 });
 
-export function usePagination(limit = DEFAULT_LIMIT) {
-  const pagination = reactive({
-    location: 'left',
-    align: 'right',
-    current: 1,
-    limit,
-    count: 100,
-  });
+  /**
+   * 分页条数改变时调用
+   * @param v 分页条数
+   */
+  const handlePageLimitChange = (v: number) => {
+    pagination.limit = v;
+    pagination.start = 0;
+    cb();
+  };
 
-  function changePagination(key: keyof typeof pagination) {
-    return (val: number) => {
-      Object.assign(pagination, {
-        [key]: val,
-        ...(key === 'limit' ? {
-          current: 1,
-        } : {}),
-      });
-    };
-  }
+  /**
+   * 分页 start offset 改变时调用
+   * @param v 当前 start offset
+   */
+  const handlePageValueChange = (v: number) => {
+    pagination.start = (v - 1) * pagination.limit;
+    cb();
+  };
 
   return {
     pagination,
-    handlePageValueChange: changePagination('current'),
-    handlePageLimitChange: changePagination('limit'),
-    handleTotalChange: changePagination('count'),
+    handlePageLimitChange,
+    handlePageValueChange,
   };
 }

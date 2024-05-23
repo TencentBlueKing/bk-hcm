@@ -4,24 +4,17 @@ import DetailTab from '../../common/tab/detail-tab';
 import SecurityInfo from '../components/security/security-info.vue';
 import SecurityRelate from '../components/security/security-relate.vue';
 import SecurityRule from '../components/security/security-rule.vue';
-import {
-  useI18n,
-} from 'vue-i18n';
+import { useI18n } from 'vue-i18n';
 
 import { watch, ref, reactive } from 'vue';
 
-
-import {
-  useRoute,
-} from 'vue-router';
+import { useRoute } from 'vue-router';
 import useDetail from '../../hooks/use-detail';
 import { QueryRuleOPEnum } from '@/typings';
 import { useResourceStore } from '@/store';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
-const {
-  t,
-} = useI18n();
+const { t } = useI18n();
 
 const route = useRoute();
 const filter = ref({ op: 'and', rules: [{ field: 'type', op: 'eq', value: 'ingress' }] });
@@ -39,14 +32,7 @@ const templateData = reactive({
 const { whereAmI } = useWhereAmI();
 const resoureStore = useResourceStore();
 
-const {
-  loading,
-  detail,
-  getDetail,
-} = useDetail(
-  'security_groups',
-  securityId.value as string,
-);
+const { loading, detail, getDetail } = useDetail('security_groups', securityId.value as string);
 
 const tabs = [
   {
@@ -69,13 +55,13 @@ const handleTabsChange = (val: string) => {
 
 watch(
   () => detail.value,
-  (val: { account_id: string; region: string; }) => {
+  (val: { account_id: string; region: string }) => {
     getRelatedSecurityGroups(val);
     getTemplateData(val);
   },
 );
 
-const getRelatedSecurityGroups = async (detail: { account_id: string; region: string; }) => {
+const getRelatedSecurityGroups = async (detail: { account_id: string; region: string }) => {
   const url = 'security_groups/list';
   const filter = {
     op: QueryRuleOPEnum.AND,
@@ -92,84 +78,88 @@ const getRelatedSecurityGroups = async (detail: { account_id: string; region: st
       },
     ],
   };
-  const res = await resourceStore.getCommonList({
-    page: {
-      count: false,
-      start: 0,
-      limit: 100,
+  const res = await resourceStore.getCommonList(
+    {
+      page: {
+        count: false,
+        start: 0,
+        limit: 100,
+      },
+      filter,
     },
-    filter,
-  }, url);
+    url,
+  );
   relatedSecurityGroups.value = res?.data?.details;
 };
 
-const getTemplateData = async (detail: { account_id: string;}) => {
-  const [
-    ipListPromise,
-    ipGroupListPromise,
-    portListPromise,
-    portGroupListPromise,
-  ] = [
+const getTemplateData = async (detail: { account_id: string }) => {
+  const [ipListPromise, ipGroupListPromise, portListPromise, portGroupListPromise] = [
     'address',
     'address_group',
     'service',
     'service_group',
-  ].map(type => resoureStore.getCommonList(
-    {
-      filter: {
-        op: 'and',
-        rules: [
-          {
-            field: 'vendor',
-            op: 'eq',
-            value: 'tcloud',
-          },
-          {
-            field: 'account_id',
-            op: QueryRuleOPEnum.CS,
-            value: detail.account_id,
-          },
-          {
-            field: 'type',
-            op: 'eq',
-            value: type,
-          },
-        ],
+  ].map((type) =>
+    resoureStore.getCommonList(
+      {
+        filter: {
+          op: 'and',
+          rules: [
+            {
+              field: 'vendor',
+              op: 'eq',
+              value: 'tcloud',
+            },
+            {
+              field: 'account_id',
+              op: QueryRuleOPEnum.CS,
+              value: detail.account_id,
+            },
+            {
+              field: 'type',
+              op: 'eq',
+              value: type,
+            },
+          ],
+        },
+        page: {
+          start: 0,
+          limit: 500,
+        },
       },
-      page: {
-        start: 0,
-        limit: 500,
-      },
-    },
-    'argument_templates/list',
-  ));
-  const res = await Promise.all([
-    ipListPromise,
-    ipGroupListPromise,
-    portListPromise,
-    portGroupListPromise,
-  ]);
+      'argument_templates/list',
+    ),
+  );
+  const res = await Promise.all([ipListPromise, ipGroupListPromise, portListPromise, portGroupListPromise]);
   templateData.ipList = res[0]?.data?.details;
   templateData.ipGroupList = res[1]?.data?.details;
   templateData.portList = res[2]?.data?.details;
   templateData.portGroupList = res[3]?.data?.details;
 };
-
 </script>
 
 <template>
-  <detail-header>
-    {{ t('安全组') }}：ID（{{ `${securityId}` }}）
-  </detail-header>
+  <detail-header>{{ t('安全组') }}：ID（{{ `${securityId}` }}）</detail-header>
 
   <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
     <detail-tab :tabs="tabs" :active="activeTab" :on-change="handleTabsChange">
       <template #default="type">
-        <security-info :id="securityId" :vendor="vendor" v-if="type === 'detail'" :loading="loading" :detail="detail"
-                       :get-detail="getDetail" />
+        <security-info
+          :id="securityId"
+          :vendor="vendor"
+          v-if="type === 'detail'"
+          :loading="loading"
+          :detail="detail"
+          :get-detail="getDetail"
+        />
         <security-relate v-if="type === 'relate'" />
-        <security-rule v-if="type === 'rule'" :filter="filter" :id="securityId" :vendor="vendor"
-                       :related-security-groups="relatedSecurityGroups" :template-data="templateData" />
+        <security-rule
+          v-if="type === 'rule'"
+          :filter="filter"
+          :id="securityId"
+          :vendor="vendor"
+          :related-security-groups="relatedSecurityGroups"
+          :template-data="templateData"
+        />
       </template>
     </detail-tab>
   </div>

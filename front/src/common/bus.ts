@@ -8,9 +8,9 @@ type Events = {
 };
 
 interface IBus {
-  $on: Emitter<Events>['on'],
-  $off: Emitter<Events>['off'],
-  $emit: Emitter<Events>['emit'],
+  $on: Emitter<Events>['on'];
+  $off: Emitter<Events>['off'];
+  $emit: Emitter<Events>['emit'];
 }
 
 const emitter = mitt<Events>();

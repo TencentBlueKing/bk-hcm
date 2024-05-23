@@ -38,7 +38,6 @@ pre:
 
 # 本地测试前后端编译
 all: pre ui server suite
-	@cd ${PRO_DIR}/cmd && make
 	@echo -e "\033[32;1mBuild All Success!\n\033[0m"
 
 # 后端本地测试编译

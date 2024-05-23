@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/cmd/data-service/service/audit/cloud/cvm"
+	auditlb "hcm/cmd/data-service/service/audit/cloud/load-balancer"
 	networkinterface "hcm/cmd/data-service/service/audit/cloud/network-interface"
 	"hcm/cmd/data-service/service/audit/cloud/subnet"
 	"hcm/pkg/api/core"
@@ -209,6 +210,7 @@ func (s *SecurityGroup) OperationAuditBuild(kt *kit.Kit, operations []protoaudit
 	cvmAssOperations := make([]protoaudit.CloudResourceOperationInfo, 0)
 	subnetAssOperations := make([]protoaudit.CloudResourceOperationInfo, 0)
 	niAssOperations := make([]protoaudit.CloudResourceOperationInfo, 0)
+	clbAssOperations := make([]protoaudit.CloudResourceOperationInfo, 0)
 	for _, operation := range operations {
 		switch operation.Action {
 		case protoaudit.Associate, protoaudit.Disassociate:
@@ -219,6 +221,8 @@ func (s *SecurityGroup) OperationAuditBuild(kt *kit.Kit, operations []protoaudit
 				subnetAssOperations = append(subnetAssOperations, operation)
 			case enumor.NetworkInterfaceAuditResType:
 				niAssOperations = append(niAssOperations, operation)
+			case enumor.LoadBalancerAuditResType:
+				clbAssOperations = append(clbAssOperations, operation)
 			default:
 				return nil, fmt.Errorf("audit associated resource type: %s not support", operation.AssociatedResType)
 			}
@@ -256,6 +260,15 @@ func (s *SecurityGroup) OperationAuditBuild(kt *kit.Kit, operations []protoaudit
 		audits = append(audits, audit...)
 	}
 
+	if len(clbAssOperations) != 0 {
+		audit, err := s.clbAssOperationAuditBuild(kt, clbAssOperations)
+		if err != nil {
+			return nil, err
+		}
+
+		audits = append(audits, audit...)
+	}
+
 	return audits, nil
 }
 
@@ -286,7 +299,7 @@ func (s *SecurityGroup) cvmAssOperationAuditBuild(kt *kit.Kit, operations []prot
 			return nil, errf.Newf(errf.RecordNotFound, "security group: %s not found", one.ResID)
 		}
 
-		cvm, exist := cvmIDMap[one.AssociatedResID]
+		cvmInfo, exist := cvmIDMap[one.AssociatedResID]
 		if !exist {
 			return nil, errf.Newf(errf.RecordNotFound, "cvm: %s not found", one.AssociatedResID)
 		}
@@ -312,9 +325,9 @@ func (s *SecurityGroup) cvmAssOperationAuditBuild(kt *kit.Kit, operations []prot
 			Detail: &tableaudit.BasicDetail{
 				Data: &tableaudit.AssociatedOperationAudit{
 					AssResType:    enumor.CvmAuditResType,
-					AssResID:      cvm.ID,
-					AssResCloudID: cvm.CloudID,
-					AssResName:    cvm.Name,
+					AssResID:      cvmInfo.ID,
+					AssResCloudID: cvmInfo.CloudID,
+					AssResName:    cvmInfo.Name,
 				},
 			},
 		})
@@ -350,7 +363,7 @@ func (s *SecurityGroup) subnetAssOperationAuditBuild(kt *kit.Kit, operations []p
 			return nil, errf.Newf(errf.RecordNotFound, "security group: %s not found", one.ResID)
 		}
 
-		subnet, exist := subnetIDMap[one.AssociatedResID]
+		subnetInfo, exist := subnetIDMap[one.AssociatedResID]
 		if !exist {
 			return nil, errf.Newf(errf.RecordNotFound, "subnet: %s not found", one.AssociatedResID)
 		}
@@ -361,8 +374,8 @@ func (s *SecurityGroup) subnetAssOperationAuditBuild(kt *kit.Kit, operations []p
 		}
 
 		subnetName := ""
-		if subnet.Name != nil {
-			subnetName = *subnet.Name
+		if subnetInfo.Name != nil {
+			subnetName = *subnetInfo.Name
 		}
 		audits = append(audits, &tableaudit.AuditTable{
 			ResID:      sg.ID,
@@ -380,8 +393,8 @@ func (s *SecurityGroup) subnetAssOperationAuditBuild(kt *kit.Kit, operations []p
 			Detail: &tableaudit.BasicDetail{
 				Data: &tableaudit.AssociatedOperationAudit{
 					AssResType:    enumor.SubnetAuditResType,
-					AssResID:      subnet.ID,
-					AssResCloudID: subnet.CloudID,
+					AssResID:      subnetInfo.ID,
+					AssResCloudID: subnetInfo.CloudID,
 					AssResName:    subnetName,
 				},
 			},
@@ -447,6 +460,70 @@ func (s *SecurityGroup) niAssOperationAuditBuild(kt *kit.Kit, operations []proto
 					AssResID:      ni.ID,
 					AssResCloudID: ni.CloudID,
 					AssResName:    ni.Name,
+				},
+			},
+		})
+	}
+
+	return audits, nil
+}
+
+func (s *SecurityGroup) clbAssOperationAuditBuild(kt *kit.Kit, operations []protoaudit.CloudResourceOperationInfo) (
+	[]*tableaudit.AuditTable, error) {
+
+	sgIDs := make([]string, 0)
+	clbIDs := make([]string, 0)
+	for _, one := range operations {
+		sgIDs = append(sgIDs, one.ResID)
+		clbIDs = append(clbIDs, one.AssociatedResID)
+	}
+
+	sgIDMap, err := s.listSecurityGroup(kt, sgIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	clbIDMap, err := auditlb.ListLoadBalancer(kt, s.dao, clbIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	audits := make([]*tableaudit.AuditTable, 0, len(operations))
+	for _, one := range operations {
+		sg, exist := sgIDMap[one.ResID]
+		if !exist {
+			return nil, errf.Newf(errf.RecordNotFound, "security group: %s not found", one.ResID)
+		}
+
+		clbInfo, exist := clbIDMap[one.AssociatedResID]
+		if !exist {
+			return nil, errf.Newf(errf.RecordNotFound, "clb: %s not found", one.AssociatedResID)
+		}
+
+		action, err := one.Action.ConvAuditAction()
+		if err != nil {
+			return nil, err
+		}
+
+		audits = append(audits, &tableaudit.AuditTable{
+			ResID:      sg.ID,
+			CloudResID: sg.CloudID,
+			ResName:    sg.Name,
+			ResType:    enumor.SecurityGroupAuditResType,
+			Action:     action,
+			BkBizID:    sg.BkBizID,
+			Vendor:     sg.Vendor,
+			AccountID:  sg.AccountID,
+			Operator:   kt.User,
+			Source:     kt.GetRequestSource(),
+			Rid:        kt.Rid,
+			AppCode:    kt.AppCode,
+			Detail: &tableaudit.BasicDetail{
+				Data: &tableaudit.AssociatedOperationAudit{
+					AssResType:    enumor.LoadBalancerAuditResType,
+					AssResID:      clbInfo.ID,
+					AssResCloudID: clbInfo.CloudID,
+					AssResName:    clbInfo.Name,
 				},
 			},
 		})

@@ -27,25 +27,13 @@ export default defineComponent({
         <Card class={'result-page-card'} showHeader={false}>
           <div class={'result-page-content'}>
             {props.type === 'success' ? (
-              <img
-                src={SuccessIcon}
-                alt='success'
-                class={'result-page-icon-success'}
-              />
+              <img src={SuccessIcon} alt='success' class={'result-page-icon-success'} />
             ) : (
-              <img
-                src={FailureIcon}
-                alt='failure'
-                class={'result-page-icon-success'}
-              />
+              <img src={FailureIcon} alt='failure' class={'result-page-icon-success'} />
             )}
-            <p class={'result-page-title'}>
-              {props.type === 'success' ? '账号信息填写成功' : '账号接入失败'}
-            </p>
+            <p class={'result-page-title'}>{props.type === 'success' ? '账号信息填写成功' : '账号接入失败'}</p>
             <p class={'result-page-text'}>
-              {props.type === 'success'
-                ? '账号审批通过后，可以进行资源管理'
-                : '错误详情如下所示'}
+              {props.type === 'success' ? '账号审批通过后，可以进行资源管理' : '错误详情如下所示'}
             </p>
             <div>
               {props.type === 'success' ? (
@@ -58,8 +46,7 @@ export default defineComponent({
                         path: '/service/my-apply',
                         query: route.query,
                       });
-                    }}
-                  >
+                    }}>
                     查看单据
                   </Button>
                   {/* <Button>资源管理</Button> */}
@@ -71,8 +58,7 @@ export default defineComponent({
                   class={'result-page-failure-box'}
                   v-model={props.errMsg}
                   resize={false}
-                  placeholder=' '>
-                </Input>
+                  placeholder=' '></Input>
               )}
             </div>
           </div>

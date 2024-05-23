@@ -26,6 +26,7 @@ package enumor
 // AuditResourceType audit resource type.
 type AuditResourceType string
 
+// AuditResourceType 资源审计类型
 const (
 	SubAccountAuditResType        AuditResourceType = "sub_account"
 	AccountAuditResType           AuditResourceType = "account"
@@ -41,6 +42,12 @@ const (
 	GcpFirewallRuleAuditResType   AuditResourceType = "gcp_firewall_rule"
 	NetworkInterfaceAuditResType  AuditResourceType = "network_interface"
 	ArgumentTemplateAuditResType  AuditResourceType = "argument_template"
+	SslCertAuditResType           AuditResourceType = "ssl_cert"
+	LoadBalancerAuditResType      AuditResourceType = "load_balancer"
+	TargetGroupAuditResType       AuditResourceType = "target_group"
+	ListenerAuditResType          AuditResourceType = "listener"
+	UrlRuleAuditResType           AuditResourceType = "url_rule"
+	UrlRuleDomainAuditResType     AuditResourceType = "url_rule_domain"
 )
 
 // AuditResourceTypeEnums resource type map.
@@ -58,6 +65,12 @@ var AuditResourceTypeEnums = map[AuditResourceType]struct{}{
 	GcpFirewallRuleAuditResType:   {},
 	NetworkInterfaceAuditResType:  {},
 	ArgumentTemplateAuditResType:  {},
+	SslCertAuditResType:           {},
+	LoadBalancerAuditResType:      {},
+	TargetGroupAuditResType:       {},
+	ListenerAuditResType:          {},
+	UrlRuleAuditResType:           {},
+	UrlRuleDomainAuditResType:     {},
 }
 
 // Exist judge enum value exist.
@@ -127,6 +140,7 @@ func (a AuditAction) Exist() bool {
 // AuditAssignedResType audit assigned resource type.
 type AuditAssignedResType string
 
+// AuditAssignedResType 资源分配类型
 const (
 	BizAuditAssignedResType       AuditAssignedResType = "biz"
 	CloudAreaAuditAssignedResType AuditAssignedResType = "cloud_area"

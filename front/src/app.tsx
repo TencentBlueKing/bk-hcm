@@ -26,8 +26,6 @@ export default defineComponent({
     onUnmounted(() => {
       window.removeEventListener('resize', calcRem, false);
     });
-    return () => (
-      <Home></Home>
-    );
+    return () => <Home></Home>;
   },
 });

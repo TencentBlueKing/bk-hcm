@@ -1,23 +1,5 @@
-import {
-  Alert,
-  Button,
-  Card,
-  Dialog,
-  Form,
-  Input,
-  Loading,
-  Radio,
-  Select,
-  Table,
-} from 'bkui-vue';
-import {
-  PropType,
-  defineComponent,
-  onMounted,
-  reactive,
-  ref,
-  watch,
-} from 'vue';
+import { Alert, Button, Card, Dialog, Form, Input, Loading, Radio, Select, Table } from 'bkui-vue';
+import { PropType, defineComponent, onMounted, reactive, ref, watch } from 'vue';
 import './index.scss';
 import { VendorEnum } from '@/common/constant';
 import tcloudVendor from '@/assets/image/vendor-tcloud.svg';
@@ -72,9 +54,7 @@ export default defineComponent({
       required: true,
     },
     changeSubmitData: {
-      type: Function as PropType<
-      (val: Record<string, string | Object>) => void
-      >,
+      type: Function as PropType<(val: Record<string, string | Object>) => void>,
       required: true,
     },
     changeValidateForm: {
@@ -105,13 +85,8 @@ export default defineComponent({
     const isAuthTableLoading = ref(false);
     const authTableData = ref([]);
 
-    const {
-      curExtension,
-      tcloudExtension,
-      handleValidate,
-      isValidateLoading,
-      isValidateDiasbled,
-    } = useSecretExtension(formModel);
+    const { curExtension, tcloudExtension, handleValidate, isValidateLoading, isValidateDiasbled } =
+      useSecretExtension(formModel);
     watch(
       () => curExtension.value.validatedStatus,
       (val) => {
@@ -135,9 +110,7 @@ export default defineComponent({
     watch(
       () => formModel.vendor,
       () => {
-        if (
-          [VendorEnum.AZURE, VendorEnum.GCP, VendorEnum.HUAWEI].includes(formModel.vendor)
-        ) {
+        if ([VendorEnum.AZURE, VendorEnum.GCP, VendorEnum.HUAWEI].includes(formModel.vendor)) {
           formModel.site = 'international';
         }
       },
@@ -190,34 +163,25 @@ export default defineComponent({
                   {VENDORS_INFO.map(({ vendor, name, icon }) => (
                     <div
                       class={`account-vendor-option ${
-                        vendor === formModel.vendor
-                          ? 'account-vendor-option-active'
-                          : ''
+                        vendor === formModel.vendor ? 'account-vendor-option-active' : ''
                       }`}
                       onClick={() => (formModel.vendor = vendor)}>
-                      <img
-                        src={icon}
-                        alt={name}
-                        class={'account-vendor-option-icon'}
-                      />
+                      <img src={icon} alt={name} class={'account-vendor-option-icon'} />
                       <p class={'account-vendor-option-text'}>{name}</p>
-                      {formModel.vendor === vendor ? (
-                        <Success fill='#3A84FF' class={'active-icon'} />
-                      ) : null}
+                      {formModel.vendor === vendor ? <Success fill='#3A84FF' class={'active-icon'} /> : null}
                     </div>
                   ))}
                 </div>
               </FormItem>
               <FormItem required label='站点种类'>
-                {![
-                  VendorEnum.AZURE,
-                  VendorEnum.GCP,
-                  VendorEnum.HUAWEI,
-                ].includes(formModel.vendor) ? (
-                  <Radio label={'china'} v-model={formModel.site}>
+                {![VendorEnum.AZURE, VendorEnum.GCP].includes(formModel.vendor) ? (
+                  <Radio
+                    label={'china'}
+                    v-model={formModel.site}
+                    disabled={[VendorEnum.HUAWEI, VendorEnum.AWS].includes(formModel.vendor)}>
                     中国站
                   </Radio>
-                  ) : null}
+                ) : null}
                 <Radio label={'international'} v-model={formModel.site}>
                   国际站
                 </Radio>
@@ -231,9 +195,7 @@ export default defineComponent({
             <div class={'api-secret-header'}>
               <p class={'account-form-card-title'}>API 密钥</p>
               <InfoLine fill='#979BA5' />
-              <p class={'header-text'}>
-                同一个主账号下,只允许接入一次。如后续对API密钥更新,必须是隶属于同一主账号。
-              </p>
+              <p class={'header-text'}>同一个主账号下,只允许接入一次。如后续对API密钥更新,必须是隶属于同一主账号。</p>
               <div class='btn-guide-wrap'>
                 <TextFile fill='#3A84FF' />
                 <Button theme='primary' text class={'header-btn'}>
@@ -242,29 +204,25 @@ export default defineComponent({
               </div>
             </div>
             <div class={'account-form-card-content'}>
-              <Form
-                formType='vertical'
-                class={'account-form-card-content-grid'}>
+              <Form formType='vertical' class={'account-form-card-content-grid'}>
                 <div>
                   {Object.entries(curExtension.value.input).map(([property, { label }]) => (
-                      <FormItem label={label} property={property} required>
-                        <Input
-                          v-model={curExtension.value.input[property].value}
-                          type={
-                            property === 'cloud_service_secret_key'
-                            && formModel.vendor === VendorEnum.GCP
-                              ? 'textarea'
-                              : 'text'
-                          }
-                          rows={8}
-                          resize={!(formModel.vendor === VendorEnum.GCP)}
-                        />
-                      </FormItem>
+                    <FormItem label={label} property={property} required>
+                      <Input
+                        v-model={curExtension.value.input[property].value}
+                        type={
+                          property === 'cloud_service_secret_key' && formModel.vendor === VendorEnum.GCP
+                            ? 'textarea'
+                            : 'text'
+                        }
+                        rows={8}
+                        resize={!(formModel.vendor === VendorEnum.GCP)}
+                      />
+                    </FormItem>
                   ))}
                 </div>
                 <div class={'account-form-card-content-grid-right'}>
-                  {formModel.vendor === VendorEnum.TCLOUD
-                  && tcloudExtension.validatedStatus === ValidateStatus.YES ? (
+                  {formModel.vendor === VendorEnum.TCLOUD && tcloudExtension.validatedStatus === ValidateStatus.YES ? (
                     <Button
                       text
                       theme='primary'
@@ -275,11 +233,11 @@ export default defineComponent({
                       <TextFile fill='#3A84FF' />
                       查看账号权限
                     </Button>
-                    ) : null}
+                  ) : null}
                   {Object.entries(curExtension.value.output1).map(([property, { label, value, placeholder }]) => (
-                      <FormItem label={label} property={property}>
-                        <Input v-model={value} readonly placeholder={placeholder} />
-                      </FormItem>
+                    <FormItem label={label} property={property}>
+                      <Input v-model={value} readonly placeholder={placeholder} />
+                    </FormItem>
                   ))}
                 </div>
               </Form>
@@ -287,35 +245,23 @@ export default defineComponent({
             <div class={'validate-btn-block'}>
               <Button
                 theme='primary'
-                outline={
-                  curExtension.value.validatedStatus === ValidateStatus.YES
-                }
+                outline={curExtension.value.validatedStatus === ValidateStatus.YES}
                 class={'account-validate-btn'}
-                onClick={() => handleValidate((payload: Record<string, string>) => props.changeExtension(payload))
-                }
+                onClick={() => handleValidate((payload: Record<string, string>) => props.changeExtension(payload))}
                 disabled={isValidateDiasbled.value}
                 loading={isValidateLoading.value}>
                 账号校验
               </Button>
               {curExtension.value.validatedStatus === ValidateStatus.YES ? (
                 <>
-                  <img
-                    src={successIcon}
-                    alt='success'
-                    class={'validate-icon'}></img>
+                  <img src={successIcon} alt='success' class={'validate-icon'}></img>
                   <span> 校验成功 </span>
                 </>
               ) : null}
               {curExtension.value.validatedStatus === ValidateStatus.NO ? (
                 <>
-                  <img
-                    src={failedIcon}
-                    alt='success'
-                    class={'validate-icon'}></img>
-                  <span>
-                    {' '}
-                    校验失败 {curExtension.value.validateFailedReason}
-                  </span>
+                  <img src={failedIcon} alt='success' class={'validate-icon'}></img>
+                  <span> 校验失败 {curExtension.value.validateFailedReason}</span>
                 </>
               ) : null}
             </div>
@@ -345,23 +291,21 @@ export default defineComponent({
               }}>
               {/* eslint-disable-next-line @typescript-eslint/no-unused-vars */}
               {Object.entries(curExtension.value.output2).map(([, { label, value, placeholder }]) => (
-                  <FormItem label={label}>
-                    <Input v-model={value} readonly placeholder={placeholder}/>
-                  </FormItem>
+                <FormItem label={label}>
+                  <Input v-model={value} readonly placeholder={placeholder} />
+                </FormItem>
               ))}
               <FormItem
                 label='账号别名'
                 class={'api-secret-selector'}
                 required
                 property='name'
-                description={'必须以小写字母开头，后面可跟小写字母、数字、连字符 - 或 下划线 _ ，但不能以连字符 - 或下划线 _ 结尾。\n名称长度不少于 3 个字符，且不多于 64 个字符。'}>
+                description={
+                  '必须以小写字母开头，后面可跟小写字母、数字、连字符 - 或 下划线 _ ，但不能以连字符 - 或下划线 _ 结尾。\n名称长度不少于 3 个字符，且不多于 64 个字符。'
+                }>
                 <Input v-model={formModel.name} />
               </FormItem>
-              <FormItem
-                label='责任人'
-                class={'api-secret-selector'}
-                required
-                property='managers'>
+              <FormItem label='责任人' class={'api-secret-selector'} required property='managers'>
                 <MemberSelect
                   v-model={formModel.managers}
                   defaultUserlist={[
@@ -373,10 +317,7 @@ export default defineComponent({
                 />
               </FormItem>
               <FormItem label='使用业务' property='bk_biz_ids' required>
-                <Select
-                  filterable
-                  placeholder='请选择使用业务'
-                  v-model={formModel.bk_biz_ids}>
+                <Select filterable placeholder='请选择使用业务' v-model={formModel.bk_biz_ids}>
                   {businessList.value.map(({ id, name }) => (
                     <Option key={id} value={id} label={name}>
                       {name}
@@ -385,7 +326,7 @@ export default defineComponent({
                 </Select>
               </FormItem>
               <FormItem label='备注'>
-                <Input type={'textarea'} v-model={formModel.memo} maxlength={255} resize={false}/>
+                <Input type={'textarea'} v-model={formModel.memo} maxlength={255} resize={false} />
               </FormItem>
             </Form>
           </div>
@@ -400,10 +341,13 @@ export default defineComponent({
           width={900}>
           <Alert theme='info' class={'mb16'}>
             该账号在云上拥有的权限组列表如下，如需调整权限请到
-            <Button theme='primary' text onClick={() => {
-              isAuthDialogShow.value = false;
-              window.open('https://console.cloud.tencent.com/cam/overview', '_blank', 'noopener,noreferrer');
-            }}>
+            <Button
+              theme='primary'
+              text
+              onClick={() => {
+                isAuthDialogShow.value = false;
+                window.open('https://console.cloud.tencent.com/cam/overview', '_blank', 'noopener,noreferrer');
+              }}>
               云控制台
             </Button>
             调整

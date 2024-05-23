@@ -1,0 +1,17 @@
+.group-view-page {
+  height: 100%;
+  display: flex;
+  overflow: hidden;
+
+  .left-container {
+    width: 300px;
+    height: 100%;
+    box-shadow: 1px 0 0 0 #dcdee5;
+  }
+
+  .main-container {
+    flex: 1;
+    padding: 24px;
+    background-color: #f5f7fb;
+  }
+}

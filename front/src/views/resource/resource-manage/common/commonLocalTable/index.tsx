@@ -39,7 +39,7 @@ export default defineComponent({
         if (!Object.keys(searchVal.value).length) localData.value = props.data;
         for (const { id, values } of searchVal.value) {
           const searchReg = new RegExp(values?.[0]?.id);
-          localData.value = localData.value.filter(item => searchReg.test(item[id]));
+          localData.value = localData.value.filter((item) => searchReg.test(item[id]));
         }
       },
       {
@@ -50,7 +50,7 @@ export default defineComponent({
 
     watch(
       () => props.data,
-      () => localData.value = props.data,
+      () => (localData.value = props.data),
       {
         immediate: true,
         deep: true,
@@ -60,20 +60,11 @@ export default defineComponent({
     return () => (
       <>
         <div class={'felx-row'}>
-          { slots.default?.() }
-          <SearchSelect
-            class='w500 common-search-selector'
-            v-model={searchVal.value}
-            data={props.searchData}
-          />
+          {slots.default?.()}
+          <SearchSelect class='w500 common-search-selector' v-model={searchVal.value} data={props.searchData} />
         </div>
         <Loading loading={isLoading.value}>
-          <Table
-            data={localData.value}
-            columns={props.columns}
-            pagination={pagination}
-            showOverflowTooltip
-          />
+          <Table data={localData.value} columns={props.columns} pagination={pagination} showOverflowTooltip />
         </Loading>
       </>
     );

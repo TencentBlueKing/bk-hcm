@@ -1,10 +1,8 @@
 <script lang="ts" setup>
-import {  ref, watchEffect, defineExpose, watch } from 'vue';
+import { ref, watchEffect, defineExpose, watch, computed } from 'vue';
 import { QueryFilterType, QueryRuleOPEnum } from '@/typings';
 import { VendorEnum } from '@/common/constant';
-import {
-  useBusinessStore,
-} from '@/store';
+import { useBusinessStore } from '@/store';
 
 const props = defineProps({
   vendor: {
@@ -21,6 +19,11 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  // 是否加载中
+  isLoading: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -29,10 +32,17 @@ const businessStore = useBusinessStore();
 const zonesList = ref([]);
 const loading = ref(null);
 const zonePage = ref(0);
-const selectedValue = ref(props.modelValue);
+const selectedValue = computed({
+  get() {
+    return props.modelValue;
+  },
+  set(val) {
+    emit('update:modelValue', val);
+  },
+});
 const hasMoreData = ref(true);
 
-const filter  = ref<QueryFilterType>({
+const filter = ref<QueryFilterType>({
   op: 'and',
   rules: [],
 });
@@ -52,8 +62,8 @@ const getZonesData = async () => {
     },
   });
   zonePage.value += 1;
-  zonesList.value.push(...res?.data?.details || []);
-  hasMoreData.value = res?.data?.details?.length >= 100;   // 100条数据说明还有数据 可翻页
+  zonesList.value.push(...(res?.data?.details || []));
+  hasMoreData.value = res?.data?.details?.length >= 100; // 100条数据说明还有数据 可翻页
   loading.value = false;
 };
 
@@ -64,29 +74,33 @@ const resetData = () => {
   selectedValue.value = '';
 };
 
-watchEffect(void (async () => {
-  getZonesData();
-})());
+watchEffect(
+  void (async () => {
+    getZonesData();
+  })(),
+);
 
-watch(() => props.vendor, (val) => {
-  switch (val) {
-    case VendorEnum.TCLOUD:
-      filter.value.rules = [
-        {
-          field: 'vendor',
-          op: QueryRuleOPEnum.EQ,
-          value: val,
-        },
-        {
-          field: 'state',
-          op: QueryRuleOPEnum.EQ,
-          value: 'AVAILABLE',
-        },
-      ];
-      break;
-    default:
-      filter.value.rules = [];
-    /* case VendorEnum.AWS:
+watch(
+  () => props.vendor,
+  (val) => {
+    switch (val) {
+      case VendorEnum.TCLOUD:
+        filter.value.rules = [
+          {
+            field: 'vendor',
+            op: QueryRuleOPEnum.EQ,
+            value: val,
+          },
+          {
+            field: 'state',
+            op: QueryRuleOPEnum.EQ,
+            value: 'AVAILABLE',
+          },
+        ];
+        break;
+      default:
+        filter.value.rules = [];
+      /* case VendorEnum.AWS:
       filter.value.rules = [
         {
           field: 'state',
@@ -104,19 +118,20 @@ watch(() => props.vendor, (val) => {
         },
       ];
       break;*/
-  }
-  resetData();
-  getZonesData();
-}, { immediate: !props.delayed });
+    }
+    resetData();
+    getZonesData();
+  },
+  { immediate: !props.delayed },
+);
 
-watch(() => props.region, () => {
-  resetData();
-  getZonesData();
-});
-
-watch(() => selectedValue.value, (val) => {
-  emit('update:modelValue', val);
-});
+watch(
+  () => props.region,
+  () => {
+    resetData();
+    getZonesData();
+  },
+);
 
 defineExpose({
   zonesList,
@@ -124,17 +139,7 @@ defineExpose({
 </script>
 
 <template>
-  <bk-select
-    v-model="selectedValue"
-    filterable
-    @scroll-end="getZonesData"
-    :loading="loading"
-  >
-    <bk-option
-      v-for="(item, index) in zonesList"
-      :key="index"
-      :value="item.name"
-      :label="item.name_cn || item.name"
-    />
+  <bk-select v-model="selectedValue" filterable @scroll-end="getZonesData" :loading="loading || isLoading">
+    <bk-option v-for="(item, index) in zonesList" :key="index" :value="item.name" :label="item.name_cn || item.name" />
   </bk-select>
 </template>

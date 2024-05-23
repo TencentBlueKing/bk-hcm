@@ -21,7 +21,10 @@
 package audit
 
 import (
+	"hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/table/audit"
+	"hcm/pkg/dal/table/cloud/load-balancer"
 )
 
 // Audit define audit.
@@ -43,6 +46,35 @@ type Audit struct {
 	Source               enumor.RequestSourceType `json:"source"`
 	Rid                  string                   `json:"rid"`
 	AppCode              string                   `json:"app_code"`
-	Detail               interface{}              `json:"detail,omitempty"` // Detail list接口该字段默认不返回
+	Detail               any                      `json:"detail,omitempty"` // Detail list接口该字段默认不返回
 	CreatedAt            string                   `json:"created_at"`
+}
+
+// RawAudit define audit.
+type RawAudit struct {
+	ID                   uint64                   `json:"id"`
+	ResID                string                   `json:"res_id"`
+	CloudResID           string                   `json:"cloud_res_id"`
+	ResName              string                   `json:"res_name"`
+	ResType              enumor.AuditResourceType `json:"res_type"`
+	AssociatedResID      string                   `json:"associated_res_id"`
+	AssociatedCloudResID string                   `json:"associated_cloud_res_id"`
+	AssociatedResName    string                   `json:"associated_res_name"`
+	AssociatedResType    string                   `json:"associated_res_type"`
+	Action               enumor.AuditAction       `json:"action"`
+	BkBizID              int64                    `json:"bk_biz_id"`
+	Vendor               enumor.Vendor            `json:"vendor"`
+	AccountID            string                   `json:"account_id"`
+	Operator             string                   `json:"operator"`
+	Source               enumor.RequestSourceType `json:"source"`
+	Rid                  string                   `json:"rid"`
+	AppCode              string                   `json:"app_code"`
+	Detail               *audit.BasicDetailRaw    `json:"detail,omitempty"` // Detail list接口该字段默认不返回
+	CreatedAt            string                   `json:"created_at"`
+}
+
+// TargetGroupAsyncAuditDetail 目标组异步任务操作详情
+type TargetGroupAsyncAuditDetail struct {
+	LoadBalancer tablelb.LoadBalancerTable `json:"load_balancer"`
+	ResFlow      *cloud.ResFlowLockReq     `json:"res_flow"`
 }

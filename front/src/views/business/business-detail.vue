@@ -1,11 +1,6 @@
 <script lang="ts" setup>
-import {
-  provide,
-  computed,
-} from 'vue';
-import {
-  useRoute,
-} from 'vue-router';
+import { provide, computed } from 'vue';
+import { useRoute } from 'vue-router';
 
 import HostDetail from '@/views/resource/resource-manage/children/detail/host-detail.vue';
 import VpcDetail from '@/views/resource/resource-manage/children/detail/vpc-detail.vue';
@@ -21,9 +16,7 @@ import TemplateDetail from '../resource/resource-manage/children/detail/template
 import { useVerify } from '@/hooks';
 import bus from '@/common/bus';
 
-import {
-  useAccountStore,
-} from '@/store';
+import { useAccountStore } from '@/store';
 
 const route = useRoute();
 const accountStore = useAccountStore();
@@ -59,14 +52,16 @@ const renderComponent = computed(() => {
   }, {});
 });
 
-const isResourcePage = computed(() => {   // 资源下没有业务ID
+const isResourcePage = computed(() => {
+  // 资源下没有业务ID
   return !accountStore.bizs;
 });
 
-provide('authVerifyData', authVerifyData);    // 将数据传入孙组件
+provide('authVerifyData', authVerifyData); // 将数据传入孙组件
 provide('isResourcePage', isResourcePage);
 
-bus.$on('auth', (authActionName: string) => {   // bus监听
+bus.$on('auth', (authActionName: string) => {
+  // bus监听
   handleAuth(authActionName);
 });
 </script>

@@ -8,11 +8,25 @@ import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import useColumns from '../hooks/use-columns';
 import { timeFormatter } from '@/common/util';
+import { useRouter } from 'vue-router';
+import { useAccountStore } from '@/store';
+import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 
 export default defineComponent({
   setup() {
     const businessMapStore = useBusinessMapStore();
+    const accountStore = useAccountStore();
     const { isResourcePage } = useWhereAmI();
+    const router = useRouter();
+
+    // 资源类型 tab 选项
+    const resourceTypes = [
+      { label: 'all', text: '全部' },
+      { label: 'security_group', text: '安全组' },
+      { label: 'load_balancer', text: '负载均衡' },
+    ];
+    // 当前选中的资源类型，默认为全部
+    const activeResourceType = ref('all');
 
     // 表格
     const { columns, settings } = useColumns('operationRecord');
@@ -33,44 +47,48 @@ export default defineComponent({
         ),
       },
     ];
-    const searchData = [
-      {
-        name: '资源类型',
-        id: 'res_type',
-      },
-      {
-        name: '资源名称',
-        id: 'res_name',
-      },
-      {
-        name: '操作方式',
-        id: 'action',
-      },
-      {
-        name: '操作来源',
-        id: 'source',
-      },
-      {
-        name: '所属业务',
-        id: 'bk_biz_id',
-      },
-      {
-        name: '云账号',
-        id: 'account_id',
-      },
-      {
-        name: '任务状态',
-        id: 'task_status',
-      },
-      {
-        name: '操作人',
-        id: 'operator',
-      },
-    ];
-    !isResourcePage && searchData.splice(4, 1);
+    const searchData = computed(() => {
+      const base = [
+        {
+          name: '资源类型',
+          id: 'res_type',
+        },
+        {
+          name: '资源名称',
+          id: 'res_name',
+        },
+        {
+          name: '操作方式',
+          id: 'action',
+        },
+        {
+          name: '操作来源',
+          id: 'source',
+        },
+        {
+          name: '所属业务',
+          id: 'bk_biz_id',
+        },
+        {
+          name: '云账号',
+          id: 'account_id',
+        },
+        {
+          name: '操作人',
+          id: 'operator',
+        },
+      ] as ISearchItem[];
+      // 资源下, 不展示所属业务选项
+      !isResourcePage && base.splice(4, 1);
+      // 如果当前 tab 为负载均衡, 则展示任务类型选项(异步任务详情入口)
+      activeResourceType.value === 'load_balancer' &&
+        base.push({ name: '任务类型', id: 'detail.data.res_flow.flow_id', children: [{ name: '异步任务', id: '' }] });
+      return base;
+    });
+
     const { CommonTable } = useTable({
       searchOptions: {
-        searchData,
+        searchData: () => searchData.value,
         extra: {
           placeholder: '请输入',
         },
@@ -91,15 +109,28 @@ export default defineComponent({
       },
     });
 
-    // 当前选中的资源类型，默认为全部
-    const activeResourceType = ref('all');
-
     // 操作详情
     const isRecordDetailShow = ref(false);
     const currentDetailInfo = ref(null);
-    const showOperationDetail = (detail: any) => {
+    const showOperationDetail = (listItem: any) => {
+      if (
+        ['load_balancer', 'url_rule', 'listener', 'url_rule_domain', 'target_group'].includes(listItem.res_type) &&
+        listItem?.detail?.data?.res_flow?.flow_id
+      ) {
+        router.push({
+          path: `/${isResourcePage ? 'resource' : 'business'}/record/detail`,
+          query: {
+            id: listItem.id,
+            name: listItem.res_name,
+            flow: listItem.detail.data.res_flow.flow_id,
+            res_id: listItem.res_id,
+            bizs: accountStore.bizs,
+          },
+        });
+        return;
+      }
       isRecordDetailShow.value = true;
-      currentDetailInfo.value = detail;
+      currentDetailInfo.value = listItem;
     };
     const detailInfoItemOptions = computed(() => [
       {
@@ -159,7 +190,15 @@ export default defineComponent({
       },
     ]);
 
-    watch(activeResourceType, val => (searchRule.value = val));
+    watch(activeResourceType, (val) => {
+      if (['load_balancer'].includes(val)) {
+        searchRule.value = ['load_balancer', 'url_rule', 'listener', 'url_rule_domain', 'target_group'];
+        searchRule.op = QueryRuleOPEnum.IN;
+      } else {
+        searchRule.value = val;
+        searchRule.op = QueryRuleOPEnum.EQ;
+      }
+    });
 
     return () => (
       <div class={`operation-record-module${isResourcePage ? ' resource-apply' : ''}`}>
@@ -168,8 +207,9 @@ export default defineComponent({
             {{
               operation: () => (
                 <BkRadioGroup v-model={activeResourceType.value} type='capsule' class='resource-radio-group'>
-                  <BkRadioButton label='all'>全部</BkRadioButton>
-                  <BkRadioButton label='security_group'>安全组</BkRadioButton>
+                  {resourceTypes.map(({ label, text }) => (
+                    <BkRadioButton label={label}>{text}</BkRadioButton>
+                  ))}
                 </BkRadioGroup>
               ),
             }}

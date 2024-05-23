@@ -25,11 +25,5 @@ const tableData = [
 </script>
 
 <template>
-  <bk-table
-    class="mt20"
-    row-hover="auto"
-    :columns="columns"
-    :data="tableData"
-    show-overflow-tooltip
-  />
+  <bk-table class="mt20" row-hover="auto" :columns="columns" :data="tableData" show-overflow-tooltip />
 </template>

@@ -1,21 +1,11 @@
-import {
-  defineComponent,
-  onMounted,
-  onUnmounted,
-} from 'vue';
+import { defineComponent, onMounted, onUnmounted } from 'vue';
 
 export default defineComponent({
   setup() {
-    onMounted(() => {
-    });
+    onMounted(() => {});
 
-    onUnmounted(() => {
-    });
+    onUnmounted(() => {});
 
-    return () => (
-          <span class="test">do it</span>
-    );
+    return () => <span class='test'>do it</span>;
   },
 });
-
-

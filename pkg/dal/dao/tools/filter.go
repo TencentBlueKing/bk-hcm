@@ -48,7 +48,7 @@ func EqualWithOpExpression(op filter.LogicOperator, fields map[string]interface{
 }
 
 // ContainersExpression 生成资源字段包含的过滤条件，即fieldName in (1,2,3)
-func ContainersExpression(fieldName string, values interface{}) *filter.Expression {
+func ContainersExpression[T any](fieldName string, values []T) *filter.Expression {
 	return &filter.Expression{
 		Op: filter.And,
 		Rules: []filter.RuleFactory{
@@ -100,4 +100,50 @@ func And(rules ...filter.RuleFactory) (*filter.Expression, error) {
 		Op:    filter.And,
 		Rules: andRules,
 	}, nil
+}
+
+// RuleEqual 生成资源字段等于查询的AtomRule，即fieldName=value
+func RuleEqual(fieldName string, value any) *filter.AtomRule {
+	return &filter.AtomRule{Field: fieldName, Op: filter.Equal.Factory(), Value: value}
+}
+
+// RuleIn 生成资源字段等于查询的AtomRule，即fieldName in values
+func RuleIn[T any](fieldName string, values []T) *filter.AtomRule {
+	return &filter.AtomRule{Field: fieldName, Op: filter.In.Factory(), Value: values}
+}
+
+// RuleNotIn 生成资源字段等于查询的AtomRule，即fieldName nin values
+func RuleNotIn[T any](fieldName string, values []T) *filter.AtomRule {
+	return &filter.AtomRule{Field: fieldName, Op: filter.NotIn.Factory(), Value: values}
+}
+
+// RuleGreaterThan 生成资源字段等于查询的AtomRule，即fieldName > values
+func RuleGreaterThan(fieldName string, values any) *filter.AtomRule {
+	return &filter.AtomRule{Field: fieldName, Op: filter.GreaterThan.Factory(), Value: values}
+}
+
+// ExpressionAnd expression with op and
+func ExpressionAnd(rules ...*filter.AtomRule) *filter.Expression {
+	// for type transformation
+	var factories = make([]filter.RuleFactory, len(rules))
+	for i, rule := range rules {
+		factories[i] = rule
+	}
+	return &filter.Expression{
+		Op:    filter.And,
+		Rules: factories,
+	}
+}
+
+// ExpressionOr expression with op or
+func ExpressionOr(rules ...*filter.AtomRule) *filter.Expression {
+	// for type transformation
+	var factories = make([]filter.RuleFactory, len(rules))
+	for i, rule := range rules {
+		factories[i] = rule
+	}
+	return &filter.Expression{
+		Op:    filter.Or,
+		Rules: factories,
+	}
 }

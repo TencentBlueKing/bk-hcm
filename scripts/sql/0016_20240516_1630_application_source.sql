@@ -37,4 +37,7 @@ alter table application drop key idx_uk_sn;
 alter table application
     add constraint idx_uk_source_sn unique (source, sn);
 
+CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
+SELECT 'v1.4.4' as `hcm_ver`, '0016' as `sql_ver`;
+
 COMMIT

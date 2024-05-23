@@ -26,6 +26,7 @@ export default (
   apiMethod?: Function,
   apiName = 'list',
   args: any = {},
+  extraResolveData?: (...args: any) => Promise<any>, // 对表格数据做额外的处理
 ) => {
   // 接口
   const resourceStore = useResourceStore();
@@ -63,62 +64,55 @@ export default (
     isLoading.value = true;
     if (whereAmI.value === Senarios.business && !accountStore.bizs) return;
     // 默认拉取方法
-    const getDefaultList = () => Promise.all([
-      resourceStore[apiName](
-        {
-          page: {
-            count: false,
-            start: (pagination.value.current - 1) * pagination.value.limit,
-            limit: pagination.value.limit,
-            sort: sort.value,
-            order: order.value,
+    const getDefaultList = () =>
+      Promise.all([
+        resourceStore[apiName](
+          {
+            page: {
+              count: false,
+              start: (pagination.value.current - 1) * pagination.value.limit,
+              limit: pagination.value.limit,
+              sort: sort.value,
+              order: order.value,
+            },
+            filter: [DResourceType.cvms, DResourceType.disks, DResourceType.eips].includes(type as DResourceType)
+              ? {
+                  op: 'and',
+                  rules: props.filter.rules.concat([
+                    {
+                      op: QueryRuleOPEnum.NEQ,
+                      field: 'recycle_status',
+                      value: 'recycling',
+                    },
+                  ]),
+                }
+              : props.filter,
+            ...args,
           },
-          filter: [
-            DResourceType.cvms,
-            DResourceType.disks,
-            DResourceType.eips,
-          ].includes(type as DResourceType)
-            ? {
-              op: 'and',
-              rules: props.filter.rules.concat([
-                {
-                  op: QueryRuleOPEnum.NEQ,
-                  field: 'recycle_status',
-                  value: 'recycling',
-                },
-              ]),
-            }
-            : props.filter,
-          ...args,
-        },
-        type,
-      ),
-      resourceStore[apiName](
-        {
-          page: {
-            count: true,
+          type,
+        ),
+        resourceStore[apiName](
+          {
+            page: {
+              count: true,
+            },
+            filter: [DResourceType.cvms, DResourceType.disks, DResourceType.eips].includes(type as DResourceType)
+              ? {
+                  op: 'and',
+                  rules: props.filter.rules.concat([
+                    {
+                      op: QueryRuleOPEnum.NEQ,
+                      field: 'recycle_status',
+                      value: 'recycling',
+                    },
+                  ]),
+                }
+              : props.filter,
+            ...args,
           },
-          filter: [
-            DResourceType.cvms,
-            DResourceType.disks,
-            DResourceType.eips,
-          ].includes(type as DResourceType)
-            ? {
-              op: 'and',
-              rules: props.filter.rules.concat([
-                {
-                  op: QueryRuleOPEnum.NEQ,
-                  field: 'recycle_status',
-                  value: 'recycling',
-                },
-              ]),
-            }
-            : props.filter,
-          ...args,
-        },
-        type,
-      ),
-    ]);
+          type,
+        ),
+      ]);
     // 用户如果传了，就用传入的获取数据的方法
     const method = apiMethod || getDefaultList;
     // 执行获取数据的逻辑
@@ -134,6 +128,8 @@ export default (
             ...item?.extension?.attachment,
           };
         });
+        // 如果传入了 extraResolveData 方法，则执行该方法, 对 datas 做额外的处理
+        typeof extraResolveData === 'function' && extraResolveData(datas.value).then((res) => (datas.value = res));
         pagination.value.count = countResult?.data?.count || 0;
       })
       .finally(() => {

@@ -23,9 +23,13 @@ import (
 	"hcm/pkg/client"
 	dataservice "hcm/pkg/client/data-service"
 	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/dal/dao"
 )
 
-var cliSet *client.ClientSet
+var (
+	cliSet *client.ClientSet
+	daoSet dao.Set
+)
 
 // SetClientSet set client set.
 func SetClientSet(cli *client.ClientSet) {
@@ -40,4 +44,14 @@ func GetHCService() *hcservice.Client {
 // GetDataService get data service.
 func GetDataService() *dataservice.Client {
 	return cliSet.DataService()
+}
+
+// SetDaoSet set dao set.
+func SetDaoSet(cli dao.Set) {
+	daoSet = cli
+}
+
+// GetDaoSet get dao set.
+func GetDaoSet() dao.Set {
+	return daoSet
 }

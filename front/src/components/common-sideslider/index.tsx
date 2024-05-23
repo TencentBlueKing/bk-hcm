@@ -1,5 +1,6 @@
 import { defineComponent } from 'vue';
 import { Sideslider, Button } from 'bkui-vue';
+import { useI18n } from 'vue-i18n';
 import './index.scss';
 
 export default defineComponent({
@@ -17,9 +18,21 @@ export default defineComponent({
       type: [Number, String],
       default: 400,
     },
+    isSubmitDisabled: {
+      type: Boolean,
+      default: false,
+    },
+    isSubmitLoading: {
+      type: Boolean,
+      default: false,
+    },
+    handleClose: Function,
   },
   emits: ['update:isShow', 'handleSubmit'],
   setup(props, ctx) {
+    // use hooks
+    const { t } = useI18n();
+
     const triggerShow = (isShow: boolean) => {
       ctx.emit('update:isShow', isShow);
     };
@@ -33,16 +46,23 @@ export default defineComponent({
         class='common-sideslider'
         width={props.width}
         isShow={props.isShow}
-        title={props.title}
-        onClosed={() => triggerShow(false)}>
+        title={t(props.title)}
+        onClosed={() => {
+          triggerShow(false);
+          props.handleClose?.();
+        }}>
         {{
-          default: () => ctx.slots.default?.(),
+          default: () => <div class='common-sideslider-content'>{ctx.slots.default?.()}</div>,
           footer: () => (
             <>
-              <Button theme='primary' onClick={handleSubmit}>
-                提交
+              <Button
+                theme='primary'
+                onClick={handleSubmit}
+                disabled={props.isSubmitDisabled}
+                loading={props.isSubmitLoading}>
+                {t('提交')}
               </Button>
-              <Button onClick={() => triggerShow(false)}>取消</Button>
+              <Button onClick={() => triggerShow(false)}>{t('取消')}</Button>
             </>
           ),
         }}

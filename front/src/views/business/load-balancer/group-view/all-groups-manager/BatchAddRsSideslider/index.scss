@@ -1,0 +1,20 @@
+.rs-sideslider-content {
+  margin-top: -8px;
+
+  .selected-target-groups {
+    display: flex;
+    margin-bottom: 16px;
+
+    .label {
+      flex-shrink: 0;
+
+      margin-right: 8px;
+      font-size: 14px;
+      color: #313238;
+    }
+
+    .tags .bk-tag {
+      margin: 0 8px 8px 0;
+    }
+  }
+}

@@ -6,19 +6,24 @@ export function useDepartment() {
   const departmentStore = useDepartmentStore();
 
   const departmentMap = ref<Map<number, Department>>(generateDeptTreeMap());
-  const organizationTree = computed(() => Array.from(departmentMap.value.values())
-    .filter(department => !department.parent));
+  const organizationTree = computed(() =>
+    Array.from(departmentMap.value.values()).filter((department) => !department.parent),
+  );
   const checkedDept = computed(() => getCheckedDept(organizationTree.value));
 
   if (departmentStore.departmentMap.size === 0) {
     departmentStore.getRootDept();
   }
 
-  watch(() => departmentStore.departmentMap, (deptMap) => {
-    departmentMap.value = generateDeptTreeMap(deptMap);
-  }, {
-    deep: true,
-  });
+  watch(
+    () => departmentStore.departmentMap,
+    (deptMap) => {
+      departmentMap.value = generateDeptTreeMap(deptMap);
+    },
+    {
+      deep: true,
+    },
+  );
 
   function generateDeptTreeMap(deptMap?: Map<number, Department>) {
     const originDepartmentMap = deptMap ?? departmentStore.departmentMap;
@@ -30,10 +35,12 @@ export function useDepartment() {
 
       acc.set(department.id, {
         ...department,
-        ...(department.has_children ? {
-          children: [],
-          async: true,
-        } : {}),
+        ...(department.has_children
+          ? {
+              children: [],
+              async: true,
+            }
+          : {}),
         checked: (isChecked || curDept?.checked) ?? false,
         indeterminate: curDept?.indeterminate ?? false,
       });
@@ -74,10 +81,7 @@ export function useDepartment() {
     });
   }
 
-  function recursionCheckChildDept(
-    list: Department[],
-    checked: boolean,
-  ) {
+  function recursionCheckChildDept(list: Department[], checked: boolean) {
     return list.forEach((item) => {
       updateDepartment(item.id, {
         checked,
@@ -89,19 +93,19 @@ export function useDepartment() {
     });
   }
 
-  function recursionCheckParentDept(
-    id: number,
-    checked: boolean,
-  ): Record<number, Department> {
+  function recursionCheckParentDept(id: number, checked: boolean): Record<number, Department> {
     const curDept = departmentMap.value.get(id);
     const parent = departmentMap.value.get(curDept.parent);
     if (parent) {
       const indeterminate = isHalf(parent.children);
 
-      departmentMap.value.set(parent.id, Object.assign(parent, {
-        checked: checked && !indeterminate,
-        indeterminate,
-      }));
+      departmentMap.value.set(
+        parent.id,
+        Object.assign(parent, {
+          checked: checked && !indeterminate,
+          indeterminate,
+        }),
+      );
 
       if (parent.parent) {
         return recursionCheckParentDept(parent.id, checked);
@@ -117,7 +121,7 @@ export function useDepartment() {
       if (item.indeterminate) halfLength += 1;
     });
 
-    return (checkedLength > 0 && checkedLength < children.length) || (halfLength > 0);
+    return (checkedLength > 0 && checkedLength < children.length) || halfLength > 0;
   }
 
   function getCheckedDept(list = organizationTree.value) {

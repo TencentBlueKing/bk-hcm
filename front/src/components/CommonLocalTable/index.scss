@@ -1,0 +1,40 @@
+.local-table-container {
+  height: 100%;
+  overflow: hidden;
+
+  .top-bar {
+    display: flex;
+    justify-content: space-between;
+
+    .operation-area {
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+
+      .mr12 {
+        margin-right: 12px;
+      }
+
+      .f20 {
+        font-size: 20px;
+      }
+    }
+
+    .table-search-selector {
+      margin-bottom: 16px;
+      width: 500px;
+    }
+  }
+
+  .loading-container {
+    height: 100%;
+
+    .table-container {
+      max-height: 100%;
+    }
+  }
+
+  &.has-top-bar .loading-container {
+    max-height: calc(100% - 48px);
+  }
+}

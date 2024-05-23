@@ -1,20 +1,16 @@
 import type { QueryFilterType } from '@/typings';
 import { QueryRuleOPEnum } from '@/typings';
-import {
-  useAuditStore,
-} from '@/store/audit';
-import {
-  ref,
-} from 'vue';
+import { useAuditStore } from '@/store/audit';
+import { ref } from 'vue';
 
 type SortType = {
   column: {
-    field: string
+    field: string;
   };
-  type: string
+  type: string;
 };
 
-export default (options: { filter: any, filterOptions: any }) => {
+export default (options: { filter: any; filterOptions: any }) => {
   // 接口
   const auditStore = useAuditStore();
 
@@ -52,24 +48,25 @@ export default (options: { filter: any, filterOptions: any }) => {
       op: 'and',
       rules: [],
     };
-    for (let i = 0, key; key = filterIds[i]; i++) {
+    for (let i = 0, key; (key = filterIds[i]); i++) {
       const value = filter[key];
-      if (!value || !value?.length || (Array.isArray(value) && !value.every(val => val))) {
+      if (!value || !value?.length || (Array.isArray(value) && !value.every((val) => val))) {
         continue;
       }
 
       if (key === 'created_at') {
-        queryFilter.rules.push({
-          field: key,
-          op: QueryRuleOPEnum.GTE,
-          value: new Date(value[0]).toISOString()
-            .replace('.000Z', 'Z'),
-        }, {
-          field: key,
-          op: QueryRuleOPEnum.LTE,
-          value: new Date(value[1]).toISOString()
-            .replace('.000Z', 'Z'),
-        });
+        queryFilter.rules.push(
+          {
+            field: key,
+            op: QueryRuleOPEnum.GTE,
+            value: new Date(value[0]).toISOString().replace('.000Z', 'Z'),
+          },
+          {
+            field: key,
+            op: QueryRuleOPEnum.LTE,
+            value: new Date(value[1]).toISOString().replace('.000Z', 'Z'),
+          },
+        );
         continue;
       }
 
@@ -89,27 +86,30 @@ export default (options: { filter: any, filterOptions: any }) => {
       });
     }
 
-    Promise
-      .all([
-        auditStore
-          .list({
-            page: {
-              count: false,
-              start: (pagination.value.current - 1) * pagination.value.limit,
-              limit: pagination.value.limit,
-              sort: sort.value,
-              order: order.value,
-            },
-            filter: queryFilter,
-          }, filter.bk_biz_id),
-        auditStore
-          .list({
-            page: {
-              count: true,
-            },
-            filter: queryFilter,
-          }, filter.bk_biz_id),
-      ])
+    Promise.all([
+      auditStore.list(
+        {
+          page: {
+            count: false,
+            start: (pagination.value.current - 1) * pagination.value.limit,
+            limit: pagination.value.limit,
+            sort: sort.value,
+            order: order.value,
+          },
+          filter: queryFilter,
+        },
+        filter.bk_biz_id,
+      ),
+      auditStore.list(
+        {
+          page: {
+            count: true,
+          },
+          filter: queryFilter,
+        },
+        filter.bk_biz_id,
+      ),
+    ])
       .then(([listResult, countResult]) => {
         datas.value = listResult?.data?.details || [];
         pagination.value.count = countResult?.data?.count || 0;

@@ -1,9 +1,7 @@
 <template>
-  <div
-    :class="['item', { 'has-bottom-border': hasBottomBorder }, { 'is-active': isActive }]"
-    @click.stop="handleClick">
+  <div :class="['item', { 'has-bottom-border': hasBottomBorder }, { 'is-active': isActive }]" @click.stop="handleClick">
     <div class="header-info">
-      <span class="title" :title="data.sn">{{data.sn}}</span>
+      <span class="title" :title="data.sn">{{ data.sn }}</span>
       <div :class="['status', statusItem[data.status]?.value || '']">
         {{ statusItem[data.status]?.label || '' }}
       </div>
@@ -81,7 +79,10 @@ export default defineComponent({
       },
     });
     const state = reactive({
-      fieldMap: [{ field: `${t('资源')}：`, value: 'resource' }, { field: `${t('备注')}：`, value: 'remarks' }],
+      fieldMap: [
+        { field: `${t('资源')}：`, value: 'resource' },
+        { field: `${t('备注')}：`, value: 'remarks' },
+      ],
     });
 
     const isActive = computed(() => {

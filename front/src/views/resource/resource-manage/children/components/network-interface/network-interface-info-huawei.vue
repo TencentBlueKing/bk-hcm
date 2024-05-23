@@ -62,8 +62,11 @@ const fields = ref([
       if (!val) {
         return '--';
       }
-      return h('div', { class: 'cell-content-list' }, val?.split(';')
-        .map(item => h('p', { class: 'cell-content-item' }, item?.split('/')?.pop())));
+      return h(
+        'div',
+        { class: 'cell-content-list' },
+        val?.split(';').map((item) => h('p', { class: 'cell-content-item' }, item?.split('/')?.pop())),
+      );
     },
   },
   {
@@ -73,8 +76,11 @@ const fields = ref([
       if (!val) {
         return '--';
       }
-      return h('div', { class: 'cell-content-list' }, val?.split(';')
-        .map(item => h('p', { class: 'cell-content-item' }, item?.split('/')?.pop())));
+      return h(
+        'div',
+        { class: 'cell-content-list' },
+        val?.split(';').map((item) => h('p', { class: 'cell-content-item' }, item?.split('/')?.pop())),
+      );
     },
   },
   {
@@ -105,9 +111,6 @@ watchEffect(() => {
 
 <template>
   <div class="field-list">
-    <detail-info
-      :detail="data"
-      :fields="fields"
-    />
+    <detail-info :detail="data" :fields="fields" />
   </div>
 </template>

@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/eip"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -281,6 +282,25 @@ func (t *TCloudImpl) CreateEip(kt *kit.Kit, opt *eip.TCloudEipCreateOption) (*po
 	respPoller := poller.Poller[*TCloudImpl, []*eip.TCloudEip,
 		poller.BaseDoneResult]{Handler: &createEipPollingHandler{region: opt.Region}}
 	return respPoller.PollUntilDone(t, kt, resp.Response.AddressSet, nil)
+}
+
+// DescribeNetworkAccountType 查询用户网络类型
+// https://cloud.tencent.com/document/product/215/86509
+func (t *TCloudImpl) DescribeNetworkAccountType(kt *kit.Kit) (
+	*vpc.DescribeNetworkAccountTypeResponseParams, error) {
+
+	client, err := t.clientSet.VpcClient(constant.TCloudDefaultRegion)
+	if err != nil {
+		return nil, fmt.Errorf("init tencent cloud clb client failed, region: %s, err: %v",
+			constant.TCloudDefaultRegion, err)
+	}
+	req := vpc.NewDescribeNetworkAccountTypeRequest()
+	resp, err := client.DescribeNetworkAccountTypeWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf(" tencent cloud describe account type failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
+		return nil, err
+	}
+	return resp.Response, nil
 }
 
 type createEipPollingHandler struct {

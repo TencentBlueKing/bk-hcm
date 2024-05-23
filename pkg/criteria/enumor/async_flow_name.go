@@ -26,18 +26,61 @@ type FlowName string
 
 // Validate FlowName.
 func (v FlowName) Validate() error {
-	switch v {
-	case FlowStartCvm, FlowStopCvm, FlowRebootCvm, FlowDeleteCvm, FlowCreateCvm:
-	case FlowDeleteFirewallRule:
-	case FlowDeleteSubnet:
-	case FlowNormalTest, FlowSleepTest:
-	case FlowDeleteSecurityGroup, FlowCreateHuaweiSGRule:
-	case FlowDeleteEIP:
-
-	default:
-		return fmt.Errorf("unsupported tpl: %s", v)
+	// 	校验默认的FlowName
+	if err := v.ValidateDefault(); err == nil {
+		return nil
 	}
 
+	// 校验负载均衡的FlowName
+	if err := v.ValidateLoadBalancer(); err == nil {
+		return nil
+	}
+
+	return fmt.Errorf("unsupported flow name: %s", v)
+}
+
+// 默认的FlowName
+var defaultFlowNameMap = map[FlowName]struct{}{
+	FlowStartCvm:            {},
+	FlowStopCvm:             {},
+	FlowRebootCvm:           {},
+	FlowDeleteCvm:           {},
+	FlowCreateCvm:           {},
+	FlowDeleteFirewallRule:  {},
+	FlowDeleteSubnet:        {},
+	FlowNormalTest:          {},
+	FlowSleepTest:           {},
+	FlowDeleteSecurityGroup: {},
+	FlowCreateHuaweiSGRule:  {},
+	FlowDeleteEIP:           {},
+}
+
+// ValidateDefault validate default FlowName.
+func (v FlowName) ValidateDefault() error {
+	_, exist := defaultFlowNameMap[v]
+	if !exist {
+		return fmt.Errorf("unsupported flow name: %s", v)
+	}
+	return nil
+}
+
+// 负载均衡相关的FlowName
+var loadBalancerFlowNameMap = map[FlowName]struct{}{
+	FlowTargetGroupAddRS:               {},
+	FlowTargetGroupRemoveRS:            {},
+	FlowTargetGroupModifyPort:          {},
+	FlowTargetGroupModifyWeight:        {},
+	FlowLoadBalancerOperateWatch:       {},
+	FlowApplyTargetGroupToListenerRule: {},
+	FlowDeleteLoadBalancer:             {},
+}
+
+// ValidateLoadBalancer validate load balancer FlowName.
+func (v FlowName) ValidateLoadBalancer() error {
+	_, exist := loadBalancerFlowNameMap[v]
+	if !exist {
+		return fmt.Errorf("%s does not have a corresponding flow name", v)
+	}
 	return nil
 }
 
@@ -78,4 +121,22 @@ const (
 const (
 	// FlowDeleteEIP ...
 	FlowDeleteEIP FlowName = "delete_eip"
+)
+
+// Flow 相关Flow
+const (
+	// FlowLoadBalancerOperateWatch 负载均衡操作查询
+	FlowLoadBalancerOperateWatch FlowName = "load_balancer_operate_watch"
+)
+
+// 负载均衡相关Flow
+const (
+	FlowTargetGroupAddRS        FlowName = "tg_add_rs"
+	FlowTargetGroupRemoveRS     FlowName = "tg_remove_rs"
+	FlowTargetGroupModifyPort   FlowName = "tg_modify_port"
+	FlowTargetGroupModifyWeight FlowName = "tg_modify_weight"
+
+	FlowApplyTargetGroupToListenerRule FlowName = "apply_tg_listener_rule"
+
+	FlowDeleteLoadBalancer FlowName = "delete_load_balancer"
 )

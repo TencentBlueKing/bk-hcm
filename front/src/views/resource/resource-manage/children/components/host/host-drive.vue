@@ -1,30 +1,14 @@
 <script lang="ts" setup>
-import {
-  h,
-  watch,
-  ref,
-  inject,
-  computed, withDirectives,
-} from 'vue';
-import {
-  bkTooltips,
-  Button,
-} from 'bkui-vue';
+import { h, watch, ref, inject, computed, withDirectives } from 'vue';
+import { bkTooltips, Button } from 'bkui-vue';
 
-import {
-  useRouter,
-  useRoute,
-} from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import useMountedDrive from '../../../hooks/use-mounted-drive';
 import useUninstallDrive from '../../../hooks/use-uninstall-drive';
 import useQueryList from '../../../hooks/use-query-list';
 import bus from '@/common/bus';
-import {
-  useResourceStore,
-} from '@/store/resource';
-import {
-  useAccountStore,
-} from '@/store/account';
+import { useResourceStore } from '@/store/resource';
+import { useAccountStore } from '@/store/account';
 import { INSTANCE_CHARGE_MAP, VendorEnum } from '@/common/constant';
 import { timeFormatter } from '@/common/util';
 
@@ -42,58 +26,43 @@ const accountStore = useAccountStore();
 const router = useRouter();
 const route = useRoute();
 
-
 const isResourcePage: any = inject('isResourcePage');
 const authVerifyData: any = inject('authVerifyData');
 
-
-const actionName = computed(() => {   // 资源下没有业务ID
+const actionName = computed(() => {
+  // 资源下没有业务ID
   return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
 });
-
 
 // 权限弹窗 bus通知最外层弹出
 const showAuthDialog = (authActionName: string) => {
   bus.$emit('auth', authActionName);
 };
 
-const {
-  datas,
-  triggerApi,
-  isLoading,
-} = useQueryList(
-  {},
-  'disk',
-  () => {
-    return Promise.all([resourceStore.getDiskListByCvmId(props.data.vendor, props.data.id)]);
-  },
-);
+const { datas, triggerApi, isLoading } = useQueryList({}, 'disk', () => {
+  return Promise.all([resourceStore.getDiskListByCvmId(props.data.vendor, props.data.id)]);
+});
 
-const {
-  isShowMountedDrive,
-  handleMountedDrive,
-  MountedDrive,
-} = useMountedDrive();
+const { isShowMountedDrive, handleMountedDrive, MountedDrive } = useMountedDrive();
 
-const {
-  isShowUninstallDrive,
-  handleUninstallDrive,
-  UninstallDrive,
-} = useUninstallDrive();
+const { isShowUninstallDrive, handleUninstallDrive, UninstallDrive } = useUninstallDrive();
 
 const generateTooltipsOptions = (data: any) => {
-  if (!authVerifyData.value?.permissionAction?.[actionName.value]) return {
-    content: '当前用户无权限操作该按钮',
-    disabled: authVerifyData.value?.permissionAction?.[actionName.value],
-  };
-  if (isResourcePage.value && props.data?.bk_biz_id !== -1) return {
-    content: '该主机已分配到业务，仅可在业务下操作',
-    disabled: props.data.bk_biz_id === -1,
-  };
-  if (data?.is_system_disk) return {
-    content: '系统盘不可以卸载',
-    disabled: !data.is_system_disk,
-  };
+  if (!authVerifyData.value?.permissionAction?.[actionName.value])
+    return {
+      content: '当前用户无权限操作该按钮',
+      disabled: authVerifyData.value?.permissionAction?.[actionName.value],
+    };
+  if (isResourcePage.value && props.data?.bk_biz_id !== -1)
+    return {
+      content: '该主机已分配到业务，仅可在业务下操作',
+      disabled: props.data.bk_biz_id === -1,
+    };
+  if (data?.is_system_disk)
+    return {
+      content: '系统盘不可以卸载',
+      disabled: !data.is_system_disk,
+    };
 
   return {
     disabled: true,
@@ -133,29 +102,21 @@ const columns = ref([
             // 业务下
             if (route.path.includes('business')) {
               routeInfo.query.bizs = accountStore.bizs;
-              Object.assign(
-                routeInfo,
-                {
-                  name: `${type}BusinessDetail`,
-                },
-              );
+              Object.assign(routeInfo, {
+                name: `${type}BusinessDetail`,
+              });
             } else {
-              Object.assign(
-                routeInfo,
-                {
-                  name: 'resourceDetail',
-                  params: {
-                    type,
-                  },
+              Object.assign(routeInfo, {
+                name: 'resourceDetail',
+                params: {
+                  type,
                 },
-              );
+              });
             }
             router.push(routeInfo);
           },
         },
-        [
-          cell || '--',
-        ],
+        [cell || '--'],
       );
     },
   },
@@ -171,12 +132,7 @@ const columns = ref([
     label: '是否加密',
     field: 'exencrypted',
     render({ data }: any) {
-      return h(
-        'span',
-        [
-          data.exencrypted ? '是' : '否',
-        ],
-      );
+      return h('span', [data.exencrypted ? '是' : '否']);
     },
   },
   {
@@ -200,23 +156,25 @@ const columns = ref([
           },
         },
         [
-          withDirectives(h(
-            Button,
-            {
-              text: true,
-              theme: 'primary',
-              disabled: !authVerifyData.value?.permissionAction[actionName.value] || data.is_system_disk
-                    || (isResourcePage.value && props.data?.bk_biz_id !== -1),
-              onClick() {
-                handleUninstallDrive(data);
+          withDirectives(
+            h(
+              Button,
+              {
+                text: true,
+                theme: 'primary',
+                disabled:
+                  !authVerifyData.value?.permissionAction[actionName.value] ||
+                  data.is_system_disk ||
+                  (isResourcePage.value && props.data?.bk_biz_id !== -1),
+                onClick() {
+                  handleUninstallDrive(data);
+                },
               },
-            },
-            [
-              '卸载',
-            ],
-          ), [
-            [bkTooltips, generateTooltipsOptions(data)],
-          ])],
+              ['卸载'],
+            ),
+            [[bkTooltips, generateTooltipsOptions(data)]],
+          ),
+        ],
       );
     },
   },
@@ -261,63 +219,71 @@ watch(
   () => props.data,
   () => {
     if (props.data.vendor === 'tcloud') {
-      columns.value.splice(2, 4, ...[
-        {
-          label: '硬盘类型',
-          field: 'disk_type',
-          render({ data }: any) {
-            if (data?.is_system_disk) {
-              return sysDiskTypeValues[VendorEnum.TCLOUD][data?.disk_type];
-            }
-            return dataDiskTypeValues[VendorEnum.TCLOUD][data?.disk_type];
+      columns.value.splice(
+        2,
+        4,
+        ...[
+          {
+            label: '硬盘类型',
+            field: 'disk_type',
+            render({ data }: any) {
+              if (data?.is_system_disk) {
+                return sysDiskTypeValues[VendorEnum.TCLOUD][data?.disk_type];
+              }
+              return dataDiskTypeValues[VendorEnum.TCLOUD][data?.disk_type];
+            },
           },
-        },
-        {
-          label: '容量(GB)',
-          field: 'disk_size',
-        },
-        {
-          label: '计费类型',
-          field: 'disk_charge_type',
-          render({ cell }: any) {
-            return INSTANCE_CHARGE_MAP[cell];
+          {
+            label: '容量(GB)',
+            field: 'disk_size',
           },
-        },
-        {
-          label: '到期时间',
-          field: '',
-          render({ cell }: any) {
-            return timeFormatter(cell) || '--';
+          {
+            label: '计费类型',
+            field: 'disk_charge_type',
+            render({ cell }: any) {
+              return INSTANCE_CHARGE_MAP[cell];
+            },
           },
-        },
-      ]);
+          {
+            label: '到期时间',
+            field: '',
+            render({ cell }: any) {
+              return timeFormatter(cell) || '--';
+            },
+          },
+        ],
+      );
     }
     if (props.data.vendor === 'aws') {
-      columns.value.splice(2, 0, ...[
-        {
-          label: '硬盘类型',
-          field: 'disk_type',
-          render({ data }: any) {
-            if (data?.is_system_disk) {
-              return sysDiskTypeValues[VendorEnum.AWS][data?.disk_type];
-            }
-            return dataDiskTypeValues[VendorEnum.AWS][data?.disk_type];
+      columns.value.splice(
+        2,
+        0,
+        ...[
+          {
+            label: '硬盘类型',
+            field: 'disk_type',
+            render({ data }: any) {
+              if (data?.is_system_disk) {
+                return sysDiskTypeValues[VendorEnum.AWS][data?.disk_type];
+              }
+              return dataDiskTypeValues[VendorEnum.AWS][data?.disk_type];
+            },
           },
-        },
-        {
-          label: '设备名',
-          field: 'device_name',
-          render({ data }: any) {
-            const attachment = data?.extension?.attachment;
-            const host = attachment.find((x: any) => x.instance_id === props.data.cloud_id);
-            return host.device_name;
+          {
+            label: '设备名',
+            field: 'device_name',
+            render({ data }: any) {
+              const attachment = data?.extension?.attachment;
+              const host = attachment.find((x: any) => x.instance_id === props.data.cloud_id);
+              return host.device_name;
+            },
           },
-        },
-        {
-          label: '容量(GB)',
-          field: 'disk_size',
-        },
-      ]);
+          {
+            label: '容量(GB)',
+            field: 'disk_size',
+          },
+        ],
+      );
     }
     if (props.data.vendor === 'azure') {
       columns.value.splice(6, 1);
@@ -331,40 +297,27 @@ watch(
 </script>
 
 <template>
-  <bk-loading
-    :loading="isLoading"
-  >
+  <bk-loading :loading="isLoading">
     <span @click="showAuthDialog(actionName)">
       <bk-button
         class="btn"
         theme="primary"
         :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]"
         @click="handleMountedDrive"
-      >挂载</bk-button>
+      >
+        挂载
+      </bk-button>
     </span>
-    <bk-table
-      class="mt16"
-      row-hover="auto"
-      :columns="columns"
-      :data="datas"
-      show-overflow-tooltip
-    />
+    <bk-table class="mt16" row-hover="auto" :columns="columns" :data="datas" show-overflow-tooltip />
   </bk-loading>
 
-  <mounted-drive
-    v-model:is-show="isShowMountedDrive"
-    :detail="data"
-    @success="triggerApi"
-  />
+  <mounted-drive v-model:is-show="isShowMountedDrive" :detail="data" @success="triggerApi" />
 
-  <uninstall-drive
-    v-model:is-show="isShowUninstallDrive"
-    @success="triggerApi"
-  />
+  <uninstall-drive v-model:is-show="isShowUninstallDrive" @success="triggerApi" />
 </template>
 
 <style lang="scss" scoped>
-  .btn {
-    min-width: 88px;
-  }
+.btn {
+  min-width: 88px;
+}
 </style>

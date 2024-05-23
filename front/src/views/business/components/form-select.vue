@@ -2,11 +2,7 @@
 import { reactive, watch, ref, inject } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAccountStore, useResourceStore } from '@/store';
-import {
-  BusinessFormFilter,
-  QueryFilterType,
-  QueryRuleOPEnum,
-} from '@/typings';
+import { BusinessFormFilter, QueryFilterType, QueryRuleOPEnum } from '@/typings';
 import { CLOUD_TYPE } from '@/constants';
 import { VendorEnum } from '@/common/constant';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
@@ -158,22 +154,23 @@ const getAccountList = async () => {
     accountLoading.value = true;
     const payload = isResourcePage
       ? {
-        page: {
-          count: false,
-          limit: 100,
-          start: 0,
-        },
-        filter: { op: 'and', rules: [] },
-      }
+          page: {
+            count: false,
+            limit: 100,
+            start: 0,
+          },
+          filter: { op: 'and', rules: [] },
+        }
       : {
-        params: {
-          account_type: 'resource',
-        },
-      };
+          params: {
+            account_type: 'resource',
+          },
+        };
     const res = await accountStore.getAccountList(payload, accountStore.bizs);
     if (resourceAccountStore.resourceAccount?.id) {
-      accountList.value = res.data?.details
-        .filter(({ id }: {id: string}) => id === resourceAccountStore.resourceAccount.id);
+      accountList.value = res.data?.details.filter(
+        ({ id }: { id: string }) => id === resourceAccountStore.resourceAccount.id,
+      );
       // 自动填充当前账号
       state.filter.account_id = accountList.value?.[0].id;
       return;
@@ -182,9 +179,9 @@ const getAccountList = async () => {
     if (props.type === 'security') {
       // 安全组需要区分
       if (securityType.value && securityType.value === 'gcp') {
-        accountList.value = accountList.value.filter(e => e.vendor === 'gcp');
+        accountList.value = accountList.value.filter((e) => e.vendor === 'gcp');
       } else {
-        accountList.value = accountList.value.filter(e => e.vendor !== 'gcp');
+        accountList.value = accountList.value.filter((e) => e.vendor !== 'gcp');
       }
     }
   } catch (error) {
@@ -225,42 +222,14 @@ getAccountList();
 </script>
 <template>
   <bk-form class="pt20 bussine-form" label-width="150" :model="state.filter" ref="formRef">
-    <bk-form-item
-      :label="t('云账号')"
-      class="item-warp"
-      required
-      property="account_id"
-    >
-      <bk-select
-        class="item-warp-component"
-        :loading="accountLoading"
-        v-model="state.filter.account_id"
-      >
-        <bk-option
-          v-for="(item, index) in accountList"
-          :key="index"
-          :value="item.id"
-          :label="item.name"
-        />
+    <bk-form-item :label="t('云账号')" class="item-warp" required property="account_id">
+      <bk-select class="item-warp-component" :loading="accountLoading" v-model="state.filter.account_id">
+        <bk-option v-for="(item, index) in accountList" :key="index" :value="item.id" :label="item.name" />
       </bk-select>
     </bk-form-item>
-    <bk-form-item
-      :label="t('云厂商')"
-      class="item-warp"
-      required
-      property="vendor"
-    >
-      <bk-select
-        disabled
-        class="item-warp-component"
-        v-model="state.filter.vendor"
-      >
-        <bk-option
-          v-for="(item, index) in CLOUD_TYPE"
-          :key="index"
-          :value="item.id"
-          :label="item.name"
-        />
+    <bk-form-item :label="t('云厂商')" class="item-warp" required property="vendor">
+      <bk-select disabled class="item-warp-component" v-model="state.filter.vendor">
+        <bk-option v-for="(item, index) in CLOUD_TYPE" :key="index" :value="item.id" :label="item.name" />
       </bk-select>
     </bk-form-item>
     <bk-form-item
@@ -280,11 +249,7 @@ getAccountList();
         <bk-option
           v-for="(item, index) in cloudRegionsList"
           :key="index"
-          :value="
-            state.filter.vendor === 'azure'
-              ? item.name
-              : item.region_id || item.id
-          "
+          :value="state.filter.vendor === 'azure' ? item.name : item.region_id || item.id"
           :label="item.locales_zh_cn || item.region_name || item.region_id || item.name"
         />
       </bk-select>

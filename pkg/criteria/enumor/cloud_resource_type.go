@@ -28,6 +28,28 @@ import (
 // CloudResourceType defines the cloud resource type.
 type CloudResourceType string
 
+var typeMapping = map[CloudResourceType]table.Name{
+	AccountCloudResType:          table.AccountTable,
+	SubAccountCloudResType:       table.SubAccountTable,
+	SecurityGroupCloudResType:    table.SecurityGroupTable,
+	GcpFirewallRuleCloudResType:  table.GcpFirewallRuleTable,
+	VpcCloudResType:              table.VpcTable,
+	SubnetCloudResType:           table.SubnetTable,
+	EipCloudResType:              table.EipTable,
+	DiskCloudResType:             table.DiskTable,
+	CvmCloudResType:              table.CvmTable,
+	RouteTableCloudResType:       table.RouteTableTable,
+	NetworkInterfaceCloudResType: table.NetworkInterfaceTable,
+	ZoneCloudResType:             table.ZoneTable,
+	AzureResourceGroup:           table.AzureRGTable,
+	ArgumentTemplateResType:      table.ArgumentTemplateTable,
+	CertCloudResType:             table.SslCertTable,
+	LoadBalancerCloudResType:     table.LoadBalancerTable,
+	ListenerCloudResType:         table.LoadBalancerListenerTable,
+	TargetGroupCloudResType:      table.LoadBalancerTargetGroupTable,
+	TCLoudUrlRuleCloudResType:    table.TCloudLbUrlRuleTable,
+}
+
 // ConvTableName conv CloudResourceType to table.Name.
 func (rt CloudResourceType) ConvTableName() (table.Name, error) {
 	name := table.Name(rt)
@@ -35,38 +57,11 @@ func (rt CloudResourceType) ConvTableName() (table.Name, error) {
 		return name, nil
 	}
 
-	switch rt {
-	case AccountCloudResType:
-		return table.AccountTable, nil
-	case SubAccountCloudResType:
-		return table.SubAccountTable, nil
-	case SecurityGroupCloudResType:
-		return table.SecurityGroupTable, nil
-	case GcpFirewallRuleCloudResType:
-		return table.GcpFirewallRuleTable, nil
-	case VpcCloudResType:
-		return table.VpcTable, nil
-	case SubnetCloudResType:
-		return table.SubnetTable, nil
-	case EipCloudResType:
-		return table.EipTable, nil
-	case DiskCloudResType:
-		return table.DiskTable, nil
-	case CvmCloudResType:
-		return table.CvmTable, nil
-	case RouteTableCloudResType:
-		return table.RouteTableTable, nil
-	case NetworkInterfaceCloudResType:
-		return table.NetworkInterfaceTable, nil
-	case ZoneCloudResType:
-		return table.ZoneTable, nil
-	case AzureResourceGroup:
-		return table.AzureRGTable, nil
-	case ArgumentTemplateResType:
-		return table.ArgumentTemplateTable, nil
-	default:
+	name, exists := typeMapping[rt]
+	if !exists {
 		return "", fmt.Errorf("%s does not have a corresponding table name", rt)
 	}
+	return name, nil
 }
 
 // CloudResourceType define all cloud resource type.
@@ -88,4 +83,9 @@ const (
 	ZoneCloudResType             CloudResourceType = "zone"
 	AzureResourceGroup           CloudResourceType = "azure_resource_group"
 	ArgumentTemplateResType      CloudResourceType = "argument_template"
+	CertCloudResType             CloudResourceType = "cert"
+	LoadBalancerCloudResType     CloudResourceType = "load_balancer"
+	ListenerCloudResType         CloudResourceType = "listener"
+	TargetGroupCloudResType      CloudResourceType = "target_group"
+	TCLoudUrlRuleCloudResType    CloudResourceType = "tcloud_url_rule"
 )
