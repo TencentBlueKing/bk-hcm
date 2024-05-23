@@ -60,8 +60,7 @@ func (svc *securityGroupSvc) ListLoadBalancersBySecurityGroup(cts *rest.Contexts
 	}
 
 	return svc.client.DataService().Global.SecurityGroup.ListLoadBalancersBySecurityGroup(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+		cts.Kit,
 		id,
 		&core.ListReq{
 			Page:   req.Page,
@@ -107,8 +106,7 @@ func (svc *securityGroupSvc) ListCvmsBySecurityGroup(cts *rest.Contexts) (interf
 	}
 
 	return svc.client.DataService().Global.SecurityGroup.ListCvmsBySecurityGroup(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+		cts.Kit,
 		id,
 		&core.ListReq{
 			Page:   req.Page,

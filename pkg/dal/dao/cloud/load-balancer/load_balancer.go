@@ -49,7 +49,6 @@ type LoadBalancerInterface interface {
 	Update(kt *kit.Kit, expr *filter.Expression, model *tablelb.LoadBalancerTable) error
 	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.LoadBalancerTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*typeslb.ListLoadBalancerDetails, error)
-	ListInIDs(kt *kit.Kit, opt *types.ListOption, ids []string) (*typeslb.ListLoadBalancerDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
 
@@ -191,29 +190,6 @@ func (dao LoadBalancerDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
 
 // List list load balancer.
 func (dao LoadBalancerDao) List(kt *kit.Kit, opt *types.ListOption) (*typeslb.ListLoadBalancerDetails, error) {
-	return dao.list(kt, opt, tools.DefaultSqlWhereOption)
-}
-
-// ListInIDs list load balancer by ids.
-func (dao LoadBalancerDao) ListInIDs(kt *kit.Kit, opt *types.ListOption, ids []string) (*typeslb.ListLoadBalancerDetails, error) {
-	whereOpt := &filter.SQLWhereOption{
-		Priority: filter.Priority{"id"},
-		CrownedOption: &filter.CrownedOption{
-			CrownedOp: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{
-					Field: "id",
-					Op:    filter.In.Factory(),
-					Value: ids,
-				},
-			},
-		},
-	}
-
-	return dao.list(kt, opt, whereOpt)
-}
-
-func (dao LoadBalancerDao) list(kt *kit.Kit, opt *types.ListOption, sqlOpt *filter.SQLWhereOption) (*typeslb.ListLoadBalancerDetails, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
@@ -223,10 +199,7 @@ func (dao LoadBalancerDao) list(kt *kit.Kit, opt *types.ListOption, sqlOpt *filt
 		return nil, err
 	}
 
-	if sqlOpt == nil {
-		sqlOpt = tools.DefaultSqlWhereOption
-	}
-	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(sqlOpt)
+	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return nil, err
 	}

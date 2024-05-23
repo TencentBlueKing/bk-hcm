@@ -120,13 +120,13 @@ func (svc *securityGroupSvc) ListLoadBalancersBySecurityGroup(cts *rest.Contexts
 		return nil, err
 	}
 	if req.Page.Count {
-		return &protocloud.ListLoadBalancersBySecurityGroupResult{
+		return &core.ListResultT[*corelb.BaseLoadBalancer]{
 			Count: list.Count,
 		}, nil
 	}
 	if len(list.Details) == 0 {
-		return &protocloud.ListLoadBalancersBySecurityGroupResult{
-			Details: nil,
+		return &core.ListResultT[*corelb.BaseLoadBalancer]{
+			Details: make([]*corelb.BaseLoadBalancer, 0),
 		}, nil
 	}
 
@@ -135,13 +135,17 @@ func (svc *securityGroupSvc) ListLoadBalancersBySecurityGroup(cts *rest.Contexts
 		lbIDs = append(lbIDs, one.ResID)
 	}
 
-	result, err := svc.dao.LoadBalancer().ListInIDs(
+	expression, err := tools.And(req.Filter, tools.ContainersExpression[string]("id", lbIDs))
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := svc.dao.LoadBalancer().List(
 		cts.Kit,
 		&types.ListOption{
-			Filter: req.Filter,
+			Filter: expression,
 			Page:   req.Page,
 		},
-		lbIDs,
 	)
 	if err != nil {
 		return nil, err
@@ -152,7 +156,7 @@ func (svc *securityGroupSvc) ListLoadBalancersBySecurityGroup(cts *rest.Contexts
 		details = append(details, loadbalancer.ConvTableToBaseLB(&one))
 	}
 
-	return &protocloud.ListLoadBalancersBySecurityGroupResult{
+	return &core.ListResultT[*corelb.BaseLoadBalancer]{
 		Details: details,
 	}, nil
 }
@@ -178,13 +182,13 @@ func (svc *securityGroupSvc) ListCvmsBySecurityGroup(cts *rest.Contexts) (interf
 		return nil, err
 	}
 	if req.Page.Count {
-		return &protocloud.ListCvmsBySecurityGroupResult{
+		return &core.ListResultT[*corecvm.BaseCvm]{
 			Count: list.Count,
 		}, nil
 	}
 
 	if len(list.Details) == 0 {
-		return &protocloud.ListCvmsBySecurityGroupResult{
+		return &core.ListResultT[*corecvm.BaseCvm]{
 			Details: make([]*corecvm.BaseCvm, 0),
 		}, nil
 	}
@@ -194,11 +198,16 @@ func (svc *securityGroupSvc) ListCvmsBySecurityGroup(cts *rest.Contexts) (interf
 		cvmIDs = append(cvmIDs, one.CvmID)
 	}
 
+	expression, err := tools.And(req.Filter, tools.ContainersExpression[string]("id", cvmIDs))
+	if err != nil {
+		return nil, err
+	}
+
 	opt := &types.ListOption{
-		Filter: req.Filter,
+		Filter: expression,
 		Page:   req.Page,
 	}
-	cvmList, err := svc.dao.Cvm().ListInIDs(cts.Kit, opt, cvmIDs)
+	cvmList, err := svc.dao.Cvm().List(cts.Kit, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +217,7 @@ func (svc *securityGroupSvc) ListCvmsBySecurityGroup(cts *rest.Contexts) (interf
 		details = append(details, cvm.ConvTableToBaseCvm(&one))
 	}
 
-	return &protocloud.ListCvmsBySecurityGroupResult{
+	return &core.ListResultT[*corecvm.BaseCvm]{
 		Details: details,
 	}, nil
 }
