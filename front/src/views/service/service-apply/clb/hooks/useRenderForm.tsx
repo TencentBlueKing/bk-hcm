@@ -12,6 +12,7 @@ import ConditionOptions from '../../components/common/condition-options.vue';
 import CommonCard from '@/components/CommonCard';
 import VpcReviewPopover from '../../components/common/VpcReviewPopover';
 import SelectedItemPreviewComp from '@/components/SelectedItemPreviewComp';
+import BandwidthPackageSelector from '../../components/common/BandwidthPackageSelector';
 // import types
 import { type ISubnetItem } from '../../cvm/children/SubnetPreviewDialog';
 import type { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
@@ -401,7 +402,11 @@ export default (formModel: ApplyClbModel) => {
           property: 'internet_charge_type',
           hidden: (!isIntranet.value && formModel.account_type === 'LEGACY') || isIntranet.value,
           content: () => (
-            <BkRadioGroup v-model={formModel.internet_charge_type}>
+            <BkRadioGroup
+              v-model={formModel.internet_charge_type}
+              onChange={(val) => {
+                if (val !== 'BANDWIDTH_PACKAGE') formModel.bandwidth_package_id = undefined;
+              }}>
               {INTERNET_CHARGE_TYPE.map(({ label, value }) => (
                 <BkRadioButton
                   key={value}
@@ -416,6 +421,19 @@ export default (formModel: ApplyClbModel) => {
                 </BkRadioButton>
               ))}
             </BkRadioGroup>
+          ),
+        },
+        {
+          label: '共享带宽包',
+          required: true,
+          property: 'bandwidth_package_id',
+          hidden: formModel.internet_charge_type !== 'BANDWIDTH_PACKAGE',
+          content: () => (
+            <BandwidthPackageSelector
+              v-model={formModel.bandwidth_package_id}
+              accountId={formModel.account_id}
+              region={formModel.region}
+            />
           ),
         },
         {

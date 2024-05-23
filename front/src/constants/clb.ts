@@ -71,10 +71,10 @@ export const INTERNET_CHARGE_TYPE = [
     label: '按带宽',
     value: 'BANDWIDTH_POSTPAID_BY_HOUR',
   },
-  // {
-  //   label: '共享带宽包',
-  //   value: 'BANDWIDTH_PACKAGE',
-  // },
+  {
+    label: '共享带宽包',
+    value: 'BANDWIDTH_PACKAGE',
+  },
 ];
 
 // 支持IPv6 NAT64的地域
@@ -229,3 +229,11 @@ export const IP_VERSION_MAP = {
 
 // 运营商类型
 export const ISP_TYPES = ['BGP', 'CTCC', 'CUCC', 'CMCC'];
+
+// 带宽包状态
+export enum BANDWIDTH_PACKAGE_STATUS {
+  CREATING = 'CREATING',
+  CREATED = 'CREATED',
+  DELETING = 'DELETING',
+  DELETED = 'DELETED',
+}
