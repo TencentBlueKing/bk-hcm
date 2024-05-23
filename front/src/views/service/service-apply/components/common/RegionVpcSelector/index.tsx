@@ -2,7 +2,7 @@ import { PropType, defineComponent, ref, watch } from 'vue';
 import { Select } from 'bkui-vue';
 import { QueryRuleOPEnum } from '@/typings';
 import { useSingleList } from '@/hooks/useSingleList';
-import { getBusinessApiPath } from '@/utils';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { VendorEnum } from '@/common/constant';
 
 const { Option } = Select;
@@ -20,12 +20,13 @@ export default defineComponent({
   setup(props, { emit, expose }) {
     const cloudVpcId = ref('');
 
+    const { getBusinessApiPath } = useWhereAmI();
     const businessApiPath = getBusinessApiPath();
     const { dataList, isDataLoad, handleScrollEnd, handleRefresh } = useSingleList({
       url: () =>
         props.vendor
-          ? `/api/v1/web/${businessApiPath}/vendors/${props.vendor}/vpcs/with/subnet_count/list`
-          : `/api/v1/cloud/${businessApiPath}/vpcs/list`,
+          ? `/api/v1/web/${businessApiPath}vendors/${props.vendor}/vpcs/with/subnet_count/list`
+          : `/api/v1/cloud/${businessApiPath}vpcs/list`,
       rules: () => [
         { op: QueryRuleOPEnum.EQ, field: 'account_id', value: props.accountId },
         { op: QueryRuleOPEnum.EQ, field: 'region', value: props.region },
