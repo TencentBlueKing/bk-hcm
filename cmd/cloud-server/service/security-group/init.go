@@ -56,11 +56,6 @@ func InitSecurityGroupService(c *capability.Capability) {
 	h.Add("DisAssociateNetworkInterface", http.MethodPost, "/security_groups/disassociate/network_interfaces",
 		svc.DisAssociateNetworkInterface)
 
-	// SG 关联的其他资源接口
-	h.Add("ListCvmsBySecurityGroup", http.MethodPost, "/security_group/{id}/cvm/list", svc.ListCvmsBySecurityGroup)
-	h.Add("ListLoadBalancersBySecurityGroup", http.MethodPost, "/security_group/{id}/load_balancer/list",
-		svc.ListLoadBalancersBySecurityGroup)
-
 	h.Add("CreateSecurityGroupRule", http.MethodPost,
 		"/vendors/{vendor}/security_groups/{security_group_id}/rules/create", svc.CreateSecurityGroupRule)
 	h.Add("ListSecurityGroupRule", http.MethodPost,
@@ -110,9 +105,18 @@ func InitSecurityGroupService(c *capability.Capability) {
 	h.Add("DeleteBizSGRule", http.MethodDelete,
 		"/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.DeleteBizSGRule)
 
+	relatedResourceService(h, svc)
+
 	initSecurityGroupServiceHooks(svc, h)
 
 	h.Load(c.WebService)
+}
+
+// SG 关联的其他资源接口
+func relatedResourceService(h *rest.Handler, svc *securityGroupSvc) {
+	h.Add("ListCvmsBySecurityGroup", http.MethodPost, "/security_group/{id}/cvm/list", svc.ListCvmsBySecurityGroup)
+	h.Add("ListLoadBalancersBySecurityGroup", http.MethodPost, "/security_group/{id}/load_balancer/list",
+		svc.ListLoadBalancersBySecurityGroup)
 }
 
 type securityGroupSvc struct {
