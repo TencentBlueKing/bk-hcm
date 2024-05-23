@@ -32,6 +32,7 @@ import (
 	ressync "hcm/cmd/hc-service/logics/res-sync"
 	"hcm/cmd/hc-service/service/account"
 	argstpl "hcm/cmd/hc-service/service/argument-template"
+	bwpkg "hcm/cmd/hc-service/service/bandwidth-package"
 	"hcm/cmd/hc-service/service/bill"
 	"hcm/cmd/hc-service/service/capability"
 	"hcm/cmd/hc-service/service/cert"
@@ -170,6 +171,7 @@ func (s *Service) apiSet() *restful.Container {
 	argstpl.InitArgsTplService(c)
 	loadbalancer.InitLoadBalancerService(c)
 	cert.InitCertService(c)
+	bwpkg.InitBwPkgService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }
