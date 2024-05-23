@@ -2,19 +2,20 @@
 
 - 该接口提供版本：v9.9.9+。
 - 该接口所需权限：资源查看。
-- 该接口功能描述：获取安全组下绑定的云主机ID列表。
+- 该接口功能描述：获取业务下安全组下的云主机ID列表。
 
 ### URL
 
-POST /api/v1/cloud/security_group/{id}/cvm/list
+POST /api/v1/cloud/bizs/{bk_biz_id}/security_group/{id}/cvm/list
 
 ### 输入参数
 
-| 参数名称   | 参数类型   | 必选 | 描述     |
-|--------|--------|----|--------|
-| id     | string | 是  | 安全组id  |
-| filter | object | 是  | 查询过滤条件 |
-| page   | object | 是  | 分页设置   |
+| 参数名称      | 参数类型   | 必选 | 描述     |
+|-----------|--------|----|--------|
+| bk_biz_id | int64  | 是  | 业务ID   |
+| id        | string | 是  | 安全组id  |
+| filter    | object | 是  | 查询过滤条件 |
+| page      | object | 是  | 分页设置   |
 
 
 #### filter
@@ -100,7 +101,7 @@ POST /api/v1/cloud/security_group/{id}/cvm/list
 
 #### 获取详细信息请求参数示例
 
-查询安全组ID为0000000h绑定的云主机列表。
+查询安全组ID为0000000h的云主机列表。
 
 ```json
 {

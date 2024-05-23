@@ -2,19 +2,20 @@
 
 - 该接口提供版本：v9.9.9+。
 - 该接口所需权限：资源查看。
-- 该接口功能描述：获取安全组下绑定的云主机ID列表。
+- 该接口功能描述：查询业务下的安全组下绑定的资源ID列表。
 
 ### URL
 
-POST /api/v1/cloud/security_group/{id}/cvm/list
+POST /api/v1/bizs/{bk_biz_id}/cloud/security_group/{id}/common/list
 
 ### 输入参数
 
-| 参数名称   | 参数类型   | 必选 | 描述     |
-|--------|--------|----|--------|
-| id     | string | 是  | 安全组id  |
-| filter | object | 是  | 查询过滤条件 |
-| page   | object | 是  | 分页设置   |
+| 参数名称      | 参数类型   | 必选 | 描述     |
+|-----------|--------|----|--------|
+| bk_biz_id | int64  | 是  | 业务ID   |
+| id        | string | 是  | 安全组id  |
+| filter    | object | 是  | 查询过滤条件 |
+| page      | object | 是  | 分页设置   |
 
 
 #### filter
@@ -100,7 +101,7 @@ POST /api/v1/cloud/security_group/{id}/cvm/list
 
 #### 获取详细信息请求参数示例
 
-查询安全组ID为0000000h绑定的云主机列表。
+查询安全组ID为0000000h绑定的*负载均衡*列表。
 
 ```json
 {
@@ -111,6 +112,11 @@ POST /api/v1/cloud/security_group/{id}/cvm/list
         "field": "security_group_id",
         "op": "eq",
         "value": "0000000h"
+      },
+      {
+        "field": "res_type",
+        "op": "eq",
+        "value": "load_balancer"
       }
     ]
   },
@@ -124,7 +130,7 @@ POST /api/v1/cloud/security_group/{id}/cvm/list
 
 #### 获取数量请求参数示例
 
-查询Cvm数量。
+查询创建者是Jim的Cvm数量。
 
 ```json
 {
@@ -135,6 +141,11 @@ POST /api/v1/cloud/security_group/{id}/cvm/list
         "field": "security_group_id",
         "op": "eq",
         "value": "0000000h"
+      },
+      {
+        "field": "res_type",
+        "op": "eq",
+        "value": "load_balancer"
       }
     ]
   },
@@ -155,9 +166,8 @@ POST /api/v1/cloud/security_group/{id}/cvm/list
   "data": {
     "count": 0,
     "details": [
-      "00000004",
-      "00000002",
-      "00000003"
+      "0000000d",
+      "0000000a"
     ]
   }
 }
@@ -168,10 +178,9 @@ POST /api/v1/cloud/security_group/{id}/cvm/list
 ```json
 {
   "code": 0,
-  "message": "",
+  "message": "ok",
   "data": {
-    "count": 3,
-    "details": []
+    "count": 2
   }
 }
 ```
@@ -189,4 +198,4 @@ POST /api/v1/cloud/security_group/{id}/cvm/list
 | 参数名称    | 参数类型     | 描述             |
 |---------|----------|----------------|
 | count   | uint64   | 当前规则能匹配到的总记录条数 |
-| details | []string | 云主机ID列表        |
+| details | []string | 查询返回的数据        |

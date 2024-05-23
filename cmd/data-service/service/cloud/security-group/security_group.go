@@ -25,12 +25,8 @@ import (
 	"reflect"
 
 	"hcm/cmd/data-service/service/capability"
-	"hcm/cmd/data-service/service/cloud/cvm"
-	loadbalancer "hcm/cmd/data-service/service/cloud/load-balancer"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
-	corecvm "hcm/pkg/api/core/cloud/cvm"
-	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -43,7 +39,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/json"
 
 	"github.com/jmoiron/sqlx"
@@ -80,146 +75,11 @@ func initSecurityGroupService(cap *capability.Capability) {
 	h.Add("BatchUpdateSecurityGroupCommonInfo", http.MethodPatch, "/security_groups/common/info/batch/update",
 		svc.BatchUpdateSecurityGroupCommonInfo)
 
-	// related resource
-	h.Add("ListCvmsBySecurityGroup", http.MethodPost, "/security_group/{id}/cvm/list", svc.ListCvmsBySecurityGroup)
-	h.Add("ListLoadBalancersBySecurityGroup", http.MethodPost, "/security_group/{id}/load_balancer/list",
-		svc.ListLoadBalancersBySecurityGroup)
-
 	h.Load(cap.WebService)
 }
 
 type securityGroupSvc struct {
 	dao dao.Set
-}
-
-// ListLoadBalancersBySecurityGroup list load balancer by security group.
-func (svc *securityGroupSvc) ListLoadBalancersBySecurityGroup(cts *rest.Contexts) (interface{}, error) {
-	req := new(core.ListReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-	id := cts.PathParameter("id").String()
-
-	// 后续如果有新接入的资源类型，需要把这段逻辑进行抽象
-	list, err := svc.dao.SGCommonRel().List(cts.Kit, &types.ListOption{
-		Fields: []string{"res_id"},
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				filter.AtomRule{Field: "security_group_id", Op: filter.Equal.Factory(), Value: id},
-				filter.AtomRule{Field: "res_type", Op: filter.Equal.Factory(), Value: enumor.LoadBalancerCloudResType},
-			},
-		},
-		Page: req.Page,
-	})
-	if err != nil {
-		return nil, err
-	}
-	if req.Page.Count {
-		return &core.ListResultT[*corelb.BaseLoadBalancer]{
-			Count: list.Count,
-		}, nil
-	}
-	if len(list.Details) == 0 {
-		return &core.ListResultT[*corelb.BaseLoadBalancer]{
-			Details: make([]*corelb.BaseLoadBalancer, 0),
-		}, nil
-	}
-
-	lbIDs := make([]string, 0, len(list.Details))
-	for _, one := range list.Details {
-		lbIDs = append(lbIDs, one.ResID)
-	}
-
-	expression, err := tools.And(req.Filter, tools.ContainersExpression[string]("id", lbIDs))
-	if err != nil {
-		return nil, err
-	}
-
-	result, err := svc.dao.LoadBalancer().List(
-		cts.Kit,
-		&types.ListOption{
-			Filter: expression,
-			Page:   req.Page,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	details := make([]*corelb.BaseLoadBalancer, 0, len(result.Details))
-	for _, one := range result.Details {
-		details = append(details, loadbalancer.ConvTableToBaseLB(&one))
-	}
-
-	return &core.ListResultT[*corelb.BaseLoadBalancer]{
-		Details: details,
-	}, nil
-}
-
-// ListCvmsBySecurityGroup list cvm by security group.
-func (svc *securityGroupSvc) ListCvmsBySecurityGroup(cts *rest.Contexts) (interface{}, error) {
-	req := new(core.ListReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-	id := cts.PathParameter("id").String()
-
-	list, err := svc.dao.SGCvmRel().List(cts.Kit, &types.ListOption{
-		Fields: []string{"cvm_id"},
-		Filter: tools.EqualExpression("security_group_id", id),
-		Page:   req.Page,
-	})
-	if err != nil {
-		return nil, err
-	}
-	if req.Page.Count {
-		return &core.ListResultT[*corecvm.BaseCvm]{
-			Count: list.Count,
-		}, nil
-	}
-
-	if len(list.Details) == 0 {
-		return &core.ListResultT[*corecvm.BaseCvm]{
-			Details: make([]*corecvm.BaseCvm, 0),
-		}, nil
-	}
-
-	cvmIDs := make([]string, 0, len(list.Details))
-	for _, one := range list.Details {
-		cvmIDs = append(cvmIDs, one.CvmID)
-	}
-
-	expression, err := tools.And(req.Filter, tools.ContainersExpression[string]("id", cvmIDs))
-	if err != nil {
-		return nil, err
-	}
-
-	opt := &types.ListOption{
-		Filter: expression,
-		Page:   req.Page,
-	}
-	cvmList, err := svc.dao.Cvm().List(cts.Kit, opt)
-	if err != nil {
-		return nil, err
-	}
-
-	details := make([]*corecvm.BaseCvm, 0, len(cvmList.Details))
-	for _, one := range cvmList.Details {
-		details = append(details, cvm.ConvTableToBaseCvm(&one))
-	}
-
-	return &core.ListResultT[*corecvm.BaseCvm]{
-		Details: details,
-	}, nil
 }
 
 // BatchCreateSecurityGroup create security group.

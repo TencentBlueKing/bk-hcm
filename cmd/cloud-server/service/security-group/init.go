@@ -114,9 +114,16 @@ func InitSecurityGroupService(c *capability.Capability) {
 
 // SG 关联的其他资源接口
 func relatedResourceService(h *rest.Handler, svc *securityGroupSvc) {
-	h.Add("ListCvmsBySecurityGroup", http.MethodPost, "/security_group/{id}/cvm/list", svc.ListCvmsBySecurityGroup)
-	h.Add("ListLoadBalancersBySecurityGroup", http.MethodPost, "/security_group/{id}/load_balancer/list",
-		svc.ListLoadBalancersBySecurityGroup)
+	h.Add("ListResourceIdBySecurityGroup", http.MethodPost,
+		"/security_group/{id}/common/list", svc.ListResourceIdBySecurityGroup)
+	h.Add("ListBizResourceIDBySecurityGroup", http.MethodPost,
+		"/bizs/{bk_biz_id}/security_group/{id}/common/list", svc.ListBizResourceIDBySecurityGroup)
+
+	h.Add("ListCvmIdBySecurityGroup", http.MethodPost,
+		"/security_group/{id}/cvm/list", svc.ListCvmIdBySecurityGroup)
+	h.Add("ListBizCvmIdBySecurityGroup", http.MethodPost,
+		"/bizs/{bk_biz_id}/security_group/{id}/cvm/list", svc.ListBizCvmIdBySecurityGroup)
+
 }
 
 type securityGroupSvc struct {

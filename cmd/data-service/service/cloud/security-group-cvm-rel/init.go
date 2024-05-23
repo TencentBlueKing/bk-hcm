@@ -41,6 +41,10 @@ func InitService(cap *capability.Capability) {
 	h.Add("ListWithSecurityGroup", http.MethodPost, "/security_group_cvm_rels/with/security_group/list",
 		svc.ListWithSecurityGroup)
 
+	// related resource
+	h.Add("ListResourceIdBySecurityGroup", http.MethodPost,
+		"/security_group_cvm_rels/by/security_group/list", svc.ListCvmsIdBySecurityGroup)
+
 	h.Load(cap.WebService)
 }
 
