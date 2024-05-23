@@ -41,9 +41,10 @@ export default defineComponent({
     });
 
     // use custom hooks
-    const { subnetData, isSubnetPreviewDialogShow, ApplyClbForm, formRef } = useRenderForm(formModel);
+    const { subnetData, isSubnetPreviewDialogShow, ApplyClbForm, formRef, isInquiryPricesLoading } =
+      useRenderForm(formModel);
     const { BindEipDialog } = useBindEip(formModel);
-    const { ApplyClbBottomBar } = useBottomBar(formModel, formRef);
+    const { ApplyClbBottomBar } = useBottomBar(formModel, formRef, isInquiryPricesLoading);
     useHandleParams(formModel, formRef);
 
     return () => (

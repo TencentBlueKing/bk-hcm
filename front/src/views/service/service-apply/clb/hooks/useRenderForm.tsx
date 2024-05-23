@@ -42,7 +42,6 @@ export default (formModel: ApplyClbModel) => {
   // define data
   const vpcId = ref('');
   const vpcData = ref(null); // 预览vpc
-  const isVpcPreviewDialogShow = ref(false);
   const subnetData = ref(null); // 预览子网
   const isSubnetPreviewDialogShow = ref(false);
   const formRef = ref();
@@ -70,7 +69,7 @@ export default (formModel: ApplyClbModel) => {
   };
 
   // use custom hooks
-  const { ispList, isResourceListLoading, quotas } = useFilterResource(formModel);
+  const { ispList, isResourceListLoading, quotas, isInquiryPricesLoading } = useFilterResource(formModel);
 
   // 当前地域下负载均衡的配额
   const currentLbQuota = computed(() => {
@@ -588,5 +587,12 @@ export default (formModel: ApplyClbModel) => {
     },
   );
 
-  return { vpcData, isVpcPreviewDialogShow, subnetData, isSubnetPreviewDialogShow, ApplyClbForm, formRef };
+  return {
+    vpcData,
+    subnetData,
+    isSubnetPreviewDialogShow,
+    ApplyClbForm,
+    formRef,
+    isInquiryPricesLoading,
+  };
 };
