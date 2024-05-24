@@ -723,17 +723,14 @@ func (b Backend) GetCloudID() string {
 	switch enumor.InstType(cvt.PtrToVal(b.Type)) {
 	case enumor.CcnInstType:
 		// 云联网类型没有云id，但是ip+端口是唯一的
-		ips := strings.Builder{}
-		for _, ip := range b.PrivateIpAddresses {
-			ips.WriteString(cvt.PtrToVal(ip))
-			ips.WriteByte('-')
+		builder := strings.Builder{}
+		ips := append(b.PrivateIpAddresses, b.PublicIpAddresses...)
+		for _, ip := range ips {
+			builder.WriteString(cvt.PtrToVal(ip))
+			builder.WriteByte('-')
 		}
-		for _, ip := range b.PublicIpAddresses {
-			ips.WriteString(cvt.PtrToVal(ip))
-			ips.WriteByte('-')
-		}
-		ips.WriteString(fmt.Sprint(cvt.PtrToVal(b.Port)))
-		return ips.String()
+		builder.WriteString(fmt.Sprint(cvt.PtrToVal(b.Port)))
+		return builder.String()
 	default:
 		return fmt.Sprintf("%s-%d", cvt.PtrToVal(b.InstanceId), cvt.PtrToVal(b.Port))
 	}
@@ -829,4 +826,28 @@ type TCloudLoadBalancerQuota struct {
 	QuotaCurrent *int64 `json:"quota_current,omitnil"`
 	// 配额数量。
 	QuotaLimit int64 `json:"quota_limit,omitnil"`
+}
+
+// TCloudCreateSnatIpOpt ...
+type TCloudCreateSnatIpOpt struct {
+	Region         string           `json:"region" validate:"required"`
+	LoadBalancerId string           `json:"load_balancer_id" validate:"required"`
+	SnatIps        []*corelb.SnatIp `json:"snat_ips" validate:"required,min=1,dive,required"`
+}
+
+// Validate ...
+func (opt *TCloudCreateSnatIpOpt) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// TCloudDeleteSnatIpOpt ...
+type TCloudDeleteSnatIpOpt struct {
+	Region         string   `json:"region" validate:"required"`
+	LoadBalancerId string   `json:"load_balancer_id" validate:"required"`
+	Ips            []string `json:"ips" validate:"required,min=1"`
+}
+
+// Validate ...
+func (opt *TCloudDeleteSnatIpOpt) Validate() error {
+	return validator.Validate.Struct(opt)
 }

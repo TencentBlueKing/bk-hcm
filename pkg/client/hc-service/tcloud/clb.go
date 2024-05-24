@@ -211,3 +211,15 @@ func (c *ClbClient) ListQuota(kt *kit.Kit, req *hcproto.TCloudListLoadBalancerQu
 	return common.Request[hcproto.TCloudListLoadBalancerQuotaReq, []typelb.TCloudLoadBalancerQuota](
 		c.client, http.MethodPost, kt, req, "/load_balancers/quota")
 }
+
+// CreateSnatIp ...
+func (c *ClbClient) CreateSnatIp(kt *kit.Kit, req *hcproto.TCloudCreateSnatIpReq) error {
+	return common.RequestNoResp[hcproto.TCloudCreateSnatIpReq](c.client, http.MethodPost, kt, req,
+		"/load_balancers/snat_ips/create")
+}
+
+// DeleteSnatIp ...
+func (c *ClbClient) DeleteSnatIp(kt *kit.Kit, req *hcproto.TCloudDeleteSnatIpReq) error {
+	return common.RequestNoResp[hcproto.TCloudDeleteSnatIpReq](c.client, http.MethodDelete, kt, req,
+		"/load_balancers/snat_ips")
+}

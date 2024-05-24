@@ -620,3 +620,63 @@ func (t *TCloudImpl) ListLoadBalancerQuota(kt *kit.Kit, opt *typelb.ListTCloudLo
 
 	return result, nil
 }
+
+// CreateLoadBalancerSnatIps 添加Snatip
+// https://cloud.tencent.com/document/product/214/41505
+func (t *TCloudImpl) CreateLoadBalancerSnatIps(kt *kit.Kit, opt *typelb.TCloudCreateSnatIpOpt) error {
+
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "create load balancer snat ip option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return err
+	}
+
+	client, err := t.clientSet.ClbClient(opt.Region)
+	if err != nil {
+		return fmt.Errorf("init tencent cloud clb client failed, err: %v", err)
+	}
+
+	req := clb.NewCreateLoadBalancerSnatIpsRequest()
+
+	req.LoadBalancerId = cvt.ValToPtr(opt.LoadBalancerId)
+	for _, snatIp := range opt.SnatIps {
+		req.SnatIps = append(req.SnatIps, &clb.SnatIp{SubnetId: snatIp.SubnetId, Ip: snatIp.Ip})
+	}
+	_, err = client.CreateLoadBalancerSnatIpsWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("create tcloud snat ip failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	return nil
+}
+
+// DeleteLoadBalancerSnatIps 删除负载均衡Snatip
+// https://cloud.tencent.com/document/product/214/41503
+func (t *TCloudImpl) DeleteLoadBalancerSnatIps(kt *kit.Kit, opt *typelb.TCloudDeleteSnatIpOpt) error {
+
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "delete load balancer snat ip option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return err
+	}
+
+	client, err := t.clientSet.ClbClient(opt.Region)
+	if err != nil {
+		return fmt.Errorf("init tencent cloud clb client failed, err: %v", err)
+	}
+
+	req := clb.NewDeleteLoadBalancerSnatIpsRequest()
+
+	req.LoadBalancerId = cvt.ValToPtr(opt.LoadBalancerId)
+	req.Ips = cvt.SliceToPtr(opt.Ips)
+	_, err = client.DeleteLoadBalancerSnatIpsWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("delete tcloud snat ip failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	return nil
+}

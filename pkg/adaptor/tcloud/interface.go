@@ -184,4 +184,7 @@ type TCloud interface {
 
 	ListBandwidthPackage(kt *kit.Kit, opt *types.TCloudListBwPkgOption) (
 		*types.TCloudListBwPkgResult, error)
+
+	CreateLoadBalancerSnatIps(kt *kit.Kit, opt *typelb.TCloudCreateSnatIpOpt) error
+	DeleteLoadBalancerSnatIps(kt *kit.Kit, opt *typelb.TCloudDeleteSnatIpOpt) error
 }

@@ -123,7 +123,7 @@ type TCloudClbExtension struct {
 // SnatIp ...
 type SnatIp struct {
 	// 私有网络子网的唯一性id，如subnet-12345678
-	SubnetId *string `json:"subnet_id"`
+	SubnetId *string `json:"subnet_id" validate:"required"`
 
 	// IP地址，如192.168.0.1
 	Ip *string `json:"ip"`

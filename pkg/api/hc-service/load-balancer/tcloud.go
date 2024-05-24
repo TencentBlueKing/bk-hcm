@@ -477,3 +477,29 @@ type TCloudListLoadBalancerQuotaReq struct {
 func (req *TCloudListLoadBalancerQuotaReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// TCloudCreateSnatIpReq ...
+type TCloudCreateSnatIpReq struct {
+	AccountID           string           `json:"account_id" validate:"required"`
+	Region              string           `json:"region" validate:"required"`
+	LoadBalancerCloudId string           `json:"load_balancer_cloud_id" validate:"required"`
+	SnatIPs             []*corelb.SnatIp `json:"snat_ips" validate:"required,min=1,dive,required"`
+}
+
+// Validate ...
+func (r *TCloudCreateSnatIpReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// TCloudDeleteSnatIpReq ...
+type TCloudDeleteSnatIpReq struct {
+	AccountID           string   `json:"account_id" validate:"required"`
+	Region              string   `json:"region" validate:"required"`
+	LoadBalancerCloudId string   `json:"load_balancer_cloud_id" validate:"required"`
+	Ips                 []string `json:"ips" validate:"required,min=1,dive,required"`
+}
+
+// Validate ...
+func (r *TCloudDeleteSnatIpReq) Validate() error {
+	return validator.Validate.Struct(r)
+}

@@ -87,6 +87,11 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 		"/load_balancers/{id}/lock/status", svc.GetBizLoadBalancerLockStatus)
 	h.Add("ListBizLoadBalancerQuotas", http.MethodPost, "/load_balancers/quotas", svc.ListBizLoadBalancerQuotas)
 
+	h.Add("TCloudCreateSnatIps", http.MethodPost,
+		"/vendors/tcloud/load_balancers/{lb_id}/snat_ips/create", svc.TCloudCreateSnatIps)
+	h.Add("TCloudDeleteSnatIps", http.MethodDelete,
+		"/vendors/tcloud/load_balancers/{lb_id}/snat_ips", svc.TCloudDeleteSnatIps)
+
 	// 目标组
 	h.Add("ListBizTargetsByTGID", http.MethodPost,
 		"/target_groups/{target_group_id}/targets/list", svc.ListBizTargetsByTGID)

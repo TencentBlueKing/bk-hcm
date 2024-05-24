@@ -487,3 +487,23 @@ type TargetGroupCreateReq struct {
 func (req *TargetGroupCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// TCloudCreateSnatIpReq ...
+type TCloudCreateSnatIpReq struct {
+	SnatIps []*corelb.SnatIp `json:"snat_ips" validate:"required,min=1,dive,required"`
+}
+
+// Validate ...
+func (r *TCloudCreateSnatIpReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// TCloudDeleteSnatIpReq ...
+type TCloudDeleteSnatIpReq struct {
+	DeleteIps []string `json:"delete_ips" validate:"required,min=1,dive,required"`
+}
+
+// Validate ...
+func (r *TCloudDeleteSnatIpReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
