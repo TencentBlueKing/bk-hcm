@@ -20,7 +20,6 @@
 package securitygroup
 
 import (
-	proto "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -41,7 +40,12 @@ func (svc *securityGroupSvc) ListBizResourceIDBySecurityGroup(cts *rest.Contexts
 }
 
 func (svc *securityGroupSvc) listResourceIdBySecurityGroup(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
-	req := new(proto.ListReq)
+	id := cts.PathParameter("id").String()
+	if len(id) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -49,15 +53,10 @@ func (svc *securityGroupSvc) listResourceIdBySecurityGroup(cts *rest.Contexts, v
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	id := cts.PathParameter("id").String()
-	if len(id) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "id is required")
-	}
-
 	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.SecurityGroupCloudResType, id)
 	if err != nil {
-		logs.Errorf("get resource vendor failed, id: %s, err: %s, rid: %s", id, err, cts.Kit.Rid)
+		logs.Errorf("get security group vendor failed, id: %s, err: %s, rid: %s", id, err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -67,11 +66,7 @@ func (svc *securityGroupSvc) listResourceIdBySecurityGroup(cts *rest.Contexts, v
 		return nil, err
 	}
 
-	opt := &core.ListReq{
-		Filter: req.Filter,
-		Page:   req.Page,
-	}
-	return svc.client.DataService().Global.SGCommonRel.ListResIDBySecurityGroups(cts.Kit, opt)
+	return svc.client.DataService().Global.SGCommonRel.List(cts.Kit, req)
 }
 
 // ListCvmIdBySecurityGroup list cvm id by security group
@@ -85,7 +80,12 @@ func (svc *securityGroupSvc) ListBizCvmIdBySecurityGroup(cts *rest.Contexts) (in
 }
 
 func (svc *securityGroupSvc) listCvmIDBySecurityGroup(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
-	req := new(proto.ListReq)
+	id := cts.PathParameter("id").String()
+	if len(id) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -93,15 +93,10 @@ func (svc *securityGroupSvc) listCvmIDBySecurityGroup(cts *rest.Contexts, validH
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	id := cts.PathParameter("id").String()
-	if len(id) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "id is required")
-	}
-
 	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.SecurityGroupCloudResType, id)
 	if err != nil {
-		logs.Errorf("get resource vendor failed, id: %s, err: %s, rid: %s", id, err, cts.Kit.Rid)
+		logs.Errorf("get security group vendor failed, id: %s, err: %s, rid: %s", id, err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -111,10 +106,5 @@ func (svc *securityGroupSvc) listCvmIDBySecurityGroup(cts *rest.Contexts, validH
 		return nil, err
 	}
 
-	opt := &core.ListReq{
-		Filter: req.Filter,
-		Page:   req.Page,
-	}
-	return svc.client.DataService().Global.SGCvmRel.ListCvmIDBySecurityGroups(cts.Kit, opt)
-
+	return svc.client.DataService().Global.SGCvmRel.List(cts.Kit.Ctx, cts.Kit.Header(), req)
 }

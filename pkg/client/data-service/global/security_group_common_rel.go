@@ -72,10 +72,3 @@ func (cli *SGCommonRelClient) ListWithSecurityGroup(kt *kit.Kit,
 	return common.Request[protocloud.SGCommonRelWithSecurityGroupListReq, []corecloud.SGCommonRelWithBaseSecurityGroup](
 		cli.client, rest.POST, kt, request, "/security_group_common_rels/with/security_group/list")
 }
-
-// ListResIDBySecurityGroups list resource id by security groups.
-func (cli *SGCommonRelClient) ListResIDBySecurityGroups(kt *kit.Kit, request *core.ListReq) (*core.ListResult, error) {
-	return common.Request[core.ListReq, core.ListResult](
-		cli.client, rest.POST, kt, request,
-		"/security_group_common_rels/by/security_group/list")
-}

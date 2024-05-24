@@ -21,7 +21,6 @@ package sgcomrel
 
 import (
 	"fmt"
-
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
@@ -74,35 +73,4 @@ func (svc *sgComRelSvc) List(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return &protocloud.SGCommonRelListResult{Details: details}, nil
-}
-
-// ListResourceIdBySecurityGroup list resource id by security group.
-func (svc *sgComRelSvc) ListResourceIdBySecurityGroup(cts *rest.Contexts) (interface{}, error) {
-	req := new(core.ListReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
-	}
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	listOpt := &types.ListOption{
-		Fields: []string{"res_id"},
-		Filter: req.Filter,
-		Page:   req.Page,
-	}
-	list, err := svc.dao.SGCommonRel().List(cts.Kit, listOpt)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]string, 0)
-	for _, detail := range list.Details {
-		result = append(result, detail.ResID)
-	}
-
-	return &core.ListResultT[string]{
-		Count:   list.Count,
-		Details: result,
-	}, nil
 }

@@ -21,8 +21,6 @@ package global
 
 import (
 	"context"
-	"hcm/pkg/client/common"
-	"hcm/pkg/kit"
 	"net/http"
 
 	"hcm/pkg/api/core"
@@ -138,11 +136,4 @@ func (cli *SGCvmRelClient) ListWithSecurityGroup(ctx context.Context, h http.Hea
 	}
 
 	return resp.Data, nil
-}
-
-// ListCvmIDBySecurityGroups list cvm id by security groups.
-func (cli *SGCvmRelClient) ListCvmIDBySecurityGroups(kt *kit.Kit, request *core.ListReq) (*core.ListResult, error) {
-	return common.Request[core.ListReq, core.ListResult](
-		cli.client, rest.POST, kt, request,
-		"/security_group_cvm_rels/by/security_group/list")
 }

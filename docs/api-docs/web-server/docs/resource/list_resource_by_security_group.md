@@ -10,11 +10,12 @@ POST /api/v1/cloud/security_group/{id}/common/list
 
 ### 输入参数
 
-| 参数名称   | 参数类型   | 必选 | 描述     |
-|--------|--------|----|--------|
-| id     | string | 是  | 安全组id  |
-| filter | object | 是  | 查询过滤条件 |
-| page   | object | 是  | 分页设置   |
+| 参数名称   | 参数类型     | 必选 | 描述                                         |
+|--------|----------|----|--------------------------------------------|
+| id     | string   | 是  | 安全组id                                      |
+| fields | []string | 否  | 查询条件Field名称，具体可使用的用于查询的字段及其说明请看下面 - 查询参数介绍 |
+| filter | object   | 是  | 查询过滤条件                                     |
+| page   | object   | 是  | 分页设置                                       |
 
 
 #### filter
@@ -96,6 +97,22 @@ POST /api/v1/cloud/security_group/{id}/common/list
 | order | string | 否   | 排序顺序（枚举值：ASC、DESC）                                                                                                                                  |
 
 
+#### 查询参数介绍：
+
+| 参数名称              | 参数类型   | 描述                             |
+|-------------------|--------|--------------------------------|
+| id                | string | 主键ID                           |
+| vendor            | string | 云厂商                            |
+| res_id            | string | 资源ID                           |
+| res_type          | string | 资源类型                           |
+| security_group_id | string | 安全组ID                          |
+| priority          | uint64 | 优先级                            |
+| creator           | string | 创建者                            |
+| reviser           | string | 更新者                            |
+| created_at        | string | 创建时间，标准格式：2006-01-02T15:04:05Z |
+
+接口调用者可以根据以上参数自行根据查询场景设置查询规则。
+
 ### 调用示例
 
 #### 获取详细信息请求参数示例
@@ -104,6 +121,7 @@ POST /api/v1/cloud/security_group/{id}/common/list
 
 ```json
 {
+  "fields": ["res_id"],
   "filter": {
     "op": "and",
     "rules": [
@@ -194,7 +212,22 @@ POST /api/v1/cloud/security_group/{id}/common/list
 
 #### data
 
-| 参数名称    | 参数类型     | 描述             |
-|---------|----------|----------------|
-| count   | uint64   | 当前规则能匹配到的总记录条数 |
-| details | []string | 查询返回的数据        |
+| 参数名称    | 参数类型   | 描述             |
+|---------|--------|----------------|
+| count   | uint64 | 当前规则能匹配到的总记录条数 |
+| details | array  | 查询返回的数据        |
+
+
+#### data.details[n]
+
+| 参数名称              | 参数类型   | 描述                             |
+|-------------------|--------|--------------------------------|
+| id                | string | 主键ID                           |
+| vendor            | string | 云厂商                            |
+| res_id            | string | 资源ID                           |
+| res_type          | string | 资源类型                           |
+| security_group_id | string | 安全组ID                          |
+| priority          | uint64 | 优先级                            |
+| creator           | string | 创建者                            |
+| reviser           | string | 更新者                            |
+| created_at        | string | 创建时间，标准格式：2006-01-02T15:04:05Z |

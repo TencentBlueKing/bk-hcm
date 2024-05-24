@@ -65,7 +65,7 @@ func (svc *cvmSvc) ListCvm(cts *rest.Contexts) (interface{}, error) {
 
 	details := make([]corecvm.BaseCvm, 0, len(result.Details))
 	for _, one := range result.Details {
-		details = append(details, *ConvTableToBaseCvm(&one))
+		details = append(details, *convTableToBaseCvm(&one))
 	}
 
 	return &protocloud.CvmListResult{Details: details}, nil
@@ -90,7 +90,7 @@ func (svc *cvmSvc) GetCvm(cts *rest.Contexts) (interface{}, error) {
 
 	// TODO: 添加查询关联信息逻辑
 
-	base := ConvTableToBaseCvm(cvmTable)
+	base := convTableToBaseCvm(cvmTable)
 
 	switch cvmTable.Vendor {
 	case enumor.TCloud:
@@ -125,8 +125,7 @@ func convCvmGetResult[T corecvm.Extension](base *corecvm.BaseCvm, extJson tablet
 	}, nil
 }
 
-// ConvTableToBaseCvm convert table to base cvm.
-func ConvTableToBaseCvm(one *tablecvm.Table) *corecvm.BaseCvm {
+func convTableToBaseCvm(one *tablecvm.Table) *corecvm.BaseCvm {
 	base := &corecvm.BaseCvm{
 		ID:                   one.ID,
 		CloudID:              one.CloudID,
@@ -244,7 +243,7 @@ func convCvmListResult[T corecvm.Extension](tables []tablecvm.Table) (*protoclou
 		}
 
 		details = append(details, corecvm.Cvm[T]{
-			BaseCvm:   *ConvTableToBaseCvm(&one),
+			BaseCvm:   *convTableToBaseCvm(&one),
 			Extension: extension,
 		})
 	}

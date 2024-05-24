@@ -67,6 +67,15 @@ func InitSecurityGroupService(c *capability.Capability) {
 	h.Add("GetAzureDefaultSGRule", http.MethodGet, "/vendors/azure/default/security_groups/rules/{type}",
 		svc.GetAzureDefaultSGRule)
 
+	bizService(h, svc)
+	relatedResourceService(h, svc)
+
+	initSecurityGroupServiceHooks(svc, h)
+
+	h.Load(c.WebService)
+}
+
+func bizService(h *rest.Handler, svc *securityGroupSvc) {
 	// 业务下安全组相关接口
 	h.Add("CreateBizSecurityGroup", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/create",
 		svc.CreateBizSecurityGroup)
@@ -104,12 +113,6 @@ func InitSecurityGroupService(c *capability.Capability) {
 		"/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.UpdateBizSGRule)
 	h.Add("DeleteBizSGRule", http.MethodDelete,
 		"/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.DeleteBizSGRule)
-
-	relatedResourceService(h, svc)
-
-	initSecurityGroupServiceHooks(svc, h)
-
-	h.Load(c.WebService)
 }
 
 // SG 关联的其他资源接口

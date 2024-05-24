@@ -67,7 +67,7 @@ func (svc *lbSvc) ListLoadBalancer(cts *rest.Contexts) (interface{}, error) {
 
 	details := make([]corelb.BaseLoadBalancer, 0, len(result.Details))
 	for _, one := range result.Details {
-		tmpOne := ConvTableToBaseLB(&one)
+		tmpOne := convTableToBaseLB(&one)
 		details = append(details, *tmpOne)
 	}
 
@@ -102,7 +102,7 @@ func (svc *lbSvc) ListLoadBalancerRaw(cts *rest.Contexts) (any, error) {
 
 	details := make([]corelb.LoadBalancerRaw, 0, len(result.Details))
 	for _, one := range result.Details {
-		tmpOne := ConvTableToBaseLB(&one)
+		tmpOne := convTableToBaseLB(&one)
 		details = append(details, corelb.LoadBalancerRaw{
 			BaseLoadBalancer: *tmpOne,
 			Extension:        rawjson.RawMessage(one.Extension),
@@ -112,8 +112,7 @@ func (svc *lbSvc) ListLoadBalancerRaw(cts *rest.Contexts) (any, error) {
 	return &protocloud.LbRawListResult{Details: details}, nil
 }
 
-// ConvTableToBaseLB convert table to base load balancer.
-func ConvTableToBaseLB(one *tablelb.LoadBalancerTable) *corelb.BaseLoadBalancer {
+func convTableToBaseLB(one *tablelb.LoadBalancerTable) *corelb.BaseLoadBalancer {
 	return &corelb.BaseLoadBalancer{
 		ID:                   one.ID,
 		CloudID:              one.CloudID,
@@ -219,7 +218,7 @@ func (svc *lbSvc) GetLoadBalancer(cts *rest.Contexts) (any, error) {
 	}
 }
 func convLoadBalancerWithExt[T corelb.Extension](tableLB *tablelb.LoadBalancerTable) (*corelb.LoadBalancer[T], error) {
-	base := ConvTableToBaseLB(tableLB)
+	base := convTableToBaseLB(tableLB)
 	extension := new(T)
 	if tableLB.Extension != "" {
 		if err := json.UnmarshalFromString(string(tableLB.Extension), extension); err != nil {
@@ -237,7 +236,7 @@ func convLbListResult[T corelb.Extension](tables []tablelb.LoadBalancerTable) (
 
 	details := make([]corelb.LoadBalancer[T], 0, len(tables))
 	for _, tableLB := range tables {
-		base := ConvTableToBaseLB(&tableLB)
+		base := convTableToBaseLB(&tableLB)
 		extension := new(T)
 		if tableLB.Extension != "" {
 			if err := json.UnmarshalFromString(string(tableLB.Extension), extension); err != nil {

@@ -21,10 +21,6 @@ package global
 
 import (
 	"context"
-	corecvm "hcm/pkg/api/core/cloud/cvm"
-	corelb "hcm/pkg/api/core/cloud/load-balancer"
-	"hcm/pkg/client/common"
-	"hcm/pkg/kit"
 	"net/http"
 
 	"hcm/pkg/api/core"
@@ -43,20 +39,6 @@ func NewCloudSecurityGroupClient(client rest.ClientInterface) *SecurityGroupClie
 // SecurityGroupClient is data service security group api client.
 type SecurityGroupClient struct {
 	client rest.ClientInterface
-}
-
-// ListLoadBalancersBySecurityGroup list load balancers by security group.
-func (cli *SecurityGroupClient) ListLoadBalancersBySecurityGroup(kt *kit.Kit,
-	id string, req *core.ListReq) (*core.ListResultT[*corelb.BaseLoadBalancer], error) {
-	return common.Request[core.ListReq, core.ListResultT[*corelb.BaseLoadBalancer]](cli.client,
-		rest.POST, kt, req, "/security_group/%s/load_balancer/list", id)
-}
-
-// ListCvmsBySecurityGroup list cvm by security group.
-func (cli *SecurityGroupClient) ListCvmsBySecurityGroup(kt *kit.Kit,
-	id string, req *core.ListReq) (*core.ListResultT[*corecvm.BaseCvm], error) {
-	return common.Request[core.ListReq, core.ListResultT[*corecvm.BaseCvm]](cli.client,
-		rest.POST, kt, req, "/security_group/%s/cvm/list", id)
 }
 
 // ListSecurityGroup security group.

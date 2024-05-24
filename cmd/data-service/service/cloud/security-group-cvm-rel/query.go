@@ -70,34 +70,3 @@ func (svc *sgCvmRelSvc) List(cts *rest.Contexts) (interface{}, error) {
 
 	return &protocloud.SGCvmRelListResult{Details: details}, nil
 }
-
-// ListCvmsIdBySecurityGroup list cvm ids by security group id.
-func (svc *sgCvmRelSvc) ListCvmsIdBySecurityGroup(cts *rest.Contexts) (interface{}, error) {
-	req := new(core.ListReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
-	}
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	listOpt := &types.ListOption{
-		Fields: []string{"cvm_id"},
-		Filter: req.Filter,
-		Page:   req.Page,
-	}
-	list, err := svc.dao.SGCvmRel().List(cts.Kit, listOpt)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]string, 0)
-	for _, detail := range list.Details {
-		result = append(result, detail.CvmID)
-	}
-
-	return &core.ListResultT[string]{
-		Count:   list.Count,
-		Details: result,
-	}, nil
-}
