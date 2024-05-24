@@ -644,11 +644,27 @@ func (t *TCloudImpl) CreateLoadBalancerSnatIps(kt *kit.Kit, opt *typelb.TCloudCr
 	for _, snatIp := range opt.SnatIps {
 		req.SnatIps = append(req.SnatIps, &clb.SnatIp{SubnetId: snatIp.SubnetId, Ip: snatIp.Ip})
 	}
-	_, err = client.CreateLoadBalancerSnatIpsWithContext(kt.Ctx, req)
+	resp, err := client.CreateLoadBalancerSnatIpsWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("create tcloud snat ip failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
+	// 轮询结果
+	respPoller := poller.Poller[*TCloudImpl, map[string]*clb.DescribeTaskStatusResponseParams, poller.BaseDoneResult]{
+		Handler: &taskStatusDefaultPollingHandler{opt.Region},
+	}
+
+	reqID := resp.Response.RequestId
+	result, err := respPoller.PollUntilDone(t, kt, []*string{reqID}, types.NewLoadBalancerDefaultPollerOption())
+	if err != nil {
+		return err
+	}
+
+	if len(result.SuccessCloudIDs) == 0 {
+		return errf.Newf(errf.CloudVendorError, "no any snat ip has been added, TencentCloudSDK RequestId: %s",
+			cvt.PtrToVal(reqID))
+	}
+
 	return nil
 }
 
@@ -673,10 +689,27 @@ func (t *TCloudImpl) DeleteLoadBalancerSnatIps(kt *kit.Kit, opt *typelb.TCloudDe
 
 	req.LoadBalancerId = cvt.ValToPtr(opt.LoadBalancerId)
 	req.Ips = cvt.SliceToPtr(opt.Ips)
-	_, err = client.DeleteLoadBalancerSnatIpsWithContext(kt.Ctx, req)
+	resp, err := client.DeleteLoadBalancerSnatIpsWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("delete tcloud snat ip failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
+
+	// 轮询结果
+	respPoller := poller.Poller[*TCloudImpl, map[string]*clb.DescribeTaskStatusResponseParams, poller.BaseDoneResult]{
+		Handler: &taskStatusDefaultPollingHandler{opt.Region},
+	}
+
+	reqID := resp.Response.RequestId
+	result, err := respPoller.PollUntilDone(t, kt, []*string{reqID}, types.NewLoadBalancerDefaultPollerOption())
+	if err != nil {
+		return err
+	}
+
+	if len(result.SuccessCloudIDs) == 0 {
+		return errf.Newf(errf.CloudVendorError, "no any snat ip has been deleted, TencentCloudSDK RequestId: %s",
+			cvt.PtrToVal(reqID))
+	}
+
 	return nil
 }

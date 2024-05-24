@@ -38,7 +38,7 @@ import (
 func (svc *lbSvc) TCloudCreateSnatIps(cts *rest.Contexts) (any, error) {
 	lbID := cts.PathParameter("lb_id").String()
 	if len(lbID) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "id is required")
+		return nil, errf.New(errf.InvalidParameter, "load balancer id is required")
 	}
 
 	req := new(cslb.TCloudCreateSnatIpReq)
@@ -52,7 +52,7 @@ func (svc *lbSvc) TCloudCreateSnatIps(cts *rest.Contexts) (any, error) {
 
 	lbInfo, err := svc.client.DataService().TCloud.LoadBalancer.Get(cts.Kit, lbID)
 	if err != nil {
-		logs.Errorf("getLoadBalancer resource vendor failed, id: %s, err: %s, rid: %s", lbID, err, cts.Kit.Rid)
+		logs.Errorf("getLoadBalancer resource vendor failed, id: %s, err: %v, rid: %s", lbID, err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -104,7 +104,7 @@ func (svc *lbSvc) TCloudDeleteSnatIps(cts *rest.Contexts) (any, error) {
 
 	lbID := cts.PathParameter("lb_id").String()
 	if len(lbID) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "id is required")
+		return nil, errf.New(errf.InvalidParameter, "load balancer id is required")
 	}
 
 	req := new(cslb.TCloudDeleteSnatIpReq)
@@ -118,7 +118,7 @@ func (svc *lbSvc) TCloudDeleteSnatIps(cts *rest.Contexts) (any, error) {
 
 	lbInfo, err := svc.client.DataService().TCloud.LoadBalancer.Get(cts.Kit, lbID)
 	if err != nil {
-		logs.Errorf("getLoadBalancer resource vendor failed, id: %s, err: %s, rid: %s", lbID, err, cts.Kit.Rid)
+		logs.Errorf("getLoadBalancer resource vendor failed, id: %s, err: %v, rid: %s", lbID, err, cts.Kit.Rid)
 		return nil, err
 	}
 

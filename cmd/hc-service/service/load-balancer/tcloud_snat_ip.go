@@ -50,17 +50,20 @@ func (svc *clbSvc) TCloudCreateSnatIps(cts *rest.Contexts) (any, error) {
 		LoadBalancerId: req.LoadBalancerCloudId,
 		SnatIps:        req.SnatIPs,
 	}
-
-	if err := adpt.CreateLoadBalancerSnatIps(cts.Kit, opt); err != nil {
-		logs.Errorf("fail to call tcloud to create snat ip, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
-		return nil, err
+	createErr := adpt.CreateLoadBalancerSnatIps(cts.Kit, opt)
+	if createErr != nil {
+		logs.Errorf("fail to call tcloud to create snat ip, err: %v, req: %+v, rid: %s", createErr, req, cts.Kit.Rid)
+		// 添加失败也同步
 	}
 
 	if err := svc.lbSync(cts.Kit, adpt, req.AccountID, req.Region, []string{req.LoadBalancerCloudId}); err != nil {
-		logs.Errorf("fail to sync load balancer for create snat ip, rid: %s", req, cts.Kit.Rid)
-		return nil, fmt.Errorf("fail to sync load balancer for create snat ip, err: %w", err)
+		logs.Errorf("fail to sync load balancer for create snat ip, rid: %s", cts.Kit.Rid)
+		// 添加成功情况下才返回同步的错误
+		if createErr == nil {
+			return nil, fmt.Errorf("fail to sync load balancer for create snat ip, err: %w", err)
+		}
 	}
-	return nil, nil
+	return nil, createErr
 }
 
 // TCloudDeleteSnatIps 删除snat ip
@@ -83,14 +86,17 @@ func (svc *clbSvc) TCloudDeleteSnatIps(cts *rest.Contexts) (any, error) {
 		LoadBalancerId: req.LoadBalancerCloudId,
 		Ips:            req.Ips,
 	}
-
-	if err := adpt.DeleteLoadBalancerSnatIps(cts.Kit, opt); err != nil {
-		logs.Errorf("fail to call tcloud to delete snat ip, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
-		return nil, err
+	delErr := adpt.DeleteLoadBalancerSnatIps(cts.Kit, opt)
+	if delErr != nil {
+		logs.Errorf("fail to call tcloud to delete snat ip, err: %v, req: %+v, rid: %s", delErr, req, cts.Kit.Rid)
+		// 删除失败也同步
 	}
 	if err := svc.lbSync(cts.Kit, adpt, req.AccountID, req.Region, []string{req.LoadBalancerCloudId}); err != nil {
-		logs.Errorf("fail to sync load balancer for delete snat ip, rid: %s", req, cts.Kit.Rid)
-		return nil, fmt.Errorf("fail to sync load balancer for delete snat ip, err: %w", err)
+		logs.Errorf("fail to sync load balancer for delete snat ip, rid: %s", cts.Kit.Rid)
+		// 删除成功情况下才返回同步的错误
+		if delErr == nil {
+			return nil, fmt.Errorf("fail to sync load balancer for delete snat ip, err: %w", err)
+		}
 	}
-	return nil, nil
+	return nil, delErr
 }

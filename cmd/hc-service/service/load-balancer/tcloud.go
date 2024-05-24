@@ -306,6 +306,11 @@ func (svc *clbSvc) TCloudUpdateCLB(cts *rest.Contexts) (any, error) {
 		ModifyClassicDomain:      req.ModifyClassicDomain,
 	}
 
+	if req.TargetRegion != nil || req.TargetCloudVpcID != nil {
+		adtOpt.TargetRegionInfo.Region = req.TargetRegion
+		adtOpt.TargetRegionInfo.VpcId = req.TargetCloudVpcID
+	}
+
 	_, err = client.UpdateLoadBalancer(cts.Kit, adtOpt)
 	if err != nil {
 		logs.Errorf("fail to call tcloud update load balancer(id:%s),err: %v, rid: %s", lbID, err, cts.Kit.Rid)
