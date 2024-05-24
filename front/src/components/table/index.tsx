@@ -10,15 +10,9 @@ export interface IProp {
   tableOptions: {
     // 表格字段
     columns: Array<Column> | (() => Array<Column>);
-    // 用于预览效果的数据
-    reviewData?: Array<Record<string, any>>;
     // 其他 table 属性/自定义事件, 比如 settings, onSelectionChange...
     extra?: Object;
   };
-  // 分页方法
-  handlePageLimitChange?: (...args: any) => Promise<any>;
-  handlePageValueChange?: (...args: any) => Promise<any>;
-  handleSort?: (...args: any) => Promise<any>;
 }
 export default defineComponent({
   props: {
@@ -32,7 +26,7 @@ export default defineComponent({
     },
   },
   emits: ['querylist', 'emptyform', 'handlePageLimitChange', 'handlePageValueChange', 'handleSort'],
-  setup(props: IProp, { slots }: any, { emit }: any) {
+  setup(props: IProp, { slots, emit }) {
     const isLoading = ref(false);
     const pagination = computed(() => {
       return { count: props.dataList.length, limit: 10 };
@@ -72,25 +66,22 @@ export default defineComponent({
     };
     return () => (
       <div>
-        <div>
-          {slots.search()}{' '}
-          <bk-button class='ml10' theme='primary' onClick={clickquerylist} circle>
-            <search class='f22' />
-            <span>查询</span>
-          </bk-button>
-          <bk-button class='ml10' onClick={clickemptyform} circle>
-            <search class='f22' />
-            <span>清空</span>
-          </bk-button>
-        </div>
-
+        <div>{slots.select?.()}</div>
+        <bk-button class='ml10' theme='primary' onClick={clickquerylist} circle>
+          <search class='f22' />
+          <span>查询</span>
+        </bk-button>
+        <bk-button class='ml10' onClick={clickemptyform} circle>
+          <search class='f22' />
+          <span>清空</span>
+        </bk-button>
         <Loading loading={isLoading.value} class='loading-table-container'>
           <Table
             class='table-container'
-            data={data}
+            data={data.value}
             rowKey='id'
             columns={props.tableOptions.columns}
-            pagination={pagination}
+            pagination={pagination.value}
             remotePagination
             showOverflowTooltip
             {...(props.tableOptions.extra || {})}
