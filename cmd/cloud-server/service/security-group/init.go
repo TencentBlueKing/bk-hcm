@@ -66,10 +66,12 @@ func InitSecurityGroupService(c *capability.Capability) {
 		"/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.DeleteSecurityGroupRule)
 	h.Add("GetAzureDefaultSGRule", http.MethodGet, "/vendors/azure/default/security_groups/rules/{type}",
 		svc.GetAzureDefaultSGRule)
+	h.Add("ListResourceIdBySecurityGroup", http.MethodPost,
+		"/security_group/{id}/common/list", svc.ListResourceIdBySecurityGroup)
+	h.Add("ListCvmIdBySecurityGroup", http.MethodPost,
+		"/security_group/{id}/cvm/list", svc.ListCvmIdBySecurityGroup)
 
 	bizService(h, svc)
-	relatedResourceService(h, svc)
-
 	initSecurityGroupServiceHooks(svc, h)
 
 	h.Load(c.WebService)
@@ -113,20 +115,11 @@ func bizService(h *rest.Handler, svc *securityGroupSvc) {
 		"/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.UpdateBizSGRule)
 	h.Add("DeleteBizSGRule", http.MethodDelete,
 		"/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.DeleteBizSGRule)
-}
 
-// SG 关联的其他资源接口
-func relatedResourceService(h *rest.Handler, svc *securityGroupSvc) {
-	h.Add("ListResourceIdBySecurityGroup", http.MethodPost,
-		"/security_group/{id}/common/list", svc.ListResourceIdBySecurityGroup)
 	h.Add("ListBizResourceIDBySecurityGroup", http.MethodPost,
 		"/bizs/{bk_biz_id}/security_group/{id}/common/list", svc.ListBizResourceIDBySecurityGroup)
-
-	h.Add("ListCvmIdBySecurityGroup", http.MethodPost,
-		"/security_group/{id}/cvm/list", svc.ListCvmIdBySecurityGroup)
 	h.Add("ListBizCvmIdBySecurityGroup", http.MethodPost,
 		"/bizs/{bk_biz_id}/security_group/{id}/cvm/list", svc.ListBizCvmIdBySecurityGroup)
-
 }
 
 type securityGroupSvc struct {

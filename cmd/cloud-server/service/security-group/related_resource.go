@@ -56,7 +56,7 @@ func (svc *securityGroupSvc) listResourceIdBySecurityGroup(cts *rest.Contexts, v
 	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.SecurityGroupCloudResType, id)
 	if err != nil {
-		logs.Errorf("get security group vendor failed, id: %s, err: %s, rid: %s", id, err, cts.Kit.Rid)
+		logs.Errorf("get security group vendor failed, id: %s, err: %v, rid: %s", id, err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -96,7 +96,7 @@ func (svc *securityGroupSvc) listCvmIDBySecurityGroup(cts *rest.Contexts, validH
 	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.SecurityGroupCloudResType, id)
 	if err != nil {
-		logs.Errorf("get security group vendor failed, id: %s, err: %s, rid: %s", id, err, cts.Kit.Rid)
+		logs.Errorf("get security group vendor failed, id: %s, err: %v, rid: %s", id, err, cts.Kit.Rid)
 		return nil, err
 	}
 
