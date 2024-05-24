@@ -64,6 +64,8 @@ func InitApplicationService(c *capability.Capability, bkHcmUrl string) {
 	h.Add("CreateForCreateCvm", "POST", "/vendors/{vendor}/applications/types/create_cvm", svc.CreateForCreateCvm)
 	h.Add("CreateForCreateVpc", "POST", "/vendors/{vendor}/applications/types/create_vpc", svc.CreateForCreateVpc)
 	h.Add("CreateForCreateDisk", "POST", "/vendors/{vendor}/applications/types/create_disk", svc.CreateForCreateDisk)
+	h.Add("CreateForCreateLB", "POST",
+		"/vendors/{vendor}/applications/types/create_load_balancer", svc.CreateForCreateLB)
 
 	initApplicationServiceHooks(svc, h)
 	h.Load(c.WebService)

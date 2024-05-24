@@ -39,10 +39,10 @@ type LoadBalancerBatchCreateReq[Extension corelb.Extension] struct {
 	Lbs []LbBatchCreate[Extension] `json:"lbs" validate:"required,min=1"`
 }
 
-// TCloudCLBCreateReq ...
+// TCloudCLBCreateReq batch create load balancer
 type TCloudCLBCreateReq = LoadBalancerBatchCreateReq[corelb.TCloudClbExtension]
 
-// TCloudCLBCreate ...
+// TCloudCLBCreate create load balancer
 type TCloudCLBCreate = LbBatchCreate[corelb.TCloudClbExtension]
 
 // LbBatchCreate define load balancer batch create.

@@ -99,12 +99,12 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 
 // BatchCreateTCloudClb ...
 func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error) {
-	req := new(protolb.TCloudBatchCreateReq)
+	req := new(protolb.TCloudLoadBalancerCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	if err := req.Validate(); err != nil {
+	if err := req.Validate(false); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
@@ -129,6 +129,8 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		SlaType:            req.SlaType,
 		Number:             req.RequireCount,
 		ClientToken:        cvt.StrNilPtr(cts.Kit.Rid),
+
+		BandwidthpkgSubType: req.BandwidthpkgSubType,
 	}
 	if cvt.PtrToVal(req.CloudEipID) != "" {
 		createOpt.EipAddressID = req.CloudEipID
@@ -180,7 +182,7 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 	return respData, nil
 }
 
-func (svc *clbSvc) createTCloudDBLoadBalancer(cts *rest.Contexts, req *protolb.TCloudBatchCreateReq,
+func (svc *clbSvc) createTCloudDBLoadBalancer(cts *rest.Contexts, req *protolb.TCloudLoadBalancerCreateReq,
 	cloudIDs []string) (err error) {
 
 	dataReq := &dataproto.TCloudCLBCreateReq{Lbs: make([]dataproto.TCloudCLBCreate, len(cloudIDs))}
@@ -995,16 +997,16 @@ func (svc *clbSvc) BatchDeleteTCloudLoadBalancer(cts *rest.Contexts) (any, error
 
 // InquiryPriceTCloudLB inquiry price tcloud clb.
 func (svc *clbSvc) InquiryPriceTCloudLB(cts *rest.Contexts) (any, error) {
-	req := new(protolb.TCloudBatchCreateReq)
+	req := new(protolb.TCloudLoadBalancerCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	if err := req.Validate(); err != nil {
+	if err := req.Validate(false); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	tcloud, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	adaptor, err := svc.ad.TCloud(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -1023,6 +1025,7 @@ func (svc *clbSvc) InquiryPriceTCloudLB(cts *rest.Contexts) (any, error) {
 
 		InternetChargeType:      req.InternetChargeType,
 		InternetMaxBandwidthOut: req.InternetMaxBandwidthOut,
+		BandwidthpkgSubType:     req.BandwidthpkgSubType,
 
 		BandwidthPackageID: req.BandwidthPackageID,
 		SlaType:            req.SlaType,
@@ -1047,7 +1050,7 @@ func (svc *clbSvc) InquiryPriceTCloudLB(cts *rest.Contexts) (any, error) {
 			createOpt.ZoneID = cvt.ValToPtr(req.Zones[0])
 		}
 	}
-	result, err := tcloud.InquiryPriceLoadBalancer(cts.Kit, createOpt)
+	result, err := adaptor.InquiryPriceLoadBalancer(cts.Kit, createOpt)
 	if err != nil {
 		logs.Errorf("inquiry load balancer price failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -1067,12 +1070,12 @@ func (svc *clbSvc) ListTCloudLBQuota(cts *rest.Contexts) (any, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	tcloud, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	adaptor, err := svc.ad.TCloud(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
-	result, err := tcloud.ListLoadBalancerQuota(cts.Kit, &typelb.ListTCloudLoadBalancerQuotaOption{
+	result, err := adaptor.ListLoadBalancerQuota(cts.Kit, &typelb.ListTCloudLoadBalancerQuotaOption{
 		Region: req.Region,
 	})
 	if err != nil {

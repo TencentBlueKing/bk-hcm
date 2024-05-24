@@ -45,6 +45,7 @@ func (a ApplicationType) Validate() error {
 	case AssociateSecurityGroup:
 	case DisassociateSecurityGroup:
 
+	case CreateLoadBalancer:
 	default:
 		return fmt.Errorf("unsupported application type: %s", a)
 	}
@@ -61,6 +62,8 @@ const (
 	CreateVpc ApplicationType = "create_vpc"
 	// CreateDisk 创建云盘
 	CreateDisk ApplicationType = "create_disk"
+	// CreateLoadBalancer 创建负载均衡
+	CreateLoadBalancer ApplicationType = "create_load_balancer"
 
 	// CreateSecurityGroup 创建安全组
 	CreateSecurityGroup ApplicationType = "create_security_group"

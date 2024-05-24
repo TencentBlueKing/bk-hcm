@@ -86,11 +86,11 @@ const (
 	BizIaaSResDelete client.ActionID = "biz_iaas_resource_delete"
 
 	// BizCLBResCreate biz clb resource create action id to register iam.
-	// BizCLBResCreate client.ActionID = "biz_clb_resource_create"
+	BizCLBResCreate client.ActionID = "biz_clb_resource_create"
 	// BizCLBResOperate biz clb resource operate action id to register iam.
-	// BizCLBResOperate client.ActionID = "biz_clb_resource_operate"
+	BizCLBResOperate client.ActionID = "biz_clb_resource_operate"
 	// BizCLBResDelete biz clb resource delete action id to register iam.
-	// BizCLBResDelete client.ActionID = "biz_clb_resource_delete"
+	BizCLBResDelete client.ActionID = "biz_clb_resource_delete"
 
 	// BizCertResCreate biz cert resource create action id to register iam.
 	BizCertResCreate client.ActionID = "biz_cert_resource_create"
@@ -135,11 +135,11 @@ const (
 	IaaSResDelete client.ActionID = "iaas_resource_delete"
 
 	// CLBResCreate clb resource create action id to register iam.
-	// CLBResCreate client.ActionID = "clb_resource_create"
+	CLBResCreate client.ActionID = "clb_resource_create"
 	// CLBResOperate clb resource operate action id to register iam.
-	// CLBResOperate client.ActionID = "clb_resource_operate"
+	CLBResOperate client.ActionID = "clb_resource_operate"
 	// CLBResDelete clb resource delete action id to register iam.
-	// CLBResDelete client.ActionID = "clb_resource_delete"
+	CLBResDelete client.ActionID = "clb_resource_delete"
 
 	// CertResCreate cert resource create action id to register iam.
 	CertResCreate client.ActionID = "cert_resource_create"
@@ -183,11 +183,13 @@ var ActionIDNameMap = map[client.ActionID]string{
 	BizIaaSResCreate:  "业务-IaaS资源创建",
 	BizIaaSResOperate: "业务-IaaS资源操作",
 	BizIaaSResDelete:  "业务-IaaS资源删除",
-	// BizCLBResCreate:        "业务-负载均衡创建",
-	// BizCLBResOperate:       "业务-负载均衡操作",
-	// BizCLBResDelete:        "负载均衡删除",
+
+	BizCLBResCreate:  "业务-负载均衡创建",
+	BizCLBResOperate: "业务-负载均衡操作",
+	BizCLBResDelete:  "业务-负载均衡删除",
 	BizCertResCreate: "业务-证书创建",
 	BizCertResDelete: "业务-证书删除",
+
 	// BizArrangeResCreate:    "业务-资源编排创建",
 	// BizArrangeResOperate:   "业务-资源编排操作",
 	// BizArrangeResDelete:    "业务-资源编排删除",
@@ -205,9 +207,11 @@ var ActionIDNameMap = map[client.ActionID]string{
 	IaaSResCreate:  "资源-IaaS资源创建",
 	IaaSResOperate: "资源-IaaS资源操作",
 	IaaSResDelete:  "资源-IaaS资源删除",
-	// CLBResCreate:        "负载均衡创建",
-	// CLBResOperate:       "负载均衡操作",
-	// CLBResDelete:        "负载均衡删除",
+
+	CLBResCreate:  "负载均衡创建",
+	CLBResOperate: "负载均衡操作",
+	CLBResDelete:  "负载均衡删除",
+
 	CertResCreate:       "资源-证书创建",
 	CertResDelete:       "资源-证书删除",
 	RecycleBinAccess:    "资源-回收站查看",

@@ -38,7 +38,7 @@ import (
 	"hcm/cmd/cloud-server/service/assign"
 	asynctask "hcm/cmd/cloud-server/service/async-task"
 	"hcm/cmd/cloud-server/service/audit"
-	bandwidthpackage "hcm/cmd/cloud-server/service/bandwitdh-package"
+	bandwidthpackage "hcm/cmd/cloud-server/service/bandwidth-package"
 	"hcm/cmd/cloud-server/service/bill"
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/cmd/cloud-server/service/cert"

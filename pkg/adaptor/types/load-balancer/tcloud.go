@@ -260,9 +260,9 @@ type TCloudCreateClbOption struct {
 	DynamicVip               *bool                      `json:"dynamic_vip" validate:"omitempty"`
 	Egress                   *string                    `json:"egress" validate:"omitempty"`
 
-	InternetChargeType      *string `json:"internet_charge_type"`
-	InternetMaxBandwidthOut *int64  `json:"internet_max_bandwidth_out" `
-	BandwidthpkgSubType     *string `json:"bandwidthpkg_sub_type" validate:"omitempty"`
+	InternetChargeType      *TCloudLoadBalancerChargeType `json:"internet_charge_type"`
+	InternetMaxBandwidthOut *int64                        `json:"internet_max_bandwidth_out" `
+	BandwidthpkgSubType     *string                       `json:"bandwidthpkg_sub_type" validate:"omitempty"`
 
 	// 不填默认按量付费
 	LoadBalancerChargeType TCloudLoadBalancerChargeType `json:"load_balancer_charge_type"`

@@ -68,7 +68,7 @@ func InitService(c *capability.Capability) {
 }
 
 func bizService(h *rest.Handler, svc *lbSvc) {
-	h.Add("BizBatchCreateLB", http.MethodPost, "/load_balancers/create", svc.BizBatchCreateLB)
+	// h.Add("BizBatchCreateLB", http.MethodPost, "/load_balancers/create", svc.BizBatchCreateLB)
 	h.Add("UpdateBizTCloudLoadBalancer", http.MethodPatch,
 		"/vendors/tcloud/load_balancers/{id}", svc.UpdateBizTCloudLoadBalancer)
 	h.Add("ListBizLoadBalancer", http.MethodPost, "/load_balancers/list", svc.ListBizLoadBalancer)

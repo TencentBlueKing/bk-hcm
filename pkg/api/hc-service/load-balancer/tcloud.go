@@ -33,11 +33,11 @@ import (
 	"hcm/pkg/tools/converter"
 )
 
-// TCloudBatchCreateReq tcloud batch create req.
-type TCloudBatchCreateReq struct {
+// TCloudLoadBalancerCreateReq tcloud batch create req.
+type TCloudLoadBalancerCreateReq struct {
 	AccountID string  `json:"account_id" validate:"required"`
+	BkBizID   int64   `json:"bk_biz_id"`
 	Region    string  `json:"region" validate:"required"`
-	BkBizID   int64   `json:"bk_biz_id" validate:"required"`
 	Name      *string `json:"name" validate:"required,max=60"`
 
 	LoadBalancerType typelb.TCloudLoadBalancerType   `json:"load_balancer_type" validate:"required"`
@@ -52,17 +52,25 @@ type TCloudBatchCreateReq struct {
 	Vip                     *string  `json:"vip" validate:"omitempty"`
 	CloudEipID              *string  `json:"cloud_eip_id" validate:"omitempty"`
 	VipIsp                  *string  `json:"vip_isp" validate:"omitempty"`
-	InternetChargeType      *string  `json:"internet_charge_type" validate:"omitempty"`
 	InternetMaxBandwidthOut *int64   `json:"internet_max_bandwidth_out" validate:"omitempty"`
 	BandwidthPackageID      *string  `json:"bandwidth_package_id" validate:"omitempty"`
-	SlaType                 *string  `json:"sla_type" validate:"omitempty"`
-	AutoRenew               *bool    `json:"auto_renew" validate:"omitempty"`
-	RequireCount            *uint64  `json:"require_count" validate:"omitempty"`
-	Memo                    string   `json:"memo" validate:"omitempty"`
+	BandwidthpkgSubType     *string  `json:"bandwidthpkg_sub_type" validate:"omitempty"`
+
+	SlaType      *string `json:"sla_type" validate:"omitempty"`
+	AutoRenew    *bool   `json:"auto_renew" validate:"omitempty"`
+	RequireCount *uint64 `json:"require_count" validate:"omitempty"`
+	Memo         string  `json:"memo" validate:"omitempty"`
+
+	InternetChargeType *typelb.TCloudLoadBalancerChargeType `json:"internet_charge_type" validate:"omitempty"`
 }
 
 // Validate request.
-func (req *TCloudBatchCreateReq) Validate() error {
+func (req *TCloudLoadBalancerCreateReq) Validate(bizRequired bool) error {
+
+	if bizRequired && req.BkBizID <= 0 {
+		return errors.New("bk_biz_id is required")
+	}
+
 	switch req.LoadBalancerType {
 	case typelb.InternalLoadBalancerType:
 		// 内网校验
@@ -72,6 +80,10 @@ func (req *TCloudBatchCreateReq) Validate() error {
 	case typelb.OpenLoadBalancerType:
 		if converter.PtrToVal(req.CloudEipID) != "" {
 			return errors.New("eip id only support load balancer type 'INTERNAL'")
+		}
+		// 	公网不能指定子网
+		if converter.PtrToVal(req.CloudSubnetID) != "" {
+			return errors.New("subnet id is not supported for load balancer type 'OPEN'")
 		}
 	default:
 		return fmt.Errorf("unknown load balancer type: '%s'", req.LoadBalancerType)
