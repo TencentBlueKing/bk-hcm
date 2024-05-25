@@ -193,3 +193,22 @@ func TaskServer() TaskServerSetting {
 
 	return *s
 }
+
+// AccountServer return account server Setting.
+func AccountServer() AccountServerSetting {
+	rt.lock.Lock()
+	defer rt.lock.Unlock()
+
+	if !rt.Ready() {
+		logs.ErrorDepthf(1, "runtime not ready, return empty task server setting")
+		return AccountServerSetting{}
+	}
+
+	s, ok := rt.settings.(*AccountServerSetting)
+	if !ok {
+		logs.ErrorDepthf(1, "current %s service can not get task server setting", ServiceName())
+		return AccountServerSetting{}
+	}
+
+	return *s
+}
