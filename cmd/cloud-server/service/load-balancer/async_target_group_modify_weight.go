@@ -87,7 +87,7 @@ func (svc *lbSvc) batchModifyTargetWeight(cts *rest.Contexts, authHandler handle
 }
 
 func (svc *lbSvc) buildModifyTCloudTargetWeight(kt *kit.Kit, body json.RawMessage,
-	tgID, accountID string) (interface{}, error) {
+	tgID, accountID string) (*core.FlowStateResult, error) {
 
 	req := new(cslb.TCloudBatchModifyTargetWeightReq)
 	if err := json.Unmarshal(body, req); err != nil {
@@ -153,7 +153,7 @@ func (svc *lbSvc) batchUpdateTargetWeightDb(kt *kit.Kit, req *cslb.TCloudBatchMo
 }
 
 func (svc *lbSvc) buildModifyTCloudTargetTasksWeight(kt *kit.Kit, req *cslb.TCloudBatchModifyTargetWeightReq,
-	lbID, tgID, accountID string) (interface{}, error) {
+	lbID, tgID, accountID string) (*core.FlowStateResult, error) {
 
 	// 预检测
 	_, err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
