@@ -22,6 +22,7 @@ package client
 
 import (
 	"hcm/pkg/cc"
+	accountserver "hcm/pkg/client/account-server"
 	authserver "hcm/pkg/client/auth-server"
 	cloudserver "hcm/pkg/client/cloud-server"
 	dataservice "hcm/pkg/client/data-service"
@@ -109,6 +110,15 @@ func (cs *ClientSet) TaskServer() *taskserver.Client {
 		Discover: cs.discovery(cc.TaskServerName),
 	}
 	return taskserver.NewClient(c, cs.version)
+}
+
+// AccountServer get task-server client.
+func (cs *ClientSet) AccountServer() *accountserver.Client {
+	c := &client.Capability{
+		Client:   cs.client,
+		Discover: cs.discovery(cc.AccountServerName),
+	}
+	return accountserver.NewClient(c, cs.version)
 }
 
 // Healthz get service health check client.

@@ -64,6 +64,8 @@ const (
 	WebServerName Name = "web-server"
 	// TaskServerName is task server's name
 	TaskServerName Name = "task-server"
+	// AccountServerName is account server's name
+	AccountServerName Name = "account-server"
 )
 
 // Setting defines all service Setting interface.
@@ -390,6 +392,51 @@ func (s TaskServerSetting) Validate() error {
 	}
 
 	if err := s.Database.validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// AccountServerSetting defines task server used setting options.
+type AccountServerSetting struct {
+	Network Network    `yaml:"network"`
+	Service Service    `yaml:"service"`
+	Log     LogOption  `yaml:"log"`
+	Crypto  Crypto     `yaml:"crypto"`
+	Itsm    ApiGateway `yaml:"itsm"`
+}
+
+// trySetFlagBindIP try set flag bind ip.
+func (s *AccountServerSetting) trySetFlagBindIP(ip net.IP) error {
+	return s.Network.trySetFlagBindIP(ip)
+}
+
+// trySetDefault set the TaskServerSetting default value if user not configured.
+func (s *AccountServerSetting) trySetDefault() {
+	s.Network.trySetDefault()
+	s.Service.trySetDefault()
+	s.Log.trySetDefault()
+
+	return
+}
+
+// Validate TaskServerSetting option.
+func (s AccountServerSetting) Validate() error {
+
+	if err := s.Network.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Service.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Crypto.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Itsm.validate(); err != nil {
 		return err
 	}
 

@@ -46,7 +46,7 @@ type proxy struct {
 func newProxy(dis serviced.Discover, cli *http.Client) (*proxy, error) {
 	apiDiscovery := make(map[cc.Name]*discovery.APIDiscovery)
 
-	discoverServices := []cc.Name{cc.CloudServerName}
+	discoverServices := []cc.Name{cc.CloudServerName, cc.AccountServerName}
 	for _, service := range discoverServices {
 		apiDiscovery[service] = discovery.NewAPIDiscovery(service, dis)
 	}
@@ -146,6 +146,8 @@ func (p *proxy) prepareRequest(req *restful.Request) error {
 	switch servicePath {
 	case "cloud":
 		service = cc.CloudServerName
+	case "account":
+		service = cc.AccountServerName
 	default:
 		return fmt.Errorf("received unknown url path: %s", req.Request.URL.Path)
 	}
