@@ -25,77 +25,100 @@ import (
 	"net"
 	"strconv"
 
-	"hcm/cmd/web-server/options"
-	"hcm/cmd/web-server/service"
+	"hcm/cmd/account-server/options"
+	"hcm/cmd/account-server/service"
 	"hcm/pkg/cc"
 	"hcm/pkg/logs"
 	"hcm/pkg/metrics"
 	"hcm/pkg/runtime/ctl"
-	"hcm/pkg/runtime/ctl/cmd"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
 )
 
-// Run start the web server
+const shutdownWaitTimeSec = 60
+
+// Run start the account server.
 func Run(opt *options.Option) error {
-	s := new(webService)
-	if err := s.prepare(opt); err != nil {
+	as := new(accountServer)
+	if err := as.prepare(opt); err != nil {
 		return err
 	}
 
-	if err := s.svc.ListenAndServeRest(); err != nil {
+	if err := as.svc.ListenAndServeRest(); err != nil {
 		return err
 	}
 
-	shutdown.RegisterFirstShutdown(s.finalizer)
-	shutdown.WaitShutdown(20)
+	if err := as.register(); err != nil {
+		return err
+	}
+
+	shutdown.RegisterFirstShutdown(as.finalizer)
+	shutdown.WaitShutdown(shutdownWaitTimeSec)
 	return nil
 }
 
-type webService struct {
+type accountServer struct {
 	svc *service.Service
-	dis serviced.Discover
+	sd  serviced.Service
 }
 
-// prepare do prepare jobs before run api server.
-func (s *webService) prepare(opt *options.Option) error {
+// prepare do prepare jobs before run api discover.
+func (ds *accountServer) prepare(opt *options.Option) error {
 	// load settings from config file.
 	if err := cc.LoadSettings(opt.Sys); err != nil {
 		return fmt.Errorf("load settings from config files failed, err: %v", err)
 	}
 
-	logs.InitLogger(cc.WebServer().Log.Logs())
+	logs.InitLogger(cc.AccountServer().Log.Logs())
 
 	logs.Infof("load settings from config file success.")
 
 	// init metrics
-	network := cc.WebServer().Network
+	network := cc.AccountServer().Network
 	metrics.InitMetrics(net.JoinHostPort(network.BindIP, strconv.Itoa(int(network.Port))))
 
-	// new api server discovery client.
-	discOpt := serviced.DiscoveryOption{Services: []cc.Name{cc.CloudServerName, cc.AuthServerName, cc.AccountServerName}}
-	dis, err := serviced.NewDiscovery(cc.WebServer().Service, discOpt)
-	if err != nil {
-		return fmt.Errorf("new service discovery faield, err: %v", err)
+	// init service discovery.
+	svcOpt := serviced.NewServiceOption(cc.AccountServerName, cc.AccountServer().Network)
+	discOpt := serviced.DiscoveryOption{
+		Services: []cc.Name{cc.DataServiceName, cc.HCServiceName, cc.AuthServerName, cc.TaskServerName},
 	}
+	sd, err := serviced.NewServiceD(cc.AccountServer().Service, svcOpt, discOpt)
+	if err != nil {
+		return fmt.Errorf("new service discovery failed, err: %v", err)
+	}
+	ds.sd = sd
 
-	s.dis = dis
-	logs.Infof("create discovery success.")
-
-	svc, err := service.NewService(s.dis)
+	// init service.
+	svc, err := service.NewService(sd, shutdownWaitTimeSec)
 	if err != nil {
 		return fmt.Errorf("initialize service failed, err: %v", err)
 	}
-	s.svc = svc
+	ds.svc = svc
 
 	// init hcm control tool
-	if err := ctl.LoadCtl(cmd.WithLog()); err != nil {
+	if err := ctl.LoadCtl(ctl.WithBasics(sd)...); err != nil {
 		return fmt.Errorf("load control tool failed, err: %v", err)
 	}
 
 	return nil
 }
 
-func (s *webService) finalizer() {
-	return
+// register account-server to etcd.
+func (ds *accountServer) register() error {
+	if err := ds.sd.Register(); err != nil {
+		return fmt.Errorf("register account server failed, err: %v", err)
+	}
+
+	logs.Infof("register account server to etcd success.")
+	return nil
+}
+
+// finalizer ...
+func (ds *accountServer) finalizer() {
+	if err := ds.sd.Deregister(); err != nil {
+		logs.Errorf("process service shutdown, but deregister failed, err: %v", err)
+		return
+	}
+
+	logs.Infof("shutting down service, deregister service success.")
 }
