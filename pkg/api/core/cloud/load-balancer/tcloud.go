@@ -113,12 +113,17 @@ type TCloudClbExtension struct {
 
 	// 双栈混绑 开启IPv6FullChain负载均衡7层监听器支持混绑IPv4/IPv6目标功能。
 	MixIpTarget *bool `json:"mix_ip_target,omitempty"`
+
+	// 跨域1.0 region 非空表示支持跨域
+	TargetRegion *string `json:"target_region,omitempty"`
+	// 跨域1.0 为0表示基础网络
+	TargetCloudVpcID *string `json:"target_vpc,omitempty"`
 }
 
 // SnatIp ...
 type SnatIp struct {
 	// 私有网络子网的唯一性id，如subnet-12345678
-	SubnetId *string `json:"subnet_id"`
+	SubnetId *string `json:"subnet_id" validate:"required"`
 
 	// IP地址，如192.168.0.1
 	Ip *string `json:"ip"`

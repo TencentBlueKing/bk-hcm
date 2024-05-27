@@ -188,6 +188,11 @@ type TCloudLBUpdateReq struct {
 	SnatPro                  *bool `json:"snat_pro" validate:"omitempty"`
 	DeleteProtect            *bool `json:"delete_protect" validate:"omitempty"`
 	ModifyClassicDomain      *bool `json:"modify_classic_domain" validate:"omitempty"`
+
+	// 跨域1.0 region 非空表示支持跨域
+	TargetRegion *string `json:"target_region,omitempty"`
+	// 跨域1.0 为0表示基础网络
+	TargetCloudVpcID *string `json:"target_vpc,omitempty"`
 }
 
 // Validate tcloud security group update request.
@@ -488,4 +493,30 @@ type TCloudListLoadBalancerQuotaReq struct {
 // Validate request.
 func (req *TCloudListLoadBalancerQuotaReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// TCloudCreateSnatIpReq ...
+type TCloudCreateSnatIpReq struct {
+	AccountID           string           `json:"account_id" validate:"required"`
+	Region              string           `json:"region" validate:"required"`
+	LoadBalancerCloudId string           `json:"load_balancer_cloud_id" validate:"required"`
+	SnatIPs             []*corelb.SnatIp `json:"snat_ips" validate:"required,min=1,dive,required"`
+}
+
+// Validate ...
+func (r *TCloudCreateSnatIpReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// TCloudDeleteSnatIpReq ...
+type TCloudDeleteSnatIpReq struct {
+	AccountID           string   `json:"account_id" validate:"required"`
+	Region              string   `json:"region" validate:"required"`
+	LoadBalancerCloudId string   `json:"load_balancer_cloud_id" validate:"required"`
+	Ips                 []string `json:"ips" validate:"required,min=1,dive,required"`
+}
+
+// Validate ...
+func (r *TCloudDeleteSnatIpReq) Validate() error {
+	return validator.Validate.Struct(r)
 }

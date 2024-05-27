@@ -293,10 +293,12 @@ func (svc *lbSvc) batchCreateTargetWithGroupID(kt *kit.Kit, txn *sqlx.Tx, accoun
 
 	for _, item := range rsList {
 		tmpRs := &tablelb.LoadBalancerTargetTable{
-			AccountID:     accountID,
-			InstType:      item.InstType,
-			CloudInstID:   item.CloudInstID,
-			TargetGroupID: item.TargetGroupID,
+			AccountID:        accountID,
+			InstType:         item.InstType,
+			CloudInstID:      item.CloudInstID,
+			TargetGroupID:    item.TargetGroupID,
+			PrivateIPAddress: item.PrivateIPAddress,
+			PublicIPAddress:  item.PublicIPAddress,
 			// for local target group its cloud id is same as local id
 			CloudTargetGroupID: item.TargetGroupID,
 			Port:               item.Port,
@@ -314,6 +316,10 @@ func (svc *lbSvc) batchCreateTargetWithGroupID(kt *kit.Kit, txn *sqlx.Tx, accoun
 			tmpRs.Zone = cvmMap[item.CloudInstID].Zone
 			tmpRs.AccountID = cvmMap[item.CloudInstID].AccountID
 			tmpRs.CloudVpcIDs = cvmMap[item.CloudInstID].CloudVpcIDs
+		}
+		if item.InstType == enumor.CcnInstType {
+			tmpRs.InstID = tmpRs.CloudInstID
+			tmpRs.AccountID = item.AccountID
 		}
 
 		rsModels = append(rsModels, tmpRs)

@@ -29,7 +29,7 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/tools/converter"
+	cvt "hcm/pkg/tools/converter"
 
 	tclb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 )
@@ -142,17 +142,17 @@ type TCloudClb struct {
 
 // GetCloudID get cloud id
 func (clb TCloudClb) GetCloudID() string {
-	return converter.PtrToVal(clb.LoadBalancerId)
+	return cvt.PtrToVal(clb.LoadBalancerId)
 }
 
 // GetIPVersion 返回ip版本信息
 func (clb TCloudClb) GetIPVersion() enumor.IPAddressType {
 
-	ver := strings.ToLower(converter.PtrToVal(clb.AddressIPVersion))
+	ver := strings.ToLower(cvt.PtrToVal(clb.AddressIPVersion))
 	if ver == "ipv4" {
 		return enumor.Ipv4
 	}
-	mode := strings.ToLower(converter.PtrToVal(clb.IPv6Mode))
+	mode := strings.ToLower(cvt.PtrToVal(clb.IPv6Mode))
 	if ver == "ipv6" && mode == "ipv6fullchain" {
 		return enumor.Ipv6
 	}
@@ -190,12 +190,12 @@ type TCloudListener struct {
 
 // GetCloudID get cloud id
 func (clb TCloudListener) GetCloudID() string {
-	return converter.PtrToVal(clb.ListenerId)
+	return cvt.PtrToVal(clb.ListenerId)
 }
 
 // GetProtocol ...
 func (clb TCloudListener) GetProtocol() enumor.ProtocolType {
-	return converter.PtrToVal((*enumor.ProtocolType)(clb.Protocol))
+	return cvt.PtrToVal((*enumor.ProtocolType)(clb.Protocol))
 }
 
 // -------------------------- List Targets--------------------------
@@ -225,7 +225,7 @@ type TCloudListenerTarget struct {
 
 // GetProtocol ...
 func (t *TCloudListenerTarget) GetProtocol() enumor.ProtocolType {
-	return enumor.ProtocolType(converter.PtrToVal(t.Protocol))
+	return enumor.ProtocolType(cvt.PtrToVal(t.Protocol))
 }
 
 // -------------------------- Create Clb--------------------------
@@ -609,7 +609,7 @@ type TCloudUrlRule struct {
 
 // GetCloudID get cloud id
 func (rule TCloudUrlRule) GetCloudID() string {
-	return converter.PtrToVal(rule.LocationId)
+	return cvt.PtrToVal(rule.LocationId)
 }
 
 // -------------------------- Register Targets --------------------------
@@ -720,7 +720,21 @@ type Backend struct {
 
 // GetCloudID 一个机器可以被反复绑定，只要端口不一样即可
 func (b Backend) GetCloudID() string {
-	return fmt.Sprintf("%s-%d", converter.PtrToVal(b.InstanceId), converter.PtrToVal(b.Port))
+	switch enumor.InstType(cvt.PtrToVal(b.Type)) {
+	case enumor.CcnInstType:
+		// 云联网类型没有云id，但是ip+端口是唯一的
+		builder := strings.Builder{}
+		ips := append(b.PrivateIpAddresses, b.PublicIpAddresses...)
+		for _, ip := range ips {
+			builder.WriteString(cvt.PtrToVal(ip))
+			builder.WriteByte('-')
+		}
+		builder.WriteString(fmt.Sprint(cvt.PtrToVal(b.Port)))
+		return builder.String()
+	default:
+		return fmt.Sprintf("%s-%d", cvt.PtrToVal(b.InstanceId), cvt.PtrToVal(b.Port))
+	}
+
 }
 
 // -------------------------- List Target Health --------------------------
@@ -812,4 +826,28 @@ type TCloudLoadBalancerQuota struct {
 	QuotaCurrent *int64 `json:"quota_current,omitnil"`
 	// 配额数量。
 	QuotaLimit int64 `json:"quota_limit,omitnil"`
+}
+
+// TCloudCreateSnatIpOpt ...
+type TCloudCreateSnatIpOpt struct {
+	Region         string           `json:"region" validate:"required"`
+	LoadBalancerId string           `json:"load_balancer_id" validate:"required"`
+	SnatIps        []*corelb.SnatIp `json:"snat_ips" validate:"required,min=1,dive,required"`
+}
+
+// Validate ...
+func (opt *TCloudCreateSnatIpOpt) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// TCloudDeleteSnatIpOpt ...
+type TCloudDeleteSnatIpOpt struct {
+	Region         string   `json:"region" validate:"required"`
+	LoadBalancerId string   `json:"load_balancer_id" validate:"required"`
+	Ips            []string `json:"ips" validate:"required,min=1"`
+}
+
+// Validate ...
+func (opt *TCloudDeleteSnatIpOpt) Validate() error {
+	return validator.Validate.Struct(opt)
 }

@@ -318,13 +318,19 @@ func (cli *client) createLocalTargetGroupL7(kt *kit.Kit, opt *SyncListenerOfSing
 
 func convTarget(accountID string) func(cloudTarget *tclb.Backend) *dataproto.TargetBaseReq {
 	return func(cloudTarget *tclb.Backend) *dataproto.TargetBaseReq {
-		return &dataproto.TargetBaseReq{
-			InstType:    cvt.PtrToVal((*enumor.InstType)(cloudTarget.Type)),
-			CloudInstID: cvt.PtrToVal(cloudTarget.InstanceId),
-			Port:        cvt.PtrToVal(cloudTarget.Port),
-			Weight:      cloudTarget.Weight,
-			AccountID:   accountID,
+		target := &dataproto.TargetBaseReq{
+			InstType:         cvt.PtrToVal((*enumor.InstType)(cloudTarget.Type)),
+			CloudInstID:      cvt.PtrToVal(cloudTarget.InstanceId),
+			Port:             cvt.PtrToVal(cloudTarget.Port),
+			Weight:           cloudTarget.Weight,
+			AccountID:        accountID,
+			PrivateIPAddress: cvt.PtrToSlice(cloudTarget.PrivateIpAddresses),
+			PublicIPAddress:  cvt.PtrToSlice(cloudTarget.PublicIpAddresses),
 		}
+		if enumor.InstType(cvt.PtrToVal(cloudTarget.Type)) == enumor.CcnInstType {
+			target.CloudInstID = typeslb.Backend{Backend: cloudTarget}.GetCloudID()
+		}
+		return target
 	}
 }
 
@@ -469,16 +475,11 @@ func (cli *client) createRs(kt *kit.Kit, accountID, tgId string, addSlice []type
 		return nil, nil
 	}
 
-	var targets []*dataproto.TargetBaseReq
+	var targets []*dataproto.TargetBaseReq = make([]*dataproto.TargetBaseReq, 0, len(addSlice))
 	for _, backend := range addSlice {
-		targets = append(targets, &dataproto.TargetBaseReq{
-			InstType:      cvt.PtrToVal((*enumor.InstType)(backend.Type)),
-			CloudInstID:   cvt.PtrToVal(backend.InstanceId),
-			Port:          cvt.PtrToVal(backend.Port),
-			Weight:        backend.Weight,
-			AccountID:     accountID,
-			TargetGroupID: tgId,
-		})
+		rs := convTarget(accountID)(backend.Backend)
+		rs.TargetGroupID = tgId
+		targets = append(targets, rs)
 	}
 
 	created, err := cli.dbCli.Global.LoadBalancer.BatchCreateTCloudTarget(kt,
