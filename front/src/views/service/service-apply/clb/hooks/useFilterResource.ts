@@ -114,14 +114,19 @@ export default (formModel: ApplyClbModel) => {
    */
   const inquiryPrices = async () => {
     isInquiryPricesLoading.value = true;
-    const { data } = await businessStore.lbPricesInquiry({
-      ...formModel,
-      bk_biz_id: isBusinessPage ? formModel.bk_biz_id : undefined,
-      zones: [formModel.zones],
-      backup_zones: formModel.backup_zones ? [formModel.backup_zones] : undefined,
-    });
-    prices.value = data;
-    isInquiryPricesLoading.value = false;
+    try {
+      const { data } = await businessStore.lbPricesInquiry({
+        ...formModel,
+        bk_biz_id: isBusinessPage ? formModel.bk_biz_id : undefined,
+        zones: [formModel.zones],
+        backup_zones: formModel.backup_zones ? [formModel.backup_zones] : undefined,
+        bandwidthpkg_sub_type: formModel.vip_isp === 'BGP' ? 'BGP' : 'SINGLE_ISP',
+        bandwidth_package_id: undefined,
+      });
+      prices.value = data;
+    } finally {
+      isInquiryPricesLoading.value = false;
+    }
   };
 
   watch(
