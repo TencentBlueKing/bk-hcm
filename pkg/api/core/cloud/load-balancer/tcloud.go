@@ -103,7 +103,7 @@ type TCloudClbExtension struct {
 	SnatPro *bool `json:"snat_pro,omitempty"`
 
 	// 开启SnatPro负载均衡后，SnatIp列表。
-	SnatIps []SnatIp `json:"snat_ips,omitempty"`
+	SnatIps *[]SnatIp `json:"snat_ips"`
 
 	// 删除保护
 	DeleteProtect *bool `json:"delete_protect,omitempty"`
