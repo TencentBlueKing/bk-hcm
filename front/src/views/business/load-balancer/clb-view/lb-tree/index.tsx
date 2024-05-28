@@ -434,10 +434,15 @@ export default defineComponent({
                     </bk-loading>
                   );
                 }
-                const { type, id, name, protocol, port, isDefault, listenerNum, domain_num, url_count } = data;
+                const { type, id, name, protocol, port, end_port, isDefault, listenerNum, domain_num, url_count } =
+                  data;
                 const extension =
                   // eslint-disable-next-line no-nested-ternary
-                  type === 'lb' ? ` (${getInstVip(data)})` : type === 'listener' ? `(${protocol}:${port})` : '';
+                  type === 'lb'
+                    ? ` (${getInstVip(data)})`
+                    : type === 'listener'
+                    ? `(${protocol}:${port}${end_port ? `-${end_port}` : ''})`
+                    : '';
                 return (
                   <>
                     <OverflowTitle type='tips' class='base-info'>
