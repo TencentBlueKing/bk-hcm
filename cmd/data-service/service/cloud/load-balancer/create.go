@@ -259,6 +259,7 @@ func convTargetGroupCreateReqToTable[T corelb.TargetGroupExtension](kt *kit.Kit,
 	return targetGroup, nil
 }
 
+// accountID 参数和tgID 参数 会覆盖rsList 中指定的参数. 对于cvm 类型数据会尝试查询对应的的cvm信息
 func (svc *lbSvc) batchCreateTargetWithGroupID(kt *kit.Kit, txn *sqlx.Tx, accountID, tgID string,
 	rsList []*dataproto.TargetBaseReq) ([]string, error) {
 
@@ -293,7 +294,8 @@ func (svc *lbSvc) batchCreateTargetWithGroupID(kt *kit.Kit, txn *sqlx.Tx, accoun
 
 	for _, item := range rsList {
 		tmpRs := &tablelb.LoadBalancerTargetTable{
-			AccountID:        accountID,
+			AccountID:        item.AccountID,
+			IP:               item.IP,
 			InstType:         item.InstType,
 			CloudInstID:      item.CloudInstID,
 			TargetGroupID:    item.TargetGroupID,

@@ -72,14 +72,15 @@ type TargetGroupExtension interface {
 type BaseTarget struct {
 	ID                 string          `json:"id"`
 	AccountID          string          `json:"account_id"`
+	IP                 string          `json:"ip"`
+	Port               int64           `json:"port"`
+	Weight             *int64          `json:"weight"`
 	InstType           enumor.InstType `json:"inst_type"`
 	InstID             string          `json:"inst_id"`
 	CloudInstID        string          `json:"cloud_inst_id"`
 	InstName           string          `json:"inst_name"`
 	TargetGroupID      string          `json:"target_group_id"`
 	CloudTargetGroupID string          `json:"cloud_target_group_id"`
-	Port               int64           `json:"port"`
-	Weight             *int64          `json:"weight"`
 	PrivateIPAddress   []string        `json:"private_ip_address"`
 	PublicIPAddress    []string        `json:"public_ip_address"`
 	CloudVpcIDs        []string        `json:"cloud_vpc_ids"`
@@ -95,7 +96,7 @@ func (rs BaseTarget) GetID() string {
 
 // GetCloudID ...
 func (rs BaseTarget) GetCloudID() string {
-	return fmt.Sprintf("%s-%d", rs.CloudInstID, rs.Port)
+	return fmt.Sprintf("%s-%d", rs.IP, rs.Port)
 }
 
 // BaseTargetListenerRuleRel define base target listener rule rel.

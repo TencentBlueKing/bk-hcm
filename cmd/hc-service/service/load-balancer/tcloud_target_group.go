@@ -174,6 +174,7 @@ func (svc *clbSvc) batchCreateTargetDb(kt *kit.Kit, req *protolb.TCloudBatchOper
 	for _, item := range rsList {
 		rsReq.Targets = append(rsReq.Targets, &dataproto.TargetBaseReq{
 			AccountID:     accountID,
+			IP:            item.IP,
 			TargetGroupID: tgID,
 			InstType:      item.InstType,
 			CloudInstID:   item.CloudInstID,
@@ -300,7 +301,7 @@ func (svc *clbSvc) batchDeleteTargetDb(kt *kit.Kit, req *protolb.TCloudBatchOper
 			Filter: tools.ExpressionAnd(
 				tools.RuleEqual("account_id", accountID),
 				tools.RuleEqual("target_group_id", tgID),
-				tools.RuleEqual("cloud_inst_id", item.CloudInstID),
+				tools.RuleEqual("ip", item.IP),
 				tools.RuleEqual("port", item.Port),
 			),
 			Page: core.NewDefaultBasePage(),

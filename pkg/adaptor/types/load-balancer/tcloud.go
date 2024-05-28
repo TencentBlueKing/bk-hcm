@@ -718,23 +718,26 @@ type Backend struct {
 	*tclb.Backend
 }
 
-// GetCloudID 一个机器可以被反复绑定，只要端口不一样即可
-func (b Backend) GetCloudID() string {
-	switch enumor.InstType(cvt.PtrToVal(b.Type)) {
-	case enumor.CcnInstType:
-		// 云联网类型没有云id，但是ip+端口是唯一的
-		builder := strings.Builder{}
-		ips := append(b.PrivateIpAddresses, b.PublicIpAddresses...)
-		for _, ip := range ips {
-			builder.WriteString(cvt.PtrToVal(ip))
-			builder.WriteByte('-')
-		}
-		builder.WriteString(fmt.Sprint(cvt.PtrToVal(b.Port)))
-		return builder.String()
-	default:
-		return fmt.Sprintf("%s-%d", cvt.PtrToVal(b.InstanceId), cvt.PtrToVal(b.Port))
+// GetIP comma separated ip addresses
+func (b Backend) GetIP() string {
+	if len(b.PrivateIpAddresses) == 0 {
+		return ""
 	}
+	if len(b.PrivateIpAddresses) == 1 {
+		return cvt.PtrToVal(b.PrivateIpAddresses[0])
+	}
+	builder := strings.Builder{}
+	builder.WriteString(cvt.PtrToVal(b.PrivateIpAddresses[0]))
+	for _, ip := range b.PrivateIpAddresses[1:] {
+		builder.WriteByte(',')
+		builder.WriteString(cvt.PtrToVal(ip))
+	}
+	return builder.String()
+}
 
+// GetCloudID 内网ip+端口 作为唯一键
+func (b Backend) GetCloudID() string {
+	return fmt.Sprintf("%s-%d", b.GetIP(), cvt.PtrToVal(b.Port))
 }
 
 // -------------------------- List Target Health --------------------------

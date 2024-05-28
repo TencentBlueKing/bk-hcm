@@ -67,12 +67,13 @@ func (req *TargetGroupCreateReq) Validate() error {
 // TargetBaseReq Target基本参数
 type TargetBaseReq struct {
 	ID               string          `json:"id" validate:"omitempty"`
+	IP               string          `json:"ip" validate:"required"`
 	InstType         enumor.InstType `json:"inst_type" validate:"required"`
-	CloudInstID      string          `json:"cloud_inst_id" validate:"required"`
 	Port             int64           `json:"port" validate:"required"`
 	Weight           *int64          `json:"weight" validate:"required"`
 	AccountID        string          `json:"account_id,omitempty" validate:"omitempty"`
 	TargetGroupID    string          `json:"target_group_id,omitempty" validate:"omitempty"`
+	CloudInstID      string          `json:"cloud_inst_id" validate:"omitempty"`
 	InstName         string          `json:"inst_name,omitempty" validate:"omitempty"`
 	PrivateIPAddress []string        `json:"private_ip_address,omitempty" validate:"omitempty"`
 	PublicIPAddress  []string        `json:"public_ip_address,omitempty" validate:"omitempty"`
@@ -82,10 +83,10 @@ type TargetBaseReq struct {
 	NewWeight        *int64          `json:"new_weight,omitempty" validate:"omitempty"`
 }
 
-// Validate validate req(目前仅支持CVM的实例类型)
+// Validate ...
 func (req *TargetBaseReq) Validate() error {
 	switch req.InstType {
-	case enumor.CvmInstType, enumor.CcnInstType:
+	case enumor.CvmInstType, enumor.EniInstType, enumor.CcnInstType:
 	default:
 		return errf.Newf(errf.InvalidParameter, "inst_type not supportted %s", req.InstType)
 	}

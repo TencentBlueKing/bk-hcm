@@ -488,6 +488,7 @@ func (svc *lbSvc) ListTarget(cts *rest.Contexts) (interface{}, error) {
 func convTableToBaseTarget(one *tablelb.LoadBalancerTargetTable) *corelb.BaseTarget {
 	return &corelb.BaseTarget{
 		ID:                 one.ID,
+		IP:                 one.IP,
 		AccountID:          one.AccountID,
 		InstType:           one.InstType,
 		InstID:             one.InstID,
