@@ -1,9 +1,7 @@
-import { computed, defineComponent, onMounted, onUnmounted, ref, shallowRef } from 'vue';
+import { Ref, computed, defineComponent, onMounted, onUnmounted, ref, shallowRef } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 // import components
-import { Button, Message, Popover, Table } from 'bkui-vue';
-// import stores
-import { useResourceStore } from '@/store';
+import { Button, Loading, Message, Popover, Table } from 'bkui-vue';
 // import types
 import { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
 import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
@@ -11,18 +9,20 @@ import { LbPrice } from '@/typings';
 // import utils
 import { useI18n } from 'vue-i18n';
 import bus from '@/common/bus';
+import http from '@/http';
+
+const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 const { Column } = Table;
 
 // apply-clb, 底栏
-export default (formModel: ApplyClbModel, formRef: any) => {
+export default (formModel: ApplyClbModel, formRef: any, isInquiryPricesLoading: Ref<boolean>) => {
   // use hooks
   const router = useRouter();
   const route = useRoute();
-  const { whereAmI } = useWhereAmI();
+  const { whereAmI, isBusinessPage } = useWhereAmI();
   const { t } = useI18n();
   // use stores
-  const resourceStore = useResourceStore();
   // define data
   const applyLoading = ref(false);
   const prices = shallowRef<LbPrice>();
@@ -59,6 +59,7 @@ export default (formModel: ApplyClbModel, formRef: any) => {
   const handleParams = () => {
     return {
       ...formModel,
+      bk_biz_id: isBusinessPage ? formModel.bk_biz_id : undefined,
       // 只有公网下可以配置
       address_ip_version: isOpen.value ? formModel.address_ip_version : undefined,
       vip_isp: isOpen.value ? formModel.vip_isp : undefined,
@@ -87,9 +88,15 @@ export default (formModel: ApplyClbModel, formRef: any) => {
       await formRef.value.validate();
       // 整理参数
       applyLoading.value = true;
-      await resourceStore.create('load_balancers', handleParams());
+      const url = isBusinessPage
+        ? `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/tcloud/applications/types/create_load_balancer`
+        : `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/load_balancers/create`;
+      await http.post(url, handleParams());
       Message({ theme: 'success', message: '购买成功' });
-      goBack();
+      if (isBusinessPage) {
+        // 业务下购买CLB, 跳转至我的单据
+        router.push({ path: '/service/my-apply' });
+      } else goBack();
     } finally {
       applyLoading.value = false;
     }
@@ -133,14 +140,18 @@ export default (formModel: ApplyClbModel, formRef: any) => {
               }}
             </Popover>
             :
-            <span class='value'>
+            <Loading loading={isInquiryPricesLoading.value} size='small' opacity={1} color='#fafbfd' class='value'>
               <span class='number'>{totalPrice.value}</span>
               {/* 本期只支持按量计费, 按照按量计费的模式进行单位显示 */}
               <span class='unit'>{t('元/小时')}</span>
-            </span>
+            </Loading>
           </div>
           <div class='operation-btn-wrap'>
-            <Button theme='primary' onClick={handleApplyClb} loading={applyLoading.value}>
+            <Button
+              theme='primary'
+              onClick={handleApplyClb}
+              loading={applyLoading.value}
+              disabled={isInquiryPricesLoading.value}>
               {t('立即购买')}
             </Button>
             <Button loading={applyLoading.value} onClick={goBack}>
