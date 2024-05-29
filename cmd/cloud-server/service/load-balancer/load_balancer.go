@@ -95,6 +95,9 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 	// 目标组
 	h.Add("ListBizTargetsByTGID", http.MethodPost,
 		"/target_groups/{target_group_id}/targets/list", svc.ListBizTargetsByTGID)
+
+	h.Add("StatBizTargetWeight", http.MethodPost,
+		"/target_groups/targets/weight_stat", svc.StatBizTargetWeight)
 	h.Add("AssociateBizTargetGroupListenerRel", http.MethodPost,
 		"/listeners/associate/target_group", svc.AssociateBizTargetGroupListenerRel)
 

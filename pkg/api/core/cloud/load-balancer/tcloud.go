@@ -201,6 +201,7 @@ type TCloudCertificateInfo struct {
 
 // TCloudListenerExtension 腾讯云监听器拓展
 type TCloudListenerExtension struct {
+	EndPort     *int64                 `json:"end_port,omitempty"`
 	Certificate *TCloudCertificateInfo `json:"certificate,omitempty"`
 }
 

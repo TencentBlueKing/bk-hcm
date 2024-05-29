@@ -141,7 +141,9 @@ func (t *TCloudImpl) formatCreateListenerRequest(opt *typelb.TCloudCreateListene
 	req.Protocol = converter.ValToPtr(string(opt.Protocol))
 	req.Ports = append(req.Ports, converter.ValToPtr(opt.Port))
 	req.MultiCertInfo = convCert(opt.Certificate)
-
+	if opt.EndPort > 0 {
+		req.EndPort = converter.ValToPtr(opt.EndPort)
+	}
 	if len(opt.Scheduler) > 0 {
 		req.Scheduler = converter.ValToPtr(opt.Scheduler)
 	}
