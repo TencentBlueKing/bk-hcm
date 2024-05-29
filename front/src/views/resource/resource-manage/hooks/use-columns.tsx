@@ -1798,6 +1798,75 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
   ];
 
+  const securityCvmColumns = [
+    {
+      type: 'selection',
+      width: 32,
+      minWidth: 32,
+      onlyShowOnList: true,
+      align: 'right',
+    },
+    {
+      label: '内网 IP',
+      field: 'private_ip',
+      isDefaultShow: true,
+      render: ({ data }: any) => {
+        return [...(data?.private_ipv4_addresses || []), ...(data?.private_ipv6_addresses || [])].join(',') || '--';
+      },
+    },
+    {
+      label: '公网 IP',
+      field: 'public_ip',
+      isDefaultShow: true,
+      render: ({ data }: any) => {
+        return [...(data.public_ipv4_addresses || []), ...(data.public_ipv6_addresses || [])].join(',') || '--';
+      },
+    },
+    {
+      label: '地域',
+      field: 'region',
+      isDefaultShow: true,
+      sort: true,
+    },
+    {
+      label: '可用区',
+      field: 'zone',
+      isDefaultShow: true,
+    },
+    {
+      label: '主机名称',
+      field: 'name',
+      isDefaultShow: true,
+    },
+    {
+      label: '主机状态',
+      field: 'status',
+      isDefaultShow: true,
+    },
+    {
+      label: '机型',
+      field: 'machine_type',
+      isDefaultShow: true,
+    },
+    {
+      label: '是否分配',
+      field: 'bk_biz_id',
+      isOnlyShowInResource: true,
+      isDefaultShow: true,
+      render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => (
+        <bk-tag
+          v-bk-tooltips={{
+            content: businessMapStore.businessMap.get(cell),
+            disabled: !cell || cell === -1,
+            theme: 'light',
+          }}
+          theme={data.bk_biz_id === -1 ? false : 'success'}>
+          {data.bk_biz_id === -1 ? '未分配' : '已分配'}
+        </bk-tag>
+      ),
+    },
+  ];
+
   const columnsMap = {
     vpc: vpcColumns,
     subnet: subnetColumns,
@@ -1819,6 +1888,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     url: urlColumns,
     targetGroupListener: targetGroupListenerColumns,
     cert: certColumns,
+    securityCvm: securityCvmColumns,
   };
 
   let columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);
