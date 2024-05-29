@@ -388,18 +388,25 @@ func (r BatchRegisterTCloudTargetReq) Validate() error {
 
 // RegisterTarget ...
 type RegisterTarget struct {
-	CloudInstID      string   `json:"cloud_inst_id,omitempty" validate:"required"`
-	InstType         string   `json:"inst_type,omitempty" validate:"required"`
-	Port             int64    `json:"port" validate:"required"`
-	Weight           int64    `json:"weight" validate:"required"`
-	Zone             string   `json:"zone,omitempty" validate:"omitempty"`
-	InstName         string   `json:"inst_name,omitempty" validate:"omitempty"`
-	PrivateIPAddress []string `json:"private_ip_address,omitempty" validate:"omitempty"`
-	PublicIPAddress  []string `json:"public_ip_address,omitempty" validate:"omitempty"`
+	CloudInstID      string          `json:"cloud_inst_id,omitempty" validate:"omitempty"`
+	TargetType       enumor.InstType `json:"inst_type,omitempty" validate:"required"`
+	EniIp            string          `json:"eni_ip,omitempty" validate:"omitempty"`
+	Port             int64           `json:"port" validate:"required"`
+	Weight           int64           `json:"weight" validate:"required"`
+	Zone             string          `json:"zone,omitempty" validate:"omitempty"`
+	InstName         string          `json:"inst_name,omitempty" validate:"omitempty"`
+	PrivateIPAddress []string        `json:"private_ip_address,omitempty" validate:"omitempty"`
+	PublicIPAddress  []string        `json:"public_ip_address,omitempty" validate:"omitempty"`
 }
 
 // Validate ...
 func (r RegisterTarget) Validate() error {
+	if r.TargetType == enumor.EniInstType && len(r.EniIp) == 0 {
+		return errors.New("eni_ip not set for eni type target")
+	}
+	if r.TargetType == enumor.CvmInstType && len(r.CloudInstID) == 0 {
+		return errors.New("cloud_inst_id not set for cvm type target")
+	}
 	return validator.Validate.Struct(r)
 }
 

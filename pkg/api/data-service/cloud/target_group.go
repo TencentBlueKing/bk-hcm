@@ -67,7 +67,7 @@ func (req *TargetGroupCreateReq) Validate() error {
 // TargetBaseReq Target基本参数
 type TargetBaseReq struct {
 	ID               string          `json:"id" validate:"omitempty"`
-	IP               string          `json:"ip" validate:"required"`
+	IP               string          `json:"ip" validate:"omitempty"`
 	InstType         enumor.InstType `json:"inst_type" validate:"required"`
 	Port             int64           `json:"port" validate:"required"`
 	Weight           *int64          `json:"weight" validate:"required"`
