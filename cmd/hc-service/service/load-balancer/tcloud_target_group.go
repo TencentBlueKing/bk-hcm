@@ -21,6 +21,8 @@
 package loadbalancer
 
 import (
+	"errors"
+
 	typelb "hcm/pkg/adaptor/types/load-balancer"
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
@@ -107,6 +109,7 @@ func (svc *clbSvc) batchAddTargetsToGroup(kt *kit.Kit, req *protolb.TCloudBatchO
 	rsOpt := &typelb.TCloudRegisterTargetsOption{
 		Region: tgInfo.Region,
 	}
+
 	for _, ruleItem := range urlRuleList.Details {
 		if _, ok := cloudLBExists[ruleItem.CloudLbID]; !ok {
 			rsOpt.LoadBalancerId = ruleItem.CloudLbID
@@ -115,10 +118,19 @@ func (svc *clbSvc) batchAddTargetsToGroup(kt *kit.Kit, req *protolb.TCloudBatchO
 		for _, rsItem := range req.RsList {
 			tmpRs := &typelb.BatchTarget{
 				ListenerId: cvt.ValToPtr(ruleItem.CloudLBLID),
-				InstanceId: cvt.ValToPtr(rsItem.CloudInstID),
 				Port:       cvt.ValToPtr(rsItem.Port),
 				Weight:     rsItem.Weight,
 			}
+			switch rsItem.InstType {
+			case enumor.CvmInstType:
+				tmpRs.InstanceId = cvt.ValToPtr(rsItem.CloudInstID)
+			case enumor.EniInstType:
+				// 跨域rs 指定 ip
+				tmpRs.EniIp = cvt.ValToPtr(rsItem.IP)
+			default:
+				return nil, errors.New(string("invalid target type: " + rsItem.InstType))
+			}
+
 			if ruleItem.RuleType == enumor.Layer7RuleType {
 				tmpRs.LocationId = cvt.ValToPtr(ruleItem.CloudID)
 			}
@@ -174,6 +186,7 @@ func (svc *clbSvc) batchCreateTargetDb(kt *kit.Kit, req *protolb.TCloudBatchOper
 	for _, item := range rsList {
 		rsReq.Targets = append(rsReq.Targets, &dataproto.TargetBaseReq{
 			AccountID:     accountID,
+			IP:            item.IP,
 			TargetGroupID: tgID,
 			InstType:      item.InstType,
 			CloudInstID:   item.CloudInstID,
@@ -300,7 +313,7 @@ func (svc *clbSvc) batchDeleteTargetDb(kt *kit.Kit, req *protolb.TCloudBatchOper
 			Filter: tools.ExpressionAnd(
 				tools.RuleEqual("account_id", accountID),
 				tools.RuleEqual("target_group_id", tgID),
-				tools.RuleEqual("cloud_inst_id", item.CloudInstID),
+				tools.RuleEqual("ip", item.IP),
 				tools.RuleEqual("port", item.Port),
 			),
 			Page: core.NewDefaultBasePage(),

@@ -21,6 +21,7 @@
 package loadbalancer
 
 import (
+	"errors"
 	"fmt"
 
 	typeslb "hcm/pkg/adaptor/types/load-balancer"
@@ -77,9 +78,17 @@ func (svc *clbSvc) RegisterTargetToListenerRule(cts *rest.Contexts) (any, error)
 		tmpRs := &typeslb.BatchTarget{
 			ListenerId: cvt.ValToPtr(req.CloudListenerID),
 			Port:       cvt.ValToPtr(target.Port),
-			Type:       cvt.ValToPtr(target.InstType),
-			InstanceId: cvt.ValToPtr(target.CloudInstID),
+			Type:       cvt.ValToPtr(string(target.TargetType)),
 			Weight:     cvt.ValToPtr(target.Weight),
+		}
+		switch target.TargetType {
+		case enumor.CvmInstType:
+			tmpRs.InstanceId = cvt.ValToPtr(target.CloudInstID)
+		case enumor.EniInstType:
+			// 跨域rs 通过指定为 ip
+			tmpRs.EniIp = cvt.ValToPtr(target.EniIp)
+		default:
+			return nil, errors.New(string("invalid target type: " + target.TargetType))
 		}
 		// 只有七层规则才需要传该参数
 		if req.RuleType == enumor.Layer7RuleType {
@@ -95,6 +104,5 @@ func (svc *clbSvc) RegisterTargetToListenerRule(cts *rest.Contexts) (any, error)
 	if len(failLblIds) > 0 {
 		return nil, fmt.Errorf("some listener fail to bind: %v", failLblIds)
 	}
-
 	return nil, nil
 }

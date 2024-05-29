@@ -78,20 +78,20 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 	h.Add("DeleteTCloudListener", http.MethodDelete, "/vendors/tcloud/listeners/batch", svc.DeleteTCloudListener)
 
 	// 域名、规则
-	h.Add("UpdateTCloudDomainAttr", http.MethodPatch, "/vendors/tcloud/listeners/{lbl_id}/domains",
-		svc.UpdateTCloudDomainAttr)
+	h.Add("UpdateTCloudDomainAttr", http.MethodPatch,
+		"/vendors/tcloud/listeners/{lbl_id}/domains", svc.UpdateTCloudDomainAttr)
 
 	// 目标组
-	h.Add("BatchCreateTCloudTargets", http.MethodPost, "/vendors/tcloud/target_groups/{target_group_id}/targets/create",
-		svc.BatchCreateTCloudTargets)
+	h.Add("BatchCreateTCloudTargets", http.MethodPost,
+		"/vendors/tcloud/target_groups/{target_group_id}/targets/create", svc.BatchCreateTCloudTargets)
 	h.Add("BatchRemoveTCloudTargets", http.MethodDelete,
 		"/vendors/tcloud/target_groups/{target_group_id}/targets/batch", svc.BatchRemoveTCloudTargets)
 	h.Add("BatchModifyTCloudTargetsPort", http.MethodPatch,
 		"/vendors/tcloud/target_groups/{target_group_id}/targets/port", svc.BatchModifyTCloudTargetsPort)
 	h.Add("BatchModifyTCloudTargetsWeight", http.MethodPatch,
 		"/vendors/tcloud/target_groups/{target_group_id}/targets/weight", svc.BatchModifyTCloudTargetsWeight)
-	h.Add("ListTCloudTargetsHealth", http.MethodPost, "/vendors/tcloud/load_balancers/targets/health",
-		svc.ListTCloudTargetsHealth)
+	h.Add("ListTCloudTargetsHealth", http.MethodPost,
+		"/vendors/tcloud/load_balancers/targets/health", svc.ListTCloudTargetsHealth)
 
 	h.Add("RegisterTargetToListenerRule", http.MethodPost,
 		"/vendors/tcloud/load_balancers/{lb_id}/targets/create", svc.RegisterTargetToListenerRule)

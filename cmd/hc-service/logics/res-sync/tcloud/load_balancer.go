@@ -453,7 +453,7 @@ func convertTCloudExtension(cloud typeslb.TCloudClb, region string) *corelb.TClo
 			}
 			ipList = append(ipList, corelb.SnatIp{SubnetId: snatIP.SubnetId, Ip: snatIP.Ip})
 		}
-		ext.SnatIps = ipList
+		ext.SnatIps = cvt.ValToPtr(ipList)
 	}
 
 	flagMap := make(map[string]bool)
@@ -516,7 +516,7 @@ func convCloudToDBUpdate(id string, cloud typeslb.TCloudClb, vpcMap map[string]*
 			}
 			ipList = append(ipList, corelb.SnatIp{SubnetId: snatIP.SubnetId, Ip: snatIP.Ip})
 		}
-		lb.Extension.SnatIps = ipList
+		lb.Extension.SnatIps = cvt.ValToPtr(ipList)
 	}
 
 	if len(cloud.LoadBalancerVips) != 0 {
@@ -686,8 +686,8 @@ func isLBExtensionChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) 
 
 // 云上SnatIP列表与本地对比
 func isSnatIPChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) bool {
-
-	if len(db.Extension.SnatIps) != len(cloud.SnatIps) {
+	dbSnatIps := cvt.PtrToVal(db.Extension.SnatIps)
+	if len(dbSnatIps) != len(cloud.SnatIps) {
 		return true
 	}
 	if len(cloud.SnatIps) == 0 {
@@ -696,7 +696,7 @@ func isSnatIPChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) bool 
 	}
 	// 转为map逐个比较
 	cloudSnatMap := cloudSnatSliceToMap(cloud.SnatIps)
-	for _, local := range db.Extension.SnatIps {
+	for _, local := range dbSnatIps {
 		delete(cloudSnatMap, local.Hash())
 	}
 	// 数量相等的情况下，应该刚好删除干净。因此非零就是存在不同
