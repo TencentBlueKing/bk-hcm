@@ -70,6 +70,20 @@ export default defineComponent({
       });
     };
 
+    const getListenerDetail = async (targetGroup: any) => {
+      // 请求绑定的监听器规则
+      const rulesRes = await businessStore.list(
+        {
+          page: { limit: 1, start: 0, count: false },
+          filter: { op: 'and', rules: [] },
+        },
+        `vendors/tcloud/target_groups/${targetGroup.id}/rules`,
+      );
+      const listenerItem = rulesRes.data.details[0];
+      // 请求监听器详情, 获取端口段信息
+      const detailRes = await businessStore.detail('listeners', listenerItem.lbl_id);
+      loadBalancerStore.setListenerDetailWithTargetGroup(detailRes.data);
+    };
     // click-handler - 编辑目标组
     const handleEditTargetGroup = async (data: any) => {
       clearInterval(timer);
@@ -98,6 +112,7 @@ export default defineComponent({
         const res = await businessStore.getLbDetail(data.lb_id);
         lbDetail.value = res.data;
       }
+      getListenerDetail(data);
     };
 
     // 处理参数 - add

@@ -1322,6 +1322,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '端口',
       field: 'port',
       isDefaultShow: true,
+      render: ({ data, cell }: any) => `${cell}${data.end_port ? `-${data.end_port}` : ''}`,
     },
     {
       label: '均衡方式',
@@ -1603,25 +1604,9 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       isDefaultShow: true,
       width: 300,
       render: ({ data }: any) => {
-        const {
-          lb_name,
-          private_ipv4_addresses,
-          private_ipv6_addresses,
-          public_ipv4_addresses,
-          public_ipv6_addresses,
-        } = data;
-        if (public_ipv4_addresses.length > 0) {
-          return `${lb_name}（${public_ipv4_addresses.join(',')}）`;
-        }
-        if (public_ipv6_addresses.length > 0) {
-          return `${lb_name}（${public_ipv6_addresses.join(',')}）`;
-        }
-        if (private_ipv4_addresses.length > 0) {
-          return `${lb_name}（${private_ipv4_addresses.join(',')}）`;
-        }
-        if (private_ipv6_addresses.length > 0) {
-          return `${lb_name}（${private_ipv6_addresses.join(',')}）`;
-        }
+        const vip = getInstVip(data);
+        const { lb_name } = data;
+        return `${lb_name}（${vip}）`;
       },
     },
     {
@@ -1647,6 +1632,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '端口',
       field: 'port',
       isDefaultShow: true,
+      render: ({ data, cell }: any) => `${cell}${data.end_port ? `-${data.end_port}` : ''}`,
     },
     {
       label: '异常端口数',

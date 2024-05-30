@@ -43,7 +43,9 @@ export default defineComponent({
           },
           {
             label: t('协议端口'),
-            value: `${listenerDetail.protocol}:${listenerDetail.port}`,
+            value: `${listenerDetail.protocol}:${listenerDetail.port}${
+              listenerDetail.end_port ? `-${listenerDetail.end_port}` : ''
+            }`,
           },
           {
             label: t('域名数量'),
