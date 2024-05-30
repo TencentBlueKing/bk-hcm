@@ -24,6 +24,7 @@ export default defineComponent({
     cloudVpcId: String,
     region: String,
     protocol: String as PropType<Protocol>,
+    isCorsV2: Boolean,
   },
   emits: ['update:modelValue'],
   setup(props, { emit, expose }) {
@@ -33,12 +34,18 @@ export default defineComponent({
     const targetGroupId = ref(props.modelValue);
     const { dataList, isDataLoad, isDataRefresh, handleScrollEnd, handleRefresh } = useSingleList({
       url: `/api/v1/cloud/${getBusinessApiPath()}target_groups/list`,
-      rules: () => [
-        { field: 'account_id', op: QueryRuleOPEnum.EQ, value: props.accountId },
-        { field: 'cloud_vpc_id', op: QueryRuleOPEnum.EQ, value: props.cloudVpcId },
-        { field: 'region', op: QueryRuleOPEnum.EQ, value: props.region },
-        { field: 'protocol', op: QueryRuleOPEnum.EQ, value: props.protocol },
-      ],
+      rules: () => {
+        const baseRules = [
+          { field: 'account_id', op: QueryRuleOPEnum.EQ, value: props.accountId },
+          { field: 'protocol', op: QueryRuleOPEnum.EQ, value: props.protocol },
+        ];
+        if (props.isCorsV2) return baseRules;
+        return [
+          ...baseRules,
+          { field: 'region', op: QueryRuleOPEnum.EQ, value: props.region },
+          { field: 'cloud_vpc_id', op: QueryRuleOPEnum.EQ, value: props.cloudVpcId },
+        ];
+      },
     });
 
     // click-handler - 新增目标组

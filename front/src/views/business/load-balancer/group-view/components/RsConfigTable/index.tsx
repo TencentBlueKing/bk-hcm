@@ -26,6 +26,7 @@ export default defineComponent({
     noSearch: Boolean,
     noDisabled: Boolean, // 禁用所有disabled
     onlyShow: Boolean, // 只用于显示(基本信息页面使用)
+    lbDetail: Object,
   },
   emits: ['update:rsList', 'update:deletedRsList'],
   setup(props, { emit }) {
@@ -216,6 +217,7 @@ export default defineComponent({
         vpcIds: [vpc_id.value],
         port: props.port,
         rsList: props.rsList,
+        isCorsV2: props.lbDetail?.extension?.snat_pro,
       });
     };
 

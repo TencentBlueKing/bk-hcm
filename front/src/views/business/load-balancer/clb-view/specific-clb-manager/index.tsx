@@ -92,7 +92,7 @@ export default defineComponent({
         v-model:active={activeTab.value}
         type={'card-grid'}
         onChange={handleActiveTabChange}
-        class='manager-tab-wrap'>
+        class='manager-tab-wrap has-breadcrumb'>
         {tabList.map((tab) => (
           <TabPanel key={tab.name} name={tab.name} label={tab.label} class={'clb-list-tab-content-container'}>
             <div class='common-card-wrap'>

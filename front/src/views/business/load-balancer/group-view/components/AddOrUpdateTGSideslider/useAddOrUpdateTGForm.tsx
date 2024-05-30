@@ -12,7 +12,7 @@ import { TARGET_GROUP_PROTOCOLS, VendorEnum } from '@/common/constant';
 
 const { Option } = Select;
 
-export default (formData: any, updateCount: Ref<number>, isEdit: Ref<boolean>) => {
+export default (formData: any, updateCount: Ref<number>, isEdit: Ref<boolean>, lbDetail: Ref<any>) => {
   // use stores
   const accountStore = useAccountStore();
   const loadBalancerStore = useLoadBalancerStore();
@@ -190,6 +190,7 @@ export default (formData: any, updateCount: Ref<number>, isEdit: Ref<boolean>) =
           accountId={formData.account_id}
           vpcId={curVpcId.value}
           port={formData.port}
+          lbDetail={lbDetail.value}
         />
       ),
     },

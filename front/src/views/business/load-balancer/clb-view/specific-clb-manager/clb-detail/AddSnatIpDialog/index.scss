@@ -1,0 +1,69 @@
+.add-snat-ip-dialog {
+  .vpc-info {
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    height: 40px;
+
+    .label {
+      &::after {
+        content: ':';
+        margin: 0 10px 0 5px;
+      }
+    }
+
+    .value {
+      color: #313238;
+    }
+  }
+
+  .ip-input-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+
+    .bk-button {
+      margin-left: 16px;
+      .hcm-icon {
+        font-size: 14px;
+        color: #c4c6cc;
+        transition: color 0.2s;
+
+        &:hover {
+          color: #3a84ff;
+        }
+      }
+
+      &.is-disabled {
+        .hcm-icon {
+          color: #c4c6cc;
+        }
+      }
+    }
+
+    &:last-of-type {
+      margin-bottom: 0;
+    }
+
+    .bk-form-item {
+      flex: 1;
+      margin-bottom: 0;
+    }
+  }
+
+  .footer-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .quota-wrap {
+      .add-count {
+        color: #3a84ff;
+      }
+
+      .total-count {
+        color: #313238;
+      }
+    }
+  }
+}
