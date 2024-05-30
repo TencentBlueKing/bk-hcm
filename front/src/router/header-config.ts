@@ -23,6 +23,11 @@ export const headRouteConfig = [
     name: '资源选型',
     path: '/scheme/recommendation',
   },
+  {
+    id: 'bill',
+    name: '账号管理',
+    path: '/bill/account-manage',
+  },
 
   // 接下来是 资源选型、平台管理
   // {
