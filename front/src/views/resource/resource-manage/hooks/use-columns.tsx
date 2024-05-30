@@ -768,7 +768,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'private_ipv4_addresses',
       idFiled: 'id',
       onlyShowOnList: false,
-      render: (data) => [...data.private_ipv4_addresses, ...data.private_ipv6_addresses].join(','),
+      render: (data) =>
+        [...(data.private_ipv4_addresses || []), ...(data.private_ipv6_addresses || [])].join(',') || '--',
       sort: false,
     }),
     {
@@ -776,14 +777,15 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'vendor',
       isDefaultShow: true,
       onlyShowOnList: true,
-      render: ({ data }: any) => [...data.public_ipv4_addresses, ...data.public_ipv6_addresses].join(',') || '--',
+      render: ({ data }: any) =>
+        [...(data.public_ipv4_addresses || []), ...(data.public_ipv6_addresses || [])].join(',') || '--',
     },
     {
       label: '所属VPC',
       field: 'cloud_vpc_ids',
       isDefaultShow: true,
       onlyShowOnList: true,
-      render: ({ data }: any) => data.cloud_vpc_ids.join(',') || '--',
+      render: ({ data }: any) => data.cloud_vpc_ids?.join(',') || '--',
     },
     {
       label: '云厂商',
