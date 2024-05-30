@@ -35,6 +35,7 @@ export default defineComponent({
       return !['add', 'edit', 'AddRs', 'port', 'weight', 'BatchDeleteRs'].includes(loadBalancerStore.currentScene);
     });
     let timer: any;
+    const lbDetail = ref(null);
 
     // 表单相关
     const getDefaultFormData = () => ({
@@ -54,7 +55,7 @@ export default defineComponent({
     const formData = reactive(getDefaultFormData());
     const { updateCount } = useChangeScene(isShow, formData);
     const { formItemOptions, canUpdateRegionOrVpc, formRef, rules, deletedRsList, regionVpcSelectorRef } =
-      useAddOrUpdateTGForm(formData, updateCount, isEdit);
+      useAddOrUpdateTGForm(formData, updateCount, isEdit, lbDetail);
 
     // click-handler - 新建目标组
     const handleAddTargetGroup = () => {
@@ -92,6 +93,11 @@ export default defineComponent({
         // 侧边栏显示后, 刷新 vpc 列表, 支持编辑的时候默认选中 vpc
         regionVpcSelectorRef.value.handleRefresh();
       });
+      // 请求关联的负载均衡detail, 获取跨域信息
+      if (data.lb_id) {
+        const res = await businessStore.getLbDetail(data.lb_id);
+        lbDetail.value = res.data;
+      }
     };
 
     // 处理参数 - add
@@ -133,12 +139,15 @@ export default defineComponent({
           targets: formData.rs_list
             // 只提交新增的rs
             .filter(({ isNew }) => isNew)
-            .map(({ cloud_id, port, weight }) => ({
-              inst_type: 'CVM',
-              cloud_inst_id: cloud_id,
-              port,
-              weight,
-            })),
+            .map(({ cloud_id, port, weight, private_ipv4_addresses }) => {
+              return {
+                inst_type: lbDetail.value?.extension?.snat_pro ? 'ENI' : 'CVM',
+                ip: lbDetail.value?.extension?.snat_pro ? private_ipv4_addresses[0] : undefined,
+                cloud_inst_id: lbDetail.value?.extension?.snat_pro ? undefined : cloud_id,
+                port,
+                weight,
+              };
+            }),
         },
       ],
     });
@@ -266,7 +275,12 @@ export default defineComponent({
         v-model:isShow={isShow.value}
         isSubmitLoading={isSubmitLoading.value}
         isSubmitDisabled={isSubmitDisabled.value}
-        onHandleSubmit={handleAddOrUpdateTargetGroupSubmit}>
+        onHandleSubmit={handleAddOrUpdateTargetGroupSubmit}
+        handleClose={() => {
+          if (['canceled', 'failed'].includes(lastAsyncTaskInfo.state)) {
+            Object.assign(lastAsyncTaskInfo, { tgId: '', flowId: '', state: '' });
+          }
+        }}>
         <bk-container margin={0}>
           <Form formType='vertical' model={formData} ref={formRef} rules={rules}>
             {/* 异步任务提示 */}

@@ -7,11 +7,13 @@ import AddOrUpdateTGSideslider from '../../components/AddOrUpdateTGSideslider';
 import AddRsDialog from '../../components/AddRsDialog';
 // import stores
 import { useRegionsStore } from '@/store/useRegionsStore';
+import { useBusinessStore } from '@/store';
 // import utils
 import bus from '@/common/bus';
 import { timeFormatter } from '@/common/util';
 // import constants
 import { VendorEnum } from '@/common/constant';
+import { QueryRuleOPEnum } from '@/typings';
 import './index.scss';
 
 export default defineComponent({
@@ -28,6 +30,7 @@ export default defineComponent({
   setup(props) {
     // use stores
     const { getRegionName } = useRegionsStore();
+    const businessStore = useBusinessStore();
 
     const targetGroupDetail = computed(() => [
       {
@@ -76,8 +79,20 @@ export default defineComponent({
     ]);
 
     // click-handler - 编辑目标组
-    const handleEditTargetGroup = () => {
-      bus.$emit('editTargetGroup', { ...props.detail, rs_list: props.detail.target_list });
+    const handleEditTargetGroup = async () => {
+      // 根据目标组id获取目标组关联lb_id
+      const res = await businessStore.list(
+        {
+          filter: { op: QueryRuleOPEnum.AND, rules: [{ field: 'id', op: QueryRuleOPEnum.EQ, value: props.detail.id }] },
+          page: { count: false, start: 0, limit: 1 },
+        },
+        'target_groups',
+      );
+      bus.$emit('editTargetGroup', {
+        ...props.detail,
+        rs_list: props.detail.target_list,
+        lb_id: res.data.details[0].lb_id,
+      });
     };
 
     return () => (
