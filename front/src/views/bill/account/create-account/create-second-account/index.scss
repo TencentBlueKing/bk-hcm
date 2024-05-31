@@ -1,0 +1,27 @@
+.create-second-account-wrapper {
+  width: calc(100% - 239px);
+
+  .header-title {
+    font-family: MicrosoftYaHei;
+    font-size: 16px;
+    color: #313238;
+    letter-spacing: 0;
+    line-height: 24px;
+    padding: 14px 5px;
+    display: flex;
+    align-items: center;
+  }
+
+  .info-card {
+    margin: 12px 24px;
+    width: calc(83.5vw);
+
+    &:first-of-type {
+      margin-top: 76px;
+    }
+
+    &:last-of-type {
+      margin-bottom: 16px;
+    }
+  }
+}

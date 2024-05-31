@@ -8,9 +8,13 @@ import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import CommonSideslider from '@/components/common-sideslider';
 import FirstLevelAccountDetail from '../account-detail/first-level-account-detail';
 import SecondLevelAccountDetail from '../account-detail/second-level-account-detail';
+import { useRoute, useRouter } from 'vue-router';
 
 export default defineComponent({
   setup() {
+    const router = useRouter();
+    const route = useRoute();
+
     const accountLevel = ref(AccountLevelEnum.FirstLevel);
     const { columns: firstAccountColumns } = useColumns(AccountLevelEnum.FirstLevel);
     const { columns: secondaryAccountColumns } = useColumns(AccountLevelEnum.SecondLevel);
@@ -102,7 +106,19 @@ export default defineComponent({
               <_component>
                 {{
                   operation: () => (
-                    <Button theme='primary'>
+                    <Button
+                      theme='primary'
+                      onClick={() => {
+                        router.push({
+                          path:
+                            accountLevel.value === AccountLevelEnum.FirstLevel
+                              ? '/bill/account-manage/first-account'
+                              : '/bill/account-manage/second-account',
+                          query: {
+                            ...route.query,
+                          },
+                        });
+                      }}>
                       {accountLevel.value === AccountLevelEnum.FirstLevel ? '录入一级账号' : '创建二级账号'}
                     </Button>
                   ),
