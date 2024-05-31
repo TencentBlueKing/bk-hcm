@@ -30,13 +30,6 @@ import (
 // Option defines the app's runtime flag options.
 type Option struct {
 	Sys *cc.SysOption
-	// PublicKey used to api gateway jwt token.
-	PublicKey string
-	// DisableJWT whether to enable blueking api-gateway jwt parser.if disable-tgw = false, api-service
-	// parse request will api-gateway parser, requests from other parties will not be parsed.if
-	// disable-tgw = true, api-service parse requests for direct access that have not been processed by
-	// the gateway. Parse rule details：pkg/runtime/parser/parser.go
-	DisableJWT bool
 }
 
 // InitOptions init api server's options from command flags.

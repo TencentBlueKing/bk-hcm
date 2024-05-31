@@ -20,12 +20,13 @@
 package mainaccount
 
 import (
+	"net/http"
+
 	"hcm/cmd/account-server/logics/audit"
 	"hcm/cmd/account-server/service/capability"
 	"hcm/pkg/client"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
-	"net/http"
 )
 
 // InitService initial the main account service
