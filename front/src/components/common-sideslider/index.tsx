@@ -57,18 +57,20 @@ export default defineComponent({
         }}>
         {{
           default: () => <div class='common-sideslider-content'>{ctx.slots.default?.()}</div>,
-          footer: !props.noFooter && (() => (
-            <>
-              <Button
-                theme='primary'
-                onClick={handleSubmit}
-                disabled={props.isSubmitDisabled}
-                loading={props.isSubmitLoading}>
-                {t('提交')}
-              </Button>
-              <Button onClick={() => triggerShow(false)}>{t('取消')}</Button>
-            </>
-          ))
+          footer: !props.noFooter
+            ? () => (
+                <>
+                  <Button
+                    theme='primary'
+                    onClick={handleSubmit}
+                    disabled={props.isSubmitDisabled}
+                    loading={props.isSubmitLoading}>
+                    {t('提交')}
+                  </Button>
+                  <Button onClick={() => triggerShow(false)}>{t('取消')}</Button>
+                </>
+              )
+            : undefined,
         }}
       </Sideslider>
     );

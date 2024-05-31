@@ -1827,10 +1827,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
 
   const secondaryAccountColumns = [
     {
-      label: '二级帐号名称',
-      field: 'secondaryAccountName',
-    },
-    {
       label: '二级帐号ID',
       field: 'secondaryAccountId',
     },
