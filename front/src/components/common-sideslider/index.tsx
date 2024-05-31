@@ -27,6 +27,10 @@ export default defineComponent({
       default: false,
     },
     handleClose: Function,
+    noFooter: {
+      type: Boolean,
+      default: false,
+    }, // 是否不需要footer
   },
   emits: ['update:isShow', 'handleSubmit'],
   setup(props, ctx) {
@@ -53,7 +57,7 @@ export default defineComponent({
         }}>
         {{
           default: () => <div class='common-sideslider-content'>{ctx.slots.default?.()}</div>,
-          footer: () => (
+          footer: !props.noFooter && (() => (
             <>
               <Button
                 theme='primary'
@@ -64,7 +68,7 @@ export default defineComponent({
               </Button>
               <Button onClick={() => triggerShow(false)}>{t('取消')}</Button>
             </>
-          ),
+          ))
         }}
       </Sideslider>
     );

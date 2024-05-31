@@ -1,10 +1,13 @@
-import { computed, defineComponent, ref } from 'vue';
+import { defineComponent, ref } from 'vue';
 import './index.scss';
 import { Button, Tab } from 'bkui-vue';
 import { BkTabPanel } from 'bkui-vue/lib/tab';
 import { AccountLevelEnum, reviewData, searchData, tabs, secondaryReviewData, secondarySearchData } from './constants';
 import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+import CommonSideslider from '@/components/common-sideslider';
+import FirstLevelAccount from '../account-detail/first-level-account-detail';
+import FirstLevelAccountDetail from '../account-detail/first-level-account-detail';
 
 export default defineComponent({
   setup(props, ctx) {
@@ -12,9 +15,33 @@ export default defineComponent({
     const { columns: firstAccountColumns } = useColumns(AccountLevelEnum.FirstLevel);
     const { columns: secondaryAccountColumns } = useColumns(AccountLevelEnum.SecondLevel);
 
+    const isFirstLevelSideSliderShow = ref(false);
+    const isSecondLevelSideSliderShow = ref(false);
+
+    const curFirstLevelAccount = ref({});
+    const curSecondLeveleAccount = ref({});
+
     const { CommonTable: FirstLevelTable } = useTable({
       tableOptions: {
-        columns: firstAccountColumns,
+        columns: [
+          {
+            label: '一级帐号名称',
+            field: 'primaryAccountName',
+            render: ({ data }: any) => (
+              <Button
+                text
+                theme='primary'
+                onClick={() => {
+                  // SideSlider展示详情(可编辑)
+                  curFirstLevelAccount.value = data;
+                  isFirstLevelSideSliderShow.value = true;
+                }}>
+                {data.primaryAccountName}
+              </Button>
+            ),
+          },
+          ...firstAccountColumns,
+        ],
         reviewData: reviewData,
       },
       searchOptions: {
@@ -48,8 +75,11 @@ export default defineComponent({
     ];
 
     return () => (
-      <div>
-        <Tab v-model:active={accountLevel.value} type='card-grid' class={'account-manage-wrapper'}>
+      <div class={'account-manage-wrapper'}>
+        <div class={'header'}>
+          <p class={'title'}>云账号管理</p>
+        </div>
+        <Tab v-model:active={accountLevel.value} type='card-grid' class={'account-table'}>
           {tabs.map(({ key, label, _component }) => (
             <BkTabPanel key={key} label={label} name={key} renderDirective='if'>
               <_component>
@@ -64,6 +94,11 @@ export default defineComponent({
             </BkTabPanel>
           ))}
         </Tab>
+
+        {/* 一级账号详情及编辑 */}
+        <CommonSideslider v-model:isShow={isFirstLevelSideSliderShow.value} width={640} title={'一级账号详情'} noFooter={true}>
+          <FirstLevelAccountDetail detail={curFirstLevelAccount.value}/>
+        </CommonSideslider>
       </div>
     );
   },

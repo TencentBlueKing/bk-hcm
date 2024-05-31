@@ -1800,10 +1800,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
 
   const firstAccountColumns = [
     {
-      label: '一级帐号名称',
-      field: 'primaryAccountName',
-    },
-    {
       label: '一级帐号ID',
       field: 'primaryAccountId',
     },
@@ -1826,10 +1822,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '二级帐号个数',
       field: 'secondaryAccountCount',
-    },
-    {
-      label: '操作',
-      field: 'actions',
     },
   ];
 
@@ -1865,10 +1857,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '运营产品',
       field: 'operatingProduct',
-    },
-    {
-      label: '操作',
-      field: 'actions',
     },
   ];
 
