@@ -1798,6 +1798,80 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
   ];
 
+  const firstAccountColumns = [
+    {
+      label: '一级帐号名称',
+      field: 'primaryAccountName',
+    },
+    {
+      label: '一级帐号ID',
+      field: 'primaryAccountId',
+    },
+    {
+      label: '云厂商',
+      field: 'cloudProvider',
+    },
+    {
+      label: '帐号邮箱',
+      field: 'accountEmail',
+    },
+    {
+      label: '主负责人',
+      field: 'mainResponsiblePerson',
+    },
+    {
+      label: '组织架构',
+      field: 'organizationalStructure',
+    },
+    {
+      label: '二级帐号个数',
+      field: 'secondaryAccountCount',
+    },
+    {
+      label: '操作',
+      field: 'actions',
+    },
+  ];
+
+  const secondaryAccountColumns = [
+    {
+      label: '二级帐号名称',
+      field: 'secondaryAccountName',
+    },
+    {
+      label: '二级帐号ID',
+      field: 'secondaryAccountId',
+    },
+    {
+      label: '所属一级帐号',
+      field: 'parentPrimaryAccount',
+    },
+    {
+      label: '云厂商',
+      field: 'cloudProvider',
+    },
+    {
+      label: '站点类型',
+      field: 'siteType',
+    },
+    {
+      label: '帐号邮箱',
+      field: 'accountEmail',
+    },
+    {
+      label: '主负责人',
+      field: 'mainResponsiblePerson',
+    },
+    {
+      label: '运营产品',
+      field: 'operatingProduct',
+    },
+    {
+      label: '操作',
+      field: 'actions',
+    },
+  ];
+
   const columnsMap = {
     vpc: vpcColumns,
     subnet: subnetColumns,
@@ -1819,6 +1893,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     url: urlColumns,
     targetGroupListener: targetGroupListenerColumns,
     cert: certColumns,
+    firstAccount: firstAccountColumns,
+    secondaryAccount: secondaryAccountColumns,
   };
 
   let columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);
