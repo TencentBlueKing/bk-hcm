@@ -29,6 +29,7 @@ import (
 	"time"
 
 	logicaudit "hcm/cmd/account-server/logics/audit"
+	mainaccount "hcm/cmd/account-server/service/account-set/main-account"
 	"hcm/cmd/account-server/service/capability"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
@@ -56,7 +57,6 @@ type Service struct {
 	cipher     cryptography.Crypto
 	authorizer auth.Authorizer
 	audit      logicaudit.Interface
-	//audit
 }
 
 // NewService create a service instance.
@@ -188,9 +188,7 @@ func (s *Service) apiSet() *restful.Container {
 		Audit:      s.audit,
 	}
 
-	// todo
-	// init sub services
-	// e.g. cvm.InitCvmService(c)
+	mainaccount.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

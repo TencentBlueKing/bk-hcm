@@ -17,36 +17,38 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package mainaccount ...
 package mainaccount
 
 import (
 	"net/http"
 
-	"hcm/cmd/account-server/logics/audit"
-	"hcm/cmd/account-server/service/capability"
-	"hcm/pkg/client"
-	"hcm/pkg/iam/auth"
+	"hcm/cmd/data-service/service/capability"
+	"hcm/pkg/cryptography"
+	"hcm/pkg/dal/dao"
 	"hcm/pkg/rest"
 )
 
 // InitService initial the main account service
-func InitService(c *capability.Capability) {
+func InitService(cap *capability.Capability) {
 	svc := &service{
-		client:     c.ApiClient,
-		authorizer: c.Authorizer,
-		audit:      c.Audit,
+		dao:    cap.Dao,
+		cipher: cap.Cipher,
 	}
 
 	h := rest.NewHandler()
 
-	// register handler
-	h.Add("GetMainAccounts", http.MethodGet, "/main_accounts/{id}", svc.Get)
+	h.Add("CreateMainAccount", http.MethodPost, "/vendors/{vendor}/main_accounts/create", svc.CreateMainAccount)
+	h.Add("GetMainAccount", http.MethodGet, "/vendors/{vendor}/main_accounts/{account_id}", svc.GetMainAccount)
+	h.Add("UpdateMainAccount", http.MethodPatch, "/main_accounts/{account_id}", svc.UpdateMainAccount)
+	h.Add("ListMainAccount", http.MethodPost, "/main_accounts/list", svc.ListMainAccount)
 
-	h.Load(c.WebService)
+	h.Add("GetMainAccountBasicInfo", http.MethodGet, "/main_accounts/basic_info/{account_id}", svc.GetMainAccountBasicInfo)
+
+	h.Load(cap.WebService)
 }
 
 type service struct {
-	client     *client.ClientSet
-	authorizer auth.Authorizer
-	audit      audit.Interface
+	dao    dao.Set
+	cipher cryptography.Crypto
 }

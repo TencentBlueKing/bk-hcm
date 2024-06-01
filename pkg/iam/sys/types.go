@@ -48,6 +48,10 @@ const (
 	Biz client.TypeID = "biz"
 	// CloudSelectionScheme define cloud selection scheme resource type to register iam.
 	CloudSelectionScheme client.TypeID = "cloud_selection_scheme"
+	// MainAccount defines main account resource type to register iam.
+	MainAccount client.TypeID = "main_account"
+	// RootAccount defines main account resource type to register iam.
+	RootAccount client.TypeID = "main_account"
 )
 
 const (

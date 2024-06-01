@@ -17,12 +17,29 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package mainaccount
+package enumor
 
-import "hcm/pkg/rest"
+import "fmt"
 
-// Get get main account with options
-func (a *service) Get(cts *rest.Contexts) (interface{}, error) {
-	//todo
-	return nil, nil
+// AccountSiteType is site type.
+type RootAccountSiteType string
+
+// Validate the AccountSiteType is valid or not
+func (a RootAccountSiteType) Validate() error {
+	switch a {
+	case RootAccountChinaSite:
+	case RootAccountInternationalSite:
+	default:
+		return fmt.Errorf("unsupported main account site type: %s", a)
+
+	}
+
+	return nil
 }
+
+const (
+	// RootAccountChinaSite is china site.
+	RootAccountChinaSite RootAccountSiteType = "china"
+	// RootAccountInternationalSite is international site.
+	RootAccountInternationalSite RootAccountSiteType = "international"
+)

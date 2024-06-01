@@ -48,6 +48,8 @@ const (
 	ListenerAuditResType          AuditResourceType = "listener"
 	UrlRuleAuditResType           AuditResourceType = "url_rule"
 	UrlRuleDomainAuditResType     AuditResourceType = "url_rule_domain"
+	MainAccountAuditResType       AuditResourceType = "main_account"
+	RootAccountAuditResType       AuditResourceType = "root_account"
 )
 
 // AuditResourceTypeEnums resource type map.

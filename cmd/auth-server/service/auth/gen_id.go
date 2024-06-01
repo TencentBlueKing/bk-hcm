@@ -639,3 +639,13 @@ func genTargetGroupResource(a *meta.ResourceAttribute) (client.ActionID, []clien
 func genUrlRuleResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
 	return genIaaSResourceResource(a)
 }
+
+func genMainAccountRuleResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	//todo
+	return "", nil, nil
+}
+
+func genRootAccountRuleResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	//todo
+	return "", nil, nil
+}

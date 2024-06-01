@@ -170,6 +170,11 @@ const (
 	ResourceFlowRelTable Name = "resource_flow_rel"
 	// ResourceFlowLockTable is resource_flow_lock table's name.
 	ResourceFlowLockTable Name = "resource_flow_lock"
+
+	// MainAccountTable is main_account table's name
+	MainAccountTable Name = "main_account"
+	// RootAccountTable is main_account table's name
+	RootAccountTable Name = "root_account"
 )
 
 // Validate whether the table name is valid or not.
@@ -255,6 +260,9 @@ var TableMap = map[Name]struct{}{
 	TargetGroupListenerRuleRelTable: {},
 	ResourceFlowRelTable:            {},
 	ResourceFlowLockTable:           {},
+
+	MainAccountTable: {},
+	RootAccountTable: {},
 }
 
 // Register 注册表名

@@ -91,4 +91,8 @@ const (
 	TargetGroup ResourceType = "target_group"
 	// UrlRuleAuditResType url规则
 	UrlRuleAuditResType ResourceType = "url_rule"
+	// MainAccount defines main cloud account resource's hcm auth resource type
+	MainAccount ResourceType = "main_account"
+	// RootAccount defines main cloud account resource's hcm auth resource type
+	RootAccount ResourceType = "root_account"
 )
