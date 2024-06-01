@@ -102,6 +102,7 @@ func (rs BaseTarget) GetCloudID() string {
 // BaseTargetListenerRuleRel define base target listener rule rel.
 type BaseTargetListenerRuleRel struct {
 	ID                  string          `json:"id"`
+	Vendor              enumor.Vendor   `json:"vendor"`
 	ListenerRuleID      string          `json:"listener_rule_id"`
 	ListenerRuleType    enumor.RuleType `json:"listener_rule_type"`
 	CloudListenerRuleID string          `json:"cloud_listener_rule_id"`

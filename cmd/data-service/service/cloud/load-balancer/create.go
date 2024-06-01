@@ -377,6 +377,7 @@ func (svc *lbSvc) CreateTargetGroupListenerRel(cts *rest.Contexts) (any, error) 
 
 		models := make([]*tablelb.TargetGroupListenerRuleRelTable, 0)
 		models = append(models, &tablelb.TargetGroupListenerRuleRelTable{
+			Vendor:              req.Vendor,
 			ListenerRuleID:      req.ListenerRuleID,
 			CloudListenerRuleID: req.CloudListenerRuleID,
 			ListenerRuleType:    req.ListenerRuleType,
@@ -478,6 +479,7 @@ func (svc *lbSvc) convRuleRel(kt *kit.Kit, listenerRuleID string, rule dataproto
 	bindingStatus enumor.BindingStatus) *tablelb.TargetGroupListenerRuleRelTable {
 
 	return &tablelb.TargetGroupListenerRuleRelTable{
+		Vendor:              rule.Vendor,
 		ListenerRuleID:      listenerRuleID,
 		CloudListenerRuleID: rule.CloudID,
 		ListenerRuleType:    enumor.Layer7RuleType,
@@ -667,6 +669,7 @@ func (svc *lbSvc) insertListenerWithRule(kt *kit.Kit, req *dataproto.ListenerWit
 			}
 
 			ruleRelModels := []*tablelb.TargetGroupListenerRuleRelTable{{
+				Vendor:              enumor.TCloud,
 				ListenerRuleID:      ruleID,
 				CloudListenerRuleID: item.CloudRuleID,
 				ListenerRuleType:    item.RuleType,

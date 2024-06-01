@@ -244,6 +244,8 @@ func (r *TCloudUrlRuleBatchCreateReq) Validate() error {
 
 // TCloudUrlRuleCreate tcloud url rule create.
 type TCloudUrlRuleCreate struct {
+	Vendor enumor.Vendor `json:"vendor" validate:"required"`
+
 	LbID       string `json:"lb_id" validate:"required,lte=255"`
 	CloudLbID  string `json:"cloud_lb_id" validate:"required,lte=255"`
 	LblID      string `json:"lbl_id" validate:"required,lte=255"`

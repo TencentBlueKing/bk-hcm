@@ -122,6 +122,7 @@ func createRel[T corelb.TargetGroupExtension](kt *kit.Kit, svc *lbSvc, txn *sqlx
 
 	// 创建关系
 	ruleRelModels := []*tablelb.TargetGroupListenerRuleRelTable{{
+		Vendor:              vendor,
 		ListenerRuleID:      tgReq.ListenerRuleID,
 		CloudListenerRuleID: tgReq.CloudListenerRuleID,
 		ListenerRuleType:    tgReq.ListenerRuleType,
